@@ -1,6 +1,6 @@
 {
  "schemaVersion": 1,
- "builtAt": "2026-09-16T08:32:51.026Z",
+ "builtAt": "2026-09-17T08:08:21.940Z",
  "basis": "archive event name -> rated venue, voted from (year, opponent) co-occurrence with api-tennis tournamentHistory",
  "acceptance": {
   "minVotes": 20,
@@ -1018,5 +1018,525 @@
     }
    ]
   }
+ },
+ "venues": {
+  "Hangzhou": {
+   "speed": 1.42,
+   "ratingYear": 2025
+  },
+  "Stuttgart": {
+   "speed": 1.4,
+   "ratingYear": 2025
+  },
+  "Basel": {
+   "speed": 1.4,
+   "ratingYear": 2025
+  },
+  "Turin": {
+   "speed": 1.36,
+   "ratingYear": 2025
+  },
+  "London": {
+   "speed": 1.35,
+   "ratingYear": 2025
+  },
+  "Metz": {
+   "speed": 1.35,
+   "ratingYear": 2025
+  },
+  "Antwerp": {
+   "speed": 1.34,
+   "ratingYear": 2025
+  },
+  "Halle": {
+   "speed": 1.27,
+   "ratingYear": 2025
+  },
+  "Vienna": {
+   "speed": 1.23,
+   "ratingYear": 2025
+  },
+  "Brisbane": {
+   "speed": 1.23,
+   "ratingYear": 2025
+  },
+  "Almaty": {
+   "speed": 1.22,
+   "ratingYear": 2025
+  },
+  "Dallas": {
+   "speed": 1.21,
+   "ratingYear": 2025
+  },
+  "Cincinnati": {
+   "speed": 1.2,
+   "ratingYear": 2025
+  },
+  "Miami": {
+   "speed": 1.18,
+   "ratingYear": 2025
+  },
+  "Tokyo": {
+   "speed": 1.18,
+   "ratingYear": 2025
+  },
+  "Washington": {
+   "speed": 1.18,
+   "ratingYear": 2025
+  },
+  "Chengdu": {
+   "speed": 1.17,
+   "ratingYear": 2025
+  },
+  "Adelaide": {
+   "speed": 1.15,
+   "ratingYear": 2025
+  },
+  "Cordoba": {
+   "speed": 1.15,
+   "ratingYear": 2023
+  },
+  "Wimbledon": {
+   "speed": 1.11,
+   "ratingYear": 2025
+  },
+  "Delray Beach": {
+   "speed": 1.11,
+   "ratingYear": 2025
+  },
+  "Winston-Salem": {
+   "speed": 1.1,
+   "ratingYear": 2025
+  },
+  "Montpellier": {
+   "speed": 1.1,
+   "ratingYear": 2025
+  },
+  "Marseille": {
+   "speed": 1.09,
+   "ratingYear": 2025
+  },
+  "Shanghai": {
+   "speed": 1.08,
+   "ratingYear": 2025
+  },
+  "Doha": {
+   "speed": 1.08,
+   "ratingYear": 2025
+  },
+  "Mallorca": {
+   "speed": 1.06,
+   "ratingYear": 2025
+  },
+  "Australian Open": {
+   "speed": 1.06,
+   "ratingYear": 2025
+  },
+  "Beijing": {
+   "speed": 1.06,
+   "ratingYear": 2025
+  },
+  "Dubai": {
+   "speed": 1.03,
+   "ratingYear": 2025
+  },
+  "Hong Kong": {
+   "speed": 1.02,
+   "ratingYear": 2025
+  },
+  "Montreal": {
+   "speed": 1.02,
+   "ratingYear": 2025
+  },
+  "Los Cabos": {
+   "speed": 1.02,
+   "ratingYear": 2025
+  },
+  "Toronto": {
+   "speed": 1.01,
+   "ratingYear": 2024
+  },
+  "Gstaad": {
+   "speed": 1,
+   "ratingYear": 2025
+  },
+  "US Open": {
+   "speed": 0.98,
+   "ratingYear": 2025
+  },
+  "Hertogenbosch": {
+   "speed": 0.97,
+   "ratingYear": 2025
+  },
+  "Paris": {
+   "speed": 0.97,
+   "ratingYear": 2025
+  },
+  "Auckland": {
+   "speed": 0.93,
+   "ratingYear": 2025
+  },
+  "Stockholm": {
+   "speed": 0.93,
+   "ratingYear": 2025
+  },
+  "Rio de Janeiro": {
+   "speed": 0.91,
+   "ratingYear": 2025
+  },
+  "Buenos Aires": {
+   "speed": 0.89,
+   "ratingYear": 2025
+  },
+  "Bastad": {
+   "speed": 0.84,
+   "ratingYear": 2025
+  },
+  "Umag": {
+   "speed": 0.82,
+   "ratingYear": 2025
+  },
+  "Acapulco": {
+   "speed": 0.81,
+   "ratingYear": 2025
+  },
+  "Kitzbuhel": {
+   "speed": 0.81,
+   "ratingYear": 2025
+  },
+  "Madrid": {
+   "speed": 0.8,
+   "ratingYear": 2025
+  },
+  "Marrakech": {
+   "speed": 0.8,
+   "ratingYear": 2025
+  },
+  "Rotterdam": {
+   "speed": 0.78,
+   "ratingYear": 2025
+  },
+  "Eastbourne": {
+   "speed": 0.77,
+   "ratingYear": 2025
+  },
+  "Houston": {
+   "speed": 0.76,
+   "ratingYear": 2025
+  },
+  "Indian Wells": {
+   "speed": 0.74,
+   "ratingYear": 2025
+  },
+  "Geneva": {
+   "speed": 0.72,
+   "ratingYear": 2025
+  },
+  "Santiago": {
+   "speed": 0.7,
+   "ratingYear": 2025
+  },
+  "Lyon": {
+   "speed": 0.7,
+   "ratingYear": 2023
+  },
+  "Estoril": {
+   "speed": 0.7,
+   "ratingYear": 2023
+  },
+  "Roland Garros": {
+   "speed": 0.68,
+   "ratingYear": 2025
+  },
+  "Munich": {
+   "speed": 0.65,
+   "ratingYear": 2025
+  },
+  "Newport": {
+   "speed": 0.62,
+   "ratingYear": 2023
+  },
+  "Rome": {
+   "speed": 0.61,
+   "ratingYear": 2025
+  },
+  "Barcelona": {
+   "speed": 0.59,
+   "ratingYear": 2025
+  },
+  "Hamburg": {
+   "speed": 0.58,
+   "ratingYear": 2025
+  },
+  "Monte Carlo": {
+   "speed": 0.56,
+   "ratingYear": 2025
+  },
+  "Bucharest": {
+   "speed": 0.41,
+   "ratingYear": 2025
+  }
+ },
+ "apiNames": {
+  "French Open": "Roland Garros",
+  "US Open": "US Open",
+  "Buenos Aires": "Buenos Aires",
+  "Australian Open": "Australian Open",
+  "Antwerp": "Antwerp",
+  "Rio de Janeiro": "Rio de Janeiro",
+  "Wimbledon": "Wimbledon",
+  "Rome Masters": "Rome",
+  "Vienna": "Vienna",
+  "Cordoba": "Cordoba",
+  "Barcelona": "Barcelona",
+  "Hamburg": "Hamburg",
+  "Monte Carlo Masters": "Monte Carlo",
+  "Canada Masters": "Montreal",
+  "Bastad": "Bastad",
+  "Miami Masters": "Miami",
+  "Paris Masters": "Paris",
+  "Tokyo": "Tokyo",
+  "Indian Wells Masters": "Indian Wells",
+  "Madrid Masters": "Madrid",
+  "Cincinnati Masters": "Cincinnati",
+  "Cincinnati": "Cincinnati",
+  "Monte Carlo": "Monte Carlo",
+  "Acapulco": "Acapulco",
+  "Kitzbuhel": "Kitzbuhel",
+  "Winston-Salem": "Winston-Salem",
+  "Shanghai": "Shanghai",
+  "Los Cabos": "Los Cabos",
+  "Montreal": "Montreal",
+  "Indian Wells": "Indian Wells",
+  "Miami": "Miami",
+  "Rome": "Rome",
+  "Auckland": "Auckland",
+  "Shanghai Masters": "Shanghai",
+  "Paris": "Paris",
+  "Toronto": "Toronto",
+  "Beijing": "Beijing",
+  "Madrid": "Madrid",
+  "London": "London",
+  "Eastbourne": "Eastbourne",
+  "Chengdu": "Chengdu",
+  "Brisbane": "Brisbane",
+  "Munich": "Munich",
+  "Bucharest": "Bucharest",
+  "Estoril": "Estoril",
+  "Santiago": "Santiago",
+  "Lyon": "Lyon",
+  "Washington": "Washington",
+  "Basel": "Basel",
+  "Umag": "Umag",
+  "Houston": "Houston",
+  "Marrakech": "Marrakech",
+  "Hertogenbosch": "Hertogenbosch",
+  "Newport": "Newport",
+  "Dallas": "Dallas",
+  "Delray Beach": "Delray Beach",
+  "Mallorca": "Mallorca",
+  "'s-Hertogenbosch": "Hertogenbosch",
+  "Adelaide": "Adelaide",
+  "Halle": "Halle",
+  "Stuttgart": "Stuttgart",
+  "Adelaide 2": "Adelaide",
+  "Geneva": "Geneva",
+  "Doha": "Doha",
+  "Hong Kong": "Hong Kong",
+  "Marseille": "Marseille",
+  "Dubai": "Dubai",
+  "Stockholm": "Stockholm",
+  "Almaty": "Almaty",
+  "Hangzhou": "Hangzhou",
+  "Metz": "Metz",
+  "Gstaad": "Gstaad",
+  "Montpellier": "Montpellier",
+  "Rotterdam": "Rotterdam",
+  "Finals - Turin": "Turin",
+  "Lyon 2": "Lyon",
+  "Stuttgart 1": "Stuttgart",
+  "''s-Hertogenbosch": "Hertogenbosch",
+  "London Olympics": "London",
+  "Hamburg Masters": "Hamburg",
+  "Beijing Olympics": "Beijing",
+  "M25 Rio de Janeiro": "Rio de Janeiro",
+  "Buenos Aires 3": "Buenos Aires",
+  "Cordoba 2": "Cordoba",
+  "Buenos Aires 2": "Buenos Aires",
+  "Buenos Aires Challenger Men": "Buenos Aires",
+  "M15 Buenos Aires": "Buenos Aires",
+  "ATP Indian Wells": "Indian Wells",
+  "Brisbane 2": "Brisbane",
+  "ATP Adelaide": "Adelaide",
+  "ATP Chengdu": "Chengdu",
+  "ATP US Open": "US Open",
+  "ATP Winston-Salem": "Winston-Salem",
+  "ATP Washington": "Washington",
+  "ATP Wimbledon": "Wimbledon",
+  "ATP Mallorca": "Mallorca",
+  "ATP French Open": "Roland Garros",
+  "ATP Miami": "Miami",
+  "ATP Australian Open": "Australian Open",
+  "Hamburg Challenger Men": "Hamburg",
+  "ITF M25 Dallas, TX Men": "Dallas",
+  "Mallorca Challenger Men": "Mallorca",
+  "ATP Dubai": "Dubai",
+  "ATP Vienna": "Vienna",
+  "ATP Almaty": "Almaty",
+  "ATP Hangzhou": "Hangzhou",
+  "ATP Cincinnati": "Cincinnati",
+  "ATP Umag": "Umag",
+  "ATP Hamburg": "Hamburg",
+  "ATP Eastbourne": "Eastbourne",
+  "ATP Halle": "Halle",
+  "ATP Stuttgart": "Stuttgart",
+  "ATP Geneva": "Geneva",
+  "ATP Rome": "Rome",
+  "ATP Madrid": "Madrid",
+  "ATP Barcelona": "Barcelona",
+  "ATP Doha": "Doha",
+  "ATP Rotterdam": "Rotterdam",
+  "ATP Auckland": "Auckland",
+  "ATP Hong Kong": "Hong Kong",
+  "ATP Antwerp": "Antwerp",
+  "ATP Shanghai": "Shanghai",
+  "Rome Challenger Men": "Rome",
+  "Indian Wells 2": "Indian Wells",
+  "Boys US Open": "US Open",
+  "M15 Doha 2": "Doha",
+  "ITF M25 Doha Men": "Doha",
+  "ITF M15 Doha Men": "Doha",
+  "M15 Umag": "Umag",
+  "ITF M15 Madrid 4 Men": "Madrid",
+  "M15 Madrid 3": "Madrid",
+  "ITF M15 Vienna Men": "Vienna",
+  "Almaty 2": "Almaty",
+  "ATP Beijing": "Beijing",
+  "ATP Bastad": "Bastad",
+  "ATP Monte Carlo": "Monte Carlo",
+  "ATP Acapulco": "Acapulco",
+  "ATP Los Cabos": "Los Cabos",
+  "ATP Brisbane": "Brisbane",
+  "ATP Paris": "Paris",
+  "ATP Stockholm": "Stockholm",
+  "ATP Montpellier": "Montpellier",
+  "ATP Houston": "Houston",
+  "ATP Dallas": "Dallas",
+  "ATP Basel": "Basel",
+  "ATP Toronto": "Toronto",
+  "ATP Metz": "Metz",
+  "ATP Hertogenbosch": "Hertogenbosch",
+  "ATP Gstaad": "Gstaad",
+  "Buenos Aires 3 Challenger Men": "Buenos Aires",
+  "Buenos Aires 2 Challenger Men": "Buenos Aires",
+  "Madrid Challenger Men": "Madrid",
+  "Roland Garros": "Roland Garros",
+  "Lyon Challenger Men": "Lyon",
+  "ATP Marrakech": "Marrakech",
+  "ATP Marseille": "Marseille",
+  "ATP Kitzbuhel": "Kitzbuhel",
+  "ATP Estoril": "Estoril",
+  "Turin 2 Challenger Men": "Turin",
+  "ATP Munich": "Munich",
+  "M15 Doha 3": "Doha",
+  "Shanghai Challenger Men": "Shanghai",
+  "ATP London": "London",
+  "Lyon 2 Challenger Men": "Lyon",
+  "ATP Rio de Janeiro": "Rio de Janeiro",
+  "ATP Santiago": "Santiago",
+  "Rome 2": "Rome",
+  "M15 Metzingen": "Metz",
+  "ATP Bucharest": "Bucharest",
+  "ATP Buenos Aires": "Buenos Aires",
+  "Santiago Challenger Men": "Santiago",
+  "Santiago 3": "Santiago",
+  "ATP Tokyo": "Tokyo",
+  "ATP Delray Beach": "Delray Beach",
+  "ATP Newport": "Newport",
+  "Rome US": "Rome",
+  "ATP Lyon": "Lyon",
+  "Turin 2": "Turin",
+  "M25 Hamburg": "Hamburg",
+  "ATP Finals - Turin": "Turin",
+  "Santiago 2": "Santiago",
+  "M15 Doha 5": "Doha",
+  "ITF M25 Cordoba Men": "Cordoba",
+  "ITF M15 Bucharest Men": "Bucharest",
+  "M25 Doha": "Doha",
+  "M15 Doha 4": "Doha",
+  "ITF M15 Madrid Men": "Madrid",
+  "ITF M15 Madrid 3 Men": "Madrid",
+  "M25 Madrid": "Madrid",
+  "M25 Rome": "Rome",
+  "M15 Tokyo 2": "Tokyo",
+  "M15 Tokyo": "Tokyo",
+  "M25 Montreal": "Montreal",
+  "M25 Metzingen": "Metz",
+  "M25 Brisbane": "Brisbane",
+  "M15 Tokyo 4 (Japan)": "Tokyo",
+  "M15 Tokyo 3 (Japan)": "Tokyo",
+  "Brisbane 3": "Brisbane",
+  "M25 Dallas, TX": "Dallas",
+  "ITF M15 Nishi-Tokyo Men": "Tokyo",
+  "M25 Hong Kong 2": "Hong Kong",
+  "M15 Shanghai": "Shanghai",
+  "M15 Madrid": "Madrid",
+  "M25 Brisbane 2": "Brisbane",
+  "M15 Brisbane 2": "Brisbane",
+  "M15 Brisbane": "Brisbane",
+  "M15 Doha 6": "Doha",
+  "ITF M15 Santiago 3 Men": "Santiago",
+  "ITF M15 Santiago 2 Men": "Santiago",
+  "M15 Cordoba 2": "Cordoba",
+  "M15 Cordoba": "Cordoba",
+  "M15 Madrid 4": "Madrid",
+  "ITF M15 Madrid 2 Men": "Madrid",
+  "M25 Hong Kong": "Hong Kong",
+  "Boys Wimbledon": "Wimbledon",
+  "M25 Winston-Salem, NC 2": "Winston-Salem",
+  "M15 Winston-Salem, NC": "Winston-Salem",
+  "ITF M15 Winston-Salem, NC Men": "Winston-Salem",
+  "M15 Bucharest": "Bucharest",
+  "M15 Manacor (Mallorca)": "Mallorca",
+  "M15 Bucharest 2": "Bucharest",
+  "M25 Cordoba": "Cordoba",
+  "ITF M15 Bucharest 3 Men": "Bucharest",
+  "ITF M15 Bucharest 2 Men": "Bucharest",
+  "ITF M15 Doha 2 Men": "Doha",
+  "M15 Marrakech": "Marrakech",
+  "M15 Marrakech 2": "Marrakech",
+  "ITF M15 Metzingen Men": "Metz",
+  "M15 Montreal": "Montreal",
+  "M15 Doha": "Doha",
+  "M25 Marrakech": "Marrakech",
+  "M15 Bastad": "Bastad",
+  "M15 Nishi-Tokyo": "Tokyo",
+  "ITF M25 Brisbane Men": "Brisbane",
+  "ITF M15 Hong Kong 2 Men": "Hong Kong",
+  "ITF M15 Hong Kong Men": "Hong Kong",
+  "ITF M25 Hong Kong Men": "Hong Kong",
+  "M25 Santiago 2": "Santiago",
+  "M25 Santiago": "Santiago",
+  "ITF M15 Santiago Men": "Santiago",
+  "Boys Australian Open": "Australian Open",
+  "M15 Bastad 2": "Bastad",
+  "M15 Bucharest 3": "Bucharest",
+  "ITF M15 Bucharest 4 Men": "Bucharest",
+  "M25 Winston-Salem, NC": "Winston-Salem",
+  "M15 Hong Kong 3": "Hong Kong",
+  "M15 Madrid 2": "Madrid",
+  "M15 Bucharest 4": "Bucharest",
+  "M15 Bucharest 5": "Bucharest",
+  "M15 Vienna": "Vienna",
+  "ITF M15 Doha 3 Men": "Doha",
+  "M25 Montreal 2": "Montreal",
+  "ITF M25 Montreal Men": "Montreal"
+ },
+ "apiCoverage": {
+  "distinctNames": 2871,
+  "fromCareerHistory": 2269,
+  "careerHistoryPresent": true,
+  "resolvedNames": 253,
+  "basis": "api-tennis tournamentHistory + career-history name -> rated venue, same matcher as the archive half"
  }
 }

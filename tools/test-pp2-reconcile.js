@@ -17,9 +17,19 @@ const assert = require('assert');
 
 const ROOT = path.join(__dirname, '..');
 
+// §8.1 · the Court speed bands resolve their venue through this map, and with it
+// absent EVERY row is unbandable — which silently turns the band assertions below
+// into "this check never ran". It is loaded here, from the real committed artefact
+// like every other store in this file, so the band scans exercise real bands.
+const _SPEED_MAP_PATH = path.join(ROOT, 'court-speed-map.json');
+const SPEED_MAP = fs.existsSync(_SPEED_MAP_PATH)
+  ? JSON.parse(fs.readFileSync(_SPEED_MAP_PATH, 'utf8')) : null;
+
 // ─── load the module under test into a window shim ──────────────────────────
 function loadModule(profiles, extra) {
-  const sandbox = Object.assign({ FEATURE_PP2: true, playerProfiles: { players: profiles } }, extra || {});
+  const sandbox = Object.assign(
+    { FEATURE_PP2: true, playerProfiles: { players: profiles }, courtSpeedMap: SPEED_MAP },
+    extra || {});
   global.window = sandbox;
   const src = fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8');
   // eslint-disable-next-line no-new-func
@@ -1385,9 +1395,8 @@ check('real committed profiles are unaffected until the pipeline repopulates', (
 // ════════════════════════════════════════════════════════════════════════════
 console.log('\n16 · Court speed (§5.5)');
 
-const SPEED_MAP_PATH = path.join(ROOT, 'court-speed-map.json');
-const SPEED_MAP = fs.existsSync(SPEED_MAP_PATH)
-  ? JSON.parse(fs.readFileSync(SPEED_MAP_PATH, 'utf8')) : null;
+// SPEED_MAP is loaded at the top of this file now — the band scans need it in the
+// sandbox, not just here.
 
 // The join that matters most. Roland Garros (clay, AS 0.68) and Paris-Bercy
 // (indoor hard, AS 0.97) are two courts in one city. tournament-venues.json
@@ -1470,7 +1479,10 @@ check('every Grass row lands in Very fast, whatever its Abstract rating', () => 
     const p = Object.assign({ key: k }, PLAYERS[k]);
     const rows = I.speedRows(p);
     if (!rows.length) continue;
-    const grass = rows.filter(m => String(m.surface || '') === 'Grass');
+    // §8.1 moved this population from the market shard (surface title-cased) to the
+    // career spine (lower-cased). The check matches either, so it keeps testing the
+    // RULE rather than the casing of whichever store currently feeds it.
+    const grass = rows.filter(m => String(m.surface || '').toLowerCase() === 'grass');
     if (!grass.length) continue;
     players++;
     grass.forEach((m) => {
@@ -1581,25 +1593,37 @@ mustFail('the openability check would catch a clickable thin band', () => {
 // Units are the LISTED rows only, and the footer says so. The two scopes living
 // in one card is the design's own construction (speedTotal.unitsSub); what must
 // not happen is a units figure summed over an n the label does not state.
-check('the footer units equal the sum of the listed rows, and name their n', () => {
+// §8.1 SPLIT THESE TWO SCOPES. Before it, every row reaching this modal came from
+// the priced archive, so "listed rows" and "priced rows" were the same number and
+// the distinction could not be tested. Now the list is CAREER rows and units are
+// the Pinnacle-priced subset — so the invariant is no longer equality, it is:
+// priced is a strict subset, and the label names the subset it summed.
+check('the footer units are summed over the priced subset, and name their n', () => {
+  let split = 0;
   for (const p of SAMPLE) {
     if (!I.speedRows(p).length) continue;
     I.state.speedSurf = 'all';
     const bands = I.speedBands(p);
     const priced = bands.reduce((n, b) => n + b.priced, 0);
-    const pl = bands.reduce((n, b) => n + b.pl, 0);
+    const cents = bands.reduce((n, b) => n + b.cents, 0);
+    const rows = bands.reduce((n, b) => n + b.rows.length, 0);
     const html = I.renderSpeedModal(p);
     if (!priced) continue;
-    assert(html.indexOf('on ' + priced + ' listed') > -1,
+    assert(html.indexOf('on ' + priced + ' priced') > -1,
       `${p.name}: footer does not state its own n of ${priced}`);
-    const rows = bands.reduce((n, b) => n + b.rows.length, 0);
-    assert.strictEqual(rows, priced, `${p.name}: ${rows} listed rows but units summed over ${priced}`);
-    assert(isFinite(pl), `${p.name}: units are not finite`);
+    assert(priced <= rows,
+      `${p.name}: ${priced} priced rows exceed the ${rows} banded rows they are drawn from`);
+    assert(Number.isInteger(cents), `${p.name}: units are not accumulated in whole cents`);
+    if (priced < rows) split++;
   }
+  // Without this, the check would still pass if §8.1 silently regressed to the
+  // priced population and the two scopes collapsed back into one.
+  assert(split > 0, 'no sampled player has an unpriced banded row — the two scopes never diverged');
+  console.log(`        ${split} players carry banded rows the units correctly exclude`);
 });
 mustFail('the footer check would catch units summed over an unstated n', () => {
-  const html = 'on 313 listed';
-  assert(html.indexOf('on ' + 250 + ' listed') > -1, 'footer does not state its own n of 250');
+  const html = 'on 313 priced';
+  assert(html.indexOf('on ' + 250 + ' priced') > -1, 'footer does not state its own n of 250');
 });
 
 check('every surface chip renders without leaking NaN/undefined', () => {
@@ -1627,7 +1651,8 @@ check('unbanded rows are declared in the note, not silently absorbed', () => {
     const bands = I.speedBands(p);
     if (!bands.unbanded) continue;
     const html = I.renderSpeedModal(p);
-    assert(html.indexOf(bands.unbanded + ' of ' + total + ' priced matches') > -1,
+    // §8.2 wording: the population is now CAREER matches, not priced ones.
+    assert(html.indexOf(bands.unbanded + ' of ' + total + ' matches sit at a venue') > -1,
       `${p.name}: ${bands.unbanded} unbanded rows are not declared on the page`);
     stated++;
   }
@@ -1635,20 +1660,107 @@ check('unbanded rows are declared in the note, not silently absorbed', () => {
   console.log(`        ${stated} players declare their unbanded rows in the DOM`);
 });
 mustFail('the declaration check would catch a silently absorbed gap', () => {
-  const html = 'Bands are Tennis Abstract speed.';
-  assert(html.indexOf('24 of 337 priced matches') > -1, '24 unbanded rows are not declared on the page');
+  const html = 'Units cover priced matches only.';
+  assert(html.indexOf('24 of 337 matches sit at a venue') > -1,
+    '24 unbanded rows are not declared on the page');
 });
 
-// Set counts and set scores are genuinely absent — the odds archive drops
-// Tennis-Data's per-set columns at ingest. They must dash, never be inferred.
-check('set counts and set scores dash rather than being inferred', () => {
-  const p = SAMPLE.find(x => I.speedRows(x).length);
-  assert(p, 'no sampled player has priced rows');
-  const rows = I.speedRows(p);
-  rows.slice(0, 200).forEach((m) => {
-    assert(m.sets === undefined && m.score === undefined,
-      'a shard row carries a score field the archive does not hold: ' + JSON.stringify(m));
-  });
+// §8.4 / §8.5 — these two columns have DIFFERENT provenance and the difference is
+// the whole point of the founder's sequencing note:
+//   SETS       career-history `result`, subject-oriented, 99.4% of 89,719 rows.
+//   SET SCORES held by NOTHING at career scope (0 of 89,719). recentForm is the
+//              only per-set source and it is a rolling window.
+// So SETS must be populated and must agree with `won`; SET SCORES must dash
+// wherever we hold no per-set string, and must never be back-filled from `result`.
+check('SETS come from the subject-oriented result and agree with the W/L flag', () => {
+  let seen = 0, dashed = 0, retired = 0;
+  for (const p of SAMPLE) {
+    const rows = I.speedRows(p);
+    if (!rows.length) continue;
+    rows.forEach((m) => {
+      if (!m.sets) { dashed++; return; }
+      const mm = String(m.sets).match(/^(\d+)\s*-\s*(\d+)$/);
+      assert(mm, `${p.name}: SETS "${m.sets}" is not a subject-oriented set count`);
+      const mine = +mm[1], theirs = +mm[2];
+      assert(!(mine === 0 && theirs === 0),
+        `${p.name}: a 0-0 walkover reached the SETS column on ${m.date}`);
+      // A retirement legitimately breaks the "more sets = won" rule: the player
+      // ahead on the scoreboard is the one who retired and lost. Those rows are
+      // exempted by FLAG, not by tolerance, so a genuinely mis-oriented score
+      // still fails here.
+      if (m.retired || m.wo || mine === theirs) { retired++; seen++; return; }
+      assert.strictEqual(mine > theirs, !!m.won,
+        `${p.name}: SETS "${m.sets}" disagrees with won=${m.won} on ${m.date} vs ${m.opp}`);
+      seen++;
+    });
+  }
+  assert(seen > 0, 'no row carried a set count — this check never ran');
+  console.log(`        ${seen} SETS values consistent (${retired} retirement/tie rows exempt); ${dashed} dashed`);
+});
+mustFail('the SETS check would catch a score written from the wrong side', () => {
+  const m = { sets: '1 - 2', won: true, retired: false, wo: false, date: 'd', opp: 'o' };
+  const mm = String(m.sets).match(/^(\d+)\s*-\s*(\d+)$/);
+  assert(!(m.retired || m.wo || +mm[1] === +mm[2]), 'row is exempt');
+  assert.strictEqual((+mm[1]) > (+mm[2]), !!m.won, 'SETS disagrees with won');
+});
+
+// ─── the 16 mis-oriented archive rows, locked ──────────────────────────────
+// Measured roster-wide: of 89,719 career-history rows, 123 carry a set count that
+// contradicts `won`. 107 are retirements and 0 are walkovers, leaving 16 rows —
+// every one of them src:'archive', several Davis Cup — that are genuinely written
+// from the wrong side. That is 0.018%, small enough to report rather than block on,
+// and this locks the number so it cannot grow unnoticed.
+check('the mis-oriented archive rows stay at their measured 16', () => {
+  const chDir = path.join(ROOT, 'career-history');
+  if (!fs.existsSync(chDir)) {
+    console.log('        career-history/ absent — skipped (runtime artefact)');
+    return;
+  }
+  let unexplained = 0, contradictions = 0;
+  for (const f of fs.readdirSync(chDir)) {
+    if (!f.endsWith('.json')) continue;
+    let shard;
+    try { shard = JSON.parse(fs.readFileSync(path.join(chDir, f), 'utf8')); } catch (e) { continue; }
+    for (const r of (shard.matches || [])) {
+      const mm = String(r.result || '').match(/^\s*(\d+)\s*-\s*(\d+)\s*$/);
+      if (!mm) continue;
+      const a = +mm[1], b = +mm[2];
+      if (a === b) continue;
+      if ((a > b) === !!r.won) continue;
+      contradictions++;
+      if (!r.retired && !r.walkover) unexplained++;
+    }
+  }
+  assert(contradictions > 0, 'no contradictions found at all — this check never ran');
+  assert(unexplained <= 16,
+    `mis-oriented archive rows grew to ${unexplained} (was 16) — a new orientation defect has landed`);
+  console.log(`        ${contradictions} set counts contradict won; ${unexplained} unexplained by retirement/walkover`);
+});
+check('SET SCORES are never back-filled from the set count', () => {
+  let perSet = 0, fellBack = 0;
+  for (const p of SAMPLE) {
+    const rows = I.speedRows(p);
+    if (!rows.length) continue;
+    rows.forEach((m) => {
+      const ps = I.perSetScore(m);
+      if (ps) {
+        // A real scoreline is UNSPACED and never equal to the set count.
+        assert(/\d+-\d+/.test(ps), `${p.name}: SET SCORES "${ps}" is not a per-set scoreline`);
+        assert(ps !== m.sets, `${p.name}: SET SCORES "${ps}" is the set count repeated`);
+        perSet++;
+      } else {
+        fellBack++;
+      }
+    });
+  }
+  assert(perSet > 0, 'no row carried a real per-set scoreline — this check never ran');
+  assert(fellBack > 0, 'every row had per-set data — the dash path is untested here');
+  console.log(`        ${perSet} real per-set scorelines, ${fellBack} correctly dashed`);
+});
+mustFail('the SET SCORES check would catch the set count echoed as a scoreline', () => {
+  const m = { score: '2 - 1', sets: '2 - 1' };
+  const ps = I.perSetScore(m);
+  assert(ps, 'a set count was accepted as a per-set scoreline');
 });
 
 
@@ -1685,7 +1797,10 @@ mustFail('the taxonomy lock would catch a renamed archetype', () => {
 check('archetyped + unlabelled = every priced row', () => {
   let n = 0;
   for (const p of SAMPLE) {
-    const total = I.speedRows(p).length;
+    // §5.6's population is the PRICED market rows. It was written as speedRows()
+    // back when that WAS the market shard; §8.1 repointed speedRows at the career
+    // spine, so this names the store it actually reconciles against.
+    const total = I.marketRows(p).length;
     if (!total) continue;
     const rows = I.styleRows(p);
     const labelled = rows.reduce((s, r) => s + r.won + r.lost, 0);
@@ -1706,8 +1821,12 @@ check('an under-minimum archetype stays listed, dashed, and does not open', () =
   let found = 0;
   for (const key of Object.keys(PLAYERS)) {
     const p = Object.assign({ key }, PLAYERS[key]);
-    if (!I.speedRows(p).length) continue;
+    // Gate on what this check actually needs — style rows. It used to gate on
+    // speedRows(), which happened to mean "has a market shard"; §8.1 repointed that
+    // accessor at the career spine, and the incidental coupling silently turned this
+    // assertion into a no-op that still reported PASS.
     const rows = I.styleRows(p);
+    if (!rows.length) continue;
     const thin = rows.filter(r => { const n = r.won + r.lost; return n > 0 && n < 5; });
     if (!thin.length) continue;
     const html = I.renderStylesModal(p);
@@ -1734,7 +1853,7 @@ mustFail('the listing check would catch a dropped thin archetype', () => {
 check('unlabelled opponents are declared in the DOM', () => {
   let stated = 0;
   for (const p of SAMPLE) {
-    const total = I.speedRows(p).length;
+    const total = I.marketRows(p).length;
     if (!total) continue;
     const rows = I.styleRows(p);
     if (!rows.unlabelled) continue;
@@ -1757,7 +1876,8 @@ check('a rate outside the 40-80% axis is clamped in position but printed exactly
   let checked = 0;
   for (const key of Object.keys(PLAYERS)) {
     const p = Object.assign({ key }, PLAYERS[key]);
-    if (!I.speedRows(p).length) continue;
+    // Same incidental-coupling fix as the check above: gate on style rows, which is
+    // what this assertion reads, not on the Court speed population.
     const rows = I.styleRows(p).filter(r => {
       const n = r.won + r.lost;
       if (n < 5) return false;
@@ -1869,6 +1989,26 @@ const STORES = [
       return v.market && v.market.headline != null;
     }).length,
     universe: () => Object.keys(MARKET).length,
+    floor: 0.5,
+  },
+  {
+    name: 'courtSpeedMap',
+    file: 'court-speed-map.json',
+    // §8.1 · the gate that matters for this store is not "did the file load" but
+    // "does a CAREER row come back banded" — the failure it exists to catch is the
+    // map serving 200 while resolving nothing, which paints five dashed bands and
+    // a full unbanded footnote without ever looking broken.
+    resolve: () => Object.keys(PLAYERS).filter((k) => {
+      const p = Object.assign({ key: k }, PLAYERS[k]);
+      return I.speedRows(p).some(m => m.speed != null);
+    }).length,
+    // Only players whose spine has rows at all can band one, so that is the
+    // universe. Scoring against the whole roster would charge this store for
+    // players career-history holds nothing for.
+    universe: () => Object.keys(PLAYERS).filter((k) => {
+      const p = Object.assign({ key: k }, PLAYERS[k]);
+      return I.speedRows(p).length > 0;
+    }).length,
     floor: 0.5,
   },
   {

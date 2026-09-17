@@ -193,9 +193,14 @@
   // rating. The quintile cut-offs above still govern every other venue. This is
   // deliberately unconditional: it also bands the grass rows we hold no Abstract
   // reading for, which previously fell into the `unbanded` shortfall.
+  // Case-insensitive on purpose. This rule used to read only market-edge rows,
+  // whose surface is title-cased ("Grass"); §8.1 feeds it the CAREER SPINE, which
+  // lower-cases its surface ("grass"). A strict === here silently stopped applying
+  // the founder's ruling to every grass match on the page while every band still
+  // looked plausible — the test suite's grass check is what surfaced it.
   function speedBandForRow(m) {
     if (!m) return null;
-    if (String(m.surface || '') === 'Grass') return bandById('vfast');
+    if (String(m.surface || '').toLowerCase() === 'grass') return bandById('vfast');
     return speedBandFor(m.speed);
   }
 
@@ -609,18 +614,24 @@
     }
     return max;
   }
+  // §8.16 (founder, 2026-09-17) — DRAW-SIZE codes, everywhere.
+  //
+  // This used to convert a proven draw back into a draw-RELATIVE ordinal: at a
+  // 128 draw, R32 was printed "3R", R64 "2R", R128 "1R". The comment justified it
+  // as the export's own convention, and that reading was wrong — `Player Stat
+  // Boxes.dc.html` writes "R32" and "R64" verbatim in its Court speed rows, never
+  // an nR form. Measured on the rendered page: Roland Garros 2026 printed
+  // F · SF · QF · R16 · 3R · 2R · 1R.
+  //
+  // The round-of-N code is now returned directly, which makes the draw index
+  // unnecessary here. It is deliberately a change to the SHARED labeller rather
+  // than a Court-speed-local one: the founder's rule is that the ledger, the
+  // tournament modal, the calendar and this list all agree, and four surfaces
+  // agreeing is only guaranteed by one implementation.
   function roundLabel(m) {
     var q = qualifyingCode(m && m.round);
     if (q) return q;
-    var code = roundOfN(m && m.round);
-    var n = CODE_N[code];
-    // F / SF / QF / R16 need no draw size; earlier rounds are draw-relative in
-    // the export and are only numbered when the draw size is proven.
-    if (!n || n <= 16) return code || DASH;
-    var draw = (m && m.date && m.tournament)
-      ? (drawIndex()[m.tournament + '|' + String(m.date).slice(0, 4)] || 0) : 0;
-    if (!draw || draw < n) return code;
-    return String(Math.round(Math.log(draw / n) / Math.LN2) + 1) + 'R';
+    return roundOfN(m && m.round) || DASH;
   }
   function eventName(m) {
     return String(m.tournament || '') || DASH;
@@ -1355,30 +1366,29 @@
     // thing the box is named after; the box is Court SPEED, so it headlines a
     // speed band.
     //
-    // The band shown is his best banded win rate over ALL surfaces, using the
-    // same rows, the same grass-is-Very-fast rule and the same n >= 10 gate the
-    // modal behind it uses — so the box and the modal can never disagree.
+    // §8.3 tightened the rule the founder set here: the headline is the largest
+    // POSITIVE gap between a band's win rate and his win rate over ALL speed-rated
+    // matches, n >= 10, ties to the larger n. The previous rule took the highest
+    // banded rate outright, which headlines a band even when it is no better than
+    // the player's own average — a "best surface" that is not actually a strength.
+    //
+    // speedBestBand() is the single implementation, shared with the modal's default
+    // selection, so the box and the panel behind it cannot name different bands.
+    // It is computed over the UNFILTERED population on purpose: the box has no
+    // surface chip, so it must not inherit one from the last-opened modal.
     var speedBest = null;
     (function () {
-      var agg = {};
-      SPEED_BANDS.forEach(function (b) { agg[b.id] = { band: b, won: 0, lost: 0 }; });
-      speedRows(p).forEach(function (m) {
-        var b = speedBandForRow(m);
-        if (!b) return;
-        if (m.won) agg[b.id].won += 1; else agg[b.id].lost += 1;
-      });
-      SPEED_BANDS.forEach(function (b) {
-        var a = agg[b.id], n = a.won + a.lost;
-        if (gateFor(n) !== GATE.FULL) return;
-        var pct = 100 * a.won / n;
-        if (!speedBest || pct > speedBest.pct) speedBest = { band: b, pct: pct, won: a.won, lost: a.lost, n: n };
-      });
+      var prevSurf = state.speedSurf;
+      state.speedSurf = 'all';
+      try { speedBest = speedBestBand(speedBands(p)); }
+      finally { state.speedSurf = prevSurf; }
     }());
     v.speed = speedBest
-      ? { headline: speedBest.band.label,
-          support: speedBest.pct.toFixed(1) + '% ' + MIDDOT + ' ' +
-            recordText(speedBest.won, speedBest.lost) + ' ' + MIDDOT + ' ' + speedBest.n + ' matches' }
-      : { headline: null, support: 'no speed band clears the ten-match minimum' };
+      ? { headline: speedBest.band.band.label,
+          support: Math.round(100 * speedBest.band.won / speedBest.n) + '% ' + MIDDOT + ' ' +
+            recordText(speedBest.band.won, speedBest.band.lost) + ' ' + MIDDOT + ' ' +
+            speedBest.n + ' matches' }
+      : { headline: null, support: 'no speed band beats his rated-match rate at ten matches or more' };
 
     // 5 · Versus playing styles — RULING 2: the headline is his OWN archetype,
     // by design, even though the modal behind it reads by OPPOSING archetype.
@@ -3455,9 +3465,45 @@
         surface: r.surface ? String(r.surface).toLowerCase() : null,
         court: hit ? (hit.court || null) : null,
         event: evOf(r),
+        // §8.17 · the REAL tier, and only the real one. career-history's own
+        // `level` column holds 'atp'/'chitf' — a feed scope, not a tour tier — and
+        // the founder's rule is explicit that it must never stand in for one. The
+        // archive row carries the genuine tier ("Masters 1000", "Grand Slam",
+        // "ATP 500"), so the level travels with the JOIN and is null wherever the
+        // join did not land. A group row then prints its surface alone rather than
+        // inventing a tier for it.
+        level: hit ? (hit.level || null) : null,
+        // The raw feed name, kept beside the display name because the court-speed
+        // dictionary is keyed on what the STORE says ("ATP Cincinnati"), while
+        // `event` is the aliased display name ("Cincinnati"). Resolving on both is
+        // what closes the last 1.7pp of Zverev's spine.
+        tournament: r.tournament || null,
         round: roundLabel({ round: r.round, date: r.date, tournament: r.tournament }),
         opp: r.opponent || null,
         score: rf ? setScoreText(rf, ', ') : (r.result ? String(r.result) : DASH),
+        // §8.4 · SETS, from the player's own side. career-history's `result` is
+        // already subject-oriented, and 88,097 of 89,719 rows (98.2%) are a clean
+        // two-integer count agreeing with `won`. This is the column that read "—"
+        // on every row of the live screenshot, and filling it needed no pipeline
+        // change at all.
+        //
+        // "0 - 0" is excluded, and only "0 - 0": all 428 such rows carry the
+        // walkover or retired flag, so the string means "no set was played" rather
+        // than "he lost every set". Printing it would invent a 0-0 scoreline for a
+        // match that never started.
+        //
+        // Counts that TIE ("1 - 1") or contradict `won` ("1 - 0" on a loss) are
+        // KEPT. They look wrong and are not: 485 of 521 ties and 107 of 123
+        // contradictions are retirements, where the set count genuinely does not
+        // decide the match. The colour keys off `won`, never off the count, so a
+        // retirement still reads red for the player who retired.
+        sets: (function () {
+          var mm = String(r.result || '').match(/^\s*(\d+)\s*-\s*(\d+)\s*$/);
+          if (!mm) return null;
+          if (+mm[1] === 0 && +mm[2] === 0) return null;
+          return String(r.result);
+        }()),
+        retired: !!r.retired,
         price: pin ? pin.price : null,
         oppPrice: pin ? (pin.oppPrice != null ? pin.oppPrice : null) : null,
         // Integer cents: a float sum re-ordered moved a painted card by 0.01u
@@ -4694,15 +4740,108 @@
     { id: 'Indoors', label: 'Indoors' }
   ];
 
-  function speedRows(p) {
+  /**
+   * §8.1 · venue -> Tennis Abstract reading, for a CAREER-SPINE row.
+   *
+   * The dictionary is built by build-court-speed-map.js, which resolves every name
+   * it can see with the full matcher (substring, then canonical identity, then the
+   * voted table) and ships the answer. Nothing is matched here: a name either has a
+   * venue in the table or it is unbandable, and there is no third outcome the page
+   * can invent. `direct` exists only as a floor for a name the table has never seen
+   * — a tournament added after the map was last built — and is the same plain
+   * `includes` test the builder's own first tier uses.
+   */
+  function speedInfoFor(display, raw, surface, court) {
+    var map = (typeof window !== 'undefined') ? window.courtSpeedMap : null;
+    if (!map || !map.venues) return null;
+    var venue = null, names = map.apiNames || {};
+    if (raw && names[raw]) venue = names[raw];
+    else if (display && names[display]) venue = names[display];
+    else {
+      var keys = Object.keys(map.venues);
+      for (var i = 0; i < keys.length; i++) {
+        if ((raw && String(raw).indexOf(keys[i]) > -1) ||
+            (display && String(display).indexOf(keys[i]) > -1)) { venue = keys[i]; break; }
+      }
+    }
+    if (!venue || !map.venues[venue]) return null;
+    // Surface guard, the same one build-market-edge.js applies: a row from an era
+    // the venue no longer plays is NOT banded off today's reading (Stuttgart's clay
+    // years cannot be rated by a 2025 grass number). The guard key is
+    // "Surface/Court", and the career spine knows its court only where the odds
+    // join landed — so the surface half is always checked and the court half only
+    // when we actually hold one. Guarding on a court we do not know would silently
+    // unband most of the spine, which is the opposite of the guard's purpose.
+    var guard = (map.surfaceGuard || {})[venue];
+    if (guard && guard.keep) {
+      var keep = String(guard.keep).split('/');
+      var sTitle = surface ? String(surface).charAt(0).toUpperCase() + String(surface).slice(1) : null;
+      if (sTitle && keep[0] && keep[0] !== '?' && sTitle !== keep[0]) return null;
+      if (court && keep[1] && keep[1] !== '?' && String(court) !== keep[1]) return null;
+    }
+    return { venue: venue, speed: map.venues[venue].speed, ratingYear: map.venues[venue].ratingYear };
+  }
+
+  /**
+   * §8.1 · the population the bands are counted from.
+   *
+   * This used to return the market-edge shard — the PRICED archive, 727 rows for
+   * Zverev — which meant a match needed a bet365 price before it could be called a
+   * fast-court match. That is the wrong test: a match needs its VENUE's rating to be
+   * banded, and its price only to contribute units. So the bands now count off
+   * calSpine(), the identical spine Calendar and Streaks use (775 for Zverev), and
+   * `cents` carries the Pinnacle P&L for the priced subset.
+   *
+   * Grass keeps the founder's 2026-09-16 ruling: always Very fast, rating or not.
+   */
+  /**
+   * The PRICED market-shard rows — §5.6's population, and what speedRows() used to
+   * return before §8.1 moved Court speed onto the career spine.
+   *
+   * These two populations must not be conflated again. §5.6 keys every row on
+   * `oppArchetype`, which only build-market-edge.js stamps, and sums `pl` off the
+   * row itself; the career spine carries neither. Pointing §5.6 at the spine leaves
+   * its eight archetype rows structurally intact and numerically empty — eight
+   * labels reading 0-0 — which looks like a player who has never met anyone rather
+   * than like a broken join. It is split out under its own name so the next person
+   * to repoint one modal cannot silently take the other with it.
+   */
+  function marketRows(p) {
     var mk = marketFor(p.key);
     return (mk && mk.matches) ? mk.matches : [];
   }
 
+  function speedRows(p) {
+    var spine = calSpine(p);
+    var map = (typeof window !== 'undefined') ? window.courtSpeedMap : null;
+    if (speedRows._k === p.key && speedRows._s === spine && speedRows._m === map && speedRows._v) {
+      return speedRows._v;
+    }
+    var out = spine.map(function (r) {
+      var info = speedInfoFor(r.event, r.tournament, r.surface, r.court);
+      return {
+        date: r.date, year: r.year, won: r.won, surface: r.surface, court: r.court,
+        event: r.event, level: r.level, round: r.round, opp: r.opp,
+        sets: r.sets, score: r.score, retired: r.retired, wo: r.wo,
+        price: r.price, oppPrice: r.oppPrice, cents: r.cents,
+        venue: info ? info.venue : null,
+        speed: info ? info.speed : null,
+        ratingYear: info ? info.ratingYear : null,
+        sheetId: r.sheetId
+      };
+    });
+    speedRows._k = p.key; speedRows._s = spine; speedRows._m = map; speedRows._v = out;
+    return out;
+  }
+
   function speedSurfaceMatch(m, surf) {
     if (surf === 'all') return true;
+    // Indoors is a COURT TYPE carved out of the court column, not a surface. The
+    // spine knows its court only where the odds join landed, so this chip filters a
+    // smaller population than the others by construction — the chip's own count
+    // states what it found rather than implying the rest are outdoor.
     if (surf === 'Indoors') return String(m.court || '') === 'Indoor';
-    return String(m.surface || '') === surf;
+    return String(m.surface || '').toLowerCase() === String(surf).toLowerCase();
   }
 
   /**
@@ -4713,20 +4852,22 @@
   function speedBands(p) {
     var surf = state.speedSurf || 'all';
     var agg = {};
-    SPEED_BANDS.forEach(function (b) { agg[b.id] = { band: b, won: 0, lost: 0, pl: 0, priced: 0, rows: [] }; });
-    var unbanded = 0;
+    SPEED_BANDS.forEach(function (b) { agg[b.id] = { band: b, won: 0, lost: 0, cents: 0, priced: 0, rows: [] }; });
+    var unbanded = 0, scoped = 0;
     speedRows(p).forEach(function (m) {
       if (!speedSurfaceMatch(m, surf)) return;
+      scoped += 1;
       var b = speedBandForRow(m);
       if (!b) { unbanded += 1; return; }
       var a = agg[b.id];
       if (m.won) a.won += 1; else a.lost += 1;
       a.rows.push(m);
-      // Every archive row is priced by construction (an unpriced row never reaches a
-      // shard), so `listed` and `priced` coincide here. They are still counted
-      // separately: the day a non-archive row set feeds this modal they diverge, and
-      // a units figure silently summed over a different n is the bug that hides.
-      if (m.pl != null) { a.pl += m.pl; a.priced += 1; }
+      // §8.1 splits the two scopes that used to coincide. Every row here is a CAREER
+      // row, so `rows.length` is the banded match count; only the subset carrying a
+      // Pinnacle price contributes units, and `priced` counts exactly that subset.
+      // Summing units over the banded count instead is the error the design guards
+      // against with its own "on N listed" label.
+      if (m.cents != null) { a.cents += m.cents; a.priced += 1; }
     });
     var out = SPEED_BANDS.map(function (b) { return agg[b.id]; });
     // FILE over README: README §5.5 lists the bands slowest-to-fastest, but the
@@ -4742,15 +4883,51 @@
       return ry - rx;
     });
     out.unbanded = unbanded;
+    out.scoped = scoped;
     return out;
   }
 
-  /** The band the panel shows: the current selection if it can open, else the best that can. */
+  /**
+   * §8.3 · the best band — ONE definition, used by both the box headline and the
+   * modal's default selection, so the two can never name different bands.
+   *
+   * "Largest POSITIVE gap between the band's win rate and his win rate over all
+   * speed-rated matches, n >= 10, tie -> larger n; none -> dash." The baseline is
+   * deliberately his rated-match rate and not his career rate: the bands only
+   * partition rated matches, so measuring the gap against a population the bands
+   * do not cover would credit a band for the venues we cannot rate.
+   *
+   * Positive-only is load-bearing. A player with no band above his own baseline has
+   * no "best" court speed, and the honest answer there is a dash — not the least-bad
+   * band dressed up as a strength.
+   */
+  function speedBestBand(bands) {
+    var bw = 0, bl = 0;
+    bands.forEach(function (b) { bw += b.won; bl += b.lost; });
+    var base = (bw + bl) ? bw / (bw + bl) : null;
+    if (base == null) return null;
+    var best = null;
+    bands.forEach(function (b) {
+      var n = b.won + b.lost;
+      if (n < 10) return;
+      var gap = (b.won / n) - base;
+      if (gap <= 0) return;
+      if (!best || gap > best.gap || (gap === best.gap && n > best.n)) {
+        best = { band: b, gap: gap, n: n };
+      }
+    });
+    return best;
+  }
+
+  /** The band the panel shows: the current selection if it can open, else §8.3's best. */
   function speedSelected(bands) {
     var openable = bands.filter(function (b) { return gateFor(b.won + b.lost) !== GATE.NONE && gateFor(b.won + b.lost) !== GATE.THIN; });
     var cur = state.speedBand;
     var hit = cur && openable.filter(function (b) { return b.band.id === cur; })[0];
-    return hit || openable[0] || null;
+    if (hit) return hit;
+    var best = speedBestBand(bands);
+    if (best && openable.indexOf(best.band) > -1) return best.band;
+    return openable[0] || null;
   }
 
   function renderSpeedModal(p) {
@@ -4758,7 +4935,7 @@
     var total = speedRows(p).length;
     if (!total) {
       return '<div style="border:1px dashed rgba(255,255,255,0.12);border-radius:10px;padding:26px;' +
-        'text-align:center;font-size:13px;color:#5b6880;">No priced matches on record, so no court can be rated.</div>';
+        'text-align:center;font-size:13px;color:#5b6880;">No matches on record, so no court can be rated.</div>';
     }
 
     var chips = SPEED_SURFACES.map(function (s) {
@@ -4775,81 +4952,114 @@
       var n = b.won + b.lost;
       var gate = gateFor(n);
       var openable = gate !== GATE.NONE && gate !== GATE.THIN;
-      var on = sel && sel.band.id === b.band.id;
-      var rate = rateText(b.won, b.lost);
+      var on = !!(sel && sel.band.id === b.band.id);
+      // §8.8 · a WHOLE number. rateText() prints one decimal ("73.0%") and the
+      // design prints "72%", so the gate is reused for the decision and the
+      // rounding is done here rather than loosening a shared formatter every other
+      // block depends on.
+      var rate = (gate === GATE.NONE || gate === GATE.THIN) ? DASH : Math.round(100 * b.won / n) + '%';
+      var meta = !n
+        ? 'no matches on record'
+        : (gate === GATE.THIN
+            ? recordText(b.won, b.lost) + ' ' + MIDDOT + ' ' + n + ' match' + (n === 1 ? '' : 'es') + ' ' + MIDDOT + ' under minimum'
+            : recordText(b.won, b.lost) + ' ' + MIDDOT + ' ' + n + ' matches' +
+              (gate === GATE.SMALL ? ' ' + MIDDOT + ' small sample' : ''));
       return '<div' + (openable ? ' data-pp2="speed-band" data-v="' + b.band.id + '"' : '') +
-        ' style="display:grid;grid-template-columns:1fr auto;gap:10px;border-radius:9px;padding:11px 13px;' +
-        'align-items:center;border:1px solid ' + (on ? 'rgba(91,155,255,0.4)' : 'rgba(255,255,255,0.08)') + ';' +
-        'background:' + (on ? 'rgba(91,155,255,0.10)' : 'transparent') + ';' +
+        ' style="position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;' +
+        'border-radius:9px;padding:11px 13px;align-items:center;' +
+        'border:1px solid ' + (on ? 'rgba(91,155,255,0.4)' : 'rgba(255,255,255,0.07)') + ';' +
+        'background:' + (on ? 'rgba(91,155,255,0.10)' : (openable ? '#06070a' : 'rgba(255,255,255,0.012)')) + ';' +
         'cursor:' + (openable ? 'pointer' : 'default') + ';">' +
-        '<div>' +
-          '<div style="font-size:13px;font-weight:700;color:' + (openable ? '#e7e9ee' : '#3f4860') + ';">' +
+        // §8.7 · units sit ABSOLUTE in the card's top-right corner, not stacked
+        // above the rate in the right-hand column.
+        '<span style="position:absolute;top:6px;right:9px;font-family:\'IBM Plex Mono\',monospace;' +
+          'font-size:10px;font-weight:700;color:' +
+          (b.priced ? (b.cents >= 0 ? '#3dd68c' : '#e0616f') : DASH_COLOUR) + ';">' +
+          (b.priced ? signed(b.cents / 100, 1, 'u') : DASH) + '</span>' +
+        '<div style="min-width:0;">' +
+          '<div style="font-size:13px;font-weight:700;white-space:nowrap;color:' +
+            (gate === GATE.THIN || gate === GATE.NONE ? '#5b6880' : (on ? '#e7e9ee' : '#c6ccdb')) + ';">' +
             esc(b.band.label) + '</div>' +
-          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:#4b5672;margin-top:3px;">' +
-            (n ? recordText(b.won, b.lost) + ' ' + MIDDOT + ' ' + n + ' matches' : 'no matches on record') +
-          '</div>' +
+          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:#4b5672;' +
+            'margin-top:3px;white-space:nowrap;">' + esc(meta) + '</div>' +
         '</div>' +
-        '<div style="text-align:right;">' +
-          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;font-weight:700;color:' +
-            (b.priced ? (b.pl >= 0 ? '#3dd68c' : '#e0616f') : DASH_COLOUR) + ';">' +
-            (b.priced ? signed(b.pl, 1, 'u') : DASH) + '</div>' +
-          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:15px;font-weight:700;margin-top:2px;color:' +
-            (rate === DASH ? DASH_COLOUR : gate === GATE.SMALL ? '#8b96b5' : '#e8ecf4') + ';">' + rate + '</div>' +
-        '</div>' +
+        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:15px;font-weight:700;color:' +
+          (rate === DASH ? '#3f4860' : gate === GATE.SMALL ? '#8b96b5' : '#e7e9ee') + ';">' + rate + '</span>' +
       '</div>';
     }).join('');
 
-    // Career footer. Summed from the SAME band objects the cards render, so the
-    // footer cannot disagree with the list above it (§4).
-    var tw = 0, tl = 0, tpl = 0, tpriced = 0;
-    bands.forEach(function (b) { tw += b.won; tl += b.lost; tpl += b.pl; tpriced += b.priced; });
+    // §8.10 · CAREER totals. Summed from the SAME band objects the cards render, so
+    // the row cannot disagree with the list above it (§4 reconciliation): the match
+    // count is Σ band matches — the RATED population, not the career total — and the
+    // footnote below carries the difference.
+    var tw = 0, tl = 0, tcents = 0, tpriced = 0;
+    bands.forEach(function (b) { tw += b.won; tl += b.lost; tcents += b.cents; tpriced += b.priced; });
     var tn = tw + tl;
     var surfLabel = (state.speedSurf || 'all') === 'all' ? 'Career' : 'Career ' + MIDDOT + ' ' + state.speedSurf;
-    var footer = '<div style="display:grid;grid-template-columns:1fr auto;gap:10px;padding:11px 13px;' +
-      'border-top:1px solid rgba(255,255,255,0.09);margin-top:2px;align-items:center;">' +
-      '<div>' +
+    var trate = (gateFor(tn) === GATE.NONE || gateFor(tn) === GATE.THIN) ? DASH : Math.round(100 * tw / tn) + '%';
+    var footer = '<div style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;' +
+      'padding:12px 13px 0;margin-top:6px;border-top:1px solid rgba(255,255,255,0.09);align-items:center;">' +
+      '<div style="min-width:0;">' +
         '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
-          'letter-spacing:0.14em;text-transform:uppercase;color:#5b6880;">' + esc(surfLabel) + '</div>' +
-        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:#4b5672;margin-top:4px;">' +
-          (tn ? tn + ' matches' : DASH) + '</div>' +
+          'letter-spacing:0.14em;text-transform:uppercase;color:#5b6880;white-space:nowrap;">' +
+          esc(surfLabel) + '</div>' +
+        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:#4b5672;' +
+          'margin-top:4px;white-space:nowrap;">' + (tn ? tn + ' matches' : DASH) + '</div>' +
       '</div>' +
-      '<div style="text-align:right;">' +
-        '<div><span style="font-family:\'IBM Plex Mono\',monospace;font-size:12.5px;font-weight:600;color:' +
-          (tpriced ? (tpl >= 0 ? '#3dd68c' : '#e0616f') : DASH_COLOUR) + ';">' +
-          (tpriced ? signed(tpl, 1, 'u') : DASH) + '</span> ' +
-          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9px;color:#4b5672;">' +
-          (tpriced ? 'on ' + tpriced + ' listed' : '') + '</span></div>' +
-        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:12.5px;font-weight:600;color:' +
-          (rateText(tw, tl) === DASH ? DASH_COLOUR : '#8b96b5') + ';">' + rateText(tw, tl) + '</div>' +
+      '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">' +
+        '<span style="display:flex;align-items:baseline;gap:6px;">' +
+          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:12.5px;font-weight:600;color:' +
+            (tpriced ? (tcents >= 0 ? '#3dd68c' : '#e0616f') : DASH_COLOUR) + ';">' +
+            (tpriced ? signed(tcents / 100, 1, 'u') : DASH) + '</span>' +
+          // FILE vs §8.1, reported: the .dc.html labels this "on N listed", where
+          // every listed row was priced by construction. §8.1 separates the two —
+          // the list is CAREER rows, units are the PRICED subset — so "listed"
+          // would now name a number the units were not summed over. The word is
+          // changed to keep the label true to its figure; the geometry is the
+          // file's, untouched.
+          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9px;color:#4b5672;white-space:nowrap;">' +
+            (tpriced ? 'on ' + tpriced + ' priced' : '') + '</span>' +
+        '</span>' +
+        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:12.5px;font-weight:600;color:' +
+          (trate === DASH ? DASH_COLOUR : '#8b96b5') + ';">' + trate + '</span>' +
       '</div>' +
     '</div>';
 
     return '' +
-      '<div style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px;">' + chips + '</div>' +
-      '<div class="pp2-speed" style="display:grid;grid-template-columns:268px minmax(0,1fr);gap:18px;">' +
+      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap;">' + chips + '</div>' +
+      '<div class="pp2-speed" style="display:grid;grid-template-columns:268px minmax(0,1fr);gap:18px;align-items:start;">' +
         '<div style="display:flex;flex-direction:column;gap:6px;">' + cards + footer + '</div>' +
-        renderSpeedPanel(sel) +
+        renderSpeedPanel(sel, bands) +
       '</div>' +
       renderSpeedNote(bands, total);
   }
 
-  function renderSpeedPanel(sel) {
+  function renderSpeedPanel(sel, bands) {
     if (!sel) {
       return '<div style="background:#06070a;border:1px solid rgba(91,155,255,0.3);border-radius:10px;' +
         'overflow:hidden;"><div style="border:1px dashed rgba(255,255,255,0.12);border-radius:10px;' +
         'padding:26px;margin:18px;text-align:center;font-size:13px;color:#5b6880;">' +
         'No band clears the five-match minimum, so none opens.</div></div>';
     }
-    var head = '<div style="display:flex;align-items:center;gap:12px;padding:13px 16px;' +
+    // §8.11 · the header states the band's record, rate and n, then how much of it
+    // is on screen. The old build put SPEED_BASIS here instead; the founder moved
+    // that sentence to the footnote, where a basis note belongs.
+    var sn = sel.won + sel.lost;
+    var srate = (gateFor(sn) === GATE.NONE || gateFor(sn) === GATE.THIN) ? DASH : Math.round(100 * sel.won / sn) + '%';
+    var shown = sel.rows.length;
+    var head = '<div style="display:flex;align-items:center;gap:11px;padding:13px 16px;' +
       'border-bottom:1px solid rgba(255,255,255,0.07);">' +
       '<span style="font-size:13.5px;font-weight:700;white-space:nowrap;">' + esc(sel.band.label) + ' courts</span>' +
-      '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:#8b96b5;flex:none;">' +
-        recordText(sel.won, sel.lost) + '</span>' +
-      '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:#4b5672;margin-left:auto;' +
-        'flex:none;">' + esc(SPEED_BASIS) + '</span>' +
-      '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:12.5px;font-weight:700;flex:none;color:' +
-        (sel.priced ? (sel.pl >= 0 ? '#3dd68c' : '#e0616f') : DASH_COLOUR) + ';">' +
-        (sel.priced ? signed(sel.pl, 1, 'u') : DASH) + '</span>' +
+      '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:#8b96b5;' +
+        'white-space:nowrap;flex:none;">' +
+        recordText(sel.won, sel.lost) + ' ' + MIDDOT + ' ' + srate + ' ' + MIDDOT + ' ' + sn + ' matches</span>' +
+      '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:#4b5672;' +
+        'white-space:nowrap;flex:none;margin-left:auto;">' +
+        (shown < sn ? 'Showing ' + shown + ' of ' + sn : 'All ' + shown + ' matches') + '</span>' +
+      '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:12.5px;font-weight:700;' +
+        'white-space:nowrap;flex:none;color:' +
+        (sel.priced ? (sel.cents >= 0 ? '#3dd68c' : '#e0616f') : DASH_COLOUR) + ';">' +
+        (sel.priced ? signed(sel.cents / 100, 1, 'u') : DASH) + '</span>' +
     '</div>';
 
     // Newest first, grouped by event — the design groups a run of matches under the
@@ -4860,32 +5070,65 @@
       var g = m.event + '|' + m.date.slice(0, 4);
       if (g !== lastGroup) {
         lastGroup = g;
-        out += '<div style="display:flex;gap:8px;align-items:baseline;padding:12px 0 5px;">' +
-          '<span style="font-size:11.5px;font-weight:700;color:#c6ccdb;">' + esc(m.event) + '</span>' +
-          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;color:#4b5672;">' +
-            esc([m.surface, m.court === 'Indoor' ? 'Indoors' : null, m.level, m.date.slice(0, 4)]
-              .filter(Boolean).join(' ' + MIDDOT + ' ')) + '</span>' +
-          (m.venue && m.venue !== m.event
-            ? '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;color:#3f4860;">' +
-              esc(m.venue) + '</span>' : '') +
+        // §8.17 · title is "{Display name} {year}"; meta is "{surface} · {level}".
+        // Indoors REPLACES the surface rather than being appended to it — the old
+        // build printed "Hard · Indoors", which reads as two surfaces. The level is
+        // printed only when the real tier is on the match; career-history's own
+        // 'atp'/'chitf' scope is never substituted for one.
+        var surfWord = m.court === 'Indoor'
+          ? 'Indoors'
+          : (m.surface ? String(m.surface).charAt(0).toUpperCase() + String(m.surface).slice(1) : null);
+        out += '<div style="grid-column:1 / -1;display:flex;align-items:center;gap:10px;' +
+          'padding:8px 0 4px;border-top:1px solid rgba(255,255,255,0.07);">' +
+          // tournDisplayName(name, level) APPENDS the tier ("Rome" -> "Rome Masters
+          // 1000"), which §5.3 wants because its rows carry no separate meta line.
+          // Here the tier already has its own column, so passing the level prints it
+          // twice — "Rome Masters 1000 2026 · Clay · Masters 1000", measured in the
+          // browser. The design's own group titles ("Estoril", "Madrid Masters")
+          // carry no tier either. Passing null takes the display-name map alone.
+          '<span style="font-size:12.5px;font-weight:700;white-space:nowrap;">' +
+            esc(tournDisplayName(m.event, null) + ' ' + m.date.slice(0, 4)) + '</span>' +
+          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;color:#4b5672;white-space:nowrap;">' +
+            esc([surfWord, m.level].filter(Boolean).join(' ' + MIDDOT + ' ')) + '</span>' +
         '</div>';
       }
-      out += '<div ' + sheetHook(m.date + '|' + m.opp) +
-        'style="display:grid;grid-template-columns:52px 12px 1.1fr 38px 44px 1.3fr 48px 48px;gap:0 8px;' +
-        'padding:6px 0;border-top:1px solid rgba(255,255,255,0.04);align-items:baseline;' + sheetCursor() +
-        'font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;">' +
-        '<span style="color:#5b6880;">' + esc(shortDate(m.date)) + '</span>' +
-        '<span style="color:' + (m.won ? '#3dd68c' : '#e0616f') + ';">' + (m.won ? 'W' : 'L') + '</span>' +
-        '<span style="font-family:inherit;color:#e8ecf4;">' + esc(m.opp) + '</span>' +
-        '<span style="color:#5b6880;">' + esc(shortRound(m.round)) + '</span>' +
-        // Set counts and set scores: the odds archive drops Tennis-Data's per-set
-        // columns at ingest, so neither is held for these rows. Dashed, not guessed.
-        '<span style="color:' + DASH_COLOUR + ';">' + DASH + '</span>' +
-        '<span style="color:' + DASH_COLOUR + ';">' + DASH + '</span>' +
-        '<span style="text-align:right;color:#e8ecf4;">' + (m.price == null ? DASH : m.price.toFixed(2)) + '</span>' +
-        '<span style="text-align:right;color:#5b6880;">' + (m.oppPrice == null ? DASH : m.oppPrice.toFixed(2)) + '</span>' +
-      '</div>';
+      var hook = sheetHook(m.sheetId || (m.date + '|' + m.opp));
+      var cell = 'cursor:pointer;padding:5px 0;';
+      out +=
+        '<span ' + hook + 'style="' + cell + 'font-family:\'IBM Plex Mono\',monospace;font-size:11px;' +
+          'color:#5b6880;">' + esc(shortDate(m.date)) + '</span>' +
+        // §8.14 · a coloured square dot, not a "W"/"L" letter.
+        '<span ' + hook + 'style="cursor:pointer;width:8px;height:8px;border-radius:2px;background:' +
+          (m.won ? '#3dd68c' : '#e0616f') + ';"></span>' +
+        // §8.15 · the opponent is the page's sans face, not mono.
+        '<span ' + hook + 'style="' + cell + 'font-size:12.5px;overflow:hidden;text-overflow:ellipsis;' +
+          'white-space:nowrap;">' + esc(m.opp || DASH) + '</span>' +
+        // §8.16 · draw-size codes. calSpine() already labels through roundLabel(),
+        // which resolves R16/R32/R64/R128 from the proven draw size — the old build
+        // read the ARCHIVE's prose ("1st Round") and printed R1-R4 at the Slams.
+        '<span ' + hook + 'style="' + cell + 'font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;' +
+          'color:#5b6880;">' + esc(m.round || DASH) + '</span>' +
+        // §8.4 · SETS, from the player's side, coloured by result.
+        '<span ' + hook + 'style="' + cell + 'font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;' +
+          'font-weight:700;color:' + (m.sets ? (m.won ? '#3dd68c' : '#e0616f') : DASH_COLOUR) + ';">' +
+          esc(m.sets || DASH) + '</span>' +
+        // §8.5 · SET SCORES. career-history carries none (0 of 89,719 rows); the only
+        // per-set source we hold is recentForm, which calSpine() already joins on
+        // ±0 days. Outside that rolling window this dashes with a stated reason
+        // rather than inventing a scoreline.
+        '<span ' + hook + 'style="' + cell + 'font-family:\'IBM Plex Mono\',monospace;font-size:11px;' +
+          'color:' + (perSetScore(m) ? '#8b96b5' : DASH_COLOUR) + ';white-space:nowrap;">' +
+          esc(perSetScore(m) || DASH) + '</span>' +
+        '<span ' + hook + 'style="' + cell + 'font-family:\'IBM Plex Mono\',monospace;font-size:11px;' +
+          'color:#c6ccdb;text-align:right;">' + (m.price == null ? DASH : m.price.toFixed(2)) + '</span>' +
+        '<span ' + hook + 'style="' + cell + 'font-family:\'IBM Plex Mono\',monospace;font-size:11px;' +
+          'color:#5b6880;text-align:right;">' + (m.oppPrice == null ? DASH : m.oppPrice.toFixed(2)) + '</span>';
     });
+    // §8.13 · one grid for the whole list. The group rows span it with
+    // `grid-column:1/-1`, which is why they are emitted into the same container
+    // rather than sitting between per-row grids as they used to.
+    out = out ? '<div style="display:grid;grid-template-columns:52px 12px minmax(0,1.1fr) 38px 44px ' +
+      'minmax(0,1.3fr) 48px 48px;gap:0 10px;align-items:center;">' + out + '</div>' : '';
 
     return '<div style="background:#06070a;border:1px solid rgba(91,155,255,0.3);border-radius:10px;overflow:hidden;">' +
       head +
@@ -4900,23 +5143,54 @@
    * bands that fell under the minimum, and the matches no band could rate.
    */
   function renderSpeedNote(bands, total) {
-    var thin = bands.filter(function (b) {
-      var n = b.won + b.lost;
-      return n > 0 && (gateFor(n) === GATE.THIN);
-    });
     var parts = [];
-    thin.forEach(function (b) {
+    // §8.2 · the under-minimum sentence appears ONLY when a band is under five, and
+    // it is the design's own wording. The design shows exactly one such band, so it
+    // hard-codes the sentence; a real career can have several, hence the loop.
+    bands.forEach(function (b) {
       var n = b.won + b.lost;
-      parts.push(b.band.label + ' courts have ' + n + ' match' + (n === 1 ? '' : 'es') + ' on record, ' +
-        'short of the five-match minimum ' + ENDASH + ' the band reads as a dash and does not open.');
+      if (!n || gateFor(n) !== GATE.THIN) return;
+      parts.push(b.band.label + ' courts have ' + numWord(n) + ' match' + (n === 1 ? '' : 'es') +
+        ' on record, short of the five-match minimum ' + ENDASH +
+        ' the band reads as a dash and does not open.');
     });
+    // §8.2 · the shortfall, with the counts that make it checkable. `scoped` is the
+    // population AFTER the surface chip, so the sentence stays true on every chip
+    // rather than quoting a career total under a filtered list.
+    var scoped = bands.scoped == null ? total : bands.scoped;
     if (bands.unbanded) {
-      parts.push(bands.unbanded + ' of ' + total + ' priced matches sit at a venue with no Tennis Abstract ' +
+      parts.push(bands.unbanded + ' of ' + scoped + ' matches sit at a venue without a Tennis Abstract ' +
         'rating, or in an era before the venue&#39;s current surface, and are not banded.');
     }
-    parts.push('Bands are ' + SPEED_BASIS + '. Units are the listed rows only.');
+    var map = (typeof window !== 'undefined') ? window.courtSpeedMap : null;
+    if (!map) {
+      // The "not wired" case kept distinct from "he has none": a pending or failed
+      // fetch of the venue map unbands every row, and saying so is the difference
+      // between an honest empty state and a silent lie about our own data.
+      parts.push('The court-speed venue map has not loaded, so no match can be banded yet.');
+    }
+    parts.push('Units cover priced matches only ' + ENDASH + ' Pinnacle closing prices, the listed rows.');
     return '<div style="font-size:12px;color:#4b5672;margin-top:14px;line-height:1.6;">' +
       parts.join(' ') + '</div>';
+  }
+  /** The design writes the under-minimum count as a word ("three matches"). */
+  var NUM_WORDS = ['zero', 'one', 'two', 'three', 'four'];
+  function numWord(n) { return NUM_WORDS[n] || String(n); }
+
+  /**
+   * §8.5 · the per-set scoreline, or null.
+   *
+   * calSpine() falls back to the SET COUNT when recentForm holds nothing for a row,
+   * so `score` is not evidence of per-set data on its own. The two shapes are told
+   * apart by their spacing, which is how the stores themselves write them: a set
+   * COUNT is spaced ("2 - 1"), a per-set score is not ("6-3, 4-6"). Requiring the
+   * unspaced form means a walkover's " - " and a retirement's "1 - 1" both dash
+   * here instead of appearing as a scoreline that was never played.
+   */
+  function perSetScore(m) {
+    var s = m && m.score ? String(m.score) : '';
+    if (!s || s === DASH || s === m.sets) return null;
+    return /\d+-\d+/.test(s) ? s : null;
   }
 
   /** "2024-01-05" -> "05.01." — the design's row date format. */
@@ -4973,7 +5247,9 @@
     var agg = {};
     STYLE_AXIS.forEach(function (a) { agg[a.label] = { axis: a, won: 0, lost: 0, pl: 0, rows: [] }; });
     var unlabelled = 0;
-    speedRows(p).forEach(function (m) {
+    // §5.6 reads the PRICED market rows, not the Court speed spine — see
+    // marketRows() for why the two must stay apart.
+    marketRows(p).forEach(function (m) {
       var a = m.oppArchetype && agg[m.oppArchetype];
       if (!a) { unlabelled += 1; return; }
       if (m.won) a.won += 1; else a.lost += 1;
@@ -4987,7 +5263,7 @@
 
   function renderStylesModal(p) {
     var rows = styleRows(p);
-    var total = speedRows(p).length;
+    var total = marketRows(p).length;
     if (!total) {
       return '<div style="border:1px dashed rgba(255,255,255,0.12);border-radius:10px;padding:26px;' +
         'text-align:center;font-size:13px;color:#5b6880;">No priced matches on record, ' +
@@ -6081,8 +6357,12 @@
       // §5.5 Court speed
       renderSpeedModal: renderSpeedModal,
       speedRows: speedRows,
+      marketRows: marketRows,
       speedBands: speedBands,
       speedSelected: speedSelected,
+      speedBestBand: speedBestBand,
+      speedInfoFor: speedInfoFor,
+      perSetScore: perSetScore,
       speedSurfaceMatch: speedSurfaceMatch,
       SPEED_SURFACES: SPEED_SURFACES,
       shortDate: shortDate,

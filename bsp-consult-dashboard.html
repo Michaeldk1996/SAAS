@@ -38,8 +38,14 @@
        resolving to an undefined var -> invalid -> serif fallback (the shared
        serif bug on Profile/Odds/H2H/Playing-Style). Defined at :root so all
        pages inherit Hanken Grotesk / IBM Plex Mono. Matches keeps its own copy. */
-    --mx-font-ui: 'Hanken Grotesk', sans-serif;
-    --mx-font-mono: 'IBM Plex Mono', monospace;
+    /* §5 (founder, 2026-09-17) — the missing system-ui fallback. Between the
+       webfont failing to load and the generic `sans-serif`, the browser fell to
+       its own default face; system-ui names the platform UI font the rest of the
+       chrome already uses. No visible change while Hanken Grotesk loads, because
+       Hanken still wins the cascade — verified in a real browser, where every
+       measured element still computes to "Hanken Grotesk". */
+    --mx-font-ui: 'Hanken Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --mx-font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
   }
   *{ box-sizing: border-box; }
   body{
@@ -137,8 +143,8 @@
 
   /* ============ MATCHES TAB — "1b" redesign (scoped to this tab only) ============ */
   [data-page="matches"]{
-    --mx-font-ui: 'Hanken Grotesk', sans-serif;
-    --mx-font-mono: 'IBM Plex Mono', monospace;
+    --mx-font-ui: 'Hanken Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    --mx-font-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
     --mx-bg-table: #0a0c11;
     --mx-bg-input: #0d0f14;
     --mx-hairline: rgba(255,255,255,0.07);
@@ -1177,7 +1183,7 @@
      font-family resolved to the CSS initial — Times, a serif — on every tab
      (H2H match-history names, Odds, etc.). Re-declare the faces on the modal
      root and pin a UI default so inheriting text is Hanken, not Times. */
-  .modal-analysis{ --mx-font-ui:'Hanken Grotesk', sans-serif; --mx-font-mono:'IBM Plex Mono', monospace; font-family:var(--mx-font-ui); max-width:1200px; width:100%; text-align:left; max-height:88vh; padding:0; display:flex; flex-direction:column; overflow:hidden; background:#0a0d14; box-shadow:0 40px 90px -50px rgba(0,0,0,0.95); }
+  .modal-analysis{ --mx-font-ui:'Hanken Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif; --mx-font-mono:'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace; font-family:var(--mx-font-ui); max-width:1200px; width:100%; text-align:left; max-height:88vh; padding:0; display:flex; flex-direction:column; overflow:hidden; background:#0a0d14; box-shadow:0 40px 90px -50px rgba(0,0,0,0.95); }
 
   /* ---- Header ---- */
   .modal-analysis .ahead2{ position:relative; padding:20px 48px 20px 24px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; gap:24px; flex-shrink:0; flex-wrap:wrap; }
@@ -16959,6 +16965,10 @@ function pp2Bridge(){
   // surface columns. Same lazy-with-repaint posture as the market shard — an
   // absent fetch dashes those two columns and the footnote says so.
   window.careerHistory = window.careerHistory || {};
+  // §8.1 Court speed bands off the career spine. null means "not fetched yet" and
+  // is distinct from an empty map: the modal footnote tells the two apart so a
+  // slow fetch never reads as "this player has no rated venues".
+  if (!('courtSpeedMap' in window)) window.courtSpeedMap = null;
 }
 // ── item 11 · bet365 capture months ────────────────────────────────────────
 // The odds archive stops at 2026-07-26, which is why every post-cutoff ledger row
@@ -17073,6 +17083,26 @@ async function loadPp2TourHist(key){
   } catch (e) { /* additive; the tile keeps its own empty state */ }
   pp2RepaintIfOpen(k);
 }
+// §8.1 · the court-speed venue map. Until now the Court speed bands were counted
+// off the PRICED market shard (727 rows for Zverev), so a match needed a bet365
+// price to be banded at all. §8.1 moves them onto the career spine (775), where a
+// match needs only its venue's Tennis Abstract rating — which means the page now
+// has to resolve "which venue is this event" for itself.
+//
+// It does not do that by matching. build-court-speed-map.js resolves every name
+// it can see and ships the answer as two dictionaries; this is a plain lookup
+// table, fetched once for the whole session rather than per player (30 KB, 5.7 KB
+// gzipped, and identical for every reader). A failed fetch leaves the store null,
+// every row unbanded, and the footnote says so — the "not wired" dash, never a zero.
+let _pp2SpeedMapPromise = null;
+function loadPp2SpeedMap(key){
+  if (_pp2SpeedMapPromise) return _pp2SpeedMapPromise;
+  _pp2SpeedMapPromise = fetch('./court-speed-map.json', { cache: 'no-cache' })
+    .then(res => res.ok ? res.json() : null)
+    .then(j => { window.courtSpeedMap = j || null; pp2RepaintIfOpen(key); })
+    .catch(() => { window.courtSpeedMap = null; pp2RepaintIfOpen(key); });
+  return _pp2SpeedMapPromise;
+}
 function showPlayerProfileV2(key){
   const profile = playerProfiles[String(key)];
   if (!profile) return false;
@@ -17087,6 +17117,7 @@ function showPlayerProfileV2(key){
   loadPp2Bet365(key);
   loadPp2CareerHistory(key);
   loadPp2TourHist(key);
+  loadPp2SpeedMap(key);
   window.scrollTo(0, 0);
   return true;
 }
