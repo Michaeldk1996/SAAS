@@ -64,11 +64,34 @@ def row(uid, **kw):
     return base
 
 
+print("0. /info/markets refuses to be called without feed_source_id")
+# MEASURED: without feed_source_id the live API answers HTTP 200 with no
+# `result` key and the text "minimum of 1 feed_source_id needed". That reads as
+# "this account has no odds at all" — it is the single most expensive way this
+# integration can fail silently, so the client refuses to issue the call.
+guard = FakeClient([[]])
+try:
+    guard.markets(league_id="19")
+    check("bare markets() call rejected", False, "no ValueError raised")
+except ValueError as e:
+    check("bare markets() call rejected", "feed_source_id" in str(e))
+try:
+    guard.markets_three_state(league_id="19")
+    check("three-state call rejected too", False, "no ValueError raised")
+except ValueError:
+    check("three-state call rejected too", True)
+check("no call was issued for either", guard.calls == 0, guard.calls)
+ok_guard = FakeClient([[], []])
+ok_guard.markets_three_state(league_id="19", feed_source_id=43)
+check("with feed_source_id it proceeds", ok_guard.calls == 2, ok_guard.calls)
+check("feed_source_id reaches the wire",
+      all(p.get("feed_source_id") == 43 for _, p in ok_guard.seen), ok_guard.seen)
+
 print("1. the three-state read issues both is_current values explicitly")
 cur = [{"participants": [row("c1", is_current=True)]}]
 old = [{"participants": [row("o1", is_opener=True), row("p1", is_previous=True)]}]
 fc = FakeClient([cur, old])
-rows, metas = fc.markets_three_state(league_id="19")
+rows, metas = fc.markets_three_state(league_id="19", feed_source_id=43)
 flags = [p.get("is_current") for _, p in fc.seen]
 check("two calls issued", len(fc.seen) == 2, fc.seen)
 check("both flag values sent explicitly", set(flags) == {"true", "false"}, flags)
@@ -89,13 +112,13 @@ check("the merge strictly dominates it", len(rows) > len(only_current))
 print("3. duplicate rows across the two calls collapse, distinct rows do not")
 dupe = FakeClient([[{"participants": [row("x", is_current=True)]}],
                    [{"participants": [row("x", is_current=True)]}]])
-r2, _ = dupe.markets_three_state(league_id="19")
+r2, _ = dupe.markets_three_state(league_id="19", feed_source_id=43)
 check("same uuid seen twice counts once", len(r2) == 1, len(r2))
 
 nouuid_a = row(None, is_current=True); nouuid_a.pop("uuid")
 nouuid_b = row(None, is_opener=True, inserted_on="2026-09-17T00:00:00Z"); nouuid_b.pop("uuid")
 nokey = FakeClient([[{"participants": [nouuid_a]}], [{"participants": [nouuid_b]}]])
-r3, _ = nokey.markets_three_state(league_id="19")
+r3, _ = nokey.markets_three_state(league_id="19", feed_source_id=43)
 check("rows without a uuid fall back to the natural key, not collapsed",
       len(r3) == 2, len(r3))
 

@@ -330,6 +330,22 @@ class KiblClient:
             take(rec)
         return out
 
+    def markets(self, **params):
+        """GET /info/markets with the undocumented required filter enforced.
+
+        MEASURED 2026-09-17: /info/markets REQUIRES feed_source_id. Without it
+        the API answers **HTTP 200** with `{"code":..,"description":"minimum of
+        1 feed_source_id needed",..}` — no `result` key, no error status. Every
+        league, every sport, every time window. That is a fail-open: it reads as
+        "this account has no odds" and it is not. The swagger marks the
+        parameter `required: false`, so the spec cannot be trusted here.
+        """
+        if not params.get("feed_source_id"):
+            raise ValueError(
+                "/info/markets requires feed_source_id — without it the API "
+                "returns HTTP 200 with no result and it reads as zero coverage")
+        return self.get("/info/markets", params)
+
     def markets_three_state(self, **params):
         """Return opener + previous + current, defeating the is_current default.
 
@@ -343,7 +359,7 @@ class KiblClient:
         seen = {}
         metas = []
         for flag in (True, False):
-            payload, meta = self.get("/info/markets", {**params, "is_current": flag})
+            payload, meta = self.markets(**{**params, "is_current": flag})
             metas.append(meta)
             for row in self.market_participants(payload):
                 # uuid is per-row; fall back to the natural key when absent so a

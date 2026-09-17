@@ -89,25 +89,41 @@ def test_a_entitlement(c, now):
     # Bet105's feed_source_id — needed by every later measurement, so resolved
     # here and echoed loudly rather than assumed.
     books = out["reference"]["sportsbooks"]["rows"]
-    # Match on the NAME fields only. Matching the whole serialised row would hit
-    # any book that merely happens to have 105 in an id.
+    # /reference/sportsbooks returns exactly the books this account is entitled
+    # to, so the list IS the entitlement. Every book is reported by name: the
+    # founder's premise is that we are receiving Bet105, and whether that is the
+    # book we actually get is his call to make on the evidence, not ours to
+    # assume from the ticket title.
     def book_name(b):
         if not isinstance(b, dict):
             return ""
-        return " ".join(str(b.get(f) or "") for f in ("name", "abrv", "display_name",
-                                                      "short_name", "description")).lower()
-    bet105 = [b for b in books if "105" in book_name(b)]
+        return " ".join(str(b.get(f) or "") for f in ("name", "abrv", "tag",
+                                                      "display_name", "short_name")).lower()
+    out["entitled_books"] = [b for b in books if isinstance(b, dict)]
+    out["entitled_feed_source_ids"] = [b.get("feed_source_id") for b in out["entitled_books"]]
+    bet105 = [b for b in out["entitled_books"] if "105" in book_name(b)]
     out["bet105_candidates"] = bet105
     out["bet105_feed_source_id"] = (
-        bet105[0].get("feed_source_id") if len(bet105) == 1 and isinstance(bet105[0], dict)
-        else None
-    )
+        bet105[0].get("feed_source_id") if len(bet105) == 1 else None)
+    # What every market call must carry. Without it the API returns HTTP 200
+    # with no result and it reads as zero coverage.
+    out["feed_source_for_calls"] = ",".join(
+        str(x) for x in out["entitled_feed_source_ids"] if x is not None) or None
 
     # Tennis sport id, resolved from the table rather than hard-coded.
     tennis = [s for s in out["reference"]["sports"]["rows"]
               if isinstance(s, dict) and "tennis" in str(s.get("name", "")).lower()]
     out["tennis_sport"] = tennis
     out["tennis_sport_id"] = tennis[0].get("sport_id") if len(tennis) == 1 else None
+
+    # Kibl's own freshness view, per league. This is the cleanest statement of
+    # which tennis leagues actually receive prices for us, independent of
+    # whether any fixture happens to be on today: a league absent from this list
+    # is a league nobody is pricing to us, not a quiet day.
+    payload, meta = c.get("/info/markets-last-updated",
+                          {"sport_id": out["tennis_sport_id"]})
+    out["tennis_freshness"] = {"status": meta["status"],
+                               "rows": [r for r in c.rows(payload) if isinstance(r, dict)]}
 
     # 3. Empirical league entitlement. A league we are not entitled to returns
     #    200 with zero rows — indistinguishable from a league with no fixtures
@@ -128,12 +144,13 @@ def test_a_entitlement(c, now):
     #    3 (Live Fluid) and uses 2 for nothing at all — asking for the wrong id
     #    returns 200 and zero rows, which reads as "no live coverage".
     men = ",".join(str(k) for k in TENNIS_LEAGUES_MEN)
+    fs_all = out["feed_source_for_calls"]
     bt = {}
     for bid in (1, 2, 3):
-        payload, meta = c.get("/info/markets",
-                              {"league_id": men, "betting_type_id": bid,
-                               "start_time": iso(now - dt.timedelta(hours=12)),
-                               "end_time": iso(now + dt.timedelta(days=2))})
+        payload, meta = c.markets(league_id=men, betting_type_id=bid,
+                                  feed_source_id=fs_all,
+                                  start_time=iso(now - dt.timedelta(hours=12)),
+                                  end_time=iso(now + dt.timedelta(days=2)))
         parts = c.market_participants(payload)
         bt[bid] = {"status": meta["status"], "rows": len(parts), "bytes": meta["bytes"]}
     out["empirical"]["betting_types"] = bt
@@ -142,9 +159,9 @@ def test_a_entitlement(c, now):
     #    alternates are exactly what the founder asked to archive.
     ismain = {}
     for flag in (None, True, False):
-        payload, meta = c.get("/info/markets",
-                              {"league_id": men, "is_main": flag,
-                               "start_time": iso(now), "end_time": iso(now + dt.timedelta(days=2))})
+        payload, meta = c.markets(league_id=men, is_main=flag, feed_source_id=fs_all,
+                                  start_time=iso(now),
+                                  end_time=iso(now + dt.timedelta(days=2)))
         parts = c.market_participants(payload)
         ismain["omitted" if flag is None else str(flag).lower()] = {
             "status": meta["status"], "rows": len(parts),
@@ -156,9 +173,9 @@ def test_a_entitlement(c, now):
     # 6. Which books do we actually receive? If the answer is one, the account
     #    is feed-source restricted to Bet105 and the "all books" figures in the
     #    public coverage CSVs do not apply to us at all.
-    payload, meta = c.get("/info/markets",
-                          {"league_id": men, "start_time": iso(now),
-                           "end_time": iso(now + dt.timedelta(days=3))})
+    payload, meta = c.markets(league_id=men, feed_source_id=fs_all,
+                              start_time=iso(now),
+                              end_time=iso(now + dt.timedelta(days=3)))
     parts = c.market_participants(payload)
     out["empirical"]["feed_sources_seen"] = {
         "status": meta["status"], "rows": len(parts),
@@ -180,7 +197,7 @@ def test_a_entitlement(c, now):
 
 # --------------------------------------------------------------- test b
 
-def test_b_backward_reach(c, now, bet105_id):
+def test_b_backward_reach(c, now, feed_source_id):
     """Does start_time/end_time reach backwards to finished fixtures?
 
     This is the question that decides whether any history is recoverable. Two
@@ -207,7 +224,7 @@ def test_b_backward_reach(c, now, bet105_id):
         # and "only the current price survives" are told apart.
         rows, metas = c.markets_three_state(
             league_id=men, start_time=iso(w_start), end_time=iso(w_end),
-            feed_source_id=bet105_id)
+            feed_source_id=feed_source_id)
         ok = all(m["status"] == 200 for m in metas)
         states = Counter(state_of(r) for r in rows)
         rec.update({
@@ -238,8 +255,8 @@ def test_b_backward_reach(c, now, bet105_id):
 
 # --------------------------------------------------------------- test c
 
-def test_c_bet105_coverage(c, now, bet105_id, horizon_days=3):
-    """Bet105-specific pre-match coverage per men's league."""
+def test_c_bet105_coverage(c, now, feed_source_id, horizon_days=3):
+    """Pre-match coverage per men's league, for our entitled book."""
     start, end = now, now + dt.timedelta(days=horizon_days)
     per_league = {}
     for lid, label in TENNIS_LEAGUES_MEN.items():
@@ -251,7 +268,7 @@ def test_c_bet105_coverage(c, now, bet105_id, horizon_days=3):
 
         rows, metas = c.markets_three_state(
             league_id=lid, betting_type_id=1,
-            start_time=iso(start), end_time=iso(end), feed_source_id=bet105_id)
+            start_time=iso(start), end_time=iso(end), feed_source_id=feed_source_id)
         ok = all(m["status"] == 200 for m in metas)
 
         priced = {r.get("fixture_id") for r in rows}
@@ -299,7 +316,7 @@ def test_c_bet105_coverage(c, now, bet105_id, horizon_days=3):
 
 # --------------------------------------------------------------- test d
 
-def test_d_is_current_trap(c, now, bet105_id):
+def test_d_is_current_trap(c, now, feed_source_id):
     """Prove the two-call merge actually returns all three states.
 
     A read cannot prove this — the three counts have to be produced by three
@@ -309,7 +326,7 @@ def test_d_is_current_trap(c, now, bet105_id):
     men = ",".join(str(k) for k in TENNIS_LEAGUES_MEN)
     base = {"league_id": men, "betting_type_id": 1,
             "start_time": iso(now), "end_time": iso(now + dt.timedelta(days=2)),
-            "feed_source_id": bet105_id}
+            "feed_source_id": feed_source_id}
 
     variants = {}
     for name, extra in [
@@ -318,7 +335,7 @@ def test_d_is_current_trap(c, now, bet105_id):
         ("is_current_false", {"is_current": False}),
         ("is_opener_true", {"is_opener": True}),
     ]:
-        payload, meta = c.get("/info/markets", {**base, **extra})
+        payload, meta = c.markets(**{**base, **extra})
         parts = c.market_participants(payload)
         variants[name] = {
             "status": meta["status"], "rows": len(parts),
@@ -388,9 +405,56 @@ def build_markdown(res):
     A(f"**Cognito custom attributes on our token:** "
       f"{'`' + json.dumps(custom) + '`' if custom else 'none — entitlement is not expressed in the token'}")
     A("")
-    A(f"**Bet105 feed_source_id:** `{fmt(a.get('bet105_feed_source_id'))}` "
-      f"(candidates matched: {len(a.get('bet105_candidates') or [])})")
+    A("### Which book are we actually receiving?")
+    A("")
+    books = a.get("entitled_books") or []
+    A(f"`/reference/sportsbooks` returns **{len(books)}** book(s) — that list IS the "
+      f"entitlement, and it is the only book any market call can ask for:")
+    A("")
+    if books:
+        A("| feed_source_id | name | tag | feed_type_id | metadata |")
+        A("|---|---|---|---|---|")
+        for b in books:
+            A(f"| {fmt(b.get('feed_source_id'))} | {fmt(b.get('name'))} | "
+              f"{fmt(b.get('tag'))} | {fmt(b.get('feed_type_id'))} | "
+              f"`{json.dumps(b.get('metadata') or {})}` |")
+    else:
+        A("- none returned")
+    A("")
+    if not (a.get("bet105_candidates") or []):
+        A("**No book named Bet105 is visible to this account.** Every figure in this "
+          "report is therefore a measurement of the book above, not of Bet105 — "
+          "unless that book IS Bet105's pricing feed under another name, which only "
+          "Bet105 can confirm. Flagged, not assumed.")
+    else:
+        A(f"**Bet105 matched:** feed_source_id `{fmt(a.get('bet105_feed_source_id'))}`.")
+    A("")
+    A(f"**feed_source_id sent on every market call:** `{fmt(a.get('feed_source_for_calls'))}`  ")
     A(f"**Tennis sport_id:** `{fmt(a.get('tennis_sport_id'))}`")
+    A("")
+    A("> **Undocumented hard requirement, measured 2026-09-17.** `/info/markets` "
+      "*requires* `feed_source_id`. Without it the API returns **HTTP 200** with "
+      "`\"description\": \"minimum of 1 feed_source_id needed\"`, no `result` key and "
+      "no error status — for every league, every sport and every time window. The "
+      "swagger marks the parameter `required: false`. This is a fail-open: it reads "
+      "exactly like an account with no odds entitlement. The client now refuses to "
+      "issue a market call without it.")
+    A("")
+    fr = a.get("tennis_freshness") or {}
+    frows = fr.get("rows") or []
+    A(f"### Tennis leagues actually receiving prices (`/info/markets-last-updated`, n={len(frows)})")
+    A("")
+    if frows:
+        A("| league_id | betting_type_id | book | last update | minutes ago |")
+        A("|---|---|---|---|---|")
+        for r in sorted(frows, key=lambda x: (x.get("league_id") or 0)):
+            A(f"| {fmt(r.get('league_id'))} | {fmt(r.get('betting_type_id'))} | "
+              f"{fmt(r.get('name'))} | {fmt(r.get('updated_on'))} | {fmt(r.get('minutes_ago'))} |")
+        A("")
+        A("A men's league absent from this table is a league nobody is pricing to us "
+          "— not a quiet day.")
+    else:
+        A("- none returned")
     A("")
     A("### Reference tables visible to us")
     A("")
@@ -446,7 +510,7 @@ def build_markdown(res):
     b = res.get("test_b") or {}
     A("## b. Does the time window reach BACKWARDS to finished fixtures?")
     A("")
-    A(f"**Furthest back with Bet105 market rows:** "
+    A(f"**Furthest back with market rows:** "
       f"`{fmt(b.get('max_days_back_with_markets'), ' days')}`  ")
     A(f"**Furthest back with fixtures (no prices):** "
       f"`{fmt(b.get('max_days_back_with_fixtures'), ' days')}`")
@@ -466,10 +530,11 @@ def build_markdown(res):
 
     # --- c
     c_ = res.get("test_c") or {}
-    A("## c. Bet105-specific pre-match coverage (men's leagues)")
+    A("## c. Pre-match coverage for our entitled book (men's leagues)")
     A("")
     A(f"Window `{' → '.join(c_.get('window', [DASH, DASH]))}`, "
-      f"betting_type_id=1 (Prematch), feed_source_id = Bet105 only.")
+      f"betting_type_id=1 (Prematch), feed_source_id = "
+      f"`{fmt(res.get('feed_source_id_used'))}` — see section a for which book that is.")
     A("")
     A("| league | fixtures (n) | priced | % priced | market rows | lines/fixture mean | max | both sides % |")
     A("|---|---|---|---|---|---|---|---|")
@@ -555,18 +620,22 @@ def main():
         except Exception as e:
             res["errors"].append(f"test a: {type(e).__name__}: {e}")
 
-    bet105_id = (res.get("test_a") or {}).get("bet105_feed_source_id")
-    res["bet105_feed_source_id_used"] = bet105_id
-    if bet105_id is None:
+    # Every /info/markets call MUST carry feed_source_id or the API answers 200
+    # with no result. The value used is the account's entitled book list, and it
+    # is named in the report so nobody has to assume which book was measured.
+    feed_source_id = (res.get("test_a") or {}).get("feed_source_for_calls")
+    res["feed_source_id_used"] = feed_source_id
+    res["entitled_books"] = (res.get("test_a") or {}).get("entitled_books")
+    if not feed_source_id:
         res["errors"].append(
-            "Bet105 feed_source_id could not be resolved from /reference/sportsbooks; "
-            "tests b/c/d ran WITHOUT a feed-source filter and therefore measure "
-            "every book we receive, not Bet105 specifically.")
+            "No feed_source_id could be resolved from /reference/sportsbooks, so "
+            "tests b/c/d could not run at all: /info/markets returns HTTP 200 with "
+            "no result unless at least one feed_source_id is supplied.")
 
-    for key, fn in [("test_b", lambda: test_b_backward_reach(c, now, bet105_id)),
-                    ("test_c", lambda: test_c_bet105_coverage(c, now, bet105_id, args.horizon_days)),
-                    ("test_d", lambda: test_d_is_current_trap(c, now, bet105_id))]:
-        if key[-1] in skip:
+    for key, fn in [("test_b", lambda: test_b_backward_reach(c, now, feed_source_id)),
+                    ("test_c", lambda: test_c_bet105_coverage(c, now, feed_source_id, args.horizon_days)),
+                    ("test_d", lambda: test_d_is_current_trap(c, now, feed_source_id))]:
+        if key[-1] in skip or not feed_source_id:
             continue
         try:
             res[key] = fn()
