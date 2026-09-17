@@ -110,7 +110,11 @@ KEEP_POINTS = 24
 # complete 6h after its start.
 COMPLETE_AFTER_H = 6
 
-SCHEMA = 'bet365-history/1'
+# Bumped to /2 by Michael's ruling 2026-09-17T10:45Z item 2: entries now carry
+# trueStart / trueEnd / startSched as three separate fields plus `cut`, and the
+# collapsed `start` field is gone. A reader must branch on the schema (or on the
+# presence of `cut`) rather than assume the tail of s1/s2 is a close.
+SCHEMA = 'bet365-history/2'
 
 
 # ---------------------------------------------------------------- api plumbing
@@ -196,16 +200,40 @@ def tier_of(fx):
     return None
 
 
-def fixture_start(fx):
-    """The fixture's real UTC start. trueStartTime is the observed first ball and
-    is preferred; startTime is the scheduled slot."""
+def close_cutoff(fx):
+    """The ONLY timestamp a Close may be cut at: the observed first ball.
+
+    Michael's ruling 2026-09-17T10:45Z item 2, fixing this file at source. The
+    function this replaces was `trueStartTime or startTime`, which silently
+    substituted the SCHEDULED slot on the 3.59% of fixtures (466 of 12,995,
+    measured 2026-09-17) where oddspapi has no trueStartTime — and, worse, threw
+    away which of the two it had used, so a row could not be audited after the
+    fact.
+
+    Returns None when there is no observed start. None means "we cannot prove
+    any point is pre-match", and the caller must then decline to claim a close
+    rather than reach for the next-best timestamp. There is no next-best
+    timestamp: the locked definition says "Never use the scheduled time".
+    """
+    return fx.get('trueStartTime')
+
+
+def completeness_ref(fx):
+    """A time used ONLY to decide whether a series can still grow.
+
+    This one IS allowed to fall back to the scheduled slot, and the separate
+    name is the point: "has six hours passed since this thing was due to start"
+    is a scheduling question, and being wrong about it costs one extra refetch.
+    Cutting a Close is an evidentiary question and is wrong forever. Keeping the
+    two in one helper is what produced the defect this file just fixed.
+    """
     return fx.get('trueStartTime') or fx.get('startTime')
 
 
 def is_complete(fx, now):
     if fx.get('trueEndTime'):
         return True
-    st = parse_iso(fixture_start(fx))
+    st = parse_iso(completeness_ref(fx))
     return bool(st and st + timedelta(hours=COMPLETE_AFTER_H) < now)
 
 
@@ -261,11 +289,26 @@ def reduce_series(series, keep=KEEP_POINTS):
 def build_entry(payload, fx):
     """One archive entry from a historical-odds payload, or (None, reason).
 
-    The close is pinned to the last point AT OR BEFORE the fixture start. That is
-    the TEN-124 ruling — an in-play price is never a closing price — and this is
-    the reliable version of it, because the fixture record hands us a real UTC
-    start rather than the tick-cadence proxy that silently pinned an in-play
-    1.062 as Zverev-Darderi's close."""
+    The close is pinned to the last point AT OR BEFORE the OBSERVED first ball.
+    That is the TEN-124 ruling — an in-play price is never a closing price — and
+    this is the reliable version of it, because the fixture record hands us a
+    real UTC start rather than the tick-cadence proxy that silently pinned an
+    in-play 1.062 as Zverev-Darderi's close.
+
+    RULING 2026-09-17T10:45Z item 2 — no observed start, no close claim.
+    When trueStartTime is absent the entry is still written (the Open is the
+    first point and is unaffected by any cutoff) but it is written UNCUT and
+    marked `cut: 'none'`, with n1/n2 null. Three consequences, all deliberate:
+
+      * no consumer can mistake the tail for a close — `cut` is the permission
+        slip, and its absence is checkable, unlike the old collapsed `start`;
+      * the series is kept whole rather than truncated, so the line-summary
+        loader can still re-cut it later at a live-flip bound once the recorder
+        has covered the fixture. Truncating here would destroy that rescue;
+      * `start` is GONE. Michael: "It must never collapse trueStartTime and
+        startTime into one field." trueStart / trueEnd / startSched are written
+        separately, and a reader that wants a day bucket picks one explicitly.
+    """
     blk = ((payload or {}).get('bookmakers') or {}).get(BOOK)
     if not isinstance(blk, dict):
         return None, 'no-bet365-block'
@@ -281,30 +324,39 @@ def build_entry(payload, fx):
     if not s1 and not s2:
         return None, 'empty-series'
 
-    start = epoch(fixture_start(fx))
-    if start is None:
-        return None, 'no-start-time'
+    meta = {
+        'trueStart': epoch(fx.get('trueStartTime')),
+        'trueEnd': epoch(fx.get('trueEndTime')),
+        'startSched': epoch(fx.get('startTime')),
+        'cat': tier_of(fx) or (fx.get('categoryName') or ''),
+        'tour': fx.get('tournamentName') or '',
+        'p1': fx.get('participant1Name') or '',
+        'p2': fx.get('participant2Name') or '',
+    }
 
-    pre1 = [p for p in s1 if p[0] <= start]
-    pre2 = [p for p in s2 if p[0] <= start]
+    cut = epoch(close_cutoff(fx))
+    if cut is None:
+        # No observed first ball. Keep the Open, claim no close. See the
+        # docstring — this is the 3.59% that used to be cut at the schedule.
+        entry = dict(meta, cut='none', cutTs=None, n1=None, n2=None, inplay=None,
+                     s1=reduce_series(s1), s2=reduce_series(s2))
+        return entry, None
+
+    pre1 = [p for p in s1 if p[0] <= cut]
+    pre2 = [p for p in s2 if p[0] <= cut]
     if not pre1 and not pre2:
         # Market posted only after the first ball: there is no pre-match journey
         # to archive. Recorded as a miss so it is visible, not silently dropped.
         return None, 'no-prematch-points'
 
     dropped = (len(s1) - len(pre1)) + (len(s2) - len(pre2))
-    entry = {
-        'start': start,
-        'cat': tier_of(fx) or (fx.get('categoryName') or ''),
-        'tour': fx.get('tournamentName') or '',
-        'p1': fx.get('participant1Name') or '',
-        'p2': fx.get('participant2Name') or '',
-        'n1': len(pre1),                 # true pre-start point counts BEFORE
-        'n2': len(pre2),                 # reduction, so thin coverage stays visible
-        'inplay': dropped,
-        's1': reduce_series(pre1),
-        's2': reduce_series(pre2),
-    }
+    entry = dict(meta,
+                 cut='trueStart', cutTs=cut,
+                 n1=len(pre1),      # true pre-start point counts BEFORE
+                 n2=len(pre2),      # reduction, so thin coverage stays visible
+                 inplay=dropped,
+                 s1=reduce_series(pre1),
+                 s2=reduce_series(pre2))
     return entry, None
 
 
@@ -335,7 +387,9 @@ def save_shard(month, shard):
 
 
 def month_of(fx):
-    st = parse_iso(fixture_start(fx))
+    # Which monthly shard the fixture is FILED under — a calendar question, not
+    # a cutoff, so completeness_ref()'s scheduled fallback is correct here.
+    st = parse_iso(completeness_ref(fx))
     return st.strftime('%Y-%m') if st else None
 
 
@@ -490,7 +544,7 @@ def archive(key, targets, max_seconds, label):
         if not month_of(f):
             continue
         todo.append(f)
-    todo.sort(key=lambda f: fixture_start(f) or '')
+    todo.sort(key=lambda f: completeness_ref(f) or '')   # pull order only
 
     print(f'{label}: {len(targets)} target(s), {len(done)} already resolved, '
           f'{len(todo)} to pull. Budget {max_seconds}s at ~{HIST_SLEEP}s/call '

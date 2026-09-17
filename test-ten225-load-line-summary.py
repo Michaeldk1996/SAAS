@@ -37,6 +37,7 @@ other under UNIQUE NULLS NOT DISTINCT. That is a data-loss bug that no amount
 of reading the loader would surface.
 """
 import importlib.util
+import types
 import json
 import os
 import sys
@@ -44,11 +45,19 @@ import tempfile
 from datetime import datetime, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-spec = importlib.util.spec_from_file_location(
-    'loader', os.path.join(HERE, 'ten225-load-line-summary.py'))
-L = importlib.util.module_from_spec(spec)
-sys.argv = ['loader']
-spec.loader.exec_module(L)
+# STALE-BYTECODE GUARD — measured 2026-09-17, and it produced a FALSE PASS.
+# macOS system python3.9 sets sys.pycache_prefix to ~/Library/Caches/com.apple.python,
+# so a module loaded by path is cached OUTSIDE the repo where no `git clean` or
+# `rm -rf __pycache__` ever reaches it. The validator is (mtime, size), and a
+# mutation test that restores a same-size file inside the same second gets the
+# MUTANT's bytecode back while the source on disk reads correct. That is the
+# worst possible failure mode for a harness whose whole job is to bite.
+# exec()ing the source text bypasses the bytecode path entirely.
+sys.dont_write_bytecode = True
+L = types.ModuleType('L')
+L.__file__ = os.path.join(HERE, 'ten225-load-line-summary.py')
+sys.argv = ['L']
+exec(compile(open(L.__file__).read(), L.__file__, 'exec'), L.__dict__)
 
 FAILED = []
 
@@ -320,6 +329,30 @@ svajda = L.resolve_start(START - 17.8 * H, START + 4.7 * H, START, None, None)
 check('the measured Svajda/Altmaier row (22.5h implied) is REJECTED',
       svajda[0] is None and svajda[2] == 'implausible_duration')
 
+# --- ruling 2026-09-17T10:45Z item 1: trueEnd BEFORE trueStart is its own reject
+neg = L.resolve_start(TRUE, TRUE - 90 * 60, SCHED, None, None)   # ends 90m early
+check('a NEGATIVE duration is REJECTED', neg[0] is None)
+check('a negative duration -> reason end_before_start, NOT implausible_duration',
+      neg[2] == 'end_before_start', f'got {neg[2]}')
+check('a negative duration -> dash when there is no flip', neg[1] == 'none')
+# One second is enough: this is a contradiction test, not a magnitude test.
+check('trueEnd one second before trueStart is still a reject',
+      L.resolve_start(TRUE, TRUE - 1.0, SCHED, None, None)[2] == 'end_before_start')
+check('trueEnd EQUAL to trueStart is not a contradiction (accepted)',
+      L.resolve_start(TRUE, TRUE, SCHED, None, None)[:2] == (TRUE, 'oddspapi'))
+# ...and it falls through to the live-flip bound exactly like the other two.
+NEG_FLIP = TRUE - 600.0
+negf = L.resolve_start(TRUE, TRUE - 90 * 60, SCHED, NEG_FLIP, 30.0)
+check('a negative duration falls through to the live-flip bound',
+      negf[0] == NEG_FLIP and negf[1] == 'api-tennis-live')
+check('the fall-through keeps the end_before_start reason',
+      negf[2] == 'end_before_start')
+# The reason strings stay THREE distinct values (ruling item 3: "keep the two
+# strings", plus this one). A single-label refactor would break this.
+check('the three reject reasons are distinct strings',
+      len({'implausible_duration', 'implausible_early_start',
+           'end_before_start'}) == 3)
+
 # --- limb 2: trueEnd missing -> trueStart more than 6h BEFORE startTime
 e5 = L.resolve_start(SCHED - 5 * H, None, SCHED, None, None)
 e7 = L.resolve_start(SCHED - 7 * H, None, SCHED, None, None)
@@ -377,6 +410,86 @@ for a_, b_ in ((TRUE, TRUE - 20 * 60), (TRUE, TRUE + 20 * 60),
     got = L.resolve_start(a_, a_ + H, SCHED, b_, 10.0)[0]
     check(f'cutoff <= both candidates ({int((a_-b_)/60)} min apart)',
           got <= a_ + 1e-9 and got <= max(a_, b_) + 1e-9, f'got {got}')
+
+# --- ruling 2026-09-17T10:45Z item 3: the ITF corroboration rule
+# "because ITF has no trueEnd and the gate only runs the weak limb there, for ITF
+#  fixtures from 2026-09-17 onward require the Close cutoff to agree with the
+#  live flip: if trueStartTime is missing or differs from last_not_live_seen_at
+#  by more than 5 min, use the live-flip lower bound."
+print('\nITF corroboration — Michael ruling 2026-09-17T10:45Z item 3')
+
+from datetime import datetime as _dt, timezone as _tz
+IN_SCOPE = _dt(2026, 9, 20, 12, 0, tzinfo=_tz.utc).timestamp()    # after the date
+OUT_SCOPE = _dt(2026, 9, 10, 12, 0, tzinfo=_tz.utc).timestamp()   # before it
+ITF_TRUE = IN_SCOPE + 120.0
+
+check('the scope boundary is the ruled date, 2026-09-17T00:00Z',
+      L.ITF_RULE_FROM == _dt(2026, 9, 17, tzinfo=_tz.utc).timestamp())
+check('ITF Men is in scope', L.itf_protected('ITF Men', None, IN_SCOPE))
+check('ITF Women is in scope', L.itf_protected('ITF Women', None, IN_SCOPE))
+check('ATP is NOT in scope at the same date',
+      not L.itf_protected('ATP', None, IN_SCOPE))
+check('Challenger is NOT in scope', not L.itf_protected('Challenger', None, IN_SCOPE))
+check('an ITF fixture BEFORE 2026-09-17 is NOT in scope (not retroactive)',
+      not L.itf_protected('ITF Men', None, OUT_SCOPE))
+check('a levelless fixture is never ITF-protected',
+      not L.itf_protected(None, None, IN_SCOPE))
+
+# 1. trueStart present, flip AGREES (inside 5 min) -> trueStart stands.
+agree = L.resolve_start(ITF_TRUE, None, IN_SCOPE, ITF_TRUE + 180.0, 10.0, 'ITF Men')
+check('ITF: a flip 3 min away CORROBORATES, trueStart stands',
+      agree[:2] == (ITF_TRUE, 'oddspapi'), f'got {agree[:2]}')
+
+# 2. trueStart present, flip disagrees by >5 min -> the FLIP wins, either way.
+#    This is the limb that differs from the generic cross-check: there the
+#    EARLIER of the two wins, here the flip wins even when it is later, because
+#    last_not_live_seen_at is an OBSERVATION that the match was not yet live.
+flip_late = ITF_TRUE + 20 * 60
+d_late = L.resolve_start(ITF_TRUE, None, IN_SCOPE, flip_late, 10.0, 'ITF Men')
+check('ITF: flip 20 min LATER than trueStart -> the FLIP is the cutoff',
+      d_late[:2] == (flip_late, 'api-tennis-live'), f'got {d_late[:2]}')
+check('ITF: the disagreement is flagged as a conflict', d_late[3] is True)
+# The same inputs on a non-ITF level take the generic path and keep trueStart.
+gen_late = L.resolve_start(ITF_TRUE, None, IN_SCOPE, flip_late, 10.0, 'ATP')
+check('non-ITF with the SAME inputs keeps the earlier (oddspapi) start — the '
+      'ITF limb is what changed the answer',
+      gen_late[:2] == (ITF_TRUE, 'oddspapi'), f'got {gen_late[:2]}')
+
+flip_early = ITF_TRUE - 20 * 60
+d_early = L.resolve_start(ITF_TRUE, None, IN_SCOPE, flip_early, 10.0, 'ITF Men')
+check('ITF: flip 20 min EARLIER -> the flip is the cutoff',
+      d_early[:2] == (flip_early, 'api-tennis-live'))
+
+# 3. trueStart missing, flip present -> the flip bound, reason recorded.
+miss = L.resolve_start(None, None, IN_SCOPE, ITF_TRUE, 10.0, 'ITF Men')
+check('ITF: no trueStart but a flip -> the flip bound',
+      miss[:2] == (ITF_TRUE, 'api-tennis-live'))
+check('ITF: the row records WHY it fell to the flip',
+      miss[2] == 'itf_uncorroborated_start', f'got {miss[2]}')
+
+# 4. No flip at all -> no cutoff. Close = dash.
+nf = L.resolve_start(ITF_TRUE, None, IN_SCOPE, None, None, 'ITF Men')
+check('ITF: a trueStart with NO flip to corroborate it -> dash, not the '
+      'uncorroborated trueStart',
+      nf[:2] == (None, 'none'), f'got {nf[:2]}')
+check('ITF: the dash carries the itf_uncorroborated_start reason',
+      nf[2] == 'itf_uncorroborated_start')
+# The control that proves the ITF limb is what dashed it: same inputs, ATP.
+ctl = L.resolve_start(ITF_TRUE, None, IN_SCOPE, None, None, 'ATP')
+check('the SAME inputs on ATP still resolve — the dash is the ITF rule, not a '
+      'general failure', ctl[:2] == (ITF_TRUE, 'oddspapi'))
+# ...and out of scope by date, ITF behaves exactly like ATP.
+old = L.resolve_start(OUT_SCOPE + 120, None, OUT_SCOPE, None, None, 'ITF Men')
+check('a pre-2026-09-17 ITF fixture is unaffected',
+      old[:2] == (OUT_SCOPE + 120, 'oddspapi'))
+
+# The gate still runs FIRST on ITF: a rejected trueStart cannot be corroborated
+# into existence by a nearby flip.
+bad_itf = L.resolve_start(IN_SCOPE - 8 * H, None, IN_SCOPE,
+                          IN_SCOPE - 8 * H + 60, 10.0, 'ITF Men')
+check('ITF: a gate-REJECTED trueStart is not rescued by an agreeing flip',
+      bad_itf[1] == 'api-tennis-live' and bad_itf[2] == 'implausible_early_start',
+      f'got {bad_itf[1:3]}')
 
 # --- item 3: a live-flip Close needs gap_seconds <= 300 ON TOP of the rest
 arch2 = START + 1 * DAY

@@ -16,13 +16,24 @@ regress silently:
 """
 
 import importlib.util
+import types
 import os
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-spec = importlib.util.spec_from_file_location('arch', os.path.join(HERE, 'archive-bet365-history.py'))
-a = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(a)
+# STALE-BYTECODE GUARD — measured 2026-09-17, and it produced a FALSE PASS.
+# macOS system python3.9 sets sys.pycache_prefix to ~/Library/Caches/com.apple.python,
+# so a module loaded by path is cached OUTSIDE the repo where no `git clean` or
+# `rm -rf __pycache__` ever reaches it. The validator is (mtime, size), and a
+# mutation test that restores a same-size file inside the same second gets the
+# MUTANT's bytecode back while the source on disk reads correct. That is the
+# worst possible failure mode for a harness whose whole job is to bite.
+# exec()ing the source text bypasses the bytecode path entirely.
+sys.dont_write_bytecode = True
+a = types.ModuleType('a')
+a.__file__ = os.path.join(HERE, 'archive-bet365-history.py')
+sys.argv = ['a']
+exec(compile(open(a.__file__).read(), a.__file__, 'exec'), a.__dict__)
 
 FAILS = []
 
@@ -91,7 +102,7 @@ if e:
        e['s1'][-1][1] == 4.0, e['s1'][-1])
     ck('open is the first pre-start price (3.0)', e['s1'][0][1] == 3.0, e['s1'][0])
     ck('no stored point is after the first ball',
-       all(p[0] <= e['start'] for p in e['s1'] + e['s2']))
+       all(p[0] <= e['cutTs'] for p in e['s1'] + e['s2']))
     ck('in-play points counted, not silently dropped', e['inplay'] == 4, e['inplay'])
     ck('n1 is the TRUE pre-start count before reduction', e['n1'] == 3, e['n1'])
 
@@ -102,8 +113,65 @@ ck('no market 121', a.build_entry(
 ck('empty series', a.build_entry(payload([], []), FX)[1] == 'empty-series')
 ck('market posted only after first ball -> no-prematch-points',
    a.build_entry(payload(inplay, inplay), FX)[1] == 'no-prematch-points')
-ck('fixture with no start time is a miss, not an in-play close',
-   a.build_entry(payload(pre, pre), {**FX, 'startTime': None, 'trueStartTime': None})[1] == 'no-start-time')
+
+# ------------------------------------------- TRIPWIRE: ruling 2026-09-17T10:45Z
+# item 2 — "It must never collapse trueStartTime and startTime into one field or
+# cut Close at a scheduled time."
+#
+# The fixture below is the whole point: a REAL scheduled slot at 12:00 and NO
+# trueStartTime. Under the old `trueStartTime or startTime` helper this cut the
+# series at 12:00 and handed the 11:59 price out as a close. The measured size of
+# that population was 466 of 12,995 joinable fixtures, 3.59% (2026-09-17).
+print('\n=== TRIPWIRE: no observed start -> no close claim (ruling 10:45Z item 2) ===')
+NO_TRUE = {**FX, 'trueStartTime': None}          # scheduled 12:00 survives
+
+ck('close_cutoff() returns the observed start and NOTHING else',
+   a.close_cutoff(FX) == '2026-09-01T12:00:00Z')
+ck('close_cutoff() is None when trueStartTime is absent, even with a schedule',
+   a.close_cutoff(NO_TRUE) is None, a.close_cutoff(NO_TRUE))
+ck('close_cutoff() never returns the scheduled slot',
+   a.close_cutoff({'startTime': '2026-09-01T12:00:00Z'}) is None)
+
+ns, why_ns = a.build_entry(payload(pre + inplay, pre + inplay), NO_TRUE)
+ck('an entry is still written (the Open does not depend on a cutoff)',
+   ns is not None, why_ns)
+if ns:
+    ck('cut is marked "none" so no reader may treat the tail as a close',
+       ns['cut'] == 'none', ns['cut'])
+    ck('cutTs is null', ns['cutTs'] is None)
+    ck('n1/n2 are null, not a count against a scheduled cut',
+       ns['n1'] is None and ns['n2'] is None)
+    ck('the Open survives and is still the first real point (3.0)',
+       ns['s1'][0][1] == 3.0, ns['s1'][0])
+    # The trap the old code fell into, asserted directly.
+    ck('the series is NOT cut at the scheduled 12:00 (in-play points retained '
+       'for a later re-cut, and visibly so)',
+       ns['s1'][-1][1] == 1.06, ns['s1'][-1])
+    ck('the collapsed `start` field is GONE from the entry',
+       'start' not in ns, sorted(ns))
+    ck('trueStart / trueEnd / startSched are three separate fields',
+       ns['trueStart'] is None and ns['startSched'] is not None
+       and 'trueEnd' in ns, {k: ns.get(k) for k in
+                             ('trueStart', 'trueEnd', 'startSched')})
+
+# ...and the same three fields on a normal, fully-timed fixture.
+FULL = {**FX, 'trueStartTime': '2026-09-01T12:05:00Z',
+        'trueEndTime': '2026-09-01T14:00:00Z'}
+ef, _ = a.build_entry(payload(pre + inplay, pre + inplay), FULL)
+ck('a fully-timed fixture keeps all three timestamps distinct',
+   ef['trueStart'] != ef['startSched'] and ef['trueEnd'] > ef['trueStart'],
+   {k: ef.get(k) for k in ('trueStart', 'trueEnd', 'startSched')})
+ck('its cut is the trueStart, not the schedule',
+   ef['cut'] == 'trueStart' and ef['cutTs'] == ef['trueStart'])
+ck('the schema is bumped so readers can branch on it',
+   a.SCHEMA == 'bet365-history/2', a.SCHEMA)
+
+# completeness_ref IS allowed the scheduled fallback — and must stay a separate
+# function, or the defect walks straight back in.
+ck('completeness_ref() may fall back to the schedule (scheduling, not evidence)',
+   a.completeness_ref(NO_TRUE) == '2026-09-01T12:00:00Z')
+ck('completeness_ref and close_cutoff are NOT the same function',
+   a.completeness_ref is not a.close_cutoff)
 
 # ---------------------------------------------------------------------- scope
 print('\n=== tier / completeness gating ===')

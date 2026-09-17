@@ -3148,8 +3148,15 @@ check('item 11 · the capture join needs BOTH names and dashes on an ambiguous p
   assert.strictEqual(I.b365PriceFor('A. Zverev', { date: '2026-09-13', opponent: 'Nobody Here' }), null);
   // The close is the LAST observed point, which the artefact pins to the last
   // quote at or before the start — never an in-play price.
-  assert.strictEqual(I.b365Close([[1, 1.5], [2, 1.7]]), 1.7);
-  assert.strictEqual(I.b365Close([]), null);
+  assert.strictEqual(I.b365Close({ cut: 'trueStart' }, [[1, 1.5], [2, 1.7]]), 1.7);
+  assert.strictEqual(I.b365Close({ cut: 'trueStart' }, []), null);
+  // Michael's ruling 2026-09-17T10:45Z item 2 — a bet365-history/2 entry whose
+  // series was never cut at an observed first ball has NO close. Its tail is an
+  // unproven price and must dash, not render.
+  assert.strictEqual(I.b365Close({ cut: 'none' }, [[1, 1.5], [2, 1.06]]), null,
+    'an uncut /2 entry must not hand out its tail as a close');
+  // A /1 entry has no `cut` field and keeps the pre-ruling behaviour.
+  assert.strictEqual(I.b365Close({}, [[1, 1.5], [2, 1.7]]), 1.7);
 });
 mustFail('the capture-join check would catch a first-point close', () => {
   const close = s => s[0][1];

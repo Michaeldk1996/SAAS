@@ -885,7 +885,19 @@
     else s = surnameOf(s);                     // feed form: "A. Zverev"
     return s.toLowerCase().replace(/[^a-z]/g, '');
   }
-  function b365Close(series) {
+  // Michael's ruling 2026-09-17T10:45Z item 2. bet365-history/2 entries carry an
+  // explicit `cut` field saying WHICH timestamp the series was cut at, and
+  // `cut === 'none'` means the fixture had no observed first ball, so the series
+  // was stored UNCUT and its tail may be an in-play price. Only a series cut at
+  // the trueStart is a close; anything else dashes.
+  //
+  // A /1 entry has no `cut` field at all. Those keep today's behaviour rather
+  // than being blanked wholesale: they were cut at `trueStartTime or startTime`,
+  // so ~96.4% of them are correct and the file no longer records which. Blanking
+  // every historical close to fix 3.59% of them would be the bigger error, and
+  // the /2 rewrite is what retires the ambiguity. Flagged to Michael, not slipped.
+  function b365Close(entry, series) {
+    if (entry && entry.cut && entry.cut !== 'trueStart') return null;
     if (!series || !series.length) return null;
     var last = series[series.length - 1];
     var v = last && last[1];
@@ -910,11 +922,16 @@
         var f = fx[id];
         var a = b365Norm(f.p1), b = b365Norm(f.p2);
         if (!a || !b) continue;
-        var day = b365DayOf(f.start);
+        // DAY BUCKET ONLY — never a cutoff. /2 split the collapsed `start` into
+        // trueStart / startSched; either dates the fixture to within a day, and
+        // the join already allows +-1 day. `f.start` is the /1 fallback.
+        var day = b365DayOf(f.trueStart != null ? f.trueStart
+          : (f.startSched != null ? f.startSched : f.start));
         if (!day) continue;
         var pair = a < b ? a + '|' + b : b + '|' + a;
         (out[pair] = out[pair] || []).push({
-          day: day, a: a, b: b, closeA: b365Close(f.s1), closeB: b365Close(f.s2)
+          day: day, a: a, b: b,
+          closeA: b365Close(f, f.s1), closeB: b365Close(f, f.s2)
         });
       }
     }

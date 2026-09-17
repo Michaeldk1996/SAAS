@@ -216,8 +216,32 @@ GATE_SECONDS = 6 * 3600.0     # Michael's ruling 2026-09-17T10:02Z, option (a)
 CONFLICT_MIN = 5.0            # ruling item 2
 FLIP_GAP_MAX_S = 300.0        # ruling item 3, restated from 09:11Z
 
+# Michael's ruling 2026-09-17T10:45Z item 3 — the ITF corroboration rule.
+# ITF fixtures carry no trueEndTime, so the sanity gate can only ever run its
+# WEAK limb there (trueStart-vs-startTime). From this date on, an ITF Close
+# cutoff has to be corroborated by the live flip or it does not exist.
+# Dated, not retroactive: the live-flip recorder only started 2026-09-17, so
+# before that date there is no flip to corroborate against and applying the rule
+# backwards would dash every historical ITF close for a reason that is about our
+# instrumentation, not about the data.
+ITF_RULE_FROM = datetime(2026, 9, 17, tzinfo=timezone.utc).timestamp()
+ITF_LEVELS = ('ITF Men', 'ITF Women')
 
-def resolve_start(true_start, true_end, sched, flip_ts, flip_gap):
+
+def itf_protected(level, true_start, sched):
+    """Is this fixture inside the ITF corroboration rule's scope?
+
+    Dated off the fixture's SCHEDULED time where there is one, because that is
+    the one timestamp on an ITF fixture that is always present and is never
+    itself under suspicion — it decides scope, never a cutoff.
+    """
+    if (level or '') not in ITF_LEVELS:
+        return False
+    ref = sched if sched is not None else true_start
+    return ref is not None and ref >= ITF_RULE_FROM
+
+
+def resolve_start(true_start, true_end, sched, flip_ts, flip_gap, level=None):
     """Michael's trueStartTime ruling (2026-09-17T10:02Z), in one place.
 
     Returns (start_ts, start_ts_source, reject_reason, conflict, conflict_min,
@@ -249,19 +273,51 @@ def resolve_start(true_start, true_end, sched, flip_ts, flip_gap):
     Note the asymmetry that makes this safe: the gate runs FIRST. A rejected
     trueStartTime never reaches the cross-check, so a garbage timestamp hours in
     the past can never win the min() and drag the cutoff with it.
+
+    RULING 2026-09-17T10:45Z item 1 — trueEnd BEFORE trueStart:
+      its own reject, reason 'end_before_start', same fall-through. It is a
+      third string, not a widening of 'implausible_duration', because a negative
+      duration is not an implausible match length — it is a feed contradiction,
+      and folding the two together would hide which one the archive is producing.
+
+    RULING 2026-09-17T10:45Z item 3 — ITF corroboration (see itf_protected):
+      an in-scope ITF fixture's cutoff must AGREE with the live flip. trueStart
+      missing, or more than 5 min from the flip -> use the flip bound; no flip at
+      all -> no cutoff, Close = dash.
+
+      Note this limb can move the cutoff LATER than trueStart, which the generic
+      cross-check never does. That is safe here and only here, because
+      last_not_live_seen_at is a timestamp at which the match was OBSERVED not
+      live: every tick at or before it is pre-start by construction, whatever
+      trueStartTime claims. The generic path has no such observation behind it,
+      which is why it keeps the earlier-of-the-two rule.
     """
     reason = None
     ts = true_start
 
     if ts is not None:
         if true_end is not None:
-            if (true_end - ts) > GATE_SECONDS:
+            if true_end < ts:
+                reason = 'end_before_start'
+            elif (true_end - ts) > GATE_SECONDS:
                 reason = 'implausible_duration'
         elif sched is not None:
             if (sched - ts) > GATE_SECONDS:
                 reason = 'implausible_early_start'
         if reason is not None:
             ts = None
+
+    if itf_protected(level, true_start, sched):
+        if flip_ts is None:
+            return None, 'none', reason or 'itf_uncorroborated_start', False, None, None
+        if ts is None:
+            return (flip_ts, 'api-tennis-live', reason or 'itf_uncorroborated_start',
+                    False, None, flip_gap)
+        diff_min = (ts - flip_ts) / 60.0
+        if abs(diff_min) > CONFLICT_MIN:
+            return (flip_ts, 'api-tennis-live', reason, True,
+                    round(diff_min, 3), flip_gap)
+        return ts, 'oddspapi', reason, False, None, None
 
     # Rejected, or never present: the live-flip lower bound, else dash.
     if ts is None:
@@ -385,12 +441,17 @@ def start_for(fid, meta, flips):
 
     NOTE it reads trueStart/trueEnd/startSched as three separate fields and
     never `meta['start']` — that collapsed field can be the scheduled time.
+
+    `cat` is passed through because the ITF corroboration rule is level-scoped.
+    A fixture the index does not cover has no level, so it is not ITF-protected
+    — it already dashes its Close for the stronger reason that it has no start
+    fields at all.
     """
     flip_ts, flip_gap = (flips or {}).get(fid, (None, None))
     return resolve_start(epoch((meta or {}).get('trueStart')),
                          epoch((meta or {}).get('trueEnd')),
                          epoch((meta or {}).get('startSched')),
-                         flip_ts, flip_gap)
+                         flip_ts, flip_gap, (meta or {}).get('cat'))
 
 
 def judge_close(start_ts, close_ts, archived_at, start_src='oddspapi',
@@ -829,35 +890,63 @@ def main():
               f' — {tot_rej} of {len(by_fix)} fixtures rejected '
               f'({tot_rej/max(len(by_fix),1):.3%})')
         print(f'  {"level":<22} {"fixtures":>8} {"rejected":>8} {"duration":>9} '
-              f'{"early":>6} {"->flip":>7} {"->dash":>7}')
+              f'{"early":>6} {"end<st":>7} {"itf":>5} {"->flip":>7} {"->dash":>7}')
         for lvl, c in sorted(lvl_rej.items(), key=lambda kv: -kv[1]['rejected']):
             flag = '  <-- n<%d' % MIN_N if c['fixtures'] < MIN_N else ''
             print(f'  {lvl:<22} {c["fixtures"]:>8} {c["rejected"]:>8} '
                   f'{c["implausible_duration"]:>9} '
                   f'{c["implausible_early_start"]:>6} '
+                  f'{c["end_before_start"]:>7} '
+                  f'{c["itf_uncorroborated_start"]:>5} '
                   f'{c["rescued_by_flip"]:>7} {c["fell_to_dash"]:>7}{flag}')
         result['gate'] = {'fixtures': len(by_fix), 'rejected': tot_rej,
                           'byLevel': {k: dict(v) for k, v in lvl_rej.items()}}
 
-        confl = [x['conflict_minutes'] for x in by_fix.values()
-                 if x['conflict_minutes'] is not None]
-        both = sum(1 for fid in by_fix if fid in flips
-                   and (fx_index.get(fid) or {}).get('trueStart'))
-        print(f'\ncross-check (ruling item 2) — {both} fixtures have BOTH a '
-              f'trueStartTime and a live-flip bound')
-        if confl:
-            early = sum(1 for m in confl if m < 0)
-            print(f'  beyond +-5 min: {len(confl)} '
-                  f'(oddspapi earlier {early}, flip earlier {len(confl)-early}); '
-                  f'median {statistics.median(confl):+.1f} min, '
-                  f'min {min(confl):+.1f}, max {max(confl):+.1f}'
-                  + (f'  <-- n<{MIN_N}' if len(confl) < MIN_N else ''))
-        else:
-            print(f'  beyond +-5 min: 0 — nothing to flag'
-                  + ('' if both else ' (no fixture has both sources yet; the '
-                     'recorder started 2026-09-17, so this fills going forward)'))
-        result['crossCheck'] = {'bothSources': both, 'flagged': len(confl),
-                                'minutes': confl[:200]}
+        # Ruling 2026-09-17T10:45Z item 3 asks for ITF "separately in the 48h
+        # cross-check report" — ITF is the level the corroboration rule now
+        # governs, so a pooled figure would hide exactly the population he
+        # asked to watch. Reported as three lines: all, ITF, non-ITF.
+        def _cut(pred):
+            fids = [fid for fid in by_fix if pred(fid)]
+            m = [by_fix[fid]['conflict_minutes'] for fid in fids
+                 if by_fix[fid]['conflict_minutes'] is not None]
+            b = sum(1 for fid in fids if fid in flips
+                    and (fx_index.get(fid) or {}).get('trueStart'))
+            return fids, m, b
+
+        def _is_itf(fid):
+            return ((fx_index.get(fid) or {}).get('cat') or '') in ITF_LEVELS
+
+        print('\ncross-check (ruling item 2; ITF split per ruling 10:45Z item 3)')
+        cross = {}
+        for name, pred in (('all', lambda f: True),
+                           ('ITF', _is_itf),
+                           ('non-ITF', lambda f: not _is_itf(f))):
+            fids, confl, both = _cut(pred)
+            line = (f'  {name:<8} {len(fids):>6} fixtures, {both:>5} with BOTH '
+                    f'trueStartTime and a live-flip bound; beyond +-5 min: '
+                    f'{len(confl)}')
+            if confl:
+                early = sum(1 for m in confl if m < 0)
+                line += (f' (oddspapi earlier {early}, flip earlier '
+                         f'{len(confl)-early}); median '
+                         f'{statistics.median(confl):+.1f} min, '
+                         f'min {min(confl):+.1f}, max {max(confl):+.1f}')
+                if len(confl) < MIN_N:
+                    line += f'  <-- n<{MIN_N}'
+            elif not both:
+                line += ' — no fixture has both sources yet'
+            print(line)
+            cross[name] = {'fixtures': len(fids), 'bothSources': both,
+                           'flagged': len(confl), 'minutes': confl[:200]}
+        itf_unc = sum(1 for fid in by_fix if _is_itf(fid)
+                      and by_fix[fid]['start_reject_reason']
+                      == 'itf_uncorroborated_start')
+        print(f'  ITF dashed for want of corroboration: {itf_unc}')
+        cross['ITF']['uncorroborated'] = itf_unc
+        # Back-compatible key so anything already reading crossCheck.* keeps
+        # working; the split lives under .byLevel.
+        result['crossCheck'] = dict(cross['all'], byLevel=cross)
 
     # ----------------------------------------------------------------- write
     print(f'\ntotal summary rows: {len(all_rows)}')
