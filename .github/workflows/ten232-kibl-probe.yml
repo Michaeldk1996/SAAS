@@ -30,7 +30,7 @@ on:
         description: 'Comma-separated tests to skip (a,b,c,d)'
         default: ''
       mode:
-        description: 'probe | diag | both'
+        description: 'probe | diag | opener | both'
         default: 'probe'
 
 concurrency:
@@ -102,16 +102,26 @@ jobs:
       # The report files are the evidence, not the step summary. A prior probe
       # on this repo reported a green run through a tee'd summary while being
       # dead; committed artefacts can be read back and checked for content.
+      # Are the three state flags a property of the price, or an echo of the
+      # request? Identical row counts came back under contradictory filters.
+      - name: Opener / state-flag check
+        if: inputs.mode == 'opener' || inputs.mode == 'both'
+        env:
+          KIBL_USERNAME: ${{ secrets.KIBL_USERNAME }}
+          KIBL_PASSWORD: ${{ secrets.KIBL_PASSWORD }}
+          KIBL_CLIENT_ID: ${{ secrets.KIBL_CLIENT_ID }}
+        run: python3 ten232-kibl-opener-check.py
+
       - name: Commit the probe output
         if: always()
         run: |
-          if [ ! -f ten232-kibl-probe.json ] && [ ! -f ten232-kibl-markets-diag.json ]; then
+          if ! ls ten232-kibl-*.json >/dev/null 2>&1; then
             echo "::error::probe produced no output file"
             exit 1
           fi
           git config user.name "bsp-bot"
           git config user.email "bsp-bot@users.noreply.github.com"
-          for f in ten232-kibl-probe.json TEN232-KIBL-PROBE.md ten232-kibl-markets-diag.json; do
+          for f in ten232-kibl-probe.json TEN232-KIBL-PROBE.md ten232-kibl-markets-diag.json ten232-kibl-opener-check.json; do
             [ -f "$f" ] && git add -f "$f"
           done
           if git diff --cached --quiet; then
@@ -140,4 +150,5 @@ jobs:
             ten232-kibl-probe.json
             TEN232-KIBL-PROBE.md
             ten232-kibl-markets-diag.json
+            ten232-kibl-opener-check.json
           if-no-files-found: warn
