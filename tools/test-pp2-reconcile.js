@@ -1207,10 +1207,16 @@ check('cal-2 · the rendered Streaks tab carries the career count, not the archi
     const html = I.renderSeasonModal(CAL_P);
     const runs = I.calRuns(I.calSpineFiltered(CAL_P));
     assert(html.includes(`${runs.length} runs`), `the run count ${runs.length} is not painted`);
-    assert(html.includes(`Runs are counted over the career match rows`),
-      'the scope note still describes the archive');
-    assert(html.includes(`${CAL_EXPECT.grid} matches`),
-      `the scope note does not state the ${CAL_EXPECT.grid} career rows`);
+    // The footnote is now the FILE's wording (`Player Stat Boxes.dc.html`:2021)
+    // rather than the sentence the cal-2 pass wrote, so the lock moves onto the
+    // file's opening clause — and keeps asserting the CAREER count inside it,
+    // which is the fact cal-2 actually protects.
+    assert(html.includes(`Runs count all ${CAL_EXPECT.grid} matches on record`),
+      'the footnote does not carry the file wording over the career count');
+    assert(html.includes('not a tour average'),
+      'the footnote dropped the file clause that the expectations are his own rate');
+    assert(!html.includes('the archive carries no match dates'),
+      'the archive-dates clause survived, but our rows are dated');
     assert(!html.includes('priced tour archive'), 'the old archive scope sentence survived');
     console.log(`        Streaks paints ${runs.length} runs over ${CAL_EXPECT.grid} career rows`);
   } finally { Object.assign(I.state, saved); }

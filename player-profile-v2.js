@@ -285,7 +285,14 @@
     '.call:hover{background:rgba(224,97,111,0.42)!important;color:#fff!important;' +
     'box-shadow:inset 0 0 0 1px rgba(224,97,111,0.75)!important;}' +
     '.caln:hover{background:rgba(255,255,255,0.14)!important;color:#fff!important;' +
-    'box-shadow:inset 0 0 0 1px rgba(255,255,255,0.22)!important;}</style>';
+    'box-shadow:inset 0 0 0 1px rgba(255,255,255,0.22)!important;}' +
+    // §5.4 Streaks item 8 — the run timeline scrolls sideways at a FIXED bar
+    // pitch, so it needs the export's own scrollbar (Player Profile.dc.html:30:
+    // 9px, thumb rgba(255,255,255,0.13) radius 5, transparent track). The page
+    // has no global rule for it, so it lands here scoped to the one container.
+    '.pp2-xscroll::-webkit-scrollbar{width:9px;height:9px;}' +
+    '.pp2-xscroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.13);border-radius:5px;}' +
+    '.pp2-xscroll::-webkit-scrollbar-track{background:transparent;}</style>';
 
   var SPINE_SURFACES = ['hard', 'clay', 'grass'];
   var SPINE_LABEL = { hard: 'Hard', clay: 'Clay', grass: 'Grass', other: 'Unrecorded surface' };
@@ -3346,6 +3353,57 @@
   // 0 of 355 for Krumich — a Challenger-only career the ATP-main-draw archive
   // never covers, which is exactly why the yield layer has to be able to dash
   // while the grid still renders in full.
+  // ─── RULING-FREE FACT, item 26: career-history dates are TOURNAMENT-START ──
+  // dates before 2021, not match dates. Measured on Zverev's 775 rows, the
+  // weekday of `date` by season:
+  //     2016  66 of 68 Monday      2019  65 of 69 Monday
+  //     2017  72 of 79 Monday      2020  35 of 39 Monday
+  //     2018  73 of 79 Monday      2021+ uniform across all seven weekdays
+  // market-edge (Tennis-Data) carries the real match date throughout. So the
+  // exact-date tier CANNOT fire for any pre-2021 match, which is exactly the
+  // era the founder flagged: St. Petersburg 2016 reads 2016-09-19 in the spine
+  // (the Monday) against 2016-09-23 / 09-24 in the archive. The (year, event)
+  // tier then misses too because the two stores name events differently
+  // ("St. Petersburg" vs "St. Petersburg Open", "Beijing" vs "China Open",
+  // "Nice" vs "Open de Nice Cote d'Azur"), and the (year, surname) fallback is
+  // ambiguous whenever the pair met twice in a season. Hence Youzhny, Berdych,
+  // Thiem and Sock all dashed inside one seven-match run.
+  //
+  // The fix is a DATE-WINDOW tier, and it keeps §3's refusal posture: a pairing
+  // is taken only when it is unique from BOTH sides inside the window.
+  //   tier 4  +/- 7 days,  no tie-break
+  //   tier 5  +/- 14 days, ties broken on round CLASS (F / SF / QF / RR only —
+  //           numbered rounds are NOT comparable across draw sizes, R32 is the
+  //           "3rd Round" at a Masters and the "2nd Round" at a 250)
+  // Validated against market-edge's own `won` column, which the join never
+  // reads: 602 of 602 joined rows agree on the result for Zverev, 168 of 168
+  // for Martinez. Zero mismatches at any window we measured.
+  // Zverev ATP main draw inside the archive's range: 490/657 -> 602/657.
+  var JOIN_WIN_1 = 7, JOIN_WIN_2 = 14;
+  function dayNum(iso) {
+    var s = String(iso || '');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return null;
+    var t = Date.parse(s + 'T00:00:00Z');
+    return isFinite(t) ? Math.round(t / 86400000) : null;
+  }
+  /** F / SF / QF / RR, or null where the label is a numbered round. */
+  function roundClass(label) {
+    var t = String(label || '').toLowerCase().replace(/[\s-]/g, '');
+    if (t.indexOf('roundrobin') >= 0 || t === 'rr') return 'RR';
+    if (t.indexOf('semi') >= 0) return 'SF';
+    if (t.indexOf('quarter') >= 0 || t.indexOf('1/4') >= 0 || t === 'qf') return 'QF';
+    if (t === 'f' || t === 'final' || t === 'thefinal') return 'F';
+    return null;
+  }
+  function bySurname(list, nameOf) {
+    var m = {};
+    for (var i = 0; i < list.length; i++) {
+      var k = oppKeyOf(nameOf(list[i]));
+      if (!m[k]) m[k] = [];
+      m[k].push(list[i]);
+    }
+    return m;
+  }
   function calSpine(p) {
     var ch = careerHistoryFor(p.key);
     var mk = marketFor(p.key);
@@ -3372,7 +3430,13 @@
     var rfByDate = pairKeyIndex(ledgerMatches(p).filter(function (m) { return m && m.date; }),
       function (m) { return m.date + '|' + oppKeyOf(m.opponent); });
 
-    var out = rows.map(function (r) {
+    // Tiers 4 + 5 run as a pre-pass so the windows can see every spine row at
+    // once — a window tier needs both populations, not one row at a time. The
+    // result is a plain index -> market-row map consulted after the three
+    // exact-key tiers fail.
+    var win = calWindowJoin(rows, mrows);
+
+    var out = rows.map(function (r, ri) {
       var y = String(r.date).slice(0, 4);
       var kd = r.date + '|' + oppKeyOf(r.opponent);
       var ke = ekey(y, evOf(r), r.opponent);
@@ -3381,6 +3445,7 @@
       if (spByDate[kd] && mkByDate[kd]) hit = mkByDate[kd];
       else if (spByEv[ke] && mkByEv[ke]) hit = mkByEv[ke];
       else if (spByYear[ky] && mkByYear[ky]) hit = mkByYear[ky];
+      else if (win[ri]) hit = win[ri];
       var pin = (hit && hit.book === 'pinnacle' && hit.price != null &&
         hit.pl != null && isFinite(hit.pl)) ? hit : null;
       var rf = rfByDate[kd] || null;
@@ -3399,12 +3464,76 @@
         // once already, so every P&L here is accumulated in whole cents and
         // divided only at the point it is printed.
         cents: pin ? Math.round(pin.pl * 100) : null,
+        // Item 27 · WALKOVERS. career-history carries no walkover flag; the one
+        // marker it has is an EMPTY result string (" - ") where no set was ever
+        // played. recentForm does carry `walkover`, so it is preferred wherever
+        // the ±0-day join reaches (66 of Zverev's 775 rows). Either signal sets
+        // this flag; calRuns() then applies the founder's ruling — a walkover
+        // RECEIVED is a win and stays in the sequence, a walkover GIVEN is
+        // neither and is stepped over without breaking the run.
+        wo: !!(rf && rf.walkover) || !/\d/.test(String(r.result || '')),
         sheetId: r.date + '|' + (r.opponent || '')
       };
     }).sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
     calSpine._k = p.key; calSpine._ch = ch; calSpine._mk = mk; calSpine._v = out;
     return out;
   }
+  /**
+   * Tiers 4 + 5 of the odds join (item 26). Returns { spineIndex: marketRow }.
+   *
+   * Both passes require the pairing to be unique from BOTH directions inside
+   * the window, which is the same refusal §3 already imposes on the exact-key
+   * tiers — an ambiguous pair is dropped, never resolved by picking one. Pass 2
+   * widens the window and is allowed ONE tie-break: round class, and only the
+   * four labels that mean the same thing at every draw size.
+   *
+   * A market row claimed by pass 1 is off the table for pass 2 (`taken`), so
+   * the wider window cannot re-use a price that already belongs to a match.
+   */
+  function calWindowJoin(rows, mrows) {
+    var out = {}, taken = {};
+    var mBy = bySurname(mrows, function (r) { return r.opp; });
+    var sBy = bySurname(rows, function (r) { return r.opponent; });
+    function pass(win, useRound) {
+      for (var i = 0; i < rows.length; i++) {
+        if (out[i]) continue;
+        var r = rows[i], d = dayNum(r.date);
+        if (d == null) continue;
+        var sn = oppKeyOf(r.opponent);
+        var cands = (mBy[sn] || []).filter(function (m, mi) {
+          var md = dayNum(m.date);
+          return md != null && Math.abs(md - d) <= win && !taken[sn + '#' + mi];
+        });
+        if (!cands.length) continue;
+        // Back-check: which spine rows could also claim these candidates?
+        var back = (sBy[sn] || []).filter(function (q) {
+          var qd = dayNum(q.date);
+          if (qd == null) return false;
+          for (var c = 0; c < cands.length; c++) {
+            var cd = dayNum(cands[c].date);
+            if (cd != null && Math.abs(cd - qd) <= win) return true;
+          }
+          return false;
+        });
+        if (useRound && cands.length > 1) {
+          var rc = roundClass(r.round);
+          if (rc) {
+            cands = cands.filter(function (m) { return roundClass(m.round) === rc; });
+            back = back.filter(function (q) { return roundClass(q.round) === rc; });
+          }
+        }
+        if (cands.length === 1 && back.length === 1) {
+          out[i] = cands[0];
+          var list = mBy[sn] || [];
+          for (var k = 0; k < list.length; k++) if (list[k] === cands[0]) taken[sn + '#' + k] = true;
+        }
+      }
+    }
+    pass(JOIN_WIN_1, false);
+    pass(JOIN_WIN_2, true);
+    return out;
+  }
+
   // One value per key; a key seen twice is poisoned to null so neither side can
   // claim it. Same posture as pairIndex(), on a single key rather than two.
   function pairKeyIndex(list, keyOf) {
@@ -3547,15 +3676,30 @@
   }
 
   // Win/loss runs over the dated sequence, oldest first.
+  //
+  // Item 27 · the founder's walkover ruling is applied HERE and nowhere else: a
+  // walkover RECEIVED is a win (it arrives as won:true and is simply kept), a
+  // walkover GIVEN is neither a win nor a loss, so it is stepped over — the run
+  // either side of it continues rather than being broken by a match that was
+  // never played. calRunsSkipped() reports how many rows that removed, because
+  // it is the one thing that can make Sum(run lengths) differ from M.
   function calRuns(rows) {
     var runs = [];
     rows.forEach(function (r) {
+      if (r.wo && !r.won) return;                    // walkover given: neither
       var res = r.won ? 'W' : 'L';
       var last = runs[runs.length - 1];
       if (last && last.res === res) { last.len++; last.to = r.date; last.rows.push(r); }
       else runs.push({ res: res, len: 1, from: r.date, to: r.date, rows: [r] });
     });
     return runs;
+  }
+  function calRunsSkipped(rows) {
+    return rows.filter(function (r) { return r.wo && !r.won; }).length;
+  }
+  /** The rows calRuns() actually sequenced, in the same order. */
+  function calRunRows(rows) {
+    return rows.filter(function (r) { return !(r.wo && !r.won); });
   }
   // The design's Erdos-Renyi longest-run approximation, transcribed from the
   // .dc.html script (§6.4 asked for the definition behind "expected longest"
@@ -3622,7 +3766,12 @@
         return seg + calEmpty(calNoRowsWhy(state.calSurface || 'all',
           'so there is no dated row to place in a run.'));
       }
-      return seg + renderStreakTab(p) + calStreakScopeNote(p);
+      // Re-verify item 1 · the file puts the four tiles FIRST and the
+      // Calendar|Streaks control UNDER them on this tab too (Player Stat
+      // Boxes.dc.html:104 tiles, :114 control) — the same order the Calendar
+      // tab was already ruled into. `seg` is therefore handed to the renderer
+      // rather than concatenated ahead of it.
+      return renderStreakTab(p, seg);
     }
     if (!calSpine(p).length) {
       return seg + calEmpty('No dated career match rows on record, so there is no match to place in a calendar.');
@@ -3662,17 +3811,28 @@
   // the run — it is a real match and dropping it would break the sequence — and
   // dashes its two money columns. The run's P&L is therefore summed over the
   // priced rows it contains and labelled with that count.
-  function calStreakScopeNote(p) {
+  // Item 24 · the FILE's footnote (:2021), with this player's real values in the
+  // three slots. Its last clause — "the archive carries no match dates, so a
+  // run's span reads to the month" — is dropped because our rows DO carry full
+  // ISO dates; spans still read to the month, as the design draws them. The
+  // sentence that replaces it is the priced-coverage disclosure the standing
+  // rule requires, which is what makes the dashes in HOME/AWAY/P&L legible.
+  function calStreakScopeNote(p, seqN, skipped, pr) {
     var rows = calSpineFiltered(p);
-    var from = rows.length ? String(rows[0].date).slice(0, 4) : null;
-    var to = rows.length ? String(rows[rows.length - 1].date).slice(0, 4) : null;
     var priced = rows.filter(function (r) { return r.cents != null; }).length;
-    return '<div style="margin-top:16px;font-size:11px;line-height:1.65;color:#5b6880;max-width:900px;">' +
-      'Runs are counted over the career match rows ' + MIDDOT + ' ' + rows.length + ' matches ' +
-      MIDDOT + ' ' + esc(from === to ? String(from) : from + ENDASH + to) +
-      '. Same rows as the Calendar tab above. ' +
-      esc(priced + ' of ' + rows.length) + ' carry a Pinnacle closing price; an unpriced match still ' +
-      'counts in its run and dashes its price and P&amp;L.</div>';
+    var txt = 'Runs count all ' + seqN + ' matches on record regardless of whether a closing ' +
+      'price exists. Expected runs of five or more, and both expected longest figures, are ' +
+      'derived from this player’s own career win rate (' + (pr * 100).toFixed(1) + '%) and ' +
+      'match count (' + seqN + '), not a tour average. ' +
+      priced + ' of ' + rows.length + ' carry a Pinnacle closing price; an unpriced match still ' +
+      'counts in its run and dashes its price and P&L.' +
+      // Only stated when it actually happened, so the sentence can never read as
+      // boilerplate on a player it does not apply to.
+      (skipped ? ' ' + skipped + (skipped === 1 ? ' walkover' : ' walkovers') + ' given ' +
+        (skipped === 1 ? 'is' : 'are') + ' excluded from the sequence — neither a win nor a ' +
+        'loss — so the run either side of ' + (skipped === 1 ? 'it' : 'them') + ' continues.' : '');
+    return '<div style="margin-top:18px;font-size:11px;line-height:1.65;color:#5b6880;' +
+      'max-width:900px;">' + esc(txt) + '</div>';
   }
 
   // ── the four tiles (items 5-7) ───────────────────────────────────────────
@@ -4148,98 +4308,367 @@
     return out;
   }
 
-  function renderStreakTab(p) {
+  // ═══════════════════════════════════════════════════════════════════════════
+  // §5.4 STREAKS TAB — rebuilt to `Player Stat Boxes.dc.html`:104-357
+  // ═══════════════════════════════════════════════════════════════════════════
+  //
+  // README-vs-FILE differences found in §5.4 "Streaks tab", all resolved the
+  // file's way (§0: the file wins), all four reported:
+  //   a. README lists the tiles as "Longest win run, Longest loss run, Current,
+  //      …". The file's strip (:2001-2006) is Runs of 5+ / Longest win run /
+  //      Longest loss run / Expected longest. There is no "Current" tile.
+  //   b. README's run-detail title is "W5 · Barcelona → Madrid". The file
+  //      (:1942) builds "Winning run · 10 matches" / "Losing run · N matches".
+  //   c. README's baseline row reads "All matches". The file (:2014) writes
+  //      "baseline".
+  //   d. README puts the Calendar|Streaks control at the "Top". The file puts
+  //      the four tiles above it (:104 vs :114).
+  // One founder-vs-file difference, also resolved the file's way: the tile sub
+  // line is asked for in #5b6880 and the file (:109) sets `font-size:10.5px;
+  // color:#4b5672` with no font-family, i.e. Hanken at #4b5672.
+
+  var STREAK_MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  /**
+   * Item 5 · a run's span ALWAYS carries its year and reads to the month, the
+   * file's `span()` (:1865) and `sp` (:1938). The two differ only in spacing
+   * around the dash — the tile is tight ("Jul–Sep 2018"), the detail eyebrow is
+   * spaced ("JUL – SEP 2018") — so one formatter with a flag, not two.
+   */
+  function runSpan(r, spaced) {
+    if (!r) return DASH;
+    var a = String(r.from), b = String(r.to);
+    var m1 = STREAK_MON[+a.slice(5, 7) - 1], y1 = a.slice(0, 4);
+    var m2 = STREAK_MON[+b.slice(5, 7) - 1], y2 = b.slice(0, 4);
+    var d = spaced ? ' ' + ENDASH + ' ' : ENDASH;
+    if (y1 === y2) return (m1 === m2 ? m1 : m1 + d + m2) + ' ' + y1;
+    return m1 + ' ' + y1 + d + m2 + ' ' + y2;
+  }
+
+  // Items 2-4 · the file's tile (:106-110): a bordered box, centred, gap 8px,
+  // a WHITE 26px value whatever the sign (no green/red on this tab), and a sub
+  // in the page font at 10.5px/#4b5672 rather than mono.
+  function streakTile(cap, value, sub) {
+    return '<div style="background:#0a0d14;border:1px solid rgba(255,255,255,0.09);' +
+      'border-radius:12px;padding:15px 16px;display:flex;flex-direction:column;' +
+      'align-items:center;text-align:center;gap:8px;min-width:0;box-sizing:border-box;">' +
+      '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
+        'letter-spacing:0.14em;text-transform:uppercase;color:#5b6880;">' + esc(cap) + '</span>' +
+      '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:26px;font-weight:700;' +
+        'line-height:1;color:' + (value === DASH ? DASH_COLOUR : '#fff') + ';">' + esc(value) + '</span>' +
+      '<span style="font-size:10.5px;color:#4b5672;">' + esc(sub) + '</span></div>';
+  }
+
+  // ── items 19-23 · WHAT FOLLOWS A RUN ─────────────────────────────────────
+  //
+  // The file's b2 block is the ONE part of this tab whose figures are marked
+  // "placeholder figures for the design pass — see report" (:1983). Its note
+  // (:2015) is the whole specification, and it is quoted here rather than
+  // paraphrased:
+  //
+  //   "State is evaluated on the match immediately prior. A five-match win run
+  //    contributes three observations to 'after W3+'. Record covers all 678
+  //    matches; yield covers priced matches only, so the two denominators
+  //    differ."
+  //
+  // Read literally, the observation is the NEXT match and the state is how many
+  // consecutive same-result matches preceded it. Walk W W W W W: the 2nd match
+  // is observed after W1, the 3rd after W2, the 4th after W3+, the 5th after
+  // W4 = W3+, and the match that ended the run after W5 = W3+. Three in W3+ —
+  // the sentence is a test of the shape, and this implementation passes it.
+  var FOLLOW_STATES = ['W1', 'W2', 'W3+', 'L1', 'L2', 'L3+'];
+  function followStats(rows) {
+    var seq = calRunRows(rows);
+    var acc = {};
+    FOLLOW_STATES.forEach(function (s) { acc[s] = { w: 0, l: 0, cents: 0, priced: 0 }; });
+    var base = { w: 0, l: 0, cents: 0, priced: 0 };
+    var res = null, len = 0;
+    for (var i = 0; i < seq.length; i++) {
+      var m = seq[i];
+      if (i > 0) {
+        var b = acc[res + (len >= 3 ? '3+' : String(len))];
+        if (b) {
+          if (m.won) b.w++; else b.l++;
+          if (m.cents != null) { b.cents += m.cents; b.priced++; }
+        }
+      }
+      if (m.won) base.w++; else base.l++;
+      if (m.cents != null) { base.cents += m.cents; base.priced++; }
+      var r = m.won ? 'W' : 'L';
+      if (r === res) len++; else { res = r; len = 1; }
+    }
+    return { rows: acc, base: base };
+  }
+  // The file's gate() (:1979-1982), applied per column against its OWN
+  // denominator: full figure at n>=10, the same figure plus a "*" at 5-9, the
+  // figure suppressed under 5 (the record beside it still carries the W-L), a
+  // dash at 0.
+  function followGate(k) {
+    if (!k) return { show: 'dash', mark: '' };
+    if (k >= 10) return { show: 'full', mark: '' };
+    if (k >= 5) return { show: 'full', mark: '*' };
+    return { show: 'hide', mark: '' };
+  }
+  /** cents/priced IS the percentage yield: 100 cents = 1 unit = 100% of stake. */
+  function followYield(b) { return b.priced ? b.cents / b.priced : null; }
+
+  function renderFollowsCard(rows, n) {
+    var f = followStats(rows);
+    var baseY = followYield(f.base);
+    var HEAD = 'font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
+      'letter-spacing:0.2em;text-transform:uppercase;color:#3f4860;padding-bottom:9px;';
+    var TRACK = 'display:grid;grid-template-columns:118px 176px minmax(56px,0.6fr) ' +
+      'minmax(76px,1fr) minmax(86px,1fr) minmax(72px,0.8fr);gap:0 16px;width:100%;align-items:stretch;';
+    var MONO = 'font-family:\'IBM Plex Mono\',monospace;';
+    var RULE = 'border-top:1px solid rgba(255,255,255,0.05);';
+    var BRULE = 'border-top:1px solid rgba(255,255,255,0.09);';
+    var head = ['State', 'Next match', 'n', 'Yield', 'Vs baseline', 'n priced']
+      .map(function (h, i) {
+        return '<span style="' + HEAD + (i >= 2 ? 'text-align:right;' : '') + '">' + esc(h) + '</span>';
+      }).join('');
+
+    var body = FOLLOW_STATES.map(function (id) {
+      var b = f.rows[id];
+      var nAll = b.w + b.l;
+      var g = followGate(nAll);
+      var y = followYield(b), yg = followGate(b.priced);
+      var vsOk = b.priced >= 5 && y != null && baseY != null;
+      var vs = vsOk ? y - baseY : null;
+      var rate = g.show === 'full' ? (b.w / nAll * 100).toFixed(1) + '%'
+        : g.show === 'dash' ? DASH : '';
+      var yTxt = yg.show === 'full' && y != null ? signed(y, 1, '%')
+        : yg.show === 'dash' ? DASH : '';
+      var yCol = yg.show === 'full' && y != null
+        ? (y > 0 ? '#3dd68c' : y < 0 ? '#e0616f' : '#8b96b5') : DASH_COLOUR;
+      return '<span style="display:flex;align-items:center;font-size:15px;font-weight:800;' +
+          'letter-spacing:-0.015em;color:#e7e9ee;padding:11px 0;' + RULE + '">after ' + esc(id) + '</span>' +
+        '<span style="display:flex;flex-direction:column;gap:4px;justify-content:center;padding:11px 0;' + RULE + '">' +
+          '<span style="display:flex;align-items:baseline;gap:8px;">' +
+            '<span style="' + MONO + 'font-size:11px;color:#8b96b5;">' +
+              esc(nAll ? 'W' + b.w + ENDASH + 'L' + b.l : DASH) + '</span>' +
+            '<span style="' + MONO + 'font-size:13px;color:' +
+              (g.show === 'full' ? '#e7e9ee' : DASH_COLOUR) + ';">' + esc(rate) + '</span>' +
+            '<span style="' + MONO + 'font-size:9px;color:#4b5672;">' + g.mark + '</span></span>' +
+          '<span style="display:flex;height:5px;border-radius:2px;overflow:hidden;' +
+            'background:rgba(224,97,111,0.28);">' +
+            '<span style="width:' + (nAll ? (b.w / nAll * 100).toFixed(1) : 0) + '%;' +
+            'background:rgba(61,214,140,0.55);"></span></span></span>' +
+        '<span style="display:flex;align-items:center;justify-content:flex-end;' + MONO +
+          'font-size:11px;color:#5b6880;padding:11px 0;' + RULE + '">' + nAll + '</span>' +
+        '<span style="display:flex;align-items:baseline;justify-content:flex-end;gap:3px;padding:11px 0;' + RULE + '">' +
+          '<span style="' + MONO + 'font-size:12px;color:' + yCol + ';">' + esc(yTxt) + '</span>' +
+          '<span style="' + MONO + 'font-size:9px;color:#4b5672;">' + yg.mark + '</span></span>' +
+        '<span style="display:flex;align-items:center;justify-content:flex-end;' + MONO +
+          'font-size:17px;font-weight:700;color:' +
+          (vsOk ? (vs > 0 ? '#3dd68c' : vs < 0 ? '#e0616f' : '#8b96b5') : DASH_COLOUR) +
+          ';padding:11px 0;' + RULE + '">' + (vsOk ? esc(signed(vs, 1, 'pp')) : DASH) + '</span>' +
+        '<span style="display:flex;align-items:center;justify-content:flex-end;' + MONO +
+          'font-size:11px;color:#5b6880;padding:11px 0;' + RULE + '">' + b.priced + '</span>';
+    }).join('');
+
+    var bn = f.base.w + f.base.l;
+    var baseRow =
+      '<span style="display:flex;align-items:center;font-size:15px;font-weight:800;' +
+        'letter-spacing:-0.015em;color:#8b96b5;padding:11px 0;' + BRULE + '">baseline</span>' +
+      '<span style="display:flex;align-items:baseline;gap:8px;padding:11px 0;' + BRULE + '">' +
+        '<span style="' + MONO + 'font-size:11.5px;color:#8b96b5;">' +
+          esc(bn ? 'W' + f.base.w + ENDASH + 'L' + f.base.l : DASH) + '</span>' +
+        '<span style="' + MONO + 'font-size:11px;color:#8b96b5;">' +
+          esc(bn ? (f.base.w / bn * 100).toFixed(1) + '%' : DASH) + '</span></span>' +
+      '<span style="display:flex;align-items:center;justify-content:flex-end;' + MONO +
+        'font-size:11px;color:#5b6880;padding:7px 0;' + BRULE + '">' + bn + '</span>' +
+      '<span style="display:flex;align-items:center;justify-content:flex-end;' + MONO +
+        'font-size:11px;color:#8b96b5;padding:7px 0;' + BRULE + '">' +
+        (baseY == null ? DASH : esc(signed(baseY, 1, '%'))) + '</span>' +
+      '<span style="display:flex;align-items:center;justify-content:flex-end;' + MONO +
+        'font-size:11px;color:#4b5672;padding:7px 0;' + BRULE + '">' + DASH + '</span>' +
+      '<span style="display:flex;align-items:center;justify-content:flex-end;' + MONO +
+        'font-size:11px;color:#5b6880;padding:7px 0;' + BRULE + '">' + f.base.priced + '</span>';
+
+    // Item 23 · the file's own note, with this player's real counts in it.
+    var note = 'State is evaluated on the match immediately prior. A five-match win run ' +
+      'contributes three observations to ' + '“after W3+”' + '. Record covers all ' + n +
+      ' matches; yield covers the ' + f.base.priced + ' priced matches only, so the two ' +
+      'denominators differ.';
+
+    return '<div style="margin-top:26px;display:grid;grid-template-columns:minmax(0,1fr);gap:14px;' +
+      'align-items:stretch;"><div style="background:#0a0d14;border:1px solid rgba(255,255,255,0.09);' +
+      'border-radius:12px;padding:16px 18px;display:flex;flex-direction:column;min-width:0;' +
+      'box-sizing:border-box;">' +
+      '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
+        'letter-spacing:0.14em;text-transform:uppercase;color:#5b6880;margin-bottom:10px;">' +
+        'What follows a run ' + MIDDOT + ' career</div>' +
+      '<div style="' + TRACK + '">' + head + body + baseRow + '</div>' +
+      '<div style="margin-top:auto;padding-top:12px;font-size:11px;line-height:1.65;color:#5b6880;">' +
+        esc(note) + '</div></div></div>';
+  }
+
+  function renderStreakTab(p, seg) {
     // Ruling cal-2: the CAREER spine, the same rows the Calendar tab counts.
+    // Item 25 · M is calSpineFiltered().length for the tiles, the timeline, the
+    // footnote AND the modal subtitle (modalSubtitle 'season' reads calScope(),
+    // which is the same array). The 819 the founder saw is `careerByYear`, a
+    // different store that the subtitle stopped reading in the Calendar pass —
+    // it is not a second M, and nothing on this tab counts it.
     var rows = calSpineFiltered(p);
     var runs = calRuns(rows);
+    var skipped = calRunsSkipped(rows);
+    var seqN = rows.length - skipped;              // Sum(run lengths), by construction
     var n = rows.length;
-    var wins = rows.filter(function (r) { return r.won; }).length;
-    var pr = n ? wins / n : 0;
+    var wins = calRunRows(rows).filter(function (r) { return r.won; }).length;
+    var pr = seqN ? wins / seqN : 0;
     var longestW = runs.filter(function (r) { return r.res === 'W'; })
       .sort(function (a, b) { return b.len - a.len; })[0] || null;
     var longestL = runs.filter(function (r) { return r.res === 'L'; })
       .sort(function (a, b) { return b.len - a.len; })[0] || null;
     var obs5 = runs.filter(function (r) { return r.len >= 5; }).length;
-    var exp5 = expectedRuns5(n, pr);
-    var expW = expectedLongest(n, pr);
-    function span(r) {
-      if (!r) return DASH;
-      return fmtDayMonth(r.from) + (r.from === r.to ? '' : ' ' + ENDASH + ' ' + fmtDayMonth(r.to));
-    }
-    var tiles = '<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:16px 0 18px;">' +
-      calTile('Runs of 5+', String(obs5),
-        exp5 == null ? runs.length + ' runs' : 'expected ' + exp5 + ' ' + MIDDOT + ' ' + runs.length + ' runs', null) +
-      calTile('Longest win run', longestW ? String(longestW.len) : DASH, span(longestW), longestW ? '#3dd68c' : null) +
-      calTile('Longest loss run', longestL ? String(longestL.len) : DASH, span(longestL), longestL ? '#e0616f' : null) +
-      calTile('Expected longest', expW == null ? DASH : String(expW),
-        expW == null ? 'undefined at this win rate'
-          : 'at ' + (pr * 100).toFixed(1) + '% over ' + n + ' matches', null) + '</div>';
+    // Item 28 · every expected figure comes from the file's own script, quoted
+    // in expectedRuns5()/expectedLongest() above, over THIS player's rate and
+    // match count — never a tour average. The loss-run expectation is the same
+    // Erdos-Renyi form with p and (1-p) exchanged (:1877-1878).
+    var exp5 = expectedRuns5(seqN, pr);
+    var expW = expectedLongest(seqN, pr);
+    var expL = expectedLongest(seqN, 1 - pr);
 
+    var tiles = '<div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;' +
+      'margin-bottom:20px;">' +
+      streakTile('Runs of 5+', String(obs5),
+        (exp5 == null ? '' : 'expected ' + exp5 + ' ' + MIDDOT + ' ') + runs.length + ' runs') +
+      streakTile('Longest win run', longestW ? String(longestW.len) : DASH, runSpan(longestW, false)) +
+      streakTile('Longest loss run', longestL ? String(longestL.len) : DASH,
+        longestL ? (expL == null ? '' : 'expected ' + expL + ' ' + MIDDOT + ' ') + runSpan(longestL, false) : DASH) +
+      streakTile('Expected longest', expW == null ? DASH : String(expW),
+        expW == null ? 'undefined at this win rate'
+          : 'at ' + (pr * 100).toFixed(1) + '% over ' + seqN + ' matches') + '</div>';
+
+    // ── items 6-11 · the run timeline ────────────────────────────────────────
+    // One chart around ONE mid rule (:263-272): the container is 140px with the
+    // rule absolutely at top:50%, and each bar is a 6px column of three spans
+    // whose heights place it above or below 68px. The previous build used
+    // justify-content, which pinned win bars to the container floor instead of
+    // the rule and split the chart into two disconnected strips.
     var maxRun = runs.reduce(function (a, x) { return Math.max(a, x.len); }, 1);
+    var RW = 7;                                     // 6px bar + 1px gap (:1894)
     var bars = runs.map(function (x, i) {
       var hh = Math.max(3, Math.round(x.len / maxRun * 68));
       var on = state.calRun === i;
       var up = x.res === 'W';
-      return '<div data-pp2="cal-run" data-v="' + i + '" title="' + esc(x.res + x.len) + '" ' +
-        'style="width:6px;margin-right:1px;height:140px;display:flex;flex-direction:column;' +
-        'justify-content:' + (up ? 'flex-end' : 'flex-start') + ';cursor:pointer;flex:0 0 auto;">' +
-        (up ? '<div style="height:' + (68 - hh) + 'px;"></div>' : '<div style="height:68px;"></div>') +
-        '<div style="height:' + hh + 'px;background:' +
-          (up ? (on ? '#3dd68c' : 'rgba(61,214,140,0.62)') : (on ? '#e0616f' : 'rgba(224,97,111,0.62)')) +
-          ';"></div></div>';
+      var col = up ? (on ? '#3dd68c' : 'rgba(61,214,140,0.62)')
+        : (on ? '#e0616f' : 'rgba(224,97,111,0.55)');
+      return '<span data-pp2="cal-run" data-v="' + i + '" title="' + esc(x.res + x.len) + '" ' +
+        'style="width:6px;flex:none;height:100%;display:flex;flex-direction:column;cursor:pointer;">' +
+        '<span style="display:block;height:' + (up ? (68 - hh) : 68) + 'px;"></span>' +
+        '<span style="display:block;height:' + hh + 'px;background:' + col + ';border-radius:1px;' +
+          'transition:background .14s ease;"></span>' +
+        '<span style="display:block;height:' + (up ? 68 : (68 - hh)) + 'px;"></span></span>';
+    }).join('');
+    // Item 9 · year ticks, one per season, each as wide as the runs that STARTED
+    // in it (:1895-1896) so the tick lines up with the first bar of that year.
+    var yrOrder = [], yrCount = {};
+    runs.forEach(function (x) {
+      var y = String(x.from).slice(0, 4);
+      if (!yrCount[y]) { yrCount[y] = 0; yrOrder.push(y); }
+      yrCount[y]++;
+    });
+    var ticks = yrOrder.map(function (y) {
+      return '<span style="width:' + (yrCount[y] * RW) + 'px;flex:none;box-sizing:border-box;' +
+        'border-left:1px solid rgba(255,255,255,0.09);font-family:\'IBM Plex Mono\',monospace;' +
+        'font-size:9.5px;font-weight:600;letter-spacing:0.12em;color:#5b6880;padding:6px 0 0 5px;">' +
+        esc(y) + '</span>';
     }).join('');
 
-    var detail = '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;letter-spacing:0.1em;' +
-      'text-transform:uppercase;color:#4b5672;margin-top:10px;">Click a run for its matches</div>';
+    var timeline =
+      '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:26px 0 12px;">' +
+        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
+          'letter-spacing:0.14em;text-transform:uppercase;color:#5b6880;">Run timeline ' +
+          MIDDOT + ' career order</span>' +
+        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;color:#4b5672;">' +
+          runs.length + ' runs ' + MIDDOT + ' longest ' + maxRun + '</span></div>' +
+      '<div class="pp2-xscroll" style="overflow-x:auto;padding-bottom:4px;">' +
+        '<div style="width:' + (runs.length * RW - 1) + 'px;">' +
+          '<div style="position:relative;display:flex;align-items:center;gap:1px;height:140px;">' +
+            '<span style="position:absolute;left:0;right:0;top:50%;height:1px;' +
+              'background:rgba(255,255,255,0.12);"></span>' + bars + '</div>' +
+          '<div style="display:flex;">' + ticks + '</div></div></div>';
+
+    // ── items 12-18 · the run detail ────────────────────────────────────────
+    var detail = '<div style="margin:12px 0 0;font-family:\'IBM Plex Mono\',monospace;font-size:10px;' +
+      'letter-spacing:0.1em;text-transform:uppercase;color:#4b5672;">Click a run for its matches</div>';
     var sel = runs[state.calRun];
     if (sel) {
       // Integer cents, per the money rule the rest of this modal already follows
-      // — a float sum re-ordered moved a painted card by 0.01u once already. The
-      // run's P&L covers only the PRICED rows inside it (cal-2), so the count is
-      // printed beside it rather than letting a 3-row sum read as a 7-row run.
+      // — a float sum re-ordered moved a painted card by 0.01u once already.
       var spc = 0, spn = 0;
       sel.rows.forEach(function (r) { if (r.cents != null) { spc += r.cents; spn++; } });
-      var spl = spc / 100;
-      detail = '<div style="background:#06070a;border:1px solid rgba(91,155,255,0.3);border-radius:10px;' +
-        'margin-top:12px;padding:12px 14px;">' +
-        '<div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px;">' +
-          '<div style="font-size:14px;font-weight:700;">' + esc(sel.res + sel.len) + ' ' + MIDDOT + ' ' +
-            esc(sel.rows[0].event || DASH) +
-            (sel.rows.length > 1 ? ' &rarr; ' + esc(sel.rows[sel.rows.length - 1].event || DASH) : '') +
-            ' <span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:#5b6880;' +
-            'font-weight:400;">' + esc(span(sel)) + '</span></div>' +
-          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:12.5px;font-weight:700;color:' +
+      // Item 14 · units AND yield AND the priced count, all three (:1944). Yield
+      // is units/priced, the same cents-per-priced-match figure the Calendar
+      // drill prints, so the two panels cannot drift apart.
+      var syld = spn ? spc / spn : null;
+      var plLine = spn
+        ? signed(spc / 100, 2) + 'u ' + MIDDOT + ' ' + signed(syld, 1, '%') + ' ' + MIDDOT + ' ' +
+          spn + ' priced'
+        : DASH + ' ' + MIDDOT + ' no priced match in this run';
+      var TRACK = 'display:grid;grid-template-columns:14px 36px minmax(0,1.1fr) minmax(0,1fr) ' +
+        '104px 48px 48px 56px;gap:0 14px;align-items:center;';
+      var HEAD = 'font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
+        'letter-spacing:0.14em;text-transform:uppercase;color:#5b6880;padding-bottom:7px;';
+      // The OPPONENT cell is the one column the file leaves in the page font
+      // (:300) — every other cell is mono — so the shared part stops short of
+      // font-family and each cell adds its own.
+      var CELL = 'padding:6px 0;border-top:1px solid rgba(255,255,255,0.05);';
+      var MONOF = 'font-family:\'IBM Plex Mono\',monospace;';
+      var colHead = '<span></span>' +
+        '<span style="' + HEAD + '">Rd</span>' +
+        '<span style="' + HEAD + '">Event</span>' +
+        '<span style="' + HEAD + '">Opponent</span>' +
+        '<span style="' + HEAD + '">Score</span>' +
+        '<span style="' + HEAD + 'text-align:right;">Home</span>' +
+        '<span style="' + HEAD + 'text-align:right;">Away</span>' +
+        '<span style="' + HEAD + 'text-align:right;">P&amp;L</span>';
+      // Item 18 · EVERY cell of a row carries the sheet hook, because the grid
+      // is one flat track (the file has no row wrapper here, :296-305) and a
+      // hook on a wrapper that does not exist would open nothing.
+      var body = sel.rows.map(function (r) {
+        var m = sheetHook(r.sheetId) + 'style="' + sheetCursor() + CELL + MONOF;
+        var t = sheetHook(r.sheetId) + 'style="' + sheetCursor() + CELL;
+        var plCol = r.cents == null ? DASH_COLOUR
+          : r.cents > 0 ? '#3dd68c' : r.cents < 0 ? '#e0616f' : '#8b96b5';
+        return '<span ' + m + 'font-size:11px;font-weight:700;color:' +
+            (r.won ? '#3dd68c' : '#e0616f') + ';">' + (r.won ? 'W' : 'L') + '</span>' +
+          '<span ' + m + 'font-size:10.5px;color:#5b6880;">' + esc(r.round || DASH) + '</span>' +
+          '<span ' + m + 'font-size:11px;color:#8a93a6;overflow:hidden;text-overflow:ellipsis;' +
+            'white-space:nowrap;">' + esc(r.event || DASH) + '</span>' +
+          '<span ' + t + 'font-size:12.5px;color:#e7e9ee;overflow:hidden;' +
+            'text-overflow:ellipsis;white-space:nowrap;">' +
+            esc(r.opp ? surnameFirst(r.opp) : DASH) + '</span>' +
+          '<span ' + m + 'font-size:11.5px;color:#8b96b5;white-space:nowrap;">' +
+            esc(r.score || DASH) + '</span>' +
+          '<span ' + m + 'font-size:11.5px;font-weight:700;text-align:right;color:' +
+            (r.price == null ? DASH_COLOUR : '#e7e9ee') + ';">' +
+            (r.price == null ? DASH : r.price.toFixed(2)) + '</span>' +
+          '<span ' + m + 'font-size:11.5px;text-align:right;color:' +
+            (r.oppPrice == null ? DASH_COLOUR : '#5b6880') + ';">' +
+            (r.oppPrice == null ? DASH : r.oppPrice.toFixed(2)) + '</span>' +
+          '<span ' + m + 'font-size:11.5px;text-align:right;color:' + plCol + ';">' +
+            (r.cents == null ? DASH : signed(r.cents / 100, 2)) + '</span>';
+      }).join('');
+      detail = '<div style="margin:12px 0 0;box-sizing:border-box;background:#06070a;' +
+        'border:1px solid rgba(91,155,255,0.3);border-radius:10px;padding:12px 14px;">' +
+        '<div style="display:flex;align-items:baseline;gap:11px;margin-bottom:2px;">' +
+          '<span style="font-size:12.5px;font-weight:700;">' +
+            esc((sel.res === 'W' ? 'Winning run' : 'Losing run') + ' ' + MIDDOT + ' ' + sel.len +
+              (sel.len === 1 ? ' match' : ' matches')) + '</span>' +
+          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;font-weight:600;' +
+            'letter-spacing:0.12em;text-transform:uppercase;color:#5b6880;">' +
+            esc(runSpan(sel, true)) + '</span>' +
+          '<span style="margin-left:auto;font-family:\'IBM Plex Mono\',monospace;font-size:15px;' +
+            'font-weight:700;text-align:right;white-space:nowrap;color:' +
             (spn === 0 ? DASH_COLOUR : spc > 0 ? '#3dd68c' : spc < 0 ? '#e0616f' : '#8b96b5') + ';">' +
-            (spn === 0 ? DASH : signed(spl, 2, 'u')) +
-            '<span style="font-weight:400;color:#4b5672;font-size:11px;"> ' + MIDDOT + ' ' +
-            esc(spn + ' of ' + sel.rows.length + ' priced') + '</span></div></div>' +
-        sel.rows.map(function (r) {
-          return '<div style="display:grid;grid-template-columns:14px 36px minmax(0,1.1fr) minmax(0,1fr) 56px 56px;' +
-            'gap:0 14px;align-items:center;padding:4px 0;">' +
-            '<div style="width:7px;height:7px;border-radius:50%;background:' +
-              (r.won ? '#3dd68c' : '#e0616f') + ';"></div>' +
-            '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:#5b6880;">' +
-              esc(r.round || DASH) + '</div>' +
-            '<div style="font-size:12.5px;">' + esc(r.event || DASH) + '</div>' +
-            '<div style="font-size:12.5px;color:#8b96b5;">' + esc(r.opp || DASH) + '</div>' +
-            '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;text-align:right;color:' +
-              (r.price != null ? '#8b96b5' : DASH_COLOUR) + ';">' +
-              (r.price != null ? r.price.toFixed(2) : DASH) + '</div>' +
-            '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;text-align:right;color:' +
-              (r.cents == null ? DASH_COLOUR : r.cents > 0 ? '#3dd68c' : r.cents < 0 ? '#e0616f' : '#8b96b5') + ';">' +
-              (r.cents != null ? signed(r.cents / 100, 2, 'u') : DASH) + '</div></div>';
-        }).join('') + '</div>';
+            esc(plLine) + '</span></div>' +
+        '<div style="' + TRACK + 'margin-top:10px;">' + colHead + body + '</div></div>';
     }
 
-    return tiles +
-      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">' +
-        eyebrow('Run timeline ' + MIDDOT + ' career order') +
-        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:#5b6880;">' +
-          runs.length + ' runs ' + MIDDOT + ' longest ' + maxRun + '</div></div>' +
-      '<div style="overflow-x:auto;"><div style="display:flex;align-items:stretch;' +
-        'background:linear-gradient(to bottom,transparent 68px,rgba(255,255,255,0.09) 68px,' +
-        'rgba(255,255,255,0.09) 69px,transparent 69px);">' + bars + '</div></div>' +
-      detail;
+    return tiles + seg + timeline + detail + renderFollowsCard(rows, seqN) +
+      calStreakScopeNote(p, seqN, skipped, pr);
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -5594,6 +6023,16 @@
       calFindings: calFindings,
       calSurfaceSpans: calSurfaceSpans,
       calRuns: calRuns,
+      calRunRows: calRunRows,
+      calRunsSkipped: calRunsSkipped,
+      calWindowJoin: calWindowJoin,
+      roundClass: roundClass,
+      runSpan: runSpan,
+      followStats: followStats,
+      followGate: followGate,
+      followYield: followYield,
+      renderStreakTab: renderStreakTab,
+      renderFollowsCard: renderFollowsCard,
       calScope: calScope,
       renderCalDrill: renderCalDrill,
       renderCalFooter: renderCalFooter,
