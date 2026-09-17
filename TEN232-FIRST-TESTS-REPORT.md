@@ -92,9 +92,11 @@ combinations exist across every fixture:
 - Spread / Full Game (games handicap)
 - Total / Full Game (total games)
 
-There is no `Sets` segment in anything we receive. Your specific question was
-whether Bet105 prices the set handicap that bet365-on-Oddspapi does not: **for
-this book, no.** Nor total sets, nor set betting.
+The `Sets` segment **does** exist in Kibl's reference taxonomy (segment_id 54,
+plus First–Fifth Set) — it is *our book* that returns zero rows on it, which is
+the sharper way to put the question to Bet105. Your specific question was whether
+Bet105 prices the set handicap that bet365-on-Oddspapi does not: **for this book,
+no.** Nor total sets, nor set betting.
 
 ---
 
@@ -116,14 +118,19 @@ this book, no.** Nor total sets, nor set betting.
 | 180 | 30 | **0** | 0 |
 | 365 | 49 | **0** | 0 |
 
-Fixtures survive a year; **prices survive about 30 days**. Between 30 and 60 days
-it goes to zero.
+Fixtures survive a year; **prices survive at least 30 days**. The cutoff is
+somewhere in (30, 60] — I did not bisect it, so "at least 30", not "about 30".
 
-Two caveats, both important. The backward windows return **only the current
-(i.e. final) price** — no openers. And `distinct inserted_on` equals the row
-count exactly (356 stamps for 356 rows), which is what you would see if each line
-has one surviving row, not a tick series. So this is a **closing-price archive**
-for finished matches, not a movement history.
+⚠️ **Correction.** An earlier version of this report said the backward windows
+return only the final price with no openers. **That was never measured** — the
+backward-reach test ran before the state model was corrected, so it pulled on the
+`is_current` axis (which does nothing) and `is_opener` was never sent for a single
+historical window. Status: **unknown**. The backfill now running does send it, so
+the answer will come from its captured state mix rather than from an assumption.
+
+What can be said: `distinct inserted_on` equals the row count exactly (356 stamps
+for 356 rows), which is what you would see if each line has one surviving row
+rather than a tick series.
 
 That window slides forward every day, so I have started a backfill over it — it
 is the one piece of history here that is recoverable at all, and only this week.
@@ -141,7 +148,9 @@ Window +3 days, `betting_type_id=1`, `feed_source_id=43`:
 | ITF Men (962) | 37 | 0 | 0.0% | 0 | — | — |
 
 n is small for ATP — 3 fixtures is below any threshold worth trusting, flagged
-rather than dressed up. Challenger is the real coverage story: 78.3% of fixtures
+rather than dressed up. Worse, the three "ATP" fixture names are Challenger-level
+pairings, so the denominator itself looks wrong: I would put **no** percentage on
+ATP yet. Challenger is the real coverage story: 78.3% of fixtures
 priced, ~3.8 lines each (moneyline + games handicap + total games).
 
 "Both sides quoted" at 50.7% on Challenger is not a coverage gap — it is the
