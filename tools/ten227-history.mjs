@@ -256,7 +256,7 @@ async function diskAllowance() {
     `/v1/projects/${REF}/billing/addons`,
   ];
   for (const path of paths) {
-    let status = null, hit = null, keys = null, err = null;
+    let status = null, hit = null, keys = null, err = null, probeExtra = null;
     try {
       const res = await fetch(`https://api.supabase.com${path}`, {
         headers: { Authorization: `Bearer ${SB_MGMT}` },
@@ -267,9 +267,16 @@ async function diskAllowance() {
         const body = JSON.parse(text || 'null');
         keys = body && typeof body === 'object' && !Array.isArray(body) ? Object.keys(body) : Array.isArray(body) ? `array[${body.length}]` : typeof body;
         hit = extractDiskBytes(body);
+        // A disk UPGRADE shows up as a selected addon, so the addon list is the
+        // evidence for "the disk is at the plan default" when no endpoint states
+        // the allowance outright. Names only — no prices, no ids.
+        const addons = body?.selected_addons;
+        if (Array.isArray(addons)) {
+          probeExtra = addons.map((a) => `${a?.type ?? '?'}:${a?.variant?.identifier ?? a?.variant?.name ?? '?'}`).join(' ');
+        }
       }
     } catch (e) { err = redact(e.message).slice(0, 120); }
-    probes.push({ path, status, top_level_keys: keys, found: hit, error: err });
+    probes.push({ path, status, top_level_keys: keys, found: hit, error: err, addons: probeExtra });
     if (hit) {
       return { bytes: hit.bytes, source: `measured:${path}#${hit.key}=${hit.raw}`, measured: true, probes };
     }
@@ -703,7 +710,8 @@ async function cmdDisk() {
   log(`  disk allowance         ${gib(allow.bytes)}   [${allow.source || 'UNMEASURED and not configured'}]`);
   for (const p of allow.probes) {
     log(`    probe ${String(p.status ?? p.error).padEnd(6)} ${p.path}` +
-        (p.found ? `  -> ${p.found.key}=${p.found.raw}` : p.top_level_keys ? `  keys: ${Array.isArray(p.top_level_keys) ? p.top_level_keys.slice(0, 10).join(',') : p.top_level_keys}` : ''));
+        (p.found ? `  -> ${p.found.key}=${p.found.raw}` : p.top_level_keys ? `  keys: ${Array.isArray(p.top_level_keys) ? p.top_level_keys.slice(0, 10).join(',') : p.top_level_keys}` : '') +
+        (p.addons ? `  addons: ${p.addons || '(none selected)'}` : ''));
   }
   log('\n== projection ==');
   log(`  stored width           ${width == null ? '—' : width + ' B/match'} (n=${out.stored_width.n}, pg_column_size)` +
