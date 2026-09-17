@@ -57,9 +57,6 @@ jobs:
           print("\nREAL MOVES (changed and prices differ):")
           print(json.dumps(sql(
               "select count(*) as real_moves from public.ten216_test_odds_changes "
-              "where change_kind='changed' and (prev_price is distinct from price))".replace("))", ")")
-              + ")" if False else
-              "select count(*) as real_moves from public.ten216_test_odds_changes "
               "where change_kind='changed' and prev_price is distinct from price")))
 
           print("\nDISTINCT QUOTES vs FIRST_SEEN ROWS (a quote first_seen twice = fabricated Open):")
