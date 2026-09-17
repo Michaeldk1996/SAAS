@@ -1,0 +1,177 @@
+{
+ "started_utc": "2026-09-17T23:27:14Z",
+ "feed_source_id": "43",
+ "base_params": {
+  "league_id": "19,537,962",
+  "feed_source_id": "43",
+  "betting_type_id": 1,
+  "start_time": "2026-09-17T23:27:14Z",
+  "end_time": "2026-09-19T23:27:14Z"
+ },
+ "variants": {
+  "unfiltered": {
+   "status": 200,
+   "rows": 108,
+   "distinct_idents": 108,
+   "states": {
+    "current": 78,
+    "opener": 30
+   },
+   "distinct_market_ids": 108,
+   "distinct_fixtures": 20
+  },
+  "is_opener_true": {
+   "status": 200,
+   "rows": 108,
+   "distinct_idents": 108,
+   "states": {
+    "opener": 108
+   },
+   "distinct_market_ids": 108,
+   "distinct_fixtures": 20
+  },
+  "is_opener_false": {
+   "status": 200,
+   "rows": 108,
+   "distinct_idents": 108,
+   "states": {
+    "opener": 108
+   },
+   "distinct_market_ids": 108,
+   "distinct_fixtures": 20
+  },
+  "is_current_true": {
+   "status": 200,
+   "rows": 108,
+   "distinct_idents": 108,
+   "states": {
+    "current": 78,
+    "opener": 30
+   },
+   "distinct_market_ids": 108,
+   "distinct_fixtures": 20
+  },
+  "is_current_false": {
+   "status": 200,
+   "rows": 108,
+   "distinct_idents": 108,
+   "states": {
+    "current": 78,
+    "opener": 30
+   },
+   "distinct_market_ids": 108,
+   "distinct_fixtures": 20
+  }
+ },
+ "comparison": {
+  "unfiltered_n": 108,
+  "opener_true_n": 108,
+  "identical_sets": false,
+  "in_opener_not_unfiltered": 78,
+  "in_unfiltered_not_opener": 78,
+  "jaccard": 0.1613,
+  "shared_rows": 30,
+  "label_flipped_on_shared_rows": 0,
+  "flip_examples": [],
+  "flip_pairs": {}
+ },
+ "verdict": "filters genuinely select different row sets; the matching counts were coincidence.",
+ "is_current_comparison": {
+  "true_n": 108,
+  "false_n": 108,
+  "identical_sets": true,
+  "jaccard": 1.0,
+  "label_flipped": 0
+ },
+ "calls": 6,
+ "call_log": [
+  {
+   "path": "/reference/sportsbooks",
+   "params": {},
+   "status": 200,
+   "bytes": 510,
+   "seconds": 0.24,
+   "rate_headers": {},
+   "rows": 1
+  },
+  {
+   "path": "/info/markets",
+   "params": {
+    "league_id": "19,537,962",
+    "feed_source_id": "43",
+    "betting_type_id": 1,
+    "start_time": "2026-09-17T23:27:14Z",
+    "end_time": "2026-09-19T23:27:14Z"
+   },
+   "status": 200,
+   "bytes": 71760,
+   "seconds": 0.21,
+   "rate_headers": {},
+   "rows": 108
+  },
+  {
+   "path": "/info/markets",
+   "params": {
+    "league_id": "19,537,962",
+    "feed_source_id": "43",
+    "betting_type_id": 1,
+    "start_time": "2026-09-17T23:27:14Z",
+    "end_time": "2026-09-19T23:27:14Z",
+    "is_opener": "true"
+   },
+   "status": 200,
+   "bytes": 71789,
+   "seconds": 0.22,
+   "rate_headers": {},
+   "rows": 108
+  },
+  {
+   "path": "/info/markets",
+   "params": {
+    "league_id": "19,537,962",
+    "feed_source_id": "43",
+    "betting_type_id": 1,
+    "start_time": "2026-09-17T23:27:14Z",
+    "end_time": "2026-09-19T23:27:14Z",
+    "is_opener": "false"
+   },
+   "status": 200,
+   "bytes": 71789,
+   "seconds": 0.22,
+   "rate_headers": {},
+   "rows": 108
+  },
+  {
+   "path": "/info/markets",
+   "params": {
+    "league_id": "19,537,962",
+    "feed_source_id": "43",
+    "betting_type_id": 1,
+    "start_time": "2026-09-17T23:27:14Z",
+    "end_time": "2026-09-19T23:27:14Z",
+    "is_current": "true"
+   },
+   "status": 200,
+   "bytes": 71760,
+   "seconds": 0.22,
+   "rate_headers": {},
+   "rows": 108
+  },
+  {
+   "path": "/info/markets",
+   "params": {
+    "league_id": "19,537,962",
+    "feed_source_id": "43",
+    "betting_type_id": 1,
+    "start_time": "2026-09-17T23:27:14Z",
+    "end_time": "2026-09-19T23:27:14Z",
+    "is_current": "false"
+   },
+   "status": 200,
+   "bytes": 71760,
+   "seconds": 0.21,
+   "rate_headers": {},
+   "rows": 108
+  }
+ ]
+}

@@ -1,8 +1,8 @@
 # TEN-232 — Kibl / Bet105 first tests (a–d)
 
-- commit `30ead4f`
-- run started `2026-09-17T23:20:58Z` UTC
-- API calls `70`, bytes down `6,904,661`, min interval `1.25s` (conservative — Kibl documents no rate limit)
+- commit `18bfa23`
+- run started `2026-09-17T23:25:30Z` UTC
+- API calls `70`, bytes down `6,904,670`, min interval `1.25s` (conservative — Kibl documents no rate limit)
 
 Report only. Nothing archived, nothing published, no site surface touched.
 
@@ -29,10 +29,10 @@ Report only. Nothing archived, nothing published, no site surface touched.
 
 | league_id | betting_type_id | book | last update | minutes ago |
 |---|---|---|---|---|
-| 19 | 1 | sports411 | 2026-09-17T23:11:27.139Z | 10 |
-| 20 | 1 | sports411 | 2026-09-17T23:20:21.123Z | 1 |
-| 537 | 1 | sports411 | 2026-09-17T23:18:41.160Z | 3 |
-| 643 | 1 | sports411 | 2026-09-17T23:12:22.394Z | 9 |
+| 19 | 1 | sports411 | 2026-09-17T23:11:27.139Z | 15 |
+| 20 | 1 | sports411 | 2026-09-17T23:25:05.741Z | 1 |
+| 537 | 1 | sports411 | 2026-09-17T23:18:41.160Z | 8 |
+| 643 | 1 | sports411 | 2026-09-17T23:12:22.394Z | 14 |
 
 A men's league absent from this table is a league nobody is pricing to us — not a quiet day.
 
@@ -95,7 +95,7 @@ A men's league absent from this table is a league nobody is pricing to us — no
 | 5 | 50 | 96 | - | - | 96 | 16 | 96 |
 | 7 | 147 | 170 | - | - | 170 | 29 | 168 |
 | 14 | 175 | 258 | - | - | 258 | 43 | 258 |
-| 30 | 162 | 356 | - | - | 356 | 64 | 356 |
+| 30 | 161 | 356 | - | - | 356 | 64 | 356 |
 | 60 | 95 | 0 | - | - | - | 0 | 0 |
 | 90 | 81 | 0 | - | - | - | 0 | 0 |
 | 180 | 30 | 0 | - | - | - | 0 | 0 |
@@ -105,7 +105,7 @@ A men's league absent from this table is a league nobody is pricing to us — no
 
 ## c. Pre-match coverage for our entitled book (men's leagues)
 
-Window `2026-09-17T23:20:58Z → 2026-09-20T23:20:58Z`, betting_type_id=1 (Prematch), feed_source_id = `43` — see section a for which book that is.
+Window `2026-09-17T23:25:30Z → 2026-09-20T23:25:30Z`, betting_type_id=1 (Prematch), feed_source_id = `43` — see section a for which book that is.
 
 | league | fixtures (n) | priced | % priced | market rows | lines/fixture mean | max | both sides % |
 |---|---|---|---|---|---|---|---|
