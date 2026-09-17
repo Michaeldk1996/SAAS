@@ -3884,18 +3884,18 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.15,
-      "p2": 4.5,
-      "bookmaker": "bet365"
+      "p1": 1.16,
+      "p2": 3.85,
+      "bookmaker": "Sbo"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.15,
-        "bookmaker": "bet365"
+        "price": 1.16,
+        "bookmaker": "Sbo"
       },
       "p2": {
-        "price": 4.5,
-        "bookmaker": "bet365"
+        "price": 3.85,
+        "bookmaker": "Sbo"
       }
     },
     "tournamentRound": null,
@@ -5972,7 +5972,28 @@
     "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/427_t-griekspoor.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/7641_n-mejia.jpg",
-    "oddsMovement": null,
+    "oddsMovement": {
+      "market": "Match Winner",
+      "capturedAt": "2026-09-17T15:45:01Z",
+      "startTime": "2026-09-18T13:10:00.000Z",
+      "fixtureId": "id1200210074792414",
+      "books": {
+        "bet365": {
+          "p1": [
+            [
+              "2026-09-17T13:07:21.265Z",
+              1.15
+            ]
+          ],
+          "p2": [
+            [
+              "2026-09-17T13:07:21.265Z",
+              4.5
+            ]
+          ]
+        }
+      }
+    },
     "bet365Now": {
       "p1": 1.15,
       "p2": 4.5,
@@ -5995,18 +6016,18 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 6.5,
-      "p2": 1.091,
-      "bookmaker": "bet365"
+      "p1": 7.5,
+      "p2": 1.1,
+      "bookmaker": "Betfair"
     },
     "bestOdds": {
       "p1": {
-        "price": 6.5,
-        "bookmaker": "bet365"
+        "price": 7.5,
+        "bookmaker": "Betfair"
       },
       "p2": {
-        "price": 1.091,
-        "bookmaker": "bet365"
+        "price": 1.1,
+        "bookmaker": "Betfair"
       }
     },
     "tournamentRound": null,
@@ -7755,7 +7776,28 @@
     "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/39675_e-moeller.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2384_g-dimitrov.jpg",
-    "oddsMovement": null,
+    "oddsMovement": {
+      "market": "Match Winner",
+      "capturedAt": "2026-09-17T15:45:01Z",
+      "startTime": "2026-09-18T08:00:00.000Z",
+      "fixtureId": "id1200210074798230",
+      "books": {
+        "bet365": {
+          "p1": [
+            [
+              "2026-09-17T14:35:23.945Z",
+              6.5
+            ]
+          ],
+          "p2": [
+            [
+              "2026-09-17T14:35:23.945Z",
+              1.091
+            ]
+          ]
+        }
+      }
+    },
     "bet365Now": {
       "p1": 6.5,
       "p2": 1.091,
@@ -14259,7 +14301,7 @@
         "year": "2024",
         "allTier": true,
         "total": {
-          "won": 43,
+          "won": 42,
           "lost": 24
         },
         "clay": {
@@ -14267,7 +14309,7 @@
           "lost": 1
         },
         "hard": {
-          "won": 38,
+          "won": 37,
           "lost": 23
         },
         "grass": null,
@@ -14295,7 +14337,7 @@
         },
         "chitf": {
           "total": {
-            "won": 38,
+            "won": 37,
             "lost": 24
           },
           "clay": {
@@ -14303,7 +14345,7 @@
             "lost": 1
           },
           "hard": {
-            "won": 38,
+            "won": 37,
             "lost": 23
           },
           "grass": null,
@@ -19837,18 +19879,18 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.5,
-      "p2": 2.37,
-      "bookmaker": "bet365"
+      "p1": 1.46,
+      "p2": 2.35,
+      "bookmaker": "Sbo"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.5,
-        "bookmaker": "bet365"
+        "price": 1.46,
+        "bookmaker": "Sbo"
       },
       "p2": {
-        "price": 2.37,
-        "bookmaker": "bet365"
+        "price": 2.35,
+        "bookmaker": "Sbo"
       }
     },
     "tournamentRound": null,
@@ -21138,12 +21180,12 @@
         "allTier": true,
         "total": {
           "won": 8,
-          "lost": 4
+          "lost": 3
         },
         "clay": null,
         "hard": {
           "won": 8,
-          "lost": 4
+          "lost": 3
         },
         "grass": null,
         "indoor": null,
@@ -21163,12 +21205,12 @@
         "chitf": {
           "total": {
             "won": 7,
-            "lost": 3
+            "lost": 2
           },
           "clay": null,
           "hard": {
             "won": 7,
-            "lost": 3
+            "lost": 2
           },
           "grass": null,
           "indoor": null
@@ -21400,7 +21442,28 @@
     "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1098_s-kwon.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/18341_d-suresh.jpg",
-    "oddsMovement": null,
+    "oddsMovement": {
+      "market": "Match Winner",
+      "capturedAt": "2026-09-17T15:45:01Z",
+      "startTime": "2026-09-18T05:00:00.000Z",
+      "fixtureId": "id1200210074791536",
+      "books": {
+        "bet365": {
+          "p1": [
+            [
+              "2026-09-17T13:11:18.290Z",
+              1.5
+            ]
+          ],
+          "p2": [
+            [
+              "2026-09-17T13:11:18.290Z",
+              2.37
+            ]
+          ]
+        }
+      }
+    },
     "bet365Now": {
       "p1": 1.5,
       "p2": 2.37,
@@ -21423,18 +21486,18 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 2.25,
-      "p2": 1.54,
-      "bookmaker": "bet365"
+      "p1": 2.16,
+      "p2": 1.55,
+      "bookmaker": "Sbo"
     },
     "bestOdds": {
       "p1": {
-        "price": 2.25,
-        "bookmaker": "bet365"
+        "price": 2.16,
+        "bookmaker": "Sbo"
       },
       "p2": {
-        "price": 1.54,
-        "bookmaker": "bet365"
+        "price": 1.55,
+        "bookmaker": "Sbo"
       }
     },
     "tournamentRound": null,
@@ -23237,7 +23300,28 @@
     "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/3135_h-chung.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1077_s-nagal.jpg",
-    "oddsMovement": null,
+    "oddsMovement": {
+      "market": "Match Winner",
+      "capturedAt": "2026-09-17T15:45:01Z",
+      "startTime": "2026-09-18T06:10:00.000Z",
+      "fixtureId": "id1200210074791538",
+      "books": {
+        "bet365": {
+          "p1": [
+            [
+              "2026-09-17T14:04:42.980Z",
+              2.25
+            ]
+          ],
+          "p2": [
+            [
+              "2026-09-17T14:04:42.980Z",
+              1.54
+            ]
+          ]
+        }
+      }
+    },
     "bet365Now": {
       "p1": 2.25,
       "p2": 1.54,
@@ -47938,7 +48022,7 @@
         "year": "2024",
         "allTier": true,
         "total": {
-          "won": 43,
+          "won": 42,
           "lost": 24
         },
         "clay": {
@@ -47946,7 +48030,7 @@
           "lost": 1
         },
         "hard": {
-          "won": 38,
+          "won": 37,
           "lost": 23
         },
         "grass": null,
@@ -47974,7 +48058,7 @@
         },
         "chitf": {
           "total": {
-            "won": 38,
+            "won": 37,
             "lost": 24
           },
           "clay": {
@@ -47982,7 +48066,7 @@
             "lost": 1
           },
           "hard": {
-            "won": 38,
+            "won": 37,
             "lost": 23
           },
           "grass": null,
@@ -55682,12 +55766,12 @@
         "allTier": true,
         "total": {
           "won": 8,
-          "lost": 4
+          "lost": 3
         },
         "clay": null,
         "hard": {
           "won": 8,
-          "lost": 4
+          "lost": 3
         },
         "grass": null,
         "indoor": null,
@@ -55707,12 +55791,12 @@
         "chitf": {
           "total": {
             "won": 7,
-            "lost": 3
+            "lost": 2
           },
           "clay": null,
           "hard": {
             "won": 7,
-            "lost": 3
+            "lost": 2
           },
           "grass": null,
           "indoor": null
@@ -76015,7 +76099,7 @@
     "walkover": false,
     "matchStats": null,
     "setStats": null,
-    "finishedAt": "2026-09-17T14:05:38.210Z",
+    "finishedAt": "2026-09-17T13:50:49.596Z",
     "oddsMovement": null
   }
 ]
