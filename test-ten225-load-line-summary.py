@@ -249,6 +249,38 @@ check('no start -> pre_start_tick_count is NULL, not a guess',
       r5['pre_start_tick_count'] is None)
 check('no start -> counted', st5['no_start_open_only'] == 1)
 
+# ---------------------------------------------------- open_limit (locked Open)
+# Michael: Open is "the first recorded Oddspapi tick ... with timestamp and
+# STAKE LIMIT". The tick payload carries `limit` and the loader was discarding
+# it, so odds_card_state.open_limit could only ever have been NULL — a column
+# that silently answers "we have no limit" for every row in the table.
+print('\nopen_limit — the stake limit the locked Open definition names')
+
+def _lt(offset_s, price, limit):
+    return {'createdAt': L.iso(START + offset_s), 'price': price,
+            'limit': limit, 'active': True, 'exchangeMeta': None}
+
+lim_rows, _ = L.summarise_payload(
+    payload(mk('121', '121', [_lt(-7200, 1.50, 2500), _lt(-60, 1.44, 900)])),
+    'idTEST', OD(START), START + DAY, CAT)
+check('open_limit is the FIRST tick\'s limit (2500), not the last (900)',
+      lim_rows[0]['open_limit'] == 2500.0, lim_rows[0]['open_limit'])
+check('the Open price still comes from the same tick',
+      lim_rows[0]['open_price'] == 1.50)
+
+# A tick with no limit is None, never 0 — 0 is a limit-shaped number and would
+# reach a card reading as "this book will take nothing".
+nol_rows, _ = L.summarise_payload(
+    payload(mk('121', '121', [_lt(-7200, 1.50, None), _lt(-60, 1.44, None)])),
+    'idTEST', OD(START), START + DAY, CAT)
+check('a tick with no limit yields NULL, never 0',
+      nol_rows[0]['open_limit'] is None, nol_rows[0]['open_limit'])
+check('a non-numeric limit is NULL, not a crash',
+      L.summarise_payload(payload(mk('121', '121', [_lt(-7200, 1.50, 'n/a')])),
+                          'idTEST', OD(START), START + DAY,
+                          CAT)[0][0]['open_limit'] is None)
+# bet365-history months carry no limit field at all — honestly None there.
+
 # ---------------------------------------------- PART 2's "Now" source: last_tick
 # Michael's locked definition: "Now = freshest Oddspapi price already available
 # to us, with its timestamp. No new polling in this step." The archive stores the
@@ -533,6 +565,53 @@ bad_itf = L.resolve_start(IN_SCOPE - 8 * H, None, IN_SCOPE,
 check('ITF: a gate-REJECTED trueStart is not rescued by an agreeing flip',
       bad_itf[1] == 'api-tennis-live' and bad_itf[2] == 'implausible_early_start',
       f'got {bad_itf[1:3]}')
+
+# ------------------------------------- reason strings vs the schema's CHECK
+# Run 35213968572 is why this exists. The loader started emitting
+# 'end_before_start' and the CHECK constraint on oddspapi_line_summary still
+# enumerated only the two older reasons, so the upsert died at row 13,500 —
+# AFTER 13,500 rows had already been written. The constraint was right to refuse
+# an unruled string; what was missing was anything that notices the two lists
+# have drifted apart before a loader run finds out the hard way.
+#
+# So this reads the reasons the LOADER can actually emit straight out of its
+# source, and the sets both SCHEMA files allow, and fails if the three disagree.
+# It is deliberately derived from the files rather than restating a literal list
+# here: a fourth reason added to one place and not the others is exactly the
+# regression, and a hand-maintained third copy would just be one more thing to
+# forget.
+print('\nreject reasons — loader source vs BOTH schema CHECKs')
+
+import re as _re
+
+_src = open(os.path.join(HERE, 'ten225-load-line-summary.py')).read()
+# The assignments inside resolve_start(), e.g.  reason = 'end_before_start'
+_emitted = set(_re.findall(r"reason = '([a-z_]+)'", _src))
+_emitted |= set(_re.findall(r"reason or '([a-z_]+)'", _src))
+
+def _allowed(path):
+    txt = open(os.path.join(HERE, path)).read()
+    m = _re.search(r'start_reject_reason IN \(([^)]*)\)', txt, _re.S)
+    return set(_re.findall(r"'([a-z_]+)'", m.group(1))) if m else set()
+
+_ls = _allowed('ten225-line-summary-schema.sql')
+_cs = _allowed('ten225-card-state-schema.sql')
+
+check('the loader emits the three ruled reasons plus the ITF one',
+      _emitted == {'implausible_duration', 'implausible_early_start',
+                   'end_before_start', 'itf_uncorroborated_start'},
+      f'emitted={sorted(_emitted)}')
+check('every reason the loader can emit is allowed by the line-summary CHECK',
+      _emitted <= _ls, f'missing from schema: {sorted(_emitted - _ls)}')
+check('every reason the loader can emit is allowed by the card-state CHECK',
+      _emitted <= _cs, f'missing from schema: {sorted(_emitted - _cs)}')
+check('the two schemas allow the SAME set (a card row and its summary row '
+      'must never disagree about what a valid reason is)',
+      _ls == _cs, f'line-summary-only={sorted(_ls - _cs)} '
+                  f'card-state-only={sorted(_cs - _ls)}')
+check('the schemas allow nothing the loader cannot emit (a dead enum value '
+      'reads as a supported state that never appears)',
+      _ls <= _emitted, f'unreachable: {sorted(_ls - _emitted)}')
 
 # --- item 3: a live-flip Close needs gap_seconds <= 300 ON TOP of the rest
 arch2 = START + 1 * DAY

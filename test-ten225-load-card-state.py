@@ -54,43 +54,39 @@ NOW = datetime(2026, 9, 17, 12, 0, tzinfo=timezone.utc).timestamp()
 
 
 # ------------------------------------------------------------- the Now rule
-print('qualifies_as_now — Michael\'s Now definition')
+print("qualifies_as_now — Michael's Now definition")
 
-ok, basis = C.qualifies_as_now(True, None, NOW)
-check('a tick the archive PROVED pre-start qualifies', ok is True)
-check('...and reports the strong basis', basis == 'prestart-tick', basis)
+# A fixture that has NOT started: the only shape that earns a Now.
+ok, basis = C.qualifies_as_now(None, NOW + 3 * HOUR, NOW)
+check('an upcoming fixture qualifies', ok is True)
+check('...and reports the basis', basis == 'fixture-not-started', basis)
 
-# The trap. A finished fixture: the archive resolved a start and the freshest
-# tick is AFTER it, i.e. a settled in-play price.
-ok2, basis2 = C.qualifies_as_now(False, NOW - 6 * HOUR, NOW)
-check('a FINISHED fixture\'s settled tick does NOT qualify — this is the '
-      'assertion that keeps a post-match 1.02 off a live card', ok2 is False)
+# THE TRAP, stated as its own assertion. A fixture with a resolved start has
+# begun, so the freshest pre-start price we hold is its CLOSE. The first version
+# of this rule promoted exactly this case and reported "Now 92.0%" on run
+# 35214569618 — 26,277 rows of relabelled closing prices.
+started = NOW - 6 * HOUR
+ok2, basis2 = C.qualifies_as_now(started, started, NOW)
+check('a STARTED fixture does NOT qualify — this is the assertion that keeps a '
+      'three-month-old close off a card labelled "Now"', ok2 is False)
 check('...and carries no basis', basis2 is None)
+check('a fixture that started ONE SECOND ago already does not qualify',
+      C.qualifies_as_now(NOW - 1, NOW - 1, NOW)[0] is False)
+check('a resolved start OUTRANKS a future schedule (a delayed fixture that has '
+      'actually begun has no Now)',
+      C.qualifies_as_now(NOW - HOUR, NOW + HOUR, NOW)[0] is False)
 
-# An upcoming fixture: no resolved start yet, so the flag is NULL, but the
-# fixture is in the future and every tick we hold is necessarily pre-match.
-ok3, basis3 = C.qualifies_as_now(None, NOW + 3 * HOUR, NOW)
-check('an UPCOMING fixture qualifies on the not-started limb', ok3 is True)
-check('...and reports which limb justified it',
-      basis3 == 'fixture-not-started', basis3)
-
-# Direction matters, and the margin is safe in one direction only.
-check('a fixture scheduled one second in the PAST does not qualify',
+# Direction and margin on the schedule test.
+check('scheduled one second in the PAST does not qualify',
       C.qualifies_as_now(None, NOW - 1, NOW)[0] is False)
-check('a fixture scheduled EXACTLY now does not qualify (strict >)',
+check('scheduled EXACTLY now does not qualify (strict >)',
       C.qualifies_as_now(None, NOW, NOW)[0] is False)
-check('a fixture scheduled one second in the future does',
+check('scheduled one second in the future does',
       C.qualifies_as_now(None, NOW + 1, NOW)[0] is True)
 
-# Unknowable -> dash. Never zero, never the open.
-check('no flag and no schedule -> does NOT qualify',
+# Unknowable -> dash. Never zero, never the open, never the close.
+check('no start and no schedule -> does NOT qualify',
       C.qualifies_as_now(None, None, NOW)[0] is False)
-check('flag false and no schedule -> does NOT qualify',
-      C.qualifies_as_now(False, None, NOW)[0] is False)
-# The strong test outranks a stale schedule rather than being overridden by it.
-check('a proven pre-start tick qualifies even on a past-scheduled fixture',
-      C.qualifies_as_now(True, NOW - 6 * HOUR, NOW)[0] is True)
-
 
 # ---------------------------------------------------------------- card_rows
 print('\ncard_rows — projection, and the Now it is allowed to carry')
@@ -100,7 +96,8 @@ def srow(**kw):
     base = {'fixture_id': 'idA', 'book': 'bet365', 'market': 'match winner',
             'side': '1', 'line': None, 'open_price': 1.5,
             'open_ts': '2026-09-17T08:00:00Z', 'close_price': 1.44,
-            'close_ts': '2026-09-17T11:00:00Z', 'start_ts': None,
+            'close_ts': '2026-09-17T11:00:00Z',
+            'start_ts': '2026-09-17T11:30:00Z',
             'start_ts_source': 'oddspapi', 'start_reject_reason': None,
             'last_tick_price': 1.02, 'last_tick_ts': '2026-09-17T13:00:00Z',
             'last_tick_is_prestart': False, 'close_reliable': True}
@@ -124,8 +121,9 @@ check('match winner carries a NULL line, never the catalogue 0.0',
       fin[0]['line'] is None)
 
 up, ust = C.card_rows(
-    [srow(last_tick_is_prestart=None, close_price=None, close_ts=None)],
-    {'idA': {'start_sched': C.iso(NOW + 3 * HOUR)}}, NOW)
+    [srow(start_ts=None, last_tick_is_prestart=None,
+          close_price=None, close_ts=None)],
+    {'idA': {'scheduled_start': C.iso(NOW + 3 * HOUR)}}, NOW)
 check('an upcoming fixture DOES carry a Now', up[0]['now_price'] == 1.02)
 check('...stamped with the tick\'s own timestamp',
       up[0]['now_ts'] == '2026-09-17T13:00:00Z')
@@ -191,6 +189,41 @@ os_, osst = C.fallback_rows(
                        'seenAt': '2026-09-16T19:00:30Z'})], set(), NOW)
 check('a one-sided open yields ONE row, never a mirrored second',
       len(os_) == 1 and osst['open_side_missing'] == 1)
+
+
+# ------------------------------------- the column names the filler ASKS FOR
+# An earlier draft of the filler selected `level,start_sched` from
+# oddspapi_fixtures. The real columns are `category_name` and `scheduled_start`,
+# so PostgREST would have 400'd — and the filler's error path was fail-SOFT, so
+# it would have run with an empty fixture map, silently disabling the
+# not-started limb of the Now rule. Every upcoming match would have dashed its
+# Now on a green run. A surface that is wholly empty for a structural reason is
+# the failure mode that hides longest, which is why the path is now fail-loud
+# AND why the names are checked against the DDL rather than against memory.
+print('\ncolumn names — filler select vs the DDL')
+
+import re as _re
+_ddl = open(os.path.join(HERE, 'ten225-line-summary-schema.sql')).read()
+_m = _re.search(r'CREATE TABLE IF NOT EXISTS oddspapi_fixtures\s*\((.*?)\n\);',
+                _ddl, _re.S)
+_cols = set(_re.findall(r'^\s{2}([a-z_]+)\s+\w', _m.group(1), _re.M)) if _m else set()
+_src = open(os.path.join(HERE, 'ten225-load-card-state.py')).read()
+_sel = _re.search(r"'oddspapi_fixtures',\s*\n\s*'([a-z_,]+)'", _src)
+_asked = set((_sel.group(1) if _sel else '').split(','))
+
+check('the DDL for oddspapi_fixtures was found', bool(_cols), f'cols={sorted(_cols)}')
+check('the filler asks for columns that exist', _asked and _asked <= _cols,
+      f'asked={sorted(_asked)} missing={sorted(_asked - _cols)}')
+check('it asks for scheduled_start specifically (the not-started Now limb '
+      'reads it, and a rename here silently empties every upcoming Now)',
+      'scheduled_start' in _asked)
+# And the field card_rows() actually reads must be one of them.
+# Matched on the CALL, not on the word: the filler's comment names the old
+# alias on purpose, to say why it is gone.
+check('card_rows reads scheduled_start, not an index-side alias',
+      "fx.get('scheduled_start')" in _src
+      and "get('start_sched')" not in _src
+      and "get('startSched')" not in _src)
 
 print('\n' + ('all checks passed' if not FAILED
               else f'{len(FAILED)} FAILURE(S): {FAILED}'))

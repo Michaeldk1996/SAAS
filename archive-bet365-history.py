@@ -378,10 +378,38 @@ def load_shard(month):
     return s
 
 
+def shard_schema(fixtures):
+    """The schema label that actually describes this file's CONTENTS.
+
+    A shard is appended to over months and we never re-pull a fixture we already
+    hold, so a file written before the ruling keeps its /1 entries forever while
+    gaining /2 entries beside them. Stamping the whole file '/2' because the
+    writer is new would be a lie in the one field a reader would trust to decide
+    how to read the entries — and the specific consequence is ugly: a /2 entry
+    with `cut: 'none'` read as /1 hands its UNCUT in-play tail out as a close,
+    which is the exact defect the ruling exists to remove.
+
+    So the label is computed from the entries: '/1' if none carry `cut`, '/2' if
+    all do, '/1+2' while a file is part-way through. The mixed value is there to
+    be noticed — a reader that has not been taught about it will not silently
+    treat the file as either pure form.
+
+    THE ONLY SAFE READ IS PER ENTRY, on the `cut` field. This label says what is
+    in the file; it is not a licence to skip that check.
+    """
+    vals = [e.get('cut') for e in (fixtures or {}).values()]
+    if not vals:
+        return SCHEMA
+    has, lacks = any(v is not None for v in vals), any(v is None for v in vals)
+    return 'bet365-history/1+2' if (has and lacks) else (
+        SCHEMA if has else 'bet365-history/1')
+
+
 def save_shard(month, shard):
     os.makedirs(OUT_DIR, exist_ok=True)
     shard['generatedAt'] = datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ')
     shard['count'] = len(shard['fixtures'])
+    shard['schema'] = shard_schema(shard.get('fixtures'))
     with open(shard_path(month), 'w') as fh:
         json.dump(shard, fh, separators=(',', ':'), ensure_ascii=False, sort_keys=True)
 

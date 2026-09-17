@@ -531,7 +531,12 @@ def summarise_payload(payload, fixture_id, start, archived_at, catalogue):
                         if t is None or p.get('price') is None:
                             st['tick_unusable'] += 1
                             continue
-                        ticks.append((t, float(p['price'])))
+                        lim = p.get('limit')
+                        try:
+                            lim = None if lim is None else float(lim)
+                        except (TypeError, ValueError):
+                            lim = None
+                        ticks.append((t, float(p['price']), lim))
                     if not ticks:
                         continue
                     ticks.sort()
@@ -542,7 +547,7 @@ def summarise_payload(payload, fixture_id, start, archived_at, catalogue):
                         st['inplay_only_leaf'] += 1
                         continue
 
-                    open_ts, open_price = ticks[0]
+                    open_ts, open_price, open_limit = ticks[0]
                     if start_ts is None:
                         # Never substitute the scheduled time — Michael's locked
                         # definition forbids it. Open is still exact (the first
@@ -554,10 +559,11 @@ def summarise_payload(payload, fixture_id, start, archived_at, catalogue):
                             open_price, open_ts, None, None, None,
                             None, ticks[0][0], None, None, 'none',
                             'oddspapi-raw', archived_at, False,
-                            reject_reason=reason, last_tick=ticks[-1]))
+                            reject_reason=reason, last_tick=ticks[-1][:2],
+                            open_limit=open_limit))
                         continue
 
-                    close_ts, close_price = pre[-1]
+                    close_ts, close_price = pre[-1][0], pre[-1][1]
                     reliable, lag = judge_close(start_ts, close_ts, archived_at,
                                                 start_src, flip_gap)
                     rows.append(_row(
@@ -569,7 +575,7 @@ def summarise_payload(payload, fixture_id, start, archived_at, catalogue):
                         start_ts, start_src, 'oddspapi-raw', archived_at, reliable,
                         reject_reason=reason, conflict=conflict,
                         conflict_min=conflict_min, flip_gap=flip_gap,
-                        last_tick=ticks[-1]))
+                        last_tick=ticks[-1][:2], open_limit=open_limit))
                     st['reliable_close' if reliable else 'close_nulled'] += 1
     return rows, st
 
@@ -578,7 +584,7 @@ def _row(fixture_id, book, market, side, line, open_price, open_ts,
          close_price, close_ts, lag, pre_count, first_ts, last_pre_ts,
          start_ts, start_src, source, archived_at, reliable,
          reject_reason=None, conflict=False, conflict_min=None, flip_gap=None,
-         last_tick=None):
+         last_tick=None, open_limit=None):
     # PART 2's "Now" source. `last_tick` is (ts, price) of the freshest tick we
     # actually observed for this series, or None. Stored as a FACT, with a
     # separate flag saying whether it is pre-start — odds_card_state is what
@@ -591,6 +597,13 @@ def _row(fixture_id, book, market, side, line, open_price, open_ts,
     return {
         'last_tick_price': lt_price, 'last_tick_ts': iso(lt_ts),
         'last_tick_is_prestart': lt_pre,
+        # Michael's locked Open definition: "first recorded Oddspapi tick for
+        # fixture + book + side (createdAt), with timestamp AND STAKE LIMIT".
+        # The tick carries `limit` and this loader was discarding it, so
+        # odds_card_state.open_limit could only ever have been NULL. The
+        # bet365-history months have no limit field at all, so that path is
+        # honestly None rather than zero.
+        'open_limit': open_limit,
         'fixture_id': fixture_id, 'book': book, 'market': market,
         'side': side, 'line': line,
         'open_price': open_price, 'open_ts': iso(open_ts),

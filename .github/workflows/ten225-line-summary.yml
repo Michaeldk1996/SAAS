@@ -337,31 +337,41 @@ jobs:
           printf '%s\n' "$body" | jq -e 'type == "array" and length > 0' >/dev/null \
             || { echo "::error::card-state read-back returned no rows or an error body"; exit 1; }
 
-      # The invariant that would be invisible in a count: a Now on a fixture that
-      # already started. That is the settled-in-play-price-as-Now defect, and it
-      # is checked against the table rather than against the filler's intent.
-      - name: Assert no Now sits after its own start
+      # THE INVARIANT, and it is deliberately NOT "now_ts > start_ts". Under the
+      # corrected Now rule a row with a resolved start_ts never carries a Now at
+      # all, so that assertion can no longer fail on any input — it would be a
+      # vacuous check that passes forever and reads like coverage. This asks the
+      # question that can still be answered wrongly: is there a Now on a fixture
+      # whose scheduled start has already passed? It also reports the population
+      # it examined, so "0 violations" cannot be confused with "0 rows looked at".
+      - name: Assert no Now sits on a fixture that has already started
         if: ${{ always() }}
         run: |
           set -euo pipefail
           read -r -d '' Q <<'SQL' || true
-          SELECT count(*) AS now_after_start
-            FROM odds_card_state
-           WHERE now_ts IS NOT NULL
-             AND start_ts IS NOT NULL
-             AND now_ts > start_ts;
+          SELECT count(*) FILTER (WHERE c.now_price IS NOT NULL)            AS with_now,
+                 count(*) FILTER (WHERE c.now_price IS NOT NULL
+                                   AND f.scheduled_start <= now())          AS now_on_started,
+                 count(*) FILTER (WHERE c.now_price IS NOT NULL
+                                   AND c.start_ts IS NOT NULL)              AS now_with_resolved_start,
+                 count(*)                                                   AS rows_examined
+            FROM odds_card_state c
+            LEFT JOIN oddspapi_fixtures f ON f.fixture_id = c.fixture_id
+           WHERE c.market = 'match winner';
           SQL
           resp=$(jq -Rn --arg q "$Q" '{query: $q}' | curl -sS -w $'\n%{http_code}' -X POST \
             -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
             -H "Content-Type: application/json" \
             --data @- "$MGMT/v1/projects/$PROJECT_REF/database/query")
           body=$(printf '%s' "$resp" | sed '$d')
-          { echo '## TEN-225 Part 2 — invariant: no Now after its own start'
+          { echo '## TEN-225 Part 2 — invariant: no Now on a started fixture'
             echo '```json'; printf '%s\n' "$body" | jq .; echo '```'; } \
             | tee -a "$GITHUB_STEP_SUMMARY"
           printf '%s\n' "$body" | jq -e 'type == "array" and length == 1
-            and (.[0].now_after_start|tonumber) == 0' >/dev/null \
-            || { echo "::error::a Now is timestamped after its own start — settled price on a card"; exit 1; }
+            and (.[0].rows_examined|tonumber) > 0
+            and (.[0].now_on_started|tonumber) == 0
+            and (.[0].now_with_resolved_start|tonumber) == 0' >/dev/null \
+            || { echo "::error::a Now is sitting on a fixture that has already started, or the check examined no rows"; exit 1; }
 
       - name: Upload the load artifact
         if: ${{ always() }}
