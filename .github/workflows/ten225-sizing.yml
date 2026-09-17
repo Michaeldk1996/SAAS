@@ -1,0 +1,144 @@
+name: TEN-225 sizing report
+
+# Answers the two report items Michael asked for on 2026-09-17T07:33Z that can
+# only be read where the credentials live:
+#
+#   "Report next: - Raw archive: object count, bucket size, projected per year.
+#                 - Summary table size projection + choice confirmation."
+#
+# Both need secrets that are GitHub-only by design (the Supabase service key and
+# Management API token are not in the local .env), so they cannot be measured
+# from a workstation. This is a dispatch-only reporting job.
+#
+# WHY IT IS A SEPARATE WORKFLOW FROM oddspapi-raw-archive.yml
+# The archive job holds concurrency group `bsp-oddspapi-raw-archive` for hours
+# while it paces through /v4/historical-odds. Putting the report in that group
+# would queue it behind a 5-hour run. This job takes its own group so the two
+# run side by side; it makes no odds-API calls at all, so there is no contention
+# for the rate-limited key and no metered unit spent.
+#
+# READ-ONLY WITH RESPECT TO EVERYTHING THAT EXISTS
+# The row-size probe creates two tables prefixed `_ten225_`, measures them and
+# drops them. The drop runs with `if: always()`. No existing table, policy,
+# publication or pg_cron job is touched — that is a DO-NOT-TOUCH on TEN-225.
+# The bucket report is a listing; it writes nothing.
+
+on:
+  workflow_dispatch:
+    inputs:
+      rowsize:
+        description: 'Run the Postgres bytes/row probe (creates + drops two _ten225_ scratch tables)'
+        type: boolean
+        default: true
+      bucket:
+        description: 'Run the oddspapi-raw bucket report (object count + size)'
+        type: boolean
+        default: true
+
+concurrency:
+  group: ten225-sizing
+  cancel-in-progress: false
+
+jobs:
+  sizing:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+      MGMT: https://api.supabase.com
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Preconditions + derive project ref
+        run: |
+          set -euo pipefail
+          for v in SUPABASE_ACCESS_TOKEN SUPABASE_URL SUPABASE_SECRET_KEY; do
+            [ -n "${!v:-}" ] || { echo "::error::missing repository secret $v"; exit 1; }
+          done
+          REF=$(printf '%s' "$SUPABASE_URL" | sed -E 's#https?://([^./]+)\.supabase\.co/?.*#\1#')
+          [ -n "$REF" ] && [ "$REF" != "$SUPABASE_URL" ] \
+            || { echo "::error::could not derive project ref from SUPABASE_URL"; exit 1; }
+          echo "PROJECT_REF=$REF" >> "$GITHUB_ENV"
+          echo "Derived project ref: $REF"
+
+      # ---------------------------------------------------------------- bucket
+      # Item 5a. Runs first and independently of the Postgres probe, so a
+      # Management API problem cannot cost us the bucket number.
+      - name: Raw archive — object count and bucket size
+        if: ${{ inputs.bucket }}
+        run: |
+          {
+            echo '## TEN-225 raw archive — bucket report'
+            echo '```'
+            python3 archive-oddspapi-raw.py report
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      # --------------------------------------------------------------- rowsize
+      - name: Build the bytes/row scratch tables
+        if: ${{ inputs.rowsize }}
+        run: |
+          set -euo pipefail
+          resp=$(jq -Rs '{query: .}' ten225-rowsize-probe.sql | curl -sS -w $'\n%{http_code}' -X POST \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data @- "$MGMT/v1/projects/$PROJECT_REF/database/query")
+          code=$(printf '%s' "$resp" | tail -n1)
+          body=$(printf '%s' "$resp" | sed '$d')
+          echo "http $code"
+          if [ "$code" != "200" ] && [ "$code" != "201" ]; then
+            echo "::error::scratch build failed ($code): $body"; exit 1
+          fi
+
+      - name: Measure bytes/row
+        if: ${{ inputs.rowsize }}
+        run: |
+          set -euo pipefail
+          resp=$(jq -Rs '{query: .}' ten225-rowsize-measure.sql | curl -sS -w $'\n%{http_code}' -X POST \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data @- "$MGMT/v1/projects/$PROJECT_REF/database/query")
+          code=$(printf '%s' "$resp" | tail -n1)
+          body=$(printf '%s' "$resp" | sed '$d')
+          echo "http $code"
+          if [ "$code" != "200" ] && [ "$code" != "201" ]; then
+            echo "::error::measurement failed ($code): $body"; exit 1
+          fi
+          {
+            echo '## TEN-225 oddspapi_line_summary — MEASURED bytes/row'
+            echo
+            echo 'Grain: fixture + book + market + side + line. One row per series,'
+            echo 'not per tick. v1 is the schema exactly as ruled (text book/market/'
+            echo 'side); v2 is the same information with coded narrow keys.'
+            echo
+            echo '```json'
+            printf '%s\n' "$body" | jq .
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      # Always: the instance must end this job exactly as it started it.
+      - name: Drop the scratch tables
+        if: ${{ always() && inputs.rowsize }}
+        run: |
+          set -euo pipefail
+          resp=$(jq -Rs '{query: .}' ten225-rowsize-drop.sql | curl -sS -w $'\n%{http_code}' -X POST \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data @- "$MGMT/v1/projects/$PROJECT_REF/database/query")
+          code=$(printf '%s' "$resp" | tail -n1)
+          body=$(printf '%s' "$resp" | sed '$d')
+          echo "http $code"
+          if [ "$code" != "200" ] && [ "$code" != "201" ]; then
+            echo "::error::SCRATCH TABLES MAY STILL EXIST ($code): $body"
+            echo "::error::drop _ten225_summary_v1 and _ten225_summary_v2 by hand"
+            exit 1
+          fi
+          echo "scratch tables dropped; instance unchanged." | tee -a "$GITHUB_STEP_SUMMARY"
