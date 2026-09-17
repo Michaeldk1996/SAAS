@@ -2,17 +2,22 @@
 """TEN-232 Part 1 — Kibl / Bet105 pre-match line archive.
 
 ARCHIVE FIRST. Kibl has no history endpoint and no export endpoint across all
-71 paths, and keeps exactly three states per line (opener / previous / current).
-Everything between the opener and the current price is discarded on their side
-the moment a new price lands. A sweep we do not run is not data we collect later
-— it is data nobody has.
+71 paths. It keeps the OPENING price and the CURRENT price per line and nothing
+between them — measured, not assumed: `is_previous` never appears on a row and
+`is_current` is ignored as a filter, so the documented three-state model is two
+states in practice. Every price between open and current is discarded on their
+side the moment a new one lands. A sweep we do not run is not data we collect
+later; it is data nobody has.
 
 Scope (founder ruling 2026-09-17):
   - men's leagues only: ATP 19, Challenger 537, ITF Men 962. WTA, WTA-125K and
     ITF Women are reported if we are entitled to them, and NOT archived.
-  - pre-match only (betting_type_id=1). Live is measured before it is archived.
-  - is_main unrestricted: main lines AND alternates, including the Sets/Spread
-    set handicap that bet365-on-oddspapi does not price.
+  - pre-match only (betting_type_id=1). Live is measured before it is archived —
+    and measured 0 rows for this account on both live betting types.
+  - is_main unrestricted, so alternates would be captured if any existed. For
+    the book we are actually served, alt_id is 0 on every row: no alternates, no
+    Sets/Spread set handicap. The pull does not assume that, so the day they
+    appear we capture them.
 
 Storage follows TEN-225: raw gzipped payload per sweep in the private Supabase
 bucket `kibl-raw` (source of truth, rebuildable), summary rows in Postgres with
@@ -214,13 +219,65 @@ def sweep(args):
     ensure_bucket(url, key)
 
     started = now_utc()
-    sweep_id = started.strftime("%Y%m%dT%H%M%SZ")
-    leagues = sorted(TENNIS_LEAGUES_MEN)
-    win_start = started - dt.timedelta(hours=args.lookback_hours)
-    win_end = started + dt.timedelta(days=args.horizon_days)
-
     c = KiblClient()
     c.authenticate()
+    return run_window(c, url, key, started,
+                      started - dt.timedelta(hours=args.lookback_hours),
+                      started + dt.timedelta(days=args.horizon_days),
+                      args.betting_type_id,
+                      sweep_id=started.strftime("%Y%m%dT%H%M%SZ"))
+
+
+def backfill(args):
+    """One-time recovery of the history that is still reachable.
+
+    MEASURED 2026-09-17: /info/markets start_time/end_time DO reach backwards to
+    finished fixtures, but only about 30 days — 356 rows at 30 days back, zero at
+    60. That window slides forward every day, so this is not history that waits
+    for us: a day not backfilled now is a day that leaves the window and never
+    comes back.
+
+    What comes back for a finished fixture is the CURRENT (final) price only —
+    the backward windows returned no openers. Recorded as what it is, not
+    described as a series.
+    """
+    url, key = supabase_creds()
+    ensure_bucket(url, key)
+    c = KiblClient()
+    c.authenticate()
+    now = now_utc()
+    worst = 0
+    for d in range(args.from_days, args.to_days - 1, -1):
+        w_start, w_end = now - dt.timedelta(days=d), now - dt.timedelta(days=d - 1)
+        print(f"\n--- backfill day -{d} ({iso(w_start)} .. {iso(w_end)}) ---")
+        # allow_empty: a day genuinely outside the reachable window returns zero
+        # rows, and that is the measurement, not a failure.
+        worst = max(worst, run_window(c, url, key, now, w_start, w_end,
+                                      args.betting_type_id,
+                                      sweep_id=f"bf{w_start:%Y%m%d}",
+                                      allow_empty=True))
+    return worst
+
+
+def run_window(c, url, key, started, win_start, win_end, betting_type_id,
+               sweep_id, allow_empty=False):
+    """Pull one time window across every men's league and archive it."""
+    leagues = sorted(TENNIS_LEAGUES_MEN)
+
+    # /info/markets REQUIRES feed_source_id: without it the API answers HTTP 200
+    # with no `result` key, which reads as "this account has no odds". The value
+    # is the account's entitled book list, read from the API rather than
+    # hard-coded, so a change in entitlement shows up as more data rather than as
+    # a silent miss.
+    books, _ = c.get("/reference/sportsbooks")
+    book_rows = [b for b in c.rows(books) if isinstance(b, dict)]
+    feed_source_id = ",".join(str(b["feed_source_id"]) for b in book_rows
+                              if b.get("feed_source_id") is not None)
+    if not feed_source_id:
+        die("no feed_source_id from /reference/sportsbooks; every market call "
+            "would come back as an empty envelope")
+    print(f"feed_source_id={feed_source_id} "
+          f"(entitled books: {[b.get('name') for b in book_rows]})")
 
     fixtures_all = []
     rows_all = []
@@ -239,12 +296,13 @@ def sweep(args):
                 f.setdefault("league_id", lid)
         fixtures_all.extend(fixtures)
 
-        # is_main is deliberately NOT sent: omitting it is what returns main
-        # lines AND alternates. feed_source_id is deliberately NOT sent either —
-        # we archive every book this account receives, and which books those are
-        # is a measured fact in the sweep, not an assumption.
-        rows, metas = c.markets_three_state(
-            league_id=lid, betting_type_id=args.betting_type_id,
+        # is_main is deliberately NOT sent: omitting it is what would return
+        # alternates as well as main lines. (Measured: this book returns alt_id=0
+        # only, so there are no alternates to get — but the pull does not assume
+        # that, so the day they appear we capture them.)
+        rows, metas = c.markets_all_states(
+            league_id=lid, betting_type_id=betting_type_id,
+            feed_source_id=feed_source_id,
             start_time=iso(win_start), end_time=iso(win_end))
         if not all(m["status"] == 200 for m in metas):
             ok = False
@@ -253,17 +311,21 @@ def sweep(args):
         for r in rows:
             r["_league_id"] = lid
         rows_all.extend(rows)
+        print(f"  league {lid}: {len(fixtures)} fixtures, {len(rows)} market rows")
 
     observed_at = iso(now_utc())
-    raw_object = f"{started:%Y/%m/%d}/{sweep_id}.json.gz"
+    raw_object = f"{win_start:%Y/%m/%d}/{sweep_id}.json.gz"
     blob = gzip.compress(json.dumps({
         "sweep_id": sweep_id,
         "observed_at": observed_at,
         "window": [iso(win_start), iso(win_end)],
         "leagues": leagues,
-        "betting_type_id": args.betting_type_id,
-        "note": ("three-state merge (is_current true+false); is_main omitted so "
-                 "alternates are included; no feed_source filter"),
+        "betting_type_id": betting_type_id,
+        "feed_source_id": feed_source_id,
+        "entitled_books": book_rows,
+        "note": ("two-state merge: unfiltered (current) + is_opener (opening). "
+                 "is_current is ignored by the API and is never sent. is_main "
+                 "omitted so alternates would be included if any existed."),
         "fixtures": fixtures_all,
         "market_participants": rows_all,
     }, default=str).encode("utf-8"))
@@ -309,9 +371,11 @@ def sweep(args):
         print("::warning::could not write the heartbeat object")
 
     print(json.dumps(sweep_row, indent=1))
-    # A sweep that captured nothing must not report green: the whole point of
-    # the job is that a missed sweep is unrecoverable, so silence is the failure.
-    if len(rows_all) == 0:
+    # A sweep that captured nothing must not report green: the whole point of the
+    # job is that a missed sweep is unrecoverable, so silence is the failure.
+    # A BACKFILL day outside the reachable window is a different thing — zero
+    # there is the measurement, so allow_empty says which of the two this is.
+    if len(rows_all) == 0 and not allow_empty:
         print("::error::sweep captured zero market rows")
         return 1
     return 0 if sweep_row["ok"] else 1
@@ -386,6 +450,13 @@ def main():
     s.add_argument("--betting-type-id", type=int, default=1,
                    help="1=Prematch. Live is 3 for tennis, not 2 — measured before archived.")
     s.set_defaults(func=sweep)
+
+    b = sub.add_parser("backfill")
+    b.add_argument("--from-days", type=int, default=35,
+                   help="oldest day to attempt; reachability measured at ~30 days")
+    b.add_argument("--to-days", type=int, default=1)
+    b.add_argument("--betting-type-id", type=int, default=1)
+    b.set_defaults(func=backfill)
 
     r = sub.add_parser("report")
     r.add_argument("--days", type=int, default=2)

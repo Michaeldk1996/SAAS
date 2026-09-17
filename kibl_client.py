@@ -6,19 +6,29 @@ IDP endpoint with USERNAME/PASSWORD/ClientId, get back a 60-minute Bearer
 AccessToken. There is one Production environment and no sandbox, so every call
 this module makes is a real call against the live feed.
 
-Three things this module exists to get right, because each of them fails
-SILENTLY (HTTP 200, plausible-looking but wrong data):
+Four things this module exists to get right. Every one of them fails SILENTLY
+— HTTP 200, plausible-looking, wrong — and every one was MEASURED against the
+live API on 2026-09-17, because on each of them the documentation is wrong:
 
-  1. `is_current` defaults to TRUE on /info/markets. A naive pull therefore
-     returns the current price only and silently drops the opener and the
-     previous state — the exact two rows an archive exists to preserve.
-     `markets_three_state()` is the only sanctioned way to read markets.
+  1. /info/markets REQUIRES feed_source_id. Without it: HTTP 200, no `result`
+     key, "minimum of 1 feed_source_id needed". The swagger says the parameter
+     is optional. A caller who believes the swagger concludes the account has
+     no odds entitlement. `markets()` refuses to issue the call.
 
-  2. Entitlement is a Cognito user attribute, not an endpoint. A restricted
-     account returns 200 with fewer rows, never a 403. Anything measured here
-     is therefore a measurement of OUR ENTITLEMENT, not of Kibl's coverage.
+  2. The state model is TWO states, not three. `is_opener` is a real filter but
+     only its PRESENCE matters (`is_opener=false` returns openers). `is_current`
+     is ignored entirely — true and false return identical sets. `is_previous`
+     never appears on a row. The documented "is_current defaults to true" trap
+     is not the trap; trusting it is. `markets_all_states()` is the only
+     sanctioned way to read markets.
 
-  3. Credentials arrive as GitHub Actions secrets and a trailing newline on a
+  3. Entitlement is not an endpoint — it is the contents of
+     /reference/sportsbooks, and it is not expressed in the Cognito token at
+     all. A restricted account returns 200 with fewer rows, never a 403.
+     Anything measured here is a measurement of OUR ENTITLEMENT, not of Kibl's
+     coverage, and never of a book we were not served.
+
+  4. Credentials arrive as GitHub Actions secrets and a trailing newline on a
      secret has already broken one integration on this repo (BetsAPI). Every
      credential read goes through .strip().
 
@@ -346,20 +356,37 @@ class KiblClient:
                 "returns HTTP 200 with no result and it reads as zero coverage")
         return self.get("/info/markets", params)
 
-    def markets_three_state(self, **params):
-        """Return opener + previous + current, defeating the is_current default.
+    def markets_all_states(self, **params):
+        """Return the current price AND the opening price for every line.
 
-        `is_previous` is NOT a query parameter and `is_current` defaults true,
-        so the three states cannot be had in one call. Two calls, then dedupe:
-        is_current=true gives the live price, is_current=false gives everything
-        that is not the live price (opener and previous).
+        MEASURED 2026-09-17 by set comparison, not by row counts — the counts
+        are identical under contradictory filters and counting cannot tell these
+        apart:
 
+          unfiltered      108 rows, {current: 78, opener: 30}
+          is_opener=true  108 rows, {opener: 108}  <- 78 of 108 are DIFFERENT rows
+          is_opener=false 108 rows, {opener: 108}  <- the VALUE is ignored
+          is_current=true  == is_current=false, jaccard 1.0  <- wholly ignored
+
+        So:
+          - `is_opener` is a real filter, but only its PRESENCE matters. Sending
+            `is_opener=false` returns openers, not non-openers.
+          - `is_current` does nothing at all. The documented "is_current defaults
+            to true" trap is not the trap; trusting it IS.
+          - `is_previous` never appears on a row. There are TWO retrievable
+            states, not three.
+
+        The 30 rows shared between the two pulls are lines whose current price
+        still equals the opener, i.e. lines that have not moved. That is a fact
+        about the market, not a duplicate.
+
+        Two calls — unfiltered, then is_opener — deduped on the natural key.
         Returns (rows, per_call_meta).
         """
         seen = {}
         metas = []
-        for flag in (True, False):
-            payload, meta = self.markets(**{**params, "is_current": flag})
+        for extra in ({}, {"is_opener": True}):
+            payload, meta = self.markets(**{**params, **extra})
             metas.append(meta)
             for row in self.market_participants(payload):
                 # uuid is per-row; fall back to the natural key when absent so a
