@@ -6018,6 +6018,13 @@
   // harder rule wins: a boundary value extends. The bottom needs no such test
   // because the file's 5pp pad already holds a bubble at the low tick clear.
   var STYLE_TICK_LO = 40, STYLE_TICK_HI = 80, STYLE_PAD_LO = 5;
+  // Founder ruling 2026-09-18 (gate cc69c6cf, option "pad"): the 240px track is
+  // the amendment's item 8 and does NOT move; the drawable area is inset 12px at
+  // the top instead. A >=98% value on a 40-100 axis used to seat its disc 8px
+  // from the top rule, leaving the value label only 2px of the card's 14px gap
+  // before the eyebrow. The inset buys that label the same 14px+ clearance every
+  // other bubble already had, without shrinking the axis or clamping the value.
+  var STYLE_PLOT_H = 240, STYLE_PLOT_PAD_TOP = 12;
   function styleScale(values) {
     var lo = STYLE_TICK_LO, hi = STYLE_TICK_HI;
     var min = null, max = null;
@@ -6060,7 +6067,15 @@
     var elite = byAxis.filter(function (r) { return r.axis.elite; });
 
     var sc = styleScale(byAxis.map(function (r) { return 100 * r.won / (r.won + r.lost); }));
-    function top(v) { return ((1 - (v - sc.LO) / (sc.HI - sc.LO)) * 100).toFixed(1) + '%'; }
+    // px, not %, because the inset is a fixed 12px and the track is a fixed
+    // 240px: the LO tick still lands exactly on the bottom rule, the HI tick
+    // lands 12px down. Ticks, gridlines, the EVEN rule and the bubbles all read
+    // this one function, so the two columns stay registered to each other.
+    function top(v) {
+      var frac = (v - sc.LO) / (sc.HI - sc.LO);
+      return (STYLE_PLOT_PAD_TOP +
+        (1 - frac) * (STYLE_PLOT_H - STYLE_PLOT_PAD_TOP)).toFixed(1) + 'px';
+    }
 
     var tickLabels = sc.ticks.map(function (t) {
       return '<span style="position:absolute;right:0;top:' + top(t) + ';transform:translateY(-50%);' +
@@ -6094,9 +6109,10 @@
         'transform:translate(-50%,-50%);width:' + size + 'px;height:' + size + 'px;border-radius:50%;' +
         'background:' + blue(pct) + ';border:1px solid rgba(91,155,255,0.5);"></span>' +
         // The value sits ABOVE the disc with a gap — translateY(-(r + 13)) is the
-        // file's own `labelShift`. It is deliberately allowed to paint over the
-        // plot's top border; the card's 14px flex gap is the clear space the
-        // amendment's item 7 asks for.
+        // file's own `labelShift`. It may paint over the plot's top border into
+        // the card's 14px flex gap, which is the clear space the amendment's
+        // item 7 asks for; the 12px scale inset above keeps the topmost bubble
+        // from spending all of that gap at once.
         '<span style="position:absolute;left:' + left + ';top:' + top(pct) + ';' +
         'transform:translate(-50%,-50%) translateY(-' + (size / 2 + 13) + 'px);' +
         'font-family:\'IBM Plex Mono\',monospace;font-size:12px;font-weight:700;color:#e7e9ee;' +
@@ -6129,7 +6145,7 @@
     return '<div style="' + card + '">' +
       styleEyebrow() +
       '<div style="display:grid;grid-template-columns:52px minmax(0,1fr);gap:12px;">' +
-        '<div style="position:relative;height:240px;">' +
+        '<div style="position:relative;height:' + STYLE_PLOT_H + 'px;">' +
           // Rotated, anchored at the column's LEFT edge; the tick labels are
           // right-aligned in the same 52px column. That is the file's own layout
           // and it is what keeps "WIN RATE" clear of "60%" (item 9).
@@ -6138,7 +6154,8 @@
             'text-transform:uppercase;color:#3f4860;white-space:nowrap;">Win rate</span>' +
           tickLabels +
         '</div>' +
-        '<div style="position:relative;height:240px;border-left:1px solid rgba(255,255,255,0.12);' +
+        '<div style="position:relative;height:' + STYLE_PLOT_H + 'px;' +
+          'border-left:1px solid rgba(255,255,255,0.12);' +
           'border-bottom:1px solid rgba(255,255,255,0.12);">' +
           gridlines +
           '<span style="position:absolute;left:0;right:0;top:' + top(50) + ';height:1px;' +

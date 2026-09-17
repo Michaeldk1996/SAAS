@@ -211,7 +211,18 @@ for (const key of KEYS) {
                bars: bar, h: r.height };
     });
 
-    return { open:true, body: body, chars: body.length,
+    // Horizontal rules inside the plot: the gridlines (alpha 0.05) and the EVEN
+    // rule (alpha 0.28). Offset is measured from the PLOT's own top edge, which
+    // is what the 12px inset ruling is about.
+    var rules = !plot ? [] : Array.prototype.slice.call(plot.children).filter(function(e){
+      var s=getComputedStyle(e), rr=e.getBoundingClientRect();
+      return s.position==='absolute' && rr.height<=1.5 && rr.width>40 &&
+        /rgba\\(255, 255, 255/.test(s.backgroundColor);
+    }).map(function(e){ var rr=e.getBoundingClientRect();
+      return { dy: +(rr.top - pr.top).toFixed(1), bg: getComputedStyle(e).backgroundColor }; })
+      .sort(function(a,b){ return a.dy-b.dy; });
+
+    return { open:true, body: body, chars: body.length, rules: rules,
       panelWidth: panel ? panel.getBoundingClientRect().width : null,
       panelMaxWidth: pcs ? pcs.maxWidth : null,
       heads: heads,
@@ -241,13 +252,47 @@ for (const key of KEYS) {
   ck(key, 'item 7 · eyebrow present',
     /WIN RATE BY ARCHETYPE .* BUBBLE SIZE IS MATCH COUNT/i.test(m.body.replace(/·/g, '·')));
 
+  // ── item 8 · the 240px track ─────────────────────────────────────────────
+  // This was COLLECTED but never asserted before today, so item 8 was carried on
+  // the word of the source rather than a measurement. The ruling below moves the
+  // plot's contents; the track itself must not move with them.
+  ck(key, 'item 8 · plot track is exactly 240px', m.plotHeight === '240px',
+    `computed height ${m.plotHeight}`);
+
+  // ── founder ruling cc69c6cf ("pad") · 12px top inset inside the plot ──────
+  // The drawable area starts 12px below the track's top edge, so the HI tick's
+  // gridline sits at dy=12 and the LO tick's at dy=240 (the bottom rule). Both
+  // ends are asserted: an inset applied by shrinking the track instead of by
+  // insetting the scale would also produce dy=12 at the top, and only the bottom
+  // reading separates the two.
+  // Gridlines only — the EVEN rule is the same shape at a different alpha.
+  const grid = m.rules.filter(r => /0\.05\)$/.test(r.bg));
+  const topRule = grid.length ? grid[0] : null;
+  ck(key, 'ruling cc69c6cf · HI tick gridline inset 12px from the plot top',
+    topRule !== null && Math.abs(topRule.dy - 12) <= 1,
+    topRule ? `top gridline at dy=${topRule.dy}px of a 240px track` : 'no gridlines found');
+
+  // The bottom end needs a DERIVED expectation, not 240. The lowest tick is not
+  // the scale floor: styleScale pads the floor by STYLE_PAD_LO = 5pp, which is
+  // half of the 10pp tick step. So the scale's LO lands on the 240px bottom rule
+  // when `lowest gridline + half a step === 240`. Asserting a bare 240 here
+  // reported all five correct builds as broken on the first run — the pad has
+  // been in the scale since before this ticket.
+  const step = grid.length >= 2 ? grid[grid.length - 1].dy - grid[grid.length - 2].dy : null;
+  const floorDy = step === null ? null : grid[grid.length - 1].dy + step / 2;
+  ck(key, 'ruling cc69c6cf · scale floor still lands on the 240px bottom rule',
+    floorDy !== null && Math.abs(floorDy - 240) <= 1.5,
+    floorDy === null ? 'fewer than 2 gridlines'
+      : `lowest gridline dy=${grid[grid.length - 1].dy}px + half a ${step.toFixed(1)}px step = ${floorDy.toFixed(1)}px`);
+
   // ── item 10 + step (f) · NO BUBBLE CLIPPED ───────────────────────────────
   // "Clipped" means a clipping ANCESTOR actually cuts the disc, not that the disc
-  // crosses the plot's border line. Those are different things: the plot height is
-  // locked at 240px by item 8, so a 98% value on a 40-100 axis necessarily draws
-  // its disc a few px above the top rule while remaining fully visible. Testing
+  // crosses the plot's border line. Those are different things, and testing
   // boundary-crossing reported Sinner's 98% Counterpuncher bubble as clipped when
   // every ancestor is overflow:visible and the whole disc paints.
+  // The gap below is REPORTED, not thresholded. The 12px inset is asserted exactly
+  // by the two gridline checks above; the eyebrow gap also depends on bubble size,
+  // so a floor here would be a number no player population guarantees.
   if (m.bubbles.length) {
     const clip = await ev(`(function(){
       var ov = Array.prototype.slice.call(document.querySelectorAll('[data-pp2="scrim"]'))
