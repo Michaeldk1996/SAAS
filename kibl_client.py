@@ -241,9 +241,18 @@ class KiblClient:
             if status != 200:
                 return None, meta
             try:
-                return json.loads(raw), meta
+                payload = json.loads(raw)
             except json.JSONDecodeError:
                 return None, {**meta, "status": "bad-json"}
+            # A 200 whose envelope we cannot read is a parser failure, and it
+            # looks identical to an empty account unless it is named as one.
+            if self.unrecognised_envelope(payload):
+                meta["unrecognised_envelope"] = (
+                    sorted(payload.keys())[:12] if isinstance(payload, dict) else str(type(payload)))
+                print(f"::warning::unrecognised envelope on {path}: "
+                      f"{meta['unrecognised_envelope']}")
+            meta["rows"] = len(self.rows(payload))
+            return payload, meta
 
         if last_err:
             meta = {"path": path, "params": dict(params), "status": "transport",
@@ -256,39 +265,69 @@ class KiblClient:
 
     # ------------------------------------------------------------- helpers
 
+    # Kibl's real envelope, confirmed against a live 200 on 2026-09-17:
+    #   {api_key, code, description, request_uuid, result: [...], timestamp}
+    # The swagger declares an EMPTY response schema for every /info path, so this
+    # is taken from the payload, not from the spec.
+    ENVELOPE_KEYS = ("result", "data", "results", "items", "records",
+                     "markets", "fixtures")
+
     @staticmethod
     def rows(payload):
         """Normalise the envelope to a flat list of records.
 
-        The swagger declares an empty response schema for /info/markets, so the
-        shape is taken from the payload rather than assumed: a bare list, or a
-        dict wrapping one under any of the usual keys.
+        Returns [] for an envelope we do not recognise rather than [payload].
+        Wrapping the envelope itself as a single row is how this read "n=1" for
+        every reference table on the first live run — a wrong parser that looks
+        exactly like an empty account. Callers use `unrecognised_envelope()` to
+        tell "nothing there" from "we cannot read this".
         """
         if payload is None:
             return []
         if isinstance(payload, list):
             return payload
         if isinstance(payload, dict):
-            for key in ("data", "results", "items", "records", "markets", "fixtures"):
+            for key in KiblClient.ENVELOPE_KEYS:
                 if isinstance(payload.get(key), list):
                     return payload[key]
-            return [payload]
+            return []
         return []
+
+    @staticmethod
+    def unrecognised_envelope(payload):
+        """True when a 200 payload carries no list under any known key."""
+        if payload is None or isinstance(payload, list):
+            return False
+        if not isinstance(payload, dict):
+            return True
+        return not any(isinstance(payload.get(k), list)
+                       for k in KiblClient.ENVELOPE_KEYS)
 
     @classmethod
     def market_participants(cls, payload):
         """Flatten /info/markets into InfoMarketParticipant rows.
 
-        The documented shape is [{participants:[...]}, ...]; rows that are
-        already flat are passed through so a shape change does not read as
-        "zero markets".
+        The documented shape is [{participants:[...]}, ...], but the live
+        envelope wraps that under `result` and a fixture-level nesting is also
+        possible. Descends one level through `markets`/`participants` and passes
+        already-flat rows through, so a shape we did not anticipate reads as an
+        unrecognised shape rather than as "zero markets".
         """
         out = []
-        for rec in cls.rows(payload):
-            if isinstance(rec, dict) and isinstance(rec.get("participants"), list):
-                out.extend(p for p in rec["participants"] if isinstance(p, dict))
-            elif isinstance(rec, dict) and "market_type_id" in rec:
+
+        def take(rec):
+            if not isinstance(rec, dict):
+                return
+            if "market_type_id" in rec and "side_id" in rec:
                 out.append(rec)
+                return
+            for key in ("participants", "markets"):
+                if isinstance(rec.get(key), list):
+                    for sub in rec[key]:
+                        take(sub)
+
+        for rec in cls.rows(payload):
+            take(rec)
         return out
 
     def markets_three_state(self, **params):

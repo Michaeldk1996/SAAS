@@ -100,13 +100,41 @@ check("rows without a uuid fall back to the natural key, not collapsed",
       len(r3) == 2, len(r3))
 
 print("4. envelope shapes")
+# REGRESSION: the live envelope is {api_key, code, description, request_uuid,
+# result: [...], timestamp}. The first live run did not know `result`, wrapped
+# the envelope as a single row, and reported n=1 for every reference table and
+# zero markets everywhere — a wrong parser that reads exactly like an empty
+# account. Both halves are locked: `result` is parsed, and an envelope we do
+# NOT recognise returns [] plus a flag, never a bogus row of 1.
+live = {"api_key": "get_reference_info_by_genres:sports", "code": 200,
+        "description": "api success", "request_uuid": "x", "timestamp": 1,
+        "result": [{"sport_id": 5, "name": "Tennis"}, {"sport_id": 1}]}
+check("live `result` envelope parsed", len(KiblClient.rows(live)) == 2,
+      len(KiblClient.rows(live)))
+check("live envelope is not flagged unrecognised",
+      KiblClient.unrecognised_envelope(live) is False)
 check("bare list", len(KiblClient.rows([1, 2, 3])) == 3)
 check("dict wrapping under data", len(KiblClient.rows({"data": [1, 2]})) == 2)
 check("None is empty, not an error", KiblClient.rows(None) == [])
+mystery = {"code": 200, "payload_v2": {"rows": [1, 2]}}
+check("unknown envelope yields [], NOT [envelope]", KiblClient.rows(mystery) == [],
+      KiblClient.rows(mystery))
+check("unknown envelope is flagged so it cannot pass as an empty account",
+      KiblClient.unrecognised_envelope(mystery) is True)
 check("flat participant rows pass through",
-      len(KiblClient.market_participants([{"market_type_id": 1}])) == 1)
+      len(KiblClient.market_participants([{"market_type_id": 1, "side_id": 1}])) == 1)
 check("nested participants flattened",
-      len(KiblClient.market_participants([{"participants": [{"a": 1}, {"b": 2}]}])) == 2)
+      len(KiblClient.market_participants(
+          [{"participants": [{"market_type_id": 1, "side_id": 1},
+                             {"market_type_id": 1, "side_id": 2}]}])) == 2)
+check("participants under the live result envelope",
+      len(KiblClient.market_participants(
+          {"result": [{"participants": [{"market_type_id": 1, "side_id": 1}]}]})) == 1)
+check("fixture -> markets -> participants nesting descended",
+      len(KiblClient.market_participants(
+          {"result": [{"markets": [{"participants": [
+              {"market_type_id": 2, "side_id": 1},
+              {"market_type_id": 2, "side_id": 2}]}]}]})) == 2)
 
 print("5. state_of precedence")
 check("opener wins over current",

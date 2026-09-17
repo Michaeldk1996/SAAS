@@ -89,8 +89,14 @@ def test_a_entitlement(c, now):
     # Bet105's feed_source_id — needed by every later measurement, so resolved
     # here and echoed loudly rather than assumed.
     books = out["reference"]["sportsbooks"]["rows"]
-    bet105 = [b for b in books
-              if "105" in json.dumps(b).lower() or "bet105" in json.dumps(b).lower()]
+    # Match on the NAME fields only. Matching the whole serialised row would hit
+    # any book that merely happens to have 105 in an id.
+    def book_name(b):
+        if not isinstance(b, dict):
+            return ""
+        return " ".join(str(b.get(f) or "") for f in ("name", "abrv", "display_name",
+                                                      "short_name", "description")).lower()
+    bet105 = [b for b in books if "105" in book_name(b)]
     out["bet105_candidates"] = bet105
     out["bet105_feed_source_id"] = (
         bet105[0].get("feed_source_id") if len(bet105) == 1 and isinstance(bet105[0], dict)
@@ -339,6 +345,22 @@ def test_d_is_current_trap(c, now, bet105_id):
 
 # --------------------------------------------------------------- report
 
+def market_names(test_a):
+    """id -> name lookups built from the live reference tables."""
+    out = {"market": {}, "segment": {}, "book": {}}
+    ref = (test_a or {}).get("reference") or {}
+    for row in (ref.get("market_types") or {}).get("rows") or []:
+        if isinstance(row, dict) and row.get("market_type_id") is not None:
+            out["market"][str(row["market_type_id"])] = row.get("name") or row["market_type_id"]
+    for row in (ref.get("segments") or {}).get("rows") or []:
+        if isinstance(row, dict) and row.get("segment_id") is not None:
+            out["segment"][str(row["segment_id"])] = row.get("name") or row["segment_id"]
+    for row in (ref.get("sportsbooks") or {}).get("rows") or []:
+        if isinstance(row, dict) and row.get("feed_source_id") is not None:
+            out["book"][str(row["feed_source_id"])] = row.get("name") or row["feed_source_id"]
+    return out
+
+
 def fmt(v, suffix=""):
     if v is None or v == "":
         return DASH
@@ -401,9 +423,17 @@ def build_markdown(res):
         A(f"| {k} | {rec['status']} | {rec['rows']} | {rec['distinct_alt_ids']} |")
     A("")
     fs = a.get("empirical", {}).get("feed_sources_seen") or {}
-    A(f"### Feed sources actually received (n={fmt(fs.get('rows'))} rows)")
+    bnames = market_names(a)["book"]
+    A(f"### Books actually received (n={fmt(fs.get('rows'))} market rows, all men's leagues)")
     A("")
-    A(f"`{json.dumps(fs.get('counts') or {})}`")
+    counts = fs.get("counts") or {}
+    if counts:
+        A("| feed_source_id | book | rows |")
+        A("|---|---|---|")
+        for fsid, n in counts.items():
+            A(f"| {fsid} | {bnames.get(str(fsid), DASH)} | {n} |")
+    else:
+        A("no market rows returned")
     A("")
     if a.get("restrictions"):
         A("### Restrictions found")
@@ -451,12 +481,26 @@ def build_markdown(res):
     A("")
     A("### Market presence — fixtures carrying each market_type/segment")
     A("")
+    # Named against the live reference tables rather than left as raw ids: the
+    # founder's questions are about set handicap and total sets by name, and an
+    # id-only table cannot be checked by eye.
+    names = market_names(a)
     for lid, rec in (c_.get("per_league") or {}).items():
-        A(f"- **{rec['label']}**: `{json.dumps(rec.get('presence') or {})}`")
-    A("")
-    A("Read the keys as `market_type_id/segment_id`. The set handicap the founder "
-      "asked about is Spread on the Sets segment; total sets is Total on Sets. "
-      "Both are named against the reference tables in the JSON.")
+        A(f"**{rec['label']}**")
+        A("")
+        pres = rec.get("presence")
+        if not pres:
+            A("- no market rows returned for this league in the window")
+            A("")
+            continue
+        A("| market | segment | fixtures carrying it |")
+        A("|---|---|---|")
+        for k, n in sorted(pres.items(), key=lambda kv: -kv[1]):
+            mt, sg = k.split("/", 1)
+            A(f"| {names['market'].get(mt, mt)} | {names['segment'].get(sg, sg)} | {n} |")
+        A("")
+    A("Set handicap is Spread on the Sets segment; total sets is Total on Sets. "
+      "Raw `market_type_id/segment_id` keys are in the JSON.")
     A("")
 
     # --- d
@@ -536,6 +580,15 @@ def main():
     for m in c.call_log:
         seen.update(m.get("rate_headers") or {})
     res["rate_headers_seen"] = seen
+    # Named explicitly: a 200 we could not parse is not a measurement of zero.
+    res["unrecognised_envelopes"] = [
+        {"path": m["path"], "keys": m["unrecognised_envelope"]}
+        for m in c.call_log if m.get("unrecognised_envelope")]
+    if res["unrecognised_envelopes"]:
+        res["errors"].append(
+            f"{len(res['unrecognised_envelopes'])} call(s) returned 200 with an "
+            f"envelope this parser does not recognise — every zero below them is "
+            f"unmeasured, not empty.")
 
     with open(OUT_JSON, "w") as f:
         json.dump(res, f, indent=1, sort_keys=True, default=str)
