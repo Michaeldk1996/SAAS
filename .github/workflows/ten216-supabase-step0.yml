@@ -1,0 +1,109 @@
+name: TEN-216 Supabase Step 0 (READ-ONLY report)
+
+# TEN-216 Part A Step 0 — report our Supabase plan limits and current usage
+# BEFORE creating anything. This workflow is strictly read-only:
+#   - no CREATE / ALTER / DROP / INSERT / UPDATE / DELETE
+#   - no bucket creation, no policy change, no pg_cron change
+# It prints plan, database size, storage size, and an inventory of existing
+# tables and buckets so the guardrail "touch nothing that exists" is auditable.
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: ten216-supabase-step0
+  cancel-in-progress: false
+
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Read-only Supabase plan + usage report
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          python3 - <<'PY'
+          import os, sys, json, re, urllib.request, urllib.error
+
+          url = os.environ["SUPABASE_URL"].strip().rstrip("/")
+          tok = os.environ["SUPABASE_ACCESS_TOKEN"].strip()
+          m = re.search(r"https?://([a-z0-9]+)\.supabase\.co", url)
+          if not m:
+              print("ERROR: cannot parse project ref"); sys.exit(1)
+          ref = m.group(1)
+          print(f"PROJECT_REF={ref}")
+
+          def api(path, method="GET", body=None):
+              req = urllib.request.Request(
+                  f"https://api.supabase.com{path}", method=method,
+                  headers={"Authorization": f"Bearer {tok}",
+                           "Content-Type": "application/json"},
+                  data=json.dumps(body).encode() if body is not None else None)
+              try:
+                  with urllib.request.urlopen(req, timeout=60) as r:
+                      return r.status, json.loads(r.read().decode() or "null")
+              except urllib.error.HTTPError as e:
+                  return e.code, e.read().decode()[:400]
+
+          def sql(q):
+              # read-only guard: refuse anything that is not a SELECT/WITH
+              if not re.match(r"^\s*(select|with)\b", q, re.I):
+                  raise SystemExit(f"REFUSED non-read query: {q[:60]}")
+              return api(f"/v1/projects/{ref}/database/query", "POST", {"query": q})
+
+          print("\n===== PROJECT =====")
+          st, proj = api(f"/v1/projects/{ref}")
+          print("http", st)
+          if isinstance(proj, dict):
+              for k in ("id","organization_id","name","region","created_at","status","database"):
+                  print(f"  {k} = {proj.get(k)}")
+              org_id = proj.get("organization_id")
+          else:
+              print("  ", proj); org_id = None
+
+          print("\n===== ORGANISATION / PLAN =====")
+          st, orgs = api("/v1/organizations")
+          print("http", st)
+          if isinstance(orgs, list):
+              for o in orgs:
+                  print(f"  org id={o.get('id')} name={o.get('name')} plan={o.get('plan')}")
+                  st2, detail = api(f"/v1/organizations/{o.get('id')}")
+                  print(f"    detail http={st2} -> {json.dumps(detail)[:500]}")
+          else:
+              print("  ", orgs)
+
+          print("\n===== DATABASE SIZE =====")
+          st, r = sql("select pg_database_size(current_database()) as bytes, "
+                      "pg_size_pretty(pg_database_size(current_database())) as pretty")
+          print("http", st, "->", json.dumps(r)[:400])
+
+          print("\n===== EXISTING TABLES (public) =====")
+          st, r = sql(
+              "select c.relname as table_name, "
+              "pg_total_relation_size(c.oid) as total_bytes, "
+              "pg_size_pretty(pg_total_relation_size(c.oid)) as pretty, "
+              "c.reltuples::bigint as approx_rows "
+              "from pg_class c join pg_namespace n on n.oid=c.relnamespace "
+              "where n.nspname='public' and c.relkind='r' "
+              "order by pg_total_relation_size(c.oid) desc")
+          print("http", st, "->", json.dumps(r, indent=1)[:3000])
+
+          print("\n===== EXISTING STORAGE BUCKETS =====")
+          st, r = sql("select id, name, public, created_at from storage.buckets order by created_at")
+          print("http", st, "->", json.dumps(r, indent=1)[:2000])
+
+          print("\n===== STORAGE OBJECT USAGE =====")
+          st, r = sql(
+              "select bucket_id, count(*) as objects, "
+              "coalesce(sum((metadata->>'size')::bigint),0) as bytes "
+              "from storage.objects group by bucket_id order by bytes desc")
+          print("http", st, "->", json.dumps(r, indent=1)[:2000])
+
+          print("\n===== EXISTING pg_cron JOBS (untouched) =====")
+          st, r = sql("select jobid, schedule, jobname, active from cron.job order by jobid")
+          print("http", st, "->", json.dumps(r, indent=1)[:2000])
+
+          print("\nDONE — nothing was created, altered or deleted.")
+          PY
