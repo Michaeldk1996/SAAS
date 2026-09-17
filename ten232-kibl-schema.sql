@@ -69,6 +69,16 @@ create table if not exists public.kibl_line_observations (
     raw_object         text
 );
 
+-- `create table if not exists` does NOT add columns to a table that already
+-- exists, so every column added after the first deploy needs its own idempotent
+-- ALTER or the next insert fails with "column not found" — on a job whose whole
+-- purpose is that a missed write is unrecoverable.
+alter table public.kibl_line_observations
+    add column if not exists is_opener   boolean,
+    add column if not exists is_previous boolean,
+    add column if not exists is_current  boolean,
+    add column if not exists is_live     boolean;
+
 create index if not exists kibl_lo_fixture_idx
     on public.kibl_line_observations (fixture_id, observed_at);
 create index if not exists kibl_lo_observed_idx
