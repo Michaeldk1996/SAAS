@@ -511,18 +511,25 @@ async function cmdSelect() {
 
   // ---- 4. api-tennis presence, read from the TEN-216 collector's stored data
   //         (read-only; the brief forbids touching that collector).
-  let apitennisKeys = new Set();
+  // The table carries `match_key`, not home/away columns (measured via
+  // information_schema in `diag` — the first pass guessed `event_key` and got a
+  // 400, which is exactly the kind of miss that becomes a silent zero).
+  let apitennisKeys = [];
   try {
-    const rows = await sbSelect(`select distinct event_key::text as k, home_name, away_name
-      from ten216_test_odds_changes limit 5000`);
-    for (const r of rows || []) apitennisKeys.add(`${norm(r.home_name)}|${norm(r.away_name)}`);
-    log(`TEN-216 stored api-tennis rows: ${apitennisKeys.size} distinct fixtures available for overlap`);
+    const rows = await sbSelect(`select distinct match_key from ten216_test_odds_changes
+      where observed_at > now() - interval '3 days' limit 2000`);
+    apitennisKeys = (rows || []).map((r) => ({ raw: r.match_key, n: norm(r.match_key) }));
+    log(`TEN-216 stored api-tennis: ${apitennisKeys.length} distinct match_key in the last 3 days`);
+    for (const s of apitennisKeys.slice(0, 5)) log(`    example match_key: ${s.raw}`);
   } catch (err) {
-    log(`::warning::TEN-216 stored data unreadable (${redact(err.message).slice(0, 120)}) — api-tennis overlap will be reported as unknown`);
+    log(`::warning::TEN-216 stored data unreadable (${redact(err.message).slice(0, 120)}) — api-tennis overlap reported as unknown`);
   }
   for (const p of paired) {
-    const k1 = `${norm(p.home)}|${norm(p.away)}`, k2 = `${norm(p.away)}|${norm(p.home)}`;
-    p.apitennisKey = apitennisKeys.has(k1) ? k1 : apitennisKeys.has(k2) ? k2 : null;
+    // Both surnames must appear in the same match_key. A single surname is not
+    // enough; ambiguity (two candidate keys) is a drop, not a coin flip.
+    const a = nameKey(p.home), b = nameKey(p.away);
+    const hits = (a && b) ? apitennisKeys.filter((k) => k.n.includes(a) && k.n.includes(b)) : [];
+    p.apitennisKey = hits.length === 1 ? hits[0].raw : null;
   }
 
   // ---- 5. Take the sample. Prefer matches present in all three feeds; fall back
@@ -533,10 +540,16 @@ async function cmdSelect() {
     const rest = pool.filter((p) => !p.apitennisKey);
     return [...all3, ...rest].slice(0, n);
   };
+  // ATP main tour and Slams are NOT sampleable in this trial window and this is
+  // a calendar fact, not a classifier miss: the 20260917-20 board carries 306
+  // tennis events in 61 leagues and not one is named `ATP <city>` (measured in
+  // `diag`). It is a Davis Cup week; the next ATP 250s start 2026-09-21, after
+  // the trial wall. Those cells are a dash with the census behind them, never a
+  // Challenger number relabelled.
   const sample = [
-    ...pick('atp', TARGET_PER_LEVEL), ...pick('slam', 0),
-    ...pick('challenger', TARGET_PER_LEVEL),
-    ...pick('itf', Number(process.env.TARGET_ITF || 10)),
+    ...pick('atp', TARGET_PER_LEVEL), ...pick('slam', TARGET_PER_LEVEL),
+    ...pick('challenger', Number(process.env.TARGET_CHALLENGER || 40)),
+    ...pick('itf', Number(process.env.TARGET_ITF || 40)),
   ];
   const byLevel = {};
   for (const s of sample) byLevel[s.level] = (byLevel[s.level] || 0) + 1;
@@ -658,6 +671,15 @@ async function cmdLoop() {
   let anyLive = true;
   while (Date.now() < deadline) {
     const t0 = Date.now();
+    // Top the sample up hourly. Tomorrow's board publishes in waves, so a
+    // selection frozen at dispatch time sees a fraction of what will exist by
+    // the evening — and this run's n is already the weak point.
+    // CAMPAIGN_END is the hard wall. Without it a job that keeps adding newly
+    // published matches never sees an empty selection and never stands down.
+    const campaignEnd = Date.parse(process.env.CAMPAIGN_END || '') || Infinity;
+    if (pollNo % 4 === 0 && Date.now() < campaignEnd) {
+      try { await cmdSelect(); } catch (err) { log(`::warning::reselect failed: ${redact(err.message).slice(0, 160)}`); }
+    }
     try {
       const r = await cmdPoll(pollNo++);
       anyLive = r.live > 0;
