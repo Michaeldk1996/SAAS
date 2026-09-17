@@ -99,6 +99,15 @@ jobs:
               "select count(*) as objects, min(created_at) as oldest, max(created_at) as newest "
               "from storage.objects where bucket_id = 'ten216-test-raw'")))
 
+          # Raw is uploaded on EVERY poll for the first 24h, so the object list is the
+          # only complete record of when we actually polled. Change-row poll_ids show
+          # only the polls that saw something move — silence and a dead collector are
+          # indistinguishable without this.
+          print("\nEVERY POLL (raw object per tick — the true cadence):")
+          print(json.dumps(sql(
+              "select name, created_at from storage.objects "
+              "where bucket_id = 'ten216-test-raw' order by created_at asc"), indent=1))
+
           print("\nRAW DEBRIS (objects older than the first change row — must be 0):")
           print(json.dumps(sql(
               "select count(*) as stale_objects from storage.objects "
