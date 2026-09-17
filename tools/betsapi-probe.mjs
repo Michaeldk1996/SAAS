@@ -332,6 +332,116 @@ function seriesStats(rows, startTs) {
   };
 }
 
+// The stratified sample is deterministic — fixed days, fixed stride — so any
+// later subcommand can rebuild the identical sample and stay comparable with
+// the Phase 2 numbers instead of measuring a different set of matches.
+async function buildSample(perLevelPerYear) {
+  const sample = {}; // `${year}|${level}` -> [event]
+  for (const year of YEARS) {
+    const days = sampleDays(year);
+    // Two passes on purpose. Filling buckets greedily as days stream in would
+    // take all 50 ATP matches from January and call it a year — a hard-court
+    // sample masquerading as a season. So: collect every candidate across the
+    // whole calendar first, then thin each level evenly across the days that
+    // actually have matches.
+    const candidates = { atp: [], slam: [], challenger: [] };
+    for (const day of days) {
+      for (let page = 1; page <= 4; page++) {
+        let r;
+        try { r = await api('/v3/events/ended', { sport_id: TENNIS, day, page }); }
+        catch (e) { if (e instanceof BudgetExhausted) { log('BUDGET EXHAUSTED during sampling'); break; } throw e; }
+        const rows = r.body?.results || [];
+        for (const e of rows) {
+          const lvl = classify(e.league?.name);
+          if (!lvl) continue;
+          if (String(e.time_status) !== '3') continue;   // ended normally only
+          if (/\//.test(e.home?.name || '') || /\//.test(e.away?.name || '')) continue; // belt-and-braces doubles guard
+          candidates[lvl].push({ id: e.id, time: Number(e.time), league: e.league?.name, home: e.home?.name, away: e.away?.name, ss: e.ss, round: e.round?.name ?? null, day });
+        }
+        const total = r.body?.pager?.total ?? 0;
+        if (rows.length < 50 || page * 50 >= total) break;
+      }
+    }
+    for (const [lvl, all] of Object.entries(candidates)) {
+      let picked = all;
+      if (all.length > perLevelPerYear) {
+        const stride = all.length / perLevelPerYear;
+        picked = Array.from({ length: perLevelPerYear }, (_, i) => all[Math.floor(i * stride)]);
+      }
+      sample[`${year}|${lvl}`] = picked;
+      const daysCovered = new Set(picked.map((p) => p.day)).size;
+      log(`sample ${year} ${lvl}: n=${picked.length} of ${all.length} candidates, across ${daysCovered} days`);
+    }
+  }
+  return sample;
+}
+
+// (h) done properly. The Phase 2 book sweep asked ten named bookmakers for odds
+// and found handicap/total nowhere — but it never asked FonBet, and the markets
+// probe then caught FonBet reporting 13_2 AND 13_3 on ended tennis. A named
+// list can only ever find the books someone thought to name, so this inverts
+// it: /v2/event/odds/summary returns EVERY book that priced the match in one
+// request, so the books are discovered from the data instead of guessed, and
+// the same call reports which market keys each one carried.
+async function cmdBooks() {
+  const n = Number(process.env.PROBE_N || 25);
+  const out = { ran_at: new Date().toISOString(), per_level_per_year: n, cells: {}, books: {}, requests_used: 0 };
+  const sample = await buildSample(n);
+  save('books-sample.json', sample);
+  log(`sampling used ${reqCount} requests`);
+
+  // book -> year -> { seen, mw, hcap, ou }
+  const agg = {};
+  for (const [key, events] of Object.entries(sample)) {
+    const [year, level] = key.split('|');
+    const cell = { n_events: 0, ok: 0, books_seen: {} };
+    for (const ev of events) {
+      let r;
+      try { r = await api('/v2/event/odds/summary', { event_id: ev.id }); }
+      catch (e) { if (e instanceof BudgetExhausted) { log(`BUDGET EXHAUSTED at ${key}`); break; } throw e; }
+      cell.n_events++;
+      if (!r.ok) continue;
+      cell.ok++;
+      for (const [book, payload] of Object.entries(r.body?.results || {})) {
+        const keys = new Set();
+        for (const side of ['start', 'end']) for (const k of Object.keys(payload?.odds?.[side] || {})) keys.add(k);
+        cell.books_seen[book] = (cell.books_seen[book] || 0) + 1;
+        agg[book] ||= {};
+        agg[book][year] ||= { seen: 0, mw: 0, hcap: 0, ou: 0, levels: {} };
+        const a = agg[book][year];
+        a.seen++;
+        if (keys.has(MARKETS.mw)) a.mw++;
+        if (keys.has(MARKETS.hcap)) a.hcap++;
+        if (keys.has(MARKETS.ou)) a.ou++;
+        a.levels[level] = (a.levels[level] || 0) + 1;
+      }
+    }
+    out.cells[key] = cell;
+    log(`${key}: n=${cell.n_events} ok=${cell.ok} distinct books=${Object.keys(cell.books_seen).length} [req ${reqCount}]`);
+    save('books.json', out);
+  }
+  out.books = agg;
+  out.requests_used = reqCount;
+  out.rate_limit_headers = rateLimitHeaders;
+  save('books.json', out);
+
+  // Rank by how often the book carried a handicap or a total, which is the only
+  // thing the line-coverage design actually needs.
+  const rank = Object.entries(agg).map(([b, years]) => {
+    const t = { book: b, seen: 0, mw: 0, hcap: 0, ou: 0 };
+    for (const y of Object.values(years)) { t.seen += y.seen; t.mw += y.mw; t.hcap += y.hcap; t.ou += y.ou; }
+    return t;
+  }).sort((a, b) => (b.hcap + b.ou) - (a.hcap + a.ou) || b.seen - a.seen);
+  log('\nbook                 seen    13_1    13_2    13_3');
+  for (const t of rank) log(`${t.book.padEnd(18)} ${String(t.seen).padStart(6)} ${String(t.mw).padStart(7)} ${String(t.hcap).padStart(7)} ${String(t.ou).padStart(7)}`);
+  log('\nper-year for any book carrying 13_2 or 13_3:');
+  for (const t of rank.filter((x) => x.hcap + x.ou > 0)) {
+    for (const [y, v] of Object.entries(agg[t.book]).sort()) {
+      log(`  ${t.book.padEnd(16)} ${y}: seen=${v.seen} mw=${v.mw} hcap=${v.hcap} ou=${v.ou} levels=${JSON.stringify(v.levels)}`);
+    }
+  }
+}
+
 async function cmdProbe() {
   const cfg = {
     per_level_per_year: Number(process.env.PROBE_N || 50),
@@ -748,6 +858,7 @@ try {
   else if (cmd === 'census') await cmdCensus();
   else if (cmd === 'probe') await cmdProbe();
   else if (cmd === 'markets') await cmdMarkets();
+  else if (cmd === 'books') await cmdBooks();
   else { console.error('unknown command'); process.exit(2); }
 } catch (err) {
   if (err instanceof BudgetExhausted) log(`STOPPED: ${err.message} after ${reqCount} requests`);
