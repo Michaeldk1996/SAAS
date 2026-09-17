@@ -960,6 +960,208 @@ async function cmdMarkets() {
   save('markets.json', out);
 }
 
+/* ---------------------------------------------------------------- semantics */
+
+// The board's follow-up asks what `13_2` and `13_3` actually ARE — games or
+// sets — with example rows against the final score. That question cannot be
+// answered from the Phase 2 sample: bet365 returns zero rows for both keys on
+// all 539 matches. The books sweep found exactly one book that ever quotes
+// them, FonBet, on 11 of 276 matches and only in 2025.
+//
+// So this goes at the question from the only angle that has data:
+//   1. re-summarise the SAME 2025 events the books sweep used (ids passed in,
+//      so the two runs are comparable rather than two different samples),
+//   2. widen the hunt across more 2025 ended days to lift n above the handful,
+//   3. for every hit, pull the full series from that book and pair each quoted
+//      handicap/total line against the final score, so "games vs sets" is read
+//      off the data instead of assumed from the key number.
+//
+// Pre-start is the board's definition, not the earlier one: ss null OR an
+// all-zero ss ("0-0", "0-0,0-0"), and no in-play time_str. The earlier filter
+// dropped every 0-0 row and therefore mis-stated the closing price by hours.
+const ZERO_SS = /^(0-0)(,0-0)*$/;
+const isPreStart = (r) => !r.time_str && (r.ss == null || ZERO_SS.test(String(r.ss)));
+const hasPrice = (r) => r && r.home_od != null && r.home_od !== '-' && r.home_od !== '';
+
+// "4-6,6-4,7-6" -> { games: 33, margin: -2 (home minus away), sets: 3 }
+function scoreShape(ss) {
+  if (!ss) return null;
+  const sets = String(ss).split(',').map((s) => s.trim()).filter(Boolean);
+  let h = 0, a = 0, hs = 0, as = 0;
+  for (const s of sets) {
+    const m = /^(\d+)-(\d+)$/.exec(s);
+    if (!m) return null;
+    const [, x, y] = m;
+    h += Number(x); a += Number(y);
+    if (Number(x) > Number(y)) hs++; else if (Number(y) > Number(x)) as++;
+  }
+  return { games: h + a, home_games: h, away_games: a, margin: h - a, sets: sets.length, set_score: `${hs}-${as}` };
+}
+
+async function cmdSemantics() {
+  const out = {
+    ran_at: new Date().toISOString(),
+    entitlement: {},
+    scanned: { known_ids: 0, extra: 0 },
+    hits: [],
+    market_rows: { '13_2': 0, '13_3': 0 },
+    lines: { '13_2': {}, '13_3': {} },
+    lines_per_match: { '13_2': [], '13_3': [] },
+    recent_series_markets: {},
+    requests_used: 0,
+  };
+
+  // ---- 0. package liveness, first, before spending anything on the probe.
+  log('== package liveness ==');
+  const now = new Date(Date.now() - 2 * 86400_000);
+  const recentDay = `${now.getUTCFullYear()}${String(now.getUTCMonth() + 1).padStart(2, '0')}${String(now.getUTCDate()).padStart(2, '0')}`;
+  const live = await api('/v3/events/ended', { sport_id: TENNIS, day: recentDay });
+  const old = await api('/v3/events/ended', { sport_id: TENNIS, day: '20170715' });
+  out.entitlement = {
+    checked_at: new Date().toISOString(),
+    recent_day: recentDay,
+    recent: { http: live.status, success: live.body?.success ?? null, error: live.body?.error ?? null, n: live.body?.results?.length ?? 0 },
+    historical_2017: { http: old.status, success: old.body?.success ?? null, error: old.body?.error ?? null, n: old.body?.results?.length ?? 0 },
+  };
+  log(`  ended ${recentDay}: http=${live.status} success=${live.body?.success} n=${live.body?.results?.length ?? 0}`);
+  log(`  ended 20170715  : http=${old.status} success=${old.body?.success} n=${old.body?.results?.length ?? 0}`);
+  if (!live.ok) { log('TOKEN/PACKAGE NOT LIVE — stopping before spending the budget'); save('semantics.json', out); return; }
+
+  // ---- 1. the events to ask about.
+  const known = (process.env.BETSAPI_EVENT_IDS || '').split(',').map((s) => s.trim()).filter(Boolean);
+  const pool = known.map((id) => ({ id }));
+  out.scanned.known_ids = pool.length;
+  log(`\n== summarising ${pool.length} known 2025 sample events ==`);
+
+  // ---- 2. widen: more 2025 ended singles, same classifier, same stride logic.
+  const extraWant = Number(process.env.BETSAPI_EXTRA_SCAN || 200);
+  if (extraWant > 0) {
+    const seen = new Set(known);
+    const days = sampleDays(2025);
+    const extra = [];
+    for (const day of days) {
+      if (extra.length >= extraWant) break;
+      let r; try { r = await api('/v3/events/ended', { sport_id: TENNIS, day }); }
+      catch (e) { if (e instanceof BudgetExhausted) break; throw e; }
+      for (const e of r.body?.results || []) {
+        if (extra.length >= extraWant) break;
+        if (seen.has(String(e.id))) continue;
+        if (!classify(e.league?.name)) continue;
+        if (String(e.time_status) !== '3') continue;
+        if (/\//.test(e.home?.name || '') || /\//.test(e.away?.name || '')) continue;
+        seen.add(String(e.id));
+        extra.push({ id: e.id, league: e.league?.name, home: e.home?.name, away: e.away?.name, ss: e.ss, time: Number(e.time) });
+      }
+    }
+    out.scanned.extra = extra.length;
+    pool.push(...extra);
+    log(`widened with ${extra.length} further 2025 ended singles [req ${reqCount}]`);
+  }
+
+  // ---- 3. one summary per event; keep anything with a non-null 13_2 / 13_3.
+  const nonNull = (v) => v !== null && v !== undefined && typeof v === 'object';
+  let summarised = 0;
+  for (const ev of pool) {
+    let r; try { r = await api('/v2/event/odds/summary', { event_id: ev.id }); }
+    catch (e) { if (e instanceof BudgetExhausted) { log('BUDGET EXHAUSTED during summaries'); break; } throw e; }
+    summarised++;
+    if (!r.ok) continue;
+    for (const [book, payload] of Object.entries(r.body?.results || {})) {
+      const carries = ['13_2', '13_3'].filter((m) =>
+        ['start', 'kickoff', 'end'].some((side) => nonNull(payload?.odds?.[side]?.[m])));
+      if (!carries.length) continue;
+      out.hits.push({ event_id: ev.id, book, markets: carries, summary: payload, ev });
+      log(`  HIT ${ev.id} ${book} ${carries.join('+')} [req ${reqCount}]`);
+    }
+    if (summarised % 25 === 0) { out.requests_used = reqCount; save('semantics.json', out); }
+  }
+  out.summarised = summarised;
+  log(`\nsummarised ${summarised} events, ${out.hits.length} book-hits carrying 13_2/13_3`);
+
+  // ---- 4. for each hit: the event's final score, then the book's full series.
+  const maxSeries = Number(process.env.BETSAPI_MAX_SERIES || 40);
+  const examples = { '13_2': [], '13_3': [] };
+  for (const hit of out.hits.slice(0, maxSeries)) {
+    let view;
+    if (!hit.ev.ss) {
+      try { view = await api('/v1/event/view', { event_id: hit.event_id }); }
+      catch (e) { if (e instanceof BudgetExhausted) break; throw e; }
+      const v = view?.body?.results?.[0];
+      if (v) hit.ev = { id: v.id, league: v.league?.name, home: v.home?.name, away: v.away?.name, ss: v.ss, time: Number(v.time) };
+    }
+    const shape = scoreShape(hit.ev.ss);
+    hit.score_shape = shape;
+
+    let s; try { s = await api('/v2/event/odds', { event_id: hit.event_id, source: hit.book.toLowerCase() }); }
+    catch (e) { if (e instanceof BudgetExhausted) break; throw e; }
+    const odds = s.body?.results?.odds || {};
+    hit.series_counts = Object.fromEntries(Object.entries(odds).map(([k, v]) => [k, Array.isArray(v) ? v.length : 0]));
+
+    for (const m of ['13_2', '13_3']) {
+      const rows = odds[m] || [];
+      out.market_rows[m] += rows.length;
+      const pre = rows.filter((r) => isPreStart(r) && hasPrice(r));
+      const lineSet = new Set();
+      for (const r of pre) if (r.handicap != null) lineSet.add(String(r.handicap));
+      if (pre.length) out.lines_per_match[m].push(lineSet.size);
+      for (const l of lineSet) out.lines[m][l] = (out.lines[m][l] || 0) + 1;
+
+      if (pre.length && examples[m].length < 8) {
+        // Closing row = latest pre-start quote, which is the row the coverage
+        // design would actually price off.
+        const close = pre.reduce((a, b) => (Number(a.add_time) > Number(b.add_time) ? a : b));
+        examples[m].push({
+          event_id: hit.event_id, book: hit.book,
+          match: `${hit.ev.home} vs ${hit.ev.away}`, league: hit.ev.league,
+          final_ss: hit.ev.ss, total_games: shape?.games ?? null, game_margin: shape?.margin ?? null,
+          set_score: shape?.set_score ?? null, sets_played: shape?.sets ?? null,
+          closing_row: close,
+          distinct_pre_lines: [...lineSet].sort(),
+        });
+      }
+    }
+    // The summary's own open/close for the same markets, verbatim, so the two
+    // surfaces can be compared rather than one trusted.
+    hit.summary_lines = Object.fromEntries(['start', 'kickoff', 'end'].map((side) => [side,
+      Object.fromEntries(['13_2', '13_3'].map((m) => [m, hit.summary?.odds?.[side]?.[m] ?? null]))]));
+    save('semantics.json', out);
+  }
+  out.examples = examples;
+
+  // ---- 5. does the SERIES endpoint carry the lines on recent tennis at all?
+  //         If it does now but not in 2025, the gap is retention, not coverage.
+  log('\n== recent tennis: which market keys does /v2/event/odds return today? ==');
+  const rec = { n: 0, markets: {}, with_2: 0, with_3: 0 };
+  for (const e of (live.body?.results || []).slice(0, 20)) {
+    let r; try { r = await api('/v2/event/odds', { event_id: e.id }); }
+    catch (err) { if (err instanceof BudgetExhausted) break; throw err; }
+    rec.n++;
+    const o = r.body?.results?.odds || {};
+    for (const [k, v] of Object.entries(o)) rec.markets[k] = (rec.markets[k] || 0) + (Array.isArray(v) && v.length ? 1 : 0);
+    if ((o['13_2'] || []).length) rec.with_2++;
+    if ((o['13_3'] || []).length) rec.with_3++;
+  }
+  out.recent_series_markets = rec;
+  log(`  n=${rec.n} markets=${JSON.stringify(rec.markets)} 13_2=${rec.with_2} 13_3=${rec.with_3}`);
+
+  // ---- 6. report
+  for (const m of ['13_2', '13_3']) {
+    const lines = Object.entries(out.lines[m]).sort((a, b) => b[1] - a[1]);
+    log(`\n${m}: ${out.market_rows[m]} rows, ${out.lines_per_match[m].length} matches with a pre-start quote`);
+    log(`  distinct lines: ${lines.length ? lines.map(([l, c]) => `${l}×${c}`).join('  ') : '—'}`);
+    log(`  median distinct lines per match: ${median(out.lines_per_match[m]) ?? '—'}`);
+    for (const ex of examples[m]) {
+      log(`  e.g. ${ex.match} (${ex.league}) final ${ex.final_ss} = ${ex.total_games} games, margin ${ex.game_margin}, sets ${ex.set_score}`);
+      log(`       closing row: ${JSON.stringify(ex.closing_row)}  lines seen: ${ex.distinct_pre_lines.join(', ')}`);
+    }
+  }
+
+  out.requests_used = reqCount;
+  out.rate_limit_headers = rateLimitHeaders;
+  save('semantics.json', out);
+  log(`\nTOTAL requests used: ${reqCount} / budget ${MAX_REQ}`);
+}
+
 /* --------------------------------------------------------------------- main */
 
 const cmd = process.argv[2] || 'status';
@@ -976,6 +1178,7 @@ try {
   else if (cmd === 'books') await cmdBooks();
   else if (cmd === 'shape') await cmdShape();
   else if (cmd === 'fonbet') await cmdFonbet();
+  else if (cmd === 'semantics') await cmdSemantics();
   else { console.error('unknown command'); process.exit(2); }
 } catch (err) {
   if (err instanceof BudgetExhausted) log(`STOPPED: ${err.message} after ${reqCount} requests`);

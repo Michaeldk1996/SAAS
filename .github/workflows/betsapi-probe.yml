@@ -27,6 +27,14 @@ on:
         description: 'probe sample size per level per year'
         required: false
         default: '50'
+      event_ids:
+        description: 'semantics: comma-separated event ids to re-summarise'
+        required: false
+        default: ''
+      extra_scan:
+        description: 'semantics: how many further 2025 ended singles to widen with'
+        required: false
+        default: '200'
 
 concurrency:
   group: ten227-betsapi-probe
@@ -60,6 +68,8 @@ jobs:
           BETSAPI_MAX_REQ: ${{ inputs.max_req }}
           BETSAPI_RATE_PER_HOUR: ${{ inputs.rate_per_hour }}
           PROBE_N: ${{ inputs.per_level_per_year }}
+          BETSAPI_EVENT_IDS: ${{ inputs.event_ids }}
+          BETSAPI_EXTRA_SCAN: ${{ inputs.extra_scan }}
         run: node tools/betsapi-probe.mjs "${{ inputs.cmd }}"
 
       - name: Upload output
