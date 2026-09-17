@@ -22,23 +22,18 @@ expressible as a column on either input.
 THE NOW RULE — the one genuinely subtle decision in this file
 --------------------------------------------------------------
 Michael: "Now = freshest Oddspapi price already available to us, with its
-timestamp." The freshest tick we hold is `last_tick_*` on the summary row. But a
-FINISHED fixture's freshest tick is a settled in-play price, and rendering that
-as "Now" would put a post-match 1.02 on a card. So a stored tick is promoted to
-a Now only when we can show it is pre-match, by one of two independent tests:
+timestamp." The freshest tick we hold is `last_tick_*` on the summary row. But
+that tick is only a NOW for a fixture that has not started:
 
-  1. `last_tick_is_prestart IS TRUE` — the archive resolved a real start for the
-     fixture and the tick is at or before it. This is the strong test.
-  2. the fixture has not started yet, so EVERY tick we hold is necessarily
-     pre-match. The scheduled start is what tells us that.
+  * a fixture with a resolved start has already begun, and the freshest
+    pre-start price we hold for it IS ITS CLOSE. Rendering that as "Now" would
+    put a three-month-old closing price on a card under a live-sounding label;
+  * a fixture whose scheduled start is still in the future cannot have an
+    in-play tick at all, so its freshest tick is a genuine Now.
 
-Test 2 uses the scheduled time, and that is not a breach of "never use the
-scheduled time as a start". The locked rule forbids the schedule as a CUTOFF —
-as the instant a Close is pinned to. Here it decides SCOPE: "is this fixture in
-the future". Being wrong costs a Now that is a few minutes stale on a match just
-starting; being wrong about a cutoff pins an in-play price as a close forever.
-Same distinction as close_cutoff() vs completeness_ref() in the archive, and the
-margin makes it safe in one direction only, which is why it is a strict `>`.
+See qualifies_as_now() for the version of this rule that was wrong, why it
+reported 92% coverage, and why that number was the symptom rather than the
+reassurance.
 
 Neither test satisfied -> now_price is NULL and the card dashes. Missing is a
 dash, never zero, never the open, never a price from another book.
@@ -82,15 +77,44 @@ epoch, iso, sb, creds = L.epoch, L.iso, L.sb, L.creds
 
 # ------------------------------------------------------------------- the rules
 
-def qualifies_as_now(last_tick_is_prestart, sched_ts, as_of):
+def qualifies_as_now(start_ts, sched_ts, as_of):
     """Michael's Now definition -> may this stored tick be rendered as "Now"?
 
-    See the module docstring. Returns (ok, basis) where basis names WHICH test
-    passed, so the Part 4 report can say how each Now was justified rather than
-    just how many there are.
+    Returns (ok, basis) where basis names WHICH test passed, so the Part 4 report
+    can say how each Now was justified rather than just how many there are.
+
+    A Now is only meaningful for a fixture that HAS NOT STARTED. That is the
+    whole rule, and the first version of this function got it wrong in a way
+    worth recording, because the number looked healthy:
+
+      The first draft also promoted any tick the archive had proved pre-start
+      (`last_tick_is_prestart IS TRUE`). On run 35214569618 that produced "Now
+      92.0%" across 26,277 rows and read like excellent coverage. It was not.
+      That flag is true precisely when we hold a resolved start and our freshest
+      tick is BEFORE it — which, on a finished fixture, means the freshest price
+      we hold IS THE CLOSE. The rule was relabelling three-month-old closing
+      prices as "Now". A high number, uniformly wrong.
+
+    So the test is the fixture's own state, not the tick's position:
+      * a resolved start_ts means the match has started -> there is no Now, the
+        card shows Close;
+      * otherwise, a scheduled start in the future means every tick we hold is
+        necessarily pre-match -> the freshest one is a real Now.
+
+    Reading the scheduled time here is not a breach of "never use the scheduled
+    time". That rule forbids the schedule as a CUTOFF — the instant a Close is
+    pinned to. Here it decides SCOPE: "is this fixture still in the future".
+    Being wrong costs a Now a few minutes stale on a match just starting; being
+    wrong about a cutoff pins an in-play price as a close forever. Same split as
+    close_cutoff() vs completeness_ref() in the archive.
+
+    An in-play match gets no Now either. We hold no in-play price for it (the
+    summary is pre-start by construction) and the freshest pre-start price we do
+    hold is its close. Dash is the honest answer; "Now" would be a lie with a
+    plausible number attached.
     """
-    if last_tick_is_prestart is True:
-        return True, 'prestart-tick'
+    if start_ts is not None:
+        return False, None
     if sched_ts is not None and as_of is not None and sched_ts > as_of:
         return True, 'fixture-not-started'
     return False, None
@@ -110,9 +134,8 @@ def card_rows(summary_rows, fixtures, as_of):
             st['not_match_winner'] += 1
             continue
         fx = fixtures.get(r['fixture_id']) or {}
-        sched = epoch(fx.get('start_sched') or fx.get('startSched'))
-        now_ok, basis = qualifies_as_now(r.get('last_tick_is_prestart'),
-                                         sched, as_of)
+        sched = epoch(fx.get('scheduled_start'))
+        now_ok, basis = qualifies_as_now(epoch(r.get('start_ts')), sched, as_of)
         if now_ok:
             st[f'now_{basis}'] += 1
         elif r.get('last_tick_price') is not None:
@@ -243,7 +266,7 @@ def main():
     as_of = datetime.now(timezone.utc).timestamp()
     result = {'generatedAt': iso(as_of), 'market': MARKET}
 
-    cols = ('fixture_id,book,market,side,line,open_price,open_ts,close_price,'
+    cols = ('fixture_id,book,market,side,line,open_price,open_ts,open_limit,close_price,'
             'close_ts,start_ts,start_ts_source,start_reject_reason,'
             'last_tick_price,last_tick_ts,last_tick_is_prestart,close_reliable')
     summary, err = fetch_page(url, key, 'oddspapi_line_summary', cols,
@@ -253,12 +276,21 @@ def main():
         return 1
     print(f'oddspapi_line_summary: {len(summary)} match-winner rows')
 
+    # NOTE the column names are the TABLE's, not the index's: category_name /
+    # scheduled_start / true_start. An earlier draft of this file asked for
+    # `level,start_sched` and would have 400'd.
     fx_rows, err = fetch_page(url, key, 'oddspapi_fixtures',
-                              'fixture_id,level,start_sched,status')
+                              'fixture_id,category_name,scheduled_start,status')
     if err:
-        print(f'::warning::reading oddspapi_fixtures failed ({err}); '
-              'the not-started Now test cannot run and those Nows will dash.')
-        fx_rows = []
+        # FAIL LOUD. Continuing here would run the fill with an empty fixture
+        # map, which does not error — it silently disables the not-started limb
+        # of the Now rule, so every upcoming match dashes its Now and the run
+        # still reports success. A surface that is wholly empty for a structural
+        # reason is the failure mode that hides longest.
+        print(f'::error::reading oddspapi_fixtures failed ({err}). Refusing to '
+              'fill: without it the not-started Now test cannot run and every '
+              'upcoming Now would silently dash on a green run.')
+        return 1
     fixtures = {r['fixture_id']: r for r in fx_rows}
     print(f'oddspapi_fixtures: {len(fixtures)} fixtures')
 

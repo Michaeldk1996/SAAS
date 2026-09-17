@@ -160,6 +160,12 @@ ALTER TABLE oddspapi_line_summary
 -- would put a post-match number one join away from a surface that renders
 -- "Now". So the archive stores `last_tick_*` as a fact, and odds_card_state
 -- decides — per fixture, against the start — whether that fact is a Now.
+-- Michael's Open definition names the stake limit alongside the price and the
+-- timestamp. The tick carries `limit`; the loader was discarding it, so
+-- odds_card_state.open_limit could only ever have been NULL.
+ALTER TABLE oddspapi_line_summary
+  ADD COLUMN IF NOT EXISTS open_limit          numeric;
+
 ALTER TABLE oddspapi_line_summary
   ADD COLUMN IF NOT EXISTS last_tick_price     numeric,
   ADD COLUMN IF NOT EXISTS last_tick_ts        timestamptz,

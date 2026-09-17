@@ -249,6 +249,38 @@ check('no start -> pre_start_tick_count is NULL, not a guess',
       r5['pre_start_tick_count'] is None)
 check('no start -> counted', st5['no_start_open_only'] == 1)
 
+# ---------------------------------------------------- open_limit (locked Open)
+# Michael: Open is "the first recorded Oddspapi tick ... with timestamp and
+# STAKE LIMIT". The tick payload carries `limit` and the loader was discarding
+# it, so odds_card_state.open_limit could only ever have been NULL — a column
+# that silently answers "we have no limit" for every row in the table.
+print('\nopen_limit — the stake limit the locked Open definition names')
+
+def _lt(offset_s, price, limit):
+    return {'createdAt': L.iso(START + offset_s), 'price': price,
+            'limit': limit, 'active': True, 'exchangeMeta': None}
+
+lim_rows, _ = L.summarise_payload(
+    payload(mk('121', '121', [_lt(-7200, 1.50, 2500), _lt(-60, 1.44, 900)])),
+    'idTEST', OD(START), START + DAY, CAT)
+check('open_limit is the FIRST tick\'s limit (2500), not the last (900)',
+      lim_rows[0]['open_limit'] == 2500.0, lim_rows[0]['open_limit'])
+check('the Open price still comes from the same tick',
+      lim_rows[0]['open_price'] == 1.50)
+
+# A tick with no limit is None, never 0 — 0 is a limit-shaped number and would
+# reach a card reading as "this book will take nothing".
+nol_rows, _ = L.summarise_payload(
+    payload(mk('121', '121', [_lt(-7200, 1.50, None), _lt(-60, 1.44, None)])),
+    'idTEST', OD(START), START + DAY, CAT)
+check('a tick with no limit yields NULL, never 0',
+      nol_rows[0]['open_limit'] is None, nol_rows[0]['open_limit'])
+check('a non-numeric limit is NULL, not a crash',
+      L.summarise_payload(payload(mk('121', '121', [_lt(-7200, 1.50, 'n/a')])),
+                          'idTEST', OD(START), START + DAY,
+                          CAT)[0][0]['open_limit'] is None)
+# bet365-history months carry no limit field at all — honestly None there.
+
 # ---------------------------------------------- PART 2's "Now" source: last_tick
 # Michael's locked definition: "Now = freshest Oddspapi price already available
 # to us, with its timestamp. No new polling in this step." The archive stores the
