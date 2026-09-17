@@ -1,5 +1,24 @@
 #!/usr/bin/env python3
-"""TEN-225 — size the SUMMARY table Michael ruled for on 2026-09-17T07:33Z.
+"""SUPERSEDED — do not run phase B. Use ten225-density-from-bucket.py instead.
+
+Phase A (the /v4/fixtures level sweep) was replaced by ten225-fixture-index.py,
+which caches the same sweep to disk so it is not re-spent.
+
+Phase B (density via direct /v4/historical-odds calls) is the reason this file
+is superseded: it shares the rate-limited key with the raw-archive job and
+LOSES to it. Measured 2026-09-17 while archive run 35194415114 was pulling:
+3 fixtures in 9 minutes, all the rest of the time in 429 backoff — and every
+one of those retries stole throughput from the one job racing irreversible
+data loss (oddspapi prunes the pre-start tail within weeks). Running it again
+would cost real, unrecoverable series to re-measure something that is now free.
+
+ten225-density-from-bucket.py counts the same thing from payloads the archive
+has already written to object storage: zero odds-API calls, no contention, and
+n grows on its own every archive run.
+
+Kept only because its docstring records how the grain maps onto the payload.
+
+TEN-225 — size the SUMMARY table Michael ruled for on 2026-09-17T07:33Z.
 
 His ruling replaced the per-tick load with a collapsed table:
 
