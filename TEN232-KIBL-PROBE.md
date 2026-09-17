@@ -1,8 +1,8 @@
 # TEN-232 — Kibl / Bet105 first tests (a–d)
 
-- commit `e76d2d7`
-- run started `2026-09-17T23:08:52Z` UTC
-- API calls `69`, bytes down `3,778,996`, min interval `1.25s` (conservative — Kibl documents no rate limit)
+- commit `8db73c7`
+- run started `2026-09-17T23:13:15Z` UTC
+- API calls `69`, bytes down `3,779,329`, min interval `1.25s` (conservative — Kibl documents no rate limit)
 
 Report only. Nothing archived, nothing published, no site surface touched.
 
@@ -11,31 +11,31 @@ Report only. Nothing archived, nothing published, no site surface touched.
 **Cognito custom attributes on our token:** none — entitlement is not expressed in the token
 
 **Bet105 feed_source_id:** `-` (candidates matched: 0)
-**Tennis sport_id:** `-`
+**Tennis sport_id:** `5`
 
 ### Reference tables visible to us
 
 | table | HTTP | n |
 |---|---|---|
-| sports | 200 | 1 |
+| sports | 200 | 22 |
 | sportsbooks | 200 | 1 |
-| leagues | 200 | 1 |
-| betting_types | 200 | 1 |
-| market_types | 200 | 1 |
-| segments | 200 | 1 |
-| fixture_types | 200 | 1 |
-| feed_types | 200 | 1 |
+| leagues | 200 | 359 |
+| betting_types | 200 | 4 |
+| market_types | 200 | 127 |
+| segments | 200 | 68 |
+| fixture_types | 200 | 8 |
+| feed_types | 200 | 6 |
 
 ### Leagues — empirical (fixtures in a −3d/+7d window)
 
 | league_id | league | HTTP | fixtures | in archive scope |
 |---|---|---|---|---|
-| 19 | ATP | 200 | 1 | yes |
-| 537 | Challenger | 200 | 1 | yes |
-| 962 | ITF Men | 200 | 1 | yes |
-| 20 | WTA | 200 | 1 | NO (reported, not archived) |
-| 643 | WTA 125K | 200 | 1 | NO (reported, not archived) |
-| 963 | ITF Women | 200 | 1 | NO (reported, not archived) |
+| 19 | ATP | 200 | 3 | yes |
+| 537 | Challenger | 200 | 149 | yes |
+| 962 | ITF Men | 200 | 272 | yes |
+| 20 | WTA | 200 | 75 | NO (reported, not archived) |
+| 643 | WTA 125K | 200 | 93 | NO (reported, not archived) |
+| 963 | ITF Women | 200 | 217 | NO (reported, not archived) |
 
 ### betting_type_id — which ids actually carry tennis rows
 
@@ -53,9 +53,9 @@ Report only. Nothing archived, nothing published, no site surface touched.
 | true | 200 | 0 | [] |
 | false | 200 | 0 | [] |
 
-### Feed sources actually received (n=0 rows)
+### Books actually received (n=0 market rows, all men's leagues)
 
-`{}`
+no market rows returned
 
 ### Restrictions found
 
@@ -68,37 +68,45 @@ Report only. Nothing archived, nothing published, no site surface touched.
 
 | days back | fixtures | market rows | opener | previous | current | fixtures priced | distinct inserted_on |
 |---|---|---|---|---|---|---|---|
-| 1 | 1 | 0 | - | - | - | 0 | 0 |
-| 2 | 1 | 0 | - | - | - | 0 | 0 |
-| 3 | 1 | 0 | - | - | - | 0 | 0 |
-| 5 | 1 | 0 | - | - | - | 0 | 0 |
-| 7 | 1 | 0 | - | - | - | 0 | 0 |
-| 14 | 1 | 0 | - | - | - | 0 | 0 |
-| 30 | 1 | 0 | - | - | - | 0 | 0 |
-| 60 | 1 | 0 | - | - | - | 0 | 0 |
-| 90 | 1 | 0 | - | - | - | 0 | 0 |
-| 180 | 1 | 0 | - | - | - | 0 | 0 |
-| 365 | 1 | 0 | - | - | - | 0 | 0 |
+| 1 | 134 | 0 | - | - | - | 0 | 0 |
+| 2 | 116 | 0 | - | - | - | 0 | 0 |
+| 3 | 62 | 0 | - | - | - | 0 | 0 |
+| 5 | 50 | 0 | - | - | - | 0 | 0 |
+| 7 | 148 | 0 | - | - | - | 0 | 0 |
+| 14 | 175 | 0 | - | - | - | 0 | 0 |
+| 30 | 161 | 0 | - | - | - | 0 | 0 |
+| 60 | 94 | 0 | - | - | - | 0 | 0 |
+| 90 | 81 | 0 | - | - | - | 0 | 0 |
+| 180 | 31 | 0 | - | - | - | 0 | 0 |
+| 365 | 49 | 0 | - | - | - | 0 | 0 |
 
 `distinct inserted_on` is the series-depth test: three states per line means at most three distinct stamps per line. A number far above 3× the line count would be the only evidence a real tick series exists.
 
 ## c. Bet105-specific pre-match coverage (men's leagues)
 
-Window `2026-09-17T23:08:52Z → 2026-09-20T23:08:52Z`, betting_type_id=1 (Prematch), feed_source_id = Bet105 only.
+Window `2026-09-17T23:13:15Z → 2026-09-20T23:13:15Z`, betting_type_id=1 (Prematch), feed_source_id = Bet105 only.
 
 | league | fixtures (n) | priced | % priced | market rows | lines/fixture mean | max | both sides % |
 |---|---|---|---|---|---|---|---|
-| ATP (19) | 1 | 0 | 0.0% | 0 | - | 0 | - |
-| Challenger (537) | 1 | 0 | 0.0% | 0 | - | 0 | - |
-| ITF Men (962) | 1 | 0 | 0.0% | 0 | - | 0 | - |
+| ATP (19) | 3 | 0 | 0.0% | 0 | - | 0 | - |
+| Challenger (537) | 24 | 0 | 0.0% | 0 | - | 0 | - |
+| ITF Men (962) | 38 | 0 | 0.0% | 0 | - | 0 | - |
 
 ### Market presence — fixtures carrying each market_type/segment
 
-- **ATP**: `{}`
-- **Challenger**: `{}`
-- **ITF Men**: `{}`
+**ATP**
 
-Read the keys as `market_type_id/segment_id`. The set handicap the founder asked about is Spread on the Sets segment; total sets is Total on Sets. Both are named against the reference tables in the JSON.
+- no market rows returned for this league in the window
+
+**Challenger**
+
+- no market rows returned for this league in the window
+
+**ITF Men**
+
+- no market rows returned for this league in the window
+
+Set handicap is Spread on the Sets segment; total sets is Total on Sets. Raw `market_type_id/segment_id` keys are in the JSON.
 
 ## d. Is the `is_current` default trap handled?
 
@@ -117,6 +125,7 @@ The archive uses `markets_three_state()`, which is the two-call merge, and never
 ## Errors
 
 - Bet105 feed_source_id could not be resolved from /reference/sportsbooks; tests b/c/d ran WITHOUT a feed-source filter and therefore measure every book we receive, not Bet105 specifically.
+- 41 call(s) returned 200 with an envelope this parser does not recognise — every zero below them is unmeasured, not empty.
 
 ## Rate-limit evidence
 
