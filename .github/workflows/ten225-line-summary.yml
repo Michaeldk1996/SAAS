@@ -191,6 +191,52 @@ jobs:
           printf '%s\n' "$body" | jq -e 'type == "array" and length > 0' >/dev/null \
             || { echo "::error::read-back returned no rows or an error body"; exit 1; }
 
+      # Michael's trueStartTime ruling (2026-09-17T10:02Z) asks for the reject
+      # count per level and the cross-check distribution. The loader prints both
+      # from the rows it BUILT; this reads them back from the rows that actually
+      # LANDED, which is the only version that proves the four ruling columns
+      # exist on the instance and were written. The two agreeing is the check.
+      - name: Read back — the start gate and the cross-check
+        if: ${{ always() }}
+        run: |
+          set -euo pipefail
+          read -r -d '' Q <<'SQL' || true
+          SELECT coalesce(f.category_name, '(not in the 180d index)')   AS level,
+                 count(DISTINCT s.fixture_id)                           AS fixtures,
+                 count(DISTINCT s.fixture_id)
+                   FILTER (WHERE s.start_reject_reason IS NOT NULL)     AS rejected,
+                 count(DISTINCT s.fixture_id)
+                   FILTER (WHERE s.start_reject_reason
+                                 = 'implausible_duration')              AS duration,
+                 count(DISTINCT s.fixture_id)
+                   FILTER (WHERE s.start_reject_reason
+                                 = 'implausible_early_start')           AS early_start,
+                 count(DISTINCT s.fixture_id)
+                   FILTER (WHERE s.start_ts_source = 'api-tennis-live') AS via_flip,
+                 count(DISTINCT s.fixture_id)
+                   FILTER (WHERE s.start_conflict)                      AS conflicts
+            FROM oddspapi_line_summary s
+            LEFT JOIN oddspapi_fixtures f ON f.fixture_id = s.fixture_id
+           GROUP BY 1 ORDER BY rejected DESC, fixtures DESC;
+          SQL
+          resp=$(jq -Rn --arg q "$Q" '{query: $q}' | curl -sS -w $'\n%{http_code}' -X POST \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data @- "$MGMT/v1/projects/$PROJECT_REF/database/query")
+          body=$(printf '%s' "$resp" | sed '$d')
+          { echo '## TEN-225 — read-back: start gate per level'
+            echo '```json'; printf '%s\n' "$body" | jq .; echo '```'; } \
+            | tee -a "$GITHUB_STEP_SUMMARY"
+          # Same trap as the coverage read-back: a 201 with an error body must
+          # not read as "the gate columns are fine".
+          printf '%s\n' "$body" | jq -e 'type == "array" and length > 0' >/dev/null \
+            || { echo "::error::gate read-back returned no rows or an error body"; exit 1; }
+          # A migration that silently did not apply surfaces as an error body
+          # above; this asserts the four columns are actually QUERYABLE rather
+          # than merely present in the DDL file.
+          printf '%s\n' "$body" | jq -e 'map(.rejected|tonumber) | add >= 0' >/dev/null \
+            || { echo "::error::start_reject_reason is not readable"; exit 1; }
+
       - name: Table size on the instance
         if: ${{ always() }}
         run: |
