@@ -1,0 +1,123 @@
+name: TEN-232 kibl probe
+
+# TEN-232 first tests (a-d), run BEFORE the archive is built:
+#   a. what this account is ACTUALLY entitled to (a restricted account returns
+#      HTTP 200 with fewer rows, never a 403)
+#   b. whether /info/markets start_time/end_time reaches BACKWARDS to finished
+#      fixtures — this decides how much history is recoverable vs lost forever
+#   c. Bet105-specific coverage for ATP / Challenger / ITF Men
+#   d. whether the is_current default trap is defeated by the two-call merge
+#
+# Report only. Reads the feed, writes two report files to the repo, touches no
+# site surface, no bucket, no Postgres table, and nothing on the board.
+#
+# This job exists because the credentials are Actions secrets: KIBL_USERNAME and
+# KIBL_PASSWORD. KIBL_CLIENT_ID is deliberately NOT set — Kibl publishes the
+# client id in plaintext in their own tutorial, so the script falls back to it.
+#
+# Pacing: Kibl documents NO rate limit, quota or 429 anywhere in 71 endpoints.
+# "Undocumented" is not "absent", so the client paces itself at one call per
+# 1.25s and the report states plainly whether any rate-limit header was ever
+# seen. Rate limits are still pending from Bet105.
+
+on:
+  workflow_dispatch:
+    inputs:
+      horizon_days:
+        description: 'Forward window for the coverage test, days'
+        default: '3'
+      skip:
+        description: 'Comma-separated tests to skip (a,b,c,d)'
+        default: ''
+
+concurrency:
+  group: ten232-kibl-probe
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # Fail loudly and early rather than authenticating with an empty string,
+      # which Cognito answers with a generic error that reads like a bad password.
+      - name: Guard — credentials present
+        env:
+          KIBL_USERNAME: ${{ secrets.KIBL_USERNAME }}
+          KIBL_PASSWORD: ${{ secrets.KIBL_PASSWORD }}
+        run: |
+          missing=
+          [ -z "$(printf '%s' "$KIBL_USERNAME" | tr -d '[:space:]')" ] && missing="$missing KIBL_USERNAME"
+          [ -z "$(printf '%s' "$KIBL_PASSWORD" | tr -d '[:space:]')" ] && missing="$missing KIBL_PASSWORD"
+          if [ -n "$missing" ]; then
+            echo "::error::missing secret(s):$missing"
+            exit 1
+          fi
+          echo "both credentials present (values never printed)"
+
+      # Offline, no network, no credentials. Locks the is_current two-call merge
+      # and the boolean serialisation before a single real call is spent.
+      - name: Offline tests
+        run: python3 test-kibl-client.py
+
+      - name: Run the probe
+        env:
+          KIBL_USERNAME: ${{ secrets.KIBL_USERNAME }}
+          KIBL_PASSWORD: ${{ secrets.KIBL_PASSWORD }}
+          KIBL_CLIENT_ID: ${{ secrets.KIBL_CLIENT_ID }}
+        run: |
+          python3 ten232-kibl-probe.py \
+            --horizon-days "${{ inputs.horizon_days }}" \
+            --skip "${{ inputs.skip }}"
+
+      # The report files are the evidence, not the step summary. A prior probe
+      # on this repo reported a green run through a tee'd summary while being
+      # dead; committed artefacts can be read back and checked for content.
+      - name: Commit the probe output
+        if: always()
+        run: |
+          if [ ! -f ten232-kibl-probe.json ]; then
+            echo "::error::probe produced no output file"
+            exit 1
+          fi
+          git config user.name "bsp-bot"
+          git config user.email "bsp-bot@users.noreply.github.com"
+          git add -f ten232-kibl-probe.json TEN232-KIBL-PROBE.md
+          if git diff --cached --quiet; then
+            echo "no change in probe output"
+            exit 0
+          fi
+          git commit -m "TEN-232: kibl first-tests probe output (report only) [skip ci]"
+          git pull --rebase --autostash origin main || true
+          git push origin HEAD:main
+
+      - name: Summary
+        if: always()
+        run: |
+          if [ -f TEN232-KIBL-PROBE.md ]; then
+            cat TEN232-KIBL-PROBE.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "no report produced" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ten232-kibl-probe
+          path: |
+            ten232-kibl-probe.json
+            TEN232-KIBL-PROBE.md
+          if-no-files-found: warn
