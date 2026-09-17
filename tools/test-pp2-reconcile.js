@@ -1155,19 +1155,24 @@ check('real shards: Σ grid cells = subtitle M, and the priced set is a subset',
   console.log(`        ${checked} real shards — Σ cells = M, priced ⊆ grid`);
 });
 
-check('runs partition the sequence — lengths sum to the match count', () => {
-  // Streaks is explicitly out of scope for this pass and still runs on the
-  // archive spine (ruling cal-1). This asserts that it DOES — if it ever moves,
-  // it moves in its own pass with its own numbers re-measured.
+check('cal-2 · runs partition the CAREER sequence — lengths sum to the match count', () => {
+  // RULING cal-2 (founder, 2026-09-17): Streaks moved off the priced archive
+  // onto the same career rows the Calendar tab counts. The lock is two-sided —
+  // the run set must equal the career spine AND must NOT equal the archive it
+  // came from, or a fixture where the two happen to be the same size would let a
+  // revert pass.
   const saved = { ...I.state };
   try {
     I.state.calSurface = 'all';
     for (const k of CAL_PLAYERS) {
       const p = PLAYERS[k];
       if (!p) continue;
-      const rows = I.calMarketFiltered(p);
-      assert.strictEqual(rows.length, MARKET[k].matches.length,
-        `${k}: the Streaks spine is no longer the archive`);
+      const rows = I.calSpineFiltered(p);
+      assert.strictEqual(rows.length, (CAREER_HIST[k] || [])
+        .filter(r => r && /^\d{4}-\d{2}-\d{2}$/.test(String(r.date))).length,
+        `${k}: the Streaks spine is not the career match rows`);
+      assert.notStrictEqual(rows.length, I.calMarketRows(p).length,
+        `${k}: the Streaks spine equals the priced archive — ruling cal-2 was reverted`);
       const runs = I.calRuns(rows);
       const summed = runs.reduce((a, r) => a + r.len, 0);
       assert.strictEqual(summed, rows.length, `${k}: runs sum to ${summed}, not ${rows.length}`);
@@ -1178,10 +1183,38 @@ check('runs partition the sequence — lengths sum to the match count', () => {
       rows.forEach((r) => { cur = r.won ? cur + 1 : 0; if (cur > best) best = cur; });
       const lw = runs.filter(r => r.res === 'W').sort((a, b) => b.len - a.len)[0];
       assert.strictEqual(lw ? lw.len : 0, best, `${k}: longest win run disagrees with a direct scan`);
+      // The priced set is a SUBSET of the run rows, never the other way round —
+      // this is the relation that replaced "every run row carries a price".
+      const priced = rows.filter(r => r.cents != null).length;
+      assert(priced <= rows.length, `${k}: ${priced} priced rows in a ${rows.length}-row sequence`);
     }
   } finally { Object.assign(I.state, saved); }
-  console.log(`        ${CAL_PLAYERS.length} players — Streaks still on the archive; runs alternate and sum to n`);
+  console.log(`        ${CAL_PLAYERS.length} players — Streaks on the career spine; runs alternate and sum to n`);
 });
+
+mustFail('[neg] the cal-2 lock would catch Streaks reverting to the archive', () => withCal(() => {
+  // Drive the assertion the lock makes, with the OLD spine substituted. If this
+  // ever stops throwing, the lock above has gone inert.
+  const rows = I.calMarketRows(CAL_P);
+  assert.strictEqual(rows.length, CAL_EXPECT.grid,
+    `archive holds ${rows.length}, not the ${CAL_EXPECT.grid} career rows`);
+}));
+
+check('cal-2 · the rendered Streaks tab carries the career count, not the archive count', () => withCal(() => {
+  const saved = { ...I.state };
+  try {
+    I.state.calTab = 'streaks'; I.state.calSurface = 'all'; I.state.calRun = null;
+    const html = I.renderSeasonModal(CAL_P);
+    const runs = I.calRuns(I.calSpineFiltered(CAL_P));
+    assert(html.includes(`${runs.length} runs`), `the run count ${runs.length} is not painted`);
+    assert(html.includes(`Runs are counted over the career match rows`),
+      'the scope note still describes the archive');
+    assert(html.includes(`${CAL_EXPECT.grid} matches`),
+      `the scope note does not state the ${CAL_EXPECT.grid} career rows`);
+    assert(!html.includes('priced tour archive'), 'the old archive scope sentence survived');
+    console.log(`        Streaks paints ${runs.length} runs over ${CAL_EXPECT.grid} career rows`);
+  } finally { Object.assign(I.state, saved); }
+}));
 
 check('Erdos-Renyi expectations match the design formula, and degenerate rates dash', () => {
   // Transcribed independently here from the .dc.html comment, not from the

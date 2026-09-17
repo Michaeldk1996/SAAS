@@ -3259,22 +3259,15 @@
     { id: 'indoors', label: 'Indoors' }
   ];
 
-  // The Streaks tab is explicitly out of scope for this pass ("DON'T TOUCH —
-  // Streaks tab (separate pass)"), so its rows stay on the archive spine cal-0
-  // gave it and none of its published numbers move. The two tabs therefore sit
-  // on DIFFERENT spines until that pass lands — raised to the founder rather
-  // than silently unified here, because unifying them would change Streaks.
+  // The priced archive, dated and sorted. Since ruling cal-2 NOTHING in this
+  // modal renders from it — both tabs read calSpine() — but it stays exported as
+  // the negative control the spine locks compare against: a test that only knows
+  // the new count cannot tell a correct spine from a coincidence, whereas one
+  // that also holds the OLD count catches a silent revert.
   function calMarketRows(p) {
     var mk = marketFor(p.key);
     if (!mk || !mk.matches) return [];
     return mk.matches.slice().sort(function (a, b) { return a.date < b.date ? -1 : a.date > b.date ? 1 : 0; });
-  }
-  function calMarketFiltered(p) {
-    var rows = calMarketRows(p);
-    var s = state.calSurface || 'all';
-    if (s === 'all') return rows;
-    if (s === 'indoors') return rows.filter(function (r) { return r.court === 'Indoor'; });
-    return rows.filter(function (r) { return String(r.surface || '').toLowerCase() === s; });
   }
 
   // ── the display-name map (item 20) ────────────────────────────────────────
@@ -3622,12 +3615,12 @@
       calSegBtn('cal-tab', 'calendar', 'Calendar', tab === 'calendar') +
       calSegBtn('cal-tab', 'streaks', 'Streaks', tab === 'streaks'), false, '16px');
     if (tab === 'streaks') {
-      // The guard is on the FILTERED rows, not the whole archive: a surface a
-      // player has no priced match on leaves the run maths with n=0, and every
-      // rate downstream of it is 0/0. It printed "undefined" into the DOM.
-      if (!calMarketFiltered(p).length) {
-        return seg + calEmpty('No priced matches on record for this surface, ' +
-          'so there is no dated row to place in a run.');
+      // The guard is on the FILTERED rows, not the whole spine: a surface a
+      // player has no match on leaves the run maths with n=0, and every rate
+      // downstream of it is 0/0. It printed "undefined" into the DOM.
+      if (!calSpineFiltered(p).length) {
+        return seg + calEmpty(calNoRowsWhy(state.calSurface || 'all',
+          'so there is no dated row to place in a run.'));
       }
       return seg + renderStreakTab(p) + calStreakScopeNote(p);
     }
@@ -3640,17 +3633,46 @@
     return '<div style="border:1px dashed rgba(255,255,255,0.12);border-radius:10px;padding:26px;' +
       'text-align:center;font-size:13px;color:#5b6880;margin-top:14px;">' + esc(text) + '</div>';
   }
-  // The Streaks tab still runs on the archive spine (see ruling cal-1), so it
-  // keeps its own scope sentence rather than inheriting the Calendar tab's.
+  // ONE refusal sentence for BOTH tabs. Since ruling cal-2 the two tabs read the
+  // same rows, so an empty segment has the same cause on either — and the
+  // Indoors case has to keep saying WHY it is empty rather than reading as "he
+  // never played indoors". `tail` is the clause that names the block.
+  function calNoRowsWhy(surf, tail) {
+    if (surf === 'indoors') {
+      return 'No per-match court type on record. Indoors is a court type carved out of the surfaces, and the ' +
+        'career match rows carry a surface but no court column — the Career record drill refuses an ' +
+        'Indoors drill for the same reason.';
+    }
+    if (!surf || surf === 'all') return 'No dated career match rows on record, ' + tail;
+    var label = (CAL_SURFACES.filter(function (s) { return s.id === surf; })[0] || {}).label;
+    return 'No career match rows on ' + (label || 'this surface') + ' on record, ' + tail;
+  }
+  // ─── RULING cal-2 · THE STREAKS SPINE MOVED TOO (founder, 2026-09-17) ──────
+  //
+  // cal-1 moved the Calendar tab onto the career match rows and left Streaks on
+  // the priced archive, because the brief listed Streaks as don't-touch. That
+  // left one modal sitting on two populations (Zverev: 775 career rows against
+  // 727 priced archive rows), which the scope note had to confess in words. The
+  // founder ruled "move it now in this branch; re-measure every run length", so
+  // both tabs now read calSpineFiltered() and this note states the one scope.
+  //
+  // What the move costs, stated rather than hidden: a run's PRICE and P&L come
+  // from the Pinnacle closing join, which covers a SUBSET of the career rows
+  // (Zverev 497 of 775, Krumich 0 of 355). An unpriced row keeps its place in
+  // the run — it is a real match and dropping it would break the sequence — and
+  // dashes its two money columns. The run's P&L is therefore summed over the
+  // priced rows it contains and labelled with that count.
   function calStreakScopeNote(p) {
-    var rows = calMarketRows(p);
+    var rows = calSpineFiltered(p);
     var from = rows.length ? String(rows[0].date).slice(0, 4) : null;
     var to = rows.length ? String(rows[rows.length - 1].date).slice(0, 4) : null;
+    var priced = rows.filter(function (r) { return r.cents != null; }).length;
     return '<div style="margin-top:16px;font-size:11px;line-height:1.65;color:#5b6880;max-width:900px;">' +
-      'Runs are counted over the priced tour archive ' + MIDDOT + ' ' + rows.length + ' matches ' +
+      'Runs are counted over the career match rows ' + MIDDOT + ' ' + rows.length + ' matches ' +
       MIDDOT + ' ' + esc(from === to ? String(from) : from + ENDASH + to) +
-      '. The Calendar tab above runs on the career match rows; this tab is a separate pass and has ' +
-      'not been moved onto them yet.</div>';
+      '. Same rows as the Calendar tab above. ' +
+      esc(priced + ' of ' + rows.length) + ' carry a Pinnacle closing price; an unpriced match still ' +
+      'counts in its run and dashes its price and P&amp;L.</div>';
   }
 
   // ── the four tiles (items 5-7) ───────────────────────────────────────────
@@ -3695,12 +3717,7 @@
     // The Indoors segment has no per-match source. Same refusal, same wording as
     // the ruled §5.2 drill — not a new behaviour invented here.
     if (!rows.length) {
-      var why = surf === 'indoors'
-        ? 'No per-match court type on record. Indoors is a court type carved out of the surfaces, and the ' +
-          'career match rows carry a surface but no court column — the Career record drill refuses an ' +
-          'Indoors drill for the same reason.'
-        : 'No career match rows on ' + (CAL_SURFACES.filter(function (s) { return s.id === surf; })[0] || {}).label +
-          ' on record.';
+      var why = calNoRowsWhy(surf, 'so there is no match to place in a calendar.');
       return calTiles4(DASH, DASH, DASH, DASH, 0) + seg + eyebrowRow + calEmpty(why);
     }
 
@@ -4132,9 +4149,8 @@
   }
 
   function renderStreakTab(p) {
-    // Deliberately still the ARCHIVE spine — see ruling cal-1. The Streaks tab
-    // is out of scope for this pass, so none of its numbers move.
-    var rows = calMarketFiltered(p);
+    // Ruling cal-2: the CAREER spine, the same rows the Calendar tab counts.
+    var rows = calSpineFiltered(p);
     var runs = calRuns(rows);
     var n = rows.length;
     var wins = rows.filter(function (r) { return r.won; }).length;
@@ -4177,7 +4193,13 @@
       'text-transform:uppercase;color:#4b5672;margin-top:10px;">Click a run for its matches</div>';
     var sel = runs[state.calRun];
     if (sel) {
-      var spl = sel.rows.reduce(function (a, r) { return a + (typeof r.pl === 'number' ? r.pl : 0); }, 0);
+      // Integer cents, per the money rule the rest of this modal already follows
+      // — a float sum re-ordered moved a painted card by 0.01u once already. The
+      // run's P&L covers only the PRICED rows inside it (cal-2), so the count is
+      // printed beside it rather than letting a 3-row sum read as a 7-row run.
+      var spc = 0, spn = 0;
+      sel.rows.forEach(function (r) { if (r.cents != null) { spc += r.cents; spn++; } });
+      var spl = spc / 100;
       detail = '<div style="background:#06070a;border:1px solid rgba(91,155,255,0.3);border-radius:10px;' +
         'margin-top:12px;padding:12px 14px;">' +
         '<div style="display:flex;align-items:baseline;justify-content:space-between;margin-bottom:8px;">' +
@@ -4187,7 +4209,10 @@
             ' <span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:#5b6880;' +
             'font-weight:400;">' + esc(span(sel)) + '</span></div>' +
           '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:12.5px;font-weight:700;color:' +
-            (spl > 0 ? '#3dd68c' : spl < 0 ? '#e0616f' : '#8b96b5') + ';">' + signed(spl, 2, 'u') + '</div></div>' +
+            (spn === 0 ? DASH_COLOUR : spc > 0 ? '#3dd68c' : spc < 0 ? '#e0616f' : '#8b96b5') + ';">' +
+            (spn === 0 ? DASH : signed(spl, 2, 'u')) +
+            '<span style="font-weight:400;color:#4b5672;font-size:11px;"> ' + MIDDOT + ' ' +
+            esc(spn + ' of ' + sel.rows.length + ' priced') + '</span></div></div>' +
         sel.rows.map(function (r) {
           return '<div style="display:grid;grid-template-columns:14px 36px minmax(0,1.1fr) minmax(0,1fr) 56px 56px;' +
             'gap:0 14px;align-items:center;padding:4px 0;">' +
@@ -4197,11 +4222,12 @@
               esc(r.round || DASH) + '</div>' +
             '<div style="font-size:12.5px;">' + esc(r.event || DASH) + '</div>' +
             '<div style="font-size:12.5px;color:#8b96b5;">' + esc(r.opp || DASH) + '</div>' +
-            '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;text-align:right;color:#8b96b5;">' +
+            '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;text-align:right;color:' +
+              (r.price != null ? '#8b96b5' : DASH_COLOUR) + ';">' +
               (r.price != null ? r.price.toFixed(2) : DASH) + '</div>' +
             '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;text-align:right;color:' +
-              (r.pl > 0 ? '#3dd68c' : r.pl < 0 ? '#e0616f' : '#8b96b5') + ';">' +
-              (typeof r.pl === 'number' ? signed(r.pl, 2, 'u') : DASH) + '</div></div>';
+              (r.cents == null ? DASH_COLOUR : r.cents > 0 ? '#3dd68c' : r.cents < 0 ? '#e0616f' : '#8b96b5') + ';">' +
+              (r.cents != null ? signed(r.cents / 100, 2, 'u') : DASH) + '</div></div>';
         }).join('') + '</div>';
     }
 
@@ -5558,7 +5584,7 @@
       // covered only by inspection.
       state: state,
       calMarketRows: calMarketRows,
-      calMarketFiltered: calMarketFiltered,
+      calNoRowsWhy: calNoRowsWhy,
       calSpine: calSpine,
       calSpineFiltered: calSpineFiltered,
       calNameMap: calNameMap,
