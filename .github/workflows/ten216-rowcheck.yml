@@ -65,6 +65,26 @@ jobs:
               "count(distinct (match_key, market, coalesce(line,''), selection, bookmaker)) as distinct_quotes "
               "from public.ten216_test_odds_changes where change_kind='first_seen'")))
 
+          # A quote first_seen twice is either (a) a quote that left the board and came
+          # back, which the state map legitimately forgets on 'removed', or (b) the
+          # fabricated-Open bug returning. Those look identical in the count above, so
+          # split them instead of guessing which one it is.
+          print("\nDUPLICATE first_seen, SPLIT BY WHETHER THE QUOTE WAS EVER REMOVED:")
+          print(json.dumps(sql(
+              "select count(*) filter (where has_removed) as dup_after_removal, "
+              "count(*) filter (where not has_removed) as dup_without_removal from ("
+              "  select match_key, market, coalesce(line,'') as l, selection, bookmaker, "
+              "         count(*) filter (where change_kind='first_seen') as fs, "
+              "         bool_or(change_kind='removed') as has_removed "
+              "  from public.ten216_test_odds_changes group by 1,2,3,4,5) t where fs > 1")))
+
+          print("\nSAME-POLL DUPLICATE first_seen (must be 0 — a quote cannot open twice in one poll):")
+          print(json.dumps(sql(
+              "select count(*) as same_poll_dupes from ("
+              "  select poll_id, match_key, market, coalesce(line,'') as l, selection, bookmaker "
+              "  from public.ten216_test_odds_changes where change_kind='first_seen' "
+              "  group by 1,2,3,4,5,6 having count(*) > 1) t")))
+
           # --- restart-cleanliness audit (TEN-216 Part A confirmation 1) -------------
           # The table and the raw bucket were restarted together. If either still holds
           # rows or objects from the corrupted series, the 7-day window is measuring a
