@@ -1194,7 +1194,8 @@
       '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:#5b6880;' +
         'white-space:nowrap;">' + esc(roundLabel(m)) + '</span>' +
       '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:#8b96b5;' +
-        'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(setScoreText(m)) + '</span>' +
+        'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' +
+          esc(scoreWithStatus(m, setScoreText(m))) + '</span>' +
       '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;font-weight:700;' +
         'text-align:right;color:#e7e9ee;">' + oddsText(x.price) + '</span>' +
       '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;font-weight:700;' +
@@ -1216,6 +1217,40 @@
   //    3.3% print "7-6" with no bracket, never an invented margin.
   // The bracket shows the LOSER's points, which is the convention the export's
   // own strings follow ("7-6(2)" = the 7-6 set won on a 7-2 breaker).
+  /**
+   * §item 27 display · the match-status suffix (founder, approved 2026-09-17):
+   * "ret." after the score on a retirement, "w/o" on a walkover.
+   *
+   * Two stores, two field names, one helper. Ledger rows come from recentForm and
+   * carry `walkover`; career-spine rows (drills, Court speed, the match sheet)
+   * carry `wo`, which calSpine() derives from recentForm's flag OR from a result
+   * string with no digit in it. Reading only one of the two names would tag the
+   * suffix on two surfaces and silently skip the other, which is exactly how the
+   * ledger and the drill came to disagree about set counts before.
+   *
+   * DISPLAY ONLY. Run counting is untouched — calRuns() still applies the
+   * founder's walkover ruling (received = a win and stays in the sequence, given =
+   * neither and is stepped over), and this helper is not on that path.
+   *
+   * A walkover has no score to suffix — nothing was played — so it REPLACES the
+   * score rather than trailing it. Printing "— w/o" would read as a missing
+   * scoreline next to a status; "w/o" is the whole fact.
+   */
+  function matchStatus(m) {
+    if (!m) return null;
+    if (m.wo || m.walkover) return 'wo';
+    if (m.retired) return 'ret';
+    return null;
+  }
+  function scoreWithStatus(m, text) {
+    var st = matchStatus(m);
+    if (st === 'wo') return 'w/o';
+    var base = (text == null || text === '') ? DASH : String(text);
+    if (st !== 'ret') return base;
+    // A retirement with no scoreline on record is still a retirement.
+    return base === DASH ? 'ret.' : base + ' ret.';
+  }
+
   function setScoreText(m, sep) {
     var sets = m.sets || [];
     if (!sets.length) return m.result ? String(m.result) : DASH;
@@ -2082,7 +2117,7 @@
         cell('font-family:\'IBM Plex Mono\',monospace;font-size:12px;font-weight:700;color:' + wl +
              ';padding:5px 0;', esc(r.sets || DASH)) +
         cell('font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:#8b96b5;' +
-             'white-space:nowrap;padding:5px 0;', esc(r.setScores || DASH)) +
+             'white-space:nowrap;padding:5px 0;', esc(scoreWithStatus(r, r.setScores))) +
         cell('font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;font-weight:700;color:#e7e9ee;' +
              'text-align:right;padding:5px 0;', oddsText(r.price)) +
         cell('font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:#4b5672;' +
@@ -4114,7 +4149,7 @@
             '<span style="font-size:12.5px;color:#e7e9ee;overflow:hidden;text-overflow:ellipsis;' +
               'white-space:nowrap;">' + esc(r.opp ? surnameFirst(r.opp) : DASH) + '</span>' +
             '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:#8b96b5;' +
-              'white-space:nowrap;">' + esc(r.score || DASH) + '</span>' +
+              'white-space:nowrap;">' + esc(scoreWithStatus(r, r.score)) + '</span>' +
             '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;font-weight:700;' +
               'text-align:right;color:' + (r.price == null ? DASH_COLOUR : '#e7e9ee') + ';">' +
               (r.price == null ? DASH : r.price.toFixed(2)) + '</span>' +
@@ -4687,7 +4722,7 @@
             'text-overflow:ellipsis;white-space:nowrap;">' +
             esc(r.opp ? surnameFirst(r.opp) : DASH) + '</span>' +
           '<span ' + m + 'font-size:11.5px;color:#8b96b5;white-space:nowrap;">' +
-            esc(r.score || DASH) + '</span>' +
+            esc(scoreWithStatus(r, r.score)) + '</span>' +
           '<span ' + m + 'font-size:11.5px;font-weight:700;text-align:right;color:' +
             (r.price == null ? DASH_COLOUR : '#e7e9ee') + ';">' +
             (r.price == null ? DASH : r.price.toFixed(2)) + '</span>' +
@@ -5117,8 +5152,8 @@
         // ±0 days. Outside that rolling window this dashes with a stated reason
         // rather than inventing a scoreline.
         '<span ' + hook + 'style="' + cell + 'font-family:\'IBM Plex Mono\',monospace;font-size:11px;' +
-          'color:' + (perSetScore(m) ? '#8b96b5' : DASH_COLOUR) + ';white-space:nowrap;">' +
-          esc(perSetScore(m) || DASH) + '</span>' +
+          'color:' + ((perSetScore(m) || matchStatus(m)) ? '#8b96b5' : DASH_COLOUR) + ';white-space:nowrap;">' +
+          esc(scoreWithStatus(m, perSetScore(m))) + '</span>' +
         '<span ' + hook + 'style="' + cell + 'font-family:\'IBM Plex Mono\',monospace;font-size:11px;' +
           'color:#c6ccdb;text-align:right;">' + (m.price == null ? DASH : m.price.toFixed(2)) + '</span>' +
         '<span ' + hook + 'style="' + cell + 'font-family:\'IBM Plex Mono\',monospace;font-size:11px;' +
@@ -5659,7 +5694,8 @@
             '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:14px;font-weight:700;' +
               'color:' + (won ? '#3dd68c' : '#e0616f') + ';">' +
               esc(((won ? 'Won ' : 'Lost ') +
-                ((m.sets && m.sets.length) ? setScoreText(m, ' ') : '')).trim()) + '</span>' +
+                scoreWithStatus(m, (m.sets && m.sets.length) ? setScoreText(m, ' ') : ''))
+                .replace(' ' + DASH, '').trim()) + '</span>' +
             '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:#5b6880;">' +
               esc(priceLine) + '</span>' +
           '</div>' +
@@ -6307,6 +6343,7 @@
       followStats: followStats,
       followGate: followGate,
       followYield: followYield,
+      renderSpeedPanel: renderSpeedPanel,
       renderStreakTab: renderStreakTab,
       renderFollowsCard: renderFollowsCard,
       calScope: calScope,
@@ -6356,6 +6393,8 @@
       renderMarketModal: renderMarketModal,
       // §5.5 Court speed
       renderSpeedModal: renderSpeedModal,
+      matchStatus: matchStatus,
+      scoreWithStatus: scoreWithStatus,
       speedRows: speedRows,
       marketRows: marketRows,
       speedBands: speedBands,

@@ -249,5 +249,50 @@ if (v2ReadsField > 0) {
   ok(`V2 renderer loads the shard it reads (${v2ReadsField} inline read sites)`);
 }
 
+// ── 10 · the shard roster is the WIDE one, and is the SAME one the profile
+//        shards and the search index use (founder, 2026-09-17) ───────────────
+//
+// This block shipped taking `playerProfiles.players` — today's board. Measured
+// live on 2026-09-17: 30 tournament-history shards against 556 players holding a
+// profiles/<key>.json and 2,375 reachable by search, so tournament-history/1980
+// .json 404'd for Zverev while profiles/1980.json served 200.
+//
+// The lock is RELATIONAL, not a name match. Asserting the literal `allProfiles`
+// would pass the day someone renames the variable and narrows it; what has to
+// hold is that the three shard families are handed the SAME expression. If one
+// is narrowed, the identifiers diverge and this fires.
+{
+  const pipelineSrc = fs.readFileSync(path.join(ROOT, 'bsp-pipeline.js'), 'utf8');
+  const argOf = (fn) => {
+    const m = pipelineSrc.match(new RegExp(`\\n\\s*(?:await\\s+)?${fn}\\(([A-Za-z_$][\\w$.]*)`));
+    assert.ok(m, `could not find the ${fn}() call site in bsp-pipeline.js — the harness is stale`);
+    return m[1];
+  };
+  const th = argOf('writeTournamentHistoryShards');
+  const profileShards = argOf('writePlayerShardsAndIndex');
+  const careerShards = argOf('writeCareerHistoryShards');
+  assert.strictEqual(th, profileShards,
+    `tournament-history shards are built from \`${th}\` but the profile shards and search index `
+    + `come from \`${profileShards}\`. Every player search can reach has a profiles/<key>.json; `
+    + `a narrower roster here 404s his Record per tournament card while his profile serves 200.`);
+  assert.strictEqual(th, careerShards,
+    `tournament-history shards are built from \`${th}\` but the career-history shards come from `
+    + `\`${careerShards}\` — the three shard families must cover one roster.`);
+  assert.notStrictEqual(th, 'playerProfiles.players',
+    'the eager map is today\'s board; it published 30 shards against 556 profiled players');
+  ok(`all three shard families are built from one roster (\`${th}\`)`);
+
+  // The deploy step must actually ship the directory. A committed file left out
+  // of the literal cp allowlist 404s live while every test passes — this repo
+  // has shipped that exact class before.
+  const wf = fs.readFileSync(path.join(ROOT, '.github/workflows/pipeline.yml'), 'utf8');
+  assert.ok(/cp -r tournament-history _site\//.test(wf),
+    'pipeline.yml must copy the tournament-history/ shard dir into _site — the allowlist is a '
+    + 'literal cp list with no glob');
+  assert.ok(/cp tournament-history-index\.json _site\//.test(wf),
+    'pipeline.yml must copy tournament-history-index.json into _site');
+  ok('deploy allowlist ships both the shard dir and its index');
+}
+
 console.log(`TEN-207 tournament-history shard lock — ${checks.length} checks passed:`);
 checks.forEach(c => console.log(`  ✓ ${c}`));
