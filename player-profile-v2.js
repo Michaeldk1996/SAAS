@@ -6865,6 +6865,19 @@
       splitCandidates: splitCandidates,
       biggestSplit: biggestSplit,
       biggestBand: biggestBand,
+      // R2 · the one shared selector behind both Key insights and "best split",
+      // exported so a probe can compare it against an independent recompute
+      // rather than against itself.
+      rankedInsights: rankedInsights,
+      insightCandidates: insightCandidates,
+      careerBaseline: careerBaseline,
+      INSIGHT_MIN_N: INSIGHT_MIN_N,
+      splitsFor: splitsFor,
+      splitScope: splitScope,
+      setBaseline: setBaseline,
+      // §5.8 · the band cut-offs the drill mirrors from the builder.
+      marketFor: marketFor,
+      priceBandId: priceBandId,
       buildBoxVals: buildBoxVals,
       renderCareerModal: renderCareerModal,
       // §5.2 rebuild — exported so the harness asserts on the real functions
