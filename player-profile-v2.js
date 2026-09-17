@@ -1387,7 +1387,18 @@
       // glyph states the same fact the number does rather than contradicting it.
       var path = up ? 'M4 13l4-4 3 3 5-6M13 6h3v3' : 'M4 7l4 4 3-3 5 6M13 14h3v-3';
       return '' +
-        '<div data-pp2="insight" data-split="' + esc(ins.id) + '" ' +
+        // `data-insight`, deliberately OUTSIDE the data-pp2 vocabulary. data-pp2 is
+        // this page's CLICK vocabulary and every hook in it must have a handler in
+        // the mount — the affordance-promises-content rule. The export's §7
+        // interaction table has no row for an insight card and the prototype's card
+        // carries no onClick (unlike the tournament-detail close beside it), so the
+        // card is inert by design; carrying it in the click vocabulary painted a
+        // dead target, which is what the hook-coverage check caught.
+        //
+        // Do not name the click attribute literally in this comment: the coverage
+        // check scans this file as SOURCE with a regex, so a mention in a comment
+        // reads as a painted hook and fails the check on markup that is correct.
+        '<div data-insight="' + esc(ins.id) + '" ' +
         'style="height:100%;background:#0a0d14;border:1px solid rgba(255,255,255,0.09);' +
         'border-radius:12px;padding:24px 24px 26px;display:flex;flex-direction:column;gap:16px;">' +
           '<div style="width:36px;height:36px;border-radius:13px;display:flex;align-items:center;' +
@@ -1396,7 +1407,11 @@
             'stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">' +
             '<path d="' + path + '"/></svg></div>' +
           '<div style="font-size:18.5px;font-weight:800;letter-spacing:-0.01em;line-height:1.25;color:#fff;">' +
-            esc(ins.label) + ' ' + MIDDOT + ' ' + rateText0(ins.won, ins.lost) + '</div>' +
+            // One decimal, via rateText. rateText0 is documented above as the
+            // formatter for exactly TWO export call sites (ribbonPct and the
+            // ledger header); the export's own insight bodies read "58.3%",
+            // "23.8%", "27.8%" — one decimal, like its ~40 other rates.
+            esc(ins.label) + ' ' + MIDDOT + ' ' + rateText(ins.won, ins.lost) + '</div>' +
           '<div style="font-size:13.5px;color:#5b6880;line-height:1.7;">' +
             esc(recordText(ins.won, ins.lost)) + ' over ' + ins.n + ' matches ' + MIDDOT +
             ' career baseline ' + ins.baseline.toFixed(1) + '% ' + MIDDOT + ' ' +
@@ -3312,12 +3327,25 @@
       return '<div style="border:1px dashed rgba(255,255,255,0.12);border-radius:10px;padding:26px;' +
         'text-align:center;font-size:13px;color:#5b6880;">No split data on record for this player.</div>';
     }
-    // Results' baseline stays pickByLargestGap's pooled split rate — that is what
-    // the legend has always claimed and what the column has always measured. The
-    // R2 insight rule is a different question (career baseline) and lives in
-    // rankedInsights(); the two are deliberately not conflated here.
+    // TWO baselines, deliberately, and the modal now names both instead of
+    // silently holding one back.
+    //
+    // `baseline` (pooled, from pickByLargestGap over this scope's candidates) is
+    // what the Vs avg COLUMN measures and what the legend has always claimed.
+    // That stays exactly as it was.
+    //
+    // `headline` is the R2 insight rule — largest |pp| against the player's own
+    // CAREER spine rate (careerBaseline), the same selector the Splits BOX calls.
+    // The two are different numbers by construction: the pooled rate is weighted
+    // over splits, which do not cover every match. Measured over the roster, the
+    // pooled and career baselines differ for 188 of 188 players and the two rules
+    // name a DIFFERENT split for 82 of them (43.6%) — so the box could headline
+    // "Best of 5" while the modal it opens was measured on "Grand Slams", with no
+    // number on screen able to reproduce the box's gap. Disclosing the headline's
+    // own baseline is what closes that.
     var picked = pickByLargestGap(splitCandidates(p.key, scope));
     var baseline = picked ? picked.baseline : null;
+    var headline = rankedInsights(p, scope, 1)[0] || null;
     var setBase = setBaseline(sc);
 
     var grid = tab.id === 'service' ? SPLIT_GRID_5 : SPLIT_GRID_4;
@@ -3415,7 +3443,13 @@
         return 'Record and matches played ' + MIDDOT + ' win rate ' + MIDDOT + ' vs avg is the gap to this ' +
           'player&#39;s own win rate across all splits in this scope' +
           (baseline == null ? '' : ' (' + baseline.toFixed(1) + '%), weighted by match count') + '. ' +
-          'A split under ten matches shows its record and a dash for the gap.';
+          'A split under ten matches shows its record and a dash for the gap.' +
+          // The box headline's own baseline, stated here because it is NOT the
+          // column's baseline and nothing else on screen carries it.
+          (headline == null ? '' : ' The box headline (' + esc(headline.label) + ') is picked by a ' +
+            'different rule — the largest gap to this player&#39;s own career rate (' +
+            headline.baseline.toFixed(1) + '%) over splits of at least ten matches, which is why it ' +
+            'can name a different split from the biggest gap in this column.');
       }
       if (tab.id === 'sets') {
         return 'Share of tiebreaks, games and sets won ' + MIDDOT + ' vs avg is the gap to this ' +

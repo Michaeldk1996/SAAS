@@ -780,35 +780,80 @@ check('per-row book counts sum to the headline, and the label is never blended',
   }
 });
 
-// The fallback must be load-bearing: if Pinnacle covered everything, ruling B
-// would be a no-op and this whole pass would be unnecessary. Prove it is not.
-check('the Bet365-archive fallback is load-bearing', () => {
+// ★ Founder ruling R1, 2026-09-17, SUPERSEDES ruling B where they conflict:
+//   "Headline yield, role cards, price bands and the cumulative chart use
+//    Pinnacle closing only. No fallback to Bet365 or any other book inside those
+//    figures. Bet365 may appear on rows, labelled by book, but is excluded from
+//    every yield/units figure."
+//
+// This check used to assert the OPPOSITE — that the Bet365 fallback was
+// load-bearing (`b > 0`), which is exactly what ruling B required and exactly
+// what R1 forbids. It is inverted here rather than deleted: an absent check
+// would let the fallback creep back into the headline unnoticed. Both halves of
+// R1 are locked, because only asserting the first half would pass a build that
+// achieved "no Bet365 in the headline" by dropping the Bet365 rows entirely —
+// the rows must survive, labelled, outside the basis.
+check('R1 · no Bet365 inside the headline basis, and Bet365 rows still survive labelled', () => {
   const b = MK_KEYS.reduce((a, k) => a + MARKET[k].headline.book.bet365, 0);
   const p = MK_KEYS.reduce((a, k) => a + MARKET[k].headline.book.pinnacle, 0);
-  assert(b > 0, 'no row used the fallback — Pinnacle now covers everything, re-check ruling B');
-  console.log(`        ${p} Pinnacle rows, ${b} Bet365-archive rows ` +
-    `(${(100 * b / (p + b)).toFixed(1)}% of priced rows would be DARK under Pinnacle-only)`);
+  assert.strictEqual(b, 0, `${b} Bet365 rows are inside the headline basis — R1 forbids any`);
+  assert(p > 0, 'no Pinnacle rows at all — the basis is empty, not Pinnacle-only');
+  // Half two: the excluded rows are still carried, still labelled by book.
+  let rows = 0, shards = 0;
+  for (const k of MK_KEYS) {
+    const off = (MARKET[k].matches || []).filter(m => m.book && m.book !== 'pinnacle');
+    if (off.length) { shards++; rows += off.length; }
+  }
+  assert(rows > 0, 'no non-Pinnacle row survives anywhere — R1 excludes them from the '
+    + 'basis, it does not delete them');
+  console.log(`        headline basis: ${p} Pinnacle rows, ${b} Bet365 ` +
+    `· ${rows} non-Pinnacle rows kept and labelled across ${shards} shards (outside every yield)`);
 });
 
-check('flat-stake yield recomputes from the shard rows', () => {
+mustFail('the R1 check would catch a Bet365 row readmitted to the headline basis', () => {
+  const headline = { book: { pinnacle: 300, bet365: 5 } };
+  assert.strictEqual(headline.book.bet365, 0, 'readmitted Bet365 row not caught');
+});
+
+mustFail('the R1 check would catch a build that deleted the Bet365 rows instead of excluding them', () => {
+  const shards = [{ matches: [{ book: 'pinnacle' }, { book: 'pinnacle' }] }];
+  const rows = shards.reduce((a, s) => a + s.matches.filter(m => m.book !== 'pinnacle').length, 0);
+  assert(rows > 0, 'deleted-rather-than-excluded not caught');
+});
+
+check('flat-stake yield recomputes from the shard rows, over the R1 basis', () => {
   // Recompute the headline from the per-row P&L rather than trusting the
   // summary. A summary that cannot be re-derived from its own rows is a claim,
   // not a measurement.
-  for (const k of MK_KEYS.slice(0, 40)) {
+  //
+  // The recompute is over the PINNACLE rows, not over every row: under R1 the
+  // headline's population is Pinnacle-only while `matches` also carries the
+  // labelled Bet365 rows for display. Summing all of them was this check's own
+  // bug — it read shard 207 as "rows give 2.23% but the headline says 2.4%"
+  // when the headline was right and the check was using the pre-R1 population.
+  // Scope is every shard with a yield, not the first 40: the mismatch sat at
+  // index 40+ and a head-slice would have missed it.
+  let checked = 0;
+  for (const k of MK_KEYS) {
     const s = MARKET[k];
     if (s.headline.yield == null) continue;
-    const pl = s.matches.reduce((a, m) => a + m.pl, 0);
-    const y = 100 * pl / s.matches.length;
+    const pin = (s.matches || []).filter(m => m.book === 'pinnacle');
+    assert.strictEqual(pin.length, s.headline.n,
+      `${k}: headline n ${s.headline.n} != ${pin.length} Pinnacle rows`);
+    const y = 100 * pin.reduce((a, m) => a + (m.pl || 0), 0) / pin.length;
     assert(Math.abs(y - s.headline.yield) < 0.06,
-      `${k}: rows give ${y.toFixed(2)}% but the headline says ${s.headline.yield}%`);
+      `${k}: Pinnacle rows give ${y.toFixed(2)}% but the headline says ${s.headline.yield}%`);
+    checked++;
   }
+  console.log(`        ${checked} shards: headline n and yield both re-derived from the Pinnacle rows`);
 });
 
 mustFail('yield check would catch a doctored row', () => {
-  const k = MK_KEYS[0];
+  const k = MK_KEYS.find(x => MARKET[x].headline.yield != null);
   const s = JSON.parse(JSON.stringify(MARKET[k]));
-  s.matches[0].pl += 40;
-  const y = 100 * s.matches.reduce((a, m) => a + m.pl, 0) / s.matches.length;
+  const pin = s.matches.filter(m => m.book === 'pinnacle');
+  pin[0].pl += 40;
+  const y = 100 * pin.reduce((a, m) => a + (m.pl || 0), 0) / pin.length;
   assert(Math.abs(y - s.headline.yield) < 0.06, 'doctored row not caught');
 });
 
