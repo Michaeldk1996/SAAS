@@ -497,16 +497,30 @@ async function cmdBooks() {
       if (!r.ok) continue;
       cell.ok++;
       for (const [book, payload] of Object.entries(r.body?.results || {})) {
+        // A key can be present with a null value — 2017 summaries return
+        // "13_1": null on every book. Counting keys therefore counts empty
+        // slots as coverage. Both are recorded: `*_key` is what the first pass
+        // measured, `*` is what is actually quoted, and the gap between them is
+        // the size of that error.
         const keys = new Set();
-        for (const side of ['start', 'end']) for (const k of Object.keys(payload?.odds?.[side] || {})) keys.add(k);
+        const filled = new Set();
+        for (const side of ['start', 'kickoff', 'end']) {
+          for (const [k, v] of Object.entries(payload?.odds?.[side] || {})) {
+            keys.add(k);
+            if (v !== null && v !== undefined && typeof v === 'object') filled.add(k);
+          }
+        }
         cell.books_seen[book] = (cell.books_seen[book] || 0) + 1;
         agg[book] ||= {};
-        agg[book][year] ||= { seen: 0, mw: 0, hcap: 0, ou: 0, levels: {} };
+        agg[book][year] ||= { seen: 0, mw: 0, hcap: 0, ou: 0, mw_key: 0, hcap_key: 0, ou_key: 0, levels: {} };
         const a = agg[book][year];
         a.seen++;
-        if (keys.has(MARKETS.mw)) a.mw++;
-        if (keys.has(MARKETS.hcap)) a.hcap++;
-        if (keys.has(MARKETS.ou)) a.ou++;
+        if (keys.has(MARKETS.mw)) a.mw_key++;
+        if (keys.has(MARKETS.hcap)) a.hcap_key++;
+        if (keys.has(MARKETS.ou)) a.ou_key++;
+        if (filled.has(MARKETS.mw)) a.mw++;
+        if (filled.has(MARKETS.hcap)) a.hcap++;
+        if (filled.has(MARKETS.ou)) a.ou++;
         a.levels[level] = (a.levels[level] || 0) + 1;
       }
     }
@@ -522,14 +536,21 @@ async function cmdBooks() {
   // Rank by how often the book carried a handicap or a total, which is the only
   // thing the line-coverage design actually needs.
   const rank = Object.entries(agg).map(([b, years]) => {
-    const t = { book: b, seen: 0, mw: 0, hcap: 0, ou: 0 };
-    for (const y of Object.values(years)) { t.seen += y.seen; t.mw += y.mw; t.hcap += y.hcap; t.ou += y.ou; }
+    const t = { book: b, seen: 0, mw: 0, hcap: 0, ou: 0, mw_key: 0, hcap_key: 0, ou_key: 0 };
+    for (const y of Object.values(years)) {
+      for (const k of ['seen', 'mw', 'hcap', 'ou', 'mw_key', 'hcap_key', 'ou_key']) t[k] += y[k] || 0;
+    }
     return t;
-  }).sort((a, b) => (b.hcap + b.ou) - (a.hcap + a.ou) || b.seen - a.seen);
-  log('\nbook                 seen    13_1    13_2    13_3');
-  for (const t of rank) log(`${t.book.padEnd(18)} ${String(t.seen).padStart(6)} ${String(t.mw).padStart(7)} ${String(t.hcap).padStart(7)} ${String(t.ou).padStart(7)}`);
-  log('\nper-year for any book carrying 13_2 or 13_3:');
-  for (const t of rank.filter((x) => x.hcap + x.ou > 0)) {
+  }).sort((a, b) => (b.hcap + b.ou) - (a.hcap + a.ou) || b.mw - a.mw || b.seen - a.seen);
+  log('\n                            QUOTED (non-null)        KEY PRESENT (may be null)');
+  log('book                 seen    13_1   13_2   13_3      13_1   13_2   13_3');
+  for (const t of rank) {
+    log(`${t.book.padEnd(18)} ${String(t.seen).padStart(6)} ${String(t.mw).padStart(7)} ${String(t.hcap).padStart(6)} ${String(t.ou).padStart(6)}    ${String(t.mw_key).padStart(6)} ${String(t.hcap_key).padStart(6)} ${String(t.ou_key).padStart(6)}`);
+  }
+  log('\nper-year for any book that ever QUOTED 13_2 or 13_3:');
+  const movers = rank.filter((x) => x.hcap + x.ou > 0);
+  if (!movers.length) log('  none — no bookmaker quoted a handicap or a total on any sampled match.');
+  for (const t of movers) {
     for (const [y, v] of Object.entries(agg[t.book]).sort()) {
       log(`  ${t.book.padEnd(16)} ${y}: seen=${v.seen} mw=${v.mw} hcap=${v.hcap} ou=${v.ou} levels=${JSON.stringify(v.levels)}`);
     }
