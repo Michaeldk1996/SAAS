@@ -250,17 +250,60 @@ async function cmdDiscover() {
 
 // Level classification from the BetsAPI tennis league name. Deliberately
 // conservative: anything not clearly one of the three target levels is dropped
-// rather than guessed at.
+// rather than guessed at, and every drop is counted so the exclusion rate is
+// reportable instead of invisible.
+//
+// The ` MD` / ` WD` suffixes are DOUBLES containers, not "main draw" — verified
+// by the `suffix` subcommand, which reads the player names out of suffixed vs
+// unsuffixed leagues ("A/B" pairs vs single names). Getting this backwards would
+// silently fill the sample with doubles matches, whose games-handicap lines are
+// a different market entirely.
+const DROP = {
+  doubles: /(\bMD\b|\bWD\b|doubles)\s*$/i,
+  qualifying: /\bqual(ifying|ifier)?\b\s*$/i,
+  women: /\bwta\b|\bwomen\b|\bgirls\b|\bladies\b|\bw\d{2,3}\b/i,
+  lower_tier: /\bitf\b|\butr\b|\bm\d{2,3}\b|exhibition|junior/i,
+};
+const dropCounts = Object.fromEntries(Object.keys(DROP).map((k) => [k, 0]));
+let unclassified = 0;
+
 function classify(name) {
   if (!name) return null;
-  const n = name.toLowerCase();
-  if (/doubles/.test(n)) return null;            // singles only
-  if (/\bwta\b|\bwomen\b|\bgirls\b|\bladies\b/.test(n)) return null;
-  if (/\bitf\b|\butr\b|exhibition|juniors?\b/.test(n)) return null;
-  if (/australian open|roland garros|french open|wimbledon|us open/.test(n)) return 'slam';
-  if (/challenger/.test(n)) return 'challenger';
-  if (/\batp\b/.test(n)) return 'atp';
+  for (const [reason, re] of Object.entries(DROP)) {
+    if (re.test(name)) { dropCounts[reason]++; return null; }
+  }
+  const n = name.trim().toLowerCase();
+  if (/^(australian open|roland garros|french open|wimbledon|us open)$/.test(n)) return 'slam';
+  if (/^challenger\b/.test(n)) return 'challenger';
+  if (/^atp\b/.test(n)) return 'atp';
+  unclassified++;
   return null;
+}
+
+// Reads the player names behind suffixed and unsuffixed league names, so the
+// MD/WD reading is measured rather than assumed. Doubles fixtures name two
+// players per side, separated by "/".
+async function cmdSuffix() {
+  const out = { ran_at: new Date().toISOString(), groups: {} };
+  const seen = { MD: [], WD: [], Qual: [], plain: [] };
+  for (const day of ['20230523', '20250709', '20170715']) {
+    for (let page = 1; page <= 2; page++) {
+      const r = await api('/v3/events/ended', { sport_id: TENNIS, day, page });
+      for (const e of r.body?.results || []) {
+        const n = e.league?.name || '';
+        const g = /\bMD$/.test(n) ? 'MD' : /\bWD$/.test(n) ? 'WD' : /\bQual$/.test(n) ? 'Qual' : 'plain';
+        if (seen[g].length >= 6) continue;
+        seen[g].push({ league: n, home: e.home?.name, away: e.away?.name, ss: e.ss, round: e.round?.name ?? null });
+      }
+    }
+  }
+  for (const [g, rows] of Object.entries(seen)) {
+    const slashRate = rows.length ? rows.filter((r) => /\//.test(r.home || '') || /\//.test(r.away || '')).length / rows.length : null;
+    out.groups[g] = { n: rows.length, pair_named_rate: slashRate, rows };
+    log(`${g.padEnd(6)} n=${rows.length} "A/B"-named=${slashRate === null ? '—' : pct(slashRate * rows.length, rows.length)}`);
+    for (const r of rows.slice(0, 3)) log(`    ${r.league} | ${r.home} vs ${r.away} | ss=${r.ss}`);
+  }
+  save('suffix.json', out);
 }
 
 const MARKETS = { mw: '13_1', hcap: '13_2', ou: '13_3' };
@@ -531,6 +574,7 @@ try {
   else if (cmd === 'dryrun') await cmdDryrun();
   else if (cmd === 'status') await cmdStatus();
   else if (cmd === 'discover') await cmdDiscover();
+  else if (cmd === 'suffix') await cmdSuffix();
   else if (cmd === 'probe') await cmdProbe();
   else { console.error('unknown command'); process.exit(2); }
 } catch (err) {
