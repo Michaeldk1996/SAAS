@@ -102,6 +102,10 @@ Stennisfy is a tennis betting analytics SaaS dashboard for serious ATP bettors. 
 5. **Scope discipline.** Every task specifies what to keep unchanged — respect those boundaries exactly. Do not refactor, redesign, or touch anything outside the stated scope.
 6. **Real data sources only.** Sackmann datasets are flat files, not live APIs — any integration must download, parse, and cache them locally, not query at runtime.
 7. **ATP only.** No WTA content anywhere — filter it out at the pipeline level (`tourBadge === 'ATP'`).
+8. **Heavy per-player detail ships as a lazy shard, never inside `player-profiles.json`.** That file is on the eager path — the matches board blocks on it before a single profile is opened, so anything added to it is paid for by every visitor for every rostered player. The established idiom is a shard dir + a small index (`career-history/`, `style-meetings/`, `odds-performance/`, and since TEN-207 `tournament-history/`). Three rules, all learned the hard way:
+   - **The index is authoritative for "does this player have any?"** Deciding that from the shard cache makes a player mid-fetch indistinguishable from a player with no data, and the empty-state copy then tells the user we hold nothing when we simply have not fetched yet.
+   - **A new shard dir needs BOTH `cp` lines and BOTH asserts in `pipeline.yml`.** The deploy allowlist has no glob: committed-but-not-copied is a silent 404, and an index without its dir 404s every shard while every test still passes.
+   - **Stripping a field from the published profile must not mutate the in-memory store** unless you have checked every later in-process reader. `writeCareerHistoryShards` may `delete p.careerMatches` because nothing reads it afterwards; `tournamentHistory` is read after the write by `backfillMatchesTournamentHistory`, so TEN-207 publishes a shallow-cloned lite view instead.
 
 ---
 

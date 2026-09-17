@@ -145,9 +145,34 @@ function auditEdition(tourneyName, ed, viol, ctx) {
   }
 }
 
+// TEN-207: tournamentHistory moved out of player-profiles.json into one lazy
+// shard per player. This gate walks `p.tournamentHistory`, so against a lite
+// profiles file it would have found NOTHING to audit and printed a clean bill of
+// health — a vacuous pass, which is worse than a failure because it looks like
+// evidence. Re-attach the shards before auditing, and refuse to report at all if
+// the attach found nothing (see the editions === 0 guard at the end of main).
+function hydrateFromShards(players, profilesFile) {
+  const dir = path.join(path.dirname(path.resolve(profilesFile)), 'tournament-history');
+  if (!fs.existsSync(dir)) return 0;
+  let n = 0;
+  for (const key of Object.keys(players)) {
+    const p = players[key];
+    if (!p || Array.isArray(p.tournamentHistory)) continue;
+    const f = path.join(dir, `${key}.json`);
+    if (!fs.existsSync(f)) continue;
+    try {
+      const shard = JSON.parse(fs.readFileSync(f, 'utf8'));
+      if (Array.isArray(shard.tournamentHistory)) { p.tournamentHistory = shard.tournamentHistory; n++; }
+    } catch (e) { /* a corrupt shard is a data fault, not an audit fault — skip it */ }
+  }
+  return n;
+}
+
 function main() {
   const raw = JSON.parse(fs.readFileSync(FILE, 'utf8'));
   const players = raw.players || raw;
+  const hydrated = hydrateFromShards(players, FILE);
+  if (hydrated) console.log(`Re-attached tournamentHistory from ${hydrated} shard(s) (TEN-207 lazy split).`);
   const viol = { rule1: 0, rule2: 0, rule3: 0, rule4: 0, rule5: 0, rule1Slam: 0, rule2Slam: 0, rule3Slam: 0, rule4Slam: 0 };
   const ctx = { rule1: [], rule2: [], rule3: [], rule4: [], rule5: [] };
   const offenders = {};
@@ -168,6 +193,19 @@ function main() {
         if (after > before) offenders[p.name || key] = (offenders[p.name || key] || 0) + 1;
       }
     }
+  }
+
+  // TEN-207 vacuous-pass guard. Zero editions means the input carried no
+  // tournamentHistory and no shards were found next to it — the audit examined
+  // nothing. Report that as a FAILURE, never as "0 violations": a gate that
+  // passes when it cannot see its subject is not a gate.
+  if (editions === 0) {
+    console.error(`\nTEN-89 audit ABORTED — ${path.basename(FILE)} yielded 0 editions to audit.`);
+    console.error(`Players in file: ${Object.keys(players).length}. Since TEN-207 the rows live in`);
+    console.error(`tournament-history/ next to the profiles file; that directory was missing or empty,`);
+    console.error(`so this run checked nothing. Rebuild the shards (node bsp-pipeline.js) or point this`);
+    console.error(`tool at a profiles file that still carries tournamentHistory inline.`);
+    process.exit(2);
   }
 
   const slamStructural = viol.rule1Slam + viol.rule2Slam + viol.rule3Slam + viol.rule4Slam;
