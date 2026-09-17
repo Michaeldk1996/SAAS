@@ -150,14 +150,22 @@ async function firstObservedAt() {
  *  exact failure mode the Open rule exists to prevent. */
 async function loadState() {
   const state = new Map();
-  const page = 10000;
-  for (let from = 0; ; from += page) {
+  /* PostgREST enforces a server-side max-rows (1000 on this project), so a Range of
+   * 0-9999 silently returns 1000. Advance by what actually came back and stop only on
+   * an empty page — never on `rows.length < page`, which exits after one page and
+   * leaves the successor run re-emitting every unknown quote as a fresh first_seen.
+   * That is a fabricated "Open", which is the one thing the Open rule forbids. */
+  const page = 1000;
+  let rowsRead = 0;
+  for (let from = 0; ; ) {
     const res = await sbFetch(
       `/rest/v1/${TABLE}?select=match_key,market,line,selection,bookmaker,price,change_kind&order=id.asc`,
       { headers: { Range: `${from}-${from + page - 1}` } });
-    if (!res.ok) break;
+    if (!res.ok) throw new Error(`loadState HTTP ${res.status}: ${(await res.text()).slice(0, 200)}`);
     const rows = await res.json();
     if (!Array.isArray(rows) || rows.length === 0) break;
+    from += rows.length;
+    rowsRead += rows.length;
     for (const r of rows) {
       const k = keyOf(r.match_key, r.market, r.line, r.selection, r.bookmaker);
       if (r.change_kind === 'removed') state.delete(k);
@@ -167,9 +175,17 @@ async function loadState() {
         selection: r.selection, book: r.bookmaker,
       });
     }
-    if (rows.length < page) break;
   }
-  return state;
+  /* Lock the truncation bug out rather than trusting the loop. A partial rebuild and a
+   * complete one otherwise produce identical logs, and the damage (fabricated Opens)
+   * only shows up days later in the report. */
+  const total = await rowCount();
+  if (total != null && rowsRead < total) {
+    console.error(`FATAL: state rebuild truncated — read ${rowsRead} of ${total} rows. ` +
+                  `Continuing would re-emit known quotes as first_seen and fabricate Opens.`);
+    process.exit(3);
+  }
+  return { state, rowsRead, total };
 }
 
 async function uploadRaw(path, buf) {
@@ -267,10 +283,11 @@ async function tick(state, startedAt) {
 
 const t0 = Date.now();
 console.log(`TEN-216 Supabase collector — interval ${INTERVAL_MIN} min, loop ${LOOP_MIN} min, window +${WINDOW_DAYS}d`);
-const state = await loadState();
+const { state, rowsRead, total } = await loadState();
 const firstSeen = await firstObservedAt();
 const startedAt = firstSeen ? new Date(firstSeen) : new Date();
-console.log(`state rebuilt: ${state.size} known quotes; collection started ${iso(startedAt)}`);
+console.log(`state rebuilt: ${state.size} live quotes from ${rowsRead}/${total ?? '-'} rows; ` +
+            `collection started ${iso(startedAt)}`);
 
 let n = 0;
 while ((Date.now() - t0) / 60000 < LOOP_MIN) {
