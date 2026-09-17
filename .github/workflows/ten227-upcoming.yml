@@ -47,6 +47,18 @@ on:
         description: 'Poll counter to resume from'
         required: false
         default: '0'
+      select_min_h:
+        description: 'Select matches starting at least this many hours out'
+        required: false
+        default: '2'
+      select_max_h:
+        description: 'Select matches starting at most this many hours out'
+        required: false
+        default: '40'
+      campaign_end:
+        description: 'ISO UTC after which the loop stops topping the sample up'
+        required: false
+        default: ''
       stop:
         description: 'Set to "yes" to stand down without re-dispatching'
         required: false
@@ -91,6 +103,9 @@ jobs:
           INTERVAL_MIN: ${{ github.event.inputs.interval_min }}
           LOOP_MINUTES: ${{ github.event.inputs.loop_minutes }}
           START_POLL_NO: ${{ github.event.inputs.start_poll_no }}
+          SELECT_MIN_H: ${{ github.event.inputs.select_min_h }}
+          SELECT_MAX_H: ${{ github.event.inputs.select_max_h }}
+          CAMPAIGN_END: ${{ github.event.inputs.campaign_end }}
         run: |
           set -o pipefail
           node tools/ten227-upcoming.mjs "${{ github.event.inputs.mode }}" 2>&1 | tee run.log
@@ -126,7 +141,10 @@ jobs:
                      --jq 'map(.databaseId) | max')
           gh workflow run ten227-upcoming.yml --ref "${{ github.ref_name }}" \
              -f mode=loop -f interval_min="$INTERVAL" -f loop_minutes="$LOOP" \
-             -f start_poll_no="${NEXT:-0}" -f stop=no
+             -f start_poll_no="${NEXT:-0}" -f stop=no \
+             -f select_min_h="${{ github.event.inputs.select_min_h }}" \
+             -f select_max_h="${{ github.event.inputs.select_max_h }}" \
+             -f campaign_end="${{ github.event.inputs.campaign_end }}"
           # A dead chain and a healthy one otherwise produce identical logs.
           for i in $(seq 1 12); do
             sleep 5
