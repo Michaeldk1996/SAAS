@@ -554,7 +554,7 @@ def summarise_payload(payload, fixture_id, start, archived_at, catalogue):
                             open_price, open_ts, None, None, None,
                             None, ticks[0][0], None, None, 'none',
                             'oddspapi-raw', archived_at, False,
-                            reject_reason=reason))
+                            reject_reason=reason, last_tick=ticks[-1]))
                         continue
 
                     close_ts, close_price = pre[-1]
@@ -568,7 +568,8 @@ def summarise_payload(payload, fixture_id, start, archived_at, catalogue):
                         lag, len(pre), ticks[0][0], close_ts,
                         start_ts, start_src, 'oddspapi-raw', archived_at, reliable,
                         reject_reason=reason, conflict=conflict,
-                        conflict_min=conflict_min, flip_gap=flip_gap))
+                        conflict_min=conflict_min, flip_gap=flip_gap,
+                        last_tick=ticks[-1]))
                     st['reliable_close' if reliable else 'close_nulled'] += 1
     return rows, st
 
@@ -576,8 +577,20 @@ def summarise_payload(payload, fixture_id, start, archived_at, catalogue):
 def _row(fixture_id, book, market, side, line, open_price, open_ts,
          close_price, close_ts, lag, pre_count, first_ts, last_pre_ts,
          start_ts, start_src, source, archived_at, reliable,
-         reject_reason=None, conflict=False, conflict_min=None, flip_gap=None):
+         reject_reason=None, conflict=False, conflict_min=None, flip_gap=None,
+         last_tick=None):
+    # PART 2's "Now" source. `last_tick` is (ts, price) of the freshest tick we
+    # actually observed for this series, or None. Stored as a FACT, with a
+    # separate flag saying whether it is pre-start — odds_card_state is what
+    # decides whether a given fact is allowed to be rendered as "Now". See the
+    # schema note: a finished fixture's last tick is a settled price, not a Now.
+    lt_ts, lt_price, lt_pre = None, None, None
+    if last_tick is not None:
+        lt_ts, lt_price = last_tick
+        lt_pre = None if start_ts is None else bool(lt_ts <= start_ts)
     return {
+        'last_tick_price': lt_price, 'last_tick_ts': iso(lt_ts),
+        'last_tick_is_prestart': lt_pre,
         'fixture_id': fixture_id, 'book': book, 'market': market,
         'side': side, 'line': line,
         'open_price': open_price, 'open_ts': iso(open_ts),
@@ -641,7 +654,7 @@ def summarise_history(month_path, catalogue, fx_index, flips):
                                  open_price, open_ts, None, None, None,
                                  None, open_ts, None, None, 'none',
                                  'bet365-history', gen, False,
-                                 reject_reason=reason))
+                                 reject_reason=reason, last_tick=series[-1]))
                 continue
             # The series is pre-start BY THE OLD START. Under a corrected or
             # earlier start it may not be, so re-cut it here instead of trusting
@@ -654,7 +667,8 @@ def summarise_history(month_path, catalogue, fx_index, flips):
                                  0, open_ts, None, start_ts, start_src,
                                  'bet365-history', gen, False,
                                  reject_reason=reason, conflict=conflict,
-                                 conflict_min=conflict_min, flip_gap=flip_gap))
+                                 conflict_min=conflict_min, flip_gap=flip_gap,
+                                 last_tick=series[-1]))
                 continue
             close_ts, close_price = pre[-1]
             reliable, lag = judge_close(start_ts, close_ts, gen,
@@ -666,7 +680,8 @@ def summarise_history(month_path, catalogue, fx_index, flips):
                              lag, len(pre), open_ts, close_ts,
                              start_ts, start_src, 'bet365-history', gen,
                              reliable, reject_reason=reason, conflict=conflict,
-                             conflict_min=conflict_min, flip_gap=flip_gap))
+                             conflict_min=conflict_min, flip_gap=flip_gap,
+                             last_tick=series[-1]))
             st['reliable_close' if reliable else 'close_nulled'] += 1
     return rows, st, gen
 

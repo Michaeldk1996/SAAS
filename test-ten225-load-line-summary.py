@@ -249,6 +249,49 @@ check('no start -> pre_start_tick_count is NULL, not a guess',
       r5['pre_start_tick_count'] is None)
 check('no start -> counted', st5['no_start_open_only'] == 1)
 
+# ---------------------------------------------- PART 2's "Now" source: last_tick
+# Michael's locked definition: "Now = freshest Oddspapi price already available
+# to us, with its timestamp. No new polling in this step." The archive stores the
+# freshest tick as a FACT and flags whether it is pre-start; odds_card_state is
+# what decides whether a given fact may be rendered as a Now. The trap this
+# guards is a FINISHED fixture whose last tick is a settled 1.02 landing one join
+# away from a surface that renders "Now".
+print('\nlast_tick — Part 2 Now source, stored as a fact not as a Now')
+
+# Pre-start open 1.50, pre-start 1.44, then two IN-PLAY ticks ending at 1.02.
+lt_rows, _ = L.summarise_payload(
+    payload(mk('121', '121', [tick(-7200, 1.50), tick(-60, 1.44),
+                              tick(+600, 1.20), tick(+1800, 1.02)])),
+    'idTEST', OD(START), START + DAY, CAT)
+lt = lt_rows[0]
+check('last_tick is the FRESHEST tick, in-play included (1.02)',
+      lt['last_tick_price'] == 1.02, lt['last_tick_price'])
+check('last_tick_ts is stamped with it',
+      lt['last_tick_ts'] == L.iso(START + 1800), lt['last_tick_ts'])
+check('a FINISHED fixture flags its last tick as NOT pre-start — this is the '
+      'flag that stops a settled 1.02 rendering as "Now"',
+      lt['last_tick_is_prestart'] is False)
+check('the Close is still the last PRE-start tick (1.44), untouched by last_tick',
+      lt['close_price'] == 1.44)
+check('Open is still the first tick (1.50), untouched by last_tick',
+      lt['open_price'] == 1.50)
+
+# An UPCOMING fixture: every tick is pre-start, so the freshest one IS a Now.
+up_rows, _ = L.summarise_payload(
+    payload(mk('121', '121', [tick(-7200, 1.50), tick(-60, 1.44)])),
+    'idTEST', OD(START), START + DAY, CAT)
+check('an all-pre-start series flags its last tick as pre-start (a real Now)',
+      up_rows[0]['last_tick_is_prestart'] is True)
+check('...and it is the freshest, not the open',
+      up_rows[0]['last_tick_price'] == 1.44)
+
+# No start at all: we cannot say whether the last tick is pre-start. NULL, not
+# False — "unknown" and "known to be in-play" are different rows on the report.
+check('no start -> last_tick_is_prestart is NULL, not False',
+      r5['last_tick_is_prestart'] is None, r5['last_tick_is_prestart'])
+check('no start -> the last tick is still recorded as a fact',
+      r5['last_tick_price'] == 1.10, r5['last_tick_price'])
+
 # An outcome the catalogue does not know must not be labelled with its raw id.
 rows6, st6 = L.summarise_payload(payload(mk('121', '77777', [tick(-100, 1.5)])),
                                  'idTEST', OD(START), START + DAY, CAT)

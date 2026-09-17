@@ -148,6 +148,28 @@ ALTER TABLE oddspapi_line_summary
   ADD COLUMN IF NOT EXISTS conflict_minutes    numeric,
   ADD COLUMN IF NOT EXISTS flip_gap_seconds    numeric;
 
+-- PART 2's "Now" source. Michael's locked definition: "Now = freshest Oddspapi
+-- price already available to us, with its timestamp. No new polling in this
+-- step." The freshest price we hold for a series IS its last observed tick, and
+-- the loader already has it in hand — it was simply never stored.
+--
+-- NAMED FOR WHAT IT IS, NOT FOR WHAT A CARD CALLS IT. On a FINISHED fixture the
+-- last tick is an in-play or settled price, and storing that under `now_price`
+-- would put a post-match number one join away from a surface that renders
+-- "Now". So the archive stores `last_tick_*` as a fact, and odds_card_state
+-- decides — per fixture, against the start — whether that fact is a Now.
+ALTER TABLE oddspapi_line_summary
+  ADD COLUMN IF NOT EXISTS last_tick_price     numeric,
+  ADD COLUMN IF NOT EXISTS last_tick_ts        timestamptz,
+  ADD COLUMN IF NOT EXISTS last_tick_is_prestart boolean;
+
+-- Same half-populated guard the other price/timestamp pairs carry.
+ALTER TABLE oddspapi_line_summary
+  DROP CONSTRAINT IF EXISTS oddspapi_line_summary_last_tick_ck;
+ALTER TABLE oddspapi_line_summary
+  ADD CONSTRAINT oddspapi_line_summary_last_tick_ck
+  CHECK ((last_tick_price IS NULL) = (last_tick_ts IS NULL));
+
 -- start_ts_source gained 'api-tennis-live' as a real (not merely allowed)
 -- value with this ruling. The v1 CHECK already listed it, so this is a no-op
 -- on a fresh table and a repair on any instance that predates it.
