@@ -105,7 +105,8 @@ jobs:
           # indistinguishable without this.
           print("\nEVERY POLL (raw object per tick — the true cadence):")
           print(json.dumps(sql(
-              "select name, created_at from storage.objects "
+              "select name, (metadata->>'size')::bigint as gz_bytes, created_at "
+              "from storage.objects "
               "where bucket_id = 'ten216-test-raw' order by created_at asc"), indent=1))
 
           print("\nRAW DEBRIS (objects older than the first change row — must be 0):")
