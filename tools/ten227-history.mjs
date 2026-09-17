@@ -729,6 +729,12 @@ async function cmdDownload() {
   const budgetReq = Number(process.env.DOWNLOAD_MAX_REQ || 3000);
   const deadline = Date.now() + Number(process.env.DOWNLOAD_MINUTES || 300) * 60_000;
   const summaryEvery = Number(process.env.DOWNLOAD_SUMMARY_EVERY || 25);
+  // A board-set cap on total matches in the table, for the case where the full
+  // corpus does not fit under the ceiling and only the newest N are wanted.
+  const maxMatches = Number(process.env.DOWNLOAD_MAX_MATCHES || 0);
+  // The between-runs ceiling check cannot stop a 300-minute run that crosses it
+  // in minute 40, so the same test runs every RECHECK_EVERY matches as well.
+  const RECHECK_EVERY = 500;
 
   await upsert('betsapi_raw_mw_runs', [{ run_id: runId, started_at: nowIso(), status: 'running' }], 'run_id');
 
@@ -744,9 +750,17 @@ async function cmdDownload() {
 
   const doneDays = new Set((await sbSelect(
     `select day from betsapi_raw_mw_days where done = true`) || []).map((r) => r.day));
-  log(`resume: ${doneDays.size} days already complete`);
+  const already = (await sbSelect(`select count(*)::int as n from betsapi_raw_mw_matches`))?.[0]?.n ?? 0;
+  log(`resume: ${doneDays.size} days already complete, ${already} matches stored` +
+      (maxMatches ? `, cap ${maxMatches}` : ''));
+  if (maxMatches && already >= maxMatches) {
+    log(`already at the ${maxMatches}-match cap — standing down`);
+    await upsert('betsapi_raw_mw_runs', [{ run_id: runId, ended_at: nowIso(), status: 'cap', matches: 0, requests: betsapiReq }], 'run_id');
+    if (process.env.GITHUB_OUTPUT) writeFileSync(process.env.GITHUB_OUTPUT, `more_work=0\nmatches=0\n`, { flag: 'a' });
+    return { stopped: 'cap' };
+  }
 
-  let matches = 0, failures = 0, moreWork = true;
+  let matches = 0, failures = 0, moreWork = true, stopped = null;
   outer:
   for (const year of YEARS) {
     for (const day of daysOfYear(year)) {
@@ -775,6 +789,15 @@ async function cmdDownload() {
         batch.push(m.row);
         fetched++; matches++;
         if (batch.length >= 100) { await upsert('betsapi_raw_mw_matches', batch.splice(0), 'betsapi_event_id'); }
+        if (maxMatches && already + matches >= maxMatches) { stopped = 'cap'; interrupted = true; break; }
+        if (matches % RECHECK_EVERY === 0) {
+          const g = await tableBytes();
+          if (g.database && g.total > g.database * DB_FRACTION_CEILING) {
+            log(`::error::crossed ${DB_FRACTION_CEILING * 100}% of the database mid-run ` +
+                `(${(g.total / 1e6).toFixed(1)} MB of ${(g.database / 1e6).toFixed(1)} MB) — STOPPING per ruling 4`);
+            stopped = 'ceiling'; interrupted = true; break;
+          }
+        }
       }
       if (batch.length) await upsert('betsapi_raw_mw_matches', batch, 'betsapi_event_id');
       await upsert('betsapi_raw_mw_days', [{
@@ -793,10 +816,12 @@ async function cmdDownload() {
   // stop dispatching successors.
   const remaining = await sbSelect(`select count(*)::int as n from betsapi_raw_mw_days where done = true`);
   const totalDays = YEARS.reduce((a, y) => a + daysOfYear(y).length, 0);
-  moreWork = (remaining?.[0]?.n ?? 0) < totalDays;
+  // A cap or a ceiling stop ENDS the chain: re-dispatching into a wall we just
+  // hit is exactly the loop the TEN-221 rulings exist to prevent.
+  moreWork = !stopped && (remaining?.[0]?.n ?? 0) < totalDays;
 
   await upsert('betsapi_raw_mw_runs', [{
-    run_id: runId, ended_at: nowIso(), status: 'ok', matches, requests: betsapiReq,
+    run_id: runId, ended_at: nowIso(), status: stopped || 'ok', matches, requests: betsapiReq,
     note: `${remaining?.[0]?.n ?? 0}/${totalDays} days done`,
   }], 'run_id');
 

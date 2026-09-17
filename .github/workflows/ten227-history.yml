@@ -50,6 +50,10 @@ on:
         description: 'BetsAPI request ceiling for this run'
         required: false
         default: '4500'
+      max_matches:
+        description: 'Stop once the table holds this many matches (0 = no cap)'
+        required: false
+        default: '0'
       rate_per_hour:
         description: 'BetsAPI requests/hour for this tool (campaign uses 400 of the 1,600)'
         required: false
@@ -99,6 +103,7 @@ jobs:
           HISTORY_YEARS: ${{ github.event.inputs.years }}
           DOWNLOAD_MINUTES: ${{ github.event.inputs.download_minutes }}
           DOWNLOAD_MAX_REQ: ${{ github.event.inputs.download_max_req }}
+          DOWNLOAD_MAX_MATCHES: ${{ github.event.inputs.max_matches }}
         run: |
           set -o pipefail
           node tools/ten227-history.mjs "${{ github.event.inputs.mode }}" 2>&1 | tee run.log
@@ -163,6 +168,7 @@ jobs:
              -f years="${{ github.event.inputs.years }}" \
              -f download_minutes="${{ github.event.inputs.download_minutes }}" \
              -f download_max_req="${{ github.event.inputs.download_max_req }}" \
+             -f max_matches="${{ github.event.inputs.max_matches }}" \
              -f rate_per_hour="${{ github.event.inputs.rate_per_hour }}" \
              -f trial_end="${TRIAL_END}" \
              -f stop=no
