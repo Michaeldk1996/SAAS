@@ -267,7 +267,13 @@
     // .dc.html:489). An inline style cannot express :hover, so it lands here,
     // scoped to the one class that carries it. The selected row sets its own
     // inline background, which outranks this.
-    '.pp2-trow:hover{background:rgba(255,255,255,0.02);}</style>';
+    '.pp2-trow:hover{background:rgba(255,255,255,0.02);}' +
+    // §5.2B — every clickable record in the Career modal's season table. The
+    // design file gives these cells `cursor:{{ y.cursor }}` but NO style-hover,
+    // so the hover token is the one the same file uses for its other clickable
+    // data row (.dc.html:489) rather than a colour invented here.
+    '.pp2-crec{transition:background .12s ease,color .12s ease;}' +
+    '.pp2-crec:hover{background:rgba(255,255,255,0.02);color:#5b9bff;}</style>';
 
   var SPINE_SURFACES = ['hard', 'clay', 'grass'];
   var SPINE_LABEL = { hard: 'Hard', clay: 'Clay', grass: 'Grass', other: 'Unrecorded surface' };
@@ -1589,10 +1595,31 @@
   // file.
   var SMALL_RATE_PX = 15;
   var DIM_COLOUR = '#3f4860';
-  function barFill(pct) {
-    if (pct == null) return 'transparent';
-    var a = Math.max(0.25, Math.min(1, 0.25 + (pct - 40) / 34 * 0.75));
-    return 'rgba(91,155,255,' + a.toFixed(2) + ')';
+  // ─── MINIMAL BAR — the founder's override of the export (2026-09-17) ────────
+  //
+  // The export's `row()` computes ONE blue ramp whose ALPHA encodes the rate
+  // (rgba(91,155,255, 0.25..1 over a 40->74% win rate)) on a 16px track. That
+  // shipped and was then overridden: "Win rate is shown by length only; remove
+  // the blue-ramp shading." So the rate is carried by the FILL WIDTH alone and
+  // the colour carries the SAMPLE GATE instead — which is the one thing length
+  // cannot say, because a 4-of-5 bar and a 40-of-50 bar are the same length.
+  //
+  //   n >= 10   #5b9bff   full rate
+  //   n 5-9     #5b6880   small sample
+  //   n < 5     no fill at all — only the track
+  //
+  // Track and fill are both 4px / radius 2 / no border, no shadow, no gradient.
+  var BAR_TRACK_BG = 'rgba(255,255,255,0.06)';
+  var BAR_FULL = '#5b9bff';
+  var BAR_SMALL = '#5b6880';
+  // Takes the MATCH COUNT, not the percentage: the colour is a gate reading and
+  // the gate is defined over n. Returns null where the gate paints no fill, so a
+  // caller cannot accidentally render a transparent bar that still has a width.
+  function barFillColour(n) {
+    var g = gateFor(n);
+    if (g === GATE.FULL) return BAR_FULL;
+    if (g === GATE.SMALL) return BAR_SMALL;
+    return null;
   }
   // opts: { label, meta, won, lost, hook, v, open, detail }
   function barRow(opts) {
@@ -1626,9 +1653,14 @@
           (thin ? 'color:' + DIM_COLOUR + ';' : '') + '">' + esc(opts.label) + '</div>' +
           '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:#4b5672;' +
             'margin-top:4px;">' + esc(opts.meta) + '</div></div>' +
-        '<div style="height:16px;border-radius:4px;background:rgba(255,255,255,0.04);overflow:hidden;">' +
-          (thin ? '' : '<div style="height:100%;width:' + pct.toFixed(1) + '%;' +
-            'background:' + barFill(pct) + ';border-radius:4px;"></div>') +
+        // Minimal bar: 4px track, 4px fill, radius 2 on both, one solid colour.
+        // The grid's align-items:center does the vertical centring, so the track
+        // needs no margin of its own.
+        '<div style="height:4px;border-radius:2px;background:' + BAR_TRACK_BG + ';overflow:hidden;">' +
+          (barFillColour(n)
+            ? '<div style="height:4px;width:' + pct.toFixed(1) + '%;' +
+              'background:' + barFillColour(n) + ';border-radius:2px;"></div>'
+            : '') +
         '</div>' +
         '<div style="text-align:right;font-family:\'IBM Plex Mono\',monospace;font-size:' + ratePx + 'px;' +
           'font-weight:700;color:' + rateColour + ';">' + rate + mark +
@@ -1804,7 +1836,23 @@
     return w + ' - ' + l;
   }
 
-  var DRILL_CAP = 200;   // a scroll list, not a pager; stated when it bites
+  // ─── PROGRESSIVE DRILL PAGING ───────────────────────────────────────────────
+  //
+  // "All · career" is 1,463 rows for Djokovic — the largest list on the deployed
+  // roster. Painting all of them costs ~13k DOM nodes on open, and the old
+  // DRILL_CAP of 200 made the rest UNREACHABLE, which the founder ruled out
+  // ("no freezing, no cut-off list: all M matches must be reachable").
+  //
+  // So the card paints one page and appends the next as the list scrolls. The
+  // append writes into the LIVE grid rather than going through repaint(), for
+  // one concrete reason: repaint() rebuilds the whole profile string and the
+  // scroll container with it, which resets scrollTop to 0 — the user would be
+  // yanked to the top of the list every time it grew.
+  var DRILL_PAGE = 150;
+  // DOM lifetime, deliberately NOT part of `state`: this tracks how much of the
+  // open card has been painted, which dies with the card. Only one drill is ever
+  // open (the handlers enforce it), so a single pager cannot be clobbered.
+  var drillPager = null;
 
   // ONE STORE PER YEAR — never the union.
   //
@@ -1822,19 +1870,31 @@
   // price join is built over. Where it is silent, the edition store is all we hold.
   // A year the form store covers only partly then reads "Showing 13 of 81" — a
   // coverage statement, which is true, rather than 94 rows, which is not.
-  function drillSourceFor(p, year) {
-    if (!year) return null;                       // career scope spans both
-    var rows = drillSpine(p);
-    for (var i = 0; i < rows.length; i++) {
-      if (rows[i].year === String(year) && rows[i].src === 'form') return 'form';
-    }
-    return 'edition';
+  // year -> 'form' | 'edition', memoised per player. Built once over the spine
+  // rather than re-scanned per call: the career drills ask this for every row.
+  function drillSourceMap(p) {
+    if (drillSourceMap._k === p.key && drillSourceMap._v) return drillSourceMap._v;
+    var m = {};
+    drillSpine(p).forEach(function (r) {
+      if (r.src === 'form') m[r.year] = 'form';
+      else if (!m[r.year]) m[r.year] = 'edition';
+    });
+    drillSourceMap._k = p.key; drillSourceMap._v = m;
+    return m;
   }
+  function drillSourceFor(p, year) {
+    if (!year) return null;
+    return drillSourceMap(p)[String(year)] || 'edition';
+  }
+  // The one-store-per-year rule is applied PER ROW-YEAR, not per drill. A career
+  // drill therefore equals the sum of its own year drills by construction — the
+  // reconciliation the founder asked for in item 4 — instead of quietly unioning
+  // two stores that disagree the moment the scope widens past one season.
   function drillRows(p, surf, year) {
-    var only = drillSourceFor(p, year);
+    var src = drillSourceMap(p);
     return drillSpine(p).filter(function (r) {
       if (year && r.year !== String(year)) return false;
-      if (only && r.src !== only) return false;
+      if (r.src !== (src[r.year] || 'edition')) return false;
       if (!surf) return true;
       // Indoors is a COURT TYPE carved out of the surfaces; recentForm carries a
       // surface but no court type, so an Indoors drill has no per-match source at
@@ -1846,21 +1906,40 @@
 
   // The drill card (README §5.2B) — used by both the surface rows and the season
   // cells, so the two cannot drift apart.
-  function renderDrill(p, opts) {
-    var rows = drillRows(p, opts.surf, opts.year);
-    var shown = rows.slice(0, DRILL_CAP);
-    var cellN = (opts.won || 0) + (opts.lost || 0);
-    // The note is the design's own field. It states real coverage: the cell's own
-    // count is the authority, and the list says how much of it it can show.
-    var note;
-    if (!rows.length) {
-      note = opts.surf === 'indoors'
-        ? 'no per-match court type on record'
-        : 'no matches in the per-match store for this record';
-    } else if (rows.length < cellN) {
-      note = 'Showing ' + rows.length + ' of ' + cellN + ' ' + MIDDOT +
-        ' the rest are not in the per-match store';
-    } else if (rows.length > cellN) {
+  // The note is the design's own field (`mkDrill().note`, Player Stat Boxes
+  // .dc.html:3173). Two things can make a list shorter than the record above it
+  // and they are NOT the same statement, so the note distinguishes them:
+  //   * the per-match store does not hold those matches  -> a coverage shortfall
+  //   * the page has not painted them YET                -> "scroll for more"
+  // Collapsing the two would let a paging cut read as missing data.
+  // `surfaceless` is the count of rows that ARE in the store for this scope but
+  // carry no surface, so a surface drill cannot claim them. Measured on Zverev
+  // 2025: the year drill lists all 81 matches and the Clay drill listed none —
+  // and the first draft said "no matches in the per-match store for this record",
+  // which is false. The matches are stored; the SURFACE is what is missing, and
+  // those are different defects with different fixes. A reason has to be true.
+  function drillNote(rowsN, paintedN, cellN, surf, surfaceless) {
+    if (!rowsN) {
+      if (surf === 'indoors') return 'no per-match court type on record';
+      if (surfaceless) {
+        // "in scope", not "here": these rows belong to the YEAR (or career), not
+        // to this surface — no one can say which surface they were played on,
+        // which is the whole reason they cannot appear.
+        return 'the ' + surfaceless + ' match' + (surfaceless === 1 ? '' : 'es') +
+          ' in scope carr' + (surfaceless === 1 ? 'ies' : 'y') + ' no surface';
+      }
+      return 'no matches in the per-match store for this record';
+    }
+    if (paintedN < rowsN) {
+      return 'Showing ' + paintedN + ' of ' + rowsN + ' ' + MIDDOT + ' scroll for more';
+    }
+    if (rowsN < cellN) {
+      return 'Showing ' + rowsN + ' of ' + cellN + ' ' + MIDDOT +
+        (surfaceless
+          ? ' ' + surfaceless + ' more in scope carry no surface'
+          : ' the rest are not in the per-match store');
+    }
+    if (rowsN > cellN) {
       // OVERFLOW — the list holds MORE than the record it sits under.
       //
       // Do NOT name a cause here. The first draft of this note called it a
@@ -1870,13 +1949,21 @@
       // actual 2021. It is the provider's season aggregate that is short, not
       // the match list that is long. Which source is wrong varies, so the note
       // states the DISAGREEMENT and leaves the cause to the report.
-      note = rows.length + ' matches on record here against a ' + cellN +
+      return rowsN + ' matches on record here against a ' + cellN +
         '-match season row ' + MIDDOT + ' the two sources disagree';
-    } else if (shown.length < rows.length) {
-      note = 'Showing ' + shown.length + ' of ' + rows.length + ' ' + MIDDOT + ' scroll for more';
-    } else {
-      note = 'All ' + shown.length + ' matches';
     }
+    return 'All ' + rowsN + ' matches';
+  }
+  function renderDrill(p, opts) {
+    var rows = drillRows(p, opts.surf, opts.year);
+    var shown = rows.slice(0, DRILL_PAGE);
+    var cellN = (opts.won || 0) + (opts.lost || 0);
+    // Rows that are in the store for this scope but carry no surface. Only a
+    // SURFACE drill can lose rows to that, so an all-matches drill asks nothing.
+    var surfaceless = (opts.surf && opts.surf !== 'indoors')
+      ? drillRows(p, null, opts.year).filter(function (r) { return !r.surface; }).length
+      : 0;
+    var note = drillNote(rows.length, shown.length, cellN, opts.surf, surfaceless);
 
     var HEAD = [['Date', 'left'], ['', 'left'], ['Opponent', 'left'], ['Rd', 'left'],
                 ['Sets', 'left'], ['Set scores', 'left'], ['H', 'right'], ['A', 'right']];
@@ -1888,17 +1975,55 @@
         'text-align:' + h[1] + ';padding:0 0 7px;">' + esc(h[0]) + '</div>';
     }).join('');
 
-    var lastEvent = null;
-    var body = shown.map(function (r) {
+    // The pager reuses THIS builder for every appended page, so a scrolled-in row
+    // is byte-identical to a first-page one. `pg.lastEvent` carries the event
+    // grouping across the page boundary — reset it and the first row of page two
+    // would repeat a group header that is already on screen.
+    var body = drillBodyHtml(rows, 0, shown.length, drillPager = {
+      rows: rows, next: shown.length, lastEvent: null, cellN: cellN, surf: opts.surf,
+      surfaceless: surfaceless,
+      // A career-scope drill lists every edition of an event, so "Australian Open"
+      // heads a group once per year. Without the year in the meta the reader cannot
+      // tell 2019's group from 2024's.
+      multiYear: !opts.year
+    });
+
+    return '<div style="' + (opts.span ? 'grid-column:1 / -1;' : '') + 'background:#06070a;' +
+      'border:1px solid rgba(91,155,255,0.3);border-radius:' + (opts.span ? 11 : 10) + 'px;' +
+      'padding:' + (opts.span ? '15px 17px' : '13px 15px') + ';margin:10px 0 14px;">' +
+      '<div style="display:flex;align-items:center;gap:12px;margin-bottom:11px;">' +
+        '<div style="font-size:14px;font-weight:700;">' + esc(opts.title) + '</div>' +
+        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;color:#8b96b5;' +
+          'white-space:nowrap;">' + esc(recordText(opts.won, opts.lost) + ' ' + MIDDOT + ' ' +
+          cellN + ' matches') + '</div>' +
+        '<div data-pp2-drill-note="1" style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;' +
+          'color:#4b5672;white-space:nowrap;">' + esc(note) + '</div>' +
+        '<button type="button" data-pp2="career-drill-close" style="margin-left:auto;background:none;' +
+          'border:0;color:#5b6880;font-size:11px;font-family:\'IBM Plex Mono\',monospace;' +
+          'letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;">Close</button>' +
+      '</div>' +
+      (shown.length
+        ? '<div data-pp2-drill-scroll="1" style="max-height:340px;overflow-y:auto;">' +
+            '<div data-pp2-drill-grid="1" style="' + GRID + '">' + head + body + '</div></div>'
+        : '') +
+      '</div>';
+  }
+  // One page of drill rows. `pg` is the pager, mutated in place so the caller can
+  // ask "how far have I painted" without re-deriving it from the DOM.
+  function drillBodyHtml(rows, from, to, pg) {
+    return rows.slice(from, to).map(function (r) {
       var grp = '';
-      if (r.event !== lastEvent) {
-        lastEvent = r.event;
+      // Group on event AND year when the scope spans years, or two editions of the
+      // same event that happen to sort next to each other would merge into one.
+      var gk = pg.multiYear ? r.year + '|' + r.event : r.event;
+      if (gk !== pg.lastEvent) {
+        pg.lastEvent = gk;
         grp = '<div style="grid-column:1 / -1;display:flex;align-items:center;gap:10px;' +
           'padding:9px 0 5px;border-top:1px solid rgba(255,255,255,0.07);">' +
           '<div style="font-size:12.5px;font-weight:700;color:#e7e9ee;white-space:nowrap;">' +
             esc(r.event || DASH) + '</div>' +
           '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;color:#4b5672;' +
-            'white-space:nowrap;">' + esc(eventMetaOf(r)) + '</div></div>';
+            'white-space:nowrap;">' + esc(eventMetaOf(r, pg.multiYear)) + '</div></div>';
       }
       var wl = r.won ? '#3dd68c' : '#e0616f';
       // Only a form-sourced row has a match sheet to open — the sheet is keyed on
@@ -1926,30 +2051,33 @@
         cell('font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:#4b5672;' +
              'text-align:right;padding:5px 0;', oddsText(r.oppPrice));
     }).join('');
-
-    return '<div style="' + (opts.span ? 'grid-column:1 / -1;' : '') + 'background:#06070a;' +
-      'border:1px solid rgba(91,155,255,0.3);border-radius:' + (opts.span ? 11 : 10) + 'px;' +
-      'padding:' + (opts.span ? '15px 17px' : '13px 15px') + ';margin:10px 0 14px;">' +
-      '<div style="display:flex;align-items:center;gap:12px;margin-bottom:11px;">' +
-        '<div style="font-size:14px;font-weight:700;">' + esc(opts.title) + '</div>' +
-        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;color:#8b96b5;' +
-          'white-space:nowrap;">' + esc(recordText(opts.won, opts.lost) + ' ' + MIDDOT + ' ' +
-          cellN + ' matches') + '</div>' +
-        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:#4b5672;' +
-          'white-space:nowrap;">' + esc(note) + '</div>' +
-        '<button type="button" data-pp2="career-drill-close" style="margin-left:auto;background:none;' +
-          'border:0;color:#5b6880;font-size:11px;font-family:\'IBM Plex Mono\',monospace;' +
-          'letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;">Close</button>' +
-      '</div>' +
-      (shown.length
-        ? '<div style="max-height:340px;overflow-y:auto;"><div style="' + GRID + '">' +
-            head + body + '</div></div>'
-        : '') +
-      '</div>';
   }
-  // "Clay · Grand Slam" under the event group row. Only stated where held.
-  function eventMetaOf(r) {
+
+  // Scroll-driven append. Installed with capture:true because `scroll` does not
+  // bubble — a delegated listener on the mount root never sees it otherwise.
+  function onDrillScroll(e) {
+    var sc = e.target;
+    if (!sc || !sc.getAttribute || !sc.getAttribute('data-pp2-drill-scroll')) return;
+    var pg = drillPager;
+    if (!pg || pg.next >= pg.rows.length) return;
+    // 240px of runway — append before the user reaches the end, not after.
+    if (sc.scrollTop + sc.clientHeight < sc.scrollHeight - 240) return;
+    var grid = sc.querySelector('[data-pp2-drill-grid]');
+    if (!grid) return;
+    var to = Math.min(pg.rows.length, pg.next + DRILL_PAGE);
+    grid.insertAdjacentHTML('beforeend', drillBodyHtml(pg.rows, pg.next, to, pg));
+    pg.next = to;
+    var noteEl = sc.parentNode && sc.parentNode.querySelector('[data-pp2-drill-note]');
+    if (noteEl) noteEl.textContent = drillNote(pg.rows.length, pg.next, pg.cellN, pg.surf, pg.surfaceless);
+  }
+  // "2024 · Clay · ATP" under the event group row. Only stated where held — the
+  // design's example reads "Australian Open · Hard · Grand Slam", but the level
+  // word is not in either per-match store (recentForm carries `tier`, which is
+  // atp/challenger, not the 250/500/1000/Slam level), so the tier is what we can
+  // truthfully print. Reported rather than approximated.
+  function eventMetaOf(r, withYear) {
     var bits = [];
+    if (withYear && r.year) bits.push(r.year);
     if (r.surface) bits.push(r.surface.charAt(0).toUpperCase() + r.surface.slice(1));
     if (r.m && r.m.tier) bits.push(String(r.m.tier).toUpperCase() === 'ATP' ? 'ATP' : String(r.m.tier));
     return bits.join(' ' + MIDDOT + ' ');
@@ -2049,21 +2177,54 @@
         'padding-bottom:11px;' + (i ? 'text-align:right;' : '') + '">' + h.label + '</div>';
     }).join('');
 
+    // ── EVERY RECORD CLICKABLE (founder 2026-09-17, items 1 and 2) ────────────
+    //
+    // The gate is the design file's, not §9's. `pick()` (Player Stat Boxes
+    // .dc.html:3179) guards on ONE thing — `if (!val || val === DASH) return;` —
+    // so a dash is inert and every cell that carries a record opens, however
+    // small. That is right for a drill and wrong for a RATE: §9's n>=5 gate
+    // exists because a 1-of-2 win rate is a claim a 2-match sample cannot make,
+    // whereas a list of 2 matches is just those 2 matches. The gate therefore
+    // moved to where the claim is — the bar (item 3) still greys at 5-9 and
+    // paints nothing under 5.
+    function cellCan(rec) { return !!rec && ((rec.won || 0) + (rec.lost || 0)) > 0; }
+    // The design's season cell carries no `style-hover` at all; the only hover the
+    // file defines for a clickable data row is `background:rgba(255,255,255,0.02)`
+    // (.dc.html:489), already carried by `.pp2-trow`. Reused rather than invented.
+    function cellAttrs(can, v) {
+      return can ? ' class="pp2-crec" data-pp2="career-cell" data-v="' + esc(v) + '"' : '';
+    }
+    function drillTitleFor(surfId, scopeLabel) {
+      // The file's own title expression: `(surf ? Capitalised : 'All matches')
+      // + ' · ' + scope`. The founder's note writes it "All · career"; the file
+      // writes "All matches · career" and he ruled the export wins outside item 3.
+      var lab = surfId
+        ? HEADS.filter(function (h) { return h.id === surfId; })[0].label
+        : 'All matches';
+      return lab + ' ' + MIDDOT + ' ' + scopeLabel;
+    }
+    // One drill, one renderer, for a season row and the career row alike.
+    function drillFor(scope, surfId, rec, scopeLabel) {
+      return renderDrill(p, {
+        surf: surfId, year: scope === 'career' ? null : scope, span: true,
+        title: drillTitleFor(surfId, scopeLabel),
+        won: rec ? rec.won || 0 : 0, lost: rec ? rec.lost || 0 : 0
+      });
+    }
+
     var body = years.map(function (y) {
       var g = gridCells(y);
       var yearStr = String(y.year);
       var openCell = state.careerDrill && state.careerDrill.kind === 'cell' &&
         state.careerDrill.year === yearStr ? state.careerDrill.surf : null;
+      var yearCan = cellCan(g.total);
       var cellsHtml = HEADS.slice(1).map(function (h) {
         var r = g[h.id];
         var txt = r ? (r.won || 0) + '/' + (r.lost || 0) : DASH;
-        var n = r ? (r.won || 0) + (r.lost || 0) : 0;
-        // §9: a cell under five matches does not open. A cell with no record at
-        // all is a dash and is inert — clicking a dash must not paint an empty card.
-        var can = n >= 5 && !(h.id === 'indoors');
+        // A dash is inert — clicking a dash must not paint an empty card.
+        var can = cellCan(r);
         var on = openCell === (h.id === 'total' ? '' : h.id);
-        return '<div' + (can ? ' data-pp2="career-cell" data-v="' + yearStr + '|' +
-            (h.id === 'total' ? '' : h.id) + '"' : '') +
+        return '<div' + cellAttrs(can, yearStr + '|' + (h.id === 'total' ? '' : h.id)) +
           ' style="font-family:\'IBM Plex Mono\',monospace;font-size:' + (h.id === 'total' ? 14 : 13) + 'px;' +
           (h.id === 'total' ? 'font-weight:700;' : '') + 'font-variant-numeric:tabular-nums;text-align:right;' +
           'padding:11px 0;border-top:1px solid rgba(255,255,255,0.05);' +
@@ -2073,16 +2234,15 @@
       var drill = '';
       if (openCell !== null) {
         var surf = openCell || null;
-        var rec = surf ? g[surf] : g.total;
-        drill = renderDrill(p, {
-          surf: surf, year: yearStr, span: true,
-          title: (surf ? HEADS.filter(function (h) { return h.id === surf; })[0].label : 'All matches') +
-            ' ' + MIDDOT + ' ' + yearStr,
-          won: rec ? rec.won || 0 : 0, lost: rec ? rec.lost || 0 : 0
-        });
+        drill = drillFor(yearStr, surf, surf ? g[surf] : g.total, yearStr);
       }
-      return '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:13px;font-weight:700;' +
-        'letter-spacing:0.02em;padding:11px 0;border-top:1px solid rgba(255,255,255,0.05);">' +
+      // 1a — the YEAR label opens the same drill as its Total cell (the file gives
+      // both `y.onYear`).
+      return '<div' + cellAttrs(yearCan, yearStr + '|') +
+        ' style="font-family:\'IBM Plex Mono\',monospace;font-size:13px;font-weight:700;' +
+        'letter-spacing:0.02em;padding:11px 0;border-top:1px solid rgba(255,255,255,0.05);' +
+        (yearCan ? 'cursor:pointer;' : 'color:' + DIM_COLOUR + ';') +
+        (openCell === '' ? 'color:#5b9bff;' : '') + '">' +
         esc(yearStr) + '</div>' + cellsHtml + drill;
     }).join('');
 
@@ -2090,17 +2250,36 @@
     var cf = careerGridCells(p);
     // Footer label is the file's EYEBROW (mono 10/700 0.18em uppercase #8b96b5),
     // not a 13px body word — item 15.
-    var footer = '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;font-weight:700;' +
-      'letter-spacing:0.18em;text-transform:uppercase;color:#8b96b5;padding:15px 0 13px;' +
+    // ── item 2 — the CAREER row opens too ────────────────────────────────────
+    // The file makes every footer cell clickable (`c.onClick`, .dc.html:1009) with
+    // the same `pick()` guard; the label is ours, because the founder asked for
+    // "CAREER label or TOTAL cell". Scope sentinel is the literal "career", which
+    // cannot collide with a year.
+    var openCareerCell = state.careerDrill && state.careerDrill.kind === 'cell' &&
+      state.careerDrill.year === 'career' ? state.careerDrill.surf : null;
+    var careerCan = cellCan(ct);
+    var footer = '<div' + cellAttrs(careerCan, 'career|') +
+      ' style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;font-weight:700;' +
+      'letter-spacing:0.18em;text-transform:uppercase;color:' +
+      (openCareerCell === '' ? '#5b9bff' : '#8b96b5') + ';padding:15px 0 13px;' +
+      (careerCan ? 'cursor:pointer;' : '') +
       'border-top:1px solid rgba(255,255,255,0.18);">Career</div>' +
       HEADS.slice(1).map(function (h) {
         var r = h.id === 'total' ? ct : cf[h.id];
-        return '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:' + (h.id === 'total' ? 14 : 13) + 'px;' +
+        var can = cellCan(r);
+        var on = openCareerCell === (h.id === 'total' ? '' : h.id);
+        return '<div' + cellAttrs(can, 'career|' + (h.id === 'total' ? '' : h.id)) +
+          ' style="font-family:\'IBM Plex Mono\',monospace;font-size:' + (h.id === 'total' ? 14 : 13) + 'px;' +
           'font-weight:700;font-variant-numeric:tabular-nums;text-align:right;padding:15px 0 13px;' +
-          (r ? '' : 'color:' + DIM_COLOUR + ';') +
+          (r ? '' : 'color:' + DIM_COLOUR + ';') + (can ? 'cursor:pointer;' : '') +
+          (on ? 'color:#5b9bff;' : '') +
           'border-top:1px solid rgba(255,255,255,0.18);">' +
           (r ? (r.won || 0) + '/' + (r.lost || 0) : DASH) + '</div>';
-      }).join('');
+      }).join('') +
+      (openCareerCell !== null
+        ? drillFor('career', openCareerCell || null,
+                   openCareerCell ? cf[openCareerCell] : ct, 'career')
+        : '');
 
     var fy = spineFirstYear(p);
     var ic = indoorCoverage(p);
@@ -4585,9 +4764,12 @@
       state.careerDrill = (state.careerDrill && state.careerDrill.kind === 'surface' &&
         state.careerDrill.surf === v) ? null : { kind: 'surface', surf: v, year: null };
     }
-    // §5.2B — `data-v` is "YYYY|surf", surf empty for the Total column. Clicking
-    // the same cell closes it; clicking another switches, which falls out of
-    // comparing the whole descriptor rather than just the year.
+    // §5.2B — `data-v` is "<scope>|<surf>", where scope is a year or the literal
+    // "career" and surf is empty for the Total column. Clicking the same cell
+    // closes it; clicking another switches, which falls out of comparing the
+    // whole descriptor rather than just the scope. `state.careerDrill` holds ONE
+    // descriptor, so the year rows, the career row and the surface bar rows all
+    // evict each other — "only one drill open at a time" is structural.
     else if (kind === 'career-cell') {
       var parts = String(v || '').split('|');
       var want = { kind: 'cell', year: parts[0], surf: parts[1] || '' };
@@ -4643,9 +4825,13 @@
       if (mounted) {
         mounted.removeEventListener('click', onClick);
         mounted.removeEventListener('input', onInput);
+        mounted.removeEventListener('scroll', onDrillScroll, true);
       }
       container.addEventListener('click', onClick);
       container.addEventListener('input', onInput);
+      // capture:true — `scroll` does not bubble, so a delegated listener on the
+      // container never fires without it. This is what feeds the drill pager.
+      container.addEventListener('scroll', onDrillScroll, true);
       if (!mount._key) { document.addEventListener('keydown', onKey); mount._key = true; }
       mounted = container;
     }
@@ -4756,10 +4942,18 @@
       // §5.2 rebuild — exported so the harness asserts on the real functions
       // rather than re-deriving their logic, which is how a check goes vacuous.
       modalSubtitle: modalSubtitle,
-      barFill: barFill,
+      barFillColour: barFillColour,
+      BAR_FULL: BAR_FULL,
+      BAR_SMALL: BAR_SMALL,
+      BAR_TRACK_BG: BAR_TRACK_BG,
       barRow: barRow,
       drillRows: drillRows,
       drillSpine: drillSpine,
+      drillSourceFor: drillSourceFor,
+      drillNote: drillNote,
+      drillBodyHtml: drillBodyHtml,
+      onDrillScroll: onDrillScroll,
+      DRILL_PAGE: DRILL_PAGE,
       renderDrill: renderDrill,
       CAREER_ROWS: CAREER_ROWS,
       ENDASH: ENDASH,

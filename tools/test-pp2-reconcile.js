@@ -2736,27 +2736,69 @@ mustFail('[neg] the row=column check would catch the live build\'s uncarved Hard
   assert.strictEqual(rowN, colN, `Hard row ${rowN} vs column ${colN}`);
 });
 
-check('item 7 · bars use the file\'s BLUE ramp, never the surface colour', () => {
+// ─── item 3 · MINIMAL BARS (founder override of the export, 2026-09-17) ───────
+//
+// This REPLACES the blue-ramp lock that shipped at 7a75a667. The export computes
+// one alpha ramp over the win rate; the founder overrode it: length carries the
+// rate, colour carries the sample gate. Both rules cannot hold at once, so the
+// old assertions are gone rather than weakened — a test kept but loosened is how
+// an override silently half-lands.
+check('item 3 · the bar is minimal: 4px track and fill, radius 2, ONE solid colour', () => {
   const html = renderCareer(CM_PLAYER);
-  const fills = (html.match(/width:[\d.]+%;background:([^;]+);/g) || []);
+  const tracks = (html.match(/height:4px;border-radius:2px;background:rgba\(255,255,255,0\.06\);/g) || []);
+  assert(tracks.length >= 4, `only ${tracks.length} minimal tracks rendered (expected one per surface row)`);
+  const fills = (html.match(/height:4px;width:[\d.]+%;background:([^;]+);border-radius:2px;/g) || []);
   assert(fills.length >= 3, `only ${fills.length} bar fills rendered`);
   fills.forEach((f) => {
-    assert(/rgba\(91,155,255,[\d.]+\)/.test(f), `a bar is not on the blue ramp: ${f}`);
+    assert(/background:(#5b9bff|#5b6880);/.test(f), `a fill is not one of the two solid colours: ${f}`);
   });
+  // the ramp is GONE — no alpha-varying blue anywhere on a fill
+  assert(!/width:[\d.]+%;background:rgba\(91,155,255,/.test(html),
+    'the blue alpha ramp is still painting a fill');
+  // and no 16px track survives
+  assert(!/height:16px;border-radius:4px/.test(html), 'the 16px track is still being drawn');
   ['#4db8ff', '#e8a84e', '#3dd68c'].forEach((c) => {
     assert(!new RegExp('width:[\\d.]+%;background:' + c).test(html),
-      `a bar is still painted the surface colour ${c}`);
+      `a bar is painted the surface colour ${c}`);
   });
-  assert(!/width:[\d.]+%;background:[^"]*opacity:0\.75/.test(html),
-    'the flat 0.75 opacity is still on the fill — the ramp already encodes the rate');
-  // the ramp must actually VARY with the rate, or it is a constant wearing a formula
-  assert.notStrictEqual(I.barFill(64), I.barFill(75), 'the blue ramp is flat');
-  assert.strictEqual(I.barFill(40), 'rgba(91,155,255,0.25)', 'ramp floor moved');
-  assert.strictEqual(I.barFill(74), 'rgba(91,155,255,1.00)', 'ramp ceiling moved');
+  // The colour is a GATE reading, not a rate reading: two very different rates on
+  // the same side of the gate must be the same colour, and two equal rates on
+  // opposite sides must differ. That is the whole content of the override.
+  assert.strictEqual(I.barFillColour(40), I.barFillColour(99),
+    'the fill colour still varies with the rate — the ramp survived under a new name');
+  assert.strictEqual(I.barFillColour(10), '#5b9bff', 'the n>=10 fill is not #5b9bff');
+  assert.strictEqual(I.barFillColour(9), '#5b6880', 'the 5-9 fill is not #5b6880');
+  assert.strictEqual(I.barFillColour(5), '#5b6880', 'the gate floor moved off 5');
+  assert.strictEqual(I.barFillColour(4), null, 'a sub-5 sample still paints a fill');
+  assert.strictEqual(I.barFillColour(0), null, 'a 0-match row still paints a fill');
 });
-mustFail('[neg] the ramp check would catch a fill painted the hard-court blue', () => {
-  const html = 'width:64.3%;background:#4db8ff;';
-  assert(!/width:[\d.]+%;background:#4db8ff/.test(html), 'a bar is still the surface colour');
+mustFail('[neg] the minimal-bar check would catch the shipped 16px ramp track', () => {
+  const html = 'height:16px;border-radius:4px;background:rgba(255,255,255,0.04);' +
+    '<div style="height:100%;width:64.3%;background:rgba(91,155,255,0.78);border-radius:4px;">';
+  assert(!/height:16px;border-radius:4px/.test(html), 'the 16px track is still being drawn');
+});
+mustFail('[neg] the gate-colour check would catch a fill that still ramped with the rate', () => {
+  const ramp = (n) => (n >= 10 ? 'rgba(91,155,255,' + (0.25 + n / 200).toFixed(2) + ')' : null);
+  assert.strictEqual(ramp(40), ramp(99), 'the fill colour still varies with the rate');
+});
+
+// A sub-5 row must show the TRACK and no fill — the founder's "n < 5 shows no
+// bar, only the track". Proven on a player built to sit under the gate, because
+// CM_PLAYER has none.
+check('item 3 · under the gate the track is drawn and the fill is not', () => {
+  const thin = {
+    key: '__thin', name: 'T. Hin',
+    careerByYear: [{ year: '2026', allTier: true, total: { won: 3, lost: 1 },
+      clay: null, hard: { won: 3, lost: 1 }, grass: null, indoor: null }],
+  };
+  const html = renderCareer(thin);
+  const tracks = (html.match(/height:4px;border-radius:2px;background:rgba\(255,255,255,0\.06\);/g) || []);
+  assert(tracks.length >= 4, 'the track disappeared along with the fill');
+  assert(!/height:4px;width:[\d.]+%/.test(html), 'a 4-match row still painted a fill');
+});
+mustFail('[neg] the sub-gate check would catch a fill painted at n=4', () => {
+  const html = '<div style="height:4px;width:75.0%;background:#5b9bff;border-radius:2px;">';
+  assert(!/height:4px;width:[\d.]+%/.test(html), 'a 4-match row still painted a fill');
 });
 
 check('item 8 · the win rate is a WHOLE number at 19px', () => {
@@ -2835,6 +2877,291 @@ check('items 16-17 · records OPEN — surface rows and season cells carry click
   assert(/data-pp2="career-cell" data-v="2026\|"/.test(html), 'the Total cell does not open');
   assert(/data-pp2="career-cell" data-v="2026\|hard"/.test(html), 'the Hard cell does not open');
   assert(/cursor:pointer/.test(html), 'nothing advertises a click');
+});
+
+// ─── items 1-2 · EVERY record clickable (founder 2026-09-17) ─────────────────
+//
+// The real roster player with the deepest season table. A one-year fixture cannot
+// show that EVERY year row opens, which is the whole of item 1.
+const DEEP_PLAYER = Object.keys(PLAYERS)
+  .map((k) => ({ key: k, ...PLAYERS[k] }))
+  .map((p) => ({ p, y: I.spineYears(p).length }))
+  .sort((a, b) => b.y - a.y)[0].p;
+
+check('item 1a-c · the YEAR label and the CAREER row open, on real roster data', () => {
+  // Driven over the real committed store rather than a fixture: the hooks have to
+  // land on the rows the page actually paints.
+  const p = DEEP_PLAYER;
+  const html = renderCareer(p);
+  const years = I.spineYears(p).map((y) => String(y.year));
+  assert(years.length >= 3, `only ${years.length} spine years to test`);
+  years.forEach((y) => {
+    const cells = I.gridCells(I.spineYears(p).filter((r) => String(r.year) === y)[0]);
+    const n = (cells.total && (cells.total.won + cells.total.lost)) || 0;
+    if (!n) return;
+    // 1a + 1b — the year label and the Total cell carry the SAME descriptor, so a
+    // click on either opens one drill rather than two competing ones.
+    const hits = (html.match(new RegExp('data-pp2="career-cell" data-v="' + y + '\\|"', 'g')) || []).length;
+    assert.strictEqual(hits, 2, `year ${y}: expected the label AND the Total cell, found ${hits}`);
+    // 1c — every surface cell that holds a record opens
+    ['clay', 'hard', 'grass'].forEach((s) => {
+      const rec = cells[s];
+      if (!rec || (rec.won + rec.lost) === 0) return;
+      assert(new RegExp('data-pp2="career-cell" data-v="' + y + '\\|' + s + '"').test(html),
+        `year ${y} ${s} holds ${rec.won}/${rec.lost} but does not open`);
+    });
+  });
+  // item 2 — the CAREER label and all five footer cells
+  assert((html.match(/data-pp2="career-cell" data-v="career\|"/g) || []).length === 2,
+    'the CAREER label and its Total cell do not both open');
+  const cf = I.careerGridCells(p);
+  ['clay', 'hard', 'grass'].forEach((s) => {
+    if (!cf[s] || (cf[s].won + cf[s].lost) === 0) return;
+    assert(new RegExp('data-pp2="career-cell" data-v="career\\|' + s + '"').test(html),
+      `the career ${s} cell does not open`);
+  });
+});
+mustFail('[neg] the open check would catch the year label left inert', () => {
+  // the shipped 7a75a667 markup: the label carried no hook at all
+  const html = '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:13px;">2026</div>' +
+    '<div data-pp2="career-cell" data-v="2026|">53/13</div>';
+  const hits = (html.match(/data-pp2="career-cell" data-v="2026\|"/g) || []).length;
+  assert.strictEqual(hits, 2, `expected the label AND the Total cell, found ${hits}`);
+});
+
+check('item 1f · a dash cell is inert and advertises no click', () => {
+  // A player whose 2026 has hard matches and no clay/grass at all.
+  const gap = {
+    key: '__gap', name: 'G. Ap',
+    careerByYear: [{ year: '2026', allTier: true, total: { won: 12, lost: 3 },
+      clay: null, hard: { won: 12, lost: 3 }, grass: null, indoor: null }],
+  };
+  const html = renderCareer(gap);
+  assert(/data-pp2="career-cell" data-v="2026\|hard"/.test(html), 'the Hard cell does not open');
+  assert(!/data-pp2="career-cell" data-v="2026\|clay"/.test(html), 'an empty Clay cell opens');
+  assert(!/data-pp2="career-cell" data-v="2026\|grass"/.test(html), 'an empty Grass cell opens');
+  // and the dash cell carries neither the class nor the pointer
+  const dashCell = html.match(/<div[^>]*>—<\/div>/g) || [];
+  assert(dashCell.length >= 2, `only ${dashCell.length} dash cells rendered`);
+  dashCell.forEach((d) => {
+    assert(!/cursor:pointer/.test(d), `a dash cell advertises a click: ${d}`);
+    assert(!/pp2-crec/.test(d), `a dash cell carries the hover class: ${d}`);
+  });
+});
+mustFail('[neg] the inert check would catch a dash cell wearing the pointer', () => {
+  const d = '<div class="pp2-crec" style="cursor:pointer;">—</div>';
+  assert(!/cursor:pointer/.test(d), 'a dash cell advertises a click');
+});
+
+check('item 1f · the n>=5 gate is OFF the drill and still ON the bar', () => {
+  // The gate moved: a 2-match cell opens (it is a list of 2 matches, not a rate),
+  // but a 2-match bar still paints nothing. Both halves asserted together so a
+  // future "restore the gate" cannot quietly take the bar's with it.
+  const tiny = {
+    key: '__tiny', name: 'T. Iny',
+    careerByYear: [{ year: '2026', allTier: true, total: { won: 2, lost: 0 },
+      clay: { won: 2, lost: 0 }, hard: null, grass: null, indoor: null }],
+  };
+  const html = renderCareer(tiny);
+  assert(/data-pp2="career-cell" data-v="2026\|clay"/.test(html),
+    'a 2-match cell is still gated shut');
+  assert(!/height:4px;width:[\d.]+%/.test(html), 'a 2-match row painted a bar fill');
+});
+mustFail('[neg] the moved-gate check would catch the old n>=5 cell gate', () => {
+  const can = (n) => n >= 5;
+  assert(can(2), 'a 2-match cell is still gated shut');
+});
+
+check('item 4 · a career drill is Σ its year drills plus the years the spine omits', () => {
+  // The reconciliation the founder asked for, stated exactly. It is NOT a plain
+  // equality, and forcing one would mean trimming the list — which he ruled out
+  // ("never pad or trim the list to force a match").
+  //
+  // `careerByYear` is a rolling WINDOW, not a career: Schwartzman's season table
+  // starts 2015 while the per-match store holds 2013 and 2014. Those matches are
+  // on record, so "every career match on record" must include them, and the
+  // career drill is then legitimately longer than Σ of the year cells. The
+  // invariant that DOES hold — and the one that breaks the instant drillRows
+  // reverts to unioning both stores at career scope — is that the surplus is
+  // exactly the out-of-window rows.
+  const keys = Object.keys(PLAYERS).slice(0, 40);
+  let checked = 0, surplusRows = 0, surplusPlayers = 0;
+  keys.forEach((k) => {
+    const p = { key: k, ...PLAYERS[k] };
+    const years = I.spineYears(p).map((y) => String(y.year));
+    if (!years.length) return;
+    const inSpine = new Set(years);
+    let sawSurplus = false;
+    [null, 'clay', 'hard', 'grass'].forEach((s) => {
+      const careerRows = I.drillRows(p, s, null);
+      const summed = years.reduce((a, y) => a + I.drillRows(p, s, y).length, 0);
+      const outside = careerRows.filter((r) => !inSpine.has(r.year)).length;
+      assert.strictEqual(careerRows.length, summed + outside,
+        `${k} ${s || 'all'}: career drill ${careerRows.length} vs Σ year drills ${summed} + ${outside} out-of-window`);
+      if (s === null && outside) { surplusRows += outside; sawSurplus = true; }
+    });
+    if (sawSurplus) surplusPlayers++;
+    checked++;
+  });
+  assert(checked >= 20, `only ${checked} players carried a spine to check`);
+  console.log(`        career = Σ year drills + out-of-window, ${checked} players, 4 scopes each`);
+  console.log(`        ${surplusRows} out-of-window rows across ${surplusPlayers} of ${checked} sampled players`);
+});
+mustFail('[neg] the sum check would catch a career drill that unioned both stores', () => {
+  // the pre-fix behaviour: no source filter at career scope, so a year the form
+  // store covers ALSO contributed its edition rows — a surplus that is NOT
+  // out-of-window and would slip past a check that only looked at the total.
+  const spine = [{ year: '2026', src: 'form' }, { year: '2026', src: 'edition' }];
+  const career = spine.length;                                   // union = 2
+  const summed = spine.filter((r) => r.src === 'form').length;    // per-year = 1
+  const outside = spine.filter((r) => r.year !== '2026').length;  // 0
+  assert.strictEqual(career, summed + outside,
+    `career drill ${career} vs Σ year drills ${summed} + ${outside} out-of-window`);
+});
+
+check('item 2e · the drill pages instead of truncating — every match stays reachable', () => {
+  const big = Object.keys(PLAYERS)
+    .map((k) => ({ key: k, ...PLAYERS[k] }))
+    .map((p) => ({ p, n: I.drillRows(p, null, null).length }))
+    .sort((a, b) => b.n - a.n)[0];
+  assert(big.n > I.DRILL_PAGE, `the largest career drill is ${big.n}, under one page`);
+  const saved = { ...I.state };
+  let html;
+  try {
+    I.state.key = big.p.key; I.state.careerScope = 'career';
+    I.state.careerDrill = { kind: 'cell', year: 'career', surf: '' };
+    html = I.renderCareerModal(big.p, { archetype: null });
+  } finally { Object.assign(I.state, saved); }
+  // one page painted, the rest reachable — and the note says so rather than
+  // implying the list is complete
+  assert(new RegExp('Showing ' + I.DRILL_PAGE + ' of ' + big.n + ' · scroll for more').test(html),
+    `the note does not state the paging for ${big.p.key} (${big.n} rows)`);
+  assert(/data-pp2-drill-scroll="1"/.test(html), 'the scroll container has no pager hook');
+  assert(/data-pp2-drill-grid="1"/.test(html), 'the row grid has no pager hook');
+  // the paged note must NOT read as a data shortfall — those are different claims
+  assert(!new RegExp('Showing ' + I.DRILL_PAGE + ' of ' + big.n +
+    ' · the rest are not in the per-match store').test(html),
+    'a paging cut is being reported as missing data');
+  console.log(`        largest career drill ${big.n} rows (${big.p.name || big.p.key}), paged at ${I.DRILL_PAGE}`);
+});
+mustFail('[neg] the paging check would catch the old 200-row hard cap', () => {
+  const rows = 1463, cap = 200;
+  const shown = Math.min(rows, cap);
+  // the old note claimed a cap it never lifted — "scroll for more" with nothing more to load
+  assert(shown === rows, `${shown} of ${rows} rows are reachable`);
+});
+
+check('item 2e · a scroll append reuses the SAME row builder and advances the pager', () => {
+  const big = Object.keys(PLAYERS)
+    .map((k) => ({ key: k, ...PLAYERS[k] }))
+    .map((p) => ({ p, n: I.drillRows(p, null, null).length }))
+    .sort((a, b) => b.n - a.n)[0];
+  const rows = I.drillRows(big.p, null, null);
+  // page 1 and page 2 through the real builder, then the whole list in one go —
+  // the concatenation must be byte-identical, which is the only thing that proves
+  // a scrolled-in row is not a second, drifting renderer.
+  const pgA = { lastEvent: null, multiYear: true };
+  const paged = I.drillBodyHtml(rows, 0, I.DRILL_PAGE, pgA) +
+                I.drillBodyHtml(rows, I.DRILL_PAGE, I.DRILL_PAGE * 2, pgA);
+  const whole = I.drillBodyHtml(rows, 0, I.DRILL_PAGE * 2, { lastEvent: null, multiYear: true });
+  assert.strictEqual(paged, whole,
+    'two pages do not reassemble into the single-pass render — the group headers drifted');
+  assert(paged.length > 0, 'the pager produced nothing');
+});
+mustFail('[neg] the append check would catch a pager that reset its event grouping', () => {
+  const rows = [{ year: '2026', event: 'A' }, { year: '2026', event: 'A' }];
+  const grp = (r, pg) => { const g = r.event; const out = g !== pg.last ? '[H]' : ''; pg.last = g; return out + 'r'; };
+  const pgA = { last: null };
+  const paged = grp(rows[0], pgA) + grp(rows[1], { last: null });   // pager reset
+  const pgB = { last: null };
+  const whole = grp(rows[0], pgB) + grp(rows[1], pgB);
+  assert.strictEqual(paged, whole, 'two pages do not reassemble into the single-pass render');
+});
+
+check('a dashed surface drill states the TRUE reason — stored-but-surfaceless vs absent', () => {
+  // Zverev 2025 on the deployed store: the year drill lists all 81 matches and the
+  // Clay drill lists none, because that year's rows come from the edition store,
+  // which carries no surface. Saying "no matches in the per-match store" there is
+  // false — the matches are stored. Two reasons, two sentences.
+  const mk = (form) => ({
+    key: '__r' + (form ? 'f' : 'e'), name: 'R. Eason',
+    careerByYear: [{ year: '2024', allTier: true, total: { won: 6, lost: 2 },
+      clay: { won: 6, lost: 2 }, hard: null, grass: null, indoor: null }],
+    recentForm: { matches: [] },
+    tournamentHistory: [{ name: 'Test Cup', editions: [{ year: '2024', matches:
+      Array.from({ length: 8 }, (_, i) => ({ res: i < 6 ? 'W' : 'L', round: 'R32',
+        opp: 'X. Ample ' + i, score: '2 - 0' })) }] }],
+  });
+  const stored = mk(false);
+  // the edition store holds all 8 rows for 2024...
+  assert.strictEqual(I.drillRows(stored, null, '2024').length, 8, 'the year drill lost its rows');
+  // ...and none of them can answer a surface question
+  assert.strictEqual(I.drillRows(stored, 'clay', '2024').length, 0, 'an edition row claimed a surface');
+  const saved = { ...I.state };
+  let html;
+  try {
+    I.state.key = stored.key; I.state.careerScope = 'career';
+    I.state.careerDrill = { kind: 'cell', year: '2024', surf: 'clay' };
+    html = I.renderCareerModal(stored, { archetype: null });
+  } finally { Object.assign(I.state, saved); }
+  assert(/the 8 matches in scope carry no surface/.test(html),
+    'the drill does not say WHY the surface list is empty');
+  assert(!/no matches in the per-match store/.test(html),
+    'the drill still claims the matches are unstored when they are stored');
+  // and where there genuinely are no rows at all, the other reason stands
+  const empty = { key: '__none', name: 'N. One',
+    careerByYear: [{ year: '2024', allTier: true, total: { won: 6, lost: 2 },
+      clay: { won: 6, lost: 2 }, hard: null, grass: null, indoor: null }] };
+  let h2;
+  try {
+    I.state.key = empty.key; I.state.careerScope = 'career';
+    I.state.careerDrill = { kind: 'cell', year: '2024', surf: 'clay' };
+    h2 = I.renderCareerModal(empty, { archetype: null });
+  } finally { Object.assign(I.state, saved); }
+  assert(/no matches in the per-match store for this record/.test(h2),
+    'a genuinely empty scope lost its reason');
+});
+mustFail('[neg] the reason check would catch the blanket "not in the store" wording', () => {
+  const note = 'no matches in the per-match store for this record';
+  assert(/carry no surface/.test(note), 'the drill does not say WHY the surface list is empty');
+});
+
+check('item 4 · every drill header carries the CLICKED cell\'s record, never the list\'s', () => {
+  // Swept over the real roster: for each year cell that opens, the header record
+  // must be the cell's own W–L and n. A header that quoted the list length would
+  // make a partial list look complete.
+  const keys = Object.keys(PLAYERS).slice(0, 12);
+  let seen = 0, mismatched = 0;
+  keys.forEach((k) => {
+    const p = { key: k, ...PLAYERS[k] };
+    I.spineYears(p).forEach((y) => {
+      const g = I.gridCells(y);
+      ['', 'clay', 'hard', 'grass'].forEach((s) => {
+        const rec = s ? g[s] : g.total;
+        if (!rec || (rec.won + rec.lost) === 0) return;
+        const saved = { ...I.state };
+        let html;
+        try {
+          I.state.key = p.key; I.state.careerScope = 'career';
+          I.state.careerDrill = { kind: 'cell', year: String(y.year), surf: s };
+          html = I.renderCareerModal(p, { archetype: null });
+        } finally { Object.assign(I.state, saved); }
+        const n = rec.won + rec.lost;
+        const want = rec.won + '–' + rec.lost + ' · ' + n + ' matches';
+        seen++;
+        if (html.indexOf(want) < 0) { mismatched++; }
+      });
+    });
+  });
+  assert(seen >= 100, `only ${seen} cells opened across ${keys.length} players`);
+  assert.strictEqual(mismatched, 0, `${mismatched} of ${seen} drill headers did not carry the cell's record`);
+  console.log(`        ${seen} drill headers carry their cell's own record`);
+});
+mustFail('[neg] the header check would catch a header quoting the list length', () => {
+  const rec = { won: 30, lost: 14 }, listLen = 6;
+  const html = `${listLen}–14 · ${listLen} matches`;
+  const want = rec.won + '–' + rec.lost + ' · ' + (rec.won + rec.lost) + ' matches';
+  assert(html.indexOf(want) >= 0, 'the header does not carry the cell\'s record');
 });
 mustFail('[neg] the open check would catch the shipped modal, where nothing was clickable', () => {
   // measured on the deployed page: 0 clickable surface rows, 0 of 55 pointer cells
