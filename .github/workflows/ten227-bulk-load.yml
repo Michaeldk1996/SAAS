@@ -1,0 +1,146 @@
+name: TEN-227 BetsAPI bulk load
+
+# TEN-227 Phase 3 — download ended ATP/Challenger/Slam singles and their odds
+# into the betsapi_raw_* Supabase tables.
+#
+# Writes ONLY to tables whose name starts with betsapi_raw_. Touches no product
+# data: not matches.json, not the pipeline, not the live site, not the TEN-216
+# collector's tables, not the TEN-225 Oddspapi work. The DDL allowlist that
+# enforces that is unit-tested (tools/test-ten227-ddl-guard.js), and the test
+# runs here before any load is allowed to start.
+#
+# Manual dispatch. `load` self-chains because the download is longer than one
+# Actions job, and that chain follows the TEN-221 rulings: a 5-minute redispatch
+# floor, and a circuit breaker that stops the chain after 3 consecutive failed
+# runs rather than looping on a broken state.
+
+on:
+  workflow_dispatch:
+    inputs:
+      cmd:
+        description: 'setup | size | load'
+        required: true
+        default: 'size'
+        type: choice
+        options: [setup, size, load]
+      max_req:
+        description: 'hard client-side request ceiling for this run'
+        required: false
+        default: '7000'
+      rate_per_hour:
+        description: 'pacing ceiling (trial limit is 1800; stay <= 1600)'
+        required: false
+        default: '1600'
+      deadline_min:
+        description: 'stop cleanly after this many minutes, inside the job timeout'
+        required: false
+        default: '300'
+      from_year:
+        description: 'earliest year to load (floor is 2016; 2016-09-01 is the data wall)'
+        required: false
+        default: '2016'
+      to_year:
+        description: 'latest year to load — the download runs newest-first'
+        required: false
+        default: '2025'
+      chain:
+        description: 'self-dispatch a follow-on run when work remains (true/false)'
+        required: false
+        default: 'false'
+
+concurrency:
+  group: ten227-bulk-load
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  actions: write
+
+jobs:
+  load:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    outputs:
+      more_work: ${{ steps.run.outputs.more_work }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # The scope guard is the only thing between this job and the production
+      # database. If its test does not pass, nothing else in this job runs.
+      - name: Prove the DDL scope guard
+        run: node --test tools/test-ten227-ddl-guard.js
+
+      - name: Run
+        id: run
+        env:
+          BETSAPI_TOKEN: ${{ secrets.BETSAPI_TOKEN }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          BETSAPI_MAX_REQ: ${{ inputs.max_req }}
+          BETSAPI_RATE_PER_HOUR: ${{ inputs.rate_per_hour }}
+          LOAD_DEADLINE_MIN: ${{ inputs.deadline_min }}
+          LOAD_FROM_YEAR: ${{ inputs.from_year }}
+          LOAD_TO_YEAR: ${{ inputs.to_year }}
+        run: node tools/ten227-bulk-load.mjs "${{ inputs.cmd }}"
+
+      - name: Upload output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ten227-bulk-${{ inputs.cmd }}-${{ github.run_id }}
+          path: betsapi-out/
+          if-no-files-found: warn
+          retention-days: 14
+
+  # TEN-221 rulings, both of them, enforced before a single redispatch:
+  #   - 5-minute floor between runs
+  #   - stop after 3 consecutive non-zero runs instead of looping on a break
+  chain:
+    needs: load
+    if: inputs.chain == 'true' && inputs.cmd == 'load' && needs.load.outputs.more_work == '1'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Circuit breaker — refuse to chain onto a broken run of runs
+        id: breaker
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          # The three most recent COMPLETED runs of this workflow, newest first.
+          recent=$(gh api \
+            "repos/${{ github.repository }}/actions/workflows/ten227-bulk-load.yml/runs?status=completed&per_page=3" \
+            --jq '[.workflow_runs[].conclusion] | join(",")')
+          echo "recent conclusions: ${recent:-<none>}"
+          fails=$(printf '%s' "$recent" | tr ',' '\n' | awk '
+            /^success$/ { exit }
+            NF { n++ }
+            END { print n+0 }')
+          echo "consecutive non-success: $fails"
+          if [ "$fails" -ge 3 ]; then
+            echo "CIRCUIT BREAKER OPEN — 3 consecutive non-success runs, not chaining."
+            echo "go=0" >> "$GITHUB_OUTPUT"
+          else
+            echo "go=1" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Redispatch floor — 5 minutes
+        if: steps.breaker.outputs.go == '1'
+        run: sleep 300
+
+      - name: Redispatch
+        if: steps.breaker.outputs.go == '1'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh workflow run ten227-bulk-load.yml \
+            -f cmd=load \
+            -f max_req='${{ inputs.max_req }}' \
+            -f rate_per_hour='${{ inputs.rate_per_hour }}' \
+            -f deadline_min='${{ inputs.deadline_min }}' \
+            -f from_year='${{ inputs.from_year }}' \
+            -f to_year='${{ inputs.to_year }}' \
+            -f chain=true
