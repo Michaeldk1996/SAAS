@@ -222,7 +222,7 @@ def test_b_backward_reach(c, now, feed_source_id):
         }
         # Markets for the same window, all three states, so "markets survive"
         # and "only the current price survives" are told apart.
-        rows, metas = c.markets_three_state(
+        rows, metas = c.markets_all_states(
             league_id=men, start_time=iso(w_start), end_time=iso(w_end),
             feed_source_id=feed_source_id)
         ok = all(m["status"] == 200 for m in metas)
@@ -266,7 +266,7 @@ def test_c_bet105_coverage(c, now, feed_source_id, horizon_days=3):
         fixtures = c.rows(fx_payload)
         fixture_ids = {f.get("fixture_id") for f in fixtures if isinstance(f, dict)}
 
-        rows, metas = c.markets_three_state(
+        rows, metas = c.markets_all_states(
             league_id=lid, betting_type_id=1,
             start_time=iso(start), end_time=iso(end), feed_source_id=feed_source_id)
         ok = all(m["status"] == 200 for m in metas)
@@ -342,7 +342,7 @@ def test_d_is_current_trap(c, now, feed_source_id):
             "states": dict(Counter(state_of(p) for p in parts)),
         }
 
-    merged, metas = c.markets_three_state(**base)
+    merged, metas = c.markets_all_states(**base)
     merged_states = Counter(state_of(r) for r in merged)
     default_rows = variants["default_no_flag"]["rows"]
 
@@ -582,7 +582,7 @@ def build_markdown(res):
     A(f"**Trap confirmed:** `{d.get('trap_confirmed')}` — "
       f"rows the default call would have lost: `{fmt(d.get('rows_lost_by_default'))}`.")
     A("")
-    A("The archive uses `markets_three_state()`, which is the two-call merge, and "
+    A("The archive uses `markets_all_states()`, which is the two-call merge, and "
       "never a bare `/info/markets` pull.")
     A("")
 

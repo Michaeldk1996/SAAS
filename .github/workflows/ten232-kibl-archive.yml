@@ -1,0 +1,181 @@
+name: TEN-232 kibl archive
+
+# TEN-232 Part 1 — pre-match line archive for the Kibl feed.
+#
+# WHY THIS RUNS ON A SCHEDULE AND NOT ON DEMAND: Kibl has no history endpoint
+# and no export endpoint. It serves the opening price and the current price and
+# discards everything in between as soon as a new price lands. A sweep that does
+# not run is not a sweep we run later — it is a price nobody has. The founder's
+# instruction is explicit: archive first.
+#
+# Scope: men's leagues (ATP 19, Challenger 537, ITF Men 962), pre-match only.
+# WTA / WTA-125K / ITF Women are deliberately excluded even though this account
+# is entitled to them and they ARE priced.
+#
+# Writes to the private Supabase bucket `kibl-raw` and two Postgres tables with
+# RLS on and zero policies. Touches no site surface and publishes nothing.
+
+on:
+  schedule:
+    # Every 30 minutes. The cadence the observed change rate justifies is
+    # reported by the `report` command rather than assumed here; this is the
+    # conservative starting point from the ticket (15 min pre-match) halved,
+    # because Kibl documents no rate limit at all and we would rather discover
+    # a ceiling from their answer than by hitting it.
+    - cron: '7,37 * * * *'
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'sweep | backfill | report'
+        default: 'sweep'
+      horizon_days:
+        description: 'sweep: how far forward, days'
+        default: '3'
+      from_days:
+        description: 'backfill: oldest day to attempt'
+        default: '35'
+      to_days:
+        description: 'backfill: newest day to attempt'
+        default: '1'
+
+concurrency:
+  group: ten232-kibl-archive
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+      MGMT: https://api.supabase.com
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Guard — credentials present
+        env:
+          KIBL_USERNAME: ${{ secrets.KIBL_USERNAME }}
+          KIBL_PASSWORD: ${{ secrets.KIBL_PASSWORD }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: |
+          missing=
+          for n in KIBL_USERNAME KIBL_PASSWORD SUPABASE_URL SUPABASE_SECRET_KEY; do
+            eval "v=\$$n"
+            [ -z "$(printf '%s' "$v" | tr -d '[:space:]')" ] && missing="$missing $n"
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::missing secret(s):$missing"
+            exit 1
+          fi
+          echo "all four credentials present (values never printed)"
+
+      # Offline, no network. Locks the two properties that would corrupt the
+      # archive silently: the is_opener pull axis (is_current does nothing, so a
+      # merge built on it archives current prices twice and no openers) and the
+      # refusal to issue a market call without feed_source_id (which returns 200
+      # and an empty envelope).
+      - name: Offline tests
+        run: python3 test-kibl-client.py
+
+      # DDL runs BEFORE the pull and is idempotent. Applying it every run is
+      # what makes a dropped or drifted table a loud failure here rather than a
+      # silent insert failure later, after the prices are already unrecoverable.
+      - name: Apply the schema
+        run: |
+          set -euo pipefail
+          REF=$(printf '%s' "$SUPABASE_URL" | sed -E 's#https?://([^./]+)\.supabase\.co/?.*#\1#')
+          [ -n "$REF" ] && [ "$REF" != "$SUPABASE_URL" ] \
+            || { echo "::error::could not derive project ref from SUPABASE_URL"; exit 1; }
+          echo "PROJECT_REF=$REF" >> "$GITHUB_ENV"
+          resp=$(jq -Rs '{query: .}' ten232-kibl-schema.sql | curl -sS -w $'\n%{http_code}' -X POST \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data @- "$MGMT/v1/projects/$REF/database/query")
+          code=$(printf '%s' "$resp" | tail -n1)
+          body=$(printf '%s' "$resp" | sed '$d')
+          if [ "$code" != "200" ] && [ "$code" != "201" ]; then
+            echo "::error::schema apply failed ($code): $body"; exit 1
+          fi
+          echo 'schema applied (idempotent).'
+
+      # Proves the posture rather than asserting it: RLS on, zero policies. This
+      # is odds data under a partner grant, not public data.
+      - name: Verify RLS is on and no policy exists
+        run: |
+          set -euo pipefail
+          read -r -d '' Q <<'SQL' || true
+          SELECT c.relname,
+                 c.relrowsecurity AS rls_enabled,
+                 (SELECT count(*) FROM pg_policies p
+                   WHERE p.schemaname='public' AND p.tablename=c.relname) AS policies
+            FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+           WHERE n.nspname='public'
+             AND c.relname IN ('kibl_line_observations','kibl_sweeps')
+           ORDER BY 1;
+          SQL
+          resp=$(jq -Rn --arg q "$Q" '{query: $q}' | curl -sS -w $'\n%{http_code}' -X POST \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data @- "$MGMT/v1/projects/$PROJECT_REF/database/query")
+          code=$(printf '%s' "$resp" | tail -n1)
+          body=$(printf '%s' "$resp" | sed '$d')
+          echo "$body"
+          if [ "$code" != "200" ] && [ "$code" != "201" ]; then
+            echo "::error::RLS check failed ($code)"; exit 1
+          fi
+          n=$(printf '%s' "$body" | jq '[.[] | select(.rls_enabled != true or .policies != 0)] | length')
+          if [ "$n" != "0" ]; then
+            echo "::error::a kibl table has RLS off or a policy attached"; exit 1
+          fi
+          tables=$(printf '%s' "$body" | jq 'length')
+          if [ "$tables" != "2" ]; then
+            echo "::error::expected 2 kibl tables, found $tables"; exit 1
+          fi
+          echo "RLS on, zero policies, both tables present."
+
+      - name: Sweep
+        if: github.event_name == 'schedule' || inputs.mode == 'sweep'
+        env:
+          KIBL_USERNAME: ${{ secrets.KIBL_USERNAME }}
+          KIBL_PASSWORD: ${{ secrets.KIBL_PASSWORD }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: |
+          python3 archive-kibl.py sweep \
+            --horizon-days "${{ github.event_name == 'schedule' && '3' || inputs.horizon_days }}"
+
+      # One-time recovery of the ~30 days of finished fixtures that are still
+      # reachable through start_time/end_time. That window slides forward daily.
+      - name: Backfill
+        if: github.event_name == 'workflow_dispatch' && inputs.mode == 'backfill'
+        env:
+          KIBL_USERNAME: ${{ secrets.KIBL_USERNAME }}
+          KIBL_PASSWORD: ${{ secrets.KIBL_PASSWORD }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: |
+          python3 archive-kibl.py backfill \
+            --from-days "${{ inputs.from_days }}" --to-days "${{ inputs.to_days }}"
+
+      # Runs even when the pull failed: whatever landed is real data, and the
+      # size and reliability figures are how the 48h report and the gap alert are
+      # read. Reported, never used to decide the cadence — that is the founder's.
+      - name: Report
+        if: always()
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: python3 archive-kibl.py report --days 3 | tee -a "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,139 @@
+name: TEN-225 oddspapi budget
+
+# Michael's ruling (2026-09-17T23:15Z, TEN-225 item 6): a hard daily cap of 150
+# billable units shared across ALL jobs, with a persisted counter; any single run
+# planning more than 50 units stops and asks first.
+#
+# This workflow owns the ledger table and the standing report. The gate itself
+# runs inside each spending job (see `oddspapi_budget.py preflight`), because a
+# cap that is only checked here would be advice, not a cap.
+#
+# WHY A LEDGER AND NOT A COUNTER WE INCREMENT. Measured on this key 2026-09-18:
+# /v4/odds-by-tournaments billed 1 unit while returning HTTP 400. A failed call
+# still bills, so any counter we maintain ourselves under-counts exactly when a
+# job is misbehaving. The counter of record is oddspapi's own free
+# /v4/account -> request_count; the ledger persists only the UTC day boundary
+# and the per-job attribution the meter cannot give us.
+#
+# ZERO BILLABLE UNITS. Every call this workflow makes is /v4/account (free) or
+# PostgREST. The report can be run as often as you like.
+#
+# NOTHING MEMBER-VISIBLE. One new table, RLS on, no policy at all, so no browser
+# role can read it. No existing table, policy, publication or pg_cron job is
+# referenced — all four are DO-NOT-TOUCH on TEN-225.
+
+on:
+  workflow_dispatch:
+    inputs:
+      schema:
+        description: 'Apply the DDL (idempotent: every statement is IF NOT EXISTS)'
+        type: boolean
+        default: true
+      since:
+        description: 'Report ledger rows from this date'
+        default: '2026-09-10'
+  schedule:
+    # 23:50 UTC — the last word on the day before the UTC boundary moves, so the
+    # ledger always has a closing reading for the day the baseline is read from.
+    - cron: '50 23 * * *'
+
+concurrency:
+  group: ten225-budget
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  budget:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      ODDSPAPI_KEY: ${{ secrets.ODDSPAPI_KEY }}
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+      MGMT: https://api.supabase.com
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Preconditions + derive project ref
+        run: |
+          set -euo pipefail
+          for v in ODDSPAPI_KEY SUPABASE_ACCESS_TOKEN SUPABASE_URL SUPABASE_SECRET_KEY; do
+            [ -n "${!v:-}" ] || { echo "::error::missing repository secret $v"; exit 1; }
+          done
+          REF=$(printf '%s' "$SUPABASE_URL" | sed -E 's#https?://([^./]+)\.supabase\.co/?.*#\1#')
+          [ -n "$REF" ] && [ "$REF" != "$SUPABASE_URL" ] \
+            || { echo "::error::could not derive project ref from SUPABASE_URL"; exit 1; }
+          echo "PROJECT_REF=$REF" >> "$GITHUB_ENV"
+          echo "Derived project ref: $REF"
+
+      # BEFORE the DDL on purpose. A gate that lets a capped run through, or one
+      # that blocks the board's 1-unit price refresh, is worse than no gate; both
+      # are pinned here and both fail the job before the table exists.
+      - name: Offline harness (no network, no Supabase, no odds-API call)
+        run: python3 test-oddspapi-budget.py
+
+      - name: Apply the schema
+        if: ${{ inputs.schema || github.event_name == 'schedule' }}
+        run: |
+          set -euo pipefail
+          resp=$(jq -Rs '{query: .}' ten225-budget-schema.sql | curl -sS -w $'\n%{http_code}' -X POST \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data @- "$MGMT/v1/projects/$PROJECT_REF/database/query")
+          code=$(printf '%s' "$resp" | tail -n1)
+          body=$(printf '%s' "$resp" | sed '$d')
+          echo "http $code"
+          if [ "$code" != "200" ] && [ "$code" != "201" ]; then
+            echo "::error::schema apply failed ($code): $body"; exit 1
+          fi
+          echo 'oddspapi_budget_ledger applied (idempotent).'
+
+      # Proves the posture rather than asserting it: RLS on, zero policies.
+      - name: Verify RLS is on and no policy exists
+        if: ${{ inputs.schema || github.event_name == 'schedule' }}
+        run: |
+          set -euo pipefail
+          read -r -d '' Q <<'SQL' || true
+          SELECT c.relname,
+                 c.relrowsecurity AS rls_enabled,
+                 (SELECT count(*) FROM pg_policies p
+                   WHERE p.schemaname='public' AND p.tablename=c.relname) AS policies
+            FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+           WHERE n.nspname='public' AND c.relname = 'oddspapi_budget_ledger';
+          SQL
+          resp=$(jq -Rn --arg q "$Q" '{query: $q}' | curl -sS -X POST \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data @- "$MGMT/v1/projects/$PROJECT_REF/database/query")
+          echo "$resp"
+          echo "$resp" | jq -e '.[0].rls_enabled == true and (.[0].policies|tonumber) == 0' >/dev/null \
+            || { echo "::error::oddspapi_budget_ledger is not RLS-on-with-zero-policies"; exit 1; }
+          echo 'RLS on, zero policies — confirmed.'
+
+      # The standing answer to ruling 6a. Written straight to the step summary
+      # with a plain redirect: a `| tee` here has silently reported a green run
+      # off a dead probe before (see CLAUDE.md), so the report is generated to a
+      # file first and only then appended.
+      - name: Ledger + meter report
+        if: always()
+        run: |
+          set -uo pipefail
+          SINCE="${{ inputs.since || '2026-09-10' }}"
+          python3 oddspapi_budget.py report --since "$SINCE" > budget-report.txt 2>&1
+          rc=$?
+          {
+            echo '## TEN-225 oddspapi budget'
+            echo '```'
+            cat budget-report.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          cat budget-report.txt
+          exit $rc

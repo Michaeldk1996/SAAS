@@ -58,6 +58,18 @@ jobs:
         with:
           python-version: '3.11'
 
+      # TEN-225 ruling 6b — see the note in odds-now.yml. Observe-only: the
+      # shared ledger must see every job on the key or the cap is computed from
+      # a partial view, but this job is DO-NOT-TOUCH capture and spends exactly
+      # 1 unit per run, so the gate records and never blocks.
+      - name: Budget observe — pre (free, non-blocking)
+        continue-on-error: true
+        env:
+          ODDSPAPI_KEY: ${{ secrets.ODDSPAPI_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: python3 oddspapi_budget.py preflight --job odds-history --plan 1 --observe
+
       - name: Capture odds-movement timelines
         env:
           ODDSPAPI_KEY: ${{ secrets.ODDSPAPI_KEY }}
@@ -71,6 +83,15 @@ jobs:
             exit 1
           fi
           python3 refresh-odds-history.py
+
+      - name: Budget observe — post (free, non-blocking)
+        if: always()
+        continue-on-error: true
+        env:
+          ODDSPAPI_KEY: ${{ secrets.ODDSPAPI_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: python3 oddspapi_budget.py commit --job odds-history
 
       # Runs even when the capture step failed. A PARTIAL capture (exit 2) has
       # already written real prices into matches.json and those are worth

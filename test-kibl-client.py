@@ -76,49 +76,63 @@ try:
 except ValueError as e:
     check("bare markets() call rejected", "feed_source_id" in str(e))
 try:
-    guard.markets_three_state(league_id="19")
+    guard.markets_all_states(league_id="19")
     check("three-state call rejected too", False, "no ValueError raised")
 except ValueError:
     check("three-state call rejected too", True)
 check("no call was issued for either", guard.calls == 0, guard.calls)
 ok_guard = FakeClient([[], []])
-ok_guard.markets_three_state(league_id="19", feed_source_id=43)
+ok_guard.markets_all_states(league_id="19", feed_source_id=43)
 check("with feed_source_id it proceeds", ok_guard.calls == 2, ok_guard.calls)
 check("feed_source_id reaches the wire",
       all(p.get("feed_source_id") == 43 for _, p in ok_guard.seen), ok_guard.seen)
 
-print("1. the three-state read issues both is_current values explicitly")
+print("1. the all-states read pulls on the is_opener axis, NOT the is_current axis")
+# MEASURED by comparing row SETS, not counts — the counts are identical under
+# contradictory filters, so counting cannot tell these apart:
+#   unfiltered      -> current prices (+ openers for lines that have not moved)
+#   is_opener=true  -> opening prices; 78 of 108 rows DIFFER from unfiltered
+#   is_current true == is_current false, jaccard 1.0 -> the flag does nothing
+# An earlier version of this client merged is_current=true with is_current=false.
+# That pulls the SAME rows twice and never retrieves a single opener — a
+# full-looking archive with no opening prices in it.
 cur = [{"participants": [row("c1", is_current=True)]}]
-old = [{"participants": [row("o1", is_opener=True), row("p1", is_previous=True)]}]
-fc = FakeClient([cur, old])
-rows, metas = fc.markets_three_state(league_id="19", feed_source_id=43)
-flags = [p.get("is_current") for _, p in fc.seen]
-check("two calls issued", len(fc.seen) == 2, fc.seen)
-check("both flag values sent explicitly", set(flags) == {"true", "false"}, flags)
-check("flag serialised lowercase, not Python-cased",
-      all(f in ("true", "false") for f in flags), flags)
-check("all three states merged", len(rows) == 3, len(rows))
+opn = [{"participants": [row("o1", is_opener=True)]}]
+fc = FakeClient([cur, opn])
+rows, metas = fc.markets_all_states(league_id="19", feed_source_id=43)
+sent = [p for _, p in fc.seen]
+check("two calls issued", len(sent) == 2, sent)
+check("first call is unfiltered by state",
+      "is_opener" not in sent[0] and "is_current" not in sent[0], sent[0])
+check("second call sets is_opener", sent[1].get("is_opener") == "true", sent[1])
+check("is_current is NEVER sent — it does nothing and implies a false model",
+      all("is_current" not in p for p in sent), sent)
+check("both states merged", len(rows) == 2, len(rows))
 check("states labelled",
-      sorted(state_of(r) for r in rows) == ["current", "opener", "previous"],
+      sorted(state_of(r) for r in rows) == ["current", "opener"],
       sorted(state_of(r) for r in rows))
 
-print("2. a default (single-call) read loses the opener and previous — the trap")
+print("2. a single unfiltered read cannot see the opener — that is the real trap")
 single = FakeClient([cur])
 payload, _ = single.get("/info/markets", {"league_id": "19"})
 only_current = single.market_participants(payload)
-check("default read returns 1 of the 3 states", len(only_current) == 1, len(only_current))
+check("unfiltered read returns the current price only", len(only_current) == 1,
+      len(only_current))
 check("the merge strictly dominates it", len(rows) > len(only_current))
+check("and it contains an opener the single read did not",
+      any(state_of(r) == "opener" for r in rows)
+      and not any(state_of(r) == "opener" for r in only_current))
 
 print("3. duplicate rows across the two calls collapse, distinct rows do not")
 dupe = FakeClient([[{"participants": [row("x", is_current=True)]}],
                    [{"participants": [row("x", is_current=True)]}]])
-r2, _ = dupe.markets_three_state(league_id="19", feed_source_id=43)
+r2, _ = dupe.markets_all_states(league_id="19", feed_source_id=43)
 check("same uuid seen twice counts once", len(r2) == 1, len(r2))
 
 nouuid_a = row(None, is_current=True); nouuid_a.pop("uuid")
 nouuid_b = row(None, is_opener=True, inserted_on="2026-09-17T00:00:00Z"); nouuid_b.pop("uuid")
 nokey = FakeClient([[{"participants": [nouuid_a]}], [{"participants": [nouuid_b]}]])
-r3, _ = nokey.markets_three_state(league_id="19", feed_source_id=43)
+r3, _ = nokey.markets_all_states(league_id="19", feed_source_id=43)
 check("rows without a uuid fall back to the natural key, not collapsed",
       len(r3) == 2, len(r3))
 
