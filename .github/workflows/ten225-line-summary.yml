@@ -183,20 +183,29 @@ jobs:
           { echo '## TEN-225 — read-back: Open/Close coverage'
             echo '```json'; printf '%s\n' "$body" | jq .; echo '```'; } \
             | tee -a "$GITHUB_STEP_SUMMARY"
+          # A read-back that errors must not read as "coverage verified". The
+          # Management API returns 201 with an {"message": "Failed to run sql
+          # query..."} body, so the status code alone does not catch it — on run
+          # 35199000215 the size query below died on an ambiguous column and the
+          # job still concluded success.
+          printf '%s\n' "$body" | jq -e 'type == "array" and length > 0' >/dev/null \
+            || { echo "::error::read-back returned no rows or an error body"; exit 1; }
 
       - name: Table size on the instance
         if: ${{ always() }}
         run: |
           set -euo pipefail
           read -r -d '' Q <<'SQL' || true
-          SELECT relname,
-                 n_live_tup AS rows,
+          -- c.relname, not relname: pg_stat_user_tables and pg_class BOTH expose
+          -- relname, so the unqualified name is ambiguous and the query errors.
+          SELECT c.relname AS table_name,
+                 t.n_live_tup AS rows,
                  pg_size_pretty(pg_total_relation_size(c.oid)) AS total_size,
-                 CASE WHEN n_live_tup > 0
-                      THEN round(pg_total_relation_size(c.oid)::numeric / n_live_tup, 1)
+                 CASE WHEN t.n_live_tup > 0
+                      THEN round(pg_total_relation_size(c.oid)::numeric / t.n_live_tup, 1)
                  END AS bytes_per_row
             FROM pg_stat_user_tables t JOIN pg_class c ON c.oid = t.relid
-           WHERE relname IN ('oddspapi_line_summary','oddspapi_fixtures');
+           WHERE c.relname IN ('oddspapi_line_summary','oddspapi_fixtures');
           SQL
           resp=$(jq -Rn --arg q "$Q" '{query: $q}' | curl -sS -w $'\n%{http_code}' -X POST \
             -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
@@ -206,6 +215,8 @@ jobs:
           { echo '## TEN-225 — measured table size (vs the 255.9 B/row the gate cleared on)'
             echo '```json'; printf '%s\n' "$body" | jq .; echo '```'; } \
             | tee -a "$GITHUB_STEP_SUMMARY"
+          printf '%s\n' "$body" | jq -e 'type == "array" and length == 2' >/dev/null \
+            || { echo "::error::size query did not return both tables"; exit 1; }
 
       - name: Upload the load artifact
         if: ${{ always() }}
