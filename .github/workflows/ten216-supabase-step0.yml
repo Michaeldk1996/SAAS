@@ -1,5 +1,4 @@
-patched 5596
- Supabase Step 0 (READ-ONLY report)
+name: TEN-216 Supabase Step 0 (READ-ONLY report)
 
 # TEN-216 Part A Step 0 — report our Supabase plan limits and current usage
 # BEFORE creating anything. This workflow is strictly read-only:
@@ -108,7 +107,7 @@ jobs:
 
 
           print("\n===== TEN-216 TEST TABLE: change_kind breakdown per poll =====")
-          st, r = sql("select poll_id, change_kind, count(*) as rows from public.ten216_test_odds_changes "
+          st, r = sql("select poll_id, change_kind, count(*) as n from public.ten216_test_odds_changes "
                       "group by poll_id, change_kind order by poll_id, change_kind")
           print("http", st, "->", json.dumps(r, indent=1)[:4000])
 
