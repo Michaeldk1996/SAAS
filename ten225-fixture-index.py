@@ -129,9 +129,24 @@ def main():
                     continue
                 index[fid] = {
                     'cat': cat,
+                    # `start` is the COLLAPSED convenience field and is the one
+                    # thing here that can be a scheduled time. Michael's locked
+                    # definition forbids the scheduled time as a start, so
+                    # consumers must read trueStart / trueEnd / startSched
+                    # separately and let resolve_start() decide. Kept only so
+                    # existing callers do not silently change meaning.
                     'start': f.get('trueStartTime') or f.get('startTime'),
                     'startSched': f.get('startTime'),
                     'trueStart': f.get('trueStartTime'),
+                    # Added 2026-09-17 for Michael's trueStartTime sanity gate:
+                    # the ruled test is trueEnd - trueStart > 6h, and without
+                    # the end time only the weaker early-start limb can run
+                    # (it misses 70.6% of the impossible rows).
+                    'trueEnd': f.get('trueEndTime'),
+                    # Added for the live-flip cross-check: live_flip_log is
+                    # keyed by api-tennis event_key, so pairing needs names.
+                    'p1': f.get('participant1Name'),
+                    'p2': f.get('participant2Name'),
                     'tourn': f.get('tournamentName'),
                 }
                 mix[cat] += 1

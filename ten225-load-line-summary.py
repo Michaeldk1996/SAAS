@@ -51,10 +51,11 @@ import json
 import os
 import statistics
 import sys
+import unicodedata
 import urllib.error
 import urllib.parse
 import urllib.request
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 BUCKET = 'oddspapi-raw'
@@ -139,6 +140,34 @@ def sb_download(url, key, path):
         return None, (0, f'unreadable: {e}')
 
 
+def fetch_flips(url, key, page=1000):
+    """Read live_flip_log, paged.
+
+    PostgREST caps a page at 1,000 rows regardless of what you ask for, and a
+    previous rebuild on this codebase was silently truncated by trusting a
+    single unpaged read. So the page size is pinned AT the cap and the walk
+    stops only on a short page. Requesting more than 1,000 would make
+    `len(rows) < page` true on the very first full page and stop at 1,000.
+    """
+    assert page <= 1000, 'PostgREST caps pages at 1000; a larger page truncates'
+    cols = ('event_key,first_live_seen_at,last_not_live_seen_at,gap_seconds,'
+            'event_date,first_player,second_player,tournament_name,'
+            'event_type_type')
+    out, offset = [], 0
+    while True:
+        got, err = sb('GET',
+                      f'/rest/v1/live_flip_log?select={cols}'
+                      f'&order=event_key.asc&limit={page}&offset={offset}',
+                      url, key)
+        if got is None:
+            return out, err
+        rows = json.loads(got.decode('utf-8'))
+        out.extend(rows)
+        if len(rows) < page:
+            return out, None
+        offset += page
+
+
 def upsert(url, key, table, rows, conflict):
     """PostgREST upsert. merge-duplicates + on_conflict makes a re-run
     idempotent, which matters because this job is meant to be re-run after
@@ -183,10 +212,199 @@ def load_catalogue():
 
 
 # ------------------------------------------------------------------- the rules
-def judge_close(start_ts, close_ts, archived_at):
+GATE_SECONDS = 6 * 3600.0     # Michael's ruling 2026-09-17T10:02Z, option (a)
+CONFLICT_MIN = 5.0            # ruling item 2
+FLIP_GAP_MAX_S = 300.0        # ruling item 3, restated from 09:11Z
+
+
+def resolve_start(true_start, true_end, sched, flip_ts, flip_gap):
+    """Michael's trueStartTime ruling (2026-09-17T10:02Z), in one place.
+
+    Returns (start_ts, start_ts_source, reject_reason, conflict, conflict_min,
+             flip_gap_used).
+
+    RULING ITEM 1 — the sanity gate, option (a):
+      reject trueStartTime when trueEndTime - trueStartTime > 6 h; when
+      trueEndTime is missing, reject when trueStartTime is more than 6 h before
+      startTime. Rejected -> fall through to the live-flip lower bound
+      (last_not_live_seen_at); if none, Close = dash. Open is kept.
+
+    Measured basis (TEN-225 item 4): the duration test catches 34/1,037 = 3.279%
+    and is a STRICT SUPERSET of the early-start test at this threshold, which is
+    why the early-start limb is only reached when trueEndTime is absent — there
+    it is the only signal left, not a second opinion.
+
+    TWO reason strings, not the one Michael named. He wrote
+    start_reject_reason = 'implausible_duration'; limb 2 is not a duration test
+    (it never sees an end time), so folding it under that label would make the
+    per-level reject report unreadable and would misdescribe the row. Both are
+    reported separately and the total is what he asked for. Flagged, not slipped.
+
+    RULING ITEM 2 — the cross-check:
+      when trueStartTime and last_not_live_seen_at disagree by more than 5 min,
+      use the EARLIER of the two and flag the row. An earlier cutoff can only
+      miss pre-start ticks, never include in-play ticks — so the failure mode is
+      a Close that is slightly stale, never a Close that is secretly in-play.
+
+    Note the asymmetry that makes this safe: the gate runs FIRST. A rejected
+    trueStartTime never reaches the cross-check, so a garbage timestamp hours in
+    the past can never win the min() and drag the cutoff with it.
+    """
+    reason = None
+    ts = true_start
+
+    if ts is not None:
+        if true_end is not None:
+            if (true_end - ts) > GATE_SECONDS:
+                reason = 'implausible_duration'
+        elif sched is not None:
+            if (sched - ts) > GATE_SECONDS:
+                reason = 'implausible_early_start'
+        if reason is not None:
+            ts = None
+
+    # Rejected, or never present: the live-flip lower bound, else dash.
+    if ts is None:
+        if flip_ts is not None:
+            return flip_ts, 'api-tennis-live', reason, False, None, flip_gap
+        return None, 'none', reason, False, None, None
+
+    # Both exist -> cross-check.
+    if flip_ts is not None:
+        diff_min = (ts - flip_ts) / 60.0
+        if abs(diff_min) > CONFLICT_MIN:
+            if flip_ts < ts:
+                return (flip_ts, 'api-tennis-live', reason, True,
+                        round(diff_min, 3), flip_gap)
+            return ts, 'oddspapi', reason, True, round(diff_min, 3), None
+
+    return ts, 'oddspapi', reason, False, None, None
+
+
+def nfd(s):
+    """Standing rule: NFD accent strip before any cross-feed name comparison."""
+    s = unicodedata.normalize('NFD', s or '')
+    s = ''.join(c for c in s if unicodedata.category(c) != 'Mn')
+    return ' '.join(s.lower().replace(',', ' ').replace('.', ' ').split())
+
+
+def name_key(name):
+    """A surname key that survives the two feeds' different orderings.
+
+    The two feeds write the same player two different ways:
+      oddspapi    'Zverev, Alexander'      — surname FIRST, comma-delimited
+      api-tennis  'A. Zverev' / 'Alexander Zverev' — surname LAST
+    so the rule is: take the part before the comma if there is one, else the
+    whole string, and key on its LAST alphabetic token.
+
+    "Last token of the surname part", not "the whole surname part", because
+    api-tennis's player_full_name is known to reorder multi-part surnames:
+    'Van de Zandschulp, Botic' and 'B. Van De Zandschulp' both reduce to
+    'zandschulp', while the full surname strings do not match.
+
+    NOT the longest token — that was the first draft and the harness caught it:
+    'Zverev, Alexander' has 'alexander' as its longest token and 'A. Zverev' has
+    'zverev', so every full-vs-initial pair silently failed to match.
+    """
+    s = nfd(name.split(',')[0] if ',' in (name or '') else name)
+    toks = [t for t in s.split() if len(t) > 1 and t.isalpha()]
+    return toks[-1] if toks else None
+
+
+def pair_flips(fx_index, flip_rows):
+    """live_flip_log rows -> {oddspapi fixtureId: (flip_ts, gap_seconds)}.
+
+    Standing rule: DROP ON AMBIGUITY. The key is (date, frozenset of both
+    players' name keys). If two fixtures or two flips collapse onto one key,
+    neither is paired — an unpaired match dashes, it never guesses.
+
+    The date comes from the oddspapi side's scheduled day. Using the scheduled
+    DAY to bucket candidates is not using the scheduled TIME as a start: it
+    narrows who to compare, and the timestamp that survives is api-tennis's
+    observed flip. Matches near UTC midnight are handled by also trying the
+    neighbouring day.
+    """
+    by_key, ambiguous = {}, set()
+    for fid, m in fx_index.items():
+        k1, k2 = name_key(m.get('p1')), name_key(m.get('p2'))
+        day = (m.get('trueStart') or m.get('startSched') or '')[:10]
+        if not (k1 and k2 and day) or k1 == k2:
+            continue
+        key = (day, frozenset((k1, k2)))
+        if key in by_key:
+            ambiguous.add(key)
+        by_key[key] = fid
+
+    out, st = {}, collections.Counter()
+    seen_fid = {}
+    for r in flip_rows:
+        k1, k2 = name_key(r.get('first_player')), name_key(r.get('second_player'))
+        lnl = epoch(r.get('last_not_live_seen_at'))
+        if not (k1 and k2) or k1 == k2 or lnl is None:
+            st['flip_unusable'] += 1
+            continue
+        day = (r.get('event_date') or '')[:10]
+        cand = None
+        for d in (day, _shift_day(day, -1), _shift_day(day, 1)):
+            key = (d, frozenset((k1, k2)))
+            if key in ambiguous:
+                st['dropped_ambiguous'] += 1
+                cand = None
+                break
+            if key in by_key:
+                cand = by_key[key]
+                break
+        if cand is None:
+            st['flip_unpaired'] += 1
+            continue
+        if cand in seen_fid:
+            # Two different flips claiming one fixture is the same ambiguity
+            # seen from the other side. Drop both rather than keep the first.
+            out.pop(cand, None)
+            st['dropped_ambiguous'] += 1
+            continue
+        seen_fid[cand] = True
+        gap = r.get('gap_seconds')
+        out[cand] = (lnl, None if gap is None else float(gap))
+        st['paired'] += 1
+    return out, st
+
+
+def _shift_day(day, delta):
+    if not day:
+        return ''
+    try:
+        d = datetime.strptime(day, '%Y-%m-%d').replace(tzinfo=timezone.utc)
+    except ValueError:
+        return ''
+    return (d + timedelta(days=delta)).strftime('%Y-%m-%d')
+
+
+def start_for(fid, meta, flips):
+    """Index meta + the paired flip -> resolve_start()'s 6-tuple.
+
+    NOTE it reads trueStart/trueEnd/startSched as three separate fields and
+    never `meta['start']` — that collapsed field can be the scheduled time.
+    """
+    flip_ts, flip_gap = (flips or {}).get(fid, (None, None))
+    return resolve_start(epoch((meta or {}).get('trueStart')),
+                         epoch((meta or {}).get('trueEnd')),
+                         epoch((meta or {}).get('startSched')),
+                         flip_ts, flip_gap)
+
+
+def judge_close(start_ts, close_ts, archived_at, start_src='oddspapi',
+                flip_gap=None):
     """Michael's ruling 2, in one place so the loader and the tests share it.
 
     Returns (close_reliable, close_lag_minutes).
+
+    RULING 2026-09-17T10:02Z item 3: a Close cut at the live-flip lower bound
+    carries that bound's own uncertainty, so it needs gap_seconds <= 300 ON TOP
+    OF the 21-day/60-minute test. A 40-minute gap means the match may have been
+    live for 40 minutes before we saw it, and the "last pre-start tick" could
+    then be an in-play price — the exact thing Close must never be. A missing
+    gap is not a pass: we cannot show it is <= 300, so it is false.
 
     close_lag_minutes is returned whenever it is computable, EVEN when the close
     is judged unreliable — it is the diagnostic Part 4 item 4 reports on, and
@@ -204,14 +422,22 @@ def judge_close(start_ts, close_ts, archived_at):
         return False, lag_min
     age_days = (archived_at - start_ts) / 86400.0
     reliable = (0.0 <= age_days <= RELIABLE_DAYS) and (lag_min <= RELIABLE_LAG_MIN)
+    if reliable and start_src == 'api-tennis-live':
+        reliable = flip_gap is not None and flip_gap <= FLIP_GAP_MAX_S
     return reliable, lag_min
 
 
-def summarise_payload(payload, fixture_id, start_ts, archived_at, catalogue):
+def summarise_payload(payload, fixture_id, start, archived_at, catalogue):
     """One raw /v4/historical-odds payload -> summary rows at the ruled grain.
+
+    `start` is the 6-tuple resolve_start() returns. It is resolved ONCE per
+    fixture by the caller rather than per leaf: every leaf of one fixture shares
+    one start, and re-deriving it per leaf is how a fixture ends up with two
+    different start_ts_source values on two of its own rows.
 
     Returns (rows, stats). Rows are dicts ready for PostgREST.
     """
+    start_ts, start_src, reason, conflict, conflict_min, flip_gap = start
     rows = []
     st = collections.Counter()
     for book, blk in ((payload or {}).get('bookmakers') or {}).items():
@@ -266,25 +492,30 @@ def summarise_payload(payload, fixture_id, start_ts, archived_at, catalogue):
                             fixture_id, book, fam, side, line,
                             open_price, open_ts, None, None, None,
                             None, ticks[0][0], None, None, 'none',
-                            'oddspapi-raw', archived_at, False))
+                            'oddspapi-raw', archived_at, False,
+                            reject_reason=reason))
                         continue
 
                     close_ts, close_price = pre[-1]
-                    reliable, lag = judge_close(start_ts, close_ts, archived_at)
+                    reliable, lag = judge_close(start_ts, close_ts, archived_at,
+                                                start_src, flip_gap)
                     rows.append(_row(
                         fixture_id, book, fam, side, line,
                         open_price, open_ts,
                         close_price if reliable else None,
                         close_ts if reliable else None,
                         lag, len(pre), ticks[0][0], close_ts,
-                        start_ts, 'oddspapi', 'oddspapi-raw', archived_at, reliable))
+                        start_ts, start_src, 'oddspapi-raw', archived_at, reliable,
+                        reject_reason=reason, conflict=conflict,
+                        conflict_min=conflict_min, flip_gap=flip_gap))
                     st['reliable_close' if reliable else 'close_nulled'] += 1
     return rows, st
 
 
 def _row(fixture_id, book, market, side, line, open_price, open_ts,
          close_price, close_ts, lag, pre_count, first_ts, last_pre_ts,
-         start_ts, start_src, source, archived_at, reliable):
+         start_ts, start_src, source, archived_at, reliable,
+         reject_reason=None, conflict=False, conflict_min=None, flip_gap=None):
     return {
         'fixture_id': fixture_id, 'book': book, 'market': market,
         'side': side, 'line': line,
@@ -295,12 +526,16 @@ def _row(fixture_id, book, market, side, line, open_price, open_ts,
         'first_tick_ts': iso(first_ts),
         'last_pre_start_tick_ts': iso(last_pre_ts),
         'start_ts': iso(start_ts), 'start_ts_source': start_src,
+        'start_reject_reason': reject_reason,
+        'start_conflict': conflict,
+        'conflict_minutes': conflict_min,
+        'flip_gap_seconds': flip_gap,
         'source': source, 'archived_at': iso(archived_at),
         'close_reliable': reliable,
     }
 
 
-def summarise_history(month_path, catalogue):
+def summarise_history(month_path, catalogue, fx_index, flips):
     """bet365-history/YYYY-MM.json -> summary rows.
 
     This archive is match winner ONLY (`market: 121`) and its s1/s2 series are
@@ -308,13 +543,30 @@ def summarise_history(month_path, catalogue):
     it is the archived_at that ruling 2's 21-day window is measured from — which
     is exactly why the Mar-May months fail it: they were generated 2026-09-10..12,
     four to six months after the fixtures they cover.
+
+    THE START NO LONGER COMES FROM THE FILE. archive-bet365-history.py collapses
+    `trueStartTime or startTime` into one `start` field (its fixture_start()), so
+    the month files bake in the SCHEDULED time whenever trueStartTime is absent —
+    466 of 12,995 joinable fixtures, 3.59%, measured 2026-09-17. Michael's locked
+    definition forbids the scheduled time as a start ("Never use the scheduled
+    time"), and the collapsed field also loses WHICH one it was, so a row could
+    not even be audited after the fact.
+
+    So this path now resolves the start from the 180-day index exactly like the
+    bucket path: trueStart / trueEnd / startSched as three separate fields
+    through resolve_start(). Fixtures the index does not cover keep Open and dash
+    the Close rather than fall back to the file's collapsed value.
     """
     d = json.load(open(month_path))
     gen = epoch(d.get('generatedAt'))
     rows, st = [], collections.Counter()
     sides = {'s1': '1', 's2': '2'}
     for fid, f in (d.get('fixtures') or {}).items():
-        start_ts = epoch(f.get('start'))
+        meta = fx_index.get(fid) or {}
+        if not meta:
+            st['not_in_180d_index'] += 1
+        start = start_for(fid, meta, flips)
+        start_ts, start_src, reason, conflict, conflict_min, flip_gap = start
         for skey, side in sides.items():
             series = sorted((t, p) for t, p in (f.get(skey) or [])
                             if t is not None and p is not None)
@@ -322,22 +574,38 @@ def summarise_history(month_path, catalogue):
                 st['empty_series'] += 1
                 continue
             open_ts, open_price = series[0]
-            close_ts, close_price = series[-1]
             if start_ts is None:
                 st['no_start'] += 1
                 rows.append(_row(fid, BOOK_HISTORY, 'match winner', side, None,
                                  open_price, open_ts, None, None, None,
                                  None, open_ts, None, None, 'none',
-                                 'bet365-history', gen, False))
+                                 'bet365-history', gen, False,
+                                 reject_reason=reason))
                 continue
-            reliable, lag = judge_close(start_ts, close_ts, gen)
+            # The series is pre-start BY THE OLD START. Under a corrected or
+            # earlier start it may not be, so re-cut it here instead of trusting
+            # series[-1] — that is precisely the in-play-price-as-Close trap.
+            pre = [x for x in series if x[0] <= start_ts]
+            if not pre:
+                st['no_pre_start_tick'] += 1
+                rows.append(_row(fid, BOOK_HISTORY, 'match winner', side, None,
+                                 open_price, open_ts, None, None, None,
+                                 0, open_ts, None, start_ts, start_src,
+                                 'bet365-history', gen, False,
+                                 reject_reason=reason, conflict=conflict,
+                                 conflict_min=conflict_min, flip_gap=flip_gap))
+                continue
+            close_ts, close_price = pre[-1]
+            reliable, lag = judge_close(start_ts, close_ts, gen,
+                                        start_src, flip_gap)
             rows.append(_row(fid, BOOK_HISTORY, 'match winner', side, None,
                              open_price, open_ts,
                              close_price if reliable else None,
                              close_ts if reliable else None,
-                             lag, len(series), open_ts, close_ts,
-                             start_ts, 'oddspapi', 'bet365-history', gen,
-                             reliable))
+                             lag, len(pre), open_ts, close_ts,
+                             start_ts, start_src, 'bet365-history', gen,
+                             reliable, reject_reason=reason, conflict=conflict,
+                             conflict_min=conflict_min, flip_gap=flip_gap))
             st['reliable_close' if reliable else 'close_nulled'] += 1
     return rows, st, gen
 
@@ -413,6 +681,46 @@ def main():
 
     all_rows = []
 
+    # ------------------------------------ the start resolver's two inputs, once
+    # Both load paths resolve the start the SAME way (Michael's ruling
+    # 2026-09-17T10:02Z), so the index and the paired flips are built once here
+    # rather than per path. Building them per path is how the two paths drift.
+    fx_index = {}
+    if os.path.exists(INDEX):
+        with gzip.open(INDEX, 'rt', encoding='utf-8') as fh:
+            fx_index = json.load(fh)['fixtures']
+    have_end = sum(1 for m in fx_index.values() if m.get('trueEnd'))
+    have_names = sum(1 for m in fx_index.values() if m.get('p1') and m.get('p2'))
+    print(f'\n180d index: {len(fx_index)} fixtures; {have_end} with trueEnd, '
+          f'{have_names} with both player names')
+    if fx_index and not have_end:
+        print('::warning::the index carries NO trueEnd — the sanity gate falls '
+              'back to the early-start limb alone, which misses 70.6% of the '
+              'impossible rows. Re-run ten225-fixture-index.py.')
+
+    flips, flip_st = {}, collections.Counter()
+    if a.dry_run:
+        print('flips: SKIPPED in --dry-run (live_flip_log needs the Supabase '
+              'key) — no api-tennis-live fallback in this run.')
+    else:
+        flip_rows, ferr = fetch_flips(url, key)
+        if ferr:
+            print(f'::warning::live_flip_log unreadable ({ferr}) — the '
+                  f'api-tennis-live fallback is NOT applied in this run.')
+        else:
+            flips, flip_st = pair_flips(fx_index, flip_rows)
+            print(f'live_flip_log: {len(flip_rows)} flips, '
+                  f'{flip_st["paired"]} paired to an oddspapi fixture '
+                  f'({flip_st["paired"]/max(len(flip_rows),1):.1%}); '
+                  f'{flip_st["flip_unpaired"]} unpaired, '
+                  f'{flip_st["dropped_ambiguous"]} dropped ambiguous, '
+                  f'{flip_st["flip_unusable"]} unusable')
+            if len(flip_rows) < MIN_N:
+                print(f'::warning::n={len(flip_rows)} flips is below {MIN_N} — '
+                      f'the recorder started 2026-09-17; treat every '
+                      f'flip-derived rate as provisional.')
+    result['flips'] = {'rows': len(flips), 'stats': dict(flip_st)}
+
     # --------------------------------------------------------- bet365-history
     # Loaded BEFORE the bucket on purpose. Where a fixture is in both, the raw
     # payload is strictly richer (verified 12 -> 17 ticks on a paired fixture),
@@ -423,7 +731,8 @@ def main():
                         if f.endswith('.json') and f != 'index.json')
         print(f'\nbet365-history: {len(months)} months {months}')
         for mf in months:
-            r, s, gen = summarise_history(os.path.join(HISTORY_DIR, mf), catalogue)
+            r, s, gen = summarise_history(os.path.join(HISTORY_DIR, mf),
+                                          catalogue, fx_index, flips)
             rel = sum(1 for x in r if x['close_reliable'])
             print(f'  {mf}: {len(r):5d} rows, generated {iso(gen)}, '
                   f'{rel} reliable close ({rel/max(len(r),1):.1%})')
@@ -440,11 +749,9 @@ def main():
         if a.dry_run:
             print('\nbucket: SKIPPED in --dry-run (it needs the Supabase key).')
         else:
-            if not os.path.exists(INDEX):
+            if not fx_index:
                 print('::error::fixture index missing; it supplies the start times.')
                 return 1
-            with gzip.open(INDEX, 'rt', encoding='utf-8') as fh:
-                fx_index = json.load(fh)['fixtures']
             months, ok = sb_list(url, key, '')
             objects = []
             for m in months:
@@ -476,8 +783,8 @@ def main():
                 meta = fx_index.get(fid) or {}
                 if not meta:
                     unindexed += 1
-                start_ts = epoch(meta.get('trueStart'))
-                r, s = summarise_payload(payload, fid, start_ts,
+                r, s = summarise_payload(payload, fid,
+                                         start_for(fid, meta, flips),
                                          epoch(created), catalogue)
                 bst.update(s)
                 if not r:
@@ -497,6 +804,60 @@ def main():
                 'unreadable': unreadable, 'noKeeplistSeries': norow,
                 'reliableClose': rel, 'byFamily': dict(fam), 'stats': dict(bst)}
             all_rows.extend(brows)
+
+    # ------------------------------------- the ruling's own reporting asks
+    # "Report how many fixtures were rejected per level" (item 1) and, for the
+    # 48h report, the (trueStartTime - last_not_live_seen_at) distribution with
+    # counts beyond 5 min in each direction (item 2). Reported at FIXTURE grain,
+    # not row grain: a fixture with 8 side-rows is one rejected start, and
+    # quoting 8 would inflate every rate by the market count.
+    if all_rows:
+        by_fix = {}
+        for x in all_rows:
+            by_fix.setdefault(x['fixture_id'], x)
+        lvl_rej = collections.defaultdict(collections.Counter)
+        for fid, x in by_fix.items():
+            lvl = (fx_index.get(fid) or {}).get('cat') or 'not in 180d index'
+            lvl_rej[lvl]['fixtures'] += 1
+            if x['start_reject_reason']:
+                lvl_rej[lvl][x['start_reject_reason']] += 1
+                lvl_rej[lvl]['rejected'] += 1
+                lvl_rej[lvl]['rescued_by_flip' if x['start_ts_source'] ==
+                             'api-tennis-live' else 'fell_to_dash'] += 1
+        tot_rej = sum(c['rejected'] for c in lvl_rej.values())
+        print(f'\ntrueStartTime sanity gate (Michael 2026-09-17T10:02Z, option a)'
+              f' — {tot_rej} of {len(by_fix)} fixtures rejected '
+              f'({tot_rej/max(len(by_fix),1):.3%})')
+        print(f'  {"level":<22} {"fixtures":>8} {"rejected":>8} {"duration":>9} '
+              f'{"early":>6} {"->flip":>7} {"->dash":>7}')
+        for lvl, c in sorted(lvl_rej.items(), key=lambda kv: -kv[1]['rejected']):
+            flag = '  <-- n<%d' % MIN_N if c['fixtures'] < MIN_N else ''
+            print(f'  {lvl:<22} {c["fixtures"]:>8} {c["rejected"]:>8} '
+                  f'{c["implausible_duration"]:>9} '
+                  f'{c["implausible_early_start"]:>6} '
+                  f'{c["rescued_by_flip"]:>7} {c["fell_to_dash"]:>7}{flag}')
+        result['gate'] = {'fixtures': len(by_fix), 'rejected': tot_rej,
+                          'byLevel': {k: dict(v) for k, v in lvl_rej.items()}}
+
+        confl = [x['conflict_minutes'] for x in by_fix.values()
+                 if x['conflict_minutes'] is not None]
+        both = sum(1 for fid in by_fix if fid in flips
+                   and (fx_index.get(fid) or {}).get('trueStart'))
+        print(f'\ncross-check (ruling item 2) — {both} fixtures have BOTH a '
+              f'trueStartTime and a live-flip bound')
+        if confl:
+            early = sum(1 for m in confl if m < 0)
+            print(f'  beyond +-5 min: {len(confl)} '
+                  f'(oddspapi earlier {early}, flip earlier {len(confl)-early}); '
+                  f'median {statistics.median(confl):+.1f} min, '
+                  f'min {min(confl):+.1f}, max {max(confl):+.1f}'
+                  + (f'  <-- n<{MIN_N}' if len(confl) < MIN_N else ''))
+        else:
+            print(f'  beyond +-5 min: 0 — nothing to flag'
+                  + ('' if both else ' (no fixture has both sources yet; the '
+                     'recorder started 2026-09-17, so this fills going forward)'))
+        result['crossCheck'] = {'bothSources': both, 'flagged': len(confl),
+                                'minutes': confl[:200]}
 
     # ----------------------------------------------------------------- write
     print(f'\ntotal summary rows: {len(all_rows)}')

@@ -91,7 +91,20 @@ CREATE TABLE IF NOT EXISTS oddspapi_line_summary (
   last_pre_start_tick_ts  timestamptz,
 
   start_ts                timestamptz,            -- added; see header
-  start_ts_source         text,                   -- oddspapi | none
+  start_ts_source         text,                   -- oddspapi | api-tennis-live | none
+
+  -- Michael's trueStartTime ruling (2026-09-17T10:02Z), option (a).
+  -- Why the reason is a COLUMN and not a log line: a dashed Close is
+  -- indistinguishable from "we never archived it" unless the row itself says
+  -- which. Part 4 item 2 has to list every dashed match "with the reason".
+  start_reject_reason     text,
+  -- Ruling item 2, the cross-check. conflict_minutes is signed:
+  -- trueStartTime - last_not_live_seen_at, so negative = oddspapi is earlier.
+  start_conflict          boolean     NOT NULL DEFAULT false,
+  conflict_minutes        numeric,
+  -- The live-flip lower bound's own uncertainty. Michael's fallback rule needs
+  -- gap_seconds <= 300, so the gap has to survive onto the row to be audited.
+  flip_gap_seconds        numeric,
 
   source                  text        NOT NULL,   -- oddspapi-raw|bet365-history
   archived_at             timestamptz,            -- capture time; drives 21d
@@ -108,8 +121,58 @@ CREATE TABLE IF NOT EXISTS oddspapi_line_summary (
   -- "close nulled but still flagged reliable" bug impossible rather than
   -- merely unlikely.
   CONSTRAINT oddspapi_line_summary_close_ck
-    CHECK (NOT close_reliable OR (close_price IS NOT NULL AND close_ts IS NOT NULL))
+    CHECK (NOT close_reliable OR (close_price IS NOT NULL AND close_ts IS NOT NULL)),
+  -- A rejected trueStartTime must say why, and a reason must be one we ruled.
+  CONSTRAINT oddspapi_line_summary_reject_ck
+    CHECK (start_reject_reason IS NULL
+           OR start_reject_reason IN ('implausible_duration',
+                                      'implausible_early_start')),
+  -- A flagged conflict must carry its magnitude, and an unflagged row must not
+  -- claim one. Without this, "flagged but unquantified" is a silent state.
+  CONSTRAINT oddspapi_line_summary_conflict_ck
+    CHECK (start_conflict = (conflict_minutes IS NOT NULL))
 );
+
+-- ---------------------------------------------------------------------------
+-- MIGRATION for the instance that already holds the v1 table.
+--
+-- CREATE TABLE IF NOT EXISTS above is a NO-OP against the live table (28,067
+-- rows loaded 2026-09-17), so the trueStartTime-ruling columns would never
+-- appear there without these. Every statement is additive and idempotent, and
+-- the two new CHECKs are added separately because a constraint inside a
+-- skipped CREATE TABLE is skipped with it.
+-- ---------------------------------------------------------------------------
+ALTER TABLE oddspapi_line_summary
+  ADD COLUMN IF NOT EXISTS start_reject_reason text,
+  ADD COLUMN IF NOT EXISTS start_conflict      boolean NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS conflict_minutes    numeric,
+  ADD COLUMN IF NOT EXISTS flip_gap_seconds    numeric;
+
+-- start_ts_source gained 'api-tennis-live' as a real (not merely allowed)
+-- value with this ruling. The v1 CHECK already listed it, so this is a no-op
+-- on a fresh table and a repair on any instance that predates it.
+-- DROP IF EXISTS then ADD, as plain statements: that pair is idempotent on its
+-- own, so there is no reason to wrap it in a DO block and hand the SQL-exec
+-- endpoint a dollar-quoted body to pass through intact.
+ALTER TABLE oddspapi_line_summary
+  DROP CONSTRAINT IF EXISTS oddspapi_line_summary_start_src_ck;
+ALTER TABLE oddspapi_line_summary
+  ADD CONSTRAINT oddspapi_line_summary_start_src_ck
+  CHECK (start_ts_source IN ('oddspapi', 'api-tennis-live', 'none'));
+
+ALTER TABLE oddspapi_line_summary
+  DROP CONSTRAINT IF EXISTS oddspapi_line_summary_reject_ck;
+ALTER TABLE oddspapi_line_summary
+  ADD CONSTRAINT oddspapi_line_summary_reject_ck
+  CHECK (start_reject_reason IS NULL
+         OR start_reject_reason IN ('implausible_duration',
+                                    'implausible_early_start'));
+
+ALTER TABLE oddspapi_line_summary
+  DROP CONSTRAINT IF EXISTS oddspapi_line_summary_conflict_ck;
+ALTER TABLE oddspapi_line_summary
+  ADD CONSTRAINT oddspapi_line_summary_conflict_ck
+  CHECK (start_conflict = (conflict_minutes IS NOT NULL));
 
 ALTER TABLE oddspapi_line_summary ENABLE ROW LEVEL SECURITY;
 
