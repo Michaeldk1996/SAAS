@@ -9684,28 +9684,78 @@ let careerHistoryIndex = null;
 let _careerHistoryIndexPromise = null;
 const _careerHistoryShards = {};
 const _careerHistoryPromises = {};
+// TEN-228 · a FAILED index fetch must not be cached as "the index is empty".
+//
+// This used to set `careerHistoryIndex = {}` on both the non-ok and the thrown
+// path. `{}` is truthy, so the guard on the first line returned it for the rest
+// of the session: one transient blip on career-history-index.json left EVERY
+// career-spine surface — Calendar, Career record, Court speed, Streaks — reading
+// zero rows for every player until the tab was reloaded, with each surface then
+// stating it as a fact about the player. Measured while photographing §5.5: two
+// browsers against the same server, one read Zverev's 775 rows and the other
+// read 0 and rendered an empty modal.
+//
+// An EMPTY index is still cached (that is a real answer). A FAILED one is not:
+// the memo is released so the next profile open retries. The "never rejects"
+// contract is unchanged — callers still get a usable object either way.
 function loadCareerHistoryIndex(){
   if (careerHistoryIndex) return Promise.resolve(careerHistoryIndex);
   if (_careerHistoryIndexPromise) return _careerHistoryIndexPromise;
+  const retry = (why) => {
+    console.warn('career-history index load failed:', why, '— not cached, the next open retries');
+    _careerHistoryIndexPromise = null;   // release the memo so this is retryable
+    careerHistoryIndex = null;
+    return {};                           // this CALL degrades; the session does not
+  };
   _careerHistoryIndexPromise = fetch('./career-history-index.json', { cache: 'no-cache' })
-    .then(r => r.ok ? r.json() : {})
+    .then(r => r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)))
     .then(d => { careerHistoryIndex = (d && d.players) || {}; return careerHistoryIndex; })
-    .catch(err => { console.warn('career-history index load failed:', err.message); careerHistoryIndex = {}; return careerHistoryIndex; });
+    .catch(err => retry(err.message));
   return _careerHistoryIndexPromise;
 }
 // Resolves to that player's career match rows (newest-first), or [] — never
 // rejects, so a missing shard degrades to an empty drill-down rather than a
 // stuck "Loading matches…".
+//
+// TEN-228 · a FAILED fetch is not cached, an ANSWERED one is. The two are told
+// apart because caching a failure is what turns a blip into a session-long lie:
+// `_careerHistoryShards[pk] = []` is consulted by `pk in _careerHistoryShards`
+// on every later open, so one timeout used to leave that player permanently at
+// zero rows on every career-spine surface. Fixing loadCareerHistoryIndex alone
+// was not enough — the index retries, but this memo had already frozen `[]`.
+//
+// "Answered" means the index was readable AND either named no shard for this
+// player (a real "he has none") or served one. Anything else releases the memo.
 function loadCareerHistory(playerKey){
   const pk = String(playerKey || '');
   if (!pk) return Promise.resolve([]);
   if (pk in _careerHistoryShards) return Promise.resolve(_careerHistoryShards[pk]);
   if (_careerHistoryPromises[pk]) return _careerHistoryPromises[pk];
+  const drop = (why) => {
+    console.warn('career history load failed:', pk, why, '— not cached, the next open retries');
+    delete _careerHistoryPromises[pk];
+    return [];
+  };
   _careerHistoryPromises[pk] = loadCareerHistoryIndex()
-    .then(idx => (idx && idx[pk] ? fetch(`./career-history/${pk}.json`, { cache: 'no-cache' }) : null))
-    .then(r => (r && r.ok) ? r.json() : null)
-    .then(d => { const rows = (d && d.matches) || []; _careerHistoryShards[pk] = rows; return rows; })
-    .catch(err => { console.warn('career history load failed:', err.message); _careerHistoryShards[pk] = []; return []; });
+    .then(idx => {
+      // An index we could not read is not evidence that this player has no
+      // history. Only an index we DID read and that omits him is.
+      if (!idx || !Object.keys(idx).length) return Promise.reject(new Error('index unavailable'));
+      if (!idx[pk]) { _careerHistoryShards[pk] = []; return null; }   // answered: he has none
+      return fetch(`./career-history/${pk}.json`, { cache: 'no-cache' });
+    })
+    .then(r => {
+      if (r === null) return null;                                    // already answered above
+      if (!r.ok) return Promise.reject(new Error('shard HTTP ' + r.status));
+      return r.json();
+    })
+    .then(d => {
+      if (d === null) return _careerHistoryShards[pk] || [];
+      const rows = (d && d.matches) || [];
+      _careerHistoryShards[pk] = rows;
+      return rows;
+    })
+    .catch(err => drop(err.message));
   return _careerHistoryPromises[pk];
 }
 // Task 4: point-by-point sidecar. Lazy-loaded (only fetched the first time a
@@ -17051,12 +17101,26 @@ async function loadPp2MarketShard(key){
 // renderer's career drill (loadCareerHistory above); this reuses that loader and
 // its cache rather than opening a second one, and only publishes the result onto
 // the bridge the module reads.
+// TEN-228 · the bridge key is SETTLED ONLY ON AN ANSWER.
+//
+// V2 reads `window.careerHistory[key]` and treats key-present as "the store has
+// spoken" — that is how §5.5 tells "no matches on record" (a fact about the
+// player) apart from "not loaded yet" (a fact about the network). Writing `[]`
+// here after a FAILED fetch collapses the two again and puts the false sentence
+// back on the page, so the failure path leaves the key absent and the renderer
+// keeps saying "has not loaded".
+//
+// loadCareerHistory() still resolves to an array for its three array consumers;
+// the answered/failed distinction is read off its own cache, which it populates
+// only on an answer.
 async function loadPp2CareerHistory(key){
   const k = String(key);
   try {
     const rows = await loadCareerHistory(k);
-    window.careerHistory = window.careerHistory || {};
-    window.careerHistory[k] = rows || [];
+    if (k in _careerHistoryShards) {          // answered — settle the bridge
+      window.careerHistory = window.careerHistory || {};
+      window.careerHistory[k] = rows || [];
+    }
   } catch (e) { /* additive; the date/surface columns dash and the note says why */ }
   pp2RepaintIfOpen(k);
 }

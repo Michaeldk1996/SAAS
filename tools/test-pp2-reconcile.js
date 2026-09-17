@@ -4453,6 +4453,102 @@ mustFail('[neg] the disclosure check would catch an unconditional note', () => {
 });
 
 // ════════════════════════════════════════════════════════════════════════════
+// §5.5 · PENDING IS NOT EMPTY  (TEN-228)
+//
+// The modal printed "No matches on record, so no court can be rated." off a
+// zero row count alone. A zero row count is ALSO what an unsettled
+// career-history shard looks like, so on a slow or failed fetch the modal
+// stated a fact about the PLAYER that came from a fact about the NETWORK.
+// Measured live: a cold open through the hybrid server read 0 rows for Zverev
+// where a warm one read 775, and the modal asserted "no matches on record" for
+// a man with 775.
+//
+// The host settles the key with `window.careerHistory[key] = rows || []` and
+// swallows a thrown fetch, so ABSENT = in-flight or failed, PRESENT = settled.
+// The truth table, against the real predicate rather than a copy of it.
+// ════════════════════════════════════════════════════════════════════════════
+console.log('\n§5.5 · pending is not empty (TEN-228)');
+
+const PENDING_COPY = 'has not loaded';
+const EMPTY_COPY = 'No matches on record';
+const ONE_KEY = Object.keys(PLAYERS)[0];
+
+/** A module instance whose ONLY career-history store is the one handed in. */
+function speedModalFor(store) {
+  const profiles = {}; profiles[ONE_KEY] = PLAYERS[ONE_KEY];
+  const m = loadModule(profiles, {
+    careerSplits: SPLITS, marketEdge: {}, playingStyles: STYLES,
+    holdbreak: HOLDBREAK, HoldBreakHeatmap: ENGINE,
+    matchStats: {}, bet365History: {}, careerHistory: store,
+  });
+  const p = m._internals.profileFor(ONE_KEY);
+  return { html: m._internals.renderSpeedModal(p), I: m._internals };
+}
+
+check('§5.5 · an UNSETTLED store reads "has not loaded", never "no matches on record"', () => {
+  const html = speedModalFor({}).html;                      // key absent
+  assert(html.indexOf(PENDING_COPY) > -1,
+    'an unsettled store does not say so: ' + html.slice(0, 200));
+  assert(html.indexOf(EMPTY_COPY) < 0,
+    'an unsettled store still claims the player has no matches on record');
+});
+
+check('§5.5 · a SETTLED-EMPTY store reads the honest "no matches on record"', () => {
+  const store = {}; store[ONE_KEY] = [];                    // key present, 0 rows
+  const html = speedModalFor(store).html;
+  assert(html.indexOf(EMPTY_COPY) > -1,
+    'a settled-empty store does not print the honest empty copy: ' + html.slice(0, 200));
+  assert(html.indexOf(PENDING_COPY) < 0,
+    'a settled-empty store reads as still loading — the card would spin forever');
+});
+
+check('§5.5 · careerHistorySettled() is a key-presence test, not a truthiness test', () => {
+  const store = {}; store[ONE_KEY] = [];
+  assert.strictEqual(speedModalFor(store).I.careerHistorySettled(ONE_KEY), true,
+    'an empty ARRAY must count as settled — `[] || null` is how the old bug read');
+  assert.strictEqual(speedModalFor({}).I.careerHistorySettled(ONE_KEY), false,
+    'an absent key must count as unsettled');
+  console.log('        [] -> settled, absent -> unsettled');
+});
+
+check('§5.5 · the pending branch is ordered BEFORE the empty branch in the source', () => {
+  const src = fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8');
+  const fn = src.slice(src.indexOf('function renderSpeedModal'));
+  const pendingAt = fn.indexOf('careerHistorySettled');
+  const emptyAt = fn.indexOf(EMPTY_COPY);
+  assert(pendingAt > -1, 'renderSpeedModal no longer consults careerHistorySettled');
+  assert(emptyAt > -1, 'the honest empty copy is gone from renderSpeedModal');
+  assert(pendingAt < emptyAt,
+    'the empty copy is reachable before the pending guard — a network fact would '
+    + 'again be printed as a fact about the player');
+});
+
+// The controls. Each is the mutation the checks above must turn red on.
+mustFail('[neg] the pending check would catch the OLD unconditional empty copy', () => {
+  // Exactly the pre-fix branch: one empty state, chosen on the row count alone.
+  const total = 0;
+  const html = !total
+    ? '<div>No matches on record, so no court can be rated.</div>'
+    : '<div>bands</div>';
+  assert(html.indexOf(PENDING_COPY) > -1,
+    'the row-count-only empty state does not distinguish pending');
+});
+
+mustFail('[neg] the settled-empty check would catch a card that spins forever', () => {
+  const html = '<div>The career match store has not loaded, so no court can be rated yet.</div>';
+  assert(html.indexOf(EMPTY_COPY) > -1,
+    'a settled-empty store printed the pending copy');
+});
+
+mustFail('[neg] a truthiness predicate would pass the settled-empty case', () => {
+  // `store[key] || null` — the shape careerHistoryFor() uses, and the reason the
+  // predicate had to be written separately rather than reused.
+  const store = { 1980: [] };
+  assert.strictEqual(!!(store[1980] || null), false,
+    'an empty array read as settled under a truthiness test');
+});
+
+// ════════════════════════════════════════════════════════════════════════════
 console.log('\n' + '='.repeat(64));
 console.log(`PASS ${pass}   FAIL ${fail}` + (skipped ? `   SKIP ${skipped} (career-history/ ${CH_DRIFT.state})` : ''));
 if (failures.length) {

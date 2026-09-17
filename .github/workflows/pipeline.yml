@@ -352,7 +352,16 @@ jobs:
           # The shards also feed the full ledger's two closing-odds columns.
           # Index-gated on the client, so a missing shard degrades to a dash with
           # a stated reason rather than a broken table — tolerant copy.
-          cp court-speed-map.json _site/ 2>/dev/null || true
+          #
+          # court-speed-map.json is the EXCEPTION and is no longer tolerant
+          # (TEN-228). The §5.5 rebuild reads two tables the old dictionary does
+          # not carry: `venues` (the 64 real Tennis Abstract values the quintile
+          # cut-offs are frozen against) and `apiNames` (the api-tennis → venue
+          # join). Under `2>/dev/null || true` a failed copy left the new
+          # renderer meeting the OLD schema — every venue lookup misses, the
+          # bands read empty, and every test still passes. Hard copy here, hard
+          # schema assert in "Assert site completeness" below.
+          cp court-speed-map.json _site/
           cp market-edge-index.json _site/ 2>/dev/null || true
           cp -r market-edge _site/ 2>/dev/null || true
           # TEN-206 correction pass items 11 + 14.
@@ -586,6 +595,7 @@ jobs:
                    style-meetings-index.json \
                    odds-performance-index.json odds-index.json \
                    tournament-history-index.json \
+                   court-speed-map.json \
                    series.js series.css; do
             [ -s "_site/$f" ] || { echo "MISSING from _site: $f"; exit 1; }
           done
@@ -608,6 +618,22 @@ jobs:
             const idx = JSON.parse(require("fs").readFileSync("_site/tournament-history-index.json","utf8")).players || {};
             if (!Object.keys(idx).length) { console.error("tournament-history-index.json is empty — the record card would read 0 on record for every player"); process.exit(1); }
             console.log(`TEN-207: profiles lite, ${Object.keys(idx).length} tournament-history shard(s) indexed.`);
+          '
+          # TEN-228 · §5.5 Court speed. Presence is not enough: the file existed
+          # BEFORE the rebuild too, at 18.5 KB with neither of the tables the new
+          # renderer reads. Asserting only `-s` would pass on that old shape and
+          # ship a band list where every venue lookup misses. Assert the SCHEMA.
+          node -e '
+            const m = JSON.parse(require("fs").readFileSync("_site/court-speed-map.json","utf8"));
+            const venues = Object.keys(m.venues || {}).length;
+            const apiNames = Object.keys(m.apiNames || {}).length;
+            if (!venues)   { console.error("court-speed-map.json carries no `venues` table — the quintile cut-offs have nothing to bind to and every band would read empty. Old-schema dictionary shipped?"); process.exit(1); }
+            if (!apiNames) { console.error("court-speed-map.json carries no `apiNames` table — the api-tennis venue join misses on every match. Old-schema dictionary shipped?"); process.exit(1); }
+            // The bands are quintiles of 64 REAL Tennis Abstract values, frozen
+            // by a partition test. A dictionary that lost rows would re-cut the
+            // quintiles silently and move every band boundary.
+            if (venues < 64) { console.error(`court-speed-map.json holds ${venues} rated venues, fewer than the 64 the frozen quintile cut-offs were cut from — the bands would silently re-partition`); process.exit(1); }
+            console.log(`TEN-228: court-speed-map.json schema ok — ${venues} rated venues, ${apiNames} api-tennis name(s) joined.`);
           '
           echo "All referenced files present in _site."
 

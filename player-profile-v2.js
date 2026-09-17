@@ -2505,6 +2505,34 @@
     return store[String(key)] || null;
   }
 
+  /**
+   * Has the career-history fetch for this player SETTLED?
+   *
+   * `careerHistoryFor()` cannot answer this: it returns null both for "the shard
+   * has not come back yet" and for "the shard came back with nothing", and those
+   * two are different facts about our data. The host settles the key by writing
+   * `window.careerHistory[key] = rows || []` (bsp-consult-dashboard.html
+   * `loadPp2CareerHistory`) — and its catch is silent, so a THROWN fetch leaves
+   * the key absent forever too. Absent therefore means in-flight or failed;
+   * present means settled, empty or not.
+   *
+   * The fetch is unconditional on profile open (`showPlayerProfileV2` calls
+   * `loadPp2CareerHistory(key)` on every mount), so "absent" cannot mean
+   * "nobody asked" and this predicate cannot spin forever on a real open.
+   *
+   * Why it exists: §5.5 printed "No matches on record, so no court can be rated."
+   * off `!speedRows(p).length`, which is true of an unsettled store. On a slow or
+   * failed shard the modal stated a FACT ABOUT THE PLAYER that came from a fact
+   * about the network — the plausible-default class the missing-data ruling
+   * forbids. Measured: a cold open through the hybrid server read 0 rows where a
+   * warm one read 775, and the modal asserted "no matches on record" for Zverev.
+   */
+  function careerHistorySettled(key) {
+    var store = (typeof window !== 'undefined') ? window.careerHistory : null;
+    if (!store) return false;
+    return Object.prototype.hasOwnProperty.call(store, String(key));
+  }
+
   // Per-player join of all four stores. Memoised on the player key AND on the
   // identity of the two lazy stores, because both land after first paint and a
   // cache keyed on the player alone would freeze the pre-fetch (empty) state.
@@ -4965,12 +4993,24 @@
     return openable[0] || null;
   }
 
+  /** The §5.5 empty box, so the pending and settled copies cannot drift apart. */
+  function speedEmptyBox(copy) {
+    return '<div style="border:1px dashed rgba(255,255,255,0.12);border-radius:10px;padding:26px;' +
+      'text-align:center;font-size:13px;color:#5b6880;">' + copy + '</div>';
+  }
+
   function renderSpeedModal(p) {
     var bands = speedBands(p);
     var total = speedRows(p).length;
+    // PENDING IS CHECKED BEFORE EMPTY, and the order is the whole point: a zero
+    // row count is what an unsettled store and a genuinely empty one look like
+    // from here, and only the store itself can tell them apart. Reversing these
+    // two branches re-states a network fact as a fact about the player.
+    if (!total && !careerHistorySettled(p.key)) {
+      return speedEmptyBox('The career match store has not loaded, so no court can be rated yet.');
+    }
     if (!total) {
-      return '<div style="border:1px dashed rgba(255,255,255,0.12);border-radius:10px;padding:26px;' +
-        'text-align:center;font-size:13px;color:#5b6880;">No matches on record, so no court can be rated.</div>';
+      return speedEmptyBox('No matches on record, so no court can be rated.');
     }
 
     var chips = SPEED_SURFACES.map(function (s) {
@@ -6398,6 +6438,9 @@
       speedRows: speedRows,
       marketRows: marketRows,
       speedBands: speedBands,
+      // Exported so the pending-vs-empty truth table is testable against the
+      // real predicate rather than a copy of it in the test.
+      careerHistorySettled: careerHistorySettled,
       speedSelected: speedSelected,
       speedBestBand: speedBestBand,
       speedInfoFor: speedInfoFor,
