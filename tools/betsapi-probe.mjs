@@ -643,6 +643,98 @@ async function cmdDryrun() {
   save('dryrun.json', report);
 }
 
+/* ------------------------------------------------------------------ markets */
+
+// Phase 2 found ZERO games-handicap and ZERO total-games rows on /v2/event/odds
+// across 539 ended matches. That kills the historical line-coverage design, but
+// it leaves a materially different question open: do those markets exist on
+// BetsAPI AT ALL for tennis, going forward?
+//
+// The pricing page claims the per-bookmaker APIs carry "all odds markets" while
+// the Events API has "limited odds markets". That is a vendor claim about a
+// product we would be paying for, so it gets measured rather than quoted:
+//   - /v4/bet365/prematch on UPCOMING tennis, enumerating every market name
+//   - /v2/event/odds/summary on ENDED tennis, enumerating every bookmaker and
+//     every market key each one reports
+// The distinction matters: "no history, collectable from today" and "not
+// available at all" lead to completely different decisions.
+async function cmdMarkets() {
+  const out = { ran_at: new Date().toISOString(), prematch: null, summary: null, requests_used: 0 };
+  const WANT = /(handicap|spread|line|total|over|under|set betting|games|asian)/i;
+
+  // ---- 1. bet365 prematch on upcoming tennis
+  const up = await api('/v1/bet365/upcoming', { sport_id: TENNIS });
+  const rows = up.body?.results || [];
+  log(`bet365/upcoming: success=${up.body?.success} total=${up.body?.pager?.total ?? '—'} page=${rows.length}`);
+  const picks = [];
+  for (const e of rows) {
+    const lvl = classify(e.league?.name);
+    if (!lvl) continue;
+    picks.push({ id: e.id, level: lvl, league: e.league?.name, home: e.home?.name, away: e.away?.name, time: e.time });
+    if (picks.length >= 12) break;
+  }
+  log(`  classified upcoming picks: ${picks.length} (of ${rows.length} on page 1)`);
+
+  const pre = { n: 0, ok: 0, events: [], market_names: {}, matching: {}, errors: {} };
+  for (const ev of picks) {
+    let r; try { r = await api('/v4/bet365/prematch', { FI: ev.id }); }
+    catch (e) { if (e instanceof BudgetExhausted) break; throw e; }
+    pre.n++;
+    if (!r.ok) { const k = `${r.status}:${r.body?.error || 'empty'}`; pre.errors[k] = (pre.errors[k] || 0) + 1; continue; }
+    pre.ok++;
+    // The payload nests market groups under arbitrary keys; walk it and collect
+    // every object carrying a name, rather than assuming a shape.
+    const names = new Set();
+    const walk = (node) => {
+      if (Array.isArray(node)) { node.forEach(walk); return; }
+      if (!node || typeof node !== 'object') return;
+      const nm = node.NA ?? node.name;
+      if (typeof nm === 'string' && nm.trim()) names.add(nm.trim());
+      for (const v of Object.values(node)) walk(v);
+    };
+    walk(r.body.results);
+    for (const n of names) {
+      pre.market_names[n] = (pre.market_names[n] || 0) + 1;
+      if (WANT.test(n)) pre.matching[n] = (pre.matching[n] || 0) + 1;
+    }
+    pre.events.push({ id: ev.id, level: ev.level, league: ev.league, distinct_names: names.size });
+    log(`  FI=${ev.id} ${ev.level} "${ev.league}" -> ${names.size} distinct names`);
+  }
+  out.prematch = pre;
+  const hits = Object.entries(pre.matching).sort((a, b) => b[1] - a[1]);
+  log(`bet365 prematch: ${pre.ok}/${pre.n} ok; ${hits.length} market names matching handicap/total/set:`);
+  for (const [n, c] of hits.slice(0, 40)) log(`    ${String(c).padStart(3)}x  ${n}`);
+
+  // ---- 2. odds summary on ended tennis — which books, which market keys
+  const endedDay = '20250909';
+  const ended = await api('/v3/events/ended', { sport_id: TENNIS, day: endedDay });
+  const evs = (ended.body?.results || []).filter((e) => classify(e.league?.name)).slice(0, 8);
+  const summ = { n: 0, ok: 0, day: endedDay, books: {}, book_markets: {} };
+  for (const e of evs) {
+    let r; try { r = await api('/v2/event/odds/summary', { event_id: e.id }); }
+    catch (err) { if (err instanceof BudgetExhausted) break; throw err; }
+    summ.n++;
+    if (!r.ok) continue;
+    summ.ok++;
+    for (const [book, payload] of Object.entries(r.body?.results || {})) {
+      summ.books[book] = (summ.books[book] || 0) + 1;
+      const keys = new Set();
+      for (const side of ['start', 'end']) for (const k of Object.keys(payload?.odds?.[side] || {})) keys.add(k);
+      summ.book_markets[book] ||= {};
+      for (const k of keys) summ.book_markets[book][k] = (summ.book_markets[book][k] || 0) + 1;
+    }
+  }
+  out.summary = summ;
+  log(`odds/summary on ${summ.ok}/${summ.n} ended tennis matches (${endedDay}):`);
+  for (const [b, n] of Object.entries(summ.books).sort((a, c) => c[1] - a[1])) {
+    log(`    ${b.padEnd(16)} seen on ${n} matches, market keys: ${JSON.stringify(summ.book_markets[b])}`);
+  }
+
+  out.requests_used = reqCount;
+  out.rate_limit_headers = rateLimitHeaders;
+  save('markets.json', out);
+}
+
 /* --------------------------------------------------------------------- main */
 
 const cmd = process.argv[2] || 'status';
@@ -655,6 +747,7 @@ try {
   else if (cmd === 'suffix') await cmdSuffix();
   else if (cmd === 'census') await cmdCensus();
   else if (cmd === 'probe') await cmdProbe();
+  else if (cmd === 'markets') await cmdMarkets();
   else { console.error('unknown command'); process.exit(2); }
 } catch (err) {
   if (err instanceof BudgetExhausted) log(`STOPPED: ${err.message} after ${reqCount} requests`);
