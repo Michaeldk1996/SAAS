@@ -194,5 +194,41 @@ ck('fixture started 1h ago is NOT complete (series can still grow)',
 ck('future fixture is NOT complete',
    not a.is_complete({'startTime': (NOW + timedelta(hours=5)).isoformat()}, NOW))
 
+# ------------------------------------------ the shard label must not lie
+# A shard is appended to for months and a fixture is never re-pulled, so a file
+# written before the ruling keeps /1 entries forever while gaining /2 entries
+# beside them. Stamping the whole file '/2' because the WRITER is new would be a
+# lie in the one field a reader trusts to decide how to read the entries — and a
+# /2 entry with cut:'none' read as /1 hands its uncut in-play tail out as a close.
+print('\n=== shard schema label describes the CONTENTS, not the writer ===')
+ck('a file of pre-ruling entries stays /1',
+   a.shard_schema({'a': {'s1': []}, 'b': {'s1': []}}) == 'bet365-history/1',
+   a.shard_schema({'a': {'s1': []}}))
+ck('a file of post-ruling entries is /2',
+   a.shard_schema({'a': {'cut': 'trueStart'}, 'b': {'cut': 'none'}})
+   == 'bet365-history/2')
+ck('a MIXED file is labelled /1+2, not silently promoted to /2',
+   a.shard_schema({'a': {'cut': 'trueStart'}, 'b': {'s1': []}})
+   == 'bet365-history/1+2',
+   a.shard_schema({'a': {'cut': 'trueStart'}, 'b': {'s1': []}}))
+ck('an empty file takes the current writer schema',
+   a.shard_schema({}) == a.SCHEMA)
+ck('cut:"none" still counts as a /2 entry (the FIELD is the marker, not its value)',
+   a.shard_schema({'a': {'cut': 'none'}}) == 'bet365-history/2')
+
+# save_shard must actually apply it, or the function above is decoration.
+import json as _json, tempfile as _tmp, os as _os
+_d = _tmp.mkdtemp()
+_old_dir, a.OUT_DIR = a.OUT_DIR, _d
+try:
+    a.save_shard('2026-09', {'schema': 'bet365-history/1', 'month': '2026-09',
+                             'fixtures': {'x': {'cut': 'trueStart'},
+                                          'y': {'s1': []}}, 'misses': {}})
+    _w = _json.load(open(_os.path.join(_d, '2026-09.json')))
+    ck('save_shard REWRITES a stale /1 label on a file that now holds /2 entries',
+       _w['schema'] == 'bet365-history/1+2', _w['schema'])
+finally:
+    a.OUT_DIR = _old_dir
+
 print('\n' + ('ALL PASS' if not FAILS else f'{len(FAILS)} FAILURE(S): {FAILS}'))
 sys.exit(1 if FAILS else 0)
