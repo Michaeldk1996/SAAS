@@ -343,10 +343,14 @@ async function cmdProbe() {
   const sample = {}; // `${year}|${level}` -> [event]
   for (const year of YEARS) {
     const days = sampleDays(year);
-    const buckets = { atp: [], slam: [], challenger: [] };
+    // Two passes on purpose. Filling buckets greedily as days stream in would
+    // take all 50 ATP matches from January and call it a year — a hard-court
+    // sample masquerading as a season. So: collect every candidate across the
+    // whole calendar first, then thin each level evenly across the days that
+    // actually have matches.
+    const candidates = { atp: [], slam: [], challenger: [] };
     for (const day of days) {
-      if (Object.values(buckets).every((b) => b.length >= cfg.per_level_per_year)) break;
-      for (let page = 1; page <= 3; page++) {
+      for (let page = 1; page <= 4; page++) {
         let r;
         try { r = await api('/v3/events/ended', { sport_id: TENNIS, day, page }); }
         catch (e) { if (e instanceof BudgetExhausted) { log('BUDGET EXHAUSTED during sampling'); break; } throw e; }
@@ -355,18 +359,28 @@ async function cmdProbe() {
           const lvl = classify(e.league?.name);
           if (!lvl) continue;
           if (String(e.time_status) !== '3') continue;   // ended normally only
-          if (buckets[lvl].length >= cfg.per_level_per_year) continue;
-          buckets[lvl].push({ id: e.id, time: Number(e.time), league: e.league?.name, home: e.home?.name, away: e.away?.name, ss: e.ss, round: e.round?.name ?? null, day });
+          if (/\//.test(e.home?.name || '') || /\//.test(e.away?.name || '')) continue; // belt-and-braces doubles guard
+          candidates[lvl].push({ id: e.id, time: Number(e.time), league: e.league?.name, home: e.home?.name, away: e.away?.name, ss: e.ss, round: e.round?.name ?? null, day });
         }
         const total = r.body?.pager?.total ?? 0;
         if (rows.length < 50 || page * 50 >= total) break;
       }
     }
-    for (const [lvl, arr] of Object.entries(buckets)) {
-      sample[`${year}|${lvl}`] = arr;
-      log(`sample ${year} ${lvl}: n=${arr.length}`);
+    for (const [lvl, all] of Object.entries(candidates)) {
+      const want = cfg.per_level_per_year;
+      let picked = all;
+      if (all.length > want) {
+        // Even stride over the chronologically ordered candidate list.
+        const stride = all.length / want;
+        picked = Array.from({ length: want }, (_, i) => all[Math.floor(i * stride)]);
+      }
+      sample[`${year}|${lvl}`] = picked;
+      const daysCovered = new Set(picked.map((p) => p.day)).size;
+      log(`sample ${year} ${lvl}: n=${picked.length} of ${all.length} candidates, across ${daysCovered} days`);
     }
   }
+  out.classifier = { drops: { ...dropCounts }, unclassified };
+  log(`classifier drops: ${JSON.stringify(dropCounts)} unclassified=${unclassified}`);
   save('sample.json', sample);
   log(`sampling used ${reqCount} requests`);
 
