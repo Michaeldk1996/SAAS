@@ -64,4 +64,24 @@ jobs:
               "select count(*) as first_seen_rows, "
               "count(distinct (match_key, market, coalesce(line,''), selection, bookmaker)) as distinct_quotes "
               "from public.ten216_test_odds_changes where change_kind='first_seen'")))
+
+          # --- restart-cleanliness audit (TEN-216 Part A confirmation 1) -------------
+          # The table and the raw bucket were restarted together. If either still holds
+          # rows or objects from the corrupted series, the 7-day window is measuring a
+          # mixture and the day-7 report is worthless. Prove it, do not assume it.
+          print("\nSERIES BOUNDS (first tick anchors the 7-day window):")
+          print(json.dumps(sql(
+              "select min(observed_at) as first_tick, max(observed_at) as last_tick, "
+              "count(distinct poll_id) as polls from public.ten216_test_odds_changes")))
+
+          print("\nRAW BUCKET ten216-test-raw:")
+          print(json.dumps(sql(
+              "select count(*) as objects, min(created_at) as oldest, max(created_at) as newest "
+              "from storage.objects where bucket_id = 'ten216-test-raw'")))
+
+          print("\nRAW DEBRIS (objects older than the first change row — must be 0):")
+          print(json.dumps(sql(
+              "select count(*) as stale_objects from storage.objects "
+              "where bucket_id = 'ten216-test-raw' "
+              "and created_at < (select min(observed_at) from public.ten216_test_odds_changes)")))
           PY

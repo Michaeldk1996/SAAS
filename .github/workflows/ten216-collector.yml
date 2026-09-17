@@ -50,16 +50,37 @@ jobs:
         with: { node-version: '20' }
 
       - name: Poll
+        id: poll
         env:
           API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
           INTERVAL_MIN: ${{ github.event.inputs.interval_min }}
           LOOP_MINUTES: ${{ github.event.inputs.loop_minutes }}
-        run: node tools/ten216-supabase-collector.mjs
+        run: |
+          set +e
+          node tools/ten216-supabase-collector.mjs
+          rc=$?
+          set -e
+          # Exits 2 and 3 are the collector's two DELIBERATE stand-downs — the change-row
+          # cap was hit, or the state rebuild came back short. Both mean "continuing would
+          # corrupt the measurement", so the chain is supposed to end here.
+          #
+          # Everything else — a clean loop, or a transient failure (API 5xx, runner
+          # eviction, a dropped Supabase connection) — must still hand off. Gating the
+          # handoff on step success, as it was, let a single bad poll silently end a
+          # seven-day collection with a green-looking history behind it.
+          if [ "$rc" = "2" ] || [ "$rc" = "3" ]; then
+            echo "handoff=no" >> "$GITHUB_OUTPUT"
+            echo "::error::collector stood down deliberately (exit $rc) — the chain ENDS here, by design"
+          else
+            echo "handoff=yes" >> "$GITHUB_OUTPUT"
+          fi
+          echo "rc=$rc" >> "$GITHUB_OUTPUT"
+          exit $rc
 
       - name: Hand off to successor
-        if: ${{ github.event.inputs.stop != 'yes' }}
+        if: ${{ always() && steps.poll.outputs.handoff == 'yes' && github.event.inputs.stop != 'yes' }}
         env:
           GH_TOKEN: ${{ github.token }}
           INTERVAL: ${{ github.event.inputs.interval_min }}
