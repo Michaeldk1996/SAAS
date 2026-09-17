@@ -757,171 +757,430 @@ check('a rate is never printed below the ten-match gate anywhere in a shard', ()
 });
 
 // ════════════════════════════════════════════════════════════════════════════
-// 14 · CALENDAR RECORD (founder ruling cal-0, gate 3).
-//      §4's "Calendar grid total = career total" is DROPPED by that ruling —
-//      the archive is ATP tour main draw only. These checks are what replaced
-//      it: the grid must be a labelled SUBSET of the spine, and the label must
-//      state both numbers. Every figure is recomputed here from the shard rows
-//      rather than read back off the renderer.
+// 14 · CALENDAR RECORD (founder ruling cal-1, 2026-09-17 — SUPERSEDES cal-0).
+//      cal-0 built the heat grid from the priced archive. Item 1 of the
+//      2026-09-17 comment moves it onto the CAREER MATCH ROWS and confines the
+//      archive to the yield layer: "GRID = CAREER MATCH ROWS ... Do NOT build
+//      the grid from the priced archive", "YIELD / P&L = PRICED SUBSET".
+//
+//      career-history/ is gitignored and CI-built, so it is normally ABSENT
+//      here. A test that silently skipped would have let this whole rebuild ship
+//      unchecked, so the spine assertions run against a SYNTHETIC store whose
+//      every figure is known by construction, and the real shards are folded in
+//      as an extra pass whenever CI has them on disk.
 // ════════════════════════════════════════════════════════════════════════════
-console.log('\n14 · Calendar record (ruling cal-0 — dated rows from the priced archive)');
+console.log('\n14 · Calendar record (ruling cal-1 — grid = career rows, yield = priced subset)');
 
 const CAL_PLAYERS = Object.keys(MARKET).slice(0, 80);
 
-check('the heat grid accounts for every priced row, and only those', () => {
-  let checked = 0;
-  for (const k of CAL_PLAYERS) {
-    const p = PLAYERS[k];
-    if (!p) continue;
-    const rows = I.calRows(p);
-    assert.strictEqual(rows.length, MARKET[k].matches.length,
-      `${k}: calRows dropped rows`);
-    // Recompute the grid total independently of calGrid().
-    let gridTotal = 0;
-    I.calGrid(rows).forEach(yr => yr.cells.forEach(c => { gridTotal += c.won + c.lost; }));
-    let raw = 0;
-    MARKET[k].matches.forEach((m) => {
-      if (/^\d{4}-\d{2}/.test(m.date)) raw += 1;
+// ── the synthetic spine ────────────────────────────────────────────────────
+// Two seasons. January holds 12 matches a year (8-4 in 2025, 3-9 in 2026);
+// every 2025 January match is priced at a flat +0.50 win / -1.00 loss, and NO
+// 2026 match is priced at all. March holds a single match, so the n>=10 gate
+// must exclude it from every tile. February is empty in both seasons.
+const CAL_SPINE = [];
+const CAL_MK = [];
+function calPush(date, won, opp, ev, priced) {
+  CAL_SPINE.push({
+    year: date.slice(0, 4), date, surface: 'hard', level: 'atp',
+    tournament: ev, round: 'R32', opponent: opp, result: won ? '2 - 0' : '0 - 2', won
+  });
+  if (priced) {
+    CAL_MK.push({
+      date, event: ev, level: 'ATP 250', surface: 'Hard', court: 'Outdoor',
+      round: '2nd Round', opp, won, price: won ? 1.5 : 2.0, oppPrice: won ? 2.6 : 1.8,
+      book: 'pinnacle', role: won ? 'fav' : 'dog', pl: won ? 0.5 : -1
     });
-    assert.strictEqual(gridTotal, raw, `${k}: grid holds ${gridTotal} of ${raw} dated rows`);
-    checked++;
   }
-  assert(checked > 50, `only ${checked} players checked`);
-  console.log(`        ${checked} players — every dated row lands in a grid cell`);
+}
+for (let i = 0; i < 12; i++) {
+  calPush(`2025-01-${String(i + 1).padStart(2, '0')}`, i < 8, `P${i} A`, 'Adelaide', true);
+}
+for (let i = 0; i < 12; i++) {
+  calPush(`2026-01-${String(i + 1).padStart(2, '0')}`, i < 3, `Q${i} B`, 'Brisbane', false);
+}
+calPush('2025-03-04', true, 'Z9 C', 'Miami', true);
+const CAL_P = {
+  key: '__cal', name: 'T. Cal', tournamentHistory: [],
+  careerByYear: [
+    { year: '2025', total: { won: 9, lost: 4 }, hard: { won: 9, lost: 4 } },
+    { year: '2026', total: { won: 5, lost: 9 }, hard: { won: 5, lost: 9 } }
+  ]
+};
+// 2026 carries 14 matches in careerByYear against 12 dated rows, so the spine
+// gap the footnote has to disclose is 2 and is known exactly.
+const CAL_EXPECT = { grid: 25, spine: 27, gap: 2, priced: 13, seasons: 2 };
+
+function withCal(fn) {
+  const savedCh = global.window.careerHistory;
+  const savedMk = global.window.marketEdge;
+  const savedSt = { ...I.state };
+  global.window.careerHistory = Object.assign({}, CAREER_HIST, { __cal: CAL_SPINE });
+  global.window.marketEdge = Object.assign({}, MARKET, { __cal: { matches: CAL_MK } });
+  try { return fn(); } finally {
+    global.window.careerHistory = savedCh;
+    global.window.marketEdge = savedMk;
+    Object.assign(I.state, savedSt);
+  }
+}
+
+check('the grid is the CAREER rows, not the priced archive', () => withCal(() => {
+  I.state.calSurface = 'all';
+  const rows = I.calSpineFiltered(CAL_P);
+  assert.strictEqual(rows.length, CAL_EXPECT.grid,
+    `spine holds ${rows.length}, not the ${CAL_EXPECT.grid} career rows`);
+  // The archive holds 13 rows. If the grid ever equals that number again, the
+  // spine has silently reverted to cal-0.
+  assert.notStrictEqual(rows.length, CAL_MK.length,
+    'the grid equals the priced archive — ruling cal-1 was reverted');
+  let total = 0;
+  I.calGrid(rows).forEach(yr => yr.cells.forEach(c => { total += c.won + c.lost; }));
+  assert.strictEqual(total, CAL_EXPECT.grid, `Σ cells = ${total}, not ${CAL_EXPECT.grid}`);
+  console.log(`        Σ grid cells ${total} = career rows ${CAL_EXPECT.grid}, archive holds ${CAL_MK.length}`);
+}));
+
+mustFail('[neg] the spine check would catch a revert to the archive', () => withCal(() => {
+  const archive = I.calMarketRows(CAL_P);
+  assert.strictEqual(archive.length, CAL_EXPECT.grid,
+    `archive holds ${archive.length}, not ${CAL_EXPECT.grid}`);
+}));
+
+check('item 2 · the yield layer counts ONLY the priced rows', () => withCal(() => {
+  I.state.calSurface = 'all';
+  const info = I.calMonths(I.calSpineFiltered(CAL_P));
+  const jan = info.months[0], feb = info.months[1], mar = info.months[2];
+  assert.strictEqual(jan.n, 24, `January grid n ${jan.n}, not 24`);
+  assert.strictEqual(jan.priced, 12, `January priced ${jan.priced}, not 12`);
+  // 8 wins at +0.50 and 4 losses at -1.00 over 12 priced matches = 0.0u = 0.0%.
+  assert(Math.abs(jan.yield - 0) < 1e-9, `January yield ${jan.yield}, not 0`);
+  assert.strictEqual(feb.n, 0, 'February should be empty');
+  assert.strictEqual(feb.yield, null, 'an empty month must dash, not read 0%');
+  assert.strictEqual(mar.n, 1, 'March should hold one match');
+  assert.strictEqual(mar.priced, 1, 'March should hold one priced match');
+  assert.strictEqual(info.priced, CAL_EXPECT.priced,
+    `priced total ${info.priced}, not ${CAL_EXPECT.priced}`);
+  // Σ of the monthly grid counts must be the grid total — the buckets partition.
+  let sumN = 0, sumP = 0;
+  info.months.forEach((x) => { sumN += x.n; sumP += x.priced; });
+  assert.strictEqual(sumN, CAL_EXPECT.grid, `month buckets hold ${sumN} of ${CAL_EXPECT.grid}`);
+  assert.strictEqual(sumP, CAL_EXPECT.priced, `priced buckets hold ${sumP} of ${CAL_EXPECT.priced}`);
+  console.log(`        Jan n=24 grid / 12 priced; Σ buckets ${sumN} grid + ${sumP} priced`);
+}));
+
+check('item 7 · a stretch is ADJACENT MONTHS and the n>=10 gate holds', () => withCal(() => {
+  I.state.calSurface = 'all';
+  const info = I.calMonths(I.calSpineFiltered(CAL_P));
+  const s = I.calStretches(info);
+  assert(s.best, 'no stretch cleared the gate');
+  // Every eligible stretch must be a 2- or 3-month adjacent run, never a year.
+  [s.best, s.worst].forEach((w) => {
+    assert(/^[A-Z][a-z]{2}–[A-Z][a-z]{2}$/.test(w.label),
+      `stretch label "${w.label}" is not a month range — a year label is the cal-0 shape`);
+    assert(w.n >= 10, `stretch ${w.label} shipped with n=${w.n}, under the gate`);
+  });
+  // March holds one priced match. It must not reach a tile under any label.
+  const monthIdx = info.months.filter(x => x.priced >= 10 && x.pp != null);
+  assert(!monthIdx.some(x => x.m === 2), 'the 1-match March month cleared the n>=10 gate');
+  console.log(`        best ${s.best.label} n=${s.best.n}; the 1-match month is gated out`);
+}));
+
+mustFail('[neg] the gate check would catch a 1-match month reaching a tile', () => withCal(() => {
+  const info = I.calMonths(I.calSpineFiltered(CAL_P));
+  const ungated = info.months.filter(x => x.priced > 0 && x.pp != null);
+  assert(!ungated.some(x => x.m === 2), 'March reached a tile');
+}));
+
+check('item 3 · the subtitle M is the GRID total and carries the span', () => withCal(() => {
+  const sc = I.calScope(CAL_P);
+  assert.strictEqual(sc.n, CAL_EXPECT.grid, `scope n ${sc.n}, not the grid total`);
+  assert.strictEqual(sc.m, CAL_EXPECT.spine, `scope m ${sc.m}, not the careerByYear spine`);
+  assert.strictEqual(sc.from, '2025');
+  assert.strictEqual(sc.to, '2026');
+  // Asserted unconditionally on purpose: an `if (sub)` here would pass silently
+  // the day the export is dropped, which is the vacuous shape this file bans.
+  assert(typeof I.modalSubtitle === 'function', 'modalSubtitle is not exported — item 3 unchecked');
+  const sub = I.modalSubtitle('season', CAL_P, {});
+  assert(sub.includes(`${CAL_EXPECT.grid} matches`),
+    `subtitle says "${sub}" — M must be the grid total`);
+  assert(sub.includes('2025–2026'), `subtitle "${sub}" carries no year span`);
+  assert(!sub.includes(`${CAL_EXPECT.spine} matches`),
+    'the subtitle reverted to the careerByYear total');
+  console.log(`        subtitle M=${sc.n} (grid) with span ${sc.from}–${sc.to}; spine is ${sc.m}`);
+}));
+
+check('the footnote discloses the spine gap rather than hiding it', () => withCal(() => {
+  I.state.calTab = 'calendar'; I.state.calSurface = 'all'; I.state.calCell = null;
+  const html = I.renderSeasonModal(CAL_P);
+  assert(html.includes(`the ${CAL_EXPECT.priced} priced`),
+    'the footnote never states the priced count');
+  assert(html.includes(`the grid covers all ${CAL_EXPECT.grid}`),
+    'the footnote never states the grid total');
+  assert(html.includes(`${CAL_EXPECT.gap} of them carry no dated match row`),
+    `the ${CAL_EXPECT.gap}-row gap against the career record is not disclosed`);
+  // Item 31 — the long archive paragraph is gone.
+  assert(!/qualifying and Challenger matches are absent by scope/.test(html),
+    'the cal-0 archive paragraph is still in the footnote');
+  console.log(`        footnote: ${CAL_EXPECT.priced} priced, grid ${CAL_EXPECT.grid}, gap ${CAL_EXPECT.gap} disclosed`);
+}));
+
+check('items 13 + 12 · empty months are a middot, and the tint is the file\'s flat 0.10', () => withCal(() => {
+  I.state.calTab = 'calendar'; I.state.calSurface = 'all'; I.state.calCell = null;
+  const html = I.renderSeasonModal(CAL_P);
+  assert(html.includes('rgba(61,214,140,0.10)'), 'the win tint is not the file\'s flat 0.10');
+  assert(html.includes('rgba(224,97,111,0.10)'), 'the loss tint is not the file\'s flat 0.10');
+  // The ramped alpha cal-0 drew (0.10 + 0.32 * ...) produced three-decimal
+  // alphas. If one reappears the tint went back to a gradient.
+  assert(!/rgba\(61,214,140,0\.\d{3}\)/.test(html), 'a ramped green alpha is back in the grid');
+  assert(!/rgba\(224,97,111,0\.\d{3}\)/.test(html), 'a ramped red alpha is back in the grid');
+  assert(html.includes('>·</span>'), 'an empty month does not render the file\'s middot');
+  console.log('        flat 0.10 tints, no ramp, empty months render ·');
+}));
+
+check('the drill opens, groups by event, and its P&L is the priced rows only', () => withCal(() => {
+  I.state.calTab = 'calendar'; I.state.calSurface = 'all';
+  I.state.calCell = '2026|0';                       // January 2026 — 12 rows, 0 priced
+  let html = I.renderSeasonModal(CAL_P);
+  assert(html.includes('rgba(91,155,255,0.3)'), 'the drill did not open');
+  assert(html.includes('January 2026'), 'the drill header names the wrong month');
+  assert(html.includes('3–09') || html.includes('3–9'), 'the drill record is not 3-9');
+  assert(html.includes('no priced match in this month'),
+    'an unpriced month must say so, not print a 0.00u yield');
+  assert(html.includes('data-pp2="cal-cell-close"'), 'the drill has no close button');
+  assert(/>Score</.test(html), 'the drill has no SCORE column');
+  assert(/>Home</.test(html) && />Away</.test(html), 'the drill is missing HOME/AWAY');
+  assert(!/NaN|undefined|Infinity/.test(html), 'the drill leaked a non-number');
+
+  I.state.calCell = '2025|0';                       // January 2025 — 12 rows, all priced
+  html = I.renderSeasonModal(CAL_P);
+  assert(html.includes('12 priced'), 'the drill does not state its priced count');
+  // 8 x +0.50 - 4 x 1.00 = 0.00u over 12 priced = +0.0%
+  assert(html.includes('+0.00u'), 'the drill total is not the recomputed +0.00u');
+  assert(!/\+0\.50u|−1\.00u/.test(html),
+    'a drill ROW still carries the "u" suffix the design drops (item 20)');
+  console.log('        drill: grouped, close button, SCORE/HOME/AWAY, priced count, no "u" on rows');
+}));
+
+check('item 30 · CONSISTENT is one segment per season, not prose', () => withCal(() => {
+  I.state.calTab = 'calendar'; I.state.calSurface = 'all'; I.state.calCell = null;
+  const html = I.renderSeasonModal(CAL_P);
+  assert(html.includes('>1/2<'), `CONSISTENT should read 1/2 over ${CAL_EXPECT.seasons} seasons`);
+  assert(!/\d+ of \d+<\/div>/.test(html.split('Consistent')[1] || ''),
+    'CONSISTENT reverted to the "8 of 14" prose form');
+  assert(html.includes('rgba(91,155,255,0.62)'), 'no filled CONSISTENT segment rendered');
+  console.log('        CONSISTENT renders 1/2 as filled segments, one per season');
+}));
+
+// The findings strip is labelled "pp" and the file's own SW array is commented
+// "weighted to the career yield" — so the figure is a GAP against his own
+// career yield, not the raw surface yield. The two differ by a constant, so a
+// raw yield under a pp label reads plausibly and the spread (which cancels the
+// baseline) agrees either way. That is exactly why it needs pinning.
+check('item 24 · the findings strip is a pp gap, not a raw yield', () => withCal(() => {
+  I.state.calSurface = 'all';
+  const rows = I.calSpineFiltered(CAL_P);
+  const f = I.calFindings(rows);
+  const priced = rows.filter(r => r.cents != null);
+  const careerY = priced.reduce((a, r) => a + r.cents, 0) / priced.length;
+  // The fixture is 100% hard court, so hard is both best and worst and its gap
+  // against his own career yield is exactly zero — a raw yield would not be.
+  const hardRows = priced.filter(r => r.surface === 'hard');
+  const rawHard = hardRows.reduce((a, r) => a + r.cents, 0) / hardRows.length;
+  assert(Math.abs(f[0].value - (rawHard - careerY)) < 1e-9,
+    `best swing ${f[0].value} is not (surface yield − career yield) = ${rawHard - careerY}`);
+  assert.strictEqual(f[2].cap, 'Surface spread');
+  assert.strictEqual(f[2].n, priced.length,
+    `the spread's n is ${f[2].n}, not the ${priced.length} priced rows it spans`);
+  console.log(`        best swing = ${f[0].value.toFixed(2)}pp vs career, n=${f[0].n}`);
+}));
+
+check('a player with no priced match keeps the grid and dashes the yield layer', () => {
+  const savedCh = global.window.careerHistory;
+  const savedMk = global.window.marketEdge;
+  const savedSt = { ...I.state };
+  try {
+    global.window.careerHistory = Object.assign({}, CAREER_HIST, { __cal: CAL_SPINE });
+    global.window.marketEdge = Object.assign({}, MARKET, { __cal: { matches: [] } });
+    I.state.calTab = 'calendar'; I.state.calSurface = 'all'; I.state.calCell = null;
+    const rows = I.calSpineFiltered(CAL_P);
+    assert.strictEqual(rows.length, CAL_EXPECT.grid,
+      'the grid shrank when the price source went away — the two scopes are coupled');
+    const html = I.renderSeasonModal(CAL_P);
+    assert(html.includes('None of these ' + CAL_EXPECT.grid + ' matches carries a Pinnacle closing price'),
+      'the unpriced footnote does not say why every yield is a dash');
+    assert(!/across the 0 priced/.test(html), 'the footnote still reads "across the 0 priced matches"');
+    assert(!/NaN|undefined|Infinity/.test(html), 'the unpriced state leaked a non-number');
+    // Never a 0% where a dash belongs (§3).
+    assert(!/>[+−]0\.0%</.test(html), 'an unpriced month rendered 0.0% instead of a dash');
+    console.log(`        grid still ${rows.length} rows; every yield dashes with a stated reason`);
+  } finally {
+    global.window.careerHistory = savedCh;
+    global.window.marketEdge = savedMk;
+    Object.assign(I.state, savedSt);
+  }
 });
 
-// The archive and the spine OVERLAP, they do not nest — the archive is narrower
-// by tier and deeper in time. Measured: 11 of 356 players have more priced rows
-// than the spine holds (Djokovic 1,277 vs 601), because careerByYear is a
-// window. So the label must never be phrased as a fraction. This pins that.
-check('the calendar never claims to be a subset it is not', () => {
-  const inverted = [];
-  for (const k of Object.keys(MARKET)) {
-    const p = PLAYERS[k];
-    if (!p) continue;
-    const c = I.calScope(p);
-    assert.strictEqual(c.nested, c.n <= c.m, `${p.name}: nested flag disagrees with the counts`);
-    if (!c.nested) inverted.push(`${p.name} ${c.n}>${c.m}`);
+check('items 24-27 · the footer rows the design requires are all present', () => withCal(() => {
+  I.state.calTab = 'calendar'; I.state.calSurface = 'all'; I.state.calCell = null;
+  const html = I.renderSeasonModal(CAL_P);
+  ['Best swing', 'Worst swing', 'Surface spread', 'Swing', 'Month', 'Yield',
+    'Vs other months', 'Consistent', 'Year'].forEach((label) => {
+    assert(html.includes('>' + label + '<'), `the footer is missing the ${label} row/label`);
+  });
+  assert(!/NaN|undefined|Infinity|\[object/.test(html), 'the footer leaked a non-number');
+  console.log('        findings strip + swing chart + MONTH/N/YIELD/VS/CONSISTENT all render');
+}));
+
+// ── item 20 · the event display name ────────────────────────────────────────
+// Found by the CDP read-back, not by this file: the name vote keyed on
+// (year, opponent surname) and took the tournamentHistory owner without
+// checking that the key was unique on the CAREER-HISTORY side too. Zverev met
+// Hurkacz twice in 2026 — United Cup (January) and Halle (June) — so every
+// January United Cup row rendered under "Halle", a June grass event. The
+// fixture below reproduces exactly that shape.
+const DUP_SPINE = [
+  { year: '2026', date: '2026-01-04', surface: 'hard', level: 'atp', tournament: 'ATP United Cup', round: '', opponent: 'T. Griekspoor', result: '2 - 0', won: true },
+  { year: '2026', date: '2026-01-05', surface: 'hard', level: 'atp', tournament: 'ATP United Cup', round: '', opponent: 'H. Hurkacz', result: '0 - 2', won: false },
+  { year: '2026', date: '2026-06-18', surface: 'grass', level: 'atp', tournament: 'Halle', round: 'QF', opponent: 'H. Hurkacz', result: '2 - 1', won: true },
+  { year: '2026', date: '2026-06-20', surface: 'grass', level: 'atp', tournament: 'Halle', round: 'SF', opponent: 'J. Sinner', result: '1 - 2', won: false }
+];
+const DUP_P = {
+  key: '__dup', name: 'T. Dup',
+  // tournamentHistory knows only Halle, and it owns BOTH Hurkacz meetings.
+  tournamentHistory: [{
+    name: 'Halle',
+    editions: [{ year: 2026, matches: [{ res: 'W', round: 'QF', opp: 'H. Hurkacz' }, { res: 'L', round: 'SF', opp: 'J. Sinner' }] }]
+  }],
+  careerByYear: [{ year: '2026', total: { won: 2, lost: 2 } }]
+};
+check('item 20 · an ambiguous name vote is refused, not resolved', () => {
+  const savedCh = global.window.careerHistory;
+  const savedMk = global.window.marketEdge;
+  const savedSt = { ...I.state };
+  try {
+    global.window.careerHistory = Object.assign({}, CAREER_HIST, { __dup: DUP_SPINE });
+    global.window.marketEdge = Object.assign({}, MARKET, { __dup: { matches: [] } });
+    I.state.calSurface = 'all'; I.state.calTab = 'calendar';
+    const alias = I.calNameMap(DUP_P);
+    assert.notStrictEqual(alias['ATP United Cup'], 'Halle',
+      'the ambiguous (2026, hurkacz) key still renamed United Cup to Halle');
+    const rows = I.calSpineFiltered(DUP_P);
+    const jan = rows.filter(r => r.mon === 0);
+    assert.strictEqual(jan.length, 2, 'the January rows went missing');
+    jan.forEach((r) => {
+      assert.strictEqual(r.event, 'United Cup',
+        `a January row renders as "${r.event}" — a June grass event on a January date`);
+    });
+    // The unambiguous side must STILL be named: a fix that refuses everything
+    // would pass the assertion above and destroy the feature.
+    const jun = rows.filter(r => r.mon === 5);
+    assert(jun.length === 2 && jun.every(r => r.event === 'Halle'),
+      'the unambiguous June rows lost their name — the vote was disabled, not fixed');
+  } finally {
+    global.window.careerHistory = savedCh;
+    global.window.marketEdge = savedMk;
+    Object.assign(I.state, savedSt);
   }
-  // The inversion is real and must stay visible — if it ever reads zero, either
-  // the spine widened or the archive was silently truncated, and both are news.
-  assert(inverted.length > 0, 'no player inverts — the scopes changed, re-measure the label');
-  console.log(`        ${inverted.length} of ${Object.keys(MARKET).length} players hold MORE priced ` +
-    `rows than the spine (e.g. ${inverted[0]}) — why the label is not a fraction`);
+  console.log('        United Cup keeps its own name; Halle still resolves through the vote');
 });
 
-check('the scope label states both numbers without asserting nesting', () => {
-  let shown = 0;
-  for (const k of CAL_PLAYERS.slice(0, 20)) {
-    const p = PLAYERS[k];
-    if (!p) continue;
-    const c = I.calScope(p);
-    if (!c.n) continue;
-    const html = I.renderSeasonModal(p);
-    assert(html.includes(`${c.n} priced`), `${p.name}: modal never prints its own row count`);
-    assert(html.includes(`career record above holds ${c.m}`),
-      `${p.name}: modal drops the spine total, leaving the scope uncomparable`);
-    assert(/tour main draw/.test(html), `${p.name}: modal does not name the scope`);
-    assert(!html.includes(`${c.n} of ${c.m}`),
-      `${p.name}: the label reverted to a fraction, which inverts for veterans`);
-    shown++;
-  }
-  assert(shown > 10, `only ${shown} modals rendered`);
-  console.log(`        ${shown} modals carry both counts, neither phrased as a fraction`);
+mustFail('[neg] the name check would catch the pre-fix weak-key vote', () => {
+  // The old rule: take thOwner[(year, surname)] with no uniqueness test.
+  const owner = { '2026|hurkacz': 'Halle' };
+  const alias = owner['2026|hurkacz'];
+  assert.notStrictEqual(alias, 'Halle', 'the weak-key vote is back');
 });
 
-mustFail('[neg] the label check would catch a revert to the "N of M" fraction', () => {
-  const c = { n: 1277, m: 601 };
-  const html = `tour main draw · ${c.n} of ${c.m}`;
-  assert(!html.includes(`${c.n} of ${c.m}`), 'fraction wording is back');
+check('the Indoors segment refuses rather than showing a partial grid', () => withCal(() => {
+  I.state.calTab = 'calendar'; I.state.calCell = null;
+  I.state.calSurface = 'indoors';
+  const html = I.renderSeasonModal(CAL_P);
+  assert(html.includes('No per-match court type on record'),
+    'the Indoors segment silently rendered a grid it has no source for');
+  assert.strictEqual(I.calSpineFiltered(CAL_P).length, 0,
+    'the Indoors segment returned rows — the court column does not exist on this spine');
+  // The surfaces that DO exist must still partition the grid exactly.
+  I.state.calSurface = 'all';
+  const all = I.calSpineFiltered(CAL_P).length;
+  const bySurf = ['hard', 'clay', 'grass'].reduce((a, s) => {
+    I.state.calSurface = s; return a + I.calSpineFiltered(CAL_P).length;
+  }, 0);
+  assert.strictEqual(bySurf, all, `surfaces hold ${bySurf} of ${all} — they must partition`);
+  console.log('        Indoors refuses with a stated reason; hard+clay+grass partition the grid');
+}));
+
+check('every tab and segment renders without leaking NaN/undefined into the DOM', () => withCal(() => {
+  let rendered = 0;
+  for (const tab of ['calendar', 'streaks']) {
+    for (const s of ['all', 'hard', 'clay', 'grass', 'indoors']) {
+      I.state.calTab = tab; I.state.calSurface = s;
+      I.state.calCell = null; I.state.calRun = null;
+      const html = I.renderSeasonModal(CAL_P);
+      ['NaN', 'undefined', 'Infinity', '[object'].forEach((t) => {
+        assert(!html.includes(t), `${tab}/${s}: "${t}" reached the DOM`);
+      });
+      rendered++;
+    }
+  }
+  console.log(`        ${rendered} tab x segment combinations render clean`);
+}));
+
+// ── the same assertions against the REAL shards, when CI has them ──────────
+// Absent locally (career-history/ is gitignored), so this prints its own skip
+// rather than passing silently — a green run that checked nothing is the bug
+// this whole file exists to prevent.
+check('real shards: Σ grid cells = subtitle M, and the priced set is a subset', () => {
+  const keys = Object.keys(CAREER_HIST).filter(k => PLAYERS[k] && CAREER_HIST[k].length);
+  if (!keys.length) {
+    console.log('        SKIPPED — career-history/ is gitignored and absent; CI runs this branch');
+    return;
+  }
+  const saved = { ...I.state };
+  let checked = 0;
+  try {
+    I.state.calTab = 'calendar'; I.state.calSurface = 'all'; I.state.calCell = null;
+    for (const k of keys.slice(0, 40)) {
+      const p = PLAYERS[k];
+      const rows = I.calSpineFiltered(p);
+      const dated = CAREER_HIST[k].filter(r => r && /^\d{4}-\d{2}-\d{2}$/.test(String(r.date)));
+      assert.strictEqual(rows.length, dated.length, `${k}: spine dropped rows`);
+      let total = 0;
+      I.calGrid(rows).forEach(yr => yr.cells.forEach(c => { total += c.won + c.lost; }));
+      assert.strictEqual(total, I.calScope(p).n, `${k}: Σ cells != subtitle M`);
+      const info = I.calMonths(rows);
+      assert(info.priced <= rows.length,
+        `${k}: ${info.priced} priced rows against a ${rows.length}-row grid — priced must be a subset`);
+      checked++;
+    }
+  } finally { Object.assign(I.state, saved); }
+  console.log(`        ${checked} real shards — Σ cells = M, priced ⊆ grid`);
 });
 
 check('runs partition the sequence — lengths sum to the match count', () => {
-  for (const k of CAL_PLAYERS) {
-    const p = PLAYERS[k];
-    if (!p) continue;
-    const rows = I.calRows(p);
-    const runs = I.calRuns(rows);
-    const summed = runs.reduce((a, r) => a + r.len, 0);
-    assert.strictEqual(summed, rows.length, `${k}: runs sum to ${summed}, not ${rows.length}`);
-    // adjacent runs must alternate, or they were not runs
-    for (let i = 1; i < runs.length; i++) {
-      assert(runs[i].res !== runs[i - 1].res, `${k}: two ${runs[i].res} runs in a row`);
-    }
-    // the longest win run must really be the longest streak of wins
-    let cur = 0, best = 0;
-    rows.forEach((r) => { cur = r.won ? cur + 1 : 0; if (cur > best) best = cur; });
-    const lw = runs.filter(r => r.res === 'W').sort((a, b) => b.len - a.len)[0];
-    assert.strictEqual(lw ? lw.len : 0, best, `${k}: longest win run disagrees with a direct scan`);
-  }
-  console.log(`        ${CAL_PLAYERS.length} players — runs alternate and sum to n`);
-});
-
-check('the Indoors segment reads the archive court column, not the surface', () => {
-  const p = PLAYERS[Object.keys(MARKET).find(k => MARKET[k].matches.some(m => m.court === 'Indoor'))];
-  assert(p, 'no shard carries an Indoor row — the court column did not survive the build');
-  const all = I.calRows(p);
-  // Indoor rows must be a mix of surfaces, which is the whole point: "Indoors"
-  // overlaps Hard/Clay/Grass rather than being a fourth surface.
-  const indoor = all.filter(m => m.court === 'Indoor');
-  assert(indoor.length > 0);
-  assert(indoor.every(m => ['Hard', 'Clay', 'Grass'].includes(m.surface)),
-    'an Indoor row carries no surface — the two axes got conflated');
-  let total = 0, ind = 0;
-  Object.keys(MARKET).forEach((k) => {
-    MARKET[k].matches.forEach((m) => { total++; if (m.court === 'Indoor') ind++; });
-  });
-  assert.strictEqual(total, Object.keys(MARKET).reduce((a, k) => a + MARKET[k].matches.length, 0));
-  const missing = Object.keys(MARKET).reduce((a, k) =>
-    a + MARKET[k].matches.filter(m => !m.court).length, 0);
-  assert.strictEqual(missing, 0, `${missing} shard rows have no court type — the column is not 100%`);
-  console.log(`        ${ind} of ${total} shard rows are Indoor (${(100 * ind / total).toFixed(1)}%), 0 unlabelled`);
-});
-
-check('every tab and segment renders without leaking NaN/undefined into the DOM', () => {
-  const p = PLAYERS[Object.keys(MARKET).find(k => (MARKET[k].matches || []).length > 200)];
-  assert(p, 'no shard large enough to exercise the segments');
+  // Streaks is explicitly out of scope for this pass and still runs on the
+  // archive spine (ruling cal-1). This asserts that it DOES — if it ever moves,
+  // it moves in its own pass with its own numbers re-measured.
   const saved = { ...I.state };
-  let rendered = 0;
   try {
-    for (const tab of ['calendar', 'streaks']) {
-      for (const s of ['all', 'hard', 'clay', 'grass', 'indoors']) {
-        I.state.calTab = tab; I.state.calSurface = s;
-        I.state.calCell = null; I.state.calRun = null;
-        const html = I.renderSeasonModal(p);
-        ['NaN', 'undefined', 'Infinity', '[object'].forEach((t) => {
-          assert(!html.includes(t), `${tab}/${s}: "${t}" reached the DOM`);
-        });
-        rendered++;
-      }
-    }
-    // Surfaces partition the rows; "Indoors" does NOT — it is a court type that
-    // overlaps them. If indoors ever equals the leftover, the axes got conflated.
-    I.state.calTab = 'calendar';
-    const all = (I.state.calSurface = 'all', I.calFiltered(p).length);
-    const bySurf = ['hard', 'clay', 'grass']
-      .reduce((a, s) => (I.state.calSurface = s, a + I.calFiltered(p).length), 0);
-    assert.strictEqual(bySurf, all, `surfaces hold ${bySurf} of ${all} — they must partition`);
-    I.state.calSurface = 'indoors';
-    const ind = I.calFiltered(p).length;
-    assert(ind > 0 && ind < all, `indoors holds ${ind} of ${all} — not an overlapping subset`);
-
-    // Both drills must open and stay clean.
     I.state.calSurface = 'all';
-    const grid = I.calGrid(I.calRows(p));
-    const mi = grid[0].cells.findIndex(c => c.won + c.lost > 0);
-    I.state.calCell = `${grid[0].year}-${mi}`;
-    let h = I.renderSeasonModal(p);
-    assert(h.includes('rgba(91,155,255,0.3)'), 'cell drill did not open');
-    assert(!/NaN|undefined/.test(h), 'cell drill leaked a non-number');
-    I.state.calCell = null; I.state.calTab = 'streaks'; I.state.calRun = 0;
-    h = I.renderSeasonModal(p);
-    assert(h.includes('rgba(91,155,255,0.3)'), 'run detail did not open');
-    assert(!/NaN|undefined/.test(h), 'run detail leaked a non-number');
-  } finally {
-    Object.assign(I.state, saved);
-  }
-  console.log(`        ${rendered} tab x segment combinations + both drills render clean`);
+    for (const k of CAL_PLAYERS) {
+      const p = PLAYERS[k];
+      if (!p) continue;
+      const rows = I.calMarketFiltered(p);
+      assert.strictEqual(rows.length, MARKET[k].matches.length,
+        `${k}: the Streaks spine is no longer the archive`);
+      const runs = I.calRuns(rows);
+      const summed = runs.reduce((a, r) => a + r.len, 0);
+      assert.strictEqual(summed, rows.length, `${k}: runs sum to ${summed}, not ${rows.length}`);
+      for (let i = 1; i < runs.length; i++) {
+        assert(runs[i].res !== runs[i - 1].res, `${k}: two ${runs[i].res} runs in a row`);
+      }
+      let cur = 0, best = 0;
+      rows.forEach((r) => { cur = r.won ? cur + 1 : 0; if (cur > best) best = cur; });
+      const lw = runs.filter(r => r.res === 'W').sort((a, b) => b.len - a.len)[0];
+      assert.strictEqual(lw ? lw.len : 0, best, `${k}: longest win run disagrees with a direct scan`);
+    }
+  } finally { Object.assign(I.state, saved); }
+  console.log(`        ${CAL_PLAYERS.length} players — Streaks still on the archive; runs alternate and sum to n`);
 });
 
 check('Erdos-Renyi expectations match the design formula, and degenerate rates dash', () => {
@@ -942,33 +1201,35 @@ check('Erdos-Renyi expectations match the design formula, and degenerate rates d
   console.log('        expected-longest and runs-of-5+ match the .dc.html formula');
 });
 
-check('month "vs other months" gaps are weighted, and Consistent counts seasons', () => {
-  for (const k of CAL_PLAYERS.slice(0, 40)) {
-    const p = PLAYERS[k];
-    if (!p) continue;
-    const rows = I.calRows(p);
-    const info = I.calMonths(rows);
-    let sumN = 0;
-    info.months.forEach((x) => { sumN += x.n; });
-    assert.strictEqual(sumN, rows.length, `${k}: month buckets hold ${sumN} of ${rows.length}`);
-    info.months.forEach((x) => {
-      // Consistent can never exceed the seasons on record.
-      assert(x.above <= x.seasons, `${k}/${x.m}: consistent ${x.above} > ${x.seasons} seasons`);
-      if (x.n === 0) assert.strictEqual(x.yield, null, `${k}/${x.m}: yield on an empty month`);
-    });
-    // Recompute one month's gap the long way and compare.
-    const m0 = info.months.find(x => x.n > 0 && x.gap != null);
-    if (m0) {
-      const mine = rows.filter(r => parseInt(r.date.slice(5, 7), 10) - 1 === m0.m);
-      const others = rows.filter(r => parseInt(r.date.slice(5, 7), 10) - 1 !== m0.m);
-      const y = 100 * mine.reduce((a, r) => a + r.pl, 0) / mine.length;
-      const o = 100 * others.reduce((a, r) => a + r.pl, 0) / others.length;
-      assert(Math.abs((y - o) - m0.gap) < 1e-6,
-        `${k}: month ${m0.m} gap ${m0.gap} but a direct recompute says ${(y - o)}`);
+check('month "vs other months" is the OTHER-ELEVEN baseline, the tile pp is CAREER', () => withCal(() => {
+  I.state.calSurface = 'all';
+  const rows = I.calSpineFiltered(CAL_P);
+  const info = I.calMonths(rows);
+  const priced = rows.filter(r => r.cents != null);
+  const careerY = priced.reduce((a, r) => a + r.cents, 0) / priced.length;
+  info.months.forEach((x) => {
+    assert(x.above <= x.seasons, `month ${x.m}: consistent ${x.above} > ${x.seasons} seasons`);
+    if (x.priced === 0) {
+      assert.strictEqual(x.yield, null, `month ${x.m}: a yield on an unpriced month`);
+      assert.strictEqual(x.pp, null, `month ${x.m}: a pp on an unpriced month`);
     }
-  }
-  console.log('        month buckets partition the rows; gaps recomputed the long way agree');
-});
+  });
+  // Recompute January's two baselines the long way. They are DIFFERENT numbers
+  // and the renderer must not use one where the file specifies the other.
+  const jan = info.months[0];
+  const mine = priced.filter(r => r.mon === 0);
+  const others = priced.filter(r => r.mon !== 0);
+  const y = mine.reduce((a, r) => a + r.cents, 0) / mine.length;
+  const o = others.reduce((a, r) => a + r.cents, 0) / others.length;
+  assert(Math.abs((y - o) - jan.gap) < 1e-9,
+    `January gap ${jan.gap} but a direct recompute says ${y - o}`);
+  assert(Math.abs((y - careerY) - jan.pp) < 1e-9,
+    `January pp ${jan.pp} but vs-career recompute says ${y - careerY}`);
+  assert.notStrictEqual(jan.gap, jan.pp,
+    'gap and pp are identical — the two baselines got conflated');
+  console.log(`        Jan vs-other-months ${jan.gap.toFixed(2)}pp != vs-career ${jan.pp.toFixed(2)}pp`);
+}));
+
 
 // ════════════════════════════════════════════════════════════════════════════
 // 15 · INDOORS COLUMN (founder's gate-3 correction: "We should have it through
