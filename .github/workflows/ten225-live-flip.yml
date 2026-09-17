@@ -1,0 +1,248 @@
+name: TEN-225 live-flip recorder
+
+# TEN-225 item 2a (Michael, 2026-09-17T09:11Z):
+#   "Record the flip from the existing ~10-second live poller, not from a
+#    5-minute odds collector: append-only table (fixture, first_live_seen_at,
+#    last_not_live_seen_at, poller, gap_seconds). Report the median gap after
+#    48h."
+#
+# TWO MODES
+#   install — apply the additive migration, run the harness, and ONLY THEN
+#             replace write_snapshot. The order is the whole point: write_snapshot
+#             is on the member read path and there is no local Postgres to
+#             rehearse against, so the function it calls is proven first.
+#   report  — read back the gap distribution. This is the 48h median-gap report.
+#             Runs on a schedule so the number accrues without anyone remembering.
+#
+# NOTHING MEMBER-VISIBLE. Two new tables, RLS on, zero policies — no browser role
+# can read them. The Live tab's board is byte-for-byte what it was: write_snapshot
+# keeps its signature and its effect on live_snapshot, and the recorder call is
+# exception-wrapped so a recorder fault cannot reach the board.
+#
+# DO-NOT-TOUCH compliance: no existing TABLE, POLICY or pg_cron JOB is altered.
+# write_snapshot (a FUNCTION) is changed under Michael's explicit instruction to
+# record the flip from this poller.
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: 'install (apply + harness + wire) or report (48h gap report)'
+        type: choice
+        options: [install, report]
+        default: install
+  schedule:
+    # Hourly read-back. The 48h median-gap report is just this, read after the
+    # table has had 48h of ticks; scheduling it means the number is always there.
+    - cron: '35 * * * *'
+
+concurrency:
+  group: ten225-live-flip
+  cancel-in-progress: false
+
+jobs:
+  flip:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      MGMT: https://api.supabase.com
+      MODE: ${{ inputs.mode || 'report' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Preconditions + derive project ref
+        run: |
+          set -euo pipefail
+          for v in SUPABASE_ACCESS_TOKEN SUPABASE_URL; do
+            [ -n "${!v:-}" ] || { echo "::error::missing repository secret $v"; exit 1; }
+          done
+          REF=$(printf '%s' "$SUPABASE_URL" | sed -E 's#https?://([^./]+)\.supabase\.co/?.*#\1#')
+          [ -n "$REF" ] && [ "$REF" != "$SUPABASE_URL" ] \
+            || { echo "::error::could not derive project ref from SUPABASE_URL"; exit 1; }
+          echo "PROJECT_REF=$REF" >> "$GITHUB_ENV"
+          echo "Derived project ref: $REF"
+          echo "mode: $MODE"
+
+      # A single helper, because every step below has the same failure mode: the
+      # Management API answers 201 with an error BODY, so the status code alone
+      # is not a result. runsql() fails on either.
+      - name: Install the sql helper
+        run: |
+          set -euo pipefail
+          cat > runsql.sh <<'SH'
+          #!/usr/bin/env bash
+          # usage: runsql.sh <file|-> ; prints the response body, exits non-zero on error
+          set -euo pipefail
+          src="$1"
+          resp=$(jq -Rs '{query: .}' "$src" | curl -sS -w $'\n%{http_code}' -X POST \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data @- "$MGMT/v1/projects/$PROJECT_REF/database/query")
+          code=$(printf '%s' "$resp" | tail -n1)
+          body=$(printf '%s' "$resp" | sed '$d')
+          printf '%s\n' "$body"
+          if [ "$code" != "200" ] && [ "$code" != "201" ]; then
+            echo "::error::http $code" >&2; exit 1
+          fi
+          # The 201-with-an-error-body case. A jq object carrying `message` or
+          # `error` is a failure no matter what the status line said.
+          if printf '%s' "$body" | jq -e 'type=="object" and (has("message") or has("error"))' >/dev/null 2>&1; then
+            echo "::error::sql failed: $(printf '%s' "$body" | jq -c .)" >&2; exit 1
+          fi
+          SH
+          chmod +x runsql.sh
+
+      # ---------------------------------------------------------------- install
+      - name: 1of4 — apply the additive migration (tables + record_live_flips)
+        if: ${{ env.MODE == 'install' }}
+        run: |
+          set -euo pipefail
+          {
+            echo '## 1/4 — additive migration'
+            echo '```json'
+            ./runsql.sh supabase/migrations/20260917100000_live_flip_log.sql | jq -c .
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: 2of4 — RLS posture (on, zero policies) on both new tables
+        if: ${{ env.MODE == 'install' }}
+        run: |
+          set -euo pipefail
+          cat > /tmp/rls.sql <<'SQL'
+          SELECT c.relname,
+                 c.relrowsecurity AS rls_enabled,
+                 (SELECT count(*) FROM pg_policies p
+                   WHERE p.schemaname='public' AND p.tablename=c.relname) AS policies
+            FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+           WHERE n.nspname='public'
+             AND c.relname IN ('live_flip_log','live_flip_stats')
+           ORDER BY 1;
+          SQL
+          body=$(./runsql.sh /tmp/rls.sql)
+          { echo '## 2/4 — RLS posture'; echo '```json'; printf '%s\n' "$body" | jq .; echo '```'; } \
+            | tee -a "$GITHUB_STEP_SUMMARY"
+          printf '%s\n' "$body" | jq -e 'type=="array" and length==2
+            and all(.[]; .rls_enabled == true and (.policies|tonumber) == 0)' >/dev/null \
+            || { echo "::error::RLS is not on with zero policies on both tables"; exit 1; }
+
+      # The gate. write_snapshot is NOT touched until this passes.
+      - name: 3of4 — harness against record_live_flips (14 assertions + failing control)
+        if: ${{ env.MODE == 'install' }}
+        run: |
+          set -euo pipefail
+          {
+            echo '## 3/4 — record_live_flips harness'
+            echo '```json'
+            ./runsql.sh test-live-flip-log.sql | jq -c .
+            echo '```'
+            echo 'All assertions passed (any RAISE would have failed this step).'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: 4of4 — wire it into write_snapshot
+        if: ${{ env.MODE == 'install' }}
+        run: |
+          set -euo pipefail
+          {
+            echo '## 4/4 — write_snapshot now calls the recorder'
+            echo '```json'
+            ./runsql.sh supabase/migrations/20260917100100_write_snapshot_flip.sql | jq -c .
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      # ----------------------------------------------------------- always: read
+      # Proves the poller is alive BEFORE any flip number is believed. A flip
+      # count of zero against a dead poller is not "a quiet board".
+      - name: Poller liveness — snapshot freshness + the pg_cron job
+        if: ${{ always() }}
+        run: |
+          set -euo pipefail
+          cat > /tmp/live.sql <<'SQL'
+          SELECT (SELECT jobname FROM cron.job WHERE jobname='live-poller-10s')      AS cron_job,
+                 (SELECT schedule FROM cron.job WHERE jobname='live-poller-10s')     AS cron_schedule,
+                 (SELECT active   FROM cron.job WHERE jobname='live-poller-10s')     AS cron_active,
+                 (SELECT updated_at FROM live_snapshot WHERE id=1)                   AS snapshot_updated_at,
+                 round(EXTRACT(epoch FROM (now() - (SELECT updated_at FROM live_snapshot WHERE id=1)))::numeric, 1)
+                                                                                     AS snapshot_age_seconds,
+                 (SELECT match_count FROM live_snapshot WHERE id=1)                  AS board_match_count;
+          SQL
+          body=$(./runsql.sh /tmp/live.sql)
+          { echo '## Poller liveness'; echo '```json'; printf '%s\n' "$body" | jq .; echo '```'; } \
+            | tee -a "$GITHUB_STEP_SUMMARY"
+          age=$(printf '%s' "$body" | jq -r '.[0].snapshot_age_seconds // empty')
+          [ -n "$age" ] || { echo "::error::could not read snapshot age"; exit 1; }
+          # 120s = 12 poller cadences. Anything older and the flip numbers below
+          # describe a poller that is not running, so say so rather than report them.
+          awk -v a="$age" 'BEGIN{exit !(a<120)}' \
+            || echo "::warning::live_snapshot is ${age}s old (> 120s) — the poller may not be ticking; treat the flip numbers below as suspect"
+
+      - name: Recorder diagnostics — is it seeing boards at all?
+        if: ${{ always() }}
+        run: |
+          set -euo pipefail
+          cat > /tmp/stats.sql <<'SQL'
+          SELECT last_tick_at, last_board_count, last_live_count, last_new_count,
+                 total_flips, last_error,
+                 round(EXTRACT(epoch FROM (now() - last_tick_at))::numeric, 1) AS tick_age_seconds
+            FROM live_flip_stats WHERE id = 1;
+          SQL
+          body=$(./runsql.sh /tmp/stats.sql)
+          { echo '## Recorder diagnostics'; echo '```json'; printf '%s\n' "$body" | jq .; echo '```'; } \
+            | tee -a "$GITHUB_STEP_SUMMARY"
+          err=$(printf '%s' "$body" | jq -r '.[0].last_error // empty')
+          [ -z "$err" ] || { echo "::error::recorder raised: $err"; exit 1; }
+
+      # THE 48h REPORT. Median gap overall and by level, plus how many rows would
+      # pass Michael's <=300s reliability rule.
+      - name: Gap distribution — the 48h median-gap report
+        if: ${{ always() }}
+        run: |
+          set -euo pipefail
+          cat > /tmp/gap.sql <<'SQL'
+          WITH w AS (
+            SELECT coalesce(event_type_type, 'unknown') AS level, gap_seconds, first_live_seen_at
+              FROM live_flip_log
+             WHERE poller = 'live-poller-10s'
+          )
+          SELECT 'ALL' AS level,
+                 count(*)                                             AS flips,
+                 count(*) FILTER (WHERE gap_seconds IS NULL)          AS gap_null,
+                 round(percentile_cont(0.5) WITHIN GROUP (ORDER BY gap_seconds)::numeric, 1) AS median_gap_s,
+                 round(percentile_cont(0.95) WITHIN GROUP (ORDER BY gap_seconds)::numeric, 1) AS p95_gap_s,
+                 round(max(gap_seconds)::numeric, 1)                  AS max_gap_s,
+                 count(*) FILTER (WHERE gap_seconds <= 300)           AS within_300s,
+                 min(first_live_seen_at)                              AS earliest,
+                 max(first_live_seen_at)                              AS latest
+            FROM w
+          UNION ALL
+          SELECT level, count(*), count(*) FILTER (WHERE gap_seconds IS NULL),
+                 round(percentile_cont(0.5) WITHIN GROUP (ORDER BY gap_seconds)::numeric, 1),
+                 round(percentile_cont(0.95) WITHIN GROUP (ORDER BY gap_seconds)::numeric, 1),
+                 round(max(gap_seconds)::numeric, 1),
+                 count(*) FILTER (WHERE gap_seconds <= 300),
+                 min(first_live_seen_at), max(first_live_seen_at)
+            FROM w GROUP BY level
+          ORDER BY 2 DESC;
+          SQL
+          body=$(./runsql.sh /tmp/gap.sql)
+          { echo '## Gap distribution (Michael'"'"'s rule: gap_seconds <= 300 for a fallback Close)'
+            echo '```json'; printf '%s\n' "$body" | jq .; echo '```'; } \
+            | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Twenty most recent flips, with both bounds
+        if: ${{ always() }}
+        run: |
+          set -euo pipefail
+          cat > /tmp/recent.sql <<'SQL'
+          SELECT event_key, event_type_type AS level, tournament_name,
+                 first_player, second_player,
+                 last_not_live_seen_at, first_live_seen_at, gap_seconds
+            FROM live_flip_log
+           ORDER BY first_live_seen_at DESC
+           LIMIT 20;
+          SQL
+          body=$(./runsql.sh /tmp/recent.sql)
+          { echo '## Twenty most recent flips'; echo '```json'; printf '%s\n' "$body" | jq .; echo '```'; } \
+            | tee -a "$GITHUB_STEP_SUMMARY"
