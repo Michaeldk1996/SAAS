@@ -200,14 +200,28 @@ def summarise(payload, start_ts):
 CATALOGUE = {}
 
 
+def load_catalogue():
+    """marketId -> market name. The gzipped copy is the committed one (the
+    plain file is a 1.4 MB local cache); either is accepted so the script runs
+    identically on a workstation and in Actions."""
+    gz = os.path.join(HERE, '.oddspapi-markets.json.gz')
+    if os.path.exists(gz):
+        with gzip.open(gz, 'rt', encoding='utf-8') as fh:
+            return json.load(fh)
+    plain = os.path.join(HERE, '.oddspapi-markets.json')
+    if os.path.exists(plain):
+        return json.load(open(plain))
+    return None
+
+
 def main():
     global CATALOGUE
-    cat_path = os.path.join(HERE, '.oddspapi-markets.json')
-    if not os.path.exists(cat_path):
-        print('::error::.oddspapi-markets.json missing — the payload carries no '
+    CATALOGUE = load_catalogue()
+    if CATALOGUE is None:
+        print('::error::no .oddspapi-markets.json[.gz] — the payload carries no '
               'market names, only ids, so the keep-list cannot be applied.')
         return 1
-    CATALOGUE = json.load(open(cat_path))
+    print(f'markets catalogue: {len(CATALOGUE)} ids (0 metered units)')
     if not os.path.exists(INDEX):
         print(f'::error::{os.path.basename(INDEX)} missing — run '
               f'ten225-fixture-index.py first (it supplies fixtureId -> level).')

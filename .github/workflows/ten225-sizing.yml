@@ -79,6 +79,12 @@ jobs:
       - name: Raw archive — object count and bucket size
         if: ${{ inputs.bucket }}
         run: |
+          # pipefail is load-bearing: without it the exit status of
+          # `{ ...; python3 ...; } | tee` is tee's, so a failed measurement
+          # would be reported as a green run. That happened on run
+          # 35196686216 — the density step errored on a missing catalogue and
+          # the job still concluded `success`.
+          set -euo pipefail
           {
             echo '## TEN-225 raw archive — bucket report'
             echo '```'
@@ -95,6 +101,7 @@ jobs:
       - name: Summary rows/fixture + GB/yr projection (from the bucket)
         if: ${{ inputs.density }}
         run: |
+          set -euo pipefail          # see the note on the bucket step above
           {
             echo '## TEN-225 oddspapi_line_summary — rows/fixture and GB/yr'
             echo '```'
@@ -151,6 +158,11 @@ jobs:
             printf '%s\n' "$body" | jq .
             echo '```'
           } | tee -a "$GITHUB_STEP_SUMMARY"
+          # A 201 with an error body, or one variant silently missing, would
+          # otherwise read as a successful measurement.
+          printf '%s\n' "$body" | jq -e 'type == "array" and length == 2
+            and all(.[]; .rows > 0 and (.bytes_per_row | tonumber) > 0)' >/dev/null \
+            || { echo "::error::measurement body is not two populated variants"; exit 1; }
 
       # Always: the instance must end this job exactly as it started it.
       - name: Drop the scratch tables
