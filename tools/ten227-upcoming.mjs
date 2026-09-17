@@ -375,6 +375,69 @@ export function classify(name) {
   return null;
 }
 
+/* ---------------------------------------------------------------------- diag */
+
+/**
+ * What is actually on the board, and what does the TEN-216 table look like.
+ * Exists because the first `select` returned 14 Challengers and zero ATP, and
+ * "the classifier is wrong" and "there is no ATP tennis tomorrow" are the same
+ * log line until you print the league names.
+ */
+async function cmdDiag() {
+  const now = Date.now();
+  const days = new Set();
+  for (let t = now; t <= now + 3 * 86400_000; t += 86400_000) {
+    days.add(new Date(t).toISOString().slice(0, 10).replace(/-/g, ''));
+  }
+  const leagues = new Map();   // name -> { n, classified, firstStart, lastStart }
+  let total = 0, pagesRead = 0;
+  for (const day of [...days].sort()) {
+    for (let page = 1; page <= 30; page++) {
+      const r = await betsapi('/v3/events/upcoming', { sport_id: TENNIS_BETSAPI, day, page });
+      pagesRead++;
+      const rows = r.body?.results || [];
+      const pager = r.body?.pager;
+      if (page === 1) log(`  day ${day}: pager ${JSON.stringify(pager)}`);
+      if (!rows.length) break;
+      total += rows.length;
+      for (const e of rows) {
+        const name = e.league?.name || '(none)';
+        if (!leagues.has(name)) leagues.set(name, { n: 0, level: classify(name), first: Infinity, last: -Infinity });
+        const L = leagues.get(name);
+        L.n++;
+        L.first = Math.min(L.first, Number(e.time));
+        L.last = Math.max(L.last, Number(e.time));
+      }
+      if (!pager || pager.page * pager.per_page >= pager.total) break;
+    }
+  }
+  const sorted = [...leagues.entries()].sort((a, b) => b[1].n - a[1].n);
+  log(`\n${total} upcoming tennis events over ${days.size} days, ${pagesRead} pages, ${leagues.size} distinct leagues`);
+  log('\n  n     level        first start (UTC)     league');
+  for (const [name, L] of sorted.slice(0, 60)) {
+    log(`  ${String(L.n).padStart(4)}  ${String(L.level ?? 'DROP').padEnd(11)} ` +
+        `${new Date(L.first * 1000).toISOString().slice(0, 16)}  ${name}`);
+  }
+  const hrs = (h) => now + h * 3600_000;
+  for (const [lo, hi] of [[12, 36], [6, 48], [2, 72]]) {
+    const n = sorted.reduce((acc, [, L]) => acc + (L.first * 1000 <= hrs(hi) && L.last * 1000 >= hrs(lo) ? L.n : 0), 0);
+    log(`  window ${lo}-${hi}h: <= ${n} events in leagues overlapping it`);
+  }
+
+  // TEN-216's real column names, so the api-tennis overlap read stops guessing.
+  try {
+    const cols = await sbSelect(`select table_name, column_name, data_type
+      from information_schema.columns
+      where table_schema='public' and table_name like 'ten216%'
+      order by table_name, ordinal_position`);
+    log('\nTEN-216 columns:');
+    for (const c of cols || []) log(`  ${c.table_name}.${c.column_name} ${c.data_type}`);
+  } catch (err) { log(`::warning::ten216 schema unreadable: ${redact(err.message).slice(0, 160)}`); }
+
+  save('upcoming-diag.json', { ran_at: nowIso(), total, leagues: sorted.map(([k, v]) => ({ league: k, ...v })) });
+  log(`\nbetsapi requests: ${betsapiReq}`);
+}
+
 /* -------------------------------------------------------------------- select */
 
 async function cmdSelect() {
@@ -391,7 +454,7 @@ async function cmdSelect() {
   const events = [];
   const drops = { level: 0, team: 0, window: 0, doubles_name: 0 };
   for (const day of [...days].sort()) {
-    for (let page = 1; page <= 6; page++) {
+    for (let page = 1; page <= 30; page++) {
       const r = await betsapi('/v3/events/upcoming', { sport_id: TENNIS_BETSAPI, day, page });
       const rows = r.body?.results || [];
       if (!rows.length) break;
@@ -823,6 +886,7 @@ async function cmdReport() {
 /* ---------------------------------------------------------------------- main */
 
 const needs = {
+  diag: ['BETSAPI_TOKEN', 'SUPABASE_URL', 'SUPABASE_ACCESS_TOKEN'],
   setup: ['SUPABASE_URL', 'SUPABASE_ACCESS_TOKEN'],
   select: ['BETSAPI_TOKEN', 'ODDSPAPI_KEY', 'SUPABASE_URL', 'SUPABASE_SECRET_KEY', 'SUPABASE_ACCESS_TOKEN'],
   poll: ['BETSAPI_TOKEN', 'ODDSPAPI_KEY', 'SUPABASE_URL', 'SUPABASE_SECRET_KEY', 'SUPABASE_ACCESS_TOKEN'],
@@ -834,6 +898,7 @@ async function main() {
   for (const k of needs[CMD] || []) {
     if (!(process.env[k] || '').trim()) { console.error(`FATAL: ${k} is not set`); process.exit(1); }
   }
+  if (CMD === 'diag') return cmdDiag();
   if (CMD === 'setup') return cmdSetup();
   if (CMD === 'select') return cmdSelect();
   if (CMD === 'poll') return cmdPoll(Number(process.env.START_POLL_NO || 0));
