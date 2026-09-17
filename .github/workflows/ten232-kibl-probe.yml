@@ -29,6 +29,9 @@ on:
       skip:
         description: 'Comma-separated tests to skip (a,b,c,d)'
         default: ''
+      mode:
+        description: 'probe | diag | both'
+        default: 'probe'
 
 concurrency:
   group: ten232-kibl-probe
@@ -73,6 +76,7 @@ jobs:
         run: python3 test-kibl-client.py
 
       - name: Run the probe
+        if: inputs.mode != 'diag'
         env:
           KIBL_USERNAME: ${{ secrets.KIBL_USERNAME }}
           KIBL_PASSWORD: ${{ secrets.KIBL_PASSWORD }}
@@ -82,19 +86,34 @@ jobs:
             --horizon-days "${{ inputs.horizon_days }}" \
             --skip "${{ inputs.skip }}"
 
+      # The markets diagnostic. /info/markets answered 200 with no `result` key
+      # at all on the first run, for every league and every filter shape, while
+      # /info/fixtures returned hundreds of rows. This separates "tennis has no
+      # markets" from "this account has no market entitlement" using a
+      # non-tennis control league.
+      - name: Markets diagnostic
+        if: inputs.mode == 'diag' || inputs.mode == 'both'
+        env:
+          KIBL_USERNAME: ${{ secrets.KIBL_USERNAME }}
+          KIBL_PASSWORD: ${{ secrets.KIBL_PASSWORD }}
+          KIBL_CLIENT_ID: ${{ secrets.KIBL_CLIENT_ID }}
+        run: python3 ten232-kibl-markets-diag.py
+
       # The report files are the evidence, not the step summary. A prior probe
       # on this repo reported a green run through a tee'd summary while being
       # dead; committed artefacts can be read back and checked for content.
       - name: Commit the probe output
         if: always()
         run: |
-          if [ ! -f ten232-kibl-probe.json ]; then
+          if [ ! -f ten232-kibl-probe.json ] && [ ! -f ten232-kibl-markets-diag.json ]; then
             echo "::error::probe produced no output file"
             exit 1
           fi
           git config user.name "bsp-bot"
           git config user.email "bsp-bot@users.noreply.github.com"
-          git add -f ten232-kibl-probe.json TEN232-KIBL-PROBE.md
+          for f in ten232-kibl-probe.json TEN232-KIBL-PROBE.md ten232-kibl-markets-diag.json; do
+            [ -f "$f" ] && git add -f "$f"
+          done
           if git diff --cached --quiet; then
             echo "no change in probe output"
             exit 0
@@ -120,4 +139,5 @@ jobs:
           path: |
             ten232-kibl-probe.json
             TEN232-KIBL-PROBE.md
+            ten232-kibl-markets-diag.json
           if-no-files-found: warn
