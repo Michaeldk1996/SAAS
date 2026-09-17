@@ -1,0 +1,1302 @@
+{
+ "generatedAt": "2026-09-17T22:42:48.070285+00:00",
+ "backward": {
+  "held_n": 4298,
+  "age_min_d": 0.09,
+  "age_max_d": 174.81,
+  "windows": {
+   "21d": {
+    "admitted_n": 528,
+    "reliable_n": 406,
+    "additional_vs_21d": 0,
+    "lag_median_min": 1.417
+   },
+   "30d": {
+    "admitted_n": 528,
+    "reliable_n": 406,
+    "additional_vs_21d": 0,
+    "lag_median_min": 1.417
+   },
+   "45d": {
+    "admitted_n": 528,
+    "reliable_n": 406,
+    "additional_vs_21d": 0,
+    "lag_median_min": 1.417
+   }
+  },
+  "age_histogram": {
+   "0-13d": 528,
+   "13-21d": 0,
+   "21-30d": 0,
+   "30-45d": 0,
+   "45-90d": 0,
+   "90-126d": 0,
+   "126-999d": 3770
+  }
+ },
+ "forward": {
+  "30-45d": {
+   "pool_n": 1168,
+   "sampled_n": 45,
+   "with_bet365_series_n": 40,
+   "with_close_n": 40,
+   "lag_le_60min_n": 9,
+   "lag_le_15min_n": 6,
+   "lag_median_min": 414.27,
+   "lag_p25_min": 70.79,
+   "lag_p75_min": 1587.88,
+   "lag_min_min": 1.42,
+   "lag_max_min": 2851.33,
+   "flag_small_n": false,
+   "rows": [
+    {
+     "fixture": "id1205168673779488",
+     "cat": "Challenger",
+     "age_d": 30.0,
+     "err": 429,
+     "series_n": 0,
+     "lag_min": null,
+     "open_lead_h": null
+    },
+    {
+     "fixture": "id1205168873807170",
+     "cat": "Challenger",
+     "age_d": 30.22,
+     "err": 429,
+     "series_n": 0,
+     "lag_min": null,
+     "open_lead_h": null
+    },
+    {
+     "fixture": "id1200836373467050",
+     "cat": "WTA",
+     "age_d": 30.32,
+     "err": null,
+     "series_n": 198,
+     "lag_min": 1640.183,
+     "open_lead_h": 34.637
+    },
+    {
+     "fixture": "id1205169873759114",
+     "cat": "Challenger",
+     "age_d": 30.52,
+     "err": null,
+     "series_n": 156,
+     "lag_min": 475.14,
+     "open_lead_h": 50.747
+    },
+    {
+     "fixture": "id1200298373466008",
+     "cat": "ATP",
+     "age_d": 30.95,
+     "err": null,
+     "series_n": 176,
+     "lag_min": 2.749,
+     "open_lead_h": 32.308
+    },
+    {
+     "fixture": "id1200298373465948",
+     "cat": "ATP",
+     "age_d": 31.19,
+     "err": null,
+     "series_n": 200,
+     "lag_min": 1896.729,
+     "open_lead_h": 33.906
+    },
+    {
+     "fixture": "id1200836573740318",
+     "cat": "WTA",
+     "age_d": 31.31,
+     "err": null,
+     "series_n": 146,
+     "lag_min": 17.789,
+     "open_lead_h": 55.57
+    },
+    {
+     "fixture": "id1205170273772028",
+     "cat": "Challenger",
+     "age_d": 31.61,
+     "err": null,
+     "series_n": 12,
+     "lag_min": 10.604,
+     "open_lead_h": 12.368
+    },
+    {
+     "fixture": "id1200298373465984",
+     "cat": "ATP",
+     "age_d": 32.16,
+     "err": null,
+     "series_n": 190,
+     "lag_min": 700.242,
+     "open_lead_h": 35.355
+    },
+    {
+     "fixture": "id1205169273762132",
+     "cat": "Challenger",
+     "age_d": 32.31,
+     "err": null,
+     "series_n": 4,
+     "lag_min": 421.938,
+     "open_lead_h": 7.032
+    },
+    {
+     "fixture": "id1205169873759068",
+     "cat": "Challenger",
+     "age_d": 32.46,
+     "err": null,
+     "series_n": 14,
+     "lag_min": 171.121,
+     "open_lead_h": 2.852
+    },
+    {
+     "fixture": "id1200298373465888",
+     "cat": "ATP",
+     "age_d": 32.98,
+     "err": null,
+     "series_n": 212,
+     "lag_min": 8.479,
+     "open_lead_h": 37.693
+    },
+    {
+     "fixture": "id1200383773441810",
+     "cat": "Challenger",
+     "age_d": 33.27,
+     "err": null,
+     "series_n": 170,
+     "lag_min": 499.306,
+     "open_lead_h": 19.961
+    },
+    {
+     "fixture": "id1205168273441688",
+     "cat": "Challenger",
+     "age_d": 33.91,
+     "err": 404,
+     "series_n": 0,
+     "lag_min": null,
+     "open_lead_h": null
+    },
+    {
+     "fixture": "id1200298373667552",
+     "cat": "ATP",
+     "age_d": 34.17,
+     "err": null,
+     "series_n": 180,
+     "lag_min": 2851.331,
+     "open_lead_h": 60.857
+    },
+    {
+     "fixture": "id1200298373721800",
+     "cat": "ATP",
+     "age_d": 34.31,
+     "err": null,
+     "series_n": 212,
+     "lag_min": 321.071,
+     "open_lead_h": 12.852
+    },
+    {
+     "fixture": "id1200210073729590",
+     "cat": "Davis Cup",
+     "age_d": 34.56,
+     "err": 404,
+     "series_n": 0,
+     "lag_min": null,
+     "open_lead_h": null
+    },
+    {
+     "fixture": "id1200298373667568",
+     "cat": "ATP",
+     "age_d": 35.11,
+     "err": null,
+     "series_n": 214,
+     "lag_min": 434.231,
+     "open_lead_h": 38.217
+    },
+    {
+     "fixture": "id1200836373667600",
+     "cat": "WTA",
+     "age_d": 35.32,
+     "err": null,
+     "series_n": 214,
+     "lag_min": 1430.984,
+     "open_lead_h": 33.27
+    },
+    {
+     "fixture": "id1200392373441866",
+     "cat": "Challenger",
+     "age_d": 35.56,
+     "err": 404,
+     "series_n": 0,
+     "lag_min": null,
+     "open_lead_h": null
+    },
+    {
+     "fixture": "id1200828573252874",
+     "cat": "ATP",
+     "age_d": 35.92,
+     "err": null,
+     "series_n": 227,
+     "lag_min": 786.897,
+     "open_lead_h": 15.529
+    },
+    {
+     "fixture": "id1202987873572248",
+     "cat": "Challenger",
+     "age_d": 36.31,
+     "err": null,
+     "series_n": 4,
+     "lag_min": 237.863,
+     "open_lead_h": 68.772
+    },
+    {
+     "fixture": "id1200392173441830",
+     "cat": "Challenger",
+     "age_d": 36.69,
+     "err": null,
+     "series_n": 162,
+     "lag_min": 2027.188,
+     "open_lead_h": 35.959
+    },
+    {
+     "fixture": "id1200828573252884",
+     "cat": "ATP",
+     "age_d": 37.02,
+     "err": null,
+     "series_n": 229,
+     "lag_min": 2250.236,
+     "open_lead_h": 39.792
+    },
+    {
+     "fixture": "id1200836373624124",
+     "cat": "WTA",
+     "age_d": 37.27,
+     "err": null,
+     "series_n": 180,
+     "lag_min": 1.42,
+     "open_lead_h": 12.434
+    },
+    {
+     "fixture": "id1200383773609908",
+     "cat": "Challenger",
+     "age_d": 37.5,
+     "err": null,
+     "series_n": 156,
+     "lag_min": 177.299,
+     "open_lead_h": 15.086
+    },
+    {
+     "fixture": "id1200827973255982",
+     "cat": "WTA",
+     "age_d": 37.98,
+     "err": null,
+     "series_n": 192,
+     "lag_min": 1725.203,
+     "open_lead_h": 34.579
+    },
+    {
+     "fixture": "id1200392173549158",
+     "cat": "Challenger",
+     "age_d": 38.5,
+     "err": null,
+     "series_n": 156,
+     "lag_min": 2166.446,
+     "open_lead_h": 39.112
+    },
+    {
+     "fixture": "id1200827973255960",
+     "cat": "WTA",
+     "age_d": 39.12,
+     "err": null,
+     "series_n": 198,
+     "lag_min": 36.099,
+     "open_lead_h": 29.688
+    },
+    {
+     "fixture": "id1200383773550316",
+     "cat": "Challenger",
+     "age_d": 39.36,
+     "err": null,
+     "series_n": 14,
+     "lag_min": 6.76,
+     "open_lead_h": 15.174
+    },
+    {
+     "fixture": "id1200383773550302",
+     "cat": "Challenger",
+     "age_d": 39.61,
+     "err": null,
+     "series_n": 8,
+     "lag_min": 6.505,
+     "open_lead_h": 9.516
+    },
+    {
+     "fixture": "id1200828173256106",
+     "cat": "WTA",
+     "age_d": 40.16,
+     "err": null,
+     "series_n": 152,
+     "lag_min": 719.89,
+     "open_lead_h": 13.607
+    },
+    {
+     "fixture": "id1200828573252888",
+     "cat": "ATP",
+     "age_d": 40.92,
+     "err": null,
+     "series_n": 196,
+     "lag_min": 1776.022,
+     "open_lead_h": 37.705
+    },
+    {
+     "fixture": "id1200828173438488",
+     "cat": "WTA",
+     "age_d": 41.24,
+     "err": null,
+     "series_n": 148,
+     "lag_min": 19.784,
+     "open_lead_h": 59.296
+    },
+    {
+     "fixture": "id1205232073255528",
+     "cat": "Challenger",
+     "age_d": 41.44,
+     "err": null,
+     "series_n": 168,
+     "lag_min": 499.012,
+     "open_lead_h": 13.964
+    },
+    {
+     "fixture": "id1200828573252914",
+     "cat": "ATP",
+     "age_d": 42.02,
+     "err": null,
+     "series_n": 198,
+     "lag_min": 202.002,
+     "open_lead_h": 31.448
+    },
+    {
+     "fixture": "id1200827973255994",
+     "cat": "WTA",
+     "age_d": 42.25,
+     "err": null,
+     "series_n": 194,
+     "lag_min": 88.764,
+     "open_lead_h": 40.036
+    },
+    {
+     "fixture": "id1203488873255248",
+     "cat": "Challenger",
+     "age_d": 42.44,
+     "err": null,
+     "series_n": 22,
+     "lag_min": 83.136,
+     "open_lead_h": 35.569
+    },
+    {
+     "fixture": "id1200828573252840",
+     "cat": "ATP",
+     "age_d": 43.02,
+     "err": null,
+     "series_n": 222,
+     "lag_min": 66.673,
+     "open_lead_h": 19.681
+    },
+    {
+     "fixture": "id1200827973255950",
+     "cat": "WTA",
+     "age_d": 43.24,
+     "err": null,
+     "series_n": 216,
+     "lag_min": 137.476,
+     "open_lead_h": 39.044
+    },
+    {
+     "fixture": "id1203489073345538",
+     "cat": "Challenger",
+     "age_d": 43.33,
+     "err": null,
+     "series_n": 6,
+     "lag_min": 324.406,
+     "open_lead_h": 71.807
+    },
+    {
+     "fixture": "id1203488873255244",
+     "cat": "Challenger",
+     "age_d": 43.47,
+     "err": null,
+     "series_n": 22,
+     "lag_min": 2015.278,
+     "open_lead_h": 33.588
+    },
+    {
+     "fixture": "id1200359973409852",
+     "cat": "Challenger",
+     "age_d": 44.0,
+     "err": null,
+     "series_n": 202,
+     "lag_min": 406.608,
+     "open_lead_h": 6.777
+    },
+    {
+     "fixture": "id1200827973255956",
+     "cat": "WTA",
+     "age_d": 44.18,
+     "err": null,
+     "series_n": 120,
+     "lag_min": 951.523,
+     "open_lead_h": 15.859
+    },
+    {
+     "fixture": "id1203192773370458",
+     "cat": "WTA 125K",
+     "age_d": 44.31,
+     "err": null,
+     "series_n": 4,
+     "lag_min": 2782.039,
+     "open_lead_h": 46.367
+    }
+   ]
+  },
+  "21-30d": {
+   "pool_n": 798,
+   "sampled_n": 45,
+   "with_bet365_series_n": 33,
+   "with_close_n": 33,
+   "lag_le_60min_n": 6,
+   "lag_le_15min_n": 5,
+   "lag_median_min": 576.03,
+   "lag_p25_min": 113.48,
+   "lag_p75_min": 870.49,
+   "lag_min_min": 6.1,
+   "lag_max_min": 2351.2,
+   "flag_small_n": false,
+   "rows": [
+    {
+     "fixture": "id1205171673862664",
+     "cat": "Challenger",
+     "age_d": 21.02,
+     "err": null,
+     "series_n": 172,
+     "lag_min": 745.955,
+     "open_lead_h": 12.433
+    },
+    {
+     "fixture": "id1205172473851472",
+     "cat": "Challenger",
+     "age_d": 21.26,
+     "err": null,
+     "series_n": 6,
+     "lag_min": 785.852,
+     "open_lead_h": 13.098
+    },
+    {
+     "fixture": "id1205172273851360",
+     "cat": "Challenger",
+     "age_d": 21.39,
+     "err": null,
+     "series_n": 24,
+     "lag_min": 727.029,
+     "open_lead_h": 12.117
+    },
+    {
+     "fixture": "id1205171873996318",
+     "cat": "Challenger",
+     "age_d": 21.93,
+     "err": null,
+     "series_n": 8,
+     "lag_min": 8.404,
+     "open_lead_h": 62.586
+    },
+    {
+     "fixture": "id1205171073863134",
+     "cat": "WTA 125K",
+     "age_d": 22.02,
+     "err": null,
+     "series_n": 276,
+     "lag_min": 2351.195,
+     "open_lead_h": 39.187
+    },
+    {
+     "fixture": "id1200259574067484",
+     "cat": "WTA",
+     "age_d": 22.08,
+     "err": null,
+     "series_n": 194,
+     "lag_min": 116.385,
+     "open_lead_h": 19.628
+    },
+    {
+     "fixture": "id1205171673862670",
+     "cat": "Challenger",
+     "age_d": 22.15,
+     "err": null,
+     "series_n": 166,
+     "lag_min": 319.94,
+     "open_lead_h": 5.332
+    },
+    {
+     "fixture": "id1200259574033810",
+     "cat": "WTA",
+     "age_d": 22.22,
+     "err": null,
+     "series_n": 216,
+     "lag_min": 2067.869,
+     "open_lead_h": 35.836
+    },
+    {
+     "fixture": "id1202948073862804",
+     "cat": "Challenger",
+     "age_d": 22.29,
+     "err": null,
+     "series_n": 164,
+     "lag_min": 110.57,
+     "open_lead_h": 1.843
+    },
+    {
+     "fixture": "id1200259574029540",
+     "cat": "WTA",
+     "age_d": 22.32,
+     "err": null,
+     "series_n": 238,
+     "lag_min": 282.048,
+     "open_lead_h": 33.558
+    },
+    {
+     "fixture": "id1202948073862808",
+     "cat": "Challenger",
+     "age_d": 22.5,
+     "err": 404,
+     "series_n": 0,
+     "lag_min": null,
+     "open_lead_h": null
+    },
+    {
+     "fixture": "id1200271773937200",
+     "cat": "WTA",
+     "age_d": 22.99,
+     "err": null,
+     "series_n": 146,
+     "lag_min": 744.175,
+     "open_lead_h": 28.837
+    },
+    {
+     "fixture": "id1200259173997598",
+     "cat": "ATP",
+     "age_d": 23.04,
+     "err": null,
+     "series_n": 184,
+     "lag_min": 8.907,
+     "open_lead_h": 36.138
+    },
+    {
+     "fixture": "id1200432973853038",
+     "cat": "ATP",
+     "age_d": 23.08,
+     "err": null,
+     "series_n": 218,
+     "lag_min": 831.02,
+     "open_lead_h": 13.85
+    },
+    {
+     "fixture": "id1200259573997370",
+     "cat": "WTA",
+     "age_d": 23.15,
+     "err": null,
+     "series_n": 210,
+     "lag_min": 1199.632,
+     "open_lead_h": 33.592
+    },
+    {
+     "fixture": "id1200259173997506",
+     "cat": "ATP",
+     "age_d": 23.2,
+     "err": 429,
+     "series_n": 0,
+     "lag_min": null,
+     "open_lead_h": null
+    },
+    {
+     "fixture": "id1200259573997458",
+     "cat": "WTA",
+     "age_d": 23.24,
+     "err": 429,
+     "series_n": 0,
+     "lag_min": null,
+     "open_lead_h": null
+    },
+    {
+     "fixture": "id1205171674032758",
+     "cat": "Challenger",
+     "age_d": 23.31,
+     "err": 429,
+     "series_n": 0,
+     "lag_min": null,
+     "open_lead_h": null
+    },
+    {
+     "fixture": "id1200259173997578",
+     "cat": "ATP",
+     "age_d": 23.32,
+     "err": null,
+     "series_n": 202,
+     "lag_min": 85.076,
+     "open_lead_h": 29.528
+    },
+    {
+     "fixture": "id1205172274027722",
+     "cat": "Challenger",
+     "age_d": 23.46,
+     "err": null,
+     "series_n": 22,
+     "lag_min": 576.028,
+     "open_lead_h": 9.6
+    },
+    {
+     "fixture": "id1200259173997492",
+     "cat": "ATP",
+     "age_d": 24.0,
+     "err": 429,
+     "series_n": 0,
+     "lag_min": null,
+     "open_lead_h": null
+    },
+    {
+     "fixture": "id1200259573997406",
+     "cat": "WTA",
+     "age_d": 24.04,
+     "err": null,
+     "series_n": 242,
+     "lag_min": 6.096,
+     "open_lead_h": 12.163
+    },
+    {
+     "fixture": "id1200259573997484",
+     "cat": "WTA",
+     "age_d": 24.1,
+     "err": null,
+     "series_n": 212,
+     "lag_min": 1196.937,
+     "open_lead_h": 20.335
+    },
+    {
+     "fixture": "id1205171073998152",
+     "cat": "WTA 125K",
+     "age_d": 24.15,
+     "err": 429,
+     "series_n": 0,
+     "lag_min": null,
+     "open_lead_h": null
+    },
+    {
+     "fixture": "id1200259573997374",
+     "cat": "WTA",
+     "age_d": 24.2,
+     "err": null,
+     "series_n": 200,
+     "lag_min": 396.468,
+     "open_lead_h": 8.229
+    },
+    {
+     "fixture": "id1205172273962102",
+     "cat": "Challenger",
+     "age_d": 24.26,
+     "err": null,
+     "series_n": 4,
+     "lag_min": 315.995,
+     "open_lead_h": 27.566
+    },
+    {
+     "fixture": "id1200259173997584",
+     "cat": "ATP",
+     "age_d": 24.31,
+     "err": 429,
+     "series_n": 0,
+     "lag_min": null,
+     "open_lead_h": null
+    },
+    {
+     "fixture": "id1202948073961884",
+     "cat": "Challenger",
+     "age_d": 24.44,
+     "err": null,
+     "series_n": 240,
+     "lag_min": 616.225,
+     "open_lead_h": 24.745
+    },
+    {
+     "fixture": "id1200396973688098",
+     "cat": "Challenger",
+     "age_d": 24.93,
+     "err": null,
+     "series_n": 216,
+     "lag_min": 299.054,
+     "open_lead_h": 13.616
+    },
+    {
+     "fixture": "id1205171673992670",
+     "cat": "Challenger",
+     "age_d": 25.16,
+     "err": 429,
+     "series_n": 0,
+     "lag_min": null,
+     "open_lead_h": null
+    },
+    {
+     "fixture": "id1205172273962048",
+     "cat": "Challenger",
+     "age_d": 25.27,
+     "err": 429,
+     "series_n": 0,
+     "lag_min": null,
+     "open_lead_h": null
+    },
+    {
+     "fixture": "id1202948073961416",
+     "cat": "Challenger",
+     "age_d": 25.46,
+     "err": null,
+     "series_n": 14,
+     "lag_min": 7.765,
+     "open_lead_h": 1.018
+    },
+    {
+     "fixture": "id1205169473690560",
+     "cat": "Challenger",
+     "age_d": 25.96,
+     "err": null,
+     "series_n": 6,
+     "lag_min": 860.014,
+     "open_lead_h": 14.334
+    },
+    {
+     "fixture": "id1200298373465942",
+     "cat": "ATP",
+     "age_d": 26.18,
+     "err": null,
+     "series_n": 209,
+     "lag_min": 1429.195,
+     "open_lead_h": 29.459
+    },
+    {
+     "fixture": "id1200396973688116",
+     "cat": "Challenger",
+     "age_d": 26.8,
+     "err": null,
+     "series_n": 172,
+     "lag_min": 880.961,
+     "open_lead_h": 14.683
+    },
+    {
+     "fixture": "id1200298373465938",
+     "cat": "ATP",
+     "age_d": 27.11,
+     "err": null,
+     "series_n": 227,
+     "lag_min": 2044.838,
+     "open_lead_h": 35.262
+    },
+    {
+     "fixture": "id1205170473691590",
+     "cat": "Challenger",
+     "age_d": 27.37,
+     "err": 429,
+     "series_n": 0,
+     "lag_min": null,
+     "open_lead_h": null
+    },
+    {
+     "fixture": "id1205168673690144",
+     "cat": "Challenger",
+     "age_d": 27.94,
+     "err": 429,
+     "series_n": 0,
+     "lag_min": null,
+     "open_lead_h": null
+    },
+    {
+     "fixture": "id1200836573562820",
+     "cat": "WTA",
+     "age_d": 28.15,
+     "err": null,
+     "series_n": 154,
+     "lag_min": 272.811,
+     "open_lead_h": 4.547
+    },
+    {
+     "fixture": "id1205168873689034",
+     "cat": "Challenger",
+     "age_d": 28.31,
+     "err": null,
+     "series_n": 106,
+     "lag_min": 806.201,
+     "open_lead_h": 16.866
+    },
+    {
+     "fixture": "id1205170273691472",
+     "cat": "Challenger",
+     "age_d": 28.56,
+     "err": 429,
+     "series_n": 0,
+     "lag_min": null,
+     "open_lead_h": null
+    },
+    {
+     "fixture": "id1200298573587384",
+     "cat": "ATP",
+     "age_d": 28.95,
+     "err": null,
+     "series_n": 142,
+     "lag_min": 44.808,
+     "open_lead_h": 33.079
+    },
+    {
+     "fixture": "id1205169273689710",
+     "cat": "Challenger",
+     "age_d": 29.11,
+     "err": null,
+     "series_n": 26,
+     "lag_min": 546.865,
+     "open_lead_h": 12.193
+    },
+    {
+     "fixture": "id1205170073772730",
+     "cat": "Challenger",
+     "age_d": 29.25,
+     "err": null,
+     "series_n": 104,
+     "lag_min": 11.077,
+     "open_lead_h": 68.7
+    },
+    {
+     "fixture": "id1200836373466980",
+     "cat": "WTA",
+     "age_d": 29.32,
+     "err": null,
+     "series_n": 186,
+     "lag_min": 1731.084,
+     "open_lead_h": 34.978
+    }
+   ]
+  },
+  "0-21d": {
+   "pool_n": 1795,
+   "sampled_n": 45,
+   "with_bet365_series_n": 31,
+   "with_close_n": 31,
+   "lag_le_60min_n": 18,
+   "lag_le_15min_n": 11,
+   "lag_median_min": 21.79,
+   "lag_p25_min": 9.03,
+   "lag_p75_min": 655.8,
+   "lag_min_min": 0.61,
+   "lag_max_min": 3084.66,
+   "flag_small_n": false,
+   "rows": [
+    {
+     "fixture": "id1200390774640368",
+     "cat": "Challenger",
+     "age_d": 0.96,
+     "err": null,
+     "series_n": 108,
+     "lag_min": 9.034,
+     "open_lead_h": 75.888
+    },
+    {
+     "fixture": "id1204705374574538",
+     "cat": "WTA 125K",
+     "age_d": 1.32,
+     "err": null,
+     "series_n": 221,
+     "lag_min": 21.906,
+     "open_lead_h": 11.399
+    },
+    {
+     "fixture": "id1200210074759164",
+     "cat": "Davis Cup",
+     "age_d": 1.53,
+     "err": null,
+     "series_n": 232,
+     "lag_min": 12.682,
+     "open_lead_h": 0.916
+    },
+    {
+     "fixture": "id1200390574632734",
+     "cat": "Challenger",
+     "age_d": 2.03,
+     "err": null,
+     "series_n": 160,
+     "lag_min": 817.509,
+     "open_lead_h": 50.138
+    },
+    {
+     "fixture": "id1200383174702740",
+     "cat": "Challenger",
+     "age_d": 2.33,
+     "err": null,
+     "series_n": 220,
+     "lag_min": 684.336,
+     "open_lead_h": 16.099
+    },
+    {
+     "fixture": "id1203638974655924",
+     "cat": "WTA 125K",
+     "age_d": 2.53,
+     "err": null,
+     "series_n": 250,
+     "lag_min": 21.785,
+     "open_lead_h": 38.678
+    },
+    {
+     "fixture": "id1203358674609198",
+     "cat": "WTA",
+     "age_d": 2.92,
+     "err": null,
+     "series_n": 220,
+     "lag_min": 16.154,
+     "open_lead_h": 28.785
+    },
+    {
+     "fixture": "id1200342574628296",
+     "cat": "Challenger",
+     "age_d": 3.35,
+     "err": null,
+     "series_n": 198,
+     "lag_min": 123.452,
+     "open_lead_h": 17.817
+    },
+    {
+     "fixture": "id1203638974657276",
+     "cat": "WTA 125K",
+     "age_d": 3.56,
+     "err": null,
+     "series_n": 162,
+     "lag_min": 12.1,
+     "open_lead_h": 1.03
+    },
+    {
+     "fixture": "id1203358674609196",
+     "cat": "WTA",
+     "age_d": 4.15,
+     "err": null,
+     "series_n": 200,
+     "lag_min": 4.881,
+     "open_lead_h": 0.122
+    },
+    {
+     "fixture": "id1200463174625544",
+     "cat": "Challenger",
+     "age_d": 4.43,
+     "err": 404,
+     "series_n": 0,
+     "lag_min": null,
+     "open_lead_h": null
+    },
+    {
+     "fixture": "id1200463174625530",
+     "cat": "Challenger",
+     "age_d": 4.61,
+     "err": 404,
+     "series_n": 0,
+     "lag_min": null,
+     "open_lead_h": null
+    },
+    {
+     "fixture": "id1203358674606406",
+     "cat": "WTA",
+     "age_d": 5.22,
+     "err": 404,
+     "series_n": 0,
+     "lag_min": null,
+     "open_lead_h": null
+    },
+    {
+     "fixture": "id1200380174283548",
+     "cat": "Challenger",
+     "age_d": 6.26,
+     "err": null,
+     "series_n": 218,
+     "lag_min": 643.188,
+     "open_lead_h": 15.846
+    },
+    {
+     "fixture": "id1205172874287658",
+     "cat": "Challenger",
+     "age_d": 6.61,
+     "err": null,
+     "series_n": 144,
+     "lag_min": 6.719,
+     "open_lead_h": 14.197
+    },
+    {
+     "fixture": "id1205194674293618",
+     "cat": "WTA 125K",
+     "age_d": 7.36,
+     "err": 429,
+     "series_n": 0,
+     "lag_min": null,
+     "open_lead_h": null
+    },
+    {
+     "fixture": "id1200606974284772",
+     "cat": "Challenger",
+     "age_d": 7.61,
+     "err": 429,
+     "series_n": 0,
+     "lag_min": null,
+     "open_lead_h": null
+    },
+    {
+     "fixture": "id1204310774443144",
+     "cat": "WTA 125K",
+     "age_d": 8.24,
+     "err": null,
+     "series_n": 126,
+     "lag_min": 253.455,
+     "open_lead_h": 47.161
+    },
+    {
+     "fixture": "id1203487474286016",
+     "cat": "Challenger",
+     "age_d": 8.55,
+     "err": null,
+     "series_n": 234,
+     "lag_min": 15.008,
+     "open_lead_h": 17.485
+    },
+    {
+     "fixture": "id1200259374133818",
+     "cat": "ATP",
+     "age_d": 9.02,
+     "err": 429,
+     "series_n": 0,
+     "lag_min": null,
+     "open_lead_h": null
+    },
+    {
+     "fixture": "id1205194474397854",
+     "cat": "WTA 125K",
+     "age_d": 9.34,
+     "err": 429,
+     "series_n": 0,
+     "lag_min": null,
+     "open_lead_h": null
+    },
+    {
+     "fixture": "id1202612674374954",
+     "cat": "Challenger",
+     "age_d": 9.49,
+     "err": null,
+     "series_n": 182,
+     "lag_min": 3084.661,
+     "open_lead_h": 54.74
+    },
+    {
+     "fixture": "id1205173474370712",
+     "cat": "Challenger",
+     "age_d": 9.65,
+     "err": null,
+     "series_n": 44,
+     "lag_min": 2144.074,
+     "open_lead_h": 60.433
+    },
+    {
+     "fixture": "id1200259773992664",
+     "cat": "WTA",
+     "age_d": 10.19,
+     "err": 429,
+     "series_n": 0,
+     "lag_min": null,
+     "open_lead_h": null
+    },
+    {
+     "fixture": "id1205172874375440",
+     "cat": "Challenger",
+     "age_d": 10.44,
+     "err": 429,
+     "series_n": 0,
+     "lag_min": null,
+     "open_lead_h": null
+    },
+    {
+     "fixture": "id1200606774368500",
+     "cat": "Challenger",
+     "age_d": 10.59,
+     "err": null,
+     "series_n": 164,
+     "lag_min": 655.804,
+     "open_lead_h": 38.584
+    },
+    {
+     "fixture": "id1200259773992640",
+     "cat": "WTA",
+     "age_d": 11.14,
+     "err": null,
+     "series_n": 204,
+     "lag_min": 6.73,
+     "open_lead_h": 31.644
+    },
+    {
+     "fixture": "id1200380174375232",
+     "cat": "Challenger",
+     "age_d": 11.44,
+     "err": 429,
+     "series_n": 0,
+     "lag_min": null,
+     "open_lead_h": null
+    },
+    {
+     "fixture": "id1204310574372608",
+     "cat": "WTA 125K",
+     "age_d": 11.57,
+     "err": 429,
+     "series_n": 0,
+     "lag_min": null,
+     "open_lead_h": null
+    },
+    {
+     "fixture": "id1200259173992454",
+     "cat": "ATP",
+     "age_d": 11.86,
+     "err": null,
+     "series_n": 385,
+     "lag_min": 25.852,
+     "open_lead_h": 28.861
+    },
+    {
+     "fixture": "id1200259573992576",
+     "cat": "WTA",
+     "age_d": 12.31,
+     "err": null,
+     "series_n": 248,
+     "lag_min": 13.984,
+     "open_lead_h": 18.005
+    },
+    {
+     "fixture": "id1200259774273282",
+     "cat": "WTA",
+     "age_d": 13.18,
+     "err": null,
+     "series_n": 204,
+     "lag_min": 2.572,
+     "open_lead_h": 38.861
+    },
+    {
+     "fixture": "id1201065574086778",
+     "cat": "Challenger",
+     "age_d": 13.44,
+     "err": null,
+     "series_n": 162,
+     "lag_min": 6.715,
+     "open_lead_h": 35.27
+    },
+    {
+     "fixture": "id1200259573992538",
+     "cat": "WTA",
+     "age_d": 14.17,
+     "err": 404,
+     "series_n": 0,
+     "lag_min": null,
+     "open_lead_h": null
+    },
+    {
+     "fixture": "id1202484874086738",
+     "cat": "Challenger",
+     "age_d": 14.42,
+     "err": 404,
+     "series_n": 0,
+     "lag_min": null,
+     "open_lead_h": null
+    },
+    {
+     "fixture": "id1200259573992562",
+     "cat": "WTA",
+     "age_d": 15.03,
+     "err": null,
+     "series_n": 233,
+     "lag_min": 168.924,
+     "open_lead_h": 45.83
+    },
+    {
+     "fixture": "id1202484674265022",
+     "cat": "Challenger",
+     "age_d": 15.34,
+     "err": null,
+     "series_n": 220,
+     "lag_min": 5.534,
+     "open_lead_h": 15.242
+    },
+    {
+     "fixture": "id1200259574150432",
+     "cat": "WTA",
+     "age_d": 15.9,
+     "err": null,
+     "series_n": 231,
+     "lag_min": 20.748,
+     "open_lead_h": 78.117
+    },
+    {
+     "fixture": "id1201065774169662",
+     "cat": "Challenger",
+     "age_d": 16.3,
+     "err": null,
+     "series_n": 12,
+     "lag_min": 0.615,
+     "open_lead_h": 45.916
+    },
+    {
+     "fixture": "id1201065574173644",
+     "cat": "Challenger",
+     "age_d": 16.55,
+     "err": null,
+     "series_n": 230,
+     "lag_min": 494.299,
+     "open_lead_h": 48.673
+    },
+    {
+     "fixture": "id1200259574124890",
+     "cat": "WTA",
+     "age_d": 17.06,
+     "err": null,
+     "series_n": 243,
+     "lag_min": 656.464,
+     "open_lead_h": 51.631
+    },
+    {
+     "fixture": "id1205232674171378",
+     "cat": "Challenger",
+     "age_d": 17.35,
+     "err": null,
+     "series_n": 238,
+     "lag_min": 1362.311,
+     "open_lead_h": 40.054
+    },
+    {
+     "fixture": "id1201836074167186",
+     "cat": "Challenger",
+     "age_d": 17.63,
+     "err": null,
+     "series_n": 240,
+     "lag_min": 1290.261,
+     "open_lead_h": 36.861
+    },
+    {
+     "fixture": "id1200377774171288",
+     "cat": "Challenger",
+     "age_d": 18.27,
+     "err": 429,
+     "series_n": 0,
+     "lag_min": null,
+     "open_lead_h": null
+    },
+    {
+     "fixture": "id1201065574173614",
+     "cat": "Challenger",
+     "age_d": 18.57,
+     "err": null,
+     "series_n": 12,
+     "lag_min": 15.137,
+     "open_lead_h": 8.331
+    }
+   ]
+  }
+ }
+}

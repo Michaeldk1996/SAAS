@@ -1,0 +1,249 @@
+{
+ "info": {
+  "commit": "a1823c32a869837007286066aedeb9788f74ce87",
+  "tip": "694cf0dabfadffb5878c12cc255546f245d84e94",
+  "behindTip": 3,
+  "onMain": true,
+  "event": "workflow_dispatch",
+  "runId": "35282319676",
+  "runNumber": 3572,
+  "builtAt": "2026-09-17T22:46:43.387Z"
+ },
+ "headsPriced": [
+  {
+   "t": "Hard",
+   "cls": "mc-surface hard",
+   "x": 16,
+   "w": 27
+  },
+  {
+   "t": "ATP ATP Davis Cup ",
+   "cls": "mc-tourn",
+   "x": 52,
+   "w": 182
+  },
+  {
+   "t": "Odds · Implied",
+   "cls": "lbl",
+   "x": 266,
+   "w": 130
+  },
+  {
+   "t": "· in 6h",
+   "cls": "mc-rel",
+   "x": 282,
+   "w": 46
+  },
+  {
+   "t": "Recent form",
+   "cls": "lbl",
+   "x": 408,
+   "w": 120
+  }
+ ],
+ "headsDashed": [
+  {
+   "t": "Hard",
+   "cls": "mc-surface hard",
+   "x": 16,
+   "w": 27
+  },
+  {
+   "t": "ATP ATP Davis Cup ",
+   "cls": "mc-tourn",
+   "x": 52,
+   "w": 192
+  },
+  {
+   "t": "Odds · Implied",
+   "cls": "lbl",
+   "x": 266,
+   "w": 130
+  },
+  {
+   "t": "· in 8h",
+   "cls": "mc-rel",
+   "x": 292,
+   "w": 46
+  },
+  {
+   "t": "Recent form",
+   "cls": "lbl",
+   "x": 408,
+   "w": 120
+  }
+ ],
+ "thead": [
+  {
+   "t": "Match",
+   "x": 0,
+   "w": 0
+  },
+  {
+   "t": "Odds · Implied",
+   "x": 0,
+   "w": 0
+  },
+  {
+   "t": "Form",
+   "x": 0,
+   "w": 0
+  }
+ ],
+ "priced": {
+  "label": "PRICED",
+  "id": null,
+  "text": "S. KwonFAV 1.5067%60% D. Suresh 2.3742%50%",
+  "leaves": [
+   {
+    "t": "S. Kwon",
+    "cls": "mc-name",
+    "x": 59,
+    "w": 53
+   },
+   {
+    "t": "D. Suresh",
+    "cls": "mc-name",
+    "x": 59,
+    "w": 64
+   },
+   {
+    "t": "FAV",
+    "cls": "mc-fav-tag",
+    "x": 123,
+    "w": 33
+   },
+   {
+    "t": "1.50",
+    "cls": "mc-odds",
+    "x": 338,
+    "w": 38
+   },
+   {
+    "t": "2.37",
+    "cls": "mc-odds",
+    "x": 338,
+    "w": 38
+   },
+   {
+    "t": "67%",
+    "cls": "mc-implied",
+    "x": 384,
+    "w": 22
+   },
+   {
+    "t": "42%",
+    "cls": "mc-implied",
+    "x": 384,
+    "w": 22
+   },
+   {
+    "t": "60%",
+    "cls": "mc-form__val",
+    "x": 512,
+    "w": 26
+   },
+   {
+    "t": "50%",
+    "cls": "mc-form__val",
+    "x": 512,
+    "w": 26
+   }
+  ],
+  "implied": [
+   {
+    "t": "67%",
+    "x": 661,
+    "w": 22,
+    "display": "block",
+    "vis": "visible"
+   },
+   {
+    "t": "42%",
+    "x": 661,
+    "w": 22,
+    "display": "block",
+    "vis": "visible"
+   }
+  ],
+  "head": " 13:00 · in 6h Odds · ImpliedRecent form",
+  "aria": [
+   "View S. Kwon profile",
+   "View S. Kwon profile",
+   "View D. Suresh profile",
+   "View D. Suresh profile"
+  ]
+ },
+ "dashed": {
+  "label": "DASHED",
+  "id": null,
+  "text": "GTG. Trismuwantara —20% C. Cretu —60%",
+  "leaves": [
+   {
+    "t": "GT",
+    "cls": "mc-av a",
+    "x": 16,
+    "w": 32
+   },
+   {
+    "t": "G. Trismuwanta",
+    "cls": "mc-name",
+    "x": 59,
+    "w": 120
+   },
+   {
+    "t": "C. Cretu",
+    "cls": "mc-name",
+    "x": 59,
+    "w": 56
+   },
+   {
+    "t": "—",
+    "cls": "mc-odds",
+    "x": 388,
+    "w": 10
+   },
+   {
+    "t": "—",
+    "cls": "mc-odds",
+    "x": 388,
+    "w": 10
+   },
+   {
+    "t": "20%",
+    "cls": "mc-form__val",
+    "x": 512,
+    "w": 26
+   },
+   {
+    "t": "60%",
+    "cls": "mc-form__val",
+    "x": 512,
+    "w": 26
+   }
+  ],
+  "implied": [
+   {
+    "t": "",
+    "x": 1251,
+    "w": 0,
+    "display": "block",
+    "vis": "visible"
+   },
+   {
+    "t": "",
+    "x": 1251,
+    "w": 0,
+    "display": "block",
+    "vis": "visible"
+   }
+  ],
+  "head": " 14:30 · in 8h Odds · ImpliedRecent form",
+  "aria": [
+   "View G. Trismuwantara profile",
+   "View G. Trismuwantara profile",
+   "View C. Cretu profile",
+   "View C. Cretu profile"
+  ]
+ }
+}
