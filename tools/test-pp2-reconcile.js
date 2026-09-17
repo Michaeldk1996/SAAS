@@ -2191,6 +2191,40 @@ checkCareer('item 23 · an under-minimum archetype stays listed, dashed, dim and
   console.log(`        ${found} players keep a sub-minimum archetype listed, dashed and dim`);
 });
 function esc17(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
+
+// Item 32's footnote dash is PUNCTUATION, so it is U+2014 — both the design file
+// and the README write it that way and the amendment quotes it verbatim. The
+// build emitted ENDASH (U+2013) and no source-reading check saw it; it took
+// reading the rendered footnote in a browser. §3's "ranges en dash" rule is about
+// ranges and does not reach a sentence dash, so the two constants exist
+// separately (ENDASH for ranges, EMDASH for punctuation) and this locks the
+// choice at the one call site that got it wrong.
+check('item 32 · the footnote sentence dash is an em dash, not an en dash', () => {
+  let found = 0;
+  for (const key of Object.keys(PLAYERS)) {
+    const p = Object.assign({ key }, PLAYERS[key]);
+    const rows = I.styleRows(p);
+    if (!rows.length || !rows.total) continue;
+    if (!rows.filter(r => { const n = r.won + r.lost; return n > 0 && n < 5; }).length) continue;
+    const html = I.renderStylesModal(p);
+    const i = html.indexOf('rather than dropping out');
+    if (i < 0) continue;
+    const tail = html.slice(i, i + 60);
+    assert(tail.indexOf('—') > -1,
+      `${p.name}: footnote dash is not U+2014 — got ${JSON.stringify(tail.slice(24, 32))}`);
+    assert(tail.indexOf('dropping out –') < 0,
+      `${p.name}: footnote still uses the en dash U+2013`);
+    found++;
+    if (found >= 3) break;
+  }
+  assert(found > 0, 'no player carried the footnote — this check never ran');
+  console.log(`        ${found} footnotes carry U+2014, none U+2013`);
+});
+
+mustFail('the footnote-dash check would catch the en dash it was shipped with', () => {
+  const tail = 'rather than dropping out – an absent row reads as';
+  assert(tail.indexOf('—') > -1, 'en dash not caught');
+});
 mustFail('the listing check would catch a dropped thin archetype', () => {
   const html = '<div>Attacking Baseliner</div>';
   assert(html.indexOf('Solid Defender') > -1, 'thin archetype Solid Defender dropped out');

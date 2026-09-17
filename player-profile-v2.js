@@ -6317,7 +6317,11 @@
     var parts = ['Click an archetype for the matches behind it.'];
     if (thin) {
       parts.push((thin === 1 ? 'One sits' : thin + ' sit') + ' below the five-match minimum and ' +
-        (thin === 1 ? 'stays' : 'stay') + ' listed with a dash rather than dropping out ' + ENDASH +
+        // EMDASH, not ENDASH. This is a PUNCTUATION dash in a sentence, not a
+        // range: the design file and the README both write it U+2014 and item 32
+        // quotes it that way. §3's "ranges en dash" rule does not reach here.
+        // Caught by reading the rendered footnote, not the source.
+        (thin === 1 ? 'stays' : 'stay') + ' listed with a dash rather than dropping out ' + EMDASH +
         ' an absent row reads as an absent opponent.');
     }
     var labelled = rows.total - rows.unlabelled;
