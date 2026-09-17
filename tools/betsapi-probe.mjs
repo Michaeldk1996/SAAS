@@ -514,6 +514,70 @@ async function cmdProbe() {
   log(`\nTOTAL requests used: ${reqCount} / budget ${MAX_REQ}`);
 }
 
+/* ------------------------------------------------------------------ census */
+
+// Phase 3 asks for "ended events per year 2016-2025" to size the full download.
+// Counting every day of ten years would itself cost ~3,650 requests, so this
+// measures a stratified sample of days and reports BOTH the measured counts and
+// the projection built from them — the projection is labelled as such and
+// carries its own n, because a download budget derived from a guess is a guess.
+async function cmdCensus() {
+  const CENSUS_YEARS = [2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023, 2024, 2025];
+  const daysPerMonth = [6, 20];
+  const out = { ran_at: new Date().toISOString(), years: {} };
+
+  for (const year of CENSUS_YEARS) {
+    // 2016 only exists from the 20160901 floor onward.
+    const months = year === 2016 ? [9, 10, 11, 12] : [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+    const days = [];
+    for (const m of months) for (const d of daysPerMonth) days.push(`${year}${String(m).padStart(2, '0')}${String(d).padStart(2, '0')}`);
+
+    const per = [];
+    for (const day of days) {
+      let allTennis = null;
+      const counts = { atp: 0, slam: 0, challenger: 0 };
+      for (let page = 1; page <= 4; page++) {
+        let r;
+        try { r = await api('/v3/events/ended', { sport_id: TENNIS, day, page }); }
+        catch (e) { if (e instanceof BudgetExhausted) { log('BUDGET EXHAUSTED during census'); break; } throw e; }
+        const rows = r.body?.results || [];
+        if (page === 1) allTennis = r.body?.pager?.total ?? null;
+        for (const e of rows) {
+          const lvl = classify(e.league?.name);
+          if (!lvl) continue;
+          if (String(e.time_status) !== '3') continue;
+          if (/\//.test(e.home?.name || '') || /\//.test(e.away?.name || '')) continue;
+          counts[lvl]++;
+        }
+        const total = r.body?.pager?.total ?? 0;
+        if (rows.length < 50 || page * 50 >= total) break;
+      }
+      // Paging stops at 4 pages; if the day had more, the target-level counts
+      // are a FLOOR, not a count. Flag it rather than silently under-reporting.
+      const truncated = (allTennis ?? 0) > 200;
+      per.push({ day, all_tennis_ended: allTennis, ...counts, truncated });
+    }
+
+    const clean = per.filter((p) => !p.truncated);
+    const sum = (k, rows) => rows.reduce((a, r) => a + (r[k] || 0), 0);
+    const yearDays = year === 2016 ? 122 : (year % 4 === 0 ? 366 : 365);
+    out.years[year] = {
+      days_sampled: per.length,
+      days_untruncated: clean.length,
+      days_in_scope: yearDays,
+      measured: { atp: sum('atp', per), slam: sum('slam', per), challenger: sum('challenger', per) },
+      measured_untruncated: { atp: sum('atp', clean), slam: sum('slam', clean), challenger: sum('challenger', clean) },
+      per_day: per,
+    };
+    const m = out.years[year].measured;
+    log(`${year}: days=${per.length} (untruncated ${clean.length}) atp=${m.atp} slam=${m.slam} chal=${m.challenger} [req ${reqCount}]`);
+    save('census.json', out);
+  }
+  out.requests_used = reqCount;
+  out.note = 'measured counts only; any per-year projection must be computed from days_sampled vs days_in_scope and labelled a projection';
+  save('census.json', out);
+}
+
 /* ------------------------------------------------------------------ dryrun */
 
 // Proves the Phase 2 extraction end to end without spending a single credited
@@ -589,6 +653,7 @@ try {
   else if (cmd === 'status') await cmdStatus();
   else if (cmd === 'discover') await cmdDiscover();
   else if (cmd === 'suffix') await cmdSuffix();
+  else if (cmd === 'census') await cmdCensus();
   else if (cmd === 'probe') await cmdProbe();
   else { console.error('unknown command'); process.exit(2); }
 } catch (err) {
