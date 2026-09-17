@@ -1423,7 +1423,15 @@
           support: Math.round(100 * speedBest.band.won / speedBest.n) + '% ' + MIDDOT + ' ' +
             recordText(speedBest.band.won, speedBest.band.lost) + ' ' + MIDDOT + ' ' +
             speedBest.n + ' matches' }
-      : { headline: null, support: 'no speed band beats his rated-match rate at ten matches or more' };
+      // The BOX has to make the same pending-vs-empty distinction the modal
+      // makes, or the two contradict each other on one screen: with the store
+      // unsettled every band is zero, speedBestBand() returns null, and the
+      // card asserted "no speed band beats his rated-match rate" — a claim
+      // about the player — while the modal it opens correctly said the store had
+      // not loaded. Same defect class, same zero, one screen.
+      : !careerHistorySettled(p.key)
+        ? { headline: null, support: 'career match store not loaded' }
+        : { headline: null, support: 'no speed band beats his rated-match rate at ten matches or more' };
 
     // 5 · Versus playing styles — RULING 2: the headline is his OWN archetype,
     // by design, even though the modal behind it reads by OPPOSING archetype.

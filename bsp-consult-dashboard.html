@@ -9695,9 +9695,21 @@ const _careerHistoryPromises = {};
 // browsers against the same server, one read Zverev's 775 rows and the other
 // read 0 and rendered an empty modal.
 //
-// An EMPTY index is still cached (that is a real answer). A FAILED one is not:
-// the memo is released so the next profile open retries. The "never rejects"
-// contract is unchanged — callers still get a usable object either way.
+// A FAILED index is not cached: the memo is released so the next profile open
+// retries. The "never rejects" contract is unchanged — callers still get a
+// usable object either way.
+//
+// A ZERO-PLAYER index counts as a FAILURE here, not as an answer. It is not a
+// state this site can legitimately be in — the index is one entry per player
+// with rows, 556 of them on the live build — and it ships under a tolerant
+// `cp … 2>/dev/null || true` with no non-empty assert, so "{} " is far more
+// likely to mean a bad copy than "no ATP player has ever played a match".
+// Caching it would be the same session-long lie by a different route: `{}` is
+// truthy, so the guard on the first line would serve it forever while
+// loadCareerHistory() (which cannot use an unreadable index as evidence that a
+// player has no history) rejected every lookup — leaving every career-spine
+// surface permanently on "has not loaded" with no path back. The two functions
+// now agree on what an empty index means.
 function loadCareerHistoryIndex(){
   if (careerHistoryIndex) return Promise.resolve(careerHistoryIndex);
   if (_careerHistoryIndexPromise) return _careerHistoryIndexPromise;
@@ -9709,7 +9721,12 @@ function loadCareerHistoryIndex(){
   };
   _careerHistoryIndexPromise = fetch('./career-history-index.json', { cache: 'no-cache' })
     .then(r => r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)))
-    .then(d => { careerHistoryIndex = (d && d.players) || {}; return careerHistoryIndex; })
+    .then(d => {
+      const players = (d && d.players) || {};
+      if (!Object.keys(players).length) return Promise.reject(new Error('index names 0 players'));
+      careerHistoryIndex = players;
+      return careerHistoryIndex;
+    })
     .catch(err => retry(err.message));
   return _careerHistoryIndexPromise;
 }
@@ -9736,24 +9753,35 @@ function loadCareerHistory(playerKey){
     delete _careerHistoryPromises[pk];
     return [];
   };
+  // A UNIQUE sentinel, not `null`, for "already answered upstream". `null` is
+  // also what `r.json()` resolves to for a shard whose body is literally `null`,
+  // and sharing the value put that case into the answered branch: it resolved
+  // `[]` without writing the shard cache AND without calling drop(), so the
+  // promise memo stayed installed forever — the player could never settle and
+  // never retry, the one hole in the answered/failed split.
+  const ANSWERED = Symbol('answered upstream');
   _careerHistoryPromises[pk] = loadCareerHistoryIndex()
     .then(idx => {
       // An index we could not read is not evidence that this player has no
       // history. Only an index we DID read and that omits him is.
       if (!idx || !Object.keys(idx).length) return Promise.reject(new Error('index unavailable'));
-      if (!idx[pk]) { _careerHistoryShards[pk] = []; return null; }   // answered: he has none
+      if (!idx[pk]) { _careerHistoryShards[pk] = []; return ANSWERED; }   // he has none
       return fetch(`./career-history/${pk}.json`, { cache: 'no-cache' });
     })
     .then(r => {
-      if (r === null) return null;                                    // already answered above
+      if (r === ANSWERED) return ANSWERED;
       if (!r.ok) return Promise.reject(new Error('shard HTTP ' + r.status));
       return r.json();
     })
     .then(d => {
-      if (d === null) return _careerHistoryShards[pk] || [];
-      const rows = (d && d.matches) || [];
-      _careerHistoryShards[pk] = rows;
-      return rows;
+      if (d === ANSWERED) return _careerHistoryShards[pk] || [];
+      // A shard that parses to null/undefined, or to an object with no
+      // `matches`, is a MALFORMED shard, not a player with zero matches. The
+      // index said he has rows; a body that cannot produce them disagrees with
+      // the index, and the honest reading of that is "we do not know".
+      if (!d || !Array.isArray(d.matches)) return Promise.reject(new Error('shard has no matches array'));
+      _careerHistoryShards[pk] = d.matches;
+      return d.matches;
     })
     .catch(err => drop(err.message));
   return _careerHistoryPromises[pk];

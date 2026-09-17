@@ -633,9 +633,41 @@ jobs:
             // by a partition test. A dictionary that lost rows would re-cut the
             // quintiles silently and move every band boundary.
             if (venues < 64) { console.error(`court-speed-map.json holds ${venues} rated venues, fewer than the 64 the frozen quintile cut-offs were cut from — the bands would silently re-partition`); process.exit(1); }
-            console.log(`TEN-228: court-speed-map.json schema ok — ${venues} rated venues, ${apiNames} api-tennis name(s) joined.`);
+            // `venues` is parsed out of bsp-pipeline.js COURT_CONDITIONS, so it
+            // can only move on a deliberate source edit — the floor above is a
+            // tripwire, not the real risk. `apiNames` is the one that DEGRADES
+            // QUIETLY: build-court-speed-map.js derives 2,269 of its 2,871
+            // distinct names from career-history/, which is gitignored, CI-built
+            // and has been measured short on a dev checkout, and the builder is
+            // deliberately tolerant of the directory being absent. Regenerating
+            // the map against a cold or partial store would cut `apiNames`, keep
+            // it non-zero, pass a `!apiNames` check, and leave §5.5 banding only
+            // part of the spine — while the modal footnote blamed "venue without
+            // a Tennis Abstract rating" rather than a shrunken dictionary.
+            if (!(m.apiCoverage && m.apiCoverage.careerHistoryPresent === true)) {
+              console.error("court-speed-map.json was built WITHOUT career-history/ (apiCoverage.careerHistoryPresent is not true) — the api-tennis venue join is built from a fraction of its names. Rebuild it on a run that has the store.");
+              process.exit(1);
+            }
+            if (apiNames < 253) { console.error(`court-speed-map.json resolves ${apiNames} api-tennis venue names, down from the 253 the shipped dictionary holds — the join would silently miss matches the bands used to cover`); process.exit(1); }
+            console.log(`TEN-228: court-speed-map.json schema ok — ${venues} rated venues, ${apiNames} api-tennis name(s) joined, built with career-history present.`);
           '
           echo "All referenced files present in _site."
+          # career-history-index.json gates EVERY career-spine surface — Calendar,
+          # Career record, Court speed, Streaks all read rows the client only
+          # fetches if this index names the player. It ships under a tolerant
+          # `cp` (line 424) with no assert, so a silently failed copy served an
+          # index naming 0 players and the client cached it. The renderer now
+          # refuses to read a zero-player index as an answer (it says "not
+          # loaded" rather than "no matches on record"), but an honest empty
+          # state on every player is still a broken deploy — fail it here.
+          node -e '
+            const fs = require("fs");
+            if (!fs.existsSync("_site/career-history-index.json")) { console.error("career-history-index.json is MISSING from _site — every career-spine surface would read \"store not loaded\" for every player"); process.exit(1); }
+            const idx = JSON.parse(fs.readFileSync("_site/career-history-index.json","utf8")).players || {};
+            const n = Object.keys(idx).length;
+            if (!n) { console.error("career-history-index.json names 0 players — Calendar, Career record, Court speed and Streaks would all be empty site-wide"); process.exit(1); }
+            console.log(`TEN-228: career-history-index.json names ${n} player(s).`);
+          '
 
       # TEN-178 scope item 2 — the merge-ancestor guard.
       #

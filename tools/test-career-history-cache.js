@@ -137,12 +137,30 @@ console.log('TEN-228 · a failed career-history fetch is not cached as an answer
       'a good index was re-fetched — the memo is not working');
   });
 
-  await check('an index that is READABLE but genuinely empty stays cached', async () => {
+  // SUPERSEDED, deliberately. The first cut of this file asserted that a
+  // readable-but-empty index "stays cached (that is a real answer)". The review
+  // pass showed that reading is not tenable: loadCareerHistory cannot use an
+  // unreadable index as evidence that a player has no history, so caching `{}`
+  // left every player permanently unsettled with no retry. A zero-player index
+  // is now a FAILURE on both sides, and this check asserts that instead. Noted
+  // rather than deleted: a test that encodes the opposite of the current ruling
+  // is how a correct page gets "fixed" back into a broken one.
+  await check('a readable-but-empty index is NOT cached (superseded ruling)', async () => {
     const { api, scope } = makeScope(() => ({ players: {} }));
     await api.loadCareerHistoryIndex();
     await api.loadCareerHistoryIndex();
+    assert.strictEqual(scope.calls.length, 2,
+      'a zero-player index was cached — the truthy-{} guard would serve it all session');
+    assert.strictEqual(api.index(), null, 'a zero-player index was stored as the answer');
+  });
+
+  await check('a NON-empty index is cached (the memo still works)', async () => {
+    const { api, scope } = makeScope(() => IDX);
+    await api.loadCareerHistoryIndex();
+    await api.loadCareerHistoryIndex();
+    await api.loadCareerHistoryIndex();
     assert.strictEqual(scope.calls.length, 1,
-      'a real empty answer was retried — "he has none" would re-fetch forever');
+      'a good index was re-fetched — the retry path swallowed the memo');
   });
 
   // ── 2 · the shard: the same rule, per player ───────────────────────────────
@@ -213,6 +231,66 @@ console.log('TEN-228 · a failed career-history fetch is not cached as an answer
       'the rows did not reach the bridge: ' + JSON.stringify(win.careerHistory));
   });
 
+  // ── 3b · the review findings (clean-context pass, 2026-09-17) ─────────────
+  //
+  // Three holes an independent review found in the first cut of this fix. Each
+  // is a state the answered/failed split did not actually cover.
+
+  await check('a ZERO-PLAYER index is a failure, not a cached answer', async () => {
+    // The two halves of the fix used to disagree: the index cached `{}` as an
+    // answer (and `{}` is truthy, so it was served forever), while
+    // loadCareerHistory treated an empty index as unusable and rejected every
+    // lookup. Result: permanently "not loaded", site-wide, with no retry path.
+    let empty = true;
+    const { api, scope } = makeScope((url) => {
+      if (url.indexOf('career-history-index') > -1) return empty ? { players: {} } : IDX;
+      return SHARD;
+    });
+    await api.loadCareerHistory('1980');
+    assert.strictEqual(api.index(), null,
+      'a zero-player index was cached — the guard would serve it for the whole session');
+    empty = false;
+    const b = await api.loadCareerHistory('1980');
+    assert.strictEqual(b.length, 1,
+      'the retry after a zero-player index did not reach the shard: ' + JSON.stringify(b));
+    assert.ok(scope.calls.filter((u) => u.indexOf('career-history-index') > -1).length >= 2,
+      'the index was never re-fetched after the empty one');
+  });
+
+  await check('a shard body of literal `null` is dropped, not left as a dead memo', async () => {
+    // `r.json()` resolving null collided with the "already answered upstream"
+    // sentinel: it returned [] without caching the shard AND without dropping
+    // the memo, so the player could never settle and never retry.
+    let bad = true;
+    const { api } = makeScope((url) => {
+      if (url.indexOf('career-history-index') > -1) return IDX;
+      return bad ? null : SHARD;          // a 200 whose body is `null`
+    });
+    const a = await api.loadCareerHistory('1980');
+    assert.deepStrictEqual(a, [], 'a null shard should degrade to [] for that caller');
+    assert.ok(!('1980' in api.shards()), 'a null shard was cached as an answer');
+    bad = false;
+    const b = await api.loadCareerHistory('1980');
+    assert.strictEqual(b.length, 1,
+      'the memo was never released — the player is stuck forever: ' + JSON.stringify(b));
+  });
+
+  await check('a shard with no `matches` array is dropped, not read as zero matches', async () => {
+    let bad = true;
+    const { api, win } = makeScope((url) => {
+      if (url.indexOf('career-history-index') > -1) return IDX;
+      return bad ? { note: 'schema changed' } : SHARD;
+    });
+    await api.loadPp2CareerHistory('1980');
+    assert.ok(!('1980' in api.shards()), 'a malformed shard was cached as an answer');
+    assert.ok(!Object.prototype.hasOwnProperty.call(win.careerHistory || {}, '1980'),
+      'a malformed shard settled the bridge — the index says he has rows, so "no matches '
+      + 'on record" would contradict our own index');
+    bad = false;
+    const b = await api.loadCareerHistory('1980');
+    assert.strictEqual(b.length, 1, 'the retry after a malformed shard did not serve rows');
+  });
+
   // ── 4 · negative controls ─────────────────────────────────────────────────
   await mustFail('the retry check would catch the OLD sticky-{} index', async () => {
     // The pre-fix body, verbatim in shape: a truthy {} cached on failure.
@@ -242,6 +320,24 @@ console.log('TEN-228 · a failed career-history fetch is not cached as an answer
   await mustFail('the shard check would catch a cached failure', async () => {
     const shards = { 1980: [] };                         // the old failure cache
     assert.ok(!('1980' in shards), 'a cached failure was not detected');
+  });
+
+  await mustFail('the zero-player check would catch a cached {} index', async () => {
+    // The pre-review body: an empty `players` map stored as the answer.
+    let idx = null;
+    idx = {};                                            // what `(d.players)||{}` produced
+    assert.strictEqual(idx, null, 'a zero-player index was cached as the answer');
+  });
+
+  await mustFail('the null-shard check would catch the shared `null` sentinel', async () => {
+    // The pre-review body: `null` meaning both "answered upstream" and "the
+    // shard body parsed to null", so the second fell into the first's branch.
+    const shards = {};
+    const d = null;                                      // r.json() -> null
+    const resolved = (d === null) ? (shards['1980'] || []) : d.matches;
+    assert.ok('1980' in shards,
+      'the null shard took the answered branch and wrote nothing: resolved '
+      + JSON.stringify(resolved));
   });
 
   console.log('\n' + '='.repeat(64));
