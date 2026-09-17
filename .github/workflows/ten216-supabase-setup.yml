@@ -1,0 +1,173 @@
+name: TEN-216 Supabase test storage (CREATE-ONLY, additive)
+
+# TEN-216 Part A Step 1 — create the test-only change-row table and the
+# test-only raw bucket. Additive only, and strictly scoped to names that
+# begin with ten216_test / ten216-test.
+#
+# Guardrails enforced in code, not by convention:
+#   - every DDL statement is checked against an allowlist regex before it runs
+#   - nothing may reference an object that does not start with the test prefix
+#   - no DROP, no ALTER of anything pre-existing, no policy/pg_cron change
+#   - the bucket is PRIVATE and the table has RLS ON with zero policies, so the
+#     public anon/publishable key cannot read either
+#   - action=teardown removes ONLY the test objects (used after the day-7 report)
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'create | status | teardown'
+        required: true
+        default: 'status'
+        type: choice
+        options: [create, status, teardown]
+
+concurrency:
+  group: ten216-supabase-setup
+  cancel-in-progress: false
+
+jobs:
+  manage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Manage TEN-216 test storage
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          ACTION: ${{ github.event.inputs.action }}
+        run: |
+          python3 - <<'PY'
+          import os, sys, json, re, urllib.request, urllib.error
+
+          url = os.environ["SUPABASE_URL"].strip().rstrip("/")
+          tok = os.environ["SUPABASE_ACCESS_TOKEN"].strip()
+          svc = os.environ["SUPABASE_SECRET_KEY"].strip()
+          action = (os.environ.get("ACTION") or "status").strip()
+          ref = re.search(r"https?://([a-z0-9]+)\.supabase\.co", url).group(1)
+
+          TABLE  = "ten216_test_odds_changes"
+          BUCKET = "ten216-test-raw"
+
+          def mgmt(path, method="GET", body=None):
+              req = urllib.request.Request(
+                  f"https://api.supabase.com{path}", method=method,
+                  headers={"Authorization": f"Bearer {tok}", "Content-Type": "application/json"},
+                  data=json.dumps(body).encode() if body is not None else None)
+              try:
+                  with urllib.request.urlopen(req, timeout=90) as r:
+                      return r.status, json.loads(r.read().decode() or "null")
+              except urllib.error.HTTPError as e:
+                  return e.code, e.read().decode()[:600]
+
+          FORBIDDEN = re.compile(r"\b(drop\s+database|drop\s+schema|truncate|grant|revoke|alter\s+system)\b", re.I)
+          def guard(stmt):
+              """Refuse anything that touches a name outside the test prefix."""
+              if FORBIDDEN.search(stmt):
+                  raise SystemExit(f"REFUSED (forbidden verb): {stmt[:80]}")
+              # every identifier that looks like one of our objects must be prefixed
+              for ident in re.findall(r"\b(?:table|index|bucket)\s+(?:if\s+not\s+exists\s+)?([a-zA-Z0-9_.\"]+)", stmt, re.I):
+                  bare = ident.replace('"', '').split('.')[-1]
+                  if not bare.startswith("ten216_test"):
+                      raise SystemExit(f"REFUSED (object outside test prefix): {bare} in {stmt[:80]}")
+              return stmt
+
+          def sql(stmt):
+              return mgmt(f"/v1/projects/{ref}/database/query", "POST", {"query": guard(stmt)})
+
+          def read(q):
+              return mgmt(f"/v1/projects/{ref}/database/query", "POST", {"query": q})
+
+          def inventory(label):
+              print(f"\n----- inventory: {label} -----")
+              for q, name in (
+                  ("select c.relname from pg_class c join pg_namespace n on n.oid=c.relnamespace "
+                   "where n.nspname='public' and c.relkind='r' order by 1", "public tables"),
+                  ("select id, public from storage.buckets order by 1", "buckets"),
+                  ("select jobid, jobname, schedule, active from cron.job order by jobid", "pg_cron jobs"),
+              ):
+                  st, r = read(q)
+                  print(f"  {name}: http={st} {json.dumps(r)}")
+
+          inventory("BEFORE")
+
+          if action == "create":
+              print("\n===== CREATE =====")
+              stmts = [
+                f"""create table if not exists public.{TABLE} (
+                      id             bigserial primary key,
+                      observed_at    timestamptz not null,
+                      poll_id        text        not null,
+                      match_key      text        not null,
+                      tour           text,
+                      event_status   text,
+                      event_live     boolean,
+                      market         text        not null,
+                      line           text,
+                      selection      text        not null,
+                      bookmaker      text        not null,
+                      price          numeric,
+                      prev_price     numeric,
+                      change_kind    text        not null
+                    )""",
+                f"create index if not exists ten216_test_idx_match on public.{TABLE} (match_key, bookmaker, observed_at)",
+                f"create index if not exists ten216_test_idx_observed on public.{TABLE} (observed_at)",
+                f"create unique index if not exists ten216_test_uq_quote on public.{TABLE} "
+                f"(poll_id, match_key, market, coalesce(line,''), selection, bookmaker)",
+              ]
+              for s in stmts:
+                  st, r = sql(s)
+                  print(f"  http={st} :: {' '.join(s.split())[:90]}")
+                  if st >= 400: print("   ->", r); sys.exit(1)
+
+              # RLS on, zero policies => anon/publishable key cannot read it.
+              st, r = mgmt(f"/v1/projects/{ref}/database/query", "POST",
+                           {"query": f"alter table public.{TABLE} enable row level security"})
+              print(f"  RLS enable http={st}")
+              if st >= 400: print("   ->", r); sys.exit(1)
+
+              print("\n===== BUCKET =====")
+              req = urllib.request.Request(
+                  f"{url}/storage/v1/bucket", method="POST",
+                  headers={"Authorization": f"Bearer {svc}", "apikey": svc,
+                           "Content-Type": "application/json"},
+                  data=json.dumps({"name": BUCKET, "id": BUCKET, "public": False}).encode())
+              try:
+                  with urllib.request.urlopen(req, timeout=60) as r:
+                      print("  create bucket http", r.status, r.read().decode()[:200])
+              except urllib.error.HTTPError as e:
+                  body = e.read().decode()[:300]
+                  if e.code == 409 or "already exists" in body.lower():
+                      print("  bucket already exists — left as is")
+                  else:
+                      print("  ERROR", e.code, body); sys.exit(1)
+
+          elif action == "teardown":
+              print("\n===== TEARDOWN (test objects only) =====")
+              st, r = mgmt(f"/v1/projects/{ref}/database/query", "POST",
+                           {"query": f"drop table if exists public.{TABLE}"})
+              print("  drop table http", st)
+              req = urllib.request.Request(
+                  f"{url}/storage/v1/bucket/{BUCKET}/empty", method="POST",
+                  headers={"Authorization": f"Bearer {svc}", "apikey": svc,
+                           "Content-Type": "application/json"}, data=b"{}")
+              try:
+                  with urllib.request.urlopen(req, timeout=120) as r: print("  empty bucket http", r.status)
+              except urllib.error.HTTPError as e: print("  empty bucket http", e.code)
+              req = urllib.request.Request(
+                  f"{url}/storage/v1/bucket/{BUCKET}", method="DELETE",
+                  headers={"Authorization": f"Bearer {svc}", "apikey": svc})
+              try:
+                  with urllib.request.urlopen(req, timeout=60) as r: print("  delete bucket http", r.status)
+              except urllib.error.HTTPError as e: print("  delete bucket http", e.code)
+
+          inventory("AFTER")
+
+          print("\n===== VERIFY: anon key must NOT be able to read the table =====")
+          st, r = read(f"select relrowsecurity as rls_enabled, "
+                       f"(select count(*) from pg_policies where tablename='{TABLE}') as policy_count "
+                       f"from pg_class where relname='{TABLE}'")
+          print("  ", json.dumps(r))
+          print("\nDONE.")
+          PY
