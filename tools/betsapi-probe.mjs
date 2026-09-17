@@ -157,6 +157,39 @@ async function cmdDiag() {
 
 /* ------------------------------------------------------------------ status */
 
+// The books sweep turned up something the Phase 2 sweep could not see:
+// /v2/event/odds/summary reports a Bet365 13_1 record on 52 of 52 sampled 2017
+// matches, while /v2/event/odds returns ZERO rows for the same year. The
+// summary endpoint therefore reaches back further than the series endpoint.
+//
+// That matters for the closing-price ruling, so the payload gets dumped verbatim
+// rather than summarised: whether `start`/`end` carry ss/time_str decides whether
+// a pre-match price is recoverable from them at all, and Phase 1 already showed
+// `end` can be an in-play number. Reading the field names is the whole point.
+async function cmdShape() {
+  const out = { ran_at: new Date().toISOString(), samples: [] };
+  for (const day of ['20170909', '20200923', '20250909']) {
+    const ended = await api('/v3/events/ended', { sport_id: TENNIS, day });
+    const ev = (ended.body?.results || []).find((e) => classify(e.league?.name));
+    if (!ev) { log(`${day}: no classified event on page 1`); continue; }
+    const s = await api('/v2/event/odds/summary', { event_id: ev.id });
+    const o = await api('/v2/event/odds', { event_id: ev.id });
+    const entry = {
+      day,
+      event: { id: ev.id, league: ev.league?.name, home: ev.home?.name, away: ev.away?.name, ss: ev.ss, time: ev.time },
+      summary_books: Object.keys(s.body?.results || {}),
+      summary_bet365: s.body?.results?.Bet365 ?? null,
+      odds_markets: Object.fromEntries(Object.entries(o.body?.results?.odds || {}).map(([k, v]) => [k, Array.isArray(v) ? v.length : 0])),
+    };
+    out.samples.push(entry);
+    log(`\n=== ${day} event ${ev.id} "${ev.league?.name}" ${ev.home?.name} vs ${ev.away?.name} start=${ev.time}`);
+    log(`  /v2/event/odds markets: ${JSON.stringify(entry.odds_markets)}`);
+    log(`  summary books: ${entry.summary_books.join(', ') || '—'}`);
+    log(`  summary Bet365 verbatim:\n${JSON.stringify(entry.summary_bet365, null, 2)}`);
+  }
+  save('shape.json', out);
+}
+
 async function cmdStatus() {
   const out = { ran_at: new Date().toISOString(), probes: [] };
   const rec = async (label, path, params) => {
@@ -859,6 +892,7 @@ try {
   else if (cmd === 'probe') await cmdProbe();
   else if (cmd === 'markets') await cmdMarkets();
   else if (cmd === 'books') await cmdBooks();
+  else if (cmd === 'shape') await cmdShape();
   else { console.error('unknown command'); process.exit(2); }
 } catch (err) {
   if (err instanceof BudgetExhausted) log(`STOPPED: ${err.message} after ${reqCount} requests`);
