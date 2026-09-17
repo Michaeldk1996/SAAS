@@ -1,0 +1,226 @@
+{
+ "generatedAt": "2026-09-17T07:15:43Z",
+ "levelMix": {
+  "WTA 125K": 141,
+  "UTR Men": 239,
+  "UTR Women": 247,
+  "WTA": 83,
+  "ITF Men": 260,
+  "ITF Women": 208,
+  "Challenger": 353,
+  "Juniors": 12,
+  "Wheelchairs": 13,
+  "Wheelchairs Juniors": 4,
+  "ATP": 4,
+  "Davis Cup": 5
+ },
+ "windowDays": 6.0,
+ "density": {
+  "Challenger": {
+   "n": 4,
+   "median_pre": 234.0,
+   "rows": [
+    {
+     "fid": "id1200380174283532",
+     "pre": 574,
+     "inplay": 1381,
+     "tourn": "ATP Challenger Genoa, Italy Men Singles"
+    },
+    {
+     "fid": "id1200381574284006",
+     "pre": 78,
+     "inplay": 220,
+     "tourn": "ATP Challenger Seville, Spain Men Doubles"
+    },
+    {
+     "fid": "id1202612674286322",
+     "pre": 14,
+     "inplay": 1876,
+     "tourn": "ATP Challenger Cassis, France Men Singles"
+    },
+    {
+     "fid": "id1205172874287644",
+     "pre": 390,
+     "inplay": 1639,
+     "tourn": "ATP Challenger Istanbul 3, Turkiye Men Singles"
+    }
+   ]
+  },
+  "ITF Men": {
+   "n": 4,
+   "median_pre": 442.0,
+   "rows": [
+    {
+     "fid": "pn129034481636267554",
+     "pre": 400,
+     "inplay": 263,
+     "tourn": "Sintra"
+    },
+    {
+     "fid": "pn129036751636267508",
+     "pre": 484,
+     "inplay": 0,
+     "tourn": "Budapest"
+    },
+    {
+     "fid": "pn129042431636341485",
+     "pre": 504,
+     "inplay": 405,
+     "tourn": "Tsaghkadzor"
+    },
+    {
+     "fid": "pn129049801636231362",
+     "pre": 10,
+     "inplay": 302,
+     "tourn": "Wuning"
+    }
+   ]
+  },
+  "ITF Women": {
+   "n": 5,
+   "median_pre": 142,
+   "rows": [
+    {
+     "fid": "pn129033251636229569",
+     "pre": 90,
+     "inplay": 287,
+     "tourn": "Guiyang"
+    },
+    {
+     "fid": "pn129036211636267476",
+     "pre": 222,
+     "inplay": 207,
+     "tourn": "Radom"
+    },
+    {
+     "fid": "pn129038871636311193",
+     "pre": 142,
+     "inplay": 0,
+     "tourn": "Yeongwol"
+    },
+    {
+     "fid": "pn129042331636401331",
+     "pre": 94,
+     "inplay": 230,
+     "tourn": "Reus"
+    },
+    {
+     "fid": "pn129043561636378701",
+     "pre": 194,
+     "inplay": 104,
+     "tourn": "Evora"
+    }
+   ]
+  },
+  "WTA 125K": {
+   "n": 3,
+   "median_pre": 450,
+   "rows": [
+    {
+     "fid": "id1204043974293730",
+     "pre": 450,
+     "inplay": 2241,
+     "tourn": "WTA 125K Barranquilla, Colombia Women Singles"
+    },
+    {
+     "fid": "id1204310774294286",
+     "pre": 16,
+     "inplay": 1103,
+     "tourn": "WTA 125K Montreux, Switzerland Women Doubles"
+    },
+    {
+     "fid": "id1205194474293582",
+     "pre": 512,
+     "inplay": 1377,
+     "tourn": "WTA 125K Antalya 4, Turkiye Women Singles"
+    }
+   ]
+  },
+  "WTA": {
+   "n": 1,
+   "median_pre": 468,
+   "rows": [
+    {
+     "fid": "id1200259573992546",
+     "pre": 468,
+     "inplay": 1872,
+     "tourn": "US Open Women Singles"
+    }
+   ]
+  },
+  "ATP": {
+   "n": 3,
+   "median_pre": 1251,
+   "rows": [
+    {
+     "fid": "id1200259173992438",
+     "pre": 1251,
+     "inplay": 2895,
+     "tourn": "US Open Men Singles"
+    },
+    {
+     "fid": "id1200259173992440",
+     "pre": 1711,
+     "inplay": 2764,
+     "tourn": "US Open Men Singles"
+    },
+    {
+     "fid": "id1200259374133776",
+     "pre": 460,
+     "inplay": 1584,
+     "tourn": "US Open Men Doubles"
+    }
+   ]
+  }
+ },
+ "skipped": {
+  "Challenger:http-404": 1,
+  "ITF Men:http-404": 1,
+  "WTA 125K:http-404": 2,
+  "WTA:http-404": 4
+ },
+ "projection": {
+  "(a) ATP tour + Slams": {
+   "cats": [
+    "ATP"
+   ],
+   "fixturesPerDay": 0.6666666666666666,
+   "rowsPerYear": 304410.0,
+   "gbPerYear": 0.114975657,
+   "gbBackfill": 0.02381413608,
+   "underLine": true
+  },
+  "(b) (a) + Challengers": {
+   "cats": [
+    "ATP",
+    "Challenger"
+   ],
+   "fixturesPerDay": 59.5,
+   "rowsPerYear": 5329365.0,
+   "gbPerYear": 2.0129011605,
+   "gbBackfill": 0.4169187061199999,
+   "underLine": false
+  },
+  "(c) (b) + ITF": {
+   "cats": [
+    "ATP",
+    "Challenger",
+    "ITF Men",
+    "ITF Women"
+   ],
+   "fixturesPerDay": 137.5,
+   "rowsPerYear": 14117105.000000002,
+   "gbPerYear": 5.3320305585000005,
+   "gbBackfill": 1.10438769924,
+   "underLine": false
+  }
+ },
+ "budgetGbPerYear": 2.0,
+ "rowBytes": 377.7,
+ "meter": {
+  "before": 362,
+  "after": 364,
+  "limit": 5000
+ },
+ "freeCalls": 28
+}
