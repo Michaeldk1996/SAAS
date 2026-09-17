@@ -1,0 +1,114 @@
+{
+ "generatedAt": "2026-09-17T07:51:13Z",
+ "rule": {
+  "archiveAgeLimitDays": 21.0,
+  "closeLagLimitMinutes": 60.0
+ },
+ "months": {
+  "2026-01": {
+   "source": "none",
+   "held": 0,
+   "reliable": 0,
+   "reason": "no bet365-history month file",
+   "universe": null
+  },
+  "2026-02": {
+   "source": "none",
+   "held": 0,
+   "reliable": 0,
+   "reason": "no bet365-history month file",
+   "universe": null
+  },
+  "2026-03": {
+   "source": "bet365-history",
+   "generatedAt": "2026-09-11T13:38:51Z",
+   "held": 691,
+   "archiveAgeOk": 0,
+   "closeLagOk": 76,
+   "reliable": 0,
+   "noPreStartPoint": 0,
+   "capAgeDaysMedian": 170.15152777777777,
+   "capAgeDaysMin": 163.57971064814814,
+   "capAgeDaysMax": 174.81287037037038,
+   "closeLagMinMedian": 544.9333333333333,
+   "universe": 1530,
+   "pctOfUniverse": 0.0
+  },
+  "2026-04": {
+   "source": "bet365-history",
+   "generatedAt": "2026-09-12T13:14:54Z",
+   "held": 2476,
+   "archiveAgeOk": 0,
+   "closeLagOk": 261,
+   "reliable": 0,
+   "noPreStartPoint": 0,
+   "capAgeDaysMedian": 149.13023726851853,
+   "capAgeDaysMin": 134.63700231481482,
+   "capAgeDaysMax": 164.5384837962963,
+   "closeLagMinMedian": 531.55,
+   "universe": 5647,
+   "pctOfUniverse": 0.0
+  },
+  "2026-05": {
+   "source": "bet365-history",
+   "generatedAt": "2026-09-12T13:14:54Z",
+   "held": 603,
+   "archiveAgeOk": 0,
+   "closeLagOk": 68,
+   "reliable": 0,
+   "noPreStartPoint": 0,
+   "capAgeDaysMedian": 130.07493055555557,
+   "capAgeDaysMin": 126.1770138888889,
+   "capAgeDaysMax": 134.42038194444444,
+   "closeLagMinMedian": 580.75,
+   "universe": 6719,
+   "pctOfUniverse": 0.0
+  },
+  "2026-06": {
+   "source": "none",
+   "held": 0,
+   "reliable": 0,
+   "reason": "no bet365-history month file",
+   "universe": 7066,
+   "pctOfUniverse": 0.0
+  },
+  "2026-07": {
+   "source": "none",
+   "held": 0,
+   "reliable": 0,
+   "reason": "no bet365-history month file",
+   "universe": 7557,
+   "pctOfUniverse": 0.0
+  },
+  "2026-08": {
+   "source": "bet365-history",
+   "generatedAt": "2026-09-10T05:47:51Z",
+   "held": 51,
+   "archiveAgeOk": 51,
+   "closeLagOk": 38,
+   "reliable": 38,
+   "noPreStartPoint": 0,
+   "capAgeDaysMedian": 10.922025462962964,
+   "capAgeDaysMin": 10.69255787037037,
+   "capAgeDaysMax": 12.21199074074074,
+   "closeLagMinMedian": 4.733333333333333,
+   "universe": 5622,
+   "pctOfUniverse": 0.6759160441124155
+  },
+  "2026-09": {
+   "source": "bet365-history",
+   "generatedAt": "2026-09-12T09:14:52Z",
+   "held": 477,
+   "archiveAgeOk": 477,
+   "closeLagOk": 369,
+   "reliable": 369,
+   "noPreStartPoint": 0,
+   "capAgeDaysMedian": 3.6671412037037037,
+   "capAgeDaysMin": 0.09296296296296297,
+   "capAgeDaysMax": 5.320648148148148,
+   "closeLagMinMedian": 3.85,
+   "universe": 3603,
+   "pctOfUniverse": 10.241465445462115
+  }
+ }
+}

@@ -26,9 +26,12 @@ hold and still be near-zero against the calendar. Both are stated; neither
 alone answers the question.
 
 No network calls, no API cost. Reads only committed bet365-history/ month files
-plus, if present, the 180-day /v4/fixtures sweep captured by
-ten225-summary-sizing.py for the denominator.
+plus, if present, .ten225-fixture-index.json.gz for a REAL per-month fixture
+denominator (counted from the 180-day /v4/fixtures sweep, not projected off a
+flat rate — tennis volume is seasonal and January is not September).
 """
+import collections
+import gzip
 import json
 import os
 import statistics
@@ -37,12 +40,18 @@ from datetime import datetime, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 HIST = os.path.join(HERE, 'bet365-history')
-SWEEP = os.path.join(HERE, 'ten225-summary-sizing.json')
+INDEX = os.path.join(HERE, '.ten225-fixture-index.json.gz')
 OUT = os.path.join(HERE, 'ten225-close-reliable.json')
 
 ARCHIVE_AGE_LIMIT_D = 21.0
 CLOSE_LAG_LIMIT_MIN = 60.0
 MONTHS = [f'2026-{m:02d}' for m in range(1, 10)]
+
+# Counted in the fixture universe by oddspapi but 404 on /v4/historical-odds
+# across the board (19/19 sampled on TEN-225), so they can never carry an Open
+# or a Close and must not sit in the denominator.
+NO_ODDS_LEVELS = ('UTR Men', 'UTR Women', 'Juniors', 'Wheelchairs',
+                  'Wheelchairs Juniors', 'Legends', 'Exhibition')
 
 
 def parse_iso(ts):
@@ -139,33 +148,48 @@ def main():
     print(f'  {"TOTAL":<8} {grand_held:>6} {"":>20} {"":>9} {"":>9} {grand_ok:>6} '
           f'{(f"{grand_ok/grand_held*100:.1f}%" if grand_held else "-"):>10}')
 
-    # ---- denominator: the fixture universe, so "% of held" is not mistaken
-    #      for "% of the calendar".
-    if os.path.exists(SWEEP):
-        sw = json.load(open(SWEEP))
-        mix = sw.get('levelMix') or {}
-        span = sw.get('spanDays') or 0
-        if mix and span:
-            per_day = sum(mix.values()) / span
-            print(f'\n=== against the fixture universe ===')
-            print(f'  180-day sweep: {sum(mix.values())} non-synthetic tennis '
-                  f'fixtures = {per_day:.0f}/day, all levels')
-            print(f'  {"month":<8} {"universe est":>13} {"reliable":>9} {"% of month":>11}')
-            for month in MONTHS:
-                y, m = int(month[:4]), int(month[5:])
-                days = [31, 28, 31, 30, 31, 30, 31, 31, 30][m - 1]
-                uni = per_day * days
-                rel = out['months'][month].get('reliable', 0)
-                print(f'  {month:<8} {uni:>13,.0f} {rel:>9} '
-                      f'{rel/uni*100 if uni else 0:>10.2f}%')
-                out['months'][month]['universeEstimate'] = uni
-            print('\n  The universe figure is the CURRENT all-level fixture rate '
-                  'projected onto each month, not a per-month count. It is an\n'
-                  '  order-of-magnitude denominator only; tennis volume is '
-                  'seasonal and January is not September.')
-    else:
-        print(f'\n  (no {os.path.basename(SWEEP)} yet - "% of the calendar" '
-              f'not computed. "% of held" above is NOT calendar coverage.)')
+    # ---- denominator: the real fixture universe per month, so "% of held" is
+    #      never mistaken for "% of the calendar". These are two very different
+    #      numbers here and reporting only the first would flatter the archive.
+    if not os.path.exists(INDEX):
+        print(f'\n  (no {os.path.basename(INDEX)} - "% of the calendar" not '
+              f'computed. "% of held" above is NOT calendar coverage.)')
+        json.dump(out, open(OUT, 'w'), indent=1)
+        print(f'\nwrote {OUT}')
+        return 0
+
+    with gzip.open(INDEX, 'rt', encoding='utf-8') as fh:
+        idx = json.load(fh)
+    uni = collections.Counter()
+    for fx in idx['fixtures'].values():
+        if (fx.get('cat') or '') in NO_ODDS_LEVELS:
+            continue
+        st = str(fx.get('start') or '')
+        if len(st) >= 7:
+            uni[st[:7]] += 1
+
+    print(f'\n=== against the REAL fixture universe (counted, not projected) ===')
+    print(f'  source: {os.path.basename(INDEX)}, {idx["spanDays"]}d '
+          f'/v4/fixtures sweep, {idx.get("sliceErrors", 0)} slice errors, '
+          f'no-odds levels excluded')
+    print(f'\n  {"month":<8} {"universe":>9} {"held":>6} {"reliable":>9} '
+          f'{"% of universe":>14}')
+    for month in MONTHS:
+        u = uni.get(month, 0)
+        rel = out['months'][month].get('reliable', 0)
+        held = out['months'][month].get('held', 0)
+        if u == 0:
+            print(f'  {month:<8} {"n/a":>9} {held:>6} {rel:>9} {"n/a":>14}'
+                  f'   <-- outside the 180d /v4/fixtures window')
+            out['months'][month]['universe'] = None
+            continue
+        print(f'  {month:<8} {u:>9,} {held:>6} {rel:>9} {rel/u*100:>13.2f}%')
+        out['months'][month]['universe'] = u
+        out['months'][month]['pctOfUniverse'] = rel / u * 100
+    print('\n  2026-01 and 2026-02 have no denominator because they sit outside '
+          'the 180-day /v4/fixtures window, and no numerator either:\n'
+          '  /v4/historical-odds 404s past ~180 days, so there is no source '
+          'from which a Close for those months could ever be recovered.')
 
     json.dump(out, open(OUT, 'w'), indent=1)
     print(f'\nwrote {OUT}')

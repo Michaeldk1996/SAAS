@@ -34,6 +34,10 @@ on:
         description: 'Run the oddspapi-raw bucket report (object count + size)'
         type: boolean
         default: true
+      density:
+        description: 'Measure summary rows/fixture from the bucket (no odds-API calls)'
+        type: boolean
+        default: true
 
 concurrency:
   group: ten225-sizing
@@ -81,6 +85,30 @@ jobs:
             python3 archive-oddspapi-raw.py report
             echo '```'
           } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      # --------------------------------------------------------------- density
+      # Item: "project rows per fixture and GB per year for this table".
+      # Reads the archived payloads out of the bucket and counts summary rows at
+      # Michael's grain. Makes NO odds-API call, so it cannot contend with the
+      # raw-archive job for the rate-limited key — which is exactly why the
+      # first attempt (direct /v4/historical-odds) was abandoned.
+      - name: Summary rows/fixture + GB/yr projection (from the bucket)
+        if: ${{ inputs.density }}
+        run: |
+          {
+            echo '## TEN-225 oddspapi_line_summary — rows/fixture and GB/yr'
+            echo '```'
+            python3 ten225-density-from-bucket.py
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload the density artifact
+        if: ${{ always() && inputs.density }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ten225-density
+          path: ten225-density-from-bucket.json
+          if-no-files-found: warn
 
       # --------------------------------------------------------------- rowsize
       - name: Build the bytes/row scratch tables
