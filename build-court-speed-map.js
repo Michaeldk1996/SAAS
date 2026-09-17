@@ -259,6 +259,66 @@ function main() {
     if (resolve(event)) resolvedRows += count;
   }
 
+  // ─── TEN-206 §8.1 · the CAREER-SPINE half of the join ──────────────────────
+  // Everything above resolves ARCHIVE (sponsor-shaped) event names, because the
+  // Court speed modal used to count its bands off the priced archive. §8.1 moves
+  // the bands onto the career match rows — the same spine Calendar and Streaks
+  // use — so the modal now has to resolve API-TENNIS (host-city-shaped) names as
+  // well, and it has to do it in the BROWSER, where neither canonicalTournament()
+  // nor COURT_CONDITIONS exists.
+  //
+  // Rather than port the matcher client-side, the names are resolved HERE and
+  // shipped as a plain dictionary. The page does a lookup and no matching, so
+  // there is exactly one implementation of "which venue is this" and it is this
+  // file. A name absent from `apiNames` is unbandable BY CONSTRUCTION — the page
+  // dashes it and counts it out loud, never guesses.
+  // The spine presents TWO name shapes and they are not the same strings.
+  // `tournamentHistory` says "Mutua Madrid Open"; the career-history shard the
+  // Calendar/Streaks/Court-speed spine is actually built from says "ATP Madrid".
+  // Both are enumerated, so a dictionary lookup on either resolves.
+  const apiSeen = new Set();
+  for (const key of Object.keys(players)) {
+    for (const t of players[key].tournamentHistory || []) {
+      const raw = String(t.name || '').trim();
+      if (raw) apiSeen.add(raw);
+    }
+  }
+  // career-history/ is a RUNTIME artifact (gitignored, rebuilt each pipeline run),
+  // so it is read when present and skipped when not. Absent, every career-history
+  // name falls through to the page's direct-substring tier, which costs ~1.7pp of
+  // Zverev's rows — a smaller, stated loss rather than a hard failure.
+  let chNames = 0;
+  const CH_DIR = path.join(ROOT, 'career-history');
+  if (fs.existsSync(CH_DIR)) {
+    for (const f of fs.readdirSync(CH_DIR)) {
+      if (!f.endsWith('.json')) continue;
+      let shard;
+      try { shard = JSON.parse(fs.readFileSync(path.join(CH_DIR, f), 'utf8')); } catch (e) { continue; }
+      for (const r of (shard.matches || shard || [])) {
+        const raw = String((r && r.tournament) || '').trim();
+        if (raw && !apiSeen.has(raw)) { apiSeen.add(raw); chNames += 1; }
+      }
+    }
+  }
+
+  const apiNames = {};
+  for (const raw of apiSeen) {
+    // Same precedence the archive half uses: direct/canonical substring first,
+    // then the voted table. The voted table is keyed by archive name, but an
+    // api-tennis name that happens to appear there resolves for free.
+    const v = venueOf(raw) || (derived[raw] && derived[raw].venue) || null;
+    if (v && CC[v]) apiNames[raw] = v;
+  }
+  const apiCoverage = {
+    distinctNames: apiSeen.size,
+    fromCareerHistory: chNames,
+    careerHistoryPresent: fs.existsSync(CH_DIR),
+    resolvedNames: Object.keys(apiNames).length,
+    basis: 'api-tennis tournamentHistory + career-history name -> rated venue, same matcher as the archive half',
+  };
+  log(`api-tennis names   : ${apiCoverage.resolvedNames} of ${apiSeen.size} distinct resolve to a rated venue` +
+      ` (${chNames} names came from career-history/${apiCoverage.careerHistoryPresent ? '' : ' — ABSENT'})`);
+
   const out = {
     schemaVersion: SCHEMA_VERSION,
     builtAt: new Date().toISOString(),
@@ -281,6 +341,14 @@ function main() {
     ambiguous: ambiguous.sort((a, b) => b.rows - a.rows),
     /** venue -> which (surface, court) is banded and which eras are set aside */
     surfaceGuard,
+    /** rated venue -> the reading the bands are cut from (§8.1, browser-side) */
+    venues: Object.fromEntries(ccKeys.map((k) => [k, {
+      speed: CC[k].abstractSpeed,
+      ratingYear: CC[k].abstractSpeedYear || null,
+    }])),
+    /** api-tennis tournament name -> rated venue; an absent name cannot be banded */
+    apiNames,
+    apiCoverage,
   };
   fs.writeFileSync(OUT_PATH, JSON.stringify(out, null, 1));
 
