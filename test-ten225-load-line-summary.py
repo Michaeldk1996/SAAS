@@ -534,6 +534,53 @@ check('ITF: a gate-REJECTED trueStart is not rescued by an agreeing flip',
       bad_itf[1] == 'api-tennis-live' and bad_itf[2] == 'implausible_early_start',
       f'got {bad_itf[1:3]}')
 
+# ------------------------------------- reason strings vs the schema's CHECK
+# Run 35213968572 is why this exists. The loader started emitting
+# 'end_before_start' and the CHECK constraint on oddspapi_line_summary still
+# enumerated only the two older reasons, so the upsert died at row 13,500 —
+# AFTER 13,500 rows had already been written. The constraint was right to refuse
+# an unruled string; what was missing was anything that notices the two lists
+# have drifted apart before a loader run finds out the hard way.
+#
+# So this reads the reasons the LOADER can actually emit straight out of its
+# source, and the sets both SCHEMA files allow, and fails if the three disagree.
+# It is deliberately derived from the files rather than restating a literal list
+# here: a fourth reason added to one place and not the others is exactly the
+# regression, and a hand-maintained third copy would just be one more thing to
+# forget.
+print('\nreject reasons — loader source vs BOTH schema CHECKs')
+
+import re as _re
+
+_src = open(os.path.join(HERE, 'ten225-load-line-summary.py')).read()
+# The assignments inside resolve_start(), e.g.  reason = 'end_before_start'
+_emitted = set(_re.findall(r"reason = '([a-z_]+)'", _src))
+_emitted |= set(_re.findall(r"reason or '([a-z_]+)'", _src))
+
+def _allowed(path):
+    txt = open(os.path.join(HERE, path)).read()
+    m = _re.search(r'start_reject_reason IN \(([^)]*)\)', txt, _re.S)
+    return set(_re.findall(r"'([a-z_]+)'", m.group(1))) if m else set()
+
+_ls = _allowed('ten225-line-summary-schema.sql')
+_cs = _allowed('ten225-card-state-schema.sql')
+
+check('the loader emits the three ruled reasons plus the ITF one',
+      _emitted == {'implausible_duration', 'implausible_early_start',
+                   'end_before_start', 'itf_uncorroborated_start'},
+      f'emitted={sorted(_emitted)}')
+check('every reason the loader can emit is allowed by the line-summary CHECK',
+      _emitted <= _ls, f'missing from schema: {sorted(_emitted - _ls)}')
+check('every reason the loader can emit is allowed by the card-state CHECK',
+      _emitted <= _cs, f'missing from schema: {sorted(_emitted - _cs)}')
+check('the two schemas allow the SAME set (a card row and its summary row '
+      'must never disagree about what a valid reason is)',
+      _ls == _cs, f'line-summary-only={sorted(_ls - _cs)} '
+                  f'card-state-only={sorted(_cs - _ls)}')
+check('the schemas allow nothing the loader cannot emit (a dead enum value '
+      'reads as a supported state that never appears)',
+      _ls <= _emitted, f'unreachable: {sorted(_ls - _emitted)}')
+
 # --- item 3: a live-flip Close needs gap_seconds <= 300 ON TOP of the rest
 arch2 = START + 1 * DAY
 good_lag = START - 30 * 60          # 30 min before start: inside the 60 min rule

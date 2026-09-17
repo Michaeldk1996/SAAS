@@ -126,7 +126,9 @@ CREATE TABLE IF NOT EXISTS oddspapi_line_summary (
   CONSTRAINT oddspapi_line_summary_reject_ck
     CHECK (start_reject_reason IS NULL
            OR start_reject_reason IN ('implausible_duration',
-                                      'implausible_early_start')),
+                                      'implausible_early_start',
+                                      'end_before_start',
+                                      'itf_uncorroborated_start')),
   -- A flagged conflict must carry its magnitude, and an unflagged row must not
   -- claim one. Without this, "flagged but unquantified" is a silent state.
   CONSTRAINT oddspapi_line_summary_conflict_ck
@@ -188,7 +190,19 @@ ALTER TABLE oddspapi_line_summary
   ADD CONSTRAINT oddspapi_line_summary_reject_ck
   CHECK (start_reject_reason IS NULL
          OR start_reject_reason IN ('implausible_duration',
-                                    'implausible_early_start'));
+                                    'implausible_early_start',
+                                    -- Michael's ruling 2026-09-17T10:45Z added
+                                    -- these two. Run 35213968572 is why they are
+                                    -- here: the loader emitted end_before_start
+                                    -- and this CHECK rejected the batch at row
+                                    -- 13,500. It was right to — an unruled reason
+                                    -- string is exactly what it exists to stop.
+                                    -- test-ten225-load-line-summary.py now
+                                    -- cross-checks this list against the reasons
+                                    -- the loader can actually emit, so a third
+                                    -- reason cannot repeat this.
+                                    'end_before_start',
+                                    'itf_uncorroborated_start'));
 
 ALTER TABLE oddspapi_line_summary
   DROP CONSTRAINT IF EXISTS oddspapi_line_summary_conflict_ck;

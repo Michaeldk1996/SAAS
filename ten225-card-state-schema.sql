@@ -97,7 +97,16 @@ CREATE TABLE IF NOT EXISTS odds_card_state (
     CHECK ((close_price IS NULL) = (close_ts IS NULL)),
   -- A close cut at a start we do not have is a contradiction.
   CONSTRAINT odds_card_state_close_needs_start_ck
-    CHECK (close_price IS NULL OR start_ts IS NOT NULL)
+    CHECK (close_price IS NULL OR start_ts IS NOT NULL),
+  -- A reason must be one we ruled. Same enumeration as the line summary, and
+  -- kept in step with it by test-ten225-load-line-summary.py, which reads BOTH
+  -- files and the loader and fails if the three disagree.
+  CONSTRAINT odds_card_state_reject_ck
+    CHECK (start_reject_reason IS NULL
+           OR start_reject_reason IN ('implausible_duration',
+                                      'implausible_early_start',
+                                      'end_before_start',
+                                      'itf_uncorroborated_start'))
 );
 
 -- Idempotent migration for any instance that predates a column above.
@@ -105,6 +114,16 @@ ALTER TABLE odds_card_state
   ADD COLUMN IF NOT EXISTS start_reject_reason text,
   ADD COLUMN IF NOT EXISTS start_ts            timestamptz,
   ADD COLUMN IF NOT EXISTS id_space            text;
+
+ALTER TABLE odds_card_state
+  DROP CONSTRAINT IF EXISTS odds_card_state_reject_ck;
+ALTER TABLE odds_card_state
+  ADD CONSTRAINT odds_card_state_reject_ck
+  CHECK (start_reject_reason IS NULL
+         OR start_reject_reason IN ('implausible_duration',
+                                    'implausible_early_start',
+                                    'end_before_start',
+                                    'itf_uncorroborated_start'));
 
 ALTER TABLE odds_card_state ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON odds_card_state FROM anon, authenticated;
