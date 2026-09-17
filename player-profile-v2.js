@@ -297,7 +297,25 @@
     // has no global rule for it, so it lands here scoped to the one container.
     '.pp2-xscroll::-webkit-scrollbar{width:9px;height:9px;}' +
     '.pp2-xscroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.13);border-radius:5px;}' +
-    '.pp2-xscroll::-webkit-scrollbar-track{background:transparent;}</style>';
+    '.pp2-xscroll::-webkit-scrollbar-track{background:transparent;}' +
+    // ─── §5.6 item 15 · the bubble-chart x tick labels ───────────────────────
+    // `tickLabel()` (Player Stat Boxes.dc.html:1546) drives four properties off a
+    // HOVER state (`styleTick`) and swaps the abbreviation for the full archetype
+    // name. Doing that through our state object would repaint the entire modal on
+    // every pass of the pointer, so the lift is CSS and the text swap is a display
+    // toggle over two spans. `.on` is the selected archetype, which the file lifts
+    // the same way. Values are the file's: colour #8b96b5 -> #e7e9ee, weight
+    // 400 -> 700, border-bottom dotted rgba(255,255,255,0.22) -> solid
+    // rgba(91,155,255,0.45), background transparent -> #06070a, z-index 1 -> 3.
+    '.pp2-stk{position:absolute;top:8px;transform:translateX(-50%);cursor:pointer;z-index:1;' +
+    'padding:2px 5px;border-radius:5px;background:transparent;color:#8b96b5;font-weight:400;' +
+    'border-bottom:1px dotted rgba(255,255,255,0.22);' +
+    'font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;letter-spacing:0.08em;white-space:nowrap;}' +
+    '.pp2-stk .pp2-stk-n{display:none;}' +
+    '.pp2-stk:hover,.pp2-stk.on{background:#06070a;color:#e7e9ee;font-weight:700;z-index:3;' +
+    'border-bottom:1px solid rgba(91,155,255,0.45);}' +
+    '.pp2-stk:hover .pp2-stk-a,.pp2-stk.on .pp2-stk-a{display:none;}' +
+    '.pp2-stk:hover .pp2-stk-n,.pp2-stk.on .pp2-stk-n{display:inline;}</style>';
 
   var SPINE_SURFACES = ['hard', 'clay', 'grass'];
   var SPINE_LABEL = { hard: 'Hard', clay: 'Clay', grass: 'Grass', other: 'Unrecorded surface' };
@@ -1619,7 +1637,11 @@
       case 'splits': return 'Record and win rate by surface, level, format, round and opponent';
       case 'market': return 'How the market has priced him, and what backing him flat has returned';
       case 'speed': return 'Win rate by court pace band';
-      case 'styles': return 'Win rate against each playing style ' + possessive(sn) + ' record covers';
+      // TEN-228 item 5 · the file's own BOXES subtitle, verbatim and static
+      // (`Player Stat Boxes.dc.html`:2935). The previous string was a truthful
+      // hedge about coverage; the coverage fact now lives in the footnote, where
+      // §5.6's own note already carries it.
+      case 'styles': return 'Win rate by opposing archetype ' + MIDDOT + ' minimum 5 matches';
       // §5.9. The subtitle names the SOURCE's window, not a career span — this
       // modal is the only block on the page fed by the point-by-point rollup and
       // its horizon is shorter than the ledger's.
@@ -1633,8 +1655,20 @@
     }
   }
 
+  // TEN-228 item 5 · "Title 'Matchup record' (live: 'Versus playing styles')".
+  //
+  // REPORTED DIFFERENCE, and the reason this is an override rather than a rename
+  // of the box: the FILE's own BOXES entry (`Player Stat Boxes.dc.html`:2935)
+  // reads `title: 'Versus playing styles'`, and that same string is what renders
+  // on the page TILE (renderBoxes -> b.title). The design screenshot attached to
+  // the amendment shows "Matchup record" in the MODAL header, which is what the
+  // founder is comparing against, and he asked for it under "SHELL". So the modal
+  // takes the new title and the accepted §4 tile is left alone. If he wants the
+  // tile renamed too it is one entry in this map away — asked in the report.
+  var MODAL_TITLE = { styles: 'Matchup record' };
   function modalShell(key, p, ctx, body) {
-    var title = (BOXES.filter(function (b) { return b.key === key; })[0] || {}).title || '';
+    var title = MODAL_TITLE[key] ||
+      (BOXES.filter(function (b) { return b.key === key; })[0] || {}).title || '';
     return '' +
       '<div class="pp2-scrim" data-pp2="scrim" style="position:fixed;inset:0;background:rgba(4,5,9,0.76);' +
       'backdrop-filter:blur(3px);z-index:60;display:flex;align-items:flex-start;justify-content:center;' +
@@ -1691,7 +1725,18 @@
   // choice, not a measurement — the single number here I could not read off the
   // file.
   var SMALL_RATE_PX = 15;
-  var DIM_COLOUR = '#3f4860';
+  // TEN-228 item 23, founder: "n < 5 -> name #5b6880 (file colour)". He is right
+  // and this was wrong: `Player Stat Boxes.dc.html`:1172 declares
+  // `DIM = '#5b6880'` and its shared `row()` (:1398) paints the under-minimum
+  // NAME with DIM, not with FAINT. We had #3f4860 — the file's FAINT, which it
+  // reserves for the under-minimum RATE. One constant was doing two jobs.
+  //
+  // `row()` is shared by the career and styles boxes in the export exactly as
+  // barRow() is here, so this corrects §5.2A's under-minimum rows too. Reported
+  // rather than slipped in. The matching FAINT on the dashed RATE is NOT applied:
+  // that cell reads DASH_COLOUR #4b5672 today and changing it would restyle an
+  // accepted surface on an instruction the founder did not give.
+  var DIM_COLOUR = '#5b6880';
   // ─── MINIMAL BAR — the founder's override of the export (2026-09-17) ────────
   //
   // The export's `row()` computes ONE blue ramp whose ALPHA encodes the rate
@@ -1718,7 +1763,20 @@
     if (g === GATE.SMALL) return BAR_SMALL;
     return null;
   }
-  // opts: { label, meta, won, lost, hook, v, open, detail }
+  // opts: { label, meta, thinMeta, won, lost, hook, v, open, openBg, anchor,
+  //         units, unitsColour, detail }
+  //
+  // TEN-228 §5.6 additions, all opt-in so §5.2A's shipped pixels are untouched
+  // where they are not passed:
+  //   thinMeta     the file's under-minimum meta ("N matches · below the
+  //                five-match minimum"); without it `meta` is used for both.
+  //   units        a mono 12px/700 line ABOVE the rate, which is what the file's
+  //                right cell holds (`flex-direction:column; align-items:flex-end;
+  //                gap:4px`). Absent -> the single-value cell renders unchanged.
+  //   openBg       the selected-row background (amendment item 24). §5.2A ships
+  //                with border-only selection, so this stays off there.
+  //   anchor       a scroll target id, so a bubble click can bring its row into
+  //                view (item 16).
   function barRow(opts) {
     var won = opts.won || 0, lost = opts.lost || 0;
     var n = won + lost;
@@ -1739,17 +1797,20 @@
 
     var thin = g === GATE.NONE || g === GATE.THIN;
     var clickable = !!opts.hook && !thin;
+    var bg = thin ? 'rgba(255,255,255,0.012)' : '#06070a';
+    if (opts.open && opts.openBg) bg = 'rgba(91,155,255,0.08)';
     return '' +
       '<div' + (clickable ? ' data-pp2="' + opts.hook + '" data-v="' + esc(String(opts.v)) + '"' : '') +
+      (opts.anchor ? ' data-pp2-anchor="' + esc(String(opts.anchor)) + '"' : '') +
       ' style="display:grid;grid-template-columns:minmax(0,1fr) 300px 58px;gap:16px;align-items:center;' +
       'border-radius:10px;padding:13px 16px;' +
       'border:1px solid ' + (opts.open ? 'rgba(91,155,255,0.4)' : 'rgba(255,255,255,0.07)') + ';' +
-      'background:' + (thin ? 'rgba(255,255,255,0.012)' : '#06070a') + ';' +
+      'background:' + bg + ';' +
       (clickable ? 'cursor:pointer;' : '') + '">' +
         '<div style="min-width:0;"><div style="font-size:14px;font-weight:700;' +
           (thin ? 'color:' + DIM_COLOUR + ';' : '') + '">' + esc(opts.label) + '</div>' +
           '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:#4b5672;' +
-            'margin-top:4px;">' + esc(opts.meta) + '</div></div>' +
+            'margin-top:4px;">' + esc((thin && opts.thinMeta) ? opts.thinMeta : opts.meta) + '</div></div>' +
         // Minimal bar: 4px track, 4px fill, radius 2 on both, one solid colour.
         // The grid's align-items:center does the vertical centring, so the track
         // needs no margin of its own.
@@ -1759,9 +1820,16 @@
               'background:' + barFillColour(n) + ';border-radius:2px;"></div>'
             : '') +
         '</div>' +
-        '<div style="text-align:right;font-family:\'IBM Plex Mono\',monospace;font-size:' + ratePx + 'px;' +
-          'font-weight:700;color:' + rateColour + ';">' + rate + mark +
-        '</div>' +
+        (opts.units == null
+          ? '<div style="text-align:right;font-family:\'IBM Plex Mono\',monospace;font-size:' + ratePx + 'px;' +
+            'font-weight:700;color:' + rateColour + ';">' + rate + mark + '</div>'
+          : '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">' +
+            '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;font-weight:700;' +
+              'color:' + (opts.unitsColour || '#3f4860') + ';">' + esc(String(opts.units)) + '</span>' +
+            '<span style="text-align:right;font-family:\'IBM Plex Mono\',monospace;' +
+              'font-size:' + ratePx + 'px;font-weight:700;color:' + rateColour + ';">' +
+              rate + mark + '</span>' +
+            '</div>') +
       '</div>' + (opts.detail || '');
   }
 
@@ -4883,16 +4951,21 @@
    * Grass keeps the founder's 2026-09-16 ruling: always Very fast, rating or not.
    */
   /**
-   * The PRICED market-shard rows — §5.6's population, and what speedRows() used to
-   * return before §8.1 moved Court speed onto the career spine.
+   * The PRICED market-shard rows — the population §8.1 (Court speed) and §5.6
+   * (Matchup record) BOTH used to count off, and which neither counts off now.
    *
-   * These two populations must not be conflated again. §5.6 keys every row on
-   * `oppArchetype`, which only build-market-edge.js stamps, and sums `pl` off the
-   * row itself; the career spine carries neither. Pointing §5.6 at the spine leaves
-   * its eight archetype rows structurally intact and numerically empty — eight
-   * labels reading 0-0 — which looks like a player who has never met anyone rather
-   * than like a broken join. It is split out under its own name so the next person
-   * to repoint one modal cannot silently take the other with it.
+   * No renderer calls this today; it is kept as the named accessor for the priced
+   * shard, used by the reconciliation tests to assert the difference between the
+   * two populations rather than to define either of them.
+   *
+   * The reason the split matters has not changed, only the resolution. The old
+   * comment here argued §5.6 could not leave this shard because only
+   * build-market-edge.js stamps `oppArchetype`. That was an argument about where
+   * the LABEL comes from, not about which matches the modal is counting, and it
+   * produced the founder's defect: an archetype record over 727 priced rows
+   * standing in for a 775-match career. §5.6 now resolves the label client-side
+   * (styleArchetypeOf) over calSpine(), and takes units from the priced subset
+   * alone. Two populations, both stated on the card.
    */
   function marketRows(p) {
     var mk = marketFor(p.key);
@@ -5306,30 +5379,39 @@
   function shortRound(r) { return ROUND_SHORT[r] || (r == null ? DASH : String(r)); }
 
   // ═══════════════════════════════════════════════════════════════════════════
-  // §5.6 VERSUS PLAYING STYLES
+  // §5.6 MATCHUP RECORD  (TEN-228 amendment, founder 2026-09-17)
   // ═══════════════════════════════════════════════════════════════════════════
-  // Taxonomy: the board-finalised v5.1 set in playing-styles.json, which
-  // matchup-matrix.json also names as its own source. Eight labels, carried
-  // verbatim. The ticket asks for "v5.2 names and IDs exactly" — no v5.2 exists in
-  // this repo (reported at recon); the prototype's own row labels are v5.1 verbatim,
-  // so the export and our data already agree.
   //
-  // Source: market-edge rows, which build-market-edge.js now stamps with the
-  // OPPONENT's archetype using the same name resolver that joins the row's subject.
+  // SPINE (amendment item 1). This modal used to count off marketRows() — the
+  // PRICED archive, 727 rows for Zverev — so a match needed a Pinnacle price
+  // before the opponent's archetype could be counted at all. It now counts off
+  // calSpine(), the identical career spine Calendar, Streaks and Court speed use
+  // (775 for Zverev), and `cents` carries the Pinnacle-closing P&L for the priced
+  // subset only. Same split §8.1 already makes: the LIST is career rows, the
+  // UNITS are the priced subset, and the two are labelled separately so a reader
+  // cannot take one count for the other.
   //
-  // Coverage is the honest constraint and the modal states it. The labelled roster is
-  // the CURRENT 250 players, so a long career's early opponents are mostly unlabelled
-  // by construction: Djokovic 424 of 1,277, against a 75.8% median for players whose
-  // careers sit inside the roster era.
+  // The old build's own comment argued the opposite — that pointing §5.6 at the
+  // spine would leave eight structurally-intact, numerically-empty rows. That was
+  // true only because the spine carries no `oppArchetype`; the fix is to resolve
+  // the label here (styleArchetypeOf) rather than to keep the modal on the wrong
+  // population. marketRows() is left in place as the named accessor for the
+  // priced shard — no renderer calls it now; the tests use it to assert that the
+  // two populations really are different.
+  //
+  // TAXONOMY (item 2). playing-styles.json, the board-finalised set the profile
+  // header and matchup-matrix.json already name. Eight labels, carried verbatim.
+  // No v5.2 exists in this repo (reported at recon and still true).
 
   /**
-   * Serve-first to baseline-first, the design's x order, with All Court Elite held
-   * out to the right of the divider as its own tier.
+   * Serve-first to baseline-first — the design's x order — with All Court Elite
+   * held out to the right of the divider as its own tier.
    *
-   * ABBREVIATIONS: BS / BS+FS / BS+CB / AB / SB / ACE are the design's own. CP and SD
-   * are NOT — the export never plots Counterpuncher or Solid Defender (they were that
-   * player's two under-minimum rows), so those two are derived here and flagged in the
-   * report rather than presented as specified.
+   * ABBREVIATIONS: BS / BS+FS / BS+CB / AB / SB / ACE are the design's own
+   * (`Player Stat Boxes.dc.html`:3068). CP and SD are NOT: the export never plots
+   * Counterpuncher or Solid Defender because they were that placeholder player's
+   * two under-minimum rows. They are derived here and flagged in the report
+   * rather than presented as specified.
    */
   var STYLE_AXIS = [
     { label: 'Big Server', abbr: 'BS' },
@@ -5342,206 +5424,449 @@
     { label: 'All Court Elite', abbr: 'ACE', elite: true }
   ];
 
-  /** Per-archetype record over the priced rows, plus the rows carrying no label. */
+  // ─── opponent → archetype (item 2: "never guessed") ────────────────────────
+  //
+  // build-market-edge.js stamps `oppArchetype` on the priced rows through its own
+  // server-side resolver. The career spine has no such column, so the same join
+  // is made here, against the same file, under a refusal rule.
+  //
+  //   tier 1  EXACT display name.               Zverev 521 of 775 rows
+  //   tier 2  surname key, unique on BOTH sides AND the initial agrees.   +13
+  //
+  // THE INITIAL GUARD IS LOAD-BEARING, not a formality. Measured on the deployed
+  // stores, tier 2 without it silently labels:
+  //     M. Zverev  -> A. Zverev      (Mischa taking Alexander's archetype)
+  //     M. Ymer    -> E. Ymer        3 rows for Zverev, 4 for Sinner
+  //     T. Bellucci-> M. Bellucci    3 rows
+  //     G. Muller  -> A. Muller      2 rows
+  // — 9 guessed rows for Zverev alone. With the guard, every tier-2 hit is a
+  // pure punctuation/case difference on the SAME person:
+  //     A. de Minaur -> A. De Minaur · R. Bautista Agut -> R. Bautista-Agut
+  //     P. Carreno Busta -> P. Carreno-Busta · C. O'Connell (entity-escaped)
+  // Anything else is counted UNLABELLED and says so in the footnote.
+  var styleByName = null, styleBySurname = null;
+  function styleStores() {
+    if (styleByName) return;
+    styleByName = {}; styleBySurname = {};
+    var src = window.playingStyles;
+    var list = (src && src.players) || (Array.isArray(src) ? src : []);
+    for (var i = 0; i < list.length; i++) {
+      var s = list[i];
+      if (!s || !s.name || !s.archetype_label) continue;
+      styleByName[s.name] = s.archetype_label;
+      var k = oppKeyOf(s.name);
+      (styleBySurname[k] = styleBySurname[k] || []).push(s);
+    }
+  }
+  function styleInitialOf(name) {
+    var m = /^([A-Za-z])[.\s]/.exec(String(name || '').trim());
+    return m ? m[1].toLowerCase() : '';
+  }
+  function styleArchetypeOf(name) {
+    styleStores();
+    var n = String(name || '').trim();
+    if (!n) return null;
+    if (styleByName[n]) return styleByName[n];
+    var c = styleBySurname[oppKeyOf(n)];
+    if (!c || c.length !== 1) return null;                       // ambiguous -> refuse
+    var a = styleInitialOf(n), b = styleInitialOf(c[0].name);
+    if (!a || !b || a !== b) return null;                        // different person -> refuse
+    return c[0].archetype_label;
+  }
+
+  /**
+   * Per-archetype record over the CAREER SPINE, with the Pinnacle-priced subset
+   * carried separately (item 1).
+   *
+   * Reconciliation (item 4), guaranteed by construction rather than by a check:
+   *   Σ rows (including under-minimum) + `unlabelled` === `total` === career M,
+   *   because every spine row lands in exactly one bucket or in `unlabelled`.
+   *   The Career footer row sums THESE row objects, so it cannot disagree with
+   *   the list above it, and a row's detail is `r.rows` itself.
+   *
+   * ORDER (item 22): win rate descending, under-minimum rows at the bottom — the
+   * design's own D array is written that way and the two null-rate rows sit last.
+   */
   function styleRows(p) {
+    var spine = calSpine(p);
+    if (styleRows._k === p.key && styleRows._s === spine && styleRows._ps === window.playingStyles &&
+        styleRows._v) {
+      return styleRows._v;
+    }
     var agg = {};
-    STYLE_AXIS.forEach(function (a) { agg[a.label] = { axis: a, won: 0, lost: 0, pl: 0, rows: [] }; });
+    STYLE_AXIS.forEach(function (a) {
+      agg[a.label] = { axis: a, won: 0, lost: 0, cents: 0, priced: 0, rows: [] };
+    });
     var unlabelled = 0;
-    // §5.6 reads the PRICED market rows, not the Court speed spine — see
-    // marketRows() for why the two must stay apart.
-    marketRows(p).forEach(function (m) {
-      var a = m.oppArchetype && agg[m.oppArchetype];
+    spine.forEach(function (m) {
+      var lab = styleArchetypeOf(m.opp);
+      var a = lab && agg[lab];
       if (!a) { unlabelled += 1; return; }
       if (m.won) a.won += 1; else a.lost += 1;
-      a.pl += (m.pl == null ? 0 : m.pl);
       a.rows.push(m);
+      // Units are the PRICED subset and nothing else (item 1, R1). `cents` is
+      // set by calSpine() only where the join landed a Pinnacle CLOSING price;
+      // a bet365 pre-match snapshot never reaches it.
+      if (m.cents != null) { a.cents += m.cents; a.priced += 1; }
     });
     var out = STYLE_AXIS.map(function (a) { return agg[a.label]; });
+    out.sort(function (x, y) {
+      var nx = x.won + x.lost, ny = y.won + y.lost;
+      var ox = styleOpenable(nx), oy = styleOpenable(ny);
+      if (ox !== oy) return ox ? -1 : 1;                 // under-minimum to the bottom
+      if (!ox) return ny - nx;                           // then by size, largest first
+      var d = (y.won / ny) - (x.won / nx);
+      return d !== 0 ? d : (ny - nx);                    // rate desc, tie -> larger n
+    });
     out.unlabelled = unlabelled;
+    out.total = spine.length;
+    styleRows._k = p.key; styleRows._s = spine; styleRows._ps = window.playingStyles;
+    styleRows._v = out;
     return out;
+  }
+  /** n >= 5 — the modal's stated minimum. Plotted, openable and rate-bearing. */
+  function styleOpenable(n) {
+    var g = gateFor(n);
+    return g !== GATE.NONE && g !== GATE.THIN;
   }
 
   function renderStylesModal(p) {
     var rows = styleRows(p);
-    var total = marketRows(p).length;
-    if (!total) {
+    if (!rows.total) {
       return '<div style="border:1px dashed rgba(255,255,255,0.12);border-radius:10px;padding:26px;' +
-        'text-align:center;font-size:13px;color:#5b6880;">No priced matches on record, ' +
+        'text-align:center;font-size:13px;color:#5b6880;">No matches on record, ' +
         'so no opponent can be archetyped.</div>';
     }
-    return renderStyleBubbles(rows) + renderStyleList(rows) + renderStyleNote(rows, total);
+    return renderStyleBubbles(rows) + renderStyleList(rows) + renderStyleNote(rows);
+  }
+
+  // ─── the y scale (item 10) ─────────────────────────────────────────────────
+  //
+  // README §5.6 says "Y axis 40-80%". THE FILE DOES NOT: `Player Stat Boxes.dc
+  // .html`:3073 sets `LO = 35, HI = 80` and prints ticks at 80/70/60/50/40, so
+  // the 40% tick sits at 88.9% down the plot and the bottom 11.1% is PAD. That
+  // padding is why the export's own 41% bubble is not cut in half by the axis.
+  // Reported as a README-vs-file difference; the file wins, so the pad is kept.
+  //
+  // The founder's rule on top of it: extend the TICK range in 10pp steps when a
+  // value falls outside it, regenerating ticks and gridlines; never clip, never
+  // clamp. The old build clamped to 40-80 and pinned an 81% bubble to the top
+  // edge, which is what he caught.
+  //
+  // `max >= hi` rather than `max > hi` is deliberate and is the one place this
+  // resolves a conflict between two of his sentences. A value sitting exactly ON
+  // the top tick has its centre on the plot's top border and half the disc
+  // outside it — "outside 40-80" says leave it, "never clipped" says do not. The
+  // harder rule wins: a boundary value extends. The bottom needs no such test
+  // because the file's 5pp pad already holds a bubble at the low tick clear.
+  var STYLE_TICK_LO = 40, STYLE_TICK_HI = 80, STYLE_PAD_LO = 5;
+  function styleScale(values) {
+    var lo = STYLE_TICK_LO, hi = STYLE_TICK_HI;
+    var min = null, max = null;
+    values.forEach(function (v) {
+      if (min == null || v < min) min = v;
+      if (max == null || v > max) max = v;
+    });
+    if (min == null) { min = lo; max = hi - 1; }
+    while (min < lo && lo > 0) lo -= 10;
+    while (max >= hi && hi < 100) hi += 10;
+    // hi has hit 100 and a value is still on or above it (a clean sweep, 100%).
+    // Ticks stop at 100 — there is no 110% — so the SCALE takes the headroom.
+    var padHi = max >= hi ? STYLE_PAD_LO : 0;
+    var ticks = [];
+    for (var t = hi; t >= lo; t -= 10) ticks.push(t);
+    return { lo: lo, hi: hi, LO: lo - STYLE_PAD_LO, HI: hi + padHi, ticks: ticks };
   }
 
   /**
-   * Bubble plot. Y is fixed 40-80% as the design specifies, so a rate outside that
-   * range is CLAMPED for position and still printed exactly — a bubble pinned to the
-   * axis is honest about its value; a silently rescaled axis is not.
+   * Bubble plot. Geometry, colours and the label offset are the file's
+   * (`Player Stat Boxes.dc.html`:359-390 for the markup, :3066-3104 for the
+   * model); only the y scale generalises, per item 10.
    */
   function renderStyleBubbles(rows) {
-    var plotted = rows.filter(function (r) {
-      var n = r.won + r.lost;
-      return gateFor(n) !== GATE.NONE && gateFor(n) !== GATE.THIN;
-    });
+    var plotted = rows.filter(function (r) { return styleOpenable(r.won + r.lost); });
+    var card = 'background:#06070a;border:1px solid rgba(255,255,255,0.08);border-radius:12px;' +
+      'padding:20px 22px 16px;margin-bottom:18px;display:flex;flex-direction:column;gap:14px;';
     if (!plotted.length) {
-      return '<div style="background:#06070a;border:1px solid rgba(255,255,255,0.08);border-radius:12px;' +
-        'padding:20px 22px 16px;margin-bottom:16px;">' +
+      return '<div style="' + card + '">' + styleEyebrow() +
         '<div style="border:1px dashed rgba(255,255,255,0.12);border-radius:10px;padding:26px;' +
         'text-align:center;font-size:13px;color:#5b6880;">No archetype clears the five-match ' +
         'minimum, so the chart has nothing to plot.</div></div>';
     }
-    // The design's radius is 16 + n/47*22, where 47 was that player's busiest
-    // archetype — placeholder scale, not a constant. Re-derived from this player's max
-    // so the biggest bubble still lands at 38px.
-    var maxN = plotted.reduce(function (m, r) { return Math.max(m, r.won + r.lost); }, 1);
-    var regular = plotted.filter(function (r) { return !r.axis.elite; });
-    var elite = plotted.filter(function (r) { return r.axis.elite; });
+    // Plot order is the AXIS order (serve-first -> baseline-first), not the row
+    // list's rate order — the x axis is a style spectrum and must not resort.
+    var byAxis = STYLE_AXIS.map(function (a) {
+      return plotted.filter(function (r) { return r.axis.label === a.label; })[0] || null;
+    }).filter(Boolean);
+    var regular = byAxis.filter(function (r) { return !r.axis.elite; });
+    var elite = byAxis.filter(function (r) { return r.axis.elite; });
 
-    var ticks = [80, 70, 60, 50, 40].map(function (t) {
-      var y = (80 - t) / 40 * 100;
-      return '<div style="position:absolute;right:calc(100% + 6px);top:' + y + '%;transform:translateY(-50%);' +
-        'font-size:10px;color:#4b5672;">' + t + '%</div>' +
-        '<div style="position:absolute;left:0;right:0;top:' + y + '%;height:1px;background:' +
-        (t === 50 ? 'rgba(255,255,255,0.28)' : 'rgba(255,255,255,0.05)') + ';"></div>' +
-        (t === 50 ? '<div style="position:absolute;left:4px;top:' + y + '%;transform:translateY(-130%);' +
-          'font-family:\'IBM Plex Mono\',monospace;font-size:9px;color:#5b6880;">even</div>' : '');
+    var sc = styleScale(byAxis.map(function (r) { return 100 * r.won / (r.won + r.lost); }));
+    function top(v) { return ((1 - (v - sc.LO) / (sc.HI - sc.LO)) * 100).toFixed(1) + '%'; }
+
+    var tickLabels = sc.ticks.map(function (t) {
+      return '<span style="position:absolute;right:0;top:' + top(t) + ';transform:translateY(-50%);' +
+        'font-family:\'IBM Plex Mono\',monospace;font-size:10px;color:#4b5672;">' + t + '%</span>';
+    }).join('');
+    var gridlines = sc.ticks.map(function (t) {
+      return '<span style="position:absolute;left:0;right:0;top:' + top(t) + ';height:1px;' +
+        'background:rgba(255,255,255,0.05);"></span>';
     }).join('');
 
-    function bubble(r, leftPct) {
+    // The design's scale constant is 47 — the busiest archetype of a placeholder
+    // player whose whole chart covered 155 matches. A real top-10 career puts 156
+    // matches into one archetype, so the raw formula would mint an 89px disc.
+    // The file's own range is 16px (n=0) to 38px (n=47); the amendment says
+    // "cap as the file", so 38px is the ceiling. MEASURED CONSEQUENCE, reported
+    // rather than silently worked around: for Zverev five of eight archetypes sit
+    // at or above n=47 and therefore render at an identical 38px, which is the
+    // eyebrow's "bubble size is match count" losing its resolution at the top.
+    function bubbleSize(n) { return Math.round(Math.min(38, 16 + n / 47 * 22)); }
+    function blue(pct) {
+      return 'rgba(91,155,255,' +
+        Math.max(0.25, Math.min(1, 0.25 + (pct - 40) / 34 * 0.75)).toFixed(2) + ')';
+    }
+    function point(r, left) {
       var n = r.won + r.lost;
-      var rate = 100 * r.won / n;
-      var clamped = Math.max(40, Math.min(80, rate));
-      var y = (80 - clamped) / 40 * 100;
-      var size = 16 + (n / maxN) * 22;
-      var op = 0.25 + ((clamped - 40) / 40) * 0.75;
-      return '<div data-pp2="style-row" data-v="' + esc(r.axis.label) + '" ' +
-        'style="position:absolute;left:' + leftPct + '%;top:' + y + '%;transform:translate(-50%,-50%);' +
-        'cursor:pointer;">' +
-        '<div style="position:absolute;left:50%;bottom:' + (size / 2 + 4).toFixed(1) + 'px;' +
-          'transform:translateX(-50%);font-family:\'IBM Plex Mono\',monospace;font-size:12px;' +
-          'font-weight:700;color:#e7e9ee;white-space:nowrap;">' + rate.toFixed(0) + '%</div>' +
-        '<div style="width:' + size.toFixed(1) + 'px;height:' + size.toFixed(1) + 'px;border-radius:50%;' +
-          'background:rgba(91,155,255,' + op.toFixed(2) + ');border:1px solid rgba(91,155,255,0.5);"></div>' +
-        '</div>';
+      var pct = 100 * r.won / n;
+      var size = bubbleSize(n);
+      var tip = r.axis.label + ' ' + MIDDOT + ' ' + Math.round(pct) + '% ' + MIDDOT + ' n=' + n;
+      return '<span data-pp2="style-row" data-v="' + esc(r.axis.label) + '" title="' + esc(tip) + '" ' +
+        'style="cursor:pointer;position:absolute;left:' + left + ';top:' + top(pct) + ';' +
+        'transform:translate(-50%,-50%);width:' + size + 'px;height:' + size + 'px;border-radius:50%;' +
+        'background:' + blue(pct) + ';border:1px solid rgba(91,155,255,0.5);"></span>' +
+        // The value sits ABOVE the disc with a gap — translateY(-(r + 13)) is the
+        // file's own `labelShift`. It is deliberately allowed to paint over the
+        // plot's top border; the card's 14px flex gap is the clear space the
+        // amendment's item 7 asks for.
+        '<span style="position:absolute;left:' + left + ';top:' + top(pct) + ';' +
+        'transform:translate(-50%,-50%) translateY(-' + (size / 2 + 13) + 'px);' +
+        'font-family:\'IBM Plex Mono\',monospace;font-size:12px;font-weight:700;color:#e7e9ee;' +
+        'white-space:nowrap;pointer-events:none;">' + Math.round(pct) + '%</span>';
     }
-    function xlabel(r, leftPct) {
+    // Hover and selection are CSS, not state: a repaint on mouseenter would tear
+    // down and rebuild the whole modal on every pass of the pointer. The file
+    // swaps the abbreviation for the full name on hover, so both are rendered and
+    // the swap is a display toggle.
+    function xlabel(r, left) {
       var on = state.styleRow === r.axis.label;
-      return '<div data-pp2="style-row" data-v="' + esc(r.axis.label) + '" ' +
-        'style="position:absolute;left:' + leftPct + '%;top:6px;transform:translateX(-50%);' +
-        'font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;letter-spacing:0.08em;cursor:pointer;' +
-        'white-space:nowrap;padding:2px 5px;border-radius:4px;' +
-        (on ? 'background:rgba(91,155,255,0.16);font-weight:700;border-bottom:1px solid #5b9bff;color:#e7e9ee;'
-            : 'color:#5b6880;') + '">' + esc(r.axis.abbr) + '</div>';
+      return '<span class="pp2-stk' + (on ? ' on' : '') + '" data-pp2="style-row" ' +
+        'data-v="' + esc(r.axis.label) + '" title="' + esc(r.axis.label) + '" ' +
+        'style="left:' + left + ';">' +
+        '<span class="pp2-stk-a">' + esc(r.axis.abbr) + '</span>' +
+        '<span class="pp2-stk-n">' + esc(r.axis.label) + '</span></span>';
     }
 
-    var bubbles = '', labels = '';
+    var span = 80, step = span / (regular.length + 1);
+    var pts = '', labels = '';
     regular.forEach(function (r, i) {
-      var x = regular.length === 1 ? 43 : 8 + (i / (regular.length - 1)) * 70;
-      bubbles += bubble(r, x); labels += xlabel(r, x);
+      var x = (step * (i + 1)).toFixed(1) + '%';
+      pts += point(r, x); labels += xlabel(r, x);
     });
-    elite.forEach(function (r) { bubbles += bubble(r, 92); labels += xlabel(r, 92); });
+    elite.forEach(function (r) { pts += point(r, '92%'); labels += xlabel(r, '92%'); });
 
-    return '<div style="background:#06070a;border:1px solid rgba(255,255,255,0.08);border-radius:12px;' +
-      'padding:20px 22px 16px;margin-bottom:16px;">' +
-      '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
-        'letter-spacing:0.14em;text-transform:uppercase;color:#4b5672;margin-bottom:16px;">' +
-        'Win rate by archetype ' + MIDDOT + ' bubble size is match count</div>' +
-      '<div style="display:grid;grid-template-columns:52px 1fr;">' +
-        '<div style="position:relative;">' +
-          '<div style="position:absolute;left:8px;top:50%;transform:translateY(-50%) rotate(-90deg);' +
-            'font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;letter-spacing:0.14em;' +
-            'text-transform:uppercase;color:#4b5672;white-space:nowrap;">Win rate</div>' +
+    var foot = 'position:absolute;bottom:0;font-family:\'IBM Plex Mono\',monospace;font-size:9px;' +
+      'letter-spacing:0.14em;text-transform:uppercase;color:#3f4860;white-space:nowrap;';
+
+    return '<div style="' + card + '">' +
+      styleEyebrow() +
+      '<div style="display:grid;grid-template-columns:52px minmax(0,1fr);gap:12px;">' +
+        '<div style="position:relative;height:240px;">' +
+          // Rotated, anchored at the column's LEFT edge; the tick labels are
+          // right-aligned in the same 52px column. That is the file's own layout
+          // and it is what keeps "WIN RATE" clear of "60%" (item 9).
+          '<span style="position:absolute;left:-2px;top:50%;transform:translateY(-50%) rotate(-90deg);' +
+            'font-family:\'IBM Plex Mono\',monospace;font-size:9px;letter-spacing:0.14em;' +
+            'text-transform:uppercase;color:#3f4860;white-space:nowrap;">Win rate</span>' +
+          tickLabels +
         '</div>' +
-        '<div>' +
-          '<div style="position:relative;height:240px;border-left:1px solid rgba(255,255,255,0.12);' +
-            'border-bottom:1px solid rgba(255,255,255,0.12);">' +
-            ticks +
-            (elite.length ? '<div style="position:absolute;left:86%;top:0;bottom:0;width:0;' +
-              'border-left:1px dashed rgba(255,255,255,0.14);"></div>' : '') +
-            bubbles +
-          '</div>' +
-          '<div style="position:relative;height:26px;">' + labels + '</div>' +
-          '<div style="display:flex;justify-content:space-between;font-family:\'IBM Plex Mono\',monospace;' +
-            'font-size:9px;letter-spacing:0.12em;text-transform:uppercase;color:#3f4860;margin-top:2px;">' +
-            '<span>Serve</span><span>Baseline</span><span>Archetype</span></div>' +
+        '<div style="position:relative;height:240px;border-left:1px solid rgba(255,255,255,0.12);' +
+          'border-bottom:1px solid rgba(255,255,255,0.12);">' +
+          gridlines +
+          '<span style="position:absolute;left:0;right:0;top:' + top(50) + ';height:1px;' +
+            'background:rgba(255,255,255,0.28);"></span>' +
+          (elite.length ? '<span style="position:absolute;left:86%;top:0;bottom:0;width:1px;' +
+            'border-left:1px dashed rgba(255,255,255,0.16);"></span>' : '') +
+          '<span style="position:absolute;right:6px;top:' + top(50) + ';transform:translateY(-135%);' +
+            'font-family:\'IBM Plex Mono\',monospace;font-size:9px;letter-spacing:0.1em;' +
+            'text-transform:uppercase;color:#3f4860;">even</span>' +
+          pts +
         '</div>' +
-      '</div></div>';
+        '<span></span>' +
+        '<div style="position:relative;height:58px;">' + labels +
+          '<span style="' + foot + 'left:0;">Serve</span>' +
+          '<span style="' + foot + 'left:66%;transform:translateX(-50%);">Baseline</span>' +
+          '<span style="' + foot + 'right:0;">Archetype</span>' +
+        '</div>' +
+      '</div>' +
+    '</div>';
+  }
+  function styleEyebrow() {
+    return '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
+      'letter-spacing:0.14em;text-transform:uppercase;color:#5b6880;">' +
+      'Win rate by archetype ' + MIDDOT + ' bubble size is match count</div>';
   }
 
-  /** Row list, §5.2A spec (1fr 300px 58px). All eight kept — dashed when under gate. */
+  /**
+   * Row list. Cards, not lines — the shared §5.2A `barRow()` with the units
+   * column the design puts above the rate (items 17-21, 24).
+   */
   function renderStyleList(rows) {
-    var tw = 0, tl = 0, tpl = 0;
+    var tw = 0, tl = 0, tcents = 0, tpriced = 0;
     var body = rows.map(function (r) {
       var n = r.won + r.lost;
-      var gate = gateFor(n);
       var open = state.styleRow === r.axis.label;
-      var openable = gate !== GATE.NONE && gate !== GATE.THIN;
-      tw += r.won; tl += r.lost; tpl += r.pl;
-      var rate = rateText(r.won, r.lost);
-      var row = '<div' + (openable ? ' data-pp2="style-row" data-v="' + esc(r.axis.label) + '"' : '') +
-        ' style="display:grid;grid-template-columns:1fr 300px 58px;gap:0 12px;padding:7px 0;' +
-        'border-top:1px solid rgba(255,255,255,0.04);align-items:baseline;' +
-        'cursor:' + (openable ? 'pointer' : 'default') + ';' +
-        (open ? 'background:rgba(91,155,255,0.06);' : '') + '">' +
-        '<div style="font-size:12.5px;font-weight:700;color:' + (openable ? '#e7e9ee' : '#3f4860') + ';">' +
-          esc(r.axis.label) + '</div>' +
-        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:#8b96b5;text-align:right;">' +
-          (n ? recordText(r.won, r.lost) + ' ' + MIDDOT + ' ' + n + ' matches' : 'no matches on record') + '</div>' +
-        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:12.5px;font-weight:700;text-align:right;' +
-          'color:' + (rate === DASH ? DASH_COLOUR : gate === GATE.SMALL ? '#8b96b5' : '#e8ecf4') + ';">' +
-          rate + '</div>' +
-      '</div>';
-      return row + (open ? renderStyleDetail(r) : '');
+      tw += r.won; tl += r.lost; tcents += r.cents; tpriced += r.priced;
+      return barRow({
+        label: r.axis.label,
+        meta: n
+          ? recordText(r.won, r.lost) + ' ' + MIDDOT + ' ' + n + ' matches'
+          : 'no matches on record',
+        thinMeta: n + ' matches ' + MIDDOT + ' below the five-match minimum',
+        won: r.won, lost: r.lost,
+        hook: 'style-row', v: r.axis.label, open: open, openBg: true,
+        anchor: 'style|' + r.axis.label,
+        units: r.priced ? signed(r.cents / 100, 2, 'u') : DASH,
+        unitsColour: r.priced ? (r.cents >= 0 ? '#3dd68c' : '#e0616f') : '#3f4860',
+        detail: open ? renderStyleDetail(r) : ''
+      });
     }).join('');
 
-    var totalRow = '<div style="display:grid;grid-template-columns:1fr 300px 58px;gap:0 12px;padding:9px 0;' +
-      'border-top:1px solid rgba(255,255,255,0.09);align-items:baseline;">' +
-      '<div style="font-size:12.5px;font-weight:600;color:#8b96b5;">Career</div>' +
-      '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;font-weight:600;color:#8b96b5;' +
-        'text-align:right;">' + recordText(tw, tl) + ' ' + MIDDOT + ' ' +
-        '<span style="color:' + (tpl >= 0 ? '#3dd68c' : '#e0616f') + ';">' + signed(tpl, 1, 'u') + '</span></div>' +
-      '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:12.5px;font-weight:600;text-align:right;' +
-        'color:' + (rateText(tw, tl) === DASH ? DASH_COLOUR : '#8b96b5') + ';">' + rateText(tw, tl) + '</div>' +
+    // CAREER (item 25). Summed from the SAME row objects the cards render, so it
+    // cannot disagree with the list. This is Σ archetype rows — the LABELLED
+    // population — not career M; the footnote carries the difference.
+    var tn = tw + tl;
+    var trate = styleOpenable(tn) ? Math.round(100 * tw / tn) + '%' : DASH;
+    var total = '<div style="display:grid;grid-template-columns:minmax(0,1fr) 300px 58px;' +
+      'align-items:center;gap:16px;padding:13px 16px 0;margin-top:4px;' +
+      'border-top:1px solid rgba(255,255,255,0.09);">' +
+      '<div style="min-width:0;">' +
+        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
+          'letter-spacing:0.14em;text-transform:uppercase;color:#5b6880;">Career</div>' +
+        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:#4b5672;' +
+          'margin-top:4px;">' + (tn ? recordText(tw, tl) + ' ' + MIDDOT + ' ' + tn + ' matches' : DASH) + '</div>' +
+      '</div>' +
+      '<span></span>' +
+      '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">' +
+        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;font-weight:600;color:' +
+          (tpriced ? (tcents >= 0 ? '#3dd68c' : '#e0616f') : '#3f4860') + ';">' +
+          (tpriced ? signed(tcents / 100, 2, 'u') : DASH) + '</span>' +
+        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:14px;font-weight:600;color:' +
+          (trate === DASH ? '#3f4860' : '#8b96b5') + ';">' + trate + '</span>' +
+      '</div>' +
     '</div>';
-    return body + totalRow;
+
+    return '<div style="display:flex;flex-direction:column;gap:7px;">' + body + total + '</div>';
   }
 
+  /**
+   * The archetype detail (items 26-31). Markup is the file's
+   * (`Player Stat Boxes.dc.html`:424-468) verbatim, including the column heads
+   * the live build never rendered.
+   */
   function renderStyleDetail(r) {
-    var rows = r.rows.slice().sort(function (a, b) { return a.date < b.date ? 1 : a.date > b.date ? -1 : 0; });
-    var out = rows.map(function (m) {
-      return '<div ' + sheetHook(m.date + '|' + m.opp) +
-        'style="display:grid;grid-template-columns:16px 64px 1.1fr 1fr 38px 104px 48px 48px 58px;gap:0 8px;' +
-        'padding:5px 0;border-top:1px solid rgba(255,255,255,0.04);align-items:baseline;' + sheetCursor() +
-        'font-family:\'IBM Plex Mono\',monospace;font-size:11px;">' +
-        '<span style="color:' + (m.won ? '#3dd68c' : '#e0616f') + ';">' + (m.won ? 'W' : 'L') + '</span>' +
-        '<span style="color:#5b6880;">' + esc(m.date) + '</span>' +
-        '<span style="font-family:inherit;color:#e8ecf4;">' + esc(m.opp) + '</span>' +
-        '<span style="font-family:inherit;color:#8b96b5;">' + esc(m.event) + '</span>' +
-        '<span style="color:#5b6880;">' + esc(shortRound(m.round)) + '</span>' +
-        '<span style="color:' + DASH_COLOUR + ';">' + DASH + '</span>' +
-        '<span style="text-align:right;color:#e8ecf4;">' + (m.price == null ? DASH : m.price.toFixed(2)) + '</span>' +
-        '<span style="text-align:right;color:#5b6880;">' + (m.oppPrice == null ? DASH : m.oppPrice.toFixed(2)) + '</span>' +
-        '<span style="text-align:right;font-weight:700;color:' + (m.pl >= 0 ? '#3dd68c' : '#e0616f') + ';">' +
-          signed(m.pl, 2, 'u') + '</span>' +
-      '</div>';
+    var n = r.won + r.lost;
+    var yield_ = r.priced ? (r.cents / 100) / r.priced * 100 : null;
+    var plText = r.priced
+      ? signed(r.cents / 100, 2, 'u') + ' ' + MIDDOT + ' ' + signed(yield_, 1, '%') +
+        ' ' + MIDDOT + ' ' + r.priced + ' priced'
+      : DASH + ' ' + MIDDOT + ' 0 priced';
+    var plColour = r.priced ? (r.cents >= 0 ? '#3dd68c' : '#e0616f') : '#3f4860';
+
+    var headCell = 'font-family:\'IBM Plex Mono\',monospace;font-size:9px;letter-spacing:0.12em;' +
+      'text-transform:uppercase;color:#4b5672;padding-bottom:7px;';
+    // The file's first head cell is EMPTY — the W/L column carries no label.
+    var heads = '<span></span>' +
+      ['Date', 'Opponent', 'Event', 'Rd', 'Score'].map(function (h) {
+        return '<span style="' + headCell + '">' + h + '</span>';
+      }).join('') +
+      ['Price', 'Opp', 'P&amp;L'].map(function (h) {
+        return '<span style="' + headCell + 'text-align:right;">' + h + '</span>';
+      }).join('');
+
+    var cell = 'padding:6px 0;border-top:1px solid rgba(255,255,255,0.05);';
+    var mono = 'font-family:\'IBM Plex Mono\',monospace;';
+    var body = r.rows.slice().sort(function (a, b) {
+      return a.date < b.date ? 1 : a.date > b.date ? -1 : 0;
+    }).map(function (m) {
+      var hook = sheetHook(m.sheetId || (m.date + '|' + m.opp));
+      var cur = sheetCursor();
+      var s = perSetScore(m);
+      // Item 30 · an unpriced row dashes all three money columns and is already
+      // excluded from `priced`, so the header count and the visible prices agree.
+      var priced = m.price != null;
+      return '' +
+        '<span ' + hook + 'style="' + cur + cell + mono + 'font-size:11px;font-weight:700;color:' +
+          (m.won ? '#3dd68c' : '#e0616f') + ';">' + (m.won ? 'W' : 'L') + '</span>' +
+        '<span ' + hook + 'style="' + cur + cell + mono + 'font-size:10.5px;color:#5b6880;">' +
+          esc(styleMonthYear(m.date)) + '</span>' +
+        // The file's opponent cell is the page's sans face, not mono, and ellipses.
+        '<span ' + hook + 'style="' + cur + cell + 'font-size:12px;color:#e7e9ee;overflow:hidden;' +
+          'text-overflow:ellipsis;white-space:nowrap;">' +
+          esc(m.opp ? surnameFirst(m.opp) : DASH) + '</span>' +
+        '<span ' + hook + 'style="' + cur + cell + 'font-size:12px;color:#8b96b5;overflow:hidden;' +
+          'text-overflow:ellipsis;white-space:nowrap;">' +
+          esc(tournDisplayName(m.event, null) || DASH) + '</span>' +
+        '<span ' + hook + 'style="' + cur + cell + mono + 'font-size:10.5px;color:#5b6880;">' +
+          esc(m.round || DASH) + '</span>' +
+        // Set scores where recentForm reaches, the retired/walkover marker either
+        // way, and an honest dash outside that window — never an invented line.
+        '<span ' + hook + 'style="' + cur + cell + mono + 'font-size:11px;white-space:nowrap;color:' +
+          ((s || matchStatus(m)) ? '#8b96b5' : DASH_COLOUR) + ';">' +
+          esc(scoreWithStatus(m, s)) + '</span>' +
+        '<span ' + hook + 'style="' + cur + cell + mono + 'font-size:11.5px;font-weight:700;' +
+          'text-align:right;color:' + (priced ? '#e7e9ee' : DASH_COLOUR) + ';">' +
+          (priced ? m.price.toFixed(2) : DASH) + '</span>' +
+        '<span ' + hook + 'style="' + cur + cell + mono + 'font-size:11px;text-align:right;color:#4b5672;">' +
+          (m.oppPrice == null ? DASH : m.oppPrice.toFixed(2)) + '</span>' +
+        // Item 29 · the file prints the P&L with NO "u" suffix; the unit is
+        // stated once, in the header.
+        '<span ' + hook + 'style="' + cur + cell + mono + 'font-size:11.5px;font-weight:700;' +
+          'text-align:right;color:' +
+          (m.cents == null ? DASH_COLOUR : (m.cents >= 0 ? '#3dd68c' : '#e0616f')) + ';">' +
+          (m.cents == null ? DASH : signed(m.cents / 100, 2)) + '</span>';
     }).join('');
-    return '<div style="background:#06070a;border:1px solid rgba(91,155,255,0.3);border-radius:11px;' +
-      'padding:10px 14px;margin:6px 0 10px;max-height:420px;overflow-y:auto;">' + out + '</div>';
+
+    return '<div style="background:#06070a;border:1px solid rgba(91,155,255,0.3);border-radius:10px;' +
+      'padding:13px 15px;">' +
+      '<div style="display:flex;align-items:baseline;gap:11px;margin-bottom:8px;">' +
+        '<span style="font-size:12.5px;font-weight:700;">' + esc(r.axis.label) + '</span>' +
+        '<span style="' + mono + 'font-size:10px;font-weight:600;letter-spacing:0.12em;' +
+          'text-transform:uppercase;color:#5b6880;">' + recordText(r.won, r.lost) + ' ' + MIDDOT +
+          ' ' + n + ' matches</span>' +
+        '<span style="margin-left:auto;' + mono + 'font-size:14px;font-weight:700;color:' +
+          plColour + ';">' + plText + '</span>' +
+      '</div>' +
+      '<div style="display:grid;grid-template-columns:16px 64px minmax(0,1.1fr) minmax(0,1fr) 38px ' +
+        '104px 48px 48px 58px;gap:0 12px;align-items:center;">' + heads + body + '</div>' +
+    '</div>';
+  }
+  /** The file's detail date: "Oct 2026" (`styleMatches()` -> `MONS[mi] + ' ' + yr`). */
+  var STYLE_MONS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function styleMonthYear(iso) {
+    var s = String(iso || '');
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return DASH;
+    return STYLE_MONS[parseInt(s.slice(5, 7), 10) - 1] + ' ' + s.slice(0, 4);
   }
 
-  function renderStyleNote(rows, total) {
-    var thin = rows.filter(function (r) { var n = r.won + r.lost; return n > 0 && n < 5; });
+  /**
+   * Footnote (item 32): the design's sentence with real counts, plus ONE coverage
+   * line. The old build's three-sentence roster explanation is gone — the founder
+   * asked for the fact, not the essay.
+   */
+  function renderStyleNote(rows) {
+    var thin = rows.filter(function (r) { return !styleOpenable(r.won + r.lost); }).length;
     var parts = ['Click an archetype for the matches behind it.'];
-    if (thin.length) {
-      parts.push((thin.length === 1 ? 'One sits' : thin.length + ' sit') + ' below the five-match minimum and ' +
-        (thin.length === 1 ? 'stays' : 'stay') + ' listed with a dash rather than dropping out ' + ENDASH +
+    if (thin) {
+      parts.push((thin === 1 ? 'One sits' : thin + ' sit') + ' below the five-match minimum and ' +
+        (thin === 1 ? 'stays' : 'stay') + ' listed with a dash rather than dropping out ' + ENDASH +
         ' an absent row reads as an absent opponent.');
     }
-    if (rows.unlabelled) {
-      parts.push(rows.unlabelled + ' of ' + total + ' priced matches were against an opponent who carries no ' +
-        'archetype. The labelled roster is the current 250 players, so a long career&#39;s early opponents are ' +
-        'mostly absent by construction, not by omission.');
-    }
-    return '<div style="font-size:12px;color:#4b5672;margin-top:14px;line-height:1.6;">' + parts.join(' ') + '</div>';
+    var labelled = rows.total - rows.unlabelled;
+    parts.push(labelled + ' of ' + rows.total + ' matches against a labelled opponent ' +
+      MIDDOT + ' labels are current.');
+    return '<div style="font-size:12px;color:#4b5672;margin-top:14px;line-height:1.6;">' +
+      parts.join(' ') + '</div>';
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -6254,7 +6579,14 @@
     else if (kind === 'cal-run') state.calRun = state.calRun === Number(v) ? null : Number(v);
     else if (kind === 'speed-surf') { state.speedSurf = v; state.speedBand = null; }
     else if (kind === 'speed-band') state.speedBand = toggleVal(state.speedBand, v);
-    else if (kind === 'style-row') state.styleRow = toggleVal(state.styleRow, v);
+    // §5.6 item 16 · a bubble, its x label and its row all toggle the same
+    // archetype. When the click OPENS one, the row is brought into view after the
+    // repaint — a bubble sits above the fold on a long list, so without this the
+    // detail opens somewhere the reader cannot see.
+    else if (kind === 'style-row') {
+      state.styleRow = toggleVal(state.styleRow, v);
+      pendingStyleScroll = state.styleRow;
+    }
     else if (kind === 'hb-surf') state.hbSurf = v;
     // §8.1 match sheet. The host is told which match opened so it can pull the
     // stats shard; the sheet paints its own "no stats on record" state until it
@@ -6266,7 +6598,25 @@
     else if (kind === 'sheet-close' || kind === 'sheet-scrim') state.sheet = null;
     else return;   // unknown hook: do nothing rather than repaint blindly
     repaint();
+    if (pendingStyleScroll) { scrollToStyleRow(pendingStyleScroll); pendingStyleScroll = null; }
   }
+
+  // §5.6 item 16. repaint() replaces innerHTML, so the anchor has to be found
+  // again after it. The scroll parent is walked for rather than assumed: the
+  // modal scrolls on the scrim today, and hard-coding that selector would break
+  // silently the first time a modal grows its own overflow container.
+  var pendingStyleScroll = null;
+  function scrollToStyleRow(label) {
+    if (!mounted) return;
+    var el = mounted.querySelector('[data-pp2-anchor="' + cssAttrEscape('style|' + label) + '"]');
+    if (!el) return;
+    var sp = el.parentElement;
+    while (sp && sp.scrollHeight <= sp.clientHeight + 4) sp = sp.parentElement;
+    if (!sp || !sp.scrollTo) return;
+    var t = el.getBoundingClientRect().top - sp.getBoundingClientRect().top + sp.scrollTop - 14;
+    try { sp.scrollTo({ top: t, behavior: 'smooth' }); } catch (err) { sp.scrollTop = t; }
+  }
+  function cssAttrEscape(s) { return String(s).replace(/["\\]/g, '\\$&'); }
 
   function onInput(e) {
     var el = e.target;
@@ -6427,6 +6777,8 @@
       // §5.2 rebuild — exported so the harness asserts on the real functions
       // rather than re-deriving their logic, which is how a check goes vacuous.
       modalSubtitle: modalSubtitle,
+      MODAL_TITLE: MODAL_TITLE,
+      MODAL_WIDTH: MODAL_WIDTH,
       barFillColour: barFillColour,
       BAR_FULL: BAR_FULL,
       BAR_SMALL: BAR_SMALL,
@@ -6481,10 +6833,14 @@
       hbStore: hbStore,
       HB_SURFACES: HB_SURFACES,
       HB_BEST_OF: HB_BEST_OF,
-      // §5.6 Versus playing styles
+      // §5.6 Matchup record
       renderStylesModal: renderStylesModal,
       styleRows: styleRows,
       STYLE_AXIS: STYLE_AXIS,
+      styleArchetypeOf: styleArchetypeOf,
+      styleScale: styleScale,
+      styleOpenable: styleOpenable,
+      styleMonthYear: styleMonthYear,
       archetypeFor: archetypeFor,
       SPLIT_GROUPS: SPLIT_GROUPS,
       state: state
