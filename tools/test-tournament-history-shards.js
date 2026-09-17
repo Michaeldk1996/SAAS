@@ -218,5 +218,36 @@ assert.ok(/-d _site\/tournament-history \]/.test(wf),
   'the shard dir must be asserted non-empty, like style-meetings/');
 ok('deploy copies and asserts both the index and the shard dir');
 
+// ── 10 · EVERY renderer that reads the field must load the shard ────────────
+// The regression this exists to stop: TEN-207 wired the lazy fetch into
+// buildPlayerProfileHtml() only. player-profile-v2.js is the DEFAULT renderer
+// (pp2FlagOn() returns true) and reads p.tournamentHistory inline, so it painted
+// "no tournaments on record" for 30 of 30 board players on the deployed build
+// while their shards served 200. The suite stayed green because every check
+// above reads the legacy path. Checks 1-9 cannot catch this class; this one can.
+const v2src = fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8');
+const v2ReadsField = (v2src.match(/\.tournamentHistory\b/g) || []).length;
+if (v2ReadsField > 0) {
+  const v2Mount = (html.match(/function showPlayerProfileV2\([\s\S]*?\n\}/) || [''])[0];
+  assert.ok(v2Mount, 'could not lift showPlayerProfileV2() — the harness is stale');
+  assert.ok(/loadPp2TourHist\(key\)/.test(v2Mount),
+    `player-profile-v2.js reads .tournamentHistory in ${v2ReadsField} place(s), so `
+    + 'showPlayerProfileV2() must call loadPp2TourHist(key) — otherwise the field is '
+    + 'absent from the lite store, nothing fetches the shard, and the V2 record card '
+    + 'reads "no tournaments on record" for every player');
+  const loader = (html.match(/async function loadPp2TourHist\([\s\S]*?\n\}/) || [''])[0];
+  assert.ok(loader, 'loadPp2TourHist() must exist');
+  assert.ok(/loadTourHistShard\(/.test(loader),
+    'loadPp2TourHist() must go through loadTourHistShard() so V2 and the legacy '
+    + 'renderer share one cache and one fetch, and cannot disagree about the rows');
+  assert.ok(/Array\.isArray\(rows\)/.test(loader),
+    'loadPp2TourHist() must assign only a real array — a null miss written as [] '
+    + 'turns "not fetched yet" into "he has none", the false negative check 8 guards');
+  assert.ok(/pp2RepaintIfOpen\(/.test(loader),
+    'loadPp2TourHist() must repaint when the shard lands, or it arrives after first '
+    + 'paint and the tile stays empty forever (the lazy-race idiom)');
+  ok(`V2 renderer loads the shard it reads (${v2ReadsField} inline read sites)`);
+}
+
 console.log(`TEN-207 tournament-history shard lock — ${checks.length} checks passed:`);
 checks.forEach(c => console.log(`  ✓ ${c}`));

@@ -17050,6 +17050,29 @@ async function loadPp2CareerHistory(key){
   } catch (e) { /* additive; the date/surface columns dash and the note says why */ }
   pp2RepaintIfOpen(k);
 }
+// TEN-207 moved tournamentHistory out of player-profiles.json into a lazy shard
+// and wired the fetch into buildPlayerProfileHtml() — the LEGACY renderer. V2 is
+// the default (pp2FlagOn() returns true), it reads p.tournamentHistory inline in
+// five places, and it never asked for the shard, so every V2 profile painted
+// "no tournaments on record" — measured 30 of 30 board players on the deployed
+// 1ad7a2be build while their shards served 200 with the right rows.
+//
+// The rows are folded back ONTO the profile object rather than handed to the
+// module separately, because that is the shape all five read sites already
+// expect — and it is the same shape ppCareerHistory() returns to the legacy
+// renderer, so the two cannot drift. The eager payload is unaffected: this is
+// still fetched only when a profile opens.
+async function loadPp2TourHist(key){
+  const k = String(key);
+  try {
+    const rows = await loadTourHistShard(k);
+    // A miss caches as null in loadTourHistShard. Assigning [] here would turn
+    // "we have not got it" into "he has none" — the false negative about our own
+    // data that ppCareerHistoryPending() exists to prevent. Leave it absent.
+    if (Array.isArray(rows) && playerProfiles[k]) playerProfiles[k].tournamentHistory = rows;
+  } catch (e) { /* additive; the tile keeps its own empty state */ }
+  pp2RepaintIfOpen(k);
+}
 function showPlayerProfileV2(key){
   const profile = playerProfiles[String(key)];
   if (!profile) return false;
@@ -17063,6 +17086,7 @@ function showPlayerProfileV2(key){
   loadPp2MarketShard(key);
   loadPp2Bet365(key);
   loadPp2CareerHistory(key);
+  loadPp2TourHist(key);
   window.scrollTo(0, 0);
   return true;
 }
