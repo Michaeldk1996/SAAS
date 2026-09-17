@@ -90,6 +90,66 @@ const median = (xs) => {
   return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
 };
 
+/* -------------------------------------------------------------------- diag */
+
+// Every endpoint answering AUTHORIZE_FAILED ("Token is not provided or
+// incorrect" per the Glossary) is ambiguous: a dead token and a mangled secret
+// look identical. This isolates the two without ever printing the token or any
+// substring of it — only its length, character class and a SHA-256 fingerprint,
+// which Michael can recompute locally to confirm we hold what he pasted.
+async function cmdDiag() {
+  const { createHash } = await import('node:crypto');
+  const raw = process.env.BETSAPI_TOKEN || '';
+  const fp = (s) => createHash('sha256').update(s).digest('hex').slice(0, 12);
+  const shape = {
+    length: raw.length,
+    sha256_prefix: fp(raw),
+    all_alnum: /^[0-9a-zA-Z]+$/.test(raw),
+    all_hex: /^[0-9a-f]+$/i.test(raw),
+    has_leading_ws: /^\s/.test(raw),
+    has_trailing_ws: /\s$/.test(raw),
+    has_inner_ws: /\S\s+\S/.test(raw),
+    has_quotes: /^["']|["']$/.test(raw),
+    has_newline: /[\r\n]/.test(raw),
+    trimmed_length: raw.trim().length,
+    trimmed_sha256_prefix: fp(raw.trim()),
+  };
+  console.log('token shape:', JSON.stringify(shape));
+
+  const variants = {
+    raw,
+    trimmed: raw.trim(),
+    dequoted: raw.trim().replace(/^["']|["']$/g, ''),
+    first_field: raw.trim().split(/\s+/)[0] || '',
+  };
+  const results = {};
+  for (const [name, tok] of Object.entries(variants)) {
+    if (!tok) { results[name] = 'empty'; continue; }
+    for (const host of ['https://api.b365api.com', 'https://api.betsapi.com']) {
+      const u = `${host}/v3/events/ended?sport_id=13&token=${encodeURIComponent(tok)}`;
+      let res, body;
+      try {
+        res = await fetch(u, { headers: { 'User-Agent': 'stennisfy-ten227-probe' } });
+        body = await res.text();
+      } catch (e) { results[`${name}@${host}`] = `transport:${e.message}`; continue; }
+      let j = null; try { j = JSON.parse(body); } catch {}
+      results[`${name}@${host}`] = `http=${res.status} success=${j?.success ?? '?'} error=${j?.error ?? '?'} detail=${j?.error_detail ?? '—'}`;
+      console.log(`  ${name} @ ${host}: ${results[`${name}@${host}`]}`);
+      await sleep(1500);
+    }
+  }
+  // Control: a deliberately bogus token, to confirm what "bad token" looks like
+  // and prove the AUTHORIZE_FAILED we get is not just how this endpoint answers.
+  const ctl = await fetch('https://api.b365api.com/v3/events/ended?sport_id=13&token=deadbeefdeadbeef');
+  const ctlBody = await ctl.text();
+  console.log(`  CONTROL bogus token: http=${ctl.status} body=${ctlBody.slice(0, 200)}`);
+  // Control: no token at all.
+  const ctl2 = await fetch('https://api.b365api.com/v3/events/ended?sport_id=13');
+  console.log(`  CONTROL no token:    http=${ctl2.status} body=${(await ctl2.text()).slice(0, 200)}`);
+
+  save('diag.json', { shape, results });
+}
+
 /* ------------------------------------------------------------------ status */
 
 async function cmdStatus() {
@@ -362,7 +422,8 @@ async function cmdProbe() {
 const cmd = process.argv[2] || 'status';
 log(`BetsAPI probe — cmd=${cmd} budget=${MAX_REQ} pace=${RATE_PER_HOUR}/h (${MIN_GAP_MS}ms gap)`);
 try {
-  if (cmd === 'status') await cmdStatus();
+  if (cmd === 'diag') await cmdDiag();
+  else if (cmd === 'status') await cmdStatus();
   else if (cmd === 'discover') await cmdDiscover();
   else if (cmd === 'probe') await cmdProbe();
   else { console.error('unknown command'); process.exit(2); }
