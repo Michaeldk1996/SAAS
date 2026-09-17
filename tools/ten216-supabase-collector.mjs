@@ -49,6 +49,17 @@ const ymd = d => new Date(d).toISOString().slice(0, 10);
 const keyOf = (matchKey, market, line, selection, book) =>
   [matchKey, market, line ?? '', selection, book].join(SEP);
 
+/** Compare prices NUMERICALLY, never as strings. api-tennis sends every price as a string
+ *  and 33.5% carry a trailing zero ("6.90", "8.00"); stored as numeric and read back through
+ *  PostgREST, 6.90 parses to 6.9, so a string compare reports a move that did not happen.
+ *  Measured on the first handoff: 375 `changed` rows, 375 phantom, 0 real. The raw string is
+ *  still what gets written to the table — only the comparison is normalised. */
+const normPrice = v => {
+  if (v == null || v === '') return null;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : String(v);
+};
+
 // ---------------------------------------------------------------- api-tennis
 
 async function apiTennis(method, params = {}) {
@@ -170,7 +181,8 @@ async function loadState() {
       const k = keyOf(r.match_key, r.market, r.line, r.selection, r.bookmaker);
       if (r.change_kind === 'removed') state.delete(k);
       else state.set(k, {
-        price: r.price == null ? null : String(r.price),
+        price: normPrice(r.price),
+        raw: r.price == null ? null : String(r.price),
         matchKey: r.match_key, market: r.market, line: r.line,
         selection: r.selection, book: r.bookmaker,
       });
@@ -229,18 +241,18 @@ async function tick(state, startedAt) {
   for (const [k, q] of now) {
     const meta = live.get(String(q.matchKey)) || {};
     const prev = state.get(k);
-    const cur = q.price == null ? null : String(q.price);
+    const cur = normPrice(q.price);
     if (!prev || prev.price !== cur) {
       rows.push({
         ...base,
         match_key: String(q.matchKey), tour: meta.tour ?? null,
         event_status: meta.status ?? null, event_live: meta.live ?? null,
         market: q.market, line: q.line, selection: q.selection, bookmaker: q.book,
-        price: cur, prev_price: prev ? prev.price : null,
+        price: q.price ?? null, prev_price: prev ? (prev.raw ?? prev.price) : null,
         change_kind: prev ? 'changed' : 'first_seen',
       });
     }
-    state.set(k, { price: cur, ...q });
+    state.set(k, { ...q, price: cur, raw: q.price ?? null });
   }
   for (const [k, prev] of [...state]) {
     if (now.has(k)) continue;
@@ -248,7 +260,7 @@ async function tick(state, startedAt) {
       ...base,
       match_key: String(prev.matchKey), market: prev.market, line: prev.line,
       selection: prev.selection, bookmaker: prev.book,
-      price: null, prev_price: prev.price, change_kind: 'removed',
+      price: null, prev_price: prev.raw ?? prev.price, change_kind: 'removed',
       tour: null, event_status: null, event_live: null,
     });
     state.delete(k);
