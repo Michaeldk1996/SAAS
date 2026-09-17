@@ -43,12 +43,16 @@ console.log(`disk assumed:  ${DISK_BYTES} bytes (${gb(DISK_BYTES)} GiB)`);
 console.log(`used:          ${((100 * used) / DISK_BYTES).toFixed(2)}%`);
 console.log(`70% ceiling:   ${Math.round(0.7 * DISK_BYTES)} bytes — headroom to ceiling ${gb(0.7 * DISK_BYTES - used)} GiB`);
 
+// pg_statio_user_tables and pg_stat_user_tables both carry schemaname/relname,
+// so joining them unqualified makes every selected column ambiguous and the
+// statement errors out AFTER the headroom figure has already printed — which
+// reads like a successful run with a crash tacked on. pg_stat_user_tables alone
+// has everything needed.
 const tables = await q(`
   select schemaname, relname,
          pg_total_relation_size(relid) as total_bytes,
          n_live_tup as live_rows
-  from pg_catalog.pg_statio_user_tables
-  join pg_stat_user_tables using (relid)
+  from pg_catalog.pg_stat_user_tables
   order by pg_total_relation_size(relid) desc
   limit 25`);
 console.log('\nlargest tables:');
