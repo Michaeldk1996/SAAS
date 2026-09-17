@@ -1,0 +1,83 @@
+name: TEN-216 odds collector (Supabase test sink)
+
+# TEN-216 Part A Step 1 — the ONE collector.
+#
+# ISOLATION:
+#   * No `schedule:` trigger. It runs only when dispatched, and hands off to its
+#     own successor, so cadence comes from inside the job rather than from GitHub's
+#     best-effort scheduler (this repo's cron has been throttled before, and a
+#     sparse sample of the quantity under measurement is worthless).
+#   * It writes ONLY to Supabase `ten216_test_odds_changes` (RLS on, no policies)
+#     and the private bucket `ten216-test-raw`. It commits nothing to any branch.
+#   * It never touches matches.json, model-output.json, fetchApiTennisMatchOdds,
+#     refresh-odds.py or the odds-history capture workflow.
+#
+# OFF SWITCH: re-dispatch with stop=yes, or disable this workflow in the Actions UI.
+
+on:
+  workflow_dispatch:
+    inputs:
+      interval_min:
+        description: 'Minutes between polls'
+        required: false
+        default: '5'
+      loop_minutes:
+        description: 'Minutes to loop before handing off to a successor'
+        required: false
+        default: '330'
+      stop:
+        description: 'Set to "yes" to stand down without re-dispatching'
+        required: false
+        default: 'no'
+
+concurrency:
+  group: ten216-collector          # a second dispatch queues; it never double-polls
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  actions: write                   # lets the loop dispatch its own successor
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 1 }
+
+      - uses: actions/setup-node@v4
+        with: { node-version: '20' }
+
+      - name: Poll
+        env:
+          API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          INTERVAL_MIN: ${{ github.event.inputs.interval_min }}
+          LOOP_MINUTES: ${{ github.event.inputs.loop_minutes }}
+        run: node tools/ten216-supabase-collector.mjs
+
+      - name: Hand off to successor
+        if: ${{ github.event.inputs.stop != 'yes' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INTERVAL: ${{ github.event.inputs.interval_min }}
+          LOOP: ${{ github.event.inputs.loop_minutes }}
+        run: |
+          set -euo pipefail
+          BEFORE=$(gh run list --workflow ten216-collector.yml --limit 20 --json databaseId \
+                     --jq 'map(.databaseId) | max')
+          gh workflow run ten216-collector.yml -f interval_min="$INTERVAL" \
+             -f loop_minutes="$LOOP" -f stop=no
+          # A dead chain and a healthy one otherwise produce identical logs. Fail loudly.
+          for i in $(seq 1 12); do
+            sleep 5
+            AFTER=$(gh run list --workflow ten216-collector.yml --limit 20 --json databaseId \
+                      --jq 'map(.databaseId) | max')
+            if [ "$AFTER" != "$BEFORE" ]; then
+              echo "successor dispatched: run $AFTER"; exit 0
+            fi
+          done
+          echo "::error::successor run never appeared — the collection chain is BROKEN"
+          exit 1
