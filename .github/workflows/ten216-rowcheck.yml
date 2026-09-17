@@ -1,0 +1,70 @@
+name: TEN-216 change-row audit (READ-ONLY)
+
+# TEN-216 — verification only. SELECTs against the test table so a review finding
+# can be confirmed with numbers instead of inferred from reltuples.
+# Refuses any statement that is not a SELECT. Creates and alters nothing.
+
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: ten216-rowcheck
+  cancel-in-progress: false
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Audit change rows
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          python3 - <<'PY'
+          import os, re, json, urllib.request, urllib.error
+          url = os.environ["SUPABASE_URL"].strip().rstrip("/")
+          tok = os.environ["SUPABASE_ACCESS_TOKEN"].strip()
+          ref = re.search(r"https?://([a-z0-9]+)\.supabase\.co", url).group(1)
+
+          def sql(q):
+              if not re.match(r"^\s*select\b", q, re.I):
+                  raise SystemExit("REFUSED non-SELECT")
+              req = urllib.request.Request(
+                  f"https://api.supabase.com/v1/projects/{ref}/database/query",
+                  method="POST",
+                  headers={"Authorization": f"Bearer {tok}", "Content-Type": "application/json"},
+                  data=json.dumps({"query": q}).encode())
+              try:
+                  with urllib.request.urlopen(req, timeout=120) as r:
+                      return json.loads(r.read().decode() or "null")
+              except urllib.error.HTTPError as e:
+                  return {"http_error": e.code, "body": e.read().decode()[:300]}
+
+          print("EXACT TOTAL:", json.dumps(sql(
+              "select count(*) as rows from public.ten216_test_odds_changes")))
+
+          print("\nPER POLL x CHANGE_KIND:")
+          print(json.dumps(sql(
+              "select poll_id, change_kind, count(*) as n from public.ten216_test_odds_changes "
+              "group by poll_id, change_kind order by poll_id, change_kind"), indent=1))
+
+          print("\nPHANTOM MOVES (change_kind='changed' but prev_price = price numerically):")
+          print(json.dumps(sql(
+              "select count(*) as phantom from public.ten216_test_odds_changes "
+              "where change_kind='changed' and prev_price is not null and prev_price = price")))
+
+          print("\nREAL MOVES (changed and prices differ):")
+          print(json.dumps(sql(
+              "select count(*) as real_moves from public.ten216_test_odds_changes "
+              "where change_kind='changed' and (prev_price is distinct from price))".replace("))", ")")
+              + ")" if False else
+              "select count(*) as real_moves from public.ten216_test_odds_changes "
+              "where change_kind='changed' and prev_price is distinct from price")))
+
+          print("\nDISTINCT QUOTES vs FIRST_SEEN ROWS (a quote first_seen twice = fabricated Open):")
+          print(json.dumps(sql(
+              "select count(*) as first_seen_rows, "
+              "count(distinct (match_key, market, coalesce(line,''), selection, bookmaker)) as distinct_quotes "
+              "from public.ten216_test_odds_changes where change_kind='first_seen'")))
+          PY
