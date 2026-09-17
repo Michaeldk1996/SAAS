@@ -977,6 +977,10 @@
   .psearch-item{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 12px; cursor:pointer; border-bottom:1px solid var(--border); }
   .psearch-item:last-child{ border-bottom:none; }
   .psearch-item:hover, .psearch-item.active{ background:rgba(123,164,255,0.10); }
+  /* Known player, profile not built yet — findable but not openable, so it must
+     not offer a pointer or a hover state it can't honour. */
+  .psearch-item-noprofile{ cursor:default; opacity:0.55; }
+  .psearch-item-noprofile:hover{ background:transparent; }
   .psearch-name{ font-size:13px; font-weight:600; color:var(--text); }
   .psearch-meta{ font-size:11px; color:var(--text-dim); font-family:'IBM Plex Mono', monospace; white-space:nowrap; }
   .psearch-empty{ padding:12px 13px; font-size:12.5px; color:var(--text-faint); }
@@ -14998,13 +15002,35 @@ function pesc(s){
     ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[c]));
 }
 function searchablePlayers(){
-  return Object.values(playerProfiles).map(p => ({
-    key: p.key,
-    name: p.name || '',
-    rank: (p.rank != null && p.rank !== '') ? parseInt(p.rank, 10) : null,
-    lastTournament: (p.recentForm && p.recentForm.matches && p.recentForm.matches[0])
-      ? p.recentForm.matches[0].tournament : null,
-  }));
+  // The eager roster first — it carries the richest metadata (last tournament)
+  // and is definitionally profiled — then every index row we don't already have.
+  const out = [];
+  const seen = new Set();
+  for (const p of Object.values(playerProfiles)){
+    const k = String(p.key);
+    seen.add(k);
+    out.push({
+      key: k,
+      name: p.name || '',
+      rank: (p.rank != null && p.rank !== '') ? parseInt(p.rank, 10) : null,
+      lastTournament: (p.recentForm && p.recentForm.matches && p.recentForm.matches[0])
+        ? p.recentForm.matches[0].tournament : null,
+      hasProfile: true,
+    });
+  }
+  for (const r of playerIndex){
+    const k = String(r.key);
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push({
+      key: k,
+      name: r.name || '',
+      rank: (r.rank != null && r.rank !== '') ? parseInt(r.rank, 10) : null,
+      lastTournament: null,
+      hasProfile: !!r.hasProfile,
+    });
+  }
+  return out;
 }
 function renderPlayerSearch(query){
   const box = document.getElementById('playerSearchResults');
@@ -15026,8 +15052,16 @@ function renderPlayerSearch(query){
     return;
   }
   box.innerHTML = list.map(p => {
-    const meta = (p.rank != null && !Number.isNaN(p.rank)) ? `#${p.rank}`
-      : (p.lastTournament ? pesc(p.lastTournament) : '');
+    const rank = (p.rank != null && !Number.isNaN(p.rank)) ? `#${p.rank}` : '';
+    // Third state, honestly labelled: we know this player, his profile has not
+    // been built yet. Previously indistinguishable from "no such player".
+    if (!p.hasProfile){
+      return `<div class="psearch-item psearch-item-noprofile" title="No profile built for this player yet">
+        <span class="psearch-name">${pesc(p.name)}</span>
+        <span class="psearch-meta">${rank}${rank ? ' · ' : ''}profile not built yet</span>
+      </div>`;
+    }
+    const meta = rank || (p.lastTournament ? pesc(p.lastTournament) : '');
     return `<div class="psearch-item" onclick="selectSearchedPlayer('${p.key}')">
       <span class="psearch-name">${pesc(p.name)}</span>
       <span class="psearch-meta">${meta}</span>
@@ -15035,11 +15069,15 @@ function renderPlayerSearch(query){
   }).join('');
   box.style.display = '';
 }
-function selectSearchedPlayer(key){
+async function selectSearchedPlayer(key){
   const input = document.getElementById('playerSearch');
   if (input) input.value = '';
   const box = document.getElementById('playerSearchResults');
   if (box){ box.style.display = 'none'; box.innerHTML = ''; }
+  // Players outside today's field live in a per-player shard, fetched on click.
+  // Bail rather than render a blank page if the shard isn't there.
+  const ok = await ensurePlayerProfile(key);
+  if (!ok) return;
   showPlayerProfile(key);
 }
 document.getElementById('playerSearch').addEventListener('input', e => renderPlayerSearch(e.target.value));
@@ -15747,6 +15785,52 @@ async function loadSurfaceRatings(){
     const res = await fetch('./surface-ratings.json', { cache: 'no-cache' });
     if (res.ok){ surfaceRatings = await res.json(); if (typeof renderEdgeRatings === 'function') renderEdgeRatings(); }
   } catch (err) { /* additive; the ratings board degrades to an empty state */ }
+}
+// TEN-206 — the searchable ATP roster, decoupled from the profile payload.
+// player-profiles.json only ever held today's field plus their opponents (31 on
+// a 4-match day), and search filtered exactly that, so "Zverev" returned "No
+// player found". player-index.json is every ranked ATP player (~2,342 rows,
+// ~34 KB gzipped): name, rank, country, and whether a profile exists yet.
+let playerIndex = [];
+async function loadPlayerIndex(){
+  try {
+    const res = await fetch('./player-index.json', { cache: 'no-cache' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const data = await res.json();
+    playerIndex = Array.isArray(data.players) ? data.players : [];
+  } catch (err) {
+    // Additive: search falls back to the eager roster, i.e. today's behaviour.
+    console.error('Could not load player-index.json:', err);
+    playerIndex = [];
+  }
+}
+// Fetch one player's profile shard on demand and fold it into playerProfiles, so
+// every downstream renderer keeps reading the one map it already reads. Resolves
+// true once the profile is available. Never fabricates: a missing shard resolves
+// false and the caller shows the "profile not built yet" state.
+const ppShardInflight = new Map();
+async function ensurePlayerProfile(key){
+  const k = String(key);
+  if (playerProfiles[k]) return true;
+  if (ppShardInflight.has(k)) return ppShardInflight.get(k);
+  const p = (async () => {
+    try {
+      const res = await fetch(`./profiles/${encodeURIComponent(k)}.json`, { cache: 'no-cache' });
+      if (!res.ok) return false;
+      const data = await res.json();
+      if (!data || !data.profile) return false;
+      playerProfiles[k] = data.profile;
+      // A shard opened before the eager file lands would otherwise have no tour
+      // baseline to compare against; only fill, never overwrite a real one.
+      if (data.tourAverage && (!ppTourAverage || !Object.keys(ppTourAverage.dna || {}).length)) {
+        ppTourAverage = data.tourAverage;
+      }
+      return true;
+    } catch (err) { return false; }
+    finally { ppShardInflight.delete(k); }
+  })();
+  ppShardInflight.set(k, p);
+  return p;
 }
 async function loadPlayerProfiles(){
   try {
@@ -23353,7 +23437,7 @@ loadTournamentProgression();
 // Defer them off the critical path so those large downloads don't compete with
 // first paint — each re-renders its own view when it finishes loading. (Cards
 // become clickable and search populates a beat later, which is fine.)
-const loadHeavyDatasets = () => { loadTournamentProfiles(); loadPlayerProfiles(); loadCareerSplits(); loadAsapSignals(); loadEloRatings(); loadSurfaceRatings(); loadPlayerStyles(); loadOddsPerfIndex(); loadHoldbreak(); };
+const loadHeavyDatasets = () => { loadTournamentProfiles(); loadPlayerIndex(); loadPlayerProfiles(); loadCareerSplits(); loadAsapSignals(); loadEloRatings(); loadSurfaceRatings(); loadPlayerStyles(); loadOddsPerfIndex(); loadHoldbreak(); };
 if ('requestIdleCallback' in window) requestIdleCallback(loadHeavyDatasets, { timeout: 2500 });
 else setTimeout(loadHeavyDatasets, 200);
 // Refresh automatically every 3 minutes while the page is open — cheap

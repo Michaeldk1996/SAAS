@@ -481,6 +481,14 @@ function currentSinglesRank(playerStats) {
 // data live, which is the safe failure. Unmatched players -> null (dash).
 const MIN_STANDINGS_ROWS = 1800;
 let atpRankByKey = new Map();
+// TEN-206: the same get_standings response also carries `player` and `country`,
+// which this loader used to read and throw away. Search coverage was welded to
+// the profile payload — the dropdown filtered player-profiles.json, so a player
+// was findable only if his full profile had been published, and on a 4-match
+// board that collapsed to 31 names ("Alexander Zverev" -> "No player found").
+// Keeping the two discarded columns decouples them at zero extra API cost.
+// key -> { key, name, rank, country }, ranked order preserved from the feed.
+let atpStandingRows = [];
 async function loadAtpStandings() {
   const url = `${API_TENNIS_BASE}?method=get_standings&APIkey=${API_TENNIS_KEY}&event_type=ATP`;
   const res = await fetch(url);
@@ -488,17 +496,29 @@ async function loadAtpStandings() {
   const data = await res.json();
   const rows = Array.isArray(data.result) ? data.result : [];
   const map = new Map();
+  const standingRows = [];
   for (const r of rows) {
     if (r && r.player_key != null) {
       // Dash (null), never 0: a blank/non-numeric place must not coerce to rank 0
       // (Number("") === 0). Only a genuine positive integer place is a rank.
       const place = Number(r.place);
-      map.set(String(r.player_key), (Number.isFinite(place) && place >= 1) ? place : null);
+      const rank = (Number.isFinite(place) && place >= 1) ? place : null;
+      map.set(String(r.player_key), rank);
+      if (r.player) {
+        standingRows.push({ key: String(r.player_key), name: String(r.player), rank, country: r.country || null });
+      }
     }
   }
   if (map.size < MIN_STANDINGS_ROWS) {
     throw new Error(`get_standings returned ${map.size} ranked players (< ${MIN_STANDINGS_ROWS}) — failing closed: run writes nothing, yesterday's data stays live.`);
   }
+  standingRows.sort((a, b) => {
+    const ra = a.rank == null ? Infinity : a.rank;
+    const rb = b.rank == null ? Infinity : b.rank;
+    if (ra !== rb) return ra - rb;
+    return a.name.localeCompare(b.name);
+  });
+  atpStandingRows = standingRows;
   return map;
 }
 
@@ -3914,6 +3934,24 @@ async function buildOneProfile(key, name, surfaceMap) {
 const PLAYER_PROFILE_CACHE_PATH = 'player-profiles-cache.json';
 const OPPONENT_PROFILE_MAX_AGE_MS = 14 * 24 * 60 * 60 * 1000; // 14 days
 const MAX_OPPONENT_BUILDS_PER_RUN = 400;
+// TEN-206: how deep into the live ATP ranking the per-player shard roster goes.
+// Players already in the profile cache are kept regardless of rank, so this only
+// governs how many NEW ranked players get pulled in. 400 covers everyone a
+// member realistically searches while bounding the initial fill to ~2 runs at
+// the shared build cap above; the full 2,342-row standings list stays findable
+// through player-index.json either way.
+const MAX_SHARD_RANK = 400;
+// How much profile-building the shard pass may do in ONE run. This is a HARD
+// safety bound, not a tuning knob: pipeline.yml sets timeout-minutes: 30, and
+// the July 2026 run that built 400 profiles took 1,814s — 30.2 minutes. It
+// survived only because it ran under launchd. Reaching that cap inside Actions
+// kills the job, and a killed job writes NOTHING, so the whole board goes stale
+// — a far worse regression than the search gap this fixes. 60 builds is ~300 API
+// calls, a few minutes, and the pool still drains in a handful of runs.
+const MAX_SHARD_BUILDS_PER_RUN = 60;
+// Belt to that braces: latency, not count, is what actually burns the clock, so
+// the pass also stops on wall time regardless of how many it managed.
+const SHARD_BUILD_BUDGET_MS = 6 * 60 * 1000;
 
 // Bump whenever a change alters the CONTENT of a built profile (a stat formula,
 // a new/removed field, a cap). The TTL above only answers "is this data old?" —
@@ -4404,7 +4442,12 @@ async function buildPlayerProfiles(matches, surfaceMap) {
       continue;
     }
     if (built >= MAX_OPPONENT_BUILDS_PER_RUN) {
-      if (cached && cached.profile) { profiles[key] = cached.profile; reused++; }
+      // Stale-but-current-schema falls back so the player stays searchable while
+      // he waits his turn. A WRONG-SCHEMA profile must NOT: it predates fields
+      // the page now reads, so it renders as a half-empty "ghost" that looks
+      // like a data defect rather than a player awaiting rebuild. Omit and let a
+      // later run publish him for real.
+      if (cached && cached.profile && cached.v === PROFILE_SCHEMA_VERSION) { profiles[key] = cached.profile; reused++; }
       continue;
     }
     const { profile } = await buildOneProfile(key, name, surfaceMap);
@@ -4412,6 +4455,73 @@ async function buildPlayerProfiles(matches, surfaceMap) {
     built++;
     if (profile) profiles[key] = profile; else skippedNull++;
   }
+
+  // Pass 2b — the SHARD roster (TEN-206). Passes 1 and 2 define the EAGER file:
+  // today's field plus their 1st-degree opponents. That roster tracks board size
+  // (31 on a 4-match Davis Cup day) and is why player search couldn't find
+  // Alexander Zverev. It cannot simply be widened: measured 2026-09-17, the full
+  // 467-player roster is 2.79 MB gzipped eagerly, and stripping tournamentHistory
+  // (TEN-207) only brings that to 2.16 MB — both far past budget for a file every
+  // page load blocks on.
+  //
+  // So widen the roster WITHOUT widening the eager file. Everyone below is built
+  // and enriched exactly like an opponent, then written as a per-player shard
+  // (~6 KB gzipped) that the profile page fetches on click. The eager file keeps
+  // precisely the keys it has today — eagerKeys, captured here, is what the split
+  // at write time keys off — so no existing page changes weight or behaviour.
+  //
+  // Budget: `built` is SHARED with pass 2, so the per-run API cost is unchanged.
+  // The pool drains best-ranked-first over successive runs and then just ticks
+  // over on the 14-day TTL.
+  const eagerKeys = new Set([...seedPlayers.keys(), ...opponentPool.keys()]);
+  const shardPool = new Map(); // key -> name
+  for (const [key, entry] of Object.entries(cachedPlayers)) {
+    const nm = entry && entry.profile && entry.profile.name;
+    if (nm && !eagerKeys.has(key)) shardPool.set(String(key), nm);
+  }
+  for (const row of atpStandingRows) {
+    if (row.rank == null || row.rank > MAX_SHARD_RANK) continue;
+    if (eagerKeys.has(row.key) || shardPool.has(row.key)) continue;
+    shardPool.set(row.key, row.name);
+  }
+  // Best-ranked first: a member searches the top of the tour, so that is the
+  // half of the pool that must converge first.
+  const shardOrder = [...shardPool.entries()].sort((a, b) => {
+    const ra = atpRankByKey.get(a[0]); const rb = atpRankByKey.get(b[0]);
+    return (ra == null ? Infinity : ra) - (rb == null ? Infinity : rb);
+  });
+  let shardBuilt = 0, shardReused = 0, shardPending = 0, shardDeferred = 0;
+  const shardStart = Date.now();
+  for (const [key, name] of shardOrder) {
+    const cached = cachedPlayers[key];
+    const fresh = cached && cached.builtAt
+      && cached.v === PROFILE_SCHEMA_VERSION
+      && (now - new Date(cached.builtAt).getTime() < OPPONENT_PROFILE_MAX_AGE_MS);
+    if (fresh) {
+      if (cached.profile) { profiles[key] = cached.profile; shardReused++; }
+      continue;
+    }
+    const outOfBudget = shardBuilt >= MAX_SHARD_BUILDS_PER_RUN
+      || built >= MAX_OPPONENT_BUILDS_PER_RUN
+      || (Date.now() - shardStart) > SHARD_BUILD_BUDGET_MS;
+    if (outOfBudget) {
+      if (cached && cached.profile && cached.v === PROFILE_SCHEMA_VERSION) { profiles[key] = cached.profile; shardReused++; }
+      else { shardPending++; shardDeferred++; }   // findable now, profile next run
+      continue;
+    }
+    const { profile } = await buildOneProfile(key, name, surfaceMap);
+    cachedPlayers[key] = { builtAt: new Date().toISOString(), v: PROFILE_SCHEMA_VERSION, profile: profile || null };
+    built++; shardBuilt++;
+    if (profile) profiles[key] = profile;
+  }
+  // Never silently truncate: say how many players this run deliberately left
+  // without a profile, so "pending" is visible in the log rather than read as
+  // full coverage.
+  console.log(`Shard roster: pool ${shardPool.size} `
+    + `[built ${shardBuilt}, reused ${shardReused}, pending ${shardPending}] `
+    + `(rank cap ${MAX_SHARD_RANK}, build cap ${MAX_SHARD_BUILDS_PER_RUN}/run, `
+    + `${((Date.now() - shardStart) / 1000).toFixed(0)}s spent`
+    + `${shardDeferred ? `, ${shardDeferred} deferred to a later run` : ''}).`);
 
   // Cap EVERY served profile's recentForm to current-year + last-10 — the only
   // slice the Player Profile page reads. buildOneProfile already caps freshly
@@ -4518,11 +4628,81 @@ async function buildPlayerProfiles(matches, surfaceMap) {
     + `opponents [built ${built}, reused ${reused}, no-stats ${skippedNull}] `
     + `→ ${Object.keys(profiles).length} searchable.`);
 
+  // Split (TEN-206). `profiles` now holds the wide roster; the EAGER file must
+  // keep only the keys it had before this change, or every page load pays for
+  // the widening. Shards carry the rest.
+  const eagerProfiles = {};
+  for (const key of Object.keys(profiles)) if (eagerKeys.has(key)) eagerProfiles[key] = profiles[key];
+
   return {
     fetchedAt: new Date().toISOString(),
-    players: profiles,
+    players: eagerProfiles,
     tourAverage,
+    // Not serialised into player-profiles.json — consumed by runPipeline() to
+    // write the shards and the search index. Stripped at the write site.
+    _allProfiles: profiles,
   };
+}
+
+// Per-player profile shards + the searchable index (TEN-206).
+//
+// Finding a player and loading his profile were one problem; these are the two
+// halves, split. `player-index.json` is every ranked ATP player plus everyone we
+// hold a profile for — name, rank, country, and hasProfile — which is all the
+// dropdown renders (measured: 2,342 rows, ~34 KB gzipped). `profiles/<key>.json`
+// is one player's full profile, fetched only when he is actually opened.
+//
+// hasProfile is the honest third state. Without it "we have no such player" and
+// "we know him, his profile isn't built yet" both render as "No player found".
+function writePlayerShardsAndIndex(allProfiles, tourAverage) {
+  const dir = 'profiles';
+  fs.mkdirSync(dir, { recursive: true });
+  // Rewrite from scratch each run so a player who leaves the roster stops being
+  // served a profile that no longer refreshes.
+  for (const f of fs.readdirSync(dir)) if (f.endsWith('.json')) fs.unlinkSync(`${dir}/${f}`);
+
+  let written = 0;
+  for (const [key, profile] of Object.entries(allProfiles)) {
+    if (!profile) continue;
+    // tourAverage travels with each shard: the page's "vs tour" comparisons need
+    // it, and a shard may be opened without the eager file's copy being relevant.
+    fs.writeFileSync(`${dir}/${key}.json`, JSON.stringify({ key, profile, tourAverage }));
+    written++;
+  }
+
+  const byKey = new Map();
+  for (const row of atpStandingRows) {
+    byKey.set(row.key, { key: row.key, name: row.name, rank: row.rank, country: row.country, hasProfile: false });
+  }
+  // A retired or unranked player keeps his profile but loses his standings row —
+  // union him in (rank null -> dash) so nobody who HAS a profile is unsearchable.
+  for (const [key, profile] of Object.entries(allProfiles)) {
+    if (!profile || !profile.name) continue;
+    const existing = byKey.get(String(key));
+    if (existing) { existing.hasProfile = true; continue; }
+    byKey.set(String(key), { key: String(key), name: profile.name, rank: null, country: profile.country || null, hasProfile: true });
+  }
+
+  // Fail-closed, same contract as loadAtpStandings(): a short standings return
+  // would silently shrink the searchable roster, which is the exact failure this
+  // is fixing. Floor applies to the standings contribution alone, so a large
+  // profile roster cannot mask a truncated fetch.
+  if (atpStandingRows.length < MIN_STANDINGS_ROWS) {
+    throw new Error(`player-index: standings contributed ${atpStandingRows.length} rows (< ${MIN_STANDINGS_ROWS}) `
+      + `— failing closed, index not rewritten.`);
+  }
+
+  const players = [...byKey.values()].sort((a, b) => {
+    const ra = a.rank == null ? Infinity : a.rank;
+    const rb = b.rank == null ? Infinity : b.rank;
+    if (ra !== rb) return ra - rb;
+    return a.name.localeCompare(b.name);
+  });
+  writeJsonAtomic('player-index.json',
+    { fetchedAt: new Date().toISOString(), source: 'api-tennis get_standings (ATP)', players }, true);
+
+  const withProfile = players.filter(p => p.hasProfile).length;
+  console.log(`Player index: ${players.length} searchable (${withProfile} with a profile), ${written} shard(s) written.`);
 }
 
 // =================================================================
@@ -5538,10 +5718,19 @@ async function runPipeline() {
   // written: it strips the build-time careerMatches carrier off each profile and
   // stamps per-year row counts onto careerByYear.
   console.log('Building career-record drill-down shards...');
-  await writeCareerHistoryShards(playerProfiles.players, { log: (m) => console.log(m) });
+  // TEN-206: run over the WIDE roster, not just the eager one. This strips the
+  // careerMatches carrier and stamps careerByYear row counts, so a shard player
+  // who skipped it would ship the heavy carrier and render without its counts.
+  const allProfiles = playerProfiles._allProfiles || playerProfiles.players;
+  await writeCareerHistoryShards(allProfiles, { log: (m) => console.log(m) });
 
+  // Per-player shards + search index — after the strip above, so a shard carries
+  // exactly the shape the eager file's profiles have.
+  writePlayerShardsAndIndex(allProfiles, playerProfiles.tourAverage);
+
+  delete playerProfiles._allProfiles;   // carrier only — never serialised
   writeJsonAtomic('player-profiles.json', playerProfiles, true);
-  console.log(`Wrote player-profiles.json (${Object.keys(playerProfiles.players).length} player profile(s)).`);
+  console.log(`Wrote player-profiles.json (${Object.keys(playerProfiles.players).length} eager player profile(s)).`);
 
   // Backfill the per-match embedded tournament histories (p1/p2TournamentHistory)
   // with the same pre-2021 archive used for the profiles, so the Today's Matches
@@ -5833,4 +6022,10 @@ module.exports = { isIndoorTournament, loadTournamentCourtMap, fetchRecentSingle
   // returns, and that is what ten8-career-verify.js asserts.
   buildAllTierYearly, playerMatchHistory, writeCareerHistoryShards,
   fetchPlayerCareerHistory, deriveSlamBoxes, dedupeByPlayerKeyPair, historyCacheFresh,
-  TOURNAMENT_HISTORY_SCHEMA_VERSION };
+  TOURNAMENT_HISTORY_SCHEMA_VERSION,
+  // TEN-206 search/shard split. loadAtpStandings is exported alongside the two
+  // writers because the index is built from the rows it keeps as a side effect —
+  // the verifier has to prove those two agree, not just that each runs.
+  loadAtpStandings, writePlayerShardsAndIndex, MAX_SHARD_RANK,
+  _standingRows: () => atpStandingRows,
+  _setStandingRowsForTest: (rows) => { atpStandingRows = rows; } };

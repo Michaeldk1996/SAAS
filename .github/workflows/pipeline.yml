@@ -371,6 +371,14 @@ jobs:
           cp admin.html admin-config.js _site/ 2>/dev/null || true
           cp matches.json tournament-profiles.json tournament-progression.json player-profiles.json _site/
           cp career-splits.json _site/
+          # TEN-206: the searchable ATP roster (every ranked player, ~34 KB gz) plus
+          # the per-player profile shards it points at. player-profiles.json only
+          # ever carried today's field, so search could not reach anyone off the
+          # board. This allowlist is a literal cp list with no glob — a new file left
+          # out of it 404s live while every test still passes, so player-index.json
+          # is asserted below.
+          cp player-index.json _site/
+          mkdir -p _site/profiles && cp profiles/*.json _site/profiles/ 2>/dev/null || true
           # TEN-173 Points at Risk: static artifact refreshed daily by
           # points-at-risk.yml (its own fail-closed workflow). The profile "Points
           # at Risk" tile reads it once, keyed by player_key. Assert-gated below.
@@ -562,6 +570,7 @@ jobs:
                    live-tab.js \
                    holdbreak-heatmap.js player-profile-v2.js \
                    matches.json player-profiles.json career-splits.json form-index.json \
+                   player-index.json \
                    points-at-risk.json \
                    player-atp-aliases.json \
                    matchup-matrix.json playing-styles.json style-radar.json \
