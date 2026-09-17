@@ -1,6 +1,5 @@
 {
- "bet105_feed_source_id_used": null,
- "bytes_down": 3779329,
+ "bytes_down": 6904661,
  "call_log": [
   {
    "bytes": 2945,
@@ -8,7 +7,7 @@
    "path": "/reference/sports",
    "rate_headers": {},
    "rows": 22,
-   "seconds": 0.42,
+   "seconds": 0.54,
    "status": 200
   },
   {
@@ -17,7 +16,7 @@
    "path": "/reference/sportsbooks",
    "rate_headers": {},
    "rows": 1,
-   "seconds": 0.18,
+   "seconds": 0.3,
    "status": 200
   },
   {
@@ -26,7 +25,7 @@
    "path": "/reference/leagues",
    "rate_headers": {},
    "rows": 359,
-   "seconds": 0.29,
+   "seconds": 0.44,
    "status": 200
   },
   {
@@ -35,7 +34,7 @@
    "path": "/reference/betting-types",
    "rate_headers": {},
    "rows": 4,
-   "seconds": 0.18,
+   "seconds": 0.54,
    "status": 200
   },
   {
@@ -44,7 +43,7 @@
    "path": "/reference/market-types",
    "rate_headers": {},
    "rows": 127,
-   "seconds": 0.18,
+   "seconds": 0.41,
    "status": 200
   },
   {
@@ -53,7 +52,7 @@
    "path": "/reference/segments",
    "rate_headers": {},
    "rows": 68,
-   "seconds": 0.3,
+   "seconds": 0.27,
    "status": 200
   },
   {
@@ -62,7 +61,7 @@
    "path": "/reference/fixture-types",
    "rate_headers": {},
    "rows": 8,
-   "seconds": 0.18,
+   "seconds": 0.29,
    "status": 200
   },
   {
@@ -71,1150 +70,988 @@
    "path": "/reference/feed-types",
    "rate_headers": {},
    "rows": 6,
-   "seconds": 0.14,
+   "seconds": 0.31,
+   "status": 200
+  },
+  {
+   "bytes": 1144,
+   "params": {
+    "sport_id": 5
+   },
+   "path": "/info/markets-last-updated",
+   "rate_headers": {},
+   "rows": 4,
+   "seconds": 1.04,
    "status": 200
   },
   {
    "bytes": 4878,
    "params": {
-    "end_time": "2026-09-24T23:13:15Z",
+    "end_time": "2026-09-24T23:20:58Z",
     "league_id": 19,
-    "start_time": "2026-09-14T23:13:15Z"
+    "start_time": "2026-09-14T23:20:58Z"
    },
    "path": "/info/fixtures",
    "rate_headers": {},
    "rows": 3,
-   "seconds": 0.14,
+   "seconds": 0.26,
    "status": 200
   },
   {
    "bytes": 276198,
    "params": {
-    "end_time": "2026-09-24T23:13:15Z",
+    "end_time": "2026-09-24T23:20:58Z",
     "league_id": 537,
-    "start_time": "2026-09-14T23:13:15Z"
+    "start_time": "2026-09-14T23:20:58Z"
    },
    "path": "/info/fixtures",
    "rate_headers": {},
    "rows": 149,
-   "seconds": 0.43,
+   "seconds": 0.67,
    "status": 200
   },
   {
    "bytes": 501407,
    "params": {
-    "end_time": "2026-09-24T23:13:15Z",
+    "end_time": "2026-09-24T23:20:58Z",
     "league_id": 962,
-    "start_time": "2026-09-14T23:13:15Z"
+    "start_time": "2026-09-14T23:20:58Z"
    },
    "path": "/info/fixtures",
    "rate_headers": {},
    "rows": 272,
-   "seconds": 0.66,
+   "seconds": 0.81,
    "status": 200
   },
   {
-   "bytes": 149140,
+   "bytes": 148374,
    "params": {
-    "end_time": "2026-09-24T23:13:15Z",
+    "end_time": "2026-09-24T23:20:58Z",
     "league_id": 20,
-    "start_time": "2026-09-14T23:13:15Z"
+    "start_time": "2026-09-14T23:20:58Z"
    },
    "path": "/info/fixtures",
    "rate_headers": {},
    "rows": 75,
-   "seconds": 0.32,
+   "seconds": 0.52,
    "status": 200
   },
   {
    "bytes": 172866,
    "params": {
-    "end_time": "2026-09-24T23:13:15Z",
+    "end_time": "2026-09-24T23:20:58Z",
     "league_id": 643,
-    "start_time": "2026-09-14T23:13:15Z"
+    "start_time": "2026-09-14T23:20:58Z"
    },
    "path": "/info/fixtures",
    "rate_headers": {},
    "rows": 93,
-   "seconds": 0.31,
+   "seconds": 0.52,
    "status": 200
   },
   {
    "bytes": 403220,
    "params": {
-    "end_time": "2026-09-24T23:13:15Z",
+    "end_time": "2026-09-24T23:20:58Z",
     "league_id": 963,
-    "start_time": "2026-09-14T23:13:15Z"
+    "start_time": "2026-09-14T23:20:58Z"
    },
    "path": "/info/fixtures",
    "rate_headers": {},
    "rows": 217,
-   "seconds": 0.4,
+   "seconds": 0.72,
    "status": 200
   },
   {
-   "bytes": 156,
+   "bytes": 119160,
    "params": {
     "betting_type_id": 1,
-    "end_time": "2026-09-19T23:13:15Z",
+    "end_time": "2026-09-19T23:20:58Z",
+    "feed_source_id": "43",
     "league_id": "19,537,962",
-    "start_time": "2026-09-17T11:13:15Z"
+    "start_time": "2026-09-17T11:20:58Z"
    },
    "path": "/info/markets",
    "rate_headers": {},
-   "rows": 0,
-   "seconds": 0.13,
-   "status": 200,
-   "unrecognised_envelope": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ]
+   "rows": 180,
+   "seconds": 0.52,
+   "status": 200
   },
   {
-   "bytes": 156,
+   "bytes": 199,
    "params": {
     "betting_type_id": 2,
-    "end_time": "2026-09-19T23:13:15Z",
+    "end_time": "2026-09-19T23:20:58Z",
+    "feed_source_id": "43",
     "league_id": "19,537,962",
-    "start_time": "2026-09-17T11:13:15Z"
+    "start_time": "2026-09-17T11:20:58Z"
    },
    "path": "/info/markets",
    "rate_headers": {},
    "rows": 0,
-   "seconds": 0.13,
-   "status": 200,
-   "unrecognised_envelope": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ]
+   "seconds": 0.32,
+   "status": 200
   },
   {
-   "bytes": 156,
+   "bytes": 199,
    "params": {
     "betting_type_id": 3,
-    "end_time": "2026-09-19T23:13:15Z",
+    "end_time": "2026-09-19T23:20:58Z",
+    "feed_source_id": "43",
     "league_id": "19,537,962",
-    "start_time": "2026-09-17T11:13:15Z"
-   },
-   "path": "/info/markets",
-   "rate_headers": {},
-   "rows": 0,
-   "seconds": 0.15,
-   "status": 200,
-   "unrecognised_envelope": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ]
-  },
-  {
-   "bytes": 156,
-   "params": {
-    "end_time": "2026-09-19T23:13:15Z",
-    "league_id": "19,537,962",
-    "start_time": "2026-09-17T23:13:15Z"
-   },
-   "path": "/info/markets",
-   "rate_headers": {},
-   "rows": 0,
-   "seconds": 0.13,
-   "status": 200,
-   "unrecognised_envelope": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ]
-  },
-  {
-   "bytes": 156,
-   "params": {
-    "end_time": "2026-09-19T23:13:15Z",
-    "is_main": "true",
-    "league_id": "19,537,962",
-    "start_time": "2026-09-17T23:13:15Z"
-   },
-   "path": "/info/markets",
-   "rate_headers": {},
-   "rows": 0,
-   "seconds": 0.13,
-   "status": 200,
-   "unrecognised_envelope": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ]
-  },
-  {
-   "bytes": 156,
-   "params": {
-    "end_time": "2026-09-19T23:13:15Z",
-    "is_main": "false",
-    "league_id": "19,537,962",
-    "start_time": "2026-09-17T23:13:15Z"
+    "start_time": "2026-09-17T11:20:58Z"
    },
    "path": "/info/markets",
    "rate_headers": {},
    "rows": 0,
    "seconds": 0.27,
-   "status": 200,
-   "unrecognised_envelope": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ]
-  },
-  {
-   "bytes": 156,
-   "params": {
-    "end_time": "2026-09-20T23:13:15Z",
-    "league_id": "19,537,962",
-    "start_time": "2026-09-17T23:13:15Z"
-   },
-   "path": "/info/markets",
-   "rate_headers": {},
-   "rows": 0,
-   "seconds": 0.13,
-   "status": 200,
-   "unrecognised_envelope": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ]
-  },
-  {
-   "bytes": 254585,
-   "params": {
-    "end_time": "2026-09-16T23:13:15Z",
-    "league_id": "19,537,962",
-    "start_time": "2026-09-15T23:13:15Z"
-   },
-   "path": "/info/fixtures",
-   "rate_headers": {},
-   "rows": 134,
-   "seconds": 0.36,
    "status": 200
   },
   {
-   "bytes": 156,
+   "bytes": 71766,
    "params": {
-    "end_time": "2026-09-16T23:13:15Z",
-    "is_current": "true",
+    "end_time": "2026-09-19T23:20:58Z",
+    "feed_source_id": "43",
     "league_id": "19,537,962",
-    "start_time": "2026-09-15T23:13:15Z"
+    "start_time": "2026-09-17T23:20:58Z"
    },
    "path": "/info/markets",
    "rate_headers": {},
-   "rows": 0,
-   "seconds": 0.13,
-   "status": 200,
-   "unrecognised_envelope": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ]
-  },
-  {
-   "bytes": 156,
-   "params": {
-    "end_time": "2026-09-16T23:13:15Z",
-    "is_current": "false",
-    "league_id": "19,537,962",
-    "start_time": "2026-09-15T23:13:15Z"
-   },
-   "path": "/info/markets",
-   "rate_headers": {},
-   "rows": 0,
-   "seconds": 0.13,
-   "status": 200,
-   "unrecognised_envelope": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ]
-  },
-  {
-   "bytes": 221234,
-   "params": {
-    "end_time": "2026-09-15T23:13:15Z",
-    "league_id": "19,537,962",
-    "start_time": "2026-09-14T23:13:15Z"
-   },
-   "path": "/info/fixtures",
-   "rate_headers": {},
-   "rows": 116,
-   "seconds": 0.33,
+   "rows": 108,
+   "seconds": 0.43,
    "status": 200
   },
   {
-   "bytes": 156,
+   "bytes": 71766,
    "params": {
-    "end_time": "2026-09-15T23:13:15Z",
-    "is_current": "true",
+    "end_time": "2026-09-19T23:20:58Z",
+    "feed_source_id": "43",
+    "is_main": "true",
     "league_id": "19,537,962",
-    "start_time": "2026-09-14T23:13:15Z"
+    "start_time": "2026-09-17T23:20:58Z"
    },
    "path": "/info/markets",
    "rate_headers": {},
-   "rows": 0,
-   "seconds": 0.14,
-   "status": 200,
-   "unrecognised_envelope": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ]
+   "rows": 108,
+   "seconds": 0.56,
+   "status": 200
   },
   {
-   "bytes": 156,
+   "bytes": 71766,
    "params": {
-    "end_time": "2026-09-15T23:13:15Z",
-    "is_current": "false",
+    "end_time": "2026-09-19T23:20:58Z",
+    "feed_source_id": "43",
+    "is_main": "false",
     "league_id": "19,537,962",
-    "start_time": "2026-09-14T23:13:15Z"
+    "start_time": "2026-09-17T23:20:58Z"
    },
    "path": "/info/markets",
    "rate_headers": {},
-   "rows": 0,
-   "seconds": 0.14,
-   "status": 200,
-   "unrecognised_envelope": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ]
+   "rows": 108,
+   "seconds": 0.45,
+   "status": 200
+  },
+  {
+   "bytes": 71766,
+   "params": {
+    "end_time": "2026-09-20T23:20:58Z",
+    "feed_source_id": "43",
+    "league_id": "19,537,962",
+    "start_time": "2026-09-17T23:20:58Z"
+   },
+   "path": "/info/markets",
+   "rate_headers": {},
+   "rows": 108,
+   "seconds": 0.44,
+   "status": 200
+  },
+  {
+   "bytes": 252693,
+   "params": {
+    "end_time": "2026-09-16T23:20:58Z",
+    "league_id": "19,537,962",
+    "start_time": "2026-09-15T23:20:58Z"
+   },
+   "path": "/info/fixtures",
+   "rate_headers": {},
+   "rows": 133,
+   "seconds": 0.62,
+   "status": 200
+  },
+  {
+   "bytes": 87343,
+   "params": {
+    "end_time": "2026-09-16T23:20:58Z",
+    "feed_source_id": "43",
+    "is_current": "true",
+    "league_id": "19,537,962",
+    "start_time": "2026-09-15T23:20:58Z"
+   },
+   "path": "/info/markets",
+   "rate_headers": {},
+   "rows": 132,
+   "seconds": 0.67,
+   "status": 200
+  },
+  {
+   "bytes": 87343,
+   "params": {
+    "end_time": "2026-09-16T23:20:58Z",
+    "feed_source_id": "43",
+    "is_current": "false",
+    "league_id": "19,537,962",
+    "start_time": "2026-09-15T23:20:58Z"
+   },
+   "path": "/info/markets",
+   "rate_headers": {},
+   "rows": 132,
+   "seconds": 0.44,
+   "status": 200
+  },
+  {
+   "bytes": 223126,
+   "params": {
+    "end_time": "2026-09-15T23:20:58Z",
+    "league_id": "19,537,962",
+    "start_time": "2026-09-14T23:20:58Z"
+   },
+   "path": "/info/fixtures",
+   "rate_headers": {},
+   "rows": 117,
+   "seconds": 0.62,
+   "status": 200
+  },
+  {
+   "bytes": 226558,
+   "params": {
+    "end_time": "2026-09-15T23:20:58Z",
+    "feed_source_id": "43",
+    "is_current": "true",
+    "league_id": "19,537,962",
+    "start_time": "2026-09-14T23:20:58Z"
+   },
+   "path": "/info/markets",
+   "rate_headers": {},
+   "rows": 342,
+   "seconds": 0.88,
+   "status": 200
+  },
+  {
+   "bytes": 226558,
+   "params": {
+    "end_time": "2026-09-15T23:20:58Z",
+    "feed_source_id": "43",
+    "is_current": "false",
+    "league_id": "19,537,962",
+    "start_time": "2026-09-14T23:20:58Z"
+   },
+   "path": "/info/markets",
+   "rate_headers": {},
+   "rows": 342,
+   "seconds": 0.68,
+   "status": 200
   },
   {
    "bytes": 118432,
    "params": {
-    "end_time": "2026-09-14T23:13:15Z",
+    "end_time": "2026-09-14T23:20:58Z",
     "league_id": "19,537,962",
-    "start_time": "2026-09-13T23:13:15Z"
+    "start_time": "2026-09-13T23:20:58Z"
    },
    "path": "/info/fixtures",
    "rate_headers": {},
    "rows": 62,
-   "seconds": 0.27,
+   "seconds": 0.53,
    "status": 200
   },
   {
-   "bytes": 156,
+   "bytes": 178780,
    "params": {
-    "end_time": "2026-09-14T23:13:15Z",
+    "end_time": "2026-09-14T23:20:58Z",
+    "feed_source_id": "43",
     "is_current": "true",
     "league_id": "19,537,962",
-    "start_time": "2026-09-13T23:13:15Z"
+    "start_time": "2026-09-13T23:20:58Z"
    },
    "path": "/info/markets",
    "rate_headers": {},
-   "rows": 0,
-   "seconds": 0.13,
-   "status": 200,
-   "unrecognised_envelope": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ]
+   "rows": 270,
+   "seconds": 0.87,
+   "status": 200
   },
   {
-   "bytes": 156,
+   "bytes": 178780,
    "params": {
-    "end_time": "2026-09-14T23:13:15Z",
+    "end_time": "2026-09-14T23:20:58Z",
+    "feed_source_id": "43",
     "is_current": "false",
     "league_id": "19,537,962",
-    "start_time": "2026-09-13T23:13:15Z"
+    "start_time": "2026-09-13T23:20:58Z"
    },
    "path": "/info/markets",
    "rate_headers": {},
-   "rows": 0,
-   "seconds": 0.13,
-   "status": 200,
-   "unrecognised_envelope": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ]
+   "rows": 270,
+   "seconds": 0.51,
+   "status": 200
   },
   {
    "bytes": 94103,
    "params": {
-    "end_time": "2026-09-12T23:13:15Z",
+    "end_time": "2026-09-12T23:20:58Z",
     "league_id": "19,537,962",
-    "start_time": "2026-09-11T23:13:15Z"
+    "start_time": "2026-09-11T23:20:58Z"
    },
    "path": "/info/fixtures",
    "rate_headers": {},
    "rows": 50,
-   "seconds": 0.23,
+   "seconds": 0.46,
    "status": 200
   },
   {
-   "bytes": 156,
+   "bytes": 63805,
    "params": {
-    "end_time": "2026-09-12T23:13:15Z",
+    "end_time": "2026-09-12T23:20:58Z",
+    "feed_source_id": "43",
     "is_current": "true",
     "league_id": "19,537,962",
-    "start_time": "2026-09-11T23:13:15Z"
+    "start_time": "2026-09-11T23:20:58Z"
    },
    "path": "/info/markets",
    "rate_headers": {},
-   "rows": 0,
-   "seconds": 0.15,
-   "status": 200,
-   "unrecognised_envelope": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ]
+   "rows": 96,
+   "seconds": 0.52,
+   "status": 200
   },
   {
-   "bytes": 156,
+   "bytes": 63805,
    "params": {
-    "end_time": "2026-09-12T23:13:15Z",
+    "end_time": "2026-09-12T23:20:58Z",
+    "feed_source_id": "43",
     "is_current": "false",
     "league_id": "19,537,962",
-    "start_time": "2026-09-11T23:13:15Z"
+    "start_time": "2026-09-11T23:20:58Z"
    },
    "path": "/info/markets",
    "rate_headers": {},
-   "rows": 0,
-   "seconds": 0.13,
-   "status": 200,
-   "unrecognised_envelope": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ]
+   "rows": 96,
+   "seconds": 0.46,
+   "status": 200
   },
   {
-   "bytes": 281902,
+   "bytes": 279941,
    "params": {
-    "end_time": "2026-09-10T23:13:15Z",
+    "end_time": "2026-09-10T23:20:58Z",
     "league_id": "19,537,962",
-    "start_time": "2026-09-09T23:13:15Z"
+    "start_time": "2026-09-09T23:20:58Z"
    },
    "path": "/info/fixtures",
    "rate_headers": {},
-   "rows": 148,
-   "seconds": 0.4,
+   "rows": 147,
+   "seconds": 0.81,
    "status": 200
   },
   {
-   "bytes": 156,
+   "bytes": 112539,
    "params": {
-    "end_time": "2026-09-10T23:13:15Z",
+    "end_time": "2026-09-10T23:20:58Z",
+    "feed_source_id": "43",
     "is_current": "true",
     "league_id": "19,537,962",
-    "start_time": "2026-09-09T23:13:15Z"
+    "start_time": "2026-09-09T23:20:58Z"
    },
    "path": "/info/markets",
    "rate_headers": {},
-   "rows": 0,
-   "seconds": 0.13,
-   "status": 200,
-   "unrecognised_envelope": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ]
+   "rows": 170,
+   "seconds": 0.98,
+   "status": 200
   },
   {
-   "bytes": 156,
+   "bytes": 112539,
    "params": {
-    "end_time": "2026-09-10T23:13:15Z",
+    "end_time": "2026-09-10T23:20:58Z",
+    "feed_source_id": "43",
     "is_current": "false",
     "league_id": "19,537,962",
-    "start_time": "2026-09-09T23:13:15Z"
+    "start_time": "2026-09-09T23:20:58Z"
    },
    "path": "/info/markets",
    "rate_headers": {},
-   "rows": 0,
-   "seconds": 0.13,
-   "status": 200,
-   "unrecognised_envelope": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ]
+   "rows": 170,
+   "seconds": 0.56,
+   "status": 200
   },
   {
    "bytes": 337765,
    "params": {
-    "end_time": "2026-09-03T23:13:15Z",
+    "end_time": "2026-09-03T23:20:58Z",
     "league_id": "19,537,962",
-    "start_time": "2026-09-02T23:13:15Z"
+    "start_time": "2026-09-02T23:20:58Z"
    },
    "path": "/info/fixtures",
    "rate_headers": {},
    "rows": 175,
-   "seconds": 0.39,
+   "seconds": 0.75,
    "status": 200
   },
   {
-   "bytes": 156,
+   "bytes": 171099,
    "params": {
-    "end_time": "2026-09-03T23:13:15Z",
+    "end_time": "2026-09-03T23:20:58Z",
+    "feed_source_id": "43",
     "is_current": "true",
     "league_id": "19,537,962",
-    "start_time": "2026-09-02T23:13:15Z"
+    "start_time": "2026-09-02T23:20:58Z"
    },
    "path": "/info/markets",
    "rate_headers": {},
-   "rows": 0,
-   "seconds": 0.13,
-   "status": 200,
-   "unrecognised_envelope": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ]
+   "rows": 258,
+   "seconds": 1.08,
+   "status": 200
   },
   {
-   "bytes": 156,
+   "bytes": 171099,
    "params": {
-    "end_time": "2026-09-03T23:13:15Z",
+    "end_time": "2026-09-03T23:20:58Z",
+    "feed_source_id": "43",
     "is_current": "false",
     "league_id": "19,537,962",
-    "start_time": "2026-09-02T23:13:15Z"
+    "start_time": "2026-09-02T23:20:58Z"
    },
    "path": "/info/markets",
    "rate_headers": {},
-   "rows": 0,
-   "seconds": 0.13,
-   "status": 200,
-   "unrecognised_envelope": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ]
+   "rows": 258,
+   "seconds": 0.53,
+   "status": 200
   },
   {
-   "bytes": 302110,
+   "bytes": 304015,
    "params": {
-    "end_time": "2026-08-18T23:13:15Z",
+    "end_time": "2026-08-18T23:20:58Z",
     "league_id": "19,537,962",
-    "start_time": "2026-08-17T23:13:15Z"
+    "start_time": "2026-08-17T23:20:58Z"
    },
    "path": "/info/fixtures",
    "rate_headers": {},
-   "rows": 161,
-   "seconds": 0.38,
+   "rows": 162,
+   "seconds": 0.67,
    "status": 200
   },
   {
-   "bytes": 156,
+   "bytes": 235809,
    "params": {
-    "end_time": "2026-08-18T23:13:15Z",
+    "end_time": "2026-08-18T23:20:58Z",
+    "feed_source_id": "43",
     "is_current": "true",
     "league_id": "19,537,962",
-    "start_time": "2026-08-17T23:13:15Z"
+    "start_time": "2026-08-17T23:20:58Z"
    },
    "path": "/info/markets",
    "rate_headers": {},
-   "rows": 0,
-   "seconds": 0.16,
-   "status": 200,
-   "unrecognised_envelope": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ]
+   "rows": 356,
+   "seconds": 1.04,
+   "status": 200
   },
   {
-   "bytes": 156,
+   "bytes": 235809,
    "params": {
-    "end_time": "2026-08-18T23:13:15Z",
+    "end_time": "2026-08-18T23:20:58Z",
+    "feed_source_id": "43",
     "is_current": "false",
     "league_id": "19,537,962",
-    "start_time": "2026-08-17T23:13:15Z"
+    "start_time": "2026-08-17T23:20:58Z"
    },
    "path": "/info/markets",
    "rate_headers": {},
-   "rows": 0,
-   "seconds": 0.13,
-   "status": 200,
-   "unrecognised_envelope": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ]
+   "rows": 356,
+   "seconds": 0.73,
+   "status": 200
   },
   {
-   "bytes": 179689,
+   "bytes": 181588,
    "params": {
-    "end_time": "2026-07-19T23:13:15Z",
+    "end_time": "2026-07-19T23:20:58Z",
     "league_id": "19,537,962",
-    "start_time": "2026-07-18T23:13:15Z"
+    "start_time": "2026-07-18T23:20:58Z"
    },
    "path": "/info/fixtures",
    "rate_headers": {},
-   "rows": 94,
-   "seconds": 0.28,
+   "rows": 95,
+   "seconds": 0.59,
    "status": 200
   },
   {
-   "bytes": 156,
+   "bytes": 199,
    "params": {
-    "end_time": "2026-07-19T23:13:15Z",
+    "end_time": "2026-07-19T23:20:58Z",
+    "feed_source_id": "43",
     "is_current": "true",
     "league_id": "19,537,962",
-    "start_time": "2026-07-18T23:13:15Z"
+    "start_time": "2026-07-18T23:20:58Z"
    },
    "path": "/info/markets",
    "rate_headers": {},
    "rows": 0,
-   "seconds": 0.13,
-   "status": 200,
-   "unrecognised_envelope": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ]
+   "seconds": 0.44,
+   "status": 200
   },
   {
-   "bytes": 156,
+   "bytes": 199,
    "params": {
-    "end_time": "2026-07-19T23:13:15Z",
+    "end_time": "2026-07-19T23:20:58Z",
+    "feed_source_id": "43",
     "is_current": "false",
     "league_id": "19,537,962",
-    "start_time": "2026-07-18T23:13:15Z"
+    "start_time": "2026-07-18T23:20:58Z"
    },
    "path": "/info/markets",
    "rate_headers": {},
    "rows": 0,
-   "seconds": 0.13,
-   "status": 200,
-   "unrecognised_envelope": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ]
+   "seconds": 0.25,
+   "status": 200
   },
   {
    "bytes": 133742,
    "params": {
-    "end_time": "2026-06-19T23:13:15Z",
+    "end_time": "2026-06-19T23:20:58Z",
     "league_id": "19,537,962",
-    "start_time": "2026-06-18T23:13:15Z"
+    "start_time": "2026-06-18T23:20:58Z"
    },
    "path": "/info/fixtures",
    "rate_headers": {},
    "rows": 81,
-   "seconds": 0.28,
+   "seconds": 0.55,
    "status": 200
   },
   {
-   "bytes": 156,
+   "bytes": 199,
    "params": {
-    "end_time": "2026-06-19T23:13:15Z",
+    "end_time": "2026-06-19T23:20:58Z",
+    "feed_source_id": "43",
     "is_current": "true",
     "league_id": "19,537,962",
-    "start_time": "2026-06-18T23:13:15Z"
+    "start_time": "2026-06-18T23:20:58Z"
    },
    "path": "/info/markets",
    "rate_headers": {},
    "rows": 0,
-   "seconds": 0.13,
-   "status": 200,
-   "unrecognised_envelope": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ]
+   "seconds": 0.26,
+   "status": 200
   },
   {
-   "bytes": 156,
+   "bytes": 199,
    "params": {
-    "end_time": "2026-06-19T23:13:15Z",
+    "end_time": "2026-06-19T23:20:58Z",
+    "feed_source_id": "43",
     "is_current": "false",
     "league_id": "19,537,962",
-    "start_time": "2026-06-18T23:13:15Z"
+    "start_time": "2026-06-18T23:20:58Z"
    },
    "path": "/info/markets",
    "rate_headers": {},
    "rows": 0,
-   "seconds": 0.13,
-   "status": 200,
-   "unrecognised_envelope": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ]
+   "seconds": 0.26,
+   "status": 200
   },
   {
-   "bytes": 51840,
+   "bytes": 50181,
    "params": {
-    "end_time": "2026-03-21T23:13:15Z",
+    "end_time": "2026-03-21T23:20:58Z",
     "league_id": "19,537,962",
-    "start_time": "2026-03-20T23:13:15Z"
+    "start_time": "2026-03-20T23:20:58Z"
    },
    "path": "/info/fixtures",
    "rate_headers": {},
-   "rows": 31,
-   "seconds": 0.23,
+   "rows": 30,
+   "seconds": 0.45,
    "status": 200
   },
   {
-   "bytes": 156,
+   "bytes": 199,
    "params": {
-    "end_time": "2026-03-21T23:13:15Z",
+    "end_time": "2026-03-21T23:20:58Z",
+    "feed_source_id": "43",
     "is_current": "true",
     "league_id": "19,537,962",
-    "start_time": "2026-03-20T23:13:15Z"
+    "start_time": "2026-03-20T23:20:58Z"
    },
    "path": "/info/markets",
    "rate_headers": {},
    "rows": 0,
-   "seconds": 0.13,
-   "status": 200,
-   "unrecognised_envelope": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ]
+   "seconds": 0.25,
+   "status": 200
   },
   {
-   "bytes": 156,
+   "bytes": 199,
    "params": {
-    "end_time": "2026-03-21T23:13:15Z",
+    "end_time": "2026-03-21T23:20:58Z",
+    "feed_source_id": "43",
     "is_current": "false",
     "league_id": "19,537,962",
-    "start_time": "2026-03-20T23:13:15Z"
+    "start_time": "2026-03-20T23:20:58Z"
    },
    "path": "/info/markets",
    "rate_headers": {},
    "rows": 0,
-   "seconds": 0.13,
-   "status": 200,
-   "unrecognised_envelope": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ]
+   "seconds": 0.37,
+   "status": 200
   },
   {
    "bytes": 70537,
    "params": {
-    "end_time": "2025-09-17T23:13:15Z",
+    "end_time": "2025-09-17T23:20:58Z",
     "league_id": "19,537,962",
-    "start_time": "2025-09-16T23:13:15Z"
+    "start_time": "2025-09-16T23:20:58Z"
    },
    "path": "/info/fixtures",
    "rate_headers": {},
    "rows": 49,
-   "seconds": 0.23,
+   "seconds": 0.6,
    "status": 200
   },
   {
-   "bytes": 156,
+   "bytes": 199,
    "params": {
-    "end_time": "2025-09-17T23:13:15Z",
+    "end_time": "2025-09-17T23:20:58Z",
+    "feed_source_id": "43",
     "is_current": "true",
     "league_id": "19,537,962",
-    "start_time": "2025-09-16T23:13:15Z"
+    "start_time": "2025-09-16T23:20:58Z"
    },
    "path": "/info/markets",
    "rate_headers": {},
    "rows": 0,
-   "seconds": 0.13,
-   "status": 200,
-   "unrecognised_envelope": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ]
+   "seconds": 0.27,
+   "status": 200
   },
   {
-   "bytes": 156,
+   "bytes": 199,
    "params": {
-    "end_time": "2025-09-17T23:13:15Z",
+    "end_time": "2025-09-17T23:20:58Z",
+    "feed_source_id": "43",
     "is_current": "false",
     "league_id": "19,537,962",
-    "start_time": "2025-09-16T23:13:15Z"
+    "start_time": "2025-09-16T23:20:58Z"
    },
    "path": "/info/markets",
    "rate_headers": {},
    "rows": 0,
-   "seconds": 0.13,
-   "status": 200,
-   "unrecognised_envelope": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ]
+   "seconds": 0.41,
+   "status": 200
   },
   {
    "bytes": 4878,
    "params": {
-    "end_time": "2026-09-20T23:13:15Z",
+    "end_time": "2026-09-20T23:20:58Z",
     "league_id": 19,
-    "start_time": "2026-09-17T23:13:15Z"
+    "start_time": "2026-09-17T23:20:58Z"
    },
    "path": "/info/fixtures",
    "rate_headers": {},
    "rows": 3,
-   "seconds": 0.15,
+   "seconds": 0.26,
    "status": 200
   },
   {
-   "bytes": 156,
+   "bytes": 2849,
    "params": {
     "betting_type_id": 1,
-    "end_time": "2026-09-20T23:13:15Z",
+    "end_time": "2026-09-20T23:20:58Z",
+    "feed_source_id": "43",
     "is_current": "true",
     "league_id": 19,
-    "start_time": "2026-09-17T23:13:15Z"
+    "start_time": "2026-09-17T23:20:58Z"
    },
    "path": "/info/markets",
    "rate_headers": {},
-   "rows": 0,
-   "seconds": 0.13,
-   "status": 200,
-   "unrecognised_envelope": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ]
+   "rows": 4,
+   "seconds": 0.26,
+   "status": 200
   },
   {
-   "bytes": 156,
+   "bytes": 2849,
    "params": {
     "betting_type_id": 1,
-    "end_time": "2026-09-20T23:13:15Z",
+    "end_time": "2026-09-20T23:20:58Z",
+    "feed_source_id": "43",
     "is_current": "false",
     "league_id": 19,
-    "start_time": "2026-09-17T23:13:15Z"
+    "start_time": "2026-09-17T23:20:58Z"
    },
    "path": "/info/markets",
    "rate_headers": {},
-   "rows": 0,
-   "seconds": 0.13,
-   "status": 200,
-   "unrecognised_envelope": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ]
+   "rows": 4,
+   "seconds": 0.26,
+   "status": 200
   },
   {
-   "bytes": 38442,
+   "bytes": 36539,
    "params": {
-    "end_time": "2026-09-20T23:13:15Z",
+    "end_time": "2026-09-20T23:20:58Z",
     "league_id": 537,
-    "start_time": "2026-09-17T23:13:15Z"
+    "start_time": "2026-09-17T23:20:58Z"
    },
    "path": "/info/fixtures",
    "rate_headers": {},
-   "rows": 24,
-   "seconds": 0.19,
+   "rows": 23,
+   "seconds": 0.36,
    "status": 200
   },
   {
-   "bytes": 156,
+   "bytes": 69115,
    "params": {
     "betting_type_id": 1,
-    "end_time": "2026-09-20T23:13:15Z",
+    "end_time": "2026-09-20T23:20:58Z",
+    "feed_source_id": "43",
     "is_current": "true",
     "league_id": 537,
-    "start_time": "2026-09-17T23:13:15Z"
+    "start_time": "2026-09-17T23:20:58Z"
    },
    "path": "/info/markets",
    "rate_headers": {},
-   "rows": 0,
-   "seconds": 0.13,
-   "status": 200,
-   "unrecognised_envelope": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ]
+   "rows": 104,
+   "seconds": 0.43,
+   "status": 200
   },
   {
-   "bytes": 156,
+   "bytes": 69115,
    "params": {
     "betting_type_id": 1,
-    "end_time": "2026-09-20T23:13:15Z",
+    "end_time": "2026-09-20T23:20:58Z",
+    "feed_source_id": "43",
     "is_current": "false",
     "league_id": 537,
-    "start_time": "2026-09-17T23:13:15Z"
+    "start_time": "2026-09-17T23:20:58Z"
    },
    "path": "/info/markets",
    "rate_headers": {},
-   "rows": 0,
-   "seconds": 0.14,
-   "status": 200,
-   "unrecognised_envelope": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ]
+   "rows": 104,
+   "seconds": 0.43,
+   "status": 200
   },
   {
-   "bytes": 58864,
+   "bytes": 56908,
    "params": {
-    "end_time": "2026-09-20T23:13:15Z",
+    "end_time": "2026-09-20T23:20:58Z",
     "league_id": 962,
-    "start_time": "2026-09-17T23:13:15Z"
+    "start_time": "2026-09-17T23:20:58Z"
    },
    "path": "/info/fixtures",
    "rate_headers": {},
-   "rows": 38,
-   "seconds": 0.24,
+   "rows": 37,
+   "seconds": 0.44,
    "status": 200
   },
   {
-   "bytes": 156,
+   "bytes": 199,
    "params": {
     "betting_type_id": 1,
-    "end_time": "2026-09-20T23:13:15Z",
+    "end_time": "2026-09-20T23:20:58Z",
+    "feed_source_id": "43",
     "is_current": "true",
     "league_id": 962,
-    "start_time": "2026-09-17T23:13:15Z"
+    "start_time": "2026-09-17T23:20:58Z"
    },
    "path": "/info/markets",
    "rate_headers": {},
    "rows": 0,
-   "seconds": 0.13,
-   "status": 200,
-   "unrecognised_envelope": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ]
+   "seconds": 0.25,
+   "status": 200
   },
   {
-   "bytes": 156,
+   "bytes": 199,
    "params": {
     "betting_type_id": 1,
-    "end_time": "2026-09-20T23:13:15Z",
+    "end_time": "2026-09-20T23:20:58Z",
+    "feed_source_id": "43",
     "is_current": "false",
     "league_id": 962,
-    "start_time": "2026-09-17T23:13:15Z"
+    "start_time": "2026-09-17T23:20:58Z"
    },
    "path": "/info/markets",
    "rate_headers": {},
    "rows": 0,
-   "seconds": 0.14,
-   "status": 200,
-   "unrecognised_envelope": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ]
+   "seconds": 0.26,
+   "status": 200
   },
   {
-   "bytes": 156,
+   "bytes": 71766,
    "params": {
     "betting_type_id": 1,
-    "end_time": "2026-09-19T23:13:15Z",
+    "end_time": "2026-09-19T23:20:58Z",
+    "feed_source_id": "43",
     "league_id": "19,537,962",
-    "start_time": "2026-09-17T23:13:15Z"
+    "start_time": "2026-09-17T23:20:58Z"
    },
    "path": "/info/markets",
    "rate_headers": {},
-   "rows": 0,
-   "seconds": 0.13,
-   "status": 200,
-   "unrecognised_envelope": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ]
+   "rows": 108,
+   "seconds": 0.42,
+   "status": 200
   },
   {
-   "bytes": 156,
+   "bytes": 71766,
    "params": {
     "betting_type_id": 1,
-    "end_time": "2026-09-19T23:13:15Z",
+    "end_time": "2026-09-19T23:20:58Z",
+    "feed_source_id": "43",
     "is_current": "true",
     "league_id": "19,537,962",
-    "start_time": "2026-09-17T23:13:15Z"
+    "start_time": "2026-09-17T23:20:58Z"
    },
    "path": "/info/markets",
    "rate_headers": {},
-   "rows": 0,
-   "seconds": 0.13,
-   "status": 200,
-   "unrecognised_envelope": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ]
+   "rows": 108,
+   "seconds": 0.43,
+   "status": 200
   },
   {
-   "bytes": 156,
+   "bytes": 71766,
    "params": {
     "betting_type_id": 1,
-    "end_time": "2026-09-19T23:13:15Z",
+    "end_time": "2026-09-19T23:20:58Z",
+    "feed_source_id": "43",
     "is_current": "false",
     "league_id": "19,537,962",
-    "start_time": "2026-09-17T23:13:15Z"
+    "start_time": "2026-09-17T23:20:58Z"
    },
    "path": "/info/markets",
    "rate_headers": {},
-   "rows": 0,
-   "seconds": 0.13,
-   "status": 200,
-   "unrecognised_envelope": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ]
+   "rows": 108,
+   "seconds": 0.42,
+   "status": 200
   },
   {
-   "bytes": 156,
+   "bytes": 71789,
    "params": {
     "betting_type_id": 1,
-    "end_time": "2026-09-19T23:13:15Z",
+    "end_time": "2026-09-19T23:20:58Z",
+    "feed_source_id": "43",
     "is_opener": "true",
     "league_id": "19,537,962",
-    "start_time": "2026-09-17T23:13:15Z"
+    "start_time": "2026-09-17T23:20:58Z"
    },
    "path": "/info/markets",
    "rate_headers": {},
-   "rows": 0,
-   "seconds": 0.14,
-   "status": 200,
-   "unrecognised_envelope": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ]
+   "rows": 108,
+   "seconds": 1.07,
+   "status": 200
   },
   {
-   "bytes": 156,
+   "bytes": 71766,
    "params": {
     "betting_type_id": 1,
-    "end_time": "2026-09-19T23:13:15Z",
+    "end_time": "2026-09-19T23:20:58Z",
+    "feed_source_id": "43",
     "is_current": "true",
     "league_id": "19,537,962",
-    "start_time": "2026-09-17T23:13:15Z"
+    "start_time": "2026-09-17T23:20:58Z"
    },
    "path": "/info/markets",
    "rate_headers": {},
-   "rows": 0,
-   "seconds": 0.13,
-   "status": 200,
-   "unrecognised_envelope": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ]
+   "rows": 108,
+   "seconds": 0.42,
+   "status": 200
   },
   {
-   "bytes": 156,
+   "bytes": 71766,
    "params": {
     "betting_type_id": 1,
-    "end_time": "2026-09-19T23:13:15Z",
+    "end_time": "2026-09-19T23:20:58Z",
+    "feed_source_id": "43",
     "is_current": "false",
     "league_id": "19,537,962",
-    "start_time": "2026-09-17T23:13:15Z"
+    "start_time": "2026-09-17T23:20:58Z"
    },
    "path": "/info/markets",
    "rate_headers": {},
-   "rows": 0,
-   "seconds": 0.13,
-   "status": 200,
-   "unrecognised_envelope": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ]
+   "rows": 108,
+   "seconds": 0.44,
+   "status": 200
   }
  ],
- "calls": 69,
- "commit": "8db73c7",
- "errors": [
-  "Bet105 feed_source_id could not be resolved from /reference/sportsbooks; tests b/c/d ran WITHOUT a feed-source filter and therefore measure every book we receive, not Bet105 specifically.",
-  "41 call(s) returned 200 with an envelope this parser does not recognise \u2014 every zero below them is unmeasured, not empty."
+ "calls": 70,
+ "commit": "30ead4f",
+ "entitled_books": [
+  {
+   "allow_direct_push": true,
+   "allow_xml_parse": true,
+   "feed_abrv": null,
+   "feed_id": null,
+   "feed_name": null,
+   "feed_source_id": 43,
+   "feed_type_id": 2,
+   "inserted_on": "2022-07-05T07:00:00.000Z",
+   "inserted_on_epoch": 1657004400000000,
+   "metadata": {
+    "offered": true,
+    "tier": "primary"
+   },
+   "name": "Sports411",
+   "parent_id": null,
+   "tag": "sports411"
+  }
  ],
+ "errors": [],
+ "feed_source_id_used": "43",
  "rate_headers_seen": {},
- "started_utc": "2026-09-17T23:13:15Z",
+ "started_utc": "2026-09-17T23:20:58Z",
  "test_a": {
   "bet105_candidates": [],
   "bet105_feed_source_id": null,
   "empirical": {
    "betting_types": {
     "1": {
-     "bytes": 156,
-     "rows": 0,
+     "bytes": 119160,
+     "rows": 180,
      "status": 200
     },
     "2": {
-     "bytes": 156,
+     "bytes": 199,
      "rows": 0,
      "status": 200
     },
     "3": {
-     "bytes": 156,
+     "bytes": 199,
      "rows": 0,
      "status": 200
     }
    },
    "feed_sources_seen": {
-    "counts": {},
-    "rows": 0,
+    "counts": {
+     "43": 108
+    },
+    "rows": 108,
     "status": 200
    },
    "is_main": {
     "false": {
-     "distinct_alt_ids": [],
-     "is_main_values": [],
-     "rows": 0,
+     "distinct_alt_ids": [
+      0
+     ],
+     "is_main_values": [
+      true
+     ],
+     "rows": 108,
      "status": 200
     },
     "omitted": {
-     "distinct_alt_ids": [],
-     "is_main_values": [],
-     "rows": 0,
+     "distinct_alt_ids": [
+      0
+     ],
+     "is_main_values": [
+      true
+     ],
+     "rows": 108,
      "status": 200
     },
     "true": {
-     "distinct_alt_ids": [],
-     "is_main_values": [],
-     "rows": 0,
+     "distinct_alt_ids": [
+      0
+     ],
+     "is_main_values": [
+      true
+     ],
+     "rows": 108,
      "status": 200
     }
    },
@@ -1256,9 +1093,39 @@
      "status": 200
     }
    },
-   "market_types_seen": {},
-   "segments_seen": {}
+   "market_types_seen": {
+    "1": 40,
+    "2": 34,
+    "3": 34
+   },
+   "segments_seen": {
+    "1": 108
+   }
   },
+  "entitled_books": [
+   {
+    "allow_direct_push": true,
+    "allow_xml_parse": true,
+    "feed_abrv": null,
+    "feed_id": null,
+    "feed_name": null,
+    "feed_source_id": 43,
+    "feed_type_id": 2,
+    "inserted_on": "2022-07-05T07:00:00.000Z",
+    "inserted_on_epoch": 1657004400000000,
+    "metadata": {
+     "offered": true,
+     "tier": "primary"
+    },
+    "name": "Sports411",
+    "parent_id": null,
+    "tag": "sports411"
+   }
+  ],
+  "entitled_feed_source_ids": [
+   43
+  ],
+  "feed_source_for_calls": "43",
   "reference": {
    "betting_types": {
     "n": 4,
@@ -7604,9 +7471,56 @@
     "truncated": false
    }
   },
-  "restrictions": [
-   "no markets returned for ANY betting_type_id"
-  ],
+  "restrictions": [],
+  "tennis_freshness": {
+   "rows": [
+    {
+     "betting_type_id": 1,
+     "feed_source_id": 43,
+     "league_id": 537,
+     "minutes_ago": 3,
+     "name": "sports411",
+     "redis_key": "puncher:last_seen:feed_inbound_sports_lines_puncher:sports411:43:5:537:1",
+     "seconds_ago": 151,
+     "sport_id": 5,
+     "updated_on": "2026-09-17T23:18:41.160Z"
+    },
+    {
+     "betting_type_id": 1,
+     "feed_source_id": 43,
+     "league_id": 19,
+     "minutes_ago": 10,
+     "name": "sports411",
+     "redis_key": "puncher:last_seen:feed_inbound_sports_lines_puncher:sports411:43:5:19:1",
+     "seconds_ago": 585,
+     "sport_id": 5,
+     "updated_on": "2026-09-17T23:11:27.139Z"
+    },
+    {
+     "betting_type_id": 1,
+     "feed_source_id": 43,
+     "league_id": 643,
+     "minutes_ago": 9,
+     "name": "sports411",
+     "redis_key": "puncher:last_seen:feed_inbound_sports_lines_puncher:sports411:43:5:643:1",
+     "seconds_ago": 530,
+     "sport_id": 5,
+     "updated_on": "2026-09-17T23:12:22.394Z"
+    },
+    {
+     "betting_type_id": 1,
+     "feed_source_id": 43,
+     "league_id": 20,
+     "minutes_ago": 1,
+     "name": "sports411",
+     "redis_key": "puncher:last_seen:feed_inbound_sports_lines_puncher:sports411:43:5:20:1",
+     "seconds_ago": 51,
+     "sport_id": 5,
+     "updated_on": "2026-09-17T23:20:21.123Z"
+    }
+   ],
+   "status": 200
+  },
   "tennis_sport": [
    {
     "abrv": "TN",
@@ -7619,11 +7533,11 @@
   "tennis_sport_id": 5,
   "token_claims": {
    "access_token": {
-    "auth_time": 1789686796,
+    "auth_time": 1789687258,
     "client_id": "3udv7qsqgju8c4riqvk72bqcl",
     "event_id": "<redacted>",
-    "exp": 1789773196,
-    "iat": 1789686796,
+    "exp": 1789773658,
+    "iat": 1789687258,
     "iss": "https://cognito-idp.us-west-2.amazonaws.com/us-west-2_6KKL7mPOX",
     "jti": "<redacted>",
     "origin_jti": "<redacted>",
@@ -7635,13 +7549,13 @@
    "custom_attributes": {},
    "id_token": {
     "aud": "3udv7qsqgju8c4riqvk72bqcl",
-    "auth_time": 1789686796,
+    "auth_time": 1789687258,
     "cognito:username": "<redacted>",
     "email": "<redacted>",
     "email_verified": true,
     "event_id": "<redacted>",
-    "exp": 1789690396,
-    "iat": 1789686796,
+    "exp": 1789690858,
+    "iat": 1789687258,
     "iss": "https://cognito-idp.us-west-2.amazonaws.com/us-west-2_6KKL7mPOX",
     "jti": "<redacted>",
     "name": "claw",
@@ -7655,140 +7569,154 @@
  },
  "test_b": {
   "max_days_back_with_fixtures": 365,
-  "max_days_back_with_markets": null,
+  "max_days_back_with_markets": 30,
   "stopped_early": false,
   "windows": [
    {
-    "bytes": 312,
+    "bytes": 174686,
     "days_back": 1,
-    "distinct_inserted_on": 0,
-    "fixtures": 134,
+    "distinct_inserted_on": 132,
+    "fixtures": 133,
     "fixtures_status": 200,
-    "fixtures_with_markets": 0,
-    "market_rows": 0,
+    "fixtures_with_markets": 22,
+    "market_rows": 132,
     "markets_status": [
      200,
      200
     ],
-    "states": {},
+    "states": {
+     "current": 132
+    },
     "window": [
-     "2026-09-15T23:13:15Z",
-     "2026-09-16T23:13:15Z"
+     "2026-09-15T23:20:58Z",
+     "2026-09-16T23:20:58Z"
     ]
    },
    {
-    "bytes": 312,
+    "bytes": 453116,
     "days_back": 2,
-    "distinct_inserted_on": 0,
-    "fixtures": 116,
+    "distinct_inserted_on": 342,
+    "fixtures": 117,
     "fixtures_status": 200,
-    "fixtures_with_markets": 0,
-    "market_rows": 0,
+    "fixtures_with_markets": 59,
+    "market_rows": 342,
     "markets_status": [
      200,
      200
     ],
-    "states": {},
+    "states": {
+     "current": 342
+    },
     "window": [
-     "2026-09-14T23:13:15Z",
-     "2026-09-15T23:13:15Z"
+     "2026-09-14T23:20:58Z",
+     "2026-09-15T23:20:58Z"
     ]
    },
    {
-    "bytes": 312,
+    "bytes": 357560,
     "days_back": 3,
-    "distinct_inserted_on": 0,
+    "distinct_inserted_on": 270,
     "fixtures": 62,
     "fixtures_status": 200,
-    "fixtures_with_markets": 0,
-    "market_rows": 0,
+    "fixtures_with_markets": 57,
+    "market_rows": 270,
     "markets_status": [
      200,
      200
     ],
-    "states": {},
+    "states": {
+     "current": 270
+    },
     "window": [
-     "2026-09-13T23:13:15Z",
-     "2026-09-14T23:13:15Z"
+     "2026-09-13T23:20:58Z",
+     "2026-09-14T23:20:58Z"
     ]
    },
    {
-    "bytes": 312,
+    "bytes": 127610,
     "days_back": 5,
-    "distinct_inserted_on": 0,
+    "distinct_inserted_on": 96,
     "fixtures": 50,
     "fixtures_status": 200,
-    "fixtures_with_markets": 0,
-    "market_rows": 0,
+    "fixtures_with_markets": 16,
+    "market_rows": 96,
     "markets_status": [
      200,
      200
     ],
-    "states": {},
+    "states": {
+     "current": 96
+    },
     "window": [
-     "2026-09-11T23:13:15Z",
-     "2026-09-12T23:13:15Z"
+     "2026-09-11T23:20:58Z",
+     "2026-09-12T23:20:58Z"
     ]
    },
    {
-    "bytes": 312,
+    "bytes": 225078,
     "days_back": 7,
-    "distinct_inserted_on": 0,
-    "fixtures": 148,
+    "distinct_inserted_on": 168,
+    "fixtures": 147,
     "fixtures_status": 200,
-    "fixtures_with_markets": 0,
-    "market_rows": 0,
+    "fixtures_with_markets": 29,
+    "market_rows": 170,
     "markets_status": [
      200,
      200
     ],
-    "states": {},
+    "states": {
+     "current": 170
+    },
     "window": [
-     "2026-09-09T23:13:15Z",
-     "2026-09-10T23:13:15Z"
+     "2026-09-09T23:20:58Z",
+     "2026-09-10T23:20:58Z"
     ]
    },
    {
-    "bytes": 312,
+    "bytes": 342198,
     "days_back": 14,
-    "distinct_inserted_on": 0,
+    "distinct_inserted_on": 258,
     "fixtures": 175,
     "fixtures_status": 200,
-    "fixtures_with_markets": 0,
-    "market_rows": 0,
+    "fixtures_with_markets": 43,
+    "market_rows": 258,
     "markets_status": [
      200,
      200
     ],
-    "states": {},
+    "states": {
+     "current": 258
+    },
     "window": [
-     "2026-09-02T23:13:15Z",
-     "2026-09-03T23:13:15Z"
+     "2026-09-02T23:20:58Z",
+     "2026-09-03T23:20:58Z"
     ]
    },
    {
-    "bytes": 312,
+    "bytes": 471618,
     "days_back": 30,
-    "distinct_inserted_on": 0,
-    "fixtures": 161,
+    "distinct_inserted_on": 356,
+    "fixtures": 162,
     "fixtures_status": 200,
-    "fixtures_with_markets": 0,
-    "market_rows": 0,
+    "fixtures_with_markets": 64,
+    "market_rows": 356,
     "markets_status": [
      200,
      200
     ],
-    "states": {},
+    "states": {
+     "current": 356
+    },
     "window": [
-     "2026-08-17T23:13:15Z",
-     "2026-08-18T23:13:15Z"
+     "2026-08-17T23:20:58Z",
+     "2026-08-18T23:20:58Z"
     ]
    },
    {
-    "bytes": 312,
+    "bytes": 398,
     "days_back": 60,
     "distinct_inserted_on": 0,
-    "fixtures": 94,
+    "fixtures": 95,
     "fixtures_status": 200,
     "fixtures_with_markets": 0,
     "market_rows": 0,
@@ -7798,12 +7726,12 @@
     ],
     "states": {},
     "window": [
-     "2026-07-18T23:13:15Z",
-     "2026-07-19T23:13:15Z"
+     "2026-07-18T23:20:58Z",
+     "2026-07-19T23:20:58Z"
     ]
    },
    {
-    "bytes": 312,
+    "bytes": 398,
     "days_back": 90,
     "distinct_inserted_on": 0,
     "fixtures": 81,
@@ -7816,15 +7744,15 @@
     ],
     "states": {},
     "window": [
-     "2026-06-18T23:13:15Z",
-     "2026-06-19T23:13:15Z"
+     "2026-06-18T23:20:58Z",
+     "2026-06-19T23:20:58Z"
     ]
    },
    {
-    "bytes": 312,
+    "bytes": 398,
     "days_back": 180,
     "distinct_inserted_on": 0,
-    "fixtures": 31,
+    "fixtures": 30,
     "fixtures_status": 200,
     "fixtures_with_markets": 0,
     "market_rows": 0,
@@ -7834,12 +7762,12 @@
     ],
     "states": {},
     "window": [
-     "2026-03-20T23:13:15Z",
-     "2026-03-21T23:13:15Z"
+     "2026-03-20T23:20:58Z",
+     "2026-03-21T23:20:58Z"
     ]
    },
    {
-    "bytes": 312,
+    "bytes": 398,
     "days_back": 365,
     "distinct_inserted_on": 0,
     "fixtures": 49,
@@ -7852,8 +7780,8 @@
     ],
     "states": {},
     "window": [
-     "2025-09-16T23:13:15Z",
-     "2025-09-17T23:13:15Z"
+     "2025-09-16T23:20:58Z",
+     "2025-09-17T23:20:58Z"
     ]
    }
   ]
@@ -7862,34 +7790,68 @@
   "horizon_days": 3,
   "per_league": {
    "19": {
-    "both_sides_quoted_pct": null,
-    "distinct_points": [],
+    "both_sides_quoted_pct": 100.0,
+    "distinct_points": [
+     0.0
+    ],
     "fixtures_status": 200,
     "label": "ATP",
-    "lines_per_fixture_max": 0,
-    "lines_per_fixture_mean": null,
-    "market_rows": 0,
+    "lines_per_fixture_max": 1,
+    "lines_per_fixture_mean": 1.0,
+    "market_rows": 4,
     "markets_ok": true,
     "n_fixtures": 3,
-    "n_fixtures_priced": 0,
-    "pct_priced": 0.0,
-    "presence": {},
-    "states": {}
+    "n_fixtures_priced": 2,
+    "pct_priced": 66.7,
+    "presence": {
+     "1/1": 2
+    },
+    "states": {
+     "current": 4
+    }
    },
    "537": {
-    "both_sides_quoted_pct": null,
-    "distinct_points": [],
+    "both_sides_quoted_pct": 50.7,
+    "distinct_points": [
+     -5.0,
+     -4.5,
+     -4.0,
+     -3.0,
+     -2.5,
+     -2.0,
+     -1.0,
+     0.0,
+     1.0,
+     2.0,
+     2.5,
+     3.0,
+     4.0,
+     4.5,
+     5.0,
+     20.5,
+     21.0,
+     21.5,
+     22.0,
+     22.5
+    ],
     "fixtures_status": 200,
     "label": "Challenger",
-    "lines_per_fixture_max": 0,
-    "lines_per_fixture_mean": null,
-    "market_rows": 0,
+    "lines_per_fixture_max": 4,
+    "lines_per_fixture_mean": 3.8,
+    "market_rows": 104,
     "markets_ok": true,
-    "n_fixtures": 24,
-    "n_fixtures_priced": 0,
-    "pct_priced": 0.0,
-    "presence": {},
-    "states": {}
+    "n_fixtures": 23,
+    "n_fixtures_priced": 18,
+    "pct_priced": 78.3,
+    "presence": {
+     "1/1": 18,
+     "2/1": 17,
+     "3/1": 17
+    },
+    "states": {
+     "current": 74,
+     "opener": 30
+    }
    },
    "962": {
     "both_sides_quoted_pct": null,
@@ -7900,7 +7862,7 @@
     "lines_per_fixture_mean": null,
     "market_rows": 0,
     "markets_ok": true,
-    "n_fixtures": 38,
+    "n_fixtures": 37,
     "n_fixtures_priced": 0,
     "pct_priced": 0.0,
     "presence": {},
@@ -7908,408 +7870,52 @@
    }
   },
   "window": [
-   "2026-09-17T23:13:15Z",
-   "2026-09-20T23:13:15Z"
+   "2026-09-17T23:20:58Z",
+   "2026-09-20T23:20:58Z"
   ]
  },
  "test_d": {
   "merge_calls_ok": true,
-  "merged_rows": 0,
-  "merged_states": {},
+  "merged_rows": 108,
+  "merged_states": {
+   "current": 78,
+   "opener": 30
+  },
   "rows_lost_by_default": 0,
   "trap_confirmed": false,
   "variants": {
    "default_no_flag": {
-    "rows": 0,
-    "states": {},
+    "rows": 108,
+    "states": {
+     "current": 78,
+     "opener": 30
+    },
     "status": 200
    },
    "is_current_false": {
-    "rows": 0,
-    "states": {},
+    "rows": 108,
+    "states": {
+     "current": 78,
+     "opener": 30
+    },
     "status": 200
    },
    "is_current_true": {
-    "rows": 0,
-    "states": {},
+    "rows": 108,
+    "states": {
+     "current": 78,
+     "opener": 30
+    },
     "status": 200
    },
    "is_opener_true": {
-    "rows": 0,
-    "states": {},
+    "rows": 108,
+    "states": {
+     "opener": 108
+    },
     "status": 200
    }
   }
  },
- "unrecognised_envelopes": [
-  {
-   "keys": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ],
-   "path": "/info/markets"
-  },
-  {
-   "keys": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ],
-   "path": "/info/markets"
-  },
-  {
-   "keys": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ],
-   "path": "/info/markets"
-  },
-  {
-   "keys": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ],
-   "path": "/info/markets"
-  },
-  {
-   "keys": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ],
-   "path": "/info/markets"
-  },
-  {
-   "keys": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ],
-   "path": "/info/markets"
-  },
-  {
-   "keys": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ],
-   "path": "/info/markets"
-  },
-  {
-   "keys": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ],
-   "path": "/info/markets"
-  },
-  {
-   "keys": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ],
-   "path": "/info/markets"
-  },
-  {
-   "keys": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ],
-   "path": "/info/markets"
-  },
-  {
-   "keys": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ],
-   "path": "/info/markets"
-  },
-  {
-   "keys": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ],
-   "path": "/info/markets"
-  },
-  {
-   "keys": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ],
-   "path": "/info/markets"
-  },
-  {
-   "keys": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ],
-   "path": "/info/markets"
-  },
-  {
-   "keys": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ],
-   "path": "/info/markets"
-  },
-  {
-   "keys": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ],
-   "path": "/info/markets"
-  },
-  {
-   "keys": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ],
-   "path": "/info/markets"
-  },
-  {
-   "keys": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ],
-   "path": "/info/markets"
-  },
-  {
-   "keys": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ],
-   "path": "/info/markets"
-  },
-  {
-   "keys": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ],
-   "path": "/info/markets"
-  },
-  {
-   "keys": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ],
-   "path": "/info/markets"
-  },
-  {
-   "keys": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ],
-   "path": "/info/markets"
-  },
-  {
-   "keys": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ],
-   "path": "/info/markets"
-  },
-  {
-   "keys": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ],
-   "path": "/info/markets"
-  },
-  {
-   "keys": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ],
-   "path": "/info/markets"
-  },
-  {
-   "keys": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ],
-   "path": "/info/markets"
-  },
-  {
-   "keys": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ],
-   "path": "/info/markets"
-  },
-  {
-   "keys": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ],
-   "path": "/info/markets"
-  },
-  {
-   "keys": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ],
-   "path": "/info/markets"
-  },
-  {
-   "keys": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ],
-   "path": "/info/markets"
-  },
-  {
-   "keys": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ],
-   "path": "/info/markets"
-  },
-  {
-   "keys": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ],
-   "path": "/info/markets"
-  },
-  {
-   "keys": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ],
-   "path": "/info/markets"
-  },
-  {
-   "keys": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ],
-   "path": "/info/markets"
-  },
-  {
-   "keys": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ],
-   "path": "/info/markets"
-  },
-  {
-   "keys": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ],
-   "path": "/info/markets"
-  },
-  {
-   "keys": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ],
-   "path": "/info/markets"
-  },
-  {
-   "keys": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ],
-   "path": "/info/markets"
-  },
-  {
-   "keys": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ],
-   "path": "/info/markets"
-  },
-  {
-   "keys": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ],
-   "path": "/info/markets"
-  },
-  {
-   "keys": [
-    "code",
-    "description",
-    "request_uuid",
-    "timestamp"
-   ],
-   "path": "/info/markets"
-  }
- ]
+ "unrecognised_envelopes": []
 }
