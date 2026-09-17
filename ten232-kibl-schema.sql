@@ -2,10 +2,13 @@
 --
 -- WHY THIS TABLE EXISTS
 -- Kibl has no history endpoint and no export endpoint — 71 paths, zero. It
--- keeps three states per line (opener / previous / current) and nothing else.
--- A price we do not capture is not "harder to get later", it is gone. This
--- table is therefore append-only and first-write-wins: we never overwrite an
--- observation, because the earlier one is the one that cannot be re-fetched.
+-- serves the OPENING price and the CURRENT price per line and nothing between
+-- them: measured, not assumed — `is_previous` never appears on a row and
+-- `is_current` is ignored as a filter, so the documented three-state model is
+-- two states in practice. A price we do not capture is not "harder to get
+-- later", it is gone. This table is therefore append-only and first-write-wins:
+-- we never overwrite an observation, because the earlier one is the one that
+-- cannot be re-fetched.
 --
 -- SHAPE follows TEN-225: raw gzipped payloads in a private Supabase Storage
 -- bucket (kibl-raw), summary rows here. The bucket is the source of truth; this
@@ -45,10 +48,16 @@ create table if not exists public.kibl_line_observations (
     betting_type_id    integer,
     market_status_id   integer,
 
-    -- opener | previous | current | unflagged. 'unflagged' is a real value, not
-    -- a null: a row carrying none of the three flags is a fact about the feed
-    -- and gets recorded as one rather than being dropped.
+    -- opener | previous | current | unflagged. A CONVENIENCE LABEL with a lossy
+    -- precedence: a line that has not moved is both the opener and the current
+    -- price, and labels as 'opener' (30 of 108 rows, 28%, in the measured pull).
+    -- Filtering state='current' would miss every one of them. Query the raw
+    -- booleans below instead — they are the source of truth; `state` is a hint.
     state              text not null,
+    is_opener          boolean,
+    is_previous        boolean,
+    is_current         boolean,
+    is_live            boolean,
 
     price_american     integer,
     -- numeric, not float: a decimal price that round-trips through a float can

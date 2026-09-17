@@ -24,7 +24,8 @@ bucket `kibl-raw` (source of truth, rebuildable), summary rows in Postgres with
 RLS on and zero policies (queryable projection).
 
 Append-only, first-write-wins: an observation already held is never overwritten,
-because the held one is the one that cannot be re-fetched.
+because the held one is the one that cannot be re-fetched. Raw object names carry
+the observation time, so a re-run adds a capture rather than replacing one.
 
 Stdlib only. Reads KIBL_USERNAME, KIBL_PASSWORD, SUPABASE_URL,
 SUPABASE_SECRET_KEY from the environment. Never prints any of them.
@@ -40,7 +41,8 @@ import sys
 import urllib.error
 import urllib.request
 
-from kibl_client import KiblClient, TENNIS_LEAGUES_MEN, state_of
+from kibl_client import (KiblClient, TENNIS_LEAGUES_MEN, state_of,
+                         observation_key)
 
 BUCKET = "kibl-raw"
 TABLE_OBS = "kibl_line_observations"
@@ -135,21 +137,13 @@ def sb_list(url, key, prefix, limit=1000):
 # --------------------------------------------------------------- row shaping
 
 def row_key_of(row):
-    """Stable dedupe key.
+    """Stable dedupe key — the hash of the shared observation identity.
 
-    Kibl's uuid is used when present. When it is absent the natural key is
-    hashed instead — including the state flags and inserted_on, so two genuinely
-    different observations of the same line never collapse into one row.
+    Uses `observation_key()` so the archive's notion of a duplicate is the SAME
+    function as the two-call merge's. Two different field lists for one job is
+    how a row gets deduped in one place and kept in the other.
     """
-    uid = row.get("uuid")
-    if uid:
-        return str(uid)
-    natural = "|".join(str(row.get(f)) for f in (
-        "market_id", "fixture_id", "fixture_participant_id", "market_type_id",
-        "segment_id", "side_id", "point", "alt_id", "feed_source_id",
-        "betting_type_id", "is_opener", "is_previous", "is_current",
-        "price_american", "price_decimal", "inserted_on"))
-    return "nk_" + hashlib.sha1(natural.encode()).hexdigest()
+    return "nk_" + hashlib.sha1(observation_key(row).encode()).hexdigest()
 
 
 def num(v):
@@ -181,7 +175,17 @@ def to_summary(row, observed_at, league_id, sweep_id, raw_object):
         "is_main": row.get("is_main"),
         "betting_type_id": row.get("betting_type_id"),
         "market_status_id": row.get("market_status_id"),
+        # `state` is a convenience label with a lossy precedence: a row that is
+        # BOTH the opener and the current price (a line that has not moved —
+        # 30 of 108 in the measured pull, 28%) labels as 'opener'. A downstream
+        # "current price" query filtering state='current' would miss every one
+        # of them. The raw booleans are therefore persisted alongside it, and
+        # they, not the label, are the source of truth.
         "state": state_of(row),
+        "is_opener": row.get("is_opener"),
+        "is_previous": row.get("is_previous"),
+        "is_current": row.get("is_current"),
+        "is_live": row.get("is_live"),
         "price_american": row.get("price_american"),
         "price_decimal": num(row.get("price_decimal")),
         "price_fraction": row.get("price_fraction"),
@@ -232,14 +236,18 @@ def backfill(args):
     """One-time recovery of the history that is still reachable.
 
     MEASURED 2026-09-17: /info/markets start_time/end_time DO reach backwards to
-    finished fixtures, but only about 30 days — 356 rows at 30 days back, zero at
-    60. That window slides forward every day, so this is not history that waits
-    for us: a day not backfilled now is a day that leaves the window and never
-    comes back.
+    finished fixtures — rows at 1/2/3/5/7/14/30 days back (356 at 30d) and zero
+    at 60/90/180/365. So the reach is AT LEAST 30 days and the cutoff is
+    somewhere in (30, 60]; it was not bisected. That window slides forward every
+    day, so this is not history that waits for us: a day not backfilled now is a
+    day that leaves the window and never comes back.
 
-    What comes back for a finished fixture is the CURRENT (final) price only —
-    the backward windows returned no openers. Recorded as what it is, not
-    described as a series.
+    What a finished fixture returns is NOT established. The backward-reach test
+    ran before the state model was corrected: it pulled on the is_current axis,
+    which does nothing, so `is_opener` was never sent for a historical window and
+    "no openers survive" was never measured. This job does send it, so the answer
+    comes out of the captured state mix rather than out of an assumption. Do not
+    describe the result as closing-price-only until those counts say so.
     """
     url, key = supabase_creds()
     ensure_bucket(url, key)
@@ -252,9 +260,13 @@ def backfill(args):
         print(f"\n--- backfill day -{d} ({iso(w_start)} .. {iso(w_end)}) ---")
         # allow_empty: a day genuinely outside the reachable window returns zero
         # rows, and that is the measurement, not a failure.
+        # The run timestamp is in the sweep_id so a re-run records a NEW attempt
+        # rather than overwriting the earlier one. A day re-run after it has slid
+        # out of the reachable window returns zero, and that zero must not
+        # replace the 356 rows a previous run captured for the same day.
         worst = max(worst, run_window(c, url, key, now, w_start, w_end,
                                       args.betting_type_id,
-                                      sweep_id=f"bf{w_start:%Y%m%d}",
+                                      sweep_id=f"bf{w_start:%Y%m%d}-{now:%Y%m%dT%H%M%SZ}",
                                       allow_empty=True))
     return worst
 
@@ -279,8 +291,14 @@ def run_window(c, url, key, started, win_start, win_end, betting_type_id,
     print(f"feed_source_id={feed_source_id} "
           f"(entitled books: {[b.get('name') for b in book_rows]})")
 
+    # Snapshot the client's counters: one KiblClient is reused across every day
+    # of a backfill, so its running totals would report day 35 as ~35x its real
+    # cost. The sweep row records what THIS window spent.
+    calls_before, bytes_before = c.calls, c.bytes_down
+
     fixtures_all = []
     rows_all = []
+    all_fixture_ids = set()
     ok = True
     for lid in leagues:
         fx_payload, fx_meta = c.get("/info/fixtures",
@@ -295,6 +313,8 @@ def run_window(c, url, key, started, win_start, win_end, betting_type_id,
             if isinstance(f, dict):
                 f.setdefault("league_id", lid)
         fixtures_all.extend(fixtures)
+        all_fixture_ids.update(f.get("fixture_id") for f in fixtures
+                               if isinstance(f, dict) and f.get("fixture_id") is not None)
 
         # is_main is deliberately NOT sent: omitting it is what would return
         # alternates as well as main lines. (Measured: this book returns alt_id=0
@@ -314,7 +334,13 @@ def run_window(c, url, key, started, win_start, win_end, betting_type_id,
         print(f"  league {lid}: {len(fixtures)} fixtures, {len(rows)} market rows")
 
     observed_at = iso(now_utc())
-    raw_object = f"{win_start:%Y/%m/%d}/{sweep_id}.json.gz"
+    # The object name carries the OBSERVATION time, not just the window, so a
+    # re-run can never overwrite an earlier capture. sb_upload sends x-upsert,
+    # and a deterministic per-day name would let a backfill re-run — after that
+    # day has slid out of the ~30-day reachable window — replace a full raw
+    # object with an empty one. That is the opposite of append-only, and with
+    # allow_empty the run would still report green.
+    raw_object = f"{win_start:%Y/%m/%d}/{sweep_id}-{observed_at.replace(':', '')}.json.gz"
     blob = gzip.compress(json.dumps({
         "sweep_id": sweep_id,
         "observed_at": observed_at,
@@ -342,7 +368,10 @@ def run_window(c, url, key, started, win_start, win_end, betting_type_id,
                for r in rows_all]
     n_new, n_failed = insert_rows(url, key, summary)
 
-    priced = len({r.get("fixture_id") for r in rows_all})
+    # Intersected with the window's fixture list, and None excluded: an
+    # unintersected count can exceed fixtures_seen and reads as >100% coverage.
+    priced = len({r.get("fixture_id") for r in rows_all
+                  if r.get("fixture_id") is not None} & all_fixture_ids)
     sweep_row = {
         "sweep_id": sweep_id,
         "started_at": iso(started),
@@ -352,8 +381,8 @@ def run_window(c, url, key, started, win_start, win_end, betting_type_id,
         "fixtures_priced": priced,
         "rows_seen": len(rows_all),
         "rows_new": n_new,
-        "api_calls": c.calls,
-        "bytes_down": c.bytes_down,
+        "api_calls": c.calls - calls_before,
+        "bytes_down": c.bytes_down - bytes_before,
         "raw_object": raw_object,
         "raw_bytes": len(blob),
         "ok": ok and n_failed == 0,

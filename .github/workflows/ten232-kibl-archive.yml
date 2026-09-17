@@ -178,4 +178,9 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
-        run: python3 archive-kibl.py report --days 3 | tee -a "$GITHUB_STEP_SUMMARY"
+        # pipefail: without it a crashing report exits 0 through tee and the run
+        # reports green on a dead probe — the exact fail-open this repo has been
+        # bitten by before.
+        run: |
+          set -o pipefail
+          python3 archive-kibl.py report --days 3 | tee -a "$GITHUB_STEP_SUMMARY"

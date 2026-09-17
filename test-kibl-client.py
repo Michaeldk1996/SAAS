@@ -136,6 +136,32 @@ r3, _ = nokey.markets_all_states(league_id="19", feed_source_id=43)
 check("rows without a uuid fall back to the natural key, not collapsed",
       len(r3) == 2, len(r3))
 
+print("3b. uuid must never act as an override in the dedupe key")
+# MEASURED: `uuid` is null on every live row, so a uuid-first key is dead code
+# that has never run against real data. The danger is the day Kibl populates it
+# PER LINE rather than per observation: a uuid-first key would then be constant
+# for that line, the opener would overwrite the current price in the merge, and
+# the archive's ignore-duplicates insert would silently discard every later
+# price while rows_new read as a quiet market.
+from kibl_client import observation_key
+same_uuid_current = row("LINE-1", is_current=True, price_american=-120,
+                        inserted_on="2026-09-18T10:00:00Z")
+same_uuid_opener = row("LINE-1", is_opener=True, price_american=-105,
+                       inserted_on="2026-09-18T09:00:00Z")
+check("same uuid, different price/state -> DIFFERENT keys",
+      observation_key(same_uuid_current) != observation_key(same_uuid_opener))
+uu = FakeClient([[{"participants": [same_uuid_current]}],
+                 [{"participants": [same_uuid_opener]}]])
+r_uu, _ = uu.markets_all_states(league_id="19", feed_source_id=43)
+check("so the merge keeps both, not one", len(r_uu) == 2, len(r_uu))
+check("a genuinely identical observation still collapses",
+      observation_key(dict(same_uuid_current)) == observation_key(same_uuid_current))
+# The live shape: uuid null, so the rest of the key does all the work.
+live_a = row(None, is_current=True, price_american=-120); live_a["uuid"] = None
+live_b = row(None, is_current=True, price_american=-130); live_b["uuid"] = None
+check("uuid=null rows keyed by price, not collapsed",
+      observation_key(live_a) != observation_key(live_b))
+
 print("4. envelope shapes")
 # REGRESSION: the live envelope is {api_key, code, description, request_uuid,
 # result: [...], timestamp}. The first live run did not know `result`, wrapped

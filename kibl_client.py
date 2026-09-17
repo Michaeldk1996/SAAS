@@ -389,17 +389,31 @@ class KiblClient:
             payload, meta = self.markets(**{**params, **extra})
             metas.append(meta)
             for row in self.market_participants(payload):
-                # uuid is per-row; fall back to the natural key when absent so a
-                # missing uuid cannot collapse distinct states into one.
-                key = row.get("uuid") or (
-                    row.get("market_id"), row.get("fixture_participant_id"),
-                    row.get("market_type_id"), row.get("segment_id"),
-                    row.get("side_id"), row.get("point"), row.get("alt_id"),
-                    row.get("is_opener"), row.get("is_previous"), row.get("is_current"),
-                    row.get("inserted_on"),
-                )
-                seen[key] = row
+                seen[observation_key(row)] = row
         return list(seen.values()), metas
+
+
+def observation_key(row):
+    """The identity of one OBSERVATION of one price. The dedupe key everywhere.
+
+    One function, used by both the two-call merge and the archive's row_key, so
+    the two can never drift into disagreeing about what a duplicate is.
+
+    `uuid` is deliberately NOT used as a shortcut, even though Kibl's schema
+    carries the field. MEASURED: `uuid` is **null** on every live row, so a
+    uuid-first key is dead code that has never run against real data. If Kibl
+    ever populates it PER LINE rather than per observation, a uuid-first key
+    becomes constant for that line — the opener would overwrite the current
+    price in the merge, and every later price would be silently discarded by the
+    archive's ignore-duplicates insert while `rows_new` read as a quiet market.
+    uuid is therefore included as one field among many, never as an override.
+    """
+    return "|".join(str(row.get(f)) for f in (
+        "uuid", "market_id", "fixture_id", "fixture_participant_id",
+        "market_type_id", "segment_id", "side_id", "point", "alt_id",
+        "feed_source_id", "betting_type_id",
+        "is_opener", "is_previous", "is_current",
+        "price_american", "price_decimal", "inserted_on"))
 
 
 def state_of(row):
