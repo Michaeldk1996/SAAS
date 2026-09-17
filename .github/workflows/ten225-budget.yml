@@ -118,6 +118,20 @@ jobs:
             || { echo "::error::oddspapi_budget_ledger is not RLS-on-with-zero-policies"; exit 1; }
           echo 'RLS on, zero policies — confirmed.'
 
+      # THE DAY'S CLOSING READING. The daily cap is evaluated as
+      # `meter_now - baseline(today)`, and the baseline is the last reading
+      # recorded on an EARLIER day. Without a guaranteed closing row that
+      # baseline is whatever gated job happened to run last, and on a day when
+      # none did the gate falls back to `no-history` — which means the day opens
+      # at zero spend no matter what was actually spent. That is exactly what
+      # happened on the first run (2026-09-17: 357 units already spent, ledger
+      # empty, gate allowed). This step is what stops it recurring: at 23:50 UTC,
+      # ten minutes before the boundary, the ledger always gets a closing meter.
+      # Free — /v4/account is unmetered.
+      - name: Write the day's closing meter reading
+        if: ${{ github.event_name == 'schedule' }}
+        run: python3 oddspapi_budget.py commit --job ten225-budget-daily-close
+
       # The standing answer to ruling 6a. Written straight to the step summary
       # with a plain redirect: a `| tee` here has silently reported a green run
       # off a dead probe before (see CLAUDE.md), so the report is generated to a
