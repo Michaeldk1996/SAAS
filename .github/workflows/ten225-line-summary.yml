@@ -107,6 +107,22 @@ jobs:
           fi
           echo 'schema applied (idempotent).' | tee -a "$GITHUB_STEP_SUMMARY"
 
+      - name: Apply the card-state schema
+        if: ${{ inputs.schema || github.event_name == 'schedule' }}
+        run: |
+          set -euo pipefail
+          resp=$(jq -Rs '{query: .}' ten225-card-state-schema.sql | curl -sS -w $'\n%{http_code}' -X POST \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data @- "$MGMT/v1/projects/$PROJECT_REF/database/query")
+          code=$(printf '%s' "$resp" | tail -n1)
+          body=$(printf '%s' "$resp" | sed '$d')
+          echo "http $code"
+          if [ "$code" != "200" ] && [ "$code" != "201" ]; then
+            echo "::error::card-state schema apply failed ($code): $body"; exit 1
+          fi
+          echo 'odds_card_state schema applied (idempotent).' | tee -a "$GITHUB_STEP_SUMMARY"
+
       # Proves the posture rather than asserting it: RLS on, zero policies.
       - name: Verify RLS is on and no policy exists
         if: ${{ inputs.schema || github.event_name == 'schedule' }}
@@ -279,22 +295,6 @@ jobs:
             python3 -B test-ten225-load-card-state.py
             echo '```'
           } | tee -a "$GITHUB_STEP_SUMMARY"
-
-      - name: Apply the card-state schema
-        if: ${{ inputs.schema || github.event_name == 'schedule' }}
-        run: |
-          set -euo pipefail
-          resp=$(jq -Rs '{query: .}' ten225-card-state-schema.sql | curl -sS -w $'\n%{http_code}' -X POST \
-            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
-            -H "Content-Type: application/json" \
-            --data @- "$MGMT/v1/projects/$PROJECT_REF/database/query")
-          code=$(printf '%s' "$resp" | tail -n1)
-          body=$(printf '%s' "$resp" | sed '$d')
-          echo "http $code"
-          if [ "$code" != "200" ] && [ "$code" != "201" ]; then
-            echo "::error::card-state schema apply failed ($code): $body"; exit 1
-          fi
-          echo 'odds_card_state schema applied (idempotent).' | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: Fill odds_card_state
         run: |
