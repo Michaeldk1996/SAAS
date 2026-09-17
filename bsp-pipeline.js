@@ -3533,11 +3533,17 @@ async function writeCareerHistoryShards(profiles, opts = {}) {
 //      steps that run AFTER the write (career-backfill's match backfill) still
 //      see it. writeCareerHistoryShards can `delete` its carrier because
 //      careerMatches has no later reader; this field does.
-//   2. NO PRUNING of stale shards. The published roster tracks today's board,
-//      not the cache (137 vs 428 on a measured day), so a player off today's
-//      board is absent from `profiles` — deleting his shard would 404 the
-//      record card the moment he plays again. Shards are gitignored, rebuilt
-//      every run, and cost ~1 KB each; accumulating them is the cheap side.
+//   2. NO PRUNING of stale shards. Shards are gitignored, rebuilt every run, and
+//      cost ~1 KB each; accumulating them is the cheap side.
+//   3. The WIDE roster, not the eager one. This block originally took
+//      `playerProfiles.players` — today's board — which published 30 shards on a
+//      measured day against 2,361 searchable players. Search reaches every one of
+//      them and profiles/<key>.json serves every one of them, so Record per
+//      tournament was empty for everybody off the board, Zverev included: his
+//      tournament-history/1980.json 404'd live while profiles/1980.json returned
+//      200. It now takes the same `allProfiles` that writePlayerShardsAndIndex()
+//      and writeCareerHistoryShards() take, so the three shard families cover one
+//      roster and cannot drift apart again.
 const TOURNAMENT_HISTORY_SHARD_DIR = 'tournament-history';
 const TOURNAMENT_HISTORY_INDEX_PATH = 'tournament-history-index.json';
 const TOURNAMENT_HISTORY_SHARD_SCHEMA_VERSION = 1;
@@ -5829,8 +5835,11 @@ async function runPipeline() {
   // eager profile store. Must run BEFORE the write (it is the source of the
   // shards) and the write must publish the LITE view. Non-mutating on purpose —
   // backfillMatchesTournamentHistory below still reads playerProfiles.players.
+  //
+  // `allProfiles`, not `playerProfiles.players`: the same wide roster the profile
+  // shards and the search index already use. See rule 3 on the block above.
   console.log('Building tournament-history shards...');
-  writeTournamentHistoryShards(playerProfiles.players, { log: (m) => console.log(m) });
+  writeTournamentHistoryShards(allProfiles, { log: (m) => console.log(m) });
 
   delete playerProfiles._allProfiles;   // carrier only — never serialised
   writeJsonAtomic('player-profiles.json', profilesWithoutTournamentHistory(playerProfiles), true);
