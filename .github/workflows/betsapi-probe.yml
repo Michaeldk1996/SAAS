@@ -46,7 +46,15 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Supabase headroom (read-only)
+        if: inputs.cmd == 'headroom'
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+        run: node tools/ten227-supabase-headroom.mjs
+
       - name: Run probe
+        if: inputs.cmd != 'headroom'
         env:
           BETSAPI_TOKEN: ${{ secrets.BETSAPI_TOKEN }}
           BETSAPI_MAX_REQ: ${{ inputs.max_req }}
