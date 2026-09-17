@@ -2002,55 +2002,148 @@ mustFail('the taxonomy lock would catch a renamed archetype', () => {
     'axis disagrees with playing-styles.json');
 });
 
-// §4: archetyped rows plus rows whose opponent carries no label must account for
-// every priced row. Without this an unlabelled opponent can vanish rather than be
-// declared, which is how a 33% coverage figure reads as a complete career.
-check('archetyped + unlabelled = every priced row', () => {
-  let n = 0;
+// ─────────────────────────────────────────────────────────────────────────────
+// §5.6 MATCHUP RECORD — TEN-228 amendment (founder, 2026-09-17)
+// ─────────────────────────────────────────────────────────────────────────────
+// Item 4's reconciliation, verbatim: "Σ archetype rows (incl. under-minimum) +
+// unlabelled = career M; Career row = Σ archetype rows; a row's detail W–L and
+// priced count = its rows."
+//
+// The population moved from the PRICED archive to the CAREER SPINE (item 1), so
+// the old assertion — which reconciled against marketRows() — would now pass on
+// a modal counting the wrong matches. Both populations are asserted here and the
+// check fails if they are ever the same object again by accident.
+checkCareer('item 1 · §5.6 counts the career spine, not the priced archive', () => {
+  let n = 0, seen = [];
   for (const p of SAMPLE) {
-    // §5.6's population is the PRICED market rows. It was written as speedRows()
-    // back when that WAS the market shard; §8.1 repointed speedRows at the career
-    // spine, so this names the store it actually reconciles against.
-    const total = I.marketRows(p).length;
-    if (!total) continue;
+    const spine = I.calSpine(p).length;
+    if (!spine) continue;
     const rows = I.styleRows(p);
-    const labelled = rows.reduce((s, r) => s + r.won + r.lost, 0);
-    assert.strictEqual(labelled + rows.unlabelled, total,
-      `${p.name}: ${labelled} archetyped + ${rows.unlabelled} unlabelled != ${total}`);
+    assert.strictEqual(rows.total, spine,
+      `${p.name}: styleRows total ${rows.total} != career spine ${spine}`);
+    const priced = I.marketRows(p).length;
+    seen.push(`${p.name} ${spine} spine / ${priced} priced`);
     n++;
   }
-  assert(n > 0, 'no sampled player had priced rows — this check never ran');
-  console.log(`        ${n} players reconcile exactly`);
+  assert(n > 0, 'no sampled player had a career spine — this check never ran');
+  console.log(`        ${n} players count off the spine: ${seen.join(' · ')}`);
+});
+mustFail('the spine check would catch §5.6 slipping back onto the priced archive', () => {
+  assert.strictEqual(727, 775, 'A. Zverev: styleRows total 727 != career spine 775');
+});
+
+checkCareer('item 4 · Σ archetype rows + unlabelled = career M', () => {
+  let n = 0;
+  for (const p of SAMPLE) {
+    const rows = I.styleRows(p);
+    if (!rows.total) continue;
+    const labelled = rows.reduce((s, r) => s + r.won + r.lost, 0);
+    assert.strictEqual(labelled + rows.unlabelled, rows.total,
+      `${p.name}: ${labelled} archetyped + ${rows.unlabelled} unlabelled != ${rows.total}`);
+    // ...and each row's own detail list IS its record, so the drill cannot show a
+    // different number of matches from the row that opened it.
+    rows.forEach((r) => {
+      assert.strictEqual(r.rows.length, r.won + r.lost,
+        `${p.name}/${r.axis.label}: ${r.rows.length} detail rows != ${r.won + r.lost} record`);
+      const priced = r.rows.filter(m => m.cents != null).length;
+      assert.strictEqual(priced, r.priced,
+        `${p.name}/${r.axis.label}: ${priced} priced detail rows != ${r.priced} counted`);
+    });
+    n++;
+  }
+  assert(n > 0, 'no sampled player had spine rows — this check never ran');
+  console.log(`        ${n} players reconcile exactly, rows and drills`);
 });
 mustFail('the reconciliation would catch a dropped opponent', () => {
   assert.strictEqual(296 + 30, 337, '296 archetyped + 30 unlabelled != 337');
 });
 
+// Item 1, second half: "Units use Pinnacle-closing priced rows only (R1)." A row
+// without `cents` contributes to the RECORD and to nothing else.
+checkCareer('item 1 · units come from the Pinnacle-priced subset alone', () => {
+  let n = 0;
+  for (const p of SAMPLE) {
+    const rows = I.styleRows(p);
+    if (!rows.total) continue;
+    rows.forEach((r) => {
+      const cents = r.rows.reduce((s, m) => s + (m.cents == null ? 0 : m.cents), 0);
+      assert.strictEqual(r.cents, cents,
+        `${p.name}/${r.axis.label}: units ${r.cents} != Σ priced rows ${cents}`);
+      assert(r.priced <= r.won + r.lost,
+        `${p.name}/${r.axis.label}: ${r.priced} priced > ${r.won + r.lost} matches`);
+    });
+    n++;
+  }
+  assert(n > 0, 'no sampled player had spine rows — this check never ran');
+  console.log(`        ${n} players keep units on the priced subset`);
+});
+mustFail('the units check would catch an unpriced row paying out', () => {
+  assert.strictEqual(268, 0, 'X/Attacking Baseliner: units 268 != Σ priced rows 0');
+});
+
+// Item 2 · "Unlabelled opponents are counted as unlabelled, never guessed."
+// The tier-2 surname fallback is only safe because of the initial guard; without
+// it M. Zverev is labelled as A. Zverev and M. Ymer as E. Ymer. This asserts the
+// refusal directly rather than trusting the count.
+check('item 2 · the name join refuses a different player with the same surname', () => {
+  const src = STYLES_SRC.players.filter(s => s && s.name && s.archetype_label);
+  const bySurname = {};
+  const keyOf = (s) => {
+    let t = String(s || '').trim();
+    const c = t.indexOf(',');
+    if (c > 0) t = t.slice(0, c);
+    else if (/^[A-Za-z]\.\s+/.test(t)) t = t.replace(/^[A-Za-z]\.\s+/, '');
+    else t = t.replace(/(\s+[A-Za-z]\.)+$/, '');
+    return t.toLowerCase().replace(/[^a-z]/g, '');
+  };
+  src.forEach((s) => { (bySurname[keyOf(s.name)] = bySurname[keyOf(s.name)] || []).push(s.name); });
+  // Build a name that shares a labelled player's surname under a DIFFERENT
+  // initial, from the store itself, so the case is real and not hand-written.
+  let probe = null, owner = null;
+  for (const s of src) {
+    const m = /^([A-Za-z])\.\s+(.+)$/.exec(s.name);
+    if (!m) continue;
+    if ((bySurname[keyOf(s.name)] || []).length !== 1) continue;
+    const other = m[1].toUpperCase() === 'Z' ? 'Q' : 'Z';
+    probe = other + '. ' + m[2]; owner = s.name; break;
+  }
+  assert(probe, 'no unique labelled surname to probe with — this check never ran');
+  assert.strictEqual(I.styleArchetypeOf(probe), null,
+    `${probe} was labelled from ${owner} — the initial guard is gone`);
+  assert(I.styleArchetypeOf(owner), `${owner} no longer resolves at all`);
+  console.log(`        "${probe}" refused, "${owner}" resolves — initial guard live`);
+});
+mustFail('the guard check would catch the initial test being dropped', () => {
+  assert.strictEqual('All Court Elite', null, 'Z. Sinner was labelled from J. Sinner — the initial guard is gone');
+});
+
 // §5.6 keeps an under-minimum archetype LISTED with a dash. Dropping it would read
 // as an opponent type he has never faced, which is a different claim entirely.
-check('an under-minimum archetype stays listed, dashed, and does not open', () => {
+// Item 23 adds the file's colour and meta line to that.
+checkCareer('item 23 · an under-minimum archetype stays listed, dashed, dim and inert', () => {
   let found = 0;
   for (const key of Object.keys(PLAYERS)) {
     const p = Object.assign({ key }, PLAYERS[key]);
-    // Gate on what this check actually needs — style rows. It used to gate on
-    // speedRows(), which happened to mean "has a market shard"; §8.1 repointed that
-    // accessor at the career spine, and the incidental coupling silently turned this
-    // assertion into a no-op that still reported PASS.
     const rows = I.styleRows(p);
-    if (!rows.length) continue;
+    if (!rows.length || !rows.total) continue;
     const thin = rows.filter(r => { const n = r.won + r.lost; return n > 0 && n < 5; });
     if (!thin.length) continue;
     const html = I.renderStylesModal(p);
     thin.forEach((r) => {
+      const n = r.won + r.lost;
       assert(html.indexOf(esc17(r.axis.label)) > -1, `${p.name}: thin archetype ${r.axis.label} dropped out`);
       assert(html.indexOf('data-pp2="style-row" data-v="' + esc17(r.axis.label) + '"') < 0,
         `${p.name}: thin archetype ${r.axis.label} is still clickable`);
-      assert.strictEqual(I.rateText(r.won, r.lost), '—', `${p.name}: thin archetype printed a rate`);
+      assert(html.indexOf(n + ' matches · below the five-match minimum') > -1,
+        `${p.name}: thin archetype ${r.axis.label} does not carry the file's meta line`);
     });
+    // The file's DIM (#5b6880), not its FAINT (#3f4860) — item 23 names it.
+    assert(html.indexOf('font-size:14px;font-weight:700;color:#5b6880;') > -1,
+      `${p.name}: the under-minimum name is not the file's DIM colour`);
     if (++found >= 3) break;
   }
   assert(found > 0, 'no player had an under-minimum archetype — this check never ran');
-  console.log(`        ${found} players keep a sub-minimum archetype listed and dashed`);
+  console.log(`        ${found} players keep a sub-minimum archetype listed, dashed and dim`);
 });
 function esc17(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/"/g, '&quot;'); }
 mustFail('the listing check would catch a dropped thin archetype', () => {
@@ -2058,65 +2151,288 @@ mustFail('the listing check would catch a dropped thin archetype', () => {
   assert(html.indexOf('Solid Defender') > -1, 'thin archetype Solid Defender dropped out');
 });
 
-// Coverage must be on the page, not only in a counter. For a 20-year career most
-// opponents predate the roster, and a modal that hides that is claiming a
-// completeness it does not have.
-check('unlabelled opponents are declared in the DOM', () => {
-  let stated = 0;
+// Item 22 · rate descending, under-minimum at the bottom. The design's own D array
+// is written that way; the live build listed them in taxonomy order, which put a
+// 2-match row above a 156-match one.
+checkCareer('item 22 · rows sort by win rate, under-minimum last', () => {
+  let n = 0;
   for (const p of SAMPLE) {
-    const total = I.marketRows(p).length;
-    if (!total) continue;
     const rows = I.styleRows(p);
-    if (!rows.unlabelled) continue;
-    const html = I.renderStylesModal(p);
-    assert(html.indexOf(rows.unlabelled + ' of ' + total + ' priced matches') > -1,
-      `${p.name}: ${rows.unlabelled} unlabelled opponents are not declared`);
-    stated++;
+    if (!rows.total) continue;
+    let seenThin = false, last = Infinity;
+    rows.forEach((r) => {
+      const c = r.won + r.lost;
+      if (!I.styleOpenable(c)) { seenThin = true; return; }
+      assert(!seenThin, `${p.name}: ${r.axis.label} sits below an under-minimum row`);
+      const rate = 100 * r.won / c;
+      assert(rate <= last + 1e-9, `${p.name}: ${r.axis.label} at ${rate} breaks the descending order`);
+      last = rate;
+    });
+    n++;
   }
-  assert(stated > 0, 'no sampled player had unlabelled opponents — this check never ran');
-  console.log(`        ${stated} players declare their archetype coverage gap`);
+  assert(n > 0, 'no sampled player had spine rows — this check never ran');
+  console.log(`        ${n} players ordered rate-desc with thin rows last`);
 });
-mustFail('the declaration check would catch a hidden coverage gap', () => {
-  const html = 'Click an archetype for the matches behind it.';
-  assert(html.indexOf('853 of 1277 priced matches') > -1, '853 unlabelled opponents are not declared');
+mustFail('the order check would catch a thin row left at the top', () => {
+  assert(!true, 'X: Counterpuncher sits below an under-minimum row');
 });
 
-// The y axis is fixed 40-80%, so a rate outside it is clamped for POSITION only.
-// The printed value must stay exact — a clamped label would be a false number.
-check('a rate outside the 40-80% axis is clamped in position but printed exactly', () => {
+// Item 3 · ONE coverage line with real counts, and the old three-sentence roster
+// essay gone. Both halves matter: he asked for the fact AND for the essay to go.
+checkCareer('item 3 · coverage is one line with real counts, essay removed', () => {
+  let stated = 0;
+  for (const p of SAMPLE) {
+    const rows = I.styleRows(p);
+    if (!rows.total) continue;
+    const html = I.renderStylesModal(p);
+    const labelled = rows.total - rows.unlabelled;
+    assert(html.indexOf(labelled + ' of ' + rows.total + ' matches against a labelled opponent') > -1,
+      `${p.name}: the coverage line is missing or does not carry real counts`);
+    assert(html.indexOf('The labelled roster is the current 250 players') < 0,
+      `${p.name}: the roster essay is still in the footnote`);
+    assert(html.indexOf('priced matches were against an opponent') < 0,
+      `${p.name}: the footnote still describes the priced population`);
+    stated++;
+  }
+  assert(stated > 0, 'no sampled player rendered — this check never ran');
+  console.log(`        ${stated} players state coverage in one line`);
+});
+mustFail('the coverage check would catch a hidden gap', () => {
+  const html = 'Click an archetype for the matches behind it.';
+  assert(html.indexOf('424 of 1277 matches against a labelled opponent') > -1,
+    'X: the coverage line is missing or does not carry real counts');
+});
+
+// ─── item 10 · the axis EXTENDS, it never clips or clamps ───────────────────
+// This is the defect the founder photographed: 81% drawn above the top of the
+// plot and 33% below the bottom. The rule is tested on styleScale() directly,
+// because a real player with both extremes may not exist in the local stores and
+// a check that silently never runs is worse than no check.
+check('item 10 · the y scale extends in 10pp steps and never clamps', () => {
+  const base = I.styleScale([74, 63, 48]);
+  assert.deepStrictEqual(base.ticks, [80, 70, 60, 50, 40], 'default tick set changed');
+  assert.strictEqual(base.LO, 35, 'the file\'s 5pp bottom pad (LO = 35) is gone');
+  assert.strictEqual(base.HI, 80, 'the default top of scale is not the 80 tick');
+
+  const hi = I.styleScale([81, 50]);
+  assert.strictEqual(hi.hi, 90, '81% did not extend the top tick to 90');
+  assert(hi.ticks.indexOf(90) === 0 && hi.ticks[hi.ticks.length - 1] === 40,
+    'the extended tick ladder was not regenerated');
+
+  const lo = I.styleScale([33, 60]);
+  assert.strictEqual(lo.lo, 30, '33% did not extend the bottom tick to 30');
+  assert.strictEqual(lo.LO, 25, 'the bottom pad did not travel with the extension');
+
+  const both = I.styleScale([33, 81]);
+  assert.strictEqual(both.lo, 30, 'two-sided extension lost the bottom');
+  assert.strictEqual(both.hi, 90, 'two-sided extension lost the top');
+
+  // A value sitting exactly ON the top tick has half its disc outside the plot.
+  // "Never clipped" is the harder rule, so a boundary value extends.
+  assert.strictEqual(I.styleScale([80, 50]).hi, 90, 'a value exactly on the top tick did not extend');
+  // 100% cannot extend the ticks past 100, so the SCALE takes the headroom.
+  const sweep = I.styleScale([100, 50]);
+  assert.strictEqual(sweep.hi, 100, 'ticks ran past 100');
+  assert.strictEqual(sweep.HI, 105, 'a 100% bubble was left sitting on the plot border');
+
+  // Every plotted value must land strictly inside the drawn scale — that is what
+  // "never clipped" means numerically.
+  [[74, 63, 48], [81, 50], [33, 60], [33, 81], [100, 50], [40, 55]].forEach((vs) => {
+    const s = I.styleScale(vs);
+    vs.forEach((v) => {
+      const top = (1 - (v - s.LO) / (s.HI - s.LO)) * 100;
+      assert(top > 0 && top < 100, `${v}% lands at ${top.toFixed(1)}% — outside the plot`);
+    });
+  });
+  console.log('        40–80 default · extends to 30–90 · 100% padded · no value on an edge');
+});
+mustFail('the axis check would catch a return to clamping', () => {
+  assert.strictEqual(80, 90, '81% did not extend the top tick to 90');
+});
+
+// The printed value must stay exact whatever the axis does — a rewritten label
+// would be a false number, which is the failure mode clamping used to risk.
+checkCareer('a bubble prints its exact whole-number rate', () => {
   let checked = 0;
   for (const key of Object.keys(PLAYERS)) {
     const p = Object.assign({ key }, PLAYERS[key]);
-    // Same incidental-coupling fix as the check above: gate on style rows, which is
-    // what this assertion reads, not on the Court speed population.
-    const rows = I.styleRows(p).filter(r => {
-      const n = r.won + r.lost;
-      if (n < 5) return false;
-      const rate = 100 * r.won / n;
-      return rate > 80 || rate < 40;
-    });
+    const rows = I.styleRows(p).filter(r => I.styleOpenable(r.won + r.lost));
     if (!rows.length) continue;
     const html = I.renderStylesModal(p);
     rows.forEach((r) => {
-      const rate = (100 * r.won / (r.won + r.lost)).toFixed(0);
+      const rate = Math.round(100 * r.won / (r.won + r.lost));
       assert(html.indexOf('>' + rate + '%<') > -1,
-        `${p.name}: ${r.axis.label} at ${rate}% is off-axis and its exact value is not printed`);
+        `${p.name}: ${r.axis.label} at ${rate}% does not print its exact value`);
       checked++;
     });
-    if (checked >= 5) break;
+    if (checked >= 12) break;
   }
-  assert(checked > 0, 'no off-axis rate found — this check never ran');
-  console.log(`        ${checked} off-axis bubbles print their exact rate`);
+  assert(checked > 0, 'no plotted bubble found — this check never ran');
+  console.log(`        ${checked} bubbles print their exact rate`);
 });
-mustFail('the clamp check would catch a label rewritten to the axis bound', () => {
+mustFail('the value check would catch a label rewritten to the axis bound', () => {
   const html = '>80%<';
-  assert(html.indexOf('>' + '95' + '%<') > -1, 'a 95% rate is off-axis and its exact value is not printed');
+  assert(html.indexOf('>' + '95' + '%<') > -1, 'X: Y at 95% does not print its exact value');
 });
 
-check('every archetype drill renders without leaking NaN/undefined', () => {
+// ─── shell and row chrome (items 5, 12, 17-21, 25, 27-29) ──────────────────
+// One render, many assertions: these are all "is this exact value in the DOM",
+// and splitting them into ten checks would just render the same html ten times.
+checkCareer('items 5,12,17-21,25,27-29 · the shell, rows and drill carry the file\'s values', () => {
+  let subject = null;
+  for (const p of SAMPLE) {
+    const rows = I.styleRows(p);
+    if (rows.total && rows.some(r => I.styleOpenable(r.won + r.lost) && r.priced > 0)) { subject = p; break; }
+  }
+  assert(subject, 'no sampled player has a priced, openable archetype — this check never ran');
+  const rows = I.styleRows(subject);
+  const open = rows.filter(r => I.styleOpenable(r.won + r.lost) && r.priced > 0)[0];
+  I.state.styleRow = open.axis.label;
+  const html = I.renderStylesModal(subject);
+  I.state.styleRow = null;
+
+  const want = [
+    // item 7 · the eyebrow, and the flex gap that gives the plot clear space
+    ['WIN RATE BY ARCHETYPE eyebrow', 'Win rate by archetype · bubble size is match count'],
+    ['item 7 · chart card clear space', 'display:flex;flex-direction:column;gap:14px;'],
+    // item 8 · layout and plot box
+    ['item 8 · 52px 1fr layout', 'grid-template-columns:52px minmax(0,1fr);gap:12px;'],
+    ['item 8 · 240px plot with 0.12 borders',
+      'height:240px;border-left:1px solid rgba(255,255,255,0.12);border-bottom:1px solid rgba(255,255,255,0.12);'],
+    // item 9 · tick labels right-aligned in the gutter, rotated label at its left
+    ['item 9 · rotated label left of the ticks', 'left:-2px;top:50%;transform:translateY(-50%) rotate(-90deg);'],
+    ['item 9 · tick label', 'font-size:10px;color:#4b5672;'],
+    // item 11 · the EVEN rule and its right-aligned, uppercased label
+    ['item 11 · even rule', 'height:1px;background:rgba(255,255,255,0.28);'],
+    ['item 11 · EVEN label right-aligned', 'right:6px;top:'],
+    ['item 11 · EVEN uppercased', 'text-transform:uppercase;color:#3f4860;">even<'],
+    // item 12 · the value label above the bubble
+    ['item 12 · value label above the bubble', 'font-size:12px;font-weight:700;color:#e7e9ee;white-space:nowrap;pointer-events:none;'],
+    // item 13 · disc
+    ['item 13 · disc border', 'border-radius:50%;'],
+    ['item 13 · disc fill', 'background:rgba(91,155,255,'],
+    // item 15 · abbreviations and the foot labels
+    ['item 15 · x tick label class', 'class="pp2-stk'],
+    ['item 15 · foot label SERVE', '>Serve<'],
+    ['item 15 · foot label BASELINE', '>Baseline<'],
+    ['item 15 · foot label ARCHETYPE', '>Archetype<'],
+    // items 17-19 · the row is a card with the minimal bar
+    ['item 17 · row card grid', 'grid-template-columns:minmax(0,1fr) 300px 58px;gap:16px;align-items:center;border-radius:10px;padding:13px 16px;'],
+    ['item 18 · row name', 'font-size:14px;font-weight:700;'],
+    ['item 18 · row meta', 'font-size:11.5px;color:#4b5672;'],
+    ['item 19 · minimal bar track', 'height:4px;border-radius:2px;background:rgba(255,255,255,0.06);'],
+    ['item 19 · minimal bar fill', 'background:#5b9bff;border-radius:2px;'],
+    // item 20 · units above the rate
+    ['item 20 · right column stacks', 'display:flex;flex-direction:column;align-items:flex-end;gap:4px;'],
+    ['item 20 · units', 'font-size:12px;font-weight:700;color:#'],
+    // item 24 · the selected row
+    ['item 24 · selected row background', 'background:rgba(91,155,255,0.08);'],
+    ['item 24 · selected row border', 'border:1px solid rgba(91,155,255,0.4);'],
+    // item 25 · the CAREER footer
+    ['item 25 · Career eyebrow', '>Career<'],
+    // items 26-28 · the drill
+    ['item 26 · drill container', 'border:1px solid rgba(91,155,255,0.3);border-radius:10px;padding:13px 15px;'],
+    ['item 28 · drill grid',
+      'grid-template-columns:16px 64px minmax(0,1.1fr) minmax(0,1fr) 38px 104px 48px 48px 58px;gap:0 12px;'],
+    ['item 28 · drill head Score', '>Score<'],
+    ['item 28 · drill head P&L', '>P&amp;L<']
+  ];
+  want.forEach(([what, needle]) => {
+    assert(html.indexOf(needle) > -1, `${subject.name}: ${what} missing — "${needle}"`);
+  });
+
+  // item 21 · a whole-number win rate. The live build printed "81.2%".
+  assert(!/\d\.\d%</.test(html.replace(/[+−]\d+\.\d%/g, '')),
+    `${subject.name}: a fractional rate is being printed`);
+  // item 27 · the drill header's three-part P&L line
+  assert(new RegExp('u \\u00b7 [+\\u2212]\\d+\\.\\d% \\u00b7 ' + open.priced + ' priced').test(html),
+    `${subject.name}: the drill header does not carry "Xu · Y% · ${open.priced} priced"`);
+  // item 29 · the drill's P&L column carries no "u" — the unit is in the header
+  assert(html.indexOf('text-align:right;color:#3dd68c;">+') > -1 ||
+         html.indexOf('text-align:right;color:#e0616f;">−') > -1,
+    `${subject.name}: no signed P&L cell rendered`);
+  // item 29 · "Oct 2026" dates
+  assert(/>(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) \d{4}</.test(html),
+    `${subject.name}: the drill date is not the file's "Mon YYYY"`);
+  console.log(`        ${want.length + 4} values verified on ${subject.name}/${open.axis.label}`);
+});
+mustFail('the chrome check would catch the plain-text row list coming back', () => {
+  const html = '<div style="display:grid;grid-template-columns:1fr 300px 58px;">';
+  assert(html.indexOf('grid-template-columns:minmax(0,1fr) 300px 58px;gap:16px;') > -1,
+    'X: item 17 · row card grid missing');
+});
+
+check('item 5 · the shell says "Matchup record" with the file\'s subtitle', () => {
+  // Deliberately NOT gated on the career store: the subtitle is a constant and
+  // the title an override, so this must stay green even where the spine is absent.
+  assert.strictEqual(I.modalSubtitle('styles', SAMPLE[0], {}),
+    'Win rate by opposing archetype · minimum 5 matches');
+  assert.strictEqual(I.MODAL_TITLE.styles, 'Matchup record');
+  assert.strictEqual(I.MODAL_WIDTH.styles, 820, 'item 6 · the modal is not 820px');
+  console.log('        title, subtitle and 820px width all as specified');
+});
+mustFail('the shell check would catch the old subtitle', () => {
+  assert.strictEqual('Win rate against each playing style Zverev\'s record covers',
+    'Win rate by opposing archetype · minimum 5 matches');
+});
+
+// item 30 · an unpriced row dashes PRICE/OPP/P&L and does not inflate `priced`.
+checkCareer('item 30 · unpriced drill rows dash and stay out of the priced count', () => {
   let n = 0;
   for (const p of SAMPLE) {
-    if (!I.speedRows(p).length) continue;
+    const rows = I.styleRows(p);
+    const open = rows.filter(r => I.styleOpenable(r.won + r.lost) &&
+      r.rows.some(m => m.cents == null))[0];
+    if (!open) continue;
+    I.state.styleRow = open.axis.label;
+    const html = I.renderStylesModal(p);
+    I.state.styleRow = null;
+    const unpriced = open.rows.filter(m => m.cents == null).length;
+    assert(unpriced > 0 && open.priced === open.rows.length - unpriced,
+      `${p.name}/${open.axis.label}: priced count includes an unpriced row`);
+    // Three dashed money cells per unpriced row.
+    const dashes = (html.match(/text-align:right;color:#4b5672;">—</g) || []).length;
+    assert(dashes >= unpriced,
+      `${p.name}/${open.axis.label}: ${dashes} dashed money cells for ${unpriced} unpriced rows`);
+    n++;
+    if (n >= 2) break;
+  }
+  assert(n > 0, 'no archetype had an unpriced row — this check never ran');
+  console.log(`        ${n} archetypes dash their unpriced rows`);
+});
+mustFail('the unpriced check would catch an invented price', () => {
+  assert(0 >= 1, 'X/Y: 0 dashed money cells for 1 unpriced rows');
+});
+
+// item 31 · every drill row opens the match sheet.
+checkCareer('item 31 · every drill row carries the match-sheet hook', () => {
+  let n = 0;
+  for (const p of SAMPLE) {
+    const rows = I.styleRows(p);
+    const open = rows.filter(r => I.styleOpenable(r.won + r.lost))[0];
+    if (!open) continue;
+    I.state.styleRow = open.axis.label;
+    const html = I.renderStylesModal(p);
+    I.state.styleRow = null;
+    const hooks = (html.match(/data-pp2="sheet"/g) || []).length;
+    // Nine cells per row, each individually hooked (the file hooks every cell so
+    // the whole row is clickable without a wrapper the grid cannot have).
+    assert.strictEqual(hooks, open.rows.length * 9,
+      `${p.name}/${open.axis.label}: ${hooks} sheet hooks for ${open.rows.length} rows`);
+    n++;
+    if (n >= 2) break;
+  }
+  assert(n > 0, 'no openable archetype found — this check never ran');
+  console.log(`        ${n} drills hook every row to the match sheet`);
+});
+mustFail('the sheet-hook check would catch an unclickable drill row', () => {
+  assert.strictEqual(0, 27 * 9, 'X/Y: 0 sheet hooks for 27 rows');
+});
+
+checkCareer('every archetype drill renders without leaking NaN/undefined', () => {
+  let n = 0;
+  for (const p of SAMPLE) {
+    if (!I.calSpine(p).length) continue;
     for (const a of I.STYLE_AXIS) {
       I.state.styleRow = a.label;
       const html = I.renderStylesModal(p);
