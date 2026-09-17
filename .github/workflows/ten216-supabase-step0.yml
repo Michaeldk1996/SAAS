@@ -1,4 +1,5 @@
-name: TEN-216 Supabase Step 0 (READ-ONLY report)
+patched 5596
+ Supabase Step 0 (READ-ONLY report)
 
 # TEN-216 Part A Step 0 — report our Supabase plan limits and current usage
 # BEFORE creating anything. This workflow is strictly read-only:
@@ -105,5 +106,16 @@ jobs:
           st, r = sql("select jobid, schedule, jobname, active from cron.job order by jobid")
           print("http", st, "->", json.dumps(r, indent=1)[:2000])
 
+
+          print("\n===== TEN-216 TEST TABLE: change_kind breakdown per poll =====")
+          st, r = sql("select poll_id, change_kind, count(*) as rows from public.ten216_test_odds_changes "
+                      "group by poll_id, change_kind order by poll_id, change_kind")
+          print("http", st, "->", json.dumps(r, indent=1)[:4000])
+
+          print("\n===== TEN-216 TEST TABLE: totals =====")
+          st, r = sql("select count(*) as total_rows, count(distinct poll_id) as polls, "
+                      "min(observed_at) as first_observed, max(observed_at) as last_observed "
+                      "from public.ten216_test_odds_changes")
+          print("http", st, "->", json.dumps(r)[:600])
           print("\nDONE — nothing was created, altered or deleted.")
           PY
