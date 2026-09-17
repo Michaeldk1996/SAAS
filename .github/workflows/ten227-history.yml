@@ -3,8 +3,13 @@ name: TEN-227 match-winner history download
 # TEN-227, board ruling 4 (2026-09-17T10:23Z): download the full BetsAPI
 # match-winner SERIES per match, 2026 first and then backwards to 2020, using
 # what is left of the trial window after the upcoming campaign's needs. Report
-# bytes per match before loading and the projected total; stop if it passes 25%
-# of the database.
+# bytes per match before loading and the projected total.
+#
+# CEILING, as corrected by the board on 2026-09-17T11:19Z: 25% of the 8 GB disk
+# ALLOWANCE (~2 GB), tested against TOTAL database usage — not 25% of today's
+# database size. `mode=disk` measures the allowance and current usage and spends
+# zero BetsAPI requests; the download re-tests the same gate at start and every
+# 500 matches.
 #
 # REPORT ONLY. Nothing here is a product surface, and nothing here writes
 # outside tables prefixed `betsapi_raw_`.
@@ -35,9 +40,13 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: 'setup | size | download | report'
+        description: 'setup | disk | size | download | report'
         required: true
-        default: 'size'
+        default: 'disk'
+      disk_bytes:
+        description: 'Plan disk allowance in bytes, used ONLY if the API does not expose it (8 GiB)'
+        required: false
+        default: '8589934592'
       years:
         description: 'Comma-separated, newest first'
         required: false
@@ -104,6 +113,7 @@ jobs:
           DOWNLOAD_MINUTES: ${{ github.event.inputs.download_minutes }}
           DOWNLOAD_MAX_REQ: ${{ github.event.inputs.download_max_req }}
           DOWNLOAD_MAX_MATCHES: ${{ github.event.inputs.max_matches }}
+          SUPABASE_DISK_BYTES: ${{ github.event.inputs.disk_bytes }}
         run: |
           set -o pipefail
           node tools/ten227-history.mjs "${{ github.event.inputs.mode }}" 2>&1 | tee run.log
@@ -170,6 +180,7 @@ jobs:
              -f download_max_req="${{ github.event.inputs.download_max_req }}" \
              -f max_matches="${{ github.event.inputs.max_matches }}" \
              -f rate_per_hour="${{ github.event.inputs.rate_per_hour }}" \
+             -f disk_bytes="${{ github.event.inputs.disk_bytes }}" \
              -f trial_end="${TRIAL_END}" \
              -f stop=no
           # A dead chain and a healthy one otherwise produce identical logs.

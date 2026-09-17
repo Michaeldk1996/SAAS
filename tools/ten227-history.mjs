@@ -60,8 +60,23 @@ const YEARS = (process.env.HISTORY_YEARS || '2026,2025,2024,2023,2022,2021,2020'
   .split(',').map((s) => Number(s.trim())).filter(Boolean);
 const LEVELS = new Set((process.env.HISTORY_LEVELS || 'atp,slam,challenger').split(',').map((s) => s.trim()));
 
-// Ruling 4's stop condition, as a constant rather than a comment.
-const DB_FRACTION_CEILING = 0.25;
+/**
+ * Ruling 4's stop condition, corrected by the board on 2026-09-17T11:19Z:
+ *
+ *   "The 25% means 25% of the 8 GB database disk ALLOWANCE (~2 GB), not 25% of
+ *    today's database size. Measure the actual allowance and current usage first
+ *    (pg_database_size vs plan disk), then proceed if the projected 457 MB keeps
+ *    TOTAL usage under 25% of the allowance."
+ *
+ * The two readings are not close to each other. On the measured numbers the old
+ * one stops the download (457 MB > 25% of a 129 MB database) and the new one
+ * clears it with room to spare (129 + 457 = 586 MB < 25% of 8 GiB) — which is
+ * why the test file mutates one into the other and asserts the verdict flips.
+ */
+const DISK_FRACTION_CEILING = 0.25;
+// A FALLBACK only, and labelled as one wherever it is used: the allowance is
+// measured from the Management API first and never silently assumed.
+const CONFIGURED_DISK_BYTES = Number(process.env.SUPABASE_DISK_BYTES || 0) || null;
 
 if (!existsSync(OUT)) mkdirSync(OUT, { recursive: true });
 
@@ -148,6 +163,124 @@ async function mgmtQuery(sql) {
 }
 
 async function ddl(sql) { assertDdlAllowed(sql); return mgmtQuery(sql); }
+
+/* ----------------------------------------------------- the disk-allowance gate */
+
+/**
+ * Pull a disk-size figure out of whatever shape the Management API answers with.
+ * Kept separate and pure because the endpoint that carries it is not documented
+ * to a stable shape, and a wrong key here would silently produce a NULL
+ * allowance (gate unknown) or, far worse, a plausible wrong one.
+ *
+ * Only keys that are unambiguously a DISK VOLUME size are read. `db_size`,
+ * `database_size` and friends are USAGE, not allowance, and reading one as the
+ * other is exactly the confusion this ruling exists to correct.
+ */
+const DISK_GB_KEYS = /^(disk_volume_size_gb|disk_size_gb|volume_size_gb|size_gb|total_size_gb)$/i;
+const DISK_BYTES_KEYS = /^(disk_volume_size_bytes|disk_size_bytes|volume_size_bytes)$/i;
+export function extractDiskBytes(obj, depth = 0) {
+  if (obj == null || depth > 4) return null;
+  if (Array.isArray(obj)) {
+    for (const v of obj) { const hit = extractDiskBytes(v, depth + 1); if (hit) return hit; }
+    return null;
+  }
+  if (typeof obj !== 'object') return null;
+  for (const [k, v] of Object.entries(obj)) {
+    if (DISK_BYTES_KEYS.test(k) && Number.isFinite(Number(v)) && Number(v) > 0) {
+      return { bytes: Number(v), key: k, raw: v };
+    }
+    if (DISK_GB_KEYS.test(k) && Number.isFinite(Number(v)) && Number(v) > 0) {
+      return { bytes: Number(v) * 1024 ** 3, key: k, raw: v };
+    }
+  }
+  for (const v of Object.values(obj)) {
+    const hit = extractDiskBytes(v, depth + 1);
+    if (hit) return hit;
+  }
+  return null;
+}
+
+/**
+ * The board's gate, as one pure function so it can be tested without a network:
+ * does CURRENT usage plus the PROJECTED download stay under `fraction` of the
+ * disk allowance?
+ *
+ * Any missing input yields `passes_ceiling: null` — unknown, never a guess in
+ * either direction. An unknown allowance must not read as "fits".
+ */
+export function ceilingVerdict({ databaseBytes, projectedBytes, allowanceBytes, fraction = DISK_FRACTION_CEILING } = {}) {
+  // Number(null) is 0, and 0 is finite — which is how a MISSING projection would
+  // otherwise read as "nothing to store, of course it fits". Absent is absent.
+  const num = (v) => (v == null || v === '' ? NaN : Number(v));
+  const db = num(databaseBytes);
+  const proj = num(projectedBytes);
+  const allow = num(allowanceBytes);
+  const known = Number.isFinite(db) && db >= 0 && Number.isFinite(proj) && proj >= 0
+    && Number.isFinite(allow) && allow > 0;
+  const ceiling = Number.isFinite(allow) && allow > 0 ? allow * fraction : null;
+  if (!known) {
+    return {
+      passes_ceiling: null, ceiling_bytes: ceiling, projected_total_bytes: null,
+      headroom_bytes: null, fraction,
+      basis: 'UNKNOWN — one of database size, projected size or disk allowance is missing',
+    };
+  }
+  const total = db + proj;
+  return {
+    passes_ceiling: total > ceiling,        // true = STOP, same polarity as before
+    ceiling_bytes: ceiling,
+    database_bytes: db,
+    projected_bytes: proj,
+    projected_total_bytes: total,
+    allowance_bytes: allow,
+    headroom_bytes: ceiling - total,
+    used_fraction_of_allowance: total / allow,
+    fraction,
+    basis: '(pg_database_size + projected download) vs fraction x disk allowance',
+  };
+}
+
+/**
+ * Measure the allowance rather than assume it. The Management API does not
+ * document one canonical endpoint for disk size, so every candidate is probed
+ * and the one that ANSWERED is named in the output. If none answers, the result
+ * is explicitly unmeasured and falls back to SUPABASE_DISK_BYTES only when that
+ * is set — labelled `configured`, never presented as a measurement.
+ */
+async function diskAllowance() {
+  const probes = [];
+  const paths = [
+    `/v1/projects/${REF}/config/database/disk`,
+    `/v1/projects/${REF}/disk`,
+    `/v1/projects/${REF}`,
+    `/v1/projects/${REF}/billing/addons`,
+  ];
+  for (const path of paths) {
+    let status = null, hit = null, keys = null, err = null;
+    try {
+      const res = await fetch(`https://api.supabase.com${path}`, {
+        headers: { Authorization: `Bearer ${SB_MGMT}` },
+      });
+      status = res.status;
+      const text = await res.text();
+      if (res.ok) {
+        const body = JSON.parse(text || 'null');
+        keys = body && typeof body === 'object' && !Array.isArray(body) ? Object.keys(body) : Array.isArray(body) ? `array[${body.length}]` : typeof body;
+        hit = extractDiskBytes(body);
+      }
+    } catch (e) { err = redact(e.message).slice(0, 120); }
+    probes.push({ path, status, top_level_keys: keys, found: hit, error: err });
+    if (hit) {
+      return { bytes: hit.bytes, source: `measured:${path}#${hit.key}=${hit.raw}`, measured: true, probes };
+    }
+  }
+  return {
+    bytes: CONFIGURED_DISK_BYTES,
+    source: CONFIGURED_DISK_BYTES ? 'configured:SUPABASE_DISK_BYTES (NOT measured)' : null,
+    measured: false,
+    probes,
+  };
+}
 
 async function sbSelect(sql) {
   if (!/^\s*select\b/i.test(sql)) throw new Error('refusing a non-SELECT statement');
@@ -522,6 +655,77 @@ async function fetchMatch(ev, level, { withSummary = false } = {}) {
   };
 }
 
+/* --------------------------------------------------------------------- disk */
+
+/**
+ * Board ruling, 2026-09-17T11:19Z: "Measure the actual allowance and current
+ * usage first (pg_database_size vs plan disk), then proceed if the projected
+ * 457 MB keeps total usage under 25% of the allowance."
+ *
+ * This mode spends ZERO BetsAPI requests. The per-match width is RE-MEASURED
+ * here from the pilot rows already in the table (pg_column_size, n printed);
+ * only the projected match COUNT is carried in, and it is labelled with the run
+ * that measured it.
+ */
+async function cmdDisk() {
+  const projectedMatches = Number(process.env.PROJECTED_MATCHES || 99411);
+  const matchesSource = process.env.PROJECTED_MATCHES
+    ? 'PROJECTED_MATCHES input'
+    : 'census of run 35211790569 (2020-2026, ATP+Slam+Challenger singles)';
+
+  const out = { ran_at: nowIso(), commit: process.env.GITHUB_SHA || null, project_ref: REF };
+
+  const sz = await tableBytes();
+  out.usage = { database_bytes: sz.database, betsapi_table_bytes: sz.total };
+
+  const allow = await diskAllowance();
+  out.allowance = allow;
+
+  const cols = await sbSelect(`select count(*)::int as n,
+      avg(pg_column_size(t.*))::numeric(12,1) as mean_row_bytes
+    from betsapi_raw_mw_matches t`);
+  const width = cols?.[0]?.mean_row_bytes == null ? null : Number(cols[0].mean_row_bytes);
+  out.stored_width = { n: cols?.[0]?.n ?? 0, mean_row_bytes: width, method: 'pg_column_size' };
+
+  const projectedBytes = width == null ? null : Math.round(width * projectedMatches);
+  const verdict = ceilingVerdict({
+    databaseBytes: sz.database, projectedBytes, allowanceBytes: allow.bytes,
+  });
+  out.projection = { matches: projectedMatches, matches_source: matchesSource, bytes: projectedBytes };
+  out.verdict = verdict;
+
+  const mb = (b) => (b == null ? '—' : (b / 1e6).toFixed(1) + ' MB');
+  const gib = (b) => (b == null ? '—' : (b / 1024 ** 3).toFixed(3) + ' GiB');
+  log('\n== measured ==');
+  log(`  project ref            ${REF}`);
+  log(`  database size          ${mb(sz.database)} (${gib(sz.database)})   [pg_database_size]`);
+  log(`  betsapi_raw_mw_matches ${mb(sz.total)}`);
+  log(`  disk allowance         ${gib(allow.bytes)}   [${allow.source || 'UNMEASURED and not configured'}]`);
+  for (const p of allow.probes) {
+    log(`    probe ${String(p.status ?? p.error).padEnd(6)} ${p.path}` +
+        (p.found ? `  -> ${p.found.key}=${p.found.raw}` : p.top_level_keys ? `  keys: ${Array.isArray(p.top_level_keys) ? p.top_level_keys.slice(0, 10).join(',') : p.top_level_keys}` : ''));
+  }
+  log('\n== projection ==');
+  log(`  stored width           ${width == null ? '—' : width + ' B/match'} (n=${out.stored_width.n}, pg_column_size)` +
+      (out.stored_width.n < 30 ? '   ::warning:: n < 30' : ''));
+  log(`  projected matches      ${projectedMatches.toLocaleString()}  [${matchesSource}]`);
+  log(`  projected download     ${mb(projectedBytes)}`);
+  log('\n== the gate ==');
+  log(`  ceiling                ${gib(verdict.ceiling_bytes)}  = ${DISK_FRACTION_CEILING * 100}% of the allowance`);
+  log(`  database + download    ${mb(verdict.projected_total_bytes)}` +
+      (verdict.used_fraction_of_allowance == null ? '' : `  = ${(verdict.used_fraction_of_allowance * 100).toFixed(2)}% of the allowance`));
+  log(`  headroom to ceiling    ${mb(verdict.headroom_bytes)}`);
+  if (verdict.passes_ceiling === true) log(`  VERDICT: STOP — the projection passes ${DISK_FRACTION_CEILING * 100}% of the allowance`);
+  else if (verdict.passes_ceiling === false) log(`  VERDICT: PROCEED — total usage stays under ${DISK_FRACTION_CEILING * 100}% of the allowance`);
+  else log(`  VERDICT: UNKNOWN — ${verdict.basis}`);
+
+  save('history-disk.json', out);
+  if (process.env.GITHUB_OUTPUT) {
+    writeFileSync(process.env.GITHUB_OUTPUT,
+      `passes_ceiling=${verdict.passes_ceiling}\nallowance_measured=${allow.measured}\n`, { flag: 'a' });
+  }
+}
+
 /* --------------------------------------------------------------------- size */
 
 /**
@@ -653,7 +857,7 @@ async function cmdSize() {
     log(`\n== on-disk ==`);
     log(`  pilot ${n} matches upserted; table ${after.total} B over ${nStored} rows = ` +
         `${out.disk.bytes_per_match_on_disk == null ? '—' : Math.round(out.disk.bytes_per_match_on_disk)} B/match`);
-    log(`  database size ${(after.database / 1e9).toFixed(3)} GB; 25% ceiling ${(after.database * DB_FRACTION_CEILING / 1e9).toFixed(3)} GB`);
+    log(`  database size ${(after.database / 1e9).toFixed(3)} GB; 25% ceiling ${(after.database * DISK_FRACTION_CEILING / 1e9).toFixed(3)} GB`);
   } else {
     out.disk = { measured: false, note: 'pilot load skipped' };
   }
@@ -669,6 +873,16 @@ async function cmdSize() {
     perYearProj[year] = Math.round(m);
     totalMatches += m;
   }
+  // The ceiling is 25% of the DISK ALLOWANCE and the test is on TOTAL usage
+  // (board, 2026-09-17T11:19Z) — not on the download measured against today's
+  // database size, which is what this tool asked before that correction.
+  const allow = await diskAllowance();
+  out.allowance = allow;
+  const verdict = ceilingVerdict({
+    databaseBytes: out.disk.database_bytes ?? null,
+    projectedBytes: bpm == null ? null : Math.round(totalMatches * bpm),
+    allowanceBytes: allow.bytes,
+  });
   out.projection = {
     basis: `mean tennis events/day x eligible fraction ${eligFrac == null ? '—' : (eligFrac * 100).toFixed(1) + '%'} x elapsed days`,
     matches_per_year: perYearProj,
@@ -676,10 +890,10 @@ async function cmdSize() {
     bytes_per_match_on_disk: bpm,
     projected_bytes: bpm == null ? null : Math.round(totalMatches * bpm),
     database_bytes: out.disk.database_bytes ?? null,
-    ceiling_fraction: DB_FRACTION_CEILING,
-    passes_ceiling: (bpm != null && out.disk.database_bytes)
-      ? (totalMatches * bpm) > (out.disk.database_bytes * DB_FRACTION_CEILING)
-      : null,
+    allowance_bytes: allow.bytes,
+    allowance_source: allow.source,
+    ceiling_fraction: DISK_FRACTION_CEILING,
+    ...verdict,
     requests_per_match: 1,
     requests_total: Math.round(totalMatches) + YEARS.reduce((a, y) => a + (out.census[y]?.elapsed_days || 0) * 2, 0),
   };
@@ -689,12 +903,15 @@ async function cmdSize() {
       (bpm == null ? '' : `, ${(out.projection.projected_bytes / 1e9).toFixed(3)} GB on disk`));
   log(`  request budget: ~${out.projection.requests_total.toLocaleString()} calls ` +
       `= ${(out.projection.requests_total / RATE_PER_HOUR).toFixed(1)} h at ${RATE_PER_HOUR}/h`);
+  log(`  disk allowance ${allow.bytes == null ? '—' : (allow.bytes / 1024 ** 3).toFixed(3) + ' GiB'} ` +
+      `[${allow.source || 'UNMEASURED and not configured'}]; ceiling ` +
+      `${verdict.ceiling_bytes == null ? '—' : (verdict.ceiling_bytes / 1024 ** 3).toFixed(3) + ' GiB'}`);
   if (out.projection.passes_ceiling === true) {
-    log(`::error::PROJECTION PASSES THE 25% CEILING — ruling 4 says stop. Not loading.`);
+    log(`::error::database + download would pass ${DISK_FRACTION_CEILING * 100}% OF THE ALLOWANCE — stop. Not loading.`);
   } else if (out.projection.passes_ceiling === false) {
-    log(`  under the 25% ceiling — the download may proceed.`);
+    log(`  total usage stays under ${DISK_FRACTION_CEILING * 100}% of the allowance — the download may proceed.`);
   } else {
-    log(`  ceiling test: UNKNOWN (missing on-disk or database size)`);
+    log(`  ceiling test: UNKNOWN — ${verdict.basis}`);
   }
 
   out.requests_used = betsapiReq;
@@ -740,13 +957,31 @@ async function cmdDownload() {
 
   // Ruling 4's gate is enforced here too, not only in `size`: a projection made
   // an hour ago is not a licence to keep writing after the table has grown.
+  // Basis corrected 2026-09-17T11:19Z — TOTAL database usage against 25% of the
+  // disk allowance, measured once per run and then re-tested every 500 matches.
+  const allowance = await diskAllowance();
+  const ceilingBytes = allowance.bytes == null ? null : allowance.bytes * DISK_FRACTION_CEILING;
+  log(`ceiling: ${ceilingBytes == null ? '—' : (ceilingBytes / 1e6).toFixed(0) + ' MB'} ` +
+      `= ${DISK_FRACTION_CEILING * 100}% of ${allowance.bytes == null ? 'an UNKNOWN allowance' : (allowance.bytes / 1024 ** 3).toFixed(3) + ' GiB'} ` +
+      `[${allowance.source || 'UNMEASURED and not configured'}]`);
+  if (ceilingBytes == null) {
+    // An unknown allowance is not permission to write. Downloading blind is the
+    // one outcome the ruling rules out in both directions.
+    log(`::error::disk allowance could not be measured and SUPABASE_DISK_BYTES is unset — refusing to download.`);
+    await upsert('betsapi_raw_mw_runs', [{ run_id: runId, ended_at: nowIso(), status: 'allowance_unknown', requests: betsapiReq }], 'run_id');
+    if (process.env.GITHUB_OUTPUT) writeFileSync(process.env.GITHUB_OUTPUT, `more_work=0\nmatches=0\n`, { flag: 'a' });
+    return { stopped: 'allowance_unknown' };
+  }
   const guard = await tableBytes();
-  if (guard.database && guard.total > guard.database * DB_FRACTION_CEILING) {
-    log(`::error::betsapi_raw_mw_matches is ${(guard.total / 1e9).toFixed(3)} GB = ` +
-        `over ${DB_FRACTION_CEILING * 100}% of the ${(guard.database / 1e9).toFixed(3)} GB database. STOPPING per ruling 4.`);
+  if (guard.database > ceilingBytes) {
+    log(`::error::the database is ${(guard.database / 1e6).toFixed(1)} MB, over the ` +
+        `${(ceilingBytes / 1e6).toFixed(0)} MB ceiling (${DISK_FRACTION_CEILING * 100}% of the allowance). STOPPING per ruling 4.`);
     await upsert('betsapi_raw_mw_runs', [{ run_id: runId, ended_at: nowIso(), status: 'ceiling', requests: betsapiReq }], 'run_id');
+    if (process.env.GITHUB_OUTPUT) writeFileSync(process.env.GITHUB_OUTPUT, `more_work=0\nmatches=0\n`, { flag: 'a' });
     return { stopped: 'ceiling' };
   }
+  log(`  database now ${(guard.database / 1e6).toFixed(1)} MB — ` +
+      `${((ceilingBytes - guard.database) / 1e6).toFixed(0)} MB of headroom to the ceiling`);
 
   const doneDays = new Set((await sbSelect(
     `select day from betsapi_raw_mw_days where done = true`) || []).map((r) => r.day));
@@ -790,11 +1025,16 @@ async function cmdDownload() {
         fetched++; matches++;
         if (batch.length >= 100) { await upsert('betsapi_raw_mw_matches', batch.splice(0), 'betsapi_event_id'); }
         if (maxMatches && already + matches >= maxMatches) { stopped = 'cap'; interrupted = true; break; }
+        // The board kept this mid-run re-check explicitly ("keep the mid-run
+        // size re-check every 500 matches"). It is the only thing that can stop
+        // a 300-minute run that crosses the ceiling in minute 40.
         if (matches % RECHECK_EVERY === 0) {
           const g = await tableBytes();
-          if (g.database && g.total > g.database * DB_FRACTION_CEILING) {
-            log(`::error::crossed ${DB_FRACTION_CEILING * 100}% of the database mid-run ` +
-                `(${(g.total / 1e6).toFixed(1)} MB of ${(g.database / 1e6).toFixed(1)} MB) — STOPPING per ruling 4`);
+          log(`  [recheck @ ${matches} matches] database ${(g.database / 1e6).toFixed(1)} MB ` +
+              `of a ${(ceilingBytes / 1e6).toFixed(0)} MB ceiling; table ${(g.total / 1e6).toFixed(1)} MB`);
+          if (g.database > ceilingBytes) {
+            log(`::error::crossed ${DISK_FRACTION_CEILING * 100}% of the disk allowance mid-run ` +
+                `(${(g.database / 1e6).toFixed(1)} MB of a ${(ceilingBytes / 1e6).toFixed(0)} MB ceiling) — STOPPING per ruling 4`);
             stopped = 'ceiling'; interrupted = true; break;
           }
         }
@@ -874,9 +1114,18 @@ async function cmdReport() {
   }
 
   const sz = await tableBytes();
-  out.size = { table_bytes: sz.total, database_bytes: sz.database, fraction: sz.database ? sz.total / sz.database : null };
-  log(`\n  table ${(sz.total / 1e6).toFixed(1)} MB of a ${(sz.database / 1e9).toFixed(3)} GB database = ` +
-      `${fmt(out.size.fraction * 100, 2)}% (ceiling ${DB_FRACTION_CEILING * 100}%)`);
+  const allow = await diskAllowance();
+  const ceilingBytes = allow.bytes == null ? null : allow.bytes * DISK_FRACTION_CEILING;
+  out.size = {
+    table_bytes: sz.total, database_bytes: sz.database,
+    allowance_bytes: allow.bytes, allowance_source: allow.source,
+    ceiling_bytes: ceilingBytes,
+    fraction_of_allowance: allow.bytes ? sz.database / allow.bytes : null,
+  };
+  log(`\n  table ${(sz.total / 1e6).toFixed(1)} MB; database ${(sz.database / 1e6).toFixed(1)} MB ` +
+      `of a ${allow.bytes == null ? '—' : (allow.bytes / 1024 ** 3).toFixed(3) + ' GiB'} allowance ` +
+      `[${allow.source || 'UNMEASURED'}] = ${fmt(out.size.fraction_of_allowance * 100, 2)}% ` +
+      `(ceiling ${DISK_FRACTION_CEILING * 100}% = ${ceilingBytes == null ? '—' : (ceilingBytes / 1e6).toFixed(0) + ' MB'})`);
 
   // pg_total_relation_size rounds to 8 KB pages, so on a small pilot it reports
   // page granularity rather than payload — 35 rows came back as exactly 35
@@ -893,10 +1142,11 @@ async function cmdReport() {
   if (s?.n) {
     log(`  stored width (pg_column_size, n=${s.n}): mean ${s.mean_row_bytes} B/match ` +
         `(series alone ${s.mean_series_bytes} B over ${s.mean_series_rows} quotes), max ${s.max_row_bytes} B`);
-    if (sz.database) {
-      const ceilingMatches = Math.floor((sz.database * DB_FRACTION_CEILING) / Number(s.mean_row_bytes));
-      log(`  the ${DB_FRACTION_CEILING * 100}% ceiling holds ~${ceilingMatches.toLocaleString()} matches at that width`);
-      out.stored_bytes.ceiling_matches = ceilingMatches;
+    if (ceilingBytes != null) {
+      const ceilingMatches = Math.floor((ceilingBytes - sz.database) / Number(s.mean_row_bytes));
+      log(`  the remaining headroom to the ${DISK_FRACTION_CEILING * 100}% ceiling holds ` +
+          `~${ceilingMatches.toLocaleString()} more matches at that width`);
+      out.stored_bytes.headroom_matches = ceilingMatches;
     }
   }
 
@@ -916,10 +1166,11 @@ async function main() {
   if (!TOKEN && ['size', 'download'].includes(CMD)) throw new Error('BETSAPI_TOKEN is empty');
   switch (CMD) {
     case 'setup': return cmdSetup();
+    case 'disk': return cmdDisk();
     case 'size': return cmdSize();
     case 'download': return cmdDownload();
     case 'report': return cmdReport();
-    default: throw new Error(`unknown command "${CMD}" (setup | size | download | report)`);
+    default: throw new Error(`unknown command "${CMD}" (setup | disk | size | download | report)`);
   }
 }
 

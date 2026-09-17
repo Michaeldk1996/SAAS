@@ -213,3 +213,74 @@ test('daysOfYear runs newest first and never into the future', async () => {
   assert.strictEqual(y2024.length, 366, '2024 is a leap year');
   assert.strictEqual(y2024[0], '20241231');
 });
+
+/* ------------------------------------------------- the disk-allowance ceiling */
+
+/**
+ * The board corrected the 25% gate on 2026-09-17T11:19Z: it is 25% of the DISK
+ * ALLOWANCE, tested against TOTAL usage — not the download measured against
+ * today's database size. Both readings are one line of arithmetic and neither
+ * looks wrong on its own, so the measured numbers are pinned here and the wrong
+ * reading is run as a mutation control below.
+ */
+const MEASURED = {
+  databaseBytes: 129e6,          // pg_database_size, run 35211790569
+  projectedBytes: 457e6,         // 99,411 matches x 4,600 B (pg_column_size, n=35)
+  allowanceBytes: 8 * 1024 ** 3, // 8 GiB plan disk
+};
+
+test('the gate is 25% of the ALLOWANCE against TOTAL usage, not 25% of the database', async () => {
+  const { ceilingVerdict } = await load();
+  const v = ceilingVerdict(MEASURED);
+
+  assert.strictEqual(v.passes_ceiling, false,
+    '129 MB + 457 MB = 586 MB is well under 25% of 8 GiB; this download must be cleared');
+  assert.strictEqual(v.projected_total_bytes, 586e6, 'total usage is database + download, not the download alone');
+  assert.ok(Math.abs(v.ceiling_bytes - 2 * 1024 ** 3) < 1, 'ceiling is 2 GiB');
+  assert.ok(v.headroom_bytes > 1.4e9, `expected >1.4 GB of headroom, got ${v.headroom_bytes}`);
+
+  // MUTATION CONTROL — the reading this tool shipped with before the correction.
+  // If it still agreed with the corrected one, this test would prove nothing.
+  const oldReading = MEASURED.projectedBytes > MEASURED.databaseBytes * 0.25;
+  assert.strictEqual(oldReading, true, 'the old reading stopped the download');
+  assert.notStrictEqual(v.passes_ceiling, oldReading,
+    'the corrected gate must reach the OPPOSITE verdict from "25% of today database size"');
+});
+
+test('the gate fires when total usage really would pass the ceiling', async () => {
+  const { ceilingVerdict } = await load();
+  // 1.9 GB already stored, 457 MB more: over 2 GiB, so STOP.
+  const v = ceilingVerdict({ ...MEASURED, databaseBytes: 1.9e9 });
+  assert.strictEqual(v.passes_ceiling, true);
+  assert.ok(v.headroom_bytes < 0, 'headroom must go negative once the ceiling is passed');
+});
+
+test('a missing input is UNKNOWN, never "fits"', async () => {
+  const { ceilingVerdict } = await load();
+  for (const [why, patch] of [
+    ['no allowance measured', { allowanceBytes: null }],
+    ['allowance of zero', { allowanceBytes: 0 }],
+    ['no projection', { projectedBytes: null }],
+    ['no database size', { databaseBytes: undefined }],
+  ]) {
+    const v = ceilingVerdict({ ...MEASURED, ...patch });
+    assert.strictEqual(v.passes_ceiling, null, `${why} must be UNKNOWN, got ${v.passes_ceiling}`);
+    assert.match(v.basis, /UNKNOWN/);
+  }
+});
+
+test('extractDiskBytes reads a disk volume and refuses to read usage as allowance', async () => {
+  const { extractDiskBytes } = await load();
+  assert.deepStrictEqual(extractDiskBytes({ size_gb: 8 }), { bytes: 8 * 1024 ** 3, key: 'size_gb', raw: 8 });
+  assert.strictEqual(extractDiskBytes({ disk: { disk_volume_size_gb: 8 } }).bytes, 8 * 1024 ** 3, 'must find a nested disk block');
+  assert.strictEqual(extractDiskBytes({ disk_size_bytes: 12345 }).bytes, 12345, 'a bytes key is taken as bytes, not GB');
+  assert.strictEqual(extractDiskBytes([{ nope: 1 }, { size_gb: 16 }]).bytes, 16 * 1024 ** 3, 'must walk arrays');
+
+  for (const [why, body] of [
+    ['a usage figure', { db_size: 129e6 }],
+    ['a database-size figure', { database_size_gb: 0.129 }],
+    ['a zero', { size_gb: 0 }],
+    ['a non-numeric', { size_gb: 'large' }],
+    ['nothing at all', { id: 'abc', region: 'eu-central-1' }],
+  ]) assert.strictEqual(extractDiskBytes(body), null, `read ${why} as a disk allowance`);
+});
