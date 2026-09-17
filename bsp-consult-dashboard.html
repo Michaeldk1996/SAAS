@@ -15139,10 +15139,15 @@ function renderPlayerSearch(query){
     const rank = (p.rank != null && !Number.isNaN(p.rank)) ? `#${p.rank}` : '';
     // Third state, honestly labelled: we know this player, his profile has not
     // been built yet. Previously indistinguishable from "no such player".
+    // R4 (founder ruling, 2026-09-17): a player with no profile shard shows
+    // "Profile not built yet" in the search result until the shard exists, and
+    // NEVER an empty page. Verbatim wording and sentence case per the ruling.
+    // 1,819 of the 2,375 indexed players are in this state today, so this is the
+    // majority path, not an edge case.
     if (!p.hasProfile){
-      return `<div class="psearch-item psearch-item-noprofile" title="No profile built for this player yet">
+      return `<div class="psearch-item psearch-item-noprofile" title="Profile not built yet">
         <span class="psearch-name">${pesc(p.name)}</span>
-        <span class="psearch-meta">${rank}${rank ? ' · ' : ''}profile not built yet</span>
+        <span class="psearch-meta">${rank}${rank ? ' · ' : ''}Profile not built yet</span>
       </div>`;
     }
     const meta = rank || (p.lastTournament ? pesc(p.lastTournament) : '');
@@ -15155,13 +15160,27 @@ function renderPlayerSearch(query){
 }
 async function selectSearchedPlayer(key){
   const input = document.getElementById('playerSearch');
+  // R4 second path. The index's `hasProfile` flag is built with the shards and can
+  // be STALE against what is actually deployed — a player it calls built whose
+  // shard 404s at click time. The old code cleared the query and the dropdown
+  // FIRST and then bailed on the failed fetch, so the click did nothing at all:
+  // no page, no message, no dropdown, not even the query still on screen. That is
+  // the "leads to an empty page" failure with the page left blank instead.
+  //
+  // So: fetch first, and only tear the search down once there is something to show.
+  // On failure, correct the index entry in place — the flag is now known wrong —
+  // and re-render the SAME query, which drops the row into the honest
+  // "Profile not built yet" state the ruling names.
+  const ok = await ensurePlayerProfile(key);
+  if (!ok){
+    const stale = (playerIndex || []).find(r => String(r.key) === String(key));
+    if (stale) stale.hasProfile = false;
+    renderPlayerSearch(input ? input.value : '');
+    return;
+  }
   if (input) input.value = '';
   const box = document.getElementById('playerSearchResults');
   if (box){ box.style.display = 'none'; box.innerHTML = ''; }
-  // Players outside today's field live in a per-player shard, fetched on click.
-  // Bail rather than render a blank page if the shard isn't there.
-  const ok = await ensurePlayerProfile(key);
-  if (!ok) return;
   showPlayerProfile(key);
 }
 document.getElementById('playerSearch').addEventListener('input', e => renderPlayerSearch(e.target.value));

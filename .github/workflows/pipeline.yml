@@ -651,6 +651,53 @@ jobs:
             if (apiNames < 253) { console.error(`court-speed-map.json resolves ${apiNames} api-tennis venue names, down from the 253 the shipped dictionary holds — the join would silently miss matches the bands used to cover`); process.exit(1); }
             console.log(`TEN-228: court-speed-map.json schema ok — ${venues} rated venues, ${apiNames} api-tennis name(s) joined, built with career-history present.`);
           '
+          # TEN-228 · §5.8 Market edge, founder ruling R1 (Pinnacle closing only).
+          # Same trap as court-speed, one file over: market-edge/ and its index ship
+          # under a TOLERANT `cp -r … 2>/dev/null || true` (lines 365-366) and were
+          # in no assert at all. R1 changes the shard SCHEMA — priceBasis, `units`
+          # on every summary, `inBasis` on every match row — so a silently failed
+          # copy leaves the new renderer reading the OLD shards: "At 1u flat" dashes
+          # on every role card and the headline silently reverts to the blended
+          # basis the ruling forbids, while every test stays green. Presence is not
+          # enough here either; assert the basis itself.
+          [ -d _site/market-edge ] && [ -n "$(ls -A _site/market-edge 2>/dev/null)" ] \
+            || { echo "MISSING from _site: market-edge/ shard dir is absent or empty"; exit 1; }
+          [ -s _site/market-edge-index.json ] || { echo "MISSING from _site: market-edge-index.json"; exit 1; }
+          node -e '
+            const fs = require("fs");
+            const idx = JSON.parse(fs.readFileSync("_site/market-edge-index.json","utf8"));
+            if (idx.priceBasis !== "Pinnacle closing only") {
+              console.error(`market-edge-index.json priceBasis is ${JSON.stringify(idx.priceBasis)}, not "Pinnacle closing only" — founder ruling R1 (2026-09-17) regressed, or a pre-R1 index shipped`);
+              process.exit(1);
+            }
+            const tour = (idx.tour && idx.tour.all) || {};
+            // The tour baseline is the number every player yield is compared
+            // against, so a single Bet365-archive side in it makes the comparison a
+            // book-mix artefact. build-market-edge.js throws on this too; asserted
+            // again here because the shards are COMMITTED — the build that made
+            // them and the build that ships them are different runs, and a stale
+            // commit is exactly what this catches.
+            if (!tour.book || tour.book.bet365 !== 0) {
+              console.error(`market-edge tour baseline carries ${tour.book && tour.book.bet365} non-Pinnacle sides — R1 violated`);
+              process.exit(1);
+            }
+            const files = fs.readdirSync("_site/market-edge").filter(f => f.endsWith(".json"));
+            if (files.length < 300) { console.error(`market-edge/ holds ${files.length} shards, short of the 356 shipped — partial copy?`); process.exit(1); }
+            // Sample shards that actually carry a priced sample: a 0-priced player
+            // legitimately has null units, so asserting on an arbitrary shard would
+            // fail for a true reason and hide the one being tested for.
+            let checked = 0;
+            for (const f of files) {
+              const s = JSON.parse(fs.readFileSync(`_site/market-edge/${f}`,"utf8"));
+              if (!s.headline || !s.headline.n) continue;
+              if (s.priceBasis !== "Pinnacle closing only") { console.error(`${f}: priceBasis ${JSON.stringify(s.priceBasis)} — pre-R1 shard shipped`); process.exit(1); }
+              if (s.headline.units == null) { console.error(`${f}: headline.units absent on a shard with ${s.headline.n} priced rows — the role cards "At 1u flat" figure would dash. Pre-R1 shard shipped?`); process.exit(1); }
+              if (s.headline.book.bet365 !== 0) { console.error(`${f}: ${s.headline.book.bet365} Bet365 sides in the headline — R1 violated`); process.exit(1); }
+              if (++checked >= 40) break;
+            }
+            if (!checked) { console.error("market-edge/: no shard carries a priced sample — the whole join is empty"); process.exit(1); }
+            console.log(`TEN-228 R1: market-edge schema ok — ${files.length} shards, ${checked} sampled, Pinnacle-only basis, tour baseline ${tour.yield}% over ${tour.n} sides.`);
+          '
           echo "All referenced files present in _site."
           # career-history-index.json gates EVERY career-spine surface — Calendar,
           # Career record, Court speed, Streaks all read rows the client only

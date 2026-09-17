@@ -1342,12 +1342,19 @@
       '</div>';
   }
 
-  // §6 Key insights — README rule: the split whose win rate differs from the
-  // player's OWN baseline by the largest |pp| with n >= 10. The stored
-  // `insights` array is prose written by the pipeline and does not carry the
-  // record/gap the spec requires, so it is rendered only when it supplies both.
+  // §6 Key insights — the SPEC RULE, computed here (R2, founder 2026-09-17).
+  //
+  // What this replaced: `p.insights`, prose written by the pipeline
+  // ("Return is a standout strength", "Clay is the strongest surface"). That
+  // array carries an adjective and a tour-average comparison; it does not carry
+  // the record or the signed gap the rule requires, and its candidate set is not
+  // the ruled one (it ranged over Level and Round too). It is no longer read here.
+  //
+  // Per card: the split, its rate, its record, the comparison and the signed gap.
+  // No adjectives. An insight may be negative — a red card is a real finding, not
+  // a formatting accident. Fewer than three eligible -> fewer cards, never padded.
   function renderInsights(p) {
-    var list = (p.insights || []).slice(0, 3);
+    var list = rankedInsights(p, 'career', 3);
     if (!list.length) {
       return '<div><div style="font-size:22px;font-weight:800;letter-spacing:-0.015em;' +
         'margin-bottom:16px;">Key insights</div>' +
@@ -1355,26 +1362,36 @@
         'text-align:center;font-size:13px;color:#5b6880;">No splits clear the ten-match minimum.</div></div>';
     }
     var cards = list.map(function (ins) {
-      var green = ins.accent === 'green';
-      var col = green ? '#3dd68c' : '#e0616f';
-      var bg = green ? 'rgba(61,214,140,0.14)' : 'rgba(224,97,111,0.14)';
+      var up = ins.gap >= 0;
+      var col = up ? '#3dd68c' : '#e0616f';
+      var bg = up ? 'rgba(61,214,140,0.14)' : 'rgba(224,97,111,0.14)';
+      // Up-and-right for a positive gap, down-and-right for a negative one, so the
+      // glyph states the same fact the number does rather than contradicting it.
+      var path = up ? 'M4 13l4-4 3 3 5-6M13 6h3v3' : 'M4 7l4 4 3-3 5 6M13 14h3v-3';
       return '' +
-        '<div style="height:100%;background:#0a0d14;border:1px solid rgba(255,255,255,0.09);' +
+        '<div data-pp2="insight" data-split="' + esc(ins.id) + '" ' +
+        'style="height:100%;background:#0a0d14;border:1px solid rgba(255,255,255,0.09);' +
         'border-radius:12px;padding:24px 24px 26px;display:flex;flex-direction:column;gap:16px;">' +
           '<div style="width:36px;height:36px;border-radius:13px;display:flex;align-items:center;' +
             'justify-content:center;background:' + bg + ';color:' + col + ';">' +
             '<svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" ' +
             'stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">' +
-            '<path d="M4 7l4 4 3-3 5 6M13 14h3v-3"/></svg></div>' +
+            '<path d="' + path + '"/></svg></div>' +
           '<div style="font-size:18.5px;font-weight:800;letter-spacing:-0.01em;line-height:1.25;color:#fff;">' +
-            esc(endashRecords(ins.title)) + '</div>' +
+            esc(ins.label) + ' ' + MIDDOT + ' ' + rateText0(ins.won, ins.lost) + '</div>' +
           '<div style="font-size:13.5px;color:#5b6880;line-height:1.7;">' +
-            esc(endashRecords(ins.text)) + '</div>' +
+            esc(recordText(ins.won, ins.lost)) + ' over ' + ins.n + ' matches ' + MIDDOT +
+            ' career baseline ' + ins.baseline.toFixed(1) + '% ' + MIDDOT + ' ' +
+            '<span style="color:' + col + ';font-weight:700;">' + signed(ins.gap, 1, 'pp') + '</span>' +
+          '</div>' +
         '</div>';
     }).join('');
     return '<div><div style="font-size:22px;font-weight:800;letter-spacing:-0.015em;' +
       'margin-bottom:16px;">Key insights</div>' +
-      '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;align-items:stretch;">' +
+      // minmax(0,1fr) rather than 1fr: with two cards the third column stays empty,
+      // which is the honest shape of "fewer eligible" — stretching two across the
+      // full width would read as three insights with one missing.
+      '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;align-items:stretch;">' +
       cards + '</div></div>';
   }
 
@@ -1526,8 +1543,64 @@
     });
     return out;
   }
+  // ── R2 (founder, 2026-09-17) · ONE rule, ONE function ─────────────────────
+  // "The 'best split' selector and the Key insights selector are now one rule —
+  // implement them off one shared function, not two that happen to agree today."
+  //
+  //   candidates : Surface, Format and Opponent only. Level and Round EXCLUDED.
+  //   gate       : n >= 10.
+  //   baseline   : the player's OWN career win rate — not the pooled rate of the
+  //                candidate set, which is what pickByLargestGap() computes and
+  //                which drifts as members enter and leave the set.
+  //   selection  : largest |pp| against that baseline. May be negative.
+  //   padding    : never. Fewer than three eligible -> fewer cards.
+  //
+  // pickByLargestGap() stays exactly as it is: it still backs the Court speed and
+  // price-band pickers, whose baseline IS their own pooled rate by design. This is
+  // a different rule for a different question, so it is a different function.
+  var INSIGHT_MIN_N = 10;
+  var INSIGHT_GROUPS = ['surface', 'format', 'opponent'];
+  function insightCandidates(key, scope) {
+    return splitCandidates(key, scope).filter(function (c) {
+      return INSIGHT_GROUPS.indexOf(String(c.id).split(':')[0]) >= 0;
+    });
+  }
+  /** The player's own career win rate, off the career spine (README §4's total). */
+  function careerBaseline(p) {
+    var t = spineTotal(p);
+    var n = t.won + t.lost;
+    return n ? (100 * t.won / n) : null;
+  }
+  /**
+   * Every eligible candidate, ranked by |gap| descending. `limit` slices; it never
+   * pads. Returns [] when the player has no baseline or nothing clears n >= 10.
+   */
+  function rankedInsights(p, scope, limit) {
+    var baseline = careerBaseline(p);
+    if (baseline == null) return [];
+    var out = insightCandidates(p.key, scope || 'career').map(function (c) {
+      var n = c.won + c.lost;
+      if (n < INSIGHT_MIN_N) return null;
+      var rate = 100 * c.won / n;
+      return { id: c.id, label: c.label, won: c.won, lost: c.lost, n: n,
+        rate: rate, gap: rate - baseline, baseline: baseline };
+    }).filter(Boolean);
+    out.sort(function (a, b) { return Math.abs(b.gap) - Math.abs(a.gap); });
+    return limit == null ? out : out.slice(0, limit);
+  }
   function biggestSplit(p) {
-    return pickByLargestGap(splitCandidates(p.key, 'career'));
+    var top = rankedInsights(p, 'career', 1)[0];
+    return top ? { pick: top, baseline: top.baseline } : null;
+  }
+
+  // The band cut-offs, mirrored from build-market-edge.js's PRICE_BANDS so the
+  // band -> match drill puts a row in the SAME band the shard counted it in. A
+  // mirror of a builder constant is a thing that drifts silently, so the drill
+  // prints its own reconciliation (the band's n against the rows matched) on
+  // screen rather than trusting the two to agree.
+  function priceBandId(price) {
+    if (price == null) return null;
+    return price < 1.5 ? 'u150' : price < 2.0 ? 'b150_200' : price < 3.0 ? 'b200_300' : 'o300';
   }
 
   // ─── market edge (market-edge/{key}.json) ──────────────────────────────────
@@ -3119,20 +3192,73 @@
       '</div>';
   }
 
-  // §5.7 Splits.
+  // §5.7 Splits — THREE tabs (Results · Sets & Games · Service), per the export's
+  // `modal.splits.tabBtns` / `resultsOn|setsOn|serviceOn`. Only Results was built;
+  // the other two are new here.
+  //
+  // Columns, grids and labels are lifted verbatim from
+  // `Player Stat Boxes.dc.html` rather than inferred:
+  //   results  minmax(84px,1.25fr) repeat(4,…)  Record · Matches · Win rate · Vs avg
+  //   sets     minmax(84px,1.25fr) repeat(4,…)  Tiebreaks · Games · Sets · Vs avg
+  //   service  minmax(84px,1.25fr) repeat(5,…)  Matches · Aces · Dbl faults · Holds · Breaks
+  //
+  // Two different `Vs avg` columns, and they are NOT interchangeable. On Results
+  // it is the gap to the player's own average MATCH win rate; on Sets & Games the
+  // export names `r.setDev`, the gap to his own average SET win rate. Reusing the
+  // match baseline there would print a plausible number measuring nothing.
+  //
+  // Service percentages are measured over MS (matches with recorded serve data),
+  // never over M — which is exactly why `Matches` is the tab's first column: the
+  // denominator is disclosed on the row that rests on it. Where the source
+  // recorded none, the value is absent and dashes: "not measured" and "zero" are
+  // different facts and must not look alike.
+  var SPLIT_TABS = [
+    { id: 'results', label: 'Results' },
+    { id: 'sets', label: 'Sets & Games' },
+    { id: 'service', label: 'Service' }
+  ];
+  var SPLIT_GRID_4 = 'minmax(84px,1.25fr) repeat(4,minmax(0,1fr))';
+  var SPLIT_GRID_5 = 'minmax(84px,1.25fr) repeat(5,minmax(0,1fr))';
+  function pct1(v) { return v == null ? DASH : Number(v).toFixed(1) + '%'; }
+  /**
+   * The Sets tab's own baseline: this player's average SET win rate across the
+   * splits in this scope, weighted by sets played. Computed off setW/setL, not
+   * off match W/L — see the note above.
+   */
+  function setBaseline(sc) {
+    var w = 0, t = 0;
+    SPLIT_GROUPS.forEach(function (g) {
+      g.members.forEach(function (m) {
+        var r = sc[m];
+        if (!r || r.setW == null || r.setL == null) return;
+        w += r.setW; t += r.setW + r.setL;
+      });
+    });
+    return t ? (100 * w / t) : null;
+  }
   function renderSplitsModal(p) {
     var scope = state.splitScope === 'last52' ? 'last52' : 'career';
+    var tab = SPLIT_TABS.filter(function (t) { return t.id === state.splitTab; })[0] || SPLIT_TABS[0];
     var sc = splitScope(p.key, scope);
     if (!sc) {
       return '<div style="border:1px dashed rgba(255,255,255,0.12);border-radius:10px;padding:26px;' +
         'text-align:center;font-size:13px;color:#5b6880;">No split data on record for this player.</div>';
     }
-    var cands = splitCandidates(p.key, scope);
-    var picked = pickByLargestGap(cands);
+    // Results' baseline stays pickByLargestGap's pooled split rate — that is what
+    // the legend has always claimed and what the column has always measured. The
+    // R2 insight rule is a different question (career baseline) and lives in
+    // rankedInsights(); the two are deliberately not conflated here.
+    var picked = pickByLargestGap(splitCandidates(p.key, scope));
     var baseline = picked ? picked.baseline : null;
+    var setBase = setBaseline(sc);
 
-    var head = '<div style="display:grid;grid-template-columns:minmax(84px,1.25fr) repeat(4,1fr);gap:0 10px;">' +
-      ['', 'Record', 'Matches', 'Win rate', 'Vs avg'].map(function (h, i) {
+    var grid = tab.id === 'service' ? SPLIT_GRID_5 : SPLIT_GRID_4;
+    var heads = tab.id === 'results' ? ['', 'Record', 'Matches', 'Win rate', 'Vs avg']
+      : tab.id === 'sets' ? ['', 'Tiebreaks', 'Games', 'Sets', 'Vs avg']
+      : ['', 'Matches', 'Aces', 'Dbl faults', 'Holds', 'Breaks'];
+
+    var head = '<div style="display:grid;grid-template-columns:' + grid + ';gap:0 10px;">' +
+      heads.map(function (h, i) {
         return '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9px;font-weight:600;' +
           'letter-spacing:0.12em;text-transform:uppercase;color:#4b5672;' + (i ? 'text-align:right;' : '') +
           '">' + h + '</div>';
@@ -3142,22 +3268,40 @@
       var rows = g.members.map(function (m) {
         var r = sc[m];
         var n = r ? (r.W || 0) + (r.L || 0) : 0;
-        var gate = gateFor(n);
-        var rate = r ? rateText(r.W, r.L) : DASH;
-        var gap = (r && gate === GATE.FULL && baseline != null) ? (100 * r.W / n) - baseline : null;
-        return '<div style="display:grid;grid-template-columns:minmax(84px,1.25fr) repeat(4,1fr);gap:0 10px;' +
+        var cells;
+        if (tab.id === 'results') {
+          var gate = gateFor(n);
+          var rate = r ? rateText(r.W, r.L) : DASH;
+          var gap = (r && gate === GATE.FULL && baseline != null) ? (100 * r.W / n) - baseline : null;
+          cells =
+            num(r ? recordText(r.W, r.L) : DASH, '#8b96b5', 11.5) +
+            num(n ? n : 'no matches on record', '#5b6880', 11.5) +
+            num(rate, rate === DASH ? DASH_COLOUR : gate === GATE.SMALL ? '#8b96b5' : '#e8ecf4', 12.5) +
+            dev(gap);
+        } else if (tab.id === 'sets') {
+          // Set-level gate: the row is about sets, so it is gated on sets played,
+          // not on matches. A 3-match split can carry 9 sets and a real set rate.
+          var setsN = r && r.setW != null ? r.setW + r.setL : 0;
+          var sgap = (r && r.setPct != null && setsN >= INSIGHT_MIN_N && setBase != null)
+            ? r.setPct - setBase : null;
+          cells =
+            num(r ? pct1(r.tbPct) : DASH, r && r.tbPct != null ? '#8b96b5' : DASH_COLOUR, 11.5) +
+            num(r ? pct1(r.gamePct) : DASH, r && r.gamePct != null ? '#8b96b5' : DASH_COLOUR, 11.5) +
+            num(r ? pct1(r.setPct) : DASH, r && r.setPct != null ? '#e8ecf4' : DASH_COLOUR, 12.5) +
+            dev(sgap);
+        } else {
+          var ms = r && r.MS != null ? r.MS : null;
+          cells =
+            num(ms == null ? DASH : ms, ms == null ? DASH_COLOUR : '#5b6880', 11.5) +
+            num(r ? pct1(r.aPct) : DASH, r && r.aPct != null ? '#8b96b5' : DASH_COLOUR, 11.5) +
+            num(r ? pct1(r.dfPct) : DASH, r && r.dfPct != null ? '#8b96b5' : DASH_COLOUR, 11.5) +
+            num(r ? pct1(r.hldPct) : DASH, r && r.hldPct != null ? '#8b96b5' : DASH_COLOUR, 11.5) +
+            num(r ? pct1(r.brkPct) : DASH, r && r.brkPct != null ? '#8b96b5' : DASH_COLOUR, 11.5);
+        }
+        return '<div style="display:grid;grid-template-columns:' + grid + ';gap:0 10px;' +
           'padding:7px 0;border-top:1px solid rgba(255,255,255,0.04);align-items:baseline;">' +
           '<div style="font-size:12.5px;font-weight:700;white-space:nowrap;' +
-            (n ? '' : 'color:' + DASH_COLOUR + ';') + '">' + esc(m) + '</div>' +
-          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:#8b96b5;text-align:right;">' +
-            (r ? recordText(r.W, r.L) : DASH) + '</div>' +
-          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:#5b6880;text-align:right;">' +
-            (n ? n : 'no matches on record') + '</div>' +
-          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:12.5px;text-align:right;color:' +
-            (rate === DASH ? DASH_COLOUR : gate === GATE.SMALL ? '#8b96b5' : '#e8ecf4') + ';">' + rate + '</div>' +
-          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:14px;font-weight:700;text-align:right;color:' +
-            (gap == null ? DASH_COLOUR : gap >= 0 ? '#3dd68c' : '#e0616f') + ';">' +
-            (gap == null ? DASH : signed(gap, 1, 'pp')) + '</div>' +
+            (n ? '' : 'color:' + DASH_COLOUR + ';') + '">' + esc(m) + '</div>' + cells +
           '</div>';
       }).join('');
       return '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
@@ -3179,24 +3323,83 @@
             ? 'Every tour match on record ' + MIDDOT + ' ' + (n52 && n52.matchesParsed != null ? n52.matchesParsed + ' matches' : DASH)
             : 'Rolling 12-month form ' + MIDDOT + ' ' + (n52 && n52.last52Count != null ? n52.last52Count + ' matches' : DASH)) +
         '</div>' +
+        // margin-left:auto — the export pins the tab control to the right edge of
+        // the same row as the scope switch.
+        '<div style="display:flex;gap:3px;background:#0a0d13;border:1px solid rgba(255,255,255,0.09);' +
+          'border-radius:9px;padding:2px;margin-left:auto;">' +
+          SPLIT_TABS.map(function (t) { return tabBtn(t.id, t.label, t.id === tab.id); }).join('') +
+        '</div>' +
       '</div>' +
       head + groups +
-      '<div style="font-size:11.5px;color:#4b5672;margin-top:12px;line-height:1.6;">' +
-        'Record and matches played ' + MIDDOT + ' win rate ' + MIDDOT + ' vs avg is the gap to this ' +
-        'player&#39;s own win rate across all splits in this scope' +
-        (baseline == null ? '' : ' (' + baseline.toFixed(1) + '%), weighted by match count') + '. ' +
-        'A split under ten matches shows its record and a dash for the gap.' +
-      '</div>';
+      '<div style="font-size:11.5px;color:#4b5672;margin-top:12px;line-height:1.6;">' + legend() + '</div>';
 
+    function num(txt, colour, size) {
+      return '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:' + size + 'px;color:' +
+        colour + ';text-align:right;">' + txt + '</div>';
+    }
+    function dev(gap) {
+      return '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:14px;font-weight:700;' +
+        'text-align:right;color:' + (gap == null ? DASH_COLOUR : gap >= 0 ? '#3dd68c' : '#e0616f') + ';">' +
+        (gap == null ? DASH : signed(gap, 1, 'pp')) + '</div>';
+    }
+    function legend() {
+      if (tab.id === 'results') {
+        return 'Record and matches played ' + MIDDOT + ' win rate ' + MIDDOT + ' vs avg is the gap to this ' +
+          'player&#39;s own win rate across all splits in this scope' +
+          (baseline == null ? '' : ' (' + baseline.toFixed(1) + '%), weighted by match count') + '. ' +
+          'A split under ten matches shows its record and a dash for the gap.';
+      }
+      if (tab.id === 'sets') {
+        return 'Share of tiebreaks, games and sets won ' + MIDDOT + ' vs avg is the gap to this ' +
+          'player&#39;s own <b>set</b> win rate across all splits in this scope' +
+          (setBase == null ? '' : ' (' + setBase.toFixed(1) + '%), weighted by sets played') + ' — a ' +
+          'different baseline from the Results tab, which compares match win rates. ' +
+          'A split under ten sets shows its rates and a dash for the gap.';
+      }
+      return 'Matches with recorded serve data ' + MIDDOT + ' aces and double faults as a share of ' +
+        'service points ' + MIDDOT + ' holds and breaks as a share of games. Every percentage here is ' +
+        'measured over the Matches column, never over the match count on the Results tab, which is why ' +
+        'the two differ. A split the source never measured shows a dash, not a zero.';
+    }
     function scopeBtn(id, label, on) {
       return '<button type="button" data-pp2="split-scope" data-scope="' + id + '" style="padding:5px 12px;' +
         'border-radius:7px;font-size:11px;border:1px solid ' + (on ? 'rgba(91,155,255,0.4)' : 'transparent') + ';' +
         'background:' + (on ? 'rgba(91,155,255,0.16)' : 'transparent') + ';color:' + (on ? '#e7e9ee' : '#5b6880') + ';' +
         'font-weight:' + (on ? 700 : 600) + ';cursor:pointer;">' + esc(label) + '</button>';
     }
+    // The export's tab pills carry a stronger fill than the scope pills
+    // (0.22/0.45 against 0.16/0.4) — two controls on one row, deliberately not
+    // identical, so the active tab reads as the nearer of the two.
+    function tabBtn(id, label, on) {
+      return '<button type="button" data-pp2="split-tab" data-tab="' + id + '" style="padding:5px 12px;' +
+        'border-radius:7px;font-size:11px;white-space:nowrap;border:1px solid ' +
+        (on ? 'rgba(91,155,255,0.45)' : 'transparent') + ';' +
+        'background:' + (on ? 'rgba(91,155,255,0.22)' : 'transparent') + ';color:' + (on ? '#e7e9ee' : '#5b6880') + ';' +
+        'font-weight:' + (on ? 700 : 600) + ';cursor:pointer;">' + esc(label) + '</button>';
+    }
   }
 
-  // §5.8 Market edge — role cards, price bands, book note, cumulative chart.
+  // §5.8 Market edge — role cards, price bands, band drill, cumulative chart.
+  //
+  // ★ Founder ruling R1, 2026-09-17, SUPERSEDING `market-1`:
+  //   "Headline yield, role cards, price bands and the cumulative profit chart use
+  //    Pinnacle closing only. No fallback to Bet365 or any other book inside those
+  //    figures. Bet365 may appear on ledger rows, labelled by book, but is excluded
+  //    from every yield and every units figure."
+  //
+  // The basis is enforced in build-market-edge.js (one `isYieldBasis` predicate at
+  // every aggregation point) and locked by tools/test-market-edge-basis.js. This
+  // renderer's job is to SAY which population each figure rests on, because the
+  // ledger legitimately shows more priced rows than the headline counts and the
+  // two numbers disagreeing is otherwise indistinguishable from a bug.
+  //
+  // Four pieces were missing from the build and are added here, all specified in
+  // `Player Stat Boxes.dc.html`:
+  //   * the "At 1u flat" figure on each role card (the file's second figure; the
+  //     build showed a bare win rate — §6 item 2, founder default "the file wins")
+  //   * the divergence bars, on role cards AND band rows
+  //   * the band row -> match detail drill
+  //   * the cumulative profit chart, with its Back|Fade and surface filters
   function renderMarketModal(p) {
     var mk = marketFor(p.key);
     if (!mk || !mk.headline || !mk.headline.n) {
@@ -3206,7 +3409,12 @@
         'whose record is Challenger or qualifying has no priced row here.</div>';
     }
     var sel = state.marketRole || 'all';
+    var side = state.marketSide === 'fade' ? 'fade' : 'back';
+    var surf = state.marketSurf || 'all';
     var tourY = mk.tour && mk.tour.all ? mk.tour.all.yield : null;
+    // Only rows on the R1 basis may be summed. The shard already marks them, so
+    // this never re-derives the rule — it reads the flag the builder wrote.
+    var basisRows = (mk.matches || []).filter(function (m) { return m.inBasis; });
 
     var cards = [
       { id: 'all', label: 'All matches', s: mk.roles.all },
@@ -3218,15 +3426,22 @@
       var gap = (y == null || tourY == null) ? null : y - tourY;
       return '<div data-pp2="market-role" data-role="' + c.id + '" style="border-radius:12px;padding:18px 20px;' +
         'display:flex;flex-direction:column;gap:14px;cursor:pointer;' +
-        'background:' + (on ? 'rgba(91,155,255,0.08)' : 'transparent') + ';' +
-        'border:1px solid ' + (on ? 'rgba(91,155,255,0.4)' : 'rgba(255,255,255,0.08)') + ';">' +
+        'background:' + (on ? 'rgba(91,155,255,0.10)' : 'transparent') + ';' +
+        'border:1px solid ' + (on ? 'rgba(91,155,255,0.5)' : 'rgba(255,255,255,0.08)') + ';">' +
         '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;">' +
-          '<div style="font-size:17px;font-weight:800;">' + c.label + '</div>' +
-          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:13px;font-weight:700;color:#8b96b5;">' +
+          '<div style="font-size:17px;font-weight:800;letter-spacing:-0.015em;">' + c.label + '</div>' +
+          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:13px;font-weight:700;color:#e7e9ee;">' +
             c.s.n + '</div></div>' +
-        '<div style="display:flex;gap:18px;">' + fig('Yield', y == null ? DASH : neg(y, 2, '%'), y) +
-          fig('Win rate', c.s.winRate == null ? DASH : c.s.winRate.toFixed(1) + '%', null) + '</div>' +
-        '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;">' +
+        // The file's two figures: Yield, and "At 1u flat" — the units actually
+        // returned. A 70% win rate at odds-on and a 40% win rate at 3.00 look the
+        // same on a win-rate card and are not the same result.
+        '<div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;">' +
+          fig('Yield', y == null ? DASH : neg(y, 2, '%'), y) +
+          fig('At 1u flat', c.s.units == null ? DASH : signed(c.s.units, 2, 'u'), c.s.units) +
+        '</div>' +
+        divBar(gap) +
+        '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;' +
+          'border-top:1px solid rgba(255,255,255,0.07);padding-top:13px;">' +
           '<div style="font-size:13.5px;color:#8b96b5;">Vs tour ' +
             (tourY == null ? DASH : neg(tourY, 2, '%')) + '</div>' +
           '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:21px;font-weight:700;color:' +
@@ -3235,57 +3450,85 @@
         '</div>';
     }).join('');
 
-    var groups = ['favourite', 'underdog'].map(function (g) {
+    // Price sensitivity. The selected role card filters the groups shown — the
+    // file's "Select a card above to filter".
+    var showGroups = sel === 'favourite' ? ['favourite'] : sel === 'underdog' ? ['underdog'] : ['favourite', 'underdog'];
+    var BGRID = 'minmax(96px,1.1fr) 52px 66px 62px minmax(120px,1.4fr) 74px';
+    var groups = showGroups.map(function (g) {
       var bands = (mk.bands[g] || []).map(function (b) {
         var rate = b.winRate == null ? DASH : b.winRate.toFixed(1) + '%';
-        return '<div style="display:grid;grid-template-columns:minmax(96px,1.1fr) 52px 66px 62px 74px;gap:0 10px;' +
-          'padding:9px 4px;border-bottom:1px solid rgba(255,255,255,0.05);align-items:baseline;">' +
-          '<div style="font-size:14px;font-weight:700;' + (b.n ? '' : 'color:' + DASH_COLOUR + ';') + '">' +
-            esc(b.label) + '</div>' +
-          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:12.5px;font-weight:700;color:#8b96b5;' +
-            'text-align:right;">' + (b.n || DASH) + '</div>' +
-          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:12.5px;font-weight:700;color:#8b96b5;' +
-            'text-align:right;">' + (b.n ? recordText(b.wins, b.losses) : DASH) + '</div>' +
-          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:13px;font-weight:700;text-align:right;' +
-            'color:' + (rate === DASH ? DASH_COLOUR : '#e8ecf4') + ';">' + rate + '</div>' +
-          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:14px;font-weight:700;text-align:right;' +
-            'color:' + (b.yield == null ? DASH_COLOUR : b.yield >= 0 ? '#3dd68c' : '#e0616f') + ';">' +
-            (b.yield == null ? DASH : neg(b.yield, 2, '%')) + '</div>' +
-          '</div>';
+        var bid = g + ':' + b.id;
+        var open = state.marketBand === bid;
+        // A band with no matches has nothing to open. It stays LISTED with a dash
+        // (the §5 missing-data rule) rather than dropping out, and carries no
+        // click hook at all — so a click lands and nothing happens, which is the
+        // honest behaviour for "nothing to show".
+        var openable = !!b.n;
+        return '<div ' + (openable ? 'data-pp2="market-band" data-band="' + esc(bid) + '" ' : '') +
+          'style="display:grid;grid-template-columns:' + BGRID + ';gap:10px;' +
+          'padding:9px 4px;border-bottom:1px solid rgba(255,255,255,0.05);align-items:center;' +
+          (openable ? 'cursor:pointer;' : '') +
+          (open ? 'background:rgba(91,155,255,0.07);' : '') + '">' +
+          '<div style="font-size:14px;font-weight:700;white-space:nowrap;' +
+            (b.n ? '' : 'color:' + DASH_COLOUR + ';') + '">' + esc(b.label) + '</div>' +
+          bcell(b.n || DASH, '#8b96b5', 12.5) +
+          bcell(b.n ? recordText(b.wins, b.losses) : DASH, '#8b96b5', 12.5) +
+          bcell(rate, rate === DASH ? DASH_COLOUR : '#e8ecf4', 13) +
+          divBar(b.yield) +
+          bcell(b.yield == null ? DASH : neg(b.yield, 2, '%'),
+            b.yield == null ? DASH_COLOUR : b.yield >= 0 ? '#3dd68c' : '#e0616f', 14) +
+          '</div>' +
+          (open ? bandDetail(g, b, bid) : '');
       }).join('');
       var gn = (mk.bands[g] || []).reduce(function (a, b) { return a + (b.n || 0); }, 0);
-      return '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:700;' +
-        'letter-spacing:0.14em;text-transform:uppercase;color:#8b96b5;padding:14px 4px 6px;">' +
-        (g === 'favourite' ? 'Favourite' : 'Underdog') + ' ' + MIDDOT + ' ' + gn + '</div>' + bands;
+      return '<div style="display:flex;align-items:baseline;gap:10px;padding:12px 4px 6px;">' +
+        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:700;' +
+        'letter-spacing:0.14em;text-transform:uppercase;color:#8b96b5;">' +
+        (g === 'favourite' ? 'Favourite' : 'Underdog') + '</div>' +
+        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:#4b5672;">' + gn + '</div>' +
+        '</div>' + bands;
     }).join('');
 
     var bk = mk.headline.book || { pinnacle: 0, bet365: 0 };
     var lvl = mk.roles.level && mk.roles.level.n ? mk.roles.level.n : 0;
+    var cov = mk.coverage || {};
+    var excluded = cov.excludedNonPinnacle || 0;
 
     return '' +
       '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;letter-spacing:0.06em;' +
-        'color:#5b6880;margin-bottom:14px;">All priced matches ' + MIDDOT + ' ' + mk.headline.n +
-        ' priced ' + MIDDOT + ' median odds ' + (mk.medianPrice == null ? DASH : mk.medianPrice.toFixed(2)) +
+        'color:#5b6880;margin-bottom:14px;">' +
+        'Pinnacle closing only ' + MIDDOT + ' ' + mk.headline.n + ' priced ' + MIDDOT + ' ' +
+        recordText(mk.headline.wins, mk.headline.losses) + ' ' + MIDDOT + ' median odds ' +
+        (mk.medianPrice == null ? DASH : mk.medianPrice.toFixed(2)) +
         ' ' + MIDDOT + ' tour baseline ' + (tourY == null ? DASH : neg(tourY, 2, '%')) + '</div>' +
-      '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;">' + cards + '</div>' +
+      '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;">' + cards + '</div>' +
       '<div style="border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:18px 20px 16px;' +
         'margin-top:16px;">' +
-        '<div style="font-size:17px;font-weight:800;margin-bottom:10px;">Price sensitivity</div>' +
-        '<div style="display:grid;grid-template-columns:minmax(96px,1.1fr) 52px 66px 62px 74px;gap:0 10px;' +
-          'border-bottom:1px solid rgba(255,255,255,0.12);padding-bottom:6px;">' +
-          ['', 'n', 'Record', 'Win rate', 'Yield'].map(function (h, i) {
+        '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap;">' +
+          '<div style="font-size:17px;font-weight:800;letter-spacing:-0.015em;">Price sensitivity</div>' +
+          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;letter-spacing:0.06em;' +
+            'color:#5b6880;">Select a card above to filter ' + MIDDOT + ' click a band for its matches</div>' +
+        '</div>' +
+        '<div style="display:grid;grid-template-columns:' + BGRID + ';gap:10px;align-items:end;' +
+          'padding:0 4px 9px;border-bottom:1px solid rgba(255,255,255,0.12);margin-top:12px;">' +
+          ['', 'n', 'Record', 'Win rate', 'Yield vs break even', 'Yield'].map(function (h, i) {
             return '<div style="font-size:10px;font-weight:600;color:#5b6880;' +
-              (i ? 'text-align:right;' : '') + '">' + h + '</div>';
+              (i === 4 ? 'text-align:center;' : i ? 'text-align:right;' : '') + '">' + h + '</div>';
           }).join('') + '</div>' + groups +
       '</div>' +
-      // §5's book rule, stated on the page rather than assumed. The counts are
-      // this player's own, not a roster-wide claim.
+      cumulativeChart() +
+      // §5's book rule, stated on the page rather than assumed, and restated for
+      // R1: this modal no longer blends books at all.
       '<div style="border:1px solid rgba(255,255,255,0.07);border-radius:10px;padding:14px 16px;' +
         'margin-top:16px;font-size:12.5px;color:#5b6880;line-height:1.65;">' +
-        'Every price is a <b>closing</b> price from the Tennis-Data archive. ' +
-        'Pinnacle where Pinnacle priced the match (' + bk.pinnacle + ' of ' + mk.headline.n + '), ' +
-        'Bet365&#39;s archive close where it did not (' + bk.bet365 + '). ' +
-        'Pinnacle stops at ' + esc(marketPinnacleEnd(mk)) + ', which is why the fallback exists. ' +
+        'Every figure above is struck on <b>Pinnacle closing prices only</b> — ' + bk.pinnacle +
+        ' priced matches. Pinnacle stops at ' + esc(marketPinnacleEnd(mk)) + '. ' +
+        (excluded
+          ? esc(shortName(p)) + ' has ' + excluded + ' further match' + (excluded === 1 ? '' : 'es') +
+            ' the Tennis-Data archive priced at Bet365&#39;s close and Pinnacle did not; ' +
+            'those rows appear on the full ledger, labelled by book, and are excluded from every ' +
+            'yield and every units figure here. '
+          : 'Every priced match on record was priced by Pinnacle, so nothing is excluded. ') +
         'The de-vig always uses both prices from the same book. ' +
         'Bet365 pre-match snapshots from the live odds feed are a different artefact and are ' +
         'not blended into anything above.' +
@@ -3294,10 +3537,191 @@
       '</div>';
 
     function fig(cap, val, colourVal) {
-      return '<div><div style="font-family:\'IBM Plex Mono\',monospace;font-size:24px;font-weight:700;color:' +
-        (colourVal == null ? '#e8ecf4' : colourVal >= 0 ? '#3dd68c' : '#e0616f') + ';">' + val + '</div>' +
-        '<div style="font-size:9px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;' +
-        'color:#4b5672;margin-top:3px;">' + cap + '</div></div>';
+      return '<div style="display:flex;flex-direction:column;gap:4px;">' +
+        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:24px;font-weight:700;color:' +
+        (colourVal == null ? DASH_COLOUR : colourVal >= 0 ? '#3dd68c' : '#e0616f') + ';">' + val + '</div>' +
+        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9px;letter-spacing:0.12em;' +
+        'text-transform:uppercase;color:#4b5672;">' + cap + '</div></div>';
+    }
+    function bcell(txt, colour, size) {
+      return '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:' + size + 'px;' +
+        'font-weight:700;text-align:right;color:' + colour + ';">' + txt + '</div>';
+    }
+    /**
+     * The divergence bar. Geometry is the export's, verbatim:
+     *   pos = clamp(4, 96, 50 + v*6); fill spans from 50% to pos.
+     * A null value draws the track and the break-even rule and NO fill — the
+     * absence is the statement, and a zero-width fill at centre would read as
+     * "exactly break even", which is a different fact.
+     */
+    function divBar(v) {
+      var track = '<div style="position:relative;height:9px;background:rgba(255,255,255,0.05);' +
+        'border-radius:5px;display:block;">' +
+        '<div style="position:absolute;left:50%;top:-3px;bottom:-3px;width:2px;' +
+          'background:rgba(255,255,255,0.3);"></div>';
+      if (v == null) return track + '</div>';
+      var pos = Math.max(4, Math.min(96, 50 + v * 6));
+      return track +
+        '<div style="position:absolute;top:0;bottom:0;border-radius:5px;left:' +
+        (v >= 0 ? 50 : pos).toFixed(1) + '%;width:' + Math.abs(pos - 50).toFixed(1) + '%;' +
+        'background:' + (v >= 0 ? '#3dd68c' : '#e0616f') + ';"></div></div>';
+    }
+    /** The band row -> match detail drill. Reads the shard's own rows. */
+    function bandDetail(group, b, bid) {
+      var role = group === 'favourite' ? 'fav' : 'dog';
+      var rows = basisRows.filter(function (m) {
+        return m.role === role && priceBandId(m.price) === b.id;
+      }).sort(function (a, c) { return a.date < c.date ? 1 : a.date > c.date ? -1 : 0; });
+      var shown = rows.slice(0, 40);
+      var list = shown.map(function (m) {
+        return '<div style="display:grid;grid-template-columns:62px 12px minmax(0,1.4fr) 58px 52px 58px;' +
+          'gap:0 10px;align-items:center;padding:5px 0;border-top:1px solid rgba(255,255,255,0.04);">' +
+          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:#5b6880;">' +
+            esc(fmtDotDate(m.date)) + '</div>' +
+          '<div style="width:8px;height:8px;border-radius:2px;background:' +
+            (m.won ? '#3dd68c' : '#e0616f') + ';"></div>' +
+          '<div style="font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' +
+            esc(surnameFirst(m.opp)) + '</div>' +
+          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:#8b96b5;' +
+            'text-align:right;">' + (m.price == null ? DASH : m.price.toFixed(2)) + '</div>' +
+          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:#5b6880;' +
+            'text-align:right;">' + esc(m.round || DASH) + '</div>' +
+          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;font-weight:700;' +
+            'text-align:right;color:' + (m.pl >= 0 ? '#3dd68c' : '#e0616f') + ';">' +
+            signed(m.pl, 2, 'u') + '</div>' +
+          '</div>';
+      }).join('');
+      var note = shown.length < rows.length
+        ? 'Showing ' + shown.length + ' of ' + rows.length + ' ' + MIDDOT + ' newest first'
+        : 'All ' + rows.length + ' match' + (rows.length === 1 ? '' : 'es');
+      // The drill must reconcile to the row that opened it, or the row and its
+      // own matches are describing different sets. Say so rather than hide it.
+      var recon = rows.length === b.n ? '' :
+        ' ' + MIDDOT + ' band counts ' + b.n + ', ' + rows.length + ' rows carry a matching price';
+      return '<div style="background:#06070a;border:1px solid rgba(91,155,255,0.3);border-radius:11px;' +
+        'padding:14px 16px;margin:10px 0 14px;">' +
+        '<div style="display:flex;align-items:center;gap:12px;margin-bottom:6px;flex-wrap:wrap;">' +
+          '<div style="font-size:14px;font-weight:700;">' + esc(b.label) + ' ' + MIDDOT + ' ' +
+            (group === 'favourite' ? 'favourite' : 'underdog') + '</div>' +
+          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;color:#8b96b5;">' +
+            recordText(b.wins, b.losses) + ' ' + MIDDOT + ' ' +
+            (b.units == null ? DASH : signed(b.units, 2, 'u')) + '</div>' +
+          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:#4b5672;">' +
+            note + recon + '</div>' +
+          '<button type="button" data-pp2="market-band" data-band="' + esc(bid) + '" ' +
+            'style="margin-left:auto;background:none;border:0;color:#5b6880;font-size:11px;' +
+            'font-family:\'IBM Plex Mono\',monospace;letter-spacing:0.08em;text-transform:uppercase;' +
+            'cursor:pointer;">Close</button>' +
+        '</div>' + list + '</div>';
+    }
+    /**
+     * Cumulative units. The shard's `curve` is the BACK side on every priced row
+     * in date order; Fade is its exact mirror (laying at the same price returns
+     * the opposite of backing it, to the same stake), and the surface filter
+     * re-walks the basis rows rather than scaling the stored curve — a filtered
+     * curve is a different walk, not the same walk shrunk.
+     */
+    function cumulativeChart() {
+      var rows = basisRows.filter(function (m) {
+        if (surf !== 'all' && String(m.surface || '') !== surf) return false;
+        if (sel === 'favourite') return m.role === 'fav';
+        if (sel === 'underdog') return m.role === 'dog';
+        return true;
+      }).slice().sort(function (a, c) { return a.date < c.date ? -1 : a.date > c.date ? 1 : 0; });
+      var pts = [], cents = 0;
+      rows.forEach(function (m) {
+        // Integer cents: this is the series the line is drawn from, so float drift
+        // here is visible drift in the chart.
+        var c = m.won ? Math.round(m.price * 100) - 100 : -100;
+        cents += (side === 'fade' ? -c : c);
+        pts.push({ d: m.date, c: cents / 100 });
+      });
+      var title = 'Cumulative units ' + MIDDOT + ' ' +
+        (sel === 'favourite' ? 'when favourite' : sel === 'underdog' ? 'when underdog' : 'all priced matches') +
+        (surf === 'all' ? '' : ' ' + MIDDOT + ' ' + surf) +
+        (side === 'fade' ? ' ' + MIDDOT + ' fading' : '');
+      var controls =
+        '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-left:auto;">' +
+          '<div style="display:flex;gap:3px;background:#0a0d13;border:1px solid rgba(255,255,255,0.09);' +
+            'border-radius:9px;padding:2px;">' +
+            segBtn('market-side', 'side', 'back', 'Back', side === 'back') +
+            segBtn('market-side', 'side', 'fade', 'Fade', side === 'fade') +
+          '</div>' +
+          '<div style="display:flex;gap:3px;background:#0a0d13;border:1px solid rgba(255,255,255,0.09);' +
+            'border-radius:9px;padding:2px;">' +
+            ['all', 'Hard', 'Clay', 'Grass'].map(function (s) {
+              return segBtn('market-surf', 'surf', s, s === 'all' ? 'All surfaces' : s, surf === s);
+            }).join('') +
+          '</div>' +
+        '</div>';
+      var body;
+      if (pts.length < 2) {
+        body = '<div style="border:1px dashed rgba(255,255,255,0.12);border-radius:10px;padding:26px;' +
+          'text-align:center;font-size:13px;color:#5b6880;">' +
+          (pts.length ? 'One priced match in this filter — a cumulative line needs at least two points.'
+            : 'No priced matches in this filter.') + '</div>';
+      } else {
+        var W = 720, H = 180;
+        var lo = 0, hi = 0;
+        pts.forEach(function (q) { if (q.c < lo) lo = q.c; if (q.c > hi) hi = q.c; });
+        if (hi === lo) { hi = lo + 1; }
+        var pad = (hi - lo) * 0.08;
+        lo -= pad; hi += pad;
+        var xy = function (i, c) {
+          return [(i / (pts.length - 1)) * W, H - ((c - lo) / (hi - lo)) * H];
+        };
+        var line = pts.map(function (q, i) {
+          var a = xy(i, q.c);
+          return (i ? 'L' : 'M') + a[0].toFixed(1) + ' ' + a[1].toFixed(1);
+        }).join(' ');
+        var zeroY = H - ((0 - lo) / (hi - lo)) * H;
+        var last = pts[pts.length - 1].c;
+        var stroke = last >= 0 ? '#3dd68c' : '#e0616f';
+        var fill = last >= 0 ? 'rgba(61,214,140,0.12)' : 'rgba(224,97,111,0.12)';
+        var area = line + ' L' + W + ' ' + zeroY.toFixed(1) + ' L0 ' + zeroY.toFixed(1) + ' Z';
+        body =
+          '<div style="display:flex;gap:12px;align-items:stretch;">' +
+            '<div style="width:46px;flex:none;display:flex;flex-direction:column;justify-content:space-between;' +
+              'font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:#4b5672;text-align:right;">' +
+              '<div>' + signed(hi, 1, 'u') + '</div><div>' + signed(lo, 1, 'u') + '</div></div>' +
+            '<div style="position:relative;flex:1;min-width:0;height:180px;">' +
+              '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" ' +
+                'style="position:absolute;inset:0;width:100%;height:100%;display:block;">' +
+                '<path d="' + area + '" fill="' + fill + '"></path>' +
+                '<line x1="0" y1="' + zeroY.toFixed(1) + '" x2="' + W + '" y2="' + zeroY.toFixed(1) +
+                  '" stroke="rgba(255,255,255,0.3)" stroke-width="1" vector-effect="non-scaling-stroke"></line>' +
+                '<path d="' + line + '" fill="none" stroke="' + stroke + '" stroke-width="2" ' +
+                  'stroke-linejoin="round" vector-effect="non-scaling-stroke"></path>' +
+              '</svg>' +
+            '</div>' +
+          '</div>' +
+          '<div style="display:flex;gap:12px;margin-top:6px;">' +
+            '<div style="width:46px;flex:none;"></div>' +
+            '<div style="flex:1;min-width:0;display:flex;justify-content:space-between;' +
+              'font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:#4b5672;">' +
+              '<div>' + esc(String(pts[0].d).slice(0, 4)) + '</div>' +
+              '<div>' + esc(String(pts[pts.length - 1].d).slice(0, 4)) + '</div></div>' +
+          '</div>' +
+          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;letter-spacing:0.1em;' +
+            'text-transform:uppercase;color:#3f4860;margin-top:8px;">' +
+            'Horizontal: season ' + MIDDOT + ' vertical: cumulative units ' + MIDDOT +
+            ' the bright rule is break even ' + MIDDOT + ' ' + pts.length + ' matches ' + MIDDOT +
+            ' finishing ' + signed(last, 2, 'u') + '</div>';
+      }
+      return '<div style="border:1px solid rgba(255,255,255,0.08);border-radius:12px;' +
+        'padding:18px 20px 16px;margin-top:16px;">' +
+        '<div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;margin-bottom:14px;">' +
+          '<div style="font-size:17px;font-weight:800;letter-spacing:-0.015em;">' + esc(title) + '</div>' +
+          controls +
+        '</div>' + body + '</div>';
+    }
+    function segBtn(kind, attr, id, label, on) {
+      return '<button type="button" data-pp2="' + kind + '" data-' + attr + '="' + esc(id) + '" ' +
+        'style="padding:5px 11px;border-radius:7px;font-size:11px;white-space:nowrap;cursor:pointer;' +
+        'border:1px solid ' + (on ? 'rgba(91,155,255,0.45)' : 'rgba(255,255,255,0.09)') + ';' +
+        'background:' + (on ? 'rgba(91,155,255,0.22)' : 'transparent') + ';' +
+        'color:' + (on ? '#fff' : '#5b6880') + ';font-weight:' + (on ? 700 : 600) + ';">' +
+        esc(label) + '</button>';
     }
   }
 
@@ -6073,6 +6497,15 @@
     key: null, ledgerOpen: false, ledgerExpanded: false,
     surfaces: [], priceFilters: [], modal: null,
     careerScope: 'career', splitScope: 'career', marketRole: 'all',
+    // §5.8 Market edge. marketBand is "<group>:<bandId>" for the open drill;
+    // marketSide is the cumulative chart's Back|Fade; marketSurf its surface
+    // filter. Three independent controls on one modal — kept apart so switching
+    // one never silently resets another.
+    marketBand: null, marketSide: 'back', marketSurf: 'all',
+    // §5.7 Splits. The scope switch (Career / Last 52 weeks) and the tab switch
+    // (Results / Sets & Games / Service) are independent axes of the same table —
+    // changing scope must not reset the tab, so they are separate state.
+    splitTab: 'results',
     tournQuery: '', tournOpen: null,
     // §5.4 Calendar record. calSurface 'all' is the default segment; calCell is
     // "YYYY-m" (month index, not 1-based) and calRun is an index into calRuns().
@@ -6243,7 +6676,17 @@
     }
     else if (kind === 'career-drill-close') state.careerDrill = null;
     else if (kind === 'split-scope') state.splitScope = el.getAttribute('data-scope');
-    else if (kind === 'market-role') state.marketRole = el.getAttribute('data-role');
+    else if (kind === 'split-tab') state.splitTab = el.getAttribute('data-tab');
+    else if (kind === 'market-role') {
+      // Changing the role card re-filters the band groups, so a band opened under
+      // the previous filter would be left open under a group that is no longer
+      // rendered — the drill would vanish with no close ever having been clicked.
+      state.marketRole = el.getAttribute('data-role');
+      state.marketBand = null;
+    }
+    else if (kind === 'market-band') state.marketBand = toggleVal(state.marketBand, el.getAttribute('data-band'));
+    else if (kind === 'market-side') state.marketSide = el.getAttribute('data-side');
+    else if (kind === 'market-surf') state.marketSurf = el.getAttribute('data-surf');
     else if (kind === 'tourn-row') state.tournOpen = toggleVal(state.tournOpen, el.getAttribute('data-t'));
     else if (kind === 'cal-tab') state.calTab = v;
     else if (kind === 'cal-surface') { state.calSurface = v; state.calCell = null; state.calRun = null; }

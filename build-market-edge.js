@@ -127,8 +127,27 @@ function pickBook(row) {
   return null;
 }
 
+/**
+ * ★ R1 — founder ruling, 2026-09-17. SUPERSEDES `market-1` where they conflict.
+ *
+ * "Headline yield, role cards, price bands and the cumulative profit chart use
+ *  Pinnacle closing only. No fallback to Bet365 or any other book inside those
+ *  figures — neither the Tennis-Data archive close nor Oddspapi. Bet365 may
+ *  appear on ledger rows, labelled by book, but is excluded from every yield and
+ *  every units figure."
+ *
+ * One predicate, used at every aggregation point, so the basis cannot drift apart
+ * between the headline and the bands. Rows the predicate rejects are still carried
+ * in `matches[]` with their own `book` label — the ledger reads those — they are
+ * simply never summed into a yield or a unit count.
+ */
+const isYieldBasis = (side) => side.book === 'pinnacle';
+
 function emptyAgg() {
-  return { n: 0, wins: 0, expSum: 0, varSum: 0, profit: 0, priceSum: 0, pinnacle: 0, bet365: 0 };
+  // profitCents, not profit. Summing `price - 1` as a float reorders with the row
+  // order and has already moved a painted card 1.42 -> 1.41 on this codebase. A
+  // decimal price is exact in cents, so the sum is exact in cents.
+  return { n: 0, wins: 0, expSum: 0, varSum: 0, profitCents: 0, priceCents: 0, pinnacle: 0, bet365: 0 };
 }
 
 function addTo(a, side) {
@@ -136,8 +155,9 @@ function addTo(a, side) {
   if (side.won) a.wins += 1;
   a.expSum += side.p;
   a.varSum += side.p * (1 - side.p);
-  a.profit += side.won ? side.price - 1 : -1;
-  a.priceSum += side.price;
+  const cents = Math.round(side.price * 100);
+  a.profitCents += side.won ? cents - 100 : -100;
+  a.priceCents += cents;
   if (side.book === 'pinnacle') a.pinnacle += 1; else a.bet365 += 1;
 }
 
@@ -147,7 +167,7 @@ function addTo(a, side) {
  * never 0%, never a plausible default".
  */
 function summarise(a) {
-  if (!a || !a.n) return { n: 0, wins: 0, losses: 0, gate: 'none', winRate: null, expectedWinRate: null, vsMarket: null, yield: null, ci95: null, avgPrice: null, book: { pinnacle: 0, bet365: 0 } };
+  if (!a || !a.n) return { n: 0, wins: 0, losses: 0, gate: 'none', winRate: null, expectedWinRate: null, vsMarket: null, yield: null, units: null, ci95: null, avgPrice: null, book: { pinnacle: 0, bet365: 0 } };
   const gate = a.n >= GATE_FULL ? 'full' : a.n >= GATE_SMALL ? 'small' : 'thin';
   const actual = (a.wins / a.n) * 100;
   const expected = (a.expSum / a.n) * 100;
@@ -163,9 +183,15 @@ function summarise(a) {
     vsMarket: rateOk ? r1(actual - expected) : null,
     // Flat 1-unit stake on this player every match, at the closing price actually
     // recorded for that row. Yield, not ROI on turnover — one unit per match.
-    yield: rateOk ? r1((a.profit / a.n) * 100) : null,
+    yield: rateOk ? r1((a.profitCents / a.n) / 100 * 100) : null,
+    // The role card's second figure. §5's file specifies "At 1u flat" — the units
+    // actually returned — where the build showed a bare win rate; founder default
+    // on the §6 item-2 question is "the file wins". Units, not a rate, because a
+    // 70% win rate at odds-on prices and a 40% win rate at 3.00 are the same card
+    // otherwise. Struck from the cents sum, so it is exact.
+    units: a.n ? r2(a.profitCents / 100) : null,
     ci95: rateOk && se > 0 ? [r1(actual - expected - 1.96 * se), r1(actual - expected + 1.96 * se)] : null,
-    avgPrice: r2(a.priceSum / a.n),
+    avgPrice: r2(a.priceCents / a.n / 100),
     book: { pinnacle: a.pinnacle, bet365: a.bet365 },
   };
 }
@@ -295,10 +321,17 @@ function main() {
           // counted as such rather than shoved into one card to make a sum work.
           role: s.price < s.oppPrice ? 'fav' : s.price > s.oppPrice ? 'dog' : 'level',
         };
-        addTo(tour.all, side);
-        if (level) { tour.level[level] = tour.level[level] || emptyAgg(); addTo(tour.level[level], side); }
-        tour.season[season] = tour.season[season] || emptyAgg();
-        addTo(tour.season[season], side);
+        // R1 (founder, 2026-09-17) — the tour baseline is what every player's yield
+        // is compared against, so it must rest on the SAME basis as the yields:
+        // Pinnacle closing only. Left blended, a Pinnacle-only player yield would
+        // be measured against a part-Bet365 field and the "vs tour" gap would be a
+        // book-mix artefact rather than a finding.
+        if (isYieldBasis(side)) {
+          addTo(tour.all, side);
+          if (level) { tour.level[level] = tour.level[level] || emptyAgg(); addTo(tour.level[level], side); }
+          tour.season[season] = tour.season[season] || emptyAgg();
+          addTo(tour.season[season], side);
+        }
 
         const hit = resolve(s.name);
         if (!hit) return;
@@ -337,9 +370,13 @@ function main() {
     const bySurface = {};
     PRICE_BANDS.forEach((b) => { bands.fav[b.id] = emptyAgg(); bands.dog[b.id] = emptyAgg(); });
 
-    let cum = 0;
+    // R1: every aggregate below — headline, roles, bands, per-surface and the
+    // cumulative curve — is struck on Pinnacle closing only. `sides` keeps every
+    // priced row for `matches[]`; `basis` is the subset that may be summed.
+    const basis = sides.filter(isYieldBasis);
+    let cumCents = 0;
     const curve = [];
-    sides.forEach((s) => {
+    basis.forEach((s) => {
       addTo(all, s);
       if (s.role === 'fav') addTo(fav, s);
       else if (s.role === 'dog') addTo(dog, s);
@@ -351,8 +388,11 @@ function main() {
       const surf = s.surface || 'Unknown';
       bySurface[surf] = bySurface[surf] || emptyAgg();
       addTo(bySurface[surf], s);
-      cum += s.won ? s.price - 1 : -1;
-      curve.push({ d: s.date, c: Math.round(cum * 100) / 100 });
+      // Integer cents, for the same reason emptyAgg() carries cents: this running
+      // total is what the cumulative chart plots, so a float drift here is a
+      // visible drift in the line.
+      cumCents += s.won ? Math.round(s.price * 100) - 100 : -100;
+      curve.push({ d: s.date, c: Math.round(cumCents) / 100 });
     });
 
     const bandOut = (group) => PRICE_BANDS.map((b) => Object.assign({ id: b.id, label: b.label }, summarise(bands[group][b.id])));
@@ -366,17 +406,28 @@ function main() {
       name: rec.name,
       // §5: every figure below is a CLOSING price. The label is not decoration — the
       // page prints it, and the book mix says how much of it is Pinnacle.
-      priceBasis: 'closing price, Pinnacle where present, else Bet365 archive close, labelled per row',
+      // R1: the basis is now a single book. This string is printed on the page, so it
+      // must name the basis the numbers were actually struck on — not the join's
+      // wider reach. `matches[]` still carries Bet365-archive rows, labelled.
+      priceBasis: 'Pinnacle closing only',
       headline: summarise(all),
-      medianPrice: r2(median(sides.map((s) => s.price))),
+      // Median over the BASIS, not over every priced row: the headline names a
+      // Pinnacle-only sample, so a median drawn from a wider set would describe a
+      // different population than the figure beside it.
+      medianPrice: r2(median(basis.map((s) => s.price))),
       roles: { all: summarise(all), favourite: summarise(fav), underdog: summarise(dog), level: summarise(lvl) },
       bands: { favourite: bandOut('fav'), underdog: bandOut('dog') },
       surface: surfaceOut,
       curve,
       tour: { all: tourSummary, level: tourByLevel },
       coverage: {
-        firstPriced: sides.length ? sides[0].date : null,
-        lastPriced: sides.length ? sides[sides.length - 1].date : null,
+        firstPriced: basis.length ? basis[0].date : null,
+        lastPriced: basis.length ? basis[basis.length - 1].date : null,
+        // Disclosure, not decoration: how many priced rows the R1 basis excluded.
+        // Without it "603 priced" and a ledger showing 727 priced rows read as a
+        // bug rather than as two different, correctly-labelled populations.
+        pricedAnyBook: sides.length,
+        excludedNonPinnacle: sides.length - basis.length,
         pinnacleEndByLevel: pinnacleEnd,
         bet365ArchiveEndByLevel: bet365End,
       },
@@ -394,7 +445,12 @@ function main() {
         // roster; the modal counts those rather than folding them into a bucket.
         oppArchetype: s.oppArchetype,
         opp: s.opp, won: s.won, price: r2(s.price), oppPrice: r2(s.oppPrice),
-        book: s.book, role: s.role, pl: Math.round((s.won ? s.price - 1 : -1) * 100) / 100,
+        book: s.book, role: s.role,
+        // Per-row P&L in units, struck in cents. `inBasis` is what the modal reads
+        // to grey a row out of the yield: the row is real and priced, it is simply
+        // not on the R1 basis.
+        pl: (s.won ? Math.round(s.price * 100) - 100 : -100) / 100,
+        inBasis: isYieldBasis(s),
       })),
     };
 
@@ -405,7 +461,7 @@ function main() {
 
   fs.writeFileSync(INDEX_PATH, JSON.stringify({
     schemaVersion: SCHEMA_VERSION,
-    priceBasis: 'closing price, Pinnacle where present, else Bet365 archive close, labelled per row',
+    priceBasis: 'Pinnacle closing only',
     tour: { all: tourSummary, level: tourByLevel },
     coverage: { pinnacleEndByLevel: pinnacleEnd, bet365ArchiveEndByLevel: bet365End },
     players: index,
@@ -413,7 +469,11 @@ function main() {
 
   log(`archive rows ${stats.rows}, ${stats.incomplete} retired/walkover excluded, ${stats.unpriced} unpriced dropped`);
   log(`player-sides ${stats.sides}, joined to a profile ${stats.joined}, exact price ties ${stats.ties}`);
-  log(`tour baseline: ${tourSummary.n} priced sides, yield ${tourSummary.yield}%, book mix ${tourSummary.book.pinnacle} Pinnacle / ${tourSummary.book.bet365} Bet365-archive`);
+  log(`tour baseline (R1, Pinnacle closing only): ${tourSummary.n} priced sides, yield ${tourSummary.yield}%, `
+    + `book mix ${tourSummary.book.pinnacle} Pinnacle / ${tourSummary.book.bet365} Bet365-archive`);
+  if (tourSummary.book.bet365 !== 0) {
+    throw new Error(`R1 violated: ${tourSummary.book.bet365} non-Pinnacle sides reached the tour baseline`);
+  }
   log(`shards written: ${shipped}`);
   return 0;
 }
