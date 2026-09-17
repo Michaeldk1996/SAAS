@@ -1,0 +1,137 @@
+name: BSP oddspapi raw archive
+
+# TEN-225 Part 1 item 1. Saves the FULL gzipped /v4/historical-odds payload for
+# every tennis fixture — all levels, all markets, every tick, pre-start and
+# in-play — into the private Supabase Storage bucket `oddspapi-raw`.
+#
+# Founder ruling (2026-09-17, TEN-225 gate): start the raw archive now, do not
+# wait on the Postgres scope decision. The reason is one-way: oddspapi prunes
+# the dense pre-match series on their side within weeks, so a fixture we do not
+# capture this week is captured worse next week and not at all next quarter.
+# A raw object archive makes the schema decision reversible.
+#
+# THIS IS A DIFFERENT JOB FROM bet365-archive.yml. That one writes the REDUCED
+# match-winner shards in bet365-history/ and commits them to the repo. This one
+# writes raw bytes to object storage and commits nothing but the discovery
+# cache. They share the API key and nothing else; separate concurrency groups.
+#
+# COST: /v4/historical-odds is free and unmetered but rate-limited to ~1 call/5s
+# with no market filter and no benefit from concurrency, so this is PACING-bound,
+# not quota-bound. The only metered call is /v4/fixtures discovery (~31 units for
+# a full 180-day sweep). The script refuses to spend metered units past 80% of
+# the request limit.
+
+on:
+  schedule:
+    - cron: '25 5 * * *'      # daily, after bet365-archive.yml at 04:40
+  workflow_dispatch:
+    inputs:
+      rediscover:
+        description: 'Run a fresh full /v4/fixtures sweep (~31 metered units)'
+        type: boolean
+        default: false
+      max_seconds:
+        description: 'Time budget for the pulling phase, seconds'
+        default: '18000'
+
+concurrency:
+  group: bsp-oddspapi-raw-archive
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    # Under GitHub's 6h ceiling with room for checkout and commit. The script's
+    # own --max-seconds stops the pulling well before this, so the job ends by
+    # finishing rather than by being killed mid-upload.
+    timeout-minutes: 350
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Guard — credentials present
+        env:
+          ODDSPAPI_KEY: ${{ secrets.ODDSPAPI_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: |
+          missing=
+          [ -z "$ODDSPAPI_KEY" ] && missing="$missing ODDSPAPI_KEY"
+          [ -z "$SUPABASE_URL" ] && missing="$missing SUPABASE_URL"
+          [ -z "$SUPABASE_SECRET_KEY" ] && missing="$missing SUPABASE_SECRET_KEY"
+          if [ -n "$missing" ]; then
+            echo "::error::missing secret(s):$missing"
+            exit 1
+          fi
+          echo "all three credentials present"
+
+      # Offline unit tests before anything touches the network or the bucket.
+      # They lock the properties that would otherwise corrupt the archive
+      # silently: the ordering rule, the settle window, and the refusal to
+      # re-pull a fixture we already hold.
+      - name: Unit tests (offline)
+        run: python3 test-archive-oddspapi-raw.py
+
+      # Discovery is the only metered call. Cached in the repo so a resumed run
+      # does not re-spend it; refreshed when the cache is older than a day or on
+      # an explicit rediscover.
+      - name: Discover fixtures (metered)
+        env:
+          ODDSPAPI_KEY: ${{ secrets.ODDSPAPI_KEY }}
+        run: |
+          if [ "${{ inputs.rediscover }}" = "true" ] || [ ! -f .oddspapi-raw-targets.json.gz ]; then
+            python3 archive-oddspapi-raw.py discover
+          else
+            AGE=$(( ( $(date +%s) - $(date -r .oddspapi-raw-targets.json.gz +%s) ) / 3600 ))
+            echo "discovery cache is ${AGE}h old"
+            if [ "$AGE" -ge 20 ]; then
+              python3 archive-oddspapi-raw.py discover
+            else
+              echo "reusing the cache (no metered units spent)"
+            fi
+          fi
+
+      - name: Archive raw payloads
+        env:
+          ODDSPAPI_KEY: ${{ secrets.ODDSPAPI_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: |
+          BUDGET="${{ github.event_name == 'schedule' && '17000' || inputs.max_seconds }}"
+          python3 archive-oddspapi-raw.py archive --max-seconds "$BUDGET"
+
+      # Runs even if the pull step failed: whatever landed in the bucket is real
+      # data, and the size report is how the 24h-gap alert and the per-year
+      # projection are read.
+      - name: Bucket report
+        if: always()
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: python3 archive-oddspapi-raw.py report | tee -a "$GITHUB_STEP_SUMMARY"
+
+      # The discovery cache is the only thing this job commits. [skip ci] — it is
+      # not on any startup path and nothing on the board reads it, so there is no
+      # reason to burn a Pages deploy on it.
+      - name: Commit the discovery cache (only if changed)
+        if: always()
+        run: |
+          if git diff --quiet -- .oddspapi-raw-targets.json.gz; then
+            echo "No discovery-cache change to commit."
+            exit 0
+          fi
+          git config user.name "bsp-bot"
+          git config user.email "bsp-bot@users.noreply.github.com"
+          git add .oddspapi-raw-targets.json.gz
+          git commit -m "chore(odds): oddspapi raw-archive discovery cache [skip ci]"
+          git pull --rebase --autostash origin main || true
+          git push origin HEAD:main
