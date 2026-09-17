@@ -1,0 +1,64 @@
+name: TEN-227 BetsAPI probe
+
+# Read-only reconnaissance of BetsAPI's historical tennis odds (TEN-227).
+#
+# The BETSAPI_TOKEN secret is Actions-only, so the probe cannot run from a
+# laptop — this workflow is the only place it can execute. It writes NOTHING
+# back to the repo and touches no product data; all output is a build artifact.
+#
+# Manual dispatch only. No schedule, no push trigger.
+
+on:
+  workflow_dispatch:
+    inputs:
+      cmd:
+        description: 'status | discover | probe'
+        required: true
+        default: 'status'
+      max_req:
+        description: 'hard client-side request budget for this run'
+        required: false
+        default: '200'
+      rate_per_hour:
+        description: 'pacing ceiling (trial limit is 1800; stay <= 1600)'
+        required: false
+        default: '1600'
+      per_level_per_year:
+        description: 'probe sample size per level per year'
+        required: false
+        default: '50'
+
+concurrency:
+  group: ten227-betsapi-probe
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run probe
+        env:
+          BETSAPI_TOKEN: ${{ secrets.BETSAPI_TOKEN }}
+          BETSAPI_MAX_REQ: ${{ inputs.max_req }}
+          BETSAPI_RATE_PER_HOUR: ${{ inputs.rate_per_hour }}
+          PROBE_N: ${{ inputs.per_level_per_year }}
+        run: node tools/betsapi-probe.mjs "${{ inputs.cmd }}"
+
+      - name: Upload output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: betsapi-${{ inputs.cmd }}
+          path: betsapi-out/
+          if-no-files-found: warn
+          retention-days: 14
