@@ -20,8 +20,13 @@
 
 import { writeFileSync, mkdirSync, existsSync, readFileSync } from 'node:fs';
 
-const TOKEN = process.env.BETSAPI_TOKEN || '';
-if (!TOKEN) { console.error('FATAL: BETSAPI_TOKEN is not set'); process.exit(1); }
+// The secret as stored carries a trailing newline, and BetsAPI answers a
+// whitespace-suffixed token with AUTHORIZE_FAILED — indistinguishable from a
+// dead token. Trim here rather than asking for the secret to be re-pasted.
+const TOKEN = (process.env.BETSAPI_TOKEN || '').trim();
+// `dryrun` exercises the extraction against BetsAPI's own published sample JSON
+// and needs no credential; every other subcommand does.
+if (!TOKEN && process.argv[2] !== 'dryrun') { console.error('FATAL: BETSAPI_TOKEN is not set'); process.exit(1); }
 
 const BASE = 'https://api.b365api.com';
 const OUT = 'betsapi-out';
@@ -32,7 +37,7 @@ const TENNIS = 13;
 
 if (!existsSync(OUT)) mkdirSync(OUT, { recursive: true });
 
-const redact = (s) => String(s).split(TOKEN).join('«TOKEN»');
+const redact = (s) => (TOKEN ? String(s).split(TOKEN).join('«TOKEN»') : String(s));
 const log = (...a) => console.log(redact(a.join(' ')));
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -259,12 +264,29 @@ function classify(name) {
 }
 
 const MARKETS = { mw: '13_1', hcap: '13_2', ou: '13_3' };
+// (f) the line-coverage design's target lines, matched as exact quoted strings.
+const TARGET_HCAP = ['-2.5', '-3.5', '-4.5', '-1.5'];
+const TARGET_OU = ['20.5', '22.5', '21.5', '23.5'];
 
+// Two independent pre-match discriminators, kept separate on purpose:
+//   by time  — add_time <= the event's scheduled start
+//   by score — the row carries no ss/time_str, i.e. the book had not gone in-play
+// The dry-run on BetsAPI's own sample showed they DISAGREE (a market can still
+// be quoted with a null score after the scheduled start). The closing price is
+// taken from the intersection, which is the conservative reading; the two
+// counts are reported side by side so the disagreement stays visible.
 function seriesStats(rows, startTs) {
-  // rows: [{add_time, handicap?, ss, time_str, ...}]
-  const pre = rows.filter((r) => Number(r.add_time) <= startTs);
-  const preMatchByScore = rows.filter((r) => !r.ss && !r.time_str);
-  return { n_rows: rows.length, n_pre_by_time: pre.length, n_pre_by_score: preMatchByScore.length, pre, preMatchByScore };
+  const byTime = rows.filter((r) => Number(r.add_time) <= startTs);
+  const byScore = rows.filter((r) => !r.ss && !r.time_str);
+  const pre = rows.filter((r) => !r.ss && !r.time_str && Number(r.add_time) <= startTs);
+  return {
+    n_rows: rows.length,
+    n_pre_by_time: byTime.length,
+    n_pre_by_score: byScore.length,
+    n_pre: pre.length,
+    pre,
+    preMatchByScore: byScore,
+  };
 }
 
 async function cmdProbe() {
@@ -313,17 +335,23 @@ async function cmdProbe() {
     const cell = {
       n_events: events.length,
       mw_present: 0, hcap_present: 0, ou_present: 0,
+      any_rows_mw: 0,
       hcap_lines: {}, ou_lines: {},
       hcap_distinct_per_match: [], ou_distinct_per_match: [],
-      series_rows_mw: [], lead_minutes_mw: [],
+      series_rows_mw: [], pre_rows_mw: [], lead_minutes_mw: [],
       extra_markets: {},
       bo: { bo3: 0, bo5: 0, unknown: 0 },
       target_lines: {},
+      discriminator_disagreements: 0,
       errors: 0,
     };
     for (const ev of events) {
       let r;
-      try { r = await api('/v2/event/odds', { event_id: ev.id, odds_market: '1,2,3' }); }
+      // Deliberately NOT restricted with odds_market: the docs list only three
+      // generic markets for tennis, and (d) asks whether a set handicap exists
+      // at all. Asking for everything is the only way to answer that rather
+      // than assume it — and it costs the same one request.
+      try { r = await api('/v2/event/odds', { event_id: ev.id }); }
       catch (e) { if (e instanceof BudgetExhausted) { log(`BUDGET EXHAUSTED at ${key}`); break; } throw e; }
       if (!r.ok) { cell.errors++; continue; }
       const odds = r.body?.results?.odds || {};
@@ -338,35 +366,47 @@ async function cmdProbe() {
       const ou = odds[MARKETS.ou] || [];
 
       const mwS = seriesStats(mw, start);
-      if (mwS.n_pre_by_score > 0) {
+      cell.any_rows_mw += mwS.n_rows > 0 ? 1 : 0;
+      if (mwS.n_pre > 0) {
         cell.mw_present++;
         cell.series_rows_mw.push(mwS.n_rows);
-        const last = mwS.preMatchByScore.reduce((a, b) => (Number(a.add_time) > Number(b.add_time) ? a : b));
+        cell.pre_rows_mw.push(mwS.n_pre);
+        const last = mwS.pre.reduce((a, b) => (Number(a.add_time) > Number(b.add_time) ? a : b));
         cell.lead_minutes_mw.push((start - Number(last.add_time)) / 60);
+        // How often the two pre-match discriminators disagree, so the closing
+        // definition can be stated with a measured error rate rather than a hope.
+        if (mwS.n_pre_by_score !== mwS.n_pre) cell.discriminator_disagreements++;
       }
       const hcS = seriesStats(hc, start);
-      if (hcS.n_pre_by_score > 0) {
+      if (hcS.n_pre > 0) {
         cell.hcap_present++;
         const lines = new Set();
-        for (const row of hcS.preMatchByScore) { if (row.handicap != null) lines.add(String(row.handicap)); }
+        for (const row of hcS.pre) { if (row.handicap != null) lines.add(String(row.handicap)); }
         cell.hcap_distinct_per_match.push(lines.size);
         for (const l of lines) cell.hcap_lines[l] = (cell.hcap_lines[l] || 0) + 1;
+        // (f) target lines — the exact line must have been quoted pre-match.
+        for (const t of TARGET_HCAP) if (lines.has(t) || lines.has(t.replace('-', '+'))) cell.target_lines[`hcap ${t}`] = (cell.target_lines[`hcap ${t}`] || 0) + 1;
       }
       const ouS = seriesStats(ou, start);
-      if (ouS.n_pre_by_score > 0) {
+      if (ouS.n_pre > 0) {
         cell.ou_present++;
         const lines = new Set();
-        for (const row of ouS.preMatchByScore) { if (row.handicap != null) lines.add(String(row.handicap)); }
+        for (const row of ouS.pre) { if (row.handicap != null) lines.add(String(row.handicap)); }
         cell.ou_distinct_per_match.push(lines.size);
         for (const l of lines) cell.ou_lines[l] = (cell.ou_lines[l] || 0) + 1;
+        for (const t of TARGET_OU) if (lines.has(t)) cell.target_lines[`total ${t}`] = (cell.target_lines[`total ${t}`] || 0) + 1;
       }
       writeFileSync(`${rawDir}/${key.replace('|', '_')}_${ev.id}.json`, JSON.stringify({ ev, odds }, null, 0));
     }
     cell.median_series_rows_mw = median(cell.series_rows_mw);
+    cell.median_pre_rows_mw = median(cell.pre_rows_mw);
     cell.median_lead_minutes_mw = median(cell.lead_minutes_mw);
     cell.lead_minutes_range = cell.lead_minutes_mw.length
       ? [Math.min(...cell.lead_minutes_mw), Math.max(...cell.lead_minutes_mw)] : null;
-    delete cell.series_rows_mw; delete cell.lead_minutes_mw;
+    cell.median_hcap_lines_per_match = median(cell.hcap_distinct_per_match);
+    cell.median_ou_lines_per_match = median(cell.ou_distinct_per_match);
+    delete cell.series_rows_mw; delete cell.pre_rows_mw; delete cell.lead_minutes_mw;
+    delete cell.hcap_distinct_per_match; delete cell.ou_distinct_per_match;
     out.cells[key] = cell;
     log(`${key}: n=${cell.n_events} mw=${pct(cell.mw_present, cell.n_events)} hcap=${pct(cell.hcap_present, cell.n_events)} ou=${pct(cell.ou_present, cell.n_events)} err=${cell.errors} [req ${reqCount}]`);
     save('probe.json', out);   // checkpoint after every cell
@@ -417,12 +457,78 @@ async function cmdProbe() {
   log(`\nTOTAL requests used: ${reqCount} / budget ${MAX_REQ}`);
 }
 
+/* ------------------------------------------------------------------ dryrun */
+
+// Proves the Phase 2 extraction end to end without spending a single credited
+// request: BetsAPI publishes real /v2/event/odds and /v2/event/odds/summary
+// payloads at /docs/samples/. They are soccer (market keys 1_*), so the keys are
+// remapped to the tennis equivalents (13_*) — the row SHAPE is identical across
+// sports, which is the thing under test.
+async function cmdDryrun() {
+  const fetchSample = async (n) => {
+    const local = `${OUT}/${n}`;
+    if (existsSync(local)) return JSON.parse(readFileSync(local, 'utf8'));
+    const r = await fetch(`https://betsapi.com/docs/samples/${n}`);
+    const j = await r.json();
+    writeFileSync(local, JSON.stringify(j));
+    return j;
+  };
+
+  const sampleOdds = await fetchSample('event_odds.json');
+  const sampleSummary = await fetchSample('event_odds_summary.json');
+
+  const remap = { '1_1': MARKETS.mw, '1_2': MARKETS.hcap, '1_3': MARKETS.ou };
+  const odds = {};
+  for (const [k, v] of Object.entries(sampleOdds.results.odds)) if (remap[k]) odds[remap[k]] = v;
+
+  // The sample has no event record, so derive a plausible start time from the
+  // data itself: the earliest row carrying an in-play marker is at-or-after
+  // kickoff, so the latest pre-match row is strictly before it.
+  const allRows = Object.values(odds).flat();
+  const inplay = allRows.filter((r) => r.ss || r.time_str).map((r) => Number(r.add_time));
+  const startTs = inplay.length ? Math.min(...inplay) : Math.max(...allRows.map((r) => Number(r.add_time)));
+
+  const report = { startTs_derived: startTs, markets: {} };
+  for (const [name, key] of Object.entries(MARKETS)) {
+    const rows = odds[key] || [];
+    const s = seriesStats(rows, startTs);
+    const lines = {};
+    for (const row of s.preMatchByScore) if (row.handicap != null) lines[String(row.handicap)] = (lines[String(row.handicap)] || 0) + 1;
+    const last = s.preMatchByScore.length
+      ? s.preMatchByScore.reduce((a, b) => (Number(a.add_time) > Number(b.add_time) ? a : b)) : null;
+    report.markets[`${name} (${key})`] = {
+      rows: s.n_rows,
+      pre_match_rows_by_null_score: s.n_pre_by_score,
+      pre_match_rows_by_start_time: s.n_pre_by_time,
+      distinct_pre_match_lines: Object.keys(lines).length ? lines : '—',
+      last_pre_match_row: last,
+      lead_minutes_before_start: last ? ((startTs - Number(last.add_time)) / 60).toFixed(1) : '—',
+    };
+  }
+
+  // The summary endpoint's start/end are undocumented: show empirically what
+  // each one actually carries, because `end` is NOT necessarily the close.
+  const firstBook = Object.keys(sampleSummary.results)[0];
+  const so = sampleSummary.results[firstBook].odds;
+  report.summary_semantics = {
+    bookmaker: firstBook,
+    bookmakers_listed: Object.keys(sampleSummary.results).length,
+    start: so.start,
+    end: so.end,
+    end_rows_carry_inplay_marker: Object.values(so.end || {}).map((r) => ({ key: r.id, ss: r.ss, time_str: r.time_str })),
+  };
+
+  console.log(JSON.stringify(report, null, 1));
+  save('dryrun.json', report);
+}
+
 /* --------------------------------------------------------------------- main */
 
 const cmd = process.argv[2] || 'status';
 log(`BetsAPI probe — cmd=${cmd} budget=${MAX_REQ} pace=${RATE_PER_HOUR}/h (${MIN_GAP_MS}ms gap)`);
 try {
   if (cmd === 'diag') await cmdDiag();
+  else if (cmd === 'dryrun') await cmdDryrun();
   else if (cmd === 'status') await cmdStatus();
   else if (cmd === 'discover') await cmdDiscover();
   else if (cmd === 'probe') await cmdProbe();
