@@ -89,6 +89,20 @@ jobs:
       - name: Unit tests (offline)
         run: python3 test-archive-bet365-history.py
 
+      # TEN-225 ruling 6b — see the note in odds-now.yml. Observe-only: this job
+      # is DO-NOT-TOUCH capture and its discovery sweep is already cached, so it
+      # normally spends 1 unit per run. It reports into the shared ledger so the
+      # 150/day cap is computed against every job on the key, but the gate never
+      # blocks it. A `--rediscover` dispatch costs ~30 units and IS worth gating
+      # once Michael rules on making these three blocking.
+      - name: Budget observe — pre (free, non-blocking)
+        continue-on-error: true
+        env:
+          ODDSPAPI_KEY: ${{ secrets.ODDSPAPI_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: python3 oddspapi_budget.py preflight --job bet365-archive --plan 1 --observe
+
       - name: Forward archive (nightly)
         if: github.event_name == 'schedule' || inputs.mode == 'nightly'
         env:
@@ -107,6 +121,15 @@ jobs:
           ARGS="backfill --max-seconds ${{ github.event_name == 'schedule' && '14400' || inputs.max_seconds }}"
           if [ "${{ inputs.rediscover }}" = "true" ]; then ARGS="$ARGS --rediscover"; fi
           python3 archive-bet365-history.py $ARGS
+
+      - name: Budget observe — post (free, non-blocking)
+        if: always()
+        continue-on-error: true
+        env:
+          ODDSPAPI_KEY: ${{ secrets.ODDSPAPI_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: python3 oddspapi_budget.py commit --job bet365-archive
 
       # Offline integrity gate, fail-closed. Re-reads every shard from disk and
       # re-checks the invariants against the bytes we are about to commit rather

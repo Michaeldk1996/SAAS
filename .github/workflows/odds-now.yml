@@ -68,6 +68,22 @@ jobs:
         with:
           python-version: '3.11'
 
+      # TEN-225 ruling 6b — the shared 150/day cap needs to see EVERY job on the
+      # key, or the number it caps is not the number we are billed. This job is
+      # on the spec's DO NOT TOUCH list and spends 2-4 units per run behind its
+      # own budget logic, so it reports into the ledger in OBSERVE mode: the
+      # reading is recorded, the gate never blocks, and the board's price refresh
+      # cannot be killed by another job eating the cap. Making it blocking is a
+      # one-word change (`--observe` off) and Michael's call.
+      # continue-on-error so a Supabase or meter blip can never stop the board.
+      - name: Budget observe — pre (free, non-blocking)
+        continue-on-error: true
+        env:
+          ODDSPAPI_KEY: ${{ secrets.ODDSPAPI_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: python3 oddspapi_budget.py preflight --job odds-now --plan 4 --observe
+
       - name: Run the capture loop
         env:
           ODDSPAPI_KEY: ${{ secrets.ODDSPAPI_KEY }}
@@ -82,6 +98,18 @@ jobs:
           fi
           chmod +x odds-capture-loop.sh ci-commit-push.sh
           ./odds-capture-loop.sh
+
+      # The closing meter read. The loop runs for most of the hour and spends
+      # across many iterations, so the pre/post pair is this job's ACTUAL spend
+      # — which, until now, nothing recorded per job at all.
+      - name: Budget observe — post (free, non-blocking)
+        if: always()
+        continue-on-error: true
+        env:
+          ODDSPAPI_KEY: ${{ secrets.ODDSPAPI_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: python3 oddspapi_budget.py commit --job odds-now
 
       # A safety net only. The loop commits after EVERY iteration (see
       # ci-commit-push.sh), so in the normal case — and on a trapped SIGTERM —

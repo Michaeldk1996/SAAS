@@ -81,10 +81,31 @@ jobs:
       - name: Unit tests (offline)
         run: python3 test-archive-oddspapi-raw.py
 
+      # TEN-225 ruling 6b/6c — the shared 150-unit daily cap. Discovery is this
+      # job's only billable work and costs ~31 units for a full 180-day sweep,
+      # so that is the plan it declares. If another job has already spent the
+      # cap the gate says no and discovery is skipped, but the archive step
+      # below still runs: /v4/historical-odds is free and ruling 6b is explicit
+      # that free calls continue at the cap.
+      #
+      # The gate asks for 31 units even on the runs where the cache is fresh and
+      # discovery spends 0, so on a tight day it can decline a sweep that would
+      # have cost nothing. That is deliberate: the ledger records the METER, not
+      # the plan, so nothing is charged for the reservation, and erring towards
+      # refusing is the right direction for a cap that exists to stop surprises.
+      - name: Budget gate (ruling 6b/6c)
+        id: budget
+        env:
+          ODDSPAPI_KEY: ${{ secrets.ODDSPAPI_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: python3 oddspapi_budget.py preflight --job oddspapi-raw-archive --plan 31
+
       # Discovery is the only metered call. Cached in the repo so a resumed run
       # does not re-spend it; refreshed when the cache is older than a day or on
       # an explicit rediscover.
       - name: Discover fixtures (metered)
+        if: steps.budget.outputs.allowed == 'true'
         env:
           ODDSPAPI_KEY: ${{ secrets.ODDSPAPI_KEY }}
         run: |
@@ -108,6 +129,18 @@ jobs:
         run: |
           BUDGET="${{ github.event_name == 'schedule' && '17000' || inputs.max_seconds }}"
           python3 archive-oddspapi-raw.py archive --max-seconds "$BUDGET"
+
+      # Closes this run's ledger entry with a post-run meter read, so the spend
+      # on the record is what oddspapi actually charged and not what the job
+      # planned. Runs even when the gate said no — a skipped run that spent 0 is
+      # itself the evidence the cap worked.
+      - name: Budget commit
+        if: always()
+        env:
+          ODDSPAPI_KEY: ${{ secrets.ODDSPAPI_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: python3 oddspapi_budget.py commit --job oddspapi-raw-archive
 
       # Runs even if the pull step failed: whatever landed in the bucket is real
       # data, and the size report is how the 24h-gap alert and the per-year
