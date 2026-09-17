@@ -53,6 +53,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Michael's TEN-225 ruling 1 (2026-09-17): "event_time is never used as a
+      # start time, anywhere, at any level, even labelled." Rulings become tests
+      # the same day. Runs FIRST and needs no network or secret, so a violation
+      # is reported even if Supabase is unreachable.
+      #
+      # It lives here because the repo has no push-triggered CI; this workflow's
+      # hourly schedule is the most frequent gate available today. It should move
+      # to whatever gate Part 2 lands behind.
+      - name: Ruling lock — event_time is never a start time
+        run: |
+          set -euo pipefail
+          {
+            echo '## Ruling lock — event_time is never a start time'
+            echo '```'
+            python3 test-no-event-time-as-start.py
+            echo '```'
+          } | tee -a "$GITHUB_STEP_SUMMARY"
+
       - name: Preconditions + derive project ref
         run: |
           set -euo pipefail
