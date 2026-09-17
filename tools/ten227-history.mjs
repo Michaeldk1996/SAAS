@@ -853,6 +853,28 @@ async function cmdReport() {
   log(`\n  table ${(sz.total / 1e6).toFixed(1)} MB of a ${(sz.database / 1e9).toFixed(3)} GB database = ` +
       `${fmt(out.size.fraction * 100, 2)}% (ceiling ${DB_FRACTION_CEILING * 100}%)`);
 
+  // pg_total_relation_size rounds to 8 KB pages, so on a small pilot it reports
+  // page granularity rather than payload — 35 rows came back as exactly 35
+  // pages. pg_column_size reads the COMPRESSED stored width of each row, which
+  // is the number the 25% ceiling should actually be projected from.
+  const cols = await sbSelect(`select count(*)::int as n,
+      avg(pg_column_size(t.*))::numeric(12,1) as mean_row_bytes,
+      max(pg_column_size(t.*))::bigint as max_row_bytes,
+      avg(pg_column_size(series))::numeric(12,1) as mean_series_bytes,
+      avg(n_series_rows)::numeric(10,1) as mean_series_rows
+    from betsapi_raw_mw_matches t`);
+  out.stored_bytes = cols?.[0] ?? null;
+  const s = out.stored_bytes;
+  if (s?.n) {
+    log(`  stored width (pg_column_size, n=${s.n}): mean ${s.mean_row_bytes} B/match ` +
+        `(series alone ${s.mean_series_bytes} B over ${s.mean_series_rows} quotes), max ${s.max_row_bytes} B`);
+    if (sz.database) {
+      const ceilingMatches = Math.floor((sz.database * DB_FRACTION_CEILING) / Number(s.mean_row_bytes));
+      log(`  the ${DB_FRACTION_CEILING * 100}% ceiling holds ~${ceilingMatches.toLocaleString()} matches at that width`);
+      out.stored_bytes.ceiling_matches = ceilingMatches;
+    }
+  }
+
   const days = await sbSelect(`select year, count(*)::int as days_done, sum(eligible)::int as eligible, sum(fetched)::int as fetched
     from betsapi_raw_mw_days where done = true group by year order by year desc`);
   out.days = days;
