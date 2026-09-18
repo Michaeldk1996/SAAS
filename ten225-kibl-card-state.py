@@ -372,6 +372,7 @@ def build_rows(kibl_fixtures, observations, odds_index, as_of):
     """
     rows, st = [], collections.Counter()
     unknown_sides = collections.defaultdict(list)
+    side_shapes = collections.Counter()
     for fx in kibl_fixtures:
         fid = fx['fixture_id']
         obs = [o for o in observations.get(fid, []) if is_match_winner(o)]
@@ -389,6 +390,14 @@ def build_rows(kibl_fixtures, observations, odds_index, as_of):
 
         sched = epoch(fx.get('scheduled_start'))
         now_ok, now_basis = qualifies_as_now(start_ts, sched, as_of)
+
+        # WHICH side_ids this fixture actually carries, as a set. The counts
+        # alone cannot answer the question that matters: run 35294707656 showed
+        # 25 fixtures priced, 25 card rows and 90 side_id-3 rows, and "90 odd
+        # rows" reads as a fringe oddity — while "every fixture carries exactly
+        # one recognised side plus side_id 3" says the two-way market is not
+        # two-way as we read it, which is a different finding entirely.
+        side_shapes[frozenset(o.get('side_id') for o in obs)] += 1
 
         by_side = collections.defaultdict(list)
         for o in obs:
@@ -474,7 +483,9 @@ def build_rows(kibl_fixtures, observations, odds_index, as_of):
                 '_start_why': why,
             })
             st['rows'] += 1
-    return rows, st, {str(k): v for k, v in unknown_sides.items()}
+    shapes = {'+'.join(str(x) for x in sorted(k, key=lambda v: (v is None, v))): n
+              for k, n in side_shapes.items()}
+    return rows, st, {str(k): v for k, v in unknown_sides.items()}, shapes
 
 
 def _limit(obs_list):
@@ -775,7 +786,14 @@ def main():
     odds_index, ist = index_oddspapi(ofx, osum)
     print(f'oddspapi pairing index: {len(odds_index)} match keys  {dict(ist)}')
 
-    rows, st, unknown_sides = build_rows(fx, observations, odds_index, as_of)
+    rows, st, unknown_sides, side_shapes = build_rows(
+        fx, observations, odds_index, as_of)
+    print(f'side_id shapes per priced fixture: {side_shapes}')
+    two_way = sum(n for k, n in side_shapes.items() if '1' in k.split('+')
+                  and '2' in k.split('+'))
+    print(f'fixtures carrying BOTH sides 1 and 2: {two_way} of '
+          f'{sum(side_shapes.values())} — a fixture with one recognised side '
+          f'has no favourite, so it cannot enter the orientation check')
     print(f'kibl card rows: {len(rows)}  {dict(st)}')
     for sid, hits in sorted(unknown_sides.items()):
         fixtures = sorted({h['fixture_id'] for h in hits})

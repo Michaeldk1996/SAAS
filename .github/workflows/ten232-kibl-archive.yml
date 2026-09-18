@@ -99,6 +99,7 @@ jobs:
           python3 -B test-kibl-client.py
           python3 -B test-ten225-kibl-card-state.py
           python3 -B test-ten225-orientation.py
+          python3 -B test-ten225-ddl-audit.py
 
       # DDL runs BEFORE the pull and is idempotent. Applying it every run is
       # what makes a dropped or drifted table a loud failure here rather than a

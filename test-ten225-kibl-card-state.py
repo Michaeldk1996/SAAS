@@ -424,7 +424,7 @@ index = {'2026-09-18|alcaraz|zverev': {
     'fixture_id': 'op1', 'start_ts': K.epoch(T % (12, 0)),
     'start_ts_source': 'oddspapi', 'start_reject_reason': None,
     'flip_gap_seconds': None, 'sides': {}}}
-built, bst, _us = K.build_rows(fixtures, observations, index, K.epoch(T % (13, 0)))
+built, bst, _us, _sh = K.build_rows(fixtures, observations, index, K.epoch(T % (13, 0)))
 check('two rows, one per side', len(built) == 2, len(built))
 r1 = [r for r in built if r['side'] == '1'][0]
 check('Open is the opener price', r1['open_price'] == 1.50, r1['open_price'])
@@ -446,7 +446,7 @@ check('start provenance is carried', r1['start_ts_source'] == 'oddspapi')
 up = [{'fixture_id': 9, 'scheduled_start': '2026-09-19T12:00:00Z',
        'player1_name': 'Carlos Alcaraz', 'player2_name': 'Alexander Zverev',
        'match_key': '2026-09-19|alcaraz|zverev', 'league_id': 19}]
-ub, _, _us2 = K.build_rows(up, {9: [obs(1.50, T % (6, 0), opener=True, side_id=1),
+ub, _, _us2, _sh2 = K.build_rows(up, {9: [obs(1.50, T % (6, 0), opener=True, side_id=1),
                               obs(1.44, T % (9, 0), side_id=1)]},
                      {}, K.epoch(T % (7, 0)))
 check('an upcoming fixture gets a Now', ub[0]['now_price'] == 1.44, ub[0]['now_price'])

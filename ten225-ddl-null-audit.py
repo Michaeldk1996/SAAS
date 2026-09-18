@@ -135,7 +135,11 @@ def columns_of(sql):
 
 def count(url, key, table, where=''):
     """Exact row count via the Content-Range header. -> (n, error)."""
-    path = f'/rest/v1/{table}?select=1&limit=0{where}'
+    # `select=*`, never `select=1`: PostgREST reads the select list as COLUMN
+    # NAMES, so `select=1` asks for a column called "1" and 400s with
+    # `column <table>.1 does not exist`. Measured on run 35294709422, where it
+    # made all 7 tables unreadable.
+    path = f'/rest/v1/{table}?select=*&limit=0{where}'
     req = urllib.request.Request(
         url + path, method='GET',
         headers={'Authorization': f'Bearer {key}', 'apikey': key,
@@ -229,14 +233,35 @@ def main():
               + (f' -> {[c["column"] for c in nw]}' if nw else ''))
 
     print()
+    # ⚠️ COVERAGE BEFORE VERDICT. Run 35294709422 printed "NEVER WRITTEN: none.
+    # Every nullable column ... has at least one non-NULL value" while every one
+    # of the 7 tables had 400'd and NOTHING had been read. That is this script's
+    # own failure mode committed by the script itself: a clean zero reported as
+    # a clean bill of health. The verdict is now gated on having assessed
+    # something, and an unassessed run FAILS rather than reassures.
+    assessed = sum(len([c for c in rec['columns'].values()
+                        if 'nonNull' in c])
+                   for rec in result['tables'].values())
+    result['columnsAssessed'] = assessed
+    result['tablesAssessed'] = len([t for t in result['tables']
+                                    if result['tables'][t]['rows']])
+    if not assessed:
+        print(f'::error::NOTHING WAS ASSESSED — 0 columns read across '
+              f'{len(tables)} tables. This run answers the question for no '
+              f'column at all; it is NOT evidence that the DDL is clean.')
+        json.dump(result, open(OUT, 'w'), indent=1)
+        return 1
+    print(f'assessed {assessed} nullable columns across '
+          f'{result["tablesAssessed"]} non-empty tables')
     if result['neverWritten']:
         for c in result['neverWritten']:
             print(f'::warning::{c["table"]}.{c["column"]} is 100% NULL over '
                   f'{c["rows"]} rows — declared in the DDL, never written. This '
                   f'is the player1/player2 failure shape.')
     else:
-        print('NEVER WRITTEN: none. Every nullable column in the audited DDL '
-              'has at least one non-NULL value.')
+        print(f'NEVER WRITTEN: none across the {assessed} columns actually '
+              f'assessed. Columns skipped as NOT NULL, and any listed as '
+              f'unreadable below, are NOT covered by that statement.')
     print(f'sparse (<{SPARSE_PCT}% non-NULL, reported not judged): '
           f'{[(c["table"], c["column"], c["pct"]) for c in result["sparse"]]}')
     if result['emptyTables']:
