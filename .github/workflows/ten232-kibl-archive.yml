@@ -200,6 +200,13 @@ jobs:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          # The FREE referee arm for the side-mapping gate. The board prices
+          # Davis Cup and ATP, Kibl prices Challenger, and the two barely
+          # intersect — measured on run 35297481674: 23 of 25 Kibl fixtures
+          # unpaired, every one of them `not_on_board` and none a matcher fault.
+          # api-tennis get_odds covers both tiers, bulk-by-date, and spends ZERO
+          # oddspapi units (founder item 1: prefer free endpoints).
+          API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
         run: |
           set -euo pipefail
           resp=$(jq -Rs '{query: .}' ten225-card-state-schema.sql | curl -sS -w $'\n%{http_code}' -X POST \

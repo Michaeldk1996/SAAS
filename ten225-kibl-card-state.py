@@ -55,6 +55,7 @@ OUT = os.path.join(HERE, 'ten225-kibl-card-state.json')
 
 from ten225_names import match_key as mk_of, name_key  # noqa: E402
 import ten225_orientation as ORI  # noqa: E402
+import ten225_apitennis_odds as AT  # noqa: E402
 
 # The board file, read for its INDEPENDENT prices only. It is the api-tennis /
 # oddspapi view of the same matches, oriented to its own p1/p2, and nothing on
@@ -715,7 +716,8 @@ def participant_ids_by_fixture(observations):
     return out
 
 
-def run_orientation(rows, kibl_fixtures, odds_index, matches, ids=None):
+def run_orientation(rows, kibl_fixtures, odds_index, matches, ids=None,
+                    api_tennis_key=None):
     """The side-mapping control and the guard it feeds, in one pass.
 
     Founder ruling 2026-09-18 item 1. The comparison itself lives in
@@ -751,6 +753,57 @@ def run_orientation(rows, kibl_fixtures, odds_index, matches, ids=None):
     for k, rec in odds_reads.items():
         independent[k]['oddspapi:line_summary'] = rec
 
+    # ---------------------------------------------------- the free referee arm
+    # The board alone cannot referee this: it prices Davis Cup and ATP, Kibl
+    # prices Challenger, and the two sets barely intersect (23 of 25 unpaired,
+    # all of them `not_on_board`). api-tennis get_odds covers both, by date, on
+    # the api-tennis key — zero oddspapi units.
+    at_rows, at_index, at_valid, at_err = [], {}, None, None
+    if api_tennis_key:
+        days = sorted({kr['day'] for kr in kibl_index.values() if kr.get('day')})
+        for day in days:
+            got, err = AT.fixtures_and_odds(api_tennis_key, day)
+            if err:
+                at_err = err
+                print(f'::warning::api-tennis {day}: {err}')
+                continue
+            at_rows.extend(got)
+        at_index, at_st = ORI.apitennis_favourites(at_rows)
+        print(f'api-tennis arm: {len(at_rows)} priced fixtures over '
+              f'{len(days)} day(s) -> {len(at_index)} keyed  {dict(at_st)}')
+
+        # The arm is checked against a source it cannot see BEFORE it referees
+        # anything. bet365 via the board is that source.
+        ref = {k: r['readings']['oddspapi:bet365Now']
+               for k, r in board_index.items()
+               if 'oddspapi:bet365Now' in r['readings']}
+        ref.update({k: r['readings']['oddspapi:openingOdds']
+                    for k, r in board_index.items()
+                    if k not in ref and 'oddspapi:openingOdds' in r['readings']})
+        at_valid = ORI.validate_home_away(at_index, ref)
+        print(f"api-tennis Home==event_first_player vs bet365: "
+              f"n={at_valid['n']}, agree={at_valid['agree']}, "
+              f"disagree={at_valid['disagree']}, "
+              f"trustworthy={at_valid['trustworthy']}")
+        if not at_valid['trustworthy']:
+            # REFUSE rather than dilute. An arm that disagrees with bet365 about
+            # which player is favourite is not a weaker referee, it is a
+            # differently-oriented one, and folding it in would let it agree
+            # with a reversed Kibl and certify the exact defect the gate exists
+            # to catch. n=0 refuses too: unvalidated is not the same as fine.
+            for d in at_valid['disagreements']:
+                print(f"::error::api-tennis disagrees with bet365 on "
+                      f"{d['match_key']}: {d['apitennis']} vs {d['reference']}")
+            print('::warning::api-tennis arm REFUSED — not folded into the '
+                  'gate. The gate will report on the board arm alone.')
+            at_index = {}
+        else:
+            for k, rec in at_index.items():
+                independent[k]['api-tennis:get_odds'] = rec
+    else:
+        print('::warning::no API_TENNIS_KEY — the free referee arm is absent '
+              'and the gate sees only the board')
+
     vmap = ORI.verdicts(kibl_index, independent)
     report = ORI.agreement(vmap)
     report['kiblStats'] = dict(kst)
@@ -763,6 +816,9 @@ def run_orientation(rows, kibl_fixtures, odds_index, matches, ids=None):
     # The gate names its own blocker. `no_independent_price: N` cannot say
     # whether N is a matcher bug, an odds-coverage gap, or nothing at all.
     report['unpaired'] = why_unpaired(kibl_index, independent, matches)
+    report['apiTennisArm'] = {'pricedFixtures': len(at_rows),
+                              'keyed': len(at_index),
+                              'validation': at_valid, 'error': at_err}
 
     dashed = {k for k, v in vmap.items() if v['verdict'] == 'disagree'}
     return report, dashed
@@ -1031,7 +1087,9 @@ def main():
         print(f'::warning::could not read {MATCHES} ({merr}) — the orientation '
               f'cross-check loses its upcoming-fixture arm')
     orient, dashed = run_orientation(rows, fx, odds_index, matches,
-                                     participant_ids_by_fixture(observations))
+                                     participant_ids_by_fixture(observations),
+                                     os.environ.get('API_TENNIS_KEY', '').strip()
+                                     or None)
     orient['matchesReadError'] = merr
     print(f'orientation cross-check: n={orient["n"]}, '
           f'agree={orient["agree"]}, disagree={orient["disagree"]}, '

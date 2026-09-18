@@ -435,6 +435,50 @@ check('a gate driven WITHOUT ids still reports the fixture rather than '
       bool(O.kibl_favourites(*synth(1, 0)[:2])[0]))
 
 print()
+print('THE FREE REFEREE ARM — and that IT is checked before it referees')
+# api-tennis is the only source that prices both universes (Kibl's Challengers
+# and our board's Davis Cup). But `Home == event_first_player` is the SAME shape
+# of assumption as Kibl's side_id, and that one was wrong. An unvalidated
+# referee validating an unvalidated mapping proves nothing.
+import ten225_apitennis_odds as AT  # noqa: E402
+
+_AT_ROWS = [{'p1': 'Alexandr Binda', 'p2': 'Bernard Tomic', 'day': '2026-09-18',
+             'tier': 'Challenger Men Singles', 'books': {'home': ['Sbo']},
+             'prices': {'Alexandr Binda': 1.11, 'Bernard Tomic': 4.70}}]
+_ati, _atst = O.apitennis_favourites(_AT_ROWS)
+check('an api-tennis row becomes a reading in the SAME shape as every other, '
+      'so verdicts() cannot tell it apart',
+      list(_ati.values())[0]['fav'] == 'binda'
+      and _ati['2026-09-18|binda|tomic']['source'] == 'api-tennis', _ati)
+check('two api-tennis fixtures on one match_key drop BOTH',
+      O.apitennis_favourites(_AT_ROWS * 2)[0] == {})
+check('_best takes the shortest price on a side and ignores a 1.0 placeholder',
+      AT._best({'a': '2.50', 'b': '1.90', 'c': '1.00'}) == 1.90)
+check('a side nobody prices is None, not zero', AT._best({}) is None)
+
+_ref_agree = {'2026-09-18|binda|tomic': {'fav': 'binda', 'gap_pp': 60.0,
+                                         'prices': {'A. Binda': 1.15}}}
+_ref_flip = {'2026-09-18|binda|tomic': {'fav': 'tomic', 'gap_pp': 60.0,
+                                        'prices': {'B. Tomic': 1.15}}}
+check('agreeing with bet365 makes the arm trustworthy',
+      O.validate_home_away(_ati, _ref_agree)['trustworthy'])
+_v = O.validate_home_away(_ati, _ref_flip)
+check('ONE disagreement with bet365 makes it untrustworthy — a reversed referee '
+      'would agree with a reversed Kibl and certify the defect',
+      not _v['trustworthy'] and _v['disagree'] == 1 and _v['rate'] == 0.0, _v)
+check('...and the disagreement carries both payloads',
+      _v['disagreements'][0]['apitennisFav'] == 'binda'
+      and _v['disagreements'][0]['referenceFav'] == 'tomic')
+_v0 = O.validate_home_away(_ati, {})
+check('an arm checked against NOTHING is not trustworthy — unvalidated is not '
+      'the same as fine, and rate is None rather than 1.0',
+      _v0['trustworthy'] is False and _v0['rate'] is None and _v0['n'] == 0, _v0)
+check('a near-even reference cannot validate the arm either — it is skipped, '
+      'so it can neither confirm nor condemn',
+      O.validate_home_away(_ati, {'2026-09-18|binda|tomic': {
+          'fav': 'tomic', 'gap_pp': 1.0, 'prices': {}}})['n'] == 0)
+
+print()
 if FAILED:
     print(f'{len(FAILED)} FAILED: {FAILED}')
     sys.exit(1)

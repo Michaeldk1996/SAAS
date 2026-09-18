@@ -331,6 +331,86 @@ def oddspapi_favourites(odds_index):
     return out
 
 
+def apitennis_favourites(rows, ambiguous_ok=False):
+    """api-tennis get_odds rows -> {match_key: reading}, the FREE referee arm.
+
+    Same shape as every other reading so `verdicts()` cannot tell it apart, and
+    the same drop-on-ambiguity rule: two api-tennis fixtures keying to one match
+    means we cannot say which priced which.
+
+    See ten225_apitennis_odds for why this arm exists and for the measurement
+    that pointed it the right way round before it was allowed to referee
+    anything.
+    """
+    out, ambiguous, st = {}, set(), collections.Counter()
+    for r in rows or []:
+        p1, p2 = r.get('p1'), r.get('p2')
+        k = mk_of(r.get('day'), p1, p2)
+        if not k:
+            st['apitennis_unkeyable'] += 1
+            continue
+        prices = r.get('prices') or {}
+        fav, gap = favourite({name_key(p1): prices.get(p1),
+                              name_key(p2): prices.get(p2)})
+        if fav is None:
+            st[f'apitennis_{gap}'] += 1
+            continue
+        if k in out:
+            ambiguous.add(k)
+        out[k] = {'source': 'api-tennis', 'field': 'get_odds',
+                  'book': '+'.join(sorted(set(
+                      (r.get('books') or {}).get('home', []))))[:60] or None,
+                  'fav': fav, 'gap_pp': gap,
+                  'tier': r.get('tier'),
+                  'prices': {p1: prices.get(p1), p2: prices.get(p2)}}
+    if not ambiguous_ok:
+        for k in ambiguous:
+            out.pop(k, None)
+            st['apitennis_ambiguous_dropped'] += 1
+    st['apitennis_usable'] = len(out)
+    return out, st
+
+
+def validate_home_away(apitennis_index, reference_index, min_gap_pp=MIN_GAP_PP):
+    """Is the api-tennis arm itself pointed the right way round?
+
+    ⚠️ WHY THIS RUNS EVERY JOB AND NOT ONCE
+    Using an unvalidated orientation to referee another unvalidated orientation
+    proves nothing — it moves the guess one file to the left. `Home ==
+    event_first_player` is the SAME shape of assumption as Kibl's side_id, and
+    that one turned out to be wrong in a way that never crashed and never
+    dashed.
+
+    `reference_index` is {match_key: reading} from a source that cannot see
+    api-tennis — in practice the board's oddspapi bet365 readings. Only matches
+    where BOTH are separated enough to read are counted.
+
+    Returns a report. It does NOT decide: the caller refuses the arm on a
+    disagreement, because "stop using the referee" is a bigger action than a
+    comparison function should take on its own.
+    """
+    agree, disagree = [], []
+    for k, r in (apitennis_index or {}).items():
+        ref = (reference_index or {}).get(k)
+        if not ref or r['gap_pp'] < min_gap_pp or ref['gap_pp'] < min_gap_pp:
+            continue
+        (agree if r['fav'] == ref['fav'] else disagree).append({
+            'match_key': k, 'apitennis': r['prices'], 'reference': ref['prices'],
+            'apitennisFav': r['fav'], 'referenceFav': ref['fav']})
+    n = len(agree) + len(disagree)
+    return {
+        'n': n,
+        'agree': len(agree),
+        'disagree': len(disagree),
+        # None at n=0, never 1.0. An arm that has been checked against nothing
+        # has not been validated, and this is the specific shape that let an
+        # n=0 control read as green earlier on this very issue.
+        'rate': (len(agree) / n) if n else None,
+        'trustworthy': bool(n) and not disagree,
+        'disagreements': disagree,
+    }
+
+
 # --------------------------------------------------------------- the comparison
 
 def verdicts(kibl_index, independent, min_gap_pp=MIN_GAP_PP):
