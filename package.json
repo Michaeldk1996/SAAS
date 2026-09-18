@@ -4,7 +4,7 @@
   "description": "",
   "main": "api-tennis-integration.js",
   "scripts": {
-    "test": "node tools/test-progression-seed.js && node tools/test-points-at-risk-dash.js && node tools/test-live-tab-feed.js && node tools/test-series-dates.js && node tools/test-series-reference.js && node tools/test-series-rows.js && node tools/test-series-outcome-summary.js && node tools/test-profile-cache-store.js && node tools/test-tournament-history-shards.js && node tools/test-career-history-cache.js && node tools/test-tournament-identity.js && node tools/test-reconcile-nameset.js && node --test test-ten225-drift-order.mjs"
+    "test": "node tools/test-progression-seed.js && node tools/test-points-at-risk-dash.js && node tools/test-live-tab-feed.js && node tools/test-series-dates.js && node tools/test-series-reference.js && node tools/test-series-rows.js && node tools/test-series-outcome-summary.js && node tools/test-profile-cache-store.js && node tools/test-tournament-history-shards.js && node tools/test-career-history-cache.js && node tools/test-perset-scores.js && node tools/test-tournament-identity.js && node tools/test-reconcile-nameset.js && node --test test-ten225-drift-order.mjs"
   },
   "keywords": [],
   "author": "",

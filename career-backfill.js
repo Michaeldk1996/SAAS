@@ -105,6 +105,40 @@ function setCounts(score) {
   return (w === 0 && l === 0) ? null : [w, l];
 }
 
+// The per-set games that setCounts() throws away. Parsed into the same
+// {p, o, ...} shape the profile renderer already consumes for api-tennis rows
+// (formSetsFromFixture), oriented to the match WINNER — callers flip it for the
+// loser's row. The CSVs are already on disk (ensureTmlCsv), so this is a field,
+// not a fetch.
+//
+// Tiebreak points arrive parenthesised and name only the side that LOST the
+// breaker ("7-6(4)" = the loser of it took 4). That single number is carried as
+// `tbLo` and is NEVER expanded into both sides' points: the winner's total is
+// not on the record, and deriving it from the rules of tennis would put a number
+// on the page the source never said.
+function parseSetScores(score) {
+  if (!score) return null;
+  const sets = [];
+  for (const tok of String(score).trim().split(/\s+/)) {
+    const m = tok.match(/^(\d+)-(\d+)(?:\((\d+)\))?$/);
+    if (!m) continue;                  // RET / W/O / DEF / unparsable token
+    const p = +m[1], o = +m[2];
+    if (p === 0 && o === 0) continue;  // 0-0 pseudo-set, same rule as the API path
+    const set = { p, o };
+    if (m[3] !== undefined) set.tbLo = +m[3];
+    sets.push(set);
+  }
+  return sets.length ? sets : null;
+}
+
+// Winner-oriented set list -> the loser's point of view. `tbLo` is the
+// loser-of-the-breaker's score by convention, so it reads the same from either
+// side and crosses over unchanged.
+function flipSetScores(sets) {
+  if (!sets) return null;
+  return sets.map((s) => (s.tbLo !== undefined ? { p: s.o, o: s.p, tbLo: s.tbLo } : { p: s.o, o: s.p }));
+}
+
 // Render as the API's edition score format: "opponentSets - playerSets".
 function scoreDisplay(score, playerWon) {
   const sc = setCounts(score);
@@ -186,11 +220,16 @@ async function buildTmlIndex(log) {
       // TEN-89 Part 2: the raw TML score marks retirements ("... RET"); setCounts
       // drops the token, so capture it here for the over-3.5 exclusion downstream.
       const ret = /\bRET\b|Retired/i.test(String(r.score || ''));
+      // The same string also carries the per-set games. Parsed once here, in the
+      // winner's orientation, and flipped for the loser's row — without this the
+      // archive half of career-history can only ever show a set COUNT, which caps
+      // per-set coverage at the fixture window (~50% of a veteran's career).
+      const wSets = parseSetScores(r.score);
       // Winner's row entry.
-      pushMatch(byId, wId, { tourney, ...meta, year, round, oppName: toInitialLast(r.loser_name), score: scoreDisplay(r.score, true), won: true, ret });
+      pushMatch(byId, wId, { tourney, ...meta, year, round, oppName: toInitialLast(r.loser_name), score: scoreDisplay(r.score, true), won: true, ret, sets: wSets });
       trackIdentity(identity, wId, r.winner_name, r.winner_ioc, year);
       // Loser's row entry.
-      pushMatch(byId, lId, { tourney, ...meta, year, round, oppName: toInitialLast(r.winner_name), score: scoreDisplay(r.score, false), won: false, ret });
+      pushMatch(byId, lId, { tourney, ...meta, year, round, oppName: toInitialLast(r.winner_name), score: scoreDisplay(r.score, false), won: false, ret, sets: flipSetScores(wSets) });
       trackIdentity(identity, lId, r.loser_name, r.loser_ioc, year);
     }
   }
@@ -498,6 +537,11 @@ async function buildArchiveHistories(profiles, minYear, maxYear, opts = {}) {
         // scoreDisplay renders opponentSets - playerSets; the live drill-down uses
         // playerSets - oppSets, so flip to keep both consistent.
         opponent: m.oppName, result: flipSets(m.score), won: m.won,
+        // Per-set games, already subject-oriented by buildTmlIndex. Omitted
+        // rather than emitted empty when the scoreline held none (walkovers),
+        // so the renderer falls back to the set count instead of drawing a
+        // blank line that looks like a data loss.
+        ...(m.sets ? { sets: m.sets } : {}),
       });
     }
     if (list.length) {
@@ -787,5 +831,5 @@ module.exports = {
   backfillMatchesTournamentHistory,
   buildArchiveHistories,
   // exported for testing
-  _internal: { buildTmlIndex, reconcile, reconcileLegacy, surnameSig, fullNameSig, apiInitialSig, tmlInitialCanons, mergePlayer, finalizeTournament, buildEmbeddedHistory, nameKey, scoreDisplay, swapScore, setCounts, toInitialLast },
+  _internal: { buildTmlIndex, reconcile, reconcileLegacy, surnameSig, fullNameSig, apiInitialSig, tmlInitialCanons, mergePlayer, finalizeTournament, buildEmbeddedHistory, nameKey, scoreDisplay, swapScore, setCounts, parseSetScores, flipSetScores, toInitialLast },
 };

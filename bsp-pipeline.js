@@ -797,7 +797,14 @@ function playerMatchHistory(fixtures, playerKey, currentYear, surfaceMap) {
     // it. tournament_key is verified stable across seasons, so pairing it with
     // _season still separates editions correctly.
     const _tkey = f.tournament_key != null ? String(f.tournament_key) : `name:${_tid}`;
+    // Per-set games for this row. event_final_result carries only the SET COUNT
+    // ("2 - 1"); the set-by-set line has to come from the fixture's own `scores`
+    // array, which this same wide fetch already returned — so it costs no extra
+    // API call. formSetsFromFixture orients to the tracked player and returns
+    // null (never a partial line) on a walkover.
+    const _sets = formSetsFromFixture(f, isFirst);
     out.push({ year, surface, level, date: f.event_date, tournament: f.tournament_name, round, opponent, result, won, eventKey: f.event_key, src: 'fixtures',
+      ...(_sets ? { sets: _sets } : {}),
       _tid, _tkey, _cname, _season, _frac, _qual, _short: _qual ? 'Q' : _short, _rank: _qual ? -1 : (ROUND_RANK[_short] != null ? ROUND_RANK[_short] : -1),
       ...(retired ? { retired: true } : {}), ...(walkover ? { walkover: true } : {}) });
   }
