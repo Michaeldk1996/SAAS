@@ -409,6 +409,21 @@ jobs:
           # makes the entire ATP headshot layer disappear (every player falls back to
           # the api-tennis logo). Required — in the assert list below.
           cp player-atp-aliases.json _site/
+          # TEN-225 Part 3: Open / Now / Close, published from the odds_card_state
+          # table by ten225-publish-card-state.py (Actions-only — the table has RLS
+          # on and zero policies, so the browser reads this FILE, not the database).
+          # This allowlist is a literal `cp` list with no glob, and a committed-but-
+          # uncopied file 404s silently — which is exactly how a new .js went missing
+          # live once already. Tolerant cp and deliberately NOT in the assert list:
+          # a 404 here is a state the page handles (every odds accessor falls back to
+          # its matches.json binding and dashes what it does not have), so a hard
+          # assert would red the deploy over a degradation rather than a break. The
+          # warning is what stops its absence passing unnoticed.
+          if [ -s odds-card-state.json ]; then
+            cp odds-card-state.json _site/
+          else
+            echo "::warning::odds-card-state.json absent — Open/Now/Close fall back to matches.json"
+          fi
           # ASAP Sports "Player's own words" readiness signal (TEN-8), keyed by
           # profile key; asapsports.yml rebuilds it twice daily. Tolerant cp (may
           # not exist before that workflow's first run) — NOT in the assert list.
