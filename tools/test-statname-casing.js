@@ -95,7 +95,11 @@ try {
   const tracked = require('child_process')
     .execSync('git ls-files -- "*.js" "*.mjs" "*.py" "*.html"', { cwd: ROOT, encoding: 'utf8' })
     .split('\n').filter(Boolean);
-  const listed = new Set(FILES);
+  // This guard is itself a tracked file full of the string it hunts for, so it
+  // matches its own sweep the moment it is committed (it passed pre-commit and
+  // went red on the first run after — caught by re-running the suite rather than
+  // trusting the earlier green). Exempt it explicitly; nothing else is exempt.
+  const listed = new Set([...FILES, 'tools/test-statname-casing.js']);
   for (const f of tracked) {
     if (listed.has(f)) continue;
     const abs = path.join(ROOT, f);
