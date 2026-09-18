@@ -94,8 +94,12 @@ async function harvest(key, playerKey) {
   for (const f of R) {
     const stats = (f.statistics || []).filter(s => s.player_key === +playerKey && s.stat_period === 'match');
     if (!stats.length) continue;
-    const bs = stats.find(s => s.stat_name === 'Break Points Saved');
-    const bc = stats.find(s => s.stat_name === 'Break Points Converted');
+    // Case-insensitive on stat_name: the feed's casing drifts by season (2024/25
+    // Title Case, 2026 lowercase). These two names happen not to have flipped yet,
+    // but an exact compare is the same trap that blanked the Live tab's serve
+    // rating across 2024+2025 — read both sides lowercased, always.
+    const bs = stats.find(s => String(s.stat_name).toLowerCase() === 'break points saved');
+    const bc = stats.find(s => String(s.stat_name).toLowerCase() === 'break points converted');
     if (!bs && !bc) continue;
     const lvl = levelOf(f);
     levelCount[lvl] = (levelCount[lvl] || 0) + 1;

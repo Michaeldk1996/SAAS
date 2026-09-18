@@ -156,7 +156,6 @@ jobs:
             player-profiles-cache.json
             player-profiles.json
             player-tournament-history.json
-            historical-match-stats.json
             tournament-profiles.json
             point-by-point-cache.json
             tml-cache
@@ -166,6 +165,30 @@ jobs:
           key: bsp-caches-${{ steps.cacheday.outputs.day }}
           restore-keys: |
             bsp-caches-
+
+      # historical-match-stats.json is cached SEPARATELY, keyed by the content hash
+      # of the committed copy. It used to sit in the list above, and that quietly
+      # made a committed refresh of it a no-op: `restore-keys: bsp-caches-` matches
+      # essentially forever, so the restored cache overwrote the checkout before the
+      # pipeline ever read it, and `_site/` published the cached copy. The file is
+      # ALSO never committed back (unlike admin-log.json / series-outcomes.json /
+      # the two .gz caches below), so the tracked copy is a pure floor — and on
+      # 2026-09-18 that floor held 1,082 entries against the 2,002 actually deployed.
+      # With the Actions cache at the repo's 10 GiB ceiling, an eviction meant the
+      # Player Profile page's match-stat coverage silently halved.
+      #
+      # Hashing the committed file into the key fixes both halves: change the file
+      # in a commit and the key changes, so no cache matches and the fresh copy is
+      # what the run reads and publishes; leave it alone and runs keep sharing the
+      # accumulated cache exactly as before. Self-maintaining — the next person to
+      # commit a refresh does not have to remember any of this.
+      - name: Restore historical match stats cache
+        uses: actions/cache@v4
+        with:
+          path: historical-match-stats.json
+          key: bsp-hms-${{ hashFiles('historical-match-stats.json') }}-${{ steps.cacheday.outputs.day }}
+          restore-keys: |
+            bsp-hms-${{ hashFiles('historical-match-stats.json') }}-
 
       # TEN-206 Q2(d) ch-1, second half: "commit one gzipped file daily."
       # player-profiles-cache.json was ALREADY tracked — 57.4 MB of pretty JSON frozen
