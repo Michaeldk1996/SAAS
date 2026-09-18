@@ -132,10 +132,15 @@ const READ = (key) => `(async () => {
     boxGroups: I.BOX_SPLIT_GROUPS,
     leadId: ids[0] || null,
     positiveCards: ids.filter(id => byId[id] ? byId[id].gap > 0 : (bs && id === bs.pick.id)),
-    colBaseline: (() => {
-      const col = I.pickByLargestGap(I.splitCandidates(p.key, 'career', I.DRAW_GROUPS));
-      return col ? col.baseline : null;
-    })(),
+    // The number the Draw record modal's "vs avg" column is measured against.
+    // NOT pickByLargestGap's row-weighted pool any more — that was the
+    // double-counting error; it still backs the price bands, where the members
+    // genuinely partition, so it is deliberately not read here.
+    colBaseline: I.pooledBaseline(p.key, 'career'),
+    pop: (() => { const q = I.splitPopulation(p.key, 'career'); return q ? { rate: q.rate, won: q.won, n: q.n, via: q.via } : null; })(),
+    // Every card's baseline, to prove they all quote ONE number.
+    cardBaselines: ids.map(id => (byId[id] ? byId[id].baseline : null)).filter(v => v != null),
+    zeroGapCards: ids.filter(id => byId[id] && byId[id].gap === 0),
     tournBad: views.filter(t => t.pinN > t.n).map(t => t.display),
     tournSuppressed: views.filter(t => t.pricedImpossible)
       .map(t => ({ ev: t.display, played: t.n, claimed: t.pricedClaimed, pinN: t.pinN, pinPl: t.pinPl }))
@@ -178,7 +183,7 @@ for (const key of KEYS) {
     const gap = rate - d.base;
     const pp = (gap < 0 ? '−' : '+') + Math.abs(gap).toFixed(1) + 'pp';
     const want = `best split · ${rate.toFixed(1)}% · ${pp} vs his ${d.base.toFixed(1)}% `
-      + `across his draw splits · ${d.pick.won}–${d.pick.lost}`;
+      + `across these splits · ${d.pick.won}–${d.pick.lost}`;
     ok(tag + ' · tile support reconstructs from the split rows', d.support === want,
       `got "${d.support}" want "${want}"`);
     ok(tag + ' · tile prints a POSITIVE gap', d.pick.gap > 0, d.pick.gap + 'pp');
@@ -188,7 +193,7 @@ for (const key of KEYS) {
   } else {
     const want = d.base == null ? 'no split data on record'
       : !d.eligible ? 'no split clears the ten-match minimum'
-      : `no split above his ${d.base.toFixed(1)}% across his draw splits`;
+      : `no split above his ${d.base.toFixed(1)}% across these splits`;
     ok(tag + ' · empty copy states the RIGHT empty fact', d.support === want,
       `got "${d.support}" want "${want}" (base=${d.base}, eligible=${d.eligible})`);
     ok(tag + ' · headline dashes with no pick', d.headline === null, String(d.headline));
@@ -201,6 +206,16 @@ for (const key of KEYS) {
       d.base.toFixed(3) + '% vs ' + d.colBaseline.toFixed(3) + '%');
     ok(tag + ' · [control] a 0.5pp drift between them would fail',
       !(Math.abs(d.base - (d.colBaseline + 0.5)) < 1e-9));
+    // The baseline must BE a win rate — wins over matches on a complete
+    // partition — not a mean of overlapping rows. This is the correction.
+    ok(tag + ' · baseline is wins/matches on a complete partition',
+      !!d.pop && Math.abs(100 * d.pop.won / d.pop.n - d.base) < 1e-9,
+      d.pop ? `${d.pop.won}/${d.pop.n} via ${d.pop.via}` : 'no population');
+    ok(tag + ' · every insight card quotes that one baseline',
+      d.cardBaselines.every((b) => Math.abs(b - d.base) < 1e-9),
+      JSON.stringify(d.cardBaselines));
+    ok(tag + ' · no card sits at an exactly zero gap', d.zeroGapCards.length === 0,
+      d.zeroGapCards.join(', '));
   }
 
   // ── Q2 round 2 · box pick == insights positive card ──────────────────────

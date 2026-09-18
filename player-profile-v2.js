@@ -1468,6 +1468,19 @@
     var lead = bestSplit(p);
     var rest = rankedInsights(p, 'career', null, INSIGHT_GROUPS).filter(function (c) {
       if (lead && c.id === lead.pick.id) return false;
+      // An EXACTLY zero gap is not a finding, and it must not be dressed as one.
+      // The card's arrow keys off `gap >= 0`, so a zero painted GREEN — while the
+      // box, which requires `gap > 0`, dashed. Measured on the real roster: 27
+      // zero-gap candidates, and for 8 players that put a green card directly
+      // under a dashed tile. Exactly the contradiction Q2 forbids, reachable with
+      // today's data rather than a constructed one.
+      //
+      // It is common by construction, not a fluke: when a player has only Best of
+      // 3 matches, the format partition IS that row, so its gap is exactly 0.
+      //
+      // Dropping it also honours "fewer than three eligible -> fewer cards, never
+      // padded" — a split sitting exactly at his own rate is padding.
+      if (c.gap === 0) return false;
       if (c.gap > 0 && BOX_SPLIT_GROUPS.indexOf(String(c.id).split(':')[0]) < 0) return false;
       return true;
     });
@@ -1479,7 +1492,9 @@
         'text-align:center;font-size:13px;color:#5b6880;">No splits clear the ten-match minimum.</div></div>';
     }
     var cards = list.map(function (ins) {
-      var up = ins.gap >= 0;
+      // `> 0`, not `>= 0`. A zero gap is filtered out above; this is the second
+      // lock, so that if a zero ever reaches here it cannot paint as a strength.
+      var up = ins.gap > 0;
       var col = up ? '#3dd68c' : '#e0616f';
       var bg = up ? 'rgba(61,214,140,0.14)' : 'rgba(224,97,111,0.14)';
       // Up-and-right for a positive gap, down-and-right for a negative one, so the
@@ -1797,7 +1812,7 @@
             ? 'no split data on record'
             : !rankedInsights(p, 'career', null, BOX_SPLIT_GROUPS).length
               ? 'no split clears the ten-match minimum'
-              : 'no split above his ' + bsBase.toFixed(1) + '% ' + baselinePopLabel(BOX_SPLIT_GROUPS) };
+              : 'no split above his ' + bsBase.toFixed(1) + '% ' + baselinePopLabel() };
 
     // 6 · Matchup record (was "Versus playing styles", slot 5) — the headline
     // CHANGES SUBJECT. It used to print his OWN archetype, a label that says
@@ -2002,10 +2017,13 @@
   /**
    * The player's own career win rate, off the career spine (README §4's total).
    *
-   * NO LONGER the insight/split baseline — see RULING Q1 round 2 below. It stays
-   * because it is a real, separately-useful figure (the header and Career record
-   * both print it) and because the round-2 report has to quote the old number
-   * beside the new one.
+   * NO LONGER the insight/split baseline — see RULING Q1 round 2 below. The
+   * renderer has no call site left; it is kept and exported for the RECONCILIATION
+   * checks, which compare the split population against the spine to quantify how
+   * much narrower the split store is (the −11.7pp finding). The earlier docstring
+   * claimed the header and Career record print it — they do not; they compute
+   * their own totals off spineTotal(). Corrected rather than deleted, because a
+   * wrong reason for keeping code is how dead code survives the next audit.
    */
   function careerBaseline(p) {
     var t = spineTotal(p);
@@ -2032,22 +2050,74 @@
   // figures weight by match count"), then take the largest positive gap at
   // n >= 10. Every number in the claim is then reproducible from the rows the
   // modal behind the tile prints — which is the whole point of printing it.
-  function pooledBaseline(cands) {
-    var num = 0, den = 0;
-    (cands || []).forEach(function (c) { num += c.won; den += c.won + c.lost; });
-    return den ? (100 * num / den) : null;
+  // ── CORRECTION (clean-context review, 2026-09-18) · a row-weighted mean over
+  //    OVERLAPPING groups is not a win rate ──────────────────────────────────
+  //
+  // The first cut of this ruling summed W and L across every candidate row and
+  // divided. That is exactly what speedBestBand() does — but its BANDS PARTITION
+  // their matches, and the split groups do not:
+  //
+  //   Zverev, career      W / n      what it is
+  //     format          572 / 808    a COMPLETE partition of the split population
+  //     surface         572 / 808    a second complete partition — same number
+  //     level           545 / 765    incomplete: 43 matches at no listed level
+  //     round           156 / 253    Finals/SF/QF only; early rounds absent
+  //     opponent        631 / 954    OVER-counts: vs. Top 10 overlaps the
+  //                                  handedness rows, so those matches count twice
+  //
+  // Summed, that is 2,780 row-slots over ~808 real matches, and the quotient
+  // (68.49%) is a row-weighted mean, NOT his win rate over the population — the
+  // low-rate rows (vs. Top 10, deep rounds) are counted two and three times, so
+  // the mean sits BELOW the truth. Roster-wide the error is a median -1.37pp,
+  // worst -8.93pp, which inflated every printed gap by a median +1.47pp and
+  // advertised FOUR splits as a positive "best" when the player's record over the
+  // population is flat or negative (B. Gojo, vs. Righties: printed +3.2pp, really
+  // -0.4pp). That is the defect Q1 exists to remove, reintroduced by the baseline.
+  //
+  // So the baseline is a WIN RATE over a COMPLETE PARTITION. `format` is used —
+  // Best of 5 + Best of 3 is every match the store holds — cross-checked against
+  // `surface`, which is an independent partition of the same population: the two
+  // agree exactly for 213 of 227 players on career and 227 of 227 on last52, and
+  // in all 14 disagreements format is the larger, so format is also the safer.
+  //
+  // One consequence, and it is the point: the baseline no longer depends on WHICH
+  // GROUPS the caller ranks over. The box and Key insights now quote one number,
+  // the modal's "vs avg" column quotes the same number, and a split shows the
+  // same signed pp wherever it appears.
+  var POP_PARTITIONS = ['format', 'surface'];
+  function partitionTotal(sc, groupId) {
+    var g = SPLIT_GROUPS.filter(function (x) { return x.id === groupId; })[0];
+    var w = 0, n = 0;
+    if (!g || !sc) return { won: 0, n: 0 };
+    g.members.forEach(function (m) {
+      var r = sc[m];
+      if (!r || r.W == null || r.L == null) return;
+      w += r.W; n += r.W + r.L;
+    });
+    return { won: w, n: n };
   }
   /**
-   * The population a baseline was pooled over, named in words, so a reader can
-   * tell which row set to add up. Two populations exist on this page — the Draw
-   * record box's groups and Key insights' wider vocabulary — and an unlabelled
-   * percentage that differs between two cards on one screen reads as a bug.
+   * The player's win rate over the population his splits are drawn from, with the
+   * partition it was measured on. Returns null when the store holds nothing —
+   * "no population" and "a 0% population" are different facts.
    */
-  function baselinePopLabel(groups) {
-    var g = groups || INSIGHT_GROUPS;
-    var boxOnly = g.every(function (id) { return BOX_SPLIT_GROUPS.indexOf(id) >= 0; });
-    return boxOnly ? 'across his draw splits' : 'across all his splits';
+  function splitPopulation(key, scope) {
+    var sc = splitScope(key, scope || 'career');
+    if (!sc) return null;
+    for (var i = 0; i < POP_PARTITIONS.length; i++) {
+      var t = partitionTotal(sc, POP_PARTITIONS[i]);
+      if (t.n) return { rate: 100 * t.won / t.n, won: t.won, n: t.n, via: POP_PARTITIONS[i] };
+    }
+    return null;
   }
+  function pooledBaseline(key, scope) {
+    var pop = splitPopulation(key, scope);
+    return pop ? pop.rate : null;
+  }
+  // One population now, so one phrase. It stays a function because the string is
+  // asserted in three places and a literal repeated four times is a drift waiting
+  // to happen.
+  function baselinePopLabel() { return 'across these splits'; }
   /**
    * Every eligible candidate, ranked by |gap| descending. `limit` slices; it never
    * pads. Returns [] when the player has no baseline or nothing clears n >= 10.
@@ -2060,9 +2130,14 @@
    */
   function rankedInsights(p, scope, limit, groups) {
     var cands = insightCandidates(p.key, scope || 'career', groups);
-    var baseline = pooledBaseline(cands);
+    // Deliberately NOT derived from `cands`: the baseline is the population's win
+    // rate, and the population does not change because the caller narrowed which
+    // groups it will rank. This is what makes the box's pick and Key insights'
+    // cards quote one number — the review found the group-dependent version could
+    // put a green +1.3pp card under a dashed tile.
+    var baseline = pooledBaseline(p.key, scope || 'career');
     if (baseline == null) return [];
-    var pop = baselinePopLabel(groups);
+    var pop = baselinePopLabel();
     var out = cands.map(function (c) {
       var n = c.won + c.lost;
       if (n < INSIGHT_MIN_N) return null;
@@ -2103,9 +2178,11 @@
     return best;
   }
   /** The box's baseline, whether or not a pick clears the bar — the empty copy
-   *  has to name the number the splits failed to beat, or the dash is unreadable. */
+   *  has to name the number the splits failed to beat, or the dash is unreadable.
+   *  Now the population rate, so it is the SAME number the modal column and every
+   *  insight card quote. */
   function boxSplitBaseline(p, scope) {
-    return pooledBaseline(insightCandidates(p.key, scope || 'career', BOX_SPLIT_GROUPS));
+    return pooledBaseline(p.key, scope || 'career');
   }
   function bestSplit(p) {
     var top = bestPositiveSplit(p, 'career', BOX_SPLIT_GROUPS);
@@ -3601,9 +3678,19 @@
             rateText0(t.won, t.lost) +
             (gateFor(t.n) === GATE.SMALL
               ? ' <span style="font-size:9px;color:' + DASH_COLOUR + ';">small</span>' : '') + '</span>' +
+          // Q3 · a SUPPRESSED row and a never-priced row both dash this column,
+          // and they are different facts: one is "the archive never priced this
+          // event", the other is "our join produced an impossible count and we
+          // withdrew it". Leaving them identical in the list is the same defect
+          // the splits box was just fixed for — one dash standing for two facts —
+          // so the suppressed one is marked here, not only inside the detail.
           '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;text-align:right;' +
-            'white-space:nowrap;color:' + (pin == null ? DASH_COLOUR : pin >= 0 ? '#3dd68c' : '#e0616f') + ';">' +
-            (pin == null ? DASH : signed(pin, 1, 'u')) + '</span>' +
+            'white-space:nowrap;color:' + (pin == null ? DASH_COLOUR : pin >= 0 ? '#3dd68c' : '#e0616f') + ';"' +
+            (t.pricedImpossible ? ' title="Priced count (' + t.pricedClaimed + ') exceeds ' + t.n +
+              ' matches played — withdrawn pending the odds-join fix"' : '') + '>' +
+            (pin == null ? DASH : signed(pin, 1, 'u')) +
+            (t.pricedImpossible
+              ? '<span style="font-size:9px;color:#e0616f;margin-left:4px;">!</span>' : '') + '</span>' +
         '</div>' +
         (open ? renderTournDetail(p, t) : '') +
         '</div>';
@@ -3892,8 +3979,16 @@
     // identity rather than trusting it; the legend states it once.
     // Both are scoped to DRAW_GROUPS for the reason setBaseline is: every number
     // the modal discloses has to be reproducible from the rows it prints.
-    var picked = pickByLargestGap(splitCandidates(p.key, scope, DRAW_GROUPS));
-    var baseline = picked ? picked.baseline : null;
+    // The COLUMN's baseline is the same population rate the box quotes. It used
+    // to be pickByLargestGap()'s row-weighted pool, which carried the same
+    // double-counting error (see splitPopulation): the review measured 163
+    // players / 265 cards where an insight card and this column printed a gap up
+    // to 2.04pp apart for the SAME split. One population, one number, so the
+    // tile's gap is reproducible from these rows — which is what the ruling asked
+    // for. pickByLargestGap() is untouched and still backs the price bands, where
+    // the members genuinely partition.
+    var baseline = pooledBaseline(p.key, scope);
+    var pop = splitPopulation(p.key, scope);
     // RULING Q1 · the same positive-gap selector the tile now uses, so the
     // disclosure below still describes how the box that opened this modal chose.
     var headline = bestPositiveSplit(p, scope, BOX_SPLIT_GROUPS) || null;
@@ -3992,8 +4087,14 @@
     function legend() {
       if (tab.id === 'results') {
         return 'Record and matches played ' + MIDDOT + ' win rate ' + MIDDOT + ' vs avg is the gap to this ' +
-          'player&#39;s own win rate across all splits in this scope' +
-          (baseline == null ? '' : ' (' + baseline.toFixed(1) + '%), weighted by match count') + '. ' +
+          'player&#39;s own win rate over every match in this scope' +
+          // The arithmetic is stated, because it is the thing that was wrong: the
+          // baseline is a WIN RATE over a complete partition of these matches, not
+          // a mean of the rows below (the groups overlap, so a mean of the rows
+          // counts some matches three times and is not a rate at all).
+          (baseline == null ? '' : ' (' + baseline.toFixed(1) + '%' +
+            (pop ? ', ' + recordText(pop.won, pop.n - pop.won) + ' over ' + pop.n + ' matches' : '') +
+            ')') + '. ' +
           'A split under ten matches shows its record and a dash for the gap.' +
           // The box headline's own baseline, stated here because it is NOT the
           // column's baseline and nothing else on screen carries it.
@@ -7914,9 +8015,12 @@
       insightCandidates: insightCandidates,
       careerBaseline: careerBaseline,
       pooledBaseline: pooledBaseline,
+      splitPopulation: splitPopulation,
       boxSplitBaseline: boxSplitBaseline,
       baselinePopLabel: baselinePopLabel,
-      BOX_SPLIT_GROUPS: BOX_SPLIT_GROUPS,
+      // BOX_SPLIT_GROUPS is exported once, below with DRAW_GROUPS. It was listed
+      // here too; a duplicate key in an object literal silently keeps the LAST
+      // one, so the two could have drifted with nothing to say which was live.
       INSIGHT_GROUPS: INSIGHT_GROUPS,
       INSIGHT_MIN_N: INSIGHT_MIN_N,
       splitsFor: splitsFor,

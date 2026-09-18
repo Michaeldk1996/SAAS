@@ -5233,16 +5233,42 @@ check('Q1 · "best split" is POSITIVE-only, measured against the POOLED candidat
   for (const p of SAMPLE) {
     const bs = I.bestSplit(p);
     const vals = I.buildBoxVals(p, { archetype: null });
-    // Round 2 · the baseline is pooled over the box's OWN candidate set. Computed
-    // here from the raw split rows, not read back off the object the renderer
-    // built, so the check can disagree with the implementation.
-    const boxCands = I.splitCandidates(p.key, 'career')
-      .filter(c => (I.BOX_SPLIT_GROUPS || []).includes(String(c.id).split(':')[0]));
-    let bw = 0, bn = 0;
-    for (const c of boxCands) { bw += c.won; bn += c.won + c.lost; }
-    const expectBase = bn ? (100 * bw / bn) : null;
+    // Round 2, CORRECTED · the baseline is a WIN RATE over a complete partition
+    // of the split population, not a mean of the candidate rows. Summing the rows
+    // double-counts: the groups overlap (vs. Top 10 sits inside the handedness
+    // rows) and two of them do not even cover the population. Computed here from
+    // the raw split rows on the FORMAT partition, independently of the renderer.
+    const sc = (SPLITS[p.key] || {}).career;
+    const partition = (members) => {
+      let w = 0, n = 0;
+      for (const m of members) {
+        const r = sc && sc[m];
+        if (!r || r.W == null || r.L == null) continue;
+        w += r.W; n += r.W + r.L;
+      }
+      return { w, n };
+    };
+    const fmt = partition(['Best of 5', 'Best of 3']);
+    const srf = partition(['Hard', 'Clay', 'Grass']);
+    const expectBase = fmt.n ? (100 * fmt.w / fmt.n) : (srf.n ? (100 * srf.w / srf.n) : null);
     assert.strictEqual(I.boxSplitBaseline(p, 'career'), expectBase,
-      `${p.name}: box baseline is not the pooled candidate rate`);
+      `${p.name}: box baseline is not the population win rate`);
+    // It must BE a rate: bounded, and reproducible as wins over matches.
+    if (expectBase != null) {
+      assert(expectBase >= 0 && expectBase <= 100, `${p.name}: baseline ${expectBase} is not a percentage`);
+      const pop = I.splitPopulation(p.key, 'career');
+      assert.strictEqual(pop.rate, expectBase);
+      assert.strictEqual(100 * pop.won / pop.n, expectBase, `${p.name}: population rate != won/n`);
+      // The row-weighted mean the correction replaced must NOT be what ships.
+      const boxCands = I.splitCandidates(p.key, 'career')
+        .filter(c => (I.BOX_SPLIT_GROUPS || []).includes(String(c.id).split(':')[0]));
+      let bw = 0, bn = 0;
+      for (const c of boxCands) { bw += c.won; bn += c.won + c.lost; }
+      if (bn && Math.abs(100 * bw / bn - expectBase) > 1e-9) {
+        assert.notStrictEqual(I.boxSplitBaseline(p, 'career'), 100 * bw / bn,
+          `${p.name}: the row-weighted mean is back`);
+      }
+    }
     if (!bs) {
       dashed++;
       assert.strictEqual(vals.splits.headline, null, `${p.name}: headline without a pick`);
@@ -5254,7 +5280,7 @@ check('Q1 · "best split" is POSITIVE-only, measured against the POOLED candidat
           ? 'no split data on record'
           : !eligible
             ? 'no split clears the ten-match minimum'
-            : `no split above his ${expectBase.toFixed(1)}% across his draw splits`,
+            : `no split above his ${expectBase.toFixed(1)}% across these splits`,
         `${p.name}: empty copy is "${vals.splits.support}" (base=${expectBase}, eligible=${eligible})`);
       // And it must be dashed for the RIGHT reason: nothing positive, not
       // nothing at all. A player with a positive split and a dashed tile is the
@@ -5278,7 +5304,7 @@ check('Q1 · "best split" is POSITIVE-only, measured against the POOLED candidat
     const pp = (gap < 0 ? '−' : '+') + Math.abs(gap).toFixed(1) + 'pp';
     assert.strictEqual(vals.splits.support,
       `best split · ${rate.toFixed(1)}% · ${pp} vs his ${expectBase.toFixed(1)}% `
-      + `across his draw splits · ${bs.pick.won}–${bs.pick.lost}`,
+      + `across these splits · ${bs.pick.won}–${bs.pick.lost}`,
       `${p.name}: support line does not reproduce from the rows`);
     // Independent recompute of the winner, straight off the candidate list.
     const cands = I.rankedInsights(p, 'career', null, I.BOX_SPLIT_GROUPS || undefined)
@@ -5343,7 +5369,7 @@ check('Q2 round 2 · box pick == insights positive card, for EVERY player', () =
     `the box groups are ${JSON.stringify(box)} — the ruling names format, level, round, opponent`);
   assert(!box.includes('surface'), 'Surface is back in the box groups — the ruling forbids it');
 
-  let checked = 0, agree = 0, dashed = 0, negSurface = 0;
+  let checked = 0, agree = 0, dashed = 0, negSurface = 0, zeroCards = 0;
   for (const p of Object.values(PLAYERS)) {
     let html;
     try { html = I.renderInsights(p); } catch (e) { continue; }
@@ -5374,9 +5400,15 @@ check('Q2 round 2 · box pick == insights positive card, for EVERY player', () =
     // The ruling keeps negative surface findings eligible; confirm the path is
     // live rather than quietly filtered out with the positives.
     if (ids.some(id => String(id).startsWith('surface:'))) negSurface++;
+    // A rendered card whose gap is exactly zero. Measured at 27 before the fix,
+    // 8 of them under a DASHED tile — a green card contradicting the box.
+    zeroCards += ids.filter(id => byId.get(id) && byId.get(id).gap === 0).length;
   }
   assert(checked > 100, `only ${checked} players exercised — the roster did not load`);
   assert(negSurface > 0, 'no player carried a surface card — the negative-surface path is dead');
+  assert(zeroCards === 0,
+    `${zeroCards} zero-gap card(s) rendered — a split sitting exactly at his own rate `
+    + 'is not a finding, and the card arrow would paint it as a strength');
   console.log(`        ${checked} players · ${agree} agree · ${dashed} dash (0 contradictions) · `
     + `${negSurface} carry a surface finding`);
 });
@@ -5385,19 +5417,57 @@ check('Q2 round 2 · box pick == insights positive card, for EVERY player', () =
 // Vs-avg column baseline are now ONE number over ONE row set. Before the ruling
 // they differed for 188 of 188 players, which is why the modal had to disclose
 // two. This is the check that keeps them collapsed.
-check('Q1 round 2 · box baseline == the Draw record column baseline, roster-wide', () => {
-  let n = 0, maxDelta = 0;
+// ONE baseline, everywhere it appears. The correction made this stronger than the
+// version it replaces: the box, the Draw record column and EVERY Key insights card
+// now quote the same number, whichever groups the caller ranked over. The review
+// measured the old behaviour at 163 players / 265 cards showing a gap up to 2.04pp
+// apart for the SAME split.
+check('Q1 · one baseline — box == column == every insight card, roster-wide', () => {
+  let n = 0, cards = 0, maxDelta = 0;
   for (const p of Object.values(PLAYERS)) {
     const bBox = I.boxSplitBaseline(p, 'career');
-    const col = I.pickByLargestGap(I.splitCandidates(p.key, 'career', I.DRAW_GROUPS));
-    if (bBox == null || !col) continue;
+    if (bBox == null) continue;
     n++;
-    maxDelta = Math.max(maxDelta, Math.abs(bBox - col.baseline));
-    assert(Math.abs(bBox - col.baseline) < 1e-9,
-      `${p.name}: box ${bBox.toFixed(3)}% vs column ${col.baseline.toFixed(3)}%`);
+    // The column reads the same accessor the modal reads.
+    const bCol = I.pooledBaseline(p.key, 'career');
+    maxDelta = Math.max(maxDelta, Math.abs(bBox - bCol));
+    assert(Math.abs(bBox - bCol) < 1e-9,
+      `${p.name}: box ${bBox.toFixed(3)}% vs column ${bCol.toFixed(3)}%`);
+    // And every card, over BOTH group sets — the two that used to disagree.
+    for (const groups of [I.BOX_SPLIT_GROUPS, I.INSIGHT_GROUPS]) {
+      for (const c of I.rankedInsights(p, 'career', null, groups)) {
+        cards++;
+        assert(Math.abs(c.baseline - bBox) < 1e-9,
+          `${p.name}: card ${c.id} quotes ${c.baseline.toFixed(3)}%, the tile ${bBox.toFixed(3)}%`);
+        // The gap must reproduce from the card's own record against that baseline.
+        assert(Math.abs(c.gap - (100 * c.won / c.n - bBox)) < 1e-9,
+          `${p.name}: card ${c.id} gap does not reproduce`);
+      }
+    }
   }
-  assert(n > 100, `only ${n} players had both baselines — the check is vacuous`);
-  console.log(`        ${n} players, max |box − column| = ${maxDelta.toExponential(1)}pp`);
+  assert(n > 100, `only ${n} players had a baseline — the check is vacuous`);
+  assert(cards > 500, `only ${cards} cards walked — the card half is vacuous`);
+  console.log(`        ${n} players, ${cards} cards, max |box − column| = ${maxDelta.toExponential(1)}pp`);
+});
+
+// The defect the correction removes, pinned directly: a "best split" must be
+// positive against the POPULATION rate, not against a row-weighted mean that sits
+// below it. Four picks were advertised as positive when the player's real record
+// over the population was flat or negative.
+check('Q1 · every "best split" is positive against the population win rate', () => {
+  let picked = 0;
+  for (const p of Object.values(PLAYERS)) {
+    const bs = I.bestSplit(p);
+    if (!bs) continue;
+    picked++;
+    const pop = I.splitPopulation(p.key, 'career');
+    const real = 100 * bs.pick.won / bs.pick.n - (100 * pop.won / pop.n);
+    assert(real > 0,
+      `${p.name}: "${bs.pick.label}" prints ${bs.pick.gap.toFixed(1)}pp but is ${real.toFixed(1)}pp `
+      + `against his real ${(100 * pop.won / pop.n).toFixed(1)}% over ${pop.n} matches`);
+  }
+  assert(picked > 100, `only ${picked} picks — the check is vacuous`);
+  console.log(`        ${picked} picks, every one positive against the real population rate`);
 });
 
 // ── RULING Q3 (founder, 2026-09-18) ────────────────────────────────────────
@@ -5426,6 +5496,62 @@ check('Q3 · no view ever exposes priced n > played n', () => {
   }
   assert(views > 500, `only ${views} views walked — the roster did not load`);
   console.log(`        ${views} views · ${suppressed} suppressed across ${playersHit} players`);
+});
+
+// The guard's BOUNDARY, pinned. The check above is one-sided — it only asserts
+// nothing exceeds, and only inspects the suppressed branch — so flipping
+// `pinN <= n` to `pinN < n` left the whole suite green while blanking 3,975 of
+// 9,419 legitimately fully-priced views (42%), including 241 bestEvent
+// candidates. A guard test that cannot see over-suppression is not a guard test.
+check('Q3 boundary · a FULLY priced view (pinN === n) survives untouched', () => {
+  let exact = 0, kept = 0, candidates = 0;
+  for (const p of Object.values(PLAYERS)) {
+    let vs;
+    try { vs = I.tournViews(p) || []; } catch (e) { continue; }
+    for (const t of vs) {
+      if (t.pricedImpossible) continue;
+      if (t.pricedClaimed !== t.n || !t.n) continue;
+      exact++;
+      assert.strictEqual(t.pinN, t.n,
+        `${p.name} / ${t.display}: fully-priced view was blanked (${t.pinN} of ${t.n})`);
+      assert(t.pinPl != null, `${p.name} / ${t.display}: fully-priced view lost its units`);
+      kept++;
+      if (t.pinN >= 10) candidates++;
+    }
+  }
+  assert(exact > 500, `only ${exact} fully-priced views — the boundary is unexercised`);
+  assert(candidates > 50, `only ${candidates} of them are bestEvent candidates — too few to bite`);
+  console.log(`        ${exact} views priced exactly to the played count · ${kept} kept · ${candidates} bestEvent-eligible`);
+});
+
+// Finding 5 · reverting the detail sub to its two-branch pre-ruling form also left
+// the suite green, and every suppressed row then read "Pinnacle priced none of
+// these" — the exact false claim the ruling exists to prevent. Nothing asserted
+// the RENDERED string, so this does.
+check('Q3 disclosure · a suppressed row says WHY, never "Pinnacle priced none of these"', () => {
+  let checked = 0;
+  for (const p of Object.values(PLAYERS)) {
+    let vs;
+    try { vs = I.tournViews(p) || []; } catch (e) { continue; }
+    const bad = vs.filter(t => t.pricedImpossible);
+    if (!bad.length) continue;
+    for (const t of bad.slice(0, 2)) {
+      const html = I.renderTournDetail(p, t);
+      const txt = String(html).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+      assert(!/Pinnacle priced none of these/.test(txt),
+        `${p.name} / ${t.display}: suppressed row blames the archive`);
+      assert(txt.includes(String(t.pricedClaimed)) && /exceeds/.test(txt),
+        `${p.name} / ${t.display}: suppressed row does not state the impossible count — "${txt.slice(0, 220)}"`);
+      checked++;
+    }
+  }
+  assert(checked > 20, `only ${checked} suppressed details rendered — the check is vacuous`);
+  console.log(`        ${checked} suppressed details rendered, every one states the count`);
+});
+
+mustFail('[neg] the disclosure check would catch the pre-ruling two-branch sub', () => {
+  const pre = 'Pinnacle priced none of these';
+  assert(!/Pinnacle priced none of these/.test(pre), 'the pre-ruling sub slipped through');
 });
 
 mustFail('[neg] Q3 would catch an impossible pair reaching the tile', () => {
