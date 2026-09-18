@@ -387,7 +387,7 @@ def fmt(v, suffix=""):
 def build_markdown(res):
     L = []
     A = L.append
-    A(f"# TEN-232 — Kibl / Bet105 first tests (a–d)")
+    A(f"# TEN-232 — Kibl / Sports411 first tests (a–d)")
     A("")
     A(f"- commit `{res['commit']}`")
     A(f"- run started `{res['started_utc']}` UTC")

@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """TEN-225 / TEN-232 — fill odds_card_state (match winner) from the KIBL archive.
 
-Founder ruling 2026-09-18T00:18Z: Kibl (Sports411 / Bet105) is the PRIMARY book.
+Founder ruling 2026-09-18T00:18Z: Kibl is the PRIMARY book. The book it
+serves us is SPORTS411. Sports411, NOT Bet105 — measured 2026-09-18T22:33Z (run 35401888326): /reference/sportsbooks returns exactly one book, feed_source_id 43, name Sports411. Bet105 does not appear in our entitlement. The two are not the same book and nothing here carries an affiliate relationship.
 Order is kibl(1) -> bet365 via oddspapi(2) -> api-tennis(3). One book per
 fixture; Open, Now and Close always from the SAME book; a higher-priority book
 that appears later takes over all three values using its own first tick as Open.
@@ -73,6 +74,39 @@ MATCHES = os.path.join(HERE, 'matches.json')
 
 MARKET = 'match winner'
 BOOK = 'sports411'          # the book we are actually served; NOT Bet105 (measured)
+
+# ⚠️ ITEM 7 GUARD (founder directive 2026-09-18T22:01Z): "No Bet105 price reaches
+# a card until 5 passes." This constant is what enforces it, and it has to,
+# because nothing else can:
+#
+#   archive-kibl.py:run_window() does NOT hard-code a book. It reads
+#   /reference/sportsbooks every sweep and sends EVERY entitled feed_source_id,
+#   comma-joined — deliberately, "so a change in entitlement shows up as more
+#   data rather than as a silent miss". That is right for an archive racing
+#   irreversible data loss. It also means the DAY Bet105 is activated on the
+#   account, its prices start landing in kibl_line_observations with no deploy,
+#   no PR and no notice.
+#
+#   This file used to read that table without `feed_source_id` at all and stamp
+#   the constant BOOK on every row it projected. A second book would therefore
+#   have reached a card labelled `sports411` — breaking item 7 and item 2 (the
+#   label must never imply another book) in the same write, silently, on a
+#   green run, with the archive behaving perfectly.
+#
+# MEASURED 2026-09-18T22:33Z, run 35401888326: /reference/sportsbooks returns
+# exactly ONE book — feed_source_id 43, name Sports411, tag `sports411`. Bet105
+# does NOT appear; the entitlement IS that list (a restricted account returns
+# 200 with fewer rows, never a 403), so this is an answer, not a failed call.
+#
+# So today this filter excludes nothing and is a no-op. That is exactly when it
+# is safe to install one. Raising it later, after a second book is already in
+# the table, would mean auditing which cards were built from which book after
+# the fact.
+#
+# DO NOT widen this to "every book in the archive". A book is added here only
+# after its own side-mapping gate passes on its own data — the convention does
+# not carry over between sources, which is the whole reason the gate exists.
+VERIFIED_FEED_SOURCE_ID = 43
 SOURCE = 'kibl'
 BOOK_RANK = 1
 TS_KIND = 'vendor-insert'
@@ -97,7 +131,11 @@ OBS_COLUMNS = (
     'fixture_id,side_id,participant_id,fixture_participant_id,'
     'market_type_id,segment_id,betting_type_id,is_live,'
     'is_opener,is_current,price_decimal,inserted_on,observed_at,alt_id,'
-    'is_main,point')
+    # feed_source_id is SELECTED, not merely filtered on, so the projection can
+    # assert per row that every price it is about to stamp `sports411` actually
+    # came from Sports411. A filter alone is a promise about the query; reading
+    # the column back is a check on the answer.
+    'is_main,point,feed_source_id')
 
 MARKET_TYPE_ID = 1
 SEGMENT_ID = 1
@@ -1345,6 +1383,9 @@ def main():
         OBS_COLUMNS,
         f'&market_type_id=eq.{MARKET_TYPE_ID}&segment_id=eq.{SEGMENT_ID}'
         f'&betting_type_id=eq.{BETTING_TYPE_ID}'
+        # Item 7: only the book whose side mapping has passed its own gate may
+        # reach a card. See VERIFIED_FEED_SOURCE_ID.
+        f'&feed_source_id=eq.{VERIFIED_FEED_SOURCE_ID}'
         # Bounded on OUR capture time, not on the price's. A window on
         # inserted_on would drop a still-valid opener the moment the book's
         # opening price aged past the cutoff, which is the one row the whole
@@ -1354,11 +1395,49 @@ def main():
     if err:
         print(f'::error::reading kibl_line_observations failed ({err})')
         return 1
+    # The filter is a promise about the query; this is the check on the answer.
+    # A PostgREST filter that silently failed to apply would otherwise be
+    # indistinguishable from one book being in the table.
+    foreign = [o for o in obs_rows
+               if o.get('feed_source_id') != VERIFIED_FEED_SOURCE_ID]
+    if foreign:
+        ids = sorted({o.get('feed_source_id') for o in foreign})
+        print(f'::error::the feed_source_id filter did not hold — {len(foreign)} '
+              f'rows came back from {ids}, not {VERIFIED_FEED_SOURCE_ID}. '
+              f'Refusing to stamp them "{BOOK}".')
+        return 1
+
     observations = collections.defaultdict(list)
     for o in obs_rows:
         observations[o['fixture_id']].append(o)
     print(f'kibl_line_observations: {len(obs_rows)} match-winner rows over '
-          f'{len(observations)} fixtures')
+          f'{len(observations)} fixtures '
+          f'(feed_source_id={VERIFIED_FEED_SOURCE_ID} only)')
+
+    # Item 7, the visible half. A book we do not project must still be COUNTED,
+    # or "a new book was activated" looks exactly like "nothing happened". This
+    # is the line that turns the day Bet105 lands from a silent relabel into a
+    # number in the job summary.
+    excluded, err_x = fetch_all(
+        url, key, 'kibl_line_observations', 'fixture_id,feed_source_id',
+        f'&market_type_id=eq.{MARKET_TYPE_ID}&segment_id=eq.{SEGMENT_ID}'
+        f'&betting_type_id=eq.{BETTING_TYPE_ID}'
+        f'&observed_at=gte.{iso(as_of - a.days_back * 86400)}'
+        f'&feed_source_id=neq.{VERIFIED_FEED_SOURCE_ID}')
+    n_excluded = len(excluded or [])
+    if err_x:
+        print(f'::warning::could not count unverified-book rows ({err_x})')
+    elif n_excluded:
+        books_seen = sorted({o.get('feed_source_id') for o in excluded})
+        print(f'::warning::ITEM 7 HELD: {n_excluded} rows from book(s) '
+              f'{books_seen} — other than '
+              f'feed_source_id {VERIFIED_FEED_SOURCE_ID} are in the archive and '
+              f'were NOT projected to any card. They are captured and safe; they '
+              f'stay off cards until that book passes its own side-mapping gate.')
+    else:
+        print(f'item 7: 0 rows from any other book in this window '
+              f'(the archive holds one book, feed_source_id '
+              f'{VERIFIED_FEED_SOURCE_ID}).')
 
     ofx, err = fetch_all(url, key, 'oddspapi_fixtures',
                          'fixture_id,player1,player2,scheduled_start,true_start,'

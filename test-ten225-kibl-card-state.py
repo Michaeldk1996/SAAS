@@ -801,6 +801,59 @@ check('an unreadable board does NOT read as a matcher fault',
       len(K.why_unpaired(_up_kibl, {}, [])['not_on_board']) == 4
       and 'surname_on_board' not in K.why_unpaired(_up_kibl, {}, []))
 
+# ---------------------------------------------------------------------------
+# ITEM 7 — only a book whose side mapping has passed may reach a card.
+#
+# Founder directive 2026-09-18T22:01Z: "No Bet105 price reaches a card until 5
+# passes." Nothing else in this repo can hold that line. archive-kibl.py reads
+# /reference/sportsbooks every sweep and sends EVERY entitled feed_source_id, so
+# a newly activated book lands in kibl_line_observations with no deploy. Before
+# this guard the filler read that table WITHOUT feed_source_id and stamped the
+# constant BOOK on every row it projected -- a second book would have reached a
+# card labelled `sports411`, breaking item 7 and item 2 in one write, silently,
+# on a green run.
+#
+# These assertions are deliberately NOT a substring search over the whole file.
+# Mutation (j) on an earlier round passed against this module's own explanatory
+# COMMENT while the column was actually missing, so every check below reads code
+# with comments stripped, or reads the value itself.
+print('\nITEM 7 - the unverified-book guard')
+
+_SRC_LINES = open(K.__file__).read().splitlines()
+_CODE = '\n'.join(
+    ln.split('#', 1)[0] for ln in _SRC_LINES if not ln.lstrip().startswith('#'))
+
+check('VERIFIED_FEED_SOURCE_ID is 43 - Sports411, the ONLY book '
+      '/reference/sportsbooks returned (measured 2026-09-18T22:33Z, run '
+      '35401888326). Not a placeholder and not inferred.',
+      getattr(K, 'VERIFIED_FEED_SOURCE_ID', None) == 43,
+      getattr(K, 'VERIFIED_FEED_SOURCE_ID', '<missing>'))
+
+check('the constant is an int - "43" as a string builds an eq. filter that '
+      'still matches, so the type is not cosmetic when it is later compared '
+      'against the integer PostgREST returns',
+      isinstance(getattr(K, 'VERIFIED_FEED_SOURCE_ID', None), int))
+
+check('OBS_COLUMNS SELECTS feed_source_id - a filter is a promise about the '
+      'query, reading the column back is a check on the answer',
+      'feed_source_id' in getattr(K, 'OBS_COLUMNS', ''),
+      getattr(K, 'OBS_COLUMNS', '<missing>'))
+
+check('the observation read is FILTERED on feed_source_id (asserted against '
+      'code with comments stripped, because a comment once satisfied this)',
+      'feed_source_id=eq.' in _CODE)
+
+check('the filter is bound to the constant, not to a literal 43 - a hard-coded '
+      'id would not move when the constant is raised after a gate passes',
+      'feed_source_id=eq.{VERIFIED_FEED_SOURCE_ID}' in _CODE)
+
+check('rows from another book are still COUNTED, not merely dropped: the day a '
+      'book is activated must be a number in the summary and not silence',
+      'feed_source_id=neq.' in _CODE)
+
+check('the guard names item 7 where a future reader will be standing',
+      any('ITEM 7' in ln.upper() for ln in _SRC_LINES))
+
 print()
 if FAILED:
     print(f'{len(FAILED)} FAILED: {FAILED}')

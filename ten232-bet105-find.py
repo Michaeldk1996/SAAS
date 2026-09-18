@@ -144,7 +144,19 @@ def main():
               "never a 403 — so this IS the answer, not a failed call. "
               "**No id guessed. Stopping.**\n")
         out("bet105_found", "no")
-        return 2
+        # EXIT 0, deliberately, and this is a correction to how this script
+        # first shipped. "Bet105 is not in our entitlement" is a MEASUREMENT,
+        # not a fault — and a non-zero exit here is not free: this job carries a
+        # circuit breaker that unschedules the Supabase pinger after 3
+        # consecutive non-zero runs, and that pinger is the real cadence behind
+        # an archive racing prices that vanish in 30–60 days. Run 35401888326
+        # exited 2 and did NOT trip it ("breaker: not tripped"), but two more
+        # asks of a read-only question would have stopped the capture.
+        # A probe must never be able to starve the job it is probing.
+        # Genuine faults below still exit 1: an unread entitlement, an
+        # ambiguous name match, or Bet105 arriving on the id we already archive
+        # under. Those are states we must not proceed from.
+        return 0
 
     if len(bet105) > 1:
         print(f"::error::{len(bet105)} rows match Bet105 — ambiguous, not "
