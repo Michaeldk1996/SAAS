@@ -6827,6 +6827,22 @@ function ocsFmtTs(iso){
   return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
     + ' ' + d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
 }
+// The same instant, minus the date WHEN THE DATE IS TODAY. The founder's format
+// is "since 01:08 · seen 09:15" — two clocks in one hover — and repeating
+// today's date inside it twice is fourteen characters of nothing, which is what
+// pushed the line past its slot in the first place. A timestamp from any OTHER
+// day keeps its date: an Open pinned yesterday reading as a bare "09:14" would
+// be a tooltip understating its own age, i.e. this round's bug in miniature.
+function ocsFmtClock(iso){
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d)) return '';
+  const n = new Date();
+  const sameDay = d.getFullYear() === n.getFullYear() && d.getMonth() === n.getMonth()
+               && d.getDate() === n.getDate();
+  return sameDay ? d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
+                 : ocsFmtTs(iso);
+}
 // The one provenance string every surface shows: "bet365 · Sep 17, 09:14".
 // Book name AND Open timestamp, always together (founder, 2026-09-18) — they
 // travel in one function so a surface cannot render one without the other.
@@ -6856,10 +6872,58 @@ function ocsProvenance(m){
 // A TIMESTAMP IS APPENDED ONLY WHERE ONE EXISTS. `_mcBet365Now`'s two feed paths
 // return `at: null` — the api-tennis get_odds payload carries no tick time — so
 // those cells read "bet365" alone rather than borrowing a time from the Open.
-function mcPriceTitle(pair){
+// ── TEN-225 founder ruling, 2026-09-18 09:33Z, item 1 — SHOW BOTH CLOCKS ──────
+// Verbatim: "option 2, show both clocks. Format: 'bet365 · 1.22 since 01:08 ·
+// seen 09:15' (book · price · when the book last moved it · when we last
+// observed it). If the one-line slot cannot hold it, use two lines in the
+// tooltip rather than dropping a clock."
+//
+// WHY, MEASURED. The tooltip printed `at` alone — bet365's CHANGE INSTANT — over
+// a price that is current. On the deployed board, n=32 upcoming fixtures carrying
+// both clocks, the gap between what the tooltip printed and when we actually
+// looked ran to a MEDIAN of 109 min and a max of 486 min (Artnak/Vales: printed
+// 01:08, observed 09:15). So the hover understated the freshness of a live price
+// by about two hours typically and eight hours at worst, and that is what made an
+// evidenced-flat card read as a dead feed.
+//
+// THE TWO CLOCKS ARE NOT INTERCHANGEABLE AND NEITHER IS REDUNDANT:
+//   `at`  — when the BOOK last moved this price. Answers "how stale is the line".
+//   `obs` — when WE last looked and saw it. Answers "how stale is our copy".
+// A 19h-old `at` on a price we re-read 4 minutes ago is a market that has not
+// moved, not a feed that has died. Dropping either clock loses one of those two
+// questions, which is why the founder refused option 1.
+//
+// THE FIRST CLOCK IS ONLY PRINTED WHERE A BOOK CLOCK EXISTS. `ts_kind` says which
+// kind of time the row carries (book-tick | vendor-insert | sighting). On a
+// `sighting` row — api-tennis get_odds, which ships no tick time — OUR observation
+// is the only clock there is, so it prints `seen` alone rather than dressing our
+// own poll time up as "since", which is the false label this issue has already
+// paid for twice.
+//
+// Two lines when the one-line slot cannot hold it: a `title` attribute renders a
+// literal \n as a line break, so the second clock wraps instead of being dropped.
+const MC_TITLE_1LINE_MAX = 52;
+function mcPriceTitle(pair, px){
   if (!pair || !pair.book) return '';
-  const ts = ocsFmtTs(pair.at);
-  return [pair.book, ts].filter(Boolean).join(' · ');
+  const priceTxt = (typeof px === 'number' && px > 0) ? px.toFixed(2) : '';
+  // A `sighting` row has no book clock at all, so it prints no "since".
+  const bookClock = pair.kind === 'sighting' ? '' : ocsFmtClock(pair.at);
+  // OUR clock comes from `obs` AND NOWHERE ELSE. It used to fall back to `at` on
+  // a sighting row, which looks harmless until you follow where `at` comes from
+  // on the takeover path: ten225-load-card-state.py writes now_ts = the LOADER'S
+  // OWN RUN CLOCK there, and deliberately leaves now_observed_at NULL because
+  // that run clock is not a second look at the market. Falling back to `at`
+  // printed the exact value the loader had just refused to record, under the
+  // word "seen". No clock is the honest render; the book name still shows.
+  const seenClock = ocsFmtClock(pair.obs);
+  const head = [pair.book, priceTxt].filter(Boolean).join(' · ');
+  // The founder's format, verbatim: "bet365 · 1.22 since 01:08 · seen 09:15".
+  // The book clock hangs off the price with a SPACE, not a separator dot — it
+  // qualifies that price rather than standing beside it as a third field.
+  const first = bookClock ? head + ' since ' + bookClock : head;
+  if (!seenClock) return first;
+  const one = first + ' · seen ' + seenClock;
+  return one.length <= MC_TITLE_1LINE_MAX ? one : first + '\nseen ' + seenClock;
 }
 function mcTitleAttr(txt){
   return txt ? ` title="${String(txt).replace(/"/g, '&quot;')}"` : '';
@@ -6937,13 +7001,13 @@ function _mcBet365Now(m){
   // (when bet365 last MOVED the price). They answer different questions and
   // _measurablePair needs the former; every other consumer ignores it.
   if (b && b.p1 > 0 && b.p2 > 0) return { p1: b.p1, p2: b.p2, book: 'bet365', at: b.at || null,
-                                          obs: b.observedAt || null, src: 'timeline' };
+                                          obs: b.observedAt || null, kind: 'book-tick', src: 'timeline' };
   const bo = m.bestOdds;
   if (bo && _isBet365(bo.p1?.bookmaker) && _isBet365(bo.p2?.bookmaker) && bo.p1.price && bo.p2.price) {
-    return { p1: bo.p1.price, p2: bo.p2.price, book: 'bet365', at: null, src: 'feed' };
+    return { p1: bo.p1.price, p2: bo.p2.price, book: 'bet365', at: null, kind: 'sighting', src: 'feed' };
   }
   const o = m.odds;
-  if (o && _isBet365(o.bookmaker) && o.p1 && o.p2) return { p1: o.p1, p2: o.p2, book: 'bet365', at: null, src: 'feed' };
+  if (o && _isBet365(o.bookmaker) && o.p1 && o.p2) return { p1: o.p1, p2: o.p2, book: 'bet365', at: null, kind: 'sighting', src: 'feed' };
   return null;
 }
 // ───────────────────────────────────────── TEN-225 rulings A + B (2026-09-18) ──
@@ -6985,10 +7049,10 @@ function _mcAnyBookPair(m){
   const cands = [];
   const bo = m.bestOdds;
   if (bo && bo.p1?.price && bo.p2?.price && bo.p1.bookmaker && bo.p1.bookmaker === bo.p2.bookmaker)
-    cands.push({ p1: bo.p1.price, p2: bo.p2.price, book: bo.p1.bookmaker, at: null, src: 'feed' });
+    cands.push({ p1: bo.p1.price, p2: bo.p2.price, book: bo.p1.bookmaker, at: null, kind: 'sighting', src: 'feed' });
   const o = m.odds;
   if (o && o.p1 && o.p2 && o.bookmaker)
-    cands.push({ p1: o.p1, p2: o.p2, book: o.bookmaker, at: null, src: 'feed' });
+    cands.push({ p1: o.p1, p2: o.p2, book: o.bookmaker, at: null, kind: 'sighting', src: 'feed' });
   if (!cands.length) return null;
   const cov = _mcBooksByCoverage();
   cands.sort((a, b) => (cov[b.book] || 0) - (cov[a.book] || 0));
@@ -7007,7 +7071,13 @@ function _mcNowPair(m){
   const o = _ocsOf(m);
   if (o){
     if (o.p1.now != null && o.p2.now != null)
-      return { p1: o.p1.now, p2: o.p2.now, book: o.book, at: o.p1.nowTs || o.p2.nowTs || null, src: 'ocs' };
+      // `nowObs` is OUR observation clock, published alongside `nowTs` since the
+      // 2026-09-18 source fix (see ten225-kibl-card-state.py). It is absent on
+      // rows written before that and on the oddspapi path, which has no
+      // observation clock in the line summary at all — mcPriceTitle prints only
+      // the clocks that exist rather than borrowing one for the other.
+      return { p1: o.p1.now, p2: o.p2.now, book: o.book, at: o.p1.nowTs || o.p2.nowTs || null,
+               obs: o.p1.nowObs || o.p2.nowObs || null, kind: o.tsKind || null, src: 'ocs' };
     // The selected book has no Now. bet365 — and ONLY bet365 — may top its own
     // Now up from the matches.json bet365 stream: same book, same stream, so it
     // is not a blend. This is exactly the table's rule (_mcNowOf), which the
@@ -7191,8 +7261,16 @@ function _openDerivedOf(m, who){ return _openPinIsVendor(m) ? null : _openAnchor
 // bet365 last MOVED the price: a quote sitting unchanged for 19h carries a
 // 19h-old `at` while being perfectly current, so testing `at` would throw away
 // exactly the evidenced-flat case above. `seenAt`/`observedAt` answer "when did
-// we look", which is what a 0% actually rests on. For the odds_card_state path
-// the two coincide — `inserted_on` is both the vendor insert and our sighting.
+// we look", which is what a 0% actually rests on.
+//
+// CORRECTED 2026-09-18 (founder item 3). This comment used to claim that on the
+// odds_card_state path "the two coincide — `inserted_on` is both the vendor
+// insert and our sighting". They do NOT. `inserted_on` is KIBL's row-write time
+// and `observed_at` is when our sweep ran; kibl_odds has always carried both and
+// the publisher simply never emitted the second. That is why a Kibl price
+// re-seen unchanged by a later sweep — an evidenced flat market — was
+// indistinguishable here from a row we had only ever read once. The publisher
+// now emits `openObs`/`nowObs` and they are preferred over the price's own clock.
 function _obsMs(){
   for (let i = 0; i < arguments.length; i++){
     const t = Date.parse(arguments[i] || '');
@@ -7200,9 +7278,18 @@ function _obsMs(){
   }
   return NaN;
 }
+// A `sighting` row (api-tennis) has NO clock of its own for the current price:
+// that feed ships no tick time, and matches.json carries no observation stamp for
+// its `odds`/`bestOdds` block. The loader therefore writes now_observed_at NULL
+// rather than its own run clock (ten225-load-card-state.py), and without this
+// branch the fallback chain would reach past the missing observation to the row's
+// `now_ts` — which on the takeover path IS the loader's run clock, i.e. a second
+// look we never took. So on a sighting row a flat pair is never evidenced. A MOVE
+// still renders: two different prices are their own evidence and need no clock.
 function _measurablePair(p, openObs, nowObs){
   if (!p) return null;
   if (p.n1 !== p.o1 || p.n2 !== p.o2) return p;      // a move is its own evidence
+  if (p.kind === 'sighting' && !p.obs) return null;
   return (Number.isFinite(openObs) && Number.isFinite(nowObs) && nowObs > openObs) ? p : null;
 }
 function _mcOpenNowPair(m){
@@ -7214,16 +7301,25 @@ function _mcOpenNowPair(m){
     const openTs = o.p1.openTs || o.p2.openTs || null;
     if (o.p1.now != null && o.p2.now != null){
       const nowTs = o.p1.nowTs || o.p2.nowTs || null;
-      return _measurablePair({ o1, o2, n1: o.p1.now, n2: o.p2.now, book: o.book, openTs, nowTs },
-                             _obsMs(openTs), _obsMs(nowTs));
+      // OUR clock first, the row's own stamp only as the fallback. Before the
+      // 2026-09-18 source fix the publisher emitted no observation clock at all
+      // on this path, so a re-sighting of an unchanged Kibl price was
+      // indistinguishable from a single row read twice and the guard suppressed
+      // both. With `nowObs`/`openObs` present the two separate correctly.
+      const openObs = o.p1.openObs || o.p2.openObs || null;
+      const nowObs  = o.p1.nowObs  || o.p2.nowObs  || null;
+      return _measurablePair({ o1, o2, n1: o.p1.now, n2: o.p2.now, book: o.book, openTs, nowTs,
+                               obs: nowObs, kind: o.tsKind || null },
+                             _obsMs(openObs, openTs), _obsMs(nowObs, nowTs));
     }
     // The selected book has no Now. bet365 — and only bet365 — may top its own
     // Now up from the matches.json bet365 stream: same book, same stream, so it
     // is not a blend. Identical to the rule _mcNowOf/_mcNowPair already apply.
     if (_isBet365(o.book)){
       const b = _mcBet365Now(m);
-      if (b) return _measurablePair({ o1, o2, n1: b.p1, n2: b.p2, book: 'bet365', openTs, nowTs: b.at || null },
-                                    _obsMs(openTs), _obsMs(b.obs, b.at));
+      if (b) return _measurablePair({ o1, o2, n1: b.p1, n2: b.p2, book: 'bet365', openTs, nowTs: b.at || null,
+                                      obs: b.obs || null, kind: b.kind || null },
+                                    _obsMs(o.p1.openObs, o.p2.openObs, openTs), _obsMs(b.obs, b.at));
     }
     return null;
   }
@@ -7233,7 +7329,8 @@ function _mcOpenNowPair(m){
   if (!b) return null;
   if (String(op.bookmaker || '').toLowerCase() !== String(b.book || '').toLowerCase()) return null;
   return _measurablePair({ o1: op.p1, o2: op.p2, n1: b.p1, n2: b.p2, book: b.book,
-                           openTs: op.at || op.seenAt || null, nowTs: b.at || null },
+                           openTs: op.at || op.seenAt || null, nowTs: b.at || null,
+                           obs: b.obs || null, kind: b.kind || null },
                          _obsMs(op.seenAt, op.at), _obsMs(b.obs, b.at));
 }
 // Largest |open → now| as a fraction of the open, over either side. -1 when the
@@ -8648,7 +8745,10 @@ function renderMatches(){
     const oddsProv = ocsProvenance(m);
     // TEN-225 ruling 2 — the hover label for the ODDS COLUMN, which shows the Now.
     // It names `nowPair`'s book, not the Open's; see mcPriceTitle.
-    const nowTitle = mcPriceTitle(nowPair);
+    // Per LEG, because the founder's format carries the price of the cell being
+    // hovered ("bet365 · 1.22 since 01:08 · seen 09:15"). One shared string would
+    // print p1's price over p2's cell on half the board.
+    const nowTitleOf = who => mcPriceTitle(nowPair, nowPair ? (nowPair[who] ?? null) : null);
     // TEN-225 ruling 4c — "has this fixture started?", the client-clock test the card
     // already uses for its Underway marker (see scoreLineHtml). Defined ONCE here so
     // the drift cell, its column header and the marker cannot disagree about it.
@@ -8714,25 +8814,71 @@ function renderMatches(){
     // instant, not the book's clock, and the price behind it may be up to 14.6h
     // older; the drawer has always said "seen by us" and the card said nothing, so
     // face and drawer DID disagree — the opposite of what shipping this claimed.
+    // FOUNDER RULING 2026-09-18 09:33Z item 1 — both clocks, and the price of the
+    // cell being hovered. Both titles are now per-leg functions of that leg's own
+    // price; the old shared strings could not carry one.
+    //
+    // The OPEN's own observation clock comes from `openObs` (published since the
+    // same-day source fix) or from matches.json's `openingOdds.seenAt` — the
+    // sighting stamp refresh-odds-history.py writes once and never rewrites. The
+    // old "seen by us" qualifier is gone: it said a vendor pin was our sighting
+    // without saying WHEN, which is the half-answer this ruling replaces.
     const _vendorSeen = _openPinIsVendor(m);
-    const _openTitle = (function(){
-      const book = ocsBookOf(m), ts = ocsFmtTs(ocsOpenTsOf(m));
+    const _openTitle = who => {
+      const o = _ocsOf(m);
+      const book = ocsBookOf(m);
       if (!book) return '';
-      return [book, ts, _vendorSeen ? 'seen by us' : ''].filter(Boolean).join(' · ');
-    })();
-    const _nowTitleFor = () => {
+      const op = m && m.openingOdds;
+      // OUR sighting of the OPEN, in order of authority: the published
+      // observation clock, then matches.json's `openingOdds.seenAt` — the
+      // stamp refresh-odds-history.py writes once on first sighting and never
+      // rewrites. The second is used ONLY when the pin names the same book the
+      // title does, or it would be one book's sighting under another's name.
+      const pinSeen = (op && op.seenAt
+                       && String(op.bookmaker || '').toLowerCase() === String(book).toLowerCase())
+                      ? op.seenAt : null;
+      return mcPriceTitle({
+        book,
+        at: ocsOpenTsOf(m),
+        obs: (o ? (o.p1.openObs || o.p2.openObs) : null) || pinSeen || null,
+        // A vendor-pinned open is a sighting of ours, never a book tick, so it
+        // prints no "since" — TEN-198 measured that price up to 14.6h older
+        // than the sighting, and labelling our poll as the book's move is the
+        // false label this round exists to remove.
+        kind: _vendorSeen ? 'sighting' : (o ? (o.tsKind || null) : 'book-tick'),
+      }, _openAnchorOf(m, who));
+    };
+    const _nowTitleFor = who => {
+      const px = mcDriftRight(who);
       if (mcStarted){
         const o = _ocsOf(m);
         const book = o ? o.book : ((m.closingOdds && m.closingOdds.bookmaker) || null);
-        const ts = o ? ocsFmtTs(o.p1.closeTs || o.p2.closeTs) : '';
-        return book ? [book, ts].filter(Boolean).join(' · ') : '';
+        if (!book) return '';
+        return mcPriceTitle({ book, at: o ? (o.p1.closeTs || o.p2.closeTs) : null,
+                              kind: o ? (o.tsKind || null) : null }, px);
       }
-      if (_dpair) return mcPriceTitle({ book: _dpair.book, at: _dpair.nowTs });
+      if (_dpair) return mcPriceTitle({ book: _dpair.book, at: _dpair.nowTs,
+                                        obs: _dpair.obs || null, kind: _dpair.kind || null }, px);
       if (_openAnchorOf(m, 'p1') != null || _openAnchorOf(m, 'p2') != null){
+        // MIRRORS `_mcNowOf`, WHICH IS WHERE `px` CAME FROM — caught in the
+        // clean-context review, and it was live. This branch titled the cell
+        // from `_mcBet365Now` unconditionally while `mcDriftRight` resolved the
+        // VALUE through `_mcNowOf`, which prefers the odds_card_state book. On
+        // the deployed board that put "bet365 · 4.10" over a sports411 price
+        // bet365 never quoted (Draxl/Rinderknech, both legs; bet365's own quote
+        // was 4.00) with bet365's two clocks on it — a price under another
+        // book's name AND another value's timestamps, the standing rule broken
+        // three ways on the single card this round made most likely to be
+        // hovered. The flat-0% guard is what routes a card here, so the two
+        // changes collided.
+        const o = _ocsOf(m);
+        if (o && o[who].now != null)
+          return mcPriceTitle({ book: o.book, at: o[who].nowTs || null,
+                                obs: o[who].nowObs || null, kind: o.tsKind || null }, px);
         const n = _mcBet365Now(m);
-        return n ? mcPriceTitle(n) : '';
+        return n ? mcPriceTitle(n, px) : '';
       }
-      return mcPriceTitle(_dfaceNow);
+      return mcPriceTitle(_dfaceNow, px);
     };
     const finOddsCell = (open, close) => {
       const rows = [];
@@ -8833,16 +8979,16 @@ function renderMatches(){
             <span class="mc-id">${mcAvatarHtml(m.p1PhotoUrl, m.p1, m.p1Key, 'a')}<span class="mc-name"${profileLinkAttrs(m.p1Key, m.p1)}>${m.p1}${serve('p1')}</span>${p1IsFavorite ? '<span class="mc-fav-tag">FAV</span>' : ''}</span>
             ${mxDriftView()
               ? mcDriftCell(_openAnchorOf(m, 'p1'), mcDriftRight('p1'), openAnchorOnly,
-                            { openTitle: _openTitle, nowTitle: _nowTitleFor(), paired: !!_dpair || mcStarted })
-              : `<span class="mc-oddswrap"${mcTitleAttr(nowTitle)}><span class="mc-odds">${p1OddsDisplay}</span><span class="mc-implied">${oddsSlot ? impliedPct(nowPair?.p1 ?? null) : ''}</span></span>`
+                            { openTitle: _openTitle('p1'), nowTitle: _nowTitleFor('p1'), paired: !!_dpair || mcStarted })
+              : `<span class="mc-oddswrap"${mcTitleAttr(nowTitleOf('p1'))}><span class="mc-odds">${p1OddsDisplay}</span><span class="mc-implied">${oddsSlot ? impliedPct(nowPair?.p1 ?? null) : ''}</span></span>`
                 + mcFormBar(m.p1RecentForm)}
           </div>
           <div class="mc-row b">
             <span class="mc-id">${mcAvatarHtml(m.p2PhotoUrl, m.p2, m.p2Key, 'b')}<span class="mc-name"${profileLinkAttrs(m.p2Key, m.p2)}>${m.p2}${serve('p2')}</span>${(hasFavLine && !p1IsFavorite) ? '<span class="mc-fav-tag">FAV</span>' : ''}</span>
             ${mxDriftView()
               ? mcDriftCell(_openAnchorOf(m, 'p2'), mcDriftRight('p2'), openAnchorOnly,
-                            { openTitle: _openTitle, nowTitle: _nowTitleFor(), paired: !!_dpair || mcStarted })
-              : `<span class="mc-oddswrap"${mcTitleAttr(nowTitle)}><span class="mc-odds">${p2OddsDisplay}</span><span class="mc-implied">${oddsSlot ? impliedPct(nowPair?.p2 ?? null) : ''}</span></span>`
+                            { openTitle: _openTitle('p2'), nowTitle: _nowTitleFor('p2'), paired: !!_dpair || mcStarted })
+              : `<span class="mc-oddswrap"${mcTitleAttr(nowTitleOf('p2'))}><span class="mc-odds">${p2OddsDisplay}</span><span class="mc-implied">${oddsSlot ? impliedPct(nowPair?.p2 ?? null) : ''}</span></span>`
                 + mcFormBar(m.p2RecentForm)}
           </div>
         </div>`;

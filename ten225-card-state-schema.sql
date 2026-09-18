@@ -74,6 +74,50 @@ CREATE TABLE IF NOT EXISTS odds_card_state (
   now_price         numeric,
   now_ts            timestamptz,
 
+  -- ── OUR OBSERVATION CLOCK, SEPARATE FROM THE PRICE'S OWN CLOCK ────────────
+  -- Founder ruling 2026-09-18 09:33Z, items 1 + 3.
+  --
+  -- `open_ts`/`now_ts` are the PRICE's time: a bet365 tick, or Kibl's
+  -- vendor-insert instant. `*_observed_at` is OUR time — when the sweep that
+  -- holds this value actually looked. They answer different questions and this
+  -- table could not previously tell them apart, which cost two real defects:
+  --
+  --   1. THE TOOLTIP printed the price's clock under a label a member reads as
+  --      "how fresh is this". Measured on the deployed board, n=32 fixtures
+  --      carrying both clocks: median gap 109 min, max 486 min. The hover was
+  --      systematically wrong about its own freshness.
+  --   2. THE FLAT 0%. A Kibl price re-seen unchanged by a LATER sweep is an
+  --      evidenced flat market. A Kibl price seen exactly ONCE is not evidence
+  --      of anything. Both wrote one row into open_* and now_*, so downstream
+  --      could only guess from timestamp equality.
+  --
+  -- ⚠️ WHAT THIS COLUMN DOES *NOT* YET FIX, ON THE KIBL PATH. MEASURED, not
+  -- assumed: kibl_client.observation_key() hashes inserted_on + price + the
+  -- three state flags and DOES NOT include observed_at, and archive-kibl.py
+  -- inserts ON CONFLICT (row_key) with resolution=ignore-duplicates. So a sweep
+  -- that re-sees an unchanged, still-current price writes NO NEW ROW and the
+  -- stored observed_at never advances past the FIRST sweep that saw it. On this
+  -- source now_observed_at > open_observed_at is therefore true exactly when
+  -- now_ts <> open_ts — the same test the renderer already had. On the deployed
+  -- file (32 complete Kibl sides) the two rules agree on all 32: 4 flat with
+  -- equal stamps, 3 flat with different stamps. ZERO behaviour change.
+  --
+  -- So on Kibl this is INSTRUMENTED, not fixed. The column is real and correct
+  -- where the fact exists (it is the genuine first-sighting stamp, and on the
+  -- api-tennis fallback it is a true sighting clock), but a Kibl re-sighting
+  -- cannot be evidenced until the ARCHIVE records one — a last_seen_at on
+  -- kibl_line_observations bumped every sweep, which is a Part 1 change to an
+  -- append-only store and the founder's call, not this file's.
+  --
+  -- NULLABLE AND OFTEN NULL, DELIBERATELY. The oddspapi path has no observation
+  -- clock to give: oddspapi_line_summary summarises book ticks and has never
+  -- carried a fetch time. NULL means "we do not hold our own clock for this
+  -- value", and every reader falls back to the price's own clock rather than
+  -- inventing one. NOT backfilled — a sighting time not recorded is not
+  -- recoverable, the same rule "first sighting wins forever" already encodes.
+  open_observed_at  timestamptz,
+  now_observed_at   timestamptz,
+
   -- Close. Michael: "last Oddspapi tick before the match start, with timestamp."
   -- NULL whenever the start could not be established or the close failed the
   -- reliability rule — the Open survives either way.
@@ -154,7 +198,9 @@ ALTER TABLE odds_card_state
   ADD COLUMN IF NOT EXISTS match_key           text,
   ADD COLUMN IF NOT EXISTS book_rank           smallint NOT NULL DEFAULT 99,
   ADD COLUMN IF NOT EXISTS is_selected         boolean  NOT NULL DEFAULT false,
-  ADD COLUMN IF NOT EXISTS ts_kind             text;
+  ADD COLUMN IF NOT EXISTS ts_kind             text,
+  ADD COLUMN IF NOT EXISTS open_observed_at    timestamptz,
+  ADD COLUMN IF NOT EXISTS now_observed_at     timestamptz;
 
 ALTER TABLE odds_card_state
   DROP CONSTRAINT IF EXISTS odds_card_state_reject_ck;

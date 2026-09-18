@@ -192,8 +192,17 @@ def card_rows(summary_rows, fixtures, as_of):
             'open_price': r.get('open_price'),
             'open_ts': r.get('open_ts'),
             'open_limit': r.get('open_limit'),
+            # NULL on this path, and it is a real gap rather than an oversight:
+            # oddspapi_line_summary summarises the BOOK's tick series and has
+            # never carried the time we fetched it, so there is no observation
+            # clock to write. Readers fall back to the tick clock, which is
+            # sound here for the reason the sighting path is not — two ticks at
+            # two instants are two observations BY THE BOOK, evidence in their
+            # own right. Reported as a named NULL column (ladder item J).
+            'open_observed_at': None,
             'now_price': r.get('last_tick_price') if now_ok else None,
             'now_ts': r.get('last_tick_ts') if now_ok else None,
+            'now_observed_at': None,
             'close_price': r.get('close_price'),
             'close_ts': r.get('close_ts'),
             'start_ts': r.get('start_ts'),
@@ -266,10 +275,14 @@ def fallback_rows(matches, covered, as_of):
                 'open_price': float(price),
                 'open_ts': iso(seen),
                 'open_limit': None,
+                # The Open here IS a sighting of ours, so its own stamp is also
+                # our observation clock. Written to both so the column is
+                # populated wherever the fact exists.
+                'open_observed_at': iso(seen),
                 # No Now on the fallback in this step: matches.json's `odds`
                 # block is whatever book was best, not necessarily bet365, and
                 # substituting it would be a cross-book blend.
-                'now_price': None, 'now_ts': None,
+                'now_price': None, 'now_ts': None, 'now_observed_at': None,
                 'close_price': None, 'close_ts': None,
                 'start_ts': None,
                 'start_ts_source': 'none',
@@ -375,8 +388,46 @@ def takeover_candidate_rows(matches, as_of):
                     'open_price': float(op['p1'] if side == '1' else op['p2']),
                     'open_ts': iso(seen),
                     'open_limit': None,
+                    # ── FOUNDER RULING 2026-09-18 09:33Z ITEM 3, SECOND SITE ──
+                    # "Report whether the same one-row-two-fields shape exists
+                    #  anywhere else in the publisher." It does, HERE, and in a
+                    # worse form than the Kibl one the ruling names.
+                    #
+                    # `bookOpens[book]` is a write-once pin and `now_by_book` is
+                    # the current pair off THE SAME api-tennis payload. On the
+                    # first run after a book's open is pinned they are one
+                    # sighting — but the two stamps DIFFER (open_ts = the pin's
+                    # seenAt, now_ts = this run's clock), so unlike the Kibl case
+                    # the renderer's equal-timestamps guard cannot see it and a
+                    # manufactured "two observations" would pass, rendering 0%
+                    # as an evidenced flat market on a fixture we have looked at
+                    # exactly once.
+                    #
+                    # open_observed_at IS seenAt: api-tennis ships no tick time,
+                    # so on this source our sighting is the only clock there is
+                    # and ts_kind='sighting' already says so.
+                    #
+                    # now_observed_at is NULL, AND THAT IS THE FIX. `as_of` is
+                    # when THIS SCRIPT RAN, not when the price in front of it was
+                    # observed — matches.json carries no observation stamp for
+                    # `odds`/`bestOdds`. Writing as_of there would assert a
+                    # second look we did not take, which is the same false label
+                    # one layer down. So the row says plainly that it has no
+                    # observation clock for its Now, _measurablePair refuses to
+                    # call a flat pair evidenced on a sighting row, and the card
+                    # renders both prices with no delta — founder item 2,
+                    # verbatim. A real MOVE still renders: two different prices
+                    # are their own evidence and need no clock.
+                    #
+                    # This costs takeover rows the ability to ever show an
+                    # evidenced 0%. Reported to the founder rather than papered
+                    # over: the fix is one field in bsp-pipeline.js stamping the
+                    # api-tennis book payload with its fetch instant (~2 KB on
+                    # matches.json), and that is his call, not this file's.
+                    'open_observed_at': iso(seen),
                     'now_price': (nowpair[idx] if nowpair else None),
                     'now_ts': (iso(as_of) if nowpair else None),
+                    'now_observed_at': None,
                     'close_price': None, 'close_ts': None,
                     'start_ts': None,
                     'start_ts_source': 'none',

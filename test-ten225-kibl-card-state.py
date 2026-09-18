@@ -94,28 +94,40 @@ check('live fluid (betting_type 3, the id the swagger gets wrong) is rejected',
 # ------------------------------------------------------------------- the Open
 print('\nopen_of — only the book\'s own opener')
 o = [obs(2.5, T % (9, 0)), obs(2.2, T % (8, 0), opener=True), obs(2.4, T % (10, 0))]
-p, ts, why = K.open_of(o)
+p, ts, why, seen = K.open_of(o)
 check('the is_opener row wins, whatever we saw first', p == 2.2, p)
 check('...stamped with ITS inserted_on', ts == T % (8, 0), ts)
 check('...and no reason', why is None)
+# FOUNDER RULING 2026-09-18 09:33Z item 3 — the Open now carries OUR sweep clock
+# in its own return value, so a downstream 0% rests on two observations rather
+# than on two fields of one row.
+check('...and OUR observation clock, separately from the price\'s own',
+      seen == '2026-09-18T00:00:00Z', seen)
+p2, _, _, seen2 = K.open_of([obs(2.2, T % (8, 0), opener=True, observed_at='2026-09-18T09:00:00Z'),
+                             obs(2.2, T % (8, 0), opener=True, observed_at='2026-09-18T07:00:00Z')])
+check('the EARLIEST sweep that saw the opener wins — a re-served opener must '
+      'not drift its own first-seen forward', seen2 == '2026-09-18T07:00:00Z', seen2)
+p3, _, _, seen3 = K.open_of([obs(2.2, T % (8, 0), opener=True, observed_at=None)])
+check('no sweep clock on the row -> None, never the price\'s clock borrowed',
+      p3 == 2.2 and seen3 is None, seen3)
 
-p, ts, why = K.open_of([obs(2.5, T % (9, 0)), obs(2.4, T % (10, 0))])
+p, ts, why, _ = K.open_of([obs(2.5, T % (9, 0)), obs(2.4, T % (10, 0))])
 check('NO opener row -> no Open. Our earliest sighting is not the book\'s '
       'opener and stamping it "Open" would be the approximation the standing '
       'rules forbid', p is None and ts is None)
 check('...with the reason carried', why == 'no_opener_row', why)
 
-p, _, why = K.open_of([obs(2.2, T % (8, 0), opener=True),
-                       obs(2.9, T % (8, 0), opener=True)])
+p, _, why, _ = K.open_of([obs(2.2, T % (8, 0), opener=True),
+                          obs(2.9, T % (8, 0), opener=True)])
 check('two openers at ONE instant disagreeing on price drops on ambiguity',
       p is None and why == 'ambiguous_opener', why)
 
-p, _, _ = K.open_of([obs(2.2, T % (8, 0), opener=True),
-                     obs(2.9, T % (9, 0), opener=True)])
+p, _, _, _ = K.open_of([obs(2.2, T % (8, 0), opener=True),
+                        obs(2.9, T % (9, 0), opener=True)])
 check('two openers at different instants -> the EARLIER (first sighting wins '
       'forever)', p == 2.2, p)
 
-p, _, why = K.open_of([obs(2.2, None, opener=True)])
+p, _, why, _ = K.open_of([obs(2.2, None, opener=True)])
 check('an opener with no timestamp is not an Open — a price without its time is '
       'unrenderable and the schema CHECK would reject it anyway',
       p is None and why == 'no_opener_row', why)

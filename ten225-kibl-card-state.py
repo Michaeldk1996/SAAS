@@ -34,9 +34,18 @@ THREE TIMESTAMP FACTS THAT ARE NOT INTERCHANGEABLE
                 data." -> ts_kind = 'vendor-insert' on every row this file
                 writes. It is the price's time and it is what Open/Now/Close are
                 stamped with.
-  observed_at   when OUR sweep ran. Never rendered. It is our cadence, not the
-                market's, and mixing it into a published timestamp is exactly
-                what makes a book look slower than it is.
+  observed_at   when OUR sweep ran. It is our cadence, not the market's, and
+                MIXING it into a price's timestamp is exactly what makes a book
+                look slower than it is — so it is never written into open_ts /
+                now_ts / close_ts.
+                It IS now written, and rendered, in its own columns
+                (open_observed_at / now_observed_at) and shown as the second
+                clock in the hover: "bet365 · 1.22 since 01:08 · seen 09:15"
+                (founder ruling 2026-09-18 09:33Z, items 1 + 3). Separate
+                columns, separate labels — the ban is on conflating them, not on
+                showing our own clock. Withholding it was itself a defect: it
+                left a 0% move unable to say whether a later sweep had confirmed
+                the flat price or whether we had only ever looked once.
   scheduled_start  Kibl's scheduled time. NEVER a Close cutoff (standing rule).
 
 Reads SUPABASE_URL / SUPABASE_SECRET_KEY. Stdlib only. Secrets never printed.
@@ -210,20 +219,34 @@ def open_of(obs_list):
     forever). Two opener rows sharing one inserted_on but disagreeing on price
     is a contradiction we cannot resolve, so it drops on ambiguity.
 
-    Returns (price, ts_iso, reason) — exactly one of price/reason is set.
+    Returns (price, ts_iso, reason, observed_at) — exactly one of price/reason
+    is set. `observed_at` is OUR sweep clock for the row the Open came from, and
+    it is a fourth return value rather than a field on the same timestamp because
+    conflating the two is the defect this ruling was raised about: see
+    `open_observed_at` in ten225-card-state-schema.sql.
     """
     openers = [o for o in obs_list
                if o.get('is_opener') and o.get('price_decimal') is not None
                and epoch(o.get('inserted_on')) is not None]
     if not openers:
-        return None, None, 'no_opener_row'
+        return None, None, 'no_opener_row', None
     openers.sort(key=lambda o: epoch(o['inserted_on']))
     first_ts = epoch(openers[0]['inserted_on'])
     tied = {float(o['price_decimal']) for o in openers
             if epoch(o['inserted_on']) == first_ts}
     if len(tied) > 1:
-        return None, None, 'ambiguous_opener'
-    return float(openers[0]['price_decimal']), openers[0]['inserted_on'], None
+        return None, None, 'ambiguous_opener', None
+    # The EARLIEST sweep that saw this opener row, not the row we happened to
+    # sort first: an opener re-served on every sweep would otherwise drift its
+    # own "when did we first see it" forward, which is `first sighting wins
+    # forever` broken from the other end.
+    # Filter on the PARSED value, not on the raw string's truthiness: an
+    # unparseable-but-non-empty stamp would put a None into the list and kill
+    # min() — and with it the whole card-state build — on one bad row.
+    seen = [e for e in (epoch(o.get('observed_at')) for o in openers
+                        if epoch(o['inserted_on']) == first_ts) if e is not None]
+    return (float(openers[0]['price_decimal']), openers[0]['inserted_on'], None,
+            iso(min(seen)) if seen else None)
 
 
 def newest_of(obs_list):
@@ -526,7 +549,7 @@ def build_rows(kibl_fixtures, observations, odds_index, as_of):
             by_side[s].append(o)
 
         for side, lst in sorted(by_side.items()):
-            open_price, open_ts, open_reason = open_of(lst)
+            open_price, open_ts, open_reason, open_obs = open_of(lst)
             if open_reason:
                 st[f'open_{open_reason}'] += 1
             else:
@@ -569,8 +592,47 @@ def build_rows(kibl_fixtures, observations, odds_index, as_of):
                 # provided" on every row we are served. 0.0 is a limit-shaped
                 # number, so it is stored as NULL, never as a stake limit.
                 'open_limit': _limit(lst),
+                # ── FOUNDER RULING 2026-09-18 09:33Z ITEM 3, FIXED AT SOURCE ──
+                # "ten225-kibl-card-state.py writing the opener row into both
+                #  open_ and now_: confirm that is fixed at source, not only
+                #  guarded in the renderer."
+                #
+                # The VALUE was never wrong: with one observation on file, the
+                # opener IS also the freshest price we hold, and item 2 rules
+                # that it must keep rendering ("keep the price rendering with no
+                # delta on a single sighting — do not dash it"). What was wrong
+                # is that the row said nothing about WHICH of the two cases it
+                # was, so the renderer had to infer it from open_ts == now_ts —
+                # which also suppresses the legitimate case where a LATER sweep
+                # re-saw an unchanged price. That is an evidenced flat market and
+                # it was being thrown away with the artefact.
+                #
+                # These two columns carry OUR sweep clock, which is the clock
+                # a 0% actually rests on.
+                #
+                # ⚠️ AND ON THIS SOURCE THAT IS NOT YET ENOUGH — say so rather
+                # than let the column imply otherwise. kibl_line_observations is
+                # append-only and its row_key (kibl_client.observation_key)
+                # hashes inserted_on + price + flags WITHOUT observed_at, under
+                # an ignore-duplicates insert. A sweep that re-sees an unchanged
+                # current price therefore writes no row at all, so observed_at
+                # never advances and now_observed_at > open_observed_at holds
+                # exactly when now_ts <> open_ts — the test the renderer already
+                # applied. Measured on the deployed file, 32 complete Kibl
+                # sides: the two rules agree 32/32, zero behaviour change.
+                #
+                # What IS fixed here is the second half of the founder's
+                # question — the shape now exists nowhere in the publisher
+                # UNLABELLED: every row states which clock is whose, and the
+                # api-tennis fallback (ten225-load-card-state.py) writes a
+                # genuine sighting clock. Evidencing a Kibl RE-sighting needs a
+                # last_seen_at bumped per sweep on the archive table, which is a
+                # Part 1 change to an append-only store and the founder's call.
+                # See `open_observed_at` in ten225-card-state-schema.sql.
+                'open_observed_at': open_obs,
                 'now_price': (float(newest['price_decimal']) if newest else None),
                 'now_ts': (newest['inserted_on'] if newest else None),
+                'now_observed_at': (newest.get('observed_at') if newest else None),
                 'close_price': (float(close_obs['price_decimal'])
                                 if (close_obs and reliable) else None),
                 'close_ts': close_ts if (close_obs and reliable) else None,
@@ -1117,8 +1179,9 @@ def apply_orientation_guard(rows, dashed, st):
     """
     for r in rows:
         if r.get('match_key') in dashed:
-            for f in ('open_price', 'open_ts', 'open_limit',
-                      'now_price', 'now_ts', 'close_price', 'close_ts'):
+            for f in ('open_price', 'open_ts', 'open_limit', 'open_observed_at',
+                      'now_price', 'now_ts', 'now_observed_at',
+                      'close_price', 'close_ts'):
                 r[f] = None
             r['label'] = 'orientation-disagreement'
             st['orientation_guard_dashed'] += 1

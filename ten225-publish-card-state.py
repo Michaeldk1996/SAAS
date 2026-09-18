@@ -244,6 +244,18 @@ def build(rows, oddspapi_fx, kibl_fx, board_fx, window=(None, None)):
                 'now': _px(r.get('now_price')), 'nowTs': r.get('now_ts'),
                 'close': _px(r.get('close_price')), 'closeTs': r.get('close_ts'),
             }
+            # ── BOTH CLOCKS (founder ruling 2026-09-18 09:33Z, items 1 + 3) ──
+            # `openTs`/`nowTs` are the PRICE's clock; these two are OURS. The
+            # page needs both: one answers "how stale is the line", the other
+            # "how stale is our copy", and the hover now prints them side by
+            # side. Emitted ONLY when present — an absent key is the dash, and
+            # a NULL written as a key would make every row look like it carried
+            # a clock it does not have. This also keeps the payload off the 602
+            # oddspapi rows that genuinely have no observation clock.
+            for k, col in (('openObs', 'open_observed_at'),
+                           ('nowObs', 'now_observed_at')):
+                if r.get(col):
+                    sides[nk][k] = r[col]
         if bad or not sides:
             continue
 
@@ -369,7 +381,8 @@ def main():
     rows = fetch_all(
         url, key, 'odds_card_state',
         'fixture_id,id_space,book,market,side,line,match_key,book_rank,'
-        'is_selected,ts_kind,open_price,open_ts,open_limit,now_price,now_ts,'
+        'is_selected,ts_kind,open_price,open_ts,open_limit,open_observed_at,'
+        'now_price,now_ts,now_observed_at,'
         'close_price,close_ts,start_ts,start_ts_source,start_reject_reason,'
         'source,label',
         extra=f'&market=eq.{urllib.parse.quote(MARKET)}')
