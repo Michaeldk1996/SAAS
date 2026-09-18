@@ -23,12 +23,15 @@ on:
     # lives in should_sweep() where it can be tested and counted, and the
     # schedule only has to fire often enough for it to be applicable.
     #
-    # ⚠️ MEASURED 2026-09-18 05:05Z, and it is worse than 27%: this schedule has
-    # delivered ZERO firings in the 5h34m since the file landed on main at
-    # 23:31Z (~66 due). Repo-wide control over the same window: 7 schedule runs
-    # across 7 distinct workflows — so cron is not dead here, it is throttled to
-    # roughly one firing per workflow per 5 hours, and a `*/5` expression buys
-    # nothing. The schedule is KEPT as a free backstop, but the cadence the
+    # ⚠️ MEASURED 2026-09-18, and it is worse than 27%: this schedule delivered
+    # ONE firing (05:07:36Z) in the 5h36m since the file landed on main at
+    # 23:31Z — against ~67 due, so 1.5%. Repo-wide control over the same window:
+    # 7 schedule runs across 7 distinct workflows, one each. Cron is not dead
+    # here, it is throttled to roughly one firing per workflow per several
+    # hours, and a `*/5` expression buys nothing over `@hourly`. The observed
+    # inter-capture gaps under it were min 4 / median 65 / max 187 minutes
+    # (n=6), independently recomputed from the GitHub run list.
+    # The schedule is KEPT as a free backstop, but the cadence the
     # archive actually runs at comes from the Supabase pg_cron pinger installed
     # by `ten232-kibl-sweep-cron.yml` (same mechanism as TEN-141, measured ~100%
     # delivery), which dispatches this workflow with cadence_gate=true.
@@ -58,8 +61,11 @@ concurrency:
 # TEN-225 Part 3 — `write` so the publish step can commit odds-card-state.json.
 # The sweep, the card fill and every report in this job stay read-only; the one
 # writer is the publish step, and the one path it writes is that file.
+# `actions: read` is for the circuit-breaker step, which reads this workflow's
+# own run list to count consecutive failures.
 permissions:
   contents: write
+  actions: read
 
 jobs:
   archive:
@@ -109,6 +115,7 @@ jobs:
         run: |
           python3 -B test-kibl-client.py
           python3 -B test-ten232-report.py
+          python3 -B test-ten232-breaker.py
           python3 -B test-ten225-kibl-card-state.py
           python3 -B test-ten225-orientation.py
           python3 -B test-ten225-ddl-audit.py
@@ -331,3 +338,22 @@ jobs:
         run: |
           set -o pipefail
           python3 archive-kibl.py report --days 3 | tee -a "$GITHUB_STEP_SUMMARY"
+
+      # Standing rule: a self-dispatching job stops itself after 3 consecutive
+      # non-zero runs. The pinger fires from Supabase and cannot see an outcome,
+      # so the failure is reported from here. Counts THIS run as one of the
+      # three — it only executes on failure() — plus the last two completed
+      # runs, and unschedules the pinger when all three failed. Recovery is
+      # deliberately manual: re-run ten232-kibl-sweep-cron.yml with
+      # action=install once the cause is fixed.
+      - name: Circuit breaker — stop the pinger after 3 consecutive failures
+        if: failure()
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ACTION: breaker
+        run: |
+          set -o pipefail
+          python3 -B ten232-kibl-sweep-cron.py | tee -a "$GITHUB_STEP_SUMMARY"

@@ -29,15 +29,22 @@ on:
   workflow_dispatch:
     inputs:
       action:
-        description: 'install | status | uninstall'
+        description: 'install | status | uninstall | breaker'
         required: true
         default: 'status'
         type: choice
-        options: [install, status, uninstall]
+        options: [install, status, uninstall, breaker]
 
 concurrency:
   group: ten232-kibl-sweep-cron
   cancel-in-progress: false
+
+# `actions: read` is what action=breaker needs to read this workflow's own run
+# list. Declaring a permissions block sets every unlisted scope to none, which
+# is the point: this job writes no repo content and needs no write anywhere.
+permissions:
+  contents: read
+  actions: read
 
 jobs:
   manage:
@@ -53,6 +60,9 @@ jobs:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
           WORKFLOW_PAT: ${{ secrets.WORKFLOW_PAT }}
+          # action=breaker reads this repo's own run list; the job token is
+          # enough and no PAT is involved in the read.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ACTION: ${{ github.event.inputs.action }}
         run: |
           set -o pipefail

@@ -121,6 +121,53 @@ def sweep_gap(url, key):
     return (now - ts).total_seconds() / 60.0, rows[0].get("sweep_id")
 
 
+BREAKER_N = 3
+
+
+def recent_conclusions(token, limit=10):
+    """The last completed archive runs, newest first, as (id, conclusion).
+
+    Only COMPLETED runs count. An in-progress run has conclusion null, and
+    treating null as a failure would trip the breaker on the run that is asking
+    the question — itself.
+    """
+    req = urllib.request.Request(
+        f"https://api.github.com/repos/{REPO}/actions/workflows/{WF}"
+        f"/runs?per_page={limit}&status=completed",
+        headers={"Authorization": f"Bearer {token}",
+                 "Accept": "application/vnd.github+json",
+                 "User-Agent": "ten232-breaker/1.0"})
+    with urllib.request.urlopen(req, timeout=60) as r:
+        runs = json.loads(r.read().decode()).get("workflow_runs", [])
+    return [(x["id"], x["conclusion"], x["created_at"]) for x in runs]
+
+
+def breaker_should_trip():
+    gh = (os.environ.get("GITHUB_TOKEN") or "").strip()
+    if not gh:
+        return False, "breaker: no GITHUB_TOKEN — cannot read the run list, not tripping"
+    try:
+        runs = recent_conclusions(gh)
+    except Exception as e:                                    # noqa: BLE001
+        # Fails SAFE, in the direction that keeps capturing: an unreadable run
+        # list is not evidence of three failures.
+        return False, f"breaker: could not read the run list ({e}); not tripping"
+    # The run asking the question is still in progress, so it is not in the
+    # completed list — but this step only executes on failure(), so it IS a
+    # failure and it counts as one of the three. Without this the breaker would
+    # need a FOURTH failing run to trip, which is not the rule as written.
+    me = (os.environ.get("GITHUB_RUN_ID") or "").strip()
+    runs = [r for r in runs if str(r[0]) != me]
+    window = [("this run", "failure", "in progress")] + runs[:BREAKER_N - 1]
+    if len(window) < BREAKER_N:
+        return False, (f"breaker: only {len(window)} runs to judge "
+                       f"(need {BREAKER_N}); not tripping")
+    lines = "\n".join(f"  - {c} {t} (run {i})" for i, c, t in window)
+    bad = [c for _, c, _ in window if c != "success"]
+    return (len(bad) == BREAKER_N,
+            f"breaker: last {BREAKER_N} runs —\n{lines}")
+
+
 def main():
     url = (os.environ.get("SUPABASE_URL") or "").strip()
     token = (os.environ.get("SUPABASE_ACCESS_TOKEN") or "").strip()
@@ -136,6 +183,30 @@ def main():
 
     body = json.dumps({"ref": "main",
                        "inputs": {"mode": "sweep", "cadence_gate": "true"}})
+
+    if action == "breaker":
+        # Standing rule: a self-dispatching job stops itself after 3 consecutive
+        # non-zero runs. A pinger fires from Supabase and cannot see a run
+        # outcome, so the ARCHIVE reports its own failures here. Read from the
+        # GitHub run list rather than from a counter we keep, because a counter
+        # in a table only survives if the run that increments it got far enough
+        # to write — which a hard failure is exactly what does not.
+        tripped, why = breaker_should_trip()
+        print(why)
+        if not tripped:
+            print("breaker: not tripped; the pinger stays scheduled.")
+            return 0
+        run_sql(ref, token, f"""
+        do $$ begin perform cron.unschedule({sql_lit(JOB)});
+              exception when others then null; end $$;
+        """, "breaker unschedule")
+        print("::error::circuit breaker TRIPPED — the Kibl sweep pinger has been "
+              "unscheduled after 3 consecutive failing runs. The archive is NOT "
+              "capturing. Fix the cause, then re-run this workflow with "
+              "action=install.")
+        # Exit non-zero: a tripped breaker is an outage, and a green run here
+        # would be the fail-open this repo has been bitten by before.
+        sys.exit(1)
 
     if action == "install":
         if not pat:
