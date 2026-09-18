@@ -8149,19 +8149,34 @@ function mcDriftCell(open, now, anchorOnly, opts){
 // present and "we have no price" is always stated rather than implied.
 // `prov` is "<book> · <open time>", rendered as the cell's title because the
 // completed card has no room for a provenance line — see the design-gap list.
-function mcJourney(open, close, anchorOnly, prov){
-  const t = prov ? ` title="${String(prov).replace(/"/g, '&quot;')}"` : '';
+// ── TEN-225, founder ruling 2026-09-18 09:33Z item 1, COMPLETED CARD ─────────
+// `opts` used to be ONE provenance STRING on the WRAPPER, and both of that
+// shape's failures were live. MEASURED on the completed board:
+//   * 4 of 4 journeys put the OPEN's timestamp over the CLOSE cell as well —
+//     "bet365 · 18 Sept 09:08" spanning a 5.50 open and a 5.50 close that was
+//     cut at a different instant entirely. The same false label the drift cell
+//     was corrected for, on the other view.
+//   * 2 of 4 carried that title over a DASHED close, i.e. a book name beside a
+//     price we are not showing, which ruling 2 forbids in those words.
+// So: per-leg titles, each carrying its own price and its own clock, and a
+// dashed leg carries none. Identical treatment to mcDriftCell.
+function mcJourney(open, close, anchorOnly, opts){
+  const o = opts || {};
+  const ot = open  != null ? mcTitleAttr(typeof o.openTitle  === 'function' ? o.openTitle()  : o.openTitle)  : '';
+  const ct = close != null ? mcTitleAttr(typeof o.closeTitle === 'function' ? o.closeTitle() : o.closeTitle) : '';
   if (open == null && close == null){
-    return `<span class="mc-journey mc-journey--noopen"${t}>`
+    // No title anywhere: naming a book on a card showing neither price is the
+    // purest form of the label ruling 2 removes.
+    return `<span class="mc-journey mc-journey--noopen">`
       + `<span class="mc-journey__open mc-journey__nodata">—</span>`
       + `<span class="mc-journey__lane"></span>`
       + `<span class="mc-journey__close mc-journey__nodata">—</span>`
       + `<span class="mc-journey__delta"></span></span>`;
   }
   if (open != null && close != null && anchorOnly) {
-    return `<span class="mc-journey"${t}><span class="mc-journey__open">${open.toFixed(2)}</span>`
+    return `<span class="mc-journey"><span class="mc-journey__open"${ot}>${open.toFixed(2)}</span>`
       + `<span class="mc-journey__lane"></span>`
-      + `<span class="mc-journey__close">${close.toFixed(2)}</span>`
+      + `<span class="mc-journey__close"${ct}>${close.toFixed(2)}</span>`
       + `<span class="mc-journey__delta"></span></span>`;
   }
   // §5 (PASS 4) — opening price missing (oddspapi tier blocked). An empty OPEN cell
@@ -8171,11 +8186,11 @@ function mcJourney(open, close, anchorOnly, prov){
   // When openingOdds land the em dash resolves on its own and the track/delta return.
   // Missing OPEN: em dash in the OPEN cell, a thin neutral (empty) lane, close kept,
   // no delta. Layout holds its fixed columns so CLOSE stays under its header.
-  if (open == null) return `<span class="mc-journey mc-journey--noopen"${t}><span class="mc-journey__open mc-journey__nodata">—</span><span class="mc-journey__lane"></span><span class="mc-journey__close">${close.toFixed(2)}</span><span class="mc-journey__delta"></span></span>`;
+  if (open == null) return `<span class="mc-journey mc-journey--noopen"><span class="mc-journey__open mc-journey__nodata">—</span><span class="mc-journey__lane"></span><span class="mc-journey__close"${ct}>${close.toFixed(2)}</span><span class="mc-journey__delta"></span></span>`;
   // TEN-225 — a recorded Open with no Close now keeps its CLOSE cell and dashes
   // in it. The old shape emitted the open alone, which collapsed the row and
   // left nothing under the CLOSE header: a blank, not a dash.
-  if (close == null) return `<span class="mc-journey"${t}><span class="mc-journey__open">${open.toFixed(2)}</span><span class="mc-journey__lane"></span><span class="mc-journey__close mc-journey__nodata">—</span><span class="mc-journey__delta"></span></span>`;
+  if (close == null) return `<span class="mc-journey"><span class="mc-journey__open"${ot}>${open.toFixed(2)}</span><span class="mc-journey__lane"></span><span class="mc-journey__close mc-journey__nodata">—</span><span class="mc-journey__delta"></span></span>`;
   // §2/§6 SETTLED (founder review 2026-08-08) — the odds journey is ONE object:
   //   open (40px) · direction bar (64px lane) · close (44px) · delta (44px, inline).
   // The BAR LENGTH encodes the move size — width ∝ |delta%|, per the export exactly
@@ -8194,10 +8209,10 @@ function mcJourney(open, close, anchorOnly, prov){
   const delta = d.pct !== 0
     ? `<span class="mc-journey__delta ${d.dir}">${d.text}</span>`
     : `<span class="mc-journey__delta"></span>`;
-  return `<span class="mc-journey ${d.dir}"${t}>`
-    + `<span class="mc-journey__open">${open.toFixed(2)}</span>`
+  return `<span class="mc-journey ${d.dir}">`
+    + `<span class="mc-journey__open"${ot}>${open.toFixed(2)}</span>`
     + `<span class="mc-journey__lane"><span class="mc-journey__bar" style="width:${barW}px"></span></span>`
-    + `<span class="mc-journey__close">${close.toFixed(2)}</span>`
+    + `<span class="mc-journey__close"${ct}>${close.toFixed(2)}</span>`
     + delta
     + `</span>`;
 }
@@ -8742,7 +8757,12 @@ function renderMatches(){
     // provenance line, so on the CARD it is the cell title and the full line is
     // rendered in the match detail. Logged as a design gap, not solved by
     // inventing a row the approved layout does not have.
-    const oddsProv = ocsProvenance(m);
+    //
+    // ONE SHARED `ocsProvenance(m)` STRING USED TO SERVE BOTH CELLS HERE, on the
+    // wrapper. It named the OPEN's timestamp over the CLOSE cell on 4 of 4
+    // completed journeys, and sat over a DASHED close on 2 of those 4 — the same
+    // two failures the drift cell was corrected for. Replaced by _openTitle /
+    // _closeTitle below, per leg, each with its own price and its own clock.
     // TEN-225 ruling 2 — the hover label for the ODDS COLUMN, which shows the Now.
     // It names `nowPair`'s book, not the Open's; see mcPriceTitle.
     // Per LEG, because the founder's format carries the price of the cell being
@@ -8834,8 +8854,14 @@ function renderMatches(){
       // stamp refresh-odds-history.py writes once on first sighting and never
       // rewrites. The second is used ONLY when the pin names the same book the
       // title does, or it would be one book's sighting under another's name.
+      // Same book AND the same price: that makes it provably a sighting of the
+      // open being titled, not of some other open the same book once posted.
+      // Without the price test, matches.json's pin and odds_card_state's first
+      // tick are only assumed to be the same event.
+      const px = _openAnchorOf(m, who);
       const pinSeen = (op && op.seenAt
-                       && String(op.bookmaker || '').toLowerCase() === String(book).toLowerCase())
+                       && String(op.bookmaker || '').toLowerCase() === String(book).toLowerCase()
+                       && op[who] === px)
                       ? op.seenAt : null;
       return mcPriceTitle({
         book,
@@ -8846,7 +8872,20 @@ function renderMatches(){
         // than the sighting, and labelling our poll as the book's move is the
         // false label this round exists to remove.
         kind: _vendorSeen ? 'sighting' : (o ? (o.tsKind || null) : 'book-tick'),
-      }, _openAnchorOf(m, who));
+      }, px);
+    };
+    // The CLOSE's own book and its own cut instant. It follows `_mcCloseOf`,
+    // which is where the price came from — odds_card_state where it covers the
+    // fixture, else matches.json's pinned close — so the label can never name a
+    // book that did not supply the number above it. A close has no observation
+    // clock of its own: it is a historical cut, not something we re-observe.
+    const _closeTitle = who => {
+      const o = _ocsOf(m);
+      const book = o ? o.book : ((m.closingOdds && m.closingOdds.bookmaker) || null);
+      if (!book) return '';
+      return mcPriceTitle({ book, at: o ? (o[who].closeTs || null) : null,
+                            kind: o ? (o.tsKind || null) : 'book-tick' },
+                          _mcCloseOf(m, who));
     };
     const _nowTitleFor = who => {
       const px = mcDriftRight(who);
@@ -8965,13 +9004,13 @@ function renderMatches(){
             <span class="mc-id">${mcAvatarHtml(m.p1PhotoUrl, m.p1, m.p1Key, 'a')}<span class="mc-name"${profileLinkAttrs(m.p1Key, m.p1)}>${m.p1}</span>${p1IsFavorite ? '<span class="mc-fav-tag">FAV</span>' : ''}</span>
             ${(m.retired || m.walkover) ? mcTermCell(m, 'p1', boardSetCols) : mcSetCluster(finalScore, 'p1', false, boardSetCols)}
             <span class="mc-vdiv"></span>
-            ${mcJourney(p1Open, p1Close, openAnchorOnly, oddsProv)}
+            ${mcJourney(p1Open, p1Close, openAnchorOnly, { openTitle: _openTitle('p1'), closeTitle: _closeTitle('p1') })}
           </div>
           <div class="mc-row b${p2IsWinner ? ' winner' : ''}">
             <span class="mc-id">${mcAvatarHtml(m.p2PhotoUrl, m.p2, m.p2Key, 'b')}<span class="mc-name"${profileLinkAttrs(m.p2Key, m.p2)}>${m.p2}</span>${(hasFavLine && !p1IsFavorite) ? '<span class="mc-fav-tag">FAV</span>' : ''}</span>
             ${(m.retired || m.walkover) ? mcTermCell(m, 'p2', boardSetCols) : mcSetCluster(finalScore, 'p2', false, boardSetCols)}
             <span class="mc-vdiv"></span>
-            ${mcJourney(p2Open, p2Close, openAnchorOnly, oddsProv)}
+            ${mcJourney(p2Open, p2Close, openAnchorOnly, { openTitle: _openTitle('p2'), closeTitle: _closeTitle('p2') })}
           </div>
         </div>`
       : `<div class="mc-players up">

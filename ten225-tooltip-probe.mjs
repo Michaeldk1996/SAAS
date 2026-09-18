@@ -41,7 +41,7 @@ async function cdp() {
   const proc = spawn('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
     ['--headless=new', '--remote-debugging-port=0', '--no-first-run',
      '--no-default-browser-check', '--disable-gpu',
-     '--user-data-dir=' + DATA + '/ten225-tip-chrome', 'about:blank'],
+     '--user-data-dir=' + DATA + '/ten225-tip-chrome-' + Date.now(), 'about:blank'],
     { stdio: ['ignore', 'ignore', 'pipe'] });
   let wsUrl = null;
   proc.stderr.on('data', d => { const m = /ws:\/\/[^\s]+/.exec(String(d)); if (m && !wsUrl) wsUrl = m[0]; });
@@ -72,7 +72,7 @@ const c = await cdp();
 try {
   await c.send('Page.enable'); await c.send('Runtime.enable');
   await c.send('Page.addScriptToEvaluateOnNewDocument', { source: AUTH_STUB });
-  await c.send('Page.navigate', { url: PAGE + (PAGE.includes('?') ? '&' : '?') + 'cb=ten225tip' });
+  await c.send('Page.navigate', { url: PAGE + (PAGE.includes('?') ? '&' : '?') + 'cb=ten225tip' + Date.now() });
   const ev = async e => {
     const r = await c.send('Runtime.evaluate', { expression: e, awaitPromise: true, returnByValue: true });
     if (r.exceptionDetails) throw new Error(JSON.stringify(r.exceptionDetails).slice(0, 700));
@@ -203,6 +203,50 @@ try {
   check('Open and Now either side of the drift arrow name the SAME book',
         drift.bookClash.length === 0, drift.bookClash);
   check('...and that check was not vacuous', drift.bookPairsSeen > 0, drift.bookPairsSeen);
+
+  // ── the COMPLETED card's Open/Close journey ───────────────────────────────
+  // Same defect class, other view. Before the fix this wrapper carried ONE
+  // title for both cells: the OPEN's timestamp over the CLOSE on 4 of 4
+  // journeys, and a book name over a DASHED close on 2 of those 4.
+  await ev(`(function(){ if (typeof setMatchesView==='function') setMatchesView('completed');
+                         else state.view='completed'; renderMatches(); return true; })()`);
+  await sleep(1500);
+  const cmpl = await ev(`(function(){
+    const out = { wrappers: 0, wrapperTitled: 0, openPriced: 0, closePriced: 0,
+                  openTitled: 0, closeTitled: 0, dashTitled: 0,
+                  openPriceMatch: 0, closePriceMatch: 0, mismatch: [], samples: [] };
+    const pxIn = t => { const m = (t || '').match(/^[^·]+·\\s*(\\d+\\.\\d\\d)/); return m ? m[1] : null; };
+    for (const j of document.querySelectorAll('.mc-journey')){
+      out.wrappers++;
+      if (j.getAttribute('title')) out.wrapperTitled++;
+      for (const [sel, kind] of [['.mc-journey__open','open'], ['.mc-journey__close','close']]){
+        const el = j.querySelector(sel); if (!el) continue;
+        const px = el.textContent.trim(), t = el.getAttribute('title') || '';
+        if (!/^\\d/.test(px)){ if (t) out.dashTitled++; continue; }
+        out[kind + 'Priced']++;
+        if (!t) continue;
+        out[kind + 'Titled']++;
+        const p = pxIn(t);
+        if (p === px) out[kind + 'PriceMatch']++; else out.mismatch.push({ kind: kind, cell: px, title: t });
+        if (out.samples.length < 6) out.samples.push(kind.toUpperCase() + ' ' + px + '  <- ' + t);
+      }
+    }
+    return out;
+  })()`);
+  console.log('');
+  console.log('COMPLETED CARD — Open/Close journey');
+  console.log(`  journeys ${cmpl.wrappers}   open priced ${cmpl.openPriced} (titled ${cmpl.openTitled})   close priced ${cmpl.closePriced} (titled ${cmpl.closeTitled})`);
+  for (const s of cmpl.samples) console.log(`    ${s.replace(/\n/g, ' ⏎ ')}`);
+  check('the completed view rendered journeys', cmpl.wrappers > 0, cmpl.wrappers);
+  check('NO title on the wrapper — it spans two cells with two different clocks',
+        cmpl.wrapperTitled === 0, cmpl.wrapperTitled);
+  check('no dashed Open/Close cell is titled', cmpl.dashTitled === 0, cmpl.dashTitled);
+  check('every priced Open cell is titled', cmpl.openTitled === cmpl.openPriced, cmpl);
+  check('every priced Close cell is titled', cmpl.closeTitled === cmpl.closePriced, cmpl);
+  check('each cell\'s title carries ITS OWN price',
+        cmpl.openPriceMatch === cmpl.openTitled && cmpl.closePriceMatch === cmpl.closeTitled, cmpl.mismatch);
+  check('...and that cross-check was not vacuous', cmpl.openTitled + cmpl.closeTitled > 0,
+        cmpl.openTitled + cmpl.closeTitled);
 } finally {
   c.close();
 }
