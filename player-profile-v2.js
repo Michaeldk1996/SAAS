@@ -1433,8 +1433,29 @@
   // Per card: the split, its rate, its record, the comparison and the signed gap.
   // No adjectives. An insight may be negative — a red card is a real finding, not
   // a formatting accident. Fewer than three eligible -> fewer cards, never padded.
+  //
+  // RULING Q1 (founder, 2026-09-18) · "Apply the same rule to Key insights'
+  // positive card so box and insights never disagree; negative findings stay
+  // allowed in the insights as a separate card, worded plainly."
+  //
+  // Implemented as: the leading card IS the Draw record box's pick, the same
+  // object bestSplit() hands the tile — not a re-selection that happens to agree
+  // today. The remaining slots keep R2's |gap| ranking over the WIDER insight
+  // vocabulary (surface included), so a negative finding still earns a card and
+  // still reads as one: a red arrow, a signed pp, no adjective.
+  //
+  // REPORTED, not resolved — the one place the two can still differ. The box
+  // chooses from BOX_SPLIT_GROUPS (format, opponent) because §5.7 removed the
+  // Surface group from the modal it opens, while insights keep Surface. So when
+  // the box has NO positive pick and a positive SURFACE split exists, the tile
+  // dashes with "no split above his career rate" while a green card sits below
+  // it. Closing that needs a ruling on the candidate sets, not a renderer change.
   function renderInsights(p) {
-    var list = rankedInsights(p, 'career', 3);
+    var lead = bestSplit(p);
+    var rest = rankedInsights(p, 'career', null).filter(function (c) {
+      return !lead || c.id !== lead.pick.id;
+    });
+    var list = (lead ? [lead.pick] : []).concat(rest).slice(0, 3);
     if (!list.length) {
       return '<div><div style="font-size:22px;font-weight:800;letter-spacing:-0.015em;' +
         'margin-bottom:16px;">Key insights</div>' +
@@ -1528,25 +1549,37 @@
   }
 
   /**
-   * Box 3's "best event": highest win rate among events clearing the §9
-   * full-rate gate, ties to the larger n.
+   * Box 3's "best event" -- RULING Q2 (founder, 2026-09-18).
    *
-   * NO DEFINITION EXISTS IN THE EXPORT for this selector (§6 item 4) -- the
-   * prototype hardcodes "Cincinnati". This is therefore an invented rule and is
-   * flagged as such in the report. It is deliberately the plainest reading of
-   * "best" rather than the largest-gap rule the splits box uses: a tournament
-   * is a place he plays, not a split of his record, so "best" here means the
-   * highest rate, not the biggest departure from his own average.
+   * NO DEFINITION EXISTED IN THE EXPORT (§6 item 4); the prototype hardcodes
+   * "Cincinnati". Phase A shipped an invented rule (highest win rate at n >= 10)
+   * and reported it. The ruling replaces it:
+   *
+   *   candidates : PRICED events only -- n >= 10 matches carrying a Pinnacle
+   *                CLOSING price. The unpriced record is not a candidate at all.
+   *   selection  : best backing units (pinPl). Ties -> the larger priced n.
+   *   none       : dash, "no event with 10+ priced matches".
+   *
+   * The headline is a units figure, so its population must BE the priced one --
+   * the old rule could pick an event on a 15-match record and then headline a
+   * P&L struck over three of them, or over none at all (Zverev's Olympic Games:
+   * 9-1, "Pinnacle priced none of these", headline dashed). Ranking on the same
+   * figure the headline prints removes that whole class.
+   *
+   * `pinN` is carried into the support line for the same reason: §3's "every
+   * rate shows its record and n" applies to the units too, and the event's
+   * overall record (which the modal row prints) is a WIDER population than the
+   * units. Stating both is the only way the tile cannot be misread.
    */
   function bestEvent(p) {
     var views = tournViews(p);
     var best = null;
     (views || []).forEach(function (t) {
-      if (gateFor(t.n) !== GATE.FULL) return;
-      var rate = t.won / t.n;
-      if (!best || rate > best.rate || (rate === best.rate && t.n > best.n)) {
-        best = { display: t.display, won: t.won, lost: t.lost, n: t.n, rate: rate,
-                 pinPl: t.pinPl, pinN: t.pinN };
+      if (!t.pinN || t.pinN < 10) return;       // priced gate, not the record gate
+      if (t.pinPl == null) return;
+      if (!best || t.pinPl > best.pinPl || (t.pinPl === best.pinPl && t.pinN > best.pinN)) {
+        best = { display: t.display, won: t.won, lost: t.lost, n: t.n,
+                 rate: t.n ? t.won / t.n : null, pinPl: t.pinPl, pinN: t.pinN };
       }
     });
     return best;
@@ -1640,17 +1673,17 @@
     // for his best event, qualified by that event's own record:
     //   +4.2u  /  Record per tournament  /  Cincinnati · best event · 14–4 · 78%
     //
-    // "Best event" HAS NO DEFINITION IN THE EXPORT (§6 item 4). Implemented as
-    // the highest win rate among events clearing the §9 full-rate gate (n >= 10),
-    // ties to the larger n -- and reported as an invented selector awaiting a
-    // ruling. The units are that event's Pinnacle-closing P&L, the same `pinPl`
-    // the modal's "Backing him here" tile prints, so the tile and the row it
-    // opens on cannot disagree.
+    // RULING Q2 (2026-09-18) · the candidate set is PRICED events only (Pinnacle
+    // closing, n >= 10 priced) and the ranking figure is the backing units the
+    // headline prints. See bestEvent(). The units are that event's Pinnacle-closing
+    // P&L, the same `pinPl` the modal's "Backing him here" tile prints, so the tile
+    // and the row it opens on cannot disagree -- and under the new gate the
+    // headline can no longer dash while the support line names an event.
     var be = bestEvent(p);
     v.tourn = be
       ? {
-          headline: be.pinN ? signed(be.pinPl, 1) : null,
-          hlSuffix: be.pinN ? 'u' : null,
+          headline: signed(be.pinPl, 1),
+          hlSuffix: 'u',
           hlSuffixColor: be.pinPl >= 0 ? '#3dd68c' : '#e0616f',
           support: be.display + ' ' + MIDDOT + ' best event ' + MIDDOT + ' ' +
             // rateText0 -- whole number. Founder ruling 2026-09-16 (§5.3 item
@@ -1658,12 +1691,9 @@
             // tournament. This support line IS a Record per tournament win%, so
             // it takes that ruling, and the export's own "78%" agrees.
             recordText(be.won, be.lost) + ' ' + MIDDOT + ' ' + rateText0(be.won, be.lost) +
-            (be.pinN ? '' : ' ' + MIDDOT + ' Pinnacle priced none of these')
+            ' ' + MIDDOT + ' ' + be.pinN + ' priced'
         }
-      : { headline: null,
-          support: (p.tournamentHistory || []).length
-            ? 'no tournament clears the ten-match minimum'
-            : 'no tournaments on record' };
+      : { headline: null, support: 'no event with 10+ priced matches' };
 
     // 4 · Court speed — FOUNDER RULING 2026-09-16: the headline is always one of
     // the five PACE BANDS (Very slow · Slow · Medium · Fast · Very fast) or a
@@ -1710,15 +1740,19 @@
     //
     // Two words left the line deliberately, both because the file's string drops
     // them: "biggest" -> "best", and the trailing "±Xpp vs his baseline" is gone.
-    // The SELECTOR is untouched -- still R2's one shared rule, largest |pp| vs
-    // his own career rate at n >= 10 -- only its explanation no longer fits the
-    // line. That is a real loss of provenance on the tile and it is in the report.
-    var bs = biggestSplit(p);
+    //
+    // RULING Q1 (2026-09-18): the word stayed and the SELECTOR changed. It is now
+    // bestSplit() -- largest POSITIVE gap vs his career rate, n >= 10, tie to the
+    // larger n, the same rule Court speed uses. See bestPositiveSplit(). The empty
+    // copy changed with it: "no split clears the ten-match minimum" was true of the
+    // old selector but would now be a lie in the common case, where splits clear
+    // ten and simply none of them beats his own career rate.
+    var bs = bestSplit(p);
     v.splits = bs
       ? { headline: bs.pick.label,
           support: 'best split ' + MIDDOT + ' ' + bs.pick.rate.toFixed(1) + '% ' + MIDDOT + ' ' +
             recordText(bs.pick.won, bs.pick.lost) + ' ' + MIDDOT + ' ' + bs.pick.n + ' matches' }
-      : { headline: null, support: 'no split clears the ten-match minimum' };
+      : { headline: null, support: 'no split above his career rate' };
 
     // 6 · Matchup record (was "Versus playing styles", slot 5) — the headline
     // CHANGES SUBJECT. It used to print his OWN archetype, a label that says
@@ -1926,8 +1960,36 @@
     out.sort(function (a, b) { return Math.abs(b.gap) - Math.abs(a.gap); });
     return limit == null ? out : out.slice(0, limit);
   }
-  function biggestSplit(p) {
-    var top = rankedInsights(p, 'career', 1, BOX_SPLIT_GROUPS)[0];
+  // ── RULING Q1 (founder, 2026-09-18) · "best" now MEANS best ───────────────
+  // Phase A shipped the v7 locked word "best split" over R2's sign-BLIND
+  // largest-|pp| selector, and the result was a tile reading
+  //   "vs. Top 10 — best split · 40.8% · 60–87"
+  // against a 70.9% career rate. That is Zverev's WORST split, labelled best.
+  //
+  // Founder ruled: keep the word, change the selector. The rule is now the one
+  // Court speed already uses (speedBestBand, §8.3):
+  //
+  //   candidates : rankedInsights' set for the caller's groups (n >= 10 floor,
+  //                gap measured against his OWN career rate — both unchanged).
+  //   selection  : largest POSITIVE gap. Ties -> the larger n.
+  //   none       : dash. "No positive split" is an honest answer; the least-bad
+  //                split dressed up as a strength is not.
+  //
+  // ONE function, two callers — the box (BOX_SPLIT_GROUPS) and Key insights'
+  // positive card (which takes the box's pick verbatim, see renderInsights), so
+  // the tile and the card cannot name different splits. rankedInsights() is
+  // untouched: it still ranks by |gap| and still surfaces NEGATIVE findings,
+  // which stay allowed in Key insights as separate cards, worded plainly.
+  function bestPositiveSplit(p, scope, groups) {
+    var best = null;
+    rankedInsights(p, scope || 'career', null, groups).forEach(function (c) {
+      if (!(c.gap > 0)) return;                 // positive-only is the ruling
+      if (!best || c.gap > best.gap || (c.gap === best.gap && c.n > best.n)) best = c;
+    });
+    return best;
+  }
+  function bestSplit(p) {
+    var top = bestPositiveSplit(p, 'career', BOX_SPLIT_GROUPS);
     return top ? { pick: top, baseline: top.baseline } : null;
   }
 
@@ -2008,13 +2070,28 @@
       // Item 2. The design string is "All-time record, by surface, indoors and by
       // season" — we had dropped "indoors", which is the one word that tells the
       // reader the Hard row is outdoor-only. The ruled scope label stays appended.
-      // v7 §5.1 rewrites this: "Record by surface and season, and his ratings
-      // against the field". The third clause forward-declares the Ratings TAB
-      // this modal gains in phase C -- it is written here now because the
-      // subtitle is locked copy, but note the tab itself is not built yet, so
-      // the sentence currently over-promises by one clause. Flagged in the
-      // report; the honest alternative is to land the subtitle with the tab.
-      case 'career': return 'Record by surface and season, and his ratings against the field';
+      // v7 §5.1 rewrote this to "Record by surface and season, and his ratings
+      // against the field". RULING Q4 (founder, 2026-09-18) amends the locked
+      // string in three ways, and every one of them is his wording:
+      //
+      //  (a) "indoors" is RE-ADDED. The Hard row is outdoor-only and the word is
+      //      the only thing on this header that says so. Dropping it made the
+      //      Indoors row and column unexplained.
+      //  (b) "and his ratings against the field" is DROPPED until the Ratings tab
+      //      lands in phase C, then restored VERBATIM. A subtitle that promises a
+      //      tab the modal does not have is the same defect class as a dead click
+      //      target. PHASE C: restore the clause exactly as quoted above.
+      //  (c) the scope label "since <year>" is carried wherever the TILE's window
+      //      is narrower than the GRID -- i.e. when dated match rows reach further
+      //      back than the careerByYear spine this modal totals. Printed only when
+      //      the two genuinely differ, so it is never noise.
+      case 'career': return (function () {
+        var base = 'Record by surface, indoors and by season';
+        var cs = calScope(p);
+        // String compare is safe and intentional: both are 4-digit year strings.
+        var narrower = fy && cs.from && String(cs.from) < String(fy);
+        return narrower ? base + ' ' + MIDDOT + ' since ' + fy : base;
+      })();
       // §3: the export's "678 matches · 2016-2026" is placeholder copy; both
       // halves are real counts here or the clause is dropped entirely.
       // Item 2. Reverted to the design string verbatim (README §5.1). The
@@ -3675,7 +3752,9 @@
     // only job here is to disclose how the tile that opened this modal chose.
     var picked = pickByLargestGap(splitCandidates(p.key, scope, DRAW_GROUPS));
     var baseline = picked ? picked.baseline : null;
-    var headline = rankedInsights(p, scope, 1, BOX_SPLIT_GROUPS)[0] || null;
+    // RULING Q1 · the same positive-gap selector the tile now uses, so the
+    // disclosure below still describes how the box that opened this modal chose.
+    var headline = bestPositiveSplit(p, scope, BOX_SPLIT_GROUPS) || null;
     var setBase = setBaseline(sc);
 
     var grid = tab.id === 'service' ? SPLIT_GRID_5 : SPLIT_GRID_4;
@@ -4559,6 +4638,56 @@
     };
   }
 
+  // ── FOUNDER 2026-09-18 · the two residual populations, measured apart ──────
+  // The §4 footnote used to print one signed net (`scope.m - scope.n`). Two
+  // different facts were being subtracted from each other:
+  //
+  //   undated : matches the CAREER RECORD counts that carry no dated match row,
+  //             so no month can hold them. The grid is smaller than the tile.
+  //   outside : dated match rows whose YEAR the career spine's window does not
+  //             cover. The grid is larger than the tile.
+  //
+  // They are independent and can both be non-zero on the same player, where the
+  // net is meaningless and can be exactly zero while both counts are large. The
+  // window is the spine's own YEAR SET, not its first-to-last span, so a gap
+  // year inside the window is counted correctly rather than assumed covered.
+  function calResidual(p) {
+    var win = {};
+    spineYears(p).forEach(function (y) { win[String(y.year)] = 1; });
+    var inWindow = 0, out = [];
+    calSpine(p).forEach(function (r) {
+      if (win[String(r.year)]) inWindow += 1; else out.push(String(r.year));
+    });
+    out.sort();
+    var m = spineTotal(p).n;
+    return {
+      m: m,
+      // Clamped at zero, and the clamp is a real case: if the dated store ever
+      // held MORE in-window rows than the spine totals, a negative "undated"
+      // would be a third, different defect and must not be printed as this one.
+      undated: Math.max(0, m - inWindow),
+      outside: out.length,
+      from: out.length ? out[0] : null,
+      to: out.length ? out[out.length - 1] : null
+    };
+  }
+  /** Each clause only when its own count is non-zero; never a net. */
+  function calResidualNote(r) {
+    var parts = [];
+    if (r.undated > 0) {
+      parts.push(r.undated + (r.undated === 1 ? ' match carries' : ' matches carry') +
+        ' no dated match row');
+    }
+    if (r.outside > 0) {
+      var span = r.from === r.to ? r.from : r.from + ENDASH + r.to;
+      parts.push(r.outside + (r.outside === 1 ? ' dated match falls' : ' dated matches fall') +
+        ' outside the tile’s window (' + span + ')');
+    }
+    if (!parts.length) return '';
+    return ' The career record above holds ' + r.m + ' matches ' + MIDDOT + ' ' +
+      parts.join(' ' + MIDDOT + ' ') + '.';
+  }
+
   // Year x month buckets over the filtered rows. `n`/`won`/`lost` count the
   // CAREER rows (item 1); `cents`/`priced` count only the Pinnacle subset
   // (item 2), so one cell carries both scopes without conflating them.
@@ -4951,7 +5080,7 @@
 
     // Item 31 — one short scope sentence, the design's wording adapted to real
     // counts, and the long archive paragraph gone.
-    var gap = scope.m - scope.n;
+    var resid = calResidual(p);
     var note = 'Grid cells are W' + ENDASH + 'L only, counted over the career match rows. The tint shows ' +
       'whether that month finished above .500 that season, not a yield comparison. ' +
       (info.priced
@@ -4963,19 +5092,18 @@
       esc('Consistent') + ' counts, out of the ' + seasons + ' ' +
       (seasons === 1 ? 'season' : 'seasons') + ' on record, those in which the month finished above .500; ' +
       'a season with no matches that month counts as not above.' +
-      // The gap runs BOTH ways and both directions have to be stated. The
-      // career spine is careerByYear, which is a window, so for a player whose
-      // dated rows reach further back the grid is LARGER than the record above
-      // it. Printing the clause only when the grid is smaller would leave that
-      // reader with two totals and no explanation.
-      (surf !== 'all' ? ''
-        : gap > 0
-          ? ' The career record above holds ' + scope.m + ' matches; ' + gap +
-            ' of them carry no dated match row and cannot be placed in a month.'
-          : gap < 0
-            ? ' The career record above holds ' + scope.m + ' matches, fewer than the grid: it is a ' +
-              'season window and the dated match rows reach ' + (-gap) + ' matches further back.'
-            : '');
+      // FOOTNOTE DEFECT, founder 2026-09-18: "stop netting the two populations.
+      // State them separately." This clause used to print `scope.m - scope.n`,
+      // a SIGNED NET of two unrelated facts:
+      //   * undated  — career-record matches with no dated match row at all;
+      //   * outside  — dated match rows in years the career spine's window does
+      //                not cover, which the grid shows and the tile does not.
+      // A player carrying 40 of each netted to zero and the footnote said
+      // nothing, on a modal whose two totals visibly disagreed. Both counts are
+      // now computed independently and printed as their own clause, each shown
+      // only when non-zero. See calResidual(); §12A pins both clauses against a
+      // fixture that carries both, so this cannot pass by luck of the player.
+      (surf !== 'all' ? '' : calResidualNote(resid));
 
     return tiles + seg + eyebrowRow +
       '<div style="overflow-x:auto;">' +
@@ -7590,6 +7718,8 @@
       renderStreakTab: renderStreakTab,
       renderFollowsCard: renderFollowsCard,
       calScope: calScope,
+      calResidual: calResidual,
+      calResidualNote: calResidualNote,
       renderCalDrill: renderCalDrill,
       renderCalFooter: renderCalFooter,
       expectedLongest: expectedLongest,
@@ -7598,12 +7728,20 @@
       spineYears: spineYears,
       pickByLargestGap: pickByLargestGap,
       splitCandidates: splitCandidates,
-      biggestSplit: biggestSplit,
+      bestSplit: bestSplit,
+      bestPositiveSplit: bestPositiveSplit,
+      // Kept as an alias: probes and the suite reference the old name, and a
+      // silent rename would turn their assertions into `undefined is not a
+      // function` rather than a failure that names the ruling.
+      biggestSplit: bestSplit,
       biggestBand: biggestBand,
       // R2 · the one shared selector behind both Key insights and "best split",
       // exported so a probe can compare it against an independent recompute
       // rather than against itself.
       rankedInsights: rankedInsights,
+      // Exported so ruling Q1's "the tile and the insights lead cannot disagree"
+      // is asserted on the RENDERED card rather than on a re-run of the selector.
+      renderInsights: renderInsights,
       insightCandidates: insightCandidates,
       careerBaseline: careerBaseline,
       INSIGHT_MIN_N: INSIGHT_MIN_N,

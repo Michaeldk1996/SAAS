@@ -1,200 +1,261 @@
 {
-  "pass": 225,
-  "fail": 0,
+  "pass": 174,
+  "fail": 60,
   "errors": [],
-  "fails": [],
+  "fails": [
+    "1980 · eight boxes in the v7 order :: got career,tourn,season,speed,styles,splits,market,profile",
+    "1980 · at 1000px the grid is 2 columns :: got 4",
+    "1980 · at 640px the grid is 1 column :: got 4",
+    "1980 · box hover border is rgba(91,155,255,0.35) :: resting rgba(255, 255, 255, 0.09) -> hovered rgba(255, 255, 255, 0.09)",
+    "1980 · career headline 26px :: computed 30px on \"581–238\"",
+    "1980 · season headline 26px :: computed 30px on \"53–13\"",
+    "1980 · speed title \"Court speed record\" :: got \"Court speed\"",
+    "1980 · speed headline 22px :: computed 30px on \"Medium\"",
+    "1980 · splits title \"Draw record\" :: got \"Splits\"",
+    "1980 · splits headline 20px :: computed 30px on \"vs. Top 10\"",
+    "1980 · styles title \"Matchup record\" :: got \"Versus playing styles\"",
+    "1980 · styles headline 30px :: computed 19px on \"Big Server + Complete Baseliner\"",
+    "1980 · market headline 26px :: computed 30px on \"2.80%\"",
+    "1980 · profile title \"Live trading\" :: got \"Playing profile\"",
+    "1980 · career subtitle starts with the ruled Q4 string :: got \"All-time record, by surface, indoors and by season · since 2015\"",
+    "1980 · speed modal title \"Court speed record\" :: got \"Court speed\"",
+    "1980 · splits modal title \"Draw record\" :: got \"Splits\"",
+    "1980 · splits subtitle is the v7 string :: got \"Record and win rate by surface, level, format, round and opponent\"",
+    "1980 · profile modal title \"Live trading\" :: got \"Playing profile\"",
+    "1775 · eight boxes in the v7 order :: got career,tourn,season,speed,styles,splits,market,profile",
+    "1775 · at 1000px the grid is 2 columns :: got 4",
+    "1775 · at 640px the grid is 1 column :: got 4",
+    "1775 · box hover border is rgba(91,155,255,0.35) :: resting rgba(255, 255, 255, 0.09) -> hovered rgba(255, 255, 255, 0.09)",
+    "1775 · career headline 26px :: computed 30px on \"370–305\"",
+    "1775 · season headline 26px :: computed 30px on \"28–26\"",
+    "1775 · speed title \"Court speed record\" :: got \"Court speed\"",
+    "1775 · speed headline 22px :: computed 30px on \"Very slow\"",
+    "1775 · splits title \"Draw record\" :: got \"Splits\"",
+    "1775 · splits headline 20px :: computed 30px on \"vs. Top 10\"",
+    "1775 · styles title \"Matchup record\" :: got \"Versus playing styles\"",
+    "1775 · styles headline 30px :: computed 23px on \"Solid Baseliner\"",
+    "1775 · market headline 26px :: computed 30px on \"—\"",
+    "1775 · profile title \"Live trading\" :: got \"Playing profile\"",
+    "1775 · career subtitle starts with the ruled Q4 string :: got \"All-time record, by surface, indoors and by season · since 2015\"",
+    "1775 · career scope label matches the window (grid 2018, spine 2015) :: got \"All-time record, by surface, indoors and by season · since 2015\", narrower=false",
+    "1775 · tourn headline \"66\" appears in its own modal :: \"66\" absent from the tourn body",
+    "1775 · speed modal title \"Court speed record\" :: got \"Court speed\"",
+    "1775 · splits modal title \"Draw record\" :: got \"Splits\"",
+    "1775 · splits subtitle is the v7 string :: got \"Record and win rate by surface, level, format, round and opponent\"",
+    "1775 · profile modal title \"Live trading\" :: got \"Playing profile\"",
+    "370 · eight boxes in the v7 order :: got career,tourn,season,speed,styles,splits,market,profile",
+    "370 · at 1000px the grid is 2 columns :: got 4",
+    "370 · at 640px the grid is 1 column :: got 4",
+    "370 · box hover border is rgba(91,155,255,0.35) :: resting rgba(255, 255, 255, 0.09) -> hovered rgba(255, 255, 255, 0.09)",
+    "370 · career headline 26px :: computed 30px on \"389–354\"",
+    "370 · season headline 26px :: computed 30px on \"25–25\"",
+    "370 · speed title \"Court speed record\" :: got \"Court speed\"",
+    "370 · speed headline 22px :: computed 30px on \"Very slow\"",
+    "370 · splits title \"Draw record\" :: got \"Splits\"",
+    "370 · splits headline 20px :: computed 30px on \"—\"",
+    "370 · styles title \"Matchup record\" :: got \"Versus playing styles\"",
+    "370 · market headline 26px :: computed 30px on \"−34.90%\"",
+    "370 · profile title \"Live trading\" :: got \"Playing profile\"",
+    "370 · career subtitle starts with the ruled Q4 string :: got \"All-time record, by surface, indoors and by season · since 2015\"",
+    "370 · career scope label matches the window (grid 2015, spine 2015) :: got \"All-time record, by surface, indoors and by season · since 2015\", narrower=false",
+    "370 · tourn headline \"19\" appears in its own modal :: \"19\" absent from the tourn body",
+    "370 · speed modal title \"Court speed record\" :: got \"Court speed\"",
+    "370 · splits modal title \"Draw record\" :: got \"Splits\"",
+    "370 · splits subtitle is the v7 string :: got \"Record and win rate by surface, level, format, round and opponent\"",
+    "370 · profile modal title \"Live trading\" :: got \"Playing profile\""
+  ],
   "report": [
     {
       "player": "ZA. ZverevBig Server + Complete Baseline",
       "box": "career",
       "title": "Career record",
       "headline": "581–238",
-      "size": 26,
-      "support": "70.9% all-time · by surface and by season"
+      "size": 30,
+      "support": "70.9% · all surfaces · since 2015"
     },
     {
       "player": "ZA. ZverevBig Server + Complete Baseline",
       "box": "season",
       "title": "Calendar record",
       "headline": "53–13",
-      "size": 26,
-      "support": "2026 season · all surfaces · 2 titles"
+      "size": 30,
+      "support": "2026 season · win rate 80.3%"
     },
     {
       "player": "ZA. ZverevBig Server + Complete Baseline",
       "box": "tourn",
       "title": "Record per tournament",
-      "headline": "—",
+      "headline": "67",
       "size": 30,
-      "support": "Olympic Games · best event · 9–1 · 90% · Pinnacle priced none of these"
+      "support": "tournaments on record"
     },
     {
       "player": "ZA. ZverevBig Server + Complete Baseline",
       "box": "speed",
-      "title": "Court speed record",
+      "title": "Court speed",
       "headline": "Medium",
-      "size": 22,
+      "size": 30,
       "support": "74% · 122–43 · 165 matches"
     },
     {
       "player": "ZA. ZverevBig Server + Complete Baseline",
       "box": "splits",
-      "title": "Draw record",
+      "title": "Splits",
       "headline": "vs. Top 10",
-      "size": 20,
-      "support": "best split · 40.8% · 60–87 · 147 matches"
+      "size": 30,
+      "support": "biggest split · 40.8% · 147 matches · −30.1pp vs his baseline"
     },
     {
       "player": "ZA. ZverevBig Server + Complete Baseline",
       "box": "styles",
-      "title": "Matchup record",
-      "headline": "81%",
-      "size": 30,
-      "support": "Attacking Baseliner · his best archetype · 124–29"
+      "title": "Versus playing styles",
+      "headline": "Big Server + Complete Baseliner",
+      "size": 19,
+      "support": "style signature"
     },
     {
       "player": "ZA. ZverevBig Server + Complete Baseline",
       "box": "market",
       "title": "Market edge",
       "headline": "2.80%",
-      "size": 26,
+      "size": 30,
       "support": "flat-stake yield · 670 priced · tour −4.30%"
     },
     {
       "player": "ZA. ZverevBig Server + Complete Baseline",
       "box": "profile",
-      "title": "Live trading",
-      "headline": "4–8",
+      "title": "Playing profile",
+      "headline": "80.3%",
       "size": 30,
-      "support": "from a set down · 33.3% · 12 of 66 with set scores"
+      "support": "win rate this season · all surfaces"
     },
     {
-      "player": "SJ. SinnerAll Court EliteItalyAge 25Curr",
+      "player": "M148P. MartinezATP No. 148Solid Baseline",
       "box": "career",
       "title": "Career record",
-      "headline": "403–99",
-      "size": 26,
-      "support": "80.3% all-time · by surface and by season"
+      "headline": "370–305",
+      "size": 30,
+      "support": "54.8% · all surfaces · since 2015"
     },
     {
-      "player": "SJ. SinnerAll Court EliteItalyAge 25Curr",
+      "player": "M148P. MartinezATP No. 148Solid Baseline",
       "box": "season",
       "title": "Calendar record",
-      "headline": "44–3",
-      "size": 26,
-      "support": "2026 season · all surfaces · 6 titles"
+      "headline": "28–26",
+      "size": 30,
+      "support": "2026 season · win rate 51.9%"
     },
     {
-      "player": "SJ. SinnerAll Court EliteItalyAge 25Curr",
+      "player": "M148P. MartinezATP No. 148Solid Baseline",
       "box": "tourn",
       "title": "Record per tournament",
-      "headline": "+4.5u",
+      "headline": "66",
       "size": 30,
-      "support": "Beijing ATP 500 · best event · 14–1 · 93%"
+      "support": "tournaments on record"
     },
     {
-      "player": "SJ. SinnerAll Court EliteItalyAge 25Curr",
+      "player": "M148P. MartinezATP No. 148Solid Baseline",
       "box": "speed",
-      "title": "Court speed record",
-      "headline": "Fast",
-      "size": 22,
-      "support": "84% · 43–8 · 51 matches"
+      "title": "Court speed",
+      "headline": "Very slow",
+      "size": 30,
+      "support": "50% · 41–41 · 82 matches"
     },
     {
-      "player": "SJ. SinnerAll Court EliteItalyAge 25Curr",
+      "player": "M148P. MartinezATP No. 148Solid Baseline",
       "box": "splits",
-      "title": "Draw record",
+      "title": "Splits",
       "headline": "vs. Top 10",
-      "size": 20,
-      "support": "best split · 65.1% · 69–37 · 106 matches"
+      "size": 30,
+      "support": "biggest split · 7.1% · 14 matches · −47.7pp vs his baseline"
     },
     {
-      "player": "SJ. SinnerAll Court EliteItalyAge 25Curr",
+      "player": "M148P. MartinezATP No. 148Solid Baseline",
       "box": "styles",
-      "title": "Matchup record",
-      "headline": "98%",
-      "size": 30,
-      "support": "Counterpuncher · his best archetype · 50–1"
+      "title": "Versus playing styles",
+      "headline": "Solid Baseliner",
+      "size": 23,
+      "support": "style signature"
     },
     {
-      "player": "SJ. SinnerAll Court EliteItalyAge 25Curr",
-      "box": "market",
-      "title": "Market edge",
-      "headline": "5.00%",
-      "size": 26,
-      "support": "flat-stake yield · 361 priced · tour −4.30%"
-    },
-    {
-      "player": "SJ. SinnerAll Court EliteItalyAge 25Curr",
-      "box": "profile",
-      "title": "Live trading",
-      "headline": "4–1",
-      "size": 30,
-      "support": "from a set down · 80.0% · 5 of 47 with set scores · small sample"
-    },
-    {
-      "player": "RD. Rincon—SpainAge 23Current runL1since",
-      "box": "career",
-      "title": "Career record",
-      "headline": "208–153",
-      "size": 26,
-      "support": "57.6% all-time · by surface and by season"
-    },
-    {
-      "player": "RD. Rincon—SpainAge 23Current runL1since",
-      "box": "season",
-      "title": "Calendar record",
-      "headline": "33–23",
-      "size": 26,
-      "support": "2026 season · all surfaces · 0 titles"
-    },
-    {
-      "player": "RD. Rincon—SpainAge 23Current runL1since",
-      "box": "tourn",
-      "title": "Record per tournament",
-      "headline": "—",
-      "size": 30,
-      "support": "no tournament clears the ten-match minimum"
-    },
-    {
-      "player": "RD. Rincon—SpainAge 23Current runL1since",
-      "box": "speed",
-      "title": "Court speed record",
-      "headline": "Medium",
-      "size": 22,
-      "support": "70% · 19–8 · 27 matches"
-    },
-    {
-      "player": "RD. Rincon—SpainAge 23Current runL1since",
-      "box": "splits",
-      "title": "Draw record",
-      "headline": "—",
-      "size": 20,
-      "support": "no split clears the ten-match minimum"
-    },
-    {
-      "player": "RD. Rincon—SpainAge 23Current runL1since",
-      "box": "styles",
-      "title": "Matchup record",
-      "headline": "62%",
-      "size": 30,
-      "support": "Solid Baseliner · his best archetype · 16–10"
-    },
-    {
-      "player": "RD. Rincon—SpainAge 23Current runL1since",
+      "player": "M148P. MartinezATP No. 148Solid Baseline",
       "box": "market",
       "title": "Market edge",
       "headline": "—",
-      "size": 26,
+      "size": 30,
       "support": "no priced matches on record"
     },
     {
-      "player": "RD. Rincon—SpainAge 23Current runL1since",
+      "player": "M148P. MartinezATP No. 148Solid Baseline",
       "box": "profile",
-      "title": "Live trading",
-      "headline": "8–21",
+      "title": "Playing profile",
+      "headline": "51.9%",
       "size": 30,
-      "support": "from a set down · 27.6% · 29 of 56 with set scores"
+      "support": "win rate this season · all surfaces"
+    },
+    {
+      "player": "GL. Giustino—ItalyAge 35Current runL2sin",
+      "box": "career",
+      "title": "Career record",
+      "headline": "389–354",
+      "size": 30,
+      "support": "52.4% · all surfaces · since 2015"
+    },
+    {
+      "player": "GL. Giustino—ItalyAge 35Current runL2sin",
+      "box": "season",
+      "title": "Calendar record",
+      "headline": "25–25",
+      "size": 30,
+      "support": "2026 season · win rate 50.0%"
+    },
+    {
+      "player": "GL. Giustino—ItalyAge 35Current runL2sin",
+      "box": "tourn",
+      "title": "Record per tournament",
+      "headline": "19",
+      "size": 30,
+      "support": "tournaments on record"
+    },
+    {
+      "player": "GL. Giustino—ItalyAge 35Current runL2sin",
+      "box": "speed",
+      "title": "Court speed",
+      "headline": "Very slow",
+      "size": 30,
+      "support": "52% · 14–13 · 27 matches"
+    },
+    {
+      "player": "GL. Giustino—ItalyAge 35Current runL2sin",
+      "box": "splits",
+      "title": "Splits",
+      "headline": "—",
+      "size": 30,
+      "support": "no split clears the ten-match minimum"
+    },
+    {
+      "player": "GL. Giustino—ItalyAge 35Current runL2sin",
+      "box": "styles",
+      "title": "Versus playing styles",
+      "headline": "—",
+      "size": 30,
+      "support": "no archetype on record"
+    },
+    {
+      "player": "GL. Giustino—ItalyAge 35Current runL2sin",
+      "box": "market",
+      "title": "Market edge",
+      "headline": "−34.90%",
+      "size": 30,
+      "support": "flat-stake yield · 8 priced · tour −4.30%"
+    },
+    {
+      "player": "GL. Giustino—ItalyAge 35Current runL2sin",
+      "box": "profile",
+      "title": "Playing profile",
+      "headline": "50.0%",
+      "size": 30,
+      "support": "win rate this season · all surfaces"
     }
   ]
 }

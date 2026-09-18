@@ -36,7 +36,10 @@ const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 
 const WANT = [
   { key: 'career',  title: 'Career record',         size: 26, width: 820,
-    subtitle: 'Record by surface and season, and his ratings against the field' },
+    // RULING Q4 (2026-09-18): "indoors" is back, the Ratings clause is gone
+    // until phase C, and a "· since <year>" tail rides on a CONDITION -- so this
+    // is a PREFIX match with the two amendments asserted explicitly below.
+    subtitlePrefix: 'Record by surface, indoors and by season' },
   { key: 'season',  title: 'Calendar record',       size: 26, width: 1180 },
   { key: 'tourn',   title: 'Record per tournament', size: 30, width: 1120,
     subtitle: 'Career win–loss at every event he has played' },
@@ -317,6 +320,29 @@ for (const key of KEYS) {
     if (w.subtitle) {
       ok(`${key} · ${w.key} subtitle is the v7 string`, modal.subtitle === w.subtitle,
         `got "${modal.subtitle}"`);
+    }
+    if (w.subtitlePrefix) {
+      const sub = modal.subtitle || '';
+      ok(`${key} · ${w.key} subtitle starts with the ruled Q4 string`,
+        sub.startsWith(w.subtitlePrefix), `got "${sub}"`);
+      ok(`${key} · ${w.key} subtitle carries "indoors"`, /\bindoors\b/.test(sub), `got "${sub}"`);
+      ok(`${key} · ${w.key} subtitle does NOT promise the phase-C Ratings tab`,
+        !/ratings against the field/.test(sub), `got "${sub}"`);
+      // The scope label is conditional, so assert the CONDITION, not the string:
+      // present iff the grid reaches further back than the career spine.
+      const scope = await ev(`(function(){
+        var I = window.PlayerProfileV2 && window.PlayerProfileV2._internals;
+        if (!I) return null;
+        var p = Object.assign({ key: ${JSON.stringify(String(key))} },
+          (window.playerProfiles.players || {})[${JSON.stringify(String(key))}]);
+        var cs = I.calScope(p), fy = I.spineFirstYear(p);
+        return { from: cs.from, fy: fy };
+      })()`);
+      if (scope && scope.from && scope.fy) {
+        const narrower = String(scope.from) < String(scope.fy);
+        ok(`${key} · ${w.key} scope label matches the window (grid ${scope.from}, spine ${scope.fy})`,
+          /· since \d{4}$/.test(sub) === narrower, `got "${sub}", narrower=${narrower}`);
+      }
     }
     // A modal that opens empty is the failure this catches — but an HONEST
     // empty state is not empty, it is a stated reason. Rincon has no
