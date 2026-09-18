@@ -698,6 +698,32 @@ jobs:
             if (ss < fsh)  { console.error(`_site/historical-match-stats.json carries ${ss} box scores, fewer than the ${fsh} in the committed floor — coverage regressed`); process.exit(1); }
             console.log(`TEN-206: match-stat store published, ${sn} entries / ${ss} box scores (floor ${fn}/${fsh}).`);
           '
+          # ...and the SAME question against what is ALREADY LIVE, which the floor
+          # comparison above structurally cannot ask. Found 2026-09-18: the committed
+          # floor held 2,002 eventKeys and the deployed store held 2,002 — but they
+          # disagreed on 120 of them in each direction. Because this cache's key is
+          # prefixed with the floor's own content hash, committing a refreshed floor
+          # invalidates every prior cache entry, so the very next run starts from the
+          # floor ALONE. A floor that is behind live therefore publishes a store that
+          # is behind live, and every guard above passes, because every guard above
+          # compares to the floor — the one artifact that is wrong.
+          #
+          # Fail-closed on a real regression, fail-OPEN on a network error: a flaky
+          # fetch of the live site must never cost a deploy, but a measured shortfall
+          # must. That asymmetry is the whole design.
+          node -e '
+            const fs = require("fs");
+            const site = JSON.parse(fs.readFileSync("_site/historical-match-stats.json","utf8"));
+            const url = "https://michaeldk1996.github.io/SAAS/historical-match-stats.json";
+            fetch(url).then(r => r.ok ? r.json() : Promise.reject(new Error("HTTP " + r.status))).then(live => {
+              const missing = Object.keys(live).filter(k => !(k in site));
+              if (missing.length) {
+                console.error(`_site/historical-match-stats.json is MISSING ${missing.length} eventKey(s) that are live right now (e.g. ${missing.slice(0,3).join(", ")}) — this deploy would take box scores off the page.`);
+                process.exit(1);
+              }
+              console.log(`TEN-206: published store contains all ${Object.keys(live).length} live eventKeys.`);
+            }).catch(e => console.log(`::warning title=live match-stat comparison skipped::${e.message} — could not read the live store, so the against-live check did not run this time.`));
+          '
           # TEN-228 · §5.5 Court speed. Presence is not enough: the file existed
           # BEFORE the rebuild too, at 18.5 KB with neither of the tables the new
           # renderer reads. Asserting only `-s` would pass on that old shape and
