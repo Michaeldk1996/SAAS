@@ -107,11 +107,45 @@ const ENGINE = loadEngine();
 // Correction pass. Both stores are loaded from the REAL committed artefacts for
 // the same reason as the others: a fixture would let the page and the pipeline
 // drift apart silently.
-//  * historical-match-stats.json — the §8.1 match sheet, joined by the
-//    api-tennis eventKey recentForm carries.
+//  * the match-stat store — the §8.1 match sheet, joined by the api-tennis
+//    eventKey recentForm carries. Founder ruling 2026-09-18 (Q1) moved the
+//    COMMITTED copy to historical-match-stats.floor.json and gitignored the
+//    runtime path, so read the runtime file when the box has one (it is the
+//    floor unioned with the warm cache) and fall back to the committed floor.
+//    Reading only the old path made this suite die with ENOENT on any clean
+//    checkout, which is every CI clone and every fresh worktree.
 //  * bet365-history/ — the ledger's second price source, for the rows after the
 //    Tennis-Data archive's 2026-07-26 cutoff.
-const STATS = JSON.parse(fs.readFileSync(path.join(ROOT, 'historical-match-stats.json'), 'utf8'));
+const STATS_RUNTIME = path.join(ROOT, 'historical-match-stats.json');
+const STATS_FLOOR = path.join(ROOT, 'historical-match-stats.floor.json');
+const STATS_PATH = fs.existsSync(STATS_RUNTIME) ? STATS_RUNTIME : STATS_FLOOR;
+if (!fs.existsSync(STATS_PATH)) {
+  console.error('\n  ✗ NO MATCH-STAT STORE — neither historical-match-stats.json nor'
+    + ' historical-match-stats.floor.json is present. Every §8.1 check would'
+    + ' walk an empty store and report a clean bill of health. ABORTING.');
+  process.exit(1);
+}
+const STATS = JSON.parse(fs.readFileSync(STATS_PATH, 'utf8'));
+console.log(`  match-stat store: ${path.basename(STATS_PATH)} — ${Object.keys(STATS).length} eventKeys`);
+
+// match-stat-event-coverage.json — the whole-event note's per-EVENT index.
+// GITIGNORED and CI-built, so build it here when the box has none. A skipped
+// row would satisfy the all-stores gate while measuring nothing.
+const COV_PATH = path.join(ROOT, 'match-stat-event-coverage.json');
+let EVENT_COV = null;
+try {
+  if (!fs.existsSync(COV_PATH)) {
+    require('child_process').execFileSync(
+      process.execPath, [path.join(ROOT, 'tools', 'build-event-stat-coverage.js')],
+      { cwd: ROOT, stdio: 'ignore' });
+  }
+  if (fs.existsSync(COV_PATH)) EVENT_COV = JSON.parse(fs.readFileSync(COV_PATH, 'utf8'));
+} catch (e) {
+  EVENT_COV = null;
+}
+console.log(`  event-coverage index: ${EVENT_COV
+  ? `${Object.keys(EVENT_COV.keys).length} keys / ${Object.keys(EVENT_COV.events).length} editions`
+  : 'UNAVAILABLE — its coverage row will read 0 and fail its floor'}`);
 const B365_DIR = path.join(ROOT, 'bet365-history');
 const B365 = {};
 if (fs.existsSync(B365_DIR)) {
@@ -2844,6 +2878,43 @@ const STORES = [
     floor: 0.5,
   },
   {
+    name: 'matchStatEventCoverage',
+    file: 'match-stat-event-coverage.json',
+    // The whole-event note's index (founder ruling 2026-09-18 Q2, third clause).
+    // Measured through the page's OWN join, not by counting the file: the
+    // failure this exists to catch is an index that loads and resolves nothing,
+    // which silences the note on every sheet while looking perfectly healthy —
+    // and the page's documented behaviour for an absent index is silence, so
+    // nothing else on the site would ever go red.
+    //
+    // GITIGNORED and CI-built, and the deploy copies it with a tolerant
+    // `cp … || true`, so it is normally absent here. Build it from the floor
+    // rather than skip: a skipped row satisfies the all-stores gate while
+    // measuring nothing, which is the vacuity this table exists to prevent.
+    resolve: () => {
+      const cov = EVENT_COV;
+      if (!cov) return 0;
+      let n = 0;
+      for (const k of Object.keys(PLAYERS)) {
+        for (const m of I.ledgerMatches(PLAYERS[k])) {
+          const ed = cov.keys[String(m.eventKey)];
+          if (ed && cov.events[ed] && cov.events[ed].n >= 1) n++;
+        }
+      }
+      return n;
+    },
+    // Only ledger rows whose eventKey the store holds a sheet for can ever be
+    // indexed, so that is the honest denominator.
+    universe: () => {
+      let n = 0;
+      for (const k of Object.keys(PLAYERS)) {
+        for (const m of I.ledgerMatches(PLAYERS[k])) if (I.statsFor(m.eventKey)) n++;
+      }
+      return n;
+    },
+    floor: 0.5,
+  },
+  {
     name: 'bet365History',
     file: 'bet365-history/{month}.json',
     // The capture only exists to price rows the archive never reached, so the
@@ -3795,13 +3866,37 @@ check('item 14 · the match sheet renders real stats and dashes what we do not h
   const html = I.renderSheet(ZVEREV, ctx);
   I.state.sheet = null;
   assert(/Dominance ratio/.test(html), 'the sheet did not render');
-  // The three rows we genuinely do not hold must be dashed, on every sheet.
-  ['Serve rating', 'Return rating', 'Net points won'].forEach((label) => {
+  // The rows we genuinely do not hold must be dashed, on every sheet.
+  ['Serve rating', 'Return rating'].forEach((label) => {
     const at = html.indexOf(label);
     assert(at > 0, `${label} row is missing from the sheet`);
     const before = html.slice(Math.max(0, at - 420), at);
     assert(/color:#4b5672;">—</.test(before), `${label} rendered a value — we do not hold it`);
   });
+  // Net points is NOT one of them. Founder ruling 2026-09-18 (Q2): it IS an
+  // api-tennis field — measured on the committed floor at 1,674 of 3,494
+  // populated sides (47.9%) — and "a dash must only ever mean we don't hold
+  // it". So the row follows the store PER MATCH: a value where this side
+  // carries one, a dash where it does not. Asserting a blanket dash is the
+  // struck-down premise, and it passed for months while the page told users a
+  // field we hold does not exist.
+  {
+    const at = html.indexOf('Net points won');
+    assert(at > 0, 'Net points won row is missing from the sheet');
+    const before = html.slice(Math.max(0, at - 420), at);
+    const dashed = /color:#4b5672;">—</.test(before);
+    const recNp = I.statsFor(target.m.eventKey);
+    const sideNp = String(recNp.p1Key) === String(ZVEREV.key)
+      ? recNp.matchStats.p1 : recNp.matchStats.p2;
+    const npHeld = sideNp && sideNp['Points:Net points won'] != null;
+    if (npHeld) {
+      assert(!dashed, 'Net points won dashed on a match whose side carries the field'
+        + ` (${sideNp['Points:Net points won']}) — a dash must only mean we do not hold it`);
+    } else {
+      assert(dashed, 'Net points won rendered a value on a side that carries none');
+    }
+    console.log(`        net points: side ${npHeld ? 'holds the field → value' : 'holds none → dash'}`);
+  }
   // ...and a stat we DO hold must not be dashed on a match that carries it.
   const rec = I.statsFor(target.m.eventKey);
   const side = String(rec.p1Key) === String(ZVEREV.key) ? rec.matchStats.p1 : rec.matchStats.p2;
@@ -3813,10 +3908,16 @@ check('item 14 · the match sheet renders real stats and dashes what we do not h
   console.log(`        sheet for ${ZVEREV.name} ${target.m.date}: real stats rendered, ` +
     `3 unheld rows dashed`);
 });
-mustFail('the match-sheet check would catch an estimated net-points value', () => {
+mustFail('the match-sheet check would catch a net-points value invented on a side that holds none', () => {
+  // The control now points at the defect that is still real after the Q2
+  // ruling: a value painted where the store carries nothing. (Its twin — a
+  // dash painted where the store DOES carry a value — is what the live check
+  // above catches, and is the defect that shipped.)
   const html = 'color:#5b9bff;">12</span>...Net points won';
   const at = html.indexOf('Net points won');
-  assert(/color:#4b5672;">—</.test(html.slice(0, at)), 'Net points won rendered a value');
+  const held = false; // this side carries no Points:Net points won
+  const dashed = /color:#4b5672;">—</.test(html.slice(0, at));
+  assert(held || dashed, 'Net points won rendered a value on a side that carries none');
 });
 
 check('item 14 · no sheet is painted with the opponent’s numbers under this player’s name', () => {
