@@ -262,6 +262,90 @@ function surnameSig(name) {
 
 function isSubset(a, b) { for (const t of a) if (!b.has(t)) return false; return true; }
 
+// FULL name-token signature — every token, given name included, hyphen-folded,
+// order-insensitive.
+//
+// surnameSig() above assumes token 0 is the given name. api-tennis does not
+// honour that: it writes multi-part names SURNAME-FIRST. We hold
+// "Elahi Galan Daniel"; TML holds "Daniel Elahi Galan". surnameSig() reads those
+// as initial 'e' / {galan,daniel} and initial 'd' / {elahi,galan} — different
+// initial AND different set, so no tier matched, no backfill ran, and the
+// player kept every hole the TML merge exists to fill. 153 of 587 shards were in
+// that state. As a full token set both names are {daniel, elahi, galan} and the
+// same person matches himself.
+//
+// Set EQUALITY only, never subset: the whole point is that neither side's token
+// ORDER can be trusted, and once order is gone a subset test has no direction
+// left to constrain it ("Silva" would swallow "Reis Da Silva"). Collisions go
+// through the same disambiguate() as every other tier — IOC, then active era
+// with the >=4yr guard — and an ambiguous case is dropped, never guessed.
+function fullNameSig(name) {
+  const s = deaccent(name).toLowerCase()
+    .replace(/[.]/g, ' ').replace(/-/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!s) return null;
+  const toks = s.split(' ').filter(Boolean);
+  if (toks.length < 2) return null;
+  // A one-character token is an INITIAL ("Galan D."), not a name part, and a set
+  // holding one can never equal a spelled-out name's set. Refuse, and let the
+  // surname tiers — which understand initials — handle those names instead.
+  if (toks.some((t) => t.length < 2)) return null;
+  const set = new Set(toks);
+  if (set.size < 2) return null;
+  return { set, canon: [...set].sort().join(' ') };
+}
+
+// ── MULTI-INITIAL NAMES ─────────────────────────────────────────────────────
+// The single largest unmatched class on the DEPLOYED store, and it is not the
+// one the July file suggested. Live, the pipeline publishes names in
+// initial-last form, so a player with two given names arrives as "D. E. Galan"
+// — and surnameSig() reads only token 0 as the given name, which makes the
+// SECOND initial a surname token: initial 'd', surname {e, galan}. TML holds
+// "Daniel Elahi Galan" -> initial 'd', surname {elahi, galan}. The sets differ
+// by that stray "e" and nothing matches, so the whole TML backfill skips him.
+//
+// apiInitialSig() parses the leading run of one-character tokens as the given
+// names' INITIALS and the rest as the surname; tmlInitialCanons() offers, for a
+// spelled-out TML name, one canon per place the given/surname boundary could
+// fall. A match needs the initial SEQUENCE to agree in order AND the surname
+// token set to agree exactly — so "D. E. Galan" meets "Daniel Elahi Galan" at
+// k=2 and meets nothing else. Order-insensitive within the surname, strict
+// everywhere else, and collisions still go through disambiguate().
+//
+// Only 2+ initials are handled here; one initial is already tier 1's job and
+// re-admitting it would loosen a tier that is currently exact.
+function apiInitialSig(name) {
+  const s = deaccent(name).toLowerCase().replace(/[.]/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!s) return null;
+  const parts = s.split(' ').filter(Boolean);
+  const initials = [];
+  let i = 0;
+  while (i < parts.length - 1 && parts[i].length === 1) { initials.push(parts[i]); i++; }
+  if (initials.length < 2) return null;
+  const toks = parts.slice(i).join(' ').replace(/-/g, ' ').split(/\s+/).filter(Boolean);
+  if (!toks.length) return null;
+  // Any surviving one-char token means the name is not "initials then surname"
+  // and this parse does not describe it. Refuse rather than match on a guess.
+  if (toks.some((t) => t.length < 2)) return null;
+  const set = new Set(toks);
+  return { initials, set, canon: `${initials.join('')}|${[...set].sort().join(' ')}` };
+}
+
+function tmlInitialCanons(name) {
+  const s = deaccent(name).toLowerCase().replace(/[.]/g, ' ').replace(/\s+/g, ' ').trim();
+  if (!s) return [];
+  const parts = s.split(' ').filter(Boolean);
+  if (parts.length < 3) return [];               // needs >=2 given + >=1 surname
+  if (parts.some((t) => t.length < 2)) return []; // already-abbreviated TML name: no split to infer
+  const out = [];
+  for (let k = 2; k < parts.length; k++) {
+    const initials = parts.slice(0, k).map((t) => t.charAt(0));
+    const toks = parts.slice(k).join(' ').replace(/-/g, ' ').split(/\s+/).filter(Boolean);
+    if (!toks.length) continue;
+    out.push(`${initials.join('')}|${[...new Set(toks)].sort().join(' ')}`);
+  }
+  return out;
+}
+
 // Legacy (surname|initial, raw) matcher — retained only so the before/after audit
 // can measure exactly what the upgrade changes. Not used by the pipeline.
 function reconcileLegacy(profiles, identity, countryToIoc, log) {
@@ -299,6 +383,8 @@ function reconcile(profiles, identity, countryToIoc, log) {
   const c2i = (countryToIoc && Object.keys(countryToIoc).length) ? countryToIoc : COUNTRY_TO_IOC;
   const idSig = new Map();     // tmlId -> { initial, set, canon, maxYear, iocs }
   const byCanon = new Map();   // canon -> [tmlId]
+  const byFull = new Map();    // full-token-set canon -> Set<tmlId>
+  const byInit = new Map();    // "initials|surname set" canon -> Set<tmlId>
   for (const [id, idn] of identity) {
     let best = null, bestN = -1;
     for (const [nm, n] of idn.names) if (n > bestN) { best = nm; bestN = n; }
@@ -307,6 +393,20 @@ function reconcile(profiles, identity, countryToIoc, log) {
     idSig.set(id, { ...sig, maxYear: idn.maxYear || 0, iocs: idn.iocs });
     let arr = byCanon.get(sig.canon); if (!arr) { arr = []; byCanon.set(sig.canon, arr); }
     arr.push(id);
+    // Tier 2 index. Every SPELLING this identity was seen under is indexed, not
+    // just the most frequent one — a feed that reorders name parts is exactly the
+    // case this tier serves, and TML's own archive is not internally consistent
+    // about the order either. Duplicate ids under one canon are folded below.
+    for (const nm of idn.names.keys()) {
+      const f = fullNameSig(nm);
+      if (!f) continue;
+      let fa = byFull.get(f.canon); if (!fa) { fa = new Set(); byFull.set(f.canon, fa); }
+      fa.add(id);
+      for (const c of tmlInitialCanons(nm)) {
+        let ia = byInit.get(c); if (!ia) { ia = new Set(); byInit.set(c, ia); }
+        ia.add(id);
+      }
+    }
   }
 
   function disambiguate(p, cands) {
@@ -335,12 +435,25 @@ function reconcile(profiles, identity, countryToIoc, log) {
   }
 
   const apiToTml = new Map();
-  let matched = 0, viaSubset = 0, viaDisambig = 0, collided = 0, unmatched = 0;
+  let matched = 0, viaSubset = 0, viaFull = 0, viaInit = 0, viaDisambig = 0, collided = 0, unmatched = 0;
   for (const [apiKey, p] of Object.entries(profiles)) {
     const sig = surnameSig(p.name);
     if (!sig) { unmatched++; continue; }
     let cands = byCanon.get(sig.canon);
-    let usedSubset = false;
+    let usedSubset = false, usedFull = false, usedInit = false;
+    // TIER 2 — full name-token set. Runs only where tier 1 found nothing, so it
+    // can never override or weaken an existing match; it is purely additive.
+    if (!cands || !cands.length) {
+      const f = fullNameSig(p.name);
+      const hit = f && byFull.get(f.canon);
+      if (hit && hit.size) { cands = [...hit]; usedFull = true; }
+    }
+    // TIER 2b — multi-initial ("D. E. Galan"). Also strictly additive.
+    if (!cands || !cands.length) {
+      const a = apiInitialSig(p.name);
+      const hit = a && byInit.get(a.canon);
+      if (hit && hit.size) { cands = [...hit]; usedInit = true; }
+    }
     if (!cands || !cands.length) {
       const sub = [];
       for (const [id, r] of idSig) {
@@ -356,9 +469,9 @@ function reconcile(profiles, identity, countryToIoc, log) {
     if (pick === null || pick === undefined) { collided++; continue; }
     apiToTml.set(apiKey, pick);
     matched++;
-    if (usedSubset) viaSubset++; else if (wasMulti) viaDisambig++;
+    if (usedFull) viaFull++; else if (usedInit) viaInit++; else if (usedSubset) viaSubset++; else if (wasMulti) viaDisambig++;
   }
-  if (log) log(`  Reconciled ${matched} players to TML (+${viaSubset} subset, +${viaDisambig} disambiguated; collisions ${collided}, unmatched ${unmatched}).`);
+  if (log) log(`  Reconciled ${matched} players to TML (+${viaFull} full-token-set, +${viaInit} multi-initial, +${viaSubset} subset, +${viaDisambig} disambiguated; collisions ${collided}, unmatched ${unmatched}).`);
   return apiToTml;
 }
 
@@ -674,5 +787,5 @@ module.exports = {
   backfillMatchesTournamentHistory,
   buildArchiveHistories,
   // exported for testing
-  _internal: { buildTmlIndex, reconcile, reconcileLegacy, surnameSig, mergePlayer, finalizeTournament, buildEmbeddedHistory, nameKey, scoreDisplay, swapScore, setCounts, toInitialLast },
+  _internal: { buildTmlIndex, reconcile, reconcileLegacy, surnameSig, fullNameSig, apiInitialSig, tmlInitialCanons, mergePlayer, finalizeTournament, buildEmbeddedHistory, nameKey, scoreDisplay, swapScore, setCounts, toInitialLast },
 };

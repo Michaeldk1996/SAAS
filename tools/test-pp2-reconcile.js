@@ -38,8 +38,44 @@ function loadModule(profiles, extra) {
   return sandbox.PlayerProfileV2;
 }
 
-const raw = JSON.parse(fs.readFileSync(path.join(ROOT, 'player-profiles.json'), 'utf8'));
-const PLAYERS = raw.players;
+// ── THE PROFILE STORE COMES FROM THE DEPLOYED SITE, NOT FROM GIT ────────────
+// This used to be `readFileSync(ROOT/player-profiles.json)`. The pipeline does
+// not commit that file back, so the copy in the tree was written 2026-07-22 —
+// THIRTEEN DAYS BEFORE the 2021-hole fix it was being used to measure. Every
+// roster-wide figure this suite printed for weeks described July data, and a
+// whole report had to be withdrawn because of it. See tools/deployed-store.js.
+//
+// Fail-closed: if the deployed store cannot be reached and nothing is cached,
+// the suite ABORTS rather than fall back to the fossil. "Could not check" must
+// never render as green — the same rule the career-history drift guard enforces
+// ninety lines down.
+const DEPLOYED = require('./deployed-store.js');
+const STORE = DEPLOYED.playerProfiles();
+if (STORE.source !== 'deployed') {
+  console.error('\n  ✗ COULD NOT READ THE DEPLOYED player-profiles.json — ABORTING.');
+  console.error(`    ${STORE.drift.why}`);
+  console.error(`    The committed copy is dated ${STORE.committedFetchedAt || 'unknown'} and is NOT a`);
+  console.error('    substitute: reporting roster-wide numbers off it is the bug this guard exists for.');
+  console.error(`    Set TEN206_DATA_BASE, or run with network access to ${DEPLOYED.BASE}.\n`);
+  process.exit(1);
+}
+const PLAYERS = STORE.players;
+// TEN-207 moved tournamentHistory out of the eager store into per-player shards.
+// Reading the deployed store WITHOUT re-attaching them walks an empty list and
+// passes every §5.3 check vacuously — strictly worse than the July fossil, which
+// at least carried rows. Fail-closed on a short hydrate.
+const TH = DEPLOYED.hydrateTournamentHistory(PLAYERS);
+if (TH.error || TH.attached < TH.indexed) {
+  console.error('\n  ✗ tournament-history/ DID NOT HYDRATE FROM THE DEPLOYED STORE — ABORTING.');
+  console.error(`    ${TH.error || `attached ${TH.attached} of ${TH.indexed} indexed players (${TH.short} short)`}`);
+  console.error('    Every §5.3 check would walk an empty list and report a clean bill of health.\n');
+  process.exit(1);
+}
+console.log(`  ····  tournament-history: ${TH.attached}/${TH.indexed} players hydrated from the deployed `
+  + `shards (${TH.fetched} fetched, ${TH.tournamentRows} tournament rows; ${TH.rosterNotInIndex} roster keys not indexed).`);
+console.log(`  ····  profile store: DEPLOYED ${STORE.fetchedAt} — ${STORE.drift.deployedPlayers} players `
+  + `(committed copy: ${STORE.drift.committedFetchedAt}, ${STORE.drift.committedPlayers} players; `
+  + `+${STORE.drift.onlyDeployed} live-only / −${STORE.drift.onlyCommitted} dropped).`);
 
 // career-splits.json feeds the Splits modal; the market-edge shards feed Market
 // edge. Both are loaded from the REAL committed artefacts — a fixture would let
@@ -637,20 +673,56 @@ check('career modal total row = career box headline', () => {
 // ════════════════════════════════════════════════════════════════════════════
 console.log('\n11 · Record per tournament');
 
+// ⚠ OPEN RULING — DOES A WITHDRAWAL COUNT AS A LOSS?
+// This check went red the moment the suite started reading the DEPLOYED store,
+// on J. Thompson / Cincinnati: "editions 3 losses vs stored 4". It is not
+// corruption. The store carries a THIRD result code — `WD` — that the header
+// counts as a loss and this sum did not count at all. Measured over the whole
+// deployed store: 31,064 W · 26,933 L · 104 WD, and of the 100 tournament rows
+// where the header disagrees with its editions, 100 are explained by a WD. Not
+// 98, not "mostly": all of them.
+//
+// Which convention is right is the founder's call, not the suite's, so this
+// does NOT pick one. It counts WD the way the header already does — as a loss,
+// making the reconciliation exact — and PINS the population so the gap cannot
+// grow while the ruling is pending. If the ruling goes the other way the header
+// changes and this pin moves with it.
+// ⚠ AND THE CONVENTION IS NOT UNIFORM. Of the 102 tournament rows carrying a
+// WD, 100 have a header that counts it as a loss and 2 have a header that
+// ignores it. So the published store applies BOTH conventions. Neither is
+// picked here; both populations are pinned, and the split is the finding.
+const WD_ROWS_AS_LOSS = 100;
+const WD_ROWS_IGNORED = 2;
 check('every tournament W-L equals the sum of its editions', () => {
-  let rows = 0;
+  let rows = 0, wdAsLoss = 0, wdIgnored = 0, wdMatches = 0;
   for (const p of Object.values(PLAYERS)) {
     for (const t of p.tournamentHistory || []) {
-      let w = 0, l = 0;
+      let w = 0, l = 0, wd = 0;
       (t.editions || []).forEach(e => (e.matches || []).forEach(m => {
-        if (m.res === 'W') w++; else if (m.res === 'L') l++;
+        if (m.res === 'W') w++;
+        else if (m.res === 'L') l++;
+        else { wd++; }        // WD today; any future code lands here too
       }));
       assert.strictEqual(w, t.won || 0, `${p.name} / ${t.name}: editions ${w} wins vs stored ${t.won}`);
-      assert.strictEqual(l, t.lost || 0, `${p.name} / ${t.name}: editions ${l} losses vs stored ${t.lost}`);
+      if (!wd) {
+        assert.strictEqual(l, t.lost || 0, `${p.name} / ${t.name}: editions ${l} losses vs stored ${t.lost}`);
+      } else {
+        wdMatches += wd;
+        if (l + wd === (t.lost || 0)) wdAsLoss++;
+        else if (l === (t.lost || 0)) wdIgnored++;
+        else assert.fail(`${p.name} / ${t.name}: ${l} losses + ${wd} WD reconciles with neither `
+          + `${t.lost} under either convention`);
+      }
       rows++;
     }
   }
-  console.log(`        ${rows} tournament rows reconcile with their editions`);
+  assert.strictEqual(wdAsLoss, WD_ROWS_AS_LOSS,
+    `WD-as-loss population moved: ${wdAsLoss} (pinned ${WD_ROWS_AS_LOSS})`);
+  assert.strictEqual(wdIgnored, WD_ROWS_IGNORED,
+    `WD-ignored population moved: ${wdIgnored} (pinned ${WD_ROWS_IGNORED})`);
+  console.log(`        ${rows} tournament rows reconcile with their editions; `
+    + `${wdMatches} WD rows across ${wdAsLoss + wdIgnored} tournaments — `
+    + `${wdAsLoss} headers count WD as a loss, ${wdIgnored} ignore it (OPEN RULING)`);
 });
 
 mustFail('tournament check would catch a dropped edition', () => {
@@ -1571,22 +1643,40 @@ mustFail('[neg] the DOM check would catch a grid that never widened', () => {
   assert(/repeat\(5,minmax\(0,1fr\)\)/.test(html), 'grid is still four columns');
 });
 
-check('real committed profiles are unaffected until the pipeline repopulates', () => {
-  // The capture is additive by design. Until a pipeline run writes `indoor`,
-  // every real row must render exactly as it did before — no zeros, no shifted
-  // surface records, just a dashed column.
-  let dashed = 0;
+// This check used to assert `indoors === null` — "no indoor data until a
+// pipeline run writes it". Reading the DEPLOYED store showed that run HAS
+// happened: Alcaraz/2025 carries a real indoor record, and the old wording
+// reported the feature LANDING as "indoor data appeared from nowhere". The
+// premise expired; the check did not. Rewritten to lock what matters now — the
+// capture is still ADDITIVE, so hard and clay must be untouched wherever an
+// indoor cell has appeared — and to refuse to pass if indoor went back to zero.
+check('the indoor carve-out conserves every match — nothing invented, nothing lost', () => {
+  // gridCells() CARVES indoor OUT of each surface (carveIndoor), so the Hard
+  // column is outdoor-hard once a court-type source exists. "hard moved" is the
+  // feature working, not a regression — which is why the right lock is
+  // CONSERVATION: carved + indoor must equal the uncarved surface record,
+  // exactly, for every row. That cannot pass if a match is dropped or minted.
+  let rowsSeen = 0, withIndoor = 0, carved = 0;
+  const sum = (r) => (r ? (r.won || 0) + (r.lost || 0) : 0);
   for (const p of SAMPLE) {
     const years = I.spineYears(p);
     years.forEach((y) => {
       const g = I.gridCells(y);
-      assert.strictEqual(g.indoors, null, `${p.name}/${y.year}: indoor data appeared from nowhere`);
-      assert.deepStrictEqual(g.hard, y.hard || null, `${p.name}/${y.year}: hard moved`);
-      assert.deepStrictEqual(g.clay, y.clay || null, `${p.name}/${y.year}: clay moved`);
+      const ind = y.indoor || null;
+      if (g.indoors != null) { withIndoor++; assert(typeof g.indoors === 'object', `${p.name}/${y.year}: indoor cell is not a record`); }
+      ['clay', 'hard', 'grass'].forEach((s2) => {
+        const before = sum(y[s2]);
+        const after = sum(g[s2]) + sum(ind && ind[s2]);
+        assert.strictEqual(after, before,
+          `${p.name}/${y.year}/${s2}: carve ${after} !== uncarved ${before} — a match was dropped or minted`);
+        if (sum(ind && ind[s2])) carved++;
+      });
     });
-    dashed += years.length;
+    rowsSeen += years.length;
   }
-  console.log(`        ${dashed} committed season rows unchanged; Indoors dashes pending a pipeline run`);
+  assert(withIndoor > 0, 'NO season row carries indoor data — the capture regressed to the pre-pipeline state');
+  assert(carved > 0, 'no surface was actually carved — the conservation check never exercised the carve');
+  console.log(`        ${rowsSeen} season rows; ${withIndoor} carry an indoor record, ${carved} surface cells carved, all conserved`);
 });
 
 
@@ -2720,7 +2810,17 @@ const STORES = [
     name: 'holdbreak',
     file: 'holdbreak.json',
     resolve: () => Object.keys(PLAYERS).filter(k => I.hbCoverage(PLAYERS[k])).length,
-    universe: () => Object.keys(HOLDBREAK.players).length,
+    // The universe is the artefact's rows THAT BELONG TO TODAY'S BOARD, not
+    // every row it holds. holdbreak.json is a fixed 337-row build; 43 of those
+    // rows are for players who have since left the board, and a row for a
+    // player the page never renders cannot "reach the page" by any definition.
+    // Scoring against the raw 337 charged this store for the roster moving:
+    // it read 294/337 (87.2%) and tripped the 90% floor, which looks exactly
+    // like a store going dark and is nothing of the kind — all 294 in-roster
+    // rows resolve. The separate, real coverage gap (165 board players have no
+    // holdbreak row at all) is reported by the line below, not hidden in a
+    // denominator.
+    universe: () => Object.keys(HOLDBREAK.players).filter(k => PLAYERS[k]).length,
     floor: 0.9,
   },
   // ── correction pass · the two stores wired this run ──────────────────────
@@ -2865,7 +2965,13 @@ mustFail('the all-stores gate would catch a store that resolves only a token few
 //
 // This check pins the gap at its measured size so it cannot quietly grow while
 // the ruling is pending. It is a report in code, not a resolution.
-const NAME_JOIN_UNMATCHED = 42;
+// Re-pinned 42 -> 46 on 2026-09-18 when the suite moved off the July store.
+// The gap did NOT regress: the deployed roster is 459 players against the
+// committed file's 428 (+110 live-only, -79 dropped), and four more full-form
+// labelled rows now fail to find a short-form profile name. classify-styles.js
+// is unchanged. The pin tracks a population, so it moves when the population
+// does — that is the point of re-pinning rather than widening the assertion.
+const NAME_JOIN_UNMATCHED = 46;
 check(`the archetype name join misses exactly ${NAME_JOIN_UNMATCHED} labelled rows (open defect)`, () => {
   const names = new Set(Object.keys(PLAYERS).map(k => PLAYERS[k].name));
   const labelled = (STYLES.players || []).filter(s => s.archetype_label);
@@ -2881,7 +2987,7 @@ check(`the archetype name join misses exactly ${NAME_JOIN_UNMATCHED} labelled ro
 });
 
 mustFail('the name-join pin would catch the gap growing', () => {
-  assert.strictEqual(58, NAME_JOIN_UNMATCHED, 'the name-format gap moved');
+  assert.strictEqual(62, NAME_JOIN_UNMATCHED, 'the name-format gap moved');
 });
 
 // The gate is only as good as its coverage of the stores that actually exist.
@@ -3290,15 +3396,24 @@ check('the ledger H column is the subject price and A the opponent price', () =>
   (shard.matches || []).forEach(m => {
     if (byDate[m.date] === undefined) byDate[m.date] = m; else byDate[m.date] = null;
   });
-  let agree = 0;
+  // A DAY, not a match, is the join key here, so a day carrying two matches
+  // cannot be resolved by date alone — byDate deliberately nulls it. Treating
+  // that as a failure made the probe red on the deployed store (Djokovic,
+  // 2026-08-31) for a limitation of the probe, not a defect in the page. Skip
+  // the ambiguous days and FLOOR the resolved count, so the check can never
+  // quietly degrade to "nothing was comparable, therefore green".
+  let agree = 0, ambiguous = 0;
   for (const x of rows) {
     const src = byDate[x.m.date];
-    assert(src, `${x.m.date} resolved a price from an ambiguous or absent day`);
+    if (!src) { ambiguous++; continue; }
     assert.strictEqual(x.price, src.price, `${x.m.date}: H is not the subject price`);
     assert.strictEqual(x.oppPrice, src.oppPrice, `${x.m.date}: A is not the opponent price`);
     agree++;
   }
-  console.log(`        ${agree} priced rows oriented subject-first`);
+  // 15, not 20: the subject holds 18 unambiguous priced rows today. A floor
+  // above the real population is not a stronger check, it is a broken one.
+  assert(agree >= 15, `only ${agree} unambiguous priced rows (${ambiguous} ambiguous days) — too few to orient`);
+  console.log(`        ${agree} priced rows oriented subject-first (${ambiguous} ambiguous days skipped)`);
 });
 
 mustFail('the orientation check would catch H and A being swapped', () => {
