@@ -17498,6 +17498,31 @@ function pp2RepaintIfOpen(key){
 // repaint. Repaints in place when it lands (the lazy-race idiom used by
 // loadHoldbreak / loadAsapSignals above) — without that the shard arrives after
 // first paint and the columns stay dashed forever.
+// §5.2C Career record > Ratings. The DNA file is ONE 2.3 MB document for the
+// whole field, not a per-player shard, so it is fetched once per session and
+// reused — and it is fetched through ensureMatchDna(), the loader Match Analysis
+// already owns, rather than opening a third copy of the same request. (The page
+// had two already; this adds a consumer, not a fetch.) Publishing null on
+// failure would say "this player is unrated", which is a different and untrue
+// statement, so a failure leaves `window.dnaRatings` absent and the panel says
+// it has not loaded.
+let _pp2DnaStarted = false;
+async function loadPp2Dna(){
+  if (_pp2DnaStarted) return;
+  _pp2DnaStarted = true;
+  let d = null;
+  try { d = await ensureMatchDna(); } catch (e) { _pp2DnaStarted = false; return; }
+  if (!d || !d.byKey || !Object.keys(d.byKey).length) { _pp2DnaStarted = false; return; }
+  // The panel needs the player ROWS as well as the by-key index: the tour
+  // averages are computed over the pool at read time, because §3 forbids a
+  // rounded constant and nothing in the file pre-computes them.
+  window.dnaRatings = { byKey: d.byKey, players: Object.keys(d.byKey).map(k => d.byKey[k]), meta: d.meta || {} };
+  const view = document.getElementById('playerProfileView');
+  if (view && view.style.display !== 'none' && window.PlayerProfileV2 && window.PlayerProfileV2.repaint) {
+    pp2Bridge();
+    window.PlayerProfileV2.repaint();
+  }
+}
 const _pp2Shards = {};
 async function loadPp2MarketShard(key){
   const k = String(key);
@@ -17603,6 +17628,7 @@ function showPlayerProfileV2(key){
   loadPp2CareerHistory(key);
   loadPp2TourHist(key);
   loadPp2SpeedMap(key);
+  loadPp2Dna();
   window.scrollTo(0, 0);
   return true;
 }

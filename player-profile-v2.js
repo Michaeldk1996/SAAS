@@ -2389,9 +2389,12 @@
               '<div style="font-size:12.5px;color:#5b6880;margin-top:2px;">' +
                 esc(modalSubtitle(key, p, ctx)) + '</div>' +
             '</div>' +
+            (key === 'career' ? headScopeHtml() : '') +
             '<button type="button" data-pp2="close" aria-label="Close" style="width:32px;height:32px;' +
               'border-radius:9px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);' +
-              'color:#8b96b5;cursor:pointer;font-size:15px;line-height:1;">×</button>' +
+              'color:#8b96b5;cursor:pointer;font-size:15px;line-height:1;flex:none;' +
+              (key === 'career' ? 'margin-left:12px;' : 'margin-left:auto;') +
+              '">×</button>' +
           '</div>' +
           '<div style="padding:20px 22px 24px;">' + body + '</div>' +
         '</div>' +
@@ -2589,6 +2592,74 @@
     });
     return out;
   }
+  // ── the Last-52 window's surface cells ────────────────────────────────────
+  //
+  // §5.2 item 5, second half. The file's head control is `Career | Last 52`
+  // (:3332), replacing the `Career | 2026` we shipped — see renderCareerModal.
+  //
+  // WHY THIS CANNOT COME OFF THE SPINE, and why it does not come off
+  // career-splits either:
+  //
+  //   The spine is the provider's SEASON aggregate. A 52-week window crosses a
+  //   year boundary, so no combination of season buckets can carve it — the
+  //   window is simply not expressible in that store.
+  //
+  //   career-splits.json DOES carry a `last52` node, and using it would have been
+  //   one line. It is the wrong store twice over. (a) Its surface list is
+  //   Hard/Clay/Grass with NO Indoors, so it cannot fill the file's four-row
+  //   ladder. (b) It is a measurably NARROWER population than the spine — the
+  //   two disagree by a double-digit number of matches on most players — so the
+  //   Career scope (spine) and the Last 52 scope (splits) would be two different
+  //   populations under one control, and the §4 reconciliation would be checking
+  //   one against the other. That is the exact failure the surface-row-vs-column
+  //   rebuild already fixed once.
+  //
+  //   So the window is carved from `drillSpine()` — the SAME rows the drill card
+  //   lists — filtered to those carrying a date. Row and drill are then one
+  //   population by construction: a Last-52 Hard row reading 18–6 opens a card of
+  //   exactly those 24 matches, because both sides are the same filter over the
+  //   same array. Nothing new is fetched.
+  //
+  // TWO THINGS IT CANNOT DO, both stated on the page rather than papered over:
+  //
+  //   a. INDOORS. Indoors is a court type the Career scope carves out of the
+  //      provider's season buckets. The per-match spine carries a surface and no
+  //      court type (drillRows() already refuses an Indoors drill for this exact
+  //      reason), so inside the window there is no source for the row. It dashes
+  //      with its reason instead of reading 0–0, and instead of being folded into
+  //      Hard where it would inflate a row the Career scope keeps separate.
+  //
+  //   b. UNDATED ROWS. tournamentHistory editions carry no date, so they cannot
+  //      be placed in a 52-week window at all. They are excluded and counted, and
+  //      the footnote says how many — an undated match is not a match that did
+  //      not happen.
+  function last52Cutoff() {
+    var d = new Date();
+    d.setUTCDate(d.getUTCDate() - 364);
+    return d.toISOString().slice(0, 10);
+  }
+  function last52GridCells(p) {
+    var all = drillRows(p, null, null);
+    if (!all) return null;
+    var cut = last52Cutoff();
+    var rows = all.filter(function (r) { return r && r.date && r.date >= cut; });
+    var undated = all.filter(function (r) { return r && !r.date; }).length;
+    var out = { hard: null, grass: null, clay: null, indoors: null };
+    var total = { won: 0, lost: 0 };
+    rows.forEach(function (r) {
+      var w = r.won ? 1 : 0, l = r.won ? 0 : 1;
+      total.won += w; total.lost += l;
+      var s = String(r.surface || '').toLowerCase();
+      var id = s.indexOf('clay') >= 0 ? 'clay'
+        : s.indexOf('grass') >= 0 ? 'grass'
+        : s.indexOf('hard') >= 0 ? 'hard' : null;
+      if (!id) return;                       // no surface on record -> the residual
+      if (!out[id]) out[id] = { won: 0, lost: 0 };
+      out[id].won += w; out[id].lost += l;
+    });
+    return { cells: out, total: total, n: rows.length, cutoff: cut, undated: undated };
+  }
+
   // How many spine rows can actually carry the column — the number the footnote
   // quotes, so the page states its own coverage instead of implying completeness.
   function indoorCoverage(p) {
@@ -2757,10 +2828,15 @@
   // drill therefore equals the sum of its own year drills by construction — the
   // reconciliation the founder asked for in item 4 — instead of quietly unioning
   // two stores that disagree the moment the scope widens past one season.
-  function drillRows(p, surf, year) {
+  // `since` is the Last-52 window's cut-off (YYYY-MM-DD). It is the SAME filter
+  // last52GridCells() counts with, so a windowed row and its drill card cannot
+  // disagree. An undated row can never satisfy it, which is why it is excluded
+  // from the count too rather than being listed under a record it is not in.
+  function drillRows(p, surf, year, since) {
     var src = drillSourceMap(p);
     return drillSpine(p).filter(function (r) {
       if (year && r.year !== String(year)) return false;
+      if (since && !(r.date && r.date >= since)) return false;
       if (r.src !== (src[r.year] || 'edition')) return false;
       if (!surf) return true;
       // Indoors is a COURT TYPE carved out of the surfaces; recentForm carries a
@@ -2822,13 +2898,13 @@
     return 'All ' + rowsN + ' matches';
   }
   function renderDrill(p, opts) {
-    var rows = drillRows(p, opts.surf, opts.year);
+    var rows = drillRows(p, opts.surf, opts.year, opts.since);
     var shown = rows.slice(0, DRILL_PAGE);
     var cellN = (opts.won || 0) + (opts.lost || 0);
     // Rows that are in the store for this scope but carry no surface. Only a
     // SURFACE drill can lose rows to that, so an all-matches drill asks nothing.
     var surfaceless = (opts.surf && opts.surf !== 'indoors')
-      ? drillRows(p, null, opts.year).filter(function (r) { return !r.surface; }).length
+      ? drillRows(p, null, opts.year, opts.since).filter(function (r) { return !r.surface; }).length
       : 0;
     var note = drillNote(rows.length, shown.length, cellN, opts.surf, surfaceless);
 
@@ -2950,6 +3026,493 @@
     return bits.join(' ' + MIDDOT + ' ');
   }
 
+  // ═══════════════════════════════════════════════════════════════════════════
+  // §5.2C CAREER RECORD — the RATINGS tab (`Player Stat Boxes.dc.html` :953-1065,
+  //        geometry from `profileDNA()` :1255-1322)
+  // ═══════════════════════════════════════════════════════════════════════════
+  //
+  // The file gives the Career-record modal a two-tab row — `Record | Ratings`
+  // (:3306) — and hangs the same `dna` block off BOTH this tab and the Live
+  // trading box (:3439). This section is the data layer for it; the Live trading
+  // box (item 3) will call the same functions rather than growing a second copy.
+  //
+  // SOURCE. `dna-apitennis-ratings.json` — TEN-103, api-tennis box scores only,
+  // ATP main-tour singles (event_type 265), 2024-03-06 onward, NO Sackmann/TML.
+  // 280 rated players of a 428 roster; Elo resolved for 261. Its five radar axes
+  // (`_meta.radarAxes`) are EXACTLY the five the file draws — serve, return,
+  // underPressure, dominanceRatio, elo — so no axis is invented and none is
+  // dropped. The README's "Serve · Return · Pressure · Baseline · Net" loses
+  // here, as the file wins everywhere; reported as a README-vs-file difference.
+  //
+  // The component TILES are the locked formula's own terms, not a new metric set.
+  // Return (`_meta.lockedFormulas.return`) is a 4-term sum and the file draws 4;
+  // underPressure is a 4-term sum and the file draws 4 — same four, in the file's
+  // order. That is why "Break points converted" appears under both Return and
+  // Under pressure: one figure, two readings, which is what the file's own
+  // footnote says.
+  //
+  // TWO REPORTED DIFFERENCES ON THE SERVE GROUP, both resolved the file's way:
+  //
+  //  a. COUNT. The locked serve formula is a SIX-term sum (it includes hold%),
+  //     but the file's serve list (:3480-3486) is FIVE tiles and has no hold%
+  //     tile. The template's `hint-placeholder-count="6"` is a placeholder hint,
+  //     not data — the tile list is authoritative. The file wins, so five tiles
+  //     ship and `holdPct` is not drawn here. It is not lost: hold% is the whole
+  //     subject of the Live trading hold/break heatmap. Reported, not restored.
+  //
+  //  b. UNIT. The file's last two serve tiles are "Ace rate" and "Double fault
+  //     rate", both carrying a '%'. We do not hold an ace RATE — the locked
+  //     formula is explicit that aces and DFs enter "raw per-match", and the
+  //     store has `acesPerMatch`/`dfPerMatch` with no service-point denominator
+  //     anywhere in it to build a rate from. Printing a per-match count under a
+  //     "%" label would be a fabricated unit, which §3 forbids ahead of any
+  //     fidelity rule, so the label states what the number is. Reported.
+  var DNA_AXES = [
+    { key: 'serve', label: 'Serve', dp: 0 },
+    { key: 'return', label: 'Return', dp: 1 },
+    { key: 'underPressure', label: 'Under Pressure', dp: 1 },
+    { key: 'dominanceRatio', label: 'Dominance Ratio', dp: 2 },
+    { key: 'elo', label: 'Elo Rating', dp: 0 }
+  ];
+  // The Career modal has no surface control, so the node is the whole-field one.
+  // 'All' is the DNA file's own union node, not a surface we picked.
+  var DNA_SURFACE = 'All';
+  // `_meta.inclusion` already gates the FILE at >10 sinceBase matches; this is the
+  // per-scope render floor, the same >=10 the rest of §9 uses.
+  var DNA_FLOOR = 10;
+  var DNA_TILES = {
+    // labels and ORDER are `Player Stat Boxes.dc.html` :3480-3498 verbatim, bar
+    // the two unit-corrected serve labels noted above.
+    serve: [
+      { f: 'firstInPct', label: 'First serve in', dp: 1, unit: '%' },
+      { f: 'firstWonPct', label: 'First serve points won', dp: 1, unit: '%' },
+      { f: 'secondWonPct', label: 'Second serve points won', dp: 1, unit: '%' },
+      { f: 'acesPerMatch', label: 'Aces per match', dp: 1, unit: '' },
+      { f: 'dfPerMatch', label: 'Double faults per match', dp: 1, unit: '', lower: true }
+    ],
+    return: [
+      { f: 'ret1stWonPct', label: '1st serve return points won', dp: 1, unit: '%' },
+      { f: 'ret2ndWonPct', label: '2nd serve return points won', dp: 1, unit: '%' },
+      { f: 'returnGamesWonPct', label: 'Return games won', dp: 1, unit: '%' },
+      { f: 'bpConvPct', label: 'Break points converted', dp: 1, unit: '%' }
+    ],
+    underPressure: [
+      { f: 'bpConvPct', label: 'Break points converted', dp: 1, unit: '%' },
+      { f: 'bpSavedPct', label: 'Break points saved', dp: 1, unit: '%' },
+      { f: 'tbWinPct', label: 'Tie breaks won', dp: 1, unit: '%' },
+      { f: 'decWinPct', label: 'Deciding sets won', dp: 1, unit: '%' }
+    ]
+  };
+
+  function dnaStore() { return window.dnaRatings || null; }
+  // The head scope control is the ONE control for this modal (file :3321-3338
+  // renders `headScopeTabs`, and sets `dnaScopeOn:false` so the DNA block's own
+  // scope tabs are suppressed). 'career' maps to the file's `sinceBase` node.
+  function dnaScope() { return state.careerScope === 'l52' ? 'last52' : 'sinceBase'; }
+  function dnaRecordFor(p) {
+    var st = dnaStore();
+    if (!st || !st.byKey) return null;
+    return st.byKey[String(p.key)] || null;
+  }
+
+  // Tour averages — §3 forbids a rounded constant, so every "Tour" figure on this
+  // panel is the MEAN over the rated pool at the same surface and scope, computed
+  // here from the file's own player rows. n is carried with it and printed.
+  var _dnaTour = {};
+  function dnaTourStats(scope) {
+    var st = dnaStore();
+    if (!st || !st.players) return null;
+    if (_dnaTour[scope]) return _dnaTour[scope];
+    var acc = {};
+    function push(k, v) {
+      if (v == null || !isFinite(v)) return;
+      (acc[k] || (acc[k] = [])).push(v);
+    }
+    st.players.forEach(function (row) {
+      var sf = row.surfaces && row.surfaces[DNA_SURFACE];
+      if (!sf) return;
+      var sc = sf[scope] || {};
+      DNA_AXES.forEach(function (ax) {
+        if (ax.key === 'elo') {
+          if (sf.elo && sf.elo.rating != null) push('elo', sf.elo.rating);
+          return;
+        }
+        var node = sc[ax.key];
+        if (node && node.rating != null) push(ax.key, node.rating);
+        if (node) {
+          (DNA_TILES[ax.key] || []).forEach(function (t) {
+            push(ax.key + '.' + t.f, node[t.f]);
+          });
+        }
+      });
+    });
+    var out = {};
+    Object.keys(acc).forEach(function (k) {
+      var v = acc[k];
+      out[k] = { mean: v.reduce(function (a, b) { return a + b; }, 0) / v.length, n: v.length };
+    });
+    _dnaTour[scope] = out;
+    return out;
+  }
+
+  // The published p2->p98 band is what turns a raw rating into the percentile the
+  // radar plots (`_meta.pctMethod`). Inverting it here is what lets the TOUR
+  // polygon sit at the tour mean's true percentile instead of a flat ring.
+  function dnaBand(scope, axKey) {
+    var st = dnaStore();
+    var m = st && st.meta;
+    if (!m) return null;
+    if (axKey === 'elo') return (m.eloBands && m.eloBands[DNA_SURFACE]) || null;
+    var b = m.bands && m.bands[scope] && m.bands[scope][DNA_SURFACE];
+    return (b && b[axKey]) || null;
+  }
+  function dnaPctFromBand(scope, axKey, rating) {
+    var b = dnaBand(scope, axKey);
+    if (rating == null || !b || b.p2 == null || b.p98 == null || b.p98 <= b.p2) return null;
+    return Math.max(0, Math.min(100, (rating - b.p2) / (b.p98 - b.p2) * 100));
+  }
+
+  // ── the resolved panel model ──────────────────────────────────────────────
+  //
+  // Returns null shapes rather than zeros throughout: a missing axis draws no
+  // vertex value and dashes its row, per §3. `state` is one of
+  //   'no-store'  the JSON has not loaded (a fact about the network)
+  //   'unrated'   the player is outside the 280 rated (a fact about him)
+  //   'thin'      rated, but under the floor at this scope
+  //   'ok'
+  function dnaModel(p) {
+    var st = dnaStore();
+    if (!st) return { state: 'no-store' };
+    var rec = dnaRecordFor(p);
+    if (!rec) return { state: 'unrated', roster: (st.meta && st.meta.rosterSize) || null,
+      rated: (st.meta && st.meta.ratedPlayers) || null };
+    var scope = dnaScope();
+    var sf = rec.surfaces && rec.surfaces[DNA_SURFACE];
+    var sc = (sf && sf[scope]) || {};
+    var tour = dnaTourStats(scope) || {};
+    var matches = (sc.sample && sc.sample.matches) || 0;
+
+    var axes = DNA_AXES.map(function (ax) {
+      var rating = null, pct = null;
+      if (ax.key === 'elo') {
+        // Elo carries no scope in the file — one rating per surface — so it does
+        // not move between Career and Last 52. Said in the note rather than
+        // silently drawn as if it had been rescoped.
+        rating = (sf && sf.elo && sf.elo.rating != null) ? sf.elo.rating : null;
+        pct = rating != null ? dnaPctFromBand(scope, 'elo', rating) : null;
+        if (pct == null && sf && sf.elo && sf.elo.pct != null) pct = sf.elo.pct;
+      } else {
+        var node = sc[ax.key];
+        rating = (node && node.rating != null) ? node.rating : null;
+        pct = (node && node.pct != null) ? node.pct : dnaPctFromBand(scope, ax.key, rating);
+      }
+      var t = tour[ax.key] || null;
+      var tPct = t ? dnaPctFromBand(scope, ax.key, t.mean) : null;
+      return {
+        key: ax.key, label: ax.label, dp: ax.dp,
+        rating: rating, pct: pct,
+        tour: t ? t.mean : null, tourN: t ? t.n : null, tourPct: tPct,
+        delta: (rating != null && t) ? rating - t.mean : null,
+        scoped: ax.key !== 'elo'
+      };
+    });
+    var drawable = axes.filter(function (a) { return a.pct != null; }).length;
+    return {
+      state: matches >= DNA_FLOOR && drawable ? 'ok' : (drawable ? 'thin' : 'thin'),
+      scope: scope, matches: matches, axes: axes,
+      estimated: !!(sc.underPressure && sc.underPressure.estimated),
+      sinceBaseMatches: ((sf && sf.sinceBase && sf.sinceBase.sample && sf.sinceBase.sample.matches) || 0),
+      latest: rec.latestMatch || null,
+      meta: st.meta || {},
+      node: sc, tourStats: tour
+    };
+  }
+
+  // ── geometry, lifted verbatim from `profileDNA()` :1276-1310 ───────────────
+  //   cx 168 · cy 132 · R 96 · 72 degrees per axis from -90 · PAD 60 for the
+  //   absolutely-positioned labels · web rings 1/0.75/0.5/0.25 · value label at
+  //   max(0.3, frac)+0.12 · axis label at 1.14 with the file's three-way shift.
+  var DNA_CX = 168, DNA_CY = 132, DNA_R = 96, DNA_PAD = 60;
+  function dnaPt(i, frac) {
+    var a = (-90 + i * 72) * Math.PI / 180;
+    return [DNA_CX + Math.cos(a) * DNA_R * frac, DNA_CY + Math.sin(a) * DNA_R * frac];
+  }
+  function dnaPoly(fracs) {
+    return fracs.map(function (v, i) {
+      return dnaPt(i, v).map(function (n) { return n.toFixed(1); }).join(',');
+    }).join(' ');
+  }
+  function dnaFmt(v, dp) {
+    if (v == null) return DASH;
+    return dp === 0 ? String(Math.round(v)) : (+v).toFixed(dp);
+  }
+
+  // ── the `Record | Ratings` tab row (`Player Stat Boxes.dc.html` :80-86) ────
+  //   Wrapper: flex gap 3 · #0a0d13 · 1px rgba(255,255,255,0.09) · radius 10 ·
+  //   padding 3 · margin-bottom 18 · width fit-content.
+  //   Seg: padding 7/14 · radius 8 · 12px · 700/600 · #e7e9ee / #5b6880 ·
+  //   rgba(91,155,255,0.16) / transparent · rgba(91,155,255,0.4) /
+  //   rgba(255,255,255,0.08).
+  //   Note the borders differ from the HEAD control's (:68), which drops to
+  //   radius 9/7 and 11px — two different segmented controls, not one reused.
+  var CAREER_TABS = [['record', 'Record'], ['ratings', 'Ratings']];
+  function careerTabsHtml() {
+    return '<div style="display:flex;gap:3px;background:#0a0d13;' +
+      'border:1px solid rgba(255,255,255,0.09);border-radius:10px;padding:3px;' +
+      'margin-bottom:18px;width:fit-content;">' +
+      CAREER_TABS.map(function (t) {
+        var on = (state.careerTab || 'record') === t[0];
+        return '<button type="button" data-pp2="career-tab" data-v="' + t[0] + '" ' +
+          'style="cursor:pointer;white-space:nowrap;padding:7px 14px;border-radius:8px;' +
+          'font-size:12px;font-weight:' + (on ? 700 : 600) + ';' +
+          'color:' + (on ? '#e7e9ee' : '#5b6880') + ';' +
+          'background:' + (on ? 'rgba(91,155,255,0.16)' : 'transparent') + ';' +
+          'border:1px solid ' + (on ? 'rgba(91,155,255,0.4)' : 'rgba(255,255,255,0.08)') + ';">' +
+          esc(t[1]) + '</button>';
+      }).join('') + '</div>';
+  }
+
+  // ── the HEAD scope control, `Career | Last 52` (:67-71, :3332) ─────────────
+  //   The file renders this for the Career and Draw-record modals only
+  //   (`hasHeadScope`), and suppresses the DNA block's own scope tabs
+  //   (`dnaScopeOn:false`) because this one control drives both tabs: the surface
+  //   ladder under Record, the radar window under Ratings.
+  function headScopeHtml() {
+    return '<span style="display:flex;gap:3px;margin-left:auto;background:#0a0d13;' +
+      'border:1px solid rgba(255,255,255,0.09);border-radius:9px;padding:2px;flex:none;">' +
+      [['career', 'Career'], ['l52', 'Last 52']].map(function (t) {
+        var on = (state.careerScope === 'l52' ? 'l52' : 'career') === t[0];
+        return '<button type="button" data-pp2="career-scope" data-scope="' + t[0] + '" ' +
+          'style="cursor:pointer;white-space:nowrap;padding:5px 12px;border-radius:7px;' +
+          'font-size:11px;font-weight:' + (on ? 700 : 600) + ';' +
+          'color:' + (on ? '#e7e9ee' : '#5b6880') + ';' +
+          'background:' + (on ? 'rgba(91,155,255,0.16)' : 'transparent') + ';' +
+          'border:1px solid ' + (on ? 'rgba(91,155,255,0.4)' : 'rgba(255,255,255,0.08)') + ';">' +
+          esc(t[1]) + '</button>';
+      }).join('') + '</span>';
+  }
+
+  // ── the tiles (`metric()` :2251-2263 verbatim, with the null branch kept) ──
+  var DNA_GREEN = '#3dd68c', DNA_RED = '#e0616f', DNA_FAINT = '#3f4860';
+  function dnaTile(spec, v, avg) {
+    var unit = spec.unit || '';
+    if (v == null || avg == null) {
+      return { label: spec.label, value: DASH, delta: DASH,
+        avg: avg == null ? DASH : dnaFmt(avg, spec.dp) + unit,
+        color: DNA_FAINT, deltaColor: DNA_FAINT, weight: 600,
+        bd: 'rgba(255,255,255,0.07)', mark: spec.lower ? '↓ better' : '' };
+    }
+    var d = v - avg;
+    var above = spec.lower ? d < 0 : d > 0;
+    var level = Math.abs(d) < 0.15;
+    return {
+      label: spec.label,
+      value: (+v).toFixed(1) + unit,
+      delta: (d >= 0 ? '+' : MINUS) + Math.abs(d).toFixed(1),
+      avg: (+avg).toFixed(1) + unit,
+      color: '#e8ecf4',
+      deltaColor: level ? '#8b96b5' : (above ? DNA_GREEN : DNA_RED),
+      weight: 700,
+      mark: spec.lower ? '↓ better' : '',
+      bd: 'rgba(255,255,255,0.07)'
+    };
+  }
+  function dnaTileHtml(t) {
+    return '<div style="background:#06070a;border:1px solid ' + t.bd + ';border-radius:10px;' +
+      'padding:14px 15px;display:flex;flex-direction:column;align-items:center;text-align:center;">' +
+      '<div style="display:flex;align-items:baseline;justify-content:center;gap:8px;">' +
+        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:21px;font-weight:' + t.weight +
+          ';color:' + t.color + ';">' + esc(t.value) + '</span>' +
+        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:15px;font-weight:700;' +
+          'color:' + t.deltaColor + ';">' + esc(t.delta) + '</span>' +
+      '</div>' +
+      '<div style="font-size:12.5px;font-weight:600;color:#c6ccdb;margin-top:6px;">' + esc(t.label) + '</div>' +
+      '<div style="display:flex;align-items:baseline;justify-content:center;gap:8px;margin-top:4px;">' +
+        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:#4b5672;">' +
+          'tour average ' + esc(t.avg) + '</span>' +
+        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9px;font-weight:600;' +
+          'letter-spacing:0.12em;text-transform:uppercase;color:#4b5672;">' + esc(t.mark) + '</span>' +
+      '</div>' +
+    '</div>';
+  }
+  function dnaGroupHtml(label, tiles, first) {
+    return '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;font-weight:600;' +
+      'letter-spacing:0.12em;text-transform:uppercase;color:#4b5672;margin:' +
+      (first ? '0 0 11px' : '22px 0 11px') + ';">' + esc(label) + '</div>' +
+      '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(216px,1fr));gap:10px;">' +
+      tiles.map(dnaTileHtml).join('') + '</div>';
+  }
+
+  // ── §5.2C the rendered panel ──────────────────────────────────────────────
+  function renderRatingsPanel(p) {
+    var m = dnaModel(p);
+    var sn = shortName(p);
+    function stateBox(msg) {
+      return '<div style="border:1px dashed rgba(255,255,255,0.12);border-radius:10px;padding:26px;' +
+        'text-align:center;font-size:13px;color:' + DASH_COLOUR + ';line-height:1.6;">' + msg + '</div>';
+    }
+    if (m.state === 'no-store') {
+      // Not loaded is not the same statement as not rated. §3.
+      return stateBox('Ratings have not loaded.');
+    }
+    if (m.state === 'unrated') {
+      return stateBox(esc(sn) + ' is not in the rated pool, so no rating can be shown.' +
+        (m.rated && m.roster
+          ? '<br>The ratings cover ' + m.rated + ' players of the ' + m.roster + '-player roster — ' +
+            'entry needs more than 10 matches in the api-tennis box-score cache.'
+          : ''));
+    }
+
+    var scopeWord = m.scope === 'last52' ? 'Last 52 weeks' : 'Career';
+    var axes = m.axes;
+
+    // The radar draws only where the axis HAS a percentile; a missing axis
+    // collapses to the centre on the file's geometry, which would read as "worst
+    // on tour". Those axes are dropped from the polygon and dashed in the table
+    // instead, and the note says how many.
+    var missing = axes.filter(function (a) { return a.pct == null; });
+    var playerPoly = dnaPoly(axes.map(function (a) { return a.pct == null ? 0 : a.pct / 100; }));
+    // ★ DEVIATION, REPORTED — the file draws the tour polygon at a FLAT 0.5 ring
+    //   (:1292 `poly(AX.map(() => 0.5))`). Our percentile scale is p2->0/p98->100
+    //   over the rated pool, on which the tour MEAN does not land on 0.5: measured
+    //   on the All node it runs 43.1 (dominance ratio, career) to 57.7 (under
+    //   pressure, last 52). Drawing the flat ring would put a player who is exactly
+    //   average on dominance ratio OUTSIDE the "tour average" polygon. So the ring
+    //   is drawn at each axis's true tour-mean percentile and the deviation is in
+    //   the report for the founder to rule on.
+    var tourPoly = dnaPoly(axes.map(function (a) {
+      return a.tourPct == null ? 0.5 : a.tourPct / 100;
+    }));
+    var web = [1, 0.75, 0.5, 0.25].map(function (k) {
+      return '<polygon points="' + dnaPoly(axes.map(function () { return k; })) + '" fill="none" ' +
+        'stroke="rgba(255,255,255,0.07)" stroke-width="1"></polygon>';
+    }).join('');
+    var spokes = axes.map(function (a, i) {
+      var xy = dnaPt(i, 1);
+      return '<line x1="' + DNA_CX + '" y1="' + DNA_CY + '" x2="' + xy[0].toFixed(1) + '" y2="' +
+        xy[1].toFixed(1) + '" stroke="rgba(255,255,255,0.07)" stroke-width="1"></line>';
+    }).join('');
+    var valueLabels = axes.map(function (a, i) {
+      if (a.pct == null) return '';
+      var xy = dnaPt(i, Math.max(0.3, a.pct / 100) + 0.12);
+      return '<span style="position:absolute;left:' + (xy[0] + DNA_PAD).toFixed(1) + 'px;top:' +
+        xy[1].toFixed(1) + 'px;transform:translate(-50%,-50%);font-family:\'IBM Plex Mono\',monospace;' +
+        'font-size:10.5px;font-weight:700;color:#5b9bff;background:rgba(6,7,10,0.85);padding:1px 4px;' +
+        'border-radius:4px;white-space:nowrap;z-index:2;">' + esc(dnaFmt(a.rating, a.dp)) + '</span>';
+    }).join('');
+    var axisLabels = axes.map(function (a, i) {
+      var xy = dnaPt(i, 1.14);
+      var shift = i === 0 ? 'translate(-50%,-130%)'
+        : xy[0] > DNA_CX + 4 ? 'translate(8px,-50%)'
+        : xy[0] < DNA_CX - 4 ? 'translate(-100%,-50%) translateX(-8px)' : 'translate(-50%,20%)';
+      return '<span style="position:absolute;left:' + (xy[0] + DNA_PAD).toFixed(1) + 'px;top:' +
+        xy[1].toFixed(1) + 'px;transform:' + shift + ';font-family:\'IBM Plex Mono\',monospace;' +
+        'font-size:9.5px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#8b96b5;' +
+        'white-space:nowrap;">' + esc(a.label) + '</span>';
+    }).join('');
+
+    var HEADCELL = 'font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
+      'letter-spacing:0.14em;text-transform:uppercase;color:#5b6880;';
+    var CELL = 'padding:7px 0;border-top:1px solid rgba(255,255,255,0.04);';
+    var rows = axes.map(function (a) {
+      // The file's own "level" band, scaled by the axis's decimal place (:1315).
+      var lvl = a.delta != null && Math.abs(a.delta) < (a.dp === 2 ? 0.02 : 0.5);
+      var deltaTxt = a.delta == null ? DASH
+        : lvl ? DASH
+        : (a.delta > 0 ? '+' : MINUS) + dnaFmt(Math.abs(a.delta), a.dp);
+      var deltaCol = (a.delta == null || lvl) ? '#8b96b5' : (a.delta > 0 ? DNA_GREEN : DNA_RED);
+      return '<span style="font-size:12px;color:#8b96b5;' + CELL + '">' + esc(a.label) + '</span>' +
+        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;font-weight:400;' +
+          'color:' + (a.rating == null ? DASH_COLOUR : '#e8ecf4') + ';text-align:right;' + CELL + '">' +
+          esc(dnaFmt(a.rating, a.dp)) + '</span>' +
+        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;font-weight:700;' +
+          'color:' + deltaCol + ';text-align:right;' + CELL + '">' + esc(deltaTxt) + '</span>' +
+        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;font-weight:400;' +
+          'color:#5b6880;text-align:right;' + CELL + '">' + esc(dnaFmt(a.tour, a.dp)) + '</span>';
+    }).join('');
+
+    var tourN = (axes[0] && axes[0].tourN) || null;
+    // Every clause here is a measured fact about THIS panel, not boilerplate: the
+    // window, the pool the average is taken over, what Elo does not do, and what
+    // is missing. §3 forbids a rounded constant; this is what replaces it.
+    var note = scopeWord + ' ' + MIDDOT + ' percentile vs the ATP field ' + MIDDOT +
+      ' Δ is his figure minus the tour average, in rating points' +
+      (tourN ? ' ' + MIDDOT + ' tour average over ' + tourN + ' rated players' : '');
+    var foot = 'Ratings rest on ' + m.matches + ' match' + (m.matches === 1 ? '' : 'es') +
+      ' with api-tennis box scores in this window' +
+      (m.meta && m.meta.source ? ', ATP main-tour singles from 2024-03-06' : '') + '. ' +
+      'Elo carries no window, so it reads the same under Career and Last 52. ' +
+      'The delta carries the sign colour; a downward marker means lower is better. ' +
+      'Break points converted appears in both Return and Under pressure — one figure, two ' +
+      'readings. Anything not held reads as a dash.' +
+      (m.estimated ? ' Under pressure is estimated from three of its four terms.' : '') +
+      (missing.length ? ' ' + missing.length + ' of the five axes ' +
+        (missing.length === 1 ? 'has' : 'have') + ' no rating in this window and ' +
+        (missing.length === 1 ? 'is' : 'are') + ' left off the shape.' : '');
+
+    var thin = m.state === 'thin';
+    var shape = thin
+      ? '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;' +
+          'text-align:center;font-size:12.5px;color:' + DASH_COLOUR + ';line-height:1.6;padding:0 40px;">' +
+          m.matches + ' match' + (m.matches === 1 ? '' : 'es') + ' in this window — under the ' +
+          DNA_FLOOR + '-match floor, so no shape is drawn.</div>'
+      : axisLabels + valueLabels +
+        '<svg width="336" height="272" viewBox="0 0 336 272" fill="none" ' +
+          'style="display:block;position:absolute;left:60px;top:0;">' + web + spokes +
+          '<polygon points="' + tourPoly + '" fill="none" stroke="#5b6880" stroke-width="1.6" ' +
+            'stroke-dasharray="5 4"></polygon>' +
+          '<polygon points="' + playerPoly + '" fill="rgba(91,155,255,0.16)" stroke="#5b9bff" ' +
+            'stroke-width="1.8"></polygon>' +
+        '</svg>';
+
+    var tiles = '';
+    var node = m.node || {};
+    var ts = m.tourStats || {};
+    ['serve', 'return', 'underPressure'].forEach(function (ax, gi) {
+      var label = ax === 'serve' ? 'Serve' : ax === 'return' ? 'Return' : 'Under pressure';
+      var src = node[ax] || {};
+      var list = DNA_TILES[ax].map(function (spec) {
+        var t = ts[ax + '.' + spec.f];
+        return dnaTile(spec, src[spec.f] == null ? null : src[spec.f], t ? t.mean : null);
+      });
+      tiles += dnaGroupHtml(label, list, gi === 0);
+    });
+
+    return '' +
+      '<div style="background:#06070a;border:1px solid rgba(255,255,255,0.08);border-radius:12px;' +
+        'padding:18px 20px 16px;margin-bottom:20px;display:flex;flex-direction:column;gap:14px;">' +
+        '<div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;">' +
+          '<span style="' + HEADCELL + '">Player DNA</span>' +
+          '<span style="display:flex;align-items:center;gap:14px;margin-left:auto;">' +
+            '<span style="display:flex;align-items:center;gap:6px;">' +
+              '<span style="width:14px;height:2px;background:#5b9bff;"></span>' +
+              '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
+                'letter-spacing:0.14em;text-transform:uppercase;color:#8b96b5;">' + esc(sn) + '</span>' +
+            '</span>' +
+            '<span style="display:flex;align-items:center;gap:6px;">' +
+              '<span style="width:14px;height:0;border-top:2px dashed #5b6880;"></span>' +
+              '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
+                'letter-spacing:0.14em;text-transform:uppercase;color:#5b6880;">Tour average</span>' +
+            '</span>' +
+          '</span>' +
+        '</div>' +
+        '<div style="position:relative;width:456px;max-width:100%;height:272px;margin:0 auto;">' +
+          shape + '</div>' +
+        '<div style="display:grid;grid-template-columns:minmax(0,1fr) 74px 70px 62px;gap:0 12px;' +
+          'align-items:center;border-top:1px solid rgba(255,255,255,0.07);padding-top:10px;">' +
+          '<span style="' + HEADCELL + '">Raw rating</span>' +
+          '<span style="' + HEADCELL + 'text-align:right;">Player</span>' +
+          '<span style="' + HEADCELL + 'text-align:right;">Δ vs tour</span>' +
+          '<span style="' + HEADCELL + 'text-align:right;">Tour</span>' +
+          rows +
+        '</div>' +
+        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
+          'letter-spacing:0.14em;text-transform:uppercase;color:#4b5672;">' + esc(note) + '</div>' +
+      '</div>' +
+      tiles +
+      '<div style="font-size:12px;color:#4b5672;margin-top:16px;line-height:1.6;">' + esc(foot) + '</div>';
+  }
+
   // §5.2 Career record — surface rows over the spine + Record by season.
   // §5.2 Career record — surface rows + Record by season, rebuilt to the FILE.
   //
@@ -2984,19 +3547,36 @@
   //             joined, for both sampled players.
   //        So: before 6 matches, after 6 matches, reason stated on the page.
   function renderCareerModal(p, ctx) {
-    var scopeYear = state.careerScope === 'season' ? currentYear() : null;
+    // §5.2C item 5 — the file's `Record | Ratings` tab row (:3306). `hasRows` and
+    // `isSurface` are both gated on the RECORD tab (:3340, :3466), so the surface
+    // ladder and the season table are replaced by the ratings panel rather than
+    // stacked under it.
+    if (state.careerTab === 'ratings') return careerTabsHtml() + renderRatingsPanel(p);
+
+    var isL52 = state.careerScope === 'l52';
 
     // ── rows: the carved cells, so a row cannot disagree with its column ──────
-    var cells, total;
-    if (scopeYear) {
-      var yr = spineYears(p).filter(function (y) { return String(y.year) === String(scopeYear); })[0];
-      cells = yr ? gridCells(yr) : { total: null, hard: null, grass: null, clay: null, indoors: null };
-      total = yr && yr.total ? { won: yr.total.won || 0, lost: yr.total.lost || 0 } : { won: 0, lost: 0 };
+    var cells, total, l52 = null;
+    if (isL52) {
+      l52 = last52GridCells(p);
+      if (!l52) {
+        // The dated store has not answered. Saying "0 matches" here would be a
+        // claim about the player made from a fact about the network.
+        return careerTabsHtml() +
+          '<div style="border:1px dashed rgba(255,255,255,0.12);border-radius:10px;padding:26px;' +
+            'text-align:center;font-size:13px;color:' + DASH_COLOUR + ';">' +
+            (careerHistorySettled(p.key)
+              ? 'No dated matches on record, so the last 52 weeks cannot be carved.'
+              : 'The dated match store has not loaded.') + '</div>';
+      }
+      cells = l52.cells;
+      total = l52.total;
     } else {
       cells = careerGridCells(p);
       var ct0 = spineTotal(p);
       total = { won: ct0.won, lost: ct0.lost };
     }
+    var scopeYear = null;
     // The footnoted residual: whatever the carved rows do not account for.
     var sw = 0, sl = 0;
     CAREER_ROWS.forEach(function (s) {
@@ -3011,16 +3591,20 @@
       var w = c ? (c.won || 0) : 0, l = c ? (c.lost || 0) : 0, n = w + l;
       var open = state.careerDrill && state.careerDrill.kind === 'surface' &&
                  state.careerDrill.surf === s.id;
+      // Indoors has no source inside the window (see last52GridCells note a), so
+      // under Last 52 it states that rather than inheriting the career reason or
+      // printing a 0–0 it cannot stand behind.
+      var noIndoor = s.id === 'indoors' && (isL52 || c === null);
       return barRow({
         label: s.label,
-        meta: c === null && s.id === 'indoors'
-          ? 'no court type on record'
+        meta: noIndoor
+          ? (isL52 ? 'no court type in the dated window' : 'no court type on record')
           : (n ? recordText(w, l) + ' ' + MIDDOT + ' ' + n + ' matches' : 'no matches on record'),
-        won: w, lost: l,
+        won: noIndoor ? 0 : w, lost: noIndoor ? 0 : l,
         hook: 'career-surf', v: s.id, open: open,
         detail: open ? renderDrill(p, {
-          surf: s.id, year: scopeYear,
-          title: s.label + ' ' + MIDDOT + ' ' + (scopeYear || 'career'),
+          surf: s.id, year: scopeYear, since: isL52 ? l52.cutoff : null,
+          title: s.label + ' ' + MIDDOT + ' ' + (isL52 ? 'last 52 weeks' : 'career'),
           won: w, lost: l, span: false
         }) : ''
       });
@@ -3151,13 +3735,13 @@
     var fy = spineFirstYear(p);
     var ic = indoorCoverage(p);
     return '' +
+      careerTabsHtml() +
+      // The file moves this scope control OUT of the eyebrow row and into the
+      // modal head (`hasScope:false` :3365 against `hasHeadScope:true` :3321), so
+      // the row keeps only its label — which the file itself re-words per scope
+      // ("Last 52 by surface" / "Career by surface", :3363).
       '<div style="display:flex;align-items:center;gap:12px;margin-bottom:11px;">' +
-        eyebrow(scopeYear ? scopeYear + ' by surface' : 'Career by surface') +
-        '<div style="display:flex;gap:3px;background:#0a0d13;border:1px solid rgba(255,255,255,0.09);' +
-          'border-radius:9px;padding:2px;margin-left:auto;">' +
-          scopeBtn('career', 'Career', state.careerScope !== 'season') +
-          scopeBtn('season', currentYear(), state.careerScope === 'season') +
-        '</div>' +
+        eyebrow(isL52 ? 'Last 52 by surface' : 'Career by surface') +
       '</div>' +
       '<div style="display:flex;flex-direction:column;gap:7px;">' + rows + '</div>' +
       // Item 5 — the residual as a footnote, with the reason it cannot be resolved.
@@ -3165,6 +3749,16 @@
         ? '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:#4b5672;' +
             'margin-top:10px;">' + residN + ' match' + (residN === 1 ? '' : 'es') +
             ' with no surface on record</div>'
+        : '') +
+      // The window's own coverage, so "last 52 weeks" is a stated span over a
+      // stated number of rows rather than an unqualified claim.
+      (isL52
+        ? '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:#4b5672;' +
+            'margin-top:10px;">' + l52.n + ' dated match' + (l52.n === 1 ? '' : 'es') +
+            ' since ' + esc(l52.cutoff) +
+            (l52.undated ? ' ' + MIDDOT + ' ' + l52.undated +
+              ' undated row' + (l52.undated === 1 ? '' : 's') + ' cannot be placed in the window' : '') +
+            '</div>'
         : '') +
       // §5.2B header line — title + the "WINS / LOSSES" eyebrow the founder
       // found missing (item 11), then the file's helper copy (item 12).
@@ -3202,13 +3796,8 @@
               : '') + '.';
         })() +
       '</div>';
-
-    function scopeBtn(id, label, on) {
-      return '<button type="button" data-pp2="career-scope" data-scope="' + id + '" style="padding:5px 12px;' +
-        'border-radius:7px;font-size:11px;border:1px solid ' + (on ? 'rgba(91,155,255,0.4)' : 'transparent') + ';' +
-        'background:' + (on ? 'rgba(91,155,255,0.16)' : 'transparent') + ';color:' + (on ? '#e7e9ee' : '#5b6880') + ';' +
-        'font-weight:' + (on ? 700 : 600) + ';cursor:pointer;">' + esc(label) + '</button>';
-    }
+    // (the local scopeBtn() that used to paint the Career|2026 pair is gone with
+    // it — the head control is headScopeHtml(), shared with the modal shell)
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -7745,6 +8334,11 @@
   var state = {
     key: null, ledgerOpen: false, ledgerExpanded: false,
     surfaces: [], priceFilters: [], modal: null,
+    // §5.2 Career record. `careerTab` is the file's Record|Ratings row;
+    // `careerScope` is the head control, now Career|Last 52 ('career'|'l52') —
+    // it used to be Career|<current year>, which the file replaced. The two are
+    // independent axes of one modal: switching tab must not reset the window.
+    careerTab: 'record',
     careerScope: 'career', splitScope: 'career', marketRole: 'all',
     // §5.8 Market edge. marketBand is "<group>:<bandId>" for the open drill;
     // marketSide is the cumulative chart's Back|Fade; marketSurf its surface
@@ -7835,7 +8429,7 @@
     state.key = String(key);
     state.ledgerOpen = false; state.ledgerExpanded = false;
     state.surfaces = []; state.priceFilters = []; state.modal = null;
-    state.careerScope = 'career'; state.careerDrill = null;
+    state.careerScope = 'career'; state.careerDrill = null; state.careerTab = 'record';
     state.splitScope = 'career'; state.marketRole = 'all';
     state.tournQuery = ''; state.tournOpen = null;
     state.calTab = 'calendar'; state.calSurface = 'all'; state.calCell = null; state.calRun = null;
@@ -7905,6 +8499,9 @@
     else if (kind === 'box') state.modal = el.getAttribute('data-box');
     else if (kind === 'close' || kind === 'scrim') { state.modal = null; state.careerDrill = null; }
     else if (kind === 'career-scope') { state.careerScope = el.getAttribute('data-scope'); state.careerDrill = null; }
+    // The tab switch keeps the window (`careerScope`) — one control drives both
+    // tabs, so resetting it here would silently re-scope the radar on a tab click.
+    else if (kind === 'career-tab') { state.careerTab = v; state.careerDrill = null; }
     // §5.2A — a surface row toggles its own drill; opening one closes the other.
     else if (kind === 'career-surf') {
       state.careerDrill = (state.careerDrill && state.careerDrill.kind === 'surface' &&
