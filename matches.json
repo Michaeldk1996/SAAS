@@ -1866,11 +1866,11 @@
     "venue": null,
     "courtSpeed": null,
     "weather": null,
-    "live": false,
-    "liveStatus": null,
+    "live": true,
+    "liveStatus": "Set 3",
     "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "liveGameScore": "0 - 0",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2410_g-heide.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2168_s-wawrinka.jpg",
     "oddsMovement": {
@@ -1950,7 +1950,10 @@
       "at": "2026-09-18T15:51:53.196Z",
       "observedAt": "2026-09-18T20:15:00Z",
       "src": "live"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12164024",
@@ -5243,11 +5246,22 @@
     "venue": null,
     "courtSpeed": null,
     "weather": null,
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 2",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 6,
+        "p2": 2
+      },
+      {
+        "set": 2,
+        "p1": 4,
+        "p2": 4
+      }
+    ],
+    "liveGameScore": "15 - 40",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/3696_l-draxl.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1902_a-rinderknech.jpg",
     "oddsMovement": {
@@ -5307,7 +5321,10 @@
       "at": "2026-09-18T19:22:42.992Z",
       "observedAt": "2026-09-18T20:15:00Z",
       "src": "live"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12164266",
@@ -6591,7 +6608,27 @@
     "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/823_f-roncadelli.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/785_k-tamm.jpg",
-    "oddsMovement": null
+    "oddsMovement": null,
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "6-4, 6-2",
+      "sets": [
+        {
+          "p1": 6,
+          "p2": 4
+        },
+        {
+          "p1": 6,
+          "p2": 2
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 0,
+      "winner": "p1"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "upcoming-12163924",
@@ -220692,25 +220729,14 @@
     "venue": null,
     "courtSpeed": null,
     "weather": null,
-    "live": false,
-    "liveStatus": null,
+    "live": true,
+    "liveStatus": "Set 2",
     "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "liveGameScore": "0 - 0",
+    "liveServer": "p2",
     "interrupted": false,
     "partialScore": null,
-    "finalScore": {
-      "display": "0-0",
-      "sets": [
-        {
-          "p1": 0,
-          "p2": 0
-        }
-      ],
-      "p1Sets": 0,
-      "p2Sets": 0,
-      "winner": null
-    },
+    "finalScore": null,
     "retired": false,
     "walkover": false,
     "matchStats": null,
@@ -222308,27 +222334,11 @@
     "venue": null,
     "courtSpeed": null,
     "weather": null,
-    "live": true,
-    "liveStatus": "Set 3",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 4,
-        "p2": 6
-      },
-      {
-        "set": 2,
-        "p1": 6,
-        "p2": 4
-      },
-      {
-        "set": 3,
-        "p1": 3,
-        "p2": 1
-      }
-    ],
-    "liveGameScore": "30 - 30",
-    "liveServer": "p2",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/55163_n-budkov-kjaer.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1274_j-cui.jpg",
     "oddsMovement": {
@@ -222423,6 +222433,27 @@
     },
     "interrupted": false,
     "partialScore": null,
-    "finalScore": null
+    "finalScore": {
+      "display": "4-6, 6-4, 6-4",
+      "sets": [
+        {
+          "p1": 4,
+          "p2": 6
+        },
+        {
+          "p1": 6,
+          "p2": 4
+        },
+        {
+          "p1": 6,
+          "p2": 4
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 1,
+      "winner": "p1"
+    },
+    "retired": false,
+    "walkover": false
   }
 ]
