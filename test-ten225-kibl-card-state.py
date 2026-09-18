@@ -590,7 +590,55 @@ check('a fixture just after UTC midnight still pairs to the previous day',
       rec2 is not None)
 rec3, why3 = K.find_start(dict(fx, player2_name='Nobody Here'), idx)
 check('an unpaired fixture returns no start and says why',
-      rec3 is None and why3 == 'no_oddspapi_pair', why3)
+      rec3 is None and why3 == 'no_start_anywhere', why3)
+
+
+# ------------------------------------------- LADDER I(b): the live-flip start
+# Founder, 2026-09-18 04:36Z: "Where no pair exists, use the live-flip lower
+# bound from live_flip_log — this is the flip_gap_seconds fix."
+print('\nindex_live_flips / find_start — the I(b) fallback')
+
+
+def flip(day, p1, p2, lower='2026-09-18T12:00:00Z', gap=40, **kw):
+    d = {'event_key': f'{p1}-{p2}', 'event_date': day, 'first_player': p1,
+         'second_player': p2, 'last_not_live_seen_at': lower,
+         'first_live_seen_at': '2026-09-18T12:00:40Z', 'gap_seconds': gap}
+    d.update(kw)
+    return d
+
+
+fidx, fst = K.index_live_flips([flip('2026-09-18', 'Nobody Here', 'Carlos Alcaraz')])
+check('a flip row indexes under the match key', len(fidx) == 1, dict(fst))
+rec5, why5 = K.find_start(dict(fx, player2_name='Nobody Here'), idx, fidx,
+                          use_flip=True)
+check('with no oddspapi pair the LIVE FLIP supplies the start',
+      rec5 is not None and rec5['start_ts_source'] == 'api-tennis-live', why5)
+check('...cut at last_not_live_seen_at, the LOWER bound — first_live_seen_at is '
+      'an upper bound and would let an in-play tick into the Close slot',
+      rec5['start_ts'] == K.epoch('2026-09-18T12:00:00Z'), rec5['start_ts'])
+check('...carrying gap_seconds, so judge_close_live can apply the <=300s limb',
+      rec5['flip_gap_seconds'] == 40)
+
+rec6, why6 = K.find_start(dict(fx, player2_name='Nobody Here'), idx, fidx)
+check('GATED OFF by default: the branch runs, counts, and supplies nothing — '
+      'the founder gets the number before anything renders',
+      rec6 is None and why6 == 'flip_available_not_enabled', why6)
+
+# CONTROL: the oddspapi pair still wins where it exists, so I(b) is a fallback
+# and not a second opinion that could disagree with I(a).
+rec7, why7 = K.find_start(fx, idx, fidx, use_flip=True)
+check('CONTROL: an oddspapi pair still wins — I(b) is a fallback, not a vote',
+      rec7 is not None and rec7['start_ts_source'] != 'api-tennis-live', rec7)
+
+amb, ast_ = K.index_live_flips([flip('2026-09-18', 'Nobody Here', 'Carlos Alcaraz'),
+                                flip('2026-09-18', 'Someone Here', 'C Alcaraz')])
+check('two flips reaching ONE match key drop BOTH — a guessed start is worse '
+      'than no close', len(amb) == 0 and ast_['flip_ambiguous'] == 1, dict(ast_))
+
+nob, nst = K.index_live_flips([flip('2026-09-18', 'Nobody Here', 'Carlos Alcaraz',
+                                    lower=None)])
+check('a flip with no lower bound is a sighting, not a bound — counted, not used',
+      len(nob) == 0 and nst['flip_no_lower_bound'] == 1, dict(nst))
 rec4, why4 = K.find_start({'scheduled_start': '2026-09-18T10:00:00Z',
                            'player1_name': 'A/B', 'player2_name': None}, idx)
 check('an unkeyable fixture is named as such', rec4 is None and why4 == 'unpairable_name')

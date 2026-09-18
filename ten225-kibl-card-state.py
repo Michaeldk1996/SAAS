@@ -442,8 +442,93 @@ def index_oddspapi(fx_rows, summary_rows):
     return index, st
 
 
-def find_start(kibl_fx, odds_index):
-    """A Kibl fixture -> the oddspapi-resolved start, or a no-start record.
+def index_live_flips(flip_rows):
+    """live_flip_log -> {match_key: live-flip start record}.
+
+    ── LADDER ITEM I(b) (founder, 2026-09-18 04:36Z) ──────────────────────────
+    "Where no pair exists, use the live-flip lower bound from live_flip_log —
+     this is the flip_gap_seconds fix."
+
+    The oddspapi path already carries a live-flip start where oddspapi ITSELF
+    has the fixture: resolve_start() puts it on the summary row and
+    index_oddspapi() hands it through. What has never existed is the path for a
+    Kibl fixture oddspapi does NOT carry at all — the 'no_oddspapi_pair'
+    population, which is most of the Challenger board. This builds it.
+
+    THE BOUND IS `last_not_live_seen_at`, NOT `first_live_seen_at`. At that
+    instant the poller held a COMPLETE live board that did not contain this
+    fixture, so it was provably not yet live. first_live_seen_at is an upper
+    bound and using it would let an in-play tick into the Close slot — the one
+    failure close_of() exists to prevent. gap_seconds travels with it so
+    judge_close_live() can apply the ruled <=300 s limb; an UNKNOWN gap is not a
+    pass.
+
+    DROPS ON AMBIGUITY, both sides, exactly like index_oddspapi(): two flip rows
+    reaching one match_key means we cannot say which start belongs to which
+    match, so neither is offered. A guessed start is worse than no close.
+
+    NEVER the scheduled time, on any branch — standing rule.
+    """
+    st = collections.Counter()
+    by_key, ambiguous = {}, set()
+    for r in flip_rows:
+        day = (r.get('event_date') or '')[:10]
+        n1, n2 = r.get('first_player'), r.get('second_player')
+        if not (day and n1 and n2):
+            st['flip_unkeyable_fields'] += 1
+            continue
+        k = mk_of(day, n1, n2)
+        if not k:
+            st['flip_name_unkeyable'] += 1
+            continue
+        lower = epoch(r.get('last_not_live_seen_at'))
+        if lower is None:
+            # A flip with no lower bound is a sighting, not a bound. It cannot
+            # cut a Close and is counted rather than silently skipped.
+            st['flip_no_lower_bound'] += 1
+            continue
+        if k in by_key:
+            ambiguous.add(k)
+        by_key[k] = {
+            'start_ts': lower,
+            'start_ts_source': 'api-tennis-live',
+            'start_reject_reason': None,
+            'flip_gap_seconds': r.get('gap_seconds'),
+            'player1': n1,
+            'player2': n2,
+        }
+    for k in ambiguous:
+        by_key.pop(k, None)
+        st['flip_ambiguous'] += 1
+    st['flip_indexed'] = len(by_key)
+    return by_key, st
+
+
+def _initials_ok(n1, n2, rec):
+    """Founder ruling D, applied to whichever index offered the record.
+
+    Same test index_oddspapi's consumer runs: surnames match but given-name
+    initials conflict -> drop, not pair. Orientation-free, because no two feeds
+    agree on who is listed first.
+    """
+    by_key = {}
+    for nm in (rec.get('player1'), rec.get('player2')):
+        kk = name_key(nm)
+        if kk:
+            by_key[kk] = nm
+    return not any(initials_conflict(nm, by_key.get(name_key(nm)))
+                   for nm in (n1, n2) if by_key.get(name_key(nm)))
+
+
+def find_start(kibl_fx, odds_index, flip_index=None, use_flip=False):
+    """A Kibl fixture -> a resolved start, or a no-start record.
+
+    Two sources, in the ruled order: the oddspapi pair first (I(a)), then the
+    live-flip lower bound (I(b)) for the fixtures oddspapi does not carry at
+    all. `use_flip` gates the SECOND one because it changes what renders, and
+    the founder's standing order is to measure first — with it off the flip
+    branch still runs and still counts, so a dry run reports exactly how many
+    Closes it would recover without recovering any.
 
     Tries the scheduled day and its neighbours. Never derives a start of its own:
     the ladder lives in resolve_start() and running a second copy of it here is
@@ -482,12 +567,25 @@ def find_start(kibl_fx, odds_index):
                    for nm in (n1, n2) if by_key.get(name_key(nm))):
                 return None, 'initials_conflict'
             return rec, None
-    return None, 'no_oddspapi_pair'
+
+    # ── I(b): no oddspapi pair. Try the live flip. ───────────────────────────
+    for d in day_candidates(base):
+        k = mk_of(d, n1, n2)
+        rec = (flip_index or {}).get(k) if k else None
+        if not rec:
+            continue
+        if not _initials_ok(n1, n2, rec):
+            return None, 'flip_initials_conflict'
+        # COUNTED EVEN WHEN NOT USED, so a dry run can answer "how many Closes
+        # does this recover" before it recovers any.
+        return (rec, None) if use_flip else (None, 'flip_available_not_enabled')
+    return None, 'no_start_anywhere'
 
 
 # ------------------------------------------------------------ the build itself
 
-def build_rows(kibl_fixtures, observations, odds_index, as_of):
+def build_rows(kibl_fixtures, observations, odds_index, as_of,
+               flip_index=None, use_flip=False):
     """kibl_fixtures + kibl_line_observations -> odds_card_state rows.
 
     One row per (fixture, side). `observations` is {fixture_id: [obs, ...]}.
@@ -503,7 +601,7 @@ def build_rows(kibl_fixtures, observations, odds_index, as_of):
             continue
         st['fixtures_with_rows'] += 1
 
-        rec, why = find_start(fx, odds_index)
+        rec, why = find_start(fx, odds_index, flip_index, use_flip)
         start_ts = rec['start_ts'] if rec else None
         start_src = rec['start_ts_source'] if rec else 'none'
         reject = rec['start_reject_reason'] if rec else None
@@ -1213,6 +1311,13 @@ def main():
     ap.add_argument('--dry-run', action='store_true')
     ap.add_argument('--days-back', type=int, default=45,
                     help='how far back to read observations')
+    ap.add_argument('--use-live-flip', action='store_true',
+                    help='LADDER I(b): cut a Kibl Close at the live-flip lower '
+                         'bound where oddspapi has no pair. OFF by default — '
+                         'the flip branch still runs and still counts, so a '
+                         'normal run reports how many Closes it would recover '
+                         'without recovering any. Turn on once the founder has '
+                         'the number.')
     a = ap.parse_args()
 
     url, key = creds()
@@ -1272,8 +1377,27 @@ def main():
     odds_index, ist = index_oddspapi(ofx, osum)
     print(f'oddspapi pairing index: {len(odds_index)} match keys  {dict(ist)}')
 
+    # ── LADDER ITEM I(b) — the live-flip start for fixtures oddspapi lacks ───
+    # Read unconditionally so the counters are real on every run. Whether the
+    # bound is USED is a separate switch (--use-live-flip), because it changes
+    # what renders and the standing order is to report the number first.
+    flip_rows, err = fetch_all(url, key, 'live_flip_log',
+                               'event_key,first_live_seen_at,'
+                               'last_not_live_seen_at,gap_seconds,event_date,'
+                               'first_player,second_player',
+                               order='event_key.asc')
+    if err:
+        # NOT fatal. Losing the flip index costs some Closes; failing the run
+        # costs every Kibl card its Open and Now as well.
+        print(f'::warning::reading live_flip_log failed ({err}) — I(b) is '
+              f'unavailable this run; Kibl closes fall back to oddspapi only')
+        flip_rows = []
+    flip_index, fst = index_live_flips(flip_rows)
+    print(f'live-flip index: {len(flip_index)} match keys from '
+          f'{len(flip_rows)} flip rows  {dict(fst)}')
+
     rows, st, unknown_sides, side_shapes = build_rows(
-        fx, observations, odds_index, as_of)
+        fx, observations, odds_index, as_of, flip_index, a.use_live_flip)
     print(f'side_id shapes per priced fixture: {side_shapes}')
     # ⚠️ THIS COUNTED THE WRONG THING UNTIL 2026-09-18. It asked how many
     # fixtures carry side_ids *1 and 2*, and side_id 1 does not exist on this
