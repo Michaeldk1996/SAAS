@@ -53,7 +53,7 @@ from datetime import datetime, timezone
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, 'ten225-kibl-card-state.json')
 
-from ten225_names import match_key as mk_of, name_key  # noqa: E402
+from ten225_names import match_key as mk_of, name_key, initials_conflict  # noqa: E402
 import ten225_orientation as ORI  # noqa: E402
 import ten225_apitennis_odds as AT  # noqa: E402
 
@@ -408,14 +408,38 @@ def find_start(kibl_fx, odds_index):
     how two rows of one fixture end up with two different start_ts_source values.
     """
     base = (kibl_fx.get('scheduled_start') or '')[:10]
-    k1 = name_key(kibl_fx.get('player1_name'))
-    k2 = name_key(kibl_fx.get('player2_name'))
+    n1, n2 = kibl_fx.get('player1_name'), kibl_fx.get('player2_name')
+    k1, k2 = name_key(n1), name_key(n2)
     if not (k1 and k2) or k1 == k2:
         return None, 'unpairable_name'
     for d in day_candidates(base):
-        k = mk_of(d, kibl_fx.get('player1_name'), kibl_fx.get('player2_name'))
+        k = mk_of(d, n1, n2)
         if k and k in odds_index:
-            return odds_index[k], None
+            rec = odds_index[k]
+            # FOUNDER RULING D (2026-09-18): "surnames match but given-name
+            # initials conflict = drop, not pair."
+            #
+            # The surname key is deliberately coarse — it has to be, to survive
+            # three feeds' orderings — so two different players CAN reach one
+            # key. The measured case is Benjamin vs Christopher O'Connell, both
+            # 'connell'. A false pair here is not a missing price, it is the
+            # WRONG match's start time pinned to this fixture's Close, and
+            # nothing downstream can tell. So the initials are checked on BOTH
+            # sides and a conflict drops the pair rather than taking it.
+            #
+            # Checked per ORIENTATION-FREE side: the two feeds do not agree on
+            # who is listed first, so each Kibl name is tested against whichever
+            # oddspapi name shares its surname key, not against the same slot.
+            o1, o2 = rec.get('player1'), rec.get('player2')
+            by_key = {}
+            for nm in (o1, o2):
+                kk = name_key(nm)
+                if kk:
+                    by_key[kk] = nm
+            if any(initials_conflict(nm, by_key.get(name_key(nm)))
+                   for nm in (n1, n2) if by_key.get(name_key(nm))):
+                return None, 'initials_conflict'
+            return rec, None
     return None, 'no_oddspapi_pair'
 
 

@@ -6706,12 +6706,29 @@ const OCS = { byKey: null, generatedAt: null, gen: 0, loaded: false };
 // the drift is made loud rather than trusted: test-ten225-ocs-key.mjs drives
 // BOTH this function and the Python one over one corpus and fails if they
 // disagree on any name.
+// TEN-225 ruling D (founder, 2026-09-18) — hyphens and apostrophes fold to a
+// SPACE before keying. A hyphen is not a letter, so the token filter below threw
+// 'auger-aliassime' away entirely and the key came back null: 'F. Auger-Aliassime'
+// was unpairable in every direction, and so was every "O'Connell". Folding to a
+// space (rather than keeping the hyphen in the token) is what makes the hyphenated
+// and the spaced spelling of one surname land on the SAME key — the same treatment
+// 'Van de Zandschulp' already gets. The dash range and both curly apostrophes are
+// folded too; a matcher that handles one spelling of a separator and not another
+// is the same bug with a different code point.
+// Character-for-character the same rule as ten225_names.py — test-ten225-ocs-key.mjs
+// drives both over one corpus and fails if they disagree on any name.
+// The class is written INLINE, not lifted to a module const, because that harness
+// extracts this function by source and evals it on its own: a hoisted constant is
+// out of scope there and the assertion dies on a ReferenceError instead of on a
+// real disagreement.
 function ocsNfd(s){
   return String(s || '').normalize('NFD')
     // Unicode combining marks (category Mn), which is what Python's
     // `unicodedata.category(c) != 'Mn'` filter drops.
     .replace(/\p{Mn}/gu, '')
     .toLowerCase().replace(/,/g, ' ').replace(/\./g, ' ')
+    // U+002D, then the dash range U+2010..U+2015, then the apostrophes.
+    .replace(/[-‐-―'‘’ʼ]/g, ' ')
     .split(/\s+/).filter(Boolean).join(' ');
 }
 function ocsNameKey(name){
@@ -6846,15 +6863,95 @@ function _mcCloseOf(m, who){
 // never come from different feeds and the implied percentages stay a coherent pair.
 function _isBet365(name){ return String(name || '').toLowerCase() === 'bet365'; }
 function _mcBet365Now(m){
+  // TEN-225 ruling A — every pair now carries the book that quoted it, because
+  // the column is no longer bet365 by construction and a price without its book
+  // name is the false label this issue has already paid for once.
   const b = m.bet365Now;
-  if (b && b.p1 != null && b.p2 != null) return { p1: b.p1, p2: b.p2, at: b.at || null, src: 'timeline' };
+  if (b && b.p1 != null && b.p2 != null) return { p1: b.p1, p2: b.p2, book: 'bet365', at: b.at || null, src: 'timeline' };
   const bo = m.bestOdds;
   if (bo && _isBet365(bo.p1?.bookmaker) && _isBet365(bo.p2?.bookmaker) && bo.p1.price && bo.p2.price) {
-    return { p1: bo.p1.price, p2: bo.p2.price, at: null, src: 'feed' };
+    return { p1: bo.p1.price, p2: bo.p2.price, book: 'bet365', at: null, src: 'feed' };
   }
   const o = m.odds;
-  if (o && _isBet365(o.bookmaker) && o.p1 && o.p2) return { p1: o.p1, p2: o.p2, at: null, src: 'feed' };
+  if (o && _isBet365(o.bookmaker) && o.p1 && o.p2) return { p1: o.p1, p2: o.p2, book: 'bet365', at: null, src: 'feed' };
   return null;
+}
+// ───────────────────────────────────────── TEN-225 rulings A + B (2026-09-18) ──
+// A — ONE BOOK WINS: "the card's odds column, Open, Now and Close all come from
+//     the SAME selected book for that fixture, with the book name shown.
+//     bet365 is no longer pinned on the odds column."
+// B — NEVER DASH WHEN ANY BOOK HAS A PRICE: Kibl (sports411) -> bet365 -> any
+//     other book by coverage. "A dash is only correct when NO book anywhere has
+//     a price."
+//
+// MEASURED, deployed board 2026-09-18 (n=32 today / 75 all): the bet365 pin left
+// 23 of today's 32 cards dashed while another book quoted 20 of them. Under this
+// ladder today's board prices 29 of 32 and 3 stay genuinely unpriced.
+//
+// THE ONE-BOOK GUARD. A book qualifies only when it quotes BOTH legs. m.bestOdds
+// is a best-price-ACROSS-books merge, so its two sides are usually two different
+// books; taking it as a pair would put one book's price beside another's and the
+// implied split would belong to neither. It is accepted ONLY when both sides
+// name the SAME bookmaker — which is a genuine two-sided quote from that book,
+// not a merge. m.odds is single-book by construction, so it needs no such test.
+function _mcBooksByCoverage(){
+  // "…any other book by coverage" — ranked over the board we are rendering, not
+  // hardcoded, so the ladder follows the feed instead of a stale opinion.
+  // Cached against the matches array IDENTITY: a refresh replaces the array, so
+  // a stale ranking cannot survive one.
+  if (_mcBooksByCoverage._src === matches && _mcBooksByCoverage._map) return _mcBooksByCoverage._map;
+  const n = {};
+  for (const m of (matches || [])){
+    const bo = m.bestOdds;
+    if (bo && bo.p1?.price && bo.p2?.price && bo.p1.bookmaker && bo.p1.bookmaker === bo.p2.bookmaker)
+      n[bo.p1.bookmaker] = (n[bo.p1.bookmaker] || 0) + 1;
+    const o = m.odds;
+    if (o && o.p1 && o.p2 && o.bookmaker) n[o.bookmaker] = (n[o.bookmaker] || 0) + 1;
+  }
+  _mcBooksByCoverage._src = matches; _mcBooksByCoverage._map = n;
+  return n;
+}
+function _mcAnyBookPair(m){
+  const cands = [];
+  const bo = m.bestOdds;
+  if (bo && bo.p1?.price && bo.p2?.price && bo.p1.bookmaker && bo.p1.bookmaker === bo.p2.bookmaker)
+    cands.push({ p1: bo.p1.price, p2: bo.p2.price, book: bo.p1.bookmaker, at: null, src: 'feed' });
+  const o = m.odds;
+  if (o && o.p1 && o.p2 && o.bookmaker)
+    cands.push({ p1: o.p1, p2: o.p2, book: o.bookmaker, at: null, src: 'feed' });
+  if (!cands.length) return null;
+  const cov = _mcBooksByCoverage();
+  cands.sort((a, b) => (cov[b.book] || 0) - (cov[a.book] || 0));
+  return cands[0];
+}
+// The odds column's ONE resolver. Returns { p1, p2, book, src } or null (dash).
+//
+// Precedence is the selection's, not this function's: where odds_card_state
+// covers the fixture, the book it selected owns the column outright and the
+// ladder below is not consulted at all. That is what makes ruling C (takeover)
+// work — when a preferred book appears, the selection pass switches all three
+// values together on the next publish and this renderer follows without a
+// second opinion. Reaching past a selected book for a better price here would
+// be the cross-book blend both rulings forbid, wearing the shape of a fix.
+function _mcNowPair(m){
+  const o = _ocsOf(m);
+  if (o){
+    if (o.p1.now != null && o.p2.now != null)
+      return { p1: o.p1.now, p2: o.p2.now, book: o.book, at: o.p1.nowTs || o.p2.nowTs || null, src: 'ocs' };
+    // The selected book has no Now. bet365 — and ONLY bet365 — may top its own
+    // Now up from the matches.json bet365 stream: same book, same stream, so it
+    // is not a blend. This is exactly the table's rule (_mcNowOf), which the
+    // card previously did not share.
+    //
+    // RULING L, MEASURED on the deployed board 2026-09-18: making the card match
+    // the table costs n=0 cards a price. Every fixture that would have taken the
+    // looser path is one where the selected book is bet365 anyway, so the strict
+    // rule and the loose one return the same value on today's board. Reported to
+    // the founder with the number rather than assumed.
+    if (_isBet365(o.book)) return _mcBet365Now(m);
+    return null;
+  }
+  return _mcBet365Now(m) || _mcAnyBookPair(m);
 }
 function _mcNowOf(m, who){
   // TEN-225: where odds_card_state covers the match it owns the NOW too, and
@@ -8092,9 +8189,14 @@ function renderMatches(){
     }
     // "Favori" is honestly derived from real market odds (lower odds = favorite) —
     // not a fabricated stat. Only shown when odds actually exist for this match.
-    const nowPair = _mcBet365Now(m);
+    // TEN-225 rulings A + B (founder 2026-09-18) — "the TEN-225 one-book rule
+    // SUPERSEDES TEN-179 item 5"; bet365 is no longer pinned on this column. The
+    // pin below is unchanged in KIND — the FAV chip, the colouring and the
+    // implied % still all read the one line the card is quoting — it is only the
+    // choice of book that moved from a constant to the selection.
+    const nowPair = _mcNowPair(m);
     // TEN-179 item 5 (founder ruling 2026-09-10, gate f98f90cc) — the FAV chip and the
-    // fav/dog colouring are PINNED TO THE SAME BET365 LINE the card quotes. They used to read
+    // fav/dog colouring are PINNED TO THE SAME LINE the card quotes. They used to read
     // m.odds, whatever book that happened to be, so a card could show `— / —` and still
     // assert a favourite off a book it was not showing. If bet365 has no price for this
     // fixture there is no chip and no colouring: a dash means we do not know, and we do not
@@ -8126,17 +8228,17 @@ function renderMatches(){
       ? 'Match completed'
       : isPastDay
         ? 'Result pending'
-        // TEN-179 item 1 — the card quotes bet365 and nothing else, so the provenance line
-        // says so. When bet365 has not posted this fixture the prices dash and the line says
-        // that plainly rather than naming whichever other book happened to have a price.
-        // NOTE (measured 2026-09-10): `bookmakerLine` is computed here but rendered NOWHERE
-        // in the current card — the export's card carries no book label at all. Corrected
-        // rather than deleted so it is right if the line is ever restored; the fact that the
-        // Upcoming card names no book on screen is reported to the founder, not fixed here,
-        // because adding a label changes a signed-off design.
+        // TEN-225 ruling A — the card quotes ONE book and this line names it. Under
+        // TEN-179 that book was always bet365; it is now whichever book the selection
+        // gave this fixture, so the string is read off the pair rather than hardcoded.
+        // NOTE (measured 2026-09-10, still true): `bookmakerLine` is computed here but
+        // rendered NOWHERE in the current card — the export's card carries no book label
+        // at all. Kept correct so it is right if the line is ever restored; the fact that
+        // the Upcoming card names no book on screen is LOGGED as a design gap for Claude
+        // Design (founder ruling N, 2026-09-18: "don't invent UI"), not fixed here.
         : nowPair
-          ? 'bet365'
-          : 'no bet365 price for this match yet';
+          ? (nowPair.book || 'unnamed book')
+          : 'no book has posted a price for this match yet';
     const roundBadge = roundBadgeText(m.tournamentRound);
     // Overall + surface-specific H2H — same summarized h2h object and the
     // same surface-filter approach already used in buildH2HSection's tiles,
@@ -8487,38 +8589,67 @@ function renderMatches(){
             + `<div class="mc-story__faint">${mcMoveBookLabel(null, 'now')} · ${driftCov.text}</div>`)
       + `</div>`);
 
-    // 2. SHORTEST PRICE — the day's shortest quoted side. Purely market data, always real.
+    // TEN-225 ruling B (founder 2026-09-18) — the two boxes below describe the
+    // day's PRICES, so they must describe the prices the cards underneath are
+    // actually showing. They read the card's resolver, not the drift leg's.
+    //
+    // WHY THEY ARE SPLIT FROM `priceOf` ABOVE, AND NOT MERGED. The Biggest-move
+    // box pairs Open with Now and so needs both legs off ONE book WITH an Open
+    // on file — that is `_mcNowOf`, and widening it would manufacture a move
+    // between two books' prices. These two boxes make no open→now claim; they
+    // state a price and a gap that a member can read straight off a card. Before
+    // this change they were computed over the bet365 population only, which on
+    // the deployed board 2026-09-18 was 9 of 32 fixtures while the cards showed
+    // 29 — so the "shortest price of the day" could be beaten by a card sitting
+    // directly beneath the box.
+    //
+    // CAVEAT, stated because the label cannot carry it: with one book per
+    // fixture these are cross-book minima, and a book running a fatter margin
+    // quotes a shorter favourite. Each box therefore NAMES its book in the
+    // existing context line, so the comparison is inspectable rather than
+    // implied. No new element — `mc-story__ctx` is already a free-text line.
+    const cardPair = m => _mcNowPair(m);
     let sp = null;
     daySlate.forEach(m => {
+      const pr = cardPair(m);
+      if (!pr) return;
       ['p1','p2'].forEach(who => {
-        const c = priceOf(m, who);
+        const c = pr[who];
         if (c == null) return;
         if (!sp || c < sp.price) sp = { price: c, name: who === 'p1' ? m.p1 : m.p2,
                                         opp: who === 'p1' ? m.p2 : m.p1, tour: m.tour,
+                                        book: pr.book || null,
                                         round: roundBadgeText(m.tournamentRound) };
       });
     });
     if (sp) {
       panels.push(`<div class="mc-story"><div class="mc-story__lbl">Shortest price</div>`
         + `<div class="mc-story__move"><span class="mc-story__od">${sp.price.toFixed(2)}</span><span class="mc-story__name">${sp.name}</span></div>`
-        + `<div class="mc-story__ctx">v ${sp.opp}${sp.tour ? ' · ' + sp.tour : ''}${sp.round ? ' ' + sp.round : ''}</div></div>`);
+        + `<div class="mc-story__ctx">v ${sp.opp}${sp.tour ? ' · ' + sp.tour : ''}${sp.round ? ' ' + sp.round : ''}${sp.book ? ' · ' + sp.book : ''}</div></div>`);
     }
 
-    // 3. TIGHTEST MATCH — smallest gap in implied win probability across the day. oddsGap()
-    //    is the existing, model-free measure already used by the old 'Biggest odds gap' sort.
+    // 3. TIGHTEST MATCH — smallest gap in implied win probability across the day.
+    //    The gap is computed from the SAME pair the box prints. It used to call
+    //    oddsGap(m), which reads m.odds — a different book from the one being
+    //    displayed, and one that returns 0 when m.odds is absent, i.e. a fixture
+    //    with no reference odds at all would score a PERFECT gap and win this
+    //    box. Deriving it from the pair removes both the cross-book read and
+    //    that zero.
     let tm = null;
     daySlate.forEach(m => {
-      if (priceOf(m,'p1') == null || priceOf(m,'p2') == null) return;
-      const g = oddsGap(m);
-      if (!tm || g < tm.gap) tm = { gap: g, m };
+      const pr = cardPair(m);
+      if (!pr || pr.p1 == null || pr.p2 == null || pr.p1 <= 0 || pr.p2 <= 0) return;
+      const g = Math.abs(1 / pr.p1 - 1 / pr.p2);
+      if (!tm || g < tm.gap) tm = { gap: g, m, pr };
     });
     if (tm) {
-      const m = tm.m, a1 = priceOf(m,'p1'), b1 = priceOf(m,'p2');
+      const m = tm.m, a1 = tm.pr.p1, b1 = tm.pr.p2;
       const favIsP1 = a1 <= b1;
+      const bookTxt = tm.pr.book ? ' · ' + tm.pr.book : '';
       panels.push(`<div class="mc-story"><div class="mc-story__lbl">Tightest match</div>`
         + `<div class="mc-story__tight"><span class="mc-story__tname${favIsP1 ? ' lead' : ''}">${m.p1}</span><span class="mc-story__tod">${a1.toFixed(2)}</span></div>`
         + `<div class="mc-story__tight"><span class="mc-story__tname${favIsP1 ? '' : ' lead'}">${m.p2}</span><span class="mc-story__tod">${b1.toFixed(2)}</span></div>`
-        + `<div class="mc-story__ctx">${m.tour || ''}${roundBadgeText(m.tournamentRound) ? ' ' + roundBadgeText(m.tournamentRound) : ''}</div></div>`);
+        + `<div class="mc-story__ctx">${m.tour || ''}${roundBadgeText(m.tournamentRound) ? ' ' + roundBadgeText(m.tournamentRound) : ''}${bookTxt}</div></div>`);
     }
 
     const stripHtml = panels.length ? `<div class="mc-story-strip">${panels.join('')}</div>` : '';

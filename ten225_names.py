@@ -33,11 +33,41 @@ import unicodedata
 _VS = ' vs '
 
 
+# TEN-225 ruling D (founder, 2026-09-18) — "fix the matcher (Auger-Aliassime and
+# any other non-isalpha surname)".
+#
+# THE BUG. name_key() keeps a token only if `t.isalpha()`, and a hyphen is not a
+# letter. 'Auger-Aliassime' therefore produced NO token at all and the key came
+# back None, so the fixture was unpairable in every direction — not mis-paired,
+# invisible. Apostrophes fail identically: "O'Connell" keyed to None for the same
+# reason, and that second class was never named.
+#
+# THE FIX, AND WHY IT IS A SPACE AND NOT A KEPT HYPHEN. Keeping the hyphen inside
+# the token would key 'auger-aliassime', which only pairs against a feed that
+# also writes the hyphen. api-tennis is documented HERE to reorder and respace
+# multi-part surnames, so the space variant is not hypothetical. Folding the
+# separator to a SPACE puts both spellings through the existing last-token rule
+# and they land on the same key:
+#
+#     'Auger-Aliassime, Felix'  -> 'auger aliassime' -> 'aliassime'
+#     'F. Auger-Aliassime'      -> 'f auger aliassime' -> 'aliassime'
+#     'F. Auger Aliassime'      -> 'f auger aliassime' -> 'aliassime'
+#
+# which is exactly how 'Van de Zandschulp' is already handled. No new rule — the
+# existing rule, finally reaching the names it was locked out of.
+#
+# The full dash range is folded, not just ASCII '-': feeds emit U+2010..U+2015
+# and the two curly apostrophes, and a matcher that handles one spelling of a
+# separator and not another is the same bug with a different code point.
+_SEPS = str.maketrans({c: ' ' for c in "-‐‑‒–—―'‘’ʼ"})
+
+
 def nfd(s):
     """Standing rule: NFD accent strip before any cross-feed name comparison."""
     s = unicodedata.normalize('NFD', s or '')
     s = ''.join(c for c in s if unicodedata.category(c) != 'Mn')
-    return ' '.join(s.lower().replace(',', ' ').replace('.', ' ').split())
+    return ' '.join(s.lower().replace(',', ' ').replace('.', ' ')
+                    .translate(_SEPS).split())
 
 
 def name_key(name):
@@ -58,6 +88,53 @@ def name_key(name):
     s = nfd(name.split(',')[0] if ',' in (name or '') else name)
     toks = [t for t in s.split() if len(t) > 1 and t.isalpha()]
     return toks[-1] if toks else None
+
+
+def given_initial(name):
+    """The first letter of this player's GIVEN name, or None.
+
+    Reads the same three feed orderings name_key() does, and must agree across
+    them or it is useless as a conflict test:
+
+        'Auger-Aliassime, Felix'  -> after the comma      -> 'f'
+        'F. Auger-Aliassime'      -> before the surname   -> 'f'
+        'Felix Auger-Aliassime'   -> before the surname   -> 'f'
+        'Nadal'                   -> no given name at all -> None
+
+    None means "this feed did not tell us", which is NOT a conflict — see
+    initials_conflict().
+    """
+    raw = name or ''
+    if ',' in raw:
+        part = nfd(raw.split(',', 1)[1])
+    else:
+        toks = nfd(raw).split()
+        part = ' '.join(toks[:-1])       # everything ahead of the surname token
+    toks = [t for t in part.split() if t]
+    return toks[0][0] if toks else None
+
+
+def initials_conflict(a, b):
+    """True when two names share a surname key but CANNOT be the same player.
+
+    FOUNDER RULING D (2026-09-18): "surnames match but given-name initials
+    conflict = drop, not pair."
+
+    MEASURED REASON (ten225-d-matcher-delta.py, 2,807 local names). Folding the
+    hyphen is what lets a surname key reach the tail of a compound name, and that
+    is also what lets two different players land on one key. The corpus holds the
+    case already: Benjamin O'Connell and Christopher O'Connell both key to
+    'connell'. Before the fold they keyed to 'benjamin' and 'christopher' — they
+    could not collide because they were being keyed on their FIRST names, which
+    was a worse bug hiding this one.
+
+    ONE-SIDED ABSENCE IS NOT A CONFLICT. A feed that gives only a surname tells
+    us nothing about the given name, and treating silence as disagreement would
+    drop every legitimate single-token pairing ('Nadal' vs 'R. Nadal'). Only two
+    PRESENT and DIFFERENT initials are a conflict.
+    """
+    ia, ib = given_initial(a), given_initial(b)
+    return bool(ia and ib and ia != ib)
 
 
 def split_kibl_fixture_name(raw):

@@ -106,9 +106,28 @@ test('CONTROL: the corpus really does produce keys, and the traps really do not'
   assert.equal(ocsNameKey('Zverev, Alexander'), 'zverev');
   assert.equal(ocsNameKey('A. Zverev'), 'zverev');
   assert.equal(ocsNameKey('B. Van De Zandschulp'), 'zandschulp');
-  assert.equal(ocsNameKey('A. Ramos-Viñolas'), null,
-    'a hyphenated token is not alphabetic in Python either — both must drop it');
-  assert.equal(ocsNameKey('Ramos-Vinolas, Albert'), null);
+  // TEN-225 ruling D (founder 2026-09-18). These two lines asserted the BUG:
+  // a hyphen is not `isalpha`, so a hyphenated surname produced no token and the
+  // key came back null. Both spellings now fold the hyphen to a space and reduce
+  // to the same last token, which is the whole point — it is what makes the
+  // accented and unaccented, comma-first and initial-first forms of one player
+  // land on ONE key instead of three different answers.
+  assert.equal(ocsNameKey('A. Ramos-Viñolas'), 'vinolas');
+  assert.equal(ocsNameKey('Ramos-Vinolas, Albert'), 'vinolas');
+  assert.equal(ocsNameKey('F. Auger-Aliassime'), 'aliassime');
+  assert.equal(ocsNameKey('Auger-Aliassime, Felix'), 'aliassime');
+  assert.equal(ocsNameKey('Felix Auger-Aliassime'), 'aliassime',
+    'the full-name form used to key on the GIVEN name (felix) — that is the ' +
+    'defect the fold actually removes, and it is the one that could mis-pair');
+  // The apostrophe class, which the ruling names only by implication and which
+  // no assertion covered before: "O'Connell" failed for exactly the same reason.
+  assert.equal(ocsNameKey("C. O'Connell"), 'connell');
+  assert.equal(ocsNameKey("O'Connell, Christopher"), 'connell');
+  // A curly apostrophe and a unicode dash must not behave differently from
+  // their ASCII spellings — a matcher that handles one and not the other is the
+  // same bug at a different code point.
+  assert.equal(ocsNameKey("C. O’Connell"), 'connell');
+  assert.equal(ocsNameKey('F. Auger‑Aliassime'), 'aliassime');
   assert.equal(ocsNameKey('Alejandro Davidovich Fokina'), 'fokina');
   assert.equal(ocsNameKey('6112'), null);
   assert.equal(ocsNameKey('A. B.'), null, 'no token longer than one letter');

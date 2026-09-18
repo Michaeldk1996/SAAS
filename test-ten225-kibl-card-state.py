@@ -400,10 +400,56 @@ check('multi-part surname reorder survives',
 check('accents are stripped before comparison',
       N.name_key('Muller, Alexandre') == N.name_key('A. Müller') == 'muller')
 
+# ── TEN-225 ruling D (founder 2026-09-18) ──────────────────────────────────
+print('\nruling D — hyphenated and apostrophe surnames')
+check('all THREE feed spellings of a hyphenated surname reach ONE key '
+      '(before the fix: felix / None / None — three answers, zero pairs)',
+      N.name_key('Auger-Aliassime, Felix')
+      == N.name_key('F. Auger-Aliassime')
+      == N.name_key('Felix Auger-Aliassime') == 'aliassime')
+check('the full-name form used to key on the GIVEN name — that is the defect '
+      'that could MIS-pair, not merely fail to pair',
+      N.name_key('Felix Auger-Aliassime') != 'felix')
+check('the apostrophe class fails for the same reason and is fixed with it',
+      N.name_key("O'Connell, Christopher")
+      == N.name_key("C. O'Connell") == 'connell')
+check('a curly apostrophe and a unicode dash behave as their ASCII spellings',
+      N.name_key("C. O’Connell") == 'connell'
+      and N.name_key('F. Auger‑Aliassime') == 'aliassime')
+check('accents still strip THROUGH the fold',
+      N.name_key('A. Ramos-Viñolas')
+      == N.name_key('Ramos-Vinolas, Albert') == 'vinolas')
+
+print('\nruling D — the given-name initials guard')
+check('the initial is read the same way out of all three orderings',
+      N.given_initial('Auger-Aliassime, Felix')
+      == N.given_initial('F. Auger-Aliassime')
+      == N.given_initial('Felix Auger-Aliassime') == 'f')
+check('MEASURED COLLISION: two real O\'Connells share the key "connell" and '
+      'their initials conflict -> drop, not pair',
+      N.name_key("Benjamin O'Connell") == N.name_key("Christopher O'Connell")
+      and N.initials_conflict("Benjamin O'Connell", "O'Connell, Christopher"))
+check('one player written three ways is NEVER a conflict with himself',
+      not N.initials_conflict('Felix Auger-Aliassime', 'Auger-Aliassime, Felix')
+      and not N.initials_conflict('F. Auger-Aliassime', 'Felix Auger-Aliassime'))
+check('one-sided silence is not disagreement — a surname-only feed must still '
+      'pair, or every single-token name drops',
+      N.given_initial('Nadal') is None
+      and not N.initials_conflict('Nadal', 'R. Nadal'))
+check('CONTROL: the guard can actually fire AND actually stay silent, so a '
+      'constant-False (or constant-True) implementation fails here',
+      N.initials_conflict('A. Zverev', 'Zverev, Mischa')
+      and not N.initials_conflict('A. Zverev', 'Zverev, Alexander'))
+
 CORPUS = ['Zverev, Alexander', 'A. Zverev', 'Van de Zandschulp, Botic',
           'B. Van De Zandschulp', 'A. Müller', 'Muller, Alexandre',
           'Soonwoo Kwon', 'Dhakshineswar Suresh', 'T. Al Azmeh', '', None,
-          'X', 'de Minaur, Alex', 'A. de Minaur']
+          'X', 'de Minaur, Alex', 'A. de Minaur',
+          # ruling D traps — the drift assertion below must cover them too, or
+          # the fix could land in one copy of the matcher and not the other.
+          'Auger-Aliassime, Felix', 'F. Auger-Aliassime', 'Felix Auger-Aliassime',
+          "O'Connell, Christopher", "C. O’Connell", 'A. Ramos-Viñolas',
+          'F. Auger‑Aliassime', 'Štruff, Jan-Lennard', 'J. Struff']
 check('ten225_names.name_key agrees with the LIVE line-summary loader over the '
       'corpus that found the original bug — two copies of one rule is how a '
       'matcher drifts',

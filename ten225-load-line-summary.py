@@ -337,11 +337,21 @@ def resolve_start(true_start, true_end, sched, flip_ts, flip_gap, level=None):
     return ts, 'oddspapi', reason, False, None, None
 
 
+# TEN-225 ruling D (founder, 2026-09-18). Kept character-for-character identical
+# to ten225_names.py: test-ten225-kibl-card-state.py asserts L.name_key(x) ==
+# name_key(x) over a trap corpus, so a fix applied to one copy and not the other
+# turns that assertion red rather than drifting quietly. See that module for the
+# full reasoning — in short, a hyphen is not `isalpha`, so 'Auger-Aliassime' and
+# "O'Connell" keyed to None and were unpairable in every direction.
+_SEPS = str.maketrans({c: ' ' for c in "-‐‑‒–—―'‘’ʼ"})
+
+
 def nfd(s):
     """Standing rule: NFD accent strip before any cross-feed name comparison."""
     s = unicodedata.normalize('NFD', s or '')
     s = ''.join(c for c in s if unicodedata.category(c) != 'Mn')
-    return ' '.join(s.lower().replace(',', ' ').replace('.', ' ').split())
+    return ' '.join(s.lower().replace(',', ' ').replace('.', ' ')
+                    .translate(_SEPS).split())
 
 
 def name_key(name):
