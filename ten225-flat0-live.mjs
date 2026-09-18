@@ -149,6 +149,35 @@ try {
   check('the tile does not name a single-sighting fixture',
         !onBoard.some(s => { const r = scan.rows.find(x => x.key === s.key);
           return r && tile.who && r.name.toLowerCase().includes(String(tile.who).toLowerCase()); }));
+
+  // THE REGRESSION THIS GUARD COULD PLAUSIBLY CAUSE. Suppressing the pair sends
+  // mcDriftRight down its `_mcNowOf` branch. If that returned null the fixture
+  // would lose a REAL current price — dashing a price a book is quoting, which
+  // is ruling B breached by the fix for the 0% bug. Read the painted cells.
+  const painted = await ev(`(function(){
+    const keys = ${JSON.stringify(onBoard.map(s => s.key))};
+    const DASH = s => s === '\\u2014' || s === '-' || s === '\\u2013' || s === '';
+    const byId = new Map(matches.map(m => [String(m.id), m]));
+    const out = [];
+    [...document.querySelectorAll('.mx-match')].forEach(card => {
+      const m = byId.get(card.getAttribute('data-id'));
+      if (!m || !keys.includes(ocsKeyOf(m))) return;
+      const opens = [...card.querySelectorAll('.mc-drifted__open')].map(n => n.textContent.trim());
+      const nows  = [...card.querySelectorAll('.mc-drifted__now')].map(n => n.textContent.trim());
+      const pcts  = [...card.querySelectorAll('.mc-drifted__pct')].map(n => n.textContent.trim());
+      out.push({ name: m.p1 + ' v ' + m.p2, opens, nows, pcts,
+                 openDashed: opens.filter(DASH).length, nowDashed: nows.filter(DASH).length,
+                 pctShown: pcts.filter(t => t !== '').length });
+    });
+    return out;
+  })()`);
+  painted.forEach(p => console.log(`    painted ${p.name}: open ${JSON.stringify(p.opens)} now ${JSON.stringify(p.nows)} pct ${JSON.stringify(p.pcts)}`));
+  check('NON-VACUITY: the suppressed fixture is actually on screen to read', painted.length === onBoard.length,
+        { onBoard: onBoard.length, painted: painted.length });
+  check('a suppressed fixture STILL PAINTS both prices (no price was lost)',
+        painted.every(p => p.openDashed === 0 && p.nowDashed === 0), painted);
+  check('and paints NO percentage (the unevidenced 0% is what went)',
+        painted.every(p => p.pctShown === 0), painted);
 } finally { c.close(); }
 
 console.log('');
