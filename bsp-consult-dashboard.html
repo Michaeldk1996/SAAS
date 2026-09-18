@@ -6570,6 +6570,12 @@ async function loadMatches(){
   await loadPlayerPhotoOverrides();
   // ATP alias headshots (TEN-136), same critical-path timing. Tiny file, loaded once.
   await loadPlayerAtpAliases();
+  // TEN-225 Part 3 — Open / Now / Close. AWAITED and on the critical path, for
+  // the same reason the two files above are: every odds accessor consults it,
+  // so a card painted before it lands shows the matches.json value and then
+  // silently changes price under the reader on the next render. Refreshed every
+  // cycle, not once, because the publisher commits a new file as prices move.
+  await loadOddsCardState();
   buildTournamentFilters();
   renderHeaderStats();
   // TEN-179 item 2 — FIRST paint only. matches[] is bound by now, so this is the earliest
@@ -6670,9 +6676,141 @@ function oddsGap(m){
   return Math.abs(p1Implied - p2Implied);
 }
 
+// ─────────────────────────────────────────────────────────── TEN-225 Part 3 ──
+// odds-card-state.json — the published projection of the `odds_card_state`
+// table (Open / Now / Close, one book per fixture, already selected).
+//
+// WHY A FILE. The table has RLS on and zero policies, and this app is a static
+// page. There is no browser read path to Postgres and there should not be one:
+// an anon policy on odds held under a partner grant is not something to add as
+// a side effect of wiring a column. `ten225-publish-card-state.py` is the only
+// writer; it runs in Actions and commits the file.
+//
+// WHY SIDES ARE KEYED BY SURNAME AND NOT BY p1/p2. The board's p1/p2 ordering
+// is api-tennis's; the pricing feed has its own. A published '1'/'2' would make
+// every render a bet on two feeds listing the same player first, and this issue
+// has already paid for that class of mistake once (side_id 1 does not exist on
+// the Kibl feed, and the first mapping silently wrote both players into one
+// side). A surname key cannot be swapped.
+//
+// PRECEDENCE, AND WHY IT IS ALL-OR-NOTHING. Founder, 2026-09-18: "One book per
+// fixture, all three values from that book, no mixing." So when this file
+// covers a match it supplies Open, Now AND Close, and matches.json is not
+// consulted for that match at all. Where it does NOT cover a match, every
+// existing binding is untouched — this is additive, and a match the publisher
+// has never heard of renders exactly as it did before.
+const OCS = { byKey: null, generatedAt: null, gen: 0, loaded: false };
+
+// The JS twin of ten225_names.py. Same rule, restated in the one other language
+// that has to compute it. Two copies of a matcher is how a matcher drifts, so
+// the drift is made loud rather than trusted: test-ten225-ocs-key.mjs drives
+// BOTH this function and the Python one over one corpus and fails if they
+// disagree on any name.
+function ocsNfd(s){
+  return String(s || '').normalize('NFD')
+    // Unicode combining marks (category Mn), which is what Python's
+    // `unicodedata.category(c) != 'Mn'` filter drops.
+    .replace(/\p{Mn}/gu, '')
+    .toLowerCase().replace(/,/g, ' ').replace(/\./g, ' ')
+    .split(/\s+/).filter(Boolean).join(' ');
+}
+function ocsNameKey(name){
+  const raw = String(name || '');
+  const s = ocsNfd(raw.includes(',') ? raw.split(',')[0] : raw);
+  // Last alphabetic token of length > 1 — NOT the longest, which fails every
+  // full-name-vs-initial pair ('Zverev, Alexander' has 'alexander' as its
+  // longest token and 'A. Zverev' has 'zverev').
+  const toks = s.split(' ').filter(t => t.length > 1 && /^\p{L}+$/u.test(t));
+  return toks.length ? toks[toks.length - 1] : null;
+}
+function ocsMatchKey(day, p1, p2){
+  const k1 = ocsNameKey(p1), k2 = ocsNameKey(p2);
+  // Never a partial key, and never a key for two players who reduce to one
+  // surname — that key could not tell the sides apart, and the standing rule is
+  // to drop on ambiguity rather than guess.
+  if (!day || !k1 || !k2 || k1 === k2) return null;
+  return `${String(day).slice(0, 10)}|${[k1, k2].sort().join('|')}`;
+}
+function ocsKeyOf(m){ return m ? ocsMatchKey(m.date, m.p1, m.p2) : null; }
+
+// Resolved per match and memoised against the load generation, because every
+// odds accessor below calls it and a card renders several times per view. The
+// generation — rather than a plain cached value — is what makes the file
+// landing AFTER the first paint still repaint correctly; a bare cache would
+// pin the pre-load `null` forever.
+function _ocsOf(m){
+  if (!m || !OCS.byKey) return null;
+  if (m.__ocsGen === OCS.gen) return m.__ocs;
+  const e = OCS.byKey[ocsKeyOf(m) || ''] || null;
+  let out = null;
+  if (e && e.sides){
+    const k1 = ocsNameKey(m.p1), k2 = ocsNameKey(m.p2);
+    const s1 = k1 ? e.sides[k1] : null, s2 = k2 ? e.sides[k2] : null;
+    // Both sides or neither. A half-resolved fixture would put one player's
+    // published price beside the other player's matches.json price — the
+    // cross-source blend the ruling forbids, wearing the shape of a bug fix.
+    if (s1 && s2) out = { book: e.book, source: e.source, label: e.label || null,
+                          tsKind: e.tsKind || null, startTsSource: e.startTsSource || null,
+                          p1: s1, p2: s2 };
+  }
+  m.__ocs = out; m.__ocsGen = OCS.gen;
+  return out;
+}
+// The book this card is quoting, for the provenance line. Falls back to the
+// matches.json pin's own bookmaker so the label is never a guess.
+function ocsBookOf(m){
+  const o = _ocsOf(m);
+  if (o) return o.book || null;
+  return (m && m.openingOdds && m.openingOdds.bookmaker) || null;
+}
+function ocsOpenTsOf(m){
+  const o = _ocsOf(m);
+  if (o) return o.p1.openTs || o.p2.openTs || null;
+  const op = m && m.openingOdds;
+  return op ? (op.at || op.seenAt || null) : null;
+}
+function ocsFmtTs(iso){
+  if (!iso) return '';
+  const d = new Date(iso);
+  if (isNaN(d)) return '';
+  return d.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+    + ' ' + d.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
+}
+// The one provenance string every surface shows: "bet365 · Sep 17, 09:14".
+// Book name AND Open timestamp, always together (founder, 2026-09-18) — they
+// travel in one function so a surface cannot render one without the other.
+function ocsProvenance(m){
+  const book = ocsBookOf(m), ts = ocsFmtTs(ocsOpenTsOf(m));
+  return [book, ts].filter(Boolean).join(' · ');
+}
+async function loadOddsCardState(){
+  try {
+    const res = await fetch('./odds-card-state.json', { cache: 'no-cache' });
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const doc = JSON.parse(await res.text());
+    OCS.byKey = doc && doc.byKey ? doc.byKey : {};
+    OCS.generatedAt = doc ? doc.generatedAt || null : null;
+  } catch (err){
+    // A missing or unreadable file is NOT an error state for the page: every
+    // surface below already dashes what it does not have, and the pre-TEN-225
+    // matches.json bindings still render. Logged, never surfaced as broken.
+    OCS.byKey = null;
+    console.warn('odds-card-state.json unavailable (surfaces fall back to matches.json):', err.message);
+  }
+  OCS.loaded = true;
+  OCS.gen++;
+}
+
 // §12 — Completed-view sort scorers. All null-safe so they degrade to a stable
 // order when a match lacks odds; only reachable when state.sort is a completed key.
-function _mcCloseOf(m, who){ return m.closingOdds?.[who] ?? null; } // TEN-124: pinned pre-play close only — never a live m.bestOdds/m.odds fallback (dash when absent).
+// TEN-225: odds_card_state wins where it covers the match (all three values or
+// none — see the precedence note above); otherwise TEN-124's rule stands —
+// the pinned pre-play close only, never a live m.bestOdds/m.odds fallback.
+function _mcCloseOf(m, who){
+  const o = _ocsOf(m);
+  if (o) return o[who].close ?? null;
+  return m.closingOdds?.[who] ?? null;
+}
 // TEN-179 item 1 (founder ruling 2026-09-10) — the Upcoming card's NOW leg is PINNED TO
 // BET365. Both legs from bet365, no cross-book fallback; a leg without one is a dash, the
 // same rule TEN-124 set for the completed CLOSE. m.bestOdds is a best-price-ACROSS-books
@@ -6701,7 +6839,24 @@ function _mcBet365Now(m){
   if (o && _isBet365(o.bookmaker) && o.p1 && o.p2) return { p1: o.p1, p2: o.p2, at: null, src: 'feed' };
   return null;
 }
-function _mcNowOf(m, who){ const n = _mcBet365Now(m); return n ? (n[who] ?? null) : null; }
+function _mcNowOf(m, who){
+  // TEN-225: where odds_card_state covers the match it owns the NOW too, and
+  // its rule is stricter than this one — it withholds a Now on a fixture that
+  // has already started, because a started fixture's last tick is a settled
+  // price, not a current one.
+  //
+  // The matches.json fallback below is allowed ONLY when the published book IS
+  // bet365, i.e. the same book those sources quote. A sports411 Open beside a
+  // bet365 Now is the cross-book blend the ruling forbids; more dashes is
+  // accepted, and the founder has already accepted it once on this exact leg.
+  const o = _ocsOf(m);
+  if (o){
+    const v = o[who].now;
+    if (v != null) return v;
+    if (String(o.book || '').toLowerCase() !== 'bet365') return null;
+  }
+  const n = _mcBet365Now(m); return n ? (n[who] ?? null) : null;
+}
 function upsetScore(m){ // winner's closing odds — bigger underdog win = bigger upset
   const fscore = m.finalScore; if (!fscore) return -1;
   const c = _mcCloseOf(m, fscore.winner); return c == null ? -1 : c;
@@ -6729,9 +6884,24 @@ function mxDriftView(){ return state.view !== 'completed' && state.sort === 'dri
 //
 // _openAnchorOf  -> the OPEN to DISPLAY (vendor pin included; that is the whole fix).
 // _openDerivedOf -> the OPEN a DERIVED number may be computed from (vendor pin excluded).
-function _openPinIsVendor(m){ return !!(m && m.openingOdds && m.openingOdds.vendor); }
-function _openAnchorOf(m, who){ return m?.openingOdds?.[who] ?? null; }
-function _openDerivedOf(m, who){ return _openPinIsVendor(m) ? null : (m?.openingOdds?.[who] ?? null); }
+//
+// TEN-225 — odds_card_state carries the same distinction as a first-class
+// column rather than a marker on the value: its api-tennis rows are the
+// labelled fallback ("last seen", ts_kind 'sighting'), and they are exactly the
+// population this vendor rule was written for. So the published source answers
+// the question where the file covers the match, and the marker answers it where
+// it does not. One question, two stores, same answer.
+function _openPinIsVendor(m){
+  const o = _ocsOf(m);
+  if (o) return o.source === 'api-tennis';
+  return !!(m && m.openingOdds && m.openingOdds.vendor);
+}
+function _openAnchorOf(m, who){
+  const o = _ocsOf(m);
+  if (o) return o[who].open ?? null;
+  return m?.openingOdds?.[who] ?? null;
+}
+function _openDerivedOf(m, who){ return _openPinIsVendor(m) ? null : _openAnchorOf(m, who); }
 function driftScore(m){ // largest absolute open→close move on either side
   const o1 = _openDerivedOf(m, 'p1'), o2 = _openDerivedOf(m, 'p2');
   const c1 = _mcCloseOf(m, 'p1'), c2 = _mcCloseOf(m, 'p2');
@@ -7443,10 +7613,25 @@ function mcDriftCell(open, now, anchorOnly){
 // vendor-sourced OPEN shows its price and its recorded close, with the sparkline and the
 // signed delta suppressed. Same ruling, same reasoning; a completed card must not start
 // asserting a move the moment the fixture settles when the upcoming card refused to.
-function mcJourney(open, close, anchorOnly){
-  if (open == null && close == null) return '';
+// TEN-225 (founder 2026-09-18, 1b/3d): "Open + Close columns, dashes (never
+// blanks) where missing." The both-absent case used to return '' — an empty
+// string under two column headers, which is the literal blank cell he opened
+// Part 3d about (Davis Cup World Group II, 16 Sep 2026). It now renders the
+// same em dash the one-sided cases already did, so the columns are always
+// present and "we have no price" is always stated rather than implied.
+// `prov` is "<book> · <open time>", rendered as the cell's title because the
+// completed card has no room for a provenance line — see the design-gap list.
+function mcJourney(open, close, anchorOnly, prov){
+  const t = prov ? ` title="${String(prov).replace(/"/g, '&quot;')}"` : '';
+  if (open == null && close == null){
+    return `<span class="mc-journey mc-journey--noopen"${t}>`
+      + `<span class="mc-journey__open mc-journey__nodata">—</span>`
+      + `<span class="mc-journey__lane"></span>`
+      + `<span class="mc-journey__close mc-journey__nodata">—</span>`
+      + `<span class="mc-journey__delta"></span></span>`;
+  }
   if (open != null && close != null && anchorOnly) {
-    return `<span class="mc-journey"><span class="mc-journey__open">${open.toFixed(2)}</span>`
+    return `<span class="mc-journey"${t}><span class="mc-journey__open">${open.toFixed(2)}</span>`
       + `<span class="mc-journey__lane"></span>`
       + `<span class="mc-journey__close">${close.toFixed(2)}</span>`
       + `<span class="mc-journey__delta"></span></span>`;
@@ -7458,8 +7643,11 @@ function mcJourney(open, close, anchorOnly){
   // When openingOdds land the em dash resolves on its own and the track/delta return.
   // Missing OPEN: em dash in the OPEN cell, a thin neutral (empty) lane, close kept,
   // no delta. Layout holds its fixed columns so CLOSE stays under its header.
-  if (open == null) return `<span class="mc-journey mc-journey--noopen"><span class="mc-journey__open mc-journey__nodata">—</span><span class="mc-journey__lane"></span><span class="mc-journey__close">${close.toFixed(2)}</span><span class="mc-journey__delta"></span></span>`;
-  if (close == null) return `<span class="mc-journey"><span class="mc-journey__open">${open.toFixed(2)}</span></span>`;
+  if (open == null) return `<span class="mc-journey mc-journey--noopen"${t}><span class="mc-journey__open mc-journey__nodata">—</span><span class="mc-journey__lane"></span><span class="mc-journey__close">${close.toFixed(2)}</span><span class="mc-journey__delta"></span></span>`;
+  // TEN-225 — a recorded Open with no Close now keeps its CLOSE cell and dashes
+  // in it. The old shape emitted the open alone, which collapsed the row and
+  // left nothing under the CLOSE header: a blank, not a dash.
+  if (close == null) return `<span class="mc-journey"${t}><span class="mc-journey__open">${open.toFixed(2)}</span><span class="mc-journey__lane"></span><span class="mc-journey__close mc-journey__nodata">—</span><span class="mc-journey__delta"></span></span>`;
   // §2/§6 SETTLED (founder review 2026-08-08) — the odds journey is ONE object:
   //   open (40px) · direction bar (64px lane) · close (44px) · delta (44px, inline).
   // The BAR LENGTH encodes the move size — width ∝ |delta%|, per the export exactly
@@ -7468,7 +7656,7 @@ function mcJourney(open, close, anchorOnly){
   // lane never reads empty. The delta is a signed PERCENTAGE (close/open − 1), inline
   // to the right of the close — NOT stacked on a second line. Direction drives colour
   // on both the bar and the delta (.pos=drifted green / .neg=shortened red).
-  const d = oddsPctDelta(open, close);
+  const d = oddsPctDelta(open, close);   // both legs present from here down
   // TEN-179 q1 — the lane narrowed from 64px to 28px to make the Completed card fit
   // two-up, so the bar's scale is rescaled by the SAME factor (28/64 = 0.4375) rather
   // than re-invented: the export's "|delta%| x 2.2, clamped 10-56px in a 64px lane"
@@ -7478,7 +7666,7 @@ function mcJourney(open, close, anchorOnly){
   const delta = d.pct !== 0
     ? `<span class="mc-journey__delta ${d.dir}">${d.text}</span>`
     : `<span class="mc-journey__delta"></span>`;
-  return `<span class="mc-journey ${d.dir}">`
+  return `<span class="mc-journey ${d.dir}"${t}>`
     + `<span class="mc-journey__open">${open.toFixed(2)}</span>`
     + `<span class="mc-journey__lane"><span class="mc-journey__bar" style="width:${barW}px"></span></span>`
     + `<span class="mc-journey__close">${close.toFixed(2)}</span>`
@@ -8009,8 +8197,19 @@ function renderMatches(){
     const p1Open  = finalScore ? _openAnchorOf(m, 'p1') : null;
     const p2Open  = finalScore ? _openAnchorOf(m, 'p2') : null;
     const openAnchorOnly = _openPinIsVendor(m);
-    const p1Close = finalScore ? (m.closingOdds?.p1 ?? null) : null;
-    const p2Close = finalScore ? (m.closingOdds?.p2 ?? null) : null;
+    // TEN-225: through _mcCloseOf, so odds_card_state supplies the close where
+    // it covers the fixture. The inline `m.closingOdds` read this replaces was
+    // the one completed-card binding that bypassed the accessor, which would
+    // have paired a published Open with a matches.json Close — the cross-source
+    // blend the same ruling forbids across books.
+    const p1Close = finalScore ? _mcCloseOf(m, 'p1') : null;
+    const p2Close = finalScore ? _mcCloseOf(m, 'p2') : null;
+    // "Book name and Open timestamp always shown" (founder, 2026-09-18). The
+    // completed card's odds column is 4 fixed cells wide with no room for a
+    // provenance line, so on the CARD it is the cell title and the full line is
+    // rendered in the match detail. Logged as a design gap, not solved by
+    // inventing a row the approved layout does not have.
+    const oddsProv = ocsProvenance(m);
     const finOddsCell = (open, close) => {
       const rows = [];
       if (open != null)  rows.push(`<span class="fo-pair open"><span class="fo-l">Open</span><span class="fo-v">${open.toFixed(2)}</span></span>`);
@@ -8090,13 +8289,13 @@ function renderMatches(){
             <span class="mc-id">${mcAvatarHtml(m.p1PhotoUrl, m.p1, m.p1Key, 'a')}<span class="mc-name"${profileLinkAttrs(m.p1Key, m.p1)}>${m.p1}</span>${p1IsFavorite ? '<span class="mc-fav-tag">FAV</span>' : ''}</span>
             ${(m.retired || m.walkover) ? mcTermCell(m, 'p1', boardSetCols) : mcSetCluster(finalScore, 'p1', false, boardSetCols)}
             <span class="mc-vdiv"></span>
-            ${mcJourney(p1Open, p1Close, openAnchorOnly)}
+            ${mcJourney(p1Open, p1Close, openAnchorOnly, oddsProv)}
           </div>
           <div class="mc-row b${p2IsWinner ? ' winner' : ''}">
             <span class="mc-id">${mcAvatarHtml(m.p2PhotoUrl, m.p2, m.p2Key, 'b')}<span class="mc-name"${profileLinkAttrs(m.p2Key, m.p2)}>${m.p2}</span>${(hasFavLine && !p1IsFavorite) ? '<span class="mc-fav-tag">FAV</span>' : ''}</span>
             ${(m.retired || m.walkover) ? mcTermCell(m, 'p2', boardSetCols) : mcSetCluster(finalScore, 'p2', false, boardSetCols)}
             <span class="mc-vdiv"></span>
-            ${mcJourney(p2Open, p2Close, openAnchorOnly)}
+            ${mcJourney(p2Open, p2Close, openAnchorOnly, oddsProv)}
           </div>
         </div>`
       : `<div class="mc-players up">
@@ -12840,23 +13039,50 @@ function buildOddsReduced(m){
   // neither src nor vendor, so this reads unchanged for them.
   const SRC_TEXT = { 'first-sighting': 'first sighting', 'vendor-sighting': 'seen by us',
                      ingestion: 'ingestion point', archive: 'archive' };
-  const ocRow = (label, snap) => {
-    if (!snap || (snap.p1 == null && snap.p2 == null)) return '';
-    const a = snap.p1 != null ? snap.p1.toFixed(2) : '·';
-    const b = snap.p2 != null ? snap.p2.toFixed(2) : '·';
-    const book = snap.bookmaker
+  // TEN-225 3a (founder 2026-09-18): "Upcoming: Open where the design has a
+  // slot (match detail / See full analysis)... Do not invent UI on the card."
+  // THIS is that slot, and it already existed — what it did not do was appear.
+  // The row returned '' whenever the snapshot was absent, so the one surface
+  // the approved design gives an Open to rendered NOTHING on exactly the
+  // fixtures the Open was missing from. It now renders with em dashes, which is
+  // the standing rule ("missing = dash, never blank") applied to the panel that
+  // was silently exempt from it.
+  const ocRow = (label, snap, always) => {
+    const present = snap && (snap.p1 != null || snap.p2 != null);
+    if (!present && !always) return '';
+    const a = present && snap.p1 != null ? snap.p1.toFixed(2) : '—';
+    const b = present && snap.p2 != null ? snap.p2.toFixed(2) : '—';
+    const book = snap && snap.bookmaker
       ? (snap.vendor ? `${snap.bookmaker} via ${snap.vendor}` : snap.bookmaker)
       : '';
-    const meta = [book, ocSnapAt(snap.at || snap.seenAt), SRC_TEXT[snap.src] || '']
-      .filter(Boolean).join(' · ');
+    const meta = [book, ocSnapAt(snap && (snap.at || snap.seenAt)),
+                  (snap && SRC_TEXT[snap.src]) || ''].filter(Boolean).join(' · ');
     return `<div class="aodds-brow">
       <span class="aob-name"><b>${label}</b>${meta ? `<span style="color:#4b5672;font-size:11px;font-family:'IBM Plex Mono',monospace;margin-left:7px;">${meta}</span>` : ''}</span>
       <span class="aob-cell"><span class="aodds-price">${a}</span></span>
       <span class="aob-cell"><span class="aodds-price">${b}</span></span>
     </div>`;
   };
-  const openingRow = ocRow('Opening', m.openingOdds);
-  const closingRow = ocRow('Closing', m.closingOdds);
+  // Where odds_card_state covers the fixture it is the whole snapshot — book,
+  // both prices and the timestamp — so the panel cannot pair a published price
+  // with a matches.json book name. Where it does not, m.openingOdds/closingOdds
+  // render exactly as before.
+  const _ocsRow = _ocsOf(m);
+  const ocSnap = (which, tsField) => {
+    if (!_ocsRow) return which === 'open' ? m.openingOdds : m.closingOdds;
+    const v1 = _ocsRow.p1[which], v2 = _ocsRow.p2[which];
+    if (v1 == null && v2 == null) return { bookmaker: _ocsRow.book };
+    return { p1: v1, p2: v2, bookmaker: _ocsRow.book,
+             at: _ocsRow.p1[tsField] || _ocsRow.p2[tsField] || null,
+             src: _ocsRow.source === 'api-tennis' ? 'vendor-sighting' : 'archive' };
+  };
+  // The OPENING row is unconditional: it is the slot 3a names, and a panel that
+  // vanishes cannot report that it has nothing. The CLOSING row stays
+  // conditional on the fixture being finished — a close on an unplayed match is
+  // not missing data, it is data that does not exist yet, and dashing it would
+  // read as a gap rather than as a match that has not started.
+  const openingRow = ocRow('Opening', ocSnap('open', 'openTs'), true);
+  const closingRow = ocRow('Closing', ocSnap('close', 'closeTs'), !!m.finalScore);
   const ocPanel = (openingRow || closingRow) ? `<div>
     <div class="aodds-sechead">
       <span class="aodds-badge">PRE-MATCH</span>

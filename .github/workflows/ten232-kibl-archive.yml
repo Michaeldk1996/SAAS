@@ -31,7 +31,7 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: 'sweep | backfill | report | cards | audit | sides'
+        description: 'sweep | backfill | report | cards | publish | audit | sides'
         default: 'sweep'
       horizon_days:
         description: 'sweep: how far forward, days'
@@ -47,8 +47,11 @@ concurrency:
   group: ten232-kibl-archive
   cancel-in-progress: false
 
+# TEN-225 Part 3 — `write` so the publish step can commit odds-card-state.json.
+# The sweep, the card fill and every report in this job stay read-only; the one
+# writer is the publish step, and the one path it writes is that file.
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   archive:
@@ -220,6 +223,60 @@ jobs:
           echo 'card-state schema applied (idempotent).'
           set -o pipefail
           python3 ten225-kibl-card-state.py | tee -a "$GITHUB_STEP_SUMMARY"
+
+      # ------------------------------------------------------------- PART 3
+      # PUBLISH. odds_card_state has RLS on and zero policies and the product is
+      # a static page, so there is no browser read path to the table and there
+      # is not going to be one. The page reads a FILE; this is the only writer.
+      #
+      # Runs here rather than in its own workflow because the projection it
+      # publishes is the one the step above just wrote — a separate schedule
+      # would publish whatever the previous fill left, which on a 5-minute sweep
+      # is yesterday's Open on today's card.
+      - name: Publish odds-card-state.json
+        id: publish
+        if: |
+          inputs.mode == 'publish' || inputs.mode == 'cards' ||
+          ((github.event_name == 'schedule' || inputs.mode == 'sweep') &&
+           steps.sweep.outputs.swept != 'false')
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: |
+          # pipefail: without it a crashing publisher exits 0 through tee and
+          # the run reports green on a file nobody wrote — the fail-open this
+          # repo has been bitten by before (a dead probe reported a green run).
+          set -o pipefail
+          python3 -B test-ten225-publish-card-state.py | tee -a "$GITHUB_STEP_SUMMARY"
+          python3 -B ten225-publish-card-state.py | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Commit odds-card-state.json (only if changed)
+        if: steps.publish.outcome == 'success'
+        run: |
+          set -euo pipefail
+          git config user.name  "bsp-odds-bot"
+          git config user.email "bsp-odds-bot@users.noreply.github.com"
+          # Stage FIRST, then diff the index against HEAD: `git diff` only sees
+          # TRACKED files, so the very first publish — the one that matters —
+          # would read as "no changes" and never be committed.
+          git add -- odds-card-state.json
+          if git diff --cached --quiet; then
+            echo "odds-card-state.json unchanged."
+            exit 0
+          fi
+          git commit -m "chore(odds): publish odds_card_state projection [skip ci]"
+          # Another run may have advanced main since checkout. Rebase and retry
+          # so a benign race never loses a publish.
+          for attempt in 1 2 3; do
+            if git push origin HEAD:main; then
+              echo "Pushed odds-card-state.json on attempt $attempt."
+              exit 0
+            fi
+            echo "Push rejected (attempt $attempt) — rebasing on origin/main."
+            git pull --rebase origin main || true
+          done
+          echo "::error::could not push odds-card-state.json after 3 attempts"
+          exit 1
 
       # Founder ruling 2026-09-18 item 4 — the generalisation of the
       # player1/player2 defect: a column declared in the DDL that NOTHING ever
