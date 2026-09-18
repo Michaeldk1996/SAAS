@@ -468,13 +468,32 @@ check('bands partition the 64 real COURT_CONDITIONS venues into 5 non-empty grou
 // 8 · HEADLINE SIZE RULE (README §5)
 // ════════════════════════════════════════════════════════════════════════════
 console.log('\n8 · Headline size rule');
-check('<=10 -> 30px, 11-16 -> 23px, >16 -> 19px', () => {
-  assert.strictEqual(I.headlineSize('369–309'), 30);
-  assert.strictEqual(I.headlineSize('0123456789'), 30);
-  assert.strictEqual(I.headlineSize('01234567890'), 23);
-  assert.strictEqual(I.headlineSize('0123456789012345'), 23);
-  assert.strictEqual(I.headlineSize('01234567890123456'), 19);
-  assert.strictEqual(I.headlineSize('Counter Puncher / Solid Defender'), 19);
+// SUPERSEDED by handoff v7 / A2 (2026-09-17). The char-length rule this used to
+// lock is now explicitly dead: "Headline size comes from the per-box `size`
+// field, NOT from string length."
+check('headline size comes from the per-box `size` field, not the string', () => {
+  const want = { career: 26, season: 26, tourn: 30, speed: 22,
+                 splits: 20, styles: 30, market: 26, profile: 30 };
+  for (const b of I.BOXES) {
+    assert.strictEqual(I.headlineSize(b), want[b.key], `${b.key}: size is not the file's`);
+  }
+});
+
+mustFail('[neg] the size lock would catch a revert to the char-length rule', () => {
+  const charRule = (t) => { const n = String(t || '').length;
+    return n <= 10 ? 30 : n <= 16 ? 23 : 19; };
+  // The old rule emits only 30/23/19, so it cannot produce `splits`' locked
+  // 20px or `speed`'s 22px for ANY headline — the revert is unrepresentable.
+  assert([30, 23, 19].includes(20) || charRule('Other Tours') === 20,
+    'char rule can still hit the locked 20px');
+});
+
+check('the eight boxes are the v7 set, in the v7 order', () => {
+  assert.deepStrictEqual(I.BOXES.map(b => b.key),
+    ['career', 'season', 'tourn', 'speed', 'splits', 'styles', 'market', 'profile']);
+  assert.deepStrictEqual(I.BOXES.map(b => b.title),
+    ['Career record', 'Calendar record', 'Record per tournament', 'Court speed record',
+     'Draw record', 'Matchup record', 'Market edge', 'Live trading']);
 });
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -575,16 +594,22 @@ mustFail('spine check would catch a doctored season row', () => {
   assert.strictEqual(sw, t.won, 'planted drift not caught');
 });
 
-check('career box headline = spine total, and says which year it starts from', () => {
+// The headline half is unchanged and still load-bearing. The support half is
+// SUPERSEDED by v7: the file's string is "<rate> all-time · by surface and by
+// season" and carries no "since <year>" window. Reported as an information loss
+// — the tile no longer says when the record starts — but the file wins.
+check('career box headline = spine total, with the v7 support line', () => {
   for (const p of SAMPLE) {
     const t = I.spineTotal(p);
     const vals = I.buildBoxVals(p, { archetype: null });
     if (!t.n) { assert.strictEqual(vals.career.headline, null); continue; }
     assert.strictEqual(vals.career.headline, t.won + '–' + t.lost,
       `${p.name}: box headline disagrees with the spine`);
-    const fy = I.spineFirstYear(p);
-    assert(vals.career.support.includes('since ' + fy),
-      `${p.name}: career box does not disclose the window (${vals.career.support})`);
+    assert(vals.career.support.endsWith(' all-time · by surface and by season'),
+      `${p.name}: career support is not the v7 string (${vals.career.support})`);
+    // The rate is still the spine's own, not a re-derivation.
+    assert(vals.career.support.startsWith(I.rateText(t.won, t.lost)),
+      `${p.name}: career support rate disagrees with the spine`);
   }
 });
 
@@ -702,22 +727,34 @@ check('the pick is allowed to be negative — the rule is sign-blind by ruling',
   assert(got.pick.gap < 0, `expected a negative gap, got ${got.pick.gap}`);
 });
 
-check('no user-facing string calls it the "best" split or band', () => {
+// ── ruling bw-0 is OVERRIDDEN by handoff v7, and this is a direct collision ──
+//
+// bw-0 banned the words "best split" / "best band" from user-facing text. The
+// v7 locked copy uses that exact phrase: `Player Stat Boxes.dc.html`:3226 reads
+// `support: 'best split · 75.0% · 45–15 · 60 matches'`, and the founder's A1
+// quotes it verbatim as the locked support line.
+//
+// This handoff says the export wins every conflict, so "best split" ships and
+// bw-0 no longer holds for this string. It is called out in the report rather
+// than resolved quietly, because the two rulings are seven days apart and only
+// the founder can retire the older one.
+//
+// The lock is INVERTED rather than deleted: the wording is now pinned to the
+// file's, so a drift back to "biggest split" fails just as loudly as the drift
+// this check used to catch.
+check('the splits support line uses the v7 wording, not the bw-0 wording', () => {
   const src = fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8');
-  // Strip // comments: the ruling's own rationale quotes the old wording.
   const code = src.split('\n').map(l => l.replace(/^\s*\/\/.*$/, '')).join('\n');
-  const offenders = (code.match(/'[^'\n]*\bbest (split|band)\b[^'\n]*'/gi) || []);
-  assert.strictEqual(offenders.length, 0,
-    `ruling bw-0 regressed — user-facing text still says: ${offenders.join(', ')}`);
-  // The replacement must actually be present, or this check passes vacuously
-  // on a file that simply dropped the support line.
-  assert(/'biggest split /.test(code), 'the "biggest split" support line is gone entirely');
+  assert(/'best split /.test(code), 'the v7 "best split" support line is missing');
+  const stale = (code.match(/'[^'\n]*\bbiggest split\b[^'\n]*'/gi) || []);
+  assert.strictEqual(stale.length, 0,
+    `v7 regressed — user-facing text still says: ${stale.join(', ')}`);
 });
 
-mustFail('[neg] the wording lock would catch a revert to "best split"', () => {
-  const code = "support: 'best split ' + MIDDOT";
-  const offenders = (code.match(/'[^'\n]*\bbest (split|band)\b[^'\n]*'/gi) || []);
-  assert.strictEqual(offenders.length, 0, 'lock is inert');
+mustFail('[neg] the wording lock would catch a revert to "biggest split"', () => {
+  const code = "support: 'biggest split ' + MIDDOT";
+  const stale = (code.match(/'[^'\n]*\bbiggest split\b[^'\n]*'/gi) || []);
+  assert.strictEqual(stale.length, 0, 'lock is inert');
 });
 
 check('splits box headline and the modal agree on the picked split', () => {
@@ -2443,10 +2480,14 @@ mustFail('the chrome check would catch the plain-text row list coming back', () 
 
 check('item 5 · the shell says "Matchup record" with the file\'s subtitle', () => {
   // Deliberately NOT gated on the career store: the subtitle is a constant and
-  // the title an override, so this must stay green even where the spine is absent.
+  // the title now comes from the box set, so this stays green with no spine.
   assert.strictEqual(I.modalSubtitle('styles', SAMPLE[0], {}),
     'Win rate by opposing archetype · minimum 5 matches');
-  assert.strictEqual(I.MODAL_TITLE.styles, 'Matchup record');
+  // v7 moved the title onto the box object and the MODAL_TITLE override map is
+  // gone. The assertion is the same fact read from its new single source — and
+  // this is now stronger, because it proves the TILE says it too.
+  const styles = I.BOXES.filter(b => b.key === 'styles')[0];
+  assert.strictEqual(styles.title, 'Matchup record');
   assert.strictEqual(I.MODAL_WIDTH.styles, 820, 'item 6 · the modal is not 820px');
   console.log('        title, subtitle and 820px width all as specified');
 });
@@ -3314,14 +3355,41 @@ check('item 3 · the ribbon and ledger headlines are whole numbers, every other 
   // Slam career tile sub, detail header meta). Re-pinned rather than dropped:
   // the point is that whole-number formatting stays where it was RULED and does
   // not creep further on its own.
+  // v7 adds TWO more, both forced by verify step (d) rather than chosen: the
+  // `tourn` box support carries a Record-per-tournament win% (already ruled
+  // whole above), and the `styles` box headline had to match the Matchup list
+  // it opens, which has always rounded. Re-pinned at 9 on the same principle —
+  // the count moves only when a ruling or a measured disagreement moves it.
   const calls = (PP2_SRC.match(/rateText0\(/g) || []).length;
-  assert.strictEqual(calls, 7,
-    `rateText0 appears ${calls} times (expected 7: the definition + ribbon + ledger header + 4 in §5.3)`);
-  // The 1-dp form must still be the default. If rateText0 ever overtakes it the
-  // whole-number rule has stopped being an exception.
+  assert.strictEqual(calls, 9,
+    `rateText0 appears ${calls} times (expected 9: the definition + ribbon + ledger ` +
+    `header + 4 in §5.3 + the tourn box support + the styles box headline)`);
+
+  // The old guard here was "rateText must outnumber rateText0". v7 broke it
+  // legitimately — 8 vs 9 — and that is worth saying out loud rather than
+  // flipping the inequality and moving on: whole-number rates are now as common
+  // as 1-dp ones on this page, so the "exception" framing no longer describes
+  // the code. FLAGGED FOR THE FOUNDER.
+  //
+  // A raw majority of call sites was always a weak proxy anyway: it counts the
+  // definition, it counts comment-stripped source, and it fails the moment a
+  // ruled surface is legitimately added. Replaced with the thing the ruling
+  // actually constrains — WHICH surfaces round — so creep shows up as a named
+  // surface appearing in this list, not as a number drifting.
   const wide = (PP2_SRC.match(/[^0]\brateText\(/g) || []).length;
-  assert(wide > calls, `rateText (1 dp) is no longer the default: ${wide} vs ${calls}`);
-  console.log(`        rateText0 at 6 call sites (2 ruled + 4 in §5.3), rateText at ${wide}`);
+  const WHOLE_SURFACES = [
+    'recent-form ribbon headline',
+    'full ledger header',
+    '§5.3 list row win%', '§5.3 W–L tile sub', '§5.3 Grand Slam tile sub',
+    '§5.3 detail header meta',
+    'box 3 (tourn) support win%',        // ruled 2026-09-16, §5.3 item 9
+    'box 6 (styles) headline'            // measured: the Matchup list rounds
+  ];
+  assert.strictEqual(WHOLE_SURFACES.length, calls - 1,
+    `the named whole-number surfaces (${WHOLE_SURFACES.length}) no longer account ` +
+    `for the ${calls - 1} rateText0 call sites — a surface started rounding unnamed`);
+  console.log(`        rateText0 at ${calls - 1} named surfaces, rateText at ${wide} ` +
+    `(was a majority, no longer — flagged)`);
 });
 mustFail('the whole-number check would catch a global .toFixed(0)', () => {
   const rateText = (w, l) => (100 * w / (w + l)).toFixed(0) + '%';
@@ -3730,11 +3798,17 @@ function surfaceRowOrder(html) {
   return out;
 }
 
-check('item 2 · the subtitle carries "indoors" — the word that makes Hard mean outdoor', () => {
+// SUPERSEDED by v7 §5.1, and the two things it locked are BOTH lost:
+//   · "indoors" — the word that told the reader the Hard row is outdoor-only
+//   · "since <year>" — the ruled scope label
+// The v7 string is "Record by surface and season, and his ratings against the
+// field". Both losses are named in the report; the file wins, so the check is
+// re-pointed rather than kept failing. The Indoors ROW is untouched — only the
+// sentence that explained it is gone.
+check('item 2 · the career subtitle is the v7 string', () => {
   const sub = I.modalSubtitle('career', CM_PLAYER, {});
-  assert(/All-time record, by surface, indoors and by season/.test(sub),
+  assert.strictEqual(sub, 'Record by surface and season, and his ratings against the field',
     `subtitle is "${sub}"`);
-  assert(/since 2026/.test(sub), 'the ruled scope label was dropped');
 });
 mustFail('[neg] the subtitle check would catch the shipped string with "indoors" missing', () => {
   const sub = 'All-time record, by surface and by season · since 2015';
