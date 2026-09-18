@@ -630,6 +630,10 @@ def build_rows(kibl_fixtures, observations, odds_index, as_of,
     """
     rows, st = [], collections.Counter()
     unknown_sides = collections.defaultdict(list)
+    # Ladder I(b) ruling D: the live-flip recovery, split by league, plus the
+    # denominator it needs. See the bump site below.
+    flip_by_league = collections.Counter()
+    league_seen = collections.Counter()
     side_shapes = collections.Counter()
     for fx in kibl_fixtures:
         fid = fx['fixture_id']
@@ -645,6 +649,24 @@ def build_rows(kibl_fixtures, observations, odds_index, as_of,
         reject = rec['start_reject_reason'] if rec else None
         flip_gap = rec.get('flip_gap_seconds') if rec else None
         st[f'start_{why or start_src}'] += 1
+
+        # LADDER I(b), founder ruling D 2026-09-18T22:58Z: "run the counting pass
+        # and post the number — how many Kibl Closes the live-flip start would
+        # recover, BY LEAGUE, with n. Then I switch it on."
+        #
+        # The flat counter already existed; a bare 31 does not answer a question
+        # asked per league, and the founder's switch-on decision is exactly the
+        # kind that turns on the league split (Kibl prices Challenger heavily and
+        # no ITF, so one number hides where the recovery actually lands).
+        #
+        # Counted on the fixture, not the side, because a Close is recovered for
+        # a fixture — counting sides would double every figure and read as twice
+        # the recovery.
+        if (why or start_src) == 'flip_available_not_enabled':
+            flip_by_league[fx.get('league_id')] += 1
+        # The denominator the percentage needs: every fixture we looked at, per
+        # league. Without it "31 recovered" has no n and cannot be read.
+        league_seen[fx.get('league_id')] += 1
 
         sched = epoch(fx.get('scheduled_start'))
         now_ok, now_basis = qualifies_as_now(start_ts, sched, as_of)
@@ -785,6 +807,8 @@ def build_rows(kibl_fixtures, observations, odds_index, as_of,
             st['rows'] += 1
     shapes = {'+'.join(str(x) for x in sorted(k, key=lambda v: (v is None, v))): n
               for k, n in side_shapes.items()}
+    st['_flip_by_league'] = dict(flip_by_league)
+    st['_league_seen'] = dict(league_seen)
     return rows, st, {str(k): v for k, v in unknown_sides.items()}, shapes
 
 
@@ -1500,6 +1524,41 @@ def main():
               f'undecidable sides and dashed entirely — never rendered on a '
               f'guess')
     print(f'kibl card rows: {len(rows)}  {dict(st)}')
+
+    # ── LADDER I(b) — THE NUMBER RULING D ASKS FOR ──────────────────────────
+    # Founder 2026-09-18T22:58Z ruling D: "run the counting pass and post the
+    # number — how many Kibl Closes the live-flip start would recover, by
+    # league, with n. Then I switch it on."
+    #
+    # Printed as its own table rather than left inside the stats blob, because a
+    # figure buried in a 20-key Counter is a figure nobody reads — and this one
+    # is the input to a switch-on decision.
+    _LEAGUE = {19: 'ATP', 537: 'Challenger', 962: 'ITF Men',
+               20: 'WTA', 643: 'WTA 125K', 963: 'ITF Women'}
+    fbl = st.get('_flip_by_league') or {}
+    seen = st.get('_league_seen') or {}
+    tot_f = sum(fbl.values())
+    tot_n = sum(seen.values())
+    mode = 'ENABLED — these Closes were RECOVERED' if a.use_live_flip \
+           else 'GATED OFF — these Closes were NOT recovered'
+    print()
+    print(f'LADDER I(b) live-flip start, {mode}')
+    if not seen:
+        # A clean zero that nobody assessed is not a clean zero. This is the
+        # same false-negative shape that has bitten this issue three times.
+        print('  ::warning:: no fixtures were assessed at all — this is NOT '
+              '"the flip recovers nothing", it is "we measured nothing".')
+    else:
+        print(f"  {'league':14} {'would recover':>14} {'fixtures seen':>14} {'rate':>8}")
+        for lid in sorted(seen, key=lambda x: (x is None, x)):
+            n = seen.get(lid, 0)
+            f = fbl.get(lid, 0)
+            nm = _LEAGUE.get(lid, f'league {lid}')
+            flag = '  (n<30)' if n < 30 else ''
+            print(f'  {nm:14} {f:>14} {n:>14} {(100.0*f/n if n else 0):>7.1f}%{flag}')
+        print(f"  {'TOTAL':14} {tot_f:>14} {tot_n:>14} "
+              f"{(100.0*tot_f/tot_n if tot_n else 0):>7.1f}%")
+
     for sid, hits in sorted(unknown_sides.items()):
         fixtures = sorted({h['fixture_id'] for h in hits})
         print(f'side_id {sid}: {len(hits)} rows over {len(fixtures)} fixtures '
