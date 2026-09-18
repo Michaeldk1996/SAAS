@@ -52,7 +52,10 @@ const INDEX_PATH = path.join(ROOT, 'market-edge-index.json');
 const PROFILES_PATH = path.join(ROOT, 'player-profiles.json');
 const SPEED_MAP_PATH = path.join(ROOT, 'court-speed-map.json');
 
-const SCHEMA_VERSION = 1;
+// 2 — the 8-band role-specific price ladder (founder ruling 2026-09-18). Band ids
+// and labels both changed, so a v1 shard in the browser cache cannot be read by
+// the v2 renderer's drill: the id set no longer overlaps.
+const SCHEMA_VERSION = 2;
 
 /**
  * TEN-206 §5.5 — venue + Tennis Abstract speed, stamped per row so the Court speed
@@ -98,13 +101,46 @@ function loadSpeedMap() {
 const GATE_FULL = 10;
 const GATE_SMALL = 5;
 
-/** Price bands are the design's own ladder (README §5.8), not a re-derived one. */
-const PRICE_BANDS = [
-  { id: 'u150', label: 'Under 1.50', test: (p) => p < 1.5 },
-  { id: 'b150_200', label: '1.50–2.00', test: (p) => p < 2.0 },
-  { id: 'b200_300', label: '2.00–3.00', test: (p) => p < 3.0 },
-  { id: 'o300', label: 'Over 3.00', test: () => true },
+/**
+ * Price bands — the design's own ladder, not a re-derived one.
+ *
+ * ★ Founder ruling, 2026-09-18: "the file wins — 8 bands. Four is useless when
+ *   434 of 534 land in one row." The locked export's `Player Stat Boxes.dc.html`
+ *   :3117-3128 prints EIGHT bands, four per role, and its note at :3165 reads
+ *   "The eight bands cover all 537 priced matches". The v7 README §5.8 still
+ *   prints the superseded 4-band ladder (Under 1.50 · 1.50–2.00 · 2.00–3.00 ·
+ *   Over 3.00); spec order says the .dc.html wins.
+ *
+ * The ladder is ROLE-SPECIFIC: the favourite ladder runs 1.01–1.99, the underdog
+ * ladder 2.00–6.00+. That is the design's own arithmetic — its four favourite
+ * bands sum to its favourite card (363) and its four underdog bands to its
+ * underdog card (174), so a row is banded inside its role, never across roles.
+ *
+ * ⚠ The two ladders do NOT quite tile the price line, because role is decided by
+ * "was he the shorter price", not by 2.00. A 1.95 quote against a 1.85 opponent
+ * is an underdog priced below 2.00; an arbed close can make a favourite priced
+ * above it. So the outer band of each ladder is a catch-all in its open
+ * direction — fav's last band takes everything above 1.64, dog's first takes
+ * everything below 2.50. Every role row therefore lands in exactly one band and
+ * the bands still sum to the role card (§4 reconciliation). The rows whose price
+ * sits outside its band's printed range are counted into `bandStraddle` and
+ * published rather than silently absorbed.
+ */
+const FAV_BANDS = [
+  { id: 'f101_120', label: '1.01 – 1.20', test: (p) => p <= 1.2 },
+  { id: 'f121_140', label: '1.21 – 1.40', test: (p) => p <= 1.4 },
+  { id: 'f141_164', label: '1.41 – 1.64', test: (p) => p <= 1.64 },
+  { id: 'f165_199', label: '1.65 – 1.99', test: () => true },
 ];
+const DOG_BANDS = [
+  { id: 'd200_249', label: '2.00 – 2.49', test: (p) => p < 2.5 },
+  { id: 'd250_349', label: '2.50 – 3.49', test: (p) => p < 3.5 },
+  { id: 'd350_599', label: '3.50 – 5.99', test: (p) => p < 6.0 },
+  { id: 'd600_up', label: '6.00 +', test: () => true },
+];
+const PRICE_BANDS = { fav: FAV_BANDS, dog: DOG_BANDS };
+/** True when `price` falls outside the printed range of the band it was put in. */
+const OUT_OF_RANGE = { fav: (p) => p >= 2.0, dog: (p) => p < 2.0 };
 
 const num = (v) => {
   const f = parseFloat(v);
@@ -368,7 +404,9 @@ function main() {
     const all = emptyAgg(); const fav = emptyAgg(); const dog = emptyAgg(); const lvl = emptyAgg();
     const bands = { fav: {}, dog: {} };
     const bySurface = {};
-    PRICE_BANDS.forEach((b) => { bands.fav[b.id] = emptyAgg(); bands.dog[b.id] = emptyAgg(); });
+    let bandStraddle = 0;
+    FAV_BANDS.forEach((b) => { bands.fav[b.id] = emptyAgg(); });
+    DOG_BANDS.forEach((b) => { bands.dog[b.id] = emptyAgg(); });
 
     // R1: every aggregate below — headline, roles, bands, per-surface and the
     // cumulative curve — is struck on Pinnacle closing only. `sides` keeps every
@@ -382,8 +420,9 @@ function main() {
       else if (s.role === 'dog') addTo(dog, s);
       else addTo(lvl, s);
       if (s.role !== 'level') {
-        const band = PRICE_BANDS.find((b) => b.test(s.price));
+        const band = PRICE_BANDS[s.role].find((b) => b.test(s.price));
         addTo(bands[s.role][band.id], s);
+        if (OUT_OF_RANGE[s.role](s.price)) bandStraddle += 1;
       }
       const surf = s.surface || 'Unknown';
       bySurface[surf] = bySurface[surf] || emptyAgg();
@@ -395,7 +434,7 @@ function main() {
       curve.push({ d: s.date, c: Math.round(cumCents) / 100 });
     });
 
-    const bandOut = (group) => PRICE_BANDS.map((b) => Object.assign({ id: b.id, label: b.label }, summarise(bands[group][b.id])));
+    const bandOut = (group) => PRICE_BANDS[group].map((b) => Object.assign({ id: b.id, label: b.label }, summarise(bands[group][b.id])));
 
     const surfaceOut = {};
     Object.keys(bySurface).forEach((s) => { surfaceOut[s] = summarise(bySurface[s]); });
@@ -430,6 +469,10 @@ function main() {
         excludedNonPinnacle: sides.length - basis.length,
         pinnacleEndByLevel: pinnacleEnd,
         bet365ArchiveEndByLevel: bet365End,
+        // Rows banded inside their role but priced outside that band's printed
+        // range — a sub-2.00 underdog or an arbed favourite above it. Published
+        // because the alternative is a label that quietly lies about its rows.
+        bandStraddle,
       },
       // Per-row detail for the drills. Every row carries its own book so the modal can
       // print "Pinnacle" or "Bet365 close" beside the price rather than a blanket claim.

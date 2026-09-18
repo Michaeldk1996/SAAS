@@ -2194,9 +2194,18 @@
   // mirror of a builder constant is a thing that drifts silently, so the drill
   // prints its own reconciliation (the band's n against the rows matched) on
   // screen rather than trusting the two to agree.
-  function priceBandId(price) {
+  // The ladder is role-specific since the 8-band ruling (2026-09-18): a price
+  // alone no longer names a band, because 1.95 is band `f165_199` for a favourite
+  // and band `d200_249` for an underdog. Passing the role is not optional.
+  function priceBandId(price, role) {
     if (price == null) return null;
-    return price < 1.5 ? 'u150' : price < 2.0 ? 'b150_200' : price < 3.0 ? 'b200_300' : 'o300';
+    if (role === 'fav') {
+      return price <= 1.2 ? 'f101_120' : price <= 1.4 ? 'f121_140' : price <= 1.64 ? 'f141_164' : 'f165_199';
+    }
+    if (role === 'dog') {
+      return price < 2.5 ? 'd200_249' : price < 3.5 ? 'd250_349' : price < 6.0 ? 'd350_599' : 'd600_up';
+    }
+    return null;
   }
 
   // ─── market edge (market-edge/{key}.json) ──────────────────────────────────
@@ -4271,7 +4280,7 @@
           ['', 'n', 'Record', 'Win rate', 'Yield vs break even', 'Yield'].map(function (h, i) {
             return '<div style="font-size:10px;font-weight:600;color:#5b6880;' +
               (i === 4 ? 'text-align:center;' : i ? 'text-align:right;' : '') + '">' + h + '</div>';
-          }).join('') + '</div>' + groups +
+          }).join('') + '</div>' + groups + priceNote() +
       '</div>' +
       cumulativeChart() +
       // §5's book rule, stated on the page rather than assumed, and restated for
@@ -4324,10 +4333,53 @@
         'background:' + (v >= 0 ? '#3dd68c' : '#e0616f') + ';"></div></div>';
     }
     /** The band row -> match detail drill. Reads the shard's own rows. */
+    /**
+     * The file's `priceNote` (`Player Stat Boxes.dc.html` :3161-3166), templated
+     * to this player's real counts instead of the prototype's 363/174/537.
+     *
+     * "all" says the eight bands COVER the priced set, so the number it quotes
+     * must be the banded population — favourite + underdog — not the headline.
+     * A level close (identical price both sides) is neither role and is banded
+     * nowhere, so quoting the headline there would print a coverage claim the
+     * ladder does not meet. When such rows exist the note names them.
+     */
+    function priceNote() {
+      var nFav = (mk.roles.favourite && mk.roles.favourite.n) || 0;
+      var nDog = (mk.roles.underdog && mk.roles.underdog.n) || 0;
+      var banded = nFav + nDog;
+      var nBands = (mk.bands.favourite || []).length + (mk.bands.underdog || []).length;
+      var him = esc(shortName(p));
+      var txt;
+      if (sel === 'favourite') {
+        txt = 'Bands are set on his own closing price, across the ' + nFav + ' match' +
+          (nFav === 1 ? '' : 'es') + ' the market made ' + him + ' favourite.';
+      } else if (sel === 'underdog') {
+        txt = 'Bands are set on his own closing price, across the ' + nDog + ' match' +
+          (nDog === 1 ? '' : 'es') + ' the market made ' + him + ' underdog.';
+      } else {
+        txt = 'Bands are set on his own closing price. The ' + numWord(nBands) + ' bands cover ' +
+          (lvl ? 'the ' + banded : 'all ' + banded) + ' banded match' + (banded === 1 ? '' : 'es') +
+          (lvl ? ' ' + MIDDOT + ' ' + lvl + ' level close' + (lvl === 1 ? '' : 's') +
+            ' sit in neither role and are banded nowhere.' : '.');
+      }
+      var straddle = cov.bandStraddle || 0;
+      if (straddle) {
+        // Role is "was he the shorter price", not "was he under 2.00", so a
+        // 1.95 underdog exists. Saying so beats a band label that quietly lies.
+        txt += ' ' + straddle + ' row' + (straddle === 1 ? '' : 's') + ' sit' + (straddle === 1 ? 's' : '') +
+          ' in the outer band of ' + (straddle === 1 ? 'its' : 'their') + ' role at a price outside that ' +
+          'band’s printed range — role is set by which side was shorter, not by 2.00.';
+      }
+      return '<div style="font-size:12.5px;color:#5b6880;line-height:1.6;margin-top:14px;">' + txt + '</div>';
+    }
+    function numWord(n) {
+      return ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight',
+        'nine', 'ten'][n] || String(n);
+    }
     function bandDetail(group, b, bid) {
       var role = group === 'favourite' ? 'fav' : 'dog';
       var rows = basisRows.filter(function (m) {
-        return m.role === role && priceBandId(m.price) === b.id;
+        return m.role === role && priceBandId(m.price, role) === b.id;
       }).sort(function (a, c) { return a.date < c.date ? 1 : a.date > c.date ? -1 : 0; });
       var shown = rows.slice(0, 40);
       var list = shown.map(function (m) {
@@ -4397,8 +4449,16 @@
         (sel === 'favourite' ? 'when favourite' : sel === 'underdog' ? 'when underdog' : 'all priced matches') +
         (surf === 'all' ? '' : ' ' + MIDDOT + ' ' + surf) +
         (side === 'fade' ? ' ' + MIDDOT + ' fading' : '');
+      // The file paints a `filtTabs` row here. That binding is DEAD — `filtTabs`
+      // is referenced once (`Player Stat Boxes.dc.html` :821) and never defined,
+      // so the prototype renders zero buttons in this slot; the chart's actual
+      // role filter is the three role cards above (`cards[].onClick` -> mkFilt),
+      // which is exactly what `sel` already does here. So no role tabs are added.
+      // The Back|Fade and surface segments below are OURS, not the file's —
+      // reported as a deviation rather than removed, because they are live
+      // affordances and removing working controls is a founder call.
       var controls =
-        '<div style="display:flex;gap:8px;flex-wrap:wrap;margin-left:auto;">' +
+        '<div style="display:flex;gap:8px;flex-wrap:wrap;">' +
           '<div style="display:flex;gap:3px;background:#0a0d13;border:1px solid rgba(255,255,255,0.09);' +
             'border-radius:9px;padding:2px;">' +
             segBtn('market-side', 'side', 'back', 'Back', side === 'back') +
@@ -4411,6 +4471,7 @@
             }).join('') +
           '</div>' +
         '</div>';
+      var last = pts.length ? pts[pts.length - 1].c : null;
       var body;
       if (pts.length < 2) {
         body = '<div style="border:1px dashed rgba(255,255,255,0.12);border-radius:10px;padding:26px;' +
@@ -4418,59 +4479,113 @@
           (pts.length ? 'One priced match in this filter — a cumulative line needs at least two points.'
             : 'No priced matches in this filter.') + '</div>';
       } else {
-        var W = 720, H = 180;
-        var lo = 0, hi = 0;
-        pts.forEach(function (q) { if (q.c < lo) lo = q.c; if (q.c > hi) hi = q.c; });
-        if (hi === lo) { hi = lo + 1; }
-        var pad = (hi - lo) * 0.08;
+        // Geometry from the locked export, `Player Stat Boxes.dc.html` :3085-3116:
+        // viewBox 1000x300, a 300px-tall plot, pad = 10% of span + 0.6u, a Y
+        // gridline ladder on a 10/5/2/1 step, gridlines rgba(255,255,255,0.05),
+        // the break-even rule rgba(255,255,255,0.28), and ONE fixed line colour
+        // (#5b9bff on rgba(91,155,255,0.13)) rather than green/red by sign — the
+        // signed colour belongs to the total beside the title, not to the line.
+        var W = 1000, H = 300;
+        // The file's series opens at 0 before the first match (`const cum = [0]`),
+        // so the line starts on the break-even rule instead of at the first
+        // match's P&L. Without it the first bet is invisible.
+        var series = [0].concat(pts.map(function (q) { return q.c; }));
+        var lo = Math.min.apply(null, series), hi = Math.max.apply(null, series);
+        var pad = (hi - lo) * 0.1 + 0.6;
         lo -= pad; hi += pad;
-        var xy = function (i, c) {
-          return [(i / (pts.length - 1)) * W, H - ((c - lo) / (hi - lo)) * H];
-        };
-        var line = pts.map(function (q, i) {
-          var a = xy(i, q.c);
-          return (i ? 'L' : 'M') + a[0].toFixed(1) + ' ' + a[1].toFixed(1);
+        var Y = function (v) { return (1 - (v - lo) / (hi - lo)) * H; };
+        var X = function (i) { return (i / (series.length - 1)) * W; };
+        var line = series.map(function (v, i) {
+          return (i ? 'L' : 'M') + X(i).toFixed(1) + ' ' + Y(v).toFixed(1);
         }).join(' ');
-        var zeroY = H - ((0 - lo) / (hi - lo)) * H;
-        var last = pts[pts.length - 1].c;
-        var stroke = last >= 0 ? '#3dd68c' : '#e0616f';
-        var fill = last >= 0 ? 'rgba(61,214,140,0.12)' : 'rgba(224,97,111,0.12)';
+        var zeroY = Y(0);
         var area = line + ' L' + W + ' ' + zeroY.toFixed(1) + ' L0 ' + zeroY.toFixed(1) + ' Z';
+        var span = hi - lo;
+        var step = span > 40 ? 10 : span > 20 ? 5 : span > 10 ? 2 : 1;
+        var grid = [];
+        for (var v = Math.ceil(lo / step) * step; v <= hi; v += step) {
+          var g = Math.round(v * 100) / 100;
+          grid.push({
+            topPct: (Y(g) / H * 100).toFixed(2) + '%',
+            label: (g > 0 ? '+' : g < 0 ? MINUS : '') + Math.abs(g) + 'u',
+            zero: Math.abs(g) < 1e-9
+          });
+        }
+        // One tick per season. The file hard-codes 2016-2026 at an even fraction;
+        // ours cannot, because the X axis is match INDEX, not time — a season with
+        // 60 priced matches occupies more width than one with 12. Each tick is
+        // therefore placed at the index of that season's first priced row, which
+        // is where the line actually crosses into the year. A label is dropped
+        // when it would collide with the one before it.
+        var ticks = [], seenYear = {}, lastLeft = -99;
+        pts.forEach(function (q, i) {
+          var y = String(q.d).slice(0, 4);
+          if (!y || seenYear[y]) return;
+          seenYear[y] = 1;
+          var leftPct = X(i + 1) / W * 100;   // +1: series[0] is the opening zero
+          if (leftPct - lastLeft < 4.5) return;
+          lastLeft = leftPct;
+          ticks.push({ leftPct: leftPct.toFixed(1) + '%', label: y });
+        });
         body =
-          '<div style="display:flex;gap:12px;align-items:stretch;">' +
-            '<div style="width:46px;flex:none;display:flex;flex-direction:column;justify-content:space-between;' +
-              'font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:#4b5672;text-align:right;">' +
-              '<div>' + signed(hi, 1, 'u') + '</div><div>' + signed(lo, 1, 'u') + '</div></div>' +
-            '<div style="position:relative;flex:1;min-width:0;height:180px;">' +
+          '<div style="display:flex;gap:12px;">' +
+            '<div style="position:relative;width:46px;height:300px;flex:none;">' +
+              grid.map(function (q) {
+                return '<div style="position:absolute;left:0;top:' + q.topPct + ';' +
+                  'transform:translateY(-50%);font-family:\'IBM Plex Mono\',monospace;' +
+                  'font-size:10.5px;color:#4b5672;white-space:nowrap;">' + q.label + '</div>';
+              }).join('') +
+            '</div>' +
+            '<div style="position:relative;flex:1;height:300px;min-width:0;">' +
+              grid.map(function (q) {
+                return '<div style="position:absolute;left:0;right:0;top:' + q.topPct + ';' +
+                  'height:1px;background:rgba(255,255,255,0.05);"></div>';
+              }).join('') +
+              '<div style="position:absolute;left:0;right:0;top:' + (zeroY / H * 100).toFixed(2) + '%;' +
+                'height:1px;background:rgba(255,255,255,0.28);"></div>' +
               '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" ' +
                 'style="position:absolute;inset:0;width:100%;height:100%;display:block;">' +
-                '<path d="' + area + '" fill="' + fill + '"></path>' +
-                '<line x1="0" y1="' + zeroY.toFixed(1) + '" x2="' + W + '" y2="' + zeroY.toFixed(1) +
-                  '" stroke="rgba(255,255,255,0.3)" stroke-width="1" vector-effect="non-scaling-stroke"></line>' +
-                '<path d="' + line + '" fill="none" stroke="' + stroke + '" stroke-width="2" ' +
+                '<path d="' + area + '" fill="rgba(91,155,255,0.13)"></path>' +
+                '<path d="' + line + '" fill="none" stroke="#5b9bff" stroke-width="2" ' +
                   'stroke-linejoin="round" vector-effect="non-scaling-stroke"></path>' +
               '</svg>' +
             '</div>' +
           '</div>' +
-          '<div style="display:flex;gap:12px;margin-top:6px;">' +
+          '<div style="display:flex;gap:12px;">' +
             '<div style="width:46px;flex:none;"></div>' +
-            '<div style="flex:1;min-width:0;display:flex;justify-content:space-between;' +
-              'font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:#4b5672;">' +
-              '<div>' + esc(String(pts[0].d).slice(0, 4)) + '</div>' +
-              '<div>' + esc(String(pts[pts.length - 1].d).slice(0, 4)) + '</div></div>' +
+            '<div style="position:relative;flex:1;height:16px;min-width:0;">' +
+              ticks.map(function (t) {
+                return '<div style="position:absolute;left:' + t.leftPct + ';' +
+                  'transform:translateX(-50%);font-family:\'IBM Plex Mono\',monospace;' +
+                  'font-size:10.5px;color:#4b5672;">' + esc(t.label) + '</div>';
+              }).join('') +
+            '</div>' +
           '</div>' +
           '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;letter-spacing:0.1em;' +
-            'text-transform:uppercase;color:#3f4860;margin-top:8px;">' +
+            'text-transform:uppercase;color:#3f4860;">' +
             'Horizontal: season ' + MIDDOT + ' vertical: cumulative units ' + MIDDOT +
-            ' the bright rule is break even ' + MIDDOT + ' ' + pts.length + ' matches ' + MIDDOT +
-            ' finishing ' + signed(last, 2, 'u') + '</div>';
+            ' the bright rule is break even</div>';
       }
+      // Head block, per the file: title + "Flat 1u per match at closing odds · N
+      // matches" on the left, the signed total and its caption hard right.
       return '<div style="border:1px solid rgba(255,255,255,0.08);border-radius:12px;' +
-        'padding:18px 20px 16px;margin-top:16px;">' +
-        '<div style="display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;margin-bottom:14px;">' +
-          '<div style="font-size:17px;font-weight:800;letter-spacing:-0.015em;">' + esc(title) + '</div>' +
-          controls +
-        '</div>' + body + '</div>';
+        'padding:18px 20px 14px;margin-top:16px;display:flex;flex-direction:column;gap:16px;">' +
+        '<div style="display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;">' +
+          '<div style="display:flex;flex-direction:column;gap:5px;">' +
+            '<div style="font-size:17px;font-weight:800;letter-spacing:-0.015em;">' + esc(title) + '</div>' +
+            '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;letter-spacing:0.05em;' +
+              'color:#5b6880;">Flat 1u per match at closing odds ' + MIDDOT + ' ' +
+              pts.length + ' match' + (pts.length === 1 ? '' : 'es') + '</div>' +
+          '</div>' +
+          '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;">' +
+            '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:24px;font-weight:700;line-height:1;' +
+              'color:' + (last == null ? DASH_COLOUR : last >= 0 ? '#3dd68c' : '#e0616f') + ';">' +
+              (last == null ? DASH : signed(last, 1, 'u')) + '</div>' +
+            '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9px;letter-spacing:0.12em;' +
+              'text-transform:uppercase;color:#4b5672;">Profit at 1u flat</div>' +
+          '</div>' +
+        '</div>' +
+        controls + body + '</div>';
     }
     function segBtn(kind, attr, id, label, on) {
       return '<button type="button" data-pp2="' + kind + '" data-' + attr + '="' + esc(id) + '" ' +
