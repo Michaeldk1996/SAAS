@@ -87,6 +87,22 @@ check("14 min into the baseline skips", ak.should_sweep(14.0, None)[0] is False)
 check("16 min into the baseline sweeps", ak.should_sweep(16.0, None)[0] is True)
 check("6 min out with a start in 30 min sweeps", ak.should_sweep(6.0, 30.0)[0] is True)
 check("4 min out with a start in 30 min skips", ak.should_sweep(4.0, 30.0)[0] is False)
+
+# CONTROL for the grace. Run 35311030824 measured 4.9x min against a 5-min
+# floor and skipped, which turns the founder's 5-minute near-start cadence into
+# 10 minutes. A 5-minute pinger can only ever deliver just-under-5, so without
+# the grace these two checks fail — which is the point of having them.
+check("4.95 min against the 5-min near-start floor sweeps",
+      ak.should_sweep(4.95, 30.0)[0] is True)
+check("14.95 min against the 15-min baseline sweeps",
+      ak.should_sweep(14.95, None)[0] is True)
+check("the grace is smaller than the firing interval it forgives",
+      ak.CADENCE_GRACE_MIN < ak.NEAR_START_MIN)
+# ...and it must not turn the floor into a suggestion.
+check("4.0 min still skips at the near-start floor",
+      ak.should_sweep(4.0, 30.0)[0] is False)
+check("14.0 min still skips at the baseline floor",
+      ak.should_sweep(14.0, None)[0] is False)
 check("an unknown next start falls back to the baseline",
       ak.should_sweep(14.0, None)[0] is False and ak.should_sweep(16.0, None)[0] is True)
 

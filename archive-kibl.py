@@ -374,6 +374,17 @@ def _emit_output(name, value):
 BASELINE_MIN = 15.0     # founder ruling 2026-09-18 item 2: "Sweep 15 min baseline"
 NEAR_START_MIN = 5.0    # "...5 min from T-60 to start"
 NEAR_START_WINDOW_MIN = 60.0
+# MEASURED on run 35311030824: the pinger fired at 05:30:01Z, the previous
+# capture's started_at was 05:25:0xZ, and the gate read "5.0 min since the last
+# sweep, floor is 5 -> SKIP". The dispatch interval is exactly the floor, but
+# started_at is stamped inside the job — after checkout, setup-python, the
+# offline tests and the schema apply — so the measured gap is the interval MINUS
+# however much longer this run took to reach the gate than the last one. That
+# lands a few seconds under 5 and skips. Without a grace, the founder's 5-minute
+# near-start cadence silently becomes 10 minutes in the T-60 window, which is
+# the one window it was ruled for. 30s is under the smallest firing interval, so
+# it can never let two firings of one interval both sweep.
+CADENCE_GRACE_MIN = 0.5
 
 
 def should_sweep(minutes_since_last, minutes_to_next_start):
@@ -397,11 +408,12 @@ def should_sweep(minutes_since_last, minutes_to_next_start):
     near = (minutes_to_next_start is not None
             and 0.0 <= minutes_to_next_start <= NEAR_START_WINDOW_MIN)
     floor = NEAR_START_MIN if near else BASELINE_MIN
-    if minutes_since_last + 1e-9 >= floor:
+    if minutes_since_last + CADENCE_GRACE_MIN >= floor:
         return True, ('near-start' if near else 'baseline')
-    return False, (f'too soon: {minutes_since_last:.1f} min since the last '
+    return False, (f'too soon: {minutes_since_last:.2f} min since the last '
                    f'sweep, floor is {floor:.0f} '
-                   f'({"near-start" if near else "baseline"})')
+                   f'({"near-start" if near else "baseline"}, '
+                   f'{CADENCE_GRACE_MIN:.1f} min grace)')
 
 
 def cadence_inputs(url, key, now):
