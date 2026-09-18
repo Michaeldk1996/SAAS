@@ -1495,8 +1495,16 @@
       // `> 0`, not `>= 0`. A zero gap is filtered out above; this is the second
       // lock, so that if a zero ever reaches here it cannot paint as a strength.
       var up = ins.gap > 0;
-      var col = up ? '#3dd68c' : '#e0616f';
-      var bg = up ? 'rgba(61,214,140,0.14)' : 'rgba(224,97,111,0.14)';
+      // ★ Founder ruling, 2026-09-18 (Q3): "follow the file — positive #5b9bff on
+      //   rgba(62,123,250,0.15), negative #E24B4A, no icon border. It matches the
+      //   one-accent rule in the design instructions; the README loses here as it
+      //   does elsewhere."
+      // `Player Profile.dc.html` :1830-1832. The v7 README §6 asks for green
+      // #3dd68c / amber #e8a84e on 0.12 plus a 0.32 icon border; we previously
+      // shipped green/red on 0.14, matching neither. Note the positive icon's
+      // background is NOT a tint of its own #5b9bff — the file writes 62,123,250.
+      var col = up ? '#5b9bff' : '#E24B4A';
+      var bg = up ? 'rgba(62,123,250,0.15)' : 'rgba(226,75,74,0.14)';
       // Up-and-right for a positive gap, down-and-right for a negative one, so the
       // glyph states the same fact the number does rather than contradicting it.
       var path = up ? 'M4 13l4-4 3 3 5-6M13 6h3v3' : 'M4 7l4 4 3-3 5 6M13 14h3v-3';
@@ -1517,9 +1525,11 @@
         'border-radius:12px;padding:24px 24px 26px;display:flex;flex-direction:column;gap:16px;">' +
           '<div style="width:36px;height:36px;border-radius:13px;display:flex;align-items:center;' +
             'justify-content:center;background:' + bg + ';color:' + col + ';">' +
-            '<svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" ' +
-            'stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">' +
-            '<path d="' + path + '"/></svg></div>' +
+            // stroke on the PATH at 1.7, as the file writes it (:163), not on the
+            // svg at 1.6 — a hairline difference is still a difference.
+            '<svg width="16" height="16" viewBox="0 0 20 20" fill="none">' +
+            '<path d="' + path + '" stroke="currentColor" stroke-width="1.7" ' +
+            'stroke-linecap="round" stroke-linejoin="round"/></svg></div>' +
           '<div style="font-size:18.5px;font-weight:800;letter-spacing:-0.01em;line-height:1.25;color:#fff;">' +
             // One decimal, via rateText. rateText0 is documented above as the
             // formatter for exactly TWO export call sites (ribbonPct and the
