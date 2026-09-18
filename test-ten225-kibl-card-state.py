@@ -249,13 +249,17 @@ check('legacy 1+2 fixtures, if the feed ever sends them, still orient by '
 # the 25 priced fixtures came back with it NULL, side_labels_for() called them
 # all undecidable, and the run produced 0 card rows. It failed in the SAFE
 # direction — a dash, not a wrong price — but nothing connected the empty
-# coverage to the missing column, which is a round trip per occurrence.
-import inspect as _i2  # noqa: E402
-_obs_select = _i2.getsource(K.main).split("'kibl_line_observations'")[1].split('order=')[0]
+# coverage to the missing column.
+#
+# Asserted on the CONSTANT, never on getsource(main): the first version of this
+# check read the source text and matched the word inside the very comment that
+# explains why the column matters, so it passed with the column removed. A
+# mutation control is the only reason that was caught.
+_cols = set(K.OBS_COLUMNS.split(','))
 for _c in ('side_id', 'fixture_participant_id', 'price_decimal', 'inserted_on',
            'observed_at', 'is_opener'):
     check(f'the observations select list requests {_c}, which the rules read',
-          _c in _obs_select, _obs_select[:100])
+          _c in _cols, sorted(_cols))
 
 
 def krow(mkey, side, price):
