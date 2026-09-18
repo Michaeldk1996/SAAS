@@ -23,16 +23,24 @@ on:
     # lives in should_sweep() where it can be tested and counted, and the
     # schedule only has to fire often enough for it to be applicable.
     #
-    # ⚠️ Actions cron delivery on this repo has been MEASURED at 27% for a bare
-    # schedule. A 5-minute cron therefore does NOT mean a 5-minute cadence; the
-    # real inter-sweep gaps are reported by `report` with n, and the founder
-    # rules on whether they are good enough before anything renders.
+    # ⚠️ MEASURED 2026-09-18 05:05Z, and it is worse than 27%: this schedule has
+    # delivered ZERO firings in the 5h34m since the file landed on main at
+    # 23:31Z (~66 due). Repo-wide control over the same window: 7 schedule runs
+    # across 7 distinct workflows — so cron is not dead here, it is throttled to
+    # roughly one firing per workflow per 5 hours, and a `*/5` expression buys
+    # nothing. The schedule is KEPT as a free backstop, but the cadence the
+    # archive actually runs at comes from the Supabase pg_cron pinger installed
+    # by `ten232-kibl-sweep-cron.yml` (same mechanism as TEN-141, measured ~100%
+    # delivery), which dispatches this workflow with cadence_gate=true.
     - cron: '*/5 * * * *'
   workflow_dispatch:
     inputs:
       mode:
         description: 'sweep | backfill | report | cards | publish | audit | sides'
         default: 'sweep'
+      cadence_gate:
+        description: 'sweep: apply should_sweep() before pulling (the pinger sets this)'
+        default: 'false'
       horizon_days:
         description: 'sweep: how far forward, days'
         default: '3'
@@ -100,6 +108,7 @@ jobs:
         # serve stale bytecode and report a false pass.
         run: |
           python3 -B test-kibl-client.py
+          python3 -B test-ten232-report.py
           python3 -B test-ten225-kibl-card-state.py
           python3 -B test-ten225-orientation.py
           python3 -B test-ten225-ddl-audit.py
@@ -169,8 +178,12 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
         run: |
+          # The gate applies to every AUTOMATIC firing — the schedule, and the
+          # pg_cron pinger that dispatches with cadence_gate=true. A hand
+          # dispatch defaults to false and always pulls, because when a person
+          # asks for a sweep the answer "too soon" is not the one they want.
           python3 archive-kibl.py sweep \
-            ${{ github.event_name == 'schedule' && '--cadence-gate' || '' }} \
+            ${{ (github.event_name == 'schedule' || inputs.cadence_gate == 'true') && '--cadence-gate' || '' }} \
             --horizon-days "${{ github.event_name == 'schedule' && '3' || inputs.horizon_days }}"
 
       # One-time recovery of the ~30 days of finished fixtures that are still

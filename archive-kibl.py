@@ -98,6 +98,61 @@ def sb_request(method, path, url, key, body=None, headers=None, timeout=180):
         return None, (None, str(e))
 
 
+def sb_count(url, key, table, query=""):
+    """(rows, err, count) — an exact row count without pulling the rows.
+
+    sb_request() discards the response headers and PostgREST returns the count
+    in `Content-Range`, so this does its own request. The previous report asked
+    for count=exact through sb_request and could never have read the answer.
+    """
+    h = {"Authorization": f"Bearer {key}", "apikey": key,
+         "User-Agent": "BSP-Consult-Dashboard/1.0",
+         "Prefer": "count=exact", "Range": "0-0"}
+    req = urllib.request.Request(
+        f"{url}/rest/v1/{table}?select=*{query}", headers=h, method="GET")
+    try:
+        with urllib.request.urlopen(req, timeout=120) as r:
+            rows = json.loads(r.read().decode("utf-8") or "[]")
+            cr = r.headers.get("Content-Range") or ""
+    except urllib.error.HTTPError as e:
+        return None, (e.code, e.read()[:200].decode("utf-8", "replace")), None
+    except Exception as e:  # noqa: BLE001
+        return None, (None, str(e)), None
+    total = cr.rsplit("/", 1)[-1] if "/" in cr else ""
+    return rows, None, (int(total) if total.isdigit() else None)
+
+
+def is_backfill(sweep_id):
+    """A backfill window, or a live sweep? Both write a row to kibl_sweeps.
+
+    backfill() mints `bfYYYYMMDD-<run stamp>`; sweep() mints `%Y%m%dT%H%M%SZ`.
+    A 35-day backfill therefore puts 35 rows in front of the live sweeps, and a
+    count or a rows_new median taken off the mixed list describes the backfill.
+    """
+    return str(sweep_id or "").startswith("bf")
+
+
+def parse_ts(v):
+    """Postgres timestamptz -> NAIVE UTC, to match now_utc().
+
+    now_utc() strips tzinfo, so mixing it with an aware datetime raises rather
+    than reporting a wrong number — but it raises inside a report, which is the
+    same outage. Everything lands on one convention here.
+    """
+    try:
+        t = dt.datetime.fromisoformat(str(v).replace("Z", "+00:00"))
+    except (TypeError, ValueError):
+        return None
+    if t.tzinfo is not None:
+        t = t.astimezone(dt.timezone.utc).replace(tzinfo=None)
+    return t.replace(microsecond=0)
+
+
+def fmt(n):
+    """A number, or a dash. Missing is a dash and never a zero."""
+    return "—" if n is None else f"{n:,}"
+
+
 def ensure_bucket(url, key):
     got, _ = sb_request("GET", f"/storage/v1/bucket/{BUCKET}", url, key)
     if got and isinstance(got, dict) and got.get("name"):
@@ -641,30 +696,89 @@ def report(args):
         url, key)
     sweeps = sweeps if isinstance(sweeps, list) else []
 
-    cnt, _ = sb_request("GET", f"/rest/v1/{TABLE_OBS}?select=row_key&limit=1", url, key,
-                        headers={"Prefer": "count=exact", "Range": "0-0"})
+    # count=exact on a 1-row page: the row total without pulling the rows. This
+    # was already being fetched and then thrown away — the archive's headline
+    # number was computed and never printed.
+    _, _, n_obs = sb_count(url, key, TABLE_OBS)
+    _, _, n_fx = sb_count(url, key, TABLE_FIXTURES)
 
+    # A BACKFILL WINDOW IS NOT A SWEEP. Both record a row in kibl_sweeps, and a
+    # 35-day backfill therefore puts 35 rows in front of the handful of real
+    # sweeps. Reading "sweeps recorded: 45" or a rows_new median off that mixed
+    # list describes the backfill, not the live capture, and the cadence
+    # question is about the live capture only.
+    live = [s for s in sweeps if not is_backfill(s.get("sweep_id"))]
+    back = [s for s in sweeps if is_backfill(s.get("sweep_id"))]
+
+    print(f"rows archived: {fmt(n_obs)} observations, {fmt(n_fx)} fixtures")
     print(f"kibl-raw: {len(day_objs)} objects over the last {args.days} day(s), "
           f"{day_bytes / 1e6:.2f} MB gz")
-    if day_objs:
-        per_day = day_bytes / max(1, args.days)
-        print(f"projected: {per_day * 365 / 1e9:.3f} GB/year at the observed rate "
-              f"(n={len(day_objs)} objects)")
-    ok = [s for s in sweeps if s.get("ok")]
-    print(f"sweeps recorded: {len(sweeps)}, ok: {len(ok)}")
-    if sweeps:
-        last = sweeps[0]
-        print(f"last sweep {last.get('sweep_id')}: fixtures {last.get('fixtures_seen')}, "
+    print(f"sweeps recorded: {len(live)} live (ok {len([s for s in live if s.get('ok')])}), "
+          f"{len(back)} backfill windows (ok {len([s for s in back if s.get('ok')])})")
+
+    # ---------------------------------------------------------------- cadence
+    # Job reliability is the gap between consecutive CAPTURES, not the run list:
+    # a run that fired, skipped on the cadence gate and exited green is a green
+    # run and not a price. Gaps come from started_at on the live sweeps.
+    gaps = []
+    stamps = sorted([s.get("started_at") for s in live if s.get("started_at")], reverse=True)
+    for a, b in zip(stamps, stamps[1:]):
+        ta, tb = parse_ts(a), parse_ts(b)
+        if ta is None or tb is None:
+            continue
+        gaps.append((ta - tb).total_seconds() / 60.0)
+    med_gap = None
+    if gaps:
+        g = sorted(gaps)
+        med_gap = g[len(g) // 2]
+        print(f"inter-sweep gap, min: min {min(g):.0f}, median {med_gap:.0f}, "
+              f"max {max(g):.0f} (n={len(g)} gaps)")
+    else:
+        print("inter-sweep gap, min: — (n=0 gaps; fewer than two live sweeps)")
+
+    newest = parse_ts(stamps[0]) if stamps else None
+    if newest is None:
+        print("newest live sweep: — (no live sweep recorded)")
+    else:
+        age = (now - newest).total_seconds() / 60.0
+        print(f"newest live sweep {stamps[0]} ({age:.0f} min ago)")
+        # The 24h gap alert from the standing rules, at an hour rather than a
+        # day: on a 15-minute floor, an hour of silence is already four missed
+        # captures that cannot be re-fetched.
+        if age > 60:
+            print(f"::warning::no Kibl capture in {age:.0f} min — the archive is stalled")
+
+    # ------------------------------------------------------------------ size
+    # Projected from the mean SWEEP object and a cadence, not from bytes-per-
+    # elapsed-day: the observed days are a partial, hand-dispatched sample, and
+    # dividing them by 365 understated the year by roughly the ratio of the
+    # sweeps that ran to the sweeps a real cadence would run.
+    sweep_objs = [s for n, s in day_objs if "/bf" not in n and s > 0]
+    if sweep_objs:
+        mean_obj = sum(sweep_objs) / len(sweep_objs)
+        print(f"mean sweep object: {mean_obj / 1e3:.0f} KB gz (n={len(sweep_objs)})")
+        for label, per_day in (("15-min floor", 96),
+                               ("observed", (1440 / med_gap) if med_gap else None)):
+            if per_day:
+                print(f"projected at the {label} cadence "
+                      f"({per_day:.0f} sweeps/day): "
+                      f"{mean_obj * per_day * 365 / 1e9:.2f} GB/year")
+            else:
+                print(f"projected at the {label} cadence: — (no gap measured yet)")
+    else:
+        print("mean sweep object: — (no sweep objects in the window)")
+
+    if live:
+        last = live[0]
+        print(f"last live sweep {last.get('sweep_id')}: fixtures {last.get('fixtures_seen')}, "
               f"priced {last.get('fixtures_priced')}, rows {last.get('rows_seen')}, "
               f"new {last.get('rows_new')}, calls {last.get('api_calls')}")
-        newest = last.get("started_at")
         # The change rate across consecutive sweeps is what justifies a cadence.
         # Reported, not decided: the founder rules on the cadence.
-        rates = [s.get("rows_new") for s in sweeps[:24] if s.get("rows_new") is not None]
+        rates = [s.get("rows_new") for s in live[:24] if s.get("rows_new") is not None]
         if rates:
-            print(f"rows_new over the last {len(rates)} sweeps: "
+            print(f"rows_new over the last {len(rates)} LIVE sweeps: "
                   f"min {min(rates)}, median {sorted(rates)[len(rates) // 2]}, max {max(rates)}")
-        print(f"newest sweep started {newest}")
     if not complete:
         print("::warning::bucket listing was incomplete; sizes above are a floor")
     return 0

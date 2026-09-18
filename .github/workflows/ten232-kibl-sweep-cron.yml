@@ -1,0 +1,59 @@
+name: TEN-232 kibl sweep pinger
+
+# TEN-232 Part 1 — the delivery mechanism for the Kibl archive sweep.
+#
+# WHY THIS EXISTS. `ten232-kibl-archive.yml` carries `- cron: '*/5 * * * *'`.
+# MEASURED 2026-09-18 05:05Z: that schedule had delivered ZERO firings in the
+# 5h34m since the file landed on main (~66 due). The control says cron is not
+# dead on this repo — 7 schedule runs fired across 7 OTHER workflows in the same
+# window — it is throttled to roughly one firing per workflow per five hours.
+# The archive's last real price capture was 02:00:53Z, three hours stale, and
+# Kibl has no history endpoint: a sweep that does not run is a price nobody has.
+#
+# The fix is the mechanism TEN-141 already proved on this repo at ~100%
+# delivery: a Supabase pg_cron job that dispatches the workflow from always-on
+# infrastructure. The sweep still decides for itself whether to pull — the
+# dispatch carries cadence_gate=true, so should_sweep() applies the founder's
+# 15-minute baseline / 5-minute-from-T-60 ruling. The pinger sets the ceiling on
+# how often that rule can be applied; it never decides the cadence.
+#
+# DO-NOT-TOUCH compliance: this creates its OWN pg_cron job and its OWN vault
+# secret. It never unschedules, reads or deletes `ten141-pipeline-ping` or the
+# `gh_workflow_pat` secret the pipeline dispatch depends on, so installing or
+# uninstalling this cannot take the pipeline's freshness ping down with it.
+# It creates no table, no policy, and writes nothing to the site.
+#
+# Fully reversible: action=uninstall removes the job and the stored PAT.
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'install | status | uninstall'
+        required: true
+        default: 'status'
+        type: choice
+        options: [install, status, uninstall]
+
+concurrency:
+  group: ten232-kibl-sweep-cron
+  cancel-in-progress: false
+
+jobs:
+  manage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Manage the pg_cron sweep pinger
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          WORKFLOW_PAT: ${{ secrets.WORKFLOW_PAT }}
+          ACTION: ${{ github.event.inputs.action }}
+        run: |
+          set -o pipefail
+          python3 -B ten232-kibl-sweep-cron.py | tee -a "$GITHUB_STEP_SUMMARY"
