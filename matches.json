@@ -19223,11 +19223,17 @@
     "venue": null,
     "courtSpeed": null,
     "weather": null,
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 2",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 3,
+        "p2": 6
+      }
+    ],
+    "liveGameScore": "0 - 0",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1098_s-kwon.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/18341_d-suresh.jpg",
     "oddsMovement": {
@@ -19296,7 +19302,10 @@
       "edgeVsPinnacleP1": 0.0427,
       "edgeVsPinnacleP2": -0.0427,
       "ts": "2026-09-18T01:12:54.370Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12163911",
