@@ -183,19 +183,25 @@ jobs:
       # accumulated cache exactly as before.
       #
       # The DRIFT half is fixed by the commit-back step at the end of this workflow
-      # (founder ruling 2026-09-18 Q2). That moved the durable copy to a gzipped
-      # historical-match-stats.json.gz and gitignored the plain path, so the key now
-      # hashes the .gz. Hashing the plain path after that move would have silently
-      # reintroduced the original bug in its worst form: hashFiles() on an untracked
-      # path returns a constant, the restore-key would match forever, and no commit
-      # could ever dislodge the cache again.
+      # (founder ruling 2026-09-18 Q2). That moved the durable copy onto its own
+      # tracked path and gitignored the working path, so the key hashes the FLOOR.
+      # Hashing the working path after that move would have silently reintroduced the
+      # original bug in its worst form: hashFiles() on an untracked path returns a
+      # constant, the restore-key would match forever, and no commit could ever
+      # dislodge the cache again.
+      #
+      # The floor is plain minified JSON (founder ruling 2026-09-18 Q1): flat
+      # 5.3 MB/yr of git history against gzip's 8.1–88.9, because a gzip stream
+      # cannot be delta-compressed past its first changed byte. hashFiles() hashes
+      # file CONTENT, so the format change is invisible to this key's behaviour —
+      # only the filename moved.
       - name: Restore historical match stats cache
         uses: actions/cache@v4
         with:
           path: historical-match-stats.json
-          key: bsp-hms-${{ hashFiles('historical-match-stats.json.gz') }}-${{ steps.cacheday.outputs.day }}
+          key: bsp-hms-${{ hashFiles('historical-match-stats.floor.json') }}-${{ steps.cacheday.outputs.day }}
           restore-keys: |
-            bsp-hms-${{ hashFiles('historical-match-stats.json.gz') }}-
+            bsp-hms-${{ hashFiles('historical-match-stats.floor.json') }}-
 
       # UNIONs the committed .gz floor with whatever the cache restored, keeping the
       # deeper box score per eventKey. Must run AFTER the restore above and BEFORE
@@ -679,11 +685,12 @@ jobs:
           # a REGRESSION. Assert against the committed .gz floor: that number can only
           # move on a deliberate commit, so legitimate growth can never trip this, and
           # a run that published fewer box scores than the repo already holds goes red
-          # instead of quietly shipping a thinner match sheet.
+          # instead of quietly shipping a thinner match sheet. Asserts against the
+          # PLAIN floor since the Q1 ruling; the comparison is unchanged.
           node -e '
-            const fs = require("fs"), zlib = require("zlib");
+            const fs = require("fs");
             const site = JSON.parse(fs.readFileSync("_site/historical-match-stats.json","utf8"));
-            const floor = JSON.parse(zlib.gunzipSync(fs.readFileSync("historical-match-stats.json.gz")).toString("utf8"));
+            const floor = JSON.parse(fs.readFileSync("historical-match-stats.floor.json","utf8"));
             const sheets = o => Object.keys(o).filter(k => o[k] && o[k].matchStats).length;
             const [sn, fn] = [Object.keys(site).length, Object.keys(floor).length];
             const [ss, fsh] = [sheets(site), sheets(floor)];
@@ -973,23 +980,25 @@ jobs:
       #
       # Unlike the profile floor this needs NO day-guard. The profile caches rebuild
       # seed profiles with a fresh builtAt every run, so their content differs on all
-      # ~144 runs a day; this store has no such stamp and is written by JSON.stringify
-      # over numeric-like keys (V8 orders those ascending, deterministically), so a run
-      # that cached no new match reproduces it byte-for-byte. gzip at level 9 with no
-      # mtime header then produces an identical blob and `git status` finds nothing.
-      # The content IS the guard — locked by the byte-identity check in
-      # tools/test-match-stats-store.js, which has a mutating control proving a real
-      # change still produces different bytes.
+      # ~144 runs a day; this store has no such stamp and freeze() re-serialises it
+      # with JSON.stringify over numeric-like keys (V8 orders those ascending,
+      # deterministically), so a run that cached no new match reproduces the floor
+      # byte-for-byte and `git status` finds nothing. The content IS the guard —
+      # locked by the byte-identity check in tools/test-match-stats-store.js, which
+      # has a mutating control proving a real change still produces different bytes.
+      # Plain JSON (Q1 ruling) shortens that argument rather than weakening it: there
+      # is no compressor state or header left to reason about, only the bytes
+      # JSON.stringify emitted.
       - name: Refresh the committed match-stat floor
         run: |
           node tools/match-stats-store.js freeze || true
-          if [ -z "$(git status --porcelain -- historical-match-stats.json.gz)" ]; then
+          if [ -z "$(git status --porcelain -- historical-match-stats.floor.json)" ]; then
             echo "Committed match-stat floor unchanged this run — nothing to commit."
             exit 0
           fi
           git config user.name "bsp-profile-cache-bot"
           git config user.email "bsp-profile-cache-bot@users.noreply.github.com"
-          git add historical-match-stats.json.gz
+          git add historical-match-stats.floor.json
           git commit -m "chore(stats): refresh committed match-stat floor [skip ci]"
           for attempt in 1 2 3; do
             if git push origin HEAD:main; then echo "Pushed on attempt $attempt."; exit 0; fi

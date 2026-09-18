@@ -12,10 +12,9 @@ const assert = require('assert');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
-const zlib = require('zlib');
 
 const store = require('./match-stats-store.js');
-const { depth, sideDepths, notShallower, strictlyDeeper, census, mergeStores, hydrate, freeze, PLAIN, GZ } = store;
+const { depth, sideDepths, notShallower, strictlyDeeper, census, mergeStores, hydrate, freeze, PLAIN, FLOOR } = store;
 
 let checks = 0;
 function check(label, fn) {
@@ -46,11 +45,17 @@ const FULL = {
 const ONE_SIDED = { p1: FULL.p1, p2: {} };
 const SHALLOW = { p1: { 'Service:Aces': 4, 'Points:Total Points Won': 55.1 }, p2: { 'Service:Aces': 2 } };
 
+// How a PLAIN floor actually corrupts, now that it cannot fail to gunzip: a writer
+// killed mid-write, or a merge resolution left half a file. Deliberately valid-looking
+// JSON right up to the cut, so this tests JSON.parse failing rather than a fixture
+// that is obviously not the artifact at all.
+const TRUNCATED = '{"12153350":{"p1Key":1,"p2Key":2,"matchStats":{"p1":{"Service:Aces":4';
+
 const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'hms-store-'));
 const writePlain = (root, obj) => fs.writeFileSync(path.join(root, PLAIN), JSON.stringify(obj));
-const writeGz = (root, obj) => fs.writeFileSync(path.join(root, GZ), zlib.gzipSync(Buffer.from(JSON.stringify(obj)), { level: 9 }));
+const writeFloor = (root, obj) => fs.writeFileSync(path.join(root, FLOOR), JSON.stringify(obj));
 const readPlain = (root) => JSON.parse(fs.readFileSync(path.join(root, PLAIN), 'utf8'));
-const readGz = (root) => JSON.parse(zlib.gunzipSync(fs.readFileSync(path.join(root, GZ))).toString('utf8'));
+const readFloor = (root) => JSON.parse(fs.readFileSync(path.join(root, FLOOR), 'utf8'));
 
 console.log('match-stats-store: depth() is the merge currency');
 
@@ -99,16 +104,16 @@ check('merge upgrades a recorded provider-miss (matchStats:null)', () => {
 
 console.log('match-stats-store: hydrate()');
 
-check('hydrate writes the plain file from the .gz when nothing was restored', () => {
+check('hydrate writes the working file from the floor when nothing was restored', () => {
   const root = tmp();
-  writeGz(root, { a: { matchStats: FULL } });
+  writeFloor(root, { a: { matchStats: FULL } });
   hydrate(root);
   assert.deepStrictEqual(Object.keys(readPlain(root)), ['a']);
 });
 
 check('hydrate UNIONs a warm cache with the committed floor', () => {
   const root = tmp();
-  writeGz(root, { floorOnly: { matchStats: FULL }, both: { matchStats: FULL } });
+  writeFloor(root, { floorOnly: { matchStats: FULL }, both: { matchStats: FULL } });
   writePlain(root, { warmOnly: { matchStats: SHALLOW }, both: { matchStats: SHALLOW } });
   hydrate(root);
   const out = readPlain(root);
@@ -117,9 +122,9 @@ check('hydrate UNIONs a warm cache with the committed floor', () => {
   assert.strictEqual(depth(out.both.matchStats), depth(FULL));
 });
 
-check('hydrate REPORTS a corrupt .gz rather than proceeding (negative control)', () => {
+check('hydrate REPORTS a corrupt floor rather than proceeding (negative control)', () => {
   const root = tmp();
-  fs.writeFileSync(path.join(root, GZ), Buffer.from('not gzip'));
+  fs.writeFileSync(path.join(root, FLOOR), TRUNCATED);
   writePlain(root, { warm: { matchStats: FULL } });
   // Asserting the RETURN VALUE, not just the file. The first version of this check
   // only looked at the plain file, and a warm cache survives a corrupt floor whether
@@ -128,40 +133,44 @@ check('hydrate REPORTS a corrupt .gz rather than proceeding (negative control)',
   assert.strictEqual(hydrate(root), 0, 'hydrate did not report the corrupt floor');
   assert.deepStrictEqual(Object.keys(readPlain(root)), ['warm'], 'a corrupt floor destroyed the warm cache');
   // control: a readable floor must return 1 through the identical call
-  writeGz(root, { floor: { matchStats: FULL } });
+  writeFloor(root, { floor: { matchStats: FULL } });
   assert.strictEqual(hydrate(root), 1);
 });
 
-check('hydrate does NOT invent a plain store from a corrupt .gz', () => {
+check('hydrate does NOT invent a store from a corrupt floor', () => {
   const root = tmp();
-  fs.writeFileSync(path.join(root, GZ), Buffer.from('not gzip'));
+  fs.writeFileSync(path.join(root, FLOOR), TRUNCATED);
   assert.strictEqual(hydrate(root), 0);
   assert.ok(!fs.existsSync(path.join(root, PLAIN)), 'hydrate created a store out of an unreadable floor');
 });
 
 console.log('match-stats-store: freeze()');
 
-check('freeze writes the .gz from the live store', () => {
+check('freeze writes the committed floor from the live store', () => {
   const root = tmp();
   writePlain(root, { a: { matchStats: FULL } });
   assert.strictEqual(freeze(root, { bootstrap: true }), 1);
-  assert.deepStrictEqual(Object.keys(readGz(root)), ['a']);
+  assert.deepStrictEqual(Object.keys(readFloor(root)), ['a']);
 });
 
+// Plain JSON removes the compressor from this argument but not the argument: what
+// makes an idle run a no-commit is that JSON.stringify over the same object emits the
+// same bytes, and V8's ascending order for numeric-like keys is what makes the object
+// the same. The mutating control below is what stops this passing vacuously.
 check('freeze is byte-identical for identical content (this IS the day-guard)', () => {
   const root = tmp();
   writePlain(root, { a: { matchStats: FULL }, b: { matchStats: SHALLOW } });
   freeze(root, { bootstrap: true });
-  const first = fs.readFileSync(path.join(root, GZ));
+  const first = fs.readFileSync(path.join(root, FLOOR));
   // Re-freeze IN PLACE — no unlink. The real run always has a floor present, and
   // deleting it first would exercise the bootstrap path instead of the steady state
   // this check exists to describe.
   assert.strictEqual(freeze(root), 1);
-  assert.ok(first.equals(fs.readFileSync(path.join(root, GZ))), 'identical content produced different bytes — git would commit every run');
+  assert.ok(first.equals(fs.readFileSync(path.join(root, FLOOR))), 'identical content produced different bytes — git would commit every run');
   // control: a real change must produce different bytes, or the check above is vacuous
   writePlain(root, { a: { matchStats: FULL }, b: { matchStats: SHALLOW }, c: { matchStats: FULL } });
   assert.strictEqual(freeze(root), 1);
-  assert.ok(!first.equals(fs.readFileSync(path.join(root, GZ))), 'a genuine change produced identical bytes');
+  assert.ok(!first.equals(fs.readFileSync(path.join(root, FLOOR))), 'a genuine change produced identical bytes');
 });
 
 // Captures what freeze() actually said. Needed because the containment guard
@@ -179,14 +188,14 @@ function freezeSaying(root, opts) {
 
 check('freeze REFUSES a store with fewer entries, naming the SHRINK (guard + control)', () => {
   const root = tmp();
-  writeGz(root, { a: { matchStats: FULL }, b: { matchStats: FULL } });
-  const floor = fs.readFileSync(path.join(root, GZ));
+  writeFloor(root, { a: { matchStats: FULL }, b: { matchStats: FULL } });
+  const floor = fs.readFileSync(path.join(root, FLOOR));
   writePlain(root, { a: { matchStats: FULL } });
   const { rc, out } = freezeSaying(root);
   assert.strictEqual(rc, 0, 'the shrink guard did not fire');
   assert.match(out, /FEWER entries \(1\).*floor \(2\)/, 'refused, but not by the shrink guard — its message is gone');
   assert.match(out, /::error title=/, 'a refusal was logged without an annotation — invisible in CI');
-  assert.ok(floor.equals(fs.readFileSync(path.join(root, GZ))), 'the floor was overwritten anyway');
+  assert.ok(floor.equals(fs.readFileSync(path.join(root, FLOOR))), 'the floor was overwritten anyway');
   // control: the SAME call must succeed once the store is whole again
   writePlain(root, { a: { matchStats: FULL }, b: { matchStats: FULL }, c: { matchStats: FULL } });
   assert.strictEqual(freeze(root), 1, 'the guard fires on a legitimate store too');
@@ -194,39 +203,39 @@ check('freeze REFUSES a store with fewer entries, naming the SHRINK (guard + con
 
 check('freeze REFUSES an equal-sized but SHALLOWER store (depth guard + control)', () => {
   const root = tmp();
-  writeGz(root, { a: { matchStats: FULL } });
-  const floor = fs.readFileSync(path.join(root, GZ));
+  writeFloor(root, { a: { matchStats: FULL } });
+  const floor = fs.readFileSync(path.join(root, FLOOR));
   writePlain(root, { a: { matchStats: SHALLOW } });
   assert.strictEqual(freeze(root), 0, 'the depth guard did not fire — coverage could go backwards');
-  assert.ok(floor.equals(fs.readFileSync(path.join(root, GZ))));
+  assert.ok(floor.equals(fs.readFileSync(path.join(root, FLOOR))));
   // control: an equal-sized DEEPER store must be accepted
   writePlain(root, { a: { matchStats: { ...FULL, p2: { ...FULL.p2, 'Points:Net points won': 12 } } } });
   assert.strictEqual(freeze(root), 1);
 });
 
-check('freeze REFUSES to mint a floor when the .gz is absent or corrupt', () => {
+check('freeze REFUSES to mint a floor when the floor is absent or corrupt', () => {
   const root = tmp();
   writePlain(root, { onlyToday: { matchStats: FULL } });
   assert.strictEqual(freeze(root), 0, 'freeze minted a new floor over a missing one');
-  assert.ok(!fs.existsSync(path.join(root, GZ)));
+  assert.ok(!fs.existsSync(path.join(root, FLOOR)));
   const root2 = tmp();
-  fs.writeFileSync(path.join(root2, GZ), Buffer.from('not gzip'));
+  fs.writeFileSync(path.join(root2, FLOOR), TRUNCATED);
   writePlain(root2, { onlyToday: { matchStats: FULL } });
   assert.strictEqual(freeze(root2), 0, 'freeze overwrote a corrupt floor with a partial store');
   // control: --bootstrap is the only way through, and it must work
   assert.strictEqual(freeze(root, { bootstrap: true }), 1);
-  assert.deepStrictEqual(Object.keys(readGz(root)), ['onlyToday']);
+  assert.deepStrictEqual(Object.keys(readFloor(root)), ['onlyToday']);
 });
 
 check('freeze REFUSES a same-sized store that DROPPED a key (containment + control)', () => {
   const root = tmp();
   // b is a recorded provider-miss: a missing key and a null sheet both score -1,
   // so only a containment check can tell "dropped b" from "b unchanged".
-  writeGz(root, { a: { matchStats: FULL }, b: { matchStats: null } });
-  const floor = fs.readFileSync(path.join(root, GZ));
+  writeFloor(root, { a: { matchStats: FULL }, b: { matchStats: null } });
+  const floor = fs.readFileSync(path.join(root, FLOOR));
   writePlain(root, { a: { matchStats: FULL }, c: { matchStats: FULL } });
   assert.strictEqual(freeze(root), 0, 'the containment guard did not fire — an eventKey was lost');
-  assert.ok(floor.equals(fs.readFileSync(path.join(root, GZ))));
+  assert.ok(floor.equals(fs.readFileSync(path.join(root, FLOOR))));
   // control: keeping b and adding c must be accepted
   writePlain(root, { a: { matchStats: FULL }, b: { matchStats: null }, c: { matchStats: FULL } });
   assert.strictEqual(freeze(root), 1);
@@ -273,11 +282,19 @@ check('census() reports real coverage, not a constant (control)', () => {
 // This is the only thing standing between a corrupt .gz and a deploy that publishes
 // a blank match sheet.
 check('the REPO\'s committed floor is readable, non-degenerate and well-formed', () => {
-  const repoGz = path.join(__dirname, '..', GZ);
-  assert.ok(fs.existsSync(repoGz), `${GZ} is not committed`);
+  const repoFloor = path.join(__dirname, '..', FLOOR);
+  assert.ok(fs.existsSync(repoFloor), `${FLOOR} is not committed`);
+  const bytes = fs.readFileSync(repoFloor, 'utf8');
   let parsed;
-  assert.doesNotThrow(() => { parsed = JSON.parse(zlib.gunzipSync(fs.readFileSync(repoGz)).toString('utf8')); },
-    `${GZ} is corrupt — CI would hydrate nothing and publish a blank match sheet`);
+  assert.doesNotThrow(() => { parsed = JSON.parse(bytes); },
+    `${FLOOR} is corrupt — CI would hydrate nothing and publish a blank match sheet`);
+  // MINIFIED, and asserted rather than assumed. A pretty-printed floor parses and
+  // hydrates identically, so nothing downstream would complain — it would just
+  // quietly cost ~4x the bytes on every one of the ~340 refresh commits a year,
+  // which is the entire point of the founder's plain-JSON ruling. The check is a
+  // newline count, not a byte total, so legitimate growth never trips it.
+  assert.strictEqual(bytes.indexOf('\n'), -1,
+    `${FLOOR} is pretty-printed — the committed floor must be minified`);
   const keys = Object.keys(parsed);
   assert.ok(keys.length > 0, 'the committed floor is empty');
   let sheets = 0;
@@ -297,10 +314,10 @@ check('the REPO\'s committed floor is readable, non-degenerate and well-formed',
 check('hydrate -> freeze round-trips the store unchanged', () => {
   const root = tmp();
   const original = { a: { p1Key: 1, p2Key: 2, matchStats: FULL }, b: { matchStats: null } };
-  writeGz(root, original);
+  writeFloor(root, original);
   hydrate(root);
   freeze(root);
-  assert.deepStrictEqual(readGz(root), original);
+  assert.deepStrictEqual(readFloor(root), original);
 });
 
 console.log(`\nmatch-stats-store: ${checks} checks passed.`);

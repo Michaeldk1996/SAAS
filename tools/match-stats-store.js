@@ -2,9 +2,23 @@
 'use strict';
 /**
  * TEN-206 — durable home for historical-match-stats.json.
- * Founder ruling 2026-09-18 (Q2): "commit it back gzipped daily, same pattern as
+ * Founder ruling 2026-09-18 (Q2): "commit it back daily, same pattern as
  * player-profiles-cache.json.gz. A floor that drifts until an eviction halves
  * coverage isn't a floor."
+ *
+ * Founder ruling 2026-09-18 (Q1, follow-up): the committed floor is PLAIN MINIFIED
+ * JSON, not gzip — "flat 5.3 MB/yr against 8.1–88.9, and git can delta it. 3.46 MB
+ * uncompressed is fine. Predictable beats smaller-on-a-good-day." A gzip stream
+ * cannot be delta-compressed past its first changed byte, so each daily refresh
+ * commits a whole fresh blob and the yearly cost swings on whether that day's edits
+ * happened to be a pure append. Plain JSON deltas either way.
+ *
+ * WHY THE FLOOR IS ITS OWN PATH and not simply the tracked
+ * historical-match-stats.json. The Actions cache restores INTO that path before the
+ * pipeline reads it (that clobber is the original bug this store exists to fix), so
+ * a floor living at the same path would be overwritten before hydrate() could union
+ * the two. Two paths is what makes "restored cache UNION committed floor" expressible
+ * at all. Plain-vs-gzip was the founder's call; one-path-vs-two is forced.
  *
  * WHY THIS EXISTS
  * ---------------
@@ -17,34 +31,32 @@
  * fixed the shadowing half; this fixes the drift half.
  *
  * TWO SUBCOMMANDS, mirroring tools/profile-cache-store.js
- *   hydrate — before the pipeline runs. UNIONs the committed .gz with whatever the
+ *   hydrate — before the pipeline runs. UNIONs the committed floor with whatever the
  *             Actions cache restored, entry by entry, keeping the DEEPER box score
  *             for each eventKey. Union, not replace: both copies are append-only
  *             views of the same population and taking either one whole throws away
  *             real requests.
- *   freeze  — after the deploy has published. Minifies + gzips to the committed .gz.
+ *   freeze  — after the deploy has published. Minifies to the committed floor.
  *
  * NO DAY-GUARD, ON PURPOSE. profile-cache-store.js needs one because seed profiles
  * are rebuilt with a fresh builtAt every run, so its content differs on all ~144
  * runs a day and "commit if changed" would commit ~144 times. This store has no
- * such stamp: bsp-pipeline.js writes it with JSON.stringify over numeric-like keys
- * (V8 orders those ascending, deterministically), so a run that caches no new match
- * reproduces the file byte-for-byte. With gzip written at level 9 and no mtime
- * header, an idle run therefore produces an IDENTICAL blob and git finds nothing to
- * commit. The content is the guard. Measured cost of the resulting ~340 commits a
- * year: 8.1 MB/yr when days are pure-append, 88.9 MB/yr in the pessimistic case
- * where each day also scatters edits through the file (a gzip stream cannot be
- * delta-compressed past its first changed byte). Both are inside the founder's
- * ~150 MB/yr line; see the TEN-206 report for the plain-minified alternative,
- * which measures 5.3 MB/yr in BOTH cases.
+ * such stamp: it is written by JSON.stringify over numeric-like keys (V8 orders
+ * those ascending, deterministically), so a run that caches no new match reproduces
+ * the floor byte-for-byte and git finds nothing to commit. The content is the guard,
+ * and plain JSON makes that argument shorter than gzip did — there is no compressor
+ * state or header left to reason about, only the bytes JSON.stringify emitted.
+ * Measured cost of the resulting ~340 commits a year: 5.3 MB/yr, and unlike gzip
+ * that figure does NOT depend on whether the day's edits were a pure append.
  */
 
 const fs = require('fs');
-const zlib = require('zlib');
 const path = require('path');
 
 const PLAIN = 'historical-match-stats.json';
-const GZ = 'historical-match-stats.json.gz';
+// The committed floor. Plain minified JSON per the founder's Q1 ruling, and on its
+// own path because the Actions cache owns PLAIN — see the header note.
+const FLOOR = 'historical-match-stats.floor.json';
 
 /**
  * How much box score an entry actually carries — the merge currency.
@@ -108,10 +120,6 @@ function readJson(file) {
   try { return JSON.parse(fs.readFileSync(file, 'utf8')); } catch (err) { return null; }
 }
 
-function readGzJson(file) {
-  try { return JSON.parse(zlib.gunzipSync(fs.readFileSync(file)).toString('utf8')); } catch (err) { return null; }
-}
-
 // Coverage census, so the store's QUALITY shows in the run log and not just its
 // entry count. A 2,002-entry store where 354 are recorded provider-misses is not
 // the same artifact as a 2,002-entry store where 1,648 are — and only one of those
@@ -156,27 +164,28 @@ function mergeStores(a, b) {
 
 function hydrate(root) {
   const plainPath = path.join(root, PLAIN);
-  const gzPath = path.join(root, GZ);
-  const fromGz = readGzJson(gzPath);
-  if (!fromGz) {
-    // Loud, because the plain file is gitignored: with no readable .gz and no warm
-    // Actions cache there is no box-score store at all, and the Player Profile match
-    // sheet would publish blank rather than fail. Not fatal here (the deploy must not
-    // go red on it) — the guard that must catch this is npm test, before the commit.
-    console.log(`::error title=match-stats floor unreadable::${GZ} is absent or corrupt — the match-stat store has no committed floor this run.`);
+  const floorPath = path.join(root, FLOOR);
+  const fromFloor = readJson(floorPath);
+  if (!fromFloor) {
+    // Loud, because the working path is gitignored: with no readable floor and no
+    // warm Actions cache there is no box-score store at all, and the Player Profile
+    // match sheet would publish blank rather than fail. Not fatal here (the deploy
+    // must not go red on it) — the guard that must catch this is npm test, before
+    // the commit.
+    console.log(`::error title=match-stats floor unreadable::${FLOOR} is absent or corrupt — the match-stat store has no committed floor this run.`);
     return 0;
   }
   const fromPlain = readJson(plainPath);
   if (!fromPlain) {
-    fs.writeFileSync(plainPath, JSON.stringify(fromGz));
-    console.log(`hydrate: ${PLAIN} <- ${GZ} (${census(fromGz)}); nothing was restored.`);
+    fs.writeFileSync(plainPath, JSON.stringify(fromFloor));
+    console.log(`hydrate: ${PLAIN} <- ${FLOOR} (${census(fromFloor)}); nothing was restored.`);
     return 1;
   }
-  const merged = mergeStores(fromGz, fromPlain);
+  const merged = mergeStores(fromFloor, fromPlain);
   fs.writeFileSync(plainPath, JSON.stringify(merged));
   console.log(
-    `hydrate: ${PLAIN} = restored (${census(fromPlain)}) UNION committed ${GZ} ` +
-    `(${census(fromGz)}) -> ${census(merged)}.`
+    `hydrate: ${PLAIN} = restored (${census(fromPlain)}) UNION committed ${FLOOR} ` +
+    `(${census(fromFloor)}) -> ${census(merged)}.`
   );
   return 1;
 }
@@ -193,24 +202,29 @@ function refuse(reason) {
 function freeze(root, opts) {
   const bootstrap = !!(opts && opts.bootstrap);
   const plainPath = path.join(root, PLAIN);
-  const gzPath = path.join(root, GZ);
+  const floorPath = path.join(root, FLOOR);
   const live = readJson(plainPath);
   if (!live) {
     console.log(`freeze: ${PLAIN} absent or unreadable — nothing to freeze.`);
     return 0;
   }
-  const committed = readGzJson(gzPath);
+  const committed = readJson(floorPath);
 
   // NO FLOOR = REFUSE, unless explicitly bootstrapping. Every guard below is a
-  // comparison against the committed floor, so a missing or corrupt .gz used to
+  // comparison against the committed floor, so a missing or corrupt floor used to
   // skip all of them — and that is exactly the state in which the live store is
-  // least trustworthy. The full path: unreadable .gz -> hydrate writes no plain
+  // least trustworthy. The full path: unreadable floor -> hydrate writes no plain
   // file -> the pipeline starts from {} and caches only today's board -> freeze
   // commits those few entries as the new floor, permanently. Refusing leaves the
   // floor broken (loudly, and npm test fails on it) instead of destroying it.
+  //
+  // "Corrupt" survives the format change. Plain JSON cannot fail to gunzip, but it
+  // can still be truncated by a killed writer or mangled by a bad merge resolution,
+  // and readJson() returns null on exactly that — so this guard has the same teeth
+  // it had against a corrupt .gz.
   if (!committed) {
     if (!bootstrap) {
-      return refuse(`${GZ} is absent or corrupt. Refusing to mint a new floor from the live store — an unreadable floor is when the live store is least trustworthy. Re-run with --bootstrap if this store really is the first one.`);
+      return refuse(`${FLOOR} is absent or corrupt. Refusing to mint a new floor from the live store — an unreadable floor is when the live store is least trustworthy. Re-run with --bootstrap if this store really is the first one.`);
     }
     console.log(`freeze: no committed floor and --bootstrap given — minting one from ${PLAIN}.`);
   }
@@ -259,11 +273,13 @@ function freeze(root, opts) {
     }
   }
 
-  // level 9 + no mtime header, so identical content hashes identically and git sees
-  // no change on a run that cached no new match. This is the once-a-day guard.
-  const buf = zlib.gzipSync(Buffer.from(JSON.stringify(live), 'utf8'), { level: 9 });
-  fs.writeFileSync(gzPath, buf);
-  console.log(`freeze: ${GZ} <- ${PLAIN} (${census(live)}, ${(buf.length / 1e6).toFixed(3)} MB gzipped).`);
+  // Minified, with no trailing newline: identical content must produce identical
+  // bytes so git sees no change on a run that cached no new match. This is the
+  // once-a-day guard, and it is the whole reason freeze() re-serialises instead of
+  // copying the working file — bsp-pipeline.js writes that one pretty-printed.
+  const buf = Buffer.from(JSON.stringify(live), 'utf8');
+  fs.writeFileSync(floorPath, buf);
+  console.log(`freeze: ${FLOOR} <- ${PLAIN} (${census(live)}, ${(buf.length / 1e6).toFixed(3)} MB).`);
   return 1;
 }
 
@@ -278,4 +294,4 @@ if (require.main === module) {
   else { console.error('usage: match-stats-store.js <hydrate|freeze> [--bootstrap]'); process.exit(2); }
 }
 
-module.exports = { PLAIN, GZ, depth, sideDepths, notShallower, strictlyDeeper, census, mergeStores, hydrate, freeze };
+module.exports = { PLAIN, FLOOR, depth, sideDepths, notShallower, strictlyDeeper, census, mergeStores, hydrate, freeze };
