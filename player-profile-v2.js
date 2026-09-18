@@ -1444,16 +1444,32 @@
   // vocabulary (surface included), so a negative finding still earns a card and
   // still reads as one: a red arrow, a signed pp, no adjective.
   //
-  // REPORTED, not resolved — the one place the two can still differ. The box
-  // chooses from BOX_SPLIT_GROUPS (format, opponent) because §5.7 removed the
-  // Surface group from the modal it opens, while insights keep Surface. So when
-  // the box has NO positive pick and a positive SURFACE split exists, the tile
-  // dashes with "no split above his career rate" while a green card sits below
-  // it. Closing that needs a ruling on the candidate sets, not a renderer change.
+  // RULING Q2 round 2 (2026-09-18) closes the contradiction round 1 reported.
+  // Round 1's shape was: box picks from BOX_SPLIT_GROUPS, insights rank over a
+  // WIDER vocabulary, so a positive SURFACE split could sit as a green card under
+  // a dashed tile. The founder's answer:
+  //
+  //   "Restrict Key insights' positive card to the box's groups. Key insights may
+  //    still carry a NEGATIVE surface finding, but the positive card must be
+  //    selectable by the box, so the two can never contradict."
+  //
+  // Implemented as a sign-conditional filter, not a narrower vocabulary: every
+  // card with a POSITIVE gap must come from a group the box could have picked
+  // from; negative cards keep the full vocabulary, surface included. The lead is
+  // still bestSplit()'s own object, so the tile and the lead card are the same
+  // pick by construction rather than by agreement — and §12 now asserts exactly
+  // that over the whole roster.
+  //
+  // The two populations carry two pooled baselines (draw splits vs all splits),
+  // so each card NAMES the population its percentage was pooled over. An
+  // unlabelled baseline that differs between two cards on one screen reads as a
+  // bug; a labelled one reads as what it is, two scopes.
   function renderInsights(p) {
     var lead = bestSplit(p);
-    var rest = rankedInsights(p, 'career', null).filter(function (c) {
-      return !lead || c.id !== lead.pick.id;
+    var rest = rankedInsights(p, 'career', null, INSIGHT_GROUPS).filter(function (c) {
+      if (lead && c.id === lead.pick.id) return false;
+      if (c.gap > 0 && BOX_SPLIT_GROUPS.indexOf(String(c.id).split(':')[0]) < 0) return false;
+      return true;
     });
     var list = (lead ? [lead.pick] : []).concat(rest).slice(0, 3);
     if (!list.length) {
@@ -1496,9 +1512,12 @@
             // "23.8%", "27.8%" — one decimal, like its ~40 other rates.
             esc(ins.label) + ' ' + MIDDOT + ' ' + rateText(ins.won, ins.lost) + '</div>' +
           '<div style="font-size:13.5px;color:#5b6880;line-height:1.7;">' +
-            esc(recordText(ins.won, ins.lost)) + ' over ' + ins.n + ' matches ' + MIDDOT +
-            ' career baseline ' + ins.baseline.toFixed(1) + '% ' + MIDDOT + ' ' +
+            // Q1 round 2 · the same sentence shape the tile prints, so a reader
+            // comparing the lead card with the box above it sees one claim twice,
+            // not two claims. "career baseline" is gone with the career baseline.
+            esc(recordText(ins.won, ins.lost)) + ' over ' + ins.n + ' matches ' + MIDDOT + ' ' +
             '<span style="color:' + col + ';font-weight:700;">' + signed(ins.gap, 1, 'pp') + '</span>' +
+            ' vs his ' + ins.baseline.toFixed(1) + '% ' + esc(ins.pop) +
           '</div>' +
         '</div>';
     }).join('');
@@ -1742,17 +1761,43 @@
     // them: "biggest" -> "best", and the trailing "±Xpp vs his baseline" is gone.
     //
     // RULING Q1 (2026-09-18): the word stayed and the SELECTOR changed. It is now
-    // bestSplit() -- largest POSITIVE gap vs his career rate, n >= 10, tie to the
-    // larger n, the same rule Court speed uses. See bestPositiveSplit(). The empty
-    // copy changed with it: "no split clears the ten-match minimum" was true of the
-    // old selector but would now be a lie in the common case, where splits clear
-    // ten and simply none of them beats his own career rate.
+    // bestSplit() -- largest POSITIVE gap at n >= 10, tie to the larger n, the same
+    // rule Court speed uses. See bestPositiveSplit().
+    //
+    // ROUND 2 of the same ruling settles the two things round 1 got wrong:
+    //   · the baseline is the POOLED candidate population, not the career spine
+    //     (pooledBaseline) -- round 1's spine baseline dashed 370 of 428 players
+    //     by comparing a split against a population it is not drawn from;
+    //   · the baseline is PRINTED, in the founder's own string shape, so the gap
+    //     is reproducible from the rows of the modal this tile opens:
+    //       "best split · 75.0% · +9.1pp vs his 65.9% across his draw splits · 45-15"
+    // The record carries n (45-15 IS sixty matches), so the trailing "· N matches"
+    // the round-1 line repeated is gone -- the founder's example does not have it
+    // and §3's "every rate shows its record and n" is satisfied by the record.
     var bs = bestSplit(p);
+    var bsBase = boxSplitBaseline(p, 'career');
     v.splits = bs
       ? { headline: bs.pick.label,
           support: 'best split ' + MIDDOT + ' ' + bs.pick.rate.toFixed(1) + '% ' + MIDDOT + ' ' +
-            recordText(bs.pick.won, bs.pick.lost) + ' ' + MIDDOT + ' ' + bs.pick.n + ' matches' }
-      : { headline: null, support: 'no split above his career rate' };
+            signed(bs.pick.gap, 1, 'pp') + ' vs his ' + bs.baseline.toFixed(1) + '% ' + bs.pop +
+            ' ' + MIDDOT + ' ' + recordText(bs.pick.won, bs.pick.lost) }
+      // THREE different empty facts, three different sentences. Caught by reading
+      // the rendered tile rather than the code: Giustino's splits store holds
+      // eight tour matches, so the pooled baseline is a real 12.5% and the tile
+      // read "no split above his 12.5% across his draw splits" — which asserts he
+      // has splits that failed to beat the bar when in fact not one of them
+      // reaches the ten-match floor. Same class as the Court speed
+      // pending-vs-empty split: a claim about the player standing in for a claim
+      // about the sample.
+      //   no candidates at all   -> the store holds nothing for him
+      //   none clear n >= 10     -> the sample, not the player
+      //   none positive          -> the player, and it must name the bar
+      : { headline: null,
+          support: bsBase == null
+            ? 'no split data on record'
+            : !rankedInsights(p, 'career', null, BOX_SPLIT_GROUPS).length
+              ? 'no split clears the ten-match minimum'
+              : 'no split above his ' + bsBase.toFixed(1) + '% ' + baselinePopLabel(BOX_SPLIT_GROUPS) };
 
     // 6 · Matchup record (was "Versus playing styles", slot 5) — the headline
     // CHANGES SUBJECT. It used to print his OWN archetype, a label that says
@@ -1912,7 +1957,27 @@
   // price-band pickers, whose baseline IS their own pooled rate by design. This is
   // a different rule for a different question, so it is a different function.
   var INSIGHT_MIN_N = 10;
-  var INSIGHT_GROUPS = ['surface', 'format', 'opponent'];
+  // ── RULING Q2 round 2 (founder, 2026-09-18) · the candidate sets ──────────
+  //
+  // "Restrict Key insights' positive card to the box's groups (format, level,
+  //  round, opponent). Do not re-add Surface to Draw record — surface has its own
+  //  box, modal and rows in Career record. Key insights may still carry a
+  //  NEGATIVE surface finding, but the positive card must be selectable by the
+  //  box, so the two can never contradict."
+  //
+  // That answers the question round 1 reported: the box's groups ARE the Draw
+  // record modal's groups, all four of them. R2's exclusion of Level and Round
+  // from the selector is superseded — the founder names them explicitly, and the
+  // export's own example headline ("Other Tours") is a LEVEL member, so the
+  // exclusion was always in tension with the design.
+  //
+  //   BOX_SPLIT_GROUPS — format, level, round, opponent. The box's candidates,
+  //                      and the ONLY groups a POSITIVE insight card may come
+  //                      from. Identical to what the modal renders, so the pick
+  //                      is always reproducible from the rows behind the tile.
+  //   INSIGHT_GROUPS   — the full split vocabulary, surface included. Negative
+  //                      findings only, outside the box groups.
+  var INSIGHT_GROUPS = SPLIT_GROUPS.map(function (g) { return g.id; });
   // R2's RULE is untouched and still lives in one function. What v7 forces apart
   // is the CANDIDATE SET, because the two callers now open two different modals
   // and the founder's verify step (d) requires a tile's headline to be a figure
@@ -1924,38 +1989,86 @@
   //     box            removed from the modal. Level and round remain excluded
   //                    by R2, so what is left is format and opponent.
   //
-  // REPORTED, because it narrows a selector the founder ruled on: the box now
-  // chooses from two groups rather than three. If he would rather Level and By
-  // round became eligible now that Surface is gone — the export's own example
-  // headlines "Other Tours", a LEVEL member — it is one constant below.
-  var BOX_SPLIT_GROUPS = INSIGHT_GROUPS.filter(function (g) {
-    return DRAW_GROUPS.some(function (d) { return d.id === g; });
-  });
+  // RESOLVED by Q2 round 2: the box's set is the modal's set, verbatim. One list
+  // derived from one constant, so a group added to or removed from the Draw
+  // record modal moves the selector with it and the two cannot drift.
+  var BOX_SPLIT_GROUPS = DRAW_GROUPS.map(function (g) { return g.id; });
   function insightCandidates(key, scope, groups) {
     var allow = groups || INSIGHT_GROUPS;
     return splitCandidates(key, scope).filter(function (c) {
       return allow.indexOf(String(c.id).split(':')[0]) >= 0;
     });
   }
-  /** The player's own career win rate, off the career spine (README §4's total). */
+  /**
+   * The player's own career win rate, off the career spine (README §4's total).
+   *
+   * NO LONGER the insight/split baseline — see RULING Q1 round 2 below. It stays
+   * because it is a real, separately-useful figure (the header and Career record
+   * both print it) and because the round-2 report has to quote the old number
+   * beside the new one.
+   */
   function careerBaseline(p) {
     var t = spineTotal(p);
     var n = t.won + t.lost;
     return n ? (100 * t.won / n) : null;
   }
+
+  // ── RULING Q1 round 2 (founder, 2026-09-18) · the baseline is the POOLED
+  //    CANDIDATE POPULATION, not the career spine ────────────────────────────
+  //
+  // "Switch to the pooled candidate-population baseline (the Court-speed reading)
+  //  AND print the baseline on the tile so the gap is reproducible. My 'vs his
+  //  career rate' wording was wrong: comparing a split against a DIFFERENT
+  //  population was the error, not the intent."
+  //
+  // Round 1 fixed the SIGN (best now means best) but kept the spine as baseline,
+  // and that is what dashed 370 of 428 players: career-splits is a narrower and
+  // harder population than the spine — pooled rate below spine rate for 209 of
+  // 227 players, median -11.7pp — so almost nothing could clear a baseline drawn
+  // from a population the splits do not cover.
+  //
+  // The rule is now literally speedBestBand()'s, transposed: pool over the SAME
+  // candidate set you select from, weighted by match count (README §4, "pooled
+  // figures weight by match count"), then take the largest positive gap at
+  // n >= 10. Every number in the claim is then reproducible from the rows the
+  // modal behind the tile prints — which is the whole point of printing it.
+  function pooledBaseline(cands) {
+    var num = 0, den = 0;
+    (cands || []).forEach(function (c) { num += c.won; den += c.won + c.lost; });
+    return den ? (100 * num / den) : null;
+  }
+  /**
+   * The population a baseline was pooled over, named in words, so a reader can
+   * tell which row set to add up. Two populations exist on this page — the Draw
+   * record box's groups and Key insights' wider vocabulary — and an unlabelled
+   * percentage that differs between two cards on one screen reads as a bug.
+   */
+  function baselinePopLabel(groups) {
+    var g = groups || INSIGHT_GROUPS;
+    var boxOnly = g.every(function (id) { return BOX_SPLIT_GROUPS.indexOf(id) >= 0; });
+    return boxOnly ? 'across his draw splits' : 'across all his splits';
+  }
   /**
    * Every eligible candidate, ranked by |gap| descending. `limit` slices; it never
    * pads. Returns [] when the player has no baseline or nothing clears n >= 10.
+   *
+   * `baseline` is pooled over the candidate set — INCLUDING members under the
+   * n >= 10 floor, exactly as pickByLargestGap() and speedBestBand() pool. The
+   * floor governs what may be SELECTED, not what the population is; excluding
+   * thin splits from the pool would measure the gap against a population the
+   * modal does not show.
    */
   function rankedInsights(p, scope, limit, groups) {
-    var baseline = careerBaseline(p);
+    var cands = insightCandidates(p.key, scope || 'career', groups);
+    var baseline = pooledBaseline(cands);
     if (baseline == null) return [];
-    var out = insightCandidates(p.key, scope || 'career', groups).map(function (c) {
+    var pop = baselinePopLabel(groups);
+    var out = cands.map(function (c) {
       var n = c.won + c.lost;
       if (n < INSIGHT_MIN_N) return null;
       var rate = 100 * c.won / n;
       return { id: c.id, label: c.label, won: c.won, lost: c.lost, n: n,
-        rate: rate, gap: rate - baseline, baseline: baseline };
+        rate: rate, gap: rate - baseline, baseline: baseline, pop: pop };
     }).filter(Boolean);
     out.sort(function (a, b) { return Math.abs(b.gap) - Math.abs(a.gap); });
     return limit == null ? out : out.slice(0, limit);
@@ -1969,8 +2082,9 @@
   // Founder ruled: keep the word, change the selector. The rule is now the one
   // Court speed already uses (speedBestBand, §8.3):
   //
-  //   candidates : rankedInsights' set for the caller's groups (n >= 10 floor,
-  //                gap measured against his OWN career rate — both unchanged).
+  //   candidates : rankedInsights' set for the caller's groups (n >= 10 floor;
+  //                round 2 moved the baseline to the POOLED candidate population
+  //                — see pooledBaseline()).
   //   selection  : largest POSITIVE gap. Ties -> the larger n.
   //   none       : dash. "No positive split" is an honest answer; the least-bad
   //                split dressed up as a strength is not.
@@ -1988,9 +2102,14 @@
     });
     return best;
   }
+  /** The box's baseline, whether or not a pick clears the bar — the empty copy
+   *  has to name the number the splits failed to beat, or the dash is unreadable. */
+  function boxSplitBaseline(p, scope) {
+    return pooledBaseline(insightCandidates(p.key, scope || 'career', BOX_SPLIT_GROUPS));
+  }
   function bestSplit(p) {
     var top = bestPositiveSplit(p, 'career', BOX_SPLIT_GROUPS);
-    return top ? { pick: top, baseline: top.baseline } : null;
+    return top ? { pick: top, baseline: top.baseline, pop: top.pop } : null;
   }
 
   // The band cut-offs, mirrored from build-market-edge.js's PRICE_BANDS so the
@@ -3392,8 +3511,28 @@
         titles: t.titles || 0,
         lastYear: eds.length ? eds[0].year : (t.lastYear || null),
         editions: eds,
-        pinPl: b && b.pinN ? b.pinPl : null,
-        pinN: b ? b.pinN : 0,
+        // ── RULING Q3 (founder, 2026-09-18) · the impossible pair is suppressed
+        //    at the SOURCE, not at each print site ─────────────────────────────
+        //
+        // "24 played vs 28 priced is impossible. Until it's fixed, where priced n
+        //  exceeds the played n, show the played record and dash the priced clause
+        //  for that row rather than printing the impossible pair."
+        //
+        // `pinN` > `n` means the market shard attributed more priced matches to
+        // this event than the player has match rows in it — a join defect (539
+        // rows across the roster, raised as its own issue), not a display choice.
+        // Zeroing pinN/pinPl here rather than at the four print sites means the
+        // Backing column, the "Backing him here" tile, the box-3 headline and
+        // bestEvent()'s candidacy all dash together: a units figure struck over a
+        // population we know is wrong must not headline a tile, and a guard
+        // applied at three of four sites is the defect in a new place.
+        //
+        // `pricedImpossible` survives so the detail tile can SAY why it dashed.
+        // The played record is untouched — it is not the thing in doubt.
+        pinPl: b && b.pinN && b.pinN <= n ? b.pinPl : null,
+        pinN: b && b.pinN <= n ? b.pinN : 0,
+        pricedImpossible: !!(b && b.pinN > n),
+        pricedClaimed: b ? b.pinN : 0,
         isSlam: isSlamTourn(t.name, level)
       };
     }).sort(function (a, b) { return b.n - a.n; });
@@ -3531,9 +3670,17 @@
     // shard and M from the edition list, and the two stores do not agree on how
     // many matches an event held (Zverev's Australian Open: 46 shard rows, 42
     // edition rows). Printing them as a fraction would invent a shortfall.
-    var pinSub = t.pinN
-      ? t.pinN + ' priced ' + MIDDOT + ' Pinnacle closing'
-      : 'Pinnacle priced none of these';
+    //
+    // RULING Q3 · when the priced count exceeded the played count, tournViews()
+    // zeroed it, and the sub has to say so rather than fall through to "Pinnacle
+    // priced none of these" — which would be a claim about the archive when the
+    // real fact is a claim about our join.
+    var pinSub = t.pricedImpossible
+      ? 'priced count (' + t.pricedClaimed + ') exceeds ' + t.n + ' matches played ' + MIDDOT +
+        ' odds join under investigation'
+      : t.pinN
+        ? t.pinN + ' priced ' + MIDDOT + ' Pinnacle closing'
+        : 'Pinnacle priced none of these';
     var backTile = tile('Backing him here', pinTxt, pinSub, pinColour);
     var wlTile = tile('W' + ENDASH + 'L record', recordText(t.won, t.lost),
       rateText0(t.won, t.lost) + ' ' + MIDDOT + ' main draw');
@@ -3730,26 +3877,21 @@
       return '<div style="border:1px dashed rgba(255,255,255,0.12);border-radius:10px;padding:26px;' +
         'text-align:center;font-size:13px;color:#5b6880;">No split data on record for this player.</div>';
     }
-    // TWO baselines, deliberately, and the modal now names both instead of
-    // silently holding one back.
+    // ONE baseline since RULING Q1 round 2 — the two collapsed, which is the
+    // point of the ruling.
     //
-    // `baseline` (pooled, from pickByLargestGap over this scope's candidates) is
-    // what the Vs avg COLUMN measures and what the legend has always claimed.
-    // That stays exactly as it was.
+    // Before round 2 this modal carried two: the Vs-avg COLUMN's pooled rate, and
+    // a second, different number the BOX headline was measured against (the career
+    // spine). They disagreed for 188 of 188 players and named a different split
+    // for 82 of them, so the modal had to disclose both and explain why the tile
+    // above it could not be reproduced from any row on screen.
     //
-    // `headline` is the R2 insight rule — largest |pp| against the player's own
-    // CAREER spine rate (careerBaseline), the same selector the Splits BOX calls.
-    // The two are different numbers by construction: the pooled rate is weighted
-    // over splits, which do not cover every match. Measured over the roster, the
-    // pooled and career baselines differ for 188 of 188 players and the two rules
-    // name a DIFFERENT split for 82 of them (43.6%) — so the box could headline
-    // "Best of 5" while the modal it opens was measured on "Grand Slams", with no
-    // number on screen able to reproduce the box's gap. Disclosing the headline's
-    // own baseline is what closes that.
-    // Both baselines are scoped to DRAW_GROUPS for the same reason setBaseline
-    // is: every number the modal discloses has to be reproducible from the rows
-    // it prints. `headline` additionally uses the BOX's group set, because its
-    // only job here is to disclose how the tile that opened this modal chose.
+    // Round 2 moved the box onto the pooled candidate population and Q2 made the
+    // box's groups the modal's groups, so `picked.baseline` and `headline.baseline`
+    // are now the same figure over the same rows by construction. §12 asserts the
+    // identity rather than trusting it; the legend states it once.
+    // Both are scoped to DRAW_GROUPS for the reason setBaseline is: every number
+    // the modal discloses has to be reproducible from the rows it prints.
     var picked = pickByLargestGap(splitCandidates(p.key, scope, DRAW_GROUPS));
     var baseline = picked ? picked.baseline : null;
     // RULING Q1 · the same positive-gap selector the tile now uses, so the
@@ -3855,10 +3997,13 @@
           'A split under ten matches shows its record and a dash for the gap.' +
           // The box headline's own baseline, stated here because it is NOT the
           // column's baseline and nothing else on screen carries it.
-          (headline == null ? '' : ' The box headline (' + esc(headline.label) + ') is picked by a ' +
-            'different rule — the largest gap to this player&#39;s own career rate (' +
-            headline.baseline.toFixed(1) + '%) over splits of at least ten matches, which is why it ' +
-            'can name a different split from the biggest gap in this column.');
+          // Q1/Q2 round 2 · same baseline, same rows, one difference of rule left:
+          // the column ranks on |gap| and the box takes the largest POSITIVE gap,
+          // so the box can name a different split only when the biggest gap here
+          // is a negative one. That is stated rather than left to be inferred.
+          (headline == null ? '' : ' The box headline (' + esc(headline.label) + ') is the largest ' +
+            'POSITIVE gap to that same baseline over splits of at least ten matches, so it differs ' +
+            'from the biggest gap in this column only when that gap is negative.');
       }
       if (tab.id === 'sets') {
         return 'Share of tiebreaks, games and sets won ' + MIDDOT + ' vs avg is the gap to this ' +
@@ -7744,6 +7889,11 @@
       renderInsights: renderInsights,
       insightCandidates: insightCandidates,
       careerBaseline: careerBaseline,
+      pooledBaseline: pooledBaseline,
+      boxSplitBaseline: boxSplitBaseline,
+      baselinePopLabel: baselinePopLabel,
+      BOX_SPLIT_GROUPS: BOX_SPLIT_GROUPS,
+      INSIGHT_GROUPS: INSIGHT_GROUPS,
       INSIGHT_MIN_N: INSIGHT_MIN_N,
       splitsFor: splitsFor,
       splitScope: splitScope,

@@ -5191,16 +5191,34 @@ mustFail('[neg] the independence check would catch a renderer that dropped the o
 // ════════════════════════════════════════════════════════════════════════════
 console.log('\n14B · Rulings Q1 (best split) + Q2 (best event)');
 
-check('Q1 · "best split" is POSITIVE-only, measured against his career rate', () => {
+check('Q1 · "best split" is POSITIVE-only, measured against the POOLED candidate population', () => {
   let picked = 0, dashed = 0;
   for (const p of SAMPLE) {
     const bs = I.bestSplit(p);
     const vals = I.buildBoxVals(p, { archetype: null });
+    // Round 2 · the baseline is pooled over the box's OWN candidate set. Computed
+    // here from the raw split rows, not read back off the object the renderer
+    // built, so the check can disagree with the implementation.
+    const boxCands = I.splitCandidates(p.key, 'career')
+      .filter(c => (I.BOX_SPLIT_GROUPS || []).includes(String(c.id).split(':')[0]));
+    let bw = 0, bn = 0;
+    for (const c of boxCands) { bw += c.won; bn += c.won + c.lost; }
+    const expectBase = bn ? (100 * bw / bn) : null;
+    assert.strictEqual(I.boxSplitBaseline(p, 'career'), expectBase,
+      `${p.name}: box baseline is not the pooled candidate rate`);
     if (!bs) {
       dashed++;
       assert.strictEqual(vals.splits.headline, null, `${p.name}: headline without a pick`);
-      assert.strictEqual(vals.splits.support, 'no split above his career rate',
-        `${p.name}: empty copy is "${vals.splits.support}"`);
+      // Three empty facts, asserted apart. A single sentence covering all three
+      // is exactly the defect the browser read caught.
+      const eligible = I.rankedInsights(p, 'career', null, I.BOX_SPLIT_GROUPS).length;
+      assert.strictEqual(vals.splits.support,
+        expectBase == null
+          ? 'no split data on record'
+          : !eligible
+            ? 'no split clears the ten-match minimum'
+            : `no split above his ${expectBase.toFixed(1)}% across his draw splits`,
+        `${p.name}: empty copy is "${vals.splits.support}" (base=${expectBase}, eligible=${eligible})`);
       // And it must be dashed for the RIGHT reason: nothing positive, not
       // nothing at all. A player with a positive split and a dashed tile is the
       // bug this whole ruling exists to remove.
@@ -5214,6 +5232,17 @@ check('Q1 · "best split" is POSITIVE-only, measured against his career rate', (
       `${p.name}: "best split" is ${bs.pick.label} at ${bs.pick.gap.toFixed(1)}pp — a NEGATIVE gap`);
     assert(bs.pick.n >= 10, `${p.name}: pick clears no ten-match floor (n=${bs.pick.n})`);
     assert.strictEqual(vals.splits.headline, bs.pick.label);
+    // Round 2's second half: the baseline is PRINTED, and the whole support line
+    // is reconstructed here from the raw rows. If any of rate, gap, baseline or
+    // record drifts, this string stops matching.
+    assert.strictEqual(bs.baseline, expectBase, `${p.name}: pick carries a foreign baseline`);
+    const rate = 100 * bs.pick.won / bs.pick.n;
+    const gap = rate - expectBase;
+    const pp = (gap < 0 ? '−' : '+') + Math.abs(gap).toFixed(1) + 'pp';
+    assert.strictEqual(vals.splits.support,
+      `best split · ${rate.toFixed(1)}% · ${pp} vs his ${expectBase.toFixed(1)}% `
+      + `across his draw splits · ${bs.pick.won}–${bs.pick.lost}`,
+      `${p.name}: support line does not reproduce from the rows`);
     // Independent recompute of the winner, straight off the candidate list.
     const cands = I.rankedInsights(p, 'career', null, I.BOX_SPLIT_GROUPS || undefined)
       .filter(c => c.gap > 0)
@@ -5264,6 +5293,107 @@ check('Q1 · Key insights\' positive card IS the box\'s pick, and negatives stil
   assert(agreed > 0, 'no sample player had a pick — this check never ran');
   assert(negatives > 0, 'no sample player had a negative split — the card path is unexercised');
   console.log(`        ${agreed} tiles match their insights lead; ${negatives} players carry negative findings`);
+});
+
+// ── RULING Q2 round 2 (founder, 2026-09-18) — the assertion he asked for ────
+// "Add an assertion that the box's pick and the insights' positive card name the
+//  same split for every player." Not the five-player sample: EVERY player with a
+// profile. Two ways to disagree are both covered — a different split named, and
+// a positive card the box could never have picked sitting under a dashed tile.
+check('Q2 round 2 · box pick == insights positive card, for EVERY player', () => {
+  const box = I.BOX_SPLIT_GROUPS || [];
+  assert.deepStrictEqual(box.slice().sort(), ['format', 'level', 'opponent', 'round'],
+    `the box groups are ${JSON.stringify(box)} — the ruling names format, level, round, opponent`);
+  assert(!box.includes('surface'), 'Surface is back in the box groups — the ruling forbids it');
+
+  let checked = 0, agree = 0, dashed = 0, negSurface = 0;
+  for (const p of Object.values(PLAYERS)) {
+    let html;
+    try { html = I.renderInsights(p); } catch (e) { continue; }
+    checked++;
+    const bs = I.bestSplit(p);
+    // Every POSITIVE card in the stack, in render order.
+    const ids = [...html.matchAll(/data-insight="([^"]+)"/g)].map(m => m[1].replace(/&amp;/g, '&'));
+    const ranked = I.rankedInsights(p, 'career', null, I.INSIGHT_GROUPS);
+    const byId = new Map(ranked.map(c => [c.id, c]));
+    const positives = ids.filter(id => {
+      const c = byId.get(id);
+      return c ? c.gap > 0 : (bs && id === bs.pick.id);
+    });
+    if (bs) {
+      assert.strictEqual(ids[0], bs.pick.id,
+        `${p.name}: insights lead on ${ids[0]}, the box on ${bs.pick.id}`);
+      agree++;
+    } else {
+      dashed++;
+      assert.strictEqual(positives.length, 0,
+        `${p.name}: tile dashed while ${positives.length} positive card(s) show — ${positives.join(', ')}`);
+    }
+    // Every positive card must be one the box COULD have picked.
+    for (const id of positives) {
+      assert(box.includes(String(id).split(':')[0]),
+        `${p.name}: positive card "${id}" comes from a group the box cannot pick`);
+    }
+    // The ruling keeps negative surface findings eligible; confirm the path is
+    // live rather than quietly filtered out with the positives.
+    if (ids.some(id => String(id).startsWith('surface:'))) negSurface++;
+  }
+  assert(checked > 100, `only ${checked} players exercised — the roster did not load`);
+  assert(negSurface > 0, 'no player carried a surface card — the negative-surface path is dead');
+  console.log(`        ${checked} players · ${agree} agree · ${dashed} dash (0 contradictions) · `
+    + `${negSurface} carry a surface finding`);
+});
+
+// Q1 round 2's own reconciliation: the box's baseline and the Draw record modal's
+// Vs-avg column baseline are now ONE number over ONE row set. Before the ruling
+// they differed for 188 of 188 players, which is why the modal had to disclose
+// two. This is the check that keeps them collapsed.
+check('Q1 round 2 · box baseline == the Draw record column baseline, roster-wide', () => {
+  let n = 0, maxDelta = 0;
+  for (const p of Object.values(PLAYERS)) {
+    const bBox = I.boxSplitBaseline(p, 'career');
+    const col = I.pickByLargestGap(I.splitCandidates(p.key, 'career', I.DRAW_GROUPS));
+    if (bBox == null || !col) continue;
+    n++;
+    maxDelta = Math.max(maxDelta, Math.abs(bBox - col.baseline));
+    assert(Math.abs(bBox - col.baseline) < 1e-9,
+      `${p.name}: box ${bBox.toFixed(3)}% vs column ${col.baseline.toFixed(3)}%`);
+  }
+  assert(n > 100, `only ${n} players had both baselines — the check is vacuous`);
+  console.log(`        ${n} players, max |box − column| = ${maxDelta.toExponential(1)}pp`);
+});
+
+// ── RULING Q3 (founder, 2026-09-18) ────────────────────────────────────────
+// "Where priced n exceeds the played n, show the played record and dash the
+//  priced clause for that row rather than printing the impossible pair."
+check('Q3 · no view ever exposes priced n > played n', () => {
+  let views = 0, suppressed = 0, playersHit = 0;
+  for (const p of Object.values(PLAYERS)) {
+    let vs;
+    try { vs = I.tournViews(p) || []; } catch (e) { continue; }
+    let hit = false;
+    for (const t of vs) {
+      views++;
+      assert(t.pinN <= t.n,
+        `${p.name} / ${t.display}: ${t.pinN} priced vs ${t.n} played reached a consumer`);
+      if (t.pricedImpossible) {
+        hit = true; suppressed++;
+        assert.strictEqual(t.pinN, 0, `${p.name} / ${t.display}: suppressed row kept a priced count`);
+        assert.strictEqual(t.pinPl, null, `${p.name} / ${t.display}: suppressed row kept a units figure`);
+        assert(t.pricedClaimed > t.n, `${p.name} / ${t.display}: pricedClaimed does not record the defect`);
+        // The played record is NOT in doubt and must survive untouched.
+        assert(t.won + t.lost === t.n, `${p.name} / ${t.display}: the played record was disturbed`);
+      }
+    }
+    if (hit) playersHit++;
+  }
+  assert(views > 500, `only ${views} views walked — the roster did not load`);
+  console.log(`        ${views} views · ${suppressed} suppressed across ${playersHit} players`);
+});
+
+mustFail('[neg] Q3 would catch an impossible pair reaching the tile', () => {
+  const t = { n: 24, pinN: 28 };
+  assert(t.pinN <= t.n, 'an impossible pair passed the guard');
 });
 
 check('Q2 · "best event" is PRICED-only (n>=10 priced), ranked on backing units', () => {
@@ -5324,14 +5454,26 @@ check('Q1/Q2 · the superseded empty copy is gone from the BOX builder', () => {
   assert(from > -1, 'buildBoxVals is gone \u2014 this lock no longer points at anything');
   const box = code.slice(from, code.indexOf('\n  function ', from + 40));
   assert(box.length > 2000, `the buildBoxVals slice is ${box.length} chars \u2014 too short to be the real function`);
+  // "no split clears the ten-match minimum" is NOT stale copy any more: Q1 round 2
+  // split the one empty sentence into three, and that string is the middle one —
+  // the sample-size case, distinct from the no-data case and the nothing-positive
+  // case. It is asserted as REQUIRED below rather than forbidden here.
   for (const stale of [
-    'no split clears the ten-match minimum',
     'no tournament clears the ten-match minimum',
     'Pinnacle priced none of these'
   ]) {
     assert(!box.includes(`'${stale}'`), `superseded box copy still shipping: "${stale}"`);
   }
-  assert(box.includes("'no split above his career rate'"), 'the Q1 empty copy is missing');
+  assert(!box.includes("'no split above his career rate'"),
+    'the round-1 career-rate empty copy is still shipping — Q1 round 2 replaced it');
+  assert(box.includes("'no split above his '"), 'the Q1 round-2 empty copy is missing');
+  assert(box.includes("' vs his '"), 'the Q1 round-2 tile no longer prints its baseline');
+  for (const required of [
+    'no split data on record',
+    'no split clears the ten-match minimum'
+  ]) {
+    assert(box.includes(`'${required}'`), `the Q1 round-2 empty branch "${required}" is gone`);
+  }
   assert(box.includes("'no event with 10+ priced matches'"), 'the Q2 empty copy is missing');
 });
 
