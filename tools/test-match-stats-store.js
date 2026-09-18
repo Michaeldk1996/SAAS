@@ -15,7 +15,7 @@ const path = require('path');
 const zlib = require('zlib');
 
 const store = require('./match-stats-store.js');
-const { depth, mergeStores, hydrate, freeze, PLAIN, GZ } = store;
+const { depth, sideDepths, notShallower, strictlyDeeper, census, mergeStores, hydrate, freeze, PLAIN, GZ } = store;
 
 let checks = 0;
 function check(label, fn) {
@@ -32,8 +32,18 @@ const FULL = {
     'Games:Service games won': 90, 'Games:Return games won': 30,
     raw: { 'Games:Service games won': { won: 9, total: 10 } },
   },
-  p2: { 'Service:Aces': 2, 'Points:Total Points Won': 44.9 },
+  // Both sides carry the four aggregate fields: census() counts a match as covered
+  // only when BOTH players do, so a p1-only fixture would make every census check
+  // read 0% and hide that distinction rather than test it.
+  p2: {
+    'Service:Aces': 2, 'Points:Total Points Won': 44.9,
+    'Points:Service Points Won': 40, 'Points:Return Points Won': 60,
+    'Games:Service games won': 70, 'Games:Return games won': 10,
+  },
 };
+// The shape the feed actually produces for some qualifying draws — one player's
+// box score published, the other absent. Real: eventKey 12153350.
+const ONE_SIDED = { p1: FULL.p1, p2: {} };
 const SHALLOW = { p1: { 'Service:Aces': 4, 'Points:Total Points Won': 55.1 }, p2: { 'Service:Aces': 2 } };
 
 const tmp = () => fs.mkdtempSync(path.join(os.tmpdir(), 'hms-store-'));
@@ -107,12 +117,26 @@ check('hydrate UNIONs a warm cache with the committed floor', () => {
   assert.strictEqual(depth(out.both.matchStats), depth(FULL));
 });
 
-check('hydrate leaves a warm cache alone when the .gz is corrupt (negative control)', () => {
+check('hydrate REPORTS a corrupt .gz rather than proceeding (negative control)', () => {
   const root = tmp();
   fs.writeFileSync(path.join(root, GZ), Buffer.from('not gzip'));
   writePlain(root, { warm: { matchStats: FULL } });
-  hydrate(root);
+  // Asserting the RETURN VALUE, not just the file. The first version of this check
+  // only looked at the plain file, and a warm cache survives a corrupt floor whether
+  // or not the guard exists (mergeStores(null, warm) returns warm anyway) — so it
+  // passed with the guard deleted. Proven by mutation in the clean-context review.
+  assert.strictEqual(hydrate(root), 0, 'hydrate did not report the corrupt floor');
   assert.deepStrictEqual(Object.keys(readPlain(root)), ['warm'], 'a corrupt floor destroyed the warm cache');
+  // control: a readable floor must return 1 through the identical call
+  writeGz(root, { floor: { matchStats: FULL } });
+  assert.strictEqual(hydrate(root), 1);
+});
+
+check('hydrate does NOT invent a plain store from a corrupt .gz', () => {
+  const root = tmp();
+  fs.writeFileSync(path.join(root, GZ), Buffer.from('not gzip'));
+  assert.strictEqual(hydrate(root), 0);
+  assert.ok(!fs.existsSync(path.join(root, PLAIN)), 'hydrate created a store out of an unreadable floor');
 });
 
 console.log('match-stats-store: freeze()');
@@ -120,32 +144,48 @@ console.log('match-stats-store: freeze()');
 check('freeze writes the .gz from the live store', () => {
   const root = tmp();
   writePlain(root, { a: { matchStats: FULL } });
-  assert.strictEqual(freeze(root), 1);
+  assert.strictEqual(freeze(root, { bootstrap: true }), 1);
   assert.deepStrictEqual(Object.keys(readGz(root)), ['a']);
 });
 
 check('freeze is byte-identical for identical content (this IS the day-guard)', () => {
   const root = tmp();
   writePlain(root, { a: { matchStats: FULL }, b: { matchStats: SHALLOW } });
-  freeze(root);
+  freeze(root, { bootstrap: true });
   const first = fs.readFileSync(path.join(root, GZ));
-  fs.unlinkSync(path.join(root, GZ));
-  freeze(root);
-  const second = fs.readFileSync(path.join(root, GZ));
-  assert.ok(first.equals(second), 'identical content produced different bytes — git would commit every run');
+  // Re-freeze IN PLACE — no unlink. The real run always has a floor present, and
+  // deleting it first would exercise the bootstrap path instead of the steady state
+  // this check exists to describe.
+  assert.strictEqual(freeze(root), 1);
+  assert.ok(first.equals(fs.readFileSync(path.join(root, GZ))), 'identical content produced different bytes — git would commit every run');
   // control: a real change must produce different bytes, or the check above is vacuous
   writePlain(root, { a: { matchStats: FULL }, b: { matchStats: SHALLOW }, c: { matchStats: FULL } });
-  fs.unlinkSync(path.join(root, GZ));
-  freeze(root);
+  assert.strictEqual(freeze(root), 1);
   assert.ok(!first.equals(fs.readFileSync(path.join(root, GZ))), 'a genuine change produced identical bytes');
 });
 
-check('freeze REFUSES a store with fewer entries (shrink guard + control)', () => {
+// Captures what freeze() actually said. Needed because the containment guard
+// SUBSUMES the shrink guard — a store with fewer entries necessarily drops a key,
+// so both would reject it and "returned 0" cannot tell which fired. Without this
+// the shrink guard is untested: inverting it left the suite green, found by
+// mutation testing. It is kept for its diagnostic, so its diagnostic is what the
+// check asserts.
+function freezeSaying(root, opts) {
+  const said = [];
+  const real = console.log;
+  console.log = (...a) => said.push(a.join(' '));
+  try { return { rc: freeze(root, opts), out: said.join('\n') }; } finally { console.log = real; }
+}
+
+check('freeze REFUSES a store with fewer entries, naming the SHRINK (guard + control)', () => {
   const root = tmp();
   writeGz(root, { a: { matchStats: FULL }, b: { matchStats: FULL } });
   const floor = fs.readFileSync(path.join(root, GZ));
   writePlain(root, { a: { matchStats: FULL } });
-  assert.strictEqual(freeze(root), 0, 'the shrink guard did not fire');
+  const { rc, out } = freezeSaying(root);
+  assert.strictEqual(rc, 0, 'the shrink guard did not fire');
+  assert.match(out, /FEWER entries \(1\).*floor \(2\)/, 'refused, but not by the shrink guard — its message is gone');
+  assert.match(out, /::error title=/, 'a refusal was logged without an annotation — invisible in CI');
   assert.ok(floor.equals(fs.readFileSync(path.join(root, GZ))), 'the floor was overwritten anyway');
   // control: the SAME call must succeed once the store is whole again
   writePlain(root, { a: { matchStats: FULL }, b: { matchStats: FULL }, c: { matchStats: FULL } });
@@ -162,6 +202,96 @@ check('freeze REFUSES an equal-sized but SHALLOWER store (depth guard + control)
   // control: an equal-sized DEEPER store must be accepted
   writePlain(root, { a: { matchStats: { ...FULL, p2: { ...FULL.p2, 'Points:Net points won': 12 } } } });
   assert.strictEqual(freeze(root), 1);
+});
+
+check('freeze REFUSES to mint a floor when the .gz is absent or corrupt', () => {
+  const root = tmp();
+  writePlain(root, { onlyToday: { matchStats: FULL } });
+  assert.strictEqual(freeze(root), 0, 'freeze minted a new floor over a missing one');
+  assert.ok(!fs.existsSync(path.join(root, GZ)));
+  const root2 = tmp();
+  fs.writeFileSync(path.join(root2, GZ), Buffer.from('not gzip'));
+  writePlain(root2, { onlyToday: { matchStats: FULL } });
+  assert.strictEqual(freeze(root2), 0, 'freeze overwrote a corrupt floor with a partial store');
+  // control: --bootstrap is the only way through, and it must work
+  assert.strictEqual(freeze(root, { bootstrap: true }), 1);
+  assert.deepStrictEqual(Object.keys(readGz(root)), ['onlyToday']);
+});
+
+check('freeze REFUSES a same-sized store that DROPPED a key (containment + control)', () => {
+  const root = tmp();
+  // b is a recorded provider-miss: a missing key and a null sheet both score -1,
+  // so only a containment check can tell "dropped b" from "b unchanged".
+  writeGz(root, { a: { matchStats: FULL }, b: { matchStats: null } });
+  const floor = fs.readFileSync(path.join(root, GZ));
+  writePlain(root, { a: { matchStats: FULL }, c: { matchStats: FULL } });
+  assert.strictEqual(freeze(root), 0, 'the containment guard did not fire — an eventKey was lost');
+  assert.ok(floor.equals(fs.readFileSync(path.join(root, GZ))));
+  // control: keeping b and adding c must be accepted
+  writePlain(root, { a: { matchStats: FULL }, b: { matchStats: null }, c: { matchStats: FULL } });
+  assert.strictEqual(freeze(root), 1);
+});
+
+check('per-side depth: a total-depth gain may not wipe a player (D3 + control)', () => {
+  const wide = { p1: { x: 1, y: 1, z: 1, q: 1, r: 1, s: 1, t: 1 }, p2: {} };
+  const even = { p1: { x: 1, y: 1, z: 1 }, p2: { x: 1, y: 1, z: 1 } };
+  assert.ok(depth(wide) > depth(even), 'fixture is wrong: wide must win on SUMMED depth');
+  assert.ok(!strictlyDeeper(even, wide), 'a summed-depth gain was allowed to empty p2');
+  assert.ok(!notShallower(even, wide));
+  assert.deepStrictEqual(mergeStores({ a: { matchStats: even } }, { a: { matchStats: wide } }).a.matchStats, even);
+  // control: a genuine both-sides upgrade must still go through
+  const better = { p1: { x: 1, y: 1, z: 1, q: 1 }, p2: { x: 1, y: 1, z: 1 } };
+  assert.ok(strictlyDeeper(even, better));
+  assert.deepStrictEqual(mergeStores({ a: { matchStats: even } }, { a: { matchStats: better } }).a.matchStats, better);
+  assert.deepStrictEqual(sideDepths(wide), [7, 0]);
+});
+
+check('merge is upgrade-only, NOT replace-on-tie (control)', () => {
+  const incumbent = { p1: { x: 1 }, p2: { x: 1 } };
+  const tie = { p1: { y: 2 }, p2: { y: 2 } };
+  // equal depth on both sides -> the incumbent must survive. A `>=` tie-break here
+  // would make hydrate's result depend on argument order rather than on content.
+  assert.deepStrictEqual(mergeStores({ a: { matchStats: incumbent } }, { a: { matchStats: tie } }).a.matchStats, incumbent);
+});
+
+check('census() reports real coverage, not a constant (control)', () => {
+  const full = { a: { matchStats: FULL }, b: { matchStats: FULL } };
+  const half = { a: { matchStats: FULL }, b: { matchStats: SHALLOW } };
+  const none = { a: { matchStats: null }, b: { matchStats: null } };
+  assert.match(census(full), /2 entries, 2 with a sheet, agg 100\.0%/);
+  assert.match(census(half), /2 entries, 2 with a sheet, agg 50\.0%/);
+  assert.match(census(none), /2 entries, 0 with a sheet, agg —/);
+  assert.notStrictEqual(census(full), census(half), 'census is blind to the thing it measures');
+  // and it must SEE a one-sided sheet rather than scoring it as covered
+  const lopsided = { a: { matchStats: FULL }, b: { matchStats: ONE_SIDED } };
+  assert.match(census(lopsided), /agg 50\.0%, 1 one-sided/, 'census counted a half-published match as covered');
+});
+
+// THE GUARD D1 NAMES. tools/match-stats-store.js says an unreadable committed floor
+// "must be caught by npm test, before the commit" — and until this check existed, it
+// was not: every other check runs on mkdtemp fixtures and never opens the real file.
+// This is the only thing standing between a corrupt .gz and a deploy that publishes
+// a blank match sheet.
+check('the REPO\'s committed floor is readable, non-degenerate and well-formed', () => {
+  const repoGz = path.join(__dirname, '..', GZ);
+  assert.ok(fs.existsSync(repoGz), `${GZ} is not committed`);
+  let parsed;
+  assert.doesNotThrow(() => { parsed = JSON.parse(zlib.gunzipSync(fs.readFileSync(repoGz)).toString('utf8')); },
+    `${GZ} is corrupt — CI would hydrate nothing and publish a blank match sheet`);
+  const keys = Object.keys(parsed);
+  assert.ok(keys.length > 0, 'the committed floor is empty');
+  let sheets = 0;
+  for (const k of keys) {
+    const e = parsed[k];
+    assert.ok(e && typeof e === 'object', `entry ${k} is not an object`);
+    assert.ok('matchStats' in e, `entry ${k} has no matchStats field — a provider-miss must be recorded as null, not omitted`);
+    if (e.matchStats) { assert.ok(e.matchStats.p1, `entry ${k} has a sheet with no p1 side`); sheets++; }
+  }
+  // A floor that has stopped carrying box scores is as bad as a missing one, and
+  // fails silently. Deliberately a floor, not the current value: this asserts the
+  // artifact is a box-score store, and does not freeze today's coverage number.
+  assert.ok(sheets > keys.length / 2, `only ${sheets}/${keys.length} entries carry a sheet — the floor has rotted`);
+  console.log(`      (repo floor: ${census(parsed)})`);
 });
 
 check('hydrate -> freeze round-trips the store unchanged', () => {

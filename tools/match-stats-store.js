@@ -59,17 +59,49 @@ const GZ = 'historical-match-stats.json.gz';
  * letting coverage go backwards.
  */
 function depth(matchStats) {
-  if (!matchStats) return -1;
-  let n = 0;
-  for (const side of ['p1', 'p2']) {
+  const [a, b] = sideDepths(matchStats);
+  return a < 0 && b < 0 ? -1 : a + b;
+}
+
+/**
+ * The SAME count, kept per player — and this, not depth(), is what the guards
+ * compare.
+ *
+ * A single summed number is not safe as a merge currency: a sheet carrying 7 p1
+ * fields and 0 p2 fields outranks one carrying 3 and 3, so an "upgrade" can wipe
+ * a player's whole side while the total goes up. That is not hypothetical —
+ * eventKey 12153350 is already in the store with an empty p2. Comparing the two
+ * sides independently makes a merge an upgrade only when NEITHER side loses.
+ *
+ * Verified against the 2026 Challenger sweep before tightening: of its 469 real
+ * upgrades, per-side gating would have blocked 0.
+ */
+function sideDepths(matchStats) {
+  if (!matchStats) return [-1, -1];
+  return ['p1', 'p2'].map((side) => {
     const s = matchStats[side];
-    if (!s) continue;
+    if (!s) return -1;
+    let n = 0;
     for (const [k, v] of Object.entries(s)) {
       if (k === 'raw') continue;
       if (v != null) n++;
     }
-  }
-  return n;
+    return n;
+  });
+}
+
+// b is an acceptable replacement for a: neither player's side gets shallower.
+function notShallower(a, b) {
+  const [a1, a2] = sideDepths(a);
+  const [b1, b2] = sideDepths(b);
+  return b1 >= a1 && b2 >= a2;
+}
+
+// b is a strict upgrade on a: no side lost, at least one side gained.
+function strictlyDeeper(a, b) {
+  const [a1, a2] = sideDepths(a);
+  const [b1, b2] = sideDepths(b);
+  return b1 >= a1 && b2 >= a2 && (b1 > a1 || b2 > a2);
 }
 
 function readJson(file) {
@@ -90,15 +122,22 @@ const AGG_FIELDS = [
 ];
 function census(store) {
   const keys = Object.keys(store || {});
-  let sheet = 0, agg = 0;
+  let sheet = 0, agg = 0, oneSided = 0;
   for (const k of keys) {
     const ms = store[k] && store[k].matchStats;
     if (!ms || !ms.p1) continue;
     sheet++;
-    if (AGG_FIELDS.every((f) => ms.p1[f] != null)) agg++;
+    // BOTH sides. The first version of this counted ms.p1 only, which made it
+    // structurally unable to see a sheet with an empty p2 — and one is already in
+    // the store (eventKey 12153350, a Brownsburg qualifier the feed published for
+    // one player). A coverage number that cannot go down when half a match goes
+    // missing is not a coverage number.
+    if (['p1', 'p2'].every((s) => ms[s] && AGG_FIELDS.every((f) => ms[s][f] != null))) agg++;
+    if (!ms.p2 || Object.keys(ms.p2).length === 0) oneSided++;
   }
   const pct = (x) => (sheet ? `${((100 * x) / sheet).toFixed(1)}%` : '—');
-  return `${keys.length} entries, ${sheet} with a sheet, agg ${pct(agg)}`;
+  return `${keys.length} entries, ${sheet} with a sheet, agg ${pct(agg)}` +
+    (oneSided ? `, ${oneSided} one-sided` : '');
 }
 
 /**
@@ -110,7 +149,7 @@ function mergeStores(a, b) {
   for (const k of Object.keys(a || {})) out[k] = a[k];
   for (const k of Object.keys(b || {})) {
     const cur = out[k];
-    if (!cur || depth(b[k] && b[k].matchStats) > depth(cur && cur.matchStats)) out[k] = b[k];
+    if (!cur || strictlyDeeper(cur && cur.matchStats, b[k] && b[k].matchStats)) out[k] = b[k];
   }
   return out;
 }
@@ -142,7 +181,17 @@ function hydrate(root) {
   return 1;
 }
 
-function freeze(root) {
+// A refusal is a real event and must never read like an idle run. freeze() is
+// invoked with `|| true` in CI (it may not cost a deploy), so the only channel
+// left is the annotation — bare console.log made "coverage tried to go backwards"
+// and "nothing changed today" look identical in the log.
+function refuse(reason) {
+  console.log(`::error title=match-stats floor refused::${reason}`);
+  return 0;
+}
+
+function freeze(root, opts) {
+  const bootstrap = !!(opts && opts.bootstrap);
   const plainPath = path.join(root, PLAIN);
   const gzPath = path.join(root, GZ);
   const live = readJson(plainPath);
@@ -151,6 +200,20 @@ function freeze(root) {
     return 0;
   }
   const committed = readGzJson(gzPath);
+
+  // NO FLOOR = REFUSE, unless explicitly bootstrapping. Every guard below is a
+  // comparison against the committed floor, so a missing or corrupt .gz used to
+  // skip all of them — and that is exactly the state in which the live store is
+  // least trustworthy. The full path: unreadable .gz -> hydrate writes no plain
+  // file -> the pipeline starts from {} and caches only today's board -> freeze
+  // commits those few entries as the new floor, permanently. Refusing leaves the
+  // floor broken (loudly, and npm test fails on it) instead of destroying it.
+  if (!committed) {
+    if (!bootstrap) {
+      return refuse(`${GZ} is absent or corrupt. Refusing to mint a new floor from the live store — an unreadable floor is when the live store is least trustworthy. Re-run with --bootstrap if this store really is the first one.`);
+    }
+    console.log(`freeze: no committed floor and --bootstrap given — minting one from ${PLAIN}.`);
+  }
 
   // Shrink guard. The pipeline only ever ADDS keys to this cache (it loads the whole
   // file and never deletes one), so the live store is monotone and a smaller one means
@@ -162,26 +225,37 @@ function freeze(root) {
     const liveN = Object.keys(live).length;
     const commN = Object.keys(committed).length;
     if (liveN < commN) {
-      console.log(
-        `freeze: refusing to overwrite ${GZ} — live store has FEWER entries (${liveN}) ` +
-        `than the committed floor (${commN}). The cache is append-only, so this is a ` +
-        `broken hydrate, not a legitimate shrink.`
+      return refuse(
+        `live store has FEWER entries (${liveN}) than the committed floor (${commN}). ` +
+        `The cache is append-only, so this is a broken hydrate, not a legitimate shrink.`
       );
-      return 0;
+    }
+    // Containment guard. Counting is not the same as containing: a store that drops
+    // one key and adds another is the same size and has silently lost a match. The
+    // 354 recorded provider-misses here are the easiest to lose that way, because a
+    // missing key and a `matchStats:null` key both score -1 on any depth comparison
+    // and so slip past the depth guard below.
+    const lost = Object.keys(committed).filter((k) => !(k in live));
+    if (lost.length) {
+      return refuse(
+        `${lost.length} eventKey(s) present in the committed floor are MISSING from the ` +
+        `live store (e.g. ${lost.slice(0, 3).join(', ')}). The floor may not lose a match.`
+      );
     }
     // Depth guard, the shrink guard's other half. An equal-sized store can still be
     // strictly worse: re-running the per-match path over keys the tier sweep had
     // already deepened would rewrite sheets with shallower ones at the same count.
-    let shallower = 0;
-    for (const k of Object.keys(committed)) {
-      if (depth(live[k] && live[k].matchStats) < depth(committed[k] && committed[k].matchStats)) shallower++;
-    }
-    if (shallower > 0) {
-      console.log(
-        `freeze: refusing to overwrite ${GZ} — ${shallower} entr(ies) are SHALLOWER than ` +
-        `the committed floor. Coverage may not go backwards; run hydrate first.`
+    // Compared PER SIDE — see sideDepths(); a summed depth lets one player's whole
+    // side be wiped as long as the other side gained more.
+    const shallower = Object.keys(committed).filter(
+      (k) => !notShallower(committed[k] && committed[k].matchStats, live[k] && live[k].matchStats)
+    );
+    if (shallower.length) {
+      return refuse(
+        `${shallower.length} entr(ies) are SHALLOWER than the committed floor on at least ` +
+        `one player's side (e.g. ${shallower.slice(0, 3).join(', ')}). Coverage may not go ` +
+        `backwards; run hydrate first.`
       );
-      return 0;
     }
   }
 
@@ -196,9 +270,12 @@ function freeze(root) {
 if (require.main === module) {
   const cmd = process.argv[2];
   const root = process.env.MATCH_STATS_ROOT || process.cwd();
-  if (cmd === 'hydrate') hydrate(root);
-  else if (cmd === 'freeze') freeze(root);
-  else { console.error('usage: match-stats-store.js <hydrate|freeze>'); process.exit(2); }
+  // The workflow runs both with `|| true`, so the exit code is advisory rather than
+  // fatal — but it is still the difference between "nothing to do" and "I refused",
+  // and a later caller that drops the `|| true` gets the right behaviour for free.
+  if (cmd === 'hydrate') process.exitCode = hydrate(root) ? 0 : 1;
+  else if (cmd === 'freeze') process.exitCode = freeze(root, { bootstrap: process.argv.includes('--bootstrap') }) ? 0 : 1;
+  else { console.error('usage: match-stats-store.js <hydrate|freeze> [--bootstrap]'); process.exit(2); }
 }
 
-module.exports = { PLAIN, GZ, depth, census, mergeStores, hydrate, freeze };
+module.exports = { PLAIN, GZ, depth, sideDepths, notShallower, strictlyDeeper, census, mergeStores, hydrate, freeze };

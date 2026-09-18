@@ -672,6 +672,25 @@ jobs:
             if (!Object.keys(idx).length) { console.error("tournament-history-index.json is empty — the record card would read 0 on record for every player"); process.exit(1); }
             console.log(`TEN-207: profiles lite, ${Object.keys(idx).length} tournament-history shard(s) indexed.`);
           '
+          # TEN-206 founder ruling 2026-09-18 (Q2). historical-match-stats.json is
+          # copied tolerantly above (`|| true`) because a missing file dashes rather
+          # than breaking a table — but "dashes" is exactly how the halved store went
+          # unnoticed for weeks, and tolerating the copy is not the same as tolerating
+          # a REGRESSION. Assert against the committed .gz floor: that number can only
+          # move on a deliberate commit, so legitimate growth can never trip this, and
+          # a run that published fewer box scores than the repo already holds goes red
+          # instead of quietly shipping a thinner match sheet.
+          node -e '
+            const fs = require("fs"), zlib = require("zlib");
+            const site = JSON.parse(fs.readFileSync("_site/historical-match-stats.json","utf8"));
+            const floor = JSON.parse(zlib.gunzipSync(fs.readFileSync("historical-match-stats.json.gz")).toString("utf8"));
+            const sheets = o => Object.keys(o).filter(k => o[k] && o[k].matchStats).length;
+            const [sn, fn] = [Object.keys(site).length, Object.keys(floor).length];
+            const [ss, fsh] = [sheets(site), sheets(floor)];
+            if (sn < fn)   { console.error(`_site/historical-match-stats.json has ${sn} entries, fewer than the ${fn} in the committed floor — the match sheet would ship thinner than the repo already holds`); process.exit(1); }
+            if (ss < fsh)  { console.error(`_site/historical-match-stats.json carries ${ss} box scores, fewer than the ${fsh} in the committed floor — coverage regressed`); process.exit(1); }
+            console.log(`TEN-206: match-stat store published, ${sn} entries / ${ss} box scores (floor ${fn}/${fsh}).`);
+          '
           # TEN-228 · §5.5 Court speed. Presence is not enough: the file existed
           # BEFORE the rebuild too, at 18.5 KB with neither of the tables the new
           # renderer reads. Asserting only `-s` would pass on that old shape and

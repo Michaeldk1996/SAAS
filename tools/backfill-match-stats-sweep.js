@@ -66,7 +66,7 @@ function monthWindows(from, to) {
 // The merge currency lives in the store, not here — tools/match-stats-store.js
 // freeze() enforces the same "coverage may not go backwards" rule at commit time
 // and the two must agree by construction, not by both being careful.
-const { depth } = require(path.join(__dirname, 'match-stats-store.js'));
+const { depth, strictlyDeeper } = require(path.join(__dirname, 'match-stats-store.js'));
 
 async function main() {
   const KEY = process.env.API_TENNIS_KEY;
@@ -97,13 +97,20 @@ async function main() {
     try {
       const res = await fetch(url);
       log.requests++;
+      // A rate-limited or errored window must NOT read as an empty month. Without
+      // these two checks api-tennis's {success:0} shape and a non-200 both fall
+      // through to `fixtures = []` and print `fixtures=0 upgraded=0` — identical
+      // output to a genuinely empty tier page, while still burning budget. The
+      // "ITF publishes no box score" conclusion rests on telling those apart.
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       data = await res.json();
+      if (!data || data.success !== 1) throw new Error(`feed returned success=${data && data.success}`);
     } catch (e) {
       log.windows.push({ ...w, error: e.message });
-      console.error(`sweep: ${w.start}..${w.stop} FAILED — ${e.message}`);
+      console.error(`sweep: ${w.start}..${w.stop} FAILED — ${e.message} (budget spent, no data)`);
       continue;
     }
-    const fixtures = (data && data.success && Array.isArray(data.result)) ? data.result : [];
+    const fixtures = Array.isArray(data.result) ? data.result : [];
     // Counted for EVERY fixture on the page, not just the ones we cache. Without
     // it "upgraded=0" is ambiguous between "the feed has no box score for this
     // tier" and "our cached copies were already as deep as the page" — and those
@@ -117,7 +124,7 @@ async function main() {
       hit++;
       if (!f.first_player_key || !f.second_player_key) continue;
       const fresh = buildMatchStatsFromFixture(f, f.first_player_key, f.second_player_key);
-      if (depth(fresh) > depth(cache[ek] && cache[ek].matchStats)) {
+      if (strictlyDeeper(cache[ek] && cache[ek].matchStats, fresh)) {
         if (!dryRun) {
           cache[ek] = { p1Key: f.first_player_key, p2Key: f.second_player_key, matchStats: fresh };
         }
