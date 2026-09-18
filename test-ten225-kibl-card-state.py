@@ -442,6 +442,17 @@ check('first_seen_at is NOT in the refresh column list — sending it would rese
       'the denominator of the opening-time measurement on every sweep',
       "'first_seen_at'" not in _moves.split('MOVES =')[1].split(')')[0])
 check('...and last_seen_at IS', '"last_seen_at"' in _moves.split('MOVES =')[1].split(')')[0])
+# Postgres runs NOT NULL / CHECK against the PROPOSED insert tuple before it
+# resolves ON CONFLICT, so a column deliberately left OUT of an upsert payload
+# must have a default or every row 400s — even when every row is an update.
+# Measured on run 35292346974. Asserted against the DDL, not remembered.
+_ddl = open(os.path.join(HERE, 'ten232-kibl-schema.sql')).read()
+check('kibl_fixtures.first_seen_at has a DEFAULT — without it the refresh pass '
+      'that omits it fails 23502 on every row and the fixture never updates, '
+      'on a green sweep',
+      'first_seen_at     timestamptz not null default now()' in _ddl)
+check('...and the idempotent ALTER carries it too, for the table that already '
+      'exists', 'alter column first_seen_at set default now()' in _ddl)
 
 print()
 if FAILED:

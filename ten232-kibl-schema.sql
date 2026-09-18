@@ -161,11 +161,22 @@ create table if not exists public.kibl_fixtures (
     -- into disagreeing about who a player is.
     match_key         text,
 
-    first_seen_at     timestamptz not null,
-    last_seen_at      timestamptz not null,
+    -- DEFAULT now() is load-bearing, not decoration. Postgres evaluates NOT
+    -- NULL (and CHECK) on the PROPOSED insert tuple BEFORE it resolves
+    -- ON CONFLICT, so the refresh pass — which deliberately omits first_seen_at
+    -- so an update cannot reset it — fails 23502 on every row without a
+    -- default, even though every row is really an update. MEASURED on run
+    -- 35292346974: "fixture refresh chunk 0 failed (23502)", so scheduled_start
+    -- and name silently never refreshed while the sweep reported green.
+    first_seen_at     timestamptz not null default now(),
+    last_seen_at      timestamptz not null default now(),
     first_sweep_id    text,
     last_sweep_id     text
 );
+
+alter table public.kibl_fixtures
+    alter column first_seen_at set default now(),
+    alter column last_seen_at  set default now();
 
 alter table public.kibl_fixtures
     add column if not exists match_key      text,

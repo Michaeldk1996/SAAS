@@ -238,6 +238,13 @@ def upsert_fixtures(url, key, rows):
     only (ignore-duplicates, so an existing row is untouched), pass 2 updates
     the columns that are allowed to move on the rows that already existed.
 
+    ⚠️ PASS 2 DEPENDS ON first_seen_at HAVING A DEFAULT. Postgres runs NOT NULL
+    and CHECK against the PROPOSED insert tuple before it resolves ON CONFLICT,
+    so omitting a NOT NULL column fails 23502 on every row even when every row
+    is an update. Measured on run 35292346974: the whole refresh chunk 400'd and
+    scheduled_start / name silently stopped refreshing on a green sweep. The
+    schema now carries `default now()` on both timestamps for exactly this.
+
     Returns (n_new, n_failed).
     """
     new = 0
@@ -264,6 +271,11 @@ def upsert_fixtures(url, key, rows):
             "POST", f"/rest/v1/{TABLE_FIXTURES}?on_conflict=fixture_id", url, key,
             body=moved, headers={"Prefer": "resolution=merge-duplicates"})
         if err2:
+            # A failed refresh is NOT cosmetic: it means a rescheduled fixture
+            # keeps its old start and a renamed one keeps its old players, on a
+            # sweep that otherwise reports green. Counted as a failure so the
+            # sweep row says so.
+            failed += len(chunk)
             print(f"::warning::fixture refresh chunk {i // INSERT_CHUNK} failed: {err2}")
     return new, failed
 
