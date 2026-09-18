@@ -22,8 +22,16 @@ Read the meter, make one call, read the meter again:
     /v4/markets              200  ->  +1 unit
     /v4/odds-by-tournaments  400  ->  +1 unit   <-- a FAILED call still bills
     /v4/fixtures             200  ->  +1 unit
+    /v4/bookmakers           200  ->  +1 unit   <-- measured 2026-09-18, TEN-225
     /v4/historical-odds      400  ->   0 units
-    /v4/account                   ->   0 units
+    /v4/account                   ->   0 units  <-- RE-MEASURED 2026-09-18:
+        three consecutive reads gave 1078 -> 1078 -> 1078, delta 0 on both. An
+        earlier pass in this issue reported it as billable; that was a bad
+        inference from an uncounted second /v4/bookmakers call, not a
+        measurement, and it is wrong. The free-list below is correct as it
+        stands. Recorded here because a wrong entry on a budget guard's
+        free-list is exactly what gets acted on later by someone with no
+        reason to re-measure it.
 
 Two things follow. A retry loop around a billable endpoint bills every attempt,
 so "units spent" is never "rows returned". And because a 4xx bills, a counter we
