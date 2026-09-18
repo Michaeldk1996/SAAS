@@ -6783,6 +6783,23 @@ function ocsProvenance(m){
   const book = ocsBookOf(m), ts = ocsFmtTs(ocsOpenTsOf(m));
   return [book, ts].filter(Boolean).join(' · ');
 }
+// The provenance line under a Biggest Market Move figure. It used to be the
+// literal string "Bet365 open → now", and until this issue that was true by
+// construction: one book priced every leg. It stopped being true the moment
+// odds_card_state started selecting sports411 as the primary — MEASURED on the
+// deployed board 2026-09-18, the only two fixtures with both legs are
+// Kwon/Suresh and Chung/Nagal, and BOTH are sports411. A box labelled Bet365
+// over a sports411 move is exactly the "label every drift figure for what it
+// is" rule (founder, 2026-09-10) failing in the one place it was written for.
+//
+// So the label names the book that actually produced the figure. With no
+// figure on file it falls back to the default book, because the sentence still
+// has to say which book we looked in and found nothing.
+function mcMoveBookLabel(m, leg){
+  const book = (m && ocsBookOf(m)) || 'Bet365';
+  const pretty = book.toLowerCase() === 'bet365' ? 'Bet365' : book;
+  return `${pretty} open → ${leg}`;
+}
 async function loadOddsCardState(){
   try {
     const res = await fetch('./odds-card-state.json', { cache: 'no-cache' });
@@ -8353,7 +8370,7 @@ function renderMatches(){
         if (d.pct === 0) return;
         if (!bmv || Math.abs(d.pct) > Math.abs(bmv.d.pct)) {
           bmv = { o, c, d, name: who === 'p1' ? m.p1 : m.p2, opp: who === 'p1' ? m.p2 : m.p1,
-                  tour: m.tour, round: roundBadgeText(m.tournamentRound) };
+                  tour: m.tour, round: roundBadgeText(m.tournamentRound), m };
         }
       });
     });
@@ -8391,7 +8408,7 @@ function renderMatches(){
       panels.push(`<div class="mc-story"><div class="mc-story__lbl">Biggest market move</div>`
         + `<div class="mc-story__move"><span class="mc-story__od">${bmv.o.toFixed(2)} → ${bmv.c.toFixed(2)}</span><span class="mc-drift ${bmv.d.dir}">${bmv.d.text}</span></div>`
         + `<div class="mc-story__ctx"><strong>${bmv.name}</strong> ${bmv.d.pct > 0 ? 'drifted' : 'shortened'} · v ${bmv.opp}${bmv.tour ? ' · ' + bmv.tour : ''}${bmv.round ? ' ' + bmv.round : ''}</div>`
-        + `<div class="mc-story__faint">Bet365 open → close · ${cov.text}</div></div>`);
+        + `<div class="mc-story__faint">${mcMoveBookLabel(bmv.m, 'close')} · ${cov.text}</div></div>`);
     }
     if (upsetRows.length) {
       const rows = upsetRows.slice(0, 3).map(u =>
@@ -8445,7 +8462,7 @@ function renderMatches(){
         if (d.pct === 0) return;
         if (!bmv || Math.abs(d.pct) > Math.abs(bmv.d.pct)) {
           bmv = { o, c, d, name: who === 'p1' ? m.p1 : m.p2, opp: who === 'p1' ? m.p2 : m.p1,
-                  tour: m.tour, round: roundBadgeText(m.tournamentRound) };
+                  tour: m.tour, round: roundBadgeText(m.tournamentRound), m };
         }
       });
     });
@@ -8465,9 +8482,9 @@ function renderMatches(){
       + (bmv
           ? `<div class="mc-story__move"><span class="mc-story__od">${bmv.o.toFixed(2)} → ${bmv.c.toFixed(2)}</span><span class="mc-drift ${bmv.d.dir}">${bmv.d.text}</span></div>`
             + `<div class="mc-story__ctx"><strong>${bmv.name}</strong> ${bmv.d.pct > 0 ? 'drifted' : 'shortened'} · v ${bmv.opp}${bmv.tour ? ' · ' + bmv.tour : ''}${bmv.round ? ' ' + bmv.round : ''}</div>`
-            + `<div class="mc-story__faint">Bet365 open → now · ${driftCov.text}</div>`
+            + `<div class="mc-story__faint">${mcMoveBookLabel(bmv.m, 'now')} · ${driftCov.text}</div>`
           : `<div class="mc-story__vpempty">No opening prices on file</div>`
-            + `<div class="mc-story__faint">Bet365 open → now · ${driftCov.text}</div>`)
+            + `<div class="mc-story__faint">${mcMoveBookLabel(null, 'now')} · ${driftCov.text}</div>`)
       + `</div>`);
 
     // 2. SHORTEST PRICE — the day's shortest quoted side. Purely market data, always real.

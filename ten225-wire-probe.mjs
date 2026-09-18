@@ -263,6 +263,45 @@ try {
           swapped[0] === '7.77' && swapped[1] === '1.11', swapped);
   }
 
+  // 3c — Biggest Market Move. The figure is open -> now and the line under it
+  // names the book. It used to say "Bet365" unconditionally, which was true
+  // until odds_card_state started selecting sports411; then it was a false
+  // claim about a real number. Driven on the REAL published data, not injected.
+  const bmm = await evalJs(`(function(){
+    if (typeof setMatchesView === 'function') setMatchesView('upcoming');
+    const up = matches.filter(m => !isFinishedMatch(m));
+    const withMove = up.filter(m => ['p1','p2'].some(w =>
+      _openDerivedOf(m,w) != null && _mcNowOf(m,w) != null));
+    // Land on the day that actually holds one, else the panel has nothing.
+    if (withMove.length) state.day = matchDayBucket(withMove[0]);
+    renderMatches();
+    const panel = [...document.querySelectorAll('.mc-story')]
+      .find(e => /biggest market move/i.test(e.textContent||''));
+    return {
+      qualifying: withMove.length,
+      books: [...new Set(withMove.map(m => ocsBookOf(m)))],
+      move:  panel ? (panel.querySelector('.mc-story__od')||{}).textContent || '' : null,
+      faint: panel ? (panel.querySelector('.mc-story__faint')||{}).textContent || '' : null,
+      empty: panel ? !!panel.querySelector('.mc-story__vpempty') : null,
+    };
+  })()`);
+  console.log(`  ..   3c open→now: ${bmm.qualifying} qualifying fixture(s), `
+    + `books=${JSON.stringify(bmm.books)}, move=${JSON.stringify(bmm.move)}, `
+    + `label=${JSON.stringify(bmm.faint)}`);
+  check('3c: the Biggest Market Move panel is on the page', bmm.faint !== null, bmm);
+  if (bmm.qualifying > 0 && !bmm.empty) {
+    check('3c: the figure is labelled "open → now"', /open → now/.test(bmm.faint || ''), bmm);
+    check('3c: the label names a book the published data actually used',
+          bmm.books.some(b => (bmm.faint || '').toLowerCase().includes(String(b || '').toLowerCase())),
+          bmm);
+    check('3c: it does NOT claim Bet365 over a non-bet365 move',
+          !(bmm.books.length === 1 && bmm.books[0] && bmm.books[0].toLowerCase() !== 'bet365'
+            && /bet365/i.test(bmm.faint || '')), bmm);
+  } else {
+    console.log('  ..   3c: no fixture on this board has both legs — panel reports empty, '
+      + 'which is the required behaviour, but the label rule was NOT exercised');
+  }
+
   // 3a — the Upcoming Open slot: the match-detail panel must APPEAR and dash,
   // not vanish, on a fixture with no opening price on file.
   const modal = await evalJs(`(function(){
