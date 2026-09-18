@@ -31,7 +31,7 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: 'sweep | backfill | report | cards | audit'
+        description: 'sweep | backfill | report | cards | audit | sides'
         default: 'sweep'
       horizon_days:
         description: 'sweep: how far forward, days'
@@ -227,6 +227,18 @@ jobs:
         run: |
           set -o pipefail
           python3 ten225-ddl-null-audit.py | tee -a "$GITHUB_STEP_SUMMARY"
+
+      # TEN-225 side-mapping diagnosis. Read-only, no vendor calls. Answers
+      # what a Kibl side_id actually is, after the census showed side_id 1 never
+      # appears and every priced fixture carries 2+3.
+      - name: Side-mapping probe
+        if: inputs.mode == 'sides'
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: |
+          set -o pipefail
+          python3 ten225-kibl-side-probe.py | tee -a "$GITHUB_STEP_SUMMARY"
 
       # Runs even when the pull failed: whatever landed is real data, and the
       # size and reliability figures are how the 48h report and the gap alert are
