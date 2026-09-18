@@ -1,0 +1,1894 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+    <template id="__bundler_thumbnail" data-bg-color="#06070a">
+      <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+        <rect width="1200" height="800" fill="#06070a"></rect>
+        <text x="600" y="430" text-anchor="middle" font-family="sans-serif" font-size="240" font-weight="800" fill="#5b9bff">S</text>
+      </svg>
+    </template>
+
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800;900&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *{ box-sizing:border-box; } body{ margin:0; background:#06070a; color:#e7e9ee; font-family:'Hanken Grotesk',sans-serif; -webkit-font-smoothing:antialiased; }
+    a{ color:#5b9bff; text-decoration:none; } a:hover{ color:#6aaeff; }
+    .mono{ font-family:'IBM Plex Mono',monospace; }
+    .cap{ font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:0.16em; text-transform:uppercase; color:#5b6880; }
+    .seg{ cursor:pointer; transition:background .14s ease, color .14s ease, border-color .14s ease; }
+    .lnk{ cursor:pointer; } .lnk:hover{ text-decoration:underline; }
+    .row:hover{ background:rgba(255,255,255,0.03); }
+    .statcard{ transition:border-color .14s ease; } .statcard:hover{ border-color:rgba(91,155,255,0.35); }
+    ::-webkit-scrollbar{ width:9px; height:9px; } ::-webkit-scrollbar-thumb{ background:rgba(255,255,255,0.13); border-radius:5px; } ::-webkit-scrollbar-track{ background:transparent; }
+    .elotip-pop{ opacity:0; visibility:hidden; transition:opacity .12s ease; pointer-events:none; }
+    .elotip:hover .elotip-pop{ opacity:1; visibility:visible; }
+  .plink{ cursor:pointer; }
+    .plink:hover{ text-decoration:underline; }
+  </style>
+</helmet>
+
+<section style="min-height:100vh; background:#06070a; padding:0; display:flex; align-items:flex-start;">
+  <div style="position:sticky; top:0; flex:none; align-self:flex-start; height:100vh; overflow-y:auto;">
+    <dc-import name="App Sidebar" active="Players" hint-size="250px,100vh"></dc-import>
+  </div>
+  <div style="flex:1; min-width:0; max-width:1440px; padding:26px 34px 70px; display:flex; flex-direction:column; gap:22px;">
+
+    <span class="seg" onClick="{{ onBack }}" style="display:inline-flex; align-items:center; gap:9px; font-size:13.5px; font-weight:600; color:#5b6880; align-self:flex-start;"><svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M12 5l-5 5 5 5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path></svg>Back to Players</span>
+
+    <!-- HEADER -->
+    <div style="border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:26px; display:flex; align-items:flex-start; gap:28px; flex-wrap:wrap;">
+      <span style="position:relative; width:118px; height:118px; flex:none;">
+        <span style="position:absolute; inset:0; border-radius:50%; background:linear-gradient(155deg,rgba(91,155,255,0.22),rgba(91,155,255,0.05)); border:1px solid rgba(91,155,255,0.35); display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:34px; font-weight:700; color:#6aaeff;">{{ init }}</span>
+        <span style="position:absolute; bottom:-8px; left:50%; transform:translateX(-50%); background:#5b9bff; color:#fff; font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:700; border-radius:999px; padding:3px 11px; border:2px solid #06070a;">{{ atp }}</span>
+      </span>
+      <div style="flex:1; min-width:280px; display:flex; flex-direction:column; gap:11px;">
+        <div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
+          <span style="font-size:44px; font-weight:800; letter-spacing:-0.02em; line-height:1; white-space:nowrap;">{{ name }}</span>
+          <span class="mono" style="font-size:13px; font-weight:600; color:#5b6880; background:rgba(159,178,212,0.1); border:1px solid rgba(159,178,212,0.32); border-radius:8px; padding:6px 12px; white-space:nowrap;">ATP No. {{ atp }}</span>
+        </div>
+        <div style="font-size:18px; font-weight:700; color:#e7e9ee;">{{ arch }}</div>
+        <div style="display:flex; align-items:center; gap:14px; font-size:14px; color:#5b6880;"><span>{{ country }}</span><span style="width:1px; height:13px; background:rgba(255,255,255,0.16);"></span><span>Age {{ age }}</span></div>
+      </div>
+      <div style="flex:none; align-self:stretch; display:flex; align-items:stretch;">
+        <sc-for list="{{ liveState }}" as="c" hint-placeholder-count="4">
+          <div style="display:flex; flex-direction:column; justify-content:flex-end; gap:6px; min-width:0; padding:0 20px; border-left:1px solid rgba(255,255,255,0.09);">
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:9.5px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:#5b6880; white-space:nowrap;">{{ c.label }}</span>
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:15px; font-weight:700; color:{{ c.color }}; white-space:nowrap;">{{ c.value }}</span>
+            <span style="font-size:12px; color:#5b6880; white-space:nowrap;">{{ c.sub }}<sc-if value="{{ c.link }}" hint-placeholder-val="{{ false }}"><a href="{{ c.link.href }}" style="color:#5b9bff; text-decoration:none;" style-hover="color:#8bb8ff;">{{ c.link.label }}</a></sc-if><span>{{ c.sub2 }}</span></span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+
+
+
+    <!-- RECENT FORM RIBBON -->
+    <div style="background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:12px; padding:16px 22px; display:grid; grid-template-columns:auto minmax(180px,1.2fr) auto minmax(0,2fr) auto; gap:22px; align-items:center;">
+      <div style="display:flex; flex-direction:column; gap:5px;">
+        <span class="cap">Recent form</span>
+        <span class="mono" style="font-size:22px; font-weight:700; line-height:1; white-space:nowrap;"><span style="color:#5b9bff;">{{ ribbonPct }}</span> <span style="font-size:13px; color:#5b6880; font-weight:600;">{{ ribbonRecord }}</span></span>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:6px; min-width:0;">
+        <div style="display:flex; gap:4px;">
+          <sc-for list="{{ formStrip }}" as="s" hint-placeholder-count="18"><span style="flex:1; height:22px; border-radius:5px; display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:700; background:{{ s.bg }}; color:{{ s.color }};">{{ s.tag }}</span></sc-for>
+        </div>
+        <span class="cap" style="white-space:nowrap;">{{ ribbonScope }}</span>
+      </div>
+      <span style="width:1px; height:44px; background:rgba(255,255,255,0.09);"></span>
+      <div style="display:flex; gap:8px; min-width:0; overflow:hidden; mask-image:linear-gradient(90deg,#000 82%,transparent); -webkit-mask-image:linear-gradient(90deg,#000 82%,transparent);">
+        <sc-for list="{{ ribbonRecent }}" as="r" hint-placeholder-count="5">
+          <span class="seg" onClick="{{ r.onOpen }}" style="display:flex; align-items:center; gap:8px; padding:7px 10px; border:1px solid rgba(255,255,255,0.08); border-radius:8px; white-space:nowrap; flex:none;" style-hover="border-color:rgba(91,155,255,0.35);">
+            <span class="mono" style="width:20px; height:20px; border-radius:5px; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; background:{{ r.bg }}; color:{{ r.color }};">{{ r.tag }}</span>
+            <span style="display:flex; flex-direction:column; gap:2px;"><span style="font-size:12px; font-weight:700;">{{ r.opp }}</span><span class="mono" style="font-size:10px; color:#5b6880;">{{ r.meta }}</span></span>
+          </span>
+        </sc-for>
+      </div>
+      <span class="seg" onClick="{{ onToggleLedger }}" style="font-size:12.5px; font-weight:700; color:#5b9bff; white-space:nowrap;" style-hover="color:#8bb8ff;">{{ ledgerLabel }}</span>
+    </div>
+
+    <!-- FULL LEDGER (opens from the ribbon) -->
+    <sc-if value="{{ ledgerOpen }}" hint-placeholder-val="{{ false }}">
+      <div style="background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:12px; padding:22px 24px; display:flex; flex-direction:column;" ref="{{ formRef }}">
+            <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:16px;"><span style="font-size:20px; font-weight:800;">Recent form</span><span class="mono" style="font-size:12px; color:#5b6880;"><span style="color:#5b9bff; font-weight:700;">{{ formPct }}</span> · {{ formCount }}</span></div>
+            <div style="display:flex; gap:6px; margin-bottom:16px; flex-wrap:wrap;">
+              <sc-for list="{{ formFilters }}" as="f" hint-placeholder-count="4"><span class="seg" onClick="{{ f.onClick }}" style="white-space:nowrap; font-size:12px; font-weight:{{ f.weight }}; padding:7px 13px; border-radius:8px; color:{{ f.color }}; background:{{ f.bg }}; border:1px solid {{ f.bd }};">{{ f.label }}</span></sc-for>
+            </div>
+            <sc-if value="{{ formHasRows }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex; align-items:center; gap:4px; margin-bottom:8px;">
+              <sc-for list="{{ formStrip }}" as="s" hint-placeholder-count="18"><span style="flex:1; height:26px; border-radius:5px; display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:700; background:{{ s.bg }}; color:{{ s.color }};">{{ s.tag }}</span></sc-for>
+            </div>
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:20px; flex-wrap:wrap;">
+              <span class="cap">oldest → most recent</span>
+              <span style="display:flex; align-items:center; gap:14px; flex-wrap:wrap; font-size:11px; color:#4b5672;">
+                <span style="display:flex; align-items:center; gap:6px;"><span style="width:10px; height:10px; border-radius:3px; background:rgba(61,214,140,0.22);"></span>Win</span>
+                <span style="display:flex; align-items:center; gap:6px;"><span style="width:10px; height:10px; border-radius:3px; background:rgba(224,97,111,0.22);"></span>Loss</span>
+                <span style="width:1px; height:14px; background:rgba(255,255,255,0.1);"></span>
+                <sc-for list="{{ priceFilters }}" as="p" hint-placeholder-count="2">
+                  <span class="seg" onClick="{{ p.onClick }}" style="display:flex; align-items:center; gap:7px; cursor:pointer; font-size:11.5px; font-weight:600; padding:5px 10px; border-radius:8px; color:{{ p.color }}; background:{{ p.bg }}; border:1px solid {{ p.bd }};">
+                    <span style="width:11px; height:11px; border-radius:3px; background:{{ p.mark }}; border:1px solid {{ p.markBd }}; flex:none;"></span>{{ p.label }}
+                  </span>
+                </sc-for>
+              </span>
+            </div>
+            </sc-if>
+            <sc-if value="{{ formEmpty }}" hint-placeholder-val="{{ false }}">
+              <div style="border:1px dashed rgba(255,255,255,0.12); border-radius:10px; padding:26px; text-align:center; font-size:13px; color:#5b6880; margin-bottom:8px;">No matches with these filters.</div>
+            </sc-if>
+            <div style="display:flex; flex-direction:column; gap:0; flex:1; min-height:0; overflow-y:{{ formListOverflow }};">
+              <sc-for list="{{ formEvents }}" as="e" hint-placeholder-count="4">
+                <div style="display:grid; grid-template-columns:52px minmax(150px,1fr) 44px minmax(160px,0.9fr) 48px 48px; gap:10px; align-items:center; background:rgba(91,155,255,0.12); border-radius:7px; padding:7px 8px; margin-top:12px;">
+                  <span style="display:flex; align-items:center; gap:6px; grid-column:span 2; min-width:0;">
+                    <span style="width:7px; height:7px; border-radius:2px; background:{{ e.surfColor }}; flex:none;"></span>
+                    <span style="font-size:12.5px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ e.name }}</span>
+                  </span>
+                  <span class="cap" style="font-size:8.5px; color:#8b96b5; text-align:left;">Rd</span>
+                  <span class="cap" style="font-size:8.5px; color:#8b96b5; text-align:left;">Result</span>
+                  <span class="cap" style="font-size:8.5px; color:#8b96b5; text-align:right;">H</span>
+                  <span class="cap" style="font-size:8.5px; color:#8b96b5; text-align:right;">A</span>
+                </div>
+                <sc-for list="{{ e.rows }}" as="m" hint-placeholder-count="5">
+                  <div class="row seg" onClick="{{ m.onToggle }}" style="cursor:pointer; display:grid; grid-template-columns:52px minmax(150px,1fr) 44px minmax(160px,0.9fr) 48px 48px; gap:10px; align-items:center; padding:8px 8px; border-bottom:1px solid rgba(255,255,255,0.05); border-radius:6px;" style-hover="background:rgba(255,255,255,0.03);">
+                    <span class="mono" style="font-size:11px; color:#5b6880;">{{ m.date }}</span>
+                    <span style="font-size:13px; min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;"><span style="font-weight:{{ m.leftWeight }}; color:{{ m.leftColor }};">{{ m.left }}</span><span style="color:#3f4860;"> &#8211; </span><span style="font-weight:{{ m.rightWeight }}; color:{{ m.rightColor }};">{{ m.right }}</span></span>
+                    <span class="mono" style="font-size:10.5px; color:#5b6880; text-align:left;">{{ m.round }}</span>
+                    <span class="mono" style="font-size:11px; color:#8b96b5; text-align:left; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0;">{{ m.score }}</span>
+                    <span class="mono" style="font-size:12px; font-weight:700; text-align:right; color:{{ m.hColor }};">{{ m.h }}</span>
+                    <span class="mono" style="font-size:12px; font-weight:700; text-align:right; color:{{ m.aColor }};">{{ m.a }}</span>
+                  </div>
+                </sc-for>
+              </sc-for>
+            </div>
+            <div style="display:flex; justify-content:center; padding-top:16px;"><span class="seg" onClick="{{ onToggleForm }}" style="display:inline-flex; align-items:center; gap:9px; font-size:13px; font-weight:700; color:#5b9bff; padding:10px 18px; border:1px solid rgba(91,155,255,0.35); border-radius:11px;" style-hover="background:rgba(91,155,255,0.08);">{{ formToggleLabel }}</span></div>
+          </div>
+    </sc-if>
+
+    <!-- SIX BOXES -->
+    <dc-import name="Player Stat Boxes" vals="{{ boxVals }}" hint-size="100%,380px"></dc-import>
+
+        <!-- KEY INSIGHTS (three cards) -->
+        <div>
+          <div style="font-size:22px; font-weight:800; letter-spacing:-0.015em; margin-bottom:16px;">Key insights</div>
+          <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px; align-items:stretch;">
+            <sc-for list="{{ insights }}" as="i" hint-placeholder-count="3">
+              <div style="height:100%; background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:12px; padding:24px 24px 26px; display:flex; flex-direction:column; gap:16px;">
+                <span style="width:36px; height:36px; border-radius:13px; background:{{ i.iconBg }}; display:flex; align-items:center; justify-content:center; color:{{ i.iconColor }};"><svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="{{ i.icon }}" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+                <span style="font-size:18.5px; font-weight:800; letter-spacing:-0.01em; line-height:1.25; color:#fff;">{{ i.title }}</span>
+                <span style="font-size:13.5px; color:#5b6880; line-height:1.7;">{{ i.body }}</span>
+              </div>
+            </sc-for>
+          </div>
+        </div>
+
+
+    <!-- RECORD BY TOURNAMENT — EXPANDED DETAIL (full width) -->
+          <sc-if value="{{ tourDetailOpen }}" hint-placeholder-val="{{ false }}">
+          <div style="background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:12px; padding:22px 24px;">
+            <div style="display:flex; align-items:center; gap:13px; margin-bottom:22px;">
+              <span style="width:40px; height:40px; border-radius:11px; background:rgba(91,155,255,0.12); border:1px solid rgba(91,155,255,0.35); display:flex; align-items:center; justify-content:center; color:#5b9bff; flex:none;"><svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M6 4h8v3a4 4 0 01-8 0V4ZM10 11v3M7.5 16.5h5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>
+              <span style="flex:1; font-size:19px; font-weight:800;">{{ tourDetail.title }}</span>
+              <span class="mono" style="font-size:12px; font-weight:600; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.15); border-radius:8px; padding:6px 12px; white-space:nowrap;"><span style="color:#5b6880;">{{ tourDetail.tierName }} · </span><span style="color:{{ tourDetail.surfColor }};">{{ tourDetail.surfName }}</span></span>
+              <span class="seg" onClick="{{ onCloseTour }}" style="color:#5b6880; font-size:20px; line-height:1; padding:0 4px;">×</span>
+            </div>
+            <sc-if value="{{ tourDetail.isGS }}" hint-placeholder-val="{{ false }}">
+            <div style="display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:12px; margin-bottom:14px;">
+              <div style="background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:12px; padding:15px 16px; display:flex; flex-direction:column; gap:8px;"><span class="cap">W–L record</span><span class="mono" style="font-size:26px; font-weight:700; color:#fff; line-height:1;">{{ tourDetail.wl }}</span><span style="font-size:11px; color:#4b5672;">main draw</span></div>
+              <div style="background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:12px; padding:15px 16px; display:flex; flex-direction:column; gap:8px;"><span class="cap">Grand Slam career</span><span class="mono" style="font-size:26px; font-weight:700; color:#fff; line-height:1;">{{ tourDetail.gs.career }}</span><span style="font-size:11px; color:#4b5672;">{{ tourDetail.gs.careerSub }}</span></div>
+              <div style="background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:12px; padding:15px 16px; display:flex; flex-direction:column; gap:8px;"><span class="cap">Over 3.5 sets · this event</span><span class="mono" style="font-size:26px; font-weight:700; color:#fff; line-height:1;">{{ tourDetail.gs.o35Event }}</span><span style="font-size:11px; color:#4b5672;">{{ tourDetail.gs.o35EventSub }}</span></div>
+              <div style="background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:12px; padding:15px 16px; display:flex; flex-direction:column; gap:8px;"><span class="cap">Over 3.5 sets · other majors</span><span class="mono" style="font-size:26px; font-weight:700; color:#fff; line-height:1;">{{ tourDetail.gs.o35All }}</span><span style="font-size:11px; color:#4b5672;">{{ tourDetail.gs.o35AllSub }}</span></div>
+              <div style="background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:12px; padding:15px 16px; display:flex; flex-direction:column; gap:8px;"><span class="cap">Win rate</span><span class="mono" style="font-size:26px; font-weight:700; color:{{ tourDetail.winRateColor }}; line-height:1;">{{ tourDetail.winRate }}</span><span style="font-size:11px; color:#4b5672;">main draw</span></div>
+            </div>
+            <div style="display:flex; flex-direction:column; gap:3px; margin-bottom:26px;">
+              <span class="mono" style="font-size:11px; line-height:1.6; color:#4b5672;">{{ tourDetail.gs.note1 }}</span>
+              <span class="mono" style="font-size:11px; line-height:1.6; color:#4b5672;">{{ tourDetail.gs.note2 }}</span>
+              <span class="mono" style="font-size:11px; line-height:1.6; color:#4b5672;">{{ tourDetail.gs.note3 }}</span>
+            </div>
+            </sc-if>
+            <sc-if value="{{ tourDetail.notGS }}" hint-placeholder-val="{{ true }}">
+            <div style="display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:26px;">
+              <div style="background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:12px; padding:15px 16px; display:flex; flex-direction:column; gap:8px;"><span class="cap">W–L record</span><span class="mono" style="font-size:26px; font-weight:700; color:#fff; line-height:1;">{{ tourDetail.wl }}</span><span style="font-size:11px; color:#4b5672;">career</span></div>
+              <div style="background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:12px; padding:15px 16px; display:flex; flex-direction:column; gap:8px;"><span class="cap">Titles won</span><span class="mono" style="font-size:26px; font-weight:700; color:#fff; line-height:1;">{{ tourDetail.titles }}</span><span style="font-size:11px; color:#4b5672;">at this event</span></div>
+              <div style="background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:12px; padding:15px 16px; display:flex; flex-direction:column; gap:8px;"><span class="cap">Best result</span><span style="font-size:19px; font-weight:800; color:#fff; line-height:1.1;">{{ tourDetail.bestResult }}</span><span style="font-size:11px; color:#4b5672;">{{ tourDetail.bestYears }}</span></div>
+              <div style="background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:12px; padding:15px 16px; display:flex; flex-direction:column; gap:8px;"><span class="cap">Last played</span><span class="mono" style="font-size:26px; font-weight:700; color:#fff; line-height:1;">{{ tourDetail.lastPlayed }}</span><span style="font-size:11px; color:#4b5672;">{{ tourDetail.editionsCount }}</span></div>
+              <div style="background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:12px; padding:15px 16px; display:flex; flex-direction:column; gap:8px;"><span class="cap">Win rate</span><span class="mono" style="font-size:26px; font-weight:700; color:{{ tourDetail.winRateColor }}; line-height:1;">{{ tourDetail.winRate }}</span><span style="font-size:11px; color:#4b5672;">career</span></div>
+            </div>
+            </sc-if>
+            <div style="display:flex; align-items:baseline; justify-content:space-between; margin-bottom:14px;"><span class="cap">Fixtures by edition</span><span class="cap">Round-by-round · who he beat &amp; lost to</span></div>
+            <div style="display:flex; flex-direction:column; gap:20px;">
+              <sc-for list="{{ tourDetail.editions }}" as="e" hint-placeholder-count="4">
+                <div>
+                  <div style="display:flex; align-items:center; justify-content:space-between; padding:0 4px 10px; border-bottom:1px solid rgba(255,255,255,0.07); margin-bottom:2px;"><span class="mono" style="font-size:14px; font-weight:700;">{{ e.label }}</span><span class="mono" style="font-size:11px; font-weight:600; color:#e7e9ee; background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:7px; padding:5px 11px;">{{ e.roundBadge }}</span></div>
+                  <sc-for list="{{ e.fixtures }}" as="f" hint-placeholder-count="2">
+                    <div>
+                    <div class="row seg" onClick="{{ f.onToggle }}" style="display:flex; flex-direction:column; gap:8px; padding:11px 4px; border-radius:8px;">
+                      <div style="display:flex; align-items:center; gap:14px;"><span class="mono" style="width:24px; height:24px; flex:none; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; border-radius:6px; color:{{ f.color }}; background:{{ f.bg }};">{{ f.res }}</span><span class="mono" style="width:40px; flex:none; font-size:12px; color:#4b5672;">{{ f.code }}</span><span style="flex:1;"></span><span style="display:inline-flex; color:#5b6880; transform:{{ f.caret }}; transition:transform .15s ease;"><svg width="15" height="15" viewBox="0 0 20 20" fill="none"><path d="M8 6l4 4-4 4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path></svg></span></div>
+                      <div style="display:flex; flex-direction:column; gap:6px; padding-left:38px;">
+                        <sc-for list="{{ f.rows }}" as="p" hint-placeholder-count="2">
+                          <div style="display:flex; align-items:center;">
+                            <span style="width:150px; flex:none; font-size:13.5px; font-weight:700; color:{{ p.nameColor }}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><span class="{{ p.link }}" onClick="{{ p.onOpen }}">{{ p.name }}</span><span style="font-weight:400; color:#4b5672;">{{ p.ret }}</span></span>
+                            <span style="display:grid; grid-template-columns:24px repeat(3,18px); gap:0 4px; align-items:center; margin-left:8px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:15px; font-weight:700; text-align:center; margin-right:4px; padding:2px 0; border-radius:5px; background:{{ p.tileBg }}; color:#e7e9ee;">{{ p.setsWon }}</span><sc-for list="{{ p.cells }}" as="c" hint-placeholder-count="3"><span style="font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:700; text-align:center; color:#5b6880;">{{ c.games }}<sup style="font-size:9px; font-weight:600; margin-left:1px;">{{ c.tb }}</sup></span></sc-for></span>
+                          </div>
+                        </sc-for>
+                      </div>
+                    </div>
+                    <sc-if value="{{ f.open }}" hint-placeholder-val="{{ false }}">
+                    <div style="margin:4px 0 10px; padding:16px 16px 8px; background:#080b12; border:1px solid rgba(255,255,255,0.09); border-radius:12px;">
+                      
+                      <div style="display:flex; justify-content:center; margin-bottom:14px;"><div style="display:flex; gap:4px; background:#0a0d13; border:1px solid rgba(255,255,255,0.09); border-radius:10px; padding:4px;"><sc-for list="{{ statPanel.modeTabs }}" as="t" hint-placeholder-count="2"><span class="seg" onClick="{{ t.onClick }}" style="white-space:nowrap; padding:8px 15px; border-radius:7px; font-size:12.5px; font-weight:{{ t.weight }}; color:{{ t.color }}; background:{{ t.bg }}; border:1px solid {{ t.bd }};">{{ t.label }}</span></sc-for></div></div>
+                      <sc-if value="{{ statPanel.isSummary }}" hint-placeholder-val="{{ true }}">
+                        <div class="mono" style="text-align:center; font-size:11px; color:#4b5672; margin-bottom:16px;">{{ statPanel.summaryMeta }}</div>
+                        <div style="max-width:560px; margin:0 auto;">
+                        <div class="cap" style="margin-bottom:10px;">Score</div>
+                        <div style="display:flex; flex-direction:column; gap:8px; padding:0 2px 4px;">
+                          <sc-for list="{{ statPanel.sumRows }}" as="p" hint-placeholder-count="2">
+                            <div style="display:flex; align-items:center;">
+                              <span style="width:14px; flex:none;"><sc-if value="{{ p.dot }}" hint-placeholder-val="{{ false }}"><span style="display:block; width:6px; height:6px; border-radius:50%; background:#5b6880;"></span></sc-if></span>
+                              <span style="flex:1; min-width:0; font-size:13.5px; font-weight:700; color:{{ p.nameColor }}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><span class="{{ p.link }}" onClick="{{ p.onOpen }}">{{ p.name }}</span><span style="font-weight:400; color:#4b5672;">{{ p.ret }}</span></span>
+                              <span style="display:grid; grid-template-columns:{{ statPanel.setCols }}; gap:0 4px; align-items:center; margin-left:8px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:15px; font-weight:700; text-align:center; margin-right:4px; padding:2px 0; border-radius:5px; background:{{ p.tileBg }}; color:#e7e9ee;">{{ p.setsWon }}</span><sc-for list="{{ p.cells }}" as="c" hint-placeholder-count="3"><span style="font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:700; text-align:center; color:#5b6880;">{{ c.games }}<sup style="font-size:9px; font-weight:600; margin-left:1px;">{{ c.tb }}</sup></span></sc-for></span>
+                            </div>
+                          </sc-for>
+                        </div>
+                        <div style="display:flex; align-items:center; border-top:1px solid rgba(255,255,255,0.07); margin-top:10px; padding:12px 2px 8px;">
+                          <span style="width:14px; flex:none;"></span>
+                          <span class="cap" style="flex:1;">Match time</span>
+                          <span style="display:grid; grid-template-columns:{{ statPanel.setCols }}; gap:0 4px; align-items:center; margin-left:8px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:700; text-align:center; margin-right:4px; color:#e7e9ee;">{{ statPanel.durTotal }}</span><sc-for list="{{ statPanel.durSets }}" as="d" hint-placeholder-count="3"><span style="font-family:'IBM Plex Mono',monospace; font-size:11.5px; text-align:center; color:#5b6880;">{{ d.t }}</span></sc-for></span>
+                        </div>
+                        </div>
+                      </sc-if>
+                      <sc-if value="{{ statPanel.isStats }}" hint-placeholder-val="{{ false }}">
+                        <div style="display:flex; justify-content:center; margin-bottom:18px;"><div style="display:flex; gap:4px; background:#0a0d13; border:1px solid rgba(255,255,255,0.09); border-radius:10px; padding:4px;"><sc-for list="{{ statPanel.setTabs }}" as="t" hint-placeholder-count="3"><span class="seg" onClick="{{ t.onClick }}" style="white-space:nowrap; padding:7px 14px; border-radius:7px; font-size:12px; font-weight:{{ t.weight }}; color:{{ t.color }}; background:{{ t.bg }}; border:1px solid {{ t.bd }};">{{ t.label }}</span></sc-for></div></div>
+                        <div style="display:flex; justify-content:space-between; font-size:13px; font-weight:700; margin-bottom:12px;"><span style="color:#6aaeff;">{{ statPanel.aName }}</span><span class="{{ statPanel.bLink }}" onClick="{{ statPanel.onOpenB }}" style="color:#e7e9ee;">{{ statPanel.bName }}</span></div>
+                        <div class="cap" style="text-align:center; padding:8px 0; background:#0a0d14; border-radius:8px; margin-bottom:16px;">Service</div>
+                        <div style="display:flex; flex-direction:column; gap:14px;">
+                          <sc-for list="{{ statPanel.rows }}" as="r" hint-placeholder-count="6">
+                            <div>
+                              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;"><span class="mono" style="font-size:13px; color:#e7e9ee;">{{ r.a }}</span><span style="display:flex; flex-direction:column; align-items:center; gap:1px;"><span class="cap">{{ r.label }}</span><sc-if value="{{ r.lower }}" hint-placeholder-val="{{ false }}"><span style="font-family:'Hanken Grotesk',sans-serif; font-size:10px; color:#4b5672;">lower is better</span></sc-if></span><span class="mono" style="font-size:13px; color:#e7e9ee;">{{ r.b }}</span></div>
+                              <div style="display:flex; gap:4px; height:6px;"><span style="flex:1; display:flex; justify-content:flex-end;"><span style="display:block; width:{{ r.aW }}; height:100%; background:#6aaeff; border-radius:3px;"></span></span><span style="flex:1;"><span style="display:block; width:{{ r.bW }}; height:100%; background:#e7e9ee; border-radius:3px;"></span></span></div>
+                            </div>
+                          </sc-for>
+                        </div>
+                      </sc-if>
+                      <sc-if value="{{ statPanel.isPoints }}" hint-placeholder-val="{{ false }}">
+                        <div style="display:flex; justify-content:center; margin-bottom:18px;"><div style="display:flex; gap:4px; background:#0a0d13; border:1px solid rgba(255,255,255,0.09); border-radius:10px; padding:4px;"><sc-for list="{{ statPanel.pointSetTabs }}" as="t" hint-placeholder-count="2"><span class="seg" onClick="{{ t.onClick }}" style="white-space:nowrap; padding:7px 14px; border-radius:7px; font-size:12px; font-weight:{{ t.weight }}; color:{{ t.color }}; background:{{ t.bg }}; border:1px solid {{ t.bd }};">{{ t.label }}</span></sc-for></div></div>
+                        <div style="display:flex; flex-direction:column;">
+                          <sc-for list="{{ statPanel.pointSets }}" as="ps" hint-placeholder-count="2">
+                            <div style="background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:9px; text-align:center; font-size:11px; font-family:'IBM Plex Mono',monospace; letter-spacing:0.16em; color:#e7e9ee; padding:11px; margin:10px 0 4px;">{{ ps.label }}</div>
+                            <div style="display:flex; flex-direction:column;">
+                              <sc-for list="{{ ps.games }}" as="g" hint-placeholder-count="6">
+                                <div style="padding:16px 4px; border-bottom:1px solid rgba(255,255,255,0.07);">
+                                  <div style="display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:12px; margin-bottom:10px;">
+                                    <div style="display:flex; align-items:center; justify-content:flex-end; gap:8px;">
+                                      <sc-if value="{{ g.aLost }}" hint-placeholder-val="{{ false }}"><span style="font-family:'IBM Plex Mono',monospace; font-size:9.5px; font-weight:700; letter-spacing:0.08em; color:#e0616f; background:rgba(224,97,111,0.1); border:1px solid rgba(224,97,111,0.34); border-radius:5px; padding:3px 8px; white-space:nowrap;">LOST SERVE</span></sc-if>
+                                      <sc-if value="{{ g.serverA }}" hint-placeholder-val="{{ false }}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#4b5672" stroke-width="1.8"><circle cx="12" cy="12" r="9"></circle><path d="M4 8a15 15 0 0116 0M4 16a15 15 0 0016 0"></path></svg></sc-if>
+                                    </div>
+                                    <div style="display:flex; align-items:center; justify-content:center; gap:9px;">
+                                      <span style="font-family:'IBM Plex Mono',monospace; font-size:18px; font-weight:700; color:{{ g.gAColor }};">{{ g.gA }}</span>
+                                      <span style="color:#5b6880; font-size:15px;">·</span>
+                                      <span style="font-family:'IBM Plex Mono',monospace; font-size:18px; font-weight:700; color:{{ g.gBColor }};">{{ g.gB }}</span>
+                                    </div>
+                                    <div style="display:flex; align-items:center; justify-content:flex-start; gap:8px;">
+                                      <sc-if value="{{ g.serverB }}" hint-placeholder-val="{{ false }}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#4b5672" stroke-width="1.8"><circle cx="12" cy="12" r="9"></circle><path d="M4 8a15 15 0 0116 0M4 16a15 15 0 0016 0"></path></svg></sc-if>
+                                      <sc-if value="{{ g.bLost }}" hint-placeholder-val="{{ false }}"><span style="font-family:'IBM Plex Mono',monospace; font-size:9.5px; font-weight:700; letter-spacing:0.08em; color:#e0616f; background:rgba(224,97,111,0.1); border:1px solid rgba(224,97,111,0.34); border-radius:5px; padding:3px 8px; white-space:nowrap;">LOST SERVE</span></sc-if>
+                                    </div>
+                                  </div>
+                                  <div style="display:flex; flex-wrap:wrap; gap:5px; justify-content:center; align-items:center;">
+                                    <sc-for list="{{ g.points }}" as="pt" hint-placeholder-count="4">
+                                      <span style="display:inline-flex; align-items:center; gap:5px; font-family:'IBM Plex Mono',monospace; font-size:12px; color:#5b6880;">{{ pt.txt }}<sc-if value="{{ pt.bp }}" hint-placeholder-val="{{ false }}"><span style="font-size:8.5px; font-weight:700; color:#e8a84e; background:rgba(224,162,74,0.14); border:1px solid rgba(224,162,74,0.4); border-radius:4px; padding:1px 5px;">BP</span></sc-if><sc-if value="{{ pt.sp }}" hint-placeholder-val="{{ false }}"><span style="font-size:8.5px; font-weight:700; color:#5b9bff; background:rgba(91,155,255,0.14); border:1px solid rgba(91,155,255,0.35); border-radius:4px; padding:1px 5px;">SP</span></sc-if><sc-if value="{{ pt.comma }}" hint-placeholder-val="{{ true }}"><span style="color:#4a5261;">,</span></sc-if></span>
+                                    </sc-for>
+                                  </div>
+                                </div>
+                              </sc-for>
+                              <sc-if value="{{ ps.tiebreak }}" hint-placeholder-val="{{ false }}">
+                                <div style="background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:9px; text-align:center; font-size:10px; letter-spacing:0.16em; color:#5b6880; padding:9px; margin:12px 0 4px;">{{ ps.tb.label }}</div>
+                                <div style="display:flex; flex-direction:column;">
+                                  <sc-for list="{{ ps.tb.pts }}" as="tp" hint-placeholder-count="8">
+                                    <div style="display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:12px; padding:11px 4px; border-bottom:1px solid rgba(255,255,255,0.05);">
+                                      <div style="display:flex; align-items:center; justify-content:flex-end; gap:8px;">
+                                        <sc-if value="{{ tp.sp }}" hint-placeholder-val="{{ false }}"><span style="margin-right:auto; font-size:8.5px; font-weight:700; color:#5b9bff; background:rgba(91,155,255,0.14); border:1px solid rgba(91,155,255,0.35); border-radius:4px; padding:2px 6px;">SP</span></sc-if>
+                                        <sc-if value="{{ tp.serverA }}" hint-placeholder-val="{{ false }}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#4b5672" stroke-width="1.8"><circle cx="12" cy="12" r="9"></circle><path d="M4 8a15 15 0 0116 0M4 16a15 15 0 0016 0"></path></svg></sc-if>
+                                        <sc-if value="{{ tp.aLost }}" hint-placeholder-val="{{ false }}"><span style="font-family:'IBM Plex Mono',monospace; font-size:9.5px; font-weight:700; letter-spacing:0.08em; color:#e0616f; background:rgba(224,97,111,0.1); border:1px solid rgba(224,97,111,0.34); border-radius:5px; padding:3px 8px; white-space:nowrap;">LOST SERVE</span></sc-if>
+                                      </div>
+                                      <div style="display:flex; align-items:center; justify-content:center; gap:9px;">
+                                        <span style="font-family:'IBM Plex Mono',monospace; font-size:16px; font-weight:700; color:{{ tp.aColor }};">{{ tp.a }}</span>
+                                        <span style="color:#5b6880; font-size:14px;">·</span>
+                                        <span style="font-family:'IBM Plex Mono',monospace; font-size:16px; font-weight:700; color:{{ tp.bColor }};">{{ tp.b }}</span>
+                                      </div>
+                                      <div style="display:flex; align-items:center; justify-content:flex-start; gap:8px;">
+                                        <sc-if value="{{ tp.serverB }}" hint-placeholder-val="{{ false }}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#4b5672" stroke-width="1.8"><circle cx="12" cy="12" r="9"></circle><path d="M4 8a15 15 0 0116 0M4 16a15 15 0 0016 0"></path></svg></sc-if>
+                                        <sc-if value="{{ tp.bLost }}" hint-placeholder-val="{{ false }}"><span style="font-family:'IBM Plex Mono',monospace; font-size:9.5px; font-weight:700; letter-spacing:0.08em; color:#e0616f; background:rgba(224,97,111,0.1); border:1px solid rgba(224,97,111,0.34); border-radius:5px; padding:3px 8px; white-space:nowrap;">LOST SERVE</span></sc-if>
+                                      </div>
+                                    </div>
+                                  </sc-for>
+                                </div>
+                              </sc-if>
+                            </div>
+                          </sc-for>
+                        </div>
+                      </sc-if>
+                    </div>
+                    </sc-if>
+                    </div>
+                  </sc-for>
+                </div>
+              </sc-for>
+            </div>
+          </div>
+          </sc-if>
+
+<sc-if value="{{ matchPageOn }}" hint-placeholder-val="{{ false }}">
+      <div style="position:fixed; inset:0; z-index:80; background:#06070a; overflow-y:auto;">
+        <div style="max-width:1000px; margin:0 auto; padding:26px 34px 70px; display:flex; flex-direction:column; gap:18px;">
+          <span class="seg" onClick="{{ onCloseMatchPage }}" style="display:inline-flex; align-items:center; gap:9px; font-size:13.5px; font-weight:600; color:#5b6880; align-self:flex-start; cursor:pointer;"><svg width="16" height="16" viewBox="0 0 20 20" fill="none"><path d="M12 5l-5 5 5 5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path></svg>Back to profile</span>
+          <div style="display:flex; flex-direction:column; gap:5px; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:18px;">
+            <span style="font-size:26px; font-weight:800; letter-spacing:-0.02em;">{{ statPanel.aName }} <span style="color:#3f4860;">v</span> {{ statPanel.bName }}</span>
+            <span class="mono" style="font-size:12px; color:#5b6880;">{{ statPanel.meta }}</span>
+          </div>
+                    <div style="margin:4px 0 10px; padding:16px 16px 8px; background:#080b12; border:1px solid rgba(255,255,255,0.09); border-radius:12px;">
+                      
+                      <div style="display:flex; justify-content:center; margin-bottom:14px;"><div style="display:flex; gap:4px; background:#0a0d13; border:1px solid rgba(255,255,255,0.09); border-radius:10px; padding:4px;"><sc-for list="{{ statPanel.modeTabs }}" as="t" hint-placeholder-count="2"><span class="seg" onClick="{{ t.onClick }}" style="white-space:nowrap; padding:8px 15px; border-radius:7px; font-size:12.5px; font-weight:{{ t.weight }}; color:{{ t.color }}; background:{{ t.bg }}; border:1px solid {{ t.bd }};">{{ t.label }}</span></sc-for></div></div>
+                      <sc-if value="{{ statPanel.isSummary }}" hint-placeholder-val="{{ true }}">
+                        <div class="mono" style="text-align:center; font-size:11px; color:#4b5672; margin-bottom:16px;">{{ statPanel.summaryMeta }}</div>
+                        <div style="max-width:560px; margin:0 auto;">
+                        <div class="cap" style="margin-bottom:10px;">Score</div>
+                        <div style="display:flex; flex-direction:column; gap:8px; padding:0 2px 4px;">
+                          <sc-for list="{{ statPanel.sumRows }}" as="p" hint-placeholder-count="2">
+                            <div style="display:flex; align-items:center;">
+                              <span style="width:14px; flex:none;"><sc-if value="{{ p.dot }}" hint-placeholder-val="{{ false }}"><span style="display:block; width:6px; height:6px; border-radius:50%; background:#5b6880;"></span></sc-if></span>
+                              <span style="flex:1; min-width:0; font-size:13.5px; font-weight:700; color:{{ p.nameColor }}; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"><span class="{{ p.link }}" onClick="{{ p.onOpen }}">{{ p.name }}</span><span style="font-weight:400; color:#4b5672;">{{ p.ret }}</span></span>
+                              <span style="display:grid; grid-template-columns:{{ statPanel.setCols }}; gap:0 4px; align-items:center; margin-left:8px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:15px; font-weight:700; text-align:center; margin-right:4px; padding:2px 0; border-radius:5px; background:{{ p.tileBg }}; color:#e7e9ee;">{{ p.setsWon }}</span><sc-for list="{{ p.cells }}" as="c" hint-placeholder-count="3"><span style="font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:700; text-align:center; color:#5b6880;">{{ c.games }}<sup style="font-size:9px; font-weight:600; margin-left:1px;">{{ c.tb }}</sup></span></sc-for></span>
+                            </div>
+                          </sc-for>
+                        </div>
+                        <div style="display:flex; align-items:center; border-top:1px solid rgba(255,255,255,0.07); margin-top:10px; padding:12px 2px 8px;">
+                          <span style="width:14px; flex:none;"></span>
+                          <span class="cap" style="flex:1;">Match time</span>
+                          <span style="display:grid; grid-template-columns:{{ statPanel.setCols }}; gap:0 4px; align-items:center; margin-left:8px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:700; text-align:center; margin-right:4px; color:#e7e9ee;">{{ statPanel.durTotal }}</span><sc-for list="{{ statPanel.durSets }}" as="d" hint-placeholder-count="3"><span style="font-family:'IBM Plex Mono',monospace; font-size:11.5px; text-align:center; color:#5b6880;">{{ d.t }}</span></sc-for></span>
+                        </div>
+                        </div>
+                      </sc-if>
+                      <sc-if value="{{ statPanel.isStats }}" hint-placeholder-val="{{ false }}">
+                        <div style="display:flex; justify-content:center; margin-bottom:18px;"><div style="display:flex; gap:4px; background:#0a0d13; border:1px solid rgba(255,255,255,0.09); border-radius:10px; padding:4px;"><sc-for list="{{ statPanel.setTabs }}" as="t" hint-placeholder-count="3"><span class="seg" onClick="{{ t.onClick }}" style="white-space:nowrap; padding:7px 14px; border-radius:7px; font-size:12px; font-weight:{{ t.weight }}; color:{{ t.color }}; background:{{ t.bg }}; border:1px solid {{ t.bd }};">{{ t.label }}</span></sc-for></div></div>
+                        <div style="display:flex; justify-content:space-between; font-size:13px; font-weight:700; margin-bottom:12px;"><span style="color:#6aaeff;">{{ statPanel.aName }}</span><span class="{{ statPanel.bLink }}" onClick="{{ statPanel.onOpenB }}" style="color:#e7e9ee;">{{ statPanel.bName }}</span></div>
+                        <div class="cap" style="text-align:center; padding:8px 0; background:#0a0d14; border-radius:8px; margin-bottom:16px;">Service</div>
+                        <div style="display:flex; flex-direction:column; gap:14px;">
+                          <sc-for list="{{ statPanel.rows }}" as="r" hint-placeholder-count="6">
+                            <div>
+                              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;"><span class="mono" style="font-size:13px; color:#e7e9ee;">{{ r.a }}</span><span style="display:flex; flex-direction:column; align-items:center; gap:1px;"><span class="cap">{{ r.label }}</span><sc-if value="{{ r.lower }}" hint-placeholder-val="{{ false }}"><span style="font-family:'Hanken Grotesk',sans-serif; font-size:10px; color:#4b5672;">lower is better</span></sc-if></span><span class="mono" style="font-size:13px; color:#e7e9ee;">{{ r.b }}</span></div>
+                              <div style="display:flex; gap:4px; height:6px;"><span style="flex:1; display:flex; justify-content:flex-end;"><span style="display:block; width:{{ r.aW }}; height:100%; background:#6aaeff; border-radius:3px;"></span></span><span style="flex:1;"><span style="display:block; width:{{ r.bW }}; height:100%; background:#e7e9ee; border-radius:3px;"></span></span></div>
+                            </div>
+                          </sc-for>
+                        </div>
+                      </sc-if>
+                      <sc-if value="{{ statPanel.isPoints }}" hint-placeholder-val="{{ false }}">
+                        <div style="display:flex; justify-content:center; margin-bottom:18px;"><div style="display:flex; gap:4px; background:#0a0d13; border:1px solid rgba(255,255,255,0.09); border-radius:10px; padding:4px;"><sc-for list="{{ statPanel.pointSetTabs }}" as="t" hint-placeholder-count="2"><span class="seg" onClick="{{ t.onClick }}" style="white-space:nowrap; padding:7px 14px; border-radius:7px; font-size:12px; font-weight:{{ t.weight }}; color:{{ t.color }}; background:{{ t.bg }}; border:1px solid {{ t.bd }};">{{ t.label }}</span></sc-for></div></div>
+                        <div style="display:flex; flex-direction:column;">
+                          <sc-for list="{{ statPanel.pointSets }}" as="ps" hint-placeholder-count="2">
+                            <div style="background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:9px; text-align:center; font-size:11px; font-family:'IBM Plex Mono',monospace; letter-spacing:0.16em; color:#e7e9ee; padding:11px; margin:10px 0 4px;">{{ ps.label }}</div>
+                            <div style="display:flex; flex-direction:column;">
+                              <sc-for list="{{ ps.games }}" as="g" hint-placeholder-count="6">
+                                <div style="padding:16px 4px; border-bottom:1px solid rgba(255,255,255,0.07);">
+                                  <div style="display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:12px; margin-bottom:10px;">
+                                    <div style="display:flex; align-items:center; justify-content:flex-end; gap:8px;">
+                                      <sc-if value="{{ g.aLost }}" hint-placeholder-val="{{ false }}"><span style="font-family:'IBM Plex Mono',monospace; font-size:9.5px; font-weight:700; letter-spacing:0.08em; color:#e0616f; background:rgba(224,97,111,0.1); border:1px solid rgba(224,97,111,0.34); border-radius:5px; padding:3px 8px; white-space:nowrap;">LOST SERVE</span></sc-if>
+                                      <sc-if value="{{ g.serverA }}" hint-placeholder-val="{{ false }}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#4b5672" stroke-width="1.8"><circle cx="12" cy="12" r="9"></circle><path d="M4 8a15 15 0 0116 0M4 16a15 15 0 0016 0"></path></svg></sc-if>
+                                    </div>
+                                    <div style="display:flex; align-items:center; justify-content:center; gap:9px;">
+                                      <span style="font-family:'IBM Plex Mono',monospace; font-size:18px; font-weight:700; color:{{ g.gAColor }};">{{ g.gA }}</span>
+                                      <span style="color:#5b6880; font-size:15px;">·</span>
+                                      <span style="font-family:'IBM Plex Mono',monospace; font-size:18px; font-weight:700; color:{{ g.gBColor }};">{{ g.gB }}</span>
+                                    </div>
+                                    <div style="display:flex; align-items:center; justify-content:flex-start; gap:8px;">
+                                      <sc-if value="{{ g.serverB }}" hint-placeholder-val="{{ false }}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#4b5672" stroke-width="1.8"><circle cx="12" cy="12" r="9"></circle><path d="M4 8a15 15 0 0116 0M4 16a15 15 0 0016 0"></path></svg></sc-if>
+                                      <sc-if value="{{ g.bLost }}" hint-placeholder-val="{{ false }}"><span style="font-family:'IBM Plex Mono',monospace; font-size:9.5px; font-weight:700; letter-spacing:0.08em; color:#e0616f; background:rgba(224,97,111,0.1); border:1px solid rgba(224,97,111,0.34); border-radius:5px; padding:3px 8px; white-space:nowrap;">LOST SERVE</span></sc-if>
+                                    </div>
+                                  </div>
+                                  <div style="display:flex; flex-wrap:wrap; gap:5px; justify-content:center; align-items:center;">
+                                    <sc-for list="{{ g.points }}" as="pt" hint-placeholder-count="4">
+                                      <span style="display:inline-flex; align-items:center; gap:5px; font-family:'IBM Plex Mono',monospace; font-size:12px; color:#5b6880;">{{ pt.txt }}<sc-if value="{{ pt.bp }}" hint-placeholder-val="{{ false }}"><span style="font-size:8.5px; font-weight:700; color:#e8a84e; background:rgba(224,162,74,0.14); border:1px solid rgba(224,162,74,0.4); border-radius:4px; padding:1px 5px;">BP</span></sc-if><sc-if value="{{ pt.sp }}" hint-placeholder-val="{{ false }}"><span style="font-size:8.5px; font-weight:700; color:#5b9bff; background:rgba(91,155,255,0.14); border:1px solid rgba(91,155,255,0.35); border-radius:4px; padding:1px 5px;">SP</span></sc-if><sc-if value="{{ pt.comma }}" hint-placeholder-val="{{ true }}"><span style="color:#4a5261;">,</span></sc-if></span>
+                                    </sc-for>
+                                  </div>
+                                </div>
+                              </sc-for>
+                              <sc-if value="{{ ps.tiebreak }}" hint-placeholder-val="{{ false }}">
+                                <div style="background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:9px; text-align:center; font-size:10px; letter-spacing:0.16em; color:#5b6880; padding:9px; margin:12px 0 4px;">{{ ps.tb.label }}</div>
+                                <div style="display:flex; flex-direction:column;">
+                                  <sc-for list="{{ ps.tb.pts }}" as="tp" hint-placeholder-count="8">
+                                    <div style="display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:12px; padding:11px 4px; border-bottom:1px solid rgba(255,255,255,0.05);">
+                                      <div style="display:flex; align-items:center; justify-content:flex-end; gap:8px;">
+                                        <sc-if value="{{ tp.sp }}" hint-placeholder-val="{{ false }}"><span style="margin-right:auto; font-size:8.5px; font-weight:700; color:#5b9bff; background:rgba(91,155,255,0.14); border:1px solid rgba(91,155,255,0.35); border-radius:4px; padding:2px 6px;">SP</span></sc-if>
+                                        <sc-if value="{{ tp.serverA }}" hint-placeholder-val="{{ false }}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#4b5672" stroke-width="1.8"><circle cx="12" cy="12" r="9"></circle><path d="M4 8a15 15 0 0116 0M4 16a15 15 0 0016 0"></path></svg></sc-if>
+                                        <sc-if value="{{ tp.aLost }}" hint-placeholder-val="{{ false }}"><span style="font-family:'IBM Plex Mono',monospace; font-size:9.5px; font-weight:700; letter-spacing:0.08em; color:#e0616f; background:rgba(224,97,111,0.1); border:1px solid rgba(224,97,111,0.34); border-radius:5px; padding:3px 8px; white-space:nowrap;">LOST SERVE</span></sc-if>
+                                      </div>
+                                      <div style="display:flex; align-items:center; justify-content:center; gap:9px;">
+                                        <span style="font-family:'IBM Plex Mono',monospace; font-size:16px; font-weight:700; color:{{ tp.aColor }};">{{ tp.a }}</span>
+                                        <span style="color:#5b6880; font-size:14px;">·</span>
+                                        <span style="font-family:'IBM Plex Mono',monospace; font-size:16px; font-weight:700; color:{{ tp.bColor }};">{{ tp.b }}</span>
+                                      </div>
+                                      <div style="display:flex; align-items:center; justify-content:flex-start; gap:8px;">
+                                        <sc-if value="{{ tp.serverB }}" hint-placeholder-val="{{ false }}"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#4b5672" stroke-width="1.8"><circle cx="12" cy="12" r="9"></circle><path d="M4 8a15 15 0 0116 0M4 16a15 15 0 0016 0"></path></svg></sc-if>
+                                        <sc-if value="{{ tp.bLost }}" hint-placeholder-val="{{ false }}"><span style="font-family:'IBM Plex Mono',monospace; font-size:9.5px; font-weight:700; letter-spacing:0.08em; color:#e0616f; background:rgba(224,97,111,0.1); border:1px solid rgba(224,97,111,0.34); border-radius:5px; padding:3px 8px; white-space:nowrap;">LOST SERVE</span></sc-if>
+                                      </div>
+                                    </div>
+                                  </sc-for>
+                                </div>
+                              </sc-if>
+                            </div>
+                          </sc-for>
+                        </div>
+                      </sc-if>
+                    </div>
+                            </div>
+      </div>
+    </sc-if>
+
+    <div style="display:flex; align-items:center; justify-content:flex-end; border-top:1px solid rgba(255,255,255,0.07); padding-top:18px; font-size:11px; color:#5b6880;"><span class="mono">Stennisfy</span></div>
+
+  </div>
+
+    <sc-if value="{{ splitPanelOpen }}" hint-placeholder-val="{{ false }}">
+      <div onClick="{{ onCloseSplitPanel }}" style="position:fixed; inset:0; background:rgba(4,5,9,0.5); z-index:70;"></div>
+      <div style="position:fixed; top:0; right:0; bottom:0; width:min(560px,92vw); background:#080b11; border-left:1px solid rgba(255,255,255,0.1); z-index:71; display:flex; flex-direction:column; box-shadow:-24px 0 60px rgba(0,0,0,0.5);">
+        <div style="padding:24px 26px 18px; border-bottom:1px solid rgba(255,255,255,0.08); flex:none;">
+          <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px;">
+            <div style="display:flex; flex-direction:column; gap:6px;">
+              <span class="cap" style="font-size:10px; font-weight:600; letter-spacing:0.14em; color:#4b5672;">{{ splitPanelScope }}</span>
+              <span style="font-size:26px; font-weight:800; letter-spacing:-0.02em;">{{ splitPanelTitle }}</span>
+              <span style="font-size:13px; color:#5b6880;">{{ splitPanelSub }}</span>
+              <span style="font-size:11.5px; color:#4b5672;">{{ splitPanelNote }}</span>
+            </div>
+            <span class="seg" onClick="{{ onCloseSplitPanel }}" style="flex:none; width:32px; height:32px; border-radius:50%; background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.09); display:flex; align-items:center; justify-content:center; color:#8b96b5; cursor:pointer;">
+              <svg width="14" height="14" viewBox="0 0 20 20" fill="none"><path d="M5 5l10 10M15 5L5 15" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg>
+            </span>
+          </div>
+        </div>
+
+        <div style="flex:1; overflow-y:auto;">
+        <div class="mono" style="display:grid; grid-template-columns:{{ splitPanelGrid }}; gap:10px; padding:10px 26px; border-bottom:1px solid rgba(255,255,255,0.07); font-size:9.5px; letter-spacing:0.1em; color:#4b5672; position:sticky; top:0; background:#080b11; z-index:2;">
+          <span></span><span>OPPONENT</span><span style="text-align:right;">SCORE</span>
+          <sc-for list="{{ splitPanelCols }}" as="c" hint-placeholder-count="2"><span style="text-align:right;">{{ c }}</span></sc-for>
+        </div>
+          <sc-for list="{{ splitPanelMatches }}" as="m" hint-placeholder-count="8">
+            <div class="row" style="display:grid; grid-template-columns:{{ splitPanelGrid }}; gap:10px; align-items:center; padding:11px 26px; border-bottom:1px solid rgba(255,255,255,0.05);" style-hover="background:rgba(255,255,255,0.03);">
+              <span class="mono" style="width:22px; height:22px; border-radius:6px; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; background:{{ m.tagBg }}; color:{{ m.tagColor }};">{{ m.tag }}</span>
+              <span style="display:flex; flex-direction:column; gap:3px; min-width:0;">
+                <span style="font-size:13.5px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ m.opp }}</span>
+                <span class="mono" style="font-size:9px; letter-spacing:0.04em; color:#4b5672; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">{{ m.meta }}</span>
+              </span>
+              <span class="mono" style="font-size:11px; text-align:right; white-space:nowrap;">{{ m.score }}</span>
+              <sc-for list="{{ m.cells }}" as="c" hint-placeholder-count="2">
+                <span class="mono elotip" style="position:relative; font-size:12px; font-weight:700; text-align:right; color:{{ c.c }};">{{ c.v }}<span class="elotip-pop" style="position:absolute; bottom:calc(100% + 6px); right:0; background:#0a0d13; border:1px solid rgba(255,255,255,0.15); border-radius:8px; padding:6px 9px; font-family:'Hanken Grotesk',sans-serif; font-size:12px; font-weight:500; color:#e7e9ee; white-space:nowrap; letter-spacing:normal; z-index:20;">{{ c.who }}</span></span>
+              </sc-for>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </sc-if>
+</section>
+
+  <sc-if value="{{ matchSheet }}" hint-placeholder-val="{{ false }}">
+    <div style="position:fixed; inset:0; z-index:80; background:rgba(3,5,9,0.72); display:flex; align-items:flex-start; justify-content:center; padding:40px 24px; overflow-y:auto;">
+      <div onClick="{{ matchSheet.onClose }}" style="position:absolute; inset:0;"></div>
+      <div style="position:relative; width:100%; max-width:760px; background:#0a0d14; border:1px solid rgba(91,155,255,0.3); border-radius:14px; padding:22px 24px 26px; display:flex; flex-direction:column; gap:16px; box-shadow:0 30px 80px rgba(0,0,0,0.6);">
+        <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px;">
+          <div style="display:flex; flex-direction:column; gap:5px; min-width:0;">
+            <span style="font-size:17px; font-weight:800; letter-spacing:-0.015em;">{{ matchSheet.subject }} v {{ matchSheet.opp }}</span>
+            <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.06em; color:#5b6880;">{{ matchSheet.header }}</span>
+          </div>
+          <div style="display:flex; align-items:center; gap:16px; flex:none;">
+            <div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px;">
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:700; color:{{ matchSheet.resultColor }};">{{ matchSheet.result }}</span>
+              <span style="font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:#5b6880;">{{ matchSheet.priceLine }}</span>
+            </div>
+            <button onClick="{{ matchSheet.onClose }}" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.12); border-radius:8px; width:30px; height:30px; color:#8b96b5; font-size:15px; line-height:1; cursor:pointer;" style-hover="color:#e7e9ee; background:rgba(255,255,255,0.1);">&times;</button>
+          </div>
+        </div>
+        <div style="display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:14px; background:#06070a; border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:13px 16px;">
+          <span style="font-family:'IBM Plex Mono',monospace; font-size:24px; font-weight:700; color:#5b9bff;">{{ matchSheet.drA }}</span>
+          <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; font-weight:700; letter-spacing:0.16em; text-transform:uppercase; color:#8b96b5;">Dominance ratio</span>
+          <span style="font-family:'IBM Plex Mono',monospace; font-size:24px; font-weight:700; color:#e7e9ee; text-align:right;">{{ matchSheet.drB }}</span>
+        </div>
+        <sc-for list="{{ matchSheet.sections }}" as="sec" hint-placeholder-count="3">
+          <div style="display:flex; flex-direction:column; gap:13px;">
+            <span style="display:block; text-align:center; font-family:'IBM Plex Mono',monospace; font-size:9.5px; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; color:#5b6880; background:#06070a; border:1px solid rgba(255,255,255,0.07); border-radius:8px; padding:8px 0;">{{ sec.title }}</span>
+            <sc-for list="{{ sec.rows }}" as="s" hint-placeholder-count="6">
+              <div style="display:flex; flex-direction:column; gap:6px;">
+                <div style="display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:baseline; gap:12px;">
+                  <span style="display:flex; align-items:baseline; gap:7px;">
+                    <span style="font-family:'IBM Plex Mono',monospace; font-size:15px; font-weight:700; color:#5b9bff;">{{ s.a }}</span>
+                    <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:#4b5672;">{{ s.aSub }}</span>
+                  </span>
+                  <span style="font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:0.14em; text-transform:uppercase; color:#8b96b5; text-align:center;">{{ s.label }}</span>
+                  <span style="display:flex; align-items:baseline; gap:7px; justify-content:flex-end;">
+                    <span style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:#4b5672;">{{ s.bSub }}</span>
+                    <span style="font-family:'IBM Plex Mono',monospace; font-size:15px; font-weight:700; color:#e7e9ee;">{{ s.b }}</span>
+                  </span>
+                </div>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+                  <span style="display:flex; justify-content:flex-end; height:7px; background:rgba(255,255,255,0.05); border-radius:4px;"><span style="height:7px; width:{{ s.aBar }}; background:#5b9bff; border-radius:4px;"></span></span>
+                  <span style="display:flex; height:7px; background:rgba(255,255,255,0.05); border-radius:4px;"><span style="height:7px; width:{{ s.bBar }}; background:rgba(255,255,255,0.75); border-radius:4px;"></span></span>
+                </div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1440,&quot;height&quot;:1400},&quot;player&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;P. Martinez&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;arch&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;Counter Puncher / Solid Defender&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;atp&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:136,&quot;tsType&quot;:&quot;number&quot;},&quot;elo&quot;:{&quot;editor&quot;:&quot;int&quot;,&quot;default&quot;:1557,&quot;tsType&quot;:&quot;number&quot;}}">
+
+const MX_DATA = [
+  ['Surface', [
+    ['Hard', 74, 44, -2.1, 8, 5, 4.6],
+    ['Clay', 34, 28, -6.9, 3, 3, null],
+    ['Grass', 9, 9, -11.2, 0, 0, null],
+    ['Indoors', 9, 5, 3.4, 1, 1, null],
+  ]],
+  ['Court speed', [
+    ['Very slow', 18, 16, -8.3, 1, 2, null],
+    ['Slow', 26, 22, -5.1, 2, 2, null],
+    ['Medium', 44, 27, -1.4, 7, 3, 6.2],
+    ['Fast', 26, 15, 1.9, 2, 1, null],
+    ['Very fast', 12, 6, 4.8, 1, 0, null],
+  ]],
+  ['Price band', [
+    ['Under 1.50', 34, 7, -4.4, 3, 1, null],
+    ['1.50\u20132.00', 51, 26, -7.2, 5, 2, null],
+    ['2.00\u20133.00', 20, 24, 1.1, 3, 3, null],
+    ['Over 3.00', 8, 22, 4.9, 0, 2, null],
+  ]],
+  ['Level', [
+    ['Grand Slams', 24, 18, -5.6, 2, 2, null],
+    ['Masters', 23, 21, -9.8, 2, 3, null],
+    ['Other tours', 79, 47, -0.4, 8, 4, 3.1],
+  ]],
+  ['Opponent', [
+    ['vs Top 10', 5, 9, -12.4, 1, 2, null],
+    ['vs 11\u201350', 30, 28, -4.9, 2, 2, null],
+    ['vs 51+', 91, 49, -1.8, 9, 5, 2.2],
+    ['vs lefties', 19, 15, -6.3, 1, 2, null],
+    ['vs righties', 107, 71, -3.3, 11, 7, 2.7],
+  ]],
+  ['Format', [
+    ['Best of 5', 26, 20, -6.7, 2, 2, null],
+    ['Best of 3', 100, 66, -3.0, 10, 7, 1.4],
+  ]],
+  ['Round', [
+    ['Early rounds', 96, 55, -2.6, 9, 6, 1.9],
+    ['Quarter-finals', 17, 12, -4.1, 2, 2, null],
+    ['Semi-finals', 8, 12, -9.4, 1, 1, null],
+    ['Finals', 5, 7, -7.7, 0, 0, null],
+  ]],
+  ['Prior match', [
+    ['After a win', 73, 39, -1.2, 7, 4, 3.8],
+    ['After a loss', 44, 40, -7.6, 5, 5, -2.4],
+    ['After a three-setter', 35, 28, -5.3, 4, 3, null],
+    ['After a straight-sets win', 48, 23, 0.6, 5, 3, null],
+    ['On 1 day rest', 49, 39, -6.8, 5, 4, null],
+    ['On 2+ days rest', 70, 38, -1.1, 8, 4, 4.2],
+  ]],
+];
+
+class Component extends DCLogic {
+  state = { surf: 'all', win: 'career', split: 'tour', form: 'all', splitsOpen: true, l52Open: true, splitTab: 'results', l52Tab: 'results', tourQ: '', scope: 'career', marketOpen: false, mxOpen: { 'Surface': true, 'Price band': true, 'Prior match': true }, mxSort: null };
+
+  rng(seed) {
+    let h = 2166136261 >>> 0; const s = String(seed);
+    for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); }
+    return () => { h += 0x6D2B79F5; let t = h; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; };
+  }
+  ri(r, lo, hi) { return lo + Math.floor(r() * (hi - lo + 1)); }
+  wcb(p, base) { return p > base ? '#3dd68c' : (p < base - 5 ? '#e0616f' : '#e7e9ee'); }
+  wc(p) { const base = this._careerBase || 41; return p > base ? '#3dd68c' : (p < base - 5 ? '#e0616f' : '#e7e9ee'); }
+  pt(pt) { return (pt >= 0 ? '+' : '\u2212') + Math.abs(pt).toFixed(1) + 'pt'; }
+  ptc(v) { return v > 0.5 ? '#1D9E75' : (v < -0.5 ? '#E24B4A' : '#5b6880'); }
+  diverge(v, max) {
+    const half = Math.min(Math.abs(v) / max * 50, 50);
+    if (v >= 0) return { barLeft: '50%', barWidth: half + '%' };
+    return { barLeft: (50 - half) + '%', barWidth: half + '%' };
+  }
+
+  splitRow(label, seed, mlo, mhi, empty, scope) {
+    if (empty) {
+      const d = '\u2014', c = '#4b5672';
+      return { label, m: d, w: d, l: d, wl: d, rawWL: 'No matches in this period', winPct: d, winColor: c, numColor: c, setColor: c, hldColor: c, brkColor: c, setWL: d, setPct: d, gameWL: d, gamePct: d, tbWL: d, tbPct: d, ms: d, hld: d, brk: d, ace: d, df: d };
+    }
+    const r = this.rng('sp|' + seed + '|' + label);
+    const m = this.ri(r, mlo, mhi);
+    const w = Math.round(m * (0.28 + r() * 0.32)), l = m - w;
+    const winPct = m ? (w / m * 100) : 0;
+    const setW = Math.round(m * (1.4 + r() * 0.8)), setL = Math.round(m * (1.4 + r() * 0.9));
+    const setPct = setW + setL ? setW / (setW + setL) * 100 : 0;
+    const gW = this.ri(r, m * 8, m * 12), gL = this.ri(r, m * 8, m * 12);
+    const gamePct = gW + gL ? gW / (gW + gL) * 100 : 0;
+    const tbW = this.ri(r, 0, Math.max(1, Math.round(m / 5))), tbL = this.ri(r, 0, Math.max(1, Math.round(m / 5)));
+    const tbTot = tbW + tbL;
+    const ms = Math.round(m * (0.9 + r() * 0.2));
+    const hldV = 66 + r() * 9, brkV = 14 + r() * 14;
+    return {
+      label, m: String(m), w: String(w), l: String(l), wl: w + '-' + l, numColor: '#e7e9ee',
+      rawWL: 'Sets ' + setW + '-' + setL + ' \u00b7 Games ' + gW + '-' + gL + ' \u00b7 Tiebreaks ' + tbW + '-' + tbL,
+      winPct: winPct.toFixed(1) + '%', winColor: this.wc(winPct),
+      ebLeft: (winPct >= 50 ? 50 : Math.max(0, Math.min(100, (winPct - 25) / 50 * 100))).toFixed(1) + '%',
+      ebWidth: Math.abs(Math.max(0, Math.min(100, (winPct - 25) / 50 * 100)) - 50).toFixed(1) + '%',
+      ebColor: m === 0 ? 'transparent' : winPct >= 50 ? 'rgba(91,155,255,0.75)' : 'rgba(224,97,111,0.75)',
+      dots: [0, 1, 2].map(i => i < (m >= 100 ? 3 : m >= 40 ? 2 : m > 0 ? 1 : 0) ? '#5b9bff' : 'rgba(255,255,255,0.12)'),
+      setWL: setW + '-' + setL, setPct: setPct.toFixed(1) + '%', setColor: this.wc(setPct),
+      gameWL: gW + '-' + gL, gamePct: gamePct.toFixed(1) + '%',
+      tbWL: tbW + '-' + tbL, tbPct: tbTot ? (tbW / tbTot * 100).toFixed(1) + '%' : '\u2014', ms: String(ms),
+      hld: hldV.toFixed(1) + '%', brk: brkV.toFixed(1) + '%', hldColor: this.wcb(hldV, 70.5), brkColor: this.wcb(brkV, 21),
+      ace: (0.8 + r() * 3).toFixed(1) + '%', df: (3.5 + r() * 3).toFixed(1) + '%',
+      setBarLeft: (setPct >= 50 ? 50 : Math.max(0, Math.min(100, (setPct - 25) / 50 * 100))).toFixed(1) + '%',
+      setBarWidth: Math.abs(Math.max(0, Math.min(100, (setPct - 25) / 50 * 100)) - 50).toFixed(1) + '%',
+      setBarColor: m === 0 ? 'transparent' : setPct >= 50 ? 'rgba(91,155,255,0.75)' : 'rgba(224,97,111,0.75)',
+      hldBarLeft: (hldV >= 70.5 ? 51.7 : Math.max(0, Math.min(100, (hldV - 55) / 30 * 100))).toFixed(1) + '%',
+      hldBarWidth: Math.abs(Math.max(0, Math.min(100, (hldV - 55) / 30 * 100)) - 51.7).toFixed(1) + '%',
+      hldBarColor: m === 0 ? 'transparent' : hldV >= 70.5 ? 'rgba(91,155,255,0.75)' : 'rgba(224,97,111,0.75)',
+      onOpen: m === 0 ? null : () => this.setState({ splitSel: { scope, label, wl: w + '-' + l, m, winPct: winPct.toFixed(1) + '%', tab: this.state.splitTab } }),
+      rowCursor: m === 0 ? 'default' : 'pointer',
+    };
+  }
+  splitMatchList(sel, self) {
+    const OPP = [['Q. Halys', 'FRA'], ['L. Sonego', 'ITA'], ['T. Paul', 'USA'], ['T. Atmane', 'FRA'], ['C. Norrie', 'GBR'], ['T. Griekspoor', 'NED'], ['J. Sinner', 'ITA'], ['F. Cerundolo', 'ARG'], ['M. Cilic', 'CRO'], ['A. Davidovich Fokina', 'ESP'], ['A. Bublik', 'KAZ'], ['H. Rune', 'DEN']];
+    const EV = [['Australian Open', 0], ['Indian Wells', 2], ['Miami Masters', 3], ['Madrid Masters', 4], ['Roland Garros', 5], ['Canada Masters', 6], ['Cincinnati', 7], ['ATP US Open', 8]];
+    const RD = ['R128', 'R64', 'R32', 'R16', 'QF', 'SF', 'F'];
+    const MO = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct'];
+    const r = this.rng('spd|' + sel.scope + '|' + sel.label);
+    const n = Math.min(14, Math.max(3, Math.round(sel.m / (sel.scope === 'career' ? 12 : 1.6))));
+    const wr = Math.max(0.05, Math.min(0.95, parseFloat(sel.winPct) / 100));
+    const setScore = (playerWon) => {
+      const t = r();
+      if (t < 0.18) { const tb = this.ri(r, 2, 8); return playerWon ? '7-6(' + tb + ')' : '6-7(' + tb + ')'; }
+      if (t < 0.34) return playerWon ? '7-5' : '5-7';
+      const loser = this.ri(r, 0, 4);
+      return playerWon ? '6-' + loser : loser + '-6';
+    };
+    const pool = EV.slice();
+    for (let i = pool.length - 1; i > 0; i--) { const j = this.ri(r, 0, i); const t = pool[i]; pool[i] = pool[j]; pool[j] = t; }
+    const out = [];
+    let ei = 0;
+    while (out.length < n && ei < pool.length) {
+      const ev = pool[ei++];
+      const startRd = this.ri(r, 0, 2);
+      const startDay = this.ri(r, 2, 10);
+      for (let k = 0; startRd + k < RD.length && out.length < n; k++) {
+        const win = r() < wr;
+        const o = OPP[this.ri(r, 0, OPP.length - 1)];
+        const rdIdx = startRd + k;
+        const day = startDay + k * 2;
+        const order = r() < 0.55 ? [win, win] : (r() < 0.5 ? [!win, win, win] : [win, !win, win]);
+        const price = (1.25 + r() * 3.4);
+        out.push({
+          w: win, tag: win ? 'W' : 'L',
+          tagBg: win ? 'rgba(61,214,140,0.16)' : 'rgba(224,97,111,0.16)',
+          tagColor: win ? '#3dd68c' : '#e0616f',
+          verb: win ? 'def.' : 'lost to', opp: o[0], nat: o[1],
+          score: order.map(setScore).join(' '),
+          ord: ev[1] * 100 + day,
+          meta: RD[rdIdx] + ' \u00b7 ' + ev[0].toUpperCase() + ' \u00b7 ' + day + ' ' + MO[ev[1]].toUpperCase() + ' 2026',
+          odds: price.toFixed(2),
+          oppOdds: (1 / Math.max(0.05, 1.06 - 1 / price)).toFixed(2),
+          oddsWho: self,
+          oppOddsWho: o[0],
+          cells: (() => {
+            const tab = sel.tab || 'results';
+            if (tab === 'sets') {
+              const gw = this.ri(r, 14, 26), gl = this.ri(r, 10, 22);
+              const tbw = this.ri(r, 0, 2), tbl = this.ri(r, 0, 2);
+              return [
+                { v: gw + '-' + gl, c: '#e7e9ee', who: 'Games won-lost' },
+                { v: (gw / (gw + gl) * 100).toFixed(0) + '%', c: gw > gl ? '#3dd68c' : '#e0616f', who: 'Share of games won' },
+                { v: tbw + tbl ? tbw + '-' + tbl : '\u2014', c: '#8b96b5', who: 'Tiebreaks won-lost' },
+              ];
+            }
+            if (tab === 'service') {
+              const ace = (2 + r() * 12).toFixed(0), df = (1 + r() * 6).toFixed(0);
+              const hld = (60 + r() * 30), brk = (10 + r() * 30);
+              return [
+                { v: ace, c: '#e7e9ee', who: 'Aces' },
+                { v: df, c: '#8b96b5', who: 'Double faults' },
+                { v: hld.toFixed(0) + '%', c: hld > 70.5 ? '#3dd68c' : '#e0616f', who: 'Service games held' },
+                { v: brk.toFixed(0) + '%', c: brk > 21 ? '#3dd68c' : '#e0616f', who: 'Return games broken' },
+              ];
+            }
+            return [
+              { v: price.toFixed(2), c: '#e7e9ee', who: self },
+              { v: (1 / Math.max(0.05, 1.06 - 1 / price)).toFixed(2), c: '#8b96b5', who: o[0] },
+            ];
+          })(),
+        });
+        if (!win) break;
+      }
+    }
+    return out.sort((a, b) => b.ord - a.ord);
+  }
+  mxSide(w, l) {
+    const n = w + l, pct = n ? (w / n * 100) : 0;
+    if (n === 0) return { wl: '\u2014', pct: '\u2014', n: '\u2014', pctColor: '#4b5672', pctSize: '13px', wlColor: '#4b5672', nColor: '#4b5672', rate: null };
+    if (n < 5) return { wl: w + '\u2013' + l, pct: '\u2014', n: String(n), pctColor: '#4b5672', pctSize: '13px', wlColor: '#8b96b5', nColor: '#5b6880', rate: null };
+    if (n < 10) return { wl: w + '\u2013' + l, pct: pct.toFixed(1) + '%*', n: String(n), pctColor: '#5b6880', pctSize: '11.5px', wlColor: '#8b96b5', nColor: '#5b6880', rate: null };
+    return { wl: w + '\u2013' + l, pct: pct.toFixed(1) + '%', n: String(n), pctColor: '#e8ecf4', pctSize: '13px', wlColor: '#8b96b5', nColor: '#5b6880', rate: pct };
+  }
+  mxRow(d, group) {
+    const [label, cw, cl, cy, lw, ll, ly] = d;
+    const c = this.mxSide(cw, cl), l = this.mxSide(lw, ll);
+    const dash = { v: '\u2014', c: '#4b5672' };
+    const dw = (c.rate !== null && l.rate !== null) ? l.rate - c.rate : null;
+    const dy = (c.rate !== null && l.rate !== null && ly !== null) ? ly - cy : null;
+    const sign = v => (v >= 0 ? '+' : '\u2212') + Math.abs(v).toFixed(1);
+    const col = v => v > 0 ? '#3dd68c' : v < 0 ? '#e0616f' : '#8b96b5';
+    return {
+      label, group,
+      cWl: c.wl, cPct: c.pct, cPctColor: c.pctColor, cPctSize: c.pctSize, cN: c.n, cWlColor: c.wlColor, cNColor: c.nColor,
+      lWl: l.wl, lPct: l.pct, lPctColor: l.pctColor, lPctSize: l.pctSize, lN: l.n, lWlColor: l.wlColor, lNColor: l.nColor,
+      dWin: dw === null ? dash.v : sign(dw) + 'pt', dWinColor: dw === null ? dash.c : col(dw),
+      yield: cy.toFixed(1) + '%', yieldColor: cy > 0 ? '#3dd68c' : cy < 0 ? '#e0616f' : '#8b96b5',
+      dYield: dy === null ? dash.v : sign(dy) + 'pt', dYieldColor: dy === null ? dash.c : col(dy),
+      _sort: dy,
+    };
+  }
+  mxVals(S) {
+    const sortDir = S.mxSort;
+    const groups = MX_DATA.map(([group, rows]) => {
+      const open = !!S.mxOpen[group];
+      return {
+        group, open,
+        caret: open ? 'rotate(0deg)' : 'rotate(-90deg)',
+        count: rows.length + ' rows',
+        onToggle: () => this.setState(st => ({ mxOpen: Object.assign({}, st.mxOpen, { [group]: !st.mxOpen[group] }) })),
+        rows: rows.map(d => this.mxRow(d, group)),
+      };
+    });
+    let flat = [];
+    if (sortDir) {
+      groups.forEach(g => { if (g.open) flat = flat.concat(g.rows); });
+      flat.sort((a, b) => {
+        const av = a._sort, bv = b._sort;
+        if (av === null && bv === null) return 0;
+        if (av === null) return 1;
+        if (bv === null) return -1;
+        return sortDir === 'desc' ? bv - av : av - bv;
+      });
+    }
+    const cycle = () => this.setState(st => ({ mxSort: st.mxSort === null ? 'desc' : st.mxSort === 'desc' ? 'asc' : null }));
+    return {
+      mxGroups: groups, mxFlat: flat, mxSorted: !!sortDir, mxGrouped: !sortDir,
+      mxSortLabel: sortDir === 'desc' ? 'High to low' : sortDir === 'asc' ? 'Low to high' : 'Sort',
+      mxSortColor: sortDir ? '#5b9bff' : '#5b6880',
+      mxSortCaret: sortDir === 'asc' ? 'rotate(180deg)' : 'rotate(0deg)',
+      onMxSort: cycle,
+      mxFootnote: 'Win% and yield are gated by sample: n\u226510 full size, n 5\u20139 marked with an asterisk, n<5 record only, n=0 shown as a dash. Career and last-52 gate independently. Yield is measured on the priced subset (192 of 212 matches). Favourite and dog split at a closing price of 2.00. The prior match is the previous match on record; the first match of a season carries no prior state.',
+    };
+  }
+  marketEdge(S, name) {
+    const career = S.scope === 'career';
+    const r = this.rng('mkt|' + name + '|' + S.scope);
+    const n = career ? 537 : 21;
+    const favN = Math.round(n * 0.676), dogN = n - favN;
+    const mk = (label, sub, matches, yieldV, baseline) => {
+      const gap = yieldV - baseline;
+      const pos = Math.max(4, Math.min(96, 50 + gap * 6));
+      return {
+        label, sub, matches: String(matches),
+        yieldTxt: (yieldV >= 0 ? '+' : '\u2212') + Math.abs(yieldV).toFixed(2) + '%',
+        yieldColor: yieldV >= 0 ? '#3dd68c' : '#e0616f',
+        baseTxt: (baseline >= 0 ? '+' : '\u2212') + Math.abs(baseline).toFixed(2) + '%',
+        baseColor: baseline >= 0 ? '#3dd68c' : '#e0616f',
+        gapTxt: (gap >= 0 ? '+' : '\u2212') + Math.abs(gap).toFixed(2) + 'pp',
+        gapColor: gap >= 0 ? '#3dd68c' : '#e0616f',
+        fillLeft: (gap >= 0 ? 50 : pos).toFixed(1) + '%',
+        fillWidth: Math.abs(pos - 50).toFixed(1) + '%',
+        fillColor: gap >= 0 ? '#3dd68c' : '#e0616f',
+        verdict: gap >= 0 ? 'Loses less than the tour ' + (label === 'As favourite' ? 'when favoured.' : 'as underdog.') : 'Loses more than the tour ' + (label === 'As favourite' ? 'when favoured.' : 'as underdog.'),
+        verdictBg: gap >= 0 ? 'rgba(61,214,140,0.09)' : 'rgba(224,97,111,0.09)',
+        verdictBd: gap >= 0 ? 'rgba(61,214,140,0.28)' : 'rgba(224,97,111,0.28)',
+        verdictDot: gap >= 0 ? '#3dd68c' : '#e0616f',
+      };
+    };
+    const fav = mk('As favourite', 'Matches where he was the shorter price, backed flat 1u.', favN, career ? -1.07 : -2.4, career ? -2.14 : -3.1);
+    const dog = mk('As underdog', 'Matches where he was the longer price, backed flat 1u.', dogN, career ? -3.53 : 1.9, career ? -5.44 : -4.2);
+
+    const pts = career ? 120 : 21;
+    let v = 0, min = 0, max = 0;
+    const walk = [];
+    for (let i = 0; i < pts; i++) { v += (r() - 0.53) * (career ? 1.5 : 0.9); walk.push(v); if (v < min) min = v; if (v > max) max = v; }
+    const W = 360, H = 130, pad = 4;
+    const span = Math.max(1, max - min);
+    const y = val => (pad + (max - val) / span * (H - pad * 2)).toFixed(1);
+    const x = i => (i / (pts - 1) * W).toFixed(1);
+    const line = walk.map((val, i) => (i ? 'L' : 'M') + x(i) + ' ' + y(val)).join(' ');
+    const zero = y(0);
+    const last = walk[walk.length - 1];
+
+    return {
+      mkFav: fav, mkDog: dog,
+      mkHeadline: (career ? 'All priced matches' : 'Last 52 weeks'),
+      mkSummary: n + ' priced \u00b7 median odds 1.62 \u00b7 tour baseline ' + (career ? '\u22123.79%' : '\u22124.10%'),
+      mkTotal: (last >= 0 ? '+' : '\u2212') + Math.abs(last).toFixed(1) + 'u',
+      mkTotalColor: last >= 0 ? '#3dd68c' : '#e0616f',
+      mkLine: line,
+      mkArea: line + ' L' + W + ' ' + zero + ' L0 ' + zero + ' Z',
+      mkZero: zero,
+      mkDotX: x(pts - 1), mkDotY: y(last),
+      mkBook: 'Split by book: \u22120.29% across 506 Pinnacle-priced matches, \u221227.65% on n=31 Bet365-settled 2026 matches. The tile figures blend both books.',
+    };
+  }
+  formStrip(short, filter) {
+    const rows = [];
+    this.formEvents(short, filter).forEach(e => e.rows.forEach(r => rows.push(r)));
+    return rows.slice(0, 18).reverse().map(r => ({
+      tag: r.won ? 'W' : 'L',
+      color: r.won ? '#3dd68c' : '#e0616f',
+      bg: r.won ? 'rgba(61,214,140,0.22)' : 'rgba(224,97,111,0.22)',
+      bd: r.dog ? (r.won ? 'rgba(61,214,140,0.9)' : 'rgba(224,97,111,0.9)') : 'transparent',
+    }));
+  }
+  formEvents(short, filter) {
+    const SURF = { Hard: '#4db8ff', Clay: '#e8a84e', Grass: '#2ab8a0' };
+    const E = [
+      ['US Open', 'Hard', [
+        ['13.09', 'F', 'Shelton B.', true, '6-3, 7-6(2), 5-7, 6-2', 1.66, 2.24],
+        ['11.09', 'SF', 'Khachanov K.', true, '6-3, 7-6(7), 7-6(6)', 1.20, 4.57],
+        ['10.09', 'QF', 'Van De Zandschulp B.', true, '6-2, 7-5, 6-1', 1.11, 6.58],
+        ['08.09', 'R16', 'Darderi L.', true, '6-2, 6-2, 7-6(3)', 1.09, 7.41],
+        ['06.09', '3R', 'Tabilo A.', true, '6-2, 7-6(2), 6-2', 1.17, 5.11],
+        ['04.09', '2R', 'Halys Q.', true, '6-4, 4-6, 7-6(3), 6-3', 1.14, 5.64],
+        ['02.09', '1R', 'Sonego L.', true, '6-4, 3-6, 6-7(7), 7-5, 6-4', 1.05, 10.70],
+      ]],
+      ['Cincinnati', 'Hard', [
+        ['19.08', 'R16', 'Paul T.', false, '4-6, 7-6(6), 6-4', 3.19, 1.35],
+        ['18.08', '3R', 'Atmane T.', true, '7-6(4), 7-6(6)', 1.15, 5.36],
+        ['16.08', '2R', 'Norrie C.', true, '3-6, 6-3, 6-3', 1.23, 4.17],
+      ]],
+      ['Montreal', 'Hard', [
+        ['05.08', '2R', 'Griekspoor T.', false, '6-7(3), 6-2, 6-4', 5.74, 1.14],
+      ]],
+      ['Roland Garros', 'Clay', [
+        ['05.06', 'QF', 'Tsitsipas S.', false, '7-6(4), 4-6, 6-3, 6-4', 2.14, 1.72],
+        ['03.06', 'R16', 'Rune H.', true, '6-4, 7-5, 6-7(3), 6-2', 1.48, 2.66],
+        ['01.06', '3R', 'Cobolli F.', true, '6-2, 6-4, 6-4', 1.12, 6.40],
+        ['30.05', '2R', 'Muller A.', true, '6-3, 6-7(5), 6-1, 6-2', 1.09, 7.80],
+      ]],
+      ['Rome', 'Clay', [
+        ['15.05', 'SF', 'Alcaraz C.', false, '6-4, 6-3', 3.42, 1.32],
+        ['13.05', 'QF', 'Musetti L.', true, '7-6(6), 6-4', 1.86, 1.94],
+      ]],
+      ['Wimbledon', 'Grass', [
+        ['12.07', 'F', 'Sinner J.', false, '6-7(7), 7-6(2), 6-3, 6-4', 1.21, 4.59],
+        ['10.07', 'SF', 'Fery A.', true, '7-6(0), 6-2, 6-4', 1.14, 5.81],
+        ['08.07', 'QF', 'Fritz T.', true, '6-4, 6-4, 6-2', 2.02, 1.78],
+        ['07.07', 'R16', 'Lehecka J.', true, '6-4, 7-5, 3-6, 7-6(6)', 1.32, 3.43],
+        ['04.07', '3R', 'Giron M.', true, '6-2, 7-6(4), 6-4', 1.06, 9.47],
+        ['02.07', '2R', 'Royer V.', true, '6-1, 6-3, 7-6(3)', 1.03, 13.16],
+        ['30.06', '1R', 'Blockx A.', true, '6-4, 6-8(7), 7-6(5), 7-6(0)', 1.10, 7.15],
+      ]],
+    ];
+    const sel = filter || {};
+    const priceKeys = ['fav', 'dog'].filter(k => sel[k]);
+    const surfKeys = ['hard', 'clay', 'grass'].filter(k => sel[k]);
+    const keep = (surf, won, h, a) => {
+      const priceOk = !priceKeys.length || priceKeys.some(k => k === 'fav' ? h < a : h > a);
+      const surfOk = !surfKeys.length || surfKeys.indexOf(surf.toLowerCase()) > -1;
+      return priceOk && surfOk;
+    };
+    return E.map(([name, surf, rows]) => ({
+      name, surf, surfColor: SURF[surf] || '#5b6880',
+      rows: rows.filter(r => keep(surf, r[3], r[5], r[6])).map(([date, round, opp, won, score, h, a]) => ({
+        date, round, score, won, dog: h > a,
+        left: won ? short : opp, right: won ? opp : short,
+        leftWeight: won ? 700 : 500, rightWeight: won ? 500 : 700,
+        leftColor: won ? '#e7e9ee' : '#8b96b5', rightColor: won ? '#8b96b5' : '#e7e9ee',
+        h: h.toFixed(2), a: a.toFixed(2),
+        hColor: h < a ? '#e7e9ee' : '#8b96b5', aColor: a < h ? '#e7e9ee' : '#8b96b5',
+      })),
+    })).filter(e => e.rows.length);
+  }
+  chipify(sections) {
+    const rows = [];
+    sections.forEach(sec => sec.rows.forEach(r => rows.push(r)));
+    const defs = [
+      ['chips', [['tbPct', 1], ['gamePct', 1], ['setPct', 1]]],
+      ['schips', [['ms', 1], ['ace', 1], ['df', -1], ['hld', 1], ['brk', 1]]],
+    ];
+    defs.forEach(([out, keys]) => {
+      const stats = keys.map(([k]) => {
+        const vals = rows.map(r => parseFloat(r[k])).filter(v => !isNaN(v));
+        return vals.length ? [Math.min(...vals), Math.max(...vals)] : [0, 1];
+      });
+      rows.forEach(r => {
+        r[out] = keys.map(([k, dir], i) => {
+          const raw = parseFloat(r[k]);
+          if (isNaN(raw)) return { v: '\u2014', bg: 'rgba(255,255,255,0.02)', fg: '#3f4860' };
+          const [lo, hi] = stats[i];
+          let n = hi > lo ? (raw - lo) / (hi - lo) : 0.5;
+          if (dir < 0) n = 1 - n;
+          const good = n >= 0.5;
+          return {
+            v: r[k],
+            bg: good ? 'rgba(91,155,255,' + (0.08 + n * 0.32).toFixed(3) + ')' : 'rgba(224,97,111,' + (0.08 + (1 - n) * 0.28).toFixed(3) + ')',
+            fg: n > 0.78 || n < 0.18 ? '#ffffff' : '#c3ccdd',
+          };
+        });
+      });
+    });
+    const setVals = rows.map(r => parseFloat(r.setPct)).filter(v => !isNaN(v));
+    const avg = setVals.length ? setVals.reduce((a, b) => a + b, 0) / setVals.length : 0;
+    rows.forEach(r => {
+      const v = parseFloat(r.setPct);
+      if (isNaN(v)) { r.setDev = '\u2014'; r.setDevColor = '#3f4860'; return; }
+      const d = v - avg;
+      r.setDev = (d >= 0 ? '+' : '\u2212') + Math.abs(d).toFixed(1);
+      r.setDevColor = d > 1.5 ? '#3dd68c' : d < -1.5 ? '#e0616f' : '#5b6880';
+    });
+    const winVals = rows.map(r => parseFloat(r.winPct)).filter(v => !isNaN(v));
+    const wavg = winVals.length ? winVals.reduce((a, b) => a + b, 0) / winVals.length : 0;
+    rows.forEach(r => {
+      const v = parseFloat(r.winPct);
+      if (isNaN(v) || r.m === '0') { r.winDev = '\u2014'; r.winDevColor = '#3f4860'; return; }
+      const d = v - wavg;
+      r.winDev = (d >= 0 ? '+' : '\u2212') + Math.abs(d).toFixed(1);
+      r.winDevColor = d > 1.5 ? '#3dd68c' : d < -1.5 ? '#e0616f' : '#5b6880';
+    });
+    sections._avg = avg.toFixed(1) + '%';
+    return sections;
+  }
+  splitResults() {
+    const DIMV = '#4b5672';
+    // three partitions of the same 212 career matches; career record 96-116
+    const G = [
+      ['Surface', [
+        ['Hard', [50, 54], [6, 5], [95, -4.2]],
+        ['Clay', [33, 38], [3, 4], [64, 1.8]],
+        ['Grass', [13, 24], [1, 2], [33, -2.1]],
+      ]],
+      ['Level', [
+        ['Grand Slams', [14, 26], [1, 3], [36, -3.4]],
+        ['Masters', [25, 37], [2, 4], [57, -6.1]],
+        ['Other Tours', [57, 53], [7, 4], [99, 3.2]],
+      ]],
+      ['Format', [
+        ['Best of 5', [14, 26], [1, 3], [36, -3.4]],
+        ['Best of 3', [82, 90], [9, 8], [156, 0.6]],
+      ]],
+    ];
+    const CAREER_W = 96, CAREER_L = 116;
+    const careerPct = CAREER_W / (CAREER_W + CAREER_L) * 100;
+    const careerYield = -1.0;
+    const r1 = v => Math.round(v * 10) / 10;
+    const sgn = v => { const x = r1(v); return (x > 0 ? '+' : x < 0 ? '\u2212' : '') + Math.abs(x).toFixed(1); };
+    const sgnColor = v => { const x = r1(v); return x > 0 ? '#3dd68c' : x < 0 ? '#e0616f' : '#8b96b5'; };
+    const gate = n => n === 0 ? 'zero' : n < 5 ? 'hard' : n < 10 ? 'soft' : 'full';
+    const cell = (w, l) => {
+      const n = w + l, g = gate(n), pct = n ? w / n * 100 : null;
+      return {
+        wl: n ? w + '\u2013' + l : '\u2014',
+        wlColor: g === 'zero' ? DIMV : '#8b96b5',
+        pct: (g === 'full' || g === 'soft') ? pct.toFixed(1) + '%' : '\u2014',
+        pctColor: g === 'full' ? '#e8ecf4' : g === 'soft' ? '#8b96b5' : DIMV,
+        pctSize: g === 'soft' ? '11.5px' : '12.5px',
+        n: String(n), nColor: g === 'zero' ? DIMV : '#8b96b5',
+        mark: g === 'soft' ? 'small sample' : '',
+        rated: g === 'full', pctRaw: pct, g: g,
+      };
+    };
+    return G.map(([group, rows]) => ({
+      group: group,
+      rows: rows.map(([label, c, l52, y]) => {
+        const C = cell(c[0], c[1]), L = cell(l52[0], l52[1]);
+        const dWin = (C.rated && L.rated) ? L.pctRaw - C.pctRaw : null;
+        const yN = y[0], yV = y[1], yGate = gate(yN);
+        const dY = yGate === 'full' ? yV - careerYield : null;
+        const vsCareer = C.g === 'full' || C.g === 'soft' ? C.pctRaw - careerPct : null;
+        return {
+          label: label,
+          cWl: C.wl, cWlColor: C.wlColor, cPct: C.pct, cPctColor: C.pctColor, cPctSize: C.pctSize, cN: C.n, cNColor: C.nColor, cMark: C.mark,
+          lWl: L.wl, lWlColor: L.wlColor, lPct: L.pct, lPctColor: L.pctColor, lPctSize: L.pctSize, lN: L.n, lNColor: L.nColor,
+          lMark: L.mark,
+          dWin: dWin == null ? '\u2014' : sgn(dWin) + 'pp',
+          dWinColor: dWin == null ? DIMV : sgnColor(dWin),
+          vsCareer: vsCareer == null ? '\u2014' : sgn(vsCareer) + 'pp',
+          vsCareerColor: vsCareer == null ? DIMV : sgnColor(vsCareer),
+          yieldTxt: yGate === 'full' || yGate === 'soft' ? sgn(yV) + '%' : '\u2014',
+          yieldColor: yGate === 'full' ? sgnColor(yV) : yGate === 'soft' ? '#8b96b5' : DIMV,
+          yieldN: String(yN), yieldNColor: yGate === 'zero' ? DIMV : '#8b96b5',
+          yieldMark: yGate === 'soft' ? 'small sample' : '',
+          dYield: dY == null ? '\u2014' : sgn(dY) + 'pp',
+          dYieldColor: dY == null ? DIMV : sgnColor(dY),
+        };
+      }),
+    }));
+  }
+
+  splitTable(seed, big, scope) {
+    const groups = [
+      ['Surface', ['Hard', 'Clay', 'Grass']],
+      ['Level', ['Grand Slams', 'Masters', 'Other Tours']],
+      ['Format', ['Best of 5', 'Best of 3']],
+      ['By round', ['Finals', 'Semi-finals', 'Quarter-finals']],
+      ['Opponent', ['vs. Righties', 'vs. Lefties', 'vs. Top 10']],
+    ];
+    const none = big ? [] : ['Grass', 'Finals', 'Semi-finals'];
+    return groups.map(g => ({ group: g[0], rows: g[1].map(lbl => this.splitRow(lbl, seed + (big ? '|c' : '|l'), big ? 15 : 2, big ? 190 : 20, none.includes(lbl), scope)) }));
+  }
+
+  pbpScores(mm) {
+    if (mm.scoreStr) {
+      return mm.scoreStr.split(',').map(part => {
+        const t = part.trim();
+        const tbm = t.match(/\((\d+)\)/);
+        const nums = t.replace(/\(\d+\)/, '').split('-');
+        const a = parseInt(nums[0], 10), b = parseInt(nums[1], 10);
+        const flip = !!mm.scoreFlip;
+        const out = { a: flip ? b : a, b: flip ? a : b, aTb: null, bTb: null };
+        if (tbm) { const t = tbm[1]; if (out.a > out.b) out.bTb = t; else out.aTb = t; }
+        return out;
+      });
+    }
+    const rf = this.rng('pbps|' + mm.seed); const pr = n => Math.floor(rf() * n);
+    const setsStr = (mm.sets || (mm.won !== false ? '2-0' : '0-2')).replace(/\s/g, '');
+    const sa = +setsStr.split('-')[0] || 0, sb = +setsStr.split('-')[1] || 0;
+    const order = [];
+    for (let i = 0; i < sa; i++) order.push(0);
+    for (let i = 0; i < sb; i++) order.push(1);
+    for (let i = order.length - 1; i > 0; i--) { const j = pr(i + 1); const t = order[i]; order[i] = order[j]; order[j] = t; }
+    const mw = sa >= sb ? 0 : 1;
+    const li = order.lastIndexOf(mw);
+    if (li !== -1) { const t = order[li]; order[li] = order[order.length - 1]; order[order.length - 1] = t; }
+    return order.map(w => {
+      const roll = pr(10); let wg = 6, lg, tb = null;
+      if (roll < 2) { wg = 7; lg = 6; tb = pr(6); } else if (roll < 4) { wg = 7; lg = 5; } else lg = pr(5);
+      const s = w === 0 ? { a: wg, b: lg } : { a: lg, b: wg };
+      if (tb != null) { if (w === 0) { s.aTb = 7; s.bTb = tb; } else { s.bTb = 7; s.aTb = tb; } }
+      return s;
+    });
+  }
+  fixtureScore(mm) {
+    const scores = this.pbpScores(mm);
+    const won = mm.won !== false;
+    const retired = this.rng('ret|' + mm.seed)() < 0.07;
+    const canLink = !!this.props.onOpenPlayer;
+    const mk = (k, name, isWinner) => ({
+      name, link: (k === 'b' && canLink) ? 'plink' : '', onOpen: k === 'b' ? this.openOpp(name) : null,
+      ret: (!isWinner && retired) ? ' ret.' : '',
+      nameColor: k === 'a' ? '#6aaeff' : '#e7e9ee',
+      setsWon: String(scores.reduce((n, s) => n + (s[k] > s[k === 'a' ? 'b' : 'a'] ? 1 : 0), 0)),
+      tileBg: isWinner ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.03)',
+      cells: scores.map(s => { const tb = s[k + 'Tb']; return { games: String(s[k]), tb: tb != null ? String(tb) : '' }; }),
+    });
+    return [mk('a', mm.aN, won), mk('b', mm.bN, !won)];
+  }
+  pbpSets(mm) {
+    const rf = this.rng('pbp|' + mm.seed); const pr = n => Math.floor(rf() * n);
+    const A_COL = '#6aaeff', B_COL = '#e7e9ee', mut = '#4b5672';
+    const setScores = this.pbpScores(mm).map(s => ({ a: s.a, b: s.b }));
+    const shuffle = arr => { for (let i = arr.length - 1; i > 0; i--) { const j = pr(i + 1); const t = arr[i]; arr[i] = arr[j]; arr[j] = t; } return arr; };
+    const NM = ['0', '15', '30', '40'];
+    const genPointSeq = serverWon => {
+      let s = 0, r = 0, guard = 0; const toks = [];
+      const ends = (a, b) => a >= 4 && a - b >= 2;
+      while (guard++ < 50) {
+        let srvPt = pr(100) < (serverWon ? 64 : 38);
+        let ns = s + (srvPt ? 1 : 0), nr = r + (srvPt ? 0 : 1);
+        if (!serverWon && ends(ns, nr)) { srvPt = false; ns = s; nr = r + 1; }
+        if (serverWon && ends(nr, ns)) { srvPt = true; ns = s + 1; nr = r; }
+        s = ns; r = nr;
+        if (ends(s, r) || ends(r, s)) break;
+        let txt;
+        if (s >= 3 && r >= 3) txt = s === r ? '40:40' : (s > r ? 'A:40' : '40:A');
+        else txt = NM[Math.min(s, 3)] + ':' + NM[Math.min(r, 3)];
+        toks.push({ txt, bp: r >= 3 && r > s });
+      }
+      if (!toks.length) toks.push({ txt: serverWon ? '40:0' : '0:40', bp: !serverWon });
+      return toks;
+    };
+    const mkGame = (server, winnerA, gA, gB, setPoint) => {
+      const held = (server === 0) === winnerA, lostSv = !held;
+      const toks = genPointSeq(held);
+      if (setPoint) toks[toks.length - 1] = Object.assign({}, toks[toks.length - 1], { sp: 1 });
+      return { serverA: server === 0, serverB: server === 1, lostServe: lostSv, aLost: server === 0 && lostSv, bLost: server === 1 && lostSv, gA, gB,
+        gAColor: winnerA ? A_COL : mut, gBColor: winnerA ? mut : B_COL,
+        points: toks.map((t, i, arr) => ({ txt: t.txt, bp: !!t.bp, sp: !!t.sp, comma: i < arr.length - 1 })) };
+    };
+    const buildSet = (gA0, gB0, si) => {
+      const tiebreak = (Math.max(gA0, gB0) === 7 && Math.min(gA0, gB0) === 6);
+      const regA = tiebreak ? 6 : gA0, regB = tiebreak ? 6 : gB0;
+      const seq = []; for (let i = 0; i < regA; i++) seq.push(0); for (let i = 0; i < regB; i++) seq.push(1);
+      shuffle(seq);
+      const setWinner = gA0 > gB0 ? 0 : 1;
+      if (!tiebreak && seq.length) { const li2 = seq.lastIndexOf(setWinner), last = seq.length - 1, t = seq[li2]; seq[li2] = seq[last]; seq[last] = t; }
+      let a = 0, b = 0; const games = [];
+      seq.forEach((wn, idx) => {
+        const server = idx % 2; if (wn === 0) a++; else b++;
+        const clinch = !tiebreak && ((wn === 0 && a === gA0 && setWinner === 0) || (wn === 1 && b === gB0 && setWinner === 1));
+        games.push(mkGame(server, wn === 0, a, b, clinch));
+      });
+      let tb = null;
+      if (tiebreak) {
+        const pts2 = []; let x = 0, y = 0; const tbWinnerA = setWinner === 0;
+        const srvOf = p => (Math.floor((p + 1) / 2) % 2);
+        const endsTB = (u, v) => u >= 7 && u - v >= 2;
+        let p = 0, guard = 0;
+        while (guard++ < 40) {
+          const server = srvOf(p);
+          let aWon = tbWinnerA ? (pr(10) < 6) : (pr(10) < 4);
+          let nx = x + (aWon ? 1 : 0), ny = y + (aWon ? 0 : 1);
+          if (endsTB(nx, ny) && !tbWinnerA) { aWon = false; nx = x; ny = y + 1; }
+          if (endsTB(ny, nx) && tbWinnerA) { aWon = true; nx = x + 1; ny = y; }
+          x = nx; y = ny;
+          const lostSv = aWon ? (server !== 0) : (server !== 1);
+          const over = endsTB(x, y) || endsTB(y, x);
+          const leader = Math.max(x, y), other = Math.min(x, y);
+          const sp = !over && x !== y && leader >= 6 && (leader + 1 - other >= 2);
+          pts2.push({ a: x, b: y, serverA: server === 0, serverB: server === 1,
+            aLost: server === 0 && lostSv, bLost: server === 1 && lostSv, sp,
+            aColor: aWon ? A_COL : mut, bColor: aWon ? mut : B_COL });
+          p++;
+          if (over) break;
+        }
+        tb = { label: 'Tiebreak \u00b7 Set ' + (si + 1), pts: pts2 };
+      }
+      return { label: 'POINT BY POINT \u00b7 SET ' + (si + 1), games, tiebreak: !!tb, tb: tb || { label: '', pts: [] } };
+    };
+    return setScores.map((s, i) => buildSet(s.a, s.b, i));
+  }
+  openOpp(nm) {
+    return e => { if (e) { if (e.stopPropagation) e.stopPropagation(); if (e.preventDefault) e.preventDefault(); } if (this.props.onOpenPlayer) this.props.onOpenPlayer(nm); };
+  }
+  segTabs(cur, key) {
+    return [['results', 'Results'], ['sets', 'Sets & Games'], ['service', 'Service']].map(t => {
+      const on = cur === t[0];
+      return { label: t[1], onClick: () => this.setState({ [key]: t[0] }), bg: on ? 'rgba(91,155,255,0.22)' : 'transparent', bd: on ? 'rgba(91,155,255,0.45)' : 'transparent', color: on ? '#e7e9ee' : '#5b6880', weight: on ? 700 : 600 };
+    });
+  }
+  segLegend(tab) {
+    return {
+      results: 'Record and matches played \u00b7 win rate \u00b7 vs avg is the gap to this player\u2019s average win rate across all splits',
+      sets: 'TB% tiebreaks won \u00b7 GM% games won \u00b7 SET% sets won \u00b7 VS AVG is the gap to this player\u2019s average set win rate \u00b7 hover a row for raw counts',
+      service: 'Matches served \u00b7 aces and double faults as a share of service points \u00b7 holds and breaks as a share of games \u00b7 hover a row for the raw win-loss counts',
+    }[tab];
+  }
+  componentDidMount() { this._syncFormHeight(); this._onResize = () => this._syncFormHeight(); window.addEventListener('resize', this._onResize); }
+  componentDidUpdate() { this._syncFormHeight(); }
+  componentWillUnmount() { if (this._onResize) window.removeEventListener('resize', this._onResize); }
+  _syncFormHeight() {
+    const c = this._careerRef && this._careerRef.current;
+    const f = this._formRef && this._formRef.current;
+    if (!c || !f) return;
+    // only match when side by side (same row top); stacked -> let form size naturally
+    if (Math.abs(c.offsetTop - f.offsetTop) > 4) { if (f.style.height) f.style.height = ''; return; }
+    const h = c.offsetHeight;
+    if (this.state.formExpanded) { if (f.style.height) f.style.height = ''; return; }
+    if (h && Math.abs((parseFloat(f.style.height) || 0) - h) > 1) f.style.height = h + 'px';
+  }
+
+  marketPerf(S, name) {
+    const shortN = name.replace(/^[A-Z]\.\s*/, '');
+    const P = S.mpPeriod || 'all', SU = S.mpSurf || 'all', SIDE = S.mpSide || 'back';
+    if (!this._mpArch || this._mpName !== name) {
+      const rr = this.rng('mparch|' + name);
+      const arch = [];
+      for (let y = 2018; y <= 2026; y++) {
+        const n = y === 2026 ? 20 : 27 + Math.floor(rr() * 8);
+        for (let i = 0; i < n; i++) {
+          const sp = rr();
+          const surf = sp < 0.42 ? 'Hard' : sp < 0.72 ? 'Clay' : sp < 0.88 ? 'Hard Indoor' : 'Grass';
+          const isFav = rr() < (y <= 2021 ? 0.6 : 0.48);
+          const odds = isFav ? 1.22 + rr() * 0.72 : 2.05 + rr() * 2.3;
+          const skill = y <= 2020 ? 0.06 : y <= 2023 ? 0 : -0.05;
+          const won = rr() < Math.min(0.94, Math.max(0.04, 1 / odds + skill));
+          arch.push({ t: y + (i + 0.5) / n, surf, odds, won, isFav });
+        }
+      }
+      this._mpArch = arch; this._mpName = name;
+    }
+    const cut = P === 'season' ? 2026 : P === 'l2' ? 2025 : P === 'l3' ? 2024 : 0;
+    const surfPool = this._mpArch.filter(m => SU === 'all' || m.surf === SU || (SU === 'Hard' && m.surf === 'Hard Indoor'));
+    const nMax = surfPool.length;
+    const N = Math.min(S.mpN == null ? 50 : S.mpN, nMax);
+    const pool = P === 'n' ? surfPool.slice(-N) : surfPool.filter(m => m.t >= cut);
+    const profit = m => SIDE === 'back' ? (m.won ? m.odds - 1 : -1) : (m.won ? -1 : 1 / (m.odds - 1));
+    const stakeOf = m => 1;
+    const GREEN = '#3dd68c', RED = '#e0616f', MUTE = '#3f4860';
+    const t0 = P === 'n' ? (pool.length ? Math.floor(pool[0].t) : 2018) : (cut || 2018), t1 = 2026.65;
+    const build = (ms, h) => {
+      if (!ms.length) return { hasData: false, noData: true, count: '\u2014', h: h + 'px' };
+      let cum = 0;
+      const pts = [{ x: 0, v: 0 }];
+      ms.forEach(m => { cum += profit(m); pts.push({ x: (m.t - t0) / (t1 - t0), v: cum, won: m.won }); });
+      let lo = Math.min(0, ...pts.map(p => p.v)), hi = Math.max(0, ...pts.map(p => p.v));
+      const pad = (hi - lo) * 0.08 + 0.5; lo -= pad; hi += pad;
+      const Y = v => (1 - (v - lo) / (hi - lo)) * 300;
+      const X = x => 12 + x * 976;
+      const linePath = pts.map((p, i) => (i ? 'L' : 'M') + X(p.x).toFixed(1) + ' ' + Y(p.v).toFixed(1)).join(' ');
+      const areaPath = linePath + ' L' + X(pts[pts.length - 1].x).toFixed(1) + ' ' + Y(0).toFixed(1) + ' L' + X(0).toFixed(1) + ' ' + Y(0).toFixed(1) + ' Z';
+      const span = hi - lo, step = span > 40 ? 20 : span > 20 ? 10 : span > 8 ? 4 : 2;
+      const grid = [];
+      for (let v = Math.ceil(lo / step) * step; v <= hi; v += step) if (Math.abs(v) > 1e-6) grid.push({ y: Y(v).toFixed(1), topPct: (Y(v) / 3).toFixed(1) + '%', label: (v > 0 ? '+' : '') + v + 'u' });
+      const years = [];
+      for (let y = Math.ceil(t0); y <= 2026; y++) { const x = (y - t0) / (t1 - t0); if (x >= 0 && x <= 1) years.push({ leftPct: (1.2 + x * 97.6).toFixed(1) + '%', label: String(y) }); }
+      return { hasData: true, noData: false, linePath, areaPath, grid, years, zeroY: Y(0).toFixed(1), zeroTop: (Y(0) / 3).toFixed(1) + '%', h: h + 'px', count: ms.length + ' priced matches' };
+    };
+    const stat = ms => {
+      if (!ms.length) return null;
+      let staked = 0, prof = 0, wins = 0;
+      ms.forEach(m => { staked += stakeOf(m); prof += profit(m); if (m.won) wins++; });
+      const odds = ms.map(m => m.odds).sort((x, y) => x - y);
+      const med = odds.length % 2 ? odds[(odds.length - 1) / 2] : (odds[odds.length / 2 - 1] + odds[odds.length / 2]) / 2;
+      return { n: ms.length, roi: prof / staked * 100, w: wins, l: ms.length - wins, winPct: wins / ms.length * 100, med };
+    };
+    const card = (title, ms) => {
+      const s = stat(ms);
+      if (!s) return { title, roi: '\u2014', roiColor: MUTE, rec: '\u2014', med: 'median closing odds \u2014', n: 'No priced matches in this window', dim: '0.55', low: false };
+      const low = s.n < 30;
+      return {
+        title,
+        roi: 'ROI ' + (s.roi >= 0 ? '+' : '\u2212') + Math.abs(s.roi).toFixed(1) + '%',
+        roiColor: s.roi >= 0 ? GREEN : RED,
+        rec: s.w + '\u2013' + s.l + ' \u00b7 ' + Math.round(s.winPct) + '% win',
+        med: 'median closing odds ' + s.med.toFixed(2),
+        n: s.n + ' matches', dim: low ? '0.62' : '1', low,
+      };
+    };
+    const favs = pool.filter(m => m.isFav), dogs = pool.filter(m => !m.isFav);
+    const SPLIT = S.mpSplit || 'all';
+    const splitPool = SPLIT === 'fav' ? favs : SPLIT === 'dog' ? dogs : pool;
+    const selStat = stat(splitPool);
+    const sel = selStat ? {
+      roi: 'ROI ' + (selStat.roi >= 0 ? '+' : '\u2212') + Math.abs(selStat.roi).toFixed(1) + '%',
+      roiColor: selStat.roi >= 0 ? GREEN : RED,
+      rec: selStat.w + '\u2013' + selStat.l + ' \u00b7 ' + Math.round(selStat.winPct) + '% win',
+      med: 'median closing odds ' + selStat.med.toFixed(2),
+      low: selStat.n < 30,
+      caption: SIDE === 'fade'
+        ? (SPLIT === 'fav' ? 'Fading him (backing his opponent) only when the market made him favourite, 1u at closing odds.'
+          : SPLIT === 'dog' ? 'Fading him (backing his opponent) only when the market made him underdog, 1u at closing odds.'
+          : 'If you had faded him (backed his opponent) in every priced match, 1u at closing odds.')
+        : (SPLIT === 'fav' ? 'Backing him only when the market made him favourite, 1u at closing odds.'
+          : SPLIT === 'dog' ? 'Backing him only when the market made him underdog, 1u at closing odds.'
+          : 'If you had backed him in every priced match, 1u at closing odds.'),
+    } : { roi: '\u2014', roiColor: MUTE, rec: '\u2014', med: 'median closing odds \u2014', low: false, caption: '' };
+    const splitTab = (key, label, n) => { const on = SPLIT === key; return { label: label + ' \u00b7 ' + n, onClick: () => this.setState({ mpSplit: key }), weight: on ? 700 : 600, color: on ? '#fff' : '#5b6880', bg: on ? 'rgba(91,155,255,0.28)' : 'transparent', bd: on ? 'rgba(91,155,255,0.5)' : 'transparent' }; };
+    const pillSet = (opts, cur, key) => opts.map(o => { const on = cur === o[0]; return { label: o[1], onClick: () => this.setState({ [key]: o[0] }), weight: on ? 700 : 600, color: on ? '#fff' : '#5b6880', bg: on ? 'rgba(91,155,255,0.28)' : 'transparent', bd: on ? 'rgba(91,155,255,0.5)' : 'transparent' }; });
+    const effN = P === 'n' ? N : pool.length;
+    const PL = { all: 'Career', season: 'This season', l2: 'Last 2 seasons', n: 'Last ' + N + ' matches' };
+    const SL = { all: 'all surfaces', Hard: 'hard', Clay: 'clay', Grass: 'grass' };
+    return {
+      periodTabs: pillSet([['all', 'Career'], ['season', 'This season'], ['l2', 'Last 2 seasons']], P, 'mpPeriod'),
+      surfTabs: pillSet([['all', 'All'], ['Clay', 'Clay'], ['Hard', 'Hard'], ['Grass', 'Grass']], SU, 'mpSurf'),
+      sideTabs: pillSet([['back', 'Backing ' + shortN], ['fade', 'Fading ' + shortN]], SIDE, 'mpSide'),
+      scopeLine: PL[P] + ' \u00b7 ' + SL[SU] + ' \u00b7 ' + (SIDE === 'back' ? 'backing' : 'fading'),
+      showSlider: P === 'n',
+      nLabel: (P === 'n' ? 'Last ' : 'All ') + effN + ' matches', nVal: effN, nMax,
+      nSlider: (nMax > 15 ? Math.max(0, (effN - 15) / (nMax - 15)) * 100 : 100).toFixed(1) + '%',
+      onNInput: e => this.setState({ mpPeriod: 'n', mpN: +e.target.value }),
+      splitTabs: [splitTab('all', 'All matches', pool.length), splitTab('fav', 'As favourite', favs.length), splitTab('dog', 'As underdog', dogs.length)],
+      sel,
+      big: build(splitPool, 280),
+    };
+  }
+
+  matchSheetFor(m) {
+    let h = 13; const sd = m.when + m.opp + m.score;
+    for (let i = 0; i < sd.length; i++) h = (h * 31 + sd.charCodeAt(i)) % 2147483647;
+    const r = () => { h = (h * 16807 + 11) % 2147483647; return h / 2147483647; };
+    const pick = (lo, hi) => lo + r() * (hi - lo);
+    const R = (lo, hi) => Math.round(pick(lo, hi));
+    const win = m.res === 'W';
+
+    // the scoreline drives everything: games won and lost set the point split
+    const sets = String(m.score || '').trim().split(/\s+/).map(t => t.replace(/\(\d+\)/, '').split('-').map(Number))
+      .filter(p => p.length === 2 && !isNaN(p[0]) && !isNaN(p[1]));
+    let gA = 0, gB = 0, tbs = 0;
+    sets.forEach(p => { gA += p[0]; gB += p[1]; if (Math.max(p[0], p[1]) === 7 && Math.min(p[0], p[1]) === 6) tbs++; });
+    if (!sets.length) { gA = win ? 13 : 9; gB = win ? 9 : 13; }
+    const G = Math.max(1, gA + gB);
+    let margin = (gA - gB) / G;
+    if (win && margin <= 0.02) margin = 0.04 + r() * 0.05;
+    if (!win && margin >= -0.02) margin = -(0.04 + r() * 0.05);
+    margin = Math.max(-0.5, Math.min(0.5, margin - tbs * 0.01 * Math.sign(margin)));
+
+    // service points won: the winner holds better by exactly the game margin
+    const lvl = 0.655 + pick(-0.02, 0.02);
+    const spwPctA = Math.max(0.5, Math.min(0.82, lvl + 0.19 * margin));
+    const spwPctB = Math.max(0.5, Math.min(0.82, lvl - 0.19 * margin));
+    const svcGamesA = Math.round(G / 2), svcGamesB = G - svcGamesA;
+    const ppg = 6.1 + r() * 0.6;
+    const svcA = Math.max(20, Math.round(svcGamesA * ppg)), svcB = Math.max(20, Math.round(svcGamesB * ppg));
+    const spwA = Math.round(svcA * spwPctA), spwB = Math.round(svcB * spwPctB);
+    const rpwA = svcB - spwB, rpwB = svcA - spwA;
+    const tpA = spwA + rpwA, tpB = spwB + rpwB, tp = tpA + tpB;
+    const drA = (rpwA / svcB) / (rpwB / svcA), drB = 1 / drA;
+
+    // first and second serve split, solved so the two add back to service points won
+    const split = (svc, spwPct) => {
+      const firstIn = Math.max(0.5, Math.min(0.74, pick(0.58, 0.68)));
+      const gap = 0.2 + r() * 0.06;
+      let fWon = spwPct + (1 - firstIn) * gap, sWon = fWon - gap;
+      if (fWon > 0.94) { fWon = 0.94; sWon = (spwPct - firstIn * fWon) / (1 - firstIn); }
+      if (sWon < 0.2) { sWon = 0.2; fWon = (spwPct - (1 - firstIn) * sWon) / firstIn; }
+      const fIn = Math.round(svc * firstIn), sIn = svc - fIn;
+      const fW = Math.round(fIn * fWon);
+      return { firstIn: firstIn * 100, fIn, sIn, fW, sW: Math.max(0, Math.round(svc * spwPct) - fW) };
+    };
+    const A = split(svcA, spwPctA), B = split(svcB, spwPctB);
+
+    // breaks: the net break differential is half the game margin, rounded
+    let bpA = 0, bpB = 0;
+    sets.forEach(p => {
+      const net = Math.round((p[0] - p[1]) / 2), extra = r() < 0.4 ? 1 : 0;
+      if (net >= 0) { bpA += net + extra; bpB += extra; } else { bpB += -net + extra; bpA += extra; }
+    });
+    bpA = Math.min(bpA, svcGamesB); bpB = Math.min(bpB, svcGamesA);
+    if (margin > 0 && bpA <= bpB) bpA = bpB + 1;
+    if (margin < 0 && bpB <= bpA) bpB = bpA + 1;
+    bpA = Math.min(bpA, svcGamesB); bpB = Math.min(bpB, svcGamesA);
+    const bpTA = bpA + R(1, 5), bpTB = bpB + R(1, 5);
+    const savedA = bpTB - bpB, savedB = bpTA - bpA;
+
+    const acesA = Math.max(0, Math.round(svcA * pick(0.05, 0.12) + (margin > 0 ? 1 : 0)));
+    const acesB = Math.max(0, Math.round(svcB * pick(0.05, 0.12) + (margin < 0 ? 1 : 0)));
+    const dfA = Math.max(0, Math.round(A.sIn * pick(0.04, 0.13))), dfB = Math.max(0, Math.round(B.sIn * pick(0.04, 0.13)));
+    const pct = (a, b) => b ? a / b * 100 : 0;
+    const srA = Math.round(A.firstIn + pct(A.fW, A.fIn) + pct(A.sW, A.sIn) + pct(svcGamesA - bpB, svcGamesA) + acesA - dfA);
+    const srB = Math.round(B.firstIn + pct(B.fW, B.fIn) + pct(B.sW, B.sIn) + pct(svcGamesB - bpA, svcGamesB) + acesB - dfB);
+    const rrA = Math.round(pct(B.fIn - B.fW, B.fIn) + pct(B.sIn - B.sW, B.sIn) + pct(bpA, bpTA) + pct(bpA, svcGamesB));
+    const rrB = Math.round(pct(A.fIn - A.fW, A.fIn) + pct(A.sIn - A.sW, A.sIn) + pct(bpB, bpTB) + pct(bpB, svcGamesA));
+
+    const winnersA = Math.round(tpA * pick(0.26, 0.4)), winnersB = Math.round(tpB * pick(0.26, 0.4));
+    const ueA = Math.round(tpB * pick(0.22, 0.36)), ueB = Math.round(tpA * pick(0.22, 0.36));
+    const netTA = R(14, 42), netTB = R(14, 42);
+    const netA = Math.round(netTA * (0.6 + 0.5 * margin)), netB = Math.round(netTB * (0.6 - 0.5 * margin));
+    const prT = R(7, 18);
+    const prA = Math.round(prT * Math.max(0.2, Math.min(0.8, 0.5 + margin))), prB = prT - prA;
+
+    const num = v => v.toFixed(1);
+    const row = (label, a, b, kind, aSub, bSub) => {
+      const tot = (Math.abs(a) + Math.abs(b)) || 1;
+      const fmt = v => kind === 'pct' ? num(v) + '%' : String(Math.round(v));
+      return {
+        label, a: fmt(a), b: fmt(b), aSub: aSub || '', bSub: bSub || '', hasSub: !!aSub,
+        aBar: (Math.abs(a) / tot * 100).toFixed(1) + '%',
+        bBar: (Math.abs(b) / tot * 100).toFixed(1) + '%',
+      };
+    };
+    const frac = (a, b) => '(' + a + '/' + b + ')';
+
+    return {
+      header: m.when + ' \u00b7 ' + m.event + ' \u00b7 ' + m.round,
+      result: (win ? 'Won ' : 'Lost ') + m.score,
+      resultColor: win ? '#3dd68c' : '#e0616f',
+      opp: m.opp,
+      priceLine: 'Closing ' + m.oddsOwn + ' v ' + m.oddsOpp + ' \u00b7 P&L ' + m.pnl,
+      drA: drA.toFixed(2), drB: drB.toFixed(2),
+      drBarA: (drA / (drA + drB) * 100).toFixed(1) + '%',
+      drBarB: (drB / (drA + drB) * 100).toFixed(1) + '%',
+      sections: [
+        { title: 'Service', rows: [
+          row('Serve rating', srA, srB),
+          row('Aces', acesA, acesB),
+          row('Double faults', dfA, dfB),
+          row('1st serve %', A.firstIn, B.firstIn, 'pct', frac(A.fIn, svcA), frac(B.fIn, svcB)),
+          row('1st serve points won', pct(A.fW, A.fIn), pct(B.fW, B.fIn), 'pct', frac(A.fW, A.fIn), frac(B.fW, B.fIn)),
+          row('2nd serve points won', pct(A.sW, A.sIn), pct(B.sW, B.sIn), 'pct', frac(A.sW, A.sIn), frac(B.sW, B.sIn)),
+          row('Break points saved', pct(savedA, bpTB), pct(savedB, bpTA), 'pct', frac(savedA, bpTB), frac(savedB, bpTA)),
+        ] },
+        { title: 'Return', rows: [
+          row('Return rating', rrA, rrB),
+          row('1st return points won', pct(B.fIn - B.fW, B.fIn), pct(A.fIn - A.fW, A.fIn), 'pct', frac(B.fIn - B.fW, B.fIn), frac(A.fIn - A.fW, A.fIn)),
+          row('2nd return points won', pct(B.sIn - B.sW, B.sIn), pct(A.sIn - A.sW, A.sIn), 'pct', frac(B.sIn - B.sW, B.sIn), frac(A.sIn - A.sW, A.sIn)),
+          row('Break points converted', pct(bpA, bpTA), pct(bpB, bpTB), 'pct', frac(bpA, bpTA), frac(bpB, bpTB)),
+        ] },
+        { title: 'Points won', rows: [
+          row('Winners', winnersA, winnersB),
+          row('Unforced errors', ueA, ueB),
+          row('Net points won', pct(netA, netTA), pct(netB, netTB), 'pct', frac(netA, netTA), frac(netB, netTB)),
+          row('Service points won', pct(spwA, svcA), pct(spwB, svcB), 'pct', frac(spwA, svcA), frac(spwB, svcB)),
+          row('Return points won', pct(rpwA, svcB), pct(rpwB, svcA), 'pct', frac(rpwA, svcB), frac(rpwB, svcA)),
+          row('Pressure points', pct(prA, prT), pct(prB, prT), 'pct', frac(prA, prT), frac(prB, prT)),
+          row('Total points won', pct(tpA, tp), pct(tpB, tp), 'pct', frac(tpA, tp), frac(tpB, tp)),
+        ] },
+      ],
+    };
+  }
+
+  renderVals() {
+    const S = this.state;
+    this._careerRef = this._careerRef || React.createRef();
+    this._formRef = this._formRef || React.createRef();
+    const openMatch = S.openMatch || null;
+    this._mi = {};
+    const toggleMatch = id => () => this.setState(st => ({ openMatch: st.openMatch === id ? null : id, statPtSet: 0, statMode: 'summary' }));
+    const name = this.props.player || 'P. Martinez';
+    const short = name.replace(/^[A-Z]\.\s*/, '');
+    const init = name.replace(/^[A-Z]\.\s*/, '').split(/[\s-]/).map(w => w[0]).join('').slice(0, 2).toUpperCase();
+    const base = this.rng(name);
+    const atp = this.props.atp || 136;
+    const elo = this.props.elo || 1557;
+
+    // header
+    const head = { name, short, init, atp, elo, eloRank: 209, arch: this.props.arch || 'Counter Puncher / Solid Defender', country: 'Spain', age: 29 };
+    const onBack = this.props.onBack || (() => { window.location.href = 'Todays Matches - Sidebar.dc.html#Players'; });
+
+    // sidebar nav
+    const NAVDEF = [
+      ['Matches', 'M3 6.5h14M3 10h14M3 13.5h14'],
+      ['Players', 'M10 10a3 3 0 100-6 3 3 0 000 6ZM4.5 16a5.5 5.5 0 0111 0'],
+      ['Tournaments', 'M6 4h8v3a4 4 0 01-8 0V4ZM10 11v3M7.5 16.5h5'],
+      ['Stennisfy Model', 'M10 3l1.9 3.9 4.3.6-3.1 3 .7 4.3L10 16.8 6.3 18.8l.7-4.3-3.1-3 4.3-.6z'],
+      ['Playing Styles', 'M4 15V9M8 15V5M12 15v-4M16 15V7'],
+    ];
+    const sidebarNav = NAVDEF.map(n => { const on = n[0] === 'Players'; return { label: n[0], path: n[1], href: 'Todays Matches - Sidebar.dc.html#' + encodeURIComponent(n[0]), color: on ? '#fff' : '#5b6880', bg: on ? 'rgba(91,155,255,0.13)' : 'transparent', bd: on ? 'rgba(91,155,255,0.34)' : 'transparent', icon: on ? '#5b9bff' : '#7a8494' }; });
+
+    // surface tabs
+    const SURF = [['all', 'All surfaces'], ['clay', 'Clay'], ['hard', 'Hard'], ['grass', 'Grass']];
+    const surfTabs = SURF.map(t => { const on = S.surf === t[0]; return { label: t[1], onClick: () => this.setState({ surf: t[0] }), color: on ? '#e7e9ee' : '#5b6880', bg: on ? 'rgba(91,155,255,0.22)' : 'transparent', bd: on ? 'rgba(91,155,255,0.45)' : 'transparent', weight: on ? 700 : 600 }; });
+
+    // stat cards
+    const IC = { trophy: 'M6 4h8v3a4 4 0 01-8 0V4ZM10 11v3M7.5 16.5h5', chart: 'M4 15V9M8 15V5M12 15v-4M16 15V7', up: 'M4 13l4-4 3 3 5-6M13 6h3v3' };
+    const SURFSTATS = {
+      all:   { elo: elo,  eloRank: head.eloRank, career: '369\u2013309', careerPct: '54.4% all-time', season: '14\u201316', win: '46.7%' },
+      clay:  { elo: 1602, eloRank: 168, career: '283\u2013198', careerPct: '58.8% all-time', season: '8\u201313',  win: '38.1%' },
+      hard:  { elo: 1498, eloRank: 246, career: '80\u201398',   careerPct: '44.9% all-time', season: '6\u20133',   win: '66.7%' },
+      grass: { elo: 1440, eloRank: 298, career: '6\u201313',    careerPct: '31.6% all-time', season: '0\u20130',   win: '\u2014' },
+    };
+    const ss = SURFSTATS[S.surf] || SURFSTATS.all;
+    this._careerBase = parseFloat(ss.careerPct) || 41;
+    const surfLabel = { all: 'all surfaces', clay: 'clay', hard: 'hard', grass: 'grass' }[S.surf];
+    const statCards = [
+      { label: 'ELO Rating', value: String(ss.elo), sub: 'Elo rank #' + ss.eloRank + ' \u00b7 ATP #' + atp, icon: IC.trophy, iconBg: 'rgba(91,155,255,0.14)', iconColor: '#5b9bff' },
+      { label: 'Career Record', value: ss.career, sub: ss.careerPct + ' \u00b7 ' + surfLabel, icon: IC.chart, iconBg: 'rgba(91,155,255,0.14)', iconColor: '#5b9bff',
+        expandable: true, onClick: () => this.setState(st => ({ careerOpen: !st.careerOpen })) },
+      { label: 'Season Record', value: ss.season, sub: '2026 season \u00b7 ' + surfLabel, icon: IC.up, iconBg: 'rgba(91,155,255,0.14)', iconColor: '#5b9bff' },
+      { label: 'Win Rate', value: ss.win, sub: 'This season \u00b7 ' + surfLabel, icon: IC.up, iconBg: 'rgba(91,155,255,0.14)', iconColor: '#5b9bff' },
+    ].map(c => Object.assign({
+      cursor: c.expandable ? 'pointer' : 'default',
+      bd: c.expandable && S.careerOpen ? 'rgba(91,155,255,0.34)' : 'rgba(255,255,255,0.09)',
+      caret: S.careerOpen ? 'rotate(0deg)' : 'rotate(-90deg)',
+    }, c));
+
+    const SEASONS = [
+      ['2026', '14/16', '8/13', '6/3', '\u2014'], ['2025', '14/32', '7/15', '5/14', '2/3'],
+      ['2024', '36/25', '27/10', '9/11', '0/4'], ['2023', '39/32', '29/25', '10/7', '\u2014'],
+      ['2022', '8/13', '4/2', '3/8', '1/3'], ['2021', '3/5', '1/2', '2/3', '\u2014'],
+      ['2020', '35/13', '29/8', '6/5', '\u2014'], ['2019', '34/32', '26/24', '7/7', '1/1'],
+      ['2018', '39/29', '30/20', '9/9', '\u2014'], ['2017', '51/28', '44/21', '7/7', '\u2014'],
+      ['2016', '25/17', '25/16', '0/1', '\u2014'], ['2015', '18/14', '16/12', '2/2', '\u2014'],
+    ];
+    const SIDX = { all: 1, clay: 2, hard: 3, grass: 4 }[S.surf] || 1;
+    const careerSeasons = SEASONS.map(r => {
+      const cell = r[SIDX];
+      if (cell === '\u2014') return { year: r[0], record: '\u2014', pct: 'no matches', color: '#3f4860', barW: '0%', barColor: 'transparent' };
+      const p = cell.split('/'), w = +p[0], l = +p[1], pct = w + l ? (w / (w + l)) * 100 : 0;
+      return {
+        year: r[0], record: w + '\u2013' + l, pct: pct.toFixed(1) + '%',
+        color: pct >= 55 ? '#3dd68c' : (pct < 40 ? '#e0616f' : '#c6ccdb'),
+        barW: pct.toFixed(0) + '%',
+        barColor: pct >= 55 ? '#3dd68c' : (pct < 40 ? '#e0616f' : '#5b9bff'),
+      };
+    });
+
+    // radar
+    const AX = [['Big Server', 6], ['Serve+Base', 12], ['Attacking', 28], ['Solid Base', 22], ['All-Court', 7], ['Counter', 83], ['Defender', 79]];
+    const cx = 140, cy = 138, R = 92;
+    const pt = (i, val) => { const a = (-90 + i * (360 / 7)) * Math.PI / 180; const rr = R * val / 100; return [cx + rr * Math.cos(a), cy + rr * Math.sin(a)]; };
+    const poly = vals => vals.map((v, i) => pt(i, v).map(n => n.toFixed(1)).join(',')).join(' ');
+    const radar = {
+      rings: [100, 75, 50, 25].map(rv => ({ pts: poly(AX.map(() => rv)) })),
+      spokes: AX.map((a, i) => { const p = pt(i, 100); return { x2: p[0].toFixed(1), y2: p[1].toFixed(1) }; }),
+      avgPts: poly(AX.map(() => 50)),
+      playerPts: poly(AX.map(a => a[1])),
+      dots: AX.map((a, i) => { const p = pt(i, a[1]); return { x: p[0].toFixed(1), y: p[1].toFixed(1) }; }),
+      axis: AX.map((a, i) => { const p = pt(i, 128); return { name: a[0], val: a[1], left: p[0].toFixed(1) + 'px', top: p[1].toFixed(1) + 'px' }; }),
+    };
+
+    // surface performance
+    const surfacePerf = [
+      ['clay', 'Clay', '#e8a84e', '58.8%', '283\u2013198 career · 58.8%', '8\u201313 · 38.1% in 2026'],
+      ['hard', 'Hard', '#4db8ff', '44.9%', '80\u201398 career · 44.9%', '6\u20133 · 66.7% in 2026'],
+      ['grass', 'Grass', '#2ab8a0', '31.6%', '6\u201313 career · 31.6%', 'No matches in 2026'],
+    ].map(d => { const act = S.surf === d[0]; return { surf: d[1], color: d[2], winPct: d[3], barW: d[3], career: d[4], season: d[5], cardBd: act ? d[2] : 'rgba(255,255,255,0.08)', cardBg: act ? 'rgba(255,255,255,0.04)' : '#0a0d14', dim: (S.surf === 'all' || act) ? '1' : '0.45' }; });
+
+    // market window
+    const winN = S.winN == null ? 192 : S.winN;
+    const winSurf = S.winSurf || 'all';
+    const winSurfTabs = [['all', 'All'], ['Clay', 'Clay'], ['Hard', 'Hard'], ['Grass', 'Grass']].map(t => { const on = winSurf === t[0]; return { label: t[1], onClick: () => this.setState({ winSurf: t[0] }), weight: on ? 700 : 600, color: on ? '#fff' : '#5b6880', bg: on ? 'rgba(91,155,255,0.28)' : 'transparent', bd: on ? 'rgba(91,155,255,0.5)' : 'transparent' }; });
+    const WT = [['Career', 192], ['This season', 30], ['Last 2 seasons', 80], ['Last 3 seasons', 120]];
+    const winTabs = WT.map(t => { const on = winN === t[1]; return { label: t[0], onClick: () => this.setState({ winN: t[1] }), color: on ? '#e7e9ee' : '#5b6880', bg: on ? 'rgba(91,155,255,0.22)' : 'transparent', bd: on ? 'rgba(91,155,255,0.45)' : 'transparent', weight: on ? 700 : 600 }; });
+    const totalM = winSurf === 'all' ? winN : Math.max(5, Math.round(winN * (winSurf === 'Clay' ? 0.52 : winSurf === 'Hard' ? 0.4 : 0.08)));
+    const mr = this.rng('mkt|' + name + '|' + winN + '|' + winSurf);
+    const undM = Math.max(1, Math.round(totalM * (0.62 + mr() * 0.08))), favM = totalM - undM;
+    const ovWon = 38 + mr() * 6, ovImp = ovWon + (0.3 + mr() * 1.5), vsMkt = ovWon - ovImp;
+    const roi = -(6 + mr() * 12);
+    const undWon = 26 + mr() * 6, undImp = undWon + (0.5 + mr() * 3), und = undWon - undImp;
+    const favWon = 60 + mr() * 5, favImp = favWon - (mr() * 3 - 1.5), fav = favWon - favImp;
+    const reliabilityScope = (winN >= 192 ? 'career' : winN === 30 ? 'this season' : winN === 80 ? 'last 2 seasons' : winN === 120 ? 'last 3 seasons' : 'last ' + winN + ' matches') + (winSurf === 'all' ? '' : ' \u00b7 ' + winSurf.toLowerCase());
+    const marketMetrics = [
+      { label: 'Vs market expectation', value: this.pt(vsMkt), color: this.ptc(vsMkt), sub: 'Won ' + ovWon.toFixed(1) + '% · closing odds implied ' + ovImp.toFixed(1) + '%', bd: 'rgba(255,255,255,0.08)' },
+      { label: 'Flat-stake ROI', value: (roi >= 0 ? '+' : '\u2212') + Math.abs(roi).toFixed(1) + '%', color: this.ptc(roi), sub: '1u every match at average closing price', bd: 'rgba(255,255,255,0.08)' },
+      { label: 'As underdog', value: this.pt(und), color: this.ptc(und), sub: undM + ' matches · won ' + undWon.toFixed(1) + '% vs ' + undImp.toFixed(1) + '% implied', bd: 'rgba(255,255,255,0.08)' },
+      { label: 'As favourite', value: this.pt(fav), color: this.ptc(fav), sub: favM + ' matches · won ' + favWon.toFixed(1) + '% vs ' + favImp.toFixed(1) + '% implied', bd: 'rgba(255,255,255,0.08)' },
+    ];
+
+    // by surface
+    const bsData = [['Clay', '#e8a84e', 101, -1.0], ['Hard', '#4db8ff', 77, -0.9], ['Grass', '#2ab8a0', 14, -1.1]];
+    const bySurface = bsData.map(d => { const dv = this.diverge(d[3], 4); return { surf: d[0], color: d[1], matches: d[2], val: this.pt(d[3]), valColor: this.ptc(d[3]), barColor: d[1], barLeft: dv.barLeft, barWidth: dv.barWidth }; });
+
+    // reliability
+    const relNote = g => Math.abs(g) < 1.5 ? ['Roughly in line with the market\u2019s expectation.', 'rgba(255,255,255,0.03)'] : (g > 0 ? ['Beating the closing market in this window.', 'rgba(29,158,117,0.07)'] : ['Falling short of the closing market here.', 'rgba(226,75,74,0.06)']);
+    const favN = relNote(fav), undN = relNote(und);
+    const reliability = [
+      { title: 'As Favourite', desc: 'Matches where the market expected this player to win.', matches: String(favM), actual: favWon.toFixed(1) + '%', actColor: this.ptc(fav), implied: favImp.toFixed(1) + '%', actW: favWon.toFixed(1) + '%', impW: favImp.toFixed(1) + '%', gap: this.pt(fav), gapColor: this.ptc(fav), note: favN[0], noteBg: favN[1] },
+      { title: 'As Underdog', desc: 'Matches where the market expected this player to lose.', matches: String(undM), actual: undWon.toFixed(1) + '%', actColor: this.ptc(und), implied: undImp.toFixed(1) + '%', actW: undWon.toFixed(1) + '%', impW: undImp.toFixed(1) + '%', gap: this.pt(und), gapColor: this.ptc(und), note: undN[0], noteBg: undN[1] },
+    ];
+
+    // by split
+    const ST = [['tour', 'Tour level'], ['opp', 'Opponent'], ['round', 'Round']];
+    const splitTabs = ST.map(t => { const on = S.split === t[0]; return { label: t[1], onClick: () => this.setState({ split: t[0] }), color: on ? '#e7e9ee' : '#5b6880', bg: on ? 'rgba(91,155,255,0.22)' : 'transparent', bd: on ? 'rgba(91,155,255,0.45)' : 'transparent', weight: on ? 700 : 600 }; });
+    const SPLITS = {
+      tour: [['Grand Slam', 36, 4.2], ['Masters 1000', 33, -11.6], ['ATP 500', 28, 0.7], ['ATP 250', 95, 0.2]],
+      opp: [['vs Righties', 158, -0.6], ['vs Lefties', 34, 3.1], ['vs Top 10', 14, -8.4], ['vs Top 50', 61, -2.2]],
+      round: [['Final', 12, 5.5], ['Semi-final', 18, 1.2], ['Quarter-final', 29, -0.3], ['Early rounds', 133, -1.4]],
+    };
+    const bySplit = SPLITS[S.split].map(d => { const dv = this.diverge(d[2], 13); return { label: d[0], matches: d[1], val: this.pt(d[2]), valColor: this.ptc(d[2]), barColor: this.ptc(d[2]), barLeft: dv.barLeft, barWidth: dv.barWidth }; });
+
+    // recent form
+    const FF = [['all', 'All'], ['grass', 'Grass'], ['hard', 'Hard'], ['clay', 'Clay']];
+    const PF = [['fav', 'Favourite'], ['dog', 'Underdog']];
+    const sel = S.formSel || {};
+    const anySel = Object.keys(sel).some(k => sel[k]);
+    const toggle = key => () => this.setState(st => {
+      if (key === 'all') return { formSel: {} };
+      const next = Object.assign({}, st.formSel);
+      next[key] = !next[key];
+      return { formSel: next };
+    });
+    const formFilters = FF.map(t => { const on = t[0] === 'all' ? !anySel : !!sel[t[0]]; return { label: t[1], onClick: toggle(t[0]), color: on ? '#e7e9ee' : '#5b6880', bg: on ? 'rgba(91,155,255,0.22)' : 'transparent', bd: on ? 'rgba(91,155,255,0.45)' : 'transparent', weight: on ? 700 : 600 }; });
+    const seq = ['L', 'W', 'L', 'W', 'L', 'L', 'W', 'L', 'L', 'W'];
+    const sq = r => r === 'W' ? { color: '#3dd68c', bg: 'rgba(61,214,140,0.12)', bd: 'rgba(61,214,140,0.3)', solid: '#3dd68c' } : { color: '#e0616f', bg: 'rgba(224,97,111,0.1)', bd: 'rgba(224,97,111,0.28)', solid: 'rgba(224,97,111,0.55)' };
+    const formSquares = seq.map(r => Object.assign({ r }, sq(r)));
+    const SCLR = { Clay: ['#e0b64d', 'rgba(224,182,77,0.12)'], Hard: ['#5b9bff', 'rgba(91,155,255,0.12)'], Grass: ['#1D9E75', 'rgba(29,158,117,0.12)'] };
+    const GRP = [
+      ['Estoril', 'Clay', '1\u20130', [['W', 'H. Rocha', '1/16-finals', '2 - 0']]],
+      ['Gstaad', 'Clay', '0\u20131', [['L', 'Y. Hanfmann', '1/16-finals', '0 - 2']]],
+      ['Iasi', 'Clay', '1\u20131', [['L', 'M. Kasnikowski', '1/8-finals', '1 - 2'], ['W', 'P. Dev S D', '1/16-finals', '2 - 1']]],
+      ['Parma', 'Clay', '0\u20131', [['L', 'D. Rincon', '1/16-finals', '0 - 2']]],
+      ['Lyon', 'Clay', '1\u20131', [['L', 'F. Balshaw', '1/8-finals', '1 - 2'], ['W', 'S. Gulin', '1/16-finals', '2 - 0']]],
+      ['Heilbronn', 'Clay', '1\u20131', [['W', 'L. Klein', '1/8-finals', '2 - 1'], ['L', 'T. Seyboth Wild', 'Quarter-finals', '1 - 2']]],
+      ['Marrakech', 'Clay', '1\u20131', [['W', 'A. Muller', '1/16-finals', '2 - 0'], ['L', 'R. Carballes Baena', '1/8-finals', '0 - 2']]],
+      ['Munich', 'Clay', '0\u20131', [['L', 'J. Lehecka', '1/16-finals', '1 - 2']]],
+      ['Bucharest', 'Clay', '2\u20131', [['W', 'N. Gombos', '1/16-finals', '2 - 0'], ['W', 'F. Coria', '1/8-finals', '2 - 1'], ['L', 'S. Baez', 'Quarter-finals', '0 - 2']]],
+      ['Bastad', 'Clay', '1\u20131', [['W', 'P. Andujar', '1/16-finals', '2 - 1'], ['L', 'C. Ruud', '1/8-finals', '0 - 2']]],
+      ['Cordoba', 'Clay', '0\u20131', [['L', 'T. Etcheverry', '1/16-finals', '1 - 2']]],
+      ['Santiago', 'Clay', '1\u20131', [['W', 'J. Cerundolo', '1/16-finals', '2 - 0'], ['L', 'N. Jarry', '1/8-finals', '1 - 2']]],
+      ['Adelaide', 'Hard', '0\u20131', [['L', 'A. Popyrin', '1/16-finals', '0 - 2']]],
+      ['Doha', 'Hard', '1\u20131', [['W', 'R. Safiullin', '1/16-finals', '2 - 1'], ['L', 'K. Khachanov', '1/8-finals', '1 - 2']]],
+      ['Metz', 'Hard', '0\u20131', [['L', 'U. Humbert', '1/16-finals', '0 - 2']]],
+      ['Newport', 'Grass', '1\u20131', [['W', 'M. McDonald', '1/16-finals', '2 - 0'], ['L', 'A. Mannarino', '1/8-finals', '1 - 2']]],
+    ];
+    const mres = r => r === 'W' ? { color: '#3dd68c', bg: 'rgba(61,214,140,0.14)' } : { color: '#e0616f', bg: 'rgba(224,97,111,0.12)' };
+    const formGroups = GRP.filter(g => S.form === 'all' || g[1].toLowerCase() === S.form).map(g => ({
+      name: g[0], surf: g[1], surfColor: SCLR[g[1]][0], surfBg: SCLR[g[1]][1], record: g[2],
+      matches: g[3].map(m => { const id = 'rf|' + g[0] + '|' + m[1]; this._mi[id] = { seed: id, aN: short, bN: m[1], tour: g[0], round: m[2], date: '', won: m[0] === 'W', sets: m[3], surf: g[1] }; return Object.assign({ id, open: id === openMatch, onToggle: toggleMatch(id), caret: id === openMatch ? 'rotate(90deg)' : 'rotate(0deg)', r: m[0], opp: m[1], oppLink: this.props.onOpenPlayer ? 'plink' : '', onOpenOpp: this.openOpp(m[1]), round: m[2], score: m[3] }, mres(m[0])); }),
+    }));
+    const SURFC = { Clay: '#e8a84e', Hard: '#4db8ff', Grass: '#2ab8a0' };
+    const formMatches = [];
+    formGroups.forEach(g => g.matches.forEach(m => formMatches.push(Object.assign({}, m, { tour: g.name, dotColor: (g.surf === 'Clay' && S.form === 'all') ? '#5b6880' : SURFC[g.surf] }))));
+
+    // career years
+    const yc = (wl, surf) => { if (wl === '\u2014') return '#5b6880'; const p = wl.split('/'); const pct = +p[0] / ((+p[0] + +p[1]) || 1); return pct >= 0.55 ? SCLR[surf][0] : (surf === 'Total' ? '#e7e9ee' : '#5b6880'); };
+    const YR = [
+      ['2026', '', '14/16', '8/13', '6/3', '\u2014'], ['2025', '', '14/32', '7/15', '5/14', '2/3'],
+      ['2024', '', '36/25', '27/10', '9/11', '0/4'], ['2023', '', '39/32', '29/25', '10/7', '\u2014'],
+      ['2022', '', '8/13', '4/2', '3/8', '1/3'], ['2021', '', '3/5', '1/2', '2/3', '\u2014'],
+      ['2020', '', '35/13', '29/8', '6/5', '\u2014'], ['2019', '', '34/32', '26/24', '7/7', '1/1'],
+      ['2018', '', '39/29', '30/20', '9/9', '\u2014'], ['2017', '', '51/28', '44/21', '7/7', '\u2014'],
+      ['2016', '', '25/17', '25/16', '0/1', '\u2014'], ['2015', 'ATP', '18/14', '16/12', '2/2', '\u2014'],
+    ];
+    const drill = S.drill || null;
+    const setDrill = (surf, rec, key, yr) => () => { if (rec === '\u2014') return; this.setState(st => ({ drill: (st.drill && st.drill.key === yr + '|' + key) ? null : { key: yr + '|' + key, title: (surf ? surf + ' \u00b7 ' : '') + yr, record: rec.replace('/', '\u2013'), year: yr } })); };
+    const careerYears = YR.map(y => ({
+      year: y[0], tag: y[1],
+      total: y[2], clay: y[3], hard: y[4], grass: y[5],
+      yearColor: '#e7e9ee', totalColor: '#e7e9ee',
+      clayColor: y[3] === '\u2014' ? '#4b5672' : '#e7e9ee', hardColor: y[4] === '\u2014' ? '#4b5672' : '#e7e9ee', grassColor: y[5] === '\u2014' ? '#4b5672' : '#e7e9ee',
+      drillOpen: !!(drill && drill.year === y[0]),
+      onYear: setDrill('', y[2], 'all', y[0]), onTotal: setDrill('', y[2], 'all', y[0]),
+      onClay: setDrill('Clay', y[3], 'clay', y[0]), onHard: setDrill('Hard', y[4], 'hard', y[0]), onGrass: setDrill('Grass', y[5], 'grass', y[0]),
+    }));
+    const totRow = { total: '316/256', clay: '246/168', hard: '66/77', grass: '4/11' };
+    const OPPS = ['H. Rocha', 'Y. Hanfmann', 'M. Kasnikowski', 'P. Dev S D', 'D. Rincon', 'F. Balshaw', 'S. Gulin', 'L. Klein', 'R. Bautista-Agut'];
+    const DTOURS = ['Estoril', 'Gstaad', 'Iasi', 'Parma', 'Lyon', 'Heilbronn', 'Valencia'];
+    const DROUNDS = ['1/16-finals', '1/8-finals', 'Quarter-finals'];
+    const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    let drillMatches = [], drillTitle = '', drillRecord = '';
+    const onCloseDrill = () => this.setState({ drill: null });
+    if (drill) {
+      drillTitle = drill.title; drillRecord = drill.record;
+      const r = this.rng('drill|' + name + '|' + drill.key);
+      const n = this.ri(r, 4, 8);
+      for (let i = 0; i < n; i++) {
+        const win = r() < 0.5, opp = OPPS[this.ri(r, 0, OPPS.length - 1)], tour = DTOURS[this.ri(r, 0, DTOURS.length - 1)], round = DROUNDS[this.ri(r, 0, DROUNDS.length - 1)];
+        const dd = this.ri(r, 1, 28), mo = MON[this.ri(r, 0, 11)], date = dd + ' ' + mo;
+        const id = 'dr|' + drill.key + '|' + i;
+        this._mi[id] = { seed: id, aN: short, bN: opp, tour, round, date, won: win, sets: win ? '2-0' : '0-2', surf: ({ clay: 'Clay', hard: 'Hard', grass: 'Grass' })[drill.key.split('|')[1]] || '' };
+        drillMatches.push(Object.assign({ id, open: id === openMatch, onToggle: toggleMatch(id), caret: id === openMatch ? 'rotate(90deg)' : 'rotate(0deg)', r: win ? 'W' : 'L', opp, oppLink: this.props.onOpenPlayer ? 'plink' : '', onOpenOpp: this.openOpp(opp), meta: tour + ' \u00b7 ' + round + ' \u00b7 ' + date, score: win ? '2 - 0' : '0 - 2' }, mres(win ? 'W' : 'L')));
+      }
+    }
+    const TABBG = on => on ? '#5b9bff' : 'transparent';
+    // tournament detail
+    const TMETA = { 'Estoril': ['ATP 250', 'Clay'], 'Gstaad': ['ATP 250', 'Clay'], 'Kitzb\u00fchel': ['ATP 250', 'Clay'], 'Umag': ['ATP 250', 'Clay'], 'Barcelona': ['ATP 500', 'Clay'], 'Madrid': ['ATP 1000', 'Clay'], 'Rome': ['ATP 1000', 'Clay'], 'Roland Garros': ['Grand Slam', 'Clay'], 'Wimbledon': ['Grand Slam', 'Grass'], 'US Open': ['Grand Slam', 'Hard'], 'Australian Open': ['Grand Slam', 'Hard'], 'Indian Wells': ['ATP 1000', 'Hard'], 'Miami': ['ATP 1000', 'Hard'], 'Cincinnati': ['ATP 1000', 'Hard'] };
+    const ROUNDS = [['R128', 'Round of 128'], ['R64', 'Round of 64'], ['R32', 'Round of 32'], ['R16', 'Round of 16'], ['QF', 'Quarter-final'], ['SF', 'Semi-final'], ['F', 'Final']];
+    const tourSel = S.tourSel || null;
+    let tourDetail = null;
+    if (tourSel) {
+      const meta = TMETA[tourSel] || ['ATP 250', 'Hard'];
+      const tier = meta[0], surf = meta[1];
+      const entry = ({ 'Grand Slam': 0, 'ATP 1000': 1, 'ATP 500': 2, 'ATP 250': 2 })[tier];
+      const r = this.rng('tourx|' + name + '|' + tourSel);
+      const nEd = this.ri(r, 3, 6);
+      let yr = 2026, totW = 0, totL = 0, titles = 0, bestIdx = -1; const bestYears = []; const editions = [];
+      for (let e = 0; e < nEd; e++) {
+        let idx = entry; const fixtures = []; let reached = entry, champ = false;
+        while (idx < ROUNDS.length) {
+          const isFinal = idx === ROUNDS.length - 1;
+          const win = r() < (0.44 - idx * 0.02);
+          const opp = OPPS[this.ri(r, 0, OPPS.length - 1)];
+          const fid = 'tf|' + tourSel + '|' + yr + '|' + idx;
+          this._mi[fid] = { seed: fid, aN: short, bN: opp, tour: tourSel, round: ROUNDS[idx][1], date: String(yr), won: win, surf };
+          const common = { id: fid, open: fid === openMatch, onToggle: toggleMatch(fid), caret: fid === openMatch ? 'rotate(90deg)' : 'rotate(0deg)' };
+          if (win) {
+            totW++; reached = idx;
+            this._mi[fid].sets = r() < 0.5 ? '2-0' : '2-1';
+            fixtures.push(Object.assign({ res: 'W', code: ROUNDS[idx][0], color: '#1D9E75', bg: 'rgba(29,158,117,0.14)', rows: this.fixtureScore(this._mi[fid]) }, common));
+            if (isFinal) { titles++; champ = true; break; }
+            idx++;
+          } else {
+            totL++; reached = idx;
+            this._mi[fid].sets = r() < 0.5 ? '0-2' : '1-2';
+            fixtures.push(Object.assign({ res: 'L', code: ROUNDS[idx][0], color: '#E24B4A', bg: 'rgba(226,75,74,0.12)', rows: this.fixtureScore(this._mi[fid]) }, common));
+            break;
+          }
+        }
+        const rank = champ ? ROUNDS.length : reached;
+        if (rank > bestIdx) { bestIdx = rank; bestYears.length = 0; bestYears.push(yr); }
+        else if (rank === bestIdx) bestYears.push(yr);
+        editions.push({ label: tourSel + " '" + String(yr).slice(2), roundBadge: champ ? 'Champion' : ROUNDS[reached][1], fixtures, year: yr });
+        yr -= 1 + (r() < 0.22 ? 1 : 0);
+      }
+      const wr = (totW + totL) ? Math.round(totW / (totW + totL) * 100) : 0;
+      const bestResult = bestIdx < 0 ? '\u2014' : (bestIdx >= ROUNDS.length ? 'Champion' : ROUNDS[bestIdx][1]);
+      // Grand Slams get the majors panel: this event beside all four majors combined
+      const MAJORS = ['Australian Open', 'Roland Garros', 'Wimbledon', 'US Open'];
+      const isGS = tier === 'Grand Slam';
+      let gs = null;
+      if (isGS) {
+        const gr = this.rng('majors|' + name);
+        let cW = 0, cL = 0;
+        MAJORS.forEach(mj => {
+          if (mj === tourSel) { cW += totW; cL += totL; return; }
+          const n = this.ri(gr, 8, 22), w = this.ri(gr, Math.round(n * 0.35), Math.round(n * 0.75));
+          cW += w; cL += n - w;
+        });
+        const evTot = totW + totL, cTot = cW + cL;
+        const evExcl = this.ri(gr, 0, 2), cExcl = evExcl + this.ri(gr, 1, 3);
+        const evComp = Math.max(1, evTot - evExcl), cComp = Math.max(1, cTot - cExcl);
+        const evOver = Math.round(evComp * (0.5 + this.ri(gr, 0, 12) / 100));
+        const cOver = Math.round(cComp * (0.5 + this.ri(gr, 0, 12) / 100));
+        gs = {
+          career: cW + '\u2013' + cL,
+          careerSub: Math.round(cW / cTot * 100) + '% win rate \u00b7 all four majors',
+          o35Event: Math.round(evOver / evComp * 100) + '%',
+          o35EventSub: evOver + ' of ' + evComp + ' matches went over',
+          o35All: (() => {
+            const oComp = cComp - evComp;
+            return oComp > 0 ? Math.round((cOver - evOver) / oComp * 100) + '%' : '\u2014';
+          })(),
+          o35AllSub: (() => {
+            const oComp = cComp - evComp, oOver = cOver - evOver;
+            if (oComp <= 0) return 'no other majors on record';
+            const d = (oOver / oComp - evOver / evComp) * 100;
+            const sg = (d >= 0.05 ? '+' : d <= -0.05 ? '\u2212' : '');
+            return oOver + ' of ' + oComp + ' went over \u00b7 ' + sg + Math.abs(d).toFixed(1) + 'pp vs this event';
+          })(),
+          note1: 'All boxes: main draw only. W\u2013L & Grand Slam career: incl. retirements (a walkover received is a win, a walkover given is neither).',
+          note2: 'Over 3.5 sets: completed matches only \u00b7 retirements & walkovers excluded \u00b7 this event against the other three majors.',
+          note3: 'Reconciles: ' + cTot + ' main-draw matches at the majors \u00b7 ' + cExcl + ' excluded from the over-3.5 sample (retirements & walkovers).',
+        };
+      }
+      tourDetail = {
+        title: name + ' at ' + tourSel, tier: tier + ' \u00b7 ' + surf, tierName: tier, surfName: surf, surfColor: SURFC[surf] || '#5b6880',
+        isGS, notGS: !isGS, gs,
+        wl: totW + '\u2013' + totL, titles: String(titles), bestResult, bestYears: bestYears.join(', '),
+        lastPlayed: String(editions[0].year), editionsCount: nEd + (nEd === 1 ? ' edition' : ' editions'),
+        winRate: wr + '%', winRateColor: '#5b9bff', editions,
+      };
+    }
+    const formEventsData = this.formEvents(short, sel).map(e => Object.assign({}, e, { rows: e.rows.map(row => {
+      const id = 'fe|' + e.name + '|' + row.date;
+      const sets = row.score.split(',').length;
+      const aw = row.score.split(',').filter(p => { const n = p.replace(/\(\d+\)/, '').split('-'); return (parseInt(n[0], 10) > parseInt(n[1], 10)) === row.won; }).length;
+      this._mi[id] = { seed: id, aN: short, bN: row.won ? row.right : row.left, tour: e.name, round: row.round, date: row.date, won: row.won, sets: aw + '-' + (sets - aw), scoreStr: row.score, scoreFlip: !row.won, surf: e.surf, h: row.h, a: row.a };
+      return Object.assign({}, row, { id, open: false, onToggle: () => this.setState({ sheetMatch: id }), caret: 'rotate(0deg)' });
+    }) }));
+    let matchSheet = null;
+    if (S.sheetMatch && this._mi[S.sheetMatch]) {
+      const mm = this._mi[S.sheetMatch];
+      const own = mm.h != null ? mm.h : '1.80', opp = mm.a != null ? mm.a : '2.05';
+      matchSheet = Object.assign({
+        onClose: () => this.setState({ sheetMatch: null }),
+        subject: name,
+      }, this.matchSheetFor({
+        when: mm.date, opp: mm.bN, event: mm.tour, round: mm.round,
+        score: (mm.scoreStr || '').replace(/,\s*/g, ' '), res: mm.won ? 'W' : 'L',
+        oddsOwn: own, oddsOpp: opp,
+        pnl: mm.won ? '+' + (parseFloat(own) - 1).toFixed(2) : '\u22121.00',
+      }));
+    }
+    let statPanel = null;
+    if (openMatch && this._mi[openMatch]) {
+      const mm = this._mi[openMatch];
+      const setKey = S.statSet || 'match';
+      const sr = this.rng('st|' + mm.seed + '|' + setKey);
+      const svc = [['Aces', this.ri(sr, 1, 12), this.ri(sr, 1, 12), false], ['Double faults', this.ri(sr, 0, 6), this.ri(sr, 0, 6), false], ['1st serve %', this.ri(sr, 52, 72), this.ri(sr, 52, 72), true], ['1st serve points won', this.ri(sr, 55, 80), this.ri(sr, 55, 80), true], ['Break points won', this.ri(sr, 0, 6), this.ri(sr, 0, 6), false], ['Total points won', this.ri(sr, 60, 110), this.ri(sr, 60, 110), false]];
+      const LOWERBAD = { 'Double faults': 1, 'Unforced errors': 1 };
+      const rows = svc.map(x => { const a = x[1], b = x[2], tot = (a + b) || 1; const low = !!LOWERBAD[x[0]]; const aS = low ? b : a, bS = low ? a : b; return { label: x[0], lower: low, a: x[3] ? a + '%' : String(a), b: x[3] ? b + '%' : String(b), aW: (aS / tot * 100).toFixed(1) + '%', bW: (bS / tot * 100).toFixed(1) + '%' }; });
+      const sumRows = this.fixtureScore(mm).map((p, i) => Object.assign({}, p, { dot: i === 0 }));
+      const dr = this.rng('dur|' + mm.seed);
+      const setMins = this.pbpScores(mm).map(() => 25 + this.ri(dr, 5, 45));
+      const totMin = setMins.reduce((a, b) => a + b, 0);
+      const fmtDur = mn => Math.floor(mn / 60) + ':' + String(mn % 60).padStart(2, '0');
+      const allPtSets = this.pbpSets(mm);
+      const ptSel = Math.min(S.statPtSet || 0, Math.max(0, allPtSets.length - 1));
+      const pointSets = allPtSets.filter((_, i) => i === ptSel);
+      const pointSetTabs = allPtSets.map((_, i) => ({ label: 'Set ' + (i + 1), onClick: () => this.setState({ statPtSet: i }), color: ptSel === i ? '#e7e9ee' : '#5b6880', bg: ptSel === i ? 'rgba(91,155,255,0.22)' : 'transparent', bd: ptSel === i ? 'rgba(91,155,255,0.45)' : 'transparent', weight: ptSel === i ? 700 : 600 }));
+      const mode = S.statMode || 'summary';
+      statPanel = {
+        aName: mm.aN, bName: mm.bN, meta: (mm.date ? mm.date + ' \u00b7 ' : '') + mm.tour + ' \u00b7 ' + mm.round,
+        bLink: this.props.onOpenPlayer ? 'plink' : '', onOpenB: this.openOpp(mm.bN),
+        isSummary: mode === 'summary', isStats: mode === 'stats', isPoints: mode === 'points', rows, pointSets, pointSetTabs,
+        summaryMeta: [mm.date, mm.tour, mm.round, mm.surf].filter(Boolean).join(' \u00b7 '), sumRows, durTotal: fmtDur(totMin),
+        durSets: setMins.map(v => ({ t: fmtDur(v) })),
+        setCols: '34px repeat(' + setMins.length + ',30px)',
+        modeTabs: [['summary', 'Summary'], ['stats', 'Stats'], ['points', 'Point by point']].map(t => ({ label: t[1], onClick: () => this.setState({ statMode: t[0] }), color: mode === t[0] ? '#e7e9ee' : '#5b6880', bg: mode === t[0] ? 'rgba(91,155,255,0.22)' : 'transparent', bd: mode === t[0] ? 'rgba(91,155,255,0.45)' : 'transparent', weight: mode === t[0] ? 700 : 600 })),
+        setTabs: [['match', 'Match'], ['s1', 'Set 1'], ['s2', 'Set 2']].map(t => ({ label: t[1], onClick: () => this.setState({ statSet: t[0] }), color: setKey === t[0] ? '#e7e9ee' : '#5b6880', bg: setKey === t[0] ? 'rgba(91,155,255,0.22)' : 'transparent', bd: setKey === t[0] ? 'rgba(91,155,255,0.45)' : 'transparent', weight: setKey === t[0] ? 700 : 600 })),
+      };
+    }
+
+    // tournament search
+    const TOURS = Object.keys(TMETA).map(k => [k, TMETA[k][1]]);
+    const tq = (S.tourQ || '').toLowerCase();
+    const tourResults = (tq ? TOURS.filter(t => t[0].toLowerCase().includes(tq)) : TOURS).map(t => {
+      const r = this.rng('trn|' + name + '|' + t[0]); const w = this.ri(r, 2, 22), l = this.ri(r, 2, 20);
+      return { name: t[0], surf: t[1], color: SCLR[t[1]][0], record: w + '\u2013' + l, onToggle: () => this.setState({ tourSel: t[0] }) };
+    });
+
+    // insights
+    const insights = [
+      { title: 'Handles left-handers well', body: '58.3% vs lefties (14-10) against 38.7% vs righties (72-114) — a +19.6pp swing where the tour averages +1.3pp. He is 18.3pp better against left-handers than his own level implies.', icon: 'M4 13l4-4 3 3 5-6M13 6h3v3', iconBg: 'rgba(62,123,250,0.15)', iconColor: '#5b9bff', accent: '#5b9bff' },
+      { title: 'Trending down on career form', body: '23.8% over the last 52 weeks (5-16) against 41% career — running 17.2pp below his own long-run level.', icon: 'M4 7l4 4 3-3 5 6M13 14h3v-3', iconBg: 'rgba(226,75,74,0.14)', iconColor: '#E24B4A', accent: '#E24B4A' },
+      { title: 'Underperforms at Masters', body: 'Wins 27.8% at Masters (10-26) against a 41% career rate — 13.3pp below his own baseline.', icon: 'M4 15V9M8 15V5M12 15v-4M16 15V7', iconBg: 'rgba(226,75,74,0.14)', iconColor: '#E24B4A', accent: '#E24B4A' },
+    ];
+
+    return Object.assign({}, head, {
+      onBack, sidebarNav, notEmbedded: !this.props.embedded, careerRef: this._careerRef, formRef: this._formRef,
+      marketOpen: S.marketOpen, onToggleMarket: () => this.setState(st => ({ marketOpen: !st.marketOpen })),
+      marketToggleLabel: S.marketOpen ? 'See less' : 'See more about market performance',
+      marketCaret: S.marketOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+      surfTabs, statCards, radar, surfacePerf,
+      boxVals: (() => {
+      const bestSurf = surfacePerf.slice().sort((a, b) => parseFloat(b.winPct) - parseFloat(a.winPct))[0] || { surf: '\u2014', winPct: '\u2014', career: '' };
+      const tourCount = (this.tournaments ? this.tournaments().length : 0) || 14;
+      const splCareer = S.scope !== 'l52';
+      const spl = splCareer
+        ? this.chipify(this.splitTable(name, true, 'career'))
+        : this.chipify(this.splitTable(name + '|52', false, 'l52'));
+      return {
+        name: name,
+        splits: {
+          headline: 'Grand Slams',
+          support: 'best split \u00b7 57.8% \u00b7 116 matches',
+          scopeSub: splCareer ? 'Every tour match on record \u00b7 212 matches' : 'Rolling 12-month form \u00b7 21 matches',
+          scopeBtns: [['career', 'Career'], ['l52', 'Last 52 weeks']].map(t => {
+            const on = (S.scope || 'career') === t[0];
+            return { label: t[1], onClick: () => this.setState({ scope: t[0] }),
+              weight: on ? 700 : 600, color: on ? '#e7e9ee' : '#5b6880',
+              bg: on ? 'rgba(91,155,255,0.16)' : 'transparent',
+              bd: on ? 'rgba(91,155,255,0.4)' : 'rgba(255,255,255,0.08)' };
+          }),
+          sections: spl,
+          tabBtns: this.segTabs(S.splitTab, 'splitTab'),
+          resultsOn: S.splitTab === 'results', setsOn: S.splitTab === 'sets', serviceOn: S.splitTab === 'service',
+          legend: this.segLegend(S.splitTab),
+        },
+        career: { headline: SURFSTATS.all.career, support: SURFSTATS.all.careerPct + ' \u00b7 all surfaces' },
+        season: { headline: SURFSTATS.all.season, support: '2026 season \u00b7 win rate ' + SURFSTATS.all.win },
+        speed: { headline: bestSurf.surf + ' courts', support: bestSurf.winPct + ' \u00b7 ' + bestSurf.career },
+        styles: { headline: head.arch, support: 'style signature \u00b7 tour average 50' },
+        profile: { headline: SURFSTATS.all.win, support: 'win rate this season \u00b7 all surfaces' },
+        tourn: { headline: String(tourCount), support: 'tournaments on record' },
+      }; })(),
+      careerOpen: !!S.careerOpen, careerSeasons, careerSeasonScope: surfLabel,
+      marketBlurb: 'How ' + short + ' has performed against the closing market\u2019s implied probability, over ' + totalM + ' priced matches.',
+      winTabs, winSurfTabs, winCountLabel: 'All ' + winN + ' matches', winSlider: (winN / 192 * 100).toFixed(1) + '%',
+      winN, onWinInput: e => this.setState({ winN: +e.target.value }),
+      tiltLabel: '\u2193 OVERPRICED ON GRASS', tiltColor: '#e0616f', tiltBg: 'rgba(224,97,111,0.12)', tiltBd: 'rgba(224,97,111,0.3)',
+      marketMetrics, bySurface,
+      worstSurf: 'Grass', worstActual: '28.6%', worstImplied: '29.6%', worstVal: '\u22121.1pt', worstMatches: 14, worstSurfLower: 'grass',
+      priced: 192, shortName: short, overallVal: '\u22121pt', range: '\u22127.9 to 5.9pt',
+      reliability, splitTabs, bySplit, reliabilityScope, mp: this.marketPerf(S, name),
+      formPct: (() => { const st2 = this.formStrip(short, sel); const w = st2.filter(x => x.tag === 'W').length; return st2.length ? (w / st2.length * 100).toFixed(0) + '% win' : '\u2014'; })(),
+      formCount: (() => { const st2 = this.formStrip(short, sel); return st2.length + (st2.length === 1 ? ' match' : ' matches'); })(), formFilters, formSquares, formGroups, formMatches, totalResults: formGroups.reduce((a, g) => a + g.matches.length, 0),
+      formExpanded: S.formExpanded, onToggleForm: () => this.setState(st => ({ formExpanded: !st.formExpanded })),
+      formToggleLabel: S.formExpanded ? 'Show less' : ('See all ' + this.formStrip(short, sel).length + ' results'),
+      formEvents: formEventsData,
+      formStrip: this.formStrip(short, sel),
+      ledgerOpen: !!S.ledgerOpen, onToggleLedger: () => this.setState(st => ({ ledgerOpen: !st.ledgerOpen })),
+      ledgerLabel: S.ledgerOpen ? 'Hide ledger' : 'Full ledger \u2192',
+      ribbonPct: (() => { const st2 = this.formStrip(short, sel); const w = st2.filter(x => x.tag === 'W').length; return st2.length ? (w / st2.length * 100).toFixed(0) + '%' : '\u2014'; })(),
+      ribbonRecord: (() => { const st2 = this.formStrip(short, sel); const w = st2.filter(x => x.tag === 'W').length; return st2.length ? w + '\u2013' + (st2.length - w) : ''; })(),
+      ribbonScope: 'last ' + this.formStrip(short, sel).length + ' \u00b7 oldest \u2192 most recent',
+      ribbonRecent: (() => { const out = []; formEventsData.forEach(e => e.rows.forEach(r => { if (out.length < 6) out.push({ tag: r.won ? 'W' : 'L', color: r.won ? '#3dd68c' : '#e0616f', bg: r.won ? 'rgba(61,214,140,0.16)' : 'rgba(224,97,111,0.16)', opp: r.won ? r.right : r.left, meta: e.name + ' ' + r.round + ' \u00b7 ' + (r.score || '').replace(/,\s*/g, ' '), onOpen: r.onToggle }); })); return out; })(),
+      liveState: (() => {
+        const DIMV = '#4b5672', NEU = '#e8ecf4';
+        const next = { day: 'Tomorrow', event: 'Tokyo R32', opp: 'H. Rune' };
+        return [
+          { label: 'Current run', value: 'W3', color: '#3dd68c', sub: 'since 12 Sep', sub2: '' },
+          { label: 'Last played', value: '4 days ago', color: NEU, sub: 'Tokyo R64', sub2: '' },
+          next.opp
+            ? { label: 'Next match', value: next.day + ' \u00b7 ' + next.event, color: NEU, sub: 'vs ',
+                link: { label: next.opp, href: '#head-to-head' }, sub2: '' }
+            : next.event
+              ? { label: 'Next match', value: next.event, color: NEU, sub: 'vs \u2014', sub2: '' }
+              : { label: 'Next match', value: '\u2014', color: DIMV, sub: 'no fixture on record', sub2: '' },
+          { label: 'Season', value: '46.7%', color: NEU, sub: '14\u201316', sub2: '' },
+        ];
+      })(),
+      matchSheet, matchPageOn: !!S.matchPage && !!openMatch,
+      onCloseMatchPage: () => this.setState({ matchPage: false, openMatch: null }),
+      priceFilters: PF.map(t => { const on = !!sel[t[0]]; return { label: t[1], onClick: toggle(t[0]), color: on ? '#e7e9ee' : '#5b6880', bg: on ? 'rgba(91,155,255,0.18)' : 'transparent', bd: on ? 'rgba(91,155,255,0.45)' : 'rgba(255,255,255,0.12)', mark: on ? '#5b9bff' : 'transparent', markBd: on ? '#5b9bff' : 'rgba(255,255,255,0.22)' }; }),
+      formHasRows: this.formStrip(short, sel).length > 0,
+      formEmpty: this.formStrip(short, sel).length === 0,
+      formListFlex: S.formExpanded ? 'none' : '1', formListOverflow: S.formExpanded ? 'visible' : 'auto',
+      careerYears, totRow, statPanel, drillMatches, drillTitle, drillRecord, onCloseDrill,
+      scopeBtns: [['career', 'Career'], ['l52', 'Last 52 weeks']].map(t => { const on = S.scope === t[0]; return { label: t[1], onClick: () => this.setState({ scope: t[0] }), color: on ? '#e7e9ee' : '#5b6880', bg: on ? 'rgba(91,155,255,0.22)' : 'transparent', bd: on ? 'rgba(91,155,255,0.45)' : 'transparent', weight: on ? 700 : 500 }; }),
+      scopeSub: S.scope === 'career' ? 'Every tour match on record \u00b7 212 matches' : 'Rolling 12-month form \u00b7 21 matches',
+      splitsOpen: S.splitsOpen, l52Open: S.l52Open,
+      splitsCaret: S.splitsOpen ? 'rotate(0deg)' : 'rotate(-90deg)', l52Caret: S.l52Open ? 'rotate(0deg)' : 'rotate(-90deg)',
+      onToggleSplits: () => this.setState(st => ({ splitsOpen: !st.splitsOpen })), onToggleL52: () => this.setState(st => ({ l52Open: !st.l52Open })),
+      splitMatches: 212, l52Matches: 21,
+      splitSections: S.scope === 'career' ? this.chipify(this.splitTable(name, true, 'career')) : this.chipify(this.splitTable(name + '|52', false, 'l52')),
+      sectionCount: S.scope === 'career' ? 5 : 4,
+      splitPanelOpen: !!S.splitSel,
+      splitPanelScope: S.splitSel ? (S.splitSel.scope === 'career' ? 'Career' : 'Last 52 weeks') : '',
+      splitPanelTitle: S.splitSel ? S.splitSel.label : '',
+      splitPanelSub: S.splitSel ? (short + ' \u00b7 ' + S.splitSel.m + ' matches \u00b7 ' + S.splitSel.wl + ' \u00b7 ' + S.splitSel.winPct) : '',
+      splitPanelSelfTag: (short.split(' ').pop() || short).toUpperCase().slice(0, 7),
+      splitPanelNote: S.splitSel ? ('Showing the ' + Math.min(14, Math.max(3, Math.round(S.splitSel.m / (S.splitSel.scope === 'career' ? 12 : 1.6)))) + ' most recent of ' + S.splitSel.m + ' matches') : '',
+      splitPanelMatches: S.splitSel ? this.splitMatchList(S.splitSel, short) : [],
+      splitPanelCols: S.splitSel ? ({ results: ['HOME', 'AWAY'], sets: ['GAMES', 'GM%', 'TB'], service: ['A', 'DF', 'HLD%', 'BRK%'] })[S.splitSel.tab || 'results'] : [],
+      splitPanelGrid: S.splitSel ? ('26px minmax(0,1fr) 118px repeat(' + ({ results: 2, sets: 3, service: 4 })[S.splitSel.tab || 'results'] + ',52px)') : '',
+      onCloseSplitPanel: () => this.setState({ splitSel: null }),
+      splitTabBtns: this.segTabs(S.splitTab, 'splitTab'), l52TabBtns: this.segTabs(S.l52Tab, 'l52Tab'),
+      splitResultsOn: S.splitTab === 'results', splitSetsOn: S.splitTab === 'sets', splitServiceOn: S.splitTab === 'service',
+      l52ResultsOn: S.l52Tab === 'results', l52SetsOn: S.l52Tab === 'sets', l52ServiceOn: S.l52Tab === 'service',
+      splitLegend: this.segLegend(S.splitTab), l52Legend: this.segLegend(S.l52Tab),
+      splitResults: this.splitResults(),
+      splitOtherLegend: S.splitTab === 'results' ? null : this.segLegend(S.splitTab),
+      splitResultsNote: 'Record, matches played and win rate. VS CAREER is the gap to his overall career win rate (45.3%, 96\u2013116), computed once from the career totals \u2014 not an average of the splits, which each cover the same matches. YIELD is flat-stake return on the priced subset for that cut, which is smaller than the record subset and gated on its own n; career yield is \u22121.0% across 192 priced matches. Rates show full size from ten matches, greyed and marked small sample from five to nine, and as a dash under five. \u0394 WIN% needs both grains above ten, while \u0394 YIELD follows the priced n, so it can read where \u0394 WIN% is dashed.',
+      tourCount: 60, tourQ: S.tourQ, onTourSearch: e => this.setState({ tourQ: e.target.value }), tourResults,
+      tourDetail, tourDetailOpen: !!tourSel, tourListOpen: !tourSel, onCloseTour: () => this.setState({ tourSel: null }),
+      insights,
+    });
+  }
+}
+</script>
+</body>
+</html>
