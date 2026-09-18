@@ -167,28 +167,43 @@ jobs:
             bsp-caches-
 
       # historical-match-stats.json is cached SEPARATELY, keyed by the content hash
-      # of the committed copy. It used to sit in the list above, and that quietly
+      # of the committed floor. It used to sit in the list above, and that quietly
       # made a committed refresh of it a no-op: `restore-keys: bsp-caches-` matches
       # essentially forever, so the restored cache overwrote the checkout before the
       # pipeline ever read it, and `_site/` published the cached copy. The file is
       # ALSO never committed back (unlike admin-log.json / series-outcomes.json /
-      # the two .gz caches below), so the tracked copy is a pure floor — and on
+      # the two .gz caches below), so the tracked copy was a pure floor — and on
       # 2026-09-18 that floor held 1,082 entries against the 2,002 actually deployed.
       # With the Actions cache at the repo's 10 GiB ceiling, an eviction meant the
       # Player Profile page's match-stat coverage silently halved.
       #
-      # Hashing the committed file into the key fixes both halves: change the file
-      # in a commit and the key changes, so no cache matches and the fresh copy is
-      # what the run reads and publishes; leave it alone and runs keep sharing the
-      # accumulated cache exactly as before. Self-maintaining — the next person to
-      # commit a refresh does not have to remember any of this.
+      # Hashing the committed file into the key fixes the shadowing half: change the
+      # file in a commit and the key changes, so no cache matches and the fresh copy
+      # is what the run reads and publishes; leave it alone and runs keep sharing the
+      # accumulated cache exactly as before.
+      #
+      # The DRIFT half is fixed by the commit-back step at the end of this workflow
+      # (founder ruling 2026-09-18 Q2). That moved the durable copy to a gzipped
+      # historical-match-stats.json.gz and gitignored the plain path, so the key now
+      # hashes the .gz. Hashing the plain path after that move would have silently
+      # reintroduced the original bug in its worst form: hashFiles() on an untracked
+      # path returns a constant, the restore-key would match forever, and no commit
+      # could ever dislodge the cache again.
       - name: Restore historical match stats cache
         uses: actions/cache@v4
         with:
           path: historical-match-stats.json
-          key: bsp-hms-${{ hashFiles('historical-match-stats.json') }}-${{ steps.cacheday.outputs.day }}
+          key: bsp-hms-${{ hashFiles('historical-match-stats.json.gz') }}-${{ steps.cacheday.outputs.day }}
           restore-keys: |
-            bsp-hms-${{ hashFiles('historical-match-stats.json') }}-
+            bsp-hms-${{ hashFiles('historical-match-stats.json.gz') }}-
+
+      # UNIONs the committed .gz floor with whatever the cache restored, keeping the
+      # deeper box score per eventKey. Must run AFTER the restore above and BEFORE
+      # the pipeline reads the plain path. Best-effort like the profile hydrate below
+      # — it may never be why a deploy goes red; tools/test-match-stats-store.js is
+      # what proves the floor is readable, and it runs before the commit, not here.
+      - name: Hydrate the match-stat store from the committed floor
+        run: node tools/match-stats-store.js hydrate || true
 
       # TEN-206 Q2(d) ch-1, second half: "commit one gzipped file daily."
       # player-profiles-cache.json was ALREADY tracked — 57.4 MB of pretty JSON frozen
@@ -932,6 +947,37 @@ jobs:
             git pull --rebase --autostash origin main || true
           done
           echo "::warning::Could not push the profile-cache floor after 3 attempts — the next run retries."
+
+      # TEN-206 founder ruling 2026-09-18 (Q2) — the same treatment for the match-stat
+      # store. Runs AFTER the deploy has published, like every ledger above, so a git
+      # failure here can never cost a deploy.
+      #
+      # Unlike the profile floor this needs NO day-guard. The profile caches rebuild
+      # seed profiles with a fresh builtAt every run, so their content differs on all
+      # ~144 runs a day; this store has no such stamp and is written by JSON.stringify
+      # over numeric-like keys (V8 orders those ascending, deterministically), so a run
+      # that cached no new match reproduces it byte-for-byte. gzip at level 9 with no
+      # mtime header then produces an identical blob and `git status` finds nothing.
+      # The content IS the guard — locked by the byte-identity check in
+      # tools/test-match-stats-store.js, which has a mutating control proving a real
+      # change still produces different bytes.
+      - name: Refresh the committed match-stat floor
+        run: |
+          node tools/match-stats-store.js freeze || true
+          if [ -z "$(git status --porcelain -- historical-match-stats.json.gz)" ]; then
+            echo "Committed match-stat floor unchanged this run — nothing to commit."
+            exit 0
+          fi
+          git config user.name "bsp-profile-cache-bot"
+          git config user.email "bsp-profile-cache-bot@users.noreply.github.com"
+          git add historical-match-stats.json.gz
+          git commit -m "chore(stats): refresh committed match-stat floor [skip ci]"
+          for attempt in 1 2 3; do
+            if git push origin HEAD:main; then echo "Pushed on attempt $attempt."; exit 0; fi
+            echo "Push rejected (attempt $attempt) — rebasing."
+            git pull --rebase --autostash origin main || true
+          done
+          echo "::warning::Could not push the match-stat floor after 3 attempts — the next run retries."
 
       # TEN-151 (founder ruling 2026-09-05, second comment): the Trading Report
       # generator runs ISOLATED (continue-on-error above) so its failure never
