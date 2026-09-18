@@ -403,13 +403,14 @@
     "id1200210074805922": {
       "alerted": true,
       "alertedAt": "2026-09-17T23:21:33Z",
-      "captureLagH": null,
+      "captureLagH": 0.1,
       "date": "2026-09-18",
+      "firstSeenAt": "2026-09-18T01:15:01Z",
       "hoursOutAtAlert": 11.64,
-      "openAt": null,
+      "openAt": "2026-09-18T01:08:52.541Z",
       "p1": "B. Artnak",
       "p2": "A. Vales",
-      "postingLeadH": null,
+      "postingLeadH": 9.85,
       "startTime": "2026-09-18T11:00:00.000Z",
       "tour": "ATP ATP Davis Cup - World Group II"
     },
@@ -429,13 +430,14 @@
     "id1200210074805980": {
       "alerted": true,
       "alertedAt": "2026-09-17T23:21:33Z",
-      "captureLagH": null,
+      "captureLagH": 0.1,
       "date": "2026-09-18",
+      "firstSeenAt": "2026-09-18T01:15:01Z",
       "hoursOutAtAlert": 6.14,
-      "openAt": null,
+      "openAt": "2026-09-18T01:08:52.933Z",
       "p1": "G. Trismuwantara",
       "p2": "C. Cretu",
-      "postingLeadH": null,
+      "postingLeadH": 4.35,
       "startTime": "2026-09-18T05:30:00.000Z",
       "tour": "ATP ATP Davis Cup - World Group II"
     },
@@ -570,5 +572,5 @@
   },
   "schema": "odds-open-monitor/1",
   "thresholdHours": 24.0,
-  "updatedAt": "2026-09-18T01:00:01Z"
+  "updatedAt": "2026-09-18T01:15:01Z"
 }
