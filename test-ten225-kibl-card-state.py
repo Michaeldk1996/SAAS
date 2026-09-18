@@ -69,7 +69,8 @@ def obs(price, inserted_on, opener=False, observed_at='2026-09-18T00:00:00Z',
     d = {'price_decimal': price, 'inserted_on': inserted_on,
          'is_opener': opener, 'observed_at': observed_at,
          'market_type_id': 1, 'segment_id': 1, 'betting_type_id': 1,
-         'is_live': False, 'side_id': 1, 'max_limit': 0.0}
+         'is_live': False, 'side_id': 2, 'fixture_participant_id': 1,
+         'max_limit': 0.0}
     d.update(kw)
     return d
 
@@ -207,12 +208,41 @@ check('no start -> not reliable', r is False)
 
 
 # ------------------------------------------------------------------ the sides
-print('\nside_label — the asserted mapping, and its falsifiable control')
-check("side_id 1 -> '1'", K.side_label({'side_id': 1}) == '1')
-check("side_id 2 -> '2'", K.side_label({'side_id': 2}) == '2')
-check('an unknown side_id dashes rather than guesses',
-      K.side_label({'side_id': 7}) is None)
-check('a missing side_id dashes', K.side_label({}) is None)
+print('\nside_labels_for — side_id is 2/3 on this feed, and 1 never appears')
+
+
+def sobs(sid, fpid, **kw):
+    return dict(obs(2.0, T % (9, 0), side_id=sid,
+                    fixture_participant_id=fpid), **kw)
+
+
+# The real shape, from run 35295326133: census {2: 3617, 3: 3620}, every one of
+# 1,795 fixtures is '2+3', and the ids run consecutively.
+REAL = [sobs(2, 1029618), sobs(3, 1029619)]
+check('the old one-argument side_label is GONE — it mapped side_id 1, which '
+      'does not exist on this feed, and dropped side 3, which is a player',
+      not hasattr(K, 'side_label'))
+check('side_id 2 and 3 become our sides 1 and 2',
+      K.side_labels_for(REAL) == {2: '1', 3: '2'}, K.side_labels_for(REAL))
+check('the ORDER comes from fixture_participant_id, not from the side_id '
+      'number — so a fixture that ever arrives 3-then-2 still orients by the '
+      'participant',
+      K.side_labels_for([sobs(2, 1029619), sobs(3, 1029618)]) == {3: '1', 2: '2'})
+check('a one-sided fixture is undecidable, not half-rendered — this is the '
+      'defect that made Open read 100% of one side',
+      K.side_labels_for([sobs(2, 1029618)]) == {})
+check('three sides on one fixture is undecidable',
+      K.side_labels_for([sobs(2, 1), sobs(3, 2), sobs(4, 3)]) == {})
+check('a side_id pinning TWO participants is undecidable rather than resolved '
+      'by majority — a majority here renders a real price on a side we cannot '
+      'name', K.side_labels_for([sobs(2, 1), sobs(2, 9), sobs(3, 2)]) == {})
+check('a missing fixture_participant_id cannot orient',
+      K.side_labels_for([sobs(2, None), sobs(3, None)]) == {})
+check('a missing side_id cannot orient',
+      K.side_labels_for([sobs(None, 1), sobs(3, 2)]) == {})
+check('legacy 1+2 fixtures, if the feed ever sends them, still orient by '
+      'participant order rather than being rejected for not being 2+3',
+      K.side_labels_for([sobs(1, 500), sobs(2, 501)]) == {1: '1', 2: '2'})
 
 
 def krow(mkey, side, price):
@@ -413,12 +443,15 @@ print('\nbuild_rows — the assembled row')
 fixtures = [{'fixture_id': 726877, 'scheduled_start': '2026-09-18T12:00:00Z',
              'player1_name': 'Carlos Alcaraz', 'player2_name': 'Alexander Zverev',
              'match_key': '2026-09-18|alcaraz|zverev', 'league_id': 19}]
+# The REAL wire shape: side_id 2 and 3, ordered by fixture_participant_id.
+# Written as the feed actually sends it, not as the schema once assumed, so the
+# end-to-end test exercises the path today's data takes.
 observations = {726877: [
-    obs(1.50, T % (6, 0), opener=True, side_id=1),
-    obs(1.45, T % (11, 30), side_id=1),
-    obs(1.20, T % (12, 30), side_id=1),        # in-play, must never be a Close
-    obs(2.60, T % (6, 0), opener=True, side_id=2),
-    obs(2.75, T % (11, 30), side_id=2),
+    obs(1.50, T % (6, 0), opener=True, side_id=2, fixture_participant_id=1029618),
+    obs(1.45, T % (11, 30), side_id=2, fixture_participant_id=1029618),
+    obs(1.20, T % (12, 30), side_id=2, fixture_participant_id=1029618),  # in-play
+    obs(2.60, T % (6, 0), opener=True, side_id=3, fixture_participant_id=1029619),
+    obs(2.75, T % (11, 30), side_id=3, fixture_participant_id=1029619),
 ]}
 index = {'2026-09-18|alcaraz|zverev': {
     'fixture_id': 'op1', 'start_ts': K.epoch(T % (12, 0)),
@@ -446,9 +479,13 @@ check('start provenance is carried', r1['start_ts_source'] == 'oddspapi')
 up = [{'fixture_id': 9, 'scheduled_start': '2026-09-19T12:00:00Z',
        'player1_name': 'Carlos Alcaraz', 'player2_name': 'Alexander Zverev',
        'match_key': '2026-09-19|alcaraz|zverev', 'league_id': 19}]
-ub, _, _us2, _sh2 = K.build_rows(up, {9: [obs(1.50, T % (6, 0), opener=True, side_id=1),
-                              obs(1.44, T % (9, 0), side_id=1)]},
-                     {}, K.epoch(T % (7, 0)))
+ub, _, _us2, _sh2 = K.build_rows(
+    up, {9: [obs(1.50, T % (6, 0), opener=True, side_id=2,
+                 fixture_participant_id=1),
+             obs(1.44, T % (9, 0), side_id=2, fixture_participant_id=1),
+             obs(2.60, T % (6, 0), opener=True, side_id=3,
+                 fixture_participant_id=2)]},
+    {}, K.epoch(T % (7, 0)))
 check('an upcoming fixture gets a Now', ub[0]['now_price'] == 1.44, ub[0]['now_price'])
 check('...stamped with the vendor time', ub[0]['now_ts'] == T % (9, 0))
 check('...and NO Close, because it has no resolved start',

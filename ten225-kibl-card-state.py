@@ -123,22 +123,62 @@ def is_match_winner(obs):
             and obs.get('is_live') is not True)
 
 
-def side_label(obs):
-    """Kibl side_id -> our '1'/'2' side label, or None.
+def side_labels_for(obs_list):
+    """This fixture's Kibl side_ids -> our '1'/'2' labels. {} if undecidable.
 
-    Our side '1' is the fixture's FIRST-named player and '2' the second, on both
-    other feeds. Kibl writes both players into one fixture string and tags each
-    price with side_id 1 or 2, so the mapping is the identity — ASSERTED from
-    the shape, not measured, and therefore cross-checked at load time by
-    orientation_agreement() below rather than trusted. A side_id we have never
-    seen returns None and that line dashes.
+    ⚠️ THE PREVIOUS VERSION OF THIS FUNCTION WAS WRONG AND ITS FIRST BRANCH WAS
+    UNREACHABLE. It mapped side_id 1 -> '1' and 2 -> '2' and dropped the rest.
+    Measured on run 35295326133 over 7,237 match-winner rows / 1,795 fixtures:
+
+        side_id census            {2: 3617, 3: 3620}
+        shape per fixture         {'2+3': 1795}   (1795 of 1795)
+
+    **side_id 1 does not exist on this feed.** So the old mapping wrote every
+    price into side '2' and discarded side 3 as an "unknown side" — half of a
+    two-way market, dropped, while the run stayed green and Open read 100%
+    (of the one side it kept). The 90 "odd" side_id-3 rows were never an
+    oddity; they were the other player.
+
+    WHAT IS MEASURED, AND WHAT IS STILL ASSUMED
+    -------------------------------------------
+    Measured: side_id pins exactly ONE participant_id per fixture (0 of 3,590
+    (fixture, side_id) pairs map to more than one), and every fixture carries
+    exactly two distinct participants (1,795 of 1,795). So side_id is a stable
+    participant slot. That part is not in doubt.
+
+    Assumed, and therefore adjudicated rather than trusted: that the LOWER
+    `fixture_participant_id` is the fixture string's FIRST-named player. The
+    ids run consecutively per fixture (e.g. 1029618 / 1029619) which is
+    suggestive, but suggestive is not measured. `raw_object` carries no
+    name-like field anywhere in the payload (0 found), so the mapping is not
+    answerable from what we store — it is answerable only by cross-checking the
+    resulting favourite against an independent book, which is what
+    ten225_orientation does, and the guard dashes whatever disagrees.
+
+    Ordering on `fixture_participant_id` and NOT on `side_id` is deliberate:
+    "2 before 3" is an ordering of two arbitrary labels, and if a future
+    fixture arrives as 1+2 or 3+4 a side_id ordering would silently mean
+    something different. The participant id is the thing that actually
+    identifies the player.
     """
-    sid = obs.get('side_id')
-    if sid == 1:
-        return '1'
-    if sid == 2:
-        return '2'
-    return None
+    pairs = {}
+    for o in obs_list:
+        sid, pid = o.get('side_id'), o.get('fixture_participant_id')
+        if sid is None or pid is None:
+            continue
+        # One participant per side is the measured invariant. If a fixture ever
+        # violates it, the fixture is undecidable and every line on it dashes —
+        # never resolved by majority, which would render a real price on a side
+        # we cannot name.
+        if sid in pairs and pairs[sid] != pid:
+            return {}
+        pairs[sid] = pid
+    if len(pairs) != 2:
+        # Exactly two sides, or we cannot orient. A one-sided fixture has no
+        # favourite and nothing to check it against.
+        return {}
+    ordered = sorted(pairs.items(), key=lambda kv: kv[1])
+    return {ordered[0][0]: '1', ordered[1][0]: '2'}
 
 
 def open_of(obs_list):
@@ -399,9 +439,12 @@ def build_rows(kibl_fixtures, observations, odds_index, as_of):
         # two-way as we read it, which is a different finding entirely.
         side_shapes[frozenset(o.get('side_id') for o in obs)] += 1
 
+        labels = side_labels_for(obs)
+        if not labels:
+            st['fixture_undecidable_sides'] += 1
         by_side = collections.defaultdict(list)
         for o in obs:
-            s = side_label(o)
+            s = labels.get(o.get('side_id'))
             if s is None:
                 # Name the value. Run 35291839986 counted 88 of these and could
                 # not say whether the feed carries a third side or simply omits
