@@ -692,7 +692,30 @@ def load_matches():
         return [], str(e)
 
 
-def run_orientation(rows, kibl_fixtures, odds_index, matches):
+def participant_ids_by_fixture(observations):
+    """{fixture_id: {'1': fixture_participant_id, '2': ...}} for the report.
+
+    Founder 2d asks for the Kibl participant ids on every evidence line. They
+    come from the SAME `side_labels_for()` the card rows are built through, so
+    the ids printed beside a price are the ids that produced it; reading them in
+    a second independent pass would let the evidence and the data drift apart.
+    """
+    out = {}
+    for fid, obs in observations.items():
+        mw = [o for o in obs if is_match_winner(o)]
+        labels = side_labels_for(mw)
+        if not labels:
+            continue
+        ids = {}
+        for o in mw:
+            lbl = labels.get(o.get('side_id'))
+            if lbl:
+                ids[lbl] = o.get('fixture_participant_id')
+        out[int(fid)] = ids
+    return out
+
+
+def run_orientation(rows, kibl_fixtures, odds_index, matches, ids=None):
     """The side-mapping control and the guard it feeds, in one pass.
 
     Founder ruling 2026-09-18 item 1. The comparison itself lives in
@@ -716,7 +739,7 @@ def run_orientation(rows, kibl_fixtures, odds_index, matches):
           'player2_name': f.get('player2_name'),
           'name': f.get('name'),
           'scheduled_start': f.get('scheduled_start')}
-         for f in kibl_fixtures], prices)
+         for f in kibl_fixtures], prices, ids)
 
     board_index, bst = ORI.board_favourites(matches)
     odds_reads = ORI.oddspapi_favourites(odds_index)
@@ -733,9 +756,62 @@ def run_orientation(rows, kibl_fixtures, odds_index, matches):
     report['kiblStats'] = dict(kst)
     report['boardStats'] = dict(bst)
     report['oddspapiReadings'] = len(odds_reads)
+    # Founder ruling 2026-09-18 item 2: the bar this decision is actually made
+    # against. `agreement()` keeps reporting n < 30 alongside it rather than
+    # being redefined by it.
+    report['shipGate'] = ORI.ship_gate(vmap)
 
     dashed = {k for k, v in vmap.items() if v['verdict'] == 'disagree'}
     return report, dashed
+
+
+def print_evidence(gate):
+    """Founder 2d: every fixture on its own line, readable, not a percentage.
+
+    Printed to the job summary so the evidence is in the run that produced it —
+    a JSON artifact nobody opens is not a report.
+    """
+    fixtures = gate.get('fixtures') or []
+    if not fixtures:
+        print('\nSIDE-MAPPING EVIDENCE: no fixture carried both a Kibl price '
+              'and an independent one. Nothing is claimed.')
+        return
+    for group in ('lopsided', 'near-even'):
+        rows = [f for f in fixtures if f['group'] == group]
+        blocking = 'BLOCKING' if group == 'lopsided' else 'noted, not blocking'
+        print(f'\n{group.upper()} GROUP — n={len(rows)} ({blocking})')
+        if not rows:
+            print('  (none)')
+            continue
+        for f in rows:
+            k = f['kibl']
+            pid = k['participant_ids']
+            print(f"  [{f['verdict'].upper()}] {k['fixture']}  "
+                  f"(kibl fixture {k['fixture_id']}, day {f['day']})")
+            print(f"      kibl        {_pxs(k['prices'], pid)}  "
+                  f"fav={k['favourite']} gap={k['gap_pp']}pp"
+                  f"{' lopsided:' + k['limb'] if k['lopsided'] else ''}")
+            for lbl, r in sorted(f['independent'].items()):
+                print(f"      {lbl:<24} {_pxs(r['prices'])}  "
+                      f"fav={r['favourite']} gap={r['gap_pp']}pp "
+                      f"book={r['book']}"
+                      f"{' lopsided:' + r['limb'] if r['lopsided'] else ''}")
+
+
+def _pxs(prices, ids=None):
+    """'Kwon 1.57 [fp 1029619] / Suresh 2.32 [fp 1029618]' — names, never slots.
+
+    `ids` is keyed by PLAYER NAME, the same as `prices`, because that is how
+    `kibl_favourites` stores it. Keying it by slot and zipping on sort order
+    would reintroduce the exact slot-positional assumption this whole control
+    exists to disprove — and it would do so silently, printing one player's
+    participant id beside the other player's price.
+    """
+    out = []
+    for name, price in sorted((prices or {}).items()):
+        pid = (ids or {}).get(name)
+        out.append(f'{name} {price}' + (f' [fp {pid}]' if pid is not None else ''))
+    return ' / '.join(out)
 
 
 def apply_orientation_guard(rows, dashed, st):
@@ -845,11 +921,27 @@ def main():
     rows, st, unknown_sides, side_shapes = build_rows(
         fx, observations, odds_index, as_of)
     print(f'side_id shapes per priced fixture: {side_shapes}')
-    two_way = sum(n for k, n in side_shapes.items() if '1' in k.split('+')
-                  and '2' in k.split('+'))
-    print(f'fixtures carrying BOTH sides 1 and 2: {two_way} of '
-          f'{sum(side_shapes.values())} — a fixture with one recognised side '
-          f'has no favourite, so it cannot enter the orientation check')
+    # ⚠️ THIS COUNTED THE WRONG THING UNTIL 2026-09-18. It asked how many
+    # fixtures carry side_ids *1 and 2*, and side_id 1 does not exist on this
+    # feed — so it printed 0 beside a table in which every fixture was in fact
+    # two-way, and 0 reads as "nothing can be checked" rather than as "this line
+    # is measuring a side that was never served". Founder 2g asks the real
+    # question, so it is asked of the ROWS WE BUILT, not of the raw side_ids:
+    # a fixture carries both sides when side_labels_for() resolved two
+    # participants and each produced a card row.
+    sides_per_fixture = collections.Counter()
+    for r in rows:
+        sides_per_fixture[r['fixture_id']] += 1
+    both = sum(1 for n in sides_per_fixture.values() if n == 2)
+    odd = {f: n for f, n in sides_per_fixture.items() if n != 2}
+    print(f'fixtures carrying BOTH sides after the 2/3 fix: {both} of '
+          f'{len(sides_per_fixture)} priced fixtures'
+          + (f'  <-- {len(odd)} NOT two-way: {dict(list(odd.items())[:10])}'
+             if odd else ' (every priced fixture is two-way)'))
+    if st.get('fixture_undecidable_sides'):
+        print(f'::warning::{st["fixture_undecidable_sides"]} fixture(s) had '
+              f'undecidable sides and dashed entirely — never rendered on a '
+              f'guess')
     print(f'kibl card rows: {len(rows)}  {dict(st)}')
     for sid, hits in sorted(unknown_sides.items()):
         fixtures = sorted({h['fixture_id'] for h in hits})
@@ -861,7 +953,8 @@ def main():
     if merr:
         print(f'::warning::could not read {MATCHES} ({merr}) — the orientation '
               f'cross-check loses its upcoming-fixture arm')
-    orient, dashed = run_orientation(rows, fx, odds_index, matches)
+    orient, dashed = run_orientation(rows, fx, odds_index, matches,
+                                     participant_ids_by_fixture(observations))
     orient['matchesReadError'] = merr
     print(f'orientation cross-check: n={orient["n"]}, '
           f'agree={orient["agree"]}, disagree={orient["disagree"]}, '
@@ -873,6 +966,25 @@ def main():
         print(f'::warning::orientation disagreement on {d["match_key"]} '
               f'({d["kibl"]["fixture"]}): kibl favours {d["kibl"]["favourite"]}, '
               f'{d["disagreeing"]} favour otherwise — DASHED, not displayed')
+    # Founder ruling 2026-09-18 item 2 — the bar this ships against.
+    gate = orient['shipGate']
+    print('\nSHIP GATE (founder 2a-2c) — DIRECTION ONLY, never price levels')
+    for name, c in sorted(gate['criteria'].items()):
+        print(f"  {'PASS' if c['pass'] else 'FAIL'}  {name}: "
+              f"{c['actual']} (required {c['required']})")
+    print(f"  lopsided group: n={gate['lopsided']['n']}, "
+          f"agree={gate['lopsided']['agree']}, "
+          f"disagree={gate['lopsided']['disagree']}  [BLOCKING]")
+    print(f"  near-even group: n={gate['nearEven']['n']}, "
+          f"agree={gate['nearEven']['agree']}, "
+          f"disagree={gate['nearEven']['disagree']}  [noted, not blocking]")
+    print(f"  GATE: {'PASSES' if gate['passes'] else 'DOES NOT PASS'}")
+    print_evidence(gate)
+    for d in gate['lopsided']['disagreements']:
+        print(f"::error::LOPSIDED disagreement on {d['match_key']} "
+              f"({d['kibl']['fixture']}) — this stops the ship. "
+              f"kibl={d['kibl']['prices']} independent={d['independent']}")
+
     rows = apply_orientation_guard(rows, dashed, st)
     if dashed:
         print(f'orientation guard dashed {len(dashed)} match(es)')

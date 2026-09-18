@@ -68,6 +68,39 @@ MIN_GAP_PP = 5.0
 # Standing rule: flag anything below this.
 MIN_N = 30
 
+# ---------------------------------------------------------------- the ship gate
+#
+# Founder ruling 2026-09-18 item 2. n >= 30 is NOT the bar for this decision, and
+# the reason is not impatience — it is that the sample we can reach is small and
+# most of it is uninformative. The bar is evidence, not volume:
+#
+#   2a  >= 10 fixtures priced by Kibl AND an independent source
+#   2b  >= 6 of those LOPSIDED
+#   2c  ZERO disagreements inside the lopsided group
+#
+# LOPSIDED, as the founder defined it — either limb is sufficient:
+LOPSIDED_MAX_PRICE = 1.40     # favourite priced at or under 1.40, OR
+LOPSIDED_MIN_GAP_PP = 25.0    # implied-probability gap of 25 points or more
+
+MIN_CHECKED = 10              # 2a
+MIN_LOPSIDED = 6              # 2b
+
+# ⚠️ WHY THE NEAR-EVEN GROUP CANNOT CARRY THE VERDICT
+# A match priced 1.90 / 1.95 is invisible to this test in BOTH directions. Swap
+# the two sides and every number on the card still looks right, so an agreement
+# there is not evidence the mapping is correct; and Kibl is a SHARP book while
+# bet365 and api-tennis are soft, so the two genuinely disagree about which side
+# of a coin-flip is favourite without anything being wrong. Counting near-even
+# fixtures therefore adds noise to the numerator and the denominator alike.
+# Founder 2c: a near-even disagreement is NOTED, not blocking; a lopsided one
+# stops the ship.
+#
+# ⚠️ AND WHY THIS TEST NEVER LOOKS AT PRICE LEVELS
+# Founder 2e: sharp-vs-soft divergence is expected and is not a fault. Nothing
+# here compares a Kibl price to a bet365 price, or a margin to a margin. The
+# only quantity crossing the book boundary is WHICH PLAYER IS CHEAPER — a
+# direction, not a value.
+
 # The independent price sources carried on a board match, in the order they are
 # preferred for the report's "best" column. Each is (field, source, book-or-None
 # meaning "the payload names its own book").
@@ -99,6 +132,47 @@ def implied_gap_pp(price_a, price_b):
     return (1.0 / a - 1.0 / b) * 100.0
 
 
+def favourite_price(prices):
+    """The FAVOURITE's decimal price out of a two-sided payload, or None.
+
+    The '<= 1.40' limb of the lopsided test reads this. It is deliberately the
+    minimum of the pair rather than "the price on the side we named favourite":
+    if the two ever disagreed the mapping would be broken in a way this control
+    could not see, and the smaller number is the one the founder's rule names.
+    """
+    usable = []
+    for v in (prices or {}).values():
+        try:
+            f = float(v)
+        except (TypeError, ValueError):
+            continue
+        if f > 1.0:
+            usable.append(f)
+    return min(usable) if len(usable) == 2 else None
+
+
+def is_lopsided(prices, gap_pp):
+    """Founder 2b: favourite price <= 1.40 OR implied gap >= 25 points.
+
+    Either limb is sufficient. They are not redundant: a 1.35 favourite in a
+    heavily-margined book can sit under 25 points of gap, and a 1.55 favourite
+    in a tight one can clear it.
+
+    Returns (bool, which_limb) so the report can say WHY a fixture counted —
+    "6 lopsided" with no reasons is a number nobody can check.
+    """
+    fp = favourite_price(prices)
+    by_price = fp is not None and fp <= LOPSIDED_MAX_PRICE
+    by_gap = gap_pp is not None and gap_pp >= LOPSIDED_MIN_GAP_PP
+    if by_price and by_gap:
+        return True, 'price+gap'
+    if by_price:
+        return True, 'price'
+    if by_gap:
+        return True, 'gap'
+    return False, None
+
+
 def favourite(prices):
     """{name_key: decimal price} -> (favourite_key, gap_pp) or (None, reason).
 
@@ -123,12 +197,18 @@ def favourite(prices):
 
 # ------------------------------------------------------------------ the sources
 
-def kibl_favourites(fixtures, prices_by_fixture):
+def kibl_favourites(fixtures, prices_by_fixture, ids_by_fixture=None):
     """Kibl fixtures -> {match_key: record}, the favourite under OUR mapping.
 
     `prices_by_fixture` is {fixture_id: {'1': price, '2': price}} — whatever the
     caller has decided represents that side (the card builder passes Open, which
     is the price the founder's rule names).
+
+    `ids_by_fixture` is the same shape carrying `fixture_participant_id`, and it
+    is REPORTING, not logic — founder 2d asks for the Kibl participant ids on
+    every line of the evidence so a claim about a player can be traced back to
+    the row it came from. It is optional so the harness can drive the control
+    without inventing ids.
 
     side '1' -> the fixture string's FIRST player, side '2' -> the second. That
     is the assertion under test, so it is applied here and nowhere else.
@@ -161,9 +241,11 @@ def kibl_favourites(fixtures, prices_by_fixture):
             continue
         if k in by_key:
             ambiguous.add(k)
+        ids = (ids_by_fixture or {}).get(fid) or {}
         by_key[k] = {'match_key': k, 'fixture_id': fid, 'fav': fav,
                      'gap_pp': gap, 'day': day,
                      'p1': p1, 'p2': p2,
+                     'participant_ids': {p1: ids.get('1'), p2: ids.get('2')},
                      'prices': {p1: prices.get('1'), p2: prices.get('2')}}
     for k in ambiguous:
         by_key.pop(k, None)
@@ -285,14 +367,132 @@ def verdicts(kibl_index, independent, min_gap_pp=MIN_GAP_PP):
             continue
         disagreeing = {lbl: r for lbl, r in usable.items()
                        if r['fav'] != kr['fav']}
+
+        # Founder 2b. BOTH sides of the comparison must be lopsided for the
+        # fixture to carry the verdict. Requiring it of Kibl alone would let a
+        # mis-mapped Kibl reading certify its own evidence; requiring it of the
+        # independent source alone would count a fixture whose Kibl prices are
+        # too close together to point anywhere.
+        k_lop, k_limb = is_lopsided(kr['prices'], kr['gap_pp'])
+        lop_readings = {lbl: is_lopsided(r['prices'], r['gap_pp'])
+                        for lbl, r in usable.items()}
+        i_lop = any(v[0] for v in lop_readings.values())
+
         out[k] = {
             'verdict': 'disagree' if disagreeing else 'agree',
             'reason': None,
             'kibl': kr,
             'readings': usable,
             'disagreeing': sorted(disagreeing),
+            'group': 'lopsided' if (k_lop and i_lop) else 'near-even',
+            'lopsided': {
+                'kibl': k_lop, 'kiblLimb': k_limb,
+                'independent': i_lop,
+                'byReading': {lbl: {'lopsided': v[0], 'limb': v[1]}
+                              for lbl, v in lop_readings.items()},
+            },
         }
     return out
+
+
+# ------------------------------------------------------------------- ship gate
+
+def ship_gate(verdict_map, min_checked=MIN_CHECKED, min_lopsided=MIN_LOPSIDED):
+    """Founder ruling 2026-09-18 item 2a–2e, as a pass/fail with its evidence.
+
+    This REPLACES n >= 30 for the side-mapping decision only. Everywhere else the
+    standing rule stands, and `agreement()` still flags n < 30 — the two live
+    side by side deliberately, so a reader can see both the founder's bar and
+    the standing one rather than having the standing one quietly redefined.
+
+    `passes` is False on an empty sample by construction: 0 >= 10 is false. A
+    control that has checked nothing has not passed — the specific failure that
+    put this whole gate in the founder's hands.
+
+    Nothing here writes, dashes or ships. It reports, and item 6 turns a pass
+    into a deploy.
+    """
+    checked = {k: v for k, v in verdict_map.items()
+               if v['verdict'] in ('agree', 'disagree')}
+    lop = {k: v for k, v in checked.items() if v['group'] == 'lopsided'}
+    near = {k: v for k, v in checked.items() if v['group'] == 'near-even'}
+    lop_dis = sorted(k for k, v in lop.items() if v['verdict'] == 'disagree')
+    near_dis = sorted(k for k, v in near.items() if v['verdict'] == 'disagree')
+
+    criteria = {
+        '2a_fixtures_both_sources': {
+            'required': f'>= {min_checked}', 'actual': len(checked),
+            'pass': len(checked) >= min_checked},
+        '2b_lopsided_fixtures': {
+            'required': f'>= {min_lopsided}', 'actual': len(lop),
+            'pass': len(lop) >= min_lopsided},
+        '2c_lopsided_disagreements': {
+            'required': '== 0', 'actual': len(lop_dis),
+            'pass': not lop_dis},
+    }
+    return {
+        'passes': all(c['pass'] for c in criteria.values()),
+        'criteria': criteria,
+        'thresholds': {'lopsidedMaxPrice': LOPSIDED_MAX_PRICE,
+                       'lopsidedMinGapPP': LOPSIDED_MIN_GAP_PP,
+                       'minGapPP': MIN_GAP_PP},
+        # The two groups are reported separately, never pooled into one rate.
+        'lopsided': {
+            'n': len(lop),
+            'agree': len(lop) - len(lop_dis),
+            'disagree': len(lop_dis),
+            'blocking': True,
+            'disagreements': [_evidence(lop[k]) for k in lop_dis],
+        },
+        'nearEven': {
+            'n': len(near),
+            'agree': len(near) - len(near_dis),
+            'disagree': len(near_dis),
+            'blocking': False,
+            'disagreements': [_evidence(near[k]) for k in near_dis],
+        },
+        # Founder 2d: every fixture individually, not a percentage.
+        'fixtures': [_fixture_line(checked[k]) for k in sorted(checked)],
+    }
+
+
+def _fixture_line(v):
+    """One readable row of the founder's 2d evidence table.
+
+    Carries the Kibl participant ids, BOTH sides' Kibl prices, every independent
+    source's prices, both implied gaps and the verdict. Prices are keyed by
+    PLAYER NAME rather than by slot throughout, because the whole finding this
+    gate exists to prevent is a slot that names the wrong player.
+    """
+    kr = v['kibl']
+    best = max(v['readings'].items(), key=lambda kv: kv[1]['gap_pp'],
+               default=(None, None))
+    return {
+        'match_key': kr['match_key'],
+        'day': kr['day'],
+        'group': v['group'],
+        'verdict': v['verdict'],
+        'kibl': {
+            'fixture_id': kr['fixture_id'],
+            'fixture': f"{kr['p1']} vs {kr['p2']}",
+            'participant_ids': kr.get('participant_ids') or {},
+            'prices': kr['prices'],
+            'favourite': kr['fav'],
+            'gap_pp': round(kr['gap_pp'], 2),
+            'favourite_price': favourite_price(kr['prices']),
+            'lopsided': v['lopsided']['kibl'],
+            'limb': v['lopsided']['kiblLimb'],
+        },
+        'independent': {
+            lbl: {'book': r.get('book'), 'prices': r['prices'],
+                  'favourite': r['fav'], 'gap_pp': round(r['gap_pp'], 2),
+                  'favourite_price': favourite_price(r['prices']),
+                  'lopsided': v['lopsided']['byReading'][lbl]['lopsided'],
+                  'limb': v['lopsided']['byReading'][lbl]['limb']}
+            for lbl, r in v['readings'].items()},
+        'bestIndependent': best[0],
+        'agrees': v['verdict'] == 'agree',
+    }
 
 
 def agreement(verdict_map, min_n=MIN_N):

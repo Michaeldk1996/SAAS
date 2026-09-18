@@ -219,6 +219,221 @@ check('a doubles fixture keys to nothing rather than half a pair',
                           'scheduled_start': '2026-09-18T07:00:00.000Z'}],
                         {1: {'1': 1.5, '2': 2.5}})[0] == {})
 
+# =====================================================================
+# FOUNDER RULING 2026-09-18 item 2 — the ship gate
+#
+# The bar changed from "n >= 30" to an EVIDENCE bar: >= 10 checked, >= 6 of them
+# lopsided, zero disagreements among the lopsided ones. A near-even disagreement
+# is noted and does not block. Everything below locks that the gate cannot pass
+# by accident — which is the only property that matters, because item 6 turns a
+# pass straight into a deploy with no human in between.
+# =====================================================================
+
+# Twenty surnames, so every synthetic fixture keys to its own match.
+_NAMES = ('Alcaraz Sinner Medvedev Rublev Zverev Ruud Fritz Tsitsipas Hurkacz '
+          'Rune Dimitrov Paul Shelton Tiafoe Khachanov Humbert Musetti Cerundolo '
+          'Griekspoor Machac Lehecka Struff Baez Norrie Etcheverry Tabilo '
+          'Jarry Mannarino Bublik Nakashima').split()
+
+
+def synth(n_lopsided, n_near, reversed_universe=False, flip=()):
+    """Build (fixtures, prices, ids, board) for n fixtures with known groups.
+
+    `flip` is a set of indices whose BOARD prices are reversed — i.e. the
+    independent source names the other player as favourite. That is how a
+    disagreement is injected into a chosen group, rather than by reversing Kibl
+    globally and hoping it lands where the test needs it.
+
+    Lopsided fixtures are priced 1.25 / 4.00 (both limbs). Near-even ones are
+    priced 1.57 / 2.32 — TODAY'S REAL Kwon/Suresh prices, not 1.85 / 1.95.
+    That is not cosmetic: at 1.85 / 1.95 the gap is 2.8pp, which is below
+    MIN_GAP_PP, so those fixtures are `unchecked` and never reach either group.
+    There are THREE buckets, not two —
+
+        gap <  5pp   unchecked, carries no signal at all
+        gap >= 5pp, not lopsided     near-even: checked, NOTED, not blocking
+        price <= 1.40 or gap >= 25pp lopsided:  checked, BLOCKING
+
+    — and a synthetic payload that conflates the first two silently tests the
+    gate on a sample half the size it claims. (This harness caught exactly that
+    on its first run: 2a read `actual: 5` out of a 13-fixture payload.)
+    """
+    fx, prices, ids, board = [], {}, {}, []
+    for i in range(n_lopsided + n_near):
+        a, b = _NAMES[2 * i], _NAMES[2 * i + 1]
+        lop = i < n_lopsided
+        # `a` is the favourite in every fixture, lopsided or not.
+        pa, pb = (1.25, 4.00) if lop else (1.57, 2.32)
+        fid = 7000 + i
+        fx.append({'fixture_id': fid, 'player1_name': a, 'player2_name': b,
+                   'name': f'{fid} {a} vs {b}',
+                   'scheduled_start': '2026-09-18T07:00:00.000Z'})
+        # Kibl side 1 = first-named = `a`. Reversing the universe puts the
+        # favourite's price on side 2 while the names stay put.
+        prices[fid] = ({'1': pb, '2': pa} if reversed_universe
+                       else {'1': pa, '2': pb})
+        ids[fid] = {'1': 1000000 + 2 * i, '2': 1000001 + 2 * i}
+        # The board names the SAME two players in the OPPOSITE order, as the
+        # real feeds do — so a slot comparison would misread every one of these.
+        bp1, bp2 = (pa, pb) if i in flip else (pb, pa)
+        board.append({'id': f'm{i}', 'date': '2026-09-18', 'p1': b, 'p2': a,
+                      'odds': {'p1': bp1, 'p2': bp2, 'bookmaker': 'Betano'}})
+    return fx, prices, ids, board
+
+
+def gate_of(n_lop, n_near, reversed_universe=False, flip=()):
+    fx, prices, ids, board = synth(n_lop, n_near, reversed_universe, flip)
+    ki, _ = O.kibl_favourites(fx, prices, ids)
+    bi, _ = O.board_favourites(board)
+    return O.ship_gate(O.verdicts(ki, {k: v['readings'] for k, v in bi.items()}))
+
+
+print()
+print('LOPSIDED — the two limbs, and that they are not the same limb')
+check('the price limb fires on a 1.40 favourite (the boundary is inclusive)',
+      O.is_lopsided({'a': 1.40, 'b': 3.0}, 1.0)[0])
+check('and not on 1.41 by price alone',
+      O.is_lopsided({'a': 1.41, 'b': 1.44}, 1.0) == (False, None))
+check('the gap limb fires without the price limb — a 1.45 favourite in a tight '
+      'book clears 25 points while never reaching 1.40',
+      O.is_lopsided({'a': 1.45, 'b': 3.20}, O.implied_gap_pp(1.45, 3.20))
+      == (True, 'gap'))
+check('the price limb fires without the gap limb — a 1.35 favourite in a '
+      'heavily-margined book sits under 25 points',
+      O.is_lopsided({'a': 1.35, 'b': 2.00}, O.implied_gap_pp(1.35, 2.00))
+      == (True, 'price'))
+check('the gap limb boundary is inclusive — exactly 25.0 points counts',
+      O.is_lopsided({'a': 1.60, 'b': 2.67}, 25.0) == (True, 'gap'))
+check('...and 24.9 does not', O.is_lopsided({'a': 1.60, 'b': 2.67}, 24.9)
+      == (False, None))
+check('favourite_price is the LOWER of the pair, not the named side',
+      O.favourite_price({'a': 2.32, 'b': 1.57}) == 1.57)
+check('one side priced is not a market, so there is no favourite price',
+      O.favourite_price({'a': 1.57}) is None)
+
+print()
+print('THE REAL BOARD MATCH IS NEAR-EVEN — the split is not decorative')
+# Kwon 1.57 / Suresh 2.32: 20.6pp, favourite 1.57. Under the founder's
+# definition this fixture cannot carry the verdict, and if the split were
+# mis-implemented it would land in the blocking group and read as evidence.
+_real = O.is_lopsided({'S. Kwon': 1.57, 'D. Suresh': 2.32},
+                      O.implied_gap_pp(1.57, 2.32))
+check('today\'s Suresh/Kwon fixture is NEAR-EVEN, not lopsided',
+      _real == (False, None), _real)
+
+print()
+print('THE GATE CANNOT PASS BY ACCIDENT')
+check('n = 0 does not pass — 0 >= 10 is false, and this is the exact failure '
+      'that put this gate in the founder\'s hands',
+      O.ship_gate({})['passes'] is False)
+g_small = gate_of(6, 3)          # 9 checked, 6 lopsided
+check('9 checked fixtures fail 2a even with 6 lopsided',
+      not g_small['passes']
+      and not g_small['criteria']['2a_fixtures_both_sources']['pass']
+      and g_small['criteria']['2b_lopsided_fixtures']['pass'], g_small['criteria'])
+g_thin = gate_of(5, 8)           # 13 checked, 5 lopsided
+check('13 checked fixtures fail 2b with only 5 lopsided — volume does not '
+      'substitute for separation',
+      not g_thin['passes']
+      and g_thin['criteria']['2a_fixtures_both_sources']['pass']
+      and not g_thin['criteria']['2b_lopsided_fixtures']['pass'],
+      g_thin['criteria'])
+g_ok = gate_of(6, 4)             # 10 checked, 6 lopsided, no disagreement
+check('exactly 10 checked and exactly 6 lopsided with no disagreement PASSES — '
+      'the boundary is inclusive on both',
+      g_ok['passes'] and g_ok['lopsided']['n'] == 6
+      and g_ok['nearEven']['n'] == 4, g_ok['criteria'])
+
+print()
+print('2e — ONE BOOK ALONE CANNOT PROMOTE A FIXTURE INTO THE BLOCKING GROUP')
+# Founder 2e: Kibl is SHARP and bet365/api-tennis are SOFT, so the two books
+# separating a match differently is expected and is never a fault. A fixture is
+# only lopsided when BOTH sides of the comparison say so. If either alone could
+# promote it, one book's margin would decide which evidence is allowed to stop
+# a deploy — and the 'or' version of this rule passes every other test in this
+# file, so nothing else here would catch it.
+
+
+def one_sided(kibl_px, board_px):
+    """Kibl and the board price the SAME match with different separation."""
+    fx = [{'fixture_id': 8001, 'player1_name': 'Alcaraz',
+           'player2_name': 'Sinner', 'name': '8001 Alcaraz vs Sinner',
+           'scheduled_start': '2026-09-18T07:00:00.000Z'}]
+    ki, _ = O.kibl_favourites(fx, {8001: kibl_px})
+    bi, _ = O.board_favourites([{'id': 'x', 'date': '2026-09-18',
+                                 'p1': 'Sinner', 'p2': 'Alcaraz',
+                                 'odds': {**board_px, 'bookmaker': 'Betano'}}])
+    v = O.verdicts(ki, {k: r['readings'] for k, r in bi.items()})
+    return list(v.values())[0]
+
+
+# Alcaraz is the favourite in every payload below; only the SEPARATION moves.
+_k_only = one_sided({'1': 1.25, '2': 4.00}, {'p1': 2.32, 'p2': 1.57})
+check('lopsided on Kibl but near-even on the board is NEAR-EVEN — the sharp '
+      'book does not get to promote it on its own',
+      _k_only['group'] == 'near-even' and _k_only['verdict'] == 'agree',
+      _k_only['lopsided'])
+_b_only = one_sided({'1': 2.32, '2': 1.57}, {'p1': 4.00, 'p2': 1.25})
+check('...and neither does the soft book',
+      _b_only['group'] == 'near-even', _b_only['lopsided'])
+_both = one_sided({'1': 1.25, '2': 4.00}, {'p1': 4.00, 'p2': 1.25})
+check('both lopsided IS lopsided — the rule is an AND, not a veto',
+      _both['group'] == 'lopsided', _both['lopsided'])
+
+print()
+print('2c — WHICH GROUP A DISAGREEMENT LANDS IN DECIDES WHETHER IT BLOCKS')
+g_near_dis = gate_of(6, 4, flip=(7,))     # index 7 is a near-even fixture
+check('a near-even disagreement is NOTED and does not stop the ship',
+      g_near_dis['passes'] and g_near_dis['nearEven']['disagree'] == 1
+      and g_near_dis['lopsided']['disagree'] == 0
+      and g_near_dis['nearEven']['blocking'] is False,
+      {'near': g_near_dis['nearEven']['disagree'],
+       'lop': g_near_dis['lopsided']['disagree']})
+g_lop_dis = gate_of(6, 4, flip=(0,))      # index 0 is a lopsided fixture
+check('ONE lopsided disagreement stops it, even with 2a and 2b satisfied',
+      not g_lop_dis['passes']
+      and g_lop_dis['lopsided']['disagree'] == 1
+      and not g_lop_dis['criteria']['2c_lopsided_disagreements']['pass']
+      and g_lop_dis['criteria']['2a_fixtures_both_sources']['pass'],
+      g_lop_dis['criteria'])
+check('...and it is reported with BOTH payloads, not as a count',
+      bool(g_lop_dis['lopsided']['disagreements'])
+      and 'prices' in g_lop_dis['lopsided']['disagreements'][0]['kibl'],
+      g_lop_dis['lopsided']['disagreements'][:1])
+
+print()
+print('THE REVERSED UNIVERSE STILL FAILS UNDER THE NEW BAR')
+g_rev = gate_of(6, 4, reversed_universe=True)
+check('reversing Kibl fails the gate — every lopsided fixture disagrees',
+      not g_rev['passes'] and g_rev['lopsided']['disagree'] == 6
+      and g_rev['lopsided']['agree'] == 0, g_rev['lopsided'])
+check('and the near-even fixtures ALSO reverse but are reported separately, '
+      'never pooled into one rate',
+      g_rev['nearEven']['n'] == 4 and g_rev['lopsided']['n'] == 6)
+
+print()
+print('2d — EVERY FIXTURE INDIVIDUALLY, WITH ITS PARTICIPANT IDS')
+f0 = g_ok['fixtures'][0]
+check('the gate reports one line per CHECKED fixture, not a percentage',
+      len(g_ok['fixtures']) == 10)
+check('each line carries the verdict, the group and both gaps',
+      {'verdict', 'group', 'kibl', 'independent'} <= set(f0)
+      and 'gap_pp' in f0['kibl'], f0)
+check('participant ids are keyed by PLAYER NAME, so an id can never be printed '
+      'beside the other player\'s price',
+      set(f0['kibl']['participant_ids']) == set(f0['kibl']['prices']),
+      f0['kibl'])
+_ids = f0['kibl']['participant_ids']
+_pxs = f0['kibl']['prices']
+_fav = min(_pxs, key=lambda k: _pxs[k])
+check('the favourite\'s id travels with the favourite\'s price through the '
+      'feeds\' opposite orderings',
+      _ids[_fav] is not None and _ids[_fav] != _ids[
+          [k for k in _pxs if k != _fav][0]], _ids)
+check('a gate driven WITHOUT ids still reports the fixture rather than '
+      'crashing — the ids are evidence, not logic',
+      bool(O.kibl_favourites(*synth(1, 0)[:2])[0]))
+
 print()
 if FAILED:
     print(f'{len(FAILED)} FAILED: {FAILED}')
