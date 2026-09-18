@@ -6718,6 +6718,22 @@
 
   function renderStylesModal(p) {
     var rows = styleRows(p);
+    // PENDING BEFORE EMPTY — the same split §5.5 Court speed and §6.4 Streaks
+    // already make, and the last surface that lacked it (audited 2026-09-18
+    // across all six lazy stores x nine surfaces; this was the only gap).
+    //
+    // styleRows() counts opponents out of the career-history spine, so a store
+    // that has not landed yields rows.total === 0 — exactly what a player with
+    // no matches yields. Stating "No matches on record" off that zero turns a
+    // network fact into a claim about the player, which §3 forbids outright.
+    // Measured on keys 67 / 1980 / 2072: with the shard unsettled the modal
+    // asserted it for all three, each of whom has 400+ real rows once it lands.
+    // Only the store can tell the two apart, so it is asked first.
+    if (!rows.total && !careerHistorySettled(p.key)) {
+      return '<div style="border:1px dashed rgba(255,255,255,0.12);border-radius:10px;padding:26px;' +
+        'text-align:center;font-size:13px;color:#5b6880;">The career match store has not loaded, ' +
+        'so no opponent can be archetyped yet.</div>';
+    }
     if (!rows.total) {
       return '<div style="border:1px dashed rgba(255,255,255,0.12);border-radius:10px;padding:26px;' +
         'text-align:center;font-size:13px;color:#5b6880;">No matches on record, ' +
@@ -8101,6 +8117,12 @@
       HB_BEST_OF: HB_BEST_OF,
       // §5.6 Matchup record
       renderStylesModal: renderStylesModal,
+      // Item 32's footnote. Exported so its dash lock can call the emitting
+      // function directly: gating that check on "some player in the committed
+      // store happens to carry a thin archetype row" made it vacuous the moment
+      // the store's shape moved — it failed "this check never ran" for several
+      // runs while the renderer itself was already correct.
+      renderStyleNote: renderStyleNote,
       styleRows: styleRows,
       STYLE_AXIS: STYLE_AXIS,
       styleArchetypeOf: styleArchetypeOf,

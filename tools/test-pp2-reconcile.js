@@ -2250,26 +2250,55 @@ function esc17(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'
 // ranges and does not reach a sentence dash, so the two constants exist
 // separately (ENDASH for ranges, EMDASH for punctuation) and this locks the
 // choice at the one call site that got it wrong.
+//
+// 2026-09-18: this check was RED for several runs with "no player carried the
+// footnote — this check never ran", while the renderer was already emitting
+// U+2014 correctly. The bug was in the check, not the build: it hunted the
+// committed store for a player carrying an archetype row with 0 < n < 5 and
+// asserted nothing when none did. That made the lock hostage to a store shape,
+// and a lock that silently stops running is worse than no lock. It now calls
+// renderStyleNote() — the one function that emits the sentence — with rows built
+// to order, so the thin branch is ALWAYS exercised and the only way to go red is
+// for the dash to actually be wrong. Both singular ("One sits") and plural
+// ("N sit") phrasings are covered, since they are separate string literals.
 check('item 32 · the footnote sentence dash is an em dash, not an en dash', () => {
-  let found = 0;
-  for (const key of Object.keys(PLAYERS)) {
-    const p = Object.assign({ key }, PLAYERS[key]);
-    const rows = I.styleRows(p);
-    if (!rows.length || !rows.total) continue;
-    if (!rows.filter(r => { const n = r.won + r.lost; return n > 0 && n < 5; }).length) continue;
-    const html = I.renderStylesModal(p);
+  // styleOpenable() is the renderer's own gate — build the fixture from it
+  // rather than hard-coding 5, so a future gate change can't quietly un-thin
+  // these rows and make the check vacuous again.
+  const thinN = [1, 2, 3, 4].filter(n => !I.styleOpenable(n));
+  assert(thinN.length > 0, 'no sub-gate sample size exists — fixture cannot be built');
+  const fatN = [10, 20, 40].filter(n => I.styleOpenable(n));
+  assert(fatN.length > 0, 'no above-gate sample size exists — fixture cannot be built');
+
+  function rowsWith(thinCount) {
+    const rows = [];
+    for (let i = 0; i < thinCount; i++) rows.push({ won: thinN[0], lost: 0 });
+    rows.push({ won: fatN[0], lost: fatN[0] });           // one openable row
+    let total = 0;
+    rows.forEach(r => { total += r.won + r.lost; });
+    rows.total = total;
+    rows.unlabelled = 0;
+    return rows;
+  }
+
+  let checked = 0;
+  for (const thinCount of [1, 3]) {                        // singular and plural
+    const html = I.renderStyleNote(rowsWith(thinCount));
     const i = html.indexOf('rather than dropping out');
-    if (i < 0) continue;
+    assert(i > -1,
+      `thin=${thinCount}: renderStyleNote emitted no thin-row sentence — the fixture no longer trips the branch`);
     const tail = html.slice(i, i + 60);
     assert(tail.indexOf('—') > -1,
-      `${p.name}: footnote dash is not U+2014 — got ${JSON.stringify(tail.slice(24, 32))}`);
+      `thin=${thinCount}: footnote dash is not U+2014 — got ${JSON.stringify(tail.slice(24, 32))}`);
     assert(tail.indexOf('dropping out –') < 0,
-      `${p.name}: footnote still uses the en dash U+2013`);
-    found++;
-    if (found >= 3) break;
+      `thin=${thinCount}: footnote still uses the en dash U+2013`);
+    // The phrasing must actually differ, or "plural" was never really tested.
+    assert(html.indexOf(thinCount === 1 ? 'One sits' : thinCount + ' sit') > -1,
+      `thin=${thinCount}: wrong singular/plural phrasing`);
+    checked++;
   }
-  assert(found > 0, 'no player carried the footnote — this check never ran');
-  console.log(`        ${found} footnotes carry U+2014, none U+2013`);
+  assert(checked === 2, 'both the singular and plural footnote forms must be checked');
+  console.log(`        ${checked} footnote forms (singular + plural) carry U+2014, none U+2013`);
 });
 
 mustFail('the footnote-dash check would catch the en dash it was shipped with', () => {
@@ -5029,6 +5058,46 @@ function streakTabFor(store) {
   });
   return m._internals.renderStreakTab(m._internals.profileFor(ONE_KEY));
 }
+function stylesModalFor(store) {
+  const profiles = {}; profiles[ONE_KEY] = PLAYERS[ONE_KEY];
+  const m = loadModule(profiles, {
+    careerSplits: SPLITS, marketEdge: {}, playingStyles: STYLES,
+    holdbreak: HOLDBREAK, HoldBreakHeatmap: ENGINE,
+    matchStats: {}, bet365History: {}, careerHistory: store,
+  });
+  return m._internals.renderStylesModal(m._internals.profileFor(ONE_KEY));
+}
+
+// §5.6 was the LAST surface without the pending-before-empty split. Found by the
+// 2026-09-18 sweep of all six lazy stores against all nine surfaces, after the
+// two-state version of that sweep proved vacuous: with career-history absent
+// locally, "unsettled" and "settled-empty" rendered identically, so every
+// surface was filtered out — including one whose guard had been deleted on
+// purpose as a control. The sweep only works against a settled-FULL baseline.
+check('§5.6 Playing styles · an UNSETTLED store does not claim the player has no matches', () => {
+  const html = stylesModalFor({});                            // key absent
+  assert(/has not loaded/.test(html),
+    'unsettled store does not say so: ' + html.replace(/<[^>]+>/g, ' ').slice(0, 160));
+  assert(!/No matches on record/i.test(html),
+    'an unsettled store still claims "No matches on record"');
+});
+
+check('§5.6 Playing styles · a SETTLED-EMPTY store makes the honest claim instead', () => {
+  const store = {}; store[ONE_KEY] = [];                      // key present, 0 rows
+  const html = stylesModalFor(store);
+  assert(/No matches on record/i.test(html),
+    'a settled-empty store does not make the honest claim: ' + html.replace(/<[^>]+>/g, ' ').slice(0, 160));
+  assert(!/has not loaded/.test(html),
+    'a settled-empty store wrongly blames the network');
+});
+
+// Direction covered: this pair catches a PENDING state misreported as EMPTY. It
+// cannot catch the reverse (an empty state reported as pending) — the second
+// check above is what covers that side, which is why both ship together.
+mustFail('[neg] the §5.6 guard would catch the claim it replaced', () => {
+  const html = '<div>No matches on record, so no opponent can be archetyped.</div>';
+  assert(/has not loaded/.test(html), 'unsettled store does not say so');
+});
 
 check('§6.4 Streaks · an UNSETTLED store never prints a bare 0 or 0%', () => {
   const html = streakTabFor({});                             // key absent
