@@ -54,6 +54,12 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, 'ten225-kibl-card-state.json')
 
 from ten225_names import match_key as mk_of, name_key  # noqa: E402
+import ten225_orientation as ORI  # noqa: E402
+
+# The board file, read for its INDEPENDENT prices only. It is the api-tennis /
+# oddspapi view of the same matches, oriented to its own p1/p2, and nothing on
+# the Kibl path writes to it — which is what makes it a valid control.
+MATCHES = os.path.join(HERE, 'matches.json')
 
 MARKET = 'match winner'
 BOOK = 'sports411'          # the book we are actually served; NOT Bet105 (measured)
@@ -228,7 +234,18 @@ def judge_close_live(start_ts, close_ts, start_src='oddspapi', flip_gap=None):
       bound inherits that bound's uncertainty, so it needs gap_seconds <= 300.
       An UNKNOWN gap is not a pass.
 
-    Reported to Michael as a difference between sources, not ruled here.
+    ⚠️ RULED, NOT PROPOSED — DO NOT REINSTATE THE DECAY LIMB HERE.
+    Founder ruling 2026-09-18 item 2, in his words: *"21-day decay limb for
+    Kibl: agreed, skip it. It assumes post-match retrieval and Kibl has no
+    history — every Kibl close is captured live, which is what the rule wants.
+    Keep the <=60-min lag limb and the <=300 s flip-gap limb. Document the
+    exemption in the code so nobody reinstates it."*
+
+    The exemption is SOURCE-SPECIFIC and does not generalise: `judge_close()` in
+    the line-summary loader keeps its 21-day window, because oddspapi IS fetched
+    after the fact and there the window is the whole point. A future run that
+    "harmonises" the two judges has broken this ruling in the direction that
+    reports zero coverage on a green run. Locked by test-ten225-kibl-card-state.
     """
     if start_ts is None or close_ts is None:
         return False, None
@@ -271,6 +288,7 @@ def index_oddspapi(fx_rows, summary_rows):
     """
     by_key, ambiguous = {}, set()
     st = collections.Counter()
+    fx_by_id = {f['fixture_id']: f for f in fx_rows}
     for f in fx_rows:
         day = (f.get('true_start') or f.get('scheduled_start') or '')[:10]
         k = mk_of(day, f.get('player1'), f.get('player2'))
@@ -310,6 +328,12 @@ def index_oddspapi(fx_rows, summary_rows):
         any_row = next(iter(sides.values()))
         index[k] = {
             'fixture_id': fid,
+            # The fixture's OWN player order, carried so the orientation check
+            # can resolve oddspapi's favourite to a NAME. Without it the only
+            # thing comparable is slot-to-slot, and the two feeds do not share
+            # an order — see ten225_orientation's header.
+            'player1': fx_by_id[fid].get('player1'),
+            'player2': fx_by_id[fid].get('player2'),
             'start_ts': epoch(any_row.get('start_ts')),
             'start_ts_source': any_row.get('start_ts_source') or 'none',
             'start_reject_reason': any_row.get('start_reject_reason'),
@@ -347,6 +371,7 @@ def build_rows(kibl_fixtures, observations, odds_index, as_of):
     One row per (fixture, side). `observations` is {fixture_id: [obs, ...]}.
     """
     rows, st = [], collections.Counter()
+    unknown_sides = collections.defaultdict(list)
     for fx in kibl_fixtures:
         fid = fx['fixture_id']
         obs = [o for o in observations.get(fid, []) if is_match_winner(o)]
@@ -374,6 +399,18 @@ def build_rows(kibl_fixtures, observations, odds_index, as_of):
                 # the field on some rows — two very different findings.
                 st['obs_unknown_side'] += 1
                 st[f'obs_side_id_{o.get("side_id")}'] += 1
+                # Founder ruling 2026-09-18 item 3: keep dashing side_id 3, and
+                # report how often it appears AND ON WHICH FIXTURES — he is
+                # asking Bet105 what it is, and a bare count is not a question
+                # anyone can answer.
+                unknown_sides[o.get('side_id')].append({
+                    'fixture_id': fid,
+                    'fixture': fx.get('name'),
+                    'league_id': fx.get('league_id'),
+                    'scheduled_start': fx.get('scheduled_start'),
+                    'price': o.get('price_decimal'),
+                    'inserted_on': o.get('inserted_on'),
+                })
                 continue
             by_side[s].append(o)
 
@@ -437,7 +474,7 @@ def build_rows(kibl_fixtures, observations, odds_index, as_of):
                 '_start_why': why,
             })
             st['rows'] += 1
-    return rows, st
+    return rows, st, {str(k): v for k, v in unknown_sides.items()}
 
 
 def _limit(obs_list):
@@ -570,62 +607,86 @@ def select_winners(rows):
 
 # ---------------------------------------------- the orientation cross-check
 
-def orientation_agreement(kibl_rows, odds_index, min_gap_pp=5.0):
-    """Does Kibl's side_id 1/2 mean the same players our other feeds' 1/2 mean?
+def load_matches():
+    """The board file, or [] with a counted reason. Never an exception.
 
-    side_label() ASSERTS the mapping from the shape of the fixture string. This
-    is the control that makes the assertion falsifiable, and it is not circular:
-    Kibl's favourite is computed under OUR assumed mapping, oddspapi's favourite
-    is computed from ITS independently-oriented p1/p2, and the two are compared.
-    If the convention were reversed, agreement would collapse to ~0%, not to 50%.
-
-    Only matches with a clear favourite are counted — a gap of at least
-    `min_gap_pp` implied-probability points between the two sides. A near-even
-    match carries no signal about orientation and would dilute the rate toward
-    50% whichever way the mapping runs.
-
-    Returns a dict with n and the rate. REPORT ONLY: it never changes a price.
+    An unreadable board must not take the card path down — it must take the
+    CROSS-CHECK down, which then dashes every Kibl row via the guard. Failing
+    open here would ship unverified prices on a green run, which is the exact
+    shape of the defect this whole control exists to catch.
     """
-    out = {'n': 0, 'agree': 0, 'disagree': 0, 'skipped_no_clear_fav': 0,
-           'skipped_incomplete': 0, 'minGapPP': min_gap_pp, 'examples': []}
-    by_match = collections.defaultdict(dict)
-    for r in kibl_rows:
-        if r.get('match_key') and r.get('open_price'):
-            by_match[r['match_key']][r['side']] = r
+    try:
+        with open(MATCHES) as fh:
+            m = json.load(fh)
+        return (m if isinstance(m, list) else []), None
+    except (OSError, ValueError) as e:
+        return [], str(e)
 
-    for k, sides in by_match.items():
-        rec = odds_index.get(k)
-        if not rec or '1' not in sides or '2' not in sides:
-            out['skipped_incomplete'] += 1
-            continue
-        o1 = (rec['sides'].get('1') or {}).get('open_price')
-        o2 = (rec['sides'].get('2') or {}).get('open_price')
-        if o1 is None or o2 is None:
-            out['skipped_incomplete'] += 1
-            continue
-        k1, k2 = float(sides['1']['open_price']), float(sides['2']['open_price'])
-        o1, o2 = float(o1), float(o2)
-        if min(k1, k2, o1, o2) <= 1.0:
-            out['skipped_incomplete'] += 1
-            continue
-        # Implied probability, normalised away by using the DIFFERENCE of the
-        # two sides within each book — the overround cancels in the sign.
-        gap_k = (1 / k1 - 1 / k2) * 100
-        gap_o = (1 / o1 - 1 / o2) * 100
-        if abs(gap_k) < min_gap_pp or abs(gap_o) < min_gap_pp:
-            out['skipped_no_clear_fav'] += 1
-            continue
-        out['n'] += 1
-        if (gap_k > 0) == (gap_o > 0):
-            out['agree'] += 1
-        else:
-            out['disagree'] += 1
-            if len(out['examples']) < 10:
-                out['examples'].append({'match_key': k, 'kibl': [k1, k2],
-                                        'oddspapi': [o1, o2]})
-    out['rate'] = (out['agree'] / out['n']) if out['n'] else None
-    out['belowMinN'] = out['n'] < MIN_N
-    return out
+
+def run_orientation(rows, kibl_fixtures, odds_index, matches):
+    """The side-mapping control and the guard it feeds, in one pass.
+
+    Founder ruling 2026-09-18 item 1. The comparison itself lives in
+    ten225_orientation — one copy of the rule, driven here on live data and
+    driven by the harness on the reversed-universe payload that live data
+    cannot supply.
+
+    Kibl's favourite is taken from the OPEN price, because Open is the value
+    the founder's rule names and the one every Kibl row carries.
+
+    Returns (report, dashed_match_keys).
+    """
+    prices = collections.defaultdict(dict)
+    for r in rows:
+        if r.get('open_price') is not None:
+            prices[int(r['fixture_id'])][r['side']] = r['open_price']
+
+    kibl_index, kst = ORI.kibl_favourites(
+        [{'fixture_id': int(f['fixture_id']),
+          'player1_name': f.get('player1_name'),
+          'player2_name': f.get('player2_name'),
+          'name': f.get('name'),
+          'scheduled_start': f.get('scheduled_start')}
+         for f in kibl_fixtures], prices)
+
+    board_index, bst = ORI.board_favourites(matches)
+    odds_reads = ORI.oddspapi_favourites(odds_index)
+
+    # Every independent reading for a match, from every non-Kibl source.
+    independent = collections.defaultdict(dict)
+    for k, rec in board_index.items():
+        independent[k].update(rec['readings'])
+    for k, rec in odds_reads.items():
+        independent[k]['oddspapi:line_summary'] = rec
+
+    vmap = ORI.verdicts(kibl_index, independent)
+    report = ORI.agreement(vmap)
+    report['kiblStats'] = dict(kst)
+    report['boardStats'] = dict(bst)
+    report['oddspapiReadings'] = len(odds_reads)
+
+    dashed = {k for k, v in vmap.items() if v['verdict'] == 'disagree'}
+    return report, dashed
+
+
+def apply_orientation_guard(rows, dashed, st):
+    """Founder ruling 2026-09-18 item 1: *"if a Kibl fixture's favourite
+    disagrees with an independent source on the same match, dash it and log it,
+    rather than display."*
+
+    Dashes the PRICES and leaves the row, so the disagreement stays auditable in
+    the table instead of vanishing. A row with no price is never selected
+    (select_winners drops empty rows), so a dashed row cannot hide a good
+    bet365 row behind a rank-1 Kibl one — it steps aside for it.
+    """
+    for r in rows:
+        if r.get('match_key') in dashed:
+            for f in ('open_price', 'open_ts', 'open_limit',
+                      'now_price', 'now_ts', 'close_price', 'close_ts'):
+                r[f] = None
+            r['label'] = 'orientation-disagreement'
+            st['orientation_guard_dashed'] += 1
+    return rows
 
 
 # -------------------------------------------------------------------- plumbing
@@ -714,18 +775,33 @@ def main():
     odds_index, ist = index_oddspapi(ofx, osum)
     print(f'oddspapi pairing index: {len(odds_index)} match keys  {dict(ist)}')
 
-    rows, st = build_rows(fx, observations, odds_index, as_of)
+    rows, st, unknown_sides = build_rows(fx, observations, odds_index, as_of)
     print(f'kibl card rows: {len(rows)}  {dict(st)}')
+    for sid, hits in sorted(unknown_sides.items()):
+        fixtures = sorted({h['fixture_id'] for h in hits})
+        print(f'side_id {sid}: {len(hits)} rows over {len(fixtures)} fixtures '
+              f'— DASHED. fixtures={fixtures[:20]}'
+              + (' ...' if len(fixtures) > 20 else ''))
 
-    orient = orientation_agreement(rows, odds_index)
+    matches, merr = load_matches()
+    if merr:
+        print(f'::warning::could not read {MATCHES} ({merr}) — the orientation '
+              f'cross-check loses its upcoming-fixture arm')
+    orient, dashed = run_orientation(rows, fx, odds_index, matches)
+    orient['matchesReadError'] = merr
     print(f'orientation cross-check: n={orient["n"]}, '
           f'agree={orient["agree"]}, disagree={orient["disagree"]}, '
-          f'rate={orient["rate"]}'
-          + ('  <-- n<30, FLAGGED' if orient['belowMinN'] else ''))
-    if orient['n'] and orient['rate'] is not None and orient['rate'] < 1.0:
-        print(f'::warning::side orientation disagrees with oddspapi on '
-              f'{orient["disagree"]} of {orient["n"]} clearly-separated matches. '
-              f'REPORTED, NOT CORRECTED — the mapping is Michael\'s to rule on.')
+          f'rate={orient["rate"]}, passes={orient["passes"]}'
+          + (f'  <-- n<{MIN_N}, FLAGGED' if orient['belowMinN'] else ''))
+    print(f'  by source: {orient["bySource"]}')
+    print(f'  unchecked: {orient["unchecked"]}')
+    for d in orient['disagreements']:
+        print(f'::warning::orientation disagreement on {d["match_key"]} '
+              f'({d["kibl"]["fixture"]}): kibl favours {d["kibl"]["favourite"]}, '
+              f'{d["disagreeing"]} favour otherwise — DASHED, not displayed')
+    rows = apply_orientation_guard(rows, dashed, st)
+    if dashed:
+        print(f'orientation guard dashed {len(dashed)} match(es)')
 
     n = max(len(rows), 1)
     have_open = sum(1 for r in rows if r['open_price'] is not None)
@@ -741,6 +817,14 @@ def main():
     result.update({
         'counts': dict(st), 'pairing': dict(ist),
         'orientation': orient,
+        # Founder item 3 — the count AND the fixtures, capped for size but with
+        # the true total alongside so the cap can never read as the total.
+        'unknownSides': {
+            sid: {'rows': len(hits),
+                  'fixtures': len({h['fixture_id'] for h in hits}),
+                  'sample': hits[:25],
+                  'sampleCapped': len(hits) > 25}
+            for sid, hits in sorted(unknown_sides.items())},
         'coverage': {'n': len(rows), 'open': have_open, 'now': have_now,
                      'close': have_close},
         'closeLagMinutes': ({'n': len(lags), 'min': lags[0],

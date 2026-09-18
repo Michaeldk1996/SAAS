@@ -31,7 +31,7 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: 'sweep | backfill | report | cards'
+        description: 'sweep | backfill | report | cards | audit'
         default: 'sweep'
       horizon_days:
         description: 'sweep: how far forward, days'
@@ -93,11 +93,12 @@ jobs:
       # refusal to issue a market call without feed_source_id (which returns 200
       # and an empty envelope).
       - name: Offline tests
-        # Both harnesses, and -B so a cached .pyc from a previous job cannot
+        # All three harnesses, and -B so a cached .pyc from a previous job cannot
         # serve stale bytecode and report a false pass.
         run: |
           python3 -B test-kibl-client.py
           python3 -B test-ten225-kibl-card-state.py
+          python3 -B test-ten225-orientation.py
 
       # DDL runs BEFORE the pull and is idempotent. Applying it every run is
       # what makes a dropped or drifted table a loud failure here rather than a
@@ -211,6 +212,20 @@ jobs:
           echo 'card-state schema applied (idempotent).'
           set -o pipefail
           python3 ten225-kibl-card-state.py | tee -a "$GITHUB_STEP_SUMMARY"
+
+      # Founder ruling 2026-09-18 item 4 — the generalisation of the
+      # player1/player2 defect: a column declared in the DDL that NOTHING ever
+      # writes cannot raise, so it has to be asked for. Read-only, header-count
+      # only, no row bodies, no vendor calls. On demand, because the answer
+      # changes only when a writer or the DDL changes.
+      - name: DDL never-written audit
+        if: inputs.mode == 'audit'
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: |
+          set -o pipefail
+          python3 ten225-ddl-null-audit.py | tee -a "$GITHUB_STEP_SUMMARY"
 
       # Runs even when the pull failed: whatever landed is real data, and the
       # size and reliability figures are how the 48h report and the gap alert are

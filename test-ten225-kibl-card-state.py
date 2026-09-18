@@ -181,6 +181,21 @@ old_r, _ = K.L.judge_close(start, K.epoch(T % (11, 30)),
 check('...and the oddspapi rule really does reject it, so this is a real '
       'difference and not a paraphrase', old_r is False)
 
+# Founder ruling 2026-09-18 item 2: *"Document the exemption in the code so
+# nobody reinstates it."* The behaviour is locked above; this locks the REASON
+# staying attached to it, because the next person to read judge_close_live()
+# without it will see an inconsistency and "fix" it.
+import inspect as _i  # noqa: E402
+_jcl = _i.getsource(K.judge_close_live)
+check('the decay exemption is recorded in the code as a RULING, not as an '
+      'open question — a note saying "not ruled here" invites reinstatement',
+      'DO NOT REINSTATE' in _jcl and 'Founder ruling 2026-09-18 item 2' in _jcl)
+check('...and it says the exemption is source-specific, so nobody harmonises '
+      'the two judges', 'does not generalise' in _jcl)
+check('the oddspapi judge KEEPS its 21-day window — the exemption must not have '
+      'leaked across', 'DECAY_DAYS' in _i.getsource(K.L.judge_close)
+      or '21' in _i.getsource(K.L.judge_close))
+
 r, _ = K.judge_close_live(start, K.epoch(T % (11, 30)), 'api-tennis-live', None)
 check('a live-flip start with an UNKNOWN gap is not a pass', r is False)
 r, _ = K.judge_close_live(start, K.epoch(T % (11, 30)), 'api-tennis-live', 301.0)
@@ -207,25 +222,73 @@ def krow(mkey, side, price):
             'source': 'kibl'}
 
 
-IDX = {'d|alcaraz|zverev': {'sides': {'1': {'open_price': 1.40},
-                                      '2': {'open_price': 3.00}}}}
-agree = K.orientation_agreement([krow('d|alcaraz|zverev', '1', 1.45),
-                                 krow('d|alcaraz|zverev', '2', 2.80)], IDX)
-check('same favourite on both feeds -> agreement',
-      agree['n'] == 1 and agree['agree'] == 1, agree)
-flip = K.orientation_agreement([krow('d|alcaraz|zverev', '1', 2.80),
-                                krow('d|alcaraz|zverev', '2', 1.45)], IDX)
-check('a REVERSED convention is caught — the control is not circular: kibl is '
-      'oriented by our assumption, oddspapi by its own p1/p2',
-      flip['n'] == 1 and flip['disagree'] == 1, flip)
-even = K.orientation_agreement([krow('d|alcaraz|zverev', '1', 1.98),
-                                krow('d|alcaraz|zverev', '2', 1.96)],
-                               {'d|alcaraz|zverev': {'sides': {
-                                   '1': {'open_price': 1.97},
-                                   '2': {'open_price': 1.97}}}})
+# The comparison itself is locked in test-ten225-orientation.py (33 checks, 6
+# mutation controls), because it is pure. What is locked HERE is the wiring: the
+# card path must actually CONSULT it and must actually DASH on a disagreement.
+check('the old slot-to-slot control is GONE, not merely unused — two copies of '
+      'an orientation rule is how one of them drifts into shipping',
+      not hasattr(K, 'orientation_agreement'))
+
+ORI_FX = [{'fixture_id': 7, 'player1_name': 'Alexander Zverev',
+           'player2_name': 'Carlos Alcaraz', 'name': '7 Alexander Zverev vs Carlos Alcaraz',
+           'scheduled_start': '2026-09-18T12:00:00.000Z'}]
+# oddspapi names the SAME match in the OPPOSITE order — the case that made the
+# slot comparison wrong. Its p1 is Alcaraz; Kibl's side 1 is Zverev.
+ORI_IDX = {'2026-09-18|alcaraz|zverev': {
+    'player1': 'Alcaraz, Carlos', 'player2': 'Zverev, Alexander',
+    'sides': {'1': {'open_price': 1.40}, '2': {'open_price': 3.00}}}}
+BOARD = [{'id': 'm1', 'date': '2026-09-18', 'p1': 'C. Alcaraz', 'p2': 'A. Zverev',
+          'odds': {'p1': 1.45, 'p2': 2.80, 'bookmaker': 'Betano'}}]
+
+
+def ori(k_side1, k_side2, board=BOARD, idx=ORI_IDX):
+    rows = [dict(krow('2026-09-18|alcaraz|zverev', '1', k_side1), fixture_id='7'),
+            dict(krow('2026-09-18|alcaraz|zverev', '2', k_side2), fixture_id='7')]
+    rep, dashed = K.run_orientation(rows, ORI_FX, idx, board)
+    return rows, rep, dashed
+
+
+# Kibl side 1 = Zverev. Alcaraz is the favourite on both independent sources, so
+# a CORRECT mapping prices side 2 (Alcaraz) shorter.
+rows_ok, agree, dash_ok = ori(3.00, 1.40)
+check('a correct mapping agrees with BOTH independent sources, across two feeds '
+      'that name the match in opposite orders',
+      agree['n'] == 1 and agree['agree'] == 1 and agree['passes'], agree)
+check('...and nothing is dashed', dash_ok == set())
+check('the upcoming-fixture arm is live: the BOARD is counted as an independent '
+      'source, not just oddspapi',
+      'api-tennis:odds' in agree['bySource'], agree['bySource'])
+
+rows_flip, flip, dash_flip = ori(1.40, 3.00)
+check('a REVERSED convention is caught', flip['n'] == 1 and flip['disagree'] == 1
+      and not flip['passes'], flip)
+check('...and the guard DASHES it rather than displaying it (founder ruling '
+      '2026-09-18 item 1)', dash_flip == {'2026-09-18|alcaraz|zverev'})
+K.apply_orientation_guard(rows_flip, dash_flip, __import__('collections').Counter())
+check('every price on a dashed row is None — not just Open',
+      all(r['open_price'] is None and r['now_price'] is None
+          and r['close_price'] is None for r in rows_flip), rows_flip)
+check('...and the row is LABELLED so the dash is auditable rather than silent',
+      all(r['label'] == 'orientation-disagreement' for r in rows_flip))
+check('a dashed row is then not selectable, so it steps aside for bet365 '
+      'instead of hiding it behind a rank-1 blank',
+      K.select_winners(rows_flip)[1]['empty_row'] == 2)
+
+even = ori(1.98, 1.96, board=[dict(BOARD[0],
+                                   odds={'p1': 1.97, 'p2': 1.97})],
+           idx={'2026-09-18|alcaraz|zverev': dict(
+               ORI_IDX['2026-09-18|alcaraz|zverev'],
+               sides={'1': {'open_price': 1.97}, '2': {'open_price': 1.97}})})[1]
 check('a near-even match carries no orientation signal and is skipped, not '
-      'counted as 50%', even['n'] == 0 and even['skipped_no_clear_fav'] == 1, even)
+      'counted as 50%', even['n'] == 0 and even['uncheckedTotal'] == 1, even)
 check('n below 30 is flagged (standing rule)', agree['belowMinN'] is True)
+check('an unreadable board does not fail OPEN — it must cost the cross-check '
+      'its arm, never ship an unverified price quietly',
+      K.run_orientation([dict(krow("2026-09-18|alcaraz|zverev", '1', 3.0),
+                              fixture_id='7'),
+                         dict(krow("2026-09-18|alcaraz|zverev", '2', 1.4),
+                              fixture_id='7')],
+                        ORI_FX, {}, [])[0]['passes'] is False)
 
 
 # ------------------------------------------------------- book-priority selection
@@ -361,7 +424,7 @@ index = {'2026-09-18|alcaraz|zverev': {
     'fixture_id': 'op1', 'start_ts': K.epoch(T % (12, 0)),
     'start_ts_source': 'oddspapi', 'start_reject_reason': None,
     'flip_gap_seconds': None, 'sides': {}}}
-built, bst = K.build_rows(fixtures, observations, index, K.epoch(T % (13, 0)))
+built, bst, _us = K.build_rows(fixtures, observations, index, K.epoch(T % (13, 0)))
 check('two rows, one per side', len(built) == 2, len(built))
 r1 = [r for r in built if r['side'] == '1'][0]
 check('Open is the opener price', r1['open_price'] == 1.50, r1['open_price'])
@@ -383,7 +446,7 @@ check('start provenance is carried', r1['start_ts_source'] == 'oddspapi')
 up = [{'fixture_id': 9, 'scheduled_start': '2026-09-19T12:00:00Z',
        'player1_name': 'Carlos Alcaraz', 'player2_name': 'Alexander Zverev',
        'match_key': '2026-09-19|alcaraz|zverev', 'league_id': 19}]
-ub, _ = K.build_rows(up, {9: [obs(1.50, T % (6, 0), opener=True, side_id=1),
+ub, _, _us2 = K.build_rows(up, {9: [obs(1.50, T % (6, 0), opener=True, side_id=1),
                               obs(1.44, T % (9, 0), side_id=1)]},
                      {}, K.epoch(T % (7, 0)))
 check('an upcoming fixture gets a Now', ub[0]['now_price'] == 1.44, ub[0]['now_price'])
