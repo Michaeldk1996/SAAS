@@ -39,7 +39,7 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: 'sweep | backfill | report | cards | publish | audit | sides'
+        description: 'sweep | backfill | report | cards | publish | audit | sides | books'
         default: 'sweep'
       cadence_gate:
         description: 'sweep: apply should_sweep() before pulling (the pinger sets this)'
@@ -297,6 +297,26 @@ jobs:
           done
           echo "::error::could not push odds-card-state.json after 3 attempts"
           exit 1
+
+      # TEN-225 founder directive 2026-09-18T22:01Z item 1 — FIND BET105.
+      # Read-only: one /reference/sportsbooks call (free, no documented quota)
+      # plus exact PostgREST counts. Writes nothing, archives nothing, publishes
+      # nothing, spends zero oddspapi units.
+      #
+      # Exit 2 is a RESULT, not a fault: "Bet105 is not in our entitlement".
+      # /reference/sportsbooks IS the entitlement — a restricted account returns
+      # 200 with fewer rows, never a 403 — so an empty match there is an answer
+      # and the founder asked for it plainly rather than worked around.
+      - name: Find Bet105
+        if: inputs.mode == 'books'
+        env:
+          KIBL_USERNAME: ${{ secrets.KIBL_USERNAME }}
+          KIBL_PASSWORD: ${{ secrets.KIBL_PASSWORD }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: |
+          set -o pipefail
+          python3 -B ten232-bet105-find.py | tee -a "$GITHUB_STEP_SUMMARY"
 
       # Founder ruling 2026-09-18 item 4 — the generalisation of the
       # player1/player2 defect: a column declared in the DDL that NOTHING ever
