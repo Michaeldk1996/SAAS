@@ -31,8 +31,9 @@ const fs = require('fs');
 const path = require('path');
 const https = require('https');
 
+const { requireDeployedProfiles } = require('./deployed-store.js');
+
 const ROOT = path.join(__dirname, '..');
-const PROFILES = path.join(ROOT, 'player-profiles.json');
 const OUT = path.join(ROOT, 'career-splits.json');
 // TEN-162 — per-player match lists behind each split row (drawer drill-down).
 // One lazy shard per player, index-gated on the client, exactly mirroring the
@@ -441,7 +442,13 @@ async function loadCurrRank() {
 
 async function main() {
   if (!fs.existsSync(CACHE)) fs.mkdirSync(CACHE, { recursive: true });
-  const profiles = JSON.parse(fs.readFileSync(PROFILES, 'utf8')).players;
+  // DEPLOYED store — see classify-archetypes.js for why this is fail-closed.
+  // This one matters most: career-splits.json is what the profile's Draw record
+  // reads, and a board player with no row here renders a dash.
+  const store = requireDeployedProfiles('build-career-splits');
+  const profiles = store.players;
+  console.log(`Profiles: ${Object.keys(profiles).length} from ${store.source}`
+    + ` (deployed fetchedAt=${store.fetchedAt}, committed=${store.committedFetchedAt})`);
   const currRank = await loadCurrRank();
 
   // index currRank by (initial, surname)

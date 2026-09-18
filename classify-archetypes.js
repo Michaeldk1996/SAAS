@@ -21,6 +21,7 @@
 // =================================================================
 const fs = require('fs');
 const path = require('path');
+const { requireDeployedProfiles } = require('./tools/deployed-store.js');
 
 const TML_BASE = 'https://raw.githubusercontent.com/Tennismylife/TML-Database/master/';
 const CACHE = path.join(__dirname, 'tml-cache');
@@ -203,8 +204,15 @@ function classify(r, P, seedSV) {
 }
 
 (async () => {
-  // build pool from current-ATP profiles
-  const prof = require('./player-profiles.json').players;
+  // build pool from current-ATP profiles.
+  // DEPLOYED store, not the committed one: the committed player-profiles.json is
+  // a fossil (see tools/deployed-store.js) and this script COMMITS its output,
+  // so a stale roster here freezes newly-boarded players out of the artefact
+  // permanently. Fail-closed — no silent fallback to the fossil.
+  const store = requireDeployedProfiles('classify-archetypes');
+  const prof = store.players;
+  console.log(`Profiles: ${Object.keys(prof).length} from ${store.source}`
+    + ` (deployed fetchedAt=${store.fetchedAt}, committed=${store.committedFetchedAt})`);
   const pool = new Map(); // nameKey -> { name, rank }
   for (const k in prof) {
     const nm = prof[k].name; if (!nm) continue;

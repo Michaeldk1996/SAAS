@@ -24,6 +24,7 @@
 // =================================================================
 const fs = require('fs');
 const path = require('path');
+const { requireDeployedProfiles } = require('./tools/deployed-store.js');
 
 const TML_BASE = 'https://raw.githubusercontent.com/Tennismylife/TML-Database/master/';
 const CACHE = path.join(__dirname, 'tml-cache');
@@ -305,7 +306,11 @@ function pctOf(sortedArr, v) {
 (async () => {
   // ---- current-ATP pool from player-profiles.json
   // Each entry carries the surname tokens + first-initial for robust reconciliation.
-  const prof = require('./player-profiles.json').players;
+  // DEPLOYED store — see classify-archetypes.js for why this is fail-closed.
+  const store = requireDeployedProfiles('surface-ratings');
+  const prof = store.players;
+  console.log(`Profiles: ${Object.keys(prof).length} from ${store.source}`
+    + ` (deployed fetchedAt=${store.fetchedAt}, committed=${store.committedFetchedAt})`);
   const seen = new Set();
   const pool = [];
   for (const k in prof) {

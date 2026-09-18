@@ -21,6 +21,7 @@
 // =================================================================
 const fs = require('fs');
 const path = require('path');
+const { requireDeployedProfiles } = require('./tools/deployed-store.js');
 
 const TML_BASE = 'https://raw.githubusercontent.com/Tennismylife/TML-Database/master/';
 const CACHE = path.join(__dirname, 'tml-cache');
@@ -101,7 +102,11 @@ function pctOf(arr, v) {
 }
 
 (async () => {
-  const prof = require('./player-profiles.json').players;
+  // DEPLOYED store — see classify-archetypes.js for why this is fail-closed.
+  const store = requireDeployedProfiles('clutch-rating');
+  const prof = store.players;
+  console.log(`Profiles: ${Object.keys(prof).length} from ${store.source}`
+    + ` (deployed fetchedAt=${store.fetchedAt}, committed=${store.committedFetchedAt})`);
   const pool = new Map();
   for (const k in prof) {
     const nm = prof[k].name; if (!nm) continue;

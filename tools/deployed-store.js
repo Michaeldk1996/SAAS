@@ -118,6 +118,92 @@ function playerProfiles(opts = {}) {
   };
 }
 
+/**
+ * Fail-closed accessor for the builders that PUBLISH an artefact.
+ *
+ * `playerProfiles()` degrades to the committed fossil when the network is down,
+ * because some callers are read-only audits that would rather print July than
+ * print nothing. A BUILDER must not have that choice: `classify-archetypes.js`,
+ * `surface-ratings.js`, `clutch-rating.js` and `tools/build-career-splits.js`
+ * each derive their whole player pool from this store and then COMMIT the
+ * result, so reading the fossil does not produce a stale report — it freezes a
+ * stale roster into a shipped file and every player who joined the board since
+ * 2026-07-22 silently never gets a row.
+ *
+ * So: deployed, or throw. `label` names the builder in the abort message.
+ */
+/**
+ * Current ATP rank per profile key, off the DEPLOYED player-index.json.
+ *
+ * The deployed player-profiles.json carries a `rank` field that is almost
+ * always null: bsp-pipeline.js joins it by `player_key` against get_standings
+ * (`rank: atpRankByKey.get(String(key)) ?? null`), and only 141 of 459 keys
+ * land. The committed July fossil, by contrast, has a rank for 425 of 428 —
+ * so swapping a builder onto the deployed store WITHOUT this graft does not
+ * just lose freshness, it rewrites `parseInt(p.rank) || 9999` into 9999 for
+ * most of the roster and ships that number. Measured: Alcaraz 1 -> 9999.
+ *
+ * player-index.json is the same pipeline's searchable roster and IS ranked
+ * (2,342 of 2,387 rows), covering 429 of the 459 deployed profiles. It is the
+ * rank the page itself shows, so it is the right join, not a second opinion.
+ */
+function deployedRanks(opts = {}) {
+  const j = fetchJson('player-index.json', opts);
+  const rows = (j && (j.players || (Array.isArray(j) ? j : null))) || null;
+  if (!rows) return null;
+  const byKey = new Map();
+  for (const r of rows) {
+    if (r && r.key != null && Number.isFinite(r.rank)) byKey.set(String(r.key), r.rank);
+  }
+  return byKey.size ? byKey : null;
+}
+
+// A short player-index is the same failure mode bsp-pipeline.js already guards
+// (MIN_STANDINGS_ROWS): a truncated standings fetch would quietly unrank the
+// roster rather than error. Same floor, same fail-closed answer.
+const MIN_RANKED_ROWS = 1000;
+
+function requireDeployedProfiles(label, opts = {}) {
+  const res = playerProfiles(opts);
+  if (res.source !== 'deployed') {
+    const why = (res.drift && res.drift.why) || 'unknown';
+    throw new Error(
+      `${label}: refusing to build from the COMMITTED player-profiles.json `
+      + `(${why}). The committed file is a fossil (fetchedAt=${res.committedFetchedAt}); `
+      + `building from it would ship a stale roster. Fix the network/Pages read and re-run.`,
+    );
+  }
+  if (!res.players || Object.keys(res.players).length === 0) {
+    throw new Error(`${label}: deployed player-profiles.json has no players.`);
+  }
+  // Graft the rank the page shows onto the store's null-heavy `rank` field.
+  // Opt out with {ranks:false} only if the caller genuinely never reads rank.
+  if (opts.ranks !== false) {
+    const ranks = deployedRanks(opts);
+    if (!ranks) {
+      throw new Error(
+        `${label}: deployed player-index.json unreachable, so current ATP rank cannot be `
+        + `joined. The deployed profiles carry rank=null for most keys; building without `
+        + `the join would ship rank 9999. Refusing.`,
+      );
+    }
+    if (ranks.size < MIN_RANKED_ROWS) {
+      throw new Error(
+        `${label}: deployed player-index.json returned only ${ranks.size} ranked rows `
+        + `(< ${MIN_RANKED_ROWS}) — a truncated standings fetch. Refusing to unrank the roster.`,
+      );
+    }
+    let joined = 0, unranked = 0;
+    for (const [k, p] of Object.entries(res.players)) {
+      const r = ranks.get(String(k));
+      if (r == null) { unranked++; continue; }
+      p.rank = r; joined++;
+    }
+    res.rankJoin = { indexRanked: ranks.size, joined, unranked };
+  }
+  return res;
+}
+
 /** The deployed per-player row-count index for career-history/. */
 function careerHistoryIndex(opts) {
   const j = fetchJson('career-history-index.json', opts);
@@ -245,6 +331,7 @@ function hydrateTournamentHistory(players, opts = {}) {
 
 module.exports = {
   BASE, CACHE_DIR, fetchText, fetchJson, fetchShards,
-  playerProfiles, careerHistoryIndex, hydrateCareerHistory,
+  playerProfiles, requireDeployedProfiles, deployedRanks,
+  careerHistoryIndex, hydrateCareerHistory,
   tournamentHistoryIndex, hydrateTournamentHistory,
 };

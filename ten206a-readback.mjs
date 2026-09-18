@@ -106,6 +106,37 @@ for (const key of KEYS) {
   }
   await sleep(1200);
 
+  // ── MUTANT HOOK ───────────────────────────────────────────────────────────
+  // Standing rule: an assertion that has never been seen to fail has not been
+  // shown to be watching anything. TEN206A_MUTANT applies one targeted
+  // corruption to the rendered page and the fetched shard, so each check can be
+  // proven live by flipping it red on demand and reverting (the mutation exists
+  // only in this tab's DOM/fetch, never in a file).
+  if (process.env.TEN206A_MUTANT === 'baseline') {
+    // strip BOTH the baseline phrase and the gated-dash reason from the splits
+    // box; the check must then find neither and fail.
+    await ev(`(function(){var b=Array.prototype.slice.call(document.querySelectorAll('[data-pp2="box"]'))
+      .filter(function(x){return /draw record/i.test(x.textContent||'');})[0]; if(!b) return 0;
+      var n=document.createTreeWalker(b,NodeFilter.SHOW_TEXT),t,c=0;
+      while((t=n.nextNode())){ if(/pp\\s+vs|no split data on record/i.test(t.nodeValue||'')){
+        t.nodeValue=t.nodeValue.replace(/pp\\s+vs/ig,'XX YY').replace(/no split data on record/ig,'zzz'); c++; }}
+      return c;})()`);
+  }
+  if (process.env.TEN206A_MUTANT === 'yearend') {
+    // duplicate the year-end row in the shard the check reads, so "at most one"
+    // must fail on a player who legitimately has exactly one.
+    await ev(`(function(){ var f=window.fetch; window.fetch=function(u,o){
+      return f.apply(this,arguments).then(function(r){
+        if(String(u).indexOf('tournament-history/')<0) return r;
+        return r.clone().json().then(function(j){
+          var rows=(j.tournamentHistory||[]);
+          var ye=rows.filter(function(t){return /tour finals/i.test(t.name||'');})[0];
+          if(ye) rows.push(JSON.parse(JSON.stringify(ye)));
+          return new Response(JSON.stringify(j),{status:200,headers:{'content-type':'application/json'}});
+        }).catch(function(){return r;});
+      });};})()`);
+  }
+
   const name = await ev(`(function(){var h=document.querySelector('.pp2-main');
     return h?(h.textContent||'').replace(/\\s+/g,' ').replace(/^\\s*Back to Players\\s*/,'').trim().slice(0,32):'';})()`);
   console.log(`  player: ${name}`);
@@ -121,19 +152,40 @@ for (const key of KEYS) {
   ck('eight boxes render', boxes.length === 8, `${boxes.length} boxes`);
 
   // ── 2 · Draw record headline + its PRINTED baseline ───────────────────────
-  // Phase A renames "Record per tournament" -> "Draw record". Accept BOTH and
-  // report which one rendered, so this probe tells the two builds apart instead
-  // of just going red on the old one.
+  // "Draw record" and "Record per tournament" are TWO DIFFERENT BOXES on the
+  // live page (5 and 3), not two names for the same one. A single filter over
+  // /draw record|record per tournament/ returns whichever comes FIRST in DOM
+  // order -- always box 3 -- so the baseline assertion was reading the
+  // tournament box and reporting "baseline ABSENT" while box 5 was printing
+  // "+4.2pp vs his 83.1% across these splits" two boxes further down. Select
+  // each box by its own name and assert the baseline only on the splits box.
+  const tourn = await ev(`(function(){
+    var b=Array.prototype.slice.call(document.querySelectorAll('[data-pp2="box"]'))
+      .filter(function(x){return /record per tournament/i.test(x.textContent||'');})[0];
+    return b?{text:(b.textContent||'').replace(/\\s+/g,' ').trim().slice(0,200)}:null;})()`);
   const draw = await ev(`(function(){
     var b=Array.prototype.slice.call(document.querySelectorAll('[data-pp2="box"]'))
-      .filter(function(x){return /draw record|record per tournament/i.test(x.textContent||'');})[0];
-    if(!b) return null;
-    var t=(b.textContent||'').replace(/\\s+/g,' ').trim();
-    return { renamed: /draw record/i.test(t), text: t.slice(0,200) };})()`);
-  console.log(`  DRAW RECORD BOX: ${draw ? (draw.renamed ? 'RENAMED "Draw record"' : 'still "Record per tournament"') : '(not found)'}`);
-  if (draw) console.log(`    ${draw.text}`);
-  ck('the tournament box renders', !!draw, draw ? (draw.renamed ? 'Phase A naming live' : 'pre-Phase-A naming') : 'no box');
-  ck('it prints a baseline (pp vs ...)', !!draw && /pp\\s+vs/i.test(draw.text), draw ? 'baseline phrase ' + (/pp\\s+vs/i.test(draw.text) ? 'present' : 'ABSENT') : 'no box');
+      .filter(function(x){return /draw record/i.test(x.textContent||'');})[0];
+    return b?{text:(b.textContent||'').replace(/\\s+/g,' ').trim().slice(0,200)}:null;})()`);
+  console.log(`  TOURNAMENT BOX : ${tourn ? tourn.text : '(not found)'}`);
+  console.log(`  DRAW RECORD BOX: ${draw ? draw.text : '(not found)'}`);
+  ck('the tournament box renders', !!tourn, tourn ? 'present' : 'no box');
+  ck('the Draw record box renders', !!draw, draw ? 'present' : 'no box');
+  // §3's sample gate: 0 rows is "—" plus a stated reason, and that is a PASS,
+  // not a missing baseline. Galan has no career-splits row at all -- he is one
+  // of the 110 board players the committed-store freeze left out -- so his box
+  // legitimately dashes. Only a box that prints a split must print its baseline.
+  const drawDashed = !!draw && /no split data on record/i.test(draw.text);
+  // NOTE the single backslash. This literal lives in Node source, not inside an
+  // ev() template, so /pp\\s+vs/ meant "pp, a literal backslash, s..." and could
+  // never match. That, on top of the wrong-box selector, is why the original
+  // check reported "baseline ABSENT" against a box that was printing
+  // "+4.2pp vs his 83.1% across these splits". Two defects, one symptom.
+  const drawBaseline = !!draw && /pp\s+vs/i.test(draw.text);
+  ck('Draw record prints a baseline, or a gated dash with its reason',
+    !!draw && (drawDashed || drawBaseline),
+    draw ? (drawDashed ? 'gated dash: no split data on record'
+      : (drawBaseline ? 'baseline present' : 'NEITHER baseline nor gated dash')) : 'no box');
 
   // ── 3 · career tile vs an INDEPENDENT recompute off the shard ─────────────
   const tile = await ev(`(function(){
@@ -150,6 +202,16 @@ for (const key of KEYS) {
     .filter(function(x){return /career record/i.test(x.textContent||'');})[0];
     if(b) b.click(); return !!b;})()`);
   await sleep(900);
+  if (process.env.TEN206A_MUTANT === 'unsurfaced') {
+    // Make the modal UNDER-disclose its unsurfaced count by one, so the §4 sum
+    // no longer reaches the tile. Proves the check reads the disclosure rather
+    // than assuming it.
+    await ev(`(function(){var s=document.querySelector('[data-pp2="scrim"]'); if(!s) return 0;
+      var n=document.createTreeWalker(s,NodeFilter.SHOW_TEXT),t,c=0;
+      while((t=n.nextNode())){ var m=(t.nodeValue||'').match(/(\\d+)\\s+match(?:es)?\\s+with\\s+no\\s+surface\\s+on\\s+record/i);
+        if(m){ t.nodeValue=t.nodeValue.replace(m[0],(Number(m[1])-1)+' matches with no surface on record'); c++; }}
+      return c;})()`);
+  }
   // §4: career tile === sum of the modal's surface rows (+ the rows the modal
   // itself discloses as carrying no surface). Taking the scrim's FIRST W-L
   // instead read Djokovic's career as 306-55 -- that is the HARD row. Sum the
@@ -169,7 +231,13 @@ for (const key of KEYS) {
       seen[key]=1; w+=+m[1]; l+=+m[2]; m2+=+m[3];
       rows.push(cells[i]+' '+m[1]+'-'+m[2]);
     }
-    var un=txt.match(/(\\d+)\\s+matches?\\s+with\\s+no\\s+surface\\s+on\\s+record/i);
+    // "matches?" is "matche" + optional "s" -- it cannot match the SINGULAR
+    // "1 match with no surface on record", which is exactly what Galan's modal
+    // prints. The probe therefore read unsurfaced=0 and reported a 466-vs-465
+    // reconciliation failure against a modal that was disclosing the gap
+    // correctly. Djokovic's plural "4 matches ..." matched, so the bug only
+    // showed on a player with exactly one unsurfaced match.
+    var un=txt.match(/(\\d+)\\s+match(?:es)?\\s+with\\s+no\\s+surface\\s+on\\s+record/i);
     var unN=un?+un[1]:0;
     return { w:w, l:l, matches:m2, unsurfaced:unN, total:m2+unN, rows:rows, head:txt.slice(0,110) };})()`);
   await ev(`document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',bubbles:true}))`);
@@ -192,7 +260,14 @@ for (const key of KEYS) {
         ye: rows.filter(function(n){return /tour finals|masters cup|finals - turin|^finals$/i.test(n);}) };})`);
   console.log(`  YEAR-END ROWS: ${JSON.stringify(th.ye)}  (of ${th.all} tournament rows)`);
   ck('the shard carries tournament rows at all (non-vacuous)', th.all > 0, `${th.all} rows`);
-  ck('exactly one year-end championship row', th.all > 0 && th.ye.length === 1, th.ye.join(' + ') || 'none on record');
+  // Item 3 merged Masters Cup / Finals - Turin into ONE "Tour Finals" identity.
+  // The claim is therefore "no player carries more than one year-end row", NOT
+  // "every player carries one": Galan has never qualified, and asserting
+  // === 1 failed him for a fact about his career rather than about the merge.
+  // Zero must stay a pass, or the check is a ranking filter in disguise.
+  ck('at most one year-end championship row (item 3 merge)',
+    th.all > 0 && th.ye.length <= 1,
+    th.ye.length ? th.ye.join(' + ') : 'none on record (never qualified)');
   if (th.ye.length === 1) ck('it is labelled "Tour Finals"', /^tour finals$/i.test(th.ye[0]), th.ye[0]);
 }
 
