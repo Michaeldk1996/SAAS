@@ -200,3 +200,113 @@ check('the ruled fields\' coverage is reported for the run log', () => {
 });
 
 console.log(`\nsheet dashing: ${checks} checks passed.`);
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Q2 THIRD CLAUSE — the whole-event note.
+// "Add the whole-event note when an event is 0/n ('no match at this event carries
+// winners'), so a total absence reads as a feed gap rather than a per-player one."
+//
+// The note makes a claim about data the reader cannot see, so each check below pins
+// the ONE condition that makes the claim true and mutates it to prove the note goes
+// away. A note that appears unconditionally is a fabrication with good manners.
+// ═══════════════════════════════════════════════════════════════════════════════
+
+console.log('\nwhole-event note: fires on a feed gap, stays silent otherwise');
+
+// A hand-built index, not the real artifact: the note's behaviour must be pinned to
+// the COUNTS, and a fixture is the only way to hold every other variable still.
+const IDX = {
+  keys: { 100: 'Gap Open|2026', 200: 'Full Open|2026', 300: 'Mixed Open|2026', 400: 'Thin Open|2026' },
+  events: {
+    'Gap Open|2026': { n: 20, w: 0, u: 0, n_: 0 },    // feed carries none of the three
+    'Full Open|2026': { n: 40, w: 40, u: 40, n_: 40 },  // feed carries all
+    'Mixed Open|2026': { n: 11, w: 4, u: 4, n_: 4 },   // the 146-match case
+    'Thin Open|2026': { n: 1, w: 0, u: 0, n_: 0 },    // 0/1 — below the floor
+  },
+};
+const BARE = { 'Service:Aces': 5 };            // carries none of the ruled fields
+const RICH = { 'Service:Aces': 5, 'Points:Winners': 20, 'Points:Unforced errors': 18, 'Points:Net points won': 60 };
+
+function withIdx(idx) {
+  const sandbox = { FEATURE_PP2: true, playerProfiles: { players: [] }, matchStats: {}, matchStatEventCoverage: idx };
+  global.window = sandbox;
+  new Function('window', fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8'))(sandbox);
+  return sandbox.PlayerProfileV2._internals;
+}
+
+check('fires on a 0/n event, naming the event, the count and all three fields', () => {
+  const note = withIdx(IDX).wholeEventNote(100, BARE, BARE);
+  assert.match(note, /No match at Gap Open 2026 carries/, `note did not name the event: "${note}"`);
+  assert.match(note, /20 matches on record/, 'note did not state n — an unquantified gap is an assertion');
+  for (const w of ['winners', 'unforced errors', 'net points']) assert.ok(note.includes(w), `note omitted ${w}`);
+});
+
+check('SILENT when the event carries the field on every match', () => {
+  assert.strictEqual(withIdx(IDX).wholeEventNote(200, BARE, BARE), '',
+    'claimed a feed gap at an event that carries the field on all 40 matches');
+});
+
+check('SILENT on a MIXED event — the case the ruling rejects per-event dashing for', () => {
+  // 4 of 11 carry it. A per-event rule would dash all 11; the note must not describe
+  // this as a feed gap either, or it re-tells the same lie in prose.
+  assert.strictEqual(withIdx(IDX).wholeEventNote(300, BARE, BARE), '',
+    'called a mixed event a whole-event gap — exactly the mis-dashing the ruling forbids');
+});
+
+check('SILENT at n=1 — a lone match dashing is the per-player case, not a feed gap', () => {
+  assert.strictEqual(withIdx(IDX).wholeEventNote(400, BARE, BARE), '',
+    'a 0/1 event produced a feed-gap note, which is the confusion the note exists to remove');
+  // Control: the SAME counts at n>=2 must speak, or this proves nothing about the floor.
+  const lifted = JSON.parse(JSON.stringify(IDX));
+  lifted.events['Thin Open|2026'].n = 2;
+  assert.match(withIdx(lifted).wholeEventNote(400, BARE, BARE), /No match at Thin Open 2026/,
+    'the n>=2 floor is not a floor — it silences the note at every n');
+});
+
+check('SILENT about a field THIS match does hold, even at a 0/n event', () => {
+  // Contrived but load-bearing: the note must describe what the reader is looking at.
+  const note = withIdx(IDX).wholeEventNote(100, RICH, RICH);
+  assert.strictEqual(note, '', `spoke about fields that are visible on this very row: "${note}"`);
+  // ...and one-sided data still counts as held, since the sheet shows it.
+  assert.strictEqual(withIdx(IDX).wholeEventNote(100, BARE, RICH), '',
+    'ignored the opponent side, which the sheet renders in the same row');
+});
+
+check('SILENT when the index is absent or does not know the event', () => {
+  assert.strictEqual(withIdx(null).wholeEventNote(100, BARE, BARE), '', 'invented a note with no index at all');
+  assert.strictEqual(withIdx(IDX).wholeEventNote(999, BARE, BARE), '', 'spoke about an eventKey it has no edition for');
+  assert.strictEqual(withIdx(IDX).wholeEventNote(null, BARE, BARE), '', 'spoke about a match with no eventKey');
+});
+
+check('MUTATION CONTROL: a non-zero count must silence the note', () => {
+  const api0 = withIdx(IDX);
+  assert.notStrictEqual(api0.wholeEventNote(100, BARE, BARE), '', 'fixture is wrong — the gap case is already silent');
+  const bumped = JSON.parse(JSON.stringify(IDX));
+  bumped.events['Gap Open|2026'].w = 1;
+  bumped.events['Gap Open|2026'].u = 1;
+  bumped.events['Gap Open|2026'].n_ = 1;
+  assert.strictEqual(withIdx(bumped).wholeEventNote(100, BARE, BARE), '',
+    'one covered match at the event did not silence the note — it is not reading the counts');
+});
+
+console.log('\nwhole-event note: the REAL published index agrees with the renderer');
+
+check('the real index (when built) drives the note the same way', () => {
+  const real = path.join(ROOT, 'match-stat-event-coverage.json');
+  if (!fs.existsSync(real)) { console.log('      (index not built in this checkout — skipped)'); return; }
+  const idx = JSON.parse(fs.readFileSync(real, 'utf8'));
+  const api = withIdx(idx);
+  let fired = 0, silent = 0;
+  for (const [ek, edition] of Object.entries(idx.keys)) {
+    const e = idx.events[edition];
+    const note = api.wholeEventNote(ek, BARE, BARE);
+    const expectGap = e.n >= 2 && e.w === 0;
+    if (note) { fired++; assert.ok(/No match at /.test(note), `malformed note: ${note}`); }
+    else silent++;
+    if (expectGap) assert.notStrictEqual(note, '', `event ${edition} is 0/${e.n} on winners but produced no note`);
+  }
+  assert.ok(fired > 0, 'the real index produced no note anywhere — the artifact or the join is empty');
+  console.log(`      real index: ${fired} eventKey(s) would show a note, ${silent} would not`);
+});
+
+console.log(`\nsheet dashing + whole-event note: ${checks} checks passed.`);

@@ -7885,6 +7885,64 @@
     ] }
   ];
 
+  // ─── Q2 third clause · the WHOLE-EVENT note ────────────────────────────────
+  // Founder ruling 2026-09-18: "Add the whole-event note when an event is 0/n ('no
+  // match at this event carries winners'), so a total absence reads as a feed gap
+  // rather than a per-player one."
+  //
+  // The index is built at pipeline time (tools/build-event-stat-coverage.js) because
+  // the claim is about the EVENT, and the page only ever loads one player — this
+  // player's other opponents at the same tournament sit in other profiles the browser
+  // never fetches. Computing it here would quietly narrow "no match at this event" to
+  // "none of HIS matches at this event", which is the per-player reading the ruling
+  // exists to remove.
+  //
+  // Absent index => no note. The sheet is unchanged rather than degraded: silence is
+  // the honest output when we cannot substantiate the claim.
+  var EVENT_NOTE_FIELDS = [
+    { code: 'w', field: 'Points:Winners', label: 'winners' },
+    { code: 'u', field: 'Points:Unforced errors', label: 'unforced errors' },
+    { code: 'n_', field: 'Points:Net points won', label: 'net points' }
+  ];
+  function eventCoverage() { return window.matchStatEventCoverage || null; }
+  function eventCoverageFor(eventKey) {
+    var idx = eventCoverage();
+    if (!idx || !idx.keys || !idx.events || eventKey == null) return null;
+    var edition = idx.keys[String(eventKey)];
+    if (!edition) return null;
+    var e = idx.events[edition];
+    return e ? { edition: edition, counts: e } : null;
+  }
+  /**
+   * The sentence(s) to append when a ruled field dashed for THIS match and no match
+   * at the whole edition carries it.
+   *
+   * Gated on n >= 2. An edition we hold one match for is 0/1 the moment that match
+   * dashes, and calling that a feed gap is exactly the per-player-vs-feed confusion
+   * the note is supposed to clear up rather than add to.
+   */
+  function wholeEventNote(eventKey, mine, theirs) {
+    var cov = eventCoverageFor(eventKey);
+    if (!cov || !(cov.counts.n >= 2)) return '';
+    var gaps = [];
+    for (var i = 0; i < EVENT_NOTE_FIELDS.length; i++) {
+      var f = EVENT_NOTE_FIELDS[i];
+      // Only speak about a field that actually dashed HERE. An event-wide absence is
+      // not interesting on a row the reader can see a number on.
+      var heldHere = (mine && mine[f.field] != null) || (theirs && theirs[f.field] != null);
+      if (heldHere) continue;
+      if (cov.counts[f.code] === 0) gaps.push(f.label);
+    }
+    if (!gaps.length) return '';
+    var list = gaps.length === 1 ? gaps[0]
+      : gaps.slice(0, -1).join(', ') + ' or ' + gaps[gaps.length - 1];
+    var name = String(cov.edition).split('|')[0];
+    var year = String(cov.edition).split('|')[1];
+    return ' No match at ' + name + ' ' + year + ' carries ' + list +
+      ' (' + cov.counts.n + ' matches on record), so this is a gap in the feed for the ' +
+      'whole event rather than for this player.';
+  }
+
   function statsStore() { return window.matchStats || null; }
   function statsFor(eventKey) {
     var s = statsStore();
@@ -8131,7 +8189,8 @@
         'Return points won are composed from the serve rates on this row. Dominance ratio uses ' +
         'our own definition, return points won over service points lost. Any other dash means ' +
         'the feed published no value for this match — Winners, unforced errors and net points ' +
-        'are read per match and dashed individually.';
+        'are read per match and dashed individually.' +
+        wholeEventNote(m.eventKey, mine, theirs);
     }
 
     return '' +
@@ -8712,6 +8771,8 @@
       // rather than a 0 or a plausible default.
       sheetText: sheetText,
       sheetBars: sheetBars,
+      eventCoverageFor: eventCoverageFor,
+      wholeEventNote: wholeEventNote,
       // item 11 — the bet365 capture fallback
       b365Norm: b365Norm,
       b365Index: b365Index,

@@ -421,6 +421,17 @@ jobs:
           # rather than breaking a table, so these are tolerant copies.
           cp -r bet365-history _site/ 2>/dev/null || true
           cp historical-match-stats.json _site/ 2>/dev/null || true
+          #  * match-stat-event-coverage.json — the per-EVENT index behind the match
+          #    sheet's whole-event note (founder ruling 2026-09-18 Q2, third clause).
+          #    BUILT here, immediately before it is copied, so the copy can never
+          #    precede the build and publish a previous run's index. It joins the
+          #    match-stat store against the DEPLOYED profile store and is tolerant
+          #    (`|| true`) at both steps: a network blip must cost the note, never the
+          #    deploy, and with the file absent the sheet simply omits it — the honest
+          #    output when the claim cannot be substantiated. Named EXPLICITLY because
+          #    this allowlist has no glob and silently 404s anything not in it.
+          node tools/build-event-stat-coverage.js || true
+          cp match-stat-event-coverage.json _site/ 2>/dev/null || true
           cp admin.html admin-config.js _site/ 2>/dev/null || true
           cp matches.json tournament-profiles.json tournament-progression.json player-profiles.json _site/
           cp career-splits.json _site/
