@@ -1308,7 +1308,16 @@
   }
   function setText(s) {
     var base = s.p + '-' + s.o;
-    if (s.pTb == null || s.oTb == null) return base;
+    if (s.pTb == null || s.oTb == null) {
+      // Archive (TML) rows carry the breaker as the source prints it: a single
+      // parenthesised number, the points taken by the side that LOST it. That is
+      // exactly what this function renders from the api-tennis pair below, so it
+      // is used verbatim — never expanded into two per-side totals the source
+      // never recorded.
+      if (s.tbLo == null) return base;
+      var lt = Number(s.tbLo);
+      return isFinite(lt) ? base + '(' + lt + ')' : base;
+    }
     var lo = Math.min(Number(s.pTb), Number(s.oTb));
     if (!isFinite(lo)) return base;
     return base + '(' + lo + ')';
@@ -1317,7 +1326,11 @@
   function tiebreaksMissing(m) {
     return (m.sets || []).filter(function (s) {
       var tb = (s.p === 7 && s.o === 6) || (s.p === 6 && s.o === 7);
-      return tb && (s.pTb == null || s.oTb == null);
+      // Two encodings carry breaker points now: the api-tennis pair (pTb/oTb)
+      // and the archive's single parenthesised `tbLo`. A row holding either one
+      // is NOT missing its tiebreak, so this must check both or it reports every
+      // archive tiebreak as a hole.
+      return tb && (s.pTb == null || s.oTb == null) && s.tbLo == null;
     }).length;
   }
 
