@@ -70,6 +70,27 @@ const CANONICAL_ALIASES = {
   'rogers cup': 'Canada Masters',
   'canada': 'Canada Masters',
 
+  // Year-end championship — ONE event under four names. Founder ruling
+  // 2026-09-18: "Tour Finals, Masters Cup, Finals - Turin and Finals are all
+  // the same event", display name "Tour Finals".
+  //   tour finals   21 rows ·  65 eds · 230 matches · 2009–2024
+  //   finals        15 rows ·  16 eds ·  60 matches · 2015–2025
+  //   finals turin  10 rows ·  20 eds ·  30 matches · 2021–2025
+  //   masters cup    2 rows ·   3 eds ·  11 matches · 2007–2008
+  // Measured on the deployed store: "Finals - Turin" and "Tour Finals" carry
+  // 24 IDENTICAL match rows across 8 players in 2021-2024 (100% overlap), and
+  // "Finals" duplicates "Finals - Turin" 5 more times in 2025. Those matches
+  // were counted twice everywhere a tournament row is summed.
+  //
+  // 'finals' is a bare key and looks risky — it is not. identityKey() matches
+  // the WHOLE normalized string, and every other year-end-ish event keys
+  // longer: "next gen finals", "nextgen finals", "davis cup finals rr ita vs
+  // bel". tools/test-tournament-identity.js locks that, both directions.
+  'tour finals': 'Tour Finals',
+  'masters cup': 'Tour Finals',
+  'finals turin': 'Tour Finals',
+  finals: 'Tour Finals',
+
   // Year-end / rename
   'next gen atp finals': 'Next Gen Finals',
 };

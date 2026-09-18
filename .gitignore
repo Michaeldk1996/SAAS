@@ -95,3 +95,6 @@ player-tournament-history.json
 # artifacts like career-history/ above, never committed.
 profiles/
 player-index.json
+
+# deployed-store cache (tools/deployed-store.js) — snapshots of the LIVE stores
+.deployed-cache/

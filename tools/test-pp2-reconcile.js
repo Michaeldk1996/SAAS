@@ -38,8 +38,44 @@ function loadModule(profiles, extra) {
   return sandbox.PlayerProfileV2;
 }
 
-const raw = JSON.parse(fs.readFileSync(path.join(ROOT, 'player-profiles.json'), 'utf8'));
-const PLAYERS = raw.players;
+// ── THE PROFILE STORE COMES FROM THE DEPLOYED SITE, NOT FROM GIT ────────────
+// This used to be `readFileSync(ROOT/player-profiles.json)`. The pipeline does
+// not commit that file back, so the copy in the tree was written 2026-07-22 —
+// THIRTEEN DAYS BEFORE the 2021-hole fix it was being used to measure. Every
+// roster-wide figure this suite printed for weeks described July data, and a
+// whole report had to be withdrawn because of it. See tools/deployed-store.js.
+//
+// Fail-closed: if the deployed store cannot be reached and nothing is cached,
+// the suite ABORTS rather than fall back to the fossil. "Could not check" must
+// never render as green — the same rule the career-history drift guard enforces
+// ninety lines down.
+const DEPLOYED = require('./deployed-store.js');
+const STORE = DEPLOYED.playerProfiles();
+if (STORE.source !== 'deployed') {
+  console.error('\n  ✗ COULD NOT READ THE DEPLOYED player-profiles.json — ABORTING.');
+  console.error(`    ${STORE.drift.why}`);
+  console.error(`    The committed copy is dated ${STORE.committedFetchedAt || 'unknown'} and is NOT a`);
+  console.error('    substitute: reporting roster-wide numbers off it is the bug this guard exists for.');
+  console.error(`    Set TEN206_DATA_BASE, or run with network access to ${DEPLOYED.BASE}.\n`);
+  process.exit(1);
+}
+const PLAYERS = STORE.players;
+// TEN-207 moved tournamentHistory out of the eager store into per-player shards.
+// Reading the deployed store WITHOUT re-attaching them walks an empty list and
+// passes every §5.3 check vacuously — strictly worse than the July fossil, which
+// at least carried rows. Fail-closed on a short hydrate.
+const TH = DEPLOYED.hydrateTournamentHistory(PLAYERS);
+if (TH.error || TH.attached < TH.indexed) {
+  console.error('\n  ✗ tournament-history/ DID NOT HYDRATE FROM THE DEPLOYED STORE — ABORTING.');
+  console.error(`    ${TH.error || `attached ${TH.attached} of ${TH.indexed} indexed players (${TH.short} short)`}`);
+  console.error('    Every §5.3 check would walk an empty list and report a clean bill of health.\n');
+  process.exit(1);
+}
+console.log(`  ····  tournament-history: ${TH.attached}/${TH.indexed} players hydrated from the deployed `
+  + `shards (${TH.fetched} fetched, ${TH.tournamentRows} tournament rows; ${TH.rosterNotInIndex} roster keys not indexed).`);
+console.log(`  ····  profile store: DEPLOYED ${STORE.fetchedAt} — ${STORE.drift.deployedPlayers} players `
+  + `(committed copy: ${STORE.drift.committedFetchedAt}, ${STORE.drift.committedPlayers} players; `
+  + `+${STORE.drift.onlyDeployed} live-only / −${STORE.drift.onlyCommitted} dropped).`);
 
 // career-splits.json feeds the Splits modal; the market-edge shards feed Market
 // edge. Both are loaded from the REAL committed artefacts — a fixture would let
@@ -152,6 +188,14 @@ const M = loadModule(PLAYERS, {
   matchStats: STATS, bet365History: B365, careerHistory: CAREER_HIST
 });
 const I = M._internals;
+// loadModule() REASSIGNS global.window, and §5.5 builds extra module instances
+// late in this file — so by the time the last sections run, global.window is no
+// longer the sandbox `I` closes over. Every store shim writes through this handle
+// instead. A store written to the wrong sandbox reads back as an EMPTY store,
+// which is indistinguishable from a player with no rows: the check still runs,
+// still passes or fails, and measures nothing. That is how §14A first reported
+// 33 undated matches on a fixture built to carry 8.
+const W = global.window;
 
 let pass = 0, fail = 0, skipped = 0;
 const failures = [];
@@ -468,13 +512,32 @@ check('bands partition the 64 real COURT_CONDITIONS venues into 5 non-empty grou
 // 8 · HEADLINE SIZE RULE (README §5)
 // ════════════════════════════════════════════════════════════════════════════
 console.log('\n8 · Headline size rule');
-check('<=10 -> 30px, 11-16 -> 23px, >16 -> 19px', () => {
-  assert.strictEqual(I.headlineSize('369–309'), 30);
-  assert.strictEqual(I.headlineSize('0123456789'), 30);
-  assert.strictEqual(I.headlineSize('01234567890'), 23);
-  assert.strictEqual(I.headlineSize('0123456789012345'), 23);
-  assert.strictEqual(I.headlineSize('01234567890123456'), 19);
-  assert.strictEqual(I.headlineSize('Counter Puncher / Solid Defender'), 19);
+// SUPERSEDED by handoff v7 / A2 (2026-09-17). The char-length rule this used to
+// lock is now explicitly dead: "Headline size comes from the per-box `size`
+// field, NOT from string length."
+check('headline size comes from the per-box `size` field, not the string', () => {
+  const want = { career: 26, season: 26, tourn: 30, speed: 22,
+                 splits: 20, styles: 30, market: 26, profile: 30 };
+  for (const b of I.BOXES) {
+    assert.strictEqual(I.headlineSize(b), want[b.key], `${b.key}: size is not the file's`);
+  }
+});
+
+mustFail('[neg] the size lock would catch a revert to the char-length rule', () => {
+  const charRule = (t) => { const n = String(t || '').length;
+    return n <= 10 ? 30 : n <= 16 ? 23 : 19; };
+  // The old rule emits only 30/23/19, so it cannot produce `splits`' locked
+  // 20px or `speed`'s 22px for ANY headline — the revert is unrepresentable.
+  assert([30, 23, 19].includes(20) || charRule('Other Tours') === 20,
+    'char rule can still hit the locked 20px');
+});
+
+check('the eight boxes are the v7 set, in the v7 order', () => {
+  assert.deepStrictEqual(I.BOXES.map(b => b.key),
+    ['career', 'season', 'tourn', 'speed', 'splits', 'styles', 'market', 'profile']);
+  assert.deepStrictEqual(I.BOXES.map(b => b.title),
+    ['Career record', 'Calendar record', 'Record per tournament', 'Court speed record',
+     'Draw record', 'Matchup record', 'Market edge', 'Live trading']);
 });
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -575,16 +638,22 @@ mustFail('spine check would catch a doctored season row', () => {
   assert.strictEqual(sw, t.won, 'planted drift not caught');
 });
 
-check('career box headline = spine total, and says which year it starts from', () => {
+// The headline half is unchanged and still load-bearing. The support half is
+// SUPERSEDED by v7: the file's string is "<rate> all-time · by surface and by
+// season" and carries no "since <year>" window. Reported as an information loss
+// — the tile no longer says when the record starts — but the file wins.
+check('career box headline = spine total, with the v7 support line', () => {
   for (const p of SAMPLE) {
     const t = I.spineTotal(p);
     const vals = I.buildBoxVals(p, { archetype: null });
     if (!t.n) { assert.strictEqual(vals.career.headline, null); continue; }
     assert.strictEqual(vals.career.headline, t.won + '–' + t.lost,
       `${p.name}: box headline disagrees with the spine`);
-    const fy = I.spineFirstYear(p);
-    assert(vals.career.support.includes('since ' + fy),
-      `${p.name}: career box does not disclose the window (${vals.career.support})`);
+    assert(vals.career.support.endsWith(' all-time · by surface and by season'),
+      `${p.name}: career support is not the v7 string (${vals.career.support})`);
+    // The rate is still the spine's own, not a re-derivation.
+    assert(vals.career.support.startsWith(I.rateText(t.won, t.lost)),
+      `${p.name}: career support rate disagrees with the spine`);
   }
 });
 
@@ -604,20 +673,56 @@ check('career modal total row = career box headline', () => {
 // ════════════════════════════════════════════════════════════════════════════
 console.log('\n11 · Record per tournament');
 
+// ⚠ OPEN RULING — DOES A WITHDRAWAL COUNT AS A LOSS?
+// This check went red the moment the suite started reading the DEPLOYED store,
+// on J. Thompson / Cincinnati: "editions 3 losses vs stored 4". It is not
+// corruption. The store carries a THIRD result code — `WD` — that the header
+// counts as a loss and this sum did not count at all. Measured over the whole
+// deployed store: 31,064 W · 26,933 L · 104 WD, and of the 100 tournament rows
+// where the header disagrees with its editions, 100 are explained by a WD. Not
+// 98, not "mostly": all of them.
+//
+// Which convention is right is the founder's call, not the suite's, so this
+// does NOT pick one. It counts WD the way the header already does — as a loss,
+// making the reconciliation exact — and PINS the population so the gap cannot
+// grow while the ruling is pending. If the ruling goes the other way the header
+// changes and this pin moves with it.
+// ⚠ AND THE CONVENTION IS NOT UNIFORM. Of the 102 tournament rows carrying a
+// WD, 100 have a header that counts it as a loss and 2 have a header that
+// ignores it. So the published store applies BOTH conventions. Neither is
+// picked here; both populations are pinned, and the split is the finding.
+const WD_ROWS_AS_LOSS = 100;
+const WD_ROWS_IGNORED = 2;
 check('every tournament W-L equals the sum of its editions', () => {
-  let rows = 0;
+  let rows = 0, wdAsLoss = 0, wdIgnored = 0, wdMatches = 0;
   for (const p of Object.values(PLAYERS)) {
     for (const t of p.tournamentHistory || []) {
-      let w = 0, l = 0;
+      let w = 0, l = 0, wd = 0;
       (t.editions || []).forEach(e => (e.matches || []).forEach(m => {
-        if (m.res === 'W') w++; else if (m.res === 'L') l++;
+        if (m.res === 'W') w++;
+        else if (m.res === 'L') l++;
+        else { wd++; }        // WD today; any future code lands here too
       }));
       assert.strictEqual(w, t.won || 0, `${p.name} / ${t.name}: editions ${w} wins vs stored ${t.won}`);
-      assert.strictEqual(l, t.lost || 0, `${p.name} / ${t.name}: editions ${l} losses vs stored ${t.lost}`);
+      if (!wd) {
+        assert.strictEqual(l, t.lost || 0, `${p.name} / ${t.name}: editions ${l} losses vs stored ${t.lost}`);
+      } else {
+        wdMatches += wd;
+        if (l + wd === (t.lost || 0)) wdAsLoss++;
+        else if (l === (t.lost || 0)) wdIgnored++;
+        else assert.fail(`${p.name} / ${t.name}: ${l} losses + ${wd} WD reconciles with neither `
+          + `${t.lost} under either convention`);
+      }
       rows++;
     }
   }
-  console.log(`        ${rows} tournament rows reconcile with their editions`);
+  assert.strictEqual(wdAsLoss, WD_ROWS_AS_LOSS,
+    `WD-as-loss population moved: ${wdAsLoss} (pinned ${WD_ROWS_AS_LOSS})`);
+  assert.strictEqual(wdIgnored, WD_ROWS_IGNORED,
+    `WD-ignored population moved: ${wdIgnored} (pinned ${WD_ROWS_IGNORED})`);
+  console.log(`        ${rows} tournament rows reconcile with their editions; `
+    + `${wdMatches} WD rows across ${wdAsLoss + wdIgnored} tournaments — `
+    + `${wdAsLoss} headers count WD as a loss, ${wdIgnored} ignore it (OPEN RULING)`);
 });
 
 mustFail('tournament check would catch a dropped edition', () => {
@@ -702,22 +807,34 @@ check('the pick is allowed to be negative — the rule is sign-blind by ruling',
   assert(got.pick.gap < 0, `expected a negative gap, got ${got.pick.gap}`);
 });
 
-check('no user-facing string calls it the "best" split or band', () => {
+// ── ruling bw-0 is OVERRIDDEN by handoff v7, and this is a direct collision ──
+//
+// bw-0 banned the words "best split" / "best band" from user-facing text. The
+// v7 locked copy uses that exact phrase: `Player Stat Boxes.dc.html`:3226 reads
+// `support: 'best split · 75.0% · 45–15 · 60 matches'`, and the founder's A1
+// quotes it verbatim as the locked support line.
+//
+// This handoff says the export wins every conflict, so "best split" ships and
+// bw-0 no longer holds for this string. It is called out in the report rather
+// than resolved quietly, because the two rulings are seven days apart and only
+// the founder can retire the older one.
+//
+// The lock is INVERTED rather than deleted: the wording is now pinned to the
+// file's, so a drift back to "biggest split" fails just as loudly as the drift
+// this check used to catch.
+check('the splits support line uses the v7 wording, not the bw-0 wording', () => {
   const src = fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8');
-  // Strip // comments: the ruling's own rationale quotes the old wording.
   const code = src.split('\n').map(l => l.replace(/^\s*\/\/.*$/, '')).join('\n');
-  const offenders = (code.match(/'[^'\n]*\bbest (split|band)\b[^'\n]*'/gi) || []);
-  assert.strictEqual(offenders.length, 0,
-    `ruling bw-0 regressed — user-facing text still says: ${offenders.join(', ')}`);
-  // The replacement must actually be present, or this check passes vacuously
-  // on a file that simply dropped the support line.
-  assert(/'biggest split /.test(code), 'the "biggest split" support line is gone entirely');
+  assert(/'best split /.test(code), 'the v7 "best split" support line is missing');
+  const stale = (code.match(/'[^'\n]*\bbiggest split\b[^'\n]*'/gi) || []);
+  assert.strictEqual(stale.length, 0,
+    `v7 regressed — user-facing text still says: ${stale.join(', ')}`);
 });
 
-mustFail('[neg] the wording lock would catch a revert to "best split"', () => {
-  const code = "support: 'best split ' + MIDDOT";
-  const offenders = (code.match(/'[^'\n]*\bbest (split|band)\b[^'\n]*'/gi) || []);
-  assert.strictEqual(offenders.length, 0, 'lock is inert');
+mustFail('[neg] the wording lock would catch a revert to "biggest split"', () => {
+  const code = "support: 'biggest split ' + MIDDOT";
+  const stale = (code.match(/'[^'\n]*\bbiggest split\b[^'\n]*'/gi) || []);
+  assert.strictEqual(stale.length, 0, 'lock is inert');
 });
 
 check('splits box headline and the modal agree on the picked split', () => {
@@ -954,14 +1071,14 @@ const CAL_P = {
 const CAL_EXPECT = { grid: 25, spine: 27, gap: 2, priced: 13, seasons: 2 };
 
 function withCal(fn) {
-  const savedCh = global.window.careerHistory;
-  const savedMk = global.window.marketEdge;
+  const savedCh = W.careerHistory;
+  const savedMk = W.marketEdge;
   const savedSt = { ...I.state };
-  global.window.careerHistory = Object.assign({}, CAREER_HIST, { __cal: CAL_SPINE });
-  global.window.marketEdge = Object.assign({}, MARKET, { __cal: { matches: CAL_MK } });
+  W.careerHistory = Object.assign({}, CAREER_HIST, { __cal: CAL_SPINE });
+  W.marketEdge = Object.assign({}, MARKET, { __cal: { matches: CAL_MK } });
   try { return fn(); } finally {
-    global.window.careerHistory = savedCh;
-    global.window.marketEdge = savedMk;
+    W.careerHistory = savedCh;
+    W.marketEdge = savedMk;
     Object.assign(I.state, savedSt);
   }
 }
@@ -1057,8 +1174,14 @@ check('the footnote discloses the spine gap rather than hiding it', () => withCa
     'the footnote never states the priced count');
   assert(html.includes(`the grid covers all ${CAL_EXPECT.grid}`),
     'the footnote never states the grid total');
-  assert(html.includes(`${CAL_EXPECT.gap} of them carry no dated match row`),
-    `the ${CAL_EXPECT.gap}-row gap against the career record is not disclosed`);
+  // FOUNDER 2026-09-18 — the clause is no longer a net. This fixture carries
+  // only ONE of the two populations (2 undated, 0 outside the window), so it can
+  // exercise at most half the rule; §14A below runs the fixture that carries
+  // BOTH and is the check that actually pins the ruling.
+  assert(html.includes(`${CAL_EXPECT.gap} matches carry no dated match row`),
+    `the ${CAL_EXPECT.gap} undated matches are not disclosed`);
+  assert(!html.includes('fewer than the grid'),
+    'the netted "fewer than the grid" clause is back in the footnote');
   // Item 31 — the long archive paragraph is gone.
   assert(!/qualifying and Challenger matches are absent by scope/.test(html),
     'the cal-0 archive paragraph is still in the footnote');
@@ -1520,22 +1643,40 @@ mustFail('[neg] the DOM check would catch a grid that never widened', () => {
   assert(/repeat\(5,minmax\(0,1fr\)\)/.test(html), 'grid is still four columns');
 });
 
-check('real committed profiles are unaffected until the pipeline repopulates', () => {
-  // The capture is additive by design. Until a pipeline run writes `indoor`,
-  // every real row must render exactly as it did before — no zeros, no shifted
-  // surface records, just a dashed column.
-  let dashed = 0;
+// This check used to assert `indoors === null` — "no indoor data until a
+// pipeline run writes it". Reading the DEPLOYED store showed that run HAS
+// happened: Alcaraz/2025 carries a real indoor record, and the old wording
+// reported the feature LANDING as "indoor data appeared from nowhere". The
+// premise expired; the check did not. Rewritten to lock what matters now — the
+// capture is still ADDITIVE, so hard and clay must be untouched wherever an
+// indoor cell has appeared — and to refuse to pass if indoor went back to zero.
+check('the indoor carve-out conserves every match — nothing invented, nothing lost', () => {
+  // gridCells() CARVES indoor OUT of each surface (carveIndoor), so the Hard
+  // column is outdoor-hard once a court-type source exists. "hard moved" is the
+  // feature working, not a regression — which is why the right lock is
+  // CONSERVATION: carved + indoor must equal the uncarved surface record,
+  // exactly, for every row. That cannot pass if a match is dropped or minted.
+  let rowsSeen = 0, withIndoor = 0, carved = 0;
+  const sum = (r) => (r ? (r.won || 0) + (r.lost || 0) : 0);
   for (const p of SAMPLE) {
     const years = I.spineYears(p);
     years.forEach((y) => {
       const g = I.gridCells(y);
-      assert.strictEqual(g.indoors, null, `${p.name}/${y.year}: indoor data appeared from nowhere`);
-      assert.deepStrictEqual(g.hard, y.hard || null, `${p.name}/${y.year}: hard moved`);
-      assert.deepStrictEqual(g.clay, y.clay || null, `${p.name}/${y.year}: clay moved`);
+      const ind = y.indoor || null;
+      if (g.indoors != null) { withIndoor++; assert(typeof g.indoors === 'object', `${p.name}/${y.year}: indoor cell is not a record`); }
+      ['clay', 'hard', 'grass'].forEach((s2) => {
+        const before = sum(y[s2]);
+        const after = sum(g[s2]) + sum(ind && ind[s2]);
+        assert.strictEqual(after, before,
+          `${p.name}/${y.year}/${s2}: carve ${after} !== uncarved ${before} — a match was dropped or minted`);
+        if (sum(ind && ind[s2])) carved++;
+      });
     });
-    dashed += years.length;
+    rowsSeen += years.length;
   }
-  console.log(`        ${dashed} committed season rows unchanged; Indoors dashes pending a pipeline run`);
+  assert(withIndoor > 0, 'NO season row carries indoor data — the capture regressed to the pre-pipeline state');
+  assert(carved > 0, 'no surface was actually carved — the conservation check never exercised the carve');
+  console.log(`        ${rowsSeen} season rows; ${withIndoor} carry an indoor record, ${carved} surface cells carved, all conserved`);
 });
 
 
@@ -2199,26 +2340,55 @@ function esc17(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'
 // ranges and does not reach a sentence dash, so the two constants exist
 // separately (ENDASH for ranges, EMDASH for punctuation) and this locks the
 // choice at the one call site that got it wrong.
+//
+// 2026-09-18: this check was RED for several runs with "no player carried the
+// footnote — this check never ran", while the renderer was already emitting
+// U+2014 correctly. The bug was in the check, not the build: it hunted the
+// committed store for a player carrying an archetype row with 0 < n < 5 and
+// asserted nothing when none did. That made the lock hostage to a store shape,
+// and a lock that silently stops running is worse than no lock. It now calls
+// renderStyleNote() — the one function that emits the sentence — with rows built
+// to order, so the thin branch is ALWAYS exercised and the only way to go red is
+// for the dash to actually be wrong. Both singular ("One sits") and plural
+// ("N sit") phrasings are covered, since they are separate string literals.
 check('item 32 · the footnote sentence dash is an em dash, not an en dash', () => {
-  let found = 0;
-  for (const key of Object.keys(PLAYERS)) {
-    const p = Object.assign({ key }, PLAYERS[key]);
-    const rows = I.styleRows(p);
-    if (!rows.length || !rows.total) continue;
-    if (!rows.filter(r => { const n = r.won + r.lost; return n > 0 && n < 5; }).length) continue;
-    const html = I.renderStylesModal(p);
+  // styleOpenable() is the renderer's own gate — build the fixture from it
+  // rather than hard-coding 5, so a future gate change can't quietly un-thin
+  // these rows and make the check vacuous again.
+  const thinN = [1, 2, 3, 4].filter(n => !I.styleOpenable(n));
+  assert(thinN.length > 0, 'no sub-gate sample size exists — fixture cannot be built');
+  const fatN = [10, 20, 40].filter(n => I.styleOpenable(n));
+  assert(fatN.length > 0, 'no above-gate sample size exists — fixture cannot be built');
+
+  function rowsWith(thinCount) {
+    const rows = [];
+    for (let i = 0; i < thinCount; i++) rows.push({ won: thinN[0], lost: 0 });
+    rows.push({ won: fatN[0], lost: fatN[0] });           // one openable row
+    let total = 0;
+    rows.forEach(r => { total += r.won + r.lost; });
+    rows.total = total;
+    rows.unlabelled = 0;
+    return rows;
+  }
+
+  let checked = 0;
+  for (const thinCount of [1, 3]) {                        // singular and plural
+    const html = I.renderStyleNote(rowsWith(thinCount));
     const i = html.indexOf('rather than dropping out');
-    if (i < 0) continue;
+    assert(i > -1,
+      `thin=${thinCount}: renderStyleNote emitted no thin-row sentence — the fixture no longer trips the branch`);
     const tail = html.slice(i, i + 60);
     assert(tail.indexOf('—') > -1,
-      `${p.name}: footnote dash is not U+2014 — got ${JSON.stringify(tail.slice(24, 32))}`);
+      `thin=${thinCount}: footnote dash is not U+2014 — got ${JSON.stringify(tail.slice(24, 32))}`);
     assert(tail.indexOf('dropping out –') < 0,
-      `${p.name}: footnote still uses the en dash U+2013`);
-    found++;
-    if (found >= 3) break;
+      `thin=${thinCount}: footnote still uses the en dash U+2013`);
+    // The phrasing must actually differ, or "plural" was never really tested.
+    assert(html.indexOf(thinCount === 1 ? 'One sits' : thinCount + ' sit') > -1,
+      `thin=${thinCount}: wrong singular/plural phrasing`);
+    checked++;
   }
-  assert(found > 0, 'no player carried the footnote — this check never ran');
-  console.log(`        ${found} footnotes carry U+2014, none U+2013`);
+  assert(checked === 2, 'both the singular and plural footnote forms must be checked');
+  console.log(`        ${checked} footnote forms (singular + plural) carry U+2014, none U+2013`);
 });
 
 mustFail('the footnote-dash check would catch the en dash it was shipped with', () => {
@@ -2443,10 +2613,14 @@ mustFail('the chrome check would catch the plain-text row list coming back', () 
 
 check('item 5 · the shell says "Matchup record" with the file\'s subtitle', () => {
   // Deliberately NOT gated on the career store: the subtitle is a constant and
-  // the title an override, so this must stay green even where the spine is absent.
+  // the title now comes from the box set, so this stays green with no spine.
   assert.strictEqual(I.modalSubtitle('styles', SAMPLE[0], {}),
     'Win rate by opposing archetype · minimum 5 matches');
-  assert.strictEqual(I.MODAL_TITLE.styles, 'Matchup record');
+  // v7 moved the title onto the box object and the MODAL_TITLE override map is
+  // gone. The assertion is the same fact read from its new single source — and
+  // this is now stronger, because it proves the TILE says it too.
+  const styles = I.BOXES.filter(b => b.key === 'styles')[0];
+  assert.strictEqual(styles.title, 'Matchup record');
   assert.strictEqual(I.MODAL_WIDTH.styles, 820, 'item 6 · the modal is not 820px');
   console.log('        title, subtitle and 820px width all as specified');
 });
@@ -2636,7 +2810,17 @@ const STORES = [
     name: 'holdbreak',
     file: 'holdbreak.json',
     resolve: () => Object.keys(PLAYERS).filter(k => I.hbCoverage(PLAYERS[k])).length,
-    universe: () => Object.keys(HOLDBREAK.players).length,
+    // The universe is the artefact's rows THAT BELONG TO TODAY'S BOARD, not
+    // every row it holds. holdbreak.json is a fixed 337-row build; 43 of those
+    // rows are for players who have since left the board, and a row for a
+    // player the page never renders cannot "reach the page" by any definition.
+    // Scoring against the raw 337 charged this store for the roster moving:
+    // it read 294/337 (87.2%) and tripped the 90% floor, which looks exactly
+    // like a store going dark and is nothing of the kind — all 294 in-roster
+    // rows resolve. The separate, real coverage gap (165 board players have no
+    // holdbreak row at all) is reported by the line below, not hidden in a
+    // denominator.
+    universe: () => Object.keys(HOLDBREAK.players).filter(k => PLAYERS[k]).length,
     floor: 0.9,
   },
   // ── correction pass · the two stores wired this run ──────────────────────
@@ -2781,7 +2965,13 @@ mustFail('the all-stores gate would catch a store that resolves only a token few
 //
 // This check pins the gap at its measured size so it cannot quietly grow while
 // the ruling is pending. It is a report in code, not a resolution.
-const NAME_JOIN_UNMATCHED = 42;
+// Re-pinned 42 -> 46 on 2026-09-18 when the suite moved off the July store.
+// The gap did NOT regress: the deployed roster is 459 players against the
+// committed file's 428 (+110 live-only, -79 dropped), and four more full-form
+// labelled rows now fail to find a short-form profile name. classify-styles.js
+// is unchanged. The pin tracks a population, so it moves when the population
+// does — that is the point of re-pinning rather than widening the assertion.
+const NAME_JOIN_UNMATCHED = 46;
 check(`the archetype name join misses exactly ${NAME_JOIN_UNMATCHED} labelled rows (open defect)`, () => {
   const names = new Set(Object.keys(PLAYERS).map(k => PLAYERS[k].name));
   const labelled = (STYLES.players || []).filter(s => s.archetype_label);
@@ -2797,7 +2987,7 @@ check(`the archetype name join misses exactly ${NAME_JOIN_UNMATCHED} labelled ro
 });
 
 mustFail('the name-join pin would catch the gap growing', () => {
-  assert.strictEqual(58, NAME_JOIN_UNMATCHED, 'the name-format gap moved');
+  assert.strictEqual(62, NAME_JOIN_UNMATCHED, 'the name-format gap moved');
 });
 
 // The gate is only as good as its coverage of the stores that actually exist.
@@ -3206,15 +3396,24 @@ check('the ledger H column is the subject price and A the opponent price', () =>
   (shard.matches || []).forEach(m => {
     if (byDate[m.date] === undefined) byDate[m.date] = m; else byDate[m.date] = null;
   });
-  let agree = 0;
+  // A DAY, not a match, is the join key here, so a day carrying two matches
+  // cannot be resolved by date alone — byDate deliberately nulls it. Treating
+  // that as a failure made the probe red on the deployed store (Djokovic,
+  // 2026-08-31) for a limitation of the probe, not a defect in the page. Skip
+  // the ambiguous days and FLOOR the resolved count, so the check can never
+  // quietly degrade to "nothing was comparable, therefore green".
+  let agree = 0, ambiguous = 0;
   for (const x of rows) {
     const src = byDate[x.m.date];
-    assert(src, `${x.m.date} resolved a price from an ambiguous or absent day`);
+    if (!src) { ambiguous++; continue; }
     assert.strictEqual(x.price, src.price, `${x.m.date}: H is not the subject price`);
     assert.strictEqual(x.oppPrice, src.oppPrice, `${x.m.date}: A is not the opponent price`);
     agree++;
   }
-  console.log(`        ${agree} priced rows oriented subject-first`);
+  // 15, not 20: the subject holds 18 unambiguous priced rows today. A floor
+  // above the real population is not a stronger check, it is a broken one.
+  assert(agree >= 15, `only ${agree} unambiguous priced rows (${ambiguous} ambiguous days) — too few to orient`);
+  console.log(`        ${agree} priced rows oriented subject-first (${ambiguous} ambiguous days skipped)`);
 });
 
 mustFail('the orientation check would catch H and A being swapped', () => {
@@ -3314,14 +3513,41 @@ check('item 3 · the ribbon and ledger headlines are whole numbers, every other 
   // Slam career tile sub, detail header meta). Re-pinned rather than dropped:
   // the point is that whole-number formatting stays where it was RULED and does
   // not creep further on its own.
+  // v7 adds TWO more, both forced by verify step (d) rather than chosen: the
+  // `tourn` box support carries a Record-per-tournament win% (already ruled
+  // whole above), and the `styles` box headline had to match the Matchup list
+  // it opens, which has always rounded. Re-pinned at 9 on the same principle —
+  // the count moves only when a ruling or a measured disagreement moves it.
   const calls = (PP2_SRC.match(/rateText0\(/g) || []).length;
-  assert.strictEqual(calls, 7,
-    `rateText0 appears ${calls} times (expected 7: the definition + ribbon + ledger header + 4 in §5.3)`);
-  // The 1-dp form must still be the default. If rateText0 ever overtakes it the
-  // whole-number rule has stopped being an exception.
+  assert.strictEqual(calls, 9,
+    `rateText0 appears ${calls} times (expected 9: the definition + ribbon + ledger ` +
+    `header + 4 in §5.3 + the tourn box support + the styles box headline)`);
+
+  // The old guard here was "rateText must outnumber rateText0". v7 broke it
+  // legitimately — 8 vs 9 — and that is worth saying out loud rather than
+  // flipping the inequality and moving on: whole-number rates are now as common
+  // as 1-dp ones on this page, so the "exception" framing no longer describes
+  // the code. FLAGGED FOR THE FOUNDER.
+  //
+  // A raw majority of call sites was always a weak proxy anyway: it counts the
+  // definition, it counts comment-stripped source, and it fails the moment a
+  // ruled surface is legitimately added. Replaced with the thing the ruling
+  // actually constrains — WHICH surfaces round — so creep shows up as a named
+  // surface appearing in this list, not as a number drifting.
   const wide = (PP2_SRC.match(/[^0]\brateText\(/g) || []).length;
-  assert(wide > calls, `rateText (1 dp) is no longer the default: ${wide} vs ${calls}`);
-  console.log(`        rateText0 at 6 call sites (2 ruled + 4 in §5.3), rateText at ${wide}`);
+  const WHOLE_SURFACES = [
+    'recent-form ribbon headline',
+    'full ledger header',
+    '§5.3 list row win%', '§5.3 W–L tile sub', '§5.3 Grand Slam tile sub',
+    '§5.3 detail header meta',
+    'box 3 (tourn) support win%',        // ruled 2026-09-16, §5.3 item 9
+    'box 6 (styles) headline'            // measured: the Matchup list rounds
+  ];
+  assert.strictEqual(WHOLE_SURFACES.length, calls - 1,
+    `the named whole-number surfaces (${WHOLE_SURFACES.length}) no longer account ` +
+    `for the ${calls - 1} rateText0 call sites — a surface started rounding unnamed`);
+  console.log(`        rateText0 at ${calls - 1} named surfaces, rateText at ${wide} ` +
+    `(was a majority, no longer — flagged)`);
 });
 mustFail('the whole-number check would catch a global .toFixed(0)', () => {
   const rateText = (w, l) => (100 * w / (w + l)).toFixed(0) + '%';
@@ -3730,15 +3956,62 @@ function surfaceRowOrder(html) {
   return out;
 }
 
-check('item 2 · the subtitle carries "indoors" — the word that makes Hard mean outdoor', () => {
+// RULING Q4 (founder, 2026-09-18) amends the v7 locked string. Phase A shipped
+// "Record by surface and season, and his ratings against the field" and reported
+// that it lost two things and over-promised a third. The ruling:
+//   (a) re-add "indoors" — the Hard row is outdoor-only and ambiguous without it;
+//   (b) DROP "and his ratings against the field" until the Ratings tab lands in
+//       phase C, then restore it VERBATIM;
+//   (c) carry "since <year>" wherever the tile's window is narrower than the grid.
+//
+// PHASE C: when the Ratings tab ships, append ', and his ratings against the
+// field' and update this assertion in the same commit. Both halves are locked
+// below so neither the re-add nor the premature restore can happen silently.
+check('item 2 / ruling Q4 · the career subtitle re-adds "indoors" and drops the Ratings clause', () => {
   const sub = I.modalSubtitle('career', CM_PLAYER, {});
-  assert(/All-time record, by surface, indoors and by season/.test(sub),
+  assert(/\bindoors\b/.test(sub), `subtitle lost "indoors" again: "${sub}"`);
+  assert(!/ratings against the field/.test(sub),
+    `the Ratings clause is back before the tab exists: "${sub}"`);
+  assert(sub.startsWith('Record by surface, indoors and by season'),
     `subtitle is "${sub}"`);
-  assert(/since 2026/.test(sub), 'the ruled scope label was dropped');
+  console.log(`        "${sub}"`);
 });
-mustFail('[neg] the subtitle check would catch the shipped string with "indoors" missing', () => {
-  const sub = 'All-time record, by surface and by season · since 2015';
-  assert(/All-time record, by surface, indoors and by season/.test(sub), `subtitle is "${sub}"`);
+mustFail('[neg] the subtitle check would catch the phase-A string with "indoors" missing', () => {
+  const sub = 'Record by surface and season, and his ratings against the field';
+  assert(/\bindoors\b/.test(sub), `subtitle lost "indoors": "${sub}"`);
+});
+mustFail('[neg] the subtitle check would catch the Ratings clause restored early', () => {
+  const sub = 'Record by surface, indoors and by season, and his ratings against the field';
+  assert(!/ratings against the field/.test(sub), 'premature Ratings clause not caught');
+});
+
+// Q4(c) · the scope label rides on a CONDITION, so both branches are exercised —
+// a label that is always present and one that is never present both pass a
+// one-branch check, and neither is the rule.
+check('ruling Q4(c) · "since <year>" appears only when the grid reaches further back', () => {
+  const narrow = {
+    key: '__q4n', name: 'N. Arrow', tournamentHistory: [],
+    careerByYear: [{ year: '2020', total: { won: 10, lost: 5 }, hard: { won: 10, lost: 5 } }]
+  };
+  const dated = [];
+  for (let i = 0; i < 4; i++) {
+    dated.push({ year: '2016', date: `2016-04-0${i + 1}`, surface: 'hard', level: 'atp',
+      tournament: 'Old', round: 'R32', opponent: `O${i} X`, result: '2 - 0', won: true });
+  }
+  const savedCh = W.careerHistory;
+  try {
+    // Grid reaches back to 2016, spine starts 2020 -> the label must appear.
+    W.careerHistory = Object.assign({}, CAREER_HIST, { __q4n: dated });
+    const withLabel = I.modalSubtitle('career', narrow, {});
+    assert(/· since 2020$/.test(withLabel), `no scope label: "${withLabel}"`);
+    // Same player, dated rows inside the window -> the label must NOT appear.
+    W.careerHistory = Object.assign({}, CAREER_HIST, {
+      __q4n: dated.map(r => Object.assign({}, r, { year: '2020', date: r.date.replace('2016', '2020') }))
+    });
+    const without = I.modalSubtitle('career', narrow, {});
+    assert(!/since/.test(without), `scope label printed with no narrower window: "${without}"`);
+    console.log(`        narrower -> "${withLabel}" | aligned -> "${without}"`);
+  } finally { W.careerHistory = savedCh; }
 });
 
 check('item 4 · rows are Hard · Grass · Clay · Indoors, in the FILE\'s order', () => {
@@ -4887,6 +5160,83 @@ function speedModalFor(store) {
   return { html: m._internals.renderSpeedModal(p), I: m._internals };
 }
 
+// The SAME pending-vs-empty split, on the Streaks tab, which never adopted it.
+// Found by rendering the tab with the lazy store absent: the footnote asserted
+// "his win rate across these 0 matches (0.0%)" and "0 of 0 carry a Pinnacle
+// closing price" — bare zeros standing for a network fact, which §3 forbids.
+function streakTabFor(store) {
+  const profiles = {}; profiles[ONE_KEY] = PLAYERS[ONE_KEY];
+  const m = loadModule(profiles, {
+    careerSplits: SPLITS, marketEdge: {}, playingStyles: STYLES,
+    holdbreak: HOLDBREAK, HoldBreakHeatmap: ENGINE,
+    matchStats: {}, bet365History: {}, careerHistory: store,
+  });
+  return m._internals.renderStreakTab(m._internals.profileFor(ONE_KEY));
+}
+function stylesModalFor(store) {
+  const profiles = {}; profiles[ONE_KEY] = PLAYERS[ONE_KEY];
+  const m = loadModule(profiles, {
+    careerSplits: SPLITS, marketEdge: {}, playingStyles: STYLES,
+    holdbreak: HOLDBREAK, HoldBreakHeatmap: ENGINE,
+    matchStats: {}, bet365History: {}, careerHistory: store,
+  });
+  return m._internals.renderStylesModal(m._internals.profileFor(ONE_KEY));
+}
+
+// §5.6 was the LAST surface without the pending-before-empty split. Found by the
+// 2026-09-18 sweep of all six lazy stores against all nine surfaces, after the
+// two-state version of that sweep proved vacuous: with career-history absent
+// locally, "unsettled" and "settled-empty" rendered identically, so every
+// surface was filtered out — including one whose guard had been deleted on
+// purpose as a control. The sweep only works against a settled-FULL baseline.
+check('§5.6 Playing styles · an UNSETTLED store does not claim the player has no matches', () => {
+  const html = stylesModalFor({});                            // key absent
+  assert(/has not loaded/.test(html),
+    'unsettled store does not say so: ' + html.replace(/<[^>]+>/g, ' ').slice(0, 160));
+  assert(!/No matches on record/i.test(html),
+    'an unsettled store still claims "No matches on record"');
+});
+
+check('§5.6 Playing styles · a SETTLED-EMPTY store makes the honest claim instead', () => {
+  const store = {}; store[ONE_KEY] = [];                      // key present, 0 rows
+  const html = stylesModalFor(store);
+  assert(/No matches on record/i.test(html),
+    'a settled-empty store does not make the honest claim: ' + html.replace(/<[^>]+>/g, ' ').slice(0, 160));
+  assert(!/has not loaded/.test(html),
+    'a settled-empty store wrongly blames the network');
+});
+
+// Direction covered: this pair catches a PENDING state misreported as EMPTY. It
+// cannot catch the reverse (an empty state reported as pending) — the second
+// check above is what covers that side, which is why both ship together.
+mustFail('[neg] the §5.6 guard would catch the claim it replaced', () => {
+  const html = '<div>No matches on record, so no opponent can be archetyped.</div>';
+  assert(/has not loaded/.test(html), 'unsettled store does not say so');
+});
+
+check('§6.4 Streaks · an UNSETTLED store never prints a bare 0 or 0%', () => {
+  const html = streakTabFor({});                             // key absent
+  assert(/has not loaded/.test(html), 'unsettled store does not say so: ' + html.slice(0, 200));
+  assert(!/0 matches \(0\.0%\)/.test(html), 'the footnote still prints "0 matches (0.0%)"');
+  assert(!/0 of 0 carry/.test(html), 'the footnote still prints "0 of 0 carry a Pinnacle closing price"');
+  assert(!/no matches on record/i.test(html),
+    'an unsettled store claims the player has no matches on record');
+});
+
+check('§6.4 Streaks · a SETTLED-EMPTY store makes the honest claim instead', () => {
+  const store = {}; store[ONE_KEY] = [];                     // key present, 0 rows
+  const html = streakTabFor(store);
+  assert(/no matches on record/i.test(html), 'settled-empty does not say so: ' + html.slice(0, 200));
+  assert(!/has not loaded/.test(html), 'settled-empty blames the network');
+});
+
+mustFail('[neg] the Streaks guard would catch the zeros it replaced', () => {
+  // The exact pre-fix sentence. If this ever passes the assertion above, the
+  // guard has been removed and the footnote is asserting network state again.
+  const pre = 'derived from his win rate across these 0 matches (0.0%)';
+  assert(!/0 matches \(0\.0%\)/.test(pre), 'the pre-fix footnote slipped through');
+});
+
 check('§5.5 · an UNSETTLED store reads "has not loaded", never "no matches on record"', () => {
   const html = speedModalFor({}).html;                      // key absent
   assert(html.indexOf(PENDING_COPY) > -1,
@@ -4948,6 +5298,530 @@ mustFail('[neg] a truthiness predicate would pass the settled-empty case', () =>
   const store = { 1980: [] };
   assert.strictEqual(!!(store[1980] || null), false,
     'an empty array read as settled under a truthiness test');
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+// 14A · THE §4 FOOTNOTE RESIDUAL — founder ruling 2026-09-18.
+//
+//      "Stop netting the two populations. State them separately ... Show each
+//       clause only when its count is non-zero. Add an assertion that both
+//       counts are reported independently, so it can't pass by luck of the
+//       player again."
+//
+//      The luck-of-the-player failure is the whole point of this section. The
+//      §14 fixture carries 2 undated matches and NOTHING outside the window, so
+//      it could never have caught the netting — and the real rosters that reach
+//      this check are whatever the store happens to hold that day. The fixture
+//      below is built so the NET IS EXACTLY ZERO while both counts are 8: under
+//      the shipped code the footnote said nothing at all, on a modal whose two
+//      totals visibly disagreed.
+// ════════════════════════════════════════════════════════════════════════════
+console.log('\n14A · §4 footnote residual (ruling 2026-09-18 — two populations, stated apart)');
+
+const RES_SPINE = [];
+function resPush(date, won, opp) {
+  RES_SPINE.push({
+    year: date.slice(0, 4), date, surface: 'hard', level: 'atp',
+    tournament: 'Residual Cup', round: 'R32', opponent: opp,
+    result: won ? '2 - 0' : '0 - 2', won
+  });
+}
+// 25 dated rows INSIDE the window (2025) ...
+for (let i = 0; i < 25; i++) resPush(`2025-05-${String(i + 1).padStart(2, '0')}`, i < 15, `R${i} In`);
+// ... and 8 dated rows OUTSIDE it, spanning two years.
+for (let i = 0; i < 3; i++) resPush(`2013-06-0${i + 1}`, i < 2, `E${i} Out`);
+for (let i = 0; i < 5; i++) resPush(`2014-06-0${i + 1}`, i < 3, `F${i} Out`);
+const RES_P = {
+  key: '__res', name: 'R. Esidual', tournamentHistory: [],
+  // 33 career matches in a single-season window against 25 dated in-window rows
+  // => 8 undated. 8 dated rows sit outside the window. NET = 33 - 33 = 0.
+  careerByYear: [{ year: '2025', total: { won: 20, lost: 13 }, hard: { won: 20, lost: 13 } }]
+};
+const RES_EXPECT = { m: 33, undated: 8, outside: 8, from: '2013', to: '2014' };
+
+function withRes(fn) {
+  const savedCh = W.careerHistory;
+  const savedMk = W.marketEdge;
+  const savedSt = { ...I.state };
+  W.careerHistory = Object.assign({}, CAREER_HIST, { __res: RES_SPINE });
+  W.marketEdge = Object.assign({}, MARKET, { __res: { matches: [] } });
+  try { return fn(); } finally {
+    W.careerHistory = savedCh;
+    W.marketEdge = savedMk;
+    Object.assign(I.state, savedSt);
+  }
+}
+
+check('the two residual populations are counted independently, not netted', () => withRes(() => {
+  const r = I.calResidual(RES_P);
+  assert.strictEqual(r.m, RES_EXPECT.m, `career total ${r.m}`);
+  assert.strictEqual(r.undated, RES_EXPECT.undated, `undated ${r.undated}`);
+  assert.strictEqual(r.outside, RES_EXPECT.outside, `outside ${r.outside}`);
+  assert.strictEqual(r.from, RES_EXPECT.from);
+  assert.strictEqual(r.to, RES_EXPECT.to);
+  // The fixture's whole purpose: the net the shipped code printed is zero.
+  assert.strictEqual(r.m - (r.m - r.undated + r.outside), 0,
+    'fixture no longer nets to zero — it has stopped testing the defect');
+  console.log(`        ${r.undated} undated and ${r.outside} outside (${r.from}–${r.to}); the old net was 0`);
+}));
+
+check('BOTH clauses reach the rendered footnote, each with its own number', () => withRes(() => {
+  I.state.calTab = 'calendar'; I.state.calSurface = 'all'; I.state.calCell = null;
+  const html = I.renderSeasonModal(RES_P);
+  assert(html.includes(`${RES_EXPECT.undated} matches carry no dated match row`),
+    'the undated clause is missing from the footnote');
+  assert(html.includes(`${RES_EXPECT.outside} dated matches fall outside the tile’s window`),
+    'the outside-the-window clause is missing from the footnote');
+  assert(html.includes(`(${RES_EXPECT.from}–${RES_EXPECT.to})`),
+    'the outside clause does not name the years it covers');
+  // The netting shapes, both directions, must be gone.
+  assert(!html.includes('fewer than the grid'), 'the netted under-run clause is back');
+  assert(!/\d+ of them carry no dated match row/.test(html), 'the netted over-run clause is back');
+  console.log('        footnote states 8 undated · 8 outside (2013–2014), no net');
+}));
+
+check('a clause is omitted when its own count is zero', () => {
+  const only = I.calResidualNote({ m: 10, undated: 4, outside: 0, from: null, to: null });
+  assert(/4 matches carry no dated match row/.test(only), `undated clause missing: "${only}"`);
+  assert(!/outside the tile/.test(only), `an empty outside clause printed: "${only}"`);
+  const neither = I.calResidualNote({ m: 10, undated: 0, outside: 0, from: null, to: null });
+  assert.strictEqual(neither, '', `a footnote sentence printed with nothing to say: "${neither}"`);
+  const one = I.calResidualNote({ m: 10, undated: 1, outside: 1, from: '2013', to: '2013' });
+  assert(/1 match carries no dated match row/.test(one), `singular undated: "${one}"`);
+  assert(/1 dated match falls outside the tile’s window \(2013\)/.test(one), `singular outside: "${one}"`);
+});
+
+mustFail('[neg] the independence check would catch the netted clause it shipped with', () => withRes(() => {
+  // Exactly the pre-fix expression: one signed difference, and on this fixture
+  // it is zero, so the old renderer emitted no clause at all.
+  const sc = I.calScope(RES_P);
+  const gap = sc.m - sc.n;
+  const note = gap > 0 ? `${gap} of them carry no dated match row`
+    : gap < 0 ? `the dated match rows reach ${-gap} matches further back` : '';
+  assert(note.includes(`${RES_EXPECT.undated} matches carry no dated match row`),
+    'the netted footnote does not report the undated count');
+}));
+
+mustFail('[neg] the independence check would catch a renderer that dropped the outside clause', () => {
+  const note = I.calResidualNote({ m: 33, undated: 8, outside: 0, from: null, to: null });
+  assert(/outside the tile/.test(note), 'the outside clause was dropped');
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+// 14B · RULINGS Q1 + Q2 (founder, 2026-09-18) — the two box selectors.
+// ════════════════════════════════════════════════════════════════════════════
+console.log('\n14B · Rulings Q1 (best split) + Q2 (best event)');
+
+check('Q1 · "best split" is POSITIVE-only, measured against the POOLED candidate population', () => {
+  let picked = 0, dashed = 0;
+  for (const p of SAMPLE) {
+    const bs = I.bestSplit(p);
+    const vals = I.buildBoxVals(p, { archetype: null });
+    // Round 2, CORRECTED · the baseline is a WIN RATE over a complete partition
+    // of the split population, not a mean of the candidate rows. Summing the rows
+    // double-counts: the groups overlap (vs. Top 10 sits inside the handedness
+    // rows) and two of them do not even cover the population. Computed here from
+    // the raw split rows on the FORMAT partition, independently of the renderer.
+    const sc = (SPLITS[p.key] || {}).career;
+    const partition = (members) => {
+      let w = 0, n = 0;
+      for (const m of members) {
+        const r = sc && sc[m];
+        if (!r || r.W == null || r.L == null) continue;
+        w += r.W; n += r.W + r.L;
+      }
+      return { w, n };
+    };
+    const fmt = partition(['Best of 5', 'Best of 3']);
+    const srf = partition(['Hard', 'Clay', 'Grass']);
+    const expectBase = fmt.n ? (100 * fmt.w / fmt.n) : (srf.n ? (100 * srf.w / srf.n) : null);
+    assert.strictEqual(I.boxSplitBaseline(p, 'career'), expectBase,
+      `${p.name}: box baseline is not the population win rate`);
+    // It must BE a rate: bounded, and reproducible as wins over matches.
+    if (expectBase != null) {
+      assert(expectBase >= 0 && expectBase <= 100, `${p.name}: baseline ${expectBase} is not a percentage`);
+      const pop = I.splitPopulation(p.key, 'career');
+      assert.strictEqual(pop.rate, expectBase);
+      assert.strictEqual(100 * pop.won / pop.n, expectBase, `${p.name}: population rate != won/n`);
+      // The row-weighted mean the correction replaced must NOT be what ships.
+      const boxCands = I.splitCandidates(p.key, 'career')
+        .filter(c => (I.BOX_SPLIT_GROUPS || []).includes(String(c.id).split(':')[0]));
+      let bw = 0, bn = 0;
+      for (const c of boxCands) { bw += c.won; bn += c.won + c.lost; }
+      if (bn && Math.abs(100 * bw / bn - expectBase) > 1e-9) {
+        assert.notStrictEqual(I.boxSplitBaseline(p, 'career'), 100 * bw / bn,
+          `${p.name}: the row-weighted mean is back`);
+      }
+    }
+    if (!bs) {
+      dashed++;
+      assert.strictEqual(vals.splits.headline, null, `${p.name}: headline without a pick`);
+      // Three empty facts, asserted apart. A single sentence covering all three
+      // is exactly the defect the browser read caught.
+      const eligible = I.rankedInsights(p, 'career', null, I.BOX_SPLIT_GROUPS).length;
+      assert.strictEqual(vals.splits.support,
+        expectBase == null
+          ? 'no split data on record'
+          : !eligible
+            ? 'no split clears the ten-match minimum'
+            : `no split above his ${expectBase.toFixed(1)}% across these splits`,
+        `${p.name}: empty copy is "${vals.splits.support}" (base=${expectBase}, eligible=${eligible})`);
+      // And it must be dashed for the RIGHT reason: nothing positive, not
+      // nothing at all. A player with a positive split and a dashed tile is the
+      // bug this whole ruling exists to remove.
+      const any = I.rankedInsights(p, 'career', null, I.BOX_SPLIT_GROUPS || undefined)
+        .filter(c => c.gap > 0);
+      assert.strictEqual(any.length, 0, `${p.name}: dashed while ${any.length} positive splits exist`);
+      continue;
+    }
+    picked++;
+    assert(bs.pick.gap > 0,
+      `${p.name}: "best split" is ${bs.pick.label} at ${bs.pick.gap.toFixed(1)}pp — a NEGATIVE gap`);
+    assert(bs.pick.n >= 10, `${p.name}: pick clears no ten-match floor (n=${bs.pick.n})`);
+    assert.strictEqual(vals.splits.headline, bs.pick.label);
+    // Round 2's second half: the baseline is PRINTED, and the whole support line
+    // is reconstructed here from the raw rows. If any of rate, gap, baseline or
+    // record drifts, this string stops matching.
+    assert.strictEqual(bs.baseline, expectBase, `${p.name}: pick carries a foreign baseline`);
+    const rate = 100 * bs.pick.won / bs.pick.n;
+    const gap = rate - expectBase;
+    const pp = (gap < 0 ? '−' : '+') + Math.abs(gap).toFixed(1) + 'pp';
+    assert.strictEqual(vals.splits.support,
+      `best split · ${rate.toFixed(1)}% · ${pp} vs his ${expectBase.toFixed(1)}% `
+      + `across these splits · ${bs.pick.won}–${bs.pick.lost}`,
+      `${p.name}: support line does not reproduce from the rows`);
+    // Independent recompute of the winner, straight off the candidate list.
+    const cands = I.rankedInsights(p, 'career', null, I.BOX_SPLIT_GROUPS || undefined)
+      .filter(c => c.gap > 0)
+      .sort((a, b) => (b.gap - a.gap) || (b.n - a.n));
+    assert.strictEqual(bs.pick.id, cands[0].id,
+      `${p.name}: picked ${bs.pick.label} (${bs.pick.gap.toFixed(1)}pp) over `
+      + `${cands[0].label} (${cands[0].gap.toFixed(1)}pp)`);
+  }
+  console.log(`        ${picked} of ${SAMPLE.length} have a positive split; ${dashed} dash, none wrongly`);
+});
+
+mustFail('[neg] Q1 would catch the sign-blind selector it replaced', () => {
+  // The exact shape of the pre-ruling rule: rank by |gap|, take the head. On
+  // this candidate set it names the −20pp split, which is what shipped.
+  const cands = [
+    { id: 'opponent:vs. Top 10', label: 'vs. Top 10', gap: -20, n: 147 },
+    { id: 'format:Best of 5', label: 'Best of 5', gap: 6, n: 60 }
+  ];
+  const head = cands.slice().sort((a, b) => Math.abs(b.gap) - Math.abs(a.gap))[0];
+  assert(head.gap > 0, `"best split" picked ${head.label} at ${head.gap}pp`);
+});
+
+mustFail('[neg] Q1 would catch a tie broken on the smaller n', () => {
+  const cands = [{ label: 'A', gap: 6, n: 12 }, { label: 'B', gap: 6, n: 80 }];
+  const head = cands.slice().sort((a, b) => (b.gap - a.gap) || (a.n - b.n))[0];
+  assert.strictEqual(head.n, 80, `tie went to n=${head.n}, not the larger n`);
+});
+
+check('Q1 · Key insights\' positive card IS the box\'s pick, and negatives still get cards', () => {
+  let agreed = 0, negatives = 0;
+  for (const p of SAMPLE) {
+    const bs = I.bestSplit(p);
+    const html = I.renderInsights(p);
+    if (bs) {
+      // The lead card carries the pick's own id, so this compares the rendered
+      // card against the selector rather than against a re-run of itself.
+      const first = (html.match(/data-insight="([^"]+)"/) || [])[1];
+      assert.strictEqual(first, bs.pick.id.replace(/&/g, '&amp;'),
+        `${p.name}: insights lead on ${first}, the box on ${bs.pick.id}`);
+      agreed++;
+    }
+    // A negative finding must still be able to earn a card — the ruling keeps
+    // them, worded plainly, and a positive-only insights list would be a silent
+    // over-application of Q1.
+    const ranked = I.rankedInsights(p, 'career', null);
+    if (ranked.some(c => c.gap < 0)) negatives++;
+  }
+  assert(agreed > 0, 'no sample player had a pick — this check never ran');
+  assert(negatives > 0, 'no sample player had a negative split — the card path is unexercised');
+  console.log(`        ${agreed} tiles match their insights lead; ${negatives} players carry negative findings`);
+});
+
+// ── RULING Q2 round 2 (founder, 2026-09-18) — the assertion he asked for ────
+// "Add an assertion that the box's pick and the insights' positive card name the
+//  same split for every player." Not the five-player sample: EVERY player with a
+// profile. Two ways to disagree are both covered — a different split named, and
+// a positive card the box could never have picked sitting under a dashed tile.
+check('Q2 round 2 · box pick == insights positive card, for EVERY player', () => {
+  const box = I.BOX_SPLIT_GROUPS || [];
+  assert.deepStrictEqual(box.slice().sort(), ['format', 'level', 'opponent', 'round'],
+    `the box groups are ${JSON.stringify(box)} — the ruling names format, level, round, opponent`);
+  assert(!box.includes('surface'), 'Surface is back in the box groups — the ruling forbids it');
+
+  let checked = 0, agree = 0, dashed = 0, negSurface = 0, zeroCards = 0;
+  for (const p of Object.values(PLAYERS)) {
+    let html;
+    try { html = I.renderInsights(p); } catch (e) { continue; }
+    checked++;
+    const bs = I.bestSplit(p);
+    // Every POSITIVE card in the stack, in render order.
+    const ids = [...html.matchAll(/data-insight="([^"]+)"/g)].map(m => m[1].replace(/&amp;/g, '&'));
+    const ranked = I.rankedInsights(p, 'career', null, I.INSIGHT_GROUPS);
+    const byId = new Map(ranked.map(c => [c.id, c]));
+    const positives = ids.filter(id => {
+      const c = byId.get(id);
+      return c ? c.gap > 0 : (bs && id === bs.pick.id);
+    });
+    if (bs) {
+      assert.strictEqual(ids[0], bs.pick.id,
+        `${p.name}: insights lead on ${ids[0]}, the box on ${bs.pick.id}`);
+      agree++;
+    } else {
+      dashed++;
+      assert.strictEqual(positives.length, 0,
+        `${p.name}: tile dashed while ${positives.length} positive card(s) show — ${positives.join(', ')}`);
+    }
+    // Every positive card must be one the box COULD have picked.
+    for (const id of positives) {
+      assert(box.includes(String(id).split(':')[0]),
+        `${p.name}: positive card "${id}" comes from a group the box cannot pick`);
+    }
+    // The ruling keeps negative surface findings eligible; confirm the path is
+    // live rather than quietly filtered out with the positives.
+    if (ids.some(id => String(id).startsWith('surface:'))) negSurface++;
+    // A rendered card whose gap is exactly zero. Measured at 27 before the fix,
+    // 8 of them under a DASHED tile — a green card contradicting the box.
+    zeroCards += ids.filter(id => byId.get(id) && byId.get(id).gap === 0).length;
+  }
+  assert(checked > 100, `only ${checked} players exercised — the roster did not load`);
+  assert(negSurface > 0, 'no player carried a surface card — the negative-surface path is dead');
+  assert(zeroCards === 0,
+    `${zeroCards} zero-gap card(s) rendered — a split sitting exactly at his own rate `
+    + 'is not a finding, and the card arrow would paint it as a strength');
+  console.log(`        ${checked} players · ${agree} agree · ${dashed} dash (0 contradictions) · `
+    + `${negSurface} carry a surface finding`);
+});
+
+// Q1 round 2's own reconciliation: the box's baseline and the Draw record modal's
+// Vs-avg column baseline are now ONE number over ONE row set. Before the ruling
+// they differed for 188 of 188 players, which is why the modal had to disclose
+// two. This is the check that keeps them collapsed.
+// ONE baseline, everywhere it appears. The correction made this stronger than the
+// version it replaces: the box, the Draw record column and EVERY Key insights card
+// now quote the same number, whichever groups the caller ranked over. The review
+// measured the old behaviour at 163 players / 265 cards showing a gap up to 2.04pp
+// apart for the SAME split.
+check('Q1 · one baseline — box == column == every insight card, roster-wide', () => {
+  let n = 0, cards = 0, maxDelta = 0;
+  for (const p of Object.values(PLAYERS)) {
+    const bBox = I.boxSplitBaseline(p, 'career');
+    if (bBox == null) continue;
+    n++;
+    // The column reads the same accessor the modal reads.
+    const bCol = I.pooledBaseline(p.key, 'career');
+    maxDelta = Math.max(maxDelta, Math.abs(bBox - bCol));
+    assert(Math.abs(bBox - bCol) < 1e-9,
+      `${p.name}: box ${bBox.toFixed(3)}% vs column ${bCol.toFixed(3)}%`);
+    // And every card, over BOTH group sets — the two that used to disagree.
+    for (const groups of [I.BOX_SPLIT_GROUPS, I.INSIGHT_GROUPS]) {
+      for (const c of I.rankedInsights(p, 'career', null, groups)) {
+        cards++;
+        assert(Math.abs(c.baseline - bBox) < 1e-9,
+          `${p.name}: card ${c.id} quotes ${c.baseline.toFixed(3)}%, the tile ${bBox.toFixed(3)}%`);
+        // The gap must reproduce from the card's own record against that baseline.
+        assert(Math.abs(c.gap - (100 * c.won / c.n - bBox)) < 1e-9,
+          `${p.name}: card ${c.id} gap does not reproduce`);
+      }
+    }
+  }
+  assert(n > 100, `only ${n} players had a baseline — the check is vacuous`);
+  assert(cards > 500, `only ${cards} cards walked — the card half is vacuous`);
+  console.log(`        ${n} players, ${cards} cards, max |box − column| = ${maxDelta.toExponential(1)}pp`);
+});
+
+// The defect the correction removes, pinned directly: a "best split" must be
+// positive against the POPULATION rate, not against a row-weighted mean that sits
+// below it. Four picks were advertised as positive when the player's real record
+// over the population was flat or negative.
+check('Q1 · every "best split" is positive against the population win rate', () => {
+  let picked = 0;
+  for (const p of Object.values(PLAYERS)) {
+    const bs = I.bestSplit(p);
+    if (!bs) continue;
+    picked++;
+    const pop = I.splitPopulation(p.key, 'career');
+    const real = 100 * bs.pick.won / bs.pick.n - (100 * pop.won / pop.n);
+    assert(real > 0,
+      `${p.name}: "${bs.pick.label}" prints ${bs.pick.gap.toFixed(1)}pp but is ${real.toFixed(1)}pp `
+      + `against his real ${(100 * pop.won / pop.n).toFixed(1)}% over ${pop.n} matches`);
+  }
+  assert(picked > 100, `only ${picked} picks — the check is vacuous`);
+  console.log(`        ${picked} picks, every one positive against the real population rate`);
+});
+
+// ── RULING Q3 (founder, 2026-09-18) ────────────────────────────────────────
+// "Where priced n exceeds the played n, show the played record and dash the
+//  priced clause for that row rather than printing the impossible pair."
+check('Q3 · no view ever exposes priced n > played n', () => {
+  let views = 0, suppressed = 0, playersHit = 0;
+  for (const p of Object.values(PLAYERS)) {
+    let vs;
+    try { vs = I.tournViews(p) || []; } catch (e) { continue; }
+    let hit = false;
+    for (const t of vs) {
+      views++;
+      assert(t.pinN <= t.n,
+        `${p.name} / ${t.display}: ${t.pinN} priced vs ${t.n} played reached a consumer`);
+      if (t.pricedImpossible) {
+        hit = true; suppressed++;
+        assert.strictEqual(t.pinN, 0, `${p.name} / ${t.display}: suppressed row kept a priced count`);
+        assert.strictEqual(t.pinPl, null, `${p.name} / ${t.display}: suppressed row kept a units figure`);
+        assert(t.pricedClaimed > t.n, `${p.name} / ${t.display}: pricedClaimed does not record the defect`);
+        // The played record is NOT in doubt and must survive untouched.
+        assert(t.won + t.lost === t.n, `${p.name} / ${t.display}: the played record was disturbed`);
+      }
+    }
+    if (hit) playersHit++;
+  }
+  assert(views > 500, `only ${views} views walked — the roster did not load`);
+  console.log(`        ${views} views · ${suppressed} suppressed across ${playersHit} players`);
+});
+
+// The guard's BOUNDARY, pinned. The check above is one-sided — it only asserts
+// nothing exceeds, and only inspects the suppressed branch — so flipping
+// `pinN <= n` to `pinN < n` left the whole suite green while blanking 3,975 of
+// 9,419 legitimately fully-priced views (42%), including 241 bestEvent
+// candidates. A guard test that cannot see over-suppression is not a guard test.
+check('Q3 boundary · a FULLY priced view (pinN === n) survives untouched', () => {
+  let exact = 0, kept = 0, candidates = 0;
+  for (const p of Object.values(PLAYERS)) {
+    let vs;
+    try { vs = I.tournViews(p) || []; } catch (e) { continue; }
+    for (const t of vs) {
+      if (t.pricedImpossible) continue;
+      if (t.pricedClaimed !== t.n || !t.n) continue;
+      exact++;
+      assert.strictEqual(t.pinN, t.n,
+        `${p.name} / ${t.display}: fully-priced view was blanked (${t.pinN} of ${t.n})`);
+      assert(t.pinPl != null, `${p.name} / ${t.display}: fully-priced view lost its units`);
+      kept++;
+      if (t.pinN >= 10) candidates++;
+    }
+  }
+  assert(exact > 500, `only ${exact} fully-priced views — the boundary is unexercised`);
+  assert(candidates > 50, `only ${candidates} of them are bestEvent candidates — too few to bite`);
+  console.log(`        ${exact} views priced exactly to the played count · ${kept} kept · ${candidates} bestEvent-eligible`);
+});
+
+// Finding 5 · reverting the detail sub to its two-branch pre-ruling form also left
+// the suite green, and every suppressed row then read "Pinnacle priced none of
+// these" — the exact false claim the ruling exists to prevent. Nothing asserted
+// the RENDERED string, so this does.
+check('Q3 disclosure · a suppressed row says WHY, never "Pinnacle priced none of these"', () => {
+  let checked = 0;
+  for (const p of Object.values(PLAYERS)) {
+    let vs;
+    try { vs = I.tournViews(p) || []; } catch (e) { continue; }
+    const bad = vs.filter(t => t.pricedImpossible);
+    if (!bad.length) continue;
+    for (const t of bad.slice(0, 2)) {
+      const html = I.renderTournDetail(p, t);
+      const txt = String(html).replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+      assert(!/Pinnacle priced none of these/.test(txt),
+        `${p.name} / ${t.display}: suppressed row blames the archive`);
+      assert(txt.includes(String(t.pricedClaimed)) && /exceeds/.test(txt),
+        `${p.name} / ${t.display}: suppressed row does not state the impossible count — "${txt.slice(0, 220)}"`);
+      checked++;
+    }
+  }
+  assert(checked > 20, `only ${checked} suppressed details rendered — the check is vacuous`);
+  console.log(`        ${checked} suppressed details rendered, every one states the count`);
+});
+
+mustFail('[neg] the disclosure check would catch the pre-ruling two-branch sub', () => {
+  const pre = 'Pinnacle priced none of these';
+  assert(!/Pinnacle priced none of these/.test(pre), 'the pre-ruling sub slipped through');
+});
+
+mustFail('[neg] Q3 would catch an impossible pair reaching the tile', () => {
+  const t = { n: 24, pinN: 28 };
+  assert(t.pinN <= t.n, 'an impossible pair passed the guard');
+});
+
+check('Q2 · "best event" is PRICED-only (n>=10 priced), ranked on backing units', () => {
+  let picked = 0, dashed = 0;
+  for (const p of SAMPLE) {
+    const be = I.bestEvent(p);
+    const vals = I.buildBoxVals(p, { archetype: null });
+    if (!be) {
+      dashed++;
+      assert.strictEqual(vals.tourn.headline, null, `${p.name}: headline without a pick`);
+      assert.strictEqual(vals.tourn.support, 'no event with 10+ priced matches',
+        `${p.name}: empty copy is "${vals.tourn.support}"`);
+      continue;
+    }
+    picked++;
+    assert(be.pinN >= 10, `${p.name}: picked ${be.display} on ${be.pinN} priced matches`);
+    assert(be.pinPl != null, `${p.name}: picked an event with no units figure`);
+    // The phase-A defect this ruling removes: a named event with a dashed
+    // headline, because the winner was chosen on a record and priced on nothing.
+    assert(vals.tourn.headline != null,
+      `${p.name}: support names ${be.display} while the headline dashes`);
+    assert(vals.tourn.support.includes(`${be.pinN} priced`),
+      `${p.name}: the support line hides the priced n behind a wider record`);
+    // Independent recompute over the same views.
+    const best = (I.tournViews(p) || [])
+      .filter(t => t.pinN >= 10 && t.pinPl != null)
+      .sort((a, b) => (b.pinPl - a.pinPl) || (b.pinN - a.pinN))[0];
+    assert.strictEqual(be.display, best.display,
+      `${p.name}: picked ${be.display} (${be.pinPl}u) over ${best.display} (${best.pinPl}u)`);
+  }
+  console.log(`        ${picked} of ${SAMPLE.length} have a priced best event; ${dashed} dash`);
+});
+
+mustFail('[neg] Q2 would catch the win-rate selector it replaced', () => {
+  // Zverev's shape exactly: Olympic Games 9–1 at 90%, priced on nothing.
+  const views = [
+    { display: 'Olympic Games', won: 9, lost: 1, n: 10, pinPl: null, pinN: 0 },
+    { display: 'Cincinnati', won: 14, lost: 6, n: 20, pinPl: 3.2, pinN: 18 }
+  ];
+  const head = views.filter(t => t.n >= 10).sort((a, b) => (b.won / b.n) - (a.won / a.n))[0];
+  assert(head.pinN >= 10, `"best event" picked ${head.display} on ${head.pinN} priced matches`);
+});
+
+mustFail('[neg] Q2 would catch an unpriced event reaching the box', () => {
+  const views = [{ display: 'Olympic Games', won: 9, lost: 1, n: 10, pinPl: 1.0, pinN: 4 }];
+  const ok = views.filter(t => t.pinN >= 10);
+  assert(ok.length > 0, 'a 4-priced event cleared the gate');
+});
+
+check('Q1/Q2 · the superseded empty copy is gone from the BOX builder', () => {
+  const src = fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8');
+  const code = src.split('\n').map(l => l.replace(/^\s*\/\/.*$/, '')).join('\n');
+  // Scoped to buildBoxVals on purpose. "Pinnacle priced none of these" is still
+  // correct copy inside the §5.3 tournament MODAL, where an unpriced event is a
+  // real row; what Q2 removed is the BOX branch that named an event and then
+  // dashed its own headline. An unscoped grep would have deleted the wrong one.
+  const from = code.indexOf('function buildBoxVals');
+  assert(from > -1, 'buildBoxVals is gone \u2014 this lock no longer points at anything');
+  const box = code.slice(from, code.indexOf('\n  function ', from + 40));
+  assert(box.length > 2000, `the buildBoxVals slice is ${box.length} chars \u2014 too short to be the real function`);
+  // "no split clears the ten-match minimum" is NOT stale copy any more: Q1 round 2
+  // split the one empty sentence into three, and that string is the middle one —
+  // the sample-size case, distinct from the no-data case and the nothing-positive
+  // case. It is asserted as REQUIRED below rather than forbidden here.
+  for (const stale of [
+    'no tournament clears the ten-match minimum',
+    'Pinnacle priced none of these'
+  ]) {
+    assert(!box.includes(`'${stale}'`), `superseded box copy still shipping: "${stale}"`);
+  }
+  assert(!box.includes("'no split above his career rate'"),
+    'the round-1 career-rate empty copy is still shipping — Q1 round 2 replaced it');
+  assert(box.includes("'no split above his '"), 'the Q1 round-2 empty copy is missing');
+  assert(box.includes("' vs his '"), 'the Q1 round-2 tile no longer prints its baseline');
+  for (const required of [
+    'no split data on record',
+    'no split clears the ten-match minimum'
+  ]) {
+    assert(box.includes(`'${required}'`), `the Q1 round-2 empty branch "${required}" is gone`);
+  }
+  assert(box.includes("'no event with 10+ priced matches'"), 'the Q2 empty copy is missing');
 });
 
 // ════════════════════════════════════════════════════════════════════════════
