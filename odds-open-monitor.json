@@ -417,13 +417,14 @@
     "id1200210074805930": {
       "alerted": true,
       "alertedAt": "2026-09-17T23:21:33Z",
-      "captureLagH": null,
+      "captureLagH": 0.24,
       "date": "2026-09-18",
+      "firstSeenAt": "2026-09-18T01:45:01Z",
       "hoursOutAtAlert": 12.81,
-      "openAt": null,
+      "openAt": "2026-09-18T01:30:40.952Z",
       "p1": "F. J. Planinsek",
       "p2": "O. Kimhi",
-      "postingLeadH": null,
+      "postingLeadH": 10.66,
       "startTime": "2026-09-18T12:10:00.000Z",
       "tour": "ATP ATP Davis Cup - World Group II"
     },
@@ -572,5 +573,5 @@
   },
   "schema": "odds-open-monitor/1",
   "thresholdHours": 24.0,
-  "updatedAt": "2026-09-18T01:30:01Z"
+  "updatedAt": "2026-09-18T01:45:01Z"
 }
