@@ -2,9 +2,14 @@
 'use strict';
 // TEN-206 — locks the founder's Q2 dashing ruling on the §8.1 match sheet.
 //
-// RULING (2026-09-18): "per match — read the field, dash on null. Per-event
-// mis-dashes the 146 mixed-match rows exactly as per-tier mis-dashes whole events.
-// Apply the same rule to Winners, UE and Net points."
+// RULING (2026-09-18), quoted in full — an earlier version of this comment dropped
+// the third sentence with no ellipsis, which read as though the ruling had two parts:
+//   "per match — read the field, dash on null. Per-event mis-dashes the 146
+//    mixed-match rows exactly as per-tier mis-dashes whole events. Add the whole-event
+//    note when an event is 0/n ('no match at this event carries winners'), so a total
+//    absence reads as a feed gap rather than a per-player one. Apply the same rule to
+//    Winners, UE and Net points."
+// The third sentence is implemented further down this file (the whole-event note).
 //
 // Two things must hold and they pull in opposite directions, which is why both are
 // asserted here against the REAL committed floor rather than a fixture:
@@ -131,7 +136,12 @@ check('MUTATION CONTROL: re-declaring a ruled field unheld is caught', () => {
   const e = floor[held];
   // The exact regression this file exists to prevent — the shape the code had before
   // the Q2 ruling. If sheetValue() stops honouring it, every check above is vacuous.
-  const broken = { label: 'Net points won', held: false, why: 'not an api-tennis field' };
+  // `field` MUST be present. Without it sheetValue() returns null through the field
+  // lookup whether or not the held:false branch exists, so the check passes with the
+  // guard deleted — measured: with-guard null / without-guard null, identical. With
+  // the field it reads 75 once the guard is gone, which is what makes this a control.
+  const broken = { label: 'Net points won', field: 'Points:Net points won', kind: 'pct',
+    held: false, why: 'not an api-tennis field' };
   assert.strictEqual(api.sheetValue(broken, e.matchStats.p1, e.matchStats.p2), null,
     'sheetValue ignores held:false — the guard above cannot detect a re-declared field');
   assert.notStrictEqual(api.sheetValue(row, e.matchStats.p1, e.matchStats.p2), null,

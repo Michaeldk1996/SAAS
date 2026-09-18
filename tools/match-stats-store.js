@@ -38,16 +38,30 @@
  *             real requests.
  *   freeze  — after the deploy has published. Minifies to the committed floor.
  *
- * NO DAY-GUARD, ON PURPOSE. profile-cache-store.js needs one because seed profiles
- * are rebuilt with a fresh builtAt every run, so its content differs on all ~144
- * runs a day and "commit if changed" would commit ~144 times. This store has no
- * such stamp: it is written by JSON.stringify over numeric-like keys (V8 orders
- * those ascending, deterministically), so a run that caches no new match reproduces
- * the floor byte-for-byte and git finds nothing to commit. The content is the guard,
- * and plain JSON makes that argument shorter than gzip did — there is no compressor
- * state or header left to reason about, only the bytes JSON.stringify emitted.
- * Measured cost of the resulting ~340 commits a year: 5.3 MB/yr, and unlike gzip
- * that figure does NOT depend on whether the day's edits were a pure append.
+ * TWO GUARDS, AND BYTE-IDENTITY IS ONLY THE FIRST. freeze() writes minified with no
+ * trailing newline, over numeric-like keys that V8 orders ascending and
+ * deterministically, so a run that caches no new match reproduces the floor
+ * byte-for-byte and git finds nothing to commit. Plain JSON makes that argument
+ * shorter than gzip did — no compressor state or header left to reason about.
+ *
+ * ⚠️ That argument bounds the IDLE case ONLY, and this file previously concluded from
+ * it that no day-guard was needed. That was wrong. The store changes on the ACTIVE
+ * runs, and the pipeline fires ~150 times a day — measured from the sibling
+ * commit-back bots, which land ~150 commits a day each. Re-measured at that cadence:
+ *
+ *     120 commits/day    plain   227 MB/yr     gz  6,207 MB/yr
+ *       1 commit /day    plain   5.7 MB/yr     gz      7.6 MB/yr
+ *
+ * 227 MB/yr is over the founder's ~150 MB/yr line, and his ruling says "commit it
+ * back DAILY". So the workflow's commit-back step carries a day-guard keyed on the
+ * floor's own git commit date — see pipeline.yml. The stamp is deliberately NOT a
+ * field inside the store: this file is keyed by eventKey, and a non-eventKey key
+ * would pollute every consumer that walks Object.keys(), including the census, all
+ * four guards below, and the page's own lookup.
+ *
+ * The plain-vs-gzip ordering is unchanged by any of this, and in fact widens: gzip
+ * cannot be delta-compressed past its first changed byte, so it pays a full fresh
+ * blob on every commit at any cadence.
  */
 
 const fs = require('fs');

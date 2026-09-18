@@ -173,6 +173,43 @@ check('freeze is byte-identical for identical content (this IS the day-guard)', 
   assert.ok(!first.equals(fs.readFileSync(path.join(root, FLOOR))), 'a genuine change produced identical bytes');
 });
 
+// D4 — the minification rule must bind the WRITER, not only the artifact. The repo-floor
+// check further down inspects the committed file, so mutating freeze() to pretty-print
+// (or to append a trailing newline) left the suite green and only went red one cycle
+// later, AFTER the bot had committed a ~15 MB pretty blob. This closes that window by
+// asserting what freeze() itself emits.
+check('freeze WRITES minified — no newline anywhere in its own output', () => {
+  const root = tmp();
+  writeFloor(root, { a: { matchStats: FULL } });
+  writePlain(root, { a: { matchStats: FULL }, b: { matchStats: SHALLOW } });
+  assert.strictEqual(freeze(root), 1);
+  const bytes = fs.readFileSync(path.join(root, FLOOR), 'utf8');
+  assert.strictEqual(bytes.indexOf('\n'), -1, 'freeze() emitted a newline — the floor would commit ~4x the bytes');
+  // control: the same bytes must still be the store, so this cannot pass on an empty write
+  assert.deepStrictEqual(Object.keys(JSON.parse(bytes)).sort(), ['a', 'b']);
+});
+
+// D5 — the per-side depth guard was only ever exercised through strictlyDeeper() /
+// notShallower() directly, never through freeze(). The existing "equal-sized but
+// SHALLOWER" fixture shrinks on BOTH sides, so it cannot tell a per-side comparison
+// from a summed one: swapping freeze()'s notShallower() for a summed depth() left the
+// suite green. This fixture is deeper on the SUM and empties a player, which only a
+// per-side comparison can reject.
+check('freeze REFUSES a store that is deeper on the SUM but empties a player (D5)', () => {
+  const root = tmp();
+  const even = { p1: { x: 1, y: 1, z: 1 }, p2: { x: 1, y: 1, z: 1 } };          // sum 6
+  const wide = { p1: { x: 1, y: 1, z: 1, q: 1, r: 1, s: 1, t: 1 }, p2: {} };    // sum 7
+  assert.ok(depth(wide) > depth(even), 'fixture is wrong: wide must win on SUMMED depth');
+  writeFloor(root, { a: { matchStats: even } });
+  const floorBytes = fs.readFileSync(path.join(root, FLOOR));
+  writePlain(root, { a: { matchStats: wide } });
+  assert.strictEqual(freeze(root), 0, 'a summed-depth gain was allowed to empty p2 through freeze()');
+  assert.ok(floorBytes.equals(fs.readFileSync(path.join(root, FLOOR))), 'the floor was overwritten anyway');
+  // control: a genuine both-sides upgrade must still go through the SAME call
+  writePlain(root, { a: { matchStats: { p1: { x: 1, y: 1, z: 1, q: 1 }, p2: { x: 1, y: 1, z: 1 } } } });
+  assert.strictEqual(freeze(root), 1, 'the guard also blocks a legitimate upgrade');
+});
+
 // Captures what freeze() actually said. Needed because the containment guard
 // SUBSUMES the shrink guard — a store with fewer entries necessarily drops a key,
 // so both would reject it and "returned 0" cannot tell which fired. Without this

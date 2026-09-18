@@ -226,9 +226,12 @@
   // hold this" — saying it about data we DO hold is the same defect as inventing
   // a value, pointed the other way.
   //
-  // Founder ruling 2026-09-18 (Q2): "per match — read the field, dash on null.
+  // Founder ruling 2026-09-18 (Q2): "per match — read the field, dash on null. […]
   // Apply the same rule to Winners, UE and Net points." So all three are ordinary
-  // field reads now; none of them is pre-declared absent.
+  // field reads now; none of them is pre-declared absent. The ellipsis stands for the
+  // whole-event-note sentence, implemented at wholeEventNote() below — it is marked
+  // because an earlier version of this comment spliced the two halves into one
+  // quotation and made the ruling read as though it had only two parts.
   var STAT_ROWS = [
     { key: 'Points:Winners', label: 'Winners', src: 'api-tennis' },
     { key: 'Points:Unforced errors', label: 'Unforced errors', src: 'api-tennis' },
@@ -7844,16 +7847,21 @@
   //    (dna-apitennis-ratings.js) need hold% and return-games-won%, which this
   //    per-match store does not carry. Dashed, never a partial sum.
   //  * Point FRACTIONS under each value — NOT because the feed withholds them.
-  //    Measured against the committed floor, `raw` carries a won/total pair for 11
-  //    of the 17 fields: the four serve/return rates, the three Points:* totals and
-  //    the two Games:* rates at 99.9% of populated sides, break points saved and
-  //    converted at 88.0%, and net points won at 47.9%. Only the three pure counts
-  //    (aces, double faults, winners/UE) and 1st serve percentage have none, and
-  //    counts do not want a fraction. The export draws a frac() under each rate
-  //    (Player Profile.dc.html:1447), so this row is WIREABLE and is currently the
-  //    page's largest unmet §3 obligation ("every rate shows its record and n").
-  //    Left alone here on purpose: it changes the sheet's per-row geometry and so
-  //    belongs with the pixel gate, not folded into a data fix.
+  //    Measured against the committed floor, `raw` carries a won/total pair for
+  //    TWELVE of the 17 fields: the four serve/return rates, the three Points:*
+  //    totals and the two Games:* rates at 99.9% of populated sides, break points
+  //    saved and converted at 88.0%, and net points won at 47.9%. The FIVE without
+  //    one are aces, double faults, winners and unforced errors — pure counts, which
+  //    do not want a fraction — plus 1st serve percentage. 12 + 5 = 17. (An earlier
+  //    version of this comment said 11 and "three pure counts" while naming four.)
+  //    ⚠️ 1st serve percentage is NOT exempt by design: the locked export draws a
+  //    frac() under it too (…LOCKED_v7/Player Profile.dc.html:1433), so that one row
+  //    wants a denominator the feed does not give us — it would stay dashed.
+  //    The export draws a frac() under each rate (Player Profile.dc.html:1447 is the
+  //    net-points row), so this is WIREABLE and is currently the page's largest unmet
+  //    §3 obligation ("every rate shows its record and n"). Left alone on purpose: it
+  //    changes the sheet's per-row geometry and so belongs with the pixel gate, not
+  //    folded into a data fix.
   //
   // NET POINTS WON is no longer in that list. It IS an api-tennis field
   // ("Points:Net points won", a percentage), present on 47.9% of populated

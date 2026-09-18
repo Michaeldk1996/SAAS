@@ -722,18 +722,37 @@ jobs:
           # Fail-closed on a real regression, fail-OPEN on a network error: a flaky
           # fetch of the live site must never cost a deploy, but a measured shortfall
           # must. That asymmetry is the whole design.
+          # Containment is checked on THREE axes, not one. Key containment alone has an
+          # exact twin it cannot see: a store that keeps every eventKey but republishes
+          # shallower sheets. That is the same class as the defect this guard was written
+          # for, so checking only keys would leave half of it open. Depth is compared PER
+          # PLAYER SIDE for the reason sideDepths() exists — a summed comparison lets one
+          # player's whole side be wiped as long as the other side gained more.
           node -e '
             const fs = require("fs");
+            const { sideDepths } = require("./tools/match-stats-store.js");
             const site = JSON.parse(fs.readFileSync("_site/historical-match-stats.json","utf8"));
             const url = "https://michaeldk1996.github.io/SAAS/historical-match-stats.json";
-            fetch(url).then(r => r.ok ? r.json() : Promise.reject(new Error("HTTP " + r.status))).then(live => {
-              const missing = Object.keys(live).filter(k => !(k in site));
-              if (missing.length) {
-                console.error(`_site/historical-match-stats.json is MISSING ${missing.length} eventKey(s) that are live right now (e.g. ${missing.slice(0,3).join(", ")}) — this deploy would take box scores off the page.`);
-                process.exit(1);
-              }
-              console.log(`TEN-206: published store contains all ${Object.keys(live).length} live eventKeys.`);
-            }).catch(e => console.log(`::warning title=live match-stat comparison skipped::${e.message} — could not read the live store, so the against-live check did not run this time.`));
+            const fail = (m) => { console.error(m); process.exitCode = 1; };
+            // A hung Pages request must not keep a "never block the deploy" step alive
+            // forever; 30s then treat it as unreachable, which is the fail-OPEN path.
+            fetch(url, { signal: AbortSignal.timeout(30000) })
+              .then(r => r.ok ? r.json() : Promise.reject(new Error("HTTP " + r.status)))
+              .then(live => {
+                const keys = Object.keys(live);
+                const missing = keys.filter(k => !(k in site));
+                if (missing.length) return fail(`_site/historical-match-stats.json is MISSING ${missing.length} eventKey(s) that are live right now (e.g. ${missing.slice(0,3).join(", ")}) — this deploy would take box scores off the page.`);
+                const lostSheet = keys.filter(k => live[k] && live[k].matchStats && !(site[k] && site[k].matchStats));
+                if (lostSheet.length) return fail(`${lostSheet.length} eventKey(s) carry a box score LIVE but not in _site (e.g. ${lostSheet.slice(0,3).join(", ")}) — the sheet would go blank for them.`);
+                const shallower = keys.filter(k => {
+                  const [a1, a2] = sideDepths(live[k] && live[k].matchStats);
+                  const [b1, b2] = sideDepths(site[k] && site[k].matchStats);
+                  return b1 < a1 || b2 < a2;
+                });
+                if (shallower.length) return fail(`${shallower.length} eventKey(s) are SHALLOWER than live on at least one player side (e.g. ${shallower.slice(0,3).join(", ")}) — coverage regressed without losing a key.`);
+                console.log(`TEN-206: published store contains all ${keys.length} live eventKeys, no lost sheets, none shallower.`);
+              })
+              .catch(e => console.log(`::warning title=live match-stat comparison skipped::${e.message} — could not read the live store, so the against-live check did not run this time.`));
           '
           # TEN-228 · §5.5 Court speed. Presence is not enough: the file existed
           # BEFORE the rebuild too, at 18.5 KB with neither of the tables the new
@@ -1015,19 +1034,43 @@ jobs:
       # store. Runs AFTER the deploy has published, like every ledger above, so a git
       # failure here can never cost a deploy.
       #
-      # Unlike the profile floor this needs NO day-guard. The profile caches rebuild
-      # seed profiles with a fresh builtAt every run, so their content differs on all
-      # ~144 runs a day; this store has no such stamp and freeze() re-serialises it
-      # with JSON.stringify over numeric-like keys (V8 orders those ascending,
-      # deterministically), so a run that cached no new match reproduces the floor
-      # byte-for-byte and `git status` finds nothing. The content IS the guard —
-      # locked by the byte-identity check in tools/test-match-stats-store.js, which
-      # has a mutating control proving a real change still produces different bytes.
-      # Plain JSON (Q1 ruling) shortens that argument rather than weakening it: there
-      # is no compressor state or header left to reason about, only the bytes
-      # JSON.stringify emitted.
+      # TWO guards, and the second is the one that binds. Byte-identity handles the
+      # IDLE run: freeze() re-serialises with JSON.stringify over numeric-like keys
+      # (V8 orders those ascending, deterministically), so a run that cached no new
+      # match reproduces the floor byte-for-byte and `git status` finds nothing. Plain
+      # JSON shortens that argument rather than weakening it — no compressor state or
+      # header left to reason about. It is locked by the byte-identity check in
+      # tools/test-match-stats-store.js, which has a mutating control.
+      # The DAY-GUARD below handles the active runs, which byte-identity cannot: see
+      # the measured cost in that step.
       - name: Refresh the committed match-stat floor
         run: |
+          # ONE COMMIT PER UTC DAY. This step originally had no day-guard, on the
+          # argument that "the content is the guard": an idle run reproduces the floor
+          # byte-for-byte, so git finds nothing to commit. That argument is sound and
+          # it is also beside the point — it bounds only the IDLE case, and the store
+          # changes on the ACTIVE ones. Measured 2026-09-18: the sibling commit-back
+          # bots land ~150 commits a day, so this would too, and the yearly history
+          # cost is ~120x what "a daily refresh" implies:
+          #
+          #   at 120 commits/day   plain 227 MB/yr    gz 6,207 MB/yr
+          #   at 1 commit/day      plain 5.7 MB/yr    gz     7.6 MB/yr
+          #
+          # 227 MB/yr is over the founder's ~150 MB/yr line, and his ruling says
+          # "commit it back DAILY" — so the guard is what implements the ruling, not
+          # an addition to it. (The plain-vs-gzip ordering is unchanged and in fact
+          # widens: gzip cannot delta, so it pays the full blob on every commit.)
+          #
+          # The stamp is the FLOOR'S OWN COMMIT DATE, not a field inside it. This store
+          # is keyed by eventKey and a non-eventKey stamp key would pollute every
+          # consumer that walks Object.keys() — the census, all four freeze guards, and
+          # the page's own lookup. git already records exactly the date we need.
+          LAST_DAY="$(git log -1 --format=%cd --date=format:%Y-%m-%d -- historical-match-stats.floor.json || true)"
+          TODAY="$(date -u +%Y-%m-%d)"
+          if [ -n "$LAST_DAY" ] && [ "$LAST_DAY" = "$TODAY" ]; then
+            echo "Committed match-stat floor already refreshed today ($LAST_DAY) — one per UTC day."
+            exit 0
+          fi
           node tools/match-stats-store.js freeze || true
           if [ -z "$(git status --porcelain -- historical-match-stats.floor.json)" ]; then
             echo "Committed match-stat floor unchanged this run — nothing to commit."
