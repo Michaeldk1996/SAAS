@@ -178,6 +178,45 @@ UPDATE odds_card_state SET book_rank = 1 WHERE source = 'kibl'       AND book_ra
 UPDATE odds_card_state SET book_rank = 2 WHERE source = 'oddspapi'   AND book_rank <> 2;
 UPDATE odds_card_state SET book_rank = 3 WHERE source = 'api-tennis' AND book_rank <> 3;
 
+-- ---------------------------------------------------------------------------
+-- THE GRAIN CONSTRAINT MUST BE `NULLS NOT DISTINCT`, AND ON A PRE-EXISTING
+-- TABLE IT MIGHT NOT BE.
+--
+-- `line` is NULL on every match-winner row. Under a PLAIN unique constraint,
+-- NULL <> NULL, so no two of those rows ever collide: every upsert takes the
+-- INSERT branch of ON CONFLICT and the table grows a duplicate set per run
+-- instead of updating. Nothing errors. Nothing logs. The row count doubles.
+--
+-- `CREATE TABLE IF NOT EXISTS` above cannot fix a table that already exists, so
+-- the property is checked and repaired here. The DELETE only ever runs on an
+-- instance that HAS the wrong index — which is an instance that necessarily
+-- already holds duplicates — and it keeps the newest row of each grain. This
+-- table is a projection: everything in it is rebuildable from the archives.
+DO $$
+DECLARE nnd boolean;
+BEGIN
+  SELECT i.indnullsnotdistinct INTO nnd
+    FROM pg_constraint c JOIN pg_index i ON i.indexrelid = c.conindid
+   WHERE c.conrelid = 'odds_card_state'::regclass
+     AND c.conname  = 'odds_card_state_grain';
+
+  IF nnd IS DISTINCT FROM true THEN
+    RAISE WARNING 'odds_card_state_grain is not NULLS NOT DISTINCT (%) — repairing', nnd;
+    ALTER TABLE odds_card_state DROP CONSTRAINT IF EXISTS odds_card_state_grain;
+    DELETE FROM odds_card_state a
+     USING odds_card_state b
+     WHERE a.ctid < b.ctid
+       AND a.fixture_id IS NOT DISTINCT FROM b.fixture_id
+       AND a.book       IS NOT DISTINCT FROM b.book
+       AND a.market     IS NOT DISTINCT FROM b.market
+       AND a.side       IS NOT DISTINCT FROM b.side
+       AND a.line       IS NOT DISTINCT FROM b.line;
+    ALTER TABLE odds_card_state
+      ADD CONSTRAINT odds_card_state_grain
+      UNIQUE NULLS NOT DISTINCT (fixture_id, book, market, side, line);
+  END IF;
+END $$;
+
 ALTER TABLE odds_card_state DROP CONSTRAINT IF EXISTS odds_card_state_id_space_ck;
 ALTER TABLE odds_card_state ADD CONSTRAINT odds_card_state_id_space_ck
   CHECK (id_space IN ('oddspapi', 'api-tennis', 'kibl'));

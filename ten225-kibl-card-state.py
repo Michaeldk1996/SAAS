@@ -275,6 +275,17 @@ def index_oddspapi(fx_rows, summary_rows):
         day = (f.get('true_start') or f.get('scheduled_start') or '')[:10]
         k = mk_of(day, f.get('player1'), f.get('player2'))
         if not k:
+            # WHY it could not be keyed, not just that it could not. Run
+            # 35291839986 reported 49,287 unkeyable fixtures and the counter
+            # could not say whether that was a pairing problem or an empty
+            # column — it was an empty column, and the undifferentiated count
+            # cost a round trip to find out.
+            if not (f.get('player1') and f.get('player2')):
+                st['oddspapi_no_player_names'] += 1
+            elif not day:
+                st['oddspapi_no_day'] += 1
+            else:
+                st['oddspapi_same_surname'] += 1
             st['oddspapi_fixture_unkeyable'] += 1
             continue
         if k in by_key:
@@ -358,7 +369,11 @@ def build_rows(kibl_fixtures, observations, odds_index, as_of):
         for o in obs:
             s = side_label(o)
             if s is None:
+                # Name the value. Run 35291839986 counted 88 of these and could
+                # not say whether the feed carries a third side or simply omits
+                # the field on some rows — two very different findings.
                 st['obs_unknown_side'] += 1
+                st[f'obs_side_id_{o.get("side_id")}'] += 1
                 continue
             by_side[s].append(o)
 
@@ -455,31 +470,56 @@ def run_selection(url, key, dry_run=False):
     column can fail on the insert tuple even when every row is really an update.
     No price column is in the payload, so this pass cannot alter a price.
     """
+    # EVERY column, not just the ones the pass changes. PostgREST upserts as
+    # INSERT ... ON CONFLICT DO UPDATE, so a partial payload is a partial INSERT
+    # TUPLE on any row whose conflict does not fire. Run 35291839986 is why this
+    # is spelled out: a payload of keys + is_selected produced a candidate row
+    # with every price NULL and is_selected true, which the selected_ck CHECK
+    # rejected — correctly, and loudly, which is the only reason the real problem
+    # (the grain constraint) surfaced at all instead of silently inserting 26,302
+    # duplicate rows. Round-tripping the whole row makes the payload valid on
+    # either branch; the schema's NULLS NOT DISTINCT repair makes the INSERT
+    # branch unreachable. Both, because either alone leaves a hole.
     cols = ('fixture_id,id_space,book,market,side,line,match_key,book_rank,'
-            'is_selected,source,start_ts_source,open_price,now_price,close_price')
+            'is_selected,ts_kind,source,label,start_ts,start_ts_source,'
+            'start_reject_reason,open_price,open_ts,open_limit,now_price,now_ts,'
+            'close_price,close_ts')
     rows, err = fetch_all(url, key, 'odds_card_state', cols)
     if err:
         print(f'::error::reading odds_card_state for selection failed ({err})')
         return None, err
     before = sum(1 for r in rows if r.get('is_selected'))
+    n_before = len(rows)
     rows, st = select_winners(rows)
     after = sum(1 for r in rows if r['is_selected'])
-    print(f'selection over the WHOLE table: n={len(rows)} rows, '
+    print(f'selection over the WHOLE table: n={n_before} rows, '
           f'selected {before} -> {after}  {dict(st)}')
     if dry_run:
         return st, None
-    payload = [{'fixture_id': r['fixture_id'], 'id_space': r['id_space'],
-                'book': r['book'], 'market': r['market'], 'side': r['side'],
-                'line': r['line'], 'source': r['source'],
-                'book_rank': r['book_rank'], 'match_key': r.get('match_key'),
-                'start_ts_source': r.get('start_ts_source') or 'none',
-                'is_selected': r['is_selected']}
-               for r in rows]
-    sent, uerr = L.upsert(url, key, 'odds_card_state', payload,
+    sent, uerr = L.upsert(url, key, 'odds_card_state', rows,
                           'fixture_id,book,market,side,line')
-    print(f'selection write-back: {sent}/{len(payload)}'
+    print(f'selection write-back: {sent}/{len(rows)}'
           + (f' — FAILED {uerr}' if uerr else ''))
-    return st, uerr
+    if uerr:
+        return st, uerr
+
+    # MUTATE, THEN COUNT. An upsert whose conflict never fires reports success
+    # and doubles the table; the only thing that can tell the two apart is the
+    # row count afterwards. Read it back rather than trusting the write.
+    after_rows, rerr = fetch_all(url, key, 'odds_card_state', 'fixture_id')
+    if rerr:
+        print(f'::warning::could not re-count odds_card_state ({rerr}); the '
+              f'write-back is unverified')
+    elif len(after_rows) != n_before:
+        print(f'::error::odds_card_state went {n_before} -> {len(after_rows)} '
+              f'rows on a pass that updates in place. The grain constraint is '
+              f'not matching, so every upsert is inserting a duplicate.')
+        return st, f'row count {n_before} -> {len(after_rows)}'
+    else:
+        print(f'row count unchanged at {n_before} — the write-back updated in '
+              f'place (proof the grain constraint matched)')
+    st['row_count'] = n_before
+    return st, None
 
 
 def select_winners(rows):
