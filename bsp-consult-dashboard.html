@@ -7071,10 +7071,51 @@ function mxDriftView(){ return state.view !== 'completed' && state.sort === 'dri
 // population this vendor rule was written for. So the published source answers
 // the question where the file covers the match, and the marker answers it where
 // it does not. One question, two stores, same answer.
+//
+// ─── TEN-225, founder question 2026-09-18: "which rule excludes Moller?" ───
+// It was this predicate — and on two of today's five hits this predicate was
+// simply WRONG. TEN-198 was not doing its job; it was being handed a fixture
+// that was never its population.
+//
+// "One question, two stores, same answer" above is the assumption that broke.
+// The two stores DISAGREE on Moller/Dimitrov, and matches.json is the one
+// holding evidence:
+//
+//   odds-card-state.json : source 'api-tennis', tsKind 'sighting', now null
+//   matches.json         : openingOdds { bookmaker:'bet365', src:'first-sighting',
+//                                        at:'2026-09-17T14:35:23.945Z' }
+//
+// `at` is the discriminator, and it is structural rather than circumstantial: a
+// vendor pin CANNOT carry one. pinVendorOpen writes `seenAt` and deliberately no
+// `at`, because TEN-198 measured the api-tennis timestamp as untrustworthy
+// (median 5.2h lag, max 14.6h) — the absence is the point of that design, so its
+// presence is positive proof of the other provenance. Corroborated independently
+// by the VALUE: api-tennis truncates to 2dp with zero counter-examples in 394
+// agreeing observations, and Moller's second side opens at 1.091 — three
+// decimals, which a 2dp mirror cannot emit. Measured across the whole published
+// file this run: 1 of the 4 api-tennis-sourced rows carries a >2dp price (n=4,
+// thin — flagged), and that one row is this fixture.
+//
+// TEN-198 IS NOT LIFTED, and nothing here weakens it. Its reason — "harmless as
+// a one-shot anchor, fiction as one end of a move measured in percent" — still
+// binds every genuine vendor pin: Skatov/Samrej, Mensik/Tien and Ruud/Te carry
+// src 'vendor-sighting', a vendor tag and no `at`, still return true here, and
+// are still excluded from every derived figure. What changed is that two
+// fixtures which were never vendor pins stop being treated as ones.
+//
+// The override demands positive evidence on FOUR counts, so it can never
+// relabel a fixture whose stores actually hold different numbers: no vendor tag,
+// a parseable quote instant, the same book, and both sides' opens equal. Any one
+// of them missing and OCS's label stands.
 function _openPinIsVendor(m){
+  const oo = m && m.openingOdds;
   const o = _ocsOf(m);
-  if (o) return o.source === 'api-tennis';
-  return !!(m && m.openingOdds && m.openingOdds.vendor);
+  if (!o) return !!(oo && oo.vendor);
+  if (o.source !== 'api-tennis') return false;
+  if (!oo || oo.vendor || !Number.isFinite(Date.parse(oo.at))) return true;
+  if (String(oo.bookmaker || '').toLowerCase() !== String(o.book || '').toLowerCase()) return true;
+  if (!(oo.p1 > 0) || !(oo.p2 > 0)) return true;
+  return !(oo.p1 === o.p1.open && oo.p2 === o.p2.open);
 }
 function _openAnchorOf(m, who){
   const o = _ocsOf(m);
@@ -7155,13 +7196,32 @@ function _mcOpenNowPair(m){
 // bottom, not hidden"). -1 sorts BELOW a genuine 0% move and above nothing — the
 // fixture keeps its card and its place in the list. This is a sort, never a
 // filter, and there is no branch here that can drop a match.
+//
+// FOUNDER ORDER, 2026-09-18, verbatim: "largest absolute % move first, then
+// smaller moves, then 0% moves, then fixtures with no move computable, then
+// fully unpriced fixtures last." Five tiers. The first three fall out of the
+// magnitude itself; the last two did NOT — they both scored -1, so they tied,
+// and a tie leaves them interleaved in whatever order the filter produced. That
+// is how a dash/dash card (Van De Zandschulp v J. A. Rodriguez) came to sit
+// above a priced one. MOVE_UNPRICED separates them.
+const MOVE_NONE     = -1;  // priced, but no same-book open→now pair to measure
+const MOVE_UNPRICED = -2;  // the card shows no price at all: no open, no now, either side
+// "Fully unpriced" is defined by what the CARD PAINTS, not by what some store
+// holds — these are the same three resolvers the card face reads, so the bottom
+// tier is exactly the set of cards a member sees as dash/dash.
+function _mcHasAnyPrice(m){
+  if (_openAnchorOf(m, 'p1') != null || _openAnchorOf(m, 'p2') != null) return true;
+  if (_mcNowOf(m, 'p1') != null || _mcNowOf(m, 'p2') != null) return true;
+  return !!_mcNowPair(m);
+}
 function moveNowScore(m){
   const p = _mcOpenNowPair(m);
   // BOTH legs of BOTH sides must be real prices. Guarding only the open (the
   // divisor) is what let a published `now: 0` score a fabricated 1.0 — a -100%
   // move that beats every genuine move on any board and takes the top of this
   // sort. Zero is not a price; see _ocsSanePx.
-  if (!p || !(p.o1 > 0) || !(p.o2 > 0) || !(p.n1 > 0) || !(p.n2 > 0)) return -1;
+  if (!p || !(p.o1 > 0) || !(p.o2 > 0) || !(p.n1 > 0) || !(p.n2 > 0))
+    return _mcHasAnyPrice(m) ? MOVE_NONE : MOVE_UNPRICED;
   return Math.max(Math.abs(p.n1 / p.o1 - 1), Math.abs(p.n2 / p.o2 - 1));
 }
 // TEN-179 item 3 (founder standing rule 2026-09-10): "Thin coverage flagged with the
@@ -7350,7 +7410,15 @@ function getFiltered(){
   // TEN-225 ruling 3 — the Upcoming board's Drift order is open→NOW (moveNowScore),
   // not open→close (driftScore). driftScore scored 0 for all 32 fixtures on the
   // deployed board because an upcoming match has no close; see _mcOpenNowPair.
-  else if (state.sort === 'drift') out.sort((a,b) => moveNowScore(b) - moveNowScore(a));
+  // Scored ONCE per card, then sorted on the map. A comparator that recomputes
+  // resolves the same fixture O(n log n) times, and — worse — is only correct
+  // while every resolver is pure; memoising on OCS.gen makes that true today and
+  // one edit away from false. Precomputing makes the comparator's consistency
+  // structural instead of conditional.
+  else if (state.sort === 'drift'){
+    const sc = new Map(out.map(m => [m, moveNowScore(m)]));
+    out.sort((a,b) => sc.get(b) - sc.get(a));
+  }
   else if (state.sort === 'closing') out.sort((a,b) => closingScore(a) - closingScore(b));
   else out.sort((a,b) => (a.time || '').localeCompare(b.time || ''));
   return out;
