@@ -4795,6 +4795,343 @@
   //   * the divergence bars, on role cards AND band rows
   //   * the band row -> match detail drill
   //   * the cumulative profit chart, with its Back|Fade and surface filters
+  // ══════════════════════════════════════════════════════════════════════════
+  // §5.8 · DERIVED LINES  (Market edge -> "Derived lines" tab)
+  //
+  // Founder brief 2026-09-18: "Everything in it is arithmetic on a scoreline."
+  // Nothing here is a settled market and nothing here is a yield, so R1's
+  // Pinnacle-closing rule does not bind the hit rates — it binds only the
+  // favourite/underdog SPLIT, which needs a price to know which side was
+  // shorter, and that split is drawn from the same closing price the role cards
+  // use. A row is a coverage rate: how often his own scoreline landed on the
+  // right side of a line, never how a bet settled.
+  //
+  // Ruling: RET and abandoned matches are EXCLUDED and counted in the note. A
+  // games handicap off a match that stopped at 3-3 is not a handicap result.
+  // Walkovers go with them: they have no scoreline at all.
+  //
+  // "AVG MARGIN" — the export ships literals, not a formula, so the definition
+  // is derived from its own arithmetic rather than invented. In all six split
+  // rows the printed total is the HIT-COUNT-WEIGHTED mean of its favourite and
+  // underdog figures:
+  //     -4.5 games  (31*7.9 + 8*5.6)/39  = 7.43  printed 7.4
+  //     +2.5 games  (69*4.0 + 45*1.7)/114 = 3.09  printed 3.1
+  //     -1.5 sets   (39*7.2 + 15*6.1)/54  = 6.89  printed 6.9
+  // 6 of 6 reproduce. So: the mean games margin (his games minus his
+  // opponent's) across the matches that HIT that line — not across the
+  // denominator. Every sign and magnitude in the export's 30 literals agrees
+  // (a 2-0 win +6.9, a 0-2 loss -6.4; a tighter line carries a bigger margin
+  // than a looser one, because a looser line admits closer matches).
+  var LINE_DEFS = {
+    bo3: {
+      label: 'best of 3', setsToWin: 2,
+      groups: [
+        ['Games handicap', [
+          ['−4.5 games', 'gh', 4.5, -1], ['−2.5 games', 'gh', 2.5, -1],
+          ['+2.5 games', 'gh', 2.5, 1], ['+4.5 games', 'gh', 4.5, 1]]],
+        ['Set handicap', [['−1.5 sets', 'sh', 1.5, -1], ['+1.5 sets', 'sh', 1.5, 1]]],
+        ['Total games', [
+          ['over 22.5', 'tg', 22.5, 1], ['under 22.5', 'tg', 22.5, -1],
+          ['over 20.5', 'tg', 20.5, 1]]],
+        ['Match shape', [
+          ['won 2–0', 'ms', [2, 0]], ['won 2–1', 'ms', [2, 1]],
+          ['lost 1–2', 'ms', [1, 2]], ['lost 0–2', 'ms', [0, 2]]]]
+      ]
+    },
+    bo5: {
+      label: 'best of 5', setsToWin: 3,
+      groups: [
+        ['Games handicap', [
+          ['−6.5 games', 'gh', 6.5, -1], ['−3.5 games', 'gh', 3.5, -1],
+          ['+3.5 games', 'gh', 3.5, 1], ['+6.5 games', 'gh', 6.5, 1]]],
+        ['Set handicap', [['−2.5 sets', 'sh', 2.5, -1], ['+2.5 sets', 'sh', 2.5, 1]]],
+        ['Total games', [
+          ['over 37.5', 'tg', 37.5, 1], ['under 37.5', 'tg', 37.5, -1],
+          ['over 34.5', 'tg', 34.5, 1]]],
+        ['Match shape', [
+          ['won 3–0', 'ms', [3, 0]], ['won 3–1', 'ms', [3, 1]], ['won 3–2', 'ms', [3, 2]],
+          ['lost 2–3', 'ms', [2, 3]], ['lost 1–3', 'ms', [1, 3]], ['lost 0–3', 'ms', [0, 3]]]]
+      ]
+    }
+  };
+  // Games and Set handicap carry the favourite/underdog split; Total games and
+  // Match shape do not. Straight from the export's own data shape, where only
+  // those two groups pass an array for `hit`.
+  var LINE_SPLIT_KINDS = { gh: true, sh: true };
+
+  /** Subject set counts for a spine row, or null when the row carries none. */
+  function lineSetCount(r) {
+    if (r.setGames && r.setGames.length) {
+      var w = 0, l = 0;
+      for (var i = 0; i < r.setGames.length; i++) {
+        var s = r.setGames[i];
+        if (s.p == null || s.o == null) continue;
+        if (+s.p > +s.o) w++; else if (+s.o > +s.p) l++;
+      }
+      if (w || l) return { w: w, l: l };
+    }
+    var mm = String(r.sets || '').match(/^\s*(\d+)\s*-\s*(\d+)\s*$/);
+    if (!mm) return null;
+    var a = +mm[1], b = +mm[2];
+    if (!a && !b) return null;
+    return { w: a, l: b };
+  }
+
+  /** Subject games for/against, or null when the row carries no per-set games. */
+  function lineGames(r) {
+    if (!r.setGames || !r.setGames.length) return null;
+    var f = 0, a = 0, seen = 0;
+    for (var i = 0; i < r.setGames.length; i++) {
+      var s = r.setGames[i];
+      if (s.p == null || s.o == null) continue;
+      f += +s.p; a += +s.o; seen++;
+    }
+    return seen ? { f: f, a: a } : null;
+  }
+
+  /**
+   * The Derived-lines model for one format.
+   *
+   * Every row states its OWN denominator. The export runs one D.n across the
+   * whole table; we cannot, because the two halves need different data — a set
+   * handicap needs only the set count (the spine carries it on ~99% of rows),
+   * a games handicap needs the per-set games. Printing one n over both would
+   * claim coverage the games rows do not have, and the brief asks for per-line
+   * counts precisely so that coverage is visible.
+   */
+  function lineCoverage(p, fmt) {
+    var def = LINE_DEFS[fmt] || LINE_DEFS.bo3;
+    var spine = calSpine(p) || [];
+    var excluded = 0, noScore = 0, pool = [];
+    for (var i = 0; i < spine.length; i++) {
+      var r = spine[i];
+      if (r.retired || r.wo) { excluded++; continue; }
+      var sc = lineSetCount(r);
+      if (!sc) { noScore++; continue; }
+      // Format from the scoreline itself, not from the tier: the winner of a
+      // best-of-5 took three sets. A tier lookup would mislabel every Davis Cup
+      // and Tour Finals row the level map does not reach.
+      var need = Math.max(sc.w, sc.l);
+      if (need !== def.setsToWin) continue;
+      var g = lineGames(r);
+      var role = (r.price != null && r.oppPrice != null)
+        ? (r.price < r.oppPrice ? 'fav' : (r.price > r.oppPrice ? 'dog' : null)) : null;
+      pool.push({ sc: sc, g: g, role: role });
+    }
+    var withGames = pool.filter(function (m) { return !!m.g; }).length;
+    var priced = pool.filter(function (m) { return !!m.role; }).length;
+
+    function hits(m, kind, arg, dir) {
+      if (kind === 'ms') return m.sc.w === arg[0] && m.sc.l === arg[1];
+      if (kind === 'sh') {
+        var sm = m.sc.w - m.sc.l;
+        return dir < 0 ? sm > arg : sm > -arg;
+      }
+      if (!m.g) return null;               // games lines need per-set games
+      if (kind === 'gh') {
+        var gm = m.g.f - m.g.a;
+        return dir < 0 ? gm > arg : gm > -arg;
+      }
+      var tot = m.g.f + m.g.a;
+      return dir > 0 ? tot > arg : tot < arg;
+    }
+    // Margin is the games margin, so a row can only carry one where the hitting
+    // matches carry per-set games. A set-handicap row on a career whose shards
+    // have not rebuilt yet therefore shows its rate and dashes its margin —
+    // which is the honest split, not a hole.
+    function tally(subset, kind, arg, dir) {
+      var n = 0, hit = 0, marginSum = 0, marginN = 0;
+      for (var j = 0; j < subset.length; j++) {
+        var m = subset[j];
+        var h = hits(m, kind, arg, dir);
+        if (h === null) continue;          // not evaluable -> out of this row's n
+        n++;
+        if (h) {
+          hit++;
+          if (m.g) { marginSum += (m.g.f - m.g.a); marginN++; }
+        }
+      }
+      return { n: n, hit: hit, margin: marginN ? marginSum / marginN : null };
+    }
+    var favPool = pool.filter(function (m) { return m.role === 'fav'; });
+    var dogPool = pool.filter(function (m) { return m.role === 'dog'; });
+
+    var groups = def.groups.map(function (gr) {
+      var title = gr[0], rows = [];
+      gr[1].forEach(function (spec) {
+        var label = spec[0], kind = spec[1], arg = spec[2], dir = spec[3];
+        rows.push(lineRow(label, tally(pool, kind, arg, dir), false));
+        if (LINE_SPLIT_KINDS[kind]) {
+          rows.push(lineRow('as favourite', tally(favPool, kind, arg, dir), true));
+          rows.push(lineRow('as underdog', tally(dogPool, kind, arg, dir), true));
+        }
+      });
+      var needsGames = /Games handicap|Total games/.test(title);
+      return {
+        title: title,
+        meta: (needsGames ? withGames : pool.length) + ' matches · ' + def.label
+          + (needsGames && withGames < pool.length
+            ? ' · ' + (pool.length - withGames) + ' without per-set games' : ''),
+        rows: rows
+      };
+    });
+    return {
+      groups: groups, n: pool.length, withGames: withGames, priced: priced,
+      excluded: excluded, noScore: noScore, fmtLabel: def.label
+    };
+  }
+
+  /** One rendered row. Gate and colours are the export's, verbatim. */
+  function lineRow(label, t, sub) {
+    var n = t.n, hit = t.hit;
+    var g = n === 0 ? 'zero' : n < 5 ? 'hard' : n < 10 ? 'soft' : 'full';
+    var rate = n ? (hit / n * 100) : null;
+    var hot = g === 'full' && rate >= 65;
+    var mg = t.margin;
+    var r1 = function (v) { return Math.round(v * 10) / 10; };
+    return {
+      label: label, sub: !!sub,
+      pad: sub ? '6px 0 6px 30px' : '7px 0 7px 15px',
+      size: sub ? '11.5px' : '12.5px',
+      color: sub ? '#8b96b5' : '#c6ccdb',
+      mark: g === 'soft' ? 'small sample' : (g === 'hard' ? 'n < 5' : ''),
+      numSize: sub ? '11px' : '12px',
+      n: n ? String(n) : DASH,
+      nColor: g === 'zero' ? '#3f4860' : '#5b6880',
+      hit: n ? String(hit) : DASH,
+      hitColor: g === 'zero' ? '#3f4860' : '#8b96b5',
+      record: n ? (hit + '–' + (n - hit)) : DASH,
+      recordColor: g === 'zero' ? '#3f4860' : '#8b96b5',
+      rate: (g === 'full' || g === 'soft') ? rate.toFixed(1) + '%' : DASH,
+      rateColor: (g !== 'full' && g !== 'soft') ? '#3f4860'
+        : (hot ? '#7ee0a8' : (g === 'soft' ? '#8b96b5' : '#e8ecf4')),
+      rateWeight: hot ? 700 : 400,
+      rateBg: hot ? 'rgba(78,200,130,0.15)' : 'transparent',
+      rateBd: hot ? 'rgba(78,200,130,0.34)' : 'transparent',
+      margin: mg == null ? DASH
+        : ((r1(mg) > 0 ? '+' : r1(mg) < 0 ? '−' : '') + Math.abs(r1(mg)).toFixed(1)),
+      marginColor: mg == null ? '#3f4860'
+        : (r1(mg) > 0 ? '#3dd68c' : r1(mg) < 0 ? '#e0616f' : '#8b96b5')
+    };
+  }
+
+  var MARKET_TABS = [['winner', 'Match winner'], ['lines', 'Derived lines']];
+  function marketTabsHtml() {
+    return '<div style="display:flex;gap:3px;background:#0a0d13;' +
+      'border:1px solid rgba(255,255,255,0.09);border-radius:10px;padding:3px;' +
+      'margin-bottom:18px;width:fit-content;">' +
+      MARKET_TABS.map(function (t) {
+        var on = (state.marketTab === 'lines' ? 'lines' : 'winner') === t[0];
+        return '<button type="button" data-pp2="market-tab" data-v="' + t[0] + '" ' +
+          'style="cursor:pointer;white-space:nowrap;padding:7px 14px;border-radius:8px;' +
+          'font-size:12px;font-weight:' + (on ? 700 : 600) + ';' +
+          'color:' + (on ? '#e7e9ee' : '#5b6880') + ';' +
+          'background:' + (on ? 'rgba(91,155,255,0.16)' : 'transparent') + ';' +
+          'border:1px solid ' + (on ? 'rgba(91,155,255,0.4)' : 'rgba(255,255,255,0.08)') + ';">' +
+          esc(t[1]) + '</button>';
+      }).join('') + '</div>';
+  }
+
+  /** §5.8 Derived lines. Geometry verbatim from the export (:866-:896). */
+  function renderLinesTab(p) {
+    var fmt = state.lcFmt === 'bo5' ? 'bo5' : 'bo3';
+    var d = lineCoverage(p, fmt);
+    var CAP = 'font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;'
+      + 'letter-spacing:0.14em;text-transform:uppercase;color:#5b6880;';
+    var GRID = 'display:grid;grid-template-columns:minmax(0,1fr) 58px 46px 72px 72px 88px;gap:0 12px;';
+    var head = '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">' +
+      '<span style="' + CAP + '">Coverage by line</span>' +
+      '<span style="display:flex;gap:3px;background:#0a0d13;border:1px solid rgba(255,255,255,0.09);' +
+        'border-radius:9px;padding:2px;margin-left:auto;">' +
+        [['bo3', 'Best of 3'], ['bo5', 'Best of 5']].map(function (t) {
+          var on = fmt === t[0];
+          return '<button type="button" data-pp2="lc-fmt" data-v="' + t[0] + '" ' +
+            'style="cursor:pointer;white-space:nowrap;padding:5px 12px;border-radius:7px;' +
+            'font-size:11px;font-weight:' + (on ? 700 : 600) + ';' +
+            'color:' + (on ? '#e7e9ee' : '#5b6880') + ';' +
+            'background:' + (on ? 'rgba(91,155,255,0.16)' : 'transparent') + ';' +
+            'border:1px solid ' + (on ? 'rgba(91,155,255,0.4)' : 'rgba(255,255,255,0.08)') + ';">' +
+            esc(t[1]) + '</button>';
+        }).join('') +
+      '</span></div>';
+
+    if (!d.n) {
+      return '<div style="display:flex;flex-direction:column;gap:14px;">' + head +
+        '<div style="border:1px dashed rgba(255,255,255,0.12);border-radius:10px;padding:26px;' +
+          'text-align:center;font-size:13px;color:#5b6880;">' +
+          'No completed ' + esc(d.fmtLabel) + ' match on record carries a scoreline to derive a line from.' +
+          (d.excluded ? ' ' + d.excluded + ' retired or abandoned ' +
+            (d.excluded === 1 ? 'match is' : 'matches are') + ' excluded.' : '') +
+        '</div></div>';
+    }
+
+    var cols = ['Matches', 'Hit', 'Record', 'Rate', 'Avg margin'];
+    var colHead = '<div style="' + GRID + 'align-items:flex-end;padding:0 4px 8px;' +
+      'border-bottom:1px solid rgba(255,255,255,0.12);"><span></span>' +
+      cols.map(function (c) {
+        return '<span style="' + CAP + 'text-align:right;">' + esc(c) + '</span>';
+      }).join('') + '</div>';
+
+    var body = d.groups.map(function (g) {
+      return '<div style="display:flex;flex-direction:column;gap:0;">' +
+        '<div style="display:flex;align-items:baseline;gap:10px;padding:10px 4px 5px;' +
+          'border-top:1px solid rgba(255,255,255,0.06);">' +
+          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
+            'letter-spacing:0.14em;text-transform:uppercase;color:#8b96b5;">' + esc(g.title) + '</span>' +
+          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:#4b5672;">' +
+            esc(g.meta) + '</span></div>' +
+        '<div style="' + GRID + 'align-items:center;">' +
+          g.rows.map(function (r) {
+            var bt = 'border-top:1px solid rgba(255,255,255,0.04);';
+            var num = 'font-family:\'IBM Plex Mono\',monospace;text-align:right;padding:7px 0;'
+              + bt + 'font-variant-numeric:tabular-nums;';
+            return '<span style="display:flex;align-items:baseline;gap:8px;padding:' + r.pad + ';' +
+                bt + 'min-width:0;">' +
+                '<span style="font-size:' + r.size + ';color:' + r.color + ';white-space:nowrap;' +
+                  'overflow:hidden;text-overflow:ellipsis;">' + esc(r.label) + '</span>' +
+                (r.mark ? '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:8.5px;' +
+                  'font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:#4b5672;' +
+                  'white-space:nowrap;">' + esc(r.mark) + '</span>' : '') +
+              '</span>' +
+              '<span style="' + num + 'font-size:11px;color:' + r.nColor + ';">' + r.n + '</span>' +
+              '<span style="' + num + 'font-size:' + r.numSize + ';color:' + r.hitColor + ';">' + r.hit + '</span>' +
+              '<span style="' + num + 'font-size:' + r.numSize + ';color:' + r.recordColor + ';">' + r.record + '</span>' +
+              '<span style="display:flex;justify-content:flex-end;align-items:center;padding:7px 0;' + bt + '">' +
+                '<span style="display:inline-flex;align-items:center;justify-content:center;width:60px;' +
+                  'height:21px;font-family:\'IBM Plex Mono\',monospace;font-size:12px;font-weight:' +
+                  r.rateWeight + ';color:' + r.rateColor + ';background:' + r.rateBg + ';' +
+                  'border:1px solid ' + r.rateBd + ';border-radius:6px;font-variant-numeric:tabular-nums;">' +
+                  r.rate + '</span></span>' +
+              '<span style="' + num + 'font-size:' + r.numSize + ';font-weight:700;color:' +
+                r.marginColor + ';">' + r.margin + '</span>';
+          }).join('') +
+        '</div></div>';
+    }).join('');
+
+    // The export's note, plus the two counts this build owes the reader: the
+    // ruled RET/abandoned exclusion, and how many rows can carry a games line
+    // at all. Neither is in the export because its data is a generator.
+    var note = 'Lines are derived from set scores, not from settled markets — these are '
+      + 'coverage rates, not results against a priced line. Bo3 and Bo5 are counted '
+      + 'separately because the same line means a different bet in each.';
+    if (d.excluded) {
+      note += ' ' + d.excluded + ' ' + (d.excluded === 1 ? 'match' : 'matches')
+        + ' excluded — retired or abandoned.';
+    }
+    if (d.noScore) {
+      note += ' ' + d.noScore + ' carry no set count at all.';
+    }
+    if (d.withGames < d.n) {
+      note += ' Games handicap and Total games need the per-set games, which '
+        + d.withGames + ' of these ' + d.n + ' carry; the set and shape lines need only '
+        + 'the set count. Each row states its own denominator.';
+    }
+    note += ' The favourite/underdog split needs a closing price to know which side was '
+      + 'shorter, so it covers the ' + d.priced + ' priced of ' + d.n + '.';
+    return '<div style="display:flex;flex-direction:column;gap:14px;">' + head + colHead + body +
+      '<div style="font-size:11.5px;color:#4b5672;line-height:1.6;">' + esc(note) + '</div></div>';
+  }
+
   function renderMarketModal(p) {
     var mk = marketFor(p.key);
     if (!mk || !mk.headline || !mk.headline.n) {
@@ -4889,7 +5226,12 @@
     var cov = mk.coverage || {};
     var excluded = cov.excludedNonPinnacle || 0;
 
-    return '' +
+    // §5.1 tab row — `Match winner | Derived lines`, default Match winner. The
+    // row and its body ship together (founder ruling Q3): no dead affordance.
+    var mktTab = state.marketTab === 'lines' ? 'lines' : 'winner';
+    if (mktTab === 'lines') return marketTabsHtml() + renderLinesTab(p);
+
+    return marketTabsHtml() +
       '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;letter-spacing:0.06em;' +
         'color:#5b6880;margin-bottom:14px;">' +
         'Pinnacle closing only ' + MIDDOT + ' ' + mk.headline.n + ' priced ' + MIDDOT + ' ' +
@@ -5493,7 +5835,18 @@
         tournament: r.tournament || null,
         round: roundLabel({ round: r.round, date: r.date, tournament: r.tournament }),
         opp: r.opponent || null,
-        score: rf ? setScoreText(rf, ', ') : (r.result ? String(r.result) : DASH),
+        // Per-set games. `recentForm` is the richer row where it reaches (it
+        // carries both sides' tiebreak totals), so it still wins; career-history
+        // now carries its OWN subject-oriented `sets` array for every other row
+        // — TEN-206 item 1 wrote it and nothing on this page read it, so the
+        // column sat at recentForm's ~10% of the spine while the store held
+        // ~99%. Same wiring-only shape as stylesStore and the whole-event note.
+        // Fills as the shards rebuild: a data pass, not a render change.
+        setGames: (rf && rf.sets && rf.sets.length) ? rf.sets
+          : ((r.sets && r.sets.length) ? r.sets : null),
+        score: (rf && rf.sets && rf.sets.length) ? setScoreText(rf, ', ')
+          : ((r.sets && r.sets.length) ? setScoreText({ sets: r.sets }, ', ')
+            : (r.result ? String(r.result) : DASH)),
         // §8.4 · SETS, from the player's own side. career-history's `result` is
         // already subject-oriented, and 88,097 of 89,719 rows (98.2%) are a clean
         // two-integer count agreeing with `won`. This is the column that read "—"
@@ -8453,6 +8806,11 @@
     // filter. Three independent controls on one modal — kept apart so switching
     // one never silently resets another.
     marketBand: null, marketSide: 'back', marketSurf: 'all',
+    // §5.1 tab row for Market edge (`Match winner | Derived lines`, default
+    // winner) and the Derived-lines Bo3|Bo5 grain. Separate state for the same
+    // reason as the Career modal's two axes: switching tab must not reset the
+    // format, and switching format must not throw you back to Match winner.
+    marketTab: 'winner', lcFmt: 'bo3',
     // §5.7 Splits. The scope switch (Career / Last 52 weeks) and the tab switch
     // (Results / Sets & Games / Service) are independent axes of the same table —
     // changing scope must not reset the tab, so they are separate state.
@@ -8610,6 +8968,11 @@
     // The tab switch keeps the window (`careerScope`) — one control drives both
     // tabs, so resetting it here would silently re-scope the radar on a tab click.
     else if (kind === 'career-tab') { state.careerTab = v; state.careerDrill = null; }
+    // §5.8 — the Market edge tab row. Switching tabs closes any open band drill,
+    // which belongs to the Match winner tab; the Bo3|Bo5 grain is left alone, so
+    // coming back to Derived lines finds the format the reader left it on.
+    else if (kind === 'market-tab') { state.marketTab = v; state.marketBand = null; }
+    else if (kind === 'lc-fmt') { state.lcFmt = v; }
     // §5.2A — a surface row toggles its own drill; opening one closes the other.
     else if (kind === 'career-surf') {
       state.careerDrill = (state.careerDrill && state.careerDrill.kind === 'surface' &&
@@ -8736,6 +9099,11 @@
     // exported so the reconciliation check and the tests can call the same
     // code path the page uses, rather than a copy that can drift
     _internals: {
+      // §5.8 Derived lines
+      lineCoverage: lineCoverage,
+      renderLinesTab: renderLinesTab,
+      lineSetCount: lineSetCount,
+      lineGames: lineGames,
       normaliseEdition: normaliseEdition,
       editionScoreText: editionScoreText,
       speedBandFor: speedBandFor,
