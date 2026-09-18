@@ -6933,7 +6933,11 @@ function _mcBet365Now(m){
   // `> 0`, not `!= null`: zero is not a price (see _ocsSanePx). This leg comes off
   // matches.json, which the OCS sanitiser never sees, so it carries its own guard.
   const b = m.bet365Now;
-  if (b && b.p1 > 0 && b.p2 > 0) return { p1: b.p1, p2: b.p2, book: 'bet365', at: b.at || null, src: 'timeline' };
+  // `obs` is OUR observation clock (when we last LOOKED), carried alongside `at`
+  // (when bet365 last MOVED the price). They answer different questions and
+  // _measurablePair needs the former; every other consumer ignores it.
+  if (b && b.p1 > 0 && b.p2 > 0) return { p1: b.p1, p2: b.p2, book: 'bet365', at: b.at || null,
+                                          obs: b.observedAt || null, src: 'timeline' };
   const bo = m.bestOdds;
   if (bo && _isBet365(bo.p1?.bookmaker) && _isBet365(bo.p2?.bookmaker) && bo.p1.price && bo.p2.price) {
     return { p1: bo.p1.price, p2: bo.p2.price, book: 'bet365', at: null, src: 'feed' };
@@ -7162,6 +7166,45 @@ function _openDerivedOf(m, who){ return _openPinIsVendor(m) ? null : _openAnchor
 // same-book bet365 now on file. Moller/Dimitrov moved 6.50 → 9.00 (+38.5%), which
 // is the largest move on the board and is not orderable under the current ruling.
 // Reported to the founder with the number; NOT routed around here.
+// ──────────── TEN-225, founder 2026-09-18T06:14Z — the flat-0% check ──
+// "If it is 1 sighting, then Now is the Open and 0% is an artefact, not a market
+// fact." MEASURED on the deployed board, and the answer splits in two:
+//
+//   * The bet365 flat cards (Griekspoor 1.15, Artnak 1.22, Planinsek 1.27) hold
+//     TWO sightings at one price level. extract_series() collapses a run of
+//     identical prices to its FIRST and LAST point, so [17 Sep 13:07, 1.15] +
+//     [18 Sep 04:45, 1.15] is a re-observation 15h38m later, not one row read
+//     twice — and refresh-odds.py looked again at 08:15. Those 0% are market
+//     fact: bet365 was asked and had not moved.
+//   * The Kibl/sports411 cards (Lehecka 2.29 @07:32:04, Draxl 4.10 @08:24:14)
+//     hold ONE row. ten225-kibl-card-state.py writes the is_opener row into
+//     open_* and newest_of() hands that SAME row back into now_*, so open_ts
+//     === now_ts to the second. That 0% is the artefact — one observation
+//     rendered as two, which is the zero-as-price class of error: a figure we
+//     have no evidence for.
+//
+// THE GUARD ONLY BITES WHEN BOTH PRICES ARE IDENTICAL. A different price is
+// itself evidence of a second observation, whatever the clocks say, so no real
+// move can be suppressed here however the timestamps are sourced.
+//
+// IT COMPARES OUR OBSERVATION CLOCK, NOT THE BOOK'S CHANGE INSTANT. `at` is when
+// bet365 last MOVED the price: a quote sitting unchanged for 19h carries a
+// 19h-old `at` while being perfectly current, so testing `at` would throw away
+// exactly the evidenced-flat case above. `seenAt`/`observedAt` answer "when did
+// we look", which is what a 0% actually rests on. For the odds_card_state path
+// the two coincide — `inserted_on` is both the vendor insert and our sighting.
+function _obsMs(){
+  for (let i = 0; i < arguments.length; i++){
+    const t = Date.parse(arguments[i] || '');
+    if (Number.isFinite(t)) return t;
+  }
+  return NaN;
+}
+function _measurablePair(p, openObs, nowObs){
+  if (!p) return null;
+  if (p.n1 !== p.o1 || p.n2 !== p.o2) return p;      // a move is its own evidence
+  return (Number.isFinite(openObs) && Number.isFinite(nowObs) && nowObs > openObs) ? p : null;
+}
 function _mcOpenNowPair(m){
   if (_openPinIsVendor(m)) return null;
   const o = _ocsOf(m);
@@ -7169,15 +7212,18 @@ function _mcOpenNowPair(m){
     const o1 = o.p1.open, o2 = o.p2.open;
     if (o1 == null || o2 == null) return null;
     const openTs = o.p1.openTs || o.p2.openTs || null;
-    if (o.p1.now != null && o.p2.now != null)
-      return { o1, o2, n1: o.p1.now, n2: o.p2.now, book: o.book,
-               openTs, nowTs: o.p1.nowTs || o.p2.nowTs || null };
+    if (o.p1.now != null && o.p2.now != null){
+      const nowTs = o.p1.nowTs || o.p2.nowTs || null;
+      return _measurablePair({ o1, o2, n1: o.p1.now, n2: o.p2.now, book: o.book, openTs, nowTs },
+                             _obsMs(openTs), _obsMs(nowTs));
+    }
     // The selected book has no Now. bet365 — and only bet365 — may top its own
     // Now up from the matches.json bet365 stream: same book, same stream, so it
     // is not a blend. Identical to the rule _mcNowOf/_mcNowPair already apply.
     if (_isBet365(o.book)){
       const b = _mcBet365Now(m);
-      if (b) return { o1, o2, n1: b.p1, n2: b.p2, book: 'bet365', openTs, nowTs: b.at || null };
+      if (b) return _measurablePair({ o1, o2, n1: b.p1, n2: b.p2, book: 'bet365', openTs, nowTs: b.at || null },
+                                    _obsMs(openTs), _obsMs(b.obs, b.at));
     }
     return null;
   }
@@ -7186,8 +7232,9 @@ function _mcOpenNowPair(m){
   const b = _mcBet365Now(m);
   if (!b) return null;
   if (String(op.bookmaker || '').toLowerCase() !== String(b.book || '').toLowerCase()) return null;
-  return { o1: op.p1, o2: op.p2, n1: b.p1, n2: b.p2, book: b.book,
-           openTs: op.at || op.seenAt || null, nowTs: b.at || null };
+  return _measurablePair({ o1: op.p1, o2: op.p2, n1: b.p1, n2: b.p2, book: b.book,
+                           openTs: op.at || op.seenAt || null, nowTs: b.at || null },
+                         _obsMs(op.seenAt, op.at), _obsMs(b.obs, b.at));
 }
 // Largest |open → now| as a fraction of the open, over either side. -1 when the
 // fixture has no same-book pair at all.
