@@ -2760,10 +2760,41 @@ async function fetchApiTennisMatchOdds(eventKey) {
       // exactly the cross-book artefact TEN-124 removed.
       if (b1 > 0 && b2 > 0) bet365 = { p1: b1, p2: b2, seenAt: new Date().toISOString() };
     }
+    // ───────────────────────────── TEN-225 ruling 4a (founder, 2026-09-18) ──
+    // "A fixture whose current book has an Open but no Now, while another book
+    //  has both, switches ENTIRELY to that book, using ITS OWN FIRST TICK as
+    //  Open. Skatov/Samrej is the live example (Open from bet365-via-api-tennis,
+    //  Sbo prices it 1.40/2.61)."
+    //
+    // THE TAKEOVER CANNOT FIRE TODAY, AND THE REASON IS THIS FUNCTION. Measured
+    // on the deployed board 2026-09-18: `odds_card_state` holds exactly three
+    // sources — Kibl/sports411 (rank 1), bet365 via oddspapi (rank 2), bet365
+    // via api-tennis (rank 3). Sbo is not in it and never has been. get_odds
+    // hands this function the FULL per-book map and it collapses that to one
+    // headline (`ref`), one best-price-PER-SIDE merge (`bestOdds`) and bet365.
+    // Every other book's pair is dropped on the floor here — so no first
+    // sighting of Sbo has ever been recorded anywhere, and "its own first tick"
+    // does not exist for the selection pass to switch to.
+    //
+    // The raw pairs are therefore returned: every book quoting BOTH sides, named
+    // exactly as the vendor names it. BOTH LEGS OR NOTHING per book — one side
+    // from Sbo beside one from elsewhere is the cross-book artefact TEN-124
+    // removed, and it is also precisely why `bestOdds` (a per-side merge) can
+    // never serve as a book's Open.
+    //
+    // This is a CAPTURE, not a display change; nothing renders it yet. It has to
+    // start regardless of when the rest lands, because a first sighting not
+    // taken is not recoverable — the api-tennis odds payload carries no history.
+    const allBooks = {};
+    for (const bk of books) {
+      const v1 = parseFloat(ha.Home[bk]), v2 = parseFloat(ha.Away[bk]);
+      if (v1 > 0 && v2 > 0) allBooks[bk] = { p1: v1, p2: v2 };
+    }
     return {
       odds: { p1, p2, bookmaker: ref },
       bestOdds: { p1: bestSide('Home'), p2: bestSide('Away') },
       bet365,
+      allBooks,
     };
   } catch (e) {
     console.error('Finished-match odds fetch failed for', eventKey, '-', e.message);
@@ -2885,6 +2916,11 @@ async function buildPastMatchObject(fixture, surfaceMap, venueMap) {
     match.bestOdds = pastOdds.bestOdds;
     // TEN-198 — transient carrier for the OPEN block below; stripped before write.
     if (pastOdds.bet365) match.apiTennisBet365 = pastOdds.bet365;
+    // TEN-225 ruling 4a — transient carrier for the per-book first sighting; stripped
+    // before write, exactly like apiTennisBet365. pinBookOpens() is PRE-MATCH ONLY, so
+    // on this (completed) path the carrier is rejected there rather than filtered here:
+    // one guard, in one place, for the same reason the vendor open has one.
+    if (pastOdds.allBooks) match.apiTennisBooks = pastOdds.allBooks;
   }
 
   const h2hData = await fetchH2H(p1Key, p2Key);
@@ -3039,6 +3075,8 @@ async function buildUpcomingMatchObject(fixture, surfaceMap, venueMap) {
     match.bestOdds = upOdds.bestOdds;
     // TEN-198 — transient carrier for the OPEN block below; stripped before write.
     if (upOdds.bet365) match.apiTennisBet365 = upOdds.bet365;
+    // TEN-225 ruling 4a — transient carrier for the per-book first sighting.
+    if (upOdds.allBooks) match.apiTennisBooks = upOdds.allBooks;
   }
 
   const hintKey = Object.keys(TOURNAMENT_VENUE_HINTS).find(k => fixture.tournament_name.includes(k));
@@ -5211,8 +5249,14 @@ async function runPipeline() {
   try {
     const priorO = JSON.parse(fs.readFileSync('matches.json', 'utf8'));
     for (const pm of priorO) {
-      if (!pm.openingOdds && !pm.closingOdds && !pm.bet365Now) continue;
+      // TEN-225 ruling 4a — bookOpens joins the carry-forward set. Without it in this
+      // filter a fixture whose ONLY pinned odds fact is a per-book first sighting would
+      // be skipped here, the carry would miss it, and the next run's pin would re-stamp
+      // `seenAt` — turning a write-once first sighting into a value that silently
+      // refreshes every 15 minutes. That is the failure mode write-once exists to stop.
+      if (!pm.openingOdds && !pm.closingOdds && !pm.bet365Now && !pm.bookOpens) continue;
       const rec = { openingOdds: pm.openingOdds || null, closingOdds: pm.closingOdds || null,
+                    bookOpens: pm.bookOpens || null,
                     // TEN-179 item 1 — the last bet365 NOW we hold. Unlike open/close this
                     // is NOT frozen: it is re-derived whenever this run has a bet365 stream.
                     // It is carried forward only so a run where the 3-hourly capture has not
@@ -5371,6 +5415,48 @@ async function runPipeline() {
     openFromVendor++;
     return true;
   };
+  // ──────────────────────────────── TEN-225 ruling 4a (founder, 2026-09-18) ──
+  // The per-book first sighting: "using ITS OWN first tick as Open".
+  //
+  // Every rule here is deliberately the SAME rule pinVendorOpen above already
+  // obeys, because they answer one question for a different book list, and two
+  // divergent copies of "what counts as an opening price" is how an opening
+  // price stops meaning one thing:
+  //   * WRITE-ONCE PER BOOK. A book already in m.bookOpens is never rewritten —
+  //     "first sighting wins forever" (TEN-216 ruling, restated by the founder
+  //     on this issue). A quote that vanishes and returns is a change, not a new
+  //     open, so a book that drops out and comes back keeps its first price.
+  //   * PRE-MATCH ONLY. api-tennis keeps serving a fixture's Home/Away market
+  //     after the match ends, and buildPastMatchObject() calls get_odds for
+  //     completed fixtures — so without this guard a settled match would pin a
+  //     POST-MATCH price under the word "Opening", permanently, because
+  //     write-once. That exact defect was caught in clean-context review on the
+  //     vendor pin above; it is the same defect here and gets the same guard.
+  //   * SEEN-BY-US ONLY. api-tennis carries no tick time, so the only instant we
+  //     can evidence is our own observation. `seenAt`, never `at` — the same
+  //     distinction the vendor pin draws, for the same measured reason.
+  //   * BOTH LEGS. Enforced upstream in fetchApiTennisMatchOdds and restated
+  //     here, so a future caller cannot bypass it.
+  //
+  // NOTHING RENDERS THIS YET. It exists so the takeover the founder asked for
+  // HAS a first tick to switch to when the selection pass goes looking for one.
+  // Reported as a capture, not dressed up as a live behaviour change.
+  let bookOpensPinned = 0, bookOpensPostMatchRejected = 0;
+  const pinBookOpens = (m) => {
+    const raw = m.apiTennisBooks;
+    if (!raw) return;
+    if (m.finalScore) { bookOpensPostMatchRejected++; return; }
+    const seenAt = new Date().toISOString();
+    const out = m.bookOpens || {};
+    for (const bk of Object.keys(raw)) {
+      const v = raw[bk];
+      if (!bk || out[bk]) continue;                    // write-once, per book
+      if (!(v && v.p1 > 0 && v.p2 > 0)) continue;      // both legs or nothing
+      out[bk] = { p1: v.p1, p2: v.p2, seenAt, src: VENDOR_SRC, vendor: 'api-tennis' };
+      bookOpensPinned++;
+    }
+    if (Object.keys(out).length) m.bookOpens = out;
+  };
   for (const m of matches) {
     const carried = priorOdds.get(`id:${m.id}`)
       || priorOdds.get(`np:${m.date}|${normalizeName(m.p1)}|${normalizeName(m.p2)}`);
@@ -5379,6 +5465,16 @@ async function runPipeline() {
     // validity check, so an in-play close pinned by an earlier pipeline version
     // is not blindly resurrected here.
     if (carried && carried.openingOdds) { m.openingOdds = carried.openingOdds; openPreserved++; }
+    // TEN-225 ruling 4a — carry the per-book first sightings forward, then pin any book
+    // seen for the FIRST time on this run. Order matters and is the whole guarantee:
+    // carry first, so pinBookOpens sees the existing keys and its write-once test
+    // (`if (out[bk]) continue`) has something to be true about. Pinned here rather than
+    // inside the oddsMovement branches below because a book's first sighting has nothing
+    // to do with whether oddspapi has a bet365 series for the fixture — both `continue`
+    // paths down there would skip it, which is the bug TEN-198 had to be patched for on
+    // the vendor open.
+    if (carried && carried.bookOpens) m.bookOpens = carried.bookOpens;
+    pinBookOpens(m);
     // Guarded on !finalScore: a match with no oddsMovement at all `continue`s below before
     // reaching the delete, so an unguarded carry-forward would leave a stale live price
     // pinned to a settled card forever.
@@ -5649,6 +5745,11 @@ async function runPipeline() {
   // point of the vendor tag is that there is exactly one open and it says where it came
   // from. The evidence that justifies the number survives on the pin itself (`seenAt`).
   for (const m of matches) { if ('apiTennisBet365' in m) delete m.apiTennisBet365; }
+  // TEN-225 ruling 4a — same strip, same reason: the raw per-book map is a build-time
+  // carrier, not payload. m.bookOpens (the write-once pin derived from it) IS payload
+  // and stays. Leaving the carrier in would add every book's current price to
+  // matches.json on every run, which is the payload budget this app moves data OUT of.
+  for (const m of matches) { if ('apiTennisBooks' in m) delete m.apiTennisBooks; }
   // Report the anchor mix out loud. The founder asked for "how many fixtures actually
   // change in the first week", and this line is where that number is read off: every
   // openFromSighting is a fixture whose OPEN is now a price bet365 was provably showing
@@ -5705,6 +5806,19 @@ async function runPipeline() {
   }
   console.log(`Odds snapshots — opening: ${openDerived} derived / ${openPreserved} preserved / ${openFromArchive} re-pinned earlier from the bet365 archive; closing (completed only): ${closeDerived} derived / ${closePreserved} preserved / ${closeHealed} healed (cross-book/in-play pin replaced) / ${closeDashed} dashed (no proven pre-first-ball reference).`);
   console.log(`bet365 NOW (upcoming only, TEN-179 item 1) — ${nowFromLive} kept from the hourly metered read / ${nowPinned} derived from the 3-hourly series / ${nowCarried} carried forward; ${crossBookDropped} upcoming match(es) dropped a cross-book open rather than fall back to another book.`);
+  // TEN-225 ruling 4a — the per-book first sighting. Printed with its counters so the
+  // Actions log shows the capture growing (or not) rather than leaving it to be inferred
+  // from the payload; a silent capture is indistinguishable from a broken one.
+  {
+    const withBooks = matches.filter(m => m.bookOpens && Object.keys(m.bookOpens).length);
+    const distinct = new Set();
+    withBooks.forEach(m => Object.keys(m.bookOpens).forEach(b => distinct.add(b)));
+    console.log(`Per-book OPEN sightings (TEN-225 ruling 4a) — ${bookOpensPinned} new pin(s) this run;`
+      + ` ${withBooks.length} of ${matches.length} match(es) now carry one;`
+      + ` ${distinct.size} distinct book(s): ${[...distinct].sort().join(', ') || 'none'};`
+      + ` ${bookOpensPostMatchRejected} post-match payload(s) REJECTED (a settled fixture's live price is not an open).`
+      + ` Write-once per book; capture only — no surface renders these yet.`);
+  }
 
   // ---- Frozen Pinnacle opening line + base-state switch log ----
   // (Model v2.0 STEP 2; founder decision 2026-07-24.) The base-probability

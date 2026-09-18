@@ -83,6 +83,14 @@ from ten225_names import match_key as mk_of  # noqa: E402
 # filler that can only see its own source is able to answer.
 RANK_ODDSPAPI = 2
 RANK_APITENNIS = 3
+# TEN-225 ruling 4a (founder, 2026-09-18) — every OTHER book api-tennis quotes,
+# below bet365-via-api-tennis. It sits at the bottom ON PURPOSE: these books are
+# takeover CANDIDATES, not a promotion. They only ever win a fixture where the
+# higher-ranked book has an Open and no Now, and then only because the selection
+# pass's completeness tier says so — never on rank. Ranked as one number rather
+# than per book because "Pinnacle/Bet105 add later without schema changes" means
+# a new book must not need a new constant.
+RANK_OTHER_BOOK = 4
 
 
 # ------------------------------------------------------------------- the rules
@@ -274,6 +282,113 @@ def fallback_rows(matches, covered, as_of):
     return out, st
 
 
+def takeover_candidate_rows(matches, as_of):
+    """TEN-225 ruling 4a — one row per (fixture, OTHER book) with an Open of its own.
+
+    Michael, 2026-09-18: "A fixture whose current book has an Open but no Now,
+    while another book has both, switches ENTIRELY to that book, using its own
+    first tick as Open. Skatov/Samrej is the live example (Open from
+    bet365-via-api-tennis, Sbo prices it 1.40/2.61)."
+
+    WHY THIS FUNCTION HAD TO EXIST AT ALL. The takeover could not fire because the
+    alternative book was never in the table. `odds_card_state` held exactly three
+    sources — Kibl/sports411, bet365 via oddspapi, bet365 via api-tennis — so on
+    the founder's own example there was no Sbo row to switch TO. This writes them.
+
+    THE OPEN IS `m.bookOpens[book]`, NOT THE CURRENT PRICE. bsp-pipeline.js pins a
+    per-book first sighting write-once (pinBookOpens); this reads that pin and
+    nothing else. Using today's price as the Open would produce a 0% open->now
+    move on every takeover — a number that looks like data and says nothing — and
+    would silently rewrite itself every run, which is the exact failure write-once
+    exists to prevent.
+
+    THE NOW IS THE SAME BOOK'S CURRENT PAIR, BOTH LEGS. `m.bestOdds` is a
+    best-price-PER-SIDE merge across books, so it is accepted only when both sides
+    name the SAME bookmaker — a genuine two-sided quote, not a merge. `m.odds` is
+    single-book by construction. One book, both legs, or no row.
+
+    NOT WRITTEN FOR A FIXTURE THAT HAS STARTED OR FINISHED: after the off there is
+    no Now to be complete about, the selection tier is off, and a row here could
+    only add noise. Upcoming only, which is where the ruling lives.
+
+    THIS IS BUILT AHEAD OF ITS DATA. `m.bookOpens` starts empty and accrues
+    forward — a first sighting not taken is not recoverable, so the capture cannot
+    be backfilled and this function returns 0 rows until it has run. Reported with
+    its counters rather than presented as a live behaviour change.
+    """
+    out, st = [], collections.Counter()
+    for m in matches or []:
+        key = str(m.get('id') or '')
+        opens = m.get('bookOpens') or {}
+        if not key or not opens:
+            st['no_book_opens'] += 1
+            continue
+        if m.get('finalScore'):
+            st['finished'] += 1
+            continue
+        # Current pair, per book, both legs from that one book.
+        now_by_book = {}
+        o = m.get('odds') or {}
+        if o.get('bookmaker') and o.get('p1') and o.get('p2'):
+            now_by_book[o['bookmaker']] = (float(o['p1']), float(o['p2']))
+        bo = m.get('bestOdds') or {}
+        b1, b2 = bo.get('p1') or {}, bo.get('p2') or {}
+        if (b1.get('bookmaker') and b1['bookmaker'] == b2.get('bookmaker')
+                and b1.get('price') and b2.get('price')):
+            now_by_book[b1['bookmaker']] = (float(b1['price']), float(b2['price']))
+
+        mkey = mk_of(m.get('date') or '', m.get('p1'), m.get('p2'))
+        if not mkey:
+            st['no_match_key'] += 1
+            continue
+        for book, op in opens.items():
+            if (book or '').lower() == BOOK:
+                # bet365 already has its own ranked row from fallback_rows; a
+                # second one at rank 4 would be the same book twice on one
+                # fixture, which the selection pass reads as an ambiguity and
+                # drops — i.e. it would turn a working card blank.
+                st['skip_bet365'] += 1
+                continue
+            if not (op and op.get('p1') and op.get('p2')):
+                st['open_incomplete'] += 1
+                continue
+            seen = epoch(op.get('seenAt'))
+            if seen is None:
+                st['open_no_timestamp'] += 1
+                continue
+            nowpair = now_by_book.get(book)
+            st['with_now' if nowpair else 'open_only'] += 1
+            for side, idx in (('1', 0), ('2', 1)):
+                out.append({
+                    'fixture_id': f'{key}#{book}',
+                    'id_space': 'api-tennis',
+                    'book': book,
+                    'market': MARKET,
+                    'side': side,
+                    'line': None,
+                    'match_key': mkey,
+                    'book_rank': RANK_OTHER_BOOK,
+                    # A first sighting, not a book's own post time — api-tennis
+                    # carries no tick time. Same label the bet365 fallback uses,
+                    # for the same reason.
+                    'ts_kind': 'sighting',
+                    'open_price': float(op['p1'] if side == '1' else op['p2']),
+                    'open_ts': iso(seen),
+                    'open_limit': None,
+                    'now_price': (nowpair[idx] if nowpair else None),
+                    'now_ts': (iso(as_of) if nowpair else None),
+                    'close_price': None, 'close_ts': None,
+                    'start_ts': None,
+                    'start_ts_source': 'none',
+                    'start_reject_reason': None,
+                    'source': 'api-tennis',
+                    'label': 'last seen',
+                    'now_basis': 'not-started' if nowpair else None,
+                })
+                st['rows'] += 1
+    return out, st
+
+
 # -------------------------------------------------------------------- plumbing
 
 def fetch_page(url, key, table, cols, extra=''):
@@ -341,11 +456,25 @@ def main():
         covered = {r['fixture_id'] for r in rows}
         fb, fst = fallback_rows(matches, covered, as_of)
         print(f'api-tennis fallback rows: {len(fb)}  {dict(fst)}')
+        # TEN-225 ruling 4a — takeover candidates. NOT gated on `covered`: the
+        # whole point is to give the selection pass an alternative to a book that
+        # HAS an oddspapi row and no Now. The "api-tennis only where oddspapi has
+        # nothing" rule governs the FALLBACK; this is a different mechanism, and
+        # the ruling that authorises it says so explicitly.
+        tk, tkst = takeover_candidate_rows(matches, as_of)
+        print(f'takeover candidate rows (ruling 4a): {len(tk)}  {dict(tkst)}')
+        if not tk:
+            print('  NOTE: 0 rows. m.bookOpens is pinned write-once by '
+                  'bsp-pipeline.js and accrues FORWARD ONLY — a first sighting '
+                  'not taken is not recoverable, so this stays 0 until the '
+                  'pipeline has run with the capture in place.')
     else:
         print('::warning::matches.json absent — no api-tennis fallback this run.')
+        tk, tkst = [], collections.Counter()
 
-    all_rows = rows + fb
+    all_rows = rows + fb + tk
     result['counts'] = {'oddspapi': len(rows), 'apiTennis': len(fb),
+                        'takeoverCandidates': len(tk),
                         'total': len(all_rows),
                         'oddspapiStats': dict(st), 'fallbackStats': dict(fst)}
 

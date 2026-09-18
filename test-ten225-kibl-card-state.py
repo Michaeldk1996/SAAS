@@ -342,11 +342,16 @@ check('an unreadable board does not fail OPEN — it must cost the cross-check '
 print('\nselect_winners — one book per match, lowest rank wins')
 
 
-def srow(mkey, rank, source, side='1', fixture='f', price=2.0):
+def srow(mkey, rank, source, side='1', fixture='f', price=2.0,
+         book=None, now=None, close=None, start=None):
+    # TEN-225 ruling 4a — selection moved to the FIXTURE grain, so a row now has
+    # to name its book: two rows of one rank are only "the same book" if they say
+    # so. `book` defaults off the source so every existing case keeps its meaning.
     return {'match_key': mkey, 'book_rank': rank, 'source': source,
+            'book': book if book is not None else source,
             'market': 'match winner', 'side': side, 'line': None,
-            'fixture_id': fixture, 'open_price': price, 'now_price': None,
-            'close_price': None, 'is_selected': False}
+            'fixture_id': fixture, 'open_price': price, 'now_price': now,
+            'close_price': close, 'start_ts': start, 'is_selected': False}
 
 
 rows = [srow('d|a|b', 2, 'oddspapi', fixture='op1'),
@@ -380,14 +385,92 @@ check('an EMPTY rank-1 row does not hide a populated rank-2 one — this is how 
 
 rows, st = K.select_winners([srow('d|a|b', 1, 'kibl', fixture='k1'),
                              srow('d|a|b', 1, 'kibl', fixture='k2')])
-check('two rows of ONE rank on one line drop on ambiguity rather than coin-toss',
+check('two rows of ONE book on one side drop on ambiguity rather than coin-toss '
+      '(at the fixture grain this is a SIDE tie, not a rank tie — same drop, '
+      'accurate name)',
+      not any(r['is_selected'] for r in rows) and st['side_tie_dropped'] == 1,
+      dict(st))
+
+rows, st = K.select_winners([srow('d|a|b', 1, 'kibl', book='kiblA'),
+                             srow('d|a|b', 1, 'kibl', book='kiblB')])
+check('two DIFFERENT books at one rank on one fixture drop on ambiguity',
       not any(r['is_selected'] for r in rows) and st['rank_tie_dropped'] == 1,
       dict(st))
 
 rows, _ = K.select_winners([srow('d|a|b', 1, 'kibl', side='1'),
                             srow('d|a|b', 1, 'kibl', side='2')])
-check('the two SIDES of one match are independent lines, both selected',
+check('both SIDES of one match are selected together — the fixture is the unit, '
+      'so one book supplies both legs or neither',
       sum(1 for r in rows if r['is_selected']) == 2)
+
+# ---------------------------------------- TEN-225 ruling 4a: the takeover
+print('\nselect_winners — ruling 4a, completeness takeover')
+
+# The founder's case, in rows: the rank-2 book has an Open and no Now; a rank-3
+# book has both. The fixture must switch ENTIRELY to the rank-3 book.
+takeover = [srow('d|a|b', 2, 'oddspapi', side='1', book='bet365', price=1.44),
+            srow('d|a|b', 2, 'oddspapi', side='2', book='bet365', price=2.62),
+            srow('d|a|b', 3, 'feed', side='1', book='Sbo', price=1.40, now=1.40),
+            srow('d|a|b', 3, 'feed', side='2', book='Sbo', price=2.61, now=2.61)]
+rows, st = K.select_winners(takeover)
+sel = [r for r in rows if r['is_selected']]
+check('a book with Open AND Now takes over from a higher-priority book with '
+      'Open only', len(sel) == 2 and {r['book'] for r in sel} == {'Sbo'},
+      [(r['book'], r['side']) for r in sel])
+check('...it is counted, so the rule cannot fire silently',
+      st['takeover_on_completeness'] == 1, dict(st))
+check('...and the fixture switches ENTIRELY — no bet365 row survives beside it',
+      not any(r['is_selected'] for r in rows if r['book'] == 'bet365'))
+
+# Rank still wins when completeness is equal: the tier is a tie-break, not a
+# replacement for the founder's book priority.
+both = [srow('d|a|b', 2, 'oddspapi', side='1', book='bet365', price=1.44, now=1.45),
+        srow('d|a|b', 2, 'oddspapi', side='2', book='bet365', price=2.62, now=2.60),
+        srow('d|a|b', 3, 'feed', side='1', book='Sbo', price=1.40, now=1.40),
+        srow('d|a|b', 3, 'feed', side='2', book='Sbo', price=2.61, now=2.61)]
+rows, st = K.select_winners(both)
+sel = [r for r in rows if r['is_selected']]
+check('with BOTH books complete, the lower book_rank still wins — completeness '
+      'breaks ties, it does not outrank the founder priority',
+      {r['book'] for r in sel} == {'bet365'} and not st['takeover_on_completeness'],
+      [(r['book'], r['side']) for r in sel])
+
+# Half a Now is not a Now: a book quoting one leg must not trigger a takeover,
+# because the publisher would dash the fixture on the missing side anyway.
+half = [srow('d|a|b', 2, 'oddspapi', side='1', book='bet365', price=1.44),
+        srow('d|a|b', 2, 'oddspapi', side='2', book='bet365', price=2.62),
+        srow('d|a|b', 3, 'feed', side='1', book='Sbo', price=1.40, now=1.40),
+        srow('d|a|b', 3, 'feed', side='2', book='Sbo', price=2.61)]
+rows, st = K.select_winners(half)
+sel = [r for r in rows if r['is_selected']]
+check('a book with a Now on ONE side only does NOT take over',
+      {r['book'] for r in sel} == {'bet365'}, [(r['book'], r['side']) for r in sel])
+
+# After the off a Now is CORRECTLY absent, so the tier must switch off — or every
+# settled fixture would demote its bet365 open+close in favour of any book still
+# carrying a stale in-play price.
+started_ts = '2020-01-01T00:00:00+00:00'
+started = [srow('d|a|b', 2, 'oddspapi', side='1', book='bet365', price=1.44,
+                close=1.50, start=started_ts),
+           srow('d|a|b', 2, 'oddspapi', side='2', book='bet365', price=2.62,
+                close=2.50, start=started_ts),
+           srow('d|a|b', 3, 'feed', side='1', book='Sbo', price=1.40, now=1.40,
+                start=started_ts),
+           srow('d|a|b', 3, 'feed', side='2', book='Sbo', price=2.61, now=2.61,
+                start=started_ts)]
+rows, st = K.select_winners(started)
+sel = [r for r in rows if r['is_selected']]
+check('on a fixture that has STARTED the completeness tier is off — a stale '
+      'in-play Now must never demote a real Open+Close',
+      {r['book'] for r in sel} == {'bet365'}, [(r['book'], r['side']) for r in sel])
+
+check('a fixture with NO start on file reads as not-started (the state every '
+      'Kibl row is in, and where the takeover has to work)',
+      K.fixture_has_started([{'start_ts': None}]) is False)
+check('...and a resolved PAST start reads as started',
+      K.fixture_has_started([{'start_ts': started_ts}]) is True)
+check('...and a resolved FUTURE start reads as not started',
+      K.fixture_has_started([{'start_ts': '2099-01-01T00:00:00+00:00'}]) is False)
 
 
 # ------------------------------------------------------------- names & pairing

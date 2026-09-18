@@ -672,12 +672,27 @@ def run_selection(url, key, dry_run=False):
     return st, None
 
 
+def book_completeness(book_rows):
+    """Does this book quote BOTH SIDES of this fixture for open, and for now?
+
+    The unit is the fixture, not the row, because the founder's takeover rule is
+    about a fixture switching book: half an Open is not an Open for this purpose,
+    for the same reason the publisher refuses to render one.
+    """
+    sides = {r.get('side') for r in book_rows}
+    both = lambda col: (len(sides) >= 2
+                        and all(any(r.get('side') == s and r.get(col) is not None
+                                    for r in book_rows) for s in sides))
+    return {'open': both('open_price'), 'now': both('now_price'),
+            'close': both('close_price')}
+
+
 def select_winners(rows):
     """Founder ruling: one book per fixture, lowest book_rank wins.
 
-    Operates on (match_key, market, side, line) — NOT on fixture_id, because the
-    three sources key the same match under three different id spaces and
-    fixture_id cannot see that they are one match.
+    Operates on (match_key, market, line) — NOT on fixture_id, because the three
+    sources key the same match under three different id spaces and fixture_id
+    cannot see that they are one match.
 
     A row with NO match_key cannot be shown to be a duplicate of anything AND
     cannot be joined to a board match, so it is never selected. That is the
@@ -687,6 +702,47 @@ def select_winners(rows):
     A row carrying none of Open/Now/Close is not selected either — selecting it
     would let an empty rank-1 row hide a populated rank-2 one, which is the exact
     way a priority change makes a working card go blank.
+
+    ── TEN-225 RULING 4a (founder, 2026-09-18) — THE TAKEOVER ──────────────────
+
+    "A fixture whose current book has an Open but no Now, while another book has
+     both, switches ENTIRELY to that book, using its own first tick as Open."
+
+    Two changes, and the first is the one that makes the second possible:
+
+    1. THE GRAIN MOVED FROM THE SIDE TO THE FIXTURE. This function used to decide
+       each (match_key, market, SIDE, line) independently, which means "one book
+       per fixture" was never actually enforced here — it was enforced downstream
+       by the publisher DROPPING any match whose selected rows disagreed about the
+       book. Per-side selection also cannot express a takeover at all: "switches
+       ENTIRELY to that book" is a statement about the fixture, and a rule that
+       only ever looks at one side has no way to know the other side is missing.
+
+    2. COMPLETENESS OUTRANKS RANK, AND ONLY WHERE A NOW IS MEANINGFUL. Within a
+       fixture, a book quoting BOTH legs of Open AND BOTH legs of Now beats a
+       lower-ranked book that does not. That is the takeover, stated as a sort
+       key rather than as a special case.
+
+       The tier applies ONLY to a fixture that has not started. After the off a
+       Now is CORRECTLY absent — that is the whole point of withholding it — so
+       applying the tier there would demote a perfectly good bet365 open+close
+       row in favour of any book still carrying a stale in-play price. That is
+       not a hypothetical: `qualifies_as_now` in the loader exists precisely
+       because an earlier draft relabelled three-month-old closes as "Now" and
+       the number looked healthy. A fixture with NO start on file is treated as
+       not started, which is the state Kibl rows are all in (start_ts_source is
+       'none' on every one of them) and the state where the tier does real work.
+
+    MEASURED, deployed board 2026-09-18 — THE TAKEOVER FIRES ZERO TIMES TODAY,
+    and the reason is upstream of this function, not in it. `odds_card_state`
+    holds three sources and only three: Kibl/sports411, bet365 via oddspapi,
+    bet365 via api-tennis. On the founder's own example, Skatov/Samrej, the
+    other book is Sbo — which has never been written to this table, because
+    bsp-pipeline.js collapsed the api-tennis per-book map to one headline line
+    and discarded the rest. Sbo therefore has no first tick to take over with.
+    That capture now exists (`m.bookOpens`, pinned write-once per book), but it
+    can only accrue forward: a first sighting not taken is not recoverable. This
+    pass is built and correct ahead of the rows it needs, and reported as such.
 
     Returns (rows, stats) with is_selected set in place.
     """
@@ -700,22 +756,81 @@ def select_winners(rows):
                 and r.get('close_price') is None):
             st['empty_row'] += 1
             continue
-        groups[(r['match_key'], r['market'], r['side'], r.get('line'))].append(r)
+        groups[(r['match_key'], r['market'], r.get('line'))].append(r)
 
-    for k, cands in groups.items():
-        top = min(int(c['book_rank']) for c in cands)
-        winners = [c for c in cands if int(c['book_rank']) == top]
+    for _k, cands in groups.items():
+        by_book = collections.defaultdict(list)
+        for c in cands:
+            by_book[(int(c['book_rank']), c.get('book'))].append(c)
+
+        started = fixture_has_started(cands)
+        scored = []
+        for (rank, book), brows in by_book.items():
+            cov = book_completeness(brows)
+            # Tier 1 = "has both legs of Open AND both legs of Now", which is
+            # exactly the condition the founder's rule names. Never applied after
+            # the off; see the docstring.
+            tier = 1 if (not started and cov['open'] and cov['now']) else 0
+            scored.append((-tier, rank, book, brows))
+        scored.sort(key=lambda x: (x[0], x[1]))
+
+        best_tier, best_rank = scored[0][0], scored[0][1]
+        winners = [s for s in scored if s[0] == best_tier and s[1] == best_rank]
         if len(winners) > 1:
-            # Two rows of one rank on one logical line: two fixtures of one
-            # source paired onto one match. Ambiguous -> neither is selected,
-            # because picking either would be a coin toss rendered as a price.
+            # Two books of one rank at one completeness on one fixture: two
+            # fixtures of one source paired onto one match. Ambiguous -> nothing
+            # is selected, because picking either would be a coin toss rendered
+            # as a price.
             st['rank_tie_dropped'] += 1
             continue
-        winners[0]['is_selected'] = True
-        st[f'selected_rank_{top}'] += 1
-        st['demoted'] += len(cands) - 1
+        _t, rank, _book, brows = winners[0]
+
+        # Within the winning book, one row per (side, line). More than one is the
+        # same ambiguity a rank tie is, one level down, and it drops the FIXTURE
+        # rather than the side — a fixture showing one real side beside a dash
+        # that exists only because we could not decide is worse than two dashes.
+        per_side = collections.Counter((r.get('side'), r.get('line')) for r in brows)
+        if any(n > 1 for n in per_side.values()):
+            st['side_tie_dropped'] += 1
+            continue
+
+        for r in brows:
+            r['is_selected'] = True
+        st[f'selected_rank_{rank}'] += len(brows)
+        if best_tier == -1 and rank != min(s[1] for s in scored):
+            # A book took over from a higher-priority one on completeness alone.
+            # Counted, because this is the founder's rule firing and a rule that
+            # fires silently cannot be checked against the board.
+            st['takeover_on_completeness'] += 1
+        st['demoted'] += len(cands) - len(brows)
     st['selected'] = sum(1 for r in rows if r['is_selected'])
     return rows, st
+
+
+def fixture_has_started(cands):
+    """Has this fixture started, per the start we hold for it?
+
+    True only on EVIDENCE — a resolved start_ts that is in the past. A fixture
+    with no start on file reads as NOT started, which is the conservative
+    direction for the completeness tier: it keeps the tier live on exactly the
+    population the takeover was written for (every Kibl row carries
+    start_ts_source 'none') and costs nothing on a fixture that really has
+    started, because after the off no book should be carrying a Now at all.
+    """
+    now = datetime.now(timezone.utc)
+    for c in cands:
+        ts = c.get('start_ts')
+        if not ts:
+            continue
+        try:
+            t = datetime.fromisoformat(str(ts).replace('Z', '+00:00'))
+        except (TypeError, ValueError):
+            continue
+        if t.tzinfo is None:
+            t = t.replace(tzinfo=timezone.utc)
+        if t <= now:
+            return True
+    return False
 
 
 # ---------------------------------------------- the orientation cross-check

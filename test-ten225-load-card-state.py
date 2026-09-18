@@ -235,6 +235,65 @@ check('card_rows reads scheduled_start, not an index-side alias',
       and "get('start_sched')" not in _src
       and "get('startSched')" not in _src)
 
+# --------------------------------- TEN-225 ruling 4a: takeover candidates
+print('\ntakeover_candidate_rows — ruling 4a, the book the fixture can switch TO')
+
+
+def trow(**kw):
+    """The founder's own example: bet365 opened it, Sbo prices it now."""
+    m = {'id': 'evt9', 'date': '2026-09-18', 'p1': 'T. Skatov', 'p2': 'K. Samrej',
+         'odds': {'p1': 1.40, 'p2': 2.61, 'bookmaker': 'Sbo'},
+         'bestOdds': {'p1': {'price': 1.40, 'bookmaker': 'Sbo'},
+                      'p2': {'price': 2.61, 'bookmaker': 'Sbo'}},
+         'bookOpens': {'Sbo': {'p1': 1.38, 'p2': 2.70,
+                               'seenAt': '2026-09-17T09:00:00Z'}}}
+    m.update(kw)
+    return m
+
+
+tk, tst = C.takeover_candidate_rows([trow()], NOW)
+check('a book with its own pinned Open yields two sides', len(tk) == 2, len(tk))
+check('the Open is the PINNED first sighting, never today\'s price — using the '
+      'current price would make every takeover a 0% move and rewrite itself '
+      'every run',
+      tk[0]['open_price'] == 1.38 and tk[1]['open_price'] == 2.70,
+      [r['open_price'] for r in tk])
+check('...with its own sighting timestamp',
+      tk[0]['open_ts'] == '2026-09-17T09:00:00Z')
+check('the Now is that SAME book\'s current pair',
+      tk[0]['now_price'] == 1.40 and tk[1]['now_price'] == 2.61)
+check('the row names the book, and ranks BELOW bet365 — a takeover is won on '
+      'completeness, never on rank',
+      tk[0]['book'] == 'Sbo' and tk[0]['book_rank'] == C.RANK_OTHER_BOOK,
+      (tk[0]['book'], tk[0]['book_rank']))
+check('the fixture_id is namespaced per book — two books on one event key would '
+      'otherwise collide on the table grain and upsert over each other',
+      tk[0]['fixture_id'] == 'evt9#Sbo')
+
+# bestOdds is a per-SIDE merge; a pair whose two sides name different books is
+# not a quote from either of them.
+mixed = C.takeover_candidate_rows([trow(
+    odds={'p1': None, 'p2': None, 'bookmaker': None},
+    bestOdds={'p1': {'price': 1.40, 'bookmaker': 'Sbo'},
+              'p2': {'price': 2.61, 'bookmaker': 'Betano'}})], NOW)[0]
+check('a CROSS-BOOK bestOdds pair yields an Open-only row, never a blended Now',
+      len(mixed) == 2 and all(r['now_price'] is None for r in mixed),
+      [r['now_price'] for r in mixed])
+
+nb = C.takeover_candidate_rows([trow(bookOpens={})], NOW)[0]
+check('no pinned per-book Open -> no row at all (this is why the rule fires 0 '
+      'times until the capture has accrued)', nb == [])
+
+b3 = C.takeover_candidate_rows([trow(bookOpens={
+    'bet365': {'p1': 1.44, 'p2': 2.62, 'seenAt': '2026-09-17T09:00:00Z'}})], NOW)
+check('bet365 is SKIPPED here — it already has its own ranked row, and two rows '
+      'of one book on one fixture read as an ambiguity and blank the card',
+      b3[0] == [] and b3[1]['skip_bet365'] == 1, dict(b3[1]))
+
+fin = C.takeover_candidate_rows([trow(finalScore={'winner': 'p1'})], NOW)[0]
+check('a FINISHED fixture gets no candidate row — after the off there is no Now '
+      'to be complete about', fin == [])
+
 print('\n' + ('all checks passed' if not FAILED
               else f'{len(FAILED)} FAILURE(S): {FAILED}'))
 sys.exit(1 if FAILED else 0)
