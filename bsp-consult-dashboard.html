@@ -406,18 +406,17 @@
   [data-page="matches"] .mc-scoreline{ margin:0; padding:9px 16px 0; font-family:var(--mx-font-mono); font-size:12px; color:var(--mc-muted); display:flex; gap:8px; align-items:baseline; }
   [data-page="matches"] .mc-scoreline .lbl{ font-family:var(--mx-font-ui); font-size:9px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--mc-muted-2); }
   [data-page="matches"] .mc-scoreline .note{ font-family:var(--mx-font-ui); font-size:10px; color:var(--mc-muted-2); }
-  /* TEN-8 "Underway" — display-only state marker for a match whose start instant
-     has passed but which the feed has no final score for (see cardStartMs check in
-     renderMatches). Deliberately NOT a live indicator: neutral muted colour, no
-     warn/red, no dot, no animation — it reads as a state, not an event, and sits in
-     the same .mc-scoreline slot a live score will later occupy. */
+  /* Chip-carrying score line — baseline alignment is wrong for a bordered chip, so
+     the row centres instead. Its one remaining user is the terminal chip below; the
+     TEN-8 "Underway" marker that also used it was removed on the founder's ruling
+     (2026-09-18, TEN-225) for breaking card symmetry, and `.mc-underway` went with
+     it rather than being left as a dead rule. */
   [data-page="matches"] .mc-scoreline.underway{ align-items:center; }
-  [data-page="matches"] .mc-underway{ font-family:var(--mx-font-ui); font-size:10px; font-weight:600; letter-spacing:0.09em; text-transform:uppercase; color:var(--mc-muted-2); background:rgba(255,255,255,0.045); border:1px solid var(--mc-border-data); border-radius:5px; padding:2px 8px; }
-  /* TEN-8 terminal chip — "Retired"/"Walkover" status marker. Same neutral,
-     state-not-event treatment as Underway (no red, no dot). On a retirement it
+  /* TEN-8 terminal chip — "Retired"/"Walkover" status marker. Neutral,
+     state-not-event treatment (no red, no dot). On a retirement it
      replaces the partial set-score cluster (the "game" has no added value once a
      player retired — founder's call); on a scoreless walkover it sits in the
-     .mc-scoreline slot in place of the wrong "Underway" marker. */
+     .mc-scoreline slot, which is truthful where "Underway" would not have been. */
   [data-page="matches"] .mc-termchip{ font-family:var(--mx-font-ui); font-size:10px; font-weight:600; letter-spacing:0.09em; text-transform:uppercase; color:var(--mc-muted-2); background:rgba(255,255,255,0.045); border:1px solid var(--mc-border-data); border-radius:5px; padding:2px 8px; white-space:nowrap; }
   [data-page="matches"] .mc-players.cmpl .mc-sets--term{ display:flex; align-items:center; }
   /* TEN-179 q3 — on a Completed card the RETIRED / WALKOVER chip rides the header, so a
@@ -428,7 +427,7 @@
      and holds one line. That is 3.1px of slack: a tournament label longer than
      "ATP US Open . Grand Slam" on a RETIRED card will wrap the caps to a second row
      again. It degrades visibly rather than clipping, which is the behaviour asked for.
-     The Upcoming and live .mc-termchip / .mc-underway markers are untouched. */
+     The Upcoming and live .mc-termchip markers are untouched. */
   [data-page="matches"] .mc-head .mc-termchip{ flex:0 0 auto; font-size:9.5px; letter-spacing:0.04em; padding:2px 5px; }
 
   /* column headers — inline on the card header row, right-aligned above the two data columns */
@@ -8700,17 +8699,17 @@ function renderMatches(){
       scoreLineHtml = `<div class="mc-scoreline">${formatLiveScore(m)}<span class="note">as of last data refresh</span></div>`;
     } else if (isPastDay && !finalScore) {
       scoreLineHtml = `<div class="mc-scoreline">Score pending<span class="note">not yet returned by the data provider</span></div>`;
-    } else if (!finalScore && isFinite(cardStartMs(m)) && Date.now() >= cardStartMs(m)) {
-      // TEN-8 "Underway": derived purely from the client clock — the start instant
-      // has passed and the feed carries no final score yet. Independent of m.live,
-      // so it's true even before (or without) the feed's in-play flag, which at our
-      // ~hourly refresh cadence can lag badly. It makes NO score/clock/set claim; it
-      // only asserts "this has started", which is why a member can't bet it. When the
-      // live poller lands, formatLiveScore replaces this in the very same slot.
-      // Guarded on a reliable start instant (cardStartMs finite) — a match with no
-      // usable start time gets nothing here, never a guess.
-      scoreLineHtml = `<div class="mc-scoreline underway"><span class="mc-underway">Underway</span></div>`;
     }
+    // REMOVED (founder ruling, 2026-09-18, TEN-225): the TEN-8 client-clock
+    // "Underway" chip. It occupied the .mc-scoreline slot on a started-but-
+    // scoreless card and on nothing else, so one card on the grid grew a row its
+    // neighbours did not have — "it breaks the whole card symmetry with the
+    // others. Just remove it." A started fixture now renders NO score line until
+    // the feed supplies a real one; the m.live branch above (formatLiveScore)
+    // still fills the same slot once there is an actual score to show, and the
+    // started-ness test itself survives as `mcStarted` below, which the drift
+    // cell and its column header read. Do not reintroduce a marker here whose
+    // only content is "this has started".
     const p1IsWinner = finalScore && finalScore.winner === 'p1';
     const p2IsWinner = finalScore && finalScore.winner === 'p2';
     // A finished match shows the real result first: the set score is the main
