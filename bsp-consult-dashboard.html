@@ -18068,6 +18068,10 @@ function pp2Bridge(){
   // rather than to a broken column.
   window.bet365History = window.bet365History || {};
   if (!('matchStats' in window)) window.matchStats = null;
+  // Q2 third clause: the per-EVENT coverage index behind the match sheet's
+  // whole-event note. null means "not fetched yet"; the renderer emits no note at
+  // all without it, so an absent fetch loses the sentence and never the sheet.
+  if (!('matchStatEventCoverage' in window)) window.matchStatEventCoverage = null;
   // §5.3 Record per tournament: the edition store carries no date, no surface
   // and no price, so the modal joins career-history/{key}.json for the date and
   // surface columns. Same lazy-with-repaint posture as the market shard — an
@@ -18114,10 +18118,24 @@ async function loadPp2Bet365(key){
 let _pp2StatsPromise = null;
 function loadPp2MatchStats(key){
   if (_pp2StatsPromise) return _pp2StatsPromise;
-  _pp2StatsPromise = fetch('./historical-match-stats.json', { cache: 'no-cache' })
-    .then(res => res.ok ? res.json() : null)
-    .then(j => { window.matchStats = j || {}; pp2RepaintIfOpen(key); })
-    .catch(() => { window.matchStats = {}; pp2RepaintIfOpen(key); });
+  // Two fetches on the same trigger, settled TOGETHER. The 51 KB event-coverage
+  // index rides along with the store because both feed the same sheet, and racing
+  // them separately would repaint once with the note missing and again with it
+  // present — a sentence appearing a beat later reads as a glitch.
+  // Promise.allSettled, not all: the index is additive, and losing it must cost the
+  // note and never the box scores.
+  _pp2StatsPromise = Promise.allSettled([
+    fetch('./historical-match-stats.json', { cache: 'no-cache' }).then(r => r.ok ? r.json() : null),
+    fetch('./match-stat-event-coverage.json', { cache: 'no-cache' }).then(r => r.ok ? r.json() : null),
+  ]).then(([stats, cov]) => {
+    window.matchStats = (stats.status === 'fulfilled' && stats.value) || {};
+    // Left null, NOT {}, when it does not land. The renderer treats null as "no
+    // index" and stays silent; an empty object would look like a fully-built index
+    // that happens to know no events, which is the same silence for the wrong
+    // reason and would hide a broken build.
+    window.matchStatEventCoverage = (cov.status === 'fulfilled' && cov.value) || null;
+    pp2RepaintIfOpen(key);
+  });
   return _pp2StatsPromise;
 }
 window.onPp2SheetOpen = function(key){ loadPp2MatchStats(key); };

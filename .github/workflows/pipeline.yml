@@ -156,7 +156,6 @@ jobs:
             player-profiles-cache.json
             player-profiles.json
             player-tournament-history.json
-            historical-match-stats.json
             tournament-profiles.json
             point-by-point-cache.json
             tml-cache
@@ -166,6 +165,51 @@ jobs:
           key: bsp-caches-${{ steps.cacheday.outputs.day }}
           restore-keys: |
             bsp-caches-
+
+      # historical-match-stats.json is cached SEPARATELY, keyed by the content hash
+      # of the committed floor. It used to sit in the list above, and that quietly
+      # made a committed refresh of it a no-op: `restore-keys: bsp-caches-` matches
+      # essentially forever, so the restored cache overwrote the checkout before the
+      # pipeline ever read it, and `_site/` published the cached copy. The file is
+      # ALSO never committed back (unlike admin-log.json / series-outcomes.json /
+      # the two .gz caches below), so the tracked copy was a pure floor — and on
+      # 2026-09-18 that floor held 1,082 entries against the 2,002 actually deployed.
+      # With the Actions cache at the repo's 10 GiB ceiling, an eviction meant the
+      # Player Profile page's match-stat coverage silently halved.
+      #
+      # Hashing the committed file into the key fixes the shadowing half: change the
+      # file in a commit and the key changes, so no cache matches and the fresh copy
+      # is what the run reads and publishes; leave it alone and runs keep sharing the
+      # accumulated cache exactly as before.
+      #
+      # The DRIFT half is fixed by the commit-back step at the end of this workflow
+      # (founder ruling 2026-09-18 Q2). That moved the durable copy onto its own
+      # tracked path and gitignored the working path, so the key hashes the FLOOR.
+      # Hashing the working path after that move would have silently reintroduced the
+      # original bug in its worst form: hashFiles() on an untracked path returns a
+      # constant, the restore-key would match forever, and no commit could ever
+      # dislodge the cache again.
+      #
+      # The floor is plain minified JSON (founder ruling 2026-09-18 Q1): flat
+      # 5.3 MB/yr of git history against gzip's 8.1–88.9, because a gzip stream
+      # cannot be delta-compressed past its first changed byte. hashFiles() hashes
+      # file CONTENT, so the format change is invisible to this key's behaviour —
+      # only the filename moved.
+      - name: Restore historical match stats cache
+        uses: actions/cache@v4
+        with:
+          path: historical-match-stats.json
+          key: bsp-hms-${{ hashFiles('historical-match-stats.floor.json') }}-${{ steps.cacheday.outputs.day }}
+          restore-keys: |
+            bsp-hms-${{ hashFiles('historical-match-stats.floor.json') }}-
+
+      # UNIONs the committed .gz floor with whatever the cache restored, keeping the
+      # deeper box score per eventKey. Must run AFTER the restore above and BEFORE
+      # the pipeline reads the plain path. Best-effort like the profile hydrate below
+      # — it may never be why a deploy goes red; tools/test-match-stats-store.js is
+      # what proves the floor is readable, and it runs before the commit, not here.
+      - name: Hydrate the match-stat store from the committed floor
+        run: node tools/match-stats-store.js hydrate || true
 
       # TEN-206 Q2(d) ch-1, second half: "commit one gzipped file daily."
       # player-profiles-cache.json was ALREADY tracked — 57.4 MB of pretty JSON frozen
@@ -377,6 +421,17 @@ jobs:
           # rather than breaking a table, so these are tolerant copies.
           cp -r bet365-history _site/ 2>/dev/null || true
           cp historical-match-stats.json _site/ 2>/dev/null || true
+          #  * match-stat-event-coverage.json — the per-EVENT index behind the match
+          #    sheet's whole-event note (founder ruling 2026-09-18 Q2, third clause).
+          #    BUILT here, immediately before it is copied, so the copy can never
+          #    precede the build and publish a previous run's index. It joins the
+          #    match-stat store against the DEPLOYED profile store and is tolerant
+          #    (`|| true`) at both steps: a network blip must cost the note, never the
+          #    deploy, and with the file absent the sheet simply omits it — the honest
+          #    output when the claim cannot be substantiated. Named EXPLICITLY because
+          #    this allowlist has no glob and silently 404s anything not in it.
+          node tools/build-event-stat-coverage.js || true
+          cp match-stat-event-coverage.json _site/ 2>/dev/null || true
           cp admin.html admin-config.js _site/ 2>/dev/null || true
           cp matches.json tournament-profiles.json tournament-progression.json player-profiles.json _site/
           cp career-splits.json _site/
@@ -633,6 +688,71 @@ jobs:
             const idx = JSON.parse(require("fs").readFileSync("_site/tournament-history-index.json","utf8")).players || {};
             if (!Object.keys(idx).length) { console.error("tournament-history-index.json is empty — the record card would read 0 on record for every player"); process.exit(1); }
             console.log(`TEN-207: profiles lite, ${Object.keys(idx).length} tournament-history shard(s) indexed.`);
+          '
+          # TEN-206 founder ruling 2026-09-18 (Q2). historical-match-stats.json is
+          # copied tolerantly above (`|| true`) because a missing file dashes rather
+          # than breaking a table — but "dashes" is exactly how the halved store went
+          # unnoticed for weeks, and tolerating the copy is not the same as tolerating
+          # a REGRESSION. Assert against the committed .gz floor: that number can only
+          # move on a deliberate commit, so legitimate growth can never trip this, and
+          # a run that published fewer box scores than the repo already holds goes red
+          # instead of quietly shipping a thinner match sheet. Asserts against the
+          # PLAIN floor since the Q1 ruling; the comparison is unchanged.
+          node -e '
+            const fs = require("fs");
+            const site = JSON.parse(fs.readFileSync("_site/historical-match-stats.json","utf8"));
+            const floor = JSON.parse(fs.readFileSync("historical-match-stats.floor.json","utf8"));
+            const sheets = o => Object.keys(o).filter(k => o[k] && o[k].matchStats).length;
+            const [sn, fn] = [Object.keys(site).length, Object.keys(floor).length];
+            const [ss, fsh] = [sheets(site), sheets(floor)];
+            if (sn < fn)   { console.error(`_site/historical-match-stats.json has ${sn} entries, fewer than the ${fn} in the committed floor — the match sheet would ship thinner than the repo already holds`); process.exit(1); }
+            if (ss < fsh)  { console.error(`_site/historical-match-stats.json carries ${ss} box scores, fewer than the ${fsh} in the committed floor — coverage regressed`); process.exit(1); }
+            console.log(`TEN-206: match-stat store published, ${sn} entries / ${ss} box scores (floor ${fn}/${fsh}).`);
+          '
+          # ...and the SAME question against what is ALREADY LIVE, which the floor
+          # comparison above structurally cannot ask. Found 2026-09-18: the committed
+          # floor held 2,002 eventKeys and the deployed store held 2,002 — but they
+          # disagreed on 120 of them in each direction. Because this cache's key is
+          # prefixed with the floor's own content hash, committing a refreshed floor
+          # invalidates every prior cache entry, so the very next run starts from the
+          # floor ALONE. A floor that is behind live therefore publishes a store that
+          # is behind live, and every guard above passes, because every guard above
+          # compares to the floor — the one artifact that is wrong.
+          #
+          # Fail-closed on a real regression, fail-OPEN on a network error: a flaky
+          # fetch of the live site must never cost a deploy, but a measured shortfall
+          # must. That asymmetry is the whole design.
+          # Containment is checked on THREE axes, not one. Key containment alone has an
+          # exact twin it cannot see: a store that keeps every eventKey but republishes
+          # shallower sheets. That is the same class as the defect this guard was written
+          # for, so checking only keys would leave half of it open. Depth is compared PER
+          # PLAYER SIDE for the reason sideDepths() exists — a summed comparison lets one
+          # player's whole side be wiped as long as the other side gained more.
+          node -e '
+            const fs = require("fs");
+            const { sideDepths } = require("./tools/match-stats-store.js");
+            const site = JSON.parse(fs.readFileSync("_site/historical-match-stats.json","utf8"));
+            const url = "https://michaeldk1996.github.io/SAAS/historical-match-stats.json";
+            const fail = (m) => { console.error(m); process.exitCode = 1; };
+            // A hung Pages request must not keep a "never block the deploy" step alive
+            // forever; 30s then treat it as unreachable, which is the fail-OPEN path.
+            fetch(url, { signal: AbortSignal.timeout(30000) })
+              .then(r => r.ok ? r.json() : Promise.reject(new Error("HTTP " + r.status)))
+              .then(live => {
+                const keys = Object.keys(live);
+                const missing = keys.filter(k => !(k in site));
+                if (missing.length) return fail(`_site/historical-match-stats.json is MISSING ${missing.length} eventKey(s) that are live right now (e.g. ${missing.slice(0,3).join(", ")}) — this deploy would take box scores off the page.`);
+                const lostSheet = keys.filter(k => live[k] && live[k].matchStats && !(site[k] && site[k].matchStats));
+                if (lostSheet.length) return fail(`${lostSheet.length} eventKey(s) carry a box score LIVE but not in _site (e.g. ${lostSheet.slice(0,3).join(", ")}) — the sheet would go blank for them.`);
+                const shallower = keys.filter(k => {
+                  const [a1, a2] = sideDepths(live[k] && live[k].matchStats);
+                  const [b1, b2] = sideDepths(site[k] && site[k].matchStats);
+                  return b1 < a1 || b2 < a2;
+                });
+                if (shallower.length) return fail(`${shallower.length} eventKey(s) are SHALLOWER than live on at least one player side (e.g. ${shallower.slice(0,3).join(", ")}) — coverage regressed without losing a key.`);
+                console.log(`TEN-206: published store contains all ${keys.length} live eventKeys, no lost sheets, none shallower.`);
+              })
+              .catch(e => console.log(`::warning title=live match-stat comparison skipped::${e.message} — could not read the live store, so the against-live check did not run this time.`));
           '
           # TEN-228 · §5.5 Court speed. Presence is not enough: the file existed
           # BEFORE the rebuild too, at 18.5 KB with neither of the tables the new
@@ -909,6 +1029,63 @@ jobs:
             git pull --rebase --autostash origin main || true
           done
           echo "::warning::Could not push the profile-cache floor after 3 attempts — the next run retries."
+
+      # TEN-206 founder ruling 2026-09-18 (Q2) — the same treatment for the match-stat
+      # store. Runs AFTER the deploy has published, like every ledger above, so a git
+      # failure here can never cost a deploy.
+      #
+      # TWO guards, and the second is the one that binds. Byte-identity handles the
+      # IDLE run: freeze() re-serialises with JSON.stringify over numeric-like keys
+      # (V8 orders those ascending, deterministically), so a run that cached no new
+      # match reproduces the floor byte-for-byte and `git status` finds nothing. Plain
+      # JSON shortens that argument rather than weakening it — no compressor state or
+      # header left to reason about. It is locked by the byte-identity check in
+      # tools/test-match-stats-store.js, which has a mutating control.
+      # The DAY-GUARD below handles the active runs, which byte-identity cannot: see
+      # the measured cost in that step.
+      - name: Refresh the committed match-stat floor
+        run: |
+          # ONE COMMIT PER UTC DAY. This step originally had no day-guard, on the
+          # argument that "the content is the guard": an idle run reproduces the floor
+          # byte-for-byte, so git finds nothing to commit. That argument is sound and
+          # it is also beside the point — it bounds only the IDLE case, and the store
+          # changes on the ACTIVE ones. Measured 2026-09-18: the sibling commit-back
+          # bots land ~150 commits a day, so this would too, and the yearly history
+          # cost is ~120x what "a daily refresh" implies:
+          #
+          #   at 120 commits/day   plain 227 MB/yr    gz 6,207 MB/yr
+          #   at 1 commit/day      plain 5.7 MB/yr    gz     7.6 MB/yr
+          #
+          # 227 MB/yr is over the founder's ~150 MB/yr line, and his ruling says
+          # "commit it back DAILY" — so the guard is what implements the ruling, not
+          # an addition to it. (The plain-vs-gzip ordering is unchanged and in fact
+          # widens: gzip cannot delta, so it pays the full blob on every commit.)
+          #
+          # The stamp is the FLOOR'S OWN COMMIT DATE, not a field inside it. This store
+          # is keyed by eventKey and a non-eventKey stamp key would pollute every
+          # consumer that walks Object.keys() — the census, all four freeze guards, and
+          # the page's own lookup. git already records exactly the date we need.
+          LAST_DAY="$(git log -1 --format=%cd --date=format:%Y-%m-%d -- historical-match-stats.floor.json || true)"
+          TODAY="$(date -u +%Y-%m-%d)"
+          if [ -n "$LAST_DAY" ] && [ "$LAST_DAY" = "$TODAY" ]; then
+            echo "Committed match-stat floor already refreshed today ($LAST_DAY) — one per UTC day."
+            exit 0
+          fi
+          node tools/match-stats-store.js freeze || true
+          if [ -z "$(git status --porcelain -- historical-match-stats.floor.json)" ]; then
+            echo "Committed match-stat floor unchanged this run — nothing to commit."
+            exit 0
+          fi
+          git config user.name "bsp-profile-cache-bot"
+          git config user.email "bsp-profile-cache-bot@users.noreply.github.com"
+          git add historical-match-stats.floor.json
+          git commit -m "chore(stats): refresh committed match-stat floor [skip ci]"
+          for attempt in 1 2 3; do
+            if git push origin HEAD:main; then echo "Pushed on attempt $attempt."; exit 0; fi
+            echo "Push rejected (attempt $attempt) — rebasing."
+            git pull --rebase --autostash origin main || true
+          done
+          echo "::warning::Could not push the match-stat floor after 3 attempts — the next run retries."
 
       # TEN-151 (founder ruling 2026-09-05, second comment): the Trading Report
       # generator runs ISOLATED (continue-on-error above) so its failure never

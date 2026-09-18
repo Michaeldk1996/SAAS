@@ -206,19 +206,36 @@
 
   // ─── RULING 6 · match-stat provenance ──────────────────────────────────────
   // Winners and Unforced errors ARE native api-tennis fields ("Points:Winners",
-  // "Points:Unforced errors") — measured present on 1,356 of 1,964 populated
-  // player-sides in historical-match-stats.json (69.0%). Match Charting Project
-  // is therefore NOT needed for them and its CC BY-NC-SA / R&D-only flag stays
-  // where it is.
+  // "Points:Unforced errors"). Match Charting Project is therefore NOT needed for
+  // them and its CC BY-NC-SA / R&D-only flag stays where it is.
   //
-  // NET POINTS does not exist in api-tennis. A full key census of the store
-  // returns zero net-related fields. It is dashed with a stated reason — never
-  // estimated, never derived from winners.
+  // NET POINTS EXISTS TOO, and the claim that it did not was wrong. The earlier
+  // "a full key census returns zero net-related fields" was run before the
+  // stat_name casing fix and the Challenger sweep; re-run against the committed
+  // floor it returns `Points:Net points won` on 1,674 of 3,493 populated
+  // player-sides (47.9%), as a PERCENTAGE with won/total denominators preserved
+  // in the entry's `raw` sub-object (e.g. {won:9,total:12} -> 75). Measured on the
+  // deployed store the same field reads 712/3,321 (21.4%) — the sweep is what
+  // more than doubles it. `kind` is 'pct' because that is what the repo's own
+  // extractor already calls it (bsp-pipeline.js:2249), not a reading of the
+  // values.
+  //
+  // That stale claim was not a harmless comment: it was rendered to the user as
+  // "net points is not an api-tennis field at all" on a match sheet whose own
+  // store carried the number. Under this repo's rules a dash means "we do not
+  // hold this" — saying it about data we DO hold is the same defect as inventing
+  // a value, pointed the other way.
+  //
+  // Founder ruling 2026-09-18 (Q2): "per match — read the field, dash on null. […]
+  // Apply the same rule to Winners, UE and Net points." So all three are ordinary
+  // field reads now; none of them is pre-declared absent. The ellipsis stands for the
+  // whole-event-note sentence, implemented at wholeEventNote() below — it is marked
+  // because an earlier version of this comment spliced the two halves into one
+  // quotation and made the ruling read as though it had only two parts.
   var STAT_ROWS = [
     { key: 'Points:Winners', label: 'Winners', src: 'api-tennis' },
     { key: 'Points:Unforced errors', label: 'Unforced errors', src: 'api-tennis' },
-    { key: null, label: 'Net points won', src: null,
-      why: 'not carried by api-tennis' }
+    { key: 'Points:Net points won', label: 'Net points won', src: 'api-tennis' }
   ];
 
   var MARKET_NOTE =
@@ -7842,10 +7859,28 @@
   //  * Serve rating / Return rating — the repo's own definitions
   //    (dna-apitennis-ratings.js) need hold% and return-games-won%, which this
   //    per-match store does not carry. Dashed, never a partial sum.
-  //  * Net points won — does not exist in api-tennis at all (a full census found
-  //    zero net keys, including the nested `raw` object). Never derived from
-  //    winners.
-  //  * Point FRACTIONS under each value — the feed emits rates, not denominators.
+  //  * Point FRACTIONS under each value — NOT because the feed withholds them.
+  //    Measured against the committed floor, `raw` carries a won/total pair for
+  //    TWELVE of the 17 fields: the four serve/return rates, the three Points:*
+  //    totals and the two Games:* rates at 99.9% of populated sides, break points
+  //    saved and converted at 88.0%, and net points won at 47.9%. The FIVE without
+  //    one are aces, double faults, winners and unforced errors — pure counts, which
+  //    do not want a fraction — plus 1st serve percentage. 12 + 5 = 17. (An earlier
+  //    version of this comment said 11 and "three pure counts" while naming four.)
+  //    ⚠️ 1st serve percentage is NOT exempt by design: the locked export draws a
+  //    frac() under it too (…LOCKED_v7/Player Profile.dc.html:1433), so that one row
+  //    wants a denominator the feed does not give us — it would stay dashed.
+  //    The export draws a frac() under each rate (Player Profile.dc.html:1447 is the
+  //    net-points row), so this is WIREABLE and is currently the page's largest unmet
+  //    §3 obligation ("every rate shows its record and n"). Left alone on purpose: it
+  //    changes the sheet's per-row geometry and so belongs with the pixel gate, not
+  //    folded into a data fix.
+  //
+  // NET POINTS WON is no longer in that list. It IS an api-tennis field
+  // ("Points:Net points won", a percentage), present on 47.9% of populated
+  // player-sides in the committed floor — see the STAT_ROWS note above for the
+  // measurement and for why the previous census missed it. It is now read per
+  // match and dashed on null like any other field, per the founder's Q2 ruling.
   var SHEET_SECTIONS = [
     { title: 'Service', rows: [
       { label: 'Serve rating', held: false, why: 'rating formula needs hold%' },
@@ -7865,11 +7900,69 @@
     { title: 'Points won', rows: [
       { label: 'Winners', field: 'Points:Winners', kind: 'count' },
       { label: 'Unforced errors', field: 'Points:Unforced errors', kind: 'count', lowerBetter: true },
-      { label: 'Net points won', held: false, why: 'not an api-tennis field' },
+      { label: 'Net points won', field: 'Points:Net points won', kind: 'pct' },
       { label: 'Service points won', derived: 'spw', kind: 'pct' },
       { label: 'Return points won', derived: 'rpw', kind: 'pct' }
     ] }
   ];
+
+  // ─── Q2 third clause · the WHOLE-EVENT note ────────────────────────────────
+  // Founder ruling 2026-09-18: "Add the whole-event note when an event is 0/n ('no
+  // match at this event carries winners'), so a total absence reads as a feed gap
+  // rather than a per-player one."
+  //
+  // The index is built at pipeline time (tools/build-event-stat-coverage.js) because
+  // the claim is about the EVENT, and the page only ever loads one player — this
+  // player's other opponents at the same tournament sit in other profiles the browser
+  // never fetches. Computing it here would quietly narrow "no match at this event" to
+  // "none of HIS matches at this event", which is the per-player reading the ruling
+  // exists to remove.
+  //
+  // Absent index => no note. The sheet is unchanged rather than degraded: silence is
+  // the honest output when we cannot substantiate the claim.
+  var EVENT_NOTE_FIELDS = [
+    { code: 'w', field: 'Points:Winners', label: 'winners' },
+    { code: 'u', field: 'Points:Unforced errors', label: 'unforced errors' },
+    { code: 'n_', field: 'Points:Net points won', label: 'net points' }
+  ];
+  function eventCoverage() { return window.matchStatEventCoverage || null; }
+  function eventCoverageFor(eventKey) {
+    var idx = eventCoverage();
+    if (!idx || !idx.keys || !idx.events || eventKey == null) return null;
+    var edition = idx.keys[String(eventKey)];
+    if (!edition) return null;
+    var e = idx.events[edition];
+    return e ? { edition: edition, counts: e } : null;
+  }
+  /**
+   * The sentence(s) to append when a ruled field dashed for THIS match and no match
+   * at the whole edition carries it.
+   *
+   * Gated on n >= 2. An edition we hold one match for is 0/1 the moment that match
+   * dashes, and calling that a feed gap is exactly the per-player-vs-feed confusion
+   * the note is supposed to clear up rather than add to.
+   */
+  function wholeEventNote(eventKey, mine, theirs) {
+    var cov = eventCoverageFor(eventKey);
+    if (!cov || !(cov.counts.n >= 2)) return '';
+    var gaps = [];
+    for (var i = 0; i < EVENT_NOTE_FIELDS.length; i++) {
+      var f = EVENT_NOTE_FIELDS[i];
+      // Only speak about a field that actually dashed HERE. An event-wide absence is
+      // not interesting on a row the reader can see a number on.
+      var heldHere = (mine && mine[f.field] != null) || (theirs && theirs[f.field] != null);
+      if (heldHere) continue;
+      if (cov.counts[f.code] === 0) gaps.push(f.label);
+    }
+    if (!gaps.length) return '';
+    var list = gaps.length === 1 ? gaps[0]
+      : gaps.slice(0, -1).join(', ') + ' or ' + gaps[gaps.length - 1];
+    var name = String(cov.edition).split('|')[0];
+    var year = String(cov.edition).split('|')[1];
+    return ' No match at ' + name + ' ' + year + ' carries ' + list +
+      ' (' + cov.counts.n + ' matches on record), so this is a gap in the feed for the ' +
+      'whole event rather than for this player.';
+  }
 
   function statsStore() { return window.matchStats || null; }
   function statsFor(eventKey) {
@@ -8113,10 +8206,12 @@
         'a mis-oriented sheet would put the opponent’s numbers under this player’s name.';
     } else {
       note = held + ' of ' + total + ' rows held for this match. Serve rating and Return rating ' +
-        'need hold% and return-games-won%, which the per-match feed does not carry; net points ' +
-        'is not an api-tennis field at all. Service and Return points won are composed from the ' +
-        'serve rates on this row. Dominance ratio uses our own definition, return points won ' +
-        'over service points lost.';
+        'need hold% and return-games-won%, which the per-match feed does not carry. Service and ' +
+        'Return points won are composed from the serve rates on this row. Dominance ratio uses ' +
+        'our own definition, return points won over service points lost. Any other dash means ' +
+        'the feed published no value for this match — Winners, unforced errors and net points ' +
+        'are read per match and dashed individually.' +
+        wholeEventNote(m.eventKey, mine, theirs);
     }
 
     return '' +
@@ -8691,7 +8786,14 @@
       rpwPct: rpwPct,
       drFor: drFor,
       sheetValue: sheetValue,
+      // Exported so tools/test-sheet-stat-dashing.js can assert what the user SEES,
+      // not just what the reader returned. sheetValue() proves the field was read;
+      // only sheetText() proves a withheld value reaches the page as the U+2212 dash
+      // rather than a 0 or a plausible default.
+      sheetText: sheetText,
       sheetBars: sheetBars,
+      eventCoverageFor: eventCoverageFor,
+      wholeEventNote: wholeEventNote,
       // item 11 — the bet365 capture fallback
       b365Norm: b365Norm,
       b365Index: b365Index,

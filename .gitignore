@@ -90,6 +90,24 @@ trading-splits-divergence.json
 player-profiles-cache.json
 player-tournament-history.json
 
+# TEN-206 founder ruling 2026-09-18 (Q2): historical-match-stats.json joins them.
+# It was tracked UNCOMPRESSED and never committed back, so the tracked copy was a
+# fossil floor — 1,082 entries against the 2,002 deployed — and an Actions-cache
+# eviction at the repo's 10 GiB ceiling silently halved the Player Profile match
+# sheet's box-score coverage. The durable copy is now
+# historical-match-stats.json.gz, refreshed by tools/match-stats-store.js after
+# the deploy has published. Founder ruling 2026-09-18 (Q1): that floor is PLAIN
+# MINIFIED JSON at historical-match-stats.floor.json — 5.3 MB/yr of history flat,
+# against gzip's 8.1–88.9 depending on whether the day's edits were a pure append.
+# The floor is TRACKED; only this working path, which the Actions cache owns and
+# overwrites, is ignored.
+historical-match-stats.json
+
+# TEN-206 Q2 third clause: the per-event coverage index behind the match sheet's
+# whole-event note. A pure derivative — rebuilt from the match-stat store and the
+# deployed profile store on every run and copied into _site, never committed.
+match-stat-event-coverage.json
+
 # TEN-206 player search / profile split — both rebuilt from get_standings and the
 # profile cache on every run, and copied into _site by the deploy step. Runtime
 # artifacts like career-history/ above, never committed.

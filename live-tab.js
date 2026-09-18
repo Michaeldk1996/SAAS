@@ -506,6 +506,23 @@
     const pk  = (fix, which) => fix[`${which === 1 ? 'first' : 'second'}_player_key`];
 
     // Build stat lookup: byPlayer[player_key][period][stat_name] = {value,won,total}.
+    //
+    // The index key is LOWERCASED, and so is every lookup in g() below. The feed's
+    // stat_name casing drifts by season — measured 2026-09-18 over all 12,115
+    // finished ATP singles 2024-01→2026-09: 2024 and 2025 emit "1st Serve
+    // Percentage" / "Service Games Won", 2026 emits "1st serve percentage" /
+    // "Service games won", and the flip lands mid-week in January 2026 (84 finished
+    // 2026 fixtures — Brisbane, Hong Kong, United Cup, 2026-01-02..01-08 — still
+    // carry the old casing). Five of the ten literals g() is called with are
+    // lowercase-only, so keying raw made serveRating()/returnRating() return
+    // {rating:null} on every Title-Case fixture: the whole 2024+2025 corpus and
+    // that first week of 2026. A blank rating is indistinguishable from "the feed
+    // hasn't published it yet", which is why it went unnoticed.
+    //
+    // Names that never drifted (Aces, Double Faults, Break Points Saved/Converted,
+    // Total Points Won, Service/Return Points Won) are not evidence the rest won't
+    // flip back — lowercasing both sides is the only read that survives either
+    // casing. tools/test-statname-casing.js fails the build on a raw comparison.
     function indexStats(fix) {
       const idx = Object.create(null);
       const st = Array.isArray(fix.statistics) ? fix.statistics : [];
@@ -516,11 +533,11 @@
         periods.add(per);
         (idx[key] = idx[key] || {});
         (idx[key][per] = idx[key][per] || {});
-        idx[key][per][s.stat_name] = { value: s.stat_value, won: s.stat_won, total: s.stat_total };
+        idx[key][per][String(s.stat_name).toLowerCase()] = { value: s.stat_value, won: s.stat_won, total: s.stat_total };
       }
       return { idx, periods };
     }
-    const g = (idx, pkey, per, name) => (idx[String(pkey)] && idx[String(pkey)][per] && idx[String(pkey)][per][name]) || null;
+    const g = (idx, pkey, per, name) => (idx[String(pkey)] && idx[String(pkey)][per] && idx[String(pkey)][per][String(name).toLowerCase()]) || null;
 
     // Exact layer-9 / layer-10 rating rows on the box score for a given period.
     function serveRating(idx, pkey, per) {
