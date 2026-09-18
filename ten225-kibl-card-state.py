@@ -329,6 +329,13 @@ def close_of(obs_list, start_ts):
     return pre[-1]
 
 
+# Margin distributions for the flip-started Closes, so item B can report how
+# much room each pass had rather than only that it passed. Module-level and
+# cleared per build so a second call in one process cannot inherit the first.
+FLIP_LAGS = []
+FLIP_GAPS = []
+
+
 def judge_close_live(start_ts, close_ts, start_src='oddspapi', flip_gap=None):
     """Is a LIVE-CAPTURED close good enough to render? -> (reliable, lag_minutes)
 
@@ -634,6 +641,7 @@ def build_rows(kibl_fixtures, observations, odds_index, as_of,
     # denominator it needs. See the bump site below.
     flip_by_league = collections.Counter()
     league_seen = collections.Counter()
+    FLIP_LAGS.clear(); FLIP_GAPS.clear()
     side_shapes = collections.Counter()
     for fx in kibl_fixtures:
         fid = fx['fixture_id']
@@ -725,10 +733,45 @@ def build_rows(kibl_fixtures, observations, odds_index, as_of,
             close_ts = close_obs['inserted_on'] if close_obs else None
             reliable, lag = judge_close_live(start_ts, epoch(close_ts),
                                              start_src, flip_gap)
+            # LADDER I(b), founder item B 2026-09-19: "confirm none fail the
+            # <=60-min lag or <=300 s flip-gap limbs."
+            #
+            # close_withheld_unreliable alone CANNOT answer that. It is one flat
+            # counter over both limbs and both start sources, so a zero in it
+            # proves the conjunction and a non-zero names neither limb. Switching
+            # the flip on while the only instrument is that counter would mean
+            # reporting "none fail" from a number that cannot distinguish the
+            # two failures being asked about.
+            #
+            # Split by LIMB and by START SOURCE, because the flip-gap limb only
+            # exists on the flip-started population and mixing it with the
+            # oddspapi-started majority dilutes exactly the rate under test.
+            src_tag = 'flip' if start_src == 'api-tennis-live' else 'oddspapi'
             if close_obs and not reliable:
                 st['close_withheld_unreliable'] += 1
+                if lag is not None and lag < 0:
+                    # Must never happen: close_of() cuts at the start.
+                    st[f'close_reject_INPLAY_{src_tag}'] += 1
+                elif lag is not None and lag > RELIABLE_LAG_MIN:
+                    st[f'close_reject_lag_over_{RELIABLE_LAG_MIN}min_{src_tag}'] += 1
+                elif src_tag == 'flip' and flip_gap is None:
+                    # An UNKNOWN gap is a rejection, not a pass — ruled. Counted
+                    # apart from a measured over-limit gap because the fixes
+                    # differ: this one is a missing field, that one is a slow poll.
+                    st['close_reject_flipgap_UNKNOWN'] += 1
+                elif src_tag == 'flip':
+                    st[f'close_reject_flipgap_over_{FLIP_GAP_MAX_S}s'] += 1
+                else:
+                    st[f'close_reject_unclassified_{src_tag}'] += 1
             elif reliable:
                 st['close_ok'] += 1
+                st[f'close_ok_{src_tag}'] += 1
+                if src_tag == 'flip':
+                    # The margin, not just the verdict. "Zero failed" is much
+                    # weaker evidence if every pass sat at 299 s of a 300 s limb.
+                    FLIP_LAGS.append(lag)
+                    if flip_gap is not None:
+                        FLIP_GAPS.append(flip_gap)
             else:
                 st['close_absent'] += 1
 
@@ -1558,6 +1601,51 @@ def main():
             print(f'  {nm:14} {f:>14} {n:>14} {(100.0*f/n if n else 0):>7.1f}%{flag}')
         print(f"  {'TOTAL':14} {tot_f:>14} {tot_n:>14} "
               f"{(100.0*tot_f/tot_n if tot_n else 0):>7.1f}%")
+
+    # ── ITEM B — "confirm none fail the <=60-min lag or <=300 s flip-gap
+    # limbs". Reported as an explicit verdict over named counters, because the
+    # honest answer to "did any fail" is unobtainable from a total.
+    print()
+    print(f'LIMB CHECK on Closes cut at the live-flip bound '
+          f'(lag <= {RELIABLE_LAG_MIN} min AND flip gap <= {FLIP_GAP_MAX_S} s)')
+    lag_rej  = st.get(f'close_reject_lag_over_{RELIABLE_LAG_MIN}min_flip', 0)
+    gap_rej  = st.get(f'close_reject_flipgap_over_{FLIP_GAP_MAX_S}s', 0)
+    gap_unk  = st.get('close_reject_flipgap_UNKNOWN', 0)
+    inplay   = st.get('close_reject_INPLAY_flip', 0)
+    unclass  = st.get('close_reject_unclassified_flip', 0)
+    n_pass   = st.get('close_ok_flip', 0)
+    n_total  = n_pass + lag_rej + gap_rej + gap_unk + inplay + unclass
+    if n_total == 0:
+        # The vacuous-pass shape this issue has hit three times: "no limb failed"
+        # over an empty population is not a pass, it is a measurement of nothing.
+        print('  ::warning:: ZERO Closes were cut at the flip bound in this run. '
+              'This is NOT "no limb failed" — nothing was assessed, so the limbs '
+              'were never exercised and this run cannot support the claim.')
+    else:
+        print(f"  {'outcome':38} {'n':>6}")
+        for label, n in (('PASS  both limbs', n_pass),
+                         (f'FAIL  lag > {RELIABLE_LAG_MIN} min', lag_rej),
+                         (f'FAIL  flip gap > {FLIP_GAP_MAX_S} s', gap_rej),
+                         ('FAIL  flip gap UNKNOWN', gap_unk),
+                         ('FAIL  in-play price in close slot', inplay),
+                         ('FAIL  unclassified', unclass)):
+            print(f'  {label:38} {n:>6}')
+        n_fail = n_total - n_pass
+        flag = '  (n<30)' if n_total < 30 else ''
+        print(f"  {'TOTAL assessed':38} {n_total:>6}{flag}")
+        print(f'  VERDICT: {"NONE FAIL" if n_fail == 0 else str(n_fail) + " FAIL"} '
+              f'({n_pass}/{n_total} pass)')
+        # The margin, not just the verdict.
+        def _dist(name, vals, unit):
+            if not vals:
+                print(f'  {name}: no values recorded')
+                return
+            v = sorted(vals)
+            p95 = v[min(len(v) - 1, int(round(0.95 * (len(v) - 1))))]
+            print(f'  {name}: median {v[len(v)//2]:.1f}{unit}  p95 {p95:.1f}{unit}  '
+                  f'max {v[-1]:.1f}{unit}  n={len(v)}')
+        _dist('  passing lag     ', FLIP_LAGS, ' min')
+        _dist('  passing flip gap', FLIP_GAPS, ' s')
 
     for sid, hits in sorted(unknown_sides.items()):
         fixtures = sorted({h['fixture_id'] for h in hits})

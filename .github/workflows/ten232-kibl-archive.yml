@@ -242,7 +242,14 @@ jobs:
           fi
           echo 'card-state schema applied (idempotent).'
           set -o pipefail
-          python3 ten225-kibl-card-state.py | tee -a "$GITHUB_STEP_SUMMARY"
+          # --use-live-flip: LADDER I(b), SWITCHED ON by founder item B
+          # 2026-09-19 ("Ladder I(b): GO"). A Kibl fixture oddspapi does not
+          # carry at all now cuts its Close at the live-flip lower bound
+          # (last_not_live_seen_at) instead of having no Close at all. Both
+          # ruled limbs still apply -- <=60 min lag and <=300 s flip gap, an
+          # UNKNOWN gap being a rejection -- and the run prints a LIMB CHECK
+          # verdict naming which limb rejected what, per limb, with n.
+          python3 ten225-kibl-card-state.py --use-live-flip | tee -a "$GITHUB_STEP_SUMMARY"
 
       # ------------------------------------------------------------- PART 3
       # PUBLISH. odds_card_state has RLS on and zero policies and the product is
