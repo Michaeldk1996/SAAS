@@ -244,6 +244,19 @@ check('legacy 1+2 fixtures, if the feed ever sends them, still orient by '
       'participant order rather than being rejected for not being 2+3',
       K.side_labels_for([sobs(1, 500), sobs(2, 501)]) == {1: '1', 2: '2'})
 
+# ⚠️ A COLUMN THE LOGIC READS MUST BE IN THE SELECT LIST. Run 35295569715
+# omitted fixture_participant_id from the observations query, so every one of
+# the 25 priced fixtures came back with it NULL, side_labels_for() called them
+# all undecidable, and the run produced 0 card rows. It failed in the SAFE
+# direction — a dash, not a wrong price — but nothing connected the empty
+# coverage to the missing column, which is a round trip per occurrence.
+import inspect as _i2  # noqa: E402
+_obs_select = _i2.getsource(K.main).split("'kibl_line_observations'")[1].split('order=')[0]
+for _c in ('side_id', 'fixture_participant_id', 'price_decimal', 'inserted_on',
+           'observed_at', 'is_opener'):
+    check(f'the observations select list requests {_c}, which the rules read',
+          _c in _obs_select, _obs_select[:100])
+
 
 def krow(mkey, side, price):
     return {'match_key': mkey, 'side': side, 'open_price': price,

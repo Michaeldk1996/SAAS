@@ -792,7 +792,13 @@ def main():
 
     obs_rows, err = fetch_all(
         url, key, 'kibl_line_observations',
-        'fixture_id,side_id,market_type_id,segment_id,betting_type_id,is_live,'
+        # fixture_participant_id is LOAD-BEARING, not diagnostic: side_labels_for
+        # orders the two sides by it, so omitting it from the select list makes
+        # every fixture undecidable and every price dash. Run 35295569715 did
+        # exactly that — 25 priced fixtures, 0 card rows. It failed in the safe
+        # direction, but it failed.
+        'fixture_id,side_id,participant_id,fixture_participant_id,'
+        'market_type_id,segment_id,betting_type_id,is_live,'
         'is_opener,is_current,price_decimal,inserted_on,observed_at,alt_id,'
         'is_main,point',
         f'&market_type_id=eq.{MARKET_TYPE_ID}&segment_id=eq.{SEGMENT_ID}'
