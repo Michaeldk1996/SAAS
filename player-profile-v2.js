@@ -211,9 +211,20 @@
   // is therefore NOT needed for them and its CC BY-NC-SA / R&D-only flag stays
   // where it is.
   //
-  // NET POINTS does not exist in api-tennis. A full key census of the store
-  // returns zero net-related fields. It is dashed with a stated reason — never
-  // estimated, never derived from winners.
+  // NET POINTS — THE PREMISE HERE WAS WRONG AND IS CORRECTED (TEN-206 audit,
+  // 2026-09-18). It used to read "does not exist in api-tennis; a full key census
+  // returns zero net-related fields". That census read the frozen STORE, not the
+  // feed. Measured on the DEPLOYED historical-match-stats.json: `Points:Net points
+  // won` on 772 of 3,295 player-sides (23.4%). Measured on the feed: populated on
+  // 59.2% / 75.4% / 86.4% of finished ATP singles in 2024 / 2025 / 2026, carrying
+  // a real stat_won/stat_total pair. It is already in bsp-pipeline.js
+  // MATCH_STAT_DEFS (TEN-8, 2026-08-09).
+  //
+  // Founder ruling 2026-09-18: wire it (with Winners/UE) for ATP; Challenger and
+  // ITF keep the dash with TIER COVERAGE as the stated reason. The `why` strings
+  // below still carry the old wording and are rewritten in the item 3 wiring pass
+  // — behaviour is unchanged here, only the premise on record. Never estimated,
+  // never derived from winners.
   var STAT_ROWS = [
     { key: 'Points:Winners', label: 'Winners', src: 'api-tennis' },
     { key: 'Points:Unforced errors', label: 'Unforced errors', src: 'api-tennis' },
@@ -7827,10 +7838,17 @@
   //
   // WHAT WE DO NOT HOLD, and why each dashes rather than being estimated:
   //  * Serve rating / Return rating — the repo's own definitions
-  //    (dna-apitennis-ratings.js) need hold% and return-games-won%, which this
-  //    per-match store does not carry. Dashed, never a partial sum.
-  //  * Net points won — does not exist in api-tennis at all (a full census found
-  //    zero net keys, including the nested `raw` object). Never derived from
+  //    (dna-apitennis-ratings.js) need hold% and return-games-won%. CORRECTED
+  //    2026-09-18: the DEPLOYED store does carry them — `Games:Service games won`
+  //    and `Games:Return games won`, 1,331 of 3,295 player-sides (40.4%) — added
+  //    to MATCH_STAT_DEFS in TEN-8 (2026-08-09). The 60% without them are
+  //    fixtures cached BEFORE that date, which this cache never re-extracts
+  //    (bsp-pipeline.js:5124). Dashed while coverage is partial, never a partial sum.
+  //  * Net points won — CORRECTED 2026-09-18: it DOES exist in api-tennis
+  //    (`Points:Net points won`, native stat_won/stat_total) and sits in the
+  //    deployed store on 772 of 3,295 player-sides (23.4%). The constraint is
+  //    coverage — the 2024 statistics wall plus the same frozen-cache effect —
+  //    not the source. Dashes until the item 3 wiring pass; never derived from
   //    winners.
   //  * Point FRACTIONS under each value — the feed emits rates, not denominators.
   var SHEET_SECTIONS = [
