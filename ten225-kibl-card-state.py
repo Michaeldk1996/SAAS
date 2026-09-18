@@ -1,0 +1,746 @@
+#!/usr/bin/env python3
+"""TEN-225 / TEN-232 — fill odds_card_state (match winner) from the KIBL archive.
+
+Founder ruling 2026-09-18T00:18Z: Kibl (Sports411 / Bet105) is the PRIMARY book.
+Order is kibl(1) -> bet365 via oddspapi(2) -> api-tennis(3). One book per
+fixture; Open, Now and Close always from the SAME book; a higher-priority book
+that appears later takes over all three values using its own first tick as Open.
+
+ZERO Kibl API calls and zero oddspapi units. Everything here is a projection of
+what the archive already stored:
+
+    kibl_line_observations  -> Open, Now, Close candidates
+    kibl_fixtures           -> player names, scheduled time, match_key
+    oddspapi_line_summary   -> the RESOLVED start (so the ladder runs once)
+    oddspapi_fixtures       -> the names that let a kibl fixture find that start
+
+WHAT IS DIFFERENT ABOUT KIBL, AND WHY THAT MATTERS TO EVERY RULE BELOW
+---------------------------------------------------------------------
+Oddspapi is a HISTORY feed: we fetch a finished fixture's whole tick series
+afterwards, so "did the archive decay eat the tail" is the live question and the
+21-day window answers it. Kibl is a LIVE feed with no history endpoint at all:
+we hold exactly the prices our own sweeps caught, and a fixture is archived
+BEFORE it starts, not after. Transplanting the 21-day test would mark every
+correctly-captured Kibl close unreliable (age_days is negative on a capture that
+preceded the start). So the close test here is the LAG limb of Michael's ruling 2
+— the part that asks how close to the start our last pre-start price sits — and
+the decay limb is reported as inapplicable rather than silently dropped. See
+judge_close_live(). That difference is flagged to Michael, not ruled here.
+
+THREE TIMESTAMP FACTS THAT ARE NOT INTERCHANGEABLE
+--------------------------------------------------
+  inserted_on   Kibl's OWN row-write time. Founder: "Every Kibl timestamp is
+                vendor-insert time, not book-post time. Label it that way in the
+                data." -> ts_kind = 'vendor-insert' on every row this file
+                writes. It is the price's time and it is what Open/Now/Close are
+                stamped with.
+  observed_at   when OUR sweep ran. Never rendered. It is our cadence, not the
+                market's, and mixing it into a published timestamp is exactly
+                what makes a book look slower than it is.
+  scheduled_start  Kibl's scheduled time. NEVER a Close cutoff (standing rule).
+
+Reads SUPABASE_URL / SUPABASE_SECRET_KEY. Stdlib only. Secrets never printed.
+"""
+import argparse
+import collections
+import json
+import os
+import sys
+import types
+import urllib.parse
+from datetime import datetime, timezone
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+OUT = os.path.join(HERE, 'ten225-kibl-card-state.json')
+
+from ten225_names import match_key as mk_of, name_key  # noqa: E402
+
+MARKET = 'match winner'
+BOOK = 'sports411'          # the book we are actually served; NOT Bet105 (measured)
+SOURCE = 'kibl'
+BOOK_RANK = 1
+TS_KIND = 'vendor-insert'
+PAGE = 1000                 # PostgREST caps a page here; asking for more truncates
+MIN_N = 30                  # standing rule: flag anything below this
+
+# Kibl market identity for "match winner", from /reference (not from the spec):
+#   market_type_id 1 = Moneyline, segment_id 1 = Full Game, betting_type_id 1 =
+#   Prematch. Live for tennis is 3 ("Live Fluid"), NOT the 2 the swagger implies,
+#   and it returns zero rows on this entitlement — so a betting_type filter of
+#   {1} is not merely a prematch preference, it is everything we are served.
+MARKET_TYPE_ID = 1
+SEGMENT_ID = 1
+BETTING_TYPE_ID = 1
+
+# Founder ruling 2026-09-18 item 2: "is_main unfiltered". alt_id is 0 on every
+# row we are served (measured), so there are no alternates to separate today;
+# this file does not assume that, it just does not filter on it.
+
+# Import the line-summary loader's shared helpers rather than restating its
+# rules. exec of the source text, not importlib: macOS caches bytecode outside
+# the repo and a same-size restore can serve stale code.
+L = types.ModuleType('L')
+L.__file__ = os.path.join(HERE, 'ten225-load-line-summary.py')
+_argv, sys.argv = sys.argv, ['L']
+exec(compile(open(L.__file__).read(), L.__file__, 'exec'), L.__dict__)
+sys.argv = _argv
+
+# And the oddspapi card filler's Now rule — ONE Now rule for every source, so a
+# price cannot qualify as "Now" on one card path and not on another.
+C = types.ModuleType('C')
+C.__file__ = os.path.join(HERE, 'ten225-load-card-state.py')
+_argv, sys.argv = sys.argv, ['C']
+exec(compile(open(C.__file__).read(), C.__file__, 'exec'), C.__dict__)
+sys.argv = _argv
+
+epoch, iso, sb, creds = L.epoch, L.iso, L.sb, L.creds
+qualifies_as_now = C.qualifies_as_now
+RELIABLE_LAG_MIN = L.RELIABLE_LAG_MIN
+FLIP_GAP_MAX_S = L.FLIP_GAP_MAX_S
+
+
+# ------------------------------------------------------------------- the rules
+
+def is_match_winner(obs):
+    """Is this observation the two-way match-winner line?
+
+    All three ids are checked, not just market_type_id. Moneyline on a SET
+    segment would also be market_type_id 1, and pricing a set winner as the
+    match winner is the kind of error that renders as a perfectly plausible
+    number. (Measured: this entitlement returns no Sets segment at all — which
+    is why the filter has to be explicit rather than relying on that staying
+    true.)
+    """
+    return (obs.get('market_type_id') == MARKET_TYPE_ID
+            and obs.get('segment_id') == SEGMENT_ID
+            and obs.get('betting_type_id') == BETTING_TYPE_ID
+            and obs.get('is_live') is not True)
+
+
+def side_label(obs):
+    """Kibl side_id -> our '1'/'2' side label, or None.
+
+    Our side '1' is the fixture's FIRST-named player and '2' the second, on both
+    other feeds. Kibl writes both players into one fixture string and tags each
+    price with side_id 1 or 2, so the mapping is the identity — ASSERTED from
+    the shape, not measured, and therefore cross-checked at load time by
+    orientation_agreement() below rather than trusted. A side_id we have never
+    seen returns None and that line dashes.
+    """
+    sid = obs.get('side_id')
+    if sid == 1:
+        return '1'
+    if sid == 2:
+        return '2'
+    return None
+
+
+def open_of(obs_list):
+    """The book's OPENING price for one line. Founder: "Open = is_opener price,
+    with inserted_on".
+
+    Only a row Kibl itself flagged `is_opener` can be an Open. The earliest
+    observation WE hold is our first sighting, not the book's opener, and
+    stamping it "Open" would be exactly the approximation the standing rules
+    forbid — so a line with no opener row dashes its Open.
+
+    Among opener rows the EARLIEST inserted_on wins (first sighting wins
+    forever). Two opener rows sharing one inserted_on but disagreeing on price
+    is a contradiction we cannot resolve, so it drops on ambiguity.
+
+    Returns (price, ts_iso, reason) — exactly one of price/reason is set.
+    """
+    openers = [o for o in obs_list
+               if o.get('is_opener') and o.get('price_decimal') is not None
+               and epoch(o.get('inserted_on')) is not None]
+    if not openers:
+        return None, None, 'no_opener_row'
+    openers.sort(key=lambda o: epoch(o['inserted_on']))
+    first_ts = epoch(openers[0]['inserted_on'])
+    tied = {float(o['price_decimal']) for o in openers
+            if epoch(o['inserted_on']) == first_ts}
+    if len(tied) > 1:
+        return None, None, 'ambiguous_opener'
+    return float(openers[0]['price_decimal']), openers[0]['inserted_on'], None
+
+
+def newest_of(obs_list):
+    """The freshest price we hold for one line, by VENDOR time.
+
+    Ordered on inserted_on (the price's own time) and only then on observed_at
+    (our sweep's time) as a tie-break. Ordering on observed_at first would make
+    a sweep that re-saw an old price look like a new price.
+    """
+    usable = [o for o in obs_list
+              if o.get('price_decimal') is not None
+              and epoch(o.get('inserted_on')) is not None]
+    if not usable:
+        return None
+    usable.sort(key=lambda o: (epoch(o['inserted_on']),
+                               epoch(o.get('observed_at')) or 0.0))
+    return usable[-1]
+
+
+def close_of(obs_list, start_ts):
+    """The last price held STRICTLY BEFORE the start. Founder: "Close = last
+    pre-start price held; exclude any in-play row by start time".
+
+    `start_ts` is the TEN-225 ladder's answer (gated oddspapi trueStartTime, or
+    the api-tennis live flip). It is never Kibl's scheduled_start — the standing
+    rule forbids the schedule as a cutoff and Kibl publishes nothing else.
+    No start -> no Close. Dash, with the reason carried on the row.
+
+    The comparison is on inserted_on, the price's own time, and it is strict:
+    a price inserted AT the start instant is not demonstrably pre-start.
+    """
+    if start_ts is None:
+        return None
+    pre = [o for o in obs_list
+           if o.get('price_decimal') is not None
+           and epoch(o.get('inserted_on')) is not None
+           and epoch(o['inserted_on']) < start_ts]
+    if not pre:
+        return None
+    pre.sort(key=lambda o: (epoch(o['inserted_on']),
+                            epoch(o.get('observed_at')) or 0.0))
+    return pre[-1]
+
+
+def judge_close_live(start_ts, close_ts, start_src='oddspapi', flip_gap=None):
+    """Is a LIVE-CAPTURED close good enough to render? -> (reliable, lag_minutes)
+
+    This is Michael's ruling 2 with its two limbs separated, because only one of
+    them is about this source:
+
+      LAG limb (applies): the last pre-start price must sit within
+      RELIABLE_LAG_MIN of the start. A price from four hours before the start is
+      not a close, whoever captured it.
+
+      DECAY limb (does NOT apply): the 21-day window asks whether oddspapi's
+      archive had already eaten the tail by the time we fetched it. Kibl has no
+      history endpoint, so nothing is ever fetched after the fact — every close
+      here was captured before the start it is judged against, which makes
+      age_days negative and would fail judge_close() unconditionally. Applying it
+      would not be conservative, it would be vacuous: zero Kibl closes, forever,
+      on a green run.
+
+      FLIP-GAP limb (applies, unchanged): a close cut at the live-flip lower
+      bound inherits that bound's uncertainty, so it needs gap_seconds <= 300.
+      An UNKNOWN gap is not a pass.
+
+    Reported to Michael as a difference between sources, not ruled here.
+    """
+    if start_ts is None or close_ts is None:
+        return False, None
+    lag_min = (start_ts - close_ts) / 60.0
+    if lag_min < 0:
+        # An in-play price reached the close slot. close_of() makes this
+        # unreachable; the assertion stays because it is the one failure that
+        # must never render.
+        return False, lag_min
+    reliable = lag_min <= RELIABLE_LAG_MIN
+    if reliable and start_src == 'api-tennis-live':
+        reliable = flip_gap is not None and flip_gap <= FLIP_GAP_MAX_S
+    return reliable, lag_min
+
+
+# --------------------------------------------------------- cross-feed pairing
+
+def day_candidates(day):
+    """The scheduled day and its two neighbours.
+
+    A fixture at 23:40 UTC on one feed and 00:10 on the other is one match. The
+    line-summary loader already does this for the live-flip pairing; the same
+    allowance is needed here or every near-midnight match silently unpairs.
+    """
+    if not day:
+        return []
+    return [day, L._shift_day(day, -1), L._shift_day(day, 1)]
+
+
+def index_oddspapi(fx_rows, summary_rows):
+    """oddspapi fixtures + summary -> {match_key: resolved-start record}.
+
+    DROPS ON AMBIGUITY from both sides: two oddspapi fixtures on one match_key
+    means we cannot tell which start belongs to which match, so neither is
+    offered and both Kibl closes dash. A guessed start is worse than no close —
+    it pins a price to the wrong instant and nothing downstream can tell.
+
+    Returns (index, stats). The record carries the start AND the per-side prices,
+    because the orientation cross-check needs the same pairing.
+    """
+    by_key, ambiguous = {}, set()
+    st = collections.Counter()
+    for f in fx_rows:
+        day = (f.get('true_start') or f.get('scheduled_start') or '')[:10]
+        k = mk_of(day, f.get('player1'), f.get('player2'))
+        if not k:
+            st['oddspapi_fixture_unkeyable'] += 1
+            continue
+        if k in by_key:
+            ambiguous.add(k)
+        by_key[k] = f['fixture_id']
+
+    starts = {}
+    for r in summary_rows:
+        if r.get('market') != MARKET:
+            continue
+        starts.setdefault(r['fixture_id'], {})[r.get('side')] = r
+
+    index = {}
+    for k, fid in by_key.items():
+        if k in ambiguous:
+            st['oddspapi_ambiguous'] += 1
+            continue
+        sides = starts.get(fid)
+        if not sides:
+            st['oddspapi_no_summary'] += 1
+            continue
+        any_row = next(iter(sides.values()))
+        index[k] = {
+            'fixture_id': fid,
+            'start_ts': epoch(any_row.get('start_ts')),
+            'start_ts_source': any_row.get('start_ts_source') or 'none',
+            'start_reject_reason': any_row.get('start_reject_reason'),
+            'flip_gap_seconds': any_row.get('flip_gap_seconds'),
+            'sides': sides,
+        }
+        st['oddspapi_indexed'] += 1
+    return index, st
+
+
+def find_start(kibl_fx, odds_index):
+    """A Kibl fixture -> the oddspapi-resolved start, or a no-start record.
+
+    Tries the scheduled day and its neighbours. Never derives a start of its own:
+    the ladder lives in resolve_start() and running a second copy of it here is
+    how two rows of one fixture end up with two different start_ts_source values.
+    """
+    base = (kibl_fx.get('scheduled_start') or '')[:10]
+    k1 = name_key(kibl_fx.get('player1_name'))
+    k2 = name_key(kibl_fx.get('player2_name'))
+    if not (k1 and k2) or k1 == k2:
+        return None, 'unpairable_name'
+    for d in day_candidates(base):
+        k = mk_of(d, kibl_fx.get('player1_name'), kibl_fx.get('player2_name'))
+        if k and k in odds_index:
+            return odds_index[k], None
+    return None, 'no_oddspapi_pair'
+
+
+# ------------------------------------------------------------ the build itself
+
+def build_rows(kibl_fixtures, observations, odds_index, as_of):
+    """kibl_fixtures + kibl_line_observations -> odds_card_state rows.
+
+    One row per (fixture, side). `observations` is {fixture_id: [obs, ...]}.
+    """
+    rows, st = [], collections.Counter()
+    for fx in kibl_fixtures:
+        fid = fx['fixture_id']
+        obs = [o for o in observations.get(fid, []) if is_match_winner(o)]
+        if not obs:
+            st['fixture_no_match_winner_rows'] += 1
+            continue
+        st['fixtures_with_rows'] += 1
+
+        rec, why = find_start(fx, odds_index)
+        start_ts = rec['start_ts'] if rec else None
+        start_src = rec['start_ts_source'] if rec else 'none'
+        reject = rec['start_reject_reason'] if rec else None
+        flip_gap = rec.get('flip_gap_seconds') if rec else None
+        st[f'start_{why or start_src}'] += 1
+
+        sched = epoch(fx.get('scheduled_start'))
+        now_ok, now_basis = qualifies_as_now(start_ts, sched, as_of)
+
+        by_side = collections.defaultdict(list)
+        for o in obs:
+            s = side_label(o)
+            if s is None:
+                st['obs_unknown_side'] += 1
+                continue
+            by_side[s].append(o)
+
+        for side, lst in sorted(by_side.items()):
+            open_price, open_ts, open_reason = open_of(lst)
+            if open_reason:
+                st[f'open_{open_reason}'] += 1
+            else:
+                st['open_ok'] += 1
+
+            newest = newest_of(lst) if now_ok else None
+            if now_ok and newest is None:
+                st['now_no_usable_row'] += 1
+            elif not now_ok:
+                st['now_withheld_not_prematch'] += 1
+            else:
+                st['now_ok'] += 1
+
+            close_obs = close_of(lst, start_ts)
+            close_ts = close_obs['inserted_on'] if close_obs else None
+            reliable, lag = judge_close_live(start_ts, epoch(close_ts),
+                                             start_src, flip_gap)
+            if close_obs and not reliable:
+                st['close_withheld_unreliable'] += 1
+            elif reliable:
+                st['close_ok'] += 1
+            else:
+                st['close_absent'] += 1
+
+            rows.append({
+                'fixture_id': str(fid),
+                'id_space': SOURCE,
+                'book': BOOK,
+                'market': MARKET,
+                'side': side,
+                'line': None,
+                'match_key': fx.get('match_key'),
+                'book_rank': BOOK_RANK,
+                # Never set by a filler — the selection pass owns it.
+                'is_selected': False,
+                'ts_kind': TS_KIND,
+                'open_price': open_price,
+                'open_ts': open_ts,
+                # Kibl carries max_limit on the wire but it reads 0.0 = "not
+                # provided" on every row we are served. 0.0 is a limit-shaped
+                # number, so it is stored as NULL, never as a stake limit.
+                'open_limit': _limit(lst),
+                'now_price': (float(newest['price_decimal']) if newest else None),
+                'now_ts': (newest['inserted_on'] if newest else None),
+                'close_price': (float(close_obs['price_decimal'])
+                                if (close_obs and reliable) else None),
+                'close_ts': close_ts if (close_obs and reliable) else None,
+                'start_ts': iso(start_ts) if start_ts is not None else None,
+                'start_ts_source': start_src,
+                'start_reject_reason': reject,
+                'source': SOURCE,
+                'label': None,
+                # Report-only fields, stripped before the upsert.
+                '_now_basis': now_basis,
+                '_close_lag_min': lag,
+                '_start_why': why,
+            })
+            st['rows'] += 1
+    return rows, st
+
+
+def _limit(obs_list):
+    """The stake limit, or None. 0.0 means "not provided" on this feed."""
+    for o in obs_list:
+        v = o.get('max_limit')
+        if v not in (None, '', 0, 0.0):
+            try:
+                return float(v)
+            except (TypeError, ValueError):
+                return None
+    return None
+
+
+# -------------------------------------------------- the book-priority selection
+
+def run_selection(url, key, dry_run=False):
+    """Re-decide is_selected across EVERY source, then write it back.
+
+    ⚠️ THIS MUST READ THE WHOLE TABLE, NOT THIS RUN'S ROWS. The three sources are
+    filled by three different jobs at three different times; a pass that only saw
+    its own rows could never demote a bet365 row that Kibl has just taken over,
+    and "a higher-priority book that appears later takes over all three values"
+    is precisely the founder's instruction. Selecting from a partial view is how
+    a card ends up showing two books at once — or, worse, keeps showing the old
+    one because nothing ever told it to stop.
+
+    The write-back sends the NOT NULL columns alongside is_selected: PostgREST
+    upserts as INSERT ... ON CONFLICT DO UPDATE, and a payload missing a NOT NULL
+    column can fail on the insert tuple even when every row is really an update.
+    No price column is in the payload, so this pass cannot alter a price.
+    """
+    cols = ('fixture_id,id_space,book,market,side,line,match_key,book_rank,'
+            'is_selected,source,start_ts_source,open_price,now_price,close_price')
+    rows, err = fetch_all(url, key, 'odds_card_state', cols)
+    if err:
+        print(f'::error::reading odds_card_state for selection failed ({err})')
+        return None, err
+    before = sum(1 for r in rows if r.get('is_selected'))
+    rows, st = select_winners(rows)
+    after = sum(1 for r in rows if r['is_selected'])
+    print(f'selection over the WHOLE table: n={len(rows)} rows, '
+          f'selected {before} -> {after}  {dict(st)}')
+    if dry_run:
+        return st, None
+    payload = [{'fixture_id': r['fixture_id'], 'id_space': r['id_space'],
+                'book': r['book'], 'market': r['market'], 'side': r['side'],
+                'line': r['line'], 'source': r['source'],
+                'book_rank': r['book_rank'], 'match_key': r.get('match_key'),
+                'start_ts_source': r.get('start_ts_source') or 'none',
+                'is_selected': r['is_selected']}
+               for r in rows]
+    sent, uerr = L.upsert(url, key, 'odds_card_state', payload,
+                          'fixture_id,book,market,side,line')
+    print(f'selection write-back: {sent}/{len(payload)}'
+          + (f' — FAILED {uerr}' if uerr else ''))
+    return st, uerr
+
+
+def select_winners(rows):
+    """Founder ruling: one book per fixture, lowest book_rank wins.
+
+    Operates on (match_key, market, side, line) — NOT on fixture_id, because the
+    three sources key the same match under three different id spaces and
+    fixture_id cannot see that they are one match.
+
+    A row with NO match_key cannot be shown to be a duplicate of anything AND
+    cannot be joined to a board match, so it is never selected. That is the
+    conservative direction: an unselected row renders nothing, which is the dash
+    the standing rules ask for.
+
+    A row carrying none of Open/Now/Close is not selected either — selecting it
+    would let an empty rank-1 row hide a populated rank-2 one, which is the exact
+    way a priority change makes a working card go blank.
+
+    Returns (rows, stats) with is_selected set in place.
+    """
+    groups, st = collections.defaultdict(list), collections.Counter()
+    for r in rows:
+        r['is_selected'] = False
+        if not r.get('match_key'):
+            st['no_match_key'] += 1
+            continue
+        if (r.get('open_price') is None and r.get('now_price') is None
+                and r.get('close_price') is None):
+            st['empty_row'] += 1
+            continue
+        groups[(r['match_key'], r['market'], r['side'], r.get('line'))].append(r)
+
+    for k, cands in groups.items():
+        top = min(int(c['book_rank']) for c in cands)
+        winners = [c for c in cands if int(c['book_rank']) == top]
+        if len(winners) > 1:
+            # Two rows of one rank on one logical line: two fixtures of one
+            # source paired onto one match. Ambiguous -> neither is selected,
+            # because picking either would be a coin toss rendered as a price.
+            st['rank_tie_dropped'] += 1
+            continue
+        winners[0]['is_selected'] = True
+        st[f'selected_rank_{top}'] += 1
+        st['demoted'] += len(cands) - 1
+    st['selected'] = sum(1 for r in rows if r['is_selected'])
+    return rows, st
+
+
+# ---------------------------------------------- the orientation cross-check
+
+def orientation_agreement(kibl_rows, odds_index, min_gap_pp=5.0):
+    """Does Kibl's side_id 1/2 mean the same players our other feeds' 1/2 mean?
+
+    side_label() ASSERTS the mapping from the shape of the fixture string. This
+    is the control that makes the assertion falsifiable, and it is not circular:
+    Kibl's favourite is computed under OUR assumed mapping, oddspapi's favourite
+    is computed from ITS independently-oriented p1/p2, and the two are compared.
+    If the convention were reversed, agreement would collapse to ~0%, not to 50%.
+
+    Only matches with a clear favourite are counted — a gap of at least
+    `min_gap_pp` implied-probability points between the two sides. A near-even
+    match carries no signal about orientation and would dilute the rate toward
+    50% whichever way the mapping runs.
+
+    Returns a dict with n and the rate. REPORT ONLY: it never changes a price.
+    """
+    out = {'n': 0, 'agree': 0, 'disagree': 0, 'skipped_no_clear_fav': 0,
+           'skipped_incomplete': 0, 'minGapPP': min_gap_pp, 'examples': []}
+    by_match = collections.defaultdict(dict)
+    for r in kibl_rows:
+        if r.get('match_key') and r.get('open_price'):
+            by_match[r['match_key']][r['side']] = r
+
+    for k, sides in by_match.items():
+        rec = odds_index.get(k)
+        if not rec or '1' not in sides or '2' not in sides:
+            out['skipped_incomplete'] += 1
+            continue
+        o1 = (rec['sides'].get('1') or {}).get('open_price')
+        o2 = (rec['sides'].get('2') or {}).get('open_price')
+        if o1 is None or o2 is None:
+            out['skipped_incomplete'] += 1
+            continue
+        k1, k2 = float(sides['1']['open_price']), float(sides['2']['open_price'])
+        o1, o2 = float(o1), float(o2)
+        if min(k1, k2, o1, o2) <= 1.0:
+            out['skipped_incomplete'] += 1
+            continue
+        # Implied probability, normalised away by using the DIFFERENCE of the
+        # two sides within each book — the overround cancels in the sign.
+        gap_k = (1 / k1 - 1 / k2) * 100
+        gap_o = (1 / o1 - 1 / o2) * 100
+        if abs(gap_k) < min_gap_pp or abs(gap_o) < min_gap_pp:
+            out['skipped_no_clear_fav'] += 1
+            continue
+        out['n'] += 1
+        if (gap_k > 0) == (gap_o > 0):
+            out['agree'] += 1
+        else:
+            out['disagree'] += 1
+            if len(out['examples']) < 10:
+                out['examples'].append({'match_key': k, 'kibl': [k1, k2],
+                                        'oddspapi': [o1, o2]})
+    out['rate'] = (out['agree'] / out['n']) if out['n'] else None
+    out['belowMinN'] = out['n'] < MIN_N
+    return out
+
+
+# -------------------------------------------------------------------- plumbing
+
+def fetch_all(url, key, table, cols, extra='', order='fixture_id.asc'):
+    """Page a table. PostgREST caps a page at 1,000 rows and truncates silently
+    past that, so the loop is not an optimisation — without it a full read is a
+    quiet 1,000-row lie."""
+    out, offset = [], 0
+    while True:
+        got, err = sb('GET', f'/rest/v1/{table}?select={cols}{extra}'
+                             f'&order={order}&limit={PAGE}&offset={offset}',
+                      url, key)
+        if got is None:
+            return out, err
+        rows = json.loads(got.decode('utf-8'))
+        out.extend(rows)
+        if len(rows) < PAGE:
+            return out, None
+        offset += PAGE
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument('--dry-run', action='store_true')
+    ap.add_argument('--days-back', type=int, default=45,
+                    help='how far back to read observations')
+    a = ap.parse_args()
+
+    url, key = creds()
+    as_of = datetime.now(timezone.utc).timestamp()
+    result = {'generatedAt': iso(as_of), 'market': MARKET, 'book': BOOK,
+              'source': SOURCE}
+
+    fx, err = fetch_all(url, key, 'kibl_fixtures',
+                        'fixture_id,league_id,scheduled_start,name,'
+                        'player1_name,player2_name,match_key,first_seen_at')
+    if err:
+        print(f'::error::reading kibl_fixtures failed ({err})')
+        return 1
+    print(f'kibl_fixtures: {len(fx)} rows')
+    if not fx:
+        # A wholly empty surface for a structural reason is the failure that
+        # hides longest. The sweep has been running since 2026-09-17; zero
+        # fixtures means the projection never wrote, not that tennis stopped.
+        print('::error::kibl_fixtures is empty — the sweep has not projected '
+              'fixtures yet. Refusing to report a clean zero as coverage.')
+        return 1
+
+    obs_rows, err = fetch_all(
+        url, key, 'kibl_line_observations',
+        'fixture_id,side_id,market_type_id,segment_id,betting_type_id,is_live,'
+        'is_opener,is_current,price_decimal,inserted_on,observed_at,alt_id,'
+        'is_main,point',
+        f'&market_type_id=eq.{MARKET_TYPE_ID}&segment_id=eq.{SEGMENT_ID}'
+        f'&betting_type_id=eq.{BETTING_TYPE_ID}'
+        # Bounded on OUR capture time, not on the price's. A window on
+        # inserted_on would drop a still-valid opener the moment the book's
+        # opening price aged past the cutoff, which is the one row the whole
+        # source exists to carry.
+        f'&observed_at=gte.{iso(as_of - a.days_back * 86400)}',
+        order='fixture_id.asc,inserted_on.asc')
+    if err:
+        print(f'::error::reading kibl_line_observations failed ({err})')
+        return 1
+    observations = collections.defaultdict(list)
+    for o in obs_rows:
+        observations[o['fixture_id']].append(o)
+    print(f'kibl_line_observations: {len(obs_rows)} match-winner rows over '
+          f'{len(observations)} fixtures')
+
+    ofx, err = fetch_all(url, key, 'oddspapi_fixtures',
+                         'fixture_id,player1,player2,scheduled_start,true_start,'
+                         'category_name')
+    if err:
+        print(f'::error::reading oddspapi_fixtures failed ({err})')
+        return 1
+    osum, err = fetch_all(url, key, 'oddspapi_line_summary',
+                          'fixture_id,market,side,open_price,open_ts,close_price,'
+                          'start_ts,start_ts_source,start_reject_reason,'
+                          'flip_gap_seconds',
+                          f'&market=eq.{urllib.parse.quote(MARKET)}')
+    if err:
+        print(f'::error::reading oddspapi_line_summary failed ({err})')
+        return 1
+    odds_index, ist = index_oddspapi(ofx, osum)
+    print(f'oddspapi pairing index: {len(odds_index)} match keys  {dict(ist)}')
+
+    rows, st = build_rows(fx, observations, odds_index, as_of)
+    print(f'kibl card rows: {len(rows)}  {dict(st)}')
+
+    orient = orientation_agreement(rows, odds_index)
+    print(f'orientation cross-check: n={orient["n"]}, '
+          f'agree={orient["agree"]}, disagree={orient["disagree"]}, '
+          f'rate={orient["rate"]}'
+          + ('  <-- n<30, FLAGGED' if orient['belowMinN'] else ''))
+    if orient['n'] and orient['rate'] is not None and orient['rate'] < 1.0:
+        print(f'::warning::side orientation disagrees with oddspapi on '
+              f'{orient["disagree"]} of {orient["n"]} clearly-separated matches. '
+              f'REPORTED, NOT CORRECTED — the mapping is Michael\'s to rule on.')
+
+    n = max(len(rows), 1)
+    have_open = sum(1 for r in rows if r['open_price'] is not None)
+    have_now = sum(1 for r in rows if r['now_price'] is not None)
+    have_close = sum(1 for r in rows if r['close_price'] is not None)
+    print(f'coverage (n={len(rows)} rows): Open {have_open} ({have_open/n:.1%}), '
+          f'Now {have_now} ({have_now/n:.1%}), '
+          f'Close {have_close} ({have_close/n:.1%})'
+          + (f'  <-- n<{MIN_N}' if len(rows) < MIN_N else ''))
+
+    lags = sorted(r['_close_lag_min'] for r in rows
+                  if r['_close_lag_min'] is not None)
+    result.update({
+        'counts': dict(st), 'pairing': dict(ist),
+        'orientation': orient,
+        'coverage': {'n': len(rows), 'open': have_open, 'now': have_now,
+                     'close': have_close},
+        'closeLagMinutes': ({'n': len(lags), 'min': lags[0],
+                             'median': lags[len(lags) // 2], 'max': lags[-1]}
+                            if lags else {'n': 0}),
+        'closeRule': {'lagMinutes': RELIABLE_LAG_MIN,
+                      'decayWindowApplied': False,
+                      'why': ('kibl is captured live, so every close predates '
+                              'its start and the 21-day decay limb is vacuous '
+                              'here — reported, not ruled')},
+    })
+
+    if not a.dry_run and rows:
+        payload = [{k: v for k, v in r.items() if not k.startswith('_')}
+                   for r in rows]
+        sent, uerr = L.upsert(url, key, 'odds_card_state', payload,
+                              'fixture_id,book,market,side,line')
+        print(f'upserted {sent}/{len(payload)} kibl card rows'
+              + (f' — FAILED {uerr}' if uerr else ''))
+        result['upserted'] = sent
+        if uerr:
+            result['error'] = str(uerr)
+            json.dump(result, open(OUT, 'w'), indent=1)
+            return 1
+
+    # The book-priority pass runs LAST and over every source, so a Kibl row that
+    # has just landed can take a match off bet365 in the same run that created
+    # it. Run it even on a dry run — it prints what it WOULD change, which is the
+    # number worth reading before anything renders.
+    sel, serr = run_selection(url, key, dry_run=a.dry_run)
+    result['selection'] = dict(sel) if sel else None
+    if serr:
+        result['error'] = str(serr)
+        json.dump(result, open(OUT, 'w'), indent=1)
+        return 1
+
+    json.dump(result, open(OUT, 'w'), indent=1)
+    print(f'wrote {OUT}')
+    return 0
+
+
+if __name__ == '__main__':
+    sys.exit(main())

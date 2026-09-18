@@ -36,11 +36,32 @@ CREATE TABLE IF NOT EXISTS odds_card_state (
   -- 'id'/'pn') would be a guess that breaks the first time a feed changes its
   -- id format, silently, on the read path.
   fixture_id        text        NOT NULL,
-  id_space          text        NOT NULL,   -- oddspapi | api-tennis
-  book              text        NOT NULL,   -- 'bet365' today; books are config
+  id_space          text        NOT NULL,   -- oddspapi | api-tennis | kibl
+  book              text        NOT NULL,   -- sports411 | bet365; books are config
   market            text        NOT NULL,   -- 'match winner' in this step
   side              text        NOT NULL,   -- '1' | '2' (outcome name)
   line              numeric,                -- NULL on match winner
+
+  -- BOOK PRIORITY (founder ruling 2026-09-18T00:18Z). Three sources now price
+  -- the same match under three different id spaces, so "one book per fixture"
+  -- cannot be enforced on fixture_id — the three rows for one match do not share
+  -- one. match_key is what makes them one match: scheduled day + both surname
+  -- keys, sorted, from ten225_names.match_key(). NULL means the row could not be
+  -- paired to anything, which is also the reason its card dashes.
+  match_key         text,
+  -- 1 kibl/Sports411, 2 bet365 via oddspapi, 3 api-tennis. Lower wins.
+  book_rank         smallint    NOT NULL DEFAULT 99,
+  -- The one source a surface may render for this match+market+side. Set by the
+  -- selection pass, never by a filler: a filler only knows its own source, and
+  -- "am I the best source" is not a question it can answer. Default FALSE so a
+  -- row that no selection pass has judged renders nothing rather than renders
+  -- unconditionally — the safe direction when the two disagree.
+  is_selected       boolean     NOT NULL DEFAULT false,
+  -- What our timestamps MEAN, per source. Founder, 2026-09-18: "Every Kibl
+  -- timestamp is vendor-insert time, not book-post time. Label it that way in
+  -- the data." A column, not a convention, because the distinction survives
+  -- into the report and into anything that later compares two books' openers.
+  ts_kind           text,                   -- vendor-insert | book-tick | sighting
 
   -- Open. Michael: "first recorded Oddspapi tick for fixture + book + side
   -- (createdAt), with timestamp and stake limit."
@@ -78,9 +99,25 @@ CREATE TABLE IF NOT EXISTS odds_card_state (
   CONSTRAINT odds_card_state_grain
     UNIQUE NULLS NOT DISTINCT (fixture_id, book, market, side, line),
   CONSTRAINT odds_card_state_id_space_ck
-    CHECK (id_space IN ('oddspapi', 'api-tennis')),
+    CHECK (id_space IN ('oddspapi', 'api-tennis', 'kibl')),
   CONSTRAINT odds_card_state_source_ck
-    CHECK (source IN ('oddspapi', 'api-tennis')),
+    CHECK (source IN ('oddspapi', 'api-tennis', 'kibl')),
+  CONSTRAINT odds_card_state_ts_kind_ck
+    CHECK (ts_kind IS NULL
+           OR ts_kind IN ('vendor-insert', 'book-tick', 'sighting')),
+  -- The ruled rank, pinned to the source so a filler cannot promote itself.
+  CONSTRAINT odds_card_state_rank_ck
+    CHECK ((source = 'kibl'       AND book_rank = 1)
+        OR (source = 'oddspapi'   AND book_rank = 2)
+        OR (source = 'api-tennis' AND book_rank = 3)),
+  -- "Open, Now and Close always from the SAME book" is structural here: one row
+  -- carries all three and one row has one book. What the constraint CAN catch is
+  -- a row selected for rendering that has nothing to render.
+  CONSTRAINT odds_card_state_selected_ck
+    CHECK (NOT is_selected
+           OR open_price IS NOT NULL
+           OR now_price IS NOT NULL
+           OR close_price IS NOT NULL),
   CONSTRAINT odds_card_state_start_src_ck
     CHECK (start_ts_source IN ('oddspapi', 'api-tennis-live', 'none')),
   -- Michael: the fallback is "shown with label 'last seen'". Make the pairing
@@ -113,7 +150,11 @@ CREATE TABLE IF NOT EXISTS odds_card_state (
 ALTER TABLE odds_card_state
   ADD COLUMN IF NOT EXISTS start_reject_reason text,
   ADD COLUMN IF NOT EXISTS start_ts            timestamptz,
-  ADD COLUMN IF NOT EXISTS id_space            text;
+  ADD COLUMN IF NOT EXISTS id_space            text,
+  ADD COLUMN IF NOT EXISTS match_key           text,
+  ADD COLUMN IF NOT EXISTS book_rank           smallint NOT NULL DEFAULT 99,
+  ADD COLUMN IF NOT EXISTS is_selected         boolean  NOT NULL DEFAULT false,
+  ADD COLUMN IF NOT EXISTS ts_kind             text;
 
 ALTER TABLE odds_card_state
   DROP CONSTRAINT IF EXISTS odds_card_state_reject_ck;
@@ -124,6 +165,39 @@ ALTER TABLE odds_card_state
                                     'implausible_early_start',
                                     'end_before_start',
                                     'itf_uncorroborated_start'));
+
+-- The constraints added with the book-priority columns, applied idempotently to
+-- an instance that already carries the table. Each is dropped first so a rerun
+-- after a rule change replaces the old rule rather than failing on the name.
+--
+-- ⚠️ ORDER MATTERS. book_rank defaults to 99 and the rank check permits only
+-- 1/2/3, so every pre-existing row has to be backfilled to its ruled rank BEFORE
+-- the check is added or the ALTER fails on legacy data. Any row whose source we
+-- do not recognise would still fail — correctly: that is an unruled source.
+UPDATE odds_card_state SET book_rank = 1 WHERE source = 'kibl'       AND book_rank <> 1;
+UPDATE odds_card_state SET book_rank = 2 WHERE source = 'oddspapi'   AND book_rank <> 2;
+UPDATE odds_card_state SET book_rank = 3 WHERE source = 'api-tennis' AND book_rank <> 3;
+
+ALTER TABLE odds_card_state DROP CONSTRAINT IF EXISTS odds_card_state_id_space_ck;
+ALTER TABLE odds_card_state ADD CONSTRAINT odds_card_state_id_space_ck
+  CHECK (id_space IN ('oddspapi', 'api-tennis', 'kibl'));
+ALTER TABLE odds_card_state DROP CONSTRAINT IF EXISTS odds_card_state_source_ck;
+ALTER TABLE odds_card_state ADD CONSTRAINT odds_card_state_source_ck
+  CHECK (source IN ('oddspapi', 'api-tennis', 'kibl'));
+ALTER TABLE odds_card_state DROP CONSTRAINT IF EXISTS odds_card_state_ts_kind_ck;
+ALTER TABLE odds_card_state ADD CONSTRAINT odds_card_state_ts_kind_ck
+  CHECK (ts_kind IS NULL OR ts_kind IN ('vendor-insert', 'book-tick', 'sighting'));
+ALTER TABLE odds_card_state DROP CONSTRAINT IF EXISTS odds_card_state_rank_ck;
+ALTER TABLE odds_card_state ADD CONSTRAINT odds_card_state_rank_ck
+  CHECK ((source = 'kibl'       AND book_rank = 1)
+      OR (source = 'oddspapi'   AND book_rank = 2)
+      OR (source = 'api-tennis' AND book_rank = 3));
+ALTER TABLE odds_card_state DROP CONSTRAINT IF EXISTS odds_card_state_selected_ck;
+ALTER TABLE odds_card_state ADD CONSTRAINT odds_card_state_selected_ck
+  CHECK (NOT is_selected
+         OR open_price IS NOT NULL
+         OR now_price IS NOT NULL
+         OR close_price IS NOT NULL);
 
 ALTER TABLE odds_card_state ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON odds_card_state FROM anon, authenticated;
@@ -136,3 +210,6 @@ CREATE INDEX IF NOT EXISTS odds_card_state_fixture_market_idx
 CREATE INDEX IF NOT EXISTS odds_card_state_move_idx
   ON odds_card_state (market, now_ts)
   WHERE open_price IS NOT NULL AND now_price IS NOT NULL;
+-- The selection pass's own query: every source row for one match, in rank order.
+CREATE INDEX IF NOT EXISTS odds_card_state_select_idx
+  ON odds_card_state (match_key, market, side, line, book_rank);

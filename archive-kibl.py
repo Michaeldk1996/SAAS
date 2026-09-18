@@ -43,10 +43,12 @@ import urllib.request
 
 from kibl_client import (KiblClient, TENNIS_LEAGUES_MEN, state_of,
                          observation_key)
+from ten225_names import match_key, split_kibl_fixture_name
 
 BUCKET = "kibl-raw"
 TABLE_OBS = "kibl_line_observations"
 TABLE_SWEEPS = "kibl_sweeps"
+TABLE_FIXTURES = "kibl_fixtures"
 HEARTBEAT_KEY = "_heartbeat.json.gz"
 HEARTBEAT_MAX_AGE_H = 24.0
 INSERT_CHUNK = 500
@@ -194,6 +196,78 @@ def to_summary(row, observed_at, league_id, sweep_id, raw_object):
     }
 
 
+def fixture_row(f, observed_at, sweep_id):
+    """One /info/fixtures record -> a kibl_fixtures row, or None.
+
+    None when there is no fixture_id. Everything else — an unparseable name, a
+    missing start — is STORED with NULLs rather than dropped, because the raw
+    record is evidence: a fixture we cannot pair today is the thing the name
+    normaliser report has to count, and a dropped row cannot be counted.
+    """
+    fid = f.get("fixture_id")
+    if fid is None:
+        return None
+    p1, p2 = split_kibl_fixture_name(f.get("name"))
+    sched = f.get("start_time")
+    return {
+        "fixture_id": fid,
+        "league_id": f.get("league_id"),
+        "sport_id": f.get("sport_id"),
+        "fixture_type_id": f.get("fixture_type_id"),
+        "feed_source_id": f.get("feed_source_id"),
+        # Kibl's SCHEDULED time. Never a Close cutoff — see the schema comment.
+        "scheduled_start": sched,
+        "name": f.get("name"),
+        "player1_name": p1,
+        "player2_name": p2,
+        "match_key": match_key(sched or "", p1, p2),
+        "first_seen_at": observed_at,
+        "last_seen_at": observed_at,
+        "first_sweep_id": sweep_id,
+        "last_sweep_id": sweep_id,
+    }
+
+
+def upsert_fixtures(url, key, rows):
+    """Upsert fixtures, preserving first_seen_at.
+
+    PostgREST's merge-duplicates overwrites EVERY column it is sent, so sending
+    first_seen_at on an update would reset it to now on every sweep — and
+    first_seen_at is the denominator of the opening-time measurement. The
+    two-pass shape below is what keeps it: pass 1 inserts brand-new fixtures
+    only (ignore-duplicates, so an existing row is untouched), pass 2 updates
+    the columns that are allowed to move on the rows that already existed.
+
+    Returns (n_new, n_failed).
+    """
+    new = 0
+    failed = 0
+    MOVES = ("fixture_id", "league_id", "sport_id", "fixture_type_id",
+             "feed_source_id", "scheduled_start", "name", "player1_name",
+             "player2_name", "match_key", "last_seen_at", "last_sweep_id")
+    for i in range(0, len(rows), INSERT_CHUNK):
+        chunk = rows[i:i + INSERT_CHUNK]
+        got, err = sb_request(
+            "POST", f"/rest/v1/{TABLE_FIXTURES}?on_conflict=fixture_id", url, key,
+            body=chunk,
+            headers={"Prefer": "resolution=ignore-duplicates,return=representation"})
+        if got is None:
+            failed += len(chunk)
+            print(f"::warning::fixture insert chunk {i // INSERT_CHUNK} failed: {err}")
+            continue
+        new += len(got) if isinstance(got, list) else 0
+        # Pass 2: refresh the movable columns on every row in the chunk. A
+        # fixture can be rescheduled or renamed and the newest statement wins;
+        # first_seen_at / first_sweep_id are simply not in the payload.
+        moved = [{k: r[k] for k in MOVES if k in r} for r in chunk]
+        _, err2 = sb_request(
+            "POST", f"/rest/v1/{TABLE_FIXTURES}?on_conflict=fixture_id", url, key,
+            body=moved, headers={"Prefer": "resolution=merge-duplicates"})
+        if err2:
+            print(f"::warning::fixture refresh chunk {i // INSERT_CHUNK} failed: {err2}")
+    return new, failed
+
+
 def insert_rows(url, key, rows):
     """Upsert, ignoring duplicates. Returns (n_new, n_failed).
 
@@ -218,11 +292,108 @@ def insert_rows(url, key, rows):
 
 # --------------------------------------------------------------------- sweep
 
+def _emit_output(name, value):
+    """Write a step output when running under Actions; a no-op locally."""
+    path = os.environ.get("GITHUB_OUTPUT")
+    if not path:
+        return
+    try:
+        with open(path, "a") as fh:
+            fh.write(f"{name}={value}\n")
+    except OSError as e:  # noqa: BLE001
+        print(f"::warning::could not write step output {name}: {e}")
+
+
+BASELINE_MIN = 15.0     # founder ruling 2026-09-18 item 2: "Sweep 15 min baseline"
+NEAR_START_MIN = 5.0    # "...5 min from T-60 to start"
+NEAR_START_WINDOW_MIN = 60.0
+
+
+def should_sweep(minutes_since_last, minutes_to_next_start):
+    """The cadence rule, as a function -> (sweep?, why).
+
+    Founder ruling 2026-09-18 item 2: 15-minute baseline, 5-minute from T-60 to
+    the start. The decision lives HERE and not in a cron expression for two
+    reasons: cron cannot see when a fixture starts, and a rule in code can be
+    tested and counted. The workflow fires often; this decides whether a firing
+    does any work.
+
+    NEVER SKIPS ON MISSING INFORMATION. An unknown time since the last sweep
+    (first run, or the sweeps table unreadable) sweeps — for a feed whose prices
+    cannot be re-fetched, the cost of a redundant sweep is one API call and the
+    cost of a skipped one is a price nobody has. `minutes_to_next_start` being
+    None only means no fixture is near, which is the baseline case, not a reason
+    to skip.
+    """
+    if minutes_since_last is None:
+        return True, 'no-previous-sweep'
+    near = (minutes_to_next_start is not None
+            and 0.0 <= minutes_to_next_start <= NEAR_START_WINDOW_MIN)
+    floor = NEAR_START_MIN if near else BASELINE_MIN
+    if minutes_since_last + 1e-9 >= floor:
+        return True, ('near-start' if near else 'baseline')
+    return False, (f'too soon: {minutes_since_last:.1f} min since the last '
+                   f'sweep, floor is {floor:.0f} '
+                   f'({"near-start" if near else "baseline"})')
+
+
+def cadence_inputs(url, key, now):
+    """(minutes since the last sweep, minutes to the next start) — or Nones.
+
+    Both reads fail OPEN to None, which should_sweep() treats as "sweep".
+    """
+    since = None
+    rows, err = sb_request(
+        "GET", f"/rest/v1/{TABLE_SWEEPS}?select=started_at&order=started_at.desc&limit=1",
+        url, key)
+    if err:
+        print(f"::warning::cadence: could not read the last sweep ({err}); sweeping")
+    elif isinstance(rows, list) and rows and rows[0].get("started_at"):
+        try:
+            last = dt.datetime.fromisoformat(
+                rows[0]["started_at"].replace("Z", "+00:00")).replace(tzinfo=None)
+            since = (now - last).total_seconds() / 60.0
+        except ValueError:
+            print("::warning::cadence: unparseable started_at; sweeping")
+
+    to_start = None
+    hi = now + dt.timedelta(minutes=NEAR_START_WINDOW_MIN)
+    rows, err = sb_request(
+        "GET",
+        f"/rest/v1/{TABLE_FIXTURES}?select=scheduled_start"
+        f"&scheduled_start=gte.{iso(now)}&scheduled_start=lte.{iso(hi)}"
+        f"&order=scheduled_start.asc&limit=1",
+        url, key)
+    if err:
+        print(f"::warning::cadence: could not read upcoming fixtures ({err})")
+    elif isinstance(rows, list) and rows and rows[0].get("scheduled_start"):
+        try:
+            nxt = dt.datetime.fromisoformat(
+                rows[0]["scheduled_start"].replace("Z", "+00:00")).replace(tzinfo=None)
+            to_start = (nxt - now).total_seconds() / 60.0
+        except ValueError:
+            pass
+    return since, to_start
+
+
 def sweep(args):
     url, key = supabase_creds()
     ensure_bucket(url, key)
 
     started = now_utc()
+    if getattr(args, "cadence_gate", False):
+        since, to_start = cadence_inputs(url, key, started)
+        go, why = should_sweep(since, to_start)
+        print(f"cadence: {since if since is None else round(since, 1)} min since "
+              f"the last sweep, next start in "
+              f"{to_start if to_start is None else round(to_start, 1)} min -> "
+              f"{'SWEEP' if go else 'SKIP'} ({why})")
+        # Tell the workflow whether this firing did anything, so the downstream
+        # card-state step does not re-read the whole card table twelve times an
+        # hour to project an archive that did not move.
+        _emit_output("swept", "true" if go else "false")
+        if not go:
+            return 0
     c = KiblClient()
     c.authenticate()
     return run_window(c, url, key, started,
@@ -368,6 +539,24 @@ def run_window(c, url, key, started, win_start, win_end, betting_type_id,
                for r in rows_all]
     n_new, n_failed = insert_rows(url, key, summary)
 
+    # TEN-225: project the fixture list into a queryable table. The blob already
+    # holds it, but the card path needs the player names to pair a Kibl fixture
+    # to our board and it cannot read a gzipped object per fixture. Deduped on
+    # fixture_id within the window — the same fixture appears in one league only,
+    # but a window re-run inside one sweep would otherwise send it twice and
+    # PostgREST rejects a payload with two rows on one conflict target.
+    fx_rows = {}
+    for f in fixtures_all:
+        if isinstance(f, dict):
+            row = fixture_row(f, observed_at, sweep_id)
+            if row is not None:
+                fx_rows[row["fixture_id"]] = row
+    fx_new, fx_failed = upsert_fixtures(url, key, list(fx_rows.values()))
+    unpaired = sum(1 for r in fx_rows.values() if not r["match_key"])
+    print(f"fixtures: {len(fx_rows)} seen, {fx_new} new, {fx_failed} failed, "
+          f"{unpaired} with no match_key "
+          f"({unpaired / max(1, len(fx_rows)):.1%} unpairable)")
+
     # Intersected with the window's fixture list, and None excluded: an
     # unintersected count can exceed fixtures_seen and reads as >100% coverage.
     priced = len({r.get("fixture_id") for r in rows_all
@@ -385,8 +574,10 @@ def run_window(c, url, key, started, win_start, win_end, betting_type_id,
         "bytes_down": c.bytes_down - bytes_before,
         "raw_object": raw_object,
         "raw_bytes": len(blob),
-        "ok": ok and n_failed == 0,
-        "note": None if (ok and n_failed == 0) else f"{n_failed} summary rows failed to insert",
+        "ok": ok and n_failed == 0 and fx_failed == 0,
+        "note": (None if (ok and n_failed == 0 and fx_failed == 0)
+                 else f"{n_failed} summary rows and {fx_failed} fixture rows "
+                      f"failed to insert"),
     }
     _, err = sb_request("POST", f"/rest/v1/{TABLE_SWEEPS}?on_conflict=sweep_id",
                         url, key, body=[sweep_row],
@@ -478,6 +669,9 @@ def main():
                    help="how far back, to catch fixtures that just started")
     s.add_argument("--betting-type-id", type=int, default=1,
                    help="1=Prematch. Live is 3 for tennis, not 2 — measured before archived.")
+    s.add_argument("--cadence-gate", action="store_true",
+                   help="apply the 15-min baseline / 5-min-from-T-60 rule and "
+                        "skip this firing if it is too soon")
     s.set_defaults(func=sweep)
 
     b = sub.add_parser("backfill")

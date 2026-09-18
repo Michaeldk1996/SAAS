@@ -206,10 +206,20 @@ import re as _re
 _ddl = open(os.path.join(HERE, 'ten225-line-summary-schema.sql')).read()
 _m = _re.search(r'CREATE TABLE IF NOT EXISTS oddspapi_fixtures\s*\((.*?)\n\);',
                 _ddl, _re.S)
-_cols = set(_re.findall(r'^\s{2}([a-z_]+)\s+\w', _m.group(1), _re.M)) if _m else set()
+# DIGITS BELONG IN A COLUMN NAME. `[a-z_]+` silently omitted player1/player2
+# from the DDL's column set, so this guard would have reported a filler asking
+# for two real columns as asking for two that do not exist — a guard that is
+# wrong in the FAIL direction gets edited away the first time it fires.
+_cols = set(_re.findall(r'^\s{2}([a-z_0-9]+)\s+\w', _m.group(1), _re.M)) if _m else set()
 _src = open(os.path.join(HERE, 'ten225-load-card-state.py')).read()
-_sel = _re.search(r"'oddspapi_fixtures',\s*\n\s*'([a-z_,]+)'", _src)
-_asked = set((_sel.group(1) if _sel else '').split(','))
+# The select is written as adjacent string literals across lines, so the
+# fragments are joined before splitting. A regex that only matched a SINGLE
+# literal read the first fragment plus a trailing empty token and failed this
+# check on a correct filler — a guard that goes red for a formatting change
+# teaches people to edit the guard.
+_sel = _re.search(r"'oddspapi_fixtures',\s*((?:\s*'[a-z_0-9,]+')+)\)", _src)
+_asked = set(''.join(_re.findall(r"'([a-z_0-9,]*)'", _sel.group(1) if _sel else ''))
+             .split(','))
 
 check('the DDL for oddspapi_fixtures was found', bool(_cols), f'cols={sorted(_cols)}')
 check('the filler asks for columns that exist', _asked and _asked <= _cols,
