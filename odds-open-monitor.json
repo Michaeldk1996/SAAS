@@ -60,7 +60,7 @@
       "p1": "S. Kwon",
       "p2": "S. Nagal",
       "postingLeadH": null,
-      "startTime": "2026-09-18T08:30:00.000Z",
+      "startTime": "2026-09-19T04:10:00.000Z",
       "tour": "ATP ATP Davis Cup - World Group"
     },
     "id1200210074791628": {
@@ -73,7 +73,7 @@
       "p1": "H. Chung",
       "p2": "D. Suresh",
       "postingLeadH": null,
-      "startTime": "2026-09-18T09:40:00.000Z",
+      "startTime": "2026-09-19T05:20:00.000Z",
       "tour": "ATP ATP Davis Cup - World Group"
     },
     "id1200210074792414": {
@@ -139,7 +139,7 @@
       "p1": "J. Rodionov",
       "p2": "Z. Bergs",
       "postingLeadH": null,
-      "startTime": "2026-09-18T14:30:00.000Z",
+      "startTime": "2026-09-19T10:10:00.000Z",
       "tour": "ATP ATP Davis Cup - World Group"
     },
     "id1200210074796802": {
@@ -163,8 +163,8 @@
       "openAt": "2026-09-17T14:35:23.945Z",
       "p1": "E. Moller",
       "p2": "G. Dimitrov",
-      "postingLeadH": 17.41,
-      "startTime": "2026-09-18T08:00:00.000Z",
+      "postingLeadH": 23.41,
+      "startTime": "2026-09-18T14:00:00.000Z",
       "tour": "ATP ATP Davis Cup - World Group I"
     },
     "id1200210074798232": {
@@ -400,6 +400,30 @@
       "startTime": "2026-09-18T22:10:00.000Z",
       "tour": "ATP ATP Davis Cup - World Group I"
     },
+    "id1200210074804478": {
+      "alerted": false,
+      "captureLagH": 1.47,
+      "date": "2026-09-19",
+      "firstSeenAt": "2026-09-18T10:30:51Z",
+      "openAt": "2026-09-18T09:02:42.424Z",
+      "p1": "A. Tabilo",
+      "p2": "D. Merida Aguilar",
+      "postingLeadH": 30.95,
+      "startTime": "2026-09-19T16:00:00.000Z",
+      "tour": "ATP ATP Davis Cup - World Group"
+    },
+    "id1200210074804480": {
+      "alerted": false,
+      "captureLagH": 1.73,
+      "date": "2026-09-19",
+      "firstSeenAt": "2026-09-18T10:30:51Z",
+      "openAt": "2026-09-18T08:46:59.909Z",
+      "p1": "C. Garin",
+      "p2": "R. Jodar",
+      "postingLeadH": 32.38,
+      "startTime": "2026-09-19T17:10:00.000Z",
+      "tour": "ATP ATP Davis Cup - World Group"
+    },
     "id1200210074805832": {
       "alerted": true,
       "alertedAt": "2026-09-17T23:21:33Z",
@@ -619,6 +643,54 @@
       "startTime": "2026-09-18T16:10:00.000Z",
       "tour": "ATP ATP Davis Cup - World Group II"
     },
+    "id1200210074807918": {
+      "alerted": false,
+      "captureLagH": 1.71,
+      "date": "2026-09-19",
+      "firstSeenAt": "2026-09-18T10:30:51Z",
+      "openAt": "2026-09-18T08:48:04.682Z",
+      "p1": "A. De Minaur",
+      "p2": "M. Kasnikowski",
+      "postingLeadH": 18.2,
+      "startTime": "2026-09-19T03:00:00.000Z",
+      "tour": "ATP ATP Davis Cup - World Group I"
+    },
+    "id1200210074807978": {
+      "alerted": false,
+      "captureLagH": 1.73,
+      "date": "2026-09-19",
+      "firstSeenAt": "2026-09-18T10:30:51Z",
+      "openAt": "2026-09-18T08:47:00.349Z",
+      "p1": "J. Duckworth",
+      "p2": "K. Majchrzak",
+      "postingLeadH": 19.38,
+      "startTime": "2026-09-19T04:10:00.000Z",
+      "tour": "ATP ATP Davis Cup - World Group I"
+    },
+    "id1200210074808088": {
+      "alerted": false,
+      "captureLagH": 1.71,
+      "date": "2026-09-19",
+      "firstSeenAt": "2026-09-18T10:30:51Z",
+      "openAt": "2026-09-18T08:48:05.133Z",
+      "p1": "A. Shepp",
+      "p2": "R. Sakamoto",
+      "postingLeadH": 15.2,
+      "startTime": "2026-09-19T00:00:00.000Z",
+      "tour": "ATP ATP Davis Cup - World Group I"
+    },
+    "id1200210074808090": {
+      "alerted": false,
+      "captureLagH": 1.67,
+      "date": "2026-09-19",
+      "firstSeenAt": "2026-09-18T10:30:51Z",
+      "openAt": "2026-09-18T08:50:33.033Z",
+      "p1": "J. Watt",
+      "p2": "S. Shimabukuro",
+      "postingLeadH": 16.32,
+      "startTime": "2026-09-19T01:10:00.000Z",
+      "tour": "ATP ATP Davis Cup - World Group I"
+    },
     "id1200259173992438": {
       "alerted": false,
       "captureLagH": 4.38,
@@ -659,5 +731,5 @@
   },
   "schema": "odds-open-monitor/1",
   "thresholdHours": 24.0,
-  "updatedAt": "2026-09-18T10:15:00Z"
+  "updatedAt": "2026-09-18T10:30:51Z"
 }
