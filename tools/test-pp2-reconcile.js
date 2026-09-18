@@ -5016,6 +5016,43 @@ function speedModalFor(store) {
   return { html: m._internals.renderSpeedModal(p), I: m._internals };
 }
 
+// The SAME pending-vs-empty split, on the Streaks tab, which never adopted it.
+// Found by rendering the tab with the lazy store absent: the footnote asserted
+// "his win rate across these 0 matches (0.0%)" and "0 of 0 carry a Pinnacle
+// closing price" — bare zeros standing for a network fact, which §3 forbids.
+function streakTabFor(store) {
+  const profiles = {}; profiles[ONE_KEY] = PLAYERS[ONE_KEY];
+  const m = loadModule(profiles, {
+    careerSplits: SPLITS, marketEdge: {}, playingStyles: STYLES,
+    holdbreak: HOLDBREAK, HoldBreakHeatmap: ENGINE,
+    matchStats: {}, bet365History: {}, careerHistory: store,
+  });
+  return m._internals.renderStreakTab(m._internals.profileFor(ONE_KEY));
+}
+
+check('§6.4 Streaks · an UNSETTLED store never prints a bare 0 or 0%', () => {
+  const html = streakTabFor({});                             // key absent
+  assert(/has not loaded/.test(html), 'unsettled store does not say so: ' + html.slice(0, 200));
+  assert(!/0 matches \(0\.0%\)/.test(html), 'the footnote still prints "0 matches (0.0%)"');
+  assert(!/0 of 0 carry/.test(html), 'the footnote still prints "0 of 0 carry a Pinnacle closing price"');
+  assert(!/no matches on record/i.test(html),
+    'an unsettled store claims the player has no matches on record');
+});
+
+check('§6.4 Streaks · a SETTLED-EMPTY store makes the honest claim instead', () => {
+  const store = {}; store[ONE_KEY] = [];                     // key present, 0 rows
+  const html = streakTabFor(store);
+  assert(/no matches on record/i.test(html), 'settled-empty does not say so: ' + html.slice(0, 200));
+  assert(!/has not loaded/.test(html), 'settled-empty blames the network');
+});
+
+mustFail('[neg] the Streaks guard would catch the zeros it replaced', () => {
+  // The exact pre-fix sentence. If this ever passes the assertion above, the
+  // guard has been removed and the footnote is asserting network state again.
+  const pre = 'derived from his win rate across these 0 matches (0.0%)';
+  assert(!/0 matches \(0\.0%\)/.test(pre), 'the pre-fix footnote slipped through');
+});
+
 check('§5.5 · an UNSETTLED store reads "has not loaded", never "no matches on record"', () => {
   const html = speedModalFor({}).html;                      // key absent
   assert(html.indexOf(PENDING_COPY) > -1,

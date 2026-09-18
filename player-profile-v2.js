@@ -5086,8 +5086,16 @@
     var priced = rows.filter(function (r) { return r.cents != null; }).length;
     var txt = 'Runs count all ' + seqN + ' matches on record regardless of whether a closing ' +
       'price exists. Expected runs of five or more, and both expected longest figures, are ' +
-      'derived from this player’s own career win rate (' + (pr * 100).toFixed(1) + '%) and ' +
-      'match count (' + seqN + '), not a tour average. ' +
+      // RULING Q1 round 2 (founder): "same correction wherever else that phrasing
+      // leaked in." It leaked here. `pr` is wins / seqN over calRunRows — the
+      // rate across THESE runs, not his career rate; the two differ whenever the
+      // streak scope is narrower than the spine (a surface filter, walkovers
+      // dropped). The population was always right — expectedLongest() and
+      // expectedRuns5() take the same `seqN` — only the label was wrong, which is
+      // exactly the error the ruling names. It now says which rate it is, so the
+      // figure is reproducible from this tab.
+      'derived from his win rate across these ' + seqN + ' matches (' + (pr * 100).toFixed(1) +
+      '%) and that same match count, not a tour average. ' +
       priced + ' of ' + rows.length + ' carry a Pinnacle closing price; an unpriced match still ' +
       'counts in its run and dashes its price and P&L.' +
       // Only stated when it actually happened, so the sentence can never read as
@@ -5773,6 +5781,22 @@
     // different store that the subtitle stopped reading in the Calendar pass —
     // it is not a second M, and nothing on this tab counts it.
     var rows = calSpineFiltered(p);
+    // PENDING BEFORE EMPTY — the same order §8.3's Court speed box already uses,
+    // and for the same reason. Found by rendering this tab with the lazy store
+    // absent: the footnote asserted "his win rate across these 0 matches (0.0%)"
+    // and "0 of 0 carry a Pinnacle closing price". Both are bare zeros standing
+    // for a network fact, which §3 forbids outright — never 0, never 0%, never a
+    // plausible default — and they read as claims about the player.
+    //
+    // calSpineFiltered() cannot tell the two apart: an unsettled store and a
+    // player with no rows both come back empty. Only the store can, so it is
+    // asked first.
+    if (!rows.length && !careerHistorySettled(p.key)) {
+      return speedEmptyBox('The career match store has not loaded, so no runs can be counted yet.');
+    }
+    if (!rows.length) {
+      return speedEmptyBox('No matches on record, so there are no runs to count.');
+    }
     var runs = calRuns(rows);
     var skipped = calRunsSkipped(rows);
     var seqN = rows.length - skipped;              // Sum(run lengths), by construction
