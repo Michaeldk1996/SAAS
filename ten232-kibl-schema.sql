@@ -113,3 +113,81 @@ create table if not exists public.kibl_sweeps (
 );
 
 alter table public.kibl_sweeps enable row level security;
+
+-- ---------------------------------------------------------------------------
+-- TEN-225 — kibl_fixtures.
+--
+-- Until now /info/fixtures was pulled on every sweep and written ONLY into the
+-- raw blob. Nothing was lost (the blob is the source of truth and every sweep
+-- carries its fixture list), but the card path cannot read a gzipped object per
+-- fixture: it needs the player names to pair a Kibl fixture to our board, and it
+-- needs a queryable start time. This is that projection.
+--
+-- ⚠️ `start_time` here IS KIBL'S SCHEDULED TIME. It is stored and it is NEVER a
+-- Close cutoff — the TEN-225 start ladder (gated oddspapi trueStartTime, then
+-- the api-tennis live flip, else dash) is the only thing allowed to cut a Close.
+-- The column is named `scheduled_start` rather than `start_time` precisely so a
+-- future reader cannot pick it up believing it is an actual start. The same
+-- confusion already cost us a whole class of wrong Closes on bet365-history,
+-- which collapses trueStartTime and startTime into one field.
+--
+-- FIRST SEEN WINS. `first_seen_at` is written once and never updated, because
+-- "when did this fixture first appear to us" is the cadence measurement's
+-- denominator. `last_seen_at`, `scheduled_start` and `name` DO move: a fixture
+-- can be rescheduled and the newest statement is the true one.
+create table if not exists public.kibl_fixtures (
+    fixture_id        bigint primary key,
+    league_id         integer,
+    sport_id          integer,
+    fixture_type_id   integer,
+    feed_source_id    integer,
+
+    -- Kibl's own scheduled time. NOT a start. NOT a Close cutoff. See above.
+    scheduled_start   timestamptz,
+
+    -- Raw, exactly as the feed writes it: "6112 Dhakshineswar Suresh vs Soonwoo
+    -- Kwon" — a rotation number, then the two players. Kept verbatim so a
+    -- parser change can be re-run over history instead of re-fetched (which for
+    -- this feed is impossible past ~30 days).
+    name              text,
+    -- Parsed. NULL when the string did not split into exactly two singles
+    -- players — a doubles fixture ("A/B vs C/D") or a shape we have not seen.
+    -- NULL here means the fixture cannot be paired, so its card dashes. It never
+    -- means "one player".
+    player1_name      text,
+    player2_name      text,
+    -- The cross-feed join key: scheduled day + both surname keys, sorted. Same
+    -- name_key() the oddspapi<->live-flip pairing uses, so the two cannot drift
+    -- into disagreeing about who a player is.
+    match_key         text,
+
+    -- DEFAULT now() is load-bearing, not decoration. Postgres evaluates NOT
+    -- NULL (and CHECK) on the PROPOSED insert tuple BEFORE it resolves
+    -- ON CONFLICT, so the refresh pass — which deliberately omits first_seen_at
+    -- so an update cannot reset it — fails 23502 on every row without a
+    -- default, even though every row is really an update. MEASURED on run
+    -- 35292346974: "fixture refresh chunk 0 failed (23502)", so scheduled_start
+    -- and name silently never refreshed while the sweep reported green.
+    first_seen_at     timestamptz not null default now(),
+    last_seen_at      timestamptz not null default now(),
+    first_sweep_id    text,
+    last_sweep_id     text
+);
+
+alter table public.kibl_fixtures
+    alter column first_seen_at set default now(),
+    alter column last_seen_at  set default now();
+
+alter table public.kibl_fixtures
+    add column if not exists match_key      text,
+    add column if not exists player1_name   text,
+    add column if not exists player2_name   text,
+    add column if not exists first_sweep_id text,
+    add column if not exists last_sweep_id  text;
+
+create index if not exists kibl_fx_match_key_idx
+    on public.kibl_fixtures (match_key);
+create index if not exists kibl_fx_sched_idx
+    on public.kibl_fixtures (scheduled_start);
+
+alter table public.kibl_fixtures enable row level security;

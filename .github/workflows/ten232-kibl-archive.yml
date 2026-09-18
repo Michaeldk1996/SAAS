@@ -17,16 +17,21 @@ name: TEN-232 kibl archive
 
 on:
   schedule:
-    # Every 30 minutes. The cadence the observed change rate justifies is
-    # reported by the `report` command rather than assumed here; this is the
-    # conservative starting point from the ticket (15 min pre-match) halved,
-    # because Kibl documents no rate limit at all and we would rather discover
-    # a ceiling from their answer than by hitting it.
-    - cron: '7,37 * * * *'
+    # Fires every 5 minutes; --cadence-gate decides whether a firing does any
+    # work. Founder ruling 2026-09-18 item 2: 15-minute baseline, 5-minute from
+    # T-60 to the start. Cron cannot see when a fixture starts, so the rule
+    # lives in should_sweep() where it can be tested and counted, and the
+    # schedule only has to fire often enough for it to be applicable.
+    #
+    # ⚠️ Actions cron delivery on this repo has been MEASURED at 27% for a bare
+    # schedule. A 5-minute cron therefore does NOT mean a 5-minute cadence; the
+    # real inter-sweep gaps are reported by `report` with n, and the founder
+    # rules on whether they are good enough before anything renders.
+    - cron: '*/5 * * * *'
   workflow_dispatch:
     inputs:
       mode:
-        description: 'sweep | backfill | report'
+        description: 'sweep | backfill | report | cards | audit | sides'
         default: 'sweep'
       horizon_days:
         description: 'sweep: how far forward, days'
@@ -88,7 +93,13 @@ jobs:
       # refusal to issue a market call without feed_source_id (which returns 200
       # and an empty envelope).
       - name: Offline tests
-        run: python3 test-kibl-client.py
+        # All three harnesses, and -B so a cached .pyc from a previous job cannot
+        # serve stale bytecode and report a false pass.
+        run: |
+          python3 -B test-kibl-client.py
+          python3 -B test-ten225-kibl-card-state.py
+          python3 -B test-ten225-orientation.py
+          python3 -B test-ten225-ddl-audit.py
 
       # DDL runs BEFORE the pull and is idempotent. Applying it every run is
       # what makes a dropped or drifted table a loud failure here rather than a
@@ -123,7 +134,7 @@ jobs:
                    WHERE p.schemaname='public' AND p.tablename=c.relname) AS policies
             FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
            WHERE n.nspname='public'
-             AND c.relname IN ('kibl_line_observations','kibl_sweeps')
+             AND c.relname IN ('kibl_line_observations','kibl_sweeps','kibl_fixtures')
            ORDER BY 1;
           SQL
           resp=$(jq -Rn --arg q "$Q" '{query: $q}' | curl -sS -w $'\n%{http_code}' -X POST \
@@ -141,12 +152,13 @@ jobs:
             echo "::error::a kibl table has RLS off or a policy attached"; exit 1
           fi
           tables=$(printf '%s' "$body" | jq 'length')
-          if [ "$tables" != "2" ]; then
-            echo "::error::expected 2 kibl tables, found $tables"; exit 1
+          if [ "$tables" != "3" ]; then
+            echo "::error::expected 3 kibl tables, found $tables"; exit 1
           fi
-          echo "RLS on, zero policies, both tables present."
+          echo "RLS on, zero policies, all three tables present."
 
       - name: Sweep
+        id: sweep
         if: github.event_name == 'schedule' || inputs.mode == 'sweep'
         env:
           KIBL_USERNAME: ${{ secrets.KIBL_USERNAME }}
@@ -155,6 +167,7 @@ jobs:
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
         run: |
           python3 archive-kibl.py sweep \
+            ${{ github.event_name == 'schedule' && '--cadence-gate' || '' }} \
             --horizon-days "${{ github.event_name == 'schedule' && '3' || inputs.horizon_days }}"
 
       # One-time recovery of the ~30 days of finished fixtures that are still
@@ -169,6 +182,70 @@ jobs:
         run: |
           python3 archive-kibl.py backfill \
             --from-days "${{ inputs.from_days }}" --to-days "${{ inputs.to_days }}"
+
+      # TEN-225 Part 2/3 for the Kibl source. ZERO Kibl calls and zero oddspapi
+      # units — a projection of what the archive already holds. Runs after the
+      # sweep so a price captured this minute can reach a card in the same run.
+      # Nothing member-visible: odds_card_state has RLS on and no policy, and no
+      # surface reads it until Michael says go.
+      - name: Card state (Open / Now / Close)
+        # Only when the sweep actually ran. A skipped firing moved nothing, and
+        # re-reading the whole card table twelve times an hour to project an
+        # unchanged archive is cost with no output.
+        if: |
+          inputs.mode == 'cards' ||
+          ((github.event_name == 'schedule' || inputs.mode == 'sweep') &&
+           steps.sweep.outputs.swept != 'false')
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          # The FREE referee arm for the side-mapping gate. The board prices
+          # Davis Cup and ATP, Kibl prices Challenger, and the two barely
+          # intersect — measured on run 35297481674: 23 of 25 Kibl fixtures
+          # unpaired, every one of them `not_on_board` and none a matcher fault.
+          # api-tennis get_odds covers both tiers, bulk-by-date, and spends ZERO
+          # oddspapi units (founder item 1: prefer free endpoints).
+          API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
+        run: |
+          set -euo pipefail
+          resp=$(jq -Rs '{query: .}' ten225-card-state-schema.sql | curl -sS -w $'\n%{http_code}' -X POST \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" \
+            -H "Content-Type: application/json" \
+            --data @- "$MGMT/v1/projects/$PROJECT_REF/database/query")
+          code=$(printf '%s' "$resp" | tail -n1)
+          if [ "$code" != "200" ] && [ "$code" != "201" ]; then
+            echo "::error::card-state schema apply failed ($code): $(printf '%s' "$resp" | sed '$d')"; exit 1
+          fi
+          echo 'card-state schema applied (idempotent).'
+          set -o pipefail
+          python3 ten225-kibl-card-state.py | tee -a "$GITHUB_STEP_SUMMARY"
+
+      # Founder ruling 2026-09-18 item 4 — the generalisation of the
+      # player1/player2 defect: a column declared in the DDL that NOTHING ever
+      # writes cannot raise, so it has to be asked for. Read-only, header-count
+      # only, no row bodies, no vendor calls. On demand, because the answer
+      # changes only when a writer or the DDL changes.
+      - name: DDL never-written audit
+        if: inputs.mode == 'audit'
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: |
+          set -o pipefail
+          python3 ten225-ddl-null-audit.py | tee -a "$GITHUB_STEP_SUMMARY"
+
+      # TEN-225 side-mapping diagnosis. Read-only, no vendor calls. Answers
+      # what a Kibl side_id actually is, after the census showed side_id 1 never
+      # appears and every priced fixture carries 2+3.
+      - name: Side-mapping probe
+        if: inputs.mode == 'sides'
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: |
+          set -o pipefail
+          python3 ten225-kibl-side-probe.py | tee -a "$GITHUB_STEP_SUMMARY"
 
       # Runs even when the pull failed: whatever landed is real data, and the
       # size and reliability figures are how the 48h report and the gap alert are

@@ -752,6 +752,15 @@ def main():
                 'tournament_name': m.get('tourn'),
                 'scheduled_start': m.get('startSched'),
                 'true_start': m.get('trueStart'),
+                # The DDL has carried player1/player2 since day one and NOTHING
+                # ever wrote them. Measured 2026-09-18 on run 35291839986: all
+                # 49,287 rows unkeyable, so the Kibl<->oddspapi pairing found 0
+                # matches and every Kibl Close dashed — on a green run, because
+                # "no pair" and "no names to pair with" produce the same output.
+                # The names are in the committed index already (they are what the
+                # live-flip pairing uses); they were simply never projected.
+                'player1': m.get('p1'),
+                'player2': m.get('p2'),
                 'updated_at': result['generatedAt'],
             })
         no_true = sum(1 for r in frows if not r['true_start'])

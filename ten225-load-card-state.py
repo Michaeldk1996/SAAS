@@ -74,6 +74,16 @@ sys.argv = _argv
 
 epoch, iso, sb, creds = L.epoch, L.iso, L.sb, L.creds
 
+from ten225_names import match_key as mk_of  # noqa: E402
+
+# Book priority (founder ruling 2026-09-18T00:18Z): 1 kibl/Sports411, 2 bet365
+# via oddspapi, 3 api-tennis. This file fills ranks 2 and 3; rank 1 is filled by
+# ten225-kibl-card-state.py, which also owns the selection pass. Neither filler
+# sets is_selected — "am I the best source for this match" is not a question a
+# filler that can only see its own source is able to answer.
+RANK_ODDSPAPI = 2
+RANK_APITENNIS = 3
+
 
 # ------------------------------------------------------------------- the rules
 
@@ -148,6 +158,16 @@ def card_rows(summary_rows, fixtures, as_of):
         if r.get('close_price') is None:
             st['no_close'] += 1
 
+        # The cross-feed join key. Built from the fixture's own day and both
+        # player names with the SAME name_key() every other pairing on TEN-225
+        # uses. NULL when the fixture is unkeyable (a missing name, or two
+        # players who key to one surname) — and a NULL key means the selection
+        # pass can never select the row, which is the dash the standing rules
+        # ask for rather than a guessed pairing.
+        day = (fx.get('true_start') or fx.get('scheduled_start') or '')[:10]
+        key = mk_of(day, fx.get('player1'), fx.get('player2'))
+        st['match_key' if key else 'no_match_key'] += 1
+
         out.append({
             'fixture_id': r['fixture_id'],
             'id_space': 'oddspapi',
@@ -155,6 +175,12 @@ def card_rows(summary_rows, fixtures, as_of):
             'market': MARKET,
             'side': r['side'],
             'line': None,
+            'match_key': key,
+            'book_rank': RANK_ODDSPAPI,
+            # An oddspapi tick time is the BOOK's own tick as the vendor reports
+            # it, not a row-write stamp — a different thing from kibl's
+            # inserted_on and never to be compared with it unlabelled.
+            'ts_kind': 'book-tick',
             'open_price': r.get('open_price'),
             'open_ts': r.get('open_ts'),
             'open_limit': r.get('open_limit'),
@@ -209,6 +235,8 @@ def fallback_rows(matches, covered, as_of):
         if seen is None:
             st['open_no_timestamp'] += 1
             continue
+        mkey = mk_of(m.get('date') or '', m.get('p1'), m.get('p2'))
+        st['match_key' if mkey else 'no_match_key'] += 1
         for side, pkey in (('1', 'p1'), ('2', 'p2')):
             price = op.get(pkey)
             if price is None:
@@ -221,6 +249,12 @@ def fallback_rows(matches, covered, as_of):
                 'market': MARKET,
                 'side': side,
                 'line': None,
+                'match_key': mkey,
+                'book_rank': RANK_APITENNIS,
+                # A fallback Open is a SIGHTING — the first time we saw a price,
+                # not a time the book published one. Labelled as such so it can
+                # never be silently compared against a kibl or oddspapi stamp.
+                'ts_kind': 'sighting',
                 'open_price': float(price),
                 'open_ts': iso(seen),
                 'open_limit': None,
@@ -280,7 +314,8 @@ def main():
     # scheduled_start / true_start. An earlier draft of this file asked for
     # `level,start_sched` and would have 400'd.
     fx_rows, err = fetch_page(url, key, 'oddspapi_fixtures',
-                              'fixture_id,category_name,scheduled_start,status')
+                              'fixture_id,category_name,scheduled_start,'
+                              'true_start,player1,player2,status')
     if err:
         # FAIL LOUD. Continuing here would run the fill with an empty fixture
         # map, which does not error — it silently disables the not-started limb

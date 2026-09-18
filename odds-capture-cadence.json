@@ -3,74 +3,11 @@
     "maxGapMin": 320.7,
     "medianGapMin": 15.0,
     "note": "Measured gap between consecutive captures. Compare against the configured interval; the difference IS the delivery shortfall.",
-    "spanHours": 99.82,
-    "ticks": 375
+    "spanHours": 99.35,
+    "ticks": 373
   },
   "schema": "odds-capture-cadence/1",
   "ticks": [
-    {
-      "at": "2026-09-13T20:15:02Z",
-      "iter": 4,
-      "mode": "free",
-      "outcome": "captured",
-      "run": "34776468820/1"
-    },
-    {
-      "at": "2026-09-13T20:30:00Z",
-      "iter": 5,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "34776468820/1"
-    },
-    {
-      "at": "2026-09-13T20:45:01Z",
-      "iter": 6,
-      "mode": "free+metered-deferred",
-      "outcome": "captured",
-      "run": "34776468820/1"
-    },
-    {
-      "at": "2026-09-13T21:00:02Z",
-      "iter": 7,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "34776468820/1"
-    },
-    {
-      "at": "2026-09-13T21:15:02Z",
-      "iter": 8,
-      "mode": "free",
-      "outcome": "captured",
-      "run": "34776468820/1"
-    },
-    {
-      "at": "2026-09-13T21:30:02Z",
-      "iter": 9,
-      "mode": "free+metered",
-      "outcome": "captured",
-      "run": "34776468820/1"
-    },
-    {
-      "at": "2026-09-13T21:45:01Z",
-      "iter": 10,
-      "mode": "free",
-      "outcome": "captured",
-      "run": "34776468820/1"
-    },
-    {
-      "at": "2026-09-13T22:00:01Z",
-      "iter": 11,
-      "mode": "free",
-      "outcome": "captured",
-      "run": "34776468820/1"
-    },
-    {
-      "at": "2026-09-13T22:15:01Z",
-      "iter": 12,
-      "mode": "free",
-      "outcome": "captured",
-      "run": "34776468820/1"
-    },
     {
       "at": "2026-09-13T22:30:07Z",
       "iter": 13,
@@ -2806,6 +2743,69 @@
       "iter": 7,
       "mode": "free+metered-deferred",
       "outcome": "captured",
+      "run": "35272196203/1"
+    },
+    {
+      "at": "2026-09-18T00:19:06Z",
+      "iter": 8,
+      "mode": "free+metered-deferred",
+      "outcome": "captured",
+      "run": "35272196203/1"
+    },
+    {
+      "at": "2026-09-18T00:33:57Z",
+      "iter": 9,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "35272196203/1"
+    },
+    {
+      "at": "2026-09-18T00:51:09Z",
+      "iter": 10,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "35272196203/1"
+    },
+    {
+      "at": "2026-09-18T01:06:22Z",
+      "iter": 11,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "35272196203/1"
+    },
+    {
+      "at": "2026-09-18T01:21:17Z",
+      "iter": 12,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "35272196203/1"
+    },
+    {
+      "at": "2026-09-18T01:36:31Z",
+      "iter": 13,
+      "mode": "free+metered",
+      "outcome": "captured",
+      "run": "35272196203/1"
+    },
+    {
+      "at": "2026-09-18T01:51:20Z",
+      "iter": 14,
+      "mode": "free",
+      "outcome": "captured",
+      "run": "35272196203/1"
+    },
+    {
+      "at": "2026-09-18T02:06:13Z",
+      "iter": 15,
+      "mode": "stood-down",
+      "outcome": "skipped",
+      "run": "35272196203/1"
+    },
+    {
+      "at": "2026-09-18T02:15:00Z",
+      "iter": 16,
+      "mode": "stood-down",
+      "outcome": "skipped",
       "run": "35272196203/1"
     }
   ]
