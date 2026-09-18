@@ -303,10 +303,16 @@ jobs:
       # plus exact PostgREST counts. Writes nothing, archives nothing, publishes
       # nothing, spends zero oddspapi units.
       #
-      # Exit 2 is a RESULT, not a fault: "Bet105 is not in our entitlement".
-      # /reference/sportsbooks IS the entitlement — a restricted account returns
-      # 200 with fewer rows, never a 403 — so an empty match there is an answer
-      # and the founder asked for it plainly rather than worked around.
+      # "Bet105 is not in our entitlement" exits 0 — it is a MEASUREMENT, not a
+      # fault. /reference/sportsbooks IS the entitlement (a restricted account
+      # returns 200 with fewer rows, never a 403), so an empty match there is an
+      # answer, and the founder asked for it plainly rather than worked around.
+      #
+      # It exits 0 for a second reason that is not cosmetic: this job carries a
+      # circuit breaker that unschedules the Supabase pinger after 3 consecutive
+      # non-zero runs, and that pinger is the real cadence behind an archive
+      # racing prices that vanish in 30-60 days. A read-only probe must never be
+      # able to starve the job it is probing. Genuine faults still exit 1.
       - name: Find Bet105
         if: inputs.mode == 'books'
         env:

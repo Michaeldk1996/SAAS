@@ -1,4 +1,6 @@
--- TEN-232 Part 1 — Kibl / Bet105 pre-match line archive.
+-- TEN-232 Part 1 — Kibl / Sports411 pre-match line archive.
+--
+-- Sports411, NOT Bet105 — measured 2026-09-18T22:33Z (run 35401888326): /reference/sportsbooks returns exactly one book, feed_source_id 43, name Sports411. Bet105 does not appear in our entitlement. The two are not the same book and nothing here carries an affiliate relationship.
 --
 -- WHY THIS TABLE EXISTS
 -- Kibl has no history endpoint and no export endpoint — 71 paths, zero. It

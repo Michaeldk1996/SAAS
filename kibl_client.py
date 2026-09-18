@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-"""TEN-232 — shared KIBL (Bet105) API client.
+"""TEN-232 — shared KIBL API client.
+
+The book this account is served is SPORTS411, not Bet105. Sports411, NOT Bet105 — measured 2026-09-18T22:33Z (run 35401888326): /reference/sportsbooks returns exactly one book, feed_source_id 43, name Sports411. Bet105 does not appear in our entitlement. The two are not the same book and nothing here carries an affiliate relationship.
 
 Auth is AWS Cognito USER_PASSWORD_AUTH, not an API key: POST to the Cognito
 IDP endpoint with USERNAME/PASSWORD/ClientId, get back a 60-minute Bearer
