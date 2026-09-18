@@ -760,9 +760,86 @@ def run_orientation(rows, kibl_fixtures, odds_index, matches, ids=None):
     # against. `agreement()` keeps reporting n < 30 alongside it rather than
     # being redefined by it.
     report['shipGate'] = ORI.ship_gate(vmap)
+    # The gate names its own blocker. `no_independent_price: N` cannot say
+    # whether N is a matcher bug, an odds-coverage gap, or nothing at all.
+    report['unpaired'] = why_unpaired(kibl_index, independent, matches)
 
     dashed = {k for k, v in vmap.items() if v['verdict'] == 'disagree'}
     return report, dashed
+
+
+def why_unpaired(kibl_index, independent, matches):
+    """The 23 Kibl fixtures that found no independent price — WHICH failure?
+
+    `no_independent_price: 23` is a true number and a useless one: it is the same
+    count whether our name normaliser is dropping the pairing, whether the board
+    carries the match but prices nothing, or whether Kibl simply prices matches
+    we do not carry. Those three have three different fixes — the first is a
+    code bug, the second needs the odds feed, the third needs nothing at all —
+    and the founder's order puts "upcoming lane" before "name normaliser
+    report" precisely because he cannot sequence them without knowing which.
+
+    So each unpaired fixture is classified, never counted in one bucket:
+
+      board_unpriced   the board HAS this match and prices neither side
+                       -> our odds coverage, not our matcher
+      surname_on_board one player's surname is on the board that day but the
+                       match_key did not form
+                       -> SUSPECT THE MATCHER. This is the bucket that would
+                          hide a name defect, so it is listed in full.
+      not_on_board     neither surname appears that day
+                       -> Kibl prices a match we do not carry. Nothing to fix.
+
+    Read-only. No vendor calls, no writes.
+    """
+    board_keys, by_day_surname = set(), collections.defaultdict(set)
+    for m in matches or []:
+        day = (m.get('date') or '')[:10]
+        k = ORI.mk_of(day, m.get('p1'), m.get('p2'))
+        if k:
+            board_keys.add(k)
+        for p in (m.get('p1'), m.get('p2')):
+            nk = ORI.name_key(p)
+            if nk:
+                by_day_surname[day].add(nk)
+
+    buckets = collections.defaultdict(list)
+    for k, kr in kibl_index.items():
+        if independent.get(k):
+            continue
+        day, ka, kb = k.split('|')
+        if k in board_keys:
+            bucket = 'board_unpriced'
+        elif ka in by_day_surname.get(day, ()) or kb in by_day_surname.get(day, ()):
+            bucket = 'surname_on_board'
+        else:
+            bucket = 'not_on_board'
+        buckets[bucket].append(
+            {'match_key': k, 'fixture_id': kr['fixture_id'],
+             'fixture': f"{kr['p1']} vs {kr['p2']}", 'day': day})
+    return {b: sorted(v, key=lambda r: r['match_key'])
+            for b, v in buckets.items()}
+
+
+def print_unpaired(buckets):
+    total = sum(len(v) for v in buckets.values())
+    print(f'\nWHY {total} KIBL FIXTURE(S) FOUND NO INDEPENDENT PRICE')
+    if not total:
+        print('  (every priced Kibl fixture paired)')
+        return
+    for b in ('surname_on_board', 'board_unpriced', 'not_on_board'):
+        rows = buckets.get(b) or []
+        note = {'surname_on_board': 'SUSPECT THE MATCHER — listed in full',
+                'board_unpriced': 'our odds coverage, not our matcher',
+                'not_on_board': 'Kibl prices a match we do not carry'}[b]
+        print(f'  {b}: {len(rows)}  ({note})')
+        # The matcher-suspect bucket is never truncated: a capped list is how a
+        # name defect reads as a handful of oddities.
+        shown = rows if b == 'surname_on_board' else rows[:8]
+        for r in shown:
+            print(f"      {r['day']}  {r['fixture']}  (kibl {r['fixture_id']})")
+        if len(shown) < len(rows):
+            print(f'      ... {len(rows) - len(shown)} more (of {len(rows)})')
 
 
 def print_evidence(gate):
@@ -980,6 +1057,7 @@ def main():
           f"disagree={gate['nearEven']['disagree']}  [noted, not blocking]")
     print(f"  GATE: {'PASSES' if gate['passes'] else 'DOES NOT PASS'}")
     print_evidence(gate)
+    print_unpaired(orient['unpaired'])
     for d in gate['lopsided']['disagreements']:
         print(f"::error::LOPSIDED disagreement on {d['match_key']} "
               f"({d['kibl']['fixture']}) — this stops the ship. "

@@ -572,6 +572,47 @@ check('...and the idempotent ALTER carries it too, for the table that already '
       'exists', 'alter column first_seen_at set default now()' in _ddl)
 
 print()
+print('WHY UNPAIRED — three different fixes hide behind one count')
+# `no_independent_price: 23` is the number that stalled the ship gate, and it
+# reads identically whether our matcher is dropping the pairing, the board
+# carries the match and prices nothing, or Kibl covers a match we do not carry.
+# Those need a code fix, an odds feed, and nothing at all respectively.
+_up_matches = [
+    # (a) on the board AND priced -> it paired, so it must appear in no bucket
+    {'date': '2026-09-18', 'p1': 'S. Kwon', 'p2': 'D. Suresh',
+     'odds': {'p1': 1.5, 'p2': 2.37}},
+    # (b) on the board, no price at all -> board_unpriced
+    {'date': '2026-09-18', 'p1': 'J. Sinner', 'p2': 'C. Alcaraz'},
+    # (c) Rune is on the board that day, but against someone else
+    {'date': '2026-09-18', 'p1': 'H. Rune', 'p2': 'F. Cerundolo',
+     'odds': {'p1': 1.3, 'p2': 3.5}},
+]
+_up_kibl = {
+    '2026-09-18|kwon|suresh': {'fixture_id': 1, 'p1': 'D. Suresh', 'p2': 'S. Kwon'},
+    '2026-09-18|alcaraz|sinner': {'fixture_id': 2, 'p1': 'J. Sinner',
+                                  'p2': 'C. Alcaraz'},
+    '2026-09-18|medvedev|rune': {'fixture_id': 3, 'p1': 'H. Rune',
+                                 'p2': 'D. Medvedev'},
+    '2026-09-18|fritz|paul': {'fixture_id': 4, 'p1': 'T. Paul', 'p2': 'T. Fritz'},
+}
+_b = K.why_unpaired(_up_kibl, {'2026-09-18|kwon|suresh': {'src': {}}}, _up_matches)
+check('a fixture that DID pair appears in no bucket',
+      all('kwon' not in r['match_key'] for v in _b.values() for r in v), _b)
+check('the board carries the match and prices nothing -> board_unpriced, which '
+      'is an odds gap and not a matcher fault',
+      [r['fixture_id'] for r in _b.get('board_unpriced', [])] == [2], _b)
+check('one surname on the board that day -> the MATCHER is the suspect',
+      [r['fixture_id'] for r in _b.get('surname_on_board', [])] == [3], _b)
+check('neither surname on the board -> we simply do not carry it',
+      [r['fixture_id'] for r in _b.get('not_on_board', [])] == [4], _b)
+check('the buckets partition the unpaired set exactly once — a fixture counted '
+      'twice would inflate whichever diagnosis is read first',
+      sum(len(v) for v in _b.values()) == 3, _b)
+check('an unreadable board does NOT read as a matcher fault',
+      len(K.why_unpaired(_up_kibl, {}, [])['not_on_board']) == 4
+      and 'surname_on_board' not in K.why_unpaired(_up_kibl, {}, []))
+
+print()
 if FAILED:
     print(f'{len(FAILED)} FAILED: {FAILED}')
     sys.exit(1)
