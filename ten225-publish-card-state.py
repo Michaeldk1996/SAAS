@@ -109,19 +109,49 @@ def fetch_all(url, key, table, cols, extra=''):
 
 
 def _f(v):
-    """A price as a float, or None. Never 0.0 as a stand-in for absent.
+    """A number as a float, or None. Never 0.0 as a stand-in for ABSENT.
 
     PostgREST serialises `numeric` as a STRING. float('') raises and
     float(None) raises, so both are caught here rather than at the call site —
     a numeric that arrived as '' has to dash, not crash the publish.
+
+    A genuine 0 is PRESERVED here, because this also coerces `open_limit`, where
+    a zero stake limit is a real fact about a market and not a missing value.
+    Prices go through _px() below, which is stricter for a measured reason.
     """
     if v is None or v == '':
         return None
     try:
-        f = float(v)
+        return float(v)
     except (TypeError, ValueError):
         return None
-    return f
+
+
+def _px(v):
+    """A PRICE as a float, or None. A zero or negative price is ABSENT.
+
+    ── MEASURED, AND IT WAS LIVE ───────────────────────────────────────────────
+    Deployed odds-card-state.json, generatedAt 2026-09-18T05:17:40Z: two
+    published side-rows carried `now: 0` — 2026-09-18|kwon|suresh, both sides,
+    book sports411 — on a fixture that was on THAT DAY'S BOARD.
+
+    Downstream every reader tests `!= null`, and `0 != null` is true. So the zero
+    rendered as the price 0.00 on the card face, handed the FAV chip to the other
+    player off a 0/0 line, and scored a fabricated -100% move that takes the top
+    of the Biggest-market-move sort and headlines its tile. A feed zero means
+    "this market is not priced", which is a dash — the standing rule, verbatim.
+
+    Split from _f() rather than tightening it: _f also coerces `open_limit`,
+    where 0 is a real limit and not an absence, and one function cannot hold both
+    rules. Decimal odds are strictly greater than 1, so `> 0` is a floor far
+    below anything real and cannot reject a genuine price.
+
+    The renderer carries its own guard (`_ocsSanePx` in the dashboard) because
+    fixing the publisher does not un-ship a file already deployed with zeros in
+    it, and because a guard at one end is a guard someone forgets at the other.
+    """
+    f = _f(v)
+    return f if (f is not None and f > 0) else None
 
 
 # -------------------------------------------------------------------- shaping
@@ -209,10 +239,10 @@ def build(rows, oddspapi_fx, kibl_fx, board_fx, window=(None, None)):
                 bad = True
                 break
             sides[nk] = {
-                'open': _f(r.get('open_price')), 'openTs': r.get('open_ts'),
+                'open': _px(r.get('open_price')), 'openTs': r.get('open_ts'),
                 'openLimit': _f(r.get('open_limit')),
-                'now': _f(r.get('now_price')), 'nowTs': r.get('now_ts'),
-                'close': _f(r.get('close_price')), 'closeTs': r.get('close_ts'),
+                'now': _px(r.get('now_price')), 'nowTs': r.get('now_ts'),
+                'close': _px(r.get('close_price')), 'closeTs': r.get('close_ts'),
             }
         if bad or not sides:
             continue

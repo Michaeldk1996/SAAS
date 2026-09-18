@@ -19,7 +19,8 @@ sys.path.insert(0, HERE)
 P = types.ModuleType('P')
 P.__file__ = os.path.join(HERE, 'ten225-publish-card-state.py')
 _argv, sys.argv = sys.argv, ['P']
-exec(compile(open(P.__file__).read(), P.__file__, 'exec'), P.__dict__)
+P_SRC = open(P.__file__).read()
+exec(compile(P_SRC, P.__file__, 'exec'), P.__dict__)
 sys.argv = _argv
 
 from ten225_names import match_key as mk_of  # noqa: E402
@@ -162,6 +163,20 @@ check('_f(None) is None, not 0.0', P._f(None) is None)
 check("_f('') is None, not 0.0", P._f('') is None)
 check("_f of a PostgREST numeric string parses", P._f('1.80') == 1.80)
 check('_f(0) stays 0 (a real zero limit is not absence)', P._f(0) == 0.0)
+# Regression for a LIVE defect: the deployed file shipped `now: 0` on BOTH sides
+# of a fixture on that day's board, and every downstream reader tests `!= null`.
+# _px is the price-only coercion; _f stays loose because it also does open_limit.
+check('_px(0) is None — a feed zero means "not priced", which is a dash',
+      P._px(0) is None, P._px(0))
+check("...and the string '0' too (PostgREST serialises numeric as a STRING)",
+      P._px('0') is None, P._px('0'))
+check('_px of a negative is rejected on the same ground', P._px(-1.5) is None)
+check('_px leaves a real price alone', P._px('1.44') == 1.44)
+check('_px(None) / _px("") stay absent', P._px(None) is None and P._px('') is None)
+check('the three PRICE columns go through _px, and open_limit does NOT — one '
+      'function cannot hold both rules',
+      "_px(r.get('open_price'))" in P_SRC and "_px(r.get('now_price'))" in P_SRC
+      and "_px(r.get('close_price'))" in P_SRC and "_f(r.get('open_limit'))" in P_SRC)
 
 print('TEN-225 publish — kibl id space')
 KK = mk_of(DAY, 'Dhakshineswar Suresh', 'Soonwoo Kwon')
@@ -234,4 +249,3 @@ print()
 if FAILED:
     print(f'FAILED {len(FAILED)}: {", ".join(FAILED)}')
     sys.exit(1)
-print('all publish-projection assertions pass')

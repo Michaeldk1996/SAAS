@@ -167,6 +167,12 @@ async function measure(url, label) {
   })()`);
 
   // sort behaviour — measured as a mutation of the rendered order
+  const defaultPriced = await c.evaluate(`(function(){
+    state.sort = 'time'; renderMatches();
+    const cells = [].slice.call(document.querySelectorAll('.mc-odds'));
+    return { priced: cells.filter(e => !/^\\s*[—-]\\s*$/.test(e.textContent||'')).length,
+             total: cells.length };
+  })()`);
   const sortOut = await c.evaluate(`(function(){
     // reset to the default sort first so the comparison is deterministic
     state.sort = 'time'; renderMatches();
@@ -207,6 +213,73 @@ async function measure(url, label) {
              startedCards: matches.filter(m => !isFinishedMatch(m) && matchDayBucket(m)===state.day
                             && isFinite(cardStartMs(m)) && Date.now() >= cardStartMs(m))
                            .map(m => m.p1 + ' v ' + m.p2),
+             // Per-LEG titles: a leg showing a price must be titled; a leg showing a
+             // dash must not. Measured on the inner spans, not the wrapper — a
+             // wrapper title is asserted over both legs including a dashed one.
+             legTitles: (function(){
+               const legs = [].slice.call(document.querySelectorAll('.mc-drifted__open, .mc-drifted__now'));
+               let pricedTitled=0, pricedUntitled=0, dashedTitled=0, dashedUntitled=0;
+               legs.forEach(e => {
+                 const dashed = /^\s*[—-]\s*$/.test(e.textContent || '');
+                 const titled = e.hasAttribute('title');
+                 if (!dashed && titled) pricedTitled++;
+                 else if (!dashed) pricedUntitled++;
+                 else if (titled) dashedTitled++;
+                 else dashedUntitled++;
+               });
+               return { pricedTitled, pricedUntitled, dashedTitled, dashedUntitled, total: legs.length };
+             })(),
+             wrapperTitles: document.querySelectorAll('.mc-drifted[title]').length,
+             blankedLegs: (function(){
+               const slate = matches.filter(m => !isFinishedMatch(m) && matchDayBucket(m)===state.day);
+               const out = [];
+               slate.forEach(m => {
+                 const face = _mcNowPair(m);
+                 const pair = (typeof _mcOpenNowPair === 'function') ? _mcOpenNowPair(m) : null;
+                 const hasOpen = _openAnchorOf(m,'p1') != null || _openAnchorOf(m,'p2') != null;
+                 const ocs = _ocsOf(m);
+                 const openBook = ocs ? ocs.book : ((m.openingOdds||{}).bookmaker || null);
+                 ['p1','p2'].forEach(w => {
+                   const faceV = face ? face[w] : null;
+                   const driftV = pair ? (w==='p1'?pair.n1:pair.n2)
+                                : (hasOpen || typeof _mcOpenNowPair !== 'function')
+                                  ? _mcNowOf(m,w)
+                                  : (face ? face[w] : null);
+                   if (faceV != null && driftV == null)
+                     out.push({ fx: m.p1+' v '+m.p2, side: w, face: faceV,
+                                faceBook: face.book, openBook,
+                                crossBook: !!(hasOpen && openBook && face.book
+                                              && String(openBook).toLowerCase() !== String(face.book).toLowerCase()) });
+                 });
+               });
+               return out;
+             })(),
+             driftLegsPriced: [].slice.call(document.querySelectorAll('.mc-drifted__now'))
+               .filter(e => !/^\s*[—-]\s*$/.test(e.textContent||'')).length,
+             driftLegsTotal: document.querySelectorAll('.mc-drifted__now').length,
+             // Zero must never reach a price cell, a score, or the tile.
+             zeroCells: [].slice.call(document.querySelectorAll('.mc-odds, .mc-drifted__open, .mc-drifted__now'))
+                          .filter(e => /^\s*0(\.0+)?\s*$/.test(e.textContent||'')).length,
+             // typeof-guarded: this same probe runs against the DEPLOYED build as the
+             // control, and the control's whole job is to be a build that lacks these.
+             // An unguarded call throws there and silently costs us the control.
+             maxScore: (typeof moveNowScore === 'function')
+               ? Math.max.apply(null, matches.filter(m=>!isFinishedMatch(m)).map(m=>moveNowScore(m)).concat([-1]))
+               : null,
+             tileText: (document.querySelector('[data-mxsummary="drift"]')||{}).innerText || '',
+             ocsZeroRowsSeen: (function(){
+               // Does the PUBLISHED file still contain zeros, and does _ocsOf neutralise them?
+               let raw = 0, leaked = 0;
+               Object.keys(OCS.byKey||{}).forEach(k => {
+                 const e = OCS.byKey[k];
+                 Object.keys(e.sides||{}).forEach(sk => {
+                   ['open','now','close'].forEach(f => { if (e.sides[sk][f] === 0) raw++; });
+                 });
+               });
+               matches.forEach(m => { const o=_ocsOf(m); if(!o) return;
+                 ['p1','p2'].forEach(w => ['open','now','close'].forEach(f => { if (o[w][f] === 0) leaked++; })); });
+               return { raw, leaked };
+             })(),
     };
   })()`);
 
@@ -223,7 +296,7 @@ async function measure(url, label) {
   })()`);
 
   c.close();
-  return { ...out, sort: sortOut, drawer };
+  return { ...out, sort: sortOut, drawer, defaultPriced };
 }
 
 try {
@@ -291,10 +364,39 @@ try {
         `${nClose} card(s) read Close, ${b.sort.startedCards.length} started: ${JSON.stringify(b.sort.startedCards)}`);
   check('R4c — every other fixture still reads Now', nNow === b.sort.driftHeads.length - nClose && nNow > 0,
         `${nNow} read Now of ${b.sort.driftHeads.length} headers; distinct: ${JSON.stringify(heads)}`);
-  const dp = b.sort.driftPartition;
-  check('R4c — a drift cell is titled exactly where a book is known',
-        dp.knownUntitled === 0 && dp.unknownTitled === 0 && dp.knownTitled > 0,
-        `known+titled ${dp.knownTitled}, known+untitled ${dp.knownUntitled}, unknown+titled ${dp.unknownTitled}, unknown+untitled ${dp.unknownUntitled} (of ${dp.total})`);
+  // (The old wrapper-level title assertion is gone: clean-context review showed a
+  //  wrapper title is asserted over BOTH legs, including a dashed one. Titles moved
+  //  to the legs, and REV2/4 below is the stricter successor — it partitions every
+  //  leg, so it cannot pass by titling nothing.)
+
+  // ---- regressions found by the clean-context review pass
+  const z = b.sort.ocsZeroRowsSeen;
+  check('REV1 — no cell renders a ZERO price', b.sort.zeroCells === 0, `${b.sort.zeroCells} zero-valued price cell(s)`);
+  check('REV1 — published zeros exist AND are neutralised at the door',
+        z.raw > 0 && z.leaked === 0,
+        `published file still carries ${z.raw} zero field(s); ${z.leaked} reach a resolver (control: raw>0 proves the guard is exercised, not vacuous)`);
+  check('REV1 — no fabricated 100% move tops the sort', b.sort.maxScore !== null && b.sort.maxScore < 1,
+        `max moveNowScore = ${b.sort.maxScore === null ? 'n/a' : (b.sort.maxScore*100).toFixed(1) + '%'}`);
+  check('REV1 — the tile does not headline a 0.00', !/0\.00/.test(b.sort.tileText),
+        JSON.stringify(b.sort.tileText.replace(/\n/g,' ').slice(0,110)));
+  // Every leg the drift view blanks must be a CROSS-BOOK leg — the fixture has an
+  // Open from one book and the board's only current price is another book's. Those
+  // must dash: two cells either side of a drift arrow belonging to two books is the
+  // blend both rulings forbid. Any OTHER blanked leg is the resolver-swap defect.
+  const unexplained = b.sort.blankedLegs.filter(l => !l.crossBook);
+  check('REV5 — every leg the drift view blanks is a CROSS-BOOK leg, not a resolver swap',
+        unexplained.length === 0,
+        `default priced ${b.defaultPriced.priced}/${b.defaultPriced.total}; drift priced ` +
+        `${b.sort.driftLegsPriced}/${b.sort.driftLegsTotal}; ${b.sort.blankedLegs.length} blanked, ` +
+        `${b.sort.blankedLegs.length - unexplained.length} cross-book, ${unexplained.length} unexplained` +
+        (unexplained.length ? ' -> ' + JSON.stringify(unexplained.slice(0,4)) : '') +
+        (control ? ` (deployed: ${control.sort.blankedLegs.length} blanked, ${control.sort.blankedLegs.filter(l=>!l.crossBook).length} unexplained)` : ''));
+  const lt = b.sort.legTitles;
+  check('REV2/4 — a drift LEG is titled iff it shows a price',
+        lt.pricedUntitled === 0 && lt.dashedTitled === 0 && lt.pricedTitled > 0,
+        `priced+titled ${lt.pricedTitled}, priced+untitled ${lt.pricedUntitled}, dashed+titled ${lt.dashedTitled}, dashed+untitled ${lt.dashedUntitled}`);
+  check('REV4 — no title on the drift WRAPPER (it spans both legs incl. a dash)',
+        b.sort.wrapperTitles === 0, `${b.sort.wrapperTitles} wrapper title(s)`);
 
   fs.writeFileSync('ten225-cardfix-verify.json', JSON.stringify({ branch: b, control }, null, 2));
   console.log(`\n${fails === 0 ? 'ALL CHECKS PASSED' : fails + ' CHECK(S) FAILED'}`);

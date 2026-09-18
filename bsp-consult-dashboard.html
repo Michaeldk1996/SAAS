@@ -686,6 +686,10 @@
   /* No opening price on file — em dash in the dimmest token, exactly as the completed
      card's missing-open path already does. Never derived from the current price. */
   [data-page="matches"] .mc-drifted__open.nodata{ color:var(--mc-muted-2); }
+  /* TEN-225: the NOW dash needs the same muted no-data token as the OPEN dash.
+     The class was added without a rule, so a missing Now rendered BRIGHT beside a
+     muted missing Open — two different "we have nothing" states on one cell. */
+  [data-page="matches"] .mc-drifted__now.nodata{ color:var(--mc-muted-2); }
   [data-page="matches"] .mc-drifted__lane{ display:flex; align-items:center; justify-content:center; }
   [data-page="matches"] .mc-drifted__bar{ height:2px; border-radius:2px; opacity:.5; }
   [data-page="matches"] .mc-drifted__arrow{ font-size:9px; line-height:1; margin-left:1px; }
@@ -6756,6 +6760,35 @@ function ocsKeyOf(m){ return m ? ocsMatchKey(m.date, m.p1, m.p2) : null; }
 // generation — rather than a plain cached value — is what makes the file
 // landing AFTER the first paint still repaint correctly; a bare cache would
 // pin the pre-load `null` forever.
+// ──────────────────── TEN-225: ZERO IS NOT A PRICE (standing rule, 2026-09-18) ──
+// "Never fabricate or approximate. Missing = dash, never zero."
+//
+// MEASURED on the DEPLOYED odds-card-state.json, generatedAt 2026-09-18T05:17:40Z:
+// 2 published side-rows carry `now: 0` — 2026-09-18|kwon|suresh, both sides,
+// book sports411. That is a fixture on TODAY's board, not a future one.
+//
+// Nothing downstream was guarding it. Every accessor tests `!= null`, and `0 !=
+// null` is true, so a published zero rendered as the price 0.00 on the card face,
+// handed the FAV chip to the other player off a 0/0 line, and — once ruling 3's
+// ordering landed — scored |0/1.521 − 1| = 1.0, a fabricated −100% move that
+// beats every real move on any board and takes the top of the sort AND the
+// Biggest-market-move tile. A feed zero means "this market is not priced", which
+// is a dash.
+//
+// GUARDED HERE, AT THE DOOR, rather than at each of the eight accessors. A guard
+// per consumer is a guard someone forgets to add to the ninth — and the ninth was
+// this issue's own new sort. Decimal odds are strictly greater than 1, so `> 0` is
+// a floor well below anything real and cannot reject a genuine price.
+//
+// The publisher is fixed too (`ten225-publish-card-state.py`): it should never
+// emit a zero in the first place. Both, because either alone leaves a hole — the
+// file is already deployed with the zeros in it, and a fixed publisher does not
+// un-ship them.
+function _ocsSanePx(side){
+  if (!side) return null;
+  const px = v => (typeof v === 'number' && v > 0) ? v : null;
+  return { ...side, open: px(side.open), now: px(side.now), close: px(side.close) };
+}
 function _ocsOf(m){
   if (!m || !OCS.byKey) return null;
   if (m.__ocsGen === OCS.gen) return m.__ocs;
@@ -6763,7 +6796,7 @@ function _ocsOf(m){
   let out = null;
   if (e && e.sides){
     const k1 = ocsNameKey(m.p1), k2 = ocsNameKey(m.p2);
-    const s1 = k1 ? e.sides[k1] : null, s2 = k2 ? e.sides[k2] : null;
+    const s1 = k1 ? _ocsSanePx(e.sides[k1]) : null, s2 = k2 ? _ocsSanePx(e.sides[k2]) : null;
     // Both sides or neither. A half-resolved fixture would put one player's
     // published price beside the other player's matches.json price — the
     // cross-source blend the ruling forbids, wearing the shape of a bug fix.
@@ -6897,8 +6930,10 @@ function _mcBet365Now(m){
   // TEN-225 ruling A — every pair now carries the book that quoted it, because
   // the column is no longer bet365 by construction and a price without its book
   // name is the false label this issue has already paid for once.
+  // `> 0`, not `!= null`: zero is not a price (see _ocsSanePx). This leg comes off
+  // matches.json, which the OCS sanitiser never sees, so it carries its own guard.
   const b = m.bet365Now;
-  if (b && b.p1 != null && b.p2 != null) return { p1: b.p1, p2: b.p2, book: 'bet365', at: b.at || null, src: 'timeline' };
+  if (b && b.p1 > 0 && b.p2 > 0) return { p1: b.p1, p2: b.p2, book: 'bet365', at: b.at || null, src: 'timeline' };
   const bo = m.bestOdds;
   if (bo && _isBet365(bo.p1?.bookmaker) && _isBet365(bo.p2?.bookmaker) && bo.p1.price && bo.p2.price) {
     return { p1: bo.p1.price, p2: bo.p2.price, book: 'bet365', at: null, src: 'feed' };
@@ -7047,13 +7082,13 @@ function _openAnchorOf(m, who){
   return m?.openingOdds?.[who] ?? null;
 }
 function _openDerivedOf(m, who){ return _openPinIsVendor(m) ? null : _openAnchorOf(m, who); }
-function driftScore(m){ // largest absolute open→close move on either side
-  const o1 = _openDerivedOf(m, 'p1'), o2 = _openDerivedOf(m, 'p2');
-  const c1 = _mcCloseOf(m, 'p1'), c2 = _mcCloseOf(m, 'p2');
-  const d1 = (o1 != null && c1 != null) ? Math.abs(c1 - o1) : 0;
-  const d2 = (o2 != null && c2 != null) ? Math.abs(c2 - o2) : 0;
-  return Math.max(d1, d2);
-}
+// TEN-225 ruling 3 — `driftScore()` (open→CLOSE) lived here and is DELETED. It had
+// exactly one call site, the Upcoming board's Drift order, and it scored 0 on all 32
+// cards there because an upcoming fixture has no close. moveNowScore() replaced it.
+// Removed rather than left unreferenced for the same reason relStartHtml was: an
+// unused scorer with a plausible name is one edit away from being wired back into
+// the sort it was wrong for.
+
 // ───────────────────────────────────── TEN-225 ruling 3 (founder, 2026-09-18) ──
 // "BIGGEST MARKET MOVE — clicking it must sort the board. Right now it does not.
 // On click, the card list re-orders by largest Open → Now move first."
@@ -7106,7 +7141,7 @@ function _mcOpenNowPair(m){
     return null;
   }
   const op = m && m.openingOdds;
-  if (!op || op.p1 == null || op.p2 == null) return null;
+  if (!op || !(op.p1 > 0) || !(op.p2 > 0)) return null;
   const b = _mcBet365Now(m);
   if (!b) return null;
   if (String(op.bookmaker || '').toLowerCase() !== String(b.book || '').toLowerCase()) return null;
@@ -7122,7 +7157,11 @@ function _mcOpenNowPair(m){
 // filter, and there is no branch here that can drop a match.
 function moveNowScore(m){
   const p = _mcOpenNowPair(m);
-  if (!p || !(p.o1 > 0) || !(p.o2 > 0)) return -1;
+  // BOTH legs of BOTH sides must be real prices. Guarding only the open (the
+  // divisor) is what let a published `now: 0` score a fabricated 1.0 — a -100%
+  // move that beats every genuine move on any board and takes the top of this
+  // sort. Zero is not a price; see _ocsSanePx.
+  if (!p || !(p.o1 > 0) || !(p.o2 > 0) || !(p.n1 > 0) || !(p.n2 > 0)) return -1;
   return Math.max(Math.abs(p.n1 / p.o1 - 1), Math.abs(p.n2 / p.o2 - 1));
 }
 // TEN-179 item 3 (founder standing rule 2026-09-10): "Thin coverage flagged with the
@@ -7831,41 +7870,57 @@ function oddsPctDelta(open, close){
 // one.
 function mcDriftCell(open, now, anchorOnly, opts){
   const o = opts || {};
-  const t = mcTitleAttr(o.title);
+  // PER-LEG titles, never a wrapper title. The wrapper spans both values, so one
+  // title there is asserted over a price it may not describe — and over a dash,
+  // which is the "book name beside a price we are not showing" ruling 2 forbids.
+  const ot = open != null ? mcTitleAttr(o.openTitle) : '';
+  const nt = now  != null ? mcTitleAttr(o.nowTitle)  : '';
   const nowTxt = (now != null) ? now.toFixed(2) : '—';
   if (open != null && anchorOnly){
-    return `<span class="mc-drifted"${t}>`
-      + `<span class="mc-drifted__open">${open.toFixed(2)}</span>`
+    return `<span class="mc-drifted">`
+      + `<span class="mc-drifted__open"${ot}>${open.toFixed(2)}</span>`
       + `<span class="mc-drifted__lane"><span class="mc-drifted__flat"></span></span>`
-      + `<span class="mc-drifted__now">${nowTxt}</span>`
+      + `<span class="mc-drifted__now${now == null ? ' nodata' : ''}"${nt}>${nowTxt}</span>`
       + `<span class="mc-drifted__pct"></span></span>`;
   }
   if (open == null){
-    return `<span class="mc-drifted"${t}>`
+    return `<span class="mc-drifted">`
       + `<span class="mc-drifted__open nodata">—</span>`
       + `<span class="mc-drifted__lane"><span class="mc-drifted__flat"></span></span>`
-      + `<span class="mc-drifted__now${now == null ? ' nodata' : ''}">${nowTxt}</span>`
+      + `<span class="mc-drifted__now${now == null ? ' nodata' : ''}"${nt}>${nowTxt}</span>`
       + `<span class="mc-drifted__pct"></span></span>`;
   }
   if (now == null){
     // A real open with nothing on the right. Both the started-with-no-close case
     // and the plain no-current-price case land here; the cell keeps its column and
     // dashes in it rather than collapsing, so OPEN stays under its header.
-    return `<span class="mc-drifted"${t}>`
-      + `<span class="mc-drifted__open">${open.toFixed(2)}</span>`
+    return `<span class="mc-drifted">`
+      + `<span class="mc-drifted__open"${ot}>${open.toFixed(2)}</span>`
       + `<span class="mc-drifted__lane"><span class="mc-drifted__flat"></span></span>`
       + `<span class="mc-drifted__now nodata">—</span>`
+      + `<span class="mc-drifted__pct"></span></span>`;
+  }
+  // BOTH legs present — but a signed % is only meaningful when they are the SAME
+  // book. `o.paired` is the caller's answer to that (it is `_mcOpenNowPair`, the
+  // one resolver the sort and the tile also read); without it the two values still
+  // render, each titled with its own book, and the bar + delta are suppressed. A
+  // drift figure between two books is a number about the books, not the market.
+  if (!o.paired){
+    return `<span class="mc-drifted">`
+      + `<span class="mc-drifted__open"${ot}>${open.toFixed(2)}</span>`
+      + `<span class="mc-drifted__lane"><span class="mc-drifted__flat"></span></span>`
+      + `<span class="mc-drifted__now"${nt}>${nowTxt}</span>`
       + `<span class="mc-drifted__pct"></span></span>`;
   }
   const d = oddsPctDelta(open, now);
   // TOKENS.md: bar length = max(10, min(30, |pct| * 0.9))px.
   const barW = Math.max(10, Math.min(30, Math.round(Math.abs(d.pct) * 0.9)));
   const col = d.dir === 'pos' ? '#3dd68c' : d.dir === 'neg' ? '#e0645b' : 'var(--mc-muted)';
-  return `<span class="mc-drifted"${t}>`
-    + `<span class="mc-drifted__open">${open.toFixed(2)}</span>`
+  return `<span class="mc-drifted">`
+    + `<span class="mc-drifted__open"${ot}>${open.toFixed(2)}</span>`
     + `<span class="mc-drifted__lane"><span class="mc-drifted__bar" style="width:${barW}px;background:${col}"></span>`
     + `<span class="mc-drifted__arrow" style="color:${col}">▸</span></span>`
-    + `<span class="mc-drifted__now">${nowTxt}</span>`
+    + `<span class="mc-drifted__now"${nt}>${nowTxt}</span>`
     + `<span class="mc-drifted__pct ${d.dir}">${d.text}</span></span>`;
 }
 // Completed odds journey for one player: open → gradient track → close, plus the
@@ -8496,7 +8551,74 @@ function renderMatches(){
     // 3h25m BEFORE the 05:05Z off, i.e. a genuine pre-play price that nothing is
     // allowed to label. That is item I(b) — live_flip_log as the primary path to a
     // Kibl Close — and this dash is its visible symptom on the board.
-    const mcDriftRight = who => mcStarted ? _mcCloseOf(m, who) : _mcNowOf(m, who);
+    // WHICH BOOK SUPPLIES THE NOW — caught in clean-context review, and it undercut
+    // ruling 3's own goal. The default card face resolves its price through
+    // `_mcNowPair` (ruling B's any-book ladder); this cell was resolving through
+    // `_mcNowOf`, which is bet365-only outside odds_card_state. So clicking Biggest
+    // market move SWAPPED THE RESOLVER under the member: MEASURED on the deployed
+    // board 2026-09-18, 40 of 64 legs across 20 of 32 cards showed a price in the
+    // default view and a dash in the drift view — Rune/Radulov 1.29/3.50
+    // (WilliamHill), Dougaz/Shoaib 1.04/7.40 (Marathon), Rodionov/Onclin 1.40/2.49
+    // (Sbo) and so on. The board went from 29 of 32 priced to a mostly empty column
+    // the instant the sort was applied, which is also ruling B ("a dash is only
+    // correct when NO book anywhere has a price") failing on the surface ruling 3
+    // just made a destination.
+    //
+    // The fix is NOT to widen the pair. Where the fixture HAS an open, the Now must
+    // still come from that same book or the two cells either side of a drift arrow
+    // belong to two books — the blend both rulings forbid. So:
+    //   * pair on file        -> its Now, and the signed % renders (one book);
+    //   * NO open at all      -> the card's own Now, no delta possible, no blend
+    //                            possible either: there is nothing to pair it with;
+    //   * open, no same-book Now -> dash, unchanged.
+    // Each leg names its own book on hover, so the two cells are never implicitly
+    // attributed to one another.
+    const _dpair = _mcOpenNowPair(m);
+    const _dfaceNow = _mcNowPair(m);
+    const mcDriftRight = who => {
+      if (mcStarted) return _mcCloseOf(m, who);
+      if (_dpair) return who === 'p1' ? _dpair.n1 : _dpair.n2;
+      if (_openAnchorOf(m, 'p1') != null || _openAnchorOf(m, 'p2') != null) return _mcNowOf(m, who);
+      return _dfaceNow ? (_dfaceNow[who] ?? null) : null;
+    };
+    // ─────────────────────────── TEN-225 ruling 2, corrected (clean-context review) ──
+    // The drift cell's title used to be `oddsProv` — the OPEN's book and the OPEN's
+    // timestamp — on a cell whose right-hand value is the Now. mcPriceTitle's own
+    // docstring forbids exactly that ("a tooltip on a Now that named the Open's book
+    // would be precisely the false label this issue has already paid for once") and
+    // the code did it anyway. MEASURED: the Moller/Dimitrov tooltip was 9h44m stale
+    // against the Now it sat over; Chung/Nagal — the one card rendering a signed %
+    // move, i.e. the one most likely to be hovered — was ~14h stale.
+    //
+    // Now each LEG carries its own title, on its own span, and a DASHED leg carries
+    // none: a book name beside a price we are not showing is the thing ruling 2
+    // exists to prevent, and putting the title on the wrapper meant hovering an em
+    // dash produced a book name on 8 cells.
+    //
+    // The vendor qualifier travels with it. An api-tennis sighting is OUR observation
+    // instant, not the book's clock, and the price behind it may be up to 14.6h
+    // older; the drawer has always said "seen by us" and the card said nothing, so
+    // face and drawer DID disagree — the opposite of what shipping this claimed.
+    const _vendorSeen = _openPinIsVendor(m);
+    const _openTitle = (function(){
+      const book = ocsBookOf(m), ts = ocsFmtTs(ocsOpenTsOf(m));
+      if (!book) return '';
+      return [book, ts, _vendorSeen ? 'seen by us' : ''].filter(Boolean).join(' · ');
+    })();
+    const _nowTitleFor = () => {
+      if (mcStarted){
+        const o = _ocsOf(m);
+        const book = o ? o.book : ((m.closingOdds && m.closingOdds.bookmaker) || null);
+        const ts = o ? ocsFmtTs(o.p1.closeTs || o.p2.closeTs) : '';
+        return book ? [book, ts].filter(Boolean).join(' · ') : '';
+      }
+      if (_dpair) return mcPriceTitle({ book: _dpair.book, at: _dpair.nowTs });
+      if (_openAnchorOf(m, 'p1') != null || _openAnchorOf(m, 'p2') != null){
+        const n = _mcBet365Now(m);
+        return n ? mcPriceTitle(n) : '';
+      }
+      return mcPriceTitle(_dfaceNow);
+    };
     const finOddsCell = (open, close) => {
       const rows = [];
       if (open != null)  rows.push(`<span class="fo-pair open"><span class="fo-l">Open</span><span class="fo-v">${open.toFixed(2)}</span></span>`);
@@ -8595,14 +8717,16 @@ function renderMatches(){
           <div class="mc-row a">
             <span class="mc-id">${mcAvatarHtml(m.p1PhotoUrl, m.p1, m.p1Key, 'a')}<span class="mc-name"${profileLinkAttrs(m.p1Key, m.p1)}>${m.p1}${serve('p1')}</span>${p1IsFavorite ? '<span class="mc-fav-tag">FAV</span>' : ''}</span>
             ${mxDriftView()
-              ? mcDriftCell(_openAnchorOf(m, 'p1'), mcDriftRight('p1'), openAnchorOnly, { title: oddsProv })
+              ? mcDriftCell(_openAnchorOf(m, 'p1'), mcDriftRight('p1'), openAnchorOnly,
+                            { openTitle: _openTitle, nowTitle: _nowTitleFor(), paired: !!_dpair || mcStarted })
               : `<span class="mc-oddswrap"${mcTitleAttr(nowTitle)}><span class="mc-odds">${p1OddsDisplay}</span><span class="mc-implied">${oddsSlot ? impliedPct(nowPair?.p1 ?? null) : ''}</span></span>`
                 + mcFormBar(m.p1RecentForm)}
           </div>
           <div class="mc-row b">
             <span class="mc-id">${mcAvatarHtml(m.p2PhotoUrl, m.p2, m.p2Key, 'b')}<span class="mc-name"${profileLinkAttrs(m.p2Key, m.p2)}>${m.p2}${serve('p2')}</span>${(hasFavLine && !p1IsFavorite) ? '<span class="mc-fav-tag">FAV</span>' : ''}</span>
             ${mxDriftView()
-              ? mcDriftCell(_openAnchorOf(m, 'p2'), mcDriftRight('p2'), openAnchorOnly, { title: oddsProv })
+              ? mcDriftCell(_openAnchorOf(m, 'p2'), mcDriftRight('p2'), openAnchorOnly,
+                            { openTitle: _openTitle, nowTitle: _nowTitleFor(), paired: !!_dpair || mcStarted })
               : `<span class="mc-oddswrap"${mcTitleAttr(nowTitle)}><span class="mc-odds">${p2OddsDisplay}</span><span class="mc-implied">${oddsSlot ? impliedPct(nowPair?.p2 ?? null) : ''}</span></span>`
                 + mcFormBar(m.p2RecentForm)}
           </div>
@@ -8738,11 +8862,20 @@ function renderMatches(){
       const p = _mcOpenNowPair(m);
       if (!p) return;
       [['p1', p.o1, p.n1], ['p2', p.o2, p.n2]].forEach(([who, o, c]) => {
-        if (o == null || c == null || !(o > 0)) return;
+        // Same two-sided price guard as moveNowScore; `c == null` alone would let a
+        // published zero headline this tile as "1.52 -> 0.00  -100%".
+        if (!(o > 0) || !(c > 0)) return;
         const d = oddsPctDelta(o, c);
         if (d.pct === 0) return;
-        if (!bmv || Math.abs(d.pct) > Math.abs(bmv.d.pct)) {
-          bmv = { o, c, d, name: who === 'p1' ? m.p1 : m.p2, opp: who === 'p1' ? m.p2 : m.p1,
+        // RANKED ON THE UNROUNDED MOVE, compared against the unrounded incumbent.
+        // oddsPctDelta rounds to whole percent, so ranking on d.pct made 13.6% and
+        // 14.4% tie at 14 — the tile then kept whichever came first in daySlate
+        // order while moveNowScore ranks unrounded, so the tile could name one
+        // fixture and the sort it triggers put a different one on top. Same
+        // figure, one basis.
+        const mag = Math.abs(c / o - 1);
+        if (!bmv || mag > bmv.mag) {
+          bmv = { o, c, d, mag, name: who === 'p1' ? m.p1 : m.p2, opp: who === 'p1' ? m.p2 : m.p1,
                   tour: m.tour, round: roundBadgeText(m.tournamentRound), m };
         }
       });
@@ -13423,7 +13556,15 @@ function buildOddsReduced(m){
   // different book from the card face. Rendered only on an unfinished fixture: a
   // "current" price on a settled match is the leaked in-play headline TEN-124 was
   // opened about, and the Closing row above already owns that slot.
-  const nowPair = m.finalScore ? null : _mcNowPair(m);
+  // Gated on THE OFF, not on finalScore. A started-but-unscored fixture with no
+  // odds_card_state row falls through _mcNowPair to m.odds/m.bestOdds — in-play
+  // prices — and this panel is captioned "…before the match", so the row would
+  // print a live price under a pre-match heading while the CARD for the same
+  // fixture is withholding its Now and printing a Close header (ruling 4c). Same
+  // client-clock test the card uses. Measured 0 occurrences today; latent, and the
+  // guard costs nothing.
+  const _started = isFinite(cardStartMs(m)) && Date.now() >= cardStartMs(m);
+  const nowPair = (m.finalScore || _started) ? null : _mcNowPair(m);
   const currentRow = nowPair
     ? ocRow('Current', { p1: nowPair.p1, p2: nowPair.p2, bookmaker: nowPair.book,
                          at: nowPair.at || null, src: null }, false)
