@@ -1,0 +1,162 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# BSP pipeline watchdog — an ALARM, never an auto-cancel.
+#
+# Founder ruling 2026-09-18 (item 5): KEEP `cancel-in-progress: false` on the
+# bsp-pipeline group, because a cancelled mid-write pipeline run is worse than
+# a late one. This workflow therefore only ever goes RED; it never touches a
+# run. Two independent alarms:
+#
+#   (a) a pipeline run has been in_progress past its own timeout-minutes
+#   (b) the DEPLOYED build-info.json is older than STALE_AFTER_MIN
+#
+# WHY THIS IS A SEPARATE WORKFLOW, AND NOT A STEP INSIDE pipeline.yml
+# ───────────────────────────────────────────────────────────────────
+# Because a step inside pipeline.yml is structurally incapable of firing during
+# the outage it is meant to catch. `concurrency: bsp-pipeline` with
+# `cancel-in-progress: false` means a new run QUEUES behind the running one, and
+# GitHub holds at most one running + one pending per group. So while a run is
+# wedged, every later run is either pending or silently dropped — and a pending
+# run executes NO steps.
+#
+# Measured on 2026-09-18, not assumed: run 3732 held the group from 22:40:00Z.
+# In that window exactly two runs were created (3733 at 22:49:38Z, 3734 at
+# 22:50:01Z) and both sat `pending`; every other */10 ping was dropped, and no
+# pipeline job ran a single step. That is the structural point, and it holds
+# regardless of how long the hold lasts.
+#
+# Being straight about the incident that prompted this: 3732 was NOT wedged. It
+# held the group for 8.7 minutes of a 30-minute budget and was cancelled by an
+# agent (me) who misread the clock and reported an 8-hour freeze that had not
+# happened. Alarm (a) below would correctly have stayed silent — 8.7m is far
+# under the threshold. So this file is not a fix for that incident; it is a
+# guard for the genuine case (a dead runner GitHub fails to reap), and the
+# incident is recorded here so nobody later reads the alarm as evidence the
+# freeze was real.
+#
+# This workflow therefore carries its OWN concurrency group — a watchdog that
+# queues behind itself is a watchdog that stops watching — and uses
+# cancel-in-progress: true, which is safe here precisely because it writes
+# nothing.
+#
+# ⚠ TRIGGER RELIABILITY — READ BEFORE RELYING ON THIS
+# Actions `schedule:` is throttled on this repo: a bare cron was measured at 27%
+# delivery, which is why the pipeline itself is driven by an EXTERNAL pg_cron
+# pinger rather than by cron. The same throttling applies here. A watchdog that
+# fires 27% of the time is not an alarm, so this must be added to that external
+# pinger's dispatch list (`workflow_dispatch` on pipeline-watchdog.yml) for the
+# guarantee to be real. Until it is, treat `schedule:` below as best-effort.
+# ─────────────────────────────────────────────────────────────────────────────
+name: BSP pipeline watchdog
+
+on:
+  workflow_dispatch:
+  schedule:
+    # Best-effort only — see the trigger-reliability note above.
+    - cron: '*/15 * * * *'
+
+# Deliberately NOT the bsp-pipeline group: sharing it would make the watchdog
+# queue behind the very run it exists to report on.
+concurrency:
+  group: bsp-pipeline-watchdog
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  actions: read
+
+env:
+  PIPELINE_WORKFLOW: pipeline.yml
+  # Grace on top of the pipeline job's own timeout-minutes. GitHub does enforce
+  # timeout-minutes itself and needs a moment to reap, so alarming at exactly
+  # the budget would cry wolf on every run that legitimately runs long.
+  WEDGE_GRACE_MIN: '5'
+  STALE_AFTER_MIN: '60'
+  SITE_URL: https://michaeldk1996.github.io/SAAS
+
+jobs:
+  watch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+
+      # (a) A pipeline run stuck past its own budget.
+      #     timeout-minutes is READ FROM pipeline.yml rather than hardcoded, so
+      #     the alarm tracks the real budget instead of drifting away from it the
+      #     first time someone edits the workflow.
+      - name: Alarm — pipeline run wedged past its timeout
+        id: wedge
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          BUDGET="$(grep -m1 -E '^\s*timeout-minutes:' .github/workflows/pipeline.yml \
+                    | grep -oE '[0-9]+' || true)"
+          if [ -z "$BUDGET" ]; then
+            echo "::error::could not read timeout-minutes from .github/workflows/pipeline.yml"
+            echo "  The alarm threshold is derived from that value; refusing to guess."
+            exit 1
+          fi
+          # export: the node block below reads this via process.env, so a bare
+          # shell assignment would reach it as undefined and NaN-compare to false,
+          # i.e. an alarm that can never fire.
+          export LIMIT=$(( BUDGET + WEDGE_GRACE_MIN ))
+          echo "pipeline timeout-minutes=$BUDGET, grace=${WEDGE_GRACE_MIN}m, alarm at ${LIMIT}m"
+          gh api "repos/${GITHUB_REPOSITORY}/actions/workflows/${PIPELINE_WORKFLOW}/runs?status=in_progress&per_page=50" \
+            > runs.json
+          node -e '
+            const fs = require("fs");
+            const limit = Number(process.env.LIMIT);
+            const runs = (JSON.parse(fs.readFileSync("runs.json","utf8")).workflow_runs) || [];
+            const now = Date.now();
+            let worst = null;
+            for (const r of runs) {
+              const started = Date.parse(r.run_started_at || r.created_at);
+              if (!isFinite(started)) continue;
+              const mins = (now - started) / 60000;
+              if (mins > limit && (!worst || mins > worst.mins)) worst = { r, mins };
+            }
+            console.log(`${runs.length} pipeline run(s) in_progress`);
+            for (const r of runs) {
+              const mins = (now - Date.parse(r.run_started_at || r.created_at)) / 60000;
+              console.log(`  run ${r.run_number} started ${r.run_started_at} — ${mins.toFixed(1)}m`);
+            }
+            if (worst) {
+              console.log(`::error::pipeline run ${worst.r.run_number} has been in_progress for `
+                + `${worst.mins.toFixed(1)} minutes, past its ${limit}-minute alarm threshold. `
+                + `It holds concurrency group bsp-pipeline, so every later run is queued or dropped `
+                + `and the site cannot publish. THIS ALARM DOES NOT CANCEL IT (founder ruling: a `
+                + `cancelled mid-write run is worse than a late one) — a human decides. ${worst.r.html_url}`);
+              process.exit(1);
+            }
+            console.log("no pipeline run is past its budget.");
+          '
+
+      # (b) The published site has gone stale. Runs even if (a) already failed,
+      #     so one alarm never masks the other.
+      - name: Alarm — deployed build-info.json is stale
+        if: always()
+        run: |
+          set -euo pipefail
+          curl -fsSL "${SITE_URL}/build-info.json?cb=${GITHUB_RUN_ID}" -o build-info.json
+          node -e '
+            const fs = require("fs");
+            const max = Number(process.env.STALE_AFTER_MIN);
+            const b = JSON.parse(fs.readFileSync("build-info.json","utf8"));
+            const built = Date.parse(b.builtAt);
+            if (!isFinite(built)) {
+              console.log("::error::deployed build-info.json carries no parseable builtAt — "
+                + "cannot establish freshness, which is itself the alarm condition.");
+              process.exit(1);
+            }
+            const age = (Date.now() - built) / 60000;
+            console.log(`deployed ${String(b.commit).slice(0,8)} builtAt ${b.builtAt} `
+              + `— ${age.toFixed(1)} minutes old (behindTip ${b.behindTip}, onMain ${b.onMain})`);
+            if (age > max) {
+              console.log(`::error::the deployed site is ${age.toFixed(1)} minutes old, past the `
+                + `${max}-minute staleness alarm. The pipeline publishes on a */10 tick, so this `
+                + `means publishes have stopped reaching Pages.`);
+              process.exit(1);
+            }
+            console.log("site is fresh.");
+          '

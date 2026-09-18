@@ -21,3 +21,11 @@ README both still print the 4-band ladder. **The `.dc.html` file wins over the R
 
 Spec order (unchanged): `Player Profile.dc.html` + `Player Stat Boxes.dc.html` → `README.md`
 → `STENNISFY-DESIGN-INSTRUCTIONS.md` → screenshots.
+
+## Quantities that are DERIVED, not ruled
+
+`DERIVED-NOT-RULED.md` in this folder records every figure we reproduce from the
+export's hard-coded literals rather than from a stated formula — currently the
+§5.8 Derived-lines **Avg margin** column. Read it before treating any of those
+numbers as specified: they are readings of the literals, and a founder ruling
+supersedes them outright.

@@ -424,14 +424,19 @@ jobs:
           #  * match-stat-event-coverage.json — the per-EVENT index behind the match
           #    sheet's whole-event note (founder ruling 2026-09-18 Q2, third clause).
           #    BUILT here, immediately before it is copied, so the copy can never
-          #    precede the build and publish a previous run's index. It joins the
-          #    match-stat store against the DEPLOYED profile store and is tolerant
-          #    (`|| true`) at both steps: a network blip must cost the note, never the
-          #    deploy, and with the file absent the sheet simply omits it — the honest
-          #    output when the claim cannot be substantiated. Named EXPLICITLY because
-          #    this allowlist has no glob and silently 404s anything not in it.
-          node tools/build-event-stat-coverage.js || true
-          cp match-stat-event-coverage.json _site/ 2>/dev/null || true
+          #    precede the build and publish a previous run's index. Named EXPLICITLY
+          #    because this allowlist has no glob and silently 404s anything not in it.
+          #
+          #    FAIL-CLOSED since the founder ruling of 2026-09-18 (item 5). Both the
+          #    build and the copy used to carry `|| true`, and the page's documented
+          #    behaviour for an absent index is SILENCE — so a failed builder removed
+          #    the note from every match sheet with nothing anywhere going red. A
+          #    tolerant copy plus a silent consumer is not a degradation, it is an
+          #    undetectable one. The file is gitignored, so a fresh CI checkout never
+          #    carries a stale copy: if the build fails the file is absent, and the
+          #    assert in "Assert site completeness" catches it.
+          node tools/build-event-stat-coverage.js
+          cp match-stat-event-coverage.json _site/
           cp admin.html admin-config.js _site/ 2>/dev/null || true
           cp matches.json tournament-profiles.json tournament-progression.json player-profiles.json _site/
           cp career-splits.json _site/
@@ -666,6 +671,7 @@ jobs:
                    odds-performance-index.json odds-index.json \
                    tournament-history-index.json \
                    court-speed-map.json \
+                   match-stat-event-coverage.json \
                    series.js series.css; do
             [ -s "_site/$f" ] || { echo "MISSING from _site: $f"; exit 1; }
           done
