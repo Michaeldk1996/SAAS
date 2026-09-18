@@ -354,12 +354,31 @@ def index_oddspapi(fx_rows, summary_rows):
             # could not say whether that was a pairing problem or an empty
             # column — it was an empty column, and the undifferentiated count
             # cost a round trip to find out.
-            if not (f.get('player1') and f.get('player2')):
+            #
+            # TEN-225 ruling D follow-up (2026-09-18). The `else` below USED to
+            # be `oddspapi_same_surname`, which made this counter tell the same
+            # kind of lie the comment above it was written to stop. match_key
+            # returns None for THREE reasons, and "both players reduce to one
+            # surname" is only one of them — a name that fails to key AT ALL
+            # lands here too, under a label asserting the opposite (that both
+            # names keyed, and keyed identically).
+            #
+            # That mattered: before ruling D every hyphenated and apostrophe
+            # surname keyed to None, so each one was counted as a same-surname
+            # collision. The run that led to this fix reported 394 in that
+            # bucket and there was no way to tell from the number how many were
+            # really unkeyable names. Now there is.
+            p1, p2 = f.get('player1'), f.get('player2')
+            if not (p1 and p2):
                 st['oddspapi_no_player_names'] += 1
             elif not day:
                 st['oddspapi_no_day'] += 1
             else:
-                st['oddspapi_same_surname'] += 1
+                k1, k2 = name_key(p1), name_key(p2)
+                if not (k1 and k2):
+                    st['oddspapi_name_unkeyable'] += 1
+                else:
+                    st['oddspapi_same_surname'] += 1
             st['oddspapi_fixture_unkeyable'] += 1
             continue
         if k in by_key:
