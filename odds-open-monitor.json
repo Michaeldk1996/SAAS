@@ -389,13 +389,14 @@
     "id1200210074805848": {
       "alerted": true,
       "alertedAt": "2026-09-17T23:21:33Z",
-      "captureLagH": null,
+      "captureLagH": 1.23,
       "date": "2026-09-18",
+      "firstSeenAt": "2026-09-18T00:45:01Z",
       "hoursOutAtAlert": 8.64,
-      "openAt": null,
+      "openAt": "2026-09-17T23:31:12.157Z",
       "p1": "A. Shevchenko",
       "p2": "M. Jones",
-      "postingLeadH": null,
+      "postingLeadH": 8.48,
       "startTime": "2026-09-18T08:00:00.000Z",
       "tour": "ATP ATP Davis Cup - World Group II"
     },
@@ -490,6 +491,45 @@
       "startTime": "2026-09-18T20:10:00.000Z",
       "tour": "ATP ATP Davis Cup - World Group II"
     },
+    "id1200210074806080": {
+      "alerted": true,
+      "alertedAt": "2026-09-18T00:45:01Z",
+      "captureLagH": null,
+      "date": "2026-09-19",
+      "hoursOutAtAlert": 22.42,
+      "openAt": null,
+      "p1": "J. C. Prado Angelo",
+      "p2": "T. F. Wong",
+      "postingLeadH": null,
+      "startTime": "2026-09-18T23:10:00.000Z",
+      "tour": "ATP ATP Davis Cup - World Group II"
+    },
+    "id1200210074806096": {
+      "alerted": true,
+      "alertedAt": "2026-09-18T00:45:01Z",
+      "captureLagH": null,
+      "date": "2026-09-18",
+      "hoursOutAtAlert": 14.25,
+      "openAt": null,
+      "p1": "R. Cid Subervi",
+      "p2": "A. Elsayed",
+      "postingLeadH": null,
+      "startTime": "2026-09-18T15:00:00.000Z",
+      "tour": "ATP ATP Davis Cup - World Group II"
+    },
+    "id1200210074806098": {
+      "alerted": true,
+      "alertedAt": "2026-09-18T00:45:01Z",
+      "captureLagH": null,
+      "date": "2026-09-18",
+      "hoursOutAtAlert": 15.42,
+      "openAt": null,
+      "p1": "N. Hardt",
+      "p2": "K. Mabrouk",
+      "postingLeadH": null,
+      "startTime": "2026-09-18T16:10:00.000Z",
+      "tour": "ATP ATP Davis Cup - World Group II"
+    },
     "id1200259173992438": {
       "alerted": false,
       "captureLagH": 4.38,
@@ -530,5 +570,5 @@
   },
   "schema": "odds-open-monitor/1",
   "thresholdHours": 24.0,
-  "updatedAt": "2026-09-18T00:30:01Z"
+  "updatedAt": "2026-09-18T00:45:01Z"
 }
