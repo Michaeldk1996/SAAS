@@ -49,7 +49,7 @@ import sys
 import urllib.error
 import urllib.parse
 import urllib.request
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(HERE, 'odds-card-state.json')
@@ -59,6 +59,10 @@ sys.path.insert(0, HERE)
 from ten225_names import match_key as mk_of, name_key  # noqa: E402
 
 MARKET = 'match winner'
+# Days either side of the board's own date span that still get published. See
+# board_window() for why this is not zero and why it is much wider than the gap
+# it has to cover.
+WINDOW_MARGIN_DAYS = 7
 PAGE = 1000                 # PostgREST caps a page here; asking for more truncates
 MIN_N = 30                  # standing rule: flag anything below this
 
@@ -142,7 +146,7 @@ def side_names(row, oddspapi_fx, kibl_fx, board_fx):
     return None, None
 
 
-def build(rows, oddspapi_fx, kibl_fx, board_fx):
+def build(rows, oddspapi_fx, kibl_fx, board_fx, window=(None, None)):
     """Selected odds_card_state rows -> the published by-key map.
 
     Pure: every input is a plain dict, so the harness can drive it without a
@@ -150,6 +154,7 @@ def build(rows, oddspapi_fx, kibl_fx, board_fx):
     """
     st = collections.Counter()
     grouped = collections.defaultdict(list)
+    lo, hi = window
 
     for r in rows:
         if r.get('market') != MARKET:
@@ -163,6 +168,13 @@ def build(rows, oddspapi_fx, kibl_fx, board_fx):
             # Unpairable. This is the dash the standing rules ask for: a row we
             # cannot key is a row we cannot put on the right card.
             st['skip_no_match_key'] += 1
+            continue
+        # Outside the renderable window (see board_window). Counted, never
+        # silently dropped: "12,768 archived matches withheld" is a fact the
+        # report has to state, because it is the difference between "we have no
+        # price" and "we have a price no surface can reach".
+        if lo and not (lo <= mkey[:10] <= hi):
+            st['skip_outside_board_window'] += 1
             continue
         grouped[mkey].append(r)
 
@@ -249,6 +261,33 @@ def build(rows, oddspapi_fx, kibl_fx, board_fx):
     return by_key, st
 
 
+def board_window(matches, margin_days=WINDOW_MARGIN_DAYS):
+    """The day range the board can actually render, widened by a margin.
+
+    WHY THIS EXISTS, MEASURED. The first real run published all 12,843 archived
+    matches: a 4,950,429-byte file, fetched on every page load and again on
+    every 3-minute refresh, to answer questions about 75 matches. matches.json
+    is a ~3-day rolling window, so 12,768 of those entries could not reach a
+    card however long you looked — the page has no fixture to hang them on.
+    Publishing them is pure payload, and payload is this app's known bottleneck.
+
+    So the file is cut to the board's own span plus a margin. The margin is not
+    cosmetic: matches.json and this file are written by different jobs minutes
+    apart, and a board that rolls onto a new day between the two must not find
+    its Opens missing. It is deliberately much wider than that gap.
+
+    Returns (lo, hi) as 'YYYY-MM-DD', or (None, None) when the board is empty —
+    in which case nothing is withheld, because a window computed from no data
+    would be a guess.
+    """
+    days = sorted({(m.get('date') or '')[:10] for m in matches or [] if m.get('date')})
+    if not days:
+        return None, None
+    lo = (datetime.fromisoformat(days[0]) - timedelta(days=margin_days)).date().isoformat()
+    hi = (datetime.fromisoformat(days[-1]) + timedelta(days=margin_days)).date().isoformat()
+    return lo, hi
+
+
 def board_index(matches):
     """matches.json -> {event key: the match}, for the api-tennis side names."""
     out = {}
@@ -316,13 +355,17 @@ def main():
         with open(MATCHES) as fh:
             matches = json.load(fh)
     board_fx = board_index(matches)
+    window = board_window(matches)
 
-    by_key, st = build(rows, oddspapi_fx, kibl_fx, board_fx)
+    by_key, st = build(rows, oddspapi_fx, kibl_fx, board_fx, window)
     cov = board_coverage(matches, by_key)
 
     doc = {
         'generatedAt': datetime.now(timezone.utc).strftime('%Y-%m-%dT%H:%M:%SZ'),
         'market': MARKET,
+        # The window is published WITH the data so a reader can tell "no price"
+        # from "outside the file's range" without reading this script.
+        'windowFrom': window[0], 'windowTo': window[1],
         'matches': len(by_key),
         'byKey': by_key,
     }
@@ -333,7 +376,13 @@ def main():
     size = os.path.getsize(args.out)
     print(f'## TEN-225 Part 3 — published {os.path.basename(args.out)}')
     print(f'rows read       {len(rows)}')
+    print(f'window          {window[0]} .. {window[1]}  '
+          f'(board span +/- {WINDOW_MARGIN_DAYS}d)')
     print(f'matches written {len(by_key)}   ({size:,} bytes)')
+    if size > 1_000_000:
+        print(f'::warning::odds-card-state.json is {size:,} bytes — this file is '
+              'fetched on every page load and every refresh; payload is this '
+              "app's known bottleneck")
     print('')
     print('projection')
     for k in sorted(st):

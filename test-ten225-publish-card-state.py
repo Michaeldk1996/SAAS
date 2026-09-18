@@ -205,6 +205,31 @@ check('an uncovered board match is counted, not ignored',
 check('an archive match that is not on the board adds no coverage',
       cov['board_upcoming_covered'] + cov['board_completed_covered'] == 2, cov)
 
+print('TEN-225 publish — the renderable window')
+# MEASURED on run 35300413547: publishing the whole archive produced a
+# 4,950,429-byte file for a board of 75 matches, 12,768 of whose entries no
+# surface could reach. The window is the fix; these lock it.
+wb = [{'id': 'a', 'date': '2026-09-16', 'p1': 'x', 'p2': 'y'},
+      {'id': 'b', 'date': '2026-09-19', 'p1': 'x', 'p2': 'y'}]
+lo, hi = P.board_window(wb, margin_days=7)
+check('the window spans the board plus the margin, both ends',
+      (lo, hi) == ('2026-09-09', '2026-09-26'), (lo, hi))
+check('an empty board yields no window rather than a guessed one',
+      P.board_window([]) == (None, None), P.board_window([]))
+
+inw = pair('id2', K2, 1.80, 2.05)                                   # 2026-09-17
+old = pair('id3', mk_of('2024-01-04', 'Fearnley, Jacob', 'Norrie, Cameron'), 1.9, 1.9)
+by13, st13 = P.build(inw + old, ODDSPAPI_FX, KIBL_FX, BOARD_FX,
+                     window=('2026-09-10', '2026-09-24'))
+check('a match inside the window is published', K2 in by13, list(by13))
+check('a match outside it is not', len(by13) == 1, list(by13))
+check('and the withholding is counted, not silent',
+      st13['skip_outside_board_window'] == 2, st13)
+by14, st14 = P.build(inw + old, ODDSPAPI_FX, KIBL_FX, BOARD_FX)
+check('CONTROL: with no window, both are published', len(by14) == 2, list(by14))
+check('CONTROL: and nothing is withheld',
+      st14['skip_outside_board_window'] == 0, st14)
+
 print()
 if FAILED:
     print(f'FAILED {len(FAILED)}: {", ".join(FAILED)}')
