@@ -6891,6 +6891,53 @@ function ocsFmtClock(iso){
 // Returns null when the board carries no observation clock at all. The caller
 // then falls back to the load time and SAYS so, rather than printing a data-age
 // label over a page-load instant — the substitution this item is about.
+function mxOddsAgeBound(){
+  // RULING A (founder 2026-09-18T23:50Z): "switch to the OLDEST price shown on
+  // the board, not the newest. Optimistic freshness is the same defect class we
+  // have now fixed twice. Label it plainly."
+  //
+  // TWO THINGS THE NEWEST-BASED VERSION GOT AWAY WITH AND THIS ONE CANNOT.
+  //
+  // 1. SCOPE. The previous function scanned every match in the payload and every
+  //    key in OCS (~750 entries spanning +/-7 days, completed fixtures included).
+  //    Taking the NEWEST across that set is roughly the newest on the board, so
+  //    the wider scope did not show. Taking the OLDEST is the opposite: one
+  //    stale completed fixture nobody is looking at would dominate the header
+  //    and report an age no member can see. So this reads getFiltered() — the
+  //    exact list renderMatches() paints — and nothing else.
+  //
+  // 2. UNDATED PRICES. _mcAnyBookPair prices most of the board under ruling B,
+  //    and api-tennis publishes NO clock (vendor-confirmed). Before ruling N's
+  //    fetch-instant stamp those prices had no observation clock at all. An
+  //    "oldest" computed over only the dated ones is a bound over a subset, and
+  //    reporting it as the board's age would be optimistic — precisely the
+  //    defect this ruling closes. So undated prices are COUNTED, never skipped
+  //    silently, and the caller surfaces the count.
+  //
+  // Returns the shape rather than a number so no caller can accidentally read
+  // "oldest" without also seeing how much of the board it failed to cover.
+  let oldest = null, dated = 0, undated = 0, shown = 0;
+  let list;
+  try { list = (typeof getFiltered === 'function') ? getFiltered() : []; }
+  catch (e) { list = []; }
+  (Array.isArray(list) ? list : []).forEach(m => {
+    let pair = null;
+    try { pair = (typeof _mcNowPair === 'function') ? _mcNowPair(m) : null; } catch (e) {}
+    if (!pair) return;                       // dashed: no price shown, nothing to age
+    shown++;
+    const t = Date.parse(pair.obs || '');
+    // NEVER `at`. That is when the BOOK last moved the price, so a quiet market
+    // would read as a dead pipeline — the trap named on the previous ruling.
+    if (!Number.isFinite(t)) { undated++; return; }
+    dated++;
+    if (oldest === null || t < oldest) oldest = t;
+  });
+  return { oldest, dated, undated, shown };
+}
+
+// Kept as the newest-observation reading, because the two answer different
+// questions and a later surface may want either. Nothing on the header uses it
+// now; ruling A moved the header to the oldest.
 function mxOddsUpdatedAt(){
   let best = null;
   const take = v => {
@@ -6913,19 +6960,40 @@ function mxOddsUpdatedAt(){
   return best;
 }
 
-// The header string. Two shapes, and the difference is the point:
-//   "odds updated 06:45"  — a real observation clock, from mxOddsUpdatedAt()
-//   "loaded 06:54"        — no observation clock on the board; this is the page
-//                           load and it is labelled as the page load.
 function mxHeaderStatusHtml(){
-  const t = mxOddsUpdatedAt();
-  if (t !== null) {
-    return `<span class="dot"></span><span class="mx-live-txt">Live · odds updated</span>`
-         + ` <span class="mx-clock">${headerClockFmt(new Date(t))}</span>`;
+  // RULING A — the header states the age of the OLDEST price on the board, so it
+  // is a floor a member can rely on rather than a best case. Three shapes, and
+  // the differences are the whole point:
+  //
+  //   "odds from 06:45 or older"  some prices shown carry no clock at all, so
+  //                               06:45 bounds only the dated ones and the true
+  //                               oldest may be earlier. Says so.
+  //   "oldest odds 06:45"         every price on the board is dated; 06:45 is
+  //                               the real floor.
+  //   "loaded 06:54"              nothing on the board is dated. This is the
+  //                               page-load instant, LABELLED as the page load
+  //                               and never dressed up as data age.
+  //
+  // The undated count is not hidden in a tooltip alone — it changes the words on
+  // the face, because a member who cannot see it would read the bound as exact.
+  const b = mxOddsAgeBound();
+  const detail = `oldest of ${b.dated} dated price${b.dated === 1 ? '' : 's'} on this board`
+               + (b.undated ? ` · ${b.undated} shown price${b.undated === 1 ? '' : 's'} carry no clock, `
+                            + `so the true oldest may be earlier` : '')
+               + (b.shown ? '' : ' · no prices shown');
+  if (b.oldest !== null) {
+    const label = b.undated ? 'Live · odds from' : 'Live · oldest odds';
+    const tail  = b.undated ? ' or older' : '';
+    return `<span class="dot"></span><span class="mx-live-txt" title="${escapeHtml(detail)}">${label}</span>`
+         + ` <span class="mx-clock" title="${escapeHtml(detail)}">${headerClockFmt(new Date(b.oldest))}${tail}</span>`;
   }
   const d = dataLoadedAt || new Date();
-  return `<span class="dot"></span><span class="mx-live-txt">Live · loaded</span>`
-       + ` <span class="mx-clock">${headerClockFmt(d)}</span>`;
+  const noneDetail = b.shown
+    ? `${b.shown} price${b.shown === 1 ? '' : 's'} shown, none carrying an observation clock — `
+      + `this is when the page loaded, not when the odds were read`
+    : 'no prices on this board — this is when the page loaded';
+  return `<span class="dot"></span><span class="mx-live-txt" title="${escapeHtml(noneDetail)}">Live · loaded</span>`
+       + ` <span class="mx-clock" title="${escapeHtml(noneDetail)}">${headerClockFmt(d)}</span>`;
 }
 // The one provenance string every surface shows: "bet365 · Sep 17, 09:14".
 // Book name AND Open timestamp, always together (founder, 2026-09-18) — they
@@ -7133,10 +7201,18 @@ function _mcAnyBookPair(m){
   const cands = [];
   const bo = m.bestOdds;
   if (bo && bo.p1?.price && bo.p2?.price && bo.p1.bookmaker && bo.p1.bookmaker === bo.p2.bookmaker)
-    cands.push({ p1: bo.p1.price, p2: bo.p2.price, book: bo.p1.bookmaker, at: null, kind: 'sighting', src: 'feed' });
+    // TEN-225 ruling N — `obs` is OUR fetch instant, stamped by bsp-pipeline.js
+    // because api-tennis publishes NO clock of its own (vendor-confirmed
+    // 2026-09-18). `at` stays null: we do not know when the book moved the
+    // price, and inventing one would be the false label this issue has paid for
+    // repeatedly. Absent on payloads written before that stamp shipped, which is
+    // why every reader must treat a missing obs as UNDATED rather than as fresh.
+    cands.push({ p1: bo.p1.price, p2: bo.p2.price, book: bo.p1.bookmaker, at: null,
+                 obs: bo.seenAt || m.odds?.seenAt || null, kind: 'sighting', src: 'feed' });
   const o = m.odds;
   if (o && o.p1 && o.p2 && o.bookmaker)
-    cands.push({ p1: o.p1, p2: o.p2, book: o.bookmaker, at: null, kind: 'sighting', src: 'feed' });
+    cands.push({ p1: o.p1, p2: o.p2, book: o.bookmaker, at: null,
+                 obs: o.seenAt || null, kind: 'sighting', src: 'feed' });
   if (!cands.length) return null;
   const cov = _mcBooksByCoverage();
   cands.sort((a, b) => (cov[b.book] || 0) - (cov[a.book] || 0));

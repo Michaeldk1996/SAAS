@@ -797,14 +797,7 @@ function playerMatchHistory(fixtures, playerKey, currentYear, surfaceMap) {
     // it. tournament_key is verified stable across seasons, so pairing it with
     // _season still separates editions correctly.
     const _tkey = f.tournament_key != null ? String(f.tournament_key) : `name:${_tid}`;
-    // Per-set games for this row. event_final_result carries only the SET COUNT
-    // ("2 - 1"); the set-by-set line has to come from the fixture's own `scores`
-    // array, which this same wide fetch already returned — so it costs no extra
-    // API call. formSetsFromFixture orients to the tracked player and returns
-    // null (never a partial line) on a walkover.
-    const _sets = formSetsFromFixture(f, isFirst);
     out.push({ year, surface, level, date: f.event_date, tournament: f.tournament_name, round, opponent, result, won, eventKey: f.event_key, src: 'fixtures',
-      ...(_sets ? { sets: _sets } : {}),
       _tid, _tkey, _cname, _season, _frac, _qual, _short: _qual ? 'Q' : _short, _rank: _qual ? -1 : (ROUND_RANK[_short] != null ? ROUND_RANK[_short] : -1),
       ...(retired ? { retired: true } : {}), ...(walkover ? { walkover: true } : {}) });
   }
@@ -2732,6 +2725,21 @@ async function buildTournamentProgression(tourName) {
 async function fetchApiTennisMatchOdds(eventKey) {
   try {
     const url = `${API_TENNIS_BASE}?method=get_odds&APIkey=${API_TENNIS_KEY}&match_key=${eventKey}`;
+    // TEN-225 ruling N (founder 2026-09-18T22:58Z, re-approved 23:50Z): stamp the
+    // api-tennis book payload with OUR fetch instant.
+    //
+    // WHY IT IS LOAD-BEARING, not bookkeeping. api-tennis carries NO timestamp on
+    // any price — vendor-confirmed 2026-09-18 ("no timestamps on any price"). So a
+    // price taken from this payload reaches a card with no clock at all, and under
+    // ruling B's any-book ladder that is now MOST of the board. Ruling A asks the
+    // header to report the OLDEST price shown; without this stamp the header can
+    // only bound the dated minority and would read optimistically — the exact
+    // defect class ruling A exists to close.
+    //
+    // Taken BEFORE the await, so it is when we asked, not when the response
+    // happened to land. A slow response must not make the price look fresher
+    // than it is; erring earlier can only overstate age, never understate it.
+    const fetchedAt = new Date().toISOString();
     const data = await (await fetch(url)).json();
     const ha = data && data.result && data.result[eventKey] && data.result[eventKey]['Home/Away'];
     if (!ha || !ha.Home || !ha.Away) return null;
@@ -2798,10 +2806,14 @@ async function fetchApiTennisMatchOdds(eventKey) {
       if (v1 > 0 && v2 > 0) allBooks[bk] = { p1: v1, p2: v2 };
     }
     return {
-      odds: { p1, p2, bookmaker: ref },
-      bestOdds: { p1: bestSide('Home'), p2: bestSide('Away') },
+      // `seenAt` is OUR observation instant, never the book's — api-tennis
+      // publishes no book clock. Named `seenAt` to match the pin convention
+      // already used by m.bookOpens, so a reader cannot mistake it for an `at`.
+      odds: { p1, p2, bookmaker: ref, seenAt: fetchedAt },
+      bestOdds: { p1: bestSide('Home'), p2: bestSide('Away'), seenAt: fetchedAt },
       bet365,
       allBooks,
+      seenAt: fetchedAt,
     };
   } catch (e) {
     console.error('Finished-match odds fetch failed for', eventKey, '-', e.message);
