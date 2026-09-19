@@ -187,13 +187,14 @@
     "id1200210074798234": {
       "alerted": true,
       "alertedAt": "2026-09-18T15:06:54Z",
-      "captureLagH": null,
+      "captureLagH": 0.69,
       "date": "2026-09-19",
+      "firstSeenAt": "2026-09-19T00:15:56Z",
       "hoursOutAtAlert": 20.05,
-      "openAt": null,
+      "openAt": "2026-09-18T23:34:18.937Z",
       "p1": "H. Rune",
       "p2": "G. Dimitrov",
-      "postingLeadH": null,
+      "postingLeadH": 11.59,
       "startTime": "2026-09-19T11:10:00.000Z",
       "tour": "ATP ATP Davis Cup - World Group I"
     },
@@ -364,13 +365,14 @@
     "id1200210074800528": {
       "alerted": true,
       "alertedAt": "2026-09-18T15:06:54Z",
-      "captureLagH": null,
+      "captureLagH": 0.69,
       "date": "2026-09-19",
+      "firstSeenAt": "2026-09-19T00:15:56Z",
       "hoursOutAtAlert": 23.22,
-      "openAt": null,
+      "openAt": "2026-09-18T23:34:30.603Z",
       "p1": "L. Van Herck",
       "p2": "Z. Piros",
-      "postingLeadH": null,
+      "postingLeadH": 14.76,
       "startTime": "2026-09-19T14:20:00.000Z",
       "tour": "ATP ATP Davis Cup - World Group I"
     },
@@ -512,13 +514,14 @@
     "id1200210074801158": {
       "alerted": true,
       "alertedAt": "2026-09-18T15:06:54Z",
-      "captureLagH": null,
+      "captureLagH": 0.64,
       "date": "2026-09-19",
+      "firstSeenAt": "2026-09-19T00:15:56Z",
       "hoursOutAtAlert": 21.05,
-      "openAt": null,
+      "openAt": "2026-09-18T23:37:43.317Z",
       "p1": "O. Virtanen",
       "p2": "V. Vacherot",
-      "postingLeadH": null,
+      "postingLeadH": 12.54,
       "startTime": "2026-09-19T12:10:00.000Z",
       "tour": "ATP ATP Davis Cup - World Group I"
     },
@@ -920,13 +923,14 @@
     "id1200210074806102": {
       "alerted": true,
       "alertedAt": "2026-09-18T17:30:00Z",
-      "captureLagH": null,
+      "captureLagH": 0.69,
       "date": "2026-09-19",
+      "firstSeenAt": "2026-09-19T00:15:56Z",
       "hoursOutAtAlert": 23.83,
-      "openAt": null,
+      "openAt": "2026-09-18T23:34:20.173Z",
       "p1": "R. Cid Subervi",
       "p2": "K. Mabrouk",
-      "postingLeadH": null,
+      "postingLeadH": 17.76,
       "startTime": "2026-09-19T17:20:00.000Z",
       "tour": "ATP ATP Davis Cup - World Group II"
     },
@@ -1251,5 +1255,5 @@
   },
   "schema": "odds-open-monitor/1",
   "thresholdHours": 24.0,
-  "updatedAt": "2026-09-18T22:59:50Z"
+  "updatedAt": "2026-09-19T00:15:56Z"
 }
