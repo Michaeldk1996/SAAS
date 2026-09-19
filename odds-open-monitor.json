@@ -201,13 +201,14 @@
     "id1200210074798236": {
       "alerted": true,
       "alertedAt": "2026-09-18T15:06:54Z",
-      "captureLagH": null,
+      "captureLagH": 0.01,
       "date": "2026-09-19",
+      "firstSeenAt": "2026-09-19T09:53:58Z",
       "hoursOutAtAlert": 21.22,
-      "openAt": null,
+      "openAt": "2026-09-19T09:53:06.821Z",
       "p1": "E. Moller",
       "p2": "I. Radulov",
-      "postingLeadH": null,
+      "postingLeadH": 2.45,
       "startTime": "2026-09-19T12:20:00.000Z",
       "tour": "ATP ATP Davis Cup - World Group I"
     },
@@ -1015,26 +1016,28 @@
     "id1200210074808100": {
       "alerted": true,
       "alertedAt": "2026-09-19T01:15:00Z",
-      "captureLagH": null,
+      "captureLagH": -0.01,
       "date": "2026-09-20",
+      "firstSeenAt": "2026-09-19T09:53:58Z",
       "hoursOutAtAlert": 23.92,
-      "openAt": null,
+      "openAt": "2026-09-19T09:54:42.318Z",
       "p1": "A. Shepp",
       "p2": "S. Shimabukuro",
-      "postingLeadH": null,
+      "postingLeadH": 15.25,
       "startTime": "2026-09-20T01:10:00.000Z",
       "tour": "ATP ATP Davis Cup - World Group I"
     },
     "id1200210074808470": {
       "alerted": true,
       "alertedAt": "2026-09-19T02:30:00Z",
-      "captureLagH": null,
+      "captureLagH": 0.01,
       "date": "2026-09-20",
+      "firstSeenAt": "2026-09-19T09:53:58Z",
       "hoursOutAtAlert": 23.83,
-      "openAt": null,
+      "openAt": "2026-09-19T09:53:07.661Z",
       "p1": "J. Watt",
       "p2": "R. Sakamoto",
-      "postingLeadH": null,
+      "postingLeadH": 16.45,
       "startTime": "2026-09-20T02:20:00.000Z",
       "tour": "ATP ATP Davis Cup - World Group I"
     },
@@ -1387,5 +1390,5 @@
   },
   "schema": "odds-open-monitor/1",
   "thresholdHours": 24.0,
-  "updatedAt": "2026-09-19T09:30:00Z"
+  "updatedAt": "2026-09-19T09:53:58Z"
 }
