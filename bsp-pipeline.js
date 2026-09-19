@@ -2722,8 +2722,73 @@ async function buildTournamentProgression(tourName) {
 // event_second_player (= match.p2). We pick a reference bookmaker for the
 // headline `odds` and the highest price per side for `bestOdds`, mirroring the
 // odds-event shape so the dashboard renders them identically.
-async function fetchApiTennisMatchOdds(eventKey) {
+// ─────────────────── TEN-225 item I(1) — BULK-BY-DATE get_odds ──────────────
+// Founder 2026-09-19: "Poll get_odds bulk-by-date on a fixed cadence, detect
+// when a price has actually changed, and publish the change."
+//
+// WHAT THIS REPLACES. get_odds was called once PER MATCH (`match_key=`). On a
+// board of ~84 fixtures that is 84 HTTP calls every pipeline run, for data the
+// vendor hands over for a whole day in ONE call. MEASURED 2026-09-19:
+// `date_start=date_stop=<today>` returned 113 fixtures with every book in 6.9 s
+// and 599 KB. So the bulk shape is ~28x fewer calls for strictly more data.
+//
+// WHY THAT MATTERS BEYOND TIDINESS: it is what makes a tighter cadence free. At
+// one call per match, raising the cadence multiplies 84 calls; at one call per
+// date it multiplies 3.
+//
+// CADENCE, and why not faster. api-tennis refresh their books "at least every
+// 30 minutes" (vendor-confirmed). Polling faster than their refresh cannot
+// surface a price they have not taken, so the useful floor is set by THEIR
+// clock, not ours. At a 15-minute poll the worst case is their 30-minute
+// refresh plus our 15-minute gap; halving our gap again to 7 minutes buys ~7
+// minutes on a path whose DEPLOY leg alone costs ~26 minutes median. That is
+// why this rides the existing ~10-15 min pipeline tick rather than getting a
+// faster schedule of its own: below ~15 minutes the publish path, not the feed,
+// is the binding constraint.
+//
+// CACHED PER RUN, keyed by date. Every fixture on a given day is answered from
+// one payload, so two fixtures on the same date cannot disagree about what the
+// feed said at that instant — which is also what makes one `seenAt` honest for
+// all of them.
+const _atOddsByDate = new Map();
+
+async function fetchApiTennisOddsForDate(dateStr) {
+  if (_atOddsByDate.has(dateStr)) return _atOddsByDate.get(dateStr);
+  let entry;
   try {
+    const url = `${API_TENNIS_BASE}?method=get_odds&APIkey=${API_TENNIS_KEY}`
+              + `&date_start=${dateStr}&date_stop=${dateStr}`;
+    // Taken BEFORE the await — ruling N. When we asked, not when it landed.
+    const fetchedAt = new Date().toISOString();
+    const data = await (await fetch(url)).json();
+    entry = { result: (data && data.result) || null, fetchedAt, error: null };
+  } catch (e) {
+    // A failed day is recorded as an ERROR, never as an empty result. An empty
+    // result would read as "no book priced anything that day" and would quietly
+    // dash a whole date — the false-zero this issue has paid for repeatedly.
+    // The caller falls back to the per-match call on this, so a bad bulk day
+    // costs calls, never prices.
+    entry = { result: null, fetchedAt: null, error: e.message };
+    console.error('bulk get_odds failed for', dateStr, '-', e.message);
+  }
+  _atOddsByDate.set(dateStr, entry);
+  return entry;
+}
+
+async function fetchApiTennisMatchOdds(eventKey, eventDate) {
+  try {
+    // Bulk when we know the fixture's date, per-match otherwise. The per-match
+    // fallback is KEPT rather than removed: a caller with no date must still get
+    // its odds, and silently returning null there would drop prices off real
+    // cards to save a request.
+    if (eventDate) {
+      const bulk = await fetchApiTennisOddsForDate(String(eventDate).slice(0, 10));
+      if (bulk.result) {
+        // A date that returned successfully but does not carry this fixture is a
+        // real "no odds", not a reason to spend a second call.
+        return _shapeApiTennisOdds(bulk.result[String(eventKey)], bulk.fetchedAt, eventKey);
+      }
+    }
     const url = `${API_TENNIS_BASE}?method=get_odds&APIkey=${API_TENNIS_KEY}&match_key=${eventKey}`;
     // TEN-225 ruling N (founder 2026-09-18T22:58Z, re-approved 23:50Z): stamp the
     // api-tennis book payload with OUR fetch instant.
@@ -2741,7 +2806,20 @@ async function fetchApiTennisMatchOdds(eventKey) {
     // than it is; erring earlier can only overstate age, never understate it.
     const fetchedAt = new Date().toISOString();
     const data = await (await fetch(url)).json();
-    const ha = data && data.result && data.result[eventKey] && data.result[eventKey]['Home/Away'];
+    return _shapeApiTennisOdds(data && data.result && data.result[eventKey],
+                               fetchedAt, eventKey);
+  } catch (e) {
+    console.error('Finished-match odds fetch failed for', eventKey, '-', e.message);
+    return null;
+  }
+}
+
+// The ONE shaping rule, shared by the bulk and per-match paths. Extracted rather
+// than duplicated: two copies of "what counts as a usable pair" is exactly how
+// the bulk path would quietly start accepting something the per-match path
+// rejects, and every guard below (both-legs, >0, same-book) is load-bearing.
+function _shapeApiTennisOdds(entry, fetchedAt, eventKey) {
+    const ha = entry && entry['Home/Away'];
     if (!ha || !ha.Home || !ha.Away) return null;
     const books = Object.keys(ha.Home).filter(b => ha.Away[b] != null);
     if (!books.length) return null;
@@ -2815,10 +2893,6 @@ async function fetchApiTennisMatchOdds(eventKey) {
       allBooks,
       seenAt: fetchedAt,
     };
-  } catch (e) {
-    console.error('Finished-match odds fetch failed for', eventKey, '-', e.message);
-    return null;
-  }
 }
 
 async function buildPastMatchObject(fixture, surfaceMap, venueMap) {
@@ -2927,7 +3001,9 @@ async function buildPastMatchObject(fixture, surfaceMap, venueMap) {
   const pastMatchDateTime = `${fixture.event_date}T${(fixture.event_time || '12:00')}:00Z`;
   const [pastWeather, pastOdds] = await Promise.all([
     venueMap ? fetchMatchWeather(tour, pastMatchDateTime, venueMap) : Promise.resolve(null),
-    fetchApiTennisMatchOdds(fixture.event_key),
+    // event_date engages the BULK path: every fixture on this date is answered
+    // from one cached payload instead of one call each.
+    fetchApiTennisMatchOdds(fixture.event_key, fixture.event_date),
   ]);
   match.weather = pastWeather;
   if (pastOdds) {
@@ -3088,7 +3164,7 @@ async function buildUpcomingMatchObject(fixture, surfaceMap, venueMap) {
   // Odds from api-tennis get_odds — a fixture-only card has no the-odds-api
   // event, but api-tennis usually already carries a pre-match Home/Away market.
   // Keeps odds visible even when the-odds-api has no active tennis sport.
-  const upOdds = await fetchApiTennisMatchOdds(fixture.event_key);
+  const upOdds = await fetchApiTennisMatchOdds(fixture.event_key, fixture.event_date);
   if (upOdds) {
     match.odds = upOdds.odds;
     match.bestOdds = upOdds.bestOdds;
@@ -5273,9 +5349,17 @@ async function runPipeline() {
       // be skipped here, the carry would miss it, and the next run's pin would re-stamp
       // `seenAt` — turning a write-once first sighting into a value that silently
       // refreshes every 15 minutes. That is the failure mode write-once exists to stop.
-      if (!pm.openingOdds && !pm.closingOdds && !pm.bet365Now && !pm.bookOpens) continue;
+      // TEN-225 item I(1) — bookNow joins the same filter for the same reason,
+      // pointed the other way: a fixture whose only odds fact is an api-tennis
+      // current price would be skipped, the carry would miss it, and every sweep
+      // would look like a CHANGE because there was nothing to compare against.
+      // The `since` clock would then equal `seenAt` forever and the change
+      // detector would be a no-op that still reported changes.
+      if (!pm.openingOdds && !pm.closingOdds && !pm.bet365Now && !pm.bookOpens
+          && !pm.bookNow) continue;
       const rec = { openingOdds: pm.openingOdds || null, closingOdds: pm.closingOdds || null,
                     bookOpens: pm.bookOpens || null,
+                    bookNow: pm.bookNow || null,
                     // TEN-179 item 1 — the last bet365 NOW we hold. Unlike open/close this
                     // is NOT frozen: it is re-derived whenever this run has a bet365 stream.
                     // It is carried forward only so a run where the 3-hourly capture has not
@@ -5484,6 +5568,54 @@ async function runPipeline() {
     }
     if (Object.keys(out).length) m.bookOpens = out;
   };
+
+  // ───────── TEN-225 item I(1) — CHANGE DETECTION ON THE api-tennis NOW ──────
+  // Founder 2026-09-19: "Only publish on an actual change; an unchanged sweep
+  // must not advance anything except the observation clock."
+  //
+  // TWO CLOCKS, and the whole point is that they move independently:
+  //   seenAt  ADVANCES every sweep. It answers "how fresh is this reading" and
+  //           is what ruling A's header bound reads. An unchanged sweep is still
+  //           a real observation, so this must move — that is the "except" in
+  //           the founder's sentence.
+  //   since   DOES NOT advance while the price is unchanged. It answers "how
+  //           long has the book been at this number", which is the question
+  //           `at` answers for oddspapi and which api-tennis cannot answer for
+  //           itself (vendor-confirmed: no timestamps on any price).
+  //
+  // `since` is OURS, derived from consecutive observations, and is labelled as a
+  // first-seen rather than a book-post instant everywhere it surfaces. It is a
+  // LOWER bound on how long the price has stood: the book may have moved to this
+  // number before we first saw it. Erring that way can only overstate how
+  // recently it moved, never understate it — the same direction ruling N's
+  // fetch-instant stamp errs in, and for the same reason.
+  let bookNowChanged = 0, bookNowHeld = 0;
+  const trackBookNow = (m, carried) => {
+    const raw = m.apiTennisBooks;
+    if (!raw) return;
+    // A settled fixture's current price is a post-match quote, not a Now. Same
+    // guard pinBookOpens applies, for the same reason.
+    if (m.finalScore) return;
+    const seenAt = new Date().toISOString();
+    const prev = (carried && carried.bookNow) || {};
+    const out = {};
+    for (const bk of Object.keys(raw)) {
+      const v = raw[bk];
+      if (!(v && v.p1 > 0 && v.p2 > 0)) continue;     // both legs or nothing
+      const was = prev[bk];
+      // Compared on the PRICE PAIR only. Comparing the whole object would make
+      // every sweep a "change", because seenAt is in it — the bug that would
+      // turn this guard into a no-op while still looking implemented.
+      const unchanged = was && was.p1 === v.p1 && was.p2 === v.p2;
+      out[bk] = {
+        p1: v.p1, p2: v.p2,
+        seenAt,                                        // advances always
+        since: unchanged ? was.since : seenAt,         // holds while unchanged
+      };
+      if (unchanged) bookNowHeld++; else bookNowChanged++;
+    }
+    if (Object.keys(out).length) m.bookNow = out;
+  };
   for (const m of matches) {
     const carried = priorOdds.get(`id:${m.id}`)
       || priorOdds.get(`np:${m.date}|${normalizeName(m.p1)}|${normalizeName(m.p2)}`);
@@ -5502,6 +5634,10 @@ async function runPipeline() {
     // the vendor open.
     if (carried && carried.bookOpens) m.bookOpens = carried.bookOpens;
     pinBookOpens(m);
+    // Order matters: trackBookNow needs the PREVIOUS run's bookNow to tell an
+    // unchanged price from a new one, so it is handed `carried` directly rather
+    // than reading m.bookNow (which this run has not written yet).
+    trackBookNow(m, carried);
     // Guarded on !finalScore: a match with no oddsMovement at all `continue`s below before
     // reaching the delete, so an unguarded carry-forward would leave a stale live price
     // pinned to a settled card forever.
@@ -5837,6 +5973,16 @@ async function runPipeline() {
   // Actions log shows the capture growing (or not) rather than leaving it to be inferred
   // from the payload; a silent capture is indistinguishable from a broken one.
   {
+    // TEN-225 item I(1) — the change detector's own numbers, so "only publish on
+    // an actual change" is a measured claim rather than a described intention.
+    // A run where held is 0 and changed is large means the carry-forward is
+    // broken, not that the market is busy.
+    const nowBooks = matches.filter(m => m.bookNow && Object.keys(m.bookNow).length);
+    console.log(`api-tennis NOW (TEN-225 item I) — ${bookNowChanged} price(s) CHANGED,`
+      + ` ${bookNowHeld} unchanged (observation clock advanced, \`since\` held);`
+      + ` ${nowBooks.length} fixture(s) carry a current per-book price.`
+      + ` Bulk get_odds: ${_atOddsByDate.size} date payload(s) this run`
+      + ` (${[..._atOddsByDate.values()].filter(e => e.error).length} failed).`);
     const withBooks = matches.filter(m => m.bookOpens && Object.keys(m.bookOpens).length);
     const distinct = new Set();
     withBooks.forEach(m => Object.keys(m.bookOpens).forEach(b => distinct.add(b)));
