@@ -116,3 +116,15 @@ player-index.json
 
 # deployed-store cache (tools/deployed-store.js) — snapshots of the LIVE stores
 .deployed-cache/
+
+# ── SYMLINK FORMS, NOT JUST DIRECTORY FORMS ─────────────────────────────────
+# `node_modules/` and `.deployed-cache/` above carry a TRAILING SLASH, which
+# matches a directory and NOT a symlink. Both paths were committed as dangling
+# symlinks (mode 120000) by a `git add -A` run in a worktree where they had been
+# linked to another checkout for convenience. On a clean CI checkout they point
+# at a path that does not exist:
+#   node_modules      08e61cd9
+#   .deployed-cache   584a8045  -> broke "Assemble site" with ENOENT on mkdir
+# The slashless forms below close that. Locked by tools/test-no-broken-symlinks.js.
+node_modules
+.deployed-cache
