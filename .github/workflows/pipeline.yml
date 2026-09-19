@@ -789,7 +789,7 @@ jobs:
                 const lostSheet = keys.filter(k => live[k] && live[k].matchStats && !(site[k] && site[k].matchStats));
                 if (lostSheet.length && softFail(lostSheet.length, `${lostSheet.length} eventKey(s) carry a box score LIVE but not in _site (e.g. ${lostSheet.slice(0,3).join(", ")}) — the sheet would go blank for them.`)) return;
                 // Only keys present on BOTH sides. A key absent from _site reads as
-                // depth 0 here and would re-report axis 1's finding as a third,
+                // depth 0 here and would re-report the axis-1 finding as a third,
                 // separate failure — which is why the jitter tolerance above appeared
                 // to do nothing on the first run of its own controls: axes 1 and 2
                 // correctly warned, and this axis red-ed on the same keys anyway.
