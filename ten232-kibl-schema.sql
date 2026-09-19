@@ -81,6 +81,47 @@ alter table public.kibl_line_observations
     add column if not exists is_current  boolean,
     add column if not exists is_live     boolean;
 
+-- ─────────────── last_seen_at — founder ruling 2026-09-18, item A ──────────
+-- "Kibl last_seen_at — add it, bumped every sweep, first-write-wins kept on
+-- everything else." Approved 2026-09-18T22:58Z, re-ruled 2026-09-19 as next.
+--
+-- WHY. `observation_key()` hashes inserted_on + price + flags and NOT
+-- observed_at, under an ignore-duplicates insert. So a sweep that re-sees an
+-- UNCHANGED current price writes no row at all, and `observed_at` stays at the
+-- first sighting for as long as the book holds its price. MEASURED on the
+-- deployed board 2026-09-19: the sports411 `nowObs` clock runs a 191.7-minute
+-- median and a 1,026.8-minute (17-hour) p95 while the archive publishes every
+-- 2.5-5 minutes — an order of magnitude worse than any other source on the
+-- board, on a feed that is in fact the freshest we have.
+--
+-- WHAT IT DOES NOT CHANGE. `observed_at` still records the FIRST sighting and
+-- is never rewritten; so does every price column. This is one new field that is
+-- allowed to move, on a table that stays append-only in every other respect.
+--
+-- Added NULLABLE FIRST and backfilled from observed_at, deliberately. An
+-- `add column ... not null default now()` fills every existing row with the
+-- migration's own clock, which would claim we had just re-seen 8,000 historical
+-- prices — fabricating exactly the freshness this column exists to measure
+-- honestly. observed_at is the truthful last-seen for a row written before this.
+alter table public.kibl_line_observations
+    add column if not exists last_seen_at timestamptz;
+update public.kibl_line_observations
+    set last_seen_at = observed_at
+    where last_seen_at is null;
+alter table public.kibl_line_observations
+    alter column last_seen_at set default now();
+
+-- DEFAULT now() on observed_at is load-bearing for the refresh pass, exactly as
+-- it is on kibl_fixtures: Postgres evaluates NOT NULL on the PROPOSED insert
+-- tuple BEFORE resolving ON CONFLICT, so a partial merge payload that omits
+-- observed_at (which it MUST omit — sending it would overwrite the first
+-- sighting) fails 23502 on every row even though every row is an update.
+alter table public.kibl_line_observations
+    alter column observed_at set default now();
+
+create index if not exists kibl_lo_last_seen_idx
+    on public.kibl_line_observations (last_seen_at);
+
 create index if not exists kibl_lo_fixture_idx
     on public.kibl_line_observations (fixture_id, observed_at);
 create index if not exists kibl_lo_observed_idx

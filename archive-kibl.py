@@ -249,6 +249,10 @@ def to_summary(row, observed_at, league_id, sweep_id, raw_object):
         "price_decimal": num(row.get("price_decimal")),
         "price_fraction": row.get("price_fraction"),
         "sweep_id": sweep_id,
+        # Founder ruling 2026-09-18 item A. On a BRAND-NEW row the two clocks
+        # coincide; they diverge from the next sweep that re-sees this price.
+        # `observed_at` is never rewritten after this — see insert_rows().
+        "last_seen_at": observed_at,
         "raw_object": raw_object,
     }
 
@@ -337,11 +341,34 @@ def upsert_fixtures(url, key, rows):
     return new, failed
 
 
+# The ONLY columns a second sighting is allowed to move. Everything else on this
+# table is first-write-wins, because the earlier observation is the one that
+# cannot be re-fetched. `row_key` identifies the row; `fixture_id` and `state`
+# are in the payload only to satisfy Postgres's pre-conflict NOT NULL check, and
+# are no-ops by construction — both are inputs to observation_key(), so a row
+# with this row_key cannot have a different value for either.
+OBS_REFRESH_COLS = ("row_key", "fixture_id", "state", "last_seen_at")
+
+
 def insert_rows(url, key, rows):
-    """Upsert, ignoring duplicates. Returns (n_new, n_failed).
+    """Upsert, ignoring duplicates, then bump last_seen_at. -> (n_new, n_failed)
 
     `return=representation` is what makes n_new real: PostgREST hands back only
     the rows it actually inserted, so the count is measured rather than assumed.
+
+    PASS 2 IS THE FOUNDER'S ITEM A (2026-09-18): "Kibl last_seen_at — add it,
+    bumped every sweep, first-write-wins kept on everything else."
+
+    WHY IT IS A SECOND STATEMENT AND NOT A WIDER UPSERT. PostgREST's
+    merge-duplicates overwrites EVERY column it is sent, so one merged pass over
+    the full row would rewrite observed_at, the price and the flags on every
+    sweep — turning an append-only archive of an unrefetchable feed into a
+    last-write-wins one. The two-pass shape is what keeps first-write-wins, and
+    it is the same shape upsert_fixtures() already uses for the same reason.
+
+    ⚠️ A FAILED PASS 2 IS NOT COSMETIC and is counted as a failure: it means the
+    observation clock stops advancing, which is precisely the defect this ruling
+    exists to fix, and it would otherwise happen on a sweep reporting green.
     """
     new = 0
     failed = 0
@@ -356,6 +383,15 @@ def insert_rows(url, key, rows):
             print(f"::warning::insert chunk {i // INSERT_CHUNK} failed: {err}")
             continue
         new += len(got) if isinstance(got, list) else 0
+        seen = [{k: r[k] for k in OBS_REFRESH_COLS if k in r} for r in chunk]
+        _, err2 = sb_request(
+            "POST", f"/rest/v1/{TABLE_OBS}?on_conflict=row_key", url, key,
+            body=seen, headers={"Prefer": "resolution=merge-duplicates"})
+        if err2:
+            failed += len(chunk)
+            print(f"::warning::last_seen_at refresh chunk {i // INSERT_CHUNK} "
+                  f"failed: {err2} — the observation clock did NOT advance for "
+                  f"{len(chunk)} rows")
     return new, failed
 
 

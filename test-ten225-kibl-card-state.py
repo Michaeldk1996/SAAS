@@ -868,6 +868,103 @@ check('rows from another book are still COUNTED, not merely dropped: the day a '
 check('the guard names item 7 where a future reader will be standing',
       any('ITEM 7' in ln.upper() for ln in _SRC_LINES))
 
+# ───────────── last_seen_at — founder ruling 2026-09-18 item A ─────────────
+# "Kibl last_seen_at — add it, bumped every sweep, first-write-wins kept on
+# everything else." The defect it fixes: observation_key() hashes inserted_on +
+# price + flags and NOT observed_at, under an ignore-duplicates insert, so a
+# sweep that re-sees an unchanged price wrote NO row and the clock never moved —
+# a 191.7-minute median and a 1,026.8-minute p95 on a feed that publishes every
+# 2.5-5 minutes.
+print('\nlast_seen_at — the only column a second sighting may move')
+
+_row = {'fixture_id': 7, 'side_id': 2, 'price_decimal': '1.91',
+        'inserted_on': '2026-09-19T01:00:00Z', 'is_current': True,
+        'feed_source_id': 43, 'market_type_id': 1, 'segment_id': 1,
+        'betting_type_id': 1, 'fixture_participant_id': 11}
+_sum = A.to_summary(_row, '2026-09-19T01:05:00Z', 19, 'sw1', '{}')
+check('a BRAND-NEW row carries last_seen_at, and it equals observed_at — the '
+      'two clocks coincide on a first sighting and diverge from the next sweep',
+      _sum.get('last_seen_at') == _sum.get('observed_at') == '2026-09-19T01:05:00Z',
+      _sum.get('last_seen_at'))
+
+check('the refresh payload moves last_seen_at and NOTHING that would break '
+      'first-write-wins — no observed_at, no price, no inserted_on',
+      set(A.OBS_REFRESH_COLS) == {'row_key', 'fixture_id', 'state', 'last_seen_at'},
+      str(sorted(A.OBS_REFRESH_COLS)))
+for _forbidden in ('observed_at', 'price_decimal', 'inserted_on', 'is_opener', 'sweep_id'):
+    check(f'...specifically, {_forbidden} is NOT in it — a merge pass overwrites '
+          f'every column it is sent, and that one is unrefetchable',
+          _forbidden not in A.OBS_REFRESH_COLS)
+
+# The two-pass insert, over a stubbed transport. This is the behaviour, not the
+# constant: a payload that never leaves the process would satisfy every
+# assertion above and advance no clock at all.
+_calls = []
+def _fake_sb(method, path, url, key, body=None, headers=None):
+    _calls.append({'method': method, 'path': path, 'body': body,
+                   'prefer': (headers or {}).get('Prefer', '')})
+    return ([] if 'ignore-duplicates' in (headers or {}).get('Prefer', '') else None), None
+_real_sb = A.sb_request
+A.sb_request = _fake_sb
+_n, _f = A.insert_rows('u', 'k', [dict(_sum, row_key='nk_a', state='current')])
+A.sb_request = _real_sb
+check('insert_rows makes TWO statements, not one', len(_calls) == 2, str(len(_calls)))
+check('pass 1 is ignore-duplicates, so an existing observation is untouched',
+      'ignore-duplicates' in _calls[0]['prefer'])
+check('pass 2 is merge-duplicates, so an existing row IS updated',
+      len(_calls) > 1 and 'merge-duplicates' in _calls[1]['prefer'])
+check('pass 2 carries ONLY the refresh columns',
+      len(_calls) > 1 and set(_calls[1]['body'][0]) <= set(A.OBS_REFRESH_COLS),
+      str(sorted(_calls[1]['body'][0])) if len(_calls) > 1 else '-')
+check('pass 2 actually carries a last_seen_at value',
+      len(_calls) > 1 and _calls[1]['body'][0].get('last_seen_at') == '2026-09-19T01:05:00Z')
+
+# A silent pass-2 failure is the exact defect the ruling exists to remove, so it
+# must be counted, not logged past.
+_calls2 = []
+def _fail_pass2(method, path, url, key, body=None, headers=None):
+    pref = (headers or {}).get('Prefer', '')
+    _calls2.append(pref)
+    if 'merge-duplicates' in pref:
+        return None, '23502 null value in column "observed_at"'
+    return [], None
+A.sb_request = _fail_pass2
+_n2, _f2 = A.insert_rows('u', 'k', [dict(_sum, row_key='nk_b', state='current')])
+A.sb_request = _real_sb
+check('a FAILED last_seen_at refresh is counted as a failure — the clock not '
+      'advancing on a green sweep is the whole defect',
+      _f2 == 1, f'failed={_f2}')
+
+check('the projection reads last_seen_at for the NOW clock',
+      "newest.get('last_seen_at')" in _CODE)
+check('...and falls back to observed_at for rows written before the migration, '
+      'where observed_at IS the last time we saw them',
+      "or newest.get('observed_at')" in _CODE)
+# BEHAVIOURAL, not a string search: the first draft of this assertion sliced the
+# source around a marker and went red against correct code, because the new
+# OBS_COLUMNS comment mentions last_seen_at in the sliced region. It was
+# measuring the comment, not the rule. This drives the real function instead.
+_openers = [
+    {'is_opener': True, 'price_decimal': '2.10', 'inserted_on': '2026-09-19T00:00:00Z',
+     'observed_at': '2026-09-19T00:02:00Z', 'last_seen_at': '2026-09-19T09:00:00Z'},
+    {'is_opener': True, 'price_decimal': '2.10', 'inserted_on': '2026-09-19T00:00:00Z',
+     'observed_at': '2026-09-19T00:30:00Z', 'last_seen_at': '2026-09-19T09:00:00Z'},
+]
+_op = K.open_of(_openers)
+check('the OPEN clock is the FIRST sighting and does NOT move to last_seen_at — '
+      'a re-served opener must not drift its own "when did we first see it"',
+      _op[3] == '2026-09-19T00:02:00Z', str(_op[3]))
+
+_SCHEMA = open(os.path.join(HERE, 'ten232-kibl-schema.sql')).read()
+check('the column is added NULLABLE and backfilled from observed_at — a '
+      '"not null default now()" would stamp every historical row with the '
+      "migration's own clock and fabricate the freshness it measures",
+      'add column if not exists last_seen_at timestamptz;' in _SCHEMA
+      and 'set last_seen_at = observed_at' in _SCHEMA)
+check('observed_at gains a DEFAULT, without which the partial merge pass 400s '
+      'on 23502 for every row even though every row is an update',
+      'alter column observed_at set default now()' in _SCHEMA)
+
 print()
 if FAILED:
     print(f'{len(FAILED)} FAILED: {FAILED}')

@@ -130,7 +130,11 @@ MIN_N = 30                  # standing rule: flag anything below this
 OBS_COLUMNS = (
     'fixture_id,side_id,participant_id,fixture_participant_id,'
     'market_type_id,segment_id,betting_type_id,is_live,'
-    'is_opener,is_current,price_decimal,inserted_on,observed_at,alt_id,'
+    # last_seen_at — founder ruling 2026-09-18 item A, bumped every sweep. It is
+    # the ONLY column on this table that moves; it is what makes a re-sighting
+    # of an UNCHANGED price visible at all, and therefore what lets a flat 0%
+    # be evidenced rather than suppressed.
+    'is_opener,is_current,price_decimal,inserted_on,observed_at,last_seen_at,alt_id,'
     # feed_source_id is SELECTED, not merely filtered on, so the projection can
     # assert per row that every price it is about to stamp `sports411` actually
     # came from Sports411. A filter alone is a promise about the query; reading
@@ -844,29 +848,36 @@ def build_rows(kibl_fixtures, observations, odds_index, as_of,
                 # These two columns carry OUR sweep clock, which is the clock
                 # a 0% actually rests on.
                 #
-                # ⚠️ AND ON THIS SOURCE THAT IS NOT YET ENOUGH — say so rather
-                # than let the column imply otherwise. kibl_line_observations is
-                # append-only and its row_key (kibl_client.observation_key)
-                # hashes inserted_on + price + flags WITHOUT observed_at, under
-                # an ignore-duplicates insert. A sweep that re-sees an unchanged
-                # current price therefore writes no row at all, so observed_at
-                # never advances and now_observed_at > open_observed_at holds
-                # exactly when now_ts <> open_ts — the test the renderer already
-                # applied. Measured on the deployed file, 32 complete Kibl
-                # sides: the two rules agree 32/32, zero behaviour change.
+                # ⚠️ AND ON THIS SOURCE IT NEEDED A PART 1 CHANGE TO WORK.
+                # kibl_line_observations is append-only and its row_key
+                # (kibl_client.observation_key) hashes inserted_on + price +
+                # flags WITHOUT observed_at, under an ignore-duplicates insert.
+                # A sweep that re-sees an unchanged current price therefore
+                # writes no row, so `observed_at` never advanced and
+                # now_observed_at > open_observed_at held exactly when
+                # now_ts <> open_ts — the test the renderer already applied, so
+                # the column added nothing. MEASURED on the deployed board
+                # 2026-09-19: sports411's nowObs ran a 191.7-minute median and a
+                # 1,026.8-minute p95 while the archive publishes every 2.5-5
+                # minutes, an order of magnitude worse than anything else on the
+                # board, on the freshest feed we have.
                 #
-                # What IS fixed here is the second half of the founder's
-                # question — the shape now exists nowhere in the publisher
-                # UNLABELLED: every row states which clock is whose, and the
-                # api-tennis fallback (ten225-load-card-state.py) writes a
-                # genuine sighting clock. Evidencing a Kibl RE-sighting needs a
-                # last_seen_at bumped per sweep on the archive table, which is a
-                # Part 1 change to an append-only store and the founder's call.
+                # FIXED at source (founder ruling 2026-09-18 item A, built
+                # 2026-09-19): `last_seen_at` on kibl_line_observations, bumped
+                # by a second merge pass on every sweep, first-write-wins kept on
+                # every other column. The Now clock reads it here.
+                #
+                # The FALLBACK to observed_at is for rows written before that
+                # migration, where observed_at IS the last time we saw them —
+                # the truthful value, not a placeholder. The Open deliberately
+                # does NOT fall back the other way: an Open's clock is its FIRST
+                # sighting and must never move.
                 # See `open_observed_at` in ten225-card-state-schema.sql.
                 'open_observed_at': open_obs,
                 'now_price': (float(newest['price_decimal']) if newest else None),
                 'now_ts': (newest['inserted_on'] if newest else None),
-                'now_observed_at': (newest.get('observed_at') if newest else None),
+                'now_observed_at': ((newest.get('last_seen_at')
+                                     or newest.get('observed_at')) if newest else None),
                 'close_price': (float(close_obs['price_decimal'])
                                 if (close_obs and reliable) else None),
                 'close_ts': close_ts if (close_obs and reliable) else None,
