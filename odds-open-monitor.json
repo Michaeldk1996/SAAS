@@ -298,13 +298,14 @@
     "id1200210074800504": {
       "alerted": true,
       "alertedAt": "2026-09-18T15:06:54Z",
-      "captureLagH": null,
+      "captureLagH": 0.06,
       "date": "2026-09-19",
+      "firstSeenAt": "2026-09-19T01:15:00Z",
       "hoursOutAtAlert": 23.55,
-      "openAt": null,
+      "openAt": "2026-09-19T01:11:33.540Z",
       "p1": "C. Ruud",
       "p2": "J. Cui",
-      "postingLeadH": null,
+      "postingLeadH": 13.47,
       "startTime": "2026-09-19T14:40:00.000Z",
       "tour": "ATP ATP Davis Cup - World Group I"
     },
@@ -984,6 +985,19 @@
       "startTime": "2026-09-19T01:10:00.000Z",
       "tour": "ATP ATP Davis Cup - World Group I"
     },
+    "id1200210074808100": {
+      "alerted": true,
+      "alertedAt": "2026-09-19T01:15:00Z",
+      "captureLagH": null,
+      "date": "2026-09-20",
+      "hoursOutAtAlert": 23.92,
+      "openAt": null,
+      "p1": "A. Shepp",
+      "p2": "S. Shimabukuro",
+      "postingLeadH": null,
+      "startTime": "2026-09-20T01:10:00.000Z",
+      "tour": "ATP ATP Davis Cup - World Group I"
+    },
     "id1200210074818508": {
       "alerted": false,
       "captureLagH": 4.33,
@@ -1257,5 +1271,5 @@
   },
   "schema": "odds-open-monitor/1",
   "thresholdHours": 24.0,
-  "updatedAt": "2026-09-19T01:00:01Z"
+  "updatedAt": "2026-09-19T01:15:00Z"
 }
