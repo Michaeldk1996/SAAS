@@ -7834,7 +7834,17 @@ const MOVE_UNPRICED = -2;  // the card shows no price at all: no open, no now, e
 // `moveNowScore` already returns exactly that as a positive number, so the
 // filter is one comparison and cannot drift away from the sort's definition —
 // the tile, the order and the filter read one resolver.
-function mxMoved(m){ return moveNowScore(m) > 0; }
+function mxMoved(m){
+  const p = _mcOpenNowPair(m);
+  if (!p || !(p.o1 > 0) || !(p.o2 > 0) || !(p.n1 > 0) || !(p.n2 > 0)) return false;
+  // ROUNDED THE WAY THE CELL ROUNDS. oddsPctDelta is `Math.round((now/open-1)*100)`,
+  // so a 0.3% move is a positive score AND a painted "0%". The first cut of this
+  // filter used `moveNowScore(m) > 0` and 3 of 12 survivors on the live board
+  // printed 0% on both legs — the wall of 0% cards the founder asked to be rid
+  // of, just shorter. Sharing oddsPctDelta is what makes the filter and the cell
+  // agree by construction rather than by coincidence.
+  return oddsPctDelta(p.o1, p.n1).pct !== 0 || oddsPctDelta(p.o2, p.n2).pct !== 0;
+}
 // "Fully unpriced" is defined by what the CARD PAINTS, not by what some store
 // holds — these are the same three resolvers the card face reads, so the bottom
 // tier is exactly the set of cards a member sees as dash/dash.

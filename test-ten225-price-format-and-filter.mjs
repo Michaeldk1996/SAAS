@@ -84,10 +84,15 @@ test('EVERY odds template on the board goes through it — no cell left at 2dp',
 // ── ITEM 5 — the filter ───────────────────────────────────────────────────
 const filterSrc = ['mxDriftView', 'mxMoved'].map(slice).join('\n');
 
-test('mxMoved is the SORT\'s own definition, not a second one', () => {
-  // A separate predicate is how the tile, the order and the filter come to
-  // disagree about which fixtures moved.
-  assert.match(slice('mxMoved'), /moveNowScore\(m\)\s*>\s*0/);
+test('mxMoved rounds the way the CELL rounds — a painted 0% is not a move', () => {
+  // SUPERSEDED, rewritten rather than deleted. This asserted
+  // `moveNowScore(m) > 0`, which is a positive score and a painted "0%" for any
+  // move under 0.5% — measured on the live board, 3 of 12 survivors printed 0%
+  // on both legs. The founder's rule is about what he sees, so the filter shares
+  // oddsPctDelta with the cell.
+  assert.match(slice('mxMoved'), /oddsPctDelta\(p\.o1, p\.n1\)\.pct !== 0/);
+  assert.match(slice('mxMoved'), /oddsPctDelta\(p\.o2, p\.n2\)\.pct !== 0/);
+  assert.match(slice('mxMoved'), /_mcOpenNowPair\(m\)/);   // still ONE resolver
 });
 
 test('the filter runs on mxDriftView(), not on state.sort alone', () => {
@@ -115,15 +120,21 @@ test('the counts are recorded so the tile can say what was filtered', () => {
 test('the predicate itself, over manufactured fixtures', () => {
   const { mxMoved } = new Function(`
     const state = { view: 'upcoming', sort: 'drift' };
-    const MOVE_NONE = -1, MOVE_UNPRICED = -2;
-    const moveNowScore = m => m.__score;
+    const _mcOpenNowPair = m => m.__pair;
+    ${slice('oddsPctDelta')}
     ${filterSrc}
     return { mxMoved };`)();
-  assert.equal(mxMoved({ __score: 0.385 }), true,  'a real move survives');
-  assert.equal(mxMoved({ __score: 0.0001 }), true, 'a tiny real move survives');
-  assert.equal(mxMoved({ __score: 0 }), false,     'a 0% card is dropped');
-  assert.equal(mxMoved({ __score: -1 }), false,    'no computable move is dropped');
-  assert.equal(mxMoved({ __score: -2 }), false,    'an unpriced card is dropped');
+  const pair = (o1, n1, o2 = 2.0, n2 = 2.0) => ({ __pair: { o1, n1, o2, n2 } });
+  assert.equal(mxMoved(pair(6.50, 9.00)), true, 'a real move survives');
+  assert.equal(mxMoved(pair(1.22, 1.22)), false, 'a flat card is dropped');
+  assert.equal(mxMoved(pair(1.000, 1.004)), false,
+    'a 0.4% move PAINTS as 0% and must be dropped — the live-board defect');
+  assert.equal(mxMoved(pair(1.00, 1.01)), true, 'a 1% move is a move');
+  assert.equal(mxMoved(pair(2.00, 2.00, 1.50, 1.60)), true,
+    'a move on EITHER leg keeps the card');
+  assert.equal(mxMoved({ __pair: null }), false, 'no computable move is dropped');
+  for (const bad of [{ o1: 0, n1: 1, o2: 2, n2: 2 }, { o1: 1, n1: 0, o2: 2, n2: 2 }])
+    assert.equal(mxMoved({ __pair: bad }), false, 'a non-price is not a move');
 });
 
 test('clicking again restores the full board', () => {
