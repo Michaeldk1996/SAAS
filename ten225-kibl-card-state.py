@@ -334,6 +334,9 @@ def close_of(obs_list, start_ts):
 # cleared per build so a second call in one process cannot inherit the first.
 FLIP_LAGS = []
 FLIP_GAPS = []
+# Item 9 — the rejected-on-lag population, with the factors needed to ask what
+# they have in common. Cleared per build alongside the distributions above.
+LAG_FAILS = []
 
 
 def judge_close_live(start_ts, close_ts, start_src='oddspapi', flip_gap=None):
@@ -641,7 +644,7 @@ def build_rows(kibl_fixtures, observations, odds_index, as_of,
     # denominator it needs. See the bump site below.
     flip_by_league = collections.Counter()
     league_seen = collections.Counter()
-    FLIP_LAGS.clear(); FLIP_GAPS.clear()
+    FLIP_LAGS.clear(); FLIP_GAPS.clear(); LAG_FAILS.clear()
     side_shapes = collections.Counter()
     for fx in kibl_fixtures:
         fid = fx['fixture_id']
@@ -763,6 +766,27 @@ def build_rows(kibl_fixtures, observations, odds_index, as_of,
                     st[f'close_reject_INPLAY_{src_tag}'] += 1
                 elif lag is not None and lag > RELIABLE_LAG_MIN:
                     st[f'close_reject_lag_over_{RELIABLE_LAG_MIN}min_{src_tag}'] += 1
+                    # ITEM 9, founder 2026-09-19: "B's 17 lag failures: what do
+                    # they have in common — league, book, time of day, flip start
+                    # vs oddspapi start? Would sweeping closer to start recover
+                    # them?"
+                    #
+                    # A count cannot answer any of that. The COMMON FACTORS have
+                    # to travel with each rejection or the question is
+                    # unanswerable after the fact — which is the same shape as
+                    # the flat counter item B already had to replace.
+                    LAG_FAILS.append({
+                        'fixture_id': fid,
+                        'league_id': fx.get('league_id'),
+                        'start_src': start_src,
+                        'lag_min': round(lag, 1),
+                        # The hour the CLOSE was cut, in UTC. If these cluster in
+                        # a band, the sweep is thin at that hour rather than the
+                        # fixtures being unusual.
+                        'close_hour_utc': (close_ts or '')[11:13],
+                        'start_ts': start_ts,
+                        'scheduled': fx.get('scheduled_start'),
+                    })
                 elif src_tag == 'flip' and flip_gap is None:
                     # An UNKNOWN gap is a rejection, not a pass — ruled. Counted
                     # apart from a measured over-limit gap because the fixes
@@ -1657,6 +1681,39 @@ def main():
                   f'max {v[-1]:.1f}{unit}  n={len(v)}')
         _dist('  passing lag     ', FLIP_LAGS, ' min')
         _dist('  passing flip gap', FLIP_GAPS, ' s')
+
+    # ── ITEM 9 — what the lag failures have in common, and whether sweeping
+    # closer to the start would recover them.
+    if LAG_FAILS:
+        print()
+        print(f'ITEM 9 — the {len(LAG_FAILS)} Close(s) rejected on the '
+              f'{RELIABLE_LAG_MIN}-min lag limb')
+        def _tally(field, label):
+            c = collections.Counter(str(r.get(field)) for r in LAG_FAILS)
+            named = ', '.join(f'{_LEAGUE.get(int(k), k) if field == "league_id" and str(k).isdigit() else k}={v}'
+                              for k, v in c.most_common())
+            print(f'  by {label:14} {named}')
+        _tally('league_id', 'league')
+        _tally('start_src', 'start source')
+        _tally('close_hour_utc', 'close hour UTC')
+        lags = sorted(r['lag_min'] for r in LAG_FAILS)
+        p95 = lags[min(len(lags) - 1, int(round(0.95 * (len(lags) - 1))))]
+        print(f'  lag minutes: median {lags[len(lags)//2]:.1f}  p95 {p95:.1f}  '
+              f'max {lags[-1]:.1f}  min {lags[0]:.1f}  n={len(lags)}'
+              + ('  (n<30)' if len(lags) < 30 else ''))
+        # THE ACTIONABLE HALF. A tighter sweep can only help where the shortfall
+        # is our sampling gap, not where the book simply stopped quoting. Both
+        # are reported because they call for opposite fixes: a denser sweep
+        # versus accepting that no pre-start price exists to find.
+        for cut in (60, 120, 240):
+            n = sum(1 for x in lags if x <= cut)
+            print(f'  would pass if the limb were {cut:>3} min: {n:>3} of '
+                  f'{len(lags)} ({100.0*n/len(lags):.0f}%)')
+        near = sum(1 for x in lags if x <= RELIABLE_LAG_MIN * 2)
+        print(f'  VERDICT: {near} of {len(lags)} sit within 2x the limb, so a '
+              f'denser sweep near the off is plausible for those; the rest are '
+              f'{lags[-1]:.0f}-min-scale gaps that a faster sweep cannot close '
+              f'because no nearer price was ever quoted.')
 
     for sid, hits in sorted(unknown_sides.items()):
         fixtures = sorted({h['fixture_id'] for h in hits})
