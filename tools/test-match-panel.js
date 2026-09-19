@@ -459,5 +459,75 @@ check('the Live trading modal states the window AND the tour population', () => 
     'the tour caveat must be carried where the tile has no room for it');
 });
 
+// ── the tiebreak shape, taken from the REAL shard ───────────────────────────
+//
+// Deployed pbp/12162596.json (2026 US Open final), set 2 — 22 entries for a
+// 12-game set: g1..g12 real games to 6-6, then NINE entries with an empty
+// points[] and `g` restarting at 1 carrying the tiebreak's point progression
+// (1-0 .. 7-2), then g13 "7 - 6" whose single point is the blank " - ".
+//
+// Painted naively that is nine extra "games" with bogus scores and LOST SERVE
+// badges on most of them. This fixture reproduces the shape exactly.
+const TB_SET = { set: 2, games: [
+  ...[['1 - 0','p1','p1'],['1 - 1','p2','p2'],['2 - 1','p1','p1'],['2 - 2','p2','p2'],
+      ['3 - 2','p1','p1'],['3 - 3','p2','p2'],['4 - 3','p1','p1'],['4 - 4','p2','p2'],
+      ['5 - 4','p1','p1'],['5 - 5','p2','p2'],['6 - 5','p1','p1'],['6 - 6','p2','p2']]
+    .map(([score, server, winner], i) => game(i + 1, server, winner, score, [{ n: 1, s: '15 - 0' }])),
+  ...['1 - 0','2 - 0','3 - 0','4 - 0','5 - 0','5 - 1','5 - 2','6 - 2','7 - 2']
+    .map((score, i) => game(i + 1, i % 2 ? 'p2' : 'p1', 'p1', score, [])),
+  game(13, 'p2', 'p1', '7 - 6', [{ n: 1, s: ' - ' }]),
+] };
+
+check('a tiebreak is split out of the games, not painted as nine extra games', () => {
+  const I = load(FULL());
+  const sp = I.mpSplitSet(TB_SET);
+  assert.strictEqual(sp.games.length, 12, `expected 12 real games, got ${sp.games.length}`);
+  assert.strictEqual(sp.tb.length, 9, `expected 9 tiebreak points, got ${sp.tb.length}`);
+  assert.ok(sp.closer && sp.closer.score === '7 - 6', 'the set closer was not recognised');
+  assert.strictEqual(I.mpTbPoints(sp.tb), 2, 'the tiebreak score is 7-2, so the superscript is 2');
+});
+
+check('the set score comes from the closer, and the superscript from the log', () => {
+  const I = load(FULL());
+  const cells = I.mpSetGames({ sets: [] }, { p1Key: 4242, p2Key: 7777, sets: [TB_SET] }, true);
+  assert.deepStrictEqual(cells.map((c) => [c.a, c.b, c.tb]), [[7, 6, 2]],
+    'a tiebreak set must read 7-6 with a superscript of 2: ' + JSON.stringify(cells));
+  const flipped = I.mpSetGames({ sets: [] }, { p1Key: 4242, p2Key: 7777, sets: [TB_SET] }, false);
+  assert.deepStrictEqual(flipped.map((c) => [c.a, c.b, c.tb]), [[6, 7, 2]],
+    'the opponent side must read 6-7 with the SAME tiebreak points');
+});
+
+check('the Points tab gives the tiebreak its own block and says so', () => {
+  const o = FULL();
+  o.pbpShards = { [String(EK)]: { p1Key: 4242, p2Key: 7777, sets: [TB_SET] } };
+  const I = load(o);
+  I.state.mpTab = 'points'; I.state.mpPointSet = '2';
+  const html = I.renderMatchPanel(SUBJECT, I.build(SUBJECT), SHEET_ID);
+  assert.ok(/Tiebreak/.test(html), 'the tiebreak has no block of its own');
+  assert.ok(/SET 2 . 12 GAMES/.test(html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ')),
+    'the game count must exclude the tiebreak mini-points');
+  assert.ok(/not counted among the 12 games/.test(html),
+    'the split must be stated, not silent');
+  // The load-bearing one: count the rendered GAME blocks. A badge count is too
+  // loose — a mutant that painted all 22 entries as games still landed under a
+  // "<= 6 badges" threshold, because this fixture's real games are all holds.
+  // The 18px score pair is one per game block and nothing else uses it.
+  const gameBlocks = (html.match(/font-size:18px;font-weight:700/g) || []).length / 2;
+  assert.strictEqual(gameBlocks, 12,
+    `${gameBlocks} game blocks rendered — the tiebreak's 9 mini-points are being painted as games`);
+  // ...and no mini-point may wear a LOST SERVE badge: in this fixture every real
+  // game is a hold, so the correct badge count is exactly zero.
+  assert.strictEqual((html.match(/LOST SERVE/g) || []).length, 0,
+    'a tiebreak mini-point was badged as a broken service game');
+});
+
+check('a set with NO tiebreak grows no tiebreak block', () => {
+  const I = load(FULL());
+  const sp = I.mpSplitSet(PBP.sets[0]);
+  assert.strictEqual(sp.tb.length, 0, 'a plain set sprouted tiebreak points');
+  assert.strictEqual(sp.games.length, 3, 'a plain set lost games to the split');
+  assert.strictEqual(I.mpTbPoints(sp.tb), null, 'a superscript was invented for a set with no tiebreak');
+});
+
 console.log(`\n§8.2 match panel: ${pass} pass, ${fail} fail`);
 if (fail) { console.error(`FAILED: ${fail} check(s)`); process.exit(1); }

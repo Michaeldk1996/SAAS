@@ -8891,29 +8891,90 @@
    * the deployed store Zverev has it on 376 of 775 rows and Borges on 0 of 365).
    * Returns null when neither holds it; the caller dashes rather than guessing.
    */
+  /**
+   * Split one set's `games` array into real games, the tiebreak's point
+   * progression, and the set-closing marker.
+   *
+   * MEASURED on the deployed shard for the 2026 US Open final (12162596), set 2 —
+   * 22 entries for a 12-game set:
+   *     g1..g12   1-0 .. 6-6     each with a points[] array      <- real games
+   *     g1..g9    1-0 .. 7-2     points[] EMPTY, `g` restarts    <- the TIEBREAK
+   *     g13       7 - 6          one point, its score is " - "   <- set closer
+   * This is the same shape build-situational.js hit ("Set N TieBreak", one row
+   * per mini-serve). Painted naively, a tiebreak renders as nine extra games
+   * with bogus scores and LOST SERVE badges on most of them.
+   *
+   * The discriminator is the POINTS, not the `g` counter: a real game always
+   * carries at least one point with a real score string. An entry with none is
+   * not a game. That also catches the closing marker, whose single point is the
+   * blank " - ".
+   *
+   * The tiebreak's last entry carries the final tiebreak score (7-2 here), which
+   * is where the export's `7-6(2)` superscript comes from. It is READ, never
+   * derived from the rules of tennis.
+   */
+  function mpSplitSet(st) {
+    var entries = (st && st.games) || [];
+    var games = [], tb = [], closer = null;
+    for (var i = 0; i < entries.length; i++) {
+      var e = entries[i];
+      var pts = (e.points || []).filter(function (p) {
+        return p && String(p.s || '').replace(/[\s-]/g, '').length > 0;
+      });
+      if (pts.length) { games.push(e); continue; }
+      // No real points. Either a tiebreak mini-point or the set closer — the
+      // closer is the one whose score is the SET score (a games total one side
+      // has won by at least 6), and it is always last.
+      if (i === entries.length - 1) closer = e; else tb.push(e);
+    }
+    // A trailing entry that is plainly a tiebreak point (the set has not been
+    // closed by it) belongs with the tiebreak rather than being called a closer.
+    if (closer && !tb.length && !games.length) { tb.push(closer); closer = null; }
+    return { games: games, tb: tb, closer: closer };
+  }
+
+  /** The loser's points in a tiebreak, read off its last recorded score. */
+  function mpTbPoints(tb) {
+    if (!tb || !tb.length) return null;
+    var last = tb[tb.length - 1];
+    var parts = String(last.score || '').split('-');
+    var a = parseInt(String(parts[0]).replace(/[^0-9]/g, ''), 10);
+    var b = parseInt(String(parts[1] || '').replace(/[^0-9]/g, ''), 10);
+    if (!isFinite(a) || !isFinite(b)) return null;
+    return Math.min(a, b);
+  }
+
   function mpSetGames(m, shard, first) {
     var out = null;
     if (shard && Array.isArray(shard.sets) && shard.sets.length) {
       out = [];
       for (var i = 0; i < shard.sets.length; i++) {
         var st = shard.sets[i];
-        var games = st.games || [];
-        var last = games.length ? games[games.length - 1] : null;
+        var sp = mpSplitSet(st);
+        // The set score is the CLOSER's when there is one (a tiebreak set ends
+        // on it); otherwise the last real game's.
+        var last = sp.closer || (sp.games.length ? sp.games[sp.games.length - 1] : null);
         if (!last || !last.score) { out.push({ a: null, b: null, tb: null }); continue; }
         var parts = String(last.score).split('-');
         var p1 = parseInt(String(parts[0]).replace(/[^0-9]/g, ''), 10);
         var p2 = parseInt(String(parts[1] || '').replace(/[^0-9]/g, ''), 10);
         out.push({
           a: first ? p1 : p2, b: first ? p2 : p1,
-          tb: st.tiebreak ? true : null
+          // The export's superscript is the loser's tiebreak POINTS, read off
+          // the log's own last tiebreak score — never reconstructed from the
+          // rules of tennis.
+          tb: mpTbPoints(sp.tb)
         });
       }
       return out;
     }
     if (m && Array.isArray(m.sets) && m.sets.length) {
       return m.sets.map(function (s) {
-        return { a: s.p != null ? s.p : null, b: s.o != null ? s.o : null,
-                 tb: (s.pTb != null || s.oTb != null) ? true : null };
+        var tb = null;
+        if (s.pTb != null && s.oTb != null) tb = Math.min(Number(s.pTb), Number(s.oTb));
+        else if (s.pTb != null) tb = Number(s.pTb);
+        else if (s.oTb != null) tb = Number(s.oTb);
+        return { a: s.p != null ? s.p : null, b: s.o != null ? s.o : null, tb: tb };
       });
     }
     return null;
@@ -8970,7 +9031,8 @@
             return '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:13px;' +
               'font-weight:700;text-align:center;color:#5b6880;">' +
               (v == null ? DASH : v) +
-              (c.tb ? '<sup style="font-size:9px;font-weight:600;margin-left:1px;">tb</sup>' : '') +
+              (c.tb != null ? '<sup style="font-size:9px;font-weight:600;margin-left:1px;">' +
+                esc(String(c.tb)) + '</sup>' : '') +
               '</span>';
           }).join('') +
         '</span></div>';
@@ -9134,7 +9196,12 @@
     })[0] || shard.sets[0];
 
     var subjIsP1 = !!first;
-    var games = (st.games || []).map(function (g) {
+    // A tiebreak arrives as one pseudo-"game" per mini-point (see mpSplitSet).
+    // Painted as games they would read as nine extra service games with bogus
+    // scores and LOST SERVE badges on most of them, which is why the export
+    // gives the tiebreak its own sub-block.
+    var split = mpSplitSet(st);
+    var games = split.games.map(function (g) {
       var parts = String(g.score || '').split('-');
       var g1 = String(parts[0] || '').trim(), g2 = String(parts[1] || '').trim();
       var gA = subjIsP1 ? g1 : g2, gB = subjIsP1 ? g2 : g1;
@@ -9189,16 +9256,37 @@
           pts + '</div></div>';
     }).join('');
 
-    var nGames = (st.games || []).length;
+    var nGames = split.games.length;
+    var tbPts = mpTbPoints(split.tb);
+    // The export's tiebreak sub-block: a 10px/0.16em label, then the point rows.
+    var tbBlock = split.tb.length ? (
+      '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;letter-spacing:0.16em;' +
+        'text-transform:uppercase;color:#5b6880;padding:14px 4px 8px;">Tiebreak' +
+        (tbPts != null ? ' ' + MIDDOT + ' ' + esc(String(tbPts)) + ' to the loser' : '') + '</div>' +
+      '<div style="display:flex;flex-wrap:wrap;gap:5px;justify-content:center;align-items:center;' +
+        'padding:0 4px 14px;">' +
+        split.tb.map(function (t, i) {
+          var sp2 = String(t.score || '').split('-');
+          var txt = subjIsP1 ? String(t.score || '')
+            : (String(sp2[1] || '').trim() + ' - ' + String(sp2[0] || '').trim());
+          return '<span style="display:inline-flex;align-items:center;gap:5px;' +
+            'font-family:\'IBM Plex Mono\',monospace;font-size:12px;color:#5b6880;">' + esc(txt) +
+            (i < split.tb.length - 1 ? '<span style="color:#4a5261;">,</span>' : '') + '</span>';
+        }).join('') +
+      '</div>') : '';
     return mpSeg(segs, 'mp-point-set', sel) +
       '<div style="background:#0a0d14;border:1px solid rgba(255,255,255,0.09);border-radius:9px;' +
         'text-align:center;font-size:11px;font-family:\'IBM Plex Mono\',monospace;letter-spacing:0.16em;' +
         'color:#e7e9ee;padding:11px;margin:10px 0 4px;">SET ' + esc(String(sel)) + ' ' + MIDDOT + ' ' +
         nGames + ' GAMES</div>' +
-      '<div style="display:flex;flex-direction:column;">' + games + '</div>' +
+      '<div style="display:flex;flex-direction:column;">' + games + '</div>' + tbBlock +
       '<div style="font-size:11px;color:#4b5361;line-height:1.55;margin-top:12px;">' +
         'The running score reads from ' + esc(shortName(p)) + '&#39;s side. BP, SP and MP are the ' +
         'feed&#39;s own break-, set- and match-point flags — they are not inferred from the score.' +
+        (split.tb.length
+          ? ' The feed records a tiebreak as one entry per mini-point rather than as a game, so ' +
+            'those are listed separately above and are not counted among the ' + nGames + ' games.'
+          : '') +
       '</div>';
   }
 
@@ -10368,6 +10456,8 @@
       mpAvailable: mpAvailable,
       mpHasPanel: mpHasPanel,
       mpSetGames: mpSetGames,
+      mpSplitSet: mpSplitSet,
+      mpTbPoints: mpTbPoints,
       sheetFrac: sheetFrac,
       MP_TABS: MP_TABS,
       eventKeyForSheetId: eventKeyForSheetId,
