@@ -3681,7 +3681,12 @@
 
   /* ---- TEN-243 STEP 3: Ratings board (README "TAB 4") ---- */
   .db-rcard{ background:var(--db-surface); border:1px solid var(--db-bd); border-radius:12px; padding:22px 24px; }
-  .db-eyebrow{ font-family:var(--db-mono); font-size:10px; font-weight:600; letter-spacing:0.16em; text-transform:uppercase; color:var(--db-mute); }
+  /* The Ratings/Lines card eyebrow is 0.16em per README "TAB 4"; the page's
+     existing .db-eyebrow is 0.14em and is used by the Season caption, the
+     chart captions and the band-panel heads. Redefining .db-eyebrow here
+     would win on cascade order and restyle all of that ruled chrome, so this
+     is its OWN class and .db-eyebrow is left exactly as it was. */
+  .db-rbrow{ font-family:var(--db-mono); font-size:10px; font-weight:600; letter-spacing:0.16em; text-transform:uppercase; color:var(--db-mute); }
   .db-rtitle{ font-size:22px; font-weight:800; letter-spacing:-0.01em; margin:8px 0 0; color:var(--db-txt); }
   .db-rdesc{ font-size:13px; line-height:1.55; color:var(--db-mute); max-width:760px; margin:6px 0 0; }
   .db-rcount{ font-size:13px; margin-top:10px; color:var(--db-mute); }
@@ -26656,8 +26661,13 @@ window.DatabaseTab = (function(){
     wrap.appendChild(box);
     if(q && o.picks.length<o.cap){
       var pop=el('div','db-pop'); pop.onclick=function(ev){ ev.stopPropagation(); };
-      var hits=o.match(q);
-      if(!hits.length) pop.appendChild(el('div','db-pempty','No '+o.noun+' matches that.'));
+      // While the store is still in flight there are no hits YET. Saying "no
+      // player matches that" would be a false negative about the archive rather
+      // than a statement about the query - the same distinction searchField()
+      // already draws with its own pending flag.
+      var hits=o.pending?[]:o.match(q);
+      if(o.pending) pop.appendChild(el('div','db-pempty','Loading the ratings archive…'));
+      else if(!hits.length) pop.appendChild(el('div','db-pempty','No '+o.noun+' matches that.'));
       else hits.forEach(function(h){
         var row=el('div','db-prow');
         row.innerHTML='<span>'+esc(h.label)+'</span>'+(h.meta?('<em>'+esc(h.meta)+'</em>'):'');
@@ -26681,7 +26691,8 @@ window.DatabaseTab = (function(){
     if(state.view==='ratings'){
       zL.appendChild(chipSearch({
         picks:state.ratSel, cap:4, capNote:'Four players maximum', noun:'player',
-        placeholder:'Compare players…', placeholder2:'Add a player…', query:state.ratQ,
+        placeholder:'Compare with…', placeholder2:'Add a player…', query:state.ratQ,
+        pending:!RAT,
         onInput:function(v){ state.ratQ=v; },
         match:function(q){
           if(!RAT) return [];
@@ -27186,22 +27197,77 @@ window.DatabaseTab = (function(){
   // rest on the same stats-bearing match set, so they read sample.matches. Elo
   // is scraped and carries NO match count at all, so its n is a dash rather than
   // a borrowed number - see the note the board prints.
+  //
+  // THE DENOMINATOR IS NOT sample.matches. That field is the TOUR-LEVEL match
+  // count, and surface-ratings.js folds a player's Challenger/qualifying sample
+  // INTO the serve, return and under-pressure ratings whenever he is thin at
+  // tour level (the per-node `inclChallenger` flag marks exactly those). So for
+  // a folded player, sample.matches is a count of a different, smaller set than
+  // the rating rests on - M. Lajal at All/career is 14 tour matches and 154
+  // Challenger ones, and printing n=14 beside a rating built on ~168 states a
+  // sample we did not use.
+  //
+  // Per board, the count that actually backs the rating:
+  //   serve  - serve.svMatches, which the generator defines as
+  //            `b.svMatches + (srBlend ? c.svMatches : 0)`: matches CARRYING
+  //            serve stats, fold included. Already the right number.
+  //   return / under pressure - tour matches, plus the Challenger matches when
+  //            that node says it used them.
+  //   mental - tour matches ONLY, and that is not an oversight: the locked
+  //            method for Mental Edge is "tour level only (no Challenger
+  //            fold-in - mixing tiers inside a count changes what the count
+  //            means)". Adding the fold here would contradict the formula.
+  //   elo    - null. It is scraped and rests on no match set of ours; a dash is
+  //            the honest cell, not a borrowed count.
   function ratN(p, board){
     var n=ratNode(p); if(!n) return null;
     if(board==='elo') return null;
+    var sm=n.sample||{}, tour=typeof sm.matches==='number'?sm.matches:null;
     if(board==='serve'){
       var sv=n.serve && n.serve.svMatches;
-      return typeof sv==='number' ? sv : (n.sample?n.sample.matches:null);
+      // No substitution. If the field the rating is defined over is missing, the
+      // count is unknown and the cell is a dash - swapping in the wider tour
+      // count would print a denominator the rating was never built on.
+      return typeof sv==='number' ? sv : null;
     }
-    return n.sample ? n.sample.matches : null;
+    if(board==='mental') return tour;
+    var nd = n[board==='return' ? 'return' : 'underPressure'];
+    var ch = (nd && nd.inclChallenger && typeof sm.challMatches==='number') ? sm.challMatches : 0;
+    return tour==null ? null : tour+ch;
+  }
+  // The gate keys on the SAME count the board prints, so the caption "n >= 10
+  // matches" is true of every row on screen. Gating on tour matches while
+  // printing a fold-inclusive n was dropping players whose rating is perfectly
+  // well backed: at Clay/last52 that silently hid 82 of 156 rated players.
+  function ratBoardPool(board){
+    if(!RAT || !RAT.players) return [];
+    return RAT.players.filter(function(p){
+      if(!ratNode(p)) return false;
+      // Elo rests on no match set of ours, so a match gate cannot apply to it;
+      // the board is every player we hold an Elo for at this slice.
+      if(board==='elo') return ratRating(p,'elo')!=null;
+      // A leaderboard is a RANKING, so a player with no rating for it has no
+      // place on it - J. Kubler clears the match floor at Clay/last52 but has
+      // no under-pressure rating, and listing him with a dashed rating both
+      // ranked an absence and inflated the field count by one.
+      if(ratRating(p, board)==null) return false;
+      var m=ratN(p, board);
+      return m!=null && m>=RAT_GATE;
+    });
   }
   // The rated pool at the current slice. A player is on the board only if the
   // slice exists for them AND clears the match gate.
+  // The Overview shows four ratings at once, so its field is "players with
+  // matches on record at this slice" - tour plus Challenger, which is the widest
+  // set any of the four can rest on. A player whose individual rating is missing
+  // still gets a dash in that cell rather than being dropped from the board.
   function ratPool(){
     if(!RAT || !RAT.players) return [];
     return RAT.players.filter(function(p){
-      var m=ratMatches(p);
-      return m!=null && m>=RAT_GATE;
+      var n=ratNode(p); if(!n || !n.sample) return false;
+      var t=n.sample.matches, c=n.sample.challMatches;
+      var m=(typeof t==='number'?t:0)+(typeof c==='number'?c:0);
+      return m>=RAT_GATE;
     });
   }
   function ratFmt(v, dec, pct){
@@ -27222,7 +27288,7 @@ window.DatabaseTab = (function(){
   // players." So it is computed from ratPool(), which knows nothing about ratSel.
   function ratMedian(board, k){
     var vals=[];
-    ratPool().forEach(function(p){
+    (board==='overview'?ratPool():ratBoardPool(board)).forEach(function(p){
       var v = k==null ? ratRating(p,board) : ratVal(p,k);
       if(v!=null) vals.push(v);
     });
@@ -27241,16 +27307,22 @@ window.DatabaseTab = (function(){
       return;
     }
     var card=el('div','db-rcard');
-    card.appendChild(el('div','db-eyebrow','Ratings board'));
+    card.appendChild(el('div','db-rbrow','Ratings board'));
     card.appendChild(el('h2','db-rtitle','Player ratings by surface'));
     card.appendChild(el('p','db-rdesc','Surface Elo, plus serve, return, under-pressure and Mental Edge ratings derived from the full ATP-level match archive. Higher is better across every column.'));
     var pool=ratPool();
-    var cnt=el('div','db-rcount','<b>'+fmtInt(pool.length)+'</b> players');
-    card.appendChild(cnt);
+    // The count names the field of the board on screen. It is not one number for
+    // the tab: the Serve board and the Mental Edge board have different fields
+    // because they rest on different match sets.
+    var shown = state.ratBoard==='overview' ? pool : ratBoardPool(state.ratBoard);
+    card.appendChild(el('div','db-rcount','<b>'+fmtInt(shown.length)+'</b> players'));
 
     if(state.ratSel.length>=2) card.appendChild(ratComparePanel());
     card.appendChild(ratBoardTabs());
-    card.appendChild(state.ratBoard==='overview' ? ratOverview(pool) : ratLeaderboard(pool, state.ratBoard));
+    // Each board has its OWN field, because each rests on its own match set.
+    card.appendChild(state.ratBoard==='overview'
+      ? ratOverview(pool)
+      : ratLeaderboard(ratBoardPool(state.ratBoard), state.ratBoard));
     body.appendChild(card);
   }
 
@@ -27305,10 +27377,14 @@ window.DatabaseTab = (function(){
   // The slice caption under every board. Each part tracks its own control, and
   // the STEP 5 marker is appended ONLY for columns that are genuinely unwired -
   // a fully wired board says nothing.
-  function ratSliceNote(unwired){
+  // `gateWord` names WHICH matches the gate counted, because the answer differs
+  // per board: the serve board floors on matches carrying serve stats, the
+  // others on matches on record. A bare "n >= 10 matches" over a board whose n
+  // column counts something else is a caption that does not describe its table.
+  function ratSliceNote(unwired, gateWord){
     var parts=[ state.ratScope==='career'?'Career':'Last 52 weeks',
                 state.ratSurf==='All'?'all surfaces':state.ratSurf.toLowerCase(),
-                'n ≥ '+RAT_GATE+' matches' ];
+                gateWord===null ? 'no match floor' : ('n ≥ '+RAT_GATE+' '+(gateWord||'matches')) ];
     var n=el('div','db-unwired', esc(parts.join(' · ')));
     if(unwired && unwired.length){
       n.innerHTML += '<br>' + esc('Not wired: '+unwired.join(' · ')+' — no field for these in the archive, so every cell is a dash rather than a derived stand-in.');
@@ -27337,10 +27413,12 @@ window.DatabaseTab = (function(){
     // Field-median row - over the whole field at the slice, never the picks.
     function medCell(html, cls){ var d=el('div','db-rmed'); d.appendChild(el('div',cls||'db-rfig mut',html)); return d; }
     g.appendChild(medCell('',''));
-    var ml=el('div','db-rmed'); ml.appendChild(el('div','db-rh','Field median')); g.appendChild(ml);
+    var ml=el('div','db-rmed'); var mlab=el('div','db-rh','Field median');
+    mlab.style.color='#8b96b5';   // README: the label is #8b96b5 here, not the #5b6880 eyebrow
+    ml.appendChild(mlab); g.appendChild(ml);
     g.appendChild(medCell('—','db-rn'));
     cols.forEach(function(c){
-      var m=ratMedian(c[0], null);
+      var m=ratMedian(c[0]==='up'?'up':c[0], null);
       g.appendChild(medCell(m==null?'—':m.toFixed(c[0]==='elo'?0:1),'db-rfig mut'));
     });
 
@@ -27369,8 +27447,8 @@ window.DatabaseTab = (function(){
     // The overview's n column is the SERVE board's count, because that is the
     // narrowest of the four ratings on show. Say so rather than let a reader
     // assume one n backs all four.
-    var note=ratSliceNote(ELO?null:['Elo (the scraped Elo store did not load)']);
-    note.innerHTML += '<br>'+esc('n is the serve-stat match count — the narrowest of the four ratings shown; the other three rest on a wider match set.')+
+    var note=ratSliceNote(ELO?null:['Elo (the scraped Elo store did not load)'],'matches on record');
+    note.innerHTML += '<br>'+esc('n is the serve-stat match count — the narrowest of the four ratings shown. Serve, return and under-pressure fold in a player\u2019s Challenger sample when he is thin at tour level, and the count follows the rating.')+
       '<br>'+esc(ELO_CAVEAT);
     wrap.appendChild(note);
     return wrap;
@@ -27402,7 +27480,9 @@ window.DatabaseTab = (function(){
 
     function medCell(html, cls){ var d=el('div','db-rmed'); d.appendChild(el('div',cls||'db-rfig mut',html)); return d; }
     g.appendChild(medCell('',''));
-    var ml=el('div','db-rmed'); ml.appendChild(el('div','db-rh','Field median')); g.appendChild(ml);
+    var ml=el('div','db-rmed'); var mlab2=el('div','db-rh','Field median');
+    mlab2.style.color='#8b96b5';
+    ml.appendChild(mlab2); g.appendChild(ml);
     g.appendChild(medCell('—','db-rn'));
     var mr=ratMedian(board,null);
     g.appendChild(medCell(mr==null?'—':mr.toFixed(B.rtgDec),'db-rfig mut'));
@@ -27439,7 +27519,8 @@ window.DatabaseTab = (function(){
 
     var unwired=B.cols.filter(function(c){ return c.k==null; }).map(function(c){ return c.h; });
     if(board==='elo' && !ELO) unwired=unwired.concat(['Elo (the scraped Elo store did not load)']);
-    var lnote=ratSliceNote(unwired);
+    var lnote=ratSliceNote(unwired,
+      board==='elo' ? null : board==='serve' ? 'matches carrying serve stats' : 'matches backing the rating');
     // The Elo board does NOT move with the period control, so the slice line
     // above would otherwise read "Last 52 weeks" over columns that are a current
     // snapshot. Say it on the board that shows Elo rather than leaving the
@@ -27458,7 +27539,7 @@ window.DatabaseTab = (function(){
       return (RAT.players||[]).filter(function(p){ return p.name===n; })[0];
     }).filter(Boolean);
     var panel=el('div','db-cmp');
-    panel.appendChild(el('div','db-eyebrow','Compare players'));
+    panel.appendChild(el('div','db-rbrow','Compare players'));
     var g=el('div','db-cmpgrid');
     g.style.gridTemplateColumns='128px '+picks.map(function(){return '84px 84px 62px';}).join(' ');
     g.style.marginTop='12px';
@@ -27503,7 +27584,35 @@ window.DatabaseTab = (function(){
         return rec[key] && typeof rec[key].rating==='number' ? rec[key].rating : null;
       }
       var nd=n[metric];
-      return nd && typeof nd.rating==='number' ? nd.rating : null;
+      if(!nd || typeof nd.rating!=='number') return null;
+      // THE COMPARE PANEL GATES TOO. Without this it was the one surface on the
+      // tab that would print a rating the boards refuse to show: J. Choinski's
+      // All/last52 node rests on ONE match and still carries a full set of
+      // ratings, so the panel was showing him a Serve 251.5 and a signed delta
+      // against his career while the leaderboard below excluded him from that
+      // slice entirely. 693 player-slice nodes in the store are below the gate
+      // and every one was reachable here. Same floor, same count, everywhere.
+      var sm=n.sample||{}, tour=typeof sm.matches==='number'?sm.matches:null;
+      if(tour==null) return null;
+      var back;
+      if(metric==='serve') back = (n.serve && typeof n.serve.svMatches==='number') ? n.serve.svMatches : null;
+      else if(metric==='mental') back = tour;   // locked to tour level, as on the board
+      else back = tour + ((nd.inclChallenger && typeof sm.challMatches==='number') ? sm.challMatches : 0);
+      if(back==null || back<RAT_GATE) return null;
+      return nd.rating;
+    }
+    // The count behind each column, so a thin scope is FLAGGED with its number
+    // rather than silently blank - the standing rule on this page.
+    function scopeN(p, scope, metric){
+      var s=(p.surfaces||{})[state.ratSurf]; if(!s) return null;
+      var n=s[scope]; if(!n) return null;
+      if(metric==='elo') return null;
+      var sm=n.sample||{}, tour=typeof sm.matches==='number'?sm.matches:null;
+      if(tour==null) return null;
+      if(metric==='serve') return (n.serve && typeof n.serve.svMatches==='number') ? n.serve.svMatches : null;
+      if(metric==='mental') return tour;
+      var nd=n[metric];
+      return tour + ((nd && nd.inclChallenger && typeof sm.challMatches==='number') ? sm.challMatches : 0);
     }
     // The Elo row is labelled "current", and that is not decoration. Every other
     // row here IS a period aggregate, so the Career column means what it says.
@@ -27517,8 +27626,21 @@ window.DatabaseTab = (function(){
       var lab=el('div','db-cmprow'); lab.appendChild(el('div','db-rh',esc(m[1]))); g.appendChild(lab);
       picks.forEach(function(p){
         var l52=scopeVal(p,'last52',m[0]), car=scopeVal(p,'career',m[0]);
-        g.appendChild(el('div','db-cmpcell live', l52==null?'—':l52.toFixed(m[2])));
-        g.appendChild(el('div','db-cmpcell ref', car==null?'—':car.toFixed(m[2])));
+        // A gated-out cell says WHY with its count ("n=1"), so a thin scope is
+        // legible as thin rather than looking like missing data.
+        function cell(cls, v, scope){
+          var c=el('div','db-cmpcell '+cls);
+          if(v!=null){ c.textContent=v.toFixed(m[2]); return c; }
+          var k=scopeN(p, scope, m[0]);
+          if(k!=null && k<RAT_GATE){
+            c.textContent='n='+k;
+            c.style.fontSize='11px'; c.style.fontWeight='500'; c.style.color='#5b6880';
+            c.title='Below the '+RAT_GATE+'-match floor for this rating at this slice — no figure is shown.';
+          } else c.textContent='—';
+          return c;
+        }
+        g.appendChild(cell('live', l52, 'last52'));
+        g.appendChild(cell('ref', car, 'career'));
         var d=el('div','db-cmpcell delta');
         if(l52==null || car==null){ d.textContent='—'; d.style.color='#5b6880'; }
         else {
@@ -27559,7 +27681,7 @@ window.DatabaseTab = (function(){
   // the ticket rather than shipping a ladder of invented rates.
   function renderLines(body){
     var card=el('div','db-rcard');
-    card.appendChild(el('div','db-eyebrow','Line coverage'));
+    card.appendChild(el('div','db-rbrow','Line coverage'));
     card.appendChild(el('h2','db-rtitle','Derived lines'));
     card.appendChild(el('p','db-rdesc',
       'Games handicap, set handicap, total games and match shape — how often each derived line landed for a player, against the field.'));
