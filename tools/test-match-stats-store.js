@@ -13,6 +13,12 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
+// These checks drive every refusal path deliberately. Without this the module's
+// `::error` annotations land on the RUN, and six of them rode every green
+// pipeline — see the note on refuse() in tools/match-stats-store.js. The one
+// check that asserts the annotation channel turns it back on.
+process.env.MATCH_STATS_STORE_ANNOTATE = '0';
+
 const store = require('./match-stats-store.js');
 const { depth, sideDepths, notShallower, strictlyDeeper, census, mergeStores, hydrate, freeze, PLAIN, FLOOR } = store;
 
@@ -228,7 +234,11 @@ check('freeze REFUSES a store with fewer entries, naming the SHRINK (guard + con
   writeFloor(root, { a: { matchStats: FULL }, b: { matchStats: FULL } });
   const floor = fs.readFileSync(path.join(root, FLOOR));
   writePlain(root, { a: { matchStats: FULL } });
+  // The annotation channel is proved HERE, with the suppression lifted for the
+  // duration, so turning it off everywhere else cannot silently disable it.
+  process.env.MATCH_STATS_STORE_ANNOTATE = '1';
   const { rc, out } = freezeSaying(root);
+  process.env.MATCH_STATS_STORE_ANNOTATE = '0';
   assert.strictEqual(rc, 0, 'the shrink guard did not fire');
   assert.match(out, /FEWER entries \(1\).*floor \(2\)/, 'refused, but not by the shrink guard — its message is gone');
   assert.match(out, /::error title=/, 'a refusal was logged without an annotation — invisible in CI');

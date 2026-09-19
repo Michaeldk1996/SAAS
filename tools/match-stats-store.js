@@ -211,9 +211,10 @@ async function readLive() {
     const d = await r.json();
     return d && typeof d === 'object' ? d : null;
   } catch (e) {
-    console.log(`::warning title=match-stats live store unreadable::could not read the `
-      + `deployed store (${e.message}); hydrating from floor + cache only. If a live `
-      + `key has aged out of both, the completeness gate will refuse this deploy.`);
+    annotate('match-stats live store unreadable',
+      `could not read the deployed store (${e.message}); hydrating from floor + cache only. `
+      + 'If a live key has aged out of both, the completeness gate will refuse this deploy.',
+      'warning');
     return null;
   }
 }
@@ -228,7 +229,8 @@ function hydrate(root) {
     // match sheet would publish blank rather than fail. Not fatal here (the deploy
     // must not go red on it) — the guard that must catch this is npm test, before
     // the commit.
-    console.log(`::error title=match-stats floor unreadable::${FLOOR} is absent or corrupt — the match-stat store has no committed floor this run.`);
+    annotate('match-stats floor unreadable',
+      `${FLOOR} is absent or corrupt — the match-stat store has no committed floor this run.`);
     return 0;
   }
   const fromPlain = readJson(plainPath);
@@ -250,8 +252,28 @@ function hydrate(root) {
 // invoked with `|| true` in CI (it may not cost a deploy), so the only channel
 // left is the annotation — bare console.log made "coverage tried to go backwards"
 // and "nothing changed today" look identical in the log.
+// The single annotation channel. Both emitters go through it so the suppression
+// rule cannot be applied to one and forgotten on the other — which is exactly
+// what happened on the first pass: refuse() was gated and the "floor unreadable"
+// line kept printing.
+function annotate(title, message, level) {
+  const lvl = level || 'error';
+  if (process.env.MATCH_STATS_STORE_ANNOTATE === '0') console.log(`${title}: ${message}`);
+  else console.log(`::${lvl} title=${title}::${message}`);
+}
+
 function refuse(reason) {
-  console.log(`::error title=match-stats floor refused::${reason}`);
+  // ANNOTATION SUPPRESSION UNDER TEST, and the reason is the opposite of
+  // quietening a guard. tools/test-match-stats-store.js drives freeze() through
+  // every refusal path on purpose, with fixture keys literally named 'a' and 'b'.
+  // Each one printed a real `::error`, so GitHub attached SIX failure-level
+  // annotations to every GREEN run — "1 eventKey(s) ... are MISSING (e.g. b)".
+  // A genuine refusal would have been the seventh red line in a list of six that
+  // are always there, which is exactly how a real one gets scrolled past. The
+  // test sets MATCH_STATS_STORE_ANNOTATE=0 and re-enables it for the one check
+  // that asserts the annotation channel still works, so the channel stays
+  // covered and the noise stops.
+  annotate('match-stats floor refused', reason);
   return 0;
 }
 
