@@ -352,13 +352,14 @@
     "id1200210074800514": {
       "alerted": true,
       "alertedAt": "2026-09-18T15:06:54Z",
-      "captureLagH": null,
+      "captureLagH": 0.32,
       "date": "2026-09-19",
+      "firstSeenAt": "2026-09-19T00:51:26Z",
       "hoursOutAtAlert": 22.05,
-      "openAt": null,
+      "openAt": "2026-09-19T00:32:20.391Z",
       "p1": "A. Knaff",
       "p2": "F. Marozsan",
-      "postingLeadH": null,
+      "postingLeadH": 12.63,
       "startTime": "2026-09-19T13:10:00.000Z",
       "tour": "ATP ATP Davis Cup - World Group I"
     },
@@ -910,13 +911,14 @@
     "id1200210074806100": {
       "alerted": true,
       "alertedAt": "2026-09-18T16:15:00Z",
-      "captureLagH": null,
+      "captureLagH": 0.32,
       "date": "2026-09-19",
+      "firstSeenAt": "2026-09-19T00:51:26Z",
       "hoursOutAtAlert": 23.92,
-      "openAt": null,
+      "openAt": "2026-09-19T00:32:21.210Z",
       "p1": "N. Hardt",
       "p2": "A. Elsayed",
-      "postingLeadH": null,
+      "postingLeadH": 15.63,
       "startTime": "2026-09-19T16:10:00.000Z",
       "tour": "ATP ATP Davis Cup - World Group II"
     },
@@ -1255,5 +1257,5 @@
   },
   "schema": "odds-open-monitor/1",
   "thresholdHours": 24.0,
-  "updatedAt": "2026-09-19T00:30:00Z"
+  "updatedAt": "2026-09-19T00:51:26Z"
 }
