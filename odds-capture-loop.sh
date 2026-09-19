@@ -21,12 +21,24 @@
 #     script measures the meter either side and errors if that ever stops
 #     being free.
 #
-# Every METERED_EVERY-th (4th, i.e. 60 min):  refresh-odds.py
-#     ~2 billable /v4/odds-by-tournaments units. This is the NOW leg, and its
-#     cadence is DELIBERATELY UNCHANGED — flat hourly is the founder's ruling
-#     (option (a), 2026-09-10) and this loop is here to make hourly actually
-#     mean hourly, not to spend more. 86% of bet365's pre-match movement is
-#     >6h out, so sprinting buys resolution where nothing moves.
+# Every METERED_EVERY-th (2nd, i.e. 30 min):  refresh-odds.py
+#     ~1-2 billable /v4/odds-by-tournaments units. This is the NOW leg.
+#
+#     WAS FLAT HOURLY (founder ruling option (a), 2026-09-10). Moved to 30 min
+#     on 2026-09-19 with the trade stated and accepted: "I know it buys a
+#     fresher label more than a fresher price, but at +24 units/day and 54% of
+#     the monthly cap at reset the headroom is there and I would rather spend
+#     it."
+#
+#     THE COST IS EXACTLY +24 UNITS/DAY, measured, not projected: the leg asks
+#     for `ceil(distinct tournamentIds / 5)` and the board has resolved to ONE
+#     tournament on 104 of 104 runs across 21 days, with a 61-day maximum of
+#     four concurrent events. So 48 runs x 1 unit against 24 x 1.
+#
+#     WHAT IT DOES NOT BUY: 86% of bet365's pre-match movement is >6h out, and
+#     on the board this was measured against, 31 of 32 pairable cards were flat
+#     and evidenced. Halving the interval halves the age of the LABEL; it does
+#     not make a still market move.
 #
 # INTERRUPTS
 # ----------
@@ -40,7 +52,7 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$HERE"
 
 INTERVAL_MIN="${INTERVAL_MIN:-15}"
-METERED_EVERY="${METERED_EVERY:-4}"      # 4 x 15min = the approved flat hour
+METERED_EVERY="${METERED_EVERY:-2}"      # 2 x 15min = 30 min (founder 2026-09-19)
 LOOP_MINUTES="${LOOP_MINUTES:-330}"      # 5h30m; the job timeout is 350, Actions caps a job at 360
 CADENCE_FILE="odds-capture-cadence.json"
 STALENESS_FILE="odds-now-staleness.json"

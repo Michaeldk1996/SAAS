@@ -64,6 +64,11 @@ const { mcPriceTitle, _measurablePair, _obsMs } = new Function(`
   const MC_TITLE_1LINE_MAX = ${MAX};
   const newsTz = () => 'UTC';
   const mxBookLabel = b => b;
+  // mxOddsTxt is SLICED, not stubbed: it decides how many decimals a price
+  // prints, and a stub would let this file keep passing while the page changed
+  // what a member reads. See MX_3DP_BELOW in the dashboard.
+  const MX_3DP_BELOW = ${Number(/const MX_3DP_BELOW = ([0-9.]+);/.exec(html)?.[1])};
+  ${slice('mxOddsTxt')}
   ${shipped}
   return { mcPriceTitle, _measurablePair, _obsMs };
 `)();

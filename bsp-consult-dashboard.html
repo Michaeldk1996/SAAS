@@ -7202,9 +7202,37 @@ function mxBookLabel(book){
   const k = String(book).toLowerCase().replace(/[^a-z0-9]/g, '');
   return MX_BOOK_LABELS[k] || book;
 }
+// ───────────────────────── TEN-225 item 3 — HOW A PRICE IS PRINTED ────────
+// Founder 2026-09-19: "keep [the 1.01 floor] where it is, fix the DISPLAY.
+// Show 3 decimals below 1.10 (1.012, not \"1.01\")."
+//
+// WHY. Two decimals is fine across the range a member actually reads, and it is
+// what every card has always used — but under 1.10 the second decimal is the
+// whole price. bet365 quotes Dougaz v Murtaza at 1.004 and the card printed
+// "1.00", which is not a rounding of that price so much as a different claim:
+// 1.00 returns nothing, 1.004 returns 0.4%. That mis-print is what made the
+// pair look impossible when only the leg was extreme.
+//
+// MEASURED on the deployed board 2026-09-19, n=62 fixtures / 760 priced legs:
+// 115 legs sit below 1.10, and 26 of them LOSE a digit at two decimals —
+// 1.004 (x6), 1.052 (x6), 1.091 (x4), 1.025 (x4), 1.068 (x2), 1.012 (x2),
+// 1.001, 1.008. Everything at or above 1.10 is untouched.
+//
+// THE CUT IS ON THE VALUE, NOT THE CELL, so one price reads the same in the
+// card face, the drift arrow, the completed journey and the hover. A per-site
+// rule is how the same number comes to be printed two ways on one screen.
+//
+// ⚠️ SCOPE: book prices on the matches board. Model-derived numbers
+// (edgeOdds, the implied-probability inverses, court speed) keep two decimals —
+// they are not quotes, and widening them would be a change nobody asked for.
+const MX_3DP_BELOW = 1.10;
+function mxOddsTxt(v){
+  if (!(typeof v === 'number' && isFinite(v) && v > 0)) return '';
+  return v < MX_3DP_BELOW ? v.toFixed(3) : v.toFixed(2);
+}
 function mcPriceTitle(pair, px){
   if (!pair || !pair.book) return '';
-  const priceTxt = (typeof px === 'number' && px > 0) ? px.toFixed(2) : '';
+  const priceTxt = mxOddsTxt(px);
   // A `sighting` row has no book clock at all, so it prints no "since".
   const bookClock = pair.kind === 'sighting' ? '' : ocsFmtClock(pair.at);
   // OUR clock comes from `obs` AND NOWHERE ELSE. It used to fall back to `at` on
@@ -7506,6 +7534,11 @@ function upsetScore(m){ // winner's closing odds — bigger underdog win = bigge
 // cannot fall out of sync (the export's stated reason for this design). Upcoming only:
 // a completed card has its own open→close journey block and is unaffected by the sort.
 function mxDriftView(){ return state.view !== 'completed' && state.sort === 'drift'; }
+// TEN-225 item 5 — "Show the count in the view ... so it is clear the rest were
+// filtered, not lost." Written by getFiltered() on every build and read by the
+// tile; null whenever the filter is not applied, so the tile cannot print a
+// stale count from a view the member has already left.
+let MX_DRIFT_FILTER = null;
 // TEN-198 — FOUNDER RULING 2026-09-13 (gate 05ded3ab). When oddspapi has no bet365
 // series for a fixture, the OPEN falls back to the same book read off api-tennis, and
 // the pinned value lands IN m.openingOdds carrying `vendor:'api-tennis'` (he chose that
@@ -7746,6 +7779,23 @@ function _mcOpenNowPair(m){
 // above a priced one. MOVE_UNPRICED separates them.
 const MOVE_NONE     = -1;  // priced, but no same-book open→now pair to measure
 const MOVE_UNPRICED = -2;  // the card shows no price at all: no open, no now, either side
+// ───────────────────── TEN-225 item 5 — FILTER, DON'T SORT TO THE BOTTOM ──
+// Founder 2026-09-19: "When I click the tile, show ONLY fixtures that actually
+// moved. Drop every 0% card, every card with no computable move, and every
+// unpriced card out of the view entirely — the tile exists to make the real
+// moves easy to see, and a wall of 0% cards defeats it."
+//
+// This SUPERSEDES his 2026-09-18 ruling ("fixtures without both legs from one
+// book go to the bottom, not hidden"), which is why the five-tier score below
+// is kept rather than deleted: the ordering of what survives is unchanged, and
+// MOVE_NONE / MOVE_UNPRICED still separate correctly for the count. Only the
+// membership of the view changed.
+//
+// A fixture MOVED when its same-book open→now pair exists and is not flat.
+// `moveNowScore` already returns exactly that as a positive number, so the
+// filter is one comparison and cannot drift away from the sort's definition —
+// the tile, the order and the filter read one resolver.
+function mxMoved(m){ return moveNowScore(m) > 0; }
 // "Fully unpriced" is defined by what the CARD PAINTS, not by what some store
 // holds — these are the same three resolvers the card face reads, so the bottom
 // tier is exactly the set of cards a member sees as dash/dash.
@@ -7938,6 +7988,30 @@ function getFiltered(){
     }
     return true;
   });
+  // TEN-225 item 5. The filter lives HERE, beside the other view predicates,
+  // rather than in the renderer — Prev/Next, the keyboard walk, the empty-state
+  // message and the per-day counter all read getFiltered(), so filtering in the
+  // renderer would leave every one of them counting a board nobody can see.
+  //
+  // GATED ON mxDriftView(), NOT on `state.sort` alone. `state.sort` survives a
+  // switch to Results, where the drift ordering is never applied — filtering the
+  // Results tab down to movers would hide finished matches on a view that has
+  // no drift in it. mxDriftView() is the same predicate the drift CELL uses, so
+  // the filter and the rendering cannot disagree about which view this is.
+  //
+  // Clicking the tile again sets state.sort back to 'time', which restores the
+  // full board by construction: this branch only exists while drift is on.
+  //
+  // The counts are recorded rather than recomputed, because the denominator is
+  // "what this view would have shown", which only this line knows — every other
+  // caller sees the filtered array and could not reconstruct it.
+  if (mxDriftView()){
+    const before = out.length;
+    out = out.filter(mxMoved);
+    MX_DRIFT_FILTER = { shown: out.length, total: before };
+  } else {
+    MX_DRIFT_FILTER = null;
+  }
   const surfaceOrder = { clay:0, hard:1, grass:2 };
   if (crossDate) out.sort((a,b) => state.view === 'completed'
     ? cardStartMs(b) - cardStartMs(a)   // Results search: most recent first
@@ -8483,10 +8557,10 @@ function mcDriftCell(open, now, anchorOnly, opts){
   // which is the "book name beside a price we are not showing" ruling 2 forbids.
   const ot = open != null ? mcTitleAttr(o.openTitle) : '';
   const nt = now  != null ? mcTitleAttr(o.nowTitle)  : '';
-  const nowTxt = (now != null) ? now.toFixed(2) : '—';
+  const nowTxt = (now != null) ? mxOddsTxt(now) : '—';
   if (open != null && anchorOnly){
     return `<span class="mc-drifted">`
-      + `<span class="mc-drifted__open"${ot}>${open.toFixed(2)}</span>`
+      + `<span class="mc-drifted__open"${ot}>${mxOddsTxt(open)}</span>`
       + `<span class="mc-drifted__lane"><span class="mc-drifted__flat"></span></span>`
       + `<span class="mc-drifted__now${now == null ? ' nodata' : ''}"${nt}>${nowTxt}</span>`
       + `<span class="mc-drifted__pct"></span></span>`;
@@ -8503,7 +8577,7 @@ function mcDriftCell(open, now, anchorOnly, opts){
     // and the plain no-current-price case land here; the cell keeps its column and
     // dashes in it rather than collapsing, so OPEN stays under its header.
     return `<span class="mc-drifted">`
-      + `<span class="mc-drifted__open"${ot}>${open.toFixed(2)}</span>`
+      + `<span class="mc-drifted__open"${ot}>${mxOddsTxt(open)}</span>`
       + `<span class="mc-drifted__lane"><span class="mc-drifted__flat"></span></span>`
       + `<span class="mc-drifted__now nodata">—</span>`
       + `<span class="mc-drifted__pct"></span></span>`;
@@ -8515,7 +8589,7 @@ function mcDriftCell(open, now, anchorOnly, opts){
   // drift figure between two books is a number about the books, not the market.
   if (!o.paired){
     return `<span class="mc-drifted">`
-      + `<span class="mc-drifted__open"${ot}>${open.toFixed(2)}</span>`
+      + `<span class="mc-drifted__open"${ot}>${mxOddsTxt(open)}</span>`
       + `<span class="mc-drifted__lane"><span class="mc-drifted__flat"></span></span>`
       + `<span class="mc-drifted__now"${nt}>${nowTxt}</span>`
       + `<span class="mc-drifted__pct"></span></span>`;
@@ -8525,7 +8599,7 @@ function mcDriftCell(open, now, anchorOnly, opts){
   const barW = Math.max(10, Math.min(30, Math.round(Math.abs(d.pct) * 0.9)));
   const col = d.dir === 'pos' ? '#3dd68c' : d.dir === 'neg' ? '#e0645b' : 'var(--mc-muted)';
   return `<span class="mc-drifted">`
-    + `<span class="mc-drifted__open"${ot}>${open.toFixed(2)}</span>`
+    + `<span class="mc-drifted__open"${ot}>${mxOddsTxt(open)}</span>`
     + `<span class="mc-drifted__lane"><span class="mc-drifted__bar" style="width:${barW}px;background:${col}"></span>`
     + `<span class="mc-drifted__arrow" style="color:${col}">▸</span></span>`
     + `<span class="mc-drifted__now"${nt}>${nowTxt}</span>`
@@ -8570,9 +8644,9 @@ function mcJourney(open, close, anchorOnly, opts){
       + `<span class="mc-journey__delta"></span></span>`;
   }
   if (open != null && close != null && anchorOnly) {
-    return `<span class="mc-journey"><span class="mc-journey__open"${ot}>${open.toFixed(2)}</span>`
+    return `<span class="mc-journey"><span class="mc-journey__open"${ot}>${mxOddsTxt(open)}</span>`
       + `<span class="mc-journey__lane"></span>`
-      + `<span class="mc-journey__close"${ct}>${close.toFixed(2)}</span>`
+      + `<span class="mc-journey__close"${ct}>${mxOddsTxt(close)}</span>`
       + `<span class="mc-journey__delta"></span></span>`;
   }
   // §5 (PASS 4) — opening price missing (oddspapi tier blocked). An empty OPEN cell
@@ -8582,11 +8656,11 @@ function mcJourney(open, close, anchorOnly, opts){
   // When openingOdds land the em dash resolves on its own and the track/delta return.
   // Missing OPEN: em dash in the OPEN cell, a thin neutral (empty) lane, close kept,
   // no delta. Layout holds its fixed columns so CLOSE stays under its header.
-  if (open == null) return `<span class="mc-journey mc-journey--noopen"><span class="mc-journey__open mc-journey__nodata">—</span><span class="mc-journey__lane"></span><span class="mc-journey__close"${ct}>${close.toFixed(2)}</span><span class="mc-journey__delta"></span></span>`;
+  if (open == null) return `<span class="mc-journey mc-journey--noopen"><span class="mc-journey__open mc-journey__nodata">—</span><span class="mc-journey__lane"></span><span class="mc-journey__close"${ct}>${mxOddsTxt(close)}</span><span class="mc-journey__delta"></span></span>`;
   // TEN-225 — a recorded Open with no Close now keeps its CLOSE cell and dashes
   // in it. The old shape emitted the open alone, which collapsed the row and
   // left nothing under the CLOSE header: a blank, not a dash.
-  if (close == null) return `<span class="mc-journey"><span class="mc-journey__open"${ot}>${open.toFixed(2)}</span><span class="mc-journey__lane"></span><span class="mc-journey__close mc-journey__nodata">—</span><span class="mc-journey__delta"></span></span>`;
+  if (close == null) return `<span class="mc-journey"><span class="mc-journey__open"${ot}>${mxOddsTxt(open)}</span><span class="mc-journey__lane"></span><span class="mc-journey__close mc-journey__nodata">—</span><span class="mc-journey__delta"></span></span>`;
   // §2/§6 SETTLED (founder review 2026-08-08) — the odds journey is ONE object:
   //   open (40px) · direction bar (64px lane) · close (44px) · delta (44px, inline).
   // The BAR LENGTH encodes the move size — width ∝ |delta%|, per the export exactly
@@ -8606,9 +8680,9 @@ function mcJourney(open, close, anchorOnly, opts){
     ? `<span class="mc-journey__delta ${d.dir}">${d.text}</span>`
     : `<span class="mc-journey__delta"></span>`;
   return `<span class="mc-journey ${d.dir}">`
-    + `<span class="mc-journey__open"${ot}>${open.toFixed(2)}</span>`
+    + `<span class="mc-journey__open"${ot}>${mxOddsTxt(open)}</span>`
     + `<span class="mc-journey__lane"><span class="mc-journey__bar" style="width:${barW}px"></span></span>`
-    + `<span class="mc-journey__close"${ct}>${close.toFixed(2)}</span>`
+    + `<span class="mc-journey__close"${ct}>${mxOddsTxt(close)}</span>`
     + delta
     + `</span>`;
 }
@@ -9033,8 +9107,8 @@ function renderMatches(){
     const hasOdds = m.odds && m.odds.p1 && m.odds.p2;
     const hasFavLine = !!(nowPair && nowPair.p1 != null && nowPair.p2 != null);
     const p1IsFavorite = hasFavLine && nowPair.p1 < nowPair.p2;
-    const p1OddsDisplay = nowPair?.p1 != null ? nowPair.p1.toFixed(2) : '—';
-    const p2OddsDisplay = nowPair?.p2 != null ? nowPair.p2.toFixed(2) : '—';
+    const p1OddsDisplay = nowPair?.p1 != null ? mxOddsTxt(nowPair.p1) : '—';
+    const p2OddsDisplay = nowPair?.p2 != null ? mxOddsTxt(nowPair.p2) : '—';
     // Yesterday / 2-days-ago matches have no betting market (the match is
     // already over) — show the real final score instead of odds. "pending"
     // (never blank/guessed) if this is a past-day match whose score wasn't
@@ -9352,8 +9426,8 @@ function renderMatches(){
     };
     const finOddsCell = (open, close) => {
       const rows = [];
-      if (open != null)  rows.push(`<span class="fo-pair open"><span class="fo-l">Open</span><span class="fo-v">${open.toFixed(2)}</span></span>`);
-      if (close != null) rows.push(`<span class="fo-pair"><span class="fo-l">${open != null ? 'Close' : 'Odds'}</span><span class="fo-v">${close.toFixed(2)}</span></span>`);
+      if (open != null)  rows.push(`<span class="fo-pair open"><span class="fo-l">Open</span><span class="fo-v">${mxOddsTxt(open)}</span></span>`);
+      if (close != null) rows.push(`<span class="fo-pair"><span class="fo-l">${open != null ? 'Close' : 'Odds'}</span><span class="fo-v">${mxOddsTxt(close)}</span></span>`);
       return rows.length ? `<span class="mx-finodds">${rows.join('')}</span>` : '';
     };
     const p1OddsCell = finOddsCell(p1Open, p1Close);
@@ -9544,13 +9618,13 @@ function renderMatches(){
       // leg is the pinned pre-start close, so the figure reads "open → close".
       const cov = mcOpenCoverage(filtered.filter(m => m.finalScore));
       panels.push(`<div class="mc-story"><div class="mc-story__lbl">Biggest market move</div>`
-        + `<div class="mc-story__move"><span class="mc-story__od">${bmv.o.toFixed(2)} → ${bmv.c.toFixed(2)}</span><span class="mc-drift ${bmv.d.dir}">${bmv.d.text}</span></div>`
+        + `<div class="mc-story__move"><span class="mc-story__od">${mxOddsTxt(bmv.o)} → ${mxOddsTxt(bmv.c)}</span><span class="mc-drift ${bmv.d.dir}">${bmv.d.text}</span></div>`
         + `<div class="mc-story__ctx"><strong>${bmv.name}</strong> ${bmv.d.pct > 0 ? 'drifted' : 'shortened'} · v ${bmv.opp}${bmv.tour ? ' · ' + bmv.tour : ''}${bmv.round ? ' ' + bmv.round : ''}</div>`
         + `<div class="mc-story__faint">${mcMoveBookLabel(bmv.m, 'close')} · ${cov.text}</div></div>`);
     }
     if (upsetRows.length) {
       const rows = upsetRows.slice(0, 3).map(u =>
-        `<div class="mc-story__ups"><span class="mc-story__upname"><strong>${u.winner}</strong> d. ${u.loser}</span><span class="mc-story__upprice">${u.price.toFixed(2)}</span></div>`).join('');
+        `<div class="mc-story__ups"><span class="mc-story__upname"><strong>${u.winner}</strong> d. ${u.loser}</span><span class="mc-story__upprice">${mxOddsTxt(u.price)}</span></div>`).join('');
       panels.push(`<div class="mc-story"><div class="mc-story__lbl">Upsets</div>${rows}</div>`);
     }
     if (vpPicks > 0) {
@@ -9635,9 +9709,9 @@ function renderMatches(){
     panels.push(`<div class="mc-story mc-story--click${driftOn ? ' is-on' : ''}" data-mxsummary="drift" role="button" tabindex="0" aria-pressed="${driftOn ? 'true' : 'false'}" title="${driftOn ? 'Back to the default view' : 'Sort by drift'}">`
       + `<div class="mc-story__lbl">Biggest market move</div>`
       + (bmv
-          ? `<div class="mc-story__move"><span class="mc-story__od">${bmv.o.toFixed(2)} → ${bmv.c.toFixed(2)}</span><span class="mc-drift ${bmv.d.dir}">${bmv.d.text}</span></div>`
+          ? `<div class="mc-story__move"><span class="mc-story__od">${mxOddsTxt(bmv.o)} → ${mxOddsTxt(bmv.c)}</span><span class="mc-drift ${bmv.d.dir}">${bmv.d.text}</span></div>`
             + `<div class="mc-story__ctx"><strong>${bmv.name}</strong> ${bmv.d.pct > 0 ? 'drifted' : 'shortened'} · v ${bmv.opp}${bmv.tour ? ' · ' + bmv.tour : ''}${bmv.round ? ' ' + bmv.round : ''}</div>`
-            + `<div class="mc-story__faint">${mcMoveBookLabel(bmv.m, 'now')} · ${driftCov.text}</div>`
+            + `<div class="mc-story__faint">${mcMoveBookLabel(bmv.m, 'now')} · ${driftOn && MX_DRIFT_FILTER ? `${MX_DRIFT_FILTER.shown} of ${MX_DRIFT_FILTER.total} matches moved · the rest are filtered out` : driftCov.text}</div>`
           : `<div class="mc-story__vpempty">No opening prices on file</div>`
             + `<div class="mc-story__faint">${mcMoveBookLabel(null, 'now')} · ${driftCov.text}</div>`)
       + `</div>`);
@@ -9677,7 +9751,7 @@ function renderMatches(){
     });
     if (sp) {
       panels.push(`<div class="mc-story"><div class="mc-story__lbl">Shortest price</div>`
-        + `<div class="mc-story__move"><span class="mc-story__od">${sp.price.toFixed(2)}</span><span class="mc-story__name">${sp.name}</span></div>`
+        + `<div class="mc-story__move"><span class="mc-story__od">${mxOddsTxt(sp.price)}</span><span class="mc-story__name">${sp.name}</span></div>`
         + `<div class="mc-story__ctx">v ${sp.opp}${sp.tour ? ' · ' + sp.tour : ''}${sp.round ? ' ' + sp.round : ''}${sp.book ? ' · ' + sp.book : ''}</div></div>`);
     }
 
@@ -9700,8 +9774,8 @@ function renderMatches(){
       const favIsP1 = a1 <= b1;
       const bookTxt = tm.pr.book ? ' · ' + tm.pr.book : '';
       panels.push(`<div class="mc-story"><div class="mc-story__lbl">Tightest match</div>`
-        + `<div class="mc-story__tight"><span class="mc-story__tname${favIsP1 ? ' lead' : ''}">${m.p1}</span><span class="mc-story__tod">${a1.toFixed(2)}</span></div>`
-        + `<div class="mc-story__tight"><span class="mc-story__tname${favIsP1 ? '' : ' lead'}">${m.p2}</span><span class="mc-story__tod">${b1.toFixed(2)}</span></div>`
+        + `<div class="mc-story__tight"><span class="mc-story__tname${favIsP1 ? ' lead' : ''}">${m.p1}</span><span class="mc-story__tod">${mxOddsTxt(a1)}</span></div>`
+        + `<div class="mc-story__tight"><span class="mc-story__tname${favIsP1 ? '' : ' lead'}">${m.p2}</span><span class="mc-story__tod">${mxOddsTxt(b1)}</span></div>`
         + `<div class="mc-story__ctx">${m.tour || ''}${roundBadgeText(m.tournamentRound) ? ' ' + roundBadgeText(m.tournamentRound) : ''}${bookTxt}</div></div>`);
     }
 
