@@ -712,10 +712,24 @@ check('6 min out with a fixture 30 min from starting: sweep',
       A.should_sweep(6.0, 30.0) == (True, 'near-start'))
 check('4 min out with a fixture 30 min from starting: skip',
       A.should_sweep(4.0, 30.0)[0] is False)
-check('a fixture 61 min away is NOT near-start, so the baseline applies',
-      A.should_sweep(6.0, 61.0)[0] is False)
-check('a fixture exactly 60 min away IS near-start (absolute boundary)',
-      A.should_sweep(6.0, 60.0)[0] is True)
+# WIDENED 2026-09-19, founder item 4(a): "widen the dense window". The two
+# boundary assertions below were written against T-60 and are rewritten to the
+# window in force rather than deleted, because their JOB — pinning where the
+# boundary is, from both sides — is unchanged. They read the shipped constant
+# rather than a literal 180, so a future widening cannot pass by moving the
+# number this file was supposed to be guarding.
+W = A.NEAR_START_WINDOW_MIN
+check('the dense window is the WIDENED 180 min, not the original 60 — the '
+      'measured start delay on the 17 lag failures is NEGATIVE (median -11 min, '
+      'min -860), so a T-60 window can open after the match has begun',
+      W == 180.0, W)
+check('a fixture just OUTSIDE the window is not near-start, so the baseline applies',
+      A.should_sweep(6.0, W + 1.0)[0] is False)
+check('a fixture exactly at the window edge IS near-start (absolute boundary)',
+      A.should_sweep(6.0, W)[0] is True)
+check('...and the OLD 60-min edge is now comfortably inside it — the control '
+      'for the widening, which would read identically if nothing had changed',
+      A.should_sweep(6.0, 120.0) == (True, 'near-start'))
 check('NO previous sweep -> sweep. For a feed whose prices cannot be '
       're-fetched, a redundant sweep costs one call and a skipped one costs a '
       'price nobody has', A.should_sweep(None, None) == (True, 'no-previous-sweep'))

@@ -375,7 +375,23 @@ def _emit_output(name, value):
 
 BASELINE_MIN = 15.0     # founder ruling 2026-09-18 item 2: "Sweep 15 min baseline"
 NEAR_START_MIN = 5.0    # "...5 min from T-60 to start"
-NEAR_START_WINDOW_MIN = 60.0
+# ── TEN-225 item 4(a), founder 2026-09-19: "widen the dense window" ────────
+# Was 60.0 — T-60 before the SCHEDULED start. MEASURED on the 17 flip-started
+# fixtures whose Close failed the 60-minute lag limb: the start delay
+# (flip start - scheduled start) is NEGATIVE — median -11.0 min, p95 -4.1,
+# min -860.0 (14.3 hours EARLY), n=17 (n<30). A fixture that starts 11 minutes
+# early is still inside a T-60 window; one that starts hours early is not, and
+# the dense window opens after its match is already over.
+#
+# 180 covers everything in that sample except the single -860 outlier, which
+# nothing short of a permanently-5-minute sweep reaches — and at that point the
+# "window" is not a window, it is the baseline. Kibl is free and unmetered, so
+# the constraint here is not cost but courtesy: we use this feed as a favour,
+# and tripling its call volume around the clock is a different conversation
+# from widening a window.
+#
+# ⚠️ READ THE ITEM 6 NOTE BELOW BEFORE EXPECTING THIS TO RECOVER THE 17.
+NEAR_START_WINDOW_MIN = 180.0
 # MEASURED on run 35311030824: the pinger fired at 05:30:01Z, the previous
 # capture's started_at was 05:25:0xZ, and the gate read "5.0 min since the last
 # sweep, floor is 5 -> SKIP". The dispatch interval is exactly the floor, but
@@ -387,6 +403,38 @@ NEAR_START_WINDOW_MIN = 60.0
 # the one window it was ruled for. 30s is under the smallest firing interval, so
 # it can never let two firings of one interval both sweep.
 CADENCE_GRACE_MIN = 0.5
+
+# ── ITEM 6, AND WHY (b) CANNOT WORK — traced, not assumed ──────────────────
+# The founder ruled shape (c): "Widen the dense window AND trigger off the live
+# flip as the backstop... Report how many of the 17 it recovers." He ruled it on
+# my recommendation, and my recommendation was wrong. Two structural facts:
+#
+# 1. THE LAG LIMB IS MEASURED ON A VENDOR CLOCK WE CANNOT INFLUENCE.
+#    ten225-kibl-card-state.py sets `close_ts = close_obs['inserted_on']`, and
+#    `lag_min = (start_ts - close_ts) / 60`. `inserted_on` is KIBL's own
+#    row-write time — the founder's own words, "every Kibl timestamp is
+#    vendor-insert time". Sweeping more often produces more rows carrying the
+#    SAME inserted_on, and kibl_client.observation_key() hashes inserted_on, so
+#    an ignore-duplicates insert discards them. A denser sweep cannot move the
+#    number the limb tests. The 17 rejections say "this book had not moved this
+#    price for over an hour before the off", which is a fact about the market.
+#
+# 2. A SWEEP TRIGGERED BY THE LIVE FLIP RUNS AFTER THE OFF.
+#    The flip fires when a fixture is first seen live. Every price captured from
+#    that moment on is in-play by construction, and a Close must be pre-start.
+#    So limb (b) cannot supply a Close for the fixture that triggered it, ever.
+#
+# WHAT WIDENING THE WINDOW DOES BUY, honestly bounded: Kibl exposes current /
+# opener / previous state, not a series, so a price the book posts and then
+# replaces between two of our sweeps is lost outright. A denser window catches
+# more of those intervening inserted_on values for fixtures that start earlier
+# than T-60. That is real, and it is NOT measurable in advance from our own
+# archive — the prices it would have caught are precisely the ones we do not
+# have. So this is shipped as a capture improvement with an honest zero
+# attached, not as a recovery of the 17.
+#
+# Reported to the founder rather than built as ruled, because building (b) would
+# be building something structurally incapable of the stated goal.
 
 
 def should_sweep(minutes_since_last, minutes_to_next_start):
