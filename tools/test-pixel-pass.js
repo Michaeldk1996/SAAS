@@ -366,6 +366,20 @@ check('item 6 · the ribbon emits six chips and fades rather than clipping', () 
   assert(/overflow:hidden/.test(html), 'the chip track does not clip its overflow');
 });
 
+check('item 6 · the ribbon grid is README §3\'s five tracks, verbatim', () => {
+  // The DECLARATION, not the resolved widths. Two of the five tracks are `auto`
+  // and two are `fr`, so what they resolve to depends on the viewport and on
+  // how wide the opponent names happen to render — pinning a resolved px value
+  // makes this check a function of the window size, which is not what §3
+  // constrains. Measured at the design's own 1234 CSS column, ours resolves to
+  // 84.0 / 352.5 / 1.0 / 587.5 / 75.0 and the design's chip track is ~30 CSS
+  // wider, which is one more chip clearing the fade. Reported, not chased.
+  const html = I.renderRibbon({ filtered: HCTX.rows, ledgerOpen: false });
+  assert(/grid-template-columns:auto minmax\(180px,1\.2fr\) auto minmax\(0,2fr\) auto/.test(html),
+    'the ribbon grid is no longer README §3\'s five tracks');
+  assert(/gap:22px/.test(html), 'the ribbon grid gap is not the spec 22px');
+});
+
 check('item 6 · a player with fewer than six results emits what he has, never padding', () => {
   const html = I.renderRibbon({ filtered: HCTX.rows.slice(0, 3), ledgerOpen: false });
   const chips = html.match(/class="pp2-chip"/g) || [];
@@ -462,6 +476,10 @@ const mutants = [
   ['item 6 · the chip count cut to four',
    "var chips = rows.slice(-6).reverse();", "var chips = rows.slice(-4).reverse();",
    /emits 4 chips/],
+  ['item 6 · the ribbon grid template changed',
+   "grid-template-columns:auto minmax(180px,1.2fr) auto minmax(0,2fr) auto;",
+   "grid-template-columns:auto 1fr auto 1fr auto;",
+   /no longer README .3's five tracks/],
   ['item 6 · the fade mask removed, so the row clips',
    "'mask-image:linear-gradient(90deg,#000 82%,transparent);\">'",
    "'\">'", /does not carry the spec fade mask/],
@@ -535,6 +553,8 @@ function scoreAgainst(MI, MCODE) {
   if (nchips !== 6) throw new Error(`the ribbon emits ${nchips} chips`);
   if (!/[^-]mask-image:linear-gradient\(90deg,#000 82%,transparent\)/.test(rib))
     throw new Error('the chip track does not carry the spec fade mask');
+  if (!/grid-template-columns:auto minmax\(180px,1\.2fr\) auto minmax\(0,2fr\) auto/.test(rib))
+    throw new Error("the ribbon grid is no longer README §3's five tracks");
   // item 7
   const SPEC_SIZES = { career: 26, season: 26, tourn: 30, speed: 22,
     splits: 20, styles: 30, market: 26, profile: 30 };
