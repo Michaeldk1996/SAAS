@@ -5115,22 +5115,11 @@
     "venue": null,
     "courtSpeed": null,
     "weather": null,
-    "live": true,
-    "liveStatus": "Set 2",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 6,
-        "p2": 2
-      },
-      {
-        "set": 2,
-        "p1": 0,
-        "p2": 1
-      }
-    ],
-    "liveGameScore": "40 - 15",
-    "liveServer": "p1",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/39675_e-moeller.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/38103_i-radulov.jpg",
     "oddsMovement": {
@@ -5208,10 +5197,7 @@
       "at": "2026-09-19T16:17:24.672Z",
       "observedAt": "2026-09-19T16:18:10Z",
       "src": "live"
-    },
-    "interrupted": false,
-    "partialScore": null,
-    "finalScore": null
+    }
   },
   {
     "id": "upcoming-12163928",
@@ -15354,22 +15340,11 @@
     "venue": null,
     "courtSpeed": null,
     "weather": null,
-    "live": true,
-    "liveStatus": "Set 2",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 5,
-        "p2": 7
-      },
-      {
-        "set": 2,
-        "p1": 3,
-        "p2": 2
-      }
-    ],
-    "liveGameScore": "0 - 0",
-    "liveServer": "p2",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/902_j-mensik.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2973_b-shelton.jpg",
     "oddsMovement": {
@@ -15484,10 +15459,7 @@
       "edgeVsPinnacleP1": -0.06,
       "edgeVsPinnacleP2": 0.06,
       "ts": "2026-09-19T09:53:35.223Z"
-    },
-    "interrupted": false,
-    "partialScore": null,
-    "finalScore": null
+    }
   },
   {
     "id": "upcoming-12163939",
@@ -30356,7 +30328,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2168_s-wawrinka.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-09-19T16:45:01Z",
+      "capturedAt": "2026-09-19T17:00:01Z",
       "startTime": "2026-09-19T18:10:00.000Z",
       "fixtureId": "id1200210074801106",
       "books": {
@@ -32384,7 +32356,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/379_d-stricker.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-09-19T16:45:01Z",
+      "capturedAt": "2026-09-19T17:00:01Z",
       "startTime": "2026-09-19T19:20:00.000Z",
       "fixtureId": "id1200210074801108",
       "books": {
@@ -34668,7 +34640,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1902_a-rinderknech.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-09-19T16:45:01Z",
+      "capturedAt": "2026-09-19T17:00:01Z",
       "startTime": "2026-09-19T19:10:00.000Z",
       "fixtureId": "id1200210074800994",
       "books": {
@@ -37064,7 +37036,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1925_q-halys.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-09-19T16:45:01Z",
+      "capturedAt": "2026-09-19T17:00:01Z",
       "startTime": "2026-09-19T20:20:00.000Z",
       "fixtureId": "id1200210074801002",
       "books": {
@@ -39670,7 +39642,7 @@
     "p2PhotoUrl": null,
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-09-19T16:45:01Z",
+      "capturedAt": "2026-09-19T17:00:01Z",
       "startTime": "2026-09-19T17:20:00.000Z",
       "fixtureId": "id1200210074806102",
       "books": {
@@ -40911,7 +40883,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/55148_m-molder.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-09-19T16:45:01Z",
+      "capturedAt": "2026-09-19T17:00:01Z",
       "startTime": "2026-09-19T19:10:00.000Z",
       "fixtureId": "id1200210074806074",
       "books": {
@@ -41984,7 +41956,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/52071_o-ojakaar.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-09-19T16:45:01Z",
+      "capturedAt": "2026-09-19T17:00:01Z",
       "startTime": "2026-09-19T20:20:00.000Z",
       "fixtureId": "id1200210074806076",
       "books": {
@@ -43722,7 +43694,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/9217_d-vallejo.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-09-19T16:45:01Z",
+      "capturedAt": "2026-09-19T17:00:01Z",
       "startTime": "2026-09-19T20:10:00.000Z",
       "fixtureId": "id1200210074803732",
       "books": {
@@ -45250,7 +45222,7 @@
     "p2PhotoUrl": null,
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-09-19T16:45:01Z",
+      "capturedAt": "2026-09-19T17:00:01Z",
       "startTime": "2026-09-19T22:00:00.000Z",
       "fixtureId": "id1200210074806646",
       "books": {
@@ -47444,17 +47416,11 @@
     "venue": null,
     "courtSpeed": null,
     "weather": null,
-    "live": true,
-    "liveStatus": "Set 1",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 2,
-        "p2": 3
-      }
-    ],
-    "liveGameScore": "15 - 0",
-    "liveServer": "p1",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2982_a-tabilo.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/978_d-merida-aguilar.jpg",
     "oddsMovement": {
@@ -47563,10 +47529,7 @@
       "edgeVsPinnacleP1": -0.0757,
       "edgeVsPinnacleP2": 0.0757,
       "ts": "2026-09-19T09:53:35.223Z"
-    },
-    "interrupted": false,
-    "partialScore": null,
-    "finalScore": null
+    }
   },
   {
     "id": "upcoming-12164125",
@@ -49282,7 +49245,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/50323_r-jodar.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-09-19T16:45:01Z",
+      "capturedAt": "2026-09-19T17:00:01Z",
       "startTime": "2026-09-19T17:10:00.000Z",
       "fixtureId": "id1200210074804480",
       "books": {
@@ -52500,22 +52463,11 @@
     "venue": null,
     "courtSpeed": null,
     "weather": null,
-    "live": true,
-    "liveStatus": "Set 2",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 4,
-        "p2": 6
-      },
-      {
-        "set": 2,
-        "p1": 2,
-        "p2": 1
-      }
-    ],
-    "liveGameScore": "0 - 15",
-    "liveServer": "p2",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/786_k-montsi.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1079_d-dzumhur.jpg",
     "oddsMovement": {
@@ -52603,10 +52555,7 @@
       "at": "2026-09-18T19:16:57.512Z",
       "observedAt": "2026-09-19T16:18:10Z",
       "src": "live"
-    },
-    "interrupted": false,
-    "partialScore": null,
-    "finalScore": null
+    }
   },
   {
     "id": "upcoming-12164158",
@@ -54649,27 +54598,7 @@
       "edgeVsPinnacleP1": -0.0077,
       "edgeVsPinnacleP2": 0.0077,
       "ts": "2026-09-19T09:53:35.223Z"
-    },
-    "retired": false,
-    "walkover": false,
-    "finalScore": {
-      "display": "6-4, 6-4",
-      "sets": [
-        {
-          "p1": 6,
-          "p2": 4
-        },
-        {
-          "p1": 6,
-          "p2": 4
-        }
-      ],
-      "p1Sets": 2,
-      "p2Sets": 0,
-      "winner": "p1"
-    },
-    "interrupted": false,
-    "partialScore": null
+    }
   },
   {
     "id": "upcoming-12164177",
@@ -57478,27 +57407,7 @@
       "edgeVsPinnacleP1": 0.0037,
       "edgeVsPinnacleP2": -0.0037,
       "ts": "2026-09-19T09:53:35.223Z"
-    },
-    "retired": false,
-    "walkover": false,
-    "finalScore": {
-      "display": "4-6, 3-6",
-      "sets": [
-        {
-          "p1": 4,
-          "p2": 6
-        },
-        {
-          "p1": 3,
-          "p2": 6
-        }
-      ],
-      "p1Sets": 0,
-      "p2Sets": 2,
-      "winner": "p2"
-    },
-    "interrupted": false,
-    "partialScore": null
+    }
   },
   {
     "id": "upcoming-12164181",
@@ -59209,27 +59118,7 @@
       "at": "2026-09-19T12:05:40.377Z",
       "observedAt": "2026-09-19T13:53:03Z",
       "src": "live"
-    },
-    "retired": false,
-    "walkover": false,
-    "finalScore": {
-      "display": "7-5, 6-0",
-      "sets": [
-        {
-          "p1": 7,
-          "p2": 5
-        },
-        {
-          "p1": 6,
-          "p2": 0
-        }
-      ],
-      "p1Sets": 2,
-      "p2Sets": 0,
-      "winner": "p1"
-    },
-    "interrupted": false,
-    "partialScore": null
+    }
   },
   {
     "id": "upcoming-12164237",
@@ -61309,27 +61198,7 @@
       "edgeVsPinnacleP1": 0.0658,
       "edgeVsPinnacleP2": -0.0658,
       "ts": "2026-09-19T10:26:45.512Z"
-    },
-    "retired": false,
-    "walkover": false,
-    "finalScore": {
-      "display": "6-0, 6-4",
-      "sets": [
-        {
-          "p1": 6,
-          "p2": 0
-        },
-        {
-          "p1": 6,
-          "p2": 4
-        }
-      ],
-      "p1Sets": 2,
-      "p2Sets": 0,
-      "winner": "p1"
-    },
-    "interrupted": false,
-    "partialScore": null
+    }
   },
   {
     "id": "upcoming-12164238",
@@ -64307,27 +64176,7 @@
       "at": "2026-09-19T15:53:51.713Z",
       "observedAt": "2026-09-19T16:18:10Z",
       "src": "live"
-    },
-    "retired": false,
-    "walkover": false,
-    "finalScore": {
-      "display": "4-6, 1-6",
-      "sets": [
-        {
-          "p1": 4,
-          "p2": 6
-        },
-        {
-          "p1": 1,
-          "p2": 6
-        }
-      ],
-      "p1Sets": 0,
-      "p2Sets": 2,
-      "winner": "p2"
-    },
-    "interrupted": false,
-    "partialScore": null
+    }
   },
   {
     "id": "upcoming-12164240",
@@ -65331,17 +65180,11 @@
     "venue": null,
     "courtSpeed": null,
     "weather": null,
-    "live": true,
-    "liveStatus": "Set 1",
-    "liveScore": [
-      {
-        "set": 1,
-        "p1": 2,
-        "p2": 1
-      }
-    ],
-    "liveGameScore": "30 - 40",
-    "liveServer": "p2",
+    "live": false,
+    "liveStatus": null,
+    "liveScore": null,
+    "liveGameScore": null,
+    "liveServer": null,
     "p1PhotoUrl": null,
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1307_a-hernandez.jpg",
     "oddsMovement": {
@@ -65419,10 +65262,7 @@
       "at": "2026-09-19T01:14:22.880Z",
       "observedAt": "2026-09-19T16:18:10Z",
       "src": "live"
-    },
-    "interrupted": false,
-    "partialScore": null,
-    "finalScore": null
+    }
   },
   {
     "id": "upcoming-12164255",
@@ -66728,7 +66568,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/358_n-borges.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-09-19T16:45:01Z",
+      "capturedAt": "2026-09-19T17:00:01Z",
       "startTime": "2026-09-19T18:00:00.000Z",
       "fixtureId": "id1200210074832482",
       "books": {
@@ -67945,7 +67785,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/824_j-faria.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-09-19T16:45:01Z",
+      "capturedAt": "2026-09-19T17:00:01Z",
       "startTime": "2026-09-19T19:10:00.000Z",
       "fixtureId": "id1200210074832484",
       "books": {
@@ -69461,7 +69301,7 @@
     "p2PhotoUrl": null,
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-09-19T16:45:01Z",
+      "capturedAt": "2026-09-19T17:00:01Z",
       "startTime": "2026-09-19T21:20:00.000Z",
       "fixtureId": "id1200210074803734",
       "books": {
@@ -72002,7 +71842,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/9608_s-shimabukuro.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-09-19T16:45:01Z",
+      "capturedAt": "2026-09-19T17:00:01Z",
       "startTime": "2026-09-20T01:10:00.000Z",
       "fixtureId": "id1200210074808100",
       "books": {
@@ -73342,7 +73182,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/37897_r-sakamoto.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-09-19T16:45:01Z",
+      "capturedAt": "2026-09-19T17:00:01Z",
       "startTime": "2026-09-20T02:20:00.000Z",
       "fixtureId": "id1200210074808470",
       "books": {
@@ -75629,7 +75469,7 @@
     },
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-09-19T16:45:01Z",
+      "capturedAt": "2026-09-19T17:00:01Z",
       "startTime": "2026-09-20T04:10:00.000Z",
       "fixtureId": "id1200210074807984",
       "books": {
@@ -77879,7 +77719,7 @@
     },
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-09-19T16:45:01Z",
+      "capturedAt": "2026-09-19T17:00:01Z",
       "startTime": "2026-09-20T05:20:00.000Z",
       "fixtureId": "id1200210074807986",
       "books": {
@@ -83694,7 +83534,7 @@
     },
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-09-19T16:45:01Z",
+      "capturedAt": "2026-09-19T17:00:01Z",
       "startTime": "2026-09-20T04:10:00.000Z",
       "fixtureId": "id1200210074818746",
       "books": {
@@ -116260,7 +116100,7 @@
     },
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-09-19T16:45:01Z",
+      "capturedAt": "2026-09-19T17:00:01Z",
       "startTime": "2026-09-20T05:20:00.000Z",
       "fixtureId": "id1200210074853976",
       "books": {
