@@ -3632,6 +3632,107 @@
   .db-footnote b{ color:var(--db-emph); font-weight:700; }
   .db-disclaimer{ margin:16px 0 0; font-family:var(--db-ui); font-size:12px; color:var(--db-mute); }
   .db-loading{ font-family:var(--db-mono); font-size:12px; color:var(--db-mute); padding:40px 0; }
+
+  /* ---- TEN-243 STEP 1: the control bar's two zones (README section 2,
+     "Bottom strip - filters, in two zones"). The left zone carries the SUBJECT
+     (chips + search); the right zone carries the slicers, the year range and
+     Reset. The divider is not decoration: README - "The divider only appears
+     once the left zone has something in it - on Tour the whole bar is one run
+     of controls." So the border and the 14px pad are applied by a class the
+     renderer only adds when the left zone rendered content, never unconditionally. */
+  .db-zL{ display:flex; align-items:center; flex-wrap:wrap; gap:10px; min-width:0; }
+  .db-zR{ display:flex; align-items:center; flex-wrap:wrap; flex:1 1 auto; gap:10px; min-width:0; }
+  .db-zR.div{ padding-left:14px; border-left:1px solid rgba(255,255,255,0.14); }
+
+  /* Pill group (segmented) - README section 2. The DISABLED state is a real
+     state with its own ink (#3d4659) and a default cursor, NOT a hidden control:
+     on Ratings, picking compare players disables Career/Last 52 because the
+     compare panel already shows both periods. Hiding it would make the control
+     look absent rather than temporarily inapplicable. */
+  .db-pills{ display:inline-flex; gap:3px; background:#0a0d13; border:1px solid var(--db-bd); border-radius:9px; padding:3px; }
+  .db-pills button{ font-family:var(--db-ui); font-size:12px; font-weight:600; border-radius:7px; white-space:nowrap;
+    background:transparent; border:1px solid transparent; color:var(--db-mute); cursor:pointer; padding:6px 14px;
+    transition:background .14s ease,color .14s ease,border-color .14s ease; }
+  .db-pills.lines button{ padding:6px 13px; }
+  .db-pills button.active{ background:rgba(91,155,255,0.22); border-color:rgba(91,155,255,0.45); color:var(--db-txt); font-weight:700; }
+  .db-pills button[disabled]{ color:#3d4659; cursor:default; background:transparent; border-color:transparent; }
+  .db-pills button[disabled].active{ color:#3d4659; background:transparent; border-color:transparent; font-weight:600; }
+
+  /* Chips-and-search box - README section 2. Distinct from .db-search (one
+     query field): this wraps N chips AND the input in one bordered box, and at
+     the cap the input is REPLACED by a note rather than merely disabled. */
+  .db-chipbox{ position:relative; flex:0 1 auto; min-width:200px; max-width:520px; }
+  .db-chipin{ display:flex; align-items:center; flex-wrap:wrap; gap:6px; min-height:36px; padding:4px 9px; border-radius:9px;
+    background:var(--db-fill); border:1px solid var(--db-bd); }
+  .db-chipin.hot{ border-color:rgba(91,155,255,0.45); }
+  .db-chip{ display:inline-flex; align-items:center; gap:6px; height:26px; padding:0 7px 0 10px; border-radius:6px; background:rgba(91,155,255,0.16); }
+  .db-chip span{ font-family:var(--db-ui); font-size:12.5px; font-weight:600; color:var(--db-txt); white-space:nowrap; }
+  .db-chip button{ background:none; border:none; padding:0; cursor:pointer; font-size:11px; color:#7ea6e8; line-height:1; }
+  .db-chipin input{ flex:1 1 110px; min-width:110px; height:26px; background:transparent; border:none; outline:none;
+    font-family:var(--db-ui); font-size:13px; color:var(--db-txt); }
+  .db-capnote{ font-family:var(--db-ui); font-size:12px; color:var(--db-faint); padding:0 2px; }
+
+  /* ---- TEN-243 STEP 5: the unwired marker. STENNISFY-DESIGN-INSTRUCTIONS
+     section 5 - if placeholder or unwired data is on screen, SAY SO, in a
+     10.5px #4b5672 note. The prototype hard-codes "Demo data"; this class is
+     driven by a real flag instead, so a slice that IS wired shows nothing and
+     only an unwired one speaks. */
+  .db-unwired{ font-family:var(--db-mono); font-size:10.5px; color:var(--db-faint); margin-top:10px; line-height:1.55; }
+
+  /* ---- TEN-243 STEP 3: Ratings board (README "TAB 4") ---- */
+  .db-rcard{ background:var(--db-surface); border:1px solid var(--db-bd); border-radius:12px; padding:22px 24px; }
+  .db-eyebrow{ font-family:var(--db-mono); font-size:10px; font-weight:600; letter-spacing:0.16em; text-transform:uppercase; color:var(--db-mute); }
+  .db-rtitle{ font-size:22px; font-weight:800; letter-spacing:-0.01em; margin:8px 0 0; color:var(--db-txt); }
+  .db-rdesc{ font-size:13px; line-height:1.55; color:var(--db-mute); max-width:760px; margin:6px 0 0; }
+  .db-rcount{ font-size:13px; margin-top:10px; color:var(--db-mute); }
+  .db-rcount b{ font-family:var(--db-mono); font-weight:400; color:var(--db-txt); }
+
+  .db-cmp{ margin-top:20px; width:fit-content; max-width:100%; overflow-x:auto;
+    background:var(--db-strip); border:1px solid rgba(91,155,255,0.22); border-radius:12px; padding:18px 20px; }
+  .db-cmpgrid{ display:grid; gap:0 12px; }
+  .db-cmphead{ display:flex; align-items:end; gap:9px; padding-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.10); }
+  .db-av{ width:28px; height:28px; border-radius:50%; flex:none; display:flex; align-items:center; justify-content:center;
+    background:linear-gradient(155deg,rgba(91,155,255,0.22),rgba(91,155,255,0.05)); border:1px solid rgba(91,155,255,0.35);
+    font-family:var(--db-mono); font-size:10px; font-weight:700; color:#6aaeff; }
+  .db-cmpname{ font-size:15px; font-weight:800; letter-spacing:-0.01em; color:var(--db-txt); }
+  .db-cmprank{ font-family:var(--db-mono); font-size:10px; color:var(--db-faint); }
+  .db-cmpx{ background:none; border:none; padding:0; cursor:pointer; font-size:11px; color:var(--db-mute); }
+  .db-sub{ font-family:var(--db-mono); font-size:9.5px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase;
+    text-align:center; padding:9px 6px 4px; color:var(--db-mute); }
+  .db-sub.live{ color:#a8c8ff; background:rgba(91,155,255,0.13); border-left:1px solid rgba(91,155,255,0.30); }
+  .db-cmprow{ border-top:1px solid rgba(255,255,255,0.07); padding:11px 0; }
+  .db-cmpcell{ font-family:var(--db-mono); text-align:center; padding:11px 0; border-top:1px solid rgba(255,255,255,0.07); }
+  .db-cmpcell.live{ font-size:16px; font-weight:700; color:var(--db-txt); background:rgba(91,155,255,0.13); border-left:1px solid rgba(91,155,255,0.30); }
+  .db-cmpcell.ref{ font-size:16px; font-weight:400; color:var(--db-sec); }
+  .db-cmpcell.delta{ font-size:12.5px; font-weight:700; }
+
+  .db-btabs{ display:flex; flex-wrap:wrap; gap:3px; background:#0a0d13; border:1px solid var(--db-bd); border-radius:10px;
+    padding:3px; margin-top:20px; width:fit-content; }
+  .db-btabs button{ font-family:var(--db-ui); font-size:12px; font-weight:600; padding:7px 14px; border-radius:8px;
+    background:transparent; border:1px solid transparent; color:var(--db-mute); cursor:pointer; white-space:nowrap;
+    transition:background .14s ease,color .14s ease,border-color .14s ease; }
+  .db-btabs button.active{ background:rgba(91,155,255,0.22); border-color:rgba(91,155,255,0.45); color:var(--db-txt); font-weight:700; }
+
+  .db-rscroll{ overflow-x:auto; }
+  .db-rgrid{ display:grid; gap:12px; }
+  .db-rhead{ padding:18px 6px 10px; border-bottom:1px solid rgba(255,255,255,0.1); }
+  .db-rh{ font-family:var(--db-mono); font-size:9.5px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:var(--db-mute); }
+  .db-rh.sortable{ letter-spacing:0.12em; line-height:1.4; color:#4b5672; cursor:pointer; background:none; border:none; padding:0; text-align:inherit;
+    font-family:var(--db-mono); font-size:9.5px; font-weight:600; text-transform:uppercase; }
+  .db-rh.sortable.on{ color:var(--db-txt); }
+  .db-rh.sortable i{ font-style:normal; color:var(--db-acc); }
+  .db-rmed{ padding:10px 6px; background:rgba(255,255,255,0.025); border-bottom:1px solid rgba(255,255,255,0.1); }
+  .db-rrow{ padding:11px 6px; border-bottom:1px solid rgba(255,255,255,0.07); }
+  .db-rnum{ font-family:var(--db-mono); font-size:12px; color:var(--db-mute); }
+  .db-rplayer{ display:flex; align-items:center; gap:9px; min-width:0; }
+  .db-av26{ width:26px; height:26px; font-size:9.5px; }
+  .db-rname{ font-size:13.5px; font-weight:600; color:var(--db-txt); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .db-rname:hover{ color:#82b4ff; }
+  .db-rfig{ font-family:var(--db-mono); font-size:13px; color:var(--db-txt); text-align:right; font-variant-numeric:tabular-nums; }
+  .db-rfig.mut{ color:var(--db-sec); }
+  .db-rfig.rtg{ font-size:14px; font-weight:700; color:#fff; }
+  .db-rfig.dash{ color:var(--db-faint); }
+  .db-rn{ font-family:var(--db-mono); font-size:13px; color:var(--db-mute); text-align:right; }
 </style>
 <div class="tabpage" data-page="database">
   <div class="pagewrap">
@@ -3645,9 +3746,18 @@
     <div class="db-ctl" id="dbCtl">
       <div class="db-ctltop">
         <div class="db-seg" id="dbViewTabs">
+          <!-- TEN-243 STEP 1.2: five tabs. The LABELS are singular and deliberate
+               (README section 2: "Labels, in order: Tour, Tournament, Player,
+               Ratings, Lines ... the singular labels are deliberate"); the
+               internal state values stay plural and are unchanged, because
+               `state.view` is what every filter, query and renderer keys on.
+               STEP 1.3: `Lines` was missing from the initialTab enum in the
+               prototype - the README flags it - so it is added here. -->
           <button class="active" data-dbview="tour">Tour</button>
-          <button data-dbview="tournaments">Tournaments</button>
-          <button data-dbview="players">Players</button>
+          <button data-dbview="tournaments">Tournament</button>
+          <button data-dbview="players">Player</button>
+          <button data-dbview="ratings">Ratings</button>
+          <button data-dbview="lines">Lines</button>
         </div>
       </div>
       <div class="db-ctlbot" id="dbFilters"></div>
@@ -26034,7 +26144,14 @@ window.DatabaseTab = (function(){
     yearMin:null, yearMax:null,
     tournament:null, player:null,
     tq:'', pq:'', menu:null, menuQ:'',
-    period:'all', psurf:null, plevel:null, ptourn:null, stance:'back'
+    period:'all', psurf:null, plevel:null, ptourn:null, stance:'back',
+    // TEN-243 STEP 3 - Ratings slicers and compare set (README "State" table:
+    // ratSurf / ratScope / ratBoard / ratSel / ratQ / lbSort / lbDir).
+    // ratVs (the rank band) is NOT carried: README "Dead code" lists
+    // showRankBand as built-but-never-mounted, so the control is not built and
+    // no state key is minted for it.
+    ratSurf:'All', ratScope:'career', ratBoard:'overview', ratSel:[], ratQ:'',
+    ratSortKey:'elo', ratSortDir:'desc'
   };
 
   // ---------- helpers ----------
@@ -26061,6 +26178,119 @@ window.DatabaseTab = (function(){
       .catch(function(e){ basePromise=null; throw e; });   // a transient failure must stay retryable
     return basePromise;
   }
+  // ================= TEN-243 STEP 3 - Ratings data layer =================
+  // Two published stores, both already on the Pages file list (pipeline.yml
+  // copies each into _site), so this adds no new artefact and no new build step:
+  //   surface-ratings.json - self-derived serve / return / under-pressure /
+  //     Mental Edge, per surface (Hard/Clay/Grass/All) x scope (career/last52).
+  //   elo-ratings.json     - SCRAPED from tennisabstract, weekly. Not ours, and
+  //     there is no formula for it in our code. It carries {all,hard,clay,grass}
+  //     -> {rating, rank}; it does NOT carry peak Elo or any Elo history.
+  //
+  // Both are loaded lazily, on first paint of the Ratings tab only, for the same
+  // reason database-yield-players.json is lazy: the base page payload is the
+  // bottleneck and a reader who never opens this tab must not pay for it.
+  var RAT_URL='./surface-ratings.json', ELO_URL='./elo-ratings.json';
+  var RAT=null, ELO=null, ratPromise=null;
+  function loadRatings(){
+    if(ratPromise) return ratPromise;
+    ratPromise = Promise.all([
+      fetch(RAT_URL,{cache:'no-cache'}).then(function(r){ if(!r.ok) throw new Error('surface-ratings http '+r.status); return r.json(); }),
+      // Elo is a SEPARATE failure domain on purpose. It is a scraped third-party
+      // file; if it 404s or the scrape lapsed, the Elo columns go to dashes and
+      // the rest of the board still renders. Folding it into the same rejection
+      // would take the whole tab down for a column we do not own.
+      fetch(ELO_URL,{cache:'no-cache'}).then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; })
+    ]).then(function(a){ RAT=a[0]; ELO=a[1]; return a; })
+      .catch(function(e){ ratPromise=null; throw e; });   // transient failures stay retryable
+    return ratPromise;
+  }
+
+  // Elo join. This is deliberately the SAME key the dashboard's existing Elo
+  // consumers use (edgeEloKey / psEloFor): last surname token + first initial,
+  // accents stripped, '.' and '-' treated as separators. Re-deriving a second
+  // key here would let two boards disagree about the same player.
+  function ratEloKey(name){
+    var p=String(name||'').normalize('NFD').replace(/[̀-ͯ]/g,'')
+      .toLowerCase().replace(/['’]/g,'').replace(/[.\-]/g,' ').replace(/\s+/g,' ').trim().split(' ').filter(Boolean);
+    if(p.length<2) return null;
+    return p[p.length-1]+'|'+p[0][0];
+  }
+  function ratLastTok(name){
+    var p=String(name||'').normalize('NFD').replace(/[̀-ͯ]/g,'')
+      .toLowerCase().replace(/['’]/g,'').replace(/[.\-]/g,' ').replace(/\s+/g,' ').trim().split(' ').filter(Boolean);
+    return p.length<2?null:p[p.length-1];
+  }
+  // Returns {all,hard,clay,grass} or null. The surname fallback is only consulted
+  // for tokens the scrape itself proved unique (bySurnameElo is built that way),
+  // so it cannot silently hand one player another player's rating.
+  function ratEloRec(name){
+    if(!ELO) return null;
+    var k=ratEloKey(name);
+    if(k && ELO.elo && ELO.elo[k]) return ELO.elo[k];
+    var t=ratLastTok(name);
+    if(t && ELO.bySurnameElo && ELO.bySurnameElo[t]) return ELO.bySurnameElo[t];
+    return null;
+  }
+
+  // The sample gate for the boards. README section "Leaderboards" measures
+  // coverage at a 10-match gate, and the standing rule is that a thin sample is
+  // FLAGGED, never filled - so a player under the gate is dropped from the board
+  // rather than shown with a rate nobody should read.
+  var RAT_GATE=10;
+
+  // Elo is the one column on this tab we do not compute. It is scraped weekly as
+  // a single CURRENT rating with no dated history, so it does not move with the
+  // Career / Last 52 control and there is no peak and no "vs peak" to show. Every
+  // surface that prints an Elo carries this line, because a reader looking at a
+  // board captioned "Last 52 weeks" would otherwise reasonably read the Elo
+  // column as a 52-week figure.
+  var ELO_CAVEAT='Elo is a current weekly snapshot from an external rating list — it does not follow the Career / Last 52 control, and we hold no Elo history, so Peak and Vs pk are dashes.';
+
+  // Column dictionaries. `k` is the path inside the scope node; a column with
+  // `k:null` is NOT WIRED - we hold no field for it - and every one of its cells
+  // renders a dash and is named in the board's unwired note. This is the whole
+  // point of STEP 5: the page says which columns are dark instead of quietly
+  // omitting them or, worse, deriving a plausible stand-in.
+  var RAT_BOARDS={
+    elo: { label:'Elo', rtg:'Elo', rtgDec:0, node:null, cols:[
+      {h:'Hard', full:'Hard-court Elo', k:'elo.hard', dec:0},
+      {h:'Clay', full:'Clay-court Elo', k:'elo.clay', dec:0},
+      {h:'Grass', full:'Grass-court Elo', k:'elo.grass', dec:0},
+      {h:'Peak', full:'Peak Elo', k:null, dec:0},
+      {h:'Vs pk', full:'Elo versus peak', k:null, dec:0}
+    ]},
+    serve: { label:'Serve', rtg:'Rtg', rtgDec:1, node:'serve', cols:[
+      {h:'1S%', full:'% 1st serves in', k:'serve.firstInPct', dec:1, pct:true},
+      {h:'1SW%', full:'% 1st serve points won', k:'serve.firstWonPct', dec:1, pct:true},
+      {h:'2SW%', full:'% 2nd serve points won', k:'serve.secondWonPct', dec:1, pct:true},
+      {h:'SGW%', full:'% service games won', k:'serve.holdPct', dec:1, pct:true},
+      {h:'ACE', full:'Aces per match', k:'serve.acesPerMatch', dec:1},
+      {h:'DF', full:'Double faults per match', k:'serve.dfPerMatch', dec:1}
+    ]},
+    return: { label:'Return', rtg:'Rtg', rtgDec:1, node:'return', cols:[
+      {h:'1RW%', full:'% 1st serve return points won', k:'return.ret1stWonPct', dec:1, pct:true},
+      {h:'2RW%', full:'% 2nd serve return points won', k:'return.ret2ndWonPct', dec:1, pct:true},
+      {h:'RGW%', full:'% return points won', k:'return.rptWonPct', dec:1, pct:true},
+      {h:'BPC%', full:'% break points converted', k:'return.bpConvPct', dec:1, pct:true}
+    ]},
+    up: { label:'Under pressure', rtg:'Rtg', rtgDec:1, node:'underPressure', cols:[
+      {h:'BPC%', full:'% break points converted', k:'underPressure.bpConvPct', dec:1, pct:true},
+      {h:'BPS%', full:'% break points saved', k:'underPressure.bpSavedPct', dec:1, pct:true},
+      {h:'TB%', full:'% tie-breaks won', k:'underPressure.tbWinPct', dec:1, pct:true},
+      {h:'DS%', full:'% deciding sets won', k:'underPressure.decWinPct', dec:1, pct:true}
+    ]},
+    mental: { label:'Mental Edge', rtg:'Rtg', rtgDec:3, node:'mental', cols:[
+      {h:'PW', full:'Pressure points won (break points saved + converted)', k:'mental.pw', dec:0},
+      {h:'PL', full:'Pressure points lost (break points lost + missed)', k:'mental.pl', dec:0, mut:true},
+      {h:'DEC%', full:'% deciding sets won', k:'underPressure.decWinPct', dec:1, pct:true},
+      {h:'5TH%', full:'% fifth sets won', k:null, dec:1, pct:true},
+      {h:'FIN%', full:'% finals won', k:null, dec:1, pct:true},
+      {h:'TB%', full:'% tie-breaks won', k:'underPressure.tbWinPct', dec:1, pct:true},
+      {h:'DSTB%', full:'% deciding-set tie-breaks won', k:null, dec:1, pct:true}
+    ]}
+  };
+
   function loadNames(){
     if(namesPromise) return namesPromise;
     namesPromise = fetch(NAMES_URL,{cache:'no-cache'}).then(function(r){ if(!r.ok) throw new Error('http '+r.status); return r.json(); })
@@ -26371,32 +26601,134 @@ window.DatabaseTab = (function(){
     state.yearMin=null; state.yearMax=null;
     state.tq=''; state.pq=''; state.menu=null; state.menuQ='';
     state.period='all'; state.psurf=null; state.plevel=null; state.ptourn=null; state.stance='back';
+    // TEN-243 STEP 1.8 - "Reset clears every tab's state at once", so the
+    // Ratings keys are cleared here too and not only while that tab is open.
+    // Resetting from Tour and then finding four players still compared on
+    // Ratings would make Reset mean "reset this tab", which is not the spec.
+    state.ratSurf='All'; state.ratScope='career'; state.ratBoard='overview';
+    state.ratSel=[]; state.ratQ=''; state.ratSortKey='elo'; state.ratSortDir='desc';
   }
   function countOf(set){ return set? String(set.size) : 'All'; }
   var lastTotal=0;
 
+  // Pill group. `disabled` is a real state, not an absence: the buttons stay on
+  // screen in #3d4659 with a default cursor so the reader can see the control is
+  // temporarily inapplicable rather than gone. README section 2.
+  function pillGroup(opts, cur, onPick, disabled, cls){
+    var g=el('div','db-pills'+(cls?(' '+cls):''));
+    opts.forEach(function(o){
+      var b=el('button', cur===o[0]?'active':null, esc(o[1]));
+      if(disabled){ b.disabled=true; b.title='Disabled while players are being compared — the compare panel already shows both periods.'; }
+      else b.onclick=function(){ onPick(o[0]); render(); };
+      g.appendChild(b);
+    });
+    return g;
+  }
+
+  // Chips-and-search box. Distinct from searchField(): N chips live INSIDE the
+  // box with the input, and at the cap the input is REPLACED by the cap note
+  // (README: "At the cap the input is replaced by a note"), which is why the
+  // input is only appended on the else branch.
+  function chipSearch(o){
+    var wrap=el('div','db-chipbox');
+    var q=(o.query||'').trim();
+    var box=el('div','db-chipin'+((o.prompting||q)?' hot':''));
+    o.picks.forEach(function(name){
+      var chip=el('div','db-chip','<span>'+esc(name)+'</span>');
+      if(!o.fixed){
+        var x=el('button',null,'×'); x.title='Remove '+name;
+        x.onclick=function(){ o.onRemove(name); render(); };
+        chip.appendChild(x);
+      }
+      box.appendChild(chip);
+    });
+    if(o.picks.length>=o.cap){
+      box.appendChild(el('span','db-capnote',esc(o.capNote)));
+    } else {
+      var inp=el('input'); inp.type='text';
+      inp.placeholder = o.picks.length ? o.placeholder2 : o.placeholder;
+      inp.value=o.query;
+      inp.oninput=function(){ o.onInput(inp.value); renderFilters();
+        var n=document.querySelector('.db-chipin input'); if(n){ n.focus(); n.setSelectionRange(n.value.length,n.value.length); } };
+      inp.onclick=function(ev){ ev.stopPropagation(); };
+      box.appendChild(inp);
+    }
+    wrap.appendChild(box);
+    if(q && o.picks.length<o.cap){
+      var pop=el('div','db-pop'); pop.onclick=function(ev){ ev.stopPropagation(); };
+      var hits=o.match(q);
+      if(!hits.length) pop.appendChild(el('div','db-pempty','No '+o.noun+' matches that.'));
+      else hits.forEach(function(h){
+        var row=el('div','db-prow');
+        row.innerHTML='<span>'+esc(h.label)+'</span>'+(h.meta?('<em>'+esc(h.meta)+'</em>'):'');
+        row.onmousedown=function(ev){ ev.preventDefault(); o.onPick(h.value); render(); };
+        pop.appendChild(row);
+      });
+      wrap.appendChild(pop);
+    }
+    return wrap;
+  }
+
   function renderFilters(){
     var bar=document.getElementById('dbFilters'); if(!bar) return;
     bar.innerHTML='';
+    // TEN-243 STEP 1.4 - the bar is TWO zones: the subject on the left, the
+    // slicers on the right. The divider between them is applied below, and only
+    // when the left zone actually rendered something, so on Tour the bar reads
+    // as one run of controls with no orphan rule.
+    var zL=el('div','db-zL'), zR=el('div','db-zR');
+    bar.appendChild(zL); bar.appendChild(zR);
+    if(state.view==='ratings'){
+      zL.appendChild(chipSearch({
+        picks:state.ratSel, cap:4, capNote:'Four players maximum', noun:'player',
+        placeholder:'Compare players…', placeholder2:'Add a player…', query:state.ratQ,
+        onInput:function(v){ state.ratQ=v; },
+        match:function(q){
+          if(!RAT) return [];
+          var ql=q.toLowerCase();
+          return (RAT.players||[]).filter(function(p){
+            return p.name.toLowerCase().indexOf(ql)>=0 && state.ratSel.indexOf(p.name)<0;
+          }).slice(0,40).map(function(p){ return {label:p.name, value:p.name, meta:p.rank!=null?('#'+p.rank):''}; });
+        },
+        onPick:function(n){ if(state.ratSel.length<4) state.ratSel=state.ratSel.concat([n]); state.ratQ=''; },
+        onRemove:function(n){ state.ratSel=state.ratSel.filter(function(x){ return x!==n; }); }
+      }));
+      zR.appendChild(pillGroup([['All','All'],['Hard','Hard'],['Clay','Clay'],['Grass','Grass']],
+        state.ratSurf, function(v){ state.ratSurf=v; }, false));
+      // Disabled, not hidden, while the compare panel is open.
+      zR.appendChild(pillGroup([['career','Career'],['last52','Last 52 weeks']],
+        state.ratScope, function(v){ state.ratScope=v; }, state.ratSel.length>=2));
+      var rreset=el('button','db-reset','Reset'); rreset.onclick=function(){ resetFilters(); render(); };
+      zR.appendChild(rreset);
+      if(zL.childNodes.length) zR.classList.add('div');
+      return;
+    }
+    if(state.view==='lines'){
+      // No controls are offered. Slicers over a tab with nothing wired behind
+      // them would imply a query is running; the card says what is missing.
+      var lreset=el('button','db-reset','Reset'); lreset.onclick=function(){ resetFilters(); render(); };
+      zR.appendChild(lreset);
+      return;
+    }
     if(state.view==='tour'){
       var lvOpts=tourLevelOpts();   // null => dictionary moved; drop the control
       // Clear the filter alongside the control, matching the Players branch. Without
       // it a dropped control could leave an applied filter with no way to clear it.
       if(!lvOpts) state.levels=null;
-      if(lvOpts) bar.appendChild(trigger('Level', countOf(state.levels), !!state.levels, 'level', function(){ return multiMenu(lvOpts, state.levels, function(s){state.levels=s;}); }));
-      bar.appendChild(trigger('Surface', countOf(state.surfaces), !!state.surfaces, 'surface', function(){ return multiMenu(allOpts(M.surfaces), state.surfaces, function(s){state.surfaces=s;}); }));
+      if(lvOpts) zR.appendChild(trigger('Level', countOf(state.levels), !!state.levels, 'level', function(){ return multiMenu(lvOpts, state.levels, function(s){state.levels=s;}); }));
+      zR.appendChild(trigger('Surface', countOf(state.surfaces), !!state.surfaces, 'surface', function(){ return multiMenu(allOpts(M.surfaces), state.surfaces, function(s){state.surfaces=s;}); }));
       var rdOpts=roundOpts();   // null => dictionary moved; drop the control and the filter with it
       if(!rdOpts) state.rounds=null;
-      if(rdOpts) bar.appendChild(trigger('Round', countOf(state.rounds), !!state.rounds, 'round', function(){ return multiMenu(rdOpts, state.rounds, function(s){state.rounds=s;}, true); }));
-      bar.appendChild(yearControl());
+      if(rdOpts) zR.appendChild(trigger('Round', countOf(state.rounds), !!state.rounds, 'round', function(){ return multiMenu(rdOpts, state.rounds, function(s){state.rounds=s;}, true); }));
+      zR.appendChild(yearControl());
     } else if(state.view==='tournaments'){
       if(state.tournament){
         var chip=el('div','db-subject','<span>'+esc(tournLabelOf(state.tournament))+'</span>');
         var x=el('button',null,'×'); x.title='Clear tournament';
         x.onclick=function(){ state.tournament=null; state.tq=''; render(); };
-        chip.appendChild(x); bar.appendChild(chip);
+        chip.appendChild(x); zL.appendChild(chip);
       }
-      bar.appendChild(searchField({
+      zL.appendChild(searchField({
         placeholder:'Search tournaments…', query:state.tq, noun:'tournament', prompting:!state.tournament,
         onInput:function(v){ state.tq=v; },
         match:function(q){
@@ -26415,16 +26747,16 @@ window.DatabaseTab = (function(){
       // C11 — no Surface filter here; Round + years only, per the export.
       var rdOpts=roundOpts();   // null => dictionary moved; drop the control and the filter with it
       if(!rdOpts) state.rounds=null;
-      if(rdOpts) bar.appendChild(trigger('Round', countOf(state.rounds), !!state.rounds, 'round', function(){ return multiMenu(rdOpts, state.rounds, function(s){state.rounds=s;}, true); }));
-      bar.appendChild(yearControl());
+      if(rdOpts) zR.appendChild(trigger('Round', countOf(state.rounds), !!state.rounds, 'round', function(){ return multiMenu(rdOpts, state.rounds, function(s){state.rounds=s;}, true); }));
+      zR.appendChild(yearControl());
     } else {
       if(state.player){
         var pchip=el('div','db-subject','<span>'+esc(state.player)+'</span>');
         var px=el('button',null,'×'); px.title='Clear player';
         px.onclick=function(){ state.player=null; state.pq=''; state.ptourn=null; render(); };
-        pchip.appendChild(px); bar.appendChild(pchip);
+        pchip.appendChild(px); zL.appendChild(pchip);
       }
-      bar.appendChild(searchField({
+      zL.appendChild(searchField({
         placeholder:'Search players…', query:state.pq, noun:'player', prompting:!state.player,
         onInput:function(v){ state.pq=v; },
         pending:!playerIndex,
@@ -26438,10 +26770,10 @@ window.DatabaseTab = (function(){
       }));
       var PERIODS=[['all','All time'],['w52','Last 52 weeks'],['y2','Last 2Y'],['y5','Last 5Y']];
       var curP=PERIODS.filter(function(p){return p[0]===state.period;})[0];
-      bar.appendChild(trigger('Period', curP?curP[1]:'All time', state.period!=='all', 'period', function(){
+      zR.appendChild(trigger('Period', curP?curP[1]:'All time', state.period!=='all', 'period', function(){
         return singleMenu(PERIODS, state.period, function(v){ state.period=v; }, false); }));
       var SURF=[[null,'All']].concat(M.surfaces.map(function(s,i){return [i,s];}));
-      bar.appendChild(trigger('Surface', state.psurf==null?'All':M.surfaces[state.psurf], state.psurf!=null, 'psurf', function(){
+      zR.appendChild(trigger('Surface', state.psurf==null?'All':M.surfaces[state.psurf], state.psurf!=null, 'psurf', function(){
         return singleMenu(SURF, state.psurf, function(v){ state.psurf=v; }, false); }));
       // Level — founder ruling TEN-196 2026-09-13: "build it with four levels,
       // fold Finals away". Finals is 238 matches for the whole tour across 16
@@ -26451,17 +26783,22 @@ window.DatabaseTab = (function(){
       // Single-select, matching this tab's own Surface/Tournament controls — which
       // also means "all four picked" can never be mistaken for "All".
       var PL=playerLevels();
-      if(PL) bar.appendChild(trigger('Level', state.plevel==null?'All':M.levels[state.plevel], state.plevel!=null, 'plevel', function(){
+      if(PL) zR.appendChild(trigger('Level', state.plevel==null?'All':M.levels[state.plevel], state.plevel!=null, 'plevel', function(){
         return singleMenu([[null,'All']].concat(PL), state.plevel, function(v){ state.plevel=v; state.ptourn=null; }, false); }));
       else state.plevel=null;   // dictionary moved: fail closed, and never filter on a stale index
       var events=playerEvents();
-      bar.appendChild(trigger('Tournament', state.ptourn==null?'All':tournLabel(state.ptourn), state.ptourn!=null, 'ptourn', function(){
+      zR.appendChild(trigger('Tournament', state.ptourn==null?'All':tournLabel(state.ptourn), state.ptourn!=null, 'ptourn', function(){
         return singleMenu([[null,'All']].concat(events), state.ptourn, function(v){ state.ptourn=v; }, true); }));
-      bar.appendChild(trigger('Side', state.stance==='back'?'Backing him':'Fading him', state.stance!=='back', 'stance', function(){
+      zR.appendChild(trigger('Side', state.stance==='back'?'Backing him':'Fading him', state.stance!=='back', 'stance', function(){
         return singleMenu([['back','Backing him'],['fade','Fading him']], state.stance, function(v){ state.stance=v; }, false); }));
     }
     var reset=el('button','db-reset','Reset'); reset.onclick=function(){ resetFilters(); render(); };
-    bar.appendChild(reset);
+    zR.appendChild(reset);
+    // The divider is conditional on the left zone HAVING rendered something,
+    // measured off the DOM rather than off the tab name - so a tab whose
+    // subject control legitimately drops out does not leave a rule with
+    // nothing on its left.
+    if(zL.childNodes.length) zR.classList.add('div');
   }
   // ================= tournament alias layer =================
   // Founder ruling TEN-196 2026-09-13 item 5: "common name displayed; search matches
@@ -26800,9 +27137,439 @@ window.DatabaseTab = (function(){
     renderChrome();
     renderFilters();
     body.innerHTML='';
+    if(state.view==='ratings'){ renderRatings(body); return; }
+    if(state.view==='lines'){ renderLines(body); return; }
     if(state.view==='players'){ renderPlayers(body); return; }
     renderBandView(body);
   }
+  // ================= TEN-243 STEP 3 - Ratings (README "TAB 4") =================
+  // Value accessors. Everything the board prints is a plain stored number at a
+  // known path - there is no derivation anywhere in this block, by design. The
+  // prototype derived every component column from its parent rating plus a
+  // name-seeded jitter; the handoff says to delete that, and the standing rule
+  // is that a missing figure is a dash, never a plausible stand-in.
+  function ratNode(p){
+    var s=(p.surfaces||{})[state.ratSurf];
+    return s ? (s[state.ratScope]||null) : null;
+  }
+  function ratMatches(p){ var n=ratNode(p); return n && n.sample ? n.sample.matches : null; }
+  // `k` is 'node.field', or 'elo.<surface>' for the scraped store.
+  function ratVal(p, k){
+    if(k==null) return null;
+    if(k.indexOf('elo.')===0){
+      var rec=ratEloRec(p.name); if(!rec) return null;
+      var r=rec[k.slice(4)]; return r && typeof r.rating==='number' ? r.rating : null;
+    }
+    var n=ratNode(p); if(!n) return null;
+    var parts=k.split('.'), sub=n[parts[0]];
+    if(!sub) return null;
+    var v=sub[parts[1]];
+    return typeof v==='number' ? v : null;
+  }
+  // The rating column of a board. Elo reads the SELECTED surface, mapping the
+  // board's 'All' onto the scrape's 'all' key.
+  function ratRating(p, board){
+    if(board==='elo'){
+      var rec=ratEloRec(p.name); if(!rec) return null;
+      var key={All:'all',Hard:'hard',Clay:'clay',Grass:'grass'}[state.ratSurf]||'all';
+      var r=rec[key]; return r && typeof r.rating==='number' ? r.rating : null;
+    }
+    var n=ratNode(p); if(!n) return null;
+    var nd=n[RAT_BOARDS[board].node];
+    return nd && typeof nd.rating==='number' ? nd.rating : null;
+  }
+  // n CHANGES PER BOARD - README: "each rating rests only on the matches
+  // carrying the stats it needs. Show the real n per board; never carry one n
+  // across all five." The serve board is the one place the store genuinely
+  // splits it (serve.svMatches counts only matches carrying serve stats, and is
+  // routinely lower than sample.matches). Return / under-pressure / Mental Edge
+  // rest on the same stats-bearing match set, so they read sample.matches. Elo
+  // is scraped and carries NO match count at all, so its n is a dash rather than
+  // a borrowed number - see the note the board prints.
+  function ratN(p, board){
+    var n=ratNode(p); if(!n) return null;
+    if(board==='elo') return null;
+    if(board==='serve'){
+      var sv=n.serve && n.serve.svMatches;
+      return typeof sv==='number' ? sv : (n.sample?n.sample.matches:null);
+    }
+    return n.sample ? n.sample.matches : null;
+  }
+  // The rated pool at the current slice. A player is on the board only if the
+  // slice exists for them AND clears the match gate.
+  function ratPool(){
+    if(!RAT || !RAT.players) return [];
+    return RAT.players.filter(function(p){
+      var m=ratMatches(p);
+      return m!=null && m>=RAT_GATE;
+    });
+  }
+  function ratFmt(v, dec, pct){
+    if(v==null) return '—';
+    return v.toFixed(dec)+(pct?'%':'');
+  }
+  function ratInitials(name){
+    var p=String(name||'').replace(/\./g,' ').split(/\s+/).filter(Boolean);
+    if(!p.length) return '?';
+    if(p.length===1) return p[0].slice(0,2).toUpperCase();
+    return (p[0][0]+p[p.length-1][0]).toUpperCase();
+  }
+  function ratAvatar(name, small){
+    return '<span class="db-av'+(small?' db-av26':'')+'">'+esc(ratInitials(name))+'</span>';
+  }
+  // Field median over the WHOLE field at the current slice - README: "The median
+  // always runs over the whole field at the current slice, never over the picked
+  // players." So it is computed from ratPool(), which knows nothing about ratSel.
+  function ratMedian(board, k){
+    var vals=[];
+    ratPool().forEach(function(p){
+      var v = k==null ? ratRating(p,board) : ratVal(p,k);
+      if(v!=null) vals.push(v);
+    });
+    return median(vals);
+  }
+
+  function renderRatings(body){
+    if(!RAT){
+      body.appendChild(el('div','db-loading','Loading the ratings archive…'));
+      loadRatings().then(function(){ if(state.view==='ratings') render(); })
+        .catch(function(err){
+          console.warn('DatabaseTab ratings load failed', err);
+          var b=document.getElementById('dbBody');
+          if(b && state.view==='ratings'){ b.innerHTML=''; b.appendChild(el('div','db-loading','The ratings archive could not be loaded.')); }
+        });
+      return;
+    }
+    var card=el('div','db-rcard');
+    card.appendChild(el('div','db-eyebrow','Ratings board'));
+    card.appendChild(el('h2','db-rtitle','Player ratings by surface'));
+    card.appendChild(el('p','db-rdesc','Surface Elo, plus serve, return, under-pressure and Mental Edge ratings derived from the full ATP-level match archive. Higher is better across every column.'));
+    var pool=ratPool();
+    var cnt=el('div','db-rcount','<b>'+fmtInt(pool.length)+'</b> players');
+    card.appendChild(cnt);
+
+    if(state.ratSel.length>=2) card.appendChild(ratComparePanel());
+    card.appendChild(ratBoardTabs());
+    card.appendChild(state.ratBoard==='overview' ? ratOverview(pool) : ratLeaderboard(pool, state.ratBoard));
+    body.appendChild(card);
+  }
+
+  function ratBoardTabs(){
+    var wrap=el('div','db-btabs');
+    [['overview','Overview'],['elo','Elo'],['serve','Serve'],['return','Return'],['up','Under pressure'],['mental','Mental Edge']]
+      .forEach(function(b){
+        var btn=el('button',state.ratBoard===b[0]?'active':null,esc(b[1]));
+        btn.onclick=function(){
+          state.ratBoard=b[0];
+          // README: "Switching a board resets the sort to its rating column,
+          // descending." Carrying a sort key across boards would silently sort
+          // one board by a column it does not have.
+          state.ratSortKey = b[0]==='overview' ? 'elo' : 'rtg';
+          state.ratSortDir='desc';
+          render();
+        };
+        wrap.appendChild(btn);
+      });
+    return wrap;
+  }
+
+  // Sorting. Descending on first click, flips on the second; ties break on ATP
+  // rank ASCENDING (README). A player with no value for the sorted column sorts
+  // last in both directions - a dash is an absence, not a low score, and letting
+  // it float to the top of an ascending sort would read as "worst in the field".
+  function ratSortRows(rows, valOf){
+    var dir = state.ratSortDir==='asc' ? 1 : -1;
+    return rows.slice().sort(function(a,b){
+      var va=valOf(a), vb=valOf(b);
+      if(va==null && vb==null) return (a.rank||9999)-(b.rank||9999);
+      if(va==null) return 1;
+      if(vb==null) return -1;
+      if(va!==vb) return (va-vb)*dir;
+      return (a.rank||9999)-(b.rank||9999);
+    });
+  }
+  function ratSortHead(key, label, full, align){
+    var on = state.ratSortKey===key;
+    var b=el('button','db-rh sortable'+(on?' on':''),
+      esc(label)+(on?(' <i>'+(state.ratSortDir==='desc'?'↓':'↑')+'</i>'):''));
+    if(full) b.title=full;
+    b.style.textAlign = align||'right';
+    b.onclick=function(){
+      if(state.ratSortKey===key) state.ratSortDir = state.ratSortDir==='desc'?'asc':'desc';
+      else { state.ratSortKey=key; state.ratSortDir='desc'; }
+      render();
+    };
+    return b;
+  }
+
+  // The slice caption under every board. Each part tracks its own control, and
+  // the STEP 5 marker is appended ONLY for columns that are genuinely unwired -
+  // a fully wired board says nothing.
+  function ratSliceNote(unwired){
+    var parts=[ state.ratScope==='career'?'Career':'Last 52 weeks',
+                state.ratSurf==='All'?'all surfaces':state.ratSurf.toLowerCase(),
+                'n ≥ '+RAT_GATE+' matches' ];
+    var n=el('div','db-unwired', esc(parts.join(' · ')));
+    if(unwired && unwired.length){
+      n.innerHTML += '<br>' + esc('Not wired: '+unwired.join(' · ')+' — no field for these in the archive, so every cell is a dash rather than a derived stand-in.');
+    }
+    return n;
+  }
+
+  function ratOverview(pool){
+    var wrap=el('div');
+    var cols=[['elo','Elo','Elo, current surface'],['serve','Serve','Serve rating'],
+              ['return','Return','Return rating'],['up','Under pressure','Under-pressure rating']];
+    var rows=ratSortRows(pool, function(p){ return ratRating(p, state.ratSortKey); });
+
+    var sc=el('div','db-rscroll');
+    var g=el('div','db-rgrid');
+    g.style.gridTemplateColumns='36px minmax(150px,1fr) 66px repeat(4,minmax(96px,1fr))';
+    g.style.minWidth='830px';
+
+    function headCell(node){ var d=el('div','db-rhead'); d.appendChild(node); return d; }
+    function staticHead(txt, align){ var s=el('div','db-rh',esc(txt)); if(align) s.style.textAlign=align; return s; }
+    g.appendChild(headCell(staticHead('#')));
+    g.appendChild(headCell(staticHead('Player')));
+    g.appendChild(headCell(staticHead('n','right')));
+    cols.forEach(function(c){ g.appendChild(headCell(ratSortHead(c[0], c[1], c[2]))); });
+
+    // Field-median row - over the whole field at the slice, never the picks.
+    function medCell(html, cls){ var d=el('div','db-rmed'); d.appendChild(el('div',cls||'db-rfig mut',html)); return d; }
+    g.appendChild(medCell('',''));
+    var ml=el('div','db-rmed'); ml.appendChild(el('div','db-rh','Field median')); g.appendChild(ml);
+    g.appendChild(medCell('—','db-rn'));
+    cols.forEach(function(c){
+      var m=ratMedian(c[0], null);
+      g.appendChild(medCell(m==null?'—':m.toFixed(c[0]==='elo'?0:1),'db-rfig mut'));
+    });
+
+    rows.forEach(function(p, i){
+      var r=function(){ return el('div','db-rrow'); };
+      var c0=r(); c0.appendChild(el('div','db-rnum',String(i+1))); g.appendChild(c0);
+      var c1=r();
+      var pl=el('div','db-rplayer', ratAvatar(p.name,true));
+      var nm=el('a','db-rname',esc(p.name));
+      nm.href='#'; nm.title=p.name;
+      nm.onclick=function(ev){ ev.preventDefault(); ratOpenPlayer(p.name); };
+      pl.appendChild(nm);
+      if(p.rank!=null) pl.appendChild(el('span','db-cmprank','#'+p.rank));
+      c1.appendChild(pl); g.appendChild(c1);
+      var c2=r(); c2.appendChild(el('div','db-rn', fmtInt(ratN(p,'serve')))); g.appendChild(c2);
+      cols.forEach(function(c){
+        var v=ratRating(p, c[0]);
+        var cell=r();
+        cell.appendChild(el('div','db-rfig'+(v==null?' dash':''), v==null?'—':v.toFixed(c[0]==='elo'?0:1)));
+        cell.firstChild.title=c[2]+' · '+p.name;
+        g.appendChild(cell);
+      });
+    });
+    sc.appendChild(g); wrap.appendChild(sc);
+
+    // The overview's n column is the SERVE board's count, because that is the
+    // narrowest of the four ratings on show. Say so rather than let a reader
+    // assume one n backs all four.
+    var note=ratSliceNote(ELO?null:['Elo (the scraped Elo store did not load)']);
+    note.innerHTML += '<br>'+esc('n is the serve-stat match count — the narrowest of the four ratings shown; the other three rest on a wider match set.')+
+      '<br>'+esc(ELO_CAVEAT);
+    wrap.appendChild(note);
+    return wrap;
+  }
+
+  function ratLeaderboard(pool, board){
+    var B=RAT_BOARDS[board];
+    var wrap=el('div');
+    var rows=ratSortRows(pool, function(p){
+      if(state.ratSortKey==='rtg') return ratRating(p, board);
+      var col=B.cols.filter(function(c){ return c.h===state.ratSortKey; })[0];
+      return col ? ratVal(p, col.k) : ratRating(p, board);
+    });
+
+    var sc=el('div','db-rscroll');
+    var g=el('div','db-rgrid');
+    g.style.gridTemplateColumns='36px minmax(150px,1fr) 56px 66px '+B.cols.map(function(){return 'minmax(66px,1fr)';}).join(' ');
+    g.style.minWidth=(350 + B.cols.length*78)+'px';
+
+    function headCell(node){ var d=el('div','db-rhead'); d.appendChild(node); return d; }
+    function staticHead(txt, align){ var s=el('div','db-rh',esc(txt)); if(align) s.style.textAlign=align; return s; }
+    g.appendChild(headCell(staticHead('#')));
+    g.appendChild(headCell(staticHead('Player')));
+    g.appendChild(headCell(staticHead('n','right')));
+    g.appendChild(headCell(ratSortHead('rtg', B.rtg, B.label+' rating')));
+    // Headers are ABBREVIATIONS with the full name on hover (README) - that is
+    // what lets a seven-column board fit without wrapping.
+    B.cols.forEach(function(c){ g.appendChild(headCell(ratSortHead(c.h, c.h, c.full))); });
+
+    function medCell(html, cls){ var d=el('div','db-rmed'); d.appendChild(el('div',cls||'db-rfig mut',html)); return d; }
+    g.appendChild(medCell('',''));
+    var ml=el('div','db-rmed'); ml.appendChild(el('div','db-rh','Field median')); g.appendChild(ml);
+    g.appendChild(medCell('—','db-rn'));
+    var mr=ratMedian(board,null);
+    g.appendChild(medCell(mr==null?'—':mr.toFixed(B.rtgDec),'db-rfig mut'));
+    B.cols.forEach(function(c){
+      var m = c.k==null ? null : ratMedian(board, c.k);
+      g.appendChild(medCell(m==null?'—':ratFmt(m,c.dec,c.pct),'db-rfig mut'));
+    });
+
+    rows.forEach(function(p,i){
+      var c0=el('div','db-rrow'); c0.appendChild(el('div','db-rnum',String(i+1))); g.appendChild(c0);
+      var c1=el('div','db-rrow');
+      var pl=el('div','db-rplayer', ratAvatar(p.name,true));
+      var nm=el('a','db-rname',esc(p.name)); nm.href='#'; nm.title=p.name;
+      nm.onclick=function(ev){ ev.preventDefault(); ratOpenPlayer(p.name); };
+      pl.appendChild(nm);
+      if(p.rank!=null) pl.appendChild(el('span','db-cmprank','#'+p.rank));
+      c1.appendChild(pl); g.appendChild(c1);
+      var c2=el('div','db-rrow'); c2.appendChild(el('div','db-rn', fmtInt(ratN(p,board)))); g.appendChild(c2);
+      var rv=ratRating(p,board);
+      var c3=el('div','db-rrow');
+      c3.appendChild(el('div','db-rfig rtg'+(rv==null?' dash':''), rv==null?'—':rv.toFixed(B.rtgDec)));
+      c3.firstChild.title=B.label+' rating · '+p.name;
+      g.appendChild(c3);
+      B.cols.forEach(function(c){
+        var v=ratVal(p,c.k);
+        var cell=el('div','db-rrow');
+        var f=el('div','db-rfig'+(c.mut?' mut':'')+(v==null?' dash':''), ratFmt(v,c.dec,c.pct));
+        f.style.fontSize='13px'; f.style.fontWeight='400';
+        f.title=c.full+' · '+p.name;
+        cell.appendChild(f); g.appendChild(cell);
+      });
+    });
+    sc.appendChild(g); wrap.appendChild(sc);
+
+    var unwired=B.cols.filter(function(c){ return c.k==null; }).map(function(c){ return c.h; });
+    if(board==='elo' && !ELO) unwired=unwired.concat(['Elo (the scraped Elo store did not load)']);
+    var lnote=ratSliceNote(unwired);
+    // The Elo board does NOT move with the period control, so the slice line
+    // above would otherwise read "Last 52 weeks" over columns that are a current
+    // snapshot. Say it on the board that shows Elo rather than leaving the
+    // reader to infer it.
+    if(board==='elo') lnote.innerHTML += '<br>'+esc(ELO_CAVEAT);
+    wrap.appendChild(lnote);
+    return wrap;
+  }
+
+  // Compare panel (2-4 players). Last 52 is the LIVE column and carries the blue
+  // wash; career is the reference; delta is in the sign colour. That contrast is
+  // the point of the panel, so the panel always shows both periods - which is
+  // exactly why the Career / Last 52 pills go disabled while it is open.
+  function ratComparePanel(){
+    var picks=state.ratSel.map(function(n){
+      return (RAT.players||[]).filter(function(p){ return p.name===n; })[0];
+    }).filter(Boolean);
+    var panel=el('div','db-cmp');
+    panel.appendChild(el('div','db-eyebrow','Compare players'));
+    var g=el('div','db-cmpgrid');
+    g.style.gridTemplateColumns='128px '+picks.map(function(){return '84px 84px 62px';}).join(' ');
+    g.style.marginTop='12px';
+
+    g.appendChild(el('div'));
+    picks.forEach(function(p){
+      var h=el('div','db-cmphead');
+      h.style.gridColumn='span 3';
+      h.innerHTML=ratAvatar(p.name);
+      var col=el('div');
+      var nm=el('a','db-cmpname',esc(p.name)); nm.href='#';
+      nm.onclick=function(ev){ ev.preventDefault(); ratOpenPlayer(p.name); };
+      col.appendChild(nm);
+      if(p.rank!=null) col.appendChild(el('div','db-cmprank','#'+p.rank));
+      h.appendChild(col);
+      var x=el('button','db-cmpx','×'); x.title='Remove '+p.name;
+      x.onclick=function(){ state.ratSel=state.ratSel.filter(function(n){ return n!==p.name; }); render(); };
+      h.appendChild(x);
+      g.appendChild(h);
+    });
+
+    g.appendChild(el('div'));
+    picks.forEach(function(){
+      g.appendChild(el('div','db-sub live','Last 52'));
+      g.appendChild(el('div','db-sub','Career'));
+      g.appendChild(el('div','db-sub','Δ'));
+    });
+
+    // Reads BOTH scopes directly rather than through ratNode(), which is bound
+    // to the current ratScope - the panel is period-independent by construction.
+    function scopeVal(p, scope, metric){
+      var s=(p.surfaces||{})[state.ratSurf]; if(!s) return null;
+      var n=s[scope]; if(!n) return null;
+      if(metric==='elo'){
+        var rec=ratEloRec(p.name); if(!rec) return null;
+        // The scrape is a single current snapshot - there is no dated Elo
+        // series - so it cannot answer "career vs last 52". Career shows the
+        // current rating; Last 52 is a dash rather than the same number twice,
+        // which would read as "unchanged over the year".
+        if(scope!=='career') return null;
+        var key={All:'all',Hard:'hard',Clay:'clay',Grass:'grass'}[state.ratSurf]||'all';
+        return rec[key] && typeof rec[key].rating==='number' ? rec[key].rating : null;
+      }
+      var nd=n[metric];
+      return nd && typeof nd.rating==='number' ? nd.rating : null;
+    }
+    // The Elo row is labelled "current", and that is not decoration. Every other
+    // row here IS a period aggregate, so the Career column means what it says.
+    // Elo is a scraped single snapshot with no dated series: its value belongs
+    // to today, not to a career, and it cannot answer Last 52 at all. Printing
+    // it under a column headed "Career" without saying so would make a claim
+    // the store cannot support, so the row says which it is.
+    var METRICS=[['elo','Elo · current',0],['serve','Serve rating',1],['return','Return rating',1],
+                 ['underPressure','Under pressure',1],['mental','Mental Edge',3]];
+    METRICS.forEach(function(m){
+      var lab=el('div','db-cmprow'); lab.appendChild(el('div','db-rh',esc(m[1]))); g.appendChild(lab);
+      picks.forEach(function(p){
+        var l52=scopeVal(p,'last52',m[0]), car=scopeVal(p,'career',m[0]);
+        g.appendChild(el('div','db-cmpcell live', l52==null?'—':l52.toFixed(m[2])));
+        g.appendChild(el('div','db-cmpcell ref', car==null?'—':car.toFixed(m[2])));
+        var d=el('div','db-cmpcell delta');
+        if(l52==null || car==null){ d.textContent='—'; d.style.color='#5b6880'; }
+        else {
+          var diff=l52-car;
+          // Three-way sign colour: this is the Compare variant the README calls
+          // out - it adds #8b96b5 at exactly zero. It is deliberately NOT the
+          // binary rule used on the yield cells; do not unify them.
+          var txt=(diff>0?'+':diff<0?'−':'±')+Math.abs(diff).toFixed(m[2]);
+          d.textContent=txt;
+          d.style.color = diff>0 ? POS : diff<0 ? NEG : '#8b96b5';
+        }
+        g.appendChild(d);
+      });
+    });
+    panel.appendChild(g);
+    return panel;
+  }
+
+  // Player links. The dashboard already owns a profile route; use it when it is
+  // there, and do nothing rather than navigate somewhere broken when it is not.
+  function ratOpenPlayer(name){
+    try {
+      if(window.BSP && typeof window.BSP.openPlayer==='function'){ window.BSP.openPlayer(name); return; }
+      if(typeof window.openPlayerProfile==='function'){ window.openPlayerProfile(name); return; }
+    } catch(e){}
+  }
+
+  // ================= TEN-243 STEP 4 - Lines (README "TAB 5") =================
+  // The tab exists because the shell is specced as five tabs. The BOARD does not,
+  // and this is a data fact, not a scheduling one: README TAB 5 is built on
+  // derived lines - games handicap, set handicap, total games, match shape - and
+  // every one of those needs GAME-level scores per set. The published archive
+  // carries set scores, not per-set games, so three of the four groups cannot be
+  // computed at all and the fourth could only be faked.
+  //
+  // The standing rule on this page decides the rest: "a fallback that emits a
+  // plausible number is worse than a dash". So the tab states the gap and names
+  // the ticket rather than shipping a ladder of invented rates.
+  function renderLines(body){
+    var card=el('div','db-rcard');
+    card.appendChild(el('div','db-eyebrow','Line coverage'));
+    card.appendChild(el('h2','db-rtitle','Derived lines'));
+    card.appendChild(el('p','db-rdesc',
+      'Games handicap, set handicap, total games and match shape — how often each derived line landed for a player, against the field.'));
+    var n=el('div','db-unwired');
+    n.innerHTML = esc('Not wired — the archive stores set scores, not per-set games. A games handicap (−4.5 games) and a total-games line both need game counts, so no rate on this tab can be computed yet; TEN-244 carries the per-set games through the pipeline.')+
+      '<br>'+esc('Nothing is shown rather than a derived stand-in: a coverage rate built from anything other than the real games would read as a measurement.');
+    card.appendChild(n);
+    body.appendChild(card);
+  }
+
   function renderChrome(){
     var sub=document.getElementById('dbSubtitle'), fr=document.getElementById('dbFresh');
     if(sub){
@@ -27780,13 +28547,17 @@ window.DatabaseTab = (function(){
     }
     if(!document._dbDismiss){
       document._dbDismiss=true;
-      document.addEventListener('click', function(){
-        if(state.menu!==null || state.tq || state.pq){ state.menu=null; state.tq=''; state.pq=''; if(built) renderFilters(); }
-      });
-      document.addEventListener('keydown', function(e){
-        if(e.key!=='Escape') return;
-        if(state.menu!==null || state.tq || state.pq){ state.menu=null; state.tq=''; state.pq=''; if(built) renderFilters(); }
-      });
+      // One dismiss rule for every query field on the bar. ratQ is included
+      // for the same reason tq/pq are: a results panel left open over the board
+      // after the reader clicked away is the bug this handler exists to stop.
+      function dbDismiss(){
+        if(state.menu!==null || state.tq || state.pq || state.ratQ){
+          state.menu=null; state.tq=''; state.pq=''; state.ratQ='';
+          if(built) renderFilters();
+        }
+      }
+      document.addEventListener('click', dbDismiss);
+      document.addEventListener('keydown', function(e){ if(e.key==='Escape') dbDismiss(); });
     }
   }
 
