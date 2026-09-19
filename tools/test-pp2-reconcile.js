@@ -721,10 +721,13 @@ console.log('\n11 · Record per tournament');
 // 13,071 tournament rows, 105 carrying a WD, and 105 of 105 counting it as a
 // loss — zero compliant.
 //
-// wdAsLoss may only ever go DOWN. Lower the ceiling as the rebuild lands; never
-// raise it. A rise means finalizeTournament regressed or a new writer appeared.
-// TARGET: 0. Re-pin to a strict equality at 0 once the republish is confirmed.
-const WD_AS_LOSS_CEILING = 105;
+// RE-PINNED 2026-09-19 after pipeline run 3753 republished the shards:
+// 0 of 105 compliant -> 105 of 105 compliant. Confirmed against the deployed
+// shard directly, not through a cached reader (J. Thompson / Cincinnati now
+// stores 5-3 against editions W5 L3 WD1).
+// This is a STRICT equality now, not a ceiling: a WD must never again land in
+// a denominator.
+const WD_AS_LOSS_CEILING = 0;
 check('every tournament W-L equals the sum of its editions', () => {
   let rows = 0, wdAsLoss = 0, wdIgnored = 0, wdMatches = 0;
   for (const p of Object.values(PLAYERS)) {
@@ -748,16 +751,14 @@ check('every tournament W-L equals the sum of its editions', () => {
       rows++;
     }
   }
-  assert.ok(wdAsLoss <= WD_AS_LOSS_CEILING,
-    `WD-as-loss population GREW: ${wdAsLoss} against a ceiling of ${WD_AS_LOSS_CEILING}. `
-    + `The ruling excludes a WD from the denominator, so this may only fall. `
-    + `A rise means finalizeTournament regressed or a new header writer appeared.`);
+  assert.strictEqual(wdAsLoss, WD_AS_LOSS_CEILING,
+    `${wdAsLoss} tournament row(s) count a WD as a loss. The ruling excludes it from `
+    + `the denominator entirely; finalizeTournament regressed or a new header writer appeared.`);
   const compliant = wdAsLoss === 0;
   console.log(`        ${rows} tournament rows reconcile with their editions; `
     + `${wdMatches} WD matches across ${wdAsLoss + wdIgnored} tournaments — `
     + `${wdAsLoss} headers still count WD as a loss, ${wdIgnored} exclude it `
-    + `(RULED: exclude; ceiling ${WD_AS_LOSS_CEILING}`
-    + `${compliant ? '; COMPLIANT — re-pin to strict 0' : '; awaiting republish'})`);
+    + `(RULED: exclude${compliant ? ' — COMPLIANT' : ' — NOT COMPLIANT'})`);
 });
 
 mustFail('tournament check would catch a dropped edition', () => {
