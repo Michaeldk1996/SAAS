@@ -312,13 +312,14 @@
     "id1200210074800506": {
       "alerted": true,
       "alertedAt": "2026-09-18T16:00:00Z",
-      "captureLagH": null,
+      "captureLagH": 0.24,
       "date": "2026-09-19",
+      "firstSeenAt": "2026-09-19T01:30:01Z",
       "hoursOutAtAlert": 23.83,
-      "openAt": null,
+      "openAt": "2026-09-19T01:15:20.855Z",
       "p1": "N. Budkov Kjaer",
       "p2": "R. Te",
-      "postingLeadH": null,
+      "postingLeadH": 14.58,
       "startTime": "2026-09-19T15:50:00.000Z",
       "tour": "ATP ATP Davis Cup - World Group I"
     },
@@ -1271,5 +1272,5 @@
   },
   "schema": "odds-open-monitor/1",
   "thresholdHours": 24.0,
-  "updatedAt": "2026-09-19T01:15:00Z"
+  "updatedAt": "2026-09-19T01:30:01Z"
 }
