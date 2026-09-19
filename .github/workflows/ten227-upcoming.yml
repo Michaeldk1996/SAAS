@@ -139,7 +139,11 @@ jobs:
           set -euo pipefail
           BEFORE=$(gh run list --workflow ten227-upcoming.yml --limit 20 --json databaseId \
                      --jq 'map(.databaseId) | max')
-          gh workflow run ten227-upcoming.yml --ref "${{ github.ref_name }}" \
+          # Standing rule (founder, 2026-09-19): from main or not at all. This
+          # workflow is disabled_manually and stays that way until the founder
+          # says otherwise; the ref is fixed here so that re-enabling it cannot
+          # quietly restore the branch-chaining defect along with it.
+          gh workflow run ten227-upcoming.yml --ref main \
              -f mode=loop -f interval_min="$INTERVAL" -f loop_minutes="$LOOP" \
              -f start_poll_no="${NEXT:-0}" -f stop=no \
              -f select_min_h="${{ github.event.inputs.select_min_h }}" \

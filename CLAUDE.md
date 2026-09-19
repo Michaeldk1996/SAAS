@@ -111,6 +111,34 @@ Stennisfy is a tennis betting analytics SaaS dashboard for serious ATP bettors. 
 
 ## Data sources — confirmed status
 
+### WHICH BET365 — settled, do not re-derive (founder, 2026-09-19)
+
+bet365 runs different sites per jurisdiction with different margins and
+different prices on the same match, so "bet365" alone is not a source. The
+answer, measured:
+
+* **Oddspapi's is the UNQUALIFIED `bet365`** — distinct from the nine country
+  variants its `/v4/bookmakers` catalogue lists as separate bookmaker rows
+  (NJ, AR, BR, DE, ES, FR, GR, IT, NL). Our entitlement record is a bare slug
+  plus two booleans: no id, no display name, no region, no country.
+* **Which physical site it is scraped from is UNKNOWN.** Oddspapi does not say,
+  and we are not inferring it. Record it as unknown rather than guessing.
+* **api-tennis's `bet365` is the SAME BOOK.** Measured over 130 commits of
+  `matches.json` — every commit is a simultaneous observation of both feeds —
+  **n=820 pre-match leg-observations, 94.5% identical** to the oddspapi tick
+  current at that instant, 1.1% matching an earlier tick, 4.4% matching no tick
+  we hold. ⚠️ Those last two are bounds, not exact: our oddspapi leg is sampled
+  hourly, so a tick between two of our reads is invisible and an api-tennis
+  price matching it lands in the disagree bucket. 4.4% is an upper bound on
+  disagreement. The disagreement cases mostly have one side exact and the other
+  stale, which is the signature of a stale leg, not a different jurisdiction.
+* api-tennis truncates to 2dp and never rounds, so it is never better than
+  oddspapi and up to 0.01 worse — a systematic downward shade. That is why
+  TEN-198 excludes a vendor-pinned open from any figure measured in percent.
+* **BetVictor and Bet105 are absent from oddspapi's 360-row catalogue entirely.**
+  BetVictor reaches our cards from api-tennis, which is why oddspapi has never
+  heard of it.
+
 | Source | What it provides | Status |
 |---|---|---|
 | api-tennis.com | Fixtures, results, H2H, surface stats, box scores | Live |
@@ -280,6 +308,18 @@ When the export and a documented rule disagree on anything **measurable — spac
 ---
 
 ## Non-negotiables — these are hard rules
+
+**A self-chaining workflow runs from `main` or it does not run** (founder
+standing rule, 2026-09-19). A workflow that dispatches its own successor must
+pass `--ref main`, never `${{ github.ref_name }}`. The reason is measured, not
+theoretical: `ten227-upcoming.yml` chained itself from its own branch, so the
+gated copy on main was not the copy the runs executed, it wrote no budget-ledger
+rows, and it went on running **five more times after the founder ruled it
+stopped** — ~65-75 oddspapi units between consecutive run starts, invisible to
+every instrument we had. Audited 2026-09-19: `ten216-collector.yml` and
+`ten227-bulk-load.yml` dispatch with no `--ref`, which defaults to the default
+branch and is compliant; `asapsports.yml` and `points-at-risk.yml` already pass
+`--ref main`.
 
 - Never show a pipeline health banner or infrastructure warnings to end users
 - Never highlight the better stat between two players with colour — neutral display only

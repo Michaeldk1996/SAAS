@@ -75,6 +75,7 @@ const FNS = ['_ocsSanePx', 'mxOverround', 'mxIsSuspendedPair', 'mxRealPair',
 function build({ matches = [], OCS = { byKey: {} } }) {
   const code = `
     ${sliceConst('MX_SUSPENDED_OVERROUND')}
+    ${sliceConst('MX_MIN_REAL_PRICE')}
     const MX_SUPPRESSED = new Map();
     const matches = ${JSON.stringify(matches)};
     const OCS = ${JSON.stringify(OCS)};
@@ -82,7 +83,7 @@ function build({ matches = [], OCS = { byKey: {} } }) {
     const console = { warn: (...a) => WARNED.push(a) };
     ${FNS.map(slice).join('\n')}
     return { ${FNS.join(', ')}, MX_SUPPRESSED, WARNED, matches, OCS,
-             MX_SUSPENDED_OVERROUND };
+             MX_SUSPENDED_OVERROUND, MX_MIN_REAL_PRICE };
   `;
   // eslint-disable-next-line no-new-func
   return new Function(code)();
@@ -106,9 +107,19 @@ console.log('\n  — the arithmetic, and where the line sits');
   check('the SOFTEST book we actually carry (Sbo, median 11.6%) is NOT suppressed — '
       + 'this is a suspension detector, not a margin referee',
         !api.mxIsSuspendedPair(1.80, 1.80), (ov(1.80, 1.80) * 100).toFixed(1) + '%');
-  check('a real 1/10-on favourite at 1.01 against a 15.0 dog stays a price: it is '
-      + '1.01 AGAINST 1.01 that is impossible, not 1.01 itself',
-        !api.mxIsSuspendedPair(1.01, 15.0), (ov(1.01, 15.0) * 100).toFixed(1) + '%');
+  check('the impossible-leg floor is the ruled 1.01, read from the shipped constant',
+        api.MX_MIN_REAL_PRICE === 1.01, String(api.MX_MIN_REAL_PRICE));
+  // SUPERSEDED, DELIBERATELY REWRITTEN RATHER THAN DELETED. This used to assert
+  // that 1.01 against a 15.0 dog STAYS a price — my reading on 2026-09-18. The
+  // founder reversed it on 2026-09-19 ("extend it to catch any leg at or below
+  // 1.01"), after bet365's 1.004/17.00 on Dougaz v Murtaza rendered as "1.00"
+  // with an overround of 5.5% — ordinary pair, impossible leg. The assertion
+  // keeps its job: it still pins WHERE the line is, on the same numbers.
+  check('an impossible LEG is now caught even inside an ordinary pair — 1.004/17.00 '
+      + 'is a 5.5% overround and was the defect the pair rule could not see',
+        api.mxIsSuspendedPair(1.004, 17.0), (ov(1.004, 17.0) * 100).toFixed(1) + '%');
+  check('...and the boundary holds: 1.02 against 10.5 is untouched',
+        !api.mxIsSuspendedPair(1.02, 10.5), (ov(1.02, 10.5) * 100).toFixed(1) + '%');
   check('a missing price is ABSENCE, not suspension — otherwise every unpriced '
       + 'fixture becomes a logged suppression',
         ov(null, 2.0) === null && !api.mxIsSuspendedPair(null, 2.0));
@@ -238,7 +249,12 @@ console.log('\n  — an honest board is left completely alone');
   const api = build({ matches: [
     { id: 'a', bet365Now: { ...HONEST, at: null, observedAt: null } },
     { id: 'b', odds: { ...WIDE, bookmaker: 'Sbo' } },
-    { id: 'c', bet365Now: { p1: 1.01, p2: 15.0, at: null, observedAt: null } },
+    // Was 1.01/15.0 — a leg the founder's 2026-09-19 rule now suppresses, so it
+    // is no longer an "honest board" fixture. Replaced by 1.02/10.5, which is a
+    // real short-priced favourite measured on the deployed board and which the
+    // floor deliberately leaves alone: the point of this block is that the guard
+    // is INVISIBLE on normal pricing, and a short price is normal.
+    { id: 'c', bet365Now: { p1: 1.02, p2: 10.5, at: null, observedAt: null } },
   ] });
   const got = api.matches.map(m => api._mcNowPair(m));
   check('all three honest fixtures still price', got.every(p => p && p.p1 > 0),

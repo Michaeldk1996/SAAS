@@ -163,7 +163,11 @@ jobs:
 
           BEFORE=$(gh run list --workflow ten227-history.yml --limit 20 --json databaseId \
                      --jq 'map(.databaseId) | max')
-          gh workflow run ten227-history.yml --ref "${{ github.ref_name }}" \
+          # Standing rule (founder, 2026-09-19): "a self-chaining workflow runs
+          # from main or it does not run." Was --ref of the run's own ref_name,
+          # which is what let ten227-upcoming chain from its own branch past the
+          # ruling that stopped it, with the gated copy on main never executing.
+          gh workflow run ten227-history.yml --ref main \
              -f mode=download \
              -f years="${{ github.event.inputs.years }}" \
              -f download_minutes="${{ github.event.inputs.download_minutes }}" \

@@ -406,18 +406,22 @@
   [data-page="matches"] .mc-scoreline{ margin:0; padding:9px 16px 0; font-family:var(--mx-font-mono); font-size:12px; color:var(--mc-muted); display:flex; gap:8px; align-items:baseline; }
   [data-page="matches"] .mc-scoreline .lbl{ font-family:var(--mx-font-ui); font-size:9px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--mc-muted-2); }
   [data-page="matches"] .mc-scoreline .note{ font-family:var(--mx-font-ui); font-size:10px; color:var(--mc-muted-2); }
-  /* TEN-8 "Underway" — display-only state marker for a match whose start instant
-     has passed but which the feed has no final score for (see cardStartMs check in
-     renderMatches). Deliberately NOT a live indicator: neutral muted colour, no
-     warn/red, no dot, no animation — it reads as a state, not an event, and sits in
-     the same .mc-scoreline slot a live score will later occupy. */
+  /* Chip-carrying score line — baseline alignment is wrong for a bordered chip, so
+     the row centres instead. Its one remaining user is the terminal chip below; the
+     TEN-8 "Underway" marker that also used it was removed on the founder's ruling
+     (2026-09-18, TEN-225) for breaking card symmetry, and `.mc-underway` went with
+     it rather than being left as a dead rule.
+     REMOVED TWICE. The first removal (2ed98d15) was clobbered back in by my own
+     commit 1d6c042f, which wrote a whole-file blob taken from a shared checkout
+     that had drifted behind main — not a second render path, and not somebody
+     else's revert. test-ten225-no-underway-chip.mjs is the standing guard: it
+     fails the build on any reappearance of this rule or of the branch it served. */
   [data-page="matches"] .mc-scoreline.underway{ align-items:center; }
-  [data-page="matches"] .mc-underway{ font-family:var(--mx-font-ui); font-size:10px; font-weight:600; letter-spacing:0.09em; text-transform:uppercase; color:var(--mc-muted-2); background:rgba(255,255,255,0.045); border:1px solid var(--mc-border-data); border-radius:5px; padding:2px 8px; }
-  /* TEN-8 terminal chip — "Retired"/"Walkover" status marker. Same neutral,
-     state-not-event treatment as Underway (no red, no dot). On a retirement it
+  /* TEN-8 terminal chip — "Retired"/"Walkover" status marker. Neutral,
+     state-not-event treatment (no red, no dot). On a retirement it
      replaces the partial set-score cluster (the "game" has no added value once a
      player retired — founder's call); on a scoreless walkover it sits in the
-     .mc-scoreline slot in place of the wrong "Underway" marker. */
+     .mc-scoreline slot, which is truthful where "Underway" would not have been. */
   [data-page="matches"] .mc-termchip{ font-family:var(--mx-font-ui); font-size:10px; font-weight:600; letter-spacing:0.09em; text-transform:uppercase; color:var(--mc-muted-2); background:rgba(255,255,255,0.045); border:1px solid var(--mc-border-data); border-radius:5px; padding:2px 8px; white-space:nowrap; }
   [data-page="matches"] .mc-players.cmpl .mc-sets--term{ display:flex; align-items:center; }
   /* TEN-179 q3 — on a Completed card the RETIRED / WALKOVER chip rides the header, so a
@@ -428,7 +432,7 @@
      and holds one line. That is 3.1px of slack: a tournament label longer than
      "ATP US Open . Grand Slam" on a RETIRED card will wrap the caps to a second row
      again. It degrades visibly rather than clipping, which is the behaviour asked for.
-     The Upcoming and live .mc-termchip / .mc-underway markers are untouched. */
+     The Upcoming and live .mc-termchip markers are untouched. */
   [data-page="matches"] .mc-head .mc-termchip{ flex:0 0 auto; font-size:9.5px; letter-spacing:0.04em; padding:2px 5px; }
 
   /* column headers — inline on the card header row, right-aligned above the two data columns */
@@ -6808,10 +6812,37 @@ function _ocsSanePx(side){
 // covers the most cards, trading a rare wrong price for a common missing one.
 // It is a sentinel detector by design, and it is deliberately not a quality bar.
 //
-// WHY A PAIR TEST AND NOT A PRICE TEST. 1.01 alone is a legitimate price on a
-// fixture that is 100-to-1 on. It is 1.01 AGAINST 1.01 that is impossible. Any
-// single-price rule would either miss the sentinel or suppress real favourites.
+// WHY A PAIR TEST AND NOT ONLY A PRICE TEST. 1.01 alone can be a real price on a
+// fixture that is 100-to-1 on. It is 1.01 AGAINST 1.01 that is impossible, and no
+// single-price rule catches that pair at all.
+//
+// ── AND WHY THE PAIR TEST WAS NOT ENOUGH (founder, 2026-09-19) ──
+// "Dougaz 1.00/1.00 is not a price. The 20% overround guard should have caught
+// it — report why it did not, and extend it to catch any leg at or below 1.01."
+//
+// WHY IT DID NOT FIRE. The pair is not suspended-looking at all. MEASURED on the
+// deployed board 2026-09-19: bet365 quotes Dougaz v Murtaza at 1.004 / 17.00, an
+// overround of 5.5% — sharper than that book's own median. The card rounds 1.004
+// to two places and prints "1.00". So the PAIR is ordinary and the LEG is
+// impossible, which a pair test cannot see by construction. Marathon prices the
+// same fixture at exactly 1.00 / 9.80, overround 10.2%: same shape.
+//
+// I argued the other way on 2026-09-18 and the founder has ruled. He is right
+// about the number a member actually sees: 1.004 returns 0.4% of stake and 1.00
+// returns nothing, and neither is something anyone can act on.
+//
+// MEASURED COST, deployed board 2026-09-19, n=64 fixtures: 7 carry a leg at or
+// below 1.01 on at least one path — Dougaz/Murtaza, Van Herck/Piros,
+// Photiades/Kravchenko, Dlimi/Adeleye, Duran/Borges, Cruz/Faria, Prado
+// Angelo/Wong. They do not dash: like every other suppression they fall through
+// the ladder, and dash only if every book quotes an impossible leg. Two of those
+// legs are an honest 1.01 rather than a rounded-to-nothing 1.004, so this rule
+// does cost a real price on a genuine 1/100 favourite. Reported, not buried.
 const MX_SUSPENDED_OVERROUND = 0.20;
+// A leg at or below this returns so little that it is not a bettable price, and
+// at 1.00 it returns nothing at all. ABSOLUTE, not relative — which is the whole
+// point, because the pair around such a leg can be perfectly ordinary.
+const MX_MIN_REAL_PRICE = 1.01;
 function mxOverround(p1, p2){
   if (!(typeof p1 === 'number' && typeof p2 === 'number') || !(p1 > 0 && p2 > 0)) return null;
   return (1 / p1) + (1 / p2) - 1;
@@ -6824,13 +6855,22 @@ function mxIsSuspendedPair(p1, p2, ctx){
   const ov = mxOverround(p1, p2);
   // null (a missing or non-positive price) is NOT suspension — it is absence,
   // and the existing dash rules already own it. Returning true here would
-  // convert every unpriced fixture into a logged suppression.
-  if (ov === null || ov <= MX_SUSPENDED_OVERROUND) return false;
+  // convert every unpriced fixture into a logged suppression. The null test comes
+  // FIRST, so the impossible-leg test below only ever runs on two real numbers.
+  if (ov === null) return false;
+  // Two independent reasons, recorded separately. Folding them into one flag
+  // would leave the log unable to say WHICH rule fired, and the second is new
+  // enough that its cost has to stay measurable.
+  const wide = ov > MX_SUSPENDED_OVERROUND;
+  const unbettable = p1 <= MX_MIN_REAL_PRICE || p2 <= MX_MIN_REAL_PRICE;
+  if (!wide && !unbettable) return false;
   const c = ctx || {};
   const key = [c.id || '?', c.book || '?', c.path || '?', p1, p2].join('|');
   if (!MX_SUPPRESSED.has(key)){
     const rec = { id: c.id || null, book: c.book || null, path: c.path || null,
                   p1: p1, p2: p2, overroundPct: +(ov * 100).toFixed(1),
+                  reason: wide ? (unbettable ? 'wide+unbettable' : 'wide')
+                               : 'unbettable-leg',
                   firstSeen: new Date().toISOString() };
     MX_SUPPRESSED.set(key, rec);
     // Console as well as the map: a member never opens either, but the log is
@@ -7180,9 +7220,15 @@ function mcPriceTitle(pair, px){
   // The book clock hangs off the price with a SPACE, not a separator dot — it
   // qualifies that price rather than standing beside it as a third field.
   const first = bookClock ? head + ' since ' + bookClock : head;
-  if (!seenClock) return first;
+  // `note` — a qualifier about WHAT the number is, not about when it was seen.
+  // Used by the underway card whose book has stopped quoting, where the Now slot
+  // carries the last price before the off. Always on its own line: the founder's
+  // one-line format is a contract about the two clocks, and a qualifier squeezed
+  // into it would be the first thing to fall off the end of the slot.
+  const tail = pair.note ? '\n' + pair.note : '';
+  if (!seenClock) return first + tail;
   const one = first + ' · seen ' + seenClock;
-  return one.length <= MC_TITLE_1LINE_MAX ? one : first + '\nseen ' + seenClock;
+  return (one.length <= MC_TITLE_1LINE_MAX ? one : first + '\nseen ' + seenClock) + tail;
 }
 function mcTitleAttr(txt){
   return txt ? ` title="${String(txt).replace(/"/g, '&quot;')}"` : '';
@@ -9050,17 +9096,22 @@ function renderMatches(){
       scoreLineHtml = `<div class="mc-scoreline">${formatLiveScore(m)}<span class="note">as of last data refresh</span></div>`;
     } else if (isPastDay && !finalScore) {
       scoreLineHtml = `<div class="mc-scoreline">Score pending<span class="note">not yet returned by the data provider</span></div>`;
-    } else if (!finalScore && isFinite(cardStartMs(m)) && Date.now() >= cardStartMs(m)) {
-      // TEN-8 "Underway": derived purely from the client clock — the start instant
-      // has passed and the feed carries no final score yet. Independent of m.live,
-      // so it's true even before (or without) the feed's in-play flag, which at our
-      // ~hourly refresh cadence can lag badly. It makes NO score/clock/set claim; it
-      // only asserts "this has started", which is why a member can't bet it. When the
-      // live poller lands, formatLiveScore replaces this in the very same slot.
-      // Guarded on a reliable start instant (cardStartMs finite) — a match with no
-      // usable start time gets nothing here, never a guess.
-      scoreLineHtml = `<div class="mc-scoreline underway"><span class="mc-underway">Underway</span></div>`;
     }
+    // REMOVED (founder ruling, 2026-09-18, TEN-225): the TEN-8 client-clock
+    // "Underway" chip. It occupied the .mc-scoreline slot on a started-but-
+    // scoreless card and on nothing else, so one card on the grid grew a row its
+    // neighbours did not have — "it breaks the whole card symmetry with the
+    // others. Just remove it." A started fixture renders NO score line until the
+    // feed supplies a real one; the m.live branch above (formatLiveScore) still
+    // fills the same slot once there is an actual score, and the started-ness test
+    // itself survives as `mcStarted` below, which the drift column reads.
+    //
+    // IT CAME BACK ONCE AND THIS IS WHY. Commit 1d6c042f (2026-09-19, the header
+    // clock) landed a whole-file blob taken from a shared checkout that had drifted
+    // behind main, silently reverting 2ed98d15 — and TEN-206's event-coverage fetch
+    // with it. Not a second render path; a stale-blob clobber. The standing guard
+    // is test-ten225-no-underway-chip.mjs. Do not reintroduce a marker here whose
+    // only content is "this has started".
     const p1IsWinner = finalScore && finalScore.winner === 'p1';
     const p2IsWinner = finalScore && finalScore.winner === 'p2';
     // A finished match shows the real result first: the set score is the main
@@ -9119,23 +9170,29 @@ function renderMatches(){
     // hovered ("bet365 · 1.22 since 01:08 · seen 09:15"). One shared string would
     // print p1's price over p2's cell on half the board.
     const nowTitleOf = who => mcPriceTitle(nowPair, nowPair ? (nowPair[who] ?? null) : null);
-    // TEN-225 ruling 4c — "has this fixture started?", the client-clock test the card
-    // already uses for its Underway marker (see scoreLineHtml). Defined ONCE here so
-    // the drift cell, its column header and the marker cannot disagree about it.
+    // "Has this fixture started?" — the client-clock test. Defined ONCE here so the
+    // drift column and its header cannot disagree about it.
     const mcStarted = !finalScore && isFinite(cardStartMs(m)) && Date.now() >= cardStartMs(m);
-    // The drift cell's right-hand value. Before the off it is the Now; after the off
-    // it is the CLOSE, because a started fixture's current price is a settled price
-    // and not a current one — that is why the Now is withheld in the first place.
+    // ──────────────────── TEN-225 — THE THREE CARD STATES (founder, 2026-09-19) ──
+    // Verbatim: "UPCOMING (not started): OPEN and NOW. UNDERWAY (started, not
+    // finished): OPEN and NOW. If the book has stopped quoting, keep showing the
+    // last pre-match price as Now and label it as such — never an empty CLOSE
+    // column. COMPLETED (finished): OPEN and CLOSE only."
     //
-    // MEASURED CONSEQUENCE, deployed board 2026-09-18, reported rather than routed
-    // around: n=1 fixture is affected today (Kwon/Suresh) and it renders Open + a
-    // DASH, not Open + Close — because `close_price` is NULL on every sports411 row
-    // in odds_card_state. The cause is upstream and already on the founder's list:
-    // `start_ts_source` is 'none' for every Kibl row, so the publisher can never
-    // promote that book's last pre-start tick to a Close. Its last tick (01:40Z) is
-    // 3h25m BEFORE the 05:05Z off, i.e. a genuine pre-play price that nothing is
-    // allowed to label. That is item I(b) — live_flip_log as the primary path to a
-    // Kibl Close — and this dash is its visible symptom on the board.
+    // THIS REVERSES RULING 4c, which I built on 2026-09-18 and which was wrong on
+    // the board. An underway card relabelled its header to CLOSE and resolved the
+    // value through `_mcCloseOf`. But a close is only computed for a fixture with a
+    // resolved start AND a finished series, so on a fixture that has merely started
+    // it is null — the header asserted a value that cannot exist yet, and dashed
+    // over a real price to do it. MEASURED on the deployed board 2026-09-19:
+    // De Minaur v Kasnikowski and Hsu v Wallin, both ~12 min past their off, both
+    // rendering OPEN / CLOSE with CLOSE dashed on both sides.
+    //
+    // So a non-finished card's right-hand column is ALWAYS the Now. Where the book
+    // really has stopped quoting, it falls back to the recorded last pre-start cut
+    // — the same number `_mcCloseOf` returns, presented as what it is: the last
+    // price before the off, not a settled close. `_nowTitleFor` says so on hover,
+    // and `mcLastPreMatch` is what tells the two cases apart.
     // WHICH BOOK SUPPLIES THE NOW — caught in clean-context review, and it undercut
     // ruling 3's own goal. The default card face resolves its price through
     // `_mcNowPair` (ruling B's any-book ladder); this cell was resolving through
@@ -9160,11 +9217,30 @@ function renderMatches(){
     // attributed to one another.
     const _dpair = _mcOpenNowPair(m);
     const _dfaceNow = _mcNowPair(m);
-    const mcDriftRight = who => {
-      if (mcStarted) return _mcCloseOf(m, who);
+    // The live Now by the ladder, with NO started-fixture special case. Named, so
+    // the underway fallback below can ASK whether the book stopped quoting instead
+    // of assuming it did the moment the clock passed the scheduled off.
+    const _liveNow = who => {
       if (_dpair) return who === 'p1' ? _dpair.n1 : _dpair.n2;
       if (_openAnchorOf(m, 'p1') != null || _openAnchorOf(m, 'p2') != null) return _mcNowOf(m, who);
       return _dfaceNow ? (_dfaceNow[who] ?? null) : null;
+    };
+    // TRUE only when the fixture is underway AND the ladder has no current price on
+    // EITHER side — i.e. the book really has gone quiet, rather than one leg being
+    // momentarily absent. Per-leg would let one side read "last pre-match" while
+    // the other read as current: two different claims on one row.
+    const mcLastPreMatch = mcStarted
+      && _liveNow('p1') == null && _liveNow('p2') == null
+      && (_mcCloseOf(m, 'p1') != null || _mcCloseOf(m, 'p2') != null);
+    const mcDriftRight = who => {
+      const n = _liveNow(who);
+      if (n != null) return n;
+      // Underway with the book gone quiet: the last price before the off, shown in
+      // the Now slot and labelled as such. Never on an UPCOMING card — before the
+      // off there is no "last pre-match price" to carry, and a close on a fixture
+      // that has not started would be a value out of its own future.
+      if (mcStarted) return _mcCloseOf(m, who);
+      return null;
     };
     // ─────────────────────────── TEN-225 ruling 2, corrected (clean-context review) ──
     // The drift cell's title used to be `oddsProv` — the OPEN's book and the OPEN's
@@ -9239,12 +9315,17 @@ function renderMatches(){
     };
     const _nowTitleFor = who => {
       const px = mcDriftRight(who);
-      if (mcStarted){
+      // Underway, book gone quiet. The value is the last price before the off and
+      // the hover says exactly that. The column header still reads NOW, because
+      // that is the slot the member is looking at — so the qualifier has to live
+      // here, or the number claims a currency it does not have.
+      if (mcLastPreMatch){
         const o = _ocsOf(m);
         const book = o ? o.book : ((m.closingOdds && m.closingOdds.bookmaker) || null);
         if (!book) return '';
-        return mcPriceTitle({ book, at: o ? (o.p1.closeTs || o.p2.closeTs) : null,
-                              kind: o ? (o.tsKind || null) : null }, px);
+        return mcPriceTitle({ book, at: o ? (o[who].closeTs || null) : null,
+                              kind: o ? (o.tsKind || null) : null,
+                              note: 'last price before the off' }, px);
       }
       if (_dpair) return mcPriceTitle({ book: _dpair.book, at: _dpair.nowTs,
                                         obs: _dpair.obs || null, kind: _dpair.kind || null }, px);
@@ -9327,7 +9408,14 @@ function renderMatches(){
     const colHead = isCompleted
       ? `<span class="mc-cmpl-head__odds"><span>Open</span><span class="sp"></span><span>Close</span></span>`
       : mxDriftView()
-        ? `<span class="mc-colhead-drift"><span>Open</span><span></span><span>${mcStarted ? 'Close' : 'Now'}</span><span></span></span>`
+        // TEN-225, founder 2026-09-19: a NON-FINISHED card's right-hand column is
+        // "Now" in every case — upcoming and underway alike. The 4c relabel to
+        // "Close" is gone: "never an empty CLOSE column". Where the fixture is
+        // underway and the book has stopped quoting, the value is the last
+        // pre-match price and the hover carries that qualifier (see _nowTitleFor).
+        // CLOSE now appears only on the completed branch above, which is the only
+        // state in which a close exists at all.
+        ? `<span class="mc-colhead-drift"><span>Open</span><span></span><span>Now</span><span></span></span>`
         : `<span class="mc-colhead-inline"><span class="lbl">Odds · Implied</span><span class="lbl">Recent form</span></span>`;
     // TEN-179 item 5 — tournament tier. The field EXISTS: m.venue.category, a curated
     // static fact from bsp-pipeline.js TOURNAMENT_VENUE_HINTS ('Grand Slam' | 'ATP 1000' |
@@ -18436,6 +18524,13 @@ function pp2Bridge(){
   // rather than to a broken column.
   window.bet365History = window.bet365History || {};
   if (!('matchStats' in window)) window.matchStats = null;
+  // Q2 third clause: the per-EVENT coverage index behind the match sheet's
+  // whole-event note. null means "not fetched yet"; the renderer emits no note at
+  // all without it, so an absent fetch loses the sentence and never the sheet.
+  // RESTORED 2026-09-19 — TEN-206 landed this in 46f44a15 and my own 1d6c042f
+  // clobbered it out with the same stale whole-file blob that brought the Underway
+  // chip back. Collateral of one mistake, so it is repaired in the same commit.
+  if (!('matchStatEventCoverage' in window)) window.matchStatEventCoverage = null;
   // §5.3 Record per tournament: the edition store carries no date, no surface
   // and no price, so the modal joins career-history/{key}.json for the date and
   // surface columns. Same lazy-with-repaint posture as the market shard — an
@@ -18482,10 +18577,25 @@ async function loadPp2Bet365(key){
 let _pp2StatsPromise = null;
 function loadPp2MatchStats(key){
   if (_pp2StatsPromise) return _pp2StatsPromise;
-  _pp2StatsPromise = fetch('./historical-match-stats.json', { cache: 'no-cache' })
-    .then(res => res.ok ? res.json() : null)
-    .then(j => { window.matchStats = j || {}; pp2RepaintIfOpen(key); })
-    .catch(() => { window.matchStats = {}; pp2RepaintIfOpen(key); });
+  // Two fetches on the same trigger, settled TOGETHER. The 51 KB event-coverage
+  // index rides along with the store because both feed the same sheet, and racing
+  // them separately would repaint once with the note missing and again with it
+  // present — a sentence appearing a beat later reads as a glitch.
+  // Promise.allSettled, not all: the index is additive, and losing it must cost the
+  // note and never the box scores.
+  // RESTORED 2026-09-19; see the matchStatEventCoverage declaration above.
+  _pp2StatsPromise = Promise.allSettled([
+    fetch('./historical-match-stats.json', { cache: 'no-cache' }).then(r => r.ok ? r.json() : null),
+    fetch('./match-stat-event-coverage.json', { cache: 'no-cache' }).then(r => r.ok ? r.json() : null),
+  ]).then(([stats, cov]) => {
+    window.matchStats = (stats.status === 'fulfilled' && stats.value) || {};
+    // Left null, NOT {}, when it does not land. The renderer treats null as "no
+    // index" and stays silent; an empty object would look like a fully-built index
+    // that happens to know no events, which is the same silence for the wrong
+    // reason and would hide a broken build.
+    window.matchStatEventCoverage = (cov.status === 'fulfilled' && cov.value) || null;
+    pp2RepaintIfOpen(key);
+  });
   return _pp2StatsPromise;
 }
 window.onPp2SheetOpen = function(key){ loadPp2MatchStats(key); };

@@ -52,9 +52,18 @@ const maxM = html.match(/const MC_TITLE_1LINE_MAX = (\d+);/);
 assert.ok(maxM, 'MC_TITLE_1LINE_MAX not found in bsp-consult-dashboard.html');
 const MAX = Number(maxM[1]);
 
+// The stub set is NOT a fixed list — every free identifier the shipped functions
+// reach for has to be declared here, or the sandbox throws and every assertion
+// below stops running while the file still looks like a test suite. That is what
+// happened when G1 (c4eab0b7) put mxBookLabel inside mcPriceTitle: this file went
+// 8/17 red on main and nothing surfaced it. `newsTz` and `mxBookLabel` are
+// stubbed to identity/UTC so the assertions stay about CLOCK SELECTION, which is
+// what this file is for — the labels have their own tests.
 const shipped = ['ocsFmtTs', 'ocsFmtClock', 'mcPriceTitle', '_obsMs', '_measurablePair'].map(slice).join('\n');
 const { mcPriceTitle, _measurablePair, _obsMs } = new Function(`
   const MC_TITLE_1LINE_MAX = ${MAX};
+  const newsTz = () => 'UTC';
+  const mxBookLabel = b => b;
   ${shipped}
   return { mcPriceTitle, _measurablePair, _obsMs };
 `)();
@@ -62,14 +71,22 @@ const { mcPriceTitle, _measurablePair, _obsMs } = new Function(`
 // The page formats in the VIEWER's locale and timezone; the tests assert on the
 // same formatter's own output rather than on a literal, so this file does not
 // go red in another timezone while the page is correct.
-const fmt = new Function(`${slice('ocsFmtTs')}\n${slice('ocsFmtClock')} return ocsFmtClock;`)();
+const fmt = new Function(
+  `const newsTz = () => 'UTC';\n${slice('ocsFmtTs')}\n${slice('ocsFmtClock')} return ocsFmtClock;`)();
+// ocsFmtClock prints a BARE time for today and a dated one otherwise — correctly,
+// since a bare "23:45" on a yesterday stamp would understate the tooltip's own
+// age. That makes any fixture with a hardcoded calendar date a test that AGES:
+// written on 2026-09-18 it asserted a 39-character one-liner, and by 2026-09-19
+// the same call returns "Sep 18 09:08 AM" and wraps. The two format tests below
+// therefore build their instants from TODAY; the clock VALUES are still asserted
+// against the page's own formatter, never against a literal.
+const DTODAY = new Date().toISOString().slice(0, 10);
 
 // ─────────────────────────────────────────────────────── item 1 — both clocks
 test('the founder format: book · price · since <book clock> · seen <our clock>', () => {
-  const t = mcPriceTitle(
-    { book: 'bet365', at: '2026-09-18T01:08:52Z', obs: '2026-09-18T09:15:00Z', kind: 'book-tick' },
-    1.22);
-  assert.equal(t, `bet365 · 1.22 since ${fmt('2026-09-18T01:08:52Z')} · seen ${fmt('2026-09-18T09:15:00Z')}`);
+  const AT = `${DTODAY}T01:08:52Z`, OBS = `${DTODAY}T09:15:00Z`;
+  const t = mcPriceTitle({ book: 'bet365', at: AT, obs: OBS, kind: 'book-tick' }, 1.22);
+  assert.equal(t, `bet365 · 1.22 since ${fmt(AT)} · seen ${fmt(OBS)}`);
   assert.match(t, /since/);
   assert.match(t, /seen/);
 });
@@ -79,8 +96,8 @@ test('NEITHER clock is ever dropped — when the line is too long it WRAPS', () 
   // than dropping a clock". The failure this guards is a silent truncation that
   // looks like the option-1 tooltip he rejected.
   const t = mcPriceTitle(
-    { book: 'a-very-long-bookmaker-name', at: '2026-09-18T01:08:52Z',
-      obs: '2026-09-18T09:15:00Z', kind: 'book-tick' }, 1.22);
+    { book: 'a-very-long-bookmaker-name', at: `${DTODAY}T01:08:52Z`,
+      obs: `${DTODAY}T09:15:00Z`, kind: 'book-tick' }, 1.22);
   assert.ok(t.includes('\n'), `expected a wrap, got ${JSON.stringify(t)}`);
   assert.equal(t.split('\n').length, 2);
   assert.match(t, /since/);
@@ -88,8 +105,8 @@ test('NEITHER clock is ever dropped — when the line is too long it WRAPS', () 
   // CONTROL: the short form does NOT wrap, so the wrap is a length decision and
   // not something that fires unconditionally.
   const short = mcPriceTitle(
-    { book: 'bet365', at: '2026-09-18T01:08:52Z', obs: '2026-09-18T09:15:00Z', kind: 'book-tick' }, 1.22);
-  assert.ok(!short.includes('\n'));
+    { book: 'bet365', at: `${DTODAY}T01:08:52Z`, obs: `${DTODAY}T09:15:00Z`, kind: 'book-tick' }, 1.22);
+  assert.ok(!short.includes('\n'), `the short form wrapped: ${JSON.stringify(short)}`);
 });
 
 test('the PRICE in the tooltip is the hovered cell\'s, not the fixture\'s', () => {
