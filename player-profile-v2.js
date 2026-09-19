@@ -770,21 +770,57 @@
           '<span>' + (p.age == null ? DASH : 'Age ' + esc(p.age)) + '</span>' +
         '</div>' +
       '</div>' +
-      '<div style="flex:none;align-self:stretch;display:flex;align-items:stretch;">' +
+      // ITEM 1 · the meta-strip hairlines.
+      //
+      // README §2 specifies `align-self: stretch; align-items: stretch` with a
+      // `border-left` on each cell — and that is exactly what we shipped, so the
+      // rule ran the full header height. MEASURED on the deployed page: 118.0 CSS
+      // against a 60.0 CSS text block.
+      //
+      // The design capture contradicts its own README. Measured off the founder's
+      // PNG (3024x1964 = 1512 CSS at DPR2, confirmed by the box grid's 24-device
+      // gap = the export's 12 CSS): all four rules run device y 287..395, i.e.
+      // 109 device = **54.5 CSS**, colour rgb(28,29,32) over the page's rgb(6,7,10)
+      // = rgba(255,255,255,0.088). They hug the text block (50.0 CSS of ink) with
+      // ~3 CSS of air above and ~1.5 below — nothing like a stretched border.
+      //
+      // So the cells are centred, not stretched, and the rule is drawn as its own
+      // element sized to the cell's content rather than as a border on a box the
+      // flex row has grown. `align-items:center` alone would still leave four
+      // rules of three different heights (the cells' text differs); an explicit
+      // rule element keeps them equal, which is what the capture shows.
+      '<div style="flex:none;align-self:center;display:flex;align-items:center;">' +
         cells.join('') +
       '</div>' +
       '</div>';
 
+    /**
+     * One live-state cell, with its leading rule.
+     *
+     * The rule is a sibling span rather than the cell's own border-left, so its
+     * height is set by the TEXT and not by however tall the flex row has grown.
+     * `align-items:center` on the pair centres it on the text block, which is
+     * what the design capture shows (rule 54.5 CSS, text ink 50.0, ~3 above and
+     * ~1.5 below).
+     */
     function cell(label, value, colour, sub) {
       return '' +
-        '<div style="display:flex;flex-direction:column;justify-content:flex-end;gap:6px;padding:0 20px;' +
-        'border-left:1px solid rgba(255,255,255,0.09);">' +
+        '<div style="display:flex;align-items:center;">' +
+        // The 2.5px block margin is what puts AIR above and below the rule, and it
+        // is a margin rather than a fixed height on purpose: `align-self:stretch`
+        // resolves the span to the wrapper's height MINUS its own margins, so the
+        // rule is always exactly 5 CSS shorter than the cell it divides, centred,
+        // whatever that cell grows to. A hardcoded 55px would reproduce today's
+        // capture and drift the moment a label wraps.
+        '<span style="width:1px;align-self:stretch;margin:2.5px 0;' +
+        'background:rgba(255,255,255,0.09);"></span>' +
+        '<div style="display:flex;flex-direction:column;justify-content:flex-end;gap:6px;padding:0 20px;">' +
         '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
           'letter-spacing:0.14em;text-transform:uppercase;color:#5b6880;white-space:nowrap;">' + label + '</div>' +
         '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:15px;font-weight:700;' +
           'color:' + colour + ';white-space:nowrap;">' + value + '</div>' +
         '<div style="font-size:12px;color:#5b6880;white-space:nowrap;">' + sub + '</div>' +
-        '</div>';
+        '</div></div>';
     }
   }
 
@@ -850,8 +886,8 @@
       'gap:22px;align-items:center;">' +
         '<div style="white-space:nowrap;">' + eyebrow('Recent form') +
           '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:22px;font-weight:700;line-height:1;">' +
-            '<span style="color:#5b9bff;">' + (r.n ? rateText0(r.won, r.lost) : DASH) + '</span> ' +
-            '<span style="font-size:13px;font-weight:600;color:#5b6880;">' +
+            '<span style="line-height:1;color:#5b9bff;">' + (r.n ? rateText0(r.won, r.lost) : DASH) + '</span> ' +
+            '<span style="line-height:1;font-size:13px;font-weight:600;color:#5b6880;">' +
               (r.n ? recordText(r.won, r.lost) : 'no matches on record') + '</span>' +
           '</div></div>' +
         '<div><div style="display:flex;gap:4px;">' + (strip || '') + '</div>' +
@@ -1497,6 +1533,62 @@
   // so each card NAMES the population its percentage was pooled over. An
   // unlabelled baseline that differs between two cards on one screen reads as a
   // bug; a labelled one reads as what it is, two scopes.
+  // ── ITEM 5 (founder, 2026-09-19) · insight cards take a SENTENCE title ────
+  //
+  // "The design's cards are titled as sentences — 'Handles left-handers well'.
+  //  Ours prints a label and a number."
+  //
+  // THE SPEC CONFLICTS WITH ITSELF INSIDE ONE SECTION, and that is what decides
+  // the shape. README §6 gives three placeholder titles from the locked build —
+  // "Strongly surface-dependent", "Undervalued by the market as a favourite",
+  // "Standout solid baseliner profile" — every one of them an adjectival
+  // sentence; then its production rule ends "state the split rate, its record,
+  // the comparison and the signed gap. No adjectives." Read as a rule about
+  // titles it contradicts all three of its own examples in the same paragraph.
+  // Read as the last clause of the sentence enumerating what the BODY must
+  // state, it is consistent: the body is evidence and carries no adjectives,
+  // the title names the finding in plain language. That is the reading here,
+  // and it is also what satisfies the founder's item 5.
+  //
+  // The titles are a FIXED TABLE, one row per member of the split vocabulary,
+  // not a sentence assembled at render time. Two reasons. A generated title has
+  // to choose a magnitude word from the gap, and any such word is a claim the
+  // data does not make ("dominant" at what pp?). And the vocabulary is closed —
+  // fourteen members, all of them here — so a table is complete, reviewable and
+  // cannot surprise. The lefties row is the design's own string verbatim.
+  //
+  // An id outside the table falls back to the old label/rate shape rather than
+  // to a guessed sentence: if the split vocabulary ever grows, the card reads
+  // plainly and visibly un-narrated instead of silently mis-describing a split.
+  var INSIGHT_TITLES = {
+    'surface:Hard':          ['Strong on hard courts',            'Loses ground on hard courts'],
+    'surface:Clay':          ['Strong on clay',                   'Loses ground on clay'],
+    'surface:Grass':         ['Strong on grass',                  'Loses ground on grass'],
+    'level:Grand Slams':     ['Rises at the Slams',               'Falls away at the Slams'],
+    'level:Masters':         ['Rises at Masters level',           'Falls away at Masters level'],
+    'level:Other Tours':     ['Strongest outside the big events', 'Weaker outside the big events'],
+    'format:Best of 5':      ['Better over five sets',            'Weaker over five sets'],
+    'format:Best of 3':      ['Better over three sets',           'Weaker over three sets'],
+    'round:Finals':          ['Finishes finals off',              'Falls short in finals'],
+    'round:Semi-finals':     ['Reliable in semi-finals',          'Stalls in semi-finals'],
+    'round:Quarter-finals':  ['Reliable in quarter-finals',       'Stalls in quarter-finals'],
+    'opponent:vs. Righties': ['Handles right-handers well',       'Struggles against right-handers'],
+    'opponent:vs. Lefties':  ['Handles left-handers well',        'Struggles against left-handers'],
+    'opponent:vs. Top 10':   ['Holds up against the top 10',      'Struggles against the top 10']
+  };
+  // The body is prose, so the split needs a prepositional phrase rather than the
+  // bare chip label ("Clay" -> "on clay"). Same closed vocabulary, same keys.
+  var INSIGHT_PHRASES = {
+    'surface:Hard': 'on hard courts', 'surface:Clay': 'on clay', 'surface:Grass': 'on grass',
+    'level:Grand Slams': 'at the Slams', 'level:Masters': 'at Masters events',
+    'level:Other Tours': 'at the other tours',
+    'format:Best of 5': 'over five sets', 'format:Best of 3': 'over three sets',
+    'round:Finals': 'in finals', 'round:Semi-finals': 'in semi-finals',
+    'round:Quarter-finals': 'in quarter-finals',
+    'opponent:vs. Righties': 'against right-handers', 'opponent:vs. Lefties': 'against left-handers',
+    'opponent:vs. Top 10': 'against the top 10'
+  };
+
   function renderInsights(p) {
     var lead = bestSplit(p);
     var rest = rankedInsights(p, 'career', null, INSIGHT_GROUPS).filter(function (c) {
@@ -1528,6 +1620,9 @@
       // `> 0`, not `>= 0`. A zero gap is filtered out above; this is the second
       // lock, so that if a zero ever reaches here it cannot paint as a strength.
       var up = ins.gap > 0;
+      var pair = INSIGHT_TITLES[ins.id];
+      var title = pair ? pair[up ? 0 : 1] : ins.label + ' ' + MIDDOT + ' ' + rateText(ins.won, ins.lost);
+      var phrase = INSIGHT_PHRASES[ins.id] || ins.label;
       // ★ Founder ruling, 2026-09-18 (Q3): "follow the file — positive #5b9bff on
       //   rgba(62,123,250,0.15), negative #E24B4A, no icon border. It matches the
       //   one-accent rule in the design instructions; the README loses here as it
@@ -1564,18 +1659,20 @@
             '<path d="' + path + '" stroke="currentColor" stroke-width="1.7" ' +
             'stroke-linecap="round" stroke-linejoin="round"/></svg></div>' +
           '<div style="font-size:18.5px;font-weight:800;letter-spacing:-0.01em;line-height:1.25;color:#fff;">' +
-            // One decimal, via rateText. rateText0 is documented above as the
-            // formatter for exactly TWO export call sites (ribbonPct and the
-            // ledger header); the export's own insight bodies read "58.3%",
-            // "23.8%", "27.8%" — one decimal, like its ~40 other rates.
-            esc(ins.label) + ' ' + MIDDOT + ' ' + rateText(ins.won, ins.lost) + '</div>' +
+            esc(title) + '</div>' +
           '<div style="font-size:13.5px;color:#5b6880;line-height:1.7;">' +
-            // Q1 round 2 · the same sentence shape the tile prints, so a reader
-            // comparing the lead card with the box above it sees one claim twice,
-            // not two claims. "career baseline" is gone with the career baseline.
-            esc(recordText(ins.won, ins.lost)) + ' over ' + ins.n + ' matches ' + MIDDOT + ' ' +
-            '<span style="color:' + col + ';font-weight:700;">' + signed(ins.gap, 1, 'pp') + '</span>' +
-            ' vs his ' + ins.baseline.toFixed(1) + '% ' + esc(ins.pop) +
+            // Everything README §6 requires of a body, in order and with no
+            // adjective: the split RATE (one decimal, via rateText — the export's
+            // own insight bodies read "58.3%", "23.8%"), its RECORD, the
+            // COMPARISON, and the SIGNED GAP.
+            //
+            // "over N matches" is gone from the body, not lost: the record IS n
+            // (95-14 is 109 matches), and the sentence read as two claims where
+            // there is one. Same reasoning that shortened the tiles in item 3.
+            'Wins ' + rateText(ins.won, ins.lost) + ' ' + esc(phrase) +
+            ' (' + esc(recordText(ins.won, ins.lost)) + ') against ' +
+            ins.baseline.toFixed(1) + '% ' + esc(ins.pop) + ' ' + EMDASH + ' ' +
+            '<span style="color:' + col + ';font-weight:700;">' + signed(ins.gap, 1, 'pp') + '</span>.' +
           '</div>' +
         '</div>';
     }).join('');
@@ -1798,13 +1895,20 @@
           headline: signed(be.pinPl, 1),
           hlSuffix: 'u',
           hlSuffixColor: be.pinPl >= 0 ? '#3dd68c' : '#e0616f',
+          // ITEM 3 (2026-09-19) · five tokens wrapped to two lines and made this
+          // row of cards 2.4 CSS taller than the other (measured: 142.4 v 140.0
+          // on T. Griekspoor). The export's shape is four:
+          //     Cincinnati · best event · 14-4 · 78%
+          //
+          // The token dropped is the RATE, not the priced count. Two reasons:
+          // the rate is recoverable from the record standing next to it (12-10
+          // IS 55%), whereas the priced n is the only thing on the tile that
+          // says what the +16.3u headline was struck over; and the founder's
+          // 2026-09-18 Q3 ruling is explicit — "keep '· N priced'". So the
+          // fourth token is the n, and the whole-number rate ruling (§5.3 item
+          // 9) now applies only where that rate still renders, in the modal.
           support: be.display + ' ' + MIDDOT + ' best event ' + MIDDOT + ' ' +
-            // rateText0 -- whole number. Founder ruling 2026-09-16 (§5.3 item
-            // 9): "Win%: whole number ('78%'), not '81.8%'" for Record per
-            // tournament. This support line IS a Record per tournament win%, so
-            // it takes that ruling, and the export's own "78%" agrees.
-            recordText(be.won, be.lost) + ' ' + MIDDOT + ' ' + rateText0(be.won, be.lost) +
-            ' ' + MIDDOT + ' ' + be.pinN + ' priced'
+            recordText(be.won, be.lost) + ' ' + MIDDOT + ' ' + be.pinN + ' priced'
         }
       : { headline: null, support: 'no event with 10+ priced matches' };
 
@@ -1832,11 +1936,21 @@
       try { speedBest = speedBestBand(speedBands(p)); }
       finally { state.speedSurf = prevSurf; }
     }());
+    // ITEM 2 (2026-09-19) · the headline slot carries a NUMBER, never a label.
+    // The band name moves into the support line, which takes the design's own
+    // three-token shape ("{label} · his best {thing} · {record}") — the same
+    // shape Matchup record already uses one box along.
+    //
+    // ONE DEVIATION FROM THE CAPTURE, deliberate. The design's speed support
+    // reads "clay courts · his best surface · 283-198 career" — a SURFACE. That
+    // is the exact defect the founder ruled out on 2026-09-16 ("the headline is
+    // always one of the five PACE BANDS ... It is never a surface name"), and
+    // the box is Court SPEED. The capture has regressed to the pre-ruling
+    // behaviour, so the ruling wins and the label stays a band.
     v.speed = speedBest
-      ? { headline: speedBest.band.band.label,
-          support: Math.round(100 * speedBest.band.won / speedBest.n) + '% ' + MIDDOT + ' ' +
-            recordText(speedBest.band.won, speedBest.band.lost) + ' ' + MIDDOT + ' ' +
-            speedBest.n + ' matches' }
+      ? { headline: rateText0(speedBest.band.won, speedBest.band.lost),
+          support: speedBest.band.band.label + ' ' + MIDDOT + ' his best band ' + MIDDOT + ' ' +
+            recordText(speedBest.band.won, speedBest.band.lost) }
       // The BOX has to make the same pending-vs-empty distinction the modal
       // makes, or the two contradict each other on one screen: with the store
       // unsettled every band is zero, speedBestBand() returns null, and the
@@ -1870,11 +1984,20 @@
     // and §3's "every rate shows its record and n" is satisfied by the record.
     var bs = bestSplit(p);
     var bsBase = boxSplitBaseline(p, 'career');
+    // ITEM 2/3 (2026-09-19) · figure in the headline, label in the support, and
+    // the line comes down from five tokens to the design's three.
+    //
+    // WHAT MOVED OFF THE TILE, and why that is safe: the round-2 Q1 ruling asked
+    // for the baseline to be printed "so the gap is reproducible". That
+    // disclosure is not lost — the Draw record modal's legend carries the same
+    // pooled baseline, its record and its n, over the very rows the reader is
+    // looking at, which is a better place to check an arithmetic claim than a
+    // 10.5px line that wrapped to two. The tile keeps the rate and the record;
+    // one click has the gap.
     v.splits = bs
-      ? { headline: bs.pick.label,
-          support: 'best split ' + MIDDOT + ' ' + bs.pick.rate.toFixed(1) + '% ' + MIDDOT + ' ' +
-            signed(bs.pick.gap, 1, 'pp') + ' vs his ' + bs.baseline.toFixed(1) + '% ' + bs.pop +
-            ' ' + MIDDOT + ' ' + recordText(bs.pick.won, bs.pick.lost) }
+      ? { headline: bs.pick.rate.toFixed(1) + '%',
+          support: bs.pick.label + ' ' + MIDDOT + ' best split ' + MIDDOT + ' ' +
+            recordText(bs.pick.won, bs.pick.lost) }
       // THREE different empty facts, three different sentences. Caught by reading
       // the rendered tile rather than the code: Giustino's splits store holds
       // eight tour matches, so the pooled baseline is a real 12.5% and the tile
@@ -10443,6 +10566,11 @@
       ledgerChip: ledgerChip,
       ledgerRowHtml: ledgerRowHtml,
       renderRibbon: renderRibbon,
+      renderHeader: renderHeader,
+      renderBoxes: renderBoxes,
+      SPLIT_GROUPS: SPLIT_GROUPS,
+      INSIGHT_TITLES: INSIGHT_TITLES,
+      INSIGHT_PHRASES: INSIGHT_PHRASES,
       renderBackLink: renderBackLink,
       // §8.1 match sheet
       renderSheet: renderSheet,

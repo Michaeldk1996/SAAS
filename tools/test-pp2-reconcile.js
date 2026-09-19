@@ -889,7 +889,12 @@ check('the pick is allowed to be negative — the rule is sign-blind by ruling',
 check('the splits support line uses the v7 wording, not the bw-0 wording', () => {
   const src = fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8');
   const code = src.split('\n').map(l => l.replace(/^\s*\/\/.*$/, '')).join('\n');
-  assert(/'best split /.test(code), 'the v7 "best split" support line is missing');
+  // ITEM 3 moved the phrase from the head of the line to its middle: the box's
+  // support is now "{label} \u00b7 best split \u00b7 {record}", so the v7 token is
+  // ' best split ' with a separator either side rather than a line-leading
+  // "'best split ". Pinned to the token, which is what the wording ruling is
+  // about, not to its position, which item 3 legitimately moved.
+  assert(/best split /.test(code), 'the v7 "best split" support line is missing');
   const stale = (code.match(/'[^'\n]*\bbiggest split\b[^'\n]*'/gi) || []);
   assert.strictEqual(stale.length, 0,
     `v7 regressed — user-facing text still says: ${stale.join(', ')}`);
@@ -907,7 +912,19 @@ check('splits box headline and the modal agree on the picked split', () => {
     const bs = I.biggestSplit(p);
     const vals = I.buildBoxVals(p, { archetype: null });
     if (!bs) { assert.strictEqual(vals.splits.headline, null, `${p.name}: headline without a pick`); continue; }
-    assert.strictEqual(vals.splits.headline, bs.pick.label);
+    // ITEM 2 (2026-09-19) · the headline is now the RATE and the label moved to
+    // the support line, so "the box and the modal agree on the picked split" is
+    // asserted over BOTH halves — the figure the box leads with and the label
+    // that qualifies it. This is strictly stronger than the old single equality:
+    // a box that picked a different split would previously have had to get the
+    // label wrong to fail; now getting either one wrong fails.
+    assert.strictEqual(vals.splits.headline, bs.pick.rate.toFixed(1) + '%',
+      `${p.name}: splits headline is not the picked split's rate`);
+    assert(String(vals.splits.support).indexOf(bs.pick.label) === 0,
+      `${p.name}: splits support does not lead with the picked split's label ` +
+      `(${JSON.stringify(vals.splits.support)})`);
+    assert(/[0-9]/.test(String(vals.splits.headline)),
+      `${p.name}: splits headline carries no figure`);
     const html = I.renderSplitsModal(p);
     assert(html.includes(bs.baseline.toFixed(1) + '%'),
       `${p.name}: modal does not disclose the baseline the headline was measured against`);
@@ -1874,19 +1891,36 @@ checkCareer('the Court speed headline is a band name or a dash, never a surface'
     const h = v.speed.headline;
     if (h == null) { dashed++; continue; }
     headlined++;
-    assert(LABELS.indexOf(h) > -1,
-      `${p.name}: Court speed headline "${h}" is not one of ${LABELS.join(' · ')}`);
-    SURFACES.forEach(s => assert(h.indexOf(s) < 0,
-      `${p.name}: Court speed headline "${h}" names a surface`));
+    // ITEM 2 (2026-09-19) · the BAND moved from the headline to the head of the
+    // support line and the headline became the rate. The 2026-09-16 ruling —
+    // "never a surface name" — is unchanged and is now asserted where the band
+    // actually renders, plus the surface ban is asserted over the WHOLE tile
+    // (headline and support), which is wider than the headline-only ban it
+    // replaces: the "Grass courts" regression would fail here from either slot.
+    assert(/^[0-9]+%$/.test(h),
+      `${p.name}: Court speed headline "${h}" is not a whole-percent figure`);
+    const band = String(v.speed.support).split(' · ')[0];
+    assert(LABELS.indexOf(band) > -1,
+      `${p.name}: Court speed support leads with "${band}", not one of ${LABELS.join(' · ')}`);
+    const tile = h + ' ' + v.speed.support;
+    SURFACES.forEach(sf => assert(tile.indexOf(sf) < 0,
+      `${p.name}: Court speed tile "${tile}" names a surface`));
   }
   assert(headlined > 0, 'no player produced a Court speed headline — this check never ran');
   console.log(`        ${headlined} band headlines, ${dashed} dashes, 0 surface names ` +
     `across ${headlined + dashed} players`);
 });
 mustFail('the headline check would catch the old "Grass courts" wording', () => {
+  // Re-aimed at the support line, which is where a surface name could now land.
   const LABELS = I.SPEED_BANDS.map(b => b.label);
-  const h = 'Grass courts';
-  assert(LABELS.indexOf(h) > -1, `Court speed headline "${h}" is not one of ${LABELS.join(' · ')}`);
+  const band = 'Grass courts · his best band · 31–12'.split(' · ')[0];
+  assert(LABELS.indexOf(band) > -1,
+    `Court speed support leads with "${band}", not one of ${LABELS.join(' · ')}`);
+});
+mustFail('the headline check would catch a LABEL back in the headline slot', () => {
+  // Item 2's own mutant: the pre-item-2 headline was the band name.
+  const h = 'Very fast';
+  assert(/^[0-9]+%$/.test(h), `Court speed headline "${h}" is not a whole-percent figure`);
 });
 
 // The band order is a README-vs-file conflict resolved in the file's favour:
@@ -2843,9 +2877,17 @@ const STORES = [
       { name: 'pbpShards', file: 'pbp/{eventKey}.json', universe: () => 1, floor: 1,
         // The accessor must tell ABSENT (not fetched) from NULL (answered,
         // empty); collapsing them is the defect, so both halves are exercised.
+        // The fixture game carries a POINT with a non-blank score. It used to
+        // carry `points: []`, and `40a421d5` correctly made an empty points[] the
+        // signature of a TIEBREAK mini-point rather than of a game — the deployed
+        // US Open final shard paints nine phantom service games without that
+        // rule. So the fixture, not the rule, was wrong: a real game always has
+        // at least one scored point, and this store check is about whether the
+        // accessor resolves a shard, not about tiebreak discrimination.
         resolve: sandboxed(() => {
           window.pbpShards = { 4: { p1Key: 1, p2Key: 2, sets: [
-            { set: 1, games: [{ g: 1, server: 'p1', winner: 'p1', score: '6 - 3', points: [] }] }] } };
+            { set: 1, games: [{ g: 1, server: 'p1', winner: 'p1', score: '6 - 3',
+              points: [{ s: '40 - 0' }] }] }] } };
           const held = I.mpSetGames({ sets: [] }, window.pbpShards[4], true);
           return (held && held.length === 1 && held[0].a === 6) ? 1 : 0; }) },
       { name: 'setStatsShards', file: 'setstats/{eventKey}.json', universe: () => 1, floor: 1,
@@ -3769,10 +3811,17 @@ check('item 3 · the ribbon and ledger headlines are whole numbers, every other 
   // whole above), and the `styles` box headline had to match the Matchup list
   // it opens, which has always rounded. Re-pinned at 9 on the same principle —
   // the count moves only when a ruling or a measured disagreement moves it.
+  // ITEM 3 (2026-09-19) took the win% out of the `tourn` box support — its
+  // fourth token is now the priced n, which is the only figure on that tile
+  // that says what the +Xu headline was struck over. The whole-number RULING is
+  // untouched: Record per tournament still rounds wherever it renders, which is
+  // now the §5.3 modal only. ITEM 2 added one back at box 4, whose headline is
+  // the band's win rate. Net 9, and the INVENTORY below is what carries the
+  // meaning — the count alone would have read as "nothing changed".
   const calls = (PP2_SRC.match(/rateText0\(/g) || []).length;
   assert.strictEqual(calls, 9,
     `rateText0 appears ${calls} times (expected 9: the definition + ribbon + ledger ` +
-    `header + 4 in §5.3 + the tourn box support + the styles box headline)`);
+    `header + 4 in §5.3 + the speed box headline + the styles box headline)`);
 
   // The old guard here was "rateText must outnumber rateText0". v7 broke it
   // legitimately — 8 vs 9 — and that is worth saying out loud rather than
@@ -3791,7 +3840,11 @@ check('item 3 · the ribbon and ledger headlines are whole numbers, every other 
     'full ledger header',
     '§5.3 list row win%', '§5.3 W–L tile sub', '§5.3 Grand Slam tile sub',
     '§5.3 detail header meta',
-    'box 3 (tourn) support win%',        // ruled 2026-09-16, §5.3 item 9
+    // ITEM 3 (2026-09-19) removed box 3's support win% — its fourth token is now
+    // the priced n. ITEM 2 added box 4's headline, which leads with the band's
+    // win rate and rounds because a pace band's rate is a coarse figure and the
+    // modal it opens has always rounded it.
+    'box 4 (speed) headline',            // item 2, 2026-09-19
     'box 6 (styles) headline'            // measured: the Matchup list rounds
   ];
   assert.strictEqual(WHOLE_SURFACES.length, calls - 1,
@@ -5759,7 +5812,19 @@ check('Q1 · "best split" is POSITIVE-only, measured against the POOLED candidat
     assert(bs.pick.gap > 0,
       `${p.name}: "best split" is ${bs.pick.label} at ${bs.pick.gap.toFixed(1)}pp — a NEGATIVE gap`);
     assert(bs.pick.n >= 10, `${p.name}: pick clears no ten-match floor (n=${bs.pick.n})`);
-    assert.strictEqual(vals.splits.headline, bs.pick.label);
+    // ITEM 2 (2026-09-19) · the headline is now the RATE and the label moved to
+    // the support line, so "the box and the modal agree on the picked split" is
+    // asserted over BOTH halves — the figure the box leads with and the label
+    // that qualifies it. This is strictly stronger than the old single equality:
+    // a box that picked a different split would previously have had to get the
+    // label wrong to fail; now getting either one wrong fails.
+    assert.strictEqual(vals.splits.headline, bs.pick.rate.toFixed(1) + '%',
+      `${p.name}: splits headline is not the picked split's rate`);
+    assert(String(vals.splits.support).indexOf(bs.pick.label) === 0,
+      `${p.name}: splits support does not lead with the picked split's label ` +
+      `(${JSON.stringify(vals.splits.support)})`);
+    assert(/[0-9]/.test(String(vals.splits.headline)),
+      `${p.name}: splits headline carries no figure`);
     // Round 2's second half: the baseline is PRINTED, and the whole support line
     // is reconstructed here from the raw rows. If any of rate, gap, baseline or
     // record drifts, this string stops matching.
@@ -5767,10 +5832,22 @@ check('Q1 · "best split" is POSITIVE-only, measured against the POOLED candidat
     const rate = 100 * bs.pick.won / bs.pick.n;
     const gap = rate - expectBase;
     const pp = (gap < 0 ? '−' : '+') + Math.abs(gap).toFixed(1) + 'pp';
+    // ITEM 3 reshaped the line to the design's three tokens. Everything the old
+    // assertion reconstructed is still reconstructed — the rate moved to the
+    // HEADLINE (asserted above), the record stays here, and the gap+baseline
+    // moved to the modal and are reconstructed there. So this check still fails
+    // if any of rate, gap, baseline or record drifts; it just reads them off
+    // the two surfaces they now render on instead of one.
     assert.strictEqual(vals.splits.support,
-      `best split · ${rate.toFixed(1)}% · ${pp} vs his ${expectBase.toFixed(1)}% `
-      + `across these splits · ${bs.pick.won}–${bs.pick.lost}`,
+      `${bs.pick.label} · best split · ${bs.pick.won}–${bs.pick.lost}`,
       `${p.name}: support line does not reproduce from the rows`);
+    assert.strictEqual(vals.splits.headline, `${rate.toFixed(1)}%`,
+      `${p.name}: headline rate does not reproduce from the rows`);
+    const modalHtml = I.renderSplitsModal(p);
+    assert(modalHtml.includes(`${expectBase.toFixed(1)}%`),
+      `${p.name}: the modal does not carry the baseline the gap is measured against`);
+    assert(modalHtml.includes(pp),
+      `${p.name}: the modal does not carry the ${pp} gap the tile's pick was chosen on`);
     // Independent recompute of the winner, straight off the candidate list.
     const cands = I.rankedInsights(p, 'career', null, I.BOX_SPLIT_GROUPS || undefined)
       .filter(c => c.gap > 0)
@@ -6095,7 +6172,23 @@ check('Q1/Q2 · the superseded empty copy is gone from the BOX builder', () => {
   assert(!box.includes("'no split above his career rate'"),
     'the round-1 career-rate empty copy is still shipping — Q1 round 2 replaced it');
   assert(box.includes("'no split above his '"), 'the Q1 round-2 empty copy is missing');
-  assert(box.includes("' vs his '"), 'the Q1 round-2 tile no longer prints its baseline');
+  // ITEM 3 (2026-09-19) · the Q1 round-2 ruling asked for the baseline to be
+  // printed "so the gap is reproducible". Item 3 capped the tile at the design's
+  // three tokens, which will not carry a gap AND a baseline AND a record on one
+  // line. The DISCLOSURE is not dropped, it MOVED — so the lock moves with it,
+  // to the Draw record modal, and is asserted against rendered output for a real
+  // player rather than against a source string. That is a stronger lock than the
+  // grep it replaces: this one fails if the modal stops painting the number,
+  // whereas a grep passes on a string that never reaches the page.
+  {
+    const subject = SAMPLE.find(p => I.biggestSplit(p));
+    assert(subject, 'no sample player has a split — this lock never ran');
+    const bs = I.biggestSplit(subject);
+    const modal = I.renderSplitsModal(subject);
+    assert(modal.includes(bs.baseline.toFixed(1) + '%'),
+      `Q1's baseline disclosure is gone: the Draw record modal for ${subject.name} ` +
+      `does not print ${bs.baseline.toFixed(1)}%`);
+  }
   for (const required of [
     'no split data on record',
     'no split clears the ten-match minimum'
