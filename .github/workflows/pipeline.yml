@@ -746,8 +746,20 @@ jobs:
               .then(r => r.ok ? r.json() : Promise.reject(new Error("HTTP " + r.status)))
               .then(live => {
                 const keys = Object.keys(live);
-                const missing = keys.filter(k => !(k in site));
-                if (missing.length) return fail(`_site/historical-match-stats.json is MISSING ${missing.length} eventKey(s) that are live right now (e.g. ${missing.slice(0,3).join(", ")}) — this deploy would take box scores off the page.`);
+                // Only keys that actually CARRY a sheet. A `{matchStats:null}` entry is
+                // negative cache — "we looked and the feed had nothing" — so losing one
+                // costs a re-fetch, never a box score, and the message below would be
+                // literally false about it. Measured 2026-09-18: this axis red-ed two
+                // consecutive deploys (3739, 3741) on eventKey 12143895, whose live
+                // value is exactly {"matchStats":null}. 500 of the 2622 live keys are
+                // the not-yet-frozen harvest of the current day, so the negative half of
+                // that set is large and churns between runs.
+                // Axis 2 below is the real coverage check and already skips nulls; this
+                // axis is kept, narrowed, only because "the key vanished entirely" is a
+                // different diagnosis from "the key is there but its sheet is gone".
+                const carrying = keys.filter(k => live[k] && live[k].matchStats);
+                const missing = carrying.filter(k => !(k in site));
+                if (missing.length) return fail(`_site/historical-match-stats.json is MISSING ${missing.length} eventKey(s) that CARRY a box score live right now (e.g. ${missing.slice(0,3).join(", ")}) — this deploy would take box scores off the page.`);
                 const lostSheet = keys.filter(k => live[k] && live[k].matchStats && !(site[k] && site[k].matchStats));
                 if (lostSheet.length) return fail(`${lostSheet.length} eventKey(s) carry a box score LIVE but not in _site (e.g. ${lostSheet.slice(0,3).join(", ")}) — the sheet would go blank for them.`);
                 const shallower = keys.filter(k => {
@@ -756,7 +768,7 @@ jobs:
                   return b1 < a1 || b2 < a2;
                 });
                 if (shallower.length) return fail(`${shallower.length} eventKey(s) are SHALLOWER than live on at least one player side (e.g. ${shallower.slice(0,3).join(", ")}) — coverage regressed without losing a key.`);
-                console.log(`TEN-206: published store contains all ${keys.length} live eventKeys, no lost sheets, none shallower.`);
+                console.log(`TEN-206: published store contains all ${carrying.length} live eventKeys that carry a box score (of ${keys.length} live keys; the rest are negative cache), no lost sheets, none shallower.`);
               })
               .catch(e => console.log(`::warning title=live match-stat comparison skipped::${e.message} — could not read the live store, so the against-live check did not run this time.`));
           '
