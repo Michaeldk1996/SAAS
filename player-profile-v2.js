@@ -9580,146 +9580,278 @@
     return c && c.held ? c : null;
   }
 
-  // One cell of the grid. The engine has already applied the sample ladder and
-  // chosen the text; this only paints it. `c.pct` is already '—', 'won/n' or
-  // 'NN%' — it is never re-derived here, so the figure and the colour cannot
-  // disagree with the Live tab's.
+  // ── THE EXPORT'S SHAPE, not ours ──────────────────────────────────────────
+  // Founder, 2026-09-19: "the export is ONE grid toggled Hold|Break with a
+  // GLOBAL column FIRST; we ship two stacked grids with ALL last. Build the
+  // export's shape."
+  //
+  // Every value below is read off `Player Stat Boxes.dc.html` — the overlay
+  // markup at :1125-1177 and the `holdBreak()` data model at :1326-1395 — not
+  // off the capture and not off the README. The capture confirms them: its card
+  // measures 684.0 CSS at DPR 2, and 684 / 0.9 (the browser zoom that frame was
+  // taken at) is 760.0, the export's `max-width` exactly; its set-cell pitch
+  // measures 174 device against the 174.2 the declared tracks predict.
+  //
+  // WHAT THE ENGINE STILL OWNS. `holdbreak-heatmap.js` is shared with the Live
+  // tab, which is on the don't-touch list, so not one of these colours is
+  // changed there — the engine keeps deciding the BAND and this renderer maps
+  // its palette onto the export's. That matters beyond tidiness: the engine
+  // bands BREAK at 30/18 where the export's `band()` uses 85/70 for both modes
+  // (its mock only ever renders hold), and a break rate of 31% is a good one.
+  // Ours is the correct thresholds; the note prints whichever pair is live.
+  //
+  // The engine's band background is the discriminator rather than its text
+  // colour, because the engine greys the TEXT of a 5-9 cell and keeps its band
+  // background — so the background is the only field that still carries the band
+  // for a muted cell, which is exactly the cell the export wants muted-but-tinted.
+  var HB_BAND_MAP = {
+    'rgba(45,226,145,0.20)': { rgb: '61,214,140', ink: '#3dd68c' },   // strong
+    'rgba(255,164,43,0.18)': { rgb: '232,168,78', ink: '#e8a84e' },   // mid
+    'rgba(255,90,106,0.18)': { rgb: '224,97,111', ink: '#e0616f' }    // weak
+  };
+  var HB_FAINT = '#3f4860';        // :1233 — the export's FAINT, not §3's #4b5672
+
+  /**
+   * One set cell, mapped from the engine's model onto the export's palette.
+   *
+   * The sample tier is taken from the engine's own `frac`, which is '' when the
+   * cell is dead, the literal 'raw' under five games, and 'won/n' otherwise —
+   * so n is read from the string the engine already computed rather than
+   * re-derived here, and the cell's figure and its tier cannot disagree.
+   * Reading `c.opacity` or `c.size` would work today and would be a guess about
+   * the engine's styling intent; n is a fact about the sample.
+   */
   function hbCellHtml(c) {
+    var bg, ink, fracInk, sub;
+    if (!c.frac) {                                   // n = 0 — dead
+      bg = 'rgba(255,255,255,0.02)'; ink = HB_FAINT; fracInk = HB_FAINT; sub = '';
+    } else if (c.frac === 'raw') {                   // n < 5 — the raw count, no rate
+      bg = 'rgba(255,255,255,0.03)'; ink = '#8b96b5'; fracInk = '#4b5672'; sub = 'raw';
+    } else {
+      var n = parseInt(String(c.frac).split('/')[1], 10);
+      var band = HB_BAND_MAP[c.bg];
+      var muted = isFinite(n) && n < 10;             // 5-9 — muted wash, grey ink
+      bg = band ? 'rgba(' + band.rgb + ',' + (muted ? '0.07' : '0.16') + ')'
+                : 'rgba(255,255,255,0.03)';
+      ink = muted || !band ? '#8b96b5' : band.ink;
+      fracInk = 'rgba(255,255,255,0.35)';
+      sub = c.frac;
+    }
+    // No border. The export gives the SET cells none at all — the tint alone
+    // carries the signal — and only the GLOBAL cell a neutral hairline.
     return '' +
-      '<div data-pp2="hb-cell" title="' + esc(c.tipHead + (c.tipRate ? ' ' + MIDDOT + ' ' + c.tipRate : '') +
+      '<span data-pp2="hb-cell" title="' + esc(c.tipHead +
+        (c.tipRate ? ' ' + MIDDOT + ' ' + c.tipRate : '') +
         (c.tipNote ? ' ' + MIDDOT + ' ' + c.tipNote : '')) + '" ' +
-      'style="border:1px solid ' + c.bd + ';background:' + c.bg + ';border-radius:8px;padding:8px 4px;' +
-      'text-align:center;min-width:0;opacity:' + c.opacity + ';">' +
-        '<div style="font-family:\'IBM Plex Mono\',monospace;font-weight:700;line-height:1;' +
-          'font-size:' + c.size + ';color:' + c.color + ';">' + esc(c.pct) + '</div>' +
-        (c.frac && c.frac !== 'raw'
-          ? '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9px;margin-top:3px;' +
-            'color:rgba(231,233,238,0.55);">' + esc(c.frac) + '</div>'
-          : '') +
-      '</div>';
+      'style="display:flex;flex-direction:column;align-items:center;gap:1px;' +
+      'background:' + bg + ';border-radius:9px;padding:10px 0;">' +
+        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:14px;font-weight:700;' +
+          'color:' + ink + ';">' + esc(c.pct) + '</span>' +
+        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9px;color:' + fracInk + ';">' +
+          esc(sub) + '</span>' +
+      '</span>';
   }
 
-  function hbPanelHtml(title, sub, model) {
-    var cols = '96px repeat(5,minmax(0,1fr)) 74px';
-    var head = '<div style="display:grid;grid-template-columns:' + cols + ';gap:6px;margin-bottom:7px;">' +
-      '<span></span>' +
-      [1, 2, 3, 4, 5].map(function (s) {
-        return '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;letter-spacing:0.1em;' +
-          'text-transform:uppercase;color:#5b6880;text-align:center;">Set ' + s + '</span>';
-      }).join('') +
-      '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;letter-spacing:0.1em;' +
-        'text-transform:uppercase;color:#5b6880;text-align:center;">All</span>' +
-      '</div>';
+  /** The GLOBAL cell — flat #0f131c, a neutral hairline, never band-tinted. */
+  function hbGlobalCellHtml(r) {
+    var dead = r.gPct === DASH;
+    return '' +
+      '<span style="display:flex;flex-direction:column;align-items:center;gap:1px;' +
+      'background:#0f131c;border:1px solid rgba(255,255,255,0.08);border-radius:9px;padding:10px 0;">' +
+        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:14px;font-weight:700;' +
+          'color:' + (dead ? HB_FAINT : '#e8ecf4') + ';">' + esc(r.gPct) + '</span>' +
+        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9px;color:#5b6880;">' +
+          esc(r.gFrac || '') + '</span>' +
+      '</span>';
+  }
+
+  /** The segmented control the export uses for Hold|Break — and, restyled to
+   *  match it, for the surface filter. */
+  function hbSegHtml(hook, items, active) {
+    return '<span style="display:inline-flex;gap:3px;background:#06070a;' +
+      'border:1px solid rgba(255,255,255,0.09);border-radius:9px;padding:3px;">' +
+      items.map(function (it) {
+        var on = it.id === active;
+        return '<button type="button" data-pp2="' + hook + '" data-v="' + esc(it.id) + '" ' +
+          'style="cursor:pointer;padding:5px 14px;border-radius:7px;font-size:11.5px;' +
+          'font-weight:' + (on ? 700 : 600) + ';color:' + (on ? '#e7e9ee' : '#5b6880') + ';' +
+          'background:' + (on ? 'rgba(91,155,255,0.16)' : 'transparent') + ';' +
+          'border:1px solid ' + (on ? 'rgba(91,155,255,0.4)' : 'transparent') + ';">' +
+          esc(it.label) + '</button>';
+      }).join('') + '</span>';
+  }
+
+  var HB_MODES = [{ id: 'hold', label: 'Hold' }, { id: 'break', label: 'Break' }];
+
+  /** ONE grid: row label · GLOBAL · hairline · S1-S5. */
+  function hbGridHtml(model) {
+    var HEAD = ['Global', 'S1', 'S2', 'S3', 'S4', 'S5'];
+    function headCell(t) {
+      return '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
+        'letter-spacing:0.14em;text-transform:uppercase;color:#5b6880;text-align:center;">' +
+        esc(t) + '</span>';
+    }
+    // The 10px track between GLOBAL and S1 carries a 1x34px rule, so the two
+    // halves of the row read as separate scales rather than one six-set run.
+    var divider = '<span style="display:flex;justify-content:center;">' +
+      '<span style="width:1px;height:34px;background:rgba(255,255,255,0.09);"></span></span>';
+
+    var head = '<span></span>' + headCell(HEAD[0]) + '<span></span>' +
+      HEAD.slice(1).map(headCell).join('');
 
     var rows = model.rows.map(function (r) {
-      return '<div style="display:grid;grid-template-columns:' + cols + ';gap:6px;margin-bottom:6px;' +
-        'align-items:stretch;">' +
-        '<div style="display:flex;flex-direction:column;justify-content:center;">' +
-          '<span style="font-size:11.5px;font-weight:700;color:#c6ccdb;">' + esc(r.bucket) + '</span>' +
-          '<span style="font-size:9px;color:#4b5672;">' + esc(r.sub) + '</span>' +
-        '</div>' +
-        r.cells.map(hbCellHtml).join('') +
-        '<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;' +
-          'border-left:1px solid rgba(255,255,255,0.07);">' +
-          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:13px;font-weight:700;' +
-            'color:' + r.gColor + ';">' + esc(r.gPct) + '</span>' +
-          (r.gFrac ? '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9px;color:#4b5672;">' +
-            esc(r.gFrac) + '</span>' : '') +
-        '</div>' +
-      '</div>';
+      return '' +
+        '<span style="display:flex;flex-direction:column;gap:2px;">' +
+          '<span style="font-size:13.5px;font-weight:700;color:#e7e9ee;white-space:nowrap;">' +
+            esc(r.bucket) + '</span>' +
+          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;color:#5b9bff;">' +
+            esc(r.sub) + '</span>' +
+        '</span>' +
+        hbGlobalCellHtml(r) + divider + r.cells.map(hbCellHtml).join('');
     }).join('');
 
-    return '<div style="border:1px solid rgba(255,255,255,0.07);border-radius:14px;background:#070a10;' +
-      'padding:15px 16px;min-width:0;">' +
-      '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:12px;">' +
-        '<span style="font-size:13.5px;font-weight:800;color:#e7e9ee;">' + esc(title) + '</span>' +
-        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:#5b6880;">' +
-          esc(sub) + '</span>' +
-      '</div>' + head + rows + '</div>';
+    return '<div class="pp2-hb-grid" style="display:grid;' +
+      'grid-template-columns:126px 78px 10px repeat(5,minmax(0,1fr));gap:8px 7px;' +
+      'align-items:center;">' + head + rows + '</div>';
   }
 
-  // The heatmap BODY. This used to be the whole Live trading modal; build item 2
-  // moves it behind a launcher card so the modal can carry the Situational table
-  // and the grid opens in a layer above it. Nothing inside this function changed.
-  function hbBodyHtml(p) {
+  /**
+   * The legend note, at the bottom where the export puts it.
+   *
+   * TWO DEVIATIONS FROM THE EXPORT'S STRING, both reported rather than silent.
+   *
+   * The band thresholds are MODE-AWARE. The export writes "Green from 85%,
+   * amber from 70%" for both modes because its `band()` ignores the metric —
+   * but our engine bands BREAK at 30/18, and it is right to: a 31% break rate
+   * is strong, and printing "green from 85%" over a grid whose greens start at
+   * 30% would be a false statement about our own page.
+   *
+   * And the coverage sentence is ours, not the mock's. The export has no counts
+   * to state; we do, and the standing rule is counts on every number. It names
+   * the matches the point-by-point parse actually REACHED — never the career
+   * total, which is a different and much larger figure.
+   */
+  function hbNoteHtml(mode, cov, sn) {
+    var T = mode === 'break' ? ['30%', '18%'] : ['85%', '70%'];
+    var lead = mode === 'break'
+      ? 'How often he broke serve in each return-game pair, overall and by set.'
+      : 'How often he held serve in each service-game pair, overall and by set.';
+    var legend = lead + ' Green from ' + T[0] + ', amber from ' + T[1] + ', red below; ' +
+      'cells on five to nine games are muted and cells under five show the raw count ' +
+      'instead of a rate.';
+    var prov = '';
+    if (cov) {
+      prov = ' Parsed from ' + cov.matches + ' of ' + esc(sn) + '’s matches ' + MIDDOT + ' ' +
+        cov.svcGames + ' service games' +
+        (cov.from && cov.to ? ' ' + MIDDOT + ' ' + cov.from + ' ' + ENDASH + ' ' + cov.to
+          : cov.windowMonths ? ' ' + MIDDOT + ' ' + cov.windowMonths + '-month window' : '') + '.';
+    }
+    return '<div style="font-size:11.5px;color:#4b5672;line-height:1.6;">' + legend + prov + '</div>';
+  }
+
+  /**
+   * The heatmap overlay, built to the export's card.
+   *
+   * SURFACE FILTER PLACEMENT — reported, because the export has no home for it.
+   * The capture simply does not show this control; it is a real working filter
+   * and the founder ruled it stays. It sits on the LEFT of the context-chip row,
+   * in the same segmented chrome as Hold|Break, which is the placement he
+   * proposed. The header's top line is then title | Hold|Break + close, and the
+   * line under it is the scope chip | All Hard Clay Grass. Measured at the
+   * export's own 760px card: the left column needs 430px of the 524px it has
+   * beside the mode control and the close button, so neither line crowds.
+   */
+  function renderHeatSheet(p) {
+    if (!state.heat) return '';
     var E = hbEngine();
     var HB = hbStore();
-    // The store is not wired / has not loaded. Say so — an empty grid would read
-    // as "this player has no data", which is a different and untrue statement.
-    if (!E || !HB) {
-      return '<div style="border:1px dashed rgba(255,255,255,0.12);border-radius:10px;padding:26px;' +
-        'text-align:center;font-size:13px;color:' + DASH_COLOUR + ';">' +
-        'Hold/break data is not loaded.</div>';
-    }
-
-    var cov = hbCoverage(p);
-    var sn = shortName(p);
+    var mode = state.hbMode === 'break' ? 'break' : 'hold';
     var surf = state.hbSurf || 'all';
+    var sn = shortName(p);
 
-    // Ruling 7: "where a player's matches lack the per-game data, the heatmap
-    // states its match count, like the Situational rows." A player outside the
-    // shard's roster has NO per-game data at all — that is stated in words, with
-    // no grid, rather than drawn as 60 dashes that look like a rendering fault.
-    if (!cov) {
-      var rosterN = (HB.meta && HB.meta.players) || null;
-      var winN = (HB.meta && HB.meta.windowMonths) || null;
-      return '<div style="border:1px dashed rgba(255,255,255,0.12);border-radius:10px;padding:26px;' +
-        'text-align:center;font-size:13px;color:' + DASH_COLOUR + ';line-height:1.6;">' +
-        esc(sn) + ' has no point-by-point data on record, so holds and breaks by game cannot be shown.' +
-        (rosterN && winN
-          ? '<br>The rollup covers ' + rosterN + ' players over the last ' + winN + ' months.'
-          : '') +
-        '</div>';
+    var body;
+    if (!E || !HB) {
+      body = '<div style="border:1px dashed rgba(255,255,255,0.12);border-radius:10px;padding:26px;' +
+        'text-align:center;font-size:13px;color:' + DASH_COLOUR + ';">Hold/break data is not loaded.</div>';
+    } else {
+      var cov = hbCoverage(p);
+      if (!cov) {
+        // Ruling 7: a player outside the rollup has NO per-game data. Say it in
+        // words — sixty dashes read as a rendering fault, not as an absence.
+        var rosterN = (HB.meta && HB.meta.players) || null;
+        var winN = (HB.meta && HB.meta.windowMonths) || null;
+        body = '<div style="border:1px dashed rgba(255,255,255,0.12);border-radius:10px;padding:26px;' +
+          'text-align:center;font-size:13px;color:' + DASH_COLOUR + ';line-height:1.6;">' +
+          esc(sn) + ' has no point-by-point data on record, so holds and breaks by game cannot be shown.' +
+          (rosterN && winN ? '<br>The rollup covers ' + rosterN + ' players over the last ' +
+            winN + ' months.' : '') + '</div>';
+      } else {
+        var model = E.heatFor(HB, p.key, mode === 'break' ? 'BREAK' : 'HOLD', HB_BEST_OF, surf);
+        body = hbGridHtml(model) + hbNoteHtml(mode, cov, sn);
+      }
     }
 
-    var chips = HB_SURFACES.map(function (s) {
-      var on = surf === s.id;
-      return '<button type="button" data-pp2="hb-surf" data-v="' + s.id + '" style="padding:6px 13px;' +
-        'border-radius:8px;font-size:11.5px;cursor:pointer;color:' + (on ? '#e7e9ee' : '#5b6880') + ';' +
-        'background:' + (on ? 'rgba(91,155,255,0.16)' : 'transparent') + ';' +
-        'border:1px solid ' + (on ? 'rgba(91,155,255,0.4)' : 'rgba(255,255,255,0.08)') + ';">' +
-        esc(s.label) + '</button>';
-    }).join('');
+    // The scope chip reads the LIVE filter and the shard's own window, in the
+    // export's shape ('All surfaces · last 24M'). The window is never a constant:
+    // if the rollup's window changes, the chip changes with it.
+    var scopeSurf = surf === 'all' ? 'All surfaces'
+      : (surf.charAt(0).toUpperCase() + surf.slice(1));
+    var win = (HB && HB.meta && HB.meta.windowMonths) || null;
+    var scope = scopeSurf + (win ? ' ' + MIDDOT + ' last ' + win + 'M' : '');
 
-    var hold = E.heatFor(HB, p.key, 'HOLD', HB_BEST_OF, surf);
-    var brk = E.heatFor(HB, p.key, 'BREAK', HB_BEST_OF, surf);
-
-    var surfLabel = surf === 'all' ? 'all surfaces' : surf + ' only';
-    // Every count printed below is the shard's own, never a career figure: the
-    // parse reached `matches` matches and `svcGames` service games. Printing
-    // "75 matches" beside a career total of 1,200 would be a coverage claim we
-    // cannot make, so both the number and what it counts are spelled out.
-    var note = 'Point-by-point parsed for ' + cov.matches + ' of ' + esc(sn) + '’s matches ' +
-      MIDDOT + ' ' + cov.svcGames + ' service games ' + MIDDOT + ' ' +
-      (cov.from && cov.to ? cov.from + ' ' + ENDASH + ' ' + cov.to : cov.windowMonths + '-month window') +
-      '. Cells with fewer than 5 service games show the raw count instead of a rate; ' +
-      '5' + ENDASH + '9 are greyed as a small sample. Nothing here is estimated.';
+    // The pill is the ACTIVE mode's weighted global, `heatFor().globalLabel`
+    // verbatim — the engine's own numerator/denominator sum over every bucket
+    // and set. RULED: the mock's "Hold 71.5%" is a layout reference, and the
+    // engine's caps stay as the engine prints them.
+    var pill = '';
+    if (E && HB && hbCoverage(p)) {
+      pill = E.heatFor(HB, p.key, mode === 'break' ? 'BREAK' : 'HOLD', HB_BEST_OF, surf).globalLabel;
+    }
 
     return '' +
-      '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;' +
-        'flex-wrap:wrap;margin-bottom:14px;">' +
-        '<div style="font-size:12.5px;color:#5b6880;line-height:1.5;max-width:560px;">' +
-          'How often ' + esc(sn) + ' holds serve, and breaks on return, as the service games run ' +
-          'deeper into a set. Rows are his own service-game order within the set; columns are the set.' +
+      '<div class="pp2-sheet" data-pp2="heat-scrim" style="position:fixed;inset:0;z-index:80;' +
+        'background:rgba(3,5,9,0.72);display:flex;align-items:flex-start;justify-content:center;' +
+        'padding:40px 24px;overflow-y:auto;">' +
+        '<div style="position:relative;width:100%;max-width:760px;background:#0a0d14;' +
+          'border:1px solid rgba(91,155,255,0.3);border-radius:14px;padding:22px 24px 24px;' +
+          'display:flex;flex-direction:column;gap:16px;box-shadow:0 30px 80px rgba(0,0,0,0.6);">' +
+
+          '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;">' +
+            '<div style="display:flex;flex-direction:column;gap:12px;min-width:0;">' +
+              '<span style="font-size:20px;font-weight:800;letter-spacing:-0.015em;">' +
+                'Hold / break heatmap</span>' +
+              '<span style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">' +
+                '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
+                  'letter-spacing:0.14em;text-transform:uppercase;color:#5b6880;background:#06070a;' +
+                  'border:1px solid rgba(255,255,255,0.09);border-radius:9px;padding:8px 14px;">' +
+                  esc(scope) + '</span>' +
+                hbSegHtml('hb-surf', HB_SURFACES, surf) +
+              '</span>' +
+            '</div>' +
+            '<div style="display:flex;align-items:center;gap:12px;flex:none;">' +
+              hbSegHtml('hb-mode', HB_MODES, mode) +
+              '<button type="button" data-pp2="heat-close" aria-label="Close" ' +
+                'style="background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);' +
+                'border-radius:8px;width:30px;height:30px;color:#8b96b5;font-size:15px;line-height:1;' +
+                'cursor:pointer;flex:none;">' + TIMES + '</button>' +
+            '</div>' +
+          '</div>' +
+
+          '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">' +
+            '<span style="font-size:15px;font-weight:700;color:#5b9bff;">' + esc(sn) + '</span>' +
+            (pill
+              ? '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;font-weight:700;' +
+                'letter-spacing:0.1em;text-transform:uppercase;color:#e8ecf4;background:#06070a;' +
+                'border:1px solid rgba(255,255,255,0.09);border-radius:9px;padding:7px 14px;">' +
+                esc(pill) + '</span>'
+              : '') +
+          '</div>' +
+
+          body +
         '</div>' +
-        '<div style="display:flex;gap:6px;flex-wrap:wrap;">' + chips + '</div>' +
-      '</div>' +
-      '<div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;">' +
-        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;padding:4px 10px;' +
-          'border-radius:7px;background:rgba(255,255,255,0.04);color:#c6ccdb;">' +
-          esc(hold.globalLabel) + '</span>' +
-        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;padding:4px 10px;' +
-          'border-radius:7px;background:rgba(255,255,255,0.04);color:#c6ccdb;">' +
-          esc(brk.globalLabel) + '</span>' +
-        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;padding:4px 10px;' +
-          'border-radius:7px;color:#5b6880;">' + esc(surfLabel) + '</span>' +
-      '</div>' +
-      '<div class="pp2-hb-grids" style="display:grid;grid-template-columns:1fr;gap:14px;">' +
-        hbPanelHtml('Service holds', 'hold %', hold) +
-        hbPanelHtml('Return breaks', 'break %', brk) +
-      '</div>' +
-      '<div style="font-size:11px;color:#4b5361;line-height:1.55;margin-top:13px;">' + note + '</div>';
+      '</div>';
   }
+
 
   // ───────────────────────────────────────────────────────────────────────────
   // BUILD ITEM 2 · heatmap launcher + overlay
@@ -10133,29 +10265,6 @@
       '</div>';
   }
 
-  // The grid, in a layer ABOVE the modal — same z-index and close semantics as
-  // the §8.1 match sheet, so Escape and a scrim click peel one layer at a time
-  // rather than dropping the reader back to the player list.
-  function renderHeatSheet(p) {
-    if (!state.heat) return '';
-    return '' +
-      '<div class="pp2-sheet" data-pp2="heat-scrim" style="position:fixed;inset:0;z-index:80;' +
-        'background:rgba(3,5,9,0.72);display:flex;align-items:flex-start;justify-content:center;' +
-        'padding:40px 24px;overflow-y:auto;">' +
-        '<div style="position:relative;width:100%;max-width:900px;background:#0a0d14;' +
-          'border:1px solid rgba(91,155,255,0.3);border-radius:14px;padding:22px 24px 26px;' +
-          'box-shadow:0 30px 80px rgba(0,0,0,0.6);">' +
-          '<div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:16px;">' +
-            '<div style="flex:1;font-size:16px;font-weight:800;color:#e7e9ee;">' +
-              'Hold/break heatmap ' + MIDDOT + ' ' + esc(shortName(p)) + '</div>' +
-            '<button type="button" data-pp2="heat-close" aria-label="Close" style="width:30px;height:30px;' +
-              'border-radius:9px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);' +
-              'color:#8b96b5;cursor:pointer;font-size:15px;line-height:1;flex:none;">' + TIMES + '</button>' +
-          '</div>' +
-          hbBodyHtml(p) +
-        '</div>' +
-      '</div>';
-  }
 
   // ═══════════════════════════════════════════════════════════════════════════
   // MOUNT
@@ -10199,6 +10308,9 @@
     // on the shard's own node names, and conflating them would silently read the
     // wrong node.
     hbSurf: 'all',
+    // Hold|Break, the export's own toggle. Hold is the default (:1327,
+    // `this.state.hbMode || 'hold'`). One grid, switched — not two stacked.
+    hbMode: 'hold',
     // §8.2 match panel / full-screen match page. `matchPage` holds the same
     // sheet id the match sheet uses, so one row id addresses both surfaces.
     // The three sub-controls are separate state for the same reason the
@@ -10282,6 +10394,7 @@
     state.speedSurf = 'all'; state.speedBand = null;
     state.styleRow = null;
     state.hbSurf = 'all';
+    state.hbMode = 'hold';
     state.heat = false;
     state.sitOpen = null;
     state.sheet = null;
@@ -10406,6 +10519,9 @@
       pendingStyleScroll = state.styleRow;
     }
     else if (kind === 'hb-surf') state.hbSurf = v;
+    // Both segmented controls live inside the layer, so each repaints with
+    // state.heat still true and the grid stays open under the reader.
+    else if (kind === 'hb-mode') state.hbMode = (v === 'break' ? 'break' : 'hold');
     // Build item 2. The surface chips live inside the layer, so 'hb-surf'
     // repaints with state.heat still true and the grid stays open.
     else if (kind === 'heat') state.heat = true;
@@ -10766,7 +10882,6 @@
       sitPbpFor: sitPbpFor,
       SIT_GROUPS: SIT_GROUPS,
       hbLauncherHtml: hbLauncherHtml,
-      hbBodyHtml: hbBodyHtml,
       renderHeatSheet: renderHeatSheet,
       hbCoverage: hbCoverage,
       hbEngine: hbEngine,

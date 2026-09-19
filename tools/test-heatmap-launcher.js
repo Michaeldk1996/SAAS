@@ -131,13 +131,23 @@ check('the grid renders only when state.heat is set', () => {
 
 // ── 6. the layer really contains the grid, not a second copy of the card ────
 check('the layer carries the full grid body', () => {
+  // REPOINTED 2026-09-19. The export's rebuild folded `hbBodyHtml` into
+  // `renderHeatSheet` and replaced the two stacked panels (`pp2-hb-grids`,
+  // plural) with ONE grid (`pp2-hb-grid`). What this check exists to prove is
+  // unchanged and is still worth locking: the layer contains the grid, and the
+  // surface filter lives inside the layer rather than behind it. The old
+  // vacuity guard — "the body itself still has a grid container" — is replaced
+  // by a stronger one: there must be EXACTLY one, which is the export's shape
+  // and which the two-panel build would fail.
   I.state.heat = true;
+  I.state.hbSurf = 'all';
   const open = I.renderHeatSheet(SUBJECT);
   I.state.heat = false;
-  const body = I.hbBodyHtml(SUBJECT);
-  assert.ok(/pp2-hb-grids/.test(body), 'the body itself lost its grid container — check 6 would be vacuous');
-  assert.ok(open.includes('pp2-hb-grids'), 'the layer does not contain the grid');
+  const grids = (open.match(/class="pp2-hb-grid"/g) || []).length;
+  assert.strictEqual(grids, 1, `the layer rendered ${grids} grids; the export has one`);
+  assert.ok(!/pp2-hb-grids/.test(open), 'the old two-panel container is still rendering');
   assert.ok(/data-pp2="hb-surf"/.test(open), 'the surface chips must live inside the layer');
+  assert.ok(/data-pp2="hb-mode"/.test(open), 'the Hold|Break toggle must live inside the layer');
 });
 
 // ── 7. the modal body launches the layer rather than inlining the grid ──────

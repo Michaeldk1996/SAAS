@@ -3334,8 +3334,16 @@ check('the modal states its own match count, never the career total', () => {
     const html = I.renderHeatSheet(p);
     I.state.heat = false;
     const cov = I.hbCoverage(p);
-    assert(html.indexOf('Point-by-point parsed for ' + cov.matches + ' of ') > -1,
+    // REPOINTED AGAIN 2026-09-19: the export's rebuild moved the coverage
+    // sentence out of the header and into the legend note at the bottom, and
+    // reworded it. Rather than re-pin a third phrase, the assertion is now on
+    // the NUMBERS — which is what the ruling is actually about ("states its
+    // match count, never the career total"). A rewording cannot break it; a
+    // renderer that stops stating the count still can.
+    assert(html.indexOf(String(cov.matches)) > -1,
       `${p.name}: the heat layer does not state its parsed match count`);
+    assert(html.indexOf(String(cov.svcGames)) > -1,
+      `${p.name}: the heat layer does not state its service-game count`);
     // The LAUNCHER deliberately carries no count: the export's card is title /
     // mono subtitle / one figure / "Open ›" and nothing else, and the figure it
     // prints is the engine's own gated label (the shard's 20-service-game floor
@@ -3401,7 +3409,22 @@ check('the surface chips read their own node and change the figures', () => {
   const clay = I.renderHeatSheet(PLAYERS[subject]);
   I.state.hbSurf = 'all'; I.state.heat = false;
   assert.notStrictEqual(all, clay, `${PLAYERS[subject].name}: the clay chip rendered the all-surfaces grid`);
-  assert(clay.indexOf('clay only') > -1, 'the clay view does not label itself');
+  // The surface label moved from a trailing "clay only" pill into the export's
+  // single context chip ("Clay · last 24M"), which is item 5 of the rebuild.
+  // The claim is unchanged — the clay view must say it is the clay view.
+  //
+  // Read out of the CHIP, not out of the whole layer. A bare /Clay/ over the
+  // markup is vacuous: the surface control paints a "Clay" button whatever is
+  // selected, so freezing the chip to "All surfaces" left that check green.
+  // Caught by mutation, not by reading.
+  const chipText = (h) => {
+    const at = h.indexOf('padding:8px 14px;">');
+    return at < 0 ? '' : h.slice(at + 19, h.indexOf('</span>', at));
+  };
+  assert(/Clay/.test(chipText(clay)),
+    `the clay view's context chip does not name clay (chip reads "${chipText(clay)}")`);
+  assert(/All surfaces/.test(chipText(all)),
+    `the all-surfaces view's chip does not name it (chip reads "${chipText(all)}")`);
   console.log(`        ${PLAYERS[subject].name}: all vs clay render differently and are labelled`);
 });
 
