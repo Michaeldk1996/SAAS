@@ -1,6 +1,6 @@
 {
   "latest": {
-    "maxAgeMin": 329.0,
+    "maxAgeMin": 342.3,
     "measured": 41,
     "stale": [
       "G. Trismuwantara v R. M. Papoe (ATP ATP Davis Cup - World Group II, 2026-09-19)",
@@ -9,15 +9,6 @@
   },
   "note": "Age of the published bet365 NOW leg, measured as now - observedAt against the artefact Pages is serving. Capture staleness and publish staleness are both inside this number, which is what the visitor sees. Re-derive the threshold on TEN-187.",
   "samples": [
-    {
-      "at": "2026-09-15T03:30:01Z",
-      "maxAgeMin": null,
-      "measured": 0,
-      "noBet365Line": 0,
-      "noClock": 0,
-      "stale": 0,
-      "thresholdMin": 120.0
-    },
     {
       "at": "2026-09-15T03:45:01Z",
       "maxAgeMin": null,
@@ -3608,9 +3599,18 @@
       "noClock": 0,
       "stale": 2,
       "thresholdMin": 120.0
+    },
+    {
+      "at": "2026-09-19T14:33:46Z",
+      "maxAgeMin": 342.3,
+      "measured": 41,
+      "noBet365Line": 31,
+      "noClock": 0,
+      "stale": 2,
+      "thresholdMin": 120.0
     }
   ],
   "schema": "odds-now-staleness/1",
   "thresholdMin": 120.0,
-  "updatedAt": "2026-09-19T14:20:30Z"
+  "updatedAt": "2026-09-19T14:33:46Z"
 }
