@@ -361,12 +361,36 @@ t('the live get_odds call is the ONLY writer of the sighting carrier', () => {
       `L${o.n} does not assign straight from a live fetchApiTennisMatchOdds() result: ${o.text}`);
   }
   // ...and both of those variables must actually be that live call, not a re-bind.
+  //
+  // THIS ASSERTS THE BINDING, NOT THE DISTANCE TO IT. It used to allow at most
+  // 200 characters between the variable and the call, which is a proxy for
+  // "bound to" rather than the thing itself. On 2026-09-19 a two-line COMMENT
+  // added inside the Promise.all that binds `pastOdds` pushed that gap from 121
+  // to 258 characters and turned this guard red while the ruling was fully
+  // honoured — still exactly two write sites, both assigning straight from a
+  // live call. A comment must not be able to fail a ruling, and widening the
+  // window would only postpone the day it happens again.
+  //
+  // Now: find the declaration that binds the variable, consume it to its
+  // terminating `;` with brackets balanced, and require the live call INSIDE
+  // that statement. A re-bind from anything else still fails, which is the
+  // property TEN-198 actually needs.
+  const srcAll = lines.join('\n');
   for (const v of ['pastOdds', 'upOdds']) {
-    const decl = lines.filter(l => new RegExp(`(const|let|var)\\s+${v}\\b|\\b${v}\\s*\\]`).test(l));
-    assert.ok(decl.length > 0, `no declaration found for ${v}`);
-    const src = lines.join('\n');
-    assert.ok(new RegExp(`${v}\\s*\\]?\\s*=?[\\s\\S]{0,200}?fetchApiTennisMatchOdds\\(`).test(src),
-      `${v} is not bound to a live fetchApiTennisMatchOdds() call`);
+    const re = new RegExp(`(?:const|let|var)\\s+(?:\\[[^\\]]*\\b${v}\\b[^\\]]*\\]|${v}\\b)\\s*=`);
+    const m = re.exec(srcAll);
+    assert.ok(m, `no declaration found for ${v}`);
+    let depth = 0, end = -1;
+    for (let i = m.index; i < srcAll.length; i++) {
+      const c = srcAll[i];
+      if (c === '[' || c === '{' || c === '(') depth++;
+      else if (c === ']' || c === '}' || c === ')') depth--;
+      else if (c === ';' && depth === 0) { end = i; break; }
+    }
+    assert.ok(end > 0, `the declaration of ${v} is not terminated`);
+    const stmt = srcAll.slice(m.index, end + 1);
+    assert.ok(/fetchApiTennisMatchOdds\(/.test(stmt),
+      `${v} is not bound to a live fetchApiTennisMatchOdds() call:\n${stmt}`);
   }
 });
 

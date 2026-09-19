@@ -69,10 +69,45 @@ def display(name):
     return VENDOR_CONFIRMED.get(canon(name), name)
 
 
+# canon() of an abbreviation -> canon() of the book it abbreviates. Derived from
+# VENDOR_CONFIRMED rather than restated, so the two lists cannot drift apart.
+_ALIAS = {abbrev: canon(full) for abbrev, full in VENDOR_CONFIRMED.items()}
+
+
+def ident(name):
+    """The book's IDENTITY, folding vendor-confirmed abbreviations.
+
+    ⚠️ THIS IS NOT canon(), AND THE DIFFERENCE IS A REAL DEFECT I SHIPPED.
+    `canon('Pncl') == 'pncl'` and `canon('Pinnacle') == 'pinnacle'`, so a
+    coverage report keyed on canon() printed
+
+        Pinnacle    0    0.0%  <- ABSENT
+
+    on 2026-09-19 while the same payload carried `Pncl` on 5 fixtures. That is
+    the WilliamHill failure again, one layer down: canon() fixes spelling, and
+    an ABBREVIATION is not a spelling.
+
+    Use ident() for any cross-source comparison of books — coverage counts,
+    ladder lookups, "does this feed carry book X". canon() remains correct where
+    the question is only about spelling of one vendor's own string.
+
+    Only the three vendor-CONFIRMED abbreviations fold. Nothing is guessed: an
+    unrecognised name is its own identity, so a new abbreviation shows up as a
+    new book rather than being silently merged into an existing one.
+    """
+    c = canon(name)
+    return _ALIAS.get(c, c)
+
+
 def same_book(a, b):
-    """Are these two names the same book? The only correct way to ask."""
-    ca, cb = canon(a), canon(b)
-    return bool(ca) and ca == cb
+    """Are these two names the same book? The only correct way to ask.
+
+    Folds abbreviations, so `same_book('Sbo', 'SBOBET')` is True — they are one
+    book and every price-level comparison between them would otherwise read as
+    two books disagreeing.
+    """
+    ia, ib = ident(a), ident(b)
+    return bool(ia) and ia == ib
 
 
 def find(name, candidates):
@@ -82,10 +117,10 @@ def find(name, candidates):
     the lookup that replaces `name in some_list`, which is exactly the test that
     reported William Hill absent.
     """
-    c = canon(name)
+    c = ident(name)
     if not c:
         return None
     for k in candidates:
-        if canon(k) == c:
+        if ident(k) == c:
             return k
     return None

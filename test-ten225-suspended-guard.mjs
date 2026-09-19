@@ -50,10 +50,22 @@ function sliceObj(name) {
   throw new Error(`unbalanced braces in const ${name}`);
 }
 function sliceConst(name) {
-  const re = new RegExp(`^const ${name} = .*?;$`, 'm');
-  const hit = SRC.match(re);
-  if (!hit) throw new Error(`const ${name} not found in the shipped HTML`);
-  return hit[0];
+  // MULTI-LINE CAPABLE. The single-line form `^const NAME = .*?;$` went red
+  // against correct code the moment MX_BOOK_LADDER was declared across two
+  // lines — it was measuring the source's line wrapping, not the constant.
+  // Now: find the declaration, then consume to the `;` that closes it,
+  // balancing brackets so a `;` inside a string or a nested literal cannot end
+  // it early.
+  const at = SRC.indexOf(`const ${name} = `);
+  if (at < 0) throw new Error(`const ${name} not found in the shipped HTML`);
+  let depth = 0;
+  for (let i = at; i < SRC.length; i++) {
+    const c = SRC[i];
+    if (c === '[' || c === '{' || c === '(') depth++;
+    else if (c === ']' || c === '}' || c === ')') depth--;
+    else if (c === ';' && depth === 0) return SRC.slice(at, i + 1);
+  }
+  throw new Error(`const ${name} is not terminated`);
 }
 
 const FAILED = [];
@@ -65,9 +77,13 @@ const check = (name, cond, detail = '') => {
 // mxJLevel / mxJClose are in the list because _mcCloseOf CALLS them (TEN-225
 // item 4). Sliced, never stubbed: a stub would let this file keep passing while
 // the shipped scope rule changed under it, and the scope rule is the ruling.
+// mxBookIdent / mxBookRank are here because _mcAnyBookPair CALLS them
+// (TEN-225 item 1 — the ladder is a named order now, not coverage). Sliced,
+// never stubbed: a stub would let this file keep passing while the shipped
+// ladder changed underneath it, and the ladder IS the ruling.
 const FNS = ['_ocsSanePx', 'mxOverround', 'mxIsSuspendedPair', 'mxRealPair',
              '_ocsOf', 'ocsKeyOf', 'ocsMatchKey', 'ocsNameKey', 'ocsNfd',
-             '_isBet365', '_mcBet365Now',
+             '_isBet365', '_mcBet365Now', 'mxBookIdent', 'mxBookRank',
              '_mcBooksByCoverage', '_mcAnyBookPair', '_mcNowPair',
              '_mcNowSuppressed', 'mxJLevel', 'mxJClose', '_mcCloseOf',
              '_openAnchorOf'];
@@ -80,6 +96,9 @@ function build({ matches = [], OCS = { byKey: {} } }) {
   const code = `
     ${sliceConst('MX_SUSPENDED_OVERROUND')}
     ${sliceConst('MX_MIN_REAL_PRICE')}
+    ${sliceConst('MX_BOOK_LADDER')}
+    ${sliceConst('MX_BOOK_LAST')}
+    ${sliceConst('MX_BOOK_ALIAS')}
     ${sliceConst('MX_J_LEVELS')}
     const MX_SUPPRESSED = new Map();
     const matches = ${JSON.stringify(matches)};
@@ -114,6 +133,17 @@ console.log('\n  — the arithmetic, and where the line sits');
         !api.mxIsSuspendedPair(1.80, 1.80), (ov(1.80, 1.80) * 100).toFixed(1) + '%');
   check('the impossible-leg floor is the ruled 1.01, read from the shipped constant',
         api.MX_MIN_REAL_PRICE === 1.01, String(api.MX_MIN_REAL_PRICE));
+  // SUPERSEDED TWICE, AND REWRITTEN BOTH TIMES RATHER THAN DELETED. The
+  // constant has not moved; the COMPARISON has. On 2026-09-19 the founder ruled
+  // "< 1.01, not <= 1.01" after the data showed 1.01 is a price a book will
+  // take: 1xBet quotes exactly 1.01 on three fixtures and bet365 pins 1.01 as
+  // its own OPEN on a fourth. A book minimum is not a placeholder.
+  check('a genuine 1.01 SURVIVES — the floor is strictly below it',
+        !api.mxIsSuspendedPair(1.01, 15.0), (ov(1.01, 15.0) * 100).toFixed(1) + '%');
+  check('...and 1.00 exactly is still suppressed — a decimal of 1.00 returns nothing',
+        api.mxIsSuspendedPair(1.00, 9.80), (ov(1.00, 9.80) * 100).toFixed(1) + '%');
+  check('...and the 1.001-1.008 band is still suppressed',
+        api.mxIsSuspendedPair(1.008, 12.0) && api.mxIsSuspendedPair(1.001, 20.0));
   // SUPERSEDED, DELIBERATELY REWRITTEN RATHER THAN DELETED. This used to assert
   // that 1.01 against a 15.0 dog STAYS a price — my reading on 2026-09-18. The
   // founder reversed it on 2026-09-19 ("extend it to catch any leg at or below

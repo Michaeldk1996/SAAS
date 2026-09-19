@@ -56,10 +56,29 @@ test('Challenger and ITF are in scope', () => {
     assert.equal(api.mxJLevel({ tour: t }), true, t);
 });
 
-test('ATP, WTA and the team events are NOT — the ATP window is unmeasured and Davis Cup has no bet365 close at all', () => {
-  for (const t of ['ATP US Open', 'ATP Davis Cup - World Group II', 'WTA Guadalajara',
-                   'Billie Jean King Cup', 'ATP Cincinnati'])
+test('ATP is IN — superseded 2026-09-19 on the August window', () => {
+  // SUPERSEDED, REWRITTEN NOT DELETED. This asserted ATP was refused, which was
+  // right while the ATP sample was n=1. Eight August days give n=199 joined
+  // against our own pinned bet365 close: median |Δ implied| 0.06pp, against
+  // 0.80-1.48pp for every other book on the same fixtures. ATP now agrees more
+  // tightly than Challenger (0.08pp), the tier already wired.
+  for (const t of ['ATP US Open', 'ATP Cincinnati', 'ATP Winston-Salem'])
+    assert.equal(api.mxJLevel({ tour: t }), true, t);
+});
+
+test('WTA and the team events stay OUT, as ruled', () => {
+  for (const t of ['WTA Guadalajara', 'WTA 125K Series', 'Billie Jean King Cup',
+                   'ATP Davis Cup - World Group II', 'Laver Cup', 'United Cup'])
     assert.equal(api.mxJLevel({ tour: t }), false, t);
+});
+
+test('a Davis Cup tie is refused even though its name STARTS "ATP"', () => {
+  // The feed names every tie "ATP Davis Cup - World Group ...". With ATP now in
+  // scope, an ATP test running before the team-event test would admit the one
+  // tier where this close does not exist at all (bet365: 0 of 33). The order of
+  // those two tests inside mxJLevel is the guard, so it gets its own assertion.
+  assert.equal(api.mxJLevel({ tour: 'ATP Davis Cup - World Group I' }), false);
+  assert.equal(api.mxJLevel({ tour: 'ATP Billie Jean King Cup' }), false);
 });
 
 test('Davis Cup is excluded even though its NAME contains no tier word — the exclusion is explicit, not incidental', () => {
@@ -95,10 +114,18 @@ test('...but it DOES fill when the pinned close is suppressed as suspended', () 
   api.setSuspended(false);
 });
 
-test('out of scope, it fills nothing — an ATP dash stays a dash', () => {
-  const m = { tour: 'ATP US Open', apiTennisClose: { ...J } };
+test('out of scope, it fills nothing — a WTA dash stays a dash', () => {
+  // Was ATP; ATP is in scope now. WTA carries the case because it is the tier
+  // that is genuinely unmeasured against our own closes.
+  const m = { tour: 'WTA Guadalajara', apiTennisClose: { ...J } };
   assert.equal(api._mcCloseOf(m, 'p1'), null);
   assert.equal(api.mxCloseIsJ(m, 'p1'), false);
+});
+
+test('an ATP fixture that would dash NOW fills, and is labelled', () => {
+  const m = { tour: 'ATP Cincinnati', apiTennisClose: { ...J } };
+  assert.equal(api._mcCloseOf(m, 'p1'), 1.35);
+  assert.equal(api.mxCloseIsJ(m, 'p1'), true);
 });
 
 test('a half-priced or absent J row is not a price', () => {

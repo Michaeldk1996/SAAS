@@ -6842,6 +6842,20 @@ const MX_SUSPENDED_OVERROUND = 0.20;
 // A leg at or below this returns so little that it is not a bettable price, and
 // at 1.00 it returns nothing at all. ABSOLUTE, not relative — which is the whole
 // point, because the pair around such a leg can be perfectly ordinary.
+// TEN-225 item 4, founder 2026-09-19: "move it to < 1.01 ... It keeps 1xBet's
+// genuine 1.01 and bet365's opening pin, and still suppresses Marathon's 1.00
+// placeholder and the 1.001-1.008 band."
+//
+// THE COMPARISON IS STRICT (`p < MX_MIN_REAL_PRICE`), NOT `<=`. That one
+// character is the whole ruling: at `<=` the floor suppressed every genuine
+// 1.01, which the data says is a real quotable price — 1xBet quotes exactly
+// 1.01 on three fixtures and bet365 pins 1.01 as its OWN open on a fourth.
+// A book minimum is not a placeholder.
+//
+// WHAT IT STILL CATCHES: 1.00 exactly (Marathon, 5 fixtures — a decimal of 1.00
+// returns nothing, so it is a slot with a number in it rather than a price) and
+// the 1.001-1.008 band, which is genuine but so extreme that printing it beside
+// an ordinary price misleads more than it informs.
 const MX_MIN_REAL_PRICE = 1.01;
 function mxOverround(p1, p2){
   if (!(typeof p1 === 'number' && typeof p2 === 'number') || !(p1 > 0 && p2 > 0)) return null;
@@ -6862,7 +6876,7 @@ function mxIsSuspendedPair(p1, p2, ctx){
   // would leave the log unable to say WHICH rule fired, and the second is new
   // enough that its cost has to stay measurable.
   const wide = ov > MX_SUSPENDED_OVERROUND;
-  const unbettable = p1 <= MX_MIN_REAL_PRICE || p2 <= MX_MIN_REAL_PRICE;
+  const unbettable = p1 < MX_MIN_REAL_PRICE || p2 < MX_MIN_REAL_PRICE;
   if (!wide && !unbettable) return false;
   const c = ctx || {};
   const key = [c.id || '?', c.book || '?', c.path || '?', p1, p2].join('|');
@@ -7308,15 +7322,33 @@ async function loadOddsCardState(){
 // "bet365's api-tennis close only, on Challenger and below, and only where we
 // would otherwise dash. Never override a close we can age."
 //
-// LEVEL SCOPE. Challenger and below means Challenger and ITF. ATP, WTA and the
-// team events are excluded: the ATP window has not been measured yet (the J
-// sample joined n=1 ATP fixture, which is no sample at all), and on Davis Cup
-// bet365's api-tennis close is absent outright — 0 of 33 — so there is nothing
-// there to wire even if it were in scope.
-const MX_J_LEVELS = /challenger/i;
+// LEVEL SCOPE: ATP, Challenger and ITF. WTA and the team events stay out.
+//
+// ATP WAS EXCLUDED AND IS NOW IN, on the founder's ruling of 2026-09-19 and the
+// August window that ruling asked for. The first J sample joined n=1 ATP
+// fixture, which is no sample; eight August days richest in ATP give n=217
+// joined, bet365 returning a two-sided close on 91.7% of them, and against our
+// own pinned bet365 close (n=199): 18.6% identical to the tick, median |Δ price|
+// 0.004, **median |Δ implied| 0.06pp**. Every OTHER book on the same fixtures
+// sits at 0.80-1.48pp. That 13-25x gap is the evidence — it is not that
+// api-tennis's numbers are close to ours, it is that bet365's are and nobody
+// else's are. ATP now agrees MORE tightly than Challenger (0.08pp, n=205), the
+// tier that was already wired.
+//
+// WTA is out because it is unmeasured against our own closes, not because it
+// looks worse. The team events are out twice over: excluded here explicitly,
+// and bet365's api-tennis close is absent there outright (0 of 33), so Betano
+// and 1xBet are the only books that could fill a Davis Cup dash — and they are
+// different books, which the founder ruled must never be dressed as a bet365
+// close.
+const MX_J_LEVELS = /challenger|\batp\b/i;
 function mxJLevel(m){
   const t = String((m && m.tour) || '');
-  if (/davis cup|billie jean/i.test(t)) return false;
+  // Checked FIRST. Every Davis Cup / BJK tie in the feed is named "ATP Davis
+  // Cup - World Group ...", so an ATP test running first would admit the one
+  // tier where this close does not exist at all.
+  if (/davis cup|billie jean|united cup|laver cup/i.test(t)) return false;
+  if (/\bwta\b/i.test(t)) return false;
   return MX_J_LEVELS.test(t) || /\bitf\b|^m15|^m25|^w15/i.test(t);
 }
 // TRUE only when nothing we can age is available. The order is the ruling: a
@@ -7429,6 +7461,50 @@ function _mcBet365Now(m){
 // implied split would belong to neither. It is accepted ONLY when both sides
 // name the SAME bookmaker — which is a genuine two-sided quote from that book,
 // not a merge. m.odds is single-book by construction, so it needs no such test.
+// ───────────────────── TEN-225 item 1 — THE BOOK LADDER, 2026-09-19 ───────
+// Founder: "1. bet365  2. Superbet  3. Betano  4. Unibet  5. William Hill
+// 6. Betfair  7. 1xBet  8. Pinnacle (sharp reference) ... SBOBET, Marathon,
+// BetVictor only when nothing above has the fixture."
+//
+// ⚠️ THIS SUPERSEDES RANKING BY COVERAGE, and the reason is measurable today.
+// The tail ladder sorted purely on how many cards a book covered, and on the
+// 2026-09-19 board SBOBET quotes 45 of 116 priced fixtures against bet365's 4 —
+// so the widest-margin book we measured (11.61% overround, against Pinnacle's
+// 3.44%) was winning cards on volume. That is the exact failure the founder
+// named: "SBOBET carries the widest margin we measured and must not win cards
+// on coverage alone."
+//
+// Superbet and Unibet are BACK after a correction: they were dropped on a
+// measurement taken over 2026-09-09..18, a window sitting entirely inside a
+// feed-wide coverage collapse. Over 08-12..09-08 Superbet quotes 96-100% of
+// priced fixtures — better covered than bet365. bwin stays out: it returned
+// nothing on any day measured, August included.
+const MX_BOOK_LADDER = ['bet365', 'Superbet', 'Betano', 'Unibet',
+                        'William Hill', 'Betfair', '1xBet', 'Pinnacle'];
+// "only when nothing above has the fixture" — explicitly below every unlisted
+// book, not merely below the ladder.
+const MX_BOOK_LAST = ['SBOBET', 'Marathon', 'BetVictor'];
+// Identity, folding the three vendor-CONFIRMED abbreviations. The feed spells
+// SBOBET `Sbo` and Pinnacle `Pncl`, so a ladder keyed on the display spelling
+// would rank neither — the same shape that reported William Hill absent while
+// api-tennis returned `WilliamHill` on 244 fixtures. Mirrors book_names.ident.
+const MX_BOOK_ALIAS = { sbo: 'sbobet', pncl: 'pinnacle', victorchandler: 'betvictor' };
+function mxBookIdent(b){
+  const k = String(b || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  return MX_BOOK_ALIAS[k] || k;
+}
+// Lower is better. The gap between the named ladder and the explicit tail is
+// deliberate: an unlisted book sits BETWEEN them, so a book the founder has
+// never ruled on still beats one he has ruled to the bottom, and coverage
+// orders only within that middle band.
+function mxBookRank(book){
+  const id = mxBookIdent(book);
+  if (!id) return 999;
+  const i = MX_BOOK_LADDER.findIndex(b => mxBookIdent(b) === id);
+  if (i >= 0) return i;
+  if (MX_BOOK_LAST.some(b => mxBookIdent(b) === id)) return 900;
+  return 500;
+}
 function _mcBooksByCoverage(){
   // "…any other book by coverage" — ranked over the board we are rendering, not
   // hardcoded, so the ladder follows the feed instead of a stale opinion.
@@ -7464,7 +7540,12 @@ function _mcAnyBookPair(m){
                  obs: o.seenAt || null, kind: 'sighting', src: 'feed' });
   if (!cands.length) return null;
   const cov = _mcBooksByCoverage();
-  cands.sort((a, b) => (cov[b.book] || 0) - (cov[a.book] || 0));
+  // TEN-225 item 1 — RANK FIRST, coverage only inside a rank. Coverage still
+  // does real work: it orders the unlisted middle band, which is where a book
+  // the founder has not ruled on belongs. What it no longer does is let volume
+  // beat the ruling.
+  cands.sort((a, b) => (mxBookRank(a.book) - mxBookRank(b.book))
+                    || ((cov[b.book] || 0) - (cov[a.book] || 0)));
   // ITEM C, and this is the rung the founder's "fall through, do not dash" rule
   // is really about. Filtering AFTER the sort, then taking the first survivor,
   // is precisely "walk down the ladder to the next book". Guarding only
