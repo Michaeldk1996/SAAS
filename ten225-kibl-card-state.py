@@ -1679,6 +1679,50 @@ def main():
             p95 = v[min(len(v) - 1, int(round(0.95 * (len(v) - 1))))]
             print(f'  {name}: median {v[len(v)//2]:.1f}{unit}  p95 {p95:.1f}{unit}  '
                   f'max {v[-1]:.1f}{unit}  n={len(v)}')
+        # ITEM 4 — "Build the denser sweep near the off for flip-started
+        # fixtures instead, and report how many of the 17 it recovers."
+        #
+        # THE DECISIVE TEST, before building anything. A denser sweep can only
+        # recover a Close where the shortfall is OUR sampling gap. It cannot
+        # recover one where the book had already stopped quoting.
+        #
+        # For a flip-started fixture the START is the live-flip bound, which can
+        # sit hours AFTER the scheduled time when a match is delayed on a busy
+        # court. Kibl stops quoting at around the scheduled start. So the lag is
+        # the DELAY, not our cadence -- and no sweep frequency closes it.
+        #
+        # If delay ~= lag, sweeping denser recovers nothing and the honest answer
+        # is to say so. If delay is small while lag is large, the gap IS ours and
+        # a denser sweep is worth building. The two are distinguishable, so they
+        # are distinguished rather than assumed.
+        delays = []
+        for r in LAG_FAILS:
+            st, sch = r.get('start_ts'), epoch(r.get('scheduled'))
+            if st is not None and sch is not None:
+                delays.append((st - sch) / 60.0)
+        if delays:
+            v = sorted(delays)
+            p95d = v[min(len(v) - 1, int(round(0.95 * (len(v) - 1))))]
+            print(f'  START DELAY (flip start - scheduled start): median '
+                  f'{v[len(v)//2]:.1f} min  p95 {p95d:.1f}  max {v[-1]:.1f}  '
+                  f'min {v[0]:.1f}  n={len(v)}' + ('  (n<30)' if len(v) < 30 else ''))
+            paired = [(r['lag_min'], (r['start_ts'] - epoch(r['scheduled'])) / 60.0)
+                      for r in LAG_FAILS
+                      if r.get('start_ts') is not None and epoch(r.get('scheduled')) is not None]
+            # How much of each failure's lag is explained by the delay alone.
+            expl = [min(d, l) / l for l, d in paired if l > 0]
+            if expl:
+                e = sorted(expl)
+                print(f'  DELAY EXPLAINS: median {100*e[len(e)//2]:.0f}% of the lag '
+                      f'(n={len(e)}). A denser sweep can only recover the REMAINDER.')
+            recoverable = [l for l, d in paired if (l - d) > RELIABLE_LAG_MIN]
+            print(f'  RECOVERABLE BY A DENSER SWEEP: {len(recoverable)} of '
+                  f'{len(paired)} — fixtures where the lag exceeds the limb even '
+                  f'AFTER the delay is accounted for. The rest are the book '
+                  f'having stopped quoting, which no cadence fixes.')
+        else:
+            print('  ::warning:: no failure carried both a start and a scheduled '
+                  'time, so the delay-vs-cadence question was NOT assessed.')
         _dist('  passing lag     ', FLIP_LAGS, ' min')
         _dist('  passing flip gap', FLIP_GAPS, ' s')
 
