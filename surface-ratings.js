@@ -10,11 +10,16 @@
 // (Tennismylife/TML-Database mirror). Every number is our own derivation
 // from public match results — NO ATP/Infosys scraping, no new licence.
 //
-//   SERVE RATING   = 1stIn% + 1stWon% + 2ndWon% + hold% + ace%
+//   SERVE RATING   = 1stIn% + 1stWon% + 2ndWon% + hold% + aces/match − DF/match
+//                    (aces and DFs are RAW PER-MATCH COUNTS — founder ruling
+//                     2026-08-29, re-affirmed on TEN-243 gate b5a358e9. This file
+//                     summed ace% with no DF penalty until TEN-243.)
 //   RETURN RATING  = 1stReturnWon% + 2ndReturnWon% + BPconverted% + returnGamesWon%
 //                    (the four ATP/Infosys "Return" board components)
 //   UNDER-PRESSURE = BPsaved% + BPconverted% + tiebreak% + decidingSet%
 //                    (the four ATP "Under Pressure" board components)
+//   MENTAL EDGE    = PW / PL, where a pressure point IS a break point
+//                    (founder ruling, TEN-243 gate b5a358e9, 2026-09-19)
 //
 // Components below a reliability floor are flagged (confidence + reliable),
 // never invented. Career and last52 pools are ranked independently so each
@@ -148,6 +153,11 @@ function parseScore(score, bestOf) {
 function newBucket() {
   return {
     matches: 0, svpt: 0, firstIn: 0, firstWon: 0, secondWon: 0, svGms: 0, ace: 0, df: 0,
+    // TEN-243: svMatches counts matches that actually CARRY serve stats, which is NOT
+    // `matches` — aces and double faults only accumulate on rows that have svpt. The
+    // locked Serve Rating divides both by a match count, and dividing by `matches` would
+    // understate them for any player whose bucket holds stat-less rows.
+    svMatches: 0,
     bpFaced: 0, bpSaved: 0,
     oSvpt: 0, oFirstIn: 0, oFirstWon: 0, oSecondWon: 0, oSvGms: 0, oBpFaced: 0, oBpSaved: 0,
     tbPlayed: 0, tbWon: 0, decPlayed: 0, decWon: 0,
@@ -155,7 +165,7 @@ function newBucket() {
 }
 function addContribution(b, c) {
   b.matches++;
-  if (c.svpt) { b.svpt += c.svpt; b.firstIn += c.firstIn; b.firstWon += c.firstWon; b.secondWon += c.secondWon; b.ace += c.ace; b.df += c.df; }
+  if (c.svpt) { b.svMatches++; b.svpt += c.svpt; b.firstIn += c.firstIn; b.firstWon += c.firstWon; b.secondWon += c.secondWon; b.ace += c.ace; b.df += c.df; }
   if (c.svGms) b.svGms += c.svGms;
   if (c.bpFaced != null) { b.bpFaced += c.bpFaced; b.bpSaved += c.bpSaved; }
   if (c.oSvpt) { b.oSvpt += c.oSvpt; b.oFirstIn += c.oFirstIn; b.oFirstWon += c.oFirstWon; b.oSecondWon += c.oSecondWon; }
@@ -204,12 +214,30 @@ function computeRatings(b, floors, cb) {
       const dfc = rate(b.df, b.svpt, c.df, c.svpt);
       const firstInPct = fi.pct, firstWonPct = fw.pct, secondWonPct = sw.pct != null ? sw.pct : 0;
       const holdPct = hd.pct, acePct = ac.pct != null ? ac.pct : 0, dfPct = dfc.pct != null ? dfc.pct : 0;
+      // ===== FOUNDER RULING, 2026-08-29, re-affirmed on TEN-243 gate `b5a358e9`. =====
+      // Serve Rating = %1stIn + %1stWon + %2ndWon + hold% + aces/match − DF/match, with
+      // aces and double faults as RAW PER-MATCH COUNTS. Big-volume servers gain ground and
+      // a double fault actually costs something.
+      //
+      // Until TEN-243 this file summed `acePct` and applied NO df penalty, so it did not
+      // implement the ruling — `dna-apitennis-ratings.js` did, and the two stores disagreed
+      // about what "Serve Rating" meant. Reproducible anchors for the locked formula:
+      // Sinner 303.1, Fritz 299.6. ⚠️ Do not "restore" acePct here; the percentage form is
+      // still emitted below for any consumer that wants the rate, but it is NOT the rating.
+      //
+      // Challenger fold-in: aces take CHALL_DISCOUNT like every other success term, DFs do
+      // NOT. Discounting a PENALTY would make Challenger double faults hurt less, which is
+      // backwards — the discount exists to devalue success at a weaker tier, not to forgive
+      // errors at it.
+      const svM = b.svMatches + (srBlend ? c.svMatches : 0);
+      const acesPerMatch = svM > 0 ? (b.ace + (srBlend ? CHALL_DISCOUNT * c.ace : 0)) / svM : 0;
+      const dfPerMatch   = svM > 0 ? (b.df  + (srBlend ? c.df : 0)) / svM : 0;
       serve = {
         firstInPct: round1(firstInPct), firstWonPct: round1(firstWonPct), secondWonPct: round1(secondWonPct),
         holdPct: round1(holdPct), acePct: round1(acePct), dfPct: round1(dfPct),
-        // ATP-style Serve Rating: sum of the serve component percentages (no df penalty,
-        // matching the official ATP/Infosys serve leaderboard build). df is still tracked.
-        rating: round1(firstInPct + firstWonPct + secondWonPct + holdPct + acePct),
+        acesPerMatch: round1(acesPerMatch), dfPerMatch: round1(dfPerMatch),
+        svMatches: svM,
+        rating: round1(firstInPct + firstWonPct + secondWonPct + holdPct + acesPerMatch - dfPerMatch),
         inclChallenger: fi.chall || fw.chall || sw.chall || hd.chall || ac.chall,
       };
     }
@@ -284,12 +312,48 @@ function computeRatings(b, floors, cb) {
     components: haveUp,
     inclChallenger: usedChall,
   };
+  // ===== MENTAL EDGE — FOUNDER RULING, TEN-243 gate `b5a358e9` (2026-09-19). =====
+  // "PW = BP saved + BP converted; PL = BP missed + BP lost; rating = PW ÷ PL."
+  //
+  // A PRESSURE POINT IS A BREAK POINT. That is the ruling's definition, and it is the only
+  // one our data supports — no store carries a "pressure point" field, and the nearest
+  // thing is the break-point pair the Under-Pressure board already rests on.
+  //
+  //   PW = bpSaved            (break points the player SAVED on serve)
+  //      + (oBpFaced - oBpSaved)   (break points the player CONVERTED on return)
+  //   PL = (bpFaced - bpSaved)     (break points LOST on serve)
+  //      + oBpSaved                (break points MISSED on return — the opponent saved)
+  //
+  // PW + PL == bpFaced + oBpFaced by construction, i.e. every break point in the bucket
+  // lands in exactly one of the two. That identity is the cheapest check that this is
+  // still right after an edit; the test asserts it.
+  //
+  // ⚠️ These are RAW INTEGER COUNTS, deliberately. Reconstructing them from the rounded
+  // bpSavedPct / bpConvPct (one decimal) loses whole break points on a career-sized bucket,
+  // and the columns are specced as integers, so the renderer must not have to re-derive them.
+  //
+  // Tour level only — no Challenger fold-in. The Under-Pressure blend exists to keep thin
+  // players on the board at all; Mental Edge is a ratio of counts, and mixing tiers inside
+  // a count would silently change what the number counts.
+  const mePW = b.bpSaved + (b.oBpFaced - b.oBpSaved);
+  const mePL = (b.bpFaced - b.bpSaved) + b.oBpSaved;
+  const mental = (mePW + mePL) > 0 ? {
+    pw: mePW,
+    pl: mePL,
+    // Three decimals per README §"Leaderboards". A player who has never lost a break point
+    // in the bucket has no ratio — null, not Infinity, and never a fabricated ceiling.
+    rating: mePL > 0 ? +(mePW / mePL).toFixed(3) : null,
+  } : null;
   return {
-    serve, return: ret, underPressure: up,
+    serve, return: ret, underPressure: up, mental,
     reliable: okSample,
     confidence: okSample ? (usedChall ? 'med' : (haveUp >= 4 ? 'high' : haveUp >= 3 ? 'med' : 'low')) : 'low',
     sample: {
       matches: b.matches, svpt: b.svpt, bpFaced: b.bpFaced, bpChances: b.oBpFaced, tbPlayed: b.tbPlayed, decPlayed: b.decPlayed,
+      // Raw break-point outcomes, so Mental Edge's PW/PL are exact integers rather than
+      // reconstructed from a 1-decimal percentage. bpSaved = saved on serve; bpConverted =
+      // converted on return (opponent break points faced, minus those the opponent saved).
+      bpSaved: b.bpSaved, bpConverted: b.oBpFaced - b.oBpSaved,
       // Challenger backing sample folded in for thin players (0 when tour sample is reliable / no Challenger match)
       challMatches: c.matches, challSvpt: c.svpt, challBpFaced: c.bpFaced, challBpChances: c.oBpFaced,
     },
@@ -595,7 +659,8 @@ function pctOf(sortedArr, v) {
     scopes: { career: `${FROM_YEAR}-${TO_YEAR} all qualifying matches`, last52: `matches within ${LAST52_DAYS} days of each player's most recent match` },
     surfaces: [...SURFACES, 'All'],
     method: {
-      serve: 'ATP-style Serve Rating = 1stIn% + 1stWon% + 2ndWon% + serviceGamesWon% + ace% (no df penalty, matching the ATP serve leaderboard build). Tour level is primary; players thin at tour level (unreliable tour sample) have their Challenger/qualifying serve sample folded in per component with the success side discounted x' + CHALL_DISCOUNT + ' (serve.inclChallenger flags those).',
+      serve: 'Serve Rating = 1stIn% + 1stWon% + 2ndWon% + serviceGamesWon% + acesPerMatch - dfPerMatch, with aces and double faults as RAW PER-MATCH COUNTS over the matches carrying serve stats (serve.svMatches) - founder ruling 2026-08-29, re-affirmed TEN-243 gate b5a358e9. Until TEN-243 this file summed ace% and applied no df penalty, which did not implement that ruling; acePct/dfPct are still emitted as rates but are NOT the rating. Tour level is primary; players thin at tour level (unreliable tour sample) have their Challenger/qualifying serve sample folded in per component with the success side discounted x' + CHALL_DISCOUNT + ' (serve.inclChallenger flags those) - aces take the discount, double faults do not, because discounting a penalty would forgive errors at the weaker tier.',
+      mental: 'Mental Edge = PW / PL to 3dp, where a PRESSURE POINT IS A BREAK POINT - founder ruling TEN-243 gate b5a358e9 (2026-09-19). PW = break points saved on serve + break points converted on return; PL = break points lost on serve + break points missed on return. PW + PL == sample.bpFaced + sample.bpChances by construction. Raw integer counts, tour level only (no Challenger fold-in - mixing tiers inside a count changes what the count means). rating is null when PL is 0: a player who never lost a break point in the bucket has no ratio, and an infinity is not a rating.',
       return: 'ATP-style Return Rating = 1stServeReturnWon% + 2ndServeReturnWon% + BPconverted% + returnGamesWon% (return points split by serve type to match the Infosys ATP Return leaderboard scale). Tour level is primary; players thin at tour level have their Challenger/qualifying return sample folded in per component with the success side discounted x' + CHALL_DISCOUNT + ' (return.inclChallenger flags those).',
       underPressure: 'ATP-style Under-Pressure Rating = sum of the components present scaled to the full 4-component equivalent (mean of BPsaved% / BPconverted% / tiebreak% / decidingSet% * 4, ~200-240); rated when >= 3 of 4 clear their floors so 3- and 4-component players share the ATP scale. Tour level is primary; any single component below its tour-level floor is topped up with the player\u2019s Challenger/qualifying sample (inclChallenger:true flags those buckets).',
       index: 'retained internally: 0-100 pool percentile within the same surface+scope bucket (serve/return rank the composite rating, under-pressure averages each component\u2019s own pool percentile). The board now displays the ATP-style ratings above, not this index.',
