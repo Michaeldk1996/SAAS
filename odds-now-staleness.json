@@ -1,6 +1,6 @@
 {
   "latest": {
-    "maxAgeMin": 596.7,
+    "maxAgeMin": 611.7,
     "measured": 41,
     "stale": [
       "B. Van De Zandschulp v N. Mejia (ATP ATP Davis Cup - World Group I, 2026-09-19)",
@@ -48,15 +48,6 @@
   },
   "note": "Age of the published bet365 NOW leg, measured as now - observedAt against the artefact Pages is serving. Capture staleness and publish staleness are both inside this number, which is what the visitor sees. Re-derive the threshold on TEN-187.",
   "samples": [
-    {
-      "at": "2026-09-15T08:00:02Z",
-      "maxAgeMin": null,
-      "measured": 0,
-      "noBet365Line": 0,
-      "noClock": 0,
-      "stale": 0,
-      "thresholdMin": 120.0
-    },
     {
       "at": "2026-09-15T08:15:02Z",
       "maxAgeMin": null,
@@ -3647,9 +3638,18 @@
       "noClock": 0,
       "stale": 41,
       "thresholdMin": 120.0
+    },
+    {
+      "at": "2026-09-19T19:03:10Z",
+      "maxAgeMin": 611.7,
+      "measured": 41,
+      "noBet365Line": 31,
+      "noClock": 0,
+      "stale": 41,
+      "thresholdMin": 120.0
     }
   ],
   "schema": "odds-now-staleness/1",
   "thresholdMin": 120.0,
-  "updatedAt": "2026-09-19T18:48:09Z"
+  "updatedAt": "2026-09-19T19:03:10Z"
 }
