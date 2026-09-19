@@ -134,6 +134,65 @@ def _billed_strike(record=None, clear=False):
         print(f'::warning::Could not maintain the billed-strike marker ({e}).')
         return False
 
+# >= half our calls billing means the movement is ours. See the long note at the
+# call site in settle() for why the test is a magnitude and not a bare delta.
+ATTRIBUTION_FLOOR = 0.5
+
+
+def _spend_is_ours(delta, n_calls):
+    """Could OUR calls have caused a meter movement of `delta`?
+
+    Module level and a real function, not an expression inlined in settle(),
+    so the test suite can call the SHIPPED rule instead of restating it. A
+    restated copy kept passing under two mutations of the real one when this
+    was first written — the failure this placement exists to prevent.
+
+    max(1, ...) is the quiet-board limb: on a sweep of 0 or 1 calls the guard
+    must still be able to notice, so it fails SAFE toward catching a regression
+    rather than explaining it away.
+    """
+    return delta >= max(1, int(ATTRIBUTION_FLOOR * max(n_calls, 1)))
+
+
+UNATTRIBUTED_FILE = BILLED_STRIKE_FILE + '.unattributed'
+
+
+def _unattributed_record(delta, n_calls):
+    """Accumulate meter movement we did NOT attribute to this leg.
+
+    TEN-225 item D. Declining to fail the run on an unattributable delta is only
+    honest if the deltas are still counted somewhere: the failure mode the old
+    rule was reaching for is real, just rare — a leg that starts billing on SOME
+    calls would show a small delta every sweep and would now never trip the
+    magnitude test. Accumulating makes that visible as a rising total rather than
+    as silence, and the total is printed on every sweep so it cannot become an
+    unread file.
+
+    Never raises. A bookkeeping problem must not break a capture — the same rule
+    _billed_strike already follows.
+    """
+    try:
+        tot_d, tot_n, hits = 0, 0, 0
+        if os.path.exists(UNATTRIBUTED_FILE):
+            with open(UNATTRIBUTED_FILE) as fh:
+                parts = fh.read().split()
+                if len(parts) >= 3:
+                    tot_d, tot_n, hits = int(parts[0]), int(parts[1]), int(parts[2])
+        tot_d += int(delta); tot_n += int(n_calls); hits += 1
+        with open(UNATTRIBUTED_FILE, 'w') as fh:
+            fh.write(f'{tot_d} {tot_n} {hits}\n')
+        # The ratio is the number that matters. If this leg genuinely started
+        # billing at a low rate, unattributed units would grow in proportion to
+        # our call count and this ratio would climb toward 1.0. Concurrent spend
+        # is independent of how many calls WE make, so it stays near zero.
+        print(f'Unattributed meter movement this window: {tot_d} unit(s) over '
+              f'{tot_n} free call(s) across {hits} sweep(s) — ratio '
+              f'{tot_d / tot_n:.3f} (concurrent spend stays near 0; this leg '
+              f'billing would climb toward 1.0).')
+    except Exception as e:
+        print(f'::warning::Could not maintain the unattributed-delta record ({e}).')
+
+
 # --- Quota accounting (TEN-179 item 2) ---------------------------------------
 # Discovery-only spend: exactly ONE metered call per run, the /v4/fixtures lookup.
 # Everything else this script touches (/v4/historical-odds, /v4/account) is free.
@@ -1059,19 +1118,48 @@ def first_appearance():
             _billed_strike(clear=True)
             return 0
 
-        # TWO STRIKES, and not out of timidity — the meter is a GLOBAL counter and our
-        # window is not exclusive. odds-history.yml (cron `0 */3`, concurrency group
-        # `bsp-odds-history`) and bet365-archive.yml each spend a /v4/fixtures unit and
-        # run in DIFFERENT concurrency groups from this loop, so either can bill inside
-        # the seconds-to-minutes between our two meter reads. On a 20-target board the
-        # sweep windows cover ~12% of the day against 8 odds-history runs — on the order
-        # of one false red PER DAY, which is exactly the cry-wolf failure this ruling
-        # exists to end (37 unread red runs, Sep 2-10).
+        # ── TEN-225 item D, 2026-09-19 — ATTRIBUTION BY MAGNITUDE ────────────
+        # MEASURED: odds-now.yml failed 6 times in 2 days, every one of them here,
+        # and not one was this leg billing. The deltas were 1, 3, 3, 4, 2, 3 units
+        # — against sweeps of ~59 calls. Inside ONE of those runs the same sweep
+        # reported "meter unchanged at 955 across 59 historical-odds call(s)" at
+        # one iteration and a 3-unit move at another. Identical code, identical
+        # call count, both results. That is not an endpoint that has started
+        # billing; that is a global meter being read across a window we do not own.
         #
-        # A concurrent job's spend is a one-off; an endpoint that has genuinely started
-        # billing repeats on EVERY sweep. So confirm across two consecutive sweeps. The
-        # false-alarm rate then needs two independent coincidences 15 minutes apart, and
-        # detection is delayed by one tick — 15 minutes, against a monthly cap.
+        # THE ARITHMETIC THAT SETTLES IT. If /v4/historical-odds had started
+        # billing, it would bill on EVERY call — there is no mechanism by which 3
+        # of 59 identical requests bill and 56 do not. So a delta far BELOW our
+        # call count is, by construction, somebody else's spend. A delta at or
+        # near our call count is ours. The test is therefore not "did the meter
+        # move" but "did it move by an amount OUR calls could have caused".
+        #
+        # WHY THE OLD TWO-STRIKE RULE COULD NOT HOLD. It assumed a concurrent
+        # job's spend is a rare one-off, so two consecutive coincidences would be
+        # unlikely. That assumption is now false: the repo runs TEN-232 kibl
+        # archive 56 times and BSP data pipeline 32 times in a 4-hour span, and at
+        # 4 of the 6 failures (the other 2 predate GitHub's retained window) three
+        # to six other workflows were in flight at the exact billing instant. With
+        # traffic that dense, two consecutive sweeps both catching a stray unit is
+        # close to certain over a 22-iteration window — which is precisely what the
+        # run history shows. Strikes are KEPT, but they now only accumulate on a
+        # delta that is ours to begin with.
+        if not _spend_is_ours(a - b, n_calls):
+            # NOT a strike, and NOT a red run. Recorded rather than swallowed: a
+            # silent ignore here would be the other failure mode, where the leg
+            # really does start billing at a low rate and nobody ever hears.
+            print(f'::warning::Meter moved {b} -> {a} ({a - b} unit(s)) across a '
+                  f'sweep of {n_calls} free call(s). NOT attributed to this leg: '
+                  f'if /v4/historical-odds had started billing it would bill on '
+                  f'every call, so a delta of {a - b} against {n_calls} calls is '
+                  f'concurrent spend by another job on the shared account meter. '
+                  f'Recorded, not failing the run (TEN-225 item D).', file=sys.stderr)
+            _unattributed_record(a - b, n_calls)
+            return 0
+
+        # The delta IS consistent with our own calls billing. From here the old
+        # two-strike confirmation still applies, because one such reading could
+        # still coincide with a large concurrent spend.
         #
         # The strike marker is deliberately UNTRACKED: ci-commit-push.sh's REDO path does
         # `git reset --hard`, which does not touch untracked files, so a strike survives a
