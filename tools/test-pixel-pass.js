@@ -86,6 +86,18 @@ const I = load();
 // The subject is whichever real player lights the MOST boxes — picked by
 // measurement, not by name, so the file does not silently degrade when a store
 // is refreshed and one player's rows move.
+// ── ABSENT vs THIN, and why the difference decides the exit code ───────────
+// `career-history/` is gitignored and CI-BUILT: it does not exist when this
+// suite runs as the pre-deploy gate, and four of the eight boxes need it. The
+// first version of this guard called that a failure and turned the whole
+// pipeline red — a correct page, a correct suite, and a red deploy, which is
+// the "could not check rendering as a defect" mistake in the other direction.
+//
+// So: ABSENT stores SKIP the value-dependent checks and say so on every line.
+// PRESENT-but-dashing still FAILS, because that is a page defect. Nothing is
+// ever silently reported as a pass.
+const STORES_PRESENT = fs.existsSync(CH_DIR) && Object.keys(CAREER_HIST).length > 0;
+let BOXES_LIT = 0;
 const SUBJECT = (function () {
   let best = null, bestN = -1;
   Object.keys(PROFILES).forEach((k) => {
@@ -96,14 +108,30 @@ const SUBJECT = (function () {
     if (n > bestN) { bestN = n; best = p; }
   });
   if (!best) throw new Error('no player in player-profiles.json produced a box — the store is empty');
-  console.log(`  subject: ${best.name} (key ${best.key}) \u2014 ${bestN} of 8 boxes carry a headline\n`);
-  if (bestN < 5) {
-    console.log('  \u2717 FEWER THAN FIVE BOXES CARRY A HEADLINE \u2014 the value checks below');
-    console.log('    would measure nothing. Refusing to report them as passes.');
-    process.exit(1);
+  BOXES_LIT = bestN;
+  console.log(`  subject: ${best.name} (key ${best.key}) \u2014 ${bestN} of 8 boxes carry a headline`);
+  if (!STORES_PRESENT) {
+    console.log('  career-history/ is ABSENT (gitignored, CI-built) \u2014 the four boxes that');
+    console.log('  need it dash, so the VALUE checks below are skipped and named as skips.');
+    console.log('  Every markup and shape check still runs.\n');
+  } else if (bestN < 5) {
+    console.log('  \u2717 the stores are PRESENT and fewer than five boxes carry a headline.');
+    console.log('    That is a page defect, not a missing store.\n');
+  } else {
+    console.log('');
   }
   return best;
 })();
+// A value-dependent check: runs for real when the stores are there, and is
+// reported as a SKIP with its reason when they are not.
+let skipped = 0;
+function checkValues(name, fn) {
+  if (!STORES_PRESENT) {
+    console.log(`  skip  ${name}\n        career-history/ absent — no subject lights enough boxes to measure`);
+    skipped++; return;
+  }
+  check(name, fn);
+}
 const HCTX = { rows: (SUBJECT.recentForm && SUBJECT.recentForm.matches) || [], nextMatch: null };
 const SRC = fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8');
 // Comment-stripped, so a rule quoted in a comment cannot satisfy a lock about
@@ -186,7 +214,7 @@ check('item 1 · the strip centres on the text, it does not stretch to the heade
 // Asserted over the VALUE BUILDER, for every box, over a subject constructed to
 // have a real figure in each. A null headline (a dash) is allowed and is not a
 // label; what is banned is a headline with no digit in it.
-check('item 2 · no box headline is a label — every non-dash headline carries a figure', () => {
+checkValues('item 2 · no box headline is a label — every non-dash headline carries a figure', () => {
   const v = I.buildBoxVals(SUBJECT, { archetype: null });
   const keys = ['career', 'season', 'tourn', 'speed', 'splits', 'styles', 'market', 'profile'];
   let figured = 0, dashed = 0;
@@ -232,7 +260,7 @@ check('item 2 · Draw record headlines a rate and supports with the split label'
 // ruled out. The geometry itself is confirmed by the CDP read-back, which
 // measures each support block's height against its own line-height.
 const MAX_TOKENS = 4;   // the longest line the design carries (`tourn`)
-check(`item 3 · no support line exceeds ${MAX_TOKENS} ${MIDDOT}-separated tokens`, () => {
+checkValues(`item 3 · no support line exceeds ${MAX_TOKENS} ${MIDDOT}-separated tokens`, () => {
   const v = I.buildBoxVals(SUBJECT, { archetype: null });
   const real = Object.keys(v).filter(k => v[k] && v[k].headline != null);
   assert(real.length >= 5,
@@ -321,7 +349,7 @@ check('item 5 · the title table covers the whole split vocabulary, both directi
   console.log(`        ${n} splits titled, both directions, no figures`);
 });
 
-check('item 5 · rendered insight titles are sentences and bodies carry rate+record+gap', () => {
+checkValues('item 5 · rendered insight titles are sentences and bodies carry rate+record+gap', () => {
   const html = I.renderInsights(SUBJECT);
   // A subject with no split store renders the empty state, which is a correct
   // page but tells this check nothing. Refuse rather than pass.
@@ -415,7 +443,7 @@ check('item 7 · the per-box headline sizes are the SPEC\'s, not the capture\'s 
     'all eight sizes are equal — the capture\'s uniform 30px was implemented against the ruling');
 });
 
-check('item 7 · the tourn unit suffix is tinted by SIGN, and green is #3dd68c', () => {
+checkValues('item 7 · the tourn unit suffix is tinted by SIGN, and green is #3dd68c', () => {
   // `Player Stat Boxes.dc.html`:3223 — `hlSuffixColor: '#3dd68c'`. Ours renders
   // rgb(61,214,140) for a positive, which is that colour; the capture's white
   // `u` is the deviation, and it is the capture that is a layout reference.
@@ -609,6 +637,7 @@ mutants.forEach(([name, from, to, expect]) => {
 try { fs.rmSync(TMP, { recursive: true, force: true }); } catch (e) { /* scratch */ }
 
 console.log('\n' + '='.repeat(64));
-console.log(`PASS ${pass}   FAIL ${fail}   mutants ${caught} caught / ${survived} survived`);
+console.log(`PASS ${pass}   FAIL ${fail}` + (skipped ? `   SKIP ${skipped} (career-history/ absent)` : '') +
+  `   mutants ${caught} caught / ${survived} survived`);
 if (failures.length) { console.log('\nFailures:'); failures.forEach(f => console.log('  - ' + f)); }
 process.exit(fail || survived ? 1 : 0);
