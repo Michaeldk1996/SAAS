@@ -1693,6 +1693,42 @@
    * ribbon applies), and a match with no first set is not a match played from a
    * set down.
    */
+  /**
+   * The tour's own from-a-set-down rate — founder ruling 2026-09-19 item 6:
+   * "follow the export: the tour gap, not the sample count."
+   *
+   * Pooled over the same population, and by the same method, as the Situational
+   * panel's tour column (sitTour): every profile in the published roster that
+   * carries ordered set scores, summed match by match at render time. NOT a
+   * constant — the export's "6.4pp below tour" is mock copy and §3 bars both
+   * reproducing it and inventing a replacement.
+   *
+   * Under founder ruling TOUR AVERAGE (2026-09-19): this is the average of the
+   * N players we hold set scores for, not the ATP field, and N moves as the
+   * store grows. The box's support line has no room for that caveat, so the
+   * modal's footnote carries it — which is exactly what that ruling asks for.
+   *
+   * A pool under ten contributing players returns null and the caller falls back
+   * to stating its own sample instead: a "tour gap" struck over four players is
+   * a worse claim than no tour gap at all.
+   */
+  var _tourSetDown = null;
+  function tourFromASetDown() {
+    if (_tourSetDown !== null) return _tourSetDown;
+    var map = playersMap();
+    var won = 0, lost = 0, players = 0;
+    Object.keys(map).forEach(function (k) {
+      var r = fromASetDown(map[k]);
+      if (!r || !r.n) return;
+      players++; won += r.won; lost += r.lost;
+    });
+    var n = won + lost;
+    _tourSetDown = (players >= 10 && n > 0)
+      ? { pct: (100 * won / n), players: players, n: n }
+      : { pct: null, players: players, n: n };
+    return _tourSetDown;
+  }
+
   function fromASetDown(p) {
     var rows = ledgerMatches(p);
     var scanned = 0, won = 0, lost = 0;
@@ -1917,10 +1953,31 @@
           // §9's gate governs the RATE, not the record: under five matches the
           // headline W-L still stands and the percentage is withheld, rather
           // than the whole tile dashing on a real but thin sample.
-          support: 'from a set down ' + MIDDOT +
-            (sd.gate === GATE.THIN ? '' : ' ' + rateText(sd.won, sd.lost) + ' ' + MIDDOT) +
-            ' ' + sd.n + ' of ' + sd.scanned + ' with set scores' +
-            (sd.gate === GATE.SMALL ? ' ' + MIDDOT + ' small sample' : '') }
+          // RULING item 6 (2026-09-19): the export's third clause is the TOUR
+          // GAP, and it is now computable — see tourFromASetDown(). The sample
+          // count it replaces moves into the modal, which is where the window
+          // was always stated. Where the pool is too thin to strike a tour
+          // figure the count comes back rather than a fabricated gap.
+          support: (function () {
+            var head = 'from a set down';
+            if (sd.gate === GATE.THIN) {
+              return head + ' ' + MIDDOT + ' ' + sd.n + ' of ' + sd.scanned + ' with set scores';
+            }
+            var rate = (100 * sd.won / sd.n);
+            var tour = tourFromASetDown();
+            var tail;
+            if (tour.pct == null) {
+              tail = sd.n + ' of ' + sd.scanned + ' with set scores';
+            } else {
+              var gap = rate - tour.pct;
+              // The export writes the direction in words ("below tour"), so the
+              // sign is carried by the word and the number stays unsigned.
+              tail = Math.abs(Math.round(gap * 10) / 10).toFixed(1) + 'pp ' +
+                (gap < 0 ? 'below' : 'above') + ' tour';
+            }
+            return head + ' ' + MIDDOT + ' ' + rateText(sd.won, sd.lost) + ' ' + MIDDOT + ' ' + tail +
+              (sd.gate === GATE.SMALL ? ' ' + MIDDOT + ' small sample' : '');
+          })() }
       : { headline: null,
           support: sd && sd.scanned
             ? 'no match on record with set scores was lost from a set down'
@@ -8435,6 +8492,40 @@
     if (v == null) return DASH;
     return row.kind === 'pct' ? v.toFixed(1) + '%' : String(Math.round(v));
   }
+
+  // ─── §3 · the record under every rate ──────────────────────────────────────
+  //
+  // README §9: "Every rate shows its record and n." The export draws a `frac()`
+  // sub-line under each rate on the match sheet; we printed the rate alone.
+  //
+  // The denominators are NOT derived — api-tennis ships them. `matchStats.{side}.raw`
+  // carries {won,total} for twelve fields, measured on the deployed store:
+  //   1st/2nd serve points won · break points saved · 1st/2nd return points won ·
+  //   break points converted · net points won · service/return/total points won ·
+  //   service/return games won.
+  // The earlier claim in this file that "the feed emits rates, not denominators"
+  // was wrong and is what kept this unbuilt.
+  //
+  // `1st serve %` is the one rate with no denominator anywhere in `raw`, so it
+  // keeps a blank sub-line rather than borrowing a plausible one — founder ruling
+  // 2026-09-18 item 4: "1st serve % stays dashed where we hold no denominator."
+  // A COUNT row (aces, double faults, winners, unforced errors) has no fraction
+  // to show: the value IS the count, and printing "11/11" under it would invent a
+  // denominator. Those return '' too.
+  var FRAC_FIELDS = {
+    spw: 'Points:Service Points Won',
+    rpw: 'Points:Return Points Won'
+  };
+  function sheetFrac(row, side) {
+    if (!side || row.kind !== 'pct') return '';
+    var raw = side.raw;
+    if (!raw) return '';
+    var field = row.field || (row.derived ? FRAC_FIELDS[row.derived] : null);
+    if (!field) return '';
+    var r = raw[field];
+    if (!r || r.won == null || r.total == null || !(Number(r.total) > 0)) return '';
+    return String(r.won) + '/' + String(r.total);
+  }
   /** Bars are a share of the pair, and only drawn when BOTH sides are held. */
   function sheetBars(a, b) {
     if (a == null || b == null) return ['0%', '0%'];
@@ -8502,6 +8593,32 @@
     return null;
   }
 
+  /**
+   * Whether §8.2's page would show anything the sheet does not already.
+   * Summary alone is worth opening ONLY when there is a set-by-set score to
+   * draw; otherwise the page is the sheet header with less on it.
+   */
+  /**
+   * The api-tennis event key behind a sheet id, or null.
+   *
+   * Exported so the HOST resolves it through this module's own row lookup rather
+   * than re-implementing the id -> row join. Two implementations of one join is
+   * how the sheet and the panel end up pointed at different matches.
+   */
+  function eventKeyForSheetId(id) {
+    var p = profileFor(state.key);
+    if (!p || !id) return null;
+    var x = sheetRowFor(p, buildCtx(p), id);
+    return x && x.m && x.m.eventKey != null ? x.m.eventKey : null;
+  }
+
+  function mpHasPanel(m) {
+    if (!m) return false;
+    var a = mpAvailable(m);
+    if (a.points || a.stats) return true;
+    return !!(m.sets && m.sets.length);
+  }
+
   function renderSheet(p, ctx) {
     if (!state.sheet) return '';
     var x = sheetRowFor(p, ctx, state.sheet);
@@ -8555,6 +8672,15 @@
             '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:#5b6880;">' +
               esc(priceLine) + '</span>' +
           '</div>' +
+          // §8.2's entry point. Painted only where the match can actually feed a
+          // panel beyond the header — a control that opens a page with one
+          // dashed Summary tab is the dead affordance the Phase A ruling bans.
+          (mpHasPanel(m)
+            ? '<button type="button" data-pp2="match-page" data-v="' + esc(state.sheet) + '" ' +
+              'style="background:rgba(91,155,255,0.12);border:1px solid rgba(91,155,255,0.35);' +
+              'border-radius:8px;padding:6px 11px;color:#8fbcff;font-size:11.5px;font-weight:600;' +
+              'cursor:pointer;white-space:nowrap;font-family:inherit;">Full match ' + RANGLE + '</button>'
+            : '') +
           '<span data-pp2="sheet-close" style="background:rgba(255,255,255,0.05);' +
             'border:1px solid rgba(255,255,255,0.12);border-radius:8px;width:30px;height:30px;' +
             'color:#8b96b5;font-size:15px;line-height:1;cursor:pointer;display:flex;' +
@@ -8584,18 +8710,30 @@
         var b = sheetValue(row, theirs, mine);
         total++; if (a != null) held++;
         var bars = sheetBars(a, b);
+        var fa = sheetFrac(row, mine), fb = sheetFrac(row, theirs);
         return '' +
           '<div style="display:flex;flex-direction:column;gap:6px;">' +
             '<div style="display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);' +
               'align-items:baseline;gap:12px;">' +
-              '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:15px;font-weight:700;' +
-                'color:' + (a == null ? DASH_COLOUR : '#5b9bff') + ';">' + sheetText(row, a) + '</span>' +
+              // §3 · the figure with its record under it (`frac()` in the export).
+              // A rate whose denominator the feed never sent shows the rate alone
+              // rather than a borrowed one.
+              '<span style="display:flex;flex-direction:column;gap:2px;min-width:0;">' +
+                '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:15px;font-weight:700;' +
+                  'color:' + (a == null ? DASH_COLOUR : '#5b9bff') + ';">' + sheetText(row, a) + '</span>' +
+                (fa ? '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;' +
+                  'color:#4b5672;">' + esc(fa) + '</span>' : '') +
+              '</span>' +
               '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;' +
                 'letter-spacing:0.14em;text-transform:uppercase;color:#8b96b5;text-align:center;">' +
                 esc(row.label) + '</span>' +
-              '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:15px;font-weight:700;' +
-                'text-align:right;color:' + (b == null ? DASH_COLOUR : '#e7e9ee') + ';">' +
-                sheetText(row, b) + '</span>' +
+              '<span style="display:flex;flex-direction:column;gap:2px;align-items:flex-end;min-width:0;">' +
+                '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:15px;font-weight:700;' +
+                  'text-align:right;color:' + (b == null ? DASH_COLOUR : '#e7e9ee') + ';">' +
+                  sheetText(row, b) + '</span>' +
+                (fb ? '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;' +
+                  'color:#4b5672;">' + esc(fb) + '</span>' : '') +
+              '</span>' +
             '</div>' +
             '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">' +
               '<span style="display:flex;justify-content:flex-end;height:7px;' +
@@ -8648,6 +8786,513 @@
           '<div style="font-size:11px;color:#4b5361;line-height:1.55;">' + esc(note) + '</div>' +
         '</div>' +
       '</div>';
+  }
+
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // §8.2 MATCH PANEL + FULL-SCREEN MATCH PAGE
+  // ═══════════════════════════════════════════════════════════════════════════
+  //
+  // README §8.2: "Match panel (inline under a tournament fixture; also
+  // full-screen `matchPage`)" — a centred `Summary | Stats | Points` segmented
+  // control over one match. On the profile the full-screen variant is the
+  // surface the export actually gates (`matchPageOn`, Player Profile.dc.html:326),
+  // so the panel is built once and the page is a wrapper around it.
+  //
+  // THE DATA LAYER ALREADY EXISTED. Every feed this needs is published and was
+  // already being fetched for the Live tab's match rows:
+  //   pbp/{eventKey}.json        point log   · pbp-index.json        11,832 keys
+  //   setstats/{eventKey}.json   per-set AND whole-match box scores
+  //                              · setstats-index.json   4,889 keys
+  //                              · matchstats-index.json 6,566 keys
+  // So this is a renderer, not an integration: the host's existing
+  // loadPbpShard/loadSetStatsShard/loadPbpIndex/... are reused and their answers
+  // published onto the bridge. Opening a second copy of any of them is what the
+  // ticket means by "reuse it, don't rebuild it".
+  //
+  // NO DEAD AFFORDANCES (founder, Phase A Q3). A tab is painted only where THIS
+  // match carries its feed. Coverage is real but partial and uneven — measured on
+  // the deployed indexes against real career rows:
+  //     Zverev   775 rows · 399 keyed · 316 pbp · 222 match stats · 152 per-set
+  //     Giustino 405 rows · 399 keyed · 283 pbp · 115 match stats ·  88 per-set
+  //     Borges   365 rows · 365 keyed ·  22 pbp ·  19 match stats ·  17 per-set
+  // so a match with a point log and no box score shows Summary | Points, and one
+  // with neither shows Summary alone. Three tabs where two do nothing is worse
+  // than one, and that is the ruling this follows.
+  //
+  // DURATION IS NOT HELD. The export's Summary carries a `Match time` row with a
+  // total and a per-set breakdown. No source we hold carries either: api-tennis
+  // gives `event_time` (a START time) and nothing else, and neither shard
+  // carries a duration field — checked on both rather than assumed. The row is
+  // rendered with dashes and the footnote says why, rather than being dropped:
+  // it is one row of a spec'd layout, not a whole group, and the ticket's first
+  // rule is to reproduce the layout. Never a zero, never a plausible default.
+
+  var MP_TABS = [
+    { id: 'summary', label: 'Summary' },
+    { id: 'stats', label: 'Stats' },
+    { id: 'points', label: 'Points' }
+  ];
+
+  function pbpIndex() { return window.pbpIndex || null; }
+  function setStatsIndex() { return window.setStatsIndex || null; }
+  function matchStatsIndex() { return window.matchStatsIndex || null; }
+  function pbpShardFor(ek) {
+    var s = window.pbpShards;
+    return (s && ek != null && Object.prototype.hasOwnProperty.call(s, String(ek)))
+      ? s[String(ek)] : undefined;   // undefined = not fetched, null = answered "nothing"
+  }
+  function setStatsShardFor(ek) {
+    var s = window.setStatsShards;
+    return (s && ek != null && Object.prototype.hasOwnProperty.call(s, String(ek)))
+      ? s[String(ek)] : undefined;
+  }
+
+  /**
+   * Orient a shard's two sides onto the subject. Proven by KEY, never by
+   * position — the same contract renderSheet uses. A shard naming neither player
+   * returns null rather than a coin flip that would hand the reader the other
+   * man's numbers.
+   */
+  function mpOrient(shard, key) {
+    if (!shard) return null;
+    var pk = String(key);
+    if (pk === String(shard.p1Key)) return { first: true };
+    if (pk === String(shard.p2Key)) return { first: false };
+    return null;
+  }
+
+  /** Which tabs this match can actually feed. */
+  function mpAvailable(m) {
+    var ek = m && m.eventKey;
+    var out = { summary: true, stats: false, points: false };
+    if (ek == null) return out;
+    var pi = pbpIndex(), si = setStatsIndex(), mi = matchStatsIndex();
+    var k = String(ek);
+    // The index is the cheap answer and it is authoritative about EXISTENCE.
+    // Where it has not loaded we fall back to the shard itself, so a slow index
+    // hides a tab for one repaint rather than permanently.
+    var pbp = pbpShardFor(ek);
+    out.points = pi ? pi.has(k) : (pbp != null && !!pbp);
+    var ss = setStatsShardFor(ek);
+    out.stats = (si ? si.has(k) : false) || (mi ? mi.has(k) : false) ||
+      (ss != null && !!ss) || !!statsFor(ek);
+    return out;
+  }
+
+  /**
+   * Per-set games for the Summary score rows.
+   *
+   * Source order is deliberate. The POINT LOG is preferred where it exists: each
+   * set's last game carries the set's final `score`, so the games are read off
+   * the same artefact the Points tab paints and the two can never disagree.
+   * career-history's `sets` is the fallback — it reaches further back but is
+   * still filling (the per-set-score fix needs a shard rebuild to land, and on
+   * the deployed store Zverev has it on 376 of 775 rows and Borges on 0 of 365).
+   * Returns null when neither holds it; the caller dashes rather than guessing.
+   */
+  function mpSetGames(m, shard, first) {
+    var out = null;
+    if (shard && Array.isArray(shard.sets) && shard.sets.length) {
+      out = [];
+      for (var i = 0; i < shard.sets.length; i++) {
+        var st = shard.sets[i];
+        var games = st.games || [];
+        var last = games.length ? games[games.length - 1] : null;
+        if (!last || !last.score) { out.push({ a: null, b: null, tb: null }); continue; }
+        var parts = String(last.score).split('-');
+        var p1 = parseInt(String(parts[0]).replace(/[^0-9]/g, ''), 10);
+        var p2 = parseInt(String(parts[1] || '').replace(/[^0-9]/g, ''), 10);
+        out.push({
+          a: first ? p1 : p2, b: first ? p2 : p1,
+          tb: st.tiebreak ? true : null
+        });
+      }
+      return out;
+    }
+    if (m && Array.isArray(m.sets) && m.sets.length) {
+      return m.sets.map(function (s) {
+        return { a: s.p != null ? s.p : null, b: s.o != null ? s.o : null,
+                 tb: (s.pTb != null || s.oTb != null) ? true : null };
+      });
+    }
+    return null;
+  }
+
+  function mpSeg(items, hook, active) {
+    return '<div style="display:flex;justify-content:center;">' +
+      '<div style="display:flex;gap:4px;background:#0a0d13;border:1px solid rgba(255,255,255,0.09);' +
+        'border-radius:10px;padding:4px;">' +
+      items.map(function (it) {
+        var on = String(it.id) === String(active);
+        return '<button type="button" data-pp2="' + hook + '" data-v="' + esc(String(it.id)) + '" ' +
+          'style="white-space:nowrap;padding:' + (hook === 'mp-tab' ? '8px 15px' : '7px 14px') + ';' +
+          'border-radius:7px;font-size:' + (hook === 'mp-tab' ? '12.5' : '12') + 'px;font-weight:' +
+          (on ? 700 : 600) + ';color:' + (on ? '#e7e9ee' : '#5b6880') + ';background:' +
+          (on ? 'rgba(91,155,255,0.16)' : 'transparent') + ';border:1px solid ' +
+          (on ? 'rgba(91,155,255,0.4)' : 'rgba(255,255,255,0.08)') + ';cursor:pointer;font-family:inherit;">' +
+          esc(it.label) + '</button>';
+      }).join('') + '</div></div>';
+  }
+
+  var MP_CAP = 'font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:700;' +
+    'letter-spacing:0.16em;text-transform:uppercase;color:#5b6880;';
+
+  // ─── Summary ───────────────────────────────────────────────────────────────
+  function mpSummary(p, x, shard, first) {
+    var m = x.m;
+    var cells = mpSetGames(m, shard, first);
+    var nSets = cells ? cells.length : 0;
+    var cols = 'auto' + new Array(nSets + 1).join(' minmax(22px,auto)');
+    var oppName = m.opponent ? surnameFirst(m.opponent) : DASH;
+    var setsWon = { a: 0, b: 0 };
+    (cells || []).forEach(function (c) {
+      if (c.a == null || c.b == null) return;
+      if (c.a > c.b) setsWon.a++; else if (c.b > c.a) setsWon.b++;
+    });
+
+    function row(name, isSubject) {
+      var won = isSubject ? !!m.won : !m.won;
+      var mine = isSubject ? 'a' : 'b';
+      return '<div style="display:flex;align-items:center;">' +
+        '<span style="width:14px;flex:none;"></span>' +
+        '<span style="flex:1;min-width:0;font-size:13.5px;font-weight:700;color:' +
+          (won ? '#e7e9ee' : '#8b96b5') + ';overflow:hidden;text-overflow:ellipsis;' +
+          'white-space:nowrap;">' + esc(name) + '</span>' +
+        '<span style="display:grid;grid-template-columns:' + cols + ';gap:0 4px;align-items:center;' +
+          'margin-left:8px;">' +
+          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:15px;font-weight:700;' +
+            'text-align:center;margin-right:4px;padding:2px 6px;border-radius:5px;background:' +
+            (won ? 'rgba(91,155,255,0.16)' : 'transparent') + ';color:#e7e9ee;">' +
+            (cells ? setsWon[mine] : DASH) + '</span>' +
+          (cells || []).map(function (c) {
+            var v = c[mine];
+            return '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:13px;' +
+              'font-weight:700;text-align:center;color:#5b6880;">' +
+              (v == null ? DASH : v) +
+              (c.tb ? '<sup style="font-size:9px;font-weight:600;margin-left:1px;">tb</sup>' : '') +
+              '</span>';
+          }).join('') +
+        '</span></div>';
+    }
+
+    var scoreBlock = cells
+      ? row(shortName(p), true) + row(oppName, false)
+      : '<div style="border:1px dashed rgba(255,255,255,0.12);border-radius:10px;padding:20px;' +
+        'text-align:center;font-size:12.5px;color:#5b6880;">No set-by-set score on record for ' +
+        'this match, so the per-set columns cannot be drawn.</div>';
+
+    // Match time: rendered, and dashed. See the note at the top of §8.2 — no
+    // source we hold carries a duration, so every cell here is a dash and the
+    // footnote names the reason. A zero here would read as a match that took no
+    // time, which is exactly the fabrication the standing rules forbid.
+    var timeRow = '<div style="display:flex;align-items:center;border-top:1px solid rgba(255,255,255,0.07);' +
+      'margin-top:10px;padding:12px 2px 8px;">' +
+      '<span style="width:14px;flex:none;"></span>' +
+      '<span style="flex:1;' + MP_CAP + '">Match time</span>' +
+      '<span style="display:grid;grid-template-columns:' + cols + ';gap:0 4px;align-items:center;' +
+        'margin-left:8px;">' +
+        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:13px;font-weight:700;' +
+          'text-align:center;margin-right:4px;color:' + DASH_COLOUR + ';">' + DASH + '</span>' +
+        (cells || []).map(function () {
+          return '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;' +
+            'text-align:center;color:' + DASH_COLOUR + ';">' + DASH + '</span>';
+        }).join('') +
+      '</span></div>';
+
+    var meta = [fmtDotDate(m.date), eventName(m),
+      (x.fromShard ? shortRound(m.round) : roundLabel(m)),
+      (m.surface ? String(m.surface) : null)]
+      .filter(function (t) { return t && t !== DASH; }).join(' ' + MIDDOT + ' ');
+
+    return '<div style="font-family:\'IBM Plex Mono\',monospace;text-align:center;font-size:11px;' +
+        'color:#4b5672;margin-bottom:16px;">' + esc(meta) + '</div>' +
+      '<div style="max-width:560px;margin:0 auto;">' +
+        '<div style="' + MP_CAP + 'margin-bottom:10px;">Score</div>' +
+        '<div style="display:flex;flex-direction:column;gap:8px;padding:0 2px 4px;">' + scoreBlock + '</div>' +
+        timeRow +
+        '<div style="font-size:11px;color:#4b5361;line-height:1.55;margin-top:10px;">' +
+          'Match duration is not carried by any source we hold — api-tennis publishes a start ' +
+          'time and no length, and neither the point log nor the box-score shard carries one — ' +
+          'so the Match time row is a dash rather than a figure.' +
+          (cells && shard ? ' Per-set games are read off this match&#39;s own point log.' : '') +
+        '</div>' +
+      '</div>';
+  }
+
+  // ─── Stats ─────────────────────────────────────────────────────────────────
+  //
+  // ONE DELIBERATE DEVIATION FROM THE EXPORT, flagged rather than silent: the
+  // export's Stats tab paints a single `Service` band because its placeholder row
+  // list is serve-only. We hold Return and Points-won rows for the same match, and
+  // the founder's rule is that where we hold a real figure and the mock does not,
+  // ours wins. So all three of SHEET_SECTIONS' bands render, each in the export's
+  // own band chrome. The band element is reproduced exactly; there are three of it.
+  function mpStats(p, x, ssShard) {
+    var m = x.m;
+    var setKeys = (ssShard && ssShard.sets) ? Object.keys(ssShard.sets).sort(function (a, b) {
+      return Number(a) - Number(b);
+    }) : [];
+    var segs = [{ id: 'match', label: 'Match' }].concat(setKeys.map(function (k) {
+      return { id: k, label: 'Set ' + k };
+    }));
+    var sel = state.mpSet;
+    if (sel !== 'match' && setKeys.indexOf(String(sel)) < 0) sel = 'match';
+
+    var mine = null, theirs = null, sourceNote = '';
+    if (sel === 'match') {
+      // The whole-match box score has two possible homes and they are the same
+      // numbers: the eager store the sheet reads, and the shard's `match` node.
+      // Prefer the store so the panel and the sheet above it cannot disagree.
+      var rec = statsFor(m.eventKey);
+      if (rec) {
+        var o = mpOrient(rec, p.key);
+        if (o) { mine = o.first ? rec.matchStats.p1 : rec.matchStats.p2;
+                 theirs = o.first ? rec.matchStats.p2 : rec.matchStats.p1; }
+      }
+      if (!mine && ssShard && ssShard.match) {
+        var o2 = mpOrient(ssShard, p.key);
+        if (o2) { mine = o2.first ? ssShard.match.p1 : ssShard.match.p2;
+                  theirs = o2.first ? ssShard.match.p2 : ssShard.match.p1; }
+      }
+      sourceNote = 'Whole-match box score.';
+    } else {
+      var pair = ssShard && ssShard.sets ? ssShard.sets[String(sel)] : null;
+      var o3 = mpOrient(ssShard, p.key);
+      if (pair && o3) {
+        mine = o3.first ? pair.p1 : pair.p2;
+        theirs = o3.first ? pair.p2 : pair.p1;
+      }
+      sourceNote = 'Set ' + sel + ' only. Per-set rows reconcile to the match totals.';
+    }
+
+    if (!mine && !theirs) {
+      return (segs.length > 1 ? mpSeg(segs, 'mp-set', sel) : '') +
+        '<div style="border:1px dashed rgba(255,255,255,0.12);border-radius:10px;padding:24px;' +
+        'text-align:center;font-size:12.5px;color:#5b6880;margin-top:16px;">' +
+        'No box score on record for this match' + (sel === 'match' ? '' : ' at set ' + sel) + '.</div>';
+    }
+
+    var names = '<div style="display:flex;justify-content:space-between;font-size:13px;' +
+      'font-weight:700;margin:18px 0 12px;">' +
+      '<span style="color:#6aaeff;">' + esc(shortName(p)) + '</span>' +
+      '<span style="color:#e7e9ee;">' + esc(m.opponent ? surnameFirst(m.opponent) : DASH) + '</span></div>';
+
+    var bands = SHEET_SECTIONS.map(function (sec) {
+      var rows = sec.rows.map(function (r) {
+        var a = sheetValue(r, mine, theirs);
+        var b = sheetValue(r, theirs, mine);
+        var bars = sheetBars(a, b);
+        return '<div>' +
+          '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">' +
+            '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:13px;color:' +
+              (a == null ? DASH_COLOUR : '#e7e9ee') + ';">' + sheetText(r, a) + '</span>' +
+            '<span style="display:flex;flex-direction:column;align-items:center;gap:1px;">' +
+              '<span style="' + MP_CAP + 'font-weight:600;letter-spacing:0.14em;font-size:9.5px;">' +
+                esc(r.label) + '</span>' +
+              (r.lowerBetter ? '<span style="font-size:10px;color:#4b5672;">lower is better</span>' : '') +
+            '</span>' +
+            '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:13px;color:' +
+              (b == null ? DASH_COLOUR : '#e7e9ee') + ';">' + sheetText(r, b) + '</span>' +
+          '</div>' +
+          '<div style="display:flex;gap:4px;height:6px;">' +
+            '<span style="flex:1;display:flex;justify-content:flex-end;">' +
+              '<span style="display:block;width:' + bars[0] + ';height:100%;background:#6aaeff;' +
+                'border-radius:3px;"></span></span>' +
+            '<span style="flex:1;"><span style="display:block;width:' + bars[1] + ';height:100%;' +
+              'background:#e7e9ee;border-radius:3px;"></span></span>' +
+          '</div></div>';
+      }).join('');
+      return '<div style="' + MP_CAP + 'text-align:center;padding:8px 0;background:#0a0d14;' +
+        'border-radius:8px;margin:16px 0;">' + esc(sec.title) + '</div>' +
+        '<div style="display:flex;flex-direction:column;gap:14px;">' + rows + '</div>';
+    }).join('');
+
+    return (segs.length > 1 ? mpSeg(segs, 'mp-set', sel) : '') + names + bands +
+      '<div style="font-size:11px;color:#4b5361;line-height:1.55;margin-top:14px;">' +
+        esc(sourceNote) + ' A stat the feed never recorded for this match shows a dash and an ' +
+        'empty bar, never a zero.' +
+        (segs.length > 1 ? '' : ' No per-set box score is on file for this match, so the set ' +
+          'selector is not shown.') +
+      '</div>';
+  }
+
+  // ─── Points ────────────────────────────────────────────────────────────────
+  function mpPoints(p, x, shard, first) {
+    var m = x.m;
+    if (!shard || !Array.isArray(shard.sets) || !shard.sets.length) {
+      return '<div style="border:1px dashed rgba(255,255,255,0.12);border-radius:10px;padding:24px;' +
+        'text-align:center;font-size:12.5px;color:#5b6880;">No point log on record for this match.</div>';
+    }
+    var segs = shard.sets.map(function (s, i) {
+      return { id: String(s.set != null ? s.set : i + 1), label: 'Set ' + (s.set != null ? s.set : i + 1) };
+    });
+    var sel = state.mpPointSet;
+    if (segs.map(function (s) { return s.id; }).indexOf(String(sel)) < 0) sel = segs[0].id;
+    var st = shard.sets.filter(function (s, i) {
+      return String(s.set != null ? s.set : i + 1) === String(sel);
+    })[0] || shard.sets[0];
+
+    var subjIsP1 = !!first;
+    var games = (st.games || []).map(function (g) {
+      var parts = String(g.score || '').split('-');
+      var g1 = String(parts[0] || '').trim(), g2 = String(parts[1] || '').trim();
+      var gA = subjIsP1 ? g1 : g2, gB = subjIsP1 ? g2 : g1;
+      var serverIsSubject = (g.server === 'p1') === subjIsP1;
+      var winnerIsSubject = (g.winner === 'p1') === subjIsP1;
+      // "LOST SERVE" is the server losing his own game — the export's own badge.
+      var aLost = serverIsSubject && !winnerIsSubject;
+      var bLost = !serverIsSubject && winnerIsSubject;
+      var serveIcon = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#4b5672" ' +
+        'stroke-width="1.8"><circle cx="12" cy="12" r="9"></circle>' +
+        '<path d="M4 8a15 15 0 0116 0M4 16a15 15 0 0016 0"></path></svg>';
+      var badge = '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:700;' +
+        'letter-spacing:0.08em;color:#e0616f;background:rgba(224,97,111,0.1);' +
+        'border:1px solid rgba(224,97,111,0.34);border-radius:5px;padding:3px 8px;' +
+        'white-space:nowrap;">LOST SERVE</span>';
+      var pts = (g.points || []).map(function (pt, i, all) {
+        // The running score is written from p1's side; flip it for the reader
+        // whose page this is, so the left-hand number is always his.
+        var sp = String(pt.s || '').split('-');
+        var txt = subjIsP1 ? String(pt.s || '')
+          : (String(sp[1] || '').trim() + ' - ' + String(sp[0] || '').trim());
+        return '<span style="display:inline-flex;align-items:center;gap:5px;' +
+          'font-family:\'IBM Plex Mono\',monospace;font-size:12px;color:#5b6880;">' + esc(txt) +
+          (pt.bp ? '<span style="font-size:8.5px;font-weight:700;color:#e8a84e;' +
+            'background:rgba(224,162,74,0.14);border:1px solid rgba(224,162,74,0.4);' +
+            'border-radius:4px;padding:1px 5px;">BP</span>' : '') +
+          (pt.sp ? '<span style="font-size:8.5px;font-weight:700;color:#5b9bff;' +
+            'background:rgba(91,155,255,0.14);border:1px solid rgba(91,155,255,0.35);' +
+            'border-radius:4px;padding:1px 5px;">SP</span>' : '') +
+          (pt.mp ? '<span style="font-size:8.5px;font-weight:700;color:#3dd68c;' +
+            'background:rgba(61,214,140,0.14);border:1px solid rgba(61,214,140,0.4);' +
+            'border-radius:4px;padding:1px 5px;">MP</span>' : '') +
+          (i < all.length - 1 ? '<span style="color:#4a5261;">,</span>' : '') +
+          '</span>';
+      }).join('');
+      return '<div style="padding:16px 4px;border-bottom:1px solid rgba(255,255,255,0.07);">' +
+        '<div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px;' +
+          'margin-bottom:10px;">' +
+          '<div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;">' +
+            (aLost ? badge : '') + (serverIsSubject ? serveIcon : '') + '</div>' +
+          '<div style="display:flex;align-items:center;justify-content:center;gap:9px;">' +
+            '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:18px;font-weight:700;' +
+              'color:' + (winnerIsSubject ? '#e7e9ee' : '#5b6880') + ';">' + esc(gA) + '</span>' +
+            '<span style="color:#5b6880;font-size:15px;">' + MIDDOT + '</span>' +
+            '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:18px;font-weight:700;' +
+              'color:' + (winnerIsSubject ? '#5b6880' : '#e7e9ee') + ';">' + esc(gB) + '</span>' +
+          '</div>' +
+          '<div style="display:flex;align-items:center;justify-content:flex-start;gap:8px;">' +
+            (!serverIsSubject ? serveIcon : '') + (bLost ? badge : '') + '</div>' +
+        '</div>' +
+        '<div style="display:flex;flex-wrap:wrap;gap:5px;justify-content:center;align-items:center;">' +
+          pts + '</div></div>';
+    }).join('');
+
+    var nGames = (st.games || []).length;
+    return mpSeg(segs, 'mp-point-set', sel) +
+      '<div style="background:#0a0d14;border:1px solid rgba(255,255,255,0.09);border-radius:9px;' +
+        'text-align:center;font-size:11px;font-family:\'IBM Plex Mono\',monospace;letter-spacing:0.16em;' +
+        'color:#e7e9ee;padding:11px;margin:10px 0 4px;">SET ' + esc(String(sel)) + ' ' + MIDDOT + ' ' +
+        nGames + ' GAMES</div>' +
+      '<div style="display:flex;flex-direction:column;">' + games + '</div>' +
+      '<div style="font-size:11px;color:#4b5361;line-height:1.55;margin-top:12px;">' +
+        'The running score reads from ' + esc(shortName(p)) + '&#39;s side. BP, SP and MP are the ' +
+        'feed&#39;s own break-, set- and match-point flags — they are not inferred from the score.' +
+      '</div>';
+  }
+
+  /**
+   * The panel itself — the export's `statPanel`, minus the page chrome, so the
+   * inline and full-screen variants render the same object.
+   */
+  function renderMatchPanel(p, ctx, id) {
+    var x = sheetRowFor(p, ctx, id);
+    if (!x) return '';
+    var m = x.m;
+    var ek = m.eventKey;
+    var avail = mpAvailable(m);
+    var tabs = MP_TABS.filter(function (t) { return avail[t.id]; });
+    var tab = tabs.filter(function (t) { return t.id === state.mpTab; })[0] || tabs[0];
+
+    var shard = pbpShardFor(ek);
+    var ssShard = setStatsShardFor(ek);
+    var pending = (avail.points && shard === undefined) || (avail.stats && ssShard === undefined);
+    var or = mpOrient(shard, p.key) || mpOrient(ssShard, p.key);
+    var first = or ? or.first : true;
+
+    var body;
+    if (tab.id === 'summary') body = mpSummary(p, x, shard || null, first);
+    else if (tab.id === 'stats') body = mpStats(p, x, ssShard || null);
+    else body = mpPoints(p, x, shard || null, first);
+
+    // A point log whose two sides name neither the subject nor his opponent is a
+    // join error. Painting it would hand the reader the wrong man's points, so
+    // the tab says so instead — the same refusal renderSheet makes.
+    if (tab.id !== 'summary' && shard && !mpOrient(shard, p.key) && !mpOrient(ssShard, p.key)) {
+      body = '<div style="border:1px dashed rgba(255,255,255,0.12);border-radius:10px;padding:24px;' +
+        'text-align:center;font-size:12.5px;color:#5b6880;">This match&#39;s log names neither ' +
+        'player by key, so it cannot be oriented and is not shown.</div>';
+    }
+
+    return '<div style="margin:4px 0 10px;padding:16px 16px 8px;background:#080b12;' +
+      'border:1px solid rgba(255,255,255,0.09);border-radius:12px;">' +
+      (tabs.length > 1
+        ? '<div style="margin-bottom:14px;">' + mpSeg(tabs, 'mp-tab', tab.id) + '</div>'
+        : '') +
+      body +
+      (pending
+        ? '<div style="font-size:11px;color:#4b5361;text-align:center;padding:8px 0;">' +
+          'Loading this match&#39;s log…</div>'
+        : '') +
+      (tabs.length < MP_TABS.length
+        ? '<div style="font-size:11px;color:#4b5361;line-height:1.55;margin-top:6px;">' +
+          MP_TABS.filter(function (t) { return !avail[t.id]; })
+            .map(function (t) { return t.label; }).join(' and ') +
+          (tabs.length === MP_TABS.length - 1 ? ' is' : ' are') +
+          ' not shown: no feed on file carries ' +
+          (tabs.length === MP_TABS.length - 1 ? 'that' : 'those') + ' for this match.</div>'
+        : '') +
+      '</div>';
+  }
+
+  /**
+   * §8.2 full-screen variant. `position:fixed; inset:0; z 80; #06070a; scroll`,
+   * inner `max-width 1000px; padding 26px 34px 70px`, a `‹ Back to profile` link,
+   * title `A v B` 26px/800 with the `v` in #3f4860, meta mono 12 #5b6880 — the
+   * export's own values, read off Player Profile.dc.html:326-334.
+   */
+  function renderMatchPage(p, ctx) {
+    if (!state.matchPage) return '';
+    var x = sheetRowFor(p, ctx, state.matchPage);
+    if (!x) return '';
+    var m = x.m;
+    var meta = [fmtDotDate(m.date), eventName(m),
+      (x.fromShard ? shortRound(m.round) : roundLabel(m)),
+      (m.surface ? String(m.surface) : null),
+      (m.won ? 'Won' : 'Lost')]
+      .filter(function (t) { return t && t !== DASH; }).join(' ' + MIDDOT + ' ');
+    return '<div data-pp2="match-page-scrim" style="position:fixed;inset:0;z-index:80;' +
+      'background:#06070a;overflow-y:auto;">' +
+      '<div style="max-width:1000px;margin:0 auto;padding:26px 34px 70px;display:flex;' +
+        'flex-direction:column;gap:18px;">' +
+        '<button type="button" data-pp2="match-page-close" style="display:inline-flex;' +
+          'align-items:center;gap:9px;font-size:13.5px;font-weight:600;color:#5b6880;' +
+          'align-self:flex-start;cursor:pointer;background:none;border:0;padding:0;' +
+          'font-family:inherit;">' +
+          '<svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true">' +
+          '<path d="M12 5l-5 5 5 5" stroke="currentColor" stroke-width="1.7" ' +
+          'stroke-linecap="round" stroke-linejoin="round"></path></svg>Back to profile</button>' +
+        '<div style="display:flex;flex-direction:column;gap:5px;' +
+          'border-bottom:1px solid rgba(255,255,255,0.08);padding-bottom:18px;">' +
+          '<span style="font-size:26px;font-weight:800;letter-spacing:-0.02em;">' +
+            esc(shortName(p)) + ' <span style="color:#3f4860;">v</span> ' +
+            esc(m.opponent ? surnameFirst(m.opponent) : DASH) + '</span>' +
+          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;color:#5b6880;">' +
+            esc(meta) + '</span>' +
+        '</div>' +
+        renderMatchPanel(p, ctx, state.matchPage) +
+      '</div></div>';
   }
 
   function renderModal(p, ctx) {
@@ -9241,7 +9886,37 @@
   // The Live trading modal body: the heatmap launcher, then the Situational
   // table. The grid itself is a click away in the layer above.
   function renderProfileModal(p) {
-    return hbLauncherHtml(p) + renderSituational(p);
+    return hbLauncherHtml(p) + renderSituational(p) + setDownNote(p);
+  }
+
+  /**
+   * The window and the population behind box 8's support line.
+   *
+   * Founder ruling item 6 moved the tour GAP onto the tile, which displaced the
+   * sample count that used to state the window. It lands here rather than being
+   * dropped: a rate over 30 of 775 matches that never says so is the thin-sample
+   * failure the standing rules exist to prevent.
+   *
+   * The second sentence is founder ruling TOUR AVERAGE, applied to the one place
+   * on this page where "tour" appears with no room for its own caveat.
+   */
+  function setDownNote(p) {
+    var sd = fromASetDown(p);
+    if (!sd || !sd.scanned) return '';
+    var tour = tourFromASetDown();
+    return '<div style="font-size:11.5px;color:#4b5672;line-height:1.6;margin-top:14px;">' +
+      'The box&#39;s &ldquo;from a set down&rdquo; record rests on the ' + sd.n + ' of ' +
+      sd.scanned + ' matches on record that carry ordered set scores, not the career figure ' +
+      'shown in Career record &mdash; the career spine stores a set COUNT, which cannot tell ' +
+      'losing the first set from losing the third.' +
+      (tour.pct == null
+        ? ' No tour comparison is drawn: fewer than ten players in the store carry enough ' +
+          'set scores to strike one.'
+        : ' The tour figure it is measured against (' + tour.pct.toFixed(1) + '%) is the average ' +
+          'of the ' + tour.players + ' players we hold set scores for, over ' + tour.n + ' such ' +
+          'matches &mdash; not the ATP field. That count is read at render time and grows as the ' +
+          'store does.') +
+      '</div>';
   }
 
   // The grid, in a layer ABOVE the modal — same z-index and close semantics as
@@ -9309,10 +9984,16 @@
     // filter) and `speedSurf`: those key on api-tennis surface names, this keys
     // on the shard's own node names, and conflating them would silently read the
     // wrong node.
-    hbSurf: 'all'
+    hbSurf: 'all',
+    // §8.2 match panel / full-screen match page. `matchPage` holds the same
+    // sheet id the match sheet uses, so one row id addresses both surfaces.
+    // The three sub-controls are separate state for the same reason the
+    // Career modal's two axes are: switching tab must not reset the set
+    // filter, and switching set must not throw you back to Summary.
+    matchPage: null, mpTab: 'summary', mpSet: 'match', mpPointSet: null
   };
 
-  function build(p) {
+  function buildCtx(p) {
     var rows = ledgerMatches(p);
     // One filtered set, shared by the ribbon strip/rate/chips and the ledger.
     // README §3 requires them to agree, and the only way to guarantee that is
@@ -9331,7 +10012,11 @@
       nextMatch: null
     };
     ctx.boxVals = buildBoxVals(p, ctx);
+    return ctx;
+  }
 
+  function build(p) {
+    var ctx = buildCtx(p);
     return '' +
       PP2_STYLE +
       '<div class="pp2-main" style="display:flex;flex-direction:column;gap:22px;max-width:1440px;">' +
@@ -9344,7 +10029,8 @@
       '</div>' +
       renderModal(p, ctx) +
       renderHeatSheet(p) +
-      renderSheet(p, ctx);
+      renderSheet(p, ctx) +
+      renderMatchPage(p, ctx);
   }
 
   function applyFilters(rows) {
@@ -9523,6 +10209,23 @@
       if (typeof window.onPp2SheetOpen === 'function') window.onPp2SheetOpen(state.key, v);
     }
     else if (kind === 'sheet-close' || kind === 'sheet-scrim') state.sheet = null;
+    // §8.2 the full-screen match page. It opens FROM the sheet and replaces it:
+    // two stacked full-viewport layers over one match would leave the reader
+    // closing the same match twice. Opening resets the panel's two sub-controls,
+    // because a set filter carried over from the previous match would point at a
+    // set this one may not have.
+    else if (kind === 'match-page') {
+      state.matchPage = v || state.sheet;
+      state.sheet = null;
+      state.mpTab = 'summary'; state.mpSet = 'match'; state.mpPointSet = null;
+      if (typeof window.onPp2MatchPageOpen === 'function') {
+        window.onPp2MatchPageOpen(state.key, state.matchPage);
+      }
+    }
+    else if (kind === 'match-page-close') state.matchPage = null;
+    else if (kind === 'mp-tab') state.mpTab = v;
+    else if (kind === 'mp-set') state.mpSet = v;
+    else if (kind === 'mp-point-set') state.mpPointSet = v;
     else return;   // unknown hook: do nothing rather than repaint blindly
     repaint();
     if (pendingStyleScroll) { scrollToStyleRow(pendingStyleScroll); pendingStyleScroll = null; }
@@ -9555,6 +10258,7 @@
   function onKey(e) {
     if (e.key !== 'Escape') return;
     // The sheet sits above the modal, so Escape closes the topmost layer only.
+    if (state.matchPage) { state.matchPage = null; repaint(); return; }
     if (state.sheet) { state.sheet = null; repaint(); return; }
     if (state.heat) { state.heat = false; repaint(); return; }
     if (state.modal) { state.modal = null; repaint(); }
@@ -9651,8 +10355,23 @@
       renderBackLink: renderBackLink,
       // §8.1 match sheet
       renderSheet: renderSheet,
+      build: buildCtx,
+      buildHtml: build,
+      boxValues: buildBoxVals,
       sheetRowFor: sheetRowFor,
       SHEET_SECTIONS: SHEET_SECTIONS,
+      renderMatchPanel: renderMatchPanel,
+      renderMatchPage: renderMatchPage,
+      mpAvailable: mpAvailable,
+      mpHasPanel: mpHasPanel,
+      mpSetGames: mpSetGames,
+      sheetFrac: sheetFrac,
+      MP_TABS: MP_TABS,
+      eventKeyForSheetId: eventKeyForSheetId,
+      tourFromASetDown: tourFromASetDown,
+      fromASetDown: fromASetDown,
+      setDownNote: setDownNote,
+      resetTourSetDownMemo: function () { _tourSetDown = null; },
       statsFor: statsFor,
       spwPct: spwPct,
       rpwPct: rpwPct,

@@ -18614,6 +18614,14 @@ function pp2Bridge(){
   // is distinct from an empty map: the modal footnote tells the two apart so a
   // slow fetch never reads as "this player has no rated venues".
   if (!('courtSpeedMap' in window)) window.courtSpeedMap = null;
+  // §8.2 match panel. Indexes are null until fetched (no tab is offered); the
+  // shard maps are objects whose KEY PRESENCE is the "answered" signal, so an
+  // absent key reads as "loading" and a null value as "nothing on file".
+  if (!('pbpIndex' in window)) window.pbpIndex = null;
+  if (!('setStatsIndex' in window)) window.setStatsIndex = null;
+  if (!('matchStatsIndex' in window)) window.matchStatsIndex = null;
+  window.pbpShards = window.pbpShards || {};
+  window.setStatsShards = window.setStatsShards || {};
 }
 // ── item 11 · bet365 capture months ────────────────────────────────────────
 // The odds archive stops at 2026-07-26, which is why every post-cutoff ledger row
@@ -18672,7 +18680,69 @@ function loadPp2MatchStats(key){
   });
   return _pp2StatsPromise;
 }
-window.onPp2SheetOpen = function(key){ loadPp2MatchStats(key); };
+window.onPp2SheetOpen = function(key){ loadPp2MatchStats(key); pp2PrefetchFeedIndexes(key); };
+// ── §8.2 · the match panel's two feeds ──────────────────────────────────────
+// Both loaders, both indexes and the shard shapes ALREADY EXIST for the Live
+// tab's match rows (loadPbpShard / loadSetStatsShard / loadPbpIndex /
+// loadSetStatsIndex / loadMatchStatsIndex, above). This publishes their answers
+// onto the bridge V2 reads and opens no second copy of any of them.
+//
+// A key is settled to `null` even when the index says the shard does not exist,
+// because the module distinguishes ABSENT (not fetched: "loading…") from NULL
+// (answered, nothing on file: say so). Leaving it absent would leave the panel
+// saying "loading" forever on a match that has no log.
+const _pp2MatchFeeds = {};
+async function loadPp2MatchFeeds(playerKey, eventKey){
+  const ek = String(eventKey == null ? '' : eventKey);
+  if (!ek) return;
+  window.pbpShards = window.pbpShards || {};
+  window.setStatsShards = window.setStatsShards || {};
+  if (ek in _pp2MatchFeeds) return;
+  _pp2MatchFeeds[ek] = true;
+  try {
+    const [pi, si, mi] = await Promise.all([loadPbpIndex(), loadSetStatsIndex(), loadMatchStatsIndex()]);
+    window.pbpIndex = pi; window.setStatsIndex = si; window.matchStatsIndex = mi;
+    pp2RepaintIfOpen(playerKey);      // the indexes alone decide which tabs paint
+    await Promise.all([
+      pi.has(ek) ? loadPbpShard(ek).then(d => { window.pbpShards[ek] = d || null; })
+                 : Promise.resolve(window.pbpShards[ek] = null),
+      (si.has(ek) || mi.has(ek))
+        ? loadSetStatsShard(ek).then(d => { window.setStatsShards[ek] = d || null; })
+        : Promise.resolve(window.setStatsShards[ek] = null),
+    ]);
+  } catch (e) {
+    // Additive: an unreachable shard settles to null and the panel says the feed
+    // holds nothing for this match, rather than throwing the page away.
+    if (!(ek in window.pbpShards)) window.pbpShards[ek] = null;
+    if (!(ek in window.setStatsShards)) window.setStatsShards[ek] = null;
+  }
+  pp2RepaintIfOpen(playerKey);
+}
+// The module hands back the SHEET ID, not the event key — one id addresses both
+// surfaces — so the key is resolved through the module's own row lookup rather
+// than re-implementing the join here and risking the two disagreeing.
+window.onPp2MatchPageOpen = function(key, sheetId){
+  try {
+    const I = window.PlayerProfileV2 && window.PlayerProfileV2._internals;
+    const ek = I && typeof I.eventKeyForSheetId === 'function' ? I.eventKeyForSheetId(sheetId) : null;
+    if (ek != null) loadPp2MatchFeeds(key, ek);
+  } catch (e) { /* additive */ }
+};
+// The sheet is where the "Full match" control is painted, and the control is
+// only painted when a feed exists — so the indexes have to be in hand by then.
+// Prefetching them on sheet-open (not on page-open) is what makes the affordance
+// appear on the first sheet rather than the second.
+const _pp2FeedIndexOnce = { done: false };
+function pp2PrefetchFeedIndexes(key){
+  if (_pp2FeedIndexOnce.done) return;
+  _pp2FeedIndexOnce.done = true;
+  Promise.all([loadPbpIndex(), loadSetStatsIndex(), loadMatchStatsIndex()])
+    .then(([pi, si, mi]) => {
+      window.pbpIndex = pi; window.setStatsIndex = si; window.matchStatsIndex = mi;
+      pp2RepaintIfOpen(key);
+    })
+    .catch(() => { /* the control simply is not offered */ });
+}
 function pp2RepaintIfOpen(key){
   const view = document.getElementById('playerProfileView');
   if (view && view.style.display !== 'none' && window.PlayerProfileV2
