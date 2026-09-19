@@ -29,3 +29,11 @@ export's hard-coded literals rather than from a stated formula — currently the
 §5.8 Derived-lines **Avg margin** column. Read it before treating any of those
 numbers as specified: they are readings of the literals, and a founder ruling
 supersedes them outright.
+
+## Founder rulings the export does not state
+
+`RULED-DECISIONS.md` in this folder carries every behaviour the founder has ruled
+on that the export is silent about, or where we deliberately deviate from it —
+currently the §5.3 tournament list order, and the §5.9 ace/double-fault unit and
+tour-average population. **A ruling there outranks the export.** Read it before
+"correcting" anything it names.

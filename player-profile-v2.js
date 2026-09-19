@@ -4250,7 +4250,48 @@
         pricedClaimed: b ? b.pinN : 0,
         isSlam: isSlamTourn(t.name, level)
       };
-    }).sort(function (a, b) { return b.n - a.n; });
+    }).sort(tournOrder);
+  }
+
+  // ── FOUNDER RULING 2026-09-19 · the tournament list order is PINNED ─────────
+  //
+  // "162 positions moving with a 22-place jump is a member opening a page they
+  //  know and finding it rearranged … Pin it to a stable, stated key and write
+  //  the key into the spec."
+  //
+  // THE PINNED KEY:  matches played DESC -> last played DESC -> display name ASC
+  //
+  // What was actually wrong. The sort here was `b.n - a.n` alone. Array.sort is
+  // stable, so every tie fell through to the order the DATA BUILDER emitted, and
+  // career-backfill.js emits on `won + lost` tie-broken by merge sequence.
+  // Measured on the deployed store: 11,664 of 13,012 rows (89.6%) sit in a tie
+  // on match count, longest tie run 36. So ~90% of this list was ordered by
+  // upstream merge order, which nobody chose and which any unrelated builder
+  // change can reshuffle. The two trailing terms remove that: the display name
+  // is unique per row, so the order is now TOTAL and the store's emission order
+  // cannot reach the page at all.
+  //
+  // WHY THE COUNT IS STILL PRIMARY, STATED RATHER THAN HIDDEN.
+  // This does NOT make the order immune to a record correction: a row that loses
+  // a match still crosses its count band. Measured by replaying the WD fix under
+  // each candidate key (rows that change position, deployed store):
+  //
+  //     matches desc + insertion (what shipped)      176 rows, max shift  7
+  //     matches desc, lastYear, name  (THIS KEY)     426 rows, max shift 28
+  //     lastYear desc, matches desc, name            141 rows, max shift  7
+  //     lastYear desc, name asc                        0 rows   <- immune
+  //     name asc                                       0 rows   <- immune
+  //
+  // Only a key that never reads the record is immune, and both of those collapse
+  // to near-alphabetical: on today's data Sinner's list would open "Doha 2-1"
+  // above "Wimbledon 27-4", and Zverev's would open on Acapulco. That is a worse
+  // page every day in exchange for avoiding a reshuffle that only happens on a
+  // data correction. So the count stays primary and the cost is written down.
+  function tournOrder(a, b) {
+    if (b.n !== a.n) return b.n - a.n;                         // biggest events first
+    var ay = Number(a.lastYear) || 0, by = Number(b.lastYear) || 0;
+    if (by !== ay) return by - ay;                             // then most recently played
+    return String(a.display).localeCompare(String(b.display)); // then name -> total order
   }
 
   // Over 3.5 sets (item 15): best-of-5 COMPLETED main-draw matches only.
@@ -9099,6 +9140,9 @@
     // exported so the reconciliation check and the tests can call the same
     // code path the page uses, rather than a copy that can drift
     _internals: {
+      // §5.3 tournament list order (pinned — see tournOrder)
+      tournViews: tournViews,
+      tournOrder: tournOrder,
       // §5.8 Derived lines
       lineCoverage: lineCoverage,
       renderLinesTab: renderLinesTab,
