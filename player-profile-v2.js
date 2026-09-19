@@ -41,6 +41,8 @@
   var MIDDOT = '·';  // separators
   var DASH = '—';    // the "not held" em dash
   var EMDASH = '—';  // the same glyph used as PUNCTUATION, not as a missing value
+  var RANGLE = '›';  // U+203A, the "open this" affordance in the design
+  var TIMES = '×';   // U+00D7 close glyph, never a lowercase x
   var DASH_COLOUR = '#4b5672';
 
   // §5.2A row set and ORDER, from `Player Stat Boxes.dc.html`:1650 — Hard,
@@ -8776,7 +8778,10 @@
       '</div>' + head + rows + '</div>';
   }
 
-  function renderProfileModal(p) {
+  // The heatmap BODY. This used to be the whole Live trading modal; build item 2
+  // moves it behind a launcher card so the modal can carry the Situational table
+  // and the grid opens in a layer above it. Nothing inside this function changed.
+  function hbBodyHtml(p) {
     var E = hbEngine();
     var HB = hbStore();
     // The store is not wired / has not loaded. Say so — an empty grid would read
@@ -8856,11 +8861,121 @@
       '<div style="font-size:11px;color:#4b5361;line-height:1.55;margin-top:13px;">' + note + '</div>';
   }
 
+  // ───────────────────────────────────────────────────────────────────────────
+  // BUILD ITEM 2 · heatmap launcher + overlay
+  //
+  // The design shows a launcher card above the Situational table carrying a
+  // headline hold figure and an "Open ›" affordance, with the grid itself in a
+  // layer above the modal.
+  //
+  // REPORTED DEVIATION — the headline figure. The design card reads
+  // "Hold 71.5%". That number is in no store we hold: C. Alcaraz's weighted hold
+  // is 87.8% (all surfaces, 125 matches / 1,568 service games), the roster-wide
+  // weighted hold is 79.6%, and his break is 31.3%. 71.5% matches neither, on any
+  // of the four surfaces, so it is placeholder copy in the mock rather than a
+  // figure to reproduce. The standing rule is "never fabricate or approximate",
+  // so the card prints what the engine returns and the deviation is noted here
+  // and in RULED-DECISIONS.md.
+  //
+  // The figure is `heatFor().globalLabel` verbatim — the engine's own weighted
+  // sum over every bucket and set, the same string the grid's pill shows. This
+  // renderer computes nothing, so the card and the grid behind it cannot
+  // disagree.
+  function hbLauncherHtml(p) {
+    var E = hbEngine();
+    var HB = hbStore();
+    if (!E || !HB) {
+      return '<div style="border:1px dashed rgba(255,255,255,0.12);border-radius:12px;padding:18px;' +
+        'font-size:12.5px;color:' + DASH_COLOUR + ';">Hold/break data is not loaded.</div>';
+    }
+
+    var cov = hbCoverage(p);
+    var sn = shortName(p);
+
+    // No per-game data at all. No button: an "Open ›" that opens an empty grid
+    // is a worse answer than the sentence saying why there is nothing to open.
+    if (!cov) {
+      var rosterN = (HB.meta && HB.meta.players) || null;
+      var winN = (HB.meta && HB.meta.windowMonths) || null;
+      return '<div style="border:1px dashed rgba(255,255,255,0.12);border-radius:12px;padding:18px;' +
+        'font-size:12.5px;color:' + DASH_COLOUR + ';line-height:1.6;">' +
+        esc(sn) + ' has no point-by-point data on record, so holds and breaks by game cannot be shown.' +
+        (rosterN && winN
+          ? '<br>The rollup covers ' + rosterN + ' players over the last ' + winN + ' months.'
+          : '') +
+        '</div>';
+    }
+
+    var surf = state.hbSurf || 'all';
+    var hold = E.heatFor(HB, p.key, 'HOLD', HB_BEST_OF, surf);
+    var brk = E.heatFor(HB, p.key, 'BREAK', HB_BEST_OF, surf);
+
+    function pill(label) {
+      return '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:12.5px;font-weight:700;' +
+        'padding:5px 11px;border-radius:8px;background:rgba(255,255,255,0.05);color:#e7e9ee;">' +
+        esc(label) + '</span>';
+    }
+
+    return '' +
+      '<div data-pp2="heat-card" style="border:1px solid rgba(255,255,255,0.08);border-radius:12px;' +
+        'background:#070a10;padding:15px 16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;">' +
+        '<div style="width:32px;height:32px;border-radius:9px;flex:none;display:flex;align-items:center;' +
+          'justify-content:center;background:rgba(91,155,255,0.14);color:#5b9bff;">' +
+          '<svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" ' +
+          'stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">' +
+          '<path d="M4 15V9M8 15V5M12 15v-4M16 15V7"/></svg></div>' +
+        '<div style="flex:1;min-width:190px;">' +
+          '<div style="font-size:13.5px;font-weight:800;color:#e7e9ee;">Hold/break heatmap</div>' +
+          '<div style="font-size:11.5px;color:#5b6880;margin-top:2px;">' +
+            'By service game and set ' + MIDDOT + ' ' + cov.matches + ' matches ' + MIDDOT + ' ' +
+            cov.svcGames + ' service games</div>' +
+        '</div>' +
+        '<div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap;">' +
+          pill(hold.globalLabel) + pill(brk.globalLabel) +
+          '<button type="button" data-pp2="heat" style="padding:7px 14px;border-radius:9px;' +
+            'font-size:12px;font-weight:700;cursor:pointer;color:#5b9bff;' +
+            'background:rgba(91,155,255,0.12);border:1px solid rgba(91,155,255,0.34);">Open ' +
+            RANGLE + '</button>' +
+        '</div>' +
+      '</div>';
+  }
+
+  // The Live trading modal body. Item 3 adds the Situational table underneath
+  // this card; until it lands the card is the whole body and the grid is one
+  // click away, which is the layering the design asks for.
+  function renderProfileModal(p) {
+    return hbLauncherHtml(p);
+  }
+
+  // The grid, in a layer ABOVE the modal — same z-index and close semantics as
+  // the §8.1 match sheet, so Escape and a scrim click peel one layer at a time
+  // rather than dropping the reader back to the player list.
+  function renderHeatSheet(p) {
+    if (!state.heat) return '';
+    return '' +
+      '<div class="pp2-sheet" data-pp2="heat-scrim" style="position:fixed;inset:0;z-index:80;' +
+        'background:rgba(3,5,9,0.72);display:flex;align-items:flex-start;justify-content:center;' +
+        'padding:40px 24px;overflow-y:auto;">' +
+        '<div style="position:relative;width:100%;max-width:900px;background:#0a0d14;' +
+          'border:1px solid rgba(91,155,255,0.3);border-radius:14px;padding:22px 24px 26px;' +
+          'box-shadow:0 30px 80px rgba(0,0,0,0.6);">' +
+          '<div style="display:flex;align-items:flex-start;gap:12px;margin-bottom:16px;">' +
+            '<div style="flex:1;font-size:16px;font-weight:800;color:#e7e9ee;">' +
+              'Hold/break heatmap ' + MIDDOT + ' ' + esc(shortName(p)) + '</div>' +
+            '<button type="button" data-pp2="heat-close" aria-label="Close" style="width:30px;height:30px;' +
+              'border-radius:9px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.09);' +
+              'color:#8b96b5;cursor:pointer;font-size:15px;line-height:1;flex:none;">' + TIMES + '</button>' +
+          '</div>' +
+          hbBodyHtml(p) +
+        '</div>' +
+      '</div>';
+  }
+
   // ═══════════════════════════════════════════════════════════════════════════
   // MOUNT
   // ═══════════════════════════════════════════════════════════════════════════
   var state = {
-    key: null, ledgerOpen: false, ledgerExpanded: false,
+    key: null, ledgerOpen: false, ledgerExpanded: false, heat: false,
     surfaces: [], priceFilters: [], modal: null,
     // §5.2 Career record. `careerTab` is the file's Record|Ratings row;
     // `careerScope` is the head control, now Career|Last 52 ('career'|'l52') —
@@ -8931,6 +9046,7 @@
         renderInsights(p) +
       '</div>' +
       renderModal(p, ctx) +
+      renderHeatSheet(p) +
       renderSheet(p, ctx);
   }
 
@@ -8969,6 +9085,7 @@
     state.speedSurf = 'all'; state.speedBand = null;
     state.styleRow = null;
     state.hbSurf = 'all';
+    state.heat = false;
     state.sheet = null;
   }
 
@@ -9012,7 +9129,8 @@
     // that bubbled up out of the card must not close the modal (README §5.1).
     if (kind === 'scrim' && e.target !== el) return;
     if (kind === 'sheet-scrim' && e.target !== el) return;
-    if (kind === 'card' || kind === 'hb-cell') return;   // inert: container / tooltip only
+    if (kind === 'heat-scrim' && e.target !== el) return;
+    if (kind === 'card' || kind === 'hb-cell' || kind === 'heat-card') return;   // inert: container / tooltip only
 
     if (kind === 'back') {
       e.preventDefault();
@@ -9090,6 +9208,10 @@
       pendingStyleScroll = state.styleRow;
     }
     else if (kind === 'hb-surf') state.hbSurf = v;
+    // Build item 2. The surface chips live inside the layer, so 'hb-surf'
+    // repaints with state.heat still true and the grid stays open.
+    else if (kind === 'heat') state.heat = true;
+    else if (kind === 'heat-close' || kind === 'heat-scrim') state.heat = false;
     // §8.1 match sheet. The host is told which match opened so it can pull the
     // stats shard; the sheet paints its own "no stats on record" state until it
     // lands rather than blocking the open.
@@ -9131,6 +9253,7 @@
     if (e.key !== 'Escape') return;
     // The sheet sits above the modal, so Escape closes the topmost layer only.
     if (state.sheet) { state.sheet = null; repaint(); return; }
+    if (state.heat) { state.heat = false; repaint(); return; }
     if (state.modal) { state.modal = null; repaint(); }
   }
 
@@ -9393,6 +9516,9 @@
       shortRound: shortRound,
       // §5.9 Playing profile — hold/break heatmap (founder ruling 7)
       renderProfileModal: renderProfileModal,
+      hbLauncherHtml: hbLauncherHtml,
+      hbBodyHtml: hbBodyHtml,
+      renderHeatSheet: renderHeatSheet,
       hbCoverage: hbCoverage,
       hbEngine: hbEngine,
       hbStore: hbStore,
