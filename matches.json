@@ -5197,7 +5197,27 @@
       "at": "2026-09-19T16:17:24.672Z",
       "observedAt": "2026-09-19T16:18:10Z",
       "src": "live"
-    }
+    },
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "6-2, 6-4",
+      "sets": [
+        {
+          "p1": 6,
+          "p2": 2
+        },
+        {
+          "p1": 6,
+          "p2": 4
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 0,
+      "winner": "p1"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "upcoming-12163928",
@@ -15459,7 +15479,31 @@
       "edgeVsPinnacleP1": -0.06,
       "edgeVsPinnacleP2": 0.06,
       "ts": "2026-09-19T09:53:35.223Z"
-    }
+    },
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "5-7, 6-4, 6-3",
+      "sets": [
+        {
+          "p1": 5,
+          "p2": 7
+        },
+        {
+          "p1": 6,
+          "p2": 4
+        },
+        {
+          "p1": 6,
+          "p2": 3
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 1,
+      "winner": "p1"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "upcoming-12163939",
@@ -17186,11 +17230,22 @@
     "venue": null,
     "courtSpeed": null,
     "weather": null,
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 2",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 6,
+        "p2": 3
+      },
+      {
+        "set": 2,
+        "p1": 0,
+        "p2": 1
+      }
+    ],
+    "liveGameScore": "0 - 30",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2959_j-lehecka.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/10520_l-tien.jpg",
     "oddsMovement": {
@@ -17285,7 +17340,10 @@
       "edgeVsPinnacleP1": -0.0443,
       "edgeVsPinnacleP2": 0.0443,
       "ts": "2026-09-19T09:53:35.223Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12163948",
@@ -47529,7 +47587,31 @@
       "edgeVsPinnacleP1": -0.0757,
       "edgeVsPinnacleP2": 0.0757,
       "ts": "2026-09-19T09:53:35.223Z"
-    }
+    },
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "7-5, 3-6, 3-6",
+      "sets": [
+        {
+          "p1": 7,
+          "p2": 5
+        },
+        {
+          "p1": 3,
+          "p2": 6
+        },
+        {
+          "p1": 3,
+          "p2": 6
+        }
+      ],
+      "p1Sets": 1,
+      "p2Sets": 2,
+      "winner": "p2"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "upcoming-12164125",
@@ -49236,10 +49318,16 @@
     "venue": null,
     "courtSpeed": null,
     "weather": null,
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 0,
+        "p2": 0
+      }
+    ],
+    "liveGameScore": "0 - 0",
     "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2071_c-garin.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/50323_r-jodar.jpg",
@@ -49357,7 +49445,10 @@
       "edgeVsPinnacleP1": -0.1179,
       "edgeVsPinnacleP2": 0.1179,
       "ts": "2026-09-19T09:53:35.223Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12164137",
@@ -52555,7 +52646,27 @@
       "at": "2026-09-19T17:17:53.892Z",
       "observedAt": "2026-09-19T17:18:28Z",
       "src": "live"
-    }
+    },
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "4-6, 5-7",
+      "sets": [
+        {
+          "p1": 4,
+          "p2": 6
+        },
+        {
+          "p1": 5,
+          "p2": 7
+        }
+      ],
+      "p1Sets": 0,
+      "p2Sets": 2,
+      "winner": "p2"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "upcoming-12164158",
@@ -54598,7 +54709,27 @@
       "edgeVsPinnacleP1": -0.0077,
       "edgeVsPinnacleP2": 0.0077,
       "ts": "2026-09-19T09:53:35.223Z"
-    }
+    },
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "6-4, 6-4",
+      "sets": [
+        {
+          "p1": 6,
+          "p2": 4
+        },
+        {
+          "p1": 6,
+          "p2": 4
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 0,
+      "winner": "p1"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "upcoming-12164177",
@@ -57407,7 +57538,27 @@
       "edgeVsPinnacleP1": 0.0037,
       "edgeVsPinnacleP2": -0.0037,
       "ts": "2026-09-19T09:53:35.223Z"
-    }
+    },
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "4-6, 3-6",
+      "sets": [
+        {
+          "p1": 4,
+          "p2": 6
+        },
+        {
+          "p1": 3,
+          "p2": 6
+        }
+      ],
+      "p1Sets": 0,
+      "p2Sets": 2,
+      "winner": "p2"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "upcoming-12164181",
@@ -59118,7 +59269,27 @@
       "at": "2026-09-19T12:05:40.377Z",
       "observedAt": "2026-09-19T13:53:03Z",
       "src": "live"
-    }
+    },
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "7-5, 6-0",
+      "sets": [
+        {
+          "p1": 7,
+          "p2": 5
+        },
+        {
+          "p1": 6,
+          "p2": 0
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 0,
+      "winner": "p1"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "upcoming-12164237",
@@ -61198,7 +61369,27 @@
       "edgeVsPinnacleP1": 0.0658,
       "edgeVsPinnacleP2": -0.0658,
       "ts": "2026-09-19T10:26:45.512Z"
-    }
+    },
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "6-0, 6-4",
+      "sets": [
+        {
+          "p1": 6,
+          "p2": 0
+        },
+        {
+          "p1": 6,
+          "p2": 4
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 0,
+      "winner": "p1"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "upcoming-12164238",
@@ -63183,7 +63374,27 @@
       "edgeVsPinnacleP1": 0.0627,
       "edgeVsPinnacleP2": -0.0627,
       "ts": "2026-09-19T10:26:45.512Z"
-    }
+    },
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "6-2, 6-4",
+      "sets": [
+        {
+          "p1": 6,
+          "p2": 2
+        },
+        {
+          "p1": 6,
+          "p2": 4
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 0,
+      "winner": "p1"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "upcoming-12164239",
@@ -64176,7 +64387,27 @@
       "at": "2026-09-19T17:09:11.193Z",
       "observedAt": "2026-09-19T18:18:10Z",
       "src": "live"
-    }
+    },
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "4-6, 1-6",
+      "sets": [
+        {
+          "p1": 4,
+          "p2": 6
+        },
+        {
+          "p1": 1,
+          "p2": 6
+        }
+      ],
+      "p1Sets": 0,
+      "p2Sets": 2,
+      "winner": "p2"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "upcoming-12164240",
@@ -65262,7 +65493,27 @@
       "at": "2026-09-19T17:17:05.044Z",
       "observedAt": "2026-09-19T17:18:28Z",
       "src": "live"
-    }
+    },
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "4-6, 2-6",
+      "sets": [
+        {
+          "p1": 4,
+          "p2": 6
+        },
+        {
+          "p1": 2,
+          "p2": 6
+        }
+      ],
+      "p1Sets": 0,
+      "p2Sets": 2,
+      "winner": "p2"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "upcoming-12164255",
@@ -66559,11 +66810,22 @@
     "venue": null,
     "courtSpeed": null,
     "weather": null,
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 2",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 2,
+        "p2": 6
+      },
+      {
+        "set": 2,
+        "p1": 1,
+        "p2": 1
+      }
+    ],
+    "liveGameScore": "15 - 0",
+    "liveServer": "p1",
     "p1PhotoUrl": null,
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/358_n-borges.jpg",
     "oddsMovement": {
@@ -66606,7 +66868,10 @@
       "at": "2026-09-19T18:17:20.438Z",
       "observedAt": "2026-09-19T18:18:10Z",
       "src": "live"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12164256",
@@ -83600,13 +83865,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 2.23,
+      "p2": 1.51,
+      "bookmaker": "Sbo"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 2.23,
+        "bookmaker": "Sbo"
+      },
+      "p2": {
+        "price": 1.51,
+        "bookmaker": "Sbo"
+      }
     },
     "tournamentRound": "",
     "p1Key": 11182,
@@ -87261,13 +87532,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 13.0,
+      "p2": 1.03,
+      "bookmaker": "Betfair"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 13.0,
+        "bookmaker": "Betfair"
+      },
+      "p2": {
+        "price": 1.03,
+        "bookmaker": "Betfair"
+      }
     },
     "tournamentRound": "",
     "p1Key": 50946,
@@ -93376,13 +93653,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 2.9,
+      "p2": 1.42,
+      "bookmaker": "Betano"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 2.9,
+        "bookmaker": "Betano"
+      },
+      "p2": {
+        "price": 1.42,
+        "bookmaker": "Betano"
+      }
     },
     "tournamentRound": null,
     "p1Key": 436,
@@ -95581,13 +95864,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 1.83,
+      "p2": 1.83,
+      "bookmaker": "Sbo"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 1.83,
+        "bookmaker": "Sbo"
+      },
+      "p2": {
+        "price": 1.83,
+        "bookmaker": "Sbo"
+      }
     },
     "tournamentRound": null,
     "p1Key": 397,
@@ -127135,7 +127424,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 3-6, 4-6",
+      "display": "7-6(2), 3-6, 4-6",
       "sets": [
         {
           "p1": 7,
@@ -159061,7 +159350,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-1, 7-6",
+      "display": "6-1, 7-6(1)",
       "sets": [
         {
           "p1": 6,
@@ -169896,7 +170185,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "3-6, 6-7",
+      "display": "3-6, 6-7(3)",
       "sets": [
         {
           "p1": 3,
@@ -174671,7 +174960,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "4-6, 7-6, 6-4",
+      "display": "4-6, 7-6(4), 6-4",
       "sets": [
         {
           "p1": 4,
@@ -182773,7 +183062,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 4-6, 7-5",
+      "display": "7-6(4), 4-6, 7-5",
       "sets": [
         {
           "p1": 7,
