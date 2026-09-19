@@ -60,8 +60,8 @@
       "openAt": "2026-09-18T17:43:16.894Z",
       "p1": "S. Kwon",
       "p2": "S. Nagal",
-      "postingLeadH": 10.61,
-      "startTime": "2026-09-19T04:20:00.000Z",
+      "postingLeadH": 10.45,
+      "startTime": "2026-09-19T04:10:00.000Z",
       "tour": "ATP ATP Davis Cup - World Group"
     },
     "id1200210074791628": {
@@ -74,8 +74,8 @@
       "openAt": "2026-09-18T17:48:54.188Z",
       "p1": "H. Chung",
       "p2": "D. Suresh",
-      "postingLeadH": 11.77,
-      "startTime": "2026-09-19T05:35:00.000Z",
+      "postingLeadH": 11.52,
+      "startTime": "2026-09-19T05:20:00.000Z",
       "tour": "ATP ATP Davis Cup - World Group"
     },
     "id1200210074792414": {
@@ -1232,6 +1232,55 @@
       "startTime": "2026-09-19T16:10:00.000Z",
       "tour": "ATP ATP Davis Cup - World Group I"
     },
+    "id1200210074832260": {
+      "alerted": true,
+      "alertedAt": "2026-09-19T02:00:00Z",
+      "captureLagH": null,
+      "date": "2026-09-19",
+      "hoursOutAtAlert": 12.0,
+      "openAt": null,
+      "p1": "D. Phillips",
+      "p2": "A. Magadan",
+      "postingLeadH": null,
+      "startTime": "2026-09-19T14:00:00.000Z",
+      "tour": "ATP ATP Davis Cup - World Group II"
+    },
+    "id1200210074832264": {
+      "alerted": false,
+      "captureLagH": 0.76,
+      "date": "2026-09-19",
+      "firstSeenAt": "2026-09-19T02:00:00Z",
+      "openAt": "2026-09-19T01:14:22.880Z",
+      "p1": "R. Mallory",
+      "p2": "A. Hernandez",
+      "postingLeadH": 13.93,
+      "startTime": "2026-09-19T15:10:00.000Z",
+      "tour": "ATP ATP Davis Cup - World Group II"
+    },
+    "id1200210074832482": {
+      "alerted": false,
+      "captureLagH": 0.76,
+      "date": "2026-09-19",
+      "firstSeenAt": "2026-09-19T02:00:00Z",
+      "openAt": "2026-09-19T01:14:23.296Z",
+      "p1": "D. Duran",
+      "p2": "N. Borges",
+      "postingLeadH": 16.76,
+      "startTime": "2026-09-19T18:00:00.000Z",
+      "tour": "ATP ATP Davis Cup - World Group II"
+    },
+    "id1200210074832484": {
+      "alerted": false,
+      "captureLagH": 0.76,
+      "date": "2026-09-19",
+      "firstSeenAt": "2026-09-19T02:00:00Z",
+      "openAt": "2026-09-19T01:14:23.697Z",
+      "p1": "C. Cruz",
+      "p2": "J. Faria",
+      "postingLeadH": 17.93,
+      "startTime": "2026-09-19T19:10:00.000Z",
+      "tour": "ATP ATP Davis Cup - World Group II"
+    },
     "id1200259173992438": {
       "alerted": false,
       "captureLagH": 4.38,
@@ -1272,5 +1321,5 @@
   },
   "schema": "odds-open-monitor/1",
   "thresholdHours": 24.0,
-  "updatedAt": "2026-09-19T01:45:01Z"
+  "updatedAt": "2026-09-19T02:00:00Z"
 }
