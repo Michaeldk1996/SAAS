@@ -6789,6 +6789,66 @@ function _ocsSanePx(side){
   const px = v => (typeof v === 'number' && v > 0) ? v : null;
   return { ...side, open: px(side.open), now: px(side.now), close: px(side.close) };
 }
+// ─────────────────────────── TEN-225 item C — THE SUSPENDED-MARKET GUARD ──
+// Founder 2026-09-19: "overround > 20%. Do NOT dash — fall through the ladder
+// to the next book, and dash only if no book has a real price. Log every
+// suppression. Apply it on every path that publishes a price, not just the
+// card-state one."
+//
+// WHAT IT CATCHES. A book that has pulled a market does not withdraw its
+// prices, it quotes something nobody can bet: bet365Now has been observed at
+// 1.01/1.01, a 98% overround. That is not a price, it is a closed door with a
+// number painted on it, and it renders as a screaming 50/50 on a fixture where
+// one player is 1/10 on.
+//
+// WHY 20% AND NOT TIGHTER. Measured median overround per book runs 3.4%
+// (Pinnacle) to 11.6% (Sbo), and the widest honest book we carry sits nowhere
+// near 20. The threshold is set to catch SUSPENSION, not to referee margin: a
+// tighter cut would start suppressing Sbo's ordinary pricing on the book that
+// covers the most cards, trading a rare wrong price for a common missing one.
+// It is a sentinel detector by design, and it is deliberately not a quality bar.
+//
+// WHY A PAIR TEST AND NOT A PRICE TEST. 1.01 alone is a legitimate price on a
+// fixture that is 100-to-1 on. It is 1.01 AGAINST 1.01 that is impossible. Any
+// single-price rule would either miss the sentinel or suppress real favourites.
+const MX_SUSPENDED_OVERROUND = 0.20;
+function mxOverround(p1, p2){
+  if (!(typeof p1 === 'number' && typeof p2 === 'number') || !(p1 > 0 && p2 > 0)) return null;
+  return (1 / p1) + (1 / p2) - 1;
+}
+// The suppression log the founder asked for. One entry per render would be
+// noise on a page that repaints on every filter change, so entries are keyed
+// and deduped: the RECORD is what matters, not one line per repaint.
+const MX_SUPPRESSED = new Map();
+function mxIsSuspendedPair(p1, p2, ctx){
+  const ov = mxOverround(p1, p2);
+  // null (a missing or non-positive price) is NOT suspension — it is absence,
+  // and the existing dash rules already own it. Returning true here would
+  // convert every unpriced fixture into a logged suppression.
+  if (ov === null || ov <= MX_SUSPENDED_OVERROUND) return false;
+  const c = ctx || {};
+  const key = [c.id || '?', c.book || '?', c.path || '?', p1, p2].join('|');
+  if (!MX_SUPPRESSED.has(key)){
+    const rec = { id: c.id || null, book: c.book || null, path: c.path || null,
+                  p1: p1, p2: p2, overroundPct: +(ov * 100).toFixed(1),
+                  firstSeen: new Date().toISOString() };
+    MX_SUPPRESSED.set(key, rec);
+    // Console as well as the map: a member never opens either, but the log is
+    // how a silent suppression is told apart from a book that simply has no
+    // price — the ambiguity that makes a quiet guard worse than no guard.
+    try { console.warn('[TEN-225 C] suspended market suppressed', rec); } catch (e) {}
+  }
+  return true;
+}
+// Returns the pair when it is real, null when suppressed. Callers must treat
+// null as "this book has nothing" so the LADDER carries them to the next book.
+// They must never turn it into a dash on the spot — that is the founder's rule,
+// and it is the whole difference between this guard and the naive one.
+function mxRealPair(pair, path, id){
+  if (!pair) return null;
+  if (mxIsSuspendedPair(pair.p1, pair.p2, { id: id, book: pair.book, path: path })) return null;
+  return pair;
+}
 function _ocsOf(m){
   if (!m || !OCS.byKey) return null;
   if (m.__ocsGen === OCS.gen) return m.__ocs;
@@ -6800,9 +6860,24 @@ function _ocsOf(m){
     // Both sides or neither. A half-resolved fixture would put one player's
     // published price beside the other player's matches.json price — the
     // cross-source blend the ruling forbids, wearing the shape of a bug fix.
-    if (s1 && s2) out = { book: e.book, source: e.source, label: e.label || null,
-                          tsKind: e.tsKind || null, startTsSource: e.startTsSource || null,
-                          p1: s1, p2: s2 };
+    if (s1 && s2){
+      // ITEM C on the card-state path. Applied PER SLOT, because a fixture can
+      // have an honest Open and a suspended Now — nulling all three off one bad
+      // slot would throw away two good prices. Nulling the slot (rather than
+      // rejecting the whole OCS entry) is also what lets the ladder work:
+      // _mcNowPair sees "the selected book has no Now" and walks on, which is a
+      // path that already exists and is already tested.
+      const id = (m && (m.id || m.matchKey)) || null;
+      for (const slot of ['open', 'now', 'close']){
+        if (mxIsSuspendedPair(s1[slot], s2[slot],
+                              { id: id, book: e.book, path: 'ocs.' + slot })){
+          s1[slot] = null; s2[slot] = null;
+        }
+      }
+      out = { book: e.book, source: e.source, label: e.label || null,
+              tsKind: e.tsKind || null, startTsSource: e.startTsSource || null,
+              p1: s1, p2: s2 };
+    }
   }
   m.__ocs = out; m.__ocsGen = OCS.gen;
   return out;
@@ -7123,7 +7198,16 @@ async function loadOddsCardState(){
 function _mcCloseOf(m, who){
   const o = _ocsOf(m);
   if (o) return o[who].close ?? null;
-  return m.closingOdds?.[who] ?? null;
+  // ITEM C on the matches.json CLOSE fallback — the same uncovered route as
+  // _openAnchorOf. A suspended close is worse than a suspended now: it is the
+  // number every settled-P&L and drift figure on the page is computed against,
+  // so it would propagate into arithmetic rather than just render wrong once.
+  const c = m.closingOdds;
+  if (!c) return null;
+  if (mxIsSuspendedPair(c.p1, c.p2,
+                        { id: (m && (m.id || m.matchKey)) || null,
+                          book: c.bookmaker || null, path: 'closingOdds' })) return null;
+  return c[who] ?? null;
 }
 // TEN-179 item 1 (founder ruling 2026-09-10) — the Upcoming card's NOW leg is PINNED TO
 // BET365. Both legs from bet365, no cross-book fallback; a leg without one is a dash, the
@@ -7148,18 +7232,35 @@ function _mcBet365Now(m){
   // name is the false label this issue has already paid for once.
   // `> 0`, not `!= null`: zero is not a price (see _ocsSanePx). This leg comes off
   // matches.json, which the OCS sanitiser never sees, so it carries its own guard.
+  // ITEM C: each source is filtered through mxRealPair, and a SUPPRESSED source
+  // falls through to the next one rather than returning null. This is where the
+  // 1.01/1.01 sentinel actually lives — bet365Now — so a guard that stopped
+  // here would dash the very fixtures the ladder can still price from bestOdds
+  // or m.odds. `return mxRealPair(...) || next` would be wrong for the opposite
+  // reason: it would also swallow a legitimately absent source.
+  const id = (m && (m.id || m.matchKey)) || null;
   const b = m.bet365Now;
   // `obs` is OUR observation clock (when we last LOOKED), carried alongside `at`
   // (when bet365 last MOVED the price). They answer different questions and
   // _measurablePair needs the former; every other consumer ignores it.
-  if (b && b.p1 > 0 && b.p2 > 0) return { p1: b.p1, p2: b.p2, book: 'bet365', at: b.at || null,
-                                          obs: b.observedAt || null, kind: 'book-tick', src: 'timeline' };
+  if (b && b.p1 > 0 && b.p2 > 0){
+    const p = mxRealPair({ p1: b.p1, p2: b.p2, book: 'bet365', at: b.at || null,
+                           obs: b.observedAt || null, kind: 'book-tick', src: 'timeline' },
+                         'bet365Now', id);
+    if (p) return p;
+  }
   const bo = m.bestOdds;
   if (bo && _isBet365(bo.p1?.bookmaker) && _isBet365(bo.p2?.bookmaker) && bo.p1.price && bo.p2.price) {
-    return { p1: bo.p1.price, p2: bo.p2.price, book: 'bet365', at: null, kind: 'sighting', src: 'feed' };
+    const p = mxRealPair({ p1: bo.p1.price, p2: bo.p2.price, book: 'bet365', at: null,
+                           obs: bo.seenAt || m.odds?.seenAt || null,
+                           kind: 'sighting', src: 'feed' }, 'bestOdds.bet365', id);
+    if (p) return p;
   }
   const o = m.odds;
-  if (o && _isBet365(o.bookmaker) && o.p1 && o.p2) return { p1: o.p1, p2: o.p2, book: 'bet365', at: null, kind: 'sighting', src: 'feed' };
+  if (o && _isBet365(o.bookmaker) && o.p1 && o.p2)
+    return mxRealPair({ p1: o.p1, p2: o.p2, book: 'bet365', at: null,
+                        obs: o.seenAt || null, kind: 'sighting', src: 'feed' },
+                      'odds.bet365', id);
   return null;
 }
 // ───────────────────────────────────────── TEN-225 rulings A + B (2026-09-18) ──
@@ -7216,7 +7317,18 @@ function _mcAnyBookPair(m){
   if (!cands.length) return null;
   const cov = _mcBooksByCoverage();
   cands.sort((a, b) => (cov[b.book] || 0) - (cov[a.book] || 0));
-  return cands[0];
+  // ITEM C, and this is the rung the founder's "fall through, do not dash" rule
+  // is really about. Filtering AFTER the sort, then taking the first survivor,
+  // is precisely "walk down the ladder to the next book". Guarding only
+  // cands[0] would dash a fixture that the second-ranked book prices perfectly
+  // well; returning null on suppression would do the same.
+  const id = (m && (m.id || m.matchKey)) || null;
+  for (const c of cands){
+    if (mxRealPair(c, 'anyBook', id)) return c;
+  }
+  // Every book on this fixture is suspended. NOW a dash is correct: the founder's
+  // rule is "dash only if no book has a real price", and that is what this is.
+  return null;
 }
 // The odds column's ONE resolver. Returns { p1, p2, book, src } or null (dash).
 //
@@ -7248,10 +7360,43 @@ function _mcNowPair(m){
     // looser path is one where the selected book is bet365 anyway, so the strict
     // rule and the loose one return the same value on today's board. Reported to
     // the founder with the number rather than assumed.
-    if (_isBet365(o.book)) return _mcBet365Now(m);
+    if (_isBet365(o.book)) return _mcBet365Now(m) || _mcAnyBookPair(m);
+    // ITEM C, and the one place it genuinely cuts against ruling A. When the
+    // SELECTED book's Now was suppressed as suspended, _ocsOf has already nulled
+    // the slot, so we arrive here with a fixture that the selection covers and
+    // that another book may be pricing normally. The founder's item C is
+    // explicit — "do NOT dash — fall through the ladder to the next book, and
+    // dash only if no book has a real price" — so we walk on.
+    //
+    // ⚠️ THE TENSION, STATED RATHER THAN HIDDEN: ruling A says one book owns
+    // Open, Now and Close together. A Now recovered here comes from a different
+    // book than the Open beside it. What makes that acceptable rather than the
+    // forbidden blend is that the label follows the pair: mcPriceTitle names
+    // nowPair.book per leg, so the card SAYS which book each value came from.
+    // It is a visibly two-book card, not a silently blended one. Flagged to the
+    // founder; if he prefers the dash here, this is the single line to change.
+    //
+    // Note this only fires on SUPPRESSION. A selected book that simply has no
+    // Now still returns null below, exactly as before — no behaviour change on
+    // the ordinary path.
+    if (o.p1.now == null && o.p2.now == null
+        && MX_SUPPRESSED.size && _mcNowSuppressed(m, o.book)) {
+      return _mcBet365Now(m) || _mcAnyBookPair(m);
+    }
     return null;
   }
   return _mcBet365Now(m) || _mcAnyBookPair(m);
+}
+// Did THIS fixture's selected book have its Now suppressed? Asks the log rather
+// than recomputing, so the fall-through above can only trigger where a
+// suppression was actually recorded — an ordinary missing Now must not take it.
+function _mcNowSuppressed(m, book){
+  const id = (m && (m.id || m.matchKey)) || null;
+  if (id == null) return false;
+  for (const r of MX_SUPPRESSED.values()){
+    if (r.id === id && r.path === 'ocs.now' && r.book === book) return true;
+  }
+  return false;
 }
 function _mcNowOf(m, who){
   // TEN-225: where odds_card_state covers the match it owns the NOW too, and
@@ -7354,7 +7499,17 @@ function _openPinIsVendor(m){
 function _openAnchorOf(m, who){
   const o = _ocsOf(m);
   if (o) return o[who].open ?? null;
-  return m?.openingOdds?.[who] ?? null;
+  // ITEM C on the matches.json OPEN fallback. _ocsOf is guarded above; this leg
+  // never passes through it, so without this the sentinel reaches the Open cell
+  // by the one route the card-state guard cannot see. Both legs are withheld
+  // together — half a suspended pair is not a price either, and leaving one
+  // behind would produce a one-sided drift figure.
+  const oo = m?.openingOdds;
+  if (!oo) return null;
+  if (mxIsSuspendedPair(oo.p1, oo.p2,
+                        { id: (m && (m.id || m.matchKey)) || null,
+                          book: oo.bookmaker || null, path: 'openingOdds' })) return null;
+  return oo[who] ?? null;
 }
 function _openDerivedOf(m, who){ return _openPinIsVendor(m) ? null : _openAnchorOf(m, who); }
 // TEN-225 ruling 3 — `driftScore()` (open→CLOSE) lived here and is DELETED. It had

@@ -670,7 +670,16 @@ def build_rows(kibl_fixtures, observations, odds_index, as_of,
         # Counted on the fixture, not the side, because a Close is recovered for
         # a fixture — counting sides would double every figure and read as twice
         # the recovery.
-        if (why or start_src) == 'flip_available_not_enabled':
+        # ⚠️ THE COUNTER HAS TO SWITCH WITH THE FLAG. 'flip_available_not_enabled'
+        # is by CONSTRUCTION zero once --use-live-flip is on: the flip is used,
+        # so the start source becomes 'api-tennis-live' and nothing is ever
+        # "available but not enabled" again. Counting only that state produced a
+        # table reading "0 would recover / 0.0%" on the very run that switched it
+        # on, which reads as "the flip recovers nothing" and is the exact opposite
+        # of the truth. Under ENABLED the recovered population IS the
+        # flip-started one.
+        if (why or start_src) == 'flip_available_not_enabled' \
+           or start_src == 'api-tennis-live':
             flip_by_league[fx.get('league_id')] += 1
         # The denominator the percentage needs: every fixture we looked at, per
         # league. Without it "31 recovered" has no n and cannot be read.
@@ -1582,8 +1591,9 @@ def main():
     seen = st.get('_league_seen') or {}
     tot_f = sum(fbl.values())
     tot_n = sum(seen.values())
-    mode = 'ENABLED — these Closes were RECOVERED' if a.use_live_flip \
-           else 'GATED OFF — these Closes were NOT recovered'
+    mode = 'ENABLED — these fixtures took their start FROM the flip' \
+           if a.use_live_flip \
+           else 'GATED OFF — these fixtures COULD have, and did not'
     print()
     print(f'LADDER I(b) live-flip start, {mode}')
     if not seen:
@@ -1592,7 +1602,8 @@ def main():
         print('  ::warning:: no fixtures were assessed at all — this is NOT '
               '"the flip recovers nothing", it is "we measured nothing".')
     else:
-        print(f"  {'league':14} {'would recover':>14} {'fixtures seen':>14} {'rate':>8}")
+        hdr = 'flip-started' if a.use_live_flip else 'would recover'
+        print(f"  {'league':14} {hdr:>14} {'fixtures seen':>14} {'rate':>8}")
         for lid in sorted(seen, key=lambda x: (x is None, x)):
             n = seen.get(lid, 0)
             f = fbl.get(lid, 0)
