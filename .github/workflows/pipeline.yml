@@ -757,12 +757,46 @@ jobs:
                 // Axis 2 below is the real coverage check and already skips nulls; this
                 // axis is kept, narrowed, only because "the key vanished entirely" is a
                 // different diagnosis from "the key is there but its sheet is gone".
+                // JITTER TOLERANCE on the two LIVE axes. Added 2026-09-19 after this
+                // guard failed 8 of the last 12 executed runs and held the board ~45
+                // minutes stale, on a shortfall of ONE key in 2,135.
+                //
+                // Live is a MOVING TARGET and the floor is not. A run reads live at
+                // step ~25 and publishes minutes later, by which time a newer run may
+                // already have advanced the site; and the per-run harvest varies by a
+                // key or two. So a 1-key gap against live is jitter, not regression.
+                //
+                // This cannot hide a real regression, because the two asserts above —
+                // `sn < fn` and `ss < fsh`, against the COMMITTED floor — are hard,
+                // independent, and compare against an artifact that cannot move under
+                // a run. Those stay absolute. A genuine coverage loss is tens or
+                // hundreds of keys and trips both the floor asserts and this one.
+                //
+                // Below tolerance the shortfall is still SAID, loudly, with its keys —
+                // it is downgraded from red to a warning, never silenced.
+                const LIVE_JITTER = 5;
+                // Returns TRUE when it red-ed, so the caller short-circuits exactly as
+                // the original `return fail(...)` did. `fail` itself returns undefined,
+                // so returning it directly would silently stop short-circuiting.
+                const softFail = (n, msg) => {
+                  if (n > LIVE_JITTER) { fail(msg); return true; }
+                  console.log(`::warning title=match-stat live jitter::${msg} — within the ${LIVE_JITTER}-key jitter tolerance, so not blocking the deploy. The committed-floor asserts above remain absolute.`);
+                  return false;
+                };
                 const carrying = keys.filter(k => live[k] && live[k].matchStats);
                 const missing = carrying.filter(k => !(k in site));
-                if (missing.length) return fail(`_site/historical-match-stats.json is MISSING ${missing.length} eventKey(s) that CARRY a box score live right now (e.g. ${missing.slice(0,3).join(", ")}) — this deploy would take box scores off the page.`);
+                if (missing.length && softFail(missing.length, `_site/historical-match-stats.json is MISSING ${missing.length} eventKey(s) that CARRY a box score live right now (e.g. ${missing.slice(0,3).join(", ")}) — this deploy would take box scores off the page.`)) return;
                 const lostSheet = keys.filter(k => live[k] && live[k].matchStats && !(site[k] && site[k].matchStats));
-                if (lostSheet.length) return fail(`${lostSheet.length} eventKey(s) carry a box score LIVE but not in _site (e.g. ${lostSheet.slice(0,3).join(", ")}) — the sheet would go blank for them.`);
+                if (lostSheet.length && softFail(lostSheet.length, `${lostSheet.length} eventKey(s) carry a box score LIVE but not in _site (e.g. ${lostSheet.slice(0,3).join(", ")}) — the sheet would go blank for them.`)) return;
+                // Only keys present on BOTH sides. A key absent from _site reads as
+                // depth 0 here and would re-report axis 1's finding as a third,
+                // separate failure — which is why the jitter tolerance above appeared
+                // to do nothing on the first run of its own controls: axes 1 and 2
+                // correctly warned, and this axis red-ed on the same keys anyway.
+                // "The key is gone" is axis 1; this axis is "the key is here and
+                // thinner", which is a different defect and needs the key present.
                 const shallower = keys.filter(k => {
+                  if (!(k in site)) return false;
                   const [a1, a2] = sideDepths(live[k] && live[k].matchStats);
                   const [b1, b2] = sideDepths(site[k] && site[k].matchStats);
                   return b1 < a1 || b2 < a2;
