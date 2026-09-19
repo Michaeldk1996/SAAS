@@ -596,7 +596,10 @@ def _pending_record(t, reason):
         "pendingReason": reason,
         "sourcePublished": None,
         # unknown draw sizes -> null (a dash), never 0.
-        "counts": {"MD": None, "Q": None, "ALT": 0},
+        # TEN-242 item 6.3: null, not 0. The comment above already said
+        # "never 0" - the dict did not. Same fabricated zero the advance
+        # builder was carrying, on the same field.
+        "counts": {"MD": None, "Q": None, "ALT": None},
         "sections": [],
     }
 
@@ -645,7 +648,7 @@ def scrape_tournament(t, year, profile_idx):
     header = None
     sections = []
     md_lines = qs_lines = None
-    counts = {"MD": None, "Q": None, "ALT": 0}
+    counts = {"MD": None, "Q": None, "ALT": None}
     alt_count = 0
     published = None
     md_empty = qs_empty = False  # a real PDF that parsed to 0 players

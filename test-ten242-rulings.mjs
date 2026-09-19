@@ -1,0 +1,391 @@
+// TEN-242 — the founder's phase-1 rulings, encoded so they cannot silently regress.
+//
+// Three rulings were made on gate `ten242:phase1:feasibility:v1` (2026-09-19),
+// each resolving a real contradiction between the Claude Design handoff bundle
+// and code that was already shipping. A ruling that lives only in a comment is
+// one clobber away from gone (see test-ten225-no-underway-chip.mjs for how that
+// actually happened), so each is a TEXT assertion here: decidable from the
+// source alone, on any board, at any hour, with no data and no browser.
+//
+//   1. SPEED BAND WORD  -> courtSpeedCategory() in bsp-pipeline.js is the single
+//      truth. README §2.2's four bands (>=1.10 Fast / >=0.95 Medium / >=0.82
+//      Medium-slow / else Slow) are OVERRULED. Measured before the ruling: the
+//      README's word disagreed with courtSpeedCategory() on 4 of 64 venues and
+//      with the word we shipped on 12 of 64 — including the Australian Open,
+//      which would have printed "Medium" directly above a Conditions-read
+//      paragraph describing a fast court.
+//
+//   2. DENOMINATORS -> all five figures render BARE, per the Tournaments README,
+//      not with an n per STENNISFY-DESIGN-INSTRUCTIONS §5. The §5 sample gate
+//      stays in the code. Measured: 61 events, min n=51, median 596, so the gate
+//      never fires today — which is exactly why it needs a test, not a reader.
+//
+//   3. FABRICATED ZERO -> build-entry-lists-advance.mjs must not mint `ALT: 0`
+//      on a tournament whose list was never fetched, and validate() must police
+//      ALT alongside MD and Q.
+//
+// Run: node --test test-ten242-rulings.mjs
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+
+const HERE = dirname(fileURLToPath(import.meta.url));
+const DASH = readFileSync(join(HERE, 'bsp-consult-dashboard.html'), 'utf8');
+const PIPE = readFileSync(join(HERE, 'bsp-pipeline.js'), 'utf8');
+const ADV = readFileSync(join(HERE, 'tools/entry-lists/build-entry-lists-advance.mjs'), 'utf8');
+
+// A comment-free view of the source. EVERY "this string must not appear"
+// assertion below runs against CODE, never against prose: this repo documents
+// the thing it removed, by design (the removal comment names the ladder it
+// overruled, and the detail renderer explains why the AO would have read
+// "Medium"). Matching raw text would make each of those comments fail the very
+// rule it records — which cost three iterations of this file to learn.
+function code(src) {
+  return src
+    .replace(/<!--[\s\S]*?-->/g, '')        // HTML comments
+    .replace(/\/\*[\s\S]*?\*\//g, '')      // block comments
+    .split('\n').map((l) => l.replace(/(^|\s)\/\/.*$/, '$1')).join('\n');
+}
+const DASH_CODE = code(DASH);
+
+// Pull an object/array literal out of a source file by brace matching from its
+// `const NAME =` line. Deliberately NOT an import: both files are browser/CJS
+// sources, and the point is to read what SHIPS.
+function literal(src, re) {
+  const L = src.split('\n');
+  const i = L.findIndex((l) => re.test(l));
+  assert.ok(i >= 0, `literal not found: ${re}`);
+  let j = i;
+  for (; j < L.length; j++) if (/^];?\s*$/.test(L[j]) || /^};\s*$/.test(L[j])) break;
+  return eval('(' + L.slice(i, j + 1).join('\n').replace(/^const \w+ =/, '').replace(/;\s*$/, '') + ')');
+}
+
+// ---------------------------------------------------------------- RULING 1
+test('ruling 1: the hero band word derives from courtSpeedCategory(), not the README ladder', () => {
+  assert.match(PIPE, /function courtSpeedCategory\(speed\)/,
+    'courtSpeedCategory() is the ruled single source of truth and must exist in the pipeline');
+
+  // The Tournaments detail column must read speedCat (courtSpeedCategory's output
+  // via tourxConditionRegistry), NOT a locally re-derived ladder.
+  const detail = DASH.slice(DASH.indexOf('function tourxConditionsPanelHtml()'),
+                            DASH.indexOf('function tourxRankLineHtml'));
+  assert.ok(detail.length > 500, 'could not isolate the detail-column renderer');
+  assert.match(detail, /const bandWord = c\.speedCat/,
+    'the hero word must come from c.speedCat (courtSpeedCategory), not a local threshold');
+
+  // and the README's ladder must not be reintroduced anywhere on the page.
+  assert.ok(!/Medium-slow/.test(DASH_CODE),
+    'README §2.2\'s "Medium-slow" band is OVERRULED — it must not be rendered by the build');
+  assert.ok(!/as >= 1\.05 \? 'Fast'/.test(DASH_CODE),
+    'the old 3-band asLabel ladder (>=1.05) must not come back either');
+  assert.ok(!/1\.10 \? 'Fast'/.test(DASH_CODE) && !/0\.82 \? /.test(DASH_CODE),
+    'the README\'s four-band thresholds must not be re-implemented');
+});
+
+test('ruling 1: courtSpeedCategory() still partitions all 64 rated venues into 3 bands', () => {
+  // A band word the page prints for an event it cannot classify would be a
+  // fabricated label. Every rated venue must classify.
+  const CC = literal(PIPE, /^const COURT_CONDITIONS = \{/);
+  const names = Object.keys(CC);
+  assert.equal(names.length, 64, 'the rated-venue table changed size — re-measure before trusting the bands');
+  const band = (sp) => (sp == null ? null : sp <= 43 ? 'Slow' : sp <= 68 ? 'Medium' : 'Fast');
+  const words = new Set(names.map((n) => band(CC[n].speed)));
+  assert.deepEqual([...words].sort(), ['Fast', 'Medium', 'Slow']);
+  assert.ok(!names.some((n) => band(CC[n].speed) == null), 'every rated venue must get a word');
+});
+
+test('the court-speed table has ONE source: the two copies must stay identical', () => {
+  // COURT_CONDITIONS is hand-mirrored into the dashboard. Sync was a comment
+  // ("keep in sync"), not a mechanism — and it is the number the whole page is
+  // about. Feasibility item (d).
+  const A = literal(PIPE, /^const COURT_CONDITIONS = \{/);
+  const B = literal(DASH, /^const COURT_CONDITIONS = \{/);
+  assert.deepEqual(Object.keys(A).sort(), Object.keys(B).sort(), 'venue sets have drifted apart');
+  for (const k of Object.keys(A)) {
+    assert.deepEqual(B[k], A[k], `COURT_CONDITIONS["${k}"] differs between bsp-pipeline.js and the dashboard`);
+  }
+});
+
+// ---------------------------------------------------------------- RULING 2
+test('ruling 2: the five figures render bare, and the §5 sample gate survives', () => {
+  const roi = DASH.slice(DASH.indexOf('function tourxRoiPairHtml'), DASH.indexOf('function tourxReliabilityHtml'));
+  const rel = DASH.slice(DASH.indexOf('function tourxReliabilityHtml'), DASH.indexOf('function tourxReportCtaHtml'));
+  assert.ok(roi.length > 300 && rel.length > 300, 'could not isolate the ROI / reliability renderers');
+  for (const [name, body] of [['ROI', roi], ['reliability', rel]]) {
+    assert.ok(!/n\s*=\s*\$\{/.test(body) && !/'n='/.test(body) && !/"n="/.test(body),
+      `${name} must render a BARE percentage — the founder ruled against an inline n`);
+  }
+  // The gate is not decoration: it is the only thing between a thin future event
+  // and a confident-looking percentage, so it must still be wired, not deleted.
+  assert.match(DASH, /function tourxSampleGate\(n\)/, '§5 sample gate must remain in the build');
+  assert.match(roi, /tourxSampleGate\(/, 'the ROI cards must still consult the gate');
+  assert.match(rel, /tourxSampleGate\(/, 'reliability must still consult the gate');
+});
+
+test('the four prototype scaffolding formulas are absent (no fallback can emit a plausible number)', () => {
+  // README: roiFav/roiDog/favRel/upsetRate are derived from court speed purely so
+  // the mock stays self-consistent. A fallback formula standing in for a query is
+  // the single worst failure available on this page.
+  for (const f of ['roiFav', 'roiDog', 'favRel', 'upsetRate']) {
+    assert.ok(!new RegExp(`(const|let|var|function)\\s+${f}\\b`).test(DASH_CODE),
+      `${f} must not exist as a computed value anywhere in the build`);
+  }
+  assert.ok(!/\(1\.20 - speed\)|\(speed - 1\.00\) \* 8|62 \+ \(speed - 0\.70\)|\(1\.50 - speed\) \* 30/.test(DASH_CODE),
+    'a prototype speed-derived formula body is present in the build');
+});
+
+// ---------------------------------------------------------------- RULING 3
+test('ruling 3: a never-fetched entry list mints no ALT zero, and the gate polices it', () => {
+  assert.match(ADV, /counts:\s*\{\s*MD:\s*null,\s*Q:\s*null,\s*ALT:\s*null\s*\}/,
+    'the pending base object must carry ALT: null — ALT: 0 was a fabricated count on 25 of 71 rows');
+  assert.ok(!/counts:\s*\{\s*MD:\s*null,\s*Q:\s*null,\s*ALT:\s*0\s*\}/.test(ADV),
+    'ALT: 0 has come back in the pending base object');
+  assert.match(ADV, /c\.MD !== null \|\| c\.Q !== null \|\| c\.ALT !== null/,
+    'validate() must police ALT alongside MD and Q — checking only two of three is how this shipped');
+});
+
+test('the entry-list renderer tells a real zero apart from no data', () => {
+  // The other direction of item 6.3: `alt || '—'` dashed a TRUE zero (a loaded
+  // event with no alternates) exactly as if we had never fetched it.
+  assert.match(DASH, /function countCell\(v\)/, 'the count cell helper must exist');
+  const cell = DASH.slice(DASH.indexOf('function countCell(v)'), DASH.indexOf('function renderTournament'));
+  assert.match(cell, /var isNull = \(v == null\)/, 'null, not falsiness, must decide the dash');
+  assert.ok(!/\balt \|\| '—'\b/.test(DASH_CODE), 'the falsy-collapse that dashed a true zero has come back');
+});
+
+// ------------------------------------------------------------- brief items
+test('item 1.1/1.4: the sidebar is the bundle\'s 11 items, in order', () => {
+  const navStart = DASH.indexOf('<nav class="sf-nav" id="mainNav">');
+  const nav = DASH.slice(navStart, DASH.indexOf('</nav>', navStart));
+  const labels = [...nav.matchAll(/<button[^>]*data-tab="([^"]+)"[^>]*>(?:<svg[\s\S]*?<\/svg>)?([^<]*)<\/button>/g)]
+    .map((m) => m[2].trim());
+  assert.deepEqual(labels, ['Matches', 'Live', 'Trading Report', 'Series', 'Players', 'Head to Head',
+    'Tournaments', 'Database', 'Stennisfy Model', 'Playing Styles', 'News']);
+  // match a real BUTTON, not any mention: the comment that replaced the item
+  // names the alias on purpose, and a comment is not a nav item.
+  assert.ok(!/<button[^>]*data-tab="entry-lists"/.test(nav), 'Entry Lists must not be a sidebar item');
+  assert.ok(!/entryListsTabBtn/.test(DASH_CODE), 'the removed button\'s id must not be referenced in code');
+});
+
+test('item 1.3: the entry-lists alias still routes rather than 404ing', () => {
+  // There was never a URL for this page, so nothing can 404 — but a residual
+  // .click() dispatch must still land somewhere real.
+  assert.match(DASH, /\(tab === 'entry-lists'\) \? 'tournaments'/,
+    'data-tab="entry-lists" must alias onto the Tournaments page');
+  assert.match(DASH, /if \(tab === 'entry-lists'\) \{ showTournamentList\(\); tourxSetSection\('entry'\); \}/,
+    'the alias must select the Entry list section');
+});
+
+test('item 3: "What players say" is not built', () => {
+  // We have a press-conference transcript source (tools/asapsports-signal.js) but
+  // it is player-keyed pre-match readiness, not tournament-keyed quotes — and it
+  // has been empty since 2026-08-06. The founder ruled: build nothing, not even a
+  // placeholder that implies the data exists.
+  // Strip line comments before matching: this file's own source explains WHY the
+  // card is absent, and an explanation is not an implementation. Matching raw
+  // text here would make the test fail on its own documentation.
+  const tourx = code(DASH.slice(DASH.indexOf('function tourxOverlayShell')));
+  assert.ok(!/What players say|Read all \$\{|quotesPanel|tourQuotesOpen|notes<|curly/.test(tourx),
+    'no quotes card, overlay or placeholder may appear on the Tournaments page');
+  // and nothing may imply the data is coming
+  assert.ok(!/coming soon/i.test(tourx), 'no "coming soon" state may imply a quote source exists');
+});
+
+test('item 6.1: the per-week absence fires on "nothing loaded", not "no events"', () => {
+  // The spec\'s own copy — "The ATP has {n} events in {week}. Their acceptance
+  // lists are not in the build yet" — is a sentence about a week that HAS events
+  // and no lists. Caught by a manufactured empty-week control: a 2-event week
+  // with nothing loaded was rendering two per-EVENT "not loaded" rows instead.
+  assert.match(DASH, /if\(!tourns\.length \|\| !tourns\.some\(hasList\)\)\{/,
+    'the week-level empty state must also fire when no event that week carries a list');
+  assert.match(DASH, /No lists loaded for this week/);
+  assert.match(DASH, /Acceptance list not loaded for this event yet\./);
+  assert.match(DASH, /Advance entry lists could not be updated/);
+});
+
+// ===========================================================================
+// EXECUTED, not grepped.
+//
+// A clean-context review found two defects that every text assertion above
+// shipped GREEN, and both were putting a fabricated number on screen:
+//   * a never-fetched row printed `Alt 0` in the real-data colour next to two
+//     dashes, because the builder fix is prospective and the DEPLOYED shard
+//     still carries ALT: 0 on 25 of 71 rows;
+//   * the speed-series trend line labelled a POINT COUNT as a duration, so
+//     Brisbane's one-year move read "over 2 yrs" — 58 of 59 multi-point venues
+//     were wrong.
+// Grepping for the fix cannot catch either. These slice the real functions out
+// of the shipped file and RUN them. Sliced, never stubbed: a stub is a second
+// implementation and would agree with itself.
+// ===========================================================================
+
+// Cut `function name(...)` out of a source by brace matching, respecting
+// strings, template literals and comments.
+function fnSource(src, sig) {
+  const i = src.indexOf(sig);
+  assert.ok(i >= 0, `function not found: ${sig}`);
+  let j = src.indexOf('{', i), depth = 0, k = j, s = null, esc = false, c = null;
+  while (k < src.length) {
+    const ch = src[k];
+    if (c) {
+      if (c === '//' && ch === '\n') c = null;
+      else if (c === '/*' && ch === '*' && src[k + 1] === '/') { c = null; k++; }
+    } else if (s) {
+      if (esc) esc = false; else if (ch === '\\') esc = true; else if (ch === s) s = null;
+    } else if (ch === '"' || ch === "'" || ch === '`') s = ch;
+    else if (ch === '/' && (src[k + 1] === '/' || src[k + 1] === '*')) { c = src[k + 1] === '/' ? '//' : '/*'; k++; }
+    else if (ch === '{') depth++;
+    else if (ch === '}') { depth--; if (depth === 0) break; }
+    k++;
+  }
+  assert.ok(depth === 0, `unbalanced braces in ${sig}`);
+  return src.slice(i, k + 1);
+}
+
+test('EXECUTED: a never-fetched row dashes all three counts even on a shard that carries ALT: 0', () => {
+  // The exact shape the DEPLOYED artefact serves for a pending tournament.
+  const DEPLOYED_PENDING = { counts: { MD: null, Q: null, ALT: 0 }, sections: [],
+    name: 'M25 Somewhere', tier: 'ITF', surface: 'Hard', startDate: '2026-10-05', weekStart: '2026-10-05' };
+  const LOADED_NO_ALTS = { counts: { MD: 28, Q: 16, ALT: 0 }, sections: [{ title: 'Main Draw', players: [] }],
+    name: 'Real Event', tier: 'ATP 250', surface: 'Clay', startDate: '2026-10-05', weekStart: '2026-10-05', sourcePublished: '2026-09-15T20:30:00Z' };
+
+  const sandbox = [
+    'const MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];',
+    'function hasList(t){ return !!(t.sections && t.sections.length); }',
+    'function renderPlayers(){ return ""; }',
+    'function fmtName(p){ return p.name; }',
+    'function fmtStatus(){ return ""; }',
+    fnSource(DASH, 'function tierCode(tier){'),
+    fnSource(DASH, 'function shortDate(iso){'),
+    fnSource(DASH, 'function countCell(v){'),
+    fnSource(DASH, 'function renderTournament(t, idx){'),
+    'return renderTournament;',
+  ].join('\n');
+  const renderTournament = eval(`(function(){ ${sandbox} })()`);
+
+  // three right-aligned count cells, in grid order MD / Q / Alt
+  const cells = (html) => [...html.matchAll(/<span style="text-align:right;font-family:[^"]*font-weight:700;font-variant-numeric:tabular-nums;color:(#[0-9a-f]{6});">([^<]*)<\/span>/g)]
+    .map((m) => ({ colour: m[1], text: m[2] }));
+
+  const never = cells(renderTournament(DEPLOYED_PENDING, 0));
+  assert.equal(never.length, 3, 'expected three count cells');
+  assert.deepEqual(never.map((c) => c.text), ['—', '—', '—'],
+    'a never-fetched row must dash ALL THREE counts — the deployed shard\'s ALT: 0 must not reach the screen');
+  assert.deepEqual([...new Set(never.map((c) => c.colour))], ['#3f4860'],
+    'all three dashes must use the no-data colour');
+
+  // ...and the other direction: a REAL zero on a loaded row must survive.
+  const real = cells(renderTournament(LOADED_NO_ALTS, 1));
+  assert.deepEqual(real.map((c) => c.text), ['28', '16', '0'],
+    'a loaded event with no alternates must print 0 — "no alternates" is not "never fetched"');
+  assert.equal(real[2].colour, '#e7e9ee', 'a real zero is real data and takes the data colour');
+});
+
+test('EXECUTED: the speed-series trend states the year SPAN, not the number of points', () => {
+  const src = fnSource(DASH, 'function tourxSpeedSeriesHtml(c){');
+  const tourxSpeedSeriesHtml = eval(`(function(){ ${src} return tourxSpeedSeriesHtml; })()`);
+  const label = (html) => (html.match(/([+−]\d+\.\d\d) over (\d+) (yrs?)/) || []).slice(1);
+
+  // Brisbane's real data: two points, ONE year apart.
+  assert.deepEqual(label(tourxSpeedSeriesHtml({ as2023: null, as2024: 1.26, as2025: 1.23 })),
+    ['−0.03', '1', 'yr'], 'two adjacent seasons are a ONE-year move');
+  // Montreal's real data: two points either side of a hole, TWO years apart.
+  assert.deepEqual(label(tourxSpeedSeriesHtml({ as2023: 1.07, as2024: null, as2025: 1.02 })),
+    ['−0.05', '2', 'yrs'], 'a 2023->2025 move spans two years even though a season is missing');
+  // three points, two years.
+  assert.deepEqual(label(tourxSpeedSeriesHtml({ as2023: 1.10, as2024: 1.11, as2025: 1.11 }))[1], '2');
+
+  // and the honesty rules the brief is explicit about
+  const montreal = tourxSpeedSeriesHtml({ as2023: 1.07, as2024: null, as2025: 1.02 });
+  assert.ok(!/>2024</.test(montreal), 'a missing season must not be plotted or labelled');
+  assert.match(montreal, /Abstract court speed · 2023–2025/, 'the eyebrow states the real range');
+  assert.equal((montreal.match(/border:2px solid #ffffff/g) || []).length, 2, 'exactly one dot per real season');
+
+  // a single season: one dot, single-year eyebrow, and NO trend (nothing to trend)
+  const one = tourxSpeedSeriesHtml({ as2023: null, as2024: 1.01, as2025: null });
+  assert.match(one, /Abstract court speed · 2024/);
+  assert.ok(!/Holding steady|Trending/.test(one), 'one point is not a trend');
+  assert.equal((one.match(/border:2px solid #ffffff/g) || []).length, 1);
+
+  // no seasons at all: render nothing rather than an empty chart
+  assert.equal(tourxSpeedSeriesHtml({ as2023: null, as2024: null, as2025: null }), '');
+
+  // all-equal values must not divide by zero
+  assert.doesNotThrow(() => tourxSpeedSeriesHtml({ as2023: 1.00, as2024: 1.00, as2025: 1.00 }));
+});
+
+test('the second entry-list builder and its gate carry the same ruling', () => {
+  // The draw shard has its own builder and its own QA gate. The gate REQUIRED
+  // ALT to be an int, so it would have rejected the corrected value — which is
+  // how the fabricated zero survived it.
+  const drawB = readFileSync(join(HERE, 'tools/entry-lists/build-entry-lists.py'), 'utf8');
+  const gate = readFileSync(join(HERE, 'tools/entry-lists/qa-gate.py'), 'utf8');
+  assert.ok(!/"counts":\s*\{"MD":\s*None,\s*"Q":\s*None,\s*"ALT":\s*0\}/.test(drawB),
+    'the draw builder must not mint ALT: 0 for a pending tournament');
+  assert.ok(!/counts = \{"MD": None, "Q": None, "ALT": 0\}/.test(drawB));
+  assert.match(gate, /alt is not None and \(not isinstance\(alt, int\)/,
+    'the gate must ACCEPT a null ALT, or it rejects the corrected value');
+  assert.match(gate, /any\(counts\.get\(k\) is not None for k in \("MD", "Q", "ALT"\)\)/,
+    'pending must be policed on null-ness, not falsiness — `or` treated 0 as acceptable');
+});
+
+// ===========================================================================
+// FOUNDER RULING 2026-09-19 — the hero knob is scaled from the DATA.
+//
+// The export hardcodes a 0.50–1.50 domain. Our observed range is 0.41–1.42, so
+// Bucharest fell below the floor and pinned at the 3% stop — a marker that has
+// stopped encoding anything. The ruling: derive the bounds from the venue set,
+// pad them, and "add a test that fails if the knob position is ever computed
+// from a hardcoded span."
+//
+// That last requirement is what the first assertion below is for, and it is the
+// only one a hardcoded implementation cannot fake: the SAME speed is fed to two
+// DIFFERENT venue sets and must land in two different places. A constant domain
+// returns the same number both times, whatever else it gets right.
+// ===========================================================================
+test('ruling: the knob scale is derived from the venue set, not a hardcoded span', () => {
+  const src = fnSource(DASH, 'function tourxKnobPct(as, speeds){');
+  const knob = eval(`(function(){ const TOURX_KNOB_PAD = 0.08; ${src} return tourxKnobPct; })()`);
+
+  // THE ANTI-HARDCODE CONTROL. Same value, two different populations.
+  const wide = knob(1.00, [0.41, 1.42]);
+  const narrow = knob(1.00, [0.90, 1.10]);
+  assert.notEqual(wide, narrow,
+    'the same speed landed in the same place under two different venue sets — the scale is not reading the data');
+  // 1.00 is dead centre of 0.90–1.10, and above centre of 0.41–1.42
+  assert.ok(Math.abs(narrow - 50) < 0.01, `1.00 should centre in a 0.90–1.10 field, got ${narrow}`);
+  assert.ok(wide > 50, `1.00 sits above the midpoint of 0.41–1.42, got ${wide}`);
+
+  // and a new outlier must MOVE the scale, not be clamped against it
+  // 0.41 is the floor of the first field and no longer the floor of the second,
+  // so it must move AWAY from the left end — a pinned marker would not move.
+  const before = knob(0.41, [0.41, 1.42]);
+  const after = knob(0.41, [0.20, 1.42]);
+  assert.ok(after > before,
+    `a new slower venue must move the old minimum off the floor: ${before} -> ${after}`);
+
+  // no venue may rest on a stop on the real data
+  const CC = literal(PIPE, /^const COURT_CONDITIONS = \{/);
+  const CAT = literal(DASH, /^const TOURNAMENT_CATALOG = \[/);
+  const speeds = CAT.filter((t) => CC[t.name]).map((t) => CC[t.name].abstractSpeed);
+  const pinned = speeds.filter((v) => { const p = knob(v, speeds); return p <= 3 || p >= 97; });
+  assert.deepEqual(pinned, [], `venue(s) still pinned at a clamp stop: ${pinned}`);
+  const lo = Math.min(...speeds), hi = Math.max(...speeds);
+  assert.ok(knob(lo, speeds) > 5 && knob(lo, speeds) < 10, `slowest venue should sit clear of the stop, got ${knob(lo, speeds)}`);
+  assert.ok(knob(hi, speeds) > 90 && knob(hi, speeds) < 95, `fastest venue, got ${knob(hi, speeds)}`);
+
+  // DEGENERATE SPAN -> centre, never NaN and never a divide by zero
+  assert.equal(knob(1.00, [1.00]), 50, 'a single venue has no axis — centre it');
+  assert.equal(knob(1.00, [1.00, 1.00, 1.00]), 50, 'an all-equal field has no axis either');
+  assert.equal(knob(1.00, []), 50);
+  assert.equal(knob(null, [0.4, 1.4]), 50);
+  for (const out of [knob(1.0, [1.0]), knob(1.0, []), knob(null, [])]) assert.ok(Number.isFinite(out));
+
+  // the export's hardcoded domain must not survive anywhere
+  assert.ok(!/\(as - 0\.50\) \/ 1\.00/.test(DASH_CODE),
+    'the README\'s hardcoded 0.50–1.50 knob domain has come back');
+  assert.ok(!/0\.41/.test(fnSource(DASH, 'function tourxKnobPct(as, speeds){')),
+    'the observed minimum must not be written into the scale — next season\'s outlier would pin silently');
+});
