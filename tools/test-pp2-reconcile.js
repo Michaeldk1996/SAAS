@@ -94,6 +94,20 @@ const STYLES = JSON.parse(fs.readFileSync(path.join(ROOT, 'playing-styles.json')
 // (founder ruling 7). Both are loaded into the same window shim the page uses,
 // so a wiring mistake shows up here rather than as a silent grid of dashes.
 const HOLDBREAK = JSON.parse(fs.readFileSync(path.join(ROOT, 'holdbreak.json'), 'utf8'));
+// §5.9 Ratings. Tracked AND published, and verified byte-identical to the
+// deployed copy on 2026-09-19 — so ROOT is the same artifact the page reads
+// here, unlike player-profiles.json which is published but never committed.
+const _DNA_RAW = JSON.parse(fs.readFileSync(path.join(ROOT, 'dna-apitennis-ratings.json'), 'utf8'));
+// Shape it the way the PAGE receives it, not the way the file is written. The
+// dashboard's ensureMatchDna() hands the module { byKey, players, meta }; the
+// file on disk is { _meta, players:[…] } with no byKey at all. Injecting the
+// raw file resolves NOTHING — dnaRecordFor() reads st.byKey[key] — which is
+// the stylesStore shape exactly: a store that loads and joins to nobody.
+const DNA = {
+  byKey: Object.fromEntries((_DNA_RAW.players || []).map(r => [String(r.playerKey), r])),
+  players: _DNA_RAW.players || [],
+  meta: _DNA_RAW._meta || {}
+};
 function loadEngine() {
   const sandbox = {};
   const src = fs.readFileSync(path.join(ROOT, 'holdbreak-heatmap.js'), 'utf8');
@@ -219,7 +233,8 @@ const CH_DRIFT = (() => {
 const M = loadModule(PLAYERS, {
   careerSplits: SPLITS, marketEdge: MARKET, playingStyles: STYLES,
   holdbreak: HOLDBREAK, HoldBreakHeatmap: ENGINE,
-  matchStats: STATS, bet365History: B365, careerHistory: CAREER_HIST
+  matchStats: STATS, bet365History: B365, careerHistory: CAREER_HIST,
+  dnaRatings: DNA
 });
 const I = M._internals;
 // loadModule() REASSIGNS global.window, and §5.5 builds extra module instances
@@ -2878,6 +2893,29 @@ const STORES = [
     },
     universe: () => Object.keys(STATS).filter(k => STATS[k] && STATS[k].matchStats).length,
     floor: 0.5,
+  },
+  {
+    name: 'dnaRatings',
+    file: 'dna-apitennis-ratings.json',
+    // §5.9 Ratings — the radar's five axes and all 13 metric tiles.
+    //
+    // Measured through the page's OWN accessor, not by counting the file. The
+    // failure this catches is the stylesStore shape: a store that loads, is
+    // never joined to a player, and leaves every axis and tile dashed — which
+    // is indistinguishable from "we hold no rating for him" and so goes
+    // unreported forever. Counting rows in the file would pass happily while
+    // the page resolved nothing.
+    //
+    // The universe is the ROSTER, not the file: the question is how many
+    // profiled players the panel can actually draw for. Measured 2026-09-19 at
+    // 276 of 575 (48%) — the floor is set well under that so ordinary roster
+    // churn does not red the build, but a wiring break goes to ~0 and trips it.
+    resolve: () => Object.keys(PLAYERS).filter(k => {
+      const m = I.dnaModel(PLAYERS[k]);
+      return m && Array.isArray(m.axes) && m.axes.some(a => a && a.rating != null);
+    }).length,
+    universe: () => Object.keys(PLAYERS).length,
+    floor: 0.25,
   },
   {
     name: 'matchStatEventCoverage',

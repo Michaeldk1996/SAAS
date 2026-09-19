@@ -3096,7 +3096,14 @@
   //     store has `acesPerMatch`/`dfPerMatch` with no service-point denominator
   //     anywhere in it to build a rate from. Printing a per-match count under a
   //     "%" label would be a fabricated unit, which §3 forbids ahead of any
-  //     fidelity rule, so the label states what the number is. Reported.
+  //     fidelity rule, so the label states what the number is.
+  //
+  //     RULED 2026-09-19, confirming what shipped: "Relabel as what the store
+  //     actually holds: per-match counts, not rates. 'Aces per match' and
+  //     'Double faults per match'. No % sign anywhere. Do not synthesise a
+  //     service-point denominator to make the export's label true — claim
+  //     less, the plain label over the enhanced one."  The deviation from the
+  //     export's "Ace rate %" is recorded in .ten206-design/RULED-DECISIONS.md.
   var DNA_AXES = [
     { key: 'serve', label: 'Serve', dp: 0 },
     { key: 'return', label: 'Return', dp: 1 },
@@ -3465,16 +3472,35 @@
     // Every clause here is a measured fact about THIS panel, not boilerplate: the
     // window, the pool the average is taken over, what Elo does not do, and what
     // is missing. §3 forbids a rounded constant; this is what replaces it.
-    var note = scopeWord + ' ' + MIDDOT + ' percentile vs the ATP field ' + MIDDOT +
-      ' Δ is his figure minus the tour average, in rating points' +
-      (tourN ? ' ' + MIDDOT + ' tour average over ' + tourN + ' rated players' : '');
+    //
+    // ── FOUNDER RULING 2026-09-19 · what "tour" means, in plain words ─────────
+    // "Compute it over the … rated players and SAY SO on the page, in the
+    //  footnote, in plain words: the average of the N players we rate, not the
+    //  ATP field. State the real N at render time, not … hardcoded."
+    //
+    // This clause previously read "percentile vs the ATP field", which is the
+    // claim the ruling forbids: the pool is the players carrying a DNA row, not
+    // the tour. `tourN` is counted in dnaTourStats() by walking the live store
+    // every render, so it moves as the store grows and is never a constant.
+    // The TOUR column header and the tiles' "tour average X" line have no room
+    // for the caveat, so the footnote below carries it for them.
+    var note = scopeWord +
+      (tourN ? ' ' + MIDDOT + ' tour figures are the average of the ' + tourN +
+        ' players we rate, not the ATP field' : '') +
+      ' ' + MIDDOT + ' Δ is his figure minus that average, in rating points';
     var foot = 'Ratings rest on ' + m.matches + ' match' + (m.matches === 1 ? '' : 'es') +
       ' with api-tennis box scores in this window' +
       (m.meta && m.meta.source ? ', ATP main-tour singles from 2024-03-06' : '') + '. ' +
       'Elo carries no window, so it reads the same under Career and Last 52. ' +
       'The delta carries the sign colour; a downward marker means lower is better. ' +
       'Break points converted appears in both Return and Under pressure — one figure, two ' +
-      'readings. Anything not held reads as a dash.' +
+      'readings. Anything not held reads as a dash. ' +
+      // RULED 2026-09-19: the TOUR column head and each tile's "tour average X"
+      // line have no room for the caveat, so it is carried here, in plain words.
+      (tourN ? 'Every "tour" figure on this panel — the column, the tile lines and the '
+        + 'dashed polygon — is the average of the ' + tourN + ' players we hold a rating '
+        + 'for, not the ATP field. That count is read from the store at render time and '
+        + 'grows as the store does. ' : '') +
       (m.estimated ? ' Under pressure is estimated from three of its four terms.' : '') +
       (missing.length ? ' ' + missing.length + ' of the five axes ' +
         (missing.length === 1 ? 'has' : 'have') + ' no rating in this window and ' +
@@ -9143,6 +9169,14 @@
       // §5.3 tournament list order (pinned — see tournOrder)
       tournViews: tournViews,
       tournOrder: tournOrder,
+      // §5.9 Ratings — the radar/tile model, exposed so the all-stores gate can
+      // measure dnaRatings through the page's own accessor rather than by
+      // counting rows in the file (the stylesStore failure shape).
+      dnaModel: dnaModel,
+      dnaTourStats: dnaTourStats,
+      renderRatingsPanel: renderRatingsPanel,
+      DNA_TILES: DNA_TILES,
+      DNA_AXES: DNA_AXES,
       // §5.8 Derived lines
       lineCoverage: lineCoverage,
       renderLinesTab: renderLinesTab,
