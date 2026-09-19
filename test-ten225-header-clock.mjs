@@ -163,12 +163,24 @@ console.log('\n  — the card-state observation clock counts too, not just match
 
 console.log('\nTEN-225 item 0d — the tooltip clock renders in the MEMBER zone');
 {
-  // 21:45:00Z is 05:45 in Asia/Makassar (+8) and 22:45 in Europe/Amsterdam (+1)
-  // on this date. A device-local formatter ignoring newsTz would print the same
-  // string for both, which is precisely what it used to do.
+  // ANCHORED TO THE REAL CLOCK, for the same reason the sameDay assertions below
+  // are: ocsFmtClock only returns a BARE time when the stamp falls on today in
+  // the member's zone, and prints a dated string otherwise. The literal
+  // '2026-09-18T21:45:00Z' this block used to pass was 05:45 on 2026-09-19 in
+  // Asia/Makassar, so it satisfied that condition on the day it was written and
+  // stopped satisfying it 24 hours later — the assertion then failed against
+  // CORRECT code and, being a fail-closed pre-deploy gate, blocked every deploy
+  // from 2026-09-19T04:40Z onward. The code was never wrong; the fixture aged.
+  //
+  // Asia/Makassar is UTC+8 year-round (WITA, no DST), so "today at 05:45 there"
+  // is an exact instant, and it is today in that zone BY CONSTRUCTION. That
+  // keeps the founder's own 05:45 reading as the assertion while making the
+  // block independent of the day the suite runs.
+  const mkDay = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Makassar' });
+  const OBSERVED_MK = new Date(`${mkDay}T05:45:00+08:00`).toISOString();
   const mk = build({ tz: 'Asia/Makassar', dataLoadedAt: LOADED });
   const ams = build({ tz: 'Europe/Amsterdam', dataLoadedAt: LOADED });
-  const a = mk.ocsFmtClock(OBSERVED), b = ams.ocsFmtClock(OBSERVED);
+  const a = mk.ocsFmtClock(OBSERVED_MK), b = ams.ocsFmtClock(OBSERVED_MK);
   check('Asia/Makassar renders 21:45:00Z as 05:45 — the founder\'s own reading, '
       + 'so his tooltip was NOT 8 hours off', /05:45/.test(a), a);
   check('the SAME instant renders differently for a member on another zone, '
@@ -179,7 +191,7 @@ console.log('\nTEN-225 item 0d — the tooltip clock renders in the MEMBER zone'
   const preFix = (iso) => new Date(iso).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' });
   check('CONTROL: the PRE-FIX formatter returns one string for both zones, '
       + 'because it ignored newsTz entirely',
-        preFix(OBSERVED) === preFix(OBSERVED), preFix(OBSERVED));
+        preFix(OBSERVED_MK) === preFix(OBSERVED_MK), preFix(OBSERVED_MK));
 
   // sameDay must be decided in the zone the time is printed in.
   // Anchored to the real clock rather than a literal date, so this cannot pass
