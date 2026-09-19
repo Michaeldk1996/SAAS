@@ -3476,6 +3476,13 @@
   .db-ga > div:first-child{ text-align:left; font-family:var(--db-ui); font-size:14px; font-weight:700; }
   .db-yieldcell{ font-family:var(--db-mono); font-size:14px; font-weight:700; letter-spacing:-0.01em; }
   .db-ga .db-yieldcell{ font-size:14px; }
+  /* TEN-243 sample gates (README "Sample gates on a yield cell"). Soft-gated keeps
+     the 14px size and drops to weight 500 in the muted ink — it is still a yield, so
+     it must not read as a label. Hard-gated is NOT a yield at all: 11px, and it
+     prints the count in place of the number. */
+  .db-yieldcell.soft{ font-weight:500; color:var(--db-mute) !important; }
+  .db-yieldcell.hard{ font-size:11px; font-weight:500; color:var(--db-mute) !important; letter-spacing:0; white-space:nowrap; }
+  .db-ga .db-yieldcell.hard{ font-size:11px; }
   .db-tourcell{ font-family:var(--db-mono); font-size:13px; font-weight:500; color:var(--db-sec) !important; }
   .db-tourcell.none{ color:var(--db-faint) !important; }
   .db-thin{ display:block; margin-top:3px; font-family:var(--db-ui); font-size:10px; font-weight:500; color:var(--db-mute); white-space:nowrap; }
@@ -25623,9 +25630,25 @@ window.DatabaseTab = (function(){
   }
   var FAV_NAMES=['Super Fav','Mid Fav','Slight Fav'];
   var DOG_NAMES=['Slight Dog','Mid Dog','Super Dog'];
-  // C8: the live rule survives — a thin band still prints its yield, flagged with
-  // its count. There is no suppression threshold on this page.
-  var THIN=30;
+  // ===== FOUNDER RULING TEN-243, gate `2ebfa608` (2026-09-19): `hardgate`. =====
+  // C8 IS OVERTURNED. C8 (TEN-196) read "a thin band still prints its yield, flagged
+  // with its count — there is no suppression threshold on this page". The design
+  // handoff `design_handoff_database/README.md` §"Sample gates on a yield cell"
+  // specifies the opposite, the conflict was put to the board with C8 named, and the
+  // board ticked the override. So this page now SUPPRESSES.
+  //
+  // Do not restore the `db-thin` flag-with-count on the strength of the C8 comment
+  // that used to sit here; C8 is superseded, not forgotten. The `.db-thin` class is
+  // kept because the Players tab's own thin marks still use it.
+  //
+  //   n < HARD_GATE (30)  -> no yield at all: "n=1,234 — too few matches for a yield"
+  //   n < SOFT_GATE (100) -> the yield, 14px weight 500 in the muted ink
+  //   otherwise           -> the yield, 14px weight 700 in the sign colour
+  //
+  // Both numbers are the README's props (`softGate` 100, `hardGate` 30). HARD_GATE
+  // keeps the value 30 that THIN carried, but the BEHAVIOUR is inverted — a reader of
+  // the diff who matches on the number alone will miss that.
+  var SOFT_GATE=100, HARD_GATE=30;
 
   var state = {
     view:'tour',
@@ -26449,11 +26472,16 @@ window.DatabaseTab = (function(){
     renderFootnote(body);
   }
 
+  // TEN-243 gate `2ebfa608`, `hardgate` — see SOFT_GATE/HARD_GATE. Three states, and
+  // the hard state emits NO yield: the band's own figure is replaced by its count, so
+  // there is nothing on screen a reader could mistake for a rate. The sign colour is
+  // applied only in the full state — a muted soft-gated yield keeps its sign in the
+  // glyph, not in the ink, which is the point of muting it.
   function yieldCell(a){
+    if(a.n<HARD_GATE) return '<span class="db-yieldcell hard">n='+fmtInt(a.n)+' — too few matches for a yield</span>';
     var txt=fmtPct(a.yield);
-    var h='<span class="db-yieldcell" style="color:'+signCol(txt)+'">'+txt+'</span>';
-    if(a.n<THIN) h+='<span class="db-thin">thin · n='+fmtInt(a.n)+'</span>';
-    return h;
+    if(a.n<SOFT_GATE) return '<span class="db-yieldcell soft">'+txt+'</span>';
+    return '<span class="db-yieldcell" style="color:'+signCol(txt)+'">'+txt+'</span>';
   }
   function bandPanel(title, res, names, sideKey, isTourn, seam){
     var panel=el('div','db-bandpanel');
@@ -26574,13 +26602,43 @@ window.DatabaseTab = (function(){
     // none. It is captioned "Match index (chronological)" — the export's own wording
     // on its other profit chart — and must never be captioned "Season" again while
     // it is an index axis.
+    //
+    // ===== FOUNDER RULING TEN-243, gate `2ebfa608` (2026-09-19): `season-axis`. =====
+    // THE ROUND-3 MATCH-INDEX RULING ABOVE IS OVERTURNED. x is a CALENDAR position
+    // again, per the design handoff's CHARTS.md §2, and the caption is "Season". The
+    // whole comment above is kept as the measured record of what the calendar axis
+    // costs — it is history, not the live rule.
+    //
+    // Two things carried over from that record so the known defect does not come back
+    // with the axis:
+    //   1. `sampleKeep` now buckets by INDEX, so the calendar axis no longer starves
+    //      the down-sampler. That starvation — not the dead air — is what painted 42
+    //      of the Australian Open's 2,130 vertices. See the note there.
+    //   2. The seam keys on `r[8]` (book, assigned from the CSV FILENAME season) while
+    //      the ticks key on `yr(r[0])` (the DATE year), and the archive holds 101 rows
+    //      where those disagree. On a calendar axis the seam sits at the first
+    //      Bet365-priced row's own date, so it no longer coincides with the 2026 tick
+    //      by construction. That is expected, not a bug: the seam marks where the BOOK
+    //      changes, which is a different fact from where the season starts.
+    //
+    // Dead air is the remaining honest cost of a calendar axis, and it is the reason
+    // the founder was shown this choice: a one-week-a-year event occupies one week of
+    // the width. That is now a true statement about time rather than a drawing defect.
     var favV=[], dogV=[], xs=[], cf=0, cd=0, seamX=null;
-    var den=(ordered.length-1)||1;
+    // The domain starts at 1 JANUARY of the first season in view, not at the first
+    // match's own date. `calendarTicks` drops any tick outside [0,1] rather than
+    // clamping it (a clamped tick is a label pointing at a date it does not mark), so
+    // anchoring on the first match would silently lose the opening season's label —
+    // its 1 Jan would sit at a negative x. Anchoring on 1 Jan puts that tick at exactly
+    // x=0 and costs only a few days of empty lead-in, which on a calendar axis is a
+    // true statement about time.
+    var d0=Date.UTC(yr(ordered[0][0]),0,1)/86400000, dEnd=dnum(ordered[ordered.length-1][0]);
+    var span=(dEnd-d0)||1;
     for(var i=0;i<ordered.length;i++){
       var r=ordered[i];
       cf += r[7] ? (r[5]-1) : -1;
       cd += r[7] ? -1 : (r[6]-1);
-      var x=i/den;
+      var x=(dnum(r[0])-d0)/span;
       favV.push(cf); dogV.push(cd); xs.push(x);
       if(seamX===null && r[8]===1) seamX=x;
     }
@@ -26638,7 +26696,14 @@ window.DatabaseTab = (function(){
     for(v=Math.floor(hi/step)*step; v>0; v-=step) gy.push({y:Y(v), label:'+'+fmtInt(v)+'u'});
     for(v=0; v>=lo; v-=step) gy.push({y:Y(v), label: v===0?'0':fmtInt(v)+'u'});
 
-    var ticks=seasonTicks(ordered, function(r){ return yr(r[0]); }, [2,1]);
+    // TEN-243 `season-axis`: calendar ticks off the same d0/span the curve is drawn
+    // on, so a label sits at that season's actual 1 January. CHARTS.md §2's pitch rule
+    // — "4 years when the span is over 12, 2 years over 6, otherwise 1" — is expressed
+    // as the ladder's starting rung, and `calendarTicks` keeps walking it until it has
+    // at least three labels, so a two-season event still gets both.
+    var spanYears=span/365.25;
+    var tickSteps = spanYears>12 ? [4,2,1] : (spanYears>6 ? [2,1] : [1]);
+    var ticks=calendarTicks(d0, span, tickSteps);
 
     var plot=el('div','db-plot');
     var yax=el('div','db-yaxis');
@@ -26650,7 +26715,7 @@ window.DatabaseTab = (function(){
     // §5 — layer order, bottom to top, exactly: loss tint, horizontal gridlines,
     // vertical gridlines, area fills (favourites then underdogs, so the deeper series
     // reads through), zero line, book seam, lines (underdogs then favourites on top).
-    var s='<svg viewBox="0 0 1000 '+H+'" preserveAspectRatio="none" role="img" aria-label="Cumulative profit by match index, ticks mark season starts">';
+    var s='<svg viewBox="0 0 1000 '+H+'" preserveAspectRatio="none" role="img" aria-label="Cumulative profit by season, ticks mark season starts">';
     s+='<rect x="0" y="'+zeroY.toFixed(1)+'" width="1000" height="'+(H-zeroY).toFixed(1)+'" fill="rgba(255,255,255,0.014)"/>';
     gy.forEach(function(g){ s+='<line x1="0" y1="'+g.y.toFixed(1)+'" x2="1000" y2="'+g.y.toFixed(1)+'" stroke="rgba(255,255,255,0.06)" stroke-width="1" vector-effect="non-scaling-stroke"/>'; });
     ticks.forEach(function(t){ s+='<line x1="'+(t.x*1000).toFixed(1)+'" y1="0" x2="'+(t.x*1000).toFixed(1)+'" y2="'+H+'" stroke="rgba(255,255,255,0.045)" stroke-width="1" vector-effect="non-scaling-stroke"/>'; });
@@ -26722,42 +26787,22 @@ window.DatabaseTab = (function(){
     var xax=el('div','db-xaxis');
     ticks.forEach(function(t){ var d=el('div',null,t.label); d.style.left=(t.x*100).toFixed(2)+'%'; xax.appendChild(d); });
     card.appendChild(xax);
-    card.appendChild(el('div','db-xcap','<span class="db-eyebrow">Match index (chronological) \u00b7 ticks mark season starts</span>'));
+    // TEN-243 `season-axis`: README \u00a7"Cumulative profit chart" X axis \u2014 the caption is
+    // the bare eyebrow "SEASON" (uppercased by .db-eyebrow's text-transform).
+    card.appendChild(el('div','db-xcap','<span class="db-eyebrow">Season</span>'));
     if(seam && seamX!=null) card.appendChild(el('div','db-seamfoot','Book change at '+M.seamSeason+' ('+esc(M.books[0])+' → '+esc(M.books[1])+', wider margin) — the step is a book artefact, not a market move.'));
     return card;
   }
-  // Season ticks on the match-index axis: each label sits at the index of that
-  // season's FIRST match, so it marks the exact point the season begins — there is
-  // no rounding and nothing to clamp.
+  // Season ticks on a CALENDAR axis — now the ONE tick ladder on this page, used by
+  // Tour, Tournaments and the Players panels alike. The match-index variant that used
+  // to sit here (`seasonTicks`, labels at the index of each season's first match) was
+  // deleted with the match-index axis under TEN-243 gate `2ebfa608` `season-axis`;
+  // with every chart back on a calendar x there is no second base for it to serve, and
+  // leaving it would invite a future edit to wire the two bases back together.
   //
-  // Only seasons that actually hold a match get a tick. On a calendar axis an empty
-  // season still occupied width and still drew a label; on an index axis it occupies
-  // none, and labelling it would put two labels on one pixel claiming different
-  // things. `ordered` must already be sorted ascending.
-  //
-  // `steps` is tried in order and the first that yields >=3 ticks wins, so an event
-  // with a handful of seasons gets every season labelled rather than every other
-  // one. It cannot manufacture ticks below the season count: a single-season event
-  // such as `Copa Telmex` draws exactly one label, at x=0.
-  function seasonTicks(ordered, yearOf, steps){
-    var n=ordered.length, den=(n-1)||1, i, y;
-    var years=[], firstIx={};
-    for(i=0;i<n;i++){ y=yearOf(ordered[i]); if(firstIx[y]==null){ firstIx[y]=i; years.push(y); } }
-    var out=[];
-    (steps||[2,1]).some(function(stp){
-      out=[];
-      for(var k=0;k<years.length;k+=stp) out.push({ label:String(years[k]), x:firstIx[years[k]]/den });
-      return out.length>=3;
-    });
-    return out;
-  }
-  // Season ticks on a CALENDAR axis — the Players panels only. `seasonTicks` above
-  // is the match-index ladder used by Tour and Tournaments; the two bases coexist on
-  // the page by founder ruling (TEN-196 2026-09-13 round 3), so they are two
-  // functions rather than one with a mode flag.
-  //
-  // Same `steps` contract as `seasonTicks`: the first entry yielding >=3 ticks wins,
-  // so a short career gets every season labelled rather than every other one.
+  // `steps` is tried in order and the first that yields >=3 ticks wins, so a short
+  // career or a two-season event gets every season labelled rather than every other
+  // one.
   //
   // Nothing is clamped, and nothing needs to be: callers pass `d0` = 1 Jan of the
   // first season in the domain, so the first tick lands at exactly x=0, and the last
@@ -26867,12 +26912,30 @@ window.DatabaseTab = (function(){
       for(i=0;i<n;i++) keep[i]=i;
     } else {
       // (N-2)/2 buckets x 2 vertices + the two pinned endpoints <= N.
-      var B=Math.max(1, Math.floor((N-2)/2)), x0=xs[0], sp=(xs[n-1]-x0)||1;
+      //
+      // ⚠️ BUCKET BY INDEX, NOT BY x — THIS IS WHAT MAKES A CALENDAR AXIS DRAWABLE.
+      // TEN-243 gate `2ebfa608` ruled `season-axis`, putting Tour and Tournaments back
+      // on a calendar x. Bucketing by x on a calendar axis STARVES the sampler: a
+      // one-week-a-year event puts all its points into a handful of columns, so most
+      // buckets never receive one and the budget goes unspent. That is measured, not
+      // theoretical — on the old calendar axis the Australian Open painted 42 vertices
+      // out of 2,130 with a 65-column gap, and that starvation was half of what "the
+      // charts look like a child's drawing" was.
+      //
+      // Bucketing by index spends the whole budget on the points that exist, in order,
+      // and still keeps each bucket's high and low — so no extremum and no zero
+      // crossing can be lost. It invents nothing: every painted vertex is a real point,
+      // drawn at its own true x. The remaining calendar dead air is honest (one week a
+      // year IS one week a year); the starved sampler never was.
+      //
+      // This is axis-independent — on an index axis the two rules coincide exactly, so
+      // it is also a no-op for anything still on one.
+      var B=Math.max(1, Math.floor((N-2)/2));
       keep=[];
       var b=-1, mn=0, mx=0;
       function flush(){ var a=mn<mx?mn:mx, z=mn<mx?mx:mn; keep.push(a); if(z!==a) keep.push(z); }
       for(i=0;i<n;i++){
-        var bk=Math.floor((xs[i]-x0)/sp*B); if(bk>=B) bk=B-1; if(bk<0) bk=0;
+        var bk=Math.floor(i/n*B); if(bk>=B) bk=B-1; if(bk<0) bk=0;
         if(bk!==b){ if(b>=0) flush(); b=bk; mn=i; mx=i; }
         if(vals[i]<vals[mn]) mn=i;
         if(vals[i]>vals[mx]) mx=i;
@@ -26962,12 +27025,20 @@ window.DatabaseTab = (function(){
     // 1 - all-matches line
     var al=el('div','db-allline');
     var ay=fmtPct(A.yield);
+    // TEN-243 `hardgate`: the same three states as yieldCell, at this line's own type
+    // scale. Under the hard gate the 22px figure is replaced outright — a suppressed
+    // yield must not leave a big coloured number on the most prominent line of the tab.
+    var abig = (A.n<HARD_GATE)
+      ? '<span class="big" style="font-size:12.5px;font-weight:500;color:var(--db-mute);">n='+fmtInt(A.n)+' — too few matches for a yield</span>'
+      : (A.n<SOFT_GATE
+        ? '<span class="big" style="font-weight:500;color:var(--db-mute);">'+ay+'</span>'
+        : '<span class="big" style="color:'+signCol(ay)+'">'+ay+'</span>');
     al.innerHTML='<span class="lbl">All matches</span>'+
-      '<span class="big" style="color:'+signCol(ay)+'">'+ay+'</span>'+
+      abig+
       '<span class="meta"><b>'+A.wins+'–'+A.losses+'</b> · '+(A.winpct==null?'—':Math.round(A.winpct*100)+'% win')+'</span>'+
       '<span class="meta">Median odds <b>'+fmtP(A.median)+'</b></span>'+
       '<span class="meta">'+(known?('Tour '+fmtPct(tAll)):'Tour — not computed for this filter')+'</span>'+
-      (A.n<THIN?'<span class="meta">n='+fmtInt(A.n)+' — thin sample</span>':'');
+      (A.n>=HARD_GATE && A.n<SOFT_GATE ? '<span class="meta">n='+fmtInt(A.n)+'</span>' : '');
     body.appendChild(al);
 
     // 2 - role cards
@@ -27003,9 +27074,17 @@ window.DatabaseTab = (function(){
       return c;
     }
     var ytxt=fmtPct(a.yield);
+    // TEN-243 `hardgate`: the role card's 28px yield obeys the same three states. Under
+    // the hard gate the figure is dropped to the count — the Matches tile beside it
+    // already carries n, so the two agree rather than contradicting each other.
+    var yfig = (a.n<HARD_GATE)
+      ? '<b style="font-size:12.5px;font-weight:500;color:var(--db-mute);">too few matches</b>'
+      : (a.n<SOFT_GATE
+        ? '<b style="font-weight:500;color:var(--db-mute);">'+ytxt+'</b>'
+        : '<b style="color:'+signCol(ytxt)+'">'+ytxt+'</b>');
     var figs=el('div','db-figs');
     figs.appendChild(el('div','db-fig','<b>'+fmtInt(a.n)+'</b><span>Matches</span>'));
-    figs.appendChild(el('div','db-fig','<b style="color:'+signCol(ytxt)+'">'+ytxt+'</b><span>Flat-stake yield</span>'));
+    figs.appendChild(el('div','db-fig',yfig+'<span>Flat-stake yield</span>'));
     figs.appendChild(el('div','db-fig','<b style="color:#5b6880">'+(known?fmtPct(base):'—')+'</b><span>Tour baseline</span>'));
     c.appendChild(figs);
 
@@ -27050,7 +27129,7 @@ window.DatabaseTab = (function(){
     // replaces) and the export's role card has no slot for them. Kept rather than
     // silently deleted, in the export's own meta idiom. Flagged for a ruling.
     var extra='<b>'+a.wins+'–'+a.losses+'</b> · '+(a.winpct==null?'—':Math.round(a.winpct*100)+'% win')+
-      ' · Median odds <b>'+fmtP(a.median)+'</b>'+(a.n<THIN?' · thin · n='+fmtInt(a.n):'');
+      ' · Median odds <b>'+fmtP(a.median)+'</b>'+(a.n<SOFT_GATE?' · n='+fmtInt(a.n):'');
     c.appendChild(el('div','db-rolemeta',extra));
     return c;
   }
@@ -27191,13 +27270,22 @@ window.DatabaseTab = (function(){
     // clearance. .db-belab is font-size:9.5px, padding:2px 7px, translateY(-50%) — any
     // type-scale or margin edit flips the bottom case into an overlap on 39 panels.
     //
-    // THE CLAMP AND THE zeroIn GUARD BELOW STAY. They are unreachable while this flag
-    // is true — proven both analytically (with zero forced, hi >= 0 >= lo, so zeroIn is
-    // always true and Y(0) is always inside the plot) and empirically (0 of 1,129
-    // panels have zeroIn false, 0 of 1,129 have tintY !== zeroY) — and they are the
-    // reason a future edit to the step ladder or the rounding cannot silently
-    // reintroduce a rect taller than its own viewBox.
-    var PLAYER_ZERO_IN_DOMAIN=true;   // FOUNDER RULING, gate e8453243: 'force-zero'.
+    // ===== FOUNDER RULING TEN-243, gate `2ebfa608` (2026-09-19): `no-force-zero`. =====
+    // THE e8453243 `force-zero` RULING ABOVE IS OVERTURNED. The design handoff's
+    // CHARTS.md §4 computes the shared player y-axis from the three series alone and
+    // does not force zero into the domain; the conflict was put to the board with the
+    // 204-panel cost named, and the board ticked the override. The whole comment above
+    // is kept because it is the measured record of what this flag costs in each
+    // direction — it is history now, not the live rule.
+    //
+    // ⚠️ THE CLAMP AND THE zeroIn GUARD BELOW ARE NOW LOAD-BEARING, NOT DEAD CODE.
+    // While force-zero was on they were provably unreachable (0 of 1,129 panels). With
+    // it off, 204 panels again have a zero line outside their own domain, and §5.1's
+    // `height = viewBoxHeight - zeroY` is exactly the expression that then produces a
+    // rect taller than the viewBox (up to 400 on a 200-tall box) or a negative height.
+    // §4 mandates overflow:visible, so an unclamped rect spills out of the card. Do not
+    // simplify them away on the strength of the "unreachable" note above.
+    var PLAYER_ZERO_IN_DOMAIN=false;  // FOUNDER RULING, gate 2ebfa608, 2026-09-19: 'no-force-zero'.
     var dHi=rawHi, dLo=rawLo;
     if(PLAYER_ZERO_IN_DOMAIN){ if(dHi<0) dHi=0; if(dLo>0) dLo=0; }
     for(var psi=0; psi<PSTEPS.length; psi++){
