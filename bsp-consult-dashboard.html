@@ -7074,7 +7074,7 @@ function mxHeaderStatusHtml(){
 // Book name AND Open timestamp, always together (founder, 2026-09-18) — they
 // travel in one function so a surface cannot render one without the other.
 function ocsProvenance(m){
-  const book = ocsBookOf(m), ts = ocsFmtTs(ocsOpenTsOf(m));
+  const book = mxBookLabel(ocsBookOf(m)), ts = ocsFmtTs(ocsOpenTsOf(m));
   return [book, ts].filter(Boolean).join(' · ');
 }
 // ───────────────────────────────────── TEN-225 ruling 2 (founder, 2026-09-18) ──
@@ -7130,6 +7130,38 @@ function ocsProvenance(m){
 // Two lines when the one-line slot cannot hold it: a `title` attribute renders a
 // literal \n as a line break, so the second clock wraps instead of being dropped.
 const MC_TITLE_1LINE_MAX = 52;
+// ───────────────── TEN-225 item G1 — VENDOR-CONFIRMED BOOK LABELS ──────────
+// Founder 2026-09-19: "G1: relabel Sbo -> SBOBET, Pncl -> Pinnacle, Victor
+// Chandler -> BetVictor. Vendor-confirmed, stop inferring."
+//
+// api-tennis ships abbreviations and never expands them. Until the vendor
+// confirmed these, the repo carried them as INFERENCES ("SBOBET and Pinnacle
+// are the natural readings and the margins fit, but that is inference, not the
+// feed"). They are now vendor-confirmed and the guesswork is retired.
+//
+// RELABELLED AT DISPLAY, NOT AT CAPTURE, and the distinction is deliberate.
+// Stored rows keep the string the vendor actually sent, so:
+//   * a row can still be traced back to what the feed said, which is the whole
+//     basis of the provenance work on this issue;
+//   * rows written before and after this change do not disagree with each other,
+//     which a capture-time rename would guarantee;
+//   * if the vendor ever expands an abbreviation itself, or a new one appears,
+//     nothing stored has to be migrated.
+// Only the member-facing string changes, which is exactly what the ruling asked
+// for.
+const MX_BOOK_LABELS = {
+  sbo: 'SBOBET',
+  pncl: 'Pinnacle',
+  victorchandler: 'BetVictor',
+};
+function mxBookLabel(book){
+  if (!book) return book;
+  // Keyed on a normalised form so casing and spacing are the vendor's business,
+  // not ours: "Victor Chandler", "victor chandler" and "VictorChandler" are one
+  // book, and a literal-match table would relabel one of them and miss two.
+  const k = String(book).toLowerCase().replace(/[^a-z0-9]/g, '');
+  return MX_BOOK_LABELS[k] || book;
+}
 function mcPriceTitle(pair, px){
   if (!pair || !pair.book) return '';
   const priceTxt = (typeof px === 'number' && px > 0) ? px.toFixed(2) : '';
@@ -7143,7 +7175,7 @@ function mcPriceTitle(pair, px){
   // printed the exact value the loader had just refused to record, under the
   // word "seen". No clock is the honest render; the book name still shows.
   const seenClock = ocsFmtClock(pair.obs);
-  const head = [pair.book, priceTxt].filter(Boolean).join(' · ');
+  const head = [mxBookLabel(pair.book), priceTxt].filter(Boolean).join(' · ');
   // The founder's format, verbatim: "bet365 · 1.22 since 01:08 · seen 09:15".
   // The book clock hangs off the price with a SPACE, not a separator dot — it
   // qualifies that price rather than standing beside it as a third field.
@@ -7169,7 +7201,10 @@ function mcTitleAttr(txt){
 // has to say which book we looked in and found nothing.
 function mcMoveBookLabel(m, leg){
   const book = (m && ocsBookOf(m)) || 'Bet365';
-  const pretty = book.toLowerCase() === 'bet365' ? 'Bet365' : book;
+  // G1 runs before the bet365 title-case, so a vendor abbreviation is expanded
+  // first and only then considered for the bet365 special case.
+  const named = mxBookLabel(book);
+  const pretty = named.toLowerCase() === 'bet365' ? 'Bet365' : named;
   return `${pretty} open → ${leg}`;
 }
 async function loadOddsCardState(){

@@ -36,6 +36,19 @@ function slice(name) {
   }
   throw new Error(`unbalanced braces in ${name}`);
 }
+// A const whose value is a multi-line object literal. sliceConst's single-line
+// regex cannot see one, and quietly failing to find it would make every
+// assertion about that table unrunnable rather than red.
+function sliceObj(name) {
+  const at = SRC.indexOf(`const ${name} = {`);
+  if (at < 0) throw new Error(`const ${name} (object) not found in the shipped HTML`);
+  let i = SRC.indexOf('{', at), depth = 0;
+  for (let j = i; j < SRC.length; j++) {
+    if (SRC[j] === '{') depth++;
+    else if (SRC[j] === '}') { depth--; if (!depth) return SRC.slice(at, j + 1) + ';'; }
+  }
+  throw new Error(`unbalanced braces in const ${name}`);
+}
 function sliceConst(name) {
   const re = new RegExp(`^const ${name} = .*?;$`, 'm');
   const hit = SRC.match(re);
@@ -310,6 +323,73 @@ console.log('\n  — the log is a record, not a per-repaint stream');
       + 're-renders on every filter change and an unbounded log is a leak',
         api.MX_SUPPRESSED.size === 1 && api.WARNED.length === 1,
         `entries=${api.MX_SUPPRESSED.size} warns=${api.WARNED.length}`);
+}
+
+// ===========================================================================
+// TEN-225 item G1 — VENDOR-CONFIRMED BOOK LABELS
+// Founder 2026-09-19: "relabel Sbo -> SBOBET, Pncl -> Pinnacle, Victor Chandler
+// -> BetVictor. Vendor-confirmed, stop inferring."
+// ===========================================================================
+console.log('\nTEN-225 item G1 — vendor-confirmed book labels');
+{
+  const api = (() => {
+    const code = `
+      ${sliceObj('MX_BOOK_LABELS')}
+      ${slice('mxBookLabel')}
+      return { mxBookLabel, MX_BOOK_LABELS };`;
+    // eslint-disable-next-line no-new-func
+    return new Function(code)();
+  })();
+
+  check('Sbo renders as SBOBET', api.mxBookLabel('Sbo') === 'SBOBET');
+  check('Pncl renders as Pinnacle', api.mxBookLabel('Pncl') === 'Pinnacle');
+  check('Victor Chandler renders as BetVictor',
+        api.mxBookLabel('Victor Chandler') === 'BetVictor');
+  // Casing and spacing are the vendor's to change, not ours to depend on. A
+  // literal-match table would relabel one spelling and silently miss the others,
+  // which is how "WilliamHill" was reported as an absent book earlier today.
+  check('the mapping is casing- and spacing-insensitive, so a vendor respelling '
+      + 'cannot silently un-relabel a book',
+        ['victor chandler', 'VICTORCHANDLER', 'VictorChandler', 'victor-chandler']
+          .every(v => api.mxBookLabel(v) === 'BetVictor'));
+  check('SBO in any casing still resolves',
+        api.mxBookLabel('SBO') === 'SBOBET' && api.mxBookLabel('sbo') === 'SBOBET');
+
+  // The books that must pass through untouched. A relabel map that rewrote an
+  // unrelated book would be a false label, which is the defect class this whole
+  // issue keeps paying for.
+  check('every other book is returned VERBATIM — the map relabels three books, '
+      + 'not "book names in general"',
+        ['bet365', '1xBet', 'Betano', 'Betfair', 'Marathon', 'WilliamHill',
+         'sports411'].every(b => api.mxBookLabel(b) === b));
+  check('exactly THREE entries in the map, so a fourth cannot be added without '
+      + 'this assertion being revisited',
+        Object.keys(api.MX_BOOK_LABELS).length === 3,
+        JSON.stringify(Object.keys(api.MX_BOOK_LABELS)));
+  check('null / empty is passed through rather than becoming a label',
+        api.mxBookLabel(null) === null && api.mxBookLabel('') === '');
+
+  // WHERE it is applied, and where it deliberately is NOT.
+  check('the hover title relabels the book it names',
+        SRC.includes("[mxBookLabel(pair.book), priceTxt]"));
+  check('the Open provenance line relabels too',
+        SRC.includes('const book = mxBookLabel(ocsBookOf(m)), ts ='));
+  check('the Biggest-market-move tile relabels BEFORE the bet365 title-case, so '
+      + 'the special case sees the expanded name',
+        SRC.includes('const named = mxBookLabel(book);')
+        && SRC.includes("named.toLowerCase() === 'bet365'"));
+
+  // ⚠️ The ruling this test exists to protect: DISPLAY only.
+  check('_isBet365 does NOT go through the label map — it is an identity test '
+      + 'that gates cross-book blending, and routing it through a display '
+      + 'relabel would let a rename change which prices may be paired',
+        /function _isBet365\(name\)\{[^}]*toLowerCase\(\) === 'bet365'/.test(
+          SRC.replace(/\s+/g, ' ').replace(/function _isBet365\(name\) \{/, 'function _isBet365(name){'))
+        || SRC.includes("function _isBet365(name){ return String(name || '').toLowerCase() === 'bet365'; }"));
+  check('the map is not applied at capture: the pipeline still stores the '
+      + 'vendor\'s own string, so a stored row remains traceable to the feed',
+        !fs.readFileSync(new URL('./bsp-pipeline.js', import.meta.url), 'utf8')
+           .includes('mxBookLabel'));
 }
 
 console.log('');
