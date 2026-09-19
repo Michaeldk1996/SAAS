@@ -5257,11 +5257,17 @@
     "venue": null,
     "courtSpeed": null,
     "weather": null,
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 1,
+        "p2": 1
+      }
+    ],
+    "liveGameScore": "40 - 40",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/437_h-rune.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2384_g-dimitrov.jpg",
     "oddsMovement": {
@@ -5360,7 +5366,10 @@
       "at": "2026-09-19T09:58:36.864Z",
       "observedAt": "2026-09-19T12:53:04Z",
       "src": "live"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12163927",
@@ -56107,11 +56116,17 @@
     "venue": null,
     "courtSpeed": null,
     "weather": null,
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 0,
+        "p2": 0
+      }
+    ],
+    "liveGameScore": "0 - 30",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/23664_p-henning.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/9640_-a-nedic.jpg",
     "oddsMovement": {
@@ -56194,7 +56209,10 @@
       "at": "2026-09-19T10:59:17.279Z",
       "observedAt": "2026-09-19T12:53:04Z",
       "src": "live"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12164141",
@@ -119255,13 +119273,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 1.18,
+      "p2": 4.33,
+      "bookmaker": "BetVictor"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 1.18,
+        "bookmaker": "BetVictor"
+      },
+      "p2": {
+        "price": 4.33,
+        "bookmaker": "BetVictor"
+      }
     },
     "tournamentRound": null,
     "p1Key": 867,
@@ -136461,7 +136485,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 1-6, 2-6",
+      "display": "7-6(5), 1-6, 2-6",
       "sets": [
         {
           "p1": 7,
@@ -141732,7 +141756,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-4, 7-6",
+      "display": "6-4, 7-6(4)",
       "sets": [
         {
           "p1": 6,
@@ -147419,7 +147443,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 6-1",
+      "display": "7-6(2), 6-1",
       "sets": [
         {
           "p1": 7,
@@ -223666,11 +223690,22 @@
     "venue": null,
     "courtSpeed": null,
     "weather": null,
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 2",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 6,
+        "p2": 4
+      },
+      {
+        "set": 2,
+        "p1": 3,
+        "p2": 2
+      }
+    ],
+    "liveGameScore": "0 - 0",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/362_t-skatov.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/680_m-jones.jpg",
     "oddsMovement": {
@@ -223763,7 +223798,10 @@
       "at": "2026-09-19T12:12:52.155Z",
       "observedAt": "2026-09-19T12:53:04Z",
       "src": "live"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12164157",
@@ -225779,11 +225817,22 @@
     "venue": null,
     "courtSpeed": null,
     "weather": null,
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 2",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 7,
+        "p2": 5
+      },
+      {
+        "set": 2,
+        "p1": 0,
+        "p2": 5
+      }
+    ],
+    "liveGameScore": "0 - 0",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2848_m-kecmanovic.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/9362_e-butvilas.jpg",
     "oddsMovement": {
@@ -225871,7 +225920,10 @@
       "at": "2026-09-19T10:58:15.937Z",
       "observedAt": "2026-09-19T11:52:48Z",
       "src": "live"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12164175",
@@ -228116,11 +228168,11 @@
     "venue": null,
     "courtSpeed": null,
     "weather": null,
-    "live": false,
-    "liveStatus": null,
+    "live": true,
+    "liveStatus": "Set 2",
     "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "liveGameScore": "0 - 0",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/397_n-gombos.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1906_s-tsitsipas.jpg",
     "oddsMovement": {
@@ -228336,7 +228388,10 @@
       "edgeVsPinnacleP1": -0.0481,
       "edgeVsPinnacleP2": 0.0481,
       "ts": "2026-09-19T09:53:35.223Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12164178",
@@ -230040,11 +230095,22 @@
     "venue": null,
     "courtSpeed": null,
     "weather": null,
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 2",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 4,
+        "p2": 6
+      },
+      {
+        "set": 2,
+        "p1": 4,
+        "p2": 3
+      }
+    ],
+    "liveGameScore": "0 - 0",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/15184_t-samuel.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/6505_a-andrade.jpg",
     "oddsMovement": {
@@ -230134,7 +230200,10 @@
       "edgeVsPinnacleP1": 0.0153,
       "edgeVsPinnacleP2": -0.0153,
       "ts": "2026-09-19T09:53:35.223Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12164179",
@@ -232072,11 +232141,22 @@
     "venue": null,
     "courtSpeed": null,
     "weather": null,
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 2",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 6,
+        "p2": 4
+      },
+      {
+        "set": 2,
+        "p1": 2,
+        "p2": 2
+      }
+    ],
+    "liveGameScore": "0 - 0",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1980_a-zverev.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/28615_m-dodig.jpg",
     "oddsMovement": {
@@ -232145,7 +232225,10 @@
       "at": "2026-09-19T10:57:46.400Z",
       "observedAt": "2026-09-19T11:52:48Z",
       "src": "live"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12163936",
@@ -234586,11 +234669,11 @@
     "venue": null,
     "courtSpeed": null,
     "weather": null,
-    "live": false,
-    "liveStatus": null,
+    "live": true,
+    "liveStatus": "Set 2",
     "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "liveGameScore": "0 - 0",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/416_j-rodionov.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1064_z-bergs.jpg",
     "oddsMovement": {
@@ -234685,7 +234768,10 @@
       "edgeVsPinnacleP1": -0.0543,
       "edgeVsPinnacleP2": 0.0543,
       "ts": "2026-09-19T09:53:35.223Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12164139",
@@ -236446,7 +236532,31 @@
       "at": "2026-09-19T12:48:34.740Z",
       "observedAt": "2026-09-19T12:53:04Z",
       "src": "live"
-    }
+    },
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "2-6, 6-1, 4-6",
+      "sets": [
+        {
+          "p1": 2,
+          "p2": 6
+        },
+        {
+          "p1": 6,
+          "p2": 1
+        },
+        {
+          "p1": 4,
+          "p2": 6
+        }
+      ],
+      "p1Sets": 1,
+      "p2Sets": 2,
+      "winner": "p2"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "upcoming-12164024",
