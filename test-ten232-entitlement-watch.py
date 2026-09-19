@@ -109,9 +109,36 @@ bl = os.path.join(HERE, 'kibl-entitlement-baseline.json')
 check('a baseline file exists to diff against', os.path.exists(bl))
 if os.path.exists(bl):
     d = json.load(open(bl))
-    check('it records exactly the one book measured 2026-09-19 (43 Sports411) — '
-          'seeded from a real read, not invented',
-          d.get('books') == {'43': 'Sports411'}, json.dumps(d.get('books')))
+    # ASSERT THE INVARIANT, NOT A FROZEN READING. This check used to pin the
+    # literal {'43': 'Sports411'}, which is the value the account happened to
+    # return on 2026-09-19. But kibl-entitlement-baseline.json is a LIVE file:
+    # the watch job rewrites and commits it every time the account moves, which
+    # is the entire point of a watch. So the first time it did its job - the
+    # account went to {'171': 'Bet105'} at 14:07Z - this assertion went red, and
+    # because `npm test` is the fail-closed PRE-DEPLOY gate, a monitor observing
+    # a change took the whole site undeployable. A gate that a passing monitor
+    # breaks is not measuring what it meant to.
+    #
+    # What the check actually means, per its own wording, is "this came from a
+    # real read rather than being invented": a dict of feed_source_id -> book
+    # name, non-empty, carrying the timestamp the reader stamped on it. That is
+    # true of any genuine read and false of a hand-written placeholder, and it
+    # does not go stale the next time the entitlement moves.
+    #
+    # NOTE, and it is not cosmetic: the entitlement HAS moved, 43/Sports411 ->
+    # 171/Bet105, while VERIFIED_FEED_SOURCE_ID is still 43. The assertion above
+    # that the card path admits only book 43 still passes, so no unverified book
+    # can reach a card - but which book the account actually carries is now a
+    # live question for TEN-232, not something this gate should answer.
+    books = d.get('books')
+    check('the baseline is a real read: a non-empty {feed_source_id: book} map, '
+          'not an invented placeholder',
+          isinstance(books, dict) and len(books) > 0
+          and all(str(k).isdigit() and isinstance(v, str) and v.strip() for k, v in books.items()),
+          json.dumps(books))
+    check('...and it is stamped with when it was read, so a stale baseline is '
+          'visible rather than silent',
+          bool(d.get('updated_at')), json.dumps(d.get('updated_at')))
 
 print()
 if FAILED:
