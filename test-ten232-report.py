@@ -81,7 +81,12 @@ for header, want in (("0-0/28067", 28067), ("*/0", 0), ("0-0/*", None), ("", Non
 print("5. the cadence rule still matches the founder ruling")
 check("baseline floor is 15 min", ak.BASELINE_MIN == 15)
 check("near-start floor is 5 min", ak.NEAR_START_MIN == 5)
-check("near-start window is T-60", ak.NEAR_START_WINDOW_MIN == 60)
+# WIDENED to T-180, founder item 4(a) 2026-09-19. Rewritten to the window in
+# force rather than deleted: its job — pinning the ruled value so a silent
+# drift is caught — is unchanged. The measured start delay on the 17 lag
+# failures is NEGATIVE (median -11 min, min -860), so a T-60 window can open
+# after the match has begun.
+check("near-start window is the widened T-180", ak.NEAR_START_WINDOW_MIN == 180)
 check("no previous sweep always sweeps", ak.should_sweep(None, None)[0] is True)
 check("14 min into the baseline skips", ak.should_sweep(14.0, None)[0] is False)
 check("16 min into the baseline sweeps", ak.should_sweep(16.0, None)[0] is True)
