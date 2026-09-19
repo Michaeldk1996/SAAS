@@ -247,7 +247,23 @@ def main():
                 continue
             shard_by_day[day][tuple(sorted((k1, k2)))] = (e.get('cat'), k1, cut)
 
-    wide_days = [d for d in sorted(shard_by_day, reverse=True)][:6]
+    # TEN-225 item 4, founder 2026-09-19: "Run the ATP window from August before
+    # wiring anything ATP." The six most recent days are the post-US-Open gap and
+    # joined n=1 ATP fixture — no sample at all. Pass a YYYY-MM prefix (or a
+    # comma list of days) to aim the window where the ATP fixtures actually are.
+    #   python3 ten225-apitennis-close-test.py 2026-08
+    _sel = sys.argv[1] if len(sys.argv) > 1 else None
+    if _sel:
+        cand = [d for d in sorted(shard_by_day, reverse=True) if d.startswith(_sel)]
+        # Prefer the days that actually carry ATP, or the window measures the
+        # tier it was chosen to escape.
+        cand.sort(key=lambda d: -sum(1 for v in shard_by_day[d].values()
+                                     if v[0] == 'ATP'))
+        wide_days = cand[:8]
+        print(f'  window override {_sel!r}: {len(cand)} day(s) available, '
+              f'querying the 8 richest in ATP')
+    else:
+        wide_days = [d for d in sorted(shard_by_day, reverse=True)][:6]
     print('\n' + '=' * 76)
     print('WIDENED SAMPLE — ATP / Challenger, from bet365-history')
     print('=' * 76)
