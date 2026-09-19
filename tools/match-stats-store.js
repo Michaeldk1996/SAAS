@@ -176,6 +176,48 @@ function mergeStores(a, b) {
   return out;
 }
 
+// The URL the guard in pipeline.yml compares against. Same constant, same
+// question: "is anything we have already served about to disappear?"
+const LIVE_URL = 'https://michaeldk1996.github.io/SAAS/historical-match-stats.json';
+
+/**
+ * The DEPLOYED store, or null if it cannot be read.
+ *
+ * ⚠️ WHY THIS EXISTS. hydrate() unioned the committed floor with the restored
+ * Actions cache and nothing else — so an eventKey that is LIVE but is in neither
+ * (the harvest window rolled past it, and the floor is only refreshed once a
+ * day) was simply absent from the build. `Assert site completeness` then refused
+ * the deploy, correctly, because that key's box score would have vanished from
+ * the page.
+ *
+ * MEASURED 2026-09-19: five consecutive pipeline runs (#3739, #3741, #3742,
+ * #3746, #3748, #3750) failed exactly that way, each naming a DIFFERENT key
+ * (12143895, then 12143247) while publishing a store LARGER than the floor
+ * (2622/2134 against 2122/1747). Not a shrinking store — rolling churn. Every
+ * unrelated change was stuck behind it.
+ *
+ * The fix is to make the publisher SATISFY the gate, not to weaken the gate.
+ * mergeStores is union, upgrade-only, so folding the live store in can only ADD
+ * an entry or deepen one; it can never drop or shallow anything. The gate is
+ * untouched and is still the thing that would catch a real regression.
+ *
+ * FAILS OPEN. A network problem here must not turn a deploy red — the guard
+ * downstream is the fail-closed half. 30 s, matching the guard's own timeout.
+ */
+async function readLive() {
+  try {
+    const r = await fetch(LIVE_URL, { signal: AbortSignal.timeout(30000) });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const d = await r.json();
+    return d && typeof d === 'object' ? d : null;
+  } catch (e) {
+    console.log(`::warning title=match-stats live store unreadable::could not read the `
+      + `deployed store (${e.message}); hydrating from floor + cache only. If a live `
+      + `key has aged out of both, the completeness gate will refuse this deploy.`);
+    return null;
+  }
+}
+
 function hydrate(root) {
   const plainPath = path.join(root, PLAIN);
   const floorPath = path.join(root, FLOOR);
@@ -297,15 +339,35 @@ function freeze(root, opts) {
   return 1;
 }
 
+/**
+ * hydrate(), then UNION the deployed store on top. Separate from hydrate() so
+ * the synchronous, network-free path stays testable exactly as it was.
+ */
+async function hydrateWithLive(root) {
+  const rc = hydrate(root);
+  if (!rc) return rc;                      // no floor: hydrate already said so
+  const live = await readLive();
+  if (!live) return rc;
+  const plainPath = path.join(root, PLAIN);
+  const cur = readJson(plainPath);
+  if (!cur) return rc;
+  const merged = mergeStores(cur, live);
+  const before = Object.keys(cur).length, after = Object.keys(merged).length;
+  fs.writeFileSync(plainPath, JSON.stringify(merged));
+  console.log(`hydrate: UNION deployed store (${census(live)}) -> ${census(merged)}; `
+    + `${after - before} key(s) recovered that had aged out of both the floor and the cache.`);
+  return 1;
+}
+
 if (require.main === module) {
   const cmd = process.argv[2];
   const root = process.env.MATCH_STATS_ROOT || process.cwd();
   // The workflow runs both with `|| true`, so the exit code is advisory rather than
   // fatal — but it is still the difference between "nothing to do" and "I refused",
   // and a later caller that drops the `|| true` gets the right behaviour for free.
-  if (cmd === 'hydrate') process.exitCode = hydrate(root) ? 0 : 1;
+  if (cmd === 'hydrate') { hydrateWithLive(root).then(rc => { process.exitCode = rc ? 0 : 1; }); }
   else if (cmd === 'freeze') process.exitCode = freeze(root, { bootstrap: process.argv.includes('--bootstrap') }) ? 0 : 1;
   else { console.error('usage: match-stats-store.js <hydrate|freeze> [--bootstrap]'); process.exit(2); }
 }
 
-module.exports = { PLAIN, FLOOR, depth, sideDepths, notShallower, strictlyDeeper, census, mergeStores, hydrate, freeze };
+module.exports = { PLAIN, FLOOR, LIVE_URL, depth, sideDepths, notShallower, strictlyDeeper, census, mergeStores, hydrate, hydrateWithLive, readLive, freeze };
