@@ -467,7 +467,12 @@ for (const key of KEYS) {
   }
   // the note must re-word with the window, or the reader takes a 52-week shape
   // for a career one
-  const noteWin = await ev(`/Last 52 weeks \\u00b7 percentile vs the ATP field/.test(
+  // FOUNDER RULING 2026-09-19 superseded the clause this used to match. It read
+  // "Last 52 weeks \u00b7 percentile vs the ATP field"; the pool is the players we
+  // rate, not the tour, so that half of the string is gone by ruling. What C4
+  // actually exists to prove is unchanged -- that the note NAMES ITS WINDOW --
+  // so it now matches the window word against the current clause.
+  const noteWin = await ev(`/Last 52 weeks \\u00b7 tour figures are the average of the \\d+ players we rate, not the ATP field/.test(
     (document.querySelector('[data-pp2="scrim"]')||{textContent:''}).textContent)`);
   ok(`${key} C4 · the note names the window it is drawn over`, !!noteWin || !l52radar.drawn,
     noteWin ? 'says Last 52 weeks' : (l52radar.drawn ? 'still says Career' : 'gated, no note expected'));
