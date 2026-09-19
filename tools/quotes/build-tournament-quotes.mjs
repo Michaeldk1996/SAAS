@@ -154,6 +154,16 @@ function resolvePlayer(cell, roster) {
 // ---------------------------------------------------------------- main
 const map = JSON.parse(fs.readFileSync(MAP, 'utf8'));
 const roster = loadRoster();
+// A roster we could not read is not "0 matches" — it is a DIFFERENT ARTEFACT.
+// The committed artefact was once built with a bad --roster path and shipped 425
+// unmatched names; regenerating it in CI then changed 363 of them. Same commit,
+// different names on screen. Fail rather than emit that quietly.
+if (roster.error && !process.argv.includes('--allow-no-roster')) {
+  console.error(`roster unreadable at ${ROSTER}: ${roster.error}\n` +
+    `Player names would all keep their source spelling, so this build would NOT match\n` +
+    `one made with the roster present. Pass --allow-no-roster only if that is intended.`);
+  process.exit(3);
+}
 if (!fs.existsSync(CSV)) {
   console.error(`quote CSV not found at ${CSV}\n` +
     `Export the sheet as CSV to that path, or pass --csv. This step FAILS rather than\n` +
@@ -170,7 +180,7 @@ const R = {                           // the report
   imported: 0, noPlayerCell: 0,
   unmappedGroup: new Map(), nullGroup: new Map(),
   unresolvedPrefix: new Map(), conflicts: [],
-  nonPlayer: [], ambiguousPlayer: [], normalised: 0, keptSourceSpelling: 0,
+  nonPlayer: [], ambiguousPlayer: [], normalised: 0, keptSourceSpelling: 0, yearAsPlayer: [],
   altered: [], withYear: 0, withoutYear: 0, carriesOwnQuotes: 0,
   years: new Set(),
 };
@@ -190,6 +200,12 @@ for (let i = 0; i < body.length; i++) {
 
   // (d) no player cell -> never import
   if (!pCell) { R.noPlayerCell++; continue; }
+  // ...and neither is a bare YEAR. Row 415's player cell is `2025` — the sheet
+  // author shifted a year into the wrong column. Imported, it became the LEAD
+  // quote on the Halle card, attributed to a person called "2025" with a 34px
+  // avatar reading "2". Reporting it was not enough: a fabricated person is
+  // exactly the class of thing that must never reach the screen.
+  if (/^\d{4}$/.test(pCell)) { R.yearAsPlayer.push({ row: lineNo, cell: pCell }); continue; }
 
   // (e) the group must resolve through the explicit map
   if (!(curT in map.groups)) { bump(R.unmappedGroup, curT ?? '(none)', lineNo); continue; }
@@ -291,6 +307,7 @@ p('');
 p('| reason | rows |');
 p('|---|---:|');
 p(`| No player cell (rule d) | ${R.noPlayerCell} |`);
+p(`| **Player cell is a bare YEAR — never a person** | **${R.yearAsPlayer.length}** |`);
 p(`| Group name not in the map — FAILS LOUDLY (rule e) | ${[...R.unmappedGroup.values()].reduce((a, b) => a + b.length, 0)} |`);
 p(`| Group known but deliberately not importable | ${[...R.nullGroup.values()].reduce((a, b) => a + b.length, 0)} |`);
 p(`| Text prefix unresolved | ${[...R.unresolvedPrefix.values()].reduce((a, b) => a + b.length, 0)} |`);
@@ -366,6 +383,18 @@ if (catalog.length) {
 }
 p('');
 fs.writeFileSync(REPORT, L.join('\n'));
+
+// (e) UNMAPPED NAMES MUST ACTUALLY FAIL. The map file promises they "FAIL
+// LOUDLY", but loudness that lives only in a markdown file CI throws away is not
+// loudness: the founder renames a sponsor in the sheet, every quote for that
+// event silently vanishes, and the deploy stays green. Non-zero exit is the only
+// signal a pipeline step can actually carry.
+if (R.unmappedGroup.size) {
+  console.error(`UNMAPPED tournament name(s) — nothing was imported for these:`);
+  for (const [k, v] of R.unmappedGroup) console.error(`  "${k}"  (${v.length} row(s), lines ${v.slice(0, 6).join(', ')})`);
+  console.error(`Add each to tools/quotes/tournament-quote-map.json. Never fuzzy-match.`);
+  process.exit(4);
+}
 
 if (process.argv.includes('--json')) console.log(JSON.stringify({ imported: R.imported, events: events.length, conflicts: R.conflicts.length }, null, 2));
 else {
