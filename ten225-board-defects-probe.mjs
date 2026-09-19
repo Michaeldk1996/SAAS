@@ -247,16 +247,71 @@ try {
           item4.restored && String(item4.restored.book).toLowerCase() === 'bet365',
           item4.restored ? `${item4.restored.book} ${item4.restored.p1}` : 'null');
   }
+  // ⚠️ READ THE UNDERLYING VALUE, NOT THE PAINTED DIGITS. The first cut of this
+  // assertion parsed the cell text and went red on a correct build: bet365
+  // quotes Photiades v Kravchenko at 1.012, which renders as "1.01" at two
+  // decimal places. The floor is `<= 1.01` and 1.012 is above it, so the guard
+  // was right and the probe was measuring the formatter. The resolver is the
+  // thing under test.
   const painted = await b.evalIn(`(() => {
-    const bad = [];
-    for (const n of document.querySelectorAll('.mc-drifted__now, .mc-drifted__open, .mc-odds')) {
-      const v = parseFloat((n.textContent || '').trim());
-      if (Number.isFinite(v) && v > 0 && v <= 1.01) bad.push(n.textContent.trim());
+    const bad = [], rounded = [];
+    const list = (typeof getFiltered === 'function') ? getFiltered() : [];
+    for (const m of list) {
+      for (const [src, p] of [['now', _mcNowPair(m)],
+                              ['open', { p1: _openAnchorOf(m,'p1'), p2: _openAnchorOf(m,'p2'), book: null }]]) {
+        if (!p) continue;
+        for (const who of ['p1','p2']) {
+          const v = p[who];
+          if (typeof v !== 'number' || !(v > 0)) continue;
+          if (v <= 1.01) bad.push({ id: m.id, src, who, v, book: p.book });
+          else if (v < 1.015) rounded.push({ id: m.id, src, who, v, book: p.book });
+        }
+      }
     }
-    return bad;
+    return { bad, rounded, examined: list.length };
   })()`);
-  check('no cell on the live board paints a price at or below 1.01',
-        painted.length === 0, `n=${painted.length}${painted.length ? ' ' + JSON.stringify(painted) : ''}`);
+  check('the resolvers were exercised — otherwise the zero below is vacuous',
+        painted.examined > 0, `fixtures=${painted.examined}`);
+  check('no price the card RESOLVES is at or below 1.01',
+        painted.bad.length === 0,
+        `n=${painted.bad.length}${painted.bad.length ? ' ' + JSON.stringify(painted.bad) : ''}`);
+  // Not a failure — a boundary the founder should see. A leg of 1.011-1.014 is
+  // above the ruled floor and still PAINTS as "1.01", which is the same
+  // rounding that made bet365's 1.004 read as "1.00" in the first place.
+  console.log(`  note: legs above the floor that still render as "1.01": ` +
+              `${painted.rounded.length}` +
+              (painted.rounded.length ? ' ' + JSON.stringify(painted.rounded) : ''));
+
+  // Ruling 2 — the book must be discoverable on hover wherever a price shows.
+  // ⚠️ THE TITLE IS ON `.mc-oddswrap`, THE PARENT — not on `.mc-odds` itself.
+  // The first cut of this assertion read `.mc-odds` and reported 0 of 90 priced
+  // cells titled, i.e. a live ruling-2 breach that is not there. A hover over
+  // the price hits the wrapper, so the label shows; the probe was looking one
+  // node too deep. Checking the wrapper is also the stricter test, because the
+  // wrapper is what a member's cursor actually lands on.
+  const titles = await b.evalIn(`(() => {
+    const wraps = [...document.querySelectorAll('.mc-oddswrap')];
+    const priced = wraps.filter(w => {
+      const v = w.querySelector('.mc-odds');
+      return v && Number.isFinite(parseFloat((v.textContent||'').trim()));
+    });
+    const titled = priced.filter(w => (w.getAttribute('title')||'').trim());
+    // And the title must carry ITS OWN cell's price, not the fixture's other leg.
+    const mismatched = titled.filter(w => {
+      const px = (w.querySelector('.mc-odds').textContent||'').trim();
+      return !(w.getAttribute('title')||'').includes(px);
+    }).map(w => [(w.querySelector('.mc-odds').textContent||'').trim(), w.getAttribute('title')]);
+    return { cells: wraps.length, priced: priced.length, titled: titled.length,
+             mismatched,
+             sample: priced.slice(0,2).map(w => [(w.querySelector('.mc-odds').textContent||'').trim(),
+                                                 w.getAttribute('title')]) };
+  })()`);
+  check('every priced cell\'s title carries ITS OWN price, not the other leg\'s',
+        titles.mismatched.length === 0,
+        `n=${titles.mismatched.length}${titles.mismatched.length ? ' ' + JSON.stringify(titles.mismatched.slice(0,3)) : ''}`);
+  check('every priced cell on the default view names its book on hover',
+        titles.priced > 0 && titles.titled === titles.priced,
+        `priced=${titles.priced} titled=${titles.titled} e.g. ${JSON.stringify(titles.sample)}`);
 
   // ── ITEM 4b — OPEN present, NOW dashed: which book, and why ─────────────
   console.log('\nITEM 4b — Open with a dashed Now, read off the painted drift view');

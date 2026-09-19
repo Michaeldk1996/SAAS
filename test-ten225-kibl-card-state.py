@@ -965,6 +965,71 @@ check('observed_at gains a DEFAULT, without which the partial merge pass 400s '
       'on 23502 for every row even though every row is an update',
       'alter column observed_at set default now()' in _SCHEMA)
 
+# ─────────── the write-back crash of run 35413651657, as a standing check ───
+# Every measurement in that run printed — the ship gate, the limb check, item 9,
+# item 4 — and then main() died at `dict(st)` with "TypeError: 'float' object is
+# not iterable", because a measurement block I had added rebound `st`, the
+# accumulator, to a float. The numbers were sound and the PERSISTENCE never
+# happened, on a run that looked complete until its last line.
+#
+# ⚠️ WHAT THIS CHECK IS, HONESTLY. It is NARROW: it asserts that main()'s own
+# accumulator name is bound exactly once. I tried two general rules first —
+# "a name assigned a Counter is never rebound" and "a name bound by tuple-unpack
+# is never bound another way" — and neither is fit to ship. The first does not
+# even catch this defect (main()'s `st` comes out of build_rows() by unpacking,
+# so no Counter literal is assigned to it in main at all) and would have passed
+# on the broken file. The second catches it but fires on NINE clean sites in
+# this one module, and a gate that cries wolf nine times trains its reader to
+# skip it. So: a narrow assertion that is true, rather than a general one that
+# is either vacuous or noise.
+print('\naccumulator shadowing — the run-35413651657 class')
+import ast as _ast
+
+
+def _bind_count(code, func, name):
+    """How many times `name` is BOUND inside `func`, not counting nested defs."""
+    tree = _ast.parse(code)
+    fn = next((n for n in _ast.walk(tree)
+               if isinstance(n, _ast.FunctionDef) and n.name == func), None)
+    if fn is None:
+        return None
+    nodes, stack = [], list(fn.body)
+    while stack:
+        n = stack.pop()
+        nodes.append(n)
+        # Do not cross into a nested def: `_tally`'s own locals are its own.
+        if isinstance(n, (_ast.FunctionDef, _ast.AsyncFunctionDef, _ast.Lambda)):
+            continue
+        stack.extend(_ast.iter_child_nodes(n))
+    seen = 0
+    for n in nodes:
+        tgts = []
+        if isinstance(n, _ast.Assign):
+            tgts = list(n.targets)
+        elif isinstance(n, _ast.For):
+            tgts = [n.target]
+        for t in tgts:
+            names = ([t] if isinstance(t, _ast.Name)
+                     else [e for e in getattr(t, 'elts', []) if isinstance(e, _ast.Name)])
+            seen += sum(1 for x in names if x.id == name)
+    return seen
+
+check("main()'s accumulator `st` is bound exactly once — it is built by "
+      "build_rows() and read at the end as dict(st), so any rebinding between "
+      "the two kills the write-back after every measurement has printed",
+      _bind_count(_CODE, 'main', 'st') == 1, str(_bind_count(_CODE, 'main', 'st')))
+
+# CONTROL: restore the exact line that broke run 35413651657 and re-run the same
+# function. Without this, "bound once" is also what a checker that had stopped
+# parsing returns.
+_mut = _CODE.replace(
+    "            _start_ts, sch = r.get('start_ts'), epoch(r.get('scheduled'))",
+    "            st, sch = r.get('start_ts'), epoch(r.get('scheduled'))")
+check('the mutation anchor still exists — otherwise the control is vacuous',
+      _mut != _CODE)
+check('CONTROL: restoring that line takes the count to 2, so the check fires',
+      _bind_count(_mut, 'main', 'st') == 2, str(_bind_count(_mut, 'main', 'st')))
+
 print()
 if FAILED:
     print(f'{len(FAILED)} FAILED: {FAILED}')

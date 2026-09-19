@@ -1708,9 +1708,15 @@ def main():
         # are distinguished rather than assumed.
         delays = []
         for r in LAG_FAILS:
-            st, sch = r.get('start_ts'), epoch(r.get('scheduled'))
-            if st is not None and sch is not None:
-                delays.append((st - sch) / 60.0)
+            # `_start_ts`, NOT `st`. `st` is the Counter built at the top of
+            # main() and read at the end of it as `dict(st)` — rebinding it to a
+            # float here made every measurement in this block print correctly and
+            # then killed the run at the write-back with
+            # "TypeError: 'float' object is not iterable" (run 35413651657).
+            # The report was sound and the persistence never happened.
+            _start_ts, sch = r.get('start_ts'), epoch(r.get('scheduled'))
+            if _start_ts is not None and sch is not None:
+                delays.append((_start_ts - sch) / 60.0)
         if delays:
             v = sorted(delays)
             p95d = v[min(len(v) - 1, int(round(0.95 * (len(v) - 1))))]
