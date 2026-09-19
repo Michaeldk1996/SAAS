@@ -1,23 +1,15 @@
 {
   "latest": {
-    "maxAgeMin": 357.2,
+    "maxAgeMin": 372.1,
     "measured": 41,
     "stale": [
       "G. Trismuwantara v R. M. Papoe (ATP ATP Davis Cup - World Group II, 2026-09-19)",
+      "H. Chung v D. Suresh (ATP ATP Davis Cup - World Group, 2026-09-19)",
       "C. H. Tseng v M. Dahlin (ATP ATP Davis Cup - World Group I, 2026-09-19)"
     ]
   },
   "note": "Age of the published bet365 NOW leg, measured as now - observedAt against the artefact Pages is serving. Capture staleness and publish staleness are both inside this number, which is what the visitor sees. Re-derive the threshold on TEN-187.",
   "samples": [
-    {
-      "at": "2026-09-15T04:00:01Z",
-      "maxAgeMin": null,
-      "measured": 0,
-      "noBet365Line": 0,
-      "noClock": 0,
-      "stale": 0,
-      "thresholdMin": 120.0
-    },
     {
       "at": "2026-09-15T04:15:01Z",
       "maxAgeMin": null,
@@ -3608,9 +3600,18 @@
       "noClock": 0,
       "stale": 2,
       "thresholdMin": 120.0
+    },
+    {
+      "at": "2026-09-19T15:03:38Z",
+      "maxAgeMin": 372.1,
+      "measured": 41,
+      "noBet365Line": 31,
+      "noClock": 0,
+      "stale": 3,
+      "thresholdMin": 120.0
     }
   ],
   "schema": "odds-now-staleness/1",
   "thresholdMin": 120.0,
-  "updatedAt": "2026-09-19T14:48:42Z"
+  "updatedAt": "2026-09-19T15:03:38Z"
 }
