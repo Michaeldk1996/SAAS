@@ -265,12 +265,17 @@ def main():
         src = cache.get(full)
         if src is None:
             src = cache[full] = open(full, encoding='utf-8').read()
+        # ⚠️ THE RESULT IS CHECKED FIRST, and this is not cosmetic. Several of
+        # these edits INSERT before an anchor they keep, so `old` still matches
+        # after a successful apply — testing `old` first made the script
+        # non-idempotent and it re-inserted four blocks on a replay. A patch
+        # that is not safe to re-run is not a replayable patch.
+        if src.count(new) >= 1:
+            already += 1
+            print(f'  ok (already applied)  {path}: {name}')
+            continue
         n = src.count(old)
         if n == 0:
-            if src.count(new) >= 1:
-                already += 1
-                print(f'  ok (already applied)  {path}: {name}')
-                continue
             raise SystemExit(f'::error:: anchor NOT FOUND and result absent in {path}: {name}')
         if n > 1:
             raise SystemExit(f'::error:: anchor is AMBIGUOUS ({n} hits) in {path}: {name}')

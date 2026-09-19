@@ -5360,6 +5360,7 @@ async function runPipeline() {
       const rec = { openingOdds: pm.openingOdds || null, closingOdds: pm.closingOdds || null,
                     bookOpens: pm.bookOpens || null,
                     bookNow: pm.bookNow || null,
+                    apiTennisClose: pm.apiTennisClose || null,
                     // TEN-179 item 1 — the last bet365 NOW we hold. Unlike open/close this
                     // is NOT frozen: it is re-derived whenever this run has a bet365 stream.
                     // It is carried forward only so a run where the 3-hourly capture has not
@@ -5589,6 +5590,48 @@ async function runPipeline() {
   // number before we first saw it. Erring that way can only overstate how
   // recently it moved, never understate it — the same direction ruling N's
   // fetch-instant stamp errs in, and for the same reason.
+  // ───────────────── TEN-225 item 4 — J, WIRED AND SCOPED ─────────────────
+  // api-tennis, verbatim (2026-09-18): they "store and display the LATEST ODDS
+  // RECEIVED BEFORE THE MATCH STARTS". On a FINISHED fixture that is, by their
+  // own definition, a Close — which is why it is captured here and not through
+  // trackBookNow, whose `if (m.finalScore) return` guard is correct and stays.
+  // Two different claims about the same number: before the off it is a Now and
+  // must be withheld after it; after the off it is the last pre-match price.
+  //
+  // MEASURED before wiring (n=120 Challenger fixtures, both books present):
+  // bet365's api-tennis price sits 0.43 implied-probability points from our
+  // pinned bet365 close, median |Δ price| 0.017, 12.5% identical to the tick.
+  // Every OTHER book sits at 1.7-1.9pp, which is ordinary cross-book spread —
+  // the gap between those two numbers is the evidence that this really is the
+  // same book's closing quote and not a coincidence.
+  //
+  // ⚠️ WHAT IS RECORDED WITH IT, because the founder asked for it in the DATA
+  // and not only in the tooltip: `noTimestamp` and `noLagCheck`. The feed
+  // carries no clock, so the <=60-min lag limb every other Close must pass
+  // cannot be applied to this one at all. A consumer that forgets that would be
+  // treating an unaged price as an aged one.
+  //
+  // bet365 ONLY. "Do NOT use Betano/1xBet as a 'bet365 close' on Davis Cup —
+  // different books." They are not written here under any name; if they are to
+  // fill a dash later it is as a labelled fallback under their own book, which
+  // is a separate ruling.
+  let atCloseWritten = 0;
+  const pinApiTennisClose = (m) => {
+    if (!m.finalScore) return;                 // a Close needs a finished match
+    const raw = m.apiTennisBooks;
+    if (!raw) return;
+    const bk = Object.keys(raw).find(k => String(k).toLowerCase() === 'bet365');
+    if (!bk) return;
+    const v = raw[bk];
+    if (!(v && v.p1 > 0 && v.p2 > 0)) return;  // both legs or nothing
+    m.apiTennisClose = {
+      p1: v.p1, p2: v.p2, book: 'bet365', src: 'api-tennis',
+      // Stated in the row, not inferred by the reader.
+      noTimestamp: true, noLagCheck: true,
+      seenAt: new Date().toISOString(),        // when WE read it, never the cut
+    };
+    atCloseWritten++;
+  };
   let bookNowChanged = 0, bookNowHeld = 0;
   const trackBookNow = (m, carried) => {
     const raw = m.apiTennisBooks;
@@ -5638,6 +5681,7 @@ async function runPipeline() {
     // unchanged price from a new one, so it is handed `carried` directly rather
     // than reading m.bookNow (which this run has not written yet).
     trackBookNow(m, carried);
+    pinApiTennisClose(m);
     // Guarded on !finalScore: a match with no oddsMovement at all `continue`s below before
     // reaching the delete, so an unguarded carry-forward would leave a stale live price
     // pinned to a settled card forever.

@@ -62,11 +62,15 @@ const check = (name, cond, detail = '') => {
   if (!cond) FAILED.push(name);
 };
 
+// mxJLevel / mxJClose are in the list because _mcCloseOf CALLS them (TEN-225
+// item 4). Sliced, never stubbed: a stub would let this file keep passing while
+// the shipped scope rule changed under it, and the scope rule is the ruling.
 const FNS = ['_ocsSanePx', 'mxOverround', 'mxIsSuspendedPair', 'mxRealPair',
              '_ocsOf', 'ocsKeyOf', 'ocsMatchKey', 'ocsNameKey', 'ocsNfd',
              '_isBet365', '_mcBet365Now',
              '_mcBooksByCoverage', '_mcAnyBookPair', '_mcNowPair',
-             '_mcNowSuppressed', '_mcCloseOf', '_openAnchorOf'];
+             '_mcNowSuppressed', 'mxJLevel', 'mxJClose', '_mcCloseOf',
+             '_openAnchorOf'];
 
 // Each build gets its OWN sandbox, so MX_SUPPRESSED cannot leak between cases —
 // _mcNowSuppressed reads that log, and a shared one would let an earlier case
@@ -76,6 +80,7 @@ function build({ matches = [], OCS = { byKey: {} } }) {
   const code = `
     ${sliceConst('MX_SUSPENDED_OVERROUND')}
     ${sliceConst('MX_MIN_REAL_PRICE')}
+    ${sliceConst('MX_J_LEVELS')}
     const MX_SUPPRESSED = new Map();
     const matches = ${JSON.stringify(matches)};
     const OCS = ${JSON.stringify(OCS)};

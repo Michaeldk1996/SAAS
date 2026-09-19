@@ -7304,19 +7304,58 @@ async function loadOddsCardState(){
 // TEN-225: odds_card_state wins where it covers the match (all three values or
 // none — see the precedence note above); otherwise TEN-124's rule stands —
 // the pinned pre-play close only, never a live m.bestOdds/m.odds fallback.
+// ───────────────────── TEN-225 item 4 — the J fallback, scoped ────────────
+// "bet365's api-tennis close only, on Challenger and below, and only where we
+// would otherwise dash. Never override a close we can age."
+//
+// LEVEL SCOPE. Challenger and below means Challenger and ITF. ATP, WTA and the
+// team events are excluded: the ATP window has not been measured yet (the J
+// sample joined n=1 ATP fixture, which is no sample at all), and on Davis Cup
+// bet365's api-tennis close is absent outright — 0 of 33 — so there is nothing
+// there to wire even if it were in scope.
+const MX_J_LEVELS = /challenger/i;
+function mxJLevel(m){
+  const t = String((m && m.tour) || '');
+  if (/davis cup|billie jean/i.test(t)) return false;
+  return MX_J_LEVELS.test(t) || /\bitf\b|^m15|^m25|^w15/i.test(t);
+}
+// TRUE only when nothing we can age is available. The order is the ruling: a
+// close with a timestamp and a lag check always wins, and this never overrides
+// one — it only fills a cell that would otherwise be a dash.
+function mxJClose(m, who){
+  const c = m && m.apiTennisClose;
+  if (!c || !(c.p1 > 0 && c.p2 > 0)) return null;
+  if (!mxJLevel(m)) return null;
+  return c[who] ?? null;
+}
 function _mcCloseOf(m, who){
   const o = _ocsOf(m);
-  if (o) return o[who].close ?? null;
+  if (o) return o[who].close ?? mxJClose(m, who);
   // ITEM C on the matches.json CLOSE fallback — the same uncovered route as
   // _openAnchorOf. A suspended close is worse than a suspended now: it is the
   // number every settled-P&L and drift figure on the page is computed against,
   // so it would propagate into arithmetic rather than just render wrong once.
   const c = m.closingOdds;
-  if (!c) return null;
+  if (!c) return mxJClose(m, who);
   if (mxIsSuspendedPair(c.p1, c.p2,
                         { id: (m && (m.id || m.matchKey)) || null,
-                          book: c.bookmaker || null, path: 'closingOdds' })) return null;
-  return c[who] ?? null;
+                          book: c.bookmaker || null, path: 'closingOdds' }))
+    return mxJClose(m, who);
+  return c[who] ?? mxJClose(m, who);
+}
+// Did THIS cell's close come from the unaged api-tennis fallback? The label has
+// to follow the value, so it asks the same question the resolver just answered
+// rather than re-deriving it from the level — a card can be in scope and still
+// have a real aged close, and labelling that one "no timestamp" would be the
+// false label this issue has paid for three times.
+function mxCloseIsJ(m, who){
+  if (mxJClose(m, who) == null) return false;
+  const o = _ocsOf(m);
+  if (o && o[who].close != null) return false;
+  const c = m && m.closingOdds;
+  if (c && c[who] != null && !mxIsSuspendedPair(c.p1, c.p2, { path: 'closingOdds.probe' }))
+    return false;
+  return true;
 }
 // TEN-179 item 1 (founder ruling 2026-09-10) — the Upcoming card's NOW leg is PINNED TO
 // BET365. Both legs from bet365, no cross-book fallback; a leg without one is a dash, the
@@ -9380,6 +9419,14 @@ function renderMatches(){
     // book that did not supply the number above it. A close has no observation
     // clock of its own: it is a historical cut, not something we re-observe.
     const _closeTitle = who => {
+      // TEN-225 item 4 — the J fallback names its own book and says plainly what
+      // it is not: no clock, so no lag check. Checked FIRST, because on a card
+      // this fills, `_ocsOf`/`closingOdds` name a book that did not supply the
+      // number.
+      if (mxCloseIsJ(m, who))
+        return mcPriceTitle({ book: 'bet365', at: null, kind: 'sighting',
+                              note: 'last pre-match price · api-tennis · no timestamp, no lag check' },
+                            _mcCloseOf(m, who));
       const o = _ocsOf(m);
       const book = o ? o.book : ((m.closingOdds && m.closingOdds.bookmaker) || null);
       if (!book) return '';
