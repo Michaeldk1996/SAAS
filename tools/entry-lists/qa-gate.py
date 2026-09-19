@@ -106,9 +106,13 @@ def validate(path):
             v = counts.get(ck)
             if v is not None and (not isinstance(v, int) or isinstance(v, bool) or v <= 0):
                 errors.append(f"{tag}: counts.{ck} must be null or a positive int (got {v!r})")
+        # TEN-242 item 6.3: ALT is null when we never fetched a list and a
+        # non-negative int when we did (0 = loaded, no alternates - a real
+        # count). Requiring an int here would have REJECTED the corrected
+        # value, which is why the fabricated zero survived this gate.
         alt = counts.get("ALT")
-        if not isinstance(alt, int) or isinstance(alt, bool) or alt < 0:
-            errors.append(f"{tag}: counts.ALT must be a non-negative int (got {alt!r})")
+        if alt is not None and (not isinstance(alt, int) or isinstance(alt, bool) or alt < 0):
+            errors.append(f"{tag}: counts.ALT must be null or a non-negative int (got {alt!r})")
 
         sections = t.get("sections")
         if is_pending:
@@ -116,8 +120,10 @@ def validate(path):
             # it must carry NO players (never a fabricated MD 0 with rows).
             if sections:
                 errors.append(f"{tag}: pending tournament must have empty sections")
-            if counts.get("MD") or counts.get("Q") or counts.get("ALT"):
-                errors.append(f"{tag}: pending tournament must have zero counts")
+            # `or` treated 0 as acceptable, which is exactly how ALT: 0 passed.
+            # A pending tournament has NO counts - all three must be null.
+            if any(counts.get(k) is not None for k in ("MD", "Q", "ALT")):
+                errors.append(f"{tag}: pending tournament must have null MD/Q/ALT")
             reason = t.get("pendingReason")
             if reason not in VALID_PENDING_REASONS:
                 errors.append(f"{tag}: pendingReason {reason!r} not in "

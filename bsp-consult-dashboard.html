@@ -2946,7 +2946,7 @@
          as a deep link into Completed (mxApplyHash) so existing links keep working. This
          is the ONLY sidebar change in scope — no item is added, reordered or renamed. -->
     <button data-tab="players"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 10a3 3 0 100-6 3 3 0 000 6ZM4.5 16a5.5 5.5 0 0111 0"/></svg>Players</button>
-    <button data-tab="h2h"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v12M13 4v12M3.5 8.5h3M13.5 11.5h3"/></svg>Head-to-Head</button>
+    <button data-tab="h2h"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4v12M13 4v12M3.5 8.5h3M13.5 11.5h3"/></svg>Head to Head</button>
     <button data-tab="tournaments"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h8v3a4 4 0 01-8 0V4ZM10 11v3M7.5 16.5h5"/></svg>Tournaments</button>
     <!-- TEN-146 Database tab: yield by odds band from the ATP closing-line archive.
          Hidden by default (display:none); the FEATURE_DATABASE_TAB guard near the end
@@ -2954,9 +2954,13 @@
          live until the founder's confirm-before-live gate. New tab + new precomputed
          artefact only — no existing nav/page/panel or pipeline job is touched. -->
     <button data-tab="database" id="databaseTabBtn" style="display:none"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="10" cy="5" rx="6" ry="2.4"/><path d="M4 5v10c0 1.3 2.7 2.4 6 2.4s6-1.1 6-2.4V5"/><path d="M4 10c0 1.3 2.7 2.4 6 2.4s6-1.1 6-2.4"/></svg>Database</button>
-    <!-- TEN-150 Entry Lists tab: acceptance lists by tournament, per week.
-         Hidden by default; FEATURE_ENTRY_LISTS guard near the end of <body> reveals it. -->
-    <button data-tab="entry-lists" id="entryListsTabBtn" style="display:none"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="14" height="14" rx="2"/><path d="M7 7h6M7 10h6M7 13h4"/></svg>Entry Lists</button>
+    <!-- TEN-242 item 1.1: the Entry Lists sidebar item is REMOVED. Entry lists are
+         now the middle tab of Tournaments (Overview · Entry list · Reports), matching
+         App Sidebar.dc.html's 11-item nav exactly. There was never a URL route for the
+         page - no hash, no query param, and the app has no router - so removing the
+         button cannot orphan a link. `data-tab="entry-lists"` is still ACCEPTED by the
+         nav handler below and lands on Tournaments -> Entry list, the same defensive
+         alias TEN-179 kept for `data-tab="results"`. -->
     <!-- Review item 2: Stennisfy Model = a line-chart glyph (axis + rising trend line), not the star/arrow. Matches the Playing-Styles bar-chart glyph weight. -->
     <button data-tab="edge"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4v12h12"/><path d="M6.5 12.5l3-3.5 2.5 2 4-5.5"/></svg>Stennisfy Model</button>
     <button data-tab="styles"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15V9M8 15V5M12 15v-4M16 15V7"/></svg>Playing Styles</button>
@@ -3164,19 +3168,32 @@
 <!-- TOURNAMENTS TAB -->
 <style>
 #tourListView{ font-family:'Hanken Grotesk', sans-serif; }
-#tourListView .tourx-head h1{ margin:0; font-size:30px; font-weight:800; letter-spacing:-0.025em; color:#eef2f8; }
-#tourListView .tourx-head p{ margin:10px 0 0; font-size:14.5px; color:#5b6880; max-width:760px; line-height:1.55; }
-#tourListView .tourx-sectiontabs{ margin-top:22px; display:inline-flex; background:#0e1015; border:1px solid rgba(255,255,255,0.09); border-radius:12px; padding:4px; }
-.tourx-secttab{ font-size:13.5px; border-radius:9px; padding:9px 18px; cursor:pointer; white-space:nowrap; }
+/* TEN-242 README "Page frame" through §3 - header card, tab control, content
+   shell. Literal export values, deliberately NOT the site theme variables: the
+   handoff is authoritative for appearance (the rule TEN-196 followed). */
+#tourListView .tourx-head{ background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:16px; padding:22px 26px; display:flex; align-items:flex-end; justify-content:space-between; gap:28px; flex-wrap:wrap; margin-bottom:16px; }
+#tourListView .tourx-head h1{ margin:0; font-size:29px; font-weight:800; letter-spacing:-0.015em; line-height:1.1; color:#e7e9ee; }
+#tourListView .tourx-head p{ margin:8px 0 0; font-size:13.5px; color:#8b96b5; max-width:540px; line-height:1.55; text-wrap:pretty; }
+#tourListView .tourx-sectiontabs{ display:inline-flex; align-self:flex-start; width:fit-content; gap:3px; background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:10px; padding:3px; margin-bottom:16px; }
+.tourx-secttab{ font-size:12.5px; border-radius:8px; padding:6px 16px; cursor:pointer; white-space:nowrap; border:1px solid transparent; }
+/* README §3 wants ONE box around all three tabs. Reports is phase 2 and the
+   brief forbids touching it, so the box is applied to the two tabs this phase
+   owns. Wrapping Reports would not just restyle it: overflow:hidden would make
+   the shell a clipping context for its absolutely-positioned round/player
+   dropdowns. Phase 2 lifts these three declarations onto .tourx-shell. */
+#tourListView .tourx-shell{ }
+#tourListView #tourxOverview, #tourListView #tourxEntry{ border:1px solid rgba(255,255,255,0.09); border-radius:12px; background:#0a0d14; overflow:hidden; }
 .tourx-searchresult:hover{ background:rgba(62,123,250,0.08) !important; }
 .tourx-link:hover{ text-decoration:underline; }
 /* Overview two-column: persistent rail + conditions panel (design-export authority:
    container fill #0a0d14, rail fixed 270px, flat rows). */
-#tourxOverview .tourx-ovwrap{ margin-top:16px; border:1px solid rgba(255,255,255,0.09); border-radius:12px; background:#0a0d14; overflow:hidden; }
-#tourxOverview .tourx-ovgrid{ display:grid; grid-template-columns:270px minmax(0,1fr); gap:22px; align-items:stretch; padding:22px 24px; }
+/* §3: the content shell (.tourx-shell) owns the border, radius and surface, so
+   the Overview wrapper is now just the specced 22px 24px padding box. */
+#tourxOverview .tourx-ovwrap{ }
+#tourxOverview .tourx-ovgrid{ display:grid; grid-template-columns:minmax(190px,270px) minmax(0,1fr); gap:22px; align-items:stretch; padding:22px 24px; }
 #tourxOverview .tourx-ovleft{ position:relative; background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:16px; overflow:hidden; min-height:480px; }
 #tourxOverview .tourx-ovleft-inner{ position:absolute; inset:0; padding:14px; display:flex; flex-direction:column; gap:14px; }
-#tourxOverview .tourx-ovright{ min-width:0; padding-left:48px; padding-right:32px; display:flex; flex-direction:column; gap:16px; }
+#tourxOverview .tourx-ovright{ min-width:0; }
 #tourxOverview .tourlist{ display:flex; flex-direction:column; gap:6px; flex:1; min-height:0; overflow-y:auto; scrollbar-width:none; }
 #tourxOverview .tourlist::-webkit-scrollbar{ display:none; }
 #tourxOverview .tourx-ovrow:hover{ background:rgba(255,255,255,0.03); }
@@ -3196,7 +3213,7 @@
 @media (max-width:960px){
   #tourxOverview .tourx-ovgrid{ grid-template-columns:1fr; }
   #tourxOverview .tourx-ovleft{ min-height:360px; }
-  #tourxOverview .tourx-ovright{ padding-left:0; padding-right:0; }
+  #tourxOverview .tourx-ovright > div{ padding-left:0 !important; }
 }
 @media (max-width:720px){
   #tourxReports .tourx-chartgrid{ grid-template-columns:1fr !important; }
@@ -3344,12 +3361,29 @@
   <div class="pagewrap">
     <div id="tourListView">
       <div class="tourx-head">
-        <h1>Tournaments</h1>
-        <p>Browse every tournament on tour, or open an event's round-by-round Tournament Report — live from the moment its first matches finish.</p>
+        <div>
+          <h1>Tournaments</h1>
+          <p>Court speed, conditions and market yields for every event on the calendar.</p>
+        </div>
       </div>
       <div class="tourx-sectiontabs" id="tourxSectionTabs"></div>
-      <div id="tourxOverview"></div>
-      <div id="tourxReports" style="display:none;"></div>
+      <div id="tourxOverlayRoot"></div>
+      <!-- TEN-242 §3: ONE box wraps all three tabs. Entry list mounts inside it and
+           keeps data-page="entry-lists" so every [data-page="entry-lists"] .el-* rule
+           in the stylesheet below still matches - the data layer, the two-shard merge
+           and the stale banner are untouched, only the frame moved. -->
+      <div class="tourx-shell">
+        <div id="tourxOverview"></div>
+        <div id="tourxEntry" data-page="entry-lists" style="display:none;">
+          <div class="el-wrap">
+            <div class="el-embedhead" id="elHead"></div>
+            <div class="el-weektabs" id="elWeekTabs"></div>
+            <div id="elBody"><div class="el-loading">Loading entry lists…</div></div>
+            <div class="el-freshness" id="elFreshness"></div>
+          </div>
+        </div>
+        <div id="tourxReports" style="display:none;"></div>
+      </div>
     </div>
     <div id="tourProfileView" style="display:none;"></div>
   </div>
@@ -3623,18 +3657,25 @@
 </div>
 <!-- ENTRY LISTS TAB (TEN-150) — static shard, protennislive PDF source, FEATURE_ENTRY_LISTS gated -->
 <style>
-  [data-page="entry-lists"] .el-wrap{ max-width:1160px; margin:0 auto; padding:30px 40px 70px; }
+  /* TEN-242 §2: Entry list mounts EMBEDDED inside the Tournaments content shell
+     (§3: "Entry list and Reports render their own embedded padding and suppress
+     their own page headers"), so the 29px page title and its subtitle are gone -
+     the shell's header card already says Tournaments. The "{n} events · {n} lists
+     loaded" count that item 6 requires survives as the right-aligned head block. */
+  [data-page="entry-lists"] .el-wrap{ max-width:1360px; margin:0; padding:22px 24px 26px; display:flex; flex-direction:column; gap:16px; }
+  [data-page="entry-lists"] .el-embedhead{ display:flex; align-items:flex-end; justify-content:flex-end; background:transparent; border-color:transparent; padding:0 2px 4px; }
+  [data-page="entry-lists"] .el-row{ display:grid; grid-template-columns:minmax(0,1fr) 72px 56px 56px 26px; gap:0 16px; align-items:center; }
+  [data-page="entry-lists"] .elrow:hover{ background:rgba(255,255,255,0.022); }
   [data-page="entry-lists"] .el-head{ margin-bottom:24px; }
   [data-page="entry-lists"] .el-head h1{ font-size:29px; font-weight:800; letter-spacing:-0.015em; margin:0 0 6px; color:#e7e9ee; }
   [data-page="entry-lists"] .el-head p{ margin:0; color:#5b6880; font-size:13.5px; }
   [data-page="entry-lists"] .el-controls{ display:flex; align-items:center; gap:10px; margin-bottom:24px; flex-wrap:wrap; }
-  [data-page="entry-lists"] .el-weektabs{ display:flex; gap:8px; flex-wrap:wrap; }
-  [data-page="entry-lists"] .el-weektab{ display:flex; flex-direction:column; align-items:flex-start; gap:1px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.09); border-radius:10px; padding:8px 14px; cursor:pointer; transition:color .12s, background .12s, border-color .12s; }
-  [data-page="entry-lists"] .el-weektab:hover{ background:rgba(255,255,255,0.06); }
-  [data-page="entry-lists"] .el-weektab.active{ background:rgba(91,155,255,0.14); border-color:rgba(91,155,255,0.35); }
-  [data-page="entry-lists"] .el-weektab-range{ font-size:12.5px; font-weight:700; color:#a8b0c0; }
-  [data-page="entry-lists"] .el-weektab.active .el-weektab-range{ color:#e7e9ee; }
-  [data-page="entry-lists"] .el-weektab-sub{ font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:9.5px; letter-spacing:0.04em; text-transform:uppercase; color:#5b6880; }
+  [data-page="entry-lists"] .el-weektabs{ display:flex; gap:10px; flex-wrap:wrap; padding-top:4px; }
+  [data-page="entry-lists"] .el-weektab{ display:flex; flex-direction:column; gap:4px; background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:11px; padding:11px 16px; min-width:132px; cursor:pointer; transition:color .14s ease, background .14s ease, border-color .14s ease; }
+  [data-page="entry-lists"] .el-weektab.active{ border-color:#5b9bff; }
+  [data-page="entry-lists"] .el-weektab-range{ font-size:14px; font-weight:700; color:#8b96b5; }
+  [data-page="entry-lists"] .el-weektab.active .el-weektab-range{ color:#ffffff; }
+  [data-page="entry-lists"] .el-weektab-sub{ font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:10.5px; letter-spacing:0.12em; text-transform:uppercase; color:#5b6880; }
   [data-page="entry-lists"] .el-freshness{ font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:11px; color:#4b5672; margin-top:22px; }
   [data-page="entry-lists"] .el-levelhdr{ font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:11px; font-weight:700; letter-spacing:0.10em; text-transform:uppercase; color:#8892a4; margin:22px 0 12px; padding-bottom:7px; border-bottom:1px solid rgba(255,255,255,0.08); }
   [data-page="entry-lists"] .el-levelgroup:first-child .el-levelhdr{ margin-top:4px; }
@@ -3661,7 +3702,10 @@
   [data-page="entry-lists"] .el-count-label{ text-transform:uppercase; letter-spacing:0.06em; font-size:9.5px; }
   [data-page="entry-lists"] .el-count-n{ color:#e7e9ee; font-weight:700; }
   [data-page="entry-lists"] .el-chev{ color:#5b6880; transition:transform .15s; flex-shrink:0; }
-  [data-page="entry-lists"] .el-card.open .el-chev{ transform:rotate(180deg); }
+  [data-page="entry-lists"] .el-card.open .el-caret{ color:#5b9bff; background:rgba(91,155,255,0.12); border-color:rgba(91,155,255,0.38); }
+  [data-page="entry-lists"] .el-card.open .el-caret::before{ content:'▴'; }
+  [data-page="entry-lists"] .el-card.open .el-caret{ font-size:0; }
+  [data-page="entry-lists"] .el-card.open .el-caret::before{ font-size:11px; }
   [data-page="entry-lists"] .el-body{ display:none; border-top:1px solid rgba(255,255,255,0.07); }
   [data-page="entry-lists"] .el-card.open .el-body{ display:block; }
   [data-page="entry-lists"] .el-sections{ display:grid; grid-template-columns:1fr 1fr; gap:0; }
@@ -3709,19 +3753,6 @@
     [data-page="entry-lists"] .el-counts{ display:none; }
   }
 </style>
-<div class="tabpage" data-page="entry-lists">
-  <div class="el-wrap">
-    <div class="el-head">
-      <h1>Entry Lists</h1>
-      <p>ATP acceptance lists — main draw, qualifying, wildcards &amp; alternates. Advance lists switch to the official draw once it is posted; each tournament is labelled with which it is showing.</p>
-    </div>
-    <div class="el-controls">
-      <div class="el-weektabs" id="elWeekTabs"></div>
-    </div>
-    <div id="elBody"><div class="el-loading">Loading entry lists…</div></div>
-    <div class="el-freshness" id="elFreshness"></div>
-  </div>
-</div>
 
 <script>
 window.EntryListsTab = (function(){
@@ -3818,26 +3849,28 @@ window.EntryListsTab = (function(){
     return givTc + ' ' + surTc;
   }
 
+  // §2.3 expanded acceptance-list column. Grid 22px / 1fr / 38px / 46px.
+  // `status` (WC, Q, LL, PR...) is not in the export's four columns but is real
+  // information a bettor needs - a wildcard is not a direct acceptance - so it
+  // rides inside the name cell rather than adding a fifth track.
   function renderPlayers(players){
-    if(!players || !players.length) return '<div class="el-empty" style="padding:16px;font-size:12px;">No players listed.</div>';
-    return '<div class="el-plist">' + players.map(function(p, i){
-      var name = fmtName(p);
+    if(!players || !players.length) return '<div style="padding:12px 0 0;font-size:12px;color:#5b6880;">No players listed.</div>';
+    var M = "'IBM Plex Mono',ui-monospace,monospace";
+    return '<div style="display:flex;flex-direction:column;margin-top:8px;">' + players.map(function(p, i){
       var isBye = p.status === 'BYE';
-      var nameHtml = isBye
-        ? '<span class="el-pname" style="color:#3a4150;font-style:italic;">Bye</span>'
+      var nm = fmtName(p);
+      var inner = isBye
+        ? '<span style="color:#3a4150;font-style:italic;">Bye</span>'
         : (p.playerKey
-            ? '<span class="el-pname"><a href="#" onclick="event.preventDefault();document.querySelector(\'#mainNav button[data-tab=players]\').click();showPlayerProfile(\''+p.playerKey+'\')">'+name+'</a></span>'
-            : '<span class="el-pname">'+name+'</span>');
-      var rank = (p.rank && !isBye) ? '#'+p.rank : '';
+            ? '<a href="#" onclick="event.preventDefault();event.stopPropagation();document.querySelector(\'#mainNav button[data-tab=players]\').click();showPlayerProfile(\''+p.playerKey+'\')" style="color:#e7e9ee;">'+nm+'</a>'
+            : nm);
       var st = fmtStatus(p.status, p.seed);
-      var sc = statusClass(p.status);
-      var cty = (!isBye && p.country) ? p.country : '';
-      return '<div class="el-prow">'
-        + '<span class="el-ppos">'+(isBye?'':i+1)+'</span>'
-        + nameHtml
-        + '<span class="el-pcountry">'+cty+'</span>'
-        + '<span class="el-prank">'+rank+'</span>'
-        + (st ? '<span class="el-pstatus '+sc+'">'+st+'</span>' : '<span></span>')
+      var tag = st ? ' <span style="font-family:'+M+';font-size:9.5px;letter-spacing:0.06em;color:#5b6880;">'+st+'</span>' : '';
+      return '<div style="display:grid;grid-template-columns:22px minmax(0,1fr) 38px 46px;gap:0 12px;padding:6px 8px;margin:0 -8px;border-radius:6px;align-items:baseline;">'
+        + '<span style="text-align:right;font-family:'+M+';font-size:11px;font-variant-numeric:tabular-nums;color:#3f4860;">'+(isBye?'':i+1)+'</span>'
+        + '<span style="font-size:13px;font-weight:600;color:#e7e9ee;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+inner+tag+'</span>'
+        + '<span style="text-align:right;font-family:'+M+';font-size:10.5px;letter-spacing:0.06em;color:#4b5672;">'+((!isBye && p.country)?p.country:'')+'</span>'
+        + '<span style="text-align:right;font-family:'+M+';font-size:11.5px;font-variant-numeric:tabular-nums;color:#8b96b5;">'+((p.rank && !isBye)?('#'+p.rank):'')+'</span>'
         + '</div>';
     }).join('') + '</div>';
   }
@@ -3863,54 +3896,92 @@ window.EntryListsTab = (function(){
     return what + (d ? ' · list published ' + d : ' · publish date —');
   }
 
+  // README §2.3 event row, on the shared column grid
+  // (minmax(0,1fr) 72px 56px 56px 26px). TEN-242.
+  //
+  // ITEM 6.1 - THREE DISTINCT ABSENCES, and they must never be confused:
+  //   never fetched      -> this row's counts dash and it expands to
+  //                         "Acceptance list not loaded for this event yet."
+  //   fetched, now stale -> the list RENDERS, with real counts, and the banner
+  //                         above the tier groups carries the age and the failed
+  //                         attempt. A stale list never renders as "not loaded",
+  //                         and never renders silently as if it were current.
+  //   week empty         -> "No lists loaded for this week" (see render()).
+  function tierCode(tier){
+    if(!tier) return '—';
+    var t = (''+tier).toLowerCase();
+    if(t.includes('challenger') || t.includes('chall')) return 'CH';
+    if(t.includes('itf') || t.includes('futures')) return 'ITF';
+    if(t.includes('grand slam') || t.includes('slam')) return 'GS';
+    var m = t.match(/(\d{3,4})/);
+    return m ? m[1] : (''+tier).toUpperCase().slice(0,4);
+  }
+  function shortDate(iso){
+    if(!iso) return null;
+    var d = new Date(iso); if(isNaN(d.getTime())) return null;
+    return d.getUTCDate()+' '+MON[d.getUTCMonth()];
+  }
+  // A count cell. null is NO DATA (dash, #3f4860). A real 0 prints as 0 in the
+  // normal colour - they are different facts and the page says so. Before
+  // TEN-242 the renderer collapsed both with `alt || '—'`, which would have
+  // dashed a true zero (an event loaded with no alternates) exactly as if we
+  // had never fetched it. Item 6.3.
+  function countCell(v){
+    var isNull = (v == null);
+    return '<span style="text-align:right;font-family:' + "'IBM Plex Mono',ui-monospace,monospace" + ';font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;color:'
+      + (isNull ? '#3f4860' : '#e7e9ee') + ';">' + (isNull ? '—' : v) + '</span>';
+  }
+
   function renderTournament(t, idx){
-    var tierLbl = t.tier || '—';
-    var surfLbl = t.surface || '';
-    var name = t.name || (t.city || 'Tournament '+t.tournamentId);
-    var city = t.city ? (t.city + (t.country ? ', '+t.country : '')) : '';
-    var wk = t.week_label || '';
     var id = 'el-card-'+idx;
-
-    // Pending: the source has not posted a list yet. Show a pending badge, never
-    // a fabricated MD 0; card does not expand.
-    if(t.status === 'pending'){
-      return '<div class="el-card">'
-        + '<div class="el-cardhead" style="cursor:default;">'
-          + '<span class="el-tier '+tierClass(t.tier)+'">'+tierLbl+'</span>'
-          + (surfLbl ? '<span class="el-surface '+surfaceClass(t.surface)+'">'+surfLbl+'</span>' : '')
-          + '<div style="flex:1;min-width:0"><p class="el-cardname">'+name+'</p>'
-            + (city||wk ? '<div style="font-size:11px;color:#5b6880;margin-top:2px;">'+(wk?wk:'')+(city?' · '+city:'')+'</div>' : '')
-          + '</div>'
-          + '<span class="el-pending">Entry list pending</span>'
-        + '</div>'
-      + '</div>';
-    }
-
-    // MD/Q are null when that draw is not posted yet -> render a dash, never 0.
+    var name = t.name || (t.city || 'Tournament '+t.tournamentId);
+    var loaded = hasList(t);
     var md = (t.counts && t.counts.MD != null) ? t.counts.MD : null;
-    var q = (t.counts && t.counts.Q != null) ? t.counts.Q : null;
-    var alt = (t.counts && t.counts.ALT) || 0;
-    var sections = (t.sections||[]).map(function(s){
-      return '<div class="el-section"><div class="el-sectitle">'+s.title+' ('+s.players.length+')</div>'+renderPlayers(s.players)+'</div>';
-    }).join('');
-    return '<div class="el-card" id="'+id+'">'
-      + '<div class="el-cardhead" onclick="(function(el){el.closest(\'.el-card\').classList.toggle(\'open\')})(this)">'
-        + '<span class="el-tier '+tierClass(t.tier)+'">'+tierLbl+'</span>'
-        + (surfLbl ? '<span class="el-surface '+surfaceClass(t.surface)+'">'+surfLbl+'</span>' : '')
-        + regimeChip(t)
-        + '<div style="flex:1;min-width:0"><p class="el-cardname">'+name+'</p>'
-          + (city||wk ? '<div style="font-size:11px;color:#5b6880;margin-top:2px;">'+(wk?wk:'')+(city?' · '+city:'')+'</div>' : '')
-          + '<div class="el-publine">'+pubLine(t)+'</div>'
-        + '</div>'
-        + '<div class="el-counts">'
-          + '<span class="el-count"><span class="el-count-label">MD</span><span class="el-count-n">'+(md != null ? md : '—')+'</span></span>'
-          + '<span class="el-count"><span class="el-count-label">Q</span><span class="el-count-n">'+(q != null ? q : '—')+'</span></span>'
-          + '<span class="el-count"><span class="el-count-label">Alt</span><span class="el-count-n">'+(alt || '—')+'</span></span>'
-        + '</div>'
-        + '<svg class="el-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>'
-      + '</div>'
-      + '<div class="el-body"><div class="el-sections">'+sections+'</div></div>'
+    var q  = (t.counts && t.counts.Q  != null) ? t.counts.Q  : null;
+    var alt= (t.counts && t.counts.ALT!= null) ? t.counts.ALT: null;
+
+    // §2.3 meta line: "{date} · {surface lowercase} · published {date}"
+    var bits = [];
+    var sd = shortDate(t.startDate || t.weekStart); if(sd) bits.push(sd);
+    if(t.surface) bits.push((''+t.surface).toLowerCase());
+    var pd = shortDate(t.sourcePublished);
+    bits.push(pd ? 'published '+pd : 'publish date —');
+    if(t.regime === 'draw') bits.push('official draw');
+
+    var head = '<div class="el-row elrow" style="padding:13px 20px;border-top:1px solid rgba(255,255,255,0.06);cursor:pointer;" onclick="(function(el){el.closest(\'.el-card\').classList.toggle(\'open\')})(this)">'
+      + '<span style="display:flex;align-items:center;gap:11px;min-width:0;">'
+        + '<span style="width:46px;height:22px;border-radius:6px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.14);font-family:' + "'IBM Plex Mono',ui-monospace,monospace" + ';font-size:10px;font-weight:700;letter-spacing:0.04em;color:#c6ccdb;display:inline-flex;align-items:center;justify-content:center;flex:none;">'+tierCode(t.tier)+'</span>'
+        + '<span style="display:flex;flex-direction:column;gap:5px;min-width:0;">'
+          + '<span style="font-size:13.5px;font-weight:700;letter-spacing:-0.005em;color:#e7e9ee;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+name+'</span>'
+          + '<span style="font-family:' + "'IBM Plex Mono',ui-monospace,monospace" + ';font-size:11px;letter-spacing:0.04em;color:#8b96b5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+bits.join(' · ')+'</span>'
+        + '</span>'
+      + '</span>'
+      // The shard is not trusted to be self-consistent here. `loaded` is derived
+      // from the SECTIONS we actually hold, so a row we never fetched dashes all
+      // three counts even when an older shard still carries the fabricated
+      // ALT: 0 (the deployed one does, on 25 of 71 rows — the builder fix only
+      // takes effect on the next successful fetch). A loaded row keeps a REAL
+      // zero: "no alternates" and "never fetched" stay different facts.
+      + countCell(loaded ? md : null) + countCell(loaded ? q : null) + countCell(loaded ? alt : null)
+      + '<span class="el-caret" style="width:26px;height:26px;border-radius:7px;font-size:11px;display:inline-flex;align-items:center;justify-content:center;color:#8b96b5;background:transparent;border:1px solid rgba(255,255,255,0.12);">▾</span>'
       + '</div>';
+
+    var body = loaded
+      ? '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));">'
+          + (t.sections||[]).map(function(s, si){
+              return '<div style="padding:17px 20px 19px;border-left:1px solid '+(si===0?'transparent':'rgba(255,255,255,0.06)')+';">'
+                + '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding-bottom:9px;border-bottom:1px solid rgba(255,255,255,0.07);">'
+                  + '<span style="font-family:' + "'IBM Plex Mono',ui-monospace,monospace" + ';font-size:9.5px;font-weight:600;letter-spacing:0.16em;text-transform:uppercase;color:#8b96b5;">'+s.title+'</span>'
+                  + '<span style="font-family:' + "'IBM Plex Mono',ui-monospace,monospace" + ';font-size:10px;letter-spacing:0.1em;color:#4b5672;white-space:nowrap;">'+s.players.length+' players</span>'
+                + '</div>'
+                + renderPlayers(s.players)
+              + '</div>';
+            }).join('')
+        + '</div>'
+      // the per-ROW absence: we have never fetched a list for this event.
+      : '<div style="padding:16px 20px 18px 37px;font-size:12.5px;color:#5b6880;">Acceptance list not loaded for this event yet.</div>';
+
+    return '<div class="el-card" id="'+id+'">'+head+'<div class="el-body" style="background:#080a0f;border-top:1px solid rgba(255,255,255,0.06);">'+body+'</div></div>';
   }
 
   function renderWeekTabs(){
@@ -3920,12 +3991,16 @@ window.EntryListsTab = (function(){
     var byWeek = {};
     (data.tournaments||[]).forEach(function(t){
       if(!t.weekStart) return;
-      byWeek[t.weekStart] = byWeek[t.weekStart] || {n:0};
-      if(t.status !== 'pending') byWeek[t.weekStart].n++;
+      byWeek[t.weekStart] = byWeek[t.weekStart] || {n:0, all:0};
+      byWeek[t.weekStart].all++;
+      if(hasList(t)) byWeek[t.weekStart].n++;
     });
     rail.innerHTML = weeks.map(function(k){
       var info = byWeek[k];
-      var sub = info ? (info.n + ' event' + (info.n===1?'':'s')) : 'none yet';
+      // §2.2 sub-label is "{n} events" - every ATP event that week, loaded or not.
+      // The separate "{n} lists loaded" count in the head is the loaded figure.
+      var info2 = info || {all:0};
+      var sub = info2.all + ' event' + (info2.all===1?'':'s');
       return '<div class="el-weektab'+(k===activeWeek?' active':'')+'" data-elweek="'+k+'">'
         + '<span class="el-weektab-range">'+weekRangeLabel(k)+'</span>'
         + '<span class="el-weektab-sub">'+sub+'</span>'
@@ -4019,13 +4094,32 @@ window.EntryListsTab = (function(){
     var body = document.getElementById('elBody');
     if(!body || !data) return;
     renderWeekTabs();
+    renderHead();
     var banner = staleBannerHtml();
 
     var tourns = (data.tournaments||[]).filter(function(t){
       return (t.tour||'ATP').toUpperCase() === 'ATP' && t.weekStart === activeWeek;
     });
-    if(!tourns.length){
-      body.innerHTML = banner + '<div class="el-empty">No tournaments published for this week yet.</div>';
+    // item 6.1, the per-WEEK absence. It fires when no event that week carries a
+    // list — NOT only when the week has zero events. The spec's own copy says so
+    // ("The ATP has {n} events in {week}. Their acceptance lists are not in the
+    // build yet"), which is a sentence about a week that HAS events and no lists.
+    // Caught by the manufactured-empty-week control: a 2-event week with nothing
+    // loaded was rendering two "not loaded" ROWS instead of the week state, which
+    // is the per-EVENT absence used to say something only the week state may say.
+    if(!tourns.length || !tourns.some(hasList)){
+      // item 6.1, the THIRD absence: the week itself is empty. Distinct from a
+      // row we never fetched, and distinct from the stale banner - which still
+      // renders above this, because "we could not refresh" is true either way.
+      // same filter as renderHead() and the grouped render - one population,
+      // one number, so the card and the head cannot disagree.
+      var nAll = (data.tournaments||[]).filter(function(t){
+        return (t.tour||'ATP').toUpperCase() === 'ATP' && t.weekStart === activeWeek;
+      }).length;
+      body.innerHTML = banner + '<div style="background:#0a0d14;border:1px solid rgba(255,255,255,0.09);border-radius:14px;padding:30px 24px;max-width:560px;">'
+        + '<div style="font-size:17px;font-weight:700;color:#e7e9ee;">No lists loaded for this week</div>'
+        + '<div style="font-size:13px;line-height:1.6;color:#8b96b5;margin-top:8px;">The ATP has ' + nAll + ' event' + (nAll===1?'':'s') + ' in ' + weekRangeLabel(activeWeek) + '. Their acceptance lists are not in the build yet — once they are loaded they appear here, grouped by tier.</div>'
+        + '</div>';
       renderFreshness();
       return;
     }
@@ -4046,13 +4140,51 @@ window.EntryListsTab = (function(){
         if(ap!==bp) return ap-bp;
         return (a.name||'').localeCompare(b.name||'');
       });
-      html += '<div class="el-levelgroup"><div class="el-levelhdr">'+g+'</div>'
-        + '<div class="el-tourns">'
-        + list.map(function(t){ return renderTournament(t, idx++); }).join('')
+      // §2.3 group head: tier name, "{n} events · advance lists", then a rule that
+      // fills the row. Group ORDER stays the founder-specified one (TEN-150) -
+      // ATP tiers first, Challengers and ITF after, which is what §2.3 asks for.
+      var anyDraw = list.some(function(t){ return t.regime === 'draw'; });
+      html += '<div class="el-levelgroup">'
+        + '<div style="display:flex;align-items:baseline;gap:14px;margin:22px 0 12px;">'
+          + '<span style="font-family:\'IBM Plex Mono\',ui-monospace,monospace;font-size:10px;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;color:#8b96b5;">'+g+'</span>'
+          + '<span style="font-size:12px;color:#4b5672;white-space:nowrap;">'+list.length+' event'+(list.length===1?'':'s')+' · '+(anyDraw?'draws and advance lists':'advance lists')+'</span>'
+          + '<span style="flex:1;height:1px;background:rgba(255,255,255,0.09);"></span>'
+        + '</div>'
+        + '<div style="background:#0a0d14;border:1px solid rgba(255,255,255,0.09);border-radius:12px;overflow:hidden;">'
+          + '<div class="el-row" style="padding:12px 20px 11px;font-family:\'IBM Plex Mono\',ui-monospace,monospace;font-size:9px;font-weight:600;letter-spacing:0.18em;text-transform:uppercase;color:#4b5672;">'
+            + '<span>Tournament</span><span style="text-align:right;">Main draw</span><span style="text-align:right;">Qual</span><span style="text-align:right;">Alt</span><span></span>'
+          + '</div>'
+          + list.map(function(t){ return renderTournament(t, idx++); }).join('')
         + '</div></div>';
     });
     body.innerHTML = html;
     renderFreshness();
+  }
+
+  // item 6.2 - "{n} lists loaded" counts lists we actually HAVE. A stale list is
+  // one of them: it is on screen and readable, so calling it "not loaded" would
+  // contradict the screen. A failed fetch with no prior list is NOT counted (it
+  // has no sections). The tooltip says which, so the number is never ambiguous.
+  // The stale BANNER above the groups carries the age and the failed attempt, so
+  // a stale list is never presented as current either (item 6.1).
+  function hasList(t){ return !!(t.sections && t.sections.length); }
+
+  function renderHead(){
+    var el = document.getElementById('elHead');
+    if(!el) return;
+    var tourns = (data.tournaments||[]).filter(function(t){
+      return (t.tour||'ATP').toUpperCase() === 'ATP' && t.weekStart === activeWeek;
+    });
+    var loaded = tourns.filter(hasList).length;
+    var stale = (advMeta && advMeta.fetchStatus === 'stale');
+    var tip = stale
+      ? 'Counts every event with an acceptance list in the build. The advance source could not be refreshed, so these lists are the last successfully fetched set — they are loaded, but not current. Events we have never fetched a list for are not counted.'
+      : 'Counts every event with an acceptance list in the build. Events we have never fetched a list for are not counted.';
+    el.innerHTML = '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;" title="'+tip+'">'
+      + '<span style="font-family:\'IBM Plex Mono\',ui-monospace,monospace;font-size:9.5px;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;color:#5b6880;">'+(weekRangeLabel(activeWeek)||'This week')+'</span>'
+      + '<span style="font-family:\'IBM Plex Mono\',ui-monospace,monospace;font-size:17px;font-weight:700;color:#e7e9ee;">'
+        + tourns.length + ' event' + (tourns.length===1?'':'s') + ' · ' + loaded + ' list' + (loaded===1?'':'s') + ' loaded</span>'
+      + '</div>';
   }
 
   function renderFreshness(){
@@ -4068,7 +4200,12 @@ window.EntryListsTab = (function(){
     if(drawMeta){
       parts.push('Draw source (protennislive) — last fetched by us: ' + fmtDateTime(drawMeta.generatedAt));
     }
-    el.innerHTML = parts.join('<br>') || 'Freshness unavailable';
+    // §2.3 footer. Item 6.4: SHIPPED, because it is accurate - `rank` is read
+    // verbatim from the acceptance list the source publishes
+    // (build-entry-lists-advance.mjs, row[0]) and is never re-joined to a live
+    // ranking table. See the feasibility document, item (h).
+    el.innerHTML = '<div style="font-size:12px;color:#5b6880;margin-bottom:6px;">Ranks are ATP singles ranking at list publication. Acceptance order, not seeding.</div>'
+      + (parts.join('<br>') || 'Freshness unavailable');
   }
 
   function pickDefaultWeek(){
@@ -5026,7 +5163,11 @@ document.getElementById('mainNav').addEventListener('click', e => {
   // Upcoming|Completed toggle on this same page and `#Results` stays live as a deep link
   // (mxApplyHash). The `results` mapping is retained defensively so any residual caller
   // that still dispatches data-tab="results" lands on Completed rather than a blank page.
-  const pageId = (tab === 'results') ? 'matches' : tab;
+  // TEN-242 item 1.3 - `entry-lists` no longer has a page of its own; it is a
+  // section of Tournaments. Any residual dispatch (a bookmarklet, a stale .click())
+  // lands on Tournaments with the Entry list section selected rather than a blank
+  // page. Same shape as the `results` -> `matches` alias it sits beside.
+  const pageId = (tab === 'results') ? 'matches' : (tab === 'entry-lists') ? 'tournaments' : tab;
   document.querySelectorAll('.tabpage').forEach(p => p.classList.toggle('active', p.dataset.page === pageId));
   if (tab === 'results') setMatchesView('completed');
   else if (tab === 'matches') setMatchesView('upcoming');
@@ -5038,7 +5179,7 @@ document.getElementById('mainNav').addEventListener('click', e => {
   if (tab === 'edge') { edgeShowPane('model'); openEdgeModelTab(); }
   if (tab === 'news') loadNews();
   if (tab === 'database') { if (window.DatabaseTab) window.DatabaseTab.init(); }
-  if (tab === 'entry-lists') { if (window.EntryListsTab) window.EntryListsTab.init(); }
+  if (tab === 'entry-lists') { showTournamentList(); tourxSetSection('entry'); }
   if (tab === 'h2h') { if (window.H2HPage) window.H2HPage.ensureInit(); }
   // TEN-107 Slice 4: Live tab owns its own poll loop — start it on entry, stop
   // it on leaving any other tab. No-op unless FEATURE_LIVE_PROXY loaded live-tab.js.
@@ -21927,7 +22068,7 @@ function showTournamentProfile(key){
    Nothing is fabricated: missing rounds/values render honest
    "Data not available" / "Showing X of Y" states.
    ====================================================================== */
-const tourxState = { section: 'overview', tsQ: '', tsOpen: false, tsScope: 'season', tsSel: 'Wimbledon', tour: null, roundIdx: null, view: 'round', rvMetrics: [], cmpPlayers: [], cmpColorIdx: {}, cmpQuery: '', cmpOpen: false, ovInfoOpen: false, h2hA: null, h2hB: null, h2hOpen: null, ppSpotOff: {}, ppFocus: null, ppInclElimByTour: {} };
+const tourxState = { section: 'overview', tsQ: '', tsOpen: false, speedPanel: false, tsSel: 'Wimbledon', tour: null, roundIdx: null, view: 'round', rvMetrics: [], cmpPlayers: [], cmpColorIdx: {}, cmpQuery: '', cmpOpen: false, h2hA: null, h2hB: null, h2hOpen: null, ppSpotOff: {}, ppFocus: null, ppInclElimByTour: {} };
 // Per-tournament market performance (build-tournament-market.js → tournament-market.json).
 // Real flat-stake yields + favourite reliability from settled closing prices; the
 // Overview panel em-dashes any tournament missing here (thin sample / no join).
@@ -22087,6 +22228,71 @@ function tourxRoundLabelsFor(tourName, playedRounds, drawSize){
   return TOURX_ROUND_LABELS.slice(TOURX_ROUND_LABELS.length - n);
 }
 
+// README §1.1 tier codes. Our catalog says 'ATP 1000'; the export says
+// 'ATP Masters 1000'. Both map to 1000 - measured: every catalog tier value on
+// the 64 rated venues maps, none falls through to the name itself.
+const TOURX_TIER_CODE = { 'Grand Slam': 'GS', 'ATP Finals': 'FNL', 'ATP Masters 1000': '1000', 'ATP 1000': '1000', 'ATP 500': '500', 'ATP 250': '250' };
+function tourxTierCode(cat){ return TOURX_TIER_CODE[cat] || (cat || '—'); }
+// §1.1 rail wash ONLY. Note Grass is #2ab8a0 here, which is NOT the site's grass
+// token (#3dd68c) - the export uses a distinct value for this one surface tint.
+const TOURX_RAIL_SURF = { clay: '#e8a84e', hard: '#4db8ff', grass: '#2ab8a0' };
+function tourxRgb(h){ const n = parseInt(String(h).replace('#', ''), 16); return `${(n >> 16) & 255},${(n >> 8) & 255},${n & 255}`; }
+// ===================== HERO KNOB SCALE =====================
+// DELIBERATE, FOUNDER-RULED DIVERGENCE FROM README §1.2. Do not "fix" this back.
+//
+// The export specifies `left = clamp(3%, (speed − 0.50) / 1.00 × 100%, 97%)` —
+// a HARDCODED 0.50–1.50 domain. Our observed range is 0.41–1.42, so Bucharest
+// (0.41) fell below the domain floor and pinned at the 3% stop: a marker that
+// has stopped encoding anything. Founder ruling 2026-09-19: "Bucharest is a
+// real venue, not an edge case we can wave through."
+//
+// The bounds are therefore derived FROM THE VENUE SET on every render — the same
+// set the rail lists, the rank line counts and the speed panel tabulates — so a
+// new outlier next season rescales the axis instead of silently pinning against
+// it. Nothing about 0.41 or 1.42 is written down anywhere; that is the point,
+// and test-ten242-rulings.mjs fails if a hardcoded span ever comes back.
+//
+// PAD: 8% of the observed span on each side, so the extremes sit clearly inside
+// the track rather than on its ends. On today's data that places the slowest
+// venue at 6.90% and the fastest at 93.10%, both well clear of the 3%/97% clamp
+// (which is now a safety rail, not the thing the extremes rest against).
+//
+// DEGENERATE SPAN: one venue, or every venue equal, means there is no axis to
+// place anything on — the knob CENTRES at 50% rather than dividing by zero.
+const TOURX_KNOB_PAD = 0.08;
+function tourxKnobPct(as, speeds){
+  if (as == null || !speeds || !speeds.length) return 50;
+  const mn = Math.min(...speeds), mx = Math.max(...speeds);
+  const span = mx - mn;
+  if (!(span > 0)) return 50;                    // degenerate -> centre, never NaN
+  const pad = span * TOURX_KNOB_PAD;
+  const lo = mn - pad, hi = mx + pad;
+  return Math.max(3, Math.min(97, (as - lo) / (hi - lo) * 100));
+}
+
+function tourxOrdinal(n){ const s = ['th', 'st', 'nd', 'rd'], v = n % 100; return n + (s[(v - 20) % 10] || s[v] || s[0]); }
+function tourxMedian(a){ if (!a.length) return null; const s = [...a].sort((p, q) => p - q), m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; }
+
+// STENNISFY-DESIGN-INSTRUCTIONS §5 sample gate. FOUNDER RULING 2026-09-19: the
+// Tournaments README's bare percentages WIN, so this renders full size for every
+// event that reaches it. It is kept live, not deleted, because it is the only
+// thing standing between a thin future event and a confident-looking percentage.
+// Measured on the deployed artefact the day of the ruling: 61 events, min n=51,
+// median 596 - so `full` is the only branch that fires today, by a factor of 5.
+//
+// BE HONEST ABOUT WHY. build-tournament-market.js OMITS any event under
+// MIN_MATCHES = 30, so a thin event reaches this page as ABSENCE (mkt === null,
+// handled by the em-dash path above) and never as a small n. The gate is
+// therefore dormant by construction of the upstream builder, not merely by
+// today's data - it would only start firing if that floor dropped below 10.
+// Raised with the founder rather than silently re-cut here.
+function tourxSampleGate(n){
+  if (n == null || n === 0) return { mode: 'none' };      // 0 -> em dash
+  if (n < 5) return { mode: 'nopct' };                     // <5 -> no percentage
+  if (n < 10) return { mode: 'small' };                    // 5-9 -> greyed + note
+  return { mode: 'full' };
+}
+
 function tourxHexA(hex, a){ const n = parseInt(hex.slice(1), 16); return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${a})`; }
 function tourxCap(s){ return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
 // 'perpoint' renders a percent-of-points metric (e.g. Winners 24.5%) as a fixed
@@ -22112,23 +22318,122 @@ function tourxEsc(s){ return String(s).replace(/'/g, "\\'"); }
 function renderTournamentsTab(){
   const tabs = document.getElementById('tourxSectionTabs');
   if (!tabs) return;
-  const secs = [['overview', 'Overview'], ['reports', 'Reports']];
+  // The flag gates the SECTION now that it no longer gates a nav button. With
+  // it off the tab is not offered and the section never initialises, so a
+  // flag-OFF build is byte-identical in behaviour to one without the feature.
+  const secs = [['overview', 'Overview']]
+    .concat(window.FEATURE_ENTRY_LISTS ? [['entry', 'Entry list']] : [])
+    .concat([['reports', 'Reports']]);
+  if (tourxState.section === 'entry' && !window.FEATURE_ENTRY_LISTS) tourxState.section = 'overview';
   tabs.innerHTML = secs.map(([v, l]) => {
     const a = tourxState.section === v;
     // §5.4 (design-export authority): active section tab paints blue #5b9bff on
     // rgba(91,155,255,0.18) with a rgba(91,155,255,0.35) border. The VIEW toggle
     // (Round/Player/H2H) stays README-white — that lives in tourxReports, not here.
-    const style = `font-weight:${a ? 700 : 600};color:${a ? '#5b9bff' : '#5b6880'};background:${a ? 'rgba(91,155,255,0.18)' : 'transparent'};border:1px solid ${a ? 'rgba(91,155,255,0.35)' : 'transparent'};`;
+    // README §2: active = rgba(91,155,255,0.22) fill, TRANSPARENT border, #ffffff, 700.
+    const style = `font-weight:${a ? 700 : 600};color:${a ? '#ffffff' : '#5b6880'};background:${a ? 'rgba(91,155,255,0.22)' : 'transparent'};border:1px solid transparent;`;
     return `<span class="tourx-secttab" style="${style}" onclick="tourxSetSection('${v}')">${l}</span>`;
   }).join('');
   tourxLoadMarket();
-  const ov = document.getElementById('tourxOverview'), rp = document.getElementById('tourxReports');
-  const isOverview = tourxState.section === 'overview';
-  ov.style.display = isOverview ? '' : 'none';
-  rp.style.display = isOverview ? 'none' : '';
-  if (isOverview) renderTourxOverview(); else renderTourxReports();
+  const ov = document.getElementById('tourxOverview'),
+        en = document.getElementById('tourxEntry'),
+        rp = document.getElementById('tourxReports');
+  const sec = tourxState.section;
+  ov.style.display = sec === 'overview' ? '' : 'none';
+  if (en) en.style.display = sec === 'entry' ? '' : 'none';
+  rp.style.display = sec === 'reports' ? '' : 'none';
+  if (sec === 'overview') renderTourxOverview();
+  else if (sec === 'entry') { if (window.EntryListsTab) window.EntryListsTab.init(); }
+  else renderTourxReports();
+  tourxRenderOverlays();
 }
 function tourxSetSection(v){ tourxState.section = v; renderTournamentsTab(); }
+
+
+/* ---------- TEN-242 §1.3 overlays ---------- */
+// One shell for every overlay, so item 7.3 (Escape + outside-click) is wired
+// once rather than per panel. The export only closes on the button; both
+// dismissals below are additions the README asks for explicitly.
+function tourxOverlayShell(opts){
+  const MONO = "'IBM Plex Mono',monospace";
+  return `<div class="tourx-scrim" data-tourx-scrim="1" style="position:fixed;inset:0;z-index:${opts.z};background:rgba(4,5,8,0.74);display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:${opts.pad};">
+      <div role="dialog" aria-modal="true" aria-label="${opts.title}" style="width:100%;max-width:${opts.max};background:#06070a;border:1px solid rgba(255,255,255,0.1);border-radius:16px;overflow:hidden;">
+        <div style="display:flex;align-items:baseline;gap:14px;padding:18px 22px;border-bottom:1px solid rgba(255,255,255,0.08);">
+          <span style="font-size:18px;font-weight:800;letter-spacing:-0.01em;color:#e7e9ee;">${opts.title}</span>
+          <span style="font-family:${MONO};font-size:11.5px;color:#5b6880;">${opts.sub}</span>
+          <span onclick="tourxCloseOverlays()" style="margin-left:auto;font-size:12.5px;font-weight:700;color:#8b96b5;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:8px 14px;cursor:pointer;flex:none;">Close</span>
+        </div>
+        ${opts.body}
+      </div>
+    </div>`;
+}
+
+function tourxOpenSpeedPanel(){ tourxState.speedPanel = true; tourxRenderOverlays(); }
+function tourxCloseOverlays(){
+  if (!tourxState.speedPanel) return;
+  tourxState.speedPanel = false;
+  tourxRenderOverlays();
+}
+function tourxRenderOverlays(){
+  const root = document.getElementById('tourxOverlayRoot');
+  if (!root) return;
+  root.innerHTML = tourxState.speedPanel ? tourxSpeedPanelHtml() : '';
+}
+
+// 7.3 - Escape anywhere, and a click that lands on the scrim itself (never on a
+// click that started inside the panel). Bound once, at document level, because
+// the overlay markup is re-rendered on every state change.
+(function tourxBindOverlayDismissal(){
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape') tourxCloseOverlays();
+  });
+  document.addEventListener('mousedown', function(e){
+    const scrim = e.target.closest && e.target.closest('[data-tourx-scrim]');
+    if (scrim && e.target === scrim) tourxCloseOverlays();
+  });
+})();
+
+// §1.3 speed panel / brief item 7.1. FEASIBILITY ANSWER: the one tour-wide table
+// is COURT_CONDITIONS (64 rated venues), joined to TOURNAMENT_CATALOG for surface
+// and the `indoor` boolean. The rail, the hero, the rank line, the median and
+// this panel all read tourxConditionRegistry() - ONE source, so they cannot be
+// different vintages of each other, which is the failure the README flags in the
+// prototype (its 18-event list and its 62-row table disagree on the same event).
+function tourxSpeedPanelHtml(){
+  const MONO = "'IBM Plex Mono',monospace";
+  const reg = tourxConditionRegistry();
+  const all = reg.map(t => t.abstractSpeed);
+  const mn = Math.min(...all), mx = Math.max(...all), span = (mx - mn) || 1;
+  const med = tourxMedian(all);
+  // "an event is Indoor if it is on the indoor list, otherwise it sits under its
+  // surface" (§1.3). We have the flag, so no list is hardcoded.
+  const bucketOf = t => t.indoor ? 'Indoor' : (t.surface === 'hard' ? 'Outdoor' : t.surface === 'clay' ? 'Clay' : 'Grass');
+  const COLS = [['Indoor', 'IND'], ['Outdoor', 'OUT'], ['Clay', 'CLY'], ['Grass', 'GRS']];
+  const cols = COLS.map(([label, mark]) => {
+    const rows = reg.filter(t => bucketOf(t) === label).sort((a, b) => b.abstractSpeed - a.abstractSpeed);
+    const cmed = tourxMedian(rows.map(t => t.abstractSpeed));
+    const body = rows.map(t => {
+      const on = t.name === tourxState.tsSel;
+      const w = Math.max(4, (t.abstractSpeed - mn) / span * 100);
+      return `<div onclick="tourxSelectCondition('${tourxEsc(t.name)}')" style="display:flex;align-items:center;gap:10px;padding:7px 16px;cursor:pointer;background:${on ? 'rgba(91,155,255,0.10)' : 'transparent'};${on ? 'box-shadow:inset 2px 0 0 #5b9bff;' : ''}">
+          <span style="flex:1;min-width:0;font-size:12.5px;font-weight:${on ? 800 : 600};color:${on ? '#e7e9ee' : '#c6ccdb'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t.name}</span>
+          <span style="width:48px;height:5px;border-radius:4px;background:rgba(255,255,255,0.06);flex:none;overflow:hidden;"><span style="display:block;height:100%;width:${w}%;border-radius:4px;background:${on ? '#5b9bff' : 'rgba(255,255,255,0.22)'};"></span></span>
+          <span style="font-family:${MONO};font-size:12.5px;font-weight:700;color:${on ? '#82b4ff' : '#e7e9ee'};flex:none;">${t.abstractSpeed.toFixed(2)}</span>
+        </div>`;
+    }).join('');
+    return `<div style="background:#06070a;">
+        <div style="height:41px;padding:0 16px;border-bottom:1px solid rgba(255,255,255,0.06);display:flex;align-items:center;gap:10px;">
+          <span style="min-width:34px;height:20px;padding:0 6px;border-radius:5px;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.14);color:#c6ccdb;font-family:${MONO};font-size:9.5px;font-weight:700;letter-spacing:0.06em;display:inline-flex;align-items:center;justify-content:center;flex:none;">${mark}</span>
+          <span style="font-size:13px;font-weight:800;color:#e7e9ee;">${label}</span>
+          <span style="margin-left:auto;font-family:${MONO};font-size:10.5px;color:#4b5672;white-space:nowrap;">${rows.length} · med ${cmed == null ? '—' : cmed.toFixed(2)}</span>
+        </div>
+        <div style="max-height:52vh;overflow-y:auto;">${body}</div>
+      </div>`;
+  }).join('');
+  // the 1px grid gap over a light background IS the column rule (§1.3).
+  const body = `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:1px;background:rgba(255,255,255,0.07);">${cols}</div>`;
+  return tourxOverlayShell({ z: 90, pad: '40px 22px 60px', max: '940px', title: 'Abstract court speed', sub: `${reg.length} events · median ${med.toFixed(2)}`, body });
+}
 
 /* ---------- Section 1: Tournaments overview ---------- */
 // Registry joining the 64-tournament conditions with catalog surface/category.
@@ -22136,7 +22441,9 @@ function tourxConditionRegistry(){
   return TOURNAMENT_CATALOG.filter(t => COURT_CONDITIONS[t.name]).map(t => {
     const c = COURT_CONDITIONS[t.name];
     const cat = courtSpeedCategory(c.speed);
-    return { name: t.name, category: t.category, surface: t.surface, ...c, speedCat: cat };
+    // `indoor` is a real boolean on TOURNAMENT_CATALOG, so the §1.3 panel's
+    // Indoor column needs no hand-maintained venue list (the export ships one).
+    return { name: t.name, category: t.category, surface: t.surface, indoor: !!t.indoor, ...c, speedCat: cat };
   });
 }
 // Two-column Overview: persistent tournament rail (This week / Season) on the
@@ -22153,191 +22460,269 @@ function renderTourxOverview(){
 // Left rail: search box + "This week" (from the match feed) then "Season"
 // (every other tournament with conditions), each row a real abstract speed.
 function tourxOverviewListHtml(){
+  // README §1.1 - search, then two groups: "This week" then "Season". The export
+  // has no scope toggle; both groups always render and search filters both.
   const reg = tourxConditionRegistry();
   const q = tourxState.tsQ.trim().toLowerCase();
-  const match = t => !q || t.name.toLowerCase().includes(q) || t.surface.toLowerCase().includes(q);
-  // Active week = tournaments still on tour (completed events drop off 24h after
-  // their final match and fall back into the Season list below).
+  // §1.1: "Search filters both groups by case-insensitive substring on the NAME".
+  const match = t => !q || t.name.toLowerCase().includes(q);
   const weekNames = tourxActiveWeekNames();
-  const scope = tourxState.tsScope || 'season';
   const week = reg.filter(t => weekNames.has(t.name) && match(t)).sort((a, b) => b.abstractSpeed - a.abstractSpeed);
-  // "This week" = live match-feed tournaments; "This season" = the full conditions catalog.
-  const season = (scope === 'week') ? [] : reg.filter(t => !weekNames.has(t.name) && match(t)).sort((a, b) => b.abstractSpeed - a.abstractSpeed);
-  // Flat rows (design-export authority): no per-row border/fill; only the selected
-  // row gets a translucent surface wash + a left bar in the surface colour.
-  const hexRgb = h => { const n = String(h).replace('#', ''); return parseInt(n.slice(0, 2), 16) + ',' + parseInt(n.slice(2, 4), 16) + ',' + parseInt(n.slice(4, 6), 16); };
+  const season = reg.filter(t => !weekNames.has(t.name) && match(t)).sort((a, b) => b.abstractSpeed - a.abstractSpeed);
   const row = t => {
     const seld = t.name === tourxState.tsSel;
-    const sc = TOURX_SURF_COLOR[t.surface] || '#5b6880';
-    const selBg = seld ? `rgba(${hexRgb(sc)},0.10)` : 'transparent';
-    const selBar = seld ? `inset 2px 0 0 ${sc}` : 'none';
-    return `<div class="tourx-ovrow" onclick="tourxSelectCondition('${tourxEsc(t.name)}')" style="display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:10px;background:${selBg};box-shadow:${selBar};cursor:pointer;">
-        <span style="width:8px;height:8px;border-radius:50%;background:${sc};flex:none;"></span>
-        <span style="flex:1;min-width:0;"><span style="display:block;font-size:13.5px;font-weight:${seld ? 600 : 700};color:#e7e9ee;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t.name}</span><span style="font-size:11px;color:#5b6880;">${tourxCap(t.surface)}</span></span>
-        <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;color:#e7e9ee;">${t.abstractSpeed.toFixed(2)}</span>
+    // §1.1 surface wash: Clay #e8a84e, Hard #4db8ff, Grass #2ab8a0 at 0.13.
+    const sc = TOURX_RAIL_SURF[t.surface] || '#5b6880';
+    const bg = seld ? `rgba(${tourxRgb(sc)},0.13)` : 'transparent';
+    // Tier chip: selected reads BRIGHTER, the name reads LIGHTER (600 vs 700).
+    // That inversion is verbatim from the export - the chip carries the selection.
+    const chipBg = seld ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.05)';
+    const chipBd = seld ? 'rgba(255,255,255,0.20)' : 'rgba(255,255,255,0.14)';
+    const chipFg = seld ? '#e7e9ee' : '#c6ccdb';
+    return `<div class="tourx-ovrow" onclick="tourxSelectCondition('${tourxEsc(t.name)}')" style="display:flex;align-items:center;gap:11px;padding:11px 14px;border-radius:11px;background:${bg};cursor:pointer;">
+        <span style="min-width:42px;height:22px;padding:0 7px;border-radius:6px;background:${chipBg};border:1px solid ${chipBd};color:${chipFg};font-family:'IBM Plex Mono',monospace;font-size:10px;font-weight:700;letter-spacing:0.04em;display:inline-flex;align-items:center;justify-content:center;flex:none;">${tourxTierCode(t.category)}</span>
+        <span style="flex:1;min-width:0;font-size:13.5px;font-weight:${seld ? 600 : 700};color:#e7e9ee;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t.name}</span>
+        <span style="font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:700;letter-spacing:-0.01em;font-variant-numeric:tabular-nums;color:#e7e9ee;flex:none;">${t.abstractSpeed.toFixed(2)}</span>
       </div>`;
   };
-  const scopeBtn = (val, label) => {
-    const a = scope === val;
-    return `<span onclick="tourxSetScope('${val}')" style="flex:1;text-align:center;padding:8px 10px;border-radius:8px;font-size:12.5px;font-weight:${a ? 700 : 600};color:${a ? '#5b9bff' : '#5b6880'};background:${a ? 'rgba(91,155,255,0.18)' : 'transparent'};border:1px solid ${a ? 'rgba(91,155,255,0.35)' : 'transparent'};cursor:pointer;white-space:nowrap;">${label}</span>`;
-  };
-  const scopeToggle = `<div style="display:flex;gap:4px;background:#0a0d14;border:1px solid rgba(255,255,255,0.09);border-radius:11px;padding:4px;">${scopeBtn('week', 'This Week')}${scopeBtn('season', 'This Season')}</div>`;
   const searchBox = `<label style="display:flex;align-items:center;gap:10px;background:#0a0d14;border:1px solid rgba(255,255,255,0.09);border-radius:10px;padding:10px 12px;">
       <svg width="15" height="15" viewBox="0 0 20 20" fill="none" style="flex:none;"><circle cx="9" cy="9" r="6" stroke="#5b6880" stroke-width="1.7"></circle><path d="m14 14 3 3" stroke="#5b6880" stroke-width="1.7" stroke-linecap="round"></path></svg>
       <input id="tourxOvSearch" value="${tourxState.tsQ.replace(/"/g, '&quot;')}" oninput="tourxSearchInput(this.value)" onfocus="tourxState.tsOpen=true" placeholder="Search tournaments..." style="flex:1;min-width:0;background:transparent;border:none;outline:none;color:#e7e9ee;font-size:13px;font-family:'Hanken Grotesk',sans-serif;">
       ${tourxState.tsQ ? `<span onclick="tourxClearSearch()" style="cursor:pointer;color:#5b6880;font-size:12px;flex:none;">✕</span>` : ''}
     </label>`;
   const groupHead = (txt, top) => `<div style="font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:#4b5361;${top ? 'padding:12px 6px 4px;border-top:1px solid rgba(255,255,255,0.05);margin-top:4px;' : 'padding:4px 6px;'}">${txt}</div>`;
-  let body = '';
-  if (week.length) body += groupHead('This week', false) + week.map(row).join('');
-  if (season.length) body += groupHead('Season', week.length > 0) + season.map(row).join('');
-  if (!week.length && !season.length) body = `<div style="padding:16px 8px;font-size:12.5px;color:#5b6880;">No tournament${scope === 'week' ? ' on tour this week' : ''} matches "${tourxState.tsQ}".</div>`;
-  body = `<div class="tourlist">${body}</div>`;
-  return scopeToggle + searchBox + body;
+  // §1.1: "groups with no match simply render empty" - the heading stays.
+  let body;
+  if (q && !week.length && !season.length){
+    // two empty headings read as a rendering failure, not as "no results".
+    body = `<div style="padding:16px 8px;font-size:12.5px;color:#5b6880;">No tournament matches “${tourxState.tsQ}”.</div>`;
+  } else {
+    body = groupHead('This week', false) + week.map(row).join('');
+    body += groupHead('Season', true) + season.map(row).join('');
+  }
+  return searchBox + `<div class="tourlist">${body}</div>`;
 }
 // Right panel: hero abstract-speed, ⓘ explainer, real stat cells, 3-year
 // sparkline, champion, and a generated conditions read. Nothing fabricated.
 function tourxConditionsPanelHtml(){
   const c = tourxResolveCondition(tourxState.tsSel);
   if (!c) return `<div style="padding:40px 26px;color:#5b6880;font-size:14px;">Select a tournament to view its conditions.</div>`;
+  const MONO = "'IBM Plex Mono',monospace";
   const as = c.abstractSpeed;
-  const asLabel = as >= 1.05 ? 'Fast' : as >= 0.95 ? 'Medium' : 'Slow';
-  // Marker position along the real abstract-speed spectrum (tour min 0.41 → max 1.42).
-  const AS_MIN = 0.41, AS_MAX = 1.42;
-  const speedPct = Math.max(3, Math.min(97, (as - AS_MIN) / (AS_MAX - AS_MIN) * 100));
-  const isDone = c.status === 'Completed';
-  const statusColor = c.status === 'Completed' ? '#3dd68c' : (c.status === 'In progress' ? '#7ba4ff' : '#5b6880');
-  const statusBg = c.status === 'Completed' ? 'rgba(62,207,142,0.12)' : (c.status === 'In progress' ? 'rgba(62,123,250,0.12)' : 'rgba(255,255,255,0.05)');
-  const statusBadge = c.status ? `<span style="font-size:10.5px;font-weight:700;color:${statusColor};background:${statusBg};border-radius:6px;padding:3px 9px;font-family:'IBM Plex Mono',monospace;">${c.status}</span>` : '';
-  const dates = tourxDateRange(c.minD, c.maxD);
-  const subline = `${c.category} · ${tourxCap(c.surface)} court${dates ? ' · ' + dates : ''}`;
-  const bounce = tourxBounce(c.surface, c.altitude, c.speedCat);
-  const champion = c.champion || 'TBD';
-  const championLabel = isDone ? 'Champion' : '2025 champion';
-  const championColor = c.champion ? '#eef2f8' : '#5b6880';
-  const infoCard = tourxState.ovInfoOpen ? `
-      <div style="margin-top:14px;border:1px solid rgba(62,123,250,0.2);background:rgba(62,123,250,0.05);border-radius:12px;padding:14px 16px;">
-        <div style="font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#7ba4ff;font-family:'IBM Plex Mono',monospace;margin-bottom:9px;">What is abstract court speed?</div>
-        <p style="margin:0;font-size:13px;line-height:1.65;color:#aeb8cc;">This metric uses ace rate, adjusted for the servers and returners in each match, to rate each tournament by surface speed. The number therefore indirectly accounts for everything that influences play: temperature, humidity, wind, balls, and of course the physical surface itself.</p>
-        <p style="margin:10px 0 0;font-size:13px;line-height:1.65;color:#aeb8cc;">Ratings cover every tour-level event from the last 52 weeks. A rating above 1.00 is faster than average — a 1.25, for example, means players hit 25% more aces than they would have on a tour-average surface.</p>
-      </div>` : '';
-  const cell = (label, value, color) => `<div style="border:1px solid rgba(255,255,255,0.07);border-radius:12px;background:#0d1420;padding:16px 18px;"><div style="font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#4b5672;font-family:'IBM Plex Mono',monospace;">${label}</div><div style="font-size:22px;font-weight:700;margin-top:8px;color:${color};font-family:'IBM Plex Mono',monospace;">${value}</div></div>`;
-  // Three tiles, matching the founder reference (Abstract court speed is not
-  // repeated here — it is already the hero number above the slider).
-  const cells = [
-    cell('Altitude', c.altitude != null ? `${c.altitude} m` : '—', '#eef2f8'),
-    cell('1st serve won', c.firstServeWon != null ? `${c.firstServeWon}%` : '—', '#eef2f8'),
-    cell('Service hold', c.serviceHold != null ? `${c.serviceHold}%` : '—', '#eef2f8'),
-  ].join('');
-  // Real derived rank + median across the conditions registry (the same set the
-  // left rail lists). Not fabricated — the numbers differ from the design mock's
-  // "18 tour events / 1.31" because the mock used a smaller placeholder set.
-  const _regAll = tourxConditionRegistry();
-  const _speedsDesc = _regAll.map(t => t.abstractSpeed).sort((a, b) => b - a);
-  const _nTot = _speedsDesc.length;
-  const _rank = _speedsDesc.filter(v => v > as).length + 1;
-  const _sortAsc = [..._speedsDesc].sort((a, b) => a - b);
-  const _median = _nTot ? (_nTot % 2 ? _sortAsc[(_nTot - 1) / 2] : (_sortAsc[_nTot / 2 - 1] + _sortAsc[_nTot / 2]) / 2) : as;
-  const _ord = n => { const s = ['th', 'st', 'nd', 'rd'], v = n % 100; return n + (s[(v - 20) % 10] || s[v] || s[0]); };
-  const rankLine = `<div style="margin-top:13px;font-size:12.5px;color:#5b6880;">
-      <span style="font-family:'IBM Plex Mono',monospace;color:#aeb8cc;">${_ord(_rank)}</span> fastest of
-      <span style="font-family:'IBM Plex Mono',monospace;color:#aeb8cc;">${_nTot}</span> tour events ·
-      tour median <span style="font-family:'IBM Plex Mono',monospace;color:#aeb8cc;">${_median.toFixed(2)}</span></div>`;
-  const sliderLabels = `<div style="margin-top:9px;display:flex;justify-content:space-between;font-size:10.5px;letter-spacing:0.08em;text-transform:uppercase;color:#4b5672;">
-      <span>Slow</span><span>Medium</span><span>Fast</span></div>`;
-  const conditionsCard = `<div style="margin-top:22px;border:1px solid rgba(255,255,255,0.07);border-radius:12px;background:#0d1420;padding:18px 20px;">
-      <div style="font-size:10px;letter-spacing:0.08em;text-transform:uppercase;color:#4b5672;font-family:'IBM Plex Mono',monospace;margin-bottom:10px;">Conditions read</div>
-      <p style="margin:0;font-size:13.5px;line-height:1.65;color:#aeb8cc;">${tourxConditionsProse(c.surface, c.speedCat, as, tourxBounce(c.surface, c.altitude, c.speedCat))}</p>
+  const EY = `font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#5b6880;`;
+  const CARD = `background:#0a0d14;border:1px solid rgba(255,255,255,0.09);`;
+
+  // ---- title block (§1.2) ------------------------------------------------
+  const badge = c.status === 'Completed'
+    ? `<span style="font-family:${MONO};font-size:10.5px;font-weight:700;color:#5b6880;background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:6px;padding:3px 10px;letter-spacing:0.04em;">Completed</span>` : '';
+  const title = `<div>
+      <div style="display:flex;align-items:center;gap:11px;flex-wrap:wrap;"><span style="font-size:29px;font-weight:800;letter-spacing:-0.015em;color:#e7e9ee;">${c.name}</span>${badge}</div>
+      <div style="font-size:13px;color:#5b6880;margin-top:6px;">${c.category} · ${tourxCap(c.surface)} court</div>
     </div>`;
-  // ROI backing favourites / underdogs — REAL flat-stake yields from settled
-  // closing prices (tournament-market.json, built by build-tournament-market.js
-  // from odds-archive/). Threshold-coloured on a ±1.0pp band vs the pooled tour
-  // average, and the caption is computed against that same figure — colour and
-  // caption can never disagree. Em-dash when the tournament is below min sample
-  // or can't be joined; the caption then says why (no dev-facing placeholder).
-  const mkt = tourxMarketFor(c.name);
-  const POS = '#3dd68c', NEG = '#e0616f', MUT = '#5b6880';
-  const fmtRoi = v => (v >= 0 ? '+' : '−') + Math.abs(v).toFixed(1) + '%';
-  const roiColor = (v, avg) => Math.abs(v - avg) < 1 ? MUT : (v - avg > 0 ? POS : NEG);
-  const roiCmp = (v, avg) => { const d = v - avg; return Math.abs(d) < 1 ? 'in line with tour average' : (d > 0 ? '+' + d.toFixed(1) + 'pp vs tour avg' : d.toFixed(1) + 'pp vs tour avg'); };
-  const roiTile = (label, val, avg) => {
-    const hasVal = val != null && avg != null;
-    const value = hasVal ? fmtRoi(val) : '—';
-    const color = hasVal ? roiColor(val, avg) : MUT;
-    const cap = hasVal ? roiCmp(val, avg) : 'Not enough settled matches at this event for a reliable yield.';
-    return `<div style="background:#0a0d14;border:1px solid rgba(255,255,255,0.09);border-radius:12px;padding:15px 18px;">
-      <div style="font-size:11px;font-weight:500;font-family:'IBM Plex Mono',monospace;letter-spacing:0.1em;text-transform:uppercase;color:#5b6880;">${label}</div>
-      <div style="display:flex;align-items:baseline;gap:9px;margin-top:8px;"><span style="font-family:'IBM Plex Mono',monospace;font-size:22px;font-weight:700;color:${color};">${value}</span><span style="font-size:11.5px;color:#5b6880;">flat-stake yield</span></div>
-      <div style="font-size:11px;color:#4b5672;margin-top:5px;">${cap}</div>
-    </div>`;
-  };
-  const roiRow = `<div style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:12px;">${roiTile('ROI backing favourites', mkt && mkt.roiFav, mkt && mkt.baseline.roiFav)}${roiTile('ROI backing underdogs', mkt && mkt.roiDog, mkt && mkt.baseline.roiDog)}</div>`;
-  // Favourite reliability — REAL favourite win rate from the same settled set.
-  // Per the export the percentage itself carries NO threshold colour (plain
-  // --text); only the classification label and the paragraph derive from a
-  // ±3.0pp band vs the tour average. Bar is suppressed entirely when there's no data.
-  const frHas = !!mkt;
-  const frV = frHas ? mkt.favRel : null, frAvg = frHas ? mkt.baseline.favRel : null;
-  const frD = frHas ? frV - frAvg : 0;
-  const frLabel = frD >= 3 ? 'Reliable' : frD <= -3 ? 'Upset-prone' : 'Moderate';
-  const frCmp = frHas
-    ? `Favourites win ${frV}% of matches here versus ${frAvg}% across the tour — ${frD >= 3 ? 'clearly above average, so chalk tends to hold and backing favourites is a stronger play than usual.' : frD <= -3 ? 'below average, so this is an upset-prone draw where underdogs return more value than the tour norm.' : 'broadly in line with the tour, so no strong lean toward favourites or underdogs.'}`
-    : 'Not enough settled matches at this event to measure favourite reliability.';
-  const reliabilityCard = `<div style="margin-top:16px;background:#0a0d14;border:1px solid rgba(255,255,255,0.09);border-radius:12px;padding:16px 18px;">
-      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;">
-        <span style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:#5b6880;">Favourite reliability</span>
-        <span style="display:inline-flex;align-items:baseline;gap:8px;"><span style="font-family:'IBM Plex Mono',monospace;font-size:18px;font-weight:700;color:#e7e9ee;">${frHas ? frV + '%' : '—'}</span>${frHas ? `<span style="font-size:11px;font-weight:600;color:#e7e9ee;">${frLabel}</span>` : ''}</span>
+
+  // ---- court-speed hero (§1.2) -------------------------------------------
+  // FOUNDER RULING 2026-09-19: the band word is courtSpeedCategory()'s, not the
+  // README's four bands. c.speedCat IS that function's output, and the Conditions
+  // read below is generated from the same value - one function, one word. The
+  // README's ">=1.10 Fast / >=0.95 Medium / >=0.82 Medium-slow" is overruled; it
+  // disagreed with courtSpeedCategory() on 4 of 64 venues and with the word we
+  // shipped on 12 of 64, which would have printed "Medium" over a paragraph
+  // describing a fast court at the Australian Open.
+  const bandWord = c.speedCat || '—';
+  // §1.2 knob, rescaled to the observed range per the founder's ruling —
+  // see tourxKnobPct(). The registry is the same one the rank line uses.
+  const knob = tourxKnobPct(as, tourxConditionRegistry().map(t => t.abstractSpeed));
+  const hero = `<div>
+      <div style="display:flex;align-items:baseline;gap:11px;flex-wrap:wrap;">
+        <span style="font-family:${MONO};font-size:52px;font-weight:700;line-height:0.9;letter-spacing:-0.02em;font-variant-numeric:tabular-nums;color:#e7e9ee;">${as.toFixed(2)}</span>
+        <span style="font-size:13px;color:#5b6880;">abstract court speed · <span style="color:#e7e9ee;font-weight:600;">${bandWord}</span></span>
       </div>
-      ${frHas ? `<div style="height:4px;border-radius:4px;background:rgba(255,255,255,0.06);overflow:hidden;margin-top:11px;"><span style="display:block;height:100%;width:${frV}%;background:rgba(91,155,255,0.5);border-radius:4px;"></span></div>` : ''}
-      <div style="font-size:12px;color:#5b6880;line-height:1.6;margin-top:${frHas ? '9px' : '11px'};text-wrap:pretty;">${frCmp}</div>
+      <div onclick="tourxOpenSpeedPanel()" title="Compare every rated event" style="position:relative;margin-top:18px;height:8px;border-radius:5px;background:linear-gradient(90deg,#161a22,#3a4557,#5b9bff);cursor:pointer;">
+        <span style="position:absolute;top:50%;left:${knob}%;width:16px;height:16px;border-radius:50%;background:#e7e9ee;border:3px solid #0a0d14;box-shadow:0 0 0 1px rgba(91,155,255,0.5);transform:translate(-50%,-50%);"></span>
+      </div>
+      <div style="margin-top:9px;display:flex;justify-content:space-between;font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:#5b6880;"><span>Slow</span><span>Medium</span><span>Fast</span></div>
+      ${tourxRankLineHtml(as)}
     </div>`;
-  const reportPanel = c.hasReport
-    ? `<div style="margin-top:16px;border:1px solid rgba(62,123,250,0.24);border-radius:12px;background:linear-gradient(120deg,rgba(62,123,250,0.10),rgba(62,123,250,0.02));padding:20px 22px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
-        <div><div style="font-size:15px;font-weight:700;color:#eef2f8;">Tournament report available</div><div style="font-size:12.5px;color:#5b6880;margin-top:4px;">Round-by-round breakdown of every completed match.</div></div>
-        <button onclick="tourxOpenReport('${tourxEsc(c.name)}')" style="display:inline-flex;align-items:center;gap:9px;background:#3E7BFA;color:#fff;font-size:14px;font-weight:700;font-family:'Hanken Grotesk',sans-serif;border:none;border-radius:11px;padding:12px 22px;cursor:pointer;transition:background 0.15s ease;" onmouseover="this.style.background='#5a90ff'" onmouseout="this.style.background='#3E7BFA'">View report<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg></button>
-      </div>`
-    : `<div style="margin-top:16px;border:1px solid rgba(255,255,255,0.07);border-radius:12px;background:#0d1420;padding:34px 22px;text-align:center;">
-        <div style="font-size:15px;font-weight:700;color:#5b6880;">Report not available yet</div>
-        <div style="font-size:12.5px;color:#4b5672;margin-top:6px;">The round-by-round report goes live as soon as the first matches of this event are completed.</div>
-      </div>`;
-  const hist = [c.as2023, c.as2024, c.as2025];
-  const histPts = [2023, 2024, 2025].map((y, i) => ({ y, v: hist[i] })).filter(p => p.v != null);
-  let sparkCard = '';
-  if (histPts.length){
-    const tdelta = +(histPts[histPts.length - 1].v - histPts[0].v).toFixed(2);
-    const trendLabel = tdelta > 0.01 ? 'Getting faster' : tdelta < -0.01 ? 'Getting slower' : 'Holding steady';
-    const trendDelta = (tdelta >= 0 ? '+' : '') + tdelta.toFixed(2) + ' over 3 yrs';
-    sparkCard = `<div style="margin-top:16px;border:1px solid rgba(255,255,255,0.07);border-radius:12px;background:#0d1420;padding:15px 18px;display:flex;align-items:flex-start;justify-content:space-between;gap:20px;flex-wrap:wrap;">
-        <div><div style="font-size:9.5px;letter-spacing:0.08em;text-transform:uppercase;color:#4b5672;font-family:'IBM Plex Mono',monospace;">Abstract court speed · last 3 years</div>
-          <div style="display:flex;align-items:center;gap:9px;margin-top:9px;"><span style="font-size:16px;font-weight:800;color:#eef2f8;">${trendLabel}</span><span style="font-size:11px;color:#5b6880;font-family:'IBM Plex Mono',monospace;">${trendDelta}</span></div></div>
-        <div style="width:260px;flex:none;">${tourxSparklineSvg([2023, 2024, 2025], hist)}</div>
+
+  // ---- three condition tiles (§1.2) --------------------------------------
+  // Altitude / 1st serve point won / Service hold, in that order. All three come
+  // from the court-conditions sheet and carry NO match count - see the feasibility
+  // document, item (c). A missing value is an em dash, never a zero.
+  const tile = (label, val) => `<div style="${CARD}border-radius:11px;padding:15px 16px;"><div style="${EY}">${label}</div><div style="font-family:${MONO};font-size:26px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums;color:${val == null ? '#4b5672' : '#e7e9ee'};margin-top:10px;">${val == null ? '—' : val}</div></div>`;
+  const tiles = `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;${CARD}border-radius:12px;padding:14px;">
+      ${tile('Altitude', c.altitude != null ? c.altitude + ' m' : null)}
+      ${tile('1st serve point won', c.firstServeWon != null ? c.firstServeWon + '%' : null)}
+      ${tile('Service hold', c.serviceHold != null ? c.serviceHold + '%' : null)}
+    </div>`;
+
+  // ---- conditions read (§1.2) --------------------------------------------
+  const read = `<div style="${CARD}border-radius:12px;padding:16px 18px;">
+      <div style="${EY}margin-bottom:11px;">Conditions read</div>
+      <p style="margin:0;font-size:13.5px;line-height:1.7;color:#e7e9ee;text-wrap:pretty;">${tourxConditionsProse(c.surface, c.speedCat, as, tourxBounce(c.surface, c.altitude, c.speedCat))}</p>
+    </div>`;
+
+  // NOTE: README §1.2 "What players say" is deliberately NOT built (brief item 3)
+  // and the vertical gap is closed - the detail column's own 16px gap does that,
+  // there is no spacer to remove.
+
+  return `<div style="display:flex;flex-direction:column;gap:16px;min-width:0;padding-left:24px;">
+      ${title}${hero}${tiles}${read}${tourxSpeedSeriesHtml(c)}${tourxRoiPairHtml(c)}${tourxReliabilityHtml(c)}${tourxReportCtaHtml(c)}
+    </div>`;
+}
+
+// §1.2 rank line. Rank, N and median are computed over the SAME registry the rail
+// lists and the speed panel tabulates - one source, so the four numbers can never
+// be different vintages of each other (the failure the README warns about).
+function tourxRankLineHtml(as){
+  const MONO = "'IBM Plex Mono',monospace";
+  const speeds = tourxConditionRegistry().map(t => t.abstractSpeed);
+  const n = speeds.length;
+  if (!n) return '';
+  const rank = speeds.filter(v => v > as).length + 1;
+  const med = tourxMedian(speeds);
+  return `<div style="margin-top:10px;font-size:13px;color:#5b6880;">
+      <span style="font-family:${MONO};">${tourxOrdinal(rank)}</span> fastest of <span style="font-family:${MONO};">${n}</span> tour events · tour median <span style="font-family:${MONO};">${med.toFixed(2)}</span>
+      <span onclick="tourxOpenSpeedPanel()" style="margin-left:6px;font-size:11.5px;font-weight:700;color:#5b9bff;cursor:pointer;">Compare all →</span>
+    </div>`;
+}
+
+// §"Seven-year court speed" - built from what EXISTS. Measured 2026-09-19: the
+// sheet carries as2023/as2024/as2025 and nothing older, so the ceiling is three
+// points, not seven; 53 of 64 venues have 3, six have 2, five have 1, and Montreal
+// is [2023, 2025] - a HOLE. Nothing is padded, extrapolated or interpolated: a gap
+// year is simply not a point, and the eyebrow states the real range.
+function tourxSpeedSeriesHtml(c){
+  const MONO = "'IBM Plex Mono',monospace";
+  const pts = [[2023, c.as2023], [2024, c.as2024], [2025, c.as2025]].filter(p => p[1] != null);
+  if (!pts.length) return '';
+  const range = pts.length === 1 ? String(pts[0][0]) : `${pts[0][0]}–${pts[pts.length - 1][0]}`;
+  const vals = pts.map(p => p[1]);
+  const mn = Math.min(...vals), mx = Math.max(...vals), span = (mx - mn) || 1;
+  // §"Seven-year court speed" geometry: plot band 40->66 across x 26->334. The
+  // export spaces 7 points at 308/6; we keep the same span and divide by our own
+  // point count so the block stays full width at 1, 2 or 3 points.
+  const X = i => pts.length === 1 ? 180 : 26 + i * (308 / (pts.length - 1));
+  const Y = v => mx === mn ? 53 : 66 - (v - mn) / span * 26;
+  let trend = '';
+  if (pts.length > 1){
+    const d = +(vals[vals.length - 1] - vals[0]).toFixed(2);
+    const word = Math.abs(d) < 0.03 ? 'Holding steady' : (d > 0 ? 'Trending faster' : 'Trending slower');
+    // real MINUS SIGN U+2212 for negatives, per the export.
+    const ds = d < 0 ? '−' + Math.abs(d).toFixed(2) : '+' + d.toFixed(2);
+    // SPAN, not point count. Brisbane holds 2024 and 2025 - two points, but a
+    // ONE-year move; labelling it "over 2 yrs" states a duration we did not
+    // measure. Montreal holds 2023 and 2025 either side of a hole: also two
+    // points, but a genuine two-year span. The two must not print the same.
+    const yrs = pts[pts.length - 1][0] - pts[0][0];
+    trend = `<div style="display:flex;align-items:baseline;gap:9px;margin-top:18px;flex-wrap:wrap;">
+        <span style="font-size:23px;font-weight:800;letter-spacing:-0.01em;color:#e7e9ee;">${word}</span>
+        <span style="font-family:${MONO};font-size:13px;color:#5b6880;">${ds} over ${yrs} yr${yrs === 1 ? '' : 's'}</span>
       </div>`;
   }
-  return `<div style="padding:24px 26px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
-        <div><div style="display:flex;align-items:center;gap:11px;"><span style="font-size:24px;font-weight:800;letter-spacing:-0.02em;">${c.name}</span>${statusBadge}</div>
-          <div style="font-size:13px;color:#5b6880;margin-top:5px;">${subline}</div></div>
+  const gid = 'txs' + Math.random().toString(36).slice(2, 8);
+  const line = pts.map((p, i) => `${X(i)},${Y(p[1])}`).join(' ');
+  const area = `M ${X(0)} ${Y(vals[0])} ` + pts.map((p, i) => `L ${X(i)} ${Y(p[1])}`).join(' ') + ` L ${X(pts.length - 1)} 90 L ${X(0)} 90 Z`;
+  const svg = `<svg viewBox="0 0 360 104" preserveAspectRatio="none" style="position:absolute;inset:0;width:100%;height:100%;">
+      <defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#ffffff" stop-opacity="0.14"/><stop offset="100%" stop-color="#ffffff" stop-opacity="0"/></linearGradient></defs>
+      <path d="${area}" fill="url(#${gid})"></path>
+      <polyline points="${line}" fill="none" stroke="#ffffff" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"></polyline>
+    </svg>`;
+  // Dots and labels are HTML spans at x = % of the 360-unit width and y in raw px.
+  // The SVG stretches, the overlay does not - intentional, so labels keep their
+  // size at any card width (§"Seven-year court speed").
+  const overlay = pts.map((p, i) => {
+    const xp = X(i) / 360 * 100, yp = Y(p[1]);
+    return `<span style="position:absolute;left:${xp}%;top:${yp}px;transform:translate(-50%,-50%);width:9px;height:9px;border-radius:50%;background:#0a0d14;border:2px solid #ffffff;"></span>
+      <span style="position:absolute;left:${xp}%;top:${yp}px;transform:translate(-50%,calc(-100% - 11px));font-family:${MONO};font-size:12.5px;font-weight:700;color:#e7e9ee;white-space:nowrap;">${p[1].toFixed(2)}</span>
+      <span style="position:absolute;left:${xp}%;bottom:0;transform:translateX(-50%);font-family:${MONO};font-size:11px;letter-spacing:0.06em;color:#5b6880;">${p[0]}</span>`;
+  }).join('');
+  return `<div style="background:#0a0d14;border:1px solid rgba(255,255,255,0.09);border-radius:12px;padding:18px 24px 20px;display:flex;flex-wrap:wrap;align-items:flex-start;gap:20px 32px;">
+      <div style="flex:1 1 220px;">
+        <div style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#5b6880;">Abstract court speed · ${range}</div>
+        ${trend}
       </div>
-      <div style="margin-top:22px;display:flex;align-items:baseline;gap:11px;flex-wrap:wrap;">
-        <span style="font-size:54px;font-weight:800;font-family:'IBM Plex Mono',monospace;letter-spacing:-0.03em;color:#eef2f8;line-height:1;">${as.toFixed(2)}</span>
-        <span style="font-size:13px;color:#5b6880;font-weight:600;">abstract court speed · ${asLabel}</span>
-        <span onclick="tourxToggleOvInfo()" title="What is this?" style="align-self:center;display:inline-flex;color:#5b6880;cursor:pointer;"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg></span>
-      </div>
-      <div style="position:relative;margin-top:18px;height:8px;border-radius:5px;background:linear-gradient(90deg,#1a2338,#2a3f66,#2f6bd8);"><span style="position:absolute;top:50%;left:${speedPct}%;width:16px;height:16px;border-radius:50%;background:#e7e9ee;border:3px solid #0a0d14;box-shadow:0 0 0 1px rgba(91,155,255,0.5);transform:translate(-50%,-50%);"></span></div>
-      ${sliderLabels}
-      ${rankLine}
-      ${infoCard}
-      ${conditionsCard}
-      <div style="margin-top:16px;display:grid;grid-template-columns:repeat(3,1fr);gap:14px;">${cells}</div>
-      <div style="margin-top:16px;display:grid;grid-template-columns:1fr 1fr;gap:14px;">
-        <div style="border:1px solid rgba(255,255,255,0.07);border-radius:12px;background:#0d1420;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;"><span style="font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:#5b6880;font-family:'IBM Plex Mono',monospace;">Bounce</span><span style="font-size:13px;font-weight:700;color:#cfd6e6;">${bounce}</span></div>
-        <div style="border:1px solid rgba(255,255,255,0.07);border-radius:12px;background:#0d1420;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;"><span style="font-size:11px;letter-spacing:0.06em;text-transform:uppercase;color:#5b6880;font-family:'IBM Plex Mono',monospace;">${championLabel}</span><span style="font-size:13px;font-weight:700;color:${championColor};">${champion}</span></div>
-      </div>
-      ${sparkCard}
-      ${roiRow}
-      ${reliabilityCard}
-      ${reportPanel}
+      <div style="flex:1 1 100%;height:104px;position:relative;">${svg}${overlay}</div>
     </div>`;
+}
+
+// §1.2 ROI pair. REAL flat-stake yields from tournament-market.json (settled
+// closing prices in odds-archive/), never a formula: the four derived formulas in
+// the prototype (roiFav/roiDog/favRel/upsetRate) are scaffolding and are NOT
+// reproduced anywhere in this file - a fallback formula emitting a plausible
+// number is the failure mode the brief singles out. No join, no figure, dash.
+function tourxRoiPairHtml(c){
+  const MONO = "'IBM Plex Mono',monospace";
+  const mkt = tourxMarketFor(c.name);
+  const POS = '#3dd68c', NEG = '#e0616f', MUT = '#5b6880';
+  const card = (label, v, avg) => {
+    const gate = tourxSampleGate(mkt ? mkt.n : null);
+    const has = v != null && avg != null && gate.mode === 'full';
+    const small = v != null && avg != null && gate.mode === 'small';
+    const d = has || small ? v - avg : 0;
+    // §1.2 comparison colour: |delta| < 1pp grey, else green/red. Already our rule
+    // (roiColor, TEN-8) with the same 1.0pp band - no conflict to resolve.
+    const col = !has ? MUT : (Math.abs(d) < 1 ? MUT : (d > 0 ? POS : NEG));
+    const val = has || small ? (v >= 0 ? '+' : '−') + Math.abs(v).toFixed(1) + '%' : '—';
+    const cmp = (has || small)
+      ? (Math.abs(d) < 1 ? 'in line with tour average' : (d > 0 ? '+' : '−') + Math.abs(d).toFixed(1) + 'pp vs tour avg')
+      : 'Not enough settled matches at this event for a reliable yield.';
+    // greyed, with a note - but NO inline n. The founder ruled all five figures
+    // bare; that ruling does not stop applying because the sample got thin.
+    const note = small ? `<div style="font-size:11px;color:#5b6880;margin-top:3px;">small sample</div>` : '';
+    return `<div style="background:#0a0d14;border:1px solid rgba(255,255,255,0.09);border-radius:12px;padding:15px 18px;">
+        <div style="font-family:${MONO};font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#5b6880;">${label}</div>
+        <div style="display:flex;align-items:baseline;gap:9px;margin-top:8px;flex-wrap:wrap;">
+          <span style="font-family:${MONO};font-size:26px;font-weight:700;font-variant-numeric:tabular-nums;color:${small ? MUT : col};">${val}</span>
+          <span style="font-size:11.5px;color:#5b6880;">flat-stake yield</span>
+        </div>
+        <div style="font-size:11px;color:#4b5672;margin-top:5px;">${cmp}</div>${note}
+      </div>`;
+  };
+  // 8.2 - the "Open favourites / underdogs graphics →" links are OMITTED this
+  // phase, not rendered inert: the ROI overlay mounts the Database page, which
+  // cannot be embedded with our current code (feasibility item e). An absent link
+  // promises nothing; a blue arrow that does nothing is a broken promise.
+  return `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;">
+      ${card('ROI backing favourites', mkt && mkt.roiFav, mkt && mkt.baseline.roiFav)}
+      ${card('ROI backing underdogs', mkt && mkt.roiDog, mkt && mkt.baseline.roiDog)}
+    </div>`;
+}
+
+// §1.2 favourite reliability. Counted win rate vs the pooled tour mean; the
+// +/-3pp band is already our rule (TEN-8), identical to the README's.
+function tourxReliabilityHtml(c){
+  const MONO = "'IBM Plex Mono',monospace";
+  const mkt = tourxMarketFor(c.name);
+  const gate = tourxSampleGate(mkt ? mkt.n : null);
+  const has = !!mkt && gate.mode !== 'none' && gate.mode !== 'nopct';
+  const v = has ? mkt.favRel : null, avg = has ? mkt.baseline.favRel : null;
+  const d = has ? v - avg : 0;
+  const word = d >= 3 ? 'Reliable' : d <= -3 ? 'Upset-prone' : 'Moderate';
+  const tail = d >= 3 ? 'clearly above average, so chalk tends to hold and backing favourites is a stronger play than usual.'
+    : d <= -3 ? 'below average, so this is an upset-prone draw where underdogs return more value than the tour norm.'
+    : 'broadly in line with the tour, so no strong lean toward favourites or underdogs.';
+  const note = has
+    ? `Favourites win ${v}% of matches here versus ${avg}% across the tour — ${tail}`
+    : 'Not enough settled matches at this event to measure favourite reliability.';
+  return `<div style="background:#0a0d14;border:1px solid rgba(255,255,255,0.09);border-radius:12px;padding:16px 18px;">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;">
+        <span style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#5b6880;">Favourite reliability</span>
+        <span style="display:inline-flex;align-items:baseline;gap:8px;">
+          <span style="font-family:${MONO};font-size:16px;font-weight:700;font-variant-numeric:tabular-nums;color:${has ? (gate.mode === 'small' ? '#5b6880' : '#e7e9ee') : '#4b5672'};">${has ? v + '%' : '—'}</span>
+          ${has ? `<span style="font-size:11px;font-weight:600;color:#e7e9ee;">${word}</span>` : ''}
+        </span>
+      </div>
+      ${has ? `<div style="height:4px;border-radius:4px;background:rgba(255,255,255,0.06);overflow:hidden;margin-top:11px;"><span style="display:block;height:100%;width:${v}%;background:rgba(91,155,255,0.5);border-radius:4px;"></span></div>` : ''}
+      <div style="font-size:12px;line-height:1.6;color:#5b6880;margin-top:${has ? '9px' : '11px'};text-wrap:pretty;">${note}</div>
+    </div>`;
+}
+
+// 8.3 - the CTA renders ONLY when the event actually has a report, and switches
+// to the Reports tab. Note tournament-progression.json is empty on the deployed
+// site right now, so this correctly renders for nothing until an event finishes.
+function tourxReportCtaHtml(c){
+  if (!c.hasReport) return '';
+  return `<div><span onclick="tourxOpenReport('${tourxEsc(c.name)}')" style="display:inline-flex;align-items:center;gap:9px;font-size:13.5px;font-weight:700;color:#5b9bff;background:rgba(91,155,255,0.15);border:1px solid rgba(91,155,255,0.35);border-radius:8px;padding:13px 20px;cursor:pointer;">View tournament report →</span></div>`;
 }
 // Join conditions + catalog + this-week status + defending champion for one name.
 function tourxResolveCondition(name){
@@ -22388,21 +22773,14 @@ function tourxConditionsProse(surface, speedCat, abstractSpeed, bounce){
 }
 function tourxSearchInput(v){ tourxState.tsQ = v; tourxState.tsOpen = true; renderTourxOverview(); }
 function tourxClearSearch(){ tourxState.tsQ = ''; renderTourxOverview(); }
-// This Week / This Season list filter. If the selected tournament falls outside
-// the new scope, snap the selection to the first tournament still visible.
-function tourxSetScope(scope){
-  tourxState.tsScope = scope;
-  if (scope === 'week'){
-    const weekNames = tourxActiveWeekNames();
-    if (!weekNames.has(tourxState.tsSel)){
-      const first = tourxConditionRegistry().filter(t => weekNames.has(t.name)).sort((a, b) => b.abstractSpeed - a.abstractSpeed)[0];
-      if (first) tourxState.tsSel = first.name;
-    }
-  }
+function tourxSelectCondition(name){
+  tourxState.tsSel = name;
   renderTourxOverview();
+  // the speed panel highlights the matched row, so it has to repaint too -
+  // otherwise clicking a row inside it moves the selection behind the scrim and
+  // the panel keeps pointing at the previous event.
+  tourxRenderOverlays();
 }
-function tourxSelectCondition(name){ tourxState.tsSel = name; renderTourxOverview(); }
-function tourxToggleOvInfo(){ tourxState.ovInfoOpen = !tourxState.ovInfoOpen; renderTourxOverview(); }
 
 // Build one tile per tournament present in the current match feed (this
 // week), reading the courtSpeed/venue fields embedded on each match.
@@ -27524,15 +27902,13 @@ window.DatabaseTab = (function(){
 </script>
 <script src="series.js" defer></script>
 
-<!-- TEN-150: Entry Lists feature flag. OFF by default — set to true once founder confirms go-live.
-     Flag ON reveals the nav button; EntryListsTab.init() fires on first tab click.
-     Deploying this code with the flag OFF changes nothing live. -->
+<!-- TEN-150 / TEN-242: Entry Lists feature flag. The nav button it used to reveal
+     is GONE (item 1.1) - entry lists are the middle SECTION of Tournaments now, and
+     renderTournamentsTab() reads this flag to decide whether that section renders.
+     No element to un-hide, so the reveal IIFE is removed rather than left pointing
+     at an id that no longer exists. -->
 <script>
   window.FEATURE_ENTRY_LISTS = true;
-  (function(){
-    var btn = document.getElementById('entryListsTabBtn');
-    if(btn && window.FEATURE_ENTRY_LISTS) btn.style.display = '';
-  })();
 </script>
 
 

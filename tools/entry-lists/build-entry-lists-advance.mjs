@@ -314,7 +314,16 @@ function shapeTournament(t, tier, weekStart, weekLabel, published, idx) {
     startDate: weekStart,
     sourcePublished: published,
     status: "active",
-    counts: { MD: null, Q: null, ALT: 0 },
+    // TEN-242 item 6.3 (founder-authorised 2026-09-19). This base object is
+    // returned UNCHANGED for a pending tournament, so `ALT: 0` was shipping a
+    // fabricated count on every not-yet-published event: MD and Q correctly
+    // dashed while Alt showed a measured-looking 0. Measured on the deployed
+    // shard the day it was found: 25 of 71 rows. Null is the only honest value
+    // for "we have not fetched this list". A tournament that IS loaded and
+    // genuinely has no alternates still gets a real 0 from reserves.length below
+    // - null and 0 are now different facts, and the renderer prints them
+    // differently. This file's own rule, line 20: missing data is null, never 0.
+    counts: { MD: null, Q: null, ALT: null },
     sections: [],
   };
 
@@ -378,8 +387,11 @@ function validate(shard) {
         errs.push(`${t.name}: active with no sections`);
     }
     if (t.status === "pending") {
-      if (c.MD !== null || c.Q !== null)
-        errs.push(`${t.name}: pending must have null MD/Q`);
+      // ALT is checked alongside MD/Q: the gate used to police two of the three
+      // counts, which is exactly how the fabricated `ALT: 0` passed QA for as
+      // long as it did (TEN-242 item 6.3).
+      if (c.MD !== null || c.Q !== null || c.ALT !== null)
+        errs.push(`${t.name}: pending must have null MD/Q/ALT`);
     }
     for (const s of t.sections || []) {
       for (const p of s.players || []) {
