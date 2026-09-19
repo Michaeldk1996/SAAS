@@ -16623,6 +16623,22 @@ async function loadHoldbreak(){
   if (_ppView && typeof ppState !== 'undefined' && ppState && ppState.key
       && playerProfiles[String(ppState.key)] && _ppView.style.display !== 'none') ppRepaint();
 }
+// TEN-206 item 3 Situational — situational.json (build-situational.js output),
+// rebuilt by the daily styles job off the same point-by-point cache the
+// hold/break rollup uses: { meta, tour, players:{ key:{ name, matches, rows } } }.
+// The eight point-by-point rows of the Live trading panel; the other six are
+// computed in the renderer from recentForm. Absent shard => those eight rows are
+// OMITTED, never dashed into place.
+let situational = null;
+async function loadSituational(){
+  try {
+    const res = await fetch('./situational.json', { cache: 'no-cache' });
+    if (res.ok){ situational = await res.json(); }
+  } catch (err) { /* additive; absence just omits the eight rows */ }
+  const _ppView = document.getElementById('playerProfileView');
+  if (_ppView && typeof ppState !== 'undefined' && ppState && ppState.key
+      && playerProfiles[String(ppState.key)] && _ppView.style.display !== 'none') ppRepaint();
+}
 // TEN-173 Points at Risk — points-at-risk.json (build-points-at-risk.js output):
 // { _meta, players:{ key:{ points, coverage, resolvedCount, gapCount, perEvent[],
 // dashed[] } } }. One small global artifact (like elo-ratings.json), keyed by
@@ -18412,6 +18428,7 @@ function pp2Bridge(){
   window.careerSplits = careerSplits;
   window.playingStyles = (playerStyles && playerStyles.data) || null;
   window.holdbreak = holdbreak;
+  window.situational = situational;
   window.marketEdge = window.marketEdge || {};
   // TEN-206 correction pass: the ledger's second price source (item 11) and the
   // match sheet's per-match stats (item 14). Both are lazy and both default to an
@@ -25091,7 +25108,7 @@ loadTournamentProgression();
 // Defer them off the critical path so those large downloads don't compete with
 // first paint — each re-renders its own view when it finishes loading. (Cards
 // become clickable and search populates a beat later, which is fine.)
-const loadHeavyDatasets = () => { loadTournamentProfiles(); loadPlayerIndex(); loadPlayerProfiles(); loadCareerSplits(); loadAsapSignals(); loadEloRatings(); loadSurfaceRatings(); loadPlayerStyles(); loadOddsPerfIndex(); loadTourHistIndex(); loadHoldbreak(); };
+const loadHeavyDatasets = () => { loadTournamentProfiles(); loadPlayerIndex(); loadPlayerProfiles(); loadCareerSplits(); loadAsapSignals(); loadEloRatings(); loadSurfaceRatings(); loadPlayerStyles(); loadOddsPerfIndex(); loadTourHistIndex(); loadHoldbreak(); loadSituational(); };
 if ('requestIdleCallback' in window) requestIdleCallback(loadHeavyDatasets, { timeout: 2500 });
 else setTimeout(loadHeavyDatasets, 200);
 // Refresh automatically every 3 minutes while the page is open — cheap

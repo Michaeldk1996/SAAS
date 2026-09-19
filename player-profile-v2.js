@@ -42,6 +42,7 @@
   var DASH = '—';    // the "not held" em dash
   var EMDASH = '—';  // the same glyph used as PUNCTUATION, not as a missing value
   var RANGLE = '›';  // U+203A, the "open this" affordance in the design
+  var RARROW = '→';  // U+2192, the export's "leads to" arrow in the Situational labels
   var TIMES = '×';   // U+00D7 close glyph, never a lowercase x
   var DASH_COLOUR = '#4b5672';
 
@@ -8940,11 +8941,271 @@
       '</div>';
   }
 
-  // The Live trading modal body. Item 3 adds the Situational table underneath
-  // this card; until it lands the card is the whole body and the grid is one
-  // click away, which is the layering the design asks for.
+  // ───────────────────────────────────────────────────────────────────────────
+  // BUILD ITEM 3 · SITUATIONAL, scoped
+  //
+  // Rows, labels, group order and every display rule come from the LOCKED export
+  // (`Player Stat Boxes.dc.html`:1630, `situational()`). Read them there, not
+  // from the README.
+  //
+  // ── REPORTED CORRECTION TO THE RULING, with the measurement ────────────────
+  // The ruling reads: "Ship the 8 pbp-backed rows unconditionally... The 7
+  // set-score rows render ONLY where that player's shard carries per-set
+  // scores." Measured against the DEPLOYED store (575 players, fetched
+  // 2026-09-19T01:41:44Z), the availability runs the other way:
+  //
+  //   per-set outcomes (recentForm.matches[].sets) : 575 of 575 players
+  //   point-by-point  (holdbreak roster)           : 315 of 575 players
+  //   set-only (no pbp): 260    pbp-only: 0    neither: 0
+  //
+  // So the set rows are the ones available to EVERY player and the pbp rows are
+  // the ones 260 players (45% of the roster) have none of. Shipping the pbp rows
+  // unconditionally would print the "block of dashes" the same ruling forbids,
+  // on nearly half the roster. The conditionality is therefore attached to the
+  // pbp rows and the set rows ship for everyone. Same rule, correct side.
+  //
+  // Two further figures in the ruling could not be reproduced and are NOT built
+  // to: the row split is 8 pbp + 6 set = 14 (the export has 14 rows, not 15),
+  // and "Alcaraz has 68 matches of set-by-set" matches no source we hold — he
+  // has 30 in recentForm, 125 in pbp and 395 in tournamentHistory (whose `score`
+  // is the set TALLY "3 - 0", never a scoreline).
+  //
+  // ── COUNTING RULES, stated because they are judgement calls ────────────────
+  // * Walkovers are excluded: no play happened, so there is no set to win. This
+  //   is the same treatment the WD ruling gives a walkover given.
+  // * Retirements are INCLUDED — the match has a real winner — but each row is
+  //   computed only over matches that actually reached the set it asks about, so
+  //   a match retired in set 1 never lands in a "set 2" denominator.
+  // * "Won set 1 -> won 2-0" is a best-of-3 question, so best-of-five matches are
+  //   out of its denominator. A slam is identified by name and any match that ran
+  //   to four or five sets is best-of-five by construction.
+  // * A match can appear in several rows. That is stated in the footnote.
+  var SIT_GREEN = '#3dd68c', SIT_RED = '#e0616f', SIT_FAINT = '#3f4860';
+  var SIT_MUT = '#8b96b5', SIT_DIM = '#5b6880', SIT_BRIGHT = '#e8ecf4';
+
+  var SIT_GROUPS = [
+    ['Set outcomes', [
+      ['winSet1', 'Win first set', 'set'],
+      ['winSet2', 'Win set 2', 'set'],
+      ['winSet3', 'Win set 3', 'set']
+    ]],
+    ['Break of serve', [
+      ['brokenFirstSvc', 'Broken in first service game', 'pbp'],
+      ['firstBreak', 'Get the first break of serve', 'pbp'],
+      ['brokenBack', 'Broken back immediately after breaking', 'pbp'],
+      ['breakBack', 'Broken, then break back before set end', 'pbp']
+    ]],
+    ['After set one', [
+      ['wonS1WonMatch', 'Won set 1 ' + RARROW + ' won match', 'set'],
+      ['lostS1WonS2', 'Lost set 1 ' + RARROW + ' won set 2', 'set'],
+      ['wonS1Won20', 'Won set 1 ' + RARROW + ' won 2' + ENDASH + '0', 'set'],
+      ['lostS1FirstBreakS2', 'Lost set 1, first break in set 2', 'pbp']
+    ]],
+    ['Serving for the set', [
+      ['holdWinSet', 'Hold to win set (5' + ENDASH + '3, 5' + ENDASH + '4, 6' + ENDASH + '5)', 'pbp'],
+      ['holdStaySet', 'Hold to stay in set (3' + ENDASH + '5, 4' + ENDASH + '5, 5' + ENDASH + '6)', 'pbp'],
+      ['breakOppServing', 'Break opp. serving for set', 'pbp']
+    ]]
+  ];
+
+  var SIT_SLAM = /^(australian open|french open|roland garros|wimbledon|us open)$/i;
+
+  // The point-by-point store. Built CI-side by build-situational.js over the same
+  // cache the hold/break rollup reads. Absent -> the pbp rows are omitted, never
+  // dashed into place.
+  function sitStore() { return window.situational || null; }
+
+  function sitPbpFor(p) {
+    var st = sitStore();
+    var rec = st && st.players ? st.players[String(p.key)] : null;
+    return rec && rec.rows ? rec : null;
+  }
+
+  // Per-set outcomes for one player, counted into the six set rows.
+  function sitSetCounts(p) {
+    var ms = (p && p.recentForm && p.recentForm.matches) || [];
+    var rows = {}, n = 0;
+    function add(id, won) {
+      var r = rows[id] || (rows[id] = { w: 0, l: 0 });
+      if (won) r.w++; else r.l++;
+    }
+    ms.forEach(function (m) {
+      var sets = m && m.sets;
+      if (!Array.isArray(sets) || !sets.length) return;
+      if (m.walkover) return;                       // no play, no set to win
+      n++;
+      function tookSet(i) {
+        var s = sets[i];
+        if (!s || s.p == null || s.o == null) return null;
+        if (s.p === s.o) return null;
+        return s.p > s.o;
+      }
+      var s1 = tookSet(0), s2 = tookSet(1), s3 = tookSet(2);
+      if (s1 !== null) add('winSet1', s1);
+      if (s2 !== null) add('winSet2', s2);
+      if (s3 !== null) add('winSet3', s3);
+      if (s1 === true) add('wonS1WonMatch', !!m.won);
+      if (s1 === false && s2 !== null) add('lostS1WonS2', s2);
+      var bo5 = sets.length >= 4 || SIT_SLAM.test(String(m.tournament || '').trim());
+      if (s1 === true && !bo5) add('wonS1Won20', !!m.won && sets.length === 2);
+    });
+    return { n: n, rows: rows };
+  }
+
+  // Tour figures. Ruling 2 applies here too: this is the average of the players
+  // WE hold data for, not the ATP field, and the count is read at render time.
+  // The set rows pool every player's recentForm; the pbp rows take the pooled
+  // block the builder wrote, so the two never mix populations.
+  var _sitTour = null;
+  function sitTour() {
+    if (_sitTour) return _sitTour;
+    var map = playersMap();
+    var keys = Object.keys(map);
+    var acc = {}, players = 0;
+    keys.forEach(function (k) {
+      var c = sitSetCounts(map[k]);
+      if (!c.n) return;
+      players++;
+      Object.keys(c.rows).forEach(function (id) {
+        var a = acc[id] || (acc[id] = { w: 0, l: 0 });
+        a.w += c.rows[id].w; a.l += c.rows[id].l;
+      });
+    });
+    var out = { rows: {}, players: players, pbpPlayers: null };
+    Object.keys(acc).forEach(function (id) {
+      var t = acc[id].w + acc[id].l;
+      out.rows[id] = t ? (acc[id].w / t) * 100 : null;
+    });
+    var st = sitStore();
+    if (st && st.tour) {
+      Object.keys(st.tour).forEach(function (id) {
+        var t = st.tour[id];
+        out.rows[id] = t && t.pct != null ? t.pct : null;
+      });
+      out.pbpPlayers = (st.meta && st.meta.players) || null;
+    }
+    _sitTour = out;
+    return out;
+  }
+
+  // One row, painted to the export's rules verbatim. n<5 shows the raw record
+  // and dashes the rate; 5-9 greys it and marks the small sample; a missing tour
+  // figure dashes BOTH tour columns, never a zero and never a blank.
+  function sitRowHtml(label, rec, tourPct) {
+    var w = rec ? rec.w : 0, l = rec ? rec.l : 0, n = w + l;
+    var hard = n < 5, soft = n >= 5 && n < 10;
+    var rate = n ? (w / n) * 100 : null;
+    var r1 = function (v) { return Math.round(v * 10) / 10; };
+    var vs = (!hard && rate != null && tourPct != null) ? rate - tourPct : null;
+    var vsR = vs == null ? null : r1(vs);
+
+    var cell = function (txt, colour, size) {
+      return '<div style="text-align:right;font-family:\'IBM Plex Mono\',monospace;' +
+        'font-size:' + size + ';color:' + colour + ';">' + esc(txt) + '</div>';
+    };
+
+    return '' +
+      '<div style="display:grid;grid-template-columns:minmax(0,1fr) 62px 74px 62px 72px;' +
+        'gap:10px;align-items:center;padding:7px 2px;">' +
+        '<div style="font-size:12.5px;color:' + (hard ? SIT_DIM : '#c6ccdb') + ';min-width:0;">' +
+          esc(label) +
+          (soft ? '<span style="font-size:10px;color:' + SIT_DIM + ';margin-left:7px;">small sample</span>' : '') +
+        '</div>' +
+        cell(n ? w + ENDASH + l : DASH, n ? SIT_MUT : SIT_FAINT, '12px') +
+        cell(hard || rate == null ? DASH : rate.toFixed(1) + '%',
+          hard ? SIT_FAINT : (soft ? SIT_MUT : SIT_BRIGHT), soft ? '11.5px' : '12.5px') +
+        cell(tourPct == null ? DASH : Math.round(tourPct) + '%',
+          tourPct == null ? SIT_FAINT : SIT_DIM, '12px') +
+        cell(vsR == null ? DASH
+          : (vsR > 0 ? '+' : vsR < 0 ? MINUS : '') + Math.abs(vsR).toFixed(1) + 'pp',
+          vsR == null ? SIT_FAINT : (vsR > 0 ? SIT_GREEN : vsR < 0 ? SIT_RED : SIT_MUT),
+          soft ? '12.5px' : '15px') +
+      '</div>';
+  }
+
+  function sitHeadHtml() {
+    var h = function (t) {
+      return '<div style="text-align:right;font-size:9.5px;letter-spacing:0.08em;' +
+        'color:' + SIT_FAINT + ';font-weight:700;">' + t + '</div>';
+    };
+    return '<div style="display:grid;grid-template-columns:minmax(0,1fr) 62px 74px 62px 72px;' +
+      'gap:10px;align-items:center;padding:0 2px 6px;' +
+      'border-bottom:1px solid rgba(255,255,255,0.07);">' +
+      '<div></div>' + h('RECORD') + h('RATE') + h('TOUR') + h('VS TOUR') + '</div>';
+  }
+
+  function renderSituational(p) {
+    var set = sitSetCounts(p);
+    var pbp = sitPbpFor(p);
+    var tour = sitTour();
+    var open = state.sitOpen || {};
+
+    var groups = SIT_GROUPS.map(function (g) {
+      var title = g[0];
+      // A row is only present when its SOURCE is held for this player. A row
+      // whose source is absent is not a dash — it is not a row.
+      var rows = g[1].filter(function (r) {
+        return r[2] === 'set' ? set.n > 0 : !!pbp;
+      });
+      return { title: title, rows: rows };
+    }).filter(function (g) { return g.rows.length > 0; });
+
+    // Nothing at all. Said in words, with no empty table.
+    if (!groups.length) {
+      return '<div style="border:1px dashed rgba(255,255,255,0.12);border-radius:12px;padding:18px;' +
+        'margin-top:14px;font-size:12.5px;color:' + DASH_COLOUR + ';">' +
+        esc(shortName(p)) + ' has no set-by-set or point-by-point data on record, so in-play ' +
+        'states cannot be shown.</div>';
+    }
+
+    var body = groups.map(function (g) {
+      var on = open[g.title] == null ? true : !!open[g.title];
+      var rows = on ? g.rows.map(function (r) {
+        var id = r[0], label = r[1], src = r[2];
+        var rec = src === 'set' ? set.rows[id] : (pbp.rows[id] || null);
+        return sitRowHtml(label, rec, tour.rows[id] == null ? null : tour.rows[id]);
+      }).join('') : '';
+      return '' +
+        '<div style="margin-top:14px;">' +
+          '<button type="button" data-pp2="sit-toggle" data-v="' + esc(g.title) + '" ' +
+            'style="display:flex;align-items:center;gap:8px;width:100%;background:none;border:0;' +
+            'padding:0 2px 8px;cursor:pointer;color:#8b96b5;font-size:10.5px;font-weight:800;' +
+            'letter-spacing:0.09em;text-transform:uppercase;">' +
+            '<span style="display:inline-block;transform:rotate(' + (on ? '90deg' : '0deg') + ');' +
+              'transition:transform .12s;">' + RANGLE + '</span>' + esc(g.title) +
+          '</button>' +
+          (on ? sitHeadHtml() + rows : '') +
+        '</div>';
+    }).join('');
+
+    // The footnote wording is the founder's, kept verbatim: the rows rest on the
+    // matches with set-by-set data, NOT the career figure in Career record, and
+    // situations are counted per match so a match can appear in several rows.
+    var srcBits = [];
+    if (set.n) srcBits.push(set.n + ' matches with set-by-set data');
+    if (pbp && pbp.matches != null) srcBits.push(pbp.matches + ' with point-by-point data');
+    var note = 'These rows rest on the ' + srcBits.join(' and ') + ' we hold for ' +
+      esc(shortName(p)) + ', not the full career figure shown in Career record. ' +
+      'Situations are counted per match, so a match can appear in several rows. ' +
+      (tour.players
+        ? 'Tour figures are the average of the ' + tour.players + ' players we hold set-by-set ' +
+          'data for' + (tour.pbpPlayers ? ' (' + tour.pbpPlayers + ' for the point-by-point rows)' : '') +
+          ', not the ATP field. '
+        : '') +
+      'Fewer than 5 matches shows the record only; 5' + ENDASH + '9 is marked a small sample. ' +
+      'Nothing here is estimated.';
+
+    return '' +
+      '<div style="margin-top:18px;">' + body +
+        '<div style="font-size:11px;color:#4b5361;line-height:1.55;margin-top:15px;">' +
+          note + '</div>' +
+      '</div>';
+  }
+
+  // The Live trading modal body: the heatmap launcher, then the Situational
+  // table. The grid itself is a click away in the layer above.
   function renderProfileModal(p) {
-    return hbLauncherHtml(p);
+    return hbLauncherHtml(p) + renderSituational(p);
   }
 
   // The grid, in a layer ABOVE the modal — same z-index and close semantics as
@@ -9086,6 +9347,7 @@
     state.styleRow = null;
     state.hbSurf = 'all';
     state.heat = false;
+    state.sitOpen = null;
     state.sheet = null;
   }
 
@@ -9212,6 +9474,11 @@
     // repaints with state.heat still true and the grid stays open.
     else if (kind === 'heat') state.heat = true;
     else if (kind === 'heat-close' || kind === 'heat-scrim') state.heat = false;
+    // Item 3. Groups default OPEN, so the stored value is only ever a close.
+    else if (kind === 'sit-toggle') {
+      var so = state.sitOpen || (state.sitOpen = {});
+      so[v] = so[v] == null ? false : !so[v];
+    }
     // §8.1 match sheet. The host is told which match opened so it can pull the
     // stats shard; the sheet paints its own "no stats on record" state until it
     // lands rather than blocking the open.
@@ -9516,6 +9783,12 @@
       shortRound: shortRound,
       // §5.9 Playing profile — hold/break heatmap (founder ruling 7)
       renderProfileModal: renderProfileModal,
+      renderSituational: renderSituational,
+      sitSetCounts: sitSetCounts,
+      sitTour: sitTour,
+      sitRowHtml: sitRowHtml,
+      sitPbpFor: sitPbpFor,
+      SIT_GROUPS: SIT_GROUPS,
       hbLauncherHtml: hbLauncherHtml,
       hbBodyHtml: hbBodyHtml,
       renderHeatSheet: renderHeatSheet,

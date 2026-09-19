@@ -548,6 +548,8 @@ jobs:
           # cron from the harvested pbp cache. Committed but not copied = silent
           # 404. Best-effort copy so an absent shard never blocks the deploy.
           cp holdbreak.json _site/ 2>/dev/null || true
+          # TEN-206 item 3 Situational rows (build-situational.js, daily styles job).
+          cp situational.json _site/ 2>/dev/null || true
           # Entry Lists shard (TEN-150): per-tournament acceptance lists scraped daily by
           # tools/entry-lists/build-entry-lists.py via launchd cron. Committed but not
           # copied = silent 404 (Entry Lists tab shows "unavailable"). Best-effort so an

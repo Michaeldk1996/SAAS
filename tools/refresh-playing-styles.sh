@@ -106,6 +106,11 @@ node harvest-holdbreak.js || echo "WARN: harvest-holdbreak failed; build rolls u
 # bucketed axis, zero API calls — pure rollup over the harvested pbp cache above.
 # Staged alongside the styles files below so it rides the same race-safe push.
 node build-holdbreak.js || echo "WARN: build-holdbreak failed; keeping last-good holdbreak.json"
+# TEN-206 item 3: the eight point-by-point Situational rows, rolled up over the
+# SAME cache harvested above — zero extra API calls. Same non-fatal posture: an
+# empty cache keeps the last-good situational.json rather than aborting the
+# styles publish.
+node build-situational.js || echo "WARN: build-situational failed; keeping last-good situational.json"
 
 # NOTE: node must emit a TRAILING NEWLINE here — `read` returns exit 1 at EOF if
 # it never sees the line delimiter, and `set -e` would then kill the whole run
@@ -152,7 +157,7 @@ for attempt in 1 2 3; do
   # build-matchup-matrix.js also (re)wrote the per-player CAREER meeting shards
   # (TEN-88 option B); they survive the mixed reset above as working-tree changes,
   # so stage them alongside. -A picks up shards deleted when a player drops out.
-  git add playing-styles.json matchup-matrix.json holdbreak.json
+  git add playing-styles.json matchup-matrix.json holdbreak.json situational.json
   git add -A style-meetings-index.json style-meetings
   ELAPSED_NOW=$(( $(date +%s) - START_EPOCH ))
   HUMAN_NOW=$(printf '%dm%02ds' $(( ELAPSED_NOW / 60 )) $(( ELAPSED_NOW % 60 )))
