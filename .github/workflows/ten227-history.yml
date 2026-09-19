@@ -54,6 +54,10 @@ on:
         description: 'Stop once the table holds this many matches (0 = no cap)'
         required: false
         default: '0'
+      disk_bytes:
+        description: 'Supabase disk allowance in BYTES. Leave empty unless the Management API cannot measure it — a value here is labelled "configured (NOT measured)" in the output and must be a real figure, never a convenience.'
+        required: false
+        default: ''
       rate_per_hour:
         description: 'BetsAPI requests/hour for this tool (campaign uses 400 of the 1,600)'
         required: false
@@ -100,6 +104,15 @@ jobs:
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           BETSAPI_RATE_PER_HOUR: ${{ github.event.inputs.rate_per_hour }}
+          # TEN-227, 2026-09-19. The collector measures the Supabase disk
+          # allowance from the Management API and REFUSES to download when it
+          # cannot — it will not guess a storage ceiling. That refusal fired on
+          # run 15 (it did not on runs 11-12 the day before, so the API stopped
+          # answering rather than the config changing). This input is the only
+          # override and it has NO DEFAULT on purpose: the gate stays fail-closed
+          # unless a human passes a real figure, and the collector labels the
+          # result `configured:SUPABASE_DISK_BYTES (NOT measured)` either way.
+          SUPABASE_DISK_BYTES: ${{ github.event.inputs.disk_bytes }}
           HISTORY_YEARS: ${{ github.event.inputs.years }}
           DOWNLOAD_MINUTES: ${{ github.event.inputs.download_minutes }}
           DOWNLOAD_MAX_REQ: ${{ github.event.inputs.download_max_req }}
