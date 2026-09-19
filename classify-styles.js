@@ -93,6 +93,8 @@ const ARCH_LABEL = {
 function lastName(nm){ const p = String(nm || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[.\-]/g, ' ').trim().split(/\s+/); return p[p.length - 1] || ''; }
 
 function deaccent(s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, ''); }
+const { buildRosterIndex, resolveNameDetailed } = require('./tools/name-canon.js');
+
 function nameKey(name) {
   const p = deaccent(name).toLowerCase().replace(/&nbsp;/g, ' ').replace(/['’]/g, '').replace(/[.\-]/g, ' ').replace(/\s+/g, ' ').trim().split(' ').filter(Boolean);
   return p.length < 2 ? null : p[p.length - 1] + '|' + p[0][0];
@@ -574,9 +576,60 @@ function pctOf(arr, v) {
     if (fs.existsSync(challFile)) {
       const chall = JSON.parse(fs.readFileSync(challFile, 'utf8')).players || [];
       const tourKeys = new Set(stylesOut.players.map(p => nameKey(p.name)).filter(Boolean));
-      let added = 0;
-      for (const c of chall) { const k = nameKey(c.name); if (k && tourKeys.has(k)) continue; stylesOut.players.push(c); added++; }
+      // ── FOUNDER RULING 2026-09-19 · canonicalise the name to the ROSTER form ───
+      //
+      // These rows were pushed through verbatim, carrying the Challenger
+      // classifier's full-name form ("Juan Pablo Ficovich") while every profile
+      // surface writes initial-last ("J. P. Ficovich"). The page joins archetypes
+      // on the display name, so those rows silently failed to join and rendered a
+      // dash on players whose label we already hold. Measured 2026-09-19: 43
+      // labelled rows missed the join — 42 of them came from THIS file, and the
+      // 1 remaining was genuinely off-roster.
+      //
+      // The given/surname split is not recoverable from the string (see
+      // tools/name-canon.js), so the roster supplies it. `resolveNameDetailed`
+      // requires an exact surname match AND prefix-compatible given names token
+      // by token, and resolves only when exactly ONE roster row qualifies.
+      // Ambiguous or absent keeps the original name and fails the join exactly as
+      // before — this can widen coverage, never mis-assign.
+      // Resolve against the LIVE roster when it is reachable, because that is the
+      // roster the page joins against. The committed player-profiles.json is a
+      // known fossil (2026-07-22) and misses players who joined since — measured
+      // 2026-09-19, exactly 2 of the residue (L. Pouille, I. Ivashka) are
+      // resolvable only against the deployed store.
+      //
+      // Deliberately NOT fail-closed: an unreachable store falls back to the
+      // committed one, and a name that resolves against neither simply keeps the
+      // form it has today. The worst case is the behaviour we already ship, so a
+      // network blip must not red a styles build.
+      let rosterSource = 'committed';
+      let rosterRows = prof;
+      try {
+        const live = require('./tools/deployed-store.js').playerProfiles();
+        if (live && live.source === 'deployed' && Object.keys(live.players || {}).length >= 300) {
+          rosterRows = live.players; rosterSource = 'deployed';
+        }
+      } catch (e) {
+        console.log(`  name-canon: deployed roster unreachable (${e && e.message}); using the committed store.`);
+      }
+      const rosterIx = buildRosterIndex(rosterRows);
+      console.log(`  name-canon: resolving against the ${rosterSource} roster `
+        + `(${Object.keys(rosterRows).length} players).`);
+      let renamed = 0, ambiguous = 0, added = 0;
+      for (const c of chall) {
+        const k = nameKey(c.name); if (k && tourKeys.has(k)) continue;
+        const r = resolveNameDetailed(c.name, rosterIx);
+        if (r.status === 'resolved') {
+          if (r.match.name !== c.name) renamed++;
+          c.name = r.match.name;
+          c.player_key = r.match.key;   // the ID mapping; an exact join needs no name at all
+        } else if (r.status === 'ambiguous') {
+          ambiguous++;                  // left unjoined on purpose: blank beats a wrong archetype
+        }
+        stylesOut.players.push(c); added++;
+      }
       console.log(`Merged Challenger pool: +${added} of ${chall.length} (tour wins ${chall.length - added} key collisions).`);
+      console.log(`  name-canon: ${renamed} canonicalised to the roster form, ${ambiguous} left unjoined as ambiguous.`);
     } else {
       console.log('WARNING: playing-styles-challengers.json missing — writing TOUR-ONLY styles (Challengers would be dropped). Aborting write.');
       throw new Error('challenger-input-missing');

@@ -561,7 +561,15 @@ function finalizeTournament(name, byYear) {
   let won = 0, lost = 0, firstYear = Infinity, lastYear = -Infinity;
   const editions = years.map((y) => {
     const ms = byYear[y].slice().sort((a, b) => rank(a.round) - rank(b.round));
-    for (const m of ms) { if (m.res === 'W') won++; else lost++; }
+    // Founder ruling 2026-09-19: a WD is a walkover GIVEN — not a win, not a
+    // loss, OUT of the denominator entirely. A binary `else lost++` counted it
+    // as a loss, which is why this function disagreed with the very aggregate
+    // its own comment above claims to mirror: fetchPlayerCareerHistory has
+    // always had `else if (!walkoverGiven) t.lost++` (bsp-pipeline.js), and
+    // this ran AFTER it and overwrote the compliant header with a wrong one.
+    // Measured on the deployed store before the fix: 105 tournament rows carry
+    // a WD and 105 of 105 counted it as a loss — zero compliant.
+    for (const m of ms) { if (m.res === 'W') won++; else if (m.res === 'L') lost++; }
     if (y < firstYear) firstYear = y;
     if (y > lastYear) lastYear = y;
     const deepest = ms.reduce((best, m) => (rank(m.round) > rank(best.round) ? m : best), ms[0]);

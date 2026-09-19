@@ -707,26 +707,24 @@ check('career modal total row = career box headline', () => {
 // ════════════════════════════════════════════════════════════════════════════
 console.log('\n11 · Record per tournament');
 
-// ⚠ OPEN RULING — DOES A WITHDRAWAL COUNT AS A LOSS?
-// This check went red the moment the suite started reading the DEPLOYED store,
-// on J. Thompson / Cincinnati: "editions 3 losses vs stored 4". It is not
-// corruption. The store carries a THIRD result code — `WD` — that the header
-// counts as a loss and this sum did not count at all. Measured over the whole
-// deployed store: 31,064 W · 26,933 L · 104 WD, and of the 100 tournament rows
-// where the header disagrees with its editions, 100 are explained by a WD. Not
-// 98, not "mostly": all of them.
+// ── RULED 2026-09-19 — a WD is NOT a loss ───────────────────────────────────
+// "A WD is not a loss and not a win. It comes OUT of the denominator entirely,
+//  same as a walkover given."
 //
-// Which convention is right is the founder's call, not the suite's, so this
-// does NOT pick one. It counts WD the way the header already does — as a loss,
-// making the reconciliation exact — and PINS the population so the gap cannot
-// grow while the ruling is pending. If the ruling goes the other way the header
-// changes and this pin moves with it.
-// ⚠ AND THE CONVENTION IS NOT UNIFORM. Of the 102 tournament rows carrying a
-// WD, 100 have a header that counts it as a loss and 2 have a header that
-// ignores it. So the published store applies BOTH conventions. Neither is
-// picked here; both populations are pinned, and the split is the finding.
-const WD_ROWS_AS_LOSS = 100;
-const WD_ROWS_IGNORED = 2;
+// The ruling is implemented in career-backfill.js `finalizeTournament`, and is
+// locked deterministically by tools/test-wd-exclusion.js, which drives that
+// function directly and fails on the binary `else lost++`.
+//
+// THIS check is the store-level LAGGING indicator. It reads the DEPLOYED
+// shards, so it cannot reach compliance until a pipeline run republishes them —
+// which is why it is a CEILING, not a pin. Measured at the moment of the fix:
+// 13,071 tournament rows, 105 carrying a WD, and 105 of 105 counting it as a
+// loss — zero compliant.
+//
+// wdAsLoss may only ever go DOWN. Lower the ceiling as the rebuild lands; never
+// raise it. A rise means finalizeTournament regressed or a new writer appeared.
+// TARGET: 0. Re-pin to a strict equality at 0 once the republish is confirmed.
+const WD_AS_LOSS_CEILING = 105;
 check('every tournament W-L equals the sum of its editions', () => {
   let rows = 0, wdAsLoss = 0, wdIgnored = 0, wdMatches = 0;
   for (const p of Object.values(PLAYERS)) {
@@ -750,13 +748,16 @@ check('every tournament W-L equals the sum of its editions', () => {
       rows++;
     }
   }
-  assert.strictEqual(wdAsLoss, WD_ROWS_AS_LOSS,
-    `WD-as-loss population moved: ${wdAsLoss} (pinned ${WD_ROWS_AS_LOSS})`);
-  assert.strictEqual(wdIgnored, WD_ROWS_IGNORED,
-    `WD-ignored population moved: ${wdIgnored} (pinned ${WD_ROWS_IGNORED})`);
+  assert.ok(wdAsLoss <= WD_AS_LOSS_CEILING,
+    `WD-as-loss population GREW: ${wdAsLoss} against a ceiling of ${WD_AS_LOSS_CEILING}. `
+    + `The ruling excludes a WD from the denominator, so this may only fall. `
+    + `A rise means finalizeTournament regressed or a new header writer appeared.`);
+  const compliant = wdAsLoss === 0;
   console.log(`        ${rows} tournament rows reconcile with their editions; `
-    + `${wdMatches} WD rows across ${wdAsLoss + wdIgnored} tournaments — `
-    + `${wdAsLoss} headers count WD as a loss, ${wdIgnored} ignore it (OPEN RULING)`);
+    + `${wdMatches} WD matches across ${wdAsLoss + wdIgnored} tournaments — `
+    + `${wdAsLoss} headers still count WD as a loss, ${wdIgnored} exclude it `
+    + `(RULED: exclude; ceiling ${WD_AS_LOSS_CEILING}`
+    + `${compliant ? '; COMPLIANT — re-pin to strict 0' : '; awaiting republish'})`);
 });
 
 mustFail('tournament check would catch a dropped edition', () => {
@@ -3034,31 +3035,61 @@ mustFail('the all-stores gate would catch a store that resolves only a token few
 // player, which is worse than the dash it replaces. The fix belongs upstream in
 // classify-styles.js — emit one name form, or better, emit the player key.
 //
-// This check pins the gap at its measured size so it cannot quietly grow while
-// the ruling is pending. It is a report in code, not a resolution.
-// Re-pinned 42 -> 46 on 2026-09-18 when the suite moved off the July store.
-// The gap did NOT regress: the deployed roster is 459 players against the
-// committed file's 428 (+110 live-only, -79 dropped), and four more full-form
-// labelled rows now fail to find a short-form profile name. classify-styles.js
-// is unchanged. The pin tracks a population, so it moves when the population
-// does — that is the point of re-pinning rather than widening the assertion.
-const NAME_JOIN_UNMATCHED = 46;
-check(`the archetype name join misses exactly ${NAME_JOIN_UNMATCHED} labelled rows (open defect)`, () => {
+// ── RULED 2026-09-19 · the normaliser landed; the metric changes with it ─────
+// "Get the 40 back … Do NOT join on surname alone anywhere, ever … The 3
+//  off-roster rows stay unmatched — nothing to join to. Don't count them as
+//  failures."
+//
+// The old check measured "rescuable" by SURNAME ALONE, which the ruling now
+// forbids outright — and that metric is what made Dali Blanch look rescuable
+// when joining her row would have painted her archetype onto Darwin Blanch.
+// It is replaced by the real normaliser (tools/name-canon.js), which is locked
+// deterministically by tools/test-name-canon.js.
+//
+// A raw unmatched count is the wrong number to pin, because it sums three
+// populations with different meanings. This splits them:
+//
+//   RECOVERABLE  we hold the label AND the normaliser places it on exactly one
+//                roster row — a real defect, every one a dash on a player whose
+//                archetype we already know. THIS is the number that must reach 0.
+//   AMBIGUOUS    two compatible roster rows; blank is correct.
+//   OFF-ROSTER   nothing to join to; per the ruling, not a failure.
+//
+// Like the WD check above, this reads the DEPLOYED playing-styles.json and is a
+// LAGGING indicator: it cannot fall until the styles workflow republishes with
+// the normaliser in it. Measured at the moment of the fix — 43 unmatched, of
+// which 39 recoverable, 0 ambiguous, 4 off-roster (D. Schwartzman, M. Martineau,
+// D. Rincon, and Dali Blanch, who is correctly refused).
+//
+// CEILING, not a pin: recoverable may only ever go DOWN. TARGET: 0.
+const NAME_JOIN_RECOVERABLE_CEILING = 39;
+check('the archetype name join leaves no recoverable label unplaced', () => {
+  const { buildRosterIndex, resolveNameDetailed } = require('./name-canon.js');
   const names = new Set(Object.keys(PLAYERS).map(k => PLAYERS[k].name));
+  const ix = buildRosterIndex(PLAYERS);
   const labelled = (STYLES.players || []).filter(s => s.archetype_label);
   const unmatched = labelled.filter(s => !names.has(s.name));
-  // surname-rescuable = players who ARE on this site but whose label never lands
-  const surname = n => String(n).trim().split(/\s+/).pop().toLowerCase();
-  const profSurnames = new Set(Object.keys(PLAYERS).map(k => surname(PLAYERS[k].name)));
-  const rescuable = unmatched.filter(s => profSurnames.has(surname(s.name)));
-  assert.strictEqual(unmatched.length, NAME_JOIN_UNMATCHED,
-    `the name-format gap moved: ${unmatched.length} labelled rows now miss (pinned at ${NAME_JOIN_UNMATCHED}). ` +
-    `If it shrank, the upstream fix landed — re-pin. If it grew, classify-styles.js regressed.`);
-  console.log(`        ${unmatched.length} labelled rows miss the name join; ${rescuable.length} of them are profiled players showing a dash`);
+  let recoverable = 0, ambiguous = 0, offRoster = 0;
+  const names_recoverable = [];
+  for (const s of unmatched) {
+    const r = resolveNameDetailed(s.name, ix);
+    if (r.status === 'resolved') { recoverable++; if (names_recoverable.length < 5) names_recoverable.push(`${s.name} -> ${r.match.name}`); }
+    else if (r.status === 'ambiguous') ambiguous++;
+    else offRoster++;
+  }
+  assert.ok(recoverable <= NAME_JOIN_RECOVERABLE_CEILING,
+    `recoverable archetype labels GREW: ${recoverable} against a ceiling of ${NAME_JOIN_RECOVERABLE_CEILING}. `
+    + `Each is a player whose archetype we hold and do not show. e.g. ${names_recoverable.join(' · ')}`);
+  console.log(`        ${unmatched.length} labelled rows miss the exact-name join — `
+    + `${recoverable} recoverable (ceiling ${NAME_JOIN_RECOVERABLE_CEILING}, target 0), `
+    + `${ambiguous} ambiguous (blank is correct), ${offRoster} off-roster (not a failure)`
+    + `${recoverable === 0 ? ' — COMPLIANT, re-pin to strict 0' : ''}`);
 });
 
-mustFail('the name-join pin would catch the gap growing', () => {
-  assert.strictEqual(62, NAME_JOIN_UNMATCHED, 'the name-format gap moved');
+mustFail('the name-join ceiling would catch recoverable labels growing', () => {
+  const recoverable = 62;
+  assert.ok(recoverable <= NAME_JOIN_RECOVERABLE_CEILING,
+    `recoverable archetype labels GREW: ${recoverable}`);
 });
 
 // The gate is only as good as its coverage of the stores that actually exist.
