@@ -151,5 +151,41 @@ check('namesCompatible: prefix-wise on givens, exact on the last token', () => {
     'min-length given comparison regressed');
 });
 
+// ── the two rows the founder named as "initial-scramble" (2026-09-19 item 8) ──
+//
+// They are NOT scrambled. The styles store writes `Z. Svajda` and `M. McDonald`,
+// which are the correct initials — the difficulty is that the roster carries a
+// SECOND player behind each surname (Trevor Svajda #529, Niels McDonald #489),
+// so a surname-only join would have painted the wrong archetype on a real
+// player. That is precisely the join the founder banned.
+//
+// Measured against the deployed 575-player roster on 2026-09-19: all four
+// resolve, to four distinct keys, with zero ambiguity. The residue I reported
+// earlier was measured against a playing-styles.json that PREDATES this
+// normaliser (0 of its 979 rows carry a player_key), not against a failure of
+// the rule. This locks the four-way collision so it cannot regress silently.
+check('the Svajda / McDonald surname collisions resolve to four distinct players', () => {
+  const idx = buildRosterIndex({
+    2986:  { name: 'Z. Svajda' },    // Zachary,   rank 83
+    52663: { name: 'T. Svajda' },    // Trevor,    rank 529
+    2839:  { name: 'M. McDonald' },  // Mackenzie, rank 145
+    73846: { name: 'N. McDonald' },  // Niels,     rank 489
+  });
+  const got = {};
+  for (const [name, want] of [['Z. Svajda', '2986'], ['T. Svajda', '52663'],
+                              ['M. McDonald', '2839'], ['N. McDonald', '73846']]) {
+    const r = resolveNameDetailed(name, idx);
+    assert.strictEqual(r.status, 'resolved', `${name} did not resolve: ${r.status}`);
+    assert.strictEqual(r.match.key, want, `${name} resolved to the WRONG player (${r.match.key})`);
+    got[r.match.key] = name;
+  }
+  assert.strictEqual(Object.keys(got).length, 4,
+    'two of the four collapsed onto one key — that is the wrong archetype on a real player');
+  // The control: a form that genuinely CANNOT be told apart must still refuse.
+  const amb = resolveNameDetailed('Svajda', idx);
+  assert.notStrictEqual(amb.status, 'resolved',
+    'a bare surname resolved — surname-only joins are banned exactly because of these two');
+});
+
 console.log(`\nname-canon: ${pass} pass, ${fails.length} fail`);
 if (fails.length) { console.error('FAILED: ' + fails.join(' · ')); process.exit(1); }

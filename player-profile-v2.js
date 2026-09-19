@@ -9272,7 +9272,10 @@
       (m.surface ? String(m.surface) : null),
       (m.won ? 'Won' : 'Lost')]
       .filter(function (t) { return t && t !== DASH; }).join(' ' + MIDDOT + ' ');
-    return '<div data-pp2="match-page-scrim" style="position:fixed;inset:0;z-index:80;' +
+    // No scrim hook: the page FILLS the viewport, so there is no outside to click.
+    // A data-pp2 the mount cannot handle is a dead control, and the reconcile
+    // suite's hook audit is what caught it here.
+    return '<div style="position:fixed;inset:0;z-index:80;' +
       'background:#06070a;overflow-y:auto;">' +
       '<div style="max-width:1000px;margin:0 auto;padding:26px 34px 70px;display:flex;' +
         'flex-direction:column;gap:18px;">' +

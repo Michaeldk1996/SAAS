@@ -94,6 +94,19 @@ const STYLES = JSON.parse(fs.readFileSync(path.join(ROOT, 'playing-styles.json')
 // (founder ruling 7). Both are loaded into the same window shim the page uses,
 // so a wiring mistake shows up here rather than as a silent grid of dashes.
 const HOLDBREAK = JSON.parse(fs.readFileSync(path.join(ROOT, 'holdbreak.json'), 'utf8'));
+// §5.9's eight point-by-point rows. It was never handed to the module, so every
+// Situational check in this file was reading an EMPTY store: the checks ran,
+// reported, and measured nothing — the wrong-sandbox failure the note below
+// describes, arrived at from the other direction. Absent file is fatal rather
+// than a silent {}: a suite that green-lights §5.9 without its store is worse
+// than one that stops.
+const SITUATIONAL = (() => {
+  const p = path.join(ROOT, 'situational.json');
+  if (!fs.existsSync(p)) {
+    throw new Error('situational.json is absent — §5.9 cannot be checked; build it or fetch the shard');
+  }
+  return JSON.parse(fs.readFileSync(p, 'utf8'));
+})();
 // §5.9 Ratings. Tracked AND published, and verified byte-identical to the
 // deployed copy on 2026-09-19 — so ROOT is the same artifact the page reads
 // here, unlike player-profiles.json which is published but never committed.
@@ -234,7 +247,7 @@ const M = loadModule(PLAYERS, {
   careerSplits: SPLITS, marketEdge: MARKET, playingStyles: STYLES,
   holdbreak: HOLDBREAK, HoldBreakHeatmap: ENGINE,
   matchStats: STATS, bet365History: B365, careerHistory: CAREER_HIST,
-  dnaRatings: DNA
+  dnaRatings: DNA, situational: SITUATIONAL
 });
 const I = M._internals;
 // loadModule() REASSIGNS global.window, and §5.5 builds extra module instances
@@ -2793,6 +2806,73 @@ mustFail('the coverage check would catch the store being unwired again', () => {
 // every window.* the module actually reads.
 // ════════════════════════════════════════════════════════════════════════════
 const STORES = [
+  // ─── §8.2 match panel · three indexes and two shard maps ───────────────────
+  // These are LAZY and per-match: nothing is fetched until a match sheet opens,
+  // so at suite time they are legitimately empty. The row that matters is
+  // therefore not "did it load" but "does the page's own accessor resolve a
+  // populated one" — the stylesStore failure this table exists to catch is a
+  // store that loads and joins to nobody. Each drives the module's accessor
+  // with a store built by construction, and a universe of 1.
+  // These five drive the accessor against a store built by construction, which
+  // means they WRITE to window. Every one restores what it touched: the first
+  // draft left `window.matchStats = null` behind and turned three unrelated
+  // checks red — a gate that corrupts the run it is measuring.
+  ...(function () {
+    const KEYS = ['pbpIndex', 'setStatsIndex', 'matchStatsIndex', 'pbpShards',
+                  'setStatsShards', 'matchStats'];
+    const sandboxed = (fn) => () => {
+      const saved = {};
+      KEYS.forEach((k) => { saved[k] = window[k]; });
+      try { return fn(); } finally { KEYS.forEach((k) => { window[k] = saved[k]; }); }
+    };
+    return [
+      { name: 'pbpIndex', file: 'pbp-index.json', universe: () => 1, floor: 1,
+        resolve: sandboxed(() => {
+          window.pbpIndex = new Set(['1']);
+          return I.mpAvailable({ eventKey: 1 }).points ? 1 : 0; }) },
+      { name: 'setStatsIndex', file: 'setstats-index.json', universe: () => 1, floor: 1,
+        resolve: sandboxed(() => {
+          window.setStatsIndex = new Set(['2']); window.matchStatsIndex = new Set();
+          window.matchStats = null; window.setStatsShards = {};
+          return I.mpAvailable({ eventKey: 2 }).stats ? 1 : 0; }) },
+      { name: 'matchStatsIndex', file: 'matchstats-index.json', universe: () => 1, floor: 1,
+        resolve: sandboxed(() => {
+          window.setStatsIndex = new Set(); window.matchStatsIndex = new Set(['3']);
+          window.matchStats = null; window.setStatsShards = {};
+          return I.mpAvailable({ eventKey: 3 }).stats ? 1 : 0; }) },
+      { name: 'pbpShards', file: 'pbp/{eventKey}.json', universe: () => 1, floor: 1,
+        // The accessor must tell ABSENT (not fetched) from NULL (answered,
+        // empty); collapsing them is the defect, so both halves are exercised.
+        resolve: sandboxed(() => {
+          window.pbpShards = { 4: { p1Key: 1, p2Key: 2, sets: [
+            { set: 1, games: [{ g: 1, server: 'p1', winner: 'p1', score: '6 - 3', points: [] }] }] } };
+          const held = I.mpSetGames({ sets: [] }, window.pbpShards[4], true);
+          return (held && held.length === 1 && held[0].a === 6) ? 1 : 0; }) },
+      { name: 'setStatsShards', file: 'setstats/{eventKey}.json', universe: () => 1, floor: 1,
+        resolve: sandboxed(() => {
+          window.setStatsShards = { 5: { p1Key: 9, p2Key: 8, match: {}, sets: {} } };
+          window.setStatsIndex = new Set(['5']); window.matchStatsIndex = new Set();
+          window.matchStats = null;
+          return I.mpAvailable({ eventKey: 5 }).stats ? 1 : 0; }) },
+    ];
+  })(),
+  {
+    name: 'situational',
+    file: 'situational.json',
+    // §5.9's eight point-by-point rows. Resolution is measured through the
+    // page's own accessor over the REAL store, so a shard that publishes but
+    // joins to nobody reads as zero rather than as coverage.
+    resolve: () => {
+      const st = (typeof I.sitStore === 'function' && I.sitStore()) || window.situational;
+      if (!st || !st.players) return 0;
+      return Object.keys(PLAYERS).filter(k => st.players[String(k)]).length;
+    },
+    universe: () => {
+      const st = (typeof I.sitStore === 'function' && I.sitStore()) || window.situational;
+      return (st && st.players) ? Object.keys(st.players).length : 0;
+    },
+    floor: 0.2,
+  },
   {
     name: 'playerProfiles',
     file: 'player-profiles.json',
@@ -3147,7 +3227,7 @@ check('the all-stores table covers every data store the module reads', () => {
   // host defined them, so each is asserted to be typeof-guarded at its call
   // site. Simply widening NOT_STORES would have let any future window.* through
   // the gate by being named plausibly.
-  const HOST_CALLBACKS = new Set(['showPlayerList', 'onPp2SheetOpen']);
+  const HOST_CALLBACKS = new Set(['showPlayerList', 'onPp2SheetOpen', 'onPp2MatchPageOpen']);
   for (const cb of HOST_CALLBACKS) {
     assert(new RegExp(`typeof window\\.${cb} === 'function'`).test(src),
       `window.${cb} is called without a typeof guard — the page must not assume the host defines it`);
@@ -3204,11 +3284,26 @@ check('the modal states its own match count, never the career total', () => {
   let stated = 0;
   for (const key of HB_KEYS.slice(0, 60)) {
     const p = PLAYERS[key];
-    I.state.modal = 'profile'; I.state.hbSurf = 'all';
-    const html = I.renderProfileModal(p);
+    // Item 2 moved the grid — and its coverage note — out of the modal body and
+    // into the layer behind the launcher. The assertion is unchanged; only the
+    // surface it is read off moved. (Left pointed at renderProfileModal it went
+    // red on a correct page, which is what made it look like a §5.9 defect.)
+    I.state.modal = 'profile'; I.state.hbSurf = 'all'; I.state.heat = true;
+    const html = I.renderHeatSheet(p);
+    I.state.heat = false;
     const cov = I.hbCoverage(p);
     assert(html.indexOf('Point-by-point parsed for ' + cov.matches + ' of ') > -1,
-      `${p.name}: the modal does not state its parsed match count`);
+      `${p.name}: the heat layer does not state its parsed match count`);
+    // The LAUNCHER deliberately carries no count: the export's card is title /
+    // mono subtitle / one figure / "Open ›" and nothing else, and the figure it
+    // prints is the engine's own gated label (the shard's 20-service-game floor
+    // withholds a rate below it). Asserting a count there would be demanding a
+    // deviation FROM the export, so what is asserted instead is that the card
+    // prints the engine's string and not a computed one — which is what
+    // tools/test-heatmap-launcher.js locks, including against the mock's 71.5%.
+    const launcher = I.hbLauncherHtml(p);
+    assert(launcher.indexOf('Open') > -1 || launcher.indexOf('no point-by-point') > -1,
+      `${p.name}: the launcher neither offers the grid nor says why it cannot`);
     // The shard's horizon is 24 months; the ledger is a whole career. If the
     // modal ever printed the career total it would claim coverage we lack.
     const career = I.spineTotal(p).n;
@@ -3231,7 +3326,15 @@ check('a player with no point-by-point data says so instead of drawing an empty 
   const html = I.renderProfileModal(PLAYERS[missing]);
   assert(html.indexOf('no point-by-point data on record') > -1,
     'an uncovered player did not get the explicit no-data statement');
-  assert(!/>\d+%</.test(html), 'an uncovered player printed a percentage out of nowhere');
+  // Scoped to the LAUNCHER, not the whole modal. Since item 3 the modal also
+  // carries Situational, whose set-score rows rest on a different store and
+  // legitimately print rates for a player with no point log — asserting over
+  // the whole modal would demand that honest data be suppressed.
+  const launcher = I.hbLauncherHtml(PLAYERS[missing]);
+  assert(!/>\d+(\.\d+)?%</.test(launcher),
+    'an uncovered player printed a hold/break percentage out of nowhere');
+  assert(!/data-pp2="heat"/.test(launcher),
+    'an uncovered player was offered a control that opens an empty grid');
   console.log(`        uncovered example ${PLAYERS[missing].name}: stated, no invented figures`);
 });
 
@@ -3249,12 +3352,12 @@ check('the surface chips read their own node and change the figures', () => {
     return a.globalLabel !== c.globalLabel && c.globalLabel !== 'HOLD —';
   });
   assert(subject, 'no covered player has clay figures distinct from all — the check would be immune');
-  I.state.modal = 'profile';
+  I.state.modal = 'profile'; I.state.heat = true;
   I.state.hbSurf = 'all';
-  const all = I.renderProfileModal(PLAYERS[subject]);
+  const all = I.renderHeatSheet(PLAYERS[subject]);
   I.state.hbSurf = 'clay';
-  const clay = I.renderProfileModal(PLAYERS[subject]);
-  I.state.hbSurf = 'all';
+  const clay = I.renderHeatSheet(PLAYERS[subject]);
+  I.state.hbSurf = 'all'; I.state.heat = false;
   assert.notStrictEqual(all, clay, `${PLAYERS[subject].name}: the clay chip rendered the all-surfaces grid`);
   assert(clay.indexOf('clay only') > -1, 'the clay view does not label itself');
   console.log(`        ${PLAYERS[subject].name}: all vs clay render differently and are labelled`);
@@ -3268,8 +3371,15 @@ mustFail('the surface-chip check would catch a chip that does nothing', () => {
 check('the modal computes nothing itself — every figure comes from the engine', () => {
   const src = fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8');
   const from = src.indexOf('§5.9 PLAYING PROFILE');
-  const to = src.indexOf('// MOUNT', from);
-  assert(from > -1 && to > from, 'could not locate the §5.9 block');
+  // Bounded at the SITUATIONAL block, not at MOUNT. Ruling 7 forbids a second
+  // HOLD/BREAK engine; item 3's Situational panel sits in the same section, has
+  // its own store (situational.json) and legitimately computes its own rates
+  // from it. Scanning to MOUNT swept that in and reported a second hold/break
+  // engine that does not exist.
+  const sit = src.indexOf('BUILD ITEM 3 · SITUATIONAL', from);
+  const to = sit > from ? sit : src.indexOf('// MOUNT', from);
+  assert(from > -1 && to > from, 'could not locate the §5.9 hold/break block');
+  assert(sit > from, 'the Situational marker moved — re-bound this scan before trusting it');
   // Scan CODE only. The first draft matched the literal string "won/n" inside
   // this block's own explanatory comment and reported a second engine that does
   // not exist — a regex that reads prose is not reading the implementation.
