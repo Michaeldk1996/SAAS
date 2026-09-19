@@ -225717,11 +225717,17 @@
     "venue": null,
     "courtSpeed": null,
     "weather": null,
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 5,
+        "p2": 2
+      }
+    ],
+    "liveGameScore": "30 - 40",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1900_j-duckworth.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1096_k-majchrzak.jpg",
     "oddsMovement": {
@@ -225865,7 +225871,10 @@
       "edgeVsPinnacleP1": -0.0194,
       "edgeVsPinnacleP2": 0.0194,
       "ts": "2026-09-18T15:02:27.187Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12164136",
@@ -227617,11 +227626,27 @@
     "venue": null,
     "courtSpeed": null,
     "weather": null,
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 3",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 6,
+        "p2": 3
+      },
+      {
+        "set": 2,
+        "p1": 2,
+        "p2": 6
+      },
+      {
+        "set": 3,
+        "p1": 4,
+        "p2": 4
+      }
+    ],
+    "liveGameScore": "15 - 40",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/867_h-hsu-yu.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/38131_o-wallin.jpg",
     "oddsMovement": {
@@ -227757,7 +227782,10 @@
       "edgeVsPinnacleP1": 0.0703,
       "edgeVsPinnacleP2": -0.0703,
       "ts": "2026-09-18T15:02:27.187Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12164024",
