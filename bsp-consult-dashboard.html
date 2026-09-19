@@ -3634,25 +3634,28 @@
   .db-loading{ font-family:var(--db-mono); font-size:12px; color:var(--db-mute); padding:40px 0; }
 </style>
 <div class="tabpage" data-page="database">
-  <div class="pagewrap">
-    <div class="db-headcard">
+  <!-- TEN-242 phase 2 B3: this is now one MOUNT ROOT among possibly several. The
+       ROI overlay mounts a second one. Nodes are addressed by data-db inside a
+       root, never by document id, so two mounts cannot fight over one DOM. -->
+  <div class="pagewrap" data-db-root="standalone">
+    <div class="db-headcard" data-db="head">
       <div>
         <h1>Database</h1>
-        <p id="dbSubtitle">Historical yield by odds band from our own ATP closing-line archive.</p>
+        <p id="dbSubtitle" data-db="subtitle">Historical yield by odds band from our own ATP closing-line archive.</p>
       </div>
-      <div class="db-fresh" id="dbFresh"></div>
+      <div class="db-fresh" id="dbFresh" data-db="fresh"></div>
     </div>
-    <div class="db-ctl" id="dbCtl">
+    <div class="db-ctl" id="dbCtl" data-db="ctl">
       <div class="db-ctltop">
-        <div class="db-seg" id="dbViewTabs">
+        <div class="db-seg" id="dbViewTabs" data-db="viewtabs">
           <button class="active" data-dbview="tour">Tour</button>
           <button data-dbview="tournaments">Tournaments</button>
           <button data-dbview="players">Players</button>
         </div>
       </div>
-      <div class="db-ctlbot" id="dbFilters"></div>
+      <div class="db-ctlbot" id="dbFilters" data-db="filters"></div>
     </div>
-    <div id="dbBody"><div class="db-loading">Loading archive…</div></div>
+    <div id="dbBody" data-db="body"><div class="db-loading">Loading archive…</div></div>
   </div>
 </div>
 <!-- ENTRY LISTS TAB (TEN-150) — static shard, protennislive PDF source, FEATURE_ENTRY_LISTS gated -->
@@ -22083,10 +22086,27 @@ function showTournamentProfile(key){
    Nothing is fabricated: missing rounds/values render honest
    "Data not available" / "Showing X of Y" states.
    ====================================================================== */
-const tourxState = { section: 'overview', tsQ: '', tsOpen: false, speedPanel: false, tsSel: 'Wimbledon', tour: null, roundIdx: null, view: 'round', rvMetrics: [], cmpPlayers: [], cmpColorIdx: {}, cmpQuery: '', cmpOpen: false, h2hA: null, h2hB: null, h2hOpen: null, ppSpotOff: {}, ppFocus: null, ppInclElimByTour: {} };
+const tourxState = { section: 'overview', tsQ: '', tsOpen: false, speedPanel: false, roiPanel: null, quotesPanel: false, tsSel: 'Wimbledon', tour: null, roundIdx: null, view: 'round', rvMetrics: [], cmpPlayers: [], cmpColorIdx: {}, cmpQuery: '', cmpOpen: false, h2hA: null, h2hB: null, h2hOpen: null, ppSpotOff: {}, ppFocus: null, ppInclElimByTour: {} };
 // Per-tournament market performance (build-tournament-market.js → tournament-market.json).
 // Real flat-stake yields + favourite reliability from settled closing prices; the
 // Overview panel em-dashes any tournament missing here (thin sample / no join).
+// TEN-242 phase 2 C. Lazy, and FAILURE IS SILENT BY DESIGN: with no artefact the
+// card simply does not render (C2). It must never degrade into an empty state or
+// a "coming soon" — nothing may imply quotes exist for an event that has none.
+let tourxQuotes = null, tourxQuotesLoading = false;
+function tourxLoadQuotes(){
+  if (tourxQuotes || tourxQuotesLoading) return;
+  tourxQuotesLoading = true;
+  fetch('./tournament-quotes.json', { cache: 'no-cache' })
+    .then(r => r.ok ? r.json() : null)
+    .then(j => { tourxQuotes = (j && j.tournaments) || {}; if (tourxState.section === 'overview') renderTourxOverview(); })
+    .catch(() => { tourxQuotes = {}; });
+}
+function tourxQuotesFor(name){
+  const t = tourxQuotes && tourxQuotes[name];
+  return (t && t.length) ? t : null;
+}
+
 let tourxMarketData = null, tourxMarketLoading = false, tourxMarketFailed = false;
 function tourxLoadMarket(){
   if (tourxMarketData || tourxMarketLoading || tourxMarketFailed) return;
@@ -22350,6 +22370,7 @@ function renderTournamentsTab(){
     return `<span class="tourx-secttab" style="${style}" onclick="tourxSetSection('${v}')">${l}</span>`;
   }).join('');
   tourxLoadMarket();
+  tourxLoadQuotes();
   const ov = document.getElementById('tourxOverview'),
         en = document.getElementById('tourxEntry'),
         rp = document.getElementById('tourxReports');
@@ -22384,15 +22405,59 @@ function tourxOverlayShell(opts){
 }
 
 function tourxOpenSpeedPanel(){ tourxState.speedPanel = true; tourxRenderOverlays(); }
+function tourxOpenQuotes(){ tourxState.quotesPanel = true; tourxRenderOverlays(); }
+function tourxOpenRoi(side){ tourxState.roiPanel = side; tourxRenderOverlays(); }
 function tourxCloseOverlays(){
-  if (!tourxState.speedPanel) return;
-  tourxState.speedPanel = false;
+  if (!tourxState.speedPanel && !tourxState.quotesPanel && !tourxState.roiPanel) return;
+  tourxState.speedPanel = false; tourxState.quotesPanel = false; tourxState.roiPanel = null;
   tourxRenderOverlays();
 }
 function tourxRenderOverlays(){
   const root = document.getElementById('tourxOverlayRoot');
   if (!root) return;
-  root.innerHTML = tourxState.speedPanel ? tourxSpeedPanelHtml() : '';
+  root.innerHTML = tourxState.speedPanel ? tourxSpeedPanelHtml()
+    : tourxState.quotesPanel ? tourxQuotesPanelHtml()
+    : tourxState.roiPanel ? tourxRoiPanelHtml()
+    : '';
+  // The ROI panel's body is the Database page MOUNTED, so it can only be wired
+  // after its root is in the document. mount() is idempotent per root.
+  if (tourxState.roiPanel && window.DatabaseTab && window.DatabaseTab.mount){
+    const host = root.querySelector('[data-db-root="roi"]');
+    const c = tourxResolveCondition(tourxState.tsSel);
+    if (host && c) window.DatabaseTab.mount(host, { hideHeader: true, initialTournament: c.name });
+  }
+}
+
+// §1.3 ROI panel — the Database page embedded. B4: it opens on the Tournament
+// tab with this event as the subject, ROUND EMPTY and the FULL year range, so
+// the tour baseline column is valid the moment it opens rather than reflecting
+// a filter the reader never set. Those four are set by mount()'s
+// initialTournament branch, not here, so the standalone page cannot inherit them.
+function tourxRoiPanelHtml(){
+  const c = tourxResolveCondition(tourxState.tsSel);
+  if (!c) return '';
+  // The embedded chrome mirrors the standalone root's data-db contract. The head
+  // card is present but hidden by hideHeader, so the two roots stay structurally
+  // identical and one renderer serves both.
+  const body = `<div style="padding:0 0 4px;">
+      <div data-db-root="roi" class="pagewrap" style="max-width:none;padding:18px 20px 22px;">
+        <div class="db-headcard" data-db="head"><div><h1>Database</h1><p data-db="subtitle"></p></div><div class="db-fresh" data-db="fresh"></div></div>
+        <div class="db-ctl" data-db="ctl">
+          <div class="db-ctltop">
+            <div class="db-seg" data-db="viewtabs">
+              <button data-dbview="tour">Tour</button>
+              <button class="active" data-dbview="tournaments">Tournaments</button>
+              <button data-dbview="players">Players</button>
+            </div>
+          </div>
+          <div class="db-ctlbot" data-db="filters"></div>
+        </div>
+        <div data-db="body"><div class="db-loading">Loading archive…</div></div>
+      </div>
+    </div>`;
+  return tourxOverlayShell({ z: 85, pad: '34px 22px 60px', max: '1180px',
+    title: `${c.name} · favourites and underdogs`,
+    sub: 'flat 1u · yields by price band', body });
 }
 
 // 7.3 - Escape anywhere, and a click that lands on the scrim itself (never on a
@@ -22589,8 +22654,86 @@ function tourxConditionsPanelHtml(){
   // there is no spacer to remove.
 
   return `<div style="display:flex;flex-direction:column;gap:16px;min-width:0;padding-left:24px;">
-      ${title}${hero}${tiles}${read}${tourxSpeedSeriesHtml(c)}${tourxRoiPairHtml(c)}${tourxReliabilityHtml(c)}${tourxReportCtaHtml(c)}
+      ${title}${hero}${tiles}${read}${tourxQuotesCardHtml(c)}${tourxSpeedSeriesHtml(c)}${tourxRoiPairHtml(c)}${tourxReliabilityHtml(c)}${tourxReportCtaHtml(c)}
     </div>`;
+}
+
+// §1.2 "What players say". C2: NO QUOTES = NO CARD — not an empty state, not a
+// "coming soon", nothing that implies the data exists. 19 of our 64 rated events
+// have none and simply do not show it; the detail column's own 16px gap closes
+// cleanly because this returns an empty string, not an empty node.
+//
+// ⚠️ THE TEXT IS RENDERED VERBATIM (founder ruling 2026-09-19). 378 of 425
+// imported values already carry their own quotation marks — they are narration
+// AROUND reported speech (`CHENGDU: "…," said T. Daniel.`), not clean quotes.
+// Wrapping those in the export's curly quotes double-quotes them, and lifting
+// the inner span out would mean choosing a subset of a person's words. So the
+// curly quotes are added ONLY to the values that carry none of their own, which
+// the importer marks per record as `selfQuoted`.
+function tourxQuoteAttrib(qt){
+  // C4: show only what exists. Name always; then year · occasion if present,
+  // year alone if that is all there is, and NOTHING if neither. Never an
+  // invented year, never "n.d.", never a placeholder.
+  const bits = [];
+  if (qt.year) bits.push(String(qt.year));
+  if (qt.occasion) bits.push(qt.occasion);
+  return bits.join(' · ');
+}
+function tourxQuoteText(qt){
+  const t = tourxEscHtml(qt.text);
+  return qt.selfQuoted ? t : `“${t}”`;
+}
+function tourxEscHtml(s){
+  return String(s == null ? '' : s)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+function tourxQuotesCardHtml(c){
+  const list = tourxQuotesFor(c.name);
+  if (!list) return '';                       // C2 — no card at all
+  const MONO = "'IBM Plex Mono',monospace";
+  // ORDER (founder ruling): most recent year first, undated last, sheet order
+  // within a bucket. The artefact is already written in that order, so the lead
+  // quote is simply the first record — no re-sort here that could disagree.
+  const lead = list[0];
+  const attrib = tourxQuoteAttrib(lead);
+  return `<div onclick="tourxOpenQuotes()" style="background:#0a0d14;border:1px solid rgba(255,255,255,0.09);border-radius:12px;padding:16px 18px;cursor:pointer;">
+      <div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;">
+        <span style="font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#5b6880;">What players say about this tournament</span>
+        <span style="font-family:${MONO};font-size:11px;color:#4b5672;">${list.length} note${list.length === 1 ? '' : 's'}</span>
+        <span style="margin-left:auto;font-size:11.5px;font-weight:700;color:#5b9bff;white-space:nowrap;">Read all ${list.length} <span style="font-family:${MONO};">→</span></span>
+      </div>
+      <div style="margin-top:13px;font-size:13.5px;line-height:1.7;color:#c6ccdb;text-wrap:pretty;">${tourxQuoteText(lead)}</div>
+      <div style="margin-top:8px;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;">
+        <span style="font-size:12.5px;font-weight:700;color:#e7e9ee;">${tourxEscHtml(lead.player)}</span>
+        ${attrib ? `<span style="font-family:${MONO};font-size:11px;color:#4b5672;">${tourxEscHtml(attrib)}</span>` : ''}
+      </div>
+    </div>`;
+}
+
+// §1.3 quotes panel — one row per note, 34px avatar with mono initials.
+function tourxQuotesPanelHtml(){
+  const MONO = "'IBM Plex Mono',monospace";
+  const c = tourxResolveCondition(tourxState.tsSel);
+  const list = c ? tourxQuotesFor(c.name) : null;
+  if (!list) return '';
+  const initials = (n) => String(n || '').trim().split(/[\s.]+/).filter(Boolean).slice(0, 2).map(x => x[0]).join('').toUpperCase() || '—';
+  const rows = list.map((qt) => {
+    const a = tourxQuoteAttrib(qt);
+    return `<div style="display:flex;gap:14px;padding:17px 0;border-bottom:1px solid rgba(255,255,255,0.06);">
+        <span style="width:34px;height:34px;flex:none;border-radius:50%;background:rgba(91,155,255,0.14);border:1px solid rgba(91,155,255,0.3);display:inline-flex;align-items:center;justify-content:center;font-family:${MONO};font-size:11px;font-weight:700;color:#82b4ff;">${tourxEscHtml(initials(qt.player))}</span>
+        <span style="flex:1;min-width:0;">
+          <span style="display:flex;align-items:baseline;gap:9px;flex-wrap:wrap;">
+            <span style="font-size:13.5px;font-weight:700;color:#e7e9ee;">${tourxEscHtml(qt.player)}</span>
+            ${a ? `<span style="font-family:${MONO};font-size:11px;color:#4b5672;">${tourxEscHtml(a)}</span>` : ''}
+          </span>
+          <span style="display:block;margin-top:7px;font-size:13.5px;line-height:1.7;color:#e7e9ee;text-wrap:pretty;">${tourxQuoteText(qt)}</span>
+        </span>
+      </div>`;
+  }).join('');
+  return tourxOverlayShell({ z: 90, pad: '40px 22px 60px', max: '720px',
+    title: `${c.name} · what players say`,
+    sub: `${list.length} note${list.length === 1 ? '' : 's'}`,
+    body: `<div style="padding:6px 22px 20px;">${rows}</div>` });
 }
 
 // §1.2 rank line. Rank, N and median are computed over the SAME registry the rail
@@ -22677,7 +22820,7 @@ function tourxRoiPairHtml(c){
   const MONO = "'IBM Plex Mono',monospace";
   const mkt = tourxMarketFor(c.name);
   const POS = '#3dd68c', NEG = '#e0616f', MUT = '#5b6880';
-  const card = (label, v, avg) => {
+  const card = (label, side, v, avg) => {
     const gate = tourxSampleGate(mkt ? mkt.n : null);
     const has = v != null && avg != null && gate.mode === 'full';
     const small = v != null && avg != null && gate.mode === 'small';
@@ -22692,13 +22835,17 @@ function tourxRoiPairHtml(c){
     // greyed, with a note - but NO inline n. The founder ruled all five figures
     // bare; that ruling does not stop applying because the sample got thin.
     const note = small ? `<div style="font-size:11px;color:#5b6880;margin-top:3px;">small sample</div>` : '';
-    return `<div style="background:#0a0d14;border:1px solid rgba(255,255,255,0.09);border-radius:12px;padding:15px 18px;">
+    // B1: the whole card is clickable and each side opens the overlay on ITS OWN
+    // side. The link row is real now — phase 1 omitted it deliberately because a
+    // blue arrow that opens nothing is a broken promise on a paid page.
+    return `<div onclick="tourxOpenRoi('${side}')" style="background:#0a0d14;border:1px solid rgba(255,255,255,0.09);border-radius:12px;padding:15px 18px;cursor:pointer;">
         <div style="font-family:${MONO};font-size:11px;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:#5b6880;">${label}</div>
         <div style="display:flex;align-items:baseline;gap:9px;margin-top:8px;flex-wrap:wrap;">
           <span style="font-family:${MONO};font-size:26px;font-weight:700;font-variant-numeric:tabular-nums;color:${small ? MUT : col};">${val}</span>
           <span style="font-size:11.5px;color:#5b6880;">flat-stake yield</span>
         </div>
         <div style="font-size:11px;color:#4b5672;margin-top:5px;">${cmp}</div>${note}
+        <div style="margin-top:11px;font-size:11.5px;font-weight:700;color:#5b9bff;">Open ${side === 'fav' ? 'favourites' : 'underdogs'} graphics <span style="font-family:${MONO};">→</span></div>
       </div>`;
   };
   // 8.2 - the "Open favourites / underdogs graphics →" links are OMITTED this
@@ -22706,8 +22853,8 @@ function tourxRoiPairHtml(c){
   // cannot be embedded with our current code (feasibility item e). An absent link
   // promises nothing; a blue arrow that does nothing is a broken promise.
   return `<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;">
-      ${card('ROI backing favourites', mkt && mkt.roiFav, mkt && mkt.baseline.roiFav)}
-      ${card('ROI backing underdogs', mkt && mkt.roiDog, mkt && mkt.baseline.roiDog)}
+      ${card('ROI backing favourites', 'fav', mkt && mkt.roiFav, mkt && mkt.baseline.roiFav)}
+      ${card('ROI backing underdogs', 'dog', mkt && mkt.roiDog, mkt && mkt.baseline.roiDog)}
     </div>`;
 }
 
@@ -25940,7 +26087,31 @@ window.DatabaseTab = (function(){
   'use strict';
   var BASE_URL = './database-yield.json';
   var NAMES_URL = './database-yield-players.json';
-  var DATA=null, NAMES=null, M=null, basePromise=null, namesPromise=null, playerIndex=null, built=false, namesBound=false;
+  // SHARED, deliberately: the archive and the name index are expensive and
+  // immutable once loaded. Two mounts reading one cache is the point of
+  // embedding, not a bug. `built` and `state` are the per-instance parts.
+  var DATA=null, NAMES=null, M=null, basePromise=null, namesPromise=null, playerIndex=null, namesBound=false;
+
+  // ---- instances -------------------------------------------------------
+  // `I` is the ACTIVE instance. use() repoints `state` and `built` at it before
+  // any render, so all 73 functions below keep referring to `state` unchanged.
+  // Rendering is synchronous, so there is no window in which `I` is stale.
+  var INSTANCES=[], I=null, built=false;
+  function freshState(){
+    return {
+      view:'tour',
+      levels:null, surfaces:null, rounds:null,
+      yearMin:null, yearMax:null,
+      tournament:null, player:null,
+      tq:'', pq:'', menu:null, menuQ:'',
+      period:'all', psurf:null, plevel:null, ptourn:null, stance:'back'
+    };
+  }
+  function use(inst){ I=inst; state=inst.state; built=inst.built; return inst; }
+  function markBuilt(){ if(I){ I.built=true; } built=true; }
+  // Every DOM read goes through here. Scoped to the active instance's root, so
+  // the overlay and the standalone page address their own nodes.
+  function q(name){ return (I && I.root) ? I.root.querySelector('[data-db="'+name+'"]') : null; }
 
   // Series colours — CHARTS.md §2, which SUPERSEDES the round-2 pairing.
   //
@@ -26051,14 +26222,9 @@ window.DatabaseTab = (function(){
   // the diff who matches on the number alone will miss that.
   var SOFT_GATE=100, HARD_GATE=30;
 
-  var state = {
-    view:'tour',
-    levels:null, surfaces:null, rounds:null,
-    yearMin:null, yearMax:null,
-    tournament:null, player:null,
-    tq:'', pq:'', menu:null, menuQ:'',
-    period:'all', psurf:null, plevel:null, ptourn:null, stance:'back'
-  };
+  // Reassigned by use() to the active instance's own object. Declared here so
+  // every function below closes over the same binding, exactly as before.
+  var state = freshState();
 
   // ---------- helpers ----------
   function el(tag, cls, html){ var e=document.createElement(tag); if(cls)e.className=cls; if(html!=null)e.innerHTML=html; return e; }
@@ -26399,7 +26565,7 @@ window.DatabaseTab = (function(){
   var lastTotal=0;
 
   function renderFilters(){
-    var bar=document.getElementById('dbFilters'); if(!bar) return;
+    var bar=q('filters'); if(!bar) return;
     bar.innerHTML='';
     if(state.view==='tour'){
       var lvOpts=tourLevelOpts();   // null => dictionary moved; drop the control
@@ -26819,7 +26985,7 @@ window.DatabaseTab = (function(){
 
   // ================= render =================
   function render(){
-    var body=document.getElementById('dbBody'); if(!body) return;
+    var body=q('body'); if(!body) return;
     renderChrome();
     renderFilters();
     body.innerHTML='';
@@ -26827,14 +26993,14 @@ window.DatabaseTab = (function(){
     renderBandView(body);
   }
   function renderChrome(){
-    var sub=document.getElementById('dbSubtitle'), fr=document.getElementById('dbFresh');
+    var sub=q('subtitle'), fr=q('fresh');
     if(sub){
       var y0=(''+M.dateRange[0]).slice(0,4), y1=(''+M.dateRange[1]).slice(0,4);
       sub.innerHTML='Historical yield by odds band from our own ATP closing-line archive — <strong>'+
         esc(M.books[0])+' closing prices, '+y0+'–'+y1+'</strong> ('+M.seamSeason+' settled on '+esc(M.books[1])+', seam-marked on the curves).';
     }
     if(fr) fr.textContent='Archive through '+fmtDate(M.dateRange[1]);
-    var tabs=document.getElementById('dbViewTabs');
+    var tabs=q('viewtabs');
     if(tabs) tabs.querySelectorAll('button').forEach(function(b){ b.classList.toggle('active', b.dataset.dbview===state.view); });
   }
 
@@ -27390,7 +27556,7 @@ window.DatabaseTab = (function(){
           .catch(function(){
             namesBound=false;
             if(state.view!=='players') return;
-            var b=document.getElementById('dbBody');
+            var b=q('body');
             if(b){ b.innerHTML=''; b.appendChild(el('div','db-empty','<h3>Player archive unavailable</h3><p>The per-player shard could not be loaded from this environment.</p>')); }
           });
       }
@@ -27792,39 +27958,82 @@ window.DatabaseTab = (function(){
 
   // ---------- tabs, dismissal, init ----------
   function bindChrome(){
-    var tabs=document.getElementById('dbViewTabs');
-    if(tabs && !tabs._bound){
-      tabs._bound=true;
+    // Bound per INSTANCE, not once per document: a second mount needs its own
+    // tab clicks. The flag lives on the instance's own node.
+    var inst=I, tabs=q('viewtabs');
+    if(tabs && !tabs._dbBound){
+      tabs._dbBound=true;
       tabs.addEventListener('click', function(e){
         var b=e.target.closest('button[data-dbview]'); if(!b) return;
+        use(inst);
         state.view=b.dataset.dbview; state.menu=null; state.menuQ='';
         render();
       });
     }
+    // The dismiss listener stays document-level (a click anywhere closes an open
+    // menu) but now clears EVERY instance rather than whichever one happened to
+    // be active. With one mount this is byte-for-byte the old behaviour.
     if(!document._dbDismiss){
       document._dbDismiss=true;
-      document.addEventListener('click', function(){
-        if(state.menu!==null || state.tq || state.pq){ state.menu=null; state.tq=''; state.pq=''; if(built) renderFilters(); }
-      });
-      document.addEventListener('keydown', function(e){
-        if(e.key!=='Escape') return;
-        if(state.menu!==null || state.tq || state.pq){ state.menu=null; state.tq=''; state.pq=''; if(built) renderFilters(); }
-      });
+      var dismiss=function(){
+        var prev=I;
+        for(var i=0;i<INSTANCES.length;i++){
+          var i2=INSTANCES[i];
+          if(i2.state.menu!==null || i2.state.tq || i2.state.pq){
+            i2.state.menu=null; i2.state.tq=''; i2.state.pq='';
+            if(i2.built){ use(i2); renderFilters(); }
+          }
+        }
+        if(prev) use(prev);
+      };
+      document.addEventListener('click', dismiss);
+      document.addEventListener('keydown', function(e){ if(e.key==='Escape') dismiss(); });
     }
   }
 
-  function init(){
-    if(built){ bindChrome(); render(); return; }
-    var body=document.getElementById('dbBody');
+  // ---- mount -----------------------------------------------------------
+  // opts.hideHeader        suppress the page header card (embedded use)
+  // opts.initialTournament open on the Tournaments view with this subject
+  function mount(root, opts){
+    if(!root) return null;
+    opts = opts || {};
+    var inst = null;
+    for(var i=0;i<INSTANCES.length;i++) if(INSTANCES[i].root===root) inst=INSTANCES[i];
+    if(!inst){ inst={ root:root, state:freshState(), built:false }; INSTANCES.push(inst); }
+    use(inst);
+
+    if(opts.hideHeader){ var h=q('head'); if(h) h.style.display='none'; }
+    if(opts.initialTournament){
+      // B4: open ON the Tournament tab with this event as the subject, round
+      // EMPTY and the FULL year range, so the tour baseline column is valid the
+      // moment it opens rather than reflecting a filter the reader never set.
+      state.view='tournaments';
+      state.tournament=opts.initialTournament;
+      state.rounds=null;
+      state.yearMin=null; state.yearMax=null;
+    }
+
+    if(inst.built){ bindChrome(); render(); return inst; }
+    var body=q('body');
     loadBase().then(function(){
-      built=true; bindChrome(); render();
+      use(inst); markBuilt(); bindChrome(); render();
     }).catch(function(err){
-      if(body) body.innerHTML='<div class="db-empty"><h3>Archive unavailable</h3><p>The closing-line archive could not be loaded from this environment.</p></div>';
+      use(inst);
+      var b=q('body')||body;
+      if(b) b.innerHTML='<div class="db-empty"><h3>Archive unavailable</h3><p>The closing-line archive could not be loaded from this environment.</p></div>';
       console.warn('DatabaseTab load failed', err);
     });
+    return inst;
   }
 
-  return { init: init };
+  // The standalone page. Its call site in the nav handler is UNTOUCHED — this is
+  // the same behaviour it has always had, now expressed as a mount of the root
+  // that was already there.
+  function init(){
+    return mount(document.querySelector('[data-db-root="standalone"]'), {});
+  }
+
+  return { mount: mount, init: init };
 })();
 </script>
 

@@ -594,6 +594,15 @@ jobs:
           # Per-tournament market performance (Tournaments Overview §4/§5). Fetched
           # by the dashboard; a missing file just em-dashes those two blocks.
           cp tournament-market.json _site/ 2>/dev/null || true
+          # TEN-242 phase 2 C7 (founder ruling): the quote sheet reaches us as a
+          # COMMITTED CSV at data/tournament-quotes.csv. NO JOB FETCHES IT, so no
+          # cron can overwrite it — the only writer is the founder exporting the
+          # sheet. This step only DERIVES the artefact from that commit, which is
+          # why a build is a function of its commit rather than of the sheet's
+          # mood. Best-effort: a missing CSV leaves the previous artefact in place
+          # and the cards simply do not render, rather than blocking the deploy.
+          node tools/quotes/build-tournament-quotes.mjs 2>/dev/null || true
+          cp tournament-quotes.json _site/ 2>/dev/null || true
           # TEN-151 Trading Report (flag-gated OFF): the module, the splits index +
           # per-player shards, and the tournament→surface map the board joins on.
           # The index gates the shard fetches; committed/built-but-not-copied =

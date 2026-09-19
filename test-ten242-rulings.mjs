@@ -178,19 +178,48 @@ test('item 1.3: the entry-lists alias still routes rather than 404ing', () => {
     'the alias must select the Entry list section');
 });
 
-test('item 3: "What players say" is not built', () => {
-  // We have a press-conference transcript source (tools/asapsports-signal.js) but
-  // it is player-keyed pre-match readiness, not tournament-keyed quotes — and it
-  // has been empty since 2026-08-06. The founder ruled: build nothing, not even a
-  // placeholder that implies the data exists.
-  // Strip line comments before matching: this file's own source explains WHY the
-  // card is absent, and an explanation is not an implementation. Matching raw
-  // text here would make the test fail on its own documentation.
-  const tourx = code(DASH.slice(DASH.indexOf('function tourxOverlayShell')));
-  assert.ok(!/What players say|Read all \$\{|quotesPanel|tourQuotesOpen|notes<|curly/.test(tourx),
-    'no quotes card, overlay or placeholder may appear on the Tournaments page');
-  // and nothing may imply the data is coming
-  assert.ok(!/coming soon/i.test(tourx), 'no "coming soon" state may imply a quote source exists');
+test('phase 2 C2: the quotes card renders ONLY when quotes exist — never a placeholder', () => {
+  // SUPERSEDES the phase-1 guard "What players say is not built". Phase 1 had no
+  // quote source; phase 2 imported 425 of them from the founder's sheet. The
+  // invariant that survives is the one that always mattered: nothing on this page
+  // may imply quotes exist for an event that has none. 19 of our 64 rated events
+  // have none and must show no card at all.
+  assert.match(DASH, /function tourxQuotesCardHtml\(c\)\{/);
+  const card = DASH.slice(DASH.indexOf('function tourxQuotesCardHtml(c){'),
+                          DASH.indexOf('function tourxQuotesPanelHtml'));
+  assert.match(card, /if \(!list\) return '';/,
+    'no quotes must return an EMPTY STRING — an empty node would still occupy the column gap');
+  const cardCode = code(card);
+  assert.ok(!/coming soon|not yet|no quotes|placeholder/i.test(cardCode),
+    'no empty state, no "coming soon", nothing that implies the data exists');
+
+  // FOUNDER RULING: render VERBATIM; curly-wrap only values carrying no quotes
+  // of their own. 378 of 425 already contain their own quotation marks.
+  assert.match(DASH, /return qt\.selfQuoted \? t : `“\$\{t\}”`;/,
+    'the curly wrap is conditional on selfQuoted — wrapping narration double-quotes it');
+
+  // C4: attribution shows only what exists. Never an invented year, never "n.d."
+  const attrib = DASH.slice(DASH.indexOf('function tourxQuoteAttrib(qt){'),
+                            DASH.indexOf('function tourxQuoteText'));
+  assert.match(attrib, /if \(qt\.year\) bits\.push/);
+  assert.ok(!/n\.d\.|unknown|—/.test(code(attrib)),
+    'a missing year contributes NOTHING to the attribution line, not a placeholder');
+});
+
+test('phase 2 B: the Database page is mountable, and the standalone call site is untouched', () => {
+  assert.match(DASH, /function mount\(root, opts\)\{/, 'mount(root, opts) must exist');
+  assert.match(DASH, /return \{ mount: mount, init: init \};/, 'init() must survive alongside it');
+  assert.match(DASH, /if \(tab === 'database'\) \{ if \(window\.DatabaseTab\) window\.DatabaseTab\.init\(\); \}/,
+    'the nav call site is deliberately unchanged');
+  // no DOM read may escape its instance root
+  assert.ok(!/getElementById\('db/.test(DASH),
+    'every Database DOM read must be root-scoped via q(); a document-wide lookup makes two mounts fight');
+  // B4: the overlay opens with round empty and the full year range so the tour
+  // baseline column is valid on open.
+  const m = DASH.slice(DASH.indexOf('if(opts.initialTournament){'), DASH.indexOf('if(inst.built){'));
+  assert.match(m, /state\.view='tournaments';/);
+  assert.match(m, /state\.rounds=null;/);
+  assert.match(m, /state\.yearMin=null; state\.yearMax=null;/);
 });
 
 test('item 6.1: the per-week absence fires on "nothing loaded", not "no events"', () => {
