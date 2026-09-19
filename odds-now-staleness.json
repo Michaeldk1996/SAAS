@@ -1,22 +1,16 @@
 {
   "latest": {
-    "maxAgeMin": 226.4,
+    "maxAgeMin": 242.3,
     "measured": 50,
     "stale": [
-      "H. Chung v D. Suresh (ATP ATP Davis Cup - World Group, 2026-09-19)"
+      "G. Trismuwantara v R. M. Papoe (ATP ATP Davis Cup - World Group II, 2026-09-19)",
+      "H. Chung v D. Suresh (ATP ATP Davis Cup - World Group, 2026-09-19)",
+      "C. H. Tseng v M. Dahlin (ATP ATP Davis Cup - World Group I, 2026-09-19)",
+      "D. Duran v N. Borges (ATP ATP Davis Cup - World Group II, 2026-09-19)"
     ]
   },
   "note": "Age of the published bet365 NOW leg, measured as now - observedAt against the artefact Pages is serving. Capture staleness and publish staleness are both inside this number, which is what the visitor sees. Re-derive the threshold on TEN-187.",
   "samples": [
-    {
-      "at": "2026-09-15T00:00:01Z",
-      "maxAgeMin": null,
-      "measured": 0,
-      "noBet365Line": 0,
-      "noClock": 0,
-      "stale": 0,
-      "thresholdMin": 120.0
-    },
     {
       "at": "2026-09-15T00:15:00Z",
       "maxAgeMin": null,
@@ -3607,9 +3601,18 @@
       "noClock": 0,
       "stale": 1,
       "thresholdMin": 120.0
+    },
+    {
+      "at": "2026-09-19T10:53:58Z",
+      "maxAgeMin": 242.3,
+      "measured": 50,
+      "noBet365Line": 32,
+      "noClock": 0,
+      "stale": 4,
+      "thresholdMin": 120.0
     }
   ],
   "schema": "odds-now-staleness/1",
   "thresholdMin": 120.0,
-  "updatedAt": "2026-09-19T10:38:05Z"
+  "updatedAt": "2026-09-19T10:53:58Z"
 }
