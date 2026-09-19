@@ -33,16 +33,10 @@ BASE = 'https://api.api-tennis.com/tennis/'
 # in descending-coverage order, which would bury the books he named.
 PRIORITY = ['bet365', 'Superbet', 'Betano', 'Unibet', 'William Hill', 'bwin',
             'Betfair', '1xBet', 'Pinnacle']
-# ⚠️ The feed's spelling is not the founder's spelling, and the difference is not
-# cosmetic: a first cut of this report matched the priority list literally and
-# announced "William Hill 0.0% — ABSENT from the feed on every day measured"
-# while the feed was returning `WilliamHill` on 244 fixtures. A book wrongly
-# reported absent is worse than an unmeasured one, because it reads as a
-# measurement. Names are normalised on both sides before any comparison.
-def canon(name):
-    return ''.join(c for c in str(name or '').lower() if c.isalnum())
-# Vendor-confirmed expansions (founder item G1) — the feed ships abbreviations.
-ALIAS = {'sbo': 'SBOBET', 'pncl': 'Pinnacle', 'victorchandler': 'BetVictor'}
+# TEN-225 item 6 — book-name normalisation is a SHARED standard, not a habit
+# repeated per script. `book_names.canon` is the one definition; see that module
+# for the WilliamHill case that caused it.
+from book_names import canon, display as _display
 
 
 def key():
@@ -88,7 +82,7 @@ def main():
             away = {b for b, v in (hw.get('Away') or {}).items() if v}
             # BOTH sides, or it cannot price a card.
             for b in (home & away):
-                books_on[str(ek)].add(ALIAS.get(canon(b), b))
+                books_on[str(ek)].add(_display(b))
 
     print(f'window: {days[0]} -> {days[-1]}  ({seen_days} of {len(days)} days usable)')
     priced = {ek for ek, bs in books_on.items() if bs}

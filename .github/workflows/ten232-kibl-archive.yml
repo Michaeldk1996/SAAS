@@ -320,8 +320,24 @@ jobs:
       # non-zero runs, and that pinger is the real cadence behind an archive
       # racing prices that vanish in 30-60 days. A read-only probe must never be
       # able to starve the job it is probing. Genuine faults still exit 1.
-      - name: Find Bet105
-        if: inputs.mode == 'books'
+      # ENTITLEMENT WATCH — founder 2026-09-19 item 3: "Re-run this check on a
+      # schedule from now on, say daily, and tell me the day it changes. I should
+      # not have to ask."
+      #
+      # Runs on every SWEEP as well as on explicit dispatch, not on a daily cron.
+      # Two measured reasons. (1) It is ONE free call -- /reference/sportsbooks
+      # returned 510 bytes in 0.4 s -- so the marginal cost of checking every
+      # sweep instead of once a day is nil. (2) This repo's `schedule:` cron is
+      # THROTTLED: measured 1.5% delivery (one firing against ~67 due), which is
+      # why the archive's real cadence comes from the Supabase pg_cron pinger.
+      # A daily cron here would be a watch that mostly does not fire, which is
+      # the failure this item exists to close.
+      #
+      # It speaks only when the entitlement DIFFERS from the committed baseline,
+      # so a quiet run is quiet and the day it changes raises an ::error::
+      # annotation that surfaces without anyone reading the log.
+      - name: Find Bet105 / entitlement watch
+        if: inputs.mode == 'books' || inputs.mode == 'sweep' || inputs.mode == ''
         env:
           KIBL_USERNAME: ${{ secrets.KIBL_USERNAME }}
           KIBL_PASSWORD: ${{ secrets.KIBL_PASSWORD }}
@@ -330,6 +346,17 @@ jobs:
         run: |
           set -o pipefail
           python3 -B ten232-bet105-find.py | tee -a "$GITHUB_STEP_SUMMARY"
+
+      # The baseline is only rewritten when the entitlement actually changed, so
+      # this commits nothing on a quiet run. Committed rather than cached: the
+      # next runner must see the SAME baseline, or every run would diff against
+      # an empty file and the watch would announce a change every time.
+      - name: Commit the entitlement baseline (only if it changed)
+        if: always() && (inputs.mode == 'books' || inputs.mode == 'sweep' || inputs.mode == '')
+        run: |
+          chmod +x ci-commit-push.sh
+          ./ci-commit-push.sh "chore(kibl): entitlement baseline [skip ci]" \
+            kibl-entitlement-baseline.json || true
 
       # Founder ruling 2026-09-18 item 4 — the generalisation of the
       # player1/player2 defect: a column declared in the DDL that NOTHING ever

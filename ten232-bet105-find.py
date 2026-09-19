@@ -46,8 +46,32 @@ import re
 import sys
 import urllib.error
 import urllib.request
+from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+
+# The committed record of what the account was entitled to last time we looked.
+# Committed rather than derived from the previous run, so a one-call blip cannot
+# quietly redefine the baseline. See the diff block in main().
+ENTITLEMENT_BASELINE = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                    'kibl-entitlement-baseline.json')
+
+
+def _write_baseline(seen):
+    """Record the entitlement. Never raises — a bookkeeping failure must not turn
+    a read-only probe into a non-zero exit, because this job's circuit breaker
+    unschedules the Supabase pinger after 3 consecutive failures, and that pinger
+    is the cadence behind an archive racing prices that vanish in 30-60 days."""
+    try:
+        with open(ENTITLEMENT_BASELINE, 'w') as fh:
+            json.dump({'books': seen,
+                       'updated_at': datetime.now(timezone.utc)
+                                     .strftime('%Y-%m-%dT%H:%M:%SZ')},
+                      fh, indent=2, sort_keys=True)
+            fh.write('\n')
+    except Exception as e:
+        print(f'::warning::could not write the entitlement baseline ({e}).')
 
 
 def supabase_creds():
@@ -136,6 +160,62 @@ def main():
 
     out("books_total", len(books))
     out("book_names", "|".join(sorted(by_name)))
+
+    # ── DAILY ENTITLEMENT WATCH (founder 2026-09-19 item 3) ──────────────────
+    # "Re-run this check on a schedule from now on, say daily, and tell me the
+    #  day it changes. I should not have to ask."
+    #
+    # A daily run that merely REPRINTS the same table is not a watch: the day it
+    # changes looks exactly like the day it did not, and the change is noticed
+    # only if somebody happens to open that run's log. So the entitlement is
+    # DIFFED against a committed baseline and any difference is raised as a
+    # GitHub ::error:: annotation, which surfaces without anyone reading the log.
+    seen = {}
+    for b in books:
+        fsid = b.get("feed_source_id")
+        if fsid is not None:
+            seen[str(fsid)] = str(b.get("name") or b.get("sportsbook_name") or "?")
+    base = {}
+    if os.path.exists(ENTITLEMENT_BASELINE):
+        try:
+            base = (json.load(open(ENTITLEMENT_BASELINE)) or {}).get("books") or {}
+        except Exception as e:
+            print(f"::warning::entitlement baseline unreadable ({e}); this run "
+                  f"cannot diff and is NOT reporting 'no change'.")
+            base = None
+
+    if base is None:
+        pass                                   # already warned; no verdict claimed
+    elif not base:
+        print(f"::warning::no entitlement baseline on file. Recording the current "
+              f"{len(seen)} book(s); the NEXT run is the first that can detect a "
+              f"change.")
+        _write_baseline(seen)
+    elif seen != base:
+        added = {k: v for k, v in seen.items() if k not in base}
+        gone = {k: v for k, v in base.items() if k not in seen}
+        renamed = {k: (base[k], seen[k]) for k in seen
+                   if k in base and seen[k] != base[k]}
+        print(f"::error::KIBL ENTITLEMENT CHANGED. added={added or {}} "
+              f"removed={gone or {}} renamed={renamed or {}}. A new book is "
+              f"captured by the sweep automatically and REFUSED by the card path "
+              f"(VERIFIED_FEED_SOURCE_ID) until its coverage, markets and "
+              f"side-mapping gate passes.")
+        print(f"\n### ⚠️ ENTITLEMENT CHANGED — {len(base)} book(s) -> {len(seen)}\n")
+        for k, v in sorted(added.items()):
+            print(f"- **ADDED** feed_source_id `{k}` — {v}")
+        for k, v in sorted(gone.items()):
+            print(f"- **REMOVED** feed_source_id `{k}` — {v}")
+        for k, (a, b2) in sorted(renamed.items()):
+            print(f"- **RENAMED** feed_source_id `{k}` — {a} -> {b2}")
+        print()
+        _write_baseline(seen)
+        out("entitlement_changed", "yes")
+    else:
+        names = ", ".join(f"{k}={v}" for k, v in sorted(seen.items()))
+        print(f"Entitlement UNCHANGED against the committed baseline: "
+              f"{len(seen)} book(s) — {names}.")
+        out("entitlement_changed", "no")
 
     if not bet105:
         print("### ❌ BET105 DOES NOT APPEAR\n")
