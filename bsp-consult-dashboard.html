@@ -3663,7 +3663,14 @@
      the shell's header card already says Tournaments. The "{n} events · {n} lists
      loaded" count that item 6 requires survives as the right-aligned head block. */
   [data-page="entry-lists"] .el-wrap{ max-width:1360px; margin:0; padding:22px 24px 26px; display:flex; flex-direction:column; gap:16px; }
-  [data-page="entry-lists"] .el-embedhead{ display:flex; align-items:flex-end; justify-content:flex-end; background:transparent; border-color:transparent; padding:0 2px 4px; }
+  /* README §2.1, restored per founder ruling (phase 2 A1). The header keeps its
+     EMBEDDED surface treatment — transparent, no border, padding 0 2px 4px —
+     but not at the cost of the title and subtitle, which §2.1 specifies in
+     full. flex-end on the cross axis keeps the right-hand count sitting on the
+     subtitle's baseline as the export has it. */
+  [data-page="entry-lists"] .el-embedhead{ display:flex; align-items:flex-end; justify-content:space-between; gap:28px; flex-wrap:wrap; background:transparent; border-color:transparent; padding:0 2px 4px; }
+  [data-page="entry-lists"] .el-embedhead h1{ margin:0; font-size:29px; font-weight:800; letter-spacing:-0.015em; line-height:1.1; color:#e7e9ee; }
+  [data-page="entry-lists"] .el-embedhead p{ margin:8px 0 0; font-size:13.5px; line-height:1.55; color:#8b96b5; max-width:620px; text-wrap:pretty; }
   [data-page="entry-lists"] .el-row{ display:grid; grid-template-columns:minmax(0,1fr) 72px 56px 56px 26px; gap:0 16px; align-items:center; }
   [data-page="entry-lists"] .elrow:hover{ background:rgba(255,255,255,0.022); }
   [data-page="entry-lists"] .el-head{ margin-bottom:24px; }
@@ -4180,8 +4187,16 @@ window.EntryListsTab = (function(){
     var tip = stale
       ? 'Counts every event with an acceptance list in the build. The advance source could not be refreshed, so these lists are the last successfully fetched set — they are loaded, but not current. Events we have never fetched a list for are not counted.'
       : 'Counts every event with an acceptance list in the build. Events we have never fetched a list for are not counted.';
-    el.innerHTML = '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;" title="'+tip+'">'
-      + '<span style="font-family:\'IBM Plex Mono\',ui-monospace,monospace;font-size:9.5px;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;color:#5b6880;">'+(weekRangeLabel(activeWeek)||'This week')+'</span>'
+    // §2.1 eyebrow is the literal "This week", NOT the week range — phase 1
+    // substituted the range, which reads as a second date control next to the
+    // week chips that already carry it.
+    el.innerHTML = '<div style="min-width:0;">'
+      + '<h1>Entry Lists</h1>'
+      + '<p>ATP acceptance lists — main draw, qualifying, wildcards and alternates. '
+      + 'Advance lists switch to the official draw once it is posted.</p>'
+      + '</div>'
+      + '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:5px;" title="'+tip+'">'
+      + '<span style="font-family:\'IBM Plex Mono\',ui-monospace,monospace;font-size:9.5px;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;color:#5b6880;">This week</span>'
       + '<span style="font-family:\'IBM Plex Mono\',ui-monospace,monospace;font-size:17px;font-weight:700;color:#e7e9ee;">'
         + tourns.length + ' event' + (tourns.length===1?'':'s') + ' · ' + loaded + ' list' + (loaded===1?'':'s') + ' loaded</span>'
       + '</div>';
@@ -22493,12 +22508,20 @@ function tourxOverviewListHtml(){
   const groupHead = (txt, top) => `<div style="font-size:11px;letter-spacing:0.16em;text-transform:uppercase;color:#4b5361;${top ? 'padding:12px 6px 4px;border-top:1px solid rgba(255,255,255,0.05);margin-top:4px;' : 'padding:4px 6px;'}">${txt}</div>`;
   // §1.1: "groups with no match simply render empty" - the heading stays.
   let body;
-  if (q && !week.length && !season.length){
+  if (!week.length && !season.length){
     // two empty headings read as a rendering failure, not as "no results".
-    body = `<div style="padding:16px 8px;font-size:12.5px;color:#5b6880;">No tournament matches “${tourxState.tsQ}”.</div>`;
+    body = q
+      ? `<div style="padding:16px 8px;font-size:12.5px;color:#5b6880;">No tournament matches “${tourxState.tsQ}”.</div>`
+      : `<div style="padding:16px 8px;font-size:12.5px;color:#5b6880;">No rated tournaments to show.</div>`;
   } else {
-    body = groupHead('This week', false) + week.map(row).join('');
-    body += groupHead('Season', true) + season.map(row).join('');
+    // A4 (founder, phase 2): a heading with nothing under it is noise. "This
+    // week" is empty for most of the calendar — between events, and all of the
+    // current Davis Cup week — so it was a permanent empty label, not an
+    // occasional one. The heading appears exactly when it has rows.
+    body = '';
+    if (week.length) body += groupHead('This week', false) + week.map(row).join('');
+    // the Season divider only earns its top border when something precedes it
+    if (season.length) body += groupHead('Season', week.length > 0) + season.map(row).join('');
   }
   return searchBox + `<div class="tourlist">${body}</div>`;
 }
