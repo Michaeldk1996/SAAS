@@ -198,5 +198,45 @@ check('a closed group hides its rows but keeps its header', () => {
   assert.ok(/Break of serve/.test(html), 'closing one group must not close the others');
 });
 
+// ── the export's own geometry (Player Stat Boxes.dc.html:919 head, :933 rows) ──
+// Measured against the founder's screenshot before this was written: our build
+// had `1fr 62px 74px 62px 72px` at `gap:10px`, which put RATE 12px, TOUR 14px and
+// VS TOUR 10px wider than the design and shifted every numeric column. The
+// screenshot's own column right-edges (916.0 / 983.5 / 1037.0 / 1104.5 CSS at a
+// 1680-wide viewport rendered at 90%) reproduce from 62/62/48/62 and do not
+// reproduce from 62/74/62/72.
+const TRACKS = 'grid-template-columns:minmax(0,1fr) 62px 62px 48px 62px;gap:0 12px;';
+
+check('rows and head use the export\'s grid tracks', () => {
+  const I = load(ROSTER, PBP_STORE);
+  const html = I.renderSituational(SUBJECT);
+  const n = html.split(TRACKS).length - 1;
+  // 1 head + one grid PER ROW (14). The export nests each group's cells in a
+  // single per-group grid; we emit a grid per row. With identical tracks and no
+  // row gap the two lay out the same, because every row resolves minmax(0,1fr)
+  // against the same container width — so this is a structural difference with
+  // no geometric one, and the per-row form is what keeps a row's five cells
+  // together when a group is collapsed.
+  assert.strictEqual(n, 15, `expected 15 grids on the export tracks (1 head + 14 rows), found ${n}`);
+  assert.ok(!/62px 74px 62px 72px/.test(html), 'the pre-export track widths are still being emitted');
+  assert.ok(!/gap:10px/.test(html.split('Situational')[1] || ''), 'the 10px gap is still being emitted');
+});
+
+check('the head row renders ONCE, not once per group', () => {
+  const I = load(ROSTER, PBP_STORE);
+  const html = I.renderSituational(SUBJECT);
+  const heads = html.split('border-bottom:1px solid rgba(255,255,255,0.12)').length - 1;
+  assert.strictEqual(heads, 1, `the column head renders ${heads} times; the export renders it once`);
+  const recs = html.split('>Record<').length - 1;
+  assert.strictEqual(recs, 1, `"Record" appears ${recs} times in the head`);
+});
+
+check('the panel carries the export\'s "Situational" title', () => {
+  const I = load(ROSTER, PBP_STORE);
+  const html = I.renderSituational(SUBJECT);
+  assert.ok(/font-size:20px;font-weight:800;">Situational</.test(html),
+    'the 20px/800 "Situational" title is missing — the export puts it above the launcher');
+});
+
 console.log(`\nsituational panel: ${pass} pass, ${fail} fail`);
 if (fail) { console.error(`FAILED: ${fail} check(s)`); process.exit(1); }

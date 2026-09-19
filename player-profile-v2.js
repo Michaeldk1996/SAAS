@@ -8909,35 +8909,48 @@
 
     var surf = state.hbSurf || 'all';
     var hold = E.heatFor(HB, p.key, 'HOLD', HB_BEST_OF, surf);
-    var brk = E.heatFor(HB, p.key, 'BREAK', HB_BEST_OF, surf);
 
-    function pill(label) {
-      return '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:12.5px;font-weight:700;' +
-        'padding:5px 11px;border-radius:8px;background:rgba(255,255,255,0.05);color:#e7e9ee;">' +
-        esc(label) + '</span>';
-    }
-
+    // Chrome is the export's verbatim (Player Stat Boxes.dc.html:904-918): the
+    // WHOLE card is the control, "Open" is a label rather than a button, the icon
+    // is a 30px tile with a 12px four-square glyph, and the subtitle is the
+    // export's own mono sentence. Our first build carried two pills (HOLD and
+    // BREAK) where the export carries one figure; the export wins, and the break
+    // figure is still one click away on the grid itself. The coverage counts that
+    // subtitle used to carry are not lost: they are in the modal subtitle and in
+    // the Situational footnote.
+    //
+    // The figure is heatFor().globalLabel verbatim — RULED. The mock reads
+    // "Hold 71.5%" and that number is in no store we hold, so it is a layout
+    // reference only. One knock-on worth stating: the engine returns "HOLD 87.8%"
+    // in caps where the design sets "Hold". The casing belongs to the engine, and
+    // title-casing it here would turn a verbatim print into a transform, so it is
+    // reported rather than restyled.
     return '' +
-      '<div data-pp2="heat-card" style="border:1px solid rgba(255,255,255,0.08);border-radius:12px;' +
-        'background:#070a10;padding:15px 16px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;">' +
-        '<div style="width:32px;height:32px;border-radius:9px;flex:none;display:flex;align-items:center;' +
-          'justify-content:center;background:rgba(91,155,255,0.14);color:#5b9bff;">' +
-          '<svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" ' +
-          'stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">' +
-          '<path d="M4 15V9M8 15V5M12 15v-4M16 15V7"/></svg></div>' +
-        '<div style="flex:1;min-width:190px;">' +
-          '<div style="font-size:13.5px;font-weight:800;color:#e7e9ee;">Hold/break heatmap</div>' +
-          '<div style="font-size:11.5px;color:#5b6880;margin-top:2px;">' +
-            'By service game and set ' + MIDDOT + ' ' + cov.matches + ' matches ' + MIDDOT + ' ' +
-            cov.svcGames + ' service games</div>' +
-        '</div>' +
-        '<div style="display:flex;gap:7px;align-items:center;flex-wrap:wrap;">' +
-          pill(hold.globalLabel) + pill(brk.globalLabel) +
-          '<button type="button" data-pp2="heat" style="padding:7px 14px;border-radius:9px;' +
-            'font-size:12px;font-weight:700;cursor:pointer;color:#5b9bff;' +
-            'background:rgba(91,155,255,0.12);border:1px solid rgba(91,155,255,0.34);">Open ' +
-            RANGLE + '</button>' +
-        '</div>' +
+      '<div data-pp2="heat" style="cursor:pointer;display:flex;align-items:center;' +
+        'justify-content:space-between;gap:14px;background:#06070a;' +
+        'border:1px solid rgba(255,255,255,0.09);border-radius:11px;padding:13px 15px;">' +
+        '<span style="display:flex;align-items:center;gap:11px;min-width:0;">' +
+          '<span style="width:30px;height:30px;border-radius:9px;' +
+            'background:rgba(91,155,255,0.12);border:1px solid rgba(91,155,255,0.3);' +
+            'display:flex;align-items:center;justify-content:center;flex:none;color:#5b9bff;">' +
+            '<svg width="12" height="12" viewBox="0 0 12 12" fill="none">' +
+              '<rect x="0.8" y="0.8" width="4" height="4" stroke="currentColor" stroke-width="1.2"/>' +
+              '<rect x="7.2" y="0.8" width="4" height="4" stroke="currentColor" stroke-width="1.2"/>' +
+              '<rect x="0.8" y="7.2" width="4" height="4" stroke="currentColor" stroke-width="1.2"/>' +
+              '<rect x="7.2" y="7.2" width="4" height="4" stroke="currentColor" stroke-width="1.2"/>' +
+            '</svg>' +
+          '</span>' +
+          '<span style="display:flex;flex-direction:column;gap:3px;min-width:0;">' +
+            '<span style="font-size:13.5px;font-weight:700;">Hold / break heatmap</span>' +
+            '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:#4b5672;">' +
+              'hold and break by service-game pair, set by set</span>' +
+          '</span>' +
+        '</span>' +
+        '<span style="display:flex;align-items:baseline;gap:10px;flex:none;">' +
+          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:13px;font-weight:700;' +
+            'color:#e8ecf4;">' + esc(hold.globalLabel) + '</span>' +
+          '<span style="font-size:12px;color:#5b6880;">Open ' + RANGLE + '</span>' +
+        '</span>' +
       '</div>';
   }
 
@@ -8981,6 +8994,14 @@
   //   to four or five sets is best-of-five by construction.
   // * A match can appear in several rows. That is stated in the footnote.
   var SIT_GREEN = '#3dd68c', SIT_RED = '#e0616f', SIT_FAINT = '#3f4860';
+  // Grid + eyebrow taken verbatim from the export (Player Stat Boxes.dc.html
+  // :919 head, :933 rows). Measured off the founder's screenshot first and both
+  // agree: our build had 1fr 62/74/62/72 at gap 10, which made every numeric
+  // column 9-13px wider than the design and pushed RECORD 27px to its left.
+  var SIT_TRACKS = 'grid-template-columns:minmax(0,1fr) 62px 62px 48px 62px;gap:0 12px;';
+  var SIT_EYEBROW = "font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:600;"
+    + 'letter-spacing:0.14em;text-transform:uppercase;color:#5b6880;';
+  var SIT_CELLBD = 'border-top:1px solid rgba(255,255,255,0.04);';
   var SIT_MUT = '#8b96b5', SIT_DIM = '#5b6880', SIT_BRIGHT = '#e8ecf4';
 
   var SIT_GROUPS = [
@@ -9099,39 +9120,48 @@
     var vs = (!hard && rate != null && tourPct != null) ? rate - tourPct : null;
     var vsR = vs == null ? null : r1(vs);
 
-    var cell = function (txt, colour, size) {
+    // Every cell carries the export's hairline top border and 7px padding, so the
+    // rows read as a ruled table rather than free-floating text.
+    var cell = function (txt, colour, size, weight) {
       return '<div style="text-align:right;font-family:\'IBM Plex Mono\',monospace;' +
-        'font-size:' + size + ';color:' + colour + ';">' + esc(txt) + '</div>';
+        'font-size:' + size + ';color:' + colour + ';padding:7px 0;' + SIT_CELLBD +
+        (weight ? 'font-weight:' + weight + ';' : '') + '">' + esc(txt) + '</div>';
     };
 
     return '' +
-      '<div style="display:grid;grid-template-columns:minmax(0,1fr) 62px 74px 62px 72px;' +
-        'gap:10px;align-items:center;padding:7px 2px;">' +
-        '<div style="font-size:12.5px;color:' + (hard ? SIT_DIM : '#c6ccdb') + ';min-width:0;">' +
-          esc(label) +
-          (soft ? '<span style="font-size:10px;color:' + SIT_DIM + ';margin-left:7px;">small sample</span>' : '') +
+      '<div style="display:grid;' + SIT_TRACKS + 'align-items:center;">' +
+        // 19px left indent is the export's: it hangs each label under the group
+        // header's chevron rather than flush with it.
+        '<div style="display:flex;align-items:baseline;gap:8px;min-width:0;' +
+          'padding:7px 4px 7px 19px;' + SIT_CELLBD + '">' +
+          '<span style="font-size:12.5px;color:' + (hard ? SIT_DIM : '#c6ccdb') + ';' +
+            'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(label) + '</span>' +
+          (soft ? '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:8.5px;' +
+            'font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:#4b5672;' +
+            'white-space:nowrap;">small sample</span>' : '') +
         '</div>' +
         cell(n ? w + ENDASH + l : DASH, n ? SIT_MUT : SIT_FAINT, '12px') +
         cell(hard || rate == null ? DASH : rate.toFixed(1) + '%',
           hard ? SIT_FAINT : (soft ? SIT_MUT : SIT_BRIGHT), soft ? '11.5px' : '12.5px') +
         cell(tourPct == null ? DASH : Math.round(tourPct) + '%',
-          tourPct == null ? SIT_FAINT : SIT_DIM, '12px') +
+          tourPct == null ? SIT_FAINT : SIT_DIM, '11px') +
         cell(vsR == null ? DASH
           : (vsR > 0 ? '+' : vsR < 0 ? MINUS : '') + Math.abs(vsR).toFixed(1) + 'pp',
           vsR == null ? SIT_FAINT : (vsR > 0 ? SIT_GREEN : vsR < 0 ? SIT_RED : SIT_MUT),
-          soft ? '12.5px' : '15px') +
+          soft ? '12.5px' : '15px', 700) +
       '</div>';
   }
 
+  // ONE head row for the whole table, not one per group. The export renders it
+  // OUTSIDE its group loop (:919 against the sc-for at :926); we were emitting it
+  // inside every group, so the panel carried four identical header rows.
   function sitHeadHtml() {
     var h = function (t) {
-      return '<div style="text-align:right;font-size:9.5px;letter-spacing:0.08em;' +
-        'color:' + SIT_FAINT + ';font-weight:700;">' + t + '</div>';
+      return '<div style="text-align:right;' + SIT_EYEBROW + '">' + t + '</div>';
     };
-    return '<div style="display:grid;grid-template-columns:minmax(0,1fr) 62px 74px 62px 72px;' +
-      'gap:10px;align-items:center;padding:0 2px 6px;' +
-      'border-bottom:1px solid rgba(255,255,255,0.07);">' +
-      '<div></div>' + h('RECORD') + h('RATE') + h('TOUR') + h('VS TOUR') + '</div>';
+    return '<div style="display:grid;' + SIT_TRACKS + 'align-items:flex-end;' +
+      'padding:0 4px 8px;border-bottom:1px solid rgba(255,255,255,0.12);">' +
+      '<div></div>' + h('Record') + h('Rate') + h('Tour') + h('Vs tour') + '</div>';
   }
 
   function renderSituational(p) {
@@ -9166,15 +9196,19 @@
         return sitRowHtml(label, rec, tour.rows[id] == null ? null : tour.rows[id]);
       }).join('') : '';
       return '' +
-        '<div style="margin-top:14px;">' +
+        '<div style="display:flex;flex-direction:column;gap:2px;">' +
           '<button type="button" data-pp2="sit-toggle" data-v="' + esc(g.title) + '" ' +
-            'style="display:flex;align-items:center;gap:8px;width:100%;background:none;border:0;' +
-            'padding:0 2px 8px;cursor:pointer;color:#8b96b5;font-size:10.5px;font-weight:800;' +
-            'letter-spacing:0.09em;text-transform:uppercase;">' +
-            '<span style="display:inline-block;transform:rotate(' + (on ? '90deg' : '0deg') + ');' +
-              'transition:transform .12s;">' + RANGLE + '</span>' + esc(g.title) +
+            'style="display:flex;align-items:center;gap:9px;width:100%;background:none;' +
+            'border:0;border-top:1px solid rgba(255,255,255,0.06);padding:8px 4px;' +
+            'cursor:pointer;text-align:left;' + SIT_EYEBROW + '">' +
+            // The export draws the caret as a 10x10 stroked path, not a text glyph.
+            '<svg width="10" height="10" viewBox="0 0 10 10" fill="none" style="flex:none;' +
+              'transform:rotate(' + (on ? '90deg' : '0deg') + ');transition:transform .14s ease;">' +
+              '<path d="M3 1l4 4-4 4" stroke="#5b6880" stroke-width="1.6" ' +
+              'stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+            esc(g.title) +
           '</button>' +
-          (on ? sitHeadHtml() + rows : '') +
+          (on ? rows : '') +
         '</div>';
     }).join('');
 
@@ -9196,9 +9230,11 @@
       'Nothing here is estimated.';
 
     return '' +
-      '<div style="margin-top:18px;">' + body +
-        '<div style="font-size:11px;color:#4b5361;line-height:1.55;margin-top:15px;">' +
-          note + '</div>' +
+      '<div style="display:flex;flex-direction:column;gap:14px;margin-top:18px;">' +
+        '<span style="font-size:20px;font-weight:800;">Situational</span>' +
+        sitHeadHtml() +
+        '<div style="display:flex;flex-direction:column;">' + body + '</div>' +
+        '<div style="font-size:11.5px;color:#4b5672;line-height:1.6;">' + note + '</div>' +
       '</div>';
   }
 
@@ -9392,7 +9428,7 @@
     if (kind === 'scrim' && e.target !== el) return;
     if (kind === 'sheet-scrim' && e.target !== el) return;
     if (kind === 'heat-scrim' && e.target !== el) return;
-    if (kind === 'card' || kind === 'hb-cell' || kind === 'heat-card') return;   // inert: container / tooltip only
+    if (kind === 'card' || kind === 'hb-cell') return;   // inert: container / tooltip only
 
     if (kind === 'back') {
       e.preventDefault();

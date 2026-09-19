@@ -69,9 +69,10 @@ check('the launcher headline is heatFor().globalLabel verbatim', () => {
   I.state.hbSurf = 'all';
   const html = I.hbLauncherHtml(SUBJECT);
   const hold = ENGINE.heatFor(HB, SUBJECT.key, 'HOLD', I.HB_BEST_OF, 'all').globalLabel;
-  const brk = ENGINE.heatFor(HB, SUBJECT.key, 'BREAK', I.HB_BEST_OF, 'all').globalLabel;
   assert.ok(html.includes(hold), `card should carry the engine's "${hold}"`);
-  assert.ok(html.includes(brk), `card should carry the engine's "${brk}"`);
+  // The export carries ONE figure, not two. The break figure lives on the grid.
+  const brk = ENGINE.heatFor(HB, SUBJECT.key, 'BREAK', I.HB_BEST_OF, 'all').globalLabel;
+  assert.ok(!html.includes(brk), 'the export\'s launcher carries hold only, no break pill');
 });
 
 // ── 2. the mock's number is NOT reproduced ──────────────────────────────────
@@ -110,7 +111,7 @@ check('the headline moves with the surface chip (so it is not a frozen string)',
 check('a player with no point-by-point data gets words, not an "Open" button', () => {
   const html = I.hbLauncherHtml(ABSENT);
   assert.ok(!/data-pp2="heat"/.test(html),
-    'offered "Open ›" to a player with no data — it would open an empty grid');
+    'offered the heatmap control to a player with no data — it would open an empty grid');
   assert.ok(/no point-by-point data on record/.test(html),
     'should state in words why there is nothing to open');
   assert.ok(!/\d+%/.test(html), 'printed a percentage for a player we hold nothing for');
@@ -145,6 +146,24 @@ check('the Live trading modal body is the launcher, not the inlined grid', () =>
   assert.ok(/data-pp2="heat"/.test(body), 'the modal body carries no launcher');
   assert.ok(!/pp2-hb-grids/.test(body),
     'the modal body still inlines the grid — item 2 moves it behind the launcher');
+});
+
+// ── the export's own chrome (Player Stat Boxes.dc.html:904-918) ────────────
+check('the launcher matches the export\'s chrome', () => {
+  I.state.hbSurf = 'all';
+  const html = I.hbLauncherHtml(SUBJECT);
+  const want = [
+    ['background:#06070a', 'card background'],
+    ['border-radius:11px', 'card radius'],
+    ['padding:13px 15px', 'card padding'],
+    ['width:30px;height:30px', 'icon tile size'],
+    ['Hold / break heatmap', 'title, spaced slash'],
+    ['hold and break by service-game pair, set by set', 'the export subtitle'],
+    ["font-family:'IBM Plex Mono',monospace;font-size:10.5px", 'mono subtitle'],
+  ];
+  for (const [needle, what] of want) {
+    assert.ok(html.includes(needle), `${what} is off the export: missing ${needle}`);
+  }
 });
 
 console.log(`\nheatmap launcher: ${pass} pass, ${fail} fail`);
