@@ -1,7 +1,7 @@
 {
   "latest": {
-    "maxAgeMin": 194.7,
-    "measured": 18,
+    "maxAgeMin": 210.4,
+    "measured": 17,
     "stale": [
       "G. Heide v D. Stricker (ATP ATP Davis Cup - World Group I, 2026-09-20)",
       "L. Draxl v Q. Halys (ATP ATP Davis Cup - World Group, 2026-09-20)"
@@ -9,15 +9,6 @@
   },
   "note": "Age of the published bet365 NOW leg, measured as now - observedAt against the artefact Pages is serving. Capture staleness and publish staleness are both inside this number, which is what the visitor sees. Re-derive the threshold on TEN-187.",
   "samples": [
-    {
-      "at": "2026-09-15T16:00:01Z",
-      "maxAgeMin": null,
-      "measured": 0,
-      "noBet365Line": 0,
-      "noClock": 0,
-      "stale": 0,
-      "thresholdMin": 120.0
-    },
     {
       "at": "2026-09-15T16:15:01Z",
       "maxAgeMin": null,
@@ -3608,9 +3599,18 @@
       "noClock": 0,
       "stale": 2,
       "thresholdMin": 120.0
+    },
+    {
+      "at": "2026-09-20T03:17:39Z",
+      "maxAgeMin": 210.4,
+      "measured": 17,
+      "noBet365Line": 15,
+      "noClock": 0,
+      "stale": 2,
+      "thresholdMin": 120.0
     }
   ],
   "schema": "odds-now-staleness/1",
   "thresholdMin": 120.0,
-  "updatedAt": "2026-09-20T03:01:59Z"
+  "updatedAt": "2026-09-20T03:17:39Z"
 }
