@@ -39,8 +39,11 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: 'sweep | backfill | report | cards | publish | audit | sides | books'
+        description: 'sweep | backfill | report | cards | publish | audit | sides | books | gate'
         default: 'sweep'
+      feed_source_id:
+        description: 'gate: the book under test, e.g. 171 for Bet105. No default on purpose — verified against the live entitlement before anything is reported.'
+        default: ''
       cadence_gate:
         description: 'sweep: apply should_sweep() before pulling (the pinger sets this)'
         default: 'false'
@@ -375,6 +378,29 @@ jobs:
       # TEN-225 side-mapping diagnosis. Read-only, no vendor calls. Answers
       # what a Kibl side_id actually is, after the census showed side_id 1 never
       # appears and every priced fixture carries 2+3.
+      # TEN-232 — the Bet105 gate. REPORT ONLY: it reads the book under test
+      # directly instead of through VERIFIED_FEED_SOURCE_ID, because the card
+      # path's filter is 43 and Bet105 is 171, so running the card path today
+      # would read zero rows and print a clean 0% for every figure the founder
+      # asked for. It writes nothing and renders nothing.
+      #
+      # API_TENNIS_KEY is passed because the side-mapping gate's free referee
+      # arm needs it. Without it the gate sees the board alone, which on a
+      # Challenger-heavy book is almost no referee at all.
+      - name: Bet105 gate (report only)
+        if: inputs.mode == 'gate'
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          KIBL_USERNAME: ${{ secrets.KIBL_USERNAME }}
+          KIBL_PASSWORD: ${{ secrets.KIBL_PASSWORD }}
+          API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
+        run: |
+          set -o pipefail
+          python3 -B ten232-bet105-gate.py \
+            --feed-source-id "${{ inputs.feed_source_id }}" \
+            | tee -a "$GITHUB_STEP_SUMMARY"
+
       - name: Side-mapping probe
         if: inputs.mode == 'sides'
         env:
