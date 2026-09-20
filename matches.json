@@ -9350,19 +9350,21 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.41,
+      "p1": 1.44,
       "p2": 2.62,
-      "bookmaker": "bet365"
+      "bookmaker": "bet365",
+      "seenAt": "2026-09-20T08:43:44.451Z"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.41,
-        "bookmaker": "bet365"
+        "price": 1.5,
+        "bookmaker": "Pncl"
       },
       "p2": {
-        "price": 2.62,
-        "bookmaker": "bet365"
-      }
+        "price": 3.02,
+        "bookmaker": "1xBet"
+      },
+      "seenAt": "2026-09-20T08:43:44.451Z"
     },
     "tournamentRound": "",
     "p1Key": 1900,
@@ -15629,19 +15631,21 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 2.37,
-      "p2": 1.5,
-      "bookmaker": "bet365"
+      "p1": 2.38,
+      "p2": 1.57,
+      "bookmaker": "Betfair",
+      "seenAt": "2026-09-20T08:43:44.451Z"
     },
     "bestOdds": {
       "p1": {
-        "price": 2.37,
-        "bookmaker": "bet365"
+        "price": 2.48,
+        "bookmaker": "1xBet"
       },
       "p2": {
-        "price": 1.5,
-        "bookmaker": "bet365"
-      }
+        "price": 1.57,
+        "bookmaker": "Betfair"
+      },
+      "seenAt": "2026-09-20T08:43:44.451Z"
     },
     "tournamentRound": "",
     "p1Key": 11182,
@@ -17333,7 +17337,28 @@
         "since": "2026-09-20T02:21:15.278Z"
       }
     },
-    "oddsMovement": null,
+    "oddsMovement": {
+      "market": "Match Winner",
+      "capturedAt": "2026-09-20T09:15:01Z",
+      "startTime": "2026-09-20T09:10:00.000Z",
+      "fixtureId": "id1200210074871854",
+      "books": {
+        "bet365": {
+          "p1": [
+            [
+              "2026-09-20T09:01:16.559Z",
+              2.37
+            ]
+          ],
+          "p2": [
+            [
+              "2026-09-20T09:01:16.559Z",
+              1.5
+            ]
+          ]
+        }
+      }
+    },
     "bet365Now": {
       "p1": 2.37,
       "p2": 1.5,
@@ -17356,19 +17381,21 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.97,
-      "p2": 1.69,
-      "bookmaker": "bet365"
+      "p1": 2.11,
+      "p2": 1.74,
+      "bookmaker": "1xBet",
+      "seenAt": "2026-09-20T08:43:44.451Z"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.97,
-        "bookmaker": "bet365"
+        "price": 2.11,
+        "bookmaker": "1xBet"
       },
       "p2": {
-        "price": 1.69,
-        "bookmaker": "bet365"
-      }
+        "price": 1.74,
+        "bookmaker": "1xBet"
+      },
+      "seenAt": "2026-09-20T08:43:44.451Z"
     },
     "tournamentRound": "",
     "p1Key": 23664,
@@ -19384,7 +19411,7 @@
     },
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-09-20T09:00:00Z",
+      "capturedAt": "2026-09-20T09:15:01Z",
       "startTime": "2026-09-20T10:10:00.000Z",
       "fixtureId": "id1200210074871690",
       "books": {
@@ -20616,7 +20643,28 @@
         "since": "2026-09-20T04:53:22.315Z"
       }
     },
-    "oddsMovement": null
+    "oddsMovement": {
+      "market": "Match Winner",
+      "capturedAt": "2026-09-20T09:15:01Z",
+      "startTime": "2026-09-20T10:20:00.000Z",
+      "fixtureId": "id1200210074871958",
+      "books": {
+        "bet365": {
+          "p1": [
+            [
+              "2026-09-20T09:02:55.736Z",
+              12.0
+            ]
+          ],
+          "p2": [
+            [
+              "2026-09-20T09:02:55.736Z",
+              1.012
+            ]
+          ]
+        }
+      }
+    }
   },
   {
     "id": "upcoming-12164148",
@@ -21798,19 +21846,21 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.25,
-      "p2": 3.5,
-      "bookmaker": "bet365"
+      "p1": 1.33,
+      "p2": 3.58,
+      "bookmaker": "Pncl",
+      "seenAt": "2026-09-20T08:43:44.451Z"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.25,
-        "bookmaker": "bet365"
+        "price": 1.33,
+        "bookmaker": "Pncl"
       },
       "p2": {
-        "price": 3.5,
-        "bookmaker": "bet365"
-      }
+        "price": 3.58,
+        "bookmaker": "Pncl"
+      },
+      "seenAt": "2026-09-20T08:43:44.451Z"
     },
     "tournamentRound": "",
     "p1Key": 2848,
@@ -23762,7 +23812,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/9385_v-gaubas.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-09-20T09:00:00Z",
+      "capturedAt": "2026-09-20T09:15:01Z",
       "startTime": "2026-09-20T12:10:00.000Z",
       "fixtureId": "id1200210074825608",
       "books": {
@@ -23916,19 +23966,21 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.15,
-      "p2": 4.5,
-      "bookmaker": "bet365"
+      "p1": 1.21,
+      "p2": 4.76,
+      "bookmaker": "Pncl",
+      "seenAt": "2026-09-20T08:43:44.451Z"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.15,
-        "bookmaker": "bet365"
+        "price": 1.21,
+        "bookmaker": "Pncl"
       },
       "p2": {
-        "price": 4.5,
-        "bookmaker": "bet365"
-      }
+        "price": 5.02,
+        "bookmaker": "1xBet"
+      },
+      "seenAt": "2026-09-20T08:43:44.451Z"
     },
     "tournamentRound": "",
     "p1Key": 2677,
@@ -25754,7 +25806,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/9362_e-butvilas.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-09-20T09:00:00Z",
+      "capturedAt": "2026-09-20T09:15:01Z",
       "startTime": "2026-09-20T13:20:00.000Z",
       "fixtureId": "id1200210074825610",
       "books": {
@@ -25908,19 +25960,21 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 2.75,
-      "p2": 1.37,
-      "bookmaker": "bet365"
+      "p1": 2.95,
+      "p2": 1.42,
+      "bookmaker": "Betfair",
+      "seenAt": "2026-09-20T08:43:44.451Z"
     },
     "bestOdds": {
       "p1": {
-        "price": 2.75,
-        "bookmaker": "bet365"
+        "price": 3.54,
+        "bookmaker": "1xBet"
       },
       "p2": {
-        "price": 1.37,
-        "bookmaker": "bet365"
-      }
+        "price": 1.42,
+        "bookmaker": "Betfair"
+      },
+      "seenAt": "2026-09-20T08:43:44.451Z"
     },
     "tournamentRound": "",
     "p1Key": 436,
@@ -28239,19 +28293,21 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.8,
-      "p2": 1.8,
-      "bookmaker": "bet365"
+      "p1": 1.91,
+      "p2": 1.91,
+      "bookmaker": "Betfair",
+      "seenAt": "2026-09-20T08:43:44.451Z"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.8,
-        "bookmaker": "bet365"
+        "price": 1.91,
+        "bookmaker": "Betfair"
       },
       "p2": {
-        "price": 1.8,
-        "bookmaker": "bet365"
-      }
+        "price": 1.92,
+        "bookmaker": "1xBet"
+      },
+      "seenAt": "2026-09-20T08:43:44.451Z"
     },
     "tournamentRound": "",
     "p1Key": 397,
@@ -30331,7 +30387,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/742_s-sakellaridis.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-09-20T09:00:00Z",
+      "capturedAt": "2026-09-20T09:15:01Z",
       "startTime": "2026-09-20T10:20:00.000Z",
       "fixtureId": "id1200210074827558",
       "books": {
@@ -31804,19 +31860,21 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.1,
-      "p2": 5.5,
-      "bookmaker": "bet365"
+      "p1": 1.11,
+      "p2": 6.91,
+      "bookmaker": "Pncl",
+      "seenAt": "2026-09-20T08:43:44.451Z"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.1,
-        "bookmaker": "bet365"
+        "price": 1.13,
+        "bookmaker": "Betano"
       },
       "p2": {
-        "price": 5.5,
-        "bookmaker": "bet365"
-      }
+        "price": 6.91,
+        "bookmaker": "Pncl"
+      },
+      "seenAt": "2026-09-20T08:43:44.451Z"
     },
     "tournamentRound": "",
     "p1Key": 1980,
@@ -33806,7 +33864,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/10869_d-prizmic.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-09-20T09:00:00Z",
+      "capturedAt": "2026-09-20T09:15:01Z",
       "startTime": "2026-09-20T11:10:00.000Z",
       "fixtureId": "id1200210074826376",
       "books": {
@@ -33819,6 +33877,10 @@
             [
               "2026-09-20T06:20:10.612Z",
               1.1
+            ],
+            [
+              "2026-09-20T09:15:52.469Z",
+              1.091
             ]
           ],
           "p2": [
@@ -33829,6 +33891,10 @@
             [
               "2026-09-20T06:20:10.612Z",
               5.5
+            ],
+            [
+              "2026-09-20T09:15:52.469Z",
+              6.0
             ]
           ]
         }
@@ -33950,19 +34016,21 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.17,
-      "p2": 4.33,
-      "bookmaker": "bet365"
+      "p1": 1.2,
+      "p2": 4.73,
+      "bookmaker": "Pncl",
+      "seenAt": "2026-09-20T08:43:44.451Z"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.17,
-        "bookmaker": "bet365"
+        "price": 1.2,
+        "bookmaker": "Betfair"
       },
       "p2": {
-        "price": 4.33,
-        "bookmaker": "bet365"
-      }
+        "price": 4.73,
+        "bookmaker": "Pncl"
+      },
+      "seenAt": "2026-09-20T08:43:44.451Z"
     },
     "tournamentRound": "",
     "p1Key": 8174,
@@ -35683,7 +35751,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/6505_a-andrade.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-09-20T09:00:00Z",
+      "capturedAt": "2026-09-20T09:15:01Z",
       "startTime": "2026-09-20T12:10:00.000Z",
       "fixtureId": "id1200210074827782",
       "books": {
@@ -35816,19 +35884,21 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.3,
-      "p2": 3.25,
-      "bookmaker": "bet365"
+      "p1": 1.35,
+      "p2": 3.28,
+      "bookmaker": "Pncl",
+      "seenAt": "2026-09-20T08:43:44.451Z"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.3,
-        "bookmaker": "bet365"
+        "price": 1.35,
+        "bookmaker": "Pncl"
       },
       "p2": {
-        "price": 3.25,
-        "bookmaker": "bet365"
-      }
+        "price": 3.4,
+        "bookmaker": "Betfair"
+      },
+      "seenAt": "2026-09-20T08:43:44.451Z"
     },
     "tournamentRound": "",
     "p1Key": 1099,
@@ -37691,7 +37761,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/28615_m-dodig.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-09-20T09:00:00Z",
+      "capturedAt": "2026-09-20T09:15:01Z",
       "startTime": "2026-09-20T12:20:00.000Z",
       "fixtureId": "id1200210074827016",
       "books": {
@@ -37832,19 +37902,21 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.032,
-      "p2": 9.0,
-      "bookmaker": "bet365"
+      "p1": 1.06,
+      "p2": 9.19,
+      "bookmaker": "Pncl",
+      "seenAt": "2026-09-20T08:43:44.451Z"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.032,
-        "bookmaker": "bet365"
+        "price": 1.06,
+        "bookmaker": "Pncl"
       },
       "p2": {
-        "price": 9.0,
-        "bookmaker": "bet365"
-      }
+        "price": 9.19,
+        "bookmaker": "Pncl"
+      },
+      "seenAt": "2026-09-20T08:43:44.451Z"
     },
     "tournamentRound": "",
     "p1Key": 15184,
@@ -39398,7 +39470,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/9230_a-guillen-meza.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-09-20T09:00:00Z",
+      "capturedAt": "2026-09-20T09:15:01Z",
       "startTime": "2026-09-20T13:20:00.000Z",
       "fixtureId": "id1200210074827816",
       "books": {

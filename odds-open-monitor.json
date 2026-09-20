@@ -1633,14 +1633,28 @@
     "id1200210074871958": {
       "alerted": true,
       "alertedAt": "2026-09-20T08:17:02Z",
-      "captureLagH": null,
+      "captureLagH": 0.2,
       "date": "2026-09-20",
+      "firstSeenAt": "2026-09-20T09:15:01Z",
       "hoursOutAtAlert": 2.05,
-      "openAt": null,
+      "openAt": "2026-09-20T09:02:55.736Z",
       "p1": "P. Photiades",
       "p2": "O. Krutykh",
-      "postingLeadH": null,
+      "postingLeadH": 1.28,
       "startTime": "2026-09-20T10:20:00.000Z",
+      "tour": "ATP ATP Davis Cup - World Group II"
+    },
+    "id1200210074873488": {
+      "alerted": true,
+      "alertedAt": "2026-09-20T09:15:01Z",
+      "captureLagH": null,
+      "date": "2026-09-20",
+      "hoursOutAtAlert": 4.08,
+      "openAt": null,
+      "p1": "Y. Dlimi",
+      "p2": "C. Abua",
+      "postingLeadH": null,
+      "startTime": "2026-09-20T13:20:00.000Z",
       "tour": "ATP ATP Davis Cup - World Group II"
     },
     "id1200259173992438": {
@@ -1683,5 +1697,5 @@
   },
   "schema": "odds-open-monitor/1",
   "thresholdHours": 24.0,
-  "updatedAt": "2026-09-20T09:00:00Z"
+  "updatedAt": "2026-09-20T09:15:01Z"
 }
