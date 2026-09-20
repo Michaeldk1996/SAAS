@@ -178,19 +178,82 @@ test('item 1.3: the entry-lists alias still routes rather than 404ing', () => {
     'the alias must select the Entry list section');
 });
 
-test('item 3: "What players say" is not built', () => {
-  // We have a press-conference transcript source (tools/asapsports-signal.js) but
-  // it is player-keyed pre-match readiness, not tournament-keyed quotes — and it
-  // has been empty since 2026-08-06. The founder ruled: build nothing, not even a
-  // placeholder that implies the data exists.
-  // Strip line comments before matching: this file's own source explains WHY the
-  // card is absent, and an explanation is not an implementation. Matching raw
-  // text here would make the test fail on its own documentation.
-  const tourx = code(DASH.slice(DASH.indexOf('function tourxOverlayShell')));
-  assert.ok(!/What players say|Read all \$\{|quotesPanel|tourQuotesOpen|notes<|curly/.test(tourx),
-    'no quotes card, overlay or placeholder may appear on the Tournaments page');
-  // and nothing may imply the data is coming
-  assert.ok(!/coming soon/i.test(tourx), 'no "coming soon" state may imply a quote source exists');
+test('phase 2 C2: the quotes card renders ONLY when quotes exist — never a placeholder', () => {
+  // SUPERSEDES the phase-1 guard "What players say is not built". Phase 1 had no
+  // quote source; phase 2 imported 425 of them from the founder's sheet. The
+  // invariant that survives is the one that always mattered: nothing on this page
+  // may imply quotes exist for an event that has none. 19 of our 64 rated events
+  // have none and must show no card at all.
+  assert.match(DASH, /function tourxQuotesCardHtml\(c\)\{/);
+  const card = DASH.slice(DASH.indexOf('function tourxQuotesCardHtml(c){'),
+                          DASH.indexOf('function tourxQuotesPanelHtml'));
+  assert.match(card, /if \(!list\) return '';/,
+    'no quotes must return an EMPTY STRING — an empty node would still occupy the column gap');
+  const cardCode = code(card);
+  assert.ok(!/coming soon|not yet|no quotes|placeholder/i.test(cardCode),
+    'no empty state, no "coming soon", nothing that implies the data exists');
+
+  // FOUNDER RULING: render VERBATIM; curly-wrap only values carrying no quotes
+  // of their own. 378 of 425 already contain their own quotation marks.
+  assert.match(DASH, /return qt\.selfQuoted \? t : `“\$\{t\}”`;/,
+    'the curly wrap is conditional on selfQuoted — wrapping narration double-quotes it');
+
+  // C4: attribution shows only what exists. Never an invented year, never "n.d."
+  const attrib = DASH.slice(DASH.indexOf('function tourxQuoteAttrib(qt){'),
+                            DASH.indexOf('function tourxQuoteText'));
+  assert.match(attrib, /if \(qt\.year\) bits\.push/);
+  assert.ok(!/n\.d\.|unknown|—/.test(code(attrib)),
+    'a missing year contributes NOTHING to the attribution line, not a placeholder');
+});
+
+test('phase 2 B: the Database page is mountable, and the standalone call site is untouched', () => {
+  assert.match(DASH, /function mount\(root, opts\)\{/, 'mount(root, opts) must exist');
+  assert.match(DASH, /return \{.*\bmount:\s*mount\b.*\binit:\s*init\b.*$/m,
+    'the module must export BOTH mount and init — init() is the standalone page\'s untouched call site');
+  assert.match(DASH, /if \(tab === 'database'\) \{ if \(window\.DatabaseTab\) window\.DatabaseTab\.init\(\); \}/,
+    'the nav call site is deliberately unchanged');
+  // no DOM read may escape its instance root
+  assert.ok(!/getElementById\('db/.test(DASH),
+    'every Database DOM read must be root-scoped via q(); a document-wide lookup makes two mounts fight');
+  // B4: the overlay opens with round empty and the full year range so the tour
+  // baseline column is valid on open.
+  const m = DASH.slice(DASH.indexOf('if(opts.initialTournamentNames'), DASH.indexOf('    // 4: the side is not decoration'));
+  assert.ok(m.length > 200, 'could not isolate the initialTournamentNames branch');
+  assert.match(m, /state\.view='tournaments';/);
+  assert.match(m, /state\.rounds=null;/);
+  assert.match(m, /state\.yearMin=null; state\.yearMax=null;/);
+
+  // THE KEY. The overlay must pass OFFICIAL ARCHIVE STRINGS, never the catalog
+  // name — measured, only 4 of 73 catalog names exist in the archive, so the
+  // catalog name opened an empty panel on 69 of them. And the strings must come
+  // from tournament-market.json, which is the same map the ROI figure on the
+  // clicked card was pooled from: any other source could make the panel show a
+  // different population than the number the reader just clicked.
+  assert.match(m, /state\.tournament=opts\.initialTournamentNames\.slice\(\);/);
+  assert.ok(!/initialTournament:\s*c\.name/.test(DASH_CODE),
+    'the catalog name must never be passed as the Database subject');
+  assert.match(DASH, /const names = mkt && mkt\.archiveNames;/,
+    'the archive names must come from tournament-market.json, not be re-derived');
+  // and no fallback: an event with no archive names opens nothing at all
+  assert.match(DASH, /if \(host && c && names && names\.length\)\{/);
+
+  // The filter must accept a SET — 28 of 61 events pool several sponsor strings.
+  assert.match(DASH, /Array\.isArray\(state\.tournament\) \? state\.tournament : \[state\.tournament\]/);
+  assert.match(DASH, /if\(!tSet \|\| !tSet\.length\) return out; if\(tSet\.indexOf\(r\[4\]\)<0\) continue;/);
+
+  // The embed must carry data-page=database or every --db-* var is undefined.
+  assert.match(DASH, /data-db-root="roi" data-page="database"/,
+    'the mount root carries the attribute the --db-* custom properties are declared on');
+  assert.match(DASH, /#dbBody, \[data-db="body"\]\{/,
+    'an ID selector cannot match the embedded body');
+
+  // The leak: dedupe on a stable key, evict detached roots.
+  assert.match(DASH, /if\(ex\.root!==root && !document\.contains\(ex\.root\)\) INSTANCES\.splice\(i,1\);/);
+  assert.match(DASH, /for\(var i2=0;i2<INSTANCES\.length;i2\+\+\) if\(INSTANCES\[i2\]\.key===key\) inst=INSTANCES\[i2\];/);
+
+  // The side is read, not just stored.
+  assert.match(DASH, /function focusSide\(inst\)\{/);
+  assert.match(DASH, /inst\.side = opts\.side \|\| null;/);
 });
 
 test('item 6.1: the per-week absence fires on "nothing loaded", not "no events"', () => {
@@ -388,4 +451,144 @@ test('ruling: the knob scale is derived from the venue set, not a hardcoded span
     'the README\'s hardcoded 0.50–1.50 knob domain has come back');
   assert.ok(!/0\.41/.test(fnSource(DASH, 'function tourxKnobPct(as, speeds){')),
     'the observed minimum must not be written into the scale — next season\'s outlier would pin silently');
+});
+
+// ---------------------------------------------------------------------------
+// B key design: a live "Open favourites graphics →" link must never open a panel
+// that says we hold no data for an event we hold data for.
+//
+// The link renders when `archiveNames` is non-empty. But archiveNames comes from
+// build-tournament-market.js's ALIAS and is filtered against the ODDS CSVs,
+// while the panel resolves those strings against database-yield.json's own list.
+// Those two lists are not the same: measured 2026-09-20, 16 of 61 events name at
+// least one archive string the Database archive does not hold. Today every event
+// still has at least one string that DOES resolve, so no link opens empty — this
+// test is what notices if that stops being true.
+test('B: every event with a live ROI link resolves at least one archive string', () => {
+  const mkt = JSON.parse(readFileSync(join(HERE, 'tournament-market.json'), 'utf8'));
+  const dby = JSON.parse(readFileSync(join(HERE, 'database-yield.json'), 'utf8'));
+  const held = new Set((dby.meta && dby.meta.tournaments) || []);
+  assert.ok(held.size > 100, `database-yield.json lists only ${held.size} tournaments — wrong shape`);
+
+  const empty = [], partial = [];
+  for (const [name, t] of Object.entries(mkt.tournaments || {})) {
+    const an = t.archiveNames || [];
+    if (!an.length) continue;                       // no link is rendered; fine
+    const hit = an.filter((s) => held.has(s));
+    if (!hit.length) empty.push(`${name} (${an.join(' | ')})`);
+    else if (hit.length < an.length) partial.push(`${name} ${hit.length}/${an.length}`);
+  }
+  assert.deepEqual(empty, [],
+    `these events render a clickable ROI card whose panel resolves NOTHING — the reader clicks through to "No matches for this filter" on an event we hold an archive for: ${empty.join('; ')}`);
+
+  // Not a failure — the card and the panel use the SAME ALIAS, so they under-cover
+  // together and never disagree with each other. Pinned so a change is noticed.
+  assert.ok(partial.length <= 16,
+    `${partial.length} events now name archive strings the Database does not hold (was 16). If this grew, the ALIAS gained a string that resolves nowhere: ${partial.join(', ')}`);
+});
+
+// ---------------------------------------------------------------------------
+// FOUNDER RULING 2026-09-20: "Land the guard with it: build FAILS when a new
+// document-wide getElementById appears in that module. TEN-243 added one while
+// B was in review, so the pattern is still spreading. Fix the class, not the
+// four instances."
+//
+// The class is a DOCUMENT-WIDE DOM LOOKUP inside DatabaseTab. With two mounts
+// on the page, `document.getElementById('dbBody')` resolves to whichever node
+// happens to be first in the document — so the overlay renders into the
+// standalone page, or the reverse. Last render wins and the other mount goes
+// blank. Every such lookup must go through q(), which is root-scoped.
+//
+// This test is deliberately BROADER than getElementById: querySelector against
+// the document has the identical failure mode, and blocking only the exact
+// call TEN-243 used would just move the pattern one method along.
+test('RULING: DatabaseTab contains NO document-wide DOM lookup (the class, not the instances)', () => {
+  const i = DASH.indexOf('window.DatabaseTab = (function(){');
+  assert.ok(i > 0, 'DatabaseTab module not found');
+  const m = /\n[ \t]*return \{.*\binit:\s*init\b.*$/m.exec(DASH.slice(i));
+  assert.ok(m, 'DatabaseTab module end not found');
+  const MODULE = DASH.slice(i, i + m.index);
+
+  // The ONE legitimate document read: init() has to find the standalone root
+  // before any instance exists, so it cannot be root-scoped by definition.
+  const ALLOWED = [`document.querySelector('[data-db-root="standalone"]')`];
+
+  const offenders = [];
+  const re = /document\s*\.\s*(getElementById|querySelector|querySelectorAll)\s*\([^)]*\)/g;
+  let hit;
+  while ((hit = re.exec(MODULE)) !== null) {
+    const call = hit[0].replace(/\s+/g, ' ');
+    if (ALLOWED.some((a) => call.replace(/\s+/g, ' ') === a)) continue;
+    // line number in the real file, so the failure points at the source
+    const line = DASH.slice(0, i + hit.index).split('\n').length;
+    offenders.push(`bsp-consult-dashboard.html:${line}  ${call}`);
+  }
+
+  assert.deepEqual(offenders, [],
+    `DatabaseTab must address its DOM through q(), which is scoped to the active ` +
+    `instance's root. A document-wide lookup makes two mounts fight over one node ` +
+    `and the last render wins. Route these through q('<name>') and give the node a ` +
+    `data-db attribute:\n  ` + offenders.join('\n  '));
+
+  // Anti-vacuity: the regex must actually match this shape, or an empty
+  // offenders list means nothing. Prove it fires on a planted call.
+  const planted = MODULE + `\n  var x = document.getElementById('dbBody');\n`;
+  const found = [...planted.matchAll(re)].filter(
+    (h) => !ALLOWED.includes(h[0].replace(/\s+/g, ' ')));
+  assert.equal(found.length, 1,
+    'the detector did not fire on a planted document.getElementById — it is not testing anything');
+});
+
+// ---------------------------------------------------------------------------
+// FOUNDER RULING 2026-09-20 (divergence -> align_window): the ROI card and the
+// Database panel it links to must cover the same matches.
+//
+// They are now computed from the SAME STORE — build-tournament-market.js reads
+// database-yield.json's rows rather than re-parsing the CSVs with its own
+// window, book and exclusion rules. This test recomputes every card's figures
+// straight from that store and requires an exact match, so the two can never
+// drift apart again the way they did (Hamburg: card -10.5%, panel +0.71%).
+test('RULING: every ROI card equals the panel it links to, recomputed from the store', () => {
+  const mkt = JSON.parse(readFileSync(join(HERE, 'tournament-market.json'), 'utf8'));
+  const y = JSON.parse(readFileSync(join(HERE, 'database-yield.json'), 'utf8'));
+  const names = y.meta.tournaments;
+  const idx = new Map(names.map((n, i) => [n, i]));
+
+  assert.match(mkt.source, /database-yield\.json/,
+    'the market artefact no longer declares the yield store as its source — if it went back to parsing the CSVs, the window/book divergence is back');
+  assert.equal(mkt.windowStart, y.meta.windowStart,
+    'the card window and the panel window disagree');
+
+  const mismatches = [];
+  let checked = 0;
+  for (const [name, t] of Object.entries(mkt.tournaments)) {
+    const want = (t.archiveNames || []).map((n) => idx.get(n)).filter((i) => i !== undefined);
+    if (!want.length) continue;
+    const rs = y.rows.filter((r) => want.includes(r[4]));
+    let sf = 0, sd = 0, fw = 0;
+    for (const r of rs) { const w = !!r[7]; sf += (w ? r[5] : 0) - 1; sd += (w ? 0 : r[6]) - 1; if (w) fw++; }
+    const exp = {
+      n: rs.length,
+      roiFav: +(sf / rs.length * 100).toFixed(1),
+      roiDog: +(sd / rs.length * 100).toFixed(1),
+      favRel: Math.round(fw / rs.length * 100),
+    };
+    checked++;
+    for (const k of ['n', 'roiFav', 'roiDog', 'favRel']) {
+      if (exp[k] !== t[k]) mismatches.push(`${name}.${k}: card ${t[k]} vs store ${exp[k]}`);
+    }
+  }
+  assert.ok(checked >= 50, `only ${checked} events cross-checked — the recomputation is not covering the artefact`);
+  assert.deepEqual(mismatches, [],
+    `these ROI cards do NOT match the panel they open — a reader clicks a figure and lands on a different one:\n  ${mismatches.join('\n  ')}`);
+
+  // Anti-vacuity: the recomputation must be capable of disagreeing. Perturb one
+  // card and confirm the same comparison catches it.
+  const probe = Object.entries(mkt.tournaments)[0];
+  const want = probe[1].archiveNames.map((n) => idx.get(n)).filter((i) => i !== undefined);
+  const rs = y.rows.filter((r) => want.includes(r[4]));
+  assert.notEqual(rs.length, probe[1].n + 1,
+    'control setup is degenerate');
+  assert.ok(rs.length === probe[1].n,
+    'the control event does not reconcile, so the comparison above is not actually comparing');
 });

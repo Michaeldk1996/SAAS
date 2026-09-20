@@ -141,43 +141,117 @@ function agg(cs) {
 }
 
 function main() {
-  const rev = {};
-  for (const [dash, arcs] of Object.entries(ALIAS)) for (const a of arcs) (rev[a] = rev[a] || []).push(dash);
+  // FOUNDER RULING 2026-09-20 — "so card and panel agree".
+  //
+  // The ROI cards link straight into the Database panel for the same event.
+  // They used to be two different measurements of it, and on Hamburg they
+  // disagreed IN SIGN: card -10.5%, panel +0.71%, one click apart.
+  //
+  // Two causes, both measured from the CSVs:
+  //   1. the WINDOW  - this builder read every season from 2004; the panel's
+  //                    store starts at 2010 (founder ruling 2026-09-04: the
+  //                    2004-08 game is "a materially different sport").
+  //                    Worth 2.4pp of Hamburg's 11.2pp gap.
+  //   2. the PRICE   - this builder averaged across books on Completed rows;
+  //                    the panel reads Pinnacle (Bet365 from 2026), includes
+  //                    Retired, and drops exact ties and >1.15-overround
+  //                    markets. Worth the other 8.8pp.
+  //
+  // Aligning the window alone left the sign flip intact. Rather than duplicate
+  // the panel's four exclusion rules here - duplicated rules drift, and this
+  // whole defect IS two copies drifting - the cards are now computed FROM THE
+  // PANEL'S OWN ROWS. Same store, same prices, same exclusions. The card and
+  // the panel now agree by construction rather than by coincidence, and I do
+  // not have to keep two rule sets in step by hand.
+  const YIELD = path.join(ROOT, 'database-yield.json');
+  if (!fs.existsSync(YIELD)) {
+    throw new Error(`${YIELD} is missing - the ROI cards are derived from it, and inventing a population is what these rulings exist to stop.`);
+  }
+  const Y = JSON.parse(fs.readFileSync(YIELD, 'utf8'));
+  const meta = Y.meta || {};
+  const rows = Y.rows;
+  const names = meta.tournaments;
+  if (!Array.isArray(rows) || !rows.length) throw new Error('database-yield.json carries no rows.');
+  if (!Array.isArray(names) || !names.length) throw new Error('database-yield.json carries no meta.tournaments.');
 
-  const files = fs.readdirSync(ARCHIVE_DIR).filter((f) => /^\d{4}\.csv$/.test(f)).sort();
-  if (!files.length) throw new Error(`no season CSVs in ${ARCHIVE_DIR}`);
+  // row = [date, level, surface, round, tournamentIdx, favPrice, dogPrice, favWon, book]
+  const R_TOURN = 4, R_FAV = 5, R_DOG = 6, R_WON = 7;
 
-  const all = [];
-  const buck = {};
-  for (const f of files) {
-    for (const r of parseCsv(path.join(ARCHIVE_DIR, f))) {
-      const c = contrib(r);
-      if (!c) continue;
-      all.push(c);
-      const ds = rev[r.tournament];
-      if (ds) for (const d of ds) (buck[d] = buck[d] || []).push(c);
-    }
+  const idxOf = new Map();
+  names.forEach((n, i) => idxOf.set(n, i));
+
+  const byIdx = new Map();          // tournamentIdx -> rows
+  for (const r of rows) {
+    const t = r[R_TOURN];
+    if (!byIdx.has(t)) byIdx.set(t, []);
+    byIdx.get(t).push(r);
   }
 
-  const baseline = agg(all);
+  const baseline = aggRows(rows);
+
   const tournaments = {};
-  for (const [name, cs] of Object.entries(buck)) {
-    const a = agg(cs);
-    if (a && a.n >= MIN_MATCHES) tournaments[name] = a;
+  const unresolved = {};
+  for (const [name, arcs] of Object.entries(ALIAS)) {
+    const hit = [], miss = [];
+    let pool = [];
+    for (const a of arcs) {
+      const ix = idxOf.get(a);
+      if (ix === undefined) { miss.push(a); continue; }
+      const rs = byIdx.get(ix);
+      if (!rs || !rs.length) { miss.push(a); continue; }
+      hit.push(a);
+      pool = pool.concat(rs);
+    }
+    if (miss.length) unresolved[name] = miss;
+    const a = aggRows(pool);
+    if (a && a.n >= MIN_MATCHES) {
+      // Emit the archive strings this figure was ACTUALLY pooled from. The
+      // Tournaments page hands these to the Database panel, so the panel's
+      // population is the card's population - the same rows, not a re-derivation.
+      tournaments[name] = Object.assign({}, a, { archiveNames: hit });
+    }
   }
 
   const out = {
     version: 1,
     builtAt: new Date().toISOString(),
-    source: 'odds-archive/*.csv — tennis-data.co.uk average closing prices',
-    priceBasis: 'average closing price across books (avgw/avgl); favourite = shorter price',
-    note: 'Flat 1u yields and favourite win rate per tournament, pooled across all archive seasons. Baseline pooled over every archive match.',
+    source: 'database-yield.json — the same rows the Database panel renders',
+    priceBasis: `${(meta.books || []).join(' / ') || 'unknown'}; favourite = shorter price. Inherited from database-yield.json, not recomputed.`,
+    windowStart: meta.windowStart || null,
+    dateRange: meta.dateRange || null,
+    note: 'Flat 1u yields and favourite win rate per tournament, computed from database-yield.json so that an ROI card and the Database panel it links to cover exactly the same matches. Baseline pooled over every row in that store.',
     minMatches: MIN_MATCHES,
     baseline,
     tournaments,
   };
   fs.writeFileSync(OUT, JSON.stringify(out, null, 0) + '\n');
+
+  const nUnres = Object.keys(unresolved).length;
+  console.log(`tournament-market.json: from database-yield.json (${meta.windowStart || '?'}+, ${(meta.books || []).join('/')}), ${rows.length} rows.`);
   console.log(`tournament-market.json: ${Object.keys(tournaments).length} tournaments with a real figure (>=${MIN_MATCHES} matches); baseline roiFav=${baseline.roiFav}% roiDog=${baseline.roiDog}% favRel=${baseline.favRel}% over ${baseline.n} matches.`);
+  if (nUnres) {
+    // NOT fatal: every unresolved alias measured so far is a pre-2010 sponsor
+    // name the window legitimately excludes. Loud, because the day one is NOT
+    // pre-window it means an event is silently under-reporting.
+    console.log(`tournament-market.json: ${nUnres} event(s) name archive strings the yield store does not hold (expected for pre-window sponsor names):`);
+    for (const [k, v] of Object.entries(unresolved)) console.log(`    ${k}: ${v.join(' | ')}`);
+  }
+}
+
+// Flat-stake aggregation over database-yield rows. One definition, used for the
+// baseline and every event, so a per-event figure and the tour figure can never
+// be computed two different ways.
+function aggRows(rs) {
+  const n = rs.length;
+  if (!n) return null;
+  let sf = 0, sd = 0, fw = 0;
+  for (const r of rs) {
+    const won = !!r[7];
+    sf += (won ? r[5] : 0) - 1;
+    sd += (won ? 0 : r[6]) - 1;
+    if (won) fw += 1;
+  }
+  return { n, roiFav: +(sf / n * 100).toFixed(1), roiDog: +(sd / n * 100).toFixed(1), favRel: Math.round(fw / n * 100) };
 }
 
 main();
