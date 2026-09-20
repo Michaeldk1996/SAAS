@@ -1,62 +1,11 @@
 {
   "latest": {
-    "maxAgeMin": 925.8,
-    "measured": 41,
-    "stale": [
-      "B. Van De Zandschulp v N. Mejia (ATP ATP Davis Cup - World Group I, 2026-09-19)",
-      "E. Moller v I. Radulov (ATP ATP Davis Cup - World Group I, 2026-09-19)",
-      "G. Trismuwantara v R. M. Papoe (ATP ATP Davis Cup - World Group II, 2026-09-19)",
-      "F. J. Planinsek v A. Vales (ATP ATP Davis Cup - World Group II, 2026-09-19)",
-      "B. Artnak v O. Kimhi (ATP ATP Davis Cup - World Group II, 2026-09-19)",
-      "H. Chung v D. Suresh (ATP ATP Davis Cup - World Group, 2026-09-19)",
-      "L. Neumayer v G. Onclin (ATP ATP Davis Cup - World Group, 2026-09-19)",
-      "J. Mensik v B. Shelton (ATP ATP Davis Cup - World Group, 2026-09-19)",
-      "J. Lehecka v L. Tien (ATP ATP Davis Cup - World Group, 2026-09-19)",
-      "M. Echargui v M. Shoaib (ATP ATP Davis Cup - World Group II, 2026-09-19)",
-      "A. Dougaz v M. Murtaza (ATP ATP Davis Cup - World Group II, 2026-09-19)",
-      "A. Knaff v F. Marozsan (ATP ATP Davis Cup - World Group I, 2026-09-19)",
-      "C. Ruud v J. Cui (ATP ATP Davis Cup - World Group I, 2026-09-19)",
-      "L. Van Herck v Z. Piros (ATP ATP Davis Cup - World Group I, 2026-09-19)",
-      "N. Budkov Kjaer v R. Te (ATP ATP Davis Cup - World Group I, 2026-09-19)",
-      "J. Fonseca v S. Wawrinka (ATP ATP Davis Cup - World Group I, 2026-09-19)",
-      "G. Heide v D. Stricker (ATP ATP Davis Cup - World Group I, 2026-09-19)",
-      "F. Auger-Aliassime v A. Rinderknech (ATP ATP Davis Cup - World Group, 2026-09-19)",
-      "L. Draxl v Q. Halys (ATP ATP Davis Cup - World Group, 2026-09-19)",
-      "N. Hardt v A. Elsayed (ATP ATP Davis Cup - World Group II, 2026-09-19)",
-      "R. Cid Subervi v K. Mabrouk (ATP ATP Davis Cup - World Group II, 2026-09-19)",
-      "F. Roncadelli v M. Molder (ATP ATP Davis Cup - World Group II, 2026-09-19)",
-      "J. Aguilar Cardozo v O. Ojakaar (ATP ATP Davis Cup - World Group II, 2026-09-19)",
-      "I. Buse v D. Vallejo (ATP ATP Davis Cup - World Group I, 2026-09-19)",
-      "A. Tabilo v D. Merida Aguilar (ATP ATP Davis Cup - World Group, 2026-09-19)",
-      "C. Garin v R. Jodar (ATP ATP Davis Cup - World Group, 2026-09-19)",
-      "C. H. Tseng v M. Dahlin (ATP ATP Davis Cup - World Group I, 2026-09-19)",
-      "K. Montsi v D. Dzumhur (ATP ATP Davis Cup - World Group II, 2026-09-19)",
-      "H. Medjedovic v V. Gaubas (ATP ATP Davis Cup - World Group I, 2026-09-19)",
-      "Y. Dlimi v D. Adeleye (ATP ATP Davis Cup - World Group II, 2026-09-19)",
-      "D. Altmaier v D. Prizmic (ATP ATP Davis Cup - World Group, 2026-09-19)",
-      "A. Fery v A. Guillen Meza (ATP ATP Davis Cup - World Group, 2026-09-19)",
-      "F. Cerundolo v Y. Erel (ATP ATP Davis Cup - World Group I, 2026-09-19)",
-      "T. A. Tirante v M. Alkaya (ATP ATP Davis Cup - World Group I, 2026-09-19)",
-      "D. Phillips v A. Magadan (ATP ATP Davis Cup - World Group II, 2026-09-19)",
-      "R. Mallory v A. Hernandez (ATP ATP Davis Cup - World Group II, 2026-09-19)",
-      "D. Duran v N. Borges (ATP ATP Davis Cup - World Group II, 2026-09-19)",
-      "C. Cruz v J. Faria (ATP ATP Davis Cup - World Group II, 2026-09-19)",
-      "J. P. Varillas v H. J. Escurra Isnardi (ATP ATP Davis Cup - World Group I, 2026-09-20)",
-      "A. Shepp v S. Shimabukuro (ATP ATP Davis Cup - World Group I, 2026-09-20)",
-      "J. Watt v R. Sakamoto (ATP ATP Davis Cup - World Group I, 2026-09-20)"
-    ]
+    "maxAgeMin": 44.9,
+    "measured": 19,
+    "stale": []
   },
   "note": "Age of the published bet365 NOW leg, measured as now - observedAt against the artefact Pages is serving. Capture staleness and publish staleness are both inside this number, which is what the visitor sees. Re-derive the threshold on TEN-187.",
   "samples": [
-    {
-      "at": "2026-09-15T13:15:01Z",
-      "maxAgeMin": null,
-      "measured": 0,
-      "noBet365Line": 0,
-      "noClock": 0,
-      "stale": 0,
-      "thresholdMin": 120.0
-    },
     {
       "at": "2026-09-15T13:30:01Z",
       "maxAgeMin": null,
@@ -3647,9 +3596,18 @@
       "noClock": 0,
       "stale": 41,
       "thresholdMin": 120.0
+    },
+    {
+      "at": "2026-09-20T00:32:11Z",
+      "maxAgeMin": 44.9,
+      "measured": 19,
+      "noBet365Line": 15,
+      "noClock": 0,
+      "stale": 0,
+      "thresholdMin": 120.0
     }
   ],
   "schema": "odds-now-staleness/1",
   "thresholdMin": 120.0,
-  "updatedAt": "2026-09-20T00:17:15Z"
+  "updatedAt": "2026-09-20T00:32:11Z"
 }
