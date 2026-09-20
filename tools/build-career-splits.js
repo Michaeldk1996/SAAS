@@ -298,6 +298,43 @@ function gameRecord(m) {
   return m.wl === 'W' ? { w, l } : { w: l, l: w };
 }
 
+// ─── TEN-244 · a match played on a different GAMES scale (founder 2026-09-21) ──
+// The NextGen Finals play best-of-five SHORT sets — first to four games with a
+// tiebreak at 3-3. Measured on the published store: across 522 NextGen sets the
+// winning side reached exactly 4 games in 520 of them and 6 games in NONE.
+//
+// The ruling is deliberately NARROW. A NextGen match IS a match: it counts in M,
+// in W/L, in the surface row, in H2H and in the SET columns, because a set won
+// is a set won. What does not carry is the GAMES scale — so `gameW`, `gameL` and
+// `gamePct` (and anything derived from game counts) are computed over a smaller
+// population, and the row states that population rather than implying M.
+//
+// MATCHED ON NAME HERE, and that is a real difference from the pipeline. This
+// file's source is Tennis Abstract's matchmx, which carries no tournament id at
+// all — so unlike career-history (api-tennis `tournament_key` 2793 / TML
+// `tourney_id` suffix 7696) there is no key to match on. The two variants
+// actually present, measured 2026-09-21 over 233 player files and 731 distinct
+// tournament names: `NextGen Finals` (151 rows) and `Next Gen Finals` (57).
+// `Next Gen ATP Finals` is carried too because TML uses it and TA may adopt it.
+//
+// The pattern is ANCHORED for one specific reason: the 2005-2008 Adelaide ATP
+// 250 was sponsored as "Next Generation Hardcourts" and was best-of-THREE. A
+// substring match on "next gen" swallows it. That event is not in matchmx today
+// (verified: 0 rows), so this is a guard against a future ingest, not a
+// present-day fix — and there is a control for it in the suite.
+// READS BOTH FIELD NAMES ON PURPOSE. `splits()` is fed parseMatches() output,
+// whose key is `tournament`; the published drawer shard (shardMatch) renames it
+// to `t`. A matcher that knew only about `t` would compile, pass a shard-shaped
+// unit test, and silently never fire in the build — which is exactly the
+// parser-test-standing-in-for-a-wiring-test defect this ticket already paid for
+// once. There is a control for each shape in the suite.
+const ALT_FORMAT_NEXTGEN = /^next\s?gen(?:\s+atp)?\s+finals$/i;
+function altFormatOf(m) {
+  if (!m) return null;
+  const name = m.tournament != null ? m.tournament : m.t;
+  return ALT_FORMAT_NEXTGEN.test(String(name || '').trim()) ? 'nextgen' : null;
+}
+
 // Tiebreaks won/lost. A tiebreak set is won by whoever won the set, so the
 // tiebreak follows the set's winner.
 function tbRecord(m) {
@@ -354,6 +391,10 @@ function splits(matches) {
     const sub = matches.filter(pred);
     if (!sub.length) continue; // zero-match categories dropped (dashboard hides)
     let W = 0, setW = 0, setL = 0, gameW = 0, gameL = 0, tbW = 0, tbL = 0;
+    // The games columns have their OWN population: M minus the matches played on
+    // a different games scale. Tracked rather than assumed, so the row can state
+    // it (gameM) instead of leaving a reader to divide by M and be wrong.
+    let gameM = 0, gameX = 0;
     // Serve totals accumulate ONLY over matches that carry stats, so the
     // denominator of every serve column is MS, not M.
     let MS = 0;
@@ -365,8 +406,14 @@ function splits(matches) {
     for (const m of sub) {
       if (m.wl === 'W') W++;
       const sr = setRecord(m); setW += sr.w; setL += sr.l;
-      const gr = gameRecord(m); gameW += gr.w; gameL += gr.l;
+      // Sets and tiebreaks are RETAINED for an alternate-format match — a set won
+      // is a set won, and a tiebreak follows its set. Only the games leave.
+      // (Flagged rather than assumed: a NextGen tiebreak triggers at 3-3, not
+      // 6-6, so it is a differently-reached event even though it is not a game
+      // count. Retained because the ruling names games, not tiebreaks.)
       const tr = tbRecord(m); tbW += tr.w; tbL += tr.l;
+      if (altFormatOf(m)) { gameX++; }
+      else { gameM++; const gr = gameRecord(m); gameW += gr.w; gameL += gr.l; }
       // Both blocks are required: RPW and DR are computed off the opponent's
       // serve, so a match with only one side recorded cannot be counted.
       if (!m.srv || !m.opp) continue;
@@ -424,7 +471,15 @@ function splits(matches) {
       M, W, L,
       winPct: pct(W, M),
       setW, setL, setPct: pct(setW, setTot),
-      gameW, gameL, gamePct: pct(gameW, gameTot),
+      // `gameM` is the population these three were computed over. It equals M on
+      // every row that holds no alternate-format match, and `gameX` is emitted
+      // ONLY when it doesn't — so a reader who sees gameX knows the games
+      // columns and the match columns describe different sets of matches, and a
+      // reader who doesn't see it knows they describe the same one.
+      // pct() already returns null on a zero denominator, so a row whose ONLY
+      // matches were alternate-format renders as a dash, never a 0.0%.
+      gameW, gameL, gamePct: pct(gameW, gameTot), gameM,
+      ...(gameX ? { gameX } : {}),
       tbW, tbL, tbPct: pct(tbW, tbTot),
       ...(serve || { MS: 0 }),
     };
@@ -559,7 +614,7 @@ async function main() {
     q7Rule: 'q7: quality-form buckets for h2h-model layer #7. Each subset (overall / top50 / surf50.{Hard,Clay,Grass}) is [M0,W0,M1,W1,M2,W2] by recency era (0=<=2yr, 1=2-4yr, 2=4yr+) vs fetchedAt. Opponent rank is at-match-time (matchmx). Recency weights + sample dampening applied model-side.',
     categories: CATEGORIES.map(c => c[0]),
     columns: [
-      'M', 'W', 'L', 'winPct', 'setW', 'setL', 'setPct', 'gameW', 'gameL', 'gamePct',
+      'M', 'W', 'L', 'winPct', 'setW', 'setL', 'setPct', 'gameW', 'gameL', 'gamePct', 'gameM',
       'tbW', 'tbL', 'tbPct', 'MS', 'hldPct', 'brkPct', 'aPct', 'dfPct', 'firstInPct',
       'firstWonPct', 'secondWonPct', 'spwPct', 'rpwPct', 'ret1WonPct', 'ret2WonPct',
       'bpConvPct', 'tpwPct', 'dr',
@@ -568,6 +623,9 @@ async function main() {
     // where the source recorded serve counters (~98% since 2025, ~74% career).
     // A row with MS=0 carries no serve keys at all and must render as dashes.
     statsRule: 'serve/return columns are averaged over MS (matches with recorded stats), never over M; absent = no stats recorded, not zero',
+    // Founder ruling 2026-09-21, scoped deliberately narrowly: an alternate-format
+    // match counts as a MATCH everywhere and leaves only the GAMES columns.
+    gamesRule: 'gameW/gameL/gamePct are averaged over gameM, not M. gameM excludes matches played on a different games scale (NextGen Finals: best-of-five SHORT sets, first to four). Such a match still counts in M/W/L, in the surface row and in the set columns. A row where gameM < M also carries gameX (the excluded count); gamePct over an empty population is null, never 0.',
     coverage: { ingested: ok, noPage: miss, noMatches: empty, attempted: targets.length, fetched, fromCache: cached, staleFallback },
     players,
   };
@@ -607,4 +665,10 @@ async function main() {
   if (ok && !fetched) console.warn('WARNING: every page came from cache — no fresh data. Check SPLITS_CACHE_TTL_HOURS.');
 }
 
-main().catch(e => { console.error(e); process.exit(1); });
+// Exported so the suite can drive the REAL aggregator over fixtures rather than
+// re-implementing it — a re-implementation is a second set of bugs that agrees
+// with itself. `main()` is now guarded because requiring this file previously
+// started a network fetch of every player page the moment it was imported.
+module.exports = { splits, altFormatOf, gameRecord, setRecord, tbRecord, isTourLevel, CATEGORIES };
+
+if (require.main === module) main().catch(e => { console.error(e); process.exit(1); });

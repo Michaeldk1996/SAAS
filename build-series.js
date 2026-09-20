@@ -158,7 +158,32 @@ function isSlam(fx) { return SLAM_RE.test(String(fx.tournament_name || '')); }
 // QUALIFYING (event_qualification === "True", which is bo3) are best-of-three.
 // This is what the FORMAT-RELEVANCE gate (founder 2026-09-07) compares a games-line
 // streak's own best-of against: a bo3 total never renders on a bo5 match.
+// ─── TEN-244 · a fixture played on a different GAMES scale (founder 2026-09-21) ──
+// The NextGen Finals play best-of-five SHORT sets — first to four games, tiebreak
+// at 3-3. Measured: across 522 NextGen sets on the published store the winning
+// side reached exactly 4 games in 520 of them and 6 games in NONE.
+//
+// Keyed on api-tennis `tournament_key` 2793 — the SAME handle the career-history
+// pipeline uses (bsp-pipeline.js NEXTGEN_TOURNAMENT_KEY). Verified 75/75 NextGen
+// fixtures across all five editions and both host cities, and a single entry in a
+// 10,287-tournament get_tournaments catalog. NEVER the name: this one event
+// carries four live name strings in this very feed, and a substring match on
+// "next gen" swallows the 2005-2008 Adelaide ATP 250, which was best-of-THREE.
+//
+// The ruling is NARROW. Such a fixture is still a match: it stays in the row set
+// and keeps counting toward the match-result families (all / surface / style).
+// What it must not do is type as a best-of or enter a games pool.
+const ALT_FORMAT_TOURNAMENT_KEYS = new Set(['2793']);
+function altFormatOf(fx) {
+  return ALT_FORMAT_TOURNAMENT_KEYS.has(String(fx && fx.tournament_key)) ? 'nextgen' : null;
+}
+
 function upcomingBestOf(fx) {
+  // An alternate-format fixture returns null rather than falling through to 3.
+  // The format-relevance gate compares this against a streak's own best-of, so
+  // returning 3 here would render a bo3 total-games run — built on sets to six —
+  // against a match whose sets are to four. null renders neither.
+  if (altFormatOf(fx)) return null;
   if (tierOf(fx) === 'tour' && isSlam(fx) && String(fx.event_qualification) !== 'True') return 5;
   return 3;
 }
@@ -352,8 +377,15 @@ function recordFor(fx, playerKey, tier, surfaceMap, styleMap, includeStyle) {
   // excluded from that line's pool (a dash, never a guess).
   const sets = setsFromScores(fx, me);
   const s1 = sets[1];
+  const altFormat = altFormatOf(fx);
+  // The first-set OUTCOME is a set fact and survives an alternate format — winning
+  // the opening set is the same event whatever the set is played to.
   const lostSet1 = (s1 && s1.decided) ? !s1.won : null;
-  const set1Total = (s1 && s1.decided) ? (s1.mine + s1.theirs) : null;
+  // The first-set TOTAL is a games count, so it does not. A first-to-four set
+  // runs ~5-8 games where a normal one runs ~10-13; pooling the two is the same
+  // category error as pooling the match totals. null => the match is excluded
+  // from that line's pool, which is the existing contract for an unreadable set.
+  const set1Total = (s1 && s1.decided && !altFormat) ? (s1.mine + s1.theirs) : null;
   const s2 = sets[2];
   const wonSet2 = (s2 && s2.decided) ? s2.won : null;
 
@@ -378,7 +410,15 @@ function recordFor(fx, playerKey, tier, surfaceMap, styleMap, includeStyle) {
   const winnerSets = won ? setsWonMe : setsWonOpp;
   const totalDecided = setsWonMe + setsWonOpp;
   let bestOf = null;
-  if (winnerSets === 2 && totalDecided <= 3) bestOf = 3;
+  // An alternate-format match is never typed. Without this a NextGen 3-1 reads
+  // `winnerSets === 3` and types Bo5 off the SET COUNT, which is correct on sets
+  // and wrong on everything underneath: ~22 games where a real Bo5 runs ~40. It
+  // would then enter the bo5 total-games and handicap pools AND the bo5 line
+  // calibration, moving the published line for every genuine Bo5 match.
+  // `bestOf = null` is what keeps it out of all three — cleanGames, the
+  // per-format pools, and the format-relevance gate all key off it.
+  if (altFormat) bestOf = null;
+  else if (winnerSets === 2 && totalDecided <= 3) bestOf = 3;
   else if (winnerSets === 3 && totalDecided <= 5) bestOf = 5;
 
   // Clean games (for total-games & handicap): need a known best-of, no super-tb,
@@ -423,6 +463,10 @@ function recordFor(fx, playerKey, tier, surfaceMap, styleMap, includeStyle) {
     // than re-derived later, because the fixture object is not in scope by then.
     side: me === 'first' ? 'Home' : 'Away',
     won,
+    // TEN-244: emitted ONLY when set, so the row discloses WHY its games fields
+    // are null rather than leaving a reader to infer an ingest failure. A reader
+    // can tell a format exclusion from missing data without reading this file.
+    ...(altFormat ? { altFormat } : {}),
     surface,
     opponent: String(oppName || ''),
     score: scoreLine,   // per-set games line (player POV), dash when unavailable
@@ -1468,6 +1512,9 @@ if (require.main === module) {
   module.exports = {
     conditionHeld, setpatHeld, collapseByFamily, handicapRank, STREAK_TYPES,
     upcomingBestOf, tierOf, recordFor, orderedRecords, cutOnGap, isRelevant,
+    // TEN-244: exported so the suite asserts the SAME matcher the engine uses
+    // rather than a copy of the key that can drift out of step with it.
+    altFormatOf, ALT_FORMAT_TOURNAMENT_KEYS,
     loadSurfaceMap, loadStyleMap, MAX_GAP_DAYS, MIN_LEN, VIEW_FLOOR_DEFAULT,
     streakReference, HISTORY_WINDOW_YEARS,
   };
