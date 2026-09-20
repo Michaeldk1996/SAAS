@@ -1,6 +1,6 @@
 {
   "latest": {
-    "maxAgeMin": 928.7,
+    "maxAgeMin": 958.4,
     "measured": 23,
     "stale": [
       "G. Heide v D. Stricker (ATP ATP Davis Cup - World Group I, 2026-09-20)",
@@ -15,15 +15,6 @@
   },
   "note": "Age of the published bet365 NOW leg, measured as now - observedAt against the artefact Pages is serving. Capture staleness and publish staleness are both inside this number, which is what the visitor sees. Re-derive the threshold on TEN-187.",
   "samples": [
-    {
-      "at": "2026-09-16T04:00:01Z",
-      "maxAgeMin": null,
-      "measured": 0,
-      "noBet365Line": 0,
-      "noClock": 0,
-      "stale": 0,
-      "thresholdMin": 120.0
-    },
     {
       "at": "2026-09-16T04:15:01Z",
       "maxAgeMin": null,
@@ -3614,9 +3605,18 @@
       "noClock": 0,
       "stale": 8,
       "thresholdMin": 120.0
+    },
+    {
+      "at": "2026-09-20T15:45:38Z",
+      "maxAgeMin": 958.4,
+      "measured": 23,
+      "noBet365Line": 4,
+      "noClock": 0,
+      "stale": 8,
+      "thresholdMin": 120.0
     }
   ],
   "schema": "odds-now-staleness/1",
   "thresholdMin": 120.0,
-  "updatedAt": "2026-09-20T15:15:54Z"
+  "updatedAt": "2026-09-20T15:45:38Z"
 }
