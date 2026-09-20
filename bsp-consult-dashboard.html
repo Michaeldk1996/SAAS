@@ -22786,9 +22786,12 @@ function tourxConditionsPanelHtml(){
       <p style="margin:0;font-size:13.5px;line-height:1.7;color:#e7e9ee;text-wrap:pretty;">${tourxConditionsProse(c.surface, c.speedCat, as, tourxBounce(c.surface, c.altitude, c.speedCat))}</p>
     </div>`;
 
-  // NOTE: README §1.2 "What players say" is deliberately NOT built (brief item 3)
-  // and the vertical gap is closed - the detail column's own 16px gap does that,
-  // there is no spacer to remove.
+  // README §1.2 "What players say" sits between the conditions read and the
+  // court-speed trend, per the spec. Phase 1 did NOT build it (brief item 3:
+  // no quote source) - phase 2 imported 424 real notes across 45 events, so it
+  // is live. C2: an event with no quotes renders NO CARD AT ALL, not an empty
+  // state; the detail column's own 16px gap closes the space, there is no
+  // spacer to remove.
 
   return `<div style="display:flex;flex-direction:column;gap:16px;min-width:0;padding-left:24px;">
       ${title}${hero}${tiles}${read}${tourxQuotesCardHtml(c)}${tourxSpeedSeriesHtml(c)}${tourxRoiPairHtml(c)}${tourxReliabilityHtml(c)}${tourxReportCtaHtml(c)}
