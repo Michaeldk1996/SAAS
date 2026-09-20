@@ -1,3 +1,7 @@
+> ⚠️ **SUPERSEDED — see SUPERSEDED.md in this directory.** The authoritative
+> Database handoff is `.ten243-design/design_handoff_database/`. This copy
+> contradicts it on the profit-curve x-axis and must not be built from.
+
 # Handoff: Stennisfy — Database
 
 ## Overview

@@ -1,3 +1,7 @@
+> ⚠️ **SUPERSEDED — see SUPERSEDED.md in this directory.** The authoritative
+> Database handoff is `.ten243-design/design_handoff_database/`. This copy
+> contradicts it on the profit-curve x-axis and must not be built from.
+
 # Database — cumulative profit charts
 
 Build spec for the four line charts on the Database page: the **Tour** chart, the

@@ -1,6 +1,6 @@
 # Tournament quote import — report
 
-Generated `2026-09-20T00:20:36.296Z` by `tools/quotes/build-tournament-quotes.mjs`.
+Generated `2026-09-20T02:33:00.543Z` by `tools/quotes/build-tournament-quotes.mjs`.
 
 ## Headline
 

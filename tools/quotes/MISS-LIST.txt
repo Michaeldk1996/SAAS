@@ -1,0 +1,130 @@
+TEN-242 - QUOTE SHEET MISS LIST
+Generated 2026-09-20T02:34:18.224Z
+Sources: data/tournament-quotes.csv, tools/quotes/tournament-quote-map.json
+
+HEADLINE - NOTHING WAS SILENTLY DROPPED.
+  Name strings in the sheet .................. 54
+  Failed to map (would FAIL LOUDLY) .......... 0
+  Deliberately NULL, each with a reason ...... 5
+  Quotes imported ............................ 424 of 450 candidate rows
+  Catalog events that got a card ............. 45
+  Catalog events with NO quote in the sheet .. 28
+
+So the tournaments you think were dropped were almost all simply ABSENT from
+the sheet, not lost in mapping. Section 3 is the list to work from.
+
+==============================================================================
+1 - NAME STRINGS THAT DID NOT MAP  (exactly as written)
+==============================================================================
+
+  "LAVER CUP"
+    quotes behind it : 0
+    (GUESS) you meant: no catalog event — team exhibition, no rated venue, so no page for a card to live on
+    why held out     : A team exhibition. No entry in TOURNAMENT_CATALOG and no court-speed rating, so there is no Overview page for a card to live on.
+
+  "UNITED CUP"
+    quotes behind it : 0
+    (GUESS) you meant: no catalog event — mixed team event, same reason
+    why held out     : A mixed team event. Same reason as Laver Cup — no catalog entry, no host page.
+
+  "NATIONAL BANK OPEN PRESENTED BY ROGERS"
+    quotes behind it : 0
+    (GUESS) you meant: Montreal OR Toronto — genuinely ambiguous. The men's event alternates cities and the sponsor string names neither. I will NOT infer it from the row's year.
+    why held out     : AMBIGUOUS BY CONSTRUCTION. The men's Canadian Open alternates between Montreal and Toronto, and our catalog carries BOTH as separate rated venues. The sponsor string names neither. Resolving it from the row's year would be an inference, and 248 of 450 rows have no year at all. Founder decision required — see the import report.
+
+  "LIBEMA OPEN               2025"
+    quotes behind it : 4
+    (GUESS) you meant: Hertogenbosch  — the name cell has a YEAR glued onto it
+    why held out     : The name cell has a YEAR glued onto it, so it is not a clean group name and not a clean year cell either. The event is 's-Hertogenbosch, which we carry as `Hertogenbosch`. Left unmapped deliberately: mapping the malformed literal would hide a sheet defect that will recur.
+
+  "MILLENNIUM ESTORIL OPEN2026"
+    quotes behind it : 4
+    (GUESS) you meant: Estoril  — same defect, with no separating space
+    why held out     : Same defect as LIBEMA, with no separating space. The event is `Estoril`, which we do carry.
+
+  TEXT-PREFIX markers held out (the 'EVENT:' inside the quote text):
+
+  "BRUSSELS:"
+    (GUESS) you meant: Antwerp — the European Open moved Antwerp->Brussels; our catalog has no Brussels row. Your call, not a guess I apply.
+    why held out     : NOT a parse artefact and NOT a filing error. The BNP Paribas Fortis European Open moved from Antwerp to Brussels; our catalog still carries only `Antwerp`, and has no Brussels row. So the group resolves to Antwerp and the text names a city we do not model. Founder decision: is our `Antwerp` the same event, in which case these rows are fine, or does the venue move need a catalog change?
+
+  "AUCKLAND M:"
+    (GUESS) you meant: Auckland — the marker reads 'AUCKLAND M:', a stray M in the source
+    why held out     : A defect in the source text: the marker reads `AUCKLAND M:`. The intent is plainly Auckland, but stripping the stray ` M` would be me editing the source. Held out and reported instead.
+
+  "MIAMI M:"
+    (GUESS) you meant: Miami — the marker reads 'MIAMI M:', same stray M
+    why held out     : Same defect, reading `MIAMI M:`. Note this row's player cell says `Khachanov` while its text says `said Karatsev` — a separate attribution defect flagged in the report.
+
+==============================================================================
+2 - THE CATALOG NAMES I ACCEPT - write the new sheet against these
+==============================================================================
+  Any one of these 73 strings in column 1 maps with no mapping entry needed.
+
+    Acapulco              Adelaide              Almaty                Antwerp
+    Astana                Auckland              Australian Open       Barcelona
+    Basel                 Bastad                Beijing               Belgrade
+    Brisbane              Bucharest             Buenos Aires          Chengdu
+    Cincinnati            Cordoba               Dallas                Delray Beach
+    Doha                  Dubai                 Eastbourne            Estoril
+    French Open           Geneva                Gstaad                Halle
+    Hamburg               Hangzhou              Hertogenbosch         Ho Chi Minh City
+    Hong Kong             Houston               Indian Wells          Jeddah
+    Kitzbuhel             London                Los Cabos             Lyon
+    Madrid                Mallorca              Marrakech             Marseille
+    Metz                  Miami                 Monte Carlo           Montpellier
+    Montreal              Munich                Newport               Paris
+    Pune                  Rio de Janeiro        Roland Garros         Rome
+    Rotterdam             Santiago              Shanghai              Stockholm
+    Stuttgart             Sydney                Tel Aviv              Tokyo
+    Toronto               Turin                 US Open               Umag
+    Vienna                Washington            Wimbledon             Winston-Salem
+    Zhuhai
+
+==============================================================================
+3 - CATALOG EVENTS WITH NO QUOTE AT ALL  (28)  <- the real gap
+==============================================================================
+  Rated, in the product, and the sheet carries nothing for them. No card
+  renders, which is correct - but if you meant to cover them, fill these.
+
+    Astana                Belgrade              Buenos Aires          Cincinnati
+    Cordoba               Estoril               French Open           Gstaad
+    Hertogenbosch         Ho Chi Minh City      Jeddah                London
+    Lyon                  Marseille             Metz                  Montreal
+    Newport               Paris                 Pune                  Stuttgart
+    Sydney                Tel Aviv              Toronto               Turin
+    US Open               Umag                  Winston-Salem         Zhuhai
+
+==============================================================================
+4 - ROWS UNUSABLE FOR REASONS OTHER THAN THE EVENT NAME
+==============================================================================
+  8  no player cell at all               - never imported (rule d)
+  1  player cell is a bare YEAR (2025)   - row 415; a year is not a person
+  6  text prefix contradicts the group   - NOT imported, per rule c. Includes
+       the SHANGHAI ball note filed under CHENGDU, and a contiguous block of
+       FIVE Umag quotes filed under Nordea Open (Bastad) - that looks like a
+       group that slid, not five separate mistakes.
+  3  text prefix unresolved              - the AUCKLAND M / MIAMI M / BRUSSELS above
+  8  held out behind the two malformed name cells (LIBEMA, ESTORIL)
+
+  SPECIFIC TO THE TWO MALFORMED NAME CELLS: the rows sitting under them are not
+  all that event. Under "LIBEMA OPEN               2025" the next rows are
+  2023 Hurkacz and 2022 Murray, both prefixed "STUTTGART:" in their own text.
+  Under "MILLENNIUM ESTORIL OPEN2026" the first row IS Estoril but later rows
+  drift too. So fixing the two cells alone would file Stuttgart quotes under
+  Hertogenbosch. When you rewrite, put each quote under the event its own text
+  names.
+
+  Also worth fixing in the rewrite, not blocking:
+  - row 262 player cell says 'Khachanov' while its own text says 'said Karatsev'
+  - 60 of 425 player names did not normalise: retired players (correct, just not
+    on our active roster), misspellings (Kygrios, Drapper, Prizimic), first-names
+    only (Tommy = T. Paul, 5 rows), not-one-person (Khachanov coach,
+    'Dimitrov/ Rublev'), and one WTA player.
+  - 378 of 425 quotes already carry their own quotation marks; they are narration
+    AROUND reported speech, not clean quotes. We render them verbatim and only
+    curly-wrap the 47 that carry none. Clean quotes would render better.
+
+IMPORT RULES UNCHANGED for the new sheet: an unmapped name FAILS LOUDLY (exit 4,
+named in the report), never fuzzy-matched, never silently dropped. No year is ever
+inferred. No one's words are edited. No card at all for an event with no quotes.
