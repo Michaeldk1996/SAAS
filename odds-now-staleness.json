@@ -1,26 +1,20 @@
 {
   "latest": {
-    "maxAgeMin": 841.7,
+    "maxAgeMin": 856.5,
     "measured": 23,
     "stale": [
       "G. Heide v D. Stricker (ATP ATP Davis Cup - World Group I, 2026-09-20)",
       "L. Draxl v Q. Halys (ATP ATP Davis Cup - World Group, 2026-09-20)",
       "J. Aguilar Cardozo v O. Ojakaar (ATP ATP Davis Cup - World Group II, 2026-09-20)",
       "H. Dellien v T. F. Wong (ATP ATP Davis Cup - World Group II, 2026-09-20)",
-      "J. Watt v R. Sakamoto (ATP ATP Davis Cup - World Group I, 2026-09-20)"
+      "J. Watt v R. Sakamoto (ATP ATP Davis Cup - World Group I, 2026-09-20)",
+      "J. Duckworth v M. Kasnikowski (ATP ATP Davis Cup - World Group I, 2026-09-20)",
+      "A. Fery v A. Andrade (ATP ATP Davis Cup - World Group, 2026-09-20)",
+      "Y. H. Hsu v K. Friberg (ATP ATP Davis Cup - World Group I, 2026-09-20)"
     ]
   },
   "note": "Age of the published bet365 NOW leg, measured as now - observedAt against the artefact Pages is serving. Capture staleness and publish staleness are both inside this number, which is what the visitor sees. Re-derive the threshold on TEN-187.",
   "samples": [
-    {
-      "at": "2026-09-16T02:15:02Z",
-      "maxAgeMin": null,
-      "measured": 0,
-      "noBet365Line": 0,
-      "noClock": 0,
-      "stale": 0,
-      "thresholdMin": 120.0
-    },
     {
       "at": "2026-09-16T02:45:02Z",
       "maxAgeMin": null,
@@ -3611,9 +3605,18 @@
       "noClock": 0,
       "stale": 5,
       "thresholdMin": 120.0
+    },
+    {
+      "at": "2026-09-20T14:03:46Z",
+      "maxAgeMin": 856.5,
+      "measured": 23,
+      "noBet365Line": 4,
+      "noClock": 0,
+      "stale": 8,
+      "thresholdMin": 120.0
     }
   ],
   "schema": "odds-now-staleness/1",
   "thresholdMin": 120.0,
-  "updatedAt": "2026-09-20T13:48:59Z"
+  "updatedAt": "2026-09-20T14:03:46Z"
 }
