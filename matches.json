@@ -26637,13 +26637,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 12.0,
+      "p2": 1.01,
+      "bookmaker": "Betfair"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 12.0,
+        "bookmaker": "Betfair"
+      },
+      "p2": {
+        "price": 1.01,
+        "bookmaker": "bet365"
+      }
     },
     "tournamentRound": "",
     "p1Key": 50946,
@@ -261891,11 +261897,11 @@
     "venue": null,
     "courtSpeed": null,
     "weather": null,
-    "live": false,
-    "liveStatus": null,
+    "live": true,
+    "liveStatus": "Set 3",
     "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "liveGameScore": "3 - 6",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/9514_i-buse.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/9217_d-vallejo.jpg",
     "oddsMovement": {
@@ -262052,7 +262058,10 @@
       "edgeVsPinnacleP1": 0.0211,
       "edgeVsPinnacleP2": -0.0211,
       "ts": "2026-09-19T10:26:45.512Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12164137",
