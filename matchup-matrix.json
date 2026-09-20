@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-19T23:14:24.905Z",
+  "generatedAt": "2026-09-20T23:10:48.543Z",
   "source": "Computed from board-finalized v5.1 archetype labels (playing-styles.json) x TML match results",
   "window": "2000-2026",
   "note": "Win% of row archetype vs column, over matches where BOTH players are in the deployed labelled roster. Full grid incl. the diagonal: same-archetype cells are 50% by construction (coin flip on style) and carry the real match count n. Off-diagonal cells below the sample floor show n but no pct. TEN-88 (2026-08-27 ruling): the current-season api-tennis supplement is now folded into the aggregate matrix as well as the per-player split, so published cells track the live season instead of stopping mid-January.",
@@ -18,9 +18,9 @@
     "Solid Defender": 18,
     "All Court Elite": 3
   },
-  "matchesCounted": 16061,
+  "matchesCounted": 16065,
   "tmlMatchesCounted": 13561,
-  "supplementMatchesInMatrix": 2500,
+  "supplementMatchesInMatrix": 2504,
   "matchesInWindow": 78091,
   "retentionPct": 17.4,
   "archetypes": {
@@ -144,11 +144,11 @@
       },
       "Counterpuncher": {
         "pct": 58,
-        "n": 705
+        "n": 706
       },
       "Solid Defender": {
-        "pct": 62,
-        "n": 237
+        "pct": 63,
+        "n": 238
       },
       "All Court Elite": {
         "pct": 24,
@@ -175,7 +175,7 @@
       },
       "Solid Baseliner": {
         "pct": 55,
-        "n": 1605
+        "n": 1606
       },
       "Counterpuncher": {
         "pct": 48,
@@ -205,7 +205,7 @@
       },
       "Attacking Baseliner": {
         "pct": 45,
-        "n": 1605
+        "n": 1606
       },
       "Solid Baseliner": {
         "pct": 50,
@@ -214,7 +214,7 @@
       },
       "Counterpuncher": {
         "pct": 39,
-        "n": 793
+        "n": 794
       },
       "Solid Defender": {
         "pct": 47,
@@ -236,7 +236,7 @@
       },
       "Big Server + Complete Baseliner": {
         "pct": 42,
-        "n": 705
+        "n": 706
       },
       "Attacking Baseliner": {
         "pct": 52,
@@ -244,7 +244,7 @@
       },
       "Solid Baseliner": {
         "pct": 61,
-        "n": 793
+        "n": 794
       },
       "Counterpuncher": {
         "pct": 50,
@@ -270,8 +270,8 @@
         "n": 255
       },
       "Big Server + Complete Baseliner": {
-        "pct": 38,
-        "n": 237
+        "pct": 37,
+        "n": 238
       },
       "Attacking Baseliner": {
         "pct": 48,
@@ -1189,8 +1189,8 @@
   "byPlayerSupplement": {
     "source": "api-tennis 2026 finished fixtures",
     "loaded": true,
-    "matchesAdded": 2500,
-    "foldedIntoMatrix": 2500,
+    "matchesAdded": 2504,
+    "foldedIntoMatrix": 2504,
     "dedupedAgainstTml": 135,
     "walkoverExcluded": 20,
     "dedupTolDays": 1
@@ -1199,15 +1199,15 @@
     "note": "Closing odds per meeting row, both players. Book unlabelled (founder ruling): Bet365 for 2026, Pinnacle (Bet365 fallback) for earlier years; dash where no price. Coverage = share of meeting rows with a price on at least one side.",
     "sourceFiles": 23,
     "sourceRows": 58940,
-    "rows": 32122,
-    "priced": 29206,
+    "rows": 32130,
+    "priced": 29208,
     "pricedPct": 90.9,
-    "rows2026": 5272,
-    "priced2026": 3626,
-    "priced2026Pct": 68.8
+    "rows2026": 5280,
+    "priced2026": 3628,
+    "priced2026Pct": 68.7
   },
   "byPlayerPlayers": 249,
-  "byPlayerEndpointsCounted": 32122,
+  "byPlayerEndpointsCounted": 32130,
   "byPlayer": {
     "martin|a": {
       "name": "A. Martin",
@@ -2204,7 +2204,7 @@
       "name": "A. Zverev",
       "vs": {
         "Counterpuncher": {
-          "w": 77,
+          "w": 78,
           "l": 22
         },
         "Attacking Baseliner": {
@@ -3468,7 +3468,7 @@
         },
         "Counterpuncher": {
           "w": 5,
-          "l": 7
+          "l": 8
         },
         "Attacking Baseliner": {
           "w": 8,
@@ -3780,7 +3780,7 @@
       "name": "S. Tsitsipas",
       "vs": {
         "Solid Defender": {
-          "w": 20,
+          "w": 21,
           "l": 16
         },
         "Solid Baseliner": {
@@ -4101,7 +4101,7 @@
       "name": "A. De Minaur",
       "vs": {
         "Solid Baseliner": {
-          "w": 37,
+          "w": 38,
           "l": 16
         },
         "Solid Defender": {
@@ -6070,7 +6070,7 @@
         },
         "Big Server + Complete Baseliner": {
           "w": 6,
-          "l": 9
+          "l": 10
         },
         "Counterpuncher": {
           "w": 7,
@@ -7815,7 +7815,7 @@
         },
         "Big Server + Complete Baseliner": {
           "w": 1,
-          "l": 2
+          "l": 3
         }
       }
     },
@@ -8282,7 +8282,7 @@
         },
         "Solid Baseliner": {
           "w": 3,
-          "l": 4
+          "l": 5
         },
         "Solid Defender": {
           "w": 2,
@@ -9429,7 +9429,7 @@
           "l": 2
         },
         "Attacking Baseliner": {
-          "w": 7,
+          "w": 8,
           "l": 9
         },
         "Counterpuncher": {
