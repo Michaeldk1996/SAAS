@@ -133,6 +133,23 @@ check('CONTROL: "any price is priced" WOULD have said 2 of 3 (66.7%)',
       naive == 2 and a['Challenger']['priced_both'] != naive,
       'the two rules genuinely differ on this data, so the test can fail')
 
+print('\n=== (b) "First Set" is NOT "Sets" — the bucket that overstated both ===')
+# The first live run reported SET HANDICAP=8,669 and TOTAL SETS=5,802 by folding
+# `Spread x First Set` (a games handicap inside set one) and `Total x First Set`
+# (total games in set one) into the set-level answers. The real figures were
+# 4,322 and 2,006. Two different products sharing one word.
+check('the segment match is EXACT, not a substring',
+      'sn in seg_exact' in exec_code and "'set',)" not in exec_code,
+      'a substring match folds First Set into Sets')
+check('the set-level asks name the SETS segment explicitly',
+      "{'sets'}" in exec_code)
+check('the First Set near-misses are printed beside them, not hidden',
+      'FIRST SET' in src and "{'first set'}" in exec_code)
+check('CONTROL: the two segments are genuinely distinct strings',
+      'first set' != 'sets' and 'sets' in 'first sets',
+      'and "sets" IS a substring of neither — but "set" is of both, '
+      'which is what the old rule matched on')
+
 print('\n=== (e) opener — unmeasurable is not a pass ===')
 check('a single observation per side reports UNMEASURABLE, not 100%',
       'unmeasurable' in code and 'cannot be\n' in src.replace('  ', ' ')

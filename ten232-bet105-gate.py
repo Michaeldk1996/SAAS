@@ -201,32 +201,49 @@ def section_b(obs, client, fsid):
         print(f'  {str(mt.get(m, m))[:27]:<28} {str(sg.get(s, s))[:23]:<24} '
               f'{str(bt.get(b, b))[:13]:<14} {n}')
 
-    def present(mnames, snames=None):
+    def present(mnames, seg_exact):
+        """Rows matching a market-type word AND an EXACT segment name.
+
+        ⚠️ THE SEGMENT MATCH IS EXACT, NOT A SUBSTRING, AND THE FIRST CUT OF
+        THIS FUNCTION GOT IT WRONG. Matching 'set' as a substring folds
+        "First Set" into "Sets", so `Spread x First Set` — a GAMES handicap
+        inside set one — was counted as a SET HANDICAP, and `Total x First Set`
+        — total GAMES in set one — as TOTAL SETS. On the first live run that
+        inflated the two answers the founder actually asked about from 4,322 to
+        8,669 and from 2,006 to 5,802. Two different products with one word in
+        common is exactly how a market gets claimed that the book does not sell.
+        """
         hit = 0
         for (m, s, _b), n in combos.items():
             mn = str(mt.get(m, '')).lower()
-            sn = str(sg.get(s, '')).lower()
-            if any(x in mn for x in mnames) and (
-                    snames is None or any(x in sn for x in snames)):
+            sn = str(sg.get(s, '')).lower().strip()
+            if any(x in mn for x in mnames) and sn in seg_exact:
                 hit += n
         return hit
 
     # The three the founder named, plus the two that decide whether this book is
-    # worth more than Sports411 was.
+    # worth more than Sports411 was, plus the two near-misses printed beside
+    # them so the distinction is visible rather than a footnote.
     asks = [
         ('match winner (moneyline, full game)', present(('moneyline', 'money line',
-                                                         'winner'), ('full',))),
-        ('spread (full game)',                  present(('spread', 'handicap'), ('full',))),
-        ('total (full game)',                   present(('total',), ('full',))),
-        ('SET HANDICAP (spread on a set)',      present(('spread', 'handicap'), ('set',))),
-        ('TOTAL SETS',                          present(('total',), ('set',))),
+                                                         'winner'), {'full game'})),
+        ('spread — games handicap (full game)', present(('spread', 'handicap'),
+                                                        {'full game'})),
+        ('total — total games (full game)',     present(('total',), {'full game'})),
+        ('SET HANDICAP (spread on SETS)',       present(('spread', 'handicap'),
+                                                        {'sets'})),
+        ('TOTAL SETS (total on SETS)',          present(('total',), {'sets'})),
+        ('  — not those: spread on FIRST SET (games hcp in set 1)',
+         present(('spread', 'handicap'), {'first set'})),
+        ('  — not those: total on FIRST SET (games in set 1)',
+         present(('total',), {'first set'})),
     ]
     print()
     for label, n in asks:
         print(f'  {label:<38} {"YES" if n else "NO ":<4} rows={n if n else "—"}')
         out('market_' + label.split(' (')[0].strip().lower().replace(' ', '_'),
             'yes' if n else 'no')
-    if not present(('spread', 'handicap'), ('set',)) and not present(('total',), ('set',)):
+    if not present(('spread', 'handicap'), {'sets'}) and not present(('total',), {'sets'}):
         print('\n  ⚠️ NO SET-LEVEL MARKET. Same as Sports411. The set handicap / '
               'total sets that made Kibl interesting are still absent.')
     return {'combos': {f'{m}/{s}/{b}': n for (m, s, b), n in combos.items()},
@@ -476,7 +493,15 @@ def main():
     print(f'side_id shapes per priced fixture: {dict(side_shapes)}')
     print(f'card-shaped rows built (NOT written anywhere): {len(rows)}')
 
-    matches = K.load_matches()
+    # load_matches() returns (matches, error). Passing the TUPLE crashed the
+    # first live run inside board_favourites — and the failure was loud, which
+    # is the only reason it is a footnote: a silently-empty board arm would have
+    # produced a gate that reported "0 paired" as a finding about Bet105.
+    matches, merr = K.load_matches()
+    if merr:
+        print(f'::warning::the board file is unreadable ({merr}) — the board '
+              f'arm of the gate is ABSENT. The api-tennis arm may still referee; '
+              f'if neither does, (f) reports 0 paired and CANNOT pass.')
     ids = K.participant_ids_by_fixture(by_fixture)
     gate, dashed = K.run_orientation(rows, fx, odds_index, matches, ids,
                                      os.environ.get('API_TENNIS_KEY'))
