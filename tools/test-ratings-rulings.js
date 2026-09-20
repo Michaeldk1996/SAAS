@@ -160,5 +160,47 @@ check('CONTROL: N is not a constant — it tracks the store it is given', () => 
     `halving the store left N unchanged (${small.serve.n} vs ${full.serve.n}) — it is hardcoded somewhere`);
 });
 
+// ─────────────────────────────────────────────────────────────────────────────
+// FOUNDER RULING 2026-09-20 — TEN-243/TEN-246 gate 94aed7f5, answer "keep_10".
+//
+// He was given the measured collision and chose (a): the Database Ratings
+// leaderboards keep the README's 10-MATCH gate. He did NOT take the store's own
+// floor (floors.career.minMatches 20 / the per-node `reliable` flag), which
+// would have cut the All/career field from 237 to 191, and he answered the
+// follow-up "as built" — so the board reports it exactly as it shipped.
+//
+// What he accepted with it, stated so nobody "fixes" it later as a bug: at this
+// gate the Mental Edge top 10 carries 7 entries the store marks reliable:false
+// (led by N. Budkov Kjaer, rating 1.380, n=16). That is the known, ruled cost of
+// the wider field, and the per-row match count is what discloses it.
+//
+// Asserted against the SHIPPED SOURCE: the gate constant, and the fact that the
+// pool is not additionally filtered on `reliable`.
+// ─────────────────────────────────────────────────────────────────────────────
+const DASH = fs.readFileSync(path.join(ROOT, 'bsp-consult-dashboard.html'), 'utf8');
+const DBTAB = DASH.slice(DASH.indexOf('window.DatabaseTab = (function()'));
+
+check('ruling 94aed7f5: the Ratings gate is 10 matches, not the store floor of 20', () => {
+  const m = DBTAB.match(/var\s+RAT_GATE\s*=\s*(\d+)/);
+  assert.ok(m, 'RAT_GATE is gone — the ruled gate constant must stay greppable');
+  assert.strictEqual(m[1], '10',
+    `RAT_GATE is ${m[1]}; the founder ruled 10 (gate 94aed7f5, "keep_10"). ` +
+    'Moving it to 20 silently drops 46 of 237 players at All/career.');
+});
+
+check('ruling 94aed7f5: the board does NOT additionally gate on the store\'s `reliable` flag', () => {
+  const pool = DBTAB.slice(DBTAB.indexOf('function ratBoardPool'), DBTAB.indexOf('function ratFmt'));
+  assert.ok(pool.length > 0, 'ratBoardPool not found');
+  assert.ok(!/\breliable\b/.test(pool),
+    'ratBoardPool now consults `reliable` — that is option (b), which the founder DECLINED. ' +
+    'He kept the wider field at the 10-match gate and accepted the thin-sample leaders that come with it.');
+});
+
+check('CONTROL: these assertions can fail — a 20-gate source is rejected', () => {
+  const mutated = DBTAB.replace(/var\s+RAT_GATE\s*=\s*10/, 'var RAT_GATE = 20');
+  const m = mutated.match(/var\s+RAT_GATE\s*=\s*(\d+)/);
+  assert.strictEqual(m[1], '20', 'mutation did not apply — the control proves nothing');
+});
+
 console.log(`\nratings rulings: ${pass} pass, ${fails.length} fail`);
 if (fails.length) { console.error('FAILED: ' + fails.join(' · ')); process.exit(1); }
