@@ -797,8 +797,22 @@ function playerMatchHistory(fixtures, playerKey, currentYear, surfaceMap) {
     // it. tournament_key is verified stable across seasons, so pairing it with
     // _season still separates editions correctly.
     const _tkey = f.tournament_key != null ? String(f.tournament_key) : `name:${_tid}`;
+    // TEN-244: carry the PER-SET GAMES the feed already gave us. `result` is a
+    // set COUNT ("2 - 1"); `f.scores` is the games in each set, and until now
+    // this push kept the former and dropped the latter on every fixtures-half
+    // row — which is why per-set games sat at 7.9% on that half (99.5% on the
+    // archive half) and at 0.5% across the last 52 weeks. Nothing new is
+    // fetched: these fields are already in responses we already pay for.
+    //
+    // Reuses formSetsFromFixture rather than parsing here, deliberately: it is
+    // already the player-oriented parser, it already decodes api-tennis's
+    // "<games>.<tiebreakPoints>" encoding into pTb/oTb, and it already drops
+    // the 0-0 pseudo-set the feed emits for a walkover or the unplayed
+    // remainder of a retirement. A second parser would be a second set of bugs.
+    const sets = formSetsFromFixture(f, isFirst);
     out.push({ year, surface, level, date: f.event_date, tournament: f.tournament_name, round, opponent, result, won, eventKey: f.event_key, src: 'fixtures',
       _tid, _tkey, _cname, _season, _frac, _qual, _short: _qual ? 'Q' : _short, _rank: _qual ? -1 : (ROUND_RANK[_short] != null ? ROUND_RANK[_short] : -1),
+      ...(sets ? { sets } : {}),
       ...(retired ? { retired: true } : {}), ...(walkover ? { walkover: true } : {}) });
   }
   // (3) Structural first-loss net — edition-grouped, mirrors the editions path.
@@ -3389,6 +3403,13 @@ function formSetsFromFixture(fixture, isFirst) {
     const theirs = isFirst ? s.score_second : s.score_first;
     const [pG, pTb] = String(mine ?? '').split('.');
     const [oG, oTb] = String(theirs ?? '').split('.');
+    // TEN-244: reject a MISSING games number instead of letting it become 0.
+    // `Number('')` is 0 and `Number.isFinite(0)` is true, so a one-sided null or
+    // an absent key used to survive this guard and ship a fabricated 6-0. That
+    // was tolerable while these sets only drew the Form tab; it is not now that
+    // they are a games total the Lines tab computes a rate from. The standing
+    // rule is that a missing figure is a dash, never a zero.
+    if (!/^\d+$/.test(String(pG ?? '').trim()) || !/^\d+$/.test(String(oG ?? '').trim())) return null;
     const p = Number(pG), o = Number(oG);
     if (!Number.isFinite(p) || !Number.isFinite(o)) return null;
     const set = { p, o };
@@ -3565,6 +3586,47 @@ const CAREER_HISTORY_SHARD_DIR = 'career-history';
 const CAREER_HISTORY_INDEX_PATH = 'career-history-index.json';
 const CAREER_HISTORY_SCHEMA_VERSION = 1;
 
+// TEN-244 — THE COMPLETENESS PREDICATE, derived from the SCORE, never from the
+// flags alone.
+//
+// This is the highest-risk item on the Database Lines tab. A line ("did this
+// player cover -4.5 games?") is a RATE, so an abandoned match counted as a miss
+// deflates numerator and denominator together and nothing on screen reveals it.
+// A match nobody finished is not a line that failed to land; it cannot answer
+// the question and has to leave the sample.
+//
+// WHY NOT THE FLAGS. In a 5,870-row ATP sample, 115 rows are not a finished
+// 2-or-3-set win and 21 carry NEITHER `retired` NOR `walkover` — e.g. AO 2019
+// R128 "1 - 1" won=true, Wimbledon 2016 R16 "0 - 1" won=false.
+//
+// WHY THE FORMAT MATTERS, and this is the part a first version of this function
+// got wrong: "winner reaches 2, loser below" cannot see that a BEST-OF-FIVE
+// stopped early. `"7-6 6-4 RET"` at a Slam is a set count of "2 - 0", which is a
+// perfectly ordinary COMPLETED best-of-three — so a format-blind rule passes it.
+// Measured over the 78,090-match TML archive: 1,391 of 2,362 retirements (58.9%)
+// read as complete that way, and 306 of 697 Bo5 retirements specifically. Bo3
+// arithmetic protects itself; Bo5 does not. So the caller must say which ladder
+// the match was played on, and at ATP level that is "is it a Grand Slam".
+//
+// Unparseable counts as incomplete ON PURPOSE: the standing rule is that missing
+// data is a dash, and a score we cannot read is not a score we may assume
+// finished.
+function careerRowIsComplete(result, isBestOfFive) {
+  const raw = String(result == null ? '' : result).trim();
+  // A trailing marker ("2 - 1 ret.", "2 - 1 RET") is not a score we can call
+  // finished; parseInt would happily ignore it.
+  if (/[a-zA-Z]/.test(raw)) return false;
+  const parts = raw.split('-').map(x => x.trim());
+  if (parts.length !== 2) return false;
+  // Reject anything that is not a bare non-negative integer — `parseInt` alone
+  // turns "2.0" into 2 and would read a decimal as a set count.
+  if (!parts.every(x => /^\d+$/.test(x))) return false;
+  const a = Number(parts[0]), b = Number(parts[1]);
+  const won = Math.max(a, b), lost = Math.min(a, b);
+  const need = isBestOfFive ? 3 : 2;
+  return won === need && lost < need;
+}
+
 async function writeCareerHistoryShards(profiles, opts = {}) {
   const log = opts.log || (() => {});
   const currentYear = new Date().getFullYear();
@@ -3582,7 +3644,11 @@ async function writeCareerHistoryShards(profiles, opts = {}) {
 
   fs.mkdirSync(CAREER_HISTORY_SHARD_DIR, { recursive: true });
   const index = {};
-  let bytes = 0, rowTotal = 0, archived = 0;
+  let bytes = 0, rowTotal = 0, archived = 0, incompleteTotal = 0, setsRows = 0;
+  // Per-half, because the whole point of TEN-244 is the FIXTURES half. A single
+  // blended percentage can read healthy while that half stays where it was —
+  // the archive half alone was already 99.5%.
+  const halfRows = { archive: 0, fixtures: 0 }, halfSets = { archive: 0, fixtures: 0 };
 
   for (const [key, p] of Object.entries(profiles)) {
     if (!p) continue;
@@ -3632,18 +3698,55 @@ async function writeCareerHistoryShards(profiles, opts = {}) {
       }
     }
 
+    // TEN-244: stamp completeness on EVERY row, both halves, in one place - a
+    // predicate applied on only one source half is a predicate a reader cannot
+    // trust. Emitted as the negative (`incomplete: true`) so the common case
+    // costs no bytes, matching how `retired`/`walkover` are carried.
+    let shardIncomplete = 0;
+    for (const r of rows) {
+      // Best-of-five is the Slam main draw at ATP level. Qualifying is best-of-
+      // three even at a Slam, so a row already relabelled 'Qualifying' is judged
+      // on the three-set ladder.
+      const isBo5 = GRAND_SLAM_NAMES.has(String(r.tournament || '').trim())
+        && !/qualif/i.test(String(r.round || ''));
+      // The flags are used as an ADDITIONAL exclusion, never as the basis: they
+      // catch what the arithmetic cannot (a Bo3 retirement that still reached a
+      // legal 2-0), and the score catches what they miss (the 21 unflagged rows).
+      // Either one firing is enough to drop the row.
+      if (r.retired || r.walkover || !careerRowIsComplete(r.result, isBo5)) {
+        r.incomplete = true; shardIncomplete++;
+      }
+    }
+    incompleteTotal += shardIncomplete;
+
     writeJsonAtomic(`${CAREER_HISTORY_SHARD_DIR}/${key}.json`, {
-      v: CAREER_HISTORY_SCHEMA_VERSION, key, matches: rows,
+      // `incomplete` is the shard's own excluded count, so a consumer can state
+      // what it dropped without walking every row to find out.
+      v: CAREER_HISTORY_SCHEMA_VERSION, key, matches: rows, incomplete: shardIncomplete,
     }, true);
     bytes += fs.statSync(`${CAREER_HISTORY_SHARD_DIR}/${key}.json`).size;
     index[key] = rows.length;
     rowTotal += rows.length;
+    for (const r of rows) {
+      const half = r.src === 'archive' ? 'archive' : 'fixtures';
+      halfRows[half]++;
+      if (Array.isArray(r.sets) && r.sets.length) { setsRows++; halfSets[half]++; }
+    }
     if (archiveRows.length) archived++;
   }
 
   writeJsonAtomic(CAREER_HISTORY_INDEX_PATH, { v: CAREER_HISTORY_SCHEMA_VERSION, players: index }, true);
+  const setsPct = rowTotal ? ((setsRows / rowTotal) * 100).toFixed(1) : '0.0';
   log(`Wrote ${Object.keys(index).length} career-history shard(s) to ${CAREER_HISTORY_SHARD_DIR}/ `
     + `(${rowTotal} rows, ${(bytes / 1024 / 1024).toFixed(1)} MB total, ${archived} with pre-${archiveMaxYear + 1} archive rows).`);
+  // TEN-244: state both figures in the build log. Per-set-games coverage is the
+  // number this change exists to move (35.1% before it); the incomplete count is
+  // what the Lines tab must exclude from every rate it prints.
+  const pct = (n, d) => (d ? ((n / d) * 100).toFixed(1) : '0.0');
+  log(`  per-set games on ${setsRows}/${rowTotal} rows (${setsPct}%) — `
+    + `fixtures half ${halfSets.fixtures}/${halfRows.fixtures} (${pct(halfSets.fixtures, halfRows.fixtures)}%), `
+    + `archive half ${halfSets.archive}/${halfRows.archive} (${pct(halfSets.archive, halfRows.archive)}%).`);
+  log(`  ${incompleteTotal} row(s) flagged incomplete (unfinished for the format, or flagged retired/walkover).`);
   return index;
 }
 
@@ -4238,6 +4341,32 @@ function nextShardCacheEntry(cached, profile, nowIso) {
 //       so the ~370 cached opponent profiles rebuild with the corrected labels
 //       instead of serving the stripped careerMatches until they age out.
 const PROFILE_SCHEMA_VERSION = 14; // v14: recent-form rows carry `tier` (atp/challenger/itf) for the name restyle (TEN-104, 2026-08-29)
+// TEN-244 DELIBERATELY DOES NOT BUMP THIS, and the reason is worth keeping.
+//
+// Bumping would be the fastest way to push the new `sets`/`incomplete` fields
+// into the store: writeCareerHistoryShards reads `careerMatches` off the
+// PROFILE, and pass 2 reuses a cached profile wholesale while
+// `cached.v === PROFILE_SCHEMA_VERSION`, so a cached player keeps his old
+// games-less rows for the full 14-day TTL. Seed players rebuild every run and
+// pick the fix up immediately; cached opponents do not.
+//
+// What stopped it, measured rather than assumed:
+//   - Pass 2 has a 400-build count cap and NO wall-clock guard, and this file's
+//     own note at MAX_OPPONENT_BUILDS_PER_RUN records 400 builds taking 1,814 s
+//     = 30.2 min against pipeline.yml's `timeout-minutes: 30`. A killed job
+//     writes NOTHING. The first post-bump run is precisely the run that has to
+//     rebuild the whole pool.
+//   - Pass 2b is capped at MAX_SHARD_BUILDS_PER_RUN (60) plus a 6-minute
+//     budget, so convergence is ~6 runs, not the two a count-only reading
+//     suggests.
+//   - A player not reached in a run is OMITTED, and writePlayerShardsAndIndex
+//     unlinks `profiles/` before rewriting from the surviving set — so the
+//     published roster shrinks for that run, and the deploy gate only asserts
+//     n > 0, so it would ship silently. That is TEN-219's failure mode.
+//
+// So the accelerator is a founder call, not a mine. Without it the fields still
+// arrive — immediately for seed players, and for the rest as the 14-day TTL
+// churns — which is slower but cannot take the roster down.
 
 // Full-career tournament history. Each player's entire ATP-singles history is
 // fetched in ONE get_fixtures call (date_start=2000-01-01) and reduced to a
@@ -6464,7 +6593,7 @@ module.exports = { isIndoorTournament, loadTournamentCourtMap, fetchRecentSingle
   // The Career-record pair. Exported together on purpose: their whole contract
   // is that the counts one returns are tallyable from the rows the other
   // returns, and that is what ten8-career-verify.js asserts.
-  buildAllTierYearly, playerMatchHistory, writeCareerHistoryShards,
+  buildAllTierYearly, playerMatchHistory, writeCareerHistoryShards, careerRowIsComplete, formSetsFromFixture,
   writeTournamentHistoryShards, profilesWithoutTournamentHistory,
   TOURNAMENT_HISTORY_SHARD_DIR, TOURNAMENT_HISTORY_INDEX_PATH,
   fetchPlayerCareerHistory, deriveSlamBoxes, dedupeByPlayerKeyPair, historyCacheFresh,

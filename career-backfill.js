@@ -542,6 +542,13 @@ async function buildArchiveHistories(profiles, minYear, maxYear, opts = {}) {
         // so the renderer falls back to the set count instead of drawing a
         // blank line that looks like a data loss.
         ...(m.sets ? { sets: m.sets } : {}),
+        // TEN-244: carry the retirement marker onto the ROW. `ret` has been
+        // parsed from the raw TML score since TEN-89 and used downstream, but it
+        // was never written here — so every archive-half career row reached the
+        // store with no `retired` flag at all. That matters now: the Lines tab
+        // must exclude unfinished matches from both sides of a rate, and on this
+        // half there was nothing on the row to exclude them BY.
+        ...(m.ret ? { retired: true } : {}),
       });
     }
     if (list.length) {
