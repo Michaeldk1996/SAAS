@@ -673,3 +673,66 @@ test('RULING: speed-panel columns stay NEUTRAL; only the selected row is tinted,
   assert.ok(!/#5b9bff/.test(fn.slice(fn.indexOf('const tint = tintOf'), fn.indexOf('</div>`;'))),
     'the selected row still carries the old accent blue');
 });
+
+// ---------------------------------------------------------------------------
+// FOUNDER RULING 2026-09-20 (closing): the Player panels follow the axis, and
+// NO chart in the product may plot x from a date.
+//
+// His reason, kept verbatim because it is the reason the guard is class-wide
+// rather than site-specific: "Two charts in the same product using different
+// axis semantics is the trap where one component gets migrated and one doesn't,
+// and the bug that surfaces later looks exactly like the original bug coming
+// back."
+test('RULING: NO chart maps x from a date — the class, not the two instances', () => {
+  // Any fraction-of-a-date-span mapping, however it is spelled.
+  const offenders = [];
+  const re = /\(\s*dnum\([^)]*\)\s*-\s*d0\s*\)\s*\/\s*span|\(\s*[A-Za-z_$][\w$]*\.d\s*-\s*d0\s*\)\s*\/\s*span|Date\.UTC\([^)]*\)\s*\/\s*86400000\s*-\s*d0\s*\)\s*\/\s*span/g;
+  let m;
+  while ((m = re.exec(DASH)) !== null) {
+    const line = DASH.slice(0, m.index).split('\n').length;
+    // a comment describing the old behaviour is not an implementation of it
+    const src = DASH.split('\n')[line - 1];
+    if (/^\s*(\/\/|\*)/.test(src)) continue;
+    offenders.push(`bsp-consult-dashboard.html:${line}  ${m[0]}`);
+  }
+  assert.deepEqual(offenders, [],
+    `these map x from a DATE span. A one-week event or an injury season then owns width proportional to TIME, not to matches:\n  ${offenders.join('\n  ')}`);
+
+  // calendarTicks was the helper that made a date axis easy to reach for. It is
+  // gone; leaving it would leave a working implementation of the superseded
+  // semantics next to its replacement.
+  assert.ok(!/function calendarTicks\s*\(/.test(DASH),
+    'calendarTicks is back — that is the date axis one call away');
+
+  // Anti-vacuity: the detector must fire on a planted date mapping, or an empty
+  // offender list means nothing.
+  const planted = 'var x=(dnum(r[0])-d0)/span;';
+  assert.equal([...planted.matchAll(re)].length, 1,
+    'the detector does not match a real date mapping — it is not testing anything');
+});
+
+test('RULING: the Player panels use the career match index and its season ticks', () => {
+  const i = DASH.indexOf('function playerCharts');
+  assert.ok(i > 0, 'playerCharts not found');
+  const fn = DASH.slice(i, DASH.indexOf('\n  function panelFor', i));
+
+  assert.match(fn, /var spine=series\[0\]\.recs\.slice\(\)\.sort/,
+    'the index spine must be the All-matches series — the other two are SUBSETS of it, which is what makes x0 meaningful');
+  assert.match(fn, /xs\.push\(N>1 \? rankOf\(v\.d\)\/\(N-1\) : 0\)/,
+    'player x must be the rank of that match in the career sequence');
+  assert.match(fn, /function rankOf\(d\)/, 'rank must be derived from date order, not object identity');
+  assert.match(fn, /seasonIndexTicks\(spine, spineX, \[2,1\], dOf\)/);
+  assert.match(fn, /seasonIndexTicks\(spine, spineX, \[4,2,1\], dOf\)/);
+  assert.ok(!/anchorHi/.test(fn), 'the calendar anchor is still being computed');
+
+  // seasonIndexTicks serves two row shapes; without the accessor it reads r[0]
+  // on a record object and every tick becomes NaN.
+  assert.match(DASH, /function seasonIndexTicks\(rows, xs, steps, dateOf\)/);
+  assert.match(DASH, /var get = dateOf \|\| function\(r\)\{ return r\[0\]; \};/);
+
+  // The caption ruling applies to both surfaces.
+  const caps = [...DASH.matchAll(/db-xcap','<span class="db-eyebrow">([^<]*)<\/span>/g)].map((m) => m[1].trim());
+  assert.ok(caps.length >= 2, `expected a caption on both the Tour curve and the Player main panel, found ${caps.length}`);
+  assert.deepEqual([...new Set(caps)], ['Season · match index'],
+    `every profit-curve caption must name both axes; found ${JSON.stringify(caps)}`);
+});

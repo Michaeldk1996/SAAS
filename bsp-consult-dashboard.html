@@ -28388,10 +28388,15 @@ window.DatabaseTab = (function(){
   // the current filter gets no tick, which is correct — there is no width on this
   // axis where it would sit. Steps are tried widest-first and the first that
   // yields at least three labels wins, so a two-season event still shows both.
-  function seasonIndexTicks(rows, xs, steps){
+  // `dateOf` lets the same tick builder serve both shapes: the Tour/Tournament
+  // curve passes archive rows (date at r[0]), the Player panels pass records
+  // (date at .d). Without it `yr(rows[i][0])` reads undefined on a record and
+  // every tick silently becomes NaN.
+  function seasonIndexTicks(rows, xs, steps, dateOf){
+    var get = dateOf || function(r){ return r[0]; };
     var firstOf={}, order=[], i, y;
     for(i=0;i<rows.length;i++){
-      y=yr(rows[i][0]);
+      y=yr(get(rows[i]));
       if(!(y in firstOf)){ firstOf[y]=xs[i]; order.push(y); }
     }
     var out=[];
@@ -28405,20 +28410,12 @@ window.DatabaseTab = (function(){
     });
     return out;
   }
-  function calendarTicks(d0, span, steps){
-    var y0=new Date(d0*86400000).getUTCFullYear(),
-        y1=new Date((d0+span)*86400000).getUTCFullYear(), out=[];
-    (steps||[2,1]).some(function(stp){
-      out=[];
-      for(var y=y0; y<=y1; y+=stp){
-        var f=(Date.UTC(y,0,1)/86400000 - d0)/span;
-        if(f<0 || f>1) continue;
-        out.push({ label:String(y), x:f });
-      }
-      return out.length>=3;
-    });
-    return out;
-  }
+  // `calendarTicks` REMOVED 2026-09-20. It mapped a tick to a fraction of the
+  // DATE span, and nothing plots by date any more — the Tour/Tournament curve and
+  // all three Player panels are on the career/match index via `seasonIndexTicks`.
+  // Leaving it in place would leave a working implementation of the superseded
+  // semantics sitting next to its replacement, which is how a migrated component
+  // gets un-migrated later and the bug reads as a regression coming back.
   // Down-sample to the EXPORT's own chart vertex budget, WITHOUT losing the
   // envelope (founder ruling TEN-196 2026-09-13 item 1, then its clean-context
   // review the same day). `Database.dc.html` builds each curve with `curve(n, …)`
@@ -28798,12 +28795,36 @@ window.DatabaseTab = (function(){
     // shows on the LEFT, because d0 is a season boundary while the window is rolling:
     // on "Last 52 weeks" the median player leaves 36.8% of the panel blank. Both are
     // on the founder's desk; neither is a defect to fix unasked.
-    var anchorHi=dnum(+(''+M.dateRange[1]).replace(/-/g,''));
-    var minD=null;
-    series[0].recs.forEach(function(v){ var d=dnum(v.d); if(minD===null||d<minD) minD=d; });
-    if(minD===null){ card.appendChild(el('div','db-note','No matches to chart.')); return card; }
-    var d0=Date.UTC(new Date(minD*86400000).getUTCFullYear(),0,1)/86400000;
-    var span=(Math.max(anchorHi, minD)-d0)||1;
+    // ===== FOUNDER RULING 2026-09-20: the Player panels follow the Tour/Tournament
+    // axis. MATCH INDEX, not calendar. =====
+    // This supersedes the TEN-196 2026-09-13 round-3 scope call recorded above,
+    // which kept these three panels on a date axis while the Tour curve moved.
+    // The founder's reason is the one that matters: two charts in one product on
+    // different axis semantics is the trap where one component gets migrated and
+    // one doesn't, and the bug that surfaces later looks exactly like the original
+    // bug coming back.
+    //
+    // THE SPINE IS THE "ALL MATCHES" SERIES. These three series are ONE player —
+    // All / When favourite / When underdog — and the latter two are SUBSETS of the
+    // first. So the index domain is the player's own career sequence, and a subset
+    // point sits at the position of that match within it. That is precisely the
+    // spec's x0: a series that starts after the domain does begins at x0 and leaves
+    // its left stretch empty. "When underdog" for a player who was favoured in his
+    // first 200 matches starts 200/N along, and stays there.
+    //
+    // The rank is computed from DATE ORDER rather than object identity, so it does
+    // not silently mis-place a point if the subset arrays are ever rebuilt rather
+    // than filtered from the same objects.
+    var spine=series[0].recs.slice().sort(function(a,b){ return a.d-b.d; });
+    var N=spine.length;
+    if(!N){ card.appendChild(el('div','db-note','No matches to chart.')); return card; }
+    var spineD=spine.map(function(v){ return v.d; });
+    // first index in the spine whose date is >= d  (ties land on the first of the day)
+    function rankOf(d){
+      var lo=0, hi=spineD.length;
+      while(lo<hi){ var mid=(lo+hi)>>1; if(spineD[mid]<d) lo=mid+1; else hi=mid; }
+      return lo;
+    }
 
     series.forEach(function(s){
       var ordered=s.recs.slice().sort(function(a,b){ return a.d-b.d; });
@@ -28811,7 +28832,8 @@ window.DatabaseTab = (function(){
       for(var i=0;i<ordered.length;i++){
         var v=ordered[i], price=fading?v.op:v.p, won=fading?(v.w?0:1):v.w;
         c += won ? (price-1) : -1;
-        xs.push((dnum(v.d)-d0)/span); vals.push(c);
+        xs.push(N>1 ? rankOf(v.d)/(N-1) : 0);
+        vals.push(c);
       }
       s.xs=xs; s.vals=vals; s.end=vals.length?vals[vals.length-1]:null;
     });
@@ -28913,10 +28935,16 @@ window.DatabaseTab = (function(){
     var grid=[]; for(var v=Math.floor(hi/step)*step; v>=lo; v-=step)
       grid.push({y:Y(v), label: v===0?'0':(v>0?'+'+fmtInt(v)+'u':fmtInt(v)+'u')});
 
-    // One tick ladder per panel size, both off the SAME d0/span, so the season
-    // lines on the small panels sit at the same x as on the big one.
-    var tMain=calendarTicks(d0, span, [2,1]);
-    var tSub=calendarTicks(d0, span, [4,2,1]);
+    // One tick ladder per panel size, both off the SAME career spine, so the season
+    // lines on the small panels sit at the same x as on the big one. Placed at the
+    // match index where each season actually starts — NOT from the ZIP spec's
+    // `a = round((y0-2010)/16 * (n-1))`, which assumes matches are uniform in time.
+    // They are not: a player's season is a cluster of tournament weeks, and that
+    // formula would put the label in the wrong place on every panel.
+    var spineX=spine.map(function(v,i){ return N>1 ? i/(N-1) : 0; });
+    var dOf=function(r){ return r.d; };
+    var tMain=seasonIndexTicks(spine, spineX, [2,1], dOf);
+    var tSub=seasonIndexTicks(spine, spineX, [4,2,1], dOf);
     // §4 rendered plot heights: Players main 360px, pair panels 230px.
     var geo={ zeroIn:zeroIn, zeroY:pZeroY, tintY:tintY };
     card.appendChild(panelFor(series[0], grid, Y, PH, tMain, 360, true, geo));
@@ -28942,7 +28970,7 @@ window.DatabaseTab = (function(){
     // only): loss tint, horizontal gridlines, vertical gridlines, area fill, zero
     // line, line. The tint is CLAMPED to the viewBox — see PLAYER_ZERO_IN_DOMAIN.
     var NV=isMain?N_PMAIN:N_PSUB;
-    var svg='<svg viewBox="0 0 1000 '+PH+'" preserveAspectRatio="none" role="img" aria-label="'+esc(s.title)+' cumulative profit on a season axis, ticks mark season starts">';
+    var svg='<svg viewBox="0 0 1000 '+PH+'" preserveAspectRatio="none" role="img" aria-label="'+esc(s.title)+' cumulative profit by match index, ticks mark season starts">';
     svg+='<rect x="0" y="'+geo.tintY.toFixed(1)+'" width="1000" height="'+(PH-geo.tintY).toFixed(1)+'" fill="rgba(255,255,255,0.014)"/>';
     grid.forEach(function(g){ svg+='<line x1="0" y1="'+g.y.toFixed(1)+'" x2="1000" y2="'+g.y.toFixed(1)+'" stroke="rgba(255,255,255,0.06)" stroke-width="1" vector-effect="non-scaling-stroke"/>'; });
     // Vertical season gridlines on the player charts — founder ruling TEN-196
@@ -28971,6 +28999,12 @@ window.DatabaseTab = (function(){
     var tr=el('div','db-pcticks');
     ticks.forEach(function(t){ var d=el('div',null,t.label); d.style.left=(t.x*100).toFixed(2)+'%'; tr.appendChild(d); });
     p.appendChild(tr);
+    // Same honesty as the Tour curve's caption (founder ruling 2026-09-20): the
+    // labels are seasons, the SPACING is match count. These panels carried no
+    // caption at all, which left bare season numbers over an axis that is not
+    // linear in time. MAIN only — the pair panels are ~166px wide and a caption
+    // would not fit without crowding the tick row.
+    if(isMain) p.appendChild(el('div','db-xcap','<span class="db-eyebrow">Season · match index</span>'));
     return p;
   }
 
