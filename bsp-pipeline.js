@@ -3649,6 +3649,9 @@ async function writeCareerHistoryShards(profiles, opts = {}) {
   // blended percentage can read healthy while that half stays where it was —
   // the archive half alone was already 99.5%.
   const halfRows = { archive: 0, fixtures: 0 }, halfSets = { archive: 0, fixtures: 0 };
+  // Rows with no readable format. The founder asked for this count explicitly:
+  // a row that cannot be typed must not disappear into a silent fallback.
+  let untypedTotal = 0;
 
   for (const [key, p] of Object.entries(profiles)) {
     if (!p) continue;
@@ -3704,16 +3707,34 @@ async function writeCareerHistoryShards(profiles, opts = {}) {
     // costs no bytes, matching how `retired`/`walkover` are carried.
     let shardIncomplete = 0;
     for (const r of rows) {
-      // Best-of-five is the Slam main draw at ATP level. Qualifying is best-of-
-      // three even at a Slam, so a row already relabelled 'Qualifying' is judged
-      // on the three-set ladder.
-      const isBo5 = GRAND_SLAM_NAMES.has(String(r.tournament || '').trim())
-        && !/qualif/i.test(String(r.round || ''));
-      // The flags are used as an ADDITIONAL exclusion, never as the basis: they
-      // catch what the arithmetic cannot (a Bo3 retirement that still reached a
-      // legal 2-0), and the score catches what they miss (the 21 unflagged rows).
-      // Either one firing is enough to drop the row.
-      if (r.retired || r.walkover || !careerRowIsComplete(r.result, isBo5)) {
+      // TEN-244: READ the format, do not guess it. `bestOf` is carried from
+      // TML's own column on the archive half (populated 78,091/78,091). Only
+      // when the row genuinely has no format is the Slam-name inference used,
+      // and that case is COUNTED rather than passed over in silence - see
+      // untypedTotal below.
+      const bo = (r.bestOf === 3 || r.bestOf === 5) ? r.bestOf : null;
+      let isBo5;
+      if (bo !== null) {
+        isBo5 = bo === 5;
+      } else {
+        // The fixtures half carries no format field of any kind (measured: 55
+        // fields on a match, none of them format). Excluding every such row
+        // would drop the entire 2021+ window, which is the window this ticket
+        // exists to light up - so the Slam-name inference stands there, but it
+        // is NOT silent: the rows are counted and reported every build.
+        // Measured error of the inference inside that era: 60 of 14,805 archive
+        // rows 2021-2026 (0.405%), all of them NextGen Finals, which plays Bo5
+        // short sets. Qualifying is Bo3 even at a Slam.
+        isBo5 = GRAND_SLAM_NAMES.has(String(r.tournament || '').trim())
+          && !/qualif/i.test(String(r.round || ''));
+        untypedTotal++;
+      }
+      // The flags are an ADDITIONAL exclusion, never the basis. The score
+      // catches rows carrying no flag at all; the flags catch what arithmetic
+      // cannot - a Bo3 retirement that still reached a legal 2-0, a walkover
+      // whose 0-0 would otherwise depend on an accident, and a default whose
+      // partial scoreline reached a legal count. Any one firing drops the row.
+      if (r.retired || r.walkover || r.defaulted || !careerRowIsComplete(r.result, isBo5)) {
         r.incomplete = true; shardIncomplete++;
       }
     }
@@ -3746,7 +3767,8 @@ async function writeCareerHistoryShards(profiles, opts = {}) {
   log(`  per-set games on ${setsRows}/${rowTotal} rows (${setsPct}%) — `
     + `fixtures half ${halfSets.fixtures}/${halfRows.fixtures} (${pct(halfSets.fixtures, halfRows.fixtures)}%), `
     + `archive half ${halfSets.archive}/${halfRows.archive} (${pct(halfSets.archive, halfRows.archive)}%).`);
-  log(`  ${incompleteTotal} row(s) flagged incomplete (unfinished for the format, or flagged retired/walkover).`);
+  log(`  ${incompleteTotal} row(s) flagged incomplete (unfinished for the format, or flagged retired/walkover/defaulted).`);
+  log(`  ${untypedTotal} row(s) carried no readable best_of and were typed by the Slam-name inference instead.`);
   return index;
 }
 

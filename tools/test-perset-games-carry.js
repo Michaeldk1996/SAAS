@@ -220,6 +220,131 @@ check('writeCareerHistoryShards flags both halves and its count matches the rows
   } finally { process.chdir(cwd); fs.rmSync(tmp, { recursive: true, force: true }); }
 });
 
+  // ── 4 · TEN-244 round 2: format READ not inferred, plus DEF and W/O flags ──
+// One control per direction for each, to the same standard as the pair above:
+// each fails if the change silently reverts.
+
+check('the STORED format wins over the tournament name (Davis Cup direction)', async () => {
+  // The 2000 Davis Cup rubber shape: best_of=5 on an event the Slam-name
+  // inference calls Bo3. Before TEN-244 round 2 this was 4,454 missed Bo5 rows
+  // (5.70% of the archive) and 4,231 COMPLETED matches wrongly excluded.
+  const cwd = process.cwd();
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'ten244b-'));
+  try {
+    process.chdir(tmp);
+    await writeCareerHistoryShards({ p: { careerMatches: [
+      // A completed straight-sets Bo5 Davis Cup rubber. Name inference says
+      // Bo3, on which "0 - 3" is three sets won and therefore INCOMPLETE.
+      { year: '2000', date: '2000-02-04', tournament: 'Davis Cup G1 QF: CHN vs UZB', round: 'RR',
+        result: '0 - 3', won: true, src: 'archive', bestOf: 5 },
+      // The pre-2008 Masters-1000 final shape, same trap, different event.
+      { year: '2000', date: '2000-03-19', tournament: 'Indian Wells Masters', round: 'F',
+        result: '0 - 3', won: true, src: 'archive', bestOf: 5 },
+    ] } }, { log: () => {} });
+    const sh = JSON.parse(fs.readFileSync(path.join('career-history', 'p.json'), 'utf8'));
+    assert.strictEqual(sh.incomplete, 0,
+      `a completed Bo5 must NOT be excluded once best_of is read (got ${sh.incomplete} excluded)`);
+    sh.matches.forEach(m => assert.strictEqual(!!m.incomplete, false, `${m.tournament} wrongly excluded`));
+  } finally { process.chdir(cwd); fs.rmSync(tmp, { recursive: true, force: true }); }
+});
+
+check('CONTROL: strip bestOf and the SAME rows revert to being wrongly excluded', async () => {
+  // Proves the assertion above is carried by `bestOf` and not by something
+  // else — remove the field and the old defect comes straight back.
+  const cwd = process.cwd();
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'ten244c-'));
+  try {
+    process.chdir(tmp);
+    await writeCareerHistoryShards({ p: { careerMatches: [
+      { year: '2000', date: '2000-02-04', tournament: 'Davis Cup G1 QF: CHN vs UZB', round: 'RR',
+        result: '0 - 3', won: true, src: 'archive' },   // no bestOf
+    ] } }, { log: () => {} });
+    const sh = JSON.parse(fs.readFileSync(path.join('career-history', 'p.json'), 'utf8'));
+    assert.strictEqual(sh.incomplete, 1,
+      'without bestOf the Davis Cup row should fall back to name inference and be excluded — ' +
+      'if it is not, this control proves nothing');
+  } finally { process.chdir(cwd); fs.rmSync(tmp, { recursive: true, force: true }); }
+});
+
+check('the stored format also holds the OTHER way — bestOf 3 beats a Slam name', async () => {
+  // Slam QUALIFYING is best-of-three. The name says "Australian Open"; the
+  // stored format must win, or a completed 2-0 qualifier reads as a truncated Bo5.
+  const cwd = process.cwd();
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'ten244d-'));
+  try {
+    process.chdir(tmp);
+    await writeCareerHistoryShards({ p: { careerMatches: [
+      { year: '2019', date: '2019-01-08', tournament: 'Australian Open', round: 'Q2',
+        result: '0 - 2', won: true, src: 'archive', bestOf: 3 },
+    ] } }, { log: () => {} });
+    const sh = JSON.parse(fs.readFileSync(path.join('career-history', 'p.json'), 'utf8'));
+    assert.strictEqual(sh.incomplete, 0, 'a completed Bo3 at a Slam must not be excluded');
+  } finally { process.chdir(cwd); fs.rmSync(tmp, { recursive: true, force: true }); }
+});
+
+check('DEF is excluded even when its partial scoreline reaches a legal set count', async () => {
+  // 6 of 16 archive defaults did exactly this — e.g. "3-6 7-5 6-0 5-2 DEF"
+  // reduces to a set count that a format check accepts.
+  const cwd = process.cwd();
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'ten244e-'));
+  try {
+    process.chdir(tmp);
+    await writeCareerHistoryShards({ p: { careerMatches: [
+      { year: '2004', date: '2004-03-26', tournament: 'Miami Masters', round: 'R64',
+        result: '0 - 2', won: true, src: 'archive', bestOf: 3, defaulted: true },
+    ] } }, { log: () => {} });
+    const sh = JSON.parse(fs.readFileSync(path.join('career-history', 'p.json'), 'utf8'));
+    assert.strictEqual(sh.incomplete, 1, 'a DEF with a legal set count must still be excluded');
+  } finally { process.chdir(cwd); fs.rmSync(tmp, { recursive: true, force: true }); }
+});
+
+check('CONTROL: the same DEF row without the flag passes — so the flag is what excludes it', async () => {
+  const cwd = process.cwd();
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'ten244f-'));
+  try {
+    process.chdir(tmp);
+    await writeCareerHistoryShards({ p: { careerMatches: [
+      { year: '2004', date: '2004-03-26', tournament: 'Miami Masters', round: 'R64',
+        result: '0 - 2', won: true, src: 'archive', bestOf: 3 },
+    ] } }, { log: () => {} });
+    const sh = JSON.parse(fs.readFileSync(path.join('career-history', 'p.json'), 'utf8'));
+    assert.strictEqual(sh.incomplete, 0,
+      'the identical row minus `defaulted` must pass — otherwise the test above is not measuring the flag');
+  } finally { process.chdir(cwd); fs.rmSync(tmp, { recursive: true, force: true }); }
+});
+
+check('W/O is excluded BY ITS FLAG, not by the 0-0 arithmetic accident', async () => {
+  // The whole point of giving walkovers a real flag: a walkover carrying a
+  // score that is NOT 0-0 must still be excluded. Under the old behaviour this
+  // row passed, because only "0 - 0" failed the format check.
+  const cwd = process.cwd();
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'ten244g-'));
+  try {
+    process.chdir(tmp);
+    await writeCareerHistoryShards({ p: { careerMatches: [
+      { year: '2015', date: '2015-06-01', tournament: 'Test Open', round: 'R32',
+        result: '0 - 2', won: true, src: 'archive', bestOf: 3, walkover: true },
+    ] } }, { log: () => {} });
+    const sh = JSON.parse(fs.readFileSync(path.join('career-history', 'p.json'), 'utf8'));
+    assert.strictEqual(sh.incomplete, 1,
+      'a walkover with a non-0-0 set count must still be excluded — the flag, not the arithmetic');
+  } finally { process.chdir(cwd); fs.rmSync(tmp, { recursive: true, force: true }); }
+});
+
+check('CONTROL: drop the walkover flag and that row passes again', async () => {
+  const cwd = process.cwd();
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'ten244h-'));
+  try {
+    process.chdir(tmp);
+    await writeCareerHistoryShards({ p: { careerMatches: [
+      { year: '2015', date: '2015-06-01', tournament: 'Test Open', round: 'R32',
+        result: '0 - 2', won: true, src: 'archive', bestOf: 3 },
+    ] } }, { log: () => {} });
+    const sh = JSON.parse(fs.readFileSync(path.join('career-history', 'p.json'), 'utf8'));
+    assert.strictEqual(sh.incomplete, 0, 'without the flag the row must pass, or the control is vacuous');
+  } finally { process.chdir(cwd); fs.rmSync(tmp, { recursive: true, force: true }); }
+});
+
 (async () => {
   for (const run of queue) await run();
   console.log(`\nper-set games + completeness: ${pass} pass, ${fails.length} fail`);

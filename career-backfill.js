@@ -220,16 +220,35 @@ async function buildTmlIndex(log) {
       // TEN-89 Part 2: the raw TML score marks retirements ("... RET"); setCounts
       // drops the token, so capture it here for the over-3.5 exclusion downstream.
       const ret = /\bRET\b|Retired/i.test(String(r.score || ''));
+      // TEN-244: the other two ways a match ends early. `ret` has covered
+      // retirements since TEN-89; these two had no flag at all.
+      //   W/O  - 413 of 78,091 archive matches (0.53%). They survived only
+      //          because a walkover's set count is "0 - 0", which no format
+      //          accepts. That is arithmetic accident, not design: the next
+      //          parser or format change breaks it with nothing failing.
+      //   DEF  - 16 of 78,091 (0.02%), and 6 of those 16 carried a partial
+      //          scoreline that reached a legal set count and passed as
+      //          COMPLETE (e.g. "3-6 7-5 6-0 5-2 DEF", "6-1 3-0 DEF").
+      // setCounts() strips every one of these tokens, so the flag is the only
+      // place the information can survive to the row.
+      const walkover = /W\/?O\b|WALKOVER/i.test(String(r.score || ''));
+      const defaulted = /\bDEF\b|DEFAULT/i.test(String(r.score || ''));
+      // TEN-244: the FORMAT, read rather than inferred. TML publishes `best_of`
+      // on every row (measured: 78,091/78,091 populated, values only 3 or 5).
+      // Inferring it from the tournament name instead cost 4,454 missed Bo5
+      // rows (5.70% of the archive) - overwhelmingly Davis Cup, which was Bo5
+      // until 2018 - and turned 4,231 COMPLETED matches into false exclusions.
+      const bestOf = /^[35]$/.test(String(r.best_of || '').trim()) ? Number(r.best_of) : null;
       // The same string also carries the per-set games. Parsed once here, in the
       // winner's orientation, and flipped for the loser's row — without this the
       // archive half of career-history can only ever show a set COUNT, which caps
       // per-set coverage at the fixture window (~50% of a veteran's career).
       const wSets = parseSetScores(r.score);
       // Winner's row entry.
-      pushMatch(byId, wId, { tourney, ...meta, year, round, oppName: toInitialLast(r.loser_name), score: scoreDisplay(r.score, true), won: true, ret, sets: wSets });
+      pushMatch(byId, wId, { tourney, ...meta, year, round, oppName: toInitialLast(r.loser_name), score: scoreDisplay(r.score, true), won: true, ret, walkover, defaulted, bestOf, sets: wSets });
       trackIdentity(identity, wId, r.winner_name, r.winner_ioc, year);
       // Loser's row entry.
-      pushMatch(byId, lId, { tourney, ...meta, year, round, oppName: toInitialLast(r.winner_name), score: scoreDisplay(r.score, false), won: false, ret, sets: flipSetScores(wSets) });
+      pushMatch(byId, lId, { tourney, ...meta, year, round, oppName: toInitialLast(r.winner_name), score: scoreDisplay(r.score, false), won: false, ret, walkover, defaulted, bestOf, sets: flipSetScores(wSets) });
       trackIdentity(identity, lId, r.loser_name, r.loser_ioc, year);
     }
   }
@@ -549,6 +568,14 @@ async function buildArchiveHistories(profiles, minYear, maxYear, opts = {}) {
         // must exclude unfinished matches from both sides of a rate, and on this
         // half there was nothing on the row to exclude them BY.
         ...(m.ret ? { retired: true } : {}),
+        // TEN-244: W/O gets a real flag rather than relying on its 0-0 set
+        // count, and DEF gets one at all - it had none, and 6 of 16 defaults
+        // reached a legal set count and read as finished.
+        ...(m.walkover ? { walkover: true } : {}),
+        ...(m.defaulted ? { defaulted: true } : {}),
+        // The format, carried from TML's own column so the completeness
+        // predicate reads it instead of guessing from the tournament name.
+        ...(m.bestOf ? { bestOf: m.bestOf } : {}),
       });
     }
     if (list.length) {
