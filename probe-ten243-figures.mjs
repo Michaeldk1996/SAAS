@@ -54,15 +54,39 @@ const check=(n,ok,detail)=>{ if(ok){pass++;console.log(`  ok    ${n}${detail?'  
 // 1 · Tour figures — the founder's ruled numbers.
 const tour = await ev(`(function(){var t=${BODY}.innerText;
   var m=t.match(/All\\n[\\d.]+\\n[\\d,]+\\n-?\\d+\\.\\d+%/g); return m?m.slice(0,2):null;})()`);
-check('Tour band table still reports the ruled figures',
-  JSON.stringify(tour)===JSON.stringify(['All\n1.44\n41,667\n-2.14%','All\n3.00\n41,667\n-5.44%']),
+// ── BASELINE MOVED 2026-09-20, AND HERE IS THE AUTHORITY, because a probe that
+//    quietly adopts new numbers is indistinguishable from one hiding a regression.
+//
+//    This probe asserted Tour -2.14% / -5.44% over 41,667 with the caption
+//    "Season". All three moved, and BOTH changes are RULED, not drift:
+//
+//      * gate 33f71aab (TEN-242, answered 2026-09-20T01:26:07Z)
+//          axis   -> `index`  : the curve plots by MATCH INDEX; the caption is
+//                               "Season · match index". The question was titled
+//                               "the chart axis (which reverses your own ruling)"
+//                               and the `keep` option was offered and declined.
+//          retire -> `void`   : retirements are voided rather than settled, as a
+//                               book does. 41,667 -> 40,389 rows (-1,278;
+//                               1,837 archive-wide), fav -2.14% -> -1.74%,
+//                               dog -5.44% -> -6.94%.
+//      * gate efdce201 (TEN-246, answered 2026-09-20) re-confirmed both after I
+//        wrongly reported them as an unauthorised regression: `index_stands`,
+//        `void_stands`.
+//
+//    I held this probe RED across two heartbeats rather than re-baseline it on
+//    my own reading. It is being updated now because the founder ruled, not
+//    because it was inconvenient. If these numbers move again WITHOUT a gate id
+//    you can point at, that is a regression - do not repeat what I nearly did
+//    and assume the page is right because the probe is loud.
+check('Tour band table reports the RULED figures (gate 33f71aab: retirements voided)',
+  JSON.stringify(tour)===JSON.stringify(['All\n1.44\n40,389\n-1.74%','All\n3.00\n40,389\n-6.94%']),
   JSON.stringify(tour));
 
 // 2 · Season caption letter-spacing — the CSS regression the review caught.
 const season = await ev(`(function(){var s=${BODY}.querySelector('.db-xcap .db-eyebrow');
   return s?{t:s.textContent.trim(),ls:getComputedStyle(s).letterSpacing}:null;})()`);
-check('Season caption keeps its 0.14em (1.4px) — the reverted CSS regression stays reverted',
-  season && season.ls==='1.4px' && season.t==='Season', JSON.stringify(season));
+check('caption is the RULED "Season · match index" at 0.14em (gate 33f71aab: axis=index)',
+  season && season.ls==='1.4px' && season.t==='Season · match index', JSON.stringify(season));
 
 // 3 · Per-board fields at All/career, recomputed independently last run.
 async function goRatings(){
