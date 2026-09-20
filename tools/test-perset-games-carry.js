@@ -28,8 +28,12 @@ const assert = require('assert');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
-const { playerMatchHistory, formSetsFromFixture, careerRowIsComplete, writeCareerHistoryShards } =
+const { playerMatchHistory, formSetsFromFixture, careerRowIsComplete, writeCareerHistoryShards,
+  NEXTGEN_TOURNAMENT_KEY, CAREER_HISTORY_INDEX_PATH } =
   require(path.join(__dirname, '..', 'bsp-pipeline.js'));
+const cb = require(path.join(__dirname, '..', 'career-backfill.js'));
+const { altFormatForTourneyId, buildArchiveHistories } = cb;
+const { buildTmlIndex } = cb._internal;
 
 let pass = 0; const fails = [];
 const queue = [];
@@ -342,6 +346,195 @@ check('CONTROL: drop the walkover flag and that row passes again', async () => {
     ] } }, { log: () => {} });
     const sh = JSON.parse(fs.readFileSync(path.join('career-history', 'p.json'), 'utf8'));
     assert.strictEqual(sh.incomplete, 0, 'without the flag the row must pass, or the control is vacuous');
+  } finally { process.chdir(cwd); fs.rmSync(tmp, { recursive: true, force: true }); }
+});
+
+// ── 5 · TEN-244 round 3: NextGen Finals leave the format-typed population ───
+// Founder ruling 2026-09-20. Best-of-five SHORT sets (first to four games,
+// tiebreak at 3-3), so the set COUNT reads as a normal Bo5 while every
+// games-based figure sits on another scale. Excluded, counted, visible — and
+// matched on TOURNAMENT IDENTITY, never on the scoreline, because a heuristic
+// that infers short sets from a score also catches legitimate blowouts.
+
+check('FIXTURES half: the NextGen row is tagged from tournament_key, not the name', () => {
+  // The same fixture twice, differing ONLY in tournament_key. If the tag
+  // followed the NAME this pair would be indistinguishable.
+  const ng = rowsFor(fixture({ tournament_key: NEXTGEN_TOURNAMENT_KEY, tournament_name: 'ATP Next Gen Finals - Jeddah' }))[0];
+  const no = rowsFor(fixture({ tournament_key: '3683', tournament_name: 'ATP Next Gen Finals - Jeddah' }))[0];
+  assert.strictEqual(ng.altFormat, 'nextgen', 'the NextGen tournament_key must tag the row');
+  assert.strictEqual('altFormat' in no, false,
+    'a row carrying the same NAME under a different key must NOT be tagged — the key is the handle');
+});
+
+check('NEGATIVE CONTROL: "Next Generation Hardcourts" is Bo3 Adelaide and stays typed', () => {
+  // A real trap: the 2005-2008 Adelaide ATP 250 carried the sponsor name
+  // "Next Generation Hardcourts" and is present in odds-archive/. A substring
+  // match on "next gen" swallows it and silently removes a best-of-THREE event
+  // from the typed population.
+  const r = rowsFor(fixture({ tournament_key: '3125', tournament_name: 'Next Generation Hardcourts' }))[0];
+  assert.strictEqual('altFormat' in r, false, 'Adelaide 2005 must not be excluded as an alternate format');
+  // ...and the Milan ATP 250 / Milan Challenger, which share the host city but
+  // not the key.
+  for (const k of ['3683', '2505']) {
+    assert.strictEqual('altFormat' in rowsFor(fixture({ tournament_key: k, tournament_name: 'Milan' }))[0], false,
+      `Milan under key ${k} must not be excluded`);
+  }
+});
+
+check('ARCHIVE half: the tourney_id suffix is the handle, both directions', () => {
+  // TML publishes "<season>-<event id>"; the event id is stable at 7696 across
+  // all eight editions while the NAME appears as 'Next Gen Finals',
+  // 'Next Gen ATP Finals' AND 'NextGen Finals'.
+  for (const id of ['2017-7696', '2021-7696', '2025-7696', '7696']) {
+    assert.strictEqual(altFormatForTourneyId(id), 'nextgen', `${id} should be the NextGen event`);
+  }
+  for (const id of ['2000-7308', '2005-337', '', null, undefined, 'abc', '2017-76960', '2017-7696x']) {
+    assert.strictEqual(altFormatForTourneyId(id), null,
+      `${JSON.stringify(id)} must NOT be excluded — an unreadable id types as normal, it does not drop a match`);
+  }
+});
+
+check('the shard writer excludes a NextGen row for FORMAT, not as a truncation', async () => {
+  const cwd = process.cwd();
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'ten244i-'));
+  try {
+    process.chdir(tmp);
+    await writeCareerHistoryShards({ p: { careerMatches: [
+      // A COMPLETED NextGen final: 3-1 in short sets. On the Bo5 ladder this is
+      // a finished match, so nothing about completeness would exclude it — only
+      // the format tag does.
+      { year: '2024', date: '2024-12-22', tournament: 'ATP Next Gen Finals - Jeddah', round: 'F',
+        result: '3 - 1', won: true, src: 'fixtures', altFormat: 'nextgen',
+        sets: [{ p: 4, o: 2 }, { p: 2, o: 4 }, { p: 4, o: 1 }, { p: 4, o: 3 }] },
+      // An ordinary completed Bo3 alongside it, so the shard counts can be read.
+      { year: '2024', date: '2024-10-01', tournament: 'Test Open', round: 'R32',
+        result: '2 - 0', won: true, src: 'fixtures' },
+    ] } }, { log: () => {} });
+    const sh = JSON.parse(fs.readFileSync(path.join('career-history', 'p.json'), 'utf8'));
+    assert.strictEqual(sh.altFormat, 1, `expected 1 format exclusion, got ${sh.altFormat}`);
+    assert.strictEqual(sh.incomplete, 0,
+      'a NextGen match is FINISHED — calling it incomplete would be the plausible default this store forbids');
+    const ng = sh.matches.find(m => m.round === 'F');
+    assert.strictEqual(ng.altFormat, 'nextgen', 'the reason must survive onto the published row');
+    assert.strictEqual(!!ng.incomplete, false, 'a format exclusion must not masquerade as a truncation');
+    // and the reason is readable from the INDEX, not only from the code
+    const idx = JSON.parse(fs.readFileSync(CAREER_HISTORY_INDEX_PATH, 'utf8'));
+    assert.strictEqual(idx.meta.exclusions.altFormat, 1, 'meta.exclusions.altFormat missing or wrong');
+    assert.strictEqual(idx.meta.exclusions.byReason.altFormat.nextgen, 1, 'the reason must be named in meta');
+    assert.strictEqual(idx.meta.population.rows, 2, 'every count must carry its population');
+    assert.deepStrictEqual(idx.meta.exclusions.altFormatByHalf, { fixtures: 1, archive: 0 },
+      'the exclusion must be readable PER HALF — the fixtures half converges on the profile-cache TTL');
+    // THE BLOCK MUST CLOSE. Here the excluded row DOES carry games, so the
+    // all-rows numerator and the games-comparable one differ, and subtracting
+    // the exclusion count from the numerator must NOT be the reader's job.
+    const g = idx.meta.perSetGames;
+    assert.strictEqual(g.rows, 1, 'only the NextGen row carries sets in this fixture');
+    assert.strictEqual(g.excluded, 1, 'the store must say how much of the numerator sits on excluded rows');
+    assert.strictEqual(g.typed, 0, 'games-comparable numerator');
+    assert.strictEqual(g.typedOf, 1, 'games-comparable denominator = population.rows - exclusions.altFormat');
+    assert.strictEqual(g.rows - g.excluded, g.typed, 'perSetGames does not reconcile with its own exclusions');
+    assert.strictEqual(idx.meta.population.rows - idx.meta.exclusions.altFormat, g.typedOf,
+      'the typed denominator must be derivable from the published population');
+  } finally { process.chdir(cwd); fs.rmSync(tmp, { recursive: true, force: true }); }
+});
+
+check('CONTROL: the identical row WITHOUT the tag is typed and counted normally', async () => {
+  // Proves the exclusion above is carried by `altFormat` and nothing else. The
+  // same "3 - 1" under name inference is a Bo3 that won three sets — which the
+  // completeness rule rejects — so it lands as `incomplete`, NOT as altFormat.
+  // Two different outcomes from one field: that is what makes this a control.
+  const cwd = process.cwd();
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'ten244j-'));
+  try {
+    process.chdir(tmp);
+    await writeCareerHistoryShards({ p: { careerMatches: [
+      { year: '2024', date: '2024-12-22', tournament: 'ATP Next Gen Finals - Jeddah', round: 'F',
+        result: '3 - 1', won: true, src: 'fixtures' },
+    ] } }, { log: () => {} });
+    const sh = JSON.parse(fs.readFileSync(path.join('career-history', 'p.json'), 'utf8'));
+    assert.strictEqual('altFormat' in sh, false, 'without the tag there is no format exclusion to count');
+    assert.strictEqual(sh.incomplete, 1,
+      'untagged, the row falls back to the typed population — if it did not, the test above proves nothing');
+  } finally { process.chdir(cwd); fs.rmSync(tmp, { recursive: true, force: true }); }
+});
+
+// ── 6 · the ARCHIVE half's WIRING, not just its parser ─────────────────────
+// A clean-context review proved the hole this closes: with only the pure
+// `altFormatForTourneyId` test above, deleting `altFormat` from either
+// career-backfill.js's pushMatch calls OR its row emitter dropped all 85
+// archive-half tags on the live store and the suite still reported 27/27.
+// A parser test standing in for a wiring test is a test that cannot fail for
+// the reason it exists.
+//
+// Driven over a STUB csv + a STUB index rather than tml-cache/, which is
+// gitignored and whose loader DOWNLOADS a missing year — `npm test` is the
+// fail-closed deploy gate and must not reach the network.
+const TML_HEADER = 'tourney_id,tourney_name,surface,draw_size,tourney_level,indoor,tourney_date,'
+  + 'match_num,winner_id,winner_seed,winner_entry,winner_name,winner_hand,winner_ht,winner_ioc,'
+  + 'winner_age,winner_rank,winner_rank_points,loser_id,loser_seed,loser_entry,loser_name,'
+  + 'loser_hand,loser_ht,loser_ioc,loser_age,loser_rank,loser_rank_points,score,best_of,round,minutes';
+const tmlRow = (id, name, bo, score) =>
+  `${id},${name},Hard,8,A,I,20181106,1,W001,,,Arch Winner,R,188,ITA,21.0,20,1500,`
+  + `L001,,,Arch Loser,R,185,USA,21.5,30,1200,${score},${bo},RR,90`;
+
+check('ARCHIVE WIRING: the tag survives buildTmlIndex into the match object', async () => {
+  const idx = await buildTmlIndex(() => {}, { csvByYear: { 2018: [TML_HEADER,
+    tmlRow('2018-7696', 'Next Gen ATP Finals', 5, '4-3(4) 4-2 4-1'),
+    tmlRow('2018-7308', 'Adelaide', 3, '6-4 6-4'),
+  ].join('\n') } });
+  const ms = idx.byId.get('W001') || [];
+  assert.strictEqual(ms.length, 2, `expected 2 matches for the winner, got ${ms.length}`);
+  const ng = ms.find(m => /Next Gen/.test(m.tournamentName));
+  const ad = ms.find(m => m.tournamentName === 'Adelaide');
+  assert.strictEqual(ng.altFormat, 'nextgen', 'buildTmlIndex dropped the tag on the way to the match object');
+  assert.strictEqual(ad.altFormat, null, 'Adelaide must not be tagged — it is a Bo3 ATP 250');
+  // ...and TML's own best_of is still carried, because we decline to USE it on
+  // these rows, we do not delete what the source said.
+  assert.strictEqual(ng.bestOf, 5);
+});
+
+check('ARCHIVE WIRING: the tag survives buildArchiveHistories onto the PUBLISHED row', async () => {
+  const idx = await buildTmlIndex(() => {}, { csvByYear: { 2018: [TML_HEADER,
+    tmlRow('2018-7696', 'Next Gen ATP Finals', 5, '4-3(4) 4-2 4-1'),
+    tmlRow('2018-7308', 'Adelaide', 3, '6-4 6-4'),
+  ].join('\n') } });
+  const out = await buildArchiveHistories({ apiKey: { name: 'Arch Winner' } }, 2000, 2020,
+    { log: () => {}, index: idx });
+  const rows = out.apiKey || [];
+  assert.strictEqual(rows.length, 2, `expected 2 emitted rows, got ${rows.length} — did reconcile fail?`);
+  const ng = rows.find(r => /Next Gen/.test(r.tournament));
+  const ad = rows.find(r => r.tournament === 'Adelaide');
+  assert.strictEqual(ng.altFormat, 'nextgen', 'the emitter dropped the tag — the archive half would readmit all of them');
+  assert.strictEqual('altFormat' in ad, false, 'a normal ATP 250 row must carry no exclusion reason');
+});
+
+check('CONTROL: an un-NextGen tourney_id through the SAME chain emits no tag', async () => {
+  // Proves the two assertions above are carried by the id and not by the name,
+  // the level, the draw size or the best_of — every one of which is identical
+  // here to a real NextGen row.
+  const idx = await buildTmlIndex(() => {}, { csvByYear: { 2018: [TML_HEADER,
+    tmlRow('2018-9999', 'Next Gen ATP Finals', 5, '4-3(4) 4-2 4-1'),
+  ].join('\n') } });
+  const out = await buildArchiveHistories({ apiKey: { name: 'Arch Winner' } }, 2000, 2020,
+    { log: () => {}, index: idx });
+  assert.strictEqual(out.apiKey.length, 1);
+  assert.strictEqual('altFormat' in out.apiKey[0], false,
+    'a NextGen-NAMED row under a different tourney_id must not be excluded — or the id is not what is matching');
+});
+
+check('a NextGen row is NOT counted as "untyped" — excluded and untyped are different states', async () => {
+  const cwd = process.cwd();
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'ten244k-'));
+  try {
+    process.chdir(tmp);
+    await writeCareerHistoryShards({ p: { careerMatches: [
+      { year: '2024', date: '2024-12-22', tournament: 'ATP Next Gen Finals - Jeddah', round: 'F',
+        result: '3 - 1', won: true, src: 'fixtures', altFormat: 'nextgen' },
+    ] } }, { log: () => {} });
+    const idx = JSON.parse(fs.readFileSync(CAREER_HISTORY_INDEX_PATH, 'utf8'));
+    assert.strictEqual(idx.meta.untypedByName, 0,
+      'a format EXCLUSION must not inflate the count of rows the format could not be READ for');
+    assert.strictEqual(idx.meta.exclusions.altFormat, 1);
   } finally { process.chdir(cwd); fs.rmSync(tmp, { recursive: true, force: true }); }
 });
 

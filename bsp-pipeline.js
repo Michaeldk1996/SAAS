@@ -810,9 +810,19 @@ function playerMatchHistory(fixtures, playerKey, currentYear, surfaceMap) {
     // the 0-0 pseudo-set the feed emits for a walkover or the unplayed
     // remainder of a retirement. A second parser would be a second set of bugs.
     const sets = formSetsFromFixture(f, isFirst);
+    // TEN-244 (founder ruling 2026-09-20): a match played on a DIFFERENT scoring
+    // scale carries its own named reason and leaves the format-typed population.
+    // It is NOT `retired`/`walkover`/`defaulted` — those are truncations of a
+    // normal match; this is a complete match on another ladder — and it is not a
+    // silent drop either: the row still ships, flagged, and the count is
+    // published in career-history-index.json's `meta.exclusions`.
+    // Keyed on the feed's tournament_key, which survives the rename and the
+    // move from Milan to Jeddah; see NEXTGEN_TOURNAMENT_KEY for the evidence.
+    const altFormat = String(f.tournament_key) === NEXTGEN_TOURNAMENT_KEY ? 'nextgen' : null;
     out.push({ year, surface, level, date: f.event_date, tournament: f.tournament_name, round, opponent, result, won, eventKey: f.event_key, src: 'fixtures',
       _tid, _tkey, _cname, _season, _frac, _qual, _short: _qual ? 'Q' : _short, _rank: _qual ? -1 : (ROUND_RANK[_short] != null ? ROUND_RANK[_short] : -1),
       ...(sets ? { sets } : {}),
+      ...(altFormat ? { altFormat } : {}),
       ...(retired ? { retired: true } : {}), ...(walkover ? { walkover: true } : {}) });
   }
   // (3) Structural first-loss net — edition-grouped, mirrors the editions path.
@@ -3652,6 +3662,11 @@ async function writeCareerHistoryShards(profiles, opts = {}) {
   // Rows with no readable format. The founder asked for this count explicitly:
   // a row that cannot be typed must not disappear into a silent fallback.
   let untypedTotal = 0;
+  // TEN-244 round 3: rows excluded for FORMAT rather than for stopping early,
+  // and the per-reason tallies that get published in the index's meta.
+  let altFormatTotal = 0, altSets = 0;
+  const altHalf = { archive: 0, fixtures: 0 };
+  const reasons = { retired: 0, walkover: 0, defaulted: 0, altFormat: {} };
 
   for (const [key, p] of Object.entries(profiles)) {
     if (!p) continue;
@@ -3705,8 +3720,22 @@ async function writeCareerHistoryShards(profiles, opts = {}) {
     // predicate applied on only one source half is a predicate a reader cannot
     // trust. Emitted as the negative (`incomplete: true`) so the common case
     // costs no bytes, matching how `retired`/`walkover` are carried.
-    let shardIncomplete = 0;
+    let shardIncomplete = 0, shardAltFormat = 0;
     for (const r of rows) {
+      // TEN-244 (founder ruling 2026-09-20): an alternate-FORMAT row leaves the
+      // format-typed population before anything is inferred about it. It is not
+      // typed, it is not scored for completeness, and it is not counted as
+      // "untyped" — untyped means "we could not read the format", this means
+      // "the format does not belong on this ladder". The row still ships with
+      // its reason on it (`altFormat: 'nextgen'`), so a reader can tell a format
+      // exclusion from a truncation without reading this file.
+      //
+      // CONSUMER CONTRACT, and the Lines tab is the reader this exists for:
+      // a games-based rate must drop a row when `incomplete` OR `altFormat` is
+      // set. `incomplete` is deliberately NOT stamped here — a NextGen match is
+      // a FINISHED match, and claiming otherwise in the store would be exactly
+      // the plausible-default this project forbids.
+      if (r.altFormat) { shardAltFormat++; continue; }
       // TEN-244: READ the format, do not guess it. `bestOf` is carried from
       // TML's own column on the archive half (populated 78,091/78,091). Only
       // when the row genuinely has no format is the Slam-name inference used,
@@ -3722,9 +3751,15 @@ async function writeCareerHistoryShards(profiles, opts = {}) {
         // would drop the entire 2021+ window, which is the window this ticket
         // exists to light up - so the Slam-name inference stands there, but it
         // is NOT silent: the rows are counted and reported every build.
-        // Measured error of the inference inside that era: 60 of 14,805 archive
-        // rows 2021-2026 (0.405%), all of them NextGen Finals, which plays Bo5
-        // short sets. Qualifying is Bo3 even at a Slam.
+        // The measured error of this inference inside that era was 60 of 14,805
+        // TML rows 2021-2026 (0.405%), EVERY ONE of them a NextGen Finals match.
+        // Those rows no longer reach this branch — they are excluded above — so
+        // the inference's remaining known error inside the fixture window is
+        // 0 of 14,730. (The exclusion removes all 75 NextGen matches in that
+        // window, not just the 60 that DISAGREED: the other 15 are the 2021
+        // edition, which TML types best_of=3 so the inference happened to
+        // agree. Same wrong scale, so they leave too.)
+        // Qualifying is Bo3 even at a Slam, and the round test keeps it so.
         isBo5 = GRAND_SLAM_NAMES.has(String(r.tournament || '').trim())
           && !/qualif/i.test(String(r.round || ''));
         untypedTotal++;
@@ -3739,11 +3774,17 @@ async function writeCareerHistoryShards(profiles, opts = {}) {
       }
     }
     incompleteTotal += shardIncomplete;
+    altFormatTotal += shardAltFormat;
 
     writeJsonAtomic(`${CAREER_HISTORY_SHARD_DIR}/${key}.json`, {
       // `incomplete` is the shard's own excluded count, so a consumer can state
-      // what it dropped without walking every row to find out.
+      // what it dropped without walking every row to find out. `altFormat` is
+      // the SECOND exclusion a games-based rate has to apply, kept separate so
+      // a reader can never mistake a format exclusion for a truncation. Emitted
+      // only when non-zero: the overwhelming majority of shards hold none, and
+      // a zero on every one of ~700 files is bytes that say nothing.
       v: CAREER_HISTORY_SCHEMA_VERSION, key, matches: rows, incomplete: shardIncomplete,
+      ...(shardAltFormat ? { altFormat: shardAltFormat } : {}),
     }, true);
     bytes += fs.statSync(`${CAREER_HISTORY_SHARD_DIR}/${key}.json`).size;
     index[key] = rows.length;
@@ -3751,12 +3792,77 @@ async function writeCareerHistoryShards(profiles, opts = {}) {
     for (const r of rows) {
       const half = r.src === 'archive' ? 'archive' : 'fixtures';
       halfRows[half]++;
-      if (Array.isArray(r.sets) && r.sets.length) { setsRows++; halfSets[half]++; }
+      const hasSets = Array.isArray(r.sets) && r.sets.length;
+      if (hasSets) { setsRows++; halfSets[half]++; }
+      // Per-reason tallies for meta.exclusions below. These count the REASON on
+      // the row, not the effect: a row can carry more than one, so they do not
+      // sum to `incomplete` and are not presented as if they did.
+      if (r.retired) reasons.retired++;
+      if (r.walkover) reasons.walkover++;
+      if (r.defaulted) reasons.defaulted++;
+      if (r.altFormat) {
+        reasons.altFormat[r.altFormat] = (reasons.altFormat[r.altFormat] || 0) + 1;
+        altHalf[half]++;
+        // Excluded rows that nonetheless CARRY games. Without this the published
+        // per-set-games block cannot be corrected: a reader who subtracts
+        // `exclusions.altFormat` from the numerator over-subtracts by every
+        // excluded row that had no `sets` (measured on the live store: 235
+        // excluded, only 135 of them with games — a 100-row error).
+        if (hasSets) altSets++;
+      }
     }
     if (archiveRows.length) archived++;
   }
 
-  writeJsonAtomic(CAREER_HISTORY_INDEX_PATH, { v: CAREER_HISTORY_SCHEMA_VERSION, players: index }, true);
+  // TEN-244 (founder ruling 2026-09-20): the counts are published IN THE STORE,
+  // not only in a build log nobody reads after the run. Every figure carries the
+  // population it was computed over — `rows` is the denominator for all of them.
+  //
+  // `byReason` and the effect counts are separate on purpose, and there are TWO
+  // ways they fail to add up rather than one — both stated here so nobody has to
+  // discover them from a number that looks reconcilable:
+  //   1. A reason can CO-OCCUR (a retirement whose score is also unreadable), so
+  //      the reasons do not sum to `incomplete`.
+  //   2. A reason can sit ENTIRELY OUTSIDE `incomplete`. An `altFormat` row
+  //      leaves the population before the completeness stamp, so a NextGen
+  //      retirement is counted under `byReason.retired` and is NOT in
+  //      `incomplete` (measured on the live store: 4 retired + 2 walkover).
+  //      The row still carries its own flag, so nothing is hidden — but the
+  //      arithmetic is not a partition and must not be read as one.
+  writeJsonAtomic(CAREER_HISTORY_INDEX_PATH, {
+    v: CAREER_HISTORY_SCHEMA_VERSION,
+    meta: {
+      generatedAt: new Date().toISOString(),
+      population: { players: Object.keys(index).length, rows: rowTotal, fixturesHalf: halfRows.fixtures, archiveHalf: halfRows.archive },
+      exclusions: {
+        // What a games-based rate must drop, and why.
+        incomplete: incompleteTotal,      // did not finish, for its format
+        altFormat: altFormatTotal,        // finished, but on another scoring scale
+        // Per half, because the fixtures-half tag rides `careerMatches` inside
+        // the profile cache and therefore arrives on the 14-day TTL churn,
+        // while the archive half is rebuilt from TML every run. A reader who
+        // can see BOTH halves can tell a converged count from a converging one;
+        // a single total cannot, and would quietly understate for two weeks.
+        altFormatByHalf: { fixtures: altHalf.fixtures, archive: altHalf.archive },
+        byReason: { retired: reasons.retired, walkover: reasons.walkover, defaulted: reasons.defaulted, altFormat: { ...reasons.altFormat } },
+      },
+      // Rows the format could not be READ for and which fell back to the
+      // Slam-name inference. Distinct from `altFormat`, which is a row we
+      // decline to type at all.
+      untypedByName: untypedTotal,
+      // `rows` is over the WHOLE population (population.rows). `excluded` is how
+      // much of that numerator sits on altFormat rows, and `typed`/`typedOf` are
+      // the games-COMPARABLE figures. Published explicitly because the two are
+      // not derivable from each other: subtracting `exclusions.altFormat` from
+      // `rows` is wrong by every excluded row that carried no games.
+      perSetGames: {
+        rows: setsRows, fixturesHalf: halfSets.fixtures, archiveHalf: halfSets.archive,
+        excluded: altSets,
+        typed: setsRows - altSets, typedOf: rowTotal - altFormatTotal,
+      },
+    },
+    players: index,
+  }, true);
   const setsPct = rowTotal ? ((setsRows / rowTotal) * 100).toFixed(1) : '0.0';
   log(`Wrote ${Object.keys(index).length} career-history shard(s) to ${CAREER_HISTORY_SHARD_DIR}/ `
     + `(${rowTotal} rows, ${(bytes / 1024 / 1024).toFixed(1)} MB total, ${archived} with pre-${archiveMaxYear + 1} archive rows).`);
@@ -3769,6 +3875,14 @@ async function writeCareerHistoryShards(profiles, opts = {}) {
     + `archive half ${halfSets.archive}/${halfRows.archive} (${pct(halfSets.archive, halfRows.archive)}%).`);
   log(`  ${incompleteTotal} row(s) flagged incomplete (unfinished for the format, or flagged retired/walkover/defaulted).`);
   log(`  ${untypedTotal} row(s) carried no readable best_of and were typed by the Slam-name inference instead.`);
+  log(`  ${altFormatTotal} row(s) excluded from the format-typed population for FORMAT, not truncation `
+    + `(${Object.entries(reasons.altFormat).map(([k, v]) => `${k}: ${v}`).join(', ') || 'none'}; `
+    + `fixtures ${altHalf.fixtures}, archive ${altHalf.archive}) — of ${rowTotal} rows.`);
+  // The games-COMPARABLE coverage, which is the number the Lines tab will use.
+  // Stated next to the all-rows figure above rather than instead of it: they are
+  // different populations and printing only one invites the wrong correction.
+  log(`  per-set games on the TYPED population: ${setsRows - altSets}/${rowTotal - altFormatTotal} `
+    + `(${pct(setsRows - altSets, rowTotal - altFormatTotal)}%) — ${altSets} of the ${altFormatTotal} excluded row(s) carried games.`);
   return index;
 }
 
@@ -4465,6 +4579,48 @@ const ROUND_RANK = {
 // a false main-draw title. canonicalTournament folds Roland Garros into
 // "French Open"; the extra alias is defensive.
 const GRAND_SLAM_NAMES = new Set(['Australian Open', 'French Open', 'Roland Garros', 'Wimbledon', 'US Open']);
+// ─── TEN-244 · NextGen Finals are a DIFFERENT format, not a shorter one ──────
+// Founder ruling 2026-09-20: the NextGen Finals play best-of-five SHORT sets —
+// first to four games, tiebreak at 3-3. The set COUNT therefore reads as an
+// ordinary Bo5 while every GAMES-based figure sits on a different scale from
+// the rest of the archive. Typing them Bo5 would be right on the set count and
+// wrong on everything underneath it, so they leave the format-typed population
+// entirely: excluded, counted, and visible (`altFormat: 'nextgen'` on the row).
+//
+// MATCHED ON TOURNAMENT IDENTITY, NEVER ON THE SCORELINE. A games heuristic
+// ("nobody reached 6") also catches legitimate blowouts, and a name match is
+// worse than it looks — measured 2026-09-20 there are FOUR live name strings
+// for this one event in the fixtures feed and THREE more in the TML archive:
+//   fixtures: 'Next Gen Finals - Milan' (2021, 2022)
+//             'ATP Next Gen Finals - Milan' (2022, on three Cancelled rows)
+//             'ATP Next Gen Finals - Jeddah' (2023, 2024)
+//             'Next Gen Finals - Jeddah' (2025)
+//   TML     : 'Next Gen Finals' · 'Next Gen ATP Finals' · 'NextGen Finals'
+// and a substring match on "next gen" additionally catches "Next Generation
+// Hardcourts" — the 2005-2008 Adelaide ATP 250, a best-of-THREE event that
+// merely carried that sponsor name.
+//
+// The stable handle is the feed's own tournament_key. Verified 2026-09-20:
+// key 2793 is carried by 75/75 NextGen fixtures across all five editions and
+// both host cities, and it is a SINGLE entry in a 10,287-tournament
+// get_tournaments catalog, so nothing else can wear it. Milan's other events
+// are distinct keys (3683 ATP singles, 2505 Challenger).
+//
+// CORROBORATED IN-REPO, not only by a live read: tools/points-at-risk/
+// atp-tier-map-v1.json already carries `events.Jeddah = {tier:"NextGenFinals",
+// confirmed:true, tournament_keys:[2793], source_url:".../next-gen-atp-finals/
+// 7696/overview"}`. Note the ATP's own event id in that URL is 7696 — the same
+// number as the TML tourney_id suffix below, so the two handles cross-check
+// against each other and against a founder-confirmed map. That map's
+// confirmed_seasons are 2025-2026 only, so it corroborates Jeddah; the Milan
+// editions rest on the live get_fixtures read recorded above.
+//
+// If either handle ever needs changing, change BOTH and say so — they are two
+// copies of one fact, and this comment is the only thing binding them.
+//
+// The archive half keys on TML's own tourney_id suffix instead — see
+// career-backfill.js, ARCHIVE_ALT_FORMAT_TOURNEY_IDS.
+const NEXTGEN_TOURNAMENT_KEY = '2793';
 // TEN-89 tour-wide (interaction 358dd5c0): round-robin / team events legitimately
 // contain a WIN after a (group-stage or bronze-match) LOSS, so the qualifying-merge
 // structural net below must NOT fire on them. Hand-checked against live data (56
@@ -6616,6 +6772,9 @@ module.exports = { isIndoorTournament, loadTournamentCourtMap, fetchRecentSingle
   // is that the counts one returns are tallyable from the rows the other
   // returns, and that is what ten8-career-verify.js asserts.
   buildAllTierYearly, playerMatchHistory, writeCareerHistoryShards, careerRowIsComplete, formSetsFromFixture,
+  // TEN-244: the NextGen exclusion key, exported so the suite asserts the SAME
+  // constant the pipeline uses rather than a copy that can drift out of step.
+  NEXTGEN_TOURNAMENT_KEY, CAREER_HISTORY_INDEX_PATH,
   writeTournamentHistoryShards, profilesWithoutTournamentHistory,
   TOURNAMENT_HISTORY_SHARD_DIR, TOURNAMENT_HISTORY_INDEX_PATH,
   fetchPlayerCareerHistory, deriveSlamBoxes, dedupeByPlayerKeyPair, historyCacheFresh,

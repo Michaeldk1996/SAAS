@@ -63,6 +63,31 @@ function normalizeTournamentName(name) {
   return String(name || '').replace(/^(ATP|WTA|ITF|Challenger)\s+/i, '').trim();
 }
 
+// ─── TEN-244 · alternate-format events, keyed on TML's own tourney_id ────────
+// TML's tourney_id is "<season>-<event id>"; the event id is stable across
+// editions while tourney_name is not. Map: event id -> exclusion reason.
+//
+//   7696 = the NextGen Finals. 122 rows across eight editions 2017-2025, and
+//          the ONLY id in the 78,091-row archive that ever carries a NextGen
+//          name (verified both directions 2026-09-20). Best-of-five SHORT sets
+//          — first to four games, tiebreak at 3-3 — so the games do not compare
+//          with anything else in the archive. Founder ruling: exclude, count,
+//          keep visible; never type it Bo3 or Bo5.
+//
+// This is a LIST, not a pattern, because the only defensible version of this
+// rule is one a reader can audit line by line. If another short-format event
+// appears it gets a measured line here, not a heuristic.
+const ARCHIVE_ALT_FORMAT_TOURNEY_IDS = { 7696: 'nextgen' };
+
+function altFormatForTourneyId(tourneyId) {
+  const raw = String(tourneyId == null ? '' : tourneyId).trim();
+  // "2017-7696" -> "7696"; a bare id is accepted too. Anything else types as
+  // normal — an unreadable id must not silently exclude a match.
+  const m = /^(?:\d{4}-)?(\d+)$/.exec(raw);
+  if (!m) return null;
+  return ARCHIVE_ALT_FORMAT_TOURNEY_IDS[Number(m[1])] || null;
+}
+
 function deaccent(s) {
   return String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 }
@@ -194,17 +219,30 @@ function tmlDate(raw) {
 function flipSets(s) {
   return (typeof s === 'string' && s.includes('-')) ? s.split('-').map((x) => x.trim()).reverse().join(' - ') : s;
 }
-async function buildTmlIndex(log) {
+// `opts.csvByYear` is a TEST-ONLY source: { 2018: "<csv text>" }. It exists
+// because `tml-cache/` is gitignored and `ensureTmlCsv` DOWNLOADS a missing
+// year, so any test driving the real path would be network-dependent — and
+// `npm test` is the fail-closed pre-deploy gate that already froze the site for
+// 19 hours once. With it set, only the named years are walked and nothing is
+// fetched. Absent, the function behaves exactly as before.
+async function buildTmlIndex(log, opts = {}) {
   const byId = new Map();
   const identity = new Map();
   let filesLoaded = 0, rowCount = 0;
+  const stub = opts.csvByYear || null;
 
   for (let y = BACKFILL_FLOOR_YEAR; y <= BACKFILL_UP_TO_YEAR; y++) {
-    let file;
-    try { file = await ensureTmlCsv(y); } catch (e) { file = null; }
-    if (!file) continue;
+    let file, text;
+    if (stub) {
+      if (!(y in stub)) continue;
+      text = stub[y];
+    } else {
+      try { file = await ensureTmlCsv(y); } catch (e) { file = null; }
+      if (!file) continue;
+      text = fs.readFileSync(file, 'utf8');
+    }
     filesLoaded++;
-    const rows = parseCsv(fs.readFileSync(file, 'utf8'));
+    const rows = parseCsv(text);
     for (const r of rows) {
       const tourney = normalizeTournamentName(r.tourney_name);
       const year = parseInt(String(r.tourney_date || '').slice(0, 4), 10);
@@ -239,16 +277,33 @@ async function buildTmlIndex(log) {
       // rows (5.70% of the archive) - overwhelmingly Davis Cup, which was Bo5
       // until 2018 - and turned 4,231 COMPLETED matches into false exclusions.
       const bestOf = /^[35]$/.test(String(r.best_of || '').trim()) ? Number(r.best_of) : null;
+      // TEN-244 (founder ruling 2026-09-20): NextGen Finals leave the
+      // format-typed population entirely — best-of-five SHORT sets (first to
+      // four, tiebreak at 3-3) put every games-based figure on a different
+      // scale, so the row is excluded with its OWN reason rather than typed.
+      //
+      // Keyed on TML's tourney_id, whose suffix is stable at 7696 across all
+      // eight editions (2017-2025) while the NAME is not: measured 2026-09-20
+      // this one event appears as 'Next Gen Finals', 'Next Gen ATP Finals' AND
+      // 'NextGen Finals', and its tourney_level flips A/F between 2017 and 2018.
+      // A substring match on "next gen" would additionally swallow the
+      // 2005-2008 Adelaide ATP 250, whose sponsor name was "Next Generation
+      // Hardcourts" and which was played best-of-THREE.
+      //
+      // TML's own best_of column cannot be trusted here and is the second
+      // reason this is an exclusion rather than a re-typing: it reports 5 for
+      // seven editions and 3 for 2021, for a format that never changed.
+      const altFormat = altFormatForTourneyId(r.tourney_id);
       // The same string also carries the per-set games. Parsed once here, in the
       // winner's orientation, and flipped for the loser's row — without this the
       // archive half of career-history can only ever show a set COUNT, which caps
       // per-set coverage at the fixture window (~50% of a veteran's career).
       const wSets = parseSetScores(r.score);
       // Winner's row entry.
-      pushMatch(byId, wId, { tourney, ...meta, year, round, oppName: toInitialLast(r.loser_name), score: scoreDisplay(r.score, true), won: true, ret, walkover, defaulted, bestOf, sets: wSets });
+      pushMatch(byId, wId, { tourney, ...meta, year, round, oppName: toInitialLast(r.loser_name), score: scoreDisplay(r.score, true), won: true, ret, walkover, defaulted, bestOf, altFormat, sets: wSets });
       trackIdentity(identity, wId, r.winner_name, r.winner_ioc, year);
       // Loser's row entry.
-      pushMatch(byId, lId, { tourney, ...meta, year, round, oppName: toInitialLast(r.winner_name), score: scoreDisplay(r.score, false), won: false, ret, walkover, defaulted, bestOf, sets: flipSetScores(wSets) });
+      pushMatch(byId, lId, { tourney, ...meta, year, round, oppName: toInitialLast(r.winner_name), score: scoreDisplay(r.score, false), won: false, ret, walkover, defaulted, bestOf, altFormat, sets: flipSetScores(wSets) });
       trackIdentity(identity, lId, r.loser_name, r.loser_ioc, year);
     }
   }
@@ -541,7 +596,13 @@ function reconcile(profiles, identity, countryToIoc, log) {
 async function buildArchiveHistories(profiles, minYear, maxYear, opts = {}) {
   const log = opts.log || (() => {});
   const countryToIoc = opts.countryToIoc || {};
-  const index = await buildTmlIndex(log);
+  // `opts.index` lets a test drive the ROW EMITTER below over a controlled
+  // index instead of the 78,091-row cache. Without it the archive half's wiring
+  // is only reachable through a network-dependent path, which means in practice
+  // it is not tested at all — and a clean-context review proved exactly that:
+  // two one-line deletions silently dropped every archive-half `altFormat` tag
+  // while the suite stayed green.
+  const index = opts.index || await buildTmlIndex(log);
   const apiToTml = reconcile(profiles, index.identity, countryToIoc, log);
   const out = {};
   for (const [apiKey, tmlId] of apiToTml) {
@@ -576,6 +637,13 @@ async function buildArchiveHistories(profiles, minYear, maxYear, opts = {}) {
         // The format, carried from TML's own column so the completeness
         // predicate reads it instead of guessing from the tournament name.
         ...(m.bestOf ? { bestOf: m.bestOf } : {}),
+        // TEN-244: the named exclusion reason for a match played on a DIFFERENT
+        // scoring scale. Kept distinct from `retired`/`walkover`/`defaulted` on
+        // purpose — those say the match stopped, this says the match finished
+        // but its games do not compare. `bestOf` is deliberately left on the row
+        // as the source published it: we decline to USE it here, we do not
+        // delete what TML said.
+        ...(m.altFormat ? { altFormat: m.altFormat } : {}),
       });
     }
     if (list.length) {
@@ -873,5 +941,7 @@ module.exports = {
   backfillMatchesTournamentHistory,
   buildArchiveHistories,
   // exported for testing
-  _internal: { buildTmlIndex, reconcile, reconcileLegacy, surnameSig, fullNameSig, apiInitialSig, tmlInitialCanons, mergePlayer, finalizeTournament, buildEmbeddedHistory, nameKey, scoreDisplay, swapScore, setCounts, parseSetScores, flipSetScores, toInitialLast },
+  altFormatForTourneyId,
+  ARCHIVE_ALT_FORMAT_TOURNEY_IDS,
+  _internal: { buildTmlIndex, reconcile, reconcileLegacy, surnameSig, fullNameSig, apiInitialSig, tmlInitialCanons, mergePlayer, finalizeTournament, buildEmbeddedHistory, nameKey, scoreDisplay, swapScore, setCounts, parseSetScores, flipSetScores, toInitialLast, altFormatForTourneyId },
 };
