@@ -102,5 +102,77 @@ await check('1: live selection is surface-tinted, columns neutral',async()=>{
   }
   return out.join(' · ');
 });
+
+// The PLAYER panels, on the HARDEST case rather than a convenient one.
+// Measured across all 217 players with 120+ matches BEFORE choosing: Karatsev A.
+// is where the two axes disagree most (2021 label moves 60.8pp). The Australian
+// Open — the subject of the last axis check — was the WORST possible case, a
+// fixed 128-draw every year so both axes agree within 0.7pp.
+await check('2: the PLAYER panels are on the career match index (hardest case: Karatsev)',async()=>{
+  // Drive the STANDALONE page. An earlier draft mounted a throwaway probe root
+  // and the Player tab never populated inside it; the standalone page is the
+  // surface a reader actually uses and is what the claim is about.
+  await ev(`(function(){tourxState.speedPanel=null; if(window.tourxRenderOverlays) tourxRenderOverlays(); return true;})()`);
+  await ev(`document.querySelector('[data-tab="database"]').click()`);
+  await new Promise(r=>setTimeout(r,3000));
+  await ev(`(function(){var b=[].slice.call(document.querySelectorAll('[data-db-root="standalone"] [data-db="viewtabs"] button')).filter(x=>x.dataset.dbview==='players')[0]; if(b)b.click(); return true;})()`);
+  await new Promise(r=>setTimeout(r,3200));
+  await ev(`(function(){var i=document.querySelector('[data-db-root="standalone"] [data-db="filters"] input'); if(i){i.value='Karatsev'; i.dispatchEvent(new Event('input',{bubbles:true}));} return true;})()`);
+  await new Promise(r=>setTimeout(r,1800));
+  const picked=await ev(`(function(){
+    var rows=[].slice.call(document.querySelectorAll('[data-db-root="standalone"] .db-prow'))
+      .filter(function(x){return /Karatsev/i.test(x.textContent);});
+    // The result row binds onMOUSEDOWN, not onclick (it preventDefaults so the
+    // search input keeps focus). A .click() does nothing — in this build and in
+    // the one before it, so this was never a product bug, only a probe that
+    // dispatched the wrong event.
+    if(rows.length){
+      rows[0].dispatchEvent(new MouseEvent('mousedown',{bubbles:true,cancelable:true}));
+      return rows[0].textContent.trim().slice(0,22);
+    }
+    return null;})()`);
+  must(picked,'could not select Karatsev from the result rows');
+  await new Promise(r=>setTimeout(r,3200));
+  const v=await ev(`(function(){
+    var root=document.querySelector('[data-db-root="standalone"]');
+    var tr=root.querySelector('.db-pcticks'); var cap=root.querySelector('.db-xcap');
+    var o={}; if(tr) [].slice.call(tr.children).forEach(function(d){o[d.textContent.trim()]=parseFloat(d.style.left);});
+    return {ticks:o, cap:cap?cap.textContent.trim():null,
+            panels:root.querySelectorAll('.db-pcmain').length + root.querySelectorAll('.db-pcpair > *').length};})()`);
+  must(v.panels>0,'no player panels rendered');
+  must(/match index/i.test(v.cap||''),`player caption is "${v.cap}"`);
+  const seasons=Object.keys(v.ticks), vals=Object.values(v.ticks);
+  must(seasons.length>=3,`only ${seasons.length} season ticks`);
+  must(vals.filter(x=>!isFinite(x)).length===0,`some tick positions are NaN — the date accessor is missing`);
+
+  // The load-bearing check: these positions must be the CAREER INDEX, not the
+  // calendar. Karatsev is the worst case in the store — measured across all 217
+  // players with 120+ matches before picking him, his 2021 label moves 60.8pp
+  // between the two mappings. (The Australian Open, used last time, was the best
+  // case: a fixed 128-draw every year puts both axes within 0.7pp.)
+  const exp=await ev(`(async function(){
+    var y=await fetch('database-yield.json').then(function(r){return r.json();});
+    var P=await fetch('database-yield-players.json').then(function(r){return r.json();});
+    var ds=[]; y.rows.forEach(function(r,i){ if(P.names[i] && P.names[i].indexOf('Karatsev A.')>=0) ds.push(r[0]); });
+    ds.sort(function(a,b){return a-b;});
+    var N=ds.length, yrOf=function(d){return Math.floor(d/10000);};
+    var dn=function(di){var s=''+di;return Date.UTC(+s.slice(0,4),(+s.slice(4,6))-1,+s.slice(6,8))/86400000;};
+    var d0=Date.UTC(yrOf(ds[0]),0,1)/86400000, span=dn(ds[N-1])-d0;
+    var first={}, out={};
+    ds.forEach(function(d,i){var s=yrOf(d); if(!(s in first)) first[s]=i;});
+    Object.keys(first).forEach(function(s){
+      out[s]={index:first[s]/(N-1)*100, calendar:(Date.UTC(+s,0,1)/86400000-d0)/span*100};});
+    return {n:N, expect:out};})()`);
+  let idxErr=0, calErr=0, cmp=0;
+  for(const [s,pos] of Object.entries(v.ticks)){
+    const e=exp.expect[s]; if(!e) continue;
+    idxErr+=Math.abs(pos-e.index); calErr+=Math.abs(pos-e.calendar); cmp++;
+  }
+  must(cmp>=3,`only ${cmp} ticks could be cross-checked`);
+  must(idxErr<1.0,`player ticks are ${idxErr.toFixed(2)}pp from the career index`);
+  must(idxErr<calErr,`ticks match the CALENDAR better than the index (idx ${idxErr.toFixed(2)} vs cal ${calErr.toFixed(2)})`);
+  return `${picked} n=${exp.n}: index error ${idxErr.toFixed(2)}pp vs calendar ${calErr.toFixed(2)}pp over ${cmp} ticks · "${v.cap}"`;
+});
+
 console.log(`\n  ${pass} passed, ${fail} failed\n`);
 ws.close();ch.kill();process.exit(fail?1:0);
