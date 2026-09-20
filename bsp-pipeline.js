@@ -3635,11 +3635,19 @@ async function writeCareerHistoryShards(profiles, opts = {}) {
   // Pre-window rows from the TML archive, keyed by API player key. Network- and
   // reconciliation-tolerant: a player who cannot be matched to a TML identity
   // simply gets no pre-window rows (never a guessed one).
-  let archive = {};
-  try {
-    archive = await buildArchiveHistories(profiles, 2000, archiveMaxYear, { log }) || {};
-  } catch (e) {
-    log(`  Career archive unavailable (${e.message}) — shards will cover the fixture window only.`);
+  // `opts.archive` lets a caller supply the pre-window rows instead of building
+  // them. buildArchiveHistories reads tml-cache/, which is GITIGNORED and
+  // fetched on demand — so without this seam a test either reaches the TML
+  // upstream from CI or silently passes against whatever the local box happens
+  // to have cached. Absent (the production path), behaviour is unchanged.
+  let archive = opts.archive || null;
+  if (!archive) {
+    archive = {};
+    try {
+      archive = await buildArchiveHistories(profiles, 2000, archiveMaxYear, { log }) || {};
+    } catch (e) {
+      log(`  Career archive unavailable (${e.message}) — shards will cover the fixture window only.`);
+    }
   }
 
   fs.mkdirSync(CAREER_HISTORY_SHARD_DIR, { recursive: true });
@@ -3707,7 +3715,23 @@ async function writeCareerHistoryShards(profiles, opts = {}) {
       // Best-of-five is the Slam main draw at ATP level. Qualifying is best-of-
       // three even at a Slam, so a row already relabelled 'Qualifying' is judged
       // on the three-set ladder.
-      const isBo5 = GRAND_SLAM_NAMES.has(String(r.tournament || '').trim())
+      //
+      // ⚠️ The name MUST be canonicalised first. This store holds two vocabularies
+      // for the same event: the archive half writes "Wimbledon", the fixtures half
+      // writes "ATP Wimbledon" — measured on the deployed store, 285 of 1,177
+      // Slam rows carry the "ATP " prefix. Matching the raw string missed every
+      // one of them, so isBo5 came back false and careerRowIsComplete then tested
+      // `won === 2` on a best-of-five: a GENUINE completed Slam match (3-0, 3-1,
+      // 1-3) failed that equality and was stamped `incomplete`. Measured: 175 of
+      // 842 Slam main-draw rows (20.8%) wrongly excluded, every one of them on
+      // the fixtures half — i.e. exactly the modern rows this ticket exists to
+      // make usable, silently dropped from the Lines sample.
+      //
+      // canonicalTournament is the repo's existing one-identity-per-event
+      // resolver (it also folds "Roland Garros" into "French Open"); use it
+      // rather than stripping the prefix here, so a future feed rename is fixed
+      // in the alias table and not in a second place that drifts.
+      const isBo5 = GRAND_SLAM_NAMES.has(canonicalTournament(r.tournament).display)
         && !/qualif/i.test(String(r.round || ''));
       // The flags are used as an ADDITIONAL exclusion, never as the basis: they
       // catch what the arithmetic cannot (a Bo3 retirement that still reached a
