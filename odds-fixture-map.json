@@ -860,8 +860,8 @@
     },
     "12164073": {
       "fixtureId": null,
-      "mappedAt": "2026-09-20T03:46:59Z",
-      "missRuns": 36,
+      "mappedAt": "2026-09-20T05:46:35Z",
+      "missRuns": 37,
       "missSince": "2026-09-17T22:00:00Z",
       "orient": null,
       "p1": "J. C. Prado Angelo",
@@ -1054,8 +1054,8 @@
     },
     "12164145": {
       "fixtureId": null,
-      "mappedAt": "2026-09-20T03:46:59Z",
-      "missRuns": 22,
+      "mappedAt": "2026-09-20T05:46:35Z",
+      "missRuns": 23,
       "missSince": "2026-09-18T16:05:22Z",
       "orient": null,
       "p1": "M. Efstathiou",
@@ -1065,8 +1065,8 @@
     },
     "12164146": {
       "fixtureId": null,
-      "mappedAt": "2026-09-20T03:46:59Z",
-      "missRuns": 22,
+      "mappedAt": "2026-09-20T05:46:35Z",
+      "missRuns": 23,
       "missSince": "2026-09-18T16:05:22Z",
       "orient": null,
       "p1": "P. Henning",
@@ -1076,8 +1076,8 @@
     },
     "12164147": {
       "fixtureId": null,
-      "mappedAt": "2026-09-20T03:46:59Z",
-      "missRuns": 22,
+      "mappedAt": "2026-09-20T05:46:35Z",
+      "missRuns": 23,
       "missSince": "2026-09-18T16:05:22Z",
       "orient": null,
       "p1": "P. Photiades",
@@ -1087,8 +1087,8 @@
     },
     "12164148": {
       "fixtureId": null,
-      "mappedAt": "2026-09-20T03:46:59Z",
-      "missRuns": 22,
+      "mappedAt": "2026-09-20T05:46:35Z",
+      "missRuns": 23,
       "missSince": "2026-09-18T16:05:22Z",
       "orient": null,
       "p1": "K. Montsi",
@@ -1230,8 +1230,8 @@
     },
     "12164216": {
       "fixtureId": null,
-      "mappedAt": "2026-09-20T03:46:59Z",
-      "missRuns": 22,
+      "mappedAt": "2026-09-20T05:46:35Z",
+      "missRuns": 23,
       "missSince": "2026-09-18T16:05:22Z",
       "orient": null,
       "p1": "K. Bennani",
@@ -1241,8 +1241,8 @@
     },
     "12164217": {
       "fixtureId": null,
-      "mappedAt": "2026-09-20T03:46:59Z",
-      "missRuns": 22,
+      "mappedAt": "2026-09-20T05:46:35Z",
+      "missRuns": 23,
       "missSince": "2026-09-18T16:05:22Z",
       "orient": null,
       "p1": "Y. Dlimi",
@@ -1444,17 +1444,17 @@
   },
   "missAudit": {
     "observed": {
-      "measuredRunsPerDay": 14.0,
+      "measuredRunsPerDay": 14.1,
       "missResolutionHoursMax": 56.29,
       "missResolutionHoursP50": 11.06,
       "missResolutionsMeasured": 66,
       "note": "ttlBitRuns counts runs where an expired MISS was the ONLY reason a billable /v4/fixtures call was made. projectedTtlUnitsPerDay uses the MEASURED run rate (measuredRunsPerDay), not an assumed 24/day; it is null until observedSpanDays is wide enough to measure one. Compare it against the <=24/day ceiling the TTL was chosen against. openMisses counts only fixtures still on the board.",
-      "observedSpanDays": 8.97,
-      "projectedTtlUnitsPerDay": 3.1,
-      "runs": 126,
-      "spentRuns": 47,
-      "ttlBitRuns": 28,
-      "ttlBitShare": 0.222,
+      "observedSpanDays": 9.01,
+      "projectedTtlUnitsPerDay": 3.2,
+      "runs": 127,
+      "spentRuns": 48,
+      "ttlBitRuns": 29,
+      "ttlBitShare": 0.228,
       "ttlHours": 1.0
     },
     "runs": [
@@ -2843,9 +2843,20 @@
         "ttlBit": false,
         "unmapped": 0,
         "upcoming": 51
+      },
+      {
+        "at": "2026-09-20T05:46:35Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 0,
+        "missExpired": 7,
+        "openMisses": 7,
+        "stale": 7,
+        "ttlBit": true,
+        "unmapped": 0,
+        "upcoming": 51
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-09-20T04:46:48Z"
+  "updatedAt": "2026-09-20T05:46:35Z"
 }
