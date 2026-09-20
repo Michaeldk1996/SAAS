@@ -22626,16 +22626,38 @@ function tourxSpeedPanelHtml(){
   // surface" (§1.3). We have the flag, so no list is hardcoded.
   const bucketOf = t => t.indoor ? 'Indoor' : (t.surface === 'hard' ? 'Outdoor' : t.surface === 'clay' ? 'Clay' : 'Grass');
   const COLS = [['Indoor', 'IND'], ['Outdoor', 'OUT'], ['Clay', 'CLY'], ['Grass', 'GRS']];
+  // ===== FOUNDER RULING 2026-09-20, gate `33f71aab`: neutral columns, SURFACE-
+  // COLOURED SELECTION. =====
+  // "Keep it neutral but the colour background when you chose a tournament should
+  // show the colour of the surface."
+  //
+  // This is a DELIBERATE divergence from README §1.3, which specs a neutral
+  // selected row as well — do not revert it as a regression.
+  //
+  // The brief's earlier line ("selection stays accent blue, selection and
+  // category would collide") was written on the assumption that the COLUMNS
+  // would be tinted. They are not, so nothing else on this panel carries a hue
+  // and the selected row's colour cannot be mistaken for a category tint — it is
+  // the only colour present, which is what makes it read as selection.
+  //
+  // The tint comes from the ROW'S OWN `t.surface`, never from the column:
+  // `bucketOf` is `indoor ? 'Indoor' : …`, so an indoor CLAY event would sit in
+  // the Indoor column and a column-derived tint would paint it blue. None exists
+  // today (Indoor is 12/12 hard, measured) — this is a guard against a future row.
+  const SURF = { clay:'#e8a84e', hard:'#4db8ff', grass:'#2ab8a0' };
+  const tintOf = t => SURF[t.surface] || SURF.hard;
+  const hexA = (h,a) => 'rgba('+parseInt(h.slice(1,3),16)+','+parseInt(h.slice(3,5),16)+','+parseInt(h.slice(5,7),16)+','+a+')';
   const cols = COLS.map(([label, mark]) => {
     const rows = reg.filter(t => bucketOf(t) === label).sort((a, b) => b.abstractSpeed - a.abstractSpeed);
     const cmed = tourxMedian(rows.map(t => t.abstractSpeed));
     const body = rows.map(t => {
       const on = t.name === tourxState.tsSel;
       const w = Math.max(4, (t.abstractSpeed - mn) / span * 100);
-      return `<div onclick="tourxSelectCondition('${tourxEsc(t.name)}')" style="display:flex;align-items:center;gap:10px;padding:7px 16px;cursor:pointer;background:${on ? 'rgba(91,155,255,0.10)' : 'transparent'};${on ? 'box-shadow:inset 2px 0 0 #5b9bff;' : ''}">
+      const tint = tintOf(t);
+      return `<div onclick="tourxSelectCondition('${tourxEsc(t.name)}')" style="display:flex;align-items:center;gap:10px;padding:7px 16px;cursor:pointer;background:${on ? hexA(tint,0.13) : 'transparent'};${on ? `box-shadow:inset 2px 0 0 ${tint};` : ''}">
           <span style="flex:1;min-width:0;font-size:12.5px;font-weight:${on ? 800 : 600};color:${on ? '#e7e9ee' : '#c6ccdb'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t.name}</span>
-          <span style="width:48px;height:5px;border-radius:4px;background:rgba(255,255,255,0.06);flex:none;overflow:hidden;"><span style="display:block;height:100%;width:${w}%;border-radius:4px;background:${on ? '#5b9bff' : 'rgba(255,255,255,0.22)'};"></span></span>
-          <span style="font-family:${MONO};font-size:12.5px;font-weight:700;color:${on ? '#82b4ff' : '#e7e9ee'};flex:none;">${t.abstractSpeed.toFixed(2)}</span>
+          <span style="width:48px;height:5px;border-radius:4px;background:rgba(255,255,255,0.06);flex:none;overflow:hidden;"><span style="display:block;height:100%;width:${w}%;border-radius:4px;background:${on ? tint : 'rgba(255,255,255,0.22)'};"></span></span>
+          <span style="font-family:${MONO};font-size:12.5px;font-weight:700;color:${on ? tint : '#e7e9ee'};flex:none;">${t.abstractSpeed.toFixed(2)}</span>
         </div>`;
     }).join('');
     return `<div style="background:#06070a;">
@@ -28153,14 +28175,35 @@ window.DatabaseTab = (function(){
     // its 1 Jan would sit at a negative x. Anchoring on 1 Jan puts that tick at exactly
     // x=0 and costs only a few days of empty lead-in, which on a calendar axis is a
     // true statement about time.
-    var d0=Date.UTC(yr(ordered[0][0]),0,1)/86400000, dEnd=dnum(ordered[ordered.length-1][0]);
-    var span=(dEnd-d0)||1;
-    for(var i=0;i<ordered.length;i++){
+    // ===== FOUNDER RULING 2026-09-20, gate `33f71aab`: MATCH INDEX. =====
+    // This supersedes the TEN-243 `season-axis` ruling recorded below. The two
+    // of us had each been reading a DIFFERENT CHARTS.md: the ZIP bundle
+    // (.ten243-design/design_handoff_database/CHARTS.md, "Geometry helpers")
+    // specifies `x = (x0 + (1 − x0) · i/(n−1)) × 1000` — evenly spaced by i —
+    // while design-export/database-handoff-4/CHARTS.md §10 "Retired — do not
+    // build" retires the match-index panel outright. The ZIP is the
+    // authoritative bundle, so index wins and the calendar axis was the mistake.
+    //
+    // Why it matters on real data: the Australian Open is ~42 matches inside one
+    // January fortnight. On a calendar axis each season is a near-vertical burst
+    // with eleven empty months after it — the staircase the founder saw. On an
+    // index axis match 41 sits one step after match 40 whether they were a day
+    // or a year apart, and the curve reads as a line at any match count.
+    //
+    // x0 is kept as the spec's offset for a series that STARTS after the domain
+    // does; both series here share one row set and therefore one domain, so it
+    // is 0 today. It exists so a late series stays late rather than being
+    // stretched across the full width.
+    var x0=0, nPts=ordered.length;
+    for(var i=0;i<nPts;i++){
       var r=ordered[i];
       cf += r[7] ? (r[5]-1) : -1;
       cd += r[7] ? -1 : (r[6]-1);
-      var x=(dnum(r[0])-d0)/span;
+      var x = nPts>1 ? (x0 + (1-x0) * i/(nPts-1)) : 0;
       favV.push(cf); dogV.push(cd); xs.push(x);
+      // The seam is the FIRST Bet365-priced row's own index — still derived from
+      // r[8], never hardcoded. On an index axis it marks where the book changes,
+      // which is a different fact from where a season starts.
       if(seamX===null && r[8]===1) seamX=x;
     }
     var rawHi=Math.max.apply(null,[Math.max.apply(null,favV), Math.max.apply(null,dogV)]);
@@ -28222,9 +28265,14 @@ window.DatabaseTab = (function(){
     // — "4 years when the span is over 12, 2 years over 6, otherwise 1" — is expressed
     // as the ladder's starting rung, and `calendarTicks` keeps walking it until it has
     // at least three labels, so a two-season event still gets both.
-    var spanYears=span/365.25;
+    // Season labels sit at the match index where that season STARTS, not at a
+    // uniform slice of the width. The spec's own year-filter maths assumes a
+    // linear year->index map (`a = round((y0 − 2010)/16 × (n − 1))`), which is
+    // true of the prototype's synthetic uniform data and false of ours — matches
+    // cluster in tournament weeks — so the label is placed from the real rows.
+    var spanYears=(yr(ordered[nPts-1][0]) - yr(ordered[0][0])) + 1;
     var tickSteps = spanYears>12 ? [4,2,1] : (spanYears>6 ? [2,1] : [1]);
-    var ticks=calendarTicks(d0, span, tickSteps);
+    var ticks=seasonIndexTicks(ordered, xs, tickSteps);
 
     var plot=el('div','db-plot');
     var yax=el('div','db-yaxis');
@@ -28236,7 +28284,7 @@ window.DatabaseTab = (function(){
     // §5 — layer order, bottom to top, exactly: loss tint, horizontal gridlines,
     // vertical gridlines, area fills (favourites then underdogs, so the deeper series
     // reads through), zero line, book seam, lines (underdogs then favourites on top).
-    var s='<svg viewBox="0 0 1000 '+H+'" preserveAspectRatio="none" role="img" aria-label="Cumulative profit by season, ticks mark season starts">';
+    var s='<svg viewBox="0 0 1000 '+H+'" preserveAspectRatio="none" role="img" aria-label="Cumulative profit by match index, ticks mark season starts">';
     s+='<rect x="0" y="'+zeroY.toFixed(1)+'" width="1000" height="'+(H-zeroY).toFixed(1)+'" fill="rgba(255,255,255,0.014)"/>';
     gy.forEach(function(g){ s+='<line x1="0" y1="'+g.y.toFixed(1)+'" x2="1000" y2="'+g.y.toFixed(1)+'" stroke="rgba(255,255,255,0.06)" stroke-width="1" vector-effect="non-scaling-stroke"/>'; });
     ticks.forEach(function(t){ s+='<line x1="'+(t.x*1000).toFixed(1)+'" y1="0" x2="'+(t.x*1000).toFixed(1)+'" y2="'+H+'" stroke="rgba(255,255,255,0.045)" stroke-width="1" vector-effect="non-scaling-stroke"/>'; });
@@ -28308,9 +28356,14 @@ window.DatabaseTab = (function(){
     var xax=el('div','db-xaxis');
     ticks.forEach(function(t){ var d=el('div',null,t.label); d.style.left=(t.x*100).toFixed(2)+'%'; xax.appendChild(d); });
     card.appendChild(xax);
-    // TEN-243 `season-axis`: README \u00a7"Cumulative profit chart" X axis \u2014 the caption is
-    // the bare eyebrow "SEASON" (uppercased by .db-eyebrow's text-transform).
-    card.appendChild(el('div','db-xcap','<span class="db-eyebrow">Season</span>'));
+    // The ZIP bundle's CHARTS.md pairs an INDEX x with the bare eyebrow "SEASON".
+    // Both halves are kept, but not the bare word: the tick labels really are
+    // seasons and sit at that season's own first match, while the SPACING is
+    // match count, not time. A busy season takes more width than a quiet one.
+    // Captioning that "Season" alone invites the reader to measure durations off
+    // an axis that does not carry them — the objection recorded when the axis
+    // last changed. Naming both is the honest form and costs nothing.
+    card.appendChild(el('div','db-xcap','<span class="db-eyebrow">Season · match index</span>'));
     if(seam && seamX!=null) card.appendChild(el('div','db-seamfoot','Book change at '+M.seamSeason+' ('+esc(M.books[0])+' → '+esc(M.books[1])+', wider margin) — the step is a book artefact, not a market move.'));
     return card;
   }
@@ -28330,6 +28383,28 @@ window.DatabaseTab = (function(){
   // season's 1 Jan cannot exceed d0+span. A tick outside [0,1] is dropped rather
   // than pulled to the edge — a clamped tick is a label pointing at a date it does
   // not mark, which is the C3 defect.
+  // Season ticks on an INDEX axis: walk the rows once, and the first row of each
+  // season contributes a tick at that row's own x. A season with no matches in
+  // the current filter gets no tick, which is correct — there is no width on this
+  // axis where it would sit. Steps are tried widest-first and the first that
+  // yields at least three labels wins, so a two-season event still shows both.
+  function seasonIndexTicks(rows, xs, steps){
+    var firstOf={}, order=[], i, y;
+    for(i=0;i<rows.length;i++){
+      y=yr(rows[i][0]);
+      if(!(y in firstOf)){ firstOf[y]=xs[i]; order.push(y); }
+    }
+    var out=[];
+    (steps||[2,1]).some(function(stp){
+      out=[];
+      for(var k=0;k<order.length;k++){
+        if((order[k]-order[0]) % stp !== 0) continue;
+        out.push({ label:String(order[k]), x:firstOf[order[k]] });
+      }
+      return out.length>=3;
+    });
+    return out;
+  }
   function calendarTicks(d0, span, steps){
     var y0=new Date(d0*86400000).getUTCFullYear(),
         y1=new Date((d0+span)*86400000).getUTCFullYear(), out=[];
@@ -28911,7 +28986,13 @@ window.DatabaseTab = (function(){
       '<p><b>What is included.</b> '+fmtInt(M.used)+' ATP main-tour matches with a usable closing price, drawn from an archive of '+fmtInt(M.archiveRows)+' rows — '+
       fmtInt(bc[M.books[0]])+' settled on '+esc(M.books[0])+' prices and '+fmtInt(bc[M.books[1]])+' on '+esc(M.books[1])+' ('+M.seamSeason+'). '+
       '<b>What is excluded:</b> '+fmtInt(ex.preWindow)+' matches before the '+M.windowStart+' window, '+fmtInt(ex.noResolvingBookPrice)+
-      ' with no resolving-book closing price, '+fmtInt(ex.walkover)+' walkovers, '+fmtInt(ex.exactTie)+' exact price ties, '+fmtInt(ex.edge)+
+      ' with no resolving-book closing price, '+fmtInt(ex.walkover)+' walkovers, '+
+      // FOUNDER RULING 2026-09-20: retirements are VOIDED, not settled — most books
+      // void the match market, so settling them would price a bet the reader could
+      // never have had. The footnote used to name walkovers and say nothing about
+      // retirements, which reads as "retirements were excluded too" when they were
+      // being counted. It now says what it does with them, either way.
+      fmtInt(ex.retired)+' retirements (voided, as a book would), '+fmtInt(ex.exactTie)+' exact price ties, '+fmtInt(ex.edge)+
       ' non-results, and '+fmtInt(ex.overroundGt115)+' with an overround above 1.15. Missing data is shown as a dash, never a zero.</p>';
     body.appendChild(f);
     body.appendChild(el('div','db-disclaimer','Historical analysis for informational purposes only. Past results do not guarantee future results.'));

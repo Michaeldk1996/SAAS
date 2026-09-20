@@ -592,3 +592,84 @@ test('RULING: every ROI card equals the panel it links to, recomputed from the s
   assert.ok(rs.length === probe[1].n,
     'the control event does not reconcile, so the comparison above is not actually comparing');
 });
+
+// ---------------------------------------------------------------------------
+// FOUNDER RULING 2026-09-20, gate `33f71aab` — three decisions, three guards.
+// ---------------------------------------------------------------------------
+
+test('RULING: retirements are VOIDED, not settled, and the footnote says so', () => {
+  const b = readFileSync(join(HERE, 'build-database-yield.js'), 'utf8');
+  // The classification, not a comment about it.
+  const m = /const RESULT_STANDS = new Set\(\[([^\]]*)\]\)/.exec(b);
+  assert.ok(m, 'RESULT_STANDS not found');
+  assert.ok(!/Retired/.test(m[1]),
+    `RESULT_STANDS still settles retirements (${m[1].trim()}) — a book voids that market, so settling it prices a bet the reader could never have had`);
+  assert.match(b, /const RETIRED = new Set\(\['Retired', 'Rrtired'\]\)/);
+  assert.match(b, /if \(RETIRED\.has\(comment\)\) \{ bucket\.retired\+\+; continue; \}/,
+    'retirements must be counted into their own bucket and skipped');
+
+  // The store must actually carry the count, or the footnote has nothing to print.
+  const y = JSON.parse(readFileSync(join(HERE, 'database-yield.json'), 'utf8'));
+  assert.ok(y.meta.exclusions.retired > 0,
+    'meta.exclusions.retired is absent or zero — rebuild database-yield.json');
+  assert.ok(!/Retired/.test(JSON.stringify(y.meta.books || [])), 'sanity');
+
+  // The footnote named walkovers and stayed silent on retirements, which reads
+  // as "retirements were excluded too" while they were being counted.
+  assert.match(DASH, /fmtInt\(ex\.retired\)\+' retirements \(voided, as a book would\)/,
+    'the What-is-included footnote does not state what happens to retirements');
+});
+
+test('RULING: the profit chart plots by MATCH INDEX, not by date', () => {
+  const i = DASH.indexOf('function renderCurveCard');
+  assert.ok(i > 0, 'renderCurveCard not found');
+  const fn = DASH.slice(i, DASH.indexOf('\n  function ', i + 10));
+
+  assert.ok(!/var x=\(dnum\(r\[0\]\)-d0\)\/span;/.test(fn),
+    'the curve is back on a DATE axis — that is the staircase: a one-week event occupies one week of the width');
+  assert.match(fn, /var x = nPts>1 \? \(x0 \+ \(1-x0\) \* i\/\(nPts-1\)\) : 0;/,
+    "x must be the ZIP bundle's index formula x = x0 + (1 - x0) * i/(n-1)");
+  assert.match(fn, /var x0=0, nPts=ordered\.length;/, 'x0 must exist so a late series stays late');
+  assert.match(fn, /ticks=seasonIndexTicks\(ordered, xs, tickSteps\)/,
+    'season labels must be placed at the match index where each season starts');
+  // the seam stays derived from the book column, never hardcoded
+  assert.match(fn, /if\(seamX===null && r\[8\]===1\) seamX=x;/);
+
+  // Smoothing: centred, w=3, endpoints pinned. Display only.
+  const sv = /function smoothVals\(vals, k\)\{[\s\S]*?\n  \}/.exec(DASH);
+  assert.ok(sv, 'smoothVals not found');
+  assert.match(sv[0], /out\[0\]=vals\[0\]; out\[n-1\]=vals\[n-1\];/,
+    'endpoints must be pinned so the line lands on the printed end value');
+
+  // An index axis must not be captioned as if it were time.
+  const cap = /db-xcap','<span class="db-eyebrow">([^<]*)<\/span>/.exec(DASH);
+  assert.ok(cap, 'x caption not found');
+  assert.notEqual(cap[1].trim(), 'Season',
+    'an index axis captioned only "Season" invites reading durations off an axis that does not carry them');
+  assert.match(cap[1], /match index/i);
+});
+
+test('RULING: speed-panel columns stay NEUTRAL; only the selected row is tinted, by its own surface', () => {
+  const i = DASH.indexOf('function tourxSpeedPanelHtml');
+  assert.ok(i > 0, 'tourxSpeedPanelHtml not found');
+  const fn = DASH.slice(i, DASH.indexOf('\n/* ---------- Section 1', i));
+
+  // Selection is tinted from the ROW, not the column.
+  assert.match(fn, /const tint = tintOf\(t\);/);
+  assert.match(fn, /const tintOf = t => SURF\[t\.surface\] \|\| SURF\.hard;/,
+    'the tint must derive from the row own surface — bucketOf puts any indoor event in the Indoor column, so a column-derived tint would paint an indoor clay event blue');
+  assert.match(fn, /background:\$\{on \? hexA\(tint,0\.13\) : 'transparent'\}/);
+  assert.match(fn, /box-shadow:inset 2px 0 0 \$\{tint\}/);
+  assert.deepEqual(
+    Object.entries({ clay: '#e8a84e', hard: '#4db8ff', grass: '#2ab8a0' })
+      .filter(([k, v]) => !fn.includes(`${k}:'${v}'`)), [],
+    'the tokens must be the design-system ones, unchanged');
+
+  // The COLUMN chrome must carry no hue — that is the "keep it neutral" half.
+  const head = /height:41px[\s\S]*?\$\{rows\.length\} · med/.exec(fn);
+  assert.ok(head, 'column header block not found');
+  assert.ok(!/\$\{colTint|SURF\.|tintOf/.test(head[0]),
+    'a column heading or mark chip is tinted — the ruling keeps the columns neutral');
+  assert.ok(!/#5b9bff/.test(fn.slice(fn.indexOf('const tint = tintOf'), fn.indexOf('</div>`;'))),
+    'the selected row still carries the old accent blue');
+});

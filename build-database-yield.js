@@ -53,7 +53,20 @@ const LEVEL_MAP = {
 const LEVEL_ORDER = ['Grand Slam', 'Masters 1000', 'ATP 500', 'ATP 250', 'Finals'];
 
 // comment classification
-const RESULT_STANDS = new Set(['Completed', 'Retired', 'Rrtired']); // Rrtired = Retired typo
+//
+// FOUNDER RULING 2026-09-20: "Void them — match what books actually do."
+// A retirement is VOIDED, not settled. Most books void the match market when a
+// player retires, so a figure that settles those rows prices a bet the reader
+// could never have had. Retirements used to be inside RESULT_STANDS.
+//
+// Measured before the change (2010+ store, 41,667 rows): 1,278 retirements,
+// 3.07% of the store. NOTE the direction, because the intuition runs the other
+// way: the favourite is credited the win in only 58.8% of retirements against
+// 69.5% overall, so retirements were disproportionately UNDERDOG results.
+// Voiding them therefore moves roiFav UP (+0.40pp) and roiDog DOWN (-1.50pp) —
+// it does not flatter favourites, it stops flattering underdogs.
+const RESULT_STANDS = new Set(['Completed']);
+const RETIRED = new Set(['Retired', 'Rrtired']);   // Rrtired = Retired typo in the source
 const WALKOVER = new Set(['Walkover']);
 // everything else non-Completed (Awarded/Disqualified/Sched) => edge non-result, excluded
 
@@ -83,7 +96,10 @@ const rows = [];      // [dateInt, lvlIdx, surfIdx, rndIdx, tourIdx, favPrice, d
 const names = [];     // [winnerName, loserName] parallel to rows
 
 // reconciliation buckets (disjoint, first failing reason wins)
-const bucket = { archive: 0, used: 0, walkover: 0, edge: 0, noPrice: 0, tie: 0, overround: 0, preWindow: 0 };
+// `retired` is its own bucket, not folded into `edge`: the footnote has to be
+// able to say how many rows were voided, and a number hidden inside another
+// number is exactly what the footnote was criticised for.
+const bucket = { archive: 0, used: 0, walkover: 0, retired: 0, edge: 0, noPrice: 0, tie: 0, overround: 0, preWindow: 0 };
 const WINDOW_START = 2010; // founder TEN-146 ruling (2026-09-04): window starts 2010, fail-closed, no pre-window fallback
 const bookCount = { 0: 0, 1: 0 };
 let dateMin = '99999999', dateMax = '00000000';
@@ -103,6 +119,7 @@ for (const f of files) {
 
     const comment = (c[col.comment] || '').trim();
     if (WALKOVER.has(comment)) { bucket.walkover++; continue; }
+    if (RETIRED.has(comment)) { bucket.retired++; continue; }     // voided, per the 2026-09-20 ruling
     if (!RESULT_STANDS.has(comment)) { bucket.edge++; continue; } // Awarded/Disqualified/Sched
 
     // resolving book (fail-closed)
@@ -172,6 +189,7 @@ const meta = {
   dateRange: [dateMin, dateMax],
   exclusions: {
     walkover: bucket.walkover,
+    retired: bucket.retired,
     edge: bucket.edge,
     noResolvingBookPrice: bucket.noPrice,
     exactTie: bucket.tie,
