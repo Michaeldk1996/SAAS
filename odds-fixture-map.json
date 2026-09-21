@@ -1335,8 +1335,8 @@
     },
     "12164244": {
       "fixtureId": "id1200210074832480",
-      "mappedAt": "2026-09-19T16:18:10Z",
-      "missHeldH": 21.05,
+      "mappedAt": "2026-09-21T04:45:07Z",
+      "missHeldH": 57.5,
       "missRuns": 13,
       "missSince": "2026-09-18T19:15:00Z",
       "orient": "same",
@@ -1347,8 +1347,8 @@
     },
     "12164245": {
       "fixtureId": "id1200210074832478",
-      "mappedAt": "2026-09-19T16:18:10Z",
-      "missHeldH": 21.05,
+      "mappedAt": "2026-09-21T04:45:07Z",
+      "missHeldH": 57.5,
       "missRuns": 13,
       "missSince": "2026-09-18T19:15:00Z",
       "orient": "same",
@@ -1401,8 +1401,8 @@
     },
     "12164261": {
       "fixtureId": "id1200210074832492",
-      "mappedAt": "2026-09-19T16:18:10Z",
-      "missHeldH": 18.55,
+      "mappedAt": "2026-09-21T04:45:07Z",
+      "missHeldH": 55.0,
       "missRuns": 11,
       "missSince": "2026-09-18T21:45:00Z",
       "orient": "same",
@@ -1413,8 +1413,8 @@
     },
     "12164262": {
       "fixtureId": "id1200210074832496",
-      "mappedAt": "2026-09-19T16:18:10Z",
-      "missHeldH": 18.55,
+      "mappedAt": "2026-09-21T04:45:07Z",
+      "missHeldH": 55.0,
       "missRuns": 11,
       "missSince": "2026-09-18T21:45:00Z",
       "orient": "same",
@@ -1457,8 +1457,8 @@
     },
     "12164693": {
       "fixtureId": null,
-      "mappedAt": "2026-09-21T03:45:01Z",
-      "missRuns": 1,
+      "mappedAt": "2026-09-21T04:45:07Z",
+      "missRuns": 2,
       "missSince": "2026-09-21T03:45:01Z",
       "orient": null,
       "p1": "J. Fuentes Vasquez",
@@ -1483,12 +1483,12 @@
       "missResolutionHoursP50": 11.06,
       "missResolutionsMeasured": 71,
       "note": "ttlBitRuns counts runs where an expired MISS was the ONLY reason a billable /v4/fixtures call was made. projectedTtlUnitsPerDay uses the MEASURED run rate (measuredRunsPerDay), not an assumed 24/day; it is null until observedSpanDays is wide enough to measure one. Compare it against the <=24/day ceiling the TTL was chosen against. openMisses counts only fixtures still on the board.",
-      "observedSpanDays": 9.93,
+      "observedSpanDays": 9.97,
       "projectedTtlUnitsPerDay": 3.7,
-      "runs": 148,
-      "spentRuns": 65,
+      "runs": 149,
+      "spentRuns": 66,
       "ttlBitRuns": 37,
-      "ttlBitShare": 0.25,
+      "ttlBitShare": 0.248,
       "ttlHours": 1.0
     },
     "runs": [
@@ -3119,9 +3119,20 @@
         "ttlBit": false,
         "unmapped": 2,
         "upcoming": 43
+      },
+      {
+        "at": "2026-09-21T04:45:07Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 4,
+        "missExpired": 1,
+        "openMisses": 1,
+        "stale": 5,
+        "ttlBit": false,
+        "unmapped": 0,
+        "upcoming": 43
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-09-21T03:45:01Z"
+  "updatedAt": "2026-09-21T04:45:07Z"
 }
