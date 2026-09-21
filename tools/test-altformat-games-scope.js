@@ -7,7 +7,11 @@
 // carry is the games scale."
 //
 //   EXCLUDED : per-set games, games handicap, total games, gameW/gameL/gamePct,
-//              the first-set games total, and any line built on game counts.
+//              the first-set games total, any line built on game counts, and
+//              — founder 2026-09-21, reversing the retention flagged on the
+//              first pass — tbW/tbL/tbPct, because a NextGen tiebreak triggers
+//              at 3-3 rather than 6-6 and is therefore a differently-REACHED
+//              event, not merely a shorter one.
 //   RETAINED : match counts, win/loss, surface record, H2H, set counts as sets.
 //
 // Two surfaces reach games by two different routes and therefore need two
@@ -86,6 +90,42 @@ check('a NextGen match still counts in M / W / L and in the SET columns', () => 
   // 2 sets from the normal match + 3 from the NextGen one, all retained.
   assert.strictEqual(hard.setW, 5, `sets are retained as sets (got ${hard.setW})`);
   assert.strictEqual(hard.setL, 0);
+});
+
+check('TIEBREAKS leave too — a 3-3 breaker is a differently-REACHED event', () => {
+  // Founder ruling 2026-09-21, reversing what the first pass retained. The
+  // fixture pairs a normal match carrying ONE tiebreak with a NextGen match
+  // carrying TWO, so a rule that kept the NextGen breakers would read 3.
+  const normalWithTb = M({ score: '7-6(4) 6-3' });                 // 1 tiebreak, reached at 6-6
+  const ngWithTb     = NG({ score: '4-3(4) 2-4(5) 4-1' });         // 2 tiebreaks, reached at 3-3
+  const hard = CS.splits([normalWithTb, ngWithTb]).Hard;
+  assert.strictEqual(hard.M, 2, 'both are still matches');
+  assert.strictEqual(hard.tbW + hard.tbL, 1,
+    `only the 6-6 tiebreak may count (got ${hard.tbW + hard.tbL})`);
+  assert.strictEqual(hard.tbW, 1, 'and it is the one the player won');
+  // ...and it shares the games population rather than inventing a second one.
+  assert.strictEqual(hard.gameM, 1, 'tiebreaks and games rest on the same gameM');
+  assert.strictEqual(hard.gameX, 1);
+});
+
+check('CONTROL: the same two tiebreaks under a normal name BOTH count', () => {
+  // Proves the exclusion above is the matcher and not the scoreline — without
+  // this, a parser that simply failed to read "4-3(4)" would pass it.
+  const hard = CS.splits([
+    M({ score: '7-6(4) 6-3' }),
+    M({ score: '4-3(4) 2-4(5) 4-1', tournament: 'Some Open' }),
+  ]).Hard;
+  assert.strictEqual(hard.tbW + hard.tbL, 3,
+    `untagged, all three tiebreaks must count (got ${hard.tbW + hard.tbL}) — else this control is vacuous`);
+  assert.strictEqual('gameX' in hard, false);
+});
+
+check('a row whose only match is alternate-format dashes its TIEBREAK pct too', () => {
+  const hard = CS.splits([NG({ score: '4-3(4) 4-2 4-1' })]).Hard;
+  assert.strictEqual(hard.M, 1, 'the match still exists');
+  assert.strictEqual(hard.tbW, 0);
+  assert.strictEqual(hard.tbPct, null, `expected null (dash), got ${hard.tbPct}`);
+  assert.strictEqual(hard.setPct, 100, 'sets still compute — they are retained');
 });
 
 check('...and its GAMES are excluded, with the reduced population stated on the row', () => {

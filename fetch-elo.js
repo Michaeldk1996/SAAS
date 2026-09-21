@@ -62,7 +62,33 @@ function lastToken(name) {
   //   <td>cRank</td><td>cElo</td>             (clay Elo rank + rating)
   //   <td>gRank</td><td>gElo</td>             (grass Elo rank + rating)
   // The report is sorted by overall Elo descending, so overall rank == row order.
-  const re = /player\.cgi\?p=([^"]+)">([^<]+)<\/a><\/td><td[^>]*>([\d.]+)<\/td><td[^>]*>([\d.]+)<\/td><td>\s*<\/td><td[^>]*>(\d+)<\/td><td[^>]*>([\d.]+)<\/td><td[^>]*>(\d+)<\/td><td[^>]*>([\d.]+)<\/td><td[^>]*>(\d+)<\/td><td[^>]*>([\d.]+)<\/td>/g;
+  //
+  // ─── FULL ROW SHAPE, verified cell by cell against the live page 2026-09-21 ──
+  // 17 <td>s. The comment above described only as far as this parse reached; the
+  // page publishes more, and the founder asked for the column-by-column read:
+  //
+  //    0 Elo Rank  · 1 Player · 2 Age · 3 Elo · 4 (spacer)
+  //    5 hElo Rank · 6 hElo · 7 cElo Rank · 8 cElo · 9 gElo Rank · 10 gElo
+  //   11 (spacer)  · 12 Peak Elo · 13 Peak Month · 14 (spacer) · 15 ATP Rank · 16 Log diff
+  //
+  // Sinner's row: 1 · Jannik Sinner · 24.8 · 2321.9 · · 1 · 2259.3 · 1 · 2211.8 ·
+  // 1 · 2125.5 · · 2339.8 · 2026-05 · · 1 · 0.
+  //
+  //   TAKEN            Player, Elo, hElo/cElo/gElo and all three ranks (these
+  //                    were ALREADY taken, not added now), Peak Elo, Peak Month.
+  //   CAPTURED, UNUSED Age (group 3) — nothing on the site reads it and the
+  //                    profile already carries an age from the feed.
+  //   NOT READ         Elo Rank (col 0), which we instead infer from row order
+  //                    below — equivalent while the report stays sorted by Elo
+  //                    descending; ATP Rank and Log diff, which nothing asks for.
+  //
+  // THE PEAK TAIL IS OPTIONAL ON PURPOSE. Measured today: 550 of 550 rows carry
+  // both Peak cells, so a REQUIRED tail would also match 550 and look identical.
+  // But if the page ever blanks one cell, a required tail stops matching that row
+  // and drops the PLAYER from the scrape entirely — trading a cosmetic gap for a
+  // silent coverage loss. Optional means a missing peak is a dash on one column,
+  // which is the standing rule.
+  const re = /player\.cgi\?p=([^"]+)">([^<]+)<\/a><\/td><td[^>]*>([\d.]+)<\/td><td[^>]*>([\d.]+)<\/td><td>\s*<\/td><td[^>]*>(\d+)<\/td><td[^>]*>([\d.]+)<\/td><td[^>]*>(\d+)<\/td><td[^>]*>([\d.]+)<\/td><td[^>]*>(\d+)<\/td><td[^>]*>([\d.]+)<\/td>(?:<td>\s*<\/td><td[^>]*>([\d.]*)<\/td><td[^>]*>(\d{4}-\d{2})<\/td>)?/g;
   const ratings = {};                 // "lastToken|firstInitial" -> overall elo (back-compat)
   const elo = {};                     // "lastToken|firstInitial" -> {all,hard,clay,grass}: {rating,rank}
   const tokCount = {};                // lastToken -> count (for unique fallback)
@@ -76,11 +102,22 @@ function lastToken(name) {
     if (!Number.isFinite(overall)) continue;
     rows++;
     const rank = rows;                 // overall Elo rank = position in the sorted report
+    // Peak Elo is the OVERALL peak — the page carries no per-surface peak, so
+    // this belongs beside the record, not inside `all`/`hard`/`clay`/`grass`.
+    // Putting it in `all` would invite a reader to pair it with a surface rating
+    // by symmetry, and that comparison is not defined.
+    //
+    // `peakMonth` is stored VERBATIM as the page prints it ("2026-05"). It is a
+    // month, not a date: widening it to a day would invent precision the source
+    // never published. A row with no peak gets `peak: null` — a dash, never 0
+    // and never carried forward from a previous week's scrape.
+    const peakRating = m[11] ? num(m[11]) : null;
     const rec = {
       all:   { rating: Math.round(overall), rank },
       hard:  { rating: num(m[6]), rank: num(m[5]) },
       clay:  { rating: num(m[8]), rank: num(m[7]) },
       grass: { rating: num(m[10]), rank: num(m[9]) },
+      peak:  peakRating == null ? null : { rating: peakRating, month: m[12] || null },
     };
     const k = eloKey(name);
     if (k) { ratings[k] = Math.round(overall); elo[k] = rec; }
@@ -91,7 +128,11 @@ function lastToken(name) {
   const bySurname = {}, bySurnameElo = {};
   for (const t in tokCount) if (tokCount[t] === 1) { bySurname[t] = tokElo[t]; bySurnameElo[t] = tokSurface[t]; }
 
+  const withPeak = Object.values(elo).filter(r => r.peak).length;
   console.log(`Parsed ${rows} Elo rows -> ${Object.keys(ratings).length} keyed (overall + surface), ${Object.keys(bySurname).length} unique-token fallbacks.`);
+  // Stated every run with its denominator, because a peak column that silently
+  // thins is exactly the failure a single blended number would hide.
+  console.log(`  peak Elo present on ${withPeak}/${Object.keys(elo).length} keyed players.`);
 
   const out = {
     generatedAt: new Date().toISOString(),
@@ -100,8 +141,16 @@ function lastToken(name) {
     count: rows,
     ratings,       // back-compat: "lastToken|firstInitial" -> overall Elo (integer)
     bySurname,     // back-compat: unique last-token -> overall Elo
-    elo,           // "lastToken|firstInitial" -> {all,hard,clay,grass}: {rating,rank}
-    bySurnameElo,  // fallback: unique last-token -> {all,hard,clay,grass}: {rating,rank}
+    // TEN-243 (founder 2026-09-21): `peak` is {rating, month} or null, and it is
+    // the OVERALL peak — the source publishes no per-surface peak.
+    //
+    // NO vs-peak IS STORED. The delta is current minus peak, and "current" is
+    // the open question: the Ratings board's Elo column follows the surface
+    // pill, so a stored delta would have to pick a surface and bake that choice
+    // into the store. The two source numbers live here; whoever renders it
+    // decides which current it subtracts from, and says so on screen.
+    elo,           // "lastToken|firstInitial" -> {all,hard,clay,grass,peak}
+    bySurnameElo,  // fallback: unique last-token -> {all,hard,clay,grass,peak}
   };
   const tmp = OUT + '.tmp';
   fs.writeFileSync(tmp, JSON.stringify(out, null, 2));

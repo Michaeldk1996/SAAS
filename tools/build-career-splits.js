@@ -405,15 +405,27 @@ function splits(matches) {
     };
     for (const m of sub) {
       if (m.wl === 'W') W++;
+      // SETS are retained for an alternate-format match: a set won is a set won,
+      // and the count of them is on the same ladder as everything else.
       const sr = setRecord(m); setW += sr.w; setL += sr.l;
-      // Sets and tiebreaks are RETAINED for an alternate-format match — a set won
-      // is a set won, and a tiebreak follows its set. Only the games leave.
-      // (Flagged rather than assumed: a NextGen tiebreak triggers at 3-3, not
-      // 6-6, so it is a differently-reached event even though it is not a game
-      // count. Retained because the ruling names games, not tiebreaks.)
-      const tr = tbRecord(m); tbW += tr.w; tbL += tr.l;
+      // GAMES and TIEBREAKS both leave. Games because the scale differs; and
+      // tiebreaks because — founder ruling 2026-09-21, reversing the retention I
+      // flagged — a NextGen tiebreak triggers at 3-3 rather than 6-6, so it is a
+      // differently-REACHED event and does not compare to the rest of the
+      // archive. A tiebreak at 3-3 is a coin-flip reached after six games; one at
+      // 6-6 is reached after twelve. Pooling them would make "tiebreaks won" mean
+      // two things in one column.
+      //
+      // Both column groups therefore rest on the SAME population, `gameM`, and
+      // `gameX` is the count that left. That is why there is no separate `tbM`:
+      // a second field would always equal the first, and two names for one
+      // population is how they drift apart.
       if (altFormatOf(m)) { gameX++; }
-      else { gameM++; const gr = gameRecord(m); gameW += gr.w; gameL += gr.l; }
+      else {
+        gameM++;
+        const gr = gameRecord(m); gameW += gr.w; gameL += gr.l;
+        const tr = tbRecord(m);   tbW   += tr.w; tbL   += tr.l;
+      }
       // Both blocks are required: RPW and DR are computed off the opponent's
       // serve, so a match with only one side recorded cannot be counted.
       if (!m.srv || !m.opp) continue;
@@ -471,13 +483,13 @@ function splits(matches) {
       M, W, L,
       winPct: pct(W, M),
       setW, setL, setPct: pct(setW, setTot),
-      // `gameM` is the population these three were computed over. It equals M on
-      // every row that holds no alternate-format match, and `gameX` is emitted
-      // ONLY when it doesn't — so a reader who sees gameX knows the games
-      // columns and the match columns describe different sets of matches, and a
-      // reader who doesn't see it knows they describe the same one.
-      // pct() already returns null on a zero denominator, so a row whose ONLY
-      // matches were alternate-format renders as a dash, never a 0.0%.
+      // `gameM` is the population the games AND tiebreak columns were computed
+      // over. It equals M on every row that holds no alternate-format match, and
+      // `gameX` is emitted ONLY when it doesn't — so a reader who sees gameX
+      // knows those columns and the match columns describe different sets of
+      // matches, and a reader who doesn't see it knows they describe the same
+      // one. pct() already returns null on a zero denominator, so a row whose
+      // ONLY matches were alternate-format renders as a dash, never a 0.0%.
       gameW, gameL, gamePct: pct(gameW, gameTot), gameM,
       ...(gameX ? { gameX } : {}),
       tbW, tbL, tbPct: pct(tbW, tbTot),
@@ -625,7 +637,7 @@ async function main() {
     statsRule: 'serve/return columns are averaged over MS (matches with recorded stats), never over M; absent = no stats recorded, not zero',
     // Founder ruling 2026-09-21, scoped deliberately narrowly: an alternate-format
     // match counts as a MATCH everywhere and leaves only the GAMES columns.
-    gamesRule: 'gameW/gameL/gamePct are averaged over gameM, not M. gameM excludes matches played on a different games scale (NextGen Finals: best-of-five SHORT sets, first to four). Such a match still counts in M/W/L, in the surface row and in the set columns. A row where gameM < M also carries gameX (the excluded count); gamePct over an empty population is null, never 0.',
+    gamesRule: 'gameW/gameL/gamePct AND tbW/tbL/tbPct are averaged over gameM, not M. gameM excludes matches played on a different games scale (NextGen Finals: best-of-five SHORT sets, first to four, tiebreak at 3-3 rather than 6-6 — so its tiebreaks are differently REACHED as well as its games). Such a match still counts in M/W/L, in the surface row and in the SET columns. A row where gameM < M also carries gameX (the excluded count); a percentage over an empty population is null, never 0.',
     coverage: { ingested: ok, noPage: miss, noMatches: empty, attempted: targets.length, fetched, fromCache: cached, staleFallback },
     players,
   };
