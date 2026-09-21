@@ -289,7 +289,14 @@ def section_accuracy(url, key, want_examples):
               and r.get('close_price') is not None]
     print(f'bet105 rows carrying a close: **{len(closes):,}** ({n_flag(len(closes))})')
 
-    gaps, paired_fixtures = [], set()
+    # ⚠️ THE REFEREE HAS TO BE CHECKED TOO. bet365 is the trusted leg, but the
+    # published card state carries bet365 closes of exactly 1.000 — a price that
+    # pays nothing and cannot be real. Each one contributes a 100-point implied
+    # probability and would inflate the median gap while looking like a finding
+    # about bet105. So the gap is reported BOTH ways and the bad referee legs
+    # are counted, not quietly dropped.
+    gaps, gaps_clean, paired_fixtures = [], [], set()
+    ref_bad = []
     for mk, bk in idx.items():
         b105, b365 = bk.get('bet105'), bk.get('bet365')
         if not b105 or not b365:
@@ -298,16 +305,33 @@ def section_accuracy(url, key, want_examples):
             r2 = b365.get(s)
             if not r2:
                 continue
-            i1, i2 = implied(r1.get('close_price')), implied(r2.get('close_price'))
+            p1, p2 = r1.get('close_price'), r2.get('close_price')
+            i1, i2 = implied(p1), implied(p2)
             if i1 is None or i2 is None:
                 continue
             gaps.append(abs(i1 - i2))
             paired_fixtures.add(mk)
+            if p2 is not None and float(p2) <= 1.0:
+                ref_bad.append((mk, s, float(p2)))
+            else:
+                gaps_clean.append(abs(i1 - i2))
     if gaps:
         print(f'\nmedian |Δ implied| against the bet365 close on the same '
               f'fixture and side: **{statistics.median(gaps):.2f} points** '
               f'({n_flag(len(gaps))} side-pairs across {len(paired_fixtures)} fixtures)')
         print(f'distribution: {dist(gaps, 2)}')
+        if ref_bad:
+            med_c = (f'{statistics.median(gaps_clean):.2f}' if gaps_clean else DASH)
+            print(f'\n⚠️ **{len(ref_bad)} of those pairs have a bet365 close of '
+                  f'≤ 1.00** — an impossible price on the leg we are treating as '
+                  f'trusted. Excluding them the median is **{med_c} points** '
+                  f'({n_flag(len(gaps_clean))}).')
+            print(f'\nThis is a defect in the REFEREE, not in bet105, and it is '
+                  f'named here rather than averaged in because it would '
+                  f'otherwise read as bet105 disagreeing with the market. '
+                  f'Affected fixtures: ' +
+                  ', '.join(f'`{mk}`/{s}' for mk, s, _ in ref_bad[:10]) +
+                  (f' … and {len(ref_bad) - 10} more' if len(ref_bad) > 10 else ''))
     else:
         print(f'\nmedian |Δ implied| vs bet365: {DASH}  — no side on any fixture '
               f'carries a close from both books, so there is nothing to subtract.')

@@ -155,6 +155,36 @@ check('the move-rate verdict is printed', 'a sharp book should move more' in txt
 check('the vendor-insert caveat rides with the move-rate verdict',
       'VENDOR-INSERT' in txt and 'biased AGAINST bet105' in txt)
 
+print('\n— the REFEREE is checked too: an impossible bet365 close is named —')
+ref = [
+    {'match_key': 'r1', 'book': 'bet105', 'side': '1', 'market': 'match winner',
+     'open_price': 1.50, 'close_price': 1.60},
+    {'match_key': 'r1', 'book': 'bet105', 'side': '2', 'market': 'match winner',
+     'open_price': 2.60, 'close_price': 2.40},
+    # bet365 closing at 1.00 pays nothing. Its implied probability is 100 pts,
+    # so it drags the median gap up while looking like a bet105 problem.
+    {'match_key': 'r1', 'book': 'bet365', 'side': '1', 'market': 'match winner',
+     'close_price': 1.00},
+    {'match_key': 'r1', 'book': 'bet365', 'side': '2', 'market': 'match winner',
+     'close_price': 1.00},
+    {'match_key': 'r2', 'book': 'bet105', 'side': '1', 'market': 'match winner',
+     'close_price': 1.60},
+    {'match_key': 'r2', 'book': 'bet365', 'side': '1', 'market': 'match winner',
+     'close_price': 1.62},
+]
+patch_fetch({'odds_card_state': ref})
+txt, _ = run(M.section_accuracy, 'u', 'k', 10)
+check('an impossible bet365 close is named as a REFEREE defect',
+      'defect in the REFEREE' in txt and 'r1' in txt)
+check('the median is reported both with and without it',
+      'Excluding them the median is' in txt)
+patch_fetch({'odds_card_state': rows})
+clean_txt, _ = run(M.section_accuracy, 'u', 'k', 10)
+check('CONTROL: a clean referee produces no such warning',
+      'defect in the REFEREE' not in clean_txt)
+check('...and the median is still reported on the clean set',
+      'median |Δ implied|' in clean_txt)
+
 print('\n— §accuracy (d) names a wrong close rather than averaging it —')
 bad = list(rows) + [
     {'match_key': 'k3', 'book': 'bet105', 'side': '1', 'market': 'match winner',
