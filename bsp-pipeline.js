@@ -3967,7 +3967,16 @@ function profilesWithoutTournamentHistory(playerProfiles) {
     delete lite.tournamentHistory;
     out[key] = lite;
   }
-  return { ...playerProfiles, players: out };
+  // `_`-prefixed keys are IN-PROCESS CARRIERS, never published. This used to be
+  // one explicit `delete playerProfiles._allProfiles` at the call site, which
+  // worked for exactly the carrier someone remembered — the spread below happily
+  // serialises any new one. Enforcing the convention here closes the class
+  // instead of the instance. Locked by tools/test-profile-roster-floor.js.
+  const top = {};
+  for (const [k, v] of Object.entries({ ...playerProfiles, players: out })) {
+    if (!k.startsWith('_')) top[k] = v;
+  }
+  return top;
 }
 
 // Per-book odds timelines move OUT of matches.json into one lazy shard per match.
@@ -4390,6 +4399,99 @@ async function buildOneProfile(key, name, surfaceMap) {
 const PLAYER_PROFILE_CACHE_PATH = 'player-profiles-cache.json';
 const OPPONENT_PROFILE_MAX_AGE_MS = 14 * 24 * 60 * 60 * 1000; // 14 days
 const MAX_OPPONENT_BUILDS_PER_RUN = 400;
+
+// ---------------------------------------------------------------------------
+// THE PUBLISH FLOOR (TEN-243, founder-ruled 2026-09-21 — shape (c))
+//
+// Before this, the profile publish step was `cp profiles/*.json _site/profiles/
+// 2>/dev/null || true`: no gate at all. A run that wrote 12 shards of 708, or
+// zero, published them and reported success. That is TEN-219's failure mode.
+//
+// Two levels, because one cannot cover both cases:
+//
+//   BACKSTOP  an absolute minimum. Catches the catastrophic collapse without
+//             reference to any prior state, so it still binds when the prior
+//             state is itself missing or wrong.
+//   RATIO     0.9 of the roster we last published. Catches the partial
+//             truncation a fixed number goes blind to once the roster grows.
+//
+// DERIVED, NOT A LITERAL 300. The backstop is only safe BECAUSE the cap above
+// is 400: the worst legitimate run is the first after a schema bump, which
+// writes seed + MAX_OPPONENT_BUILDS_PER_RUN and nothing else. Write 300 as a
+// literal and someone lowering the cap to 200 leaves a floor that blocks every
+// post-bump run afterwards, for a reason nothing in the file explains.
+const PROFILE_ROSTER_BACKSTOP = Math.floor(MAX_OPPONENT_BUILDS_PER_RUN * 0.75); // 300
+const PROFILE_ROSTER_RATIO = 0.9;
+
+// THE EXEMPTION. A schema bump deliberately writes far below the ratio: every
+// cached profile is at the old version, and pass 2 OMITS a wrong-schema profile
+// rather than serving a half-empty ghost of it. Measured on the v14 -> v15 bump:
+// 560 of 708 = 79%, a run working exactly as designed that any ratio worth
+// having would have blocked.
+//
+// So the ratio is suspended when the run saw wrong-schema cache entries. The
+// signal is the same object as the condition it exempts: non-zero exactly while
+// the cache predates the code, zero on the run where convergence completes.
+// Nothing to set, nothing to expire, no flag to leave on.
+//
+// THE CORRUPTED-CACHE CASE IS THE BACKSTOP'S JOB — deliberate, not missed. A
+// cache that decompresses with a junk `v` reads as entirely wrong-schema and
+// opens this exemption with no bump having happened. Accepted: the backstop does
+// not move, so such a run still cannot publish a collapsed roster. The exemption
+// relaxes the ratio only, never the backstop.
+//
+// Pure and exported, so both directions can be driven from a test without a
+// pipeline run: one control that FIRES when the cache is intact and the count
+// collapses, one that stays SILENT through a legitimate convergence.
+// The reference roster the ratio is measured against. Named and exported
+// because CHOOSING THE STORE is the part that goes wrong: the first cut of this
+// read `player-profiles.json`, which is the EAGER subset (428 entries against
+// 561 deployed with a profile on 2026-09-21) — two different populations either
+// side of one comparison, and a ratio ~25% too lenient with nothing saying so.
+function lastPublishedRosterCount(root) {
+  const file = (root ? root + '/' : '') + 'player-profiles-cache.json.gz';
+  try {
+    const gz = JSON.parse(require('zlib').gunzipSync(fs.readFileSync(file)).toString('utf8'));
+    return Object.keys(gz.players || {}).length;
+  } catch {
+    // Absent or unreadable -> no ratio, backstop only. Never a guessed default.
+    return 0;
+  }
+}
+
+function profileRosterFloorVerdict({ written, lastPublished, wrongSchemaRejections }) {
+  const exempt = wrongSchemaRejections > 0;
+  if (written < PROFILE_ROSTER_BACKSTOP) {
+    return {
+      ok: false, reason: 'backstop', exempt,
+      detail: `wrote ${written} profile(s), below the absolute backstop of ${PROFILE_ROSTER_BACKSTOP} `
+        + `(= floor(MAX_OPPONENT_BUILDS_PER_RUN ${MAX_OPPONENT_BUILDS_PER_RUN} x 0.75)). The backstop binds `
+        + `regardless of wrong-schema rejections (${wrongSchemaRejections}).`,
+    };
+  }
+  // No reference roster means no ratio to apply — a first run, or a clone with
+  // no prior store. Say so rather than inventing a denominator.
+  if (!(lastPublished > 0)) {
+    return { ok: true, reason: 'backstop-only', exempt, detail: 'no prior roster to compare against' };
+  }
+  if (exempt) {
+    return {
+      ok: true, reason: 'ratio-suspended', exempt: true,
+      detail: `${wrongSchemaRejections} cache entr(ies) rejected as wrong-schema, so the store is mid-convergence `
+        + `by definition and the ratio is suspended. Backstop ${PROFILE_ROSTER_BACKSTOP} still binding.`,
+    };
+  }
+  const need = Math.floor(lastPublished * PROFILE_ROSTER_RATIO);
+  if (written < need) {
+    return {
+      ok: false, reason: 'ratio', exempt: false,
+      detail: `wrote ${written} profile(s), below ${PROFILE_ROSTER_RATIO} x ${lastPublished} last published (= ${need}), `
+        + `and NO cache entry was rejected as wrong-schema — so this is not a schema convergence, it is a truncated run.`,
+    };
+  }
+  return { ok: true, reason: 'pass', exempt: false, detail: `${written} >= ${need} (${PROFILE_ROSTER_RATIO} x ${lastPublished})` };
+}
+
 // TEN-206: how deep into the live ATP ranking the per-player shard roster goes.
 // Players already in the profile cache are kept regardless of rank, so this only
 // governs how many NEW ranked players get pulled in. 400 covers everyone a
@@ -4979,8 +5081,16 @@ async function buildPlayerProfiles(matches, surfaceMap) {
   // fall back to their stale cached profile so they stay searchable meanwhile.
   const now = Date.now();
   let built = 0, reused = 0, skippedNull = 0;
+  // The publish floor's exemption signal. Counts cache entries this run found at
+  // a schema version other than the current one — which is precisely "the cache
+  // predates the code", i.e. a convergence is in progress. Counted here rather
+  // than derived later because this loop is the only place that sees it, and it
+  // is PUBLISHED (build log + player-index.json meta) because an exemption
+  // nobody can audit is a silent bypass.
+  let wrongSchemaRejections = 0;
   for (const [key, name] of opponentPool) {
     const cached = cachedPlayers[key];
+    if (cached && cached.v !== PROFILE_SCHEMA_VERSION) wrongSchemaRejections++;
     const fresh = cached && cached.builtAt
       && cached.v === PROFILE_SCHEMA_VERSION
       && (now - new Date(cached.builtAt).getTime() < OPPONENT_PROFILE_MAX_AGE_MS);
@@ -5175,7 +5285,8 @@ async function buildPlayerProfiles(matches, surfaceMap) {
   fs.writeFileSync(PLAYER_PROFILE_CACHE_PATH,
     JSON.stringify({ fetchedAt: new Date().toISOString(), players: cachedPlayers }, null, 2));
   console.log(`Player profiles: ${Object.keys(seedProfiles).length} seed, `
-    + `opponents [built ${built}, reused ${reused}, no-stats ${skippedNull}] `
+    + `opponents [built ${built}, reused ${reused}, no-stats ${skippedNull}, `
+    + `wrong-schema ${wrongSchemaRejections}] `
     + `→ ${Object.keys(profiles).length} searchable.`);
 
   // Split (TEN-206). `profiles` now holds the wide roster; the EAGER file must
@@ -5191,6 +5302,9 @@ async function buildPlayerProfiles(matches, surfaceMap) {
     // Not serialised into player-profiles.json — consumed by runPipeline() to
     // write the shards and the search index. Stripped at the write site.
     _allProfiles: profiles,
+    // The publish floor's exemption signal, travelling the same `_`-prefixed
+    // route for the same reason: it is needed by the write site, not by the page.
+    _wrongSchemaRejections: wrongSchemaRejections,
   };
 }
 
@@ -5204,8 +5318,44 @@ async function buildPlayerProfiles(matches, surfaceMap) {
 //
 // hasProfile is the honest third state. Without it "we have no such player" and
 // "we know him, his profile isn't built yet" both render as "No player found".
-function writePlayerShardsAndIndex(allProfiles, tourAverage) {
+// `opts.enforceFloor: false` is a TEST-ONLY injection point, the same shape as
+// `_setStandingRowsForTest` above it. tools/test-player-search-index.js drives
+// this function with 2-profile fixtures to test INDEX SHAPE, and the publish
+// floor is not what that suite is about; the floor has its own 22-check suite.
+// Production passes nothing and therefore gets the floor, and
+// tools/test-profile-roster-floor.js asserts the production call site does not
+// carry an override - so this cannot become the flag someone leaves on.
+function writePlayerShardsAndIndex(allProfiles, tourAverage, wrongSchemaRejections = 0, opts = {}) {
   const dir = 'profiles';
+
+  // ---- THE PUBLISH FLOOR, CHECKED BEFORE ANYTHING IS DESTROYED ----
+  // Deliberately above the unlink below. The old ordering would have deleted
+  // every shard on disk and THEN discovered the run was truncated, leaving
+  // `profiles/` holding only the bad set even though the job failed. Decide
+  // first; the previous run's shards survive a rejected run untouched.
+  const rosterCount = Object.values(allProfiles).filter(Boolean).length;
+  // THE REFERENCE ROSTER — the committed profile-cache floor.
+  //
+  // It has to be the WIDE roster, and the obvious store is the wrong one.
+  // `player-profiles.json` is the EAGER subset: measured 2026-09-21 it held 428
+  // entries against 561 deployed with a profile, so a ratio against it is
+  // silently ~25% too lenient — two different populations either side of one
+  // comparison. `profiles/` is neither committed nor in the Actions cache path
+  // list, and `player-index.json` is gitignored, so neither survives a run.
+  //
+  // The committed `.gz` does: it is in git (a cold CI clone gets a real floor
+  // rather than none), it is refreshed at most once a UTC day so it cannot move
+  // underneath the run measuring against it, and it holds the same wide
+  // population `allProfiles` is drawn from. No network fetch inside a
+  // fail-closed path, where one CDN blip would otherwise block every publish.
+  const lastPublished = lastPublishedRosterCount();
+  const verdict = profileRosterFloorVerdict({ written: rosterCount, lastPublished, wrongSchemaRejections });
+  console.log(`Profile roster floor: ${verdict.ok ? 'PASS' : 'FAIL'} [${verdict.reason}] — ${verdict.detail}`);
+  if (!verdict.ok && opts.enforceFloor !== false) {
+    throw new Error(`player-index: profile roster floor FAILED [${verdict.reason}] — ${verdict.detail} `
+      + `Failing closed: shards and index are not rewritten, yesterday's profiles stay live.`);
+  }
+
   fs.mkdirSync(dir, { recursive: true });
   // Rewrite from scratch each run so a player who leaves the roster stops being
   // served a profile that no longer refreshes.
@@ -5249,7 +5399,26 @@ function writePlayerShardsAndIndex(allProfiles, tourAverage) {
     return a.name.localeCompare(b.name);
   });
   writeJsonAtomic('player-index.json',
-    { fetchedAt: new Date().toISOString(), source: 'api-tennis get_standings (ATP)', players }, true);
+    {
+      fetchedAt: new Date().toISOString(),
+      source: 'api-tennis get_standings (ATP)',
+      // PUBLISHED, not just logged. A floor whose exemption is invisible is a
+      // silent bypass — nobody reading the store could tell why a run writing
+      // 79% of the roster was let through. Same reason `meta.exclusions` exists
+      // on career-history-index.json. Additive: every consumer reads `.players`.
+      meta: {
+        roster: {
+          written: rosterCount,
+          lastPublished,
+          backstop: PROFILE_ROSTER_BACKSTOP,
+          ratio: PROFILE_ROSTER_RATIO,
+          wrongSchemaRejections,
+          ratioSuspended: wrongSchemaRejections > 0,
+          verdict: verdict.reason,
+        },
+      },
+      players,
+    }, true);
 
   const withProfile = players.filter(p => p.hasProfile).length;
   console.log(`Player index: ${players.length} searchable (${withProfile} with a profile), ${written} shard(s) written.`);
@@ -6474,7 +6643,7 @@ async function runPipeline() {
 
   // Per-player shards + search index — after the strip above, so a shard carries
   // exactly the shape the eager file's profiles have.
-  writePlayerShardsAndIndex(allProfiles, playerProfiles.tourAverage);
+  writePlayerShardsAndIndex(allProfiles, playerProfiles.tourAverage, playerProfiles._wrongSchemaRejections || 0);
 
   // TEN-207: tournamentHistory ships as lazy per-player shards, not inside the
   // eager profile store. Must run BEFORE the write (it is the source of the
@@ -6486,7 +6655,9 @@ async function runPipeline() {
   console.log('Building tournament-history shards...');
   writeTournamentHistoryShards(allProfiles, { log: (m) => console.log(m) });
 
-  delete playerProfiles._allProfiles;   // carrier only — never serialised
+  // `_allProfiles` / `_wrongSchemaRejections` are carriers, stripped by
+  // profilesWithoutTournamentHistory() along with any other `_` key. The
+  // explicit delete that used to sit here only covered the one carrier it named.
   writeJsonAtomic('player-profiles.json', profilesWithoutTournamentHistory(playerProfiles), true);
   console.log(`Wrote player-profiles.json (${Object.keys(playerProfiles.players).length} eager player profile(s), tournamentHistory sharded).`);
 
@@ -6774,7 +6945,7 @@ if (require.main === module) {
   });
 }
 
-module.exports = { isIndoorTournament, loadTournamentCourtMap, fetchRecentSinglesFixtures, recentFormFromFixtures, buildTournamentProgression, extractProgressionMetrics, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
+module.exports = { profileRosterFloorVerdict, lastPublishedRosterCount, profilesWithoutTournamentHistory, PROFILE_ROSTER_BACKSTOP, PROFILE_ROSTER_RATIO, MAX_OPPONENT_BUILDS_PER_RUN, isIndoorTournament, loadTournamentCourtMap, fetchRecentSinglesFixtures, recentFormFromFixtures, buildTournamentProgression, extractProgressionMetrics, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
   // The Career-record pair. Exported together on purpose: their whole contract
   // is that the counts one returns are tallyable from the rows the other
   // returns, and that is what ten8-career-verify.js asserts.

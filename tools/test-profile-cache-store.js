@@ -281,6 +281,55 @@ check('F2 · NEG — change one byte of content and the blob must differ', () =>
   assert.ok(!a.equals(b), 'F1 is vacuous — the blob is identical regardless of content');
 });
 
+// ── SCHEMA DRIFT overrides the once-per-UTC-day guard (TEN-243, 2026-09-21) ──
+// The stall, reproduced: the last PRE-bump run claims today's stamp, so the run
+// that actually builds the new schema cannot commit any of it, and every run for
+// the rest of the day rebuilds from a floor it will reject again. Measured twice
+// on v14 -> v15 (runs 4057, 4059: identical `660 entries [v14:660]`, reused 0).
+
+check('S1 · a v15 live store OVERRIDES today\'s stamp on a v14 floor', () => {
+  const root = tmpRoot();
+  writeGz(root, makeStore(todayStamp, 20, 'committed', { v: 14 }));   // today's stamp, OLD schema
+  writePlain(root, makeStore(todayStamp, 20, 'live', { v: 15 }));     // same day, NEW schema
+  const written = store.freeze(root);
+  assert.strictEqual(written, 1, 'the day guard held back a schema advance — this IS the stall');
+  assert.strictEqual(store.maxSchemaVersion(readGz(root)), 15, 'floor did not take the new schema');
+});
+
+check('S2 · NEG — same schema on both sides still obeys the day guard', () => {
+  const root = tmpRoot();
+  writeGz(root, makeStore(todayStamp, 20, 'committed', { v: 15 }));
+  writePlain(root, makeStore(todayStamp, 25, 'live', { v: 15 }));
+  assert.strictEqual(store.freeze(root), 0,
+    'S1 is vacuous — freeze now writes every run, which is the ~144 commits/day the guard exists to stop');
+});
+
+check('S3 · a DOWNGRADE never overrides the day guard', () => {
+  const root = tmpRoot();
+  writeGz(root, makeStore(todayStamp, 20, 'committed', { v: 15 }));
+  writePlain(root, makeStore(todayStamp, 20, 'live', { v: 14 }));
+  assert.strictEqual(store.freeze(root), 0, 'an OLDER schema overwrote a newer floor');
+});
+
+check('S4 · drift does NOT disarm the shrink guard', () => {
+  // The whole safety argument for overriding the day guard is that the other two
+  // guards still run. A broken hydrate that also happens to carry a new schema
+  // must still be refused.
+  const root = tmpRoot();
+  writeGz(root, makeStore(todayStamp, 500, 'committed', { v: 14 }));
+  writePlain(root, makeStore(todayStamp, 9, 'live', { v: 15 }));
+  assert.strictEqual(store.freeze(root), 0,
+    'a 9-entry v15 store overwrote a 500-entry floor — drift bypassed the shrink guard');
+});
+
+check('S5 · drift does NOT disarm the newer-committed guard', () => {
+  const root = tmpRoot();
+  const tomorrow = new Date(Date.parse(todayStamp) + 86400000).toISOString();
+  writeGz(root, makeStore(tomorrow, 20, 'committed', { v: 14 }));
+  writePlain(root, makeStore(todayStamp, 20, 'live', { v: 15 }));
+  assert.strictEqual(store.freeze(root), 0, 'an older live store overwrote a newer committed one');
+});
+
 console.log(`test-profile-cache-store: ${passed} checks passed${failures.length ? `, ${failures.length} FAILED` : ''}`);
 if (failures.length) {
   for (const f of failures) console.error(`  FAIL ${f}`);

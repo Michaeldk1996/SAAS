@@ -146,9 +146,33 @@ jobs:
         id: cacheday
         run: echo "day=$(date -u +%F)" >> "$GITHUB_OUTPUT"
 
+      # TEN-243, founder-authorised 2026-09-21. The profile cache is SCHEMA-SHAPED,
+      # so its key has to carry the schema. Actions cache keys are IMMUTABLE: the
+      # first save of `bsp-caches-<day>` wins and every later save under that key is
+      # a no-op. When a schema bump lands mid-day the morning's pre-bump run already
+      # owns the key, so no new-schema profile can enter the cache until the UTC day
+      # rolls. Measured: runs 4057 and 4059 both restored the identical
+      # `660 entries [v14:660]`, rejected all 660, rebuilt 400, wrote 560 then 561.
+      #
+      # Read from the source, not pinned here: a hard-coded number is a second place
+      # to remember, and the bump that forgets it is exactly the bump that needs it.
+      # FAIL-CLOSED on an unreadable version — an empty one collapses the key back to
+      # a single shared line and silently restores the stall this step prevents.
+      - name: Profile schema version (cache-key component)
+        id: schema
+        run: |
+          V="$(grep -oE '^const PROFILE_SCHEMA_VERSION = [0-9]+;' bsp-pipeline.js | grep -oE '[0-9]+' | head -1)"
+          if [ -z "$V" ]; then
+            echo "::error::Could not read PROFILE_SCHEMA_VERSION from bsp-pipeline.js. Refusing to build a cache key without it - an empty version collapses every schema onto one key, which is the stall this step exists to prevent."
+            exit 1
+          fi
+          echo "v=$V" >> "$GITHUB_OUTPUT"
+          echo "PROFILE_SCHEMA_VERSION = $V"
+
       # Persist the heavy derived caches + TML archive between runs so each run
       # is fast and makes minimal API calls (matches how the local run reuses
-      # them). Keyed per-day so it refreshes but still restores older caches.
+      # them). Keyed per-schema-per-day so it refreshes but still restores older
+      # caches OF THE SAME SCHEMA.
       - name: Restore pipeline caches
         uses: actions/cache@v4
         with:
@@ -162,9 +186,14 @@ jobs:
             model-output.json
             news-feed.json
             tournament-entries.json
-          key: bsp-caches-${{ steps.cacheday.outputs.day }}
+          key: bsp-caches-v${{ steps.schema.outputs.v }}-${{ steps.cacheday.outputs.day }}
+          # THE PREFIX MUST CARRY THE VERSION TOO, and this is the half that is easy
+          # to miss. `restore-keys: bsp-caches-` is a prefix match, so a v15 key miss
+          # would fall straight back onto a v14 snapshot and reproduce the stall
+          # exactly — a new key that inherits the old schema anyway. Narrowed to the
+          # schema's own line: yesterday's v15 cache still restores, v14's never does.
           restore-keys: |
-            bsp-caches-
+            bsp-caches-v${{ steps.schema.outputs.v }}-
 
       # historical-match-stats.json is cached SEPARATELY, keyed by the content hash
       # of the committed floor. It used to sit in the list above, and that quietly
@@ -447,7 +476,24 @@ jobs:
           # out of it 404s live while every test still passes, so player-index.json
           # is asserted below.
           cp player-index.json _site/
-          mkdir -p _site/profiles && cp profiles/*.json _site/profiles/ 2>/dev/null || true
+          # TEN-243, founder-authorised 2026-09-21. This was
+          #   cp profiles/*.json _site/profiles/ 2>/dev/null || true
+          # and `|| true` swallowed BOTH failures the same way: "the glob matched
+          # nothing" and "the copy failed". A run that wrote zero shards published an
+          # empty folder and reported success — every profile off the site, silently.
+          #
+          # ZERO IS ITS OWN FAILURE, separate from the floor's job. A PARTIAL roster
+          # is what the profile floor in bsp-pipeline.js decides on (backstop 300 +
+          # 0.9 ratio, suspended on wrong-schema rejections); this step only has to
+          # stop an EMPTY publish from reading as a success.
+          mkdir -p _site/profiles
+          SHARDS=$(ls profiles/*.json 2>/dev/null | wc -l | tr -d ' ')
+          if [ "$SHARDS" -eq 0 ]; then
+            echo "::error::profiles/ is empty - the run wrote no player shards. Publishing an empty _site/profiles/ would take every profile off the site silently."
+            exit 1
+          fi
+          cp profiles/*.json _site/profiles/
+          echo "published $SHARDS profile shard(s)."
           # TEN-173 Points at Risk: static artifact refreshed daily by
           # points-at-risk.yml (its own fail-closed workflow). The profile "Points
           # at Risk" tile reads it once, keyed by player_key. Assert-gated below.

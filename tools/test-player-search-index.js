@@ -56,7 +56,10 @@ function inDir(fn) {
 function build(rows, profiles) {
   return inDir(() => {
     pipeline._setStandingRowsForTest(rows);
-    pipeline.writePlayerShardsAndIndex(profiles, { dna: {}, stats: {} });
+    // enforceFloor:false — this suite is about INDEX SHAPE and drives 2-profile
+    // fixtures; the publish floor (backstop 300) would reject every one of them.
+    // The floor has its own suite, tools/test-profile-roster-floor.js.
+    pipeline.writePlayerShardsAndIndex(profiles, { dna: {}, stats: {} }, 0, { enforceFloor: false });
     const shards = fs.readdirSync('profiles').filter(f => f.endsWith('.json'));
     // Read eagerly: inDir() deletes the directory on the way out, so a lazy
     // reader would ENOENT rather than test anything.
@@ -132,9 +135,9 @@ t('a stale shard is removed when its player leaves the roster', () => {
   // serving a profile that no longer refreshes.
   inDir(() => {
     pipeline._setStandingRowsForTest(standings(2000));
-    pipeline.writePlayerShardsAndIndex({ '1001': profile(1001, 'Player 1'), '1002': profile(1002, 'Player 2') }, {});
+    pipeline.writePlayerShardsAndIndex({ '1001': profile(1001, 'Player 1'), '1002': profile(1002, 'Player 2') }, {}, 0, { enforceFloor: false });
     assert.strictEqual(fs.readdirSync('profiles').length, 2);
-    pipeline.writePlayerShardsAndIndex({ '1001': profile(1001, 'Player 1') }, {});
+    pipeline.writePlayerShardsAndIndex({ '1001': profile(1001, 'Player 1') }, {}, 0, { enforceFloor: false });
     assert.deepStrictEqual(fs.readdirSync('profiles'), ['1001.json'], 'the departed player kept his shard');
   });
 });

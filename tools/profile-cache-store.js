@@ -100,6 +100,42 @@ function census(obj) {
   return `${Object.keys(players).length} entries [${parts.join(' ')}] shells:${shells}`;
 }
 
+// Highest numeric schema version present in a store, or null if it has none.
+// Non-numeric / absent `v` is ignored rather than coerced: an unversioned entry
+// is not evidence of any version.
+function maxSchemaVersion(obj) {
+  const players = (obj && obj.players) || {};
+  let max = null;
+  for (const k of Object.keys(players)) {
+    const v = players[k] && players[k].v;
+    if (typeof v === 'number' && Number.isFinite(v) && (max === null || v > max)) max = v;
+  }
+  return max;
+}
+
+// SCHEMA DRIFT — the live store carries a version the committed floor does not.
+//
+// TEN-243, founder-authorised 2026-09-21. The once-per-UTC-day guard below is
+// there so an idle day does not churn the committed blob. After a schema bump it
+// does something else entirely: the last PRE-bump run claims the day's stamp, so
+// the run that actually builds the new schema cannot commit any of it, and every
+// run for the rest of the day re-hydrates the old floor, rejects all of it, and
+// rebuilds from scratch. Measured twice on the v14 -> v15 bump — runs 4057 and
+// 4059 hydrated the identical `660 entries [v14:660]` and wrote 560 then 561.
+// That is a stall, not a slow convergence.
+//
+// So a day-stamp does not hold back a version advance. The condition is read
+// from the DATA on both sides — no flag, no hand-set argument, nothing to leave
+// on — and it is strictly one-way: it fires only when live is AHEAD of committed,
+// never on a downgrade.
+function schemaDrift(live, committed) {
+  const liveMax = maxSchemaVersion(live);
+  const committedMax = maxSchemaVersion(committed);
+  if (liveMax === null) return null;                       // nothing to advance to
+  if (committedMax !== null && liveMax <= committedMax) return null;
+  return { liveMax, committedMax };
+}
+
 // Per-entry comparison. A profile built by NEWER code wins outright — that is what
 // PROFILE_SCHEMA_VERSION exists to say, and an old-schema entry serves numbers from a
 // superseded formula however recently it was touched. Only within one version does
@@ -180,7 +216,16 @@ function freeze(root, opts) {
     }
     const committed = readGzJson(gzPath);
     const committedStamp = stampOf(committed);
-    if (!force && committedStamp !== null && utcDay(committedStamp) === today) {
+    const drift = schemaDrift(live, committed);
+    if (drift) {
+      console.log(
+        `freeze: ${pair.gz} SCHEMA DRIFT — live carries v${drift.liveMax}, committed floor is at ` +
+        `${drift.committedMax === null ? 'no version' : 'v' + drift.committedMax}. Overriding the ` +
+        `once-per-UTC-day guard: holding the floor at the old schema for the rest of the day is the ` +
+        `stall, not a saving.`
+      );
+    }
+    if (!force && !drift && committedStamp !== null && utcDay(committedStamp) === today) {
       console.log(`freeze: ${pair.gz} already carries today's stamp (${utcDay(committedStamp)}) — skipping (one per UTC day).`);
       continue;
     }
@@ -235,4 +280,4 @@ if (require.main === module) {
   }
 }
 
-module.exports = { PAIRS, hydrate, freeze, stampOf, countPlayers, utcDay };
+module.exports = { PAIRS, hydrate, freeze, stampOf, countPlayers, utcDay, maxSchemaVersion, schemaDrift };
