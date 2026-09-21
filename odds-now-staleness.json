@@ -1,6 +1,6 @@
 {
   "latest": {
-    "maxAgeMin": 329.9,
+    "maxAgeMin": 344.9,
     "measured": 2,
     "stale": [
       "C. Cruz v N. Borges (ATP ATP Davis Cup - World Group II, 2026-09-21)",
@@ -9,15 +9,6 @@
   },
   "note": "Age of the published bet365 NOW leg, measured as now - observedAt against the artefact Pages is serving. Capture staleness and publish staleness are both inside this number, which is what the visitor sees. Re-derive the threshold on TEN-187.",
   "samples": [
-    {
-      "at": "2026-09-16T17:15:12Z",
-      "maxAgeMin": null,
-      "measured": 0,
-      "noBet365Line": 2,
-      "noClock": 0,
-      "stale": 0,
-      "thresholdMin": 120.0
-    },
     {
       "at": "2026-09-16T17:30:13Z",
       "maxAgeMin": null,
@@ -3608,9 +3599,18 @@
       "noClock": 0,
       "stale": 2,
       "thresholdMin": 120.0
+    },
+    {
+      "at": "2026-09-21T05:30:07Z",
+      "maxAgeMin": 344.9,
+      "measured": 2,
+      "noBet365Line": 2,
+      "noClock": 0,
+      "stale": 2,
+      "thresholdMin": 120.0
     }
   ],
   "schema": "odds-now-staleness/1",
   "thresholdMin": 120.0,
-  "updatedAt": "2026-09-21T05:15:07Z"
+  "updatedAt": "2026-09-21T05:30:07Z"
 }
