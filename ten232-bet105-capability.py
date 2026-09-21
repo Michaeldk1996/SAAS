@@ -968,6 +968,10 @@ def ts(v):
 # ═══════════════════════════════════════ SECTION 3 — WHAT A PRICE ROW CARRIES
 
 KIBL_BUCKET = 'kibl-raw'
+
+# What §3 actually MEASURED, so §7 can derive its summary instead of restating
+# a conclusion that may since have been disproved. Populated by section_rows().
+LIMIT_FOUND = {}
 RAW_BLOBS = 4
 
 
@@ -1110,6 +1114,7 @@ def section_rows(url, key, obs):
                   f'is in (b) below, so "no limit field" can be verified rather '
                   f'than taken.')
         else:
+            LIMIT_FOUND['bet105'] = sorted(limit_keys)
             print(f'\n**The stake limit IS populated on bet105.** '
                   f'limit-shaped fields present: ' +
                   ', '.join(f'`{k}`' for k in limit_keys))
@@ -1139,21 +1144,39 @@ def section_rows(url, key, obs):
                 if s411:
                     sv = [float(r[k]) for r in s411
                           if isinstance(r.get(k), (int, float))]
-                    if sv:
-                        print(f'\n⚠️ **`{k}` is populated on Sports411 too**: '
-                              f'{dist(sv, 2)}')
+                    # ⚠️ "PRESENT" AND "CARRIES INFORMATION" ARE DIFFERENT
+                    # TESTS, and only the second one is the founder's question.
+                    # Sports411 returns max_limit on every row and every value
+                    # is 0.00 — the key is there and says nothing. Reporting
+                    # that as "populated on Sports411 too" would have read as
+                    # "both books give us a limit", which is the opposite of
+                    # what the numbers say.
+                    informative = len(set(sv)) > 1 or (sv and sv[0] != 0)
+                    if sv and informative:
+                        print(f'\n⚠️ **`{k}` carries real values on Sports411 '
+                              f'too**: {dist(sv, 2)}')
                         print(f'\nSo "null on all 299,250 Sports411 rows" was '
-                              f'true **of our summary table, not of the feed**. '
-                              f'`archive-kibl.py` does not copy `{k}` into '
-                              f'`kibl_line_observations`, so every query we ever '
-                              f'ran against it returned null. The value has been '
-                              f'arriving all along and is sitting in the raw '
-                              f'blobs. Recovering it is one column in '
-                              f'`to_summary()` plus one in the DDL — and the '
-                              f'history is NOT lost, because the blobs are kept.')
+                              f'true **of our summary table, not of the feed**.')
+                    elif sv:
+                        print(f'\n**On Sports411 the same field is present on '
+                              f'every row and is always `0.00`** '
+                              f'({n_flag(len(sv))}) — the key is there and it '
+                              f'says nothing. So the limit is a genuine '
+                              f'**bet105-over-Sports411 capability**, not just '
+                              f'a column we were not reading.')
                     else:
                         print(f'\n`{k}` on Sports411: present but never numeric '
                               f'({n_flag(len(s411))} records).')
+                    print(f'\n⚠️ **But we are not storing it.** '
+                          f'`archive-kibl.py`\'s `to_summary()` does not copy '
+                          f'`{k}` into `kibl_line_observations`, so every query '
+                          f'we have ever run against it returned null — which '
+                          f'is why it read as absent. The value has been '
+                          f'arriving all along and is sitting in the raw blobs. '
+                          f'Recovering it is one column in `to_summary()` plus '
+                          f'one in the DDL, and **the history is NOT lost**, '
+                          f'because the blobs are kept. Reported, not done: the '
+                          f'directive says wire nothing new.')
     else:
         print(f'\n{DASH}  not read. See the note above — this is silence, not '
               f'a negative finding.')
@@ -1664,10 +1687,21 @@ def section_limits(obs, endpoints):
               f'unreadable in this run; not re-confirmed here.')
 
     h2('What else we cannot get')
+    # ⚠️ THE STAKE-LIMIT LINE IS NOT HARD-CODED HERE ANY MORE. It used to read
+    # "the field is not in the record at all", which was carried over from the
+    # broken §3 read and stayed true-looking after §3 had disproved it. A
+    # summary that restates a conclusion instead of deriving it will contradict
+    # the section above it the first time that section is fixed.
+    if LIMIT_FOUND.get('bet105'):
+        print(f'* **The stake limit is NOT a limit of the feed** — see §3(a): '
+              f'`max_limit` is populated on every bet105 record. It is a limit '
+              f'of OUR TABLE, because the archive does not copy it. That is '
+              f'recoverable from the raw blobs and is the one item on this list '
+              f'we can fix ourselves.')
+    else:
+        print(f'* **Stake limit: {DASH}** — §3(a) could not read the raw '
+              f'records, so this is unmeasured rather than absent.')
     print("""
-* **No stake limit.** The field is not in the record at all (§3a) — not null,
-  absent. So the sharp-book confidence signal the founder was hoping for is not
-  available from this feed in any form.
 * **No book-post clock**, therefore no true "who moved first" between bet105
   and bet365. §3(c) of the board fixes says so on the figure itself.
 * **No intermediate prices.** We hold an open and a close and nothing between,

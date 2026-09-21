@@ -487,11 +487,31 @@ check('a populated stake limit is reported as PRESENT',
       'The stake limit IS populated on bet105' in txt)
 check('...broken down by league NAME, not bucketed under None',
       '**Challenger**' in txt and '**ATP**' in txt and '* None:' not in txt)
-check('a limit populated on Sports411 too corrects the premise',
-      'populated on Sports411 too' in txt
+check('a limit carrying REAL values on Sports411 corrects the premise',
+      'carries real values on Sports411' in txt
       and 'true **of our summary table, not of the feed**' in txt)
 check('...and says the history is recoverable rather than lost',
       'the history is NOT lost' in txt and 'blobs are kept' in txt)
+
+# ⚠️ PRESENT AND INFORMATIVE ARE DIFFERENT TESTS. Sports411 returns max_limit
+# on every row and every value is 0.00. Counting "non-null" made that read as
+# "populated on Sports411 too" — i.e. both books give us a limit, the opposite
+# of what the numbers say.
+M.kibl_blob = lambda url, key, path: (
+    {'market_participants': LIMITED + [
+        {'feed_source_id': 43, 'max_limit': 0, '_league_id': 537,
+         'price_decimal': 3.0},
+        {'feed_source_id': 43, 'max_limit': 0, '_league_id': 537,
+         'price_decimal': 2.5}]}, None)
+txt, _ = run(M.section_rows, 'u', 'k', None)
+check('an all-ZERO limit is reported as saying nothing, not as populated',
+      'always `0.00`' in txt and 'says nothing' in txt)
+check('...and is called a bet105-over-Sports411 capability',
+      'bet105-over-Sports411 capability' in txt)
+check('...and does NOT claim Sports411 carries real values',
+      'carries real values on Sports411' not in txt)
+check('the not-storing-it finding is reported either way',
+      'But we are not storing it' in txt and 'wire nothing new' in txt)
 M.kibl_blob = _real_blob
 
 print('\n— §live: zero live rows is reported as OUR SCOPE, not the book —')
@@ -578,6 +598,23 @@ check('the durable-queue question is raised as the key one',
       'durable' in txt and 'unknown' in txt)
 check('the measured floor dashes when there is no card state',
       M.DASH in txt)
+
+print('\n— §limits DERIVES its stake-limit line from what §3 measured —')
+# It used to hard-code "the field is not in the record at all", carried over
+# from the broken §3 read. That line stayed true-looking after §3 had disproved
+# it — a summary that restates rather than derives will contradict the section
+# above it the first time that section is fixed.
+M.LIMIT_FOUND.clear()
+txt, _ = run(M.section_limits, [{'inserted_on': 'x'}], {})
+check('with §3 unread, the stake limit is UNMEASURED, not absent',
+      'unmeasured rather than absent' in txt)
+M.LIMIT_FOUND['bet105'] = ['max_limit']
+txt, _ = run(M.section_limits, [{'inserted_on': 'x'}], {})
+check('with §3 having found it, §7 says it is OUR limit, not the feed\'s',
+      'NOT a limit of the feed' in txt and 'limit of OUR TABLE' in txt)
+check('...and never claims the field is absent from the record',
+      'not in the record at all' not in txt)
+M.LIMIT_FOUND.clear()
 
 print('\n— §limits confirms both standing limits —')
 txt, _ = run(M.section_limits, [{'inserted_on': 'x'}], {})
