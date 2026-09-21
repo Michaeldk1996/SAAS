@@ -81,6 +81,28 @@ TENNIS_LEAGUES_MEN = {19: "ATP", 537: "Challenger", 962: "ITF Men"}
 TENNIS_LEAGUES_WOMEN = {20: "WTA", 643: "WTA 125K", 963: "ITF Women"}
 
 
+def retry_after_seconds(headers, floor, cap=120.0):
+    """Seconds to wait after a 429 -> max(floor, Retry-After), capped.
+
+    RFC 9110 allows Retry-After to be either delta-seconds or an HTTP-date. Only
+    the delta-seconds form is honoured here: the date form needs the server's
+    clock, and a client that trusts a remote clock to schedule its own backoff
+    has two ways to be wrong instead of one. An unparseable or absent header
+    falls back to `floor`, which is the behaviour this replaced — so a feed that
+    never sends the header is unaffected.
+
+    NEVER RETURNS LESS THAN `floor`. A server asking us to come back sooner than
+    our own pacing is not a reason to speed up.
+    """
+    raw = (headers or {}).get('retry-after')
+    if raw is None:
+        return floor
+    try:
+        return min(cap, max(floor, float(str(raw).strip())))
+    except (TypeError, ValueError):
+        return floor
+
+
 class KiblError(RuntimeError):
     def __init__(self, status, body, url):
         self.status = status
@@ -261,7 +283,16 @@ class KiblClient:
             if status == 429 or (500 <= status < 600):
                 last_err = KiblError(status, raw.decode("utf-8", "replace"), url)
                 if attempt < retries - 1:
-                    time.sleep(5 * (attempt + 1))
+                    # FOUNDER 2026-09-21: "watch for 429/Retry-After and back
+                    # off". The header was already being captured into
+                    # meta["rate_headers"] above and never read — a fixed
+                    # 5/10/15s ladder is our guess, Retry-After is the server's
+                    # answer, and ignoring it is how a polite client becomes an
+                    # impolite one. Clamped at 120s so a malformed or hostile
+                    # value cannot park a job for the rest of its window; the
+                    # floor is our own ladder, so this can only ever wait
+                    # LONGER than before, never shorter.
+                    time.sleep(retry_after_seconds(hdrs, 5 * (attempt + 1)))
                     continue
             if status != 200:
                 return None, meta

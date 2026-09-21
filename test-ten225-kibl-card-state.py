@@ -155,6 +155,61 @@ check('an upcoming fixture does', K.qualifies_as_now(None, NOWT + 3600, NOWT)[0]
 
 
 # ------------------------------------------------------------------ the Close
+print('\nreal_price / the 0.000 suspension marker (founder item 1, 2026-09-21)')
+check('0.000 is not a price', K.real_price(obs(0.0, T % (9, 0))) is None)
+check('1.000 is not a price either — it returns the stake',
+      K.real_price(obs(1.0, T % (9, 0))) is None)
+check('1.01 IS a price — the founder ruled the floor at "< 1.01", so 1.01 '
+      'itself is kept', K.real_price(obs(1.01, T % (9, 0))) == 1.01)
+check('2.50 is a price', K.real_price(obs(2.5, T % (9, 0))) == 2.5)
+check('a missing price is not a price', K.real_price(obs(None, T % (9, 0))) is None)
+# PostgREST hands numerics back as STRINGS. A `> 0` test against a str raises on
+# some drivers and silently passes on others; parsing is the only version that
+# behaves the same either way.
+check('a string price parses rather than raising',
+      K.real_price(obs('2.50', T % (9, 0))) == 2.5)
+check('an unparseable price is not a price',
+      K.real_price(obs('suspended', T % (9, 0))) is None)
+check('the selector floor IS the ruled render floor, so the two cannot '
+      'disagree about what a price is', K.MIN_REAL_PRICE == 1.01)
+
+# THE MEASURED SHAPE: 44 of 135 bet105 closes are 0.000, in pairs, stamped
+# seconds-to-minutes before the off. A real price sits earlier in the series.
+_start = K.epoch(T % (15, 0))
+_susp = [obs(2.10, T % (13, 0)), obs(2.15, T % (14, 30)), obs(0.0, T % (14, 59))]
+_c = K.close_of(_susp, _start)
+check('the Close is the last REAL price, not the suspension marker',
+      _c is not None and float(_c['price_decimal']) == 2.15,
+      f'got {_c and _c.get("price_decimal")}')
+check('...and it is the LAST real one, not the first',
+      K.epoch(_c['inserted_on']) == K.epoch(T % (14, 30)))
+check('...and the skip is counted, so the recovery is measurable',
+      K.SUPPRESSED['close'] >= 1)
+
+# CONTROL: the pre-fix selector, reconstructed here, on the same input. Without
+# this, "the Close is 2.15" would also pass on a build that never had the
+# defect — and this defect shipped, so the control is the evidence.
+_pre_fix = [o for o in _susp
+            if o.get('price_decimal') is not None
+            and K.epoch(o.get('inserted_on')) is not None
+            and K.epoch(o['inserted_on']) < _start]
+_pre_fix.sort(key=lambda o: K.epoch(o['inserted_on']))
+check('CONTROL: the pre-fix selector picks the 0.000 marker on this same input',
+      float(_pre_fix[-1]['price_decimal']) == 0.0)
+
+check('a series that is ALL suspension markers still dashes — this fills no '
+      'cell it cannot justify',
+      K.close_of([obs(0.0, T % (14, 0)), obs(0.0, T % (14, 59))], _start) is None)
+
+# The opener half of the same defect.
+_op_susp = K.open_of([obs(0.0, T % (8, 0), opener=True)])
+check('an opener that is a suspension marker does not become the Open',
+      _op_susp[0] is None)
+check('...and it is NOT reported as "no opener row" — a market that opened '
+      'suspended is a different fact from one that never opened',
+      _op_susp[2] == 'opener_not_a_real_price')
+check('a real opener still opens', K.open_of([obs(2.2, T % (8, 0), opener=True)])[0] == 2.2)
+
 print('\nclose_of — strictly before the RESOLVED start')
 start = K.epoch(T % (12, 0))
 lst = [obs(2.5, T % (9, 0)), obs(2.3, T % (11, 30)), obs(1.9, T % (12, 30))]
@@ -752,10 +807,14 @@ exec(compile(open(A.__file__).read(), A.__file__, 'exec'), A.__dict__)
 check('14 min into the baseline: skip', A.should_sweep(14.0, None)[0] is False)
 check('15 min into the baseline: sweep', A.should_sweep(15.0, None)[0] is True)
 check('...and it says which floor applied', A.should_sweep(15.0, None)[1] == 'baseline')
-check('6 min out with a fixture 30 min from starting: sweep',
-      A.should_sweep(6.0, 30.0) == (True, 'near-start'))
-check('4 min out with a fixture 30 min from starting: skip',
-      A.should_sweep(4.0, 30.0)[0] is False)
+# REWRITTEN 2026-09-21, founder item 1. T-30 is the DENSE band now; both of
+# these pinned the 5-minute near-start floor that used to apply there.
+check('6 min out with a fixture 30 min from starting: sweep, DENSE tier',
+      A.should_sweep(6.0, 30.0) == (True, 'dense'))
+check('4 min out with a fixture 30 min from starting: now sweeps',
+      A.should_sweep(4.0, 30.0) == (True, 'dense'))
+check('1 min out in the dense band still skips — the floor is a floor',
+      A.should_sweep(1.0, 30.0)[0] is False)
 # WIDENED 2026-09-19, founder item 4(a): "widen the dense window". The two
 # boundary assertions below were written against T-60 and are rewritten to the
 # window in force rather than deleted, because their JOB — pinning where the
@@ -777,8 +836,109 @@ check('...and the OLD 60-min edge is now comfortably inside it — the control '
 check('NO previous sweep -> sweep. For a feed whose prices cannot be '
       're-fetched, a redundant sweep costs one call and a skipped one costs a '
       'price nobody has', A.should_sweep(None, None) == (True, 'no-previous-sweep'))
-check('a fixture that already started does not force the 5-min floor',
-      A.should_sweep(6.0, -10.0)[0] is False)
+# ⚠️ REVERSED 2026-09-21, and deliberately. This assertion pinned the OLD
+# behaviour in as many words: a fixture past its scheduled start dropped out of
+# the near-start band and fell back to the 15-minute baseline. The founder's
+# item 1 says "from T-30 TO THE LIVE FLIP", and the flip lands on either side of
+# the schedule — MEASURED median -11.0 min, min -860.0 (n=17, n<30). A fixture
+# that has passed its scheduled time and not yet flipped is the single most
+# valuable one to be sweeping, because the price we are chasing is the last one
+# before the market goes down.
+check('a fixture 10 min past its scheduled start is DENSE, not baseline',
+      A.should_sweep(6.0, -10.0) == (True, 'dense'))
+# should_sweep only names the tier when it SWEEPS; a skip returns the reason
+# string. The tier itself is sweep_floor's answer, so ask the function that
+# owns it rather than string-matching a message.
+check('...and it stops being dense once it is well past the flip',
+      A.sweep_floor(-(A.DENSE_POST_START_MIN + 0.1))[1] == 'baseline')
+
+print('\nsweep_floor — the three tiers, and the shadowing trap')
+check('T-30 exactly is dense', A.sweep_floor(30.0) == (A.DENSE_MIN, 'dense'))
+check('a minute wider is near-start', A.sweep_floor(31.0)[1] == 'near-start')
+check('the post-start edge is dense',
+      A.sweep_floor(-A.DENSE_POST_START_MIN)[1] == 'dense')
+check('past that edge is baseline',
+      A.sweep_floor(-A.DENSE_POST_START_MIN - 0.1)[1] == 'baseline')
+check('an unknown next start is baseline', A.sweep_floor(None)[1] == 'baseline')
+# THE TRAP THIS GUARDS. The dense band [-30, +30] sits ENTIRELY INSIDE the
+# near-start band [0, 180]. Test near-start first and dense is unreachable —
+# the constants would all be present, the tier function would look right, and
+# every sweep near the off would quietly run at the 5-minute floor. A test that
+# only asserted the constants exist would pass against that.
+check('dense is not shadowed by the wider band it sits inside',
+      A.sweep_floor(10.0)[1] == 'dense'
+      and A.sweep_floor(10.0)[0] < A.NEAR_START_MIN)
+check('the tiers are strictly ordered', A.DENSE_MIN < A.NEAR_START_MIN < A.BASELINE_MIN)
+
+print('\ndense_loop — driven on an injected clock, not a real 90s wait')
+
+
+class _FakeClock:
+    def __init__(self):
+        self.t = 0.0
+        self.slept = []
+
+    def time(self):
+        return self.t
+
+    def sleep(self, s):
+        self.slept.append(s)
+        self.t += s
+
+
+_calls = {'windows': 0, 'counts': 0}
+_orig_run_window, _orig_count = A.run_window, A.dense_fixture_count
+
+
+def _fake_run_window(*a, **kw):
+    _calls['windows'] += 1
+    return 0
+
+
+def _count_always(_url, _key, _now):
+    _calls['counts'] += 1
+    return 3
+
+
+A.run_window = _fake_run_window
+A.dense_fixture_count = _count_always
+_clk = _FakeClock()
+_passes, _why = A.dense_loop(None, 'u', 'k', 1, budget_s=180.0,
+                             sleeper=_clk.sleep, clock=_clk.time)
+# 3, not 2: passes land at t=0, 90 and 180, and the loop stops when another
+# full cadence would overrun the budget. Counted by driving the loop, because
+# an off-by-one here is the difference between covering the band and leaving a
+# 90-second hole in it.
+check('a 180s budget at a 90s cadence runs 3 passes and stops',
+      (_passes, _calls['windows']) == (3, 3), f'got {_passes} / {_calls["windows"]}')
+check('...and it slept the ruled 1-2 minutes between them',
+      _clk.slept == [A.DENSE_MIN * 60.0] * 2, f'slept {_clk.slept}')
+check('...and it says why it stopped rather than returning a bare number',
+      'budget' in _why)
+# The loop must never sleep a cadence it has no budget left to use: that is 90
+# seconds of a 5-minute dispatch spent holding the runner open for nothing.
+check('the last pass does not sleep before returning',
+      len(_clk.slept) == _passes - 1)
+
+_calls['windows'] = 0
+A.dense_fixture_count = lambda _u, _k, _n: 0
+_p2, _why2 = A.dense_loop(None, 'u', 'k', 1, budget_s=180.0,
+                          sleeper=_FakeClock().sleep, clock=_FakeClock().time)
+check('an empty dense band sweeps nothing and says so',
+      (_p2, _calls['windows']) == (0, 0) and 'no fixture' in _why2)
+
+# FAIL-OPEN CONTROL. An unreadable count is not an empty band. Treating None as
+# 0 would silently stand the dense loop down for the whole window every time
+# Supabase hiccuped, on a feed whose prices cannot be re-fetched — and it would
+# look identical in the log to a quiet calendar.
+_calls['windows'] = 0
+A.dense_fixture_count = lambda _u, _k, _n: None
+_clk3 = _FakeClock()
+_p3, _ = A.dense_loop(None, 'u', 'k', 1, budget_s=180.0,
+                      sleeper=_clk3.sleep, clock=_clk3.time)
+check('an UNREADABLE count keeps sweeping — None is not zero', _p3 == 3)
+
+A.run_window, A.dense_fixture_count = _orig_run_window, _orig_count
 
 print('\nfixture_row / upsert_fixtures — first_seen_at is never rewritten')
 fr = A.fixture_row({'fixture_id': 1, 'league_id': 19, 'sport_id': 5,

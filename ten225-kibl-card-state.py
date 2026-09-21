@@ -264,6 +264,60 @@ def side_labels_for(obs_list):
     return {ordered[0][0]: '1', ordered[1][0]: '2'}
 
 
+# ── FOUNDER 2026-09-21 item 1 — THE SUSPENSION MARKER ──────────────────────
+# MEASURED on the bet105 archive: 44 of 135 closes (32.6%) are exactly 0.000,
+# in PAIRS, every one stamped within seconds-to-minutes of the scheduled start.
+# That is Kibl reporting a market taken down at the live flip. It is not a
+# price: a decimal of 0.000 returns nothing, and neither does 1.000.
+#
+# It reached the Close slot because every selector below filtered on
+# `price_decimal is not None`, and 0.000 is not None. Being last, it won. The
+# publisher then correctly refused to render it — so the fixture dashed, while
+# a perfectly good last price sat one row earlier in the same series.
+#
+# THE FLOOR IS THE FOUNDER'S OWN RENDER FLOOR, 2026-09-19: "move it to < 1.01".
+# Deliberately the same number, because a price the renderer is ruled to refuse
+# must not be the one the selector picks — otherwise the two rules disagree and
+# the disagreement shows up as a dash nobody can explain.
+#
+# THIS DOES NOT DASH ANYTHING IT DID NOT ALREADY DASH. A suppressed row falls
+# through to the previous real price in the same series, exactly as the card's
+# book ladder falls through to the next book. A series with no real price at all
+# dashes, which it already did.
+#
+# ⚠️ AND IT IS DELIBERATELY NOT APPLIED TO `newest_of` — THE "NOW" SLOT.
+# Falling through there would print the price the book was showing BEFORE it
+# took the market down, labelled as the current price. A suspended market has
+# no current price, so a dash is the correct and honest answer; the fall-through
+# would be showing a stale price as live, which is the one thing the freshness
+# work is here to prevent. Close is different in kind: "the last price before
+# the off" is a historical fact that the suspension does not erase.
+MIN_REAL_PRICE = 1.01
+
+# How many rows each selector skipped, so the recovery is a measurement and not
+# a claim. Module-level and cleared per build, like FLIP_LAGS above, so a second
+# call in one process cannot inherit the first run's counts. No 'now' key: see
+# the paragraph above — that slot is not meant to skip anything.
+SUPPRESSED = {'open': 0, 'close': 0}
+
+
+def real_price(obs):
+    """The row's price if it is a price a book would take, else None.
+
+    Parses rather than trusting: PostgREST hands numerics back as strings, so
+    `o['price_decimal'] > 0` would compare a str to an int and raise on some
+    rows and silently pass on others depending on the driver.
+    """
+    raw = obs.get('price_decimal')
+    if raw is None:
+        return None
+    try:
+        v = float(raw)
+    except (TypeError, ValueError):
+        return None
+    return v if v >= MIN_REAL_PRICE else None
+
+
 def open_of(obs_list):
     """The book's OPENING price for one line. Founder: "Open = is_opener price,
     with inserted_on".
@@ -283,14 +337,20 @@ def open_of(obs_list):
     conflating the two is the defect this ruling was raised about: see
     `open_observed_at` in ten225-card-state-schema.sql.
     """
-    openers = [o for o in obs_list
-               if o.get('is_opener') and o.get('price_decimal') is not None
+    flagged = [o for o in obs_list
+               if o.get('is_opener')
                and epoch(o.get('inserted_on')) is not None]
+    openers = [o for o in flagged if real_price(o) is not None]
+    SUPPRESSED['open'] += len(flagged) - len(openers)
     if not openers:
-        return None, None, 'no_opener_row', None
+        # Distinguished from having no opener row at all: a book that opened a
+        # market suspended is a different fact from one that never opened it,
+        # and collapsing them would hide a feed change behind a familiar reason.
+        return None, None, ('opener_not_a_real_price' if flagged
+                            else 'no_opener_row'), None
     openers.sort(key=lambda o: epoch(o['inserted_on']))
     first_ts = epoch(openers[0]['inserted_on'])
-    tied = {float(o['price_decimal']) for o in openers
+    tied = {real_price(o) for o in openers
             if epoch(o['inserted_on']) == first_ts}
     if len(tied) > 1:
         return None, None, 'ambiguous_opener', None
@@ -338,10 +398,14 @@ def close_of(obs_list, start_ts):
     """
     if start_ts is None:
         return None
-    pre = [o for o in obs_list
-           if o.get('price_decimal') is not None
-           and epoch(o.get('inserted_on')) is not None
-           and epoch(o['inserted_on']) < start_ts]
+    dated = [o for o in obs_list
+             if epoch(o.get('inserted_on')) is not None
+             and epoch(o['inserted_on']) < start_ts]
+    # FOUNDER 2026-09-21 item 1: the last REAL price before the start, not the
+    # last row. See MIN_REAL_PRICE above — the suspension marker is dated,
+    # pre-start and not a price, and taking it cost 44 of 135 bet105 closes.
+    pre = [o for o in dated if real_price(o) is not None]
+    SUPPRESSED['close'] += len(dated) - len(pre)
     if not pre:
         return None
     pre.sort(key=lambda o: (epoch(o['inserted_on']),

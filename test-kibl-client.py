@@ -233,6 +233,26 @@ check("women's leagues held separately and out of archive scope",
       set(kibl_client.TENNIS_LEAGUES_MEN) & set(kibl_client.TENNIS_LEAGUES_WOMEN) == set())
 check("pacing is conservative by default", kibl_client.MIN_INTERVAL_S >= 1.0)
 
+print("\nRetry-After (founder item 1, 2026-09-21: 'watch for 429/Retry-After')")
+_ra = kibl_client.retry_after_seconds
+check("no header -> our own ladder, so a feed that never sends one is unaffected",
+      _ra({}, 5.0) == 5.0)
+check("a delta-seconds header is honoured", _ra({'retry-after': '30'}, 5.0) == 30.0)
+check("a header ASKING US TO COME BACK SOONER does not speed us up",
+      _ra({'retry-after': '1'}, 5.0) == 5.0)
+check("an HTTP-date form falls back rather than trusting a remote clock",
+      _ra({'retry-after': 'Wed, 21 Oct 2026 07:28:00 GMT'}, 5.0) == 5.0)
+check("garbage falls back", _ra({'retry-after': 'soon'}, 5.0) == 5.0)
+check("a hostile value cannot park the job for the window",
+      _ra({'retry-after': '99999'}, 5.0) == 120.0)
+check("None headers are tolerated", _ra(None, 5.0) == 5.0)
+# The header was already being captured into meta['rate_headers'] and never
+# read. If that capture ever goes, this parser has nothing to parse.
+import inspect as _insp_ra  # noqa: E402
+check("the 429 branch actually CALLS the parser — a parser nothing calls is "
+      "a comment",
+      'retry_after_seconds(hdrs' in _insp_ra.getsource(kibl_client.KiblClient.get))
+
 print()
 if FAILS:
     print(f"FAILED {len(FAILS)}: {FAILS}")

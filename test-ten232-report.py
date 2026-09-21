@@ -91,21 +91,42 @@ check("no previous sweep always sweeps", ak.should_sweep(None, None)[0] is True)
 check("14 min into the baseline skips", ak.should_sweep(14.0, None)[0] is False)
 check("16 min into the baseline sweeps", ak.should_sweep(16.0, None)[0] is True)
 check("6 min out with a start in 30 min sweeps", ak.should_sweep(6.0, 30.0)[0] is True)
-check("4 min out with a start in 30 min skips", ak.should_sweep(4.0, 30.0)[0] is False)
+# REWRITTEN 2026-09-21, founder item 1: "sweep every 1-2 minutes from T-30".
+# A fixture 30 minutes out is now in the DENSE band, so 4 minutes since the last
+# sweep is well past the 1.5-minute floor and sweeps. This assertion used to
+# pin the 5-minute floor at T-30; the floor there is 1.5 now, and the check
+# moves with the ruling rather than being deleted.
+check("4 min out with a start in 30 min now SWEEPS (dense tier)",
+      ak.should_sweep(4.0, 30.0) == (True, 'dense'))
+check("...and 1 min out still skips, so the dense floor is a floor",
+      ak.should_sweep(1.0, 30.0)[0] is False)
+check("dense floor is the ruled 1-2 minutes", 1.0 <= ak.DENSE_MIN <= 2.0)
+# The grace was sized for the 5-minute floor. Flat, it is a 33% discount on the
+# dense floor and should_sweep(1.0, 30.0) comes back SWEEP -- the floor stops
+# being a floor. Capped at a tenth, the near-start and baseline values are
+# unchanged to the digit.
+check("the grace is unchanged at the floors it was measured on",
+      ak.cadence_grace(5.0) == 0.5 and ak.cadence_grace(15.0) == 0.5)
+check("...and cannot exceed a tenth of the dense floor",
+      ak.cadence_grace(ak.DENSE_MIN) <= ak.DENSE_MIN / 10.0)
+check("the dense band opens at T-30", ak.DENSE_WINDOW_MIN == 30)
 
 # CONTROL for the grace. Run 35311030824 measured 4.9x min against a 5-min
 # floor and skipped, which turns the founder's 5-minute near-start cadence into
 # 10 minutes. A 5-minute pinger can only ever deliver just-under-5, so without
 # the grace these two checks fail — which is the point of having them.
+# The grace control needs a fixture on the 5-MINUTE floor, and 30 minutes out
+# is no longer one — it is dense. 120 minutes out is inside T-180 and outside
+# T-30, which is exactly the near-start tier this control is about.
 check("4.95 min against the 5-min near-start floor sweeps",
-      ak.should_sweep(4.95, 30.0)[0] is True)
+      ak.should_sweep(4.95, 120.0)[0] is True)
 check("14.95 min against the 15-min baseline sweeps",
       ak.should_sweep(14.95, None)[0] is True)
 check("the grace is smaller than the firing interval it forgives",
       ak.CADENCE_GRACE_MIN < ak.NEAR_START_MIN)
 # ...and it must not turn the floor into a suggestion.
 check("4.0 min still skips at the near-start floor",
-      ak.should_sweep(4.0, 30.0)[0] is False)
+      ak.should_sweep(4.0, 120.0)[0] is False)
 check("14.0 min still skips at the baseline floor",
       ak.should_sweep(14.0, None)[0] is False)
 check("an unknown next start falls back to the baseline",
