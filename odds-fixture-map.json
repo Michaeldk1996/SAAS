@@ -961,20 +961,20 @@
     },
     "12164131": {
       "fixtureId": "id1200210074804602",
-      "mappedAt": "2026-09-20T04:46:48Z",
+      "mappedAt": "2026-09-21T17:48:15Z",
       "orient": "same",
       "p1": "A. Tabilo",
       "p2": "R. Jodar",
-      "startTime": "2026-09-20T16:10:00.000Z",
+      "startTime": "2026-09-20T16:40:00.000Z",
       "tournamentId": 2100
     },
     "12164132": {
       "fixtureId": "id1200210074804640",
-      "mappedAt": "2026-09-20T04:46:48Z",
+      "mappedAt": "2026-09-21T17:48:15Z",
       "orient": "same",
       "p1": "C. Garin",
       "p2": "D. Merida Aguilar",
-      "startTime": "2026-09-20T17:20:00.000Z",
+      "startTime": "2026-09-20T18:30:00.000Z",
       "tournamentId": 2100
     },
     "12164136": {
@@ -988,7 +988,7 @@
     },
     "12164137": {
       "fixtureId": "id1200210074818628",
-      "mappedAt": "2026-09-20T04:46:48Z",
+      "mappedAt": "2026-09-21T17:48:15Z",
       "orient": "same",
       "p1": "C. H. Tseng",
       "p2": "M. Dahlin",
@@ -1120,20 +1120,20 @@
     },
     "12164163": {
       "fixtureId": "id1200210074825608",
-      "mappedAt": "2026-09-20T04:46:48Z",
+      "mappedAt": "2026-09-21T17:48:15Z",
       "orient": "same",
       "p1": "M. Kecmanovic",
       "p2": "V. Gaubas",
-      "startTime": "2026-09-20T12:10:00.000Z",
+      "startTime": "2026-09-20T13:45:00.000Z",
       "tournamentId": 2100
     },
     "12164164": {
       "fixtureId": "id1200210074825610",
-      "mappedAt": "2026-09-20T04:46:48Z",
+      "mappedAt": "2026-09-21T17:48:15Z",
       "orient": "same",
       "p1": "H. Medjedovic",
       "p2": "E. Butvilas",
-      "startTime": "2026-09-20T13:20:00.000Z",
+      "startTime": "2026-09-20T15:10:00.000Z",
       "tournamentId": 2100
     },
     "12164174": {
@@ -1266,7 +1266,7 @@
     },
     "12164219": {
       "fixtureId": "id1200210074827782",
-      "mappedAt": "2026-09-20T04:46:48Z",
+      "mappedAt": "2026-09-21T17:48:15Z",
       "orient": "same",
       "p1": "A. Fery",
       "p2": "A. Andrade",
@@ -1275,20 +1275,20 @@
     },
     "12164220": {
       "fixtureId": "id1200210074827016",
-      "mappedAt": "2026-09-20T04:46:48Z",
+      "mappedAt": "2026-09-21T17:48:15Z",
       "orient": "same",
       "p1": "D. Altmaier",
       "p2": "M. Dodig",
-      "startTime": "2026-09-20T12:20:00.000Z",
+      "startTime": "2026-09-20T13:10:00.000Z",
       "tournamentId": 2100
     },
     "12164221": {
       "fixtureId": "id1200210074827816",
-      "mappedAt": "2026-09-20T04:46:48Z",
+      "mappedAt": "2026-09-21T17:48:15Z",
       "orient": "same",
       "p1": "T. Samuel",
       "p2": "A. Guillen Meza",
-      "startTime": "2026-09-20T13:20:00.000Z",
+      "startTime": "2026-09-20T14:35:00.000Z",
       "tournamentId": 2100
     },
     "12164237": {
@@ -1457,8 +1457,8 @@
     },
     "12164693": {
       "fixtureId": null,
-      "mappedAt": "2026-09-21T16:18:15Z",
-      "missRuns": 11,
+      "mappedAt": "2026-09-21T17:48:15Z",
+      "missRuns": 12,
       "missSince": "2026-09-21T03:45:01Z",
       "orient": null,
       "p1": "J. Fuentes Vasquez",
@@ -1819,12 +1819,12 @@
       "missResolutionHoursP50": 6.61,
       "missResolutionsMeasured": 87,
       "note": "ttlBitRuns counts runs where an expired MISS was the ONLY reason a billable /v4/fixtures call was made. projectedTtlUnitsPerDay uses the MEASURED run rate (measuredRunsPerDay), not an assumed 24/day; it is null until observedSpanDays is wide enough to measure one. Compare it against the <=24/day ceiling the TTL was chosen against. openMisses counts only fixtures still on the board.",
-      "observedSpanDays": 10.45,
+      "observedSpanDays": 10.51,
       "projectedTtlUnitsPerDay": 4.1,
-      "runs": 159,
-      "spentRuns": 75,
+      "runs": 160,
+      "spentRuns": 76,
       "ttlBitRuns": 43,
-      "ttlBitShare": 0.27,
+      "ttlBitShare": 0.269,
       "ttlHours": 1.0
     },
     "runs": [
@@ -3576,9 +3576,20 @@
         "ttlBit": true,
         "unmapped": 0,
         "upcoming": 75
+      },
+      {
+        "at": "2026-09-21T17:48:15Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 8,
+        "missExpired": 1,
+        "openMisses": 1,
+        "stale": 9,
+        "ttlBit": false,
+        "unmapped": 0,
+        "upcoming": 75
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-09-21T16:18:15Z"
+  "updatedAt": "2026-09-21T17:48:15Z"
 }
