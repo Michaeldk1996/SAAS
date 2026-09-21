@@ -82,3 +82,14 @@ jobs:
           CHROME_BIN: google-chrome
           PROBE_BASE_URL: https://michaeldk1996.github.io/SAAS
         run: node probe-ten243-lines-peak.mjs
+
+      # The embedded Database inside the Tournaments ROI overlay. Its failure
+      # mode is SILENT: an unresolved `--db-*` custom property is dropped, not
+      # thrown, so the panel renders unstyled with a clean console. Only the
+      # computed value is evidence, which is what this reads.
+      - name: ROI overlay renders the embedded Database (deployed bytes)
+        if: always()
+        env:
+          CHROME_BIN: google-chrome
+          PROBE_BASE_URL: https://michaeldk1996.github.io/SAAS
+        run: node probe-ten242-roi-overlay.mjs
