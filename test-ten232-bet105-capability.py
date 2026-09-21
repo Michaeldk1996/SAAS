@@ -252,6 +252,16 @@ check('...and the substitution is FLAGGED, not done quietly',
       'not bet365' in txt and 'flagged rather than done quietly' in txt)
 check('the aggregate names the substitute book on the figure',
       'median |Δ implied| against the api-tennis close' in txt)
+# A flagged substitution printed under the ORIGINAL column heading is how the
+# flag stops protecting anyone: the reader sees "bet365 close" above numbers
+# that are not bet365's.
+check('the worked-example COLUMN is named for the book actually in it',
+      '| api-tennis close |' in txt and 'bet365 close |' not in txt)
+check('the delta column names the same pair', 'Δ implied (b105−api-tennis)' in txt)
+check('a Kibl-sourced leg is NOT labelled book-tick',
+      'api-tennis close ts' in txt and '(book-tick)' not in txt,
+      'only bet365-via-oddspapi is a book tick; everything through Kibl is '
+      'vendor-insert, and that caveat is the point of the whole document')
 
 print('\n— the REFEREE is checked too: an impossible bet365 close is named —')
 ref = [
@@ -424,7 +434,10 @@ check('no empty field table is printed as if it were a census',
       '| field | present on |' not in txt or '— not read.' in txt)
 
 # Now a blob that DOES download: the census must come from the vendor record.
-BLOB = [
+# ⚠️ The real envelope: records live under `market_participants`, alongside
+# `fixtures` and the sweep metadata. Guessing `rows`/`data` matched neither and
+# produced a refusal that blamed the book for my wrong key.
+RECS = [
     {'feed_source_id': 171, 'price_decimal': 1.9, 'is_opener': True,
      'league_id': 537, 'point': None, 'alt_id': 0},
     {'feed_source_id': 171, 'price_decimal': 2.1, 'is_opener': False,
@@ -432,6 +445,8 @@ BLOB = [
     {'feed_source_id': 43, 'price_decimal': 3.0, 'is_opener': True,
      'league_id': 537, 'point': None, 'alt_id': 0},
 ]
+BLOB = {'sweep_id': 's1', 'observed_at': 'x', 'fixtures': [{'fixture_id': 1}],
+        'market_participants': RECS}
 M.kibl_blob = lambda url, key, path: (BLOB, None)
 txt, _ = run(M.section_rows, 'u', 'k', None)
 check('the census counts only THIS book\'s records out of the shared blob',
@@ -442,6 +457,17 @@ check('the no-limit-field conclusion is now drawn from records actually read',
       'across all 2 records read' in txt)
 check('...and invites the reader to check it against the key list',
       'can be verified rather than taken' in txt)
+
+# A blob whose records are under a key this report does not know must produce a
+# refusal that NAMES THE KEYS IT SAW. Otherwise the next person gets the same
+# dead end I did: a refusal that reads as a fact about the book.
+M.kibl_blob = lambda url, key, path: (
+    {'sweep_id': 's', 'some_future_key': RECS, 'fixtures': []}, None)
+txt, _ = run(M.section_rows, 'u', 'k', None)
+check('an unrecognised blob envelope names the keys it actually saw',
+      'blob top-level keys' in txt and 'some_future_key' in txt)
+check('...and still refuses rather than reporting an empty census',
+      'nothing below claims the stake limit is absent' in txt)
 M.kibl_blob = _real_blob
 
 print('\n— §live: zero live rows is reported as OUR SCOPE, not the book —')
@@ -488,6 +514,37 @@ check('vendor_error reads the error envelope',
       M.vendor_error({'code': 'X', 'description': 'why'}) == 'X: why')
 check('vendor_error returns None for a real payload, so it cannot cry wolf',
       M.vendor_error({'data': [1]}) is None)
+
+
+class QuietButWorking(ErrEnvelope):
+    """markets-alerts answering `200: api success` with ZERO rows. Before the
+    envelope was read, this was indistinguishable from an entitlement gap and
+    the report said "unknown which" — the safe answer, but the wrong one."""
+
+    def get(self, path, params=None):
+        if path == '/info/markets-alerts':
+            return ({'code': 200, 'description': 'api success', 'data': []},
+                    {'status': 200})
+        return ErrEnvelope.get(self, path, params)
+
+
+txt, _ = run(M.section_endpoints, QuietButWorking())
+check('an empty but SUCCESSFUL endpoint is not called an entitlement gap',
+      'not an entitlement gap' in txt and 'The call SUCCEEDED' in txt)
+check('...and the real open question is named instead',
+      'fires on and how often' in txt and 'sampled over time' in txt)
+
+
+class QuietAndRefused(ErrEnvelope):
+    def get(self, path, params=None):
+        if path == '/info/markets-alerts':
+            return ({'code': 412, 'description': 'api exception'}, {'status': 200})
+        return ErrEnvelope.get(self, path, params)
+
+
+txt, _ = run(M.section_endpoints, QuietAndRefused())
+check('CONTROL: an empty AND refusing endpoint still reads as unknown',
+      'Unknown which' in txt and 'The call SUCCEEDED' not in txt)
 
 print('\n— §stream is labelled as unmeasured —')
 txt, _ = run(M.section_stream, {})

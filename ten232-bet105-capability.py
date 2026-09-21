@@ -352,8 +352,11 @@ def section_accuracy(url, key, want_examples):
             b105, b365 = bk['bet105'], bk[leg]
             at = bk.get('api-tennis') or {}
             h3(mk)
-            print('| side | bet105 open | bet105 close | bet365 close | '
-                  'api-tennis close | Δ implied (b105−b365) |')
+            # The column is named for the book actually in it. Printing
+            # sports411 numbers under a "bet365 close" heading is how a
+            # flagged substitution quietly becomes a false statement.
+            print(f'| side | bet105 open | bet105 close | {leg} close | '
+                  f'api-tennis close | Δ implied (b105−{leg}) |')
             print('|---|---|---|---|---|---|')
             for s in sides:
                 o1 = b105[s].get('open_price')
@@ -366,11 +369,17 @@ def section_accuracy(url, key, want_examples):
                       f'{num(c3, 3) if c3 is not None else DASH} | {d} |')
             ov1 = overround(b105, sides)
             ov2 = overround(b365, sides)
-            print(f'\noverround — bet105 {num(ov1)} · bet365 {num(ov2)}   '
+            # ⚠️ The clock label follows the BOOK, not the column position.
+            # sports411 comes through Kibl and is vendor-insert like bet105;
+            # only bet365-via-oddspapi is a book tick. Printing "(book-tick)"
+            # over a Kibl timestamp would undo the one caveat that matters most
+            # in this whole document.
+            leg_clock = 'book-tick' if leg == 'bet365' else 'vendor-insert'
+            print(f'\noverround — bet105 {num(ov1)} · {leg} {num(ov2)}   '
                   f'· bet105 open ts {ts(b105[sides[0]].get("open_ts"))} '
                   f'(vendor-insert) · close ts {ts(b105[sides[0]].get("close_ts"))} '
-                  f'(vendor-insert) · bet365 close ts '
-                  f'{ts(b365[sides[0]].get("close_ts"))} (book-tick)')
+                  f'(vendor-insert) · {leg} close ts '
+                  f'{ts(b365[sides[0]].get("close_ts"))} ({leg_clock})')
 
     # ── (b) ACROSS ALL BET105 CLOSES ─────────────────────────────────────────
     h2('(b) Across every bet105 close we hold')
@@ -1022,20 +1031,36 @@ def raw_records(url, key, fsid, want_blobs=RAW_BLOBS):
         return None, [], 'no raw_object path on any archived row'
 
     out, used, errs = [], [], []
+    shape = None
     for p in uniq:
         blob, berr = kibl_blob(url, key, p)
         if blob is None:
             errs.append(f'{p}: {berr}')
             continue
+        # ⚠️ THE PRICE RECORDS LIVE UNDER `market_participants`. The first cut
+        # guessed at `rows`/`data`, matched neither, and reported "blobs
+        # downloaded but carried no rows for this book" — a refusal that was
+        # honest but pointed at the book when the fault was my key list.
         recs = blob if isinstance(blob, list) else (
-            blob.get('rows') or blob.get('data') or [])
+            blob.get('market_participants') or blob.get('rows')
+            or blob.get('data') or [])
+        if shape is None and isinstance(blob, dict):
+            shape = sorted(blob)[:14]
         mine = [r for r in recs if isinstance(r, dict)
                 and r.get('feed_source_id') == fsid]
         out.extend(mine)
         used.append((p, len(recs), len(mine)))
     if not out:
-        return None, used, ('; '.join(errs) if errs else
-                            'blobs downloaded but carried no rows for this book')
+        # Say what WAS in there. A refusal nobody can act on is half a refusal,
+        # and the next reader should not have to re-derive the envelope from
+        # the writer's source the way I just did.
+        diag = f' (blob top-level keys: {", ".join(shape)})' if shape else ''
+        if used and used[0][1]:
+            diag += (f'; {used[0][1]:,} records present but none carrying '
+                     f'feed_source_id={fsid}')
+        return None, used, (('; '.join(errs) if errs else
+                             'blobs downloaded but carried no rows for this book')
+                            + diag)
     return out, used, None
 
 
@@ -1316,18 +1341,34 @@ def section_endpoints(client):
     h2('What this means for the three the founder asked about by name')
 
     ma = results.get('/info/markets-alerts', {})
+    says = str(ma.get('says') or '')
     print(f'\n**`/info/markets-alerts`** — {ma.get("status")}, '
-          f'{ma.get("rows") if ma.get("rows") is not None else DASH} rows. '
-          + ('It answers and carries data, so a dropping-odds alert could be '
-             'driven from it without any new polling budget. What it FIRES ON '
-             'is only readable from live rows over time — a single call cannot '
-             'establish a trigger rule, so that part stays **unknown** until '
-             'we watch it.'
-             if ma.get('rows') else
-             'It returns nothing on this credential right now. That is either '
-             'an entitlement gap (which fails silently with 200 on this '
-             'vendor) or genuinely no alerts in flight. **Unknown which**, and '
-             'a single empty call cannot tell them apart.'))
+          f'{ma.get("rows") if ma.get("rows") is not None else DASH} rows, '
+          f'vendor says `{says or DASH}`.')
+    if ma.get('rows'):
+        print('\nIt answers and carries data, so a dropping-odds alert could be '
+              'driven from it without any new polling budget. What it FIRES ON '
+              'is only readable from rows over time — one call cannot establish '
+              'a trigger rule, so that part stays **unknown** until we watch it.')
+    elif 'success' in says.lower():
+        # The distinction the error envelope buys. Worth spelling out: the
+        # previous run of this report called the same observation "unknown
+        # which", because it could not see that the vendor had said SUCCESS.
+        print('\n**The call SUCCEEDED and returned no alerts.** That is the '
+              'vendor\'s own word — `api success`, not an exception — so this '
+              'is not an entitlement gap and not a malformed request: the '
+              'endpoint works on our credential and there were simply no '
+              'alerts in flight at that moment.')
+        print('\nSo a dropping-odds alert could be driven from it, free, and '
+              'the open question is not *whether* we can read it but **what it '
+              'fires on and how often** — which needs it sampled over time '
+              'rather than called once. One empty call at one moment says '
+              'nothing about the rate.')
+    else:
+        print('\nIt returned nothing AND did not report success, so this is '
+              'either an entitlement gap (which fails silently with 200 on '
+              'this vendor) or a malformed call. **Unknown which** — the '
+              'vendor message above is the lead to follow.')
 
     mlu = results.get('/info/markets-last-updated', {})
     print(f'\n**`/info/markets-last-updated`** — {mlu.get("status")}, '
