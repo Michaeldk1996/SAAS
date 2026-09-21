@@ -1110,18 +1110,50 @@ def section_rows(url, key, obs):
                   f'is in (b) below, so "no limit field" can be verified rather '
                   f'than taken.')
         else:
-            print(f'\nlimit-shaped fields present: ' +
+            print(f'\n**The stake limit IS populated on bet105.** '
+                  f'limit-shaped fields present: ' +
                   ', '.join(f'`{k}`' for k in limit_keys))
             for k in limit_keys:
                 vals = [float(r[k]) for r in recs
                         if isinstance(r.get(k), (int, float))]
-                print(f'\n`{k}`: {dist(vals, 2)}')
+                print(f'\n`{k}` overall: {dist(vals, 2)}')
+                # ⚠️ THE LEAGUE KEY ON A RAW RECORD IS `_league_id`. The archive
+                # stamps it on during the sweep; the vendor's own record has no
+                # league on it. Reading `league_id` bucketed every row under
+                # None and printed one line labelled "None" where the founder
+                # asked for a range BY LEAGUE.
                 per_league = collections.defaultdict(list)
                 for r in recs:
                     if isinstance(r.get(k), (int, float)):
-                        per_league[r.get('league_id')].append(float(r[k]))
+                        lg = r.get('_league_id', r.get('league_id'))
+                        per_league[lg].append(float(r[k]))
+                print(f'\nby league:')
                 for lg, v in sorted(per_league.items(), key=lambda kv: -len(kv[1])):
-                    print(f'* {LEAGUES.get(lg, lg)}: {dist(v, 2)}')
+                    print(f'* **{LEAGUES.get(lg, lg)}**: {dist(v, 2)}')
+
+                # The founder's premise was that this was null on all 299,250
+                # Sports411 rows. If it is populated there too, the premise was
+                # about OUR TABLE, not the feed — a materially different fact
+                # and one he should hear rather than have confirmed wrongly.
+                s411, _u, e411 = raw_records(url, key, SPORTS411)
+                if s411:
+                    sv = [float(r[k]) for r in s411
+                          if isinstance(r.get(k), (int, float))]
+                    if sv:
+                        print(f'\n⚠️ **`{k}` is populated on Sports411 too**: '
+                              f'{dist(sv, 2)}')
+                        print(f'\nSo "null on all 299,250 Sports411 rows" was '
+                              f'true **of our summary table, not of the feed**. '
+                              f'`archive-kibl.py` does not copy `{k}` into '
+                              f'`kibl_line_observations`, so every query we ever '
+                              f'ran against it returned null. The value has been '
+                              f'arriving all along and is sitting in the raw '
+                              f'blobs. Recovering it is one column in '
+                              f'`to_summary()` plus one in the DDL — and the '
+                              f'history is NOT lost, because the blobs are kept.')
+                    else:
+                        print(f'\n`{k}` on Sports411: present but never numeric '
+                              f'({n_flag(len(s411))} records).')
     else:
         print(f'\n{DASH}  not read. See the note above — this is silence, not '
               f'a negative finding.')

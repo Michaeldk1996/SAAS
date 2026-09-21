@@ -468,6 +468,30 @@ check('an unrecognised blob envelope names the keys it actually saw',
       'blob top-level keys' in txt and 'some_future_key' in txt)
 check('...and still refuses rather than reporting an empty census',
       'nothing below claims the stake limit is absent' in txt)
+
+# ⚠️ The league on a RAW record is `_league_id` — the archive stamps it on
+# during the sweep; the vendor record has no league. Reading `league_id`
+# bucketed every row under None and printed one line labelled "None" where the
+# founder had asked for a range BY LEAGUE.
+LIMITED = [
+    {'feed_source_id': 171, 'max_limit': 50, '_league_id': 537, 'price_decimal': 1.9},
+    {'feed_source_id': 171, 'max_limit': 143, '_league_id': 537, 'price_decimal': 2.0},
+    {'feed_source_id': 171, 'max_limit': 1950, '_league_id': 19, 'price_decimal': 2.1},
+]
+M.kibl_blob = lambda url, key, path: (
+    {'market_participants': LIMITED + [
+        {'feed_source_id': 43, 'max_limit': 25, '_league_id': 537,
+         'price_decimal': 3.0}]}, None)
+txt, _ = run(M.section_rows, 'u', 'k', None)
+check('a populated stake limit is reported as PRESENT',
+      'The stake limit IS populated on bet105' in txt)
+check('...broken down by league NAME, not bucketed under None',
+      '**Challenger**' in txt and '**ATP**' in txt and '* None:' not in txt)
+check('a limit populated on Sports411 too corrects the premise',
+      'populated on Sports411 too' in txt
+      and 'true **of our summary table, not of the feed**' in txt)
+check('...and says the history is recoverable rather than lost',
+      'the history is NOT lost' in txt and 'blobs are kept' in txt)
 M.kibl_blob = _real_blob
 
 print('\n— §live: zero live rows is reported as OUR SCOPE, not the book —')
