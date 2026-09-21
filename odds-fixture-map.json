@@ -860,8 +860,8 @@
     },
     "12164073": {
       "fixtureId": null,
-      "mappedAt": "2026-09-21T01:45:01Z",
-      "missRuns": 51,
+      "mappedAt": "2026-09-21T02:45:01Z",
+      "missRuns": 52,
       "missSince": "2026-09-17T22:00:00Z",
       "orient": null,
       "p1": "J. C. Prado Angelo",
@@ -1234,8 +1234,8 @@
     },
     "12164216": {
       "fixtureId": null,
-      "mappedAt": "2026-09-21T01:45:01Z",
-      "missRuns": 37,
+      "mappedAt": "2026-09-21T02:45:01Z",
+      "missRuns": 38,
       "missSince": "2026-09-18T16:05:22Z",
       "orient": null,
       "p1": "K. Bennani",
@@ -1458,17 +1458,17 @@
   },
   "missAudit": {
     "observed": {
-      "measuredRunsPerDay": 14.8,
+      "measuredRunsPerDay": 14.9,
       "missResolutionHoursMax": 84.25,
       "missResolutionHoursP50": 11.06,
       "missResolutionsMeasured": 71,
       "note": "ttlBitRuns counts runs where an expired MISS was the ONLY reason a billable /v4/fixtures call was made. projectedTtlUnitsPerDay uses the MEASURED run rate (measuredRunsPerDay), not an assumed 24/day; it is null until observedSpanDays is wide enough to measure one. Compare it against the <=24/day ceiling the TTL was chosen against. openMisses counts only fixtures still on the board.",
-      "observedSpanDays": 9.84,
+      "observedSpanDays": 9.89,
       "projectedTtlUnitsPerDay": 3.7,
-      "runs": 146,
-      "spentRuns": 63,
-      "ttlBitRuns": 36,
-      "ttlBitShare": 0.247,
+      "runs": 147,
+      "spentRuns": 64,
+      "ttlBitRuns": 37,
+      "ttlBitShare": 0.252,
       "ttlHours": 1.0
     },
     "runs": [
@@ -3077,9 +3077,20 @@
         "ttlBit": false,
         "unmapped": 0,
         "upcoming": 45
+      },
+      {
+        "at": "2026-09-21T02:45:01Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 0,
+        "missExpired": 2,
+        "openMisses": 2,
+        "stale": 2,
+        "ttlBit": true,
+        "unmapped": 0,
+        "upcoming": 45
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-09-21T01:45:01Z"
+  "updatedAt": "2026-09-21T02:45:01Z"
 }
