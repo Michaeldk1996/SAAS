@@ -247,12 +247,44 @@ def normalize(header, rows):
     return out, skipped
 
 
+# Upstream typos in the tournament name, corrected as the data ENTERS the repo.
+#
+# tennis-data.co.uk is the origin and we cannot fix it there, so these are
+# normalised on read — at this boundary rather than in a consumer, because
+# odds-archive/ has SIX readers (build-database-yield, build-market-edge,
+# build-tournament-market, build-odds-performance, build-court-speed-map and the
+# dashboard). Fixing it in one leaves the other five holding the typo; fixing it
+# here means the committed CSVs are clean and every reader inherits it.
+#
+# It also has to live in THIS SCRIPT rather than in a one-off commit, because a
+# hand-edit to the CSV is overwritten the next time anyone runs the mirror — and
+# the default run refreshes current + previous season, which is exactly where the
+# Houston typo lives.
+#
+# Measured 2026-09-21 over the committed archive. Each is the minority spelling
+# of a string we already hold correctly, so this cannot invent an event:
+#   U.S.Men's Clay Court Championships    54 rows (2025, 2026)  vs 537 correct
+#   Millenium Estoril Open                81 rows (2015-2017)   vs 108 correct
+TOURNAMENT_NAME_FIXUPS = {
+    "U.S.Men's Clay Court Championships": "U.S. Men's Clay Court Championships",
+    'Millenium Estoril Open': 'Millennium Estoril Open',
+}
+
+
+def normalize_tournament(name):
+    """Correct a known upstream misspelling. Anything unrecognised passes through
+    untouched — this is a fixup table, not a guesser."""
+    return TOURNAMENT_NAME_FIXUPS.get(name, name)
+
+
 def write_season(year, rows):
     os.makedirs(ARCHIVE_DIR, exist_ok=True)
     path = os.path.join(ARCHIVE_DIR, '%s.csv' % year)
     with open(path, 'w', newline='') as fh:
         w = csv.DictWriter(fh, fieldnames=OUT_COLS, lineterminator='\n')
         w.writeheader()
+        for r in rows:
+            r['tournament'] = normalize_tournament(r.get('tournament', ''))
         w.writerows(rows)
     return path
 

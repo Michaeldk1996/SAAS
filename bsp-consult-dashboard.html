@@ -22869,12 +22869,23 @@ function tourxConditionsPanelHtml(){
 // curly quotes are added ONLY to the values that carry none of their own, which
 // the importer marks per record as `selfQuoted`.
 function tourxQuoteAttrib(qt){
-  // C4: show only what exists. Name always; then year · occasion if present,
-  // year alone if that is all there is, and NOTHING if neither. Never an
-  // invented year, never "n.d.", never a placeholder.
+  // C4: show only what exists. Never an invented year, never "n.d.", never a
+  // placeholder.
+  //
+  // `occasion` IS GONE, and it was never reachable. Measured 2026-09-21 over the
+  // shipped tournament-quotes.json: 424 records across 45 tournaments, and the
+  // field frequency is player / playerRaw / playerMatch / year / text /
+  // selfQuoted / sourceRow — no `occasion` on any record, and nothing anywhere
+  // in the repo writes one. So the branch could not fire, and the comment above
+  // it promised "year · occasion if present" about a field that never exists.
+  //
+  // Same class as the Lines note that promised rows would "land" when they were
+  // permanently excluded: a conditional on a field no producer emits reads as
+  // optional data when it is absent data. If the importer ever starts emitting
+  // an occasion, that is the change that adds the branch back, with a record
+  // carrying one as its control.
   const bits = [];
   if (qt.year) bits.push(String(qt.year));
-  if (qt.occasion) bits.push(qt.occasion);
   return bits.join(' · ');
 }
 function tourxQuoteText(qt){
@@ -26873,7 +26884,11 @@ window.DatabaseTab = (function(){
       if(opts.pending){ pop.appendChild(el('div','db-pempty','Loading the player archive…')); }
       else if(!hits.length){ pop.appendChild(el('div','db-pempty','No '+opts.noun+' matches that.')); }
       else hits.forEach(function(h){
-        var row=el('div','db-prow'+(opts.selected===h.value?' on':''));
+        // The tournament picker's `value` is a SET, so identity against it never
+        // matches. It passes selectedByLabel and a label to compare. Every other
+        // caller keeps the scalar compare unchanged.
+        var _on = opts.selectedByLabel ? (opts.selected===h.label) : (opts.selected===h.value);
+        var row=el('div','db-prow'+(_on?' on':''));
         row.innerHTML='<span>'+esc(h.label)+'</span>'+(h.meta?('<em>'+esc(h.meta)+'</em>'):'');
         row.onmousedown=function(ev){ ev.preventDefault(); opts.onPick(h.value); };
         pop.appendChild(row);
@@ -27081,17 +27096,28 @@ window.DatabaseTab = (function(){
         placeholder:'Search tournaments…', query:state.tq, noun:'tournament', prompting:!state.tournament,
         onInput:function(v){ state.tq=v; },
         match:function(q){
-          // Searches the official archive string, the common name AND the city, and
-          // displays the common name (founder ruling TEN-196 2026-09-13 item 5).
-          // `value` stays the OFFICIAL string — it is what state and filtering key on.
-          var hits=M.tournaments.map(function(t,i){return {label:tournLabel(i),value:t,i:i};})
-            .filter(function(t){ return tournHit(t.i, q); })
-            .sort(function(a,b){ return a.label<b.label ? -1 : a.label>b.label ? 1 : (a.value<b.value?-1:1); });
+          // ONE ROW PER CATALOG ENTRY, not per archive string (TEN-242, founder
+          // ruling 2026-09-21). The picker used to offer 169 rows — one per
+          // archive string — and hand `state.tournament` a single one. That is
+          // the scalar: picking "Miami Open" filtered to 549 rows while 899 more
+          // sat under "Sony Ericsson Open" one row away, and the season suffix on
+          // the label was the split leaking onto the screen.
+          //
+          // `value` is now the SET of official archive strings. filteredRows()
+          // already takes an array; it was only ever being handed one string.
+          var hits=tournCatalog()
+            .filter(function(e){ return catalogHit(e, q); })
+            .sort(function(a,b){ return a.label<b.label ? -1 : a.label>b.label ? 1 : 0; });
           lastTotal=hits.length;
-          return hits.slice(0,40).map(function(h){ return {label:h.label, value:h.value, meta:tournSurface(h.i)}; }); },
+          return hits.slice(0,40).map(function(e){ return {label:e.label, value:e.names, meta:catalogSurface(e)}; }); },
         total:function(){ return lastTotal; },
-        selected:Array.isArray(state.tournament)?null:state.tournament,
-        onPick:function(t){ state.tournament=t; state.tournLabel=null; state.tq=''; render(); }
+        selectedByLabel:true,
+        selected:(function(){ var e=catalogEntryForState(); return e ? e.label : null; })(),
+        onPick:function(names){
+          // The array, not a string. A one-string entry yields a one-element set,
+          // so nothing special-cases the 77 unmerged events.
+          state.tournament=Array.isArray(names)?names.slice():[names];
+          state.tournLabel=null; state.tq=''; render(); }
       }));
       // C11 — no Surface filter here; Round + years only, per the export.
       var rdOpts=roundOpts();   // null => dictionary moved; drop the control and the filter with it
@@ -27214,6 +27240,9 @@ window.DatabaseTab = (function(){
     "Cordoba Open":"Cordoba",
     "Dallas Open":"Dallas",
     "Delray Beach Open":"Delray Beach",
+    // Delray Beach was the International Tennis Championships to 2013; the
+    // archive string ends 2013 and Delray Beach Open starts 2014. Feb, hard, 250.
+    "International Championships":"Delray Beach",
     "Qatar Exxon Mobil Open":"Doha",
     "Dubai Tennis Championships":"Dubai",
     "Dusseldorf Open":"Dusseldorf",
@@ -27222,6 +27251,9 @@ window.DatabaseTab = (function(){
     "Eastbourne International":"Eastbourne",
     "Viking International":"Eastbourne",
     "Estoril Open":"Estoril",
+    // Portugal Open fills 2013-14, exactly the gap between Estoril Open (ends
+    // 2012) and Millenium (starts 2015). Apr/May, clay, 250 throughout.
+    "Portugal Open":"Estoril",
     "Millenium Estoril Open":"Estoril",
     "Millennium Estoril Open":"Estoril",
     "Firenze Open":"Florence",
@@ -27291,6 +27323,11 @@ window.DatabaseTab = (function(){
     "San Diego Open":"San Diego",
     "SAP Open":"San Jose",
     "Chile Open":"Santiago",
+    // Santiago, Feb, clay, ATP 250 — one event, four sponsors, never two in a
+    // season: Movistar 2010-11, VTR 2012-13, Royal Guard 2014, Chile Open 2020-26.
+    "Movistar Open":"Santiago",
+    "VTR Open":"Santiago",
+    "Royal Guard Open Chile":"Santiago",
     "Brasil Open":"Sao Paulo",
     "Forte Village Sardegna Open":"Sardinia",
     "Sardegna Open":"Sardinia",
@@ -27333,7 +27370,113 @@ window.DatabaseTab = (function(){
     "Topshelf Open":"s-Hertogenbosch",
     "Unicef Open":"s-Hertogenbosch",
   };
-  var TOURN_HELD = ["International Championships", "Portugal Open", "Astana Open", "Movistar Open", "VTR Open", "Royal Guard Open Chile"];
+  // Archive strings deliberately left unaliased. Five of the original six were
+  // sequential renames of events already in the table and were folded in above
+  // (founder ruling 2026-09-21: "same tournament, same slot in the calendar, one
+  // entry"). `Astana Open` is the one that is NOT a sponsor rename — the event
+  // moved Astana -> Almaty, a different CITY, which that ruling does not reach.
+  // Held as its own entry until it is ruled, because merging two cities on our
+  // own initiative is a claim the archive does not make.
+  var TOURN_HELD = ["Astana Open"];
+
+  // ---- THE CATALOG (TEN-242, founder-ruled 2026-09-21) --------------------
+  //
+  // RULING: "same tournament, same slot in the calendar, one entry." Miami means
+  // everything ATP Miami — all 1,448 rows, not the 549 under the current sponsor.
+  // A sponsor change is not a new tournament.
+  //
+  // A catalog entry therefore maps a display name to a SET of archive strings,
+  // never to one. `filteredRows()` already matches on membership in that set
+  // (it takes an array and builds `tSet`); what it was being handed was a
+  // scalar, and a merged event cannot be represented by a scalar. That is the
+  // whole bug — not the merging.
+  //
+  // TOURN_COMMON is the grouping, inverted. It is not duplicated here: a second
+  // map is a second thing to keep true.
+  //
+  // TOURN_SPLIT is the exception list, and the direction matters. SEQUENTIAL
+  // RENAME IS THE RULE; co-occurrence is the exception. These ten strings share
+  // a venue with another string but really did run ALONGSIDE it — checked by
+  // season, not by name — so they stay separate entries. Everything else merges.
+  //
+  //   Adelaide      International 1 and 2 both ran in 2022 AND 2023
+  //   Belgrade      Serbia Open and Belgrade Open both ran in 2021
+  //   Cologne       bett1HULKS Indoors and Championship, both October 2020
+  //   Melbourne     Great Ocean Road and Murray River, both February 2021
+  //
+  // Pune is the case that proves the direction: `Tata Open` and `Maharashtra
+  // Open` DO share 2018, but Pune has only ever held one ATP event — those four
+  // 2018 rows are a mid-season rename in the source, not a second tournament.
+  // Co-occurrence alone would have split it. It is merged, per the ruling.
+  var TOURN_SPLIT = {
+    "Adelaide International":"Adelaide",
+    "Adelaide International 1":"Adelaide 1",
+    "Adelaide International 2":"Adelaide 2",
+    "Serbia Open":"Belgrade \u00b7 Serbia Open",
+    "Belgrade Open":"Belgrade \u00b7 Belgrade Open",
+    "bett1HULKS Indoors":"Cologne \u00b7 Indoors",
+    "bett1HULKS Championship":"Cologne \u00b7 Championship",
+    "Great Ocean Road Open":"Melbourne \u00b7 Great Ocean Road",
+    "Murray River Open":"Melbourne \u00b7 Murray River",
+    "Melbourne Summer Set":"Melbourne \u00b7 Summer Set"
+  };
+
+  // display name -> { label, names:[archive strings], idx:[stored indices] }.
+  // Built once per dataset. Order is the archive's, so a set reads oldest-first.
+  var _CATALOG = null, _CATALOG_FOR = null;
+  function tournCatalog(){
+    var T = M.tournaments;
+    if(_CATALOG && _CATALOG_FOR === T) return _CATALOG;
+    var by = {}, out = [];
+    for(var i=0;i<T.length;i++){
+      var t = T[i];
+      var disp = TOURN_SPLIT[t] || TOURN_COMMON[t] || t;
+      if(!by[disp]){ by[disp] = { label: disp, names: [], idx: [] }; out.push(by[disp]); }
+      by[disp].names.push(t);
+      by[disp].idx.push(i);
+    }
+    out.sort(function(a,b){ return a.label < b.label ? -1 : a.label > b.label ? 1 : 0; });
+    _CATALOG = out; _CATALOG_FOR = T;
+    return out;
+  }
+  // An entry matches if ANY string in its set matches. Reuses tournHit per
+  // string rather than reimplementing the query rules — including the
+  // punctuation-only fallback a clean-context review put there, which a second
+  // copy would have quietly dropped.
+  function catalogHit(e, q){
+    for(var i=0;i<e.idx.length;i++) if(tournHit(e.idx[i], q)) return true;
+    // The merged LABEL is searchable too: typing "Miami" has to find an entry
+    // whose strings are "Sony Ericsson Open" and "Miami Open".
+    var qs=nrm(q); return !!qs && nrm(e.label).indexOf(qs)>=0;
+  }
+  // Modal surface ACROSS THE SET. Taking the first string's surface would read
+  // the sponsor era, not the event.
+  function catalogSurface(e){
+    if(!TSURF) tournSurface(e.idx[0]);          // builds TSURF as a side effect
+    var c={};
+    for(var i=0;i<e.idx.length;i++){
+      var per=TSURF[e.idx[i]]; if(!per) continue;
+      for(var k in per) if(Object.prototype.hasOwnProperty.call(per,k)) c[k]=(c[k]||0)+per[k];
+    }
+    var keys=Object.keys(c).sort(function(a,b){ return c[b]-c[a]; });
+    if(!keys.length) return '';
+    return M.surfaces[+keys[0]] + (keys.length>1 ? ' +'+(keys.length-1) : '');
+  }
+  // The entry a stored tournament index belongs to.
+  function catalogEntryForIndex(i){
+    var c = tournCatalog();
+    for(var k=0;k<c.length;k++) if(c[k].idx.indexOf(i)>=0) return c[k];
+    return null;
+  }
+  // The entry currently selected, from whatever `state.tournament` holds.
+  function catalogEntryForState(){
+    if(state.tournament==null) return null;
+    var want = Array.isArray(state.tournament) ? state.tournament : [state.tournament];
+    if(!want.length) return null;
+    var c = tournCatalog();
+    for(var k=0;k<c.length;k++) if(c[k].names.indexOf(want[0])>=0) return c[k];
+    return null;
+  }
   // City search terms ONLY where the city differs from the common name. Everywhere
   // else the common name IS the city, so it is already searchable.
   // Every key here MUST be a value in TOURN_COMMON. A key that is not is dead code,
