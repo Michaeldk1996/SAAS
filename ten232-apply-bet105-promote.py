@@ -294,31 +294,11 @@ edit(TCS, 'the mutation-control record',
 # label; neither is rendered under the other's name.
 PROBE = 'ten232-bet105-label-probe.mjs'
 
-edit(PROBE, 'the probe asserts the post-promotion invariant',
-     """  check('NO tooltip names Bet105', r.tipsBet105 === 0, `${r.tipsBet105}`);
-  check('\"Bet105\" appears nowhere in the text a member reads', r.visibleText === 0, `${r.visibleText}`);
-  check('\"Bet105\" appears nowhere in the served HTML at all, comments included',
-        r.anyHtml === 0, `${r.anyHtml}`);
-  check('the Kibl book is named on screen as sports411 and not as anything else',
-        (r.books.sports411 || 0) > 0, `sports411 tooltips: ${r.books.sports411 || 0}`);""",
-     """  // ⚠️ THESE ASSERTIONS WERE INVERTED ON 2026-09-20, and the inversion is the
-  // point. Until then they read "NO tooltip names Bet105" / "Bet105 appears
-  // nowhere", proving the founder's item-2 refusal while Bet105 was unverified.
-  // It then passed its own side-mapping gate (114 paired, 84 lopsided, 0
-  // disagreements on the favourite, run 35545303855) and the founder ruled
-  // promote. An absence-assertion kept past the ruling that authorised the
-  // presence is not a guard, it is a stale claim.
-  //
-  // What still has to hold is that the two books are never CONFLATED: Bet105 is
-  // the book we are served from 2026-09-19T14:07Z; sports411 rows written
-  // before that keep their own name, per the founder's 2026-09-18 ruling.
-  check('the Kibl book now renders as bet105 — the promotion is visible, not '
-        + 'merely merged', (r.books.bet105 || 0) > 0,
-        `bet105 tooltips: ${r.books.bet105 || 0}`);
-  check('nothing renders the two Kibl books under ONE name: a sports411 tooltip '
-        + 'is legacy and correct, but it may never carry a Bet105 price',
-        !/sports411[^·]*·[^·]*bet\\s*105/i.test(JSON.stringify(r.books)), 'ok');""")
-
+# LANDED in 89f87e8c: the probe's absence-assertions were inverted to the
+# post-promotion invariant there. NOT re-registered here — its anchor is gone
+# from main by construction, and an edit that can never match again would make
+# every replay of this script an ::error:: instead of a verified no-op.
+# Edit 8 below continues from that landed text.
 edit(PROBE, 'the published-file assertions follow the same ruling',
      """  check('the published data file carries no Bet105 label', nB === 0, `${nB}`);
   check('...and it is non-empty, so that zero was read rather than missed',
@@ -329,6 +309,30 @@ edit(PROBE, 'the published-file assertions follow the same ruling',
         + 'data and not only the code', nB > 0, `${nB} bet105 mentions`);
   console.log(`  legacy sports411 mentions still on file: ${nS} (frozen history; `
               + `no new one can arrive — 43 left the entitlement 2026-09-19T14:07Z)`);""")
+
+
+# ── 8. THE PROBE FAILED ON AN EMPTY SET, WHICH IS THE MIRROR OF A VACUOUS PASS ─
+# MEASURED 2026-09-21T00:50Z on the deployed board: THREE cards, and not one of
+# them a Kibl fixture — bet105 tooltips 0, and **sports411 tooltips 0 as well**.
+# A board carrying no Kibl match cannot answer "did Bet105 replace Sports411 on
+# the cards"; reporting a red there says the promotion failed when nothing was
+# tested. Gate on the precondition and skip out loud.
+edit(PROBE, 'gate the render check on there being a Kibl fixture at all',
+     """  check('the Kibl book now renders as bet105 — the promotion is visible, not '
+        + 'merely merged', (r.books.bet105 || 0) > 0,
+        `bet105 tooltips: ${r.books.bet105 || 0}`);""",
+     """  const kiblOnBoard = (r.books.bet105 || 0) + (r.books.sports411 || 0);
+  if (kiblOnBoard === 0) {
+    // NOT a pass and NOT a fail. The set is empty, so there is nothing to
+    // measure — and a red here would read as "the promotion did not work".
+    console.log('  SKIP  no Kibl fixture on the board at all (bet105 0 + sports411 0):'
+                + ' this check has nothing to measure. Re-run on a board carrying a'
+                + ' Challenger/ATP day.');
+  } else {
+    check('the Kibl book now renders as bet105 — the promotion is visible, not '
+          + 'merely merged', (r.books.bet105 || 0) > 0,
+          `bet105 ${r.books.bet105 || 0} vs legacy sports411 ${r.books.sports411 || 0}`);
+  }""")
 
 
 def apply(root):

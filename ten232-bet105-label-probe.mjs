@@ -149,9 +149,18 @@ try {
   // What still has to hold is that the two books are never CONFLATED: Bet105 is
   // the book we are served from 2026-09-19T14:07Z; sports411 rows written
   // before that keep their own name, per the founder's 2026-09-18 ruling.
-  check('the Kibl book now renders as bet105 — the promotion is visible, not '
-        + 'merely merged', (r.books.bet105 || 0) > 0,
-        `bet105 tooltips: ${r.books.bet105 || 0}`);
+  const kiblOnBoard = (r.books.bet105 || 0) + (r.books.sports411 || 0);
+  if (kiblOnBoard === 0) {
+    // NOT a pass and NOT a fail. The set is empty, so there is nothing to
+    // measure — and a red here would read as "the promotion did not work".
+    console.log('  SKIP  no Kibl fixture on the board at all (bet105 0 + sports411 0):'
+                + ' this check has nothing to measure. Re-run on a board carrying a'
+                + ' Challenger/ATP day.');
+  } else {
+    check('the Kibl book now renders as bet105 — the promotion is visible, not '
+          + 'merely merged', (r.books.bet105 || 0) > 0,
+          `bet105 ${r.books.bet105 || 0} vs legacy sports411 ${r.books.sports411 || 0}`);
+  }
   check('nothing renders the two Kibl books under ONE name: a sports411 tooltip '
         + 'is legacy and correct, but it may never carry a Bet105 price',
         !/sports411[^·]*·[^·]*bet\s*105/i.test(JSON.stringify(r.books)), 'ok');
