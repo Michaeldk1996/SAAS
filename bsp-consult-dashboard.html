@@ -26279,7 +26279,10 @@ window.DatabaseTab = (function(){
       // These live in freshState, not at module level, because a second mount
       // must not inherit or overwrite the standalone page's compare set.
       ratSurf:'All', ratScope:'career', ratBoard:'overview', ratSel:[], ratQ:'',
-      ratSortKey:'elo', ratSortDir:'desc'
+      ratSortKey:'elo', ratSortDir:'desc',
+      // TEN-243 STEP 4 · Lines. Same per-instance reasoning as the ratings keys
+      // above: a second mount must not inherit the standalone page's subject.
+      lnSel:[], lnQ:'', lnSurf:'All'
     };
   }
   function use(inst){ I=inst; state=inst.state; built=inst.built; return inst; }
@@ -26498,7 +26501,8 @@ window.DatabaseTab = (function(){
   // surface that prints an Elo carries this line, because a reader looking at a
   // board captioned "Last 52 weeks" would otherwise reasonably read the Elo
   // column as a 52-week figure.
-  var ELO_CAVEAT='Elo is a current weekly snapshot from an external rating list — it does not follow the Career / Last 52 control, and we hold no Elo history, so Peak and Vs pk are dashes.';
+  var ELO_CAVEAT='Elo is a current weekly snapshot from an external rating list — it does not follow the Career / Last 52 control. '+
+    'Peak Elo and Vs pk come from the same weekly list and are OVERALL figures: the source publishes no per-surface peak, so both dash on the Hard, Clay and Grass pills rather than compare a surface rating against an overall peak.';
 
   // Column dictionaries. `k` is the path inside the scope node; a column with
   // `k:null` is NOT WIRED - we hold no field for it - and every one of its cells
@@ -26510,8 +26514,13 @@ window.DatabaseTab = (function(){
       {h:'Hard', full:'Hard-court Elo', k:'elo.hard', dec:0},
       {h:'Clay', full:'Clay-court Elo', k:'elo.clay', dec:0},
       {h:'Grass', full:'Grass-court Elo', k:'elo.grass', dec:0},
-      {h:'Peak', full:'Peak Elo', k:null, dec:0},
-      {h:'Vs pk', full:'Elo versus peak', k:null, dec:0}
+      // TEN-243, founder ruling 2026-09-21. Both are sourced, not computed:
+      // `Peak Elo` and `Peak Month` are published columns on the same
+      // tennisabstract report the current Elo is scraped from. `ratVal` dashes
+      // both on any pill other than All, because the source carries only an
+      // OVERALL peak.
+      {h:'Peak', full:'Peak Elo — overall; dashes on a surface pill, the source has no per-surface peak', k:'elo.peak', dec:0},
+      {h:'Vs pk', full:'Current overall Elo minus peak Elo — signed', k:'elo.vspk', dec:0, sgn:true}
     ]},
     serve: { label:'Serve', rtg:'Rtg', rtgDec:1, node:'serve', cols:[
       {h:'1S%', full:'% 1st serves in', k:'serve.firstInPct', dec:1, pct:true},
@@ -26872,6 +26881,8 @@ window.DatabaseTab = (function(){
     // Ratings would make Reset mean "reset this tab", which is not the spec.
     state.ratSurf='All'; state.ratScope='career'; state.ratBoard='overview';
     state.ratSel=[]; state.ratQ=''; state.ratSortKey='elo'; state.ratSortDir='desc';
+    // Same rule for Lines, for the same reason: Reset means every tab.
+    state.lnSel=[]; state.lnQ=''; state.lnSurf='All';
   }
   function countOf(set){ return set? String(set.size) : 'All'; }
   var lastTotal=0;
@@ -26975,10 +26986,31 @@ window.DatabaseTab = (function(){
       return;
     }
     if(state.view==='lines'){
-      // No controls are offered. Slicers over a tab with nothing wired behind
-      // them would imply a query is running; the card says what is missing.
+      // TEN-243 STEP 4, founder-authorised 2026-09-21. Controls are offered now
+      // because there IS a query behind them. One subject: the spec's compare
+      // view (2-3 players) needs a field pass this build does not have, so the
+      // cap is 1 and the card says so rather than a picker promising a compare
+      // that would not arrive.
+      zL.appendChild(chipSearch({
+        picks:state.lnSel, cap:1, capNote:'One player — compare needs the field pass', noun:'player',
+        placeholder:'Choose a player…', placeholder2:'', query:state.lnQ,
+        pending:!RAT,
+        onInput:function(v){ state.lnQ=v; },
+        match:function(qs){
+          if(!RAT) return [];
+          var ql=qs.toLowerCase();
+          return (RAT.players||[]).filter(function(p){
+            return p.name.toLowerCase().indexOf(ql)>=0 && state.lnSel.indexOf(p.name)<0;
+          }).slice(0,40).map(function(p){ return {label:p.name, value:p.name, meta:p.rank!=null?('#'+p.rank):''}; });
+        },
+        onPick:function(n){ if(!state.lnSel.length) state.lnSel=[n]; state.lnQ=''; },
+        onRemove:function(n){ state.lnSel=state.lnSel.filter(function(x){ return x!==n; }); }
+      }));
+      zR.appendChild(pillGroup([['All','All'],['Hard','Hard'],['Clay','Clay'],['Grass','Grass']],
+        state.lnSurf, function(v){ state.lnSurf=v; }, false));
       var lreset=el('button','db-reset','Reset'); lreset.onclick=function(){ resetFilters(); render(); };
       zR.appendChild(lreset);
+      if(zL.childNodes.length) zR.classList.add('div');
       return;
     }
     if(state.view==='tour'){
@@ -27437,6 +27469,33 @@ window.DatabaseTab = (function(){
   // `k` is 'node.field', or 'elo.<surface>' for the scraped store.
   function ratVal(p, k){
     if(k==null) return null;
+    // ─── PEAK / VS-PK · founder ruling 2026-09-21 ─────────────────────────
+    // "Peak pairs with overall Elo only. On the All pill, Peak and Vs-pk
+    // render. On Hard, Clay and Grass they dash." The source publishes ONE
+    // peak, an overall one, and a surface current against an overall peak is
+    // not a comparison. Nothing is synthesised: there is no per-surface peak
+    // in the source, so there is nothing to derive one from.
+    //
+    // HANDLED BEFORE the generic `elo.<surface>` branch ON PURPOSE. That branch
+    // reads `rec[k.slice(4)].rating`, and `rec.peak` happens to be
+    // `{rating, month}` — so `elo.peak` would have fallen through it and
+    // "worked", on every surface, by accident. An accident that gives the right
+    // answer on one pill and the forbidden comparison on three is exactly the
+    // walkover-0-0 shape this codebase has already paid for twice.
+    if(k==='elo.peak' || k==='elo.vspk'){
+      if(state.ratSurf!=='All') return null;          // the ruling, not an accident
+      var prec=ratEloRec(p.name); if(!prec || !prec.peak) return null;
+      var pk=prec.peak.rating;
+      if(typeof pk!=='number') return null;
+      if(k==='elo.peak') return pk;
+      var cur=prec.all && prec.all.rating;
+      // vs-peak is current OVERALL minus peak — never the surface rating, even
+      // though the rating column beside it follows the pill. A player at his
+      // peak returns 0, which is a value and renders as "0"; a player with no
+      // peak returned null above and renders as a dash. Those two states must
+      // not look the same.
+      return typeof cur==='number' ? cur-pk : null;
+    }
     if(k.indexOf('elo.')===0){
       var rec=ratEloRec(p.name); if(!rec) return null;
       var r=rec[k.slice(4)]; return r && typeof r.rating==='number' ? r.rating : null;
@@ -27540,8 +27599,22 @@ window.DatabaseTab = (function(){
       return m>=RAT_GATE;
     });
   }
-  function ratFmt(v, dec, pct){
+  function ratFmt(v, dec, pct, sgn){
     if(v==null) return '—';
+    // SIGNED columns (vs-peak), founder ruling 2026-09-21: "Render it as a
+    // signed delta with the minus sign visible... A player at their peak shows
+    // 0, not a dash." So zero prints a bare "0" rather than "+0" — a plus on a
+    // zero claims a gain that isn't there — and the negative keeps the ASCII
+    // minus toFixed already produces, which is what stays column-aligned in the
+    // tabular mono the rest of the numeric cells use.
+    //
+    // There is deliberately NO colour here. Red on this dashboard means an
+    // error or a loss, and a player being below his career peak is neither —
+    // it is the ordinary state of 544 of the 548 players the scrape carries.
+    if(sgn){
+      if(v===0) return (0).toFixed(dec);
+      return (v>0?'+':'')+v.toFixed(dec)+(pct?'%':'');
+    }
     return v.toFixed(dec)+(pct?'%':'');
   }
   function ratInitials(name){
@@ -27764,7 +27837,7 @@ window.DatabaseTab = (function(){
     g.appendChild(medCell(mr==null?'—':mr.toFixed(B.rtgDec),'db-rfig mut'));
     B.cols.forEach(function(c){
       var m = c.k==null ? null : ratMedian(board, c.k);
-      g.appendChild(medCell(m==null?'—':ratFmt(m,c.dec,c.pct),'db-rfig mut'));
+      g.appendChild(medCell(m==null?'—':ratFmt(m,c.dec,c.pct,c.sgn),'db-rfig mut'));
     });
 
     rows.forEach(function(p,i){
@@ -27785,7 +27858,7 @@ window.DatabaseTab = (function(){
       B.cols.forEach(function(c){
         var v=ratVal(p,c.k);
         var cell=el('div','db-rrow');
-        var f=el('div','db-rfig'+(c.mut?' mut':'')+(v==null?' dash':''), ratFmt(v,c.dec,c.pct));
+        var f=el('div','db-rfig'+(c.mut?' mut':'')+(v==null?' dash':''), ratFmt(v,c.dec,c.pct,c.sgn));
         f.style.fontSize='13px'; f.style.fontWeight='400';
         f.title=c.full+' · '+p.name;
         cell.appendChild(f); g.appendChild(cell);
@@ -27955,17 +28028,241 @@ window.DatabaseTab = (function(){
   // The standing rule on this page decides the rest: "a fallback that emits a
   // plausible number is worse than a dash". So the tab states the gap and names
   // the ticket rather than shipping a ladder of invented rates.
+  // ─── TEN-243 STEP 4 · LINES ──────────────────────────────────────────────
+  // Wired 2026-09-21 on the founder's ruling, deliberately WHILE COVERAGE IS
+  // PARTIAL: "I want it on screen while coverage is partial, because that's
+  // when I can see what a row with missing data looks like — which I can't test
+  // once it's full."
+  //
+  // THE LADDERS ARE NOT MINE. Every line below is lifted from the design
+  // bundle's own prototype (design_handoff_database/Database.dc.html, `LIT`),
+  // which is the authoritative spec for this tab. Inventing which lines to
+  // publish would be a methodology decision, and those are the founder's.
+  var LN_LADDERS = {
+    bo3: {
+      'Games handicap': [['−4.5 games','gm',-4.5],['−2.5 games','gm',-2.5],['+2.5 games','gm',2.5],['+4.5 games','gm',4.5]],
+      'Set handicap':   [['−1.5 sets','st',-1.5],['+1.5 sets','st',1.5]],
+      'Total games':    [['over 22.5','ov',22.5],['under 22.5','un',22.5],['over 20.5','ov',20.5],['under 20.5','un',20.5]],
+      'Match shape':    [['won 2–0','sh','2-0'],['won 2–1','sh','2-1'],['lost 1–2','sh','1-2'],['lost 0–2','sh','0-2']],
+    },
+    bo5: {
+      'Games handicap': [['−6.5 games','gm',-6.5],['−3.5 games','gm',-3.5],['+3.5 games','gm',3.5],['+6.5 games','gm',6.5]],
+      'Set handicap':   [['−2.5 sets','st',-2.5],['+2.5 sets','st',2.5]],
+      'Total games':    [['over 37.5','ov',37.5],['under 37.5','un',37.5],['over 34.5','ov',34.5]],
+      'Match shape':    [['won 3–0','sh','3-0'],['won 3–1','sh','3-1'],['won 3–2','sh','3-2'],['lost 2–3','sh','2-3'],['lost 1–3','sh','1-3'],['lost 0–3','sh','0-3']],
+    },
+  };
+  var LN_GROUPS = ['Games handicap','Set handicap','Total games','Match shape'];
+
+  // Name -> api-tennis player key. surface-ratings.json carries NO key (only
+  // name and rank), and the career-history shards are keyed by player key, so
+  // the join has to go through the profile store. Exact-name only: a fuzzy
+  // match here would silently attach one player's games to another's ladder,
+  // which is the TEN-121 collision class. An unmatched name dashes and says so.
+  function lnKeyForName(nm){
+    try {
+      if (typeof playerProfiles === 'undefined' || !playerProfiles) return null;
+      for (var k in playerProfiles){
+        var p=playerProfiles[k];
+        if (p && p.name === nm) return String(k);
+      }
+    } catch(e){}
+    return null;
+  }
+
+  // The games-comparable population, and the reason each row leaves it.
+  // Mirrors the store's own contract exactly: a games-based rate drops a row
+  // when `incomplete` OR `altFormat` is set (TEN-244). `sets` absent is a third,
+  // separate state - the match happened, we just do not hold its games yet, and
+  // that is the one the coverage figure is about.
+  function lnPartition(rows, surf){
+    var scoped = rows.filter(function(r){
+      if (surf==='All') return true;
+      return String(r.surface||'').toLowerCase() === surf.toLowerCase();
+    });
+    var usable=[], noGames=0, excluded=0;
+    scoped.forEach(function(r){
+      if (r.incomplete || r.altFormat) { excluded++; return; }
+      if (!Array.isArray(r.sets) || !r.sets.length) { noGames++; return; }
+      usable.push(r);
+    });
+    return { scoped:scoped, usable:usable, noGames:noGames, excluded:excluded };
+  }
+
+  // Format from the WINNER's set count. Valid only because `usable` is already
+  // restricted to complete matches: a finished match won in 3 sets is a Bo5 and
+  // one won in 2 is a Bo3, with nothing in between. On a truncated match this
+  // would be wrong, which is why the exclusion above runs first. NextGen never
+  // reaches here (altFormat), so short sets cannot be typed by this rule.
+  function lnFormat(r){
+    var p=0,o=0;
+    r.sets.forEach(function(s){ if(s.p>s.o) p++; else if(s.o>s.p) o++; });
+    var w=Math.max(p,o);
+    return w===2 ? 'bo3' : w===3 ? 'bo5' : null;
+  }
+
+  // Did this line land, from the player's point of view? Returns true / false,
+  // or null when the row cannot answer it (then the row leaves that line's
+  // denominator rather than counting as a miss - the deflation trap TEN-244
+  // exists to avoid). `margin` is the signed distance from the line.
+  function lnHit(r, kind, arg){
+    var pg=0, og=0, ps=0, os=0;
+    r.sets.forEach(function(s){
+      pg+=s.p; og+=s.o;
+      if(s.p>s.o) ps++; else if(s.o>s.p) os++;
+    });
+    if(kind==='gm'){ var gm=(pg-og)+arg; return { hit: gm>0, margin: gm }; }
+    if(kind==='st'){ var sm=(ps-os)+arg; return { hit: sm>0, margin: sm }; }
+    if(kind==='ov'){ var t=pg+og;         return { hit: t>arg,  margin: t-arg }; }
+    if(kind==='un'){ var t2=pg+og;        return { hit: t2<arg, margin: arg-t2 }; }
+    if(kind==='sh'){ return { hit: (ps+'-'+os)===arg, margin: null }; }
+    return null;
+  }
+
   function renderLines(body){
+    // The subject picker searches the ratings roster, and that store is LAZY —
+    // it was loaded only by renderRatings. A member opening Lines first got a
+    // picker that could never offer anyone, with nothing on screen to explain
+    // it. Caught by driving the tab in a browser rather than by reading the
+    // code: the probe's pick step silently did nothing and every downstream
+    // assertion came back undefined.
+    if(!RAT){
+      body.appendChild(el('div','db-loading','Loading the ratings archive…'));
+      var linst=I;      // capture the instance - a second mount must not steal this render
+      loadRatings().then(function(){ use(linst); if(state.view==='lines') render(); })
+        .catch(function(err){
+          console.warn('DatabaseTab ratings load failed (lines)', err);
+          use(linst);
+          var b=q('body');
+          if(b && state.view==='lines'){ b.innerHTML=''; b.appendChild(el('div','db-loading','The ratings archive could not be loaded, so the player picker has nothing to search.')); }
+        });
+      return;
+    }
     var card=el('div','db-rcard');
     card.appendChild(el('div','db-rbrow','Line coverage'));
     card.appendChild(el('h2','db-rtitle','Derived lines'));
     card.appendChild(el('p','db-rdesc',
-      'Games handicap, set handicap, total games and match shape — how often each derived line landed for a player, against the field.'));
-    var n=el('div','db-unwired');
-    n.innerHTML = esc('Not wired — the archive stores set scores, not per-set games. A games handicap (−4.5 games) and a total-games line both need game counts, so no rate on this tab can be computed yet; TEN-244 carries the per-set games through the pipeline.')+
-      '<br>'+esc('Nothing is shown rather than a derived stand-in: a coverage rate built from anything other than the real games would read as a measurement.');
-    card.appendChild(n);
-    body.appendChild(card);
+      'Games handicap, set handicap, total games and match shape — how often each derived line landed for a player. Derived from set scores, not from settled markets: these are coverage rates, not results against a priced line. Best-of-three and best-of-five are counted separately, because the same line is a different bet in each.'));
+
+    if(!state.lnSel.length){
+      var prompt=el('div','db-prompt');
+      prompt.innerHTML='<h3>Choose a player</h3><p>Search above to pick one, and this tab will show how often each derived line landed for him, with the number of matches behind every rate.</p>';
+      card.appendChild(prompt); body.appendChild(card); return;
+    }
+
+    var nm=state.lnSel[0];
+    var key=lnKeyForName(nm);
+    if(!key){
+      var miss=el('div','db-unwired');
+      miss.innerHTML=esc('No profile key for "'+nm+'", so his match rows cannot be found. The ratings roster carries names only; the match store is keyed by player id, and the two are joined on an exact name match rather than a fuzzy one — a near-match here would attach another player’s games to this ladder.');
+      card.appendChild(miss); body.appendChild(card); return;
+    }
+
+    var host=el('div'); card.appendChild(host); body.appendChild(card);
+    host.appendChild(el('div','db-rdesc','Loading match rows…'));
+    var inst=I, want=nm;
+    loadCareerHistory(key).then(function(rows){
+      // Capture the instance and the subject: an async continuation that reads
+      // the live state can paint one player's ladder under another's name once
+      // a second mount exists (the defect TEN-242 caught in renderRatings).
+      if(inst!==I || (state.lnSel[0]!==want)) return;
+      host.innerHTML='';
+      lnPaint(host, rows||[], want);
+    });
+  }
+
+  function lnPaint(host, rows, nm){
+    var DASH='–';
+    var part=lnPartition(rows, state.lnSurf);
+    var total=part.scoped.length, have=part.usable.length;
+
+    // COVERAGE, ON SCREEN AND IN PLAIN TEXT — the founder's requirement, and the
+    // thing that stops a partial rate reading as a career rate. Stated as a
+    // count over its denominator, never as a bare percentage.
+    var cov=el('div','db-rcount');
+    cov.textContent = total
+      ? ('Games on ' + have.toLocaleString() + ' of ' + total.toLocaleString() + ' matches (' +
+         (have/total*100).toFixed(1) + '%)' +
+         (part.excluded ? ' · ' + part.excluded + ' excluded as unfinished or a different format' : ''))
+      : 'No matches on record at this slice.';
+    host.appendChild(cov);
+
+    var note=el('div','db-unwired');
+    var pct = total ? (have/total*100) : 0;
+    note.innerHTML =
+      esc('THIS IS A PARTIAL RATE, NOT A CAREER RATE. Per-set games are still arriving: ' +
+          have.toLocaleString() + ' of this player’s ' + total.toLocaleString() +
+          ' matches carry them (' + pct.toFixed(1) + '%). Every rate below is computed over those ' +
+          have.toLocaleString() + ' and no others, so it will move as the rest land.') +
+      '<br>' + esc('Field, Vs field and Ranking are not wired: each needs a rate for every player in the field, which is one fetch per player. Those three columns are dashes rather than a stand-in computed from a subset.');
+    host.appendChild(note);
+
+    if(!have){
+      var none=el('div','db-empty');
+      none.innerHTML='<h3>No games on record yet</h3><p>'+esc(nm+' has '+total.toLocaleString()+' matches at this slice and none of them carry per-set games yet, so every line is a dash rather than a 0% hit rate.')+'</p>';
+      host.appendChild(none);
+      return;
+    }
+
+    // Split by format ONCE, so each ladder is counted over its own population.
+    var byFmt={bo3:[],bo5:[]}, untyped=0;
+    part.usable.forEach(function(r){ var f=lnFormat(r); if(f) byFmt[f].push(r); else untyped++; });
+
+    ['bo3','bo5'].forEach(function(fmt){
+      var pool=byFmt[fmt];
+      var head=el('div','db-rbrow', (fmt==='bo3'?'Best of three':'Best of five') +
+        ' · ' + pool.length.toLocaleString() + (pool.length===1?' match':' matches'));
+      head.style.marginTop='18px';
+      host.appendChild(head);
+      if(!pool.length){
+        host.appendChild(el('div','db-rdesc', 'No '+(fmt==='bo3'?'best-of-three':'best-of-five')+' matches with games at this slice.'));
+        return;
+      }
+      var sc=el('div','db-rscroll');
+      var g=el('div','db-rgrid');
+      g.style.gridTemplateColumns='minmax(130px,1.2fr) repeat(7,minmax(78px,1fr))';
+      g.style.minWidth='830px';
+      ['Line','Matches','Record','Rate','Field','Vs field','Ranking','Avg margin'].forEach(function(h,i){
+        var d=el('div','db-rhead'); var s=el('div','db-rh',esc(h));
+        if(i) s.style.textAlign='right';
+        d.appendChild(s); g.appendChild(d);
+      });
+      LN_GROUPS.forEach(function(grp){
+        var gh=el('div','db-rbrow',grp);
+        gh.style.gridColumn='1 / -1'; gh.style.padding='16px 6px 7px';
+        g.appendChild(gh);
+        (LN_LADDERS[fmt][grp]||[]).forEach(function(spec){
+          var label=spec[0], kind=spec[1], arg=spec[2];
+          var hit=0, n=0, marg=0, margN=0;
+          pool.forEach(function(r){
+            var h2=lnHit(r, kind, arg);
+            if(!h2) return;
+            n++; if(h2.hit) hit++;
+            if(h2.margin!=null){ marg+=h2.margin; margN++; }
+          });
+          g.appendChild(el('div','db-rfig',esc(label)));
+          var cell=function(txt, mut){ var d=el('div','db-rfig'+(mut?' mut':''),txt); d.style.textAlign='right'; return d; };
+          g.appendChild(cell(n?n.toLocaleString():DASH, !n));
+          g.appendChild(cell(n?(hit+'–'+(n-hit)):DASH, !n));
+          // THE RATE GATE, from the spec: n = 0 dashes, n < 5 dashes. A rate over
+          // four matches is not a rate, and printing one would be the plausible
+          // default the whole store refuses. A dash is the honest cell.
+          g.appendChild(cell(n>=5 ? (hit/n*100).toFixed(1)+'%' : DASH, n<5));
+          g.appendChild(cell(DASH, true));   // Field       - needs the field pass
+          g.appendChild(cell(DASH, true));   // Vs field    - needs the field pass
+          g.appendChild(cell(DASH, true));   // Ranking     - needs the field pass
+          g.appendChild(cell(margN>=5 ? (marg/margN>=0?'+':'')+(marg/margN).toFixed(1) : DASH, margN<5));
+        });
+      });
+      sc.appendChild(g); host.appendChild(sc);
+    });
+
+    if(untyped){
+      var u=el('div','db-unwired');
+      u.innerHTML=esc(untyped+' match'+(untyped===1?'':'es')+' carried games but no readable best-of, so '+
+        (untyped===1?'it is':'they are')+' in no ladder. Counted here rather than folded into one.');
+      host.appendChild(u);
+    }
   }
 
   function renderChrome(){
@@ -29064,8 +29361,8 @@ window.DatabaseTab = (function(){
           // the next mount this list can hold a detached root. Rendering into
           // one is wasted work on DOM nobody can see.
           if(!i2.root || !document.contains(i2.root)) continue;
-          if(i2.state.menu!==null || i2.state.tq || i2.state.pq || i2.state.ratQ){
-            i2.state.menu=null; i2.state.tq=''; i2.state.pq=''; i2.state.ratQ='';
+          if(i2.state.menu!==null || i2.state.tq || i2.state.pq || i2.state.ratQ || i2.state.lnQ){
+            i2.state.menu=null; i2.state.tq=''; i2.state.pq=''; i2.state.ratQ=''; i2.state.lnQ='';
             if(i2.built){ use(i2); renderFilters(); }
           }
         }
