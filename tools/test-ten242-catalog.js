@@ -132,10 +132,17 @@ ok('Delray Beach absorbs International Championships',
   `${entryRows('Delray Beach')} rows`);
 ok('Estoril absorbs Portugal Open', (byDisplay['Estoril'] || []).includes('Portugal Open'),
   (byDisplay['Estoril'] || []).join(' | '));
-// Astana is held ON PURPOSE — a city change, not a sponsor change, and unruled.
-ok('Astana Open is still its own entry, pending the city-change ruling',
-  (byDisplay['Astana Open'] || []).length === 1 && !((byDisplay['Almaty'] || []).includes('Astana Open')),
-  'held, not merged on our own initiative');
+// RULED 2026-09-21: a CITY move is the same rule, not an exception to it. Same
+// event, same October slot, same surface, same tier, contiguous seasons — so
+// Astana and Almaty are one entry. This assertion used to say the opposite; it
+// is inverted rather than deleted, because the pair is exactly where a future
+// reader would reach for "different city, different tournament".
+ok('Astana and Almaty are ONE entry — a city move is not a new tournament',
+  (byDisplay['Almaty'] || []).includes('Astana Open') && (byDisplay['Almaty'] || []).includes('Almaty Open')
+    && !byDisplay['Astana Open'],
+  `${(byDisplay['Almaty'] || []).join(' | ')} = ${entryRows('Almaty')} rows`);
+ok('...and every archive string now carries an alias — TOURN_HELD is empty',
+  /var TOURN_HELD = \[\];/.test(html), 'no string left making no venue claim');
 
 // ── The resolution layer takes the SET. ───────────────────────────────────
 ok('filteredRows() matches on membership, not indexOf against one string',
@@ -149,6 +156,18 @@ ok('...and the picker offers one row per CATALOG ENTRY, not per archive string',
   'hits come from tournCatalog()');
 ok('the selected row cannot be compared by identity against a set',
   /selectedByLabel/.test(html), 'searchField compares on label for this picker');
+
+// ── An embedded mount must never render an h1 (founder ruling 2026-09-21) ──
+// The DOM proof lives in probe-ten242-roi-overlay.mjs, which reads the real
+// node. This is the regression guard in the fail-closed gate: the probe runs
+// twice a day, so without this the demotion could be deleted and ship.
+ok('the embedded mount demotes its title to h2',
+  /_embedded\s*=\s*\(root\.getAttribute\('data-db-root'\)[\s\S]{0,40}!==\s*'standalone'/.test(html)
+    && /if\(_embedded\)\{[\s\S]{0,600}createElement\('h2'\)/.test(html),
+  'keyed on the root, not on hideHeader');
+ok('...and it is NOT keyed on hideHeader, which a caller can omit',
+  !/if\(opts\.hideHeader\)\{[\s\S]{0,200}createElement\('h2'\)/.test(html),
+  'hideHeader still only hides the card');
 
 // ── The typos are corrected AT SOURCE and cannot come back. ───────────────
 const mirror = fs.readFileSync(path.join(ROOT, 'mirror-odds-archive.py'), 'utf8');

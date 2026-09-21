@@ -14,7 +14,29 @@
 import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 
-const BASE = (process.env.PROBE_BASE_URL || 'https://michaeldk1996.github.io/SAAS').replace(/\/+$/, '');
+// Defaults to the DEPLOYED site, because that is the claim worth making. Set
+// PROBE_LOCAL=1 to serve the worktree instead — needed to verify a change
+// BEFORE it deploys, which is otherwise a gap: without it the only way to check
+// an edit is to push it and read the result, and a probe you cannot run before
+// pushing is a probe that only ever confirms what already shipped.
+const LOCAL = process.env.PROBE_LOCAL === '1';
+let srv = null, BASE;
+if (LOCAL) {
+  const http = await import('node:http');
+  const path = await import('node:path');
+  const ROOT = process.cwd();
+  const TYPES = { '.html':'text/html', '.js':'text/javascript', '.json':'application/json', '.css':'text/css' };
+  srv = http.default.createServer((req, res) => {
+    const f = path.default.join(ROOT, decodeURIComponent(req.url.split('?')[0]));
+    if (!f.startsWith(ROOT) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) { res.writeHead(404); return res.end('nf'); }
+    res.writeHead(200, { 'Content-Type': TYPES[path.default.extname(f)] || 'application/octet-stream' });
+    fs.createReadStream(f).pipe(res);
+  });
+  await new Promise(r => srv.listen(0, '127.0.0.1', r));
+  BASE = `http://127.0.0.1:${srv.address().port}`;
+} else {
+  BASE = (process.env.PROBE_BASE_URL || 'https://michaeldk1996.github.io/SAAS').replace(/\/+$/, '');
+}
 const URL = `${BASE}/bsp-consult-dashboard.html`;
 const CHROME_BIN = process.env.CHROME_BIN || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 
@@ -140,6 +162,28 @@ if (mounted) {
   ok('...and it drew at least one grid or band panel', n > 0, `${n} panel(s)`);
 }
 
+// THE EMBEDDED MOUNT MUST NOT RENDER AN h1 (founder ruling 2026-09-21).
+// Checked on the real DOM rather than the source, because the demotion happens
+// at mount time and the only thing that proves it is the node that exists.
+// Note this passes even though hideHeader has display:none'd the card — the tag
+// is what is asserted, not its visibility, so the control still fires for a
+// future caller who omits hideHeader and actually shows the thing.
+if (mounted) {
+  const hdr = await ev(`(function(){
+    var root=document.querySelector('[data-db-root="roi"]');
+    var head=root.querySelector('[data-db="head"]');
+    return { h1: root.querySelectorAll('h1').length,
+             h2: head ? head.querySelectorAll('h2').length : 0,
+             title: head && head.querySelector('h2') ? head.querySelector('h2').textContent.trim() : null,
+             pageH1: [].slice.call(document.querySelectorAll('h1')).filter(function(h){
+               var r=h.getBoundingClientRect(); var cs=getComputedStyle(h);
+               return r.width>0&&r.height>0&&cs.visibility!=='hidden'&&cs.display!=='none'; }).length };
+  })()`);
+  ok('the embedded mount renders NO h1', hdr.h1 === 0, `${hdr.h1} h1 inside [data-db-root="roi"]`);
+  ok('...it renders the title as an h2 instead', hdr.h2 === 1 && hdr.title === 'Database', `h2 x${hdr.h2} "${hdr.title}"`);
+  ok('...so the page still has exactly one visible h1', hdr.pageH1 === 1, `${hdr.pageH1} visible`);
+}
+
 ok('no uncaught page errors', errors.length === 0, errors.join(' | ') || 'none');
 console.log(`\n  ${pass} passed, ${fail} failed\n`);
-ws.close(); ch.kill(); process.exit(fail ? 1 : 0);
+ws.close(); ch.kill(); if (srv) srv.close(); process.exit(fail ? 1 : 0);

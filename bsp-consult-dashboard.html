@@ -27201,6 +27201,15 @@ window.DatabaseTab = (function(){
     "Adelaide International 1":"Adelaide",
     "Adelaide International 2":"Adelaide",
     "Almaty Open":"Almaty",
+    // THE RULE IS THE CALENDAR SLOT, NOT THE NAME OR THE CITY. Same event in
+    // the same slot is ONE entry whether the SPONSOR changed or the CITY did
+    // (founder ruling 2026-09-21). A city move is not an exception to the
+    // rename chains above — it is the same rule, and the next reader should
+    // not treat it as a special case.
+    //
+    // Astana -> Almaty: Oct, hard, ATP 250, contiguous (2020-23 then 2024-25),
+    // never a shared season. Two Kazakh cities, one tournament.
+    "Astana Open":"Almaty",
     "Antalya Open":"Antalya",
     "European Open":"Antwerp",
     "Hellenic Championship":"Athens",
@@ -27377,7 +27386,12 @@ window.DatabaseTab = (function(){
   // moved Astana -> Almaty, a different CITY, which that ruling does not reach.
   // Held as its own entry until it is ruled, because merging two cities on our
   // own initiative is a claim the archive does not make.
-  var TOURN_HELD = ["Astana Open"];
+  // EMPTY, and that is the finished state rather than an oversight: all six
+  // strings once parked here were sequential renames of events already in the
+  // table, and the last of them (Astana Open) was ruled a city move on
+  // 2026-09-21. A string landing here again means a genuinely NEW event the
+  // table has never seen — which is what the console warning below is for.
+  var TOURN_HELD = [];
 
   // ---- THE CATALOG (TEN-242, founder-ruled 2026-09-21) --------------------
   //
@@ -29604,6 +29618,29 @@ window.DatabaseTab = (function(){
     inst.root = root;          // same logical mount, freshly rendered node
     use(inst);
 
+    // AN EMBEDDED MOUNT DEMOTES ITS TITLE TO h2, BY DEFAULT (founder ruling
+    // 2026-09-21). Today two <h1>s never co-render only because every embedded
+    // caller passes hideHeader — an option the NEXT caller can simply omit, and
+    // then the host page's <h1> and this one are both on screen with nothing
+    // failing. Structure should not depend on every future caller remembering
+    // an option, so the demotion is keyed on being embedded, not on hideHeader.
+    //
+    // "Embedded" is the mount having a root that is not the standalone page.
+    // hideHeader is UNCHANGED and still hides the card; this only decides what
+    // tag the title carries when it is shown.
+    var _embedded = (root.getAttribute('data-db-root') || 'anon') !== 'standalone';
+    if(_embedded){
+      var _hd = q('head');
+      var _h1 = _hd && _hd.querySelector('h1');
+      if(_h1){
+        var _h2 = document.createElement('h2');
+        _h2.innerHTML = _h1.innerHTML;
+        for(var _a=0;_a<_h1.attributes.length;_a++){
+          _h2.setAttribute(_h1.attributes[_a].name, _h1.attributes[_a].value);
+        }
+        _h1.parentNode.replaceChild(_h2, _h1);
+      }
+    }
     if(opts.hideHeader){ var h=q('head'); if(h) h.style.display='none'; }
     // The embedded panel answers ONE question about ONE event, and its title,
     // its "opened on underdogs" line and the ROI card that launched it all name
