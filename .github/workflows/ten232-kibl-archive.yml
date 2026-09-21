@@ -39,11 +39,14 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: 'sweep | backfill | report | cards | publish | audit | sides | books | gate'
+        description: 'sweep | backfill | report | cards | publish | audit | sides | books | gate | capability'
         default: 'sweep'
       feed_source_id:
         description: 'gate: the book under test, e.g. 171 for Bet105. No default on purpose — verified against the live entitlement before anything is reported.'
         default: ''
+      section:
+        description: 'capability: all | accuracy | markets | live | rows | endpoints | stream | coverage | limits'
+        default: 'all'
       cadence_gate:
         description: 'sweep: apply should_sweep() before pulling (the pinger sets this)'
         default: 'false'
@@ -118,6 +121,7 @@ jobs:
         run: |
           python3 -B test-kibl-client.py
           python3 -B test-ten232-report.py
+          python3 -B test-ten232-bet105-capability.py
           python3 -B test-ten232-breaker.py
           python3 -B test-ten225-kibl-card-state.py
           python3 -B test-ten225-orientation.py
@@ -399,6 +403,30 @@ jobs:
           set -o pipefail
           python3 -B ten232-bet105-gate.py \
             --feed-source-id "${{ inputs.feed_source_id }}" \
+            | tee -a "$GITHUB_STEP_SUMMARY"
+
+      # TEN-225/232 founder directive 2026-09-21 — the full capability report.
+      #
+      # READ-ONLY, and the harness in the offline step proves it rather than
+      # claiming it: no POST, no upsert, no PATCH, no DELETE, no file opened for
+      # writing. It reads the archive this job fills and makes a short list of
+      # GETs on endpoints we already hold entitlement for.
+      #
+      # WHY IT RUNS HERE AND NOT LOCALLY: SUPABASE_URL / SUPABASE_SECRET_KEY
+      # exist only as Actions secrets. A local run reads nothing and would
+      # report every figure as absent — which this script would correctly print
+      # as a dash, and which would still be a wasted report.
+      - name: Bet105 capability report (read only)
+        if: inputs.mode == 'capability'
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          KIBL_USERNAME: ${{ secrets.KIBL_USERNAME }}
+          KIBL_PASSWORD: ${{ secrets.KIBL_PASSWORD }}
+        run: |
+          set -o pipefail
+          python3 -B ten232-bet105-capability.py \
+            --section "${{ inputs.section || 'all' }}" \
             | tee -a "$GITHUB_STEP_SUMMARY"
 
       - name: Side-mapping probe
