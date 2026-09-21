@@ -19,7 +19,11 @@ const srv = http.createServer((q,s)=>{const u=decodeURIComponent(q.url.split('?'
  fs.createReadStream(f).pipe(s);});
 await new Promise(r=>srv.listen(PORT,'127.0.0.1',r));
 
-const ch=spawn('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+// Chrome's path is an env var so this can run somewhere other than one laptop.
+// Defaults to the macOS install so a local run needs no setup; CI sets CHROME_BIN
+// to the runner's `google-chrome`.
+const CHROME_BIN = process.env.CHROME_BIN || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+const ch=spawn(CHROME_BIN,
   ['--headless=new','--remote-debugging-port=0','--no-first-run','--disable-gpu',
    '--window-size=1440,1400','--user-data-dir='+fs.mkdtempSync('/tmp/cdpfig-'),'about:blank'],
   {stdio:['ignore','pipe','pipe']});

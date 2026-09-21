@@ -10,7 +10,12 @@ import { spawn } from 'node:child_process';
 import fs from 'node:fs';
 
 const URL = 'https://michaeldk1996.github.io/SAAS/bsp-consult-dashboard.html';
-const ch = spawn('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+// Chrome's path is an env var so this can run somewhere other than one laptop.
+// Defaults to the macOS install so a local run needs no setup; CI sets CHROME_BIN
+// to the runner's `google-chrome`. Hard-coding the macOS path is the single
+// reason this probe could only ever run on the machine that wrote it.
+const CHROME_BIN = process.env.CHROME_BIN || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+const ch = spawn(CHROME_BIN,
   ['--headless=new','--remote-debugging-port=0','--no-first-run','--disable-gpu',
    '--window-size=1440,1400','--user-data-dir='+fs.mkdtempSync('/tmp/cdplive-'),'about:blank'],
   {stdio:['ignore','pipe','pipe']});

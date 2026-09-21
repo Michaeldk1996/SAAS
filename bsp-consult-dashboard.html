@@ -8745,17 +8745,27 @@ async function loadPlayerPhotoOverrides(){
 // the PRIMARY photo layer site-wide (founder ruling 2026-09-06) — tried FIRST, above
 // the Wikimedia override and the api-tennis logo — because ATP headshots are uniform
 // current portraits and consistency beats coverage. Falls through on error.
-// Denylisted aliases are known grey-silhouette placeholders: skipped so the player
-// falls through to api-tennis rather than showing a blank silhouette. Absence is
-// harmless — any player without an alias renders exactly as before. Map written by
-// no job (hand-committed); safe from the 15-min player-profiles regeneration.
-const ATP_ALIAS_DENYLIST = new Set(['J194','E155','W133','G285']);
+// Map written by no job (hand-committed); safe from the 15-min player-profiles
+// regeneration.
+//
+// THE DENYLIST IS GONE, AND THE FOUR CODES ARE KEPT HERE RATHER THAN IN CODE.
+// It read `new Set(['J194','E155','W133','G285'])` and was described as skipping
+// known grey-silhouette placeholders. Measured 2026-09-21 on the founder's ask:
+// player-atp-aliases.json holds 184 entries and 184 DISTINCT aliases, and NONE of
+// those four is among them. `git log -S` over the file's entire history returns
+// zero commits for each — they have never been in the map, so the `.has()` call
+// could never have excluded anything. It was a comment pretending to be code.
+//
+// The FACT is worth keeping even though the code was not: if those four ATP codes
+// really do serve silhouettes, the place to act on it is wherever the alias map is
+// CURATED — a guard there stops a bad code being added. In the render path it can
+// only filter values that are already present, which these never were.
 let playerAtpAliases = {};
 let _atpAliasesLoaded = false;
 function atpPhotoFor(playerKey){
   if (playerKey == null || playerKey === '') return null;
   const alias = playerAtpAliases[String(playerKey)];
-  if (!alias || ATP_ALIAS_DENYLIST.has(alias)) return null;
+  if (!alias) return null;
   return `https://www.atptour.com/-/media/alias/player-headshot/${alias}`;
 }
 async function loadPlayerAtpAliases(){

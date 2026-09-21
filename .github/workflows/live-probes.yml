@@ -1,0 +1,77 @@
+# Browser probes against the DEPLOYED bytes — where the probes actually run.
+#
+# WHY THEY ARE NOT IN `npm test`. That suite is `pipeline.yml` step 6, the
+# fail-closed pre-deploy gate: one red assertion there freezes every publish
+# site-wide, and this repo has already lost ~19 hours of deploys to two
+# assertions that were wrong about correct code. A probe needing headless
+# Chrome AND network egress inside that gate is the same bet with worse odds.
+#
+# WHY THEY SHOULD NOT JUST SIT IN THE REPO EITHER. `probe-ten243-lines-peak.mjs`
+# caught a real defect on the day it was written — the Lines subject picker
+# searched a store that only the Ratings tab loaded, so a member opening Lines
+# first got a picker that could never offer anyone. Reading the code did not
+# find that. A probe that finds a defect once and then never runs again is worth
+# less than the hour it cost.
+#
+# SO: its own workflow. It can go red as loudly as it likes and no deploy stops.
+#
+#   schedule   twice a day, deliberately NOT after every deploy. The pipeline
+#              runs every ~10 minutes; a browser probe on that cadence is a load
+#              generator, and a check that cries twice an hour gets muted, which
+#              is how a real red goes unread.
+#   dispatch   so it can be run on demand right after a risky change, which is
+#              when it is actually worth waiting for.
+#
+# It reads the DEPLOYED site, never the worktree: between a local pass and the
+# live page sit the pipeline's copy step, its credential injection and the Pages
+# CDN, and those are exactly where a "works locally" result stops being true.
+name: Live browser probes (deployed bytes)
+
+on:
+  schedule:
+    - cron: '20 6,18 * * *'      # 06:20 and 18:20 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read                 # read-only: a probe must never write to the repo
+
+concurrency:
+  group: live-probes
+  cancel-in-progress: true       # a queued probe is stale the moment a newer one starts
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Confirm Chrome is present before claiming a result
+        id: chrome
+        run: |
+          # If Chrome is missing, the probes would fail to spawn and the job would
+          # go red for a reason that has nothing to do with the page — a harness
+          # reporting its own absence as a defect. Fail here instead, with a
+          # message that says which it is.
+          if ! command -v google-chrome >/dev/null 2>&1; then
+            echo "::error::google-chrome is not on this runner — the probes cannot start. This is a RUNNER problem, not a page problem."
+            exit 1
+          fi
+          google-chrome --version
+
+      - name: Figures on the deployed bytes
+        env:
+          CHROME_BIN: google-chrome
+        run: node probe-ten243-figures-live.mjs
+
+      # Reported to the founder rather than silently omitted: the Lines/Peak probe
+      # still points at a LOCAL server over the worktree, and the Lines tab needs
+      # `career-history/` shards, which are gitignored and CI-built — so on a
+      # runner its subject would have no match rows and the probe would assert
+      # against an empty ladder. Repointing it at the deployed URL is what it
+      # needs to join this job, and that is a change to a committed probe rather
+      # than something to slip in under a workflow commit.

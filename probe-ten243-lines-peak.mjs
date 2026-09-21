@@ -25,7 +25,12 @@ await new Promise(r=>srv.listen(0,'127.0.0.1',r));
 const PORT = srv.address().port;
 const URL = `http://127.0.0.1:${PORT}/bsp-consult-dashboard.html`;
 
-const ch = spawn('/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+// Chrome's path is an env var so this can run somewhere other than one laptop.
+// Defaults to the macOS install so a local run needs no setup; CI sets CHROME_BIN
+// to the runner's `google-chrome`. Hard-coding the macOS path is the single
+// reason this probe could only ever run on the machine that wrote it.
+const CHROME_BIN = process.env.CHROME_BIN || '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+const ch = spawn(CHROME_BIN,
   ['--headless=new','--remote-debugging-port=0','--no-first-run','--disable-gpu',
    '--window-size=1440,1600','--user-data-dir='+fs.mkdtempSync('/tmp/lnprobe-'),'about:blank'],
   {stdio:['ignore','pipe','pipe']});
