@@ -58,6 +58,7 @@ For current build state, open build state — do not rely on a snapshot in this 
 12. **Ship, don't merge.** No feature flags, no go-live gates — there are no members yet. Report with a deployed commit and a live read. "Merged" is not "shipped".
 13. **`n` on every figure; flag `n < 30`.** Say "unknown" rather than inferring from a spec.
 14. **A read-only probe must never trip a circuit breaker** and starve an archive.
+15. **Think in proportion to ambiguity.** A rebuild against a spec file needs execution, not deliberation — read the values and build. A root-cause hunt, an architecture call, or anything where the first plausible approach might be wrong deserves real thought before acting.
 
 ---
 
