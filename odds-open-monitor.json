@@ -1828,6 +1828,30 @@
       "startTime": "2026-09-22T06:10:00.000Z",
       "tour": "ATP Chengdu"
     },
+    "id1204297974921784": {
+      "alerted": false,
+      "captureLagH": 0.07,
+      "date": "2026-09-23",
+      "firstSeenAt": "2026-09-21T17:15:01Z",
+      "openAt": "2026-09-21T17:10:38.099Z",
+      "p1": "J. Faria",
+      "p2": "T. Atmane",
+      "postingLeadH": 34.82,
+      "startTime": "2026-09-23T04:00:00.000Z",
+      "tour": "ATP Hangzhou"
+    },
+    "id1204297974921786": {
+      "alerted": false,
+      "captureLagH": -0.0,
+      "date": "2026-09-23",
+      "firstSeenAt": "2026-09-21T17:15:01Z",
+      "openAt": "2026-09-21T17:15:12.561Z",
+      "p1": "A. Vukic",
+      "p2": "K. Jacquet",
+      "postingLeadH": 34.75,
+      "startTime": "2026-09-23T04:00:00.000Z",
+      "tour": "ATP Hangzhou"
+    },
     "id1204297974927256": {
       "alerted": true,
       "alertedAt": "2026-09-21T13:30:00Z",
@@ -1943,5 +1967,5 @@
   },
   "schema": "odds-open-monitor/1",
   "thresholdHours": 24.0,
-  "updatedAt": "2026-09-21T17:00:01Z"
+  "updatedAt": "2026-09-21T17:15:01Z"
 }
