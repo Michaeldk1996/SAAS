@@ -155,6 +155,104 @@ check('the move-rate verdict is printed', 'a sharp book should move more' in txt
 check('the vendor-insert caveat rides with the move-rate verdict',
       'VENDOR-INSERT' in txt and 'biased AGAINST bet105' in txt)
 
+print('\n— a 0.000 close is a suspension marker, not a price, and not a MOVE —')
+# The real shape: both sides zero, seconds before the start, with a real open.
+# Counted as a price, `open != close` is true and the book scores as having
+# moved — which is how the first run of this report read 98.5%.
+susp = [
+    {'match_key': 'z1', 'book': 'bet105', 'side': '1', 'market': 'match winner',
+     'open_price': 1.50, 'close_price': 0.0, 'close_ts': '2026-09-20T20:44:16Z',
+     'start_ts': '2026-09-20T20:45:05Z'},
+    {'match_key': 'z1', 'book': 'bet105', 'side': '2', 'market': 'match winner',
+     'open_price': 2.60, 'close_price': 0.0, 'close_ts': '2026-09-20T20:44:16Z',
+     'start_ts': '2026-09-20T20:45:05Z'},
+    # one genuinely unmoved fixture, so "moved" has something to be 0 against
+    {'match_key': 'z2', 'book': 'bet105', 'side': '1', 'market': 'match winner',
+     'open_price': 1.50, 'close_price': 1.50},
+    {'match_key': 'z2', 'book': 'bet105', 'side': '2', 'market': 'match winner',
+     'open_price': 2.60, 'close_price': 2.60},
+]
+patch_fetch({'odds_card_state': susp})
+txt, _ = run(M.section_accuracy, 'u', 'k', 10)
+check('the zeros are named as a suspension marker, with their share',
+      'suspension marker' in txt and '0.000' in txt)
+check('the move rate EXCLUDES them — 0 of 2, not 2 of 4',
+      'moved on 0 of 2 sides (0.0%)' in txt,
+      'a zeroed close must not score as the book moving')
+check('the close count excludes them too',
+      'bet105 rows carrying a close: **2**' in txt)
+check('it says explicitly that (b) and (c) were computed with them absent',
+      'computed with these rows treated as ABSENT' in txt)
+check('it states the board is unaffected rather than implying a live defect',
+      'no `0.00` has ever been published' in txt)
+
+# CONTROL: without zeros, no suspension section and the real move IS counted.
+patch_fetch({'odds_card_state': [
+    {'match_key': 'z3', 'book': 'bet105', 'side': '1', 'market': 'match winner',
+     'open_price': 1.50, 'close_price': 1.60},
+    {'match_key': 'z3', 'book': 'bet105', 'side': '2', 'market': 'match winner',
+     'open_price': 2.60, 'close_price': 2.40},
+]})
+ctl, _ = run(M.section_accuracy, 'u', 'k', 10)
+check('CONTROL: clean data prints no suspension section',
+      'suspension marker' not in ctl)
+check('CONTROL: a real move is still counted as a move',
+      'moved on 2 of 2 sides (100.0%)' in ctl)
+
+check('normalise_prices reports what it dropped rather than dropping silently',
+      M.normalise_prices([{'book': 'b', 'close_price': 0.0}])[1]
+      == {('b', 'close_price'): 1})
+check('...and leaves a real price alone',
+      M.normalise_prices([{'book': 'b', 'close_price': 1.5}])[0][0]['close_price'] == 1.5)
+
+print('\n— the overlap census runs BEFORE the examples, and substitution is flagged —')
+# Real shape of the data on 2026-09-21: bet105 prices Challenger, the bet365
+# series we hold prices ATP/Davis Cup, and the two share NOTHING. "No worked
+# examples" must therefore read as a finding about coverage, not as an empty
+# table the reader has to interpret.
+disjoint = [
+    {'match_key': 'c1', 'book': 'bet105', 'side': '1', 'market': 'match winner',
+     'open_price': 1.5, 'close_price': 1.6},
+    {'match_key': 'c1', 'book': 'bet105', 'side': '2', 'market': 'match winner',
+     'open_price': 2.6, 'close_price': 2.4},
+    {'match_key': 'c2', 'book': 'bet365', 'side': '1', 'market': 'match winner',
+     'close_price': 1.9},
+    {'match_key': 'c2', 'book': 'bet365', 'side': '2', 'market': 'match winner',
+     'close_price': 1.9},
+]
+patch_fetch({'odds_card_state': disjoint})
+txt, _ = run(M.section_accuracy, 'u', 'k', 10)
+check('zero bet105/bet365 overlap is named as the finding it is',
+      'do not price a single fixture in common' in txt)
+check('...and says the validation cannot be made rather than showing a zero',
+      'cannot be validated against bet365 on price' in txt)
+check('the census is printed before the example result, so the reader meets '
+      'the cause before the empty answer',
+      'overlap census' in txt
+      and txt.index('overlap census') < txt.index('No fixture carries a bet105 close'))
+check('with nothing to pair at all, it names what would fix it',
+      'api-tennis' in txt and 'oddspapi archive to the Challenger tier' in txt)
+
+# Now give it a leg that is NOT the one the directive named.
+sub = [
+    {'match_key': 'c1', 'book': 'bet105', 'side': '1', 'market': 'match winner',
+     'open_price': 1.5, 'close_price': 1.6},
+    {'match_key': 'c1', 'book': 'bet105', 'side': '2', 'market': 'match winner',
+     'open_price': 2.6, 'close_price': 2.4},
+    {'match_key': 'c1', 'book': 'api-tennis', 'side': '1', 'market': 'match winner',
+     'close_price': 1.62},
+    {'match_key': 'c1', 'book': 'api-tennis', 'side': '2', 'market': 'match winner',
+     'close_price': 2.38},
+]
+patch_fetch({'odds_card_state': sub})
+txt, _ = run(M.section_accuracy, 'u', 'k', 10)
+check('a substitute leg IS used rather than reporting nothing',
+      'api-tennis` and' in txt or "`api-tennis`" in txt)
+check('...and the substitution is FLAGGED, not done quietly',
+      'not bet365' in txt and 'flagged rather than done quietly' in txt)
+check('the aggregate names the substitute book on the figure',
+      'median |Δ implied| against the api-tennis close' in txt)
+
 print('\n— the REFEREE is checked too: an impossible bet365 close is named —')
 ref = [
     {'match_key': 'r1', 'book': 'bet105', 'side': '1', 'market': 'match winner',

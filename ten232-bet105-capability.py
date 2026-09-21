@@ -180,6 +180,37 @@ def load_card_state(url, key):
     return rows, err
 
 
+def normalise_prices(rows):
+    """A NON-POSITIVE PRICE IS ABSENT, not a price. Returns (rows, dropped).
+
+    ⚠️ THIS IS NOT COSMETIC, AND THE FIRST RUN OF THIS REPORT GOT IT WRONG.
+    44 of the 135 bet105 closes in the archive are `0.000` — on BOTH sides,
+    always within seconds of the scheduled start. That is Kibl's marker for a
+    suspended market, not a price anyone could take.
+
+    Left in, a zero does not merely add noise, it flips the answer:
+    * `open != close` is true for every one of them, so all 44 counted as the
+      book MOVING. The move rate read 98.5%, and much of that was the
+      suspension marker rather than the book repricing.
+    * a zero is a price-shaped number, which is precisely what the standing
+      rule — missing = dash, never zero — exists to keep away from a reader.
+
+    `ten225-publish-card-state.py` already applies this rule at the publish
+    boundary, which is why no `0.00` reaches the board. Applying the SAME rule
+    here keeps the report and the page telling one story: a measurement that
+    counts rows the product refuses to show is measuring the wrong thing.
+    """
+    dropped = collections.Counter()
+    for r in rows:
+        for f in ('open_price', 'now_price', 'close_price'):
+            v = r.get(f)
+            if v is not None and float(v) <= 0:
+                dropped[(r.get('book'), f)] += 1
+                r[f] = None
+                r['zeroed_' + f] = True
+    return rows, dropped
+
+
 def by_match_book(rows):
     """{match_key: {book: {side: row}}}. Rows without a match_key cannot pair."""
     out = collections.defaultdict(lambda: collections.defaultdict(dict))
@@ -211,6 +242,7 @@ def section_accuracy(url, key, want_examples):
               f'no figure below would mean anything.')
         return None
 
+    rows, zeroed = normalise_prices(rows)
     idx, unpaired = by_match_book(rows)
     books = collections.Counter(r.get('book') for r in rows)
     print(f'Read {len(rows):,} match-winner rows from odds_card_state across '
@@ -235,31 +267,89 @@ def section_accuracy(url, key, want_examples):
           'first price Kibl had, which is the earliest WE could have had it — '
           'it is not a claim about when Bet105 posted it.')
 
+    # ── THE OVERLAP CENSUS, BEFORE ANY EXAMPLE IS ATTEMPTED ─────────────────
+    # "No worked examples available" is not an answer to the founder's
+    # question, it is a symptom. If bet105 and bet365 do not price the same
+    # fixtures, that fact IS the finding and it decides how much of this
+    # document can be a comparison at all — so it is measured and printed
+    # before the examples rather than inferred from their absence.
+    h3('Which books can even be compared — the overlap census')
+    srcs = collections.Counter((r.get('book'), r.get('source')) for r in rows)
+    print('| book | source | rows |')
+    print('|---|---|---|')
+    for (b, s), n in srcs.most_common():
+        print(f'| {b} | {s} | {n:,} |')
+
+    mk105 = {mk for mk, bk in idx.items() if 'bet105' in bk}
+    print(f'\nfixtures carrying a bet105 row: **{len(mk105):,}**')
+    print('\n| other book | shares a fixture with bet105 | shares a SIDE with a close on both |')
+    print('|---|---|---|')
+    others = sorted({r.get('book') for r in rows} - {'bet105', None})
+    legs = {}
+    for ob in others:
+        share = {mk for mk in mk105 if ob in idx[mk]}
+        both = 0
+        for mk in share:
+            a, b = idx[mk]['bet105'], idx[mk][ob]
+            both += sum(1 for s in a if s in b
+                        and a[s].get('close_price') is not None
+                        and b[s].get('close_price') is not None)
+        legs[ob] = (len(share), both)
+        print(f'| {ob} | {len(share):,} | {both:,} |')
+
+    if not legs.get('bet365', (0, 0))[0]:
+        print(f'\n⚠️ **bet105 and bet365 do not price a single fixture in '
+              f'common.** This is not a gap in the archive — it is what the two '
+              f'feeds cover: Kibl prices Challenger and ITF, while the bet365 '
+              f'series we hold from oddspapi is ATP and Davis Cup. So bet105 '
+              f'**cannot be validated against bet365 on price**, today, at any '
+              f'sample size. That is a material input to the ladder ruling and '
+              f'it is stated here rather than left as an empty table.')
+
+    # Pick the best second leg that actually EXISTS rather than insisting on
+    # the one named in the directive and reporting nothing.
+    LEG_ORDER = ['bet365', 'api-tennis', 'sports411']
+    leg = next((b for b in LEG_ORDER if legs.get(b, (0, 0))[1] >= 2), None)
+    if leg is None:
+        leg = next((b for b, (sh, bo) in legs.items() if bo >= 2), None)
+
     cand = []
-    for mk, bk in idx.items():
-        b105, b365 = bk.get('bet105'), bk.get('bet365')
-        if not b105 or not b365:
-            continue
-        sides = [s for s in b105 if s in b365]
-        # A worked example is only worth printing if BOTH legs close.
-        ok = [s for s in sides
-              if b105[s].get('close_price') is not None
-              and b365[s].get('close_price') is not None]
-        if len(ok) >= 2:
-            cand.append((mk, bk, sorted(ok)[:2]))
-    cand.sort(key=lambda c: c[0])
+    if leg:
+        for mk, bk in idx.items():
+            b105, b2 = bk.get('bet105'), bk.get(leg)
+            if not b105 or not b2:
+                continue
+            ok = [s for s in b105 if s in b2
+                  and b105[s].get('close_price') is not None
+                  and b2[s].get('close_price') is not None]
+            if len(ok) >= 2:
+                cand.append((mk, bk, sorted(ok)[:2]))
+        cand.sort(key=lambda c: c[0])
 
     if not cand:
-        print(f'\n{DASH}  No fixture carries a bet105 close AND a bet365 close '
-              f'on the same side. Worked examples are not available; the '
-              f'aggregate in (b) is computed on whatever pairs do exist and '
-              f'says so.')
+        print(f'\n{DASH}  **No fixture carries a bet105 close alongside a close '
+              f'from ANY other book on the same side.** Worked examples with '
+              f'both legs are therefore not available on the data we hold — '
+              f'not "zero", not "they disagree": the comparison cannot be '
+              f'made. The census above is the evidence, and §6(a) gives the '
+              f'coverage that causes it.')
+        print(f'\nWhat would make it available, in order of cost: pair against '
+              f'**api-tennis**, which covers Challenger as well as ATP and is '
+              f'free (it is already the referee arm of the side-mapping gate); '
+              f'or extend the oddspapi archive to the Challenger tier, which '
+              f'costs units against the request budget.')
     else:
-        print(f'\nFixtures where both books close on both sides: '
+        if leg != 'bet365':
+            print(f'\n⚠️ **The second leg below is `{leg}`, not bet365.** The '
+                  f'directive asks for the bet365 close, and bet105 shares no '
+                  f'fixture with it (census above). Substituting a leg is '
+                  f'flagged rather than done quietly, because a gap measured '
+                  f'against a different book is a different measurement.')
+        print(f'\nFixtures where bet105 and `{leg}` both close on both sides: '
               f'**{len(cand)}** ({n_flag(len(cand))}). Showing '
               f'{min(want_examples, len(cand))}.')
         for mk, bk, sides in cand[:want_examples]:
-            b105, b365 = bk['bet105'], bk['bet365']
+            b105, b365 = bk['bet105'], bk[leg]
             at = bk.get('api-tennis') or {}
             h3(mk)
             print('| side | bet105 open | bet105 close | bet365 close | '
@@ -295,10 +385,16 @@ def section_accuracy(url, key, want_examples):
     # probability and would inflate the median gap while looking like a finding
     # about bet105. So the gap is reported BOTH ways and the bad referee legs
     # are counted, not quietly dropped.
+    ref = leg or 'bet365'
+    if ref != 'bet365':
+        print(f'\n⚠️ The comparison leg is **`{ref}`**, not bet365 — bet105 and '
+              f'bet365 share no fixture (census in (a)). A gap measured against '
+              f'a different book answers a different question, so the book is '
+              f'named on the figure.')
     gaps, gaps_clean, paired_fixtures = [], [], set()
     ref_bad = []
     for mk, bk in idx.items():
-        b105, b365 = bk.get('bet105'), bk.get('bet365')
+        b105, b365 = bk.get('bet105'), bk.get(ref)
         if not b105 or not b365:
             continue
         for s, r1 in b105.items():
@@ -316,13 +412,13 @@ def section_accuracy(url, key, want_examples):
             else:
                 gaps_clean.append(abs(i1 - i2))
     if gaps:
-        print(f'\nmedian |Δ implied| against the bet365 close on the same '
+        print(f'\nmedian |Δ implied| against the {ref} close on the same '
               f'fixture and side: **{statistics.median(gaps):.2f} points** '
               f'({n_flag(len(gaps))} side-pairs across {len(paired_fixtures)} fixtures)')
         print(f'distribution: {dist(gaps, 2)}')
         if ref_bad:
             med_c = (f'{statistics.median(gaps_clean):.2f}' if gaps_clean else DASH)
-            print(f'\n⚠️ **{len(ref_bad)} of those pairs have a bet365 close of '
+            print(f'\n⚠️ **{len(ref_bad)} of those pairs have a {ref} close of '
                   f'≤ 1.00** — an impossible price on the leg we are treating as '
                   f'trusted. Excluding them the median is **{med_c} points** '
                   f'({n_flag(len(gaps_clean))}).')
@@ -333,8 +429,9 @@ def section_accuracy(url, key, want_examples):
                   ', '.join(f'`{mk}`/{s}' for mk, s, _ in ref_bad[:10]) +
                   (f' … and {len(ref_bad) - 10} more' if len(ref_bad) > 10 else ''))
     else:
-        print(f'\nmedian |Δ implied| vs bet365: {DASH}  — no side on any fixture '
-              f'carries a close from both books, so there is nothing to subtract.')
+        print(f'\nmedian |Δ implied| vs {ref}: {DASH}  — no side on any fixture '
+              f'carries a close from both books, so there is nothing to '
+              f'subtract. Not zero: the subtraction has no operands.')
 
     h3('Overround distribution, bet105 closes')
     ovs = []
@@ -419,6 +516,41 @@ def section_accuracy(url, key, want_examples):
 
     # ── (d) CLEARLY-WRONG CLOSES, NAMED ──────────────────────────────────────
     h2('(d) bet105 closes that are clearly wrong — named, not averaged away')
+
+    # THE BIGGEST ONE FIRST, because it is a third of the population and it is
+    # the reason every figure above had to be recomputed.
+    z105 = zeroed.get(('bet105', 'close_price'), 0)
+    if z105:
+        h3(f'{z105} bet105 "closes" are 0.000 — the vendor\'s suspension marker, '
+           f'not a price')
+        n_close = sum(1 for r in rows if r.get('book') == 'bet105'
+                      and (r.get('close_price') is not None
+                           or r.get('zeroed_close_price')))
+        print(f'**{z105} of the {n_close} bet105 closes in the archive '
+              f'({pct(z105, n_close)})** carry a price of exactly `0.000`. They '
+              f'come in PAIRS — both sides of the same fixture — and every one '
+              f'is timestamped within seconds to a couple of minutes of the '
+              f'scheduled start. That shape is a market being suspended at the '
+              f'live flip, not a book quoting zero.')
+        print(f'\n**What it costs us:** those fixtures have no Close at all. '
+              f'The last real price we hold is the Open, and the card dashes '
+              f'the Close — correctly, but it is a Close we would have had if '
+              f'the final pre-flip price had been captured before the market '
+              f'went down.')
+        print(f'\n**What it does NOT cost us:** nothing reaches a member. '
+              f'`ten225-publish-card-state.py` already treats a non-positive '
+              f'price as absent, so no `0.00` has ever been published. I have '
+              f'confirmed that on the deployed `odds-card-state.json`: zero '
+              f'non-positive prices in the file.')
+        print(f'\n⚠️ **Every figure in (b) and (c) above is computed with these '
+              f'rows treated as ABSENT**, the same rule the publisher applies. '
+              f'Counting them as prices would have reported the move rate as '
+              f'98.5% when 44 of those "moves" were a market closing.')
+        if zeroed:
+            print(f'\nNon-positive prices across the whole table, by book and leg:')
+            for (b, f), n in zeroed.most_common():
+                print(f'* {b} · `{f}` — {n:,}')
+
     bad = collections.defaultdict(list)
     for mk, bk in idx.items():
         b = bk.get('bet105')
