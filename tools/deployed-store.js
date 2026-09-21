@@ -228,17 +228,33 @@ function hydrateTournamentHistory(players, opts = {}) {
     const res = fetchShards('tournament-history', need, opts);
     for (const [k, text] of res.ok) { fs.writeFileSync(path.join(dir, `${k}.json`), text); fetched++; }
   }
+  // TWO DIFFERENT DEFICIENCIES, AND THEY MUST NOT SHARE A WORD.
+  //   missing  the shard could not be read or fetched AT ALL -> never attached
+  //   short    the shard WAS attached but holds fewer rows than the index says
+  // A missing shard `continue`s before the short++ line, so the two counts are
+  // disjoint. Reporting "attached 543 of 544 (0 short)" paired the first
+  // deficiency's count with the second's and read as self-contradiction: the
+  // gate aborting while its own number said nothing was wrong. Both statements
+  // were true. The message was the defect, not the threshold.
+  //
+  // `missing` also carries the KEYS, because "one shard failed" and "which
+  // shard failed" are a diagnosis apart, and this gate freezes the whole site.
   let attached = 0, rows = 0, short = 0;
+  const missing = [], shortKeys = [];
   for (const k of keys) {
     const j = readShard(k);
-    if (!j || !Array.isArray(j.tournamentHistory)) continue;
-    if (j.tournamentHistory.length < index[k].n) short++;
+    if (!j || !Array.isArray(j.tournamentHistory)) { missing.push(k); continue; }
+    if (j.tournamentHistory.length < index[k].n) shortKeys.push(k), short++;
     players[k].tournamentHistory = j.tournamentHistory;
     attached++;
     rows += j.tournamentHistory.length;
   }
   return {
     indexed: keys.length, attached, fetched, short, tournamentRows: rows,
+    // missing.length === indexed - attached, by construction. The gate blocks on
+    // `attached < indexed`, so THIS is the number that has to appear in its
+    // message for the verdict and the count to agree.
+    missing, missingCount: missing.length, shortKeys,
     rosterNotInIndex: Object.keys(players).length - keys.length,
   };
 }

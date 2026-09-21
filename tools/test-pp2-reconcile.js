@@ -67,7 +67,25 @@ const PLAYERS = STORE.players;
 const TH = DEPLOYED.hydrateTournamentHistory(PLAYERS);
 if (TH.error || TH.attached < TH.indexed) {
   console.error('\n  ✗ tournament-history/ DID NOT HYDRATE FROM THE DEPLOYED STORE — ABORTING.');
-  console.error(`    ${TH.error || `attached ${TH.attached} of ${TH.indexed} indexed players (${TH.short} short)`}`);
+  // Say WHICH deficiency tripped it and NAME the shard. The gate blocks on
+  // `attached < indexed`, so it reports missingCount — which is exactly
+  // indexed - attached — rather than `short`, a disjoint count of shards that
+  // DID attach but are stale. Quoting the second next to the first is what made
+  // this read "0 short" while aborting.
+  if (TH.error) {
+    console.error(`    ${TH.error}`);
+  } else {
+    console.error(`    attached ${TH.attached} of ${TH.indexed} indexed players — `
+      + `${TH.missingCount} shard(s) could not be read or fetched at all.`);
+    if (TH.missing && TH.missing.length) {
+      console.error(`    COULD NOT ATTACH: ${TH.missing.slice(0, 12).join(', ')}`
+        + `${TH.missing.length > 12 ? ` (+${TH.missing.length - 12} more)` : ''}`);
+    }
+    if (TH.short) {
+      console.error(`    (separately, ${TH.short} attached shard(s) are STALE — fewer rows than the `
+        + `index claims: ${(TH.shortKeys || []).slice(0, 8).join(', ')}. This is not what aborted the run.)`);
+    }
+  }
   console.error('    Every §5.3 check would walk an empty list and report a clean bill of health.\n');
   process.exit(1);
 }
