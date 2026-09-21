@@ -1,0 +1,38 @@
+[
+ {
+  "row_json": "{\"uuid\": null, \"market_id\": 118291, \"fixture_id\": 728343, \"fixture_participant_id\": 1097925, \"market_type_id\": 1, \"segment_id\": 1, \"side_id\": 2, \"point\": null, \"alt_id\": 0, \"feed_source_id\": 171, \"betting_type_id\": 1, \"is_opener\": true, \"is_previous\": false, \"is_current\": true, \"price_american\": -145, \"price_decimal\": 1.69, \"inserted_on\": \"2026-09-19T14:24:14.000Z\"}",
+  "key": "None|118291|728343|1097925|1|1|2|None|0|171|1|True|False|True|-145|1.69|2026-09-19T14:24:14.000Z"
+ },
+ {
+  "row_json": "{\"uuid\": null, \"market_id\": null, \"fixture_id\": null, \"fixture_participant_id\": null, \"market_type_id\": null, \"segment_id\": null, \"side_id\": null, \"point\": null, \"alt_id\": null, \"feed_source_id\": null, \"betting_type_id\": null, \"is_opener\": null, \"is_previous\": null, \"is_current\": null, \"price_american\": null, \"price_decimal\": null, \"inserted_on\": null}",
+  "key": "None|None|None|None|None|None|None|None|None|None|None|None|None|None|None|None|None"
+ },
+ {
+  "row_json": "{\"is_opener\": false, \"is_previous\": true, \"is_current\": false, \"fixture_id\": 1, \"price_decimal\": 2.0}",
+  "key": "None|None|1|None|None|None|None|None|None|None|None|False|True|False|None|2.0|None"
+ },
+ {
+  "row_json": "{\"fixture_id\": 2, \"price_decimal\": 2.0, \"point\": -1.5, \"alt_id\": 0}",
+  "key": "None|None|2|None|None|None|None|-1.5|0|None|None|None|None|None|None|2.0|None"
+ },
+ {
+  "row_json": "{\"fixture_id\": 3}",
+  "key": "None|None|3|None|None|None|None|None|None|None|None|None|None|None|None|None|None"
+ },
+ {
+  "row_json": "{\"fixture_id\": 4, \"price_decimal\": 0.0, \"is_current\": true}",
+  "key": "None|None|4|None|None|None|None|None|None|None|None|None|None|True|None|0.0|None"
+ },
+ {
+  "row_json": "{\"fixture_id\": 5, \"price_decimal\": 1.012, \"price_american\": -8300}",
+  "key": "None|None|5|None|None|None|None|None|None|None|None|None|None|None|-8300|1.012|None"
+ },
+ {
+  "row_json": "{\"fixture_id\": 1200390774640370, \"market_id\": 1200390774640371}",
+  "key": "None|1200390774640371|1200390774640370|None|None|None|None|None|None|None|None|None|None|None|None|None|None"
+ },
+ {
+  "row_json": "{\"fixture_id\": \"728343\", \"price_decimal\": \"1.69\"}",
+  "key": "None|None|728343|None|None|None|None|None|None|None|None|None|None|None|None|1.69|None"
+ }
+]

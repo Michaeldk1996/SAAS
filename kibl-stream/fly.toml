@@ -1,0 +1,25 @@
+# TEN-225 item 2 — NOT DEPLOYED. `fly deploy` has never been run from here.
+#
+# ⚠️ SET `primary_region` TO THE SUPABASE PROJECT'S REGION BEFORE DEPLOYING.
+# It is left deliberately blank rather than guessed: SUPABASE_URL is a GitHub
+# Actions secret and is not readable from a local run, so I do not know it, and
+# a plausible-looking wrong region is worse than an obvious blank.
+app = "kibl-stream"
+primary_region = ""   # <- REQUIRED. One look at the Supabase dashboard.
+
+[build]
+
+[env]
+  WORKER_VERSION = "0.1.0"
+
+# One machine, always on. `auto_stop_machines = false` is the whole point: a
+# worker that scales to zero is a worker that is not listening, and this exists
+# precisely to be listening between our sweeps.
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "256mb"
+
+[http_service]
+  auto_stop_machines = false
+  auto_start_machines = false
+  min_machines_running = 1
