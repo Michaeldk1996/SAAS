@@ -384,6 +384,29 @@ def newest_of(obs_list):
     return usable[-1]
 
 
+def close_of_prefix(obs_list, start_ts):
+    """THE SELECTOR AS IT SHIPPED BEFORE 2026-09-21. Kept deliberately.
+
+    Byte-for-byte the old rule: any dated pre-start row, last one wins, with no
+    test for whether the price is a price. It exists so every run can answer
+    "what would the old build have picked here?" against LIVE data, which is the
+    only way the recovery number below is a measurement rather than my estimate.
+
+    DO NOT USE THIS TO PICK A CLOSE. It is the control arm.
+    """
+    if start_ts is None:
+        return None
+    pre = [o for o in obs_list
+           if o.get('price_decimal') is not None
+           and epoch(o.get('inserted_on')) is not None
+           and epoch(o['inserted_on']) < start_ts]
+    if not pre:
+        return None
+    pre.sort(key=lambda o: (epoch(o['inserted_on']),
+                            epoch(o.get('observed_at')) or 0.0))
+    return pre[-1]
+
+
 def close_of(obs_list, start_ts):
     """The last price held STRICTLY BEFORE the start. Founder: "Close = last
     pre-start price held; exclude any in-play row by start time".
@@ -826,6 +849,20 @@ def build_rows(kibl_fixtures, observations, odds_index, as_of,
                 st['now_ok'] += 1
 
             close_obs = close_of(lst, start_ts)
+            # ITEM 1(b) CONTROL — what the pre-fix build would have picked on
+            # this same series. Compared on the ROW, not the price: two
+            # different rows can carry the same number, and counting a price
+            # match as "unchanged" would under-report a genuine recovery.
+            _ctl = close_of_prefix(lst, start_ts)
+            _ctl_bad = _ctl is not None and real_price(_ctl) is None
+            if _ctl_bad and close_obs is not None:
+                st['close_RECOVERED_from_marker'] += 1
+            elif _ctl_bad and close_obs is None:
+                # The whole pre-start series is markers. Not a regression: the
+                # old build would have "had" a close that the publisher then
+                # suppressed into a dash anyway. Named so it is not mistaken
+                # for something this change broke.
+                st['close_still_lost_all_markers'] += 1
             close_ts = close_obs['inserted_on'] if close_obs else None
             reliable, lag = judge_close_live(start_ts, epoch(close_ts),
                                              start_src, flip_gap)
@@ -1715,6 +1752,14 @@ def main():
               f'undecidable sides and dashed entirely — never rendered on a '
               f'guess')
     print(f'kibl card rows: {len(rows)}  {dict(st)}')
+    # ITEM 1(b), founder 2026-09-21: "how many fixtures gained a real Close".
+    # Printed unconditionally, including the zeros — a run that recovered
+    # nothing must say so rather than print nothing, because a silent section
+    # and a clean one look identical.
+    print(f'suspension marker: rows skipped open={SUPPRESSED["open"]} '
+          f'close={SUPPRESSED["close"]}  |  sides RECOVERED a real close='
+          f'{st["close_RECOVERED_from_marker"]}  still lost (series is all '
+          f'markers)={st["close_still_lost_all_markers"]}')
 
     # ── LADDER I(b) — THE NUMBER RULING D ASKS FOR ──────────────────────────
     # Founder 2026-09-18T22:58Z ruling D: "run the counting pass and post the

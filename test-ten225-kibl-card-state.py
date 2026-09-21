@@ -196,6 +196,19 @@ _pre_fix = [o for o in _susp
 _pre_fix.sort(key=lambda o: K.epoch(o['inserted_on']))
 check('CONTROL: the pre-fix selector picks the 0.000 marker on this same input',
       float(_pre_fix[-1]['price_decimal']) == 0.0)
+# ...and the SHIPPED control arm, not my reconstruction of it. close_of_prefix
+# is what the run compares against live every time, so if it ever stops
+# reproducing the defect the recovery number silently becomes zero and reads as
+# "nothing to recover" rather than "the control broke".
+_ctl = K.close_of_prefix(_susp, _start)
+check('the shipped control arm reproduces the defect',
+      _ctl is not None and float(_ctl['price_decimal']) == 0.0)
+check('...and it disagrees with the real selector on this input, which is the '
+      'only thing that makes the recovery count non-vacuous',
+      K.epoch(_ctl['inserted_on']) != K.epoch(_c['inserted_on']))
+check('...while agreeing on a clean series, so it is not simply broken',
+      K.epoch(K.close_of_prefix([obs(2.10, T % (13, 0)), obs(2.15, T % (14, 30))], _start)['inserted_on'])
+      == K.epoch(K.close_of([obs(2.10, T % (13, 0)), obs(2.15, T % (14, 30))], _start)['inserted_on']))
 
 check('a series that is ALL suspension markers still dashes — this fills no '
       'cell it cannot justify',
