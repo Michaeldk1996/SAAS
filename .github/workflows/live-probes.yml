@@ -68,10 +68,17 @@ jobs:
           CHROME_BIN: google-chrome
         run: node probe-ten243-figures-live.mjs
 
-      # Reported to the founder rather than silently omitted: the Lines/Peak probe
-      # still points at a LOCAL server over the worktree, and the Lines tab needs
-      # `career-history/` shards, which are gitignored and CI-built — so on a
-      # runner its subject would have no match rows and the probe would assert
-      # against an empty ladder. Repointing it at the deployed URL is what it
-      # needs to join this job, and that is a change to a committed probe rather
-      # than something to slip in under a workflow commit.
+      # `PROBE_BASE_URL` is what lets this one run here at all. Unset, it serves the
+      # worktree — and the Lines tab reads `career-history/` shards, which are
+      # gitignored and CI-built, so on a runner every subject would come up with an
+      # empty ladder and the probe would report a missing store as a broken page.
+      # Pointed at the deployed site it reads the shards a member actually loads.
+      #
+      # `if: always()` so a red figures probe above does not hide this one's result.
+      # Two independent questions deserve two answers, not the first failure.
+      - name: Lines tab + Peak/Vs-pk on the deployed bytes
+        if: always()
+        env:
+          CHROME_BIN: google-chrome
+          PROBE_BASE_URL: https://michaeldk1996.github.io/SAAS
+        run: node probe-ten243-lines-peak.mjs

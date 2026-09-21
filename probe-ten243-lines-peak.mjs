@@ -13,17 +13,33 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 
-const ROOT = process.cwd();
-const TYPES = { '.html':'text/html', '.js':'text/javascript', '.json':'application/json', '.css':'text/css' };
-const srv = http.createServer((req,res)=>{
-  const p = path.join(ROOT, decodeURIComponent(req.url.split('?')[0]));
-  if(!p.startsWith(ROOT) || !fs.existsSync(p) || fs.statSync(p).isDirectory()){ res.writeHead(404); return res.end('nf'); }
-  res.writeHead(200,{'Content-Type': TYPES[path.extname(p)]||'application/octet-stream'});
-  fs.createReadStream(p).pipe(res);
-});
-await new Promise(r=>srv.listen(0,'127.0.0.1',r));
-const PORT = srv.address().port;
-const URL = `http://127.0.0.1:${PORT}/bsp-consult-dashboard.html`;
+// TARGET. `PROBE_BASE_URL` points this at the DEPLOYED site; with it unset the
+// probe serves the worktree, which is what a local run wants.
+//
+// It has to be switchable rather than always-local, because the Lines tab reads
+// `career-history/` shards and those are gitignored and CI-built. On a runner the
+// worktree has none of them, so every subject would come up with an empty ladder
+// and the probe would report the absence of a store as a defect in the page.
+// Against the deployed bytes the shards are there — and the deployed bytes are
+// what a member actually loads.
+const BASE = (process.env.PROBE_BASE_URL || '').replace(/\/+$/, '');
+const TARGET_NOTE = BASE ? `deployed bytes (${BASE})` : 'worktree bytes';
+let srv = null;
+let URL;
+if (BASE) {
+  URL = `${BASE}/bsp-consult-dashboard.html`;
+} else {
+  const ROOT = process.cwd();
+  const TYPES = { '.html':'text/html', '.js':'text/javascript', '.json':'application/json', '.css':'text/css' };
+  srv = http.createServer((req,res)=>{
+    const p = path.join(ROOT, decodeURIComponent(req.url.split('?')[0]));
+    if(!p.startsWith(ROOT) || !fs.existsSync(p) || fs.statSync(p).isDirectory()){ res.writeHead(404); return res.end('nf'); }
+    res.writeHead(200,{'Content-Type': TYPES[path.extname(p)]||'application/octet-stream'});
+    fs.createReadStream(p).pipe(res);
+  });
+  await new Promise(r=>srv.listen(0,'127.0.0.1',r));
+  URL = `http://127.0.0.1:${srv.address().port}/bsp-consult-dashboard.html`;
+}
 
 // Chrome's path is an env var so this can run somewhere other than one laptop.
 // Defaults to the macOS install so a local run needs no setup; CI sets CHROME_BIN
@@ -73,7 +89,7 @@ const pill = async (groupIdx,label) => { await ev(`(function(){var g=${ROOTQ}.qu
   [].slice.call(g.querySelectorAll('button')).filter(b=>b.textContent.trim()===${JSON.stringify(label)})[0].click();return true;})()`);
   await new Promise(r=>setTimeout(r,900)); };
 
-console.log(`\nTEN-243 Lines + Peak/Vs-pk — worktree bytes (${URL})\n`);
+console.log(`\nTEN-243 Lines + Peak/Vs-pk — ${TARGET_NOTE}\n${URL}\n`);
 
 // ── Lines ────────────────────────────────────────────────────────────────
 await tab('lines');
@@ -130,10 +146,39 @@ await new Promise(r=>setTimeout(r,800));
 const al = await pick('C. Alcaraz');
 const m2 = al.match(covRe);
 check('the NEAR-EMPTY case states its own coverage rather than inheriting the last one', !!m2, m2&&m2[0]);
-check('...and never prints a 0.0% hit rate for a line with no matches', !/\b0\.0%\s*$/m.test(al) || true,
-  'rate gate is n<5 -> dash');
-const dashCount = await ev(`(function(){var c=0; ${BODY}.querySelectorAll('.db-rfig').forEach(function(d){ if(d.textContent.trim()==='–') c++; }); return c;})()`);
-check('...and dashes instead, visibly', dashCount>0, dashCount+' dashed cells');
+
+// The expectation is DERIVED from the coverage the page itself reports, not from
+// a percentage measured when this probe was written. Alcaraz was 0.5% (2 of 374)
+// on the v14 store; the v15 rebuild took fixtures-half coverage to ~99%, so a
+// hard-coded "this subject must show dashes" would now fail against a page that
+// got BETTER. A probe that goes red because the data improved is worse than no
+// probe. Both branches assert — neither can pass vacuously.
+const covPct = m2 ? parseFloat(m2[3]) : null;
+// `.db-rfig` is not only rates: it also carries the line labels ("−4.5 games")
+// and the win–loss records ("123–131"). My first cut of this check allowed only a
+// bare number and went red against a correct page — the fourth time this surface
+// has caught me asserting my assumption rather than the rule. So classify by what
+// a BROKEN cell looks like, which is unambiguous, rather than by enumerating every
+// legitimate format, which I have now got wrong once.
+const figs = await ev(`(function(){var out={dash:0,rate:0,bad:[]};
+  ${BODY}.querySelectorAll('.db-rfig').forEach(function(d){ var t=d.textContent.trim();
+    if(t==='–'||t==='—') out.dash++;
+    else if(t===''||/NaN|undefined|null|Infinity/.test(t)) out.bad.push(t||'<empty>');
+    else if(/\\d/.test(t)) out.rate++;
+    else out.bad.push(t); });
+  return out;})()`);
+if (covPct !== null && covPct < 20) {
+  check(`...thin subject (${covPct}% coverage): dashes instead of a manufactured rate`,
+    figs.dash > 0, figs.dash + ' dashed cells');
+} else {
+  check(`...populated subject (${covPct}% coverage): real rates render`,
+    figs.rate > 0, figs.rate + ' rate cells, ' + figs.dash + ' dashed');
+}
+// True on ANY store: a figure cell is a dash or a well-formed number. Never blank,
+// never NaN, never "undefined" — which is what a missing-sample bug looks like on
+// screen, and the thing the old dash-count check was really reaching for.
+check('...and no figure cell renders NaN, undefined or a blank',
+  figs.bad.length === 0, figs.bad.slice(0,5).join(' | ') || `${figs.dash} dashed + ${figs.rate} populated, 0 malformed`);
 
 // ── Peak / Vs-pk ─────────────────────────────────────────────────────────
 await tab('ratings');
@@ -166,4 +211,4 @@ check('the board note explains the surface dash', /no per-surface peak/.test(not
 
 check('no uncaught page errors', errors.length===0, errors.join(' | ')||'none');
 console.log(`\n  ${pass} passed, ${fail} failed\n`);
-ws.close(); ch.kill(); srv.close(); process.exit(fail?1:0);
+ws.close(); ch.kill(); if (srv) srv.close(); process.exit(fail?1:0);
