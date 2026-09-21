@@ -37,12 +37,37 @@ const EXEMPT = {
   //  'path/to/suite.js': 'why CI cannot run it', never as a convenience.)
 };
 
-const DIRS = ['.', 'tools'];
 const SUITE = /^test-.*\.(mjs|js|py)$/;
+// Directories that are never source. `_site` is the build output — scanning it
+// would find copies of suites and report them as unwired duplicates.
+const SKIP_DIRS = new Set(['node_modules', '.git', '_site', '.github', 'dist', 'coverage']);
+
+// ⚠️ DISCOVERED, NOT LISTED. This was `['.', 'tools']`, and TEN-225 item 2 added
+// kibl-stream/ — a directory the guard could not see. The suite in it happened
+// to be wired, but had it not been, this file would have reported "all
+// reachable" and meant nothing. That is the same class of defect the guard
+// exists for (npm test was running 1 of 10 TEN-225 mjs suites, and a red
+// harness looked identical to a healthy one); a guard with a directory-shaped
+// hole will eventually certify the hole.
+//
+// One level deep, not a full walk: every suite in this repo lives at the root
+// or one directory down, and walking the whole tree on each CI run buys nothing
+// for the cost.
+function suiteDirs() {
+  const out = ['.'];
+  for (const e of fs.readdirSync(ROOT, { withFileTypes: true })) {
+    if (!e.isDirectory() || e.name.startsWith('.') || SKIP_DIRS.has(e.name)) continue;
+    const abs = path.join(ROOT, e.name);
+    let names = [];
+    try { names = fs.readdirSync(abs); } catch (err) { continue; }
+    if (names.some(f => SUITE.test(f))) out.push(e.name);
+  }
+  return out;
+}
 
 function suites() {
   const out = [];
-  for (const d of DIRS) {
+  for (const d of suiteDirs()) {
     const abs = path.join(ROOT, d);
     if (!fs.existsSync(abs)) continue;
     for (const f of fs.readdirSync(abs)) {
@@ -103,6 +128,20 @@ check('no exemption covers a suite that is actually wired',
 
 // The control. Without it, "0 unwired" is also what a checker that stopped
 // reading the filesystem returns.
+// The directory-discovery half needs its own check, because "n suites, all
+// reachable" reads identically whether a directory was scanned or skipped.
+// Named explicitly: kibl-stream/ is the directory whose absence prompted this,
+// so if it ever stops being scanned the guard says so instead of shrinking
+// quietly by one.
+const dirsScanned = suiteDirs();
+check('suite directories are DISCOVERED, so a new one is covered on the day it '
+      + 'appears', dirsScanned.length >= 2, dirsScanned.join(', '));
+if (fs.existsSync(path.join(ROOT, 'kibl-stream'))) {
+  check('...and kibl-stream/ — the directory that exposed the hole — is in the scan',
+        all.some(f => f.startsWith('kibl-stream/')),
+        all.filter(f => f.startsWith('kibl-stream/')).join(', ') || 'NOT SCANNED');
+}
+
 const sentinel = 'test-a-suite-that-is-definitely-not-wired.mjs';
 check('CONTROL: an unwired suite IS detected',
       ![sentinel].every(f => text.includes(f)),
