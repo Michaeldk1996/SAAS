@@ -32,6 +32,8 @@ after editing any of the three files, with `python3 -B`:
   g. side_label() maps side_id 2 -> '1'                     RED (orientation)
   h. name_key() takes the longest token, not the last       RED (matcher drift)
   i. split_kibl_fixture_name() accepts doubles              RED (wrong card)
+  j. BOOK moves to bet105 while the id stays 43             RED (mislabel)
+  k. the entitlement tie-break ignores BOOK                 RED (coin toss)
 
 A harness that has never been shown to fail proves nothing, which is why the
 list is the record of an actual run and not a plan.
@@ -409,6 +411,44 @@ check('two DIFFERENT books at one rank on one fixture drop on ambiguity',
       not any(r['is_selected'] for r in rows) and st['rank_tie_dropped'] == 1,
       dict(st))
 
+# ── THE ENTITLEMENT SWAP, 2026-09-19T14:07Z ─────────────────────────────────
+# Kibl replaced Sports411 (43) with Bet105 (171). odds_card_state therefore
+# holds legacy `sports411` rows AND new `bet105` rows, both written at
+# BOOK_RANK 1 — so a fixture quoted by both across the swap is a rank-1 tie.
+# Without the tie-break the check directly above would fire on it and the card
+# would go to a DASH: a price today, nothing tomorrow, for a reason that has
+# nothing to do with the market.
+rows, st = K.select_winners([srow('d|a|b', K.BOOK_RANK, 'kibl', book='sports411'),
+                             srow('d|a|b', K.BOOK_RANK, 'kibl', book=K.BOOK)])
+sel = [r for r in rows if r['is_selected']]
+check('a legacy-book row and an entitled-book row at one rank do NOT drop — '
+      'the swap is a fact, not a coin toss',
+      len(sel) == 1 and st.get('rank_tie_dropped', 0) == 0, dict(st))
+check('...and the ENTITLED book is the one selected; the legacy row is demoted, '
+      'never relabelled',
+      sel and sel[0]['book'] == K.BOOK, [r['book'] for r in sel])
+check('...and the resolution is COUNTED, so the day it fires is a number in the '
+      'summary rather than silence',
+      st.get('kibl_entitlement_tie_resolved', 0) == 1, dict(st))
+
+# CONTROL. Same shape, neither book entitled -> it must still drop. Without
+# this, a tie-break that simply picked the first row would pass every check
+# above.
+_c_rows, _c_st = K.select_winners([srow('d|a|b', K.BOOK_RANK, 'kibl', book='kiblA'),
+                                   srow('d|a|b', K.BOOK_RANK, 'kibl', book='kiblB')])
+check('CONTROL: two books at one rank with NEITHER entitled still drop',
+      not any(r['is_selected'] for r in _c_rows)
+      and _c_st['rank_tie_dropped'] == 1, dict(_c_st))
+
+# CONTROL. A rank that is not the Kibl slot must never be narrowed this way —
+# the tie-break is a statement about ONE source's book changing, not a licence
+# to break ties anywhere.
+_d_rows, _d_st = K.select_winners([srow('d|a|b', 2, 'oddspapi', book=K.BOOK),
+                                   srow('d|a|b', 2, 'oddspapi', book='other')])
+check('CONTROL: the tie-break does not reach a rank other than BOOK_RANK',
+      not any(r['is_selected'] for r in _d_rows)
+      and _d_st['rank_tie_dropped'] == 1, dict(_d_st))
+
 rows, _ = K.select_winners([srow('d|a|b', 1, 'kibl', side='1'),
                             srow('d|a|b', 1, 'kibl', side='2')])
 check('both SIDES of one match are selected together — the fixture is the unit, '
@@ -674,7 +714,11 @@ check('Now is withheld on a started fixture', r1['now_price'] is None)
 check('ts_kind says vendor-insert — founder: "Every Kibl timestamp is '
       'vendor-insert time, not book-post time. Label it that way in the data."',
       r1['ts_kind'] == 'vendor-insert')
-check('book is the book we are actually served', r1['book'] == 'sports411', r1['book'])
+# Was 'sports411' until 2026-09-20. Kibl SWAPPED the book on our credential
+# (43 Sports411 -> 171 Bet105, 2026-09-19T14:07Z) and the founder promoted
+# Bet105 to the card path once it passed its own side-mapping gate.
+check('book is the book we are actually served NOW — Bet105, not the '
+      'Sports411 it replaced', r1['book'] == 'bet105', r1['book'])
 check('book_rank is 1 (kibl is PRIMARY as of 2026-09-18)', r1['book_rank'] == 1)
 check('a filler never selects its own row', r1['is_selected'] is False)
 check('the stake limit is NULL, not the feed\'s 0.0 "not provided"',
@@ -837,11 +881,21 @@ _SRC_LINES = open(K.__file__).read().splitlines()
 _CODE = '\n'.join(
     ln.split('#', 1)[0] for ln in _SRC_LINES if not ln.lstrip().startswith('#'))
 
-check('VERIFIED_FEED_SOURCE_ID is 43 - Sports411, the ONLY book '
-      '/reference/sportsbooks returned (measured 2026-09-18T22:33Z, run '
-      '35401888326). Not a placeholder and not inferred.',
-      getattr(K, 'VERIFIED_FEED_SOURCE_ID', None) == 43,
+check('VERIFIED_FEED_SOURCE_ID is 171 - Bet105, the ONLY book '
+      '/reference/sportsbooks returns (measured 2026-09-20T23:18Z, run '
+      '35544209624; it REPLACED Sports411/43, which is gone). Promoted only '
+      'after its own gate passed 114/84/0 on run 35545303855.',
+      getattr(K, 'VERIFIED_FEED_SOURCE_ID', None) == 171,
       getattr(K, 'VERIFIED_FEED_SOURCE_ID', '<missing>'))
+
+check('the id and the LABEL moved together — an id pointing at Bet105 while '
+      'BOOK still said sports411 would stamp every Bet105 price with the name '
+      'of a book it did not come from, which is the exact breach this '
+      'constant was installed to prevent',
+      (getattr(K, 'VERIFIED_FEED_SOURCE_ID', None) == 171)
+      == (getattr(K, 'BOOK', None) == 'bet105'),
+      f"id={getattr(K, 'VERIFIED_FEED_SOURCE_ID', None)} "
+      f"book={getattr(K, 'BOOK', None)}")
 
 check('the constant is an int - "43" as a string builds an eq. filter that '
       'still matches, so the type is not cosmetic when it is later compared '
@@ -879,7 +933,7 @@ print('\nlast_seen_at — the only column a second sighting may move')
 
 _row = {'fixture_id': 7, 'side_id': 2, 'price_decimal': '1.91',
         'inserted_on': '2026-09-19T01:00:00Z', 'is_current': True,
-        'feed_source_id': 43, 'market_type_id': 1, 'segment_id': 1,
+        'feed_source_id': 171, 'market_type_id': 1, 'segment_id': 1,
         'betting_type_id': 1, 'fixture_participant_id': 11}
 _sum = A.to_summary(_row, '2026-09-19T01:05:00Z', 19, 'sw1', '{}')
 check('a BRAND-NEW row carries last_seen_at, and it equals observed_at — the '

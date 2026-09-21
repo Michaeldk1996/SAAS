@@ -138,21 +138,35 @@ try {
   console.log('');
   check('tooltips exist to be checked — a board with no titles would also show 0 Bet105',
         r.tipCount > 0, `${r.tipCount}`);
-  check('NO tooltip names Bet105', r.tipsBet105 === 0, `${r.tipsBet105}`);
-  check('"Bet105" appears nowhere in the text a member reads', r.visibleText === 0, `${r.visibleText}`);
-  check('"Bet105" appears nowhere in the served HTML at all, comments included',
-        r.anyHtml === 0, `${r.anyHtml}`);
-  check('the Kibl book is named on screen as sports411 and not as anything else',
-        (r.books.sports411 || 0) > 0, `sports411 tooltips: ${r.books.sports411 || 0}`);
+  // ⚠️ THESE ASSERTIONS WERE INVERTED ON 2026-09-20, and the inversion is the
+  // point. Until then they read "NO tooltip names Bet105" / "Bet105 appears
+  // nowhere", proving the founder's item-2 refusal while Bet105 was unverified.
+  // It then passed its own side-mapping gate (114 paired, 84 lopsided, 0
+  // disagreements on the favourite, run 35545303855) and the founder ruled
+  // promote. An absence-assertion kept past the ruling that authorised the
+  // presence is not a guard, it is a stale claim.
+  //
+  // What still has to hold is that the two books are never CONFLATED: Bet105 is
+  // the book we are served from 2026-09-19T14:07Z; sports411 rows written
+  // before that keep their own name, per the founder's 2026-09-18 ruling.
+  check('the Kibl book now renders as bet105 — the promotion is visible, not '
+        + 'merely merged', (r.books.bet105 || 0) > 0,
+        `bet105 tooltips: ${r.books.bet105 || 0}`);
+  check('nothing renders the two Kibl books under ONE name: a sports411 tooltip '
+        + 'is legacy and correct, but it may never carry a Bet105 price',
+        !/sports411[^·]*·[^·]*bet\s*105/i.test(JSON.stringify(r.books)), 'ok');
 
   const ocs = await ev('fetch("./odds-card-state.json",{cache:"no-store"}).then(r=>r.text())');
   const nB = (ocs.match(/bet105/ig) || []).length;
   const nS = (ocs.match(/sports411/ig) || []).length;
   console.log('');
   console.log(`  deployed odds-card-state.json — sports411 ${nS}, bet105 ${nB}`);
-  check('the published data file carries no Bet105 label', nB === 0, `${nB}`);
-  check('...and it is non-empty, so that zero was read rather than missed',
-        nS > 0, `${nS} sports411 rows`);
+  check('the published data file was read at all — without this, every count '
+        + 'below is a zero nobody looked for', ocs.length > 200, `${ocs.length} bytes`);
+  check('the published file now carries Bet105, so the promotion reached the '
+        + 'data and not only the code', nB > 0, `${nB} bet105 mentions`);
+  console.log(`  legacy sports411 mentions still on file: ${nS} (frozen history; `
+              + `no new one can arrive — 43 left the entitlement 2026-09-19T14:07Z)`);
 
   console.log('');
   console.log(FAILED.length ? `${FAILED.length} FAILED: ${JSON.stringify(FAILED)}`

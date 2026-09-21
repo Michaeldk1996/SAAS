@@ -73,7 +73,10 @@ import ten225_apitennis_odds as AT  # noqa: E402
 MATCHES = os.path.join(HERE, 'matches.json')
 
 MARKET = 'match winner'
-BOOK = 'sports411'          # the book we are actually served; NOT Bet105 (measured)
+BOOK = 'bet105'             # the book we are NOW served. See the swap note below.
+# Rows already written as `sports411` KEEP that label — founder, 2026-09-18:
+# "Everything already captured or published as sports411 keeps that label."
+# Nothing here rewrites them; this constant only stamps rows written FROM NOW.
 
 # ⚠️ ITEM 7 GUARD (founder directive 2026-09-18T22:01Z): "No Bet105 price reaches
 # a card until 5 passes." This constant is what enforces it, and it has to,
@@ -93,20 +96,31 @@ BOOK = 'sports411'          # the book we are actually served; NOT Bet105 (measu
 #   label must never imply another book) in the same write, silently, on a
 #   green run, with the archive behaving perfectly.
 #
-# MEASURED 2026-09-18T22:33Z, run 35401888326: /reference/sportsbooks returns
-# exactly ONE book — feed_source_id 43, name Sports411, tag `sports411`. Bet105
-# does NOT appear; the entitlement IS that list (a restricted account returns
-# 200 with fewer rows, never a 403), so this is an answer, not a failed call.
+# ⚠️ THE ENTITLEMENT SWAPPED. IT DID NOT GROW.
+# MEASURED 2026-09-20T23:18Z, run 35544209624: /reference/sportsbooks returns
+# exactly ONE book — **feed_source_id 171, name Bet105**, tag `bet105`.
+# **Sports411 (43) is GONE.** The change landed 2026-09-19T14:07:24Z (the stamp
+# the entitlement watch wrote into kibl-entitlement-baseline.json).
 #
-# So today this filter excludes nothing and is a no-op. That is exactly when it
-# is safe to install one. Raising it later, after a second book is already in
-# the table, would mean auditing which cards were built from which book after
-# the fact.
+# Until 2026-09-18 this note said the opposite — "Bet105 does NOT appear" —
+# and that was true when it was written and false the next day. It is corrected
+# rather than deleted, because a stale confident claim in a header is how the
+# next reader gets the answer wrong without ever re-measuring.
+#
+# The guard did its job in the meantime: between the swap and this promotion it
+# excluded EVERY Bet105 row (56,976 of them) from every card, on a green run,
+# while the archive captured them with no deploy. That is the whole design.
+#
+# Bet105 is here now because it PASSED ITS OWN GATE on its own data, not
+# because it inherited Sports411's: run 35545303855, 114 fixtures paired with an
+# independent source, 84 of them lopsided, **0 disagreements on the favourite**.
+# Founder ruled promote on 2026-09-20. Match winner only; the ladder is
+# unchanged (neither book is named in MX_BOOK_LADDER, so both rank 500).
 #
 # DO NOT widen this to "every book in the archive". A book is added here only
 # after its own side-mapping gate passes on its own data — the convention does
 # not carry over between sources, which is the whole reason the gate exists.
-VERIFIED_FEED_SOURCE_ID = 43
+VERIFIED_FEED_SOURCE_ID = 171
 SOURCE = 'kibl'
 BOOK_RANK = 1
 TS_KIND = 'vendor-insert'
@@ -136,9 +150,11 @@ OBS_COLUMNS = (
     # be evidenced rather than suppressed.
     'is_opener,is_current,price_decimal,inserted_on,observed_at,last_seen_at,alt_id,'
     # feed_source_id is SELECTED, not merely filtered on, so the projection can
-    # assert per row that every price it is about to stamp `sports411` actually
-    # came from Sports411. A filter alone is a promise about the query; reading
-    # the column back is a check on the answer.
+    # assert per row that every price it is about to stamp with BOOK actually
+    # came from VERIFIED_FEED_SOURCE_ID. A filter alone is a promise about the
+    # query; reading the column back is a check on the answer. It is keyed on
+    # the constants, not on a book name, so the entitlement swap of 2026-09-19
+    # could not leave the check pointing at a book we no longer receive.
     'is_main,point,feed_source_id')
 
 MARKET_TYPE_ID = 1
@@ -1085,6 +1101,30 @@ def select_winners(rows):
 
         best_tier, best_rank = scored[0][0], scored[0][1]
         winners = [s for s in scored if s[0] == best_tier and s[1] == best_rank]
+
+        # ⚠️ AN ENTITLEMENT SWAP IS NOT A COIN TOSS, AND WITHOUT THIS IT READS AS
+        # ONE. Kibl swapped Sports411 (43) for Bet105 (171) on 2026-09-19T14:07Z.
+        # `odds_card_state` therefore holds legacy `sports411` rows AND new
+        # `bet105` rows, both written by this file at BOOK_RANK 1 — so any fixture
+        # quoted by both books across the swap is a rank-1 tie, and the branch
+        # below would drop it. A card that shows a price today would go to a dash
+        # tomorrow for a reason that is not about the market at all.
+        #
+        # The tie-break is a FACT, not a preference: Sports411 is no longer served,
+        # so where both exist the Bet105 row is the live one and the Sports411 row
+        # is frozen history. Nothing is relabelled — the legacy row keeps its own
+        # book name and simply stops being selected.
+        #
+        # Narrow on purpose. It fires ONLY at BOOK_RANK (the Kibl slot, which no
+        # other source writes) and ONLY when exactly one tying book is the one we
+        # are currently entitled to. Two genuinely ambiguous books still drop,
+        # which is the refusal this branch exists for.
+        if len(winners) > 1 and best_rank == BOOK_RANK:
+            entitled = [w for w in winners if w[2] == BOOK]
+            if len(entitled) == 1:
+                st['kibl_entitlement_tie_resolved'] += 1
+                winners = entitled
+
         if len(winners) > 1:
             # Two books of one rank at one completeness on one fixture: two
             # fixtures of one source paired onto one match. Ambiguous -> nothing

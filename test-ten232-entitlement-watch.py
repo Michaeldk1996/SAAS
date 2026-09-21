@@ -14,6 +14,7 @@ waiting for Bet105 to actually appear — which is the one day the check must no
 be discovered to be broken.
 """
 import json
+import re
 import os
 import subprocess
 import sys
@@ -100,9 +101,23 @@ check('the same id carrying a DIFFERENT book is caught as a rename, not missed: 
 
 print('\n  — the card path still refuses a new book until its gate passes')
 CARD = open(os.path.join(HERE, 'ten225-kibl-card-state.py')).read()
-check('VERIFIED_FEED_SOURCE_ID is still the only book the card path admits, so a '
-      'newly activated book is captured by the sweep and REFUSED by the card',
-      'VERIFIED_FEED_SOURCE_ID = 43' in CARD)
+# ⚠️ DO NOT PIN THE ID HERE. This read `'VERIFIED_FEED_SOURCE_ID = 43' in CARD`
+# until 2026-09-20, when the founder promoted Bet105 (171) after its gate passed
+# — and a gate that goes red because a ruling was CARRIED OUT is not measuring
+# the thing it names. Same defect the baseline assertion below already had to be
+# rescued from. The guarantee is single-valued admission bound to a constant;
+# the value is TEN-232's business, not this gate's.
+_m = re.search(r'^VERIFIED_FEED_SOURCE_ID\s*=\s*(\d+)\s*$', CARD, re.M)
+check('the card path admits exactly ONE feed_source_id, and it is a bare int '
+      'constant a human has to move deliberately — not a list, not a wildcard',
+      _m is not None, '<no single-int assignment found>')
+check('...and the observation read is BOUND to that constant rather than to a '
+      'literal id, so promoting a book after its gate passes is one line and '
+      'cannot leave the filter pointing at the book it replaced',
+      'feed_source_id=eq.{VERIFIED_FEED_SOURCE_ID}' in CARD)
+check('...and nothing widens it to every book in the archive, which is the '
+      'failure this guard actually exists to catch',
+      'feed_source_id=in.' not in CARD and 'feed_source_id=neq.' in CARD)
 
 print('\n  — the baseline on disk matches what the account actually returned')
 bl = os.path.join(HERE, 'kibl-entitlement-baseline.json')
@@ -125,11 +140,13 @@ if os.path.exists(bl):
     # true of any genuine read and false of a hand-written placeholder, and it
     # does not go stale the next time the entitlement moves.
     #
-    # NOTE, and it is not cosmetic: the entitlement HAS moved, 43/Sports411 ->
-    # 171/Bet105, while VERIFIED_FEED_SOURCE_ID is still 43. The assertion above
-    # that the card path admits only book 43 still passes, so no unverified book
-    # can reach a card - but which book the account actually carries is now a
-    # live question for TEN-232, not something this gate should answer.
+    # NOTE: the entitlement moved 43/Sports411 -> 171/Bet105 on 2026-09-19T14:07Z,
+    # and on 2026-09-20 the founder promoted Bet105 to the card path after it
+    # passed its own side-mapping gate (114 paired, 84 lopsided, 0 disagreements,
+    # run 35545303855). VERIFIED_FEED_SOURCE_ID is now 171. The assertion above
+    # no longer names either number, deliberately: which book we carry is a live
+    # question for TEN-232, and a pre-deploy gate must not go red because the
+    # answer changed.
     books = d.get('books')
     check('the baseline is a real read: a non-empty {feed_source_id: book} map, '
           'not an invented placeholder',
