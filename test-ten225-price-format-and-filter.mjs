@@ -65,6 +65,43 @@ test('the boundary, from both sides', () => {
   assert.equal(mxOddsTxt(1.1), '1.10');
 });
 
+test('a TRAILING ZERO in the third decimal is dropped', () => {
+  // FOUNDER 2026-09-21, the examples verbatim: "1.012 keeps three, 1.020 drops
+  // to two, 1.004 keeps three."
+  assert.equal(mxOddsTxt(1.020), '1.02');
+  assert.equal(mxOddsTxt(1.090), '1.09');
+  assert.equal(mxOddsTxt(1.012), '1.012');
+  assert.equal(mxOddsTxt(1.004), '1.004');
+  // The rest of the band a live board actually carried on 2026-09-19.
+  for (const [v, want] of [[1.030, '1.03'], [1.050, '1.05'], [1.080, '1.08'],
+                           [1.025, '1.025'], [1.052, '1.052'], [1.068, '1.068'],
+                           [1.091, '1.091'], [1.001, '1.001'], [1.008, '1.008'],
+                           [1.010, '1.01']])
+    assert.equal(mxOddsTxt(v), want, `${v}`);
+});
+
+test('the two-decimal render is the three-decimal one MINUS the zero', () => {
+  // Not a second, independent rounding of the original value. They agree on
+  // every input either can receive — but a rule you can check by eye ("same
+  // digits, one fewer") is worth more than two roundings that happen to match.
+  for (let i = 1010; i < 1100; i++) {
+    const v = i / 1000, out = mxOddsTxt(v), three = v.toFixed(3);
+    assert.equal(out, three.endsWith('0') ? three.slice(0, -1) : three, `${v}`);
+  }
+});
+
+test('CONTROL: the PRE-change formatter disagrees on exactly the zero cases', () => {
+  // Without this, every assertion above would also pass on a formatter that
+  // had never been changed.
+  const pre = v => v < 1.10 ? v.toFixed(3) : v.toFixed(2);
+  assert.equal(pre(1.020), '1.020');                       // the defect, reproduced
+  assert.notEqual(pre(1.020), mxOddsTxt(1.020));
+  assert.notEqual(pre(1.090), mxOddsTxt(1.090));
+  // ...and agrees everywhere the ruling did not reach, so the change is narrow.
+  for (const v of [1.012, 1.004, 1.052, 1.22, 2.5, 17])
+    assert.equal(pre(v), mxOddsTxt(v), `${v} should be untouched`);
+});
+
 test('a non-price is still empty, not "0.000"', () => {
   for (const v of [null, undefined, 0, -1, NaN, Infinity, '1.20'])
     assert.equal(mxOddsTxt(v), '', String(v));

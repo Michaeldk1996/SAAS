@@ -7527,7 +7527,23 @@ function mxBookLabel(book){
 const MX_3DP_BELOW = 1.10;
 function mxOddsTxt(v){
   if (!(typeof v === 'number' && isFinite(v) && v > 0)) return '';
-  return v < MX_3DP_BELOW ? v.toFixed(3) : v.toFixed(2);
+  if (v >= MX_3DP_BELOW) return v.toFixed(2);
+  // FOUNDER 2026-09-21: "1.020 and 1.090 should read 1.02 and 1.09. The
+  // 3-decimals-below-1.10 rule stands, but only where the third decimal is
+  // non-zero: 1.012 keeps three, 1.020 drops to two, 1.004 keeps three."
+  //
+  // The third decimal earns its place by carrying information. On 1.012 it is
+  // the whole difference from 1.01; on 1.020 it is a zero that says nothing and
+  // makes a perfectly ordinary price look like a different KIND of number than
+  // the 1.02 on the card beside it.
+  //
+  // SLICED, not re-rounded. `v.toFixed(2)` would round the ORIGINAL value a
+  // second time, independently — so the two-decimal render would no longer be
+  // provably the three-decimal render with its last digit removed. They agree
+  // on every value either can receive, but "the same digits, minus a trailing
+  // zero" is a rule you can check by eye, and a second rounding is not.
+  const three = v.toFixed(3);
+  return three.endsWith('0') ? three.slice(0, -1) : three;
 }
 function mcPriceTitle(pair, px){
   if (!pair || !pair.book) return '';
@@ -8553,11 +8569,17 @@ function matchDayBucket(m){
 }
 
 function statusLabel(m){
-  // Suspended mid-play: the feed's own word for it ("Interrupted"/"Suspended"),
-  // in the same label slot as "Match completed" / "Yesterday". Checked before
-  // m.live because an interrupted match is explicitly NOT live — nothing is
-  // being played while it's suspended.
-  if (m.interrupted) return m.liveStatus || 'Interrupted';
+  // ⚠️ REMOVED 2026-09-21, founder ruling: the INTERRUPTED branch. It returned
+  // `m.liveStatus || 'Interrupted'` into the header's status slot, and the card
+  // ALREADY carries the same fact, with more in it, one row down:
+  //
+  //     Score  4-6, 2-2   at interruption · match suspended
+  //
+  // The chip repeated the weaker half of that and pushed the header onto two
+  // lines — the identical failure as the UNDERWAY chip, which is why it gets
+  // the identical treatment. This function now answers only for LIVE and for
+  // day buckets; an interrupted fixture never reaches it, because the single
+  // call site below is gated on `m.live` alone.
   if (m.live) return `LIVE${m.liveStatus ? ' · ' + m.liveStatus : ''}`;
   const day = matchDayBucket(m);
   if (day === 'past') return 'Finished';
@@ -9873,7 +9895,11 @@ function renderMatches(){
     // Header date-time sits with the left cluster (surface · tournament · round · time).
     // Per the export spec no relative "Today" tag appears — the date strip above already
     // states the selected day; a card whose day differs shows its actual date, muted.
-    const liveOrInt = m.live || m.interrupted;
+    // ⚠️ `liveOrInt` is GONE, and its removal is the fix. It routed an
+    // interrupted fixture into the LIVE header slot, which is what printed the
+    // chip. An interrupted match is explicitly NOT live — nothing is being
+    // played — so it now takes the ordinary date-time branch like any other
+    // card, and its suspension is told by the score line that already says it.
     const daySpecific = ['today','yesterday','tomorrow','daymin2','daymin3','day2','day3'].includes(state.day);
     // Cross-date search shows every row's date (the list spans multiple days), so the
     // selected-day strip no longer names the card's day.
@@ -9889,7 +9915,7 @@ function renderMatches(){
     const startWithDate = cardFmtStart(m, showAltDate);
     const rightMeta = isCompleted
       ? `<span class="mc-altdate-inl">${startWithDate}</span>`
-      : liveOrInt
+      : m.live
         ? `<span class="mc-status live">${statusLabel(m)}</span><span class="mc-time">${cardFmtStart(m, false)}</span>`
         // TEN-225 ruling 1 — start time and tournament only; no countdown suffix.
         : `<span class="mc-datetime">${startWithDate}</span>`;

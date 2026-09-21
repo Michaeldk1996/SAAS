@@ -79,6 +79,49 @@ test('what was KEPT: the terminal chip and the started-ness test', () => {
     'mcStarted is gone — the card can no longer tell an underway fixture from an upcoming one');
 });
 
+// ── THE INTERRUPTED CHIP, 2026-09-21 ────────────────────────────────────────
+// Kept in THIS file rather than a new one because it is the same defect class
+// and the same lesson: a header state-chip that was removed by ruling, and that
+// has to stay removed. One place to look beats two.
+//
+// FOUNDER: "The card already says 'SCORE 4-6, 2-2 at interruption · match
+// suspended', which is clearer and carries the real information. The chip
+// duplicates it and breaks the header line."
+test('the interrupted chip cannot come back through EITHER door', () => {
+  // Door 1 — the label function that produced the string.
+  assert.ok(/function statusLabel\(/.test(code), 'statusLabel is gone entirely');
+  const fn = code.slice(code.indexOf('function statusLabel('));
+  const body = fn.slice(0, fn.indexOf('\n}'));
+  assert.ok(!/m\.interrupted/.test(body),
+    'statusLabel has an m.interrupted branch again — it will print the chip');
+  assert.ok(/m\.live/.test(body), 'statusLabel lost its LIVE branch, which was NOT the ruling');
+
+  // Door 2 — the renderer branch that put it in the header slot. `liveOrInt`
+  // existed only to route an interrupted fixture into the LIVE slot.
+  assert.equal((code.match(/liveOrInt/g) || []).length, 0,
+    'liveOrInt is back — an interrupted card is being sent to the LIVE header slot again');
+  assert.ok(/: m\.live\s*\n?\s*\?\s*`<span class="mc-status live">/.test(code),
+    'the status slot is no longer gated on m.live alone');
+});
+
+test('what was KEPT: the score line that carries the real information', () => {
+  // The chip was removable precisely BECAUSE this row says more. If it ever
+  // goes, the removal stops being a simplification and starts being a loss.
+  assert.ok(/at interruption · match suspended/.test(code),
+    'the suspension score line is gone — removing the chip now costs information');
+  assert.ok(/mc-status live/.test(code),
+    'the LIVE status chip went with it, which was not the ruling');
+});
+
+test('the interrupted chip left no dead CSS behind', () => {
+  // Reported rather than assumed: .mc-status and .mc-status.live are STILL used
+  // by the LIVE branch, so neither is dead and neither is removed. There was no
+  // interrupted-only selector to delete — unlike .mc-underway, which had one.
+  assert.ok(/\.mc-status\.live\s*\{/.test(code), '.mc-status.live is still the LIVE chip and must stay');
+  assert.equal((code.match(/mc-interrupted|mc-suspended-chip/g) || []).length, 0,
+    'an interrupted-only class appeared — it would be dead the moment the chip is gone');
+});
+
 test('the TEN-206 fetch clobbered by the same commit is back', () => {
   // Same mistake, same commit, same fix: 1d6c042f reverted this too and nobody
   // noticed for a day. Asserting it here means the NEXT stale-blob clobber of
