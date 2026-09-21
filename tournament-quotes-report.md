@@ -1,6 +1,6 @@
 # Tournament quote import — report
 
-Generated `2026-09-20T02:33:00.543Z` by `tools/quotes/build-tournament-quotes.mjs`.
+Generated `2026-09-21T03:16:48.017Z` by `tools/quotes/build-tournament-quotes.mjs`.
 
 ## Headline
 
@@ -8,7 +8,7 @@ Generated `2026-09-20T02:33:00.543Z` by `tools/quotes/build-tournament-quotes.mj
 |---|---:|
 | Rows read (excl. header) | 509 |
 | Candidate records (player or text present) | 450 |
-| **Imported** | **424** |
+| **Imported** | **409** |
 | Events with at least one quote | 45 |
 | Events in our catalog with NO quote (no card) | 28 |
 | Dated / undated | 187 / 237 |
@@ -144,24 +144,24 @@ Only two alterations are ever made, and every one is listed. The WORDS are never
 | 373 | unwrapped outer "" |
 | 375 | unwrapped outer “” |
 
-**377 of 424** imported values already contain their own quotation marks — they are narration around reported speech, not clean quotations. Flagged per record as `selfQuoted`. See the report's presentation note.
+**377 of 409** imported values already contain their own quotation marks — they are narration around reported speech, not clean quotations. Flagged per record as `selfQuoted`. See the report's presentation note.
 
 ## Quotes per event
 
 | event | quotes | dated | undated |
 |---|---:|---:|---:|
 | Indian Wells | 31 | 0 | 31 |
-| Rome | 31 | 30 | 1 |
-| Madrid | 30 | 29 | 1 |
-| Australian Open | 26 | 0 | 26 |
+| Rome | 29 | 28 | 1 |
+| Madrid | 28 | 27 | 1 |
+| Australian Open | 24 | 0 | 24 |
 | Miami | 23 | 0 | 23 |
-| Munich | 20 | 20 | 0 |
 | Dubai | 19 | 0 | 19 |
+| Munich | 19 | 19 | 0 |
 | Wimbledon | 19 | 18 | 1 |
-| Shanghai | 17 | 0 | 17 |
-| Los Cabos | 14 | 13 | 1 |
+| Shanghai | 15 | 0 | 15 |
 | Roland Garros | 14 | 13 | 1 |
 | Washington | 14 | 13 | 1 |
+| Los Cabos | 13 | 12 | 1 |
 | Mallorca | 10 | 9 | 1 |
 | Tokyo | 10 | 0 | 10 |
 | Beijing | 9 | 0 | 9 |
@@ -170,16 +170,16 @@ Only two alterations are ever made, and every one is listed. The WORDS are never
 | Houston | 8 | 7 | 1 |
 | Monte Carlo | 8 | 8 | 0 |
 | Kitzbuhel | 7 | 6 | 1 |
-| Rio de Janeiro | 7 | 0 | 7 |
 | Adelaide | 6 | 0 | 6 |
 | Almaty | 6 | 0 | 6 |
 | Basel | 6 | 0 | 6 |
 | Bastad | 6 | 5 | 1 |
-| Brisbane | 6 | 0 | 6 |
 | Delray Beach | 6 | 0 | 6 |
+| Rio de Janeiro | 6 | 0 | 6 |
 | Barcelona | 5 | 4 | 1 |
 | Hamburg | 5 | 4 | 1 |
 | Acapulco | 4 | 0 | 4 |
+| Brisbane | 4 | 0 | 4 |
 | Chengdu | 4 | 0 | 4 |
 | Geneva | 4 | 3 | 1 |
 | Marrakech | 4 | 3 | 1 |
@@ -187,13 +187,13 @@ Only two alterations are ever made, and every one is listed. The WORDS are never
 | Doha | 3 | 0 | 3 |
 | Hong Kong | 3 | 0 | 3 |
 | Stockholm | 3 | 0 | 3 |
-| Vienna | 3 | 0 | 3 |
 | Auckland | 2 | 0 | 2 |
 | Bucharest | 2 | 0 | 2 |
-| Eastbourne | 2 | 1 | 1 |
 | Halle | 2 | 1 | 1 |
 | Montpellier | 2 | 0 | 2 |
+| Vienna | 2 | 0 | 2 |
 | Antwerp | 1 | 0 | 1 |
+| Eastbourne | 1 | 0 | 1 |
 | Hangzhou | 1 | 0 | 1 |
 
 ## Events with no quotes — **28** of 73 get NO card

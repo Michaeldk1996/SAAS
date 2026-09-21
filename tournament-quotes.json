@@ -1,11 +1,12 @@
 {
   "schemaVersion": 1,
-  "builtAt": "2026-09-20T02:33:00.527Z",
+  "builtAt": "2026-09-21T03:16:47.981Z",
   "source": "founder quote sheet (CSV export)",
   "ordering": "year desc, undated last, source order within a bucket (TEN-242 C5 — PROPOSED, awaiting ruling)",
   "counts": {
-    "imported": 424,
-    "events": 45
+    "imported": 409,
+    "events": 45,
+    "truncatedDropped": 15
   },
   "tournaments": {
     "Chengdu": [
@@ -337,27 +338,9 @@
         "playerRaw": "Djokovic",
         "playerMatch": "surname",
         "year": null,
-        "text": "Historically, the courts in Shanghai were among the fastest on the entire circuit, but since last year, they seemed to have slowed down somewhat,",
-        "selfQuoted": false,
-        "sourceRow": 47
-      },
-      {
-        "player": "N. Djokovic",
-        "playerRaw": "Djokovic",
-        "playerMatch": "surname",
-        "year": null,
         "text": "It's still a rather fast court; what has changed are the balls, which slow the game down a bit more. In any case, a good serve is a great advantage here. We are witnessing increased speed on all courts, like at the US Open, where the change from one year to the next was drastic. I consider it important for changes to be more gradual.",
         "selfQuoted": false,
         "sourceRow": 48
-      },
-      {
-        "player": "Tommy",
-        "playerRaw": "Tommy",
-        "playerMatch": "unmatched",
-        "year": null,
-        "text": "The balls get a little big, but the courts are nice and fast and they don’t bounce that high,",
-        "selfQuoted": false,
-        "sourceRow": 49
       },
       {
         "player": "T. Fritz",
@@ -512,15 +495,6 @@
     ],
     "Vienna": [
       {
-        "player": "F. Cobolli",
-        "playerRaw": "Cobolli",
-        "playerMatch": "surname",
-        "year": null,
-        "text": "VIENNA: \"[Indoor] is now one of my favorite conditions; on a court like this that isn’t very fast and where the balls bounce up I feel very comfortable,",
-        "selfQuoted": true,
-        "sourceRow": 74
-      },
-      {
         "player": "M. Berrettini",
         "playerRaw": "Berrettini",
         "playerMatch": "surname",
@@ -569,24 +543,6 @@
       }
     ],
     "Brisbane": [
-      {
-        "player": "A. Michelsen",
-        "playerRaw": "Michelsen",
-        "playerMatch": "surname",
-        "year": null,
-        "text": "\" The conditions are very fast,",
-        "selfQuoted": true,
-        "sourceRow": 86
-      },
-      {
-        "player": "A. Michelsen",
-        "playerRaw": "Michelsen",
-        "playerMatch": "surname",
-        "year": null,
-        "text": "\"It was definitely tough out there. The conditions are very fast and he was hitting the ball well,",
-        "selfQuoted": true,
-        "sourceRow": 87
-      },
       {
         "player": "Mpetshi",
         "playerRaw": "Mpetshi",
@@ -803,15 +759,6 @@
         "sourceRow": 116
       },
       {
-        "player": "D. Medvedev",
-        "playerRaw": "Medvedev",
-        "playerMatch": "surname",
-        "year": null,
-        "text": "The conditions felt slow, so we were both breaking each other’s serve a lot,",
-        "selfQuoted": false,
-        "sourceRow": 117
-      },
-      {
         "player": "C. Alcaraz",
         "playerRaw": "Alcaraz",
         "playerMatch": "surname",
@@ -873,15 +820,6 @@
         "text": "AUSTRALIAN OPEN: \"I played Casper in Cincinnati in relatively lively conditions,\" Purcell said. \"Balls are a little lighter there and more bouncy, but it’s hot here.\"",
         "selfQuoted": true,
         "sourceRow": 124
-      },
-      {
-        "player": "T. Machac",
-        "playerRaw": "Machac",
-        "playerMatch": "surname",
-        "year": null,
-        "text": "I play well here, the surface is quite fast,",
-        "selfQuoted": false,
-        "sourceRow": 125
       },
       {
         "player": "Murray",
@@ -1171,15 +1109,6 @@
         "text": "comparing the South American clay courts to the European: \"These are frankly completely different conditions. The humidity, the clay is much heavier. In South America, it's quite fast but you have to hit ten balls just to make a point. It did however allow me to train a lot on the surface. I was a little sick at the start of the South American swing but at the end of Rio de Janeiro and in Santiago, we worked well. Now, I feel comfortable travelling and playing the game. Some people haven't played on clay for a year... We'll say that South America was a great experience. I didn't win many matches, but I trained well. Now I'm fine.\"",
         "selfQuoted": true,
         "sourceRow": 162
-      },
-      {
-        "player": "C. Norrie",
-        "playerRaw": "Norrie",
-        "playerMatch": "surname",
-        "year": null,
-        "text": "\"I feel like the balls get quite big so it's, it can be quite slow and the court is quite heavy and it was,",
-        "selfQuoted": true,
-        "sourceRow": 163
       },
       {
         "player": "C. Norrie",
@@ -2367,15 +2296,6 @@
         "sourceRow": 306
       },
       {
-        "player": "F. Cerundolo",
-        "playerRaw": "F Cerundolo",
-        "playerMatch": "exact",
-        "year": 2025,
-        "text": "On the Munich conditions: \"The ball bounces a lot. It’s a little bit fast, not too much. The weather is fantastic. I thought it was going to be colder,",
-        "selfQuoted": true,
-        "sourceRow": 307
-      },
-      {
         "player": "J-L. Struff",
         "playerRaw": "Struff",
         "playerMatch": "surname",
@@ -2612,15 +2532,6 @@
         "sourceRow": 335
       },
       {
-        "player": "T. Fritz",
-        "playerRaw": "Fritz",
-        "playerMatch": "surname",
-        "year": 2024,
-        "text": "It bounces very high here, so it's great for me forehand,",
-        "selfQuoted": false,
-        "sourceRow": 336
-      },
-      {
         "player": "K. Khachanov",
         "playerRaw": "Khachanov",
         "playerMatch": "surname",
@@ -2664,15 +2575,6 @@
         "text": "on Madrid: “The altitude is good for me. I’ve played in Madrid since I was little and I’m very comfortable. The altitude benefits my game and the energy of the fans really spurs me on.\" On playing Seyboth Wild: \"He’s a very good player, with a lot of shots. Today he beat Musetti and he’s on a roll. I’ve seen him several times and I think his level is very high.\"",
         "selfQuoted": true,
         "sourceRow": 341
-      },
-      {
-        "player": "J. Sinner",
-        "playerRaw": "Sinner",
-        "playerMatch": "surname",
-        "year": 2024,
-        "text": "\"Here in Madrid the conditions are somewhat different compared to other tournaments, because we play with altitude, the ball flies and is quite fast,",
-        "selfQuoted": true,
-        "sourceRow": 342
       },
       {
         "player": "S. Baez",
@@ -2739,15 +2641,6 @@
       }
     ],
     "Rome": [
-      {
-        "player": "J. Sinner",
-        "playerRaw": "Sinner",
-        "playerMatch": "surname",
-        "year": 2026,
-        "text": "\"It was very tough conditions with the wind, and Andrey is a very dangerous player when he plays at his highest level. I don’t think either of us played our best tennis today because the conditions were difficult,",
-        "selfQuoted": true,
-        "sourceRow": 351
-      },
       {
         "player": "D. Medvedev",
         "playerRaw": "Medvedev",
@@ -2828,15 +2721,6 @@
         "text": "These are conditions that are very hard for me. The balls stay very heavy all the time, it's cold, it doesn't move very fast.",
         "selfQuoted": false,
         "sourceRow": 360
-      },
-      {
-        "player": "U. Humbert",
-        "playerRaw": "Humbert",
-        "playerMatch": "surname",
-        "year": 2026,
-        "text": "the conditions were really different, it wasn't fast at all, it was cold, quite humid,",
-        "selfQuoted": false,
-        "sourceRow": 361
       },
       {
         "player": "A. Zverev",
@@ -3346,15 +3230,6 @@
     ],
     "Eastbourne": [
       {
-        "player": "M. Giron",
-        "playerRaw": "Giron",
-        "playerMatch": "surname",
-        "year": 2024,
-        "text": "The conditions were a little tough, it was a little slick, I think both of us had a tough time moving,",
-        "selfQuoted": false,
-        "sourceRow": 432
-      },
-      {
         "player": "T. Fritz",
         "playerRaw": "Fritz",
         "playerMatch": "surname",
@@ -3787,15 +3662,6 @@
       }
     ],
     "Los Cabos": [
-      {
-        "player": "R. Pacheco Mendez",
-        "playerRaw": "Mendez",
-        "playerMatch": "surname",
-        "year": 2026,
-        "text": "The conditions were very difficult to play in, there was a lot of wind on the court and the ball flew a lot,",
-        "selfQuoted": false,
-        "sourceRow": 496
-      },
       {
         "player": "M. Zheng",
         "playerRaw": "Zheng",

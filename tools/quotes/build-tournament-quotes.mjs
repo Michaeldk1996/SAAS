@@ -175,13 +175,45 @@ const body = rows.slice(1); // header
 
 const PREFIX_RE = /^\s*([A-Z][A-Z\s.\-’'&,]{2,30}?)\s*:/;
 const out = {};                       // canonical event -> [quote]
+// ---------------------------------------------------------- truncation drop
+// Founder ruling 2026-09-21: a quote that stops mid-sentence puts half a
+// statement in a named player's mouth. Dropped HERE, at the import boundary,
+// not in the renderer — this script is run by pipeline.yml, so a fix anywhere
+// downstream is undone on the next import.
+//
+// THE RULE, stated exactly because the obvious one over-fires:
+//   drop when, after stripping trailing whitespace and any trailing closing
+//   quote/bracket, the text ends on a COMMA.
+//
+// "no terminal punctuation" ALONE is not the rule, and measuring it is why.
+// Over the 424 imported records it flags 34; only 15 of those are genuinely
+// cut mid-clause. The other 19 are complete sentences the source simply never
+// punctuated — "The conditions are a little slower", "these balls (Wilson) are
+// better". Dropping those removes true, whole statements, which is the opposite
+// of the defect. A trailing comma is the one signal that is unambiguous: no
+// sentence ends on one, so the source was cut.
+//
+// KNOWN BLIND SPOT, stated rather than papered over: a quote cut mid-WORD whose
+// final fragment happens to be a real word is invisible here. One record does
+// this — Shanghai / T. Fritz, "...it's a bit, I fee" (feel). There is no
+// character cap to key on (lengths run 31-1195 with no clustering), so catching
+// it needs a dictionary or a hand-maintained list, and a hand-maintained list of
+// bad rows goes stale silently. Reported to the founder instead of guessed at.
+const TRAILING_CLOSERS = /[\s"'\u201d\u2019)\]}\u00bb]+$/;
+function endsOnComma(text) {
+  let t = String(text == null ? '' : text);
+  let prev;
+  do { prev = t; t = t.replace(TRAILING_CLOSERS, ''); } while (t !== prev);
+  return t.endsWith(',');
+}
+
 const R = {                           // the report
   rowsRead: body.length, candidates: 0,
   imported: 0, noPlayerCell: 0,
   unmappedGroup: new Map(), nullGroup: new Map(),
   unresolvedPrefix: new Map(), conflicts: [],
   nonPlayer: [], ambiguousPlayer: [], normalised: 0, keptSourceSpelling: 0, yearAsPlayer: [],
-  altered: [], withYear: 0, withoutYear: 0, carriesOwnQuotes: 0,
+  altered: [], withYear: 0, withoutYear: 0, carriesOwnQuotes: 0, truncatedDropped: [],
   years: new Set(),
 };
 const bump = (m, k, row) => { if (!m.has(k)) m.set(k, []); m.get(k).push(row); };
@@ -240,6 +272,14 @@ for (let i = 0; i < body.length; i++) {
 
   if (curY) R.withYear++; else R.withoutYear++;
 
+  // The truncation drop. Counted, never silent: a record that vanishes from the
+  // artefact with no number anywhere is indistinguishable from one the parser
+  // failed to see.
+  if (endsOnComma(h.text)) {
+    R.truncatedDropped.push({ row: lineNo, event: group, player, tail: h.text.slice(-60) });
+    continue;
+  }
+
   (out[group] ||= []).push({
     player, playerRaw: pCell, playerMatch: pr.status,
     year: curY ? Number(curY) : null,     // (b) null is null. Never inferred.
@@ -264,7 +304,8 @@ fs.writeFileSync(OUT, JSON.stringify({
   builtAt: new Date().toISOString(),
   source: 'founder quote sheet (CSV export)',
   ordering: 'year desc, undated last, source order within a bucket (TEN-242 C5 — PROPOSED, awaiting ruling)',
-  counts: { imported: R.imported, events: events.length },
+  counts: { imported: R.imported, events: events.length,
+            truncatedDropped: R.truncatedDropped.length },
   tournaments: out,
 }, null, 2) + '\n');
 
