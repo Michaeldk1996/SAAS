@@ -1,0 +1,94 @@
+# ATP headshot reachability probe — REPORT ONLY, commits nothing.
+#
+# Founder 2026-09-21: the 403s I measured came from this machine, and ATP
+# blocking datacenter IPs while allowing ordinary browsers is standard
+# anti-scraping — so the result may be about where the request comes FROM
+# rather than about the images. A GitHub Actions runner is a different network
+# entirely, and it is also the network that would have to fetch the images if
+# we ever mirror them into the repo. That makes it the right place to ask.
+#
+# It fetches a SEEDED random 20 of the aliases in player-atp-aliases.json and
+# prints every status code. Seeded so a re-run probes the same 20 and a
+# different answer means ATP changed its mind, not that we drew a different
+# hand.
+#
+# Deliberately NOT on a schedule and NOT wired into any other job: this is a
+# measurement, and a scheduled probe against a third party's CDN is a scraper.
+name: ATP headshot probe (manual, report-only)
+
+on:
+  workflow_dispatch:
+    inputs:
+      sample:
+        description: 'How many aliases to probe (default 20)'
+        required: false
+        default: '20'
+      seed:
+        description: 'Sampling seed, so a re-run probes the same aliases'
+        required: false
+        default: '21'
+
+permissions:
+  contents: read            # read-only: this job must never write to the repo
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Probe ATP headshot URLs
+        env:
+          SAMPLE: ${{ github.event.inputs.sample }}
+          SEED: ${{ github.event.inputs.seed }}
+        run: |
+          python3 - <<'PY'
+          import json, os, random, subprocess, collections
+          n    = int(os.environ.get('SAMPLE') or 20)
+          seed = int(os.environ.get('SEED') or 21)
+
+          # The denylist is the shipped one: these four aliases are known
+          # grey-silhouette placeholders and are skipped by the dashboard too,
+          # so probing them would measure something we never request.
+          DENY = {'J194', 'E155', 'W133', 'G285'}
+          aliases = json.load(open('player-atp-aliases.json'))
+          live = sorted({v for v in aliases.values() if v not in DENY})
+          print(f'player-atp-aliases.json: {len(aliases)} entries, '
+                f'{len(DENY)} denylisted, {len(live)} distinct live aliases')
+
+          random.seed(seed)
+          pick = random.sample(live, min(n, len(live)))
+          print(f'probing {len(pick)} of them, seed={seed}\n')
+
+          codes = collections.Counter()
+          rows  = []
+          for a in pick:
+              url = f'https://www.atptour.com/-/media/alias/player-headshot/{a}'
+              # No Referer at all — this is what the shipped <img> sends, since
+              # it carries referrerpolicy="no-referrer".
+              out = subprocess.run(
+                  ['curl', '-s', '-o', '/dev/null', '--max-time', '25',
+                   '-w', '%{http_code} %{content_type} %{size_download}', url],
+                  capture_output=True, text=True).stdout.strip()
+              parts = (out.split() + ['', '', ''])[:3]
+              codes[parts[0]] += 1
+              rows.append((a, parts[0], parts[1], parts[2]))
+              print(f'  {a:<8} HTTP {parts[0]:<5} {parts[1]:<30} {parts[2]}B')
+
+          ok = codes.get('200', 0)
+          print(f'\nRESULT  {ok}/{len(pick)} returned HTTP 200')
+          print('status codes: ' + ', '.join(f'{k} x{v}' for k, v in sorted(codes.items())))
+
+          # If they load here, the next question is what mirroring them costs.
+          if ok:
+              tot = sum(int(r[3]) for r in rows if r[1] == '200' and r[3].isdigit())
+              per = tot / ok
+              print(f'\nsampled bytes: {tot:,} over {ok} images = {per:,.0f} avg')
+              print(f'EXTRAPOLATED for all {len(live)} live aliases: '
+                    f'{per * len(live) / 1024 / 1024:.1f} MB '
+                    f'(an extrapolation from {ok} images, not a measurement of {len(live)})')
+
+          # Report-only: a 403 here is the ANSWER, not a failure of this job.
+          print('\n(report-only — this job does not fail on a 403, the code above IS the result)')
+          PY

@@ -4476,33 +4476,40 @@ function nextShardCacheEntry(cached, profile, nowIso) {
 //       wins to "Qualifying" (TEN-89 re-key, founder ruling 2026-08-28). Bumped
 //       so the ~370 cached opponent profiles rebuild with the corrected labels
 //       instead of serving the stripped careerMatches until they age out.
-const PROFILE_SCHEMA_VERSION = 14; // v14: recent-form rows carry `tier` (atp/challenger/itf) for the name restyle (TEN-104, 2026-08-29)
-// TEN-244 DELIBERATELY DOES NOT BUMP THIS, and the reason is worth keeping.
+// v15 = TEN-244. FORCES THE PROFILE-CACHE REBUILD so the per-set `sets`,
+//       `incomplete` and `altFormat` fields reach every cached opponent at once
+//       instead of over the 14-day TTL. Founder-authorised 2026-09-21.
+const PROFILE_SCHEMA_VERSION = 15;
+
+// ─── WHY v15 EXISTS, AND WHAT IT COSTS — read this before bumping again ──────
 //
-// Bumping would be the fastest way to push the new `sets`/`incomplete` fields
-// into the store: writeCareerHistoryShards reads `careerMatches` off the
-// PROFILE, and pass 2 reuses a cached profile wholesale while
-// `cached.v === PROFILE_SCHEMA_VERSION`, so a cached player keeps his old
-// games-less rows for the full 14-day TTL. Seed players rebuild every run and
-// pick the fix up immediately; cached opponents do not.
+// This was held from 2026-09-20 to 2026-09-21 on a measured risk, and the thing
+// that released it was NOT a change in the risk. It was the founder telling me
+// the dashboard carries no members yet: every argument for waiting was about
+// protecting a member from a wrong number, and there is no member to protect.
+// The data-integrity rule is untouched — dashes stay dashes, counts stay
+// visible — only the timing caution moved.
 //
-// What stopped it, measured rather than assumed:
+// THE RISK IS STILL REAL, so it is written here rather than deleted:
 //   - Pass 2 has a 400-build count cap and NO wall-clock guard, and this file's
 //     own note at MAX_OPPONENT_BUILDS_PER_RUN records 400 builds taking 1,814 s
 //     = 30.2 min against pipeline.yml's `timeout-minutes: 30`. A killed job
 //     writes NOTHING. The first post-bump run is precisely the run that has to
-//     rebuild the whole pool.
+//     rebuild the whole pool, so it is the run most likely to be killed.
 //   - Pass 2b is capped at MAX_SHARD_BUILDS_PER_RUN (60) plus a 6-minute
 //     budget, so convergence is ~6 runs, not the two a count-only reading
 //     suggests.
 //   - A player not reached in a run is OMITTED, and writePlayerShardsAndIndex
 //     unlinks `profiles/` before rewriting from the surviving set — so the
 //     published roster shrinks for that run, and the deploy gate only asserts
-//     n > 0, so it would ship silently. That is TEN-219's failure mode.
+//     n > 0, so it ships silently. That is TEN-219's failure mode, and it is
+//     STILL OPEN: the inadequate floor is reported to the founder separately
+//     and is his call, not something this bump fixed.
 //
-// So the accelerator is a founder call, not a mine. Without it the fields still
-// arrive — immediately for seed players, and for the rest as the 14-day TTL
-// churns — which is slower but cannot take the roster down.
+// So if you are reading this because the roster dropped: that is the known
+// cost, it was accepted knowingly on a members-free dashboard, and the next
+// run refills it. Do not bump this again on a dashboard that has members
+// without re-reading all three bullets above.
 
 // Full-career tournament history. Each player's entire ATP-singles history is
 // fetched in ONE get_fixtures call (date_start=2000-01-01) and reduced to a
