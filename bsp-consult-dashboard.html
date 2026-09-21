@@ -28215,27 +28215,56 @@ window.DatabaseTab = (function(){
     // COVERAGE, ON SCREEN AND IN PLAIN TEXT — the founder's requirement, and the
     // thing that stops a partial rate reading as a career rate. Stated as a
     // count over its denominator, never as a bare percentage.
+    // TWO DIFFERENT SHORTFALLS, AND THEY MUST NOT BE ADDED TOGETHER.
+    //   excluded  unfinished (retired/walkover/defaulted) or a different format
+    //             (NextGen). Ruled out by TEN-244 and PERMANENT - these never
+    //             come back, however complete the backfill gets.
+    //   noGames   the row is eligible but has no per-set score yet. This is the
+    //             only one the backfill can still move.
+    // The old label said "Games on 319 of 374" and folded both into the gap,
+    // which read as missing data when 100% of the rows carried games and the 55
+    // were the ruling doing its job.
     var cov=el('div','db-rcount');
     cov.textContent = total
-      ? ('Games on ' + have.toLocaleString() + ' of ' + total.toLocaleString() + ' matches (' +
-         (have/total*100).toFixed(1) + '%)' +
-         (part.excluded ? ' · ' + part.excluded + ' excluded as unfinished or a different format' : ''))
+      ? ('Lines computed on ' + have.toLocaleString() + ' of ' + total.toLocaleString() +
+         ' matches (' + (have/total*100).toFixed(1) + '%)' +
+         (part.excluded ? ' · ' + part.excluded + ' excluded as unfinished or a different format' : '') +
+         (part.noGames ? ' · ' + part.noGames + ' still awaiting per-set games' : ''))
       : 'No matches on record at this slice.';
     host.appendChild(cov);
 
+    // THE PARTIAL-RATE NOTE COMES DOWN WHEN THE BACKFILL IS DONE, per the founder's
+    // ~90% rule - and it keys on `noGames`, the only shortfall that can still move.
+    // Keyed on `have/total` it would never come down for a player with a lot of
+    // retirements, because those 55 are not late, they are ruled out. Worse, it
+    // promised "it will move as the rest land" about rows that will never land.
+    // Measured on the v15 store: per-player games coverage is 98.2-100%, median
+    // 99.4%, 0 of 16 sampled players below 90%.
     var note=el('div','db-unwired');
-    var pct = total ? (have/total*100) : 0;
+    var gamesPct = (have + part.noGames) ? (have / (have + part.noGames) * 100) : 100;
+    var stillArriving = part.noGames > 0 && gamesPct < 90;
     note.innerHTML =
-      esc('THIS IS A PARTIAL RATE, NOT A CAREER RATE. Per-set games are still arriving: ' +
-          have.toLocaleString() + ' of this player’s ' + total.toLocaleString() +
-          ' matches carry them (' + pct.toFixed(1) + '%). Every rate below is computed over those ' +
-          have.toLocaleString() + ' and no others, so it will move as the rest land.') +
+      (stillArriving
+        ? esc('THIS IS A PARTIAL RATE, NOT A CAREER RATE. Per-set games are still arriving: ' +
+              part.noGames.toLocaleString() + ' of this player’s ' + (have + part.noGames).toLocaleString() +
+              ' eligible matches do not carry them yet (' + gamesPct.toFixed(1) + '% do). Every rate below is ' +
+              'computed over the ' + have.toLocaleString() + ' that do and no others, so it will move as the rest land.') + '<br>'
+        : '') +
+      // This one is NOT provisional and never comes down: the exclusions are a
+      // ruling, so a reader has to be told the denominator is not the career.
+      esc('Rates are computed only on finished, standard-format matches. Retirements, walkovers and NextGen are excluded, so this is not a career rate.') +
       '<br>' + esc('Field, Vs field and Ranking are not wired: each needs a rate for every player in the field, which is one fetch per player. Those three columns are dashes rather than a stand-in computed from a subset.');
     host.appendChild(note);
 
     if(!have){
+      // Say WHICH of the two emptied it. "No games on record yet" is a promise
+      // that more are coming, and it is a lie for a player whose every match was
+      // a retirement or a NextGen tie - for them nothing is pending.
       var none=el('div','db-empty');
-      none.innerHTML='<h3>No games on record yet</h3><p>'+esc(nm+' has '+total.toLocaleString()+' matches at this slice and none of them carry per-set games yet, so every line is a dash rather than a 0% hit rate.')+'</p>';
+      var why = part.noGames
+        ? nm+' has '+total.toLocaleString()+' matches at this slice and none of them carry per-set games yet, so every line is a dash rather than a 0% hit rate.'
+        : nm+' has '+total.toLocaleString()+' matches at this slice and every one is unfinished or a different format, so none can be priced. Every line is a dash rather than a 0% hit rate.';
+      none.innerHTML='<h3>'+esc(part.noGames ? 'No games on record yet' : 'Nothing priceable at this slice')+'</h3><p>'+esc(why)+'</p>';
       host.appendChild(none);
       return;
     }

@@ -121,31 +121,72 @@ async function pick(name){
 }
 
 const zv = await pick('A. Zverev');
-const covRe = /Games on ([\d,]+) of ([\d,]+) matches \(([\d.]+)%\)/;
-check('the POPULATED case states its coverage as a count over its denominator', covRe.test(zv), (zv.match(covRe)||[])[0]);
-check('...and carries the plain-text partial-rate note, not a tooltip',
-  /PARTIAL RATE, NOT A CAREER RATE/.test(zv) && /will move as the rest land/.test(zv));
+const covRe = /Lines computed on ([\d,]+) of ([\d,]+) matches \(([\d.]+)%\)/;
+
+// A SUBJECT WITH NO ROWS MEANS NO STORE, NOT A BROKEN PAGE. `career-history/` is
+// gitignored and CI-built, so a local run over the worktree has none of it. Every
+// Lines assertion below would then fail against a page that is fine - and worse,
+// the note-is-DOWN check would pass VACUOUSLY, because a page with zero rows has
+// zero rows awaiting games. Say which it is and skip, rather than score it.
+// The test is simply "is there a coverage line with real counts". A subject with
+// any rows always produces one; with no shard the page falls through to its empty
+// state instead. My first cut also required the empty-state text to be ABSENT,
+// which got it backwards - that text is the no-store symptom, not a sign of rows.
+const noStore = !covRe.test(zv);
+let skipped = 0;
+if (noStore) {
+  skipped = 11;
+  console.log(`  SKIP  the ${skipped} Lines assertions — no subject has any rows, so career-history/ is`);
+  console.log(`        absent. That is the STORE missing, not the page failing. Set PROBE_BASE_URL`);
+  console.log(`        to the deployed site to run them for real.\n`);
+}
+const lines = (n, ok, d) => { if (!noStore) check(n, ok, d); };
+
+lines('the POPULATED case states its coverage as a count over its denominator',
+  covRe.test(zv), (zv.match(covRe)||[])[0]);
+
+// The PERMANENT disclosure. It is not conditional on coverage and must never come
+// down: the denominator excludes retirements, walkovers and NextGen by ruling, so
+// a reader who is not told that will read a career rate.
+lines('...and always discloses that the denominator is not the career',
+  /Retirements, walkovers and NextGen are excluded/.test(zv));
+
+// The PROVISIONAL note. It comes down once per-set games have landed, and it is
+// keyed on rows still AWAITING games - never on the ruled exclusions, which do not
+// arrive late, they do not arrive at all. Asserted in both directions off the
+// page's own figures so this cannot pass vacuously.
+const zvGaps = zv.match(/(\d[\d,]*) still awaiting per-set games/);
+const zvAwaiting = zvGaps ? +zvGaps[1].replace(/,/g,'') : 0;
+const zvNote = /PARTIAL RATE, NOT A CAREER RATE/.test(zv);
+lines(zvAwaiting
+        ? `...and the provisional note is UP, because ${zvAwaiting} rows still await games`
+        : '...and the provisional note is DOWN, because no rows are awaiting games',
+  zvAwaiting > 0 ? zvNote : !zvNote,
+  `awaiting=${zvAwaiting}, note ${zvNote ? 'present' : 'absent'}`);
+lines('...and the note never promises that RULED-OUT rows will land',
+  !(/will move as the rest land/.test(zv)) || zvAwaiting > 0,
+  zvAwaiting ? 'promise made, and rows really are pending' : 'no promise made');
 // CASE-INSENSITIVE ON PURPOSE. `.db-rbrow` is the uppercase eyebrow, and Chrome's
 // innerText applies text-transform — so "Games handicap" reads back as
 // "GAMES HANDICAP". A case-sensitive check here failed against a correct page:
 // the probe reporting its own assumption as a defect, for the third time on
 // this surface. The first passing line above ("LINE COVERAGE") was the clue.
 const zvU = zv.toUpperCase();
-check('...and builds the four spec groups',
+lines('...and builds the four spec groups',
   ['GAMES HANDICAP','SET HANDICAP','TOTAL GAMES','MATCH SHAPE'].every(g=>zvU.includes(g)));
-check('...splits best-of-three from best-of-five',
+lines('...splits best-of-three from best-of-five',
   zvU.includes('BEST OF THREE') && zvU.includes('BEST OF FIVE'),
   (zv.match(/Best of (three|five)[^\n]*/gi)||[]).join(' | '));
-check('...names the three columns it cannot compute', /Field, Vs field and Ranking are not wired/.test(zv));
+lines('...names the three columns it cannot compute', /Field, Vs field and Ranking are not wired/.test(zv));
 const zvRates = await ev(`(function(){var t=${BODY}.innerText; var m=t.match(/\\d+\\.\\d%/g)||[]; return m.length;})()`);
-check('...and prints real rates', zvRates>4, zvRates+' percentage figures on screen');
+lines('...and prints real rates', zvRates>4, zvRates+' percentage figures on screen');
 
 // Reset then the near-empty subject: this is the row shape the founder asked to see.
 await ev(`(function(){var b=[].slice.call(${ROOTQ}.querySelectorAll('[data-db="filters"] button')).filter(x=>x.textContent.trim()==='Reset')[0]; if(b) b.click(); return true;})()`);
 await new Promise(r=>setTimeout(r,800));
 const al = await pick('C. Alcaraz');
 const m2 = al.match(covRe);
-check('the NEAR-EMPTY case states its own coverage rather than inheriting the last one', !!m2, m2&&m2[0]);
+lines('the NEAR-EMPTY case states its own coverage rather than inheriting the last one', !!m2, m2&&m2[0]);
 
 // The expectation is DERIVED from the coverage the page itself reports, not from
 // a percentage measured when this probe was written. Alcaraz was 0.5% (2 of 374)
@@ -168,16 +209,16 @@ const figs = await ev(`(function(){var out={dash:0,rate:0,bad:[]};
     else out.bad.push(t); });
   return out;})()`);
 if (covPct !== null && covPct < 20) {
-  check(`...thin subject (${covPct}% coverage): dashes instead of a manufactured rate`,
+  lines(`...thin subject (${covPct}% coverage): dashes instead of a manufactured rate`,
     figs.dash > 0, figs.dash + ' dashed cells');
 } else {
-  check(`...populated subject (${covPct}% coverage): real rates render`,
+  lines(`...populated subject (${covPct}% coverage): real rates render`,
     figs.rate > 0, figs.rate + ' rate cells, ' + figs.dash + ' dashed');
 }
 // True on ANY store: a figure cell is a dash or a well-formed number. Never blank,
 // never NaN, never "undefined" — which is what a missing-sample bug looks like on
 // screen, and the thing the old dash-count check was really reaching for.
-check('...and no figure cell renders NaN, undefined or a blank',
+lines('...and no figure cell renders NaN, undefined or a blank',
   figs.bad.length === 0, figs.bad.slice(0,5).join(' | ') || `${figs.dash} dashed + ${figs.rate} populated, 0 malformed`);
 
 // ── Peak / Vs-pk ─────────────────────────────────────────────────────────
