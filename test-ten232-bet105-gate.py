@@ -143,8 +143,16 @@ check('the segment match is EXACT, not a substring',
       'a substring match folds First Set into Sets')
 check('the set-level asks name the SETS segment explicitly',
       "{'sets'}" in exec_code)
-check('the First Set near-misses are printed beside them, not hidden',
-      'FIRST SET' in src and "{'first set'}" in exec_code)
+# The market half had the identical defect and it was fixed second: `total`
+# matched **Team Total** and reported total games as 25,366 instead of 11,707.
+check('the market type is matched EXACTLY too, not as a substring',
+      'mn in mnames' in exec_code and 'any(x in mn for x in mnames)' not in exec_code,
+      'a substring match folds Team Total into Total')
+check('the near-miss markets are printed beside them, not hidden',
+      'first set' in src.lower() and "{'first set'}" in exec_code
+      and 'team total' in src.lower() and "{'team total'}" in exec_code,
+      'First Set (a games market inside set 1) and Team Total (one player\'s '
+      'games) each share a word with a market the founder rules on')
 check('CONTROL: the two segments are genuinely distinct strings',
       'first set' != 'sets' and 'sets' in 'first sets',
       'and "sets" IS a substring of neither — but "set" is of both, '

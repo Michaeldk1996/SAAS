@@ -734,37 +734,85 @@ def section_markets(url, key, client):
           'first run of the gate. The two near-misses are printed underneath so '
           'the distinction is visible rather than trusted.')
 
-    def present(mnames, seg_exact):
-        rows = fxs = 0
+    def present(mkt_exact, seg_exact):
+        """Rows whose market type AND segment BOTH match exactly.
+
+        ⚠️ BOTH HALVES ARE EXACT, AND THE FIRST RUN OF THIS REPORT GOT THE
+        MARKET HALF WRONG. The gate before it had already learned this lesson
+        on the SEGMENT (matching `set` as a substring folded First Set into
+        Sets); I carried the fix forward for segments and left the market type
+        as a substring test. `total` then also matched **Team Total** — a
+        different product entirely, the games won by ONE player — and "total
+        games" reported 25,366 rows when the real figure is 11,707. The other
+        13,659 were Team Total.
+
+        Two markets sharing a word is exactly how a book gets credited with a
+        product it does not sell, and it has now happened once in each
+        vocabulary. So neither is a substring test any more.
+        """
+        rows = 0
         fset = set()
         for k, n in combo_rows.items():
             m, s, _b = k
-            mn = str(mt.get(m, '')).lower()
+            mn = str(mt.get(m, '')).lower().strip()
             sn = str(sg.get(s, '')).lower().strip()
-            if any(x in mn for x in mnames) and sn in seg_exact:
+            if mn in mkt_exact and sn in seg_exact:
                 rows += n
                 for lg_set in combo_fx[k].values():
                     fset |= lg_set
         return rows, len(fset)
 
     asks = [
-        ('match winner (moneyline × Full Game)', ('moneyline', 'money line', 'winner'), {'full game'}),
-        ('games handicap (spread × Full Game)', ('spread', 'handicap'), {'full game'}),
-        ('total games (total × Full Game)', ('total',), {'full game'}),
-        ('**SET HANDICAP** (spread × Sets)', ('spread', 'handicap'), {'sets'}),
-        ('**TOTAL SETS** (total × Sets)', ('total',), {'sets'}),
-        ('— not those: spread × First Set (games hcp in set 1)', ('spread', 'handicap'), {'first set'}),
-        ('— not those: total × First Set (games in set 1)', ('total',), {'first set'}),
+        ('match winner (Moneyline × Full Game)', {'moneyline'}, {'full game'}),
+        ('games handicap (Spread × Full Game)', {'spread'}, {'full game'}),
+        ('total games (Total × Full Game)', {'total'}, {'full game'}),
+        ('**SET HANDICAP** (Spread × Sets)', {'spread'}, {'sets'}),
+        ('**TOTAL SETS** (Total × Sets)', {'total'}, {'sets'}),
+        ('— a DIFFERENT market: Team Total × Full Game (games won by one player)',
+         {'team total'}, {'full game'}),
+        ('— a DIFFERENT market: Spread × First Set (games hcp inside set 1)',
+         {'spread'}, {'first set'}),
+        ('— a DIFFERENT market: Total × First Set (games inside set 1)',
+         {'total'}, {'first set'}),
     ]
     print('\n| market | present | rows | fixtures |')
     print('|---|---|---|---|')
+    accounted = 0
     for label, mn, sx in asks:
         r, f = present(mn, sx)
+        accounted += r
         print(f'| {label} | {"YES" if r else "no"} | {r:,} | {f:,} |' if r
               else f'| {label} | no | {DASH} | {DASH} |')
 
-    sh, _ = present(('spread', 'handicap'), {'sets'})
-    ts_, _ = present(('total',), {'sets'})
+    # ⚠️ EXACT MATCHING TRADES A FALSE YES FOR A POSSIBLE FALSE NO. If Kibl
+    # spells a market "Money Line" tomorrow, every exact test above silently
+    # answers "no" for a market that is right there in the feed. So the rows
+    # the table does NOT account for are counted and, if any exist, named —
+    # a vocabulary this report cannot read must be loud, not absent.
+    total_rows = sum(combo_rows.values())
+    missed = total_rows - accounted
+    if missed:
+        named = {(str(mt.get(m, m)), str(sg.get(s, s)))
+                 for (m, s, _b) in combo_rows
+                 if not any(str(mt.get(m, '')).lower().strip() in mn
+                            and str(sg.get(s, '')).lower().strip() in sx
+                            for _l, mn, sx in asks)}
+        print(f'\n⚠️ **{missed:,} of {total_rows:,} rows ({pct(missed, total_rows)}) '
+              f'are not covered by any row of the table above.** The tests are '
+              f'EXACT on both the market type and the segment, so a vendor '
+              f'spelling this report does not know reads as "no" rather than '
+              f'as an error. These are the (market, segment) pairs that fell '
+              f'through, and any of them being interesting is a question for '
+              f'the next run, not something to infer here:')
+        for m, s in sorted(named)[:20]:
+            print(f'* {m} × {s}')
+    else:
+        print(f'\nEvery one of the {total_rows:,} archived rows is accounted '
+              f'for by a line in the table above, so no market is hiding '
+              f'behind a spelling this report does not recognise.')
+
+    sh, _ = present({'spread'}, {'sets'})
+    ts_, _ = present({'total'}, {'sets'})
     if sh or ts_:
         print(f'\n**Both set-level markets are present on bet105 and both were '
               f'absent on Sports411.** This is the capability the swap bought.')
@@ -910,129 +958,189 @@ def ts(v):
 
 # ═══════════════════════════════════════ SECTION 3 — WHAT A PRICE ROW CARRIES
 
-RAW_SAMPLE = 6000
+KIBL_BUCKET = 'kibl-raw'
+RAW_BLOBS = 4
+
+
+def kibl_blob(url, key, path):
+    """One gzipped sweep blob out of the PRIVATE kibl-raw bucket.
+
+    ⚠️ NOT `L.sb_download` — that one is pinned to the `oddspapi-raw` bucket
+    and would 404 every path here.
+    """
+    import gzip
+    got, err = L.sb('GET', f'/storage/v1/object/{KIBL_BUCKET}/'
+                    + urllib.parse.quote(path), url, key)
+    if got is None:
+        return None, err
+    try:
+        return json.loads(gzip.decompress(got).decode('utf-8')), None
+    except Exception as e:                                       # noqa: BLE001
+        return None, f'unreadable: {e}'
+
+
+def field_census(records):
+    seen, filled = collections.Counter(), collections.Counter()
+    for rec in records:
+        if not isinstance(rec, dict):
+            continue
+        for k, v in rec.items():
+            seen[k] += 1
+            if v is not None and v != '':
+                filled[k] += 1
+    return seen, filled
+
+
+def raw_records(url, key, fsid, want_blobs=RAW_BLOBS):
+    """The actual vendor records for one book, out of the raw sweep blobs.
+
+    ⚠️ `kibl_line_observations.raw_object` IS A PATH, NOT THE RECORD. It holds
+    `2026/09/20/<sweep>-<ts>.json.gz`, the key of the gzipped sweep blob in the
+    private `kibl-raw` bucket. The first cut of §3 iterated that STRING as if
+    it were the vendor object, found no keys in it, and printed an empty field
+    table — and, far worse, concluded from that empty read that "no field on a
+    bet105 row is named for a stake limit". That is a definitive negative drawn
+    from a read that never happened, which is the one thing this report must
+    never do. The blob is downloaded now, and if it cannot be, §3 says so and
+    concludes nothing.
+    """
+    paths, err = fetch_all(url, key, 'kibl_line_observations',
+                           'raw_object,observed_at',
+                           extra=(f'&feed_source_id=eq.{fsid}'
+                                  '&order=observed_at.desc'),
+                           page=1000, cap=1000)
+    if err:
+        return None, [], f'could not list raw paths: {err}'
+    uniq = []
+    for r in paths:
+        p = r.get('raw_object')
+        if p and p not in uniq:
+            uniq.append(p)
+        if len(uniq) >= want_blobs:
+            break
+    if not uniq:
+        return None, [], 'no raw_object path on any archived row'
+
+    out, used, errs = [], [], []
+    for p in uniq:
+        blob, berr = kibl_blob(url, key, p)
+        if blob is None:
+            errs.append(f'{p}: {berr}')
+            continue
+        recs = blob if isinstance(blob, list) else (
+            blob.get('rows') or blob.get('data') or [])
+        mine = [r for r in recs if isinstance(r, dict)
+                and r.get('feed_source_id') == fsid]
+        out.extend(mine)
+        used.append((p, len(recs), len(mine)))
+    if not out:
+        return None, used, ('; '.join(errs) if errs else
+                            'blobs downloaded but carried no rows for this book')
+    return out, used, None
 
 
 def section_rows(url, key, obs):
     h1('§3 — WHAT EACH PRICE ROW ACTUALLY CARRIES')
+
+    recs, used, rerr = raw_records(url, key, BET105)
+    if rerr:
+        print(f'::warning::{rerr}')
+        print(f'\n{DASH}  **The raw vendor records could not be read**, so (a) '
+              f'and (b) report nothing. Specifically: nothing below claims the '
+              f'stake limit is absent — an unread field and a missing field '
+              f'are the same thing from here, and only one of them is a finding.')
+        print(f'\nReason: `{rerr}`')
+    else:
+        print(f'Read the **actual vendor records** out of the private '
+              f'`{KIBL_BUCKET}` bucket — `raw_object` on an observation row is '
+              f'a PATH to a gzipped sweep blob, not the record itself.')
+        print(f'\n| blob | records in sweep | bet105 records |')
+        print('|---|---|---|')
+        for p, tot, mine in used:
+            print(f'| `{p}` | {tot:,} | {mine:,} |')
+        print(f'\nCensus population: **{len(recs):,}** bet105 vendor records '
+              f'({n_flag(len(recs))}) from {len(used)} sweep blob(s).')
 
     # ── (a) the stake limit ─────────────────────────────────────────────────
     h2('(a) Stake limit')
     print('> "It was null on all 299,250 Sports411 rows. If populated, report '
           'the range by league — a sharp book\'s limit is a confidence signal."')
 
-    raw105, err = fetch_all(url, key, 'kibl_line_observations',
-                            'fixture_id,league_id,raw_object,price_decimal,'
-                            'market_type_id,segment_id,is_opener,is_current',
-                            extra=f'&feed_source_id=eq.{BET105}', page=1000,
-                            cap=RAW_SAMPLE)
-    if err:
-        print(f'::error::{err}')
-        print(f'\n{DASH}  the raw bet105 rows could not be read; §3 reports '
-              f'nothing rather than guessing at the field list.')
-        return
-    if not raw105:
-        print(f'\n{DASH}  no raw bet105 rows held.')
-        return
-    print(f'\nField census computed on the **first {len(raw105):,}** archived '
-          f'bet105 rows ({n_flag(len(raw105))}). This is a SAMPLE and says so; '
-          f'it is bounded because `raw_object` is the whole vendor record and '
-          f'pulling every one of them moves far more data than the answer needs.')
-
-    limit_keys = set()
-    for r in raw105:
-        ro = r.get('raw_object') or {}
-        if isinstance(ro, str):
-            try:
-                ro = json.loads(ro)
-            except Exception:                                    # noqa: BLE001
-                ro = {}
-        for k in ro:
-            if 'limit' in k.lower() or 'stake' in k.lower() or 'max' in k.lower():
-                limit_keys.add(k)
-    if not limit_keys:
-        print(f'\n**No field on a bet105 row is named for a stake limit, a '
-              f'stake, or a maximum.** Not "null" — the key is not in the '
-              f'vendor record at all. Sports411 carried the same absence.')
-        print(f'\nSo the limit cannot be read as a confidence signal on this '
-              f'feed, and the reason is the schema, not the book. Whether Kibl '
-              f'can expose it at all is **unknown** from here and is a question '
-              f'for Bet105.')
+    seen = filled = None
+    if recs:
+        seen, filled = field_census(recs)
+        limit_keys = sorted(k for k in seen
+                            if any(w in k.lower()
+                                   for w in ('limit', 'stake', 'max', 'wager')))
+        if not limit_keys:
+            print(f'\n**No field on a bet105 vendor record is named for a stake '
+                  f'limit, a stake, a maximum or a wager.** Not "null" — the key '
+                  f'is not in the record at all, across all {len(recs):,} '
+                  f'records read. Sports411 carried the same absence.')
+            print(f'\nSo the limit is not available as a confidence signal on '
+                  f'this feed, and the reason is the payload shape, not the '
+                  f'book. Whether Kibl can expose it at all is **unknown** from '
+                  f'here — a question for Bet105.')
+            print(f'\nFor the reader to check that against: the full key list '
+                  f'is in (b) below, so "no limit field" can be verified rather '
+                  f'than taken.')
+        else:
+            print(f'\nlimit-shaped fields present: ' +
+                  ', '.join(f'`{k}`' for k in limit_keys))
+            for k in limit_keys:
+                vals = [float(r[k]) for r in recs
+                        if isinstance(r.get(k), (int, float))]
+                print(f'\n`{k}`: {dist(vals, 2)}')
+                per_league = collections.defaultdict(list)
+                for r in recs:
+                    if isinstance(r.get(k), (int, float)):
+                        per_league[r.get('league_id')].append(float(r[k]))
+                for lg, v in sorted(per_league.items(), key=lambda kv: -len(kv[1])):
+                    print(f'* {LEAGUES.get(lg, lg)}: {dist(v, 2)}')
     else:
-        print(f'\nlimit-shaped fields present: ' +
-              ', '.join(f'`{k}`' for k in sorted(limit_keys)))
-        for k in sorted(limit_keys):
-            per_league = collections.defaultdict(list)
-            for r in raw105:
-                ro = r.get('raw_object') or {}
-                if isinstance(ro, str):
-                    try:
-                        ro = json.loads(ro)
-                    except Exception:                            # noqa: BLE001
-                        continue
-                v = ro.get(k)
-                if isinstance(v, (int, float)):
-                    per_league[r.get('league_id')].append(float(v))
-            print(f'\n`{k}` by league:')
-            for lg, vals in sorted(per_league.items(), key=lambda kv: -len(kv[1])):
-                print(f'* {LEAGUES.get(lg, lg)}: {dist(vals, 2)}')
+        print(f'\n{DASH}  not read. See the note above — this is silence, not '
+              f'a negative finding.')
 
     # ── (b) every field, with % populated ───────────────────────────────────
-    h2('(b) Every field on a bet105 row, with % populated')
-    keys = collections.Counter()
-    filled = collections.Counter()
-    for r in raw105:
-        ro = r.get('raw_object') or {}
-        if isinstance(ro, str):
-            try:
-                ro = json.loads(ro)
-            except Exception:                                    # noqa: BLE001
-                continue
-        for k, v in ro.items():
-            keys[k] += 1
-            if v is not None and v != '':
-                filled[k] += 1
-    n = len(raw105)
-    print(f'\n| field | present on | non-null | % populated |')
-    print('|---|---|---|---|')
-    for k, seen in sorted(keys.items(), key=lambda kv: (-kv[1], kv[0])):
-        print(f'| `{k}` | {seen:,} | {filled[k]:,} | {pct(filled[k], n)} |')
-
-    # What Sports411 did not carry, on the same census.
-    raw43, err43 = fetch_all(url, key, 'kibl_line_observations',
-                             'raw_object', extra=f'&feed_source_id=eq.{SPORTS411}',
-                             page=1000, cap=RAW_SAMPLE)
-    h3('Named plainly: what bet105 carries that Sports411 did not')
-    if err43:
-        print(f'{DASH}  the Sports411 rows could not be read ({err43}), so the '
-              f'comparison is not made rather than asserted.')
-    elif not raw43:
-        print(f'{DASH}  no Sports411 rows held to compare against.')
+    h2('(b) Every field on a bet105 record, with % populated')
+    if not recs:
+        print(f'{DASH}  not read.')
     else:
-        k43 = collections.Counter()
-        f43 = collections.Counter()
-        for r in raw43:
-            ro = r.get('raw_object') or {}
-            if isinstance(ro, str):
-                try:
-                    ro = json.loads(ro)
-                except Exception:                                # noqa: BLE001
-                    continue
-            for k, v in ro.items():
-                k43[k] += 1
-                if v is not None and v != '':
-                    f43[k] += 1
-        only105 = [k for k in filled if filled[k] and not f43.get(k)]
-        print(f'Compared on {len(raw43):,} Sports411 rows ({n_flag(len(raw43))}).')
-        if only105:
-            print('\nFields populated on bet105 and never populated on Sports411:')
-            for k in sorted(only105):
-                print(f'* `{k}` — {pct(filled[k], n)} populated on bet105, '
-                      f'0 on Sports411')
+        n = len(recs)
+        print(f'| field | present on | non-null | % populated |')
+        print('|---|---|---|---|')
+        for k, s in sorted(seen.items(), key=lambda kv: (-kv[1], kv[0])):
+            print(f'| `{k}` | {s:,} | {filled[k]:,} | {pct(filled[k], n)} |')
+
+        h3('Named plainly: what bet105 carries that Sports411 did not')
+        recs43, used43, err43 = raw_records(url, key, SPORTS411)
+        if err43:
+            print(f'{DASH}  the Sports411 records could not be read '
+                  f'(`{err43}`), so the comparison is not made rather than '
+                  f'asserted in either direction.')
         else:
-            print('\nNo field is populated on bet105 and empty on Sports411. '
-                  'The difference between the two books is in the MARKETS they '
-                  'price (§1b), not in the shape of a row.')
+            s43, f43 = field_census(recs43)
+            print(f'Compared on {len(recs43):,} Sports411 vendor records '
+                  f'({n_flag(len(recs43))}).')
+            only105 = sorted(k for k in filled if filled[k] and not f43.get(k))
+            absent = sorted(k for k in seen if k not in s43)
+            if only105:
+                print('\nFields populated on bet105 and never populated on '
+                      'Sports411:')
+                for k in only105:
+                    print(f'* `{k}` — {pct(filled[k], n)} populated on bet105, '
+                          f'0 on Sports411')
+            else:
+                print('\nNo field is populated on bet105 and empty on '
+                      'Sports411.')
+            if absent:
+                print('\nFields that do not appear on a Sports411 record at all:')
+                for k in absent:
+                    print(f'* `{k}`')
+            if not only105 and not absent:
+                print('\n**The two books return the same row shape.** The '
+                      'difference between them is entirely in the MARKETS they '
+                      'price (§1b), not in what a price row carries.')
 
     # ── (c) opener / previous / current ─────────────────────────────────────
     h2('(c) Opener / previous / current')
@@ -1085,55 +1193,125 @@ def section_rows(url, key, obs):
 # The founder asked which of the 71 documented paths ANSWER on our credential
 # and what they give. The only way to know is to call them. Each entry is
 # (path, params, what the founder asked it for).
+# Tennis on Kibl. The leagues are the men's three; the sport id is resolved at
+# run time from /reference/sports rather than hard-coded, because a wrong id
+# would make a live endpoint look dead.
+TENNIS_LEAGUE_IDS = sorted(LEAGUES)
+
+# (path, [param variants to try in order], what the founder asked it for).
+# ⚠️ SEVERAL OF THESE ENDPOINTS REQUIRE PARAMETERS AND SAY SO IN AN ERROR
+# ENVELOPE THAT STILL CARRIES HTTP 200. Probing them bare and reporting
+# "200/empty" would have told the founder that /mapping/* is unavailable on our
+# credential, when the real answer may be that the call was malformed. So each
+# one is tried bare AND scoped, and the vendor's own `description` is printed.
 PROBES = [
-    ('/info/markets-alerts', {}, 'the free line-movement signal — what does it fire on?'),
-    ('/info/markets-last-updated', {}, 'per-book freshness; could it replace our staleness guessing?'),
-    ('/info/outcomes', {}, 'anything api-tennis does not already give us?'),
-    ('/info/fixtures-states', {}, 'ditto'),
-    ('/info/fixtures-segments-scores', {}, 'ditto'),
-    ('/mapping/donbest', {}, 'DonBest id mapping — could it replace surname matching?'),
-    ('/mapping/espn', {}, 'ESPN id mapping — ditto'),
-    ('/reference/sports', {}, 'inventory'),
-    ('/reference/leagues', {}, 'inventory'),
-    ('/reference/sportsbooks', {}, 'the entitlement itself'),
-    ('/reference/market-types', {}, 'vocabulary'),
-    ('/reference/segments', {}, 'vocabulary'),
-    ('/reference/betting-types', {}, 'vocabulary'),
-    ('/reference/market-statuses', {}, 'vocabulary'),
-    ('/reference/fixture-types', {}, 'vocabulary'),
-    ('/reference/periods', {}, 'vocabulary'),
+    ('/info/markets-alerts', [{}, {'sport_id': '@tennis'},
+                              {'league_id': TENNIS_LEAGUE_IDS}],
+     'the free line-movement signal — what does it fire on?'),
+    ('/info/markets-last-updated', [{}], 'per-book freshness; could it replace our staleness guessing?'),
+    ('/info/outcomes', [{}], 'anything api-tennis does not already give us?'),
+    ('/info/fixtures-states', [{}], 'ditto'),
+    ('/info/fixtures-segments-scores', [{}, {'sport_id': '@tennis'},
+                                        {'league_id': TENNIS_LEAGUE_IDS}], 'ditto'),
+    ('/mapping/donbest', [{}, {'sport_id': '@tennis'},
+                          {'league_id': TENNIS_LEAGUE_IDS}],
+     'DonBest id mapping — could it replace surname matching?'),
+    ('/mapping/espn', [{}, {'sport_id': '@tennis'},
+                       {'league_id': TENNIS_LEAGUE_IDS}],
+     'ESPN id mapping — ditto'),
+    ('/reference/sports', [{}], 'inventory'),
+    ('/reference/leagues', [{}], 'inventory'),
+    ('/reference/sportsbooks', [{}], 'the entitlement itself'),
+    ('/reference/market-types', [{}], 'vocabulary'),
+    ('/reference/segments', [{}], 'vocabulary'),
+    ('/reference/betting-types', [{}], 'vocabulary'),
+    ('/reference/market-statuses', [{}], 'vocabulary'),
+    ('/reference/fixture-types', [{}], 'vocabulary'),
+    ('/reference/periods', [{}, {'sport_id': '@tennis'}], 'vocabulary'),
 ]
+
+
+def vendor_error(payload):
+    """The vendor's OWN words when a 200 carries an error envelope.
+
+    ⚠️ Kibl answers a malformed or unentitled call with **HTTP 200** and a body
+    of `{code, description, request_uuid, timestamp}`. The client reports that
+    as an unrecognised envelope and zero rows — which, printed as "200/empty",
+    reads exactly like "this endpoint has no data for us". They are completely
+    different answers: one is a capability gap, the other is a bad request.
+    The `description` distinguishes them and it is free to read.
+    """
+    if not isinstance(payload, dict):
+        return None
+    if 'description' in payload or 'code' in payload:
+        return f"{payload.get('code', '?')}: {str(payload.get('description', ''))[:120]}"
+    return None
 
 
 def section_endpoints(client):
     h1('§4 — OTHER ENDPOINTS, PROBED ON OUR CREDENTIAL')
-    print('Each row is a GET actually issued on this account. `rows` is what '
-          'came back, and a 200 with zero rows is reported as **200/empty** — '
-          'per the founder\'s rule, that is not a capability.')
-    print('\n| endpoint | status | rows | first-row keys | asked for |')
-    print('|---|---|---|---|---|')
+    print('Each row is a GET actually issued on this account. A 200 with zero '
+          'rows is reported as **200/empty** — per the founder\'s rule, that is '
+          'not a capability.')
+    print('\n⚠️ **This vendor answers a malformed or unentitled call with HTTP '
+          '200** and a `{code, description}` body. So an endpoint is tried bare '
+          'and then scoped to tennis, and where it refuses, the vendor\'s own '
+          'description is printed. "We called it wrong" and "we are not '
+          'entitled" are different findings and only the description separates '
+          'them.')
+
+    # Resolve the tennis sport_id rather than assuming it.
+    tennis_id = None
+    try:
+        payload, _m = client.get('/reference/sports')
+        for r in client.rows(payload):
+            if isinstance(r, dict) and str(r.get('name', '')).lower() == 'tennis':
+                tennis_id = r.get('sport_id')
+                break
+    except Exception:                                            # noqa: BLE001
+        pass
+    print(f'\ntennis `sport_id` resolved from `/reference/sports`: '
+          f'**{tennis_id if tennis_id is not None else DASH}**'
+          + ('' if tennis_id is not None else
+             '  — unresolved, so the scoped retries below are skipped and a '
+             '"no" from a parameterised endpoint stays **unknown**'))
+
+    print('\n| endpoint | status | rows | first-row keys | vendor says | asked for |')
+    print('|---|---|---|---|---|---|')
     results = {}
-    for path, params, why in PROBES:
-        try:
-            payload, meta = client.get(path, params)
+    for path, variants, why in PROBES:
+        best = None
+        for params in variants:
+            p = dict(params)
+            if p.get('sport_id') == '@tennis':
+                if tennis_id is None:
+                    continue
+                p['sport_id'] = tennis_id
+            try:
+                payload, meta = client.get(path, p)
+            except Exception as e:                               # noqa: BLE001
+                best = {'status': 'error', 'rows': None, 'keys': [],
+                        'says': str(e)[:110], 'params': p}
+                continue
             rows = [r for r in client.rows(payload) if isinstance(r, dict)]
-            status = (meta or {}).get('status', 200)
-            keys = ', '.join(f'`{k}`' for k in list(rows[0])[:8]) if rows else DASH
-            # ⚠️ A 200 whose envelope we cannot parse yields zero rows and is
-            # INDISTINGUISHABLE from an empty account unless it is named. The
-            # client flags it; not passing that flag through here would turn a
-            # parser bug into a capability finding.
-            unread = (meta or {}).get('unrecognised_envelope')
-            verdict = (f'{status}' + ('/empty' if not rows else '')
-                       + ('  ⚠️ **unparsed envelope**' if unread else ''))
-            results[path] = {'status': status, 'rows': len(rows),
-                             'keys': list(rows[0]) if rows else []}
-            print(f'| `{path}` | {verdict} | {len(rows):,} | {keys} | {why} |')
-        except Exception as e:                                   # noqa: BLE001
-            msg = str(e)[:90].replace('|', '/')
-            results[path] = {'status': 'error', 'rows': None, 'error': msg}
-            print(f'| `{path}` | **error** | {DASH} | {DASH} | {why} |')
-            print(f'| | | | `{msg}` | |')
+            cand = {'status': (meta or {}).get('status', 200), 'rows': len(rows),
+                    'keys': list(rows[0]) if rows else [],
+                    'says': vendor_error(payload), 'params': p}
+            if best is None or (cand['rows'] or 0) > (best.get('rows') or 0):
+                best = cand
+            if rows:
+                break
+        results[path] = best or {'status': '?', 'rows': None, 'keys': [], 'says': None}
+        b = results[path]
+        keys = ', '.join(f'`{k}`' for k in b['keys'][:8]) if b['keys'] else DASH
+        verdict = f"{b['status']}" + ('/empty' if not b['rows'] else '')
+        scope = ('' if not b.get('params') else
+                 (' (bare)' if not b['params'] else
+                  ' (' + ', '.join(f'{k}={v}' for k, v in b['params'].items())[:34] + ')'))
+        says = f"`{b['says']}`" if b.get('says') else DASH
+        print(f"| `{path}`{scope} | {verdict} | "
+              f"{b['rows'] if b['rows'] is not None else DASH} | {keys} | "
+              f"{says} | {why} |")
 
     h2('What this means for the three the founder asked about by name')
 
@@ -1168,6 +1346,12 @@ def section_endpoints(client):
           f'{db.get("rows") if db.get("rows") is not None else DASH} rows, '
           f'espn {es.get("status")}/'
           f'{es.get("rows") if es.get("rows") is not None else DASH} rows. ')
+    for nm, r in (('donbest', db), ('espn', es)):
+        if r.get('says') and not r.get('rows'):
+            print(f'\n* `/mapping/{nm}` refused with the vendor\'s own message: '
+                  f'**{r["says"]}**. That is the endpoint telling us why, and '
+                  f'it is NOT the same as "we hold no mapping data" — it is '
+                  f'read here rather than turned into a capability verdict.')
     if db.get('rows') or es.get('rows'):
         print('A stable third-party id would replace surname matching for '
               'cross-source pairing, which has caused three name bugs on this '
@@ -1175,9 +1359,17 @@ def section_endpoints(client):
               'id: oddspapi and api-tennis would each need a DonBest or ESPN '
               'id for the same fixture. That is the thing to check before '
               'building on it, and it is not answered by this call.')
+    elif db.get('says') or es.get('says'):
+        print('\nSo the honest verdict is **unknown**, not "unavailable": '
+              'neither call returned mapping rows, and both told us why in a '
+              'way that points at the request rather than at the entitlement. '
+              'Surname matching stays the only cross-source key we have TODAY, '
+              'and the next step is one question to Bet105 about the required '
+              'parameters — not a rebuild of the matcher.')
     else:
-        print('Neither answers with data on this credential, so surname '
-              'matching stays the only cross-source key we have.')
+        print('Neither answers with data on this credential, and neither gave '
+              'a reason. Surname matching stays the only cross-source key we '
+              'have.')
 
     return results
 

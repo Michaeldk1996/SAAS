@@ -322,10 +322,127 @@ check('...and the tests are still listed, so the absence is readable',
       'two-sided overround < 1.00' in txt)
 
 
+print('\n— §markets: "Total" must not swallow "Team Total" —')
+
+
+class FakeKibl:
+    """The real reference vocabulary, so the exact tests are tested against the
+    spellings the feed actually uses rather than the ones I hoped for."""
+    calls = 0
+    bytes_down = 0
+
+    REF = {
+        '/reference/market-types': [
+            {'market_type_id': 1, 'name': 'Moneyline'},
+            {'market_type_id': 2, 'name': 'Spread'},
+            {'market_type_id': 3, 'name': 'Total'},
+            {'market_type_id': 4, 'name': 'Team Total'},
+        ],
+        '/reference/segments': [
+            {'segment_id': 1, 'name': 'Full Game'},
+            {'segment_id': 2, 'name': 'Sets'},
+            {'segment_id': 3, 'name': 'First Set'},
+        ],
+        '/reference/betting-types': [
+            {'betting_type_id': 1, 'name': 'Prematch'},
+            {'betting_type_id': 3, 'name': 'Live Fluid'},
+        ],
+    }
+
+    def get(self, path, params=None):
+        return {'data': self.REF.get(path, [])}, {'status': 200}
+
+    @staticmethod
+    def rows(payload):
+        return (payload or {}).get('data', [])
+
+
+def obs_row(mt_id, seg_id, fid, **kw):
+    r = {'fixture_id': fid, 'league_id': 537, 'market_type_id': mt_id,
+         'segment_id': seg_id, 'betting_type_id': 1, 'alt_id': None,
+         'is_main': True, 'price_decimal': 1.9, 'side_id': 2,
+         'point': None, 'is_opener': False, 'is_previous': False,
+         'is_current': True, 'is_live': False, 'inserted_on': '2026-09-20T00:00:00Z'}
+    r.update(kw)
+    return r
+
+
+mk_obs = ([obs_row(3, 1, 100 + i) for i in range(11)]        # Total × Full Game
+          + [obs_row(4, 1, 200 + i) for i in range(13)]      # Team Total × Full Game
+          + [obs_row(2, 2, 300 + i) for i in range(4)]       # Spread × Sets
+          + [obs_row(3, 2, 400 + i) for i in range(2)])      # Total × Sets
+patch_fetch({'kibl_line_observations': mk_obs,
+             'kibl_fixtures': [{'fixture_id': r['fixture_id'], 'league_id': 537,
+                                'scheduled_start': '2026-09-20T10:00:00Z'}
+                               for r in mk_obs]})
+txt, (o, names) = run(M.section_markets, 'u', 'k', FakeKibl())
+check('"total games" counts ONLY Total × Full Game, not Team Total',
+      '| total games (Total × Full Game) | YES | 11 |' in txt,
+      'expected 11, not 24')
+check('Team Total is reported as its own, DIFFERENT market',
+      'Team Total × Full Game (games won by one player) | YES | 13 |' in txt)
+check('SET HANDICAP is Spread × Sets exactly', 'SET HANDICAP** (Spread × Sets) | YES | 4 |' in txt)
+check('TOTAL SETS is Total × Sets exactly', 'TOTAL SETS** (Total × Sets) | YES | 2 |' in txt)
+check('every row is accounted for, so nothing hides behind a spelling',
+      'Every one of the 30 archived rows is accounted for' in txt)
+
+# CONTROL: a vocabulary this report does not know must be LOUD, not silent.
+class OddSpelling(FakeKibl):
+    REF = dict(FakeKibl.REF,
+               **{'/reference/market-types': [{'market_type_id': 3,
+                                               'name': 'Money Line'}]})
+
+
+patch_fetch({'kibl_line_observations': [obs_row(3, 1, 500)],
+             'kibl_fixtures': [{'fixture_id': 500, 'league_id': 537}]})
+txt2, _ = run(M.section_markets, 'u', 'k', OddSpelling())
+check('CONTROL: an unrecognised market spelling is named, not reported as "no"',
+      'not covered by any row of the table above' in txt2 and 'Money Line' in txt2)
+
 print('\n— §markets: an empty archive is not a book with no markets —')
 patch_fetch({'kibl_line_observations': [], 'kibl_fixtures': []})
 txt, (o, n) = run(M.section_markets, 'u', 'k', None)
 check('zero archived rows refuses', o is None and 'zero archived bet105 rows' in txt)
+
+print('\n— §rows: raw_object is a PATH; an unread blob concludes NOTHING —')
+# The defect this replaces: the first cut iterated the raw_object STRING as if
+# it were the vendor record, found no keys, printed an empty table, and then
+# concluded "no field is named for a stake limit". A definitive negative drawn
+# from a read that never happened.
+_real_blob = M.kibl_blob
+M.kibl_blob = lambda url, key, path: (None, 'storage 404')
+patch_fetch({'kibl_line_observations': [
+    {'raw_object': '2026/09/20/sweep-abc.json.gz', 'observed_at': 'x'}]})
+txt, _ = run(M.section_rows, 'u', 'k', None)
+check('an unreadable blob says so and reports nothing',
+      'could not be read' in txt)
+check('...and REFUSES to conclude the stake limit is absent',
+      'nothing below claims the stake limit is absent' in txt)
+check('...naming the difference between unread and missing',
+      'an unread field and a missing field' in txt)
+check('no empty field table is printed as if it were a census',
+      '| field | present on |' not in txt or '— not read.' in txt)
+
+# Now a blob that DOES download: the census must come from the vendor record.
+BLOB = [
+    {'feed_source_id': 171, 'price_decimal': 1.9, 'is_opener': True,
+     'league_id': 537, 'point': None, 'alt_id': 0},
+    {'feed_source_id': 171, 'price_decimal': 2.1, 'is_opener': False,
+     'league_id': 537, 'point': -1.5, 'alt_id': 1},
+    {'feed_source_id': 43, 'price_decimal': 3.0, 'is_opener': True,
+     'league_id': 537, 'point': None, 'alt_id': 0},
+]
+M.kibl_blob = lambda url, key, path: (BLOB, None)
+txt, _ = run(M.section_rows, 'u', 'k', None)
+check('the census counts only THIS book\'s records out of the shared blob',
+      'Census population: **2**' in txt, 'the blob holds 3; one is Sports411')
+check('a field null on some rows reports a real percentage',
+      '| `point` | 2 | 1 | 50.0% |' in txt)
+check('the no-limit-field conclusion is now drawn from records actually read',
+      'across all 2 records read' in txt)
+check('...and invites the reader to check it against the key list',
+      'can be verified rather than taken' in txt)
+M.kibl_blob = _real_blob
 
 print('\n— §live: zero live rows is reported as OUR SCOPE, not the book —')
 txt, _ = run(M.section_live, [{'betting_type_id': 1, 'is_live': False,
@@ -335,6 +452,42 @@ check('names our pre-match-only scope as part of the reason',
       'PRE-MATCH only' in txt)
 check('refuses to conclude the book has no in-play', 'unknown' in txt)
 check('cadence is a dash, not 0', 'Cadence cannot be measured from zero rows' in txt)
+
+print('\n— §endpoints: a 200 error envelope is a REASON, not an empty account —')
+
+
+class ErrEnvelope:
+    """Kibl answers a malformed call with HTTP 200 and {code, description}.
+    Reported as "200/empty" that reads as "no data for us", which is a
+    different and much more expensive conclusion."""
+    calls = 0
+    bytes_down = 0
+
+    def get(self, path, params=None):
+        if path == '/reference/sports':
+            return {'data': [{'sport_id': 7, 'name': 'Tennis'}]}, {'status': 200}
+        if path.startswith('/mapping/'):
+            return ({'code': 'MISSING_PARAM',
+                     'description': 'league_id is required',
+                     'request_uuid': 'x', 'timestamp': 'y'}, {'status': 200})
+        return {'data': [{'a': 1}]}, {'status': 200}
+
+    @staticmethod
+    def rows(payload):
+        return (payload or {}).get('data', []) if isinstance(payload, dict) else []
+
+
+txt, res = run(M.section_endpoints, ErrEnvelope())
+check('the tennis sport_id is RESOLVED, not assumed', 'resolved from' in txt and '**7**' in txt)
+check("the vendor's own reason is printed", 'league_id is required' in txt)
+check('...and it is not turned into a capability verdict',
+      'NOT the same as "we hold no mapping data"' in txt)
+check('the verdict is unknown rather than unavailable',
+      'honest verdict is **unknown**, not "unavailable"' in txt)
+check('vendor_error reads the error envelope',
+      M.vendor_error({'code': 'X', 'description': 'why'}) == 'X: why')
+check('vendor_error returns None for a real payload, so it cannot cry wolf',
+      M.vendor_error({'data': [1]}) is None)
 
 print('\n— §stream is labelled as unmeasured —')
 txt, _ = run(M.section_stream, {})

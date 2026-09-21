@@ -212,12 +212,25 @@ def section_b(obs, client, fsid):
         inflated the two answers the founder actually asked about from 4,322 to
         8,669 and from 2,006 to 5,802. Two different products with one word in
         common is exactly how a market gets claimed that the book does not sell.
+
+        WARNING: AND SO IS THE MARKET TYPE, FOR THE SAME REASON, AFTER THE
+        SAME MISTAKE. The fix above was applied to the segment and not to
+        the market, so `total` went on matching **Team Total** — the games
+        won by ONE player, a different product from the total games in the
+        match. On the live archive that reported 'total games' as 25,366
+        rows when the real figure is 11,707; the other 13,659 were Team
+        Total.
+
+        The two set-level answers were NOT affected, because Kibl returns
+        no `Team Total x Sets` rows at all — they were right by absence
+        rather than by the test. Both halves are exact now, so neither
+        answer depends on which markets happen not to exist this month.
         """
         hit = 0
         for (m, s, _b), n in combos.items():
-            mn = str(mt.get(m, '')).lower()
+            mn = str(mt.get(m, '')).lower().strip()
             sn = str(sg.get(s, '')).lower().strip()
-            if any(x in mn for x in mnames) and sn in seg_exact:
+            if mn in mnames and sn in seg_exact:
                 hit += n
         return hit
 
@@ -225,25 +238,24 @@ def section_b(obs, client, fsid):
     # worth more than Sports411 was, plus the two near-misses printed beside
     # them so the distinction is visible rather than a footnote.
     asks = [
-        ('match winner (moneyline, full game)', present(('moneyline', 'money line',
-                                                         'winner'), {'full game'})),
-        ('spread — games handicap (full game)', present(('spread', 'handicap'),
-                                                        {'full game'})),
-        ('total — total games (full game)',     present(('total',), {'full game'})),
-        ('SET HANDICAP (spread on SETS)',       present(('spread', 'handicap'),
-                                                        {'sets'})),
-        ('TOTAL SETS (total on SETS)',          present(('total',), {'sets'})),
-        ('  — not those: spread on FIRST SET (games hcp in set 1)',
-         present(('spread', 'handicap'), {'first set'})),
-        ('  — not those: total on FIRST SET (games in set 1)',
-         present(('total',), {'first set'})),
+        ('match winner (Moneyline x Full Game)', present({'moneyline'}, {'full game'})),
+        ('games handicap (Spread x Full Game)',  present({'spread'}, {'full game'})),
+        ('total games (Total x Full Game)',      present({'total'}, {'full game'})),
+        ('SET HANDICAP (Spread x Sets)',         present({'spread'}, {'sets'})),
+        ('TOTAL SETS (Total x Sets)',            present({'total'}, {'sets'})),
+        ('  — a DIFFERENT market: Team Total x Full Game',
+         present({'team total'}, {'full game'})),
+        ('  — a DIFFERENT market: Spread x First Set (games hcp in set 1)',
+         present({'spread'}, {'first set'})),
+        ('  — a DIFFERENT market: Total x First Set (games in set 1)',
+         present({'total'}, {'first set'})),
     ]
     print()
     for label, n in asks:
         print(f'  {label:<38} {"YES" if n else "NO ":<4} rows={n if n else "—"}')
         out('market_' + label.split(' (')[0].strip().lower().replace(' ', '_'),
             'yes' if n else 'no')
-    if not present(('spread', 'handicap'), {'sets'}) and not present(('total',), {'sets'}):
+    if not present({'spread'}, {'sets'}) and not present({'total'}, {'sets'}):
         print('\n  ⚠️ NO SET-LEVEL MARKET. Same as Sports411. The set handicap / '
               'total sets that made Kibl interesting are still absent.')
     return {'combos': {f'{m}/{s}/{b}': n for (m, s, b), n in combos.items()},
