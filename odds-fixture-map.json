@@ -1457,8 +1457,8 @@
     },
     "12164693": {
       "fixtureId": null,
-      "mappedAt": "2026-09-22T03:20:42Z",
-      "missRuns": 19,
+      "mappedAt": "2026-09-22T04:47:53Z",
+      "missRuns": 20,
       "missSince": "2026-09-21T03:45:01Z",
       "orient": null,
       "p1": "J. Fuentes Vasquez",
@@ -1819,12 +1819,12 @@
       "missResolutionHoursP50": 6.61,
       "missResolutionsMeasured": 87,
       "note": "ttlBitRuns counts runs where an expired MISS was the ONLY reason a billable /v4/fixtures call was made. projectedTtlUnitsPerDay uses the MEASURED run rate (measuredRunsPerDay), not an assumed 24/day; it is null until observedSpanDays is wide enough to measure one. Compare it against the <=24/day ceiling the TTL was chosen against. openMisses counts only fixtures still on the board.",
-      "observedSpanDays": 10.91,
-      "projectedTtlUnitsPerDay": 4.3,
-      "runs": 168,
-      "spentRuns": 83,
-      "ttlBitRuns": 47,
-      "ttlBitShare": 0.28,
+      "observedSpanDays": 10.97,
+      "projectedTtlUnitsPerDay": 4.4,
+      "runs": 169,
+      "spentRuns": 84,
+      "ttlBitRuns": 48,
+      "ttlBitShare": 0.284,
       "ttlHours": 1.0
     },
     "runs": [
@@ -3675,9 +3675,20 @@
         "ttlBit": true,
         "unmapped": 0,
         "upcoming": 73
+      },
+      {
+        "at": "2026-09-22T04:47:53Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 0,
+        "missExpired": 1,
+        "openMisses": 1,
+        "stale": 1,
+        "ttlBit": true,
+        "unmapped": 0,
+        "upcoming": 73
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-09-22T03:20:42Z"
+  "updatedAt": "2026-09-22T04:47:53Z"
 }
