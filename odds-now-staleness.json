@@ -1,37 +1,11 @@
 {
   "latest": {
-    "maxAgeMin": 196.9,
+    "maxAgeMin": 31.8,
     "measured": 16,
-    "stale": [
-      "S. Baez v J. Brooksby (ATP Chengdu, 2026-09-23)",
-      "V. Kopriva v J. Hu (ATP Chengdu, 2026-09-23)",
-      "V. Royer v A. Walton (ATP Hangzhou, 2026-09-23)",
-      "A. Vukic v K. Jacquet (ATP Hangzhou, 2026-09-23)",
-      "N. Borges v C. Ugo Carabelli (ATP Chengdu, 2026-09-24)",
-      "J. M. Cerundolo v Y. Zhou (ATP Chengdu, 2026-09-24)",
-      "J. Duckworth v L. Sonego (ATP Chengdu, 2026-09-24)",
-      "T. Griekspoor v D. Shapovalov (ATP Chengdu, 2026-09-24)",
-      "J. Shang v A. Mannarino (ATP Chengdu, 2026-09-24)",
-      "A. Shevchenko v H. Hurkacz (ATP Chengdu, 2026-09-24)",
-      "M. Bellucci v K. Majchrzak (ATP Hangzhou, 2026-09-24)",
-      "Y. Bu v M. Zheng (ATP Hangzhou, 2026-09-24)",
-      "J. Cui v D. Vallejo (ATP Hangzhou, 2026-09-24)",
-      "J. Faria v T. Atmane (ATP Hangzhou, 2026-09-24)",
-      "S. Shimabukuro v H. Gaston (ATP Hangzhou, 2026-09-24)",
-      "Z. Zhang v C. Wong (ATP Hangzhou, 2026-09-24)"
-    ]
+    "stale": []
   },
   "note": "Age of the published bet365 NOW leg, measured as now - observedAt against the artefact Pages is serving. Capture staleness and publish staleness are both inside this number, which is what the visitor sees. Re-derive the threshold on TEN-187.",
   "samples": [
-    {
-      "at": "2026-09-18T05:30:00Z",
-      "maxAgeMin": 24.0,
-      "measured": 8,
-      "noBet365Line": 64,
-      "noClock": 0,
-      "stale": 0,
-      "thresholdMin": 120.0
-    },
     {
       "at": "2026-09-18T05:45:00Z",
       "maxAgeMin": 39.0,
@@ -3622,9 +3596,18 @@
       "noClock": 0,
       "stale": 16,
       "thresholdMin": 120.0
+    },
+    {
+      "at": "2026-09-22T17:01:50Z",
+      "maxAgeMin": 31.8,
+      "measured": 16,
+      "noBet365Line": 3,
+      "noClock": 0,
+      "stale": 0,
+      "thresholdMin": 120.0
     }
   ],
   "schema": "odds-now-staleness/1",
   "thresholdMin": 120.0,
-  "updatedAt": "2026-09-22T16:46:53Z"
+  "updatedAt": "2026-09-22T17:01:50Z"
 }
