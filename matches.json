@@ -191060,11 +191060,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 4,
+        "p2": 2
+      }
+    ],
+    "liveGameScore": "15 - 40",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2834_l-harris.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/10873_k-miyoshi.jpg",
     "oddsMovement": {
@@ -191197,7 +191203,10 @@
       "at": "2026-09-22T01:34:49.419Z",
       "observedAt": "2026-09-22T06:46:48Z",
       "src": "live"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12164753",
@@ -198649,7 +198658,31 @@
       "at": "2026-09-22T01:35:15.335Z",
       "observedAt": "2026-09-22T04:47:53Z",
       "src": "live"
-    }
+    },
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "6-4, 6-7(6), 6-3",
+      "sets": [
+        {
+          "p1": 6,
+          "p2": 4
+        },
+        {
+          "p1": 6,
+          "p2": 7
+        },
+        {
+          "p1": 6,
+          "p2": 3
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 1,
+      "winner": "p1"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "upcoming-12164750",
@@ -201017,11 +201050,11 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
+    "live": true,
+    "liveStatus": "Set 2",
     "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "liveGameScore": "0 - 3",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1082_e-ymer.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/557_a-galarneau.jpg",
     "oddsMovement": {
@@ -201168,7 +201201,10 @@
       "at": "2026-09-22T00:07:57.309Z",
       "observedAt": "2026-09-22T04:47:53Z",
       "src": "live"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12164756",
@@ -203428,7 +203464,27 @@
       "edgeVsPinnacleP1": 0.1121,
       "edgeVsPinnacleP2": -0.1121,
       "ts": "2026-09-22T01:06:36.337Z"
-    }
+    },
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "6-4, 6-3",
+      "sets": [
+        {
+          "p1": 6,
+          "p2": 4
+        },
+        {
+          "p1": 6,
+          "p2": 3
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 0,
+      "winner": "p1"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "upcoming-12164757",
@@ -205897,7 +205953,27 @@
       "at": "2026-09-22T02:50:29.310Z",
       "observedAt": "2026-09-22T03:20:42Z",
       "src": "live"
-    }
+    },
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "6-3, 6-4",
+      "sets": [
+        {
+          "p1": 6,
+          "p2": 3
+        },
+        {
+          "p1": 6,
+          "p2": 4
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 0,
+      "winner": "p1"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "upcoming-12164758",
@@ -207310,7 +207386,27 @@
       "at": "2026-09-21T23:23:13.043Z",
       "observedAt": "2026-09-22T03:20:42Z",
       "src": "live"
-    }
+    },
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "3-6, 0-6",
+      "sets": [
+        {
+          "p1": 3,
+          "p2": 6
+        },
+        {
+          "p1": 0,
+          "p2": 6
+        }
+      ],
+      "p1Sets": 0,
+      "p2Sets": 2,
+      "winner": "p2"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "upcoming-12164759",
@@ -209455,7 +209551,27 @@
       "at": "2026-09-22T05:42:47.905Z",
       "observedAt": "2026-09-22T05:47:17Z",
       "src": "live"
-    }
+    },
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "6-3, 6-2",
+      "sets": [
+        {
+          "p1": 6,
+          "p2": 3
+        },
+        {
+          "p1": 6,
+          "p2": 2
+        }
+      ],
+      "p1Sets": 2,
+      "p2Sets": 0,
+      "winner": "p1"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "upcoming-12164760",
@@ -211466,11 +211582,11 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
+    "live": true,
+    "liveStatus": "Set 3",
     "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "liveGameScore": "0 - 0",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/3145_b-tomic.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/663_r-te.jpg",
     "oddsMovement": {
@@ -211588,7 +211704,10 @@
       "at": "2026-09-21T20:21:14.022Z",
       "observedAt": "2026-09-22T04:47:53Z",
       "src": "live"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12164761",
@@ -212923,11 +213042,22 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 2",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 4,
+        "p2": 6
+      },
+      {
+        "set": 2,
+        "p1": 5,
+        "p2": 5
+      }
+    ],
+    "liveGameScore": "A - 40",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/24769_a-weber.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/38778_h-matsuoka.jpg",
     "oddsMovement": {
@@ -213069,7 +213199,10 @@
       "at": "2026-09-22T05:40:42.671Z",
       "observedAt": "2026-09-22T05:47:17Z",
       "src": "live"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12164762",
@@ -214979,11 +215112,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 1,
+        "p2": 1
+      }
+    ],
+    "liveGameScore": "0 - 15",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/10276_m-imamura.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/690_r-noguchi.jpg",
     "oddsMovement": {
@@ -215122,7 +215261,10 @@
       "at": "2026-09-22T03:03:55.788Z",
       "observedAt": "2026-09-22T06:46:48Z",
       "src": "live"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12164763",
