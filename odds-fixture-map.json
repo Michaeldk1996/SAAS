@@ -327,8 +327,8 @@
     },
     "12163929": {
       "fixtureId": "id1200210074805996",
-      "mappedAt": "2026-09-21T01:45:01Z",
-      "missHeldH": 84.25,
+      "mappedAt": "2026-09-22T14:20:46Z",
+      "missHeldH": 120.84,
       "missRuns": 8,
       "missSince": "2026-09-17T13:30:13Z",
       "orient": "same",
@@ -363,8 +363,8 @@
     },
     "12163932": {
       "fixtureId": "id1200210074805946",
-      "mappedAt": "2026-09-21T01:45:01Z",
-      "missHeldH": 84.25,
+      "mappedAt": "2026-09-22T14:20:46Z",
+      "missHeldH": 120.84,
       "missRuns": 8,
       "missSince": "2026-09-17T13:30:13Z",
       "orient": "same",
@@ -375,8 +375,8 @@
     },
     "12163933": {
       "fixtureId": "id1200210074805954",
-      "mappedAt": "2026-09-21T01:45:01Z",
-      "missHeldH": 84.25,
+      "mappedAt": "2026-09-22T14:20:46Z",
+      "missHeldH": 120.84,
       "missRuns": 8,
       "missSince": "2026-09-17T13:30:13Z",
       "orient": "same",
@@ -441,8 +441,8 @@
     },
     "12163948": {
       "fixtureId": "id1200210074806044",
-      "mappedAt": "2026-09-21T01:45:01Z",
-      "missHeldH": 84.25,
+      "mappedAt": "2026-09-22T14:20:46Z",
+      "missHeldH": 120.84,
       "missRuns": 8,
       "missSince": "2026-09-17T13:30:13Z",
       "orient": "same",
@@ -453,8 +453,8 @@
     },
     "12163949": {
       "fixtureId": "id1200210074806048",
-      "mappedAt": "2026-09-21T01:45:01Z",
-      "missHeldH": 84.25,
+      "mappedAt": "2026-09-22T14:20:46Z",
+      "missHeldH": 120.84,
       "missRuns": 8,
       "missSince": "2026-09-17T13:30:13Z",
       "orient": "same",
@@ -741,8 +741,8 @@
     },
     "12164042": {
       "fixtureId": "id1200210074806100",
-      "mappedAt": "2026-09-21T01:45:01Z",
-      "missHeldH": 75.75,
+      "mappedAt": "2026-09-22T14:20:46Z",
+      "missHeldH": 112.35,
       "missRuns": 1,
       "missSince": "2026-09-17T22:00:00Z",
       "orient": "same",
@@ -753,8 +753,8 @@
     },
     "12164043": {
       "fixtureId": "id1200210074806102",
-      "mappedAt": "2026-09-21T01:45:01Z",
-      "missHeldH": 75.75,
+      "mappedAt": "2026-09-22T14:20:46Z",
+      "missHeldH": 112.35,
       "missRuns": 1,
       "missSince": "2026-09-17T22:00:00Z",
       "orient": "same",
@@ -765,8 +765,8 @@
     },
     "12164044": {
       "fixtureId": "id1200210074806074",
-      "mappedAt": "2026-09-21T01:45:01Z",
-      "missHeldH": 75.75,
+      "mappedAt": "2026-09-22T14:20:46Z",
+      "missHeldH": 112.35,
       "missRuns": 1,
       "missSince": "2026-09-17T22:00:00Z",
       "orient": "same",
@@ -777,8 +777,8 @@
     },
     "12164045": {
       "fixtureId": "id1200210074806076",
-      "mappedAt": "2026-09-21T01:45:01Z",
-      "missHeldH": 75.75,
+      "mappedAt": "2026-09-22T14:20:46Z",
+      "missHeldH": 112.35,
       "missRuns": 1,
       "missSince": "2026-09-17T22:00:00Z",
       "orient": "same",
@@ -1457,8 +1457,8 @@
     },
     "12164693": {
       "fixtureId": null,
-      "mappedAt": "2026-09-22T12:24:10Z",
-      "missRuns": 25,
+      "mappedAt": "2026-09-22T14:20:46Z",
+      "missRuns": 26,
       "missSince": "2026-09-21T03:45:01Z",
       "orient": null,
       "p1": "J. Fuentes Vasquez",
@@ -1868,17 +1868,17 @@
   },
   "missAudit": {
     "observed": {
-      "measuredRunsPerDay": 15.6,
-      "missResolutionHoursMax": 113.26,
+      "measuredRunsPerDay": 15.7,
+      "missResolutionHoursMax": 120.84,
       "missResolutionHoursP50": 6.61,
       "missResolutionsMeasured": 87,
       "note": "ttlBitRuns counts runs where an expired MISS was the ONLY reason a billable /v4/fixtures call was made. projectedTtlUnitsPerDay uses the MEASURED run rate (measuredRunsPerDay), not an assumed 24/day; it is null until observedSpanDays is wide enough to measure one. Compare it against the <=24/day ceiling the TTL was chosen against. openMisses counts only fixtures still on the board.",
-      "observedSpanDays": 11.33,
+      "observedSpanDays": 11.37,
       "projectedTtlUnitsPerDay": 4.3,
-      "runs": 177,
-      "spentRuns": 91,
+      "runs": 178,
+      "spentRuns": 92,
       "ttlBitRuns": 49,
-      "ttlBitShare": 0.277,
+      "ttlBitShare": 0.275,
       "ttlHours": 1.0
     },
     "runs": [
@@ -3828,9 +3828,20 @@
         "ttlBit": false,
         "unmapped": 1,
         "upcoming": 59
+      },
+      {
+        "at": "2026-09-22T14:20:46Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 9,
+        "missExpired": 1,
+        "openMisses": 1,
+        "stale": 10,
+        "ttlBit": false,
+        "unmapped": 0,
+        "upcoming": 59
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-09-22T13:22:42Z"
+  "updatedAt": "2026-09-22T14:20:46Z"
 }
