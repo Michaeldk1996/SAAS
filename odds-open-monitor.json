@@ -1980,13 +1980,14 @@
     "id1201413374991936": {
       "alerted": true,
       "alertedAt": "2026-09-23T10:30:01Z",
-      "captureLagH": null,
+      "captureLagH": 0.23,
       "date": "2026-09-24",
+      "firstSeenAt": "2026-09-23T18:00:01Z",
       "hoursOutAtAlert": 19.67,
-      "openAt": null,
+      "openAt": "2026-09-23T17:46:09.174Z",
       "p1": "M. Kecmanovic",
       "p2": "N. Basilashvili",
-      "postingLeadH": null,
+      "postingLeadH": 12.4,
       "startTime": "2026-09-24T06:10:00.000Z",
       "tour": "ATP Chengdu"
     },
@@ -2310,5 +2311,5 @@
   },
   "schema": "odds-open-monitor/1",
   "thresholdHours": 24.0,
-  "updatedAt": "2026-09-23T17:45:01Z"
+  "updatedAt": "2026-09-23T18:00:01Z"
 }
