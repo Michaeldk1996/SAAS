@@ -1,0 +1,100 @@
+name: TEN-253 Kibl stream access test
+
+# TEN-253 part B — the live access test against Kibl's real RabbitMQ queue.
+#
+# MANUAL ONLY. No `schedule:` block, deliberately: this holds a consumer on a
+# favour-basis vendor's queue for an hour and a half, and a cron that fired it
+# unattended would do that forever. It is dispatched, it runs once, it reports.
+#
+# ⚠️ IT WRITES NOTHING TO SUPABASE. `KIBL_STREAM_WRITE` is never set here, and
+# the consumer's table writer is OPT-IN rather than opt-out precisely so that a
+# read-only experiment cannot become a write by way of a forgotten flag. The
+# only database traffic is `GET`, used to compare captures against rows the
+# poller already stored. `permissions: contents: read` and nothing else — this
+# job cannot push, cannot deploy, and cannot dispatch another workflow.
+#
+# IT DOES NOT TOUCH THE POLLER. The */5 sweep pinger keeps running throughout;
+# that is the point of running the two side by side, because part B5's decisive
+# number is "price changes the stream saw that polling never captured", and
+# there is no such number unless polling is also running.
+#
+# CREDENTIALS: six separate secrets, six separate parameters, no AMQP URL.
+# The password contains `%` and `!`; `%` is the percent-encoding introducer, so
+# a URL-shaped credential would be mangled by the parser and surface as an
+# authentication failure that looks like a wrong password. GitHub masks secret
+# VALUES in logs, and `consumer.redact()` scrubs them from exception text as
+# well — belt and braces, because an error path is where nobody reads carefully.
+
+on:
+  workflow_dispatch:
+    inputs:
+      listen_minutes:
+        description: 'Listen window in minutes (the brief asks for at least 90)'
+        required: true
+        default: '90'
+      drop_minutes:
+        description: 'Drop-test gap in minutes — stop consuming, then measure the backlog'
+        required: true
+        default: '5'
+
+concurrency:
+  group: ten253-kibl-stream-access-test
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  access-test:
+    runs-on: ubuntu-latest
+    # 90 + 5 + 2 + setup, with room for a listen window someone widens on
+    # dispatch. A job that is killed mid-listen produces no artifact at all.
+    timeout-minutes: 180
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install pika
+        run: python -m pip install --quiet 'pika==1.3.2'
+
+      - name: Offline suite first — a crash at minute 91 wastes the whole window
+        run: |
+          python3 kibl-stream/test-consumer.py
+          python3 kibl-stream/test-access-test.py
+
+      - name: Run the live access test
+        env:
+          KIBL_RMQ_HOST: ${{ secrets.KIBL_RMQ_HOST }}
+          KIBL_RMQ_PORT: ${{ secrets.KIBL_RMQ_PORT }}
+          KIBL_RMQ_VHOST: ${{ secrets.KIBL_RMQ_VHOST }}
+          KIBL_RMQ_USER: ${{ secrets.KIBL_RMQ_USER }}
+          KIBL_RMQ_PASS: ${{ secrets.KIBL_RMQ_PASS }}
+          KIBL_RMQ_QUEUE: ${{ secrets.KIBL_RMQ_QUEUE }}
+          # Read-only. Used for the mapping and stream-vs-poll comparison.
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          TEN253_LISTEN_MIN: ${{ inputs.listen_minutes }}
+          TEN253_DROP_MIN: ${{ inputs.drop_minutes }}
+          TEN253_OUT: ${{ github.workspace }}/ten253-access-test
+        run: python3 kibl-stream/access-test.py
+
+      - name: Upload the report and the raw captures
+        # `always()`: a failed connect is a RESULT, and the report explaining why
+        # is the deliverable. Skipping the upload on failure would throw away the
+        # one artifact the founder asked for in exactly the case he most needs it.
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ten253-access-test
+          path: ten253-access-test/
+          # Short, deliberately. The repo is PUBLIC, so a run's artifacts are
+          # reachable by anyone who can see the run, and these captures are a
+          # favour-basis vendor's live prices. Nothing here is a credential, but
+          # it is their data and it does not need to sit around for 90 days.
+          retention-days: 7
+          if-no-files-found: warn

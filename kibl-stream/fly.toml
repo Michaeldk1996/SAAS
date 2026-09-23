@@ -1,16 +1,28 @@
-# TEN-225 item 2 — NOT DEPLOYED. `fly deploy` has never been run from here.
+# TEN-253 A — NOT DEPLOYED. `fly deploy` has never been run from here.
 #
-# ⚠️ SET `primary_region` TO THE SUPABASE PROJECT'S REGION BEFORE DEPLOYING.
-# It is left deliberately blank rather than guessed: SUPABASE_URL is a GitHub
-# Actions secret and is not readable from a local run, so I do not know it, and
-# a plausible-looking wrong region is worse than an obvious blank.
+# ⚠️ `primary_region` IS STILL BLANK, AND DELIBERATELY SO.
+# The TEN-253 brief reads: "Supabase region: [REGION]. Fill primary_region in
+# fly.toml to match." `[REGION]` is the literal placeholder — the substitution
+# never happened, so the ruling arrived without its value. A missing value is
+# reported as missing, never guessed, and a plausible-looking wrong region is
+# worse than an obvious blank because it deploys.
+#
+# It is not left as an open question either: the access-test workflow resolves
+# the Supabase host and reports the region it actually lands in
+# (`ten253-access-test/supabase-region.json`), so this gets filled from evidence
+# and confirmed, rather than from someone's recollection.
 app = "kibl-stream"
-primary_region = ""   # <- REQUIRED. One look at the Supabase dashboard.
+primary_region = ""   # <- REQUIRED before any deploy. See supabase-region.json.
 
 [build]
+  dockerfile = "Dockerfile"
+  # ⚠️ Build from the REPO ROOT, not from this directory — the image copies
+  # archive-kibl.py and kibl_client.py, which live at the root because the
+  # worker imports the sweep's own row-key function rather than reimplementing it:
+  #   fly deploy --dockerfile kibl-stream/Dockerfile --config kibl-stream/fly.toml .
 
 [env]
-  WORKER_VERSION = "0.1.0"
+  WORKER_VERSION = "0.2.0"
 
 # One machine, always on. `auto_stop_machines = false` is the whole point: a
 # worker that scales to zero is a worker that is not listening, and this exists
@@ -19,7 +31,24 @@ primary_region = ""   # <- REQUIRED. One look at the Supabase dashboard.
   size = "shared-cpu-1x"
   memory = "256mb"
 
-[http_service]
-  auto_stop_machines = false
-  auto_start_machines = false
-  min_machines_running = 1
+# NO [http_service] AND NO [[services]] BLOCK, and that is the correction.
+#
+# The previous revision carried:
+#     [http_service]
+#       auto_stop_machines = false
+#       min_machines_running = 1
+# This worker serves no HTTP. Fly's autostop/autostart machinery lives under a
+# service and is driven by REQUEST traffic — so an http_service block on a
+# process with no listener asks the platform to make availability decisions from
+# a signal that can never arrive, and `fly deploy` would additionally have
+# failed its health check on a port nothing binds.
+#
+# A Fly app with no service defined has nothing to stop it: the machine runs
+# until it is stopped explicitly. That is exactly the always-on behaviour
+# wanted, expressed by the absence of a service rather than by flags on one that
+# does not exist.
+#
+# ⚠️ UNVERIFIED AGAINST A REAL DEPLOY. Nothing here has been run through
+# `fly deploy` or even `fly config validate` — there is no Fly account or CLI in
+# this environment, and deploying is not authorised. Treat this file as a
+# reviewed draft, and expect to run `fly config validate` as step 1 of launch.
