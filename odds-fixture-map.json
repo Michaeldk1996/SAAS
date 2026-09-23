@@ -645,8 +645,8 @@
     },
     "12164018": {
       "fixtureId": "id1200210074801108",
-      "mappedAt": "2026-09-22T08:46:37Z",
-      "missHeldH": 110.78,
+      "mappedAt": "2026-09-23T20:46:54Z",
+      "missHeldH": 146.78,
       "missRuns": 1,
       "missSince": "2026-09-17T18:00:00Z",
       "orient": "same",
@@ -1457,8 +1457,8 @@
     },
     "12164693": {
       "fixtureId": null,
-      "mappedAt": "2026-09-23T18:46:57Z",
-      "missRuns": 43,
+      "mappedAt": "2026-09-23T20:46:54Z",
+      "missRuns": 44,
       "missSince": "2026-09-21T03:45:01Z",
       "orient": null,
       "p1": "J. Fuentes Vasquez",
@@ -1885,8 +1885,8 @@
     },
     "12165516": {
       "fixtureId": null,
-      "mappedAt": "2026-09-23T18:46:57Z",
-      "missRuns": 7,
+      "mappedAt": "2026-09-23T20:46:54Z",
+      "missRuns": 8,
       "missSince": "2026-09-23T10:18:41Z",
       "orient": null,
       "p1": "M. Damm",
@@ -1941,8 +1941,8 @@
     },
     "12165553": {
       "fixtureId": null,
-      "mappedAt": "2026-09-23T18:46:57Z",
-      "missRuns": 4,
+      "mappedAt": "2026-09-23T20:46:54Z",
+      "missRuns": 5,
       "missSince": "2026-09-23T13:51:29Z",
       "orient": null,
       "p1": "K. Jacquet",
@@ -1952,8 +1952,8 @@
     },
     "12165577": {
       "fixtureId": null,
-      "mappedAt": "2026-09-23T18:46:57Z",
-      "missRuns": 4,
+      "mappedAt": "2026-09-23T20:46:54Z",
+      "missRuns": 5,
       "missSince": "2026-09-23T13:51:29Z",
       "orient": null,
       "p1": "D. Medvedev",
@@ -1965,16 +1965,16 @@
   "missAudit": {
     "observed": {
       "measuredRunsPerDay": 16.3,
-      "missResolutionHoursMax": 120.84,
+      "missResolutionHoursMax": 146.78,
       "missResolutionHoursP50": 37.52,
       "missResolutionsMeasured": 87,
       "note": "ttlBitRuns counts runs where an expired MISS was the ONLY reason a billable /v4/fixtures call was made. projectedTtlUnitsPerDay uses the MEASURED run rate (measuredRunsPerDay), not an assumed 24/day; it is null until observedSpanDays is wide enough to measure one. Compare it against the <=24/day ceiling the TTL was chosen against. openMisses counts only fixtures still on the board.",
-      "observedSpanDays": 12.59,
+      "observedSpanDays": 12.64,
       "projectedTtlUnitsPerDay": 4.8,
-      "runs": 205,
-      "spentRuns": 112,
+      "runs": 206,
+      "spentRuns": 113,
       "ttlBitRuns": 61,
-      "ttlBitShare": 0.298,
+      "ttlBitShare": 0.296,
       "ttlHours": 1.0
     },
     "runs": [
@@ -4232,9 +4232,20 @@
         "ttlBit": false,
         "unmapped": 0,
         "upcoming": 45
+      },
+      {
+        "at": "2026-09-23T20:46:54Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 1,
+        "missExpired": 4,
+        "openMisses": 4,
+        "stale": 5,
+        "ttlBit": false,
+        "unmapped": 0,
+        "upcoming": 45
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-09-23T18:46:57Z"
+  "updatedAt": "2026-09-23T20:46:54Z"
 }
