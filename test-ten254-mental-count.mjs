@@ -102,7 +102,9 @@ function buildApi(src) {
   const need = ['el', 'esc', 'fmtInt', 'median', 'ratEloKey', 'ratLastTok', 'ratEloRec',
     'ratNode', 'ratMatches', 'ratVal', 'ratRating', 'ratN', 'ratBoardPool', 'ratPool',
     'ratMedian', 'ratFmt', 'ratSortRows', 'ratSortHead', 'ratSliceNote', 'ratInitials', 'ratAvatar',
-    'ratLeaderboard', 'ratComparePanel'];
+    'ratLeaderboard', 'ratComparePanel',
+    // TEN-260: the Ratings roster (retired removed) and the Mental Edge views.
+    'ratRoster', 'ratMView', 'ratRound3', 'ratMentalFor', 'ratPP', 'ratMentalExtras'];
   let code = objSource(src, 'RAT_BOARDS') + '\n';
   for (const f of need) code += fnSource(src, f) + '\n';
   const sandbox = {
@@ -112,7 +114,9 @@ function buildApi(src) {
     RAT_GATE: 10, POS: '#3dd68c', NEG: '#e0616f', MUT: '#8b96b5',
     ELO_CAVEAT: '',
     state: { ratSurf: 'All', ratScope: 'career', ratBoard: 'mental',
-             ratSortKey: 'rtg', ratSortDir: 'desc', ratSel: [], ratQ: '' },
+             ratSortKey: 'rtg', ratSortDir: 'desc', ratSel: [], ratQ: '',
+             ratMView: 'atp' },   // TEN-260: ATP view = the semantics this lock was written for
+    RETIRED: null, ME_RANK_MIN: 200,
     render() {}, ratOpenPlayer() {}, q() { return null; }, use() {},
     console,
   };
@@ -158,7 +162,12 @@ test('every rendered count equals PW+PL recomputed from the store', (t) => {
   // And one ORDERED anchor, so a renderer that painted the right numbers against
   // the wrong players would still be caught: the top row must be the highest
   // rating, and its count must be that player's.
-  const top = pool.slice().sort((a, b) =>
+  // TEN-260 Part A.3: only players at >= 200 pressure points are RANKED, and the
+  // ranked block paints first - so row 1 is the highest rating among them.
+  // (Before the minimum this was N. Budkov Kjaer at 1.380 off 119 pp; he now
+  // sits in the "below 200 pressure points" block.)
+  const pp = p => { const m = p.surfaces.All.career.mental; return (m.pw ?? 0) + (m.pl ?? 0); };
+  const top = pool.filter(p => pp(p) >= 200).sort((a, b) =>
     b.surfaces.All.career.mental.rating - a.surfaces.All.career.mental.rating)[0];
   const tm = top.surfaces.All.career.mental;
   assert.equal(nodes[0].textContent, fmt(tm.pw + tm.pl) + ' pp',
@@ -256,7 +265,7 @@ const MUTANTS = [
   ['dash class dropped', s => s.replace("'db-rppc'+(_ppc==null?' dash':'')", "'db-rppc'")],
   ['compare panel count deleted', s => s.replace('c.appendChild(pcc);', '')],
   ['compare panel count on the delta too', s => s.replace("m[0]==='mental' && cls!=='delta'", "m[0]==='mental'")],
-  ['compare panel count summed from PW only', s => s.replace('return n.mental.pw + n.mental.pl;', 'return n.mental.pw;')],
+  ['compare panel count summed from PW only', s => s.replace('return ratPP(ratMentalFor(p, n));', 'return ratMentalFor(p, n).pw;')],
   ['reads bpFaced/bpChances instead of PW/PL', s =>
     s.replace("ratVal(p,'mental.pw'), _pl=ratVal(p,'mental.pl')",
               "ratVal(p,'sample.bpFaced'), _pl=ratVal(p,'sample.bpChances')")],

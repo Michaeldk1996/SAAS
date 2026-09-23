@@ -79,14 +79,18 @@ function gateOf(src) {
 function build(src, store) {
   const need = ['el','esc','fmtInt','median','ratEloKey','ratLastTok','ratEloRec','ratNode',
     'ratMatches','ratVal','ratRating','ratN','ratBoardPool','ratPool','ratMedian','ratFmt',
-    'ratSortRows','ratSortHead','ratSliceNote','ratInitials','ratAvatar','ratLeaderboard'];
+    'ratSortRows','ratSortHead','ratSliceNote','ratInitials','ratAvatar','ratLeaderboard',
+    // TEN-260: the Ratings roster (retired removed) and the Mental Edge views.
+    'ratRoster','ratMView','ratRound3','ratMentalFor','ratPP','ratMentalExtras'];
   let code = objSource(src, 'RAT_BOARDS') + '\n';
   for (const f of need) code += fnSource(src, f) + '\n';
   const sandbox = {
     document: makeDoc(), RAT: store, ELO: null, RAT_GATE: gateOf(src), ELO_CAVEAT: '',
     POS: '#3dd68c', NEG: '#e0616f', MUT: '#8b96b5',
     state: { ratSurf: 'All', ratScope: 'career', ratBoard: 'mental',
-             ratSortKey: 'rtg', ratSortDir: 'desc', ratSel: [], ratQ: '' },
+             ratSortKey: 'rtg', ratSortDir: 'desc', ratSel: [], ratQ: '',
+             ratMView: 'atp' },   // TEN-260: ATP view = the semantics this lock was written for
+    RETIRED: null, ME_RANK_MIN: 200,
     render() {}, ratOpenPlayer() {}, q() { return null; }, use() {}, console,
   };
   const fn = new Function(...Object.keys(sandbox),
@@ -147,7 +151,9 @@ function renderVsPk(src, store) {
   });
   const need = ['el','esc','fmtInt','median','ratEloKey','ratLastTok','ratEloRec','ratNode',
     'ratMatches','ratVal','ratRating','ratN','ratBoardPool','ratPool','ratMedian','ratFmt',
-    'ratSortRows','ratSortHead','ratSliceNote','ratInitials','ratAvatar','ratLeaderboard'];
+    'ratSortRows','ratSortHead','ratSliceNote','ratInitials','ratAvatar','ratLeaderboard',
+    // TEN-260: the Ratings roster (retired removed) and the Mental Edge views.
+    'ratRoster','ratMView','ratRound3','ratMentalFor','ratPP','ratMentalExtras'];
   let code = objSource(src, 'RAT_BOARDS') + '\n';
   for (const f of need) code += fnSource(src, f) + '\n';
   const sandbox = {
@@ -155,7 +161,9 @@ function renderVsPk(src, store) {
     ELO: eloObj, RAT_GATE: gateOf(src), ELO_CAVEAT: '',
     POS: '#3dd68c', NEG: '#e0616f', MUT: '#8b96b5',
     state: { ratSurf: 'All', ratScope: 'career', ratBoard: 'elo',
-             ratSortKey: 'rtg', ratSortDir: 'desc', ratSel: [], ratQ: '' },
+             ratSortKey: 'rtg', ratSortDir: 'desc', ratSel: [], ratQ: '',
+             ratMView: 'atp' },   // TEN-260: ATP view = the semantics this lock was written for
+    RETIRED: null, ME_RANK_MIN: 200,
     render() {}, ratOpenPlayer() {}, q() { return null; }, use() {}, console,
   };
   const api = new Function(...Object.keys(sandbox),

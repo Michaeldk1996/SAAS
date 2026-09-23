@@ -130,3 +130,7 @@ player-index.json
 # The slashless forms below close that. Locked by tools/test-no-broken-symlinks.js.
 node_modules
 .deployed-cache
+
+# TEN-260: built every pipeline run by build-lines-field.js from the (gitignored)
+# career-history store, like career-history/ itself. Never committed.
+lines-field.json

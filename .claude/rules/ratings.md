@@ -85,3 +85,40 @@ Every Mental Edge ratio carries its pressure-point count (PW + PL), on the board
 ranking minimum is unset; a minimum being chosen later does **not** make the count
 redundant — the minimum decides who is *ranked*, the count says how thin the ones
 on screen are. Locked by `test-ten254-mental-count.mjs` (12 mutants).
+
+---
+
+## Retired players leave the board (founder ruling TEN-254 #4, built TEN-260)
+
+**The rule.** Every name in `retired-players.json` → `retired[]` is absent from every
+Ratings board (Overview, all five leaderboards, the compare picker and panel), and every
+count and denominator on the tab drops with it. `_candidates_for_review` is NOT read.
+Scoped to the Ratings board: Lines, profiles and H2H still show the player.
+
+**The test.** Paint any board with the file loaded: no retired name appears, and the
+Overview count is exactly (unfiltered count − retired players who were in it). If the
+file fails to load, the board says in amber that retired players were NOT removed —
+never a silent fallback to the full roster. Locked by `test-ten260-ratings.mjs`.
+
+## Mental Edge: three views, 200-point ranking minimum (founder rulings TEN-254, built TEN-260)
+
+**The rule.**
+- Views: **ATP only** (the store's `mental.pw/pl`), **Challenger only**
+  (`challBpSaved + challBpConverted` over `(challBpFaced − challBpSaved) + (challBpChances − challBpConverted)`),
+  **ATP + Challenger** (the two counts summed, ratio recomputed from the sums). Default
+  **ATP + Challenger**. No discount — `CHALL_DISCOUNT 0.9` is Serve / Return / Under
+  pressure only.
+- A player is **ranked** on a view only with **≥ 200 pressure points (PW + PL) on that
+  view**. Below it: ratio and count shown, rank cell `—`, in a block labelled "Below 200
+  pressure points · not ranked", placed after the ranked block.
+- `challResolved !== true`: Challenger view → `—` with the reason; combined view → the
+  ATP figure, tagged "ATP only", in its own block, never ranked.
+- The count line reads **"ranked X of Y"** on every view (Y = every row the view shows).
+- The whole-row 10-match gate uses the view's own match count (tour / Challenger / sum).
+
+**The test.** Recompute PW, PL, ratio and n from the raw sample fields for every painted
+row on each view; every numbered row has ≥ 200 pp; every row in the below block has `—`
+and < 200 pp. Locked by `test-ten260-ratings.mjs` (14 mutants).
+
+**Supersedes** the TEN-243 method note "Mental Edge — tour level only (no Challenger
+fold-in)", for the combined and Challenger views.

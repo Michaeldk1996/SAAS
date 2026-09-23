@@ -2520,20 +2520,25 @@
   .sf-sidebar{ position:fixed; left:0; top:0; bottom:0; width:236px; background:var(--sf-sidebar);
     border-right:1px solid var(--sf-border-subtle); display:flex; flex-direction:column;
     padding:22px 16px; z-index:60; font-family:var(--sf-font-ui); overflow-y:auto; }
-  .sf-brand{ display:flex; align-items:center; gap:12px; padding:0 8px 2px; }
-  .sf-brand-mark{ width:40px; height:40px; border-radius:12px; flex:none; display:grid; place-items:center;
-    font-family:var(--sf-font-ui); font-weight:800; font-size:19px; color:#dbe6ff;
-    background:linear-gradient(135deg,#2f6bd8,#132648); border:1px solid rgba(91,155,255,0.35); }
-  .sf-brand-name{ font-family:var(--sf-font-ui); font-weight:800; font-size:17px; letter-spacing:-0.01em; color:var(--sf-text); line-height:1; }
-  .sf-brand-sub{ font-family:var(--sf-font-mono); font-size:9px; letter-spacing:0.22em; text-transform:uppercase; color:var(--sf-muted); margin-top:4px; }
-  .sf-navlabel{ font-family:var(--sf-font-ui); font-size:11px; font-weight:700; letter-spacing:0.16em; text-transform:uppercase; color:var(--sf-muted); padding:0 10px; margin:26px 0 8px; }
+  /* TEN-260 Part C · brand block, nav label and nav items to App Sidebar.dc.html:
+     38px mark on the card surface with a blue rule, 15px/800 name, 9px mono sub at
+     0.16em; nav label 11px/400 #4b5361 at 8px 12px; items 13.5px/600 #5b6880 with the
+     icon at #7a8494, active = rgba(91,155,255,0.13) wash + 0.34 rule, #fff text,
+     blue icon. The 250px sidebar WIDTH is not taken (this shell serves every page -
+     reported, not changed). */
+  .sf-brand{ display:flex; align-items:center; gap:11px; padding:4px 8px 22px; }
+  .sf-brand-mark{ width:38px; height:38px; border-radius:10px; flex:none; display:flex; align-items:center; justify-content:center;
+    background:#0a0d14; border:1px solid rgba(91,155,255,0.35); }
+  .sf-brand-name{ font-family:var(--sf-font-ui); font-weight:800; font-size:15px; letter-spacing:0.01em; color:var(--sf-text); line-height:1.1; }
+  .sf-brand-sub{ font-family:var(--sf-font-mono); font-size:9px; letter-spacing:0.16em; text-transform:uppercase; color:var(--sf-muted); margin-top:3px; line-height:1.1; }
+  .sf-navlabel{ font-family:var(--sf-font-ui); font-size:11px; font-weight:400; letter-spacing:0.16em; text-transform:uppercase; color:#4b5361; padding:8px 12px; margin:0; }
   .sf-nav{ display:flex; flex-direction:column; gap:2px; }
   .sf-nav button{ display:flex; align-items:center; gap:12px; width:100%; text-align:left; background:none;
-    border:none; border-radius:9px; padding:10px 12px; font-family:var(--sf-font-ui); font-size:14px;
-    font-weight:500; color:var(--sf-text-3); cursor:pointer; }
-  .sf-nav button svg{ width:17px; height:17px; flex:none; stroke:currentColor; stroke-width:1.6; }
+    border:1px solid transparent; border-radius:10px; padding:10px 12px; font-family:var(--sf-font-ui); font-size:13.5px;
+    font-weight:600; color:var(--sf-text-3); cursor:pointer; }
+  .sf-nav button svg{ width:17px; height:17px; flex:none; stroke:currentColor; stroke-width:1.6; color:#7a8494; }
   .sf-nav button:hover{ color:var(--sf-text); background:rgba(255,255,255,0.03); }
-  .sf-nav button.active{ background:var(--sf-brand-tint); color:var(--sf-text); font-weight:600; }
+  .sf-nav button.active{ background:rgba(91,155,255,0.13); border-color:rgba(91,155,255,0.34); color:#fff; font-weight:600; }
   .sf-nav button.active svg{ color:var(--sf-brand); }
   .sf-foot{ margin-top:auto; padding-top:16px; }
   /* Review item 1: the account chip is a single bordered CARD (avatar · name +
@@ -2547,7 +2552,7 @@
   .sf-userinfo{ min-width:0; flex:1; display:flex; flex-direction:column; }
   .sf-username{ font-family:var(--sf-font-ui); font-size:13px; font-weight:600; color:var(--sf-text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .sf-userplan{ font-family:var(--sf-font-ui); font-size:11px; color:var(--sf-muted); margin-top:1px; }
-  .sf-chev{ color:var(--sf-muted); flex:none; }
+  .sf-chev{ color:var(--sf-muted); flex:none; font-size:13px; line-height:1; transform:rotate(90deg); }
   /* Completed-Matches parity item 4 — global Upgrade to Pro: export leaf sbseg is brand-blue
      700 text on a brand-tint 0.35 border, radius 10, 10px pad (was neutral 600 / 0.09 border / 9 / 11px). */
   .sf-upgrade{ display:block; width:100%; margin-top:10px; padding:10px; text-align:center;
@@ -2918,7 +2923,8 @@
      paintAcct() wiring still resolves — the "Free plan" sub-line is static design copy. -->
 <aside class="sf-sidebar">
   <div class="sf-brand">
-    <div class="sf-brand-mark">T</div>
+    <!-- TEN-260 Part C: the outlined T mark from App Sidebar.dc.html (gradient T on the card surface, blue rule), not the filled tile. -->
+    <div class="sf-brand-mark"><svg width="22" height="22" viewBox="0 0 20 20" fill="none" aria-hidden="true"><defs><linearGradient id="stSideC" x1="2" y1="3" x2="16" y2="17" gradientUnits="userSpaceOnUse"><stop stop-color="#4db8ff"/><stop offset="1" stop-color="#3a5bd0"/></linearGradient></defs><path d="M3.2 3.6 H16.8 L13.4 7.4 H11.2 V15.6 Q11.2 16.6 10 16 L8.4 15.1 V7.4 H3.2 Z" fill="url(#stSideC)"/></svg></div>
     <div>
       <div class="sf-brand-name">Stennisfy</div>
       <div class="sf-brand-sub">Analytics</div>
@@ -2964,8 +2970,10 @@
          button cannot orphan a link. `data-tab="entry-lists"` is still ACCEPTED by the
          nav handler below and lands on Tournaments -> Entry list, the same defensive
          alias TEN-179 kept for `data-tab="results"`. -->
-    <!-- Review item 2: Stennisfy Model = a line-chart glyph (axis + rising trend line), not the star/arrow. Matches the Playing-Styles bar-chart glyph weight. -->
-    <button data-tab="edge"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4v12h12"/><path d="M6.5 12.5l3-3.5 2.5 2 4-5.5"/></svg>Stennisfy Model</button>
+    <!-- TEN-260 Part C (founder, 2026-09-23): "the Stennisfy Model icon" per the design - the
+         App Sidebar.dc.html star path. This REVERSES the earlier "Review item 2" choice of a
+         line-chart glyph; flagged in the TEN-260 report so the founder can reverse it back. -->
+    <button data-tab="edge"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3l1.9 3.9 4.3.6-3.1 3 .7 4.3L10 16.8 6.3 18.8l.7-4.3-3.1-3 4.3-.6z"/></svg>Stennisfy Model</button>
     <button data-tab="styles"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15V9M8 15V5M12 15v-4M16 15V7"/></svg>Playing Styles</button>
     <button data-tab="news"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h9v10H4zM13 8h3v5.5a1.5 1.5 0 01-3 0zM6 8h5M6 11h5"/></svg>News</button>
   </nav>
@@ -2976,7 +2984,8 @@
         <span class="sf-username" id="acctLabel">alex.morgan</span>
         <span class="sf-userplan">Free plan</span>
       </span>
-      <svg class="sf-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
+      <!-- TEN-260: the prototype's chevron is "›" rotated 90deg - pointing DOWN (the menu opens from this card). -->
+      <span class="sf-chev" aria-hidden="true">›</span>
     </a>
     <a class="sf-upgrade" href="account.html">Upgrade to Pro</a>
   </div>
@@ -3428,6 +3437,11 @@
   .db-seg button{ font-family:var(--db-ui); font-size:11.5px; font-weight:600; padding:6px 13px; border-radius:7px; white-space:nowrap;
     background:transparent; border:1px solid rgba(255,255,255,0.07); color:var(--db-mute); cursor:pointer; transition:background .14s ease,color .14s ease,border-color .14s ease; }
   .db-seg button.active{ background:rgba(91,155,255,0.16); border-color:rgba(91,155,255,0.22); color:var(--db-txt); font-weight:700; }
+  /* TEN-260 Part C · the active tab is the design's FILLED pill. The ring live showed
+     on a clicked tab was the browser's default focus outline left behind by the mouse
+     click; the ring now appears on KEYBOARD focus only, on every Database control. */
+  [data-page="database"] button:focus{ outline:none; }
+  [data-page="database"] button:focus-visible{ outline:2px solid rgba(91,155,255,0.7); outline-offset:2px; }
   .db-ctlbot{ display:flex; align-items:center; flex-wrap:wrap; gap:10px; padding:11px 16px; background:var(--db-surface); border-top:1px solid var(--db-bd); border-radius:0 0 12px 12px; }
 
   .db-subject{ display:inline-flex; align-items:center; gap:9px; height:36px; padding:0 12px 0 13px; border-radius:9px;
@@ -3699,7 +3713,7 @@
     font-family:var(--db-mono); font-size:11px; font-weight:700; color:#5b9bff; }
   .db-lnname{ font-size:22px; font-weight:800; letter-spacing:-0.012em; color:var(--db-txt); text-decoration:none; }
   .db-lnname:hover{ color:#82b4ff; }
-  .db-lnrank{ margin-left:8px; font-family:var(--db-mono); font-size:12px; font-weight:400; color:var(--db-mute); }
+  .db-lnrank{ margin-left:6px; font-family:var(--db-mono); font-size:12px; font-weight:400; color:var(--db-mute); }
   .db-lnchips{ margin-top:14px; display:flex; flex-wrap:wrap; gap:7px; }
   .db-lnchip{ font-family:var(--db-mono); font-size:10.5px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--db-sec);
     background:#080a10; border:1px solid rgba(255,255,255,0.08); border-radius:7px; padding:5px 10px; }
@@ -3716,6 +3730,45 @@
   .db-lnrate.low b{ color:var(--db-sec); }
   .db-lnrate.strong b{ color:#7ee0a8; font-weight:700; background:rgba(78,200,130,0.15); border-color:rgba(78,200,130,0.34); }
 
+  /* ---- TEN-260 Part B/C · the Lines table, rebuilt to Database.dc.html ----
+     ONE GRID PER ROW, as the prototype draws it: the row carries its padding
+     and its 1px rule, so the rule runs the full width (live had none), and the
+     row aligns its cells on ONE BASELINE - the rate pill's padding no longer
+     pushes its figure below the other cells. */
+  .db-lntbl{ min-width:830px; margin-top:2px; }
+  .db-lnhd{ display:grid; gap:12px; padding:18px 6px 10px; border-bottom:1px solid rgba(255,255,255,0.1); align-items:end; }
+  .db-lnhd.cmp{ padding:0 6px 10px; }
+  .db-lnh{ text-align:right; font-family:var(--db-mono); font-size:9.5px; font-weight:600; letter-spacing:0.12em; text-transform:uppercase;
+    line-height:1.4; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; color:#4b5672; }
+  .db-lnrow{ display:grid; gap:12px; align-items:baseline; padding:10px 6px; border-bottom:1px solid rgba(255,255,255,0.07); }
+  .db-lnlab{ font-family:var(--db-ui); font-size:14px; font-weight:600; letter-spacing:-0.005em; color:var(--db-txt); text-align:left;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .db-lnfig{ text-align:right; font-family:var(--db-mono); font-size:13px; color:var(--db-txt); font-variant-numeric:tabular-nums; white-space:nowrap; }
+  .db-lnfig.lnmatch{ color:var(--db-mute); }
+  .db-lnfig.dash, .db-lnpill.dash{ color:var(--db-faint); }
+  .db-lnratec{ text-align:right; }
+  .db-lnpill{ display:inline-block; padding:3px 8px; border-radius:7px; font-family:var(--db-mono); font-size:15px; font-weight:600;
+    color:#e8ecf4; background:transparent; border:1px solid transparent; font-variant-numeric:tabular-nums;
+    margin:-1px 0; /* baseline alignment adds ~2px over the prototype's centred row; -1px top and bottom takes it back */ }
+  .db-lnpill.low{ color:var(--db-sec); }
+  .db-lnpill.strong{ color:#7ee0a8; font-weight:700; background:rgba(78,200,130,0.15); border-color:rgba(78,200,130,0.34); }
+  /* compare view (README TAB 5 "Compare view") */
+  .db-lnnames{ display:grid; gap:12px; padding:18px 6px 8px; }
+  .db-lnnm{ grid-column:span 2; text-align:center; padding-bottom:7px; border-bottom:1px solid rgba(255,255,255,0.14); font-family:var(--db-mono);
+    font-size:10px; font-weight:600; letter-spacing:0.12em; text-transform:uppercase; color:var(--db-sec); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .db-lnsub{ text-align:center; font-family:var(--db-mono); font-size:9px; font-weight:600; letter-spacing:0.13em; text-transform:uppercase; color:#3f4859;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .db-lngrp.cmp{ font-size:9px; font-weight:600; letter-spacing:0.15em; color:var(--db-mute); padding:15px 6px 5px; }
+  .db-lngrp{ padding:16px 6px 7px; }
+  .db-lnrow.cmp{ padding:8px 6px; border-bottom:none; }
+  .db-lnrow.cmp .db-lnlab{ font-size:13px; font-weight:500; color:var(--db-ctl); }
+  .db-lnrow.cmp .db-lnratec{ text-align:center; }
+  .db-lnpill.cmp{ font-size:14px; font-weight:700; }
+  .db-lnfig.cmpd{ text-align:center; font-size:10.5px; font-weight:700; color:var(--db-mute); }
+  /* The two notes above the table are both the section 5 note (10.5px mono,
+     #4b5672): the coverage line, then the partial / not-wired marker. */
+  .db-lnnote{ font-family:var(--db-mono); font-size:10.5px; color:var(--db-faint); margin-top:14px; line-height:1.55; }
+
   /* ---- TEN-243 STEP 3: Ratings board (README "TAB 4") ---- */
   .db-rcard{ background:var(--db-surface); border:1px solid var(--db-bd); border-radius:12px; padding:22px 24px; }
   /* The Ratings/Lines card eyebrow is 0.16em per README "TAB 4"; the page's
@@ -3731,20 +3784,31 @@
 
   .db-cmp{ margin-top:20px; width:fit-content; max-width:100%; overflow-x:auto;
     background:var(--db-strip); border:1px solid rgba(91,155,255,0.22); border-radius:12px; padding:18px 20px; }
-  .db-cmpgrid{ display:grid; gap:0 12px; }
-  .db-cmphead{ display:flex; align-items:end; gap:9px; padding-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.10); }
+  /* TEN-260 Part C · the prototype's compare panel: a header grid, then one
+     grid PER METRIC ROW that carries its own top rule (so the rule is unbroken
+     across the column gaps), avatar centred above a baseline row of name ·
+     rank · ×. */
+  .db-cmpgrid{ display:grid; gap:0 12px; align-items:end; }
+  .db-cmphead{ display:flex; flex-direction:column; align-items:center; gap:6px; padding-bottom:10px; border-bottom:1px solid rgba(255,255,255,0.10); }
+  .db-cmpline{ display:flex; align-items:baseline; gap:7px; }
+  .db-cmpmrow{ display:grid; gap:0 12px; align-items:stretch; border-top:1px solid rgba(255,255,255,0.07); }
+  .db-cmpview{ font-family:var(--db-mono); font-size:8.5px; font-weight:600; letter-spacing:0.12em; text-transform:uppercase; color:var(--db-faint); margin-top:4px; white-space:nowrap; }
   .db-av{ width:28px; height:28px; border-radius:50%; flex:none; display:flex; align-items:center; justify-content:center;
     background:linear-gradient(155deg,rgba(91,155,255,0.22),rgba(91,155,255,0.05)); border:1px solid rgba(91,155,255,0.35);
     font-family:var(--db-mono); font-size:10px; font-weight:700; color:#6aaeff; }
-  .db-cmpname{ font-size:15px; font-weight:800; letter-spacing:-0.01em; color:var(--db-txt); }
+  .db-cmpname{ font-size:15px; font-weight:800; letter-spacing:-0.01em; color:var(--db-txt); text-decoration:none; white-space:nowrap; }
+  .db-cmpname:hover{ color:#82b4ff; }
   .db-cmprank{ font-family:var(--db-mono); font-size:10px; color:var(--db-faint); }
   .db-cmpx{ background:none; border:none; padding:0; cursor:pointer; font-size:11px; color:var(--db-mute); }
   .db-sub{ font-family:var(--db-mono); font-size:9.5px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase;
-    text-align:center; padding:9px 6px 4px; color:var(--db-mute); }
+    text-align:center; padding:9px 0 4px; color:var(--db-mute); }
+  .db-sub.live{ padding:9px 6px 4px; }
   .db-sub.live{ color:#a8c8ff; background:rgba(91,155,255,0.13); border-left:1px solid rgba(91,155,255,0.30); }
-  .db-cmprow{ border-top:1px solid rgba(255,255,255,0.07); padding:11px 0; }
-  .db-cmpcell{ font-family:var(--db-mono); text-align:center; padding:11px 0; border-top:1px solid rgba(255,255,255,0.07); }
-  .db-cmpcell.live{ font-size:16px; font-weight:700; color:var(--db-txt); background:rgba(91,155,255,0.13); border-left:1px solid rgba(91,155,255,0.30); }
+  .db-cmprow{ padding:11px 0; display:flex; flex-direction:column; justify-content:center; }
+  .db-cmpcell{ font-family:var(--db-mono); text-align:center; padding:11px 0; font-variant-numeric:tabular-nums;
+    display:flex; flex-direction:column; justify-content:center; align-items:center; }
+  .db-cmpcell.live{ padding:11px 6px; font-size:16px; font-weight:700; color:var(--db-txt); background:rgba(91,155,255,0.13); border-left:1px solid rgba(91,155,255,0.30); }
+  .db-cmpcell.thin{ font-size:11px; font-weight:500; color:var(--db-mute); }
   .db-cmpcell.ref{ font-size:16px; font-weight:400; color:var(--db-sec); }
   .db-cmpcell.delta{ font-size:12.5px; font-weight:700; }
 
@@ -3756,8 +3820,23 @@
   .db-btabs button.active{ background:rgba(91,155,255,0.22); border-color:rgba(91,155,255,0.45); color:var(--db-txt); font-weight:700; }
 
   .db-rscroll{ overflow-x:auto; }
-  .db-rgrid{ display:grid; gap:12px; }
+  /* TEN-260 Part C · NO grid gap. The prototype draws each row as its own grid
+     with 6px row padding and a 12px column gap, and paints the row's rule and
+     the field-median wash on the ROW, so both run unbroken. This grid is one
+     flat grid (the tests walk it cell by cell), so the same geometry is built
+     from the cells: 6px side padding on every cell = 6px at the row edge and
+     6+6 = 12px between columns, and every track carries +12px so each column's
+     CONTENT width equals the prototype's. With no gap, the wash and the rule
+     now touch across the whole row instead of stopping at every column. */
+  .db-rgrid{ display:grid; gap:0; }
+  .db-rhead, .db-rmed, .db-rrow{ display:flex; flex-direction:column; justify-content:center; min-width:0; }
+  .db-rhead{ justify-content:flex-end; }
   .db-rhead{ padding:18px 6px 10px; border-bottom:1px solid rgba(255,255,255,0.1); }
+  .db-rblock{ padding:16px 6px 8px; border-bottom:1px solid rgba(255,255,255,0.1); font-family:var(--db-mono); font-size:9.5px; font-weight:600;
+    letter-spacing:0.14em; text-transform:uppercase; color:var(--db-sec); }
+  .db-rblock b{ font-weight:600; color:var(--db-faint); margin-left:6px; }
+  .db-rtag{ font-family:var(--db-mono); font-size:9px; letter-spacing:0.1em; text-transform:uppercase; color:#e8a84e; text-align:right; margin-top:2px; white-space:nowrap; }
+  .db-mview{ margin-top:12px; }
   .db-rh{ font-family:var(--db-mono); font-size:9.5px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:var(--db-mute); }
   .db-rh.sortable{ letter-spacing:0.12em; line-height:1.4; color:#4b5672; cursor:pointer; background:none; border:none; padding:0; text-align:inherit;
     font-family:var(--db-mono); font-size:9.5px; font-weight:600; text-transform:uppercase; }
@@ -3766,9 +3845,9 @@
   .db-rmed{ padding:10px 6px; background:rgba(255,255,255,0.025); border-bottom:1px solid rgba(255,255,255,0.1); }
   .db-rrow{ padding:11px 6px; border-bottom:1px solid rgba(255,255,255,0.07); }
   .db-rnum{ font-family:var(--db-mono); font-size:12px; color:var(--db-mute); }
-  .db-rplayer{ display:flex; align-items:center; gap:9px; min-width:0; }
+  .db-rplayer{ display:flex; align-items:center; gap:10px; min-width:0; }
   .db-av26{ width:26px; height:26px; font-size:9.5px; }
-  .db-rname{ font-size:13.5px; font-weight:600; color:var(--db-txt); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .db-rname{ font-size:13.5px; font-weight:600; color:var(--db-txt); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-decoration:none; }
   .db-rname:hover{ color:#82b4ff; }
   .db-rfig{ font-family:var(--db-mono); font-size:13px; color:var(--db-txt); text-align:right; font-variant-numeric:tabular-nums; }
   .db-rfig.mut{ color:var(--db-sec); }
@@ -26469,13 +26548,19 @@ window.DatabaseTab = (function(){
       // must not inherit or overwrite the standalone page's compare set.
       ratSurf:'All', ratScope:'career', ratBoard:'overview', ratSel:[], ratQ:'',
       ratSortKey:'elo', ratSortDir:'desc',
+      // TEN-260 Part A.2 · Mental Edge view: 'atp' | 'chall' | 'both'. The
+      // founder's ruled default is ATP + Challenger as a simple sum of counts.
+      ratMView:'both',
       // TEN-243 STEP 4 · Lines. Same per-instance reasoning as the ratings keys
       // above: a second mount must not inherit the standalone page's subject.
       // TEN-256 adds lnScope (Career | Last 52) and lnCat (Line group). lnSide is
       // deliberately ABSENT: see the Side note in lnPaint - career-history rows
       // carry no price and no favourite marker, so a side key would be a control
       // with nothing behind it.
-      lnSel:[], lnQ:'', lnSurf:'All', lnScope:'career', lnCat:null
+      lnSel:[], lnQ:'', lnSurf:'All', lnScope:'career', lnCat:null,
+      // TEN-260 · Bo3 | Bo5 is a segmented control (README TAB 5): one ladder on
+      // screen at a time, Bo3 by default, as in the prototype.
+      lnFmt:'bo3'
     };
   }
   function use(inst){ I=inst; state=inst.state; built=inst.built; return inst; }
@@ -26639,8 +26724,12 @@ window.DatabaseTab = (function(){
   // Both are loaded lazily, on first paint of the Ratings tab only, for the same
   // reason database-yield-players.json is lazy: the base page payload is the
   // bottleneck and a reader who never opens this tab must not pay for it.
-  var RAT_URL='./surface-ratings.json', ELO_URL='./elo-ratings.json';
-  var RAT=null, ELO=null, ratPromise=null;
+  var RAT_URL='./surface-ratings.json', ELO_URL='./elo-ratings.json', RETIRED_URL='./retired-players.json';
+  // RETIRED: name -> true for every entry in retired-players.json (TEN-254
+  // ruling 4, built TEN-260 Part A.1), or null when the file did not load.
+  // null is NOT "nobody retired": the board says the list failed rather than
+  // quietly putting retired players back on it.
+  var RAT=null, ELO=null, RETIRED=null, ratPromise=null;
   function loadRatings(){
     if(ratPromise) return ratPromise;
     ratPromise = Promise.all([
@@ -26649,8 +26738,11 @@ window.DatabaseTab = (function(){
       // file; if it 404s or the scrape lapsed, the Elo columns go to dashes and
       // the rest of the board still renders. Folding it into the same rejection
       // would take the whole tab down for a column we do not own.
-      fetch(ELO_URL,{cache:'no-cache'}).then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; })
-    ]).then(function(a){ RAT=a[0]; ELO=a[1]; return a; })
+      fetch(ELO_URL,{cache:'no-cache'}).then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; }),
+      // Its own failure domain too: a missing list must not take the board down,
+      // and it must not be read as an empty list either (see RETIRED above).
+      fetch(RETIRED_URL,{cache:'no-cache'}).then(function(r){ return r.ok ? r.json() : null; }).catch(function(){ return null; })
+    ]).then(function(a){ RAT=a[0]; ELO=a[1]; RETIRED=ratRetiredSet(a[2]); return a; })
       .catch(function(e){ ratPromise=null; throw e; });   // transient failures stay retryable
     return ratPromise;
   }
@@ -26680,6 +26772,115 @@ window.DatabaseTab = (function(){
     var t=ratLastTok(name);
     if(t && ELO.bySurnameElo && ELO.bySurnameElo[t]) return ELO.bySurnameElo[t];
     return null;
+  }
+
+  // ─── TEN-260 Part A.1 · retired players leave the Ratings board ─────────
+  // retired-players.json is the list (4 sourced entries; `_candidates_for_review`
+  // is NOT read - those are unconfirmed and stay on the board). Scoped to the
+  // RATINGS BOARD only, per the file's own _doc: the Lines picker still reads
+  // RAT.players directly, so a retired player's lines stay reachable.
+  function ratRetiredSet(j){
+    if(!j || !Array.isArray(j.retired)) return null;
+    var o={};
+    j.retired.forEach(function(r){ if(r && r.name) o[r.name]=true; });
+    return o;
+  }
+  // The Ratings roster: every stored player minus the retired list. Every pool,
+  // median, count and search on the Ratings tab reads this, never RAT.players,
+  // so a removed player leaves the ranked block, the unranked block and the
+  // denominator together.
+  function ratRoster(){
+    if(!RAT || !RAT.players) return [];
+    if(!RETIRED) return RAT.players;
+    return RAT.players.filter(function(p){ return !RETIRED[p.name]; });
+  }
+  function ratRetiredOnStore(){
+    if(!RAT || !RAT.players || !RETIRED) return [];
+    return RAT.players.filter(function(p){ return RETIRED[p.name]; }).map(function(p){ return p.name; });
+  }
+
+  // ─── TEN-260 Part A.2-4 · Mental Edge, three views ────────────────────
+  // Founder rulings (TEN-254, 2026-09-23): ATP only / Challenger only /
+  // ATP + Challenger, default ATP + Challenger as a SIMPLE SUM of counts (no
+  // discount - CHALL_DISCOUNT 0.9 applies to Serve / Return / Under pressure
+  // only). A pressure point is a break point (gate b5a358e9):
+  //   PW = break points saved + converted, PL = break points lost + missed.
+  // ATP     - the store's own mental.pw / mental.pl / mental.rating.
+  // Chall.  - sample.challBpSaved + challBpConverted, and
+  //           (challBpFaced - challBpSaved) + (challBpChances - challBpConverted).
+  // Both    - the two summed, ratio recomputed from the sums (never an average
+  //           of two ratios).
+  // challResolved !== true means the Challenger lookup did not happen (or the
+  // store predates the marker), so a zero there is NOT a real zero:
+  //   Challenger view -> no ratio, the row says why.
+  //   Combined view   -> the ATP figure, marked "ATP data only", not ranked.
+  // Ratio to 3dp, rounded the same way the store rounds, so the sort order and
+  // the printed figure cannot disagree. PL = 0 -> no ratio (an infinity is not
+  // a rating), exactly as the store does it.
+  var ME_RANK_MIN=200;
+  function ratMView(){ return (state && state.ratMView) || 'both'; }
+  function ratRound3(x){ return Math.round(x*1000)/1000; }
+  function ratMentalFor(p, n, view){
+    view = view || ratMView();
+    var out={ pw:null, pl:null, ratio:null, matches:null, atpOnly:false, unresolved:false, atpRatio:null };
+    if(!n) return out;
+    var sm=n.sample||{}, me=n.mental||{};
+    var apw = typeof me.pw==='number' ? me.pw : null, apl = typeof me.pl==='number' ? me.pl : null;
+    // A slice with NO tour break points stores `mental: null`. That is a real
+    // zero, not a missing count: without this, the combined view dropped a
+    // player the Challenger view ranks (J. Choinski, Clay / Last 52: 0 tour
+    // matches, 291 Challenger pp) - combined must never be narrower than either
+    // side. Only when the sample itself says zero; otherwise null stays null.
+    if(apw==null && apl==null && (sm.bpFaced||0)+(sm.bpChances||0)===0 && typeof sm.matches==='number'){ apw=0; apl=0; }
+    var am = typeof sm.matches==='number' ? sm.matches : null;
+    var aRatio = typeof me.rating==='number' ? me.rating : null;
+    var resolved = p && p.challResolved===true;
+    function num(k){ return typeof sm[k]==='number' ? sm[k] : null; }
+    var cs=num('challBpSaved'), cc=num('challBpConverted'), cf=num('challBpFaced'), ch=num('challBpChances'), cm=num('challMatches');
+    var cpw = (cs==null||cc==null) ? null : cs+cc;
+    var cpl = (cs==null||cc==null||cf==null||ch==null) ? null : (cf-cs)+(ch-cc);
+    // A NEGATIVE count is corrupt source data (more break points saved than
+    // faced - S. Kwon All/Last 52 carries PL -3). The store already refuses a
+    // ratio for it; a sum must not launder it into a ranked figure either.
+    if((apw!=null && apw<0) || (apl!=null && apl<0)){ apw=null; apl=null; aRatio=null; }
+    if((cpw!=null && cpw<0) || (cpl!=null && cpl<0)){ cpw=null; cpl=null; }
+    if(view==='atp'){ out.pw=apw; out.pl=apl; out.matches=am; out.ratio=(apl ? aRatio : null); return out; }
+    if(view==='chall'){
+      if(!resolved){ out.unresolved=true; return out; }
+      out.pw=cpw; out.pl=cpl; out.matches=cm;
+      out.ratio = (cpw!=null && cpl) ? ratRound3(cpw/cpl) : null;
+      return out;
+    }
+    // both
+    if(!resolved){
+      out.atpOnly=true; out.pw=apw; out.pl=apl; out.matches=am; out.atpRatio=aRatio;
+      return out;                        // ratio stays null: not in the combined ranking
+    }
+    out.pw = (apw==null||cpw==null) ? null : apw+cpw;
+    out.pl = (apl==null||cpl==null) ? null : apl+cpl;
+    out.matches = (am==null) ? null : am + (cm||0);
+    out.ratio = (out.pw!=null && out.pl) ? ratRound3(out.pw/out.pl) : null;
+    return out;
+  }
+  function ratPP(m){ return (m.pw==null||m.pl==null) ? null : m.pw+m.pl; }
+  // The rows the Mental Edge board shows but cannot rank on this view because
+  // the Challenger lookup did not resolve: on Challenger only a dash with the
+  // reason, on ATP + Challenger the ATP figure marked "ATP data only". Empty on
+  // the ATP view, where the marker is irrelevant. Same whole-row gate as the
+  // board: the count the row prints (tour matches) must clear RAT_GATE - so a
+  // thin player is not smuggled back on through this side door.
+  function ratMentalExtras(pool){
+    var v=ratMView(); if(v==='atp') return [];
+    var inPool={}; (pool||[]).forEach(function(p){ inPool[p.name]=1; });
+    var sel = (state && state.ratSel && state.ratSel.length) ? state.ratSel : null;
+    return ratRoster().filter(function(p){
+      if(inPool[p.name] || p.challResolved===true) return false;
+      if(sel && sel.indexOf(p.name)<0) return false;
+      var n=ratNode(p); if(!n || !n.sample) return false;
+      var t=n.sample.matches; if(typeof t!=='number' || t<RAT_GATE) return false;
+      if(v==='both') return ratMentalFor(p, n).atpRatio!=null;
+      return true;
+    }).sort(function(a,b){ return (a.rank||9999)-(b.rank||9999); });
   }
 
   // The sample gate for the boards. README section "Leaderboards" measures
@@ -26715,7 +26916,7 @@ window.DatabaseTab = (function(){
       {h:'Peak', full:'Peak Elo — overall; dashes on a surface pill, the source has no per-surface peak', k:'elo.peak', dec:0},
       {h:'Vs pk', full:'Current overall Elo minus peak Elo — signed', k:'elo.vspk', dec:0, sgn:true}
     ]},
-    serve: { label:'Serve', rtg:'Rtg', rtgDec:1, node:'serve', cols:[
+    serve: { label:'Serve', rtg:'Rtg', rtgDec:0, node:'serve', cols:[
       {h:'1S%', full:'% 1st serves in', k:'serve.firstInPct', dec:1, pct:true},
       {h:'1SW%', full:'% 1st serve points won', k:'serve.firstWonPct', dec:1, pct:true},
       {h:'2SW%', full:'% 2nd serve points won', k:'serve.secondWonPct', dec:1, pct:true},
@@ -26723,13 +26924,13 @@ window.DatabaseTab = (function(){
       {h:'ACE', full:'Aces per match', k:'serve.acesPerMatch', dec:1},
       {h:'DF', full:'Double faults per match', k:'serve.dfPerMatch', dec:1}
     ]},
-    return: { label:'Return', rtg:'Rtg', rtgDec:1, node:'return', cols:[
+    return: { label:'Return', rtg:'Rtg', rtgDec:0, node:'return', cols:[
       {h:'1RW%', full:'% 1st serve return points won', k:'return.ret1stWonPct', dec:1, pct:true},
       {h:'2RW%', full:'% 2nd serve return points won', k:'return.ret2ndWonPct', dec:1, pct:true},
       {h:'RGW%', full:'% return points won', k:'return.rptWonPct', dec:1, pct:true},
       {h:'BPC%', full:'% break points converted', k:'return.bpConvPct', dec:1, pct:true}
     ]},
-    up: { label:'Under pressure', rtg:'Rtg', rtgDec:1, node:'underPressure', cols:[
+    up: { label:'Under pressure', rtg:'Rtg', rtgDec:0, node:'underPressure', cols:[
       {h:'BPC%', full:'% break points converted', k:'underPressure.bpConvPct', dec:1, pct:true},
       {h:'BPS%', full:'% break points saved', k:'underPressure.bpSavedPct', dec:1, pct:true},
       {h:'TB%', full:'% tie-breaks won', k:'underPressure.tbWinPct', dec:1, pct:true},
@@ -27077,9 +27278,9 @@ window.DatabaseTab = (function(){
     // Resetting from Tour and then finding four players still compared on
     // Ratings would make Reset mean "reset this tab", which is not the spec.
     state.ratSurf='All'; state.ratScope='career'; state.ratBoard='overview';
-    state.ratSel=[]; state.ratQ=''; state.ratSortKey='elo'; state.ratSortDir='desc';
+    state.ratSel=[]; state.ratQ=''; state.ratSortKey='elo'; state.ratSortDir='desc'; state.ratMView='both';
     // Same rule for Lines, for the same reason: Reset means every tab.
-    state.lnSel=[]; state.lnQ=''; state.lnSurf='All'; state.lnScope='career'; state.lnCat=null;
+    state.lnSel=[]; state.lnQ=''; state.lnSurf='All'; state.lnScope='career'; state.lnCat=null; state.lnFmt='bo3';
   }
   function countOf(set){ return set? String(set.size) : 'All'; }
   var lastTotal=0;
@@ -27165,7 +27366,9 @@ window.DatabaseTab = (function(){
         match:function(q){
           if(!RAT) return [];
           var ql=q.toLowerCase();
-          return (RAT.players||[]).filter(function(p){
+          // The Ratings roster, not RAT.players: a retired player is off this
+          // board, so offering him to compare would put him back on it.
+          return ratRoster().filter(function(p){
             return p.name.toLowerCase().indexOf(ql)>=0 && state.ratSel.indexOf(p.name)<0;
           }).slice(0,40).map(function(p){ return {label:p.name, value:p.name, meta:p.rank!=null?('#'+p.rank):''}; });
         },
@@ -27174,24 +27377,31 @@ window.DatabaseTab = (function(){
       }));
       zR.appendChild(pillGroup([['All','All'],['Hard','Hard'],['Clay','Clay'],['Grass','Grass']],
         state.ratSurf, function(v){ state.ratSurf=v; }, false));
-      // Disabled, not hidden, while the compare panel is open.
-      zR.appendChild(pillGroup([['career','Career'],['last52','Last 52 weeks']],
-        state.ratScope, function(v){ state.ratScope=v; }, state.ratSel.length>=2));
+      // TEN-260 Part C · HIDDEN, not disabled, while players are picked. The
+      // prototype's own code is `showRatPeriod: isRatings && !ratCmp` and
+      // DESIGN 3 shows no period control with two players picked; the README's
+      // prose ("go disabled") disagrees with both and is reported, not followed.
+      // With nobody picked the control stays: the board has real Career and
+      // Last 52 figures behind it.
+      if(!state.ratSel.length) zR.appendChild(pillGroup([['career','Career'],['last52','Last 52 weeks']],
+        state.ratScope, function(v){ state.ratScope=v; }, false));
       var rreset=el('button','db-reset','Reset'); rreset.onclick=function(){ resetFilters(); render(); };
       zR.appendChild(rreset);
       if(zL.childNodes.length) zR.classList.add('div');
       return;
     }
     if(state.view==='lines'){
-      // TEN-243 STEP 4, founder-authorised 2026-09-21. Controls are offered now
-      // because there IS a query behind them. One subject: the spec's compare
-      // view (2-3 players) needs a field pass this build does not have, so the
-      // cap is 1 and the card says so rather than a picker promising a compare
-      // that would not arrive.
+      // TEN-260 Part B · compare is ON: up to three players (README TAB 5 "Lines
+      // controls": "the compare search, capped at three players"). Rate needs no
+      // field pass; Vs field reads the pipeline's field file when it is live.
+      // Placeholders per README section 2: "Compare with…" once one player is
+      // picked, "Add a player…" after that. The lone chip is not removable (the
+      // prototype's `removable: players.length > 1`); Reset clears it.
+      var nSel=state.lnSel.length;
       zL.appendChild(chipSearch({
-        picks:state.lnSel, cap:1, capNote:'One player — compare needs the field pass', noun:'player',
-        placeholder:'Choose a player…', placeholder2:'', query:state.lnQ,
-        pending:!RAT,
+        picks:state.lnSel, cap:3, capNote:'Three players maximum', noun:'player',
+        placeholder:'Choose a player…', placeholder2: nSel===1 ? 'Compare with…' : 'Add a player…', query:state.lnQ,
+        pending:!RAT, fixed: nSel<2,
         onInput:function(v){ state.lnQ=v; },
         match:function(qs){
           if(!RAT) return [];
@@ -27200,18 +27410,22 @@ window.DatabaseTab = (function(){
             return p.name.toLowerCase().indexOf(ql)>=0 && state.lnSel.indexOf(p.name)<0;
           }).slice(0,40).map(function(p){ return {label:p.name, value:p.name, meta:p.rank!=null?('#'+p.rank):''}; });
         },
-        onPick:function(n){ if(!state.lnSel.length) state.lnSel=[n]; state.lnQ=''; },
+        onPick:function(n){ if(state.lnSel.length<3 && state.lnSel.indexOf(n)<0) state.lnSel=state.lnSel.concat([n]); state.lnQ=''; },
         onRemove:function(n){ state.lnSel=state.lnSel.filter(function(x){ return x!==n; }); }
       }));
-      zR.appendChild(pillGroup([['All','All'],['Hard','Hard'],['Clay','Clay'],['Grass','Grass']],
-        state.lnSurf, function(v){ state.lnSurf=v; }, false));
-      // TEN-256 · README TAB 5 "Lines controls". Career | Last 52 and Line group
-      // are wired because career-history carries a `date` on every row (measured:
-      // 0 undated of 85,779 across the 225-player field) and the ladder keys are
-      // ours. The spec's THIRD menu, Side, is NOT here - see lnPaint.
+      // Order per the founder's list and the prototype: Bo3/Bo5 · Career/Last 52 ·
+      // Surface ▾ · Line group ▾ · Reset. Bo3 and Bo5 are SEPARATE LADDERS, so the
+      // format is a segmented control, not a filter. No Side control (ruled out:
+      // career-history carries no price and no favourite marker).
+      zR.appendChild(pillGroup([['bo3','Bo3'],['bo5','Bo5']],
+        state.lnFmt, function(v){ state.lnFmt=v; }, false, 'lines'));
       zR.appendChild(pillGroup([['career','Career'],['l52','Last 52']],
-        state.lnScope, function(v){ state.lnScope=v; }, false));
-      zR.appendChild(trigger('Line group', state.lnCat || 'All', !!state.lnCat, 'lncat', function(){
+        state.lnScope, function(v){ state.lnScope=v; }, false, 'lines'));
+      zR.appendChild(trigger('Surface', state.lnSurf, state.lnSurf!=='All', 'lnsurf', function(){
+        return singleMenu([['All','All'],['Hard','Hard'],['Clay','Clay'],['Grass','Grass']],
+          state.lnSurf, function(v){ state.lnSurf=v; });
+      }));
+      zR.appendChild(trigger('Line group', state.lnCat || 'All groups', !!state.lnCat, 'lncat', function(){
         return singleMenu([[null,'All groups']].concat(LN_GROUPS.map(function(g){ return [g,g]; })),
           state.lnCat, function(v){ state.lnCat=v; });
       }));
@@ -27850,6 +28064,11 @@ window.DatabaseTab = (function(){
       var r=rec[k.slice(4)]; return r && typeof r.rating==='number' ? r.rating : null;
     }
     var n=ratNode(p); if(!n) return null;
+    // TEN-260: PW and PL follow the Mental Edge view, like the ratio beside them.
+    if(k==='mental.pw' || k==='mental.pl'){
+      var mv=ratMentalFor(p, n);
+      return k==='mental.pw' ? mv.pw : mv.pl;
+    }
     var parts=k.split('.'), sub=n[parts[0]];
     if(!sub) return null;
     var v=sub[parts[1]];
@@ -27864,6 +28083,7 @@ window.DatabaseTab = (function(){
       var r=rec[key]; return r && typeof r.rating==='number' ? r.rating : null;
     }
     var n=ratNode(p); if(!n) return null;
+    if(board==='mental') return ratMentalFor(p, n).ratio;
     var nd=n[RAT_BOARDS[board].node];
     return nd && typeof nd.rating==='number' ? nd.rating : null;
   }
@@ -27891,10 +28111,10 @@ window.DatabaseTab = (function(){
   //            serve stats, fold included. Already the right number.
   //   return / under pressure - tour matches, plus the Challenger matches when
   //            that node says it used them.
-  //   mental - tour matches ONLY, and that is not an oversight: the locked
-  //            method for Mental Edge is "tour level only (no Challenger
-  //            fold-in - mixing tiers inside a count changes what the count
-  //            means)". Adding the fold here would contradict the formula.
+  //   mental - follows the Mental Edge VIEW (TEN-260): tour matches on ATP
+  //            only, Challenger matches on Challenger only, the simple sum on
+  //            ATP + Challenger - never a discounted or folded count. See
+  //            ratMentalFor.
   //   elo    - null. It is scraped and rests on no match set of ours; a dash is
   //            the honest cell, not a borrowed count.
   function ratN(p, board){
@@ -27908,7 +28128,10 @@ window.DatabaseTab = (function(){
       // count would print a denominator the rating was never built on.
       return typeof sv==='number' ? sv : null;
     }
-    if(board==='mental') return tour;
+    // TEN-260: the Mental Edge count follows the view - tour matches on ATP
+    // only, Challenger matches on Challenger only, their sum on the combined
+    // view. The whole-row gate below keys on this same number.
+    if(board==='mental') return ratMentalFor(p, n).matches;
     var nd = n[board==='return' ? 'return' : 'underPressure'];
     var ch = (nd && nd.inclChallenger && typeof sm.challMatches==='number') ? sm.challMatches : 0;
     return tour==null ? null : tour+ch;
@@ -27919,7 +28142,7 @@ window.DatabaseTab = (function(){
   // well backed: at Clay/last52 that silently hid 82 of 156 rated players.
   function ratBoardPool(board){
     if(!RAT || !RAT.players) return [];
-    return RAT.players.filter(function(p){
+    return ratRoster().filter(function(p){
       if(!ratNode(p)) return false;
       // Elo rests on no match set of ours, so a match gate cannot apply to it;
       // the board is every player we hold an Elo for at this slice.
@@ -27941,7 +28164,7 @@ window.DatabaseTab = (function(){
   // still gets a dash in that cell rather than being dropped from the board.
   function ratPool(){
     if(!RAT || !RAT.players) return [];
-    return RAT.players.filter(function(p){
+    return ratRoster().filter(function(p){
       var n=ratNode(p); if(!n || !n.sample) return false;
       var t=n.sample.matches, c=n.sample.challMatches;
       var m=(typeof t==='number'?t:0)+(typeof c==='number'?c:0);
@@ -28007,21 +28230,71 @@ window.DatabaseTab = (function(){
     var card=el('div','db-rcard');
     card.appendChild(el('div','db-rbrow','Ratings board'));
     card.appendChild(el('h2','db-rtitle','Player ratings by surface'));
-    card.appendChild(el('p','db-rdesc','Surface Elo, plus serve, return, under-pressure and Mental Edge ratings derived from the full ATP-level match archive. Higher is better across every column.'));
+    // TEN-260 Part A.6 · the description says where each column comes from and
+    // no more. Elo is NOT ours (a scraped weekly list), serve / return / under
+    // pressure fold Challenger in only for players thin at tour level, and
+    // Mental Edge now counts Challenger break points on two of its three views.
+    card.appendChild(el('p','db-rdesc','Surface Elo from an external weekly rating list. Serve, return and under-pressure ratings are derived from the ATP-level match archive, with a player\u2019s Challenger matches folded in (discounted \u00d70.9) only when he is thin at tour level. Mental Edge counts break points won and lost at ATP level, Challenger level or both \u2014 the view on that board says which. Higher is better across every column.'));
     var pool=ratPool();
     // The count names the field of the board on screen. It is not one number for
     // the tab: the Serve board and the Mental Edge board have different fields
     // because they rest on different match sets.
     var shown = state.ratBoard==='overview' ? pool : ratBoardPool(state.ratBoard);
-    card.appendChild(el('div','db-rcount','<b>'+fmtInt(shown.length)+'</b> players'));
+    // Prototype behaviour (Database.dc.html: `if (ratCmp) rPool = picked`): with
+    // players picked, the board lists just them and the count says so. The
+    // field median still runs over the whole field (ratMedian ignores ratSel).
+    var sel=state.ratSel.length ? state.ratSel : null;
+    var pick=function(list){ return sel ? list.filter(function(p){ return sel.indexOf(p.name)>=0; }) : list; };
+    var cnt=el('div','db-rcount','<b>'+fmtInt(pick(shown).length)+'</b> players');
+    if(state.ratBoard==='mental'){
+      // Part A.5 · "ranked X of Y" on every view, over the whole field at the
+      // slice (never over the picks): Y is every row the view shows, X the
+      // ones that clear the pressure-point minimum.
+      var ext=ratMentalExtras(shown), rk=0;
+      shown.forEach(function(p){ var pp=ratPP(ratMentalFor(p, ratNode(p))); if(pp!=null && pp>=ME_RANK_MIN) rk++; });
+      var tot=shown.length + (sel ? ratMentalExtrasAll(shown) : ext).length;
+      cnt.innerHTML='<b>'+fmtInt(pick(shown).length + ext.length)+'</b> players · ranked <b>'+fmtInt(rk)+'</b> of <b>'+fmtInt(tot)+'</b>';
+    }
+    card.appendChild(cnt);
 
-    if(state.ratSel.length>=2) card.appendChild(ratComparePanel());
+    if(state.ratSel.length) card.appendChild(ratComparePanel());
     card.appendChild(ratBoardTabs());
+    if(state.ratBoard==='mental') card.appendChild(ratMViewPills());
     // Each board has its OWN field, because each rests on its own match set.
     card.appendChild(state.ratBoard==='overview'
-      ? ratOverview(pool)
-      : ratLeaderboard(ratBoardPool(state.ratBoard), state.ratBoard));
+      ? ratOverview(pick(pool))
+      : ratLeaderboard(pick(ratBoardPool(state.ratBoard)), state.ratBoard));
+    card.appendChild(ratRetiredNote());
     body.appendChild(card);
+  }
+  // Extras over the whole field regardless of the picks - for the "of Y" total.
+  function ratMentalExtrasAll(pool){
+    var keep=state.ratSel; state.ratSel=[];
+    try { return ratMentalExtras(pool); } finally { state.ratSel=keep; }
+  }
+  // Part A.2 · the three-view filter. Lives on the Mental Edge board because it
+  // re-defines only that board's figures; the other five do not move with it.
+  function ratMViewPills(){
+    var g=pillGroup([['atp','ATP only'],['chall','Challenger only'],['both','ATP + Challenger']],
+      ratMView(), function(v){ state.ratMView=v; }, false);
+    g.classList.add('db-mview');
+    g.title='Which break points the Mental Edge ratio counts. ATP + Challenger is a simple sum of the two counts.';
+    return g;
+  }
+  // Part A.1 · say who was removed, with the file that removed them - and say
+  // so loudly if the list did not load, because then nobody was removed.
+  function ratRetiredNote(){
+    var n=el('div','db-unwired');
+    if(!RETIRED){
+      n.textContent='The retired-players list could not be loaded, so retired players have NOT been removed from this board.';
+      n.style.color='#e8a84e';
+      return n;
+    }
+    var gone=ratRetiredOnStore();
+    n.textContent = gone.length
+      ? 'Removed as retired (confirmed retirements, retired-players.json): '+gone.join(', ')+' \u2014 '+gone.length+' of '+fmtInt(RAT.players.length)+' stored players.'
+      : 'No player on this store is on the retired list.';
+    return n;
   }
 
   function ratBoardTabs(){
@@ -28111,7 +28384,8 @@ window.DatabaseTab = (function(){
 
     var sc=el('div','db-rscroll');
     var g=el('div','db-rgrid');
-    g.style.gridTemplateColumns='36px minmax(150px,1fr) 66px repeat(4,minmax(96px,1fr))';
+    // The prototype's tracks + 12px each (the cells carry the gap - see .db-rgrid).
+    g.style.gridTemplateColumns='48px minmax(162px,1fr) 78px repeat(4,minmax(108px,1fr))';
     g.style.minWidth='830px';
 
     function headCell(node){ var d=el('div','db-rhead'); d.appendChild(node); return d; }
@@ -28130,7 +28404,7 @@ window.DatabaseTab = (function(){
     g.appendChild(medCell('—','db-rn'));
     cols.forEach(function(c){
       var m=ratMedian(c[0]==='up'?'up':c[0], null);
-      g.appendChild(medCell(m==null?'—':m.toFixed(c[0]==='elo'?0:1),'db-rfig mut'));
+      g.appendChild(medCell(m==null?'—':m.toFixed(0),'db-rfig mut'));
     });
 
     rows.forEach(function(p, i){
@@ -28148,7 +28422,10 @@ window.DatabaseTab = (function(){
       cols.forEach(function(c){
         var v=ratRating(p, c[0]);
         var cell=r();
-        cell.appendChild(el('div','db-rfig'+(v==null?' dash':''), v==null?'—':v.toFixed(c[0]==='elo'?0:1)));
+        // TEN-260 Part C · whole numbers (README: "Elo and rating components as
+        // integers except ACE / DF and Mental Edge"). The sort still reads the
+        // unrounded value.
+        cell.appendChild(el('div','db-rfig'+(v==null?' dash':''), v==null?'—':v.toFixed(0)));
         cell.firstChild.title=c[2]+' · '+p.name;
         g.appendChild(cell);
       });
@@ -28176,7 +28453,7 @@ window.DatabaseTab = (function(){
 
     var sc=el('div','db-rscroll');
     var g=el('div','db-rgrid');
-    g.style.gridTemplateColumns='36px minmax(150px,1fr) 56px 66px '+B.cols.map(function(){return 'minmax(66px,1fr)';}).join(' ');
+    g.style.gridTemplateColumns='48px minmax(162px,1fr) 68px 78px '+B.cols.map(function(){return 'minmax(78px,1fr)';}).join(' ');
     g.style.minWidth=(350 + B.cols.length*78)+'px';
 
     function headCell(node){ var d=el('div','db-rhead'); d.appendChild(node); return d; }
@@ -28202,8 +28479,30 @@ window.DatabaseTab = (function(){
       g.appendChild(medCell(m==null?'—':ratFmt(m,c.dec,c.pct,c.sgn),'db-rfig mut'));
     });
 
-    rows.forEach(function(p,i){
-      var c0=el('div','db-rrow'); c0.appendChild(el('div','db-rnum',String(i+1))); g.appendChild(c0);
+    // TEN-260 Part A.3 · Mental Edge ranks only at ME_RANK_MIN pressure points
+    // or more, per view. Below it a player keeps his ratio and his count, loses
+    // his rank number, and sits BELOW the ranked block under a label that says
+    // why. On the combined view a player whose Challenger lookup did not
+    // resolve is shown on his ATP figures, marked, and never ranked.
+    var blocks=[{rows:rows, ranked:true}];
+    if(board==='mental'){
+      var ranked=[], below=[];
+      rows.forEach(function(p){ var pp=ratPP(ratMentalFor(p, ratNode(p))); (pp!=null && pp>=ME_RANK_MIN ? ranked : below).push(p); });
+      blocks=[{rows:ranked, ranked:true},
+              {rows:below, ranked:false, label:'Below '+ME_RANK_MIN+' pressure points · not ranked'}];
+      var ex=ratMentalExtras(pool);
+      if(ex.length) blocks.push({rows:ex, ranked:false, extra:true,
+        label: ratMView()==='chall' ? 'Challenger data unavailable · the Challenger lookup did not resolve for these players'
+                                    : 'ATP data only · the Challenger lookup did not resolve, so these players are not in the combined ranking'});
+    }
+    blocks.forEach(function(blk){
+    if(blk.label && blk.rows.length){
+      var bl=el('div','db-rblock', esc(blk.label)+' <b>'+fmtInt(blk.rows.length)+'</b>');
+      bl.style.gridColumn='1 / -1';
+      g.appendChild(bl);
+    }
+    blk.rows.forEach(function(p,i){
+      var c0=el('div','db-rrow'); c0.appendChild(el('div','db-rnum', blk.ranked ? String(i+1) : '—')); g.appendChild(c0);
       var c1=el('div','db-rrow');
       var pl=el('div','db-rplayer', ratAvatar(p.name,true));
       var nm=el('a','db-rname',esc(p.name)); nm.href='#'; nm.title=p.name;
@@ -28211,11 +28510,17 @@ window.DatabaseTab = (function(){
       pl.appendChild(nm);
       if(p.rank!=null) pl.appendChild(el('span','db-cmprank','#'+p.rank));
       c1.appendChild(pl); g.appendChild(c1);
-      var c2=el('div','db-rrow'); c2.appendChild(el('div','db-rn', fmtInt(ratN(p,board)))); g.appendChild(c2);
-      var rv=ratRating(p,board);
+      var mx = (board==='mental' && blk.extra) ? ratMentalFor(p, ratNode(p)) : null;
+      var c2=el('div','db-rrow'); c2.appendChild(el('div','db-rn', fmtInt(mx ? mx.matches : ratN(p,board)))); g.appendChild(c2);
+      var rv = mx ? mx.atpRatio : ratRating(p,board);
       var c3=el('div','db-rrow');
       c3.appendChild(el('div','db-rfig rtg'+(rv==null?' dash':''), rv==null?'—':rv.toFixed(B.rtgDec)));
-      c3.firstChild.title=B.label+' rating · '+p.name;
+      c3.firstChild.title = mx ? (mx.unresolved
+          ? 'No Challenger figure · the Challenger lookup did not resolve for '+p.name+', so a zero here would not be a real zero'
+          : 'ATP data only · '+p.name+' · the Challenger lookup did not resolve, so this is his ATP ratio and he is not ranked on the combined view')
+        : B.label+' rating · '+p.name;
+      if(mx && mx.atpOnly) c3.appendChild(el('div','db-rtag','ATP only'));
+      if(board==='mental' && !blk.ranked && !blk.extra) c3.firstChild.title += ' · below '+ME_RANK_MIN+' pressure points, not ranked';
       // TEN-254, founder's interim instruction on the unruled Mental Edge sample
       // floor: the count that backs the RATIO goes next to it, so a thin sample
       // is visible without a floor having been picked. PW+PL is the pressure-point
@@ -28242,6 +28547,7 @@ window.DatabaseTab = (function(){
         cell.appendChild(f); g.appendChild(cell);
       });
     });
+    });
     sc.appendChild(g); wrap.appendChild(sc);
 
     var unwired=B.cols.filter(function(c){ return c.k==null; }).map(function(c){ return c.h; });
@@ -28263,28 +28569,32 @@ window.DatabaseTab = (function(){
   // exactly why the Career / Last 52 pills go disabled while it is open.
   function ratComparePanel(){
     var picks=state.ratSel.map(function(n){
-      return (RAT.players||[]).filter(function(p){ return p.name===n; })[0];
+      return ratRoster().filter(function(p){ return p.name===n; })[0];
     }).filter(Boolean);
     var panel=el('div','db-cmp');
-    panel.appendChild(el('div','db-rbrow','Compare players'));
+    // TEN-260 Part C · the prototype's panel structure: one header grid (player
+    // heads + sub-heads), then ONE GRID PER METRIC ROW carrying its own top rule,
+    // so the rule runs unbroken under every column instead of stopping at each
+    // column gap. No "Compare players" eyebrow - the prototype has none.
+    var cols='128px '+picks.map(function(){return '84px 84px 62px';}).join(' ');
     var g=el('div','db-cmpgrid');
-    g.style.gridTemplateColumns='128px '+picks.map(function(){return '84px 84px 62px';}).join(' ');
-    g.style.marginTop='12px';
+    g.style.gridTemplateColumns=cols;
 
     g.appendChild(el('div'));
     picks.forEach(function(p){
+      // Avatar CENTRED ABOVE the name; name, ATP rank and × share one baseline.
       var h=el('div','db-cmphead');
       h.style.gridColumn='span 3';
       h.innerHTML=ratAvatar(p.name);
-      var col=el('div');
+      var line=el('div','db-cmpline');
       var nm=el('a','db-cmpname',esc(p.name)); nm.href='#';
       nm.onclick=function(ev){ ev.preventDefault(); ratOpenPlayer(p.name); };
-      col.appendChild(nm);
-      if(p.rank!=null) col.appendChild(el('div','db-cmprank','#'+p.rank));
-      h.appendChild(col);
+      line.appendChild(nm);
+      if(p.rank!=null) line.appendChild(el('span','db-cmprank','#'+p.rank));
       var x=el('button','db-cmpx','×'); x.title='Remove '+p.name;
       x.onclick=function(){ state.ratSel=state.ratSel.filter(function(n){ return n!==p.name; }); render(); };
-      h.appendChild(x);
+      line.appendChild(x);
+      h.appendChild(line);
       g.appendChild(h);
     });
 
@@ -28294,6 +28604,7 @@ window.DatabaseTab = (function(){
       g.appendChild(el('div','db-sub','Career'));
       g.appendChild(el('div','db-sub','Δ'));
     });
+    panel.appendChild(g);
 
     // Reads BOTH scopes directly rather than through ratNode(), which is bound
     // to the current ratScope - the panel is period-independent by construction.
@@ -28305,28 +28616,21 @@ window.DatabaseTab = (function(){
         // The scrape is a single current snapshot - there is no dated Elo
         // series - so it cannot answer "career vs last 52". Career shows the
         // current rating; Last 52 is a dash rather than the same number twice,
-        // which would read as "unchanged over the year".
+        // which would read as "unchanged over the year". (Founder, TEN-260:
+        // "Last 52 Elo stays a dash. No last-52 Elo exists in our data.")
         if(scope!=='career') return null;
         var key={All:'all',Hard:'hard',Clay:'clay',Grass:'grass'}[state.ratSurf]||'all';
         return rec[key] && typeof rec[key].rating==='number' ? rec[key].rating : null;
       }
-      var nd=n[metric];
-      if(!nd || typeof nd.rating!=='number') return null;
       // THE COMPARE PANEL GATES TOO. Without this it was the one surface on the
       // tab that would print a rating the boards refuse to show: J. Choinski's
       // All/last52 node rests on ONE match and still carries a full set of
-      // ratings, so the panel was showing him a Serve 251.5 and a signed delta
-      // against his career while the leaderboard below excluded him from that
-      // slice entirely. 693 player-slice nodes in the store are below the gate
-      // and every one was reachable here. Same floor, same count, everywhere.
-      var sm=n.sample||{}, tour=typeof sm.matches==='number'?sm.matches:null;
-      if(tour==null) return null;
-      var back;
-      if(metric==='serve') back = (n.serve && typeof n.serve.svMatches==='number') ? n.serve.svMatches : null;
-      else if(metric==='mental') back = tour;   // locked to tour level, as on the board
-      else back = tour + ((nd.inclChallenger && typeof sm.challMatches==='number') ? sm.challMatches : 0);
+      // ratings. Same floor, same count, everywhere - scopeN is that count.
+      var back=scopeN(p, scope, metric);
       if(back==null || back<RAT_GATE) return null;
-      return nd.rating;
+      if(metric==='mental') return ratMentalFor(p, n).ratio;   // follows the view
+      var nd=n[metric];
+      return (nd && typeof nd.rating==='number') ? nd.rating : null;
     }
     // The count behind each column, so a thin scope is FLAGGED with its number
     // rather than silently blank - the standing rule on this page.
@@ -28337,33 +28641,33 @@ window.DatabaseTab = (function(){
       var sm=n.sample||{}, tour=typeof sm.matches==='number'?sm.matches:null;
       if(tour==null) return null;
       if(metric==='serve') return (n.serve && typeof n.serve.svMatches==='number') ? n.serve.svMatches : null;
-      if(metric==='mental') return tour;
+      if(metric==='mental') return ratMentalFor(p, n).matches;
       var nd=n[metric];
       return tour + ((nd && nd.inclChallenger && typeof sm.challMatches==='number') ? sm.challMatches : 0);
     }
-    // The Elo row is labelled "current", and that is not decoration. Every other
-    // row here IS a period aggregate, so the Career column means what it says.
-    // Elo is a scraped single snapshot with no dated series: its value belongs
-    // to today, not to a career, and it cannot answer Last 52 at all. Printing
-    // it under a column headed "Career" without saying so would make a claim
-    // the store cannot support, so the row says which it is.
-    var METRICS=[['elo','Elo · current',0],['serve','Serve rating',1],['return','Return rating',1],
-                 ['underPressure','Under pressure',1],['mental','Mental Edge',3]];
+    // TEN-260 Part C: the label is "Elo" (renders ELO) per the design. The
+    // reason the Last 52 cell is a dash moves into the label's title, where it
+    // is still one hover away.
+    var MV={atp:'ATP only',chall:'Challenger only',both:'ATP + Challenger'}[ratMView()];
+    var METRICS=[['elo','Elo',0,'Elo is a current weekly snapshot from an external list: there is no dated Elo series, so Last 52 is a dash and Career is today’s rating.'],
+                 ['serve','Serve rating',0],['return','Return rating',0],
+                 ['underPressure','Under pressure',0],['mental','Mental Edge',3,'Mental Edge · '+MV+' (set on the Mental Edge board)']];
     METRICS.forEach(function(m){
-      var lab=el('div','db-cmprow'); lab.appendChild(el('div','db-rh',esc(m[1]))); g.appendChild(lab);
+      var row=el('div','db-cmpmrow'); row.style.gridTemplateColumns=cols;
+      var lab=el('div','db-cmprow'); var lh=el('div','db-rh',esc(m[1])); if(m[3]) lh.title=m[3]; lab.appendChild(lh);
+      if(m[0]==='mental') lab.appendChild(el('div','db-cmpview',esc(MV)));
+      row.appendChild(lab);
       picks.forEach(function(p){
         var l52=scopeVal(p,'last52',m[0]), car=scopeVal(p,'career',m[0]);
-        // A gated-out cell says WHY with its count ("n=1"), so a thin scope is
-        // legible as thin rather than looking like missing data.
-        // TEN-254: the founder asked for the count next to EVERY Mental Edge
-        // ratio. This panel renders up to 4 players x (Last 52 + Career) of them,
-        // and it is the surface a member opens precisely to compare thin samples —
-        // so it needs the count more than the board does, not less.
+        // TEN-254: the count next to EVERY Mental Edge ratio - on the view the
+        // ratio is on, so the count and the ratio describe the same points.
         function ppcFor(scope){
           var s=(p.surfaces||{})[state.ratSurf]; if(!s) return null;
-          var n=s[scope]; if(!n || !n.mental) return null;
-          if(n.mental.pw==null || n.mental.pl==null) return null;
-          return n.mental.pw + n.mental.pl;
+          var n=s[scope]; if(!n) return null;
+          // Not gated on n.mental: on the Challenger view a slice with no tour
+          // break points still has a Challenger count, and the ratio above it
+          // must carry it (review finding, TEN-260).
+          return ratPP(ratMentalFor(p, n));
         }
         function cell(cls, v, scope){
           var c=el('div','db-cmpcell '+cls);
@@ -28374,7 +28678,7 @@ window.DatabaseTab = (function(){
             if(m[0]==='mental' && cls!=='delta'){
               var q=ppcFor(scope);
               var pcc=el('div','db-cmpppc'+(q==null?' dash':''), q==null?'—':(fmtInt(q)+' pp'));
-              pcc.title='Pressure points behind this ratio (break points saved + converted + lost + missed) · '+p.name;
+              pcc.title='Pressure points behind this ratio (break points saved + converted + lost + missed) · '+MV+' · '+p.name;
               c.appendChild(pcc);
             }
             return c;
@@ -28382,13 +28686,19 @@ window.DatabaseTab = (function(){
           var k=scopeN(p, scope, m[0]);
           if(k!=null && k<RAT_GATE){
             c.textContent='n='+k;
-            c.style.fontSize='11px'; c.style.fontWeight='500'; c.style.color='#5b6880';
+            c.classList.add('thin');
             c.title='Below the '+RAT_GATE+'-match floor for this rating at this slice — no figure is shown.';
-          } else c.textContent='—';
+          } else {
+            c.textContent='—';
+            if(m[0]==='mental' && ratMentalFor(p, (((p.surfaces||{})[state.ratSurf])||{})[scope]).unresolved)
+              c.title='No Challenger figure · the Challenger lookup did not resolve for '+p.name+'.';
+            else if(m[0]==='mental' && ratMView()==='both' && p.challResolved!==true)
+              c.title='Not on the combined view · the Challenger lookup did not resolve for '+p.name+' (ATP data only).';
+          }
           return c;
         }
-        g.appendChild(cell('live', l52, 'last52'));
-        g.appendChild(cell('ref', car, 'career'));
+        row.appendChild(cell('live', l52, 'last52'));
+        row.appendChild(cell('ref', car, 'career'));
         var d=el('div','db-cmpcell delta');
         if(l52==null || car==null){ d.textContent='—'; d.style.color='#5b6880'; }
         else {
@@ -28396,14 +28706,16 @@ window.DatabaseTab = (function(){
           // Three-way sign colour: this is the Compare variant the README calls
           // out - it adds #8b96b5 at exactly zero. It is deliberately NOT the
           // binary rule used on the yield cells; do not unify them.
-          var txt=(diff>0?'+':diff<0?'−':'±')+Math.abs(diff).toFixed(m[2]);
+          var r=Number(Math.abs(diff).toFixed(m[2]));
+          var txt=(r===0?'±':diff>0?'+':'−')+Math.abs(diff).toFixed(m[2]);
           d.textContent=txt;
-          d.style.color = diff>0 ? POS : diff<0 ? NEG : '#8b96b5';
+          d.style.color = r===0 ? '#8b96b5' : diff>0 ? POS : NEG;
+          d.title='Last 52 '+l52+' − career '+car;
         }
-        g.appendChild(d);
+        row.appendChild(d);
       });
+      panel.appendChild(row);
     });
-    panel.appendChild(g);
     return panel;
   }
 
@@ -28482,7 +28794,10 @@ window.DatabaseTab = (function(){
   // field), so nothing falls out of the window for want of one - but the filter
   // is written to DROP an undated row rather than keep it, because a row with no
   // date cannot be shown to be inside a dated window.
-  function lnCutoff(){ return new Date(Date.now() - 364*864e5).toISOString().slice(0,10); }
+  // TEN-260 · when the field file is loaded, "Last 52" is ITS cutoff, so the
+  // subject's rate and the field it is ranked in are cut on the same day. The
+  // pipeline rebuilds the file every tick, so this is at most one tick old.
+  function lnCutoff(){ return (LNF && LNF.l52Cutoff) || new Date(Date.now() - 364*864e5).toISOString().slice(0,10); }
   function lnPartition(rows, surf, scope){
     var cut = scope==='l52' ? lnCutoff() : null;
     var scoped = rows.filter(function(r){
@@ -28529,13 +28844,75 @@ window.DatabaseTab = (function(){
     return null;
   }
 
+  // One line over one pool: how many matches could answer it, how many it hit,
+  // and the signed margin. Shared with the pipeline's field builder
+  // (build-lines-field.js slices this function out of this file), so a rate on
+  // screen and the field it is ranked in are computed by ONE definition.
+  function lnLine(pool, kind, arg){
+    var hit=0, n=0, marg=0, margN=0;
+    pool.forEach(function(r){
+      var h=lnHit(r, kind, arg);
+      if(!h) return;
+      n++; if(h.hit) hit++;
+      if(h.margin!=null){ marg+=h.margin; margN++; }
+    });
+    return { n:n, hit:hit, marg:marg, margN:margN };
+  }
+  // A player's rows at a slice, split into the two ladders ONCE so each ladder
+  // is counted over its own population. Also shared with the field builder.
+  function lnPools(rows, surf, scope){
+    var part=lnPartition(rows, surf, scope);
+    var byFmt={bo3:[],bo5:[]}, untyped=0;
+    part.usable.forEach(function(r){ var f=lnFormat(r); if(f) byFmt[f].push(r); else untyped++; });
+    return { part:part, byFmt:byFmt, untyped:untyped };
+  }
+  // THE RATE GATE, from the spec: n < 5 is a dash. A rate over four matches is
+  // not a rate. Also the field's entry test (a player is in a line's field only
+  // with a rate the page would print), so the two can never disagree.
+  var LN_MIN_N=5;
+  function lnRate(L){ return L.n>=LN_MIN_N ? L.hit/L.n*100 : null; }
+  function lnRound3(x){ return Math.round(x*1000)/1000; }
+
+  // ─── TEN-260 Part B · the field ──────────────────────────────────────────
+  // lines-field.json is BUILT IN THE PIPELINE (build-lines-field.js), never in
+  // the browser: a runtime pass is 225 fetches / 20.8 MiB (TEN-256 item 5). For
+  // every format × surface × period × line it carries the SORTED rates of every
+  // player in the field. Field = its median, Vs field = rate − median, Ranking =
+  // 1 + the number of field rates strictly above the player's, over the field
+  // size. Its own failure domain: absent file -> those three columns dash and
+  // the note says so; the Rate column never waits for it.
+  var LNF=null, lnfPromise=null, LNF_URL='./lines-field.json';
+  function loadLinesField(){
+    if(LNF) return Promise.resolve(LNF);
+    if(lnfPromise) return lnfPromise;
+    lnfPromise=fetch(LNF_URL,{cache:'no-cache'})
+      .then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(j){ if(j && j.slices) LNF=j; lnfPromise=null; return LNF; })
+      .catch(function(){ lnfPromise=null; return null; });   // not cached: the next paint retries
+    return lnfPromise;
+  }
+  function lnFieldStats(fmt, label, rate){
+    if(!LNF || !LNF.slices) return null;
+    var sl=LNF.slices[fmt+'|'+state.lnSurf+'|'+state.lnScope];
+    var d=sl && sl[label];
+    if(!Array.isArray(d) || !d.length) return null;
+    var med=median(d), rank=null;
+    // The player must BE in the field to be ranked in it. A file one tick older
+    // than his shard can miss him (e.g. he has just reached n = 5), and ranking
+    // him anyway prints "226/225". Not found -> no rank, a dash.
+    if(rate!=null){ var r=lnRound3(rate); if(d.indexOf(r)>=0){ var above=0; d.forEach(function(v){ if(v>r) above++; }); rank=above+1; } }
+    return { median:med, size:d.length, rank:rank };
+  }
+  // Signed to one decimal with a real minus sign; zero after rounding prints
+  // unsigned. Colour is the three-way sign colour on the same rounded value, so
+  // a "0.0" can never be painted green or red.
+  function lnSgn(v){ var x=Math.round(v*10)/10; return (x>0?'+':x<0?'−':'')+Math.abs(x).toFixed(1); }
+  function lnSgnCol(v){ var x=Math.round(v*10)/10; return x>0?'#3dd68c':x<0?'#e0616f':'#8b96b5'; }
+
   function renderLines(body){
     // The subject picker searches the ratings roster, and that store is LAZY —
     // it was loaded only by renderRatings. A member opening Lines first got a
-    // picker that could never offer anyone, with nothing on screen to explain
-    // it. Caught by driving the tab in a browser rather than by reading the
-    // code: the probe's pick step silently did nothing and every downstream
-    // assertion came back undefined.
+    // picker that could never offer anyone, with nothing on screen to explain it.
     if(!RAT){
       body.appendChild(el('div','db-loading','Loading the ratings archive…'));
       var linst=I;      // capture the instance - a second mount must not steal this render
@@ -28549,15 +28926,6 @@ window.DatabaseTab = (function(){
       return;
     }
     var card=el('div','db-rcard');
-
-    // TEN-256 · README TAB 5 head. With a subject chosen the head is eyebrow →
-    // people row → state chips, and the PLAYER'S NAME is the title: the bundle
-    // has no separate card title here, and stacking "Derived lines" at 22px/800
-    // directly above a name at 22px/800 gave the card two competing titles. The
-    // prose that used to sit under that title is the README's FOOT note, so it
-    // moved to the foot (lnPaint) where the bundle puts it. With nothing chosen
-    // there is no name to carry the head, so the title and the fuller
-    // description stay - that state has to explain what the tab is.
     var brow=el('div','db-lnbrow','Line coverage');
     card.appendChild(brow);
 
@@ -28566,43 +28934,50 @@ window.DatabaseTab = (function(){
       card.appendChild(el('p','db-rdesc',
         'Games handicap, set handicap, total games and match shape — how often each derived line landed for a player. Derived from set scores, not from settled markets: these are coverage rates, not results against a priced line. Best-of-three and best-of-five are counted separately, because the same line is a different bet in each.'));
       var prompt=el('div','db-prompt');
-      prompt.innerHTML='<h3>Choose a player</h3><p>Search above to pick one, and this tab will show how often each derived line landed for him, with the number of matches behind every rate.</p>';
+      prompt.innerHTML='<h3>Choose a player</h3><p>Search above to pick one, and this tab will show how often each derived line landed for him, with the number of matches behind every rate. Add up to two more to compare them line by line.</p>';
       card.appendChild(prompt); body.appendChild(card); return;
     }
 
-    var nm=state.lnSel[0];
-    lnHead(card, nm);
-
-    var key=lnKeyForName(nm);
-    if(!key){
-      var miss=el('div','db-unwired');
-      miss.innerHTML=esc('No profile key for "'+nm+'", so his match rows cannot be found. The ratings roster carries names only; the match store is keyed by player id, and the two are joined on an exact name match rather than a fuzzy one — a near-match here would attach another player’s games to this ladder.');
-      card.appendChild(miss); body.appendChild(card); return;
-    }
-
+    var picks=state.lnSel.slice(0,3);
+    lnHead(card, picks);
     var host=el('div'); card.appendChild(host); body.appendChild(card);
     host.appendChild(el('div','db-rdesc','Loading match rows…'));
-    var inst=I, want=nm;
-    loadCareerHistory(key).then(function(rows){
-      // Capture the instance and the subject: an async continuation that reads
-      // the live state can paint one player's ladder under another's name once
-      // a second mount exists (the defect TEN-242 caught in renderRatings).
-      if(inst!==I || (state.lnSel[0]!==want)) return;
-      host.innerHTML='';
-      lnPaint(host, rows||[], want, brow);
+    var inst=I, want=picks.join('\u0001');
+    // Every subject's rows and the field file, in parallel. A name with no
+    // profile key resolves to null (not []) so the table can say WHY it dashes.
+    // RATE NEVER WAITS FOR THE FIELD FILE: the table paints as soon as the
+    // subjects' rows are in, with whatever field is loaded (possibly none ->
+    // dashes + note), and REPAINTS once when the file lands - which also re-cuts
+    // Last 52 to the file's cutoff, so subject and field stay on one window.
+    var hadField=!!LNF, rowsRes=null;
+    var stale=function(){ return inst!==I || state.view!=='lines' || state.lnSel.slice(0,3).join('\u0001')!==want; };
+    loadLinesField().then(function(){ if(!hadField && LNF && rowsRes && !stale()){ use(inst); paintNow(); } });
+    Promise.all(picks.map(function(nm){ var k=lnKeyForName(nm); return k ? loadCareerHistory(k) : Promise.resolve(null); }))
+    .then(function(rs){
+      // An async continuation that reads live state can paint one player's
+      // ladder under another's name once a second mount exists (TEN-242).
+      if(stale()) return;
+      rowsRes=rs; hadField=!!LNF; paintNow();
     });
+    function paintNow(){
+      var res=[rowsRes];
+      host.innerHTML='';
+      lnPaint(host, picks.map(function(nm,i){
+        // loadCareerHistory never rejects: a FAILED shard resolves [] exactly like
+        // a player with no rows. Only an ANSWERED lookup is written to the shard
+        // cache, so "not in the cache" is the failure, and it must not print as
+        // "no matches on record".
+        var k=lnKeyForName(nm), failed=false;
+        try { failed = !!k && typeof _careerHistoryShards!=='undefined' && !(String(k) in _careerHistoryShards); } catch(e){}
+        return { nm:nm, rows:res[0][i], failed:failed };
+      }), brow);
+    }
   }
 
   // Initials for the README's 34px avatar. Built from the ROSTER STRING as it is
   // stored ("C. Alcaraz", "F. Auger-Aliassime"), so the initial and the surname
-  // letter come from the same source the name beside it does - deriving them from
-  // a re-split full name would disagree with the label on a hyphenated surname.
-  // Take each token's FIRST character, not its first Latin-1 letter. A
-  // "first letter anywhere in the token" match reads past the letter it was
-  // looking for the moment a surname starts outside U+00C0-U+00FF: "M. Čilić"
-  // came out MI, because Č is U+010C and the scan ran on to the i. No name on
-  // today's 237-player roster is affected - this is a roster-growth trap, and
-  // the roster grows.
+  // letter come from the same source the name beside it does. Take each token's
+  // FIRST character: a "first Latin-1 letter" scan read "M. Čilić" as MI.
   function lnInitials(nm){
     return String(nm||'').split(/\s+/)
       .map(function(t){ return t.charAt(0); })
@@ -28614,30 +28989,26 @@ window.DatabaseTab = (function(){
     var hit=(RAT.players||[]).filter(function(p){ return p.name===nm; })[0];
     return (hit && hit.rank!=null) ? hit.rank : null;
   }
-  // README TAB 5 head: people row, then the state chips that "restate every
-  // active control so the table is readable out of context".
-  function lnHead(card, nm){
-    var ppl=el('div','db-lnppl'), who=el('div','db-lnwho');
-    who.appendChild(el('div','db-lnav', esc(lnInitials(nm))));
-    var lab=el('div');
-    var a=el('a','db-lnname', esc(nm)); a.href='#'; a.title=nm;
-    a.onclick=function(ev){ ev.preventDefault(); ratOpenPlayer(nm); };
-    lab.appendChild(a);
-    // The rank is a REAL rank or it is absent. A missing rank prints nothing
-    // rather than "#—": the rank is furniture beside the name, and a dash there
-    // reads as a ranking of dash rather than as "we do not hold one".
-    var rk=lnRankOf(nm);
-    if(rk!=null) lab.appendChild(el('span','db-lnrank','#'+rk));
-    who.appendChild(lab); ppl.appendChild(who); card.appendChild(ppl);
-
-    // Chips restate the controls THIS BUILD HAS. Format is not a control here -
-    // both ladders are on screen at once, each under its own head with its own
-    // match count - so the chip says so rather than naming one format the reader
-    // is not looking at. Side is absent for the reason given in lnPaint's foot
-    // note; inventing a chip for a control that does not exist would be the
-    // out-of-context misreading the chips are there to prevent.
+  // README TAB 5 head: people row (one per subject), then the state chips that
+  // "restate every active control so the table is readable out of context".
+  function lnHead(card, picks){
+    var ppl=el('div','db-lnppl');
+    picks.forEach(function(nm){
+      var who=el('div','db-lnwho');
+      who.appendChild(el('div','db-lnav', esc(lnInitials(nm))));
+      var a=el('a','db-lnname', esc(nm)); a.href='#'; a.title=nm;
+      a.onclick=function(ev){ ev.preventDefault(); ratOpenPlayer(nm); };
+      // The rank is a REAL rank or it is absent - never "#—".
+      var rk=lnRankOf(nm);
+      if(rk!=null) a.appendChild(el('span','db-lnrank','#'+rk));
+      who.appendChild(a); ppl.appendChild(who);
+    });
+    card.appendChild(ppl);
+    // Chips restate the controls THIS BUILD HAS: format · surface · period ·
+    // line group. No Side chip (the control is not built - founder ruling) and
+    // no "Demo data" chip (these are real rates).
     var chips=el('div','db-lnchips');
-    [ 'Bo3 & Bo5',
+    [ state.lnFmt==='bo5' ? 'Best of 5' : 'Best of 3',
       state.lnSurf==='All' ? 'All surfaces' : state.lnSurf,
       state.lnScope==='l52' ? 'Last 52 weeks' : 'Career',
       state.lnCat || 'All line groups'
@@ -28645,208 +29016,164 @@ window.DatabaseTab = (function(){
     card.appendChild(chips);
   }
 
-  function lnPaint(host, rows, nm, brow){
-    // README section 5: "a number that is not wired shows an em dash — in
-    // #4b5672". This was an EN dash (U+2013) in #8b96b5, which is the secondary
-    // text colour - the same ink a real figure uses - so an unwired cell and a
-    // quiet real one were the same weight on screen.
+  function lnPaint(host, subjects, brow){
+    // §5: a number that is not wired shows an em dash in #4b5672.
     var DASH='—';
-    var part=lnPartition(rows, state.lnSurf, state.lnScope);
-    var total=part.scoped.length, have=part.usable.length;
+    var fmt = state.lnFmt==='bo5' ? 'bo5' : 'bo3';
+    var cmp = subjects.length>1;
+    subjects.forEach(function(s){ s.P = (s.rows && !s.failed) ? lnPools(s.rows, state.lnSurf, state.lnScope) : null; });
 
-    // COVERAGE, ON SCREEN AND IN PLAIN TEXT — the founder's requirement, and the
-    // thing that stops a partial rate reading as a career rate. Stated as a
-    // count over its denominator, never as a bare percentage.
-    // TWO DIFFERENT SHORTFALLS, AND THEY MUST NOT BE ADDED TOGETHER.
+    // ── NOTE 1 · the coverage line(s) - §5 10.5px, one per subject ────────
+    // TWO DIFFERENT SHORTFALLS, AND THEY MUST NOT BE ADDED TOGETHER:
     //   excluded  unfinished (retired/walkover/defaulted) or a different format
-    //             (NextGen). Ruled out by TEN-244 and PERMANENT - these never
-    //             come back, however complete the backfill gets.
-    //   noGames   the row is eligible but has no per-set score yet. This is the
-    //             only one the backfill can still move.
-    // The old label said "Games on 319 of 374" and folded both into the gap,
-    // which read as missing data when 100% of the rows carried games and the 55
-    // were the ruling doing its job.
-    var cov=el('div','db-rcount');
-    cov.textContent = total
-      ? ('Lines computed on ' + have.toLocaleString() + ' of ' + total.toLocaleString() +
-         ' matches (' + (have/total*100).toFixed(1) + '%)' +
-         (part.excluded ? ' · ' + part.excluded + ' excluded as unfinished or a different format' : '') +
-         (part.noGames ? ' · ' + part.noGames + ' still awaiting per-set games' : ''))
-      : 'No matches on record at this slice.';
+    //             (NextGen). Ruled out by TEN-244 and PERMANENT.
+    //   noGames   eligible but no per-set score yet - the only one the
+    //             backfill can still move.
+    var cov=el('div','db-lnnote');
+    cov.innerHTML = subjects.map(function(s){
+      var who = cmp ? esc(s.nm)+' — ' : '';
+      if(s.failed) return who+esc('match rows could not be loaded just now, so every cell for this player is a dash. Re-open the tab to retry.');
+      if(!s.P) return who+esc('no match record: this name does not resolve to a profile key (the join is exact-name, never fuzzy), so every cell for this player is a dash.');
+      var part=s.P.part, total=part.scoped.length, have=part.usable.length;
+      if(!total) return who+'No matches on record at this slice.';
+      return who+esc('Lines computed on ' + have.toLocaleString() + ' of ' + total.toLocaleString() +
+        ' matches (' + (have/total*100).toFixed(1) + '%)' +
+        (part.excluded ? ' · ' + part.excluded + ' excluded as unfinished or a different format' : '') +
+        (part.noGames ? ' · ' + part.noGames + ' still awaiting per-set games' : '') +
+        ' · ' + s.P.byFmt[fmt].length.toLocaleString() + (fmt==='bo3' ? ' best of three' : ' best of five'));
+    }).join('<br>');
     host.appendChild(cov);
 
-    // THE PARTIAL-RATE NOTE COMES DOWN WHEN THE BACKFILL IS DONE, per the founder's
-    // ~90% rule - and it keys on `noGames`, the only shortfall that can still move.
-    // Keyed on `have/total` it would never come down for a player with a lot of
-    // retirements, because those 55 are not late, they are ruled out. Worse, it
-    // promised "it will move as the rest land" about rows that will never land.
-    // Measured on the v15 store: per-player games coverage is 98.2-100%, median
-    // 99.4%, 0 of 16 sampled players below 90%.
-    // TEN-256 · ONE CLASS WAS CARRYING TWO DIFFERENT NOTES. `.db-unwired` is the
-    // section 5 marker for data that is NOT WIRED (10.5px), and the README's
-    // foot note is a standing statement about the METHOD (11.5px / 1.6). They
-    // were concatenated into one 10.5px block, so the permanent ruling
-    // disclosure read as another provisional "not wired yet" line. Split:
-    //   here, 10.5px  · the section 5 marker - partial games, unwired columns,
-    //                   absent controls. Everything on this line can come down.
-    //   at the foot   · the README note - method and the exclusions ruling.
-    //                   Neither ever comes down.
-    var note=el('div','db-unwired');
-    var gamesPct = (have + part.noGames) ? (have / (have + part.noGames) * 100) : 100;
-    var stillArriving = part.noGames > 0 && gamesPct < 90;
-    note.innerHTML =
-      (stillArriving
-        ? esc('THIS IS A PARTIAL RATE, NOT A CAREER RATE. Per-set games are still arriving: ' +
-              part.noGames.toLocaleString() + ' of this player’s ' + (have + part.noGames).toLocaleString() +
-              ' eligible matches do not carry them yet (' + gamesPct.toFixed(1) + '% do). Every rate below is ' +
-              'computed over the ' + have.toLocaleString() + ' that do and no others, so it will move as the rest land.') + '<br>'
-        : '') +
-      esc('Field, Vs field and Ranking are not wired: each needs a rate for every player in the field, which is one fetch per player. Those three columns are dashes rather than a stand-in computed from a subset.') +
-      // The spec's third menu. Named here rather than rendered as a dead control:
-      // measured 2026-09-23 over the WHOLE deployed store - 0 of 85,779 rows
-      // across all 225 shards carry a price or a favourite marker, so there is
-      // no field to split on. (The first draft of this comment said "0 of
-      // 15,586", which was a 40-shard SAMPLE written up as the population. The
-      // conclusion held on a recount; the denominator did not, and this is the
-      // number that drops a control the spec asks for.)
-      '<br>' + esc('The Side control (all matches / as favourite / as underdog) is not offered: career-history rows carry no price and no favourite marker, so there is nothing to split handicap lines on.');
-    host.appendChild(note);
-
-    if(!have){
-      // Say WHICH of the two emptied it. "No games on record yet" is a promise
-      // that more are coming, and it is a lie for a player whose every match was
-      // a retirement or a NextGen tie - for them nothing is pending.
-      var none=el('div','db-empty');
-      var why = part.noGames
-        ? nm+' has '+total.toLocaleString()+' matches at this slice and none of them carry per-set games yet, so every line is a dash rather than a 0% hit rate.'
-        : nm+' has '+total.toLocaleString()+' matches at this slice and every one is unfinished or a different format, so none can be priced. Every line is a dash rather than a 0% hit rate.';
-      none.innerHTML='<h3>'+esc(part.noGames ? 'No games on record yet' : 'Nothing priceable at this slice')+'</h3><p>'+esc(why)+'</p>';
-      host.appendChild(none);
-      host.appendChild(lnFoot());
-      if(brow) brow.textContent='Line coverage · 0 lines';
-      return;
+    // ── NOTE 2 · the section 5 marker: what is partial or not wired ─────────
+    // THE PARTIAL-RATE WARNING keys on `noGames` (the only shortfall that can
+    // still move) and comes down at the founder's ~90% rule.
+    var notes=[];
+    subjects.forEach(function(s){
+      if(!s.P) return;
+      var part=s.P.part, have=part.usable.length;
+      var gamesPct = (have + part.noGames) ? (have / (have + part.noGames) * 100) : 100;
+      if(part.noGames > 0 && gamesPct < 90)
+        notes.push((cmp ? s.nm+': ' : '')+'THIS IS A PARTIAL RATE, NOT A CAREER RATE. Per-set games are still arriving: ' +
+          part.noGames.toLocaleString() + ' of ' + (have + part.noGames).toLocaleString() +
+          ' eligible matches do not carry them yet (' + gamesPct.toFixed(1) + '% do). Every rate below is computed over the ' +
+          have.toLocaleString() + ' that do and no others, so it will move as the rest land.');
+      if(s.P.untyped) notes.push((cmp ? s.nm+': ' : '')+s.P.untyped+' match'+(s.P.untyped===1?'':'es')+' carried games but no readable best-of, so '+
+        (s.P.untyped===1?'it is':'they are')+' in no ladder.');
+    });
+    if(!LNF){
+      notes.push('Field, Vs field and Ranking are dashes: the field file (lines-field.json, built in the pipeline) is not published yet. Rate is computed from each player’s own matches and does not wait for it.');
+    } else {
+      var src=LNF.source||{};
+      notes.push('Field = the median rate on each line across every roster player with at least '+LN_MIN_N+' matches on that line at this slice; Ranking is the place in that field. '+
+        'The roster is '+fmtInt(src.rosterSize)+' players, of whom '+fmtInt(src.resolved)+' resolve to a match record'+
+        (src.unresolved && src.unresolved.length ? ' ('+src.unresolved.length+' do not: '+src.unresolved.join(', ')+')' : '')+
+        '. Field sizes vary by line - each Ranking shows its own.'+
+        (state.lnScope==='l52' ? ' Last 52 = matches since '+fmtDate(LNF.l52Cutoff)+'.' : ''));
+    }
+    if(notes.length){
+      var un=el('div','db-unwired');
+      un.innerHTML=notes.map(esc).join('<br>');
+      host.appendChild(un);
     }
 
-    // Split by format ONCE, so each ladder is counted over its own population.
-    var byFmt={bo3:[],bo5:[]}, untyped=0;
-    part.usable.forEach(function(r){ var f=lnFormat(r); if(f) byFmt[f].push(r); else untyped++; });
-
-    // README TAB 5: "Line group narrows the table to one of the four groups."
-    // The narrowing is a VIEW filter over the ladders, not over the matches -
-    // every rate is still computed on the same pool, so switching group cannot
-    // move a figure. That is the point of doing it here rather than in the
-    // partition.
     var groups = state.lnCat ? LN_GROUPS.filter(function(g){ return g===state.lnCat; }) : LN_GROUPS;
-    var linesShown = 0;
+    var linesShown=0;
+    var table=el('div','db-lntbl');
+    var sc=el('div','db-rscroll'); sc.appendChild(table); host.appendChild(sc);
+    var COLS_SINGLE='minmax(130px,1.2fr) repeat(7,minmax(78px,1fr))';
+    var COLS_CMP='minmax(130px,1.2fr) '+subjects.map(function(){ return 'minmax(84px,1fr) minmax(84px,1fr)'; }).join(' ');
+    function grid(cls, cols){ var d=el('div',cls); d.style.gridTemplateColumns=cols; return d; }
 
-    ['bo3','bo5'].forEach(function(fmt){
-      var pool=byFmt[fmt];
-      var head=el('div','db-rbrow', (fmt==='bo3'?'Best of three':'Best of five') +
-        ' · ' + pool.length.toLocaleString() + (pool.length===1?' match':' matches'));
-      head.style.marginTop='18px';
-      host.appendChild(head);
-      if(!pool.length){
-        host.appendChild(el('div','db-rdesc', 'No '+(fmt==='bo3'?'best-of-three':'best-of-five')+' matches with games at this slice.'));
-        return;
+    if(!cmp){
+      var hd=grid('db-lnhd', COLS_SINGLE);
+      hd.appendChild(el('span','db-rh','Line'));
+      [['Matches','Matches on record'],['Record','Record — hit–missed'],['Rate','Coverage rate'],['Field','Field median rate'],
+       ['Vs field','Rate vs field median, in percentage points'],['Ranking','Rank in field on this line'],['Avg margin','Average margin against the line']]
+        .forEach(function(h){ var x=el('span','db-lnh',esc(h[0])); x.title=h[1]; hd.appendChild(x); });
+      table.appendChild(hd);
+    } else {
+      var nb=grid('db-lnnames', COLS_CMP); nb.appendChild(el('span'));
+      subjects.forEach(function(s){ var x=el('span','db-lnnm',esc(s.nm)); x.title=s.nm; nb.appendChild(x); });
+      table.appendChild(nb);
+      var sh=grid('db-lnhd cmp', COLS_CMP); sh.appendChild(el('span','db-rh','Line'));
+      subjects.forEach(function(s){
+        var r1=el('span','db-lnsub','Rate'); r1.title=s.nm+' — coverage rate';
+        var r2=el('span','db-lnsub','Vs field'); r2.title=s.nm+' — rate vs field median, in percentage points';
+        sh.appendChild(r1); sh.appendChild(r2);
+      });
+      table.appendChild(sh);
+    }
+
+    function fig(txt, color, cls){
+      var d=el('span','db-lnfig'+(cls?' '+cls:''), txt);
+      if(txt===DASH) d.className+=' dash'; else if(color) d.style.color=color;
+      return d;
+    }
+    function pill(rate, n, compare){
+      var wrap=el('span','db-lnratec');
+      var b=el('span','db-lnpill'+(compare?' cmp':''));
+      if(rate==null){ b.textContent=DASH; b.className+=' dash'; }
+      else {
+        b.textContent=rate.toFixed(1)+'%';
+        // README: a FULL-SAMPLE rate (n >= 10) at 65% or better is the highlight
+        // state; n < 10 prints in #8b96b5 with no wash. So a 100% off 6 matches
+        // cannot wear the highlight.
+        if(n>=10 && rate>=65) b.className+=' strong';
+        else if(n<10) b.className+=' low';
       }
-      var sc=el('div','db-rscroll');
-      var g=el('div','db-rgrid');
-      g.style.gridTemplateColumns='minmax(130px,1.2fr) repeat(7,minmax(78px,1fr))';
-      g.style.minWidth='830px';
-      ['Line','Matches','Record','Rate','Field','Vs field','Ranking','Avg margin'].forEach(function(h,i){
-        var d=el('div','db-rhead'); var s=el('div','db-rh',esc(h));
-        if(i) s.style.textAlign='right';
-        d.appendChild(s); g.appendChild(d);
-      });
-      groups.forEach(function(grp){
-        // README TAB 5 group heading: mono 10px / 700 / 0.16em / uppercase, and
-        // its OWN colour #a9b3c9 - which the token table names "Group heading
-        // (Lines)". `.db-rbrow` is the 600-weight #5b6880 card eyebrow, a
-        // different element that happened to be the same size.
-        var gh=el('div','db-lngrp',esc(grp));
-        gh.style.gridColumn='1 / -1'; gh.style.padding='16px 6px 7px';
-        g.appendChild(gh);
-        (LN_LADDERS[fmt][grp]||[]).forEach(function(spec){
-          linesShown++;
-          var label=spec[0], kind=spec[1], arg=spec[2];
-          var hit=0, n=0, marg=0, margN=0;
-          pool.forEach(function(r){
-            var h2=lnHit(r, kind, arg);
-            if(!h2) return;
-            n++; if(h2.hit) hit++;
-            if(h2.margin!=null){ marg+=h2.margin; margN++; }
-          });
-          g.appendChild(el('div','db-rfig',esc(label)));
-          // A cell whose text IS the dash takes `.dash` (#4b5672, section 5's
-          // "not wired" ink) rather than `.mut` (#8b96b5, the ink a real quiet
-          // figure uses). Keyed on the text, not on a second flag, so the two
-          // can never disagree.
-          var cell=function(txt, mut){
-            var isDash = txt===DASH;
-            var d=el('div','db-rfig'+(isDash?' dash':(mut?' mut':'')),txt);
-            d.style.textAlign='right'; return d;
-          };
-          // Matches: README TAB 5 puts this cell at #5b6880, not at the table's
-          // primary ink - it is the denominator, not a headline. The small-sample
-          // mark rides WITH it ("small n" under 10, "n < 5" under 5) so the count
-          // and the warning about the count cannot be read apart.
-          var mc=cell(n?n.toLocaleString():DASH, false);
-          if(n){
-            mc.className='db-rfig lnmatch';
-            if(n<10) mc.innerHTML += '<i class="db-lnsmall">'+(n<5?'n &lt; 5':'small n')+'</i>';
-          }
-          g.appendChild(mc);
-          g.appendChild(cell(n?(hit+'–'+(n-hit)):DASH, true));
-          // THE RATE GATE, from the spec: n = 0 dashes, n < 5 dashes. A rate over
-          // four matches is not a rate, and printing one would be the plausible
-          // default the whole store refuses. A dash is the honest cell.
-          //
-          // README: "The rate pill is the focal cell." n < 10 prints the rate in
-          // #8b96b5 with no wash; a FULL-SAMPLE rate (n >= 10) at 65% or better
-          // is the highlight. The 65% test is applied only on the full-sample
-          // branch, so a 100% off 6 matches cannot wear the highlight - that
-          // combination is exactly the one a coverage table must not flatter.
-          if(n>=5){
-            var rate=hit/n*100;
-            var strong = n>=10 && rate>=65;
-            var rc=el('div','db-rfig db-lnrate'+(n<10?' low':'')+(strong?' strong':''));
-            rc.style.textAlign='right';
-            rc.innerHTML='<b>'+rate.toFixed(1)+'%</b>';
-            g.appendChild(rc);
+      wrap.appendChild(b); return wrap;
+    }
+
+    groups.forEach(function(grp){
+      var blk=el('div','db-lnblk');
+      blk.appendChild(el('div','db-lngrp'+(cmp?' cmp':''), esc(grp)));
+      (LN_LADDERS[fmt][grp]||[]).forEach(function(spec){
+        linesShown++;
+        var label=spec[0], kind=spec[1], arg=spec[2];
+        var row=grid('db-lnrow'+(cmp?' cmp':''), cmp?COLS_CMP:COLS_SINGLE);
+        var lab=el('span','db-lnlab',esc(label)); lab.title=label; row.appendChild(lab);
+        subjects.forEach(function(s){
+          var L = s.P ? lnLine(s.P.byFmt[fmt], kind, arg) : null;
+          var rate = L ? lnRate(L) : null;
+          var F = lnFieldStats(fmt, label, rate);
+          var delta = (rate!=null && F) ? rate - F.median : null;
+          var title = s.nm+' · '+grp+' · '+label+' · '+(!L ? 'no match record' : (L.n ? L.hit+' of '+L.n : 'no matches on record'));
+          if(!cmp){
+            var mc=fig(L && L.n ? L.n.toLocaleString() : DASH, null, 'lnmatch');
+            if(L && L.n && L.n<10) mc.appendChild(el('i','db-lnsmall', L.n<5 ? 'n &lt; 5' : 'small n'));
+            row.appendChild(mc);
+            row.appendChild(fig(L && L.n ? (L.hit+'–'+(L.n-L.hit)) : DASH, '#8b96b5'));
+            row.appendChild(pill(rate, L ? L.n : 0, false));
+            var fc=fig(F ? F.median.toFixed(1)+'%' : DASH, '#8b96b5');
+            if(F){ fc.title='Median of '+F.size+' players on this line at this slice'; if(F.size<10) fc.appendChild(el('i','db-lnsmall','field '+F.size)); }
+            row.appendChild(fc);
+            row.appendChild(fig(delta==null ? DASH : lnSgn(delta)+'pp', delta==null ? null : lnSgnCol(delta)));
+            row.appendChild(fig(F && F.rank!=null && rate!=null ? F.rank+'/'+F.size : DASH, '#8b96b5'));
+            var avg = (L && L.margN>=LN_MIN_N) ? L.marg/L.margN : null;
+            row.appendChild(fig(avg==null ? DASH : lnSgn(avg), avg==null ? null : lnSgnCol(avg)));
+            Array.prototype.forEach.call(row.children, function(c,i){ if(i && !c.title) c.title=title; });
           } else {
-            g.appendChild(cell(DASH, false));
+            var pc=pill(rate, L ? L.n : 0, true); pc.title=title; row.appendChild(pc);
+            // README compare view: the delta is deliberately NEUTRAL (#5b6880),
+            // so the rate colour carries the signal.
+            var dc=fig(delta==null ? DASH : lnSgn(delta)+'pp', null, 'cmpd'); dc.title=title+(F?' · field of '+F.size:''); row.appendChild(dc);
           }
-          g.appendChild(cell(DASH, true));   // Field       - needs the field pass
-          g.appendChild(cell(DASH, true));   // Vs field    - needs the field pass
-          g.appendChild(cell(DASH, true));   // Ranking     - needs the field pass
-          g.appendChild(cell(margN>=5 ? (marg/margN>=0?'+':'')+(marg/margN).toFixed(1) : DASH, margN<5));
         });
+        blk.appendChild(row);
       });
-      sc.appendChild(g); host.appendChild(sc);
+      table.appendChild(blk);
     });
 
-    if(untyped){
-      var u=el('div','db-unwired');
-      u.innerHTML=esc(untyped+' match'+(untyped===1?'':'es')+' carried games but no readable best-of, so '+
-        (untyped===1?'it is':'they are')+' in no ladder. Counted here rather than folded into one.');
-      host.appendChild(u);
-    }
-
     host.appendChild(lnFoot());
-
-    // README TAB 5: the eyebrow is "Line coverage · {n} lines". `n` is the
-    // number of lines ON SCREEN, so it tracks the Line group control - the
-    // eyebrow and the table have to describe the same thing or the count is
-    // furniture. Counted while painting rather than derived from LN_LADDERS, so
-    // a ladder that does not render cannot still be counted.
+    // README TAB 5: the eyebrow is "Line coverage · {n} lines", counted over the
+    // format and groups ON SCREEN - counted while painting, so a ladder that does
+    // not render cannot still be counted.
     if(brow) brow.textContent='Line coverage · '+linesShown.toLocaleString()+(linesShown===1?' line':' lines');
   }
 
   // The README's foot note, at its own 11.5px / 1.6. Two sentences that are both
-  // permanent: the METHOD (first, the bundle's own wording) and the EXCLUSIONS
-  // RULING (second, unchanged - the founder holds this text and its counts).
-  // Neither is a "not wired yet" statement, which is why neither belongs in the
-  // section 5 marker above the table.
+  // permanent: the METHOD (the bundle's own wording) and the EXCLUSIONS RULING
+  // (the founder holds this text).
   function lnFoot(){
     var f=el('div','db-lnfoot');
     f.innerHTML =

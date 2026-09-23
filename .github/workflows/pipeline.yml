@@ -397,6 +397,16 @@ jobs:
       # Every file the browser can ask for must be copied here explicitly — the
       # repo is NOT the document root, only _site is. Anything committed but not
       # copied 404s silently at runtime, which is how sign-in stayed broken.
+      # TEN-260 Part B: the Lines tab's field (Field / Vs field / Ranking). Sorted
+      # coverage rates per line slice over the whole roster, built from the
+      # career-history store run-pipeline.js just wrote - in the pipeline, never in
+      # the browser (a runtime pass is 225 fetches / 20.8 MiB). It slices the line
+      # rules out of bsp-consult-dashboard.html, so the page and the field share one
+      # definition. Best-effort: if it fails, the page dashes those three columns
+      # and says the file is not published; Rate never depends on it.
+      - name: Build Lines field distribution (best-effort)
+        run: node build-lines-field.js || true
+
       - name: Assemble site
         run: |
           mkdir -p _site
@@ -586,6 +596,12 @@ jobs:
           cp elo-ratings.json _site/ 2>/dev/null || true
           cp clutch-rating.json _site/ 2>/dev/null || true
           cp surface-ratings.json _site/ 2>/dev/null || true
+          # TEN-260 Part A.1: the Ratings board removes the players named here. The
+          # page fetches it on its own; committed-but-not-copied = a 404, and the
+          # board then says in amber that retired players were NOT removed.
+          cp retired-players.json _site/ 2>/dev/null || true
+          # TEN-260 Part B: built above by build-lines-field.js (gitignored, never committed).
+          cp lines-field.json _site/ 2>/dev/null || true
           cp archetypes-classified.json _site/ 2>/dev/null || true
           cp matchup-matrix.json _site/ 2>/dev/null || true
           cp playing-styles.json _site/ 2>/dev/null || true
