@@ -43,20 +43,27 @@ counts.
    proof of death.
 7. **Never wait silently.** At every `claim` after 30 min of waiting, the tool posts a
    report on your ticket: who holds the lane, since when, and whether that run is alive.
-   It repeats every 30 min while you wait.
+   It repeats every 30 min while you wait. (30 min confirmed by the founder, 2026-09-23.)
 
 **Exceptions, inline:**
-- **Same ticket, new run.** If a new run on the ticket that holds the lane finds the old
-  run ended **and the claim hasn't expired**, it inherits the claim. A Paperclip session
-  reset is not a new task. Once the claim has expired, it goes through step 5 like anyone
-  else. If the old run is still alive, it waits.
+- **Same ticket, new run: formal re-claim only** (founder ruling, 2026-09-23 — "no silent
+  inheritance"). A new run on the ticket that holds the lane may not renew, release or push
+  under the old run's claim; `renew`/`release` from it exit 1. It runs `claim`: if the old
+  run has ended **and the claim hasn't expired**, the tool records the new run id, resets
+  the lease to 45 min and posts a RE-CLAIMED notice on the ticket (no notice → exit 5, no
+  re-claim). Once the claim has expired it goes through step 5 like anyone else. If the old
+  run is still alive, it waits.
 - **Sessions outside Paperclip** (no `PAPERCLIP_RUN_ID`, e.g. the founder's own
   terminal) claim as `session:<ticket>`. Their liveness can't be checked, so an expired
   session claim is **never** taken automatically: the waiter gets exit 4 and the founder
   decides. A session's own waiter reports go to its terminal (stderr), not to a ticket.
-- **GitHub Actions and launchd data bots are NOT covered yet.** They commit data with
-  `[skip ci]` every 5–15 min, and the ruling on them is pending on TEN-261. Don't treat
-  their commits as a held lane, and don't make them wait on one.
+- **Data bots are exempt** (founder ruling, 2026-09-23): the GitHub Actions and launchd jobs
+  that commit data with `[skip ci]` (Kibl archive, scores, pipeline commit-backs, odds, the
+  daily/weekly refreshes, the styles/splits/entry-lists launchd jobs) never take the lane and
+  never wait on one. Their commits are not a held lane. What protects code from them is the
+  clobber check: every code push still runs `tools/clobber-check.sh` against current
+  `origin/main`, data-only commits included — if one of them moved a file your commit
+  writes, you stop and rebase.
 
 **Exit codes:** 0 you hold the lane · 1 not the owner / run not active · 2 usage ·
 3 wait · 4 expired, owner alive: reported, do not take · 5 takeover refused (clobber check

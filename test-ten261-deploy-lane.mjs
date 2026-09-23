@@ -28,6 +28,7 @@ function startBoard() {
   const comments = [];
   let failRuns = false;
   let delayMs = 0;
+  let failComments = false;
   const srv = http.createServer((req, res) => {
     let body = '';
     req.on('data', (c) => { body += c; });
@@ -43,6 +44,7 @@ function startBoard() {
       }
       const c = req.url.match(/^\/api\/issues\/([^/]+)\/comments$/);
       if (req.method === 'POST' && c) {
+        if (failComments) { res.writeHead(503); return res.end('{}'); }
         const id = `c${comments.length + 1}`;
         comments.push({ id, issueId: c[1], ...JSON.parse(body) });
         res.writeHead(201, { 'content-type': 'application/json' });
@@ -53,7 +55,7 @@ function startBoard() {
   });
   return new Promise((resolve) => srv.listen(0, '127.0.0.1', () => resolve({
     base: `http://127.0.0.1:${srv.address().port}`, runs, comments,
-    setFailRuns: (v) => { failRuns = v; }, setDelay: (v) => { delayMs = v; }, close: () => { srv.closeAllConnections(); srv.close(); },
+    setFailRuns: (v) => { failRuns = v; }, setDelay: (v) => { delayMs = v; }, setFailComments: (v) => { failComments = v; }, close: () => { srv.closeAllConnections(); srv.close(); },
   })));
 }
 
@@ -211,6 +213,38 @@ const CASES = {
         && rc.r && rc.r.code === 0 && holder === 'run-C';
     } finally { board.close(); }
   },
+
+  // 7 · same ticket, new run: only a FORMAL re-claim (founder ruling) — new run id
+  //     recorded, lease reset, notice on the ticket. Never renews the old claim silently.
+  async sameTicketFormalReclaim(mod) {
+    const board = await startBoard();
+    try {
+      const { lane, clock } = await rig(mod, board);
+      const A2 = { ...A, runId: 'run-A2' };
+      board.runs['run-A'] = 'running'; board.runs['run-A2'] = 'running';
+      await lane.claim(A);
+      board.runs['run-A'] = 'cancelled';
+      clock.t = T0 + 30 * MIN;
+      const silentRenew = await lane.renew(A2);     // may not ride the old claim
+      const silentRelease = await lane.release(A2);
+      clock.t = T0 + 31 * MIN;
+      board.setFailComments(true);                   // no notice → no re-claim
+      const noNotice = await lane.claim(A2);
+      board.setFailComments(false);
+      const r = await lane.claim(A2);
+      const notice = board.comments.find((x) => x.issueId === 'issue-253' && /RE-CLAIMED/.test(x.body));
+      // Lease reset: held at 31+44 by A2, expired at 31+45.
+      const C = { ticket: 'TEN-262', issueId: 'issue-262', runId: 'run-C', kind: 'paperclip' };
+      board.runs['run-C'] = 'running';
+      clock.t = T0 + 75 * MIN; const c75 = await lane.claim(C, LAND);
+      clock.t = T0 + 76 * MIN; const c76 = await lane.claim(C, LAND);
+      return silentRenew.code === 1 && silentRelease.code === 1
+        && noNotice.code === 5 && noNotice.claim.runId === 'run-A'
+        && r.code === 0 && r.action === 're-claimed' && r.claim.runId === 'run-A2' && r.claim.reclaimedFrom === 'run-A'
+        && !!notice && /run-A2/.test(notice.body) && /run-A\b/.test(notice.body)
+        && c75.code === 3 && c76.code === 4;
+    } finally { board.close(); }
+  },
 };
 
 // Each mutant cuts one mechanism out of the real source. Every anchor must
@@ -228,12 +262,25 @@ const MUTANTS = [
     "if (!owns()) throw new Error('deploy-lane: lost the store lock; nothing written');", ''],
   ['a holder removes whatever lock is there on the way out', 'staleLockBreakCannotDoubleTake',
     '} finally { if (owns()) fs.rmSync(lock', '} finally { if (true) fs.rmSync(lock'],
+  ['a same-ticket re-claim posts no notice (silent inheritance)', 'sameTicketFormalReclaim',
+    "const notice = await notify({ to: 'owner', issueId: c.issueId,\n            body: `## Deploy lane RE-CLAIMED",
+    "const notice = { ok: true } || await notify({ to: 'owner', issueId: c.issueId,\n            body: `## Deploy lane RE-CLAIMED"],
+  ['a same-ticket re-claim goes ahead when its notice failed', 'sameTicketFormalReclaim',
+    "if (!notice.ok) {\n            out = await waiting(s, me, c, { code: EXIT.TAKEOVER_REFUSED, action: 're-claim-notice-failed'",
+    "if (false) {\n            out = await waiting(s, me, c, { code: EXIT.TAKEOVER_REFUSED, action: 're-claim-notice-failed'"],
+  ['a same-ticket re-claim keeps the old lease', 'sameTicketFormalReclaim',
+    "s.claim = newClaim(me); s.claim.reclaimedFrom = c.runId;",
+    "s.claim = { ...newClaim(me), expiresAt: c.expiresAt }; s.claim.reclaimedFrom = c.runId;"],
+  ['a same-ticket re-claim keeps the old run id', 'sameTicketFormalReclaim',
+    "s.claim = newClaim(me); s.claim.reclaimedFrom = c.runId;",
+    "s.claim = { ...newClaim(me), runId: c.runId }; s.claim.reclaimedFrom = c.runId;"],
   ['no mutual exclusion on the store', 'concurrentTakeoversSerialise',
     'const lock = `${file}.lock`;', 'const lock = `${file}.lock.${Math.random()}`;'],
   ['claims never expire (the old lane)', 'crashedOwnerIsTakenWithNotice',
     'const expired = t >= Date.parse(c.expiresAt);', 'const expired = false;'],
   ['takeover skips the owner notice', 'crashedOwnerIsTakenWithNotice',
-    "const notice = await notify({ to: 'owner',", "const notice = { ok: true } || await notify({ to: 'owner',"],
+    "const notice = await notify({ to: 'owner', issueId: c.issueId,\n              body: `## Deploy lane released as stale",
+    "const notice = { ok: true } || await notify({ to: 'owner', issueId: c.issueId,\n              body: `## Deploy lane released as stale"],
   ['takeover skips the clobber check', 'crashedOwnerIsTakenWithNotice',
     'clobberCheck({ base, files })', '({ ok: true, output: "" })'],
   ['takeover skips the liveness check', 'expiredLiveOwnerNotTaken',
@@ -315,7 +362,7 @@ test('a crashed run cannot renew; only the owner run can renew or release', asyn
   } finally { board.close(); }
 });
 
-test('succession: a new run on the SAME ticket inherits a dead run\'s claim; a live one it waits for', async () => {
+test('same-ticket re-claim: a live old run makes the new run wait; an ended one lets it re-claim', async () => {
   const board = await startBoard();
   try {
     const { lane, clock } = await rig(real, board);
@@ -326,7 +373,7 @@ test('succession: a new run on the SAME ticket inherits a dead run\'s claim; a l
     assert.equal((await lane.claim(A2)).code, 3, 'old run alive: wait');
     board.runs['run-A'] = 'cancelled';
     const r = await lane.claim(A2);
-    assert.equal(r.code, 0); assert.equal(r.action, 'succeeded'); assert.equal(r.claim.runId, 'run-A2');
+    assert.equal(r.code, 0); assert.equal(r.action, 're-claimed'); assert.equal(r.claim.runId, 'run-A2');
   } finally { board.close(); }
 });
 

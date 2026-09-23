@@ -24,10 +24,14 @@
 //  4. A waiter never waits silently: past WAIT_REPORT_MIN it reports who holds
 //     the lane, since when, and whether that run is alive — and again every
 //     WAIT_REPORT_MIN it keeps waiting.
-//  Succession: a NEW run on the SAME ticket inherits an UNEXPIRED claim whose
-//  run is dead (a Paperclip session reset is not a new task). Once expired, a
-//  same-ticket run takes it like anyone else: notice + clobber check. Same
-//  ticket, old run alive: it waits like anyone else.
+//  Same-ticket re-claim (founder ruling TEN-261, 2026-09-23: "allowed only
+//  with a formal re-claim — new run ID recorded, lease reset. No silent
+//  inheritance."): a NEW run on the SAME ticket may re-claim an UNEXPIRED claim
+//  whose run has ended, by calling `claim`. The new run id is recorded, the
+//  lease restarts at 45 min, and a notice goes on the ticket; no notice, no
+//  re-claim. It can never renew or release the old run's claim. Once expired,
+//  it takes the lane like anyone else (notice + clobber check). Old run alive:
+//  it waits.
 //
 // ── CLI ──────────────────────────────────────────────────────────────────────
 //   node tools/deploy-lane.mjs claim   --ticket TEN-123 [--base <sha> --files a b …]
@@ -158,9 +162,17 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, clo
         const sameTicket = c.ticket === me.ticket;
         const live = (expired || sameTicket) ? await liveness(c) : null;
         if (sameTicket && !expired && live.state === 'dead') {
-          s.claim = newClaim(me); s.claim.succeededFrom = c.runId; delete s.waiters[me.runId];
-          log(s, { event: 'succeeded', ticket: me.ticket, runId: me.runId, from: c.runId, evidence: live.detail });
-          out = { code: EXIT.HOLD, action: 'succeeded', claim: s.claim, from: c };
+          const notice = await notify({ to: 'owner', issueId: c.issueId,
+            body: `## Deploy lane RE-CLAIMED by a new run of ${me.ticket}\n\n` +
+              `Previous claim: ${describe(c, live)}\n\nThat run has ended, so run \`${me.runId}\` re-claims the lane ` +
+              `formally: new run id recorded, lease reset to ${LEASE_MIN} min.` });
+          if (!notice.ok) {
+            out = await waiting(s, me, c, { code: EXIT.TAKEOVER_REFUSED, action: 're-claim-notice-failed', claim: c, error: notice.error });
+          } else {
+            s.claim = newClaim(me); s.claim.reclaimedFrom = c.runId; delete s.waiters[me.runId];
+            log(s, { event: 're-claimed', ticket: me.ticket, runId: me.runId, from: c.runId, evidence: live.detail, notice: notice.id });
+            out = { code: EXIT.HOLD, action: 're-claimed', claim: s.claim, from: c, notice };
+          }
         } else if (!expired) {
           out = await waiting(s, me, c, { code: EXIT.WAIT, action: 'wait', claim: c });
         } else if (live.state !== 'dead') {
