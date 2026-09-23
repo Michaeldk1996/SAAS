@@ -431,13 +431,31 @@ def main(env=None, log=print, run_forever=True):
         try:
             params = connection_parameters(conn, pika)
             connection = pika.BlockingConnection(params)
+            # ⚠️ THE PASSIVE DECLARE GETS ITS OWN THROWAWAY CHANNEL, AND ITS
+            # FAILURE IS NOT FATAL. MEASURED against the real broker on
+            # 2026-09-23 (run 35815631134): it answers with
+            #   403 ACCESS_REFUSED — configure access to queue ... refused
+            # so this account has no `configure` permission on its own queue. A
+            # channel-level 403 CLOSES the channel, so declaring on the consuming
+            # channel takes the consume down with it — an entitlement gap the
+            # worker cannot influence would have become a permanent crash-loop.
+            #
+            # Passive, never active: we do not declare the vendor's queue into
+            # existence. A queue that is not there is a finding about
+            # entitlement, not something to paper over by creating an empty one
+            # that will never be bound.
+            depth = None
+            try:
+                probe = connection.channel()
+                ok = probe.queue_declare(queue=conn["queue"], passive=True)
+                depth = ok.method.message_count
+                log(f"connected; queue has {depth} message(s) waiting and "
+                    f"{ok.method.consumer_count} consumer(s)")
+                probe.close()
+            except Exception as e:  # noqa: BLE001
+                log(f"connected; queue depth UNAVAILABLE (passive declare refused: "
+                    f"{redact(e, secrets)[:160]}) — consuming anyway")
             channel = connection.channel()
-            # Passive: we never declare the vendor's queue into existence. If it
-            # is not there, that is a finding about entitlement, not something to
-            # paper over by creating an empty queue that will never be bound.
-            ok = channel.queue_declare(queue=conn["queue"], passive=True)
-            log(f"connected; queue {conn['queue']} has {ok.method.message_count} message(s) "
-                f"waiting and {ok.method.consumer_count} consumer(s)")
 
             if down_at_ms is not None:
                 gap = gap_record(down_at_ms, int(time.time() * 1000))

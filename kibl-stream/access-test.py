@@ -184,25 +184,51 @@ def probe_region(host, port):
 
 
 def probe_supabase_region():
-    """Answers the [REGION] the brief left unfilled — from evidence, not a guess."""
+    """Answers the [REGION] the brief left unfilled — from the AUTHORITATIVE source.
+
+    ⚠️ NOT FROM DNS. Run 35815631134 resolved the Supabase host to two Cloudflare
+    addresses and geolocated them to San Francisco. That is the CDN edge nearest
+    the runner, not the project's region, and writing it into fly.toml would have
+    pinned the worker to a city chosen by Cloudflare's anycast. A geolocation of a
+    CDN edge is a plausible-looking wrong answer, which is the one thing worse
+    than a blank.
+
+    The Management API states the region itself. SUPABASE_ACCESS_TOKEN is already
+    a repository secret. If it is absent or the call fails, this reports UNKNOWN
+    — it does not fall back to the DNS guess.
+    """
     url = os.environ.get("SUPABASE_URL", "")
     if not url:
-        return {"error": "SUPABASE_URL not set in this job"}
-    host = urllib.parse.urlparse(url).hostname or ""
-    out = {"host": host}
-    try:
-        out["resolved"] = sorted({ai[4][0] for ai in socket.getaddrinfo(host, 443, proto=socket.IPPROTO_TCP)})
-    except OSError as e:
-        out["resolved_error"] = str(e)
+        return {"region": None, "why": "SUPABASE_URL is not set in this job"}
+    ref = (urllib.parse.urlparse(url).hostname or "").split(".")[0]
+    # The project ref is not printed: it is the project's public API address, and
+    # GitHub's secret masking does not catch a hostname we parsed out ourselves.
+    SECRETS.append(ref)
+    out = {"project_ref": "[redacted]"}
+    tok = os.environ.get("SUPABASE_ACCESS_TOKEN", "").strip()
+    if not tok:
+        out["region"] = None
+        out["why"] = ("SUPABASE_ACCESS_TOKEN not present in this job — the region is "
+                      "UNKNOWN. It is not inferred from DNS: the host resolves to a "
+                      "Cloudflare edge, which geolocates to wherever the runner is.")
         return out
-    for ip in out["resolved"][:2]:
-        try:
-            with urllib.request.urlopen(f"https://ipinfo.io/{ip}/json", timeout=10) as r:
-                d = json.loads(r.read().decode())
-                out.setdefault("geo", []).append(
-                    {k: d.get(k) for k in ("ip", "city", "region", "country", "org")})
-        except Exception as e:  # noqa: BLE001
-            out.setdefault("geo_error", []).append(str(e)[:120])
+    try:
+        req = urllib.request.Request("https://api.supabase.com/v1/projects")
+        req.add_header("Authorization", "Bearer " + tok)
+        with urllib.request.urlopen(req, timeout=30) as r:
+            projects = json.loads(r.read().decode())
+        match = [p for p in projects if p.get("id") == ref]
+        if not match:
+            out["region"] = None
+            out["why"] = (f"the access token lists {len(projects)} project(s), none "
+                          "matching this URL's ref — region UNKNOWN")
+            return out
+        out["region"] = match[0].get("region")
+        out["name"] = "[redacted]"
+        out["source"] = "Supabase Management API /v1/projects — authoritative"
+    except Exception as e:  # noqa: BLE001
+        out["region"] = None
+        out["why"] = f"Management API call failed: {type(e).__name__} — region UNKNOWN"
     return out
 
 
@@ -221,12 +247,33 @@ def capture(conn, pika, seconds, cap_path, note=""):
     t0 = time.time()
     meta = {"note": note, "started_at": C.iso(C.utcnow()), "seconds_requested": seconds}
     connection = pika.BlockingConnection(params)
+
+    # ⚠️ THE PASSIVE DECLARE IS TRIED ON ITS OWN CHANNEL, AND ITS FAILURE IS NOT
+    # FATAL. MEASURED, run 35815631134: this broker answers a passive declare
+    # with 403 ACCESS_REFUSED — "configure access to queue ... refused" — so our
+    # user has no `configure` permission on its own queue. A channel-level 403
+    # CLOSES the channel, which is why the probe gets a throwaway one: on the
+    # first run the refusal took the consume down with it and cost the whole
+    # window. Whether we can still CONSUME is a separate permission (`read`) and
+    # a separate question, and it is the one that decides the product.
+    meta["backlog_at_connect"] = None
+    meta["consumers_at_connect"] = None
+    meta["passive_declare_error"] = None
+    try:
+        probe = connection.channel()
+        ok = probe.queue_declare(queue=conn["queue"], passive=True)
+        meta["backlog_at_connect"] = ok.method.message_count
+        meta["consumers_at_connect"] = ok.method.consumer_count
+        say(f"  passive declare OK — backlog {ok.method.message_count} message(s), "
+            f"{ok.method.consumer_count} consumer(s) {note}")
+        probe.close()
+    except Exception as e:  # noqa: BLE001
+        meta["passive_declare_error"] = f"{type(e).__name__}: {C.redact(e, SECRETS)}"
+        say(f"  ⚠️ passive declare REFUSED — `{meta['passive_declare_error']}`")
+        say("     Backlog at connect is therefore **—**, not 0. Continuing to the "
+            "consume, which needs a different permission.")
+
     channel = connection.channel()
-    ok = channel.queue_declare(queue=conn["queue"], passive=True)
-    meta["backlog_at_connect"] = ok.method.message_count
-    meta["consumers_at_connect"] = ok.method.consumer_count
-    say(f"  connected. backlog at connect = {ok.method.message_count} message(s), "
-        f"{ok.method.consumer_count} consumer(s) {note}")
     channel.basic_qos(prefetch_count=200)
 
     records, per_min = [], Counter()
@@ -265,12 +312,18 @@ def capture(conn, pika, seconds, cap_path, note=""):
                 say(f"    …{int(elapsed / 60)}m in, {len(records)} message(s) captured")
     finally:
         fh.close()
+        meta["backlog_at_disconnect"] = None
         try:
             channel.cancel()
-            ok2 = channel.queue_declare(queue=conn["queue"], passive=True)
-            meta["backlog_at_disconnect"] = ok2.method.message_count
         except Exception:  # noqa: BLE001
-            meta["backlog_at_disconnect"] = None
+            pass
+        try:
+            probe2 = connection.channel()
+            meta["backlog_at_disconnect"] = probe2.queue_declare(
+                queue=conn["queue"], passive=True).method.message_count
+            probe2.close()
+        except Exception:  # noqa: BLE001
+            pass   # already reported above; a refused declare is not a new finding
         try:
             connection.close()
         except Exception:  # noqa: BLE001

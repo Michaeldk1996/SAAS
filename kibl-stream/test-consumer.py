@@ -320,6 +320,115 @@ rc = C.main(env={"KIBL_RMQ_HOST": "h"}, log=lambda *a: None)
 ok(rc == 0, "CONTROL: a PARTIAL credential set also exits 0 rather than half-connecting")
 
 # ─────────────────────────────────────────────────────────────────────────────
+section("8b · A refused passive declare must NOT take the consume down with it")
+# ─────────────────────────────────────────────────────────────────────────────
+# MEASURED against the real broker, 2026-09-23 run 35815631134:
+#   403 ACCESS_REFUSED — configure access to queue '…' refused for user '…'
+# This account has no `configure` permission on its own queue. A channel-level
+# 403 CLOSES the channel, so declaring on the CONSUMING channel turns an
+# entitlement gap we cannot influence into a permanent crash-loop. Driven here
+# with a fake broker rather than asserted by reading the source, because "it is
+# on a separate channel" is a claim about behaviour.
+
+
+class _Refused(Exception):
+    pass
+
+
+class _FakeChannel:
+    def __init__(self, owner, declare_ok):
+        self.owner, self.declare_ok, self.acked = owner, declare_ok, []
+
+    def queue_declare(self, queue, passive=False):
+        self.owner.declares += 1
+        if not self.declare_ok:
+            raise _Refused("403 ACCESS_REFUSED - configure access to queue refused")
+        class _M:
+            class method:
+                message_count, consumer_count = 7, 0
+        return _M()
+
+    def basic_qos(self, prefetch_count=None):
+        self.owner.qos = prefetch_count
+
+    def consume(self, queue, inactivity_timeout=None, auto_ack=None):
+        self.owner.consumed_queue = queue
+        self.owner.auto_ack = auto_ack
+
+        class _Method:
+            delivery_tag, exchange, routing_key, redelivered = 1, "kibl.sports", "rk", False
+        yield _Method(), None, json.dumps({"fixture_id": 5, "price_decimal": 1.5,
+                                           "league_id": 19}).encode()
+
+    def basic_ack(self, tag):
+        self.acked.append(tag)
+        self.owner.acks += 1
+
+    def cancel(self):
+        self.owner.cancelled = True
+
+    def close(self):
+        self.owner.closed_channels += 1
+
+
+class _FakeConn:
+    def __init__(self, owner):
+        self.owner = owner
+
+    def channel(self):
+        self.owner.channels += 1
+        # The FIRST channel is the throwaway probe; the second is the consumer.
+        ch = _FakeChannel(self.owner, declare_ok=self.owner.declare_ok)
+        self.owner.made.append(ch)
+        return ch
+
+    def close(self):
+        self.owner.conn_closed = True
+
+
+class _FakePikaBroker:
+    """A stand-in pika module. `declare_ok=False` reproduces the live 403."""
+
+    def __init__(self, declare_ok):
+        self.declare_ok = declare_ok
+        self.channels = self.declares = self.acks = self.closed_channels = 0
+        self.made, self.qos, self.cancelled, self.conn_closed = [], None, False, False
+        self.consumed_queue = self.auto_ack = None
+        self.PlainCredentials = _FakePika.PlainCredentials
+        self.SSLOptions = _FakePika.SSLOptions
+        self.ConnectionParameters = _FakePika.ConnectionParameters
+
+    def BlockingConnection(self, params):
+        return _FakeConn(self)
+
+
+ENV = {"KIBL_RMQ_HOST": "h", "KIBL_RMQ_PORT": "5671", "KIBL_RMQ_VHOST": "/",
+       "KIBL_RMQ_USER": "u", "KIBL_RMQ_PASS": "p", "KIBL_RMQ_QUEUE": "q"}
+
+for declare_ok, label in ((True, "declare PERMITTED"), (False, "declare REFUSED (the live case)")):
+    fake = _FakePikaBroker(declare_ok)
+    sys.modules["pika"] = fake
+    logs = []
+    rc = C.main(env=ENV, log=logs.append, run_forever=False)
+    text = " ".join(logs)
+    ok(rc == 0, f"{label}: the worker returns 0 rather than crash-looping")
+    ok(fake.acks == 1, f"{label}: the message was still consumed and ACKED (acks={fake.acks})")
+    ok(fake.auto_ack is False, f"{label}: acks are MANUAL, not automatic")
+    ok(fake.channels == 2,
+       f"{label}: the declare probe and the consumer are SEPARATE channels "
+       f"(channels opened = {fake.channels})")
+    ok(fake.qos == 50, f"{label}: prefetch is bounded at 50, so a stall cannot "
+                       f"accumulate against the 20k cap (got {fake.qos})")
+    if declare_ok:
+        ok("7 message(s) waiting" in text, "declare PERMITTED: the queue depth is reported")
+    else:
+        ok("UNAVAILABLE" in text and "refused" in text.lower(),
+           "declare REFUSED: depth is reported UNAVAILABLE and the refusal is logged")
+        ok("ACCESS_REFUSED" in text or "refused" in text.lower(),
+           "…with the broker's own words, so the permission gap is diagnosable")
+sys.modules.pop("pika", None)
+
+# ─────────────────────────────────────────────────────────────────────────────
 section("9 · The sweep import is safe — loading it cannot start it")
 # ─────────────────────────────────────────────────────────────────────────────
 # sweep_bridge.py loads archive-kibl.py by path. If someone adds module-level
