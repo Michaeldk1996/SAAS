@@ -1,6 +1,6 @@
 {
   "latest": {
-    "maxAgeMin": 151.6,
+    "maxAgeMin": 166.7,
     "measured": 16,
     "stale": [
       "S. Baez v J. Brooksby (ATP Chengdu, 2026-09-23)",
@@ -23,15 +23,6 @@
   },
   "note": "Age of the published bet365 NOW leg, measured as now - observedAt against the artefact Pages is serving. Capture staleness and publish staleness are both inside this number, which is what the visitor sees. Re-derive the threshold on TEN-187.",
   "samples": [
-    {
-      "at": "2026-09-18T13:00:00Z",
-      "maxAgeMin": 75.0,
-      "measured": 28,
-      "noBet365Line": 59,
-      "noClock": 0,
-      "stale": 0,
-      "thresholdMin": 120.0
-    },
     {
       "at": "2026-09-18T13:15:00Z",
       "maxAgeMin": 90.0,
@@ -3622,9 +3613,18 @@
       "noClock": 0,
       "stale": 16,
       "thresholdMin": 120.0
+    },
+    {
+      "at": "2026-09-23T00:16:43Z",
+      "maxAgeMin": 166.7,
+      "measured": 16,
+      "noBet365Line": 1,
+      "noClock": 0,
+      "stale": 16,
+      "thresholdMin": 120.0
     }
   ],
   "schema": "odds-now-staleness/1",
   "thresholdMin": 120.0,
-  "updatedAt": "2026-09-23T00:01:38Z"
+  "updatedAt": "2026-09-23T00:16:43Z"
 }
