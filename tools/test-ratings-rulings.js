@@ -216,30 +216,21 @@ check('CONTROL: these assertions can fail — a 20-gate source is rejected', () 
 // ratio of break points is not backed by matches, and conflating them is what
 // made Budkov Kjaer's 1.380 read as "n=16" when 119 pressure points back it.
 // ─────────────────────────────────────────────────────────────────────────────
-check('TEN-254: the Mental Edge rating cell carries its pressure-point count', () => {
-  const lb = DBTAB.slice(DBTAB.indexOf('function ratLeaderboard'));
-  const body = lb.slice(0, lb.indexOf('function ratComparePanel'));
-  assert.ok(/board===['"]mental['"]/.test(body),
-    'the mental-only branch in ratLeaderboard is gone — every ratio has lost the count ' +
-    'that discloses its sample, which the founder asked for while the floor is unruled');
-  assert.ok(/db-rppc/.test(body), 'the .db-rppc count element is no longer rendered');
-  assert.ok(/mental\.pw/.test(body) && /mental\.pl/.test(body),
-    'the count is no longer derived from PW+PL — if it now reads a different field it can ' +
-    'drift from the ratio it is supposed to describe');
-});
-
-check('TEN-254: a missing PW or PL dashes the count, never prints 0', () => {
-  const lb = DBTAB.slice(DBTAB.indexOf('function ratLeaderboard'));
-  const body = lb.slice(0, lb.indexOf('function ratComparePanel'));
-  const m = body.match(/_ppc\s*=\s*\(([^)]*)\)\s*\?\s*null/);
-  assert.ok(m, 'the null-guard on the pressure-point count is gone');
-  assert.ok(/_pw\s*==\s*null/.test(m[1]) && /_pl\s*==\s*null/.test(m[1]),
-    'the guard no longer tests BOTH sides; a missing count would render as a number');
-  assert.ok(/_ppc==null\s*\?\s*'—'/.test(body.replace(/\s+/g, ' ')) ||
-            /_ppc\s*==\s*null\s*\?\s*'—'/.test(body),
-    'an absent count no longer renders an em dash — a zero here would claim a player faced ' +
-    'no pressure points, which is a fabricated reading of missing data');
-});
+// ⚠️ THE TWO FEATURE ASSERTIONS THAT WERE HERE ARE GONE ON PURPOSE.
+//
+// They were regexes over the source text, and an independent review proved them
+// vacuous: nine different ways of breaking the pressure-point count (deleting the
+// appendChild, summing PW only, hard-coding fmtInt(0), leaking onto the Serve
+// board, inverting the null guard) all left them GREEN, because a regex asserts
+// that characters exist in a file, not that the renderer does anything.
+//
+// They are replaced by test-ten254-mental-count.mjs, which slices ratLeaderboard
+// and ratComparePanel out of the shipped page and RUNS them, with a twelve-mutant
+// matrix that fails if any mutant survives. Do not re-add a grep here and think
+// the count is locked - it is locked there.
+//
+// What stays below is the one assertion a source read is actually the right tool
+// for: the presence of a CSS rule.
 
 check('TEN-254: the Ratings slice note sits at the bundle\'s 12px, and Lines is not dragged with it', () => {
   assert.ok(/n\.style\.marginTop\s*=\s*'12px'/.test(DBTAB),
@@ -251,10 +242,12 @@ check('TEN-254: the Ratings slice note sits at the bundle\'s 12px, and Lines is 
     'which the README puts at 14px, so moving it drags Lines to a value no section asks for');
 });
 
-check('CONTROL: the TEN-254 assertions can fail — stripping the mental branch is rejected', () => {
-  const mutated = DBTAB.replace(/if\(board===['"]mental['"]\)\{/, 'if(false){');
-  assert.ok(!/board===['"]mental['"]\)\{/.test(mutated.slice(mutated.indexOf('function ratLeaderboard'))),
+check('CONTROL: the 12px assertion can fail — a moved shared rule is rejected', () => {
+  const mutated = DASH.replace(/(\.db-unwired\{[^}]*)margin-top:10px/, '$1margin-top:14px');
+  assert.ok(/\.db-unwired\{[^}]*margin-top:14px/.test(mutated),
     'mutation did not apply — the control proves nothing');
+  assert.ok(!/\.db-unwired\{[^}]*margin-top:10px/.test(mutated),
+    'the 10px rule survived the mutation — the assertion above could not tell the difference');
 });
 
 console.log(`\nratings rulings: ${pass} pass, ${fails.length} fail`);

@@ -3748,7 +3748,15 @@
      off n=16 matches, which reads thin; the number that actually backs the
      ratio is 119 pressure points, which does not. Both belong on screen.
      --db-mute, not --db-faint: this is a measured count, not a placeholder. */
-  .db-rppc{ font-family:var(--db-mono); font-size:10.5px; color:var(--db-mute); text-align:right; margin-top:2px; letter-spacing:0.02em; }
+  /* nowrap: the rating column is a hard 66px with 6px side padding, so "14,302 pp"
+     (the store's widest, 3 of 237 rows are 5-digit) wraps to two lines without it
+     and pushes the row taller than its neighbours. */
+  .db-rppc{ font-family:var(--db-mono); font-size:10.5px; color:var(--db-mute); text-align:right; margin-top:2px; letter-spacing:0.02em; white-space:nowrap; }
+  /* §5: an absent number is an em dash in --db-faint, same as .db-rfig.dash. The
+     count element needs its own dash state because it is not a .db-rfig. */
+  .db-rppc.dash{ color:var(--db-faint); }
+  .db-cmpppc{ font-family:var(--db-mono); font-size:9.5px; color:var(--db-mute); text-align:center; margin-top:3px; letter-spacing:0.02em; white-space:nowrap; }
+  .db-cmpppc.dash{ color:var(--db-faint); }
 </style>
 <div class="tabpage" data-page="database">
   <!-- TEN-242 phase 2 B3: this is now one MOUNT ROOT among possibly several. The
@@ -28070,7 +28078,7 @@ window.DatabaseTab = (function(){
       if(board==='mental'){
         var _pw=ratVal(p,'mental.pw'), _pl=ratVal(p,'mental.pl');
         var _ppc=(_pw==null||_pl==null) ? null : (_pw+_pl);
-        var pc=el('div','db-rppc', _ppc==null ? '—' : (fmtInt(_ppc)+' pp'));
+        var pc=el('div','db-rppc'+(_ppc==null?' dash':''), _ppc==null ? '—' : (fmtInt(_ppc)+' pp'));
         pc.title='Pressure points behind this ratio (break points saved + converted + lost + missed) · '+p.name;
         c3.appendChild(pc);
       }
@@ -28197,9 +28205,30 @@ window.DatabaseTab = (function(){
         var l52=scopeVal(p,'last52',m[0]), car=scopeVal(p,'career',m[0]);
         // A gated-out cell says WHY with its count ("n=1"), so a thin scope is
         // legible as thin rather than looking like missing data.
+        // TEN-254: the founder asked for the count next to EVERY Mental Edge
+        // ratio. This panel renders up to 4 players x (Last 52 + Career) of them,
+        // and it is the surface a member opens precisely to compare thin samples —
+        // so it needs the count more than the board does, not less.
+        function ppcFor(scope){
+          var s=(p.surfaces||{})[state.ratSurf]; if(!s) return null;
+          var n=s[scope]; if(!n || !n.mental) return null;
+          if(n.mental.pw==null || n.mental.pl==null) return null;
+          return n.mental.pw + n.mental.pl;
+        }
         function cell(cls, v, scope){
           var c=el('div','db-cmpcell '+cls);
-          if(v!=null){ c.textContent=v.toFixed(m[2]); return c; }
+          if(v!=null){
+            c.textContent=v.toFixed(m[2]);
+            // Only on Mental Edge, and only on the two figure columns — a count
+            // under the delta would be describing a difference, not a sample.
+            if(m[0]==='mental' && cls!=='delta'){
+              var q=ppcFor(scope);
+              var pcc=el('div','db-cmpppc'+(q==null?' dash':''), q==null?'—':(fmtInt(q)+' pp'));
+              pcc.title='Pressure points behind this ratio (break points saved + converted + lost + missed) · '+p.name;
+              c.appendChild(pcc);
+            }
+            return c;
+          }
           var k=scopeN(p, scope, m[0]);
           if(k!=null && k<RAT_GATE){
             c.textContent='n='+k;
