@@ -178,5 +178,39 @@ g2 = A.close_arms([sup_opener], START)['guarded']
 ck('a superseded opener ALONE yields NO guarded close — a dash, not a wrong price',
    g2[0] is None)
 
+
+# ─────────────────────────────────────────────────────────────────────────────
+# RULING 1 (founder 2026-09-23 06:23Z): superseded NON-OPENER rows re-seen after
+# replacement are the same trap one row later. The CURRENT arm must not take one;
+# the GUARDED arm can.
+print()
+print('=== ruling 1 — the superseded non-opener ===')
+def r1(price, ins, seen, opener=False, current=False, side=2):
+    return {'price_decimal': price, 'inserted_on': ins, 'last_seen_at': seen,
+            'observed_at': None, 'is_opener': opener, 'is_current': current,
+            'side_id': side, 'fixture_id': 9, 'feed_source_id': 171}
+# 2.10 was current, moved to 2.40 at 09:00 (its not-current copy is re-served as
+# history past the off); 2.40 was current and Kibl stopped listing it at 11:20.
+hist = r1(2.10, '2026-09-20T06:00:00Z', '2026-09-20T12:30:00Z')                 # (F,F) straddles
+cur  = r1(2.40, '2026-09-20T09:00:00Z', '2026-09-20T11:20:00Z', current=True)   # the real last price
+g, gt = A.pick_close([hist, cur], START, 'guarded')
+c, ct = A.pick_close([hist, cur], START, 'current')
+ck('GUARDED takes the superseded non-opener at a fake lag 0 (the ruling-1 hole)',
+   g['price_decimal'] == 2.10 and gt == START, str(g))
+ck('CURRENT takes the real last price 2.40', c['price_decimal'] == 2.40, str(c))
+ck('...timed honestly at 40 min before the off', round((START - ct) / 60, 1) == 40.0, str(ct))
+# The ruling-1 counter must see that row as re-seen AFTER it was replaced.
+kib = {(9, 'kibl', 'bet105'): [{'start_ts': '2026-09-20T12:00:00Z', 'start_ts_source': 'oddspapi'}]}
+out = A.ruling1(kib, {('9', 'bet105'): [hist, cur,
+                      r1(1.70, '2026-09-20T06:00:00Z', '2026-09-20T12:30:00Z', current=True, side=3)]},
+                print_=lambda *a: None)
+ck('the counter finds the non-opener re-seen after its replacement appeared',
+   out['ruling1']['reseenAfterReplaced'] == 1, str(out['ruling1']))
+ck('and does NOT count a current row (only is_current=false non-openers qualify)',
+   out['ruling1']['nonOpenerNotCurrent'] == 1)
+ck('card grain: CURRENT arm puts the fixture in within60 (both sides, lags 40 and 0)',
+   out['arms']['current'].get('within60') == 1, str(out['arms']))
+ck('card grain: a one-sided fixture is never counted as a card close',
+   A.ruling1(kib, {('9', 'bet105'): [cur]}, print_=lambda *a: None)['arms']['current'].get('not_two_sides') == 1)
 print(('\nALL PASS' if not F else f'\n{len(F)} FAILURE(S): {F}'))
 sys.exit(1 if F else 0)

@@ -373,6 +373,167 @@ def forensic(obs, kibl, obs_by, print_=print):
             'afterOffIsCurrent': after_off_cur, 'afterOffNotCurrent': after_off_not}
 
 
+# ─────────────────────────── FOUNDER 2026-09-23 06:23Z — RULING 1's CHECK ──
+# "Do any NON-OPENER rows with is_current=false keep getting re-seen after
+#  they're replaced? If yes, widen the guard to 'only rows Kibl marks
+#  is_current=true at the sighting count', and report the new recovery number."
+#
+# And the per-side, per-book split the first version of this audit did not do.
+# close_arms() above pools EVERY observation on a fixture: both sides, and every
+# feed_source_id. The card is built per SIDE, from ONE book (feed_source_id 171
+# for bet105), and the publisher voids a close unless BOTH sides have one. So a
+# pooled "within 60" is not a card with a close — which is the first thing to
+# check about the 28 that were within 60 on the old rule and still dashed.
+FEED_OF_BOOK = {'bet105': 171, 'sports411': 43}
+
+
+def pick_close(rows, start, arm):
+    """One side's Close under a named arm -> (row, close_ts_epoch) or (None, None).
+
+    Every arm requires a real price that EXISTED before the off
+    (inserted_on < start). They differ only in which rows may compete:
+      old      ranks on inserted_on (what ships today)
+      guarded  last seen, capped at the off; superseded OPENERS excluded
+      current  last seen, capped at the off; only rows Kibl marks is_current
+    """
+    elig = [o for o in rows if real(o.get('price_decimal')) is not None
+            and epoch(o.get('inserted_on')) is not None
+            and epoch(o['inserted_on']) < start]
+    if arm == 'old':
+        if not elig:
+            return None, None
+        b = max(elig, key=lambda o: epoch(o['inserted_on']))
+        return b, epoch(b['inserted_on'])
+    if arm == 'guarded':
+        elig = [o for o in elig if not (o.get('is_opener') and not o.get('is_current'))]
+    elif arm == 'current':
+        elig = [o for o in elig if o.get('is_current')]
+    if not elig:
+        return None, None
+    b = max(elig, key=lambda o: (min(seen_at(o), start), epoch(o['inserted_on'])))
+    return b, min(seen_at(b), start)
+
+
+def ruling1(kibl, obs_by_fix_book, print_=print):
+    """The ruling-1 check, then every arm at the grain the card is built at."""
+    print_('')
+    print_('=' * 72)
+    print_('RULING 1 — are superseded NON-OPENER rows re-seen after replacement?')
+    print_('=' * 72)
+    n_ff = reseen = after_replaced = straddle = 0
+    for (fid, src, book), cardrows in sorted(kibl.items()):
+        start = epoch(cardrows[0].get('start_ts'))
+        by_side = collections.defaultdict(list)
+        for o in obs_by_fix_book.get((str(fid), book), []):
+            by_side[o.get('side_id')].append(o)
+        for lst in by_side.values():
+            for o in lst:
+                if o.get('is_opener') or o.get('is_current'):
+                    continue
+                ins, sa = epoch(o.get('inserted_on')), seen_at(o)
+                if ins is None or sa is None:
+                    continue
+                n_ff += 1
+                if sa - ins >= 30:
+                    reseen += 1
+                # REPLACED = a later-inserted row exists on this side. Re-seen
+                # after that row appeared is the exact question asked.
+                later = [epoch(x.get('inserted_on')) for x in lst
+                         if epoch(x.get('inserted_on')) is not None
+                         and epoch(x['inserted_on']) > ins]
+                if later and sa > min(later) + 30:
+                    after_replaced += 1
+                if start is not None and ins < start < sa:
+                    straddle += 1
+    print_(f'non-opener rows with is_current=false: n={n_ff}')
+    print_(f'  re-seen at all (last_seen >= inserted_on + 30s): {reseen}  ({pct(reseen, n_ff)})')
+    print_(f'  RE-SEEN AFTER A LATER ROW REPLACED THEM        : {after_replaced}  '
+           f'({pct(after_replaced, n_ff)})   <-- the ruling-1 question')
+    print_(f'  still listed across the off (straddle)          : {straddle}  ({pct(straddle, n_ff)})')
+    verdict = 'YES — widen the guard to is_current=true' if after_replaced else 'NO — ship as guarded'
+    print_(f'  VERDICT: {verdict}')
+
+    # ── every arm, per side, per book, both sides required ─────────────────
+    arms = ('old', 'guarded', 'current')
+    tally = {a: collections.Counter() for a in arms}
+    older_lags = {a: [] for a in arms}
+    sel2x2 = {a: collections.Counter() for a in arms}
+    per_fix = []
+    for (fid, src, book), cardrows in sorted(kibl.items()):
+        start = epoch(cardrows[0].get('start_ts'))
+        rows = obs_by_fix_book.get((str(fid), book), [])
+        by_side = collections.defaultdict(list)
+        for o in rows:
+            by_side[o.get('side_id')].append(o)
+        rec = {'fixture_id': fid, 'book': book, 'sides': len(by_side),
+               'start_src': cardrows[0].get('start_ts_source')}
+        for a in arms:
+            lags = []
+            for lst in by_side.values():
+                b, t = pick_close(lst, start, a)
+                if b is None:
+                    lags.append(None)
+                    continue
+                sel2x2[a][(bool(b.get('is_opener')), bool(b.get('is_current')))] += 1
+                lags.append((start - t) / 60.0)
+            if len(by_side) != 2:
+                cls = 'not_two_sides'
+            elif any(x is None for x in lags):
+                cls = 'dash_no_candidate'
+            elif all(x <= RELIABLE_LAG_MIN for x in lags):
+                cls = 'within60'
+            else:
+                cls = 'older'
+                older_lags[a].append(max(lags))
+            tally[a][cls] += 1
+            rec[a] = cls
+            rec[a + '_lag'] = [None if x is None else round(x, 1) for x in lags]
+        per_fix.append(rec)
+
+    d = len(kibl)
+    print_(f'\nEVERY ARM at the CARD grain (per side, one book, BOTH sides), n={d} fixture x book:')
+    print_(f"  {'arm':<9}{'within60':>10}{'older':>8}{'dash':>7}{'not2':>7}")
+    for a in arms:
+        t = tally[a]
+        print_(f"  {a:<9}{t['within60']:>10}{t['older']:>8}{t['dash_no_candidate']:>7}{t['not_two_sides']:>7}")
+    for a in arms:
+        v = sorted(older_lags[a])
+        if v:
+            n = len(v)
+            flag = '  <-- n<30' if n < 30 else ''
+            print_(f'  {a} OLDER-close age (worse side, min before the off): n={n}{flag} '
+                   f'median {statistics.median(v):.1f}, p25 {v[int(0.25*(n-1))]:.1f}, '
+                   f'p75 {v[int(0.75*(n-1))]:.1f}, max {v[-1]:.1f}')
+    for a in ('guarded', 'current'):
+        t = sel2x2[a]
+        tot = sum(t.values())
+        print_(f'  {a} selected rows (is_opener,is_current): '
+               + ', '.join(f'{k}={v} ({pct(v, tot)})' for k, v in sorted(t.items())))
+
+    # ── THE 28: within 60 on the OLD rule as first reported, yet no close ─
+    by_book = collections.Counter(r['book'] for r in per_fix)
+    print_(f'\nby book: {dict(by_book)}')
+    old_ok_card = [r for r in per_fix if r['old'] == 'within60']
+    print_(f'OLD rule, measured at the CARD grain: within60 on BOTH sides = {len(old_ok_card)} of {d}')
+    why = collections.Counter()
+    for r in old_ok_card:
+        if r['book'] != 'bet105':
+            why['legacy_sports411_row_never_rebuilt'] += 1
+        elif r['start_src'] == 'api-tennis-live':
+            why['flip_started_(<=300s_gap_limb)'] += 1
+        else:
+            why['other_(stale card row / start moved)'] += 1
+    print_(f'  why those still show no close: {dict(why)}')
+    return {'ruling1': {'nonOpenerNotCurrent': n_ff, 'reseen': reseen,
+                        'reseenAfterReplaced': after_replaced, 'straddle': straddle},
+            'arms': {a: dict(tally[a]) for a in arms},
+            'olderLags': older_lags,
+            'selected2x2': {a: {f'opener={k[0]},current={k[1]}': v for k, v in sel2x2[a].items()}
+                            for a in arms},
+            'oldWithin60Card': len(old_ok_card), 'oldWithin60Why': dict(why),
+            'perFixture': per_fix}
+
+
 def main():
     url, key = creds()
 
@@ -408,7 +569,7 @@ def main():
         obs.extend(paged(url, key,
                          '/rest/v1/kibl_line_observations?select=fixture_id,side_id,'
                          'price_decimal,inserted_on,observed_at,last_seen_at,'
-                         'market_type_id,feed_source_id,is_current,is_opener,state'
+                         'market_type_id,segment_id,betting_type_id,is_live,feed_source_id,is_current,is_opener,state'
                          f'&fixture_id=in.({ids})&market_type_id=eq.1'
                          '&order=fixture_id.asc,inserted_on.asc'))
     print(f'observations read: {len(obs)}')
@@ -524,6 +685,17 @@ def main():
 
     fx = forensic(obs, kibl, obs_by)
 
+    obs_by_fix_book = collections.defaultdict(list)
+    book_of_feed = {v: k for k, v in FEED_OF_BOOK.items()}
+    for o in obs:
+        if (o.get('segment_id') not in (None, 1) or o.get('betting_type_id') not in (None, 1)
+                or o.get('is_live') is True):
+            continue
+        b = book_of_feed.get(o.get('feed_source_id'))
+        if b:
+            obs_by_fix_book[(str(o['fixture_id']), b)].append(o)
+    r1 = ruling1(kibl, obs_by_fix_book)
+
     out = os.environ.get('TEN253_OUT', 'ten253-close-lastseen-audit.json')
     with open(out, 'w', encoding='utf-8') as fh:
         json.dump({'generatedAt': datetime.now(timezone.utc).isoformat(),
@@ -533,6 +705,7 @@ def main():
                    'within60': {'old': old_ok, 'strict': strict_ok, 'new': new_ok,
                                 'recovered': new_ok - old_ok, 'denominator': d},
                    'forensic': fx,
+                   'ruling1': r1,
                    'rows': rows}, fh, indent=1)
     print(f'\nwrote {out}')
     return 0
