@@ -205,7 +205,7 @@ Before you push:
 
 1. `git fetch origin` — if `origin/main` has moved since you branched, rebase onto it and re-run the full suite.
 2. Run `tools/clobber-check.sh`. If it reports anything, stop.
-3. Check whether another agent is mid-deploy. If one is, wait. Post that you are taking the lane before you push, and post again when you are finished with the live surface.
+3. Claim the lane: `node tools/deploy-lane.mjs claim --ticket TEN-123`. **No exit 0, no push.** A claim expires 45 min after it is taken; renew it at least every 15 min while you work (including inside your live-poll loop), and release it when the live read is done. Waiting, expired claims, takeovers and the 30-min waiter report: `.claude/rules/deploy-lane.md`. Post on your issue too, so the founder can see it.
 
 CI enforces step 1 independently: the deploy workflow refuses to publish a commit that is not a descendant of origin/main. Read its output — if the step fails with no message, that is this guard, and the answer is rebase and retry, not a retry on the same commit.
 
@@ -220,7 +220,7 @@ After you push, before you measure anything on the live surface:
 
 Never report a pass, a fail, or a regression against a build that `check-live-build.sh` has not returned 0 for.
 
-Release the lane on your issue when verification is complete.
+Release the lane when verification is complete: `node tools/deploy-lane.mjs release --ticket TEN-123`, and say so on your issue.
 
 What the live build carries, for anything reading it directly: `build-info.json` at the site root — `commit` is the **full 40-char** sha of the tip of main at build time, alongside `tip`, `behindTip`, `onMain`, `runNumber`, `builtAt` — and the same sha as `<meta name="build-sha">` in the dashboard HTML, readable from the DOM without a second fetch. Both are written by the `Deploy ancestor guard + build stamp` step of `pipeline.yml`, regenerated every run, and neither is committed.
 
@@ -239,6 +239,7 @@ Surface-specific rulings moved out of this file so they load only when relevant:
 | Player Profile export parity | `.claude/rules/player-profile.md` |
 | Records counting (Flashscore rules), walkovers, retirements | `.claude/rules/pipeline-records.md` |
 | Odds sources, book ladder, card rules, close rules | `.claude/rules/odds.md` |
+| Deploy lane — claim, 45-min expiry, renew, takeover, waiter reports | `.claude/rules/deploy-lane.md` |
 
 Full rationale and superseded decisions live in `BUILD-NOTES.md`, not here.
 
