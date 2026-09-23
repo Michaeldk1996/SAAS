@@ -60,6 +60,18 @@ function setsOf(score) {
 }
 const games = (s) => s.reduce((n, [a, b]) => n + a + b, 0);
 const margin = (s) => s.reduce((n, [a, b]) => n + a - b, 0);
+// Best-of, read off the score itself — the only format evidence a row carries. A completed
+// match ends the moment the winner reaches a majority, so the winner's set count fixes the
+// format: 2 → best-of-3, 3 → best-of-5. Anything else is not a shape this gate can judge.
+// (TEN-265: the set-shape predicates below once hard-coded best-of-3 — "went the distance"
+// was `3 sets` — and a five-set US Open decider red-lined every pipeline run.)
+function bestOfScore(s) {
+  const mine = s.filter(([a, b]) => a > b).length;
+  const theirs = s.filter(([a, b]) => a < b).length;
+  const w = Math.max(mine, theirs);
+  if (mine === theirs || mine + theirs !== s.length) return null;
+  return w === 2 && s.length <= 3 ? 3 : w === 3 && s.length <= 5 ? 5 : null;
+}
 
 // ── independent claim predicate ─────────────────────────────────────────────
 // true = the row meets the claim · false = it does not · null = not evaluable.
@@ -95,9 +107,16 @@ function holds(st, m) {
       switch (st.subtype) {
         case 'won-2nd-set':        return s.length >= 2 && s[1][0] > s[1][1];
         case 'lost-2nd-set':       return s.length >= 2 && s[1][0] < s[1][1];
-        case 'straight-sets-win':  return m.won === true && s.length === 2;
-        case 'straight-sets-loss': return m.won === false && s.length === 2;
-        case 'went-the-distance':  return s.length === 3;
+        case 'straight-sets-win':
+        case 'straight-sets-loss': {
+          const bo = bestOfScore(s);
+          if (bo == null) return null;
+          return m.won === (st.subtype === 'straight-sets-win') && s.length === (bo + 1) / 2;
+        }
+        case 'went-the-distance': {
+          const bo = bestOfScore(s);
+          return bo == null ? null : s.length === bo;
+        }
         case 'no-set-won':         return s.every(([a, b]) => a < b);
         default: return null;
       }
@@ -474,6 +493,38 @@ ok(`A · ${A.rows} rows across all streaks satisfy their own claim`);
     `accepted BOTH a 48-game blowout win and a 0-6 0-6 loss as satisfying their claim. The ` +
     `predicate is inert for those families.`);
   ok(`mutation · all ${considered} streaks reject a planted out-of-claim score`);
+}
+
+// ── F · SET-SHAPE CLAIMS ARE FORMAT-AWARE (TEN-265) ─────────────────────────
+// Fixed witnesses, independent of whatever the artifact happens to carry today, so this
+// holds on a board with no five-set row in any streak. The first witness is the exact row
+// that blocked runs 4430-4437; the CONTROL re-runs the old best-of-3-only predicate on it
+// and requires that it still fails — proof the witness would have caught the defect.
+{
+  const D = { type: 'setpat', subtype: 'went-the-distance', direction: 'win' };
+  const SW = { type: 'setpat', subtype: 'straight-sets-win', direction: 'win' };
+  const SL = { type: 'setpat', subtype: 'straight-sets-loss', direction: 'loss' };
+  const row = (score, won) => ({ score, won });
+  const VUKIC = row('4-6 7-6(5) 4-6 6-3 4-6', false);     // US Open 2026-08-31 vs Sakamoto
+  const cases = [
+    [D,  VUKIC,                          true,  'bo5 five-setter went the distance'],
+    [D,  row('6-4 3-6 7-5', true),       true,  'bo3 three-setter went the distance'],
+    [D,  row('6-4 3-6 6-4 6-3', true),   false, 'bo5 four-setter did not'],
+    [D,  row('9-7 9-7 9-7', true),       false, 'bo5 three-set sweep did not'],
+    [D,  row('6-4 6-4', true),           false, 'bo3 straight sets did not'],
+    [SW, row('6-4 6-4 6-4', true),       true,  'bo5 3-0 is a straight-sets win'],
+    [SW, row('6-4 3-6 6-4 6-3', true),   false, 'bo5 3-1 is not a straight-sets win'],
+    [SL, row('4-6 4-6 4-6', false),      true,  'bo5 0-3 is a straight-sets loss'],
+    [SL, row('4-6 6-3 4-6', false),      false, 'bo3 1-2 is not a straight-sets loss'],
+  ];
+  for (const [st, m, want, why] of cases) {
+    assert.strictEqual(holds(st, m), want, `TEN-265 — set-shape predicate wrong: ${why} ("${m.score}").`);
+  }
+  // CONTROL — the pre-TEN-265 predicate. It must reject the witness, or the witness proves nothing.
+  const oldDistance = (m) => setsOf(m.score).length === 3;
+  assert.strictEqual(oldDistance(VUKIC), false,
+    'TEN-265 CONTROL — the best-of-3-only predicate no longer rejects the Vukic row; the witness is inert.');
+  ok(`F · ${cases.length} set-shape witnesses hold across bo3 and bo5 (control: the bo3-only rule rejects the Vukic five-setter)`);
 }
 
 console.log('test-series-rows: ' + checks.length + ' checks passed');
