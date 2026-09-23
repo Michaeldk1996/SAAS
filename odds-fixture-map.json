@@ -1457,8 +1457,8 @@
     },
     "12164693": {
       "fixtureId": null,
-      "mappedAt": "2026-09-23T17:46:55Z",
-      "missRuns": 42,
+      "mappedAt": "2026-09-23T18:46:57Z",
+      "missRuns": 43,
       "missSince": "2026-09-21T03:45:01Z",
       "orient": null,
       "p1": "J. Fuentes Vasquez",
@@ -1885,8 +1885,8 @@
     },
     "12165516": {
       "fixtureId": null,
-      "mappedAt": "2026-09-23T17:46:55Z",
-      "missRuns": 6,
+      "mappedAt": "2026-09-23T18:46:57Z",
+      "missRuns": 7,
       "missSince": "2026-09-23T10:18:41Z",
       "orient": null,
       "p1": "M. Damm",
@@ -1941,8 +1941,8 @@
     },
     "12165553": {
       "fixtureId": null,
-      "mappedAt": "2026-09-23T17:46:55Z",
-      "missRuns": 3,
+      "mappedAt": "2026-09-23T18:46:57Z",
+      "missRuns": 4,
       "missSince": "2026-09-23T13:51:29Z",
       "orient": null,
       "p1": "K. Jacquet",
@@ -1952,8 +1952,8 @@
     },
     "12165577": {
       "fixtureId": null,
-      "mappedAt": "2026-09-23T17:46:55Z",
-      "missRuns": 3,
+      "mappedAt": "2026-09-23T18:46:57Z",
+      "missRuns": 4,
       "missSince": "2026-09-23T13:51:29Z",
       "orient": null,
       "p1": "D. Medvedev",
@@ -1964,17 +1964,17 @@
   },
   "missAudit": {
     "observed": {
-      "measuredRunsPerDay": 16.2,
+      "measuredRunsPerDay": 16.3,
       "missResolutionHoursMax": 120.84,
       "missResolutionHoursP50": 37.52,
       "missResolutionsMeasured": 87,
       "note": "ttlBitRuns counts runs where an expired MISS was the ONLY reason a billable /v4/fixtures call was made. projectedTtlUnitsPerDay uses the MEASURED run rate (measuredRunsPerDay), not an assumed 24/day; it is null until observedSpanDays is wide enough to measure one. Compare it against the <=24/day ceiling the TTL was chosen against. openMisses counts only fixtures still on the board.",
-      "observedSpanDays": 12.51,
-      "projectedTtlUnitsPerDay": 4.8,
-      "runs": 203,
-      "spentRuns": 111,
-      "ttlBitRuns": 60,
-      "ttlBitShare": 0.296,
+      "observedSpanDays": 12.55,
+      "projectedTtlUnitsPerDay": 4.9,
+      "runs": 204,
+      "spentRuns": 112,
+      "ttlBitRuns": 61,
+      "ttlBitShare": 0.299,
       "ttlHours": 1.0
     },
     "runs": [
@@ -4210,9 +4210,20 @@
         "ttlBit": true,
         "unmapped": 0,
         "upcoming": 45
+      },
+      {
+        "at": "2026-09-23T18:46:57Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 0,
+        "missExpired": 4,
+        "openMisses": 4,
+        "stale": 4,
+        "ttlBit": true,
+        "unmapped": 0,
+        "upcoming": 45
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-09-23T17:46:55Z"
+  "updatedAt": "2026-09-23T18:46:57Z"
 }
