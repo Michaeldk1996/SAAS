@@ -212,5 +212,29 @@ ck('card grain: CURRENT arm puts the fixture in within60 (both sides, lags 40 an
    out['arms']['current'].get('within60') == 1, str(out['arms']))
 ck('card grain: a one-sided fixture is never counted as a card close',
    A.ruling1(kib, {('9', 'bet105'): [cur]}, print_=lambda *a: None)['arms']['current'].get('not_two_sides') == 1)
+
+# ── the AFTER split must classify every pinned fixture into exactly one bucket
+print()
+print('=== the 185 after-split classifier ===')
+_sp = importlib.util.spec_from_file_location('X', 'ten253-after-split.py')
+X = importlib.util.module_from_spec(_sp); _sp.loader.exec_module(X)
+_pop = [{'fixture_id': i, 'book': 'bet105'} for i in (1, 2, 3, 4, 5)]
+_mk = {(str(i), 'bet105'): k for i, k in zip((1, 2, 3, 4, 5), 'abcde')}
+def _R(b, s, c, w, sel=True):
+    return {'book': b, 'side': s, 'is_selected': sel, 'close_price': c,
+            'close_ts': '2026-09-20T11:00:00Z' if c else None, 'close_within_60': w,
+            'start_ts': '2026-09-20T12:00:00Z'}
+_rows = {'a': [_R('bet105', '1', 2, True), _R('bet105', '2', 2, True)],
+         'b': [_R('bet105', '1', None, None, False), _R('bet105', '2', None, None, False),
+               _R('bet365', '1', 2, True), _R('bet365', '2', 2, True)],
+         'c': [_R('bet105', '1', 2, False), _R('bet105', '2', 2, False)],
+         'd': [_R('bet105', '1', None, None), _R('bet105', '2', None, None)],
+         'e': [_R('bet105', '1', 2, True), _R('bet365', '2', 2, True)]}
+_per, _t = X.classify(_pop, _rows, _mk)
+ck('fix1 within-60 / switch within-60 / fix1 older / genuine dash / MIXED are told apart',
+   [p['after'] for p in _per] == ['fix1_within60', 'switch_within60', 'fix1_older',
+                                  'dash_no_book_had_a_close', 'MIXED_BOOKS'], str(_per))
+ck('every pinned fixture lands in exactly one bucket (the split sums to n)', sum(_t.values()) == 5)
+ck('an older close carries its age (60 min here)', _per[2].get('older_age_min') == 60.0)
 print(('\nALL PASS' if not F else f'\n{len(F)} FAILURE(S): {F}'))
 sys.exit(1 if F else 0)

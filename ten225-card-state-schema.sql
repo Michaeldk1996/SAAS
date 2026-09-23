@@ -123,6 +123,13 @@ CREATE TABLE IF NOT EXISTS odds_card_state (
   -- reliability rule — the Open survives either way.
   close_price       numeric,
   close_ts          timestamptz,
+  -- TEN-253 (founder 2026-09-23, ruling 2): the Close is the last real price
+  -- seen before the actual start, SHOWN even when older than 60 minutes. This
+  -- flag says whether it is within 60 minutes of the start (and, when cut at
+  -- the live flip, within the 300 s gap limb). CLV, ROI, price movement and
+  -- Biggest Market Move use a close ONLY when this is TRUE. NULL exactly when
+  -- there is no close.
+  close_within_60   boolean,
 
   -- Provenance. start_ts_source says WHICH start the close was cut at;
   -- start_reject_reason says why there is no start at all. Part 4 item 2 has to
@@ -301,6 +308,19 @@ ALTER TABLE odds_card_state ADD CONSTRAINT odds_card_state_selected_ck
          OR open_price IS NOT NULL
          OR now_price IS NOT NULL
          OR close_price IS NOT NULL);
+
+-- TEN-253 ruling 2 — the within-60 flag. Every close stored before this column
+-- existed passed the 60-minute rule (the old loaders NULLED any close that did
+-- not), so the backfill to TRUE states a fact about those rows, not a guess.
+-- It runs BEFORE the pairing CHECK below, which it is what makes satisfiable.
+ALTER TABLE odds_card_state ADD COLUMN IF NOT EXISTS close_within_60 boolean;
+UPDATE odds_card_state SET close_within_60 = TRUE
+  WHERE close_price IS NOT NULL AND close_within_60 IS NULL;
+UPDATE odds_card_state SET close_within_60 = NULL
+  WHERE close_price IS NULL AND close_within_60 IS NOT NULL;
+ALTER TABLE odds_card_state DROP CONSTRAINT IF EXISTS odds_card_state_close_w60_ck;
+ALTER TABLE odds_card_state ADD CONSTRAINT odds_card_state_close_w60_ck
+  CHECK ((close_price IS NULL) = (close_within_60 IS NULL));
 
 ALTER TABLE odds_card_state ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON odds_card_state FROM anon, authenticated;

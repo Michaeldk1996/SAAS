@@ -72,7 +72,10 @@ def obs(price, inserted_on, opener=False, observed_at='2026-09-18T00:00:00Z',
          'is_opener': opener, 'observed_at': observed_at,
          'market_type_id': 1, 'segment_id': 1, 'betting_type_id': 1,
          'is_live': False, 'side_id': 2, 'fixture_participant_id': 1,
-         'max_limit': 0.0}
+         'max_limit': 0.0,
+         # TEN-253: only a row Kibl marks CURRENT can be a Close, so the
+         # ordinary fixture is current; the superseded cases say so explicitly.
+         'is_current': True}
     d.update(kw)
     return d
 
@@ -809,6 +812,169 @@ check('...stamped with the vendor time', ub[0]['now_ts'] == T % (9, 0))
 check('...and NO Close, because it has no resolved start',
       ub[0]['close_price'] is None and ub[0]['close_ts'] is None)
 check('...and its Open survives regardless', ub[0]['open_price'] == 1.50)
+
+# ================================================ TEN-253 Fix 1 + Fix 2 (2026-09-23)
+# Founder brief 06:23Z: ship Fix 1 guarded — widened to is_current=true by
+# ruling 1 (MEASURED, run 35827198225: 10 of 22 superseded non-openers are still
+# re-seen after replacement) — show older closes flagged, switch whole cards.
+print('\nTEN-253 Fix 1 — the Close is the last price SEEN before the off')
+S0 = K.epoch(T % (12, 0))
+
+
+def cur(price, ins, seen, **kw):
+    return obs(price, ins, last_seen_at=seen, **kw)
+
+
+# 1 · still listed at the off -> capped to the start, lag 0
+_s = [cur(2.20, T % (6, 0), T % (12, 30))]
+_c = K.close_of(_s, S0)
+check('a current price still listed at the off IS the close',
+      _c is not None and _c['price_decimal'] == 2.20, _c)
+check('...stamped the START itself (lag 0), never a post-off sighting',
+      K.close_time(_c, S0) == S0, K.close_time(_c, S0))
+check('CONTROL: the inserted_on rule times the same price 6 h back',
+      K.epoch(K.close_of_inserted_on(_s, S0)['inserted_on']) == K.epoch(T % (6, 0)))
+
+# 2 · the opener trap — the superseded opener straddles the off
+_op = cur(1.90, T % (6, 0), T % (12, 30), opener=True, is_current=False)
+_real = cur(2.40, T % (9, 0), T % (11, 20))
+_c = K.close_of([_op, _real], S0)
+check('a SUPERSEDED OPENER re-seen past the off is never the close',
+      _c is not None and _c['price_decimal'] == 2.40, _c)
+check('...the real last price is timed honestly: 40 min before the off',
+      round((S0 - K.close_time(_c, S0)) / 60, 1) == 40.0)
+
+# 3 · ruling 1 — a superseded NON-opener straddling the off
+_hist = cur(2.10, T % (7, 0), T % (12, 30), is_current=False)
+_c = K.close_of([_hist, _real], S0)
+check('RULING 1: a superseded NON-opener re-seen past the off is never the close',
+      _c is not None and _c['price_decimal'] == 2.40, _c)
+check('an opener that is STILL current competes (opened and never moved)',
+      K.close_of([cur(3.0, T % (6, 0), T % (12, 30), opener=True)], S0)['price_decimal'] == 3.0)
+check('a series of ONLY superseded rows dashes rather than show a wrong close',
+      K.close_of([_op, _hist], S0) is None)
+check('a price first written AFTER the off never competes, however it was seen',
+      K.close_of([cur(2.0, T % (12, 5), T % (12, 40))], S0) is None)
+
+# 4 · the display rule — an older close is STORED, flagged not-within-60
+_fx = [{'fixture_id': 77, 'scheduled_start': '2026-09-18T12:00:00Z',
+        'player1_name': 'Carlos Alcaraz', 'player2_name': 'Alexander Zverev',
+        'match_key': '2026-09-18|alcaraz|zverev', 'league_id': 19}]
+_old_obs = {77: [cur(1.50, T % (6, 0), T % (9, 0), opener=True, side_id=2, fixture_participant_id=1),
+                 cur(2.60, T % (6, 0), T % (9, 0), opener=True, side_id=3, fixture_participant_id=2)]}
+_new_obs = {77: [cur(1.50, T % (6, 0), T % (12, 30), opener=True, side_id=2, fixture_participant_id=1),
+                 cur(2.60, T % (6, 0), T % (12, 30), opener=True, side_id=3, fixture_participant_id=2)]}
+_ix = {'2026-09-18|alcaraz|zverev': {'fixture_id': 'op1', 'start_ts': S0,
+       'start_ts_source': 'oddspapi', 'start_reject_reason': None,
+       'flip_gap_seconds': None, 'sides': {}}}
+_b, _bst, _, _ = K.build_rows(_fx, _old_obs, _ix, K.epoch(T % (13, 0)))
+check('a close last seen 3 h before the off is STORED (ruling 2: show it)',
+      all(r['close_price'] is not None for r in _b), [r['close_price'] for r in _b])
+check('...flagged close_within_60 = FALSE, so no number is computed from it',
+      all(r['close_within_60'] is False for r in _b), [r['close_within_60'] for r in _b])
+_b, _bst, _, _ = K.build_rows(_fx, _new_obs, _ix, K.epoch(T % (13, 0)))
+check('a close still listed at the off is flagged within-60 TRUE',
+      all(r['close_within_60'] is True for r in _b), [r['close_within_60'] for r in _b])
+check('...and counted as RECOVERED against the inserted_on control (6 h back)',
+      _bst['close_within60_RECOVERED_by_last_seen'] == 2, dict(_bst))
+_b, _, _, _ = K.build_rows(_fx, {77: []}, _ix, K.epoch(T % (13, 0)))
+check('no close -> close_within_60 is NULL, never a False standing in for absent',
+      all(r.get('close_within_60') is None for r in _b))
+
+print('\nTEN-253 Fix 2 — the whole-card switch')
+
+
+def sw(book, rank, side, open_=None, now=None, close=None, w60=None, start=None):
+    r = srow('d|a|b', rank, 'kibl' if rank == 1 else 'oddspapi', side=side,
+             book=book, price=open_, now=now, close=close, start=start)
+    r['close_within_60'] = w60 if close is not None else None
+    return r
+
+
+def picked(rows):
+    return {r['book'] for r in rows if r['is_selected']}
+
+
+PAST, FUT = '2020-01-01T00:00:00+00:00', None
+# BAEZ — upcoming, the top book's Now is the 0.000 suspension marker.
+baez = [sw('bet105', 1, '1', 2.20, 0.0), sw('bet105', 1, '2', 1.714, 0.0),
+        sw('bet365', 2, '1', 2.10, 2.20), sw('bet365', 2, '2', 1.72, 1.63)]
+rows, st = K.select_winners(baez)
+check('BAEZ: a suspended Now switches the WHOLE card to the next book with a Now',
+      picked(rows) == {'bet365'}, picked(rows))
+check('...counted FROM -> TO', st.get('switch_upcoming:bet105->bet365') == 1, dict(st))
+# a >20% overround pair is suspension too, not a price
+wide = [sw('bet105', 1, '1', 2.2, 1.05), sw('bet105', 1, '2', 1.7, 1.05),
+        sw('bet365', 2, '1', 2.1, 2.2), sw('bet365', 2, '2', 1.7, 1.63)]
+check('a 1.05/1.05 Now (90% overround) is suspended, so the card switches',
+      picked(K.select_winners(wide)[0]) == {'bet365'})
+# DE MINAUR — completed, the top book has no close; bet365 has a within-60 one.
+dm = [sw('bet105', 1, '1', 1.256, start=PAST), sw('bet105', 1, '2', 4.11, start=PAST),
+      sw('bet365', 2, '1', 1.25, close=1.20, w60=True, start=PAST),
+      sw('bet365', 2, '2', 4.0, close=4.5, w60=True, start=PAST)]
+rows, st = K.select_winners(dm)
+check('DE MINAUR: no close on the top book -> the whole card moves to bet365',
+      picked(rows) == {'bet365'}, picked(rows))
+check('...counted as a completed-card switch',
+      st.get('switch_completed:bet105->bet365') == 1, dict(st))
+# a within-60 close beats an OLDER close on a higher-priority book
+older = [sw('bet105', 1, '1', 1.3, close=1.28, w60=False, start=PAST),
+         sw('bet105', 1, '2', 3.6, close=3.7, w60=False, start=PAST),
+         sw('bet365', 2, '1', 1.3, close=1.25, w60=True, start=PAST),
+         sw('bet365', 2, '2', 3.6, close=3.9, w60=True, start=PAST)]
+check('a within-60 close on bet365 beats an OLDER close on bet105 (tier 1 of 3)',
+      picked(K.select_winners(older)[0]) == {'bet365'})
+# ...but an older close is kept over NO close — priority is not a reason to dash
+older_only = older[:2] + [sw('bet365', 2, '1', 1.3, start=PAST), sw('bet365', 2, '2', 3.6, start=PAST)]
+check('an OLDER close on bet105 beats NO close anywhere else (tier 2 of 3)',
+      picked(K.select_winners(older_only)[0]) == {'bet105'})
+both60 = [dict(r, close_within_60=True) for r in older]
+check('with within-60 closes on BOTH books, priority decides: bet105',
+      picked(K.select_winners(both60)[0]) == {'bet105'})
+# The upcoming tier is the founder's words literally: a current Now, Open not
+# part of the test. Bet105 with a real Now and NO real Open keeps the card.
+lit = [sw('bet105', 1, '1', None, 2.30), sw('bet105', 1, '2', None, 1.67),
+       sw('bet365', 2, '1', 2.10, 2.20), sw('bet365', 2, '2', 1.72, 1.63)]
+check('upcoming: the top book with a current Now keeps the card even without an Open',
+      picked(K.select_winners(lit)[0]) == {'bet105'})
+# ZERO MIXING — every selected row of every case above names ONE book
+_cases = [baez, wide, dm, older, older_only, both60, lit]
+check('zero mixing: every switch case selects exactly ONE book, both sides',
+      all(len(picked(K.select_winners([dict(r) for r in c])[0])) == 1
+          and sum(r['is_selected'] for r in K.select_winners([dict(r) for r in c])[0]) == 2
+          for c in _cases))
+
+# ── IN-FILE MUTATION CONTROLS. Each reverts ONE change in a copy of the module
+# and re-runs the case that proves it. A control that cannot go red proves
+# nothing, so each also asserts its anchor still exists.
+_SRC = open(K.__file__).read()
+
+
+def _mutant(old, new):
+    assert old in _SRC, f'mutation anchor vanished: {old!r}'
+    M = types.ModuleType('M')
+    M.__file__ = K.__file__
+    exec(compile(_SRC.replace(old, new), K.__file__, 'exec'), M.__dict__)
+    return M
+
+
+_M1 = _mutant("    t = seen_at(obs)\n    return None if t is None else min(t, start_ts)",
+              "    t = epoch(obs.get('inserted_on'))\n    return None if t is None else min(t, start_ts)")
+_b1, _, _, _ = _M1.build_rows(_fx, _new_obs, _ix, K.epoch(T % (13, 0)))
+check('MUTATION revert Fix 1 (time the close on inserted_on): the straddler goes '
+      'to NOT within-60 — this suite catches it',
+      all(r['close_within_60'] is False for r in _b1), [r['close_within_60'] for r in _b1])
+_M2 = _mutant("cur = [o for o in pre if o.get('is_current') and seen_at(o) is not None]",
+              "cur = [o for o in pre if seen_at(o) is not None]")
+check('MUTATION revert the guard: the superseded OPENER is taken as the close',
+      _M2.close_of([_op, _real], S0)['price_decimal'] == 1.90)
+_M3 = _mutant("    if started:\n        return 3 if cov['close60']",
+              "    return 1\n    if started:\n        return 3 if cov['close60']")
+check('MUTATION revert the switch: BAEZ stays on the suspended book',
+      picked(_M3.select_winners([dict(r) for r in baez])[0]) == {'bet105'})
+check('MUTATION revert the switch: DE MINAUR stays on the close-less book',
+      picked(_M3.select_winners([dict(r) for r in dm])[0]) == {'bet105'})
+
 
 # ------------------------------------------------------------- sweep cadence
 print('\nshould_sweep — founder ruling: 15 min baseline, 5 min from T-60')

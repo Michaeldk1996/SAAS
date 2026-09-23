@@ -134,6 +134,29 @@ check('an upcoming fixture with no reliable close dashes the close',
 
 # A non-match-winner row must never reach this table in this step.
 _, sst = C.card_rows([srow(market='total games')], {}, NOW)
+
+# TEN-253 ruling 2 — the within-60 flag and the OLDER close (founder 2026-09-23)
+check('a summary close (only ever written when reliable) is flagged within-60',
+      fin[0]['close_within_60'] is True, fin[0].get('close_within_60'))
+_o, _ost = C.card_rows([srow(close_price=None, close_ts=None, close_reliable=False,
+                             last_tick_price=1.52, last_tick_ts='2026-09-17T09:00:00Z',
+                             last_tick_is_prestart=True)], {}, NOW)
+check('a nulled close with a PROVEN pre-start last tick shows that tick as an OLDER close',
+      _o[0]['close_price'] == 1.52 and _o[0]['close_ts'] == '2026-09-17T09:00:00Z', _o[0])
+check('...flagged close_within_60 = FALSE, so no number is computed from it',
+      _o[0]['close_within_60'] is False)
+_n, _ = C.card_rows([srow(close_price=None, close_ts=None, close_reliable=False,
+                          last_tick_is_prestart=False)], {}, NOW)
+check('a last tick NOT proven pre-start is never shown as a close (in-play is not a close)',
+      _n[0]['close_price'] is None and _n[0]['close_within_60'] is None)
+_z, _ = C.card_rows([srow(close_price=None, close_ts=None, close_reliable=False,
+                          last_tick_price=0.0, last_tick_is_prestart=True)], {}, NOW)
+check('a 0.000 last tick is not a price, so no older close',
+      _z[0]['close_price'] is None)
+_ns, _ = C.card_rows([srow(close_price=None, close_ts=None, close_reliable=False,
+                           start_ts=None, last_tick_is_prestart=True)], {}, NOW)
+check('no resolved start -> no older close (a close needs its start)',
+      _ns[0]['close_price'] is None)
 check('a non-match-winner summary row is skipped and counted',
       sst['not_match_winner'] == 1 and sst['rows'] == 0)
 

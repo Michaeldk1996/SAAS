@@ -815,6 +815,9 @@
   [data-page="matches"] .mc-journey--noopen .mc-journey__lane{ border-top:0; }
   [data-page="matches"] .mc-journey__nodata{ color:var(--mc-muted-2); }
   [data-page="matches"] .mc-journey__close{ font-family:var(--mx-font-mono); font-weight:700; color:var(--mc-text); font-size:16px; width:40px; flex:none; }
+  /* TEN-253 ruling 2: a close last seen more than 60 min before the start. Shown, muted. */
+  [data-page="matches"] .mc-journey__close.mx-close-older,
+  [data-page="matches"] .mc-drifted__now.mx-close-older{ opacity:.45; font-weight:500; }
   [data-page="matches"] .mc-journey__delta{ font-family:var(--mx-font-mono); font-weight:600; font-size:11px; color:var(--mc-muted-2); width:44px; text-align:right; flex:none; }
   [data-page="matches"] .mc-journey__delta.pos{ color:#3dd68c; }
   [data-page="matches"] .mc-journey__delta.neg{ color:#e0645b; }
@@ -7264,6 +7267,7 @@ function _ocsOf(m){
       }
       out = { book: e.book, source: e.source, label: e.label || null,
               tsKind: e.tsKind || null, startTsSource: e.startTsSource || null,
+              startTs: e.startTs || null, closeTsKind: e.closeTsKind || null,
               p1: s1, p2: s2 };
     }
   }
@@ -7739,6 +7743,62 @@ function mxCloseIsJ(m, who){
     return false;
   return true;
 }
+// ─────────────────── TEN-253 ruling 2 (founder, 2026-09-23) — THE CLOSE DISPLAY RULE ──
+// "Show the last real price seen before the actual start, even when it's older
+//  than 60 minutes ... Stats and calculations (CLV, ROI, price movement, Biggest
+//  Market Move) use ONLY within-60 Closes. Displayed older prices never feed a
+//  number."
+//
+// So there are TWO close accessors and the split is the whole rule:
+//   _mcCloseOf        -> the close to DISPLAY (older ones included, rendered muted)
+//   _mcCloseDerivedOf -> the close a NUMBER may be computed from (within-60 only)
+// Every sort, move, upset and panel figure reads the second. The pair is judged
+// together: a move or an upset needs both legs, so one older leg disqualifies the
+// fixture's close as an input, exactly as a one-sided close voids both.
+//
+// The api-tennis J close (mxJClose) carries no timestamp, so its lag cannot be
+// shown to be within 60 minutes — it stays on screen and is kept out of numbers.
+// A matches.json closingOdds (no card-state row) is the TEN-124 pinned pre-play
+// close and carries no flag; it keeps its existing role.
+function _mcCloseW60(m){
+  const o = _ocsOf(m);
+  if (!o) return true;
+  if (o.p1.close == null || o.p2.close == null) return false;
+  return o.p1.closeW60 !== false && o.p2.closeW60 !== false;
+}
+function _mcCloseDerivedOf(m, who){
+  const o = _ocsOf(m);
+  if (o) return (o[who].close != null && _mcCloseW60(m)) ? o[who].close : null;
+  // No card-state row: the TEN-124 pinned pre-play close ONLY. Never the
+  // api-tennis J close, which has no timestamp and so no provable lag.
+  const c = m && m.closingOdds;
+  if (!c) return null;
+  if (mxIsSuspendedPair(c.p1, c.p2, { id: (m && (m.id || m.matchKey)) || null,
+                                      book: c.bookmaker || null, path: 'closingOdds' })) return null;
+  return c[who] ?? null;
+}
+// Is the DISPLAYED close on this leg an older (>60 min) one? Drives the muted
+// style and the suppressed move on the card.
+function mxCloseIsOlder(m, who){
+  const o = _ocsOf(m);
+  return !!(o && o[who].close != null && o[who].closeW60 === false);
+}
+// "last seen X min before start" — minutes from the close's own clock to the
+// start it was cut at, both off the published row. null when either is absent:
+// an age we cannot compute is not printed, never guessed.
+function mxCloseAgeMin(m, who){
+  const o = _ocsOf(m);
+  if (!o || o[who].close == null) return null;
+  const c = Date.parse(o[who].closeTs || ''), st = Date.parse(o.startTs || '');
+  if (!Number.isFinite(c) || !Number.isFinite(st) || st < c) return null;
+  return Math.round((st - c) / 60000);
+}
+// Founder format: minutes under an hour, "Xh Ym" over it.
+function mxAgeText(min){
+  if (min == null) return '';
+  if (min < 60) return `${min} min`;
+  return `${Math.floor(min / 60)}h ${min % 60}m`;
+}
 // TEN-179 item 1 (founder ruling 2026-09-10) — the Upcoming card's NOW leg is PINNED TO
 // BET365. Both legs from bet365, no cross-book fallback; a leg without one is a dash, the
 // same rule TEN-124 set for the completed CLOSE. m.bestOdds is a best-price-ACROSS-books
@@ -7997,7 +8057,7 @@ function _mcNowOf(m, who){
 }
 function upsetScore(m){ // winner's closing odds — bigger underdog win = bigger upset
   const fscore = m.finalScore; if (!fscore) return -1;
-  const c = _mcCloseOf(m, fscore.winner); return c == null ? -1 : c;
+  const c = _mcCloseDerivedOf(m, fscore.winner); return c == null ? -1 : c;
 }
 // TEN-179 item 3 — the single source of truth for "is the card in the drift view?".
 // It reads state.sort DIRECTLY, with no second flag, so the sort control and the card
@@ -8337,7 +8397,7 @@ function mcOpenCoverage(list, covered){
   };
 }
 function closingScore(m){ // strongest closing favourite first (lowest favourite close)
-  const c1 = _mcCloseOf(m, 'p1'), c2 = _mcCloseOf(m, 'p2');
+  const c1 = _mcCloseDerivedOf(m, 'p1'), c2 = _mcCloseDerivedOf(m, 'p2');
   if (c1 == null && c2 == null) return Infinity;
   if (c1 == null) return c2; if (c2 == null) return c1;
   return Math.min(c1, c2);
@@ -8348,7 +8408,7 @@ function closingScore(m){ // strongest closing favourite first (lowest favourite
 function moveScore(m){
   // TEN-198: vendor pin excluded — this is a signed % move, the "never to drift" leg.
   const o1 = _openDerivedOf(m, 'p1'), o2 = _openDerivedOf(m, 'p2');
-  const c1 = _mcCloseOf(m, 'p1'), c2 = _mcCloseOf(m, 'p2');
+  const c1 = _mcCloseDerivedOf(m, 'p1'), c2 = _mcCloseDerivedOf(m, 'p2');
   const p1 = (o1 != null && c1 != null && o1 > 0) ? Math.abs(c1 / o1 - 1) : 0;
   const p2 = (o2 != null && c2 != null && o2 > 0) ? Math.abs(c2 / o2 - 1) : 0;
   return Math.max(p1, p2);
@@ -8359,7 +8419,7 @@ function moveScore(m){
 // score -1 and sink to the bottom.
 function marketWrongScore(m){
   const fscore = m.finalScore; if (!fscore) return -1;
-  const c1 = _mcCloseOf(m, 'p1'), c2 = _mcCloseOf(m, 'p2');
+  const c1 = _mcCloseDerivedOf(m, 'p1'), c2 = _mcCloseDerivedOf(m, 'p2');
   if (c1 == null || c2 == null) return -1;
   const favWho = c1 < c2 ? 'p1' : 'p2';
   return fscore.winner !== favWho ? (1 / Math.min(c1, c2)) : -1;
@@ -8375,7 +8435,7 @@ function _mcOddsLanded(){
   // that provably cannot rank the card that lit it.
   return matches.some(m => m.finalScore && !_openPinIsVendor(m)
     && m.openingOdds && (m.openingOdds.p1 != null || m.openingOdds.p2 != null)
-    && (_mcCloseOf(m, 'p1') != null || _mcCloseOf(m, 'p2') != null));
+    && (_mcCloseDerivedOf(m, 'p1') != null || _mcCloseDerivedOf(m, 'p2') != null));
 }
 function syncSortDropdown(completed){
   const menu = document.getElementById('sortMenu');
@@ -9058,14 +9118,14 @@ function mcDriftCell(open, now, anchorOnly, opts){
     return `<span class="mc-drifted">`
       + `<span class="mc-drifted__open"${ot}>${mxOddsTxt(open)}</span>`
       + `<span class="mc-drifted__lane"><span class="mc-drifted__flat"></span></span>`
-      + `<span class="mc-drifted__now${now == null ? ' nodata' : ''}"${nt}>${nowTxt}</span>`
+      + `<span class="mc-drifted__now${now == null ? ' nodata' : ''}${o.nowOlder && now != null ? ' mx-close-older' : ''}"${nt}>${nowTxt}</span>`
       + `<span class="mc-drifted__pct"></span></span>`;
   }
   if (open == null){
     return `<span class="mc-drifted">`
       + `<span class="mc-drifted__open nodata">—</span>`
       + `<span class="mc-drifted__lane"><span class="mc-drifted__flat"></span></span>`
-      + `<span class="mc-drifted__now${now == null ? ' nodata' : ''}"${nt}>${nowTxt}</span>`
+      + `<span class="mc-drifted__now${now == null ? ' nodata' : ''}${o.nowOlder && now != null ? ' mx-close-older' : ''}"${nt}>${nowTxt}</span>`
       + `<span class="mc-drifted__pct"></span></span>`;
   }
   if (now == null){
@@ -9087,7 +9147,7 @@ function mcDriftCell(open, now, anchorOnly, opts){
     return `<span class="mc-drifted">`
       + `<span class="mc-drifted__open"${ot}>${mxOddsTxt(open)}</span>`
       + `<span class="mc-drifted__lane"><span class="mc-drifted__flat"></span></span>`
-      + `<span class="mc-drifted__now"${nt}>${nowTxt}</span>`
+      + `<span class="mc-drifted__now${o.nowOlder ? ' mx-close-older' : ''}"${nt}>${nowTxt}</span>`
       + `<span class="mc-drifted__pct"></span></span>`;
   }
   const d = oddsPctDelta(open, now);
@@ -9139,6 +9199,15 @@ function mcJourney(open, close, anchorOnly, opts){
       + `<span class="mc-journey__close mc-journey__nodata">—</span>`
       + `<span class="mc-journey__delta"></span></span>`;
   }
+  // TEN-253 ruling 2 — an OLDER close (last seen > 60 min before the start) is
+  // shown, muted, and NEVER measured against the open: a move is a calculation,
+  // and "displayed older prices never feed a number".
+  if (open != null && close != null && o.closeOlder) {
+    return `<span class="mc-journey"><span class="mc-journey__open"${ot}>${mxOddsTxt(open)}</span>`
+      + `<span class="mc-journey__lane"></span>`
+      + `<span class="mc-journey__close mx-close-older"${ct}>${mxOddsTxt(close)}</span>`
+      + `<span class="mc-journey__delta"></span></span>`;
+  }
   if (open != null && close != null && anchorOnly) {
     return `<span class="mc-journey"><span class="mc-journey__open"${ot}>${mxOddsTxt(open)}</span>`
       + `<span class="mc-journey__lane"></span>`
@@ -9152,7 +9221,7 @@ function mcJourney(open, close, anchorOnly, opts){
   // When openingOdds land the em dash resolves on its own and the track/delta return.
   // Missing OPEN: em dash in the OPEN cell, a thin neutral (empty) lane, close kept,
   // no delta. Layout holds its fixed columns so CLOSE stays under its header.
-  if (open == null) return `<span class="mc-journey mc-journey--noopen"><span class="mc-journey__open mc-journey__nodata">—</span><span class="mc-journey__lane"></span><span class="mc-journey__close"${ct}>${mxOddsTxt(close)}</span><span class="mc-journey__delta"></span></span>`;
+  if (open == null) return `<span class="mc-journey mc-journey--noopen"><span class="mc-journey__open mc-journey__nodata">—</span><span class="mc-journey__lane"></span><span class="mc-journey__close${o.closeOlder ? ' mx-close-older' : ''}"${ct}>${mxOddsTxt(close)}</span><span class="mc-journey__delta"></span></span>`;
   // TEN-225 — a recorded Open with no Close now keeps its CLOSE cell and dashes
   // in it. The old shape emitted the open alone, which collapsed the row and
   // left nothing under the CLOSE header: a blank, not a dash.
@@ -9802,6 +9871,13 @@ function renderMatches(){
     const mcLastPreMatch = mcStarted
       && _liveNow('p1') == null && _liveNow('p2') == null
       && (_mcCloseOf(m, 'p1') != null || _mcCloseOf(m, 'p2') != null);
+    // TEN-253 ruling 2 (clean-context review, blocker): when the Now slot is
+    // carrying the last price before the off and that close is OLDER than 60
+    // minutes, it is shown muted and NEVER measured against the open — a % move
+    // off it is exactly the "displayed older price feeding a number" the ruling
+    // forbids. Judged on the PAIR, like every other close-derived figure.
+    const mcNowIsOlderClose = mcLastPreMatch && !_mcCloseW60(m);
+    const mcPairedDrift = (!!_dpair || mcStarted) && !mcNowIsOlderClose;
     const mcDriftRight = who => {
       const n = _liveNow(who);
       if (n != null) return n;
@@ -9887,8 +9963,12 @@ function renderMatches(){
       const o = _ocsOf(m);
       const book = o ? o.book : ((m.closingOdds && m.closingOdds.bookmaker) || null);
       if (!book) return '';
+      // TEN-253 ruling 2 — the founder's hover, verbatim shape:
+      // "[book] · last seen X min before start" (hours and minutes over 60).
+      const age = o ? mxCloseAgeMin(m, who) : null;
+      if (age != null) return `${mxBookLabel(book)} · last seen ${mxAgeText(age)} before start`;
       return mcPriceTitle({ book, at: o ? (o[who].closeTs || null) : null,
-                            kind: o ? (o.tsKind || null) : 'book-tick' },
+                            kind: o ? (o.closeTsKind || o.tsKind || null) : 'book-tick' },
                           _mcCloseOf(m, who));
     };
     const _nowTitleFor = who => {
@@ -9901,9 +9981,14 @@ function renderMatches(){
         const o = _ocsOf(m);
         const book = o ? o.book : ((m.closingOdds && m.closingOdds.bookmaker) || null);
         if (!book) return '';
+        // TEN-253: the close's clock is its own (on Kibl, OUR last sighting),
+        // and where its age is known the hover states it in the ruled format.
+        const age = o ? mxCloseAgeMin(m, who) : null;
         return mcPriceTitle({ book, at: o ? (o[who].closeTs || null) : null,
-                              kind: o ? (o.tsKind || null) : null,
-                              note: 'last price before the off' }, px);
+                              kind: o ? (o.closeTsKind || o.tsKind || null) : null,
+                              note: 'last price before the off'
+                                + (age != null ? ` · last seen ${mxAgeText(age)} before start` : '')
+                                + (mcNowIsOlderClose ? ' · older than 60 min, not used in any figure' : '') }, px);
       }
       if (_dpair) return mcPriceTitle({ book: _dpair.book, at: _dpair.nowTs,
                                         obs: _dpair.obs || null, kind: _dpair.kind || null }, px);
@@ -10024,13 +10109,13 @@ function renderMatches(){
             <span class="mc-id">${mcAvatarHtml(m.p1PhotoUrl, m.p1, m.p1Key, 'a')}<span class="mc-name"${profileLinkAttrs(m.p1Key, m.p1)}>${m.p1}</span>${p1IsFavorite ? '<span class="mc-fav-tag">FAV</span>' : ''}</span>
             ${(m.retired || m.walkover) ? mcTermCell(m, 'p1', boardSetCols) : mcSetCluster(finalScore, 'p1', false, boardSetCols)}
             <span class="mc-vdiv"></span>
-            ${mcJourney(p1Open, p1Close, openAnchorOnly, { openTitle: _openTitle('p1'), closeTitle: _closeTitle('p1') })}
+            ${mcJourney(p1Open, p1Close, openAnchorOnly, { openTitle: _openTitle('p1'), closeTitle: _closeTitle('p1'), closeOlder: mxCloseIsOlder(m, 'p1') || (p1Close != null && !_mcCloseW60(m) && !!_ocsOf(m)) })}
           </div>
           <div class="mc-row b${p2IsWinner ? ' winner' : ''}">
             <span class="mc-id">${mcAvatarHtml(m.p2PhotoUrl, m.p2, m.p2Key, 'b')}<span class="mc-name"${profileLinkAttrs(m.p2Key, m.p2)}>${m.p2}</span>${(hasFavLine && !p1IsFavorite) ? '<span class="mc-fav-tag">FAV</span>' : ''}</span>
             ${(m.retired || m.walkover) ? mcTermCell(m, 'p2', boardSetCols) : mcSetCluster(finalScore, 'p2', false, boardSetCols)}
             <span class="mc-vdiv"></span>
-            ${mcJourney(p2Open, p2Close, openAnchorOnly, { openTitle: _openTitle('p2'), closeTitle: _closeTitle('p2') })}
+            ${mcJourney(p2Open, p2Close, openAnchorOnly, { openTitle: _openTitle('p2'), closeTitle: _closeTitle('p2'), closeOlder: mxCloseIsOlder(m, 'p2') || (p2Close != null && !_mcCloseW60(m) && !!_ocsOf(m)) })}
           </div>
         </div>`
       : `<div class="mc-players up">
@@ -10038,7 +10123,7 @@ function renderMatches(){
             <span class="mc-id">${mcAvatarHtml(m.p1PhotoUrl, m.p1, m.p1Key, 'a')}<span class="mc-name"${profileLinkAttrs(m.p1Key, m.p1)}>${m.p1}${serve('p1')}</span>${p1IsFavorite ? '<span class="mc-fav-tag">FAV</span>' : ''}</span>
             ${mxDriftView()
               ? mcDriftCell(_openAnchorOf(m, 'p1'), mcDriftRight('p1'), openAnchorOnly,
-                            { openTitle: _openTitle('p1'), nowTitle: _nowTitleFor('p1'), paired: !!_dpair || mcStarted })
+                            { openTitle: _openTitle('p1'), nowTitle: _nowTitleFor('p1'), paired: mcPairedDrift, nowOlder: mcNowIsOlderClose })
               : `<span class="mc-oddswrap"${mcTitleAttr(nowTitleOf('p1'))}><span class="mc-odds">${p1OddsDisplay}</span><span class="mc-implied">${oddsSlot ? impliedPct(nowPair?.p1 ?? null) : ''}</span></span>`
                 + mcFormBar(m.p1RecentForm)}
           </div>
@@ -10046,7 +10131,7 @@ function renderMatches(){
             <span class="mc-id">${mcAvatarHtml(m.p2PhotoUrl, m.p2, m.p2Key, 'b')}<span class="mc-name"${profileLinkAttrs(m.p2Key, m.p2)}>${m.p2}${serve('p2')}</span>${(hasFavLine && !p1IsFavorite) ? '<span class="mc-fav-tag">FAV</span>' : ''}</span>
             ${mxDriftView()
               ? mcDriftCell(_openAnchorOf(m, 'p2'), mcDriftRight('p2'), openAnchorOnly,
-                            { openTitle: _openTitle('p2'), nowTitle: _nowTitleFor('p2'), paired: !!_dpair || mcStarted })
+                            { openTitle: _openTitle('p2'), nowTitle: _nowTitleFor('p2'), paired: mcPairedDrift, nowOlder: mcNowIsOlderClose })
               : `<span class="mc-oddswrap"${mcTitleAttr(nowTitleOf('p2'))}><span class="mc-odds">${p2OddsDisplay}</span><span class="mc-implied">${oddsSlot ? impliedPct(nowPair?.p2 ?? null) : ''}</span></span>`
                 + mcFormBar(m.p2RecentForm)}
           </div>
@@ -10077,7 +10162,10 @@ function renderMatches(){
   //     honestly deferred — never fabricated from partial data (README §5.3 data-defensive).
   if (state.view === 'completed') {
     const openOf  = (m, who) => (m.finalScore ? _openDerivedOf(m, who) : null); // TEN-198: vendor pin excluded — this feeds the signed-% 'Biggest market move' panel.
-    const closeOf = (m, who) => (m.finalScore ? (m.closingOdds?.[who] ?? null) : null); // TEN-124: pinned pre-play close only — never a live fallback.
+    // TEN-253: the card's OWN book and a within-60 close only. The old binding read
+    // m.closingOdds straight off matches.json beside a card-state Open, i.e. two
+    // books in one move figure, and it could never see the within-60 flag.
+    const closeOf = (m, who) => (m.finalScore ? _mcCloseDerivedOf(m, who) : null);
 
     // 1. Biggest market move — per (match, player) with both legs recorded.
     let bmv = null;
@@ -14835,7 +14923,7 @@ function buildOddsReduced(m){
       ? (snap.vendor ? `${snap.bookmaker} via ${snap.vendor}` : snap.bookmaker)
       : '';
     const meta = [book, ocSnapAt(snap && (snap.at || snap.seenAt)),
-                  (snap && SRC_TEXT[snap.src]) || ''].filter(Boolean).join(' · ');
+                  (snap && SRC_TEXT[snap.src]) || '', (snap && snap.note) || ''].filter(Boolean).join(' · ');
     return `<div class="aodds-brow">
       <span class="aob-name"><b>${label}</b>${meta ? `<span style="color:#4b5672;font-size:11px;font-family:'IBM Plex Mono',monospace;margin-left:7px;">${meta}</span>` : ''}</span>
       <span class="aob-cell"><span class="aodds-price">${a}</span></span>
@@ -14851,9 +14939,18 @@ function buildOddsReduced(m){
     if (!_ocsRow) return which === 'open' ? m.openingOdds : m.closingOdds;
     const v1 = _ocsRow.p1[which], v2 = _ocsRow.p2[which];
     if (v1 == null && v2 == null) return { bookmaker: _ocsRow.book };
+    // TEN-253 ruling 2 — the close states its age, and an older one says it
+    // is not used in any figure. The worse (older) leg is the one reported.
+    let note = '';
+    if (which === 'close'){
+      const a1 = mxCloseAgeMin(m, 'p1'), a2 = mxCloseAgeMin(m, 'p2');
+      const age = (a1 == null && a2 == null) ? null : Math.max(a1 ?? -1, a2 ?? -1);
+      if (age != null) note = `last seen ${mxAgeText(age)} before start`
+        + (_mcCloseW60(m) ? '' : ' · older than 60 min, not used in any figure');
+    }
     return { p1: v1, p2: v2, bookmaker: _ocsRow.book,
              at: _ocsRow.p1[tsField] || _ocsRow.p2[tsField] || null,
-             src: _ocsRow.source === 'api-tennis' ? 'vendor-sighting' : 'archive' };
+             src: _ocsRow.source === 'api-tennis' ? 'vendor-sighting' : 'archive', note };
   };
   // The OPENING row is unconditional: it is the slot 3a names, and a panel that
   // vanishes cannot report that it has nothing. The CLOSING row stays

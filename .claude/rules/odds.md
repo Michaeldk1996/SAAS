@@ -37,20 +37,29 @@ Expand at **display only**; identity tests use `canon()`, never the display name
 
 ---
 
-## Book ladder
+## Book ladder — TWO ladders, and which one decides the card
 
-Named order — not coverage:
+**1. The card ladder (`odds_card_state.book_rank`) decides which book a card shows.** It is set in the database, not the page:
+
+> **Bet105 / Kibl (rank 1) > bet365 via Oddspapi (rank 2) > bet365 via api-tennis (rank 3) > other api-tennis books (rank 4)**
+
+Bet105 is the **top** of this ladder. Test: for any fixture `odds-card-state.json` covers, the book it names is the one the card shows.
+
+**2. The `matches.json` ladder** orders api-tennis books only, and only where the card state does not cover a fixture:
 
 > bet365 > Superbet > Betano > Unibet > William Hill > Betfair > 1xBet > Pinnacle
 
-SBOBET, Marathon and BetVictor rank **below every unlisted book** — SBOBET carries the widest margin measured (11.61%) and must never win a card on coverage alone.
-bwin is out. Bet105 and Sports411 are unlisted (rank 500).
+SBOBET, Marathon and BetVictor rank **below every unlisted book** — SBOBET carries the widest margin measured (11.61%) and must never win a card on coverage alone. bwin is out. (Bet105 and Sports411 never appear on this ladder; they are not api-tennis books.)
 
 ---
 
 ## Card rules
 
-- **One book per fixture.** Open, Now and Close all come from the same book. A higher-priority book appearing later takes over **all three**, using its own first tick as Open. Never mix books within a fixture.
+- **One book per card, always.** Open, Now and Close all come from the same book; the hover names that one book on every slot. Test: every selected row of a match names one book (the publisher drops a match whose rows disagree, and counts it).
+- **The whole-card book switch** (TEN-253, founder 2026-09-23) — `switch_tier()` in `ten225-kibl-card-state.py`. Books are tried in card-ladder order; the first book at the best tier wins **all three slots**:
+  - **Completed:** (1) the highest-priority book with a **within-60 Close** on both sides, else (2) the highest-priority book with an **older last-seen Close** on both sides, else (3) the highest-priority book with anything, Close dashed.
+  - **Upcoming:** (1) the highest-priority book with a current, non-suspended Now on both sides, else (2) the highest-priority book with anything, Now dashed. An Open is not part of the test. A Now is **suspended** when either leg is below 1.01 (incl. Kibl's 0.000 marker) or the pair's overround is over 20% — the same test the page applies, so a suspended Now switches the card instead of dashing it (the Baez case).
+  - Priority is the order complete books are tried in, never a reason to dash. A dash means no book could fill that slot.
 - **Book name on hover, never on the card face.** Tooltip carries book, that cell's price, when the book last moved it, and when we last saw it — `bet365 · 1.22 since 01:08 · seen 09:15`.
 - **UPCOMING and UNDERWAY:** Open + Now. **COMPLETED:** Open + Close. A Close column never appears on an unfinished match.
 - **Decimals:** 3 below 1.10, but only where the third is non-zero — `1.012` stays, `1.020` reads `1.02`.
@@ -82,9 +91,18 @@ Start-time ladder:
 
 Reject `trueStartTime` when `end − start > 6h` or `end < start`.
 
-`close_reliable` needs `close_lag ≤ 60 min` **and** flip gap `≤ 300 s`. The 21-day archive-age limb does **not** apply to Kibl — it has no history, so every Kibl close is captured live, which is what the rule wants.
+**Kibl Close = the last price SEEN before the actual start** (TEN-253 Fix 1, founder 2026-09-23). A row competes only if it is a real price (≥ 1.01), was **inserted before the start**, and **Kibl marks it `is_current`**. The winner is the one with the latest `min(last_seen_at, start)`, ties to the later insert; `close_ts` is that capped clock — **our** sweep clock, not Kibl's insert time, so it is published with `closeTsKind: 'sighting'` and never labelled vendor-insert. Test: a price still listed at the off closes at lag 0; a price never re-seen closes at its own sighting time.
+- **Never a superseded row.** Kibl keeps superseded prices listed — the opener for the life of the fixture, and superseded non-openers after replacement (10 of 22 re-seen after a later row replaced them, run `35827198225`). Such a row caps to a perfect-looking lag 0 and would put an earlier price in the Close column. Exception: an opener that is **still** current (opened, never moved) competes normally.
+- `inserted_on` is never the Close clock (it is Kibl's first-saved time). It survives only as the control arm `close_of_inserted_on()`.
 
-One-sided reliable close = dash on both sides.
+**Oddspapi Close** = the line summary's close (reliable by construction, flag TRUE), else the book's last tick when `last_tick_is_prestart` is true against a resolved start (flag FALSE, even if that tick is within 60 min — the summary nulled it for a reason, e.g. the 21-day decay limb).
+- ⚠️ **Known gap:** when the summary nulled the close AND the series carries any tick after the start, no older close is shown although a pre-start price existed — the summary stores the last pre-start tick's time but not its price.
+
+**Within-60 flag** (`close_within_60`, founder ruling 2, 2026-09-23): TRUE when `close_lag ≤ 60 min` **and**, for a live-flip start, flip gap `≤ 300 s`. The 21-day archive-age limb does **not** apply to Kibl — it has no history, so every Kibl close is captured live.
+- **Display:** every close is shown — within-60 normally, older **muted**, with the hover `"[book] · last seen X min before start"` (`Xh Ym` over 60). A dash only when no book held a real price before the start.
+- **Numbers:** CLV, ROI, price movement, Biggest Market Move, upsets and every close-based sort read **only** within-60 closes (`_mcCloseDerivedOf`). Test: an older close changes no figure on the page. One older leg disqualifies the pair.
+
+One-sided close = dash on both sides.
 
 ---
 

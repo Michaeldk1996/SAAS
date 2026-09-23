@@ -298,7 +298,7 @@ MIN_REAL_PRICE = 1.01
 # a claim. Module-level and cleared per build, like FLIP_LAGS above, so a second
 # call in one process cannot inherit the first run's counts. No 'now' key: see
 # the paragraph above — that slot is not meant to skip anything.
-SUPPRESSED = {'open': 0, 'close': 0}
+SUPPRESSED = {'open': 0, 'close': 0, 'close_superseded': 0}
 
 
 def real_price(obs):
@@ -407,32 +407,97 @@ def close_of_prefix(obs_list, start_ts):
     return pre[-1]
 
 
+def seen_at(o):
+    """When OUR sweep last saw this row STILL LISTED, as epoch seconds.
+
+    `last_seen_at` is bumped by archive-kibl's PASS 2 only for rows a sweep
+    actually received back from Kibl. Rows written before that column existed
+    fall back to `observed_at`, which IS the last time we saw them — the
+    truthful value, not a filler — and then to the price's own insert time.
+    """
+    #
+    # The LATEST of the three, not the first present: a row cannot have been
+    # last seen before Kibl wrote it, so a sweep clock that reads earlier than
+    # inserted_on (clock skew, or a legacy row) is floored at the insert rather
+    # than allowed to pull the close earlier than the price existed.
+    ts = [t for t in (epoch(o.get('last_seen_at')), epoch(o.get('observed_at')),
+                      epoch(o.get('inserted_on'))) if t is not None]
+    return max(ts) if ts else None
+
+
 def close_of(obs_list, start_ts):
-    """The last price held STRICTLY BEFORE the start. Founder: "Close = last
-    pre-start price held; exclude any in-play row by start time".
+    """The last price SEEN before the actual start. -> the observation, or None.
 
-    `start_ts` is the TEN-225 ladder's answer (gated oddspapi trueStartTime, or
-    the api-tennis live flip). It is never Kibl's scheduled_start — the standing
-    rule forbids the schedule as a cutoff and Kibl publishes nothing else.
-    No start -> no Close. Dash, with the reason carried on the row.
+    ── FOUNDER RULING 2026-09-23 (TEN-253 Fix 1, rulings 1 + the 06:23Z brief) ──
+    "The Close rule must use when a price was LAST SEEN, not when it was FIRST
+     SAVED ... capped at the actual start. A price seen after the start never
+     counts." — and ruling 1: "Never a superseded opener as a Close ... widen the
+     guard to only rows Kibl marks is_current=true."
 
-    The comparison is on inserted_on, the price's own time, and it is strict:
-    a price inserted AT the start instant is not demonstrably pre-start.
+    A row competes only if ALL of these hold:
+      * it is a real price (>= MIN_REAL_PRICE; the 0.000 suspension marker is
+        dated, pre-start and not a price);
+      * it EXISTED before the off: inserted_on < start_ts, strictly. A price
+        first written after the off can never be capped down into contention;
+      * Kibl marks it is_current. MEASURED, run 35827198225: Kibl keeps
+        superseded prices LISTED — the opener for the life of the fixture, and
+        10 of 22 superseded non-openers after a later row replaced them. Such a
+        row is still re-seen at the off, caps to a perfect-looking lag of 0 and
+        beats the real last price whose clock froze when it was replaced. That
+        is the opening (or an earlier) price in the closing column. An opener
+        that is STILL current — opened and never moved — is the price at the
+        off and competes normally.
+
+    Among those, the winner is the one seen LATEST, with its clock capped at the
+    start (a row still listed at the off scores exactly the start), ties broken
+    by the later insert. The close's timestamp is that capped clock: see
+    close_time(). `start_ts` is the TEN-225 ladder's answer (gated oddspapi
+    trueStartTime, or the api-tennis live flip) — never Kibl's scheduled start.
+    No start -> no Close.
     """
     if start_ts is None:
         return None
     dated = [o for o in obs_list
              if epoch(o.get('inserted_on')) is not None
              and epoch(o['inserted_on']) < start_ts]
-    # FOUNDER 2026-09-21 item 1: the last REAL price before the start, not the
-    # last row. See MIN_REAL_PRICE above — the suspension marker is dated,
-    # pre-start and not a price, and taking it cost 44 of 135 bet105 closes.
+    # FOUNDER 2026-09-21 item 1: the last REAL price, not the last row.
     pre = [o for o in dated if real_price(o) is not None]
     SUPPRESSED['close'] += len(dated) - len(pre)
+    cur = [o for o in pre if o.get('is_current') and seen_at(o) is not None]
+    SUPPRESSED['close_superseded'] += len(pre) - len(cur)
+    if not cur:
+        return None
+    return max(cur, key=lambda o: (min(seen_at(o), start_ts), epoch(o['inserted_on'])))
+
+
+def close_time(obs, start_ts):
+    """The Close's timestamp: when we last saw it listed, capped at the off.
+
+    A price still listed at the off WAS the price at the off, so it is stamped
+    the start itself (lag 0). Never later than the start — a sighting after the
+    off is not evidence about a pre-start instant.
+    """
+    if obs is None or start_ts is None:
+        return None
+    t = seen_at(obs)
+    return None if t is None else min(t, start_ts)
+
+
+def close_of_inserted_on(obs_list, start_ts):
+    """THE CLOSE RULE AS IT SHIPPED BEFORE 2026-09-23. The control arm for Fix 1.
+
+    The last real price by inserted_on (Kibl's FIRST-saved clock), timed on that
+    same clock. Kept so every run can report how many closes the last-seen rule
+    recovered against live data. DO NOT USE THIS TO PICK A CLOSE.
+    """
+    if start_ts is None:
+        return None
+    pre = [o for o in obs_list
+           if epoch(o.get('inserted_on')) is not None
+           and epoch(o['inserted_on']) < start_ts and real_price(o) is not None]
     if not pre:
         return None
-    pre.sort(key=lambda o: (epoch(o['inserted_on']),
-                            epoch(o.get('observed_at')) or 0.0))
+    pre.sort(key=lambda o: (epoch(o['inserted_on']), epoch(o.get('observed_at')) or 0.0))
     return pre[-1]
 
 
@@ -863,9 +928,29 @@ def build_rows(kibl_fixtures, observations, odds_index, as_of,
                 # suppressed into a dash anyway. Named so it is not mistaken
                 # for something this change broke.
                 st['close_still_lost_all_markers'] += 1
-            close_ts = close_obs['inserted_on'] if close_obs else None
-            reliable, lag = judge_close_live(start_ts, epoch(close_ts),
-                                             start_src, flip_gap)
+            # TEN-253 Fix 1: timed on OUR last sighting, capped at the off —
+            # not on Kibl's first-saved insert. See close_of() / close_time().
+            _ct = close_time(close_obs, start_ts)
+            close_ts = iso(_ct) if _ct is not None else None
+            reliable, lag = judge_close_live(start_ts, _ct, start_src, flip_gap)
+            # FIX 1 CONTROL ARM — what the inserted_on rule would have said on
+            # this same series, so the recovery is a live measurement.
+            _old = close_of_inserted_on(lst, start_ts)
+            _old_ok = (_old is not None and judge_close_live(
+                start_ts, epoch(_old['inserted_on']), start_src, flip_gap)[0])
+            if reliable and not _old_ok:
+                st['close_within60_RECOVERED_by_last_seen'] += 1
+            elif _old_ok and not reliable:
+                st['close_within60_LOST_vs_inserted_on'] += 1
+            # FOUNDER 2026-09-23 ruling 2 — THE CLOSE DISPLAY RULE. "Show the
+            # last real price seen before the actual start, even when it's older
+            # than 60 minutes ... Store a flag on every Close: within 60 minutes,
+            # yes or no. Stats and calculations use ONLY within-60 Closes."
+            # So the close is STORED whenever one exists before the off, and the
+            # 60-minute (+ flip-gap) verdict travels beside it as
+            # close_within_60. The lag < 0 case is unreachable (close_time caps
+            # at the start) and still never stores.
+            shown = close_obs is not None and lag is not None and lag >= 0
             # LADDER I(b), founder item B 2026-09-19: "confirm none fail the
             # <=60-min lag or <=300 s flip-gap limbs."
             #
@@ -996,8 +1081,11 @@ def build_rows(kibl_fixtures, observations, odds_index, as_of,
                 'now_observed_at': ((newest.get('last_seen_at')
                                      or newest.get('observed_at')) if newest else None),
                 'close_price': (float(close_obs['price_decimal'])
-                                if (close_obs and reliable) else None),
-                'close_ts': close_ts if (close_obs and reliable) else None,
+                                if shown else None),
+                'close_ts': close_ts if shown else None,
+                # NULL exactly when there is no close (schema CHECK). A number
+                # may be computed from this close only when it is TRUE.
+                'close_within_60': (bool(reliable) if shown else None),
                 'start_ts': iso(start_ts) if start_ts is not None else None,
                 'start_ts_source': start_src,
                 'start_reject_reason': reject,
@@ -1059,7 +1147,7 @@ def run_selection(url, key, dry_run=False):
     cols = ('fixture_id,id_space,book,market,side,line,match_key,book_rank,'
             'is_selected,ts_kind,source,label,start_ts,start_ts_source,'
             'start_reject_reason,open_price,open_ts,open_limit,now_price,now_ts,'
-            'close_price,close_ts')
+            'close_price,close_ts,close_within_60')
     rows, err = fetch_all(url, key, 'odds_card_state', cols)
     if err:
         print(f'::error::reading odds_card_state for selection failed ({err})')
@@ -1098,19 +1186,78 @@ def run_selection(url, key, dry_run=False):
     return st, None
 
 
-def book_completeness(book_rows):
-    """Does this book quote BOTH SIDES of this fixture for open, and for now?
+# The renderer's suspended-market test, mirrored so the switch and the page
+# cannot disagree about what "has a price" means (dashboard MX_SUSPENDED_OVERROUND
+# and MX_MIN_REAL_PRICE). A pair the page would null is a pair this book does
+# NOT have — which is what lets a suspended Now trigger the switch instead of
+# being selected and then dashed on screen (the Baez case, 2026-09-23).
+SUSPENDED_OVERROUND = 0.20
 
-    The unit is the fixture, not the row, because the founder's takeover rule is
-    about a fixture switching book: half an Open is not an Open for this purpose,
-    for the same reason the publisher refuses to render one.
+
+def _px_real(v):
+    try:
+        f = float(v)
+    except (TypeError, ValueError):
+        return None
+    return f if f >= MIN_REAL_PRICE else None
+
+
+def real_pair(a, b):
+    """Two legs of one slot -> True when both are prices a member could bet."""
+    pa, pb = _px_real(a), _px_real(b)
+    if pa is None or pb is None:
+        return False
+    return (1.0 / pa + 1.0 / pb - 1.0) <= SUSPENDED_OVERROUND
+
+
+def book_completeness(book_rows):
+    """Does this book fill each slot of this fixture, on BOTH sides, with a
+    price the page will actually render?
+
+    The unit is the fixture, not the row: half an Open is not an Open, and a
+    suspended Now (0.000, sub-1.01, or a >20% overround pair) is no Now at all.
+    `close60` additionally needs every side's close flagged within 60 minutes;
+    a close carrying no flag predates the flag and passed the old 60-minute
+    rule by construction, so it counts.
     """
-    sides = {r.get('side') for r in book_rows}
-    both = lambda col: (len(sides) >= 2
-                        and all(any(r.get('side') == s and r.get(col) is not None
-                                    for r in book_rows) for s in sides))
-    return {'open': both('open_price'), 'now': both('now_price'),
-            'close': both('close_price')}
+    by_side = {}
+    for r in book_rows:
+        by_side.setdefault(r.get('side'), r)
+    if len(by_side) != 2:
+        return {'open': False, 'now': False, 'close': False, 'close60': False}
+    a, b = by_side.values()
+    close = real_pair(a.get('close_price'), b.get('close_price'))
+    return {'open': real_pair(a.get('open_price'), b.get('open_price')),
+            'now': real_pair(a.get('now_price'), b.get('now_price')),
+            'close': close,
+            'close60': close and all(r.get('close_within_60') is not False
+                                     for r in (a, b))}
+
+
+def switch_tier(cov, started):
+    """TEN-253 Fix 2, founder 2026-09-23 — THE WHOLE-CARD BOOK SWITCH.
+
+    One book per card for Open, Now and Close. Books are tried in priority
+    order (book_rank), and the FIRST book at the best tier wins:
+
+      completed (started):  3 = a within-60 Close on both sides
+                            2 = an older last-seen Close on both sides
+                            1 = anything else (the card dashes the Close)
+      upcoming:             3 = a current, non-suspended Now on both sides
+                            1 = anything else (the card dashes the Now)
+
+    The upcoming tier is the founder's words, literally: "pick the
+    highest-priority book with a current, non-suspended Now". An Open is not
+    part of the test — a rank-1 book with a real Now keeps the card even when a
+    lower book also has an Open.
+
+    Priority is the order complete books are tried in, never a reason to dash:
+    a lower-priority book wins only by filling a slot every higher one leaves
+    empty.
+    """
+    if started:
+        return 3 if cov['close60'] else 2 if cov['close'] else 1
+    return 3 if cov['now'] else 1
 
 
 def select_winners(rows):
@@ -1192,11 +1339,8 @@ def select_winners(rows):
         started = fixture_has_started(cands)
         scored = []
         for (rank, book), brows in by_book.items():
-            cov = book_completeness(brows)
-            # Tier 1 = "has both legs of Open AND both legs of Now", which is
-            # exactly the condition the founder's rule names. Never applied after
-            # the off; see the docstring.
-            tier = 1 if (not started and cov['open'] and cov['now']) else 0
+            # TEN-253 Fix 2 — the tier is the switch; see switch_tier().
+            tier = switch_tier(book_completeness(brows), started)
             scored.append((-tier, rank, book, brows))
         scored.sort(key=lambda x: (x[0], x[1]))
 
@@ -1247,11 +1391,15 @@ def select_winners(rows):
         for r in brows:
             r['is_selected'] = True
         st[f'selected_rank_{rank}'] += len(brows)
-        if best_tier == -1 and rank != min(s[1] for s in scored):
+        top_rank = min(s[1] for s in scored)
+        if rank != top_rank:
             # A book took over from a higher-priority one on completeness alone.
-            # Counted, because this is the founder's rule firing and a rule that
-            # fires silently cannot be checked against the board.
+            # Counted, and counted FROM -> TO, because this is the founder's rule
+            # firing and "how many cards switched book, from which to which" is
+            # what he asked to see.
             st['takeover_on_completeness'] += 1
+            top_book = sorted(b for (_t, r_, b, _x) in scored if r_ == top_rank)[0]
+            st[f'switch_{"completed" if started else "upcoming"}:{top_book}->{_book}'] += 1
         st['demoted'] += len(cands) - len(brows)
     st['selected'] = sum(1 for r in rows if r['is_selected'])
     return rows, st
@@ -1569,7 +1717,7 @@ def apply_orientation_guard(rows, dashed, st):
         if r.get('match_key') in dashed:
             for f in ('open_price', 'open_ts', 'open_limit', 'open_observed_at',
                       'now_price', 'now_ts', 'now_observed_at',
-                      'close_price', 'close_ts'):
+                      'close_price', 'close_ts', 'close_within_60'):
                 r[f] = None
             r['label'] = 'orientation-disagreement'
             st['orientation_guard_dashed'] += 1
@@ -1756,6 +1904,15 @@ def main():
     # Printed unconditionally, including the zeros — a run that recovered
     # nothing must say so rather than print nothing, because a silent section
     # and a clean one look identical.
+    # TEN-253 Fix 1 — the live recovery, printed with its zeros.
+    _shown = sum(1 for r in rows if r.get('close_price') is not None)
+    _w60 = sum(1 for r in rows if r.get('close_within_60') is True)
+    print(f'Fix 1 (last seen, is_current only): sides with a close {_shown} of '
+          f'{len(rows)} — within 60 min {_w60}, older {_shown - _w60}  |  '
+          f'within-60 RECOVERED vs inserted_on '
+          f'{st["close_within60_RECOVERED_by_last_seen"]}, LOST '
+          f'{st["close_within60_LOST_vs_inserted_on"]}  |  superseded rows '
+          f'kept out of the Close {SUPPRESSED["close_superseded"]}')
     print(f'suspension marker: rows skipped open={SUPPRESSED["open"]} '
           f'close={SUPPRESSED["close"]}  |  sides RECOVERED a real close='
           f'{st["close_RECOVERED_from_marker"]}  still lost (series is all '

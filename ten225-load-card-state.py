@@ -138,6 +138,15 @@ def qualifies_as_now(start_ts, sched_ts, as_of):
     return False, None
 
 
+def _real_px(v):
+    """A price a book would take (>= 1.01, the ruled floor), else None."""
+    try:
+        f = float(v)
+    except (TypeError, ValueError):
+        return None
+    return f if f >= 1.01 else None
+
+
 def card_rows(summary_rows, fixtures, as_of):
     """line_summary match-winner rows -> odds_card_state rows.
 
@@ -165,6 +174,23 @@ def card_rows(summary_rows, fixtures, as_of):
             st['no_open'] += 1
         if r.get('close_price') is None:
             st['no_close'] += 1
+
+        # TEN-253 ruling 2 (founder 2026-09-23) — THE CLOSE DISPLAY RULE.
+        # "Show the last real price seen before the actual start, even when it's
+        # older than 60 minutes ... Store a flag on every Close." The summary
+        # NULLS close_price unless close_reliable (60-min lag, 21-day decay), so
+        # a summary close is by construction within-60. Where it was nulled but
+        # the book's freshest tick is proven pre-start, that tick IS the last
+        # price we hold before the off: shown, flagged NOT within-60, so no
+        # number is ever computed from it. last_tick_is_prestart is true only
+        # against a RESOLVED start, which the close-needs-start CHECK requires.
+        close_px, close_ts, close_w60 = r.get('close_price'), r.get('close_ts'), None
+        if close_px is not None:
+            close_w60 = True
+        elif (r.get('last_tick_is_prestart') is True and r.get('start_ts')
+              and _real_px(r.get('last_tick_price')) is not None and r.get('last_tick_ts')):
+            close_px, close_ts, close_w60 = r['last_tick_price'], r['last_tick_ts'], False
+            st['close_older_shown'] += 1
 
         # The cross-feed join key. Built from the fixture's own day and both
         # player names with the SAME name_key() every other pairing on TEN-225
@@ -203,8 +229,9 @@ def card_rows(summary_rows, fixtures, as_of):
             'now_price': r.get('last_tick_price') if now_ok else None,
             'now_ts': r.get('last_tick_ts') if now_ok else None,
             'now_observed_at': None,
-            'close_price': r.get('close_price'),
-            'close_ts': r.get('close_ts'),
+            'close_price': close_px,
+            'close_ts': close_ts,
+            'close_within_60': close_w60,
             'start_ts': r.get('start_ts'),
             'start_ts_source': r.get('start_ts_source') or 'none',
             'start_reject_reason': r.get('start_reject_reason'),
@@ -283,7 +310,7 @@ def fallback_rows(matches, covered, as_of):
                 # block is whatever book was best, not necessarily bet365, and
                 # substituting it would be a cross-book blend.
                 'now_price': None, 'now_ts': None, 'now_observed_at': None,
-                'close_price': None, 'close_ts': None,
+                'close_price': None, 'close_ts': None, 'close_within_60': None,
                 'start_ts': None,
                 'start_ts_source': 'none',
                 'start_reject_reason': None,
@@ -428,7 +455,7 @@ def takeover_candidate_rows(matches, as_of):
                     'now_price': (nowpair[idx] if nowpair else None),
                     'now_ts': (iso(as_of) if nowpair else None),
                     'now_observed_at': None,
-                    'close_price': None, 'close_ts': None,
+                    'close_price': None, 'close_ts': None, 'close_within_60': None,
                     'start_ts': None,
                     'start_ts_source': 'none',
                     'start_reject_reason': None,

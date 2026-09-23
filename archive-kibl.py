@@ -473,8 +473,13 @@ DENSE_BUDGET_S = 180.0
 # flip as the backstop... Report how many of the 17 it recovers." He ruled it on
 # my recommendation, and my recommendation was wrong. Two structural facts:
 #
-# 1. THE LAG LIMB IS MEASURED ON A VENDOR CLOCK WE CANNOT INFLUENCE.
-#    ten225-kibl-card-state.py sets `close_ts = close_obs['inserted_on']`, and
+# ⚠️ SUPERSEDED 2026-09-23 (TEN-253 Fix 1). Point 1 below described the OLD
+#    Close clock. The Close is now timed on OUR `last_seen_at` capped at the
+#    start (is_current rows only), so a denser sweep DOES move the lag limb for
+#    a price still listed near the off. Kept as the record of why (b) was
+#    rejected at the time; do not read it as the current rule.
+# 1. THE LAG LIMB WAS MEASURED ON A VENDOR CLOCK WE CANNOT INFLUENCE.
+#    ten225-kibl-card-state.py set `close_ts = close_obs['inserted_on']`, and
 #    `lag_min = (start_ts - close_ts) / 60`. `inserted_on` is KIBL's own
 #    row-write time — the founder's own words, "every Kibl timestamp is
 #    vendor-insert time". Sweeping more often produces more rows carrying the

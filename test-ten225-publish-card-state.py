@@ -245,6 +245,30 @@ check('CONTROL: with no window, both are published', len(by14) == 2, list(by14))
 check('CONTROL: and nothing is withheld',
       st14['skip_outside_board_window'] == 0, st14)
 
+# ── TEN-253 ruling 2: the within-60 flag travels WITH the close ──────────────
+_w = pair('id2', K2, 1.80, 2.05)
+for _r, _c in zip(_w, (1.70, 2.20)):
+    _r.update(close_price=_c, close_ts='2026-09-17T11:00:00Z', start_ts='2026-09-17T11:30:00Z',
+              close_within_60=False)
+_bw, _sw = P.build(_w, ODDSPAPI_FX, KIBL_FX, BOARD_FX)
+_e = _bw.get(K2, {})
+check('an OLDER close is published (shown), not dropped',
+      _e.get('sides', {}).get('sinner', {}).get('close') == 1.70, _e)
+check('...carrying closeW60 = false on every side',
+      all(v.get('closeW60') is False for v in _e.get('sides', {}).values()), _e)
+check('...and the start it was cut at, so the hover can state its age',
+      _e.get('startTs') == '2026-09-17T11:30:00Z', _e)
+check('...and it counts as an OLDER close in the stats', _sw['with_close_both_older'] == 1, _sw)
+for _r in _w:
+    _r['close_within_60'] = True
+_bw2, _ = P.build(_w, ODDSPAPI_FX, KIBL_FX, BOARD_FX)
+check('a within-60 close publishes closeW60 = true',
+      all(v.get('closeW60') is True for v in _bw2[K2]['sides'].values()))
+_w[1].update(close_price=None, close_ts=None, close_within_60=None)
+_bw3, _ = P.build(_w, ODDSPAPI_FX, KIBL_FX, BOARD_FX)
+check('a one-sided close is voided on both sides, flag and all',
+      all(v.get('close') is None and 'closeW60' not in v for v in _bw3[K2]['sides'].values()))
+
 print()
 if FAILED:
     print(f'FAILED {len(FAILED)}: {", ".join(FAILED)}')

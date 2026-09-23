@@ -244,6 +244,13 @@ def build(rows, oddspapi_fx, kibl_fx, board_fx, window=(None, None)):
                 'now': _px(r.get('now_price')), 'nowTs': r.get('now_ts'),
                 'close': _px(r.get('close_price')), 'closeTs': r.get('close_ts'),
             }
+            # TEN-253 ruling 2 — "Store a flag on every Close: within 60 minutes,
+            # yes or no." Travels WITH the close so no surface can compute a
+            # number from a close without seeing it. Emitted only beside a close;
+            # a close with no stored flag predates the flag and passed the old
+            # 60-minute rule, which is the only way a close was ever stored then.
+            if sides[nk]['close'] is not None:
+                sides[nk]['closeW60'] = r.get('close_within_60') is not False
             # ── BOTH CLOCKS (founder ruling 2026-09-18 09:33Z, items 1 + 3) ──
             # `openTs`/`nowTs` are the PRICE's clock; these two are OURS. The
             # page needs both: one answers "how stale is the line", the other
@@ -277,6 +284,7 @@ def build(rows, oddspapi_fx, kibl_fx, board_fx, window=(None, None)):
             for s in sides.values():
                 s['close'] = None
                 s['closeTs'] = None
+                s.pop('closeW60', None)
             st['close_voided_one_sided'] += 1
 
         r0 = rs[0]
@@ -287,6 +295,15 @@ def build(rows, oddspapi_fx, kibl_fx, board_fx, window=(None, None)):
             'startTsSource': r0.get('start_ts_source'),
             'sides': sides,
         }
+        # WHOSE clock closeTs is. On Kibl it is OUR last sighting capped at the
+        # start (TEN-253 Fix 1), not Kibl's insert time, so it must not borrow
+        # the row's 'vendor-insert' label.
+        if any(s['close'] is not None for s in sides.values()):
+            entry['closeTsKind'] = 'sighting' if r0.get('source') == 'kibl' else r0.get('ts_kind')
+        # The actual start the close was cut at, so the hover can say "last
+        # seen X min before start" from the same instant the rule used.
+        if r0.get('start_ts') and any(s['close'] is not None for s in sides.values()):
+            entry['startTs'] = r0['start_ts']
         if r0.get('label'):
             entry['label'] = r0['label']
         by_key[mkey] = entry
@@ -298,7 +315,10 @@ def build(rows, oddspapi_fx, kibl_fx, board_fx, window=(None, None)):
             st['with_now_both'] += 1
         if all(s['close'] is not None for s in sides.values()):
             st['with_close_both'] += 1
+            st['with_close_both_within60' if all(s.get('closeW60') for s in sides.values())
+               else 'with_close_both_older'] += 1
         st[f'src_{r0.get("source")}'] += 1
+        st[f'book_{r0.get("book")}'] += 1
 
     return by_key, st
 
@@ -383,7 +403,7 @@ def main():
         'fixture_id,id_space,book,market,side,line,match_key,book_rank,'
         'is_selected,ts_kind,open_price,open_ts,open_limit,open_observed_at,'
         'now_price,now_ts,now_observed_at,'
-        'close_price,close_ts,start_ts,start_ts_source,start_reject_reason,'
+        'close_price,close_ts,close_within_60,start_ts,start_ts_source,start_reject_reason,'
         'source,label',
         extra=f'&market=eq.{urllib.parse.quote(MARKET)}')
     oddspapi_fx = {str(r['fixture_id']): r for r in fetch_all(

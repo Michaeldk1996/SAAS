@@ -37,11 +37,23 @@ jobs:
           set -o pipefail
           python3 -B ten253-close-lastseen-audit.py | tee -a "$GITHUB_STEP_SUMMARY"
 
+      - name: The 185 AFTER Fix 1 + the switch (same pinned population)
+        if: always()
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          TEN253_SPLIT_OUT: ${{ github.workspace }}/ten253-after-split.json
+        run: |
+          set -o pipefail
+          python3 -B ten253-after-split.py | tee -a "$GITHUB_STEP_SUMMARY"
+
       - name: Upload the baseline
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: ten253-close-lastseen-audit
-          path: ten253-close-lastseen-audit.json
+          path: |
+            ten253-close-lastseen-audit.json
+            ten253-after-split.json
           retention-days: 14
           if-no-files-found: warn
