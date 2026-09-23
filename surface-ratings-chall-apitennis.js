@@ -30,16 +30,38 @@ const API_BASE = 'https://api.api-tennis.com/tennis/';
 const CHALL_EVENT_TYPE = 281;   // Challenger Men Singles
 
 // One player, a date range, statistics inline — mirrors bsp-pipeline / styles supplement.
-// Returns [] on success-with-no-result, null on error (caller treats null as skip).
+// TEN-254 (2026-09-23): returns `{ ok, rows, reason }` — NOT a bare array.
+//
+// ⚠️ WHY THE SHAPE CHANGED. This used to return `[]` for BOTH "the player genuinely
+// has no Challenger matches" and "api-tennis refused the call", and the caller
+// collapsed the two with `if (!fx || !fx.length) continue`. Two consequences:
+//
+//   1. 17 of the 40 zero-Challenger players on the board were not real zeros — they
+//      were never-fetched — and nothing downstream could tell the difference.
+//   2. ⚠️ `!data.success` returned `[]`. An UNPAID api-tennis key answers HTTP 200
+//      with a falsy `success` and `cod 1006`, so an unpaid key would have produced
+//      384 "genuine empties" and published a store with ZERO Challenger data as a
+//      clean success — exactly the "never publish a thinner store as a success"
+//      failure. `!data.success` is now an ERROR, not an empty.
+//
+// ok:false is a REFUSAL (transport, HTTP, unparseable body, or success-falsy).
+// ok:true with rows:[] is a real, trustworthy "no Challenger matches in the window".
 async function fetchPlayerChallengerFixtures(apiKey, playerKey, dateStart, dateStop) {
   const url = `${API_BASE}?method=get_fixtures&APIkey=${apiKey}&date_start=${dateStart}&date_stop=${dateStop}&player_key=${playerKey}&event_type_key=${CHALL_EVENT_TYPE}`;
   let res;
-  try { res = await fetch(url); } catch (e) { return null; }
-  if (!res || !res.ok) return null;
+  try { res = await fetch(url); } catch (e) { return { ok: false, rows: null, reason: 'transport' }; }
+  if (!res) return { ok: false, rows: null, reason: 'no-response' };
+  if (!res.ok) return { ok: false, rows: null, reason: 'http-' + res.status };
   let data;
-  try { data = await res.json(); } catch (e) { return null; }
-  if (!data || !data.success) return [];
-  return Array.isArray(data.result) ? data.result : [];
+  try { data = await res.json(); } catch (e) { return { ok: false, rows: null, reason: 'unparseable' }; }
+  if (!data) return { ok: false, rows: null, reason: 'empty-body' };
+  if (!data.success) {
+    // Carry the vendor code so a quota/entitlement refusal is diagnosable, but NEVER
+    // the URL or the key — the key rides in the query string.
+    const code = data.cod != null ? String(data.cod) : (data.error != null ? 'error' : 'no-success');
+    return { ok: false, rows: null, reason: 'api-refused:' + code };
+  }
+  return { ok: true, rows: Array.isArray(data.result) ? data.result : [], reason: null };
 }
 
 function pickStat(rows, type, name) {
@@ -135,28 +157,57 @@ function buildContribs(fixtures, playerKey, surfaceMap) {
   return contribs;
 }
 
-// Public API. candidates: [{ playerKey, name }]. Returns [{ playerKey, name, contribs }].
-// Concurrency-limited, best-effort: a player whose fetch errors is simply skipped.
+// TEN-254: the FAIL-LOUD threshold. If more than this share of the player fetches is
+// REFUSED by api-tennis, the caller must abort rather than commit a thinner store.
+//
+// 2% chosen against the measured shape of a healthy run: run 12 (2026-09-23) fetched
+// 384 of 384 with zero refusals, so the normal value is 0%. 2% of 384 is ~7 calls, so
+// one or two transient 5xx do not fail a nightly build — while a quota or entitlement
+// refusal fails EVERY call (100%) and trips this on the first handful. That is the
+// shape we want: tolerate flakiness, catch systemic.
+const MAX_REFUSAL_RATE = 0.02;
+
+// Public API. candidates: [{ playerKey, name }].
+// Returns { contribs: [{ playerKey, name, contribs }], resolvedKeys: Set, refusals, fetched, refusalRate, reasons }.
+//
+// ⚠️ NO LONGER a bare array, and no longer "best-effort". A refused fetch is recorded,
+// not silently skipped: `resolvedKeys` is what surface-ratings.js turns into
+// `challResolved`, and `refusalRate` is what makes the run exit 1 instead of
+// publishing a store whose Challenger side quietly vanished.
 async function fetchChallengerContribs(candidates, opts) {
   const { apiKey, fromYear, dateStop, surfaceMap, concurrency = 6, log = () => {} } = opts;
   const dateStart = `${fromYear}-01-01`;
   const out = [];
-  let i = 0, fetched = 0, withData = 0, totalMatches = 0;
+  const resolvedKeys = new Set();          // fetch SUCCEEDED (even if it returned no matches)
+  const reasons = new Map();               // reason -> count, for the abort message
+  let i = 0, fetched = 0, refusals = 0, withData = 0, totalMatches = 0;
   async function worker() {
     while (i < candidates.length) {
       const idx = i++;
       const c = candidates[idx];
-      const fx = await fetchPlayerChallengerFixtures(apiKey, c.playerKey, dateStart, dateStop);
+      const r = await fetchPlayerChallengerFixtures(apiKey, c.playerKey, dateStart, dateStop);
       fetched++;
-      if (!fx || !fx.length) continue;
-      const contribs = buildContribs(fx, c.playerKey, surfaceMap);
+      if (!r || !r.ok) {
+        refusals++;
+        const why = (r && r.reason) || 'unknown';
+        reasons.set(why, (reasons.get(why) || 0) + 1);
+        continue;                          // NOT resolved — stays out of resolvedKeys
+      }
+      // A successful fetch that returned no matches is a REAL zero, and the player is
+      // resolved. That distinction is the whole point of this change.
+      resolvedKeys.add(String(c.playerKey));
+      if (!r.rows.length) continue;
+      const contribs = buildContribs(r.rows, c.playerKey, surfaceMap);
       if (contribs.length) { withData++; totalMatches += contribs.length; out.push({ playerKey: c.playerKey, name: c.name, contribs }); }
-      if (fetched % 25 === 0) log(`  chall-api: ${fetched}/${candidates.length} fetched, ${withData} with data, ${totalMatches} matches`);
+      if (fetched % 25 === 0) log(`  chall-api: ${fetched}/${candidates.length} fetched, ${refusals} refused, ${withData} with data, ${totalMatches} matches`);
     }
   }
   await Promise.all(Array.from({ length: Math.min(concurrency, candidates.length) }, worker));
-  log(`chall-api: ${fetched} fetched -> ${withData} players with Challenger data, ${totalMatches} matches total.`);
-  return out;
+  const refusalRate = fetched ? refusals / fetched : 0;
+  log(`chall-api: ${fetched} fetched, ${refusals} refused (${(refusalRate * 100).toFixed(2)}%), ` +
+      `${resolvedKeys.size} resolved -> ${withData} players with Challenger data, ${totalMatches} matches total.`);
+  if (reasons.size) log(`  chall-api refusal reasons: ${[...reasons].map(([k, v]) => k + '×' + v).join(', ')}`);
+  return { contribs: out, resolvedKeys, refusals, fetched, refusalRate, reasons, maxRefusalRate: MAX_REFUSAL_RATE };
 }
 
 module.exports = { fetchChallengerContribs, fetchPlayerChallengerFixtures, buildContribs, serveBlock };

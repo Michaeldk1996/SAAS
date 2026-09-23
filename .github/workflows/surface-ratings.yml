@@ -23,7 +23,14 @@ name: BSP weekly surface-ratings refresh
 
 on:
   schedule:
-    - cron: '0 21 * * 1'    # Mondays 21:00 UTC
+    - cron: '0 6 * * *'     # DAILY 06:00 UTC — founder ruling TEN-254, 2026-09-23.
+    #                          Was '0 21 * * 1' (Mondays 21:00 UTC). 06:00 was chosen because the
+    #                          day's last Challenger main-draw matches in the Americas finish by
+    #                          roughly 04:00-05:00 UTC and api-tennis needs a margin to settle the
+    #                          stats; a 21:00 run sits DURING US evening play and would
+    #                          systematically miss the day it is named for. It also stays clear of
+    #                          the 21:00 Elo refresh.
+
   workflow_dispatch:
 
 concurrency:

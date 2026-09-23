@@ -1,0 +1,55 @@
+{
+  "_doc": "TEN-254, founder ruling 3 (2026-09-23): a FIXED, HAND-CONFIRMED mapping from our player name to the api-tennis player, keyed by api-tennis player_key (an ID), never by a name string. No looser matching rule.",
+  "_why": "surface-ratings.js resolves our roster to api-tennis by building `firstInitial|lastSurnameToken` from get_standings. api-tennis scrambles name order in get_standings — it lists R. A. Burruchaga as 'Andres Burruchaga Roman', so the key becomes a|roman and never matches r|burruchaga. Nine players on the 237-board were silently unresolved, and their Challenger pressure points read as a real zero.",
+  "_how_confirmed": "get_players?player_key=<id> returns the name in OUR format (not the scrambled standings format) plus player_bday and player_country. Every entry below was confirmed on all three: exact name match, birthdate, country. Checked 2026-09-23 against live api-tennis.",
+  "_rules": [
+    "One api-tennis player_key may appear ONCE. Two of our players must never map to the same ID — tools/test-ten254-player-map.js fails if they do.",
+    "An entry that cannot be confirmed on name + birthdate + country is LEFT OUT and its reason recorded in _unmapped. Do not guess.",
+    "This map only ADDS resolutions. It never overrides a player who already resolves through the standings index."
+  ],
+  "map": {
+    "R. A. Burruchaga": {
+      "playerKey": 9596,
+      "confirmed": "get_players 9596 -> name 'R. A. Burruchaga', bday 23.01.2002, country Argentina. Standings lists him scrambled as 'Andres Burruchaga Roman' (place 56).",
+      "checkedOn": "2026-09-23"
+    },
+    "T. M. Etcheverry": {
+      "playerKey": 1777,
+      "confirmed": "get_players 1777 -> 'T. M. Etcheverry', bday 18.07.1999, Argentina. Standings: 'Martin Etcheverry Tomas' (place 30).",
+      "checkedOn": "2026-09-23"
+    },
+    "T. A. Tirante": {
+      "playerKey": 366,
+      "confirmed": "get_players 366 -> 'T. A. Tirante', bday 10.04.2001, Argentina. Standings: 'Agustin Tirante Thiago' (place 52).",
+      "checkedOn": "2026-09-23"
+    },
+    "J. M. Cerundolo": {
+      "playerKey": 388,
+      "confirmed": "get_players 388 -> 'J. M. Cerundolo', bday 15.11.2001, Argentina. THE BROTHER CHECK, because two Cerundolos are in the standings: key 388 returns J. M. Cerundolo born 15.11.2001; key 1104 returns 'F. Cerundolo' born 13.08.1998 — three years apart, two different people. 388 is the one whose get_players name matches ours exactly. Francisco (1104) already resolves on his own and is NOT in this map.",
+      "checkedOn": "2026-09-23"
+    },
+    "C. Wong": {
+      "playerKey": 2227,
+      "confirmed": "get_players 2227 -> 'C. Wong', bday 06.06.2004, Hong Kong. Standings: 'Coleman Wong Chak Lam' (place 108). A second Wong exists in the standings — 'Fu Wong Tsz' key 62930, place 2270 — and is NOT mapped: different player, not on our board.",
+      "checkedOn": "2026-09-23"
+    },
+    "D. E. Galan": {
+      "playerKey": 1735,
+      "confirmed": "get_players 1735 -> 'D. E. Galan Riveros', bday 18.06.1996, Colombia. The get_players name carries the second surname (Galan Riveros) that ours drops; initials D. E. and country match. Standings: 'Elahi Galan Daniel' (place 368).",
+      "checkedOn": "2026-09-23"
+    },
+    "C. H. Tseng": {
+      "playerKey": 389,
+      "confirmed": "get_players 389 -> 'C. H. Tseng', bday 08.08.2001, Taiwan. Standings: 'Hsin Tseng Chun' (place 212).",
+      "checkedOn": "2026-09-23"
+    },
+    "J. P. Varillas": {
+      "playerKey": 391,
+      "confirmed": "get_players 391 -> 'J. P. Varillas', bday 06.10.1995, Peru. Standings: 'Pablo Varillas Juan' (place 196).",
+      "checkedOn": "2026-09-23"
+    }
+  },
+  "_unmapped": {
+    "M. Ymer": "FOUNDER RULING 2026-09-23: do not map. The only Ymer entries in api-tennis's ATP standings are 'Elias Ymer' (key 1082, place 190) and 'Rafael Ymer' (key 52076, place 2082). Neither is Mikael. ('Ymerali Ibraimi', key 78978, is a first-name collision, not a Ymer.) Mikael Ymer is absent from the standings, so there is no ID to map him to. His Challenger figures therefore stay challResolved:false — missing, not zero. NOTE: E. Ymer (rank 171) is a DIFFERENT, active player on our board and resolves on his own; the two must never be conflated."
+  }
+}

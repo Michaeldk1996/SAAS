@@ -49,6 +49,12 @@ const LAST52_DAYS = 364;
 // build lives in surface-ratings-chall-apitennis.js, which emits contribs in the exact
 // addContribution shape, so the api sample flows through the identical discount + blend.
 const { fetchChallengerContribs } = require('./surface-ratings-chall-apitennis.js');
+// TEN-254: the hand-confirmed api-tennis ID map (founder ruling 3). Loaded, never
+// inferred — see the file's own _doc/_rules for why it is IDs and not name strings.
+const PLAYER_MAP = (function () {
+  try { return require('./api-tennis-player-map.json').map || {}; }
+  catch (e) { console.warn('api-tennis-player-map.json missing or unreadable — no hand mappings applied:', e.message); return {}; }
+})();
 const CHALL_FROM_YEAR = 2022;   // request window start (event 281 stats are dense 2024+)
 // Resolve the api-tennis key the SAME way clutch-apitennis-supplement.js does: prefer
 // process.env.API_TENNIS_KEY, else the first apitennis line in the project .env.
@@ -517,10 +523,41 @@ if (require.main === module) (async () => {
   const candidates = [];
   const candSeen = new Set();
   let resolved = 0, unresolved = 0;
+  // ── TEN-254 · the HAND-CONFIRMED map, founder ruling 3 (2026-09-23) ────────
+  // api-tennis scrambles name order in get_standings — R. A. Burruchaga is listed as
+  // "Andres Burruchaga Roman", so `firstInitial|lastToken` builds a|roman and never
+  // matches r|burruchaga. Nine board players were silently unresolved and their
+  // Challenger pressure points read as a real zero.
+  //
+  // The founder ruled a FIXED, hand-confirmed list keyed by api-tennis ID, NOT a
+  // looser matching rule — because loosening it risks attaching a brother's matches
+  // (two Cerundolos and two Ymers sit in the standings). Each entry was confirmed on
+  // name + birthdate + country via get_players; see api-tennis-player-map.json.
+  //
+  // It only ADDS resolutions. A player who already resolves through the standings
+  // index is untouched, so the map can never silently re-point an existing player.
+  let mappedUsed = 0;
   for (const meta of pool) {
     const bucket = standIndex.get(meta.fi + '|' + meta.lastTok);
     const hits = bucket ? bucket.filter(e => endsWithTokens(e.tokens, meta.surname)) : [];
-    if (!hits.length) { unresolved++; continue; }
+    if (!hits.length) {
+      const mapped = PLAYER_MAP[meta.name];
+      if (mapped && mapped.playerKey != null) {
+        const pk = mapped.playerKey;
+        if (candSeen.has(pk)) {
+          // Two of our players must never share one api-tennis ID. Shout rather than
+          // silently give one player another's matches.
+          console.error(`::error::api-tennis-player-map.json points ${meta.name} at player_key ${pk}, ` +
+            `which is already claimed by another player. Refusing to double-attach.`);
+          throw new Error('player-map collision on api-tennis player_key ' + pk);
+        }
+        candSeen.add(pk);
+        candidates.push({ playerKey: pk, name: meta.name });
+        resolved++; mappedUsed++;
+        continue;
+      }
+      unresolved++; continue;
+    }
     // prefer an exact full-token match, else the first surname-suffix match
     const exact = hits.find(e => e.tokens.length === (meta.surname.length + 1) &&
       endsWithTokens(e.tokens, meta.surname) && e.tokens[0][0] === meta.fi);
@@ -540,11 +577,38 @@ if (require.main === module) (async () => {
   } catch (e) { console.log('  tournament-surfaces.json missing — Challenger fixtures fold into All-scope only.'); }
   console.log(`Surface map: ${surfaceMap.size} tournament_key→surface entries.`);
 
+  // TEN-254: name -> the api-tennis player_key we will actually fetch for him. This is
+  // the ONLY place the two are tied together, and it is what makes challResolved
+  // answerable per player later.
+  const candKeyByName = new Map(candidates.map(c => [c.name, String(c.playerKey)]));
+
   // 4) Fetch Challenger contributions and populate challById (keyed by api:<player_key>).
   const dateStop = new Date().toISOString().slice(0, 10);
-  const challContribs = await fetchChallengerContribs(candidates, {
+  const challResult = await fetchChallengerContribs(candidates, {
     apiKey, fromYear: CHALL_FROM_YEAR, dateStop, surfaceMap, concurrency: 8, log: console.log,
   });
+  const challContribs = challResult.contribs;
+
+  // ── TEN-254 · FAIL LOUD, founder ruling 2026-09-23 ─────────────────────────
+  // "If api-tennis refuses, errors or returns empty for a meaningful share of the
+  //  player fetches, the run exits 1 and does not commit a store. It should never
+  //  publish a thinner store as a success."
+  //
+  // The threshold lives in the chall module (MAX_REFUSAL_RATE, 2%) next to the
+  // measurement that justifies it. Throwing here is what makes the WORKFLOW exit
+  // non-zero — `node surface-ratings.js` fails, the "Rebuild" step goes red, and the
+  // later "Commit refreshed surface-ratings.json" step never runs, so the previous
+  // good store stays committed. That is the property that matters: a refused run
+  // leaves yesterday's data in place rather than overwriting it with a thin one.
+  if (challResult.refusalRate > challResult.maxRefusalRate) {
+    const why = [...challResult.reasons].map(([k, v]) => `${k}×${v}`).join(', ');
+    console.error(`::error::api-tennis refused ${challResult.refusals} of ${challResult.fetched} Challenger fetches ` +
+      `(${(challResult.refusalRate * 100).toFixed(2)}%, threshold ${(challResult.maxRefusalRate * 100).toFixed(2)}%). ` +
+      `Reasons: ${why}. REFUSING to write surface-ratings.json — the previous store stays.`);
+    throw new Error('chall-api refusal rate ' + (challResult.refusalRate * 100).toFixed(2) + '% exceeds ' +
+      (challResult.maxRefusalRate * 100).toFixed(2) + '% — aborting before the store is written');
+  }
+
   let challScanned = 0, surfResolvedC = 0;
   for (const { playerKey, name, contribs } of challContribs) {
     if (!contribs || !contribs.length) continue;
@@ -648,9 +712,27 @@ if (require.main === module) (async () => {
         last52: computeRatings(scopes.last52[surf], l52Floors, chall.last52[surf]),
       };
     }
-    rows.push({ name: meta.name, rank: meta.rank, surfaces });
+    // ── TEN-254 · challResolved, founder ruling 2 (2026-09-23) ───────────────
+    // "The generator records, per player, whether the Challenger lookup actually
+    //  happened. The page uses it to tell a real zero from missing data."
+    //
+    // TRUE requires BOTH halves: the player resolved to an api-tennis player_key
+    // (through the standings index OR the hand-confirmed map) AND that key's
+    // Challenger fetch came back ok. Either half missing makes it false.
+    //
+    // ⚠️ Why the page needs this: challBpFaced/challBpChances are 0 for a player who
+    // genuinely plays no Challengers (Alcaraz) AND for a player who was never fetched
+    // (Mikael Ymer, who has no api-tennis ID at all). Those two zeros mean opposite
+    // things, and a combined ATP+Challenger figure may only be formed for the first.
+    // 17 of the 40 zero-Challenger players on the 2026-09-23 board were the second.
+    const candKey = candKeyByName.get(meta.name);
+    const challResolved = candKey != null && challResult.resolvedKeys.has(candKey);
+    rows.push({ name: meta.name, rank: meta.rank, challResolved, surfaces });
   }
   console.log(`Reconciled + qualified: ${rows.length} players.`);
+  const resolvedCount = rows.filter(r => r.challResolved).length;
+  console.log(`challResolved: ${resolvedCount}/${rows.length} players had a successful Challenger lookup ` +
+    `(${rows.length - resolvedCount} did not — their Challenger figures are MISSING, not zero).`);
 
   // ---- pool-percentile index per rating, within each surface+scope bucket
   const UP_COMPONENTS = ['bpSavedPct', 'bpConvPct', 'tbWinPct', 'decWinPct'];

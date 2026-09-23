@@ -1,0 +1,43 @@
+{
+  "_doc": "TEN-254, founder ruling 4 (2026-09-23): players removed from the RATINGS BOARD because their retirement is confirmed by a named, checkable source. Ratings board only — profiles, the H2H selector and Lines are untouched.",
+  "_rules": [
+    "NOT an inactivity rule. A player who has not played for a year because he is INJURED stays on the board. Only a confirmed announcement removes him.",
+    "Every entry names the source and the date, so anyone can check it without trusting this file.",
+    "Adding a newly retired player is one line in `retired`.",
+    "A removed player leaves BOTH the ranked and the unranked block, and the board's denominator drops with him.",
+    "The name must match the `name` field in surface-ratings.json exactly — that is what the board keys on. tools/test-ten254-retired.js fails on an entry that matches nobody, so a typo cannot sit here silently pretending to remove someone."
+  ],
+  "_coverage_warning": "⚠️ The agent that seeded this list has a knowledge cutoff of May 2026 and this file was written 2026-09-23. Any retirement announced between roughly mid-2026 and now is NOT in it, and cannot be, from this side. It needs a human pass. `_candidates_for_review` below holds the ones the agent could not confirm rather than guessing at them.",
+  "retired": [
+    {
+      "name": "R. Gasquet",
+      "retiredOn": "2025-05-27",
+      "source": "Final professional match: Roland Garros 2025 first round, lost to J. Sinner on 27 May 2025. Gasquet announced in 2024 that Roland Garros 2025 would be his last tournament; the ATP Tour and Roland Garros both covered the farewell on court.",
+      "addedBy": "TEN-254, 2026-09-23"
+    },
+    {
+      "name": "F. Fognini",
+      "retiredOn": "2025-06-30",
+      "source": "Final professional match: Wimbledon 2025 first round, lost to C. Alcaraz on 30 June 2025, after which he confirmed his retirement on court and in post-match press.",
+      "addedBy": "TEN-254, 2026-09-23"
+    },
+    {
+      "name": "D. Schwartzman",
+      "retiredOn": "2025-02-12",
+      "source": "Final professional match: Argentina Open (Buenos Aires) 2025, February 2025. He had announced the 2025 Buenos Aires event as his retirement tournament; ATP Tour covered the farewell.",
+      "addedBy": "TEN-254, 2026-09-23"
+    },
+    {
+      "name": "M. Ymer",
+      "retiredOn": "2023-08-01",
+      "source": "Announced his retirement from professional tennis in August 2023, following the CAS decision upholding an 18-month suspension for anti-doping whereabouts failures. ⚠️ This is Mikael Ymer — NOT E. Ymer (Elias, rank 171), who is a different, active player on this board.",
+      "addedBy": "TEN-254, 2026-09-23"
+    }
+  ],
+  "_candidates_for_review": {
+    "G. Monfils": "On the board at rank 68. He announced that 2025 would be his final season, but the agent could not confirm from a checkable source whether he completed it or when his final match was, so he is NOT removed. Founder to confirm.",
+    "S. Wawrinka": "On the board at rank 125. Age makes retirement plausible but no announcement is confirmable from this side. NOT removed.",
+    "N. Kyrgios": "On the board at rank 670, and deliberately NOT a candidate — his absence is injury, not retirement, and the rule says injured players stay. Listed here only so nobody adds him by inactivity.",
+    "C. Lestienne / B. Balleret / R. Bautista-Agut / P. Carreno-Busta / N. Basilashvili": "All on the board with long gaps. None has a retirement the agent can confirm. NOT removed — an inactivity rule is explicitly forbidden."
+  }
+}
