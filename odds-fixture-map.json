@@ -1066,8 +1066,8 @@
     },
     "12164146": {
       "fixtureId": "id1200210074871690",
-      "mappedAt": "2026-09-21T20:48:16Z",
-      "missHeldH": 76.72,
+      "mappedAt": "2026-09-23T09:16:17Z",
+      "missHeldH": 113.18,
       "missRuns": 24,
       "missSince": "2026-09-18T16:05:22Z",
       "orient": "same",
@@ -1078,8 +1078,8 @@
     },
     "12164147": {
       "fixtureId": "id1200210074871958",
-      "mappedAt": "2026-09-21T20:48:16Z",
-      "missHeldH": 76.72,
+      "mappedAt": "2026-09-23T09:16:17Z",
+      "missHeldH": 113.18,
       "missRuns": 24,
       "missSince": "2026-09-18T16:05:22Z",
       "orient": "same",
@@ -1090,8 +1090,8 @@
     },
     "12164148": {
       "fixtureId": "id1200210074871750",
-      "mappedAt": "2026-09-21T20:48:16Z",
-      "missHeldH": 76.72,
+      "mappedAt": "2026-09-23T09:16:17Z",
+      "missHeldH": 113.18,
       "missRuns": 24,
       "missSince": "2026-09-18T16:05:22Z",
       "orient": "same",
@@ -1873,12 +1873,12 @@
       "missResolutionHoursP50": 37.52,
       "missResolutionsMeasured": 87,
       "note": "ttlBitRuns counts runs where an expired MISS was the ONLY reason a billable /v4/fixtures call was made. projectedTtlUnitsPerDay uses the MEASURED run rate (measuredRunsPerDay), not an assumed 24/day; it is null until observedSpanDays is wide enough to measure one. Compare it against the <=24/day ceiling the TTL was chosen against. openMisses counts only fixtures still on the board.",
-      "observedSpanDays": 12.12,
+      "observedSpanDays": 12.16,
       "projectedTtlUnitsPerDay": 4.7,
-      "runs": 194,
-      "spentRuns": 104,
+      "runs": 195,
+      "spentRuns": 105,
       "ttlBitRuns": 57,
-      "ttlBitShare": 0.294,
+      "ttlBitShare": 0.292,
       "ttlHours": 1.0
     },
     "runs": [
@@ -4015,9 +4015,20 @@
         "ttlBit": true,
         "unmapped": 0,
         "upcoming": 38
+      },
+      {
+        "at": "2026-09-23T09:16:17Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 3,
+        "missExpired": 0,
+        "openMisses": 1,
+        "stale": 3,
+        "ttlBit": false,
+        "unmapped": 0,
+        "upcoming": 37
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-09-23T08:16:28Z"
+  "updatedAt": "2026-09-23T09:16:17Z"
 }
