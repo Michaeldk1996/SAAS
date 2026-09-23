@@ -3681,6 +3681,38 @@
      only an unwired one speaks. */
   .db-unwired{ font-family:var(--db-mono); font-size:10.5px; color:var(--db-faint); margin-top:10px; line-height:1.55; }
 
+  /* ---- TEN-256 (TEN-254a): Lines head furniture + foot note, README "TAB 5" ----
+     TWO different notes were sharing `.db-unwired`: the permanent exclusions
+     ruling (README foot note, 11.5px / 1.6) and the section 5 unwired marker
+     (10.5px). One class cannot be both sizes, so the foot note gets its own
+     rule here and `.db-unwired` is LEFT ALONE - the Ratings slice caption reads
+     it too, and moving it would drag that note to a size no section asks for.
+     Every value below is read from README TAB 5, not inferred. */
+  .db-lnbrow{ font-family:var(--db-mono); font-size:9.5px; font-weight:600; letter-spacing:0.15em; text-transform:uppercase; color:var(--db-mute); }
+  .db-lnppl{ margin-top:8px; display:flex; flex-wrap:wrap; gap:22px; align-items:center; }
+  .db-lnwho{ display:flex; align-items:center; gap:11px; }
+  .db-lnav{ width:34px; height:34px; border-radius:50%; flex:0 0 34px; display:flex; align-items:center; justify-content:center;
+    background:rgba(91,155,255,0.14); border:1px solid rgba(91,155,255,0.3);
+    font-family:var(--db-mono); font-size:11px; font-weight:700; color:#5b9bff; }
+  .db-lnname{ font-size:22px; font-weight:800; letter-spacing:-0.012em; color:var(--db-txt); text-decoration:none; }
+  .db-lnname:hover{ color:#82b4ff; }
+  .db-lnrank{ margin-left:8px; font-family:var(--db-mono); font-size:12px; font-weight:400; color:var(--db-mute); }
+  .db-lnchips{ margin-top:14px; display:flex; flex-wrap:wrap; gap:7px; }
+  .db-lnchip{ font-family:var(--db-mono); font-size:10.5px; font-weight:600; letter-spacing:0.08em; text-transform:uppercase; color:var(--db-sec);
+    background:#080a10; border:1px solid rgba(255,255,255,0.08); border-radius:7px; padding:5px 10px; }
+  .db-lngrp{ font-family:var(--db-mono); font-size:10px; font-weight:700; letter-spacing:0.16em; text-transform:uppercase; color:#a9b3c9; }
+  .db-lnfoot{ margin-top:14px; font-size:11.5px; line-height:1.6; color:var(--db-faint); }
+  /* The Matches cell is the denominator, not a headline — README TAB 5 puts it
+     at #5b6880 with the small-sample mark in the page's caution amber. */
+  .db-rfig.lnmatch{ color:var(--db-mute); }
+  .db-lnsmall{ font-style:normal; margin-left:6px; font-size:9px; letter-spacing:0.1em; text-transform:uppercase; color:#e8a84e; }
+  /* The rate pill — README TAB 5's focal cell. The wash and border are carried
+     by the inner <b> so the pill hugs the figure instead of the grid track. */
+  .db-lnrate b{ display:inline-block; padding:3px 8px; border-radius:7px; font-family:var(--db-mono);
+    font-size:15px; font-weight:600; color:#e8ecf4; background:transparent; border:1px solid transparent; }
+  .db-lnrate.low b{ color:var(--db-sec); }
+  .db-lnrate.strong b{ color:#7ee0a8; font-weight:700; background:rgba(78,200,130,0.15); border-color:rgba(78,200,130,0.34); }
+
   /* ---- TEN-243 STEP 3: Ratings board (README "TAB 4") ---- */
   .db-rcard{ background:var(--db-surface); border:1px solid var(--db-bd); border-radius:12px; padding:22px 24px; }
   /* The Ratings/Lines card eyebrow is 0.16em per README "TAB 4"; the page's
@@ -26342,7 +26374,11 @@ window.DatabaseTab = (function(){
       ratSortKey:'elo', ratSortDir:'desc',
       // TEN-243 STEP 4 · Lines. Same per-instance reasoning as the ratings keys
       // above: a second mount must not inherit the standalone page's subject.
-      lnSel:[], lnQ:'', lnSurf:'All'
+      // TEN-256 adds lnScope (Career | Last 52) and lnCat (Line group). lnSide is
+      // deliberately ABSENT: see the Side note in lnPaint - career-history rows
+      // carry no price and no favourite marker, so a side key would be a control
+      // with nothing behind it.
+      lnSel:[], lnQ:'', lnSurf:'All', lnScope:'career', lnCat:null
     };
   }
   function use(inst){ I=inst; state=inst.state; built=inst.built; return inst; }
@@ -26946,7 +26982,7 @@ window.DatabaseTab = (function(){
     state.ratSurf='All'; state.ratScope='career'; state.ratBoard='overview';
     state.ratSel=[]; state.ratQ=''; state.ratSortKey='elo'; state.ratSortDir='desc';
     // Same rule for Lines, for the same reason: Reset means every tab.
-    state.lnSel=[]; state.lnQ=''; state.lnSurf='All';
+    state.lnSel=[]; state.lnQ=''; state.lnSurf='All'; state.lnScope='career'; state.lnCat=null;
   }
   function countOf(set){ return set? String(set.size) : 'All'; }
   var lastTotal=0;
@@ -27072,6 +27108,16 @@ window.DatabaseTab = (function(){
       }));
       zR.appendChild(pillGroup([['All','All'],['Hard','Hard'],['Clay','Clay'],['Grass','Grass']],
         state.lnSurf, function(v){ state.lnSurf=v; }, false));
+      // TEN-256 · README TAB 5 "Lines controls". Career | Last 52 and Line group
+      // are wired because career-history carries a `date` on every row (measured:
+      // 0 undated of 85,779 across the 225-player field) and the ladder keys are
+      // ours. The spec's THIRD menu, Side, is NOT here - see lnPaint.
+      zR.appendChild(pillGroup([['career','Career'],['l52','Last 52']],
+        state.lnScope, function(v){ state.lnScope=v; }, false));
+      zR.appendChild(trigger('Line group', state.lnCat || 'All', !!state.lnCat, 'lncat', function(){
+        return singleMenu([[null,'All groups']].concat(LN_GROUPS.map(function(g){ return [g,g]; })),
+          state.lnCat, function(v){ state.lnCat=v; });
+      }));
       var lreset=el('button','db-reset','Reset'); lreset.onclick=function(){ resetFilters(); render(); };
       zR.appendChild(lreset);
       if(zL.childNodes.length) zR.classList.add('div');
@@ -27941,11 +27987,18 @@ window.DatabaseTab = (function(){
                 state.ratSurf==='All'?'all surfaces':state.ratSurf.toLowerCase(),
                 gateWord===null ? 'no match floor' : ('n ≥ '+RAT_GATE+' '+(gateWord||'matches')) ];
     var n=el('div','db-unwired', esc(parts.join(' · ')));
-    // TEN-254 Step 2, bundle README TAB 4: "Note, `margin-top:12px`". The shared
-    // `.db-unwired` rule is 10px because the SAME class carries the Lines foot
-    // note, which the README puts at 14px - so the 12px is set here, on the
-    // Ratings note only, rather than by moving the shared rule and silently
-    // dragging Lines to a third value that no section asks for.
+    // TEN-254 Step 2, bundle README TAB 4: "Note, `margin-top:12px`". The 12px is
+    // set HERE, on the Ratings note only, rather than by moving the shared
+    // `.db-unwired` rule.
+    //
+    // TEN-256 REWROTE THE REASON, so do not act on the old one. This used to say
+    // the shared rule could not move because it also carried the Lines foot note.
+    // It no longer does - that note is its own element and its own class
+    // (`.db-lnfoot`, 11.5px, the value README TAB 5 gives it). `.db-unwired` is
+    // now what section 5 says it is and nothing else: the 10.5px "this is not
+    // wired" marker, shared by this caption and the Lines one. Still do not move
+    // it - both readers want 10.5px, and the only reason this note is 12px from
+    // the top is TAB 4's spacing, which is a margin, not a size.
     n.style.marginTop='12px';
     if(unwired && unwired.length){
       n.innerHTML += '<br>' + esc('Not wired: '+unwired.join(' · ')+' — no field for these in the archive, so every cell is a dash rather than a derived stand-in.');
@@ -28324,8 +28377,19 @@ window.DatabaseTab = (function(){
   // when `incomplete` OR `altFormat` is set (TEN-244). `sets` absent is a third,
   // separate state - the match happened, we just do not hold its games yet, and
   // that is the one the coverage figure is about.
-  function lnPartition(rows, surf){
+  // TEN-256 · the Last-52 window is 364 days back from TODAY, not from the
+  // store's own latest row. Anchoring it on the latest row would silently widen
+  // the window for a player who has not played in months, so "Last 52" would
+  // mean a different period per player. Every career-history row carries a
+  // `date` (measured 2026-09-23: 0 undated of 85,779 across the 225-player
+  // field), so nothing falls out of the window for want of one - but the filter
+  // is written to DROP an undated row rather than keep it, because a row with no
+  // date cannot be shown to be inside a dated window.
+  function lnCutoff(){ return new Date(Date.now() - 364*864e5).toISOString().slice(0,10); }
+  function lnPartition(rows, surf, scope){
+    var cut = scope==='l52' ? lnCutoff() : null;
     var scoped = rows.filter(function(r){
+      if (cut && !(r.date && String(r.date) >= cut)) return false;
       if (surf==='All') return true;
       return String(r.surface||'').toLowerCase() === surf.toLowerCase();
     });
@@ -28388,18 +28452,30 @@ window.DatabaseTab = (function(){
       return;
     }
     var card=el('div','db-rcard');
-    card.appendChild(el('div','db-rbrow','Line coverage'));
-    card.appendChild(el('h2','db-rtitle','Derived lines'));
-    card.appendChild(el('p','db-rdesc',
-      'Games handicap, set handicap, total games and match shape — how often each derived line landed for a player. Derived from set scores, not from settled markets: these are coverage rates, not results against a priced line. Best-of-three and best-of-five are counted separately, because the same line is a different bet in each.'));
+
+    // TEN-256 · README TAB 5 head. With a subject chosen the head is eyebrow →
+    // people row → state chips, and the PLAYER'S NAME is the title: the bundle
+    // has no separate card title here, and stacking "Derived lines" at 22px/800
+    // directly above a name at 22px/800 gave the card two competing titles. The
+    // prose that used to sit under that title is the README's FOOT note, so it
+    // moved to the foot (lnPaint) where the bundle puts it. With nothing chosen
+    // there is no name to carry the head, so the title and the fuller
+    // description stay - that state has to explain what the tab is.
+    var brow=el('div','db-lnbrow','Line coverage');
+    card.appendChild(brow);
 
     if(!state.lnSel.length){
+      card.appendChild(el('h2','db-rtitle','Derived lines'));
+      card.appendChild(el('p','db-rdesc',
+        'Games handicap, set handicap, total games and match shape — how often each derived line landed for a player. Derived from set scores, not from settled markets: these are coverage rates, not results against a priced line. Best-of-three and best-of-five are counted separately, because the same line is a different bet in each.'));
       var prompt=el('div','db-prompt');
       prompt.innerHTML='<h3>Choose a player</h3><p>Search above to pick one, and this tab will show how often each derived line landed for him, with the number of matches behind every rate.</p>';
       card.appendChild(prompt); body.appendChild(card); return;
     }
 
     var nm=state.lnSel[0];
+    lnHead(card, nm);
+
     var key=lnKeyForName(nm);
     if(!key){
       var miss=el('div','db-unwired');
@@ -28416,13 +28492,69 @@ window.DatabaseTab = (function(){
       // a second mount exists (the defect TEN-242 caught in renderRatings).
       if(inst!==I || (state.lnSel[0]!==want)) return;
       host.innerHTML='';
-      lnPaint(host, rows||[], want);
+      lnPaint(host, rows||[], want, brow);
     });
   }
 
-  function lnPaint(host, rows, nm){
-    var DASH='–';
-    var part=lnPartition(rows, state.lnSurf);
+  // Initials for the README's 34px avatar. Built from the ROSTER STRING as it is
+  // stored ("C. Alcaraz", "F. Auger-Aliassime"), so the initial and the surname
+  // letter come from the same source the name beside it does - deriving them from
+  // a re-split full name would disagree with the label on a hyphenated surname.
+  // Take each token's FIRST character, not its first Latin-1 letter. A
+  // "first letter anywhere in the token" match reads past the letter it was
+  // looking for the moment a surname starts outside U+00C0-U+00FF: "M. Čilić"
+  // came out MI, because Č is U+010C and the scan ran on to the i. No name on
+  // today's 237-player roster is affected - this is a roster-growth trap, and
+  // the roster grows.
+  function lnInitials(nm){
+    return String(nm||'').split(/\s+/)
+      .map(function(t){ return t.charAt(0); })
+      .filter(function(c){ return c && c!=='-'; })
+      .slice(0,2).join('').toUpperCase();
+  }
+  function lnRankOf(nm){
+    if(!RAT) return null;
+    var hit=(RAT.players||[]).filter(function(p){ return p.name===nm; })[0];
+    return (hit && hit.rank!=null) ? hit.rank : null;
+  }
+  // README TAB 5 head: people row, then the state chips that "restate every
+  // active control so the table is readable out of context".
+  function lnHead(card, nm){
+    var ppl=el('div','db-lnppl'), who=el('div','db-lnwho');
+    who.appendChild(el('div','db-lnav', esc(lnInitials(nm))));
+    var lab=el('div');
+    var a=el('a','db-lnname', esc(nm)); a.href='#'; a.title=nm;
+    a.onclick=function(ev){ ev.preventDefault(); ratOpenPlayer(nm); };
+    lab.appendChild(a);
+    // The rank is a REAL rank or it is absent. A missing rank prints nothing
+    // rather than "#—": the rank is furniture beside the name, and a dash there
+    // reads as a ranking of dash rather than as "we do not hold one".
+    var rk=lnRankOf(nm);
+    if(rk!=null) lab.appendChild(el('span','db-lnrank','#'+rk));
+    who.appendChild(lab); ppl.appendChild(who); card.appendChild(ppl);
+
+    // Chips restate the controls THIS BUILD HAS. Format is not a control here -
+    // both ladders are on screen at once, each under its own head with its own
+    // match count - so the chip says so rather than naming one format the reader
+    // is not looking at. Side is absent for the reason given in lnPaint's foot
+    // note; inventing a chip for a control that does not exist would be the
+    // out-of-context misreading the chips are there to prevent.
+    var chips=el('div','db-lnchips');
+    [ 'Bo3 & Bo5',
+      state.lnSurf==='All' ? 'All surfaces' : state.lnSurf,
+      state.lnScope==='l52' ? 'Last 52 weeks' : 'Career',
+      state.lnCat || 'All line groups'
+    ].forEach(function(t){ chips.appendChild(el('span','db-lnchip', esc(t))); });
+    card.appendChild(chips);
+  }
+
+  function lnPaint(host, rows, nm, brow){
+    // README section 5: "a number that is not wired shows an em dash — in
+    // #4b5672". This was an EN dash (U+2013) in #8b96b5, which is the secondary
+    // text colour - the same ink a real figure uses - so an unwired cell and a
+    // quiet real one were the same weight on screen.
+    var DASH='—';
+    var part=lnPartition(rows, state.lnSurf, state.lnScope);
     var total=part.scoped.length, have=part.usable.length;
 
     // COVERAGE, ON SCREEN AND IN PLAIN TEXT — the founder's requirement, and the
@@ -28453,6 +28585,15 @@ window.DatabaseTab = (function(){
     // promised "it will move as the rest land" about rows that will never land.
     // Measured on the v15 store: per-player games coverage is 98.2-100%, median
     // 99.4%, 0 of 16 sampled players below 90%.
+    // TEN-256 · ONE CLASS WAS CARRYING TWO DIFFERENT NOTES. `.db-unwired` is the
+    // section 5 marker for data that is NOT WIRED (10.5px), and the README's
+    // foot note is a standing statement about the METHOD (11.5px / 1.6). They
+    // were concatenated into one 10.5px block, so the permanent ruling
+    // disclosure read as another provisional "not wired yet" line. Split:
+    //   here, 10.5px  · the section 5 marker - partial games, unwired columns,
+    //                   absent controls. Everything on this line can come down.
+    //   at the foot   · the README note - method and the exclusions ruling.
+    //                   Neither ever comes down.
     var note=el('div','db-unwired');
     var gamesPct = (have + part.noGames) ? (have / (have + part.noGames) * 100) : 100;
     var stillArriving = part.noGames > 0 && gamesPct < 90;
@@ -28463,10 +28604,15 @@ window.DatabaseTab = (function(){
               ' eligible matches do not carry them yet (' + gamesPct.toFixed(1) + '% do). Every rate below is ' +
               'computed over the ' + have.toLocaleString() + ' that do and no others, so it will move as the rest land.') + '<br>'
         : '') +
-      // This one is NOT provisional and never comes down: the exclusions are a
-      // ruling, so a reader has to be told the denominator is not the career.
-      esc('Rates are computed only on finished, standard-format matches. Retirements, walkovers and NextGen are excluded, so this is not a career rate.') +
-      '<br>' + esc('Field, Vs field and Ranking are not wired: each needs a rate for every player in the field, which is one fetch per player. Those three columns are dashes rather than a stand-in computed from a subset.');
+      esc('Field, Vs field and Ranking are not wired: each needs a rate for every player in the field, which is one fetch per player. Those three columns are dashes rather than a stand-in computed from a subset.') +
+      // The spec's third menu. Named here rather than rendered as a dead control:
+      // measured 2026-09-23 over the WHOLE deployed store - 0 of 85,779 rows
+      // across all 225 shards carry a price or a favourite marker, so there is
+      // no field to split on. (The first draft of this comment said "0 of
+      // 15,586", which was a 40-shard SAMPLE written up as the population. The
+      // conclusion held on a recount; the denominator did not, and this is the
+      // number that drops a control the spec asks for.)
+      '<br>' + esc('The Side control (all matches / as favourite / as underdog) is not offered: career-history rows carry no price and no favourite marker, so there is nothing to split handicap lines on.');
     host.appendChild(note);
 
     if(!have){
@@ -28479,12 +28625,22 @@ window.DatabaseTab = (function(){
         : nm+' has '+total.toLocaleString()+' matches at this slice and every one is unfinished or a different format, so none can be priced. Every line is a dash rather than a 0% hit rate.';
       none.innerHTML='<h3>'+esc(part.noGames ? 'No games on record yet' : 'Nothing priceable at this slice')+'</h3><p>'+esc(why)+'</p>';
       host.appendChild(none);
+      host.appendChild(lnFoot());
+      if(brow) brow.textContent='Line coverage · 0 lines';
       return;
     }
 
     // Split by format ONCE, so each ladder is counted over its own population.
     var byFmt={bo3:[],bo5:[]}, untyped=0;
     part.usable.forEach(function(r){ var f=lnFormat(r); if(f) byFmt[f].push(r); else untyped++; });
+
+    // README TAB 5: "Line group narrows the table to one of the four groups."
+    // The narrowing is a VIEW filter over the ladders, not over the matches -
+    // every rate is still computed on the same pool, so switching group cannot
+    // move a figure. That is the point of doing it here rather than in the
+    // partition.
+    var groups = state.lnCat ? LN_GROUPS.filter(function(g){ return g===state.lnCat; }) : LN_GROUPS;
+    var linesShown = 0;
 
     ['bo3','bo5'].forEach(function(fmt){
       var pool=byFmt[fmt];
@@ -28505,11 +28661,16 @@ window.DatabaseTab = (function(){
         if(i) s.style.textAlign='right';
         d.appendChild(s); g.appendChild(d);
       });
-      LN_GROUPS.forEach(function(grp){
-        var gh=el('div','db-rbrow',grp);
+      groups.forEach(function(grp){
+        // README TAB 5 group heading: mono 10px / 700 / 0.16em / uppercase, and
+        // its OWN colour #a9b3c9 - which the token table names "Group heading
+        // (Lines)". `.db-rbrow` is the 600-weight #5b6880 card eyebrow, a
+        // different element that happened to be the same size.
+        var gh=el('div','db-lngrp',esc(grp));
         gh.style.gridColumn='1 / -1'; gh.style.padding='16px 6px 7px';
         g.appendChild(gh);
         (LN_LADDERS[fmt][grp]||[]).forEach(function(spec){
+          linesShown++;
           var label=spec[0], kind=spec[1], arg=spec[2];
           var hit=0, n=0, marg=0, margN=0;
           pool.forEach(function(r){
@@ -28519,13 +28680,45 @@ window.DatabaseTab = (function(){
             if(h2.margin!=null){ marg+=h2.margin; margN++; }
           });
           g.appendChild(el('div','db-rfig',esc(label)));
-          var cell=function(txt, mut){ var d=el('div','db-rfig'+(mut?' mut':''),txt); d.style.textAlign='right'; return d; };
-          g.appendChild(cell(n?n.toLocaleString():DASH, !n));
-          g.appendChild(cell(n?(hit+'–'+(n-hit)):DASH, !n));
+          // A cell whose text IS the dash takes `.dash` (#4b5672, section 5's
+          // "not wired" ink) rather than `.mut` (#8b96b5, the ink a real quiet
+          // figure uses). Keyed on the text, not on a second flag, so the two
+          // can never disagree.
+          var cell=function(txt, mut){
+            var isDash = txt===DASH;
+            var d=el('div','db-rfig'+(isDash?' dash':(mut?' mut':'')),txt);
+            d.style.textAlign='right'; return d;
+          };
+          // Matches: README TAB 5 puts this cell at #5b6880, not at the table's
+          // primary ink - it is the denominator, not a headline. The small-sample
+          // mark rides WITH it ("small n" under 10, "n < 5" under 5) so the count
+          // and the warning about the count cannot be read apart.
+          var mc=cell(n?n.toLocaleString():DASH, false);
+          if(n){
+            mc.className='db-rfig lnmatch';
+            if(n<10) mc.innerHTML += '<i class="db-lnsmall">'+(n<5?'n &lt; 5':'small n')+'</i>';
+          }
+          g.appendChild(mc);
+          g.appendChild(cell(n?(hit+'–'+(n-hit)):DASH, true));
           // THE RATE GATE, from the spec: n = 0 dashes, n < 5 dashes. A rate over
           // four matches is not a rate, and printing one would be the plausible
           // default the whole store refuses. A dash is the honest cell.
-          g.appendChild(cell(n>=5 ? (hit/n*100).toFixed(1)+'%' : DASH, n<5));
+          //
+          // README: "The rate pill is the focal cell." n < 10 prints the rate in
+          // #8b96b5 with no wash; a FULL-SAMPLE rate (n >= 10) at 65% or better
+          // is the highlight. The 65% test is applied only on the full-sample
+          // branch, so a 100% off 6 matches cannot wear the highlight - that
+          // combination is exactly the one a coverage table must not flatter.
+          if(n>=5){
+            var rate=hit/n*100;
+            var strong = n>=10 && rate>=65;
+            var rc=el('div','db-rfig db-lnrate'+(n<10?' low':'')+(strong?' strong':''));
+            rc.style.textAlign='right';
+            rc.innerHTML='<b>'+rate.toFixed(1)+'%</b>';
+            g.appendChild(rc);
+          } else {
+            g.appendChild(cell(DASH, false));
+          }
           g.appendChild(cell(DASH, true));   // Field       - needs the field pass
           g.appendChild(cell(DASH, true));   // Vs field    - needs the field pass
           g.appendChild(cell(DASH, true));   // Ranking     - needs the field pass
@@ -28541,6 +28734,28 @@ window.DatabaseTab = (function(){
         (untyped===1?'it is':'they are')+' in no ladder. Counted here rather than folded into one.');
       host.appendChild(u);
     }
+
+    host.appendChild(lnFoot());
+
+    // README TAB 5: the eyebrow is "Line coverage · {n} lines". `n` is the
+    // number of lines ON SCREEN, so it tracks the Line group control - the
+    // eyebrow and the table have to describe the same thing or the count is
+    // furniture. Counted while painting rather than derived from LN_LADDERS, so
+    // a ladder that does not render cannot still be counted.
+    if(brow) brow.textContent='Line coverage · '+linesShown.toLocaleString()+(linesShown===1?' line':' lines');
+  }
+
+  // The README's foot note, at its own 11.5px / 1.6. Two sentences that are both
+  // permanent: the METHOD (first, the bundle's own wording) and the EXCLUSIONS
+  // RULING (second, unchanged - the founder holds this text and its counts).
+  // Neither is a "not wired yet" statement, which is why neither belongs in the
+  // section 5 marker above the table.
+  function lnFoot(){
+    var f=el('div','db-lnfoot');
+    f.innerHTML =
+      esc('Lines are derived from set scores, not from settled markets — these are coverage rates, not results against a priced line. Bo3 and Bo5 are counted separately because the same line means a different bet in each.') +
+      '<br>' + esc('Rates are computed only on finished, standard-format matches. Retirements, walkovers and NextGen are excluded, so this is not a career rate.');
+    return f;
   }
 
   function renderChrome(){
