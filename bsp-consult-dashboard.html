@@ -13012,87 +13012,6 @@ function formShortDate(d){
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(d || ''));
   return m ? `${m[3]}.${m[2]}` : (d || '');
 }
-// One player's set-by-set games. `side` picks which half of each set to read
-// ('p' = tracked player, 'o' = opponent); the other side decides the weight, so
-// the winner of each set is the bright/bold one on both rows. A set that went to
-// a tiebreak superscripts that player's own tiebreak points (7⁷ / 6⁴).
-// Number of real game cells a match can render — only matches with a per-set
-// list draw cells (a result-only/walkover row draws none). The panel's max of
-// this is what every row pads its game run up to.
-function formGameCols(m){ return Array.isArray(m.sets) ? m.sets.length : 0; }
-function formGamesHtml(sets, side, maxCols){
-  const other = side === 'p' ? 'o' : 'p';
-  const cells = (sets || []).map(s => {
-    const mine = s[side], theirs = s[other];
-    // Per-SET winner (spec §3): a player who lost the match still shows their
-    // won sets in the bright colour, so this is evaluated set by set.
-    const won = Number(mine) > Number(theirs);
-    const tb = s[side + 'Tb'];
-    const sup = tb != null ? `<sup>${escapeHtml(String(tb))}</sup>` : '';
-    return `<span class="fsm-g${won ? ' w' : ''}">${escapeHtml(String(mine))}${sup}</span>`;
-  });
-  // Pad to the list's max set count with empty transparent cells so the sets
-  // number, divider and first game score hold one fixed x down the whole list.
-  const pad = Math.max(0, (maxCols || 0) - cells.length);
-  for (let i = 0; i < pad; i++) cells.push('<span class="fsm-g pad"></span>');
-  return cells.join('');
-}
-// A recent-match block, Flashscore-style: opponent on top, the tracked player
-// below, date on the left and a W/L badge (from the tracked player's view) on
-// the right. Both player rows share one grid, so the sets-won column and the
-// divider line up down the whole list and the set scores all start at the same
-// x — only their count changes.
-// `sets` comes from the pipeline (formSetsFromFixture) and is tracked-oriented.
-// It's absent on walkovers and on any match built before that field existed, so
-// the set columns simply don't render there rather than blocking the row.
-function formRowHtml(match, idPrefix, playerKey, playerName, maxCols){
-  const sets = Array.isArray(match.sets) ? match.sets : null;
-  // Sets won: derived from the real set list when present, else from `result`,
-  // which the pipeline already flips to read "tracked - opponent".
-  let pSets, oSets;
-  if (sets) {
-    pSets = sets.filter(s => s.p > s.o).length;
-    oSets = sets.filter(s => s.o > s.p).length;
-  } else {
-    const parts = String(match.result || '').split('-').map(x => parseInt(x.trim(), 10));
-    pSets = Number.isFinite(parts[0]) ? parts[0] : '–';
-    oSets = Number.isFinite(parts[1]) ? parts[1] : '–';
-  }
-  const oppName = surnameFirstName(match.opponent) || '—';
-  const note = match.retired ? 'ret.' : (match.walkover ? 'w/o' : '');
-  // Qualifying-round matches are shown in Recent Form and counted in the form %
-  // (founder ruling, TEN-8) but flagged 'Q' so they read distinctly from the
-  // main draw.
-  const qBadge = match.qualifying ? `<span class="fsm-q" title="Qualifying-round match">Q</span>` : '';
-  const oppWon = oSets > pSets, selfWon = pSets > oSets;
-  // Three name colours (spec §3): match winner at 700 — #e7e9ee for the tracked
-  // player (`w`), #dfe3ea for the opponent (`wo`) — loser at 400 #8b94a8 (base).
-  // No avatars: the two-line grid starts at the name.
-  const nameCell = (name, cls) =>
-    `<span class="fsm-name${cls}" title="${escapeHtml(name)}">${escapeHtml(name)}</span>`;
-  const setsCell = (setsWon, isWinner) =>
-    `<span class="fsm-sets${isWinner ? ' w' : ''}">${setsWon}</span>`;
-  const gamesCell = side => `<span class="fsm-games">${formGamesHtml(sets, side, maxCols)}</span>`;
-
-  return `
-    <div class="fsm" id="formRow-${idPrefix}" onclick="toggleFormPanel('${idPrefix}')">
-      <span class="fsm-date">${escapeHtml(formShortDate(match.date))}${note ? `<span class="fsm-note">${note}</span>` : ''}${qBadge}</span>
-      <span class="fsm-players">
-        ${nameCell(oppName, oppWon ? ' wo' : '')}
-        ${setsCell(oSets, oppWon)}
-        <span class="fsm-div"></span>
-        ${gamesCell('o')}
-        ${nameCell(playerName, selfWon ? ' w' : '')}
-        ${setsCell(pSets, selfWon)}
-        ${gamesCell('p')}
-      </span>
-      <span class="fsm-badge ${match.won ? 'win' : 'loss'}">${match.won ? 'W' : 'L'}</span>
-      <span class="fsm-chev" id="formChev-${idPrefix}">▸</span>
-    </div>
-    ${formPanelHtml(match, idPrefix, playerKey, playerName)}
-  `;
-}
-
 // THE one diverging stat bar, shared by every match-detail surface: the modal
 // Match Stats sheet (msheetRowHtml) and all seven form-panel mounts
 // (formPanelStatRow). Fixed centre, total-normalised — each half is exactly
@@ -13408,160 +13327,8 @@ function toggleFormPanel(idPrefix){
   formOpenPanel[colPrefix] = isOpen ? null : idPrefix;
   if (!isOpen) ensureFormPanelTabs(idPrefix);   // opening: decide this row's tabs
 }
-function showFormMore(colPrefix){
-  document.querySelectorAll('.aform-extra-' + colPrefix).forEach(el => { el.style.display = ''; });
-  const link = document.getElementById('formShowMore-' + colPrefix);
-  if (link) link.style.display = 'none';
-}
-// Recent matches are grouped under the tournament they were played at
-// rather than listed flat. Reuses ppGroupMatchesByTournament (the same splitter
-// the profile card uses), so an event played twice in the window shows as two
-// editions rather than one merged block.
-//
-// Progressive disclosure is applied per group, not per row (spec §5): whole
-// tournaments stay together, and the first FORM_VISIBLE_GROUPS tournament groups
-// are shown up front — the "Show N more" link appears only when there are MORE
-// than that many groups' worth of rows. Anything a group can't attribute to a
-// tournament (no name or no date) is dropped by the grouper, so those rows are
-// appended ungrouped (counting as one more group) rather than disappearing.
-const FORM_VISIBLE_GROUPS = 5;
-// Must stay in lockstep with RECENT_FORM_PCT_WINDOW in bsp-pipeline.js: that is
-// the window the form score on the card is computed over, and this is the
-// window the hero's W–L and pills beside it are drawn from.
-const FORM_SCORE_WINDOW = 10;
-function buildFormGroupedList(matches, colPrefix, playerKey, name, keyspace, collapse, maxCols){
-  const groups = ppGroupMatchesByTournament(matches);
-  const grouped = new Set(groups.flatMap(g => g.matches));
-  const ungrouped = matches.filter(m => !grouped.has(m));
-
-  let groupNo = 0;
-  let idx = 0;
-  const blocks = groups.map(g => {
-    const hidden = collapse && groupNo >= FORM_VISIBLE_GROUPS;
-    groupNo++;
-    const surf = String(g.surface || '').toLowerCase();
-    const surfTag = g.surface
-      ? `<span class="surfacetag ${surf}" style="flex:none;">${g.surface}</span>`
-      : '';
-    // Name + surface + the player's record at that event. No date range: every
-    // row underneath already carries its own date, so the range only repeated it.
-    // Header shows the cleaned, tier-prefixed name; the Q chip stays per-row
-    // (formRowHtml already renders .fsm-q), so no `qualifying` is passed here.
-    const header = `<div class="aform-tgroup">
-        <span class="tname">${fmtTournament({ tournament: g.label, tier: g.tier })}</span>${surfTag}
-        <span class="tspacer"></span>
-        <span class="trec">${g.won}–${g.lost}</span>
-      </div>`;
-    const rows = g.matches.map(m => formRowHtml(m, `${colPrefix}${keyspace}${idx++}`, playerKey, name, maxCols)).join('');
-    return { hidden, count: g.matches.length, html: header + rows };
-  });
-
-  if (ungrouped.length){
-    const hidden = collapse && groupNo >= FORM_VISIBLE_GROUPS;
-    groupNo++;
-    const header = `<div class="aform-tgroup">
-        <span class="tname" style="color:#5b6880;font-weight:600;">Other matches</span>
-        <span class="tspacer"></span>
-        <span class="trec">${ungrouped.filter(m => m.won).length}–${ungrouped.filter(m => !m.won).length}</span>
-      </div>`;
-    const rows = ungrouped.map(m => formRowHtml(m, `${colPrefix}${keyspace}${idx++}`, playerKey, name, maxCols)).join('');
-    blocks.push({ hidden, count: ungrouped.length, html: header + rows });
-  }
-
-  const hiddenCount = blocks.filter(b => b.hidden).reduce((n, b) => n + b.count, 0);
-  const html = blocks.map(b => b.hidden
-    ? `<div class="aform-extra-${colPrefix}" style="display:none;">${b.html}</div>`
-    : b.html).join('');
-  return { html, hiddenCount };
-}
-
-function buildFormPlayerColumn(name, pct, allMatches, currentSurface, colPrefix, playerKey){
-  if (!allMatches || allMatches.length === 0) {
-    return `
-      <div class="aform-col">
-        <div class="aform-head"><span class="aform-name">${name}</span></div>
-        <div class="acomingsoon" style="padding:16px 0;">No recent match history on record.</div>
-      </div>
-    `;
-  }
-  // The hero (form score, W–L, pills) is "how is he playing RIGHT NOW", so it
-  // stays on the last FORM_SCORE_WINDOW matches no matter how deep the list
-  // below goes — and that window has to match the one the pipeline computes
-  // `pct` over (RECENT_FORM_PCT_WINDOW), or the score and the W–L beside it
-  // would describe different sets of matches. The list is the full shard.
-  const scored = allMatches.slice(0, FORM_SCORE_WINDOW);
-  // Most-recent-first: leftmost pill (i=0) at full opacity, older pills faded
-  // toward the right so "← most recent" reads as a direction (spec §1).
-  const pillsHtml = scored.map((m, i) => {
-    const op = Math.max(0.4, 1 - i * 0.06).toFixed(2);
-    return `<span class="aform-pill ${m.won ? 'win' : 'loss'}" style="opacity:${op};"></span>`;
-  }).join('');
-  // Per-panel max set count: each column is its own card, so the game cells are
-  // padded to THIS list's longest match (report item 3 — per-panel, not shared).
-  const maxCols = allMatches.reduce((mx, m) => Math.max(mx, formGameCols(m)), 0);
-  const allGrouped = buildFormGroupedList(allMatches, colPrefix, playerKey, name, 'main', true, maxCols);
-  const visibleRows = allGrouped.html;
-  const showMoreHtml = allGrouped.hiddenCount
-    ? `<div class="aform-showmore" id="formShowMore-${colPrefix}" onclick="showFormMore('${colPrefix}')">Show ${allGrouped.hiddenCount} more match${allGrouped.hiddenCount === 1 ? '' : 'es'}</div>`
-    : '';
-
-  const isP1 = colPrefix === 'p1';
-  const playerColor = isP1 ? ANALYSIS_P1_COLOR : ANALYSIS_P2_COLOR;
-  const rgba = isP1 ? ANALYSIS_P1_RGBA : ANALYSIS_P2_RGBA;
-  const scoreColor = isP1 ? '#eaf0ff' : '#fff2e6';
-  const captionColor = '#5b6880';
-  const recordColor = isP1 ? '#cfd6e6' : '#e6d3c2';
-  const recordSubColor = '#5b6880';
-  const wins = scored.filter(x => x.won).length;
-  const losses = scored.length - wins;
-
-  return `
-    <div class="aform-col">
-      <div class="aform-hero" style="border-color:${rgba(0.28)}; background:linear-gradient(135deg,${rgba(0.14)},${rgba(0.02)});">
-        <div class="aform-head">
-          <span class="aform-dot" style="background:${playerColor};"></span>
-          <span class="aform-name">${name}</span>
-        </div>
-        <div class="aform-scorerow">
-          <div>
-            <div class="aform-score" style="color:${scoreColor};">${pct}%</div>
-            <div class="aform-caption" style="color:${captionColor};">Last 10 win rate</div>
-          </div>
-          <div>
-            <div class="aform-record" style="color:${recordColor};">${wins}–${losses}</div>
-            <div class="aform-recordsub" style="color:${recordSubColor};">last ${scored.length} · W–L</div>
-          </div>
-        </div>
-        <div class="aform-pills">${pillsHtml}</div>
-        <div class="aform-pills-cap">← most recent</div>
-      </div>
-      <div class="aform-filterhead">
-        <span class="aform-filterlbl">Recent matches</span>
-        <span class="aform-filtercount">${allMatches.length} on record</span>
-      </div>
-      <div class="aform-list" id="formList-all-${colPrefix}">${visibleRows}${showMoreHtml}</div>
-    </div>
-  `;
-}
-function buildFormSection(m){
-  // The rows arrive from a lazy per-player shard, so "not loaded yet" and "no
-  // data" are different answers and must not share a message — otherwise every
-  // modal would flash "not connected" before its rows land.
-  if (!m._formLoaded) {
-    return `<div class="acomingsoon">Loading recent form…</div>`;
-  }
-  if (!m.p1RecentFormMatches && !m.p2RecentFormMatches) {
-    return `<div class="acomingsoon">Recent-form data needs the stats source — not connected for this match.</div>`;
-  }
-  const callout = `<div class="aform-callout"><span class="aform-callout-icon">${BSP_ICONS.info}</span><span>Form reflects who's playing better right now — the score, W–L and pills cover each player's last ${FORM_SCORE_WINDOW} completed matches (fewer if less history exists). The list below goes back further, most recent first.</span></div>`;
-  return `
-    ${callout}
-    <div class="yr-grid">
-      ${buildFormPlayerColumn(m.p1, m.p1RecentForm, m.p1RecentFormMatches, m.surface, 'p1', m.p1Key)}
-      ${buildFormPlayerColumn(m.p2, m.p2RecentForm, m.p2RecentFormMatches, m.surface, 'p2', m.p2Key)}
-    </div>
-  `;
-}
+// TEN-263: the Form tab is rebuilt from the design handoff — see fhBuildForm.
+function buildFormSection(m){ return fhBuildForm(m); }
 
 /* ---------- H2H TAB ---------- */
 function h2hRoundLabel(round){
@@ -13569,162 +13336,1091 @@ function h2hRoundLabel(round){
   const parts = round.split(' - ');
   return parts.length > 1 ? parts[parts.length - 1].trim() : round.trim();
 }
-// One past meeting. `opts` carries what the row needs to expand — omit it (or
-// pass canOpen:false) and the row renders exactly as it always has, minus a
-// chevron. A meeting only becomes expandable once the availability indexes say
-// this event key actually has a box score or a point log on file: a chevron
-// that opens an empty panel is a worse answer than no chevron.
-function h2hRowHtml(match, p1, p2, opts){
-  const surfaceTag = match.surface ? `<span class="surfacetag ${match.surface}">${match.surface.charAt(0).toUpperCase()+match.surface.slice(1)}</span>` : '';
-  const roundText = h2hRoundLabel(match.round);
-  const winner = match.p1Won ? p1 : p2;
-  const loser = match.p1Won ? p2 : p1;
-  // Qualifying meetings count in the H2H (Flashscore rule) but their raw round
-  // string reads like a main-draw round, so tag it 'Q' — same badge/meaning as
-  // the Recent Form tab uses for qualifying matches.
-  const qTag = match.qualifying ? ' <span class="fsm-q">Q</span>' : '';
-  const cells = `
-      <span class="date">${match.date || 'Date unknown'}</span>
-      <span class="result"><span class="winner">${winner}</span> def. ${loser}</span>
-      <span class="meta">${match.tournament || 'Tournament unknown'}${roundText ? ' · ' + roundText : ''}${qTag}</span>
-      <span class="score">${match.result || '—'}</span>
-      ${surfaceTag}`;
-  if (!opts || !opts.canOpen) {
-    return `<div class="ah2h-row">${cells}<span></span></div>`;
-  }
-  const idPrefix = opts.idPrefix;
-  // The panel is written against a form-row shape: own player + named opponent,
-  // and an eventKey it can join its shards from. The H2H list is always read
-  // from p1's side (blue, left) so the sheet's orientation matches every other
-  // surface in this modal rather than flipping row to row with the winner.
-  const asFormRow = {
-    date: match.date,
-    tournament: match.tournament,
-    round: roundText,
-    result: match.result,
-    won: !!match.p1Won,
-    opponent: p2,
-    eventKey: match.eventKey,
-  };
-  return `
-    <div class="ah2h-row ah2h-open" id="formRow-${idPrefix}" onclick="toggleFormPanel('${idPrefix}')">
-      ${cells}
-      <span class="ah2h-chev" id="formChev-${idPrefix}">▸</span>
-    </div>
-    ${formPanelHtml(asFormRow, idPrefix, opts.playerKey, p1)}
-  `;
+// TEN-263: the H2H tab is rebuilt from the design handoff — see fhBuildH2H.
+function buildH2HSection(m){ return fhBuildH2H(m); }
+
+/* =====================================================================
+   TEN-263 · Match analysis → Form + H2H tabs (design_handoff_match_analysis,
+   signed off 2026-09-23). Rebuilt from `Match Analysis.dc.html`
+   (analysis.isForm / analysis.isH2H), `Form Match Row v3 LOCKED`,
+   `H2H Match Row LOCKED` and `Match Detail`. Every inline style below is the
+   export's value, read from the file — change them only against the export.
+
+   ONE implementation each, shared by both tabs (brief "what's shared"):
+     · fhSegTrack / fhWlChip / fhStickyHeadHtml  — segmented control, W/L chip, sticky list header
+     · fhHotLinesTable                           — the Hot lines component
+     · fhOpenSheet / fhSheetHtml                  — the Match stats sheet (header 2a + the
+                                                    existing match-detail body, formPanelHtml)
+
+   DATA (TEN-263 data checks, reported on the ticket): everything that is not
+   confirmed renders the em dash in #4b5672 — never a zero, never a default.
+   ===================================================================== */
+
+// ---- flagged rules: the founder's calls. One constant / function each, so a
+//      ruling is a one-line change. Built as designed until he rules. ----
+const FH_HOT_MIN_ELIGIBLE = 3;            // (a) a line needs >= this many eligible matches to show
+function fhHotLineRank(x, y){             // (a) cover RATE desc, ties by sample size, then name
+  return (y.r - x.r) || (y.n - x.n) || x.name.localeCompare(y.name);
+}
+const FH_PRICE_AVG_MARGIN_REMOVED = true; // (b) Price range average: margin removed (Lowest/Highest/Today keep it)
+const FH_PRICE_AVG_LABEL = FH_PRICE_AVG_MARGIN_REMOVED ? 'avg \u00b7 margin removed' : 'avg \u00b7 margin included';
+const FH_H2H_SET1_MIRROR = true;          // (c) H2H hot lines list BOTH "A wins set 1" and "B wins set 1"
+const FH_H2H_RET_COUNTS = true;           // (e) a retirement counts in the H2H record (the design counts it)
+// Data check 4: no dated ("at the time of the match") Elo snapshots exist for
+// these windows, so the "No number" variant of both rows ships and every Elo
+// slot labelled "at the time" is a dash. Never substitute current Elo.
+const FH_ELO_AT_TIME = false;
+
+const FH_AC = '#5b9bff', FH_BC = '#e7e9ee', FH_B2 = '#b4bccf', FH_DASH = '#4b5672';
+// Surface dots. Grass = #2ab8a0, the token the live site already uses for grass on
+// the match cards (--mc-grass) and in this modal's Form/H2H lists (brief item d).
+const FH_SURF = { Hard: '#4db8ff', Clay: '#e8a84e', Grass: '#2ab8a0' };
+const FH_MONO = "font-family:'IBM Plex Mono',monospace;";
+const FH_THIN = 5;                         // design THIN: fewer than 5 matches → no ratios
+const FH_DASHC = '—';
+
+let _fh = null;                            // per-open-analysis UI state (README "State")
+
+function fhEsc(s){ return escapeHtml(s == null ? '' : String(s)); }
+function fhSurfName(s){
+  const k = String(s || '').toLowerCase();
+  return k.startsWith('hard') ? 'Hard' : k.startsWith('clay') ? 'Clay' : k.startsWith('grass') ? 'Grass' : null;
+}
+function fhHexA(hex, a){ const n = String(hex).replace('#', ''); return `rgba(${parseInt(n.slice(0, 2), 16)},${parseInt(n.slice(2, 4), 16)},${parseInt(n.slice(4, 6), 16)},${a})`; }
+function fhMedian(arr){ const s = arr.slice().sort((x, y) => x - y); return s.length ? (s.length % 2 ? s[(s.length - 1) / 2] : (s[s.length / 2 - 1] + s[s.length / 2]) / 2) : null; }
+// Two-decimal odd, rounded half-up on the decimal value (1.585 → 1.59, 1.305 → 1.31).
+function fhOdd(v){ return (Math.round(v * 100 + 1e-7) / 100).toFixed(2); }
+function fhSigned(v, dp, unit){ const r = Number(v.toFixed(dp)); return (r > 0 ? '+' : r < 0 ? '−' : '') + Math.abs(r).toFixed(dp) + (unit || ''); }
+function fhDayNum(iso){ const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || '')); return m ? Date.UTC(+m[1], +m[2] - 1, +m[3]) / 86400000 : null; }
+function fhDDMM(iso){ const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || '')); return m ? `${m[3]}.${m[2]}` : FH_DASHC; }
+const FH_MONS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+function fhLongDate(iso){ const m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || '')); return m ? `${m[3]} ${FH_MONS[+m[2] - 1]} ${m[1]}` : FH_DASHC; }
+// "J. Sinner" → "Sinner J." (the export's row name order).
+function fhOppFmt(name){ const s = surnameFirstName(name); return s || FH_DASHC; }
+function fhSurname(name){ return psShortName(name) || String(name || ''); }
+function fhIni(name){ return formIni(name); }
+// Surname key for joining the priced archive ("Galan D.E." / "D. E. Galan" / "Daniel Elahi Galan").
+// An initial token is short and dot-terminated ("D.", "J-L.", "Zh.", "D.E.") —
+// the same test build-odds-performance.js uses on both sides of the join.
+function fhIsInitial(tok){ return /\.$/.test(tok) && tok.replace(/[^A-Za-z]/g, '').length <= 3; }
+function fhNameKey(name){
+  const toks = String(name || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().split(/\s+/).filter(Boolean);
+  while (toks.length > 1 && fhIsInitial(toks[0])) toks.shift();                  // "J-L. Struff", "D. E. Galan"
+  while (toks.length > 1 && fhIsInitial(toks[toks.length - 1])) toks.pop();      // "Struff J.L.", "Zhang Zh."
+  return toks.join('').toLowerCase().replace(/[^a-z]/g, '');
+}
+// Ids used inside inline onclick handlers: keep them to [A-Za-z0-9_] so no
+// quote in an opponent's name can break the handler string.
+function fhSafeId(s){ return String(s).replace(/[^A-Za-z0-9_]/g, '_'); }
+function fhTournClean(raw){ return ppCleanTournamentName(raw) || String(raw || ''); }
+// Tournament code for the hot-line column headers (export TCODE / SHORT maps).
+const FH_TCODE = { 'washington': 'WAS', 'wimbledon': 'WIM', 'halle': 'HAL', "queen's": 'QUE', "queen's club": 'QUE', 'london': 'QUE',
+  'roland garros': 'RG', 'french open': 'RG', 'rome': 'ROM', 'madrid': 'MAD', 'miami': 'MIA', 'indian wells': 'IW', 'monte carlo': 'MC',
+  'barcelona': 'BAR', 'munich': 'MUN', 'acapulco': 'ACA', 'doha': 'DOH', 'rotterdam': 'ROT', 'australian open': 'AO', 'dubai': 'DUB',
+  'paris': 'PAR', 'umag': 'UMA', 'us open': 'USO', 'shanghai': 'SHA', 'atp finals': 'FIN', 'tour finals': 'FIN', 'turin': 'FIN',
+  'cincinnati': 'CIN', 'canada': 'CAN', 'montreal': 'CAN', 'toronto': 'CAN', 'beijing': 'BEI', 'tokyo': 'TOK', 'vienna': 'VIE', 'basel': 'BAS' };
+function fhTournCode(name){ const k = psNormTour(fhTournClean(name)); return FH_TCODE[k] || fhTournClean(name).replace(/[^A-Za-z]/g, '').slice(0, 3).toUpperCase() || FH_DASHC; }
+
+// ---- shared primitive 1: segmented control ----
+function fhSegStyle(on){ return { weight: on ? 700 : 600, color: on ? '#e7e9ee' : '#5b6880', bg: on ? 'rgba(91,155,255,0.16)' : 'transparent', bd: on ? 'rgba(91,155,255,0.22)' : 'transparent' }; }
+// items: [{label, on, onclick, count?, off?}]. `count` renders the H2H meeting count;
+// `off` is a greyed, non-clickable segment (a surface with 0 meetings).
+function fhSegTrack(items, trackExtra){
+  const segs = items.map(it => {
+    const s = fhSegStyle(!!it.on && !it.off);
+    const off = !!it.off;
+    const color = off ? '#3a4256' : s.color;
+    const cnt = it.count != null ? `<span style="${FH_MONO} font-size:10px; color:${off ? '#3a4256' : '#5b6880'};">${fhEsc(it.count)}</span>` : '';
+    const layout = it.count != null ? 'display:inline-flex; align-items:baseline; gap:6px; ' : '';
+    return `<span class="${off ? 'fh-segoff' : 'seg'}"${off ? '' : ` onclick="${it.onclick}"`} style="${layout}padding:5px 12px; border-radius:7px; font-size:11px; font-weight:${off ? 600 : s.weight}; color:${color}; background:${off ? 'transparent' : s.bg}; border:1px solid ${off ? 'transparent' : s.bd}; cursor:${off ? 'default' : 'pointer'}; white-space:nowrap;">${fhEsc(it.label)}${cnt}</span>`;
+  }).join('');
+  return `<div style="display:inline-flex; gap:4px; background:#06070a; border:1px solid rgba(255,255,255,0.09); border-radius:9px; padding:3px;${trackExtra || ''}">${segs}</div>`;
+}
+// ---- shared primitive 2: the W/L chip (keeps green/red on BOTH tabs) ----
+function fhWlChip(won){
+  const c = won ? '#3dd68c' : '#e0616f';
+  return `<span style="width:20px; height:20px; border-radius:5px; background:${fhHexA(c, 0.14)}; color:${c}; ${FH_MONO} font-size:10.5px; font-weight:700; display:flex; align-items:center; justify-content:center;">${won ? 'W' : 'L'}</span>`;
+}
+// ---- shared primitive 3: the sticky list header ----
+function fhStickyHeadHtml(cols, labels, centred){
+  const cap = `${FH_MONO} font-size:8.5px; font-weight:600; letter-spacing:0.13em; text-transform:uppercase; color:#8b96b5;`;
+  const cells = labels.map((l, i) => i === 0
+    ? `<span style="grid-column:1 / 4; ${cap}">${fhEsc(l)}</span>`
+    : `<span style="${cap}${centred ? ' text-align:center;' : (i >= labels.length - 2 ? ' text-align:right;' : '')}">${fhEsc(l)}</span>`).join('');
+  return `<div style="position:sticky; top:0; z-index:5; display:grid; grid-template-columns:${cols}; gap:9px; align-items:center; padding:9px 14px; background:#0d111b; border-bottom:1px solid rgba(255,255,255,0.09);">${cells}</div>`;
 }
 
-// Turns the static meeting list into expandable rows once the two availability
-// indexes have loaded. Runs after buildH2HSection's HTML is already in the DOM
-// (innerHTML is assigned synchronously on return, this resolves a task later).
-//
-// The token guard is the same one the Overview drill-down uses: opening a
-// different match while these indexes are in flight must not let a stale
-// response repaint the new match's list.
-let _h2hToken = 0;
-function upgradeH2HRows(m, token){
-  const matchesList = Array.isArray(m.h2h && m.h2h.matches) ? m.h2h.matches : [];
-  if (!matchesList.length) return;
-  Promise.all([loadMatchStatsIndex(), loadPbpIndex()]).then(([msIdx, pbpIdx]) => {
-    const list = document.getElementById('ah2hList');
-    if (!list || list.dataset.token !== String(token)) return;
-    let openable = 0;
-    const rows = matchesList.map((x, i) => {
-      const ek = String(x.eventKey || '');
-      const canOpen = !!ek && (msIdx.has(ek) || pbpIdx.has(ek));
-      if (canOpen) openable++;
-      // Suffix must stay `h2h<i>` — toggleFormPanel strips it to derive the
-      // accordion group, so the whole list shares one group and opening a
-      // second meeting closes the first.
-      return h2hRowHtml(x, m.p1, m.p2, { canOpen, idPrefix: `ah2hh2h${i}`, playerKey: m.p1Key });
-    }).join('');
-    list.innerHTML = rows;
-    const note = document.getElementById('ah2hNote');
-    if (note) {
-      note.innerHTML = openable === matchesList.length
-        ? `All ${matchesList.length} meeting${matchesList.length === 1 ? '' : 's'} expand to the full box score and point log.`
-        : (openable === 0
-          ? `These meetings predate our provider's per-match coverage, so none carry a stat breakdown or point log.`
-          : `${openable} of ${matchesList.length} meetings expand to a stat breakdown or point log — the remaining ${matchesList.length - openable} predate our provider's per-match coverage.`);
+// =====================================================================
+// DATA LAYER — normalised match rows, one shape for both tabs.
+// =====================================================================
+const FH_SLAMS = new Set(['australian open', 'roland garros', 'french open', 'wimbledon', 'us open']);
+// Best-of: a player who reached 3 sets is Bo5; otherwise a Grand Slam main-draw
+// tour match is Bo5; everything else Bo3. (Slam qualifying is Bo3.)
+function fhBestOf(r){
+  if (r.pS >= 3 || r.oS >= 3) return 5;
+  const slam = FH_SLAMS.has(psNormTour(r.tourn));
+  const tour = r.tier == null ? true : /^atp$/i.test(String(r.tier));
+  return slam && tour && !r.qualifying ? 5 : 3;
+}
+// Per-set games, player-oriented: [[own, opp, loserTbPoints|null], ...] or null.
+function fhSetsFrom(sets){
+  if (!Array.isArray(sets) || !sets.length) return null;
+  const out = [];
+  for (const s of sets){
+    const a = Number(s.p), b = Number(s.o);
+    if (!Number.isFinite(a) || !Number.isFinite(b)) return null;
+    let tb = null;
+    if (Math.max(a, b) === 7 && Math.min(a, b) === 6){
+      const lt = a < b ? s.pTb : s.oTb;
+      if (lt != null && Number.isFinite(Number(lt))) tb = Number(lt);
     }
-  });
-}
-function buildH2HSection(m){
-  const h2h = m.h2h;
-  if (!h2h) {
-    return `<div class="acomingsoon">No head-to-head data found for this pairing (data source connected, but no match record on file).</div>`;
+    out.push([a, b, tb]);
   }
-  const totalMatches = h2h.p1Wins + h2h.p2Wins;
-
-  // Export (state modal-h2h) bolds both player names AND the whole leading
-  // clause, all in the neutral bright — the leader is NOT coloured blue here.
-  const leaderText = h2h.p1Wins === h2h.p2Wins
-    ? `tied at ${h2h.record}`
-    : `with <b class="lead">${h2h.p1Wins > h2h.p2Wins ? m.p1 : m.p2} leading ${h2h.record}</b>`;
-  const callout = `
-    <div class="ah2h-callout">
-      <b>${m.p1}</b> and <b>${m.p2}</b> have met ${totalMatches} time${totalMatches === 1 ? '' : 's'} on record, ${leaderText}.
-    </div>
-  `;
-
-  const matchesList = Array.isArray(h2h.matches) ? h2h.matches : [];
-  const surfaceMatches = matchesList.filter(x => x.surface === m.surface);
-  const surfaceWins = surfaceMatches.filter(x => x.p1Won).length;
-
-  // Sets record: every meeting's result is a single "a - b" set tally, oriented
-  // p1 - p2 (verified across the live board). Sum both columns; a result that
-  // doesn't parse is skipped rather than guessed.
-  let p1Sets = 0, p2Sets = 0, setsRows = 0;
-  matchesList.forEach(x => {
-    const sm = /^\s*(\d+)\s*-\s*(\d+)\s*$/.exec(String(x.result || ''));
-    if (!sm) return;
-    p1Sets += +sm[1]; p2Sets += +sm[2]; setsRows++;
-  });
-
-  // Export card row is exactly three: Overall record / On {surface} / Sets
-  // record. (Matches-played and Last-3 were pre-export-parity build artifacts;
-  // match count is already in the intro sentence above.)
-  const tiles = `
-    <div class="ah2h-tiles">
-      <div class="ah2h-tile">
-        <div class="lbl">Overall record</div>
-        <div class="val">${h2h.record}</div>
-        <div class="sub">${m.p1} — ${m.p2}</div>
-      </div>
-      <div class="ah2h-tile">
-        <div class="lbl">On ${m.surface} (today's surface)</div>
-        <div class="val">${surfaceMatches.length ? `${surfaceWins}-${surfaceMatches.length - surfaceWins}` : '—'}</div>
-        <div class="sub">${surfaceMatches.length} meeting${surfaceMatches.length === 1 ? '' : 's'} on record</div>
-      </div>
-      <div class="ah2h-tile">
-        <div class="lbl">Sets record</div>
-        <div class="val">${setsRows ? `${p1Sets}-${p2Sets}` : '—'}</div>
-        <div class="sub">${m.p1} — ${m.p2} · sets won</div>
-      </div>
-    </div>
-  `;
-
-  // Painted static first, then upgraded to expandable rows by upgradeH2HRows
-  // once the availability indexes resolve. Rendering the list twice keeps the
-  // modal's first paint free of a network wait, and means a row never appears
-  // clickable before we know it has anything to show.
-  const token = ++_h2hToken;
-  const historyList = matchesList.length
-    ? `
-      <div class="ah2h-listhead">Full match history</div>
-      <div class="ah2h-list" id="ah2hList" data-token="${token}">${matchesList.map(x => h2hRowHtml(x, m.p1, m.p2)).join('')}</div>
-    `
-    : `<div class="acomingsoon">Overall record is on file, but the individual match-by-match history isn't available for this pairing.</div>`;
-
-  const cta = matchesList.length
-    ? `<div class="ah2h-cta" id="ah2hNote">Checking which meetings have a stat breakdown on file…</div>`
-    : '';
-
-  if (matchesList.length) upgradeH2HRows(m, token);
-
-  return `${callout}${tiles}${historyList}${cta}`;
+  return out;
 }
+// Round code for the Rd column. A qualifying round's feed label reads like a
+// main-draw round ("Final" = the qualifying final), so it prints as Q.
+function fhRoundCode(round, qualifying){ if (qualifying) return 'Q'; return psRoundAbbr(h2hRoundLabel(round) || round) || FH_DASHC; }
+function fhSetTxt(x){ return x[0] + '-' + x[1] + (x[2] != null ? '(' + x[2] + ')' : ''); }
+// Completes a normalised row: set counts, completeness, best-of, games.
+function fhFinishRow(r){
+  const res = /^\s*(\d+)\s*-\s*(\d+)\s*$/.exec(String(r.result || ''));
+  const count = () => {
+    if (r.sets){
+      // Only sets that were finished count: a retirement's last set is unfinished.
+      r.done = []; for (const x of r.sets){ if (fhSetDone(x)) r.done.push(x); else break; }
+      if (r.done.length < r.sets.length && !r.wo) r.ret = true;   // unfinished set = play stopped
+      r.pS = r.done.filter(x => x[0] > x[1]).length;
+      r.oS = r.done.filter(x => x[1] > x[0]).length;
+    } else {
+      r.done = null;
+      r.pS = res ? +res[1] : null; r.oS = res ? +res[2] : null;
+    }
+  };
+  count();
+  if (!r.wo && !r.sets && (r.pS == null || r.pS + r.oS === 0)) r.wo = true;   // no set played = walkover
+  r.bo = fhBestOf(r);
+  // A retirement the flags missed: the winner stopped short of the sets a
+  // completed match needs. Completeness comes from the score, never the flag alone.
+  if (!r.wo && !r.ret && r.pS != null && (r.won ? r.pS : r.oS) < (r.bo === 5 ? 3 : 2)){ r.ret = true; count(); }
+  r.complete = !r.ret && !r.wo && r.pS != null;
+  if (r.sets){
+    r.gA = r.sets.reduce((s, x) => s + x[0], 0); r.gB = r.sets.reduce((s, x) => s + x[1], 0);
+    r.tot = r.gA + r.gB; r.diff = r.gA - r.gB;
+    r.tbN = r.done.filter(x => Math.max(x[0], x[1]) === 7 && Math.min(x[0], x[1]) === 6).length;
+  }
+  r.decider = r.complete && r.pS != null && (r.pS + r.oS) === r.bo;
+  return r;
+}
+// A form-shard row (form/{key}.json) → normalised row, own player's side.
+function fhRowFromForm(x, selfKey, selfName, idx){
+  const r = {
+    mid: fhSafeId('f' + idx + '_' + (x.eventKey || x.date + '_' + (x.opponent || ''))),
+    date: x.date, tourn: fhTournClean(x.tournament), tournRaw: x.tournament,
+    surface: fhSurfName(x.surface), round: fhRoundCode(x.round, x.qualifying),
+    opp: x.opponent, oppKey: x.opponentKey, won: !!x.won, result: x.result,
+    sets: fhSetsFrom(x.sets), ret: !!x.retired, wo: !!x.walkover, qualifying: !!x.qualifying, tier: x.tier,
+    ek: x.eventKey, selfKey, selfName, formRow: x, price: null, oppPrice: null, book: null,
+  };
+  return fhFinishRow(r);
+}
+
+// ---- ODDS SOURCE RULE (founder ruling, TEN-263, 2026-09-23) — everywhere on Form + H2H:
+//      finished match → Pinnacle close, else Bet365 close, else a dash (unpriced);
+//      today's match  → Pinnacle current, else Bet365 current, else a dash (no dot).
+//      ONE BOOK PER MATCH: a book counts only if it has BOTH sides; a one-sided book
+//      is missing for that match and we fall through. Never m.bestOdds on these tabs.
+const FH_BOOK_ORDER = ['P', 'B'];                          // the ruling's fallback order
+const FH_BOOK = { P: 'Pinnacle', B: 'Bet365' };
+// The single picker every price on both tabs goes through. `pairs` = { P: [a,b]|null, B: [a,b]|null }.
+function fhPickBook(pairs){
+  for (const k of FH_BOOK_ORDER){
+    const x = pairs && pairs[k];
+    if (x && Number(x[0]) >= 1.01 && Number(x[1]) >= 1.01) return { price: Number(x[0]), oppPrice: Number(x[1]), book: k };
+  }
+  return null;
+}
+// ---- closing prices: match-closes/{key}.json (build-match-closes.js), rebuilt every
+//      pipeline run from the committed tennis-data archive (odds-archive/*.csv, psw/psl
+//      = Pinnacle, b365w/b365l = Bet365). Walkovers carry no price. ----
+const _fhCl = {}, _fhClP = {};
+function fhLoadCloses(key){
+  const k = String(key == null ? '' : key);
+  if (!k) return Promise.resolve(null);
+  if (k in _fhCl) return Promise.resolve(_fhCl[k]);
+  if (_fhClP[k]) return _fhClP[k];
+  _fhClP[k] = fetch(`./match-closes/${encodeURIComponent(k)}.json`, { cache: 'no-cache' })
+    .then(r => r.ok ? r.json() : null)
+    .then(d => {
+      _fhCl[k] = d && Array.isArray(d.rows)
+        ? d.rows.map(x => ({ date: x[0], opp: x[1], won: x[2] === 1,
+            pairs: { P: x[3] != null && x[4] != null ? [x[3], x[4]] : null, B: x[5] != null && x[6] != null ? [x[5], x[6]] : null }, ret: x[7] === 1 }))
+        : null;
+      return _fhCl[k];
+    })
+    .catch(() => { delete _fhClP[k]; return null; });   // a network error is retried on the next open, not cached
+  return _fhClP[k];
+}
+// Join one match (own player's view) to its archive row in that player's shard (the
+// shard file is keyed by player ID): same opponent surname within ±1 day, exactly one
+// candidate, and the archive's result must agree with ours. Then the book rule picks.
+function fhCloseFor(rows, date, oppName, won){
+  if (!Array.isArray(rows)) return null;
+  const d0 = fhDayNum(date), ok = fhNameKey(oppName);
+  if (d0 == null || !ok) return null;
+  const hits = rows.filter(x => { const d = fhDayNum(x.date); return d != null && Math.abs(d - d0) <= 1 && fhNameKey(x.opp) === ok; });
+  if (hits.length !== 1) return null;
+  const h = hits[0];
+  if (h.won !== !!won) return null;
+  return fhPickBook(h.pairs);
+}
+// Today's price (Price range dot): Pinnacle current (api-tennis multibook "Pncl"),
+// else Bet365 current (bet365 stream, then api-tennis's bet365, then m.odds when it
+// is bet365), else a dash. Only while the match has not started. Both sides from
+// one book, and a suspended/sentinel pair is no price (the board's mxRealPair guard).
+function fhTodayPair(m){
+  const upcoming = !m.finalScore && !(m.interrupted && m.partialScore) && !(m.live && (m.liveScore || []).length);
+  if (!upcoming) return null;
+  const real = (p1, p2, book) => {
+    const a = Number(p1), b = Number(p2);
+    if (!(a >= 1.01 && b >= 1.01)) return null;
+    if (typeof mxRealPair === 'function' && !mxRealPair({ p1: a, p2: b, book }, 'fh.today.' + book, m.id)) return null;
+    return [a, b];
+  };
+  const bn = m.bookNow || {};
+  const P = bn.Pncl ? real(bn.Pncl.p1, bn.Pncl.p2, 'Pncl') : null;
+  let B = null;
+  if (m.bet365Now) B = real(m.bet365Now.p1, m.bet365Now.p2, 'bet365');
+  if (!B && bn.bet365) B = real(bn.bet365.p1, bn.bet365.p2, 'bet365');
+  if (!B && m.odds && String(m.odds.bookmaker || '').toLowerCase() === 'bet365') B = real(m.odds.p1, m.odds.p2, 'bet365');
+  return fhPickBook({ P, B });
+}
+// "B365" tag (the old ELO tag's style) on any row priced from Bet365.
+function fhB365Tag(r){ return r && r.book === 'B' ? `<span title="Bet365 closing odds (no Pinnacle close for this match)" style="${FH_MONO} font-size:8px; font-weight:700; letter-spacing:0.1em; color:#8b96b5; border:1px solid rgba(255,255,255,0.14); border-radius:3px; padding:0 3px;">B365</span>` : ''; }
+// Source note: "Pinnacle" when every priced match is Pinnacle, else "Pinnacle, Bet365 where missing (N)".
+// Nothing priced → no source is named (a source for zero prices would be a false label).
+function fhSourceNote(priced){ if (!priced.length) return ''; const nb = priced.filter(r => r.book === 'B').length; return nb ? `Pinnacle, Bet365 where missing (${nb})` : 'Pinnacle'; }
+
+// =====================================================================
+// STATE
+// =====================================================================
+function fhStateFor(m){
+  if (!_fh || _fh.m !== m){
+    _fh = { m,
+      form: { surf: fhSurfName(m.surface) || 'all', role: 'all', wmode: 'n', n: 10, days: 30, card: false, hot: false, hotAll: [false, false], more: [false, false] },
+      h2h: { surf: 'all', allLines: false, stat: null },
+      sheetMap: {}, sheet: null };
+  }
+  return _fh;
+}
+function fhRerender(){ if (!_fh) return; const m = _fh.m; const f = document.getElementById('aSectionForm'); if (f) f.innerHTML = buildFormSection(m); const h = document.getElementById('aSectionH2H'); if (h) h.innerHTML = buildH2HSection(m); }
+function fhForm(patch){ if (!_fh) return; Object.assign(_fh.form, patch); const f = document.getElementById('aSectionForm'); if (f) f.innerHTML = buildFormSection(_fh.m); }
+function fhFormToggle(key, idx){ if (!_fh) return; _fh.form[key][idx] = !_fh.form[key][idx]; fhForm({}); }
+function fhH2h(patch){ if (!_fh) return; Object.assign(_fh.h2h, patch); const h = document.getElementById('aSectionH2H'); if (h) h.innerHTML = buildH2HSection(_fh.m); }
+function fhOpenProfile(key){ if (key != null && playerProfiles && playerProfiles[String(key)]) openPlayerProfileFromMatch(key); }
+function fhNameLink(name, key, style){
+  const has = key != null && typeof playerProfiles !== 'undefined' && playerProfiles && playerProfiles[String(key)];
+  return has
+    ? `<span class="plink" onclick="fhOpenProfile('${fhEsc(key)}')" style="${style}">${fhEsc(name)}</span>`
+    : `<span style="${style}">${fhEsc(name)}</span>`;
+}
+
+// =====================================================================
+// HOT LINES — the one component both tabs use.
+// rows: normalised rows, oldest → newest (one dot each).
+// defs: [{g, name, fav?, need:'games'|'sets', el(r), cov(r), basis}]
+// opts: { color, cls(k) line class, colHead:'date'|'year', min, famOrder, shortPriced }
+// =====================================================================
+const FH_HOT_FAM = [['hc', 'Handicap'], ['tot', 'Totals'], ['st', 'Sets & tiebreaks']];
+function fhFamOf(g){ return (g === 'gh' || g === 'sh') ? 'hc' : g; }
+// Why a match is not eligible for a line (the dot tooltip).
+function fhIneligibleWhy(r, def){
+  if (r.wo) return 'W/O';
+  if (r.ret) return 'RET';
+  if (def.need === 'games' && !r.sets) return 'no set scores';
+  if (def.bo3 && r.bo === 5) return 'Bo5';
+  return '';
+}
+function fhEligible(r, def){
+  if (r.wo || r.pS == null) return false;
+  if (def.need === 'set1') return !!(r.sets && r.sets.length && (r.sets.length > 1 || !r.ret));
+  if (r.ret) return false;
+  if (def.need === 'games' && !r.sets) return false;
+  if (def.bo3 && r.bo !== 3) return false;
+  return true;
+}
+function fhScoreLines(rows, defs){
+  const covMap = {};
+  const scored = defs.map((L, k) => {
+    const elig = rows.filter(r => fhEligible(r, L)), cov = elig.filter(L.cov);
+    cov.forEach(r => { (covMap[r.mid] = covMap[r.mid] || []).push(k); });
+    return { k, L, name: L.name, n: elig.length, c: cov.length, r: elig.length ? cov.length / elig.length : 0 };
+  }).filter(x => x.n >= FH_HOT_MIN_ELIGIBLE).sort(fhHotLineRank);
+  return { scored, covMap };
+}
+// The table: column header (one per match) + the line rows. Returns HTML.
+function fhHotLinesTable(rows, sc, opts){
+  const cols = `repeat(${Math.max(1, rows.length)},minmax(${opts.colMin},1fr))`;
+  const cap = `${FH_MONO} font-size:8.5px; font-weight:600; letter-spacing:0.13em; color:#8b96b5;`;
+  const heads = rows.map(r => `<span class="seg" title="${fhEsc(opts.colTip(r))}" onclick="fhOpenSheet('${fhEsc(r.mid)}')" style="display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer;"><span style="width:6px; height:6px; border-radius:50%; background:${FH_SURF[r.surface] || '#8b96b5'};"></span><span style="${FH_MONO} font-size:8.5px; color:#8b96b5; white-space:nowrap;">${fhEsc(fhTournCode(r.tournRaw || r.tourn))}</span><span style="${FH_MONO} font-size:8.5px; color:#4b5672;${opts.colHead === 'date' ? ' white-space:nowrap;' : ''}">${fhEsc(opts.colHead === 'date' ? fhDDMM(r.date) : "'" + String(r.date).slice(2, 4))}</span></span>`).join('');
+  const head = `<div style="display:grid; grid-template-columns:minmax(150px,0.8fr) 72px 36px minmax(234px,1.6fr); align-items:end; gap:12px; padding:10px 0 8px; border-bottom:1px solid rgba(255,255,255,0.06);">
+      <span style="${cap}">LINE</span><span style="${cap}">COVERED</span><span></span>
+      <div style="display:grid; grid-template-columns:${cols};">${heads}</div></div>`;
+  const topK = sc.scored.length ? sc.scored[0].k : -1;
+  const lineHtml = (x, famLbl) => {
+    const isTop = x.k === topK;
+    const exp = opts.shortPriced != null && !!x.L.fav;
+    const hasBasis = !!x.L.basis && x.n < rows.length;
+    const dots = rows.map(r => {
+      const e = fhEligible(r, x.L), c = e && x.L.cov(r);
+      const why = e ? '' : fhIneligibleWhy(r, x.L);
+      const tip = opts.dotTip(r) + ' · ' + (!e ? 'not eligible' + (why ? ' (' + why + ')' : '') : c ? 'covered' : 'not covered');
+      return `<span style="display:flex; justify-content:center;"><span class="seg" title="${fhEsc(tip)}" onclick="fhOpenSheet('${fhEsc(r.mid)}')" style="width:${e ? '10px' : '6px'}; height:${e ? '10px' : '6px'}; border-radius:50%; background:${!e ? 'rgba(255,255,255,0.08)' : c ? opts.color : 'transparent'}; border:1.5px solid ${!e ? 'transparent' : opts.color}; box-sizing:border-box; cursor:pointer; flex:none;"></span></span>`;
+    }).join('');
+    return `<div class="${opts.lineCls(x.k)}" style="display:grid; grid-template-columns:minmax(150px,0.8fr) 72px 36px minmax(234px,1.6fr); align-items:center; gap:12px; padding:11px 12px; margin:0 -12px; border-radius:10px; background:${isTop ? 'rgba(91,155,255,0.06)' : 'transparent'}; box-shadow:inset 0 0 0 1px ${isTop ? 'rgba(91,155,255,0.25)' : 'transparent'}; cursor:default;">
+        <span style="display:flex; flex-direction:column; gap:3px; min-width:0;">
+          ${famLbl ? `<span style="${FH_MONO} font-size:9px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:#5b6880;">${fhEsc(famLbl)}</span>` : ''}
+          <span style="font-size:13.5px; font-weight:700;">${fhEsc(x.name)}</span>
+          ${isTop ? `<span style="${FH_MONO} font-size:9px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:#5b9bff;">Most covered</span>` : ''}
+          ${exp ? `<span style="${FH_MONO} font-size:9.5px; color:#8b96b5; white-space:nowrap;">priced in at ${fhOdd(opts.shortPriced)}</span>` : ''}
+        </span>
+        <span style="display:flex; flex-direction:column; gap:2px;">
+          <span style="${FH_MONO} font-size:15px; font-weight:700; color:#e7e9ee; white-space:nowrap;">${x.c} of ${x.n}</span>
+          ${hasBasis ? `<span style="${FH_MONO} font-size:9.5px; color:#5b6880; white-space:nowrap;">${fhEsc(x.L.basis)}</span>` : ''}
+        </span>
+        <span style="height:5px; background:rgba(255,255,255,0.06); border-radius:3px; display:flex;"><span style="width:${x.r * 100}%; background:#5b9bff; border-radius:3px;"></span></span>
+        <span style="display:grid; grid-template-columns:${cols}; align-items:center;">${dots}</span>
+      </div>`;
+  };
+  const out = [];
+  if (opts.showAll){
+    FH_HOT_FAM.forEach(f => {
+      const ls = sc.scored.filter(x => fhFamOf(x.L.g) === f[0]); if (!ls.length) return;
+      out.push(`<span style="${FH_MONO} font-size:9px; font-weight:700; letter-spacing:0.16em; text-transform:uppercase; color:#5b6880; padding:12px 0 4px;">${f[1]}</span>`);
+      ls.forEach(x => out.push(lineHtml(x, '')));
+    });
+  } else {
+    FH_HOT_FAM.forEach(f => { const best = sc.scored.find(x => fhFamOf(x.L.g) === f[0]); if (best) out.push(lineHtml(best, f[1])); });
+  }
+  return { head, lines: out.join(''), shown: opts.showAll ? sc.scored.length : out.length };
+}
+// Line definitions. `bo3` = Bo3 completed only; `need` names the data a line reads.
+function fhFormLineDefs(sur){
+  return [
+    { g: 'hc', fav: true, name: sur + ' −2.5 games', need: 'games', bo3: true, cov: x => x.diff >= 3, basis: 'Bo3' },
+    { g: 'hc', fav: true, name: sur + ' +3.5 games', need: 'games', bo3: true, cov: x => x.diff >= -3, basis: 'Bo3' },
+    { g: 'hc', fav: true, name: sur + ' −1.5 sets', need: 'sets', bo3: true, cov: x => x.pS === 2 && x.oS === 0, basis: 'Bo3' },
+    { g: 'hc', fav: true, name: sur + ' +1.5 sets', need: 'sets', bo3: true, cov: x => x.pS >= 1, basis: 'Bo3' },
+    { g: 'tot', name: 'Over 22.5 games', need: 'games', bo3: true, cov: x => x.tot > 22.5, basis: 'Bo3' },
+    { g: 'tot', name: 'Over 24.5 games', need: 'games', bo3: true, cov: x => x.tot > 24.5, basis: 'Bo3' },
+    { g: 'tot', name: 'Under 20.5 games', need: 'games', bo3: true, cov: x => x.tot < 20.5, basis: 'Bo3' },
+    { g: 'st', name: 'Match goes to a deciding set', need: 'sets', cov: x => x.decider, basis: '' },
+    { g: 'st', name: 'Tiebreak in match', need: 'games', cov: x => x.tbN > 0, basis: '' },
+    { g: 'st', fav: true, name: sur + ' wins set 1', need: 'set1', cov: x => x.sets[0][0] > x.sets[0][1], basis: '' },
+  ];
+}
+function fhH2hLineDefs(aS, bS){
+  const d = [
+    { g: 'tot', name: 'Over 22.5 games', need: 'games', bo3: true, cov: m => m.tot > 22.5, basis: 'Bo3 completed' },
+    { g: 'tot', name: 'Over 24.5 games', need: 'games', bo3: true, cov: m => m.tot > 24.5, basis: 'Bo3 completed' },
+    { g: 'tot', name: 'Under 20.5 games', need: 'games', bo3: true, cov: m => m.tot < 20.5, basis: 'Bo3 completed' },
+    { g: 'gh', name: aS + ' −2.5 games', need: 'games', bo3: true, cov: m => m.diff >= 3, basis: 'Bo3 completed' },
+    { g: 'gh', name: bS + ' −2.5 games', need: 'games', bo3: true, cov: m => m.diff <= -3, basis: 'Bo3 completed' },
+    { g: 'gh', name: aS + ' +3.5 games', need: 'games', bo3: true, cov: m => m.diff >= -3, basis: 'Bo3 completed' },
+    { g: 'sh', name: aS + ' −1.5 sets', need: 'sets', bo3: true, cov: m => m.pS === 2 && m.oS === 0, basis: 'Bo3 completed' },
+    { g: 'sh', name: bS + ' −1.5 sets', need: 'sets', bo3: true, cov: m => m.oS === 2 && m.pS === 0, basis: 'Bo3 completed' },
+    { g: 'st', name: 'Match goes to a deciding set', need: 'sets', cov: m => m.decider, basis: 'completed' },
+    { g: 'st', name: 'Tiebreak in match', need: 'games', cov: m => m.tbN > 0, basis: 'completed' },
+    { g: 'st', name: aS + ' wins set 1', need: 'set1', cov: m => m.sets[0][0] > m.sets[0][1], basis: '' },
+  ];
+  if (FH_H2H_SET1_MIRROR) d.push({ g: 'st', name: bS + ' wins set 1', need: 'set1', cov: m => m.sets[0][1] > m.sets[0][0], basis: '' });
+  return d;
+}
+
+// Hover-dim rules (export helmet CSS), injected once. Line k dims the non-covered
+// matches of its own table to 0.32; no background wash.
+function fhEnsureStyles(){
+  if (document.getElementById('fhStyles')) return;
+  const r = [];
+  for (let k = 0; k < 16; k++){
+    r.push(`.fh-h2wrap:has(.hl-${k}:hover) .h2m{opacity:.32;} .fh-h2wrap:has(.hl-${k}:hover) .h2m.cov-${k}{opacity:1;}`);
+    for (let i = 0; i < 2; i++) r.push(`.fh-fwrap:has(.fl-${i}-${k}:hover) .fm${i}{opacity:.32;} .fh-fwrap:has(.fl-${i}-${k}:hover) .fm${i}.fc-${i}-${k}{opacity:1;}`);
+  }
+  ['aLo', 'aHi', 'bLo', 'bHi'].forEach(x => r.push(`.fh-h2wrap:has(.prh-${x}:hover) .h2m{opacity:.32;} .fh-h2wrap:has(.prh-${x}:hover) .h2m.pr-${x}{opacity:1;}`));
+  const css = `
+  #aSectionForm .seg, #aSectionH2H .seg, #fhSheet .seg{ cursor:pointer; transition:background .14s ease, color .14s ease, border-color .14s ease; }
+  #aSectionForm .plink, #aSectionH2H .plink{ cursor:pointer; } #aSectionForm .plink:hover, #aSectionH2H .plink:hover{ text-decoration:underline; }
+  .fh-elotip-pop{ opacity:0; visibility:hidden; transition:opacity .12s ease; pointer-events:none; }
+  .fh-elotip:hover .fh-elotip-pop{ opacity:1; visibility:visible; }
+  .h2m, .fh-fm{ transition:opacity .12s; }
+  #fhSheet .aform-panel-meta{ display:none; }
+  #fhSheet .aform-panel{ padding:0; background:transparent; max-width:720px; margin:0 auto; }
+  #fhSheet .aform-panel-names{ font-size:11.5px; font-weight:700; margin-bottom:12px; }
+  #fhSheet .aform-panel-names span:first-child{ color:#6aaeff; } #fhSheet .aform-panel-names span:last-child{ color:#e7e9ee; }
+  ${r.join('\n  ')}`;
+  const el = document.createElement('style'); el.id = 'fhStyles'; el.textContent = css;
+  document.head.appendChild(el);
+}
+
+// =====================================================================
+// FORM TAB
+// =====================================================================
+function fhRefDay(m){ const d = fhDayNum(m.date); if (d != null) return d; const t = new Date(); return Date.UTC(t.getUTCFullYear(), t.getUTCMonth(), t.getUTCDate()) / 86400000; }
+// Loads what the Form tab needs beyond the form shards: both players' priced archives.
+function fhEnsureFormData(m){
+  if (m._fhFormData) return Promise.resolve(m);
+  return Promise.all([ensureFormRows(m), fhLoadCloses(m.p1Key), fhLoadCloses(m.p2Key)]).then(([, a, b]) => {
+    m._fhCloses = [a, b]; m._fhFormData = true; return m;
+  });
+}
+function fhFormPlayer(m, idx, st){
+  const name = idx ? m.p2 : m.p1, key = idx ? m.p2Key : m.p1Key;
+  const HC = idx === 0 ? FH_AC : FH_BC;
+  const raw = (idx ? m.p2RecentFormMatches : m.p1RecentFormMatches) || [];
+  const clRows = (m._fhCloses || [])[idx];
+  const ref = fhRefDay(m);
+  const ownEk = String(eventKeyOfMatch(m) || '');
+  const all = raw.map((x, i) => {
+    const r = fhRowFromForm(x, key, name, idx * 1000 + i);
+    const c = fhCloseFor(clRows, r.date, r.opp, r.won);
+    if (c){ r.price = c.price; r.oppPrice = c.oppPrice; r.book = c.book; }
+    const d = fhDayNum(r.date); r.ago = d == null ? null : ref - d;
+    return r;
+  }).filter(r => (r.ago == null || r.ago >= 0) && !(ownEk && String(r.ek) === ownEk));   // never the analysed match itself
+  const S = st, SURFSEL = S.surf, favOn = S.role === 'fav', dogOn = S.role === 'dog';
+  const NWIN = S.wmode === 'n' ? S.n : 999, DWIN = S.wmode === 'n' ? null : S.days;
+  const WLBL = S.wmode === 'n' ? 'Last ' + S.n : 'Last ' + S.days + ' days';
+  const shown = all.filter(r => (SURFSEL === 'all' || r.surface === SURFSEL)
+    && (DWIN == null || (r.ago != null && r.ago <= DWIN))
+    && (!(favOn || dogOn) || (r.price != null && ((favOn && r.price < r.oppPrice) || (dogOn && r.price > r.oppPrice)))));
+  const win = shown.slice(0, NWIN), n = win.length, thin = n < FH_THIN;
+  const wins = win.filter(r => r.won).length;
+  const priced = win.filter(r => r.price != null), np = priced.length;
+  const fair = r => (1 / r.price) / (1 / r.price + 1 / r.oppPrice);
+  const expW = priced.reduce((s, r) => s + fair(r), 0), winsP = priced.filter(r => r.won).length;
+  const mktOk = !thin && np >= FH_THIN;
+  const cnt = n === 0 ? 'no matches' : n + (n === 1 ? ' match' : ' matches');
+  // "N of M priced" = priced by EITHER book (Pinnacle, else Bet365). The record uses
+  // every match; the market figures use the priced ones only, so the label says so.
+  const cov = np < n ? `${np} of ${n} priced` : '';
+  const srcNote = priced.some(r => r.book === 'B') ? fhSourceNote(priced) : '';
+  // "Show form data" metrics (export L10): a ratio needs 5+ matches AND 5+ priced.
+  const priceMetric = (fn, fmt) => {
+    if (thin) return { v: null, val: FH_DASHC, aside: '· ' + cnt, sub: '' };
+    if (np < FH_THIN) return { v: null, val: FH_DASHC, aside: '· ' + np + ' of ' + n + ' priced', sub: '' };
+    return { v: fn(), val: fmt(fn()), aside: cov ? '· ' + cov : '', sub: '' };
+  };
+  const noElo = { v: null, val: FH_DASHC, aside: '', sub: 'no snapshot on record' };
+  const played = all.filter(r => !r.wo && r.ago != null);
+  const in28 = played.filter(r => r.ago <= 28).length, m7 = played.filter(r => r.ago <= 7).length, m14 = played.filter(r => r.ago <= 14).length;
+  const rest = played.length ? played[0].ago - 1 : null;
+  const metrics = {
+    medP: priceMetric(() => fhMedian(priced.map(r => r.price)), fhOdd),
+    medO: priceMetric(() => fhMedian(priced.map(r => r.oppPrice)), fhOdd),
+    oppElo: noElo,
+    flat: priceMetric(() => priced.reduce((s, r) => s + (r.won ? r.price - 1 : -1), 0), v => fhSigned(v, 1, 'u')),
+    elo: noElo,
+    load: rest == null ? { v: null, val: FH_DASHC, aside: '', sub: 'not enough data' } : { v: in28, val: in28 + ' in 28d', aside: '', sub: rest + 'd rest' },
+    m714: played.length ? { v: m14, val: m7 + ' / ' + m14, aside: '', sub: '' } : { v: null, val: FH_DASHC, aside: '', sub: 'not enough data' },
+  };
+  // Recent matches list (export entries/divider logic, verbatim).
+  const list = shown.slice(0, NWIN + 6), showAll = !!S.more[idx];
+  const vis = showAll ? list : list.slice(0, NWIN);
+  const entries = []; let cur = null;
+  vis.forEach((r, i) => {
+    if (i === NWIN){ entries.push({ isDiv: true }); cur = null; }
+    if (cur !== r.tourn){ cur = r.tourn; entries.push({ isHead: true, tourn: r.tourn }); }
+    entries.push({ isRow: true, r });
+  });
+  if (!showAll && list.length > NWIN) entries.push({ isDiv: true });
+  if (list.length > 0 && list.length <= NWIN) entries.push({ isDiv: true });
+  const divEnd = entries.length > 0 && entries[entries.length - 1].isDiv;
+  if (divEnd) entries.pop();
+  all.forEach(r => { _fh.sheetMap[r.mid] = { r, aName: name, aKey: key, bName: r.opp, bKey: r.oppKey }; });
+  // Hot lines, this player's window oldest → newest.
+  const hx = win.slice().reverse();
+  const medPrice = np >= FH_THIN ? fhMedian(priced.map(r => r.price)) : null;
+  const SHORT = medPrice != null && medPrice < 1.35;
+  const sc = fhScoreLines(hx, fhFormLineDefs(fhSurname(name)));
+  const hotOk = n >= FH_HOT_MIN_ELIGIBLE && sc.scored.length > 0;
+  const table = hotOk ? fhHotLinesTable(hx, sc, {
+    colMin: '22px', colHead: 'date', color: HC, showAll: !!S.hotAll[idx], shortPriced: SHORT ? medPrice : null,
+    lineCls: k => `fhl fl-${idx}-${k}`,
+    colTip: r => 'v ' + fhOppFmt(r.opp) + ' · ' + r.tourn + ' · ' + r.round,
+    dotTip: r => 'v ' + fhOppFmt(r.opp) + ' · ' + r.tourn + ' · ' + fhScoreText(r, false),
+  }) : null;
+  const ctx = WLBL + ' · ' + (SURFSEL === 'all' ? 'All surfaces' : SURFSEL) + (favOn ? ' · as favourite' : dogOn ? ' · as underdog' : '') + (medPrice != null ? ' · median odd ' + fhOdd(medPrice) : '');
+  return { idx, name, key, HC, n, np, wins, thin, mktOk, expW, winsP, cnt, cov, srcNote, win, metrics, entries, divEnd, list, shown,
+    hot: { ok: hotOk, table, sc, ctx, short: SHORT && hotOk, few: !hotOk, fewTxt: n === 0 ? 'No matches with these filters' : 'Not enough matches to rank lines (n=' + n + ')' },
+    NWIN, WLBL, DWIN };
+}
+// Set-score text for a row. Form rows print games only; H2H adds tiebreak points.
+function fhScoreText(r, withTb){
+  if (r.wo) return 'W/O';
+  if (!r.sets) return FH_DASHC;
+  return r.sets.map(x => withTb ? fhSetTxt(x) : x[0] + '-' + x[1]).join('  ') + (r.ret ? '  RET' : '');
+}
+function fhPriceCell(v, align, strong){
+  const dash = v == null;
+  return `<span style="${FH_MONO} font-size:12px;${strong ? ' font-weight:700;' : ''} text-align:${align}; color:${dash ? FH_DASH : (strong ? '#e7e9ee' : '#5b6880')};">${dash ? FH_DASHC : v.toFixed(2)}</span>`;
+}
+// Form Match Row v3 LOCKED — "No number" variant (data check 4).
+function fhFormRowHtml(r){
+  const setsTxt = r.pS == null ? FH_DASHC : r.pS + ' - ' + r.oS;
+  return `<div class="seg" onclick="fhOpenSheet('${fhEsc(r.mid)}')" style="display:grid; grid-template-columns:22px 40px minmax(0,1fr) 30px 38px 42px 42px; gap:9px; align-items:center; padding:8px 14px; border-top:1px solid rgba(255,255,255,0.04); cursor:pointer;">
+      ${fhWlChip(r.won)}
+      <span style="${FH_MONO} font-size:11px; color:#8b96b5;">${fhDDMM(r.date)}</span>
+      <span style="display:flex; flex-direction:column; gap:3px; min-width:0;">
+        <span style="display:flex; align-items:baseline; gap:7px; flex-wrap:wrap;"><span style="font-size:13px; font-weight:600; color:#e7e9ee;">${fhEsc(fhOppFmt(r.opp))}</span>${fhB365Tag(r)}</span>
+        <span style="${FH_MONO} font-size:11px; color:#8b96b5;">${fhEsc(fhScoreText(r, false))}</span>
+      </span>
+      <span style="${FH_MONO} font-size:10.5px; color:#5b6880;">${fhEsc(r.round)}</span>
+      <span style="${FH_MONO} font-size:12.5px; font-weight:700; color:${r.pS == null ? FH_DASH : (r.won ? '#3dd68c' : '#e0616f')};">${setsTxt}</span>
+      ${fhPriceCell(r.price, 'right', true)}
+      ${fhPriceCell(r.oppPrice, 'right', false)}
+    </div>`;
+}
+function fhFormColumnHtml(P){
+  const pill = r => {
+    const c = r.won ? '#3dd68c' : '#e0616f';
+    return `<div class="fh-elotip" onclick="fhOpenSheet('${fhEsc(r.mid)}')" style="flex:1; position:relative; padding:5px 0; cursor:pointer;">
+        <div style="height:7px; border-radius:4px; background:${c};"></div>
+        <div class="fh-elotip-pop" style="position:absolute; bottom:20px; left:50%; transform:translateX(-50%); z-index:30; background:#11151f; border:1px solid rgba(255,255,255,0.14); border-radius:8px; padding:8px 11px; display:flex; flex-direction:column; gap:3px; align-items:flex-start; text-align:left; white-space:nowrap; box-shadow:0 8px 24px rgba(0,0,0,0.45); pointer-events:none;">
+          <span style="display:flex; align-items:baseline; gap:7px;"><span style="${FH_MONO} font-size:10.5px; font-weight:700; color:${c};">${r.won ? 'W' : 'L'}</span><span style="font-size:12.5px; font-weight:600; color:#e7e9ee;">v ${fhEsc(fhOppFmt(r.opp))}</span></span>
+          <span style="${FH_MONO} font-size:10.5px; color:#8b96b5;">${fhEsc(r.tourn + ' · ' + r.round + ' · ' + fhDDMM(r.date))}</span>
+          <span style="${FH_MONO} font-size:10.5px; color:#8b96b5;">${fhEsc(fhScoreText(r, false))}</span>
+          <span style="font-size:10px; color:#5b9bff;">Click for match stats</span>
+        </div>
+      </div>`;
+  };
+  const pills = P.win.slice().reverse().map(pill);
+  if (P.DWIN == null) while (pills.length < P.NWIN) pills.unshift(`<div style="flex:1; position:relative; padding:5px 0; cursor:default;"><div style="height:7px; border-radius:4px; background:rgba(255,255,255,0.07);"></div></div>`);
+  const side = P.idx === 0 ? 'padding-right:28px;' : 'padding-left:28px; border-left:1px solid rgba(255,255,255,0.07);';
+  const dW = P.mktOk ? fhSigned(P.winsP - P.expW, 1) : FH_DASHC;
+  const note = P.thin ? `${FH_DASHC} · ${P.cnt} with these filters` : '';
+  const pricedNote = !P.thin ? [P.cov, P.srcNote].filter(Boolean).join(' · ') : '';
+  return `<div style="display:flex; flex-direction:column; align-items:center; gap:10px; text-align:center; ${side} min-width:0;">
+      ${fhNameLink(P.name, P.key, 'font-size:15px; font-weight:700;')}
+      <span style="${FH_MONO} font-size:40px; font-weight:800; line-height:1; white-space:nowrap;${P.n ? '' : ' color:' + FH_DASH + ';'}">${P.n ? P.wins + '–' + (P.n - P.wins) : FH_DASHC}</span>
+      <span style="display:inline-flex; align-items:baseline; gap:6px; padding:4px 10px; border-radius:999px; border:1px solid rgba(255,255,255,0.12); background:rgba(255,255,255,0.03); white-space:nowrap;"><span style="${FH_MONO} font-size:12.5px; font-weight:700; color:${P.mktOk ? '#e7e9ee' : FH_DASH};">${dW}</span><span style="${FH_MONO} font-size:10px; letter-spacing:0.08em; text-transform:uppercase; color:#8b96b5;">v market</span></span>
+      <span style="font-size:11.5px; color:#5b6880;">market expected <span style="white-space:nowrap;"><span style="${FH_MONO} color:${P.mktOk ? '#8b96b5' : FH_DASH};">${P.mktOk ? P.expW.toFixed(1) : FH_DASHC}</span> wins in ${P.mktOk ? P.np : P.n}</span>${pricedNote ? `<span style="${FH_MONO} font-size:10.5px; color:#4b5672; white-space:nowrap;"> · ${fhEsc(pricedNote)}</span>` : ''}</span>
+      ${note ? `<span style="${FH_MONO} font-size:10.5px; color:#4b5672;">${fhEsc(note)}</span>` : ''}
+      <div style="display:flex; gap:4px; margin-top:4px; width:100%;">${pills.join('')}</div>
+      <div style="align-self:stretch; ${FH_MONO} font-size:9px; letter-spacing:0.06em; color:#4b5672; margin-top:-6px; white-space:nowrap; text-align:right;">oldest → newest</div>
+    </div>`;
+}
+function fhFormDataRows(A, B, rows){
+  const cell = (me, align) => `<div style="display:flex; flex-direction:column; align-items:${align === 'right' ? 'flex-end' : 'flex-start'}; gap:2px; text-align:${align};"><span style="display:flex; align-items:baseline; gap:6px; flex-wrap:wrap; justify-content:${align === 'right' ? 'flex-end' : 'flex-start'};"><span style="${FH_MONO} font-size:17px; font-weight:700; color:${me.v == null ? FH_DASH : '#e7e9ee'}; white-space:nowrap;">${fhEsc(me.val)}</span><span style="${FH_MONO} font-size:11px; color:#4b5672;">${fhEsc(me.aside)}</span></span><span style="${FH_MONO} font-size:10px; color:#5b6880;">${fhEsc(me.sub)}</span></div>`;
+  return rows.map(d => `<div style="display:grid; grid-template-columns:minmax(0,1fr) 200px minmax(0,1fr); align-items:center; gap:20px; padding:10px 0;">
+      ${cell(A.metrics[d[0]], 'right')}
+      <div style="display:flex; flex-direction:column; align-items:center; gap:2px; text-align:center;"><span style="font-size:12.5px; font-weight:600; color:#e7e9ee;">${fhEsc(d[1])}</span><span style="font-size:10.5px; color:#5b6880;">${fhEsc(d[2])}</span></div>
+      ${cell(B.metrics[d[0]], 'left')}
+    </div>`).join('');
+}
+function fhFormListHtml(P){
+  const head = fhStickyHeadHtml('22px 40px minmax(0,1fr) 30px 38px 42px 42px', ['Match', 'Rd', 'Sets', 'H', 'A'], false);
+  const div = `<div style="display:flex; align-items:center; gap:10px; padding:10px 14px; border-top:1px solid rgba(255,255,255,0.04);"><span style="flex:1; height:1px; background:rgba(91,155,255,0.35);"></span><span style="${FH_MONO} font-size:10px; letter-spacing:0.06em; color:#8b96b5; white-space:nowrap;">↑ used in form stats</span><span style="flex:1; height:1px; background:rgba(91,155,255,0.35);"></span></div>`;
+  const covMap = P.hot.sc ? P.hot.sc.covMap : {};
+  const body = P.entries.map(e => {
+    if (e.isHead) return `<div style="display:flex; align-items:center; gap:9px; padding:14px 14px 6px; border-top:1px solid rgba(255,255,255,0.07);"><span style="${FH_MONO} font-size:10px; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; color:#e7e9ee;">${fhEsc(e.tourn)}</span></div>`;
+    if (e.isDiv) return div;
+    return `<div class="fh-fm fm${P.idx} ${(covMap[e.r.mid] || []).map(k => 'fc-' + P.idx + '-' + k).join(' ')}" style="transition:opacity .12s;">${fhFormRowHtml(e.r)}</div>`;
+  }).join('');
+  const more = P.list.length > P.NWIN
+    ? `<div class="seg" onclick="fhFormToggle('more',${P.idx})" style="text-align:center; padding:12px 0 13px; border-top:1px solid rgba(255,255,255,0.07); font-size:13px; font-weight:600; color:#5b9bff; cursor:pointer;">${_fh.form.more[P.idx] ? 'Show fewer' : 'Show ' + (P.list.length - P.NWIN) + ' more matches'}</div>` : '';
+  return `<div style="display:flex; flex-direction:column; min-width:0;">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:10px;">
+        <span style="font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:#5b6880;">Recent matches · ${fhEsc(fhSurname(P.name))}</span>
+        <span style="font-size:11px; color:#5b6880;">${P.shown.length} on record${P.DWIN == null ? '' : ' · last ' + P.DWIN + ' days'}</span>
+      </div>
+      <div style="border:1px solid rgba(255,255,255,0.09); border-radius:14px; overflow:clip; background:#0a0d14; display:flex; flex-direction:column; flex:1;">
+        ${head}
+        ${P.list.length === 0 ? `<div style="padding:28px 16px; text-align:center; font-size:12.5px; color:#5b6880;">No matches with these filters.</div>` : ''}
+        ${body}
+        <div style="flex:1;"></div>
+        ${P.divEnd ? div : ''}
+        ${more}
+      </div>
+    </div>`;
+}
+function fhFormHotHtml(P){
+  const H = P.hot;
+  const moreLbl = _fh.form.hotAll[P.idx] ? 'Best line per family' : 'Show all lines (' + (H.sc ? H.sc.scored.length : 0) + ')';
+  const hasMore = H.ok && (H.sc.scored.length > H.table.shown || _fh.form.hotAll[P.idx]);
+  return `<div style="display:flex; flex-direction:column; border-top:1px solid rgba(255,255,255,0.06);">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:8px 14px; flex-wrap:wrap; padding-top:12px;">
+        <span style="font-size:14px; font-weight:700; color:${P.HC};">${fhEsc(P.name)}</span>
+        <span style="${FH_MONO} font-size:10.5px; letter-spacing:0.04em; color:#8b96b5;">${fhEsc(H.ctx)}</span>
+      </div>
+      ${H.short ? `<span style="align-self:flex-start; margin-top:6px; ${FH_MONO} font-size:10px; color:#8b96b5; border:1px solid rgba(255,255,255,0.12); border-radius:999px; padding:2px 9px;">Short odds · high cover rates are priced in</span>` : ''}
+      ${H.ok ? H.table.head : `<div style="display:grid; grid-template-columns:minmax(150px,0.8fr) 72px 36px minmax(234px,1.6fr); align-items:end; gap:12px; padding:10px 0 8px; border-bottom:1px solid rgba(255,255,255,0.06);"><span style="${FH_MONO} font-size:8.5px; font-weight:600; letter-spacing:0.13em; color:#8b96b5;">LINE</span><span style="${FH_MONO} font-size:8.5px; font-weight:600; letter-spacing:0.13em; color:#8b96b5;">COVERED</span><span></span></div>`}
+      ${H.few ? `<div style="padding:18px 0 12px; text-align:center; ${FH_MONO} font-size:12px; color:#5b6880;">${fhEsc(H.fewTxt)}</div>` : ''}
+      ${H.ok ? H.table.lines : ''}
+      ${hasMore ? `<span class="seg" onclick="fhFormToggle('hotAll',${P.idx})" style="align-self:flex-end; margin-top:8px; font-size:12.5px; font-weight:600; color:#5b9bff; cursor:pointer; white-space:nowrap;">${moreLbl}</span>` : ''}
+    </div>`;
+}
+function fhBuildForm(m){
+  fhEnsureStyles();
+  const F = fhStateFor(m), S = F.form;
+  if (!m._fhFormData){
+    fhEnsureFormData(m).then(() => { if (_fh && _fh.m === m){ const el = document.getElementById('aSectionForm'); if (el) el.innerHTML = buildFormSection(m); } });
+    return `<div class="acomingsoon">Loading recent form…</div>`;
+  }
+  if (!m.p1RecentFormMatches && !m.p2RecentFormMatches){
+    return `<div class="acomingsoon">Recent-form data needs the stats source — not connected for this match.</div>`;
+  }
+  const A = fhFormPlayer(m, 0, S), B = fhFormPlayer(m, 1, S);
+  const seg = on => fhSegStyle(on);
+  const surf = fhSegTrack([['all', 'All'], ['Clay', 'Clay'], ['Hard', 'Hard'], ['Grass', 'Grass']].map(t => ({ label: t[1], on: S.surf === t[0], onclick: `fhForm({surf:'${t[0]}'})` })));
+  const role = fhSegTrack([['all', 'All'], ['fav', 'As favourite'], ['dog', 'As underdog']].map(t => ({ label: t[1], on: S.role === t[0], onclick: `fhForm({role:'${t[0]}'})` })));
+  const mode = fhSegTrack([['n', 'Matches'], ['d', 'Days']].map(t => ({ label: t[1], on: S.wmode === t[0], onclick: `fhForm({wmode:'${t[0]}'})` })));
+  const vals = (S.wmode === 'n' ? [5, 10, 15, 20].map(k => ({ label: 'Last ' + k, on: S.n === k, onclick: `fhForm({n:${k}})` }))
+    : [10, 20, 30, 60].map(k => ({ label: k + ' days', on: S.days === k, onclick: `fhForm({days:${k}})` })));
+  const valsHtml = `<div style="display:inline-flex; gap:4px; margin-left:-4px;">${vals.map(it => { const s = seg(it.on); return `<span class="seg" onclick="${it.onclick}" style="padding:5px 12px; border-radius:7px; font-size:11px; font-weight:${s.weight}; color:${s.color}; background:${s.bg}; border:1px solid ${s.bd}; cursor:pointer; white-space:nowrap;">${it.label}</span>`; }).join('')}</div>`;
+  const vr = `<span style="width:1px; height:16px; background:rgba(255,255,255,0.1);"></span>`;
+  const WLBL = A.WLBL, favOn = S.role === 'fav', dogOn = S.role === 'dog';
+  const roleSfx = favOn ? ' · as favourite' : dogOn ? ' · as underdog' : '';
+  const surfLo = S.surf === 'all' ? 'all surfaces' : S.surf;
+  const lastLabel = WLBL + ' · ' + surfLo + roleSfx;
+  const eloHelp = S.wmode === 'n' ? 'now v oldest of last ' + S.n : 'now v oldest in ' + S.days + ' days';
+  const lastRows = [['medP', 'Median odd', 'his closing odd'], ['medO', 'Median opp odd', "opponents' closing odd"], ['oppElo', 'Opposition Elo', 'avg opponent Elo rating'], ['flat', 'Flat 1u', 'P/L backing him every match'], ['elo', 'Elo change', eloHelp]];
+  const fatRows = [['load', 'Load', 'matches in 28 days'], ['m714', 'Matches 7d / 14d', 'last 7 and 14 days']];
+  const cap = `${FH_MONO} font-size:9.5px; font-weight:600; letter-spacing:0.16em; text-transform:uppercase; color:#5b6880; text-align:center; padding:16px 0 8px;`;
+  const cardData = S.card ? `<div style="border-top:1px solid rgba(255,255,255,0.07); padding-bottom:8px;">
+      <div style="${cap}">${fhEsc(lastLabel)}</div>${fhFormDataRows(A, B, lastRows)}
+      <div style="${cap}">Fatigue · all matches to ${fhDDMM(m.date)}</div>${fhFormDataRows(A, B, fatRows)}
+    </div>` : '';
+  const hotLabel = WLBL + ' · ' + surfLo + roleSfx;
+  const hot = `<div style="background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:12px; margin-top:16px; display:flex; flex-direction:column;">
+      <div class="seg" onclick="fhForm({hot:${!S.hot}})" style="position:relative; display:flex; align-items:center; justify-content:center; gap:10px 16px; flex-wrap:wrap; padding:11px 16px; cursor:pointer;">
+        <span style="display:flex; align-items:center; gap:10px;"><span style="${FH_MONO} font-size:10px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:#8b96b5;">${S.hot ? 'Hide hot lines' : 'Show hot lines'}</span><span style="font-size:11px; color:#5b9bff; display:inline-block; transform:rotate(${S.hot ? '180deg' : '0deg'}); transition:transform .16s;">▾</span></span>
+        <span style="position:absolute; right:16px; top:50%; transform:translateY(-50%); ${FH_MONO} font-size:10.5px; letter-spacing:0.06em; color:#5b6880;">${fhEsc(hotLabel)}</span>
+      </div>
+      ${S.hot ? `<div style="display:flex; flex-direction:column; gap:14px; padding:12px 20px 14px; border-top:1px solid rgba(255,255,255,0.07);">
+        <span style="font-size:12px; color:#8b96b5;">Best-covered line in each market family over the window</span>
+        ${fhFormHotHtml(A)}${fhFormHotHtml(B)}
+        <span style="font-size:10.5px; color:#4b5672; padding-top:4px; border-top:1px solid rgba(255,255,255,0.06);">One dot per match, oldest → newest · filled = covered · empty = not covered · small grey = not eligible · hover a line to find its matches, click a dot for the match</span>
+      </div>` : ''}
+    </div>`;
+  return `<div class="fh-fwrap">
+    <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:18px;">${surf}${vr}${role}${vr}${mode}${valsHtml}</div>
+    <div style="background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:16px; padding:22px 24px 6px;">
+      <div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr);">${fhFormColumnHtml(A)}${fhFormColumnHtml(B)}</div>
+      <div class="seg" onclick="fhForm({card:${!S.card}})" style="display:flex; align-items:center; justify-content:center; gap:9px; margin-top:18px; padding:11px 0 8px; border-top:1px solid rgba(255,255,255,0.07); cursor:pointer;">
+        <span style="${FH_MONO} font-size:10px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:#8b96b5;">${S.card ? 'Hide form data' : 'Show form data'}</span>
+        <span style="font-size:11px; color:#5b9bff; display:inline-block; transform:rotate(${S.card ? '180deg' : '0deg'}); transition:transform .16s;">▾</span>
+      </div>
+      ${cardData}
+    </div>
+    ${hot}
+    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(400px,1fr)); gap:24px; margin-top:24px; align-items:stretch;">${fhFormListHtml(A)}${fhFormListHtml(B)}</div>
+  </div>`;
+}
+
+// =====================================================================
+// H2H TAB
+// =====================================================================
+// A finished set: 6+ games won by 2 (incl. a long final set), or a 7-6 tiebreak set.
+function fhSetDone(x){ const hi = Math.max(x[0], x[1]), lo = Math.min(x[0], x[1]); return (hi >= 6 && hi - lo >= 2) || (hi === 7 && lo === 6); }
+// Everything the H2H tab joins onto the api-tennis meeting list (m.h2h, keyed on
+// both player KEYS): per-set games + RET/W/O flags by eventKey from the players'
+// own shards, and closing prices from their priced archives.
+function fhEnsureH2hData(m){
+  if (m._fhH2hData) return Promise.resolve(m);
+  if (m._fhH2hP) return m._fhH2hP;
+  const ch = k => (k == null ? Promise.resolve(null) : Promise.resolve().then(() => loadCareerHistory(k)).then(r => Array.isArray(r) ? r : null).catch(() => null));
+  m._fhH2hP = Promise.all([ensureFormRows(m), ch(m.p1Key), ch(m.p2Key), fhLoadCloses(m.p1Key), fhLoadCloses(m.p2Key)])
+    .then(([, c1, c2, e1, e2]) => { m._fhCh = [c1, c2]; m._fhCloses = [e1, e2]; m._fhH2hData = true; return m; });
+  return m._fhH2hP;
+}
+// The api-tennis meeting list, minus the fixture itself: a finished board match
+// lists its OWN eventKey among the "previous" meetings (19 of 43 on 2026-09-23).
+function fhMeetingList(m){
+  const own = String(eventKeyOfMatch(m) || '');
+  const list = (m.h2h && Array.isArray(m.h2h.matches)) ? m.h2h.matches : [];
+  return list.filter(x => !(own && x.eventKey != null && String(x.eventKey) === own));
+}
+function fhMeetings(m){
+  const list = fhMeetingList(m);
+  const idx = rows => { const o = {}; (rows || []).forEach(x => { if (x && x.eventKey != null) (o[String(x.eventKey)] = o[String(x.eventKey)] || []).push(x); }); return o; };
+  const srcs = [
+    [idx(m.p1RecentFormMatches), false], [idx(m._fhCh && m._fhCh[0]), false],
+    [idx(m.p2RecentFormMatches), true], [idx(m._fhCh && m._fhCh[1]), true],
+  ];
+  const flip = sets => sets ? sets.map(x => [x[1], x[0], x[2]]) : null;
+  const me = m._fhCloses || [];
+  const out = list.map((x, i) => {
+    const ek = x.eventKey != null ? String(x.eventKey) : null;
+    let sets = null, ret = null, wo = null, tier = null, qual = !!x.qualifying;
+    if (ek) for (const [ix, flipped] of srcs){
+      const hit = ix[ek]; if (!hit || hit.length !== 1) continue;
+      const h = hit[0];
+      if (sets == null && Array.isArray(h.sets) && h.sets.length){ const s = fhSetsFrom(h.sets); if (s) sets = flipped ? flip(s) : s; }
+      if (ret == null && typeof h.retired === 'boolean') ret = h.retired;
+      if (wo == null && typeof h.walkover === 'boolean') wo = h.walkover;
+      if (tier == null && (h.tier || h.level)) tier = h.tier || h.level;
+    }
+    const r = { mid: fhSafeId('h2h_' + i + '_' + (ek || x.date)), date: x.date, tourn: fhTournClean(x.tournament), tournRaw: x.tournament,
+      surface: fhSurfName(x.surface), round: fhRoundCode(x.round, x.qualifying),
+      won: !!x.p1Won, result: x.result, sets, ret: !!ret, wo: !!wo, qualifying: qual, tier,
+      ek: x.eventKey, opp: m.p2, oppKey: m.p2Key, selfKey: m.p1Key, selfName: m.p1, price: null, oppPrice: null, book: null };
+    fhFinishRow(r);
+    let c = fhCloseFor(me[0], r.date, m.p2, r.won);
+    if (!c){ const c2 = fhCloseFor(me[1], r.date, m.p1, !r.won); if (c2) c = { price: c2.oppPrice, oppPrice: c2.price, book: c2.book }; }
+    if (c){ r.price = c.price; r.oppPrice = c.oppPrice; r.book = c.book; }
+    return r;
+  });
+  return out.sort((a, b) => String(a.date).localeCompare(String(b.date)));   // oldest → newest
+}
+// Price range average (flag b). Margin removed: invert the mean no-vig
+// probability. The alternative (margin included) is the mean implied probability.
+function fhPriceAvg(PR, isA){
+  if (!PR.length) return null;
+  if (FH_PRICE_AVG_MARGIN_REMOVED){
+    const pA = PR.reduce((s, r) => { const ia = 1 / r.price, ib = 1 / r.oppPrice; return s + ia / (ia + ib); }, 0) / PR.length;
+    return 1 / (isA ? pA : 1 - pA);
+  }
+  return 1 / (PR.reduce((s, r) => s + 1 / (isA ? r.price : r.oppPrice), 0) / PR.length);
+}
+function fhH2hRecCard(label, arr, tag, surfColor, onclick, aName, bName, aS, bS){
+  // A walkover is not a meeting that was played (a walkover given is never a
+  // loss — pipeline ruling), so it is out of the record; retirements per flag (e).
+  const counted = arr.filter(r => !r.wo && (FH_H2H_RET_COUNTS || !r.ret));
+  const a = counted.filter(r => r.won).length, n = counted.length, b = n - a;
+  const side = a > b ? 'a' : b > a ? 'b' : 'level';
+  const lead = !n ? 'No meetings' : side === 'level' ? 'Level' : (side === 'a' ? aS : bS) + ' leads';
+  const leadColor = side === 'a' ? FH_AC : side === 'b' ? FH_BC : '#8b96b5';
+  const small = n === 2;
+  const lbl = `${FH_MONO} font-size:10.5px; font-weight:700; letter-spacing:0.16em; text-transform:uppercase; color:#b4bdd3;`;
+  const smallChip = small ? `<span style="${FH_MONO} font-size:10px; color:#e8a84e; border:1px solid rgba(232,168,78,0.4); border-radius:999px; padding:2px 9px; white-space:nowrap;">Small sample · n=${n}</span>` : '';
+  const head = tag
+    ? `<span style="width:9px; height:9px; border-radius:50%; background:${surfColor};"></span><span style="${lbl}">${fhEsc(label)}</span><span style="font-size:10.5px; font-weight:600; color:#5b9bff; border:1px solid rgba(91,155,255,0.35); border-radius:999px; padding:2px 9px; white-space:nowrap;">${fhEsc(tag)}</span>${smallChip}`
+    : `<span style="${lbl}">${fhEsc(label)}</span><span style="margin-left:auto; font-size:11px; font-weight:600; color:#5b9bff; white-space:nowrap;">All meetings ↓</span>${smallChip}`;
+  return `<div${onclick ? ` class="seg" onclick="${onclick}"` : ''} style="background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:16px; padding:20px 22px; display:flex; flex-direction:column; gap:14px; min-width:0;${onclick ? ' cursor:pointer;' : ''}">
+      <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">${head}</div>
+      <div style="display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:16px;">
+        <span style="font-size:14px; font-weight:700; color:${FH_AC}; text-align:right; white-space:nowrap;">${fhEsc(aName)}</span>
+        <span style="${FH_MONO} font-size:44px; font-weight:800; line-height:1; white-space:nowrap;"><span style="color:${FH_AC};">${a}</span><span style="color:#4b5672;"> – </span><span style="color:${FH_BC};">${b}</span></span>
+        <span style="font-size:14px; font-weight:700; color:${FH_BC}; white-space:nowrap;">${fhEsc(bName)}</span>
+      </div>
+      <div style="display:flex; gap:3px; height:6px;"><div style="width:${n ? (a / n * 100) + '%' : '50%'}; background:${n ? FH_AC : 'rgba(255,255,255,0.06)'}; border-radius:3px;"></div><div style="width:${n ? (b / n * 100) + '%' : '50%'}; background:${n ? 'rgba(231,233,238,0.7)' : 'rgba(255,255,255,0.06)'}; border-radius:3px;"></div></div>
+      <div style="display:flex; justify-content:center; gap:8px; ${FH_MONO} font-size:11.5px; white-space:nowrap;"><span style="font-weight:700; color:${leadColor};">${fhEsc(lead)}</span><span style="color:#4b5672;">·</span><span style="color:#5b6880;">${n + (n === 1 ? ' meeting' : ' meetings')}</span></div>
+    </div>`;
+}
+function fhH2hSkeleton(){
+  const b = (w, h, r) => `<div style="${w ? 'width:' + w + ';' : ''} height:${h}px; border-radius:${r}px; background:rgba(255,255,255,0.04);"></div>`;
+  return `<div style="display:flex; flex-direction:column; gap:14px;">
+      <div style="width:260px; height:30px; border-radius:9px; background:rgba(255,255,255,0.05);"></div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">${b('', 150, 14)}${b('', 150, 14)}</div>
+      <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:14px;">${b('', 76, 14)}${b('', 76, 14)}${b('', 76, 14)}</div>
+      <div style="border-radius:14px; background:rgba(255,255,255,0.03); padding:16px; display:flex; flex-direction:column; gap:12px;"><div style="width:220px; height:14px; border-radius:4px; background:rgba(255,255,255,0.06);"></div><div style="display:grid; grid-template-columns:1fr 1fr; gap:14px;">${b('', 130, 12)}${b('', 130, 12)}</div></div>
+      <div style="border-radius:14px; background:rgba(255,255,255,0.03); padding:16px; display:flex; flex-direction:column; gap:10px;"><div style="width:180px; height:14px; border-radius:4px; background:rgba(255,255,255,0.06);"></div>${b('', 34, 14)}${b('', 34, 14)}${b('', 34, 14)}${b('', 34, 14)}${b('', 34, 14)}</div>
+      ${b('', 300, 14)}
+      <span style="${FH_MONO} font-size:10.5px; color:#5b6880; text-align:center;">Loading head-to-head…</span>
+    </div>`;
+}
+// "No previous meetings": each player's last-52-weeks record against the OTHER
+// player's playing style, from the same career-meeting shards the Playing style
+// tab reads (style-meetings/{slug}.json, dated rows). Sample ladder per house rules.
+function fhNoMeetingCards(m){
+  const ref = fhRefDay(m);
+  const side = (idx) => {
+    const name = idx ? m.p2 : m.p1, other = idx ? m.p1 : m.p2;
+    const os = ppStyleFor(other), arch = os && psArchFor(os.archetype_label);
+    const color = idx ? FH_BC : FH_AC;
+    if (!arch) return { who: fhSurname(name), vs: 'vs ' + fhSurname(other) + "'s style", rec: FH_DASHC, meta: 'playing style not classified', color, dash: true };
+    const rows = m._styleMeetLoaded ? styleMeetRowsFor(m, idx ? 'p2' : 'p1', os.archetype_label, name) : null;
+    const vs = 'vs ' + arch.name.charAt(0) + arch.name.slice(1).toLowerCase() + 's';
+    if (rows == null) return { who: fhSurname(name), vs, rec: FH_DASHC, meta: 'loading…', color, dash: true };
+    const yr = rows.filter(r => { const d = fhDayNum(r.date); return d != null && ref - d >= 0 && ref - d <= 364; });
+    const w = yr.filter(r => r.won).length, n = yr.length, l = n - w;
+    if (!n) return { who: fhSurname(name), vs, rec: FH_DASHC, meta: 'no matches on record', color, dash: true };
+    const meta = n < 5 ? n + (n === 1 ? ' match' : ' matches') + ' · too few for a rate'
+      : Math.round(w / n * 100) + '% · ' + n + ' matches' + (n < 10 ? ' · small sample' : '');
+    return { who: fhSurname(name), vs, rec: w + '–' + l, meta, color };
+  };
+  return [side(0), side(1)];
+}
+function fhBuildH2H(m){
+  fhEnsureStyles();
+  const F0 = fhStateFor(m), S = F0.h2h;
+  const A = m.p1, B = m.p2, aS = fhSurname(A), bS = fhSurname(B);
+  const hasList = fhMeetingList(m).length > 0;
+  if (!hasList){
+    // No meetings: the empty state; every section below is hidden.
+    if (!m._styleMeetLoaded) Promise.all([ensureStyleMeetings(m), ensurePsMatrix()]).then(() => { if (_fh && _fh.m === m) fhH2h({}); }).catch(() => {});
+    const cards = fhNoMeetingCards(m).map(r => `<div style="border:1px solid rgba(255,255,255,0.07); border-radius:12px; padding:16px 18px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:6px;">
+        <span style="font-size:13px; color:#8b96b5;"><span style="font-weight:700; color:${r.color};">${fhEsc(r.who)}</span> ${fhEsc(r.vs)}</span>
+        <span style="${FH_MONO} font-size:30px; font-weight:800; line-height:1;${r.dash ? ' color:' + FH_DASH + ';' : ''}">${fhEsc(r.rec)}</span>
+        <span style="${FH_MONO} font-size:11px; color:#5b6880;">${fhEsc(r.meta)}</span>
+      </div>`).join('');
+    return `<div class="fh-h2wrap" style="display:flex; flex-direction:column; gap:18px;">
+      <div style="background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:16px; padding:22px 24px; display:flex; flex-direction:column; gap:16px;">
+        <div style="display:flex; flex-direction:column; align-items:center; text-align:center; gap:5px;">
+          <span style="font-size:17px; font-weight:800;">No previous meetings</span>
+          <span style="font-size:13px; color:#8b96b5; line-height:1.5; text-wrap:pretty;">${fhEsc(A)} and ${fhEsc(B)} have not played. Closest guide: how each has done against the other's playing style, last 52 weeks.</span>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:14px;">${cards}</div>
+        <span class="seg" onclick="aGoTab('style')" style="font-size:12.5px; font-weight:600; color:#5b9bff; text-align:center; cursor:pointer;">Open the Playing style tab →</span>
+      </div></div>`;
+  }
+  if (!m._fhH2hData){
+    fhEnsureH2hData(m).then(() => { if (_fh && _fh.m === m) fhH2h({}); });
+    return `<div class="fh-h2wrap" style="display:flex; flex-direction:column; gap:18px;">${fhH2hSkeleton()}</div>`;
+  }
+  const E = fhMeetings(m);
+  E.forEach(r => { F0.sheetMap[r.mid] = { r, aName: A, aKey: m.p1Key, bName: B, bKey: m.p2Key }; });
+  const SURF = S.surf, F = E.filter(r => SURF === 'all' || r.surface === SURF);
+  const todaySurf = fhSurfName(m.surface);   // unknown → no "today's surface" card, never a default
+  // Surface filter with meeting counts; 0 meetings = greyed, not clickable.
+  const surfTabs = fhSegTrack([['all', 'All'], ['Hard', 'Hard'], ['Clay', 'Clay'], ['Grass', 'Grass']].map(t => {
+    const n = E.filter(r => t[0] === 'all' || r.surface === t[0]).length;
+    return { label: t[1], count: String(n), on: SURF === t[0], off: n === 0, onclick: `fhH2h({surf:'${t[0]}',allLines:false,stat:null})` };
+  }));
+  const top = `<div style="display:flex; align-items:center; gap:12px 14px; flex-wrap:wrap;">${surfTabs}<span style="font-size:11px; color:#4b5672; white-space:nowrap;">filters everything below</span></div>`;
+  const cards = `<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(340px,1fr)); gap:14px;">
+      ${fhH2hRecCard('Overall', E, '', null, "fhH2hOverall()", A, B, aS, bS)}
+      ${todaySurf ? fhH2hRecCard('On ' + todaySurf.toLowerCase(), E.filter(r => r.surface === todaySurf), "Today's surface", FH_SURF[todaySurf], null, A, B, aS, bS) : ''}
+    </div>`;
+  if (!F.length){
+    return `<div class="fh-h2wrap" style="display:flex; flex-direction:column; gap:18px;">${top}${cards}<div style="background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:14px; padding:28px; text-align:center; font-size:13px; color:#5b6880;">No meetings on ${SURF.toLowerCase()}.</div></div>`;
+  }
+  // ---- stats row (Sets won / Tiebreaks / Deciding sets) + breakdown drawers ----
+  const withGames = F.filter(r => r.sets), withTally = F.filter(r => r.pS != null);
+  let sA = 0, sB = 0, tA = 0, tB = 0;
+  withTally.forEach(r => { if (r.done){ r.done.forEach(x => { if (x[0] > x[1]) sA++; else if (x[1] > x[0]) sB++; }); } else { sA += r.pS; sB += r.oS; } });
+  withGames.forEach(r => r.done.forEach(x => { if (Math.max(x[0], x[1]) === 7 && Math.min(x[0], x[1]) === 6){ if (x[0] > x[1]) tA++; else tB++; } }));
+  const dec = F.filter(r => r.decider), dA = dec.filter(r => r.won).length;
+  const one = F.length === 1, pre = one ? 'n=1 · ' : '';
+  const gCov = withGames.length < F.length ? ' · ' + withGames.length + ' of ' + F.length + ' with set scores' : '';
+  const stats = [
+    { key: 'sets', label: 'Sets won', val: withTally.length ? sA + '–' + sB : FH_DASHC, sub: pre + (sA + sB) + ' completed sets' },
+    { key: 'tb', label: 'Tiebreaks', val: withGames.length ? tA + '–' + tB : FH_DASHC, sub: pre + (tA + tB) + ' played' + gCov },
+    { key: 'dec', label: 'Deciding sets', val: dec.length ? dA + '–' + (dec.length - dA) : FH_DASHC, sub: pre + dec.length + ' went the distance' },
+  ];
+  const statsHtml = `<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:14px;">${stats.map(c => {
+    const on = S.stat === c.key;
+    return `<div class="seg" onclick="fhH2h({stat:${on ? 'null' : "'" + c.key + "'"}})" style="background:${on ? 'rgba(91,155,255,0.06)' : '#0a0d14'}; border:1px solid ${on ? 'rgba(91,155,255,0.5)' : 'rgba(255,255,255,0.09)'}; border-radius:14px; padding:14px 18px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:5px; cursor:pointer;">
+        <span style="display:flex; justify-content:flex-end; width:100%; margin-bottom:-14px; font-size:10.5px; font-weight:600; color:#5b9bff;">${on ? 'Hide breakdown ▴' : 'Breakdown ▾'}</span>
+        <span style="${FH_MONO} font-size:9.5px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:#5b6880;">${c.label}</span>
+        <span style="${FH_MONO} font-size:22px; font-weight:800; color:${c.val === FH_DASHC ? FH_DASH : '#e7e9ee'}; white-space:nowrap;">${c.val}</span>
+        <span style="font-size:11px; color:#5b6880;">${fhEsc(c.sub)}</span>
+      </div>`; }).join('')}</div>`;
+  const newest = F.slice().reverse();
+  const bRow = (r, val, valColor, meta) => `<div class="seg" onclick="fhOpenSheet('${fhEsc(r.mid)}')" style="display:grid; grid-template-columns:96px minmax(0,1fr) 80px minmax(0,1.2fr); gap:12px; align-items:baseline; padding:8px 0; border-top:1px solid rgba(255,255,255,0.05); cursor:pointer;">
+      <span style="${FH_MONO} font-size:11px; color:#8b96b5; white-space:nowrap;">${fhLongDate(r.date)}</span>
+      <span style="font-size:12.5px; font-weight:600; min-width:0;">${fhEsc(r.tourn + ' ' + r.round)}</span>
+      <span style="${FH_MONO} font-size:13px; font-weight:700; color:${valColor}; white-space:nowrap;">${fhEsc(val)}</span>
+      <span style="${FH_MONO} font-size:11px; color:#b4bdd3;">${fhEsc(meta)}</span>
+    </div>`;
+  let statRows = [], statTitle = '';
+  if (S.stat === 'sets'){ statTitle = 'Sets won per meeting'; statRows = newest.filter(r => r.pS != null).map(r => bRow(r, r.pS + '–' + r.oS, r.pS > r.oS ? FH_AC : r.oS > r.pS ? FH_BC : '#8b96b5', r.sets ? r.sets.map(fhSetTxt).join('  ') + (r.ret ? '  RET' : '') : (r.wo ? 'W/O' : 'set scores not on record'))); }
+  if (S.stat === 'tb'){ statTitle = 'Every tiebreak'; newest.forEach(r => (r.done || []).forEach((x, k) => { if (Math.max(x[0], x[1]) === 7 && Math.min(x[0], x[1]) === 6){ const aw = x[0] > x[1]; statRows.push(bRow(r, aw ? aS : bS, aw ? FH_AC : FH_BC, 'Set ' + (k + 1) + ' · ' + fhSetTxt(x))); } })); }
+  if (S.stat === 'dec'){ statTitle = 'Every deciding set'; newest.filter(r => r.decider).forEach(r => { const x = r.sets ? r.sets[r.sets.length - 1] : null; const aw = x ? x[0] > x[1] : r.won; statRows.push(bRow(r, aw ? aS : bS, aw ? FH_AC : FH_BC, 'Set ' + (r.pS + r.oS) + (x ? ' · ' + fhSetTxt(x) : '') + (r.bo === 5 ? ' · Bo5' : ''))); }); }
+  const statPanel = S.stat && statRows.length ? `<div style="background:#0a0d14; border:1px solid rgba(91,155,255,0.3); border-radius:14px; padding:14px 18px 8px; display:flex; flex-direction:column;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:12px; padding-bottom:8px;">
+        <span style="${FH_MONO} font-size:9.5px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:#8b96b5;">${statTitle}</span>
+        <span style="font-size:10.5px; color:#4b5672;">Click a row for match stats</span>
+      </div>${statRows.join('')}</div>` : '';
+  // ---- Price range ----
+  const PR = F.filter(r => r.price != null), nP = PR.length;
+  const today = fhTodayPair(m);
+  const evLbl = r => r.tourn.replace(' Masters', '') + " '" + String(r.date).slice(2, 4);
+  const prMark = {};
+  const prSides = [0, 1].map(i => {
+    const isA = i === 0, k = isA ? 'a' : 'b', get = r => isA ? r.price : r.oppPrice, color = isA ? FH_AC : FH_BC;
+    const tv = today ? (isA ? today.price : today.oppPrice) : null;
+    const base = { k, name: isA ? A : B, color, rangeBg: fhHexA(color, isA ? 0.5 : 0.32), today: tv };
+    if (!nP) return Object.assign(base, { lo: null });
+    const so = PR.slice().sort((x, y) => get(x) - get(y)), lo = so[0], hi = so[so.length - 1];
+    (prMark[lo.mid] = prMark[lo.mid] || []).push('pr-' + k + 'Lo'); (prMark[hi.mid] = prMark[hi.mid] || []).push('pr-' + k + 'Hi');
+    return Object.assign(base, { lo, hi, loV: get(lo), hiV: get(hi), avgV: fhPriceAvg(PR, isA),
+      allRows: PR.slice().reverse().map(r => ({ r, isLo: r.mid === lo.mid, isHi: r.mid === hi.mid, v: get(r) })) });
+  });
+  const tx = v => v < 16 ? 'translateX(-6px)' : v > 84 ? 'translateX(calc(-100% + 6px))' : 'translateX(-50%)';
+  const figCap = `${FH_MONO} font-size:9.5px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:#5b6880;`;
+  const prCard = s => {
+    let inner = '';
+    if (nP !== 1){
+      const dash = !nP;
+      const pop = nP > 1 ? `<div class="fh-elotip-pop" style="position:absolute; top:calc(100% + 8px); left:-8px; right:-8px; z-index:30; background:#0d111b; border:1px solid rgba(255,255,255,0.14); border-radius:10px; box-shadow:0 12px 32px rgba(0,0,0,0.55); padding:10px 14px; display:flex; flex-direction:column;">
+          <span style="${FH_MONO} font-size:9.5px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:#5b6880; padding-bottom:6px;">${fhEsc(s.name)} · every priced close</span>
+          ${s.allRows.map(o => `<div style="display:grid; grid-template-columns:minmax(0,1fr) auto 48px; gap:10px; align-items:baseline; padding:4px 0; border-top:1px solid rgba(255,255,255,0.05);">
+            <span style="display:flex; align-items:baseline; gap:6px; min-width:0;"><span style="font-size:11.5px; color:#b4bccf; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${fhEsc(o.r.tourn + ' ' + String(o.r.date).slice(0, 4) + ' · ' + o.r.round)}</span>${fhB365Tag(o.r)}</span>
+            <span style="${FH_MONO} font-size:9.5px; letter-spacing:0.1em; text-transform:uppercase; color:#8b96b5;">${o.isLo ? 'Lowest' : o.isHi ? 'Highest' : ''}</span>
+            <span style="${FH_MONO} font-size:12.5px; font-weight:${o.isLo || o.isHi ? 800 : 600}; color:${o.isLo || o.isHi ? s.color : '#b4bccf'}; text-align:right;">${o.v.toFixed(2)}</span>
+          </div>`).join('')}
+          <div style="display:flex; justify-content:space-between; padding-top:6px; border-top:1px solid rgba(255,255,255,0.1); ${FH_MONO} font-size:11px; color:#8b96b5;"><span>${FH_PRICE_AVG_LABEL}</span><span style="font-weight:700; color:#e7e9ee;">${s.avgV.toFixed(2)}</span></div>
+        </div>` : '';
+      const fig = (v, c) => `<span style="${FH_MONO} font-size:22px; font-weight:800; line-height:1; color:${dash ? FH_DASH : c};">${v}</span>`;
+      inner += `<div class="fh-elotip" style="position:relative; display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; align-items:start;">
+          ${pop}
+          <div class="seg prh-${s.k}Lo"${dash ? '' : ` onclick="fhOpenSheet('${fhEsc(s.lo.mid)}')"`} style="display:flex; flex-direction:column; gap:4px; min-width:0;">
+            <span style="${figCap}">Lowest</span>${fig(dash ? FH_DASHC : s.loV.toFixed(2), s.color)}<span style="font-size:11px; color:#8b96b5;">${dash ? 'no priced meeting' : fhEsc(evLbl(s.lo))}</span>
+          </div>
+          <div style="display:flex; flex-direction:column; align-items:center; text-align:center; gap:4px; min-width:0;">
+            <span style="${figCap}">Average</span>${fig(dash ? FH_DASHC : s.avgV.toFixed(2), s.color)}<span style="font-size:11px; color:#8b96b5;">${FH_PRICE_AVG_LABEL}</span>
+          </div>
+          <div class="seg prh-${s.k}Hi"${dash ? '' : ` onclick="fhOpenSheet('${fhEsc(s.hi.mid)}')"`} style="display:flex; flex-direction:column; align-items:flex-end; text-align:right; gap:4px; min-width:0;">
+            <span style="${figCap}">Highest</span>${fig(dash ? FH_DASHC : s.hiV.toFixed(2), s.color)}<span style="font-size:11px; color:#8b96b5;">${dash ? 'no priced meeting' : fhEsc(evLbl(s.hi))}</span>
+          </div>
+        </div>`;
+    }
+    if (nP > 1){
+      const has = s.today != null;
+      const p = has ? Math.max(0, Math.min(100, (s.today - s.loV) / ((s.hiV - s.loV) || 1) * 100)) : 0;
+      inner += `<div style="position:relative; height:40px; margin:0 6px;">
+          <span style="position:absolute; top:0; left:${p.toFixed(1)}%; transform:${has ? tx(p) : 'translateX(-6px)'}; ${FH_MONO} font-size:10.5px; font-weight:700; color:#e7e9ee; white-space:nowrap;">${has ? `Today · ${FH_BOOK[today.book]} ${s.today.toFixed(2)}` : `Today <span style="color:${FH_DASH};">${FH_DASHC}</span>`}</span>
+          <span style="position:absolute; top:24px; left:0; right:0; height:6px; border-radius:3px; background:${s.rangeBg};"></span>
+          ${has ? `<span style="position:absolute; top:21px; left:${p.toFixed(1)}%; width:12px; height:12px; margin-left:-6px; border-radius:50%; background:#e7e9ee; box-shadow:0 0 0 3px #06070a;"></span>` : ''}
+        </div>`;
+    }
+    if (nP === 1){
+      inner += `<div class="seg prh-${s.k}Lo" onclick="fhOpenSheet('${fhEsc(s.lo.mid)}')" style="display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;">
+          <span style="${FH_MONO} font-size:26px; font-weight:800; line-height:1; color:${s.color};">${s.loV.toFixed(2)}</span>
+          <span style="font-size:12px; color:#8b96b5;">${fhEsc(evLbl(s.lo))}</span>
+          <span style="${FH_MONO} font-size:10px; color:#e8a84e; border:1px solid rgba(232,168,78,0.4); border-radius:999px; padding:2px 9px;">n=1</span>
+        </div>`;
+    }
+    return `<div style="background:#06070a; border:1px solid rgba(255,255,255,0.07); border-radius:12px; padding:16px 18px; display:flex; flex-direction:column; gap:14px; min-width:0;">
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;"><span style="font-size:14px; font-weight:700; color:${s.color};">${fhEsc(s.name)}</span></div>
+        ${inner}
+      </div>`;
+  };
+  const priceHtml = `<div style="background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:16px; padding:18px 20px; display:flex; flex-direction:column; gap:16px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:10px 16px; flex-wrap:wrap;">
+        <div style="display:flex; align-items:baseline; gap:8px 10px; flex-wrap:wrap;"><span style="font-size:17px; font-weight:800;">Price range</span><span style="font-size:12px; color:#8b96b5;">· Closing odds${PR.length ? ' · ' + fhSourceNote(PR) : ''}</span></div>
+        <span style="${FH_MONO} font-size:11px; color:#8b96b5; white-space:nowrap;">${nP} of ${F.length} meetings priced</span>
+      </div>
+      ${nP ? '' : `<span style="font-size:13px; color:#8b96b5; text-align:center; padding:4px 0 2px;">No closing odds on record for these meetings</span>`}
+      <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:14px;">${prSides.map(prCard).join('')}</div>
+    </div>`;
+  // ---- Hot lines (one table, one dot per meeting) ----
+  const sc = fhScoreLines(F, fhH2hLineDefs(aS, bS));
+  const hotOk = F.length >= FH_HOT_MIN_ELIGIBLE && sc.scored.length > 0;
+  const withSets = F.filter(r => r.pS != null && !r.wo).length;
+  const hotFew = F.length < FH_HOT_MIN_ELIGIBLE ? 'Not enough meetings to rank lines (n=' + F.length + ')'
+    : (!sc.scored.length ? 'Not enough scored meetings to rank lines (n=' + withSets + ')' : '');
+  const table = hotOk ? fhHotLinesTable(F, sc, { colMin: '26px', colHead: 'year', color: FH_AC, showAll: !!S.allLines, shortPriced: null,
+    lineCls: k => `h2hl hl-${k}`,
+    colTip: r => r.tourn + ' ' + String(r.date).slice(0, 4) + ' · ' + r.round,
+    dotTip: r => r.tourn + ' ' + String(r.date).slice(0, 4) }) : null;
+  const hotMore = hotOk && (sc.scored.length > table.shown || S.allLines);
+  const hotHtml = `<div style="background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:16px; padding:18px 20px 12px; display:flex; flex-direction:column; gap:12px;">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:10px 16px; flex-wrap:wrap;">
+        <div style="display:flex; flex-direction:column; gap:3px;"><span style="font-size:17px; font-weight:800;">Hot lines</span><span style="font-size:12px; color:#8b96b5;">Best-covered line in each market family across these meetings</span></div>
+      </div>
+      ${hotOk ? `<div style="display:flex; flex-direction:column; border-top:1px solid rgba(255,255,255,0.06);">${table.head}${table.lines}</div>
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; padding-top:4px; border-top:1px solid rgba(255,255,255,0.06);">
+        <span style="font-size:10.5px; color:#4b5672;">One dot per meeting, oldest → newest · filled = covered · empty = not covered · small grey = not eligible · hover a line to find its meetings, click a dot for the match</span>
+        ${hotMore ? `<span class="seg" onclick="fhH2h({allLines:${!S.allLines}})" style="font-size:12.5px; font-weight:600; color:#5b9bff; cursor:pointer; white-space:nowrap;">${S.allLines ? 'Best line per family' : 'Show all lines (' + sc.scored.length + ')'}</span>` : ''}
+      </div>` : `<div style="padding:22px 0 14px; text-align:center; ${FH_MONO} font-size:12px; color:#5b6880; border-top:1px solid rgba(255,255,255,0.06);">${fhEsc(hotFew)}</div>`}
+    </div>`;
+  // ---- Meetings · A's side ----
+  const entries = newest.map(r => {
+    const meta = psTourMeta(r.tournRaw);
+    const surfLbl = r.surface ? (r.surface === 'Hard' && meta && meta.indoor ? 'Indoor hard' : r.surface) : '';
+    const cls = 'h2m ' + (sc.covMap[r.mid] || []).map(k => 'cov-' + k).join(' ') + ' ' + (prMark[r.mid] || []).join(' ');
+    return `<div class="${cls}">
+        <div style="display:flex; align-items:center; gap:9px; padding:14px 14px 6px; border-top:1px solid rgba(255,255,255,0.07);"><span style="${FH_MONO} font-size:10px; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; color:#e7e9ee; white-space:nowrap;">${fhEsc(r.tourn + ' ' + String(r.date).slice(0, 4))}</span><span style="font-size:11px; color:#8b96b5; white-space:nowrap;">${fhEsc(surfLbl)}</span></div>
+        ${fhH2hRowHtml(r)}
+      </div>`;
+  }).join('');
+  const listHtml = `<div id="fhH2hList" style="display:flex; flex-direction:column; min-width:0;">
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:10px;">
+        <span style="font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:#5b6880;">Meetings · ${fhEsc(aS)}'s side</span>
+        <span style="font-size:11px; color:#5b6880;">${F.length} on record${SURF === 'all' ? '' : ' · ' + SURF.toLowerCase()}</span>
+      </div>
+      <div style="border:1px solid rgba(255,255,255,0.09); border-radius:14px; overflow:clip; background:#0a0d14; display:flex; flex-direction:column;">
+        ${fhStickyHeadHtml('22px 40px minmax(0,1fr) 40px 38px 42px 42px', ['Meeting', 'Round', 'Sets', 'Home', 'Away'], true)}
+        ${entries}
+      </div>
+      <span style="font-size:10.5px; color:#4b5672; margin-top:8px;">Home = ${fhEsc(aS)}'s closing price, Away = ${fhEsc(bS)}'s. Click a meeting for match stats.</span>
+    </div>`;
+  return `<div class="fh-h2wrap" style="display:flex; flex-direction:column; gap:18px;">${top}${cards}${statsHtml}${statPanel}${priceHtml}${hotHtml}${listHtml}</div>`;
+}
+// H2H Match Row LOCKED — "No number" variant (data check 4): the opponent-Elo
+// span is dropped, the rest is the locked row.
+function fhH2hRowHtml(r){
+  return `<div class="seg" onclick="fhOpenSheet('${fhEsc(r.mid)}')" style="display:grid; grid-template-columns:22px 40px minmax(0,1fr) 40px 38px 42px 42px; gap:9px; align-items:center; padding:8px 14px; border-top:1px solid rgba(255,255,255,0.04); cursor:pointer;">
+      ${fhWlChip(r.won)}
+      <span style="${FH_MONO} font-size:11px; color:#8b96b5;">${fhDDMM(r.date)}</span>
+      <span style="display:flex; flex-direction:column; gap:3px; min-width:0;">
+        <span style="display:flex; align-items:baseline; gap:7px; flex-wrap:wrap;"><span style="font-size:13px; font-weight:600; color:#e7e9ee;">${fhEsc(fhOppFmt(r.opp))}</span>${fhB365Tag(r)}</span>
+        <span style="${FH_MONO} font-size:11px; color:#8b96b5;">${fhEsc(fhScoreText(r, true))}</span>
+      </span>
+      <span style="${FH_MONO} font-size:10.5px; color:#5b6880; text-align:center;">${fhEsc(r.round)}</span>
+      <span style="${FH_MONO} font-size:12.5px; font-weight:700; color:${r.pS == null ? FH_DASH : '#e7e9ee'}; text-align:center; white-space:nowrap;">${r.pS == null ? FH_DASHC : r.pS + ' - ' + r.oS}</span>
+      ${fhPriceCell(r.price, 'center', true)}
+      ${fhPriceCell(r.oppPrice, 'center', false)}
+    </div>`;
+}
+function fhH2hOverall(){
+  fhH2h({ surf: 'all', stat: null });
+  setTimeout(() => { const el = document.getElementById('fhH2hList'); if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 60);
+}
+
+// =====================================================================
+// MATCH STATS SHEET — header 2a + the existing match-detail body
+// (formPanelHtml: Stats / Point by point, set scope, the shared msBarHtml bars).
+// Every clickable match on both tabs opens it.
+// =====================================================================
+let _fhSheetSeq = 0;
+function fhOpenSheet(mid){
+  if (!_fh || !_fh.sheetMap[mid]) return;
+  const e = _fh.sheetMap[mid], r = e.r;
+  let host = document.getElementById('fhSheet');
+  // Mounted inside the modal card so the existing match-detail body (formPanelHtml)
+  // picks up its scoped styles (:is(.modal-analysis, …) rules).
+  const card = document.querySelector('#analysisModal .modal-analysis') || document.body;
+  if (!host || host.parentNode !== card){ if (host) host.remove(); host = document.createElement('div'); host.id = 'fhSheet'; card.appendChild(host); }
+  const idPrefix = 'fhs' + (++_fhSheetSeq);
+  const last = n => fhSurname(n);
+  const scoreTxt = r.sets ? r.sets.map(x => x[0] + '-' + x[1]).join(' ') : '';
+  const flipTxt = r.sets ? r.sets.map(x => x[1] + '-' + x[0]).join(' ') : '';
+  const retTag = r.ret ? ' ret.' : '';
+  const winLine = r.wo ? (r.won ? last(e.aName) : last(e.bName)) + ' won by walkover'
+    : (r.won ? last(e.aName) + ' won ' + (scoreTxt || (r.pS + '-' + r.oS)) : last(e.bName) + ' won ' + (flipTxt || (r.oS + '-' + r.pS))) + retTag;
+  const setsKnown = r.pS != null;
+  const aC = !setsKnown ? FH_DASH : (r.won ? '#e7e9ee' : '#5b6880'), bC = !setsKnown ? FH_DASH : (r.won ? '#5b6880' : '#e7e9ee');
+  const chips = (r.sets || []).map(x => `<span style="${FH_MONO} font-size:12px; font-weight:700; color:#e7e9ee; background:#06070a; border:1px solid rgba(255,255,255,0.09); border-radius:6px; padding:3px 8px;">${x[0]}-${x[1]}</span>`).join('');
+  const badge = (v, c) => `<span style="position:absolute; left:50%; bottom:-9px; transform:translateX(-50%); ${FH_MONO} font-size:10.5px; font-weight:700; color:${v == null ? FH_DASH : c}; background:#06070a; border:1px solid rgba(255,255,255,0.16); border-radius:999px; padding:1px 7px; white-space:nowrap;">${v == null ? FH_DASHC : v.toFixed(2)}</span>`;
+  const yy = String(r.date || '').slice(2, 4);
+  const meta = [r.tourn, r.surface || FH_DASHC, r.round, fhDDMM(r.date) + (yy ? '.' + yy : '')].join(' · ');
+  const asFormRow = r.formRow || { date: r.date, tournament: r.tournRaw, round: r.round, result: r.result, won: r.won, opponent: e.bName, eventKey: r.ek };
+  host.innerHTML = `<div style="position:fixed; inset:0; z-index:110; background:rgba(3,5,9,0.72); display:flex; align-items:flex-start; justify-content:center; padding:40px 24px; overflow-y:auto; font-family:'Hanken Grotesk',sans-serif; color:#e7e9ee;">
+      <div onclick="fhCloseSheet()" style="position:absolute; inset:0;"></div>
+      <div style="position:relative; width:100%; max-width:760px; background:#0a0d14; border:1px solid rgba(91,155,255,0.3); border-radius:14px; padding:22px 24px 26px; display:flex; flex-direction:column; gap:16px;">
+        <div style="display:flex; flex-direction:column; gap:18px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:16px;">
+            <span style="display:flex; align-items:baseline; gap:8px;"><span style="${FH_MONO} font-size:11px; letter-spacing:0.06em; color:#5b6880;">${fhEsc(meta)}</span>${fhB365Tag(r)}</span>
+            <span class="seg" onclick="fhCloseSheet()" style="background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.12); border-radius:8px; width:30px; height:30px; color:#8b96b5; font-size:15px; display:flex; align-items:center; justify-content:center; cursor:pointer; flex:none;">✕</span>
+          </div>
+          <div style="display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:20px;">
+            <div style="display:flex; align-items:center; gap:16px; min-width:0;">
+              <div style="position:relative; flex:none;"><div style="width:56px; height:56px; border-radius:50%; background:rgba(91,155,255,0.16); border:2px solid #5b9bff; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:17px; color:#5b9bff;">${fhEsc(fhIni(e.aName))}</div>${badge(r.price, '#e7e9ee')}</div>
+              <span style="font-size:18px; font-weight:800; letter-spacing:-0.015em; color:#e7e9ee;">${fhEsc(e.aName)}</span>
+            </div>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
+              <span style="${FH_MONO} font-size:40px; font-weight:700; line-height:1; letter-spacing:-0.02em; white-space:nowrap;"><span style="color:${aC};">${setsKnown ? r.pS : FH_DASHC}</span><span style="color:#4b5672;"> – </span><span style="color:${bC};">${setsKnown ? r.oS : FH_DASHC}</span></span>
+              <div style="display:flex; gap:6px;">${chips}</div>
+            </div>
+            <div style="display:flex; align-items:center; gap:16px; justify-content:flex-end; min-width:0;">
+              <span style="font-size:18px; font-weight:800; letter-spacing:-0.015em; color:#b4bccf; text-align:right;">${fhEsc(e.bName)}</span>
+              <div style="position:relative; flex:none;"><div style="width:56px; height:56px; border-radius:50%; background:rgba(255,255,255,0.06); border:2px solid rgba(255,255,255,0.16); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:17px; color:#b4bccf;">${fhEsc(fhIni(e.bName))}</div>${badge(r.oppPrice, '#b4bccf')}</div>
+            </div>
+          </div>
+          <div style="display:flex; justify-content:center;"><span style="${FH_MONO} font-size:10px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:#b4bccf; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.12); border-radius:999px; padding:4px 12px;">${fhEsc(winLine)}</span></div>
+        </div>
+        <div class="fh-sheet-body">${formPanelHtml(asFormRow, idPrefix, e.aKey, e.aName)}</div>
+      </div>
+    </div>`;
+  const wrap = document.getElementById('formPanelWrap-' + idPrefix);
+  if (wrap){ wrap.classList.add('open'); ensureFormPanelTabs(idPrefix); }
+  _fh.sheet = mid;
+}
+function fhCloseSheet(){ const h = document.getElementById('fhSheet'); if (h) h.innerHTML = ''; if (_fh) _fh.sheet = null; }
+document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && _fh && _fh.sheet){ ev.stopPropagation(); fhCloseSheet(); } }, true);
 
 /* ---------- TOURNAMENT SUB-TAB ---------- */
 // Note: deliberately does not include anything derived from "court speed

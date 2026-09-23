@@ -28,6 +28,9 @@ setstats-index.json
 # already fetches, and served straight from _site.
 form/
 form-index.json
+# TEN-263 match-close shards: built every pipeline run from odds-archive/ (never committed).
+match-closes/
+match-closes-index.json
 
 # Odds-movement shards + their availability index: one file per match, split out
 # of matches.json by bsp-pipeline.js on every run from the timelines the capturer

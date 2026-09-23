@@ -325,6 +325,15 @@ jobs:
       - name: Build tournament market (best-effort)
         run: node build-tournament-market.js || true
 
+      # TEN-263 match-close shards: every ATP main-draw match per player with each
+      # side's closing price for BOTH books (Pinnacle and Bet365 pairs, each only when
+      # two-sided; the page picks Pinnacle, else Bet365, per match), from the same
+      # committed odds-archive/ CSVs. Read lazily by the Match analysis
+      # Form tab (v market, H/A) and H2H tab (Price range, Home/Away). No network
+      # calls. Best-effort: a failure publishes nothing and those cells dash.
+      - name: Build match-close shards (best-effort)
+        run: node build-match-closes.js || true
+
       # MARKET SIZE shards (TEN-8): per-match prediction-market 24h volume from
       # Kalshi (sum of both players' contract legs) and Polymarket (moneyline
       # market). Reads the matches.json the pipeline just wrote. Best-effort —
@@ -656,6 +665,10 @@ jobs:
           # Per-tournament market performance (Tournaments Overview §4/§5). Fetched
           # by the dashboard; a missing file just em-dashes those two blocks.
           cp tournament-market.json _site/ 2>/dev/null || true
+          # TEN-263 match-close shards (built above). Lazily fetched per player by the
+          # Match analysis Form/H2H tabs; a missing shard dashes the price cells.
+          cp match-closes-index.json _site/ 2>/dev/null || true
+          cp -r match-closes _site/ 2>/dev/null || true
           # TEN-242 phase 2 C7 (founder ruling): the quote sheet reaches us as a
           # COMMITTED CSV at data/tournament-quotes.csv. NO JOB FETCHES IT, so no
           # cron can overwrite it — the only writer is the founder exporting the
