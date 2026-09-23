@@ -28,7 +28,7 @@ const assert = require('assert');
 const path = require('path');
 const fs = require('fs');
 const os = require('os');
-const { playerMatchHistory, formSetsFromFixture, careerRowIsComplete, writeCareerHistoryShards,
+const { playerMatchHistory, formSetsFromFixture, careerRowIsComplete, careerRowIsBo5Slam, writeCareerHistoryShards,
   NEXTGEN_TOURNAMENT_KEY, CAREER_HISTORY_INDEX_PATH } =
   require(path.join(__dirname, '..', 'bsp-pipeline.js'));
 const cb = require(path.join(__dirname, '..', 'career-backfill.js'));
@@ -536,6 +536,80 @@ check('a NextGen row is NOT counted as "untyped" — excluded and untyped are di
       'a format EXCLUSION must not inflate the count of rows the format could not be READ for');
     assert.strictEqual(idx.meta.exclusions.altFormat, 1);
   } finally { process.chdir(cwd); fs.rmSync(tmp, { recursive: true, force: true }); }
+});
+
+// ── 7 · TEN-265: every Slam name VARIANT is typed Bo5 on its main draw ──────
+// The fixtures half carries two vocabularies for the same four events — "US Open"
+// and "ATP US Open", "French Open" / "ATP French Open" / "Roland Garros". The
+// Slam-name inference once matched the RAW string, so every "ATP …" main-draw
+// row was typed Bo3, a finished 3-1 failed the Bo3 set count, and the row was
+// stamped `incomplete`: 1,639 finished Bo5 rows on the live store 2026-09-23.
+// The variants below are the ones measured in the live shards, plus the
+// Roland-Garros spellings canonicalTournament folds.
+const SLAM_VARIANTS = [
+  'US Open', 'ATP US Open', 'Wimbledon', 'ATP Wimbledon',
+  'Australian Open', 'ATP Australian Open',
+  'French Open', 'ATP French Open', 'Roland Garros', 'ATP Roland Garros',
+];
+const MAIN_ROUNDS = ['R128', 'R64', 'R32', 'R16', 'QF', 'SF', 'F', '1/64-finals', 'Final'];
+
+check('TEN-265: no Grand-Slam MAIN-DRAW variant is typed Bo3', () => {
+  const typedBo3 = [];
+  for (const t of SLAM_VARIANTS) for (const round of MAIN_ROUNDS) {
+    if (!careerRowIsBo5Slam({ tournament: t, round })) typedBo3.push(`${t} · ${round}`);
+  }
+  assert.deepStrictEqual(typedBo3, [], `Slam main-draw rows typed Bo3: ${typedBo3.join(', ')}`);
+});
+
+check('TEN-265: Slam QUALIFYING, junior Slams and ordinary events stay Bo3', () => {
+  const wrong = [];
+  for (const r of [
+    { tournament: 'ATP US Open', round: 'Qualifying' },
+    { tournament: 'US Open - Qualification', round: 'R1' },
+    { tournament: 'ATP Wimbledon', round: 'Qualifying' },
+    { tournament: 'Boys US Open', round: 'F' },
+    { tournament: 'Boys French Open', round: 'SF' },
+    { tournament: 'ATP Cincinnati', round: 'F' },
+    { tournament: 'Test Open', round: 'F' },
+  ]) if (careerRowIsBo5Slam(r)) wrong.push(`${r.tournament} · ${r.round}`);
+  assert.deepStrictEqual(wrong, [], `typed Bo5 but best-of-three: ${wrong.join(', ')}`);
+});
+
+// Drives the REAL writer: a finished 3-1 under every spelling must ship
+// complete, and a 2-0 under the same spelling must still ship incomplete — so
+// the fix is a correct format, not a looser completeness test.
+function slamRows() {
+  const rows = [];
+  SLAM_VARIANTS.forEach((t, i) => {
+    const date = `2026-08-${String(10 + i).padStart(2, '0')}`;
+    rows.push({ year: '2026', date, tournament: t, round: 'R64', result: '3 - 1', won: true, src: 'fixtures' });
+    rows.push({ year: '2026', date, tournament: t, round: 'R32', result: '2 - 0', won: true, src: 'fixtures' });
+  });
+  return rows;
+}
+check('TEN-265: the shard writer keeps a finished Bo5 under every Slam spelling', async () => {
+  const cwd = process.cwd();
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'ten265-'));
+  try {
+    process.chdir(tmp);
+    await writeCareerHistoryShards({ p: { careerMatches: slamRows() } }, { log: () => {} });
+    const sh = JSON.parse(fs.readFileSync(path.join('career-history', 'p.json'), 'utf8'));
+    const bad = sh.matches.filter(m => (m.round === 'R64') === !!m.incomplete)
+      .map(m => `${m.tournament} ${m.round} "${m.result}" incomplete=${!!m.incomplete}`);
+    assert.deepStrictEqual(bad, [], `wrong completeness: ${bad.join('; ')}`);
+    assert.strictEqual(sh.incomplete, SLAM_VARIANTS.length, 'exactly the 2-0 rows are excluded');
+  } finally { process.chdir(cwd); fs.rmSync(tmp, { recursive: true, force: true }); }
+});
+
+check('TEN-265 CONTROL: the raw-string rule excludes the "ATP …" 3-1 rows', () => {
+  // The pre-TEN-265 inference, verbatim. If it stops rejecting the witnesses,
+  // the writer test above no longer proves the defect is gone.
+  const RAW = new Set(['Australian Open', 'French Open', 'Roland Garros', 'Wimbledon', 'US Open']);
+  const oldBo5 = (r) => RAW.has(String(r.tournament || '').trim()) && !/qualif/i.test(String(r.round || ''));
+  const falselyIncomplete = slamRows().filter(r => r.round === 'R64' && !careerRowIsComplete(r.result, oldBo5(r)));
+  assert.deepStrictEqual(falselyIncomplete.map(r => r.tournament).sort(),
+    ['ATP Australian Open', 'ATP French Open', 'ATP Roland Garros', 'ATP US Open', 'ATP Wimbledon'],
+    'the control no longer reproduces the raw-string defect on the ATP-prefixed witnesses');
 });
 
 (async () => {

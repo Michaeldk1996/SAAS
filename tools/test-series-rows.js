@@ -65,7 +65,13 @@ const margin = (s) => s.reduce((n, [a, b]) => n + a - b, 0);
 // format: 2 → best-of-3, 3 → best-of-5. Anything else is not a shape this gate can judge.
 // (TEN-265: the set-shape predicates below once hard-coded best-of-3 — "went the distance"
 // was `3 sets` — and a five-set US Open decider red-lined every pipeline run.)
+// A set is FINISHED only when someone reached six with a two-game lead, or won
+// the 7-6 tiebreak. A retirement's last set ("6-4 3-2") is not one, and counting
+// it as won would type a stopped match as a completed 2-0.
+const setDone = ([a, b]) => (Math.max(a, b) >= 6 && Math.abs(a - b) >= 2) ||
+  (Math.max(a, b) === 7 && Math.min(a, b) === 6);
 function bestOfScore(s) {
+  if (!s.every(setDone)) return null;
   const mine = s.filter(([a, b]) => a > b).length;
   const theirs = s.filter(([a, b]) => a < b).length;
   const w = Math.max(mine, theirs);
@@ -150,6 +156,40 @@ assert.strictEqual(A.bad.length, 0,
   A.bad.slice(0, 15).join('\n  '));
 assert(A.rows > 0, 'TEN-204 2.8 A — zero rows audited; the gate would pass vacuously.');
 ok(`A · ${A.rows} rows across all streaks satisfy their own claim`);
+
+// ── A2 · a SET-SHAPE row must be judgeable (TEN-265) ────────────────────────
+// A fails only on `=== false`. Once the set-shape predicates read the format off
+// the score, a score that is not a completed Bo3/Bo5 shape (a retirement, a
+// partial scoreline) returns null — "not evaluable" — and would pass A
+// unaudited. The builder never lets such a row into a set-shape run (its
+// wentDistance / straightResult are null there), so one appearing is itself a
+// defect: fail it here rather than wave it through.
+const SET_SHAPE = new Set(['went-the-distance', 'straight-sets-win', 'straight-sets-loss']);
+function unjudgeable(predicate) {
+  const bad = [];
+  eachStreak((p, st) => {
+    if (st.type !== 'setpat' || !SET_SHAPE.has(st.subtype)) return;
+    (st.matches || []).forEach((m, i) => {
+      if (predicate(st, m) === null) bad.push(`${p.name} · ${st.subtype} · row ${i + 1} ${m.date} "${m.score}"`);
+    });
+  });
+  return bad;
+}
+{
+  const bad = unjudgeable(holds);
+  assert.strictEqual(bad.length, 0,
+    `TEN-265 A2 — ${bad.length} set-shape streak row(s) carry a score that is not a completed ` +
+    `Bo3/Bo5 match, so their claim cannot be checked:\n  ` + bad.slice(0, 15).join('\n  '));
+  // CONTROL — plant a retirement scoreline into every set-shape streak; each must be caught.
+  let planted = 0, caught = 0;
+  eachStreak((p, st) => {
+    if (st.type !== 'setpat' || !SET_SHAPE.has(st.subtype) || !(st.matches || []).length) return;
+    planted++;
+    if (holds(st, Object.assign({}, st.matches[0], { score: '6-4 3-2' })) === null) caught++;
+  });
+  if (planted) assert.strictEqual(caught, planted, 'TEN-265 A2 CONTROL — a planted "6-4 3-2" was not flagged unjudgeable.');
+  ok(`A2 · every set-shape row is a completed Bo3/Bo5 score (control: ${caught}/${planted} planted retirements flagged)`);
+}
 
 // ── B · modal row count == streak count ─────────────────────────────────────
 {
@@ -516,6 +556,9 @@ ok(`A · ${A.rows} rows across all streaks satisfy their own claim`);
     [SW, row('6-4 3-6 6-4 6-3', true),   false, 'bo5 3-1 is not a straight-sets win'],
     [SL, row('4-6 4-6 4-6', false),      true,  'bo5 0-3 is a straight-sets loss'],
     [SL, row('4-6 6-3 4-6', false),      false, 'bo3 1-2 is not a straight-sets loss'],
+    // Unfinished last set = a stopped match. Not judgeable, so A2 fails it in a set-shape run.
+    [D,  row('6-4 3-2', true),           null,  'a retirement is not judgeable'],
+    [SW, row('6-4 6-4 2-1', true),       null,  'a bo5 stopped in set 3 is not a straight-sets win'],
   ];
   for (const [st, m, want, why] of cases) {
     assert.strictEqual(holds(st, m), want, `TEN-265 — set-shape predicate wrong: ${why} ("${m.score}").`);

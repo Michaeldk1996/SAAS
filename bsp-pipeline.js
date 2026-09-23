@@ -3621,6 +3621,15 @@ const CAREER_HISTORY_SCHEMA_VERSION = 1;
 // Unparseable counts as incomplete ON PURPOSE: the standing rule is that missing
 // data is a dash, and a score we cannot read is not a score we may assume
 // finished.
+// The Slam-name format inference for a career-history row that carries no
+// format of its own: a Grand-Slam MAIN-DRAW row is Bo5. Keyed on the canonical
+// display name (canonicalTournament folds "ATP US Open", "Roland Garros", …),
+// the same key every other GRAND_SLAM_NAMES test in this file uses.
+function careerRowIsBo5Slam(r) {
+  return GRAND_SLAM_NAMES.has(canonicalTournament(r && r.tournament).display)
+    && !/qualif/i.test(String((r && r.round) || ''));
+}
+
 function careerRowIsComplete(result, isBestOfFive) {
   const raw = String(result == null ? '' : result).trim();
   // A trailing marker ("2 - 1 ret.", "2 - 1 RET") is not a score we can call
@@ -3760,8 +3769,13 @@ async function writeCareerHistoryShards(profiles, opts = {}) {
         // edition, which TML types best_of=3 so the inference happened to
         // agree. Same wrong scale, so they leave too.)
         // Qualifying is Bo3 even at a Slam, and the round test keeps it so.
-        isBo5 = GRAND_SLAM_NAMES.has(String(r.tournament || '').trim())
-          && !/qualif/i.test(String(r.round || ''));
+        // TEN-265: matched on the CANONICAL name, never the raw feed string. The
+        // fixtures half carries both vocabularies ("US Open" and "ATP US Open",
+        // "ATP French Open", …), and a raw-string test typed every "ATP …" Slam
+        // main-draw row Bo3 — which then read a finished 3-1 as "not a legal
+        // Bo3 score" and stamped it `incomplete`. Measured on the live store
+        // 2026-09-23: 1,639 finished Bo5 rows excluded that way, 0 the other way.
+        isBo5 = careerRowIsBo5Slam(r);
         untypedTotal++;
       }
       // The flags are an ADDITIONAL exclusion, never the basis. The score
@@ -6949,7 +6963,7 @@ module.exports = { profileRosterFloorVerdict, lastPublishedRosterCount, profiles
   // The Career-record pair. Exported together on purpose: their whole contract
   // is that the counts one returns are tallyable from the rows the other
   // returns, and that is what ten8-career-verify.js asserts.
-  buildAllTierYearly, playerMatchHistory, writeCareerHistoryShards, careerRowIsComplete, formSetsFromFixture,
+  buildAllTierYearly, playerMatchHistory, writeCareerHistoryShards, careerRowIsComplete, careerRowIsBo5Slam, formSetsFromFixture,
   // TEN-244: the NextGen exclusion key, exported so the suite asserts the SAME
   // constant the pipeline uses rather than a copy that can drift out of step.
   NEXTGEN_TOURNAMENT_KEY, CAREER_HISTORY_INDEX_PATH,
