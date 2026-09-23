@@ -356,6 +356,33 @@ function computeRatings(b, floors, cb) {
       bpSaved: b.bpSaved, bpConverted: b.oBpFaced - b.oBpSaved,
       // Challenger backing sample folded in for thin players (0 when tour sample is reliable / no Challenger match)
       challMatches: c.matches, challSvpt: c.svpt, challBpFaced: c.bpFaced, challBpChances: c.oBpFaced,
+      // TEN-254, founder ruling 2 (2026-09-23): the Mental Edge board gets three views —
+      // ATP only / Challenger only / ATP + Challenger. The line above publishes only the
+      // Challenger DENOMINATORS (faced, chances), so a reader can know how many pressure
+      // points a player met at Challenger level but CANNOT split them into won and lost —
+      // which is exactly what a PW/PL ratio needs. Measured on the 2026-09-21 store:
+      // challBpFaced and challBpChances present on 237/237, challBpSaved and
+      // challBpConverted on 0/237. Two of the three ruled views were therefore not
+      // computable from this file at all.
+      //
+      // These two close that gap and are the exact mirror of the tour pair above: saved on
+      // serve, and converted on return (opponent break points faced, minus those the
+      // opponent saved). Both operands are already accumulated in `c` — the Under-Pressure
+      // blend has read `c.bpSaved` and `c.oBpFaced - c.oBpSaved` since the Challenger
+      // fold-in landed — so nothing new is derived here, it is only published.
+      //
+      // ⚠️ 0 means NO CHALLENGER SAMPLE, exactly as it does for the two fields above: a
+      // player with no Challenger matches gets challBpFaced 0 AND challBpSaved 0, the
+      // count total is 0, and a ratio over 0 pressure points must not be computed. That is
+      // an absence, not a zero performance — the renderer has to keep treating it as one.
+      // 40 of 237 players on the current store have no Challenger pressure points at all.
+      //
+      // ⚠️ NO DISCOUNT is applied here, unlike the serve/return/under-pressure blends which
+      // scale the Challenger success side by CHALL_DISCOUNT. These are raw counts, and a
+      // discount on a count changes what the count means rather than what it is worth.
+      // Whether the combined VIEW should weight the tiers is a founder decision that is
+      // still open; this file publishes the unweighted truth either way.
+      challBpSaved: c.bpSaved, challBpConverted: c.oBpFaced - c.oBpSaved,
     },
   };
 }
