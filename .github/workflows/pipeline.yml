@@ -1183,32 +1183,12 @@ jobs:
           fi
           git config user.name "bsp-admin-log-bot"
           git config user.email "bsp-admin-log-bot@users.noreply.github.com"
-          git add admin-log.json
-          git commit -m "chore(admin): append completed match log [skip ci]"
-          for attempt in 1 2 3; do
-            if git push origin HEAD:main; then echo "Pushed on attempt $attempt."; exit 0; fi
-            echo "Push rejected (attempt $attempt) — rebasing."
-            git pull --rebase --autostash origin main || true
-            # TEN-247, founder-authorised 2026-09-21 (option 1). `--autostash`
-            # re-applies the dirty tree AFTER the rebase, and when that re-apply
-            # conflicts git prints "applying them resulted in conflicts" and then
-            # "Successfully rebased and updated refs/heads/main." - and EXITS 0.
-            # The retry push then succeeds, so THIS step goes green while leaving
-            # `U <path>` in the tree; the next commit-back step dies on its first
-            # `git commit` and the badge names the victim instead of the cause.
-            # Measured 2026-09-20: 13 of the last 14 completed runs, always on the
-            # regenerated matches.json.
-            #
-            # This does NOT recover the write. It makes the step that corrupted the
-            # tree the step that reports it, which is the whole point: a green step
-            # corrupting the tree is the worst state to be in.
-            UNMERGED="$(git diff --name-only --diff-filter=U)"
-            if [ -n "$UNMERGED" ]; then
-              echo "::error::Rebase left unmerged files - this step corrupted the working tree and every later commit-back would fail on it: $UNMERGED"
-              exit 1
-            fi
-          done
-          echo "::error::Could not push after 3 attempts."; exit 1
+          # All four commit-backs below push through tools/commitback-push.sh (TEN-267):
+          # it takes main's side when the autostash re-apply of this run's uncommitted
+          # build output (matches.json) conflicts with a concurrent odds-bot tick, and
+          # still fails on a conflict in any ledger these steps own. Locked by
+          # tools/test-commitback-push.js.
+          tools/commitback-push.sh "chore(admin): append completed match log [skip ci]" admin-log.json
 
       # TEN-168 Series outcomes ledger (fix #3, founder 2026-09-07). build-series.js (run
       # earlier this deploy) appends CONTINUED/BROKEN evaluations for streaks whose
@@ -1224,32 +1204,7 @@ jobs:
           fi
           git config user.name "bsp-series-outcomes-bot"
           git config user.email "bsp-series-outcomes-bot@users.noreply.github.com"
-          git add series-outcomes.json
-          git commit -m "chore(series): append streak outcome evaluations [skip ci]"
-          for attempt in 1 2 3; do
-            if git push origin HEAD:main; then echo "Pushed on attempt $attempt."; exit 0; fi
-            echo "Push rejected (attempt $attempt) — rebasing."
-            git pull --rebase --autostash origin main || true
-            # TEN-247, founder-authorised 2026-09-21 (option 1). `--autostash`
-            # re-applies the dirty tree AFTER the rebase, and when that re-apply
-            # conflicts git prints "applying them resulted in conflicts" and then
-            # "Successfully rebased and updated refs/heads/main." - and EXITS 0.
-            # The retry push then succeeds, so THIS step goes green while leaving
-            # `U <path>` in the tree; the next commit-back step dies on its first
-            # `git commit` and the badge names the victim instead of the cause.
-            # Measured 2026-09-20: 13 of the last 14 completed runs, always on the
-            # regenerated matches.json.
-            #
-            # This does NOT recover the write. It makes the step that corrupted the
-            # tree the step that reports it, which is the whole point: a green step
-            # corrupting the tree is the worst state to be in.
-            UNMERGED="$(git diff --name-only --diff-filter=U)"
-            if [ -n "$UNMERGED" ]; then
-              echo "::error::Rebase left unmerged files - this step corrupted the working tree and every later commit-back would fail on it: $UNMERGED"
-              exit 1
-            fi
-          done
-          echo "::error::Could not push series-outcomes after 3 attempts."; exit 1
+          tools/commitback-push.sh "chore(series): append streak outcome evaluations [skip ci]" series-outcomes.json
 
       # TEN-206 founder ruling Q2(d) ch-1, 2026-09-16 — the daily half of "key per day
       # + commit one gzipped file daily". Runs AFTER the deploy has published, like the
@@ -1274,32 +1229,9 @@ jobs:
           fi
           git config user.name "bsp-profile-cache-bot"
           git config user.email "bsp-profile-cache-bot@users.noreply.github.com"
-          git add player-profiles-cache.json.gz player-tournament-history.json.gz
-          git commit -m "chore(profiles): refresh committed profile-cache floor [skip ci]"
-          for attempt in 1 2 3; do
-            if git push origin HEAD:main; then echo "Pushed on attempt $attempt."; exit 0; fi
-            echo "Push rejected (attempt $attempt) — rebasing."
-            git pull --rebase --autostash origin main || true
-            # TEN-247, founder-authorised 2026-09-21 (option 1). `--autostash`
-            # re-applies the dirty tree AFTER the rebase, and when that re-apply
-            # conflicts git prints "applying them resulted in conflicts" and then
-            # "Successfully rebased and updated refs/heads/main." - and EXITS 0.
-            # The retry push then succeeds, so THIS step goes green while leaving
-            # `U <path>` in the tree; the next commit-back step dies on its first
-            # `git commit` and the badge names the victim instead of the cause.
-            # Measured 2026-09-20: 13 of the last 14 completed runs, always on the
-            # regenerated matches.json.
-            #
-            # This does NOT recover the write. It makes the step that corrupted the
-            # tree the step that reports it, which is the whole point: a green step
-            # corrupting the tree is the worst state to be in.
-            UNMERGED="$(git diff --name-only --diff-filter=U)"
-            if [ -n "$UNMERGED" ]; then
-              echo "::error::Rebase left unmerged files - this step corrupted the working tree and every later commit-back would fail on it: $UNMERGED"
-              exit 1
-            fi
-          done
-          echo "::warning::Could not push the profile-cache floor after 3 attempts — the next run retries."
+          tools/commitback-push.sh "chore(profiles): refresh committed profile-cache floor [skip ci]" \
+            player-profiles-cache.json.gz player-tournament-history.json.gz \
+            || { rc=$?; [ "$rc" = 1 ] || exit "$rc"; echo "::warning::Could not push the profile-cache floor after 3 attempts — the next run retries."; }
 
       # TEN-206 founder ruling 2026-09-18 (Q2) — the same treatment for the match-stat
       # store. Runs AFTER the deploy has published, like every ledger above, so a git
@@ -1349,32 +1281,8 @@ jobs:
           fi
           git config user.name "bsp-profile-cache-bot"
           git config user.email "bsp-profile-cache-bot@users.noreply.github.com"
-          git add historical-match-stats.floor.json
-          git commit -m "chore(stats): refresh committed match-stat floor [skip ci]"
-          for attempt in 1 2 3; do
-            if git push origin HEAD:main; then echo "Pushed on attempt $attempt."; exit 0; fi
-            echo "Push rejected (attempt $attempt) — rebasing."
-            git pull --rebase --autostash origin main || true
-            # TEN-247, founder-authorised 2026-09-21 (option 1). `--autostash`
-            # re-applies the dirty tree AFTER the rebase, and when that re-apply
-            # conflicts git prints "applying them resulted in conflicts" and then
-            # "Successfully rebased and updated refs/heads/main." - and EXITS 0.
-            # The retry push then succeeds, so THIS step goes green while leaving
-            # `U <path>` in the tree; the next commit-back step dies on its first
-            # `git commit` and the badge names the victim instead of the cause.
-            # Measured 2026-09-20: 13 of the last 14 completed runs, always on the
-            # regenerated matches.json.
-            #
-            # This does NOT recover the write. It makes the step that corrupted the
-            # tree the step that reports it, which is the whole point: a green step
-            # corrupting the tree is the worst state to be in.
-            UNMERGED="$(git diff --name-only --diff-filter=U)"
-            if [ -n "$UNMERGED" ]; then
-              echo "::error::Rebase left unmerged files - this step corrupted the working tree and every later commit-back would fail on it: $UNMERGED"
-              exit 1
-            fi
-          done
-          echo "::warning::Could not push the match-stat floor after 3 attempts — the next run retries."
+          tools/commitback-push.sh "chore(stats): refresh committed match-stat floor [skip ci]" historical-match-stats.floor.json \
+            || { rc=$?; [ "$rc" = 1 ] || exit "$rc"; echo "::warning::Could not push the match-stat floor after 3 attempts — the next run retries."; }
 
       # TEN-151 (founder ruling 2026-09-05, second comment): the Trading Report
       # generator runs ISOLATED (continue-on-error above) so its failure never
