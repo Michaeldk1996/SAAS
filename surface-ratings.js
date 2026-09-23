@@ -393,7 +393,22 @@ function pctOf(sortedArr, v) {
   return sortedArr.length ? +(lo / sortedArr.length * 100).toFixed(1) : null;
 }
 
-(async () => {
+// ⚠️ THE GUARD. Everything below runs ONLY when this file is started directly.
+//
+// Until TEN-254 (2026-09-23) the body below was a bare `(async () => {...})()`, so
+// ANY program that merely LOADED this file ran the whole generator: it fetched
+// api-tennis (1 get_standings + one get_fixtures per candidate, 385 calls on the
+// run that exposed this), rebuilt every rating and OVERWROTE surface-ratings.json.
+// A `node -e 'require("./surface-ratings.js")'` typed to syntax-check an edit cost
+// exactly that. `node --check` is the right tool for a syntax check, but the file
+// should not be a landmine either way.
+//
+// `require.main === module` is true only for the entry point, so `node
+// surface-ratings.js` and the workflow's `run: node surface-ratings.js` still work
+// unchanged, while a require/import from a test or a tool is now inert.
+// Locked by tools/test-surface-ratings-no-autorun.js, which requires this file and
+// fails if any network call is attempted.
+if (require.main === module) (async () => {
   // ---- current-ATP pool from player-profiles.json
   // Each entry carries the surname tokens + first-initial for robust reconciliation.
   const prof = require('./player-profiles.json').players;
