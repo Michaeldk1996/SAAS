@@ -2282,31 +2282,33 @@
     "id1204297974989948": {
       "alerted": true,
       "alertedAt": "2026-09-23T10:30:01Z",
-      "captureLagH": null,
+      "captureLagH": 0.17,
       "date": "2026-09-24",
+      "firstSeenAt": "2026-09-23T17:45:01Z",
       "hoursOutAtAlert": 19.67,
-      "openAt": null,
+      "openAt": "2026-09-23T17:34:51.487Z",
       "p1": "F. Marozsan",
       "p2": "A. Bolt",
-      "postingLeadH": null,
+      "postingLeadH": 12.59,
       "startTime": "2026-09-24T06:10:00.000Z",
       "tour": "ATP Hangzhou"
     },
     "id1204297974989950": {
       "alerted": true,
       "alertedAt": "2026-09-23T10:30:01Z",
-      "captureLagH": null,
+      "captureLagH": 0.17,
       "date": "2026-09-24",
+      "firstSeenAt": "2026-09-23T17:45:01Z",
       "hoursOutAtAlert": 22.0,
-      "openAt": null,
+      "openAt": "2026-09-23T17:34:52.019Z",
       "p1": "F. Sun",
       "p2": "R. Safiullin",
-      "postingLeadH": null,
+      "postingLeadH": 14.92,
       "startTime": "2026-09-24T08:30:00.000Z",
       "tour": "ATP Hangzhou"
     }
   },
   "schema": "odds-open-monitor/1",
   "thresholdHours": 24.0,
-  "updatedAt": "2026-09-23T17:30:01Z"
+  "updatedAt": "2026-09-23T17:45:01Z"
 }
