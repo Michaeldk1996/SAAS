@@ -294,6 +294,7 @@ def forensic(obs, kibl, obs_by, print_=print):
     # make that impossible, because the opener is by construction the earliest
     # insert. This counts it rather than trusting the argument.
     sel_state = collections.Counter()
+    sel_2x2 = collections.Counter()
     sel_opener = 0
     for (fid, src, book), cardrows in sorted(kibl.items()):
         start = epoch(cardrows[0].get('start_ts'))
@@ -309,20 +310,39 @@ def forensic(obs, kibl, obs_by, print_=print):
             sel_state[cb.get('state') or 'null'] += 1
             if cb.get('is_opener'):
                 sel_opener += 1
+            # ⚠️ `state` CANNOT ANSWER THIS. state_of() tests is_opener FIRST, so
+            # a row flagged BOTH opener and current is labelled "opener" — and a
+            # price that opened and never moved is exactly that. Those are valid
+            # closes: the opening price WAS the price standing at the off. Only
+            # the 2x2 separates them from a genuinely superseded opener.
+            sel_2x2[(bool(cb.get('is_opener')), bool(cb.get('is_current')))] += 1
     tsel = sum(sel_state.values())
     print_(f'\nSTATE OF THE ROW FIX 1 SELECTS AS THE CLOSE, n={tsel}:')
     for k, v in sel_state.most_common():
         print_(f'  {k:<12} {v:>5}  ({pct(v, tsel)})')
     print_(f'  is_opener TRUE on the selected close: {sel_opener}  ({pct(sel_opener, tsel)})')
-    print_('  ^ MUST BE ~0. An opener selected as a close would be the opening')
-    print_('    price reported as the closing price at a lag of zero.')
+    print_(f'\n  THE 2x2 THAT ACTUALLY DECIDES IT (is_opener, is_current):')
+    for (op, cur), v in sorted(sel_2x2.items(), key=lambda kv: -kv[1]):
+        verdict = {
+            (True, True): 'OK  — opened and never moved; the opener IS the standing price',
+            (False, True): 'OK  — a normal current price',
+            (True, False): 'BAD — a SUPERSEDED opener selected as the close',
+            (False, False): '??  — neither opener nor current',
+        }[(op, cur)]
+        print_(f'    is_opener={str(op):<5} is_current={str(cur):<5} {v:>5}  ({pct(v, tsel)})  {verdict}')
+    bad = sel_2x2[(True, False)]
+    print_(f'\n  SUPERSEDED OPENERS SELECTED AS A CLOSE: {bad} of {tsel}  ({pct(bad, tsel)})')
+    print_('  ^ THIS is the number that must be ~0, not the raw opener count.')
 
     tot2 = after_off_cur + after_off_not
     print_(f'\nROWS RE-SEEN AFTER THE OFF, by Kibl\'s OWN is_current flag, n={tot2}:')
     print_(f'  is_current TRUE : {after_off_cur}  ({pct(after_off_cur, tot2)})')
     print_(f'  is_current FALSE: {after_off_not}  ({pct(after_off_not, tot2)})'
-           '   <-- a replay of rows Kibl no longer calls current')
+           '   <-- NOT a mutated stale row: is_current is in the row key,\n'
+           '                       so a current->not-current flip mints a NEW row')
     return {'selectedState': dict(sel_state), 'selectedIsOpener': sel_opener,
+            'selected2x2': {f'opener={k[0]},current={k[1]}': v for k, v in sel_2x2.items()},
+            'supersededOpenerSelected': sel_2x2[(True, False)],
             'sameRow': same_row, 'diffRow': diff_row,
             'sameRowGateFlip': same_price_diff_gate,
             'neverReseen': never, 'observations': len(lifetimes),
