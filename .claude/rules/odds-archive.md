@@ -44,8 +44,12 @@ historical backfill only.
   `meta.dateRange[1]`, the latest match in the CSVs. When that is more than 14 days
   before today (UTC days; exactly 14 is not stale), the same line reads
   "Archive through [date]. Updates pending."
+  **The clock is the latest MATCH, not the last refresh (founder ruling, 2026-09-23).** So
+  "Updates pending" also shows in the off-season (from about early December to early January;
+  the last matches of 2022–2025 fell on 16–20 Nov), when no ATP matches are played. That is
+  intended; do not switch it to a refresh clock.
 
-Locked by `test-odds-archive-refresh.py` (the tool, 7 mutants, plus the published archive,
+Locked by `test-odds-archive-refresh.py` (the tool, 11 mutants, plus the published archive,
 log and store agreeing) and `test-ten262.mjs` (the stamp, 3 mutants).
 
 ## Book per season (unchanged, TEN-146)
@@ -54,6 +58,17 @@ log and store agreeing) and `test-ten262.mjs` (the stamp, 3 mutants).
 Bet365**. The source's Pinnacle column stops on 2026-01-13 (71 rows, 4–13 Jan). Those rows
 are not used, because one season is one book. Never fill a missing Pinnacle price from
 another book.
+
+**The Database header says so (founder ruling, 2026-09-23).** It reads: "Pinnacle closing
+prices, 2010–2025; 2026 settled on Bet365 (the source's Pinnacle prices stop on 13 Jan
+2026), seam-marked on the curves." The first range ends the season before `seamSeason`.
+The stop date is `meta.pinnacleLastPriced`, the latest archive row with a valid Pinnacle
+pair. It is never typed; with no date in the store the parenthetical is omitted, not
+filled. **Test:** paint `renderChrome` with a store whose `pinnacleLastPriced` is
+2026-01-13 and read exactly that sentence; with null, no "stop on" appears. The published
+store's date must equal the value recomputed from the CSVs. Locked by `test-ten262.mjs`
+and `test-odds-archive-refresh.py`. This replaces "Pinnacle closing prices, 2010–2026
+(2026 settled on Bet365, …)", which over-claimed Pinnacle by a season.
 
 ## Who writes it, who reads it
 

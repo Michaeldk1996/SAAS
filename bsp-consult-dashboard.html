@@ -29210,8 +29210,15 @@ window.DatabaseTab = (function(){
     var sub=q('subtitle'), fr=q('fresh');
     if(sub){
       var y0=(''+M.dateRange[0]).slice(0,4), y1=(''+M.dateRange[1]).slice(0,4);
+      // TEN-262 founder ruling (2026-09-23): the first book covers the seasons BEFORE the
+      // seam only, and where the source's first-book prices stop is read from the data
+      // (meta.pinnacleLastPriced), never typed. No date in the store = no parenthetical.
+      var seam=M.seamSeason, pEnd=(+y1>=seam) ? (seam-1) : y1, pl=M.pinnacleLastPriced;
       sub.innerHTML='Historical yield by odds band from our own ATP closing-line archive — <strong>'+
-        esc(M.books[0])+' closing prices, '+y0+'–'+y1+'</strong> ('+M.seamSeason+' settled on '+esc(M.books[1])+', seam-marked on the curves).';
+        esc(M.books[0])+' closing prices, '+y0+'–'+pEnd+'</strong>'+
+        (+y1>=seam ? '; '+seam+' settled on '+esc(M.books[1])+
+          (pl && (''+pl).slice(0,4)===String(seam) ? ' (the source\u2019s '+esc(M.books[0])+' prices stop on '+esc(fmtDate(pl))+')' : '') : '')+
+        ', seam-marked on the curves.';
     }
     // The date is the latest match in the published archive (build-database-yield.js
     // writes meta.dateRange from the CSVs) - never typed. TEN-262: past 14 days old the

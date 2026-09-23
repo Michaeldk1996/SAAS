@@ -103,6 +103,9 @@ const bucket = { archive: 0, used: 0, walkover: 0, retired: 0, edge: 0, noPrice:
 const WINDOW_START = 2010; // founder TEN-146 ruling (2026-09-04): window starts 2010, fail-closed, no pre-window fallback
 const bookCount = { 0: 0, 1: 0 };
 let dateMin = '99999999', dateMax = '00000000';
+// TEN-262: the latest archive date with a valid Pinnacle pair, read BEFORE any exclusion.
+// The Database header says where the source's Pinnacle prices stop; it is never typed.
+let pinnacleLastPriced = '';
 
 for (const f of files) {
   const season = parseInt(f.slice(0, 4), 10);
@@ -116,6 +119,7 @@ for (const f of files) {
     const c = line.split(',');
     if (c.length < header.length) continue;
     bucket.archive++;
+    { const d = (c[col.date] || '').trim(); if (d > pinnacleLastPriced && validPrice(num(c[col.psw])) && validPrice(num(c[col.psl]))) pinnacleLastPriced = d; }
 
     const comment = (c[col.comment] || '').trim();
     if (WALKOVER.has(comment)) { bucket.walkover++; continue; }
@@ -200,6 +204,7 @@ const meta = {
   books: BOOKS,
   bookCounts: { Pinnacle: bookCount[0], Bet365: bookCount[1] },
   seamSeason: 2026,       // first season resolved on Bet365
+  pinnacleLastPriced: pinnacleLastPriced || null,
   levels, surfaces, rounds, tournaments,
   yieldOverall: {
     all: yAll, Pinnacle: yPS, Bet365: yB365,

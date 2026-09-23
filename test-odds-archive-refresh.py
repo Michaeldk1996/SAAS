@@ -328,6 +328,20 @@ def published_checks():
     dy = json.load(open(os.path.join(HERE, 'database-yield.json')))['meta']['dateRange'][1]
     if dy != allmax:
         out.append('database-yield dateRange ends %s but the archive runs to %s — "Archive through" would lie' % (dy, allmax))
+    # The header's "the source's Pinnacle prices stop on …" comes from the store; it must
+    # be the latest archive date carrying a valid Pinnacle pair, recomputed here.
+    def valid(v):
+        try:
+            f = float(v)
+        except (TypeError, ValueError):
+            return False
+        return 1.01 <= f <= 1000
+    pin = max((r['date'] for f in os.listdir(ad) if f.endswith('.csv')
+               for r in csv.DictReader(open(os.path.join(ad, f), newline=''))
+               if valid(r.get('psw')) and valid(r.get('psl'))), default=None)
+    got = json.load(open(os.path.join(HERE, 'database-yield.json')))['meta'].get('pinnacleLastPriced')
+    if got != pin:
+        out.append('database-yield pinnacleLastPriced %s, the archive says %s' % (got, pin))
     tm = json.load(open(os.path.join(HERE, 'tournament-market.json')))
     if 'database-yield.json' not in tm.get('source', ''):
         out.append('tournament-market.json is not built from database-yield.json')

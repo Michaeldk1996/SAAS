@@ -371,18 +371,18 @@ test('TEN-262 app shell · sidebar 250px + star icon on both pages', () => { ass
 // match), and past 14 days it adds ". Updates pending." Painted by the real renderChrome
 // with a fixed clock. The Database tab's fmtDate is its own one-liner (the page defines
 // fmtDate twice), so that exact one is sliced.
-function paintFresh(src, latest, todayIso) {
+function paintFresh(src, latest, todayIso, pinLast = '2026-01-13', which = 'fresh', seam = 2026) {
   const i = src.indexOf("function fmtDate(iso){ if(!iso) return '—';");
   if (i < 0) throw new Error('the Database fmtDate is gone');
   const code = src.slice(i, src.indexOf('\n', i)) + '\n' + fnSource(src, 'dbArchiveStale') + '\n' + fnSource(src, 'renderChrome');
   const els = { subtitle: { innerHTML: '' }, fresh: { textContent: '' } };
   const RealDate = globalThis.Date;
   class FixedDate extends RealDate { static now() { return RealDate.parse(todayIso + 'T12:00:00Z'); } }
-  const M = { dateRange: ['2010-01-04', latest], books: ['Pinnacle', 'Bet365'], seamSeason: 2026 };
+  const M = { dateRange: ['2010-01-04', latest], books: ['Pinnacle', 'Bet365'], seamSeason: seam, pinnacleLastPriced: pinLast };
   new Function('q', 'M', 'esc', 'state', 'MON', 'Date', code + '\nrenderChrome();')(
     k => els[k] || null, M, x => String(x), { view: 'tour' },
     ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'], FixedDate);
-  return els.fresh.textContent;
+  return which === 'subtitle' ? els.subtitle.innerHTML.replace(/<[^>]*>/g, '') : els.fresh.textContent;
 }
 const STALE = {
   fresh(src) {
@@ -400,7 +400,31 @@ const STALE = {
     return t === 'Archive through 26 Jul 2026' ? null : 'the date does not follow dateRange[1]: ' + JSON.stringify(t);
   },
 };
+// TEN-262 founder ruling on the header: Pinnacle covers the seasons BEFORE the seam, and
+// where the source's Pinnacle prices stop is read from meta.pinnacleLastPriced.
+STALE.header = function (src) {
+  const want = 'Historical yield by odds band from our own ATP closing-line archive — Pinnacle closing prices, 2010–2025; 2026 settled on Bet365 (the source’s Pinnacle prices stop on 13 Jan 2026), seam-marked on the curves.';
+  const t = paintFresh(src, '2026-09-13', '2026-09-23', '2026-01-13', 'subtitle');
+  if (t !== want) return 'header: ' + JSON.stringify(t);
+  const none = paintFresh(src, '2026-09-13', '2026-09-23', null, 'subtitle');
+  if (/stop on/.test(none)) return 'no Pinnacle date in the store, but the header printed one: ' + JSON.stringify(none);
+  if (!/2010–2025; 2026 settled on Bet365, seam-marked/.test(none)) return 'header without the date: ' + JSON.stringify(none);
+  // A different stop date must move the text - a typed "13 Jan 2026" cannot pass this.
+  const other = paintFresh(src, '2026-09-13', '2026-09-23', '2026-02-03', 'subtitle');
+  if (!/prices stop on 3 Feb 2026\)/.test(other)) return 'stop date not read from the store: ' + JSON.stringify(other);
+  // An archive that ends BEFORE the seam season: one book, its own last year, no Bet365 clause.
+  const pre = paintFresh(src, '2025-11-16', '2025-11-20', '2025-11-16', 'subtitle');
+  if (!/Pinnacle closing prices, 2010–2025, seam-marked/.test(pre) || /Bet365/.test(pre)) return 'pre-seam archive: ' + JSON.stringify(pre);
+  // The seam moves: every year in the sentence follows seamSeason, none is typed.
+  const s27 = paintFresh(src, '2027-03-01', '2027-03-05', '2027-01-10', 'subtitle', 2027);
+  if (!/2010–2026; 2027 settled on Bet365 \(the source’s Pinnacle prices stop on 10 Jan 2027\)/.test(s27)) return 'seam 2027: ' + JSON.stringify(s27);
+  // A Pinnacle date outside the seam season says nothing about where it stops in the seam season.
+  const off = paintFresh(src, '2026-09-13', '2026-09-23', '2025-11-16', 'subtitle');
+  if (/stop on/.test(off)) return 'a pre-seam Pinnacle date was printed as the seam-season stop: ' + JSON.stringify(off);
+  return null;
+};
 const STALE_MUTANTS = {
+  header: s => s.replace("pEnd=(+y1>=seam) ? (seam-1) : y1", "pEnd=y1"),
   fresh: s => s.replace("(dbArchiveStale(M.dateRange[1], Date.now()) ? '. Updates pending.' : '')", "'. Updates pending.'"),
   boundary: s => s.replace('return (today-t)/864e5 > 14;', 'return (today-t)/864e5 >= 14;'),
   fromData: s => s.replace("'Archive through '+fmtDate(M.dateRange[1])", "'Archive through '+fmtDate('2026-09-13')"),
