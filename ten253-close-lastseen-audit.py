@@ -98,6 +98,58 @@ def pct(n, d):
     return '—' if not d else f'{100.0 * n / d:.1f}%'
 
 
+def seen_at(o):
+    """When we last saw this row STILL LISTED. Falls back to its first sighting.
+
+    `last_seen_at` is OUR sweep clock, bumped by archive-kibl's PASS 2 only for
+    rows that sweep actually received back from Kibl. The fallback to
+    `observed_at` is for rows written before that column existed, where
+    observed_at IS the last time we saw them — the truthful value, not a filler.
+    """
+    return (epoch(o.get('last_seen_at')) or epoch(o.get('observed_at'))
+            or epoch(o.get('inserted_on')))
+
+
+def close_arms(obs_list, start):
+    """The three candidate Closes for one fixture. -> {arm: (row|None, lag|None)}
+
+    OLD     last real price whose `inserted_on` precedes the start — what ships
+            today, and what throws away a price that was still listed at the off
+            merely because it was first written hours earlier.
+    STRICT  last real price whose last-seen precedes the start. Wrong, and kept
+            only to show why: it DISCARDS the straddlers, which are the best
+            closes there are.
+    CAPPED  the founder's rule. Eligible = the price existed before the off
+            (`inserted_on < start`); its effective close time is
+            min(last_seen, start). A price listed before AND after the off was
+            the price standing AT the off, so it scores lag 0.
+
+    The pre-start test stays on `inserted_on` in the capped arm so a price that
+    did not exist before the off can never be capped down into contention.
+    """
+    def lag(t):
+        return None if t is None else (start - t) / 60.0
+
+    real_rows = [o for o in obs_list if real(o.get('price_decimal')) is not None]
+
+    old = [o for o in real_rows
+           if epoch(o.get('inserted_on')) is not None and epoch(o['inserted_on']) < start]
+    strict = [o for o in real_rows if seen_at(o) is not None and seen_at(o) < start]
+    capped = [o for o in real_rows
+              if epoch(o.get('inserted_on')) is not None and epoch(o['inserted_on']) < start]
+
+    ob = max(old, key=lambda o: epoch(o['inserted_on'])) if old else None
+    sb = max(strict, key=seen_at) if strict else None
+    # Ties on the capped clock break on the later insert — the fresher price.
+    cb = (max(capped, key=lambda o: (min(seen_at(o), start), epoch(o['inserted_on'])))
+          if capped else None)
+    return {
+        'old': (ob, lag(epoch(ob['inserted_on'])) if ob else None),
+        'strict': (sb, lag(seen_at(sb)) if sb else None),
+        'capped': (cb, lag(min(seen_at(cb), start)) if cb else None),
+    }
+
+
 def main():
     url, key = creds()
 
@@ -150,45 +202,15 @@ def main():
         if not lst:
             no_obs += 1
             continue
-        # The OLD rule: last real price whose inserted_on precedes the start.
-        old = [o for o in lst if real(o.get('price_decimal')) is not None
-               and epoch(o.get('inserted_on')) is not None
-               and epoch(o['inserted_on']) < start]
-        # The NEW rule, STRICT: last real price whose last-seen precedes the start.
-        strict = [o for o in lst if real(o.get('price_decimal')) is not None
-                  and epoch(o.get('last_seen_at') or o.get('observed_at')) is not None
-                  and epoch(o.get('last_seen_at') or o.get('observed_at')) < start]
-
-        # ⚠️ THE NEW RULE AS THE FOUNDER WROTE IT — "using last_seen_at, CAPPED
-        # AT THE ACTUAL START". The cap is the whole point and the strict form
-        # above gets it wrong: a price first listed BEFORE the off and still
-        # listed AFTER it was, by definition, the price standing AT the off —
-        # the best possible close. Strict discards it because its last-seen is
-        # on the wrong side of the line. Capped scores it at lag 0.
-        #
-        # The pre-start test stays on `inserted_on`, so a price that did not
-        # exist before the off can never be capped down into contention.
-        capped = [o for o in lst if real(o.get('price_decimal')) is not None
-                  and epoch(o.get('inserted_on')) is not None
-                  and epoch(o['inserted_on']) < start]
-
-        def seen(o):
-            return epoch(o.get('last_seen_at') or o.get('observed_at')) or epoch(o['inserted_on'])
-
-        def eff(o):
-            return min(seen(o), start)
-
-        old_best = max(old, key=lambda o: epoch(o['inserted_on'])) if old else None
-        strict_best = max(strict, key=seen) if strict else None
-        capped_best = max(capped, key=lambda o: (eff(o), epoch(o['inserted_on']))) if capped else None
-        old_lag = ((start - epoch(old_best['inserted_on'])) / 60.0) if old_best else None
-        strict_lag = ((start - seen(strict_best)) / 60.0) if strict_best else None
-        new_lag = ((start - eff(capped_best)) / 60.0) if capped_best else None
+        arms = close_arms(lst, start)
+        old_best, old_lag = arms['old']
+        strict_best, strict_lag = arms['strict']
+        capped_best, new_lag = arms['capped']
         rows.append({
             'fixture_id': fid, 'book': book, 'n_obs': len(lst),
             'inserted_on': old_best['inserted_on'] if old_best else None,
-            'last_seen_at': (new_best.get('last_seen_at') or new_best.get('observed_at'))
-                            if new_best else None,
+            'last_seen_at': (capped_best.get('last_seen_at') or capped_best.get('observed_at'))
+                            if capped_best else None,
             'start_ts': cardrows[0].get('start_ts'),
             'start_src': cardrows[0].get('start_ts_source'),
             'old_lag_min': None if old_lag is None else round(old_lag, 1),
