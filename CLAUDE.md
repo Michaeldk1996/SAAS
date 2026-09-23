@@ -197,6 +197,35 @@ Each task is a self-contained brief specifying what to build, what not to touch,
 
 ---
 
+## Deploying — one lane at a time
+
+Pushing to main does not deploy on its own. The deploy workflow is tick-only: your commit goes live on the next scheduled tick, after the pipeline runs and the CDN updates. Budget ~26 min median, ~35 min worst case from push to live. A measured run came in at 21.9 min. Do not plan around the fast case.
+
+Before you push:
+
+1. `git fetch origin` — if `origin/main` has moved since you branched, rebase onto it and re-run the full suite.
+2. Run `tools/clobber-check.sh`. If it reports anything, stop.
+3. Check whether another agent is mid-deploy. If one is, wait. Post that you are taking the lane before you push, and post again when you are finished with the live surface.
+
+CI enforces step 1 independently: the deploy workflow refuses to publish a commit that is not a descendant of origin/main. Read its output — if the step fails with no message, that is this guard, and the answer is rebase and retry, not a retry on the same commit.
+
+After you push, before you measure anything on the live surface:
+
+4. Run `tools/check-live-build.sh <your-sha>`. It tests whether your commit is **contained in** the live build, not whether the SHAs match — data commits land on main every 30–60s, so the live stamp is routinely ahead of your tip and an equality test would false-alarm constantly.
+   - **exit 0** — your commit is in the live build. Measure.
+   - **exit 1** — your commit is not in the live build. Either the tick has not run yet or something else published. Wait a tick and re-run. Do not measure.
+   - **exit 2** — undetermined. That is a dash, not a pass. Report that you could not confirm the build and treat every probe result as unverified.
+
+   Pass your sha. Run bare, it verifies nothing and returns 2 — "nothing checked" is a dash, not a pass.
+
+Never report a pass, a fail, or a regression against a build that `check-live-build.sh` has not returned 0 for.
+
+Release the lane on your issue when verification is complete.
+
+What the live build carries, for anything reading it directly: `build-info.json` at the site root — `commit` is the **full 40-char** sha of the tip of main at build time, alongside `tip`, `behindTip`, `onMain`, `runNumber`, `builtAt` — and the same sha as `<meta name="build-sha">` in the dashboard HTML, readable from the DOM without a second fetch. Both are written by the `Deploy ancestor guard + build stamp` step of `pipeline.yml`, regenerated every run, and neither is committed.
+
+---
+
 ## Where the rest lives
 
 Surface-specific rulings moved out of this file so they load only when relevant:

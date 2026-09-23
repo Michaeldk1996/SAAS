@@ -58,7 +58,15 @@ echo
 echo "live commit:  $LIVE"
 
 if [ -z "$EXPECTED" ]; then
-  exit 0
+  # Exit 2, NOT 0. The deploy rule in CLAUDE.md reads "exit 0 — your commit is in
+  # the live build. Measure." A bare invocation verifies nothing, so returning 0
+  # would hand exactly the false pass this tool exists to prevent to anyone who
+  # ran it without an argument. Nothing checked is a dash.
+  echo
+  echo "UNDETERMINED: no commit given, so nothing was verified."
+  echo "  The output above is informational only. To check a build, pass your sha:"
+  echo "    tools/check-live-build.sh <your-sha>"
+  exit 2
 fi
 
 echo "your commit:  $EXPECTED"

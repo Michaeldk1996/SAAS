@@ -259,6 +259,43 @@ check('checker exits 2 on a 200 whose body is not a build stamp', () => {
     'expected the PARSE branch, not the fetch-failed branch — a dead server would also exit 2 here');
 });
 
+check('a BARE invocation returns 2, not 0 — nothing checked is a dash', () => {
+  // CLAUDE.md's deploy rule reads "exit 0 - your commit is in the live build.
+  // Measure." A bare run verifies nothing, so exiting 0 would hand a false pass to
+  // anyone who ran it without an argument - the exact failure this tool exists to
+  // prevent. Founder ruling, TEN-255.
+  fs.writeFileSync(RESP, JSON.stringify({ body: stamp(HEAD), status: 200 }));
+  const r = spawnSync('/bin/bash', [CHECKER], {
+    cwd: REPO, encoding: 'utf8',
+    env: { ...process.env, SITE_URL: `http://127.0.0.1:${PORT}` },
+  });
+  assert.strictEqual(r.status, 2,
+    `bare invocation exited ${r.status}. Under the deploy rule 0 means "measure", so a `
+    + 'no-argument run would certify a build nobody checked.');
+  assert.match((r.stdout || '') + (r.stderr || ''), /nothing was verified/);
+});
+
+// ── The deploy ruling in CLAUDE.md, so it cannot silently regress ───────────
+// Founder ruling on TEN-255. Not a style check: each assertion below is a claim
+// that was measured wrong in the previous wording and cost real time.
+check('CLAUDE.md carries the measured deploy rule, not the superseded one', () => {
+  const md = fs.readFileSync(path.join(REPO, 'CLAUDE.md'), 'utf8');
+  const m = md.match(/^## Deploying — one lane at a time$([\s\S]*?)^---$/m);
+  assert.ok(m, 'CLAUDE.md has no "Deploying — one lane at a time" section');
+  const sec = m[1];
+
+  assert.match(sec, /does not deploy on its own|tick-only/,
+    'the section must say deploys are tick-only — "pushing to main deploys" is the superseded claim');
+  assert.doesNotMatch(sec, /up to 8 minutes/,
+    'the 8-minute poll was measured wrong (21.9 min observed) and times out on a normal merge');
+  assert.doesNotMatch(sec, /4[–-]5 min CDN lag/,
+    'push-to-live is not CDN lag — it is (next tick) + (pipeline runtime) + CDN');
+  assert.match(sec, /check-live-build\.sh <your-sha>/,
+    'the rule must pass a sha; run bare the tool verifies nothing');
+  assert.match(sec, /contained in/,
+    'the test is ancestry, not equality — the live stamp is routinely ahead of your tip');
+});
+
 // ── The two UNDETERMINED sites that nothing else reaches ────────────────────
 // Both run against a throwaway repo with NO remote, so `git fetch origin main`
 // fails instantly instead of touching the network.
