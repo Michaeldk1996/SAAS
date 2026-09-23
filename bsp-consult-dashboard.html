@@ -29199,6 +29199,13 @@ window.DatabaseTab = (function(){
     return f;
   }
 
+  // TEN-262 #6: the archive is "stale" when its latest match is MORE than 14 days
+  // before today (UTC calendar days). 14 days exactly is not stale.
+  function dbArchiveStale(latestIso, nowMs){
+    var t=Date.parse(String(latestIso).slice(0,10)+'T00:00:00Z'); if(isNaN(t)) return false;
+    var today=Date.parse(new Date(nowMs).toISOString().slice(0,10)+'T00:00:00Z');
+    return (today-t)/864e5 > 14;
+  }
   function renderChrome(){
     var sub=q('subtitle'), fr=q('fresh');
     if(sub){
@@ -29206,7 +29213,10 @@ window.DatabaseTab = (function(){
       sub.innerHTML='Historical yield by odds band from our own ATP closing-line archive — <strong>'+
         esc(M.books[0])+' closing prices, '+y0+'–'+y1+'</strong> ('+M.seamSeason+' settled on '+esc(M.books[1])+', seam-marked on the curves).';
     }
-    if(fr) fr.textContent='Archive through '+fmtDate(M.dateRange[1]);
+    // The date is the latest match in the published archive (build-database-yield.js
+    // writes meta.dateRange from the CSVs) - never typed. TEN-262: past 14 days old the
+    // same quiet line says so; the archive refresh is a manual drop-in, not a cron.
+    if(fr) fr.textContent='Archive through '+fmtDate(M.dateRange[1])+(dbArchiveStale(M.dateRange[1], Date.now()) ? '. Updates pending.' : '');
     var tabs=q('viewtabs');
     if(tabs) tabs.querySelectorAll('button').forEach(function(b){ b.classList.toggle('active', b.dataset.dbview===state.view); });
   }

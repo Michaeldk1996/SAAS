@@ -367,6 +367,56 @@ function checkShell(pages) {
 const SHELL = { 'bsp-consult-dashboard.html': SRC, 'account.html': readFileSync(join(HERE, 'account.html'), 'utf8') };
 test('TEN-262 app shell · sidebar 250px + star icon on both pages', () => { assert.equal(checkShell(SHELL), null); });
 
+// 6 · the "Archive through" line: the date is meta.dateRange[1] (the store's latest
+// match), and past 14 days it adds ". Updates pending." Painted by the real renderChrome
+// with a fixed clock. The Database tab's fmtDate is its own one-liner (the page defines
+// fmtDate twice), so that exact one is sliced.
+function paintFresh(src, latest, todayIso) {
+  const i = src.indexOf("function fmtDate(iso){ if(!iso) return '—';");
+  if (i < 0) throw new Error('the Database fmtDate is gone');
+  const code = src.slice(i, src.indexOf('\n', i)) + '\n' + fnSource(src, 'dbArchiveStale') + '\n' + fnSource(src, 'renderChrome');
+  const els = { subtitle: { innerHTML: '' }, fresh: { textContent: '' } };
+  const RealDate = globalThis.Date;
+  class FixedDate extends RealDate { static now() { return RealDate.parse(todayIso + 'T12:00:00Z'); } }
+  const M = { dateRange: ['2010-01-04', latest], books: ['Pinnacle', 'Bet365'], seamSeason: 2026 };
+  new Function('q', 'M', 'esc', 'state', 'MON', 'Date', code + '\nrenderChrome();')(
+    k => els[k] || null, M, x => String(x), { view: 'tour' },
+    ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'], FixedDate);
+  return els.fresh.textContent;
+}
+const STALE = {
+  fresh(src) {
+    const t = paintFresh(src, '2026-09-13', '2026-09-23');
+    return t === 'Archive through 13 Sep 2026' ? null : 'at 10 days: ' + JSON.stringify(t);
+  },
+  boundary(src) {
+    const t14 = paintFresh(src, '2026-09-13', '2026-09-27'), t15 = paintFresh(src, '2026-09-13', '2026-09-28');
+    if (t14 !== 'Archive through 13 Sep 2026') return 'at exactly 14 days: ' + JSON.stringify(t14);
+    if (t15 !== 'Archive through 13 Sep 2026. Updates pending.') return 'at 15 days: ' + JSON.stringify(t15);
+    return null;
+  },
+  fromData(src) {
+    const t = paintFresh(src, '2026-07-26', '2026-07-30');
+    return t === 'Archive through 26 Jul 2026' ? null : 'the date does not follow dateRange[1]: ' + JSON.stringify(t);
+  },
+};
+const STALE_MUTANTS = {
+  fresh: s => s.replace("(dbArchiveStale(M.dateRange[1], Date.now()) ? '. Updates pending.' : '')", "'. Updates pending.'"),
+  boundary: s => s.replace('return (today-t)/864e5 > 14;', 'return (today-t)/864e5 >= 14;'),
+  fromData: s => s.replace("'Archive through '+fmtDate(M.dateRange[1])", "'Archive through '+fmtDate('2026-09-13')"),
+};
+for (const [name, fn] of Object.entries(STALE)) test('TEN-262 archive stamp · ' + name, () => { assert.equal(fn(SRC), null); });
+test('CONTROL: every archive-stamp mutant is caught', () => {
+  const survived = [];
+  for (const [name, mut] of Object.entries(STALE_MUTANTS)) {
+    const m = mut(SRC);
+    if (m === SRC) { survived.push(name + ' (mutation did not apply)'); continue; }
+    let r; try { r = STALE[name](m); } catch (e) { r = 'threw ' + e.message; }
+    if (r === null) survived.push(name);
+  }
+  assert.deepEqual(survived, []);
+});
+
 for (const [name, fn] of Object.entries(CHECKS)) {
   test('TEN-262 Ratings · ' + name, { skip: !HAVE && 'published stores absent' }, () => { assert.equal(fn(SRC), null); });
 }
