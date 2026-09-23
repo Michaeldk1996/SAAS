@@ -1966,13 +1966,14 @@
     "id1201413374991934": {
       "alerted": true,
       "alertedAt": "2026-09-23T10:30:01Z",
-      "captureLagH": null,
+      "captureLagH": 0.04,
       "date": "2026-09-24",
+      "firstSeenAt": "2026-09-23T17:30:01Z",
       "hoursOutAtAlert": 19.67,
-      "openAt": null,
+      "openAt": "2026-09-23T17:27:37.745Z",
       "p1": "M. Kouame",
       "p2": "A. Muller",
-      "postingLeadH": null,
+      "postingLeadH": 12.71,
       "startTime": "2026-09-24T06:10:00.000Z",
       "tour": "ATP Chengdu"
     },
@@ -1992,13 +1993,14 @@
     "id1201413374991940": {
       "alerted": true,
       "alertedAt": "2026-09-23T10:30:01Z",
-      "captureLagH": null,
+      "captureLagH": 0.0,
       "date": "2026-09-24",
+      "firstSeenAt": "2026-09-23T17:30:01Z",
       "hoursOutAtAlert": 20.83,
-      "openAt": null,
+      "openAt": "2026-09-23T17:29:49.653Z",
       "p1": "L. Harris",
       "p2": "A. Kovacevic",
-      "postingLeadH": null,
+      "postingLeadH": 13.84,
       "startTime": "2026-09-24T07:20:00.000Z",
       "tour": "ATP Chengdu"
     },
@@ -2252,26 +2254,28 @@
     "id1204297974989944": {
       "alerted": true,
       "alertedAt": "2026-09-23T10:30:01Z",
-      "captureLagH": null,
+      "captureLagH": 0.01,
       "date": "2026-09-24",
+      "firstSeenAt": "2026-09-23T17:30:01Z",
       "hoursOutAtAlert": 19.67,
-      "openAt": null,
+      "openAt": "2026-09-23T17:29:27.392Z",
       "p1": "R. Hijikata",
       "p2": "D. Svrcina",
-      "postingLeadH": null,
+      "postingLeadH": 12.68,
       "startTime": "2026-09-24T06:10:00.000Z",
       "tour": "ATP Hangzhou"
     },
     "id1204297974989946": {
       "alerted": true,
       "alertedAt": "2026-09-23T10:30:01Z",
-      "captureLagH": null,
+      "captureLagH": 0.0,
       "date": "2026-09-24",
+      "firstSeenAt": "2026-09-23T17:30:01Z",
       "hoursOutAtAlert": 18.5,
-      "openAt": null,
+      "openAt": "2026-09-23T17:29:50.052Z",
       "p1": "D. Sweeny",
       "p2": "T. Daniel",
-      "postingLeadH": null,
+      "postingLeadH": 11.5,
       "startTime": "2026-09-24T05:00:00.000Z",
       "tour": "ATP Hangzhou"
     },
@@ -2304,5 +2308,5 @@
   },
   "schema": "odds-open-monitor/1",
   "thresholdHours": 24.0,
-  "updatedAt": "2026-09-23T17:15:01Z"
+  "updatedAt": "2026-09-23T17:30:01Z"
 }
