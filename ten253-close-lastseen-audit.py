@@ -154,16 +154,36 @@ def main():
         old = [o for o in lst if real(o.get('price_decimal')) is not None
                and epoch(o.get('inserted_on')) is not None
                and epoch(o['inserted_on']) < start]
-        # The NEW rule: last real price whose LAST-SEEN precedes the start.
-        new = [o for o in lst if real(o.get('price_decimal')) is not None
-               and epoch(o.get('last_seen_at') or o.get('observed_at')) is not None
-               and epoch(o.get('last_seen_at') or o.get('observed_at')) < start]
+        # The NEW rule, STRICT: last real price whose last-seen precedes the start.
+        strict = [o for o in lst if real(o.get('price_decimal')) is not None
+                  and epoch(o.get('last_seen_at') or o.get('observed_at')) is not None
+                  and epoch(o.get('last_seen_at') or o.get('observed_at')) < start]
+
+        # ⚠️ THE NEW RULE AS THE FOUNDER WROTE IT — "using last_seen_at, CAPPED
+        # AT THE ACTUAL START". The cap is the whole point and the strict form
+        # above gets it wrong: a price first listed BEFORE the off and still
+        # listed AFTER it was, by definition, the price standing AT the off —
+        # the best possible close. Strict discards it because its last-seen is
+        # on the wrong side of the line. Capped scores it at lag 0.
+        #
+        # The pre-start test stays on `inserted_on`, so a price that did not
+        # exist before the off can never be capped down into contention.
+        capped = [o for o in lst if real(o.get('price_decimal')) is not None
+                  and epoch(o.get('inserted_on')) is not None
+                  and epoch(o['inserted_on']) < start]
+
+        def seen(o):
+            return epoch(o.get('last_seen_at') or o.get('observed_at')) or epoch(o['inserted_on'])
+
+        def eff(o):
+            return min(seen(o), start)
+
         old_best = max(old, key=lambda o: epoch(o['inserted_on'])) if old else None
-        new_best = (max(new, key=lambda o: epoch(o.get('last_seen_at') or o['observed_at']))
-                    if new else None)
+        strict_best = max(strict, key=seen) if strict else None
+        capped_best = max(capped, key=lambda o: (eff(o), epoch(o['inserted_on']))) if capped else None
         old_lag = ((start - epoch(old_best['inserted_on'])) / 60.0) if old_best else None
-        new_lag = ((start - epoch(new_best.get('last_seen_at') or new_best['observed_at'])) / 60.0
-                   if new_best else None)
+        strict_lag = ((start - seen(strict_best)) / 60.0) if strict_best else None
+        new_lag = ((start - eff(capped_best)) / 60.0) if capped_best else None
         rows.append({
             'fixture_id': fid, 'book': book, 'n_obs': len(lst),
             'inserted_on': old_best['inserted_on'] if old_best else None,
@@ -172,6 +192,7 @@ def main():
             'start_ts': cardrows[0].get('start_ts'),
             'start_src': cardrows[0].get('start_ts_source'),
             'old_lag_min': None if old_lag is None else round(old_lag, 1),
+            'strict_lag_min': None if strict_lag is None else round(strict_lag, 1),
             'new_lag_min': None if new_lag is None else round(new_lag, 1),
         })
 
@@ -192,20 +213,31 @@ def main():
               f'min {v[0]:.1f}, max {v[-1]:.1f}')
 
     old_lags = [r['old_lag_min'] for r in rows if r['old_lag_min'] is not None]
+    strict_lags = [r['strict_lag_min'] for r in rows if r['strict_lag_min'] is not None]
     new_lags = [r['new_lag_min'] for r in rows if r['new_lag_min'] is not None]
     print()
     print('GAP TO THE ACTUAL START, in minutes (lower is better):')
-    dist(old_lags, 'OLD rule — start minus inserted_on ')
-    dist(new_lags, 'NEW rule — start minus last_seen_at')
+    dist(old_lags, 'OLD    — start minus inserted_on          ')
+    dist(strict_lags, 'STRICT — start minus last_seen (uncapped)')
+    dist(new_lags, 'NEW    — start minus min(last_seen, start)')
 
     old_ok = sum(1 for x in old_lags if x <= RELIABLE_LAG_MIN)
+    strict_ok = sum(1 for x in strict_lags if x <= RELIABLE_LAG_MIN)
     new_ok = sum(1 for x in new_lags if x <= RELIABLE_LAG_MIN)
     d = len(rows)
     print()
     print(f'WITHIN THE {RELIABLE_LAG_MIN:g}-MINUTE LIMIT — the recovery number:')
-    print(f'  old rule (inserted_on) : {old_ok} of {d}  ({pct(old_ok, d)})')
-    print(f'  new rule (last_seen_at): {new_ok} of {d}  ({pct(new_ok, d)})')
-    print(f'  RECOVERED by Fix 1     : {new_ok - old_ok} of {d}  ({pct(new_ok - old_ok, d)})')
+    print(f'  OLD    inserted_on            : {old_ok} of {d}  ({pct(old_ok, d)})')
+    print(f'  STRICT last_seen, uncapped    : {strict_ok} of {d}  ({pct(strict_ok, d)})')
+    print(f'  NEW    min(last_seen, start)  : {new_ok} of {d}  ({pct(new_ok, d)})')
+    print(f'  RECOVERED by Fix 1 as briefed : {new_ok - old_ok} of {d}  ({pct(new_ok - old_ok, d)})')
+    straddle = sum(1 for r in rows
+                   if r['new_lag_min'] is not None and r['strict_lag_min'] is None)
+    print(f'  of which STRADDLE the off (listed before AND after): {straddle}'
+          f'  — these are lag 0 under the cap and are DISCARDED without it')
+    # n counts, so a distribution is never read as if it covered every fixture.
+    print(f'  fixtures with no candidate at all: old {d - len(old_lags)}, '
+          f'strict {d - len(strict_lags)}, new {d - len(new_lags)}')
 
     same = sum(1 for r in rows
                if r['old_lag_min'] is not None and r['new_lag_min'] is not None
@@ -222,10 +254,10 @@ def main():
         """A lag in minutes, or an em dash. Never a zero standing in for absent."""
         return '—' if v is None else f'{v:.1f}'
 
-    print(f"  {'fixture':<14}{'book':<11}{'obs':>4}{'old lag':>10}{'new lag':>10}  start_src")
+    print(f"  {'fixture':<14}{'book':<11}{'obs':>4}{'old':>10}{'strict':>10}{'NEW':>10}  start_src")
     for r in rows[:10]:
         print(f"  {str(r['fixture_id']):<14}{str(r['book']):<11}{r['n_obs']:>4}"
-              f"{lag(r['old_lag_min']):>10}{lag(r['new_lag_min']):>10}  {r['start_src']}")
+              f"{lag(r['old_lag_min']):>10}{lag(r['strict_lag_min']):>10}{lag(r['new_lag_min']):>10}  {r['start_src']}")
 
     out = os.environ.get('TEN253_OUT', 'ten253-close-lastseen-audit.json')
     with open(out, 'w', encoding='utf-8') as fh:
@@ -233,7 +265,7 @@ def main():
                    'population': {'noCloseWithStart': len(noclose),
                                   'kibl': len(kibl), 'measured': len(rows),
                                   'noObservation': no_obs},
-                   'within60': {'old': old_ok, 'new': new_ok,
+                   'within60': {'old': old_ok, 'strict': strict_ok, 'new': new_ok,
                                 'recovered': new_ok - old_ok, 'denominator': d},
                    'rows': rows}, fh, indent=1)
     print(f'\nwrote {out}')
