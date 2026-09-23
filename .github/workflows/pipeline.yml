@@ -1085,10 +1085,24 @@ jobs:
               console.log(`Stamped ${f} with build-sha ${found[0]}`);
             }
           '
-          # REQUIRED. This step runs `set -uo pipefail` deliberately WITHOUT errexit (see
-          # the top of the step), so a non-zero `node` would otherwise be swallowed and the
-          # step would still exit 0 on the trailing `cat`. Every `process.exit(1)` above is
-          # a refusal to publish an untrustworthy stamp; it has to reach the job.
+          # Propagate the node program's exit status. Every `process.exit(1)` above is a
+          # refusal to publish an untrustworthy stamp, and it has to reach the job rather
+          # than being masked by the trailing `cat`.
+          #
+          # Note on errexit, because this step's own header states the opposite. The
+          # workflow sets no `shell:` and no `defaults:`, so Actions runs every `run:` on
+          # Linux as `bash -e {0}`: errexit IS on, and the `set -uo pipefail` at the top of
+          # this step does not turn it off (it sets nounset and pipefail; errexit is
+          # untouched). On the real runner the node line therefore aborts the step on its
+          # own and these two lines are belt-and-braces. They stay because they are correct
+          # under both shells and cost nothing.
+          #
+          # That fact has a consequence this diff deliberately does NOT act on: under
+          # errexit the pre-existing `git merge-base --is-ancestor` / `RC=$?` pair earlier
+          # in this step can never reach its `RC -eq 1` branch, so the "Refusing to publish
+          # — not an ancestor of origin/main" diagnostic is unreachable and that failure
+          # aborts silently. Raised with the founder under TEN-255 rather than fixed here:
+          # it is a deploy gate, and changing when it fails is his call.
           #
           # Written as a separate line rather than `node -e '…' || exit 1` on purpose:
           # tools/test-workflow-node-blocks.js extracts blocks with a regex that requires
