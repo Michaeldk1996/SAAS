@@ -1,0 +1,47 @@
+name: TEN-253 Close last_seen_at audit (read-only)
+
+# TEN-253 Fix 1, step 1 — the BEFORE picture for the Close-rule change.
+#
+# READ-ONLY, AND STRUCTURALLY SO. The script issues PostgREST GETs and nothing
+# else: no POST, no PATCH, no storage write, no commit-back. `permissions:
+# contents: read` means the job cannot push even if something tried to.
+#
+# Manual only — no `schedule:`. It exists to answer one question once, and
+# re-answer it after the fix lands.
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: ten253-close-lastseen-audit
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Read the two clocks on every started fixture with no Close
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          TEN253_OUT: ${{ github.workspace }}/ten253-close-lastseen-audit.json
+        run: |
+          set -o pipefail
+          python3 -B ten253-close-lastseen-audit.py | tee -a "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload the baseline
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ten253-close-lastseen-audit
+          path: ten253-close-lastseen-audit.json
+          retention-days: 14
+          if-no-files-found: warn
