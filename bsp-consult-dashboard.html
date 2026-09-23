@@ -3740,6 +3740,15 @@
   .db-rfig.rtg{ font-size:14px; font-weight:700; color:#fff; }
   .db-rfig.dash{ color:var(--db-faint); }
   .db-rn{ font-family:var(--db-mono); font-size:13px; color:var(--db-mute); text-align:right; }
+  /* TEN-254: the pressure-point count that sits under every Mental Edge ratio.
+     The founder's interim instruction while the sample floor is unruled: "show
+     the count next to every Mental Edge ratio so thin samples are visible."
+     It is NOT the `n` column beside it - n is matches on record, and a ratio of
+     break points is not backed by matches. Budkov Kjaer tops the board at 1.380
+     off n=16 matches, which reads thin; the number that actually backs the
+     ratio is 119 pressure points, which does not. Both belong on screen.
+     --db-mute, not --db-faint: this is a measured count, not a placeholder. */
+  .db-rppc{ font-family:var(--db-mono); font-size:10.5px; color:var(--db-mute); text-align:right; margin-top:2px; letter-spacing:0.02em; }
 </style>
 <div class="tabpage" data-page="database">
   <!-- TEN-242 phase 2 B3: this is now one MOUNT ROOT among possibly several. The
@@ -27928,6 +27937,12 @@ window.DatabaseTab = (function(){
                 state.ratSurf==='All'?'all surfaces':state.ratSurf.toLowerCase(),
                 gateWord===null ? 'no match floor' : ('n ≥ '+RAT_GATE+' '+(gateWord||'matches')) ];
     var n=el('div','db-unwired', esc(parts.join(' · ')));
+    // TEN-254 Step 2, bundle README TAB 4: "Note, `margin-top:12px`". The shared
+    // `.db-unwired` rule is 10px because the SAME class carries the Lines foot
+    // note, which the README puts at 14px - so the 12px is set here, on the
+    // Ratings note only, rather than by moving the shared rule and silently
+    // dragging Lines to a third value that no section asks for.
+    n.style.marginTop='12px';
     if(unwired && unwired.length){
       n.innerHTML += '<br>' + esc('Not wired: '+unwired.join(' · ')+' — no field for these in the archive, so every cell is a dash rather than a derived stand-in.');
     }
@@ -28047,6 +28062,22 @@ window.DatabaseTab = (function(){
       var c3=el('div','db-rrow');
       c3.appendChild(el('div','db-rfig rtg'+(rv==null?' dash':''), rv==null?'—':rv.toFixed(B.rtgDec)));
       c3.firstChild.title=B.label+' rating · '+p.name;
+      // TEN-254, founder's interim instruction on the unruled Mental Edge sample
+      // floor: the count that backs the RATIO goes next to it, so a thin sample
+      // is visible without a floor having been picked. PW+PL is the pressure-point
+      // total and, per the store's own method note, is identically
+      // sample.bpFaced + sample.bpChances - verified 0 mismatches across all 237
+      // players on the published store, so it is read from PW/PL rather than
+      // re-derived from a second field that could drift from it.
+      // Dashes rather than 0 when either side is absent: a missing count is not
+      // a zero-sample player.
+      if(board==='mental'){
+        var _pw=ratVal(p,'mental.pw'), _pl=ratVal(p,'mental.pl');
+        var _ppc=(_pw==null||_pl==null) ? null : (_pw+_pl);
+        var pc=el('div','db-rppc', _ppc==null ? '—' : (fmtInt(_ppc)+' pp'));
+        pc.title='Pressure points behind this ratio (break points saved + converted + lost + missed) · '+p.name;
+        c3.appendChild(pc);
+      }
       g.appendChild(c3);
       B.cols.forEach(function(c){
         var v=ratVal(p,c.k);

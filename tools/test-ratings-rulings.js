@@ -202,5 +202,60 @@ check('CONTROL: these assertions can fail — a 20-gate source is rejected', () 
   assert.strictEqual(m[1], '20', 'mutation did not apply — the control proves nothing');
 });
 
+// ─────────────────────────────────────────────────────────────────────────────
+// TEN-254 · the founder's INTERIM instruction while the Mental Edge sample floor
+// is unruled: "Until I rule, show the count next to every Mental Edge ratio so
+// thin samples are visible. Don't pick a floor."
+//
+// This is the assertion that stops the count disappearing when someone later
+// DOES pick a floor — the obvious cleanup at that point is to drop the count,
+// because a floor "makes it redundant". It does not: the floor sets who appears,
+// the count says how thin the ones who appear are. Only a ruling removes it.
+//
+// The count is PW+PL, not the `n` column beside it. n is matches on record; a
+// ratio of break points is not backed by matches, and conflating them is what
+// made Budkov Kjaer's 1.380 read as "n=16" when 119 pressure points back it.
+// ─────────────────────────────────────────────────────────────────────────────
+check('TEN-254: the Mental Edge rating cell carries its pressure-point count', () => {
+  const lb = DBTAB.slice(DBTAB.indexOf('function ratLeaderboard'));
+  const body = lb.slice(0, lb.indexOf('function ratComparePanel'));
+  assert.ok(/board===['"]mental['"]/.test(body),
+    'the mental-only branch in ratLeaderboard is gone — every ratio has lost the count ' +
+    'that discloses its sample, which the founder asked for while the floor is unruled');
+  assert.ok(/db-rppc/.test(body), 'the .db-rppc count element is no longer rendered');
+  assert.ok(/mental\.pw/.test(body) && /mental\.pl/.test(body),
+    'the count is no longer derived from PW+PL — if it now reads a different field it can ' +
+    'drift from the ratio it is supposed to describe');
+});
+
+check('TEN-254: a missing PW or PL dashes the count, never prints 0', () => {
+  const lb = DBTAB.slice(DBTAB.indexOf('function ratLeaderboard'));
+  const body = lb.slice(0, lb.indexOf('function ratComparePanel'));
+  const m = body.match(/_ppc\s*=\s*\(([^)]*)\)\s*\?\s*null/);
+  assert.ok(m, 'the null-guard on the pressure-point count is gone');
+  assert.ok(/_pw\s*==\s*null/.test(m[1]) && /_pl\s*==\s*null/.test(m[1]),
+    'the guard no longer tests BOTH sides; a missing count would render as a number');
+  assert.ok(/_ppc==null\s*\?\s*'—'/.test(body.replace(/\s+/g, ' ')) ||
+            /_ppc\s*==\s*null\s*\?\s*'—'/.test(body),
+    'an absent count no longer renders an em dash — a zero here would claim a player faced ' +
+    'no pressure points, which is a fabricated reading of missing data');
+});
+
+check('TEN-254: the Ratings slice note sits at the bundle\'s 12px, and Lines is not dragged with it', () => {
+  assert.ok(/n\.style\.marginTop\s*=\s*'12px'/.test(DBTAB),
+    'the Ratings note lost its 12px (bundle README TAB 4: "Note, `margin-top:12px`")');
+  // The rule lives in the page's <style> block, which is ABOVE the JS module —
+  // so this one reads DASH (the whole file), not the DBTAB slice.
+  assert.ok(/\.db-unwired\{[^}]*margin-top:10px/.test(DASH),
+    'the SHARED .db-unwired rule moved off 10px — that rule also carries the Lines foot note, ' +
+    'which the README puts at 14px, so moving it drags Lines to a value no section asks for');
+});
+
+check('CONTROL: the TEN-254 assertions can fail — stripping the mental branch is rejected', () => {
+  const mutated = DBTAB.replace(/if\(board===['"]mental['"]\)\{/, 'if(false){');
+  assert.ok(!/board===['"]mental['"]\)\{/.test(mutated.slice(mutated.indexOf('function ratLeaderboard'))),
+    'mutation did not apply — the control proves nothing');
+});
+
 console.log(`\nratings rulings: ${pass} pass, ${fails.length} fail`);
 if (fails.length) { console.error('FAILED: ' + fails.join(' · ')); process.exit(1); }
