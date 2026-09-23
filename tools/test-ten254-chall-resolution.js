@@ -144,6 +144,17 @@ async function main() {
     assert.ok(/PLAYER_MAP\[meta\.name\]/.test(src), 'the generator no longer consults the map');
     assert.ok(/candSeen\.has\(pk\)/.test(src), 'the generator no longer guards against two players claiming one api-tennis ID');
     assert.ok(/challResolved/.test(src), 'the generator no longer emits challResolved');
+    // ⚠️ THE SERIALISATION IS A WHITELIST, and this assertion exists because the first
+    // version of this change was defeated by it: challResolved was computed, pushed
+    // onto every row, and then dropped by `players: rows.map(r => ({name, rank,
+    // surfaces}))`. JSON.stringify discards undefined, so the store shipped with the
+    // key simply absent — no error, no empty value, nothing to notice. Grepping for
+    // "challResolved" anywhere in the file PASSED while the published store had none
+    // of it. Assert the OUTPUT boundary names it, not just that the string occurs.
+    const ser = /players:\s*rows\.map\(([\s\S]{0,240}?)\)\),/.exec(src);
+    assert.ok(ser, 'the players: rows.map(...) serialisation is gone or reshaped — re-point this check');
+    assert.ok(/challResolved/.test(ser[1]),
+      'the players: serialisation whitelist does NOT name challResolved, so it never reaches the published store: ' + ser[1].trim());
     // the map must only ADD — it is consulted on the !hits.length branch
     const i = src.indexOf('PLAYER_MAP[meta.name]');
     const before = src.slice(Math.max(0, i - 400), i);
@@ -158,6 +169,22 @@ async function main() {
     ['a refused player marked resolved anyway', s => s.replace('        continue;                          // NOT resolved — stays out of resolvedKeys', '        resolvedKeys.add(String(c.playerKey)); continue;')],
     ['a real empty recorded as unresolved', s => s.replace("      resolvedKeys.add(String(c.playerKey));\n      if (!r.rows.length) continue;", '      if (!r.rows.length) continue;\n      resolvedKeys.add(String(c.playerKey));')],
   ];
+  // A separate control for the SERIALISATION whitelist, because it lives in
+  // surface-ratings.js rather than the chall module.
+  await check('CONTROL: dropping challResolved from the serialisation is caught', async () => {
+    const fs = require('fs');
+    const SR = path.join(ROOT, 'surface-ratings.js');
+    const orig = fs.readFileSync(SR, 'utf8');
+    const mutated = orig.replace(
+      'players: rows.map(r => ({ name: r.name, rank: r.rank, challResolved: r.challResolved, surfaces: r.surfaces })),',
+      'players: rows.map(r => ({ name: r.name, rank: r.rank, surfaces: r.surfaces })),');
+    assert.notStrictEqual(mutated, orig, 'the whitelist mutant did not apply — it proves nothing');
+    const ser = /players:\s*rows\.map\(([\s\S]{0,240}?)\)\),/.exec(mutated);
+    assert.ok(ser, 'mutant unparseable');
+    assert.ok(!/challResolved/.test(ser[1]),
+      'the mutated serialisation still names challResolved — the assertion above could not tell the difference');
+  });
+
   await check('CONTROL: every mutant is caught', async () => {
     const fs = require('fs');
     const orig = fs.readFileSync(CHALL, 'utf8');

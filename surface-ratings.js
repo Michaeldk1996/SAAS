@@ -791,7 +791,14 @@ if (require.main === module) (async () => {
     },
     inclusion: `rated if career-All matches >= ${INCLUDE_MIN_MATCHES} (i.e. more than 10 ATP-level matches)`,
     floors: { career: careerFloors, last52: l52Floors },
-    players: rows.map(r => ({ name: r.name, rank: r.rank, surfaces: r.surfaces })),
+    // ⚠️ THIS IS A WHITELIST. A field added to rows.push above does NOT reach the
+    // published store unless it is named here too — `challResolved` was computed
+    // correctly, pushed onto every row, and then silently dropped by this line, so the
+    // 2026-09-23 05:52 store shipped with challResolved absent on all 237 players.
+    // JSON.stringify discards undefined, so there was no error and no empty field to
+    // notice — just a missing key. Locked by tools/test-ten254-chall-resolution.js,
+    // which now asserts the serialisation names it.
+    players: rows.map(r => ({ name: r.name, rank: r.rank, challResolved: r.challResolved, surfaces: r.surfaces })),
   };
   const dest = path.join(__dirname, 'surface-ratings.json');
   const tmp = dest + '.tmp';
