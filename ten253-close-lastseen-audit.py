@@ -150,6 +150,148 @@ def close_arms(obs_list, start):
     }
 
 
+
+def forensic(obs, kibl, obs_by, print_=print):
+    """THE STEP-4 SAFETY GATE, MEASURED RATHER THAN ARGUED.
+
+    Founder 2026-09-23: "Check that `last_seen_at` is bumped only when the price
+    was genuinely seen still listed in a sweep, and never by something that would
+    make an old price look recent. If there's any doubt, stop and report."
+
+    96.8% of the population scoring a capped lag of exactly 0 IS that doubt. Two
+    readings fit that number and they have opposite consequences:
+
+      A. TRUE RE-SIGHTING. Kibl served the same row again because the price was
+         still standing. Then a price listed before AND after the off was the
+         price at the off, capped lag 0 is correct, and Fix 1 recovers real
+         closes.
+
+      B. VACUOUS RE-SERVE. Kibl replays its whole history every sweep, so every
+         row's last_seen tracks the sweep clock regardless of whether the price
+         still stands. Then `last_seen_at` carries no information, every pre-off
+         row caps to the start, and the capped rule degenerates to "last row
+         inserted before the off" — the SAME PRICE THE OLD RULE PICKS — with the
+         60-minute reliability gate silently switched off. That is not a
+         recovery. That is 154 closes admitted by disabling the guard.
+
+    The discriminators, in order of how hard they are to argue with:
+
+      1. SAME-ROW RATE. If old and capped select the same observation almost
+         always, Fix 1 changes no price and only moves the gate. This is the
+         one that decides A vs B, so it is computed per (fixture, side) — the
+         grain the real rule runs at — not per fixture.
+      2. ROW LIFETIME. last_seen - inserted_on across every observation. Under B
+         it is uniformly large. Under A it varies, and a substantial share of
+         rows are never re-seen at all (lifetime 0) because the price moved.
+      3. DISTINCT last_seen PER FIXTURE. Under B every row shares the sweep
+         clock, so the count collapses toward 1.
+      4. is_current ON ROWS RE-SEEN AFTER THE OFF. A row Kibl itself no longer
+         marks current, still being re-seen, is the signature of a replay.
+    """
+    print_('')
+    print_('=' * 72)
+    print_('STEP-4 SAFETY GATE — is `last_seen_at` a re-sighting or a re-serve?')
+    print_('=' * 72)
+
+    # ── 2 · row lifetime, over every observation we hold ────────────────────
+    lifetimes, never = [], 0
+    for o in obs:
+        a, b = epoch(o.get('inserted_on')), seen_at(o)
+        if a is None or b is None:
+            continue
+        mins = (b - a) / 60.0
+        lifetimes.append(mins)
+        if mins < 0.5:
+            never += 1
+    if lifetimes:
+        v = sorted(lifetimes)
+        n = len(v)
+        print_(f'\nROW LIFETIME (last_seen - inserted_on), all {n} observations:')
+        print_(f'  median {statistics.median(v):.1f} min, p25 {v[int(0.25*(n-1))]:.1f}, '
+               f'p75 {v[int(0.75*(n-1))]:.1f}, max {v[-1]:.1f}')
+        print_(f'  NEVER RE-SEEN (lifetime < 30s): {never} of {n}  ({pct(never, n)})')
+        print_('  ^ under a vacuous re-serve this would be ~0% and the median huge.')
+
+    # ── 3 · distinct last_seen values per fixture ───────────────────────────
+    ds = []
+    for fid, lst in obs_by.items():
+        ds.append(len({o.get('last_seen_at') for o in lst}))
+    if ds:
+        v = sorted(ds)
+        print_(f'\nDISTINCT last_seen VALUES PER FIXTURE: median {statistics.median(v)}, '
+               f'min {v[0]}, max {v[-1]}')
+        one = sum(1 for x in ds if x == 1)
+        print_(f'  fixtures where EVERY row shares ONE last_seen: {one} of {len(ds)} '
+               f'({pct(one, len(ds))})')
+        print_('  ^ a high share here is the re-serve signature.')
+
+    # ── 1 · THE DECIDER: does Fix 1 pick a different PRICE, or just relabel? ─
+    same_row = diff_row = 0
+    same_price_diff_gate = 0
+    examples = []
+    for (fid, src, book), cardrows in sorted(kibl.items()):
+        start = epoch(cardrows[0].get('start_ts'))
+        if start is None:
+            continue
+        per_side = collections.defaultdict(list)
+        for o in obs_by.get(str(fid), []):
+            per_side[o.get('side_id')].append(o)
+        for sid, lst in per_side.items():
+            arms = close_arms(lst, start)
+            ob, ol = arms['old']
+            cb, nl = arms['capped']
+            if ob is None or cb is None:
+                continue
+            ident = (ob.get('inserted_on') == cb.get('inserted_on')
+                     and str(ob.get('price_decimal')) == str(cb.get('price_decimal')))
+            if ident:
+                same_row += 1
+                if (ol is not None and nl is not None
+                        and ol > RELIABLE_LAG_MIN >= nl):
+                    same_price_diff_gate += 1
+            else:
+                diff_row += 1
+                if len(examples) < 5:
+                    examples.append((fid, sid, ob.get('price_decimal'), ol,
+                                     cb.get('price_decimal'), nl))
+    tot = same_row + diff_row
+    print_(f'\nTHE DECIDER — per (fixture, side), n={tot}:')
+    print_(f'  Fix 1 selects the SAME observation as the old rule: {same_row}  ({pct(same_row, tot)})')
+    print_(f'  Fix 1 selects a DIFFERENT observation             : {diff_row}  ({pct(diff_row, tot)})')
+    print_(f'  SAME price, but old FAILED the {RELIABLE_LAG_MIN:g}-min gate and new PASSES: '
+           f'{same_price_diff_gate}  ({pct(same_price_diff_gate, tot)})')
+    print_('  ^ THIS LAST NUMBER IS THE HONEST COST OF FIX 1. Every one of these is a')
+    print_('    close recovered by re-timing a price, not by finding a better one.')
+    if examples:
+        print_('\n  sides where the SELECTED PRICE genuinely changes:')
+        for fid, sid, op, ol, npx, nl in examples:
+            print_(f'    fixture {fid} side {sid}: old {op} @ {ol:.1f} min  ->  '
+                   f'new {npx} @ {nl:.1f} min')
+
+    # ── 4 · is_current on rows re-seen after the off ────────────────────────
+    after_off_cur = after_off_not = 0
+    for (fid, src, book), cardrows in sorted(kibl.items()):
+        start = epoch(cardrows[0].get('start_ts'))
+        if start is None:
+            continue
+        for o in obs_by.get(str(fid), []):
+            sa = seen_at(o)
+            if sa is not None and sa > start:
+                if o.get('is_current'):
+                    after_off_cur += 1
+                else:
+                    after_off_not += 1
+    tot2 = after_off_cur + after_off_not
+    print_(f'\nROWS RE-SEEN AFTER THE OFF, by Kibl\'s OWN is_current flag, n={tot2}:')
+    print_(f'  is_current TRUE : {after_off_cur}  ({pct(after_off_cur, tot2)})')
+    print_(f'  is_current FALSE: {after_off_not}  ({pct(after_off_not, tot2)})'
+           '   <-- a replay of rows Kibl no longer calls current')
+    return {'sameRow': same_row, 'diffRow': diff_row,
+            'sameRowGateFlip': same_price_diff_gate,
+            'neverReseen': never, 'observations': len(lifetimes),
+            'afterOffIsCurrent': after_off_cur, 'afterOffNotCurrent': after_off_not}
+
+
 def main():
     url, key = creds()
 
@@ -185,7 +327,7 @@ def main():
         obs.extend(paged(url, key,
                          '/rest/v1/kibl_line_observations?select=fixture_id,side_id,'
                          'price_decimal,inserted_on,observed_at,last_seen_at,'
-                         'market_type_id,feed_source_id'
+                         'market_type_id,feed_source_id,is_current,is_opener'
                          f'&fixture_id=in.({ids})&market_type_id=eq.1'
                          '&order=fixture_id.asc,inserted_on.asc'))
     print(f'observations read: {len(obs)}')
@@ -253,10 +395,18 @@ def main():
     print(f'  STRICT last_seen, uncapped    : {strict_ok} of {d}  ({pct(strict_ok, d)})')
     print(f'  NEW    min(last_seen, start)  : {new_ok} of {d}  ({pct(new_ok, d)})')
     print(f'  RECOVERED by Fix 1 as briefed : {new_ok - old_ok} of {d}  ({pct(new_ok - old_ok, d)})')
-    straddle = sum(1 for r in rows
+    # ⚠️ TWO DIFFERENT NUMBERS, AND THE FIRST VERSION OF THIS PRINT CONFLATED
+    # THEM. `all_post` is the fixtures where EVERY price was last seen after the
+    # off, so strict finds nothing at all. `straddle` is the fixtures where a
+    # price was still listed AT the off — a much larger set, because a fixture
+    # can hold both straddling and expired rows and strict still finds one.
+    all_post = sum(1 for r in rows
                    if r['new_lag_min'] is not None and r['strict_lag_min'] is None)
-    print(f'  of which STRADDLE the off (listed before AND after): {straddle}'
-          f'  — these are lag 0 under the cap and are DISCARDED without it')
+    straddle = sum(1 for r in rows if r['new_lag_min'] == 0.0)
+    print(f'  a price was STILL LISTED at the off (capped lag 0): {straddle} of {d}'
+          f'  ({pct(straddle, d)})')
+    print(f'  ...of which strict finds NO candidate whatsoever: {all_post}'
+          f'  — every price on these was last seen after the off')
     # n counts, so a distribution is never read as if it covered every fixture.
     print(f'  fixtures with no candidate at all: old {d - len(old_lags)}, '
           f'strict {d - len(strict_lags)}, new {d - len(new_lags)}')
@@ -281,6 +431,8 @@ def main():
         print(f"  {str(r['fixture_id']):<14}{str(r['book']):<11}{r['n_obs']:>4}"
               f"{lag(r['old_lag_min']):>10}{lag(r['strict_lag_min']):>10}{lag(r['new_lag_min']):>10}  {r['start_src']}")
 
+    fx = forensic(obs, kibl, obs_by)
+
     out = os.environ.get('TEN253_OUT', 'ten253-close-lastseen-audit.json')
     with open(out, 'w', encoding='utf-8') as fh:
         json.dump({'generatedAt': datetime.now(timezone.utc).isoformat(),
@@ -289,6 +441,7 @@ def main():
                                   'noObservation': no_obs},
                    'within60': {'old': old_ok, 'strict': strict_ok, 'new': new_ok,
                                 'recovered': new_ok - old_ok, 'denominator': d},
+                   'forensic': fx,
                    'rows': rows}, fh, indent=1)
     print(f'\nwrote {out}')
     return 0
