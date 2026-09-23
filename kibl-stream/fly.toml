@@ -1,18 +1,25 @@
 # TEN-253 A — NOT DEPLOYED. `fly deploy` has never been run from here.
 #
-# ⚠️ `primary_region` IS STILL BLANK, AND DELIBERATELY SO.
-# The TEN-253 brief reads: "Supabase region: [REGION]. Fill primary_region in
-# fly.toml to match." `[REGION]` is the literal placeholder — the substitution
-# never happened, so the ruling arrived without its value. A missing value is
-# reported as missing, never guessed, and a plausible-looking wrong region is
-# worse than an obvious blank because it deploys.
+# FOUNDER RULING 2026-09-23T04:08Z (TEN-253): **sea**.
 #
-# It is not left as an open question either: the access-test workflow resolves
-# the Supabase host and reports the region it actually lands in
-# (`ten253-access-test/supabase-region.json`), so this gets filled from evidence
-# and confirmed, rather than from someone's recollection.
+# The brief said "fill primary_region to match Supabase", but its `[REGION]` was
+# the literal unsubstituted placeholder, so the ruling arrived without its value.
+# Measured rather than guessed:
+#
+#   Supabase project  eu-west-1  (Ireland)  — from the Management API, which
+#                                             STATES the region. DNS cannot: the
+#                                             host resolves to Cloudflare edges
+#                                             that geolocate to whoever asks.
+#   Kibl broker       us-west-2  (Boardman, Oregon; 34.223.29.158, AS16509)
+#
+# An ocean apart, ~130 ms, and this worker talks to both continuously — so
+# "match Supabase" turned out to be a trade-off, not an instruction. Put as one,
+# and the founder ruled for the BROKER: the irreplaceable resource is the
+# MESSAGE. Kibl serves no history, so a message missed during a reconnect is
+# gone permanently, while a Supabase write is batched and absorbs the latency.
+# `sea` is Fly's Seattle region, the nearest to us-west-2.
 app = "kibl-stream"
-primary_region = ""   # <- REQUIRED before any deploy. See supabase-region.json.
+primary_region = "sea"
 
 [build]
   dockerfile = "Dockerfile"

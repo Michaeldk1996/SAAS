@@ -140,14 +140,25 @@ Both test files are named `test-*.py` with a **hyphen**, because
 underscore would make them invisible to the guard, which is the same
 directory-shaped hole that guard exists to close.
 
-## ⚠️ `primary_region` is still blank
+## `primary_region = "sea"` — ruled 2026-09-23
 
-The TEN-253 brief reads *"Supabase region: **[REGION]**"* — the literal
-placeholder. The substitution never happened, so the ruling arrived without its
-value, and a missing value is reported as missing rather than guessed. The
-access-test workflow resolves the Supabase host and writes the region it
-actually lands in to `ten253-access-test/supabase-region.json`, so this gets
-filled from evidence and then confirmed.
+The brief's *"Supabase region: **[REGION]**"* was the literal unsubstituted
+placeholder, so it was measured rather than guessed:
+
+| | |
+|---|---|
+| Supabase project | **`eu-west-1`** (Ireland) — from the **Management API**, which states the region |
+| Kibl broker | **`us-west-2`** (Boardman, Oregon; `34.223.29.158`, AS16509 Amazon) |
+
+⚠️ **DNS cannot answer the Supabase question** — the host resolves to Cloudflare
+edges that geolocate to whoever is asking, so a first attempt "found" San
+Francisco, which is just the runner's nearest POP.
+
+They are an ocean apart and the worker talks to both continuously, so "match
+Supabase" was a trade-off rather than an instruction. Put to the founder as one;
+he ruled for the **broker**. The irreplaceable resource is the message — Kibl
+serves no history, so one missed during a reconnect is gone permanently, while a
+Supabase write is batched and absorbs the ~130 ms.
 
 Nothing in `fly.toml` has been through `fly deploy` or even `fly config
 validate` — there is no Fly CLI in this environment. Treat it as a reviewed
