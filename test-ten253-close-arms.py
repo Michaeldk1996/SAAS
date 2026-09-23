@@ -99,5 +99,41 @@ ck('the honest-cost counter fires: same price, old FAILS the gate, new PASSES',
 ck('never-re-seen rows are counted (A has none; the column is not vacuous)',
    fa['observations'] == 3, str(fa))
 
+
+# ─────────────────────────────────────────────────────────────────────────────
+# THE OPENER TRAP. Kibl keeps the opening price listed for the life of the
+# fixture, so the opener straddles EVERY off and caps to lag 0 like any other
+# straddler. If it ever won the tie-break we would be printing the opening price
+# in the closing slot, at a lag of zero, looking perfect. The only thing
+# stopping that is the tie-break on inserted_on — so it gets a control.
+print()
+print('=== the opener trap ===')
+
+opener  = {'price_decimal':3.0,'inserted_on':'2026-09-18T09:00:00Z',
+           'last_seen_at':'2026-09-20T13:00:00Z','observed_at':None,
+           'is_opener':True,'is_current':False,'state':'opener','side_id':1}
+current = {'price_decimal':2.4,'inserted_on':'2026-09-20T11:00:00Z',
+           'last_seen_at':'2026-09-20T13:00:00Z','observed_at':None,
+           'is_opener':False,'is_current':True,'state':'current','side_id':1}
+
+pick = A.close_arms([opener, current], START)['capped'][0]
+ck('both the opener and the current price straddle the off (both cap to lag 0)',
+   A.close_arms([opener], START)['capped'][1] == 0.0
+   and A.close_arms([current], START)['capped'][1] == 0.0)
+ck('the CURRENT price is selected as the close, not the opener',
+   pick['price_decimal'] == 2.4, str(pick.get('state')))
+ck('and the selected row is not flagged is_opener', not pick.get('is_opener'))
+
+# MUTATION CONTROL — drop the inserted_on tie-break and the opener wins, which
+# is what makes the tie-break load-bearing rather than decorative.
+def capped_no_tiebreak(lst, start):
+    elig = [o for o in lst if A.real(o['price_decimal']) is not None
+            and A.epoch(o['inserted_on']) < start]
+    return min(elig, key=lambda o: min(A.seen_at(o), start)) if elig else None
+mut = capped_no_tiebreak([opener, current], START)
+ck('MUTATION CONTROL: without the inserted_on tie-break the OPENER is selected\n'
+   '        — so the tie-break is load-bearing, not decorative',
+   mut['price_decimal'] == 3.0, str(mut))
+
 print(('\nALL PASS' if not F else f'\n{len(F)} FAILURE(S): {F}'))
 sys.exit(1 if F else 0)

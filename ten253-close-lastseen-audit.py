@@ -281,12 +281,49 @@ def forensic(obs, kibl, obs_by, print_=print):
                     after_off_cur += 1
                 else:
                     after_off_not += 1
+    # ── 5 · THE STATE OF THE ROW FIX 1 ACTUALLY SELECTS ────────────────────
+    # is_current is one of the 17 fields in observation_key (kibl_client.py:461)
+    # and PASS 2 refreshes only last_seen_at, so a current -> not-current flip
+    # MINTS A NEW ROW rather than mutating the old one. A re-seen not-current row
+    # is therefore Kibl genuinely still listing it — most often the OPENER, which
+    # Kibl keeps for the life of the fixture and which will straddle every off.
+    #
+    # That is the one way the cap could go wrong: if an opener, still listed at
+    # the off, were selected as the close, we would be reporting the OPENING
+    # price as the CLOSING price at lag 0. The tie-break on inserted_on should
+    # make that impossible, because the opener is by construction the earliest
+    # insert. This counts it rather than trusting the argument.
+    sel_state = collections.Counter()
+    sel_opener = 0
+    for (fid, src, book), cardrows in sorted(kibl.items()):
+        start = epoch(cardrows[0].get('start_ts'))
+        if start is None:
+            continue
+        per_side = collections.defaultdict(list)
+        for o in obs_by.get(str(fid), []):
+            per_side[o.get('side_id')].append(o)
+        for sid, lst in per_side.items():
+            cb = close_arms(lst, start)['capped'][0]
+            if cb is None:
+                continue
+            sel_state[cb.get('state') or 'null'] += 1
+            if cb.get('is_opener'):
+                sel_opener += 1
+    tsel = sum(sel_state.values())
+    print_(f'\nSTATE OF THE ROW FIX 1 SELECTS AS THE CLOSE, n={tsel}:')
+    for k, v in sel_state.most_common():
+        print_(f'  {k:<12} {v:>5}  ({pct(v, tsel)})')
+    print_(f'  is_opener TRUE on the selected close: {sel_opener}  ({pct(sel_opener, tsel)})')
+    print_('  ^ MUST BE ~0. An opener selected as a close would be the opening')
+    print_('    price reported as the closing price at a lag of zero.')
+
     tot2 = after_off_cur + after_off_not
     print_(f'\nROWS RE-SEEN AFTER THE OFF, by Kibl\'s OWN is_current flag, n={tot2}:')
     print_(f'  is_current TRUE : {after_off_cur}  ({pct(after_off_cur, tot2)})')
     print_(f'  is_current FALSE: {after_off_not}  ({pct(after_off_not, tot2)})'
            '   <-- a replay of rows Kibl no longer calls current')
-    return {'sameRow': same_row, 'diffRow': diff_row,
+    return {'selectedState': dict(sel_state), 'selectedIsOpener': sel_opener,
+            'sameRow': same_row, 'diffRow': diff_row,
             'sameRowGateFlip': same_price_diff_gate,
             'neverReseen': never, 'observations': len(lifetimes),
             'afterOffIsCurrent': after_off_cur, 'afterOffNotCurrent': after_off_not}
@@ -327,7 +364,7 @@ def main():
         obs.extend(paged(url, key,
                          '/rest/v1/kibl_line_observations?select=fixture_id,side_id,'
                          'price_decimal,inserted_on,observed_at,last_seen_at,'
-                         'market_type_id,feed_source_id,is_current,is_opener'
+                         'market_type_id,feed_source_id,is_current,is_opener,state'
                          f'&fixture_id=in.({ids})&market_type_id=eq.1'
                          '&order=fixture_id.asc,inserted_on.asc'))
     print(f'observations read: {len(obs)}')
