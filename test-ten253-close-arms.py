@@ -135,5 +135,48 @@ ck('MUTATION CONTROL: without the inserted_on tie-break the OPENER is selected\n
    '        — so the tie-break is load-bearing, not decorative',
    mut['price_decimal'] == 3.0, str(mut))
 
+
+# ─────────────────────────────────────────────────────────────────────────────
+# THE GUARDED ARM. The live forensic showed the capped rule taking a SUPERSEDED
+# OPENER on 263 of 368 sides — the opening price, still on display, printed in
+# the closing slot at a perfect zero lag. These lock the guard that stops it.
+print()
+print('=== the guarded arm ===')
+
+def o_(price, ins, seen, opener=False, current=False):
+    return {'price_decimal':price,'inserted_on':ins,'last_seen_at':seen,
+            'observed_at':None,'is_opener':opener,'is_current':current,'side_id':1}
+
+# The real shape: the opener is listed all the way past the off, while the
+# current price stopped being served 40 min BEFORE it.
+sup_opener = o_(3.0,'2026-09-18T09:00:00Z','2026-09-20T13:00:00Z', opener=True,  current=False)
+last_price = o_(2.4,'2026-09-20T10:00:00Z','2026-09-20T11:20:00Z', opener=False, current=True)
+arms = A.close_arms([sup_opener, last_price], START)
+
+ck('the BRIEFED rule takes the superseded opener (this is the live 71.5% case)',
+   arms['capped'][0]['price_decimal'] == 3.0)
+ck('...at a lag of exactly 0, so it looks like a perfect close',
+   arms['capped'][1] == 0.0)
+ck('the GUARDED rule takes the real last price instead',
+   arms['guarded'][0]['price_decimal'] == 2.4)
+ck('...and times it honestly at 40 min, not 0',
+   arms['guarded'][1] == 40.0, str(arms['guarded'][1]))
+ck('the guarded pick still beats the OLD rule on lag here',
+   arms['guarded'][1] < arms['old'][1])
+
+# An opener that is ALSO current — opened and never moved — must NOT be excluded.
+both = o_(3.0,'2026-09-18T09:00:00Z','2026-09-20T13:00:00Z', opener=True, current=True)
+g = A.close_arms([both], START)['guarded']
+ck('an opener that is STILL CURRENT survives the guard (it opened and never moved)',
+   g[0] is not None and g[0]['price_decimal'] == 3.0)
+ck('...and caps to lag 0, which is correct — it WAS the price at the off',
+   g[1] == 0.0)
+
+# If the opener is the only row and it is superseded, guarded must DASH rather
+# than fall back to it. A wrong close is worse than no close.
+g2 = A.close_arms([sup_opener], START)['guarded']
+ck('a superseded opener ALONE yields NO guarded close — a dash, not a wrong price',
+   g2[0] is None)
+
 print(('\nALL PASS' if not F else f'\n{len(F)} FAILURE(S): {F}'))
 sys.exit(1 if F else 0)

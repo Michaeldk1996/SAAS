@@ -138,15 +138,29 @@ def close_arms(obs_list, start):
     capped = [o for o in real_rows
               if epoch(o.get('inserted_on')) is not None and epoch(o['inserted_on']) < start]
 
+    # GUARDED — the capped rule with the opener trap closed. A row flagged
+    # is_opener with is_current FALSE is one Kibl itself says is superseded: a
+    # different row carries the standing price. Kibl keeps the opener listed for
+    # the life of the fixture, so it straddles every off and caps to lag 0; when
+    # the final current row's last_seen freezes before the off, the opener beats
+    # it on the capped clock and the tie-break never gets a say. Excluding it is
+    # what keeps "the last price SEEN before the off" from meaning "the opening
+    # price, still on display".
+    guarded = [o for o in capped
+               if not (o.get('is_opener') and not o.get('is_current'))]
+
     ob = max(old, key=lambda o: epoch(o['inserted_on'])) if old else None
     sb = max(strict, key=seen_at) if strict else None
     # Ties on the capped clock break on the later insert — the fresher price.
     cb = (max(capped, key=lambda o: (min(seen_at(o), start), epoch(o['inserted_on'])))
           if capped else None)
+    gb = (max(guarded, key=lambda o: (min(seen_at(o), start), epoch(o['inserted_on'])))
+          if guarded else None)
     return {
         'old': (ob, lag(epoch(ob['inserted_on'])) if ob else None),
         'strict': (sb, lag(seen_at(sb)) if sb else None),
         'capped': (cb, lag(min(seen_at(cb), start)) if cb else None),
+        'guarded': (gb, lag(min(seen_at(gb), start)) if gb else None),
     }
 
 
@@ -295,6 +309,7 @@ def forensic(obs, kibl, obs_by, print_=print):
     # insert. This counts it rather than trusting the argument.
     sel_state = collections.Counter()
     sel_2x2 = collections.Counter()
+    g_2x2 = collections.Counter()
     sel_opener = 0
     for (fid, src, book), cardrows in sorted(kibl.items()):
         start = epoch(cardrows[0].get('start_ts'))
@@ -316,6 +331,9 @@ def forensic(obs, kibl, obs_by, print_=print):
             # closes: the opening price WAS the price standing at the off. Only
             # the 2x2 separates them from a genuinely superseded opener.
             sel_2x2[(bool(cb.get('is_opener')), bool(cb.get('is_current')))] += 1
+            gb2 = close_arms(lst, start)['guarded'][0]
+            if gb2 is not None:
+                g_2x2[(bool(gb2.get('is_opener')), bool(gb2.get('is_current')))] += 1
     tsel = sum(sel_state.values())
     print_(f'\nSTATE OF THE ROW FIX 1 SELECTS AS THE CLOSE, n={tsel}:')
     for k, v in sel_state.most_common():
@@ -330,6 +348,12 @@ def forensic(obs, kibl, obs_by, print_=print):
             (False, False): '??  — neither opener nor current',
         }[(op, cur)]
         print_(f'    is_opener={str(op):<5} is_current={str(cur):<5} {v:>5}  ({pct(v, tsel)})  {verdict}')
+    gtot = sum(g_2x2.values())
+    print_(f'\n  THE SAME 2x2 FOR THE GUARDED ARM, n={gtot}:')
+    for (op, cur), v in sorted(g_2x2.items(), key=lambda kv: -kv[1]):
+        print_(f'    is_opener={str(op):<5} is_current={str(cur):<5} {v:>5}  ({pct(v, gtot)})')
+    print_(f'  superseded openers under GUARD: {g_2x2[(True, False)]}  (must be 0 by construction)')
+
     bad = sel_2x2[(True, False)]
     print_(f'\n  SUPERSEDED OPENERS SELECTED AS A CLOSE: {bad} of {tsel}  ({pct(bad, tsel)})')
     print_('  ^ THIS is the number that must be ~0, not the raw opener count.')
@@ -405,6 +429,7 @@ def main():
         old_best, old_lag = arms['old']
         strict_best, strict_lag = arms['strict']
         capped_best, new_lag = arms['capped']
+        guarded_best, guarded_lag = arms['guarded']
         rows.append({
             'fixture_id': fid, 'book': book, 'n_obs': len(lst),
             'inserted_on': old_best['inserted_on'] if old_best else None,
@@ -415,6 +440,8 @@ def main():
             'old_lag_min': None if old_lag is None else round(old_lag, 1),
             'strict_lag_min': None if strict_lag is None else round(strict_lag, 1),
             'new_lag_min': None if new_lag is None else round(new_lag, 1),
+            'guarded_lag_min': None if guarded_lag is None else round(guarded_lag, 1),
+            'guarded_state': (guarded_best.get('state') if guarded_best else None),
         })
 
     print()
@@ -436,22 +463,29 @@ def main():
     old_lags = [r['old_lag_min'] for r in rows if r['old_lag_min'] is not None]
     strict_lags = [r['strict_lag_min'] for r in rows if r['strict_lag_min'] is not None]
     new_lags = [r['new_lag_min'] for r in rows if r['new_lag_min'] is not None]
+    guarded_lags = [r['guarded_lag_min'] for r in rows if r['guarded_lag_min'] is not None]
     print()
     print('GAP TO THE ACTUAL START, in minutes (lower is better):')
     dist(old_lags, 'OLD    — start minus inserted_on          ')
     dist(strict_lags, 'STRICT — start minus last_seen (uncapped)')
     dist(new_lags, 'NEW    — start minus min(last_seen, start)')
+    dist(guarded_lags, 'GUARD  — as NEW, superseded openers excluded')
 
     old_ok = sum(1 for x in old_lags if x <= RELIABLE_LAG_MIN)
     strict_ok = sum(1 for x in strict_lags if x <= RELIABLE_LAG_MIN)
     new_ok = sum(1 for x in new_lags if x <= RELIABLE_LAG_MIN)
+    guarded_ok = sum(1 for x in guarded_lags if x <= RELIABLE_LAG_MIN)
     d = len(rows)
     print()
     print(f'WITHIN THE {RELIABLE_LAG_MIN:g}-MINUTE LIMIT — the recovery number:')
     print(f'  OLD    inserted_on            : {old_ok} of {d}  ({pct(old_ok, d)})')
     print(f'  STRICT last_seen, uncapped    : {strict_ok} of {d}  ({pct(strict_ok, d)})')
     print(f'  NEW    min(last_seen, start)  : {new_ok} of {d}  ({pct(new_ok, d)})')
+    print(f'  GUARD  openers excluded       : {guarded_ok} of {d}  ({pct(guarded_ok, d)})')
     print(f'  RECOVERED by Fix 1 as briefed : {new_ok - old_ok} of {d}  ({pct(new_ok - old_ok, d)})')
+    print(f'  RECOVERED with the opener trap closed: {guarded_ok - old_ok} of {d} '
+          f'({pct(guarded_ok - old_ok, d)})  <-- THE DEFENSIBLE NUMBER')
+    print(f'  fixtures with NO guarded candidate at all: {d - len(guarded_lags)}')
     # ⚠️ TWO DIFFERENT NUMBERS, AND THE FIRST VERSION OF THIS PRINT CONFLATED
     # THEM. `all_post` is the fixtures where EVERY price was last seen after the
     # off, so strict finds nothing at all. `straddle` is the fixtures where a
