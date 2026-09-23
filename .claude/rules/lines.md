@@ -24,7 +24,18 @@ dashboard — never re-implement them there. Field = median, Vs field = rate −
 Ranking = 1 + rates strictly above / field size. Without the file those three columns
 are dashes with a note; **Rate never waits for it.**
 
-**Open, NOT ruled:** a field-size floor (field size runs 225 down to 5). Until ruled, a
+**Retired players are not in the field (founder ruling TEN-262 #6, 2026-09-23).** Every name
+in `retired-players.json` → `retired[]` is dropped from the roster before the field is built,
+so it leaves Field, Vs field, Ranking and every "N of M". The file records who was removed
+(`source.retiredExcluded`). A missing or unreadable list **fails the build** — it is never
+read as "nobody retired". A retired player can still be picked on Lines: his Rate and Vs
+field show, his Ranking is a dash (he is not in the field) even when an active player has the
+same rate (`lnFieldStats` checks the name against `source.retiredExcluded`). **Test:** build
+the field from fixture shards with one retired player: no field array holds his rate, every
+field size drops by one, and a retired subject with a rate equal to an active player's
+paints Ranking "—" while the active player paints "1/3". Locked by `test-ten262.mjs`.
+
+**Open, NOT ruled:** a field-size floor (field size runs 215 down to 5 after the TEN-262 retired exclusion, measured 2026-09-23). Until ruled, a
 field under 10 carries a `field N` small-sample mark and every Ranking shows its
 denominator — flagged, not hidden, not filled.
 

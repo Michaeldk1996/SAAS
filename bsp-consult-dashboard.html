@@ -2514,18 +2514,19 @@
     --sf-text:#e7e9ee; --sf-text-strong:#fff; --sf-text-3:#5b6880; --sf-muted:#5b6880; --sf-muted-2:#4b5672;
     --sf-pos:#3dd68c; --sf-font-ui:'Hanken Grotesk',sans-serif; --sf-font-mono:'IBM Plex Mono',monospace;
   }
-  body{ background:var(--sf-page); padding-left:236px; }
+  body{ background:var(--sf-page); padding-left:250px; }
   .topnav{ display:none !important; }               /* old horizontal bar, replaced */
 
-  .sf-sidebar{ position:fixed; left:0; top:0; bottom:0; width:236px; background:var(--sf-sidebar);
+  .sf-sidebar{ position:fixed; left:0; top:0; bottom:0; width:250px; background:var(--sf-sidebar);
     border-right:1px solid var(--sf-border-subtle); display:flex; flex-direction:column;
     padding:22px 16px; z-index:60; font-family:var(--sf-font-ui); overflow-y:auto; }
   /* TEN-260 Part C · brand block, nav label and nav items to App Sidebar.dc.html:
      38px mark on the card surface with a blue rule, 15px/800 name, 9px mono sub at
      0.16em; nav label 11px/400 #4b5361 at 8px 12px; items 13.5px/600 #5b6880 with the
      icon at #7a8494, active = rgba(91,155,255,0.13) wash + 0.34 rule, #fff text,
-     blue icon. The 250px sidebar WIDTH is not taken (this shell serves every page -
-     reported, not changed). */
+     blue icon. Width 250px per App Sidebar.dc.html (`width:250px`, border included):
+     founder ruling TEN-262 #2, measured in DESIGN 1-4 as 450 device px at 1.8x.
+     See .claude/rules/app-shell.md. */
   .sf-brand{ display:flex; align-items:center; gap:11px; padding:4px 8px 22px; }
   .sf-brand-mark{ width:38px; height:38px; border-radius:10px; flex:none; display:flex; align-items:center; justify-content:center;
     background:#0a0d14; border:1px solid rgba(91,155,255,0.35); }
@@ -2970,9 +2971,8 @@
          button cannot orphan a link. `data-tab="entry-lists"` is still ACCEPTED by the
          nav handler below and lands on Tournaments -> Entry list, the same defensive
          alias TEN-179 kept for `data-tab="results"`. -->
-    <!-- TEN-260 Part C (founder, 2026-09-23): "the Stennisfy Model icon" per the design - the
-         App Sidebar.dc.html star path. This REVERSES the earlier "Review item 2" choice of a
-         line-chart glyph; flagged in the TEN-260 report so the founder can reverse it back. -->
+    <!-- Stennisfy Model icon = the App Sidebar.dc.html star path. Founder ruling TEN-262 #3
+         (2026-09-23) - it REPLACES the earlier line-chart glyph. Do not revert: .claude/rules/app-shell.md. -->
     <button data-tab="edge"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3l1.9 3.9 4.3.6-3.1 3 .7 4.3L10 16.8 6.3 18.8l.7-4.3-3.1-3 4.3-.6z"/></svg>Stennisfy Model</button>
     <button data-tab="styles"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15V9M8 15V5M12 15v-4M16 15V7"/></svg>Playing Styles</button>
     <button data-tab="news"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h9v10H4zM13 8h3v5.5a1.5 1.5 0 01-3 0zM6 8h5M6 11h5"/></svg>News</button>
@@ -26890,12 +26890,12 @@ window.DatabaseTab = (function(){
   var RAT_GATE=10;
 
   // Elo is the one column on this tab we do not compute. It is scraped weekly as
-  // a single CURRENT rating with no dated history, so it does not move with the
-  // Career / Last 52 control and there is no peak and no "vs peak" to show. Every
+  // a single CURRENT rating with no dated history, so on the Last 52 scope every
+  // Elo cell is a dash (TEN-262 ruling 1) and there is no per-surface peak. Every
   // surface that prints an Elo carries this line, because a reader looking at a
   // board captioned "Last 52 weeks" would otherwise reasonably read the Elo
   // column as a 52-week figure.
-  var ELO_CAVEAT='Elo is a current weekly snapshot from an external rating list — it does not follow the Career / Last 52 control. '+
+  var ELO_CAVEAT='Elo is a current weekly snapshot from an external list: there is no dated Elo series, so Last 52 is a dash and Career is today\u2019s rating. '+
     'Peak Elo and Vs pk come from the same weekly list and are OVERALL figures: the source publishes no per-surface peak, so both dash on the Hard, Clay and Grass pills rather than compare a surface rating against an overall peak.';
 
   // Column dictionaries. `k` is the path inside the scope node; a column with
@@ -27377,14 +27377,14 @@ window.DatabaseTab = (function(){
       }));
       zR.appendChild(pillGroup([['All','All'],['Hard','Hard'],['Clay','Clay'],['Grass','Grass']],
         state.ratSurf, function(v){ state.ratSurf=v; }, false));
-      // TEN-260 Part C · HIDDEN, not disabled, while players are picked. The
-      // prototype's own code is `showRatPeriod: isRatings && !ratCmp` and
-      // DESIGN 3 shows no period control with two players picked; the README's
-      // prose ("go disabled") disagrees with both and is reported, not followed.
-      // With nobody picked the control stays: the board has real Career and
-      // Last 52 figures behind it.
-      if(!state.ratSel.length) zR.appendChild(pillGroup([['career','Career'],['last52','Last 52 weeks']],
-        state.ratScope, function(v){ state.ratScope=v; }, false));
+      // TEN-262 ruling 1 (founder, 2026-09-23): the Career / Last 52 control is
+      // ACTIVE on Ratings, with or without players picked. It switches every
+      // board column between the store's `career` and `last52` scopes, and moves
+      // the compare panel's highlighted column to the same scope. Labels and
+      // padding are the Lines tab's control ('lines' pills), per the ruling.
+      // This replaces TEN-260 Part C's "hidden while players are picked".
+      zR.appendChild(pillGroup([['career','Career'],['last52','Last 52']],
+        state.ratScope, function(v){ state.ratScope=v; }, false, 'lines'));
       var rreset=el('button','db-reset','Reset'); rreset.onclick=function(){ resetFilters(); render(); };
       zR.appendChild(rreset);
       if(zL.childNodes.length) zR.classList.add('div');
@@ -28045,6 +28045,9 @@ window.DatabaseTab = (function(){
     // "worked", on every surface, by accident. An accident that gives the right
     // answer on one pill and the forbidden comparison on three is exactly the
     // walkover-0-0 shape this codebase has already paid for twice.
+    // TEN-262 ruling 1: Elo has no last-52 value (a current snapshot, no dated
+    // series), so every Elo figure is a dash on the Last 52 scope. Never create one.
+    if(k.indexOf('elo.')===0 && state.ratScope!=='career') return null;
     if(k==='elo.peak' || k==='elo.vspk'){
       if(state.ratSurf!=='All') return null;          // the ruling, not an accident
       var prec=ratEloRec(p.name); if(!prec || !prec.peak) return null;
@@ -28078,6 +28081,7 @@ window.DatabaseTab = (function(){
   // board's 'All' onto the scrape's 'all' key.
   function ratRating(p, board){
     if(board==='elo'){
+      if(state.ratScope!=='career') return null;   // TEN-262: no last-52 Elo exists
       var rec=ratEloRec(p.name); if(!rec) return null;
       var key={All:'all',Hard:'hard',Clay:'clay',Grass:'grass'}[state.ratSurf]||'all';
       var r=rec[key]; return r && typeof r.rating==='number' ? r.rating : null;
@@ -28548,25 +28552,32 @@ window.DatabaseTab = (function(){
       });
     });
     });
+    // TEN-262 ruling 1: on the Last 52 scope the Elo board has no rows, because
+    // no last-52 Elo exists and a leaderboard does not rank an absence. Say so
+    // in the table rather than leaving an empty grid under a header.
+    if(board==='elo' && state.ratScope!=='career'){
+      var none=el('div','db-rblock','No Elo on the Last 52 scope \u2014 there is no dated Elo series. Switch to Career for today\u2019s rating.');
+      none.style.gridColumn='1 / -1';
+      g.appendChild(none);
+    }
     sc.appendChild(g); wrap.appendChild(sc);
 
     var unwired=B.cols.filter(function(c){ return c.k==null; }).map(function(c){ return c.h; });
     if(board==='elo' && !ELO) unwired=unwired.concat(['Elo (the scraped Elo store did not load)']);
     var lnote=ratSliceNote(unwired,
       board==='elo' ? null : board==='serve' ? 'matches carrying serve stats' : 'matches backing the rating');
-    // The Elo board does NOT move with the period control, so the slice line
-    // above would otherwise read "Last 52 weeks" over columns that are a current
-    // snapshot. Say it on the board that shows Elo rather than leaving the
+    // Elo is a current snapshot: Career shows today's rating and Last 52 is a
+    // dash (TEN-262). Say it on the board that shows Elo rather than leaving the
     // reader to infer it.
     if(board==='elo') lnote.innerHTML += '<br>'+esc(ELO_CAVEAT);
     wrap.appendChild(lnote);
     return wrap;
   }
 
-  // Compare panel (2-4 players). Last 52 is the LIVE column and carries the blue
-  // wash; career is the reference; delta is in the sign colour. That contrast is
-  // the point of the panel, so the panel always shows both periods - which is
-  // exactly why the Career / Last 52 pills go disabled while it is open.
+  // Compare panel (2-4 players). The panel always shows both periods and the
+  // delta (Last 52 − career, in the sign colour). The column of the scope the
+  // Career / Last 52 control has selected carries the blue wash (TEN-262
+  // ruling 1: the control moves the highlight; it used to be Last 52 always).
   function ratComparePanel(){
     var picks=state.ratSel.map(function(n){
       return ratRoster().filter(function(p){ return p.name===n; })[0];
@@ -28599,9 +28610,10 @@ window.DatabaseTab = (function(){
     });
 
     g.appendChild(el('div'));
+    var hiL52 = state.ratScope==='last52';
     picks.forEach(function(){
-      g.appendChild(el('div','db-sub live','Last 52'));
-      g.appendChild(el('div','db-sub','Career'));
+      g.appendChild(el('div','db-sub'+(hiL52?' live':''),'Last 52'));
+      g.appendChild(el('div','db-sub'+(hiL52?'':' live'),'Career'));
       g.appendChild(el('div','db-sub','Δ'));
     });
     panel.appendChild(g);
@@ -28697,8 +28709,8 @@ window.DatabaseTab = (function(){
           }
           return c;
         }
-        row.appendChild(cell('live', l52, 'last52'));
-        row.appendChild(cell('ref', car, 'career'));
+        row.appendChild(cell(hiL52?'live':'ref', l52, 'last52'));
+        row.appendChild(cell(hiL52?'ref':'live', car, 'career'));
         var d=el('div','db-cmpcell delta');
         if(l52==null || car==null){ d.textContent='—'; d.style.color='#5b6880'; }
         else {
@@ -28891,7 +28903,7 @@ window.DatabaseTab = (function(){
       .catch(function(){ lnfPromise=null; return null; });   // not cached: the next paint retries
     return lnfPromise;
   }
-  function lnFieldStats(fmt, label, rate){
+  function lnFieldStats(fmt, label, rate, name){
     if(!LNF || !LNF.slices) return null;
     var sl=LNF.slices[fmt+'|'+state.lnSurf+'|'+state.lnScope];
     var d=sl && sl[label];
@@ -28900,7 +28912,10 @@ window.DatabaseTab = (function(){
     // The player must BE in the field to be ranked in it. A file one tick older
     // than his shard can miss him (e.g. he has just reached n = 5), and ranking
     // him anyway prints "226/225". Not found -> no rank, a dash.
-    if(rate!=null){ var r=lnRound3(rate); if(d.indexOf(r)>=0){ var above=0; d.forEach(function(v){ if(v>r) above++; }); rank=above+1; } }
+    // TEN-262: a retired player is not in the field (build-lines-field.js drops him),
+    // so he is never ranked in it - even when an active player's rate equals his.
+    var out = name!=null && LNF.source && (LNF.source.retiredExcluded||[]).indexOf(name)>=0;
+    if(rate!=null && !out){ var r=lnRound3(rate); if(d.indexOf(r)>=0){ var above=0; d.forEach(function(v){ if(v>r) above++; }); rank=above+1; } }
     return { median:med, size:d.length, rank:rank };
   }
   // Signed to one decimal with a real minus sign; zero after rounding prints
@@ -29065,7 +29080,9 @@ window.DatabaseTab = (function(){
     } else {
       var src=LNF.source||{};
       notes.push('Field = the median rate on each line across every roster player with at least '+LN_MIN_N+' matches on that line at this slice; Ranking is the place in that field. '+
-        'The roster is '+fmtInt(src.rosterSize)+' players, of whom '+fmtInt(src.resolved)+' resolve to a match record'+
+        'The roster is '+fmtInt(src.rosterSize)+' players'+
+        (src.retiredExcluded && src.retiredExcluded.length ? ' after removing '+src.retiredExcluded.length+' retired (retired-players.json)' : '')+
+        ', of whom '+fmtInt(src.resolved)+' resolve to a match record'+
         (src.unresolved && src.unresolved.length ? ' ('+src.unresolved.length+' do not: '+src.unresolved.join(', ')+')' : '')+
         '. Field sizes vary by line - each Ranking shows its own.'+
         (state.lnScope==='l52' ? ' Last 52 = matches since '+fmtDate(LNF.l52Cutoff)+'.' : ''));
@@ -29135,7 +29152,7 @@ window.DatabaseTab = (function(){
         subjects.forEach(function(s){
           var L = s.P ? lnLine(s.P.byFmt[fmt], kind, arg) : null;
           var rate = L ? lnRate(L) : null;
-          var F = lnFieldStats(fmt, label, rate);
+          var F = lnFieldStats(fmt, label, rate, s.nm);
           var delta = (rate!=null && F) ? rate - F.median : null;
           var title = s.nm+' · '+grp+' · '+label+' · '+(!L ? 'no match record' : (L.n ? L.hit+' of '+L.n : 'no matches on record'));
           if(!cmp){

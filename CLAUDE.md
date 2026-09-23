@@ -240,6 +240,8 @@ Surface-specific rulings moved out of this file so they load only when relevant:
 | Records counting (Flashscore rules), walkovers, retirements | `.claude/rules/pipeline-records.md` |
 | Odds sources, book ladder, card rules, close rules | `.claude/rules/odds.md` |
 | Deploy lane — claim, 45-min expiry, renew, takeover, waiter reports | `.claude/rules/deploy-lane.md` |
+| App shell — sidebar width, Stennisfy Model icon | `.claude/rules/app-shell.md` |
+| Database Ratings board / Lines tab rulings | `.claude/rules/ratings.md`, `.claude/rules/lines.md` |
 
 Full rationale and superseded decisions live in `BUILD-NOTES.md`, not here.
 

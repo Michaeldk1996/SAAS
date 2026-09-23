@@ -91,7 +91,7 @@ serves the worktree, sets a 1400px CDP viewport, waits for `.match-card`, probes
 then screenshots full-page + the Market-Signal-expanded card.
 
 Result — every outstanding Item-1 point is already satisfied at `8f48e86`:
-- Stennisfy Model icon = line-chart glyph (paths `M4 4v12h12` + `M6.5 12.5l3-3.5 2.5 2 4-5.5`). Not an arrow/star.
+- ~~Stennisfy Model icon = line-chart glyph~~ SUPERSEDED by founder ruling TEN-262 #3 (2026-09-23): the icon is the design's star path. Rule: `.claude/rules/app-shell.md`.
 - Playing Styles icon = bar-chart glyph (`M4 15V9M8 15V5M12 15v-4M16 15V7`). Not a target.
 - Market Signal chip `onclick="toggleSig(this)"` — expands in place (`.sig-open`), never navigates.
 - Expanded panel: SHARP ESTIMATES (Pinnacle 56/44 LIVE, Stennisfy —), MARKET MONEY

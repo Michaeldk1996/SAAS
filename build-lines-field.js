@@ -16,6 +16,10 @@
 //
 // Inputs, exactly the ones the page joins on:
 //   surface-ratings.json  the roster the Lines picker searches (name only)
+//   retired-players.json  names in `retired[]` are NOT in the field (TEN-262 ruling 6):
+//                         they leave Field, Vs field, Ranking and every "N of M".
+//                         A missing or unreadable list fails the build - it is
+//                         never read as "nobody retired".
 //   player-profiles.json  name -> profile key, EXACT name match (lnKeyForName)
 //   career-history-index.json + career-history/<key>.json   the match rows
 //
@@ -107,7 +111,11 @@ async function main() {
     const p = profiles.players[k];
     if (p && p.name != null && !(p.name in byName)) byName[p.name] = String(k);
   }
-  const roster = ratings.players.map(p => p.name);
+  const retiredFile = await readJson('retired-players.json');
+  if (!retiredFile || !Array.isArray(retiredFile.retired)) throw new Error('retired-players.json missing or has no retired[] — the field would silently include retired players');
+  const retiredSet = new Set(retiredFile.retired.map(r => r && r.name).filter(Boolean));
+  const retiredExcluded = ratings.players.map(p => p.name).filter(nm => retiredSet.has(nm));
+  const roster = ratings.players.map(p => p.name).filter(nm => !retiredSet.has(nm));
   const unresolved = roster.filter(nm => !byName[nm]);
   const resolved = roster.filter(nm => byName[nm]);
 
@@ -151,14 +159,15 @@ async function main() {
     builtAt: new Date().toISOString(),
     l52Cutoff: cutoff,
     minN: L.LN_MIN_N,
-    source: { rosterSize: roster.length, resolved: resolved.length, unresolved, shardless: resolved.filter(nm => !(rowsByName[nm] || []).length).length },
+    source: { rosterSize: roster.length, resolved: resolved.length, unresolved, shardless: resolved.filter(nm => !(rowsByName[nm] || []).length).length,
+              storeSize: ratings.players.length, retiredExcluded },
     slices,
   };
   const body = JSON.stringify(out);
   fs.writeFileSync(OUT, body);
   const gz = require('zlib').gzipSync(body).length;
   const sizes = Object.values(slices).flatMap(sl => Object.values(sl).map(a => a.length)).sort((a, b) => a - b);
-  console.log(`lines-field: ${lines} line slices (${emptyLines} empty) · roster ${roster.length}, resolved ${resolved.length}, unresolved ${unresolved.length} · field size min ${sizes[0]} / median ${sizes[sizes.length >> 1]} / max ${sizes[sizes.length - 1]} · ${body.length} B raw, ${gz} B gzip → ${OUT}`);
+  console.log(`lines-field: ${lines} line slices (${emptyLines} empty) · roster ${roster.length} (${retiredExcluded.length} retired excluded of ${ratings.players.length} stored), resolved ${resolved.length}, unresolved ${unresolved.length} · field size min ${sizes[0]} / median ${sizes[sizes.length >> 1]} / max ${sizes[sizes.length - 1]} · ${body.length} B raw, ${gz} B gzip → ${OUT}`);
 }
 
 if (require.main === module) main().catch(e => { console.error('build-lines-field FAILED:', e.message); process.exit(1); });

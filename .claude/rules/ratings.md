@@ -93,12 +93,20 @@ on screen are. Locked by `test-ten254-mental-count.mjs` (12 mutants).
 **The rule.** Every name in `retired-players.json` → `retired[]` is absent from every
 Ratings board (Overview, all five leaderboards, the compare picker and panel), and every
 count and denominator on the tab drops with it. `_candidates_for_review` is NOT read.
-Scoped to the Ratings board: Lines, profiles and H2H still show the player.
+Lines excludes them from its FIELD too (TEN-262 #6, see `lines.md`). Profiles, H2H and the
+Lines player picker still show the player.
+
+**Adding a player** is one entry in `retired[]`, `name` exactly as in
+`surface-ratings.json`, with its source. `retiredOn` is null unless a final-match date is
+confirmed. 11 entries as of TEN-262 (2026-09-23): the four TEN-254 ones plus Monfils,
+Wawrinka, Lestienne, Balleret, Bautista-Agut, Carreno-Busta and Basilashvili, each
+"founder-confirmed 2026-09-23". N. Kyrgios stays ACTIVE (injured, not retired).
 
 **The test.** Paint any board with the file loaded: no retired name appears, and the
 Overview count is exactly (unfiltered count − retired players who were in it). If the
 file fails to load, the board says in amber that retired players were NOT removed —
-never a silent fallback to the full roster. Locked by `test-ten260-ratings.mjs`.
+never a silent fallback to the full roster. Locked by `test-ten260-ratings.mjs`; the list itself (every name on the store, every entry sourced, the seven
+TEN-262 names present, Kyrgios absent) by `test-ten262.mjs`.
 
 ## Mental Edge: three views, 200-point ranking minimum (founder rulings TEN-254, built TEN-260)
 
@@ -122,3 +130,24 @@ and < 200 pp. Locked by `test-ten260-ratings.mjs` (14 mutants).
 
 **Supersedes** the TEN-243 method note "Mental Edge — tour level only (no Challenger
 fold-in)", for the combined and Challenger views.
+
+## Career / Last 52 control is ACTIVE on Ratings (founder ruling TEN-262 #1, 2026-09-23)
+
+**The rule.**
+- The control switches **every board column** between the store's `career` and `last52`
+  scopes (`surface-ratings.json` → `surfaces.<surface>.<scope>`), and moves the compare
+  panel's **highlighted (blue-wash) column** to the selected scope. The panel still shows
+  both periods and the Δ (Last 52 − career).
+- It stays on screen and enabled **while players are picked**. This replaces TEN-260 Part C
+  "hidden while players are picked".
+- Style and labels are the Lines tab's control: `db-pills lines`, "Career" / "Last 52".
+- **Elo has no last-52 value.** On Last 52, every Elo cell (Overview column, Elo board,
+  compare) is a dash, and the Elo board has no rows and says so. Never create a last-52 Elo.
+- The 10-match row gate and the 200-pressure-point ranking minimum apply to the scope on
+  screen; "ranked X of Y" is computed at that scope.
+
+**The test.** Paint the Serve board at each scope: C. Alcaraz's painted rating equals
+`surfaces.All.<scope>.serve.rating`; the Return board's rows at each scope equal the players
+whose node at that scope clears the gate; on Last 52 no Overview Elo cell is a number; the
+compare panel's `live` sub-heads read "Career" on Career and "Last 52" on Last 52; the
+control renders enabled with two players picked. Locked by `test-ten262.mjs` (5 mutants).

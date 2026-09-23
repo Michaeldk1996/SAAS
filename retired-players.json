@@ -1,11 +1,12 @@
 {
-  "_doc": "TEN-254, founder ruling 4 (2026-09-23): players removed from the RATINGS BOARD because their retirement is confirmed by a named, checkable source. Ratings board only — profiles, the H2H selector and Lines are untouched.",
+  "_doc": "TEN-254, founder ruling 4 (2026-09-23): players removed from the RATINGS BOARD because their retirement is confirmed by a named, checkable source. Read by the Ratings board (players leave it) and, since TEN-262 ruling 6, by build-lines-field.js (players leave the Lines FIELD and its denominator). Profiles, the H2H selector and the Lines player picker are untouched.",
   "_rules": [
     "NOT an inactivity rule. A player who has not played for a year because he is INJURED stays on the board. Only a confirmed announcement removes him.",
     "Every entry names the source and the date, so anyone can check it without trusting this file.",
     "Adding a newly retired player is one line in `retired`.",
     "A removed player leaves BOTH the ranked and the unranked block, and the board's denominator drops with him.",
-    "The name must match the `name` field in surface-ratings.json exactly — that is what the board keys on. tools/test-ten254-retired.js fails on an entry that matches nobody, so a typo cannot sit here silently pretending to remove someone."
+    "The name must match the `name` field in surface-ratings.json exactly — that is what the board keys on. tools/test-ten254-retired.js fails on an entry that matches nobody, so a typo cannot sit here silently pretending to remove someone.",
+    "`retiredOn` is null where no final-match date is confirmed. It is never estimated."
   ],
   "_coverage_warning": "⚠️ The agent that seeded this list has a knowledge cutoff of May 2026 and this file was written 2026-09-23. Any retirement announced between roughly mid-2026 and now is NOT in it, and cannot be, from this side. It needs a human pass. `_candidates_for_review` below holds the ones the agent could not confirm rather than guessing at them.",
   "retired": [
@@ -32,12 +33,51 @@
       "retiredOn": "2023-08-01",
       "source": "Announced his retirement from professional tennis in August 2023, following the CAS decision upholding an 18-month suspension for anti-doping whereabouts failures. ⚠️ This is Mikael Ymer — NOT E. Ymer (Elias, rank 171), who is a different, active player on this board.",
       "addedBy": "TEN-254, 2026-09-23"
+    },
+    {
+      "name": "G. Monfils",
+      "retiredOn": null,
+      "source": "founder-confirmed 2026-09-23 (TEN-262 ruling 5). Public: ATP Tour reports he announced he retires at the end of the 2026 season; his US Open 2026 exit is covered as his Grand Slam farewell. https://www.atptour.com/en/news/monfils-us-open-2026-farewell",
+      "addedBy": "TEN-262, 2026-09-23"
+    },
+    {
+      "name": "S. Wawrinka",
+      "retiredOn": null,
+      "source": "founder-confirmed 2026-09-23 (TEN-262 ruling 5). Public: ATP Tour reports he announced 2026 as his final season. https://www.atptour.com/en/news/wawrinka-2026-retirement-announcement",
+      "addedBy": "TEN-262, 2026-09-23"
+    },
+    {
+      "name": "C. Lestienne",
+      "retiredOn": null,
+      "source": "founder-confirmed 2026-09-23 (TEN-262 ruling 5). Public: Wikipedia lists him as inactive, last match June 2025. https://en.wikipedia.org/wiki/Constant_Lestienne",
+      "addedBy": "TEN-262, 2026-09-23"
+    },
+    {
+      "name": "B. Balleret",
+      "retiredOn": null,
+      "source": "founder-confirmed 2026-09-23 (TEN-262 ruling 5). Public: the ATP lists him as a coach. https://www.atptour.com/en/players/coaches/balleret-benjamin",
+      "addedBy": "TEN-262, 2026-09-23"
+    },
+    {
+      "name": "R. Bautista-Agut",
+      "retiredOn": null,
+      "source": "founder-confirmed 2026-09-23 (TEN-262 ruling 5). Public: ATP Tour reports he announced (April 2026) that he retires at the end of the 2026 season. https://www.atptour.com/en/news/roberto-bautista-agut-retirement-news-2026",
+      "addedBy": "TEN-262, 2026-09-23"
+    },
+    {
+      "name": "P. Carreno-Busta",
+      "retiredOn": null,
+      "source": "founder-confirmed 2026-09-23 (TEN-262 ruling 5). No public, checkable announcement found by the agent on 2026-09-23. The founder's confirmation is the source.",
+      "addedBy": "TEN-262, 2026-09-23"
+    },
+    {
+      "name": "N. Basilashvili",
+      "retiredOn": null,
+      "source": "founder-confirmed 2026-09-23 (TEN-262 ruling 5). No public, checkable announcement found by the agent on 2026-09-23. The founder's confirmation is the source.",
+      "addedBy": "TEN-262, 2026-09-23"
     }
   ],
   "_candidates_for_review": {
-    "G. Monfils": "On the board at rank 68. He announced that 2025 would be his final season, but the agent could not confirm from a checkable source whether he completed it or when his final match was, so he is NOT removed. Founder to confirm.",
-    "S. Wawrinka": "On the board at rank 125. Age makes retirement plausible but no announcement is confirmable from this side. NOT removed.",
-    "N. Kyrgios": "On the board at rank 670, and deliberately NOT a candidate — his absence is injury, not retirement, and the rule says injured players stay. Listed here only so nobody adds him by inactivity.",
-    "C. Lestienne / B. Balleret / R. Bautista-Agut / P. Carreno-Busta / N. Basilashvili": "All on the board with long gaps. None has a retirement the agent can confirm. NOT removed — an inactivity rule is explicitly forbidden."
+    "N. Kyrgios": "On the board at rank 670, and deliberately NOT a candidate — his absence is injury, not retirement, and the rule says injured players stay. Listed here only so nobody adds him by inactivity."
   }
 }

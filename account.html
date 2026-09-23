@@ -31,14 +31,14 @@
   }
   *{ box-sizing:border-box; }
   body{ margin:0; background:var(--sf-page); color:var(--sf-text); font-family:var(--sf-font-ui);
-    -webkit-font-smoothing:antialiased; padding-left:236px; }
+    -webkit-font-smoothing:antialiased; padding-left:250px; }
   a{ color:var(--sf-brand); text-decoration:none; }
   ::selection{ background:rgba(91,155,255,0.35); }
 
   /* ---------- global sidebar (mounted verbatim from the dashboard shell;
        on this standalone page the ANALYSE items are anchors to the dashboard
        rather than in-page data-tab buttons — see BUILD-NOTES) ---------- */
-  .sf-sidebar{ position:fixed; left:0; top:0; bottom:0; width:236px; background:var(--sf-sidebar);
+  .sf-sidebar{ position:fixed; left:0; top:0; bottom:0; width:250px; background:var(--sf-sidebar);
     border-right:1px solid var(--sf-border-subtle); display:flex; flex-direction:column;
     padding:22px 16px; z-index:60; font-family:var(--sf-font-ui); overflow-y:auto; }
   .sf-brand{ display:flex; align-items:center; gap:12px; padding:0 8px 2px; text-decoration:none; }
@@ -244,7 +244,7 @@
     <a href="bsp-consult-dashboard.html#matches"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6.5h14M3 10h14M3 13.5h14"/></svg>Matches</a>
     <a href="bsp-consult-dashboard.html#players"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 10a3 3 0 100-6 3 3 0 000 6ZM4.5 16a5.5 5.5 0 0111 0"/></svg>Players</a>
     <a href="bsp-consult-dashboard.html#tournaments"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h8v3a4 4 0 01-8 0V4ZM10 11v3M7.5 16.5h5"/></svg>Tournaments</a>
-    <a href="bsp-consult-dashboard.html#edge"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4v12h12"/><path d="M6.5 12.5l3-3.5 2.5 2 4-5.5"/></svg>Stennisfy Model</a>
+    <a href="bsp-consult-dashboard.html#edge"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 3l1.9 3.9 4.3.6-3.1 3 .7 4.3L10 16.8 6.3 18.8l.7-4.3-3.1-3 4.3-.6z"/></svg>Stennisfy Model</a>
     <a href="bsp-consult-dashboard.html#styles"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15V9M8 15V5M12 15v-4M16 15V7"/></svg>Playing Styles</a>
     <a href="bsp-consult-dashboard.html#news"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h9v10H4zM13 8h3v5.5a1.5 1.5 0 01-3 0zM6 8h5M6 11h5"/></svg>News</a>
   </nav>
