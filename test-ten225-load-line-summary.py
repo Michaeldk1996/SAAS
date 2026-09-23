@@ -829,5 +829,135 @@ if cat:
     check('match winner market 121 has outcomes 1 and 2',
           sorted((cat.get('121') or {}).get('outcomes', {}).values()) == ['1', '2'])
 
+
+# ─────────────────────────────────────────────────────────────────────────────
+print('\nTEN-253 part E — the Close-correction counter')
+# Founder: "read the existing rows before the upsert and count close_price/
+# close_ts changes, split by whether the start source changed" and "add a
+# mutation control: a run with no changes reports zero, and an injected change
+# is counted."
+#
+# The control is the point. A counter that always prints 0 is indistinguishable
+# from a clean database, and on a merge-duplicates upsert the evidence is gone
+# one statement later — so the zero arm and the non-zero arm are both driven.
+
+
+def _r(fid, side, price, ts, src='oddspapi'):
+    return {'fixture_id': fid, 'book': 'bet365', 'market': 'winner',
+            'side': side, 'line': 0.0, 'close_price': price,
+            'close_ts': ts, 'start_ts_source': src}
+
+
+BASE = [_r(1, '1', 1.69, '2026-09-10T11:58:00Z'),
+        _r(1, '2', 2.20, '2026-09-10T11:58:00Z'),
+        _r(2, '1', 1.30, '2026-09-10T13:58:00Z')]
+
+# ── ARM 1 · nothing changed -> ZERO ─────────────────────────────────────────
+same = {L._row_key(r): dict(r) for r in BASE}
+c = L.count_close_corrections(same, BASE)
+check('a run with NO changes reports zero corrections',
+      c['corrected'] == 0, f"got {c['corrected']}")
+check('…and counts all three rows as matched, none as new',
+      c['matched'] == 3 and c['new'] == 0 and c['unchanged'] == 3,
+      f"matched={c['matched']} new={c['new']} unchanged={c['unchanged']}")
+
+# ── ARM 1b · THE FORMAT TRAP, which is what would have made arm 1 lie ───────
+# We write "…T11:58:00Z"; PostgREST returns "…T11:58:00+00:00". Same instant,
+# different string. A textual compare reports every row corrected on every run.
+stored_pg = {L._row_key(r): dict(r, close_ts=r['close_ts'].replace('Z', '+00:00'))
+             for r in BASE}
+c = L.count_close_corrections(stored_pg, BASE)
+check('CONTROL: a +00:00 stored timestamp is the SAME instant as a Z one, not a correction',
+      c['corrected'] == 0, f"got {c['corrected']} — the compare is textual, not temporal")
+stored_float = {L._row_key(r): dict(r, close_price=float(f"{r['close_price']:.10f}"))
+                for r in BASE}
+check('CONTROL: a re-parsed float price is not a correction either',
+      L.count_close_corrections(stored_float, BASE)['corrected'] == 0)
+
+# ── ARM 2 · an INJECTED change is counted, and lands on the right side ──────
+inj = {L._row_key(r): dict(r) for r in BASE}
+inj[L._row_key(BASE[0])]['close_price'] = 1.75          # price moved, start source same
+c = L.count_close_corrections(inj, BASE)
+check('an injected PRICE change is counted', c['corrected'] == 1, f"got {c['corrected']}")
+check('…attributed to start source UNCHANGED — the same start, a different answer',
+      c['corrected_start_source_same'] == 1 and c['corrected_start_source_changed'] == 0,
+      f"same={c['corrected_start_source_same']} changed={c['corrected_start_source_changed']}")
+check('…and recorded as a price move, not a ts move',
+      c['price_changed'] == 1 and c['ts_changed'] == 0)
+
+inj2 = {L._row_key(r): dict(r) for r in BASE}
+inj2[L._row_key(BASE[1])].update(close_ts='2026-09-10T10:00:00Z',
+                                 start_ts_source='flip')
+c = L.count_close_corrections(inj2, BASE)
+check('an injected TS change with a MOVED start source is counted on the other side',
+      c['corrected'] == 1 and c['corrected_start_source_changed'] == 1
+      and c['corrected_start_source_same'] == 0,
+      f"corrected={c['corrected']} changed={c['corrected_start_source_changed']}")
+check('…and recorded as a ts move, not a price move',
+      c['ts_changed'] == 1 and c['price_changed'] == 0)
+
+# ── ARM 3 · appeared / withdrawn are distinguished, not merged ──────────────
+gone = {L._row_key(r): dict(r) for r in BASE}
+gone[L._row_key(BASE[2])].update(close_price=None, close_ts=None)
+c = L.count_close_corrections(gone, BASE)
+check('a close APPEARING where there was none is counted as appeared',
+      c['close_appeared'] == 1 and c['close_disappeared'] == 0,
+      f"appeared={c['close_appeared']} withdrawn={c['close_disappeared']}")
+c = L.count_close_corrections({L._row_key(r): dict(r) for r in BASE},
+                              [dict(BASE[0], close_price=None, close_ts=None)] + BASE[1:])
+check('a close being WITHDRAWN is counted separately from one appearing',
+      c['close_disappeared'] == 1 and c['close_appeared'] == 0,
+      f"appeared={c['close_appeared']} withdrawn={c['close_disappeared']}")
+
+# ── ARM 4 · a row with no stored counterpart is NEW, not a correction ───────
+c = L.count_close_corrections({}, BASE)
+check('an empty database yields 0 corrections and 3 NEW rows — never 3 corrections',
+      c['corrected'] == 0 and c['new'] == 3 and c['matched'] == 0,
+      f"corrected={c['corrected']} new={c['new']}")
+
+# ── ARM 5 · the key is the upsert's key, so rows pair correctly ─────────────
+check('the correction key IS the upsert conflict target, character for character',
+      ','.join(L.CORRECTION_KEY) == 'fixture_id,book,market,side,line',
+      ','.join(L.CORRECTION_KEY))
+shifted = {L._row_key(dict(r, side='9')): dict(r) for r in BASE}
+check('CONTROL: keying on a different side pairs nothing, so everything reads NEW',
+      L.count_close_corrections(shifted, BASE)['new'] == 3)
+
+# ── ARM 6 · a FAILED read is reported as unmeasured, never as zero ──────────
+lines = L.print_close_corrections(None)
+check('a failed pre-upsert read prints an em dash and the word FAILED, not 0',
+      len(lines) == 1 and '—' in lines[0] and 'FAILED' in lines[0]
+      and 'NOT reported as zero' in lines[0], lines[0] if lines else '(no lines)')
+
+
+def _fake_get_factory(pages):
+    calls = []
+
+    def _get(path):
+        calls.append(path)
+        return (pages.pop(0) if pages else []), None
+    return _get, calls
+
+
+# 1,001 stored rows across two pages: a single-page read would drop the last one
+# and report it as NEW, i.e. as no correction at all.
+page1 = [_r(i, '1', 1.5, '2026-09-10T11:58:00Z') for i in range(1000)]
+page2 = [_r(1000, '1', 1.5, '2026-09-10T11:58:00Z')]
+get, calls = _fake_get_factory([page1, page2, []])
+existing, err = L.fetch_existing('u', 'k', page1 + page2, _get=get)
+check('fetch_existing PAGES past the 1,000-row PostgREST cap',
+      err is None and len(existing) == 1001, f'got {len(existing) if existing else existing}')
+check('CONTROL: it took more than one request to get there', len(calls) >= 2, str(len(calls)))
+
+
+def _boom(path):
+    return None, 'HTTP 500'
+
+
+existing, err = L.fetch_existing('u', 'k', BASE, _get=_boom)
+check('a failed read returns None, so it can never be mistaken for "no rows existed"',
+      existing is None and err == 'HTTP 500', f'{existing!r} {err!r}')
+
+
 print(f'\n{"FAILED: " + ", ".join(FAILED) if FAILED else "all checks passed"}')
 sys.exit(1 if FAILED else 0)

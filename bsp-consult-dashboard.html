@@ -10118,11 +10118,6 @@ function renderMatches(){
     // SPEC open question 3 flags these three as provisional pending model prices and
     // timestamped odds ticks — built to the reviewed design, not respecified here.
     const daySlate = matches.filter(m => !isFinishedMatch(m) && matchDayBucket(m) === state.day);
-    // TEN-179 item 1 — bet365 only, same rule as the cards below the strip. The drift box is
-    // labelled "Bet365 open → now", so its NOW leg has to BE bet365 or the label is false;
-    // and once the cards dash a non-bet365 fixture, a summary box still quoting that book's
-    // price would contradict every card on the page. One book, one surface.
-    const priceOf = (m, who) => _mcNowOf(m, who);
     const panels = [];
 
     // 1. BIGGEST MARKET MOVE — needs an opening price per side. `openingOdds` is absent on
@@ -10188,11 +10183,12 @@ function renderMatches(){
     // day's PRICES, so they must describe the prices the cards underneath are
     // actually showing. They read the card's resolver, not the drift leg's.
     //
-    // WHY THEY ARE SPLIT FROM `priceOf` ABOVE, AND NOT MERGED. The Biggest-move
-    // box pairs Open with Now and so needs both legs off ONE book WITH an Open
-    // on file — that is `_mcNowOf`, and widening it would manufacture a move
-    // between two books' prices. These two boxes make no open→now claim; they
-    // state a price and a gap that a member can read straight off a card. Before
+    // WHY THEY ARE SPLIT FROM THE DRIFT BOX ABOVE, AND NOT MERGED. The
+    // Biggest-move box pairs Open with Now and so needs both legs off ONE book
+    // WITH an Open on file — that is `_mcOpenNowPair`, and widening it would
+    // manufacture a move between two books' prices. These two boxes make no
+    // open→now claim; they state a price and a gap that a member can read
+    // straight off a card. Before
     // this change they were computed over the bet365 population only, which on
     // the deployed board 2026-09-18 was 9 of 32 fixtures while the cards showed
     // 29 — so the "shortest price of the day" could be beaten by a card sitting

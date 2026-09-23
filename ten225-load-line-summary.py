@@ -187,6 +187,172 @@ def upsert(url, key, table, rows, conflict):
     return sent, None
 
 
+CORRECTION_KEY = ('fixture_id', 'book', 'market', 'side', 'line')
+
+
+def _row_key(r):
+    """The upsert's own conflict target, as a comparable tuple.
+
+    Built from CORRECTION_KEY rather than retyped at each use, so this and the
+    `on_conflict=` string cannot drift into keying different things — which
+    would silently pair each incoming row against the WRONG stored row and
+    report corrections that never happened.
+    """
+    return tuple(r.get(f) for f in CORRECTION_KEY)
+
+
+def _same_price(a, b):
+    """Two close prices, compared the way the column stores them.
+
+    PostgREST hands numerics back as JSON numbers, and a price that went in as
+    1.69 can come back through a different parse. A bare == on floats would
+    report a correction on a row nobody touched, so the tolerance is explicit
+    rather than inherited.
+    """
+    if a is None and b is None:
+        return True
+    if a is None or b is None:
+        return False
+    try:
+        return abs(float(a) - float(b)) < 1e-9
+    except (TypeError, ValueError):
+        return str(a) == str(b)
+
+
+def _same_ts(a, b):
+    """Two close timestamps, compared as INSTANTS, not as text.
+
+    ⚠️ THE REASON THIS IS NOT `a == b`. We write `iso()` — "…T12:00:00Z" — and
+    PostgREST returns timestamptz as "…T12:00:00+00:00". Same instant, different
+    string. A textual compare would report EVERY matched row as a corrected
+    close on every run, and the counter would read as a catastrophe on a
+    database nothing had changed. Both sides go through the loader's own
+    epoch(), which is the same normaliser the rest of this file trusts.
+    """
+    ea, eb = epoch(a), epoch(b)
+    if ea is None and eb is None:
+        return True
+    if ea is None or eb is None:
+        return False
+    return abs(ea - eb) < 1.0
+
+
+def fetch_existing(url, key, rows, chunk=200, page=1000, _get=None):
+    """The stored rows this run is about to overwrite, keyed by conflict target.
+
+    Fetched by fixture_id in chunks: a PostgREST `in.(...)` carrying every id at
+    once builds a URL long enough to be refused, and the refusal arrives as a
+    400 that reads like a schema problem. Paged as well, because PostgREST caps
+    a response at 1,000 rows and truncates SILENTLY — a truncated read here
+    would report every unseen row as brand new and the correction count as zero.
+    """
+    get = _get or (lambda path: sb('GET', path, url, key))
+    fids = sorted({r.get('fixture_id') for r in rows if r.get('fixture_id') is not None})
+    out = {}
+    cols = ','.join(CORRECTION_KEY + ('close_price', 'close_ts', 'start_ts_source'))
+    for i in range(0, len(fids), chunk):
+        ids = ','.join(str(f) for f in fids[i:i + chunk])
+        offset = 0
+        while True:
+            q = urllib.parse.urlencode({
+                'select': cols, 'fixture_id': f'in.({ids})',
+                'limit': page, 'offset': offset})
+            got, err = get(f'/rest/v1/oddspapi_line_summary?{q}')
+            if got is None:
+                # Reported, never swallowed. A failed read must not masquerade
+                # as "no rows existed", which would print zero corrections and
+                # look exactly like a clean run.
+                return None, err
+            batch = got if isinstance(got, list) else []
+            for r in batch:
+                out[_row_key(r)] = r
+            if len(batch) < page:
+                break
+            offset += page
+    return out, None
+
+
+def count_close_corrections(existing, rows):
+    """How many closes this run is about to CHANGE, split by start-source change.
+
+    Founder, TEN-253 part E: "read the existing rows before the upsert and count
+    close_price/close_ts changes, split by whether the start source changed."
+
+    WHY THE SPLIT IS THE POINT. A close moving because the START moved is the
+    Close rule working — close = last price before the ACTUAL start, so a better
+    start estimate legitimately re-picks the close tick. A close moving while
+    the start source stayed put is a different animal: same start, different
+    answer, meaning either a tick arrived that should have been there before, or
+    the selection changed under us. Counted together they are one number that
+    cannot answer either question.
+
+    Rows with no stored counterpart are NEW, not corrections, and are counted
+    separately so the correction rate has an honest denominator.
+    """
+    out = {'incoming': len(rows), 'new': 0, 'matched': 0, 'unchanged': 0,
+           'corrected': 0, 'corrected_start_source_changed': 0,
+           'corrected_start_source_same': 0,
+           'price_changed': 0, 'ts_changed': 0,
+           'close_appeared': 0, 'close_disappeared': 0, 'examples': []}
+    for r in rows:
+        prev = existing.get(_row_key(r))
+        if prev is None:
+            out['new'] += 1
+            continue
+        out['matched'] += 1
+        p_same = _same_price(prev.get('close_price'), r.get('close_price'))
+        t_same = _same_ts(prev.get('close_ts'), r.get('close_ts'))
+        if p_same and t_same:
+            out['unchanged'] += 1
+            continue
+        out['corrected'] += 1
+        if not p_same:
+            out['price_changed'] += 1
+        if not t_same:
+            out['ts_changed'] += 1
+        # A close arriving where there was none, and a close being withdrawn,
+        # are both corrections but they are not the same event — one is the rule
+        # finding an answer, the other is the rule taking one away.
+        if prev.get('close_price') is None and r.get('close_price') is not None:
+            out['close_appeared'] += 1
+        elif prev.get('close_price') is not None and r.get('close_price') is None:
+            out['close_disappeared'] += 1
+        if prev.get('start_ts_source') != r.get('start_ts_source'):
+            out['corrected_start_source_changed'] += 1
+        else:
+            out['corrected_start_source_same'] += 1
+        if len(out['examples']) < 5:
+            out['examples'].append({
+                'key': list(_row_key(r)),
+                'close_price': [prev.get('close_price'), r.get('close_price')],
+                'close_ts': [prev.get('close_ts'), r.get('close_ts')],
+                'start_ts_source': [prev.get('start_ts_source'), r.get('start_ts_source')],
+            })
+    return out
+
+
+def print_close_corrections(c, min_n=None):
+    """Every count with its denominator, and n<30 flagged. Returns the lines."""
+    min_n = MIN_N if min_n is None else min_n
+    if c is None:
+        return ['close corrections: — (the pre-upsert read FAILED; '
+                'NOT reported as zero)']
+    m = c['matched']
+    flag = f'  <-- n<{min_n}' if m < min_n else ''
+    pc = (lambda n: '—' if not m else f'{100.0 * n / m:.1f}%')
+    return [
+        f"close corrections: {c['corrected']} of {m} row(s) this run also holds "
+        f"({pc(c['corrected'])}){flag}; {c['new']} row(s) are NEW and not "
+        f"corrections; {c['incoming']} incoming",
+        f"  split by start source: {c['corrected_start_source_changed']} where the "
+        f"start source CHANGED, {c['corrected_start_source_same']} where it did NOT "
+        f"(denominator {c['corrected']})",
+        f"  what moved: price {c['price_changed']}, ts {c['ts_changed']}, "
+        f"close appeared {c['close_appeared']}, close withdrawn "
+        f"{c['close_disappeared']} (denominator {c['corrected']})",
+    ]
+
+
 def epoch(ts):
     if ts is None or ts == '':
         return None
@@ -1008,9 +1174,30 @@ def main():
             result['closeLag'] = {'n': len(lags),
                                   'medianMinutes': statistics.median(lags),
                                   'minMinutes': min(lags), 'maxMinutes': max(lags)}
+    # ── TEN-253 part E — the Close-correction counter ───────────────────────
+    # READ BEFORE THE UPSERT, because after it the previous value is gone: this
+    # is a merge-duplicates upsert, so the row it overwrites leaves no trace and
+    # the question "did this run change a close that was already published?"
+    # becomes permanently unanswerable one statement later.
+    #
+    # Printed on EVERY run, dry or not. On a dry run the upsert is skipped but
+    # the count is still the honest answer to "what would this have changed",
+    # which is the one number that makes a dry run worth doing.
+    corrections = None
+    if all_rows:
+        existing, err = fetch_existing(url, key, all_rows)
+        if existing is None:
+            print(f'::warning::pre-upsert read failed ({err}) — close corrections '
+                  f'are UNMEASURED for this run, not zero')
+        else:
+            corrections = count_close_corrections(existing, all_rows)
+        for line in print_close_corrections(corrections):
+            print(line)
+        result['closeCorrections'] = corrections
+
     if not a.dry_run and all_rows:
         sent, err = upsert(url, key, 'oddspapi_line_summary', all_rows,
-                           'fixture_id,book,market,side,line')
+                           ','.join(CORRECTION_KEY))
         print(f'upserted {sent}/{len(all_rows)} summary rows'
               + (f' — FAILED {err}' if err else ''))
         result['upserted'] = sent
