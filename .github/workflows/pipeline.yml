@@ -1026,10 +1026,30 @@ jobs:
           fi
 
           export SHA TIP BEHIND VERIFIED
+          # TEN-255. Two places carry the stamp, written from ONE `sha` binding below so
+          # they cannot disagree: _site/build-info.json (one curl) and a
+          # <meta name="build-sha"> in the dashboard HTML (readable from the DOM by an
+          # agent already driving CDP, no second fetch).
+          #
+          # FULL 40-character SHA in both. Not short: `build-info.json` has published the
+          # full form since TEN-178 and an agent comparing the two forms has to know to
+          # truncate one of them, which is a silent-mismatch generator.
+          #
+          # The SHA is validated BEFORE either write. Founder ruling on this ticket: a file
+          # containing "unknown" or "" reads as a real answer and is worse than absence, so
+          # a SHA that is not 40 hex chars writes NOTHING and fails the step. `git rev-parse
+          # HEAD` cannot return a non-SHA in a checkout, so this is a guard against a future
+          # edit to how SHA is derived, not an expected path.
           node -e '
             const fs = require("fs");
+            const sha = process.env.SHA;
+            if (!/^[0-9a-f]{40}$/.test(sha || "")) {
+              console.error("::error::SHA is not a 40-char hex commit: " + JSON.stringify(sha) + ". Writing no stamp at all - a placeholder would read as a real answer.");
+              process.exit(1);
+            }
+
             fs.writeFileSync("_site/build-info.json", JSON.stringify({
-              commit:     process.env.SHA,
+              commit:     sha,
               tip:        process.env.TIP || null,
               behindTip:  Number(process.env.BEHIND),   // -1 = could not be determined
               onMain:     process.env.VERIFIED === "true",
@@ -1038,7 +1058,45 @@ jobs:
               runNumber:  Number(process.env.GITHUB_RUN_NUMBER),
               builtAt:    new Date().toISOString(),
             }, null, 2) + "\n");
+
+            // Both published copies of the dashboard - index.html is the site root and
+            // bsp-consult-dashboard.html is the name the auth pages link to. An agent can
+            // land on either, so both carry the tag.
+            const ANCHOR = `<meta charset="UTF-8">`;
+            const TAG = `<meta name="build-sha" content="${sha}">`;
+            for (const f of ["_site/index.html", "_site/bsp-consult-dashboard.html"]) {
+              const before = fs.readFileSync(f, "utf8");
+              if (!before.includes(ANCHOR)) {
+                console.error(`::error::${f} has no ${ANCHOR} to anchor the build-sha meta tag. Refusing to publish a dashboard whose stamp disagrees with build-info.json.`);
+                process.exit(1);
+              }
+              fs.writeFileSync(f, before.replace(ANCHOR, ANCHOR + "\n" + TAG));
+
+              // Assert the RESULT, not the anchor: re-read from disk and recover the SHA
+              // the way a CDP probe will, through the same shape of match. A replace that
+              // silently no-ops, double-writes, or writes a different SHA fails here rather
+              // than deploying a stamp no agent can trust.
+              const found = [...fs.readFileSync(f, "utf8")
+                .matchAll(/<meta name="build-sha" content="([0-9a-f]{40})">/g)].map(m => m[1]);
+              if (found.length !== 1 || found[0] !== sha) {
+                console.error(`::error::${f}: expected exactly one build-sha meta tag carrying ${sha}, read back ${JSON.stringify(found)}.`);
+                process.exit(1);
+              }
+              console.log(`Stamped ${f} with build-sha ${found[0]}`);
+            }
           '
+          # REQUIRED. This step runs `set -uo pipefail` deliberately WITHOUT errexit (see
+          # the top of the step), so a non-zero `node` would otherwise be swallowed and the
+          # step would still exit 0 on the trailing `cat`. Every `process.exit(1)` above is
+          # a refusal to publish an untrustworthy stamp; it has to reach the job.
+          #
+          # Written as a separate line rather than `node -e '…' || exit 1` on purpose:
+          # tools/test-workflow-node-blocks.js extracts blocks with a regex that requires
+          # the closing quote to end its line, and a trailing `|| exit 1` would make that
+          # harness skip this block silently — losing the shell-quoting check that once
+          # blocked every deploy for two hours.
+          STAMP_RC=$?
+          if [ "$STAMP_RC" -ne 0 ]; then exit "$STAMP_RC"; fi
           echo "Stamped _site/build-info.json:"
           cat _site/build-info.json
 
