@@ -58,22 +58,45 @@ ok(os.path.exists(corpus_path), "the key corpus exists (generated from the REAL 
 corpus = json.load(open(corpus_path)) if os.path.exists(corpus_path) else []
 ok(len(corpus) == 9, f"the corpus carries its 9 cases (got {len(corpus)})")
 
+# THE STREAM'S ROW-BUILDING STEP, not its extraction step. The corpus exists to
+# exercise the KEY across every value type that occurs on a Kibl row — Nones,
+# booleans, integral floats, big ids — and most of its cases are deliberately
+# PARTIAL rows, so they are not participant-shaped and the extractor (correctly)
+# would not lift them out of an envelope. Extraction parity is a separate
+# question and is driven against market_participants() in section 3.
 agree = disagree = 0
 for i, case in enumerate(corpus):
     row = json.loads(case["row_json"])
-    # The stream's path: raw message text -> to_summary -> row_key.
-    stats = {}
-    rows = C.rows_from_message(case["row_json"], "2026-09-23T00:00:00Z", stats)
-    # The sweep's path: the same dict -> row_key_of.
-    want = B.row_key_of(row)
-    got = rows[0]["row_key"] if rows else None
+    got = B.to_summary(row, "2026-09-23T00:00:00Z", None, "stream", None)["row_key"]
+    want = B.row_key_of(row)          # the sweep's path, same dict
     if got == want:
         agree += 1
     else:
         disagree += 1
         print(f"         case {i}: want {want} got {got}")
 ok(disagree == 0 and agree == 9,
-   f"all 9 corpus messages key identically through the stream and the sweep ({agree}/9)")
+   f"all 9 corpus rows key identically through the stream's to_summary and the "
+   f"sweep's row_key_of ({agree}/9)")
+
+# And end-to-end through the FULL message path for the cases that really are
+# participant rows — with the denominator stated rather than a bare pass.
+# Participant-shaped AND storable. Corpus case 1 is the all-None row: it keys
+# perfectly and is correctly DROPPED by the NOT NULL guard on fixture_id, so it
+# belongs to the drop test above, not to this one. Excluded by stated rule
+# rather than by trimming the number until it passed.
+e2e_pool = [c for c in corpus
+            if {"market_type_id", "side_id"} <= set(json.loads(c["row_json"]))
+            and json.loads(c["row_json"]).get("fixture_id") is not None]
+e2e_ok = 0
+for case in e2e_pool:
+    st = {}
+    got = C.rows_from_message(case["row_json"], "2026-09-23T00:00:00Z", st)
+    if got and got[0]["row_key"] == B.row_key_of(json.loads(case["row_json"])):
+        e2e_ok += 1
+ok(len(e2e_pool) >= 1 and e2e_ok == len(e2e_pool),
+   f"end-to-end through the full message path: {e2e_ok}/{len(e2e_pool)} of the "
+   f"participant-shaped, storable corpus cases "
+   f"(the other {9 - len(e2e_pool)} are partial rows or the all-None row, by design)")
 
 # And the stored corpus key — produced by the real Python function at corpus
 # generation time, not by anything running now — still hashes to the same thing.
@@ -178,18 +201,52 @@ section("3 · Message handling — four shapes accepted, the fifth counted")
 # ─────────────────────────────────────────────────────────────────────────────
 
 AT = "2026-09-23T00:00:00Z"
-ROW = {"fixture_id": 728343, "price_decimal": 1.69, "feed_source_id": 171,
-       "league_id": 19, "inserted_on": "2026-09-23T00:00:00.000Z"}
+# ⚠️ A REAL PARTICIPANT ROW carries market_type_id AND side_id — that pair is
+# what kibl_client.market_participants() uses to tell a priced record from the
+# fixture-level wrapper around it. The first cut of these fixtures omitted both,
+# so they exercised a shape the sweep never produces and never would have caught
+# the extraction bug below.
+ROW = {"fixture_id": 728343, "market_type_id": 1, "side_id": 1,
+       "price_decimal": 1.69, "feed_source_id": 171, "league_id": 19,
+       "inserted_on": "2026-09-23T00:00:00.000Z"}
+ROW2 = dict(ROW, side_id=2, price_decimal=2.20)
 
 for name, text, want in [
-    ("a bare row", json.dumps(ROW), 1),
-    ("a bare array", json.dumps([ROW, ROW]), 2),
+    ("a bare participant row", json.dumps(ROW), 1),
+    ("a bare array", json.dumps([ROW, ROW2]), 2),
     ("the REST envelope {code,description,result}",
      json.dumps({"code": 200, "description": "ok", "result": [ROW]}), 1),
-    ("the market_participants shape", json.dumps({"market_participants": [ROW]}), 1),
 ]:
     st = {}
     ok(len(C.rows_from_message(text, AT, st)) == want, f"accepts {name}")
+
+# ── THE EXTRACTION BUG, PINNED ──────────────────────────────────────────────
+# Kibl wraps participants under a FIXTURE-LEVEL record, and the sweep descends
+# through `participants`/`markets` to reach them. A hand-rolled unwrap that just
+# took `payload["result"]` emitted ONE row summarising the WRAPPER — market_id,
+# side_id and price_decimal all None, a row_key the sweep can never produce —
+# and counted it a success, losing both real prices. This drives the sweep's own
+# extractor and compares against it directly, so the two cannot drift.
+NESTED = {"code": 0, "result": [{"fixture_id": 728343, "participants": [ROW, ROW2]}]}
+st = {}
+got = C.rows_from_message(json.dumps(NESTED), AT, st)
+ok(len(got) == 2, f"a FIXTURE-LEVEL wrapper is descended into — 2 rows, not 1 (got {len(got)})")
+ok(len(got) == len(B.market_participants(NESTED)),
+   "…and the count matches the sweep's own market_participants() exactly")
+ok(sorted(r["side_id"] for r in got) == [1, 2]
+   and sorted(r["price_decimal"] for r in got) == [1.69, 2.20],
+   "…and both real prices survive, on the right sides")
+ok(all(r["row_key"] == B.row_key_of(x) for r, x in
+       zip(sorted(got, key=lambda r: r["side_id"]), [ROW, ROW2])),
+   "…keyed identically to the sweep")
+ok(not any(r["side_id"] is None for r in got),
+   "CONTROL: no all-None wrapper row is emitted")
+
+# All SEVEN envelope keys the client knows, not the two a hand-rolled unwrap had.
+for key in B.envelope_keys:
+    st = {}
+    n = len(C.rows_from_message(json.dumps({key: [ROW]}), AT, st))
+    ok(n == 1, f"envelope key `{key}` is unwrapped (got {n} row(s))")
 
 st = {}
 ok(C.rows_from_message("not json at all", AT, st) == [] and st.get("unreadable") == 1,
@@ -197,6 +254,36 @@ ok(C.rows_from_message("not json at all", AT, st) == [] and st.get("unreadable")
 st = {}
 ok(C.rows_from_message(json.dumps({"hello": "world"}), AT, st) == [] and st.get("unreadable") == 1,
    "an unrecognised object is counted as unreadable rather than guessed at")
+# ⚠️ `market_participants` is OUR ARCHIVE BLOB's top-level key (archive-kibl.py
+# writes it), NOT one of Kibl's seven wire envelope keys. The retired Node
+# consumer accepted it as a wire shape; the client does not, and the client is
+# the one that has met the live API. Counted unreadable rather than quietly
+# supported, so a blob replayed down the wire fails loudly instead of looking
+# like a live message.
+st = {}
+ok(C.rows_from_message(json.dumps({"market_participants": [ROW]}), AT, st) == []
+   and st.get("unreadable") == 1,
+   "`market_participants` is the ARCHIVE BLOB's key, not a Kibl wire envelope — "
+   "counted unreadable, not silently accepted")
+ok("market_participants" not in B.envelope_keys,
+   f"CONTROL: and the client really does not list it ({list(B.envelope_keys)})")
+
+st = {}
+ok(C.rows_from_message(json.dumps({"result": []}), AT, st) == []
+   and st.get("no_participants") == 1 and not st.get("unreadable"),
+   "a RECOGNISED envelope with nothing priced is counted apart from unreadable — "
+   "a quiet market and a schema change must not share a counter")
+
+# ── fixture_id is NOT NULL in the schema, so such a row cannot be stored ─────
+st = {}
+ok(C.rows_from_message(json.dumps(dict(ROW, fixture_id=None)), AT, st) == []
+   and st.get("null_fixture_id") == 1,
+   "a null fixture_id row is DROPPED and counted — the column is NOT NULL, so "
+   "leaving it in would 23502 the whole batch and lose every good row with it")
+st = {}
+kept = C.rows_from_message(json.dumps([ROW, dict(ROW2, fixture_id=None)]), AT, st)
+ok(len(kept) == 1 and st.get("null_fixture_id") == 1,
+   "CONTROL: the good row in the same message still survives")
 
 st = {}
 rows = C.rows_from_message(json.dumps(ROW), AT, st)
@@ -219,11 +306,11 @@ ok(C.is_tennis({"league_id": 999}) is False, "CONTROL: an unrelated league is re
 ok(C.is_tennis({"fixture_id": 1}) is None, "a row with no league at all is UNKNOWN, not False")
 
 st = {}
-kept = C.rows_from_message(json.dumps({"fixture_id": 9, "price_decimal": 1.5}), AT, st)
+kept = C.rows_from_message(json.dumps({"fixture_id": 9, "market_type_id": 1, "side_id": 1, "price_decimal": 1.5}), AT, st)
 ok(len(kept) == 1 and st.get("league_unknown") == 1,
    "an unknown-league row is KEPT and counted — dropping it would lose a price silently")
 st = {}
-dropped = C.rows_from_message(json.dumps({"fixture_id": 9, "league_id": 20}), AT, st)
+dropped = C.rows_from_message(json.dumps({"fixture_id": 9, "market_type_id": 1, "side_id": 1, "league_id": 20}), AT, st)
 ok(dropped == [] and st.get("non_tennis") == 1,
    "a known non-tennis row is dropped and counted (so the 20k cap is never approached)")
 

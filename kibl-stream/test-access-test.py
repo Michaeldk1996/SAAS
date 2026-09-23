@@ -68,7 +68,12 @@ RECORDS = [
     rec(json.dumps(ROW_A)),
     rec(json.dumps([ROW_B])),
     rec(json.dumps({"code": 200, "description": "ok", "result": [ROW_WTA]}), delivery_mode=1),
-    rec(json.dumps({"market_participants": [ROW_NOLEAGUE]})),
+    # A FIXTURE-LEVEL WRAPPER, which is the shape that broke the first cut of
+    # the extractor: the participants sit one level down and have to be
+    # descended into. (`market_participants` — the shape this line used to
+    # carry — is our own archive BLOB's key, not a Kibl wire envelope.)
+    rec(json.dumps({"result": [{"fixture_id": 728343,
+                                "participants": [ROW_NOLEAGUE]}]})),
     rec("{ this is not json"),
     rec(json.dumps({"hello": "world"})),
 ]
@@ -92,8 +97,11 @@ rows, shapes, unreadable = AT.flatten(RECORDS)
 ok(len(rows) == 4, f"four participant rows recovered from six messages (got {len(rows)})")
 ok(unreadable == 2, f"two messages counted unreadable (got {unreadable})")
 ok(set(shapes) >= {"bare object", "bare array", "{code,description,result}",
-                   "{market_participants}", "unparseable", "UNRECOGNISED"},
+                   "unparseable", "UNRECOGNISED"},
    f"every envelope shape is labelled, including the two bad ones ({dict(shapes)})")
+ok(shapes["{code,description,result}"] == 2,
+   "the fixture-level wrapper is recognised as a result envelope and DESCENDED into, "
+   f"not counted unreadable (got {dict(shapes)})")
 
 print("\n2 · analyse() on a POPULATED capture")
 AT.REPORT.clear()

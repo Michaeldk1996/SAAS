@@ -930,33 +930,95 @@ check('a failed pre-upsert read prints an em dash and the word FAILED, not 0',
       and 'NOT reported as zero' in lines[0], lines[0] if lines else '(no lines)')
 
 
-def _fake_get_factory(pages):
-    calls = []
+# ── fetch_existing · DRIVEN THROUGH THE REAL sb(), NOT A SHIM ───────────────
+# ⚠️ THE BUG THIS REPLACES. The first cut of these tests injected `_get` and
+# returned an already-parsed LIST. Production's `sb()` returns RAW BYTES
+# (`return r.read(), None`), and fetch_existing tested `isinstance(got, list)`
+# on those bytes — always False. So the stored rows were silently `{}`, the
+# counter printed "0 of 0" on every real run, and all 177 checks passed against
+# a data shape production never produces. A shim that asserts a contract the
+# real caller does not use certifies nothing.
+#
+# These tests therefore stub `urllib.request.urlopen` and let the REAL `sb()`
+# run, so the bytes->JSON boundary is inside the test, where the bug was.
 
-    def _get(path):
-        calls.append(path)
-        return (pages.pop(0) if pages else []), None
-    return _get, calls
 
+class _FakeResponse:
+    def __init__(self, payload):
+        self._b = json.dumps(payload).encode('utf-8')
+
+    def read(self):
+        return self._b
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *a):
+        return False
+
+
+def _stub_urlopen(pages):
+    seen = []
+
+    def _open(req, timeout=None):
+        seen.append(req.full_url)
+        return _FakeResponse(pages.pop(0) if pages else [])
+    return _open, seen
+
+
+_real_urlopen = L.urllib.request.urlopen
 
 # 1,001 stored rows across two pages: a single-page read would drop the last one
 # and report it as NEW, i.e. as no correction at all.
 page1 = [_r(i, '1', 1.5, '2026-09-10T11:58:00Z') for i in range(1000)]
 page2 = [_r(1000, '1', 1.5, '2026-09-10T11:58:00Z')]
-get, calls = _fake_get_factory([page1, page2, []])
-existing, err = L.fetch_existing('u', 'k', page1 + page2, _get=get)
-check('fetch_existing PAGES past the 1,000-row PostgREST cap',
-      err is None and len(existing) == 1001, f'got {len(existing) if existing else existing}')
-check('CONTROL: it took more than one request to get there', len(calls) >= 2, str(len(calls)))
+try:
+    opener, urls = _stub_urlopen([page1, page2, []])
+    L.urllib.request.urlopen = opener
+    existing, err = L.fetch_existing('http://sb', 'k', page1 + page2)
+    check('fetch_existing reads REAL sb() bytes and parses them '
+          '(the check that would have caught the 0-of-0 bug)',
+          err is None and existing is not None and len(existing) == 1001,
+          f'err={err!r} n={len(existing) if existing else existing}')
+    check('CONTROL: it took more than one request, so paging really ran',
+          len(urls) >= 2, str(len(urls)))
+    check('CONTROL: the paged read is ORDERED — limit/offset without ORDER BY '
+          'is not a stable window',
+          all('order=' in u for u in urls), urls[0] if urls else '(none)')
 
+    # And the end-to-end shape: real sb() -> fetch_existing -> the counter.
+    opener, _ = _stub_urlopen([[dict(BASE[0], close_price=1.75)], []])
+    L.urllib.request.urlopen = opener
+    existing, err = L.fetch_existing('http://sb', 'k', BASE[:1])
+    c = L.count_close_corrections(existing, BASE[:1])
+    check('END TO END through the real sb(): an injected change is COUNTED, not 0',
+          c['matched'] == 1 and c['corrected'] == 1, f'matched={c["matched"]} corrected={c["corrected"]}')
 
-def _boom(path):
-    return None, 'HTTP 500'
+    # A non-list body is an ERROR, not an empty result — they mean opposite things.
+    class _Obj(_FakeResponse):
+        pass
+    L.urllib.request.urlopen = lambda req, timeout=None: _Obj({'message': 'nope'})
+    existing, err = L.fetch_existing('http://sb', 'k', BASE)
+    check('a JSON OBJECT body (a PostgREST error) is an error, never "no rows"',
+          existing is None and err is not None, f'{existing!r} {err!r}')
 
+    def _raise(req, timeout=None):
+        raise OSError('connection reset')
+    L.urllib.request.urlopen = _raise
+    existing, err = L.fetch_existing('http://sb', 'k', BASE)
+    check('a failed read returns None, so it can never be mistaken for '
+          '"no rows existed"', existing is None and err is not None,
+          f'{existing!r} {err!r}')
+finally:
+    L.urllib.request.urlopen = _real_urlopen
 
-existing, err = L.fetch_existing('u', 'k', BASE, _get=_boom)
-check('a failed read returns None, so it can never be mistaken for "no rows existed"',
-      existing is None and err == 'HTTP 500', f'{existing!r} {err!r}')
+# ── ARM 7 · two UNPARSEABLE timestamps must not read as "unchanged" ─────────
+check('CONTROL: two unparseable-but-DIFFERENT timestamps are a change, not a match',
+      not L._same_ts('not-a-date', 'also-not-a-date'))
+check('…while two identical unparseable strings still match (no false positive)',
+      L._same_ts('not-a-date', 'not-a-date'))
+check('a genuinely absent close_ts on both sides is still unchanged',
+      L._same_ts(None, None) and L._same_ts(None, ''))
 
 
 print(f'\n{"FAILED: " + ", ".join(FAILED) if FAILED else "all checks passed"}')

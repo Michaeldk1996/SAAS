@@ -49,18 +49,21 @@ altogether. `redact()` below scrubs them from every line this module can emit,
 including exception text.
 """
 import json
+import logging
 import os
 import random
 import ssl
 import sys
 import time
+import urllib.parse
 import urllib.request
 from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from sweep_bridge import (  # noqa: E402
-    KEY_FIELDS, TABLE_OBS, TENNIS_LEAGUES_MEN, row_key_of, to_summary,
+    INSERT_CHUNK, OBS_REFRESH_COLS, TABLE_OBS, TENNIS_LEAGUES_MEN,
+    market_participants, row_key_of, to_summary, unrecognised_envelope,
 )
 
 TABLE_HEARTBEAT = "kibl_stream_heartbeat"
@@ -76,6 +79,24 @@ BACKOFF_S = (1.0, 2.0, 5.0, 10.0, 30.0, 60.0)
 # stream row belongs to no sweep, and attributing it to the last one would
 # credit a pull that never saw this price. Readable in the table forever.
 STREAM_SWEEP_ID = "stream"
+
+# ⚠️ OPEN QUESTION FOR THE FOUNDER — `raw_object` IS NULL ON EVERY STREAMED ROW,
+# AND THAT INTERACTS BADLY WITH FIRST-SIGHTING-WINS.
+#
+# The sweep uploads the raw blob FIRST and dies if it cannot ("a summary row
+# without its raw object is a number we cannot re-derive"), then stamps the
+# pointer on every row. A streamed row has no blob behind it, so the column is
+# NULL. Because both writers share `on_conflict=row_key,ignore-duplicates`,
+# first sighting wins — so a price the STREAM sees first beats the sweep's later
+# row carrying the pointer. **Successful dedupe therefore means `raw_object` is
+# permanently NULL for exactly the rows the stream adds**, which is most of what
+# it adds. The doubling bug would be fixed into a smaller, quieter one.
+#
+# Three ways out, none of them mine to pick: have the worker upload its own blob
+# per message (cost: one object per message); write a sentinel like
+# `stream://<beat>` so the NULL is at least explained; or accept it and document
+# that stream-first rows are not re-derivable. REPORTED, NOT DECIDED — nothing
+# is deployed, so nothing is at stake until launch.
 
 
 def utcnow():
@@ -103,6 +124,51 @@ def redact(text, secrets):
     for s in sorted({s for s in secrets if s}, key=len, reverse=True):
         out = out.replace(s, "[redacted]")
     return out
+
+
+class _RedactingFilter(logging.Filter):
+    """Scrub secrets out of records this module never formatted.
+
+    ⚠️ `redact()` IS A TEXT FUNCTION OVER OUR OWN f-STRINGS. It cannot see what
+    pika logs. pika's module loggers are unconfigured here, so they fall through
+    to `logging.lastResort` and write to stderr verbatim — and the content that
+    matters is RabbitMQ's own close text, `ACCESS_REFUSED - access to vhost 'X'
+    refused for user 'Y'`, which we redact when it arrives as an exception and
+    would not when pika logs the same close itself. On Fly there is no GitHub
+    masking and the logs are retained.
+
+    Installed on the ROOT logger, so it covers pika and anything else added
+    later rather than a list of logger names that will go stale.
+    """
+
+    def __init__(self, secrets):
+        super().__init__()
+        self.secrets = [s for s in secrets if s]
+
+    def filter(self, record):
+        try:
+            record.msg = redact(record.getMessage(), self.secrets)
+            record.args = ()
+        except Exception:  # noqa: BLE001 — a logging filter must never raise
+            record.msg = "[log record suppressed: could not be redacted safely]"
+            record.args = ()
+        return True
+
+
+def install_log_redaction(secrets):
+    """Attach the filter to the root logger AND to a real handler.
+
+    A Filter on a logger only runs for records logged THROUGH that logger, and
+    `lastResort` bypasses handlers entirely — so a root handler is added here to
+    make sure every record has somewhere redacted to go.
+    """
+    handler = logging.StreamHandler()
+    handler.addFilter(_RedactingFilter(secrets))
+    root = logging.getLogger()
+    root.addFilter(_RedactingFilter(secrets))
+    root.addHandler(handler)
+    root.setLevel(logging.WARNING)
+    return handler
 
 
 def read_conn_env(env=None):
@@ -138,30 +204,39 @@ def backoff_for(attempt, rnd=random.random):
 
 
 def envelope_rows(payload):
-    """Unwrap whatever the broker sent into a list of participant rows, or None.
+    """Unwrap whatever the broker sent into PARTICIPANT rows, or None if unreadable.
 
-    Kibl's REST envelope is {code, description, result: [...]}. The STREAM's
-    envelope is not documented for us, so a bare row, a bare array and the
-    `market_participants` shape are all accepted, and anything else returns None
-    to be COUNTED rather than guessed at. Part B reports which of these the real
-    queue actually uses; until then, tolerating four shapes and counting the
-    fifth is honest and guessing is not.
+    ⚠️ THE UNWRAP IS THE SWEEP'S, NOT OURS. `market_participants()` knows two
+    things a hand-rolled unwrap does not: Kibl uses **seven** envelope keys
+    (`result, data, results, items, records, markets, fixtures`), and the rows
+    under them may be FIXTURE-LEVEL WRAPPERS that have to be descended through
+    (`participants` / `markets`) to reach the priced records. A record counts as
+    a participant only when it carries both `market_type_id` and `side_id`.
+
+    MEASURED against a hand-rolled version on
+    `{result:[{fixture_id, participants:[2 priced rows]}]}`: the sweep yields
+    **2** rows, the hand-rolled version yielded **1** row summarising the
+    wrapper — `market_id`, `side_id` and `price_decimal` all `None`, a row_key
+    the sweep can never produce — and reported it a success. Both real prices
+    were lost, silently. An envelope keyed `markets` yielded 0 and was counted
+    unreadable.
+
+    Returns:
+      None  — we cannot read this shape at all (count it, never guess)
+      []    — a recognised envelope carrying no participants (a real answer)
+      [...] — the participant rows, exactly as the sweep would have built them
     """
-    if isinstance(payload, list):
-        return payload
-    if isinstance(payload, dict):
-        for key in ("result", "market_participants"):
-            if isinstance(payload.get(key), list):
-                return payload[key]
-        # A BARE ROW is recognised by CARRYING THE KEY FIELDS, not by having a
-        # non-null fixture_id. ⚠️ The retired Node consumer tested
-        # `payload.fixture_id != null`, which rejects a row whose fixture_id is
-        # null — and the sweep keys that row perfectly well. Caught by corpus
-        # case 1 (every field None) arriving as `unreadable` instead of a row:
-        # a message the sweep would have stored, silently counted as garbage.
-        if any(f in payload for f in KEY_FIELDS):
-            return [payload]
-    return None
+    # A BARE PARTICIPANT ROW is the one shape the sweep never meets and the
+    # stream might: REST always wraps, and the broker's envelope is undocumented
+    # for us. Recognised by the two fields that DEFINE a participant, the same
+    # test market_participants() applies — not by "has any key field", which
+    # would also swallow a fixture-level wrapper and put us straight back into
+    # the failure above.
+    if isinstance(payload, dict) and "market_type_id" in payload and "side_id" in payload:
+        return [payload]
+    if unrecognised_envelope(payload):
+        return None
+    return market_participants(payload)
 
 
 def league_of(row):
@@ -220,6 +295,14 @@ def rows_from_message(body_text, observed_at, stats=None, raw_object=None):
     if raw is None:
         st["unreadable"] = st.get("unreadable", 0) + 1
         return []
+    if not raw:
+        # A RECOGNISED envelope carrying no participants. Counted apart from
+        # `unreadable`, because the two mean opposite things: this one says the
+        # vendor sent us a well-formed message with nothing priced in it, and
+        # `unreadable` says we could not parse what they sent. Merging them
+        # would hide a schema change inside a quiet market.
+        st["no_participants"] = st.get("no_participants", 0) + 1
+        return []
 
     out = []
     for r in raw:
@@ -234,6 +317,16 @@ def rows_from_message(body_text, observed_at, stats=None, raw_object=None):
             # Kept, and counted separately. See league_of(): unknown is not a
             # synonym for no, and the count is what tells us which it was.
             st["league_unknown"] = st.get("league_unknown", 0) + 1
+        if r.get("fixture_id") is None:
+            # ⚠️ DROPPED, AND COUNTED — because the COLUMN IS `NOT NULL`
+            # (ten232-kibl-schema.sql: `fixture_id bigint not null`). Keying
+            # such a row works fine; STORING it does not. Left in the batch it
+            # would 23502 the whole POST and take every good row in the message
+            # down with it, while `unreadable` stayed at 0 and the heartbeat
+            # showed 0 rows written — a silent, total loss dressed as a quiet
+            # market. A row we cannot store is a finding, not a row.
+            st["null_fixture_id"] = st.get("null_fixture_id", 0) + 1
+            continue
         out.append(to_summary(r, observed_at, league_of(r), STREAM_SWEEP_ID, raw_object))
     st["rows"] = st.get("rows", 0) + len(out)
     return out
@@ -323,6 +416,32 @@ def connection_parameters(conn, pika):
     )
 
 
+def env_secrets(env, conn=None):
+    """Everything that must never reach a log line, from BOTH credential sets.
+
+    ⚠️ THE SUPABASE PROJECT REF IS IN HERE ON PURPOSE. `SUPABASE_URL` is a
+    secret, but the moment we parse a hostname out of it ourselves, GitHub's
+    masking no longer covers that string — and on Fly nothing masks anything.
+    An `ssl.SSLCertVerificationError` stringifies as "hostname 'abc123.supabase.co'
+    doesn't match…", and a scheme-less URL raises ValueError carrying the whole
+    thing. Both were reaching stdout unredacted.
+    """
+    out = []
+    if conn:
+        out += [conn.get("password"), conn.get("user"), conn.get("vhost"),
+                conn.get("host"), conn.get("queue")]
+    url = (env.get("SUPABASE_URL") or "").strip()
+    if url:
+        out.append(url)
+        host = urllib.parse.urlparse(url).hostname or ""
+        if host:
+            out += [host, host.split(".")[0]]
+    for k in ("SUPABASE_SECRET_KEY", "GH_DISPATCH_TOKEN"):
+        if env.get(k):
+            out.append(env[k].strip())
+    return [s for s in out if s]
+
+
 def sb_request(env, method, path, body=None, prefer=None):
     """One PostgREST call with the service key. Returns (status, text)."""
     url = env["SUPABASE_URL"].rstrip("/") + path
@@ -341,23 +460,59 @@ def sb_request(env, method, path, body=None, prefer=None):
         try:
             return code, e.read().decode("utf-8", "replace")
         except Exception:  # noqa: BLE001
-            return code, str(e)
+            # Redacted HERE, not at the call site: this string can carry the
+            # Supabase host (cert-mismatch, scheme-less URL) and every caller
+            # would otherwise have to remember.
+            return code, redact(e, env_secrets(env))
 
 
-def insert_rows(env, rows, log):
-    """ignore-duplicates on row_key: the SAME conflict target the sweep uses.
+def insert_rows(env, rows, log, chunk=INSERT_CHUNK):
+    """Two passes and a chunk — the SAME shape `archive-kibl.insert_rows` uses.
 
-    A row seen by both writers is stored once and first-sighting-wins holds
-    across them — which is true only because `row_key` here comes from the
-    sweep's own `row_key_of()`. See sweep_bridge.py.
+    PASS 1 · ignore-duplicates on `row_key`, the same conflict target the sweep
+    uses, so a row seen by both writers is stored once and first-sighting-wins
+    holds across them. `return=representation` is what makes the count REAL:
+    PostgREST returns only the rows it actually inserted, so `rows_written` on
+    the heartbeat is measured rather than assumed. The first cut sent
+    `return=minimal` and returned `len(rows)` — it counted rows ATTEMPTED and
+    called them written, which on a duplicate-heavy stream is exactly the number
+    that would make a broken writer look busy.
+
+    PASS 2 · bump `last_seen_at` (founder item A, 2026-09-18). ⚠️ THE FIRST CUT
+    OMITTED THIS ENTIRELY, so every stream re-sighting of a price already stored
+    was a no-op on the observation clock — and re-sighting stored prices is most
+    of what a stream does. It is a SECOND statement, not a wider upsert, because
+    merge-duplicates overwrites every column it is sent: one merged pass would
+    rewrite `observed_at`, the price and the flags on every message, turning an
+    append-only archive of an unrefetchable feed into a last-write-wins one.
+
+    CHUNKED, because one POST per message means one bad row loses every good row
+    beside it. A failed pass 2 is counted as a failure, not as cosmetic: it means
+    the observation clock stopped advancing, on a worker reporting green.
     """
-    status, text = sb_request(
-        env, "POST", f"/rest/v1/{TABLE_OBS}?on_conflict=row_key", rows,
-        prefer="resolution=ignore-duplicates,return=minimal")
-    if status not in (200, 201, 204):
-        log(f"::warning::stream insert failed: {status} {text[:300]}")
-        return 0
-    return len(rows)
+    new = 0
+    for i in range(0, len(rows), chunk):
+        part = rows[i:i + chunk]
+        status, text = sb_request(
+            env, "POST", f"/rest/v1/{TABLE_OBS}?on_conflict=row_key", part,
+            prefer="resolution=ignore-duplicates,return=representation")
+        if status not in (200, 201, 204):
+            log(f"::warning::stream insert chunk {i // chunk} failed: "
+                f"{status} {text[:300]}")
+            continue
+        try:
+            new += len(json.loads(text)) if text.strip() else 0
+        except ValueError:
+            new += 0
+        seen = [{k: r[k] for k in OBS_REFRESH_COLS if k in r} for r in part]
+        status2, text2 = sb_request(
+            env, "POST", f"/rest/v1/{TABLE_OBS}?on_conflict=row_key", seen,
+            prefer="resolution=merge-duplicates,return=minimal")
+        if status2 not in (200, 201, 204):
+            log(f"::warning::last_seen_at refresh chunk {i // chunk} failed: "
+                f"{status2} {text2[:200]} — the observation clock did NOT advance "
+                f"for {len(part)} row(s)")
+    return new
 
 
 def write_heartbeat(env, hb, log):
@@ -394,7 +549,7 @@ def snapshot_via_sweep(env, log):
         with urllib.request.urlopen(req, timeout=30) as r:
             log(f"snapshot: dispatched the existing sweep (mode=sweep) — HTTP {r.status}")
     except Exception as e:  # noqa: BLE001
-        log(f"::warning::snapshot dispatch failed: {redact(e, [token])}")
+        log(f"::warning::snapshot dispatch failed: {redact(e, env_secrets(env))}")
 
 
 def main(env=None, log=print, run_forever=True):
@@ -409,7 +564,12 @@ def main(env=None, log=print, run_forever=True):
         log("Launch waits for the founder's go after he reads the readiness report.")
         return 0
 
-    secrets = [conn["password"], conn["user"], conn["vhost"]]
+    # ALL SIX plus the Supabase set. The first cut omitted `host` and `queue`,
+    # so a pika exception naming the broker logged in the clear on Fly.
+    secrets = env_secrets(env, conn)
+    # Installed BEFORE pika is imported, so nothing it logs at import or connect
+    # time can reach stderr unfiltered.
+    install_log_redaction(secrets)
     import pika  # imported late so the no-credentials path needs no dependency
 
     write_enabled = env.get("KIBL_STREAM_WRITE") == "1"

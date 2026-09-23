@@ -120,17 +120,41 @@ def _key_fields():
 KEY_FIELDS = _key_fields()
 
 TABLE_OBS = sweep.TABLE_OBS
+# The refresh columns and the chunk size are the sweep's too — pass 2 must send
+# exactly the columns the sweep sends, or a merge-duplicates pass would rewrite
+# a column the archive is supposed to hold first-write-wins.
+OBS_REFRESH_COLS = sweep.OBS_REFRESH_COLS
+INSERT_CHUNK = sweep.INSERT_CHUNK
 DENSE_WINDOW_MIN = sweep.DENSE_WINDOW_MIN
 DENSE_POST_START_MIN = sweep.DENSE_POST_START_MIN
 dense_fixture_count = sweep.dense_fixture_count
 
 # Tennis, as the client already defines it. Re-derived here would be a second
 # list to keep in step, which is the same mistake in a smaller font.
-from kibl_client import TENNIS_LEAGUES_MEN, TENNIS_LEAGUES_WOMEN  # noqa: E402
+#
+# ⚠️ KiblClient IS RE-EXPORTED FOR ITS ROW EXTRACTION, AND THAT IS NOT OPTIONAL.
+# The first cut of the consumer imported the row KEY from the sweep and then
+# hand-rolled the ENVELOPE UNWRAP beside it — the same reimplementation the
+# ruling forbids, one layer over. MEASURED: on the nested shape
+# `{result:[{fixture_id, participants:[...]}]}`, `market_participants()` yields
+# 2 real price rows and the hand-rolled version yielded 1 row summarising the
+# WRAPPER, with market_id/side_id/price_decimal all None — a row_key the sweep
+# can never produce — and counted it a success. Both prices silently lost. An
+# envelope keyed `markets` (one of the seven ENVELOPE_KEYS) yielded 0 rows and
+# was counted `unreadable`. Import the extraction, not just the key.
+from kibl_client import (  # noqa: E402
+    TENNIS_LEAGUES_MEN, TENNIS_LEAGUES_WOMEN, KiblClient,
+)
+
+market_participants = KiblClient.market_participants
+unrecognised_envelope = KiblClient.unrecognised_envelope
+envelope_keys = KiblClient.ENVELOPE_KEYS
 
 __all__ = [
     "sweep", "SWEEP_PATH", "row_key_of", "to_summary", "state_of", "num",
-    "observation_key", "KEY_FIELDS", "TABLE_OBS", "DENSE_WINDOW_MIN",
+    "observation_key", "KEY_FIELDS", "TABLE_OBS", "OBS_REFRESH_COLS",
+    "INSERT_CHUNK", "market_participants", "unrecognised_envelope",
+    "KiblClient", "DENSE_WINDOW_MIN",
     "DENSE_POST_START_MIN", "dense_fixture_count", "TENNIS_LEAGUES_MEN",
     "TENNIS_LEAGUES_WOMEN",
 ]

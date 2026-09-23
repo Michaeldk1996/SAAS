@@ -64,6 +64,27 @@ def say(line=""):
     REPORT.append(txt)
 
 
+def dump(obj, name):
+    """Write an artifact file with the SAME redaction `say()` applies.
+
+    ⚠️ THE REASON THIS EXISTS. `json.dump(region, open(...))` wrote the broker
+    host, its resolved IPs and its TLS certificate into `region.json`
+    UNREDACTED, while the line two statements later printed the same object
+    through `say()` as `[redacted]`. The artifact and the report disagreed, and
+    the artifact was the one telling the truth.
+
+    **GitHub's secret masking covers LOG OUTPUT ONLY — never artifact file
+    contents**, and this repo is PUBLIC, so a run's artifacts are reachable by
+    anyone who can see the run. Serialise first, redact the TEXT, then write:
+    redacting the object would miss secrets embedded inside longer strings
+    (a hostname inside a certificate SAN, a queue name inside an error).
+    """
+    txt = C.redact(json.dumps(obj, indent=1, default=str), SECRETS)
+    with open(os.path.join(OUT, name), "w", encoding="utf-8") as fh:
+        fh.write(txt + "\n")
+    return txt
+
+
 def dash(v):
     """Missing renders as an em dash, never as 0. CLAUDE.md, everywhere."""
     return "—" if v is None else v
@@ -277,6 +298,10 @@ def capture(conn, pika, seconds, cap_path, note=""):
     channel.basic_qos(prefetch_count=200)
 
     records, per_min = [], Counter()
+    # capture.jsonl is RAW VENDOR MESSAGE BODIES, deliberately unprocessed —
+    # the whole point is an offline comparison against what the poller stored.
+    # It carries no credential (bodies are prices), but it IS Kibl's live data on
+    # a PUBLIC repo's artifact, which is why the workflow keeps retention short.
     fh = open(cap_path, "a", encoding="utf-8")
     try:
         for method, props, body in channel.consume(
@@ -688,7 +713,14 @@ def close_proximity(rows, fixtures_171):
 def main():
     os.makedirs(OUT, exist_ok=True)
     conn, missing = C.read_conn_env()
-    SECRETS.extend([conn["password"], conn["user"], conn["vhost"], conn["host"]])
+    # ⚠️ ALL SIX, INCLUDING THE QUEUE. `KIBL_RMQ_QUEUE` is a declared repository
+    # secret and the first cut omitted it, so `say()` printed it verbatim into
+    # REPORT.md — masked in the Actions log, NOT masked in the uploaded artifact.
+    # The vhost is often "/" and is filtered out by redact()'s falsy check only
+    # when empty; a one-character secret would redact every slash in the report,
+    # so it is included deliberately and its effect is visible rather than subtle.
+    SECRETS.extend([conn["password"], conn["user"], conn["vhost"],
+                    conn["host"], conn["queue"]])
 
     say("# TEN-253 B — Kibl RabbitMQ live access test")
     say()
@@ -714,7 +746,7 @@ def main():
     say()
     say("## B7 · Region and latency (measured before connecting — it is cheap)")
     region = probe_region(conn["host"], int(conn["port"]))
-    json.dump(region, open(os.path.join(OUT, "region.json"), "w"), indent=1, default=str)
+    dump(region, "region.json")
     say("```json")
     say(json.dumps({k: v for k, v in region.items() if k != "tls"}, indent=1, default=str)[:1500])
     say("```")
@@ -723,7 +755,7 @@ def main():
             f"`{region['tls'].get('issuer_cn')}`, SAN `{region['tls'].get('san')}`, "
             f"expires `{region['tls'].get('notAfter')}`")
     sbr = probe_supabase_region()
-    json.dump(sbr, open(os.path.join(OUT, "supabase-region.json"), "w"), indent=1, default=str)
+    dump(sbr, "supabase-region.json")
     say()
     say("**Supabase region — the `[REGION]` the brief left as a placeholder, answered "
         "from evidence:**")
@@ -750,7 +782,7 @@ def main():
         say("```")
         return finish(1)
 
-    json.dump(meta, open(os.path.join(OUT, "listen-meta.json"), "w"), indent=1, default=str)
+    dump(meta, "listen-meta.json")
     say()
     say(f"**Connected successfully.** Backlog at connect: **{meta['backlog_at_connect']}** "
         f"message(s).")
@@ -805,7 +837,7 @@ def main():
     try:
         rec2, meta2 = capture(conn, pika, 120, os.path.join(OUT, "capture-after-drop.jsonl"),
                               note="(after drop)")
-        json.dump(meta2, open(os.path.join(OUT, "drop-meta.json"), "w"), indent=1, default=str)
+        dump(meta2, "drop-meta.json")
         backlog = meta2["backlog_at_connect"]
         say()
         say(f"- Gap: {C.iso(drop_start)} → {meta2['started_at']} "

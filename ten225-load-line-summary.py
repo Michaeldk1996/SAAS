@@ -231,10 +231,50 @@ def _same_ts(a, b):
     """
     ea, eb = epoch(a), epoch(b)
     if ea is None and eb is None:
-        return True
+        # ⚠️ BOTH UNPARSEABLE IS NOT BOTH ABSENT. epoch() returns None for a
+        # genuinely null timestamp AND for a format it cannot read, so a
+        # timestamptz format change that defeats it on both sides would make
+        # every row read "unchanged" and print the same 0 a healthy run prints.
+        # Both genuinely ABSENT is unchanged; both UNPARSEABLE falls back to the
+        # text, exactly as _same_price does. `None` and `''` are both absent —
+        # epoch() already treats them the same, so this must too.
+        a_absent, b_absent = a is None or a == '', b is None or b == ''
+        if a_absent and b_absent:
+            return True
+        if a_absent != b_absent:
+            return False
+        return str(a) == str(b)
     if ea is None or eb is None:
         return False
     return abs(ea - eb) < 1.0
+
+
+def sb_json(path, url, key):
+    """`sb()` plus the decode `sb()` does not do. Returns (list|None, err).
+
+    ⚠️ `sb()` RETURNS RAW BYTES, NOT PARSED JSON — `return r.read(), None`.
+    Every other reader in this file decodes for itself (`fetch_flips` does
+    `json.loads(got.decode('utf-8'))`). The first cut of `fetch_existing` did
+    not, and tested `isinstance(got, list)` on a `bytes`: always False, so the
+    stored rows silently became `{}` and the correction counter printed
+    "0 of 0" on every real run while its own suite passed, because the suite
+    injected an already-parsed list through `_get`. A shim that returns a shape
+    production never produces certifies nothing. Parsing lives here, once, and
+    the test now drives the real `sb()` through a stubbed `urlopen`.
+
+    A body that is not a JSON list is an error, not an empty result — the two
+    look identical downstream and mean opposite things.
+    """
+    got, err = sb('GET', path, url, key)
+    if got is None:
+        return None, err
+    try:
+        parsed = json.loads(got.decode('utf-8') if isinstance(got, bytes) else got)
+    except (ValueError, UnicodeDecodeError) as e:
+        return None, (0, f'unparseable PostgREST body: {e}')
+    if not isinstance(parsed, list):
+        return None, (0, f'expected a JSON list, got {type(parsed).__name__}')
+    return parsed, None
 
 
 def fetch_existing(url, key, rows, chunk=200, page=1000, _get=None):
@@ -246,7 +286,7 @@ def fetch_existing(url, key, rows, chunk=200, page=1000, _get=None):
     a response at 1,000 rows and truncates SILENTLY — a truncated read here
     would report every unseen row as brand new and the correction count as zero.
     """
-    get = _get or (lambda path: sb('GET', path, url, key))
+    get = _get or (lambda path: sb_json(path, url, key))
     fids = sorted({r.get('fixture_id') for r in rows if r.get('fixture_id') is not None})
     out = {}
     cols = ','.join(CORRECTION_KEY + ('close_price', 'close_ts', 'start_ts_source'))
@@ -256,6 +296,14 @@ def fetch_existing(url, key, rows, chunk=200, page=1000, _get=None):
         while True:
             q = urllib.parse.urlencode({
                 'select': cols, 'fixture_id': f'in.({ids})',
+                # ⚠️ ORDER IS LOAD-BEARING ON A PAGED READ. limit/offset without
+                # an ORDER BY is not a stable window in PostgreSQL: page 2 may
+                # repeat rows from page 1 and omit others, and an omitted row is
+                # counted NEW — corrections under-reported with no error. One
+                # 200-fixture chunk is fixtures x books x markets x sides, which
+                # clears 1,000 rows easily, so this is the ordinary path, not the
+                # edge. `fetch_flips` already orders for the same reason.
+                'order': 'fixture_id.asc,book.asc,market.asc,side.asc,line.asc',
                 'limit': page, 'offset': offset})
             got, err = get(f'/rest/v1/oddspapi_line_summary?{q}')
             if got is None:
@@ -263,10 +311,9 @@ def fetch_existing(url, key, rows, chunk=200, page=1000, _get=None):
                 # as "no rows existed", which would print zero corrections and
                 # look exactly like a clean run.
                 return None, err
-            batch = got if isinstance(got, list) else []
-            for r in batch:
+            for r in got:
                 out[_row_key(r)] = r
-            if len(batch) < page:
+            if len(got) < page:
                 break
             offset += page
     return out, None
@@ -1191,9 +1238,16 @@ def main():
                   f'are UNMEASURED for this run, not zero')
         else:
             corrections = count_close_corrections(existing, all_rows)
+    else:
+        # EVERY run, as ruled — including one that produced no rows at all.
+        # Silence here is indistinguishable from a run that never reached this
+        # code, and a run with nothing to upsert is itself worth seeing.
+        print('close corrections: — (this run produced NO rows to upsert, so there '
+              'was nothing to compare; not a clean run, an empty one)')
+    if all_rows:
         for line in print_close_corrections(corrections):
             print(line)
-        result['closeCorrections'] = corrections
+    result['closeCorrections'] = corrections
 
     if not a.dry_run and all_rows:
         sent, err = upsert(url, key, 'oddspapi_line_summary', all_rows,
