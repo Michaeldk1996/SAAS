@@ -54,21 +54,32 @@ log and store agreeing) and `test-ten262.mjs` (the stamp, 3 mutants).
 
 ## Book per season (unchanged, TEN-146)
 
-`build-database-yield.js` settles 2010–2025 on **Pinnacle** and the **whole 2026 season on
-Bet365**. The source's Pinnacle column stops on 2026-01-13 (71 rows, 4–13 Jan). Those rows
+`build-database-yield.js` uses **Pinnacle** for 2010–2025 and **Bet365 for the whole 2026
+season**. The source's Pinnacle column stops on 2026-01-13 (71 rows, 4–13 Jan). Those rows
 are not used, because one season is one book. Never fill a missing Pinnacle price from
 another book.
 
-**The Database header says so (founder ruling, 2026-09-23).** It reads: "Pinnacle closing
-prices, 2010–2025; 2026 settled on Bet365 (the source's Pinnacle prices stop on 13 Jan
-2026), seam-marked on the curves." The first range ends the season before `seamSeason`.
-The stop date is `meta.pinnacleLastPriced`, the latest archive row with a valid Pinnacle
-pair. It is never typed; with no date in the store the parenthetical is omitted, not
-filled. **Test:** paint `renderChrome` with a store whose `pinnacleLastPriced` is
-2026-01-13 and read exactly that sentence; with null, no "stop on" appears. The published
-store's date must equal the value recomputed from the CSVs. Locked by `test-ten262.mjs`
-and `test-odds-archive-refresh.py`. This replaces "Pinnacle closing prices, 2010–2026
-(2026 settled on Bet365, …)", which over-claimed Pinnacle by a season.
+**The Database says so in plain words (founder rulings, 2026-09-23; wording = option A).**
+The header reads: "Pinnacle closing prices, 2010–2025; 2026 uses Bet365 prices (the
+source's Pinnacle prices stop on 13 Jan 2026). The change is marked on the curves." The
+"Split by book" lines say "… N 2026 matches priced on Bet365" and the method note says
+"38,761 priced on Pinnacle and 2,030 on Bet365 (2026)". **Never "settled on"**: it reads
+as bet settlement. "Closing" stays (founder's call), although the source's own wording is
+only "the most recent before play starts" (a 2020 copy of its notes; the files carry no
+timestamp).
+- The first range ends the season before `seamSeason`; the stop date is
+  `meta.pinnacleLastPriced` (the latest archive row with a valid Pinnacle pair), never
+  typed. No date in the store → no parenthetical. An archive that ends before the seam
+  season has no change to mark, so the sentence just ends.
+- **Test:** paint `renderChrome` and read exactly that header (plus fixtures for another
+  stop date, a 2027 seam, a pre-seam archive, and an out-of-season Pinnacle date); paint
+  `renderFootnote` and read "priced on", never "settled on". The published store's stop
+  date must equal the value recomputed from the CSVs. Locked by `test-ten262.mjs` and
+  `test-odds-archive-refresh.py`. This replaces "2026 settled on Bet365 …, seam-marked on
+  the curves" and the earlier "2010–2026", which over-claimed Pinnacle by a season.
+- **The blend stays (ruling, 2026-09-23):** curves, ROI cards, player panels, Form, H2H and
+  the matrix keep mixing Pinnacle (≤2025) and Bet365 (2026) until 2026 Pinnacle prices
+  arrive. Tracked in TEN-266 (child of TEN-262).
 
 ## Who writes it, who reads it
 

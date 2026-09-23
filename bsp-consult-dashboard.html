@@ -29912,9 +29912,11 @@ window.DatabaseTab = (function(){
       var seam=M.seamSeason, pEnd=(+y1>=seam) ? (seam-1) : y1, pl=M.pinnacleLastPriced;
       sub.innerHTML='Historical yield by odds band from our own ATP closing-line archive — <strong>'+
         esc(M.books[0])+' closing prices, '+y0+'–'+pEnd+'</strong>'+
-        (+y1>=seam ? '; '+seam+' settled on '+esc(M.books[1])+
-          (pl && (''+pl).slice(0,4)===String(seam) ? ' (the source\u2019s '+esc(M.books[0])+' prices stop on '+esc(fmtDate(pl))+')' : '') : '')+
-        ', seam-marked on the curves.';
+        // TEN-262 founder ruling (option A, 2026-09-23): "uses Bet365 prices", never
+        // "settled on" (reads as bet settlement). No switch in range = no change to mark.
+        (+y1>=seam ? '; '+seam+' uses '+esc(M.books[1])+' prices'+
+          (pl && (''+pl).slice(0,4)===String(seam) ? ' (the source\u2019s '+esc(M.books[0])+' prices stop on '+esc(fmtDate(pl))+')' : '')+
+          '. The change is marked on the curves.' : '.');
     }
     // The date is the latest match in the published archive (build-database-yield.js
     // writes meta.dateRange from the CSVs) - never typed. TEN-262: past 14 days old the
@@ -29969,6 +29971,14 @@ window.DatabaseTab = (function(){
     var txt=fmtPct(a.yield);
     if(a.n<SOFT_GATE) return '<span class="db-yieldcell soft">'+txt+'</span>';
     return '<span class="db-yieldcell" style="color:'+signCol(txt)+'">'+txt+'</span>';
+  }
+  // The "Split by book" sentence, shared by the band panel and the player panel so the
+  // wording cannot drift between them. TEN-262 founder ruling (option A): "N <season>
+  // matches priced on Bet365", never "Bet365-settled".
+  function dbBookSplit(book, tail){
+    return 'Split by book: <b>'+fmtPct(book.ps.yield)+'</b> across '+fmtInt(book.ps.n)+' '+esc(M.books[0])+
+      '-priced matches, <b>'+fmtPct(book.b365.yield)+'</b> across '+fmtInt(book.b365.n)+' '+M.seamSeason+
+      ' matches priced on '+esc(M.books[1])+'. '+tail;
   }
   function bandPanel(title, res, names, sideKey, isTourn, seam){
     var panel=el('div','db-bandpanel');
@@ -30029,9 +30039,7 @@ window.DatabaseTab = (function(){
     if(isTourn && !showBase) panel.appendChild(el('div','db-note','Tour baselines are not computed for this round or year range.'));
     if(res.single) panel.appendChild(el('div','db-note','Fewer than three matches — shown as one band rather than split into terciles.'));
     if(seam && a.book.ps && a.book.b365){
-      panel.appendChild(el('div','db-split','Split by book: <b>'+fmtPct(a.book.ps.yield)+'</b> across '+fmtInt(a.book.ps.n)+' '+esc(M.books[0])+
-        '-priced matches, <b>'+fmtPct(a.book.b365.yield)+'</b> across '+fmtInt(a.book.b365.n)+' '+esc(M.books[1])+
-        '-settled '+M.seamSeason+' matches. The All row blends both books; '+esc(M.books[1])+' carries the wider margin.'));
+      panel.appendChild(el('div','db-split',dbBookSplit(a.book, 'The All row blends both books; '+esc(M.books[1])+' carries the wider margin.')));
     }
     return panel;
   }
@@ -30598,9 +30606,7 @@ window.DatabaseTab = (function(){
 
     // 3 - per-book split (computed on both stances — X3/X4 ruling)
     if(bl.seam && A.book.ps && A.book.b365){
-      body.appendChild(el('div','db-card','<div class="db-split">Split by book: <b>'+fmtPct(A.book.ps.yield)+'</b> across '+fmtInt(A.book.ps.n)+' '+esc(M.books[0])+
-        '-priced matches, <b>'+fmtPct(A.book.b365.yield)+'</b> across '+fmtInt(A.book.b365.n)+' '+esc(M.books[1])+'-settled '+M.seamSeason+
-        ' matches. The figures above blend both books; '+esc(M.books[1])+' carries the wider margin.</div>'));
+      body.appendChild(el('div','db-card','<div class="db-split">'+dbBookSplit(A.book, 'The figures above blend both books; '+esc(M.books[1])+' carries the wider margin.')+'</div>'));
     } else {
       body.appendChild(el('div','db-card','<div class="db-split">'+esc(bl.text)+' — a single book across this selection, no seam.</div>'));
     }
@@ -30962,7 +30968,7 @@ window.DatabaseTab = (function(){
       'The favourite is the shorter price; each pick is a flat 1-unit stake; yield is (returns − stakes) ÷ stakes. '+
       'Bands are equal terciles recomputed inside whatever filter is active, and labelled by their price cut-points.</p>'+
       '<p><b>What is included.</b> '+fmtInt(M.used)+' ATP main-tour matches with a usable closing price, drawn from an archive of '+fmtInt(M.archiveRows)+' rows — '+
-      fmtInt(bc[M.books[0]])+' settled on '+esc(M.books[0])+' prices and '+fmtInt(bc[M.books[1]])+' on '+esc(M.books[1])+' ('+M.seamSeason+'). '+
+      fmtInt(bc[M.books[0]])+' priced on '+esc(M.books[0])+' and '+fmtInt(bc[M.books[1]])+' on '+esc(M.books[1])+' ('+M.seamSeason+'). '+
       '<b>What is excluded:</b> '+fmtInt(ex.preWindow)+' matches before the '+M.windowStart+' window, '+fmtInt(ex.noResolvingBookPrice)+
       ' with no resolving-book closing price, '+fmtInt(ex.walkover)+' walkovers, '+
       // FOUNDER RULING 2026-09-20: retirements are VOIDED, not settled — most books
