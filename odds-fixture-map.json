@@ -961,7 +961,7 @@
     },
     "12164131": {
       "fixtureId": "id1200210074804602",
-      "mappedAt": "2026-09-21T17:48:15Z",
+      "mappedAt": "2026-09-23T06:46:36Z",
       "orient": "same",
       "p1": "A. Tabilo",
       "p2": "R. Jodar",
@@ -970,7 +970,7 @@
     },
     "12164132": {
       "fixtureId": "id1200210074804640",
-      "mappedAt": "2026-09-21T17:48:15Z",
+      "mappedAt": "2026-09-23T06:46:36Z",
       "orient": "same",
       "p1": "C. Garin",
       "p2": "D. Merida Aguilar",
@@ -1120,7 +1120,7 @@
     },
     "12164163": {
       "fixtureId": "id1200210074825608",
-      "mappedAt": "2026-09-21T17:48:15Z",
+      "mappedAt": "2026-09-23T06:46:36Z",
       "orient": "same",
       "p1": "M. Kecmanovic",
       "p2": "V. Gaubas",
@@ -1129,7 +1129,7 @@
     },
     "12164164": {
       "fixtureId": "id1200210074825610",
-      "mappedAt": "2026-09-21T17:48:15Z",
+      "mappedAt": "2026-09-23T06:46:36Z",
       "orient": "same",
       "p1": "H. Medjedovic",
       "p2": "E. Butvilas",
@@ -1266,7 +1266,7 @@
     },
     "12164219": {
       "fixtureId": "id1200210074827782",
-      "mappedAt": "2026-09-21T17:48:15Z",
+      "mappedAt": "2026-09-23T06:46:36Z",
       "orient": "same",
       "p1": "A. Fery",
       "p2": "A. Andrade",
@@ -1275,7 +1275,7 @@
     },
     "12164220": {
       "fixtureId": "id1200210074827016",
-      "mappedAt": "2026-09-21T17:48:15Z",
+      "mappedAt": "2026-09-23T06:46:36Z",
       "orient": "same",
       "p1": "D. Altmaier",
       "p2": "M. Dodig",
@@ -1284,7 +1284,7 @@
     },
     "12164221": {
       "fixtureId": "id1200210074827816",
-      "mappedAt": "2026-09-21T17:48:15Z",
+      "mappedAt": "2026-09-23T06:46:36Z",
       "orient": "same",
       "p1": "T. Samuel",
       "p2": "A. Guillen Meza",
@@ -1457,8 +1457,8 @@
     },
     "12164693": {
       "fixtureId": null,
-      "mappedAt": "2026-09-23T04:46:36Z",
-      "missRuns": 34,
+      "mappedAt": "2026-09-23T06:46:36Z",
+      "missRuns": 35,
       "missSince": "2026-09-21T03:45:01Z",
       "orient": null,
       "p1": "J. Fuentes Vasquez",
@@ -1873,12 +1873,12 @@
       "missResolutionHoursP50": 37.52,
       "missResolutionsMeasured": 87,
       "note": "ttlBitRuns counts runs where an expired MISS was the ONLY reason a billable /v4/fixtures call was made. projectedTtlUnitsPerDay uses the MEASURED run rate (measuredRunsPerDay), not an assumed 24/day; it is null until observedSpanDays is wide enough to measure one. Compare it against the <=24/day ceiling the TTL was chosen against. openMisses counts only fixtures still on the board.",
-      "observedSpanDays": 12.01,
-      "projectedTtlUnitsPerDay": 4.7,
-      "runs": 192,
-      "spentRuns": 102,
+      "observedSpanDays": 12.05,
+      "projectedTtlUnitsPerDay": 4.6,
+      "runs": 193,
+      "spentRuns": 103,
       "ttlBitRuns": 56,
-      "ttlBitShare": 0.292,
+      "ttlBitShare": 0.29,
       "ttlHours": 1.0
     },
     "runs": [
@@ -3993,9 +3993,20 @@
         "ttlBit": false,
         "unmapped": 0,
         "upcoming": 39
+      },
+      {
+        "at": "2026-09-23T06:46:36Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 7,
+        "missExpired": 1,
+        "openMisses": 1,
+        "stale": 8,
+        "ttlBit": false,
+        "unmapped": 0,
+        "upcoming": 39
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-09-23T04:46:36Z"
+  "updatedAt": "2026-09-23T06:46:36Z"
 }
