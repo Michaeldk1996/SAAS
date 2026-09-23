@@ -150,10 +150,21 @@ CREATE TABLE IF NOT EXISTS odds_card_state (
     CHECK (ts_kind IS NULL
            OR ts_kind IN ('vendor-insert', 'book-tick', 'sighting')),
   -- The ruled rank, pinned to the source so a filler cannot promote itself.
+  --
+  -- ⚠️ api-tennis is `>= 3`, NOT `= 3`, and that is the whole point. It is the
+  -- one source that carries MORE THAN ONE BOOK: its bet365 rows at 3 and every
+  -- other book (BetVictor, Betano, 1xBet, …) at 4. A `= 3` check rejected every
+  -- one of those, which is why the card fill died mid-upsert on five
+  -- consecutive nightly runs from 2026-09-18 (TEN-257) and left the table
+  -- ~1,116 rows short.
+  --
+  -- The constraint's JOB is unchanged: a source may never claim a rank ABOVE
+  -- its tier. `>= 3` still forbids api-tennis from claiming 1 or 2. Ordering
+  -- WITHIN a tier is the loader's business, not the database's.
   CONSTRAINT odds_card_state_rank_ck
     CHECK ((source = 'kibl'       AND book_rank = 1)
         OR (source = 'oddspapi'   AND book_rank = 2)
-        OR (source = 'api-tennis' AND book_rank = 3)),
+        OR (source = 'api-tennis' AND book_rank >= 3)),
   -- "Open, Now and Close always from the SAME book" is structural here: one row
   -- carries all three and one row has one book. What the constraint CAN catch is
   -- a row selected for rendering that has nothing to render.
@@ -216,13 +227,20 @@ ALTER TABLE odds_card_state
 -- an instance that already carries the table. Each is dropped first so a rerun
 -- after a rule change replaces the old rule rather than failing on the name.
 --
--- ⚠️ ORDER MATTERS. book_rank defaults to 99 and the rank check permits only
--- 1/2/3, so every pre-existing row has to be backfilled to its ruled rank BEFORE
--- the check is added or the ALTER fails on legacy data. Any row whose source we
--- do not recognise would still fail — correctly: that is an unruled source.
+-- ⚠️ ORDER MATTERS. book_rank defaults to 99, so every pre-existing row has to
+-- be backfilled to its ruled rank BEFORE the check is added or the ALTER fails
+-- on legacy data. Any row whose source we do not recognise would still fail —
+-- correctly: that is an unruled source.
+--
+-- ⚠️ AND THE api-tennis BACKFILL IS `= 99`, NOT `<> 3`. It used to be `<> 3`,
+-- which flattened EVERY api-tennis row to rank 3 — including the rank-4
+-- other-book rows the widened constraint now exists to admit. Left as `<> 3`
+-- this statement would have silently undone the constraint fix on every single
+-- schema apply, and the multi-book ordering would have collapsed back to one
+-- tier while the constraint looked correct. Only the legacy DEFAULT is coerced.
 UPDATE odds_card_state SET book_rank = 1 WHERE source = 'kibl'       AND book_rank <> 1;
 UPDATE odds_card_state SET book_rank = 2 WHERE source = 'oddspapi'   AND book_rank <> 2;
-UPDATE odds_card_state SET book_rank = 3 WHERE source = 'api-tennis' AND book_rank <> 3;
+UPDATE odds_card_state SET book_rank = 3 WHERE source = 'api-tennis' AND book_rank = 99;
 
 -- ---------------------------------------------------------------------------
 -- THE GRAIN CONSTRAINT MUST BE `NULLS NOT DISTINCT`, AND ON A PRE-EXISTING
@@ -276,7 +294,7 @@ ALTER TABLE odds_card_state DROP CONSTRAINT IF EXISTS odds_card_state_rank_ck;
 ALTER TABLE odds_card_state ADD CONSTRAINT odds_card_state_rank_ck
   CHECK ((source = 'kibl'       AND book_rank = 1)
       OR (source = 'oddspapi'   AND book_rank = 2)
-      OR (source = 'api-tennis' AND book_rank = 3));
+      OR (source = 'api-tennis' AND book_rank >= 3));
 ALTER TABLE odds_card_state DROP CONSTRAINT IF EXISTS odds_card_state_selected_ck;
 ALTER TABLE odds_card_state ADD CONSTRAINT odds_card_state_selected_ck
   CHECK (NOT is_selected

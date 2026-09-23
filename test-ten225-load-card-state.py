@@ -294,6 +294,128 @@ fin = C.takeover_candidate_rows([trow(finalScore={'winner': 'p1'})], NOW)[0]
 check('a FINISHED fixture gets no candidate row — after the off there is no Now '
       'to be complete about', fin == [])
 
+
+# ─────────────────────────────────────────────────────────────────────────────
+# TEN-257 — the rank CHECK must admit every book this loader writes.
+#
+# THE FAILURE THIS LOCKS. `odds_card_state_rank_ck` read
+# `source = 'api-tennis' AND book_rank = 3`, while this loader writes its
+# other-book rows (BetVictor and friends) at RANK_OTHER_BOOK = 4. Postgres
+# rejected them with a 23514, the chunked upsert died mid-write, and the card
+# fill ran ~1,116 rows short on five consecutive nightly runs from 2026-09-18
+# before anyone noticed — because the job's other steps were green.
+#
+# ⚠️ NOT A GREP. The constraint text is PARSED into (source, operator, rank)
+# clauses and EVALUATED over a truth table. A grep for ">= 3" would pass on a
+# constraint that had been rewritten in any other shape, and would not notice
+# the backfill below quietly undoing it.
+
+import re as _re
+
+_SCHEMA = open(os.path.join(HERE, 'ten225-card-state-schema.sql'), encoding='utf-8').read()
+_CLAUSE = _re.compile(r"source\s*=\s*'([a-z-]+)'\s*AND\s*book_rank\s*(>=|<=|<>|=|>|<)\s*(\d+)")
+
+
+def _rank_clauses(text):
+    """Every (source, op, n) the rank CHECK admits, from the SQL itself."""
+    return [(m.group(1), m.group(2), int(m.group(3))) for m in _CLAUSE.finditer(text)]
+
+
+def _admits(clauses, source, rank):
+    """Would the parsed CHECK accept this (source, book_rank)?"""
+    ops = {'=': lambda a, b: a == b, '>=': lambda a, b: a >= b,
+           '<=': lambda a, b: a <= b, '>': lambda a, b: a > b,
+           '<': lambda a, b: a < b, '<>': lambda a, b: a != b}
+    return any(s == source and ops[o](rank, n) for s, o, n in clauses)
+
+
+def _rank_check_text(text):
+    """Only the two `odds_card_state_rank_ck` CHECK bodies.
+
+    ⚠️ SCOPED ON PURPOSE. Parsing the whole file also swallows the backfill
+    UPDATEs, which carry `source = 'kibl' AND book_rank <> 1` — a `<>` clause
+    that makes kibl look like it admits ranks 2 and 4. The first cut of this
+    test did exactly that and reported four false failures.
+    """
+    out = []
+    for m in _re.finditer(r'odds_card_state_rank_ck', text):
+        tail = text[m.end():m.end() + 400]
+        stop = min((i for i in (tail.find('));'), tail.find(')),')) if i != -1),
+                   default=len(tail))
+        out.append(tail[:stop])
+    return out
+
+
+_bodies = [b for b in _rank_check_text(_SCHEMA) if _rank_clauses(b)]
+check('the rank CHECK is defined in at least two places '
+      '(the CREATE TABLE and the idempotent ALTER)',
+      len(_bodies) >= 2, f'found {len(_bodies)}')
+
+# ⚠️ AND THEY MUST AGREE. The table is created by one of these and migrated by
+# the other. Widen one and forget the other and a fresh database and a migrated
+# one enforce different rules — which shows up as "works on my instance".
+_sets = {tuple(sorted(_rank_clauses(b))) for b in _bodies}
+check('every rank CHECK definition in the schema states the SAME rule',
+      len(_sets) == 1, f'{len(_sets)} distinct rule(s): {_sets}')
+_clauses = [c for b in _bodies for c in _rank_clauses(b)]
+check('the rank CHECK was parsed out of the schema at all (not a silent zero)',
+      len(_clauses) >= 6, f'found {len(_clauses)} clause(s)')
+# CONTROL: the scoping is load-bearing — the unscoped parse really is wrong.
+check('CONTROL: an UNSCOPED parse wrongly admits kibl at rank 4 '
+      '(it swallows the backfill\'s `<> 1`), so the scoping above is not cosmetic',
+      _admits(_rank_clauses(_SCHEMA), 'kibl', 4))
+
+# The truth table. Each row is (source, rank, must_be_admitted).
+for _src, _rank, _want in [
+    ('kibl', 1, True), ('kibl', 2, False), ('kibl', 4, False),
+    ('oddspapi', 2, True), ('oddspapi', 1, False), ('oddspapi', 3, False),
+    ('api-tennis', 3, True),
+    ('api-tennis', 4, True),      # ← the row that was being rejected
+    ('api-tennis', 5, True),      # a fourth book later must not need a migration
+    ('api-tennis', 2, False),     # and it still may NOT promote itself
+    ('api-tennis', 1, False),
+]:
+    _got = _admits(_clauses, _src, _rank)
+    check(f'rank CHECK: {_src} at book_rank {_rank} is '
+          f'{"admitted" if _want else "REJECTED"}',
+          _got == _want, f'got admitted={_got}')
+
+# The constraint must admit exactly what this loader writes — schema and code
+# checked against each other rather than each against my memory of the other.
+for _name, _rank, _src in [('RANK_ODDSPAPI', C.RANK_ODDSPAPI, 'oddspapi'),
+                           ('RANK_APITENNIS', C.RANK_APITENNIS, 'api-tennis'),
+                           ('RANK_OTHER_BOOK', C.RANK_OTHER_BOOK, 'api-tennis')]:
+    check(f'the loader writes {_name}={_rank} on {_src}, and the CHECK admits it',
+          _admits(_clauses, _src, _rank))
+
+# ⚠️ THE BACKFILL MUST NOT FLATTEN THE TIER IT JUST ADMITTED.
+# `UPDATE ... SET book_rank = 3 WHERE source = 'api-tennis' AND book_rank <> 3`
+# coerces every rank-4 row back to 3 on EVERY schema apply. The constraint would
+# look correct and the ordering would silently collapse to one tier.
+_backfill = _re.search(
+    r"UPDATE odds_card_state SET book_rank = 3\s+WHERE source = 'api-tennis'\s+AND book_rank ([^;]+);",
+    _SCHEMA)
+check('the api-tennis rank backfill was found in the schema', _backfill is not None)
+if _backfill:
+    _cond = _backfill.group(1).strip()
+    check('the api-tennis backfill does NOT coerce every non-3 rank '
+          '(that would undo the widened constraint on every apply)',
+          '<> 3' not in _cond, f'condition is `{_cond}`')
+    check('…it coerces only the legacy 99 default',
+          _cond == '= 99', f'condition is `{_cond}`')
+
+# ── MUTATION CONTROLS — prove the checks above can actually fail ─────────────
+_narrow = _rank_clauses(_SCHEMA.replace("source = 'api-tennis' AND book_rank >= 3",
+                                        "source = 'api-tennis' AND book_rank = 3"))
+check('CONTROL: reverting the CHECK to `= 3` rejects the rank-4 row again',
+      not _admits(_narrow, 'api-tennis', 4))
+check('CONTROL: …while still admitting rank 3, so the mutation is surgical',
+      _admits(_narrow, 'api-tennis', 3))
+_loose = _rank_clauses("source = 'api-tennis' AND book_rank >= 1")
+check('CONTROL: a CHECK loose enough to let api-tennis claim rank 1 is caught',
+      _admits(_loose, 'api-tennis', 1))
+
+
 print('\n' + ('all checks passed' if not FAILED
               else f'{len(FAILED)} FAILURE(S): {FAILED}'))
 sys.exit(1 if FAILED else 0)
