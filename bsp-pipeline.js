@@ -2271,6 +2271,16 @@ function formatSetScore(scoreFirst, scoreSecond) {
 // undecided match must never count toward a win/loss record.
 const INTERRUPTED_STATUSES = ['Interrupted', 'Suspended'];
 const isInterruptedFixture = f => INTERRUPTED_STATUSES.includes(f.event_status);
+// TEN-270 C (founder 2026-09-24): a withdrawal or lucky-loser swap does NOT edit
+// the fixture — api-tennis marks the old pairing `event_status: 'Cancelled'` and
+// publishes the replacement under a NEW event_key. The upcoming filter below
+// never read that status, so the dead pairing stayed on the board. MEASURED
+// 25 Aug–24 Sep: 56 of 344 ATP main-draw singles events were Cancelled, and 55
+// of them were still carded, scoreless, after their scheduled start (sampled
+// matches.json every ≥2 h; e.g. N. Borges vs C. Ugo Carabelli, Chengdu, while
+// F. Cina vs C. Ugo Carabelli was the match actually played). A Cancelled
+// fixture is never a match that will be played, so it is never a card.
+const isCancelledFixture = f => f.event_status === 'Cancelled';
 
 function buildFinalScore(fixture) {
   if (!Array.isArray(fixture.scores) || fixture.scores.length === 0) return null;
@@ -5559,6 +5569,7 @@ async function runPipeline() {
   const seenUpcomingKeys = new Set();
   const upcomingFixtures = apiTennisFixtures.filter(f => {
     if (['Finished', 'Retired', 'Walk Over'].includes(f.event_status)) return false;
+    if (isCancelledFixture(f)) return false;
     // An interrupted match is already in play — it's built by the completed-match
     // builder below (with its partial score + stats), so it must not also be
     // surfaced here as a still-scheduled fixture.
@@ -7021,7 +7032,7 @@ if (require.main === module) {
   });
 }
 
-module.exports = { profileRosterFloorVerdict, lastPublishedRosterCount, profilesWithoutTournamentHistory, PROFILE_ROSTER_BACKSTOP, PROFILE_ROSTER_RATIO, MAX_OPPONENT_BUILDS_PER_RUN, isIndoorTournament, loadTournamentCourtMap, fetchRecentSinglesFixtures, recentFormFromFixtures, buildTournamentProgression, extractProgressionMetrics, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
+module.exports = { isCancelledFixture, profileRosterFloorVerdict, lastPublishedRosterCount, profilesWithoutTournamentHistory, PROFILE_ROSTER_BACKSTOP, PROFILE_ROSTER_RATIO, MAX_OPPONENT_BUILDS_PER_RUN, isIndoorTournament, loadTournamentCourtMap, fetchRecentSinglesFixtures, recentFormFromFixtures, buildTournamentProgression, extractProgressionMetrics, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
   // The Career-record pair. Exported together on purpose: their whole contract
   // is that the counts one returns are tallyable from the rows the other
   // returns, and that is what ten8-career-verify.js asserts.
