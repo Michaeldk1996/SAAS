@@ -145,9 +145,9 @@ print("\n4 · mapping and the decisive novel-observation count")
 AT.REPORT.clear()
 AT.mapping_and_comparison(rows, FIXTURES, POLLED, "synthetic window")
 body3 = "\n".join(AT.REPORT)
-ok("| distinct fixture ids in the stream capture | **3** |" in body3,
-   "distinct stream fixture ids counted (3: two ATP + one WTA)")
-ok("present in `kibl_fixtures` | **2**" in body3,
+ok("| distinct men's-tennis fixture ids in the stream capture | **3** |" in body3,
+   "distinct stream fixture ids counted (3: two ATP + one WTA — this call passes every row)")
+ok("present in `kibl_fixtures` or polled observations | **2**" in body3,
    "matched against polled Bet105 fixtures")
 ok("polling NEVER captured** | **1**" in body3,
    "THE DECISIVE NUMBER: exactly one of the two matched observations is novel")
@@ -163,6 +163,35 @@ ok("identical price: **1** of 1" in body3,
 # DISTINCT observations of which 1 is shared — two denominators, one heading.
 ok(body3.count("identical price: **2**") == 0,
    "CONTROL: a duplicate delivery of one observation is not counted twice")
+
+print("\n4b · TEN-270: the league rides on the ROUTING KEY, and main() maps tennis only")
+# Measured on probe run 35937443000: no row carried a league field; the routing
+# key `get.info.markets.<?>.<sport>.<league>.…` did, on every message.
+ROW_RK = {k: v for k, v in ROW_B.items() if k != "league_id"}
+ROW_RK_OTHER = dict(ROW_RK, fixture_id=555001)
+RK_RECORDS = [
+    rec(json.dumps({"result": [{"participants": [ROW_RK]}]}),
+        routing_key="get.info.markets.0.5.19.3.2.728344.171.1.1.1.0"),
+    # Another sport whose league id happens to equal ATP's must NOT pass.
+    rec(json.dumps({"result": [{"participants": [ROW_RK_OTHER]}]}),
+        routing_key="get.info.markets.1.2.19.3.1.555001.171.3.1.1.0"),
+]
+AT.REPORT.clear()
+rk_rows, rk_tennis, rk_unknown = AT.analyse(RK_RECORDS, dict(META, messages=2), FIXTURES, POLLED)
+ok(len(rk_tennis) == 1 and rk_tennis[0][1]["fixture_id"] == 728344,
+   f"sport 5 / league 19 from the routing key -> tennis (got {len(rk_tennis)})")
+ok(len(rk_unknown) == 0,
+   f"CONTROL: a routing-keyed row is never 'unknown' (got {len(rk_unknown)})")
+ok(B.row_key_of(rk_tennis[0][1]) == B.row_key_of(ROW_B),
+   "stamping _league_id leaves the sweep's row key unchanged")
+AT.REPORT.clear()
+AT.mapping_and_comparison(rk_tennis, [], POLLED + [dict(POLLED[0], fixture_id=728344,
+                                                         row_key="nk_other")], "w")
+body_rk = "\n".join(AT.REPORT)
+ok("fixture ids in the stream capture | **1** |" in body_rk
+   and "polled observations | **1**" in body_rk,
+   "a fixture id held only by polled OBSERVATIONS still counts as matched "
+   "(kibl_fixtures.feed_source_id is not 171)")
 
 print("\n5 · mapping on an EMPTY capture")
 AT.REPORT.clear()
