@@ -206,6 +206,69 @@ jobs:
               for ep in ("usage.api-counts?interval=7day", "usage.api-requests-count"):
                   st, r = call(f"{base}/{ep}", bearer=tok)
                   print(f"=== {ep} -> HTTP {st} {r[:3000]}")
+              # REPLAY. REST GET responses are chunked, so the gateway log has no
+              # Content-Length for them: their bytes are MEASURED here instead. The
+              # logged GETs of the last 12 h are re-issued READ-ONLY with the server
+              # key (GET only, /rest/v1 only, bodies never printed) and the response
+              # bytes counted, weighted by how often each exact query was logged.
+              import collections
+              sk = os.environ["SUPABASE_SECRET_KEY"]
+              lo, hi = end - dt.timedelta(hours=12), end
+              rows2, used = None, None
+              for field in ("r.search", "r.url"):
+                  q2 = (f"""select r.path as path, {field} as qs, substr(coalesce(h.user_agent, '-'), 1, 40) as ua,
+                      count(*) as n from edge_logs t cross join unnest(t.metadata) m
+                      cross join unnest(m.request) r cross join unnest(r.headers) h
+                      where r.method = 'GET' and starts_with(r.path, '/rest/v1/')
+                      group by path, qs, ua order by n desc limit 400""")
+                  qs = urllib.parse.urlencode({"sql": q2, "iso_timestamp_start": z(lo), "iso_timestamp_end": z(hi)})
+                  st, r = call(f"{base}/logs.all?{qs}", bearer=tok)
+                  body = json.loads(r) if st == 200 else {}
+                  if st == 200 and not body.get("error"):
+                      rows2, used = body.get("result") or [], field
+                      break
+                  print(f"replay query with {field} -> HTTP {st} {r[:400]}")
+              if rows2 is not None:
+                  per = collections.defaultdict(lambda: {"n": 0, "wn": 0, "wb": 0, "k": 0})
+                  budget = 160
+                  for row in rows2:
+                      route = "/".join((row["path"] or "").split("/")[:4])
+                      key = (route, row.get("ua"))
+                      g = per[key]
+                      g["n"] += row["n"]
+                      if g["k"] >= 6 or budget <= 0:
+                          continue
+                      qpart = row.get("qs") or ""
+                      if used == "r.url":
+                          qpart = urllib.parse.urlparse(qpart).query
+                          qpart = ("?" + qpart) if qpart else ""
+                      req = urllib.request.Request(url + row["path"] + qpart)
+                      req.add_header("apikey", sk); req.add_header("Authorization", "Bearer " + sk)
+                      # Match the caller's wire encoding: Python's urllib asks for none;
+                      # fetch() in node / Deno / browsers asks for gzip by default.
+                      if not str(row.get("ua") or "").startswith("Python-urllib"):
+                          req.add_header("Accept-Encoding", "gzip")
+                      try:
+                          with urllib.request.urlopen(req, timeout=60) as resp:
+                              nbytes = len(resp.read())
+                      except urllib.error.HTTPError as e:
+                          nbytes = len(e.read())
+                      except Exception:
+                          continue
+                      budget -= 1
+                      g["k"] += 1; g["wn"] += row["n"]; g["wb"] += nbytes * row["n"]
+                  print(f"=== REPLAY (field {used}) window {z(lo)} .. {z(hi)}; route, caller, GETs in 12 h, "
+                        "queries replayed, mean bytes/GET, est GB per 12 h, est GB per 30 days")
+                  tot = 0.0
+                  for (route, ua), g in sorted(per.items(), key=lambda kv: -(kv[1]["wb"] / kv[1]["wn"] * kv[1]["n"] if kv[1]["wn"] else 0)):
+                      mean = g["wb"] / g["wn"] if g["wn"] else None
+                      gb12 = (mean * g["n"] / 1e9) if mean is not None else None
+                      tot += gb12 or 0
+                      print(json.dumps({"route": route, "ua": ua, "gets_12h": g["n"], "replayed": g["k"],
+                                        "mean_bytes": round(mean) if mean is not None else None,
+                                        "gb_12h": round(gb12, 3) if gb12 is not None else None,
+                                        "gb_30d": round(gb12 * 60, 1) if gb12 is not None else None}))
+                  print(f"REPLAY TOTAL est GB per 12 h {tot:.3f}  per 30 days {tot * 60:.1f}")
           if bad:
               print("::error::" + "; ".join(bad)); sys.exit(1)
           PY
