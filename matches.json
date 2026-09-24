@@ -32211,13 +32211,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 1.8,
+      "p2": 1.91,
+      "bookmaker": "BetVictor"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 1.8,
+        "bookmaker": "BetVictor"
+      },
+      "p2": {
+        "price": 1.91,
+        "bookmaker": "BetVictor"
+      }
     },
     "tournamentRound": null,
     "p1Key": 1852,
@@ -52568,7 +52574,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7, 6-3, 3-6",
+      "display": "6-7(5), 6-3, 3-6",
       "sets": [
         {
           "p1": 6,
@@ -112541,7 +112547,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6(4), 7-6(5)",
+      "display": "7-6, 7-6",
       "sets": [
         {
           "p1": 7,
@@ -115163,7 +115169,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-4, 6-7(6), 6-3",
+      "display": "6-4, 6-7, 6-3",
       "sets": [
         {
           "p1": 6,
@@ -118192,7 +118198,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "5-7, 6-7(5)",
+      "display": "5-7, 6-7",
       "sets": [
         {
           "p1": 5,
@@ -120818,7 +120824,7 @@
     "retired": false,
     "walkover": false,
     "finalScore": {
-      "display": "7-6(4), 5-7, 5-7",
+      "display": "7-6, 5-7, 5-7",
       "sets": [
         {
           "p1": 7,
