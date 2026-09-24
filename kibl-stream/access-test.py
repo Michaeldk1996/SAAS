@@ -53,6 +53,7 @@ OUT = os.environ.get("TEN253_OUT", os.path.join(HERE, "..", "ten253-access-test"
 LISTEN_MIN = float(os.environ.get("TEN253_LISTEN_MIN", "90"))
 DROP_MIN = float(os.environ.get("TEN253_DROP_MIN", "5"))
 KIBL_FEED_SOURCE_ID = 171     # Bet105. The only book this account is served.
+KIBL_TENNIS_SPORT_ID = 5      # routing-key sport segment; measured, TEN-270 probe
 
 SECRETS = []
 REPORT = []
@@ -387,10 +388,33 @@ def flatten(records):
             unreadable += 1
             shapes["UNRECOGNISED"] += 1
             continue
+        sport, league = routing_sport_league(rec.get("routing_key"))
         for r in raw:
             if isinstance(r, dict):
+                # ⚠️ THE LEAGUE RIDES ON THE ROUTING KEY, NOT THE ROW. MEASURED,
+                # TEN-270 probe run 35937443000: 12,334 of 12,334 rows carried no
+                # league field, so every row read as "tennis: unknown", while the
+                # routing key `get.info.markets.<?>.<sport>.<league>.…` named it
+                # on every message (sport 5 = tennis: leagues 20/643/962/963
+                # seen). Stamped as `_league_id`, the archive's own convention,
+                # which observation_key() does not include — the row key is
+                # unchanged. Non-tennis sports get -1 so a league id that
+                # happens to equal a tennis id in another sport cannot pass.
+                if league is not None and "_league_id" not in r:
+                    r["_league_id"] = league if sport == KIBL_TENNIS_SPORT_ID else -1
                 rows.append((rec, r))
     return rows, shapes, unreadable
+
+
+def routing_sport_league(key):
+    """`get.info.markets.<?>.<sport>.<league>.…` -> (sport, league), or (None, None)."""
+    parts = (key or "").split(".")
+    if len(parts) < 6 or parts[:3] != ["get", "info", "markets"]:
+        return None, None
+    try:
+        return int(parts[4]), int(parts[5])
+    except ValueError:
+        return None, None
 
 
 def sample_redacted(row):
@@ -570,16 +594,17 @@ def mapping_and_comparison(rows, fixtures_171, polled_rows, window):
     say()
     say("## B4 · Mapping — do stream fixture ids exist among polled Bet105 fixtures?")
     stream_fids = {r.get("fixture_id") for _, r in rows if r.get("fixture_id") is not None}
-    polled_fids = {f.get("fixture_id") for f in fixtures_171}
+    polled_fids = ({f.get("fixture_id") for f in fixtures_171}
+                   | {r.get("fixture_id") for r in polled_rows if r.get("fixture_id") is not None})
     matched = stream_fids & polled_fids
     unmatched = stream_fids - polled_fids
     say()
     say(f"| | count |")
     say("|---|---:|")
-    say(f"| distinct fixture ids in the stream capture | **{len(stream_fids)}** |")
-    say(f"| of those, present in `kibl_fixtures` | **{len(matched)}** ({pct(len(matched), len(stream_fids))}) |")
+    say(f"| distinct men's-tennis fixture ids in the stream capture | **{len(stream_fids)}** |")
+    say(f"| of those, present in `kibl_fixtures` or polled observations | **{len(matched)}** ({pct(len(matched), len(stream_fids))}) |")
     say(f"| unmatched | **{len(unmatched)}** ({pct(len(unmatched), len(stream_fids))}) |")
-    say(f"| polled fixtures in the window (feed_source_id {KIBL_FEED_SOURCE_ID}) | {len(polled_fids)} |")
+    say(f"| polled-side fixture ids (men's-tennis fixtures ∪ Bet105 observations) | {len(polled_fids)} |")
     if not stream_fids:
         say()
         say("> **—** No fixture ids arrived, so mapping is **unmeasured**. This is the "
@@ -786,9 +811,12 @@ def main():
     say()
     say(f"**Connected successfully.** Backlog at connect: **{meta['backlog_at_connect']}** "
         f"message(s).")
+    # `inserted_on` lives on the PARTICIPANT rows, not the envelope — the first
+    # cut read it off the envelope and reported "—" on a 3,841-message backlog
+    # (TEN-270 probe run 35937443000).
     oldest = None
-    for r in records:
-        t = parse_ts(json.loads(r["body"]).get("inserted_on")) if r["body"].startswith("{") else None
+    for _, row in flatten(records)[0]:
+        t = parse_ts(row.get("inserted_on"))
         if t and (oldest is None or t < oldest):
             oldest = t
     if meta["backlog_at_connect"] == 0:
@@ -805,19 +833,32 @@ def main():
     t_from = (parse_ts(meta["started_at"]) - timedelta(minutes=30)).isoformat()
     t_to = (parse_ts(meta["ended_at"]) + timedelta(minutes=30)).isoformat()
     window = f"{t_from} .. {t_to}"
+    t_from_fx = (parse_ts(meta["started_at"]) - timedelta(days=2)).isoformat()
     fixtures_171, polled_rows = [], []
     try:
+        # ⚠️ NOT FILTERED ON feed_source_id. /info/fixtures records are not
+        # per-book, so kibl_fixtures.feed_source_id is not 171 — the filter
+        # returned 0 fixtures against 3,839 polled Bet105 observations in the
+        # same window (TEN-270 probe run 35937443000). The book is pinned on the
+        # observations read below; fixtures are pinned to the men's leagues.
+        leagues = ",".join(str(x) for x in sorted(B.TENNIS_LEAGUES_MEN))
         fixtures_171 = sb_get_all(
             f"/rest/v1/kibl_fixtures?select=fixture_id,league_id,scheduled_start,"
-            f"feed_source_id&feed_source_id=eq.{KIBL_FEED_SOURCE_ID}")
+            f"feed_source_id,name&league_id=in.({leagues})"
+            f"&scheduled_start=gte.{urllib.parse.quote(t_from_fx)}")
         polled_rows = sb_get_all(
-            f"/rest/v1/kibl_line_observations?select=row_key,fixture_id,price_decimal,"
-            f"observed_at,inserted_on,sweep_id&feed_source_id=eq.{KIBL_FEED_SOURCE_ID}"
+            f"/rest/v1/kibl_line_observations?select=*"
+            f"&feed_source_id=eq.{KIBL_FEED_SOURCE_ID}"
             f"&observed_at=gte.{urllib.parse.quote(t_from)}"
             f"&observed_at=lte.{urllib.parse.quote(t_to)}")
+        # Kept in the artifact so the opener-trap and Close questions can be
+        # answered offline against exactly the set this run compared with.
+        dump(fixtures_171, "poll-fixtures.json")
+        dump(polled_rows, "poll-observations.json")
         say()
-        say(f"Poller comparison set: **{len(fixtures_171)}** Bet105 fixtures, "
-            f"**{len(polled_rows)}** polled observations in {window}.")
+        say(f"Poller comparison set: **{len(fixtures_171)}** men's-tennis fixtures "
+            f"(leagues {leagues}, scheduled since {t_from_fx}), "
+            f"**{len(polled_rows)}** polled Bet105 observations in {window}.")
     except Exception as e:  # noqa: BLE001
         say()
         say(f"⚠️ Supabase read failed — mapping and comparison are **unmeasured**, "
@@ -825,7 +866,10 @@ def main():
 
     rows, tennis_rows, unknown_rows = analyse(records, meta, fixtures_171, polled_rows)
     close_proximity(rows, fixtures_171)
-    mapping_and_comparison(rows, fixtures_171, polled_rows, window)
+    # Mapped on MEN'S-TENNIS rows only. Every other sport in the queue can never
+    # appear among polled tennis fixtures, and counting them would put ~80% of
+    # the stream into "unmatched" as a denominator artefact.
+    mapping_and_comparison(tennis_rows, fixtures_171, polled_rows, window)
 
     # ── B6 drop test ────────────────────────────────────────────────────────
     say()
