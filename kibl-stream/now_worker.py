@@ -75,6 +75,7 @@ class NowEngine:
         self.latest = {}                             # (card_key, side_key) -> inserted_on
         self.fid_key = {}                            # fixture -> card_key it was ever joined to
         self.count = collections.Counter()
+        self.write_ok = True                         # did the last write land? (heartbeat -> page)
 
     # ── inputs ──────────────────────────────────────────────────────────────
     def set_cards(self, cards, now):
@@ -168,15 +169,14 @@ class NowEngine:
         out.append(("now", dict(common, kind="price")))
         return out
 
-    def forget(self, ck, sk):
-        """A Now write that did not land must not block the next one (review
-        finding 5): drop the in-memory 'latest' so a re-delivery or the next
-        seed writes it again."""
-        self.latest.pop((ck, sk), None)
-        self.count["now_write_failed"] += 1
+    def still_latest(self, r):
+        """Is this Now row still the newest we hold for its side? A retry of a
+        failed write must never overwrite a newer price that landed since."""
+        held = self.latest.get((r["card_key"], r["side_key"]))
+        return held is not None and CJ.parse_ts(r["kibl_inserted_on"]) == held
 
     def heartbeat(self, now, connected, extra=None):
-        body = {"connected": bool(connected), "cards": len(self.cards),
+        body = {"connected": bool(connected), "write_ok": self.write_ok, "cards": len(self.cards),
                 "matched": len(self.by_fixture), "ambiguous": len(self.ambiguous),
                 "closed": len(self.closed), "counts": dict(self.count)}
         body.update(extra or {})
@@ -256,7 +256,10 @@ def dedupe(writes):
     for k, r in writes:
         if k == "now":
             key = (r["card_key"], r["side_key"])
-            if key not in now or r["kibl_inserted_on"] > now[key]["kibl_inserted_on"]:
+            # Parsed, not string-compared: iso() drops a zero fraction, so
+            # '…10:00:00Z' would sort above '…10:00:00.5Z' as text.
+            if key not in now or (CJ.parse_ts(r["kibl_inserted_on"])
+                                  > CJ.parse_ts(now[key]["kibl_inserted_on"])):
                 now[key] = r
         else:
             hist.setdefault(r["row_key"], r)
@@ -264,24 +267,29 @@ def dedupe(writes):
 
 
 def flush(env, writes, log, enabled, eng=None):
+    """-> the writes that did NOT land, for the caller to retry (review finding 5)."""
     now_rows, hist_rows = dedupe(writes)
+    failed = []
     if not enabled:
         for r in now_rows:
             log(f"DRY now {r['card_key']} {r['side_key']} {r['price']} @ {r['kibl_inserted_on']}")
-        return
+        return []
     if now_rows:
         st, body = C.sb_request(env, "POST", f"/rest/v1/{TABLE_NOW}?on_conflict=card_key,side_key",
                                 now_rows, prefer="resolution=merge-duplicates,return=minimal")
         if st not in (200, 201, 204):
             log(f"::warning::now upsert HTTP {st}: {body[:200]}")
-            if eng is not None:
-                for r in now_rows:
-                    eng.forget(r["card_key"], r["side_key"])
+            failed += [("now", r) for r in now_rows]
     if hist_rows:
         st, body = C.sb_request(env, "POST", f"/rest/v1/{TABLE_HIST}?on_conflict=row_key",
                                 hist_rows, prefer="resolution=ignore-duplicates,return=minimal")
         if st not in (200, 201, 204):
             log(f"::warning::history insert HTTP {st}: {body[:200]}")
+            failed += [("hist", r) for r in hist_rows]
+    if eng is not None:
+        eng.count["write_failed"] += len(failed)
+        eng.write_ok = not failed
+    return failed
 
 
 def write_hb(env, row, log, enabled):
@@ -359,6 +367,7 @@ def main(env=None, log=print):
                 log(f"ambiguous (ruling 1, matched to neither): {a['card']} — {a['why']}")
 
     attempt, last_beat, last_prune, connected = 0, 0.0, 0.0, False
+    retry, last_retry = [], 0.0
     while True:
         try:
             refresh(force=True)
@@ -375,7 +384,7 @@ def main(env=None, log=print):
                 if first:
                     first = False
                     try:
-                        flush(env, seed(kc, eng, log), log, enabled, eng)
+                        retry += flush(env, seed(kc, eng, log), log, enabled, eng)
                     except Exception as e:  # noqa: BLE001
                         log(f"::warning::seed failed — cards stay on the poller: "
                             f"{C.redact(e, secrets)[:160]}")
@@ -391,11 +400,17 @@ def main(env=None, log=print):
                         if isinstance(r, dict):
                             writes += eng.accept(r, rcv)
                     if writes:
-                        flush(env, writes, log, enabled, eng)
+                        retry += flush(env, writes, log, enabled, eng)
                     # Ack everything, tennis or not: an unacked message counts
                     # against the vendor's backlog cap.
                     channel.basic_ack(method.delivery_tag)
                 t = time.time()
+                if retry and t - last_retry >= 10:
+                    # Only rows still the newest for their side; a newer price
+                    # that landed meanwhile is never overwritten by a retry.
+                    retry = [(k, r) for k, r in retry if k == "hist" or eng.still_latest(r)]
+                    retry = flush(env, retry, log, enabled, eng) if retry else []
+                    last_retry = t
                 refresh()
                 if t - last_beat >= HEARTBEAT_EVERY_S:
                     write_hb(env, eng.heartbeat(datetime.now(timezone.utc), True), log, enabled)

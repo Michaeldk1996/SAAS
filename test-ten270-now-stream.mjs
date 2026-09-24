@@ -144,7 +144,8 @@ test('half a pair is no pair', async () => {
 });
 
 test('a dead stream is never labelled live, and the real time is shown', async () => {
-  for (const [hb, want] of [[HB(10000), true], [HB(400000), false], [HB(1000, false), false]]) {
+  const failing = { ...HB(1000), note: { connected: true, write_ok: false } };
+  for (const [hb, want] of [[HB(10000), true], [HB(400000), false], [HB(1000, false), false], [failing, false]]) {
     const { ctx } = makeCtx([hb, PX('carabelli', 4.8, '2026-09-24T04:20:00Z'),
                              PX('borges', 1.18, '2026-09-24T04:20:00Z')]);
     await tick();

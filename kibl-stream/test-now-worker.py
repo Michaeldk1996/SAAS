@@ -109,9 +109,22 @@ w2 = e3.accept(row(1, 101, 1.17, "2026-09-24T03:32:00Z", market_id=12), "r")
 nowr, histr = W.dedupe(w1 + w2 + w2)
 ok(len(nowr) == 1 and nowr[0]["price"] == 1.17 and len(histr) == 2,
    f"one batch -> one Now row per side (newest) and history deduped by row_key (got {len(nowr)}, {len(histr)})")
-e3.forget("2026-09-24|borges|carabelli", "borges")
-ok([k for k, _ in e3.accept(row(1, 101, 1.17, "2026-09-24T03:32:00Z", market_id=12), "r")] == ["hist", "now"],
-   "after a failed write is forgotten, the same price writes again instead of being refused as not-newer")
+newest = [r for k, r in w2 if k == "now"][0]
+older = [r for k, r in w1 if k == "now"][0]
+ok(e3.still_latest(newest) and not e3.still_latest(older),
+   "a failed write is retried only while it is still the newest for its side")
+ok(len(W.dedupe([("now", dict(newest, kibl_inserted_on="2026-09-24T10:00:00Z")),
+                 ("now", dict(newest, kibl_inserted_on="2026-09-24T10:00:00.500000Z", price=1.33))])[0]) == 1
+   and W.dedupe([("now", dict(newest, kibl_inserted_on="2026-09-24T10:00:00Z")),
+                 ("now", dict(newest, kibl_inserted_on="2026-09-24T10:00:00.500000Z", price=1.33))])[0][0]["price"] == 1.33,
+   "dedupe compares parsed times: 10:00:00.5 beats 10:00:00 (as text it would not)")
+calls = []
+C_real = W.C.sb_request
+W.C.sb_request = lambda *a, **k: (calls.append(1) or (503, "down"))
+failed = W.flush({"SUPABASE_URL": "x", "SUPABASE_SECRET_KEY": "y"}, w2, lambda *_: None, True, e3)
+W.C.sb_request = C_real
+ok(len(failed) == 2 and e3.write_ok is False and e3.heartbeat(NOW, True)["note"]["write_ok"] is False,
+   "a failed write is returned for retry and the heartbeat says writes are not landing")
 
 print("\n5 · heartbeat")
 hb = e.heartbeat(NOW, True)
