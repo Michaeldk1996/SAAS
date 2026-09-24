@@ -25,8 +25,11 @@
     return;
   }
   const TABLE = 'kibl_now_price';
-  const REST = `${SB_URL}/rest/v1/${TABLE}?select=card_key,side_key,kind,price,book,book_name,` +
-               `kibl_inserted_on,written_at,source,note`;
+  const COLS = 'select=card_key,side_key,kind,price,book,book_name,kibl_inserted_on,written_at,source,note';
+  // Two reads: the heartbeat on its own, so it can never be cut off by the
+  // 1,000-row PostgREST cap under the price rows (review finding 7).
+  const RESTS = [`${SB_URL}/rest/v1/${TABLE}?${COLS}&kind=eq.heartbeat`,
+                 `${SB_URL}/rest/v1/${TABLE}?${COLS}&kind=eq.price&order=written_at.desc&limit=1000`];
   const RT_URL = `${SB_URL.replace(/^http/, 'ws')}/realtime/v1/websocket?apikey=` +
                  `${encodeURIComponent(SB_KEY)}&vsn=1.0.0`;
   const HB_STALE_MS = 180000;
@@ -67,10 +70,13 @@
     if (!a || !b) return null;
     if (book && String(a.book || '').toLowerCase() !== String(book).toLowerCase()) return null;
     const at = Math.max(ms(a.kibl_inserted_on) || 0, ms(b.kibl_inserted_on) || 0);
+    // Per-side Kibl times, keyed by the CARD's side, so the page can judge each
+    // side against the poller's same side rather than the pair's newest.
+    const sideAt = { p1: a.kibl_inserted_on || null, p2: b.kibl_inserted_on || null };
     const obs = Math.max(ms(a.written_at) || 0, ms(b.written_at) || 0);
     return { p1: Number(a.price), p2: Number(b.price), book: a.book, bookName: a.book_name || a.book,
              at: at ? new Date(at).toISOString() : null, obs: obs ? new Date(obs).toISOString() : null,
-             kind: 'vendor-insert', src: 'stream', live: healthy() };
+             sideAt, kind: 'vendor-insert', src: 'stream', live: healthy() };
   }
 
   function repaint() {
@@ -89,10 +95,13 @@
 
   async function backstop() {
     try {
-      const res = await fetch(REST, { headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`,
-                                                 Accept: 'application/json' } });
-      if (!res.ok) throw new Error('PostgREST ' + res.status);
-      const list = await res.json();
+      const list = [];
+      for (const u of RESTS){
+        const res = await fetch(u, { headers: { apikey: SB_KEY, Authorization: `Bearer ${SB_KEY}`,
+                                               Accept: 'application/json' } });
+        if (!res.ok) throw new Error('PostgREST ' + res.status);
+        list.push(...(await res.json() || []));
+      }
       let changed = false;
       const wasHealthy = healthy();
       for (const r of list || []) changed = put(r, null) || changed;

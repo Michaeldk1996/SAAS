@@ -102,6 +102,11 @@ class NowEngine:
         if not CJ.is_prematch_winner(row):
             self.count["skip_inplay" if CJ.is_inplay(row) else "skip_not_match_winner"] += 1
             return []
+        if row.get("is_current") is not True:
+            # Kibl can send a superseded row (is_previous) — never a Now.
+            # (clean-context review, finding 4)
+            self.count["skip_not_current"] += 1
+            return []
         if row.get("feed_source_id") != self.fsid:
             self.count["skip_other_book"] += 1
             return []
@@ -162,6 +167,13 @@ class NowEngine:
         self.count["now_written"] += 1
         out.append(("now", dict(common, kind="price")))
         return out
+
+    def forget(self, ck, sk):
+        """A Now write that did not land must not block the next one (review
+        finding 5): drop the in-memory 'latest' so a re-delivery or the next
+        seed writes it again."""
+        self.latest.pop((ck, sk), None)
+        self.count["now_write_failed"] += 1
 
     def heartbeat(self, now, connected, extra=None):
         body = {"connected": bool(connected), "cards": len(self.cards),
@@ -231,14 +243,28 @@ def seed(kc, engine, log):
             if row.get("fixture_id") in engine.by_fixture and row.get("is_current"):
                 n += 1
                 writes += engine.accept(row, iso(now), source="seed")
-    log(f"seed: {n} current match-winner row(s) on matched cards -> "
-        f"{sum(1 for k, _ in writes if k == 'now')} Now write(s)")
+    log(f"seed: {n} current row(s) on matched cards -> "
+        f"{sum(1 for k, _ in writes if k == 'now')} Now write(s); engine counts {dict(engine.count)}")
     return writes
 
 
-def flush(env, writes, log, enabled):
-    now_rows = [r for k, r in writes if k == "now"]
-    hist_rows = [r for k, r in writes if k == "hist"]
+def dedupe(writes):
+    """One row per primary key per request. A batch carrying two rows for one
+    (card, side) makes Postgres reject the WHOLE upsert ("cannot affect row a
+    second time") — review finding 4. Keep the newest by Kibl's clock."""
+    now, hist = {}, {}
+    for k, r in writes:
+        if k == "now":
+            key = (r["card_key"], r["side_key"])
+            if key not in now or r["kibl_inserted_on"] > now[key]["kibl_inserted_on"]:
+                now[key] = r
+        else:
+            hist.setdefault(r["row_key"], r)
+    return list(now.values()), list(hist.values())
+
+
+def flush(env, writes, log, enabled, eng=None):
+    now_rows, hist_rows = dedupe(writes)
     if not enabled:
         for r in now_rows:
             log(f"DRY now {r['card_key']} {r['side_key']} {r['price']} @ {r['kibl_inserted_on']}")
@@ -248,6 +274,9 @@ def flush(env, writes, log, enabled):
                                 now_rows, prefer="resolution=merge-duplicates,return=minimal")
         if st not in (200, 201, 204):
             log(f"::warning::now upsert HTTP {st}: {body[:200]}")
+            if eng is not None:
+                for r in now_rows:
+                    eng.forget(r["card_key"], r["side_key"])
     if hist_rows:
         st, body = C.sb_request(env, "POST", f"/rest/v1/{TABLE_HIST}?on_conflict=row_key",
                                 hist_rows, prefer="resolution=ignore-duplicates,return=minimal")
@@ -288,8 +317,23 @@ def main(env=None, log=print):
     log("writes ENABLED" if enabled else "writes DISABLED (KIBL_NOW_WRITE != 1) — dry run")
 
     kc = KiblClient(verbose=False)
-    fsid, tag, name = resolve_book(kc)
+    attempt = 0
+    while True:
+        try:
+            fsid, tag, name = resolve_book(kc)
+            break
+        except Exception as e:  # noqa: BLE001 — retry, never crash-loop the host
+            wait = C.backoff_for(attempt)
+            attempt += 1
+            log(f"::warning::book lookup failed ({C.redact(e, secrets)[:160]}); retrying in {wait}s")
+            time.sleep(wait)
     log(f"book: feed_source_id {fsid} = {name} ({tag})")
+    if tag not in ("bet105", "sports411"):
+        # The page matches the stream to a card by the card's book string
+        # ('bet105' in odds_card_state). A different tag fails SAFE — nothing
+        # shows — but silently, so it is said loudly here (review finding 6).
+        log(f"::warning::Kibl book tag {tag!r} is not one the card state uses — "
+            "stream prices will not reach any card until they agree")
     eng = NowEngine(tag, name, fsid)
     board_url = env.get("BOARD_URL") or BOARD_URL
 
@@ -331,7 +375,7 @@ def main(env=None, log=print):
                 if first:
                     first = False
                     try:
-                        flush(env, seed(kc, eng, log), log, enabled)
+                        flush(env, seed(kc, eng, log), log, enabled, eng)
                     except Exception as e:  # noqa: BLE001
                         log(f"::warning::seed failed — cards stay on the poller: "
                             f"{C.redact(e, secrets)[:160]}")
@@ -347,7 +391,7 @@ def main(env=None, log=print):
                         if isinstance(r, dict):
                             writes += eng.accept(r, rcv)
                     if writes:
-                        flush(env, writes, log, enabled)
+                        flush(env, writes, log, enabled, eng)
                     # Ack everything, tennis or not: an unacked message counts
                     # against the vendor's backlog cap.
                     channel.basic_ack(method.delivery_tag)
