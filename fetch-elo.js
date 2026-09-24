@@ -88,11 +88,16 @@ function lastToken(name) {
   // and drops the PLAYER from the scrape entirely — trading a cosmetic gap for a
   // silent coverage loss. Optional means a missing peak is a dash on one column,
   // which is the standing rule.
-  const re = /player\.cgi\?p=([^"]+)">([^<]+)<\/a><\/td><td[^>]*>([\d.]+)<\/td><td[^>]*>([\d.]+)<\/td><td>\s*<\/td><td[^>]*>(\d+)<\/td><td[^>]*>([\d.]+)<\/td><td[^>]*>(\d+)<\/td><td[^>]*>([\d.]+)<\/td><td[^>]*>(\d+)<\/td><td[^>]*>([\d.]+)<\/td>(?:<td>\s*<\/td><td[^>]*>([\d.]*)<\/td><td[^>]*>(\d{4}-\d{2})<\/td>)?/g;
+  const re = /player\.cgi\?p=([^"]+)">([^<]+)<\/a><\/td><td[^>]*>([\d.]*)<\/td><td[^>]*>([\d.]+)<\/td><td>\s*<\/td><td[^>]*>(\d+)<\/td><td[^>]*>([\d.]+)<\/td><td[^>]*>(\d+)<\/td><td[^>]*>([\d.]+)<\/td><td[^>]*>(\d+)<\/td><td[^>]*>([\d.]+)<\/td>(?:<td>\s*<\/td><td[^>]*>([\d.]*)<\/td><td[^>]*>(\d{4}-\d{2})<\/td>)?/g;
+  // AGE MAY BE BLANK (TEN-263 follow-up, 2026-09-24): the report prints an empty Age cell
+  // for a few players (Jack Kennedy, Jamie Mackenzie, Carlos Maria Zarate). A required
+  // Age dropped those players from the scrape entirely AND shifted every later player's
+  // row-order rank up by one; group 3 is therefore `[\d.]*`. Age is not read (see above).
   const ratings = {};                 // "lastToken|firstInitial" -> overall elo (back-compat)
   const elo = {};                     // "lastToken|firstInitial" -> {all,hard,clay,grass}: {rating,rank}
   const tokCount = {};                // lastToken -> count (for unique fallback)
   const keyCount = {};                // TEN-263: "lastToken|firstInitial" -> players sharing it
+  const names = {};                   // TEN-263: key -> the report's full name (who the key is)
   const tokElo = {};                  // lastToken -> overall elo (last seen)
   const tokSurface = {};              // lastToken -> surface record (last seen)
   let m, rows = 0;
@@ -121,7 +126,7 @@ function lastToken(name) {
       peak:  peakRating == null ? null : { rating: peakRating, month: m[12] || null },
     };
     const k = eloKey(name);
-    if (k) { ratings[k] = Math.round(overall); elo[k] = rec; keyCount[k] = (keyCount[k] || 0) + 1; }
+    if (k) { ratings[k] = Math.round(overall); elo[k] = rec; names[k] = name; keyCount[k] = (keyCount[k] || 0) + 1; }
     const t = lastToken(name);
     if (t) { tokCount[t] = (tokCount[t] || 0) + 1; tokElo[t] = Math.round(overall); tokSurface[t] = rec; }
   }
@@ -154,6 +159,8 @@ function lastToken(name) {
     // TEN-263 (2026-09-24): keys two report players share (e.g. Darwin / Dali Blanch = blanch|d).
     // ratings/elo keep only the last one, so a reader must NOT attribute these keys to anyone.
     ambiguous: Object.keys(keyCount).filter(k => keyCount[k] > 1).sort(),
+    // TEN-263 (2026-09-24): the report's full name per key, so a join by name can check WHO it is.
+    names,
     bySurnameElo,  // fallback: unique last-token -> {all,hard,clay,grass,peak}
   };
   const tmp = OUT + '.tmp';

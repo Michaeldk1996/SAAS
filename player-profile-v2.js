@@ -5521,7 +5521,11 @@
         'not blended into anything above.' +
         (lvl ? ' ' + lvl + ' match' + (lvl === 1 ? '' : 'es') + ' closed at exactly the same price on ' +
           'both sides — neither favourite nor underdog — and sit in the all-matches card only.' : '') +
-      '</div>';
+      '</div>' +
+      (marketBuiltText(mk)
+        ? '<div data-market-built style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;' +
+            'color:#4b5672;margin-top:8px;text-align:right;">' + esc(marketBuiltText(mk)) + '</div>'
+        : '');
 
     function fig(cap, val, colourVal) {
       return '<div style="display:flex;flex-direction:column;gap:4px;">' +
@@ -5818,6 +5822,16 @@
     }
   }
 
+  // Build stamp (TEN-263 follow-up, founder 2026-09-24): "rebuilt 24 Sep 14:05Z" from the
+  // shard's builtAt (build-market-edge.js, every pipeline run). No stamp, or one that does
+  // not parse, prints nothing — never a guessed time.
+  function marketBuiltText(mk) {
+    var t = mk && typeof mk.builtAt === 'string' ? Date.parse(mk.builtAt) : NaN;
+    if (!isFinite(t)) return '';
+    var d = new Date(t), p2 = function (n) { return (n < 10 ? '0' : '') + n; };
+    var mon = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][d.getUTCMonth()];
+    return 'rebuilt ' + d.getUTCDate() + ' ' + mon + ' ' + p2(d.getUTCHours()) + ':' + p2(d.getUTCMinutes()) + 'Z';
+  }
   function marketPinnacleEnd(mk) {
     var m = (mk.coverage && mk.coverage.pinnacleEndByLevel) || {};
     var latest = null;

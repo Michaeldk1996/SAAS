@@ -1999,6 +1999,34 @@ function findApiTennisFixture(oddsEvent, apiTennisFixtures) {
   );
 }
 
+// Which fixture player is the odds event's home_team (p1)? TEN-263 follow-up: The
+// Odds API event carries names only (home_team / away_team, no participant ids), so
+// there is no key to join on. Different surnames decide it as before. When BOTH
+// fixture players share a surname (Zhizhen Zhang v Ze Zhang) the surname says nothing,
+// so the given names decide: a given name matches when one is a prefix of the other
+// ("Z" ~ "Zhizhen", "Zh" ~ "Zhizhen", "Ze" !~ "Zhizhen"). Exactly one orientation must
+// fit; otherwise null — the caller then attaches no player keys rather than guess.
+// Returns true (fixture first = p1), false (fixture second = p1) or null.
+function givenNameOf(name) {
+  const toks = (name || '')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[.\-]/g, ' ')
+    .trim().split(/\s+/)
+    .filter(t => t && !NAME_SUFFIXES.has(t));
+  return toks.length >= 2 ? toks[0] : '';
+}
+function fixtureFirstIsHome(fixture, oddsEvent) {
+  const f1 = normSurname(fixture.event_first_player), f2 = normSurname(fixture.event_second_player);
+  const h = normSurname(oddsEvent.home_team), a = normSurname(oddsEvent.away_team);
+  if (f1 !== f2) return f1 === h;
+  const fits = (fx, od) => { const g1 = givenNameOf(fx), g2 = givenNameOf(od); return !!(g1 && g2 && (g1.startsWith(g2) || g2.startsWith(g1))); };
+  const straight = fits(fixture.event_first_player, oddsEvent.home_team) && fits(fixture.event_second_player, oddsEvent.away_team);
+  const crossed = fits(fixture.event_first_player, oddsEvent.away_team) && fits(fixture.event_second_player, oddsEvent.home_team);
+  if (straight === crossed) return null;
+  return straight;
+}
+
 // PLACEHOLDER — your real W/UE + first serve + surface form + fatigue
 // model goes here. Returns null deliberately until it's built, so
 // `value` is never faked.
@@ -2117,9 +2145,14 @@ async function buildMatchObject(oddsEvent, apiTennisFixtures, surfaceMap, venueM
   // unconditionally, which would silently swap p1/p2 data (H2H, form, rank,
   // surface win rate, live score/server) for any real match where API-Tennis
   // happened to list the players in the opposite order from the odds feed.
-  // Established once here via the same lastName() comparison already used
-  // throughout this file, and used consistently below instead of assuming order.
-  const p1IsFixtureFirst = normSurname(fixture.event_first_player) === normSurname(oddsEvent.home_team);
+  // Established once here (fixtureFirstIsHome: surname, then given name when both
+  // players share a surname), and used consistently below instead of assuming order.
+  // Undecidable (Z. Zhang v Z. Zhang) -> no keys, photos or live state: dashes, never a guess.
+  const p1IsFixtureFirst = fixtureFirstIsHome(fixture, oddsEvent);
+  if (p1IsFixtureFirst === null) {
+    console.warn(`p1/p2 undecidable for ${oddsEvent.home_team} v ${oddsEvent.away_team} (fixture ${fixture.event_key}: ${fixture.event_first_player} v ${fixture.event_second_player}) — card left without player keys`);
+    return match;
+  }
   const p1Key = p1IsFixtureFirst ? fixture.first_player_key : fixture.second_player_key;
   const p2Key = p1IsFixtureFirst ? fixture.second_player_key : fixture.first_player_key;
   match.p1Key = p1Key;

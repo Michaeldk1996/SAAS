@@ -325,8 +325,12 @@ jobs:
       # roster, so a run refreshes every published player, not only today's board. Best-effort
       # on a crash (the committed shards ship); an R1 basis violation writes the index first and
       # then fails, so "Assert site completeness" fails the run closed rather than publish it.
+      # The step records its own start (UTC, whole seconds) for the build-stamp assert in
+      # "Assert site completeness": the shipped index must carry a builtAt at or after it.
       - name: Build market-edge shards (best-effort)
-        run: node build-market-edge.js --quiet || true
+        run: |
+          echo "MARKET_EDGE_BUILD_START=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
+          node build-market-edge.js --quiet || true
 
       # Per-tournament market performance (TEN-8 Tournaments Overview §4/§5):
       # flat-stake yields backing favourites/underdogs + favourite reliability,
@@ -979,6 +983,16 @@ jobs:
               console.error(`market-edge-index.json priceBasis is ${JSON.stringify(idx.priceBasis)}, not "Pinnacle closing only" — founder ruling R1 (2026-09-17) regressed, or a pre-R1 index shipped`);
               process.exit(1);
             }
+            // Build stamp (TEN-263 follow-up, founder 2026-09-24): the index says when it was
+            // last rebuilt, and the page shows it. The build step is best-effort, so a crashed
+            // builder ships the committed floor, whose builtAt is older than this run (or absent).
+            // That is surfaced as a run WARNING, not a failure: turning it red is a deploy gate
+            // the founder has not ruled on (reported, not applied).
+            const started = Date.parse(process.env.MARKET_EDGE_BUILD_START || "");
+            const builtAt = Date.parse(idx.builtAt || "");
+            if (!Number.isFinite(started)) console.log("::warning::market-edge stale: MARKET_EDGE_BUILD_START is not set, the market-edge build step did not run in this job");
+            else if (!Number.isFinite(builtAt) || builtAt < started) console.log(`::warning::market-edge stale: index builtAt ${JSON.stringify(idx.builtAt || null)} is older than this run build step (${process.env.MARKET_EDGE_BUILD_START}); build-market-edge.js failed and the committed floor shipped`);
+            else console.log(`market-edge build stamp ok: builtAt ${idx.builtAt}, commit ${idx.builtFromCommit || "unknown"}`);
             const tour = (idx.tour && idx.tour.all) || {};
             // The tour baseline is the number every player yield is compared
             // against, so a single Bet365-archive side in it makes the comparison a

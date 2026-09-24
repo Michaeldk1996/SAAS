@@ -13751,6 +13751,13 @@ function fhLevelTag(r){ return r && r.level ? `<span title="${r.level === 'ATP' 
 function fhB365Tag(r){ return r && r.book === 'B' ? `<span title="${fhSrcTitle(r)} (no Pinnacle close for this match)" style="${FH_MONO} font-size:8px; font-weight:700; letter-spacing:0.1em; color:#8b96b5; border:1px solid rgba(255,255,255,0.14); border-radius:3px; padding:0 3px;">B365</span>` : ''; }
 // Source note: "Pinnacle" when every priced match is Pinnacle, else "Pinnacle, Bet365 where missing (N)".
 // Nothing priced → no source is named (a source for zero prices would be a false label).
+// Price range header: every figure in the section counts, today's price included (ruling 2026-09-24).
+function fhPriceRangeSource(priced, today){
+  const nb = priced.filter(r => r.book === 'B').length, tb = !!(today && today.book === 'B');
+  if (!nb && !tb) return 'Pinnacle';
+  const parts = [nb ? nb + (nb === 1 ? ' meeting' : ' meetings') : '', tb ? 'today' : ''].filter(Boolean);
+  return 'Pinnacle, Bet365 where missing (' + parts.join(' + ') + ')';
+}
 function fhSourceNote(priced){ if (!priced.length) return ''; const nb = priced.filter(r => r.book === 'B').length; return nb ? `Pinnacle, Bet365 where missing (${nb})` : 'Pinnacle'; }
 
 // =====================================================================
@@ -13812,12 +13819,15 @@ function fhScoreLines(rows, defs){
 }
 // The table: column header (one per match) + the line rows. Returns HTML.
 function fhHotLinesTable(rows, sc, opts){
-  const cols = `repeat(${Math.max(1, rows.length)},minmax(${opts.colMin},1fr))`;
+  // H2H (opts.fixedCols): every dot column is 1/max(n, fixedCols) of the grid, aligned right, so 4
+  // meetings sit in the same columns as 9 (ruling 2026-09-24). Form keeps the stretched columns.
+  const cols = opts.fixedCols ? `repeat(${Math.max(1, rows.length)},calc(100% / ${Math.max(rows.length, opts.fixedCols)}))` : `repeat(${Math.max(1, rows.length)},minmax(${opts.colMin},1fr))`;
+  const jc = opts.fixedCols ? ' justify-content:end;' : '';
   const cap = `${FH_MONO} font-size:8.5px; font-weight:600; letter-spacing:0.13em; color:#8b96b5;`;
   const heads = rows.map(r => `<span class="seg" title="${fhEsc(opts.colTip(r))}" onclick="fhOpenSheet('${fhEsc(r.mid)}')" style="display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer;"><span style="width:6px; height:6px; border-radius:50%; background:${FH_SURF[r.surface] || '#8b96b5'};"></span><span style="${FH_MONO} font-size:8.5px; color:#8b96b5; white-space:nowrap;">${fhEsc(fhTournCode(r.tournRaw || r.tourn))}</span><span style="${FH_MONO} font-size:8.5px; color:#4b5672;${opts.colHead === 'date' ? ' white-space:nowrap;' : ''}">${fhEsc(opts.colHead === 'date' ? fhDDMM(r.date) : "'" + String(r.date).slice(2, 4))}</span></span>`).join('');
   const head = `<div style="display:grid; grid-template-columns:minmax(150px,0.8fr) 72px 36px minmax(234px,1.6fr); align-items:end; gap:12px; padding:10px 0 8px; border-bottom:1px solid rgba(255,255,255,0.06);">
       <span style="${cap}">LINE</span><span style="${cap}">COVERED</span><span></span>
-      <div style="display:grid; grid-template-columns:${cols};">${heads}</div></div>`;
+      <div style="display:grid; grid-template-columns:${cols};${jc}">${heads}</div></div>`;
   const topK = sc.scored.length ? sc.scored[0].k : -1;
   const lineHtml = (x, famLbl) => {
     const isTop = x.k === topK;
@@ -13841,7 +13851,7 @@ function fhHotLinesTable(rows, sc, opts){
           ${hasBasis ? `<span style="${FH_MONO} font-size:9.5px; color:#5b6880; white-space:nowrap;">${fhEsc(x.L.basis)}</span>` : ''}
         </span>
         <span style="height:5px; background:rgba(255,255,255,0.06); border-radius:3px; display:flex;"><span style="width:${x.r * 100}%; background:#5b9bff; border-radius:3px;"></span></span>
-        <span style="display:grid; grid-template-columns:${cols}; align-items:center;">${dots}</span>
+        <span style="display:grid; grid-template-columns:${cols}; align-items:center;${jc}">${dots}</span>
       </div>`;
   };
   const out = [];
@@ -14056,7 +14066,7 @@ function fhFormRowHtml(r){
       ${fhWlChip(r.won)}
       <span style="${FH_MONO} font-size:11px; color:#8b96b5;">${fhDDMM(r.date)}</span>
       <span style="display:flex; flex-direction:column; gap:3px; min-width:0;">
-        <span style="display:flex; align-items:baseline; gap:7px; min-width:0;"><span style="font-size:13px; font-weight:600; color:#e7e9ee; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${fhEsc(fhOppFmt(r.opp))}</span>${fhEloBadge(r.oppElo)}</span>
+        <span style="display:flex; align-items:baseline; gap:7px; min-width:0;"><span title="${fhEsc(fhFullName(r.opp, r.oppKey))}" style="font-size:13px; font-weight:600; color:#e7e9ee; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${fhEsc(fhOppFmt(r.opp))}</span>${fhEloBadge(r.oppElo)}</span>
         <span title="${fhEsc(scoreTxt)}" style="${FH_MONO} font-size:11px; color:#8b96b5; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${fhEsc(scoreTxt)}</span>
       </span>
       <span style="${FH_MONO} font-size:10.5px; color:#5b6880;">${fhEsc(r.round)}</span>
@@ -14228,8 +14238,8 @@ function fhEnsureH2hData(m){
   if (m._fhH2hData) return Promise.resolve(m);
   if (m._fhH2hP) return m._fhH2hP;
   const ch = k => (k == null ? Promise.resolve(null) : Promise.resolve().then(() => loadCareerHistory(k)).then(r => Array.isArray(r) ? r : null).catch(() => null));
-  m._fhH2hP = Promise.all([ensureFormRows(m), ch(m.p1Key), ch(m.p2Key), fhLoadCloses(m.p1Key), fhLoadCloses(m.p2Key)])
-    .then(([, c1, c2, e1, e2]) => { m._fhCh = [c1, c2]; m._fhCloses = [e1, e2]; m._fhH2hData = true; return m; });
+  m._fhH2hP = Promise.all([ensureFormRows(m), ch(m.p1Key), ch(m.p2Key), fhLoadCloses(m.p1Key), fhLoadCloses(m.p2Key), fhLoadEloHistory()])
+    .then(([, c1, c2, e1, e2, eh]) => { m._fhCh = [c1, c2]; m._fhCloses = [e1, e2]; m._fhElo = eh; m._fhH2hData = true; return m; });
   return m._fhH2hP;
 }
 // The api-tennis meeting list, minus the fixture itself: a finished board match
@@ -14300,6 +14310,8 @@ function fhMeetings(m){
   ];
   const flip = sets => sets ? sets.map(x => [x[1], x[0], x[2]]) : null;
   const me = m._fhCloses || [];
+  const eloOwners = fhEloKeyOwners([[m.p1, m.p1Key], [m.p2, m.p2Key]].concat(
+    [m.p1RecentFormMatches || [], m.p2RecentFormMatches || []].flat().map(x => [x.opponent, x.opponentKey])));
   const out = list.map((x, i) => {
     const ek = x.eventKey != null ? String(x.eventKey) : null;
     let sets = null, ret = null, wo = null, tier = null, qual = !!x.qualifying;
@@ -14320,6 +14332,7 @@ function fhMeetings(m){
     let c = fhCloseFor(me[0], r.date, m.p2, r.won, m.p2Key, r.ek);
     if (!c){ const c2 = fhCloseFor(me[1], r.date, m.p1, !r.won, m.p1Key, r.ek); if (c2) c = { price: c2.oppPrice, oppPrice: c2.price, book: c2.book, src: c2.src }; }
     if (c){ r.price = c.price; r.oppPrice = c.oppPrice; r.book = c.book; r.src = c.src; }
+    r.oppElo = fhEloAt(m._fhElo, m.p2, r.date, eloOwners);   // H2H rows: same basis as Form (ruling 2026-09-24)
     return r;
   });
   return out.sort((a, b) => String(a.date).localeCompare(String(b.date)));   // oldest → newest
@@ -14333,6 +14346,13 @@ function fhPriceAvg(PR, isA){
     return 1 / (isA ? pA : 1 - pA);
   }
   return 1 / (PR.reduce((s, r) => s + 1 / (isA ? r.price : r.oppPrice), 0) / PR.length);
+}
+// "· incl. 1 CH" when a record includes Challenger / ITF meetings (ruling 2026-09-24: a record built on
+// lower-level meetings never reads as a tour record). ATP-only records add nothing.
+function fhRecLevelMix(rows){
+  const c = lv => rows.filter(r => r.level === lv).length;
+  const parts = [c('CH') ? c('CH') + ' CH' : '', c('ITF') ? c('ITF') + ' ITF' : ''].filter(Boolean);
+  return parts.length ? ' · incl. ' + parts.join(', ') : '';
 }
 function fhH2hRecCard(label, arr, tag, surfColor, onclick, aName, bName, aS, bS){
   // A walkover is not a meeting that was played (a walkover given is never a
@@ -14356,7 +14376,7 @@ function fhH2hRecCard(label, arr, tag, surfColor, onclick, aName, bName, aS, bS)
         <span style="font-size:14px; font-weight:700; color:${FH_BC}; white-space:nowrap;">${fhEsc(bName)}</span>
       </div>
       <div style="display:flex; gap:3px; height:6px;"><div style="width:${n ? (a / n * 100) + '%' : '50%'}; background:${n ? FH_AC : 'rgba(255,255,255,0.06)'}; border-radius:3px;"></div><div style="width:${n ? (b / n * 100) + '%' : '50%'}; background:${n ? 'rgba(231,233,238,0.7)' : 'rgba(255,255,255,0.06)'}; border-radius:3px;"></div></div>
-      <div style="display:flex; justify-content:center; gap:8px; ${FH_MONO} font-size:11.5px; white-space:nowrap;"><span style="font-weight:700; color:${leadColor};">${fhEsc(lead)}</span><span style="color:#4b5672;">·</span><span style="color:#5b6880;">${n + (n === 1 ? ' meeting' : ' meetings')}</span></div>
+      <div style="display:flex; justify-content:center; gap:8px; ${FH_MONO} font-size:11.5px; white-space:nowrap; overflow:hidden;"><span style="font-weight:700; color:${leadColor};">${fhEsc(lead)}</span><span style="color:#4b5672;">·</span><span style="color:#5b6880; overflow:hidden; text-overflow:ellipsis;">${n + (n === 1 ? ' meeting' : ' meetings') + fhEsc(fhRecLevelMix(counted))}</span></div>
     </div>`;
 }
 function fhH2hSkeleton(){
@@ -14421,7 +14441,7 @@ function fhBuildH2H(m){
   // once the histories have loaded — until then the loading skeleton shows.
   if (!m._fhH2hData){
     fhEnsureH2hData(m).then(() => { if (_fh && _fh.m === m) fhH2h({}); });
-    return `<div class="fh-h2wrap" style="display:flex; flex-direction:column; gap:18px;">${fhH2hSkeleton()}</div>`;
+    return `<div class="fh-h2wrap" style="display:flex; flex-direction:column; gap:18px; line-height:normal;">${fhH2hSkeleton()}</div>`;
   }
   const E = fhMeetings(m);
   if (!E.length){
@@ -14432,7 +14452,7 @@ function fhBuildH2H(m){
         <span style="${FH_MONO} font-size:30px; font-weight:800; line-height:1;${r.dash ? ' color:' + FH_DASH + ';' : ''}">${fhEsc(r.rec)}</span>
         <span style="${FH_MONO} font-size:11px; color:#5b6880;">${fhEsc(r.meta)}</span>
       </div>`).join('');
-    return `<div class="fh-h2wrap" style="display:flex; flex-direction:column; gap:18px;">
+    return `<div class="fh-h2wrap" style="display:flex; flex-direction:column; gap:18px; line-height:normal;">
       <div style="background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:16px; padding:22px 24px; display:flex; flex-direction:column; gap:16px;">
         <div style="display:flex; flex-direction:column; align-items:center; text-align:center; gap:5px;">
           <span style="font-size:17px; font-weight:800;">No previous meetings on record</span>
@@ -14457,7 +14477,7 @@ function fhBuildH2H(m){
       ${todaySurf ? fhH2hRecCard('On ' + todaySurf.toLowerCase(), E.filter(r => r.surface === todaySurf), "Today's surface", FH_SURF[todaySurf], null, A, B, aS, bS) : ''}
     </div>`;
   if (!F.length){
-    return `<div class="fh-h2wrap" style="display:flex; flex-direction:column; gap:18px;">${top}${cards}<div style="background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:14px; padding:28px; text-align:center; font-size:13px; color:#5b6880;">No meetings on ${SURF.toLowerCase()}.</div></div>`;
+    return `<div class="fh-h2wrap" style="display:flex; flex-direction:column; gap:18px; line-height:normal;">${top}${cards}<div style="background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:14px; padding:28px; text-align:center; font-size:13px; color:#5b6880;">No meetings on ${SURF.toLowerCase()}.</div></div>`;
   }
   // ---- stats row (Sets won / Tiebreaks / Deciding sets) + breakdown drawers ----
   const withGames = F.filter(r => r.sets), withTally = F.filter(r => r.pS != null);
@@ -14475,8 +14495,7 @@ function fhBuildH2H(m){
   const statsHtml = `<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:14px;">${stats.map(c => {
     const on = S.stat === c.key;
     return `<div class="seg" onclick="fhH2h({stat:${on ? 'null' : "'" + c.key + "'"}})" style="background:${on ? 'rgba(91,155,255,0.06)' : '#0a0d14'}; border:1px solid ${on ? 'rgba(91,155,255,0.5)' : 'rgba(255,255,255,0.09)'}; border-radius:14px; padding:14px 18px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:5px; cursor:pointer;">
-        <span style="display:flex; justify-content:flex-end; width:100%; margin-bottom:-14px; font-size:10.5px; font-weight:600; color:#5b9bff;">${on ? 'Hide breakdown ▴' : 'Breakdown ▾'}</span>
-        <span style="${FH_MONO} font-size:9.5px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:#5b6880;">${c.label}</span>
+        <span class="fh-tilehead" style="display:grid; grid-template-columns:1fr auto 1fr; align-items:baseline; align-content:end; width:100%; height:18px; overflow:visible;"><span></span><span style="${FH_MONO} font-size:9.5px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:#5b6880;">${c.label}</span><span style="justify-self:end; font-size:10.5px; font-weight:600; color:#5b9bff; white-space:nowrap;">${on ? 'Hide breakdown ▴' : 'Breakdown ▾'}</span></span>
         <span style="${FH_MONO} font-size:22px; font-weight:800; color:${c.val === FH_DASHC ? FH_DASH : '#e7e9ee'}; white-space:nowrap;">${c.val}</span>
         <span style="font-size:11px; color:#5b6880;">${fhEsc(c.sub)}</span>
       </div>`; }).join('')}</div>`;
@@ -14544,7 +14563,7 @@ function fhBuildH2H(m){
       const has = s.today != null;
       const p = has ? Math.max(0, Math.min(100, (s.today - s.loV) / ((s.hiV - s.loV) || 1) * 100)) : 0;
       inner += `<div style="position:relative; height:40px; margin:0 6px;">
-          <span style="position:absolute; top:0; left:${p.toFixed(1)}%; transform:${has ? tx(p) : 'translateX(-6px)'}; ${FH_MONO} font-size:10.5px; font-weight:700; color:#e7e9ee; white-space:nowrap;">${has ? `Today · ${FH_BOOK[today.book]} ${s.today.toFixed(2)}` : `Today <span style="color:${FH_DASH};">${FH_DASHC}</span>`}</span>
+          <span style="position:absolute; top:0; left:${p.toFixed(1)}%; transform:${has ? tx(p) : 'translateX(-6px)'}; ${FH_MONO} font-size:10.5px; font-weight:700; color:#e7e9ee; white-space:nowrap;">${has ? `Today ${s.today.toFixed(2)} <span style="font-weight:600; color:#8b96b5;">· ${FH_BOOK[today.book]}</span>` : `Today <span style="color:${FH_DASH};">${FH_DASHC}</span>`}</span>
           <span style="position:absolute; top:24px; left:0; right:0; height:6px; border-radius:3px; background:${s.rangeBg};"></span>
           ${has ? `<span style="position:absolute; top:21px; left:${p.toFixed(1)}%; width:12px; height:12px; margin-left:-6px; border-radius:50%; background:#e7e9ee; box-shadow:0 0 0 3px #06070a;"></span>` : ''}
         </div>`;
@@ -14563,7 +14582,7 @@ function fhBuildH2H(m){
   };
   const priceHtml = `<div style="background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:16px; padding:18px 20px; display:flex; flex-direction:column; gap:16px;">
       <div style="display:flex; align-items:center; justify-content:space-between; gap:10px 16px; flex-wrap:wrap;">
-        <div style="display:flex; align-items:baseline; gap:8px 10px; flex-wrap:wrap;"><span style="font-size:17px; font-weight:800;">Price range</span><span style="font-size:12px; color:#8b96b5;">· Closing odds${PR.length ? ' · ' + fhSourceNote(PR) : ''}</span></div>
+        <div style="display:flex; align-items:baseline; gap:8px 10px; flex-wrap:wrap;"><span style="font-size:17px; font-weight:800;">Price range</span><span style="font-size:12px; color:#8b96b5;">· Closing odds${PR.length ? ' · ' + fhPriceRangeSource(PR, today) : ''}</span></div>
         <span style="${FH_MONO} font-size:11px; color:#8b96b5; white-space:nowrap;">${nP} of ${F.length} meetings priced</span>
       </div>
       ${nP ? '' : `<span style="font-size:13px; color:#8b96b5; text-align:center; padding:4px 0 2px;">No closing odds on record for these meetings</span>`}
@@ -14575,7 +14594,7 @@ function fhBuildH2H(m){
   const withSets = F.filter(r => r.pS != null && !r.wo).length;
   const hotFew = F.length < FH_HOT_MIN_ELIGIBLE ? 'Not enough meetings to rank lines (n=' + F.length + ')'
     : (!sc.scored.length ? 'Not enough scored meetings to rank lines (n=' + withSets + ')' : '');
-  const table = hotOk ? fhHotLinesTable(F, sc, { colMin: '26px', colHead: 'year', color: FH_AC, showAll: !!S.allLines, shortPriced: null,
+  const table = hotOk ? fhHotLinesTable(F, sc, { colMin: '26px', colHead: 'year', fixedCols: 9, color: FH_AC, showAll: !!S.allLines, shortPriced: null,
     lineCls: k => `h2hl hl-${k}`,
     colTip: r => r.tourn + ' ' + String(r.date).slice(0, 4) + ' · ' + r.round,
     dotTip: r => r.tourn + ' ' + String(r.date).slice(0, 4) }) : null;
@@ -14596,7 +14615,7 @@ function fhBuildH2H(m){
     const surfLbl = r.surface ? (r.surface === 'Hard' && meta && meta.indoor ? 'Indoor hard' : r.surface) : '';
     const cls = 'h2m ' + (sc.covMap[r.mid] || []).map(k => 'cov-' + k).join(' ') + ' ' + (prMark[r.mid] || []).join(' ');
     return `<div class="${cls}">
-        <div style="display:flex; align-items:center; gap:9px; padding:14px 14px 6px; border-top:1px solid rgba(255,255,255,0.07);"><span style="${FH_MONO} font-size:10px; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; color:#e7e9ee; white-space:nowrap;">${fhEsc(r.tourn + ' ' + String(r.date).slice(0, 4))}</span><span style="font-size:11px; color:#8b96b5; white-space:nowrap;">${fhEsc(surfLbl)}</span></div>
+        <div style="display:flex; align-items:center; gap:9px; padding:14px 14px 6px; border-top:1px solid rgba(255,255,255,0.07);"><span style="${FH_MONO} font-size:10px; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; color:#e7e9ee; white-space:nowrap;">${fhEsc(r.tourn + ' ' + String(r.date).slice(0, 4))}</span><span style="font-size:11px; color:#8b96b5; white-space:nowrap;">${fhEsc(surfLbl)}${surfLbl ? ' · ' : ''}<span title="${r.level === 'ATP' ? 'ATP tour' : r.level === 'CH' ? 'Challenger' : 'ITF'}">${fhEsc(r.level)}</span></span></div>
         ${fhH2hRowHtml(r)}
       </div>`;
   }).join('');
@@ -14609,23 +14628,30 @@ function fhBuildH2H(m){
         ${fhStickyHeadHtml('22px 40px minmax(0,1fr) 40px 38px 42px 42px', ['Meeting', 'Round', 'Sets', 'Home', 'Away'], true)}
         ${entries}
       </div>
-      <span style="font-size:10.5px; color:#4b5672; margin-top:8px;">Home = ${fhEsc(aS)}'s closing price, Away = ${fhEsc(bS)}'s. Click a meeting for match stats.${fhEsc(fhH2hGapNote(m))}</span>
+      <span style="font-size:10.5px; color:#4b5672; margin-top:8px;">Home = ${fhEsc(aS)}'s closing price, Away = ${fhEsc(bS)}'s. Elo is ${fhEsc(bS)}'s at the time (weekly Tennis Abstract snapshot before the match). Click a meeting for match stats.${fhEsc(fhH2hGapNote(m))}</span>
     </div>`;
-  return `<div class="fh-h2wrap" style="display:flex; flex-direction:column; gap:18px;">${top}${cards}${statsHtml}${statPanel}${priceHtml}${hotHtml}${listHtml}</div>`;
+  return `<div class="fh-h2wrap" style="display:flex; flex-direction:column; gap:18px; line-height:normal;">${top}${cards}${statsHtml}${statPanel}${priceHtml}${hotHtml}${listHtml}</div>`;
 }
-// H2H Match Row LOCKED — "No number" variant (data check 4): the opponent-Elo
-// span is dropped, the rest is the locked row.
+// H2H Match Row LOCKED with the opponent Elo (ruling 2026-09-24: same basis as Form). The level tag
+// sits in the group header, the book marker in the Home cell.
+function fhH2hEloSpan(e){
+  const v = e && e.v != null ? e.v : null;
+  const tip = v != null ? 'Opponent Elo at the time of the match (Tennis Abstract weekly snapshot of ' + fhLongDate(e.asOf) + ')'
+    : 'No Elo at the time of the match: ' + ((e && e.why) || 'no snapshot on record');
+  return `<span class="fh-elo" title="${fhEsc(tip)}" style="${FH_MONO} font-size:10.5px; color:${v == null ? FH_DASH : '#5b6880'}; flex:none;">${v == null ? FH_DASHC : v}</span>`;
+}
+function fhFullName(name, key){ const p = key != null && typeof playerProfiles !== 'undefined' && playerProfiles && playerProfiles[String(key)]; return (p && p.name) || fhOppFmt(name); }
 function fhH2hRowHtml(r){
   return `<div class="seg" onclick="fhOpenSheet('${fhEsc(r.mid)}')" style="display:grid; grid-template-columns:22px 40px minmax(0,1fr) 40px 38px 42px 42px; gap:9px; align-items:center; padding:8px 14px; border-top:1px solid rgba(255,255,255,0.04); cursor:pointer;">
       ${fhWlChip(r.won)}
       <span style="${FH_MONO} font-size:11px; color:#8b96b5;">${fhDDMM(r.date)}</span>
       <span style="display:flex; flex-direction:column; gap:3px; min-width:0;">
-        <span style="display:flex; align-items:baseline; gap:7px; flex-wrap:wrap;"><span style="font-size:13px; font-weight:600; color:#e7e9ee;">${fhEsc(fhOppFmt(r.opp))}</span>${fhLevelTag(r)}${fhB365Tag(r)}</span>
-        <span style="${FH_MONO} font-size:11px; color:#8b96b5;">${fhEsc(fhScoreText(r, true))}</span>
+        <span style="display:flex; align-items:baseline; gap:7px; min-width:0;"><span title="${fhEsc(fhFullName(r.opp, r.oppKey))}" style="font-size:13px; font-weight:600; color:#e7e9ee; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${fhEsc(fhOppFmt(r.opp))}</span>${fhH2hEloSpan(r.oppElo)}</span>
+        <span title="${fhEsc(fhScoreText(r, true))}" style="${FH_MONO} font-size:11px; color:#8b96b5; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${fhEsc(fhScoreText(r, true))}</span>
       </span>
       <span style="${FH_MONO} font-size:10.5px; color:#5b6880; text-align:center;">${fhEsc(r.round)}</span>
       <span style="${FH_MONO} font-size:12.5px; font-weight:700; color:${r.pS == null ? FH_DASH : '#e7e9ee'}; text-align:center; white-space:nowrap;">${r.pS == null ? FH_DASHC : r.pS + ' - ' + r.oS}</span>
-      ${fhPriceCell(r.price, 'center', true, r)}
+      ${fhPriceCell(r.price, 'center', true, r, true)}
       ${fhPriceCell(r.oppPrice, 'center', false, r)}
     </div>`;
 }
@@ -25693,9 +25719,12 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
   const DNA_SCOPE = 'last52';                 // primary shape = trailing 52 weeks
 
   // Real data, filled by buildH2HData() the first time the page is opened.
-  let P = {};   // keyed by short name
-  let H2H = {}; // keyed by "A short|B short"
-  let ROSTER = []; // ordered short-name list for search
+  // TEN-263 (ruling 2026-09-24): keyed by PLAYER KEY, never short name — "Z. Zhang" is
+  // both Zhizhen (590) and Ze Zhang; a short-name roster kept one and hid the other.
+  let P = {};   // keyed by player key
+  let H2H = {}; // keyed by "A key|B key"
+  let ROSTER = []; // ordered player-key list for search
+  let NK_COUNT = {}; // surname|initial -> how many roster players share it (h2hFromHist fallback)
   let built = false;
 
   const state = {
@@ -25731,16 +25760,25 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
     setState({ loading: true });
     T = setTimeout(() => setState({ loading: false }), 750);
   }
-  function pick(side, name) {
-    enrich(name);
-    setState(side === 'a' ? { aSel: name, aOpen: false, aQuery: '' } : { bSel: name, bOpen: false, bQuery: '' });
+  function pick(side, key) {
+    enrich(key);
+    setState(side === 'a' ? { aSel: key, aOpen: false, aQuery: '' } : { bSel: key, bOpen: false, bQuery: '' });
     load();
   }
   function results(q, other) {
     const term = (q || '').trim().toLowerCase();
     return ROSTER.filter(k => k !== other)
-      .filter(k => !term || (P[k].full || '').toLowerCase().indexOf(term) >= 0 || k.toLowerCase().indexOf(term) >= 0)
+      .filter(k => !term || (P[k].full || '').toLowerCase().indexOf(term) >= 0 || (P[k].short || '').toLowerCase().indexOf(term) >= 0)
       .slice(0, 40);
+  }
+  // Search-list tag (country · rank). Two roster players who share a short name also show
+  // their age (profile field), else their player ID, so the list tells them apart.
+  function pickerTag(k) {
+    const e = P[k]; if (!e) return '—';
+    const base = (e.ctry || '—') + ' · ' + (e.rank != null ? '#' + e.rank : '—');
+    const twin = ROSTER.some(o => o !== k && P[o] && P[o].short === e.short);
+    if (!twin) return base;
+    return base + ' · ' + (e.age != null && e.age !== '' ? 'age ' + e.age : 'ID ' + e.key);
   }
 
   let _aN = 'A', _bN = 'B';
@@ -26026,6 +26064,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
   // store holds the meetings (e.g. Sinner–Shelton, 9 in tournamentHistory). Output
   // mirrors an H2H entry: { a, b, meetings:[[year,[[date,tour,surf,round,score,winner,eventKey,sets],...]],...] }.
   const H2H_ROUND = { R128: 'R128', R64: 'R64', R32: 'R32', R16: 'R16', QF: 'QF', SF: 'SF', F: 'F', RR: 'RR', BR: 'BR', Q1: 'Q1', Q2: 'Q2', Q3: 'Q3' };
+  function h2hNameKey(nm) { const t = String(nm || '').toLowerCase().replace(/['’.\-]/g, ' ').split(' ').filter(Boolean); return t.length >= 2 ? t[t.length - 1] + '|' + t[0][0] : null; }
   function h2hFromHist(a, b) {
     if (!a || !b || a.key == null || b.key == null) return null;
     const seen = {}, byYear = {};
@@ -26034,7 +26073,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
     // players' histories (deduped on year|tournament|round) because ~1% of pairs are
     // asymmetric — only one side records a given meeting — so reading a single side
     // would make the panel's result depend on selection order.
-    const nkOf = nm => { const t = String(nm || '').toLowerCase().replace(/['’.\-]/g, ' ').split(' ').filter(Boolean); return t.length >= 2 ? t[t.length - 1] + '|' + t[0][0] : null; };
+    const nkOf = h2hNameKey;
     // TEN-263 (ruling 2026-09-24): a match never counts in its own H2H. Career history
     // records today's finished board match too (no date or eventKey on the row), so a
     // finished board match between these two keys removes its year + tournament here.
@@ -26051,13 +26090,16 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
     });
     const collect = (owner, opp, ownerIsA) => {
       if (!Array.isArray(owner.tourHist)) return;
-      const oppKey = opp.key, oppNk = nkOf(opp.full);
+      // TEN-263: the name fallback runs only when the opponent's surname+initial is unique on
+      // the roster — two roster players sharing it ("Z. Zhang") would let it credit a namesake.
+      const nkN = (typeof NK_COUNT === 'object' && NK_COUNT) ? NK_COUNT : {};
+      const oppKey = opp.key, oppNk0 = nkOf(opp.full), oppNk = oppNk0 && (nkN[oppNk0] || 0) <= 1 ? oppNk0 : null;
       owner.tourHist.forEach(t => (t.editions || []).forEach(ed => (ed.matches || []).forEach(mt => {
         const mk = String(mt.oppKey || '');
         // Numeric key when present; else a surname+initial fallback on the recorded opponent
         // name. Pre-2021 editions are backfilled with an empty oppKey, so the numeric join
-        // silently drops them — the name match recovers them. Roster surname+initial keys are
-        // collision-free, so this can't invent a meeting against a namesake.
+        // silently drops them — the name match recovers them, and only for an opponent whose
+        // surname+initial no other roster player shares (see oppNk above).
         if (!(mk !== '' && mk === String(oppKey)) && !(mk === '' && oppNk && nkOf(mt.opp) === oppNk)) return;
         if (mt.res !== 'W' && mt.res !== 'L') return;
         const yr = String(ed.year || t.lastYear || '—');
@@ -26101,7 +26143,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
     const both = !!(a && b);
     const dash = { rankTxt: '—', eloTxt: '—', short: '—', full: '—', mono: '—', ctry: '—' };
     const mkList = (side, other) => results(side === 'a' ? S.aQuery : S.bQuery, other).map(k => ({
-      full: P[k].full, mono: P[k].mono, ctry: P[k].ctry, rankTxt: P[k].rank != null ? '#' + P[k].rank : '—',
+      full: P[k].full, mono: P[k].mono, ctry: P[k].ctry, rankTxt: P[k].rank != null ? '#' + P[k].rank : '—', tag: pickerTag(k),
       hid: bindH(() => pick(side, k)),
     }));
     const aResults = mkList('a', S.bSel), bResults = mkList('b', S.aSel);
@@ -26571,7 +26613,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
       ${list.map(r => `<div class="seg" data-hid="${r.hid}" style="display:flex; align-items:center; gap:11px; padding:9px 10px; border-radius:9px; cursor:pointer;">
         <span style="width:28px; height:28px; border-radius:50%; background:rgba(255,255,255,0.05); display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:10px; color:#8b96b5; flex:none;">${E(r.mono)}</span>
         <span style="flex:1; font-size:13.5px; font-weight:600;">${E(r.full)}</span>
-        <span style="font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:#5b6880;">${E(r.ctry)} · ${E(r.rankTxt)}</span>
+        <span style="font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:#5b6880;">${E(r.tag)}</span>
       </div>`).join('')}
       ${none ? `<div style="padding:14px 10px; font-size:12.5px; color:#4b5672;">No player matches that search.</div>` : ''}
     </div>`;
@@ -27307,8 +27349,8 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
   //  TEN-88 career-meeting shard for both the record and the list; see enrich() below.)
 
   // Enrich a light P entry with real metrics on first selection.
-  function enrich(shortKey) {
-    const e = P[shortKey]; if (!e || e.__rich) return;
+  function enrich(pkey) {
+    const e = P[pkey]; if (!e || e.__rich) return;
     const profiles = DV('playerProfiles') || {};
     const prof = e.key != null ? profiles[e.key] : null;
     // archetype + label
@@ -27401,14 +27443,14 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
   function buildH2HData() {
     const profiles = DV('playerProfiles') || {};
     const P2 = {}, ROSTER2 = [];
+    // TEN-263 (ruling 2026-09-24): one entry per PLAYER KEY — two players who share a short
+    // name ("Z. Zhang") are both on the roster; nothing is dropped on a collision.
     Object.keys(profiles).forEach(key => {
       const p = profiles[key]; if (!p || !p.name) return;
       const short = shortOf(p.name);
       const rank = (p.rank != null && p.rank !== '' && String(p.rank) !== '9999') ? parseInt(p.rank, 10) : null;
-      const existing = P2[short];
-      if (existing && existing.rank != null && (rank == null || existing.rank <= rank)) return; // keep better-ranked on collision
-      P2[short] = {
-        key: key, short: short, full: p.name, mono: monoOf(p.name), ctry: p.country || '—', rank: rank, elo: null,
+      P2[String(key)] = {
+        key: String(key), short: short, full: p.name, mono: monoOf(p.name), ctry: p.country || '—', rank: rank, age: p.age != null ? p.age : null, elo: null,
         arch: null, archDesc: null, thin: false, radar: null, ratingsBySurf: null,
         season: null, surf: null, serve: null, ret: null, press: null,
         market: null, model: null, tour: null, tourHist: null, styleMeetings: null, _styleMeetLoaded: false, _styleMeetKicked: false, news: [], __rich: false,
@@ -27417,9 +27459,11 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
     Object.keys(P2).forEach(k => ROSTER2.push(k));
     ROSTER2.sort((a, b) => {
       const ra = P2[a].rank, rb = P2[b].rank;
-      if (ra == null && rb == null) return P2[a].full.localeCompare(P2[b].full);
-      if (ra == null) return 1; if (rb == null) return -1; return ra - rb;
+      if (ra == null && rb == null) return P2[a].full.localeCompare(P2[b].full) || a.localeCompare(b);
+      if (ra == null) return 1; if (rb == null) return -1; return ra - rb || a.localeCompare(b);
     });
+    const NK2 = {};
+    ROSTER2.forEach(k => { const nk = h2hNameKey(P2[k].full); if (nk) NK2[nk] = (NK2[nk] || 0) + 1; });
 
     // H2H meetings from today's fixtures (only place client-side holds real meetings).
     const H2H2 = {};
@@ -27451,7 +27495,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
       H2H2[ka + '|' + kb] = { a: m.h2h.p1Wins != null ? m.h2h.p1Wins : 0, b: m.h2h.p2Wins != null ? m.h2h.p2Wins : 0, meetings: years };
     });
 
-    return { P: P2, H2H: H2H2, ROSTER: ROSTER2 };
+    return { P: P2, H2H: H2H2, ROSTER: ROSTER2, NK: NK2 };
   }
 
   // ============================ LIFECYCLE ============================
@@ -27464,7 +27508,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
     try {
       const d = buildH2HData();
       H2H = d.H2H;                    // today's meetings always refreshed
-      if (!built) { P = d.P; ROSTER = d.ROSTER; _ratings = null; built = true; }
+      if (!built) { P = d.P; ROSTER = d.ROSTER; NK_COUNT = d.NK || {}; _ratings = null; built = true; }
     } catch (e) { console.error('H2H buildH2HData failed', e); if (!built) { P = {}; H2H = {}; ROSTER = []; } }
   }
   function ensureInit() {
@@ -27482,7 +27526,11 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
   }
 
   window.H2HPage = { render, ensureInit, _debug: () => ({ P, H2H, ROSTER, state }),
-    _selftest: (an, bn) => { enrich(an); enrich(bn); setState({ aSel: an, bSel: bn, aOpen: false, bOpen: false, loading: false }); return { a: P[an], b: P[bn] }; } };
+    // Takes player KEYS (TEN-263); a short name is accepted only when exactly one roster player has it.
+    _selftest: (an, bn) => {
+      const kOf = x => { if (P[String(x)]) return String(x); const hit = ROSTER.filter(k => P[k].short === x); return hit.length === 1 ? hit[0] : null; };
+      const ka = kOf(an), kb = kOf(bn);
+      enrich(ka); enrich(kb); setState({ aSel: ka, bSel: kb, aOpen: false, bOpen: false, loading: false }); return { a: P[ka], b: P[kb] }; } };
 })();
 
 

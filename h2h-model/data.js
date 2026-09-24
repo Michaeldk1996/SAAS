@@ -103,6 +103,27 @@ function abbrFromFullName(fullName) {
   return `${initial}. ${rest}`;
 }
 
+// ---- Elo aliases (TEN-263 follow-up) ---------------------------------------
+// Players Tennis Abstract files under a name whose "last token | first initial" is
+// not ours: it writes some Chinese / Taiwanese names surname-first ("Bu Yunchaokete",
+// key yunchaokete|b) while api-tennis writes "Y. Bu" (bu|y), or the reverse ("Wu
+// Tung-Lin" in the feed, "Tung Lin Wu" = wu|t in the report). Each entry was checked
+// by hand against the report (tennisabstract.com player.cgi?p=BuYunchaokete,
+// TungLinWu). By api-tennis player key first, else by feed name
+// (normalised: lowercase, accents/periods/hyphens flattened). Extend by hand only.
+const ELO_ALIASES = {
+  byKey: { '796': 'yunchaokete|b', '1062': 'wu|t' },
+  byName: { 'y bu': 'yunchaokete|b', 'bu yunchaokete': 'yunchaokete|b', 'wu tung lin': 'wu|t' },
+};
+function aliasNorm(name) {
+  return stripAccents(String(name || '')).toLowerCase().replace(/['’]/g, '').replace(/[.\-]/g, ' ').replace(/\s+/g, ' ').trim();
+}
+function eloAliasFor(idStr, ...names) {
+  if (idStr && ELO_ALIASES.byKey[idStr]) return ELO_ALIASES.byKey[idStr];
+  for (const n of names) { const a = n && ELO_ALIASES.byName[aliasNorm(n)]; if (a) return a; }
+  return null;
+}
+
 // ---- normalised accessors for the "wrapped" files -------------------------
 function playersOf(fileObj) {
   if (Array.isArray(fileObj)) return fileObj;
@@ -128,10 +149,15 @@ function resolvePlayer(numericKey, abbrName) {
   const splits = (idStr && splitsAll[idStr]) || null;
   const profile = (idStr && profilesAll[idStr]) || null;
 
-  // best available full name (career-splits is cleanest, then profile)
-  const fullName = (splits && splits.fullName) || (profile && profile.name) || null;
+  // best available full name (career-splits is cleanest, then profile). TEN-263: a
+  // fixture with NO api-tennis key (seen on US Open cards: "Juncheng Shang") has
+  // neither, so it falls back to the feed name — the same name the card shows.
+  const fullName = (splits && splits.fullName) || (profile && profile.name) || (idStr == null && abbrName) || null;
 
-  const eloKey = eloKeyFromFullName(fullName);
+  // nameKey: the plain last|initial of our name (clutch / styles last-resort join).
+  // eloKey: the Tennis Abstract key (elo-ratings / style-radar), via the alias table.
+  const nameKey = eloKeyFromFullName(fullName);
+  const eloKey = eloAliasFor(idStr, fullName, abbrName) || nameKey;
   // Abbreviated "I. Lastname" key for the clutch / playing-styles join. The feed
   // does NOT always hand us an abbreviated name: hashed-id fixtures carry the FULL
   // name (e.g. "Daniel Merida Aguilar", not "D. Merida Aguilar"), and career-splits
@@ -161,14 +187,30 @@ function resolvePlayer(numericKey, abbrName) {
     // Agustin Tirante") that poisons abbrFromFullName. eloKey collapses all of
     // these to last|firstInitial. Only fires when EXACTLY ONE row carries this
     // eloKey, so an ambiguous last|initial (e.g. two A. Zverev) never mis-joins.
-    if (eloKey) {
-      const hits = arr.filter(x => x && eloKeyFromFullName(x.name) === eloKey);
+    if (nameKey) {
+      const hits = arr.filter(x => x && eloKeyFromFullName(x.name) === nameKey);
       if (hits.length === 1) return hits[0];
     }
     return null;
   };
 
-  const elo = (eloKey && eloAll[eloKey]) || null;
+  // Never the wrong player (TEN-263 review, 2026-09-24):
+  //  · a key two report players share (`ambiguous`) is nobody's, unless an alias pins it;
+  //  · a player with NO api-tennis key is joined by the feed name only when that name is a full
+  //    name whose given name matches the report's full name for the key ("Juncheng Shang" =
+  //    "Juncheng Shang"; "Ze Zhang" != "Zhizhen Zhang"; an initial-only "Z. Zhang" never). Until
+  //    the store carries `names`, a keyless player stays unpriced.
+  const eloStore = load('elo-ratings.json');
+  const aliased = !!eloAliasFor(idStr, fullName, abbrName);
+  const firstTok = s => aliasNorm(s).split(' ')[0] || '';
+  let eloOk = !!eloKey;
+  if (eloOk && !aliased && Array.isArray(eloStore.ambiguous) && eloStore.ambiguous.includes(eloKey)) eloOk = false;
+  if (eloOk && idStr == null && !aliased) {
+    const taName = eloStore.names && eloStore.names[eloKey];
+    const given = firstTok(abbrName);
+    eloOk = !!(taName && given.length > 1 && !/\.$/.test(String(abbrName || '').trim().split(/\s+/)[0] || '') && firstTok(taName) === given);
+  }
+  const elo = (eloOk && eloAll[eloKey]) || null;
 
   // Radar is only trustworthy when the source flags ok===true (enough charted
   // matches). style-radar rows for thinly-charted players carry ok:false and
@@ -347,6 +389,8 @@ module.exports = {
   load,
   resolvePlayer,
   eloKeyFromFullName,
+  eloAliasFor,
+  ELO_ALIASES,
   abbrFromFullName,
   eloSurfaceKey,
   surfaceCategory,

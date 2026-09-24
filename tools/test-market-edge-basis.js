@@ -166,5 +166,79 @@ const fired = controls();
 console.log(`  ${fired} control(s) fired`);
 if (fired < 8) fail(`only ${fired} of 8 controls fired`);
 
+// ── build stamp (TEN-263 follow-up, founder 2026-09-24) ─────────────────────
+// 1. The REAL builder, run in a temp root over the committed archive, writes builtAt
+//    (ISO, this run) and builtFromCommit (GITHUB_SHA) on the index and every shard.
+// 2. The REAL "Assert site completeness" market-edge block, cut out of pipeline.yml,
+//    passes a fresh index and fails the committed floor (older builtAt, or none).
+// 3. The modal's "rebuilt DD Mon HH:MMZ" text, sliced out of player-profile-v2.js.
+console.log('build stamp');
+{
+  const os = require('os');
+  const { execFileSync, spawnSync } = require('child_process');
+  const ROOT = path.join(__dirname, '..');
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'market-edge-stamp-'));
+  try {
+    for (const f of ['build-market-edge.js', 'build-odds-performance.js']) fs.copyFileSync(path.join(ROOT, f), path.join(tmp, f));
+    for (const f of ['odds-archive', 'court-speed-map.json', 'playing-styles.json']) if (fs.existsSync(path.join(ROOT, f))) fs.symlinkSync(path.join(ROOT, f), path.join(tmp, f));
+    fs.writeFileSync(path.join(tmp, 'player-profiles.json'), JSON.stringify({ players: { 47: { name: 'J. Sinner' } } }));
+    const t0 = Date.now();
+    execFileSync(process.execPath, [path.join(tmp, 'build-market-edge.js'), '--quiet'], { env: Object.assign({}, process.env, { GITHUB_SHA: 'abc123stamp' }), stdio: 'pipe' });
+    const built = JSON.parse(fs.readFileSync(path.join(tmp, 'market-edge-index.json'), 'utf8'));
+    const bt = Date.parse(built.builtAt);
+    if (typeof built.builtAt === 'string' && /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(built.builtAt) && bt >= t0 - 1000 && bt <= Date.now()) ok(`builder stamps the index builtAt ${built.builtAt}`);
+    else fail(`builder index builtAt ${JSON.stringify(built.builtAt)} is not this run`);
+    if (built.builtFromCommit === 'abc123stamp') ok('builder stamps builtFromCommit from GITHUB_SHA'); else fail(`builtFromCommit ${JSON.stringify(built.builtFromCommit)}`);
+    const shard = JSON.parse(fs.readFileSync(path.join(tmp, 'market-edge', '47.json'), 'utf8'));
+    if (shard.builtAt && shard.builtAt === built.builtAt) ok('each shard carries the same builtAt (the modal prints it)'); else fail(`shard builtAt ${JSON.stringify(shard.builtAt)}`);
+
+    // 2 · the workflow assert, executed.
+    const yml = fs.readFileSync(path.join(ROOT, '.github', 'workflows', 'pipeline.yml'), 'utf8');
+    const blk = [...yml.matchAll(/\n\s*node -e '\n([\s\S]*?)\n\s*'\n/g)].map((m) => m[1]).find((b) => b.includes('market-edge-index.json priceBasis'));
+    if (!blk) fail('market-edge assert block not found in pipeline.yml');
+    else {
+      const site = path.join(tmp, 'site'); fs.mkdirSync(path.join(site, '_site', 'market-edge'), { recursive: true });
+      for (let i = 0; i < 300; i++) fs.writeFileSync(path.join(site, '_site', 'market-edge', `${i}.json`), JSON.stringify({ priceBasis: BASIS, headline: { n: 5, units: 1, book: { bet365: 0 } } }));
+      const run = (builtAt, start) => {
+        const ix = { priceBasis: BASIS, tour: { all: { n: 1, yield: -4.3, book: { bet365: 0 } } } };
+        if (builtAt !== undefined) ix.builtAt = builtAt;
+        fs.writeFileSync(path.join(site, '_site', 'market-edge-index.json'), JSON.stringify(ix));
+        const env = Object.assign({}, process.env); delete env.MARKET_EDGE_BUILD_START;
+        if (start) env.MARKET_EDGE_BUILD_START = start;
+        const r = spawnSync(process.execPath, ['-e', blk], { cwd: site, env, encoding: 'utf8' });
+        // A stale index is a run WARNING (exit 0 + ::warning::), not a failure: the red gate is unruled.
+        return r.status !== 0 ? 'exit ' + r.status : /::warning::market-edge stale/.test(r.stdout) ? 'warn' : 'ok';
+      };
+      const start = '2026-09-24T14:05:00Z';
+      const cases = [
+        ['index built this run', run('2026-09-24T14:05:03.120Z', start), 'ok'],
+        ['index built in the same second the step started', run('2026-09-24T14:05:00.400Z', start), 'ok'],
+        ['committed floor shipped (older builtAt)', run('2026-09-23T09:00:00.000Z', start), 'warn'],
+        ['committed floor shipped (no builtAt: pre-stamp index)', run(undefined, start), 'warn'],
+        ['build step never ran (no start recorded)', run('2026-09-24T14:05:03.120Z', null), 'warn'],
+      ];
+      for (const [what, got, want] of cases) {
+        if (got === want) ok(`assert ${want}: ${what}`);
+        else fail(`assert ${got} (want ${want}) for: ${what}`);
+      }
+      if (/- name: Build market-edge shards \(best-effort\)\n\s+run: \|\n\s+echo "MARKET_EDGE_BUILD_START=\$\(date -u \+%Y-%m-%dT%H:%M:%SZ\)" >> "\$GITHUB_ENV"\n\s+node build-market-edge\.js --quiet \|\| true\n/.test(yml)) ok('the build step records its start before building');
+      else fail('the market-edge build step does not record MARKET_EDGE_BUILD_START before building');
+    }
+  } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
+
+  // 3 · the modal's stamp text.
+  const pp2 = fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8');
+  const st = pp2.indexOf('function marketBuiltText(');
+  if (st < 0) fail('marketBuiltText not found in player-profile-v2.js');
+  else {
+    let d = 0, i = pp2.indexOf('{', st); for (; i < pp2.length; i++) { if (pp2[i] === '{') d++; else if (pp2[i] === '}') { d--; if (!d) break; } }
+    const T = new Function(pp2.slice(st, i + 1) + '\nreturn marketBuiltText;')();
+    const a = T({ builtAt: '2026-09-24T14:05:09.000Z' }), b = T({}), c = T({ builtAt: 'nonsense' }), e = T({ builtAt: '2026-03-02T07:09:00Z' });
+    if (a === 'rebuilt 24 Sep 14:05Z' && e === 'rebuilt 2 Mar 07:09Z') ok(`modal stamp reads "${a}"`); else fail(`modal stamp reads ${JSON.stringify([a, e])}`);
+    if (b === '' && c === '') ok('no stamp, or an unparseable one, prints nothing'); else fail(`missing stamp printed ${JSON.stringify([b, c])}`);
+    if (/esc\(marketBuiltText\(mk\)\)/.test(pp2)) ok('renderMarketModal prints it'); else fail('renderMarketModal does not print marketBuiltText');
+  }
+}
+
 if (failures) { console.error(`\n${failures} check(s) FAILED`); process.exit(1); }
 console.log('\nR1 locked: Market edge is Pinnacle-closing only, and every assertion has a control that fails without it.');

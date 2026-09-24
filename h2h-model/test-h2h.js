@@ -301,5 +301,40 @@ ok('self-hide when player absent from event',
 ok('self-hide when splits missing all baselines',
    inTournamentReturnDelta(retCtx(allHot), rObj, {}, 'Clay','Best of 3')===null);
 
+console.log('=== resolvePlayer Elo join: aliases + no-key fallback (TEN-263 follow-up) ===');
+{
+  // Hermetic: the REAL data.js, copied into a temp root with synthetic stores.
+  const fs=require('fs'), os=require('os');
+  const root=fs.mkdtempSync(path.join(os.tmpdir(),'h2h-resolve-'));
+  fs.mkdirSync(path.join(root,'h2h-model'));
+  fs.copyFileSync(path.join(HM,'data.js'), path.join(root,'h2h-model','data.js'));
+  const rec=r=>({ all:{rating:r,rank:1}, hard:{rating:r,rank:1}, clay:{rating:r,rank:1}, grass:{rating:r,rank:1} });
+  const W=(f,o)=>fs.writeFileSync(path.join(root,f),JSON.stringify(o));
+  W('elo-ratings.json',{ elo:{ 'yunchaokete|b':rec(1700), 'wu|t':rec(1650), 'wu|y':rec(1680), 'shang|j':rec(1750), 'sinner|j':rec(2300), 'zhang|z':rec(1616), 'blanch|d':rec(1427) },
+    names:{ 'shang|j':'Juncheng Shang', 'zhang|z':'Zhizhen Zhang', 'blanch|d':'Darwin Blanch', 'yunchaokete|b':'Bu Yunchaokete' }, ambiguous:['blanch|d'] });
+  W('career-splits.json',{ players:{ '47':{ fullName:'Jannik Sinner' } } });
+  W('player-profiles.json',{ players:{ '796':{ name:'Y. Bu' }, '1062':{ name:'Wu Tung-Lin' } } });
+  W('clutch-rating.json',[]); W('style-radar.json',{players:{}}); W('playing-styles.json',[]);
+  const D=require(path.join(root,'h2h-model','data.js'));
+  const R=(k,n)=>D.resolvePlayer(k,n);
+  ok('alias by key: Y. Bu (796) -> yunchaokete|b', R('796','Y. Bu').elo && R('796','Y. Bu').elo.all.rating===1700, R('796','Y. Bu').eloKey);
+  ok('alias: Wu Tung-Lin (1062) -> wu|t', R('1062','Wu Tung-Lin').elo && R('1062','Wu Tung-Lin').elo.all.rating===1650, R('1062','Wu Tung-Lin').eloKey);
+  ok('control: an unlisted surname-first name (Wu Yibing) is NOT aliased (only the approved Bu / Wu Tung-Lin)', R(null,'Wu Yibing').eloKey!=='wu|y', R(null,'Wu Yibing').eloKey);
+  ok('no-key fallback: Juncheng Shang resolves by feed name', R(null,'Juncheng Shang').eloKey==='shang|j' && R(null,'Juncheng Shang').elo && R(null,'Juncheng Shang').fullName==='Juncheng Shang', R(null,'Juncheng Shang'));
+  ok('no-key fallback: surname-first Bu Yunchaokete lands on the same row', R(null,'Bu Yunchaokete').elo && R(null,'Bu Yunchaokete').elo.all.rating===1700, R(null,'Bu Yunchaokete').eloKey);
+  ok('no-key namesake: Ze Zhang never takes Zhizhen Zhang\'s Elo', R(null,'Ze Zhang').elo===null, R(null,'Ze Zhang').eloKey);
+  ok('no-key control: Zhizhen Zhang (given name matches the report) resolves', R(null,'Zhizhen Zhang').elo && R(null,'Zhizhen Zhang').elo.all.rating===1616);
+  ok('no-key, initial-only name ("Z. Zhang") is never guessed', R(null,'Z. Zhang').elo===null);
+  ok('a key two report players share (blanch|d) is nobody\'s', R(null,'Darwin Blanch').elo===null);
+  ok('control: a keyed player still resolves via career-splits', R('47','J. Sinner').elo.all.rating===2300 && R('47','J. Sinner').fullName==='Jannik Sinner');
+  ok('control: a KEYED player with no stored name does not borrow the feed name', R('999','Juncheng Shang').elo===null && R('999','Juncheng Shang').fullName===null);
+  ok('control: an unknown no-key player stays null (never fabricated)', R(null,'Nobody Known').elo===null);
+  W('elo-ratings.json',{ elo:{ 'shang|j':rec(1750) } });   // a store from before names were recorded
+  delete require.cache[require.resolve(path.join(root,'h2h-model','data.js'))];
+  const D2=require(path.join(root,'h2h-model','data.js'));
+  ok('no names in the store yet → a keyless player stays unpriced (safe default)', D2.resolvePlayer(null,'Juncheng Shang').elo===null);
+  fs.rmSync(root,{recursive:true,force:true});
+}
+
 console.log(`\nRESULT: ${pass} passed, ${fail} failed`);
 process.exit(fail?1:0);

@@ -245,6 +245,11 @@ function main() {
   const onlyIdx = args.indexOf('--only');
   const only = onlyIdx >= 0 ? args[onlyIdx + 1] : null;
   const log = (...a) => { if (!quiet) console.log(...a); };
+  // Build stamp (TEN-263 follow-up, founder 2026-09-24): when this run built the files, and
+  // from which commit. "Assert site completeness" WARNS (does not fail) when the shipped index was
+  // not built by this run (the committed floor carries an older stamp, or none), and the
+  // Market edge modal prints it as "rebuilt DD Mon HH:MMZ".
+  const stamp = { builtAt: new Date().toISOString(), builtFromCommit: process.env.GITHUB_SHA || null };
 
   const profiles = JSON.parse(fs.readFileSync(PROFILES_PATH, 'utf8')).players || {};
   // TEN-263 (ruling 2026-09-24): market-edge is a per-run pipeline output. The pipeline's
@@ -465,6 +470,8 @@ function main() {
       // must name the basis the numbers were actually struck on — not the join's
       // wider reach. `matches[]` still carries Bet365-archive rows, labelled.
       priceBasis: 'Pinnacle closing only',
+      builtAt: stamp.builtAt,
+      builtFromCommit: stamp.builtFromCommit,
       headline: summarise(all),
       // Median over the BASIS, not over every priced row: the headline names a
       // Pinnacle-only sample, so a median drawn from a wider set would describe a
@@ -521,6 +528,8 @@ function main() {
   fs.writeFileSync(INDEX_PATH, JSON.stringify({
     schemaVersion: SCHEMA_VERSION,
     priceBasis: 'Pinnacle closing only',
+    builtAt: stamp.builtAt,
+    builtFromCommit: stamp.builtFromCommit,
     tour: { all: tourSummary, level: tourByLevel },
     coverage: { pinnacleEndByLevel: pinnacleEnd, bet365ArchiveEndByLevel: bet365End },
     players: index,

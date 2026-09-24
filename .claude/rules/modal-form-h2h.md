@@ -51,6 +51,31 @@ Applies to the TEN-263 block in `bsp-consult-dashboard.html` (`fh*` functions), 
   `elo.yml` job; an unchanged report adds nothing (its `asOf` stays the date the numbers were first
   published). H2H meeting rows keep the "No number" variant (not ruled).
 
+## H2H tab: Elo and labels (rulings 2026-09-24, H2H pixel pass)
+- **H2H meeting rows carry the opponent's Elo** on the Form basis above (overall, strictly before the
+  match day, at most 7 days old; `ELO —` otherwise), as a plain grey number after the name. The level
+  tag (ATP / CH / ITF) sits in every group header next to the surface, never after the name. A Bet365
+  row carries the "B" marker in the Home cell. **Test:** no level badge after the name; every group
+  header ends with its level.
+- **Price range header:** any Bet365 figure in the section, today's price included, reads "Pinnacle,
+  Bet365 where missing (…)". **Never a single book name over mixed data.** **Test:** Pinnacle meetings
+  + a Bet365 today price → the mixed wording.
+- **Hot-line dots on H2H use fixed columns** (1/max(n, 9) of the grid, right-aligned), so 4 meetings sit
+  where 9 would. Form keeps stretched columns.
+- **Long names:** ellipsis, full name on hover (Form and H2H rows).
+
+## Player identity by key (rulings 2026-09-24)
+- The H2H compare page's roster, selections and meeting store are keyed by **player key**; two players
+  with the same short name ("Z. Zhang") are both listed and selectable. **Test:** both same-name
+  players selectable, each with only his own meetings.
+- Odds-feed match cards orient p1 by given name when the surnames tie; if still undecidable the card
+  gets **no player keys** (dashes), never a guess.
+- The model's Elo join: aliases for Y. Bu (`yunchaokete|b`) and Wu Tung-Lin (`wu|t`) only; a player
+  with no key falls back to the feed name; `fetch-elo.js` parses rows with a blank Age cell.
+- `market-edge-index.json` carries `builtAt` / `builtFromCommit`; the Market edge panel shows
+  "rebuilt …"; a stale index (builder crashed, committed floor shipped) is a run **warning**. Making it
+  red is not ruled.
+
 ## H2H covers all of men's singles (ruling 2026-09-24)
 - The pipeline keeps **ATP, Challenger and ITF singles** (`H2H_EVENT_TYPES`). Exhibitions,
   doubles, juniors, UTR and women's events stay out. **Test:** the set holds exactly these three

@@ -69,7 +69,7 @@ function sandbox() {
       fhFormLineDefs, fhH2hLineDefs, fhPriceAvg, fhTodayPair, fhFormRowHtml, fhH2hRowHtml, fhBuildForm,
       fhBuildH2H, fhSetsFrom, fhRoundCode, fhStateFor, fhNameKey, fhOdd, fhH2hRecCard, fhPickBook,
       fhSrcTitle, fhAllMeetingRows, fhLevelOf, fhH2hScopeNote, fhH2hGapNote, fhEligible, fhFormDataRows,
-      fhEloAt, fhEloKey, fhEloKeyOwners, fhEloBadge,
+      fhEloAt, fhEloKey, fhEloKeyOwners, fhEloBadge, fhPriceRangeSource, fhRecLevelMix, fhH2hEloSpan,
       consts: { FH_HOT_MIN_ELIGIBLE, FH_PRICE_AVG_MARGIN_REMOVED, FH_H2H_SET1_MIRROR, FH_H2H_RET_COUNTS,
         FH_ELO_AT_TIME, FH_BOOK_ORDER, FH_SURF, FH_H2H_LEVELS } };
   `)();
@@ -312,7 +312,9 @@ test('H2H meetings: every level, de-duplicated by eventKey, never the fixture, e
   const ms = S.fhMeetings(m);
   assert.deepEqual(ms.map(r => [String(r.ek), r.level, r.round]), [['30', 'ITF', 'R16'], ['10', 'ATP', 'F'], ['20', 'CH', 'Q']]);
   const h = S.fhBuildH2H(m);
-  assert.ok(h.includes('>CH<') && h.includes('>ITF<') && h.includes('>ATP<'), 'level tags on the rows');
+  // H2H pixel pass (2026-09-24): the level sits in every group header next to the surface, never on the row.
+  assert.ok(/ · <span title="Challenger">CH<\/span><\/span><\/div>/.test(h) && /<span title="ITF">ITF<\/span><\/span><\/div>/.test(h) && /<span title="ATP tour">ATP<\/span><\/span><\/div>/.test(h), 'level in every group header, with its hover text');
+  assert.ok(!/>(CH|ITF|ATP)<\/span><span class="fh-elo"/.test(h), 'no level badge after the opponent name');
   assert.ok(h.includes('0 of 3 meetings priced'));
 });
 test('a shared eventKey counts only when both rows are one match: same day, opposite results', () => {
@@ -587,14 +589,33 @@ test('B365 tag, and every price names its book and source', () => {
   r.price = 2.1; r.oppPrice = 1.75; r.book = 'B'; r.src = 'td';
   // Pixel pass (2026-09-24): the Form row's name slot carries no bookmaker badge; the book shows as a
   // small marker in the H price cell + the tooltip. The H2H row keeps its B365 tag.
-  assert.ok(!S.fhFormRowHtml(r).includes('>B365<') && S.fhH2hRowHtml(r).includes('>B365<'));
+  assert.ok(!S.fhFormRowHtml(r).includes('>B365<') && !S.fhH2hRowHtml(r).includes('>B365<'), 'no book badge after the name on either tab');
   assert.equal((S.fhFormRowHtml(r).match(/class="fh-bmark"[^>]*>B</g) || []).length, 1, 'one B marker, in the H cell');
+  assert.equal((S.fhH2hRowHtml(r).match(/class="fh-bmark"[^>]*>B</g) || []).length, 1, 'one B marker, in the Home cell');
   assert.ok(S.fhFormRowHtml(r).includes('title="Bet365 close · Tennis-Data"'));
   r.book = 'P'; r.src = 'cap';
   assert.ok(!S.fhFormRowHtml(r).includes('fh-bmark') && !S.fhH2hRowHtml(r).includes('B365'), 'Pinnacle rows carry no marker or tag');
   assert.ok(S.fhFormRowHtml(r).includes('title="Pinnacle close · captured"') && S.fhH2hRowHtml(r).includes('title="Pinnacle close · captured"'));
   assert.equal(S.fhSrcTitle({ book: 'P', src: 'td' }), 'Pinnacle close · Tennis-Data');
   assert.equal(S.fhSrcTitle(null), 'No Pinnacle or Bet365 close on record');
+});
+test('H2H pixel pass: header counts today\'s book, lead line carries the level mix, fixed dot columns, row Elo, design line-height', () => {
+  // Price header: today's Bet365 price makes the section mixed even when every meeting is Pinnacle.
+  assert.equal(S.fhPriceRangeSource([{ book: 'P' }], { book: 'B' }), 'Pinnacle, Bet365 where missing (today)');
+  assert.equal(S.fhPriceRangeSource([{ book: 'P' }, { book: 'B' }], { book: 'B' }), 'Pinnacle, Bet365 where missing (1 meeting + today)');
+  assert.equal(S.fhPriceRangeSource([{ book: 'P' }], { book: 'P' }), 'Pinnacle', 'control: all Pinnacle');
+  // Lead line: one line, the level mix appended when present.
+  const lvl = S.fhRecLevelMix([{ level: 'ATP' }, { level: 'CH' }]);
+  assert.equal(lvl, ' · incl. 1 CH'); assert.equal(S.fhRecLevelMix([{ level: 'ATP' }]), '', 'control: ATP-only adds nothing');
+  const card = S.fhH2hRecCard('Overall', [{ won: false, level: 'CH' }, { won: false, level: 'ATP' }], '', null, null, 'A. One', 'B. Two', 'One', 'Two');
+  assert.match(card, /Two leads<\/span><span[^>]*>·<\/span><span[^>]*>2 meetings · incl\. 1 CH<\/span>/);
+  // Row Elo: a plain grey number after the name; a dash with its reason when there is none.
+  assert.match(S.fhH2hEloSpan({ v: 2205, asOf: '2026-07-20' }), /class="fh-elo"[^>]*>2205<\/span>/);
+  assert.match(S.fhH2hEloSpan({ v: null, why: 'before the first Elo snapshot (2026-07-18)' }), /title="No Elo at the time of the match: before the first Elo snapshot[^"]*"[^>]*>—<\/span>/);
+  // Fixed dot columns: 4 meetings sit in 9-meeting columns, right-aligned; Form keeps stretched columns.
+  assert.match(html, /const cols = opts\.fixedCols \? `repeat\(\$\{Math\.max\(1, rows\.length\)\},calc\(100% \/ \$\{Math\.max\(rows\.length, opts\.fixedCols\)\}\)\)`/);
+  assert.match(html, /colHead: 'year', fixedCols: 9,/);
+  assert.equal((html.match(/<div class="fh-h2wrap" style="display:flex; flex-direction:column; gap:18px; line-height:normal;">/g) || []).length, 4, 'design line-height on every H2H state');
 });
 test('H2H price header names the Bet365 fallback count; 0 priced reads the empty copy', () => {
   const mm = (date, p1Won, ek) => ({ date, tournament: 'Umag', round: 'ATP Umag - Final', surface: 'clay', p1Won, result: p1Won ? '2 - 0' : '0 - 2', qualifying: false, eventKey: ek });
@@ -606,7 +627,7 @@ test('H2H price header names the Bet365 fallback count; 0 priced reads the empty
     { date: '2023-07-30', opp: 'Alcaraz C.', won: false, P: [2.3, 1.62], B: null, oppKey: '2' }];
   const h = S.fhBuildH2H(Object.assign({}, base, { _fhCloses: [shard(rows), null] }));
   assert.ok(h.includes('3 of 4 meetings priced'), 'N of M = either book');
-  assert.ok(h.includes('Closing odds · Pinnacle, Bet365 where missing (1)'));
+  assert.ok(h.includes('Closing odds · Pinnacle, Bet365 where missing (1 meeting)'));
   assert.ok(h.includes('>B365<'));
   const pinOnly = S.fhBuildH2H(Object.assign({}, base, { _fhCloses: [shard(rows.slice(1)), null] }));
   assert.ok(pinOnly.includes('Closing odds · Pinnacle<'), 'all-Pinnacle header');
@@ -669,6 +690,44 @@ test('pipeline H2H: two same-surname players (Zhizhen Zhang 590, Ze Zhang 36963)
   assert.equal(P.summarizeH2H([{ first_player_key: 1, second_player_key: 2, event_winner: 'First Player' }], 3).record, '0-0', '… and not counted');
   for (const name of ['summarizeH2H', 'buildH2HMatchList']) assert.doesNotMatch(slicePipe(name), /lastName\(/, name + ' must not orient by surname');
 });
+// Fix 2 (TEN-263 follow-up): the odds-feed card decides p1 by more than surname. The Odds
+// API event has names only (no participant ids), so two same-surname players are told
+// apart by given name, and an undecidable pair gets no keys at all (dashes, never a guess).
+const ORIENT = () => new Function(`const NAME_SUFFIXES = new Set(['jr', 'sr', 'ii', 'iii', 'iv', 'v']);
+  ${slicePipe('normSurname')}\n${slicePipe('givenNameOf')}\n${slicePipe('fixtureFirstIsHome')}\nreturn fixtureFirstIsHome;`)();
+test('odds-feed card: p1 is chosen by given name when both players share a surname (Zhizhen v Ze Zhang)', () => {
+  const O = ORIENT();
+  const ev = { home_team: 'Zhizhen Zhang', away_team: 'Ze Zhang' };
+  const fx = (a, b) => ({ event_first_player: a, event_second_player: b });
+  const oldRule = f => ((n) => { const t = (n || '').toLowerCase().replace(/[.\-]/g, ' ').trim().split(/\s+/); return t[t.length - 1]; })(f.event_first_player) === 'zhang';
+  // api-tennis lists Ze first: home (Zhizhen) is the fixture's SECOND player.
+  assert.equal(oldRule(fx('Ze Zhang', 'Zhizhen Zhang')), true, 'control: the surname rule calls the fixture\'s first player p1');
+  assert.equal(O(fx('Ze Zhang', 'Zhizhen Zhang'), ev), false, 'given names: Zhizhen is the second player');
+  assert.equal(O(fx('Zh. Zhang', 'Ze Zhang'), ev), true, 'an abbreviated given name that fits one side only decides');
+  assert.equal(O(fx('Z. Zhang', 'Z. Zhang'), ev), null, 'two bare initials: undecidable');
+  assert.equal(O(fx('Z. Zhang', 'Z. Zhang'), { home_team: 'Zhang', away_team: 'Zhang' }), null, 'no given names: undecidable');
+  // Different surnames: unchanged behaviour.
+  assert.equal(O(fx('C. Alcaraz', 'J. Sinner'), { home_team: 'Carlos Alcaraz', away_team: 'Jannik Sinner' }), true);
+  assert.equal(O(fx('J. Sinner', 'C. Alcaraz'), { home_team: 'Carlos Alcaraz', away_team: 'Jannik Sinner' }), false);
+});
+test('odds-feed card: an undecidable same-surname pair is built WITHOUT player keys (executed buildMatchObject)', async () => {
+  const B = new Function(`const NAME_SUFFIXES = new Set(['jr', 'sr', 'ii', 'iii', 'iv', 'v']);
+    const TOURNAMENT_VENUE_HINTS = {}, COURT_CONDITIONS = {};
+    const surfaceFromEvent = () => 'hard', pinnacleOrFirst = () => null, normalizeName = x => x, computeModelProbability = () => null;
+    const bestOdds = () => ({ bestP1: null, bestP2: null }), computeDay = () => 'today', fetchMatchWeather = async () => null;
+    let fetched = 0; const fetchH2H = async () => { fetched++; return null; };
+    ${slicePipe('normSurname')}\n${slicePipe('givenNameOf')}\n${slicePipe('fixtureFirstIsHome')}\n${slicePipe('findApiTennisFixture')}\nasync ${slicePipe('buildMatchObject')}
+    return { buildMatchObject, fetched: () => fetched };`)();
+  const ev = { id: 'e1', sport_key: 'tennis_atp_x', sport_title: 'ATP X', commence_time: '2026-09-25T10:00:00Z', home_team: 'Zhizhen Zhang', away_team: 'Ze Zhang' };
+  const fixture = { event_key: 9, tournament_round: 'ATP X - 1/16-finals', event_first_player: 'Z. Zhang', event_second_player: 'Z. Zhang', first_player_key: 36963, second_player_key: 590 };
+  const warn = console.warn; console.warn = () => {};
+  try {
+    const m = await B.buildMatchObject(ev, [fixture], {}, {});
+    assert.equal(m.p1Key, null); assert.equal(m.p2Key, null);
+    assert.equal(m.p1PhotoUrl, null); assert.equal(m.tournamentRound, 'ATP X - 1/16-finals', 'the fixture still names the round');
+    assert.equal(B.fetched(), 0, 'no H2H fetched for a pair we could not orient');
+  } finally { console.warn = warn; }
+});
 // 3 · a match never counts in its own H2H (cards, model, H2H page all read m.h2h).
 test('pipeline H2H: a finished board match never appears in its own H2H record', () => {
   const X = new Function(`${slicePipe('eventKeyOf')}\n${slicePipe('h2hExcludeOwn')}\n${slicePipe('stripOwnFixtureFromH2H')}\nreturn { h2hExcludeOwn, stripOwnFixtureFromH2H };`)();
@@ -704,8 +763,58 @@ test('H2H page: meetings are keyed and won by player key, never short name (ruli
   assert.match(html, /if \(r\[5\] === aK\) aw\+\+; else if \(r\[5\] === bK\) bw\+\+;/, 'record counted by key');
   assert.doesNotMatch(html, /r\[5\] === a\.short|m\[5\] === a\.short|H2H2\[sa \+/, 'control: no short-name winner or key remains');
 });
+// Fix 1 (TEN-263 follow-up): the H2H page roster is keyed by PLAYER KEY. Two profiles
+// sharing a short name ("Z. Zhang" = Zhizhen 590 and Ze Zhang) are both listed, both
+// selectable, told apart in the list, and each shows only its own meetings. Executed.
+function h2hPageModule(profiles, board) {
+  return new Function('profiles', 'board', `
+    let P = {}, ROSTER = [], NK_COUNT = {};
+    const DV = n => n === 'playerProfiles' ? profiles : n === 'matches' ? board : null;
+    const fn = () => null; const H2H_ROUND = {};
+    ${['shortOf', 'monoOf', 'h2hNameKey', 'buildH2HData', 'results', 'pickerTag', 'h2hFromHist'].map(slice).join('\n')}
+    const d = buildH2HData(); P = d.P; ROSTER = d.ROSTER; NK_COUNT = d.NK || {};
+    return { P, ROSTER, H2H: d.H2H, results, pickerTag, h2hFromHist };
+  `)(profiles, board);
+}
+test('H2H page: two players with the same short name are both on the roster, selectable, distinct, each with his own meetings', () => {
+  const profiles = {
+    590: { name: 'Z. Zhang', country: 'China', rank: 239, age: 29 },
+    36963: { name: 'Z. Zhang', country: 'China', rank: 612, age: 22 },
+    7: { name: 'C. Alcaraz', country: 'Spain', rank: 2, age: 23 },
+  };
+  const meet = (ek, p1Won) => ({ date: '2025-05-01', tournament: 'X', surface: 'Hard', round: 'R32', result: '2 - 0', p1Won, eventKey: ek, level: 'ATP' });
+  const board = [
+    { p1: 'C. Alcaraz', p2: 'Z. Zhang', p1Key: 7, p2Key: 590, h2h: { p1Wins: 1, p2Wins: 0, matches: [meet(111, true)] } },
+    { p1: 'Z. Zhang', p2: 'C. Alcaraz', p1Key: 36963, p2Key: 7, h2h: { p1Wins: 1, p2Wins: 1, matches: [meet(222, true), meet(333, false)] } },
+  ];
+  const M = h2hPageModule(profiles, board);
+  assert.ok(M.P['590'] && M.P['36963'], 'both Zhangs are on the roster (a short-name roster keeps one)');
+  assert.equal(M.P['590'].short, 'Z. Zhang'); assert.equal(M.P['36963'].short, 'Z. Zhang');
+  const hits = M.results('zhang', null);
+  assert.deepEqual(hits.slice().sort(), ['36963', '590'], 'the search lists both');
+  assert.deepEqual(M.results('Z. Zhang', '590'), ['36963'], 'the other side can pick the second Zhang');
+  const tags = hits.map(M.pickerTag);
+  assert.notEqual(tags[0], tags[1], 'the two list rows are told apart');
+  assert.match(M.pickerTag('590'), /age 29/); assert.equal(M.pickerTag('7'), 'Spain · #2', 'control: a unique name adds nothing');
+  // each Zhang's own meetings with Alcaraz, by key pair (renderVals looks up key|key both ways)
+  const own = (a, b) => (M.H2H[a + '|' + b] || M.H2H[b + '|' + a] || { meetings: [] }).meetings.flatMap(y => y[1]).map(r => r[6]).sort();
+  assert.deepEqual(own('590', '7'), [111]);
+  assert.deepEqual(own('36963', '7'), [222, 333]);
+  // winners stored as keys
+  assert.deepEqual(M.H2H['36963|7'].meetings.flatMap(y => y[1]).map(r => r[5]), ['36963', '7']);
+});
+test('H2H page: the pre-2021 surname+initial fallback never credits a meeting when two roster players share the name', () => {
+  const hist = [{ name: 'Old Open', editions: [{ year: 2019, matches: [{ oppKey: '', opp: 'Zhizhen Zhang', res: 'W', round: 'R32', score: '2 - 0' }] }] }];
+  const two = h2hPageModule({ 590: { name: 'Z. Zhang' }, 36963: { name: 'Z. Zhang' }, 7: { name: 'C. Alcaraz' } }, []);
+  const a = Object.assign({}, two.P['7'], { tourHist: hist });
+  assert.equal(two.h2hFromHist(a, Object.assign({}, two.P['36963'], { tourHist: [] })), null, 'ambiguous name: no meeting credited to Ze Zhang');
+  assert.equal(two.h2hFromHist(a, Object.assign({}, two.P['590'], { tourHist: [] })), null, '… nor to Zhizhen');
+  const one = h2hPageModule({ 590: { name: 'Z. Zhang' }, 7: { name: 'C. Alcaraz' } }, []);
+  const r = one.h2hFromHist(Object.assign({}, one.P['7'], { tourHist: hist }), Object.assign({}, one.P['590'], { tourHist: [] }));
+  assert.equal(r && r.a, 1, 'control: a unique name still recovers the pre-2021 meeting');
+});
 test('H2H page: the career-history blend drops a finished board match between the pair (never in its own H2H), executed', () => {
-  const src = slice('h2hFromHist');
+  const src = slice('h2hNameKey') + '\n' + slice('h2hFromHist');
   const run = (board, histA) => new Function('DV', 'H2H_ROUND', src + '\nreturn h2hFromHist;')(k => (k === 'matches' ? board : null), {})(
     { key: '1', short: 'A. One', full: 'Al One', tourHist: histA }, { key: '2', short: 'B. Two', full: 'Bo Two', tourHist: [] });
   const ed = (name, year, round, res) => ({ name, editions: [{ year, matches: [{ oppKey: '2', opp: 'B. Two', res, round, score: '2 - 0' }] }] });
@@ -798,6 +907,23 @@ test('market-edge per run: a player already published but off the board roster i
 });
 
 // ── Ruling D-12: the dated Elo store is append-only and never invents a snapshot ──
+// Fix 3c (TEN-263 follow-up): fetch-elo.js must parse a row whose Age cell is blank. Two
+// real rows copied verbatim from the Tennis Abstract report (2026-09-24): Sinner (age 24.8)
+// and Jack Kennedy (Age blank). The REAL regex is sliced out of fetch-elo.js and run.
+test('fetch-elo.js: a report row with a blank Age cell is parsed (Jack Kennedy), not dropped', () => {
+  const src = readFileSync(join(HERE, 'fetch-elo.js'), 'utf8');
+  const lit = /const re = (\/player\\\.cgi.*\/g);/.exec(src);
+  assert.ok(lit, 'row regex not found in fetch-elo.js');
+  const re = new Function('return ' + lit[1])();
+  const fixture = '<table>' +
+    '<tr><td align="right">1</td><td><a href="https://www.tennisabstract.com/cgi-bin/player.cgi?p=JannikSinner">Jannik&nbsp;Sinner</a></td><td align="right">24.8</td><td align="right">2296.9</td><td></td><td align="right">1</td><td align="right">2234.3</td><td align="right">1</td><td align="right">2186.8</td><td align="right">1</td><td align="right">2100.5</td><td></td><td align="right">2339.8</td><td align="right">2026-05</td><td></td><td align="right">1</td><td align="right">0</td></tr>' +
+    '<tr><td align="right">263</td><td><a href="https://www.tennisabstract.com/cgi-bin/player.cgi?p=JackKennedy">Jack&nbsp;Kennedy</a></td><td align="right"></td><td align="right">1508.9</td><td></td><td align="right">337</td><td align="right">1395.9</td><td align="right">203</td><td align="right">1519.8</td><td align="right">258</td><td align="right">1454.4</td><td></td><td align="right">1633.6</td><td align="right">2026-06</td><td></td><td align="right">388</td><td align="right">-0.39</td></tr>' +
+    '</table>';
+  const rows = [...fixture.matchAll(re)].map(m => ({ name: m[2].replace(/&nbsp;/g, ' '), age: m[3], elo: m[4], hard: m[6], peak: m[11], month: m[12] }));
+  assert.deepEqual(rows.map(r => r.name), ['Jannik Sinner', 'Jack Kennedy'], 'both rows parse');
+  assert.deepEqual([rows[0].age, rows[0].elo, rows[0].hard, rows[0].peak, rows[0].month], ['24.8', '2296.9', '2234.3', '2339.8', '2026-05'], 'control: a row with an age parses as before');
+  assert.deepEqual([rows[1].age, rows[1].elo, rows[1].hard, rows[1].peak], ['', '1508.9', '1395.9', '1633.6'], 'blank age: every other column still lands in its group');
+});
 test('elo-history: an unchanged weekly report adds nothing; a new one appends; history never rewinds', async () => {
   const { appendSnapshot } = await import('./tools/build-elo-history.mjs');
   const h = { snapshots: [] };
