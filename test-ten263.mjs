@@ -68,7 +68,7 @@ function sandbox() {
     return { fhCloseFor, fhFinishRow, fhRowFromForm, fhBestOf, fhMeetingList, fhMeetings, fhScoreLines,
       fhFormLineDefs, fhH2hLineDefs, fhPriceAvg, fhTodayPair, fhFormRowHtml, fhH2hRowHtml, fhBuildForm,
       fhBuildH2H, fhSetsFrom, fhRoundCode, fhStateFor, fhNameKey, fhOdd, fhH2hRecCard, fhPickBook,
-      fhSrcTitle, fhAllMeetingRows, fhLevelOf, fhH2hScopeNote, fhH2hGapNote, fhEligible,
+      fhSrcTitle, fhAllMeetingRows, fhLevelOf, fhH2hScopeNote, fhH2hGapNote, fhEligible, fhFormDataRows,
       consts: { FH_HOT_MIN_ELIGIBLE, FH_PRICE_AVG_MARGIN_REMOVED, FH_H2H_SET1_MIRROR, FH_H2H_RET_COUNTS,
         FH_ELO_AT_TIME, FH_BOOK_ORDER, FH_SURF, FH_H2H_LEVELS } };
   `)();
@@ -167,9 +167,55 @@ test('Form: partial pricing shows "N of M priced"; thin window shows no ratios',
   const m = { id: 'upcoming-1', p1: 'J. Sinner', p2: 'C. Alcaraz', p1Key: 1, p2Key: 2, surface: 'hard', date: '2026-09-01',
     p1RecentFormMatches: rows, p2RecentFormMatches: rows.slice(0, 4), _fhFormData: true, _fhCloses: [closes, null] };
   const h = S.fhBuildForm(m);
-  assert.ok(h.includes('7 of 10 priced · Pinnacle, Bet365 where missing (2)'), 'priced count + Bet365 note next to the market figures');
+  // Pixel pass (2026-09-24): the meta line is ONE line — "market expected X wins in N · 7 of 10 priced";
+  // the book note is one shared line under both columns.
+  const meta = /<span class="fh-meta"[^>]*>(.*?)<\/span>\n/.exec(h);
+  assert.ok(meta && /white-space:nowrap/.test(meta[0]) && meta[1].includes('7 of 10 priced'), 'priced count on the one-line meta line');
+  assert.ok(!meta[1].includes('Bet365'), 'the book note is not on the meta line');
+  assert.ok(h.includes('class="fh-srcline"') && h.includes('Closing odds · Pinnacle, Bet365 where missing (Sinner 2)'), 'shared book-source line names the player and count');
   assert.ok(h.includes('4 matches with these filters'), 'thin note missing for the 4-match player');
+  assert.equal((h.match(/visibility:hidden;">—<\/span>/g) || []).length, 1, 'the other column reserves the thin slot, so both form bars share a baseline');
   assert.ok(!h.includes('ELO'));
+  // Form data open: the priced count is a sub-caption, never after the value; mirrored on both sides.
+  S.fhStateFor(m).form.card = true;
+  const d = S.fhBuildForm(m);
+  assert.ok(d.includes('fh-dcell') && !/· \d+ of \d+ priced/.test(d.slice(d.indexOf('fh-dcell'))), 'no priced suffix after a data value');
+  assert.ok(/class="fh-dsub"[^>]*>7 of 10 priced</.test(d), 'priced count in the sub-caption slot');
+  assert.ok(/class="fh-dsub"[^>]*>4 matches</.test(d), 'thin count in the sub-caption slot');
+});
+test('Form pixel pass: mirrored priced count, pill tooltip only with a figure, one-line score, design line-height, Days-mode baseline', () => {
+  const rows = Array.from({ length: 10 }, (_, i) => formRow(i, i % 2 === 0, 'hard', `2026-08-${String(20 - i).padStart(2, '0')}`));
+  const cl = n => shard(rows.slice(0, n).map(r => ({ date: r.date, opp: r.opponent.replace(/^P\. (.*)$/, '$1 P.'), won: r.won, P: null, B: [1.7, 2.1], ret: false, oppKey: String(r.opponentKey) })));
+  const m = { id: 'upcoming-7', p1: 'J. Sinner', p2: 'C. Alcaraz', p1Key: 1, p2Key: 2, surface: 'hard', date: '2026-09-01',
+    p1RecentFormMatches: rows, p2RecentFormMatches: rows, _fhFormData: true, _fhCloses: [cl(10), cl(8)] };
+  S.fhStateFor(m).form.card = true;
+  const h = S.fhBuildForm(m);
+  assert.ok(/class="fh-dsub"[^>]*>10 of 10 priced</.test(h), 'the fully priced side mirrors its count when the other side is partial');
+  assert.ok(/class="fh-dsub"[^>]*>8 of 10 priced</.test(h));
+  assert.equal((h.match(/ title="v market on /g) || []).length, 2, 'pill tooltip names the book mix when the figure shows');
+  assert.ok(h.includes('<div class="fh-fwrap" style="line-height:normal;">'), 'design line-height (rows 51px, filter bar 34px)');
+  const thin = S.fhBuildForm(Object.assign({}, m, { id: 'upcoming-8', p2RecentFormMatches: rows.slice(0, 2), _fhCloses: [cl(10), cl(2)] }));
+  assert.equal((thin.match(/ title="v market on /g) || []).length, 1, 'no pill tooltip on a thin side (its figure is a dash)');
+  const r = S.fhRowFromForm({ opponent: 'C. Alcaraz', opponentKey: 1, date: '2026-03-15', tournament: 'US Open', round: 'ATP US Open - 1/64-finals', surface: 'hard', result: '2 - 3', won: false,
+    sets: [{ p: 6, o: 2 }, { p: 3, o: 6 }, { p: 3, o: 6 }, { p: 7, o: 5 }, { p: 5, o: 7 }], retired: false, walkover: false, qualifying: false, tier: 'atp', eventKey: 9 }, 5, 'A. Shevchenko', 0);
+  assert.match(S.fhFormRowHtml(r), /title="6-2  3-6  3-6  7-5  5-7" style="[^"]*white-space:nowrap; overflow:hidden; text-overflow:ellipsis;/, 'a five-set score stays on one line (full text in the tooltip)');
+});
+test('Form: a side with no match in a Days window keeps its bar row', () => {
+  const rows = Array.from({ length: 4 }, (_, i) => formRow(i, true, 'hard', `2026-08-${String(28 - i).padStart(2, '0')}`));
+  const m = { id: 'upcoming-10', p1: 'J. Sinner', p2: 'C. Alcaraz', p1Key: 1, p2Key: 2, surface: 'hard', date: '2026-09-01',
+    p1RecentFormMatches: rows, p2RecentFormMatches: [], _fhFormData: true, _fhCloses: [null, null] };
+  Object.assign(S.fhStateFor(m).form, { wmode: 'd', days: 10 });
+  const h = S.fhBuildForm(m);
+  assert.equal((h.match(/aria-hidden="true" style="flex:1; position:relative; padding:5px 0; visibility:hidden;"/g) || []).length, 1, 'placeholder bar row on the empty side');
+});
+test('Form data grid: a sub-caption on either side reserves the slot on both; values are Plex Mono tabular', () => {
+  const A = { metrics: { x: { v: 2.75, val: '2.75', aside: '', sub: '9 of 10 priced' }, y: { v: 1, val: '1', aside: '', sub: '' } } };
+  const B = { metrics: { x: { v: 1.45, val: '1.45', aside: '', sub: '' }, y: { v: 2, val: '2', aside: '', sub: '' } } };
+  const h = S.fhFormDataRows(A, B, [['x', 'Median odd', 'his closing odd'], ['y', 'Load', 'matches']]);
+  const rows = h.split('display:grid; grid-template-columns:minmax(0,1fr) 200px minmax(0,1fr)').slice(1);
+  assert.equal((rows[0].match(/class="fh-dsub"/g) || []).length, 2, 'both sides carry the slot when one side has a caption');
+  assert.equal((rows[1].match(/class="fh-dsub"/g) || []).length, 0, 'control: a row without captions adds no slot (design rhythm)');
+  assert.ok((h.match(/class="fh-dval"[^>]*font-variant-numeric:tabular-nums/g) || []).length === 4);
 });
 test('H2H states: loading skeleton until the histories land; none → "on record" empty state with its scope', () => {
   const m = { id: 'upcoming-3', p1: 'A. B', p2: 'C. D', p1Key: 1, p2Key: 2, surface: 'hard', h2h: { matches: [{ date: '2024-01-01', eventKey: 4, p1Won: true, result: '2 - 0', surface: 'hard' }] } };
@@ -482,10 +528,13 @@ test('B365 tag, and every price names its book and source', () => {
   const r = S.fhRowFromForm({ opponent: 'C. Alcaraz', opponentKey: 1, date: '2026-03-15', tournament: 'Indian Wells', round: 'ATP Indian Wells - Final',
     surface: 'hard', result: '0 - 2', won: false, sets: [{ p: 4, o: 6 }, { p: 4, o: 6 }], retired: false, walkover: false, qualifying: false, tier: 'atp', eventKey: 9 }, 5, 'J. Sinner', 0);
   r.price = 2.1; r.oppPrice = 1.75; r.book = 'B'; r.src = 'td';
-  assert.ok(S.fhFormRowHtml(r).includes('>B365<') && S.fhH2hRowHtml(r).includes('>B365<'));
+  // Pixel pass (2026-09-24): the Form row's name slot carries no bookmaker badge; the book shows as a
+  // small marker in the H price cell + the tooltip. The H2H row keeps its B365 tag.
+  assert.ok(!S.fhFormRowHtml(r).includes('>B365<') && S.fhH2hRowHtml(r).includes('>B365<'));
+  assert.equal((S.fhFormRowHtml(r).match(/class="fh-bmark"[^>]*>B</g) || []).length, 1, 'one B marker, in the H cell');
   assert.ok(S.fhFormRowHtml(r).includes('title="Bet365 close · Tennis-Data"'));
   r.book = 'P'; r.src = 'cap';
-  assert.ok(!S.fhFormRowHtml(r).includes('B365') && !S.fhH2hRowHtml(r).includes('B365'), 'Pinnacle rows carry no tag');
+  assert.ok(!S.fhFormRowHtml(r).includes('fh-bmark') && !S.fhH2hRowHtml(r).includes('B365'), 'Pinnacle rows carry no marker or tag');
   assert.ok(S.fhFormRowHtml(r).includes('title="Pinnacle close · captured"') && S.fhH2hRowHtml(r).includes('title="Pinnacle close · captured"'));
   assert.equal(S.fhSrcTitle({ book: 'P', src: 'td' }), 'Pinnacle close · Tennis-Data');
   assert.equal(S.fhSrcTitle(null), 'No Pinnacle or Bet365 close on record');
