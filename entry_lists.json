@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-09-24T00:08:21.201641Z",
+  "generatedAt": "2026-09-24T23:01:04.158817Z",
   "source": "protennislive",
-  "sourcePublished": "2026-09-23T13:11:03Z",
+  "sourcePublished": "2026-09-24T14:34:39Z",
   "tournaments": [
     {
       "tour": "ATP",
@@ -16,11 +16,11 @@
       "tier": "ATP 250",
       "surface": "Hard",
       "status": "active",
-      "sourcePublished": "2026-09-23T08:48:49Z",
+      "sourcePublished": "2026-09-24T14:19:45Z",
       "counts": {
         "MD": 32,
         "Q": 16,
-        "ALT": 0
+        "ALT": 1
       },
       "sections": [
         {
@@ -195,11 +195,11 @@
               "playerKey": "2972"
             },
             {
-              "name": "BORGES, Nuno",
-              "rank": 48,
-              "country": "POR",
-              "status": "SEED",
-              "playerKey": "358"
+              "name": "CINA, Federico",
+              "rank": null,
+              "country": "ITA",
+              "status": "LL",
+              "playerKey": "38264"
             },
             {
               "name": "UGO CARABELLI, Camilo",
@@ -384,13 +384,242 @@
       "tier": "ATP 250",
       "surface": "Hard",
       "status": "active",
-      "sourcePublished": "2026-09-23T13:11:03Z",
+      "sourcePublished": "2026-09-24T14:34:39Z",
       "counts": {
-        "MD": null,
+        "MD": 32,
         "Q": 16,
         "ALT": 0
       },
       "sections": [
+        {
+          "title": "Main Draw",
+          "players": [
+            {
+              "name": "MEDVEDEV, Daniil",
+              "rank": 6,
+              "country": null,
+              "status": "SEED",
+              "playerKey": "1093"
+            },
+            {
+              "name": "Bye",
+              "rank": null,
+              "country": null,
+              "status": "BYE",
+              "playerKey": null
+            },
+            {
+              "name": "ROYER, Valentin",
+              "rank": null,
+              "country": "FRA",
+              "status": "DA",
+              "playerKey": "954"
+            },
+            {
+              "name": "WALTON, Adam",
+              "rank": null,
+              "country": "AUS",
+              "status": "DA",
+              "playerKey": "10070"
+            },
+            {
+              "name": "ZHANG, Zhizhen",
+              "rank": null,
+              "country": "CHN",
+              "status": "WC",
+              "playerKey": "590"
+            },
+            {
+              "name": "WONG, Coleman",
+              "rank": null,
+              "country": "HKG",
+              "status": "DA",
+              "playerKey": "2227"
+            },
+            {
+              "name": "CUI, Jie",
+              "rank": null,
+              "country": "CHN",
+              "status": "WC",
+              "playerKey": "1274"
+            },
+            {
+              "name": "VALLEJO, Adolfo Daniel",
+              "rank": 58,
+              "country": "PAR",
+              "status": "SEED",
+              "playerKey": null
+            },
+            {
+              "name": "HALYS, Quentin",
+              "rank": 49,
+              "country": "FRA",
+              "status": "SEED",
+              "playerKey": "1925"
+            },
+            {
+              "name": "Bye",
+              "rank": null,
+              "country": null,
+              "status": "BYE",
+              "playerKey": null
+            },
+            {
+              "name": "SUN, Fajing",
+              "rank": null,
+              "country": "CHN",
+              "status": "Q",
+              "playerKey": "876"
+            },
+            {
+              "name": "SAFIULLIN, Roman",
+              "rank": null,
+              "country": null,
+              "status": "DA",
+              "playerKey": "1057"
+            },
+            {
+              "name": "BU, Yunchaokete",
+              "rank": null,
+              "country": "CHN",
+              "status": "DA",
+              "playerKey": "796"
+            },
+            {
+              "name": "ZHENG, Michael",
+              "rank": null,
+              "country": "USA",
+              "status": "WC",
+              "playerKey": "9515"
+            },
+            {
+              "name": "BELLUCCI, Mattia",
+              "rank": null,
+              "country": "ITA",
+              "status": "DA",
+              "playerKey": "2112"
+            },
+            {
+              "name": "MAJCHRZAK, Kamil",
+              "rank": 73,
+              "country": "POL",
+              "status": "SEED",
+              "playerKey": "1096"
+            },
+            {
+              "name": "MAROZSAN, Fabian",
+              "rank": 59,
+              "country": "HUN",
+              "status": "SEED",
+              "playerKey": "10148"
+            },
+            {
+              "name": "BOLT, Alex",
+              "rank": null,
+              "country": "AUS",
+              "status": "Q",
+              "playerKey": "3319"
+            },
+            {
+              "name": "SWEENY, Dane",
+              "rank": null,
+              "country": "AUS",
+              "status": "DA",
+              "playerKey": "1308"
+            },
+            {
+              "name": "DANIEL, Taro",
+              "rank": null,
+              "country": "JPN",
+              "status": "Q",
+              "playerKey": "2406"
+            },
+            {
+              "name": "VUKIC, Aleksandar",
+              "rank": null,
+              "country": "AUS",
+              "status": "DA",
+              "playerKey": "360"
+            },
+            {
+              "name": "JACQUET, Kyrian",
+              "rank": null,
+              "country": "FRA",
+              "status": "DA",
+              "playerKey": "1335"
+            },
+            {
+              "name": "Bye",
+              "rank": null,
+              "country": null,
+              "status": "BYE",
+              "playerKey": null
+            },
+            {
+              "name": "Etcheverry, Tomas Martin",
+              "rank": 30,
+              "country": "ARG",
+              "status": "SEED",
+              "playerKey": null
+            },
+            {
+              "name": "FARIA, Jaime",
+              "rank": 68,
+              "country": "POR",
+              "status": "SEED",
+              "playerKey": "824"
+            },
+            {
+              "name": "ATMANE, Terence",
+              "rank": null,
+              "country": "FRA",
+              "status": "DA",
+              "playerKey": "13091"
+            },
+            {
+              "name": "SHIMABUKURO, Sho",
+              "rank": null,
+              "country": "JPN",
+              "status": "DA",
+              "playerKey": "9608"
+            },
+            {
+              "name": "GASTON, Hugo",
+              "rank": null,
+              "country": "FRA",
+              "status": "DA",
+              "playerKey": "1102"
+            },
+            {
+              "name": "HIJIKATA, Rinky",
+              "rank": null,
+              "country": "AUS",
+              "status": "DA",
+              "playerKey": "3317"
+            },
+            {
+              "name": "SVRCINA, Dalibor",
+              "rank": null,
+              "country": "CZE",
+              "status": "Q",
+              "playerKey": "1754"
+            },
+            {
+              "name": "Bye",
+              "rank": null,
+              "country": null,
+              "status": "BYE",
+              "playerKey": null
+            },
+            {
+              "name": "RUBLEV, Andrey",
+              "rank": 25,
+              "country": null,
+              "status": "SEED",
+              "playerKey": "2847"
+            }
+          ]
+        },
         {
           "title": "Qualifying",
           "players": [
