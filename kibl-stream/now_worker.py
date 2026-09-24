@@ -50,6 +50,7 @@ HB_KEY = ("__stream__", "__hb__")
 # side's row (Kibl sends them as separate participant rows, not always in one
 # message) rides in the SAME row — one Realtime message per change, not two.
 COALESCE_S = 1.5
+DIRTY_GIVE_UP_S = 3600
 CARDS_EVERY_S = 60
 FIXTURES_EVERY_S = 600
 HEARTBEAT_EVERY_S = 60
@@ -81,6 +82,7 @@ class NowEngine:
         self.pending = collections.defaultdict(dict)  # fixture -> fpid -> (row, source)
         self.latest = {}                             # (card_key, side_key) -> inserted_on
         self.now_side = {}                           # (card_key, side_key) -> the Now row written
+        self.card_side_keys = collections.defaultdict(set)  # card_key -> side keys with a Now
         self.dirty = {}                              # card_key -> monotonic time the card row is due
         self.fid_key = {}                            # fixture -> card_key it was ever joined to
         self.count = collections.Counter()
@@ -178,6 +180,7 @@ class NowEngine:
         self.count["now_written"] += 1
         now_row = dict(common, kind="price")
         self.now_side[(ck, sk)] = now_row
+        self.card_side_keys[ck].add(sk)
         # The card row goes out once, COALESCE_S after the first side of a move
         # lands, carrying both sides — one Realtime message per change, not two.
         self.dirty.setdefault(ck, time.monotonic() + COALESCE_S)
@@ -189,9 +192,14 @@ class NowEngine:
         A card with one side known stays pending until the other arrives."""
         out = []
         for ck, due in list(self.dirty.items()):
+            if ck in self.closed or now_mono - due > DIRTY_GIVE_UP_S:
+                # Past its Closing point, or one side never arrived in an hour:
+                # nothing more will be sent for it (review 3rd pass, finding 7).
+                del self.dirty[ck]
+                continue
             if not force and due > now_mono:
                 continue
-            sides = sorted(sk for (c, sk) in self.now_side if c == ck)
+            sides = sorted(self.card_side_keys.get(ck, ()))
             if len(sides) != 2:
                 continue
             a, b = (self.now_side[(ck, s)] for s in sides)

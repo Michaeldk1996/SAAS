@@ -173,6 +173,15 @@ W.flush_cards({"SUPABASE_URL": "x", "SUPABASE_SECRET_KEY": "y"},
               e5.card_rows(W.time.monotonic() + 99), lambda *_: None, True, e5)
 W.C.sb_request = C_real
 ok(e5.dirty == {} and e5.card_ok is True, "the retry lands and write_ok recovers")
+e6 = eng()
+e6.accept(row(2, 201, 1.50, "2026-09-24T03:00:00Z"), "r")   # one side only
+e6.dirty["2026-09-24|machac|rublev"] = W.time.monotonic() - W.DIRTY_GIVE_UP_S - 1
+e6.card_rows(W.time.monotonic())
+ok(e6.dirty == {}, "a card whose other side never came is given up after an hour (no leak)")
+e6.accept(row(2, 202, 2.60, "2026-09-24T03:05:00Z"), "r")
+e6.closed.add("2026-09-24|machac|rublev")
+ok(e6.card_rows(W.time.monotonic() + 99) == [] and e6.dirty == {},
+   "a card past its Closing point sends no card row and leaves the queue")
 
 print("\n5 · heartbeat")
 hb = e.heartbeat(NOW, True)

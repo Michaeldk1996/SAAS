@@ -13,6 +13,8 @@ name: TEN-270 Kibl stream -> live Now
 #   realtime-config  READ the project's Realtime settings; with `max_events` set,
 #                  PATCH max_events_per_second to it (08:58Z brief, item 4) and
 #                  read them back.
+#   unpublish-price  take kibl_now_price out of supabase_realtime (after the
+#                  new page has been live long enough for old tabs to reload).
 #   usage          READ-ONLY: the API gateway's response bytes by route and
 #                  caller over the log window (08:58Z brief, egress question).
 #
@@ -22,7 +24,7 @@ on:
   workflow_dispatch:
     inputs:
       action:
-        description: 'schema | verify | deploy-worker | status | logs | realtime-config | usage'
+        description: 'schema | verify | deploy-worker | status | logs | realtime-config | usage | unpublish-price'
         required: true
         default: 'status'
       max_events:
@@ -97,6 +99,28 @@ jobs:
                   bad.append(f"publishable key could INSERT a card row ({st})")
                   call(f"{url}/rest/v1/kibl_now_card?card_key=eq.__rls_probe__", "DELETE",
                        key=os.environ["SUPABASE_SECRET_KEY"])
+              # The newer-only trigger, exercised for real on a probe row (secret key,
+              # server-side only), then removed.
+              sk = os.environ["SUPABASE_SECRET_KEY"]
+              P = "__newer_probe__"
+              def up(ap, aat, bp, bat):
+                  return call(f"{url}/rest/v1/kibl_now_card?on_conflict=card_key", "POST",
+                              [{"card_key": P, "a_side": "a", "a_price": ap, "a_at": aat,
+                                "b_side": "b", "b_price": bp, "b_at": bat}], key=sk,
+                              prefer="resolution=merge-duplicates,return=minimal")[0]
+              def read():
+                  st, r = call(f"{url}/rest/v1/kibl_now_card?card_key=eq.{P}&select=a_price,a_at,b_price,b_at,written_at", key=sk)
+                  return json.loads(r)[0] if st == 200 and json.loads(r) else None
+              s1 = up(2.0, "2026-01-01T10:00:00Z", 1.8, "2026-01-01T10:00:00Z"); r1 = read()
+              s2 = up(3.0, "2026-01-01T09:00:00Z", 1.5, "2026-01-01T11:00:00Z"); r2 = read()
+              s3 = up(3.0, "2026-01-01T09:00:00Z", 1.4, "2026-01-01T10:30:00Z"); r3 = read()
+              call(f"{url}/rest/v1/kibl_now_card?card_key=eq.{P}", "DELETE", key=sk)
+              print(f"newer-only trigger: writes {s1},{s2},{s3}")
+              ok_mixed = r2 and float(r2["a_price"]) == 2.0 and float(r2["b_price"]) == 1.5
+              ok_skip = r3 and r2 and r3["written_at"] == r2["written_at"] and float(r3["b_price"]) == 1.5
+              print(f"  older a-side kept out, newer b-side in: {'PASS' if ok_mixed else 'FAIL'} ({r2})")
+              print(f"  nothing newer -> row untouched (no message): {'PASS' if ok_skip else 'FAIL'} ({r3})")
+              if not (ok_mixed and ok_skip): bad.append("newer-only trigger")
               st, r = call(f"{url}/rest/v1/kibl_now_history?select=id&limit=1", key=pk)
               print(f"[publishable] SELECT kibl_now_history -> HTTP {st}  (want 401/403)")
               if st not in (401, 403): bad.append(f"history readable ({st})")
@@ -113,7 +137,8 @@ jobs:
                           "and tablename in ('kibl_now_price','kibl_now_history','kibl_now_card') order by 1")
               print(f"realtime publication -> {r}")
               if "kibl_now_card" not in r: bad.append("card table not in supabase_realtime")
-              if "kibl_now_price" in r: bad.append("per-side table still published (two messages per change)")
+              if "kibl_now_price" in r:
+                  print("note: kibl_now_price still published — old-client tabs only; run `unpublish-price` once they have reloaded")
               if "kibl_now_history" in r: bad.append("history table published")
               st, r = sql("select polname, polcmd, polroles::regrole[]::text from pg_policy p join pg_class c on c.oid=p.polrelid "
                           "where c.relname in ('kibl_now_price','kibl_now_history','kibl_now_card') order by 1")
@@ -125,6 +150,15 @@ jobs:
               st, r = call(f"{url}/rest/v1/kibl_now_price?kind=eq.price&select=card_key", key=sk,
                            prefer="count=exact")
               print(f"price rows -> HTTP {st} {len(json.loads(r)) if st == 200 else r[:200]}")
+          if act == "unpublish-price":
+              st, r = sql("do $$ begin if exists (select 1 from pg_publication_tables where pubname='supabase_realtime' "
+                          "and schemaname='public' and tablename='kibl_now_price') then "
+                          "alter publication supabase_realtime drop table public.kibl_now_price; end if; end $$")
+              print(f"unpublish kibl_now_price -> HTTP {st} {r[:300]}")
+              if st >= 400: bad.append("unpublish failed")
+              st, r = sql("select tablename from pg_publication_tables where pubname='supabase_realtime' "
+                          "and tablename like 'kibl_now%' order by 1")
+              print(f"realtime publication -> {r}")
           if act == "realtime-config":
               tok = os.environ["SUPABASE_ACCESS_TOKEN"]
               api = f"https://api.supabase.com/v1/projects/{ref}/config/realtime"

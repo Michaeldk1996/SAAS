@@ -4,7 +4,8 @@
 -- policy on the price table only, via the publishable key. No secret keys in
 -- the page." So:
 --   kibl_now_price    anon: SELECT (one policy, no insert/update/delete policy).
---                     Heartbeat + per-side Now; REST only since 08:58Z.
+--                     Heartbeat + per-side Now. Leaves the Realtime publication
+--                     via `unpublish-price` once old-client tabs have reloaded.
 --   kibl_now_card     anon: SELECT; the ONLY table in supabase_realtime.
 --   kibl_now_history  RLS on, NO anon grant, NO policy — invisible to the browser.
 -- The worker writes both with the service key, server-side only.
@@ -84,6 +85,26 @@ drop trigger if exists kibl_now_card_touch on public.kibl_now_card;
 create trigger kibl_now_card_touch before insert or update on public.kibl_now_card
     for each row execute function public.kibl_now_touch();
 
+-- Newer-only, per side, IN THE DATABASE: an overlapping worker during a deploy,
+-- a seed older than what is stored, or a retry of a write that did land can
+-- never move a side back — and a write that moves nothing is skipped, so it
+-- costs no Realtime message (review 3rd pass, finding 7).
+create or replace function public.kibl_now_card_newer() returns trigger
+language plpgsql as $$
+begin
+  if new.a_side = old.a_side and new.b_side = old.b_side then
+    if new.a_at <= old.a_at and new.b_at <= old.b_at then
+      return null;                                   -- nothing newer: no update, no message
+    end if;
+    if new.a_at < old.a_at then new.a_price := old.a_price; new.a_at := old.a_at; end if;
+    if new.b_at < old.b_at then new.b_price := old.b_price; new.b_at := old.b_at; end if;
+  end if;
+  return new;
+end $$;
+drop trigger if exists kibl_now_card_newer on public.kibl_now_card;
+create trigger kibl_now_card_newer before update on public.kibl_now_card
+    for each row execute function public.kibl_now_card_newer();
+
 alter table public.kibl_now_price   enable row level security;
 alter table public.kibl_now_history enable row level security;
 alter table public.kibl_now_card    enable row level security;
@@ -102,18 +123,16 @@ drop policy if exists "public read kibl_now_card" on public.kibl_now_card;
 create policy "public read kibl_now_card"
     on public.kibl_now_card for select to anon, authenticated using (true);
 
--- Realtime: the CARD table in, the per-side table OUT. kibl_now_price keeps the
--- heartbeat and the per-side Now for REST reads; it no longer costs a message.
+-- Realtime: the CARD table in. The new page subscribes to it alone, so the
+-- per-side table costs messages only for tabs still running the old client.
+-- It leaves the publication LATER, with the `unpublish-price` action, once
+-- those tabs have reloaded — dropping it now would leave them showing
+-- "● live" on a 60 s backstop (review 3rd pass, finding 1).
 do $$
 begin
   if not exists (select 1 from pg_publication_tables
                  where pubname = 'supabase_realtime' and schemaname = 'public'
                    and tablename = 'kibl_now_card') then
     alter publication supabase_realtime add table public.kibl_now_card;
-  end if;
-  if exists (select 1 from pg_publication_tables
-             where pubname = 'supabase_realtime' and schemaname = 'public'
-               and tablename = 'kibl_now_price') then
-    alter publication supabase_realtime drop table public.kibl_now_price;
   end if;
 end $$;

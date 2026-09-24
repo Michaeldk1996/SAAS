@@ -36,7 +36,7 @@ const NOW = Date.parse('2026-09-24T04:30:00Z');
 // `matches`, a fetch that answers the heartbeat and card reads separately, and
 // captured timers / visibility listener so each cost rule can be driven.
 function makeCtx(restRows, opts = {}) {
-  const sockets = [], fetches = [], intervals = [], listeners = {};
+  const sockets = [], fetches = [], intervals = [], listeners = {}, timeouts = [];
   class FakeWS {
     constructor(url) { this.url = url; this.readyState = 0; this.sent = []; sockets.push(this); }
     send(s) { this.sent.push(JSON.parse(s)); }
@@ -53,7 +53,8 @@ function makeCtx(restRows, opts = {}) {
       static parse(s) { return Date.parse(s); }
     },
     Math, JSON, Number, String, isFinite, isNaN, Map, Set, Promise, encodeURIComponent, Array,
-    setTimeout: () => 0, clearTimeout: () => {},
+    setTimeout: (fn, ms) => { timeouts.push({ fn, ms }); return timeouts.length; },
+    clearTimeout: id => { if (id && timeouts[id - 1]) timeouts[id - 1].fn = null; },
     setInterval: (fn, ms) => { intervals.push({ fn, ms }); return intervals.length; },
     clearInterval: () => {},
     document: { hidden: false, addEventListener: (ev, fn) => { listeners[ev] = fn; },
@@ -80,14 +81,21 @@ function makeCtx(restRows, opts = {}) {
                    + '\nthis.KNS = { _streamNowOver, mcNowSrcHtml };', ctx);
   vm.runInContext(client, ctx);
   const scopeTick = () => intervals.find(i => i.ms === 2000).fn();
-  return { ctx, sockets, fetches, listeners, scopeTick };
+  const runTimers = () => { for (const t of timeouts.splice(0)) if (t.fn) t.fn(); };
+  return { ctx, sockets, fetches, listeners, scopeTick, runTimers };
 }
-// Open the socket and acknowledge the join: the page is now really subscribed.
-function joinOk(sock) {
-  sock.readyState = 1; sock.onopen();
-  const j = sock.sent.filter(m => m.event === 'phx_join').pop();
+// Open the socket, accept the join, and confirm Postgres Changes is listening
+// (Supabase's `system` message): only now is the page really subscribed.
+function ack(sock, j) {
   sock.onmessage({ data: JSON.stringify({ event: 'phx_reply', topic: j.topic, ref: j.ref,
                                            payload: { status: 'ok', response: {} } }) });
+  sock.onmessage({ data: JSON.stringify({ event: 'system', topic: j.topic, ref: null,
+    payload: { status: 'ok', extension: 'postgres_changes', message: 'Subscribed to PostgreSQL' } }) });
+}
+function joinOk(sock) {
+  if (sock.readyState !== 1) { sock.readyState = 1; sock.onopen(); }
+  const j = sock.sent.filter(m => m.event === 'phx_join').pop();
+  ack(sock, j);
   return j;
 }
 const tick = () => new Promise(r => setImmediate(r));
@@ -123,27 +131,35 @@ test('no rendered pre-match card: no socket, no channel, no messages', async () 
   assert.equal(sockets.length, 0);
 });
 
-test('the scope follows the rendered list: a change re-joins with the new filter and re-reads the table', async () => {
+test('the scope follows the rendered list: a NEW card re-joins with the new filter and re-reads the table', async () => {
   const other = { id: 'upcoming-2', date: '2026-09-24', p1: 'A. Rublev', p2: 'T. Machac' };
-  const { ctx, sockets, fetches, scopeTick } = makeCtx([], { extraMatches: [other] });
+  const { ctx, sockets, fetches, scopeTick, runTimers } = makeCtx([], { extraMatches: [other] });
   await tick();
   const first = joinOk(sockets[0]);
-  const reads = fetches.length;
   ctx.__rendered = [CARD, other];
   scopeTick();
+  const joins = () => sockets[0].sent.filter(m => m.event === 'phx_join');
+  assert.equal(joins().length, 1, 'the re-join waits out its jitter (a board refresh hits every viewer at once)');
+  runTimers();
   const sent = sockets[0].sent;
   assert.ok(sent.some(m => m.event === 'phx_leave' && m.topic === first.topic), 'old channel left');
-  const j2 = sent.filter(m => m.event === 'phx_join').pop();
+  const j2 = joins().pop();
   assert.notEqual(j2.topic, first.topic);
   assert.equal(j2.payload.config.postgres_changes[0].filter,
                'card_key=in.(2026-09-24|borges|carabelli,2026-09-24|machac|rublev)');
-  scopeTick();
-  assert.equal(sent.filter(m => m.event === 'phx_join').length, 2, 'an unchanged scope never re-joins');
-  sockets[0].onmessage({ data: JSON.stringify({ event: 'phx_reply', topic: j2.topic, ref: j2.ref,
-                                                 payload: { status: 'ok' } }) });
+  scopeTick(); runTimers();
+  assert.equal(joins().length, 2, 'an unchanged scope never re-joins');
+  await tick();                              // let the first subscription's re-read finish
+  const reads = fetches.length;
+  ack(sockets[0], j2);
   await tick();
-  // lastSeedMs is "now" in a frozen clock, so the 5 s throttle holds: no second read.
-  assert.equal(fetches.length, reads, 're-read is throttled to one per 5 s');
+  assert.equal(fetches.length, reads + 2, 'every confirmed subscription re-reads the table (heartbeat + cards)');
+  ctx.__rendered = [other];
+  scopeTick(); runTimers();
+  assert.equal(joins().length, 2, 'a card LEAVING the list does not re-join (no start-time stampede)');
+  ctx.__rendered = [];
+  scopeTick();
+  assert.ok(sent.filter(m => m.event === 'phx_leave').length >= 2, 'no rendered card: the channel is left');
 });
 
 test('more than 100 rendered cards split into bindings of at most 100 keys', async () => {
@@ -245,15 +261,44 @@ test('a dead stream is never labelled live, and the real time is shown', async (
   }
 });
 
-test('a refused or unacknowledged join is never live', async () => {
-  const { ctx, sockets } = makeCtx([HB(1000), CR(1.18, '2026-09-24T04:20:00Z', 4.8, '2026-09-24T04:20:00Z')]);
+test('live needs the subscription CONFIRMED; a refused, errored or closed channel is never live', async () => {
+  const { ctx, sockets, runTimers } = makeCtx([HB(1000), CR(1.18, '2026-09-24T04:20:00Z', 4.8, '2026-09-24T04:20:00Z')]);
   await tick();
+  const S = () => ctx.KNS._streamNowOver(CARD, OCS(null, null, null)).live;
   sockets[0].readyState = 1; sockets[0].onopen();
-  assert.equal(ctx.KNS._streamNowOver(CARD, OCS(null, null, null)).live, false, 'join sent, no reply yet');
   const j = sockets[0].sent.find(m => m.event === 'phx_join');
-  sockets[0].onmessage({ data: JSON.stringify({ event: 'phx_reply', topic: j.topic, ref: j.ref,
-                                                 payload: { status: 'error', response: { reason: 'too_many_connections' } } }) });
-  assert.equal(ctx.KNS._streamNowOver(CARD, OCS(null, null, null)).live, false, 'refused join');
+  assert.equal(S(), false, 'join sent, no reply yet');
+  sockets[0].onmessage({ data: JSON.stringify({ event: 'phx_reply', topic: j.topic, ref: j.ref, payload: { status: 'ok' } }) });
+  assert.equal(S(), false, 'join accepted but Postgres Changes not yet listening');
+  sockets[0].onmessage({ data: JSON.stringify({ event: 'system', topic: j.topic,
+    payload: { status: 'error', extension: 'postgres_changes', message: 'Unable to subscribe' } }) });
+  assert.equal(S(), false, 'subscription error');
+  runTimers();
+  const j2 = sockets[0].sent.filter(m => m.event === 'phx_join').pop();
+  assert.notEqual(j2.topic, j.topic, 'an errored channel re-joins');
+  ack(sockets[0], j2);
+  assert.equal(S(), true);
+  sockets[0].onmessage({ data: JSON.stringify({ event: 'phx_error', topic: j2.topic, payload: {} }) });
+  assert.equal(S(), false, 'a channel error (e.g. the events/s ceiling) drops "● live"');
+  runTimers();
+  const j3 = sockets[0].sent.filter(m => m.event === 'phx_join').pop();
+  sockets[0].onmessage({ data: JSON.stringify({ event: 'phx_reply', topic: j3.topic, ref: j3.ref,
+    payload: { status: 'error', response: { reason: 'too_many_connections' } } }) });
+  assert.equal(S(), false, 'refused join');
+});
+
+test('a card this page is not subscribed to is never live', async () => {
+  const other = { id: 'x', date: '2026-09-24', p1: 'A. Rublev', p2: 'T. Machac' };
+  const row = { card_key: '2026-09-24|machac|rublev', book: 'bet105', book_name: 'Bet105',
+    a_side: 'machac', a_price: 2.6, a_at: '2026-09-24T04:20:00Z', b_side: 'rublev', b_price: 1.5,
+    b_at: '2026-09-24T04:20:00Z', written_at: '2026-09-24T04:20:00Z' };
+  const { ctx, sockets } = makeCtx([HB(1000), row, CR(1.18, '2026-09-24T04:20:00Z', 4.8, '2026-09-24T04:20:00Z')]);
+  await tick();
+  joinOk(sockets[0]);
+  assert.equal(ctx.KNS._streamNowOver(CARD, OCS(null, null, null)).live, true);
+  const sp = ctx.KNS._streamNowOver(other, OCS(null, null, null));
+  assert.equal(sp.p1, 1.5, 'its last real price still shows, with its time');
+  assert.equal(sp.live, false, 'but not "● live": nothing is pushing it to this page');
 });
 
 test('Realtime push: one card row moves both sides; an older side never moves Now back', async () => {

@@ -50,13 +50,14 @@
   const RT_HEARTBEAT_MS = 25000;
   const SCOPE_EVERY_MS = 2000;
   const MAX_IN = 100;                 // Supabase: an `in` filter takes at most 100 values
+  const REJOIN_JITTER_MS = 5000;
 
   const rows = new Map();          // `${card_key}|${side_key}` -> side row
   let hb = null;                   // heartbeat row
-  let ws = null, rtBeat = null, rtRetries = 0, ref = 0, paintTimer = null;
-  let topic = null, joinRef = null, joined = false, gen = 0;
+  let ws = null, rtRetries = 0, ref = 0, paintTimer = null;
+  let topic = null, joinRef = null, joined = false, gen = 0, rejoinTimer = null, chanRetries = 0;
   let scope = [];                  // card keys the live channel is filtered to
-  let backstopTimer = null, lastSeedMs = 0;
+  let backstopTimer = null;
   const samples = [];              // {written_at, kibl, recvMs} — worker->screen measurement
   const stats = { joins: 0, leaves: 0, pushes: 0, paused: 0 };
 
@@ -108,7 +109,10 @@
     const obs = Math.max(ms(a.written_at) || 0, ms(b.written_at) || 0);
     return { p1: Number(a.price), p2: Number(b.price), book: a.book, bookName: a.book_name || a.book,
              at: at ? new Date(at).toISOString() : null, obs: obs ? new Date(obs).toISOString() : null,
-             sideAt, kind: 'vendor-insert', src: 'stream', live: healthy() };
+             sideAt, kind: 'vendor-insert', src: 'stream',
+             // Live only for a card this page is subscribed to (review 3rd pass,
+             // finding 6): other surfaces can ask for an unrendered card.
+             live: healthy() && scope.includes(key) };
   }
 
   function paintNow() {
@@ -128,7 +132,6 @@
 
   async function backstop() {
     if (paused()) return;
-    lastSeedMs = Date.now();
     try {
       const got = [];
       for (const u of RESTS) {
@@ -185,6 +188,7 @@
     topic = null; joinRef = null; joined = false;
   }
   function join() {
+    clearTimeout(rejoinTimer); rejoinTimer = null;
     if (!ws || ws.readyState !== 1) return;
     leave();
     if (!scope.length) return;                 // nothing rendered, nothing to hear
@@ -200,40 +204,71 @@
   function rescope() {
     if (paused()) return;
     const next = renderedKeys();
-    if (next.join('\n') === scope.join('\n')) return;
+    if (!next.length) {
+      if (scope.length) { scope = []; leave(); repaint(); }
+      return;
+    }
+    // Only a NEW card re-joins. A card that leaves the list (it started, or a
+    // filter hid it) stays in the filter until the next re-join: it costs at
+    // most the few writes before its Closing point, while a re-join on every
+    // start would make every viewer re-join in the same 2 s tick (review 3rd
+    // pass, finding 4).
+    if (next.every(k => scope.includes(k))) return;
     scope = next;
-    if (!scope.length) { leave(); repaint(); return; }
-    if (ws && ws.readyState === 1) join(); else connect();
+    if (!ws || ws.readyState !== 1) { connect(); return; }
+    // A board refresh adds cards for every viewer at once: spread the re-joins.
+    clearTimeout(rejoinTimer);
+    rejoinTimer = setTimeout(join, Math.floor(Math.random() * REJOIN_JITTER_MS));
   }
 
+  // A refused, errored or closed channel is not live; re-join with backoff.
+  function channelDown() {
+    joined = false; topic = null; joinRef = null;
+    repaint();
+    clearTimeout(rejoinTimer);
+    rejoinTimer = setTimeout(join, Math.min(2000 * 2 ** Math.min(chanRetries++, 5), 60000));
+  }
   function connect() {
     if (paused() || !scope.length || (ws && ws.readyState <= 1)) return;
     try { ws = new WebSocket(RT_URL); } catch (e) { return; }
     const sock = ws;
+    let beat = null;                      // this socket's own heartbeat (review 3rd pass, finding 5)
     sock.onopen = () => {
       rtRetries = 0;
       join();
-      clearInterval(rtBeat);
-      rtBeat = setInterval(() => send(sock, 'phoenix', 'heartbeat', {}), RT_HEARTBEAT_MS);
+      beat = setInterval(() => send(sock, 'phoenix', 'heartbeat', {}), RT_HEARTBEAT_MS);
     };
     sock.onmessage = (evt) => {
       let msg; try { msg = JSON.parse(evt.data); } catch (e) { return; }
-      if (msg.event === 'phx_reply' && msg.ref === joinRef && msg.topic === topic) {
-        joined = !!(msg.payload && msg.payload.status === 'ok');
-        // Anything written between the last read and this join is fetched now.
-        if (joined && Date.now() - lastSeedMs > 5000) backstop();
-        repaint();
+      if (sock !== ws || msg.topic !== topic || !topic) return;
+      const st = msg.payload && msg.payload.status;
+      if (msg.event === 'phx_reply' && msg.ref === joinRef) {
+        // The join is accepted, but Postgres Changes is only listening once the
+        // server says so in a `system` message (review 3rd pass, finding 2).
+        if (st !== 'ok') channelDown();
         return;
       }
-      if (msg.event !== 'postgres_changes' || msg.topic !== topic) return;
+      if (msg.event === 'system' && (!msg.payload.extension || msg.payload.extension === 'postgres_changes')) {
+        if (st === 'ok') {
+          joined = true; chanRetries = 0;
+          // Anything written between the last read and this subscription is
+          // fetched now, every time (review 3rd pass, finding 3).
+          backstop();
+          repaint();
+        } else channelDown();
+        return;
+      }
+      if (msg.event === 'phx_error' || msg.event === 'phx_close') { channelDown(); return; }
+      if (msg.event !== 'postgres_changes') return;
       const d = msg.payload && msg.payload.data;
       const rec = d && (d.record || d.new);
       stats.pushes++;
       if (rec && putCard(rec, Date.now())) repaint();
     };
     sock.onclose = () => {
-      clearInterval(rtBeat); rtBeat = null;
-      if (ws === sock) { ws = null; topic = null; joinRef = null; joined = false; }
+      clearInterval(beat);
+      if (ws !== sock) return;               // a socket we already replaced
+      ws = null; topic = null; joinRef = null; joined = false;
       if (paused()) return;
       repaint();
       const delay = Math.min(2000 * 2 ** Math.min(rtRetries++, 5), 60000);
@@ -243,6 +278,7 @@
 
   function pause() {
     stats.paused++;
+    clearTimeout(rejoinTimer); rejoinTimer = null;
     clearInterval(backstopTimer); backstopTimer = null;
     leave();
     if (ws) { const s = ws; ws = null; try { s.close(); } catch (e) { /* gone */ } }
