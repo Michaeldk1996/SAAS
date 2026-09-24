@@ -25,6 +25,8 @@ concurrency:
 jobs:
   golive:
     runs-on: ubuntu-latest
+    # TEN-273: every job carries a timeout-minutes so none can hold a runner indefinitely.
+    timeout-minutes: 20
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}

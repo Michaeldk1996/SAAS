@@ -21,6 +21,8 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    # TEN-273: every job carries a timeout-minutes so none can hold a runner indefinitely.
+    timeout-minutes: 20
     env:
       FIREBASE_PROJECT: tennis-edge-75cd9
       GOOGLE_APPLICATION_CREDENTIALS: ${{ github.workspace }}/firebase-sa.json

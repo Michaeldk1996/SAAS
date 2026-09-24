@@ -103,6 +103,8 @@ jobs:
     needs: load
     if: inputs.chain == 'true' && inputs.cmd == 'load' && needs.load.outputs.more_work == '1'
     runs-on: ubuntu-latest
+    # TEN-273: every job carries a timeout-minutes so none can hold a runner indefinitely.
+    timeout-minutes: 10
     steps:
       - name: Circuit breaker — refuse to chain onto a broken run of runs
         id: breaker
