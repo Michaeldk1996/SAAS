@@ -59,9 +59,10 @@ function makeCtx(restRows) {
   vm.createContext(ctx);
   // The shipped page helpers, then the shipped client.
   vm.runInContext(['ocsNfd', 'ocsNameKey', 'ocsMatchKey', 'ocsKeyOf', 'psEsc', 'mxBookLabel',
-                   'mcAgoTxt', 'mcNowSrcHtml', '_streamNowOver', 'mxOverround', 'mxIsSuspendedPair']
+                   'mcAgoTxt', 'mcNowSrcHtml', '_streamNowOver', 'mxOverround', 'mxIsSuspendedPair', 'cardStartMs']
                     .map(slice).join('\n') + '\n' + sliceConst('MC_BOOK_NAMES') + '\n' + sliceConst('MX_BOOK_LABELS')
                    + '\n' + ['MX_SUSPENDED_OVERROUND', 'MX_MIN_REAL_PRICE', 'MX_SUPPRESSED'].map(sliceConst).join('\n')
+                   + '\nfunction acctTzOffsetMin(){ return 120; }'
                    + '\nfunction ocsFmtClock(iso){ return new Date(iso).toISOString().slice(11,16); }'
                    + '\nthis.KNS = { _streamNowOver, mcNowSrcHtml };', ctx);
   vm.runInContext(client, ctx);
@@ -75,7 +76,7 @@ const HB = (ageMs, connected = true) => ({ card_key: '__stream__', side_key: '__
   written_at: new Date(NOW - ageMs).toISOString(), note: { connected } });
 const PX = (side, price, ins, book = 'bet105') => ({ card_key: KEY, side_key: side, kind: 'price', price,
   book, book_name: 'Bet105', kibl_inserted_on: ins, written_at: ins, source: 'stream' });
-const OCS = (now1, now2, ts, book = 'bet105') => ({ book, p1: { now: now1, nowTs: ts }, p2: { now: now2, nowTs: ts } });
+const OCS = (now1, now2, ts, book = 'bet105', ts2 = ts) => ({ book, p1: { now: now1, nowTs: ts }, p2: { now: now2, nowTs: ts2 } });
 
 test('the page reads ONE table with the publishable key and subscribes to price rows only', async () => {
   const { ctx, sockets } = makeCtx([]);
@@ -111,6 +112,29 @@ test('a suspended stream pair never renders; the poller keeps the card', async (
   await tick();
   assert.equal(ctx.KNS._streamNowOver(CARD, OCS(5.0, 1.15, '2026-09-24T04:00:00Z')), null,
                'a 1.40/1.40 pair is a 43% overround — suspended, not a Now');
+});
+
+test('pre-match only on the page: a started, live or finished card never takes a stream Now', async () => {
+  const { ctx } = makeCtx([HB(1000), PX('carabelli', 4.8, '2026-09-24T04:20:00Z'),
+                           PX('borges', 1.18, '2026-09-24T04:20:00Z')]);
+  await tick();
+  const S = ctx.KNS._streamNowOver;
+  assert.ok(S({ ...CARD, startTs: '2026-09-24T05:00:00Z' }, OCS(null, null, null)), 'before the start: shown');
+  assert.equal(S({ ...CARD, startTs: '2026-09-24T04:29:00Z' }, OCS(null, null, null)), null,
+               'past the start with the poller Now withheld: NOT filled from the stream');
+  assert.equal(S({ ...CARD, live: true }, OCS(null, null, null)), null, 'live: never');
+  assert.equal(S({ ...CARD, finalScore: { winner: 'p1' } }, OCS(null, null, null)), null, 'finished: never');
+});
+
+test('newer is judged per side: one stale stream side keeps the whole poller pair', async () => {
+  // Stream: p1 (Ugo Carabelli) 04:00, p2 (Borges) 04:26. Poller: p1 04:05, p2 04:05.
+  const { ctx } = makeCtx([HB(1000), PX('carabelli', 4.8, '2026-09-24T04:00:00Z'),
+                           PX('borges', 1.18, '2026-09-24T04:26:00Z')]);
+  await tick();
+  assert.equal(ctx.KNS._streamNowOver(CARD, OCS(5.0, 1.15, '2026-09-24T04:05:00Z')), null,
+               'p1 would be OLDER than the poller\'s p1 — never shown, and never a mixed pair');
+  assert.ok(ctx.KNS._streamNowOver(CARD, OCS(5.0, 1.15, '2026-09-24T03:50:00Z')),
+            'both stream sides at least as new, one strictly newer: shown');
 });
 
 test('half a pair is no pair', async () => {

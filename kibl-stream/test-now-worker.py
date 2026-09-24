@@ -98,6 +98,21 @@ e2.set_cards(CARDS, late)
 ok(1 in e2.by_fixture,
    "the SCHEDULED time is not the Closing point — a card past its slot but not live keeps updating")
 
+print("\n4b · review fixes")
+e3 = eng()
+e3.accept(row(1, 101, 1.20, "2026-09-24T03:00:00Z"), "r"); e3.accept(row(1, 102, 4.8, "2026-09-24T03:00:00Z"), "r")
+before = e3.count["skip_not_current"]
+ok(e3.accept(row(1, 101, 1.50, "2026-09-24T03:30:00Z", is_current=False, is_previous=True), "r") == []
+   and e3.count["skip_not_current"] == before + 1, "a superseded (is_current false) row is never a Now")
+w1 = e3.accept(row(1, 101, 1.19, "2026-09-24T03:31:00Z", market_id=11), "r")
+w2 = e3.accept(row(1, 101, 1.17, "2026-09-24T03:32:00Z", market_id=12), "r")
+nowr, histr = W.dedupe(w1 + w2 + w2)
+ok(len(nowr) == 1 and nowr[0]["price"] == 1.17 and len(histr) == 2,
+   f"one batch -> one Now row per side (newest) and history deduped by row_key (got {len(nowr)}, {len(histr)})")
+e3.forget("2026-09-24|borges|carabelli", "borges")
+ok([k for k, _ in e3.accept(row(1, 101, 1.17, "2026-09-24T03:32:00Z", market_id=12), "r")] == ["hist", "now"],
+   "after a failed write is forgotten, the same price writes again instead of being refused as not-newer")
+
 print("\n5 · heartbeat")
 hb = e.heartbeat(NOW, True)
 ok(hb["kind"] == "heartbeat" and hb["price"] is None and hb["card_key"] == "__stream__",

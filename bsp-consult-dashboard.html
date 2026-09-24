@@ -8091,6 +8091,12 @@ function _mcAnyBookPair(m){
 function _streamNowOver(m, o){
   const K = window.KiblNow;
   if (!K || !K.enabled || !o || !o.book) return null;
+  // Pre-match only, on the page too (clean-context review, finding 1): past the
+  // card's start — the same client-clock test the card uses — or once it is
+  // live or finished, the stream has nothing to say. Without this, a started
+  // card whose poller Now was withheld would show the stream's last row as a
+  // current Now, labelled live.
+  if (m.finalScore || m.live || (isFinite(cardStartMs(m)) && Date.now() >= cardStartMs(m))) return null;
   const sp = K.pairFor(m, o.book);
   if (!sp) return null;
   // The page's own suspended-market test (legs < 1.01, overround > 20%), the
@@ -8098,9 +8104,21 @@ function _streamNowOver(m, o){
   // falls back to the poller's Now rather than rendering.
   if (mxIsSuspendedPair(sp.p1, sp.p2, { id: (m && (m.id || m.matchKey)) || null,
                                         book: sp.book, path: 'stream.now' })) return null;
-  const pollAt = Date.parse(o.p1.nowTs || o.p2.nowTs || '');
-  const strAt = Date.parse(sp.at || '');
-  if (o.p1.now != null && o.p2.now != null && isFinite(pollAt) && !(strAt > pollAt)) return null;
+  // Judged PER SIDE (review finding 3). The stream is change-only, so it can
+  // hold one fresh side beside a side the poller has since seen move. If EITHER
+  // stream side is older than the poller's same side, the poller keeps the whole
+  // pair — never a mixed pair, never an older price shown as current. The
+  // stream wins only when at least one side is strictly newer.
+  if (o.p1.now != null && o.p2.now != null){
+    let newer = false;
+    for (const s of ['p1', 'p2']){
+      const pt = Date.parse(o[s].nowTs || ''), st = Date.parse(sp.sideAt && sp.sideAt[s] || '');
+      if (!isFinite(pt)) { newer = true; continue; }
+      if (!isFinite(st) || st < pt) return null;
+      if (st > pt) newer = true;
+    }
+    if (!newer) return null;
+  }
   return sp;
 }
 function _mcNowPair(m){
@@ -8387,6 +8405,16 @@ function _mcOpenNowPair(m){
     const o1 = o.p1.open, o2 = o.p2.open;
     if (o1 == null || o2 == null) return null;
     const openTs = o.p1.openTs || o.p2.openTs || null;
+    // TEN-270 (review finding 2): the drift pair reads the SAME Now as the card
+    // face, so a stream price never sits on the face while the % move is measured
+    // off the poller's older one. Same book by construction (_streamNowOver).
+    const _sp = _streamNowOver(m, o);
+    if (_sp){
+      const openObs = o.p1.openObs || o.p2.openObs || null;
+      return _measurablePair({ o1, o2, n1: _sp.p1, n2: _sp.p2, book: o.book, openTs, nowTs: _sp.at,
+                               obs: _sp.obs, kind: _sp.kind },
+                             _obsMs(openObs, openTs), _obsMs(_sp.obs, _sp.at));
+    }
     if (o.p1.now != null && o.p2.now != null){
       const nowTs = o.p1.nowTs || o.p2.nowTs || null;
       // OUR clock first, the row's own stamp only as the fallback. Before the
@@ -10271,7 +10299,7 @@ function renderMatches(){
       ${headHtml}
       ${isCompleted ? '' : scoreLineHtml}
       ${playersHtml}
-      ${(isCompleted || m.live || isPastDay) ? '' : mcNowSrcHtml(nowPair)}
+      ${(isCompleted || m.live || isPastDay || mcStarted) ? '' : mcNowSrcHtml(nowPair)}
       <div class="mc-foot">
         <button class="mc-msig mx-msigchip" data-msig="${eventKeyOfMatch(m)}" onclick="toggleSig(this)">Market Signal${isCompleted ? ' · final' : ''} <span class="chev">⌄</span></button>
         <a class="mc-analysis" onclick="openAnalysisModal('${m.id}')">See full analysis →</a>
