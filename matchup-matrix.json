@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-24T00:12:56.827Z",
+  "generatedAt": "2026-09-24T22:59:16.299Z",
   "source": "Computed from board-finalized v5.1 archetype labels (playing-styles.json) x TML match results",
   "window": "2000-2026",
   "note": "Win% of row archetype vs column, over matches where BOTH players are in the deployed labelled roster. Full grid incl. the diagonal: same-archetype cells are 50% by construction (coin flip on style) and carry the real match count n. Off-diagonal cells below the sample floor show n but no pct. TEN-88 (2026-08-27 ruling): the current-season api-tennis supplement is now folded into the aggregate matrix as well as the per-player split, so published cells track the live season instead of stopping mid-January.",
@@ -18,9 +18,9 @@
     "Solid Defender": 18,
     "All Court Elite": 3
   },
-  "matchesCounted": 16065,
+  "matchesCounted": 16088,
   "tmlMatchesCounted": 13561,
-  "supplementMatchesInMatrix": 2504,
+  "supplementMatchesInMatrix": 2527,
   "matchesInWindow": 78091,
   "retentionPct": 17.4,
   "archetypes": {
@@ -73,8 +73,8 @@
         "n": 80
       },
       "Counterpuncher": {
-        "pct": 43,
-        "n": 120
+        "pct": 44,
+        "n": 121
       },
       "Solid Defender": {
         "pct": 50,
@@ -92,7 +92,7 @@
       },
       "Big Server + First Strike": {
         "pct": 50,
-        "n": 219,
+        "n": 220,
         "note": "same archetype — coin flip on style"
       },
       "Big Server + Complete Baseliner": {
@@ -101,19 +101,19 @@
       },
       "Attacking Baseliner": {
         "pct": 47,
-        "n": 1187
+        "n": 1190
       },
       "Solid Baseliner": {
         "pct": 57,
-        "n": 610
+        "n": 611
       },
       "Counterpuncher": {
         "pct": 45,
         "n": 584
       },
       "Solid Defender": {
-        "pct": 50,
-        "n": 255
+        "pct": 49,
+        "n": 257
       },
       "All Court Elite": {
         "pct": 12,
@@ -136,7 +136,7 @@
       },
       "Attacking Baseliner": {
         "pct": 61,
-        "n": 1261
+        "n": 1262
       },
       "Solid Baseliner": {
         "pct": 66,
@@ -162,24 +162,24 @@
       },
       "Big Server + First Strike": {
         "pct": 53,
-        "n": 1187
+        "n": 1190
       },
       "Big Server + Complete Baseliner": {
         "pct": 39,
-        "n": 1261
+        "n": 1262
       },
       "Attacking Baseliner": {
         "pct": 50,
-        "n": 1578,
+        "n": 1582,
         "note": "same archetype — coin flip on style"
       },
       "Solid Baseliner": {
         "pct": 55,
-        "n": 1606
+        "n": 1611
       },
       "Counterpuncher": {
         "pct": 48,
-        "n": 1585
+        "n": 1587
       },
       "Solid Defender": {
         "pct": 52,
@@ -197,7 +197,7 @@
       },
       "Big Server + First Strike": {
         "pct": 43,
-        "n": 610
+        "n": 611
       },
       "Big Server + Complete Baseliner": {
         "pct": 34,
@@ -205,11 +205,11 @@
       },
       "Attacking Baseliner": {
         "pct": 45,
-        "n": 1606
+        "n": 1611
       },
       "Solid Baseliner": {
         "pct": 50,
-        "n": 367,
+        "n": 368,
         "note": "same archetype — coin flip on style"
       },
       "Counterpuncher": {
@@ -218,7 +218,7 @@
       },
       "Solid Defender": {
         "pct": 47,
-        "n": 370
+        "n": 371
       },
       "All Court Elite": {
         "pct": 12,
@@ -227,8 +227,8 @@
     },
     "Counterpuncher": {
       "Big Server": {
-        "pct": 57,
-        "n": 120
+        "pct": 56,
+        "n": 121
       },
       "Big Server + First Strike": {
         "pct": 55,
@@ -240,7 +240,7 @@
       },
       "Attacking Baseliner": {
         "pct": 52,
-        "n": 1585
+        "n": 1587
       },
       "Solid Baseliner": {
         "pct": 61,
@@ -253,7 +253,7 @@
       },
       "Solid Defender": {
         "pct": 50,
-        "n": 406
+        "n": 407
       },
       "All Court Elite": {
         "pct": 10,
@@ -266,8 +266,8 @@
         "n": 38
       },
       "Big Server + First Strike": {
-        "pct": 50,
-        "n": 255
+        "pct": 51,
+        "n": 257
       },
       "Big Server + Complete Baseliner": {
         "pct": 37,
@@ -279,11 +279,11 @@
       },
       "Solid Baseliner": {
         "pct": 53,
-        "n": 370
+        "n": 371
       },
       "Counterpuncher": {
         "pct": 50,
-        "n": 406
+        "n": 407
       },
       "Solid Defender": {
         "pct": 50,
@@ -333,7 +333,7 @@
   },
   "surfaceNote": "matrixBySurface splits the same construction by court surface (hard/clay/grass). Same floor per surface; carpet/unknown dropped.",
   "surfaceMatchesCounted": {
-    "hard": 9546,
+    "hard": 9569,
     "clay": 4822,
     "grass": 1635
   },
@@ -363,7 +363,7 @@
         },
         "Counterpuncher": {
           "pct": 47,
-          "n": 86
+          "n": 87
         },
         "Solid Defender": {
           "pct": 45,
@@ -381,7 +381,7 @@
         },
         "Big Server + First Strike": {
           "pct": 50,
-          "n": 126,
+          "n": 127,
           "note": "same archetype — coin flip on style"
         },
         "Big Server + Complete Baseliner": {
@@ -390,11 +390,11 @@
         },
         "Attacking Baseliner": {
           "pct": 47,
-          "n": 698
+          "n": 701
         },
         "Solid Baseliner": {
           "pct": 56,
-          "n": 383
+          "n": 384
         },
         "Counterpuncher": {
           "pct": 46,
@@ -402,7 +402,7 @@
         },
         "Solid Defender": {
           "pct": 48,
-          "n": 128
+          "n": 130
         },
         "All Court Elite": {
           "pct": 11,
@@ -424,8 +424,8 @@
           "note": "same archetype — coin flip on style"
         },
         "Attacking Baseliner": {
-          "pct": 61,
-          "n": 820
+          "pct": 62,
+          "n": 821
         },
         "Solid Baseliner": {
           "pct": 66,
@@ -451,24 +451,24 @@
         },
         "Big Server + First Strike": {
           "pct": 53,
-          "n": 698
+          "n": 701
         },
         "Big Server + Complete Baseliner": {
-          "pct": 39,
-          "n": 820
+          "pct": 38,
+          "n": 821
         },
         "Attacking Baseliner": {
           "pct": 50,
-          "n": 889,
+          "n": 893,
           "note": "same archetype — coin flip on style"
         },
         "Solid Baseliner": {
           "pct": 57,
-          "n": 876
+          "n": 881
         },
         "Counterpuncher": {
           "pct": 48,
-          "n": 961
+          "n": 963
         },
         "Solid Defender": {
           "pct": 52,
@@ -486,7 +486,7 @@
         },
         "Big Server + First Strike": {
           "pct": 44,
-          "n": 383
+          "n": 384
         },
         "Big Server + Complete Baseliner": {
           "pct": 34,
@@ -494,11 +494,11 @@
         },
         "Attacking Baseliner": {
           "pct": 43,
-          "n": 876
+          "n": 881
         },
         "Solid Baseliner": {
           "pct": 50,
-          "n": 196,
+          "n": 197,
           "note": "same archetype — coin flip on style"
         },
         "Counterpuncher": {
@@ -507,7 +507,7 @@
         },
         "Solid Defender": {
           "pct": 51,
-          "n": 170
+          "n": 171
         },
         "All Court Elite": {
           "pct": 15,
@@ -517,7 +517,7 @@
       "Counterpuncher": {
         "Big Server": {
           "pct": 53,
-          "n": 86
+          "n": 87
         },
         "Big Server + First Strike": {
           "pct": 54,
@@ -529,7 +529,7 @@
         },
         "Attacking Baseliner": {
           "pct": 52,
-          "n": 961
+          "n": 963
         },
         "Solid Baseliner": {
           "pct": 62,
@@ -542,7 +542,7 @@
         },
         "Solid Defender": {
           "pct": 48,
-          "n": 227
+          "n": 228
         },
         "All Court Elite": {
           "pct": 11,
@@ -556,7 +556,7 @@
         },
         "Big Server + First Strike": {
           "pct": 52,
-          "n": 128
+          "n": 130
         },
         "Big Server + Complete Baseliner": {
           "pct": 42,
@@ -568,11 +568,11 @@
         },
         "Solid Baseliner": {
           "pct": 49,
-          "n": 170
+          "n": 171
         },
         "Counterpuncher": {
           "pct": 52,
-          "n": 227
+          "n": 228
         },
         "Solid Defender": {
           "pct": 50,
@@ -1189,8 +1189,8 @@
   "byPlayerSupplement": {
     "source": "api-tennis 2026 finished fixtures",
     "loaded": true,
-    "matchesAdded": 2504,
-    "foldedIntoMatrix": 2504,
+    "matchesAdded": 2527,
+    "foldedIntoMatrix": 2527,
     "dedupedAgainstTml": 135,
     "walkoverExcluded": 20,
     "dedupTolDays": 1
@@ -1199,15 +1199,15 @@
     "note": "Closing odds per meeting row, both players. Book unlabelled (founder ruling): Bet365 for 2026, Pinnacle (Bet365 fallback) for earlier years; dash where no price. Coverage = share of meeting rows with a price on at least one side.",
     "sourceFiles": 23,
     "sourceRows": 59354,
-    "rows": 32130,
-    "priced": 29626,
-    "pricedPct": 92.2,
-    "rows2026": 5280,
-    "priced2026": 4036,
-    "priced2026Pct": 76.4
+    "rows": 32176,
+    "priced": 29642,
+    "pricedPct": 92.1,
+    "rows2026": 5326,
+    "priced2026": 4052,
+    "priced2026Pct": 76.1
   },
   "byPlayerPlayers": 249,
-  "byPlayerEndpointsCounted": 32130,
+  "byPlayerEndpointsCounted": 32176,
   "byPlayer": {
     "martin|a": {
       "name": "A. Martin",
@@ -1571,7 +1571,7 @@
         },
         "Big Server + First Strike": {
           "w": 5,
-          "l": 7
+          "l": 8
         },
         "Big Server": {
           "w": 1,
@@ -1665,7 +1665,7 @@
           "l": 46
         },
         "Attacking Baseliner": {
-          "w": 55,
+          "w": 56,
           "l": 46
         },
         "Big Server": {
@@ -2176,7 +2176,7 @@
         },
         "Solid Baseliner": {
           "w": 6,
-          "l": 7
+          "l": 8
         },
         "Big Server + First Strike": {
           "w": 5,
@@ -2390,7 +2390,7 @@
         },
         "Attacking Baseliner": {
           "w": 17,
-          "l": 24
+          "l": 25
         },
         "Big Server + First Strike": {
           "w": 13,
@@ -2821,7 +2821,7 @@
           "l": 17
         },
         "Solid Baseliner": {
-          "w": 26,
+          "w": 27,
           "l": 22
         },
         "Counterpuncher": {
@@ -2829,7 +2829,7 @@
           "l": 23
         },
         "Attacking Baseliner": {
-          "w": 22,
+          "w": 23,
           "l": 28
         },
         "Big Server + First Strike": {
@@ -3105,7 +3105,7 @@
       "name": "T. Daniel",
       "vs": {
         "Solid Defender": {
-          "w": 3,
+          "w": 4,
           "l": 13
         },
         "Counterpuncher": {
@@ -3274,7 +3274,7 @@
       "name": "D. Shapovalov",
       "vs": {
         "Big Server + First Strike": {
-          "w": 18,
+          "w": 19,
           "l": 18
         },
         "Attacking Baseliner": {
@@ -3471,7 +3471,7 @@
           "l": 8
         },
         "Attacking Baseliner": {
-          "w": 8,
+          "w": 9,
           "l": 13
         },
         "All Court Elite": {
@@ -3504,7 +3504,7 @@
           "l": 5
         },
         "Attacking Baseliner": {
-          "w": 66,
+          "w": 67,
           "l": 45
         },
         "Counterpuncher": {
@@ -3579,7 +3579,7 @@
         },
         "Attacking Baseliner": {
           "w": 2,
-          "l": 8
+          "l": 9
         },
         "Big Server + Complete Baseliner": {
           "w": 3,
@@ -4253,7 +4253,7 @@
           "l": 24
         },
         "Big Server + First Strike": {
-          "w": 18,
+          "w": 19,
           "l": 18
         },
         "Attacking Baseliner": {
@@ -4361,7 +4361,7 @@
         },
         "Big Server + First Strike": {
           "w": 23,
-          "l": 10
+          "l": 11
         },
         "All Court Elite": {
           "w": 1,
@@ -4438,7 +4438,7 @@
           "l": 8
         },
         "Big Server + First Strike": {
-          "w": 7,
+          "w": 8,
           "l": 6
         },
         "Big Server + Complete Baseliner": {
@@ -4529,7 +4529,7 @@
           "l": 2
         },
         "Attacking Baseliner": {
-          "w": 7,
+          "w": 8,
           "l": 12
         },
         "Big Server + Complete Baseliner": {
@@ -4850,11 +4850,11 @@
           "l": 5
         },
         "Solid Baseliner": {
-          "w": 9,
+          "w": 10,
           "l": 12
         },
         "Attacking Baseliner": {
-          "w": 14,
+          "w": 15,
           "l": 17
         },
         "Big Server + Complete Baseliner": {
@@ -5082,7 +5082,7 @@
       "vs": {
         "Attacking Baseliner": {
           "w": 61,
-          "l": 55
+          "l": 56
         },
         "Counterpuncher": {
           "w": 19,
@@ -5212,7 +5212,7 @@
           "l": 10
         },
         "Solid Defender": {
-          "w": 2,
+          "w": 3,
           "l": 6
         },
         "Solid Baseliner": {
@@ -5600,7 +5600,7 @@
         },
         "Attacking Baseliner": {
           "w": 15,
-          "l": 24
+          "l": 25
         },
         "Big Server": {
           "w": 3,
@@ -5662,7 +5662,7 @@
         },
         "Counterpuncher": {
           "w": 5,
-          "l": 5
+          "l": 6
         },
         "Big Server + Complete Baseliner": {
           "w": 2,
@@ -5912,7 +5912,7 @@
           "l": 5
         },
         "Big Server + First Strike": {
-          "w": 6,
+          "w": 7,
           "l": 4
         }
       }
@@ -6169,7 +6169,7 @@
         },
         "Counterpuncher": {
           "w": 15,
-          "l": 12
+          "l": 13
         },
         "Solid Defender": {
           "w": 14,
@@ -6205,7 +6205,7 @@
           "l": 7
         },
         "Attacking Baseliner": {
-          "w": 4,
+          "w": 5,
           "l": 9
         },
         "Solid Baseliner": {
@@ -6222,7 +6222,7 @@
         },
         "Big Server": {
           "w": 0,
-          "l": 3
+          "l": 4
         },
         "Solid Defender": {
           "w": 2,
@@ -6767,7 +6767,7 @@
         },
         "Counterpuncher": {
           "w": 6,
-          "l": 9
+          "l": 10
         },
         "Big Server + Complete Baseliner": {
           "w": 6,
@@ -6836,12 +6836,12 @@
           "l": 5
         },
         "Solid Baseliner": {
-          "w": 1,
+          "w": 2,
           "l": 2
         },
         "Big Server + First Strike": {
           "w": 1,
-          "l": 1
+          "l": 2
         }
       }
     },
@@ -6916,7 +6916,7 @@
         },
         "Attacking Baseliner": {
           "w": 9,
-          "l": 21
+          "l": 22
         },
         "Solid Baseliner": {
           "w": 10,
@@ -7039,7 +7039,7 @@
       "name": "R. Hijikata",
       "vs": {
         "Solid Baseliner": {
-          "w": 13,
+          "w": 14,
           "l": 12
         },
         "Solid Defender": {
@@ -7291,7 +7291,7 @@
         },
         "Big Server + First Strike": {
           "w": 3,
-          "l": 10
+          "l": 11
         },
         "Solid Defender": {
           "w": 1,
@@ -7304,7 +7304,7 @@
       }
     },
     "zhukayev|b": {
-      "name": "Beibit Zhukayev",
+      "name": "B. Zhukayev",
       "vs": {
         "Counterpuncher": {
           "w": 0,
@@ -7333,7 +7333,7 @@
         },
         "Big Server + Complete Baseliner": {
           "w": 3,
-          "l": 15
+          "l": 16
         },
         "Counterpuncher": {
           "w": 5,
@@ -7378,7 +7378,7 @@
         },
         "Solid Defender": {
           "w": 2,
-          "l": 2
+          "l": 3
         },
         "Counterpuncher": {
           "w": 3,
@@ -7539,7 +7539,7 @@
         },
         "Attacking Baseliner": {
           "w": 9,
-          "l": 7
+          "l": 8
         },
         "Big Server + Complete Baseliner": {
           "w": 1,
@@ -7564,7 +7564,7 @@
       "vs": {
         "Solid Baseliner": {
           "w": 4,
-          "l": 6
+          "l": 7
         },
         "Attacking Baseliner": {
           "w": 14,
@@ -7600,7 +7600,7 @@
       "name": "F. Marozsan",
       "vs": {
         "Attacking Baseliner": {
-          "w": 26,
+          "w": 27,
           "l": 29
         },
         "Counterpuncher": {
@@ -8316,6 +8316,10 @@
         "Big Server": {
           "w": 0,
           "l": 1
+        },
+        "Solid Defender": {
+          "w": 0,
+          "l": 1
         }
       }
     },
@@ -8344,7 +8348,7 @@
         },
         "Attacking Baseliner": {
           "w": 12,
-          "l": 13
+          "l": 14
         },
         "All Court Elite": {
           "w": 0,
@@ -8394,7 +8398,7 @@
       "vs": {
         "Solid Baseliner": {
           "w": 2,
-          "l": 1
+          "l": 2
         },
         "Solid Defender": {
           "w": 0,
@@ -8514,7 +8518,7 @@
       "vs": {
         "Attacking Baseliner": {
           "w": 9,
-          "l": 17
+          "l": 18
         },
         "Counterpuncher": {
           "w": 1,
@@ -8761,7 +8765,7 @@
           "l": 7
         },
         "Counterpuncher": {
-          "w": 4,
+          "w": 5,
           "l": 3
         },
         "Solid Defender": {
@@ -8862,7 +8866,7 @@
       }
     },
     "canas|a": {
-      "name": "A. Moro Canas",
+      "name": "Alejandro Moro Canas",
       "vs": {
         "Big Server + Complete Baseliner": {
           "w": 0,
@@ -8883,7 +8887,7 @@
       }
     },
     "martineau|m": {
-      "name": "Matteo Martineau",
+      "name": "M. Martineau",
       "vs": {
         "Big Server + First Strike": {
           "w": 0,
@@ -8969,7 +8973,7 @@
       "name": "J. Faria",
       "vs": {
         "Attacking Baseliner": {
-          "w": 8,
+          "w": 9,
           "l": 13
         },
         "All Court Elite": {
@@ -9002,7 +9006,7 @@
       "name": "K. Jacquet",
       "vs": {
         "Attacking Baseliner": {
-          "w": 3,
+          "w": 4,
           "l": 2
         },
         "Counterpuncher": {
@@ -9219,7 +9223,7 @@
       "vs": {
         "Attacking Baseliner": {
           "w": 2,
-          "l": 5
+          "l": 6
         },
         "Big Server + First Strike": {
           "w": 3,
@@ -9230,7 +9234,7 @@
           "l": 3
         },
         "Solid Baseliner": {
-          "w": 2,
+          "w": 3,
           "l": 2
         },
         "Big Server + Complete Baseliner": {
@@ -9313,7 +9317,7 @@
           "l": 2
         },
         "Solid Baseliner": {
-          "w": 1,
+          "w": 2,
           "l": 5
         },
         "Big Server + First Strike": {
