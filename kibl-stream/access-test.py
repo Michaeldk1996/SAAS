@@ -777,7 +777,7 @@ def fixture_names(fids, sport5_leagues, t_from, t_to):
     return out, errors
 
 
-def board_join(rows, meta):
+def board_join(rows, meta, known_fixtures=()):
     """TEN-270 change 1 — stream rows joined to OUR cards. Report only."""
     import card_join as CJ
     say()
@@ -799,6 +799,12 @@ def board_join(rows, meta):
     t_from = (start - timedelta(days=1)).strftime("%Y-%m-%dT%H:%M:%SZ")
     t_to = (start + timedelta(days=2)).strftime("%Y-%m-%dT%H:%M:%SZ")
     names, errs = fixture_names(fids, leagues5, t_from, t_to)
+    # Ruling 1 needs EVERY candidate, not only fixtures that happened to stream:
+    # "if two candidate fixtures qualify, match neither" is undetectable if the
+    # second one is quiet. So every men's fixture the poller holds joins in.
+    for f in known_fixtures or ():
+        if f.get("fixture_id") is not None and f.get("name"):
+            names.setdefault(f["fixture_id"], f)
     openers = defaultdict(list)
     try:
         matched_ids = sorted(f for f in fids if f in names)
@@ -960,7 +966,7 @@ def main():
     # appear among polled tennis fixtures, and counting them would put ~80% of
     # the stream into "unmatched" as a denominator artefact.
     mapping_and_comparison(tennis_rows, fixtures_171, polled_rows, window)
-    board_join(rows, meta)
+    board_join(rows, meta, fixtures_171)
 
     # ── B6 drop test ────────────────────────────────────────────────────────
     say()
