@@ -14,7 +14,7 @@
   "method": {
     "serve": "Serve Rating = 1stIn% + 1stWon% + 2ndWon% + serviceGamesWon% + acesPerMatch - dfPerMatch, with aces and double faults as RAW PER-MATCH COUNTS over the matches carrying serve stats (serve.svMatches) - founder ruling 2026-08-29, re-affirmed TEN-243 gate b5a358e9. Until TEN-243 this file summed ace% and applied no df penalty, which did not implement that ruling; acePct/dfPct are still emitted as rates but are NOT the rating. Tour level is primary; players thin at tour level (unreliable tour sample) have their Challenger/qualifying serve sample folded in per component with the success side discounted x0.9 (serve.inclChallenger flags those) - aces take the discount, double faults do not, because discounting a penalty would forgive errors at the weaker tier.",
     "mental": "Mental Edge = PW / PL to 3dp, where a PRESSURE POINT IS A BREAK POINT - founder ruling TEN-243 gate b5a358e9 (2026-09-19). PW = break points saved on serve + break points converted on return; PL = break points lost on serve + break points missed on return. PW + PL == sample.bpFaced + sample.bpChances by construction. Raw integer counts, tour level only (no Challenger fold-in - mixing tiers inside a count changes what the count means). rating is null when PL is 0: a player who never lost a break point in the bucket has no ratio, and an infinity is not a rating.",
-    "return": "ATP-style Return Rating = 1stServeReturnWon% + 2ndServeReturnWon% + BPconverted% + returnGamesWon% (return points split by serve type to match the Infosys ATP Return leaderboard scale). Tour level is primary; players thin at tour level have their Challenger/qualifying return sample folded in per component with the success side discounted x0.9 (return.inclChallenger flags those).",
+    "return": "ATP-style Return Rating = 1stServeReturnWon% + 2ndServeReturnWon% + BPconverted% + returnGamesWon% (return points split by serve type to match the Infosys ATP Return leaderboard scale). Tour level is primary; players thin at tour level have their Challenger/qualifying return sample folded in per component with the success side discounted x0.9 (return.inclChallenger flags those). rating is null (a dash) when any component has a zero denominator - above all 0 break-point chances in the bucket - and that component is emitted null rather than 0; founder ruling TEN-263, one rule across the product (matches dna-apitennis-ratings.js).",
     "underPressure": "ATP-style Under-Pressure Rating = sum of the components present scaled to the full 4-component equivalent (mean of BPsaved% / BPconverted% / tiebreak% / decidingSet% * 4, ~200-240); rated when >= 3 of 4 clear their floors so 3- and 4-component players share the ATP scale. Tour level is primary; any single component below its tour-level floor is topped up with the player’s Challenger/qualifying sample (inclChallenger:true flags those buckets).",
     "index": "retained internally: 0-100 pool percentile within the same surface+scope bucket (serve/return rank the composite rating, under-pressure averages each component’s own pool percentile). The board now displays the ATP-style ratings above, not this index."
   },
@@ -307,7 +307,7 @@
               "bpConvPct": 38.9,
               "rating": 146.5,
               "inclChallenger": false,
-              "index": 94.9
+              "index": 94.8
             },
             "underPressure": {
               "bpSavedPct": 70,
@@ -366,7 +366,7 @@
               "bpConvPct": 45.4,
               "rating": 147.7,
               "inclChallenger": false,
-              "index": 91.3
+              "index": 91.1
             },
             "underPressure": {
               "bpSavedPct": 76.4,
@@ -794,7 +794,7 @@
               "bpConvPct": 36.5,
               "rating": 140.7,
               "inclChallenger": false,
-              "index": 87.4
+              "index": 87.3
             },
             "underPressure": {
               "bpSavedPct": 66.3,
@@ -853,7 +853,7 @@
               "bpConvPct": 42.1,
               "rating": 154.9,
               "inclChallenger": false,
-              "index": 94.8
+              "index": 94.7
             },
             "underPressure": {
               "bpSavedPct": 74.2,
@@ -1219,7 +1219,7 @@
               "bpConvPct": 46,
               "rating": 162.6,
               "inclChallenger": false,
-              "index": 92.5
+              "index": 92.4
             },
             "underPressure": {
               "bpSavedPct": 55.6,
@@ -1339,7 +1339,7 @@
               "bpConvPct": 27.7,
               "rating": 111.4,
               "inclChallenger": false,
-              "index": 34.3
+              "index": 33.1
             },
             "underPressure": {
               "bpSavedPct": 76.3,
@@ -1706,7 +1706,7 @@
               "bpConvPct": 38.6,
               "rating": 148.2,
               "inclChallenger": false,
-              "index": 74.1
+              "index": 73.8
             },
             "underPressure": {
               "bpSavedPct": 57.8,
@@ -1826,7 +1826,7 @@
               "bpConvPct": 40,
               "rating": 166.7,
               "inclChallenger": false,
-              "index": 98.3
+              "index": 98.2
             },
             "underPressure": {
               "bpSavedPct": 62.2,
@@ -2192,7 +2192,7 @@
               "bpConvPct": 30.3,
               "rating": 134.1,
               "inclChallenger": false,
-              "index": 42.1
+              "index": 41.3
             },
             "underPressure": {
               "bpSavedPct": 66.1,
@@ -2253,7 +2253,7 @@
               "bpConvPct": 38,
               "rating": 127.7,
               "inclChallenger": false,
-              "index": 61.7
+              "index": 61.5
             },
             "underPressure": {
               "bpSavedPct": 69.4,
@@ -2312,7 +2312,7 @@
               "bpConvPct": 36.2,
               "rating": 130.7,
               "inclChallenger": false,
-              "index": 65.7
+              "index": 65.1
             },
             "underPressure": {
               "bpSavedPct": 65.3,
@@ -2799,7 +2799,7 @@
               "bpConvPct": 34.4,
               "rating": 150.2,
               "inclChallenger": false,
-              "index": 93.6
+              "index": 93.5
             },
             "underPressure": {
               "bpSavedPct": 60.6,
@@ -3165,7 +3165,7 @@
               "bpConvPct": 42.9,
               "rating": 160.8,
               "inclChallenger": false,
-              "index": 89.9
+              "index": 89.8
             },
             "underPressure": {
               "bpSavedPct": 59.5,
@@ -3226,7 +3226,7 @@
               "bpConvPct": 36.1,
               "rating": 130.5,
               "inclChallenger": false,
-              "index": 71.5
+              "index": 71.4
             },
             "underPressure": {
               "bpSavedPct": 64,
@@ -3285,7 +3285,7 @@
               "bpConvPct": 20,
               "rating": 83.2,
               "inclChallenger": false,
-              "index": 7.6
+              "index": 5.9
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -3651,7 +3651,7 @@
               "bpConvPct": 30,
               "rating": 115.4,
               "inclChallenger": false,
-              "index": 13.2
+              "index": 12.4
             },
             "underPressure": {
               "bpSavedPct": 53.1,
@@ -3712,7 +3712,7 @@
               "bpConvPct": 41.2,
               "rating": 131.6,
               "inclChallenger": false,
-              "index": 74.8
+              "index": 74.6
             },
             "underPressure": {
               "bpSavedPct": 66.8,
@@ -3771,7 +3771,7 @@
               "bpConvPct": 47.6,
               "rating": 141.1,
               "inclChallenger": false,
-              "index": 84.3
+              "index": 84
             },
             "underPressure": {
               "bpSavedPct": 63.3,
@@ -4138,7 +4138,7 @@
               "bpConvPct": 49.2,
               "rating": 140.8,
               "inclChallenger": false,
-              "index": 55.7
+              "index": 55.1
             },
             "underPressure": {
               "bpSavedPct": 56.5,
@@ -4199,7 +4199,7 @@
               "bpConvPct": 32.8,
               "rating": 115.6,
               "inclChallenger": false,
-              "index": 32.7
+              "index": 32.4
             },
             "underPressure": {
               "bpSavedPct": 77.9,
@@ -4258,7 +4258,7 @@
               "bpConvPct": 38.8,
               "rating": 121.9,
               "inclChallenger": false,
-              "index": 46.5
+              "index": 45.6
             },
             "underPressure": {
               "bpSavedPct": 79.1,
@@ -4625,7 +4625,7 @@
               "bpConvPct": 36.1,
               "rating": 153.8,
               "inclChallenger": false,
-              "index": 81.1
+              "index": 80.9
             },
             "underPressure": {
               "bpSavedPct": 61.8,
@@ -4686,7 +4686,7 @@
               "bpConvPct": 36.1,
               "rating": 129.4,
               "inclChallenger": false,
-              "index": 66.8
+              "index": 66.7
             },
             "underPressure": {
               "bpSavedPct": 64.7,
@@ -4745,7 +4745,7 @@
               "bpConvPct": 36.4,
               "rating": 131,
               "inclChallenger": false,
-              "index": 66.3
+              "index": 65.7
             },
             "underPressure": {
               "bpSavedPct": 74.1,
@@ -5112,7 +5112,7 @@
               "bpConvPct": 40.4,
               "rating": 141.8,
               "inclChallenger": false,
-              "index": 58.3
+              "index": 57.8
             },
             "underPressure": {
               "bpSavedPct": 69,
@@ -5173,7 +5173,7 @@
               "bpConvPct": 39.9,
               "rating": 135.8,
               "inclChallenger": false,
-              "index": 82.7
+              "index": 82.6
             },
             "underPressure": {
               "bpSavedPct": 61.8,
@@ -5232,7 +5232,7 @@
               "bpConvPct": 40,
               "rating": 131,
               "inclChallenger": false,
-              "index": 66.3
+              "index": 65.7
             },
             "underPressure": {
               "bpSavedPct": 70,
@@ -5599,7 +5599,7 @@
               "bpConvPct": 37,
               "rating": 147.3,
               "inclChallenger": false,
-              "index": 73.2
+              "index": 72.9
             },
             "underPressure": {
               "bpSavedPct": 61.3,
@@ -5660,7 +5660,7 @@
               "bpConvPct": 32,
               "rating": 124.1,
               "inclChallenger": false,
-              "index": 51.9
+              "index": 51.6
             },
             "underPressure": {
               "bpSavedPct": 62.2,
@@ -6120,7 +6120,7 @@
               "bpConvPct": 42.1,
               "rating": 145.2,
               "inclChallenger": false,
-              "index": 93.5
+              "index": 93.4
             },
             "underPressure": {
               "bpSavedPct": 63.5,
@@ -6179,7 +6179,7 @@
               "bpConvPct": 28.6,
               "rating": 113.3,
               "inclChallenger": false,
-              "index": 36
+              "index": 34.9
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -6545,7 +6545,7 @@
               "bpConvPct": 44.1,
               "rating": 167.9,
               "inclChallenger": false,
-              "index": 97.4
+              "index": 97.3
             },
             "underPressure": {
               "bpSavedPct": 67.9,
@@ -6606,7 +6606,7 @@
               "bpConvPct": 40.5,
               "rating": 141.3,
               "inclChallenger": false,
-              "index": 87.9
+              "index": 87.8
             },
             "underPressure": {
               "bpSavedPct": 64,
@@ -6665,7 +6665,7 @@
               "bpConvPct": 34.4,
               "rating": 138.5,
               "inclChallenger": false,
-              "index": 80.8
+              "index": 80.5
             },
             "underPressure": {
               "bpSavedPct": 68,
@@ -7032,7 +7032,7 @@
               "bpConvPct": 47.6,
               "rating": 155.4,
               "inclChallenger": false,
-              "index": 83.3
+              "index": 83.1
             },
             "underPressure": {
               "bpSavedPct": 68.4,
@@ -7093,7 +7093,7 @@
               "bpConvPct": 34.6,
               "rating": 118.5,
               "inclChallenger": false,
-              "index": 39.3
+              "index": 39
             },
             "underPressure": {
               "bpSavedPct": 72.7,
@@ -7152,7 +7152,7 @@
               "bpConvPct": 50,
               "rating": 133.7,
               "inclChallenger": false,
-              "index": 70.9
+              "index": 70.4
             },
             "underPressure": {
               "bpSavedPct": 74.2,
@@ -7519,7 +7519,7 @@
               "bpConvPct": 37.7,
               "rating": 148.9,
               "inclChallenger": false,
-              "index": 75
+              "index": 74.7
             },
             "underPressure": {
               "bpSavedPct": 58.9,
@@ -7580,7 +7580,7 @@
               "bpConvPct": 38.2,
               "rating": 140.1,
               "inclChallenger": false,
-              "index": 86
+              "index": 85.9
             },
             "underPressure": {
               "bpSavedPct": 60,
@@ -7639,7 +7639,7 @@
               "bpConvPct": 39.5,
               "rating": 128.4,
               "inclChallenger": false,
-              "index": 60.5
+              "index": 59.8
             },
             "underPressure": {
               "bpSavedPct": 71.8,
@@ -8006,7 +8006,7 @@
               "bpConvPct": 44.2,
               "rating": 159.6,
               "inclChallenger": false,
-              "index": 89
+              "index": 88.9
             },
             "underPressure": {
               "bpSavedPct": 57.4,
@@ -8126,7 +8126,7 @@
               "bpConvPct": 40,
               "rating": 137.8,
               "inclChallenger": false,
-              "index": 80.2
+              "index": 79.9
             },
             "underPressure": {
               "bpSavedPct": 63.4,
@@ -8493,7 +8493,7 @@
               "bpConvPct": 40,
               "rating": 138.8,
               "inclChallenger": false,
-              "index": 52.2
+              "index": 51.6
             },
             "underPressure": {
               "bpSavedPct": 66,
@@ -8554,7 +8554,7 @@
               "bpConvPct": 40,
               "rating": 132.8,
               "inclChallenger": false,
-              "index": 77.6
+              "index": 77.5
             },
             "underPressure": {
               "bpSavedPct": 64.8,
@@ -8613,7 +8613,7 @@
               "bpConvPct": 39.5,
               "rating": 133.2,
               "inclChallenger": false,
-              "index": 69.8
+              "index": 69.2
             },
             "underPressure": {
               "bpSavedPct": 67.9,
@@ -9040,7 +9040,7 @@
               "bpConvPct": 36.5,
               "rating": 126.8,
               "inclChallenger": false,
-              "index": 59.8
+              "index": 59.6
             },
             "underPressure": {
               "bpSavedPct": 63.5,
@@ -9099,7 +9099,7 @@
               "bpConvPct": 38.2,
               "rating": 126.6,
               "inclChallenger": false,
-              "index": 56.4
+              "index": 55.6
             },
             "underPressure": {
               "bpSavedPct": 53.8,
@@ -9465,7 +9465,7 @@
               "bpConvPct": 48.8,
               "rating": 159.7,
               "inclChallenger": false,
-              "index": 89.5
+              "index": 89.3
             },
             "underPressure": {
               "bpSavedPct": 65.5,
@@ -9585,7 +9585,7 @@
               "bpConvPct": 44,
               "rating": 141.6,
               "inclChallenger": false,
-              "index": 84.9
+              "index": 84.6
             },
             "underPressure": {
               "bpSavedPct": 60,
@@ -9951,7 +9951,7 @@
               "bpConvPct": 43.4,
               "rating": 166.5,
               "inclChallenger": false,
-              "index": 96.1
+              "index": 96
             },
             "underPressure": {
               "bpSavedPct": 62.7,
@@ -10012,7 +10012,7 @@
               "bpConvPct": 34,
               "rating": 132.9,
               "inclChallenger": false,
-              "index": 78
+              "index": 77.9
             },
             "underPressure": {
               "bpSavedPct": 61.3,
@@ -10071,7 +10071,7 @@
               "bpConvPct": 40,
               "rating": 125.4,
               "inclChallenger": false,
-              "index": 54.1
+              "index": 53.3
             },
             "underPressure": {
               "bpSavedPct": 57.1,
@@ -10437,7 +10437,7 @@
               "bpConvPct": 37.3,
               "rating": 145.6,
               "inclChallenger": false,
-              "index": 69.3
+              "index": 68.9
             },
             "underPressure": {
               "bpSavedPct": 63.5,
@@ -10498,7 +10498,7 @@
               "bpConvPct": 32.9,
               "rating": 119.6,
               "inclChallenger": false,
-              "index": 42.1
+              "index": 41.8
             },
             "underPressure": {
               "bpSavedPct": 63.3,
@@ -10957,7 +10957,7 @@
               "bpConvPct": 36.4,
               "rating": 125.2,
               "inclChallenger": false,
-              "index": 55.6
+              "index": 55.4
             },
             "underPressure": {
               "bpSavedPct": 63.8,
@@ -11016,7 +11016,7 @@
               "bpConvPct": 36.4,
               "rating": 130.1,
               "inclChallenger": false,
-              "index": 63.4
+              "index": 62.7
             },
             "underPressure": {
               "bpSavedPct": 64.3,
@@ -11383,7 +11383,7 @@
               "bpConvPct": 37,
               "rating": 131.5,
               "inclChallenger": false,
-              "index": 37.3
+              "index": 36.4
             },
             "underPressure": {
               "bpSavedPct": 62.1,
@@ -11444,7 +11444,7 @@
               "bpConvPct": 31.8,
               "rating": 113,
               "inclChallenger": false,
-              "index": 26.2
+              "index": 25.8
             },
             "underPressure": {
               "bpSavedPct": 69.1,
@@ -11503,7 +11503,7 @@
               "bpConvPct": 32.1,
               "rating": 119.1,
               "inclChallenger": false,
-              "index": 43
+              "index": 42
             },
             "underPressure": {
               "bpSavedPct": 80,
@@ -11869,7 +11869,7 @@
               "bpConvPct": 38.9,
               "rating": 145.3,
               "inclChallenger": false,
-              "index": 68.9
+              "index": 68.4
             },
             "underPressure": {
               "bpSavedPct": 60.6,
@@ -11930,7 +11930,7 @@
               "bpConvPct": 27.4,
               "rating": 117.7,
               "inclChallenger": false,
-              "index": 36.9
+              "index": 36.6
             },
             "underPressure": {
               "bpSavedPct": 69.2,
@@ -11989,7 +11989,7 @@
               "bpConvPct": 25,
               "rating": 117.1,
               "inclChallenger": false,
-              "index": 40.1
+              "index": 39.1
             },
             "underPressure": {
               "bpSavedPct": 68,
@@ -12355,7 +12355,7 @@
               "bpConvPct": 30.4,
               "rating": 115.5,
               "inclChallenger": true,
-              "index": 13.6
+              "index": 12.9
             },
             "underPressure": {
               "bpSavedPct": 57.8,
@@ -12416,7 +12416,7 @@
               "bpConvPct": 37.9,
               "rating": 122.8,
               "inclChallenger": false,
-              "index": 49.1
+              "index": 48.8
             },
             "underPressure": {
               "bpSavedPct": 70,
@@ -12474,7 +12474,7 @@
               "bpConvPct": 37.9,
               "rating": 122.8,
               "inclChallenger": false,
-              "index": 47.7
+              "index": 46.7
             },
             "underPressure": {
               "bpSavedPct": 70,
@@ -12841,7 +12841,7 @@
               "bpConvPct": 28.4,
               "rating": 114,
               "inclChallenger": false,
-              "index": 11.8
+              "index": 11.1
             },
             "underPressure": {
               "bpSavedPct": 39.1,
@@ -12902,7 +12902,7 @@
               "bpConvPct": 33.3,
               "rating": 113.5,
               "inclChallenger": false,
-              "index": 26.6
+              "index": 26.3
             },
             "underPressure": {
               "bpSavedPct": 63.6,
@@ -12961,7 +12961,7 @@
               "bpConvPct": 27.6,
               "rating": 106.4,
               "inclChallenger": false,
-              "index": 26.7
+              "index": 25.4
             },
             "underPressure": {
               "bpSavedPct": 70,
@@ -13328,7 +13328,7 @@
               "bpConvPct": 45.2,
               "rating": 156.7,
               "inclChallenger": false,
-              "index": 86
+              "index": 85.8
             },
             "underPressure": {
               "bpSavedPct": 64.9,
@@ -13389,7 +13389,7 @@
               "bpConvPct": 39.9,
               "rating": 135.2,
               "inclChallenger": false,
-              "index": 81.3
+              "index": 81.2
             },
             "underPressure": {
               "bpSavedPct": 65.8,
@@ -13448,7 +13448,7 @@
               "bpConvPct": 33.3,
               "rating": 127.9,
               "inclChallenger": false,
-              "index": 58.1
+              "index": 57.4
             },
             "underPressure": {
               "bpSavedPct": 67.2,
@@ -13815,7 +13815,7 @@
               "bpConvPct": 35.2,
               "rating": 139.4,
               "inclChallenger": false,
-              "index": 53.5
+              "index": 52.9
             },
             "underPressure": {
               "bpSavedPct": 58.8,
@@ -13876,7 +13876,7 @@
               "bpConvPct": 34.8,
               "rating": 129.6,
               "inclChallenger": true,
-              "index": 67.3
+              "index": 67.1
             },
             "underPressure": {
               "bpSavedPct": 68.9,
@@ -13935,7 +13935,7 @@
               "bpConvPct": 27.4,
               "rating": 121.6,
               "inclChallenger": false,
-              "index": 45.9
+              "index": 45
             },
             "underPressure": {
               "bpSavedPct": 76.3,
@@ -14302,7 +14302,7 @@
               "bpConvPct": 37.8,
               "rating": 143.7,
               "inclChallenger": false,
-              "index": 63.6
+              "index": 63.1
             },
             "underPressure": {
               "bpSavedPct": 55,
@@ -14363,7 +14363,7 @@
               "bpConvPct": 39.4,
               "rating": 131.8,
               "inclChallenger": false,
-              "index": 75.2
+              "index": 75.1
             },
             "underPressure": {
               "bpSavedPct": 63.9,
@@ -14422,7 +14422,7 @@
               "bpConvPct": 37.5,
               "rating": 131.4,
               "inclChallenger": false,
-              "index": 68
+              "index": 67.5
             },
             "underPressure": {
               "bpSavedPct": 52.4,
@@ -14788,7 +14788,7 @@
               "bpConvPct": 41.6,
               "rating": 151.4,
               "inclChallenger": true,
-              "index": 78.9
+              "index": 78.7
             },
             "underPressure": {
               "bpSavedPct": 55.2,
@@ -15221,7 +15221,7 @@
               "bpConvPct": 47.8,
               "rating": 155.3,
               "inclChallenger": false,
-              "index": 82
+              "index": 81.8
             },
             "underPressure": {
               "bpSavedPct": 49.4,
@@ -15282,7 +15282,7 @@
               "bpConvPct": 33.8,
               "rating": 121.9,
               "inclChallenger": false,
-              "index": 46.3
+              "index": 46
             },
             "underPressure": {
               "bpSavedPct": 70.9,
@@ -15341,7 +15341,7 @@
               "bpConvPct": 28,
               "rating": 114.8,
               "inclChallenger": false,
-              "index": 37.8
+              "index": 36.7
             },
             "underPressure": {
               "bpSavedPct": 73.9,
@@ -15708,7 +15708,7 @@
               "bpConvPct": 38.1,
               "rating": 144.3,
               "inclChallenger": false,
-              "index": 65.8
+              "index": 65.3
             },
             "underPressure": {
               "bpSavedPct": 63.6,
@@ -15769,7 +15769,7 @@
               "bpConvPct": 29.2,
               "rating": 126.2,
               "inclChallenger": false,
-              "index": 57.9
+              "index": 57.7
             },
             "underPressure": {
               "bpSavedPct": 62.6,
@@ -15828,7 +15828,7 @@
               "bpConvPct": 33.7,
               "rating": 133.9,
               "inclChallenger": false,
-              "index": 72.1
+              "index": 71.6
             },
             "underPressure": {
               "bpSavedPct": 68.8,
@@ -16195,7 +16195,7 @@
               "bpConvPct": 39.1,
               "rating": 137.3,
               "inclChallenger": false,
-              "index": 48.7
+              "index": 48
             },
             "underPressure": {
               "bpSavedPct": 64,
@@ -16256,7 +16256,7 @@
               "bpConvPct": 40.3,
               "rating": 121.8,
               "inclChallenger": false,
-              "index": 45.8
+              "index": 45.5
             },
             "underPressure": {
               "bpSavedPct": 73.5,
@@ -16655,7 +16655,7 @@
               "bpConvPct": 26.2,
               "rating": 124.7,
               "inclChallenger": false,
-              "index": 25
+              "index": 24.4
             },
             "underPressure": {
               "bpSavedPct": 63.3,
@@ -16716,7 +16716,7 @@
               "bpConvPct": 35.4,
               "rating": 130.8,
               "inclChallenger": false,
-              "index": 72.9
+              "index": 72.8
             },
             "underPressure": {
               "bpSavedPct": 65.2,
@@ -16775,7 +16775,7 @@
               "bpConvPct": 40,
               "rating": 140.3,
               "inclChallenger": false,
-              "index": 82.6
+              "index": 82.2
             },
             "underPressure": {
               "bpSavedPct": 56.5,
@@ -17138,7 +17138,7 @@
               "bpConvPct": 40.6,
               "rating": 141.9,
               "inclChallenger": true,
-              "index": 58.8
+              "index": 58.2
             },
             "underPressure": {
               "bpSavedPct": 53.7,
@@ -17195,7 +17195,7 @@
               "bpConvPct": 15,
               "rating": 102.9,
               "inclChallenger": true,
-              "index": 11.2
+              "index": 10.8
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -17253,7 +17253,7 @@
               "bpConvPct": 15,
               "rating": 102.9,
               "inclChallenger": true,
-              "index": 22.7
+              "index": 21.3
             },
             "underPressure": {
               "bpSavedPct": 69.4,
@@ -17619,7 +17619,7 @@
               "bpConvPct": 38.8,
               "rating": 138.2,
               "inclChallenger": false,
-              "index": 51.3
+              "index": 50.7
             },
             "underPressure": {
               "bpSavedPct": 55.9,
@@ -17680,7 +17680,7 @@
               "bpConvPct": 34.9,
               "rating": 125.1,
               "inclChallenger": false,
-              "index": 54.7
+              "index": 54.5
             },
             "underPressure": {
               "bpSavedPct": 65.5,
@@ -17739,7 +17739,7 @@
               "bpConvPct": 46.4,
               "rating": 140.5,
               "inclChallenger": false,
-              "index": 83.7
+              "index": 83.4
             },
             "underPressure": {
               "bpSavedPct": 56.4,
@@ -18106,7 +18106,7 @@
               "bpConvPct": 41.3,
               "rating": 156.8,
               "inclChallenger": false,
-              "index": 86.4
+              "index": 86.2
             },
             "underPressure": {
               "bpSavedPct": 59.4,
@@ -18167,7 +18167,7 @@
               "bpConvPct": 31.8,
               "rating": 123.2,
               "inclChallenger": false,
-              "index": 50
+              "index": 49.8
             },
             "underPressure": {
               "bpSavedPct": 55.6,
@@ -18226,7 +18226,7 @@
               "bpConvPct": 36.4,
               "rating": 133.4,
               "inclChallenger": false,
-              "index": 70.3
+              "index": 69.8
             },
             "underPressure": {
               "bpSavedPct": 48.6,
@@ -18592,7 +18592,7 @@
               "bpConvPct": 38.7,
               "rating": 135.2,
               "inclChallenger": true,
-              "index": 46.1
+              "index": 45.3
             },
             "underPressure": {
               "bpSavedPct": 49.7,
@@ -18653,7 +18653,7 @@
               "bpConvPct": 27.4,
               "rating": 114.6,
               "inclChallenger": false,
-              "index": 28.5
+              "index": 28.2
             },
             "underPressure": {
               "bpSavedPct": 67.3,
@@ -18712,7 +18712,7 @@
               "bpConvPct": 26.6,
               "rating": 118.9,
               "inclChallenger": false,
-              "index": 42.4
+              "index": 41.4
             },
             "underPressure": {
               "bpSavedPct": 68.9,
@@ -19079,7 +19079,7 @@
               "bpConvPct": 37.3,
               "rating": 134.2,
               "inclChallenger": false,
-              "index": 43
+              "index": 42.2
             },
             "underPressure": {
               "bpSavedPct": 52.9,
@@ -19140,7 +19140,7 @@
               "bpConvPct": 44,
               "rating": 125.9,
               "inclChallenger": true,
-              "index": 57.5
+              "index": 57.3
             },
             "underPressure": {
               "bpSavedPct": 72,
@@ -19199,7 +19199,7 @@
               "bpConvPct": 47.3,
               "rating": 134,
               "inclChallenger": false,
-              "index": 72.7
+              "index": 72.2
             },
             "underPressure": {
               "bpSavedPct": 75.4,
@@ -19566,7 +19566,7 @@
               "bpConvPct": 47.6,
               "rating": 151.2,
               "inclChallenger": false,
-              "index": 78.5
+              "index": 78.2
             },
             "underPressure": {
               "bpSavedPct": 46.8,
@@ -19686,7 +19686,7 @@
               "bpConvPct": 45.7,
               "rating": 142.3,
               "inclChallenger": false,
-              "index": 86
+              "index": 85.8
             },
             "underPressure": {
               "bpSavedPct": 54.5,
@@ -20053,7 +20053,7 @@
               "bpConvPct": 35.4,
               "rating": 127.7,
               "inclChallenger": true,
-              "index": 30.7
+              "index": 29.8
             },
             "underPressure": {
               "bpSavedPct": 60,
@@ -20114,7 +20114,7 @@
               "bpConvPct": 35.5,
               "rating": 129.2,
               "inclChallenger": false,
-              "index": 65.4
+              "index": 65.3
             },
             "underPressure": {
               "bpSavedPct": 63.5,
@@ -20173,7 +20173,7 @@
               "bpConvPct": 38.8,
               "rating": 130.1,
               "inclChallenger": false,
-              "index": 63.4
+              "index": 62.7
             },
             "underPressure": {
               "bpSavedPct": 58.3,
@@ -20601,7 +20601,7 @@
               "bpConvPct": 44,
               "rating": 131.2,
               "inclChallenger": false,
-              "index": 73.8
+              "index": 73.7
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -21025,7 +21025,7 @@
               "bpConvPct": 58.3,
               "rating": 155.5,
               "inclChallenger": true,
-              "index": 84.2
+              "index": 84
             },
             "underPressure": {
               "bpSavedPct": 70,
@@ -21085,7 +21085,7 @@
               "bpConvPct": 42.5,
               "rating": 144,
               "inclChallenger": false,
-              "index": 90.7
+              "index": 90.6
             },
             "underPressure": {
               "bpSavedPct": 63.4,
@@ -21144,7 +21144,7 @@
               "bpConvPct": 33.5,
               "rating": 135.9,
               "inclChallenger": true,
-              "index": 76.7
+              "index": 76.3
             },
             "underPressure": {
               "bpSavedPct": 62.3,
@@ -21510,7 +21510,7 @@
               "bpConvPct": 44.6,
               "rating": 141.4,
               "inclChallenger": false,
-              "index": 57
+              "index": 56.4
             },
             "underPressure": {
               "bpSavedPct": 65,
@@ -21571,7 +21571,7 @@
               "bpConvPct": 32.9,
               "rating": 132.6,
               "inclChallenger": false,
-              "index": 76.2
+              "index": 76.1
             },
             "underPressure": {
               "bpSavedPct": 61.1,
@@ -21970,7 +21970,7 @@
               "bpConvPct": 33.8,
               "rating": 122.3,
               "inclChallenger": true,
-              "index": 20.2
+              "index": 19.6
             },
             "underPressure": {
               "bpSavedPct": 62.7,
@@ -22031,7 +22031,7 @@
               "bpConvPct": 34.7,
               "rating": 132.1,
               "inclChallenger": false,
-              "index": 75.7
+              "index": 75.6
             },
             "underPressure": {
               "bpSavedPct": 68,
@@ -22090,7 +22090,7 @@
               "bpConvPct": 32.7,
               "rating": 128.6,
               "inclChallenger": true,
-              "index": 61
+              "index": 60.4
             },
             "underPressure": {
               "bpSavedPct": 70,
@@ -22457,7 +22457,7 @@
               "bpConvPct": 46.7,
               "rating": 161.2,
               "inclChallenger": false,
-              "index": 91.2
+              "index": 91.1
             },
             "underPressure": {
               "bpSavedPct": 63.8,
@@ -22577,7 +22577,7 @@
               "bpConvPct": 47.6,
               "rating": 149.2,
               "inclChallenger": true,
-              "index": 93
+              "index": 92.9
             },
             "underPressure": {
               "bpSavedPct": 58.3,
@@ -22943,7 +22943,7 @@
               "bpConvPct": 41.4,
               "rating": 142.9,
               "inclChallenger": false,
-              "index": 61.8
+              "index": 61.3
             },
             "underPressure": {
               "bpSavedPct": 63.5,
@@ -23062,7 +23062,7 @@
               "bpConvPct": 60,
               "rating": 159.7,
               "inclChallenger": false,
-              "index": 97.1
+              "index": 97
             },
             "underPressure": {
               "bpSavedPct": 60.6,
@@ -23428,7 +23428,7 @@
               "bpConvPct": 38.1,
               "rating": 138,
               "inclChallenger": false,
-              "index": 50.9
+              "index": 50.2
             },
             "underPressure": {
               "bpSavedPct": 63,
@@ -23489,7 +23489,7 @@
               "bpConvPct": 34,
               "rating": 114.9,
               "inclChallenger": false,
-              "index": 30.4
+              "index": 30
             },
             "underPressure": {
               "bpSavedPct": 58,
@@ -23547,7 +23547,7 @@
               "bpConvPct": 33.3,
               "rating": 124.2,
               "inclChallenger": false,
-              "index": 50
+              "index": 49.1
             },
             "underPressure": {
               "bpSavedPct": 59.4,
@@ -23913,7 +23913,7 @@
               "bpConvPct": 44.3,
               "rating": 127.8,
               "inclChallenger": true,
-              "index": 31.1
+              "index": 30.2
             },
             "underPressure": {
               "bpSavedPct": 57.8,
@@ -23974,7 +23974,7 @@
               "bpConvPct": 25.3,
               "rating": 102.1,
               "inclChallenger": true,
-              "index": 9.3
+              "index": 8.9
             },
             "underPressure": {
               "bpSavedPct": 50.9,
@@ -24029,7 +24029,7 @@
               "bpConvPct": 24.5,
               "rating": 99,
               "inclChallenger": true,
-              "index": 19.2
+              "index": 17.8
             },
             "underPressure": {
               "bpSavedPct": 55.6,
@@ -24392,7 +24392,7 @@
               "bpConvPct": 33.1,
               "rating": 132.8,
               "inclChallenger": false,
-              "index": 39.9
+              "index": 39.1
             },
             "underPressure": {
               "bpSavedPct": 58.9,
@@ -24453,7 +24453,7 @@
               "bpConvPct": 32.2,
               "rating": 120,
               "inclChallenger": false,
-              "index": 43.5
+              "index": 43.2
             },
             "underPressure": {
               "bpSavedPct": 69.2,
@@ -24512,7 +24512,7 @@
               "bpConvPct": 40.4,
               "rating": 137,
               "inclChallenger": false,
-              "index": 79.1
+              "index": 78.7
             },
             "underPressure": {
               "bpSavedPct": 67.7,
@@ -24879,7 +24879,7 @@
               "bpConvPct": 42.6,
               "rating": 135.1,
               "inclChallenger": false,
-              "index": 45.6
+              "index": 44.9
             },
             "underPressure": {
               "bpSavedPct": 65.5,
@@ -24940,7 +24940,7 @@
               "bpConvPct": 32.8,
               "rating": 117.6,
               "inclChallenger": false,
-              "index": 36.4
+              "index": 36.2
             },
             "underPressure": {
               "bpSavedPct": 70.3,
@@ -24999,7 +24999,7 @@
               "bpConvPct": 20,
               "rating": 101.2,
               "inclChallenger": false,
-              "index": 20.3
+              "index": 18.9
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -25365,7 +25365,7 @@
               "bpConvPct": 35.4,
               "rating": 137.4,
               "inclChallenger": false,
-              "index": 49.1
+              "index": 48.4
             },
             "underPressure": {
               "bpSavedPct": 56.8,
@@ -25426,7 +25426,7 @@
               "bpConvPct": 35.1,
               "rating": 132.6,
               "inclChallenger": false,
-              "index": 76.2
+              "index": 76.1
             },
             "underPressure": {
               "bpSavedPct": 61.9,
@@ -25485,7 +25485,7 @@
               "bpConvPct": 27.8,
               "rating": 113.5,
               "inclChallenger": false,
-              "index": 37.2
+              "index": 36.1
             },
             "underPressure": {
               "bpSavedPct": 66.7,
@@ -25851,7 +25851,7 @@
               "bpConvPct": 42.3,
               "rating": 152.2,
               "inclChallenger": false,
-              "index": 79.8
+              "index": 79.6
             },
             "underPressure": {
               "bpSavedPct": 63.6,
@@ -25912,7 +25912,7 @@
               "bpConvPct": 12.5,
               "rating": 79.2,
               "inclChallenger": false,
-              "index": 3.3
+              "index": 2.8
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -25970,7 +25970,7 @@
               "bpConvPct": 12.5,
               "rating": 89,
               "inclChallenger": false,
-              "index": 11.6
+              "index": 10.1
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -26326,7 +26326,7 @@
               "bpConvPct": 41.3,
               "rating": 155.3,
               "inclChallenger": true,
-              "index": 82
+              "index": 81.8
             },
             "underPressure": {
               "bpSavedPct": 54.3,
@@ -26759,7 +26759,7 @@
               "bpConvPct": 31.7,
               "rating": 122.1,
               "inclChallenger": false,
-              "index": 19.7
+              "index": 19.1
             },
             "underPressure": {
               "bpSavedPct": 68.7,
@@ -26820,7 +26820,7 @@
               "bpConvPct": 38.1,
               "rating": 127.1,
               "inclChallenger": false,
-              "index": 60.7
+              "index": 60.6
             },
             "underPressure": {
               "bpSavedPct": 68,
@@ -26879,7 +26879,7 @@
               "bpConvPct": 40.5,
               "rating": 138.8,
               "inclChallenger": false,
-              "index": 81.4
+              "index": 81.1
             },
             "underPressure": {
               "bpSavedPct": 66.1,
@@ -27246,7 +27246,7 @@
               "bpConvPct": 40,
               "rating": 163.9,
               "inclChallenger": false,
-              "index": 94.3
+              "index": 94.2
             },
             "underPressure": {
               "bpSavedPct": 57.1,
@@ -27307,7 +27307,7 @@
               "bpConvPct": 35,
               "rating": 129.6,
               "inclChallenger": false,
-              "index": 67.3
+              "index": 67.1
             },
             "underPressure": {
               "bpSavedPct": 57,
@@ -27366,7 +27366,7 @@
               "bpConvPct": 44.1,
               "rating": 136.4,
               "inclChallenger": false,
-              "index": 77.9
+              "index": 77.5
             },
             "underPressure": {
               "bpSavedPct": 61.5,
@@ -27733,7 +27733,7 @@
               "bpConvPct": 37.9,
               "rating": 109.8,
               "inclChallenger": false,
-              "index": 8.3
+              "index": 7.6
             },
             "underPressure": {
               "bpSavedPct": 63.5,
@@ -27794,7 +27794,7 @@
               "bpConvPct": 39.5,
               "rating": 102.9,
               "inclChallenger": false,
-              "index": 11.2
+              "index": 10.8
             },
             "underPressure": {
               "bpSavedPct": 78.3,
@@ -27852,7 +27852,7 @@
               "bpConvPct": 36.4,
               "rating": 87.9,
               "inclChallenger": false,
-              "index": 10.5
+              "index": 8.9
             },
             "underPressure": {
               "bpSavedPct": 76.3,
@@ -28219,7 +28219,7 @@
               "bpConvPct": 42.9,
               "rating": 145.7,
               "inclChallenger": false,
-              "index": 69.7
+              "index": 69.3
             },
             "underPressure": {
               "bpSavedPct": 56.1,
@@ -28280,7 +28280,7 @@
               "bpConvPct": 36.9,
               "rating": 126.3,
               "inclChallenger": true,
-              "index": 58.4
+              "index": 58.2
             },
             "underPressure": {
               "bpSavedPct": 58.7,
@@ -28339,7 +28339,7 @@
               "bpConvPct": 39.7,
               "rating": 137.3,
               "inclChallenger": true,
-              "index": 79.7
+              "index": 79.3
             },
             "underPressure": {
               "bpSavedPct": 55.8,
@@ -28706,7 +28706,7 @@
               "bpConvPct": 29.2,
               "rating": 120.9,
               "inclChallenger": true,
-              "index": 18
+              "index": 17.3
             },
             "underPressure": {
               "bpSavedPct": 60.8,
@@ -28767,7 +28767,7 @@
               "bpConvPct": 32.5,
               "rating": 122.1,
               "inclChallenger": false,
-              "index": 47.2
+              "index": 46.9
             },
             "underPressure": {
               "bpSavedPct": 53.6,
@@ -28826,7 +28826,7 @@
               "bpConvPct": 25,
               "rating": 97.3,
               "inclChallenger": false,
-              "index": 16.3
+              "index": 14.8
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -29192,7 +29192,7 @@
               "bpConvPct": 21,
               "rating": 96.8,
               "inclChallenger": true,
-              "index": 3.5
+              "index": 2.7
             },
             "underPressure": {
               "bpSavedPct": 62.4,
@@ -29253,7 +29253,7 @@
               "bpConvPct": 29.9,
               "rating": 102.1,
               "inclChallenger": false,
-              "index": 9.3
+              "index": 8.9
             },
             "underPressure": {
               "bpSavedPct": 66,
@@ -29312,7 +29312,7 @@
               "bpConvPct": 36.7,
               "rating": 110.4,
               "inclChallenger": false,
-              "index": 33.1
+              "index": 32
             },
             "underPressure": {
               "bpSavedPct": 71.9,
@@ -29679,7 +29679,7 @@
               "bpConvPct": 29.2,
               "rating": 126,
               "inclChallenger": false,
-              "index": 28.9
+              "index": 28.4
             },
             "underPressure": {
               "bpSavedPct": 67,
@@ -29740,7 +29740,7 @@
               "bpConvPct": 35,
               "rating": 116.3,
               "inclChallenger": false,
-              "index": 33.6
+              "index": 33.3
             },
             "underPressure": {
               "bpSavedPct": 66.7,
@@ -29799,7 +29799,7 @@
               "bpConvPct": 34.5,
               "rating": 124.9,
               "inclChallenger": false,
-              "index": 53.5
+              "index": 52.7
             },
             "underPressure": {
               "bpSavedPct": 68.8,
@@ -30166,7 +30166,7 @@
               "bpConvPct": 39.6,
               "rating": 146.9,
               "inclChallenger": false,
-              "index": 72.8
+              "index": 72.4
             },
             "underPressure": {
               "bpSavedPct": 56.3,
@@ -30227,7 +30227,7 @@
               "bpConvPct": 28.6,
               "rating": 101.8,
               "inclChallenger": false,
-              "index": 8.4
+              "index": 8
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -30285,7 +30285,7 @@
               "bpConvPct": 28.6,
               "rating": 101.8,
               "inclChallenger": false,
-              "index": 21.5
+              "index": 20.1
             },
             "underPressure": {
               "bpSavedPct": 59.1,
@@ -30650,7 +30650,7 @@
               "bpConvPct": 37.5,
               "rating": 141.2,
               "inclChallenger": false,
-              "index": 56.1
+              "index": 55.6
             },
             "underPressure": {
               "bpSavedPct": 60,
@@ -31083,7 +31083,7 @@
               "bpConvPct": 33.3,
               "rating": 113.3,
               "inclChallenger": false,
-              "index": 11
+              "index": 10.2
             },
             "underPressure": {
               "bpSavedPct": 67.8,
@@ -31144,7 +31144,7 @@
               "bpConvPct": 28.3,
               "rating": 100.2,
               "inclChallenger": true,
-              "index": 7.5
+              "index": 7
             },
             "underPressure": {
               "bpSavedPct": 68.5,
@@ -31202,7 +31202,7 @@
               "bpConvPct": 30,
               "rating": 110.2,
               "inclChallenger": true,
-              "index": 32.6
+              "index": 31.4
             },
             "underPressure": {
               "bpSavedPct": 66.6,
@@ -31567,7 +31567,7 @@
               "bpConvPct": 44.3,
               "rating": 151.1,
               "inclChallenger": true,
-              "index": 78.1
+              "index": 77.8
             },
             "underPressure": {
               "bpSavedPct": 61.7,
@@ -31628,7 +31628,7 @@
               "bpConvPct": 35.5,
               "rating": 144.8,
               "inclChallenger": false,
-              "index": 92.1
+              "index": 92
             },
             "underPressure": {
               "bpSavedPct": 58.5,
@@ -31687,7 +31687,7 @@
               "bpConvPct": 34.7,
               "rating": 146.6,
               "inclChallenger": false,
-              "index": 89.5
+              "index": 89.3
             },
             "underPressure": {
               "bpSavedPct": 61.4,
@@ -32053,7 +32053,7 @@
               "bpConvPct": 48.8,
               "rating": 150.7,
               "inclChallenger": false,
-              "index": 76.8
+              "index": 76.4
             },
             "underPressure": {
               "bpSavedPct": 61.7,
@@ -32114,7 +32114,7 @@
               "bpConvPct": 37.8,
               "rating": 114.7,
               "inclChallenger": false,
-              "index": 29.9
+              "index": 29.6
             },
             "underPressure": {
               "bpSavedPct": 58.8,
@@ -32173,7 +32173,7 @@
               "bpConvPct": 31.3,
               "rating": 106.4,
               "inclChallenger": false,
-              "index": 26.7
+              "index": 25.4
             },
             "underPressure": {
               "bpSavedPct": 62.5,
@@ -32539,7 +32539,7 @@
               "bpConvPct": 42.7,
               "rating": 163.2,
               "inclChallenger": false,
-              "index": 93.4
+              "index": 93.3
             },
             "underPressure": {
               "bpSavedPct": 57.9,
@@ -32600,7 +32600,7 @@
               "bpConvPct": 31.5,
               "rating": 112.7,
               "inclChallenger": false,
-              "index": 25.7
+              "index": 25.4
             },
             "underPressure": {
               "bpSavedPct": 57.3,
@@ -32655,10 +32655,9 @@
               "ret2ndWonPct": 21.4,
               "rptWonPct": 12.2,
               "breakPct": 0,
-              "bpConvPct": 0,
-              "rating": 28.8,
-              "inclChallenger": false,
-              "index": 0
+              "bpConvPct": null,
+              "rating": null,
+              "inclChallenger": false
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -33024,7 +33023,7 @@
               "bpConvPct": 35.4,
               "rating": 125.9,
               "inclChallenger": true,
-              "index": 28.1
+              "index": 27.6
             },
             "underPressure": {
               "bpSavedPct": 55.9,
@@ -33085,7 +33084,7 @@
               "bpConvPct": 39.2,
               "rating": 130.3,
               "inclChallenger": false,
-              "index": 70.1
+              "index": 70
             },
             "underPressure": {
               "bpSavedPct": 65.4,
@@ -33144,7 +33143,7 @@
               "bpConvPct": 42.3,
               "rating": 131,
               "inclChallenger": false,
-              "index": 66.3
+              "index": 65.7
             },
             "underPressure": {
               "bpSavedPct": 66.7,
@@ -33511,7 +33510,7 @@
               "bpConvPct": 28,
               "rating": 123.8,
               "inclChallenger": true,
-              "index": 23.2
+              "index": 22.7
             },
             "underPressure": {
               "bpSavedPct": 62.3,
@@ -33572,7 +33571,7 @@
               "bpConvPct": 41.4,
               "rating": 124.2,
               "inclChallenger": false,
-              "index": 52.3
+              "index": 52.1
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -33630,7 +33629,7 @@
               "bpConvPct": 40,
               "rating": 118,
               "inclChallenger": false,
-              "index": 41.9
+              "index": 40.8
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -33996,7 +33995,7 @@
               "bpConvPct": 35.5,
               "rating": 144.8,
               "inclChallenger": false,
-              "index": 67.1
+              "index": 66.7
             },
             "underPressure": {
               "bpSavedPct": 67.6,
@@ -34057,7 +34056,7 @@
               "bpConvPct": 36.4,
               "rating": 129.1,
               "inclChallenger": false,
-              "index": 64.5
+              "index": 64.3
             },
             "underPressure": {
               "bpSavedPct": 63.8,
@@ -34116,7 +34115,7 @@
               "bpConvPct": 45.7,
               "rating": 147.1,
               "inclChallenger": false,
-              "index": 90.1
+              "index": 89.9
             },
             "underPressure": {
               "bpSavedPct": 60.5,
@@ -34483,7 +34482,7 @@
               "bpConvPct": 41.1,
               "rating": 145.1,
               "inclChallenger": true,
-              "index": 68
+              "index": 67.6
             },
             "underPressure": {
               "bpSavedPct": 56,
@@ -34916,7 +34915,7 @@
               "bpConvPct": 28,
               "rating": 123.6,
               "inclChallenger": false,
-              "index": 21.9
+              "index": 21.3
             },
             "underPressure": {
               "bpSavedPct": 64.7,
@@ -34977,7 +34976,7 @@
               "bpConvPct": 32.4,
               "rating": 122.5,
               "inclChallenger": false,
-              "index": 48.6
+              "index": 48.4
             },
             "underPressure": {
               "bpSavedPct": 63.1,
@@ -35036,7 +35035,7 @@
               "bpConvPct": 36.4,
               "rating": 124.8,
               "inclChallenger": false,
-              "index": 52.3
+              "index": 51.5
             },
             "underPressure": {
               "bpSavedPct": 56.8,
@@ -35403,7 +35402,7 @@
               "bpConvPct": 36.8,
               "rating": 125.2,
               "inclChallenger": true,
-              "index": 25.9
+              "index": 25.3
             },
             "underPressure": {
               "bpSavedPct": 50,
@@ -35464,7 +35463,7 @@
               "bpConvPct": 44.5,
               "rating": 120.8,
               "inclChallenger": true,
-              "index": 44.4
+              "index": 44.1
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -35522,7 +35521,7 @@
               "bpConvPct": 50,
               "rating": 128.2,
               "inclChallenger": false,
-              "index": 59.3
+              "index": 58.6
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -35888,7 +35887,7 @@
               "bpConvPct": 38.9,
               "rating": 144.2,
               "inclChallenger": false,
-              "index": 65.4
+              "index": 64.9
             },
             "underPressure": {
               "bpSavedPct": 66.4,
@@ -36347,7 +36346,7 @@
               "bpConvPct": 34.3,
               "rating": 142.1,
               "inclChallenger": false,
-              "index": 60.1
+              "index": 59.6
             },
             "underPressure": {
               "bpSavedPct": 62.7,
@@ -36408,7 +36407,7 @@
               "bpConvPct": 31.2,
               "rating": 114.9,
               "inclChallenger": false,
-              "index": 30.4
+              "index": 30
             },
             "underPressure": {
               "bpSavedPct": 65.8,
@@ -36467,7 +36466,7 @@
               "bpConvPct": 25,
               "rating": 85.9,
               "inclChallenger": false,
-              "index": 8.1
+              "index": 6.5
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -36833,7 +36832,7 @@
               "bpConvPct": 54.5,
               "rating": 139,
               "inclChallenger": false,
-              "index": 52.6
+              "index": 52
             },
             "underPressure": {
               "bpSavedPct": 64.4,
@@ -36894,7 +36893,7 @@
               "bpConvPct": 34.3,
               "rating": 123.6,
               "inclChallenger": false,
-              "index": 51.4
+              "index": 51.2
             },
             "underPressure": {
               "bpSavedPct": 60.3,
@@ -36953,7 +36952,7 @@
               "bpConvPct": 42.9,
               "rating": 148.8,
               "inclChallenger": false,
-              "index": 92.4
+              "index": 92.3
             },
             "underPressure": {
               "bpSavedPct": 54.1,
@@ -37318,7 +37317,7 @@
               "bpConvPct": 36,
               "rating": 134.1,
               "inclChallenger": true,
-              "index": 42.1
+              "index": 41.3
             },
             "underPressure": {
               "bpSavedPct": 58.4,
@@ -37379,7 +37378,7 @@
               "bpConvPct": 35.3,
               "rating": 124.4,
               "inclChallenger": true,
-              "index": 53.3
+              "index": 53.1
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -37777,7 +37776,7 @@
               "bpConvPct": 48.6,
               "rating": 150.1,
               "inclChallenger": false,
-              "index": 76.3
+              "index": 76
             },
             "underPressure": {
               "bpSavedPct": 68.9,
@@ -37896,7 +37895,7 @@
               "bpConvPct": 100,
               "rating": 159.3,
               "inclChallenger": false,
-              "index": 96.5
+              "index": 96.4
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -38262,7 +38261,7 @@
               "bpConvPct": 42.4,
               "rating": 139.4,
               "inclChallenger": true,
-              "index": 53.5
+              "index": 52.9
             },
             "underPressure": {
               "bpSavedPct": 64.1,
@@ -38694,7 +38693,7 @@
               "bpConvPct": 30.6,
               "rating": 113.7,
               "inclChallenger": true,
-              "index": 11.4
+              "index": 10.7
             },
             "underPressure": {
               "bpSavedPct": 55.9,
@@ -38755,7 +38754,7 @@
               "bpConvPct": 31.2,
               "rating": 111.4,
               "inclChallenger": true,
-              "index": 22.4
+              "index": 22.1
             },
             "underPressure": {
               "bpSavedPct": 62.7,
@@ -38814,7 +38813,7 @@
               "bpConvPct": 41.6,
               "rating": 127.9,
               "inclChallenger": true,
-              "index": 58.1
+              "index": 57.4
             },
             "underPressure": {
               "bpSavedPct": 58.5,
@@ -39181,7 +39180,7 @@
               "bpConvPct": 38.2,
               "rating": 132.9,
               "inclChallenger": false,
-              "index": 40.4
+              "index": 39.6
             },
             "underPressure": {
               "bpSavedPct": 63.9,
@@ -39242,7 +39241,7 @@
               "bpConvPct": 37.3,
               "rating": 122.2,
               "inclChallenger": false,
-              "index": 47.7
+              "index": 47.4
             },
             "underPressure": {
               "bpSavedPct": 70.2,
@@ -39301,7 +39300,7 @@
               "bpConvPct": 50,
               "rating": 125.7,
               "inclChallenger": false,
-              "index": 55.8
+              "index": 55
             },
             "underPressure": {
               "bpSavedPct": 64,
@@ -39667,7 +39666,7 @@
               "bpConvPct": 27.7,
               "rating": 119.3,
               "inclChallenger": false,
-              "index": 17.1
+              "index": 16.4
             },
             "underPressure": {
               "bpSavedPct": 54.2,
@@ -39728,7 +39727,7 @@
               "bpConvPct": 33.1,
               "rating": 116.6,
               "inclChallenger": false,
-              "index": 34.6
+              "index": 34.3
             },
             "underPressure": {
               "bpSavedPct": 69,
@@ -39787,7 +39786,7 @@
               "bpConvPct": 35,
               "rating": 125.5,
               "inclChallenger": false,
-              "index": 54.7
+              "index": 53.8
             },
             "underPressure": {
               "bpSavedPct": 66.7,
@@ -40153,7 +40152,7 @@
               "bpConvPct": 41.6,
               "rating": 147.8,
               "inclChallenger": true,
-              "index": 73.7
+              "index": 73.3
             },
             "underPressure": {
               "bpSavedPct": 56.8,
@@ -40214,7 +40213,7 @@
               "bpConvPct": 25,
               "rating": 90,
               "inclChallenger": false,
-              "index": 5.1
+              "index": 4.7
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -40272,7 +40271,7 @@
               "bpConvPct": 25,
               "rating": 90,
               "inclChallenger": false,
-              "index": 12.2
+              "index": 10.7
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -40638,7 +40637,7 @@
               "bpConvPct": 37.7,
               "rating": 143,
               "inclChallenger": false,
-              "index": 62.3
+              "index": 61.8
             },
             "underPressure": {
               "bpSavedPct": 61.5,
@@ -40699,7 +40698,7 @@
               "bpConvPct": 28.1,
               "rating": 108,
               "inclChallenger": false,
-              "index": 17.3
+              "index": 16.9
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -40757,7 +40756,7 @@
               "bpConvPct": 28.6,
               "rating": 104.2,
               "inclChallenger": false,
-              "index": 23.8
+              "index": 22.5
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -41123,7 +41122,7 @@
               "bpConvPct": 32.9,
               "rating": 110.9,
               "inclChallenger": true,
-              "index": 9.2
+              "index": 8.4
             },
             "underPressure": {
               "bpSavedPct": 62,
@@ -41184,7 +41183,7 @@
               "bpConvPct": 36.2,
               "rating": 124.6,
               "inclChallenger": false,
-              "index": 53.7
+              "index": 53.5
             },
             "underPressure": {
               "bpSavedPct": 64,
@@ -41243,7 +41242,7 @@
               "bpConvPct": 25.1,
               "rating": 107.5,
               "inclChallenger": true,
-              "index": 29.1
+              "index": 27.8
             },
             "underPressure": {
               "bpSavedPct": 62.3,
@@ -41610,7 +41609,7 @@
               "bpConvPct": 42.2,
               "rating": 158,
               "inclChallenger": false,
-              "index": 87.7
+              "index": 87.6
             },
             "underPressure": {
               "bpSavedPct": 64.4,
@@ -41671,7 +41670,7 @@
               "bpConvPct": 42.9,
               "rating": 144.6,
               "inclChallenger": false,
-              "index": 91.6
+              "index": 91.5
             },
             "underPressure": {
               "bpSavedPct": 58.6,
@@ -41730,7 +41729,7 @@
               "bpConvPct": 27.3,
               "rating": 96.2,
               "inclChallenger": false,
-              "index": 15.7
+              "index": 14.2
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -42091,7 +42090,7 @@
               "bpConvPct": 39.4,
               "rating": 162.4,
               "inclChallenger": true,
-              "index": 92.1
+              "index": 92
             },
             "underPressure": {
               "bpSavedPct": 50.5,
@@ -42147,7 +42146,7 @@
               "bpConvPct": 38.3,
               "rating": 128.2,
               "inclChallenger": true,
-              "index": 62.6
+              "index": 62.4
             },
             "underPressure": {
               "bpSavedPct": 56.5,
@@ -42205,7 +42204,7 @@
               "bpConvPct": 36,
               "rating": 124.5,
               "inclChallenger": true,
-              "index": 50.6
+              "index": 49.7
             },
             "underPressure": {
               "bpSavedPct": 48.6,
@@ -42563,7 +42562,7 @@
               "bpConvPct": 45,
               "rating": 96.8,
               "inclChallenger": true,
-              "index": 3.5
+              "index": 2.7
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -42619,7 +42618,7 @@
               "bpConvPct": 40.1,
               "rating": 140.1,
               "inclChallenger": true,
-              "index": 86
+              "index": 85.9
             },
             "underPressure": {
               "bpSavedPct": 60.5,
@@ -42678,7 +42677,7 @@
               "bpConvPct": 40.7,
               "rating": 143.5,
               "inclChallenger": true,
-              "index": 87.8
+              "index": 87.6
             },
             "underPressure": {
               "bpSavedPct": 64.3,
@@ -43041,7 +43040,7 @@
               "bpConvPct": 48.8,
               "rating": 143.6,
               "inclChallenger": false,
-              "index": 62.7
+              "index": 62.2
             },
             "underPressure": {
               "bpSavedPct": 64.3,
@@ -43102,7 +43101,7 @@
               "bpConvPct": 25.2,
               "rating": 105.4,
               "inclChallenger": false,
-              "index": 15
+              "index": 14.6
             },
             "underPressure": {
               "bpSavedPct": 62.1,
@@ -43501,7 +43500,7 @@
               "bpConvPct": 44,
               "rating": 132.4,
               "inclChallenger": true,
-              "index": 39
+              "index": 38.2
             },
             "underPressure": {
               "bpSavedPct": 66.1,
@@ -43562,7 +43561,7 @@
               "bpConvPct": 37.7,
               "rating": 121.9,
               "inclChallenger": false,
-              "index": 46.3
+              "index": 46
             },
             "underPressure": {
               "bpSavedPct": 63.4,
@@ -43621,7 +43620,7 @@
               "bpConvPct": 25,
               "rating": 94.2,
               "inclChallenger": false,
-              "index": 14
+              "index": 12.4
             },
             "underPressure": {
               "bpSavedPct": 45,
@@ -43987,7 +43986,7 @@
               "bpConvPct": 41.8,
               "rating": 125.5,
               "inclChallenger": true,
-              "index": 26.8
+              "index": 26.2
             },
             "underPressure": {
               "bpSavedPct": 64.6,
@@ -44048,7 +44047,7 @@
               "bpConvPct": 37.2,
               "rating": 133.4,
               "inclChallenger": true,
-              "index": 79
+              "index": 78.9
             },
             "underPressure": {
               "bpSavedPct": 57,
@@ -44107,7 +44106,7 @@
               "bpConvPct": 32.6,
               "rating": 122.9,
               "inclChallenger": true,
-              "index": 48.3
+              "index": 47.3
             },
             "underPressure": {
               "bpSavedPct": 55.1,
@@ -44474,7 +44473,7 @@
               "bpConvPct": 30.6,
               "rating": 115,
               "inclChallenger": true,
-              "index": 12.3
+              "index": 11.6
             },
             "underPressure": {
               "bpSavedPct": 58.2,
@@ -44535,7 +44534,7 @@
               "bpConvPct": 36.3,
               "rating": 125.1,
               "inclChallenger": true,
-              "index": 54.7
+              "index": 54.5
             },
             "underPressure": {
               "bpSavedPct": 63.6,
@@ -44930,7 +44929,7 @@
               "bpConvPct": 49.3,
               "rating": 152.9,
               "inclChallenger": false,
-              "index": 80.3
+              "index": 80
             },
             "underPressure": {
               "bpSavedPct": 56.9,
@@ -44991,7 +44990,7 @@
               "bpConvPct": 32.7,
               "rating": 115.3,
               "inclChallenger": false,
-              "index": 32.2
+              "index": 31.9
             },
             "underPressure": {
               "bpSavedPct": 64.1,
@@ -45050,7 +45049,7 @@
               "bpConvPct": 19.2,
               "rating": 92.2,
               "inclChallenger": false,
-              "index": 12.8
+              "index": 11.2
             },
             "underPressure": {
               "bpSavedPct": 61.8,
@@ -45417,7 +45416,7 @@
               "bpConvPct": 36,
               "rating": 132,
               "inclChallenger": true,
-              "index": 37.7
+              "index": 36.9
             },
             "underPressure": {
               "bpSavedPct": 58.9,
@@ -45478,7 +45477,7 @@
               "bpConvPct": 25,
               "rating": 94.5,
               "inclChallenger": false,
-              "index": 6.1
+              "index": 5.6
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -45536,7 +45535,7 @@
               "bpConvPct": 20,
               "rating": 79.8,
               "inclChallenger": false,
-              "index": 6.4
+              "index": 4.7
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -45902,7 +45901,7 @@
               "bpConvPct": 36.2,
               "rating": 116.1,
               "inclChallenger": true,
-              "index": 14
+              "index": 13.3
             },
             "underPressure": {
               "bpSavedPct": 59.3,
@@ -45963,7 +45962,7 @@
               "bpConvPct": 33.4,
               "rating": 131.4,
               "inclChallenger": true,
-              "index": 74.3
+              "index": 74.2
             },
             "underPressure": {
               "bpSavedPct": 59,
@@ -46022,7 +46021,7 @@
               "bpConvPct": 33,
               "rating": 124.6,
               "inclChallenger": true,
-              "index": 51.2
+              "index": 50.3
             },
             "underPressure": {
               "bpSavedPct": 54.2,
@@ -46389,7 +46388,7 @@
               "bpConvPct": 48.5,
               "rating": 155.3,
               "inclChallenger": true,
-              "index": 82
+              "index": 81.8
             },
             "underPressure": {
               "bpSavedPct": 64.1,
@@ -46446,7 +46445,7 @@
               "bpConvPct": 28.6,
               "rating": 121.3,
               "inclChallenger": false,
-              "index": 44.9
+              "index": 44.6
             },
             "underPressure": {
               "bpSavedPct": 58.1,
@@ -46843,7 +46842,7 @@
               "bpConvPct": 25,
               "rating": 96.6,
               "inclChallenger": true,
-              "index": 3.1
+              "index": 2.2
             },
             "underPressure": {
               "bpSavedPct": 70,
@@ -46904,7 +46903,7 @@
               "bpConvPct": 29.5,
               "rating": 114.6,
               "inclChallenger": true,
-              "index": 28.5
+              "index": 28.2
             },
             "underPressure": {
               "bpSavedPct": 58.7,
@@ -46963,7 +46962,7 @@
               "bpConvPct": 23,
               "rating": 103.8,
               "inclChallenger": true,
-              "index": 23.3
+              "index": 21.9
             },
             "underPressure": {
               "bpSavedPct": 59.1,
@@ -47321,7 +47320,7 @@
               "bpConvPct": 41.5,
               "rating": 157.4,
               "inclChallenger": false,
-              "index": 87.3
+              "index": 87.1
             },
             "underPressure": {
               "bpSavedPct": 58.5,
@@ -47382,7 +47381,7 @@
               "bpConvPct": 0,
               "rating": 52.4,
               "inclChallenger": false,
-              "index": 1.4
+              "index": 0.9
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -47780,7 +47779,7 @@
               "bpConvPct": 53,
               "rating": 156.3,
               "inclChallenger": false,
-              "index": 85.5
+              "index": 85.3
             },
             "underPressure": {
               "bpSavedPct": 61.2,
@@ -47900,7 +47899,7 @@
               "bpConvPct": 33.8,
               "rating": 126.9,
               "inclChallenger": false,
-              "index": 57
+              "index": 56.2
             },
             "underPressure": {
               "bpSavedPct": 58.5,
@@ -48267,7 +48266,7 @@
               "bpConvPct": 39.5,
               "rating": 125.6,
               "inclChallenger": true,
-              "index": 27.6
+              "index": 27.1
             },
             "underPressure": {
               "bpSavedPct": 64.2,
@@ -48328,7 +48327,7 @@
               "bpConvPct": 34.1,
               "rating": 117.1,
               "inclChallenger": false,
-              "index": 35.5
+              "index": 35.2
             },
             "underPressure": {
               "bpSavedPct": 63.8,
@@ -48387,7 +48386,7 @@
               "bpConvPct": 20.4,
               "rating": 98.1,
               "inclChallenger": true,
-              "index": 18
+              "index": 16.6
             },
             "underPressure": {
               "bpSavedPct": 52.7,
@@ -48754,7 +48753,7 @@
               "bpConvPct": 38.6,
               "rating": 126.5,
               "inclChallenger": true,
-              "index": 29.4
+              "index": 28.9
             },
             "underPressure": {
               "bpSavedPct": 58.9,
@@ -48815,7 +48814,7 @@
               "bpConvPct": 35.4,
               "rating": 126.7,
               "inclChallenger": false,
-              "index": 59.3
+              "index": 59.2
             },
             "underPressure": {
               "bpSavedPct": 72.5,
@@ -48874,7 +48873,7 @@
               "bpConvPct": 50,
               "rating": 130.2,
               "inclChallenger": false,
-              "index": 65.1
+              "index": 64.5
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -49240,7 +49239,7 @@
               "bpConvPct": 53.8,
               "rating": 155.9,
               "inclChallenger": true,
-              "index": 85.1
+              "index": 84.9
             },
             "underPressure": {
               "bpSavedPct": 59.3,
@@ -49300,7 +49299,7 @@
               "bpConvPct": 38.7,
               "rating": 128.4,
               "inclChallenger": false,
-              "index": 63.6
+              "index": 63.4
             },
             "underPressure": {
               "bpSavedPct": 69.2,
@@ -49359,7 +49358,7 @@
               "bpConvPct": 46.1,
               "rating": 133.7,
               "inclChallenger": true,
-              "index": 70.9
+              "index": 70.4
             },
             "underPressure": {
               "bpSavedPct": 64.1,
@@ -49726,7 +49725,7 @@
               "bpConvPct": 37.9,
               "rating": 142.6,
               "inclChallenger": false,
-              "index": 61
+              "index": 60.4
             },
             "underPressure": {
               "bpSavedPct": 53.1,
@@ -49787,7 +49786,7 @@
               "bpConvPct": 28.6,
               "rating": 109.5,
               "inclChallenger": false,
-              "index": 19.2
+              "index": 18.8
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -49845,7 +49844,7 @@
               "bpConvPct": 30,
               "rating": 112.1,
               "inclChallenger": false,
-              "index": 34.9
+              "index": 33.7
             },
             "underPressure": {
               "bpSavedPct": 67.6,
@@ -50211,7 +50210,7 @@
               "bpConvPct": 50,
               "rating": 145.9,
               "inclChallenger": false,
-              "index": 71.1
+              "index": 70.7
             },
             "underPressure": {
               "bpSavedPct": 62.8,
@@ -50272,7 +50271,7 @@
               "bpConvPct": 45.1,
               "rating": 140.1,
               "inclChallenger": true,
-              "index": 86
+              "index": 85.9
             },
             "underPressure": {
               "bpSavedPct": 58.2,
@@ -50331,7 +50330,7 @@
               "bpConvPct": 41.1,
               "rating": 139.3,
               "inclChallenger": true,
-              "index": 82
+              "index": 81.7
             },
             "underPressure": {
               "bpSavedPct": 58.7,
@@ -50698,7 +50697,7 @@
               "bpConvPct": 41.3,
               "rating": 158.5,
               "inclChallenger": true,
-              "index": 88.2
+              "index": 88
             },
             "underPressure": {
               "bpSavedPct": 56.4,
@@ -50759,7 +50758,7 @@
               "bpConvPct": 34.5,
               "rating": 132.7,
               "inclChallenger": false,
-              "index": 77.1
+              "index": 77
             },
             "underPressure": {
               "bpSavedPct": 62.4,
@@ -50818,7 +50817,7 @@
               "bpConvPct": 38.5,
               "rating": 122.6,
               "inclChallenger": false,
-              "index": 47.1
+              "index": 46.2
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -51184,7 +51183,7 @@
               "bpConvPct": 41.7,
               "rating": 145.1,
               "inclChallenger": false,
-              "index": 68
+              "index": 67.6
             },
             "underPressure": {
               "bpSavedPct": 60.1,
@@ -51245,7 +51244,7 @@
               "bpConvPct": 39.5,
               "rating": 122.3,
               "inclChallenger": false,
-              "index": 48.1
+              "index": 47.9
             },
             "underPressure": {
               "bpSavedPct": 69.6,
@@ -51303,7 +51302,7 @@
               "bpConvPct": 28.6,
               "rating": 94.6,
               "inclChallenger": false,
-              "index": 14.5
+              "index": 13
             },
             "underPressure": {
               "bpSavedPct": 66.7,
@@ -51669,7 +51668,7 @@
               "bpConvPct": 40.7,
               "rating": 137.6,
               "inclChallenger": false,
-              "index": 49.6
+              "index": 48.9
             },
             "underPressure": {
               "bpSavedPct": 65,
@@ -51730,7 +51729,7 @@
               "bpConvPct": 33.3,
               "rating": 111.3,
               "inclChallenger": false,
-              "index": 22
+              "index": 21.6
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -51788,7 +51787,7 @@
               "bpConvPct": 14.3,
               "rating": 76.1,
               "inclChallenger": false,
-              "index": 5.8
+              "index": 4.1
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -52154,7 +52153,7 @@
               "bpConvPct": 39.4,
               "rating": 149.2,
               "inclChallenger": true,
-              "index": 75.9
+              "index": 75.6
             },
             "underPressure": {
               "bpSavedPct": 57.8,
@@ -52215,7 +52214,7 @@
               "bpConvPct": 35.6,
               "rating": 118.8,
               "inclChallenger": false,
-              "index": 40.2
+              "index": 39.9
             },
             "underPressure": {
               "bpSavedPct": 62,
@@ -52614,7 +52613,7 @@
               "bpConvPct": 35.2,
               "rating": 128.6,
               "inclChallenger": true,
-              "index": 33.3
+              "index": 32.4
             },
             "underPressure": {
               "bpSavedPct": 59.5,
@@ -52675,7 +52674,7 @@
               "bpConvPct": 28.1,
               "rating": 102.1,
               "inclChallenger": true,
-              "index": 9.3
+              "index": 8.9
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -52733,7 +52732,7 @@
               "bpConvPct": 28.6,
               "rating": 112.1,
               "inclChallenger": true,
-              "index": 34.9
+              "index": 33.7
             },
             "underPressure": {
               "bpSavedPct": 66.5,
@@ -53094,7 +53093,7 @@
               "bpConvPct": 28.6,
               "rating": 132.4,
               "inclChallenger": false,
-              "index": 39
+              "index": 38.2
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -53154,7 +53153,7 @@
               "bpConvPct": 43.6,
               "rating": 129.1,
               "inclChallenger": true,
-              "index": 64.5
+              "index": 64.3
             },
             "underPressure": {
               "bpSavedPct": 54.7,
@@ -53212,7 +53211,7 @@
               "bpConvPct": 43.6,
               "rating": 129.1,
               "inclChallenger": true,
-              "index": 61.6
+              "index": 60.9
             },
             "underPressure": {
               "bpSavedPct": 54.7,
@@ -53579,7 +53578,7 @@
               "bpConvPct": 30.2,
               "rating": 122.4,
               "inclChallenger": false,
-              "index": 20.6
+              "index": 20
             },
             "underPressure": {
               "bpSavedPct": 52.6,
@@ -53640,7 +53639,7 @@
               "bpConvPct": 33.1,
               "rating": 125,
               "inclChallenger": false,
-              "index": 54.2
+              "index": 54
             },
             "underPressure": {
               "bpSavedPct": 60.8,
@@ -53699,7 +53698,7 @@
               "bpConvPct": 23.7,
               "rating": 107.3,
               "inclChallenger": false,
-              "index": 28.5
+              "index": 27.2
             },
             "underPressure": {
               "bpSavedPct": 72.9,
@@ -54066,7 +54065,7 @@
               "bpConvPct": 33.6,
               "rating": 129.9,
               "inclChallenger": false,
-              "index": 35.1
+              "index": 34.2
             },
             "underPressure": {
               "bpSavedPct": 59.1,
@@ -54127,7 +54126,7 @@
               "bpConvPct": 36.7,
               "rating": 118.6,
               "inclChallenger": false,
-              "index": 39.7
+              "index": 39.4
             },
             "underPressure": {
               "bpSavedPct": 72.1,
@@ -54185,7 +54184,7 @@
               "bpConvPct": 30,
               "rating": 109.6,
               "inclChallenger": false,
-              "index": 32
+              "index": 30.8
             },
             "underPressure": {
               "bpSavedPct": 69.2,
@@ -54984,7 +54983,7 @@
               "bpConvPct": 33.3,
               "rating": 96.4,
               "inclChallenger": false,
-              "index": 2.6
+              "index": 1.8
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -55044,7 +55043,7 @@
               "bpConvPct": 30.7,
               "rating": 112.2,
               "inclChallenger": true,
-              "index": 24.8
+              "index": 24.4
             },
             "underPressure": {
               "bpSavedPct": 54.5,
@@ -55103,7 +55102,7 @@
               "bpConvPct": 20,
               "rating": 87.1,
               "inclChallenger": true,
-              "index": 8.7
+              "index": 7.1
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -55469,7 +55468,7 @@
               "bpConvPct": 39.3,
               "rating": 125.5,
               "inclChallenger": true,
-              "index": 26.8
+              "index": 26.2
             },
             "underPressure": {
               "bpSavedPct": 61.9,
@@ -55530,7 +55529,7 @@
               "bpConvPct": 35.7,
               "rating": 123.3,
               "inclChallenger": false,
-              "index": 50.9
+              "index": 50.7
             },
             "underPressure": {
               "bpSavedPct": 61.7,
@@ -55589,7 +55588,7 @@
               "bpConvPct": 46.7,
               "rating": 133,
               "inclChallenger": false,
-              "index": 68.6
+              "index": 68
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -55955,7 +55954,7 @@
               "bpConvPct": 42.1,
               "rating": 144.1,
               "inclChallenger": false,
-              "index": 64.9
+              "index": 64.4
             },
             "underPressure": {
               "bpSavedPct": 61.7,
@@ -56016,7 +56015,7 @@
               "bpConvPct": 36.2,
               "rating": 128.2,
               "inclChallenger": true,
-              "index": 62.6
+              "index": 62.4
             },
             "underPressure": {
               "bpSavedPct": 58.6,
@@ -56075,7 +56074,7 @@
               "bpConvPct": 25.5,
               "rating": 97.8,
               "inclChallenger": true,
-              "index": 17.4
+              "index": 16
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -56441,7 +56440,7 @@
               "bpConvPct": 31.7,
               "rating": 121.2,
               "inclChallenger": false,
-              "index": 18.4
+              "index": 17.8
             },
             "underPressure": {
               "bpSavedPct": 47.8,
@@ -56502,7 +56501,7 @@
               "bpConvPct": 29,
               "rating": 104.3,
               "inclChallenger": true,
-              "index": 13.1
+              "index": 12.7
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -56560,7 +56559,7 @@
               "bpConvPct": 33.2,
               "rating": 110.5,
               "inclChallenger": true,
-              "index": 33.7
+              "index": 32.5
             },
             "underPressure": {
               "bpSavedPct": 46.8,
@@ -56926,7 +56925,7 @@
               "bpConvPct": 33.7,
               "rating": 140.5,
               "inclChallenger": true,
-              "index": 55.3
+              "index": 54.7
             },
             "underPressure": {
               "bpSavedPct": 57.9,
@@ -57046,7 +57045,7 @@
               "bpConvPct": 0,
               "rating": 44.3,
               "inclChallenger": false,
-              "index": 0.6
+              "index": 0
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -57385,7 +57384,7 @@
               "bpConvPct": 39.7,
               "rating": 137.9,
               "inclChallenger": true,
-              "index": 50.4
+              "index": 49.8
             },
             "underPressure": {
               "bpSavedPct": 58,
@@ -57818,7 +57817,7 @@
               "bpConvPct": 34.5,
               "rating": 132.9,
               "inclChallenger": true,
-              "index": 40.4
+              "index": 39.6
             },
             "underPressure": {
               "bpSavedPct": 60,
@@ -57875,7 +57874,7 @@
               "bpConvPct": 43,
               "rating": 130.4,
               "inclChallenger": true,
-              "index": 71
+              "index": 70.9
             },
             "underPressure": {
               "bpSavedPct": 63.2,
@@ -58274,7 +58273,7 @@
               "bpConvPct": 42.1,
               "rating": 157.2,
               "inclChallenger": false,
-              "index": 86.8
+              "index": 86.7
             },
             "underPressure": {
               "bpSavedPct": 54.3,
@@ -58335,7 +58334,7 @@
               "bpConvPct": 38.2,
               "rating": 142.1,
               "inclChallenger": true,
-              "index": 88.8
+              "index": 88.7
             },
             "underPressure": {
               "bpSavedPct": 53.7,
@@ -58394,7 +58393,7 @@
               "bpConvPct": 40.2,
               "rating": 147.1,
               "inclChallenger": true,
-              "index": 90.1
+              "index": 89.9
             },
             "underPressure": {
               "bpSavedPct": 52.8,
@@ -58761,7 +58760,7 @@
               "bpConvPct": 50,
               "rating": 166.6,
               "inclChallenger": true,
-              "index": 96.5
+              "index": 96.4
             },
             "underPressure": {
               "bpSavedPct": 58.5,
@@ -58822,7 +58821,7 @@
               "bpConvPct": 30,
               "rating": 110.7,
               "inclChallenger": true,
-              "index": 21
+              "index": 20.7
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -58876,7 +58875,7 @@
               "bpConvPct": 30,
               "rating": 92.2,
               "inclChallenger": true,
-              "index": 12.8
+              "index": 11.2
             },
             "underPressure": {
               "bpSavedPct": 53.2,
@@ -59238,7 +59237,7 @@
               "bpConvPct": 36.1,
               "rating": 145.9,
               "inclChallenger": false,
-              "index": 71.1
+              "index": 70.7
             },
             "underPressure": {
               "bpSavedPct": 49.3,
@@ -59299,7 +59298,7 @@
               "bpConvPct": 33.6,
               "rating": 120.6,
               "inclChallenger": false,
-              "index": 43.9
+              "index": 43.7
             },
             "underPressure": {
               "bpSavedPct": 66.7,
@@ -59698,7 +59697,7 @@
               "bpConvPct": 38.9,
               "rating": 135.6,
               "inclChallenger": true,
-              "index": 46.9
+              "index": 46.2
             },
             "underPressure": {
               "bpSavedPct": 54.1,
@@ -59759,7 +59758,7 @@
               "bpConvPct": 27.5,
               "rating": 118.3,
               "inclChallenger": true,
-              "index": 38.8
+              "index": 38.5
             },
             "underPressure": {
               "bpSavedPct": 74.7,
@@ -59818,7 +59817,7 @@
               "bpConvPct": 24.3,
               "rating": 113.4,
               "inclChallenger": true,
-              "index": 36.6
+              "index": 35.5
             },
             "underPressure": {
               "bpSavedPct": 75.9,
@@ -60185,7 +60184,7 @@
               "bpConvPct": 40,
               "rating": 146.8,
               "inclChallenger": false,
-              "index": 72.4
+              "index": 72
             },
             "underPressure": {
               "bpSavedPct": 61.8,
@@ -60246,7 +60245,7 @@
               "bpConvPct": 27.6,
               "rating": 106.4,
               "inclChallenger": false,
-              "index": 15.4
+              "index": 15
             },
             "underPressure": {
               "bpSavedPct": 61.8,
@@ -60305,7 +60304,7 @@
               "bpConvPct": 20,
               "rating": 87.1,
               "inclChallenger": false,
-              "index": 8.7
+              "index": 7.1
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -60671,7 +60670,7 @@
               "bpConvPct": 36.4,
               "rating": 144.5,
               "inclChallenger": true,
-              "index": 66.2
+              "index": 65.8
             },
             "underPressure": {
               "bpSavedPct": 54.5,
@@ -60727,7 +60726,7 @@
               "bpConvPct": 37.2,
               "rating": 123.2,
               "inclChallenger": true,
-              "index": 50
+              "index": 49.8
             },
             "underPressure": {
               "bpSavedPct": 60.2,
@@ -60786,7 +60785,7 @@
               "bpConvPct": 41.5,
               "rating": 119.9,
               "inclChallenger": true,
-              "index": 44.2
+              "index": 43.2
             },
             "underPressure": {
               "bpSavedPct": 53,
@@ -61152,7 +61151,7 @@
               "bpConvPct": 40,
               "rating": 108,
               "inclChallenger": true,
-              "index": 7
+              "index": 6.2
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -61212,7 +61211,7 @@
               "bpConvPct": 34.4,
               "rating": 125.4,
               "inclChallenger": false,
-              "index": 56.1
+              "index": 55.9
             },
             "underPressure": {
               "bpSavedPct": 65.2,
@@ -61271,7 +61270,7 @@
               "bpConvPct": 37.8,
               "rating": 125.5,
               "inclChallenger": true,
-              "index": 54.7
+              "index": 53.8
             },
             "underPressure": {
               "bpSavedPct": 57.2,
@@ -61635,10 +61634,9 @@
               "ret2ndWonPct": 32.1,
               "rptWonPct": 28,
               "breakPct": 0,
-              "bpConvPct": 0,
-              "rating": 58.3,
-              "inclChallenger": true,
-              "index": 0.4
+              "bpConvPct": null,
+              "rating": null,
+              "inclChallenger": true
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -61694,7 +61692,7 @@
               "bpConvPct": 43.1,
               "rating": 139.9,
               "inclChallenger": true,
-              "index": 85.5
+              "index": 85.4
             },
             "underPressure": {
               "bpSavedPct": 54.5,
@@ -61753,7 +61751,7 @@
               "bpConvPct": 39.6,
               "rating": 135.5,
               "inclChallenger": true,
-              "index": 75
+              "index": 74.6
             },
             "underPressure": {
               "bpSavedPct": 57.2,
@@ -62120,7 +62118,7 @@
               "bpConvPct": 35.7,
               "rating": 137.8,
               "inclChallenger": false,
-              "index": 50
+              "index": 49.3
             },
             "underPressure": {
               "bpSavedPct": 57.7,
@@ -62181,7 +62179,7 @@
               "bpConvPct": 30.1,
               "rating": 106.5,
               "inclChallenger": false,
-              "index": 15.9
+              "index": 15.5
             },
             "underPressure": {
               "bpSavedPct": 59.2,
@@ -62240,7 +62238,7 @@
               "bpConvPct": 12.5,
               "rating": 88.5,
               "inclChallenger": false,
-              "index": 11
+              "index": 9.5
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -62606,7 +62604,7 @@
               "bpConvPct": 26.1,
               "rating": 111.3,
               "inclChallenger": false,
-              "index": 9.6
+              "index": 8.9
             },
             "underPressure": {
               "bpSavedPct": 71.6,
@@ -62667,7 +62665,7 @@
               "bpConvPct": 31.3,
               "rating": 117.3,
               "inclChallenger": false,
-              "index": 36
+              "index": 35.7
             },
             "underPressure": {
               "bpSavedPct": 69.3,
@@ -62726,7 +62724,7 @@
               "bpConvPct": 31.4,
               "rating": 117.6,
               "inclChallenger": true,
-              "index": 40.7
+              "index": 39.6
             },
             "underPressure": {
               "bpSavedPct": 72.4,
@@ -63091,7 +63089,7 @@
               "bpConvPct": 32.1,
               "rating": 134.8,
               "inclChallenger": false,
-              "index": 44.3
+              "index": 43.6
             },
             "underPressure": {
               "bpSavedPct": 57.9,
@@ -63152,7 +63150,7 @@
               "bpConvPct": 23.5,
               "rating": 89.1,
               "inclChallenger": false,
-              "index": 4.7
+              "index": 4.2
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -63210,7 +63208,7 @@
               "bpConvPct": 50,
               "rating": 106,
               "inclChallenger": false,
-              "index": 25.6
+              "index": 24.3
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -63576,7 +63574,7 @@
               "bpConvPct": 35.7,
               "rating": 138.5,
               "inclChallenger": true,
-              "index": 51.8
+              "index": 51.1
             },
             "underPressure": {
               "bpSavedPct": 55,
@@ -63637,7 +63635,7 @@
               "bpConvPct": 37.1,
               "rating": 127.7,
               "inclChallenger": true,
-              "index": 61.7
+              "index": 61.5
             },
             "underPressure": {
               "bpSavedPct": 59.8,
@@ -63696,7 +63694,7 @@
               "bpConvPct": 36,
               "rating": 135.8,
               "inclChallenger": true,
-              "index": 76.2
+              "index": 75.7
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -64058,7 +64056,7 @@
               "bpConvPct": 40.4,
               "rating": 148.5,
               "inclChallenger": false,
-              "index": 74.6
+              "index": 74.2
             },
             "underPressure": {
               "bpSavedPct": 52.8,
@@ -64119,7 +64117,7 @@
               "bpConvPct": 30.7,
               "rating": 129.2,
               "inclChallenger": false,
-              "index": 65.4
+              "index": 65.3
             },
             "underPressure": {
               "bpSavedPct": 61,
@@ -64177,7 +64175,7 @@
               "bpConvPct": 42.1,
               "rating": 145.9,
               "inclChallenger": false,
-              "index": 88.4
+              "index": 88.2
             },
             "underPressure": {
               "bpSavedPct": 61.3,
@@ -64542,7 +64540,7 @@
               "bpConvPct": 45.7,
               "rating": 134.9,
               "inclChallenger": false,
-              "index": 45.2
+              "index": 44.4
             },
             "underPressure": {
               "bpSavedPct": 52.2,
@@ -64602,7 +64600,7 @@
               "bpConvPct": 41,
               "rating": 143.9,
               "inclChallenger": false,
-              "index": 90.2
+              "index": 90.1
             },
             "underPressure": {
               "bpSavedPct": 57.4,
@@ -64661,7 +64659,7 @@
               "bpConvPct": 35.7,
               "rating": 136.8,
               "inclChallenger": false,
-              "index": 78.5
+              "index": 78.1
             },
             "underPressure": {
               "bpSavedPct": 67.7,
@@ -65028,7 +65026,7 @@
               "bpConvPct": 38.7,
               "rating": 143.6,
               "inclChallenger": true,
-              "index": 62.7
+              "index": 62.2
             },
             "underPressure": {
               "bpSavedPct": 58.9,
@@ -65089,7 +65087,7 @@
               "bpConvPct": 31.5,
               "rating": 117.8,
               "inclChallenger": true,
-              "index": 37.4
+              "index": 37.1
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -65143,7 +65141,7 @@
               "bpConvPct": 31.5,
               "rating": 117.8,
               "inclChallenger": true,
-              "index": 41.3
+              "index": 40.2
             },
             "underPressure": {
               "bpSavedPct": 72,
@@ -65506,7 +65504,7 @@
               "bpConvPct": 37.9,
               "rating": 136.8,
               "inclChallenger": false,
-              "index": 47.8
+              "index": 47.1
             },
             "underPressure": {
               "bpSavedPct": 55.1,
@@ -65939,7 +65937,7 @@
               "bpConvPct": 42.6,
               "rating": 139.9,
               "inclChallenger": true,
-              "index": 54.4
+              "index": 53.8
             },
             "underPressure": {
               "bpSavedPct": 58.6,
@@ -66372,7 +66370,7 @@
               "bpConvPct": 31.9,
               "rating": 108,
               "inclChallenger": true,
-              "index": 7
+              "index": 6.2
             },
             "underPressure": {
               "bpSavedPct": 45,
@@ -66426,10 +66424,9 @@
               "ret2ndWonPct": 40,
               "rptWonPct": 19.4,
               "breakPct": 0,
-              "bpConvPct": 0,
-              "rating": 48.2,
-              "inclChallenger": true,
-              "index": 0.5
+              "bpConvPct": null,
+              "rating": null,
+              "inclChallenger": true
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -66480,10 +66477,9 @@
               "ret2ndWonPct": 40,
               "rptWonPct": 19.4,
               "breakPct": 0,
-              "bpConvPct": 0,
-              "rating": 48.2,
-              "inclChallenger": true,
-              "index": 1.7
+              "bpConvPct": null,
+              "rating": null,
+              "inclChallenger": true
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -66845,7 +66841,7 @@
               "bpConvPct": 29.7,
               "rating": 123.2,
               "inclChallenger": true,
-              "index": 21.5
+              "index": 20.9
             },
             "underPressure": {
               "bpSavedPct": 57,
@@ -66902,7 +66898,7 @@
               "bpConvPct": 36.8,
               "rating": 118.9,
               "inclChallenger": true,
-              "index": 40.7
+              "index": 40.4
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -67300,7 +67296,7 @@
               "bpConvPct": 36.3,
               "rating": 134.5,
               "inclChallenger": true,
-              "index": 43.4
+              "index": 42.7
             },
             "underPressure": {
               "bpSavedPct": 48.1,
@@ -67361,7 +67357,7 @@
               "bpConvPct": 36.7,
               "rating": 130.2,
               "inclChallenger": false,
-              "index": 69.6
+              "index": 69.5
             },
             "underPressure": {
               "bpSavedPct": 59.4,
@@ -67759,7 +67755,7 @@
               "bpConvPct": 39,
               "rating": 118.7,
               "inclChallenger": true,
-              "index": 16.7
+              "index": 16
             },
             "underPressure": {
               "bpSavedPct": 45.2,
@@ -67820,7 +67816,7 @@
               "bpConvPct": 31.3,
               "rating": 109.8,
               "inclChallenger": true,
-              "index": 19.6
+              "index": 19.2
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -67874,7 +67870,7 @@
               "bpConvPct": 12.9,
               "rating": 76,
               "inclChallenger": true,
-              "index": 4.7
+              "index": 3
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -68236,7 +68232,7 @@
               "bpConvPct": 34.3,
               "rating": 129.2,
               "inclChallenger": false,
-              "index": 34.2
+              "index": 33.3
             },
             "underPressure": {
               "bpSavedPct": 57.7,
@@ -68297,7 +68293,7 @@
               "bpConvPct": 44.6,
               "rating": 134.7,
               "inclChallenger": false,
-              "index": 79.9
+              "index": 79.8
             },
             "underPressure": {
               "bpSavedPct": 58.9,
@@ -68356,7 +68352,7 @@
               "bpConvPct": 22.7,
               "rating": 101.3,
               "inclChallenger": false,
-              "index": 20.9
+              "index": 19.5
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -68717,7 +68713,7 @@
               "bpConvPct": 30,
               "rating": 79.1,
               "inclChallenger": true,
-              "index": 1.3
+              "index": 0.4
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -68773,7 +68769,7 @@
               "bpConvPct": 41.5,
               "rating": 128.6,
               "inclChallenger": true,
-              "index": 64
+              "index": 63.8
             },
             "underPressure": {
               "bpSavedPct": 59.6,
@@ -68832,7 +68828,7 @@
               "bpConvPct": 45,
               "rating": 134.3,
               "inclChallenger": true,
-              "index": 73.3
+              "index": 72.8
             },
             "underPressure": {
               "bpSavedPct": 63.2,
@@ -69195,7 +69191,7 @@
               "bpConvPct": 21.5,
               "rating": 94.5,
               "inclChallenger": true,
-              "index": 2.2
+              "index": 1.3
             },
             "underPressure": {
               "bpSavedPct": 50.9,
@@ -69256,7 +69252,7 @@
               "bpConvPct": 33.9,
               "rating": 118,
               "inclChallenger": true,
-              "index": 37.9
+              "index": 37.6
             },
             "underPressure": {
               "bpSavedPct": 64.5,
@@ -69315,7 +69311,7 @@
               "bpConvPct": 37.6,
               "rating": 124.7,
               "inclChallenger": true,
-              "index": 51.7
+              "index": 50.9
             },
             "underPressure": {
               "bpSavedPct": 60.5,
@@ -69682,7 +69678,7 @@
               "bpConvPct": 36.1,
               "rating": 123.6,
               "inclChallenger": true,
-              "index": 21.9
+              "index": 21.3
             },
             "underPressure": {
               "bpSavedPct": 58.5,
@@ -69743,7 +69739,7 @@
               "bpConvPct": 0,
               "rating": 50.1,
               "inclChallenger": true,
-              "index": 0.9
+              "index": 0.5
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -69801,7 +69797,7 @@
               "bpConvPct": 0,
               "rating": 55.9,
               "inclChallenger": false,
-              "index": 2.3
+              "index": 1.2
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -70167,7 +70163,7 @@
               "bpConvPct": 31.9,
               "rating": 122.6,
               "inclChallenger": false,
-              "index": 21.1
+              "index": 20.4
             },
             "underPressure": {
               "bpSavedPct": 66.7,
@@ -70228,7 +70224,7 @@
               "bpConvPct": 32.2,
               "rating": 111.8,
               "inclChallenger": true,
-              "index": 23.8
+              "index": 23.5
             },
             "underPressure": {
               "bpSavedPct": 64.6,
@@ -70287,7 +70283,7 @@
               "bpConvPct": 24.6,
               "rating": 102,
               "inclChallenger": true,
-              "index": 22.1
+              "index": 20.7
             },
             "underPressure": {
               "bpSavedPct": 64.3,
@@ -70713,7 +70709,7 @@
               "bpConvPct": 27.9,
               "rating": 102.1,
               "inclChallenger": true,
-              "index": 9.3
+              "index": 8.9
             },
             "underPressure": {
               "bpSavedPct": 47.6,
@@ -70771,7 +70767,7 @@
               "bpConvPct": 10,
               "rating": 76,
               "inclChallenger": true,
-              "index": 4.7
+              "index": 3
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -71133,7 +71129,7 @@
               "bpConvPct": 27.4,
               "rating": 108.7,
               "inclChallenger": true,
-              "index": 7.9
+              "index": 7.1
             },
             "underPressure": {
               "bpSavedPct": 65,
@@ -71193,7 +71189,7 @@
               "bpConvPct": 44.3,
               "rating": 133.8,
               "inclChallenger": true,
-              "index": 79.4
+              "index": 79.3
             },
             "underPressure": {
               "bpSavedPct": 63.6,
@@ -71251,7 +71247,7 @@
               "bpConvPct": 40.6,
               "rating": 124.8,
               "inclChallenger": true,
-              "index": 52.3
+              "index": 51.5
             },
             "underPressure": {
               "bpSavedPct": 61.1,
@@ -71618,7 +71614,7 @@
               "bpConvPct": 27.7,
               "rating": 113.2,
               "inclChallenger": false,
-              "index": 10.5
+              "index": 9.8
             },
             "underPressure": {
               "bpSavedPct": 51,
@@ -71679,7 +71675,7 @@
               "bpConvPct": 42.7,
               "rating": 125.6,
               "inclChallenger": true,
-              "index": 57
+              "index": 56.8
             },
             "underPressure": {
               "bpSavedPct": 65.6,
@@ -71738,7 +71734,7 @@
               "bpConvPct": 41.9,
               "rating": 128.2,
               "inclChallenger": true,
-              "index": 59.3
+              "index": 58.6
             },
             "underPressure": {
               "bpSavedPct": 65.3,
@@ -72104,7 +72100,7 @@
               "bpConvPct": 51.5,
               "rating": 165.2,
               "inclChallenger": false,
-              "index": 95.2
+              "index": 95.1
             },
             "underPressure": {
               "bpSavedPct": 44.2,
@@ -72165,7 +72161,7 @@
               "bpConvPct": 25.9,
               "rating": 99.2,
               "inclChallenger": false,
-              "index": 7
+              "index": 6.6
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -72223,7 +72219,7 @@
               "bpConvPct": 33.3,
               "rating": 87.2,
               "inclChallenger": false,
-              "index": 9.9
+              "index": 8.3
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -72588,7 +72584,7 @@
               "bpConvPct": 43.5,
               "rating": 161.2,
               "inclChallenger": true,
-              "index": 91.2
+              "index": 91.1
             },
             "underPressure": {
               "bpSavedPct": 52.5,
@@ -72649,7 +72645,7 @@
               "bpConvPct": 50,
               "rating": 116.3,
               "inclChallenger": false,
-              "index": 33.6
+              "index": 33.3
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -72707,7 +72703,7 @@
               "bpConvPct": 50,
               "rating": 116.3,
               "inclChallenger": false,
-              "index": 39.5
+              "index": 38.5
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -73073,7 +73069,7 @@
               "bpConvPct": 40.9,
               "rating": 130.2,
               "inclChallenger": true,
-              "index": 35.5
+              "index": 34.7
             },
             "underPressure": {
               "bpSavedPct": 54.6,
@@ -73134,7 +73130,7 @@
               "bpConvPct": 35.7,
               "rating": 129.3,
               "inclChallenger": false,
-              "index": 66.4
+              "index": 66.2
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -73192,7 +73188,7 @@
               "bpConvPct": 35.7,
               "rating": 129.3,
               "inclChallenger": false,
-              "index": 62.2
+              "index": 61.5
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -73558,7 +73554,7 @@
               "bpConvPct": 47,
               "rating": 134.6,
               "inclChallenger": true,
-              "index": 43.9
+              "index": 43.1
             },
             "underPressure": {
               "bpSavedPct": 60,
@@ -73619,7 +73615,7 @@
               "bpConvPct": 33.2,
               "rating": 119,
               "inclChallenger": false,
-              "index": 41.1
+              "index": 40.8
             },
             "underPressure": {
               "bpSavedPct": 57.5,
@@ -73678,7 +73674,7 @@
               "bpConvPct": 36.3,
               "rating": 104.3,
               "inclChallenger": true,
-              "index": 24.4
+              "index": 23.1
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -74044,7 +74040,7 @@
               "bpConvPct": 46.7,
               "rating": 153.7,
               "inclChallenger": true,
-              "index": 80.7
+              "index": 80.4
             },
             "underPressure": {
               "bpSavedPct": 49,
@@ -74105,7 +74101,7 @@
               "bpConvPct": 22.2,
               "rating": 79.8,
               "inclChallenger": false,
-              "index": 4.2
+              "index": 3.8
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -74163,7 +74159,7 @@
               "bpConvPct": 22.2,
               "rating": 79.8,
               "inclChallenger": false,
-              "index": 6.4
+              "index": 4.7
             },
             "underPressure": {
               "bpSavedPct": 54.2,
@@ -74528,7 +74524,7 @@
               "bpConvPct": 36,
               "rating": 128.2,
               "inclChallenger": true,
-              "index": 32.5
+              "index": 31.6
             },
             "underPressure": {
               "bpSavedPct": 54.3,
@@ -74589,7 +74585,7 @@
               "bpConvPct": 50.6,
               "rating": 146.5,
               "inclChallenger": true,
-              "index": 94.9
+              "index": 94.8
             },
             "underPressure": {
               "bpSavedPct": 63.2,
@@ -74984,7 +74980,7 @@
               "bpConvPct": 46.7,
               "rating": 145.8,
               "inclChallenger": true,
-              "index": 70.2
+              "index": 69.8
             },
             "underPressure": {
               "bpSavedPct": 61.1,
@@ -75040,7 +75036,7 @@
               "bpConvPct": 30.3,
               "rating": 118.2,
               "inclChallenger": true,
-              "index": 38.3
+              "index": 38
             },
             "underPressure": {
               "bpSavedPct": 59.3,
@@ -75099,7 +75095,7 @@
               "bpConvPct": 35.3,
               "rating": 127.4,
               "inclChallenger": true,
-              "index": 57.6
+              "index": 56.8
             },
             "underPressure": {
               "bpSavedPct": 57.7,
@@ -75465,7 +75461,7 @@
               "bpConvPct": 45,
               "rating": 142,
               "inclChallenger": true,
-              "index": 59.6
+              "index": 59.1
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -75521,7 +75517,7 @@
               "bpConvPct": 34.3,
               "rating": 119.6,
               "inclChallenger": true,
-              "index": 42.1
+              "index": 41.8
             },
             "underPressure": {
               "bpSavedPct": 63.4,
@@ -75919,7 +75915,7 @@
               "bpConvPct": 38.2,
               "rating": 139.1,
               "inclChallenger": true,
-              "index": 53.1
+              "index": 52.4
             },
             "underPressure": {
               "bpSavedPct": 60.4,
@@ -76348,7 +76344,7 @@
               "bpConvPct": 35.5,
               "rating": 130.7,
               "inclChallenger": true,
-              "index": 36.4
+              "index": 35.6
             },
             "underPressure": {
               "bpSavedPct": 55.3,
@@ -76781,7 +76777,7 @@
               "bpConvPct": 27.5,
               "rating": 115,
               "inclChallenger": true,
-              "index": 12.3
+              "index": 11.6
             },
             "underPressure": {
               "bpSavedPct": 43.8,
@@ -76842,7 +76838,7 @@
               "bpConvPct": 36.4,
               "rating": 114.9,
               "inclChallenger": true,
-              "index": 30.4
+              "index": 30
             },
             "underPressure": {
               "bpSavedPct": 63.4,
@@ -76901,7 +76897,7 @@
               "bpConvPct": 45,
               "rating": 99,
               "inclChallenger": true,
-              "index": 19.2
+              "index": 17.8
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -77267,7 +77263,7 @@
               "bpConvPct": 37.4,
               "rating": 124.4,
               "inclChallenger": true,
-              "index": 24.1
+              "index": 23.6
             },
             "underPressure": {
               "bpSavedPct": 49.5,
@@ -77324,7 +77320,7 @@
               "bpConvPct": 30.3,
               "rating": 105.1,
               "inclChallenger": true,
-              "index": 14
+              "index": 13.6
             },
             "underPressure": {
               "bpSavedPct": 62.5,
@@ -77383,7 +77379,7 @@
               "bpConvPct": 31.3,
               "rating": 108,
               "inclChallenger": true,
-              "index": 30.8
+              "index": 29.6
             },
             "underPressure": {
               "bpSavedPct": 63.6,
@@ -77750,7 +77746,7 @@
               "bpConvPct": 32.9,
               "rating": 124.3,
               "inclChallenger": true,
-              "index": 23.7
+              "index": 23.1
             },
             "underPressure": {
               "bpSavedPct": 60.3,
@@ -77807,7 +77803,7 @@
               "bpConvPct": 33.8,
               "rating": 130,
               "inclChallenger": true,
-              "index": 68.7
+              "index": 68.5
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -77861,7 +77857,7 @@
               "bpConvPct": 33.8,
               "rating": 130,
               "inclChallenger": true,
-              "index": 62.8
+              "index": 62.1
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -78223,7 +78219,7 @@
               "bpConvPct": 37.1,
               "rating": 141.5,
               "inclChallenger": false,
-              "index": 57.5
+              "index": 56.9
             },
             "underPressure": {
               "bpSavedPct": 59.7,
@@ -78284,7 +78280,7 @@
               "bpConvPct": 26.3,
               "rating": 101.9,
               "inclChallenger": false,
-              "index": 8.9
+              "index": 8.5
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -78342,7 +78338,7 @@
               "bpConvPct": 44.4,
               "rating": 119.7,
               "inclChallenger": false,
-              "index": 43.6
+              "index": 42.6
             },
             "underPressure": {
               "bpSavedPct": 69.6,
@@ -78711,7 +78707,7 @@
               "bpConvPct": 35.7,
               "rating": 126.6,
               "inclChallenger": true,
-              "index": 58.9
+              "index": 58.7
             },
             "underPressure": {
               "bpSavedPct": 60.3,
@@ -78770,7 +78766,7 @@
               "bpConvPct": 27,
               "rating": 108.4,
               "inclChallenger": true,
-              "index": 31.4
+              "index": 30.2
             },
             "underPressure": {
               "bpSavedPct": 61.8,
@@ -79137,7 +79133,7 @@
               "bpConvPct": 39.4,
               "rating": 135.3,
               "inclChallenger": true,
-              "index": 46.5
+              "index": 45.8
             },
             "underPressure": {
               "bpSavedPct": 49.3,
@@ -79197,7 +79193,7 @@
               "bpConvPct": 38.7,
               "rating": 119.3,
               "inclChallenger": true,
-              "index": 41.6
+              "index": 41.3
             },
             "underPressure": {
               "bpSavedPct": 59.5,
@@ -79255,7 +79251,7 @@
               "bpConvPct": 36.8,
               "rating": 123.2,
               "inclChallenger": true,
-              "index": 48.8
+              "index": 47.9
             },
             "underPressure": {
               "bpSavedPct": 58.5,
@@ -79618,7 +79614,7 @@
               "bpConvPct": 34.8,
               "rating": 125,
               "inclChallenger": false,
-              "index": 25.4
+              "index": 24.9
             },
             "underPressure": {
               "bpSavedPct": 53.4,
@@ -79679,7 +79675,7 @@
               "bpConvPct": 26.3,
               "rating": 94,
               "inclChallenger": false,
-              "index": 5.6
+              "index": 5.2
             },
             "underPressure": {
               "bpSavedPct": 59,
@@ -80077,7 +80073,7 @@
               "bpConvPct": 36.9,
               "rating": 121.9,
               "inclChallenger": true,
-              "index": 18.9
+              "index": 18.2
             },
             "underPressure": {
               "bpSavedPct": 44.6,
@@ -80137,7 +80133,7 @@
               "bpConvPct": 29.7,
               "rating": 113.9,
               "inclChallenger": true,
-              "index": 27.1
+              "index": 26.8
             },
             "underPressure": {
               "bpSavedPct": 54.4,
@@ -80196,7 +80192,7 @@
               "bpConvPct": 0,
               "rating": 72.3,
               "inclChallenger": true,
-              "index": 3.5
+              "index": 2.4
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -80558,7 +80554,7 @@
               "bpConvPct": 56.3,
               "rating": 141.3,
               "inclChallenger": true,
-              "index": 56.6
+              "index": 56
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -80614,7 +80610,7 @@
               "bpConvPct": 43.1,
               "rating": 142.7,
               "inclChallenger": true,
-              "index": 89.3
+              "index": 89.2
             },
             "underPressure": {
               "bpSavedPct": 57.7,
@@ -81034,7 +81030,7 @@
               "bpConvPct": 42,
               "rating": 145.8,
               "inclChallenger": false,
-              "index": 70.2
+              "index": 69.8
             },
             "underPressure": {
               "bpSavedPct": 61.6,
@@ -81519,7 +81515,7 @@
               "bpConvPct": 28.5,
               "rating": 105.7,
               "inclChallenger": true,
-              "index": 5.7
+              "index": 4.9
             },
             "underPressure": {
               "bpSavedPct": 59.5,
@@ -81580,7 +81576,7 @@
               "bpConvPct": 27.8,
               "rating": 105.2,
               "inclChallenger": false,
-              "index": 14.5
+              "index": 14.1
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -81638,7 +81634,7 @@
               "bpConvPct": 27.8,
               "rating": 105.2,
               "inclChallenger": false,
-              "index": 25
+              "index": 23.7
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -82033,7 +82029,7 @@
               "bpConvPct": 15,
               "rating": 76.8,
               "inclChallenger": true,
-              "index": 2.8
+              "index": 2.3
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -82426,7 +82422,7 @@
               "bpConvPct": 36.4,
               "rating": 135.8,
               "inclChallenger": true,
-              "index": 47.4
+              "index": 46.7
             },
             "underPressure": {
               "bpSavedPct": 51,
@@ -82486,7 +82482,7 @@
               "bpConvPct": 34.9,
               "rating": 112.5,
               "inclChallenger": false,
-              "index": 25.2
+              "index": 24.9
             },
             "underPressure": {
               "bpSavedPct": 64.1,
@@ -82545,7 +82541,7 @@
               "bpConvPct": 28.5,
               "rating": 98.8,
               "inclChallenger": true,
-              "index": 18.6
+              "index": 17.2
             },
             "underPressure": {
               "bpSavedPct": 61.2,
@@ -82912,7 +82908,7 @@
               "bpConvPct": 37.7,
               "rating": 141.5,
               "inclChallenger": false,
-              "index": 57.5
+              "index": 56.9
             },
             "underPressure": {
               "bpSavedPct": 57.6,
@@ -82973,7 +82969,7 @@
               "bpConvPct": 37.6,
               "rating": 136.6,
               "inclChallenger": false,
-              "index": 84.1
+              "index": 84
             },
             "underPressure": {
               "bpSavedPct": 65.9,
@@ -83032,7 +83028,7 @@
               "bpConvPct": 33.3,
               "rating": 115.3,
               "inclChallenger": false,
-              "index": 38.4
+              "index": 37.3
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -83398,7 +83394,7 @@
               "bpConvPct": 50,
               "rating": 151.4,
               "inclChallenger": false,
-              "index": 78.9
+              "index": 78.7
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -83458,7 +83454,7 @@
               "bpConvPct": 36.3,
               "rating": 130.7,
               "inclChallenger": false,
-              "index": 72.4
+              "index": 72.3
             },
             "underPressure": {
               "bpSavedPct": 62.7,
@@ -83517,7 +83513,7 @@
               "bpConvPct": 43.9,
               "rating": 143.2,
               "inclChallenger": false,
-              "index": 87.2
+              "index": 87
             },
             "underPressure": {
               "bpSavedPct": 55.6,
@@ -83884,7 +83880,7 @@
               "bpConvPct": 32.8,
               "rating": 118.4,
               "inclChallenger": true,
-              "index": 15.8
+              "index": 15.1
             },
             "underPressure": {
               "bpSavedPct": 56.3,
@@ -83945,7 +83941,7 @@
               "bpConvPct": 36,
               "rating": 107.2,
               "inclChallenger": true,
-              "index": 16.4
+              "index": 16
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -83999,7 +83995,7 @@
               "bpConvPct": 36,
               "rating": 107.2,
               "inclChallenger": true,
-              "index": 27.9
+              "index": 26.6
             },
             "underPressure": {
               "bpSavedPct": 64.3,
@@ -84361,7 +84357,7 @@
               "bpConvPct": 49.1,
               "rating": 160.8,
               "inclChallenger": true,
-              "index": 89.9
+              "index": 89.8
             },
             "underPressure": {
               "bpSavedPct": 67.5,
@@ -84417,7 +84413,7 @@
               "bpConvPct": 37.2,
               "rating": 127.1,
               "inclChallenger": false,
-              "index": 60.7
+              "index": 60.6
             },
             "underPressure": {
               "bpSavedPct": 64.9,
@@ -84476,7 +84472,7 @@
               "bpConvPct": 43.8,
               "rating": 134.7,
               "inclChallenger": true,
-              "index": 73.8
+              "index": 73.4
             },
             "underPressure": {
               "bpSavedPct": 57.4,
@@ -84843,7 +84839,7 @@
               "bpConvPct": 53.6,
               "rating": 162.6,
               "inclChallenger": false,
-              "index": 92.5
+              "index": 92.4
             },
             "underPressure": {
               "bpSavedPct": 53.5,
@@ -84903,7 +84899,7 @@
               "bpConvPct": 39,
               "rating": 134.7,
               "inclChallenger": false,
-              "index": 79.9
+              "index": 79.8
             },
             "underPressure": {
               "bpSavedPct": 63.1,
@@ -84961,7 +84957,7 @@
               "bpConvPct": 37.5,
               "rating": 130.1,
               "inclChallenger": false,
-              "index": 63.4
+              "index": 62.7
             },
             "underPressure": {
               "bpSavedPct": 61.9,
@@ -85321,13 +85317,12 @@
             },
             "return": {
               "ret1stWonPct": 83.2,
-              "ret2ndWonPct": 0,
+              "ret2ndWonPct": null,
               "rptWonPct": 33.4,
               "breakPct": 9.9,
               "bpConvPct": 34,
-              "rating": 127,
-              "inclChallenger": true,
-              "index": 30.3
+              "rating": null,
+              "inclChallenger": true
             },
             "underPressure": {
               "bpSavedPct": 46.8,
@@ -85384,7 +85379,7 @@
               "bpConvPct": 30.3,
               "rating": 110,
               "inclChallenger": true,
-              "index": 20.1
+              "index": 19.7
             },
             "underPressure": {
               "bpSavedPct": 56.5,
@@ -85443,7 +85438,7 @@
               "bpConvPct": 33.8,
               "rating": 133.1,
               "inclChallenger": true,
-              "index": 69.2
+              "index": 68.6
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -85803,7 +85798,7 @@
               "bpConvPct": 50,
               "rating": 155.8,
               "inclChallenger": false,
-              "index": 84.6
+              "index": 84.4
             },
             "underPressure": {
               "bpSavedPct": 59.1,
@@ -85921,7 +85916,7 @@
               "bpConvPct": 36,
               "rating": 136.3,
               "inclChallenger": false,
-              "index": 77.3
+              "index": 76.9
             },
             "underPressure": {
               "bpSavedPct": 58.1,
@@ -86287,7 +86282,7 @@
               "bpConvPct": 41.7,
               "rating": 149.1,
               "inclChallenger": true,
-              "index": 75.4
+              "index": 75.1
             },
             "underPressure": {
               "bpSavedPct": 53.3,
@@ -86344,7 +86339,7 @@
               "bpConvPct": 43.2,
               "rating": 133,
               "inclChallenger": false,
-              "index": 78.5
+              "index": 78.4
             },
             "underPressure": {
               "bpSavedPct": 73.7,
@@ -86742,7 +86737,7 @@
               "bpConvPct": 38,
               "rating": 125.9,
               "inclChallenger": true,
-              "index": 28.1
+              "index": 27.6
             },
             "underPressure": {
               "bpSavedPct": 49.5,
@@ -86803,7 +86798,7 @@
               "bpConvPct": 42,
               "rating": 129.6,
               "inclChallenger": true,
-              "index": 67.3
+              "index": 67.1
             },
             "underPressure": {
               "bpSavedPct": 46.4,
@@ -87193,7 +87188,7 @@
               "bpConvPct": 37.2,
               "rating": 133.6,
               "inclChallenger": true,
-              "index": 41.7
+              "index": 40.9
             },
             "underPressure": {
               "bpSavedPct": 56.9,
@@ -87250,7 +87245,7 @@
               "bpConvPct": 35.5,
               "rating": 115.2,
               "inclChallenger": true,
-              "index": 31.8
+              "index": 31.5
             },
             "underPressure": {
               "bpSavedPct": 57.5,
@@ -87309,7 +87304,7 @@
               "bpConvPct": 48.8,
               "rating": 140.4,
               "inclChallenger": true,
-              "index": 83.1
+              "index": 82.8
             },
             "underPressure": {
               "bpSavedPct": 50,
@@ -87670,7 +87665,7 @@
               "bpConvPct": 30,
               "rating": 150.7,
               "inclChallenger": true,
-              "index": 76.8
+              "index": 76.4
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -87726,7 +87721,7 @@
               "bpConvPct": 38.2,
               "rating": 135.2,
               "inclChallenger": true,
-              "index": 81.3
+              "index": 81.2
             },
             "underPressure": {
               "bpSavedPct": 58.1,
@@ -87785,7 +87780,7 @@
               "bpConvPct": 22.2,
               "rating": 106,
               "inclChallenger": false,
-              "index": 25.6
+              "index": 24.3
             },
             "underPressure": {
               "bpSavedPct": 56.7,
@@ -88151,7 +88146,7 @@
               "bpConvPct": 28.6,
               "rating": 101.5,
               "inclChallenger": true,
-              "index": 4.8
+              "index": 4
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -88211,7 +88206,7 @@
               "bpConvPct": 30.2,
               "rating": 111.2,
               "inclChallenger": false,
-              "index": 21.5
+              "index": 21.1
             },
             "underPressure": {
               "bpSavedPct": 63.6,
@@ -88270,7 +88265,7 @@
               "bpConvPct": 27.2,
               "rating": 107.6,
               "inclChallenger": true,
-              "index": 29.7
+              "index": 28.4
             },
             "underPressure": {
               "bpSavedPct": 68.2,
@@ -88637,7 +88632,7 @@
               "bpConvPct": 36,
               "rating": 127.9,
               "inclChallenger": true,
-              "index": 31.6
+              "index": 30.7
             },
             "underPressure": {
               "bpSavedPct": 42.4,
@@ -89065,7 +89060,7 @@
               "bpConvPct": 42.9,
               "rating": 141.9,
               "inclChallenger": false,
-              "index": 58.8
+              "index": 58.2
             },
             "underPressure": {
               "bpSavedPct": 60.8,
@@ -89126,7 +89121,7 @@
               "bpConvPct": 32.4,
               "rating": 103,
               "inclChallenger": false,
-              "index": 12.1
+              "index": 11.7
             },
             "underPressure": {
               "bpSavedPct": 57.1,
@@ -89184,7 +89179,7 @@
               "bpConvPct": 100,
               "rating": 153.7,
               "inclChallenger": false,
-              "index": 94.2
+              "index": 94.1
             },
             "underPressure": {
               "bpSavedPct": 71,
@@ -89550,7 +89545,7 @@
               "bpConvPct": 24.4,
               "rating": 106.6,
               "inclChallenger": true,
-              "index": 6.6
+              "index": 5.8
             },
             "underPressure": {
               "bpSavedPct": 50.5,
@@ -89979,7 +89974,7 @@
               "bpConvPct": 37.1,
               "rating": 132.2,
               "inclChallenger": true,
-              "index": 38.2
+              "index": 37.3
             },
             "underPressure": {
               "bpSavedPct": 53.7,
@@ -90040,7 +90035,7 @@
               "bpConvPct": 45,
               "rating": 107.9,
               "inclChallenger": true,
-              "index": 16.8
+              "index": 16.4
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -90094,7 +90089,7 @@
               "bpConvPct": 45,
               "rating": 107.9,
               "inclChallenger": true,
-              "index": 30.2
+              "index": 29
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -90456,7 +90451,7 @@
               "bpConvPct": 37,
               "rating": 140.4,
               "inclChallenger": true,
-              "index": 54.8
+              "index": 54.2
             },
             "underPressure": {
               "bpSavedPct": 51.8,
@@ -90513,7 +90508,7 @@
               "bpConvPct": 50,
               "rating": 123,
               "inclChallenger": false,
-              "index": 49.5
+              "index": 49.3
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -90571,7 +90566,7 @@
               "bpConvPct": 50,
               "rating": 120.9,
               "inclChallenger": false,
-              "index": 45.3
+              "index": 44.4
             },
             "underPressure": {
               "bpSavedPct": 72.7,
@@ -90937,7 +90932,7 @@
               "bpConvPct": 39.7,
               "rating": 132.3,
               "inclChallenger": true,
-              "index": 38.6
+              "index": 37.8
             },
             "underPressure": {
               "bpSavedPct": 55.3,
@@ -91366,7 +91361,7 @@
               "bpConvPct": 36.7,
               "rating": 134.8,
               "inclChallenger": true,
-              "index": 44.3
+              "index": 43.6
             },
             "underPressure": {
               "bpSavedPct": 57.3,
@@ -91826,7 +91821,7 @@
               "bpConvPct": 15,
               "rating": 86.4,
               "inclChallenger": true,
-              "index": 1.8
+              "index": 0.9
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -91882,7 +91877,7 @@
               "bpConvPct": 36.8,
               "rating": 121.4,
               "inclChallenger": true,
-              "index": 45.3
+              "index": 45.1
             },
             "underPressure": {
               "bpSavedPct": 60.9,
@@ -91941,7 +91936,7 @@
               "bpConvPct": 32.1,
               "rating": 115.9,
               "inclChallenger": true,
-              "index": 39
+              "index": 37.9
             },
             "underPressure": {
               "bpSavedPct": 59.1,
@@ -92304,7 +92299,7 @@
               "bpConvPct": 38.4,
               "rating": 127.9,
               "inclChallenger": true,
-              "index": 31.6
+              "index": 30.7
             },
             "underPressure": {
               "bpSavedPct": 57.3,
@@ -92365,7 +92360,7 @@
               "bpConvPct": 30,
               "rating": 113.9,
               "inclChallenger": true,
-              "index": 27.1
+              "index": 26.8
             },
             "underPressure": {
               "bpSavedPct": 64.7,
@@ -92764,7 +92759,7 @@
               "bpConvPct": 25.7,
               "rating": 103.5,
               "inclChallenger": true,
-              "index": 5.3
+              "index": 4.4
             },
             "underPressure": {
               "bpSavedPct": 64.3,
@@ -92821,7 +92816,7 @@
               "bpConvPct": 35.3,
               "rating": 114.5,
               "inclChallenger": true,
-              "index": 28
+              "index": 27.7
             },
             "underPressure": {
               "bpSavedPct": 68.7,
@@ -92880,7 +92875,7 @@
               "bpConvPct": 45,
               "rating": 120.1,
               "inclChallenger": true,
-              "index": 44.8
+              "index": 43.8
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -93241,7 +93236,7 @@
               "bpConvPct": 35.3,
               "rating": 129.5,
               "inclChallenger": true,
-              "index": 34.6
+              "index": 33.8
             },
             "underPressure": {
               "bpSavedPct": 60.3,
@@ -93302,7 +93297,7 @@
               "bpConvPct": 0,
               "rating": 59.8,
               "inclChallenger": true,
-              "index": 1.9
+              "index": 1.4
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -93696,7 +93691,7 @@
               "bpConvPct": 37.3,
               "rating": 143.9,
               "inclChallenger": false,
-              "index": 64
+              "index": 63.6
             },
             "underPressure": {
               "bpSavedPct": 56.3,
@@ -93757,7 +93752,7 @@
               "bpConvPct": 27.3,
               "rating": 112,
               "inclChallenger": false,
-              "index": 24.3
+              "index": 23.9
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -94150,7 +94145,7 @@
               "bpConvPct": 45,
               "rating": 144.8,
               "inclChallenger": true,
-              "index": 67.1
+              "index": 66.7
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -94260,7 +94255,7 @@
               "bpConvPct": 36.3,
               "rating": 135.6,
               "inclChallenger": true,
-              "index": 75.6
+              "index": 75.1
             },
             "underPressure": {
               "bpSavedPct": 67.2,
@@ -94657,7 +94652,7 @@
               "bpConvPct": 42.1,
               "rating": 135.9,
               "inclChallenger": true,
-              "index": 83.2
+              "index": 83.1
             },
             "underPressure": {
               "bpSavedPct": 60.3,
@@ -94716,7 +94711,7 @@
               "bpConvPct": 51.4,
               "rating": 146,
               "inclChallenger": true,
-              "index": 89
+              "index": 88.8
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -95078,7 +95073,7 @@
               "bpConvPct": 40.3,
               "rating": 146,
               "inclChallenger": false,
-              "index": 71.9
+              "index": 71.6
             },
             "underPressure": {
               "bpSavedPct": 58.1,
@@ -95139,7 +95134,7 @@
               "bpConvPct": 25,
               "rating": 100.8,
               "inclChallenger": false,
-              "index": 7.9
+              "index": 7.5
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -95537,7 +95532,7 @@
               "bpConvPct": 39.9,
               "rating": 137.1,
               "inclChallenger": true,
-              "index": 48.2
+              "index": 47.6
             },
             "underPressure": {
               "bpSavedPct": 54.5,
@@ -95652,7 +95647,7 @@
               "bpConvPct": 60,
               "rating": 135.2,
               "inclChallenger": true,
-              "index": 74.4
+              "index": 74
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -96014,7 +96009,7 @@
               "bpConvPct": 35.3,
               "rating": 125.2,
               "inclChallenger": true,
-              "index": 25.9
+              "index": 25.3
             },
             "underPressure": {
               "bpSavedPct": 55.3,
@@ -96447,7 +96442,7 @@
               "bpConvPct": 46.2,
               "rating": 160.9,
               "inclChallenger": false,
-              "index": 90.8
+              "index": 90.7
             },
             "underPressure": {
               "bpSavedPct": 53.1,
@@ -96566,7 +96561,7 @@
               "bpConvPct": 45,
               "rating": 159.8,
               "inclChallenger": true,
-              "index": 97.7
+              "index": 97.6
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -96928,7 +96923,7 @@
               "bpConvPct": 37.1,
               "rating": 142.6,
               "inclChallenger": true,
-              "index": 61
+              "index": 60.4
             },
             "underPressure": {
               "bpSavedPct": 51.2,
@@ -96989,7 +96984,7 @@
               "bpConvPct": 36.4,
               "rating": 130.8,
               "inclChallenger": false,
-              "index": 72.9
+              "index": 72.8
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -97380,10 +97375,9 @@
               "ret2ndWonPct": 42.1,
               "rptWonPct": 33.2,
               "breakPct": 0,
-              "bpConvPct": 0,
-              "rating": 68.4,
-              "inclChallenger": true,
-              "index": 0.9
+              "bpConvPct": null,
+              "rating": null,
+              "inclChallenger": true
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -97439,7 +97433,7 @@
               "bpConvPct": 33.8,
               "rating": 109,
               "inclChallenger": true,
-              "index": 18.2
+              "index": 17.8
             },
             "underPressure": {
               "bpSavedPct": 56.8,
@@ -97497,7 +97491,7 @@
               "bpConvPct": 0,
               "rating": 44.3,
               "inclChallenger": false,
-              "index": 0.6
+              "index": 0
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -97863,7 +97857,7 @@
               "bpConvPct": 34.9,
               "rating": 116.2,
               "inclChallenger": true,
-              "index": 14.5
+              "index": 13.8
             },
             "underPressure": {
               "bpSavedPct": 49.3,
@@ -97924,7 +97918,7 @@
               "bpConvPct": 33.3,
               "rating": 104.2,
               "inclChallenger": false,
-              "index": 12.6
+              "index": 12.2
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -98322,7 +98316,7 @@
               "bpConvPct": 45.3,
               "rating": 142.3,
               "inclChallenger": true,
-              "index": 60.5
+              "index": 60
             },
             "underPressure": {
               "bpSavedPct": 58.3,
@@ -98383,7 +98377,7 @@
               "bpConvPct": 37.1,
               "rating": 130.1,
               "inclChallenger": false,
-              "index": 69.2
+              "index": 69
             },
             "underPressure": {
               "bpSavedPct": 65.9,
@@ -98442,7 +98436,7 @@
               "bpConvPct": 19.3,
               "rating": 97.4,
               "inclChallenger": true,
-              "index": 16.9
+              "index": 15.4
             },
             "underPressure": {
               "bpSavedPct": 69.2,
@@ -98804,7 +98798,7 @@
               "bpConvPct": 31.8,
               "rating": 117.4,
               "inclChallenger": true,
-              "index": 15.4
+              "index": 14.7
             },
             "underPressure": {
               "bpSavedPct": 47.8,
@@ -98865,7 +98859,7 @@
               "bpConvPct": 41.2,
               "rating": 114.6,
               "inclChallenger": true,
-              "index": 28.5
+              "index": 28.2
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -98920,10 +98914,9 @@
               "ret2ndWonPct": 54,
               "rptWonPct": 30.7,
               "breakPct": 0,
-              "bpConvPct": 0,
-              "rating": 72.6,
-              "inclChallenger": true,
-              "index": 4.1
+              "bpConvPct": null,
+              "rating": null,
+              "inclChallenger": true
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -99285,7 +99278,7 @@
               "bpConvPct": 36.1,
               "rating": 131,
               "inclChallenger": true,
-              "index": 36.8
+              "index": 36
             },
             "underPressure": {
               "bpSavedPct": 54.2,
@@ -99346,7 +99339,7 @@
               "bpConvPct": 18,
               "rating": 79.7,
               "inclChallenger": true,
-              "index": 3.7
+              "index": 3.3
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -99740,7 +99733,7 @@
               "bpConvPct": 29.4,
               "rating": 117.1,
               "inclChallenger": false,
-              "index": 14.9
+              "index": 14.2
             },
             "underPressure": {
               "bpSavedPct": 47.8,
@@ -99801,7 +99794,7 @@
               "bpConvPct": 29.2,
               "rating": 111.4,
               "inclChallenger": true,
-              "index": 22.4
+              "index": 22.1
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -100199,7 +100192,7 @@
               "bpConvPct": 38.7,
               "rating": 132.9,
               "inclChallenger": true,
-              "index": 40.4
+              "index": 39.6
             },
             "underPressure": {
               "bpSavedPct": 59.3,
@@ -100260,7 +100253,7 @@
               "bpConvPct": 33.3,
               "rating": 96.1,
               "inclChallenger": false,
-              "index": 6.5
+              "index": 6.1
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -100691,7 +100684,7 @@
               "bpConvPct": 30.6,
               "rating": 109,
               "inclChallenger": true,
-              "index": 18.2
+              "index": 17.8
             },
             "underPressure": {
               "bpSavedPct": 54.4,
@@ -100749,7 +100742,7 @@
               "bpConvPct": 27,
               "rating": 95.4,
               "inclChallenger": true,
-              "index": 15.1
+              "index": 13.6
             },
             "underPressure": {
               "bpSavedPct": 57.5,
@@ -101107,7 +101100,7 @@
               "bpConvPct": 35.5,
               "rating": 118.5,
               "inclChallenger": true,
-              "index": 16.2
+              "index": 15.6
             },
             "underPressure": {
               "bpSavedPct": 59.1,
@@ -101540,7 +101533,7 @@
               "bpConvPct": 44.4,
               "rating": 154.8,
               "inclChallenger": true,
-              "index": 81.6
+              "index": 81.3
             },
             "underPressure": {
               "bpSavedPct": 59.8,
@@ -101601,7 +101594,7 @@
               "bpConvPct": 25.4,
               "rating": 108.3,
               "inclChallenger": false,
-              "index": 17.8
+              "index": 17.4
             },
             "underPressure": {
               "bpSavedPct": 54.3,
@@ -101998,7 +101991,7 @@
               "bpConvPct": 33.8,
               "rating": 119.3,
               "inclChallenger": true,
-              "index": 17.1
+              "index": 16.4
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -102054,7 +102047,7 @@
               "bpConvPct": 25,
               "rating": 69.9,
               "inclChallenger": false,
-              "index": 2.3
+              "index": 1.9
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -102451,7 +102444,7 @@
               "bpConvPct": 16.2,
               "rating": 101.4,
               "inclChallenger": false,
-              "index": 4.4
+              "index": 3.6
             },
             "underPressure": {
               "bpSavedPct": 45.7,
@@ -102902,7 +102895,7 @@
               "bpConvPct": 41.3,
               "rating": 151,
               "inclChallenger": true,
-              "index": 77.6
+              "index": 77.3
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -103386,7 +103379,7 @@
               "bpConvPct": 32.2,
               "rating": 111.6,
               "inclChallenger": true,
-              "index": 23.4
+              "index": 23
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -103784,7 +103777,7 @@
               "bpConvPct": 37.3,
               "rating": 130.5,
               "inclChallenger": true,
-              "index": 36
+              "index": 35.1
             },
             "underPressure": {
               "bpSavedPct": 50.8,
@@ -103845,7 +103838,7 @@
               "bpConvPct": 31.4,
               "rating": 130.6,
               "inclChallenger": false,
-              "index": 72
+              "index": 71.8
             },
             "underPressure": {
               "bpSavedPct": 57.9,
@@ -103904,7 +103897,7 @@
               "bpConvPct": 42.1,
               "rating": 142.2,
               "inclChallenger": false,
-              "index": 85.5
+              "index": 85.2
             },
             "underPressure": {
               "bpSavedPct": 50,
@@ -104269,7 +104262,7 @@
               "bpConvPct": 46.1,
               "rating": 155.4,
               "inclChallenger": true,
-              "index": 83.3
+              "index": 83.1
             },
             "underPressure": {
               "bpSavedPct": 56.4,
@@ -104330,7 +104323,7 @@
               "bpConvPct": 33.3,
               "rating": 116.2,
               "inclChallenger": false,
-              "index": 33.2
+              "index": 32.9
             },
             "underPressure": {
               "bpSavedPct": 73.2,
@@ -104727,7 +104720,7 @@
               "bpConvPct": 33.5,
               "rating": 128.6,
               "inclChallenger": true,
-              "index": 33.3
+              "index": 32.4
             },
             "underPressure": {
               "bpSavedPct": 64,
@@ -104788,7 +104781,7 @@
               "bpConvPct": 27.1,
               "rating": 104.8,
               "inclChallenger": false,
-              "index": 13.6
+              "index": 13.1
             },
             "underPressure": {
               "bpSavedPct": 58.8,
@@ -104847,7 +104840,7 @@
               "bpConvPct": 0,
               "rating": 64.2,
               "inclChallenger": false,
-              "index": 2.9
+              "index": 1.8
             },
             "underPressure": {
               "bpSavedPct": 52.4,
@@ -105213,7 +105206,7 @@
               "bpConvPct": 44.1,
               "rating": 144.5,
               "inclChallenger": false,
-              "index": 66.2
+              "index": 65.8
             },
             "underPressure": {
               "bpSavedPct": 60.8,
@@ -105274,7 +105267,7 @@
               "bpConvPct": 50,
               "rating": 124.3,
               "inclChallenger": false,
-              "index": 52.8
+              "index": 52.6
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -105697,7 +105690,7 @@
               "bpConvPct": 38.6,
               "rating": 124.4,
               "inclChallenger": true,
-              "index": 24.1
+              "index": 23.6
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -105753,7 +105746,7 @@
               "bpConvPct": 40.4,
               "rating": 126.8,
               "inclChallenger": true,
-              "index": 59.8
+              "index": 59.6
             },
             "underPressure": {
               "bpSavedPct": 68.3,
@@ -105812,7 +105805,7 @@
               "bpConvPct": 41.3,
               "rating": 143,
               "inclChallenger": true,
-              "index": 86.6
+              "index": 86.4
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -106170,7 +106163,7 @@
               "bpConvPct": 47.7,
               "rating": 158.8,
               "inclChallenger": true,
-              "index": 88.6
+              "index": 88.4
             },
             "underPressure": {
               "bpSavedPct": 53.8,
@@ -106231,7 +106224,7 @@
               "bpConvPct": 23.5,
               "rating": 116.7,
               "inclChallenger": false,
-              "index": 35
+              "index": 34.7
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -106628,7 +106621,7 @@
               "bpConvPct": 42.6,
               "rating": 143.9,
               "inclChallenger": true,
-              "index": 64
+              "index": 63.6
             },
             "underPressure": {
               "bpSavedPct": 55.1,
@@ -106689,7 +106682,7 @@
               "bpConvPct": 44.4,
               "rating": 110.3,
               "inclChallenger": false,
-              "index": 20.6
+              "index": 20.2
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -107463,7 +107456,7 @@
               "bpConvPct": 36.4,
               "rating": 105.9,
               "inclChallenger": false,
-              "index": 6.1
+              "index": 5.3
             },
             "underPressure": {
               "bpSavedPct": 60.7,
@@ -107892,7 +107885,7 @@
               "bpConvPct": 50,
               "rating": 126.9,
               "inclChallenger": false,
-              "index": 29.8
+              "index": 29.3
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -107952,7 +107945,7 @@
               "bpConvPct": 34,
               "rating": 137,
               "inclChallenger": false,
-              "index": 84.6
+              "index": 84.5
             },
             "underPressure": {
               "bpSavedPct": 55.9,
@@ -108384,7 +108377,7 @@
               "bpConvPct": 41.2,
               "rating": 130.3,
               "inclChallenger": false,
-              "index": 70.1
+              "index": 70
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -108782,7 +108775,7 @@
               "bpConvPct": 43.8,
               "rating": 110.4,
               "inclChallenger": true,
-              "index": 8.8
+              "index": 8
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -109247,7 +109240,7 @@
               "bpConvPct": 38.5,
               "rating": 119.9,
               "inclChallenger": false,
-              "index": 43
+              "index": 42.7
             },
             "underPressure": {
               "bpSavedPct": 68.7,
@@ -109640,7 +109633,7 @@
               "bpConvPct": 32.4,
               "rating": 111.4,
               "inclChallenger": false,
-              "index": 10.1
+              "index": 9.3
             },
             "underPressure": {
               "bpSavedPct": 65.3,
@@ -109701,7 +109694,7 @@
               "bpConvPct": 45,
               "rating": 148.1,
               "inclChallenger": true,
-              "index": 96.3
+              "index": 96.2
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -109755,7 +109748,7 @@
               "bpConvPct": 45,
               "rating": 148.1,
               "inclChallenger": true,
-              "index": 91.9
+              "index": 91.7
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -110088,7 +110081,7 @@
               "bpConvPct": 55.6,
               "rating": 163.3,
               "inclChallenger": false,
-              "index": 93.9
+              "index": 93.8
             },
             "underPressure": {
               "bpSavedPct": null,
@@ -110919,7 +110912,7 @@
               "bpConvPct": 37.1,
               "rating": 121.9,
               "inclChallenger": true,
-              "index": 18.9
+              "index": 18.2
             },
             "underPressure": {
               "bpSavedPct": 120.5,
@@ -111319,7 +111312,7 @@
               "bpConvPct": 35.3,
               "rating": 128.4,
               "inclChallenger": true,
-              "index": 32.9
+              "index": 32
             },
             "underPressure": {
               "bpSavedPct": 61,
@@ -111751,7 +111744,7 @@
               "bpConvPct": 32.1,
               "rating": 123.7,
               "inclChallenger": true,
-              "index": 22.8
+              "index": 22.2
             },
             "underPressure": {
               "bpSavedPct": 45.4,
@@ -111811,7 +111804,7 @@
               "bpConvPct": 31.6,
               "rating": 125.4,
               "inclChallenger": true,
-              "index": 56.1
+              "index": 55.9
             },
             "underPressure": {
               "bpSavedPct": 70.1,
@@ -111870,7 +111863,7 @@
               "bpConvPct": 31.3,
               "rating": 123.8,
               "inclChallenger": false,
-              "index": 49.4
+              "index": 48.5
             },
             "underPressure": {
               "bpSavedPct": 76.6,

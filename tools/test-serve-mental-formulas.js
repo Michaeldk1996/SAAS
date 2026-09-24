@@ -194,6 +194,71 @@ check('raw BP counters are emitted so PW/PL never need reconstructing from a rou
   assert.strictEqual(r.mental.pw, 1193 + (3189 - 1860), 'PW from raw counters');
 });
 
+console.log('\n2b · RETURN RATING — TEN-263 ruling: 0 break-point chances => null, one rule across the product');
+
+// One return-bearing match: opponent serves 100 pts, 60 first in (won 42), 40 second
+// (won 20), 10 service games. r1 = 18/60 = 30%, r2 = 20/40 = 50%.
+const RET = { oSvpt: 100, oFirstIn: 60, oFirstWon: 42, oSecondWon: 20, oSvGms: 10 };
+
+check('0 break-point chances => return rating NULL, bpConvPct NULL (not 0)', () => {
+  const b = newBucket();
+  addContribution(b, contrib(Object.assign({}, RET, { oBpFaced: 0, oBpSaved: 0 })));
+  const r = computeRatings(b, FLOORS, null).return;
+  assert.ok(r, 'the return node itself should still exist — its other components are real');
+  assert.strictEqual(r.bpConvPct, null, `bpConvPct ${r.bpConvPct} — 0 chances has no rate`);
+  assert.strictEqual(r.rating, null, `rating ${r.rating} — was 0-substituted before TEN-263 (would read 80)`);
+  assert.strictEqual(r.ret1stWonPct, 30, `ret1stWonPct ${r.ret1stWonPct} — the real components still publish`);
+  assert.strictEqual(r.ret2ndWonPct, 50, `ret2ndWonPct ${r.ret2ndWonPct}`);
+  assert.strictEqual(r.breakPct, 0, `breakPct ${r.breakPct} — 0 breaks over 10 return games IS a real 0%`);
+});
+
+check('BP data absent (oBpFaced null, the api-tennis shape) => also null', () => {
+  const b = newBucket();
+  addContribution(b, contrib(RET));   // oBpFaced defaults to null
+  const r = computeRatings(b, FLOORS, null).return;
+  assert.strictEqual(r.rating, null, `rating ${r.rating}`);
+});
+
+check('nonzero chances are UNCHANGED — a real 0% conversion still sums', () => {
+  const b = newBucket();
+  addContribution(b, contrib(Object.assign({}, RET, { oBpFaced: 4, oBpSaved: 4 })));
+  const r = computeRatings(b, FLOORS, null).return;
+  assert.strictEqual(r.bpConvPct, 0, `bpConvPct ${r.bpConvPct}`);
+  assert.strictEqual(r.rating, 80, `rating ${r.rating} — 30 + 50 + 0 + 0`);
+});
+
+check('nonzero chances: rating = r1 + r2 + breakPct + bpConvPct to the decimal', () => {
+  const b = newBucket();
+  addContribution(b, contrib(Object.assign({}, RET, { oBpFaced: 8, oBpSaved: 5 })));
+  const r = computeRatings(b, FLOORS, null).return;
+  // 30 + 50 + 3/10=30 + 3/8=37.5 = 147.5
+  assert.strictEqual(r.bpConvPct, 37.5, `bpConvPct ${r.bpConvPct}`);
+  assert.strictEqual(r.rating, 147.5, `rating ${r.rating}`);
+});
+
+check('Challenger chances fill a tour-level 0 for a thin player (blended den > 0 => rated)', () => {
+  const b = newBucket();
+  addContribution(b, contrib(Object.assign({}, RET, { oBpFaced: 0, oBpSaved: 0 })));
+  const cb = newBucket();
+  addContribution(cb, contrib(Object.assign({}, RET, { oBpFaced: 5, oBpSaved: 3 })));
+  const thin = { minMatches: 99, minSvpt: 99, minBpFaced: 1, minBpChance: 1, minTb: 1, minDec: 1 };
+  const r = computeRatings(b, thin, cb).return;
+  assert.ok(r.rating != null, 'blended denominator is 5 chances — this player IS rated');
+  assert.strictEqual(r.inclChallenger, true, 'inclChallenger');
+});
+
+check('zero 2nd-serve return points (oFirstIn == oSvpt) => null, same rule', () => {
+  const b = newBucket();
+  addContribution(b, contrib({ oSvpt: 50, oFirstIn: 50, oFirstWon: 35, oSecondWon: 0, oSvGms: 8, oBpFaced: 3, oBpSaved: 1 }));
+  const r = computeRatings(b, FLOORS, null).return;
+  assert.strictEqual(r.ret2ndWonPct, null, `ret2ndWonPct ${r.ret2ndWonPct}`);
+  assert.strictEqual(r.rating, null, `rating ${r.rating}`);
+});
+
+check('method.return states the null rule', () => {
+  assert.ok(/rating is null \(a dash\) when any component has a zero denominator/.test(SRC), 'method.return does not state the TEN-263 rule');
+});
+
 console.log('\n3 · the shipped meta says what the shipped code does');
 check('method.serve quotes the per-match terms, not ace%', () => {
   assert.ok(/acesPerMatch - dfPerMatch/.test(SRC), 'method.serve does not quote the locked terms');

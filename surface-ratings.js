@@ -266,13 +266,26 @@ function computeRatings(b, floors, cb) {
       const bc = rate(b.oBpFaced - b.oBpSaved, b.oBpFaced, c.oBpFaced - c.oBpSaved, c.oBpFaced);
       // overall return-points-won% retained for reference (not part of the ATP rating sum).
       const rp = rate(b.oSvpt - b.oFirstWon - b.oSecondWon, b.oSvpt, c.oSvpt - c.oFirstWon - c.oSecondWon, c.oSvpt);
-      const ret1stWonPct = r1.pct != null ? r1.pct : 0, ret2ndWonPct = r2.pct != null ? r2.pct : 0;
-      const breakPct = br.pct != null ? br.pct : 0, bpConvPct = bc.pct != null ? bc.pct : 0;
-      const rptWonPct = rp.pct != null ? rp.pct : 0;
+      // ===== FOUNDER RULING, TEN-263 (2026-09-24): "Return rating with 0 break-point
+      // chances shows — (null), one rule across the product." =====
+      // A component whose (blended) denominator is 0 has NO rate — it is null, not 0%.
+      // Until TEN-263 this block substituted 0 for a null component and still summed a
+      // rating, so a player with no break-point chances in the bucket got a Return Rating
+      // ~30-40 points low and ranked at the bottom of the pool, while dna-apitennis-ratings.js
+      // (TEN-103) and the popup showed a dash for the same situation. The rating is now null
+      // whenever ANY of its four components has a zero denominator — the same gate
+      // dna-apitennis-ratings.js applies (ret1Tot, ret2Tot, retGmTot, bpConvTot all > 0).
+      // A genuine 0% over a NONZERO denominator (chances taken, none converted) is a real
+      // zero and still counts. breakPct's denominator is oSvGms, which the guard above
+      // already requires > 0. ⚠️ Do not reintroduce `: 0` on these four.
+      const ret1stWonPct = r1.pct, ret2ndWonPct = r2.pct;
+      const breakPct = br.pct, bpConvPct = bc.pct;
+      const rptWonPct = rp.pct != null ? rp.pct : 0;   // reference only, not in the rating
+      const retParts = [ret1stWonPct, ret2ndWonPct, breakPct, bpConvPct];
       ret = {
         ret1stWonPct: round1(ret1stWonPct), ret2ndWonPct: round1(ret2ndWonPct),
         rptWonPct: round1(rptWonPct), breakPct: round1(breakPct), bpConvPct: round1(bpConvPct),
-        rating: round1(ret1stWonPct + ret2ndWonPct + breakPct + bpConvPct),
+        rating: retParts.every(v => v != null) ? round1(ret1stWonPct + ret2ndWonPct + breakPct + bpConvPct) : null,
         inclChallenger: r1.chall || r2.chall || br.chall || bc.chall,
       };
     }
@@ -785,7 +798,7 @@ if (require.main === module) (async () => {
     method: {
       serve: 'Serve Rating = 1stIn% + 1stWon% + 2ndWon% + serviceGamesWon% + acesPerMatch - dfPerMatch, with aces and double faults as RAW PER-MATCH COUNTS over the matches carrying serve stats (serve.svMatches) - founder ruling 2026-08-29, re-affirmed TEN-243 gate b5a358e9. Until TEN-243 this file summed ace% and applied no df penalty, which did not implement that ruling; acePct/dfPct are still emitted as rates but are NOT the rating. Tour level is primary; players thin at tour level (unreliable tour sample) have their Challenger/qualifying serve sample folded in per component with the success side discounted x' + CHALL_DISCOUNT + ' (serve.inclChallenger flags those) - aces take the discount, double faults do not, because discounting a penalty would forgive errors at the weaker tier.',
       mental: 'Mental Edge = PW / PL to 3dp, where a PRESSURE POINT IS A BREAK POINT - founder ruling TEN-243 gate b5a358e9 (2026-09-19). PW = break points saved on serve + break points converted on return; PL = break points lost on serve + break points missed on return. PW + PL == sample.bpFaced + sample.bpChances by construction. Raw integer counts, tour level only (no Challenger fold-in - mixing tiers inside a count changes what the count means). rating is null when PL is 0: a player who never lost a break point in the bucket has no ratio, and an infinity is not a rating.',
-      return: 'ATP-style Return Rating = 1stServeReturnWon% + 2ndServeReturnWon% + BPconverted% + returnGamesWon% (return points split by serve type to match the Infosys ATP Return leaderboard scale). Tour level is primary; players thin at tour level have their Challenger/qualifying return sample folded in per component with the success side discounted x' + CHALL_DISCOUNT + ' (return.inclChallenger flags those).',
+      return: 'ATP-style Return Rating = 1stServeReturnWon% + 2ndServeReturnWon% + BPconverted% + returnGamesWon% (return points split by serve type to match the Infosys ATP Return leaderboard scale). Tour level is primary; players thin at tour level have their Challenger/qualifying return sample folded in per component with the success side discounted x' + CHALL_DISCOUNT + ' (return.inclChallenger flags those). rating is null (a dash) when any component has a zero denominator - above all 0 break-point chances in the bucket - and that component is emitted null rather than 0; founder ruling TEN-263, one rule across the product (matches dna-apitennis-ratings.js).',
       underPressure: 'ATP-style Under-Pressure Rating = sum of the components present scaled to the full 4-component equivalent (mean of BPsaved% / BPconverted% / tiebreak% / decidingSet% * 4, ~200-240); rated when >= 3 of 4 clear their floors so 3- and 4-component players share the ATP scale. Tour level is primary; any single component below its tour-level floor is topped up with the player\u2019s Challenger/qualifying sample (inclChallenger:true flags those buckets).',
       index: 'retained internally: 0-100 pool percentile within the same surface+scope bucket (serve/return rank the composite rating, under-pressure averages each component\u2019s own pool percentile). The board now displays the ATP-style ratings above, not this index.',
     },
