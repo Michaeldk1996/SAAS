@@ -92,6 +92,7 @@ function lastToken(name) {
   const ratings = {};                 // "lastToken|firstInitial" -> overall elo (back-compat)
   const elo = {};                     // "lastToken|firstInitial" -> {all,hard,clay,grass}: {rating,rank}
   const tokCount = {};                // lastToken -> count (for unique fallback)
+  const keyCount = {};                // TEN-263: "lastToken|firstInitial" -> players sharing it
   const tokElo = {};                  // lastToken -> overall elo (last seen)
   const tokSurface = {};              // lastToken -> surface record (last seen)
   let m, rows = 0;
@@ -120,7 +121,7 @@ function lastToken(name) {
       peak:  peakRating == null ? null : { rating: peakRating, month: m[12] || null },
     };
     const k = eloKey(name);
-    if (k) { ratings[k] = Math.round(overall); elo[k] = rec; }
+    if (k) { ratings[k] = Math.round(overall); elo[k] = rec; keyCount[k] = (keyCount[k] || 0) + 1; }
     const t = lastToken(name);
     if (t) { tokCount[t] = (tokCount[t] || 0) + 1; tokElo[t] = Math.round(overall); tokSurface[t] = rec; }
   }
@@ -150,6 +151,9 @@ function lastToken(name) {
     // into the store. The two source numbers live here; whoever renders it
     // decides which current it subtracts from, and says so on screen.
     elo,           // "lastToken|firstInitial" -> {all,hard,clay,grass,peak}
+    // TEN-263 (2026-09-24): keys two report players share (e.g. Darwin / Dali Blanch = blanch|d).
+    // ratings/elo keep only the last one, so a reader must NOT attribute these keys to anyone.
+    ambiguous: Object.keys(keyCount).filter(k => keyCount[k] > 1).sort(),
     bySurnameElo,  // fallback: unique last-token -> {all,hard,clay,grass,peak}
   };
   const tmp = OUT + '.tmp';

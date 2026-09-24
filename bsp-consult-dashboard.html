@@ -13445,10 +13445,53 @@ const FH_PRICE_AVG_MARGIN_REMOVED = true; // (b) Price range average: margin rem
 const FH_PRICE_AVG_LABEL = FH_PRICE_AVG_MARGIN_REMOVED ? 'avg \u00b7 margin removed' : 'avg \u00b7 margin included';
 const FH_H2H_SET1_MIRROR = true;          // (c) H2H hot lines list BOTH "A wins set 1" and "B wins set 1"
 const FH_H2H_RET_COUNTS = true;           // (e) a retirement counts in the H2H record (the design counts it)
-// Data check 4: no dated ("at the time of the match") Elo snapshots exist for
-// these windows, so the "No number" variant of both rows ships and every Elo
-// slot labelled "at the time" is a dash. Never substitute current Elo.
+// H2H meeting rows keep the "No number" variant (data check 4; not ruled for H2H).
 const FH_ELO_AT_TIME = false;
+// Form rows (founder ruling 2026-09-24, D-12): OVERALL Elo AT THE MATCH DATE = the latest weekly
+// snapshot in elo-history.json with asOf <= the match date, and only if it is no more than
+// FH_ELO_MAX_AGE_DAYS old. No qualifying snapshot → "ELO —". Never the current Elo as a stand-in.
+// "Opposition Elo" is the mean of exactly these badges; "Elo change" reads the same snapshots.
+const FH_ELO_MAX_AGE_DAYS = 7;
+let _fhEloHist = null;
+function fhLoadEloHistory(){
+  const get = u => fetch(u, { cache: 'no-cache' }).then(r => r.ok ? r.json() : null).catch(() => null);
+  if (!_fhEloHist) _fhEloHist = Promise.all([get('./elo-history.json'), get('./elo-key-conflicts.json')])
+    .then(([h, c]) => {
+      // Both are required: without the feed-wide conflict list a name join could pick the wrong
+      // player, so no number is shown at all. A failure is retried, never cached.
+      if (h && Array.isArray(h.snapshots) && h.snapshots.length && c && c.conflicts) { h.conflicts = c.conflicts; return h; }
+      _fhEloHist = null; return null;
+    });
+  return _fhEloHist;
+}
+// Same key as fetch-elo.js eloKey(): last surname token + first initial.
+function fhEloKey(name){
+  const p = String(name || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/&nbsp;/g, ' ')
+    .replace(/['’]/g, '').replace(/[.\-]/g, ' ').replace(/\s+/g, ' ').trim().split(' ').filter(Boolean);
+  return p.length < 2 ? null : p[p.length - 1] + '|' + p[0][0];
+}
+// Name keys used by more than one player key among the rows in hand (e.g. Zhizhen Zhang and
+// Ze Zhang are both zhang|z): no name join can tell them apart, so neither gets a number.
+function fhEloKeyOwners(pairs){
+  const own = {};
+  pairs.forEach(([name, key]) => { const k = fhEloKey(name); if (k && key != null && key !== '') (own[k] = own[k] || new Set()).add(String(key)); });
+  return own;
+}
+// {v, asOf, why}. v is an integer Elo or null; `why` says why it is null.
+function fhEloAt(hist, name, iso, owners){
+  if (!hist) return { v: null, why: 'Elo history not loaded' };
+  const tok = String(name || '').trim().split(/\s+/)[0] || '';
+  if (/^[A-Za-z]{2,}\.$/.test(tok)) return { v: null, why: 'the feed marks a namesake (' + tok + ')' };
+  const k = fhEloKey(name); if (!k) return { v: null, why: 'no name to match' };
+  if ((owners && owners[k] && owners[k].size > 1) || (hist.conflicts && hist.conflicts[k])) return { v: null, why: 'two players share this name key' };
+  const d = fhDayNum(iso); if (d == null) return { v: null, why: 'no match date' };
+  let snap = null; for (const x of hist.snapshots) { const a = fhDayNum(x.asOf); if (a != null && a <= d) snap = x; }
+  if (!snap) return { v: null, why: 'before the first Elo snapshot (' + hist.snapshots[0].asOf + ')' };
+  if (d - fhDayNum(snap.asOf) > FH_ELO_MAX_AGE_DAYS) return { v: null, why: 'no Elo snapshot in the ' + FH_ELO_MAX_AGE_DAYS + ' days before the match' };
+  if ((snap.ambiguous || []).includes(k)) return { v: null, why: 'two players in the Elo report share this name key' };
+  const v = snap.ratings[k];
+  return v == null ? { v: null, why: 'not in the Elo report of ' + snap.asOf } : { v, asOf: snap.asOf };
+}
 
 const FH_AC = '#5b9bff', FH_BC = '#e7e9ee', FH_B2 = '#b4bccf', FH_DASH = '#4b5672';
 // Surface dots. Grass = #2ab8a0, the token the live site already uses for grass on
@@ -13876,8 +13919,8 @@ function fhRefDay(m){ const d = fhDayNum(m.date); if (d != null) return d; const
 // Loads what the Form tab needs beyond the form shards: both players' priced archives.
 function fhEnsureFormData(m){
   if (m._fhFormData) return Promise.resolve(m);
-  return Promise.all([ensureFormRows(m), fhLoadCloses(m.p1Key), fhLoadCloses(m.p2Key)]).then(([, a, b]) => {
-    m._fhCloses = [a, b]; m._fhFormData = true; return m;
+  return Promise.all([ensureFormRows(m), fhLoadCloses(m.p1Key), fhLoadCloses(m.p2Key), fhLoadEloHistory()]).then(([, a, b, eh]) => {
+    m._fhCloses = [a, b]; m._fhElo = eh; m._fhFormData = true; return m;
   });
 }
 function fhFormPlayer(m, idx, st){
@@ -13887,8 +13930,11 @@ function fhFormPlayer(m, idx, st){
   const clRows = (m._fhCloses || [])[idx];
   const ref = fhRefDay(m);
   const ownEk = String(eventKeyOfMatch(m) || '');
+  const eloOwners = fhEloKeyOwners([[m.p1, m.p1Key], [m.p2, m.p2Key]].concat(
+    [m.p1RecentFormMatches || [], m.p2RecentFormMatches || []].flat().map(x => [x.opponent, x.opponentKey])));
   const all = raw.map((x, i) => {
     const r = fhRowFromForm(x, key, name, idx * 1000 + i);
+    r.oppElo = fhEloAt(m._fhElo, r.opp, r.date, eloOwners);
     const c = fhCloseFor(clRows, r.date, r.opp, r.won, r.oppKey, r.ek);
     if (c){ r.price = c.price; r.oppPrice = c.oppPrice; r.book = c.book; r.src = c.src; }
     const d = fhDayNum(r.date); r.ago = d == null ? null : ref - d;
@@ -13922,15 +13968,27 @@ function fhFormPlayer(m, idx, st){
     return { v: fn(), val: fmt(fn()), aside: '', sub: cov, priced: true };
   };
   const noElo = { v: null, val: FH_DASHC, aside: '', sub: 'no snapshot on record' };
+  // Opposition Elo = the mean of the badges shown (ruling D-12); a ratio needs 5+ rows with Elo.
+  const withElo = win.filter(r => r.oppElo && r.oppElo.v != null), ke = withElo.length;
+  const eloCap = ke + ' of ' + n + ' with Elo';
+  const oppEloM = thin ? { v: null, val: FH_DASHC, aside: '', sub: cnt }
+    : ke < FH_THIN ? { v: null, val: FH_DASHC, aside: '', sub: ke ? eloCap : 'no snapshot on record' }
+    : (() => { const v = withElo.reduce((s, r) => s + r.oppElo.v, 0) / ke; return { v, val: String(Math.round(v)), aside: '', sub: ke < n ? eloCap : '' }; })();
+  // Elo change = his own Elo at this match's date minus at the oldest match in the window, same snapshots.
+  const oldest = win[n - 1];
+  const eNow = fhEloAt(m._fhElo, name, m.date || new Date().toISOString().slice(0, 10), eloOwners), eOld = oldest ? fhEloAt(m._fhElo, name, oldest.date, eloOwners) : null;
+  const eloChg = thin ? { v: null, val: FH_DASHC, aside: '', sub: cnt }
+    : (eNow.v != null && eOld && eOld.v != null) ? { v: eNow.v - eOld.v, val: fhSigned(eNow.v - eOld.v, 0, ''), aside: '', sub: 'since ' + fhDDMM(oldest.date) }
+    : noElo;
   const played = all.filter(r => !r.wo && r.ago != null);
   const in28 = played.filter(r => r.ago <= 28).length, m7 = played.filter(r => r.ago <= 7).length, m14 = played.filter(r => r.ago <= 14).length;
   const rest = played.length ? played[0].ago - 1 : null;
   const metrics = {
     medP: priceMetric(() => fhMedian(priced.map(r => r.price)), fhOdd),
     medO: priceMetric(() => fhMedian(priced.map(r => r.oppPrice)), fhOdd),
-    oppElo: noElo,
+    oppElo: oppEloM,
     flat: priceMetric(() => priced.reduce((s, r) => s + (r.won ? r.price - 1 : -1), 0), v => fhSigned(v, 1, 'u')),
-    elo: noElo,
+    elo: eloChg,
     load: rest == null ? { v: null, val: FH_DASHC, aside: '', sub: 'not enough data' } : { v: in28, val: in28 + ' in 28d', aside: '', sub: rest + 'd rest' },
     m714: played.length ? { v: m14, val: m7 + ' / ' + m14, aside: '', sub: '' } : { v: null, val: FH_DASHC, aside: '', sub: 'not enough data' },
   };
@@ -13962,7 +14020,7 @@ function fhFormPlayer(m, idx, st){
   }) : null;
   const ctx = WLBL + ' · ' + (SURFSEL === 'all' ? 'All surfaces' : SURFSEL) + (favOn ? ' · as favourite' : dogOn ? ' · as underdog' : '') + (medPrice != null ? ' · median odd ' + fhOdd(medPrice) : '');
   const nB = priced.filter(r => r.book === 'B').length;
-  return { idx, name, key, HC, n, np, nB, pricedCap, wins, thin, mktOk, expW, winsP, cnt, cov, srcNote, win, metrics, entries, divEnd, list, shown,
+  return { idx, name, key, HC, n, np, nB, pricedCap, ke, eloCap, wins, thin, mktOk, expW, winsP, cnt, cov, srcNote, win, metrics, entries, divEnd, list, shown,
     hot: { ok: hotOk, table, sc, ctx, short: SHORT && hotOk, few: !hotOk, fewTxt: n === 0 ? 'No matches with these filters' : 'Not enough matches to rank lines (n=' + n + ')' },
     NWIN, WLBL, DWIN };
 }
@@ -13980,8 +14038,15 @@ function fhPriceCell(v, align, strong, r, mark){
     ? `<span class="fh-bmark" aria-hidden="true" style="position:absolute; top:-3px; right:-8px; font-size:7px; font-weight:700; letter-spacing:0; color:#8b96b5;">B</span>` : '';
   return `<span title="${fhEsc(fhSrcTitle(r))}" style="position:relative; ${FH_MONO} font-size:12px;${strong ? ' font-weight:700;' : ''} text-align:${align}; color:${dash ? FH_DASH : (strong ? '#e7e9ee' : '#5b6880')};">${dash ? FH_DASHC : v.toFixed(2)}${bMark}</span>`;
 }
-// Form Match Row v3 LOCKED — "No number" variant (data check 4). The opponent Elo badge waits
-// on Michael's basis ruling (TEN-263 D-12); the book marker sits in the H cell, not here.
+// Form Match Row v3 LOCKED with the opponent Elo badge (ruling D-12: overall Elo at the match
+// date); the book marker sits in the H cell, not here.
+function fhEloBadge(e){
+  const v = e && e.v != null ? e.v : null;
+  const tip = v != null
+    ? "Opponent's Elo rating at the time of the match (Tennis Abstract weekly snapshot of " + fhLongDate(e.asOf) + "). Higher = stronger (tour average ≈ 1800, top 10 ≈ 2000+)."
+    : 'No Elo at the time of the match: ' + ((e && e.why) || 'no snapshot on record') + '.';
+  return `<span class="fh-elo" title="${fhEsc(tip)}" style="display:inline-flex; align-items:baseline; gap:4px; cursor:help; flex:none;"><span style="${FH_MONO} font-size:8px; font-weight:700; letter-spacing:0.1em; color:#8b96b5; border:1px solid rgba(255,255,255,0.14); border-radius:3px; padding:0 3px;">ELO</span><span style="${FH_MONO} font-size:10.5px; color:${v == null ? FH_DASH : '#5b6880'};">${v == null ? FH_DASHC : v}</span></span>`;
+}
 function fhFormRowHtml(r){
   const setsTxt = r.pS == null ? FH_DASHC : r.pS + ' - ' + r.oS;
   const scoreTxt = fhScoreText(r, false);
@@ -13989,7 +14054,7 @@ function fhFormRowHtml(r){
       ${fhWlChip(r.won)}
       <span style="${FH_MONO} font-size:11px; color:#8b96b5;">${fhDDMM(r.date)}</span>
       <span style="display:flex; flex-direction:column; gap:3px; min-width:0;">
-        <span style="display:flex; align-items:baseline; gap:7px; min-width:0;"><span style="font-size:13px; font-weight:600; color:#e7e9ee; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${fhEsc(fhOppFmt(r.opp))}</span></span>
+        <span style="display:flex; align-items:baseline; gap:7px; min-width:0;"><span style="font-size:13px; font-weight:600; color:#e7e9ee; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${fhEsc(fhOppFmt(r.opp))}</span>${fhEloBadge(r.oppElo)}</span>
         <span title="${fhEsc(scoreTxt)}" style="${FH_MONO} font-size:11px; color:#8b96b5; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${fhEsc(scoreTxt)}</span>
       </span>
       <span style="${FH_MONO} font-size:10.5px; color:#5b6880;">${fhEsc(r.round)}</span>
@@ -14004,7 +14069,7 @@ function fhFormColumnHtml(P, thinAny){
     return `<div class="fh-elotip" onclick="fhOpenSheet('${fhEsc(r.mid)}')" style="flex:1; position:relative; padding:5px 0; cursor:pointer;">
         <div style="height:7px; border-radius:4px; background:${c};"></div>
         <div class="fh-elotip-pop" style="position:absolute; bottom:20px; left:50%; transform:translateX(-50%); z-index:30; background:#11151f; border:1px solid rgba(255,255,255,0.14); border-radius:8px; padding:8px 11px; display:flex; flex-direction:column; gap:3px; align-items:flex-start; text-align:left; white-space:nowrap; box-shadow:0 8px 24px rgba(0,0,0,0.45); pointer-events:none;">
-          <span style="display:flex; align-items:baseline; gap:7px;"><span style="${FH_MONO} font-size:10.5px; font-weight:700; color:${c};">${r.won ? 'W' : 'L'}</span><span style="font-size:12.5px; font-weight:600; color:#e7e9ee;">v ${fhEsc(fhOppFmt(r.opp))}</span></span>
+          <span style="display:flex; align-items:baseline; gap:7px;"><span style="${FH_MONO} font-size:10.5px; font-weight:700; color:${c};">${r.won ? 'W' : 'L'}</span><span style="font-size:12.5px; font-weight:600; color:#e7e9ee;">v ${fhEsc(fhOppFmt(r.opp))}</span><span style="${FH_MONO} font-size:10px; color:#5b6880;">Elo ${r.oppElo && r.oppElo.v != null ? r.oppElo.v : FH_DASHC}</span></span>
           <span style="${FH_MONO} font-size:10.5px; color:#8b96b5;">${fhEsc(r.tourn + ' · ' + r.round + ' · ' + fhDDMM(r.date))}</span>
           <span style="${FH_MONO} font-size:10.5px; color:#8b96b5;">${fhEsc(fhScoreText(r, false))}</span>
           <span style="font-size:10px; color:#5b9bff;">Click for match stats</span>
@@ -14096,6 +14161,8 @@ function fhBuildForm(m){
   const A = fhFormPlayer(m, 0, S), B = fhFormPlayer(m, 1, S);
   // Either side partially priced → both sides show "N of M priced" under their price figures.
   if ([A, B].some(P => !P.thin && P.np < P.n)) [A, B].forEach(P => { if (!P.thin) ['medP', 'medO', 'flat'].forEach(k => { if (!P.metrics[k].sub) P.metrics[k].sub = P.pricedCap; }); });
+  // Same for Opposition Elo: either side short of Elo on some rows → both sides show "k of n with Elo".
+  if ([A, B].some(P => !P.thin && P.ke < P.n)) [A, B].forEach(P => { if (!P.thin && !P.metrics.oppElo.sub) P.metrics.oppElo.sub = P.eloCap; });
   const thinAny = A.thin || B.thin;
   // The book-source note, one shared line under both columns (only when a Bet365 close is used).
   const srcParts = [A, B].filter(P => !P.thin && P.nB).map(P => fhSurname(P.name) + ' ' + P.nB);

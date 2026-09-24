@@ -346,6 +346,12 @@ jobs:
       - name: Build match-close shards (best-effort)
         run: node build-match-closes.js || true
 
+      # TEN-263 D-12: Elo name keys two feed players share (J. D. Silva / J. Reis Da Silva). The
+      # Form tab dashes their Elo rather than risk the wrong player. NOT best-effort: without this
+      # file the guard silently narrows to the rows in hand.
+      - name: Build Elo key conflicts
+        run: node tools/build-elo-key-conflicts.mjs
+
       # MARKET SIZE shards (TEN-8): per-match prediction-market 24h volume from
       # Kalshi (sum of both players' contract legs) and Polymarket (moneyline
       # market). Reads the matches.json the pipeline just wrote. Best-effort —
@@ -618,6 +624,9 @@ jobs:
           # archetype rosters, and the self-computed matchup matrix. Committed but
           # not copied = silent 404 (Elo pill degrades; the Styles tab goes empty).
           cp elo-ratings.json _site/ 2>/dev/null || true
+          # TEN-263 D-12: dated Elo snapshots for the Form tab's opponent Elo (at the match date).
+          cp elo-history.json _site/ 2>/dev/null || true
+          cp elo-key-conflicts.json _site/ 2>/dev/null || true
           cp clutch-rating.json _site/ 2>/dev/null || true
           cp surface-ratings.json _site/ 2>/dev/null || true
           # TEN-260 Part A.1: the Ratings board removes the players named here. The
@@ -958,6 +967,11 @@ jobs:
           [ -d _site/market-edge ] && [ -n "$(ls -A _site/market-edge 2>/dev/null)" ] \
             || { echo "MISSING from _site: market-edge/ shard dir is absent or empty"; exit 1; }
           [ -s _site/market-edge-index.json ] || { echo "MISSING from _site: market-edge-index.json"; exit 1; }
+          # TEN-263 D-12: the Form tab's opponent Elo reads this; a 404 would dash every badge silently.
+          node -e 'const h=JSON.parse(require("fs").readFileSync("_site/elo-history.json","utf8")); if(h.schema!=="elo-history/1"||!Array.isArray(h.snapshots)||!h.snapshots.length){console.error("elo-history.json malformed or empty");process.exit(1)} console.log("elo-history: "+h.snapshots.length+" snapshots, latest "+h.snapshots[h.snapshots.length-1].asOf)' \
+            || { echo "MISSING or malformed in _site: elo-history.json"; exit 1; }
+          node -e 'const c=JSON.parse(require("fs").readFileSync("_site/elo-key-conflicts.json","utf8")); if(!c.sources||!c.sources.profiles||typeof c.conflicts!=="object"){console.error("elo-key-conflicts.json malformed");process.exit(1)} console.log("elo-key-conflicts: "+Object.keys(c.conflicts).length+" shared keys, roster "+c.sources.profiles+", form shards "+c.sources.formShards)' \
+            || { echo "MISSING or malformed in _site: elo-key-conflicts.json"; exit 1; }
           node -e '
             const fs = require("fs");
             const idx = JSON.parse(fs.readFileSync("_site/market-edge-index.json","utf8"));

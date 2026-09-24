@@ -69,6 +69,7 @@ function sandbox() {
       fhFormLineDefs, fhH2hLineDefs, fhPriceAvg, fhTodayPair, fhFormRowHtml, fhH2hRowHtml, fhBuildForm,
       fhBuildH2H, fhSetsFrom, fhRoundCode, fhStateFor, fhNameKey, fhOdd, fhH2hRecCard, fhPickBook,
       fhSrcTitle, fhAllMeetingRows, fhLevelOf, fhH2hScopeNote, fhH2hGapNote, fhEligible, fhFormDataRows,
+      fhEloAt, fhEloKey, fhEloKeyOwners, fhEloBadge,
       consts: { FH_HOT_MIN_ELIGIBLE, FH_PRICE_AVG_MARGIN_REMOVED, FH_H2H_SET1_MIRROR, FH_H2H_RET_COUNTS,
         FH_ELO_AT_TIME, FH_BOOK_ORDER, FH_SURF, FH_H2H_LEVELS } };
   `)();
@@ -86,14 +87,66 @@ test('flagged rules (a)–(e) are single constants at the designed values', () =
 });
 
 // ── data check 4: no dated Elo → "No number" variant, no Elo in any row ──
-test('No-number variant: neither row renders an Elo tag or number', () => {
+test('H2H rows keep the No-number variant; Form rows carry the Elo badge (ruling D-12)', () => {
   assert.equal(S.consts.FH_ELO_AT_TIME, false);
   const r = S.fhRowFromForm({ opponent: 'C. Alcaraz', opponentKey: 1, date: '2026-08-01', tournament: 'Cincinnati', round: 'ATP Cincinnati - Final',
     surface: 'hard', result: '2 - 0', won: true, sets: [{ p: 6, o: 4 }, { p: 6, o: 3 }], retired: false, walkover: false, qualifying: false, tier: 'atp', eventKey: 9 }, 5, 'J. Sinner', 0);
-  for (const h of [S.fhFormRowHtml(r), S.fhH2hRowHtml(r)]) {
-    assert.ok(!/ELO/.test(h), 'an ELO tag rendered');
-    assert.ok(!/title="Opponent/.test(h), 'the Elo title rendered');
-  }
+  assert.ok(!/ELO/.test(S.fhH2hRowHtml(r)), 'H2H row: no Elo (not ruled)');
+  r.oppElo = { v: 2141, asOf: '2026-07-27' };
+  assert.match(S.fhFormRowHtml(r), />ELO<\/span><span [^>]*>2141<\/span>/);
+  assert.match(S.fhFormRowHtml(r), /title="Opponent&#39;s Elo rating at the time of the match \(Tennis Abstract weekly snapshot of 27 Jul 2026\)/);
+  r.oppElo = { v: null, why: 'before the first Elo snapshot (2026-07-18)' };
+  assert.match(S.fhFormRowHtml(r), />ELO<\/span><span [^>]*>—<\/span>/, 'no value → ELO —, never blank');
+  assert.match(S.fhFormRowHtml(r), /title="No Elo at the time of the match: before the first Elo snapshot/);
+});
+// ── Ruling D-12 (2026-09-24): overall Elo AT THE MATCH DATE, snapshot no more than 7 days old ──
+const EH = { snapshots: [
+  { asOf: '2026-07-20', ratings: { 'alcaraz|c': 2100, 'blanch|d': 1700, 'zhang|z': 1850 }, ambiguous: ['blanch|d'] },
+  { asOf: '2026-07-27', ratings: { 'alcaraz|c': 2141, 'blanch|d': 1710, 'zhang|z': 1860 }, ambiguous: ['blanch|d'] },
+  { asOf: '2026-08-17', ratings: { 'alcaraz|c': 2150 }, ambiguous: [] } ] };
+test('Elo at the match date: latest snapshot on or before the date, no more than 7 days old; never today\'s as a stand-in', () => {
+  assert.equal(S.fhEloAt(EH, 'C. Alcaraz', '2026-07-27').v, 2141, 'same-day snapshot');
+  assert.equal(S.fhEloAt(EH, 'C. Alcaraz', '2026-08-02').v, 2141, '6 days old');
+  assert.equal(S.fhEloAt(EH, 'C. Alcaraz', '2026-08-03').v, 2141, '7 days old is allowed');
+  const old = S.fhEloAt(EH, 'C. Alcaraz', '2026-08-04');
+  assert.equal(old.v, null, '8 days old → dash, never the later 2150'); assert.match(old.why, /7 days/);
+  assert.equal(S.fhEloAt(EH, 'C. Alcaraz', '2026-07-26').v, 2100, 'never a snapshot from after the match');
+  assert.match(S.fhEloAt(EH, 'C. Alcaraz', '2026-07-01').why, /before the first/);
+  assert.match(S.fhEloAt(EH, 'D. Blanch', '2026-07-27').why, /share this name key/, 'report collision → dash');
+  assert.match(S.fhEloAt(EH, 'Dar. Blanch', '2026-07-27').why, /namesake/, 'the feed marks a namesake → dash');
+  assert.equal(S.fhEloAt(EH, 'J-L. Struff', '2026-07-27').why, 'not in the Elo report of 2026-07-27', 'a hyphenated initial is not a namesake mark');
+  const owners = S.fhEloKeyOwners([['Z. Zhang', 590], ['Z. Zhang', 36963]]);
+  assert.match(S.fhEloAt(EH, 'Z. Zhang', '2026-07-27', owners).why, /two players share/, 'Zhizhen and Ze Zhang → neither gets a number');
+  assert.equal(S.fhEloAt(EH, 'Z. Zhang', '2026-07-27', S.fhEloKeyOwners([['Z. Zhang', 590]])).v, 1860, 'control: one owner');
+  assert.equal(S.fhEloAt(null, 'C. Alcaraz', '2026-07-27').v, null, 'no history → dash');
+  assert.match(S.fhEloAt(Object.assign({}, EH, { conflicts: { 'alcaraz|c': ['1', '2'] } }), 'C. Alcaraz', '2026-07-27').why, /two players share/, 'feed-wide conflict list → dash');
+  assert.equal(S.fhEloKey('Félix Auger-Aliassime'), 'aliassime|f', 'same key as fetch-elo.js');
+});
+test('Opposition Elo = the mean of the badges shown; Elo change reads the same snapshots', () => {
+  const rows = Array.from({ length: 10 }, (_, i) => Object.assign(formRow(i, i % 2 === 0, 'hard', `2026-07-${String(29 - i).padStart(2, '0')}`), { opponent: 'C. Alcaraz', opponentKey: 7 }));
+  const m = { id: 'upcoming-11', p1: 'J. Sinner', p2: 'D. Medvedev', p1Key: 1, p2Key: 2, surface: 'hard', date: '2026-07-30',
+    p1RecentFormMatches: rows, p2RecentFormMatches: rows.slice(0, 3), _fhFormData: true, _fhCloses: [null, null],
+    _fhElo: { snapshots: [{ asOf: '2026-07-20', ratings: { 'alcaraz|c': 2100, 'sinner|j': 2300 }, ambiguous: [] },
+                          { asOf: '2026-07-27', ratings: { 'alcaraz|c': 2140, 'sinner|j': 2320 }, ambiguous: [] }] } };
+  S.fhStateFor(m).form.card = true;
+  const h = S.fhBuildForm(m);
+  // Rows 07-20..07-29: 07-27..07-29 read 2140 (3 rows), 07-20..07-26 read 2100 (7 rows) → mean 2112.
+  const i1 = h.indexOf('Recent matches · '), i2 = h.indexOf('Recent matches · ', i1 + 1);
+  const badges = [...h.slice(i1, i2).matchAll(/>ELO<\/span><span [^>]*>(\d+)<\/span>/g)].map(x => +x[1]);   // Sinner's list only
+  assert.equal(badges.length, 10);
+  const mean = Math.round(badges.reduce((a, b) => a + b, 0) / badges.length);
+  assert.equal(mean, 2112);
+  assert.ok(new RegExp('class="fh-dval"[^>]*>' + mean + '<').test(h), 'Opposition Elo equals the mean of the badges shown');
+  // Elo change: Sinner at 07-30 (snapshot 07-27: 2320) minus at the oldest row 07-20 (snapshot 07-20: 2300).
+  assert.ok(/class="fh-dval"[^>]*>\+20</.test(h) && h.includes('since 20.07'));
+  assert.ok(/class="fh-dsub"[^>]*>3 matches</.test(h), 'thin side keeps its count, no ratio');
+  // Partial: 3 of Medvedev's 10 rows predate the first snapshot → mean over the 7 with Elo, captioned.
+  const rows2 = Array.from({ length: 10 }, (_, i) => Object.assign(formRow(i, true, 'hard', `2026-07-${String(26 - i).padStart(2, '0')}`), { opponent: 'C. Alcaraz', opponentKey: 7 }));
+  const m2 = Object.assign({}, m, { id: 'upcoming-12', p2RecentFormMatches: rows2 });
+  S.fhStateFor(m2).form.card = true;
+  const h2 = S.fhBuildForm(m2);
+  assert.ok(/class="fh-dval"[^>]*>2100</.test(h2), 'mean over the rows WITH Elo (7 × 2100), never divided by all 10');
+  assert.ok(/class="fh-dsub"[^>]*>7 of 10 with Elo</.test(h2) && /class="fh-dsub"[^>]*>10 of 10 with Elo</.test(h2), 'either side short → both sides show k of n');
 });
 
 // ── completeness from the score, not the flag; Bo5 incl. the "ATP " Slam prefix ──
@@ -175,7 +228,7 @@ test('Form: partial pricing shows "N of M priced"; thin window shows no ratios',
   assert.ok(h.includes('class="fh-srcline"') && h.includes('Closing odds · Pinnacle, Bet365 where missing (Sinner 2)'), 'shared book-source line names the player and count');
   assert.ok(h.includes('4 matches with these filters'), 'thin note missing for the 4-match player');
   assert.equal((h.match(/visibility:hidden;">—<\/span>/g) || []).length, 1, 'the other column reserves the thin slot, so both form bars share a baseline');
-  assert.ok(!h.includes('ELO'));
+  assert.ok(/>ELO<\/span><span [^>]*>—<\/span>/.test(h), 'no Elo history loaded → every badge reads ELO —');
   // Form data open: the priced count is a sub-caption, never after the value; mirrored on both sides.
   S.fhStateFor(m).form.card = true;
   const d = S.fhBuildForm(m);
@@ -738,4 +791,36 @@ test('market-edge per run: a player already published but off the board roster i
     const idx = JSON.parse(readFileSync(join(root, 'market-edge-index.json'), 'utf8'));
     assert.deepEqual(Object.keys(idx.players).sort(), ['5', '6']);
   } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+// ── Ruling D-12: the dated Elo store is append-only and never invents a snapshot ──
+test('elo-history: an unchanged weekly report adds nothing; a new one appends; history never rewinds', async () => {
+  const { appendSnapshot } = await import('./tools/build-elo-history.mjs');
+  const h = { snapshots: [] };
+  assert.equal(appendSnapshot(h, { ratings: { 'a|b': 1800 }, ambiguous: ['x|y'] }, '2026-07-20'), true);
+  assert.equal(appendSnapshot(h, { ratings: { 'a|b': 1800 }, ambiguous: [] }, '2026-07-27'), false, 'same ratings: the report did not move, asOf stays 07-20');
+  assert.equal(h.snapshots.length, 1);
+  assert.equal(appendSnapshot(h, { ratings: { 'a|b': 1810 } }, '2026-08-03'), true);
+  assert.deepEqual(h.snapshots[1].ambiguous, ['blanch|d', 'martin|a'], 'no collision list → the collisions measured on 2026-09-24, never none');
+  assert.throws(() => appendSnapshot(h, { ratings: { 'a|b': 1820 } }, '2026-08-01'), /append-only/);
+  assert.equal(appendSnapshot(h, { ratings: { 'a|b': 1815 }, ambiguous: [] }, '2026-08-03'), true, 'a same-day re-scrape replaces that day');
+  assert.equal(h.snapshots.length, 2); assert.equal(h.snapshots[1].ratings['a|b'], 1815); assert.equal(h.snapshots[0].ratings['a|b'], 1800, 'earlier weeks untouched');
+  assert.throws(() => appendSnapshot(h, { ratings: {} }, '2026-08-10'), /no ratings/);
+});
+test('elo-history.json (committed): schema, strictly increasing asOf, overall ratings only', () => {
+  const eh = JSON.parse(readFileSync(join(HERE, 'elo-history.json'), 'utf8'));
+  assert.equal(eh.schema, 'elo-history/1');
+  assert.ok(eh.snapshots.length >= 9, 'the 9 distinct reports since 2026-07-18');
+  assert.equal(eh.snapshots[0].asOf, '2026-07-18');
+  eh.snapshots.forEach((x, i) => { if (i) assert.ok(x.asOf > eh.snapshots[i - 1].asOf); assert.ok(Object.values(x.ratings).every(Number.isInteger)); assert.ok(x.ambiguous.includes('blanch|d')); });
+  assert.match(readFileSync(join(HERE, 'fetch-elo.js'), 'utf8'), /ambiguous: Object\.keys\(keyCount\)\.filter\(k => keyCount\[k\] > 1\)/, 'the scraper records its key collisions');
+  assert.match(readFileSync(join(HERE, '.github/workflows/elo.yml'), 'utf8'), /node tools\/build-elo-history\.mjs --append[\s\S]*git add elo-ratings\.json elo-history\.json/, 'the weekly job appends and commits');
+  assert.match(readFileSync(join(HERE, '.github/workflows/pipeline.yml'), 'utf8'), /cp elo-history\.json _site\//, 'the deploy ships it');
+});
+test('elo-key-conflicts: a name key two feed players share is listed (J. D. Silva / J. Reis Da Silva); one owner is not', async () => {
+  const { conflicts, eloKey } = await import('./tools/build-elo-key-conflicts.mjs');
+  const c = conflicts([['J. D. Silva', 69090], ['J. Reis Da Silva', 2408], ['J. Reis Da Silva', '2408'], ['C. Alcaraz', 7], ['Z. Zhang', 590], ['Z. Zhang', 36963]]).conflicts;
+  assert.deepEqual(c, { 'silva|j': ['2408', '69090'], 'zhang|z': ['36963', '590'] });
+  assert.equal(eloKey('J. Reis Da Silva'), 'silva|j');
+  assert.match(readFileSync(join(HERE, '.github/workflows/pipeline.yml'), 'utf8'), /- name: Build Elo key conflicts\n\s+run: node tools\/build-elo-key-conflicts\.mjs\n/, 'built every run, not best-effort');
 });

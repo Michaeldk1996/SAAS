@@ -31,6 +31,8 @@ form-index.json
 # TEN-263 match-close shards: built every pipeline run from odds-archive/ (never committed).
 match-closes/
 match-closes-index.json
+# TEN-263 D-12: rebuilt every pipeline run by tools/build-elo-key-conflicts.mjs
+elo-key-conflicts.json
 
 # Odds-movement shards + their availability index: one file per match, split out
 # of matches.json by bsp-pipeline.js on every run from the timelines the capturer

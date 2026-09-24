@@ -33,6 +33,24 @@ Applies to the TEN-263 block in `bsp-consult-dashboard.html` (`fh*` functions), 
   from the Sets / Tiebreaks tallies; a retired match never counts as a deciding set and is not
   eligible for games or sets lines ("wins set 1" only if set 1 was finished).
 
+## Form rows: opponent Elo AT THE MATCH DATE (ruling 2026-09-24, D-12)
+- **Basis:** overall Elo from the latest weekly Tennis Abstract snapshot in `elo-history.json` dated on
+  or before the match, and only if it is **no more than 7 days old** (`FH_ELO_MAX_AGE_DAYS`). No
+  qualifying snapshot → the row reads `ELO —`. **Never the current Elo as a stand-in, never a blank.**
+  **Test:** an 8-day-old snapshot, or a snapshot dated after the match, gives a dash.
+- **"Opposition Elo" is the mean of exactly the badges shown**, and needs 5+ rows with Elo; below full
+  coverage it says "k of n with Elo" (on both sides when either side is short). **"Elo change"** is the
+  player's own Elo at this match's date minus at the oldest window match, on the same snapshots.
+  **Test:** the average equals the mean of the rendered badges.
+- **No wrong player:** a name key two Tennis Abstract players share (`ambiguous`), a key two feed
+  players use (`elo-key-conflicts.json`, rebuilt every pipeline run from the roster and every form
+  shard: e.g. J. D. Silva / J. Reis Da Silva, Zhizhen / Ze Zhang), or a feed-marked namesake
+  ("Dar. Blanch") gives a dash. Without the conflict list no number is shown at all. The
+  surname-only fallback (`bySurname`) is never used here.
+- `elo-history.json` is **append-only**: `tools/build-elo-history.mjs --append` runs in the weekly
+  `elo.yml` job; an unchanged report adds nothing (its `asOf` stays the date the numbers were first
+  published). H2H meeting rows keep the "No number" variant (not ruled).
+
 ## H2H covers all of men's singles (ruling 2026-09-24)
 - The pipeline keeps **ATP, Challenger and ITF singles** (`H2H_EVENT_TYPES`). Exhibitions,
   doubles, juniors, UTR and women's events stay out. **Test:** the set holds exactly these three

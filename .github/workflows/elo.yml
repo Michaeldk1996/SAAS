@@ -39,15 +39,21 @@ jobs:
       - name: Fetch + parse Tennis Abstract Elo
         run: node fetch-elo.js
 
+      # TEN-263 (founder ruling 2026-09-24): the Form tab reads Elo AT THE MATCH DATE, so every
+      # new weekly report is appended to elo-history.json (append-only; unchanged ratings add
+      # nothing). A failure here fails the job, so the history never silently stops growing.
+      - name: Append to elo-history.json
+        run: node tools/build-elo-history.mjs --append
+
       - name: Commit refreshed elo-ratings.json (only if changed)
         run: |
-          if git diff --quiet -- elo-ratings.json; then
+          if git diff --quiet -- elo-ratings.json elo-history.json; then
             echo "No Elo changes to commit."
             exit 0
           fi
           git config user.name  "bsp-elo-bot"
           git config user.email "bsp-elo-bot@users.noreply.github.com"
-          git add elo-ratings.json
+          git add elo-ratings.json elo-history.json
           git commit -m "chore(elo): weekly Tennis Abstract Elo refresh [skip ci]"
           for attempt in 1 2 3; do
             if git push origin HEAD:main; then
