@@ -1947,3 +1947,46 @@ surface, RAIN weather, status). Non-enumerated oranges left: weather `SUN`
 `.tprofile-header` gradient tint (L650), `.ah2h-smallsample` gold `#E2A945`
 (L1838), and funnel demo oranges `#f0a95f`×2 / `#E8934B` gradient. These are
 identity/orange candidates but outside the founder's enumerated substitution set.
+
+## Deploy lane — held only while deploying; one build for several ready commits (TEN-273, 2026-09-25)
+
+Founder ruling TEN-273 items 2 and 3. It supersedes the TEN-261 45-min renewable lease.
+
+**Why.** The lease fixed the dead-holder problem. It created a new one: a live holder
+renewed through its suite, review and rebase, none of which needs the lane, so every
+other agent waited behind work that could have run in parallel. The ruling moves all of
+that before the claim, and nothing can hold the lane for long:
+- `claim --sha S --reviewed` is refused with exit 7 unless all three hold:
+  - a suite receipt for exactly S, exit 0 (written only by `tools/ci-suite.sh`, in a
+    fresh CI-shaped clone);
+  - S is rebased (only `[skip ci]` data-bot commits ahead; demanding zero commits ahead
+    would make claiming impossible, since data bots commit every minute);
+  - the review is attested.
+- `MAX_HOLD_MIN = 30` is the one hold constant. `expiresAt` never moves, and any call at
+  or after it auto-releases the claim.
+- A dead owner is released on the next claim, not after the cap. `unknown` liveness is
+  not dead.
+- Exit codes 4 and 5 (expired-owner-alive, takeover-refused) are retired, along with the
+  takeover clobber check. The pusher's own pre-push clobber check is unchanged.
+
+**One build for several.** `deploy-lane.mjs ready` queues a ready commit. The holder's
+`tools/deploy-batch.mjs`:
+- cherry-picks the holder's commits plus each queued entry onto `origin/main`,
+  skipping any entry that conflicts;
+- clobber-checks and suite-runs the combined tree;
+- pushes once, retrying once over data-bot commits;
+- records each entry's `landedAs` and notifies its issue.
+
+Any failure on the combined tree falls back to landing the holder's commit alone.
+Batched owners do their read-back against `landedAs`.
+
+**Choices worth knowing.**
+- `tools/odds-archive-dropin.sh` (the launchd drop-in job) was updated to the new claim
+  contract (`ci-suite.sh` receipt, then `--sha … --reviewed`, and `renew` before the push).
+  The INSTALLED copy in `~/.stennisfy/bin` runs the old claim until it is reinstalled with
+  `--install`, and until then it fails closed (exit 2 → "deploy lane refused").
+- A v1 store's claim keeps its old `expiresAt`, so a lease claim live at landing time
+  expires on its own schedule, at most 45 min.
+
+Tests: `test-ten261-deploy-lane.mjs` (the superseded lease cases are replaced, not kept),
+`test-ten273-deploy-batch.mjs`. Every mechanism is paired with a mutant of the real source.

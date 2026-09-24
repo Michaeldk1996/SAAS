@@ -15,14 +15,18 @@
 #   3. rebuild the committed readers of the archive: database-yield*.json and
 #      tournament-market.json (the ROI cards must equal the panel they open)
 #   4. full `npm test`, exit code read from the log
-#   5. claim the deploy lane (waits on exit 3; never takes a live owner's lane), renew it
-#      at most every ~5 min of work, clobber-check against origin/main, rebase, re-run the
-#      suite whenever a CODE commit landed since the last green run, push, poll until the
-#      live build contains the commit, release the lane
+#   5. get the commit READY before touching the lane (TEN-273): rebase (re-running the
+#      suite whenever a CODE commit landed since the last green run), then
+#      tools/ci-suite.sh <sha> for the suite receipt; claim the lane with
+#      --sha <sha> --reviewed (waits on exit 3; exit 7 → rebase + new receipt, retry),
+#      clobber-check against origin/main, push only while `renew` says the lane is still
+#      held (30-min cap), poll until the live build contains the commit, release the lane
 #
 # Each run claims as its own session (session:ODDS-ARCHIVE-<stamp>), so a run that dies
-# holding the lane is NEVER silently inherited by the next one: its claim expires and the
-# lane tool reports it (deploy-lane.md step 6).
+# holding the lane is NEVER silently inherited by the next one: the 30-min cap frees it
+# (deploy-lane.md step 3). `--reviewed` is this job's standing attestation: its only
+# change is the output of the founder-reviewed refresh + builders above, validated and
+# never-thinner-guarded, and the full suite is green on it.
 #
 # Outcome of every run: ~/Stennisfy/odds-archive-inbox/LAST-RUN.txt, a macOS
 # notification, and ~/.stennisfy/odds-archive-dropin/dropin.log. The workbook moves to
@@ -168,13 +172,22 @@ git add -- "${OUT[@]}" || failed "git add"
 git -c user.name=bsp-ceo-bot -c user.email=bsp-ceo-bot@users.noreply.github.com commit -q \
   -m "odds-archive: refresh $SEASON from tennis-data drop-in (+$ADDED rows, $CHANGED changed, through $LATEST)" || failed "git commit"
 
-# Lane: wait on exit 3 (up to 3 h), retry a transient 6 twice; anything else is not ours
-# to resolve. Every answer, including the tool's 30-min waiter reports, is kept.
-errs=0
+# Ready before the lane (TEN-273): rebased, then a suite receipt for exactly this sha.
+ready_receipt() {
+  rebase_tested; r=$?; [ $r -eq 2 ] && failed "suite red after rebasing onto new code"; [ $r -ne 0 ] && failed "rebase onto origin/main"
+  bash tools/ci-suite.sh "$(git rev-parse HEAD)" > "$RUN/ci-suite-$(date -u +%H%M%S).log" 2>&1 || failed "tools/ci-suite.sh red or failed (see $RUN/ci-suite-*.log)"
+}
+ready_receipt
+
+# Lane: wait on exit 3 (up to 3 h); exit 7 (a code commit landed: not rebased) → rebase and
+# a new receipt, at most 3 times; retry a transient 6 twice; anything else is not ours to
+# resolve. Every answer, including the tool's 30-min waiter reports, is kept.
+errs=0; notready=0
 for _ in $(seq 1 40); do
-  node tools/deploy-lane.mjs claim --ticket "$TICKET" >> "$RUN/lane.log" 2>&1; lc=$?
+  node tools/deploy-lane.mjs claim --ticket "$TICKET" --sha "$(git rev-parse HEAD)" --reviewed >> "$RUN/lane.log" 2>&1; lc=$?
   [ $lc -eq 0 ] && { LANE_HELD=1; break; }
   if [ $lc -eq 6 ] && [ $errs -lt 2 ]; then errs=$((errs + 1)); sleep 30; continue; fi
+  if [ $lc -eq 7 ] && [ $notready -lt 3 ]; then notready=$((notready + 1)); ready_receipt; continue; fi
   [ $lc -ne 3 ] && failed "deploy lane refused (exit $lc, see lane.log)"
   sleep 270
 done
@@ -185,7 +198,8 @@ bash tools/clobber-check.sh "$BASE" "${OUT[@]}" > "$RUN/clobber.log" 2>&1 || fai
 rebase_tested; r=$?; [ $r -eq 2 ] && failed "suite red after rebasing onto new code"; [ $r -ne 0 ] && failed "rebase onto origin/main"
 pushed=0
 for _ in 1 2 3; do
-  renew
+  # The hold is capped at 30 min and never extended: push only while still holding it.
+  node tools/deploy-lane.mjs renew --ticket "$TICKET" >> "$RUN/lane.log" 2>&1 || { LANE_HELD=0; failed "the deploy lane auto-released before the push (30-min cap); nothing pushed"; }
   if GIT_TERMINAL_PROMPT=0 git -c credential.helper=osxkeychain push -q origin HEAD:main >> "$RUN/push.log" 2>&1; then pushed=1; break; fi
   rebase_tested; r=$?; [ $r -eq 2 ] && failed "suite red after rebasing onto new code"; [ $r -ne 0 ] && break
 done
