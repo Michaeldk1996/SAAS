@@ -733,6 +733,96 @@ def close_proximity(rows, fixtures_171):
         "Reported as a lower-confidence indicator, not as the Close answer.")
 
 
+BOARD_URL = os.environ.get("TEN270_BOARD_URL",
+                           "https://michaeldk1996.github.io/SAAS/matches.json")
+
+
+def fixture_names(fids, sport5_leagues, t_from, t_to):
+    """{fixture_id: {name, scheduled_start, league_id}} — kibl_fixtures first,
+    then Kibl's own /info/fixtures for tennis leagues the poller never sweeps.
+    The routing-key league is used ONLY to know which fixture list to ask for;
+    whether a fixture is ours is decided by names + time against our card."""
+    out, errors = {}, []
+    ids = sorted(f for f in fids if f is not None)
+    for i in range(0, len(ids), 150):
+        chunk = ",".join(str(x) for x in ids[i:i + 150])
+        try:
+            for f in sb_get_all(f"/rest/v1/kibl_fixtures?select=fixture_id,name,"
+                                f"scheduled_start,league_id&fixture_id=in.({chunk})"):
+                out[f["fixture_id"]] = f
+        except Exception as e:  # noqa: BLE001
+            errors.append(f"kibl_fixtures: {type(e).__name__}")
+            break
+    missing = set(ids) - set(out)
+    if missing and os.environ.get("KIBL_USERNAME") and os.environ.get("KIBL_PASSWORD"):
+        SECRETS.extend([os.environ["KIBL_USERNAME"], os.environ["KIBL_PASSWORD"]])
+        try:
+            kc = B.KiblClient(verbose=False)
+            for lid in sorted(sport5_leagues):
+                payload, fmeta = kc.get("/info/fixtures", {"league_id": lid,
+                                                           "start_time": t_from, "end_time": t_to})
+                if fmeta.get("status") != 200:
+                    errors.append(f"/info/fixtures league {lid}: HTTP {fmeta.get('status')}")
+                    continue
+                for f in kc.rows(payload):
+                    if isinstance(f, dict) and f.get("fixture_id") in missing:
+                        out[f["fixture_id"]] = {"fixture_id": f["fixture_id"], "name": f.get("name"),
+                                                "scheduled_start": f.get("start_time"),
+                                                "league_id": f.get("league_id", lid)}
+        except Exception as e:  # noqa: BLE001
+            errors.append(f"/info/fixtures: {type(e).__name__}: {C.redact(e, SECRETS)[:160]}")
+    elif missing:
+        errors.append(f"{len(missing)} fixture(s) not in kibl_fixtures and KIBL_* REST "
+                      "credentials absent — their names are unknown, not guessed")
+    return out, errors
+
+
+def board_join(rows, meta):
+    """TEN-270 change 1 — stream rows joined to OUR cards. Report only."""
+    import card_join as CJ
+    say()
+    try:
+        with urllib.request.urlopen(BOARD_URL, timeout=60) as r:
+            cards = json.loads(r.read().decode())
+        cards = cards if isinstance(cards, list) else cards.get("matches", [])
+    except Exception as e:  # noqa: BLE001
+        say(f"## TEN-270 · board join — **unmeasured**: live matches.json read failed "
+            f"(`{type(e).__name__}`)")
+        return
+    start = parse_ts(meta["started_at"])
+    fids = {r.get("fixture_id") for _, r in rows}
+    leagues5 = set()
+    for rec, _ in rows:
+        sp, lg = routing_sport_league(rec.get("routing_key"))
+        if sp == KIBL_TENNIS_SPORT_ID and lg is not None:
+            leagues5.add(lg)
+    t_from = (start - timedelta(days=1)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    t_to = (start + timedelta(days=2)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    names, errs = fixture_names(fids, leagues5, t_from, t_to)
+    openers = defaultdict(list)
+    try:
+        matched_ids = sorted(f for f in fids if f in names)
+        for i in range(0, len(matched_ids), 150):
+            chunk = ",".join(str(x) for x in matched_ids[i:i + 150])
+            for o in sb_get_all(f"/rest/v1/kibl_line_observations?select=fixture_id,"
+                                f"fixture_participant_id,price_decimal,observed_at,inserted_on"
+                                f"&is_opener=is.true&market_type_id=eq.1&segment_id=eq.1"
+                                f"&betting_type_id=eq.1&feed_source_id=eq.{KIBL_FEED_SOURCE_ID}"
+                                f"&fixture_id=in.({chunk})"):
+                openers[o["fixture_id"]].append(o)
+    except Exception as e:  # noqa: BLE001
+        errs.append(f"archive openers: {type(e).__name__} — Open reads — where the stream "
+                    "carried no opener")
+    res = CJ.join(rows, cards, names, openers, since=start)
+    res["board_url"] = BOARD_URL
+    res["name_source_errors"] = errs
+    dump(res, "board-join.json")
+    for line in CJ.report_lines(res):
+        say(line)
+    for e in errs:
+        say(f"- ⚠️ {e}")
+
+
 # ─────────────────────────────────────────────────────────────────────────────
 
 def main():
@@ -870,6 +960,7 @@ def main():
     # appear among polled tennis fixtures, and counting them would put ~80% of
     # the stream into "unmatched" as a denominator artefact.
     mapping_and_comparison(tennis_rows, fixtures_171, polled_rows, window)
+    board_join(rows, meta)
 
     # ── B6 drop test ────────────────────────────────────────────────────────
     say()
