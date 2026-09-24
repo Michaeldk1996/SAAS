@@ -154,3 +154,92 @@ begin
     alter publication supabase_realtime add table public.kibl_now_card;
   end if;
 end $$;
+
+-- ── price_history(card_key) — founder 2026-09-24 item 6 (answered: RPC) ─────
+-- ONE card's Bet105 match-winner history, for the price-history hover box.
+-- security definer: the page's publishable key gets EXECUTE on this function
+-- only — never SELECT on the tables it reads. Row caps bound every call.
+-- Sources, merged by the page on (side, Kibl inserted_on, price):
+--   poller  kibl_line_observations for the card's Kibl fixture(s), side '1'/'2'
+--           = lower/higher fixture_participant_id (ten225-kibl-card-state.py
+--           side_labels_for); the page names the side from the fixture's
+--           player1/player2 with its own name key.
+--   stream  kibl_now_history rows already keyed by card_key/side_key.
+--   gaps    kibl_now_gaps over the 120 s queue TTL (stream era), and sweep gaps
+--           > 10 min between OK poller sweeps (poller era).
+create or replace function public.price_history(p_card_key text)
+returns jsonb
+language sql stable security definer
+set search_path = public
+as $fn$
+  with fx as (
+    select distinct ocs.fixture_id::bigint as fixture_id
+    from odds_card_state ocs
+    where ocs.match_key = p_card_key and ocs.id_space = 'kibl' and ocs.book = 'bet105'
+      and ocs.market = 'match winner' and ocs.fixture_id ~ '^[0-9]+$'
+    limit 4
+  ),
+  mw as (
+    select o.fixture_id, o.fixture_participant_id, o.price_decimal, o.inserted_on, o.observed_at
+    from kibl_line_observations o join fx using (fixture_id)
+    where o.feed_source_id = 171 and o.market_type_id = 1 and o.segment_id = 1
+      and o.betting_type_id = 1 and coalesce(o.is_live, false) = false
+      and o.inserted_on is not null and o.fixture_participant_id is not null
+  ),
+  parts as (
+    select fixture_id, min(fixture_participant_id) as p_lo, max(fixture_participant_id) as p_hi,
+           count(distinct fixture_participant_id) as n
+    from mw group by fixture_id
+  ),
+  poller as (
+    select m.fixture_id, case when m.fixture_participant_id = p.p_lo then '1' else '2' end as side,
+           m.price_decimal as price, m.inserted_on as at, m.observed_at as seen
+    from mw m join parts p using (fixture_id)
+    where p.n = 2 and m.price_decimal >= 1.01
+    order by m.inserted_on desc
+    limit 600
+  ),
+  stream as (
+    select h.side_key as side, h.price, h.kibl_inserted_on as at, h.received_at as seen, h.source
+    from kibl_now_history h
+    where h.card_key = p_card_key
+    order by h.kibl_inserted_on desc
+    limit 600
+  ),
+  span as (
+    select least((select min(at) from poller), (select min(at) from stream)) as since
+  ),
+  gaps as (
+    select g.gap_from, g.gap_to, g.seconds, g.reason
+    from kibl_now_gaps g, span
+    where g.lost_history and span.since is not null and g.gap_to >= span.since
+    order by g.gap_from desc
+    limit 50
+  ),
+  sweeps as (
+    select s.started_at, lag(s.started_at) over (order by s.started_at) as prev
+    from kibl_sweeps s, span
+    where s.ok and span.since is not null and s.started_at >= span.since - interval '15 minutes'
+  ),
+  sweep_gaps as (
+    select prev as gap_from, started_at as gap_to,
+           extract(epoch from started_at - prev) as seconds
+    from sweeps
+    where prev is not null and started_at - prev > interval '10 minutes'
+    order by prev desc
+    limit 50
+  )
+  select jsonb_build_object(
+    'card_key',   p_card_key,
+    'generated_at', now(),
+    'fixtures',   coalesce((select jsonb_agg(jsonb_build_object('fixture_id', f.fixture_id,
+                     'player1', kf.player1_name, 'player2', kf.player2_name))
+                   from fx f left join kibl_fixtures kf on kf.fixture_id = f.fixture_id), '[]'::jsonb),
+    'poller',     coalesce((select jsonb_agg(to_jsonb(p)) from poller p), '[]'::jsonb),
+    'stream',     coalesce((select jsonb_agg(to_jsonb(s)) from stream s), '[]'::jsonb),
+    'gaps',       coalesce((select jsonb_agg(to_jsonb(g)) from gaps g), '[]'::jsonb),
+    'sweep_gaps', coalesce((select jsonb_agg(to_jsonb(w)) from sweep_gaps w), '[]'::jsonb)
+  );
+$fn$;
+revoke all on function public.price_history(text) from public;
+grant execute on function public.price_history(text) to anon, authenticated;

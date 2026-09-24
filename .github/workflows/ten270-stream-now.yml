@@ -121,6 +121,25 @@ jobs:
               print(f"  older a-side kept out, newer b-side in: {'PASS' if ok_mixed else 'FAIL'} ({r2})")
               print(f"  nothing newer -> row untouched (no message): {'PASS' if ok_skip else 'FAIL'} ({r3})")
               if not (ok_mixed and ok_skip): bad.append("newer-only trigger")
+              # price_history RPC (item 6): EXECUTE with the publishable key works,
+              # the gaps table itself stays unreadable. Measured per-call bytes.
+              st, r = call(f"{url}/rest/v1/kibl_now_gaps?select=id&limit=1", key=pk)
+              print(f"[publishable] SELECT kibl_now_gaps -> HTTP {st}  (want 401/403)")
+              if st not in (401, 403): bad.append(f"gaps readable ({st})")
+              st, r = call(f"{url}/rest/v1/kibl_now_card?select=card_key&order=written_at.desc&limit=5",
+                           key=os.environ["SUPABASE_SECRET_KEY"])
+              keys = [x["card_key"] for x in json.loads(r)] if st == 200 else []
+              for ck in keys[:5]:
+                  st, r = call(f"{url}/rest/v1/rpc/price_history", "POST", {"p_card_key": ck}, key=pk)
+                  try:
+                      d = json.loads(r) if st == 200 else {}
+                  except ValueError:
+                      d = {}
+                  print(f"[publishable] rpc price_history({ck}) -> HTTP {st}, {len(r)} bytes: "
+                        f"fixtures {len(d.get('fixtures') or [])}, poller {len(d.get('poller') or [])}, "
+                        f"stream {len(d.get('stream') or [])}, gaps {len(d.get('gaps') or [])}, "
+                        f"sweep_gaps {len(d.get('sweep_gaps') or [])}")
+                  if st != 200: bad.append(f"price_history {st}")
               st, r = call(f"{url}/rest/v1/kibl_now_history?select=id&limit=1", key=pk)
               print(f"[publishable] SELECT kibl_now_history -> HTTP {st}  (want 401/403)")
               if st not in (401, 403): bad.append(f"history readable ({st})")
