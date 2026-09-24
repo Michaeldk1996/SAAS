@@ -2168,13 +2168,14 @@
     "id1204297974753258": {
       "alerted": true,
       "alertedAt": "2026-09-24T11:04:06Z",
-      "captureLagH": null,
+      "captureLagH": 0.02,
       "date": "2026-09-25",
+      "firstSeenAt": "2026-09-24T17:15:01Z",
       "hoursOutAtAlert": 20.77,
-      "openAt": null,
+      "openAt": "2026-09-24T17:14:05.079Z",
       "p1": "R. Hijikata",
       "p2": "A. Rublev",
-      "postingLeadH": null,
+      "postingLeadH": 14.6,
       "startTime": "2026-09-25T07:50:00.000Z",
       "tour": "ATP Hangzhou"
     },
@@ -2520,5 +2521,5 @@
   },
   "schema": "odds-open-monitor/1",
   "thresholdHours": 24.0,
-  "updatedAt": "2026-09-24T17:00:01Z"
+  "updatedAt": "2026-09-24T17:15:01Z"
 }
