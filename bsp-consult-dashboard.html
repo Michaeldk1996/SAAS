@@ -13480,7 +13480,8 @@ function fhSetsFrom(sets){
 }
 // Round code for the Rd column. A qualifying round's feed label reads like a
 // main-draw round ("Final" = the qualifying final), so it prints as Q.
-function fhRoundCode(round, qualifying){ if (qualifying) return 'Q'; return psRoundAbbr(h2hRoundLabel(round) || round) || FH_DASHC; }
+// career-history carries no qualifying flag: its round reads "Qualifying".
+function fhRoundCode(round, qualifying){ if (qualifying || /^qualif/i.test(String(round || ''))) return 'Q'; return psRoundAbbr(h2hRoundLabel(round) || round) || FH_DASHC; }
 function fhSetTxt(x){ return x[0] + '-' + x[1] + (x[2] != null ? '(' + x[2] + ')' : ''); }
 // Completes a normalised row: set counts, completeness, best-of, games.
 function fhFinishRow(r){
@@ -13530,13 +13531,18 @@ function fhRowFromForm(x, selfKey, selfName, idx){
 //      today's match  → Pinnacle current, else Bet365 current, else a dash (no dot).
 //      ONE BOOK PER MATCH: a book counts only if it has BOTH sides; a one-sided book
 //      is missing for that match and we fall through. Never m.bestOdds on these tabs.
-const FH_BOOK_ORDER = ['P', 'B'];                          // the ruling's fallback order
+// Founder ruling 2026-09-23 (second pass): Pinnacle before Bet365 always, and within each
+// book the true close first — Tennis-Data, then our own capture (last price before the
+// ACTUAL start; see build-match-closes.js). Both sides from one book AND one source.
+const FH_BOOK_ORDER = ['Ptd', 'Pcap', 'Btd', 'Bcap'];      // the ruling's fallback order
 const FH_BOOK = { P: 'Pinnacle', B: 'Bet365' };
-// The single picker every price on both tabs goes through. `pairs` = { P: [a,b]|null, B: [a,b]|null }.
+const FH_SRC = { td: 'Tennis-Data', cap: 'captured' };
+// The single picker every price on both tabs goes through.
+// `pairs` = { Ptd, Pcap, Btd, Bcap } each [a,b] | null → { price, oppPrice, book: 'P'|'B', src: 'td'|'cap' }.
 function fhPickBook(pairs){
   for (const k of FH_BOOK_ORDER){
     const x = pairs && pairs[k];
-    if (x && Number(x[0]) >= 1.01 && Number(x[1]) >= 1.01) return { price: Number(x[0]), oppPrice: Number(x[1]), book: k };
+    if (x && Number(x[0]) >= 1.01 && Number(x[1]) >= 1.01) return { price: Number(x[0]), oppPrice: Number(x[1]), book: k[0], src: k.slice(1) };
   }
   return null;
 }
@@ -13552,27 +13558,45 @@ function fhLoadCloses(key){
   _fhClP[k] = fetch(`./match-closes/${encodeURIComponent(k)}.json`, { cache: 'no-cache' })
     .then(r => r.ok ? r.json() : null)
     .then(d => {
+      const two = (a, b) => (a != null && b != null ? [a, b] : null);
       _fhCl[k] = d && Array.isArray(d.rows)
-        ? d.rows.map(x => ({ date: x[0], opp: x[1], won: x[2] === 1,
-            pairs: { P: x[3] != null && x[4] != null ? [x[3], x[4]] : null, B: x[5] != null && x[6] != null ? [x[5], x[6]] : null }, ret: x[7] === 1 }))
+        ? { rows: d.rows.map(x => ({ date: x[0], opp: x[1], won: x[2] === 1, P: two(x[3], x[4]), B: two(x[5], x[6]), ret: x[7] === 1,
+              oppKey: x[8] != null ? String(x[8]) : null })),
+            cap: (d.cap || []).map(x => ({ date: x[0], oppKey: x[1] != null ? String(x[1]) : null, P: two(x[2], x[3]), B: two(x[4], x[5]),
+              ek: x[6] != null ? String(x[6]) : null })) }
         : null;
       return _fhCl[k];
     })
     .catch(() => { delete _fhClP[k]; return null; });   // a network error is retried on the next open, not cached
   return _fhClP[k];
 }
-// Join one match (own player's view) to its archive row in that player's shard (the
-// shard file is keyed by player ID): same opponent surname within ±1 day, exactly one
-// candidate, and the archive's result must agree with ours. Then the book rule picks.
-function fhCloseFor(rows, date, oppName, won){
-  if (!Array.isArray(rows)) return null;
-  const d0 = fhDayNum(date), ok = fhNameKey(oppName);
-  if (d0 == null || !ok) return null;
-  const hits = rows.filter(x => { const d = fhDayNum(x.date); return d != null && Math.abs(d - d0) <= 1 && fhNameKey(x.opp) === ok; });
-  if (hits.length !== 1) return null;
-  const h = hits[0];
-  if (h.won !== !!won) return null;
-  return fhPickBook(h.pairs);
+// Join one match (own player's view) to its closes in that player's ID-keyed shard.
+// Tennis-Data row: the OPPONENT KEY within ±1 day (the builder resolves it); only rows
+// whose opponent did not resolve fall back to the opponent surname. Exactly one
+// candidate, and the archive's result must agree with ours. Captured rows: see capFor.
+// Then the ruled picker chooses — never one side from one source and one from another.
+function fhCloseFor(cl, date, oppName, won, oppKey, ek){
+  if (!cl) return null;
+  const d0 = fhDayNum(date);
+  if (d0 == null) return null;
+  const near = x => { const d = fhDayNum(x.date); return d != null && Math.abs(d - d0) <= 1; };
+  const ok = String(oppKey == null ? '' : oppKey), nk = fhNameKey(oppName);
+  let td = null;
+  const byKey = ok ? (cl.rows || []).filter(x => x.oppKey === ok && near(x)) : [];
+  const byName = !byKey.length && nk ? (cl.rows || []).filter(x => x.oppKey == null && near(x) && fhNameKey(x.opp) === nk) : [];
+  const tdHits = byKey.length ? byKey : byName;
+  if (tdHits.length === 1 && tdHits[0].won === !!won) td = tdHits[0];
+  // Captures are one row per book (separate sources), so each book's row is found on its
+  // own: by eventKey when both carry one, else by opponent key within ±1 day among rows
+  // that do not name a DIFFERENT match.
+  const e = ek != null ? String(ek) : '';
+  const capFor = b => {
+    const pool = (cl.cap || []).filter(x => x[b]);
+    const byEk = e ? pool.filter(x => x.ek === e) : [];
+    const hits = byEk.length ? byEk : (ok ? pool.filter(x => x.oppKey === ok && near(x) && !(e && x.ek && x.ek !== e)) : []);
+    return hits.length === 1 ? hits[0][b] : null;
+  };
+  return fhPickBook({ Ptd: td && td.P, Pcap: capFor('P'), Btd: td && td.B, Bcap: capFor('B') });
 }
 // Today's price (Price range dot): Pinnacle current (api-tennis multibook "Pncl"),
 // else Bet365 current (bet365 stream, then api-tennis's bet365, then m.odds when it
@@ -13593,10 +13617,14 @@ function fhTodayPair(m){
   if (m.bet365Now) B = real(m.bet365Now.p1, m.bet365Now.p2, 'bet365');
   if (!B && bn.bet365) B = real(bn.bet365.p1, bn.bet365.p2, 'bet365');
   if (!B && m.odds && String(m.odds.bookmaker || '').toLowerCase() === 'bet365') B = real(m.odds.p1, m.odds.p2, 'bet365');
-  return fhPickBook({ P, B });
+  return fhPickBook({ Pcap: P, Bcap: B });           // current prices (no close yet)
 }
 // "B365" tag (the old ELO tag's style) on any row priced from Bet365.
-function fhB365Tag(r){ return r && r.book === 'B' ? `<span title="Bet365 closing odds (no Pinnacle close for this match)" style="${FH_MONO} font-size:8px; font-weight:700; letter-spacing:0.1em; color:#8b96b5; border:1px solid rgba(255,255,255,0.14); border-radius:3px; padding:0 3px;">B365</span>` : ''; }
+// Row tooltip: which book and which source priced this row.
+function fhSrcTitle(r){ return r && r.book ? `${FH_BOOK[r.book]} close · ${FH_SRC[r.src] || ''}` : 'No Pinnacle or Bet365 close on record'; }
+// Level tag on H2H meetings (ATP / CH / ITF), same style as the B365 tag.
+function fhLevelTag(r){ return r && r.level ? `<span title="${r.level === 'ATP' ? 'ATP tour' : r.level === 'CH' ? 'Challenger' : 'ITF'}" style="${FH_MONO} font-size:8px; font-weight:700; letter-spacing:0.1em; color:#8b96b5; border:1px solid rgba(255,255,255,0.14); border-radius:3px; padding:0 3px;">${r.level}</span>` : ''; }
+function fhB365Tag(r){ return r && r.book === 'B' ? `<span title="${fhSrcTitle(r)} (no Pinnacle close for this match)" style="${FH_MONO} font-size:8px; font-weight:700; letter-spacing:0.1em; color:#8b96b5; border:1px solid rgba(255,255,255,0.14); border-radius:3px; padding:0 3px;">B365</span>` : ''; }
 // Source note: "Pinnacle" when every priced match is Pinnacle, else "Pinnacle, Bet365 where missing (N)".
 // Nothing priced → no source is named (a source for zero prices would be a false label).
 function fhSourceNote(priced){ if (!priced.length) return ''; const nb = priced.filter(r => r.book === 'B').length; return nb ? `Pinnacle, Bet365 where missing (${nb})` : 'Pinnacle'; }
@@ -13782,8 +13810,8 @@ function fhFormPlayer(m, idx, st){
   const ownEk = String(eventKeyOfMatch(m) || '');
   const all = raw.map((x, i) => {
     const r = fhRowFromForm(x, key, name, idx * 1000 + i);
-    const c = fhCloseFor(clRows, r.date, r.opp, r.won);
-    if (c){ r.price = c.price; r.oppPrice = c.oppPrice; r.book = c.book; }
+    const c = fhCloseFor(clRows, r.date, r.opp, r.won, r.oppKey, r.ek);
+    if (c){ r.price = c.price; r.oppPrice = c.oppPrice; r.book = c.book; r.src = c.src; }
     const d = fhDayNum(r.date); r.ago = d == null ? null : ref - d;
     return r;
   }).filter(r => (r.ago == null || r.ago >= 0) && !(ownEk && String(r.ek) === ownEk));   // never the analysed match itself
@@ -13860,9 +13888,9 @@ function fhScoreText(r, withTb){
   if (!r.sets) return FH_DASHC;
   return r.sets.map(x => withTb ? fhSetTxt(x) : x[0] + '-' + x[1]).join('  ') + (r.ret ? '  RET' : '');
 }
-function fhPriceCell(v, align, strong){
+function fhPriceCell(v, align, strong, r){
   const dash = v == null;
-  return `<span style="${FH_MONO} font-size:12px;${strong ? ' font-weight:700;' : ''} text-align:${align}; color:${dash ? FH_DASH : (strong ? '#e7e9ee' : '#5b6880')};">${dash ? FH_DASHC : v.toFixed(2)}</span>`;
+  return `<span title="${fhEsc(fhSrcTitle(r))}" style="${FH_MONO} font-size:12px;${strong ? ' font-weight:700;' : ''} text-align:${align}; color:${dash ? FH_DASH : (strong ? '#e7e9ee' : '#5b6880')};">${dash ? FH_DASHC : v.toFixed(2)}</span>`;
 }
 // Form Match Row v3 LOCKED — "No number" variant (data check 4).
 function fhFormRowHtml(r){
@@ -13876,8 +13904,8 @@ function fhFormRowHtml(r){
       </span>
       <span style="${FH_MONO} font-size:10.5px; color:#5b6880;">${fhEsc(r.round)}</span>
       <span style="${FH_MONO} font-size:12.5px; font-weight:700; color:${r.pS == null ? FH_DASH : (r.won ? '#3dd68c' : '#e0616f')};">${setsTxt}</span>
-      ${fhPriceCell(r.price, 'right', true)}
-      ${fhPriceCell(r.oppPrice, 'right', false)}
+      ${fhPriceCell(r.price, 'right', true, r)}
+      ${fhPriceCell(r.oppPrice, 'right', false, r)}
     </div>`;
 }
 function fhFormColumnHtml(P){
@@ -14040,8 +14068,58 @@ function fhMeetingList(m){
   const list = (m.h2h && Array.isArray(m.h2h.matches)) ? m.h2h.matches : [];
   return list.filter(x => !(own && x.eventKey != null && String(x.eventKey) === own));
 }
+// Levels that count in the H2H tab (records, stats, prices, hot lines, list). One
+// constant, so a "tour level only" view is ['ATP'] — a one-line change.
+const FH_H2H_LEVELS = ['ATP', 'CH', 'ITF'];
+// A meeting's level. Names that settle it come first: a junior event is never a pro
+// meeting (null: unclassified, never guessed), an ITF-named event (M15…, W25…, "ITF") is
+// ITF — the form shards' tier calls some of those 'challenger'. Then the tour level: the
+// history's 'atp' or the form tier's. A bare Slam name below tour level (a junior draw or
+// qualifying, which the history cannot tell apart) is null unless a form shard types it
+// atp. Otherwise the form tier, else CH.
+function fhLevelOf(level, tournament, tier){
+  const t = String(tier || '').toLowerCase(), name = String(tournament || '').trim();
+  if (/^(boys|girls)\b|\bjunior/i.test(name)) return null;
+  if (/^(M|W)\d{2}\b|\bITF\b/i.test(name)) return 'ITF';
+  if (String(level || '').toLowerCase() === 'atp' || t === 'atp') return 'ATP';
+  if (/^(australian open|french open|roland garros|wimbledon|us open)$/i.test(name)) return null;
+  if (t === 'itf') return 'ITF';
+  return 'CH';
+}
+// Meetings at EVERY level we hold, found by ID: api-tennis H2H (both player keys, ATP
+// only by our own filter) ∪ every match in p1's career-history (a player-key shard)
+// whose eventKey also appears in p2's career-history. De-duplicated by eventKey; the
+// fixture itself is never a previous meeting.
+function fhAllMeetingRows(m){
+  const own = String(eventKeyOfMatch(m) || '');
+  const out = fhMeetingList(m).map(x => Object.assign({}, x, { _level: 'ATP', _src: 'h2h' }));
+  const seen = new Set(out.map(x => String(x.eventKey)));
+  const ch1 = (m._fhCh && m._fhCh[0]) || [], ch2 = (m._fhCh && m._fhCh[1]) || [];
+  const in2 = new Map(ch2.filter(x => x && x.eventKey != null).map(x => [String(x.eventKey), x]));
+  const tierOf = {};
+  [m.p1RecentFormMatches, m.p2RecentFormMatches].forEach(rows => (rows || []).forEach(x => { if (x && x.eventKey != null && x.tier) tierOf[String(x.eventKey)] = x.tier; }));
+  let dupes = 0, rejected = 0;
+  for (const x of ch1){
+    if (!x || x.eventKey == null) continue;
+    const ek = String(x.eventKey);
+    if (!in2.has(ek) || ek === own) continue;
+    // One match seen from both sides: same day, opposite results. (eventKey is api-tennis's
+    // per-MATCH key; proven 30/30 on the 2026-09-23 board against get_fixtures, both player
+    // keys.) A pair of rows that disagrees is not counted as a meeting.
+    const y = in2.get(ek);
+    if (y.date !== x.date || typeof x.won !== 'boolean' || typeof y.won !== 'boolean' || x.won === y.won){ rejected++; continue; }
+    if (seen.has(ek)){ dupes++; continue; }
+    seen.add(ek);
+    out.push({ date: x.date, tournament: x.tournament, round: x.round, surface: x.surface, p1Won: !!x.won, result: x.result,
+      qualifying: !!x.qualifying, eventKey: x.eventKey, _level: fhLevelOf(x.level, x.tournament, tierOf[ek]), _src: 'career-history' });
+  }
+  m._fhMeetDupes = dupes;
+  m._fhMeetRejected = rejected;
+  m._fhMeetUnclassified = out.filter(x => x._level == null).length;
+  return out.filter(x => FH_H2H_LEVELS.includes(x._level));
+}
 function fhMeetings(m){
-  const list = fhMeetingList(m);
+  const list = fhAllMeetingRows(m);
   const idx = rows => { const o = {}; (rows || []).forEach(x => { if (x && x.eventKey != null) (o[String(x.eventKey)] = o[String(x.eventKey)] || []).push(x); }); return o; };
   const srcs = [
     [idx(m.p1RecentFormMatches), false], [idx(m._fhCh && m._fhCh[0]), false],
@@ -14063,11 +14141,12 @@ function fhMeetings(m){
     const r = { mid: fhSafeId('h2h_' + i + '_' + (ek || x.date)), date: x.date, tourn: fhTournClean(x.tournament), tournRaw: x.tournament,
       surface: fhSurfName(x.surface), round: fhRoundCode(x.round, x.qualifying),
       won: !!x.p1Won, result: x.result, sets, ret: !!ret, wo: !!wo, qualifying: qual, tier,
-      ek: x.eventKey, opp: m.p2, oppKey: m.p2Key, selfKey: m.p1Key, selfName: m.p1, price: null, oppPrice: null, book: null };
+      ek: x.eventKey, opp: m.p2, oppKey: m.p2Key, selfKey: m.p1Key, selfName: m.p1, price: null, oppPrice: null, book: null,
+      level: x._level || 'ATP', src0: x._src || 'h2h' };
     fhFinishRow(r);
-    let c = fhCloseFor(me[0], r.date, m.p2, r.won);
-    if (!c){ const c2 = fhCloseFor(me[1], r.date, m.p1, !r.won); if (c2) c = { price: c2.oppPrice, oppPrice: c2.price, book: c2.book }; }
-    if (c){ r.price = c.price; r.oppPrice = c.oppPrice; r.book = c.book; }
+    let c = fhCloseFor(me[0], r.date, m.p2, r.won, m.p2Key, r.ek);
+    if (!c){ const c2 = fhCloseFor(me[1], r.date, m.p1, !r.won, m.p1Key, r.ek); if (c2) c = { price: c2.oppPrice, oppPrice: c2.price, book: c2.book, src: c2.src }; }
+    if (c){ r.price = c.price; r.oppPrice = c.oppPrice; r.book = c.book; r.src = c.src; }
     return r;
   });
   return out.sort((a, b) => String(a.date).localeCompare(String(b.date)));   // oldest → newest
@@ -14141,12 +14220,38 @@ function fhNoMeetingCards(m){
   };
   return [side(0), side(1)];
 }
+// What "no meeting on record" covered: the later of the two players' earliest rows, per
+// level group, in the career histories the meeting search reads.
+function fhH2hScopeNote(m){
+  const ch = m._fhCh || [];
+  const names = [m.p1, m.p2];
+  const missing = [0, 1].filter(i => !Array.isArray(ch[i]) || !ch[i].length).map(i => names[i]);
+  if (missing.length) return 'Match history unavailable for ' + missing.join(' and ') + ': only ATP meetings were searched.' + fhUnclassifiedNote(m);
+  const first = (rows, tour) => { const ys = rows.filter(x => (String(x.level || '').toLowerCase() === 'atp') === tour).map(x => +String(x.date || '').slice(0, 4)).filter(Boolean); return ys.length ? Math.min(...ys) : null; };
+  const since = tour => { const a = first(ch[0], tour), b = first(ch[1], tour); return a == null || b == null ? null : Math.max(a, b); };
+  const atp = since(true), low = since(false);
+  const parts = [atp ? 'ATP since ' + atp : null, low ? 'Challenger and ITF since ' + low : null].filter(Boolean);
+  return (parts.length ? 'Searched: ' + parts.join(', ') + ', in both players\' match histories.' : 'Searched both players\' match histories.') + fhUnclassifiedNote(m);
+}
+function fhUnclassifiedNote(m){ const n = m._fhMeetUnclassified || 0; return n ? ` ${n} meeting${n === 1 ? '' : 's'} at junior or unclassified events not counted.` : ''; }
+// Under a non-empty list: only what the reader would otherwise not know.
+function fhH2hGapNote(m){
+  const ch = m._fhCh || [], names = [m.p1, m.p2];
+  const missing = [0, 1].filter(i => !Array.isArray(ch[i]) || !ch[i].length).map(i => names[i]);
+  return (missing.length ? ' Match history unavailable for ' + missing.join(' and ') + ': Challenger and ITF meetings may be missing.' : '') + fhUnclassifiedNote(m);
+}
 function fhBuildH2H(m){
   fhEnsureStyles();
   const F0 = fhStateFor(m), S = F0.h2h;
   const A = m.p1, B = m.p2, aS = fhSurname(A), bS = fhSurname(B);
-  const hasList = fhMeetingList(m).length > 0;
-  if (!hasList){
+  // Meetings come from api-tennis AND both players' histories, so "none" is only known
+  // once the histories have loaded — until then the loading skeleton shows.
+  if (!m._fhH2hData){
+    fhEnsureH2hData(m).then(() => { if (_fh && _fh.m === m) fhH2h({}); });
+    return `<div class="fh-h2wrap" style="display:flex; flex-direction:column; gap:18px;">${fhH2hSkeleton()}</div>`;
+  }
+  const E = fhMeetings(m);
+  if (!E.length){
     // No meetings: the empty state; every section below is hidden.
     if (!m._styleMeetLoaded) Promise.all([ensureStyleMeetings(m), ensurePsMatrix()]).then(() => { if (_fh && _fh.m === m) fhH2h({}); }).catch(() => {});
     const cards = fhNoMeetingCards(m).map(r => `<div style="border:1px solid rgba(255,255,255,0.07); border-radius:12px; padding:16px 18px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:6px;">
@@ -14157,18 +14262,14 @@ function fhBuildH2H(m){
     return `<div class="fh-h2wrap" style="display:flex; flex-direction:column; gap:18px;">
       <div style="background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:16px; padding:22px 24px; display:flex; flex-direction:column; gap:16px;">
         <div style="display:flex; flex-direction:column; align-items:center; text-align:center; gap:5px;">
-          <span style="font-size:17px; font-weight:800;">No previous meetings</span>
-          <span style="font-size:13px; color:#8b96b5; line-height:1.5; text-wrap:pretty;">${fhEsc(A)} and ${fhEsc(B)} have not played. Closest guide: how each has done against the other's playing style, last 52 weeks.</span>
+          <span style="font-size:17px; font-weight:800;">No previous meetings on record</span>
+          <span style="font-size:13px; color:#8b96b5; line-height:1.5; text-wrap:pretty;">${fhEsc(A)} and ${fhEsc(B)} have no meeting on record. Closest guide: how each has done against the other's playing style, last 52 weeks.</span>
+          <span style="font-size:10.5px; color:#4b5672;">${fhEsc(fhH2hScopeNote(m))}</span>
         </div>
         <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:14px;">${cards}</div>
         <span class="seg" onclick="aGoTab('style')" style="font-size:12.5px; font-weight:600; color:#5b9bff; text-align:center; cursor:pointer;">Open the Playing style tab →</span>
       </div></div>`;
   }
-  if (!m._fhH2hData){
-    fhEnsureH2hData(m).then(() => { if (_fh && _fh.m === m) fhH2h({}); });
-    return `<div class="fh-h2wrap" style="display:flex; flex-direction:column; gap:18px;">${fhH2hSkeleton()}</div>`;
-  }
-  const E = fhMeetings(m);
   E.forEach(r => { F0.sheetMap[r.mid] = { r, aName: A, aKey: m.p1Key, bName: B, bKey: m.p2Key }; });
   const SURF = S.surf, F = E.filter(r => SURF === 'all' || r.surface === SURF);
   const todaySurf = fhSurfName(m.surface);   // unknown → no "today's surface" card, never a default
@@ -14335,7 +14436,7 @@ function fhBuildH2H(m){
         ${fhStickyHeadHtml('22px 40px minmax(0,1fr) 40px 38px 42px 42px', ['Meeting', 'Round', 'Sets', 'Home', 'Away'], true)}
         ${entries}
       </div>
-      <span style="font-size:10.5px; color:#4b5672; margin-top:8px;">Home = ${fhEsc(aS)}'s closing price, Away = ${fhEsc(bS)}'s. Click a meeting for match stats.</span>
+      <span style="font-size:10.5px; color:#4b5672; margin-top:8px;">Home = ${fhEsc(aS)}'s closing price, Away = ${fhEsc(bS)}'s. Click a meeting for match stats.${fhEsc(fhH2hGapNote(m))}</span>
     </div>`;
   return `<div class="fh-h2wrap" style="display:flex; flex-direction:column; gap:18px;">${top}${cards}${statsHtml}${statPanel}${priceHtml}${hotHtml}${listHtml}</div>`;
 }
@@ -14346,13 +14447,13 @@ function fhH2hRowHtml(r){
       ${fhWlChip(r.won)}
       <span style="${FH_MONO} font-size:11px; color:#8b96b5;">${fhDDMM(r.date)}</span>
       <span style="display:flex; flex-direction:column; gap:3px; min-width:0;">
-        <span style="display:flex; align-items:baseline; gap:7px; flex-wrap:wrap;"><span style="font-size:13px; font-weight:600; color:#e7e9ee;">${fhEsc(fhOppFmt(r.opp))}</span>${fhB365Tag(r)}</span>
+        <span style="display:flex; align-items:baseline; gap:7px; flex-wrap:wrap;"><span style="font-size:13px; font-weight:600; color:#e7e9ee;">${fhEsc(fhOppFmt(r.opp))}</span>${fhLevelTag(r)}${fhB365Tag(r)}</span>
         <span style="${FH_MONO} font-size:11px; color:#8b96b5;">${fhEsc(fhScoreText(r, true))}</span>
       </span>
       <span style="${FH_MONO} font-size:10.5px; color:#5b6880; text-align:center;">${fhEsc(r.round)}</span>
       <span style="${FH_MONO} font-size:12.5px; font-weight:700; color:${r.pS == null ? FH_DASH : '#e7e9ee'}; text-align:center; white-space:nowrap;">${r.pS == null ? FH_DASHC : r.pS + ' - ' + r.oS}</span>
-      ${fhPriceCell(r.price, 'center', true)}
-      ${fhPriceCell(r.oppPrice, 'center', false)}
+      ${fhPriceCell(r.price, 'center', true, r)}
+      ${fhPriceCell(r.oppPrice, 'center', false, r)}
     </div>`;
 }
 function fhH2hOverall(){

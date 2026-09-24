@@ -325,12 +325,14 @@ jobs:
       - name: Build tournament market (best-effort)
         run: node build-tournament-market.js || true
 
-      # TEN-263 match-close shards: every ATP main-draw match per player with each
-      # side's closing price for BOTH books (Pinnacle and Bet365 pairs, each only when
-      # two-sided; the page picks Pinnacle, else Bet365, per match), from the same
-      # committed odds-archive/ CSVs. Read lazily by the Match analysis
-      # Form tab (v market, H/A) and H2H tab (Price range, Home/Away). No network
-      # calls. Best-effort: a failure publishes nothing and those cells dash.
+      # TEN-263 match-close shards: per player, every closing price we hold — Tennis-Data
+      # (committed odds-archive/ CSVs, Pinnacle + Bet365) and our own captures (committed
+      # captured-closes-pinnacle.json; bet365-history/ cut at the oddspapi ACTUAL start,
+      # never in-play), each pair only when two-sided. The page picks Pinnacle TD →
+      # Pinnacle captured → Bet365 TD → Bet365 captured per match. Needs the form/ shards
+      # (run-pipeline.js, above) for Challenger names. Read lazily by the Match analysis
+      # Form and H2H tabs. No network calls. Best-effort: a failure publishes nothing and
+      # those cells dash.
       - name: Build match-close shards (best-effort)
         run: node build-match-closes.js || true
 

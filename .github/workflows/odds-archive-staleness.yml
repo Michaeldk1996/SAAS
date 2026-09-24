@@ -1,0 +1,30 @@
+# TEN-263 (founder ruling 2026-09-23, TEN-263 thread, option a): weekly odds-archive staleness alarm.
+# tennis-data.co.uk blocks automated downloads, so odds-archive/ is refreshed by hand through the
+# drop-in inbox. This run goes RED — GitHub's own notification, the channel every pipeline alarm
+# here uses — when the newest archive row is more than 7 days old. It writes nothing.
+# A SEPARATE weekly workflow on purpose: the archive always lags between drops, and an alarm
+# inside the 15-minute pipeline or watchdog would sit red for days and hide real failures.
+# ⚠ Actions `schedule:` is throttled on this repo (27% delivery measured; see pipeline-watchdog.yml).
+# For a guaranteed weekly fire, add workflow_dispatch of this file to the external pg_cron pinger.
+name: Odds archive staleness
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 7 * * 1'
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            odds-archive
+            tools/odds-archive-staleness.py
+      - name: Newest archive row within 7 days
+        run: python3 tools/odds-archive-staleness.py --max-days 7

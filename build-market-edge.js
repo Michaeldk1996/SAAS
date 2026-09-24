@@ -43,7 +43,7 @@ const fs = require('fs');
 const path = require('path');
 
 const base = require('./build-odds-performance.js');
-const { readCsv, keyFromArchiveName, ourCandidateKeys, fullKey, devig, LEVEL_ALIASES } = base;
+const { readCsv, keyFromArchiveName, ourCandidateKeys, fullKey, devig, LEVEL_ALIASES, archiveOverride } = base;
 
 const ROOT = __dirname;
 const ARCHIVE_DIR = path.join(ROOT, 'odds-archive');
@@ -265,7 +265,12 @@ function main() {
     });
   });
 
+  const byKey = new Map();
+  byFullKey.forEach((e) => byKey.set(String(e.key), e));
   function resolve(archiveName) {
+    // TEN-263 §2c: the shared alias/block table first (build-odds-performance.js).
+    const ov = archiveOverride(archiveName);
+    if (ov) return ov.block ? null : (byKey.get(String(ov.key)) || null);
     const k = keyFromArchiveName(archiveName);
     if (!k) return null;
     const exact = byFullKey.get(fullKey(k));

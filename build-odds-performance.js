@@ -227,7 +227,11 @@ function keyFromOurName(name) {
     initials = surnameToks.slice(1).map((t) => t.split(/[-\s]/).map((p) => normToken(p)[0] || '').join('')).join('');
     surnameToks = surnameToks.slice(0, 1);
   }
-  return { surname: surnameToks.map(normToken).join(' '), initials };
+  // Surname words are joined WITHOUT a space (TEN-263 §2c): normToken already deletes a
+  // hyphen or apostrophe inside a word, so "Bautista-Agut" / "O'Connell" collapse to one
+  // token, and the archive's "Bautista Agut R." / "O Connell C." must collapse the same
+  // way or the two never meet. Measured: fixes 3 names (1,053 sides), moves no other.
+  return { surname: surnameToks.map(normToken).join(''), initials };
 }
 
 /** Archive side: "Schwartzman D.", "Alvarez Valdes L.C.", "Struff J.L." */
@@ -238,9 +242,44 @@ function keyFromArchiveName(name) {
   while (toks.length && isInitialToken(toks[toks.length - 1])) initialToks.unshift(toks.pop());
   if (!toks.length) return null;
   return {
-    surname: toks.map(normToken).join(' '),
+    surname: toks.map(normToken).join(''),
     initials: initialToks.map((t) => normToken(t)).join(''),
   };
+}
+
+/**
+ * TEN-263 §2c — archive names the key functions above cannot join, checked by hand
+ * against the source's own dates and ranks (research: ten263-work/research2/C.md).
+ * ALIASES: archive name → our player key (the key must be in the caller's roster, or
+ * the name stays unresolved). BLOCK: names the generic join attaches to the WRONG
+ * player — they resolve to nobody.
+ */
+const ARCHIVE_NAME_ALIASES = {
+  'Ramos-Vinolas A.': '1090',        // A. Ramos (Albert Ramos-Vinolas); we truncate the compound
+  'Bautista R.': '2734',             // R. Bautista-Agut, pre-2016 archive spelling
+  'Mpetshi G.': '9222',              // G. Mpetshi Perricard, archive truncates the compound
+  'Barrios M.': '396',               // T. Barrios Vera (Marcelo Tomas): truncated + initial differs
+  'Barrios Vera M.T.': '396',
+  'Herbert P.H': '1748',             // P. Herbert, archive dropped the trailing dot
+  'Meligeni Rodrigues F': '357',     // F. Meligeni Alves, other compound segment, no dot
+  'Dedura-Palomero D.': '55858',     // D. Dedura, we truncate the compound
+  // oddspapi (bet365-history) spellings — players known by a LATER given name; exact
+  // strings, and no Tennis-Data name carries a comma, so they cannot collide.
+  'Barrios Vera, Marcelo Tomas': '396', // T. Barrios Vera
+  'Vallejo, Adolfo Daniel': '9217',     // D. Vallejo
+  'Miguel, Luis Guto': '67442',         // G. Miguel
+};
+const ARCHIVE_NAME_BLOCK = new Set([
+  'Zhang Z.',    // Ze Zhang (2010-15, ranks 253-308) — would join Z. Zhang (Zhizhen, "Zhang Zh.")
+  'Zhang Ze.',   // Ze Zhang (2019) — same
+  'Daniel M.',   // Marcos Daniel (2010-11, rank ~88) — would join Daniel Milavsky
+]);
+/** { block: true } | { key } | null. Every archive resolver consults this first. */
+function archiveOverride(archiveName) {
+  const n = String(archiveName || '').trim();
+  if (ARCHIVE_NAME_BLOCK.has(n)) return { block: true };
+  if (Object.prototype.hasOwnProperty.call(ARCHIVE_NAME_ALIASES, n)) return { key: ARCHIVE_NAME_ALIASES[n] };
+  return null;
 }
 
 const fullKey = (k) => (k ? `${k.surname}|${k.initials}` : null);
@@ -376,7 +415,11 @@ function main() {
   const ambiguous = new Map();
   const stats = { rows: 0, priced: 0, incomplete: 0, impossible: 0, matchedSides: 0 };
 
+  const byKey = new Map();
+  byFullKey.forEach((e) => byKey.set(String(e.key), e));
   function resolve(archiveName) {
+    const ov = archiveOverride(archiveName);
+    if (ov) return ov.block ? null : (byKey.get(String(ov.key)) || null);
     const k = keyFromArchiveName(archiveName);
     if (!k) return null;
     const exact = byFullKey.get(fullKey(k));
@@ -656,4 +699,5 @@ if (require.main === module) process.exit(main());
 module.exports = {
   keyFromOurName, keyFromArchiveName, devig, summarize,
   readCsv, ourCandidateKeys, fullKey, LEVEL_ALIASES,
+  archiveOverride, ARCHIVE_NAME_ALIASES, ARCHIVE_NAME_BLOCK,
 };
