@@ -34,8 +34,8 @@ Applies to the TEN-263 block in `bsp-consult-dashboard.html` (`fh*` functions), 
   eligible for games or sets lines ("wins set 1" only if set 1 was finished).
 
 ## Form rows: opponent Elo AT THE MATCH DATE (ruling 2026-09-24, D-12)
-- **Basis:** overall Elo from the latest weekly Tennis Abstract snapshot in `elo-history.json` dated on
-  or before the match, and only if it is **no more than 7 days old** (`FH_ELO_MAX_AGE_DAYS`). No
+- **Basis:** overall Elo from the latest weekly Tennis Abstract snapshot in `elo-history.json` dated
+  **strictly before** the match day (ruling 2026-09-24: a same-day snapshot can hold the match's own result), and only if it is **no more than 7 days old** (`FH_ELO_MAX_AGE_DAYS`). No
   qualifying snapshot → the row reads `ELO —`. **Never the current Elo as a stand-in, never a blank.**
   **Test:** an 8-day-old snapshot, or a snapshot dated after the match, gives a dash.
 - **"Opposition Elo" is the mean of exactly the badges shown**, and needs 5+ rows with Elo; below full

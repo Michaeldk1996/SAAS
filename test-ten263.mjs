@@ -104,40 +104,44 @@ const EH = { snapshots: [
   { asOf: '2026-07-20', ratings: { 'alcaraz|c': 2100, 'blanch|d': 1700, 'zhang|z': 1850 }, ambiguous: ['blanch|d'] },
   { asOf: '2026-07-27', ratings: { 'alcaraz|c': 2141, 'blanch|d': 1710, 'zhang|z': 1860 }, ambiguous: ['blanch|d'] },
   { asOf: '2026-08-17', ratings: { 'alcaraz|c': 2150 }, ambiguous: [] } ] };
-test('Elo at the match date: latest snapshot on or before the date, no more than 7 days old; never today\'s as a stand-in', () => {
-  assert.equal(S.fhEloAt(EH, 'C. Alcaraz', '2026-07-27').v, 2141, 'same-day snapshot');
-  assert.equal(S.fhEloAt(EH, 'C. Alcaraz', '2026-08-02').v, 2141, '6 days old');
+test('Elo at the match date: latest snapshot STRICTLY before the match day, no more than 7 days old; never today\'s as a stand-in', () => {
+  // Ruling 2026-09-24: a snapshot dated the match day is rejected (scraped that evening, it can hold the match's own result).
+  const same = S.fhEloAt(EH, 'C. Alcaraz', '2026-07-27');
+  assert.equal(same.v, 2100, 'same-day 07-27 snapshot rejected → the 07-20 one (7 days old) is used');
+  assert.equal(S.fhEloAt(EH, 'C. Alcaraz', '2026-07-20').v, null, 'same day as the only earlier-or-equal snapshot → dash');
+  assert.match(S.fhEloAt(EH, 'C. Alcaraz', '2026-07-20').why, /before the first/);
+  assert.equal(S.fhEloAt(EH, 'C. Alcaraz', '2026-07-28').v, 2141, '1 day old');
   assert.equal(S.fhEloAt(EH, 'C. Alcaraz', '2026-08-03').v, 2141, '7 days old is allowed');
   const old = S.fhEloAt(EH, 'C. Alcaraz', '2026-08-04');
   assert.equal(old.v, null, '8 days old → dash, never the later 2150'); assert.match(old.why, /7 days/);
   assert.equal(S.fhEloAt(EH, 'C. Alcaraz', '2026-07-26').v, 2100, 'never a snapshot from after the match');
   assert.match(S.fhEloAt(EH, 'C. Alcaraz', '2026-07-01').why, /before the first/);
-  assert.match(S.fhEloAt(EH, 'D. Blanch', '2026-07-27').why, /share this name key/, 'report collision → dash');
-  assert.match(S.fhEloAt(EH, 'Dar. Blanch', '2026-07-27').why, /namesake/, 'the feed marks a namesake → dash');
-  assert.equal(S.fhEloAt(EH, 'J-L. Struff', '2026-07-27').why, 'not in the Elo report of 2026-07-27', 'a hyphenated initial is not a namesake mark');
+  assert.match(S.fhEloAt(EH, 'D. Blanch', '2026-07-28').why, /share this name key/, 'report collision → dash');
+  assert.match(S.fhEloAt(EH, 'Dar. Blanch', '2026-07-28').why, /namesake/, 'the feed marks a namesake → dash');
+  assert.equal(S.fhEloAt(EH, 'J-L. Struff', '2026-07-28').why, 'not in the Elo report of 2026-07-27', 'a hyphenated initial is not a namesake mark');
   const owners = S.fhEloKeyOwners([['Z. Zhang', 590], ['Z. Zhang', 36963]]);
-  assert.match(S.fhEloAt(EH, 'Z. Zhang', '2026-07-27', owners).why, /two players share/, 'Zhizhen and Ze Zhang → neither gets a number');
-  assert.equal(S.fhEloAt(EH, 'Z. Zhang', '2026-07-27', S.fhEloKeyOwners([['Z. Zhang', 590]])).v, 1860, 'control: one owner');
-  assert.equal(S.fhEloAt(null, 'C. Alcaraz', '2026-07-27').v, null, 'no history → dash');
-  assert.match(S.fhEloAt(Object.assign({}, EH, { conflicts: { 'alcaraz|c': ['1', '2'] } }), 'C. Alcaraz', '2026-07-27').why, /two players share/, 'feed-wide conflict list → dash');
+  assert.match(S.fhEloAt(EH, 'Z. Zhang', '2026-07-28', owners).why, /two players share/, 'Zhizhen and Ze Zhang → neither gets a number');
+  assert.equal(S.fhEloAt(EH, 'Z. Zhang', '2026-07-28', S.fhEloKeyOwners([['Z. Zhang', 590]])).v, 1860, 'control: one owner');
+  assert.equal(S.fhEloAt(null, 'C. Alcaraz', '2026-07-28').v, null, 'no history → dash');
+  assert.match(S.fhEloAt(Object.assign({}, EH, { conflicts: { 'alcaraz|c': ['1', '2'] } }), 'C. Alcaraz', '2026-07-28').why, /two players share/, 'feed-wide conflict list → dash');
   assert.equal(S.fhEloKey('Félix Auger-Aliassime'), 'aliassime|f', 'same key as fetch-elo.js');
 });
 test('Opposition Elo = the mean of the badges shown; Elo change reads the same snapshots', () => {
   const rows = Array.from({ length: 10 }, (_, i) => Object.assign(formRow(i, i % 2 === 0, 'hard', `2026-07-${String(29 - i).padStart(2, '0')}`), { opponent: 'C. Alcaraz', opponentKey: 7 }));
   const m = { id: 'upcoming-11', p1: 'J. Sinner', p2: 'D. Medvedev', p1Key: 1, p2Key: 2, surface: 'hard', date: '2026-07-30',
     p1RecentFormMatches: rows, p2RecentFormMatches: rows.slice(0, 3), _fhFormData: true, _fhCloses: [null, null],
-    _fhElo: { snapshots: [{ asOf: '2026-07-20', ratings: { 'alcaraz|c': 2100, 'sinner|j': 2300 }, ambiguous: [] },
-                          { asOf: '2026-07-27', ratings: { 'alcaraz|c': 2140, 'sinner|j': 2320 }, ambiguous: [] }] } };
+    _fhElo: { snapshots: [{ asOf: '2026-07-19', ratings: { 'alcaraz|c': 2100, 'sinner|j': 2300 }, ambiguous: [] },
+                          { asOf: '2026-07-26', ratings: { 'alcaraz|c': 2140, 'sinner|j': 2320 }, ambiguous: [] }] } };
   S.fhStateFor(m).form.card = true;
   const h = S.fhBuildForm(m);
-  // Rows 07-20..07-29: 07-27..07-29 read 2140 (3 rows), 07-20..07-26 read 2100 (7 rows) → mean 2112.
+  // Rows 07-20..07-29 (snapshots strictly before): 07-27..07-29 read 07-26 = 2140 (3 rows), 07-20..07-26 read 07-19 = 2100 (7 rows) → mean 2112.
   const i1 = h.indexOf('Recent matches · '), i2 = h.indexOf('Recent matches · ', i1 + 1);
   const badges = [...h.slice(i1, i2).matchAll(/>ELO<\/span><span [^>]*>(\d+)<\/span>/g)].map(x => +x[1]);   // Sinner's list only
   assert.equal(badges.length, 10);
   const mean = Math.round(badges.reduce((a, b) => a + b, 0) / badges.length);
   assert.equal(mean, 2112);
   assert.ok(new RegExp('class="fh-dval"[^>]*>' + mean + '<').test(h), 'Opposition Elo equals the mean of the badges shown');
-  // Elo change: Sinner at 07-30 (snapshot 07-27: 2320) minus at the oldest row 07-20 (snapshot 07-20: 2300).
+  // Elo change: Sinner at 07-30 (snapshot 07-26: 2320) minus at the oldest row 07-20 (snapshot 07-19: 2300).
   assert.ok(/class="fh-dval"[^>]*>\+20</.test(h) && h.includes('since 20.07'));
   assert.ok(/class="fh-dsub"[^>]*>3 matches</.test(h), 'thin side keeps its count, no ratio');
   // Partial: 3 of Medvedev's 10 rows predate the first snapshot → mean over the 7 with Elo, captioned.

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // TEN-263 (founder ruling 2026-09-24, D-12): the Form rows' opponent Elo badge, "Opposition Elo"
 // and "Elo change" use OVERALL Elo AT THE MATCH DATE: the latest weekly Tennis Abstract snapshot
-// dated on or before the match, and only if it is no more than 7 days old. elo-ratings.json holds
+// dated strictly before the match, and only if it is no more than 7 days old. elo-ratings.json holds
 // the latest snapshot only, so this keeps the dated history: elo-history.json, append-only.
 //
 //   node tools/build-elo-history.mjs --append           append elo-ratings.json if its ratings changed
@@ -36,7 +36,7 @@ const load = () => {
 const empty = () => ({
   schema: 'elo-history/1',
   source: 'tennisabstract.com/reports/atp_elo_ratings.html (weekly, via fetch-elo.js)',
-  basis: 'overall Elo; a Form row uses the latest snapshot with asOf <= match date, if no more than 7 days old',
+  basis: 'overall Elo; a Form row uses the latest snapshot with asOf < match date, if no more than 7 days old',
   snapshots: [],
 });
 export function appendSnapshot(hist, store, asOf) {

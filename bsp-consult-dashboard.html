@@ -13448,7 +13448,7 @@ const FH_H2H_RET_COUNTS = true;           // (e) a retirement counts in the H2H 
 // H2H meeting rows keep the "No number" variant (data check 4; not ruled for H2H).
 const FH_ELO_AT_TIME = false;
 // Form rows (founder ruling 2026-09-24, D-12): OVERALL Elo AT THE MATCH DATE = the latest weekly
-// snapshot in elo-history.json with asOf <= the match date, and only if it is no more than
+// snapshot in elo-history.json dated STRICTLY BEFORE the match date, and only if it is no more than
 // FH_ELO_MAX_AGE_DAYS old. No qualifying snapshot → "ELO —". Never the current Elo as a stand-in.
 // "Opposition Elo" is the mean of exactly these badges; "Elo change" reads the same snapshots.
 const FH_ELO_MAX_AGE_DAYS = 7;
@@ -13485,7 +13485,9 @@ function fhEloAt(hist, name, iso, owners){
   const k = fhEloKey(name); if (!k) return { v: null, why: 'no name to match' };
   if ((owners && owners[k] && owners[k].size > 1) || (hist.conflicts && hist.conflicts[k])) return { v: null, why: 'two players share this name key' };
   const d = fhDayNum(iso); if (d == null) return { v: null, why: 'no match date' };
-  let snap = null; for (const x of hist.snapshots) { const a = fhDayNum(x.asOf); if (a != null && a <= d) snap = x; }
+  // STRICTLY before the match day (ruling 2026-09-24): a snapshot scraped the evening of the match day
+  // can already contain the match's own result — a lookahead leak.
+  let snap = null; for (const x of hist.snapshots) { const a = fhDayNum(x.asOf); if (a != null && a < d) snap = x; }
   if (!snap) return { v: null, why: 'before the first Elo snapshot (' + hist.snapshots[0].asOf + ')' };
   if (d - fhDayNum(snap.asOf) > FH_ELO_MAX_AGE_DAYS) return { v: null, why: 'no Elo snapshot in the ' + FH_ELO_MAX_AGE_DAYS + ' days before the match' };
   if ((snap.ambiguous || []).includes(k)) return { v: null, why: 'two players in the Elo report share this name key' };
