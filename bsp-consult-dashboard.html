@@ -13174,7 +13174,7 @@ function formPanelStatRow(label, kind, ownVal, oppVal, lowerBetter, key){
 function formPanelStatsBodyHtml(joined, playerName, opponentName, setNo){
   if (!joined) {
     return setNo == null
-      ? `<div class="acomingsoon" style="padding:10px 0 2px;">Stats not available for this match.</div>`
+      ? `<div class="acomingsoon" style="padding:10px 0 2px;">${FH_NO_MATCH_STATS_MSG}</div>`
       : `<div class="acomingsoon" style="padding:10px 0 2px;">No statistics on file for set ${escapeHtml(String(setNo))} of this match.</div>`;
   }
   // Grouped SERVICE / RETURN / POINTS, same bands as the Match Stats sheet. A
@@ -14919,6 +14919,10 @@ function fhSheetRowHtml(s){
       </div>
     </div>`;
 }
+// TEN-273: the empty Match tab says why — we hold no serve or return stats for
+// this match ("on file", not "recorded": a row not yet fetched reads the same).
+// Never filled from another match or source.
+const FH_NO_MATCH_STATS_MSG = 'No serve or return stats on file for this match.';
 function fhSheetStatsHtml(joined, emptyMsg){
   if (!joined) return `<div style="min-height:72px; display:flex; align-items:center; justify-content:center; text-align:center; font-size:12.5px; color:#4b5672;">${fhEsc(emptyMsg)}</div>`;
   const M = fhSheetModel(joined);
@@ -14968,7 +14972,7 @@ function fhSheetRender(){
     }
   } else if (S.scope === 'match'){
     body = S.matchLoading ? `<div class="acomingsoon" style="padding:10px 0 2px;">Loading match stats…</div>`
-      : fhSheetStatsHtml(S.match, 'Stats not available for this match.');
+      : fhSheetStatsHtml(S.match, FH_NO_MATCH_STATS_MSG);
   } else {
     body = fhSheetStatsHtml(S.sets && S.sets[S.scope], 'No per-set stats for this match.');
   }

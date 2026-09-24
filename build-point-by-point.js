@@ -338,6 +338,41 @@ async function main() {
     }
   }
 
+  // H2H meeting rows (TEN-273). Every row of the H2H tab opens the same popup,
+  // looked up by the same eventKey, but only the board fixtures and the Form
+  // rows above were ever fetched — so a meeting older than both players' last
+  // 40 Form matches had no shard even where api-tennis holds its box score
+  // (Ruud v F. Cerundolo, Miami 2025 R16, eventKey 12022323: 116 stat rows in
+  // the feed, "Stats not available" in the popup). Same resolve(), same cache
+  // (a negative is cached, so a meeting the feed has nothing for costs one call
+  // ever), same budget, and AFTER the Form rows so it never starves them.
+  const h2hKeys = new Set();
+  const h2hRowDate = new Map();
+  for (const m of matches) {
+    for (const r of ((m && m.h2h && m.h2h.matches) || [])) {
+      if (!r || r.eventKey == null) continue;
+      const ek = String(r.eventKey);
+      h2hKeys.add(ek);
+      if (r.date && !h2hRowDate.has(ek)) h2hRowDate.set(ek, String(r.date));
+    }
+  }
+  let h2hResolved = 0, h2hDeferred = 0;
+  for (const ek of orderFormQueue(h2hKeys, h2hRowDate)) {
+    if (out[ek] || formKeys.has(ek)) continue;   // already resolved by a pass above
+    try {
+      const entry = await resolve(ek);
+      if (!entry) { h2hDeferred++; continue; }   // fetch budget spent this run
+      if ((entry.sets && entry.sets.length) || entry.matchStats) h2hResolved++;
+    } catch (e) {
+      console.error(`point-by-point: h2h-row fetch failed for ${ek}: ${e.message}`);
+      skipped++;
+    }
+  }
+  console.log(`point-by-point: ${h2hKeys.size} distinct H2H meeting rows, ${h2hResolved} with a log or box score${h2hDeferred ? `, ${h2hDeferred} deferred (budget)` : ''}.`);
+  // H2H rows are visible rows too: the backfill below orders them with the Form rows, newest first.
+  for (const [ek, d] of h2hRowDate) if (!formRowDate.has(ek)) formRowDate.set(ek, d);
+  for (const ek of h2hKeys) formKeys.add(ek);
+
   // Set-stats backfill for matches cached before the set filter existed. This
   // cache is permanent, so those entries are never re-resolved above and would
   // otherwise never gain a `stats` key — the filter would only ever appear on

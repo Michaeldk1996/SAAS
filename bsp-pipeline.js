@@ -3038,6 +3038,16 @@ function _shapeApiTennisOdds(entry, fetchedAt, eventKey) {
     };
 }
 
+// The card's tournament label. With a round, api-tennis's own "ATP <Name> - <Round>"
+// segment; without one (team events), the feed name — which for team events already
+// carries the tour ("ATP Laver Cup", "ATP Davis Cup - World Group II"), so it is
+// prefixed only when it does not (TEN-273: the subheader read "ATP ATP Laver Cup").
+function tourLabelOf(fixture) {
+  if (fixture.tournament_round) return fixture.tournament_round.split(' - ')[0].trim();
+  const name = String(fixture.tournament_name || '').trim();
+  return /^ATP\s/i.test(name) ? name : `ATP ${name}`;
+}
+
 async function buildPastMatchObject(fixture, surfaceMap, venueMap) {
   const surface = surfaceMap.get(String(fixture.tournament_key)) || 'hard';
   // Task 6: the same builder also handles suspended matches. Everything about
@@ -3049,9 +3059,7 @@ async function buildPastMatchObject(fixture, surfaceMap, venueMap) {
   const interrupted = isInterruptedFixture(fixture);
   // Same real, already-provided-by-the-API string format used by h2hRoundLabel()
   // client-side ("ATP <Name> - <Round>") — take the tournament-name segment.
-  const tour = fixture.tournament_round
-    ? fixture.tournament_round.split(' - ')[0].trim()
-    : `ATP ${fixture.tournament_name}`;
+  const tour = tourLabelOf(fixture);
 
   const p1Key = fixture.first_player_key;
   const p2Key = fixture.second_player_key;
@@ -3241,9 +3249,7 @@ async function buildPastMatchObject(fixture, surfaceMap, venueMap) {
 // =================================================================
 async function buildUpcomingMatchObject(fixture, surfaceMap, venueMap) {
   const surface = surfaceMap.get(String(fixture.tournament_key)) || 'hard';
-  const tour = fixture.tournament_round
-    ? fixture.tournament_round.split(' - ')[0].trim()
-    : `ATP ${fixture.tournament_name}`;
+  const tour = tourLabelOf(fixture);
 
   const p1Key = fixture.first_player_key;
   const p2Key = fixture.second_player_key;
@@ -7091,7 +7097,7 @@ if (require.main === module) {
   });
 }
 
-module.exports = { aggregatePlayerWue, aggregateStatsFromFixtures, isCancelledFixture, profileRosterFloorVerdict, lastPublishedRosterCount, profilesWithoutTournamentHistory, PROFILE_ROSTER_BACKSTOP, PROFILE_ROSTER_RATIO, MAX_OPPONENT_BUILDS_PER_RUN, isIndoorTournament, loadTournamentCourtMap, fetchRecentSinglesFixtures, recentFormFromFixtures, buildTournamentProgression, extractProgressionMetrics, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
+module.exports = { tourLabelOf, aggregatePlayerWue, aggregateStatsFromFixtures, isCancelledFixture, profileRosterFloorVerdict, lastPublishedRosterCount, profilesWithoutTournamentHistory, PROFILE_ROSTER_BACKSTOP, PROFILE_ROSTER_RATIO, MAX_OPPONENT_BUILDS_PER_RUN, isIndoorTournament, loadTournamentCourtMap, fetchRecentSinglesFixtures, recentFormFromFixtures, buildTournamentProgression, extractProgressionMetrics, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
   // The Career-record pair. Exported together on purpose: their whole contract
   // is that the counts one returns are tallyable from the rows the other
   // returns, and that is what ten8-career-verify.js asserts.

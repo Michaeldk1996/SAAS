@@ -4,10 +4,12 @@
 # Founder ruling 2026-09-18 (item 5): KEEP `cancel-in-progress: false` on the
 # bsp-pipeline group, because a cancelled mid-write pipeline run is worse than
 # a late one. This workflow therefore only ever goes RED; it never touches a
-# run. Two independent alarms:
+# run. Three independent alarms:
 #
 #   (a) a pipeline run has been in_progress past its own timeout-minutes
 #   (b) the DEPLOYED build-info.json is older than STALE_AFTER_MIN
+#   (c) the live build is > 30 min behind main while a run is queued or
+#       missing (TEN-273, tools/check-site-freshness.mjs)
 #
 # WHY THIS IS A SEPARATE WORKFLOW, AND NOT A STEP INSIDE pipeline.yml
 # ───────────────────────────────────────────────────────────────────
@@ -160,3 +162,14 @@ jobs:
             }
             console.log("site is fresh.");
           '
+
+      # (c) TEN-273 item 4: main has work the site does not show. Red when the
+      #     oldest commit on main that the live build lacks is > 30 min old and no
+      #     in-progress run started after it (i.e. a run is queued or missing).
+      #     The message names the live commit, the waiting commit and the stuck
+      #     run. Logic + the one constant: tools/check-site-freshness.mjs.
+      - name: Alarm — live build behind main with a run queued or missing
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node tools/check-site-freshness.mjs
