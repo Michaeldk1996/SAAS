@@ -83,6 +83,11 @@ jobs:
           # Cloudflare edge, which geolocates to wherever the runner happens to
           # be, and pinning fly.toml to that would be a plausible wrong answer.
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          # TEN-270: read-only, for ONE thing — Kibl's /info/fixtures names for
+          # stream fixtures the poller never swept, so the board join can name
+          # every unmatched row instead of printing an id.
+          KIBL_USERNAME: ${{ secrets.KIBL_USERNAME }}
+          KIBL_PASSWORD: ${{ secrets.KIBL_PASSWORD }}
           TEN253_LISTEN_MIN: ${{ inputs.listen_minutes }}
           TEN253_DROP_MIN: ${{ inputs.drop_minutes }}
           TEN253_OUT: ${{ github.workspace }}/ten253-access-test
