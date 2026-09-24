@@ -8093,6 +8093,11 @@ function _streamNowOver(m, o){
   if (!K || !K.enabled || !o || !o.book) return null;
   const sp = K.pairFor(m, o.book);
   if (!sp) return null;
+  // The page's own suspended-market test (legs < 1.01, overround > 20%), the
+  // same one every odds_card_state pair passes through. A suspended stream pair
+  // falls back to the poller's Now rather than rendering.
+  if (mxIsSuspendedPair(sp.p1, sp.p2, { id: (m && (m.id || m.matchKey)) || null,
+                                        book: sp.book, path: 'stream.now' })) return null;
   const pollAt = Date.parse(o.p1.nowTs || o.p2.nowTs || '');
   const strAt = Date.parse(sp.at || '');
   if (o.p1.now != null && o.p2.now != null && isFinite(pollAt) && !(strAt > pollAt)) return null;

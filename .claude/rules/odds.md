@@ -60,12 +60,19 @@ SBOBET, Marathon and BetVictor rank **below every unlisted book** — SBOBET car
   - **Completed:** (1) the highest-priority book with a **within-60 Close** on both sides, else (2) the highest-priority book with an **older last-seen Close** on both sides, else (3) the highest-priority book with anything, Close dashed.
   - **Upcoming:** (1) the highest-priority book with a current, non-suspended Now on both sides, else (2) the highest-priority book with anything, Now dashed. An Open is not part of the test. A Now is **suspended** when either leg is below 1.01 (incl. Kibl's 0.000 marker) or the pair's overround is over 20% — the same test the page applies, so a suspended Now switches the card instead of dashing it (the Baez case).
   - Priority is the order complete books are tried in, never a reason to dash. A dash means no book could fill that slot.
-- **Book name on hover, never on the card face.** Tooltip carries book, that cell's price, when the book last moved it, and when we last saw it — `bet365 · 1.22 since 01:08 · seen 09:15`.
+- **Every pre-match Now shows its book and its time on the card face** (TEN-270, founder 2026-09-24 — supersedes "book name on hover, never on the card face"). One line under the players: `Bet105 · updated 07:45 · 2h ago`. The time is the price's OWN clock (Kibl insert time for Bet105), never the time we looked; no clock → `update time —`. `● live` only for a stream price while the stream is healthy. Test: every upcoming card with a Now carries exactly one such line, and it names the same book as the tooltip. The tooltip keeps `bet365 · 1.22 since 01:08 · seen 09:15`.
 - **UPCOMING and UNDERWAY:** Open + Now. **COMPLETED:** Open + Close. A Close column never appears on an unfinished match.
 - **Decimals:** 3 below 1.10, but only where the third is non-zero — `1.012` stays, `1.020` reads `1.02`.
 - **Header shows the oldest price on the board**, never the newest.
 - **Biggest Market Move filters to movers only** — 0% and unpriced cards leave the view entirely.
 - **No scoreline row on an upcoming card** unless the feed actually said something (live score, suspension, Retired/Walkover). No UNDERWAY chip, no INTERRUPTED chip — they break card symmetry and duplicate the score line.
+
+- **Kibl stream → live Now** (TEN-270, founder 2026-09-24). Tests:
+  - **Join (ruling 1):** a stream fixture joins a card when both players' surname keys match (either order, no initials conflict) and it is the ONLY such Kibl fixture within ±24 h of the card's start. Two or more → neither, logged with names. Clock time is never a match condition — Kibl lists some matches at the day's first session, hours before the slot. Routing-key league is a cross-check only. Code: `kibl-stream/card_join.py` `pick()`.
+  - **Pre-match only:** `betting_type_id` 1, `is_live` false, market 1, segment 1. In-play rows and 0.000 suspension markers never become a Now or a history point.
+  - **Closing point:** the worker stops a card when our board marks it live or finished — not at its scheduled time.
+  - **One book still:** the stream replaces a card's Now only when the card's SELECTED book is the stream's book, and only when its Kibl time is newer than the poller's. It passes the same suspended-pair test as every other Now. Test: a bet365-selected card never shows a Bet105 stream Now.
+  - **Browser access:** the page reads `kibl_now_price` only, with the publishable key, SELECT-only; `kibl_now_history` is not readable from the browser. Verify with `ten270-stream-now.yml` action `verify`.
 
 ---
 

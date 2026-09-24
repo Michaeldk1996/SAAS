@@ -59,8 +59,9 @@ function makeCtx(restRows) {
   vm.createContext(ctx);
   // The shipped page helpers, then the shipped client.
   vm.runInContext(['ocsNfd', 'ocsNameKey', 'ocsMatchKey', 'ocsKeyOf', 'psEsc', 'mxBookLabel',
-                   'mcAgoTxt', 'mcNowSrcHtml', '_streamNowOver']
+                   'mcAgoTxt', 'mcNowSrcHtml', '_streamNowOver', 'mxOverround', 'mxIsSuspendedPair']
                     .map(slice).join('\n') + '\n' + sliceConst('MC_BOOK_NAMES') + '\n' + sliceConst('MX_BOOK_LABELS')
+                   + '\n' + ['MX_SUSPENDED_OVERROUND', 'MX_MIN_REAL_PRICE', 'MX_SUPPRESSED'].map(sliceConst).join('\n')
                    + '\nfunction ocsFmtClock(iso){ return new Date(iso).toISOString().slice(11,16); }'
                    + '\nthis.KNS = { _streamNowOver, mcNowSrcHtml };', ctx);
   vm.runInContext(client, ctx);
@@ -102,6 +103,14 @@ test('stream wins only when NEWER than the poller, and only for the card\'s own 
   assert.equal(S(CARD, OCS(5.0, 1.15, '2026-09-24T04:00:00Z', 'bet365')), null,
                'a bet365-selected card never takes a Bet105 Now (whole-card rule)');
   assert.equal(S(CARD, OCS(null, null, null)).p1, 4.8, 'no poller Now: the stream fills it');
+});
+
+test('a suspended stream pair never renders; the poller keeps the card', async () => {
+  const { ctx } = makeCtx([HB(1000), PX('carabelli', 1.40, '2026-09-24T04:20:00Z'),
+                           PX('borges', 1.40, '2026-09-24T04:20:00Z')]);
+  await tick();
+  assert.equal(ctx.KNS._streamNowOver(CARD, OCS(5.0, 1.15, '2026-09-24T04:00:00Z')), null,
+               'a 1.40/1.40 pair is a 43% overround — suspended, not a Now');
 });
 
 test('half a pair is no pair', async () => {
