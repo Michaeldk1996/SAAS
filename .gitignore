@@ -13,6 +13,8 @@ design-export/stennisfy-all-in-one.html
 !.claude/skills/
 *.log
 *.bak
+# TEN-270: the Kibl card job's local snapshots (restored/saved via actions/cache).
+.cache/
 
 # Point-by-point shards + their availability index: pure derived output, rebuilt
 # from point-by-point-cache.json (the tracked seed) on every pipeline run and

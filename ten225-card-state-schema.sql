@@ -336,3 +336,39 @@ CREATE INDEX IF NOT EXISTS odds_card_state_move_idx
 -- The selection pass's own query: every source row for one match, in rank order.
 CREATE INDEX IF NOT EXISTS odds_card_state_select_idx
   ON odds_card_state (match_key, market, side, line, book_rank);
+
+-- ---------------------------------------------------------------------------
+-- TEN-270 EGRESS — updated_at MEANS "last changed", ENFORCED HERE.
+--
+-- Until now updated_at was DEFAULT now() with no trigger, so it froze at insert
+-- and no reader could ask "what changed since my last read". The Kibl card job
+-- (ten225-kibl-card-state.py read_card_state) now reads only rows with
+-- updated_at past its high-water mark and merges them onto a cached snapshot —
+-- which is only equal to a full read if EVERY write moves this column. So the
+-- database does it, not the writers: an INSERT always stamps now(); an UPDATE
+-- stamps now() only when some OTHER column really changed (a no-op upsert
+-- leaves the row, and the delta, alone). Covers every writer, including the
+-- backfill UPDATEs in this file. Writers never send updated_at; if one did, the
+-- INSERT trigger overrides it with the server clock, so a runner's clock can
+-- never become the mark.
+-- ---------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION odds_card_state_touch() RETURNS trigger
+  LANGUAGE plpgsql AS $$
+BEGIN
+  NEW.updated_at := now();
+  RETURN NEW;
+END $$;
+
+CREATE OR REPLACE TRIGGER odds_card_state_touch_ins
+  BEFORE INSERT ON odds_card_state
+  FOR EACH ROW EXECUTE FUNCTION odds_card_state_touch();
+
+CREATE OR REPLACE TRIGGER odds_card_state_touch_upd
+  BEFORE UPDATE ON odds_card_state
+  FOR EACH ROW
+  WHEN ((to_jsonb(OLD) - 'updated_at') IS DISTINCT FROM (to_jsonb(NEW) - 'updated_at'))
+  EXECUTE FUNCTION odds_card_state_touch();
+
+-- The delta read's filter.
+CREATE INDEX IF NOT EXISTS odds_card_state_updated_idx
+  ON odds_card_state (updated_at);

@@ -53,11 +53,15 @@ Reads SUPABASE_URL / SUPABASE_SECRET_KEY. Stdlib only. Secrets never printed.
 """
 import argparse
 import collections
+import gzip
 import json
 import os
 import sys
+import time
 import types
+import urllib.error
 import urllib.parse
+import urllib.request
 from datetime import datetime, timezone
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -1117,6 +1121,218 @@ def _limit(obs_list):
     return None
 
 
+# ------------------------------------------ TEN-270 egress: counts + snapshots
+#
+# MEASURED 2026-09-24: this file ran ~288x/day and on every run read the whole
+# odds_card_state (35 pages x ~209 KB), read it AGAIN for a row count, and read
+# the whole oddspapi_fixtures (~50 pages) and oddspapi_line_summary match-winner
+# rows (~29 pages) — two tables a DAILY loader writes. Everything below exists
+# to stop re-reading bytes that have not changed, and every shortcut falls back
+# to the full read it replaced whenever it cannot PROVE it is equivalent.
+
+CACHE_DIR = os.environ.get('TEN270_CACHE_DIR') or os.path.join(HERE, '.cache')
+REF_SNAPSHOT = 'ten225-ref-snapshot.json.gz'
+CARD_SNAPSHOT = 'ten225-card-snapshot.json.gz'
+# A snapshot is never trusted past this age, whatever its probe says. It bounds
+# the damage of any change a probe cannot see (a writer that bypasses the
+# touch triggers, a trigger not yet installed) to one day.
+SNAPSHOT_MAX_AGE_S = 24 * 3600
+# The delta read re-reads this much BEFORE the high-water mark. updated_at is
+# the writing transaction's now(), i.e. its START; a row committed after we
+# read the mark can carry an older stamp. PostgREST requests are seconds long,
+# so ten minutes is a wide margin, not a tight one.
+DELTA_OVERLAP_S = 600
+CARD_GRAIN = ('fixture_id', 'book', 'market', 'side', 'line')
+# A UNIQUE order for offset paging. fixture_id alone is not unique on either
+# grain table, and Postgres does not promise a stable order among ties across
+# two queries — so page N and page N+1 could overlap or skip a row.
+CARD_ORDER = 'fixture_id.asc,book.asc,market.asc,side.asc,line.asc.nullsfirst'
+SUMMARY_ORDER = 'fixture_id.asc,book.asc,side.asc,line.asc.nullsfirst'
+
+
+def sb_count(url, key, table, extra=''):
+    """Exact row count, one HEAD request, no body: (int, None) | (None, err).
+
+    `sb()` returns the body only, and a count lives in the Content-Range
+    header ("0-0/34737" or "*/34737"), so this goes to urllib itself — with the
+    same two auth headers `sb()` sends."""
+    h = {'Authorization': f'Bearer {key}', 'apikey': key,
+         'Prefer': 'count=exact'}
+    req = urllib.request.Request(
+        f'{url}/rest/v1/{table}?select=fixture_id{extra}&limit=1',
+        method='HEAD', headers=h)
+    try:
+        with urllib.request.urlopen(req, timeout=120) as r:
+            cr = r.headers.get('Content-Range') or ''
+    except urllib.error.HTTPError as e:
+        return None, (e.code, 'count request refused')
+    except Exception as e:                      # noqa: BLE001 — reported
+        return None, (0, str(e))
+    total = cr.rsplit('/', 1)[-1] if '/' in cr else ''
+    if not total.isdigit():
+        return None, (0, f'no exact count in Content-Range {cr!r}')
+    return int(total), None
+
+
+def sb_newest(url, key, table, col, extra=''):
+    """The newest value of `col`, one single-row read: (value, None) | (None, err)."""
+    got, err = sb('GET', f'/rest/v1/{table}?select={col}{extra}'
+                         f'&order={col}.desc.nullslast&limit=1', url, key)
+    if got is None:
+        return None, err
+    rows = json.loads(got.decode('utf-8'))
+    return (rows[0].get(col) if rows else None), None
+
+
+def _load_snapshot(name):
+    p = os.path.join(CACHE_DIR, name)
+    try:
+        with gzip.open(p, 'rt', encoding='utf-8') as fh:
+            return json.load(fh)
+    except FileNotFoundError:
+        return None
+    except Exception as e:                      # noqa: BLE001 — a bad cache is a miss
+        print(f'::warning::snapshot {name} unreadable ({e}) — full read')
+        return None
+
+
+def _save_snapshot(name, obj):
+    os.makedirs(CACHE_DIR, exist_ok=True)
+    p = os.path.join(CACHE_DIR, name)
+    tmp = p + '.tmp'
+    # mtime=0: the same content gives the same bytes, so the workflow can key
+    # the reference cache on the file's hash and skip a save that changed
+    # nothing.
+    with open(tmp, 'wb') as raw, \
+            gzip.GzipFile(fileobj=raw, mode='wb', mtime=0) as fh:
+        fh.write(json.dumps(obj, separators=(',', ':')).encode('utf-8'))
+    os.replace(tmp, p)
+
+
+def fetch_ref_cached(url, key, table, cols, extra, order, ts_col, now_s=None):
+    """A daily-written reference table, re-read only when it has changed.
+
+    The PROBE is two tiny requests: the exact row count (HEAD) and the newest
+    `ts_col` (one row). Both are taken BEFORE the read, so a writer landing
+    mid-read changes the next run's probe and forces a re-read — the safe
+    direction. The snapshot is reused only when the probe, the column list and
+    the filter all match and it is under SNAPSHOT_MAX_AGE_S. A failed probe is
+    a full read, never a reuse.
+
+    Why the probe sees every change:
+      oddspapi_fixtures.updated_at — its only writer
+        (ten225-load-line-summary.py, the `--fixtures` block) stamps every row
+        it upserts with the run's generatedAt.
+      oddspapi_line_summary.loaded_at — DEFAULT now() only, so an UPDATE left
+        it frozen; ten225-line-summary-schema.sql now carries a BEFORE UPDATE
+        trigger that bumps it whenever the row really changed.
+    Rows are never deleted from either table; a delete would move the count.
+    """
+    now_s = time.time() if now_s is None else now_s
+    n, cerr = sb_count(url, key, table, extra)
+    newest, nerr = (None, None) if cerr else sb_newest(url, key, table,
+                                                      ts_col, extra)
+    probe = None if (cerr or nerr) else {'n': n, 'newest': newest}
+    snap = _load_snapshot(REF_SNAPSHOT) or {}
+    ent = (snap.get('tables') or {}).get(table)
+    if (probe is not None and ent and ent.get('probe') == probe
+            and ent.get('cols') == cols and ent.get('extra') == extra
+            and now_s - float(ent.get('saved_at') or 0) < SNAPSHOT_MAX_AGE_S):
+        print(f'{table}: snapshot reused ({n} rows, newest {ts_col} '
+              f'{newest}) — not re-read')
+        return ent['rows'], None, 'cached'
+    why = ('probe failed' if probe is None else
+           'no snapshot' if not ent else
+           'probe changed' if ent.get('probe') != probe else
+           'query changed' if (ent.get('cols'), ent.get('extra')) != (cols, extra)
+           else 'snapshot older than 24 h')
+    rows, err = fetch_all(url, key, table, cols, extra, order=order)
+    if err:
+        return rows, err, 'full'
+    print(f'{table}: full read ({why}) — {len(rows)} rows')
+    if probe is not None and len(rows) == n:
+        snap.setdefault('tables', {})[table] = {
+            'probe': probe, 'cols': cols, 'extra': extra, 'saved_at': now_s,
+            'rows': rows}
+        _save_snapshot(REF_SNAPSHOT, snap)
+    elif probe is not None:
+        print(f'::warning::{table} changed during the read ({n} counted, '
+              f'{len(rows)} read) — not cached')
+    return rows, None, 'full'
+
+
+def _grain(r):
+    return tuple(r.get(f) for f in CARD_GRAIN)
+
+
+def read_card_state(url, key, cols, now_s=None):
+    """The WHOLE odds_card_state, as run_selection has always needed it — built
+    from a local snapshot plus the rows changed since, when that provably
+    equals a full read, and from a full read otherwise.
+
+    Returns (rows, err, info). Every row carries `updated_at` (the server's
+    stamp) in addition to `cols`; the caller must not write it back.
+
+    THE CONTRACT THAT MAKES THE DELTA SAFE (ten225-card-state-schema.sql):
+    a BEFORE INSERT OR UPDATE trigger sets updated_at = now() whenever a row is
+    inserted or actually changes. So "rows with updated_at after the mark" is
+    every row any writer has touched since — the fillers, this file's own
+    write-back, and the schema's own backfill UPDATEs alike.
+
+    A FULL READ IS FORCED when: no snapshot; the column list changed; the last
+    full read is over 24 h old; the count or delta request failed; or the
+    merged set's size differs from the server's exact count (a delete, a
+    truncate, or a missed row). The mark is the max updated_at the SERVER
+    returned, never this runner's clock.
+    """
+    now_s = time.time() if now_s is None else now_s
+    ucols = cols + ',updated_at'
+    total, cerr = sb_count(url, key, 'odds_card_state')
+    snap = _load_snapshot(CARD_SNAPSHOT)
+    why = ('count failed' if cerr else
+           'no snapshot' if not snap else
+           'query changed' if snap.get('cols') != ucols else
+           'snapshot older than 24 h'
+           if now_s - float(snap.get('full_at') or 0) >= SNAPSHOT_MAX_AGE_S else
+           'no high-water mark' if epoch(snap.get('hwm')) is None else None)
+    info = {'mode': 'full', 'delta_rows': None, 'count': total}
+    rows, full_at = None, now_s
+    if why is None:
+        since = iso(epoch(snap['hwm']) - DELTA_OVERLAP_S)
+        delta, derr = fetch_all(url, key, 'odds_card_state', ucols,
+                                f'&updated_at=gt.{since}', order=CARD_ORDER)
+        if derr:
+            why = f'delta read failed {derr}'
+        else:
+            merged = {_grain(r): r for r in snap['rows']}
+            for r in delta:
+                merged[_grain(r)] = r
+            if len(merged) != total:
+                why = (f'count mismatch (snapshot+delta {len(merged)}, '
+                       f'server {total})')
+            else:
+                rows, full_at = list(merged.values()), snap['full_at']
+                info.update(mode='delta', delta_rows=len(delta))
+                print(f'odds_card_state: delta read — {len(delta)} rows changed '
+                      f'since {since}, merged onto the snapshot = {len(rows)} '
+                      f'rows (server count {total})')
+    if rows is None:
+        rows, err = fetch_all(url, key, 'odds_card_state', ucols,
+                              order=CARD_ORDER)
+        if err:
+            return None, err, info
+        print(f'odds_card_state: full read ({why}) — {len(rows)} rows')
+    stamps = [(epoch(r.get('updated_at')), r.get('updated_at')) for r in rows]
+    stamps = [s for s in stamps if s[0] is not None]
+    hwm = max(stamps)[1] if stamps else None
+    info['hwm'] = hwm
+    # Saved AS READ — before select_winners mutates is_selected — so the
+    # snapshot is the server's state, never this run's intentions.
+    _save_snapshot(CARD_SNAPSHOT, {'cols': ucols, 'full_at': full_at,
+                                   'hwm': hwm, 'rows': rows})
+    return [dict(r) for r in rows], None, info
+
+
 # -------------------------------------------------- the book-priority selection
 
 def run_selection(url, key, dry_run=False):
@@ -1149,37 +1365,56 @@ def run_selection(url, key, dry_run=False):
             'is_selected,ts_kind,source,label,start_ts,start_ts_source,'
             'start_reject_reason,open_price,open_ts,open_limit,now_price,now_ts,'
             'close_price,close_ts,close_within_60')
-    rows, err = fetch_all(url, key, 'odds_card_state', cols)
+    # TEN-270: the whole table, from snapshot + delta where that provably
+    # equals a full read (see read_card_state). Still EVERY row — the rule
+    # above is about what selection SEES, and that has not narrowed.
+    rows, err, rinfo = read_card_state(url, key, cols)
     if err:
         print(f'::error::reading odds_card_state for selection failed ({err})')
         return None, err
     before = sum(1 for r in rows if r.get('is_selected'))
     n_before = len(rows)
+    # What the SERVER holds, per row, before the pass decides anything.
+    # select_winners() mutates is_selected in place, so this is taken first.
+    was = [bool(r.get('is_selected')) for r in rows]
     rows, st = select_winners(rows)
     after = sum(1 for r in rows if r['is_selected'])
     print(f'selection over the WHOLE table: n={n_before} rows, '
           f'selected {before} -> {after}  {dict(st)}')
+    st['read_mode'] = rinfo.get('mode')
     if dry_run:
         return st, None
-    sent, uerr = L.upsert(url, key, 'odds_card_state', rows,
-                          'fixture_id,book,market,side,line')
-    print(f'selection write-back: {sent}/{len(rows)}'
-          + (f' — FAILED {uerr}' if uerr else ''))
+    # TEN-270: write back ONLY the rows whose is_selected changed. An
+    # unchanged row re-sent is a no-op UPDATE that cost ~210 KB per 1,000
+    # rows on every run. Each changed row still goes out WHOLE (every
+    # selection column, not keys + is_selected) for the insert-tuple reason
+    # above; `updated_at` is the server's and is never sent back.
+    fields = cols.split(',')
+    changed = [{f: r.get(f) for f in fields}
+               for r, w in zip(rows, was) if bool(r['is_selected']) != w]
+    st['written'] = len(changed)
+    sent, uerr = (0, None)
+    if changed:
+        sent, uerr = L.upsert(url, key, 'odds_card_state', changed,
+                              'fixture_id,book,market,side,line')
+    print(f'selection write-back: {sent}/{len(changed)} changed rows '
+          f'(of {n_before})' + (f' — FAILED {uerr}' if uerr else ''))
     if uerr:
         return st, uerr
 
     # MUTATE, THEN COUNT. An upsert whose conflict never fires reports success
     # and doubles the table; the only thing that can tell the two apart is the
-    # row count afterwards. Read it back rather than trusting the write.
-    after_rows, rerr = fetch_all(url, key, 'odds_card_state', 'fixture_id')
+    # row count afterwards. Counted by the server (one HEAD, Content-Range)
+    # rather than by paging the fixture_id column back — same check, no body.
+    n_after, rerr = sb_count(url, key, 'odds_card_state')
     if rerr:
         print(f'::warning::could not re-count odds_card_state ({rerr}); the '
               f'write-back is unverified')
-    elif len(after_rows) != n_before:
-        print(f'::error::odds_card_state went {n_before} -> {len(after_rows)} '
+    elif n_after != n_before:
+        print(f'::error::odds_card_state went {n_before} -> {n_after} '
               f'rows on a pass that updates in place. The grain constraint is '
               f'not matching, so every upsert is inserting a duplicate.')
-        return st, f'row count {n_before} -> {len(after_rows)}'
+        return st, f'row count {n_before} -> {n_after}'
     else:
         print(f'row count unchanged at {n_before} — the write-back updated in '
               f'place (proof the grain constraint matched)')
@@ -1840,17 +2075,21 @@ def main():
               f'(the archive holds one book, feed_source_id '
               f'{VERIFIED_FEED_SOURCE_ID}).')
 
-    ofx, err = fetch_all(url, key, 'oddspapi_fixtures',
-                         'fixture_id,player1,player2,scheduled_start,true_start,'
-                         'category_name')
+    # TEN-270: both tables are written by the DAILY line-summary loader, so a
+    # 5-minute job re-reads them only when a count + newest-stamp probe says
+    # they moved. See fetch_ref_cached().
+    ofx, err, _ = fetch_ref_cached(
+        url, key, 'oddspapi_fixtures',
+        'fixture_id,player1,player2,scheduled_start,true_start,category_name',
+        '', 'fixture_id.asc', 'updated_at')
     if err:
         print(f'::error::reading oddspapi_fixtures failed ({err})')
         return 1
-    osum, err = fetch_all(url, key, 'oddspapi_line_summary',
-                          'fixture_id,market,side,open_price,open_ts,close_price,'
-                          'start_ts,start_ts_source,start_reject_reason,'
-                          'flip_gap_seconds',
-                          f'&market=eq.{urllib.parse.quote(MARKET)}')
+    osum, err, _ = fetch_ref_cached(
+        url, key, 'oddspapi_line_summary',
+        'fixture_id,market,side,open_price,open_ts,close_price,'
+        'start_ts,start_ts_source,start_reject_reason,flip_gap_seconds',
+        f'&market=eq.{urllib.parse.quote(MARKET)}', SUMMARY_ORDER, 'loaded_at')
     if err:
         print(f'::error::reading oddspapi_line_summary failed ({err})')
         return 1

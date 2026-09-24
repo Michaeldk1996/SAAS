@@ -222,3 +222,34 @@ ALTER TABLE oddspapi_line_summary ENABLE ROW LEVEL SECURITY;
 -- fixtures". Index that access path, nothing speculative.
 CREATE INDEX IF NOT EXISTS oddspapi_line_summary_fixture_market_idx
   ON oddspapi_line_summary (fixture_id, market);
+
+-- ---------------------------------------------------------------------------
+-- TEN-270 EGRESS — loaded_at MOVES WHEN A ROW CHANGES.
+--
+-- ten225-kibl-card-state.py (every ~5 min) re-reads this table's match-winner
+-- rows only when a probe — exact count + newest loaded_at — differs from its
+-- cached snapshot. loaded_at was DEFAULT now() with no trigger, and the loader
+-- never sends it, so a daily upsert that CHANGED a row (a start resolved, a
+-- close corrected) left loaded_at frozen and the probe blind. No other column
+-- fills the gap: archived_at is the capture time of the SOURCE file, and a
+-- row's close/start can change on a re-summarise without a new capture.
+-- So an UPDATE that really changes the row bumps loaded_at; a no-op upsert
+-- (every column equal) does not, so an unchanged daily reload costs the Kibl
+-- job nothing. INSERTs keep the DEFAULT.
+-- ---------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION oddspapi_line_summary_touch() RETURNS trigger
+  LANGUAGE plpgsql AS $$
+BEGIN
+  NEW.loaded_at := now();
+  RETURN NEW;
+END $$;
+
+CREATE OR REPLACE TRIGGER oddspapi_line_summary_touch_upd
+  BEFORE UPDATE ON oddspapi_line_summary
+  FOR EACH ROW
+  WHEN ((to_jsonb(OLD) - 'loaded_at') IS DISTINCT FROM (to_jsonb(NEW) - 'loaded_at'))
+  EXECUTE FUNCTION oddspapi_line_summary_touch();
+
+-- The probe's "newest loaded_at" read.
+CREATE INDEX IF NOT EXISTS oddspapi_line_summary_loaded_idx
+  ON oddspapi_line_summary (loaded_at);

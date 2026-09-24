@@ -124,6 +124,7 @@ jobs:
           python3 -B test-ten232-bet105-capability.py
           python3 -B test-ten232-breaker.py
           python3 -B test-ten225-kibl-card-state.py
+          python3 -B test-ten270-cardstate-egress.py
           python3 -B test-ten225-orientation.py
           python3 -B test-ten225-ddl-audit.py
 
@@ -218,7 +219,41 @@ jobs:
       # sweep so a price captured this minute can reach a card in the same run.
       # Nothing member-visible: odds_card_state has RLS on and no policy, and no
       # surface reads it until Michael says go.
+      # TEN-270 egress — the card job's local snapshots (see fetch_ref_cached /
+      # read_card_state). A miss is only a full read, never a wrong answer: the
+      # script re-validates every snapshot against server counts before use.
+      # Same `if:` as the card step, so a skipped firing downloads nothing.
+      # Two caches because they change at different rates: the reference
+      # snapshot (oddspapi_fixtures + line_summary) is rewritten about once a
+      # day and is keyed on its own hash, so an unchanged file is not saved
+      # again; the card snapshot changes every run and is keyed per run.
+      # (The repo's Actions cache sits near its 10 GiB ceiling — see the
+      # pipeline's bsp-caches — so neither is saved when nothing changed.)
+      - name: Restore reference snapshot
+        id: refsnap
+        if: |
+          inputs.mode == 'cards' ||
+          ((github.event_name == 'schedule' || inputs.mode == 'sweep') &&
+           steps.sweep.outputs.swept != 'false')
+        uses: actions/cache/restore@v4
+        with:
+          path: .cache/ten225-ref-snapshot.json.gz
+          key: ten270-ref-${{ github.run_id }}
+          restore-keys: ten270-ref-
+
+      - name: Restore card snapshot
+        if: |
+          inputs.mode == 'cards' ||
+          ((github.event_name == 'schedule' || inputs.mode == 'sweep') &&
+           steps.sweep.outputs.swept != 'false')
+        uses: actions/cache/restore@v4
+        with:
+          path: .cache/ten225-card-snapshot.json.gz
+          key: ten270-card-${{ github.run_id }}
+          restore-keys: ten270-card-
+
       - name: Card state (Open / Now / Close)
+        id: cards
         # Only when the sweep actually ran. A skipped firing moved nothing, and
         # re-reading the whole card table twelve times an hour to project an
         # unchanged archive is cost with no output.
@@ -257,6 +292,28 @@ jobs:
           # UNKNOWN gap being a rejection -- and the run prints a LIMB CHECK
           # verdict naming which limb rejected what, per limb, with n.
           python3 ten225-kibl-card-state.py --use-live-flip | tee -a "$GITHUB_STEP_SUMMARY"
+
+      # TEN-270 — save only after a successful card run (a failed run keeps
+      # the previous snapshot, whose older mark just widens the next delta).
+      # hashFiles() is '' when the file is absent, which skips the save rather
+      # than raising a path warning on every run.
+      - name: Save reference snapshot (only when it changed)
+        if: >-
+          steps.cards.outcome == 'success' &&
+          hashFiles('.cache/ten225-ref-snapshot.json.gz') != '' &&
+          steps.refsnap.outputs.cache-matched-key !=
+          format('ten270-ref-{0}', hashFiles('.cache/ten225-ref-snapshot.json.gz'))
+        uses: actions/cache/save@v4
+        with:
+          path: .cache/ten225-ref-snapshot.json.gz
+          key: ten270-ref-${{ hashFiles('.cache/ten225-ref-snapshot.json.gz') }}
+
+      - name: Save card snapshot
+        if: steps.cards.outcome == 'success' && hashFiles('.cache/ten225-card-snapshot.json.gz') != ''
+        uses: actions/cache/save@v4
+        with:
+          path: .cache/ten225-card-snapshot.json.gz
+          key: ten270-card-${{ github.run_id }}-${{ github.run_attempt }}
 
       # ------------------------------------------------------------- PART 3
       # PUBLISH. odds_card_state has RLS on and zero policies and the product is
