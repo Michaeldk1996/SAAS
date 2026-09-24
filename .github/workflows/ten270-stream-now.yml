@@ -188,8 +188,9 @@ jobs:
               end = dt.datetime.now(dt.timezone.utc).replace(minute=0, second=0, microsecond=0)
               for d in range(14):
                   hi, lo = end - dt.timedelta(hours=12 * d), end - dt.timedelta(hours=12 * (d + 1))
-                  qs = urllib.parse.urlencode({"sql": q, "iso_timestamp_start": lo.isoformat(),
-                                               "iso_timestamp_end": hi.isoformat()})
+                  z = lambda x: x.strftime("%Y-%m-%dT%H:%M:%S.000Z")   # the API refuses "+00:00"
+                  qs = urllib.parse.urlencode({"sql": q, "iso_timestamp_start": z(lo),
+                                               "iso_timestamp_end": z(hi)})
                   st, r = call(f"{base}/logs.all?{qs}", bearer=tok)
                   print(f"=== edge_logs {lo.isoformat()} .. {hi.isoformat()} -> HTTP {st}")
                   if st != 200:
