@@ -310,6 +310,21 @@ def prune(env, log, enabled):
     C.sb_request(env, "DELETE", f"/rest/v1/{TABLE_NOW}?kind=eq.price&written_at=lt.{cutoff}")
 
 
+def broker_rtt_ms(host, port, n=5):
+    """Median TCP connect time to the broker, ms — the region choice, measured."""
+    import socket
+    out = []
+    for _ in range(n):
+        t0 = time.time()
+        try:
+            socket.create_connection((host, int(port)), timeout=10).close()
+            out.append((time.time() - t0) * 1000.0)
+        except OSError:
+            pass
+    out.sort()
+    return round(out[len(out) // 2], 1) if out else None
+
+
 def main(env=None, log=print):
     env = dict(os.environ) if env is None else dict(env)
     conn, missing = C.read_conn_env(env)
@@ -343,6 +358,9 @@ def main(env=None, log=print):
         log(f"::warning::Kibl book tag {tag!r} is not one the card state uses — "
             "stream prices will not reach any card until they agree")
     eng = NowEngine(tag, name, fsid)
+    where = {"region": env.get("FLY_REGION") or None,
+             "broker_rtt_ms": broker_rtt_ms(conn["host"], conn["port"])}
+    log(f"region {where['region']}: broker TCP RTT median {where['broker_rtt_ms']} ms (n=5)")
     board_url = env.get("BOARD_URL") or BOARD_URL
 
     state = {"cards": 0.0, "fx": 0.0}
@@ -413,7 +431,7 @@ def main(env=None, log=print):
                     last_retry = t
                 refresh()
                 if t - last_beat >= HEARTBEAT_EVERY_S:
-                    write_hb(env, eng.heartbeat(datetime.now(timezone.utc), True), log, enabled)
+                    write_hb(env, eng.heartbeat(datetime.now(timezone.utc), True, where), log, enabled)
                     last_beat = t
                 if t - last_prune >= 3600:
                     prune(env, log, enabled)
@@ -422,7 +440,7 @@ def main(env=None, log=print):
             return 0
         except Exception as e:  # noqa: BLE001
             if connected:
-                write_hb(env, eng.heartbeat(datetime.now(timezone.utc), False), log, enabled)
+                write_hb(env, eng.heartbeat(datetime.now(timezone.utc), False, where), log, enabled)
             connected = False
             wait = C.backoff_for(attempt)
             attempt += 1

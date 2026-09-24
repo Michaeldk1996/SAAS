@@ -93,7 +93,7 @@ jobs:
               print(f"realtime publication -> {r}")
               if "kibl_now_price" not in r: bad.append("price table not in supabase_realtime")
               if "kibl_now_history" in r: bad.append("history table published")
-              st, r = sql("select polname, cmd, roles::text from pg_policy p join pg_class c on c.oid=p.polrelid "
+              st, r = sql("select polname, polcmd, polroles::regrole[]::text from pg_policy p join pg_class c on c.oid=p.polrelid "
                           "where c.relname in ('kibl_now_price','kibl_now_history') order by 1")
               print(f"policies -> {r}")
           if act == "status":

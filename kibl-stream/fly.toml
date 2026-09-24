@@ -19,8 +19,16 @@
 # MESSAGE. Kibl serves no history, so a message missed during a reconnect is
 # gone permanently, while a Supabase write is batched and absorbs the latency.
 # `sea` is Fly's Seattle region, the nearest to us-west-2.
+#
+# ⚠️ SUPERSEDED BY FLY ITSELF, TEN-270 2026-09-24T07:24Z (deploy run 35969328376):
+#   "Region sea is deprecated and cannot have new resources provisioned.
+#    Please consider using an alternate region such as sjc"
+# Same test as the ruling — the non-deprecated Fly region nearest the broker
+# (Boardman OR): sjc, San Jose, ~900 km, vs ~1,400 km for den/lax. The worker
+# measures TCP RTT to the broker at start-up and reports it in its heartbeat,
+# so the choice is checked against a measurement, not just the map.
 app = "kibl-stream"
-primary_region = "sea"
+primary_region = "sjc"
 
 [build]
   dockerfile = "Dockerfile"
