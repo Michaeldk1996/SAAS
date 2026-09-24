@@ -47,6 +47,20 @@
     return [...out.values()].sort((a, b) => a.at - b.at);
   }
 
+  // bet365 on an UPCOMING card: the lazy odds shard's series (m.oddsMovement,
+  // founder ruling 2026-09-24), [[ts, price]] per side in card orientation. Its
+  // times are bet365's own tick times; the 15-min capture only sets how late a
+  // move arrives.
+  function shardRows(om, who) {
+    const s = om && om.books && om.books.bet365 && om.books.bet365[who];
+    const out = [];
+    for (const pt of Array.isArray(s) ? s : []) {
+      const t = ms(pt && pt[0]), p = Number(pt && pt[1]);
+      if (t != null && p >= 1.01) out.push({ at: t, price: p });
+    }
+    return out.sort((a, b) => a.at - b.at);
+  }
+
   // Keep only real CHANGES: a re-insert at the same price is not a price change.
   function changesOnly(rows) {
     const out = [];
@@ -90,6 +104,7 @@
       book: card.book, live: !!card.live, updatedAt: card.updatedAt ?? null,
       close: card.completed ? (card.close || null) : null,
       rows: rowsDesc, recordedFrom, open: card.open || null, historyAvailable: !!card.historyAvailable,
+      note: card.note || null,
     };
   }
 
@@ -120,6 +135,7 @@
     const head = mdl.live ? `<span class="phb-live">● live</span>`
                : `<span class="phb-upd">last updated ${esc(fmtWhen(mdl.updatedAt))}</span>`;
     let h = `<div class="phb-head"><span class="phb-book">${book}</span>${head}</div>`;
+    if (mdl.note) h += `<div class="phb-note phb-src">${esc(mdl.note)}</div>`;
     if (mdl.close) {
       h += `<div class="phb-sec">Closing odds</div>`
          + `<div class="phb-row"><span class="phb-when">${esc(fmtWhen(ms(mdl.close.at)))}</span>`
@@ -185,9 +201,14 @@
                                 at: side ? side.closeTs || null : null } : null;
     const live = !completed && !!(pair && pair.src === 'stream' && pair.live);
     const updatedAt = completed ? (close && close.at) : (pair && pair.at) || null;
+    // Bet105: the price_history RPC. bet365: the odds shard on upcoming cards only;
+    // a completed bet365 card waits for the post-match archive (ruled source).
+    const source = bk === 'bet105' ? 'rpc' : (bk === 'bet365' && !completed ? 'shard' : null);
     return { book: bookName, bookKey: bk, open, close, completed, live, updatedAt,
-             historyAvailable: bk === 'bet105' };
+             historyAvailable: source != null, source,
+             note: source === 'shard' ? BET365_NOTE : null };
   }
+  const BET365_NOTE = 'change times from bet365 · refreshed every 15 min';
 
   let box = null, hideTimer = null, current = null;
   function ensureBox() {
@@ -228,7 +249,14 @@
     b.innerHTML = html(model(card, [], [])).replace('no price change recorded', 'loading history…');
     place(target);
     if (!card.historyAvailable) { b.innerHTML = html(model(card, [], [])); place(target); return; }
-    const payload = await fetchHistory(ocsKeyOf(m));
+    let payload = null, om = null;
+    if (card.source === 'shard') {
+      stats.fetches++;
+      om = (typeof ensureOddsMovement === 'function')
+        ? await ensureOddsMovement(m).then(x => (x && x.oddsMovement) || null, () => null) : null;
+    } else {
+      payload = await fetchHistory(ocsKeyOf(m));
+    }
     if (current !== token) return;
     // A repaint during the fetch replaces the price cell; find this card's cell
     // again so the box stays beside it (review finding 2).
@@ -236,6 +264,12 @@
       const again = document.querySelector(`.match-card[data-id="${CSS.escape(el.dataset.id)}"] .mc-row.${who === 'p2' ? 'b' : 'a'}`);
       target = (again && again.querySelector(PRICE_SEL)) || null;
       if (!target) { hide(); return; }
+    }
+    if (card.source === 'shard') {
+      // No shard for this card is an honest "no change recorded", not a failure.
+      b.innerHTML = html(model(card, shardRows(om, who), []));
+      place(target);
+      return;
     }
     const rows = sideRows(payload, ocsNameKey(m[who]), ocsNameKey);
     // Gaps up to NOW on an upcoming card, up to the Close on a completed one: an
@@ -278,7 +312,7 @@
     document.addEventListener('visibilitychange', () => { if (document.hidden) hide(); });
   }
 
-  const api = { sideRows, changesOnly, gapRows, model, html, fmtWhen, fmtDelta, cardData, stats, _open: open };
+  const api = { sideRows, shardRows, changesOnly, gapRows, model, html, fmtWhen, fmtDelta, cardData, stats, _open: open };
   if (typeof window !== 'undefined') window.PriceHistoryBox = Object.assign(window.PriceHistoryBox || {}, api);
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })();

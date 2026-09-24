@@ -103,3 +103,35 @@ test('an outage AFTER the last recorded change still shows as a gap row', () => 
                          rows[0].at, Date.parse('2026-09-24T08:00:00Z'));
   assert.equal(gaps.length, 1);
 });
+
+// Founder ruling 2026-09-24 (23:09Z): upcoming bet365 cards take m.oddsMovement;
+// completed cards take the archive history. The shard series below is the real
+// 12165847 p1 shape: bet365 tick times, a run-end repeat kept by the capture.
+const OM = { books: { bet365: {
+  p1: [['2026-09-24T16:16:00.000Z', 1.77], ['2026-09-24T16:35:00.000Z', 1.87], ['2026-09-24T16:44:00.000Z', 1.77],
+       ['2026-09-24T16:50:00.000Z', 1.87], ['2026-09-24T16:53:00.000Z', 1.87], ['2026-09-24T20:33:00.000Z', 1.77]],
+  p2: [['2026-09-24T16:16:00.000Z', 2.05], ['bad', 2.1], ['2026-09-24T16:35:00.000Z', 0]],
+} } };
+
+test('bet365 upcoming: one row per move from the shard, the run-end repeat is not a move, newest first', () => {
+  const rows = B.shardRows(OM, 'p1');
+  assert.equal(rows.length, 6);
+  const m = B.model({ book: 'bet365', open: { price: 1.77, at: '2026-09-24T16:16:00Z' }, completed: false,
+                      historyAvailable: true, note: 'n' }, rows, []);
+  assert.deepEqual(m.rows.map(r => `${r.price}:${r.delta}`), ['1.77:-0.1', '1.87:0.1', '1.77:-0.1', '1.87:0.1'],
+                   'the 16:53 same-price sighting is not a row; the Open itself is the bottom row');
+  assert.deepEqual(B.shardRows(OM, 'p2').map(r => r.price), [2.05], 'an unparseable time or a zero price is dropped, never shown');
+  assert.deepEqual(B.shardRows(null, 'p1'), [], 'no shard: no rows, no invented history');
+});
+
+test('source per card: Bet105 -> RPC, bet365 upcoming -> shard with its label, bet365 completed -> not yet (archive)', () => {
+  const up = B.cardData({ openingOdds: { bookmaker: 'bet365' } }, 'p1');
+  assert.equal(up.source, 'shard');
+  assert.equal(up.historyAvailable, true);
+  assert.match(B.html(B.model(up, [], [])), /change times from bet365 · refreshed every 15 min/);
+  const done = B.cardData({ openingOdds: { bookmaker: 'bet365' }, finalScore: '6-4 6-4' }, 'p1');
+  assert.equal(done.source, null, 'a completed bet365 card does not fall back to the shard');
+  assert.match(B.html(B.model(done, [], [])), /history not recorded for this book/);
+  assert.equal(B.cardData({ openingOdds: { bookmaker: 'bet105' } }, 'p1').source, 'rpc');
+  assert.equal(B.cardData({ openingOdds: { bookmaker: '1xbet' } }, 'p1').source, null);
+});
