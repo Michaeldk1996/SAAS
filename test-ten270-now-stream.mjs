@@ -36,14 +36,22 @@ const NOW = Date.parse('2026-09-24T04:30:00Z');
 // `matches`, a fetch that answers the heartbeat and card reads separately, and
 // captured timers / visibility listener so each cost rule can be driven.
 function makeCtx(restRows, opts = {}) {
-  const sockets = [], fetches = [], intervals = [], listeners = {}, timeouts = [];
+  const sockets = [], fetches = [], intervals = [], listeners = {}, timeouts = [], winListeners = {};
   class FakeWS {
     constructor(url) { this.url = url; this.readyState = 0; this.sent = []; sockets.push(this); }
     send(s) { this.sent.push(JSON.parse(s)); }
     close() { this.readyState = 3; if (this.onclose) this.onclose(); }
   }
   const rendered = opts.rendered || [CARD];
-  const list = { querySelectorAll: () => ctx.__rendered.map(m => ({ dataset: { id: m.id } })) };
+  // Every query returns NEW element objects, as renderMatches() does on the
+  // live page (innerHTML) — the case the first viewport build looped on.
+  // Layout: card i sits at y = i*120 (120 px tall) minus the scroll offset;
+  // opts.layout = true gives cards real rects, otherwise (old harness) none.
+  const list = { querySelectorAll: () => ctx.__rendered.map((m, i) => {
+    const el = { dataset: { id: m.id } };
+    if (opts.layout) el.getBoundingClientRect = () => {
+      const top = i * 120 - ctx.__scrollY; return { top, bottom: top + 120, width: 300, height: 120 }; };
+    return el; }) };
   const hbRows = restRows.filter(r => r.kind === 'heartbeat');
   const cardRows = restRows.filter(r => r.kind !== 'heartbeat');
   const ctx = {
@@ -64,10 +72,12 @@ function makeCtx(restRows, opts = {}) {
     WebSocket: FakeWS,
     fetch: async (u) => { fetches.push(u); return { ok: true, json: async () =>
       (u.includes('kibl_now_card') ? cardRows : hbRows) }; },
-    window: { SUPABASE_URL: 'https://proj.example.co', SUPABASE_ANON_KEY: 'sb_publishable_TEST' },
+    window: { SUPABASE_URL: 'https://proj.example.co', SUPABASE_ANON_KEY: 'sb_publishable_TEST',
+              addEventListener: (ev, fn) => { (winListeners[ev] = winListeners[ev] || []).push(fn); } },
     newsTz: () => 'UTC',
-    __rendered: rendered,
+    __rendered: rendered, __scrollY: 0,
   };
+  if (opts.layout) ctx.innerHeight = 360;          // 3 cards on screen, +150 px margin = 5
   ctx.window.window = ctx.window;
   vm.createContext(ctx);
   // The shipped page helpers, then the shipped client.
@@ -82,7 +92,9 @@ function makeCtx(restRows, opts = {}) {
   vm.runInContext(client, ctx);
   const scopeTick = () => intervals.find(i => i.ms === 2000).fn();
   const runTimers = () => { for (const t of timeouts.splice(0)) if (t.fn) t.fn(); };
-  return { ctx, sockets, fetches, listeners, scopeTick, runTimers };
+  const fire = (ev) => (winListeners[ev] || []).forEach(f => f());
+  const pendingDelays = () => timeouts.filter(t => t.fn).map(t => t.ms);
+  return { ctx, sockets, fetches, listeners, scopeTick, runTimers, fire, pendingDelays };
 }
 // Open the socket, accept the join, and confirm Postgres Changes is listening
 // (Supabase's `system` message): only now is the page really subscribed.
@@ -156,10 +168,85 @@ test('the scope follows the rendered list: a NEW card re-joins with the new filt
   assert.equal(fetches.length, reads + 2, 'every confirmed subscription re-reads the table (heartbeat + cards)');
   ctx.__rendered = [other];
   scopeTick(); runTimers();
-  assert.equal(joins().length, 2, 'a card LEAVING the list does not re-join (no start-time stampede)');
+  assert.equal(joins().length, 3, 'a card LEAVING the list re-joins without it (it no longer costs messages)');
+  assert.equal(joins().pop().payload.config.postgres_changes[0].filter, 'card_key=in.(2026-09-24|machac|rublev)');
   ctx.__rendered = [];
   scopeTick();
   assert.ok(sent.filter(m => m.event === 'phx_leave').length >= 2, 'no rendered card: the channel is left');
+});
+
+const TEN = Array.from({ length: 10 }, (_, i) => ({ id: 'c' + i, date: '2026-09-24',
+  p1: 'A. ' + ['Alpha','Bravo','Charlie','Delta','Echo','Foxtrot','Golf','Hotel','India','Juliet'][i], p2: 'B. Zulu' }));
+const keyOf = i => '2026-09-24|' + [TEN[i].p1.split(' ')[1].toLowerCase(), 'zulu'].sort().join('|');
+
+test('ON SCREEN: only cards within the viewport (+150 px) are subscribed', async () => {
+  const { ctx, sockets } = makeCtx([], { layout: true, rendered: TEN });
+  await tick();
+  assert.equal(ctx.window.KiblNow.viewport, true);
+  const j = joinOk(sockets[0]);
+  // innerHeight 360 + 150 margin: cards at y 0,120,240,360,480 reach <= 510 -> 5 cards
+  assert.equal(j.payload.config.postgres_changes[0].filter, `card_key=in.(${[0,1,2,3,4].map(keyOf).sort().join(',')})`);
+});
+
+test('a REPAINT (new element objects, same layout) never leaves or re-joins — the loop the first build had', async () => {
+  const { sockets, scopeTick, runTimers } = makeCtx([], { layout: true, rendered: TEN });
+  await tick();
+  joinOk(sockets[0]);
+  for (let i = 0; i < 20; i++) { scopeTick(); runTimers(); }   // 20 repaints/checks
+  const sent = sockets[0].sent;
+  assert.equal(sent.filter(m => m.event === 'phx_leave').length, 0, 'no leave across 20 repaints');
+  assert.equal(sent.filter(m => m.event === 'phx_join').length, 1, 'still the one join');
+});
+
+test('a member SCROLL subscribes the cards scrolled in and drops the ones scrolled off, at once', async () => {
+  const { ctx, sockets, runTimers, fire } = makeCtx([], { layout: true, rendered: TEN });
+  await tick();
+  const j1 = joinOk(sockets[0]);
+  ctx.__scrollY = 600;                               // cards 5..9 now on screen (+margin)
+  fire('wheel'); fire('scroll'); runTimers();        // input marks it the member's; scroll triggers the check
+  const joins = sockets[0].sent.filter(m => m.event === 'phx_join');
+  assert.equal(joins.length, 2, 're-joined at once (no jitter) after the member scrolled');
+  const keys = joins[1].payload.config.postgres_changes[0].filter;
+  for (const i of [5, 6, 7, 8, 9]) assert.ok(keys.includes(keyOf(i)), 'scrolled-in card ' + i + ' subscribed');
+  for (const i of [0, 1, 2]) assert.ok(!keys.includes(keyOf(i)), 'scrolled-off card ' + i + ' unsubscribed');
+  assert.ok(sockets[0].sent.some(m => m.event === 'phx_leave' && m.topic === j1.topic), 'old channel left');
+});
+
+test('a DAY-TAB switch (new list, member click) subscribes the new day at once', async () => {
+  const tomorrow = TEN.map(m => ({ ...m, id: 't' + m.id, date: '2026-09-25' }));
+  const { ctx, sockets, runTimers, fire, scopeTick } = makeCtx([], { layout: true, rendered: TEN, extraMatches: tomorrow });
+  await tick();
+  joinOk(sockets[0]);
+  ctx.__rendered = tomorrow; fire('click'); scopeTick(); runTimers();
+  const last = sockets[0].sent.filter(m => m.event === 'phx_join').pop();
+  assert.ok(/^card_key=in\.\(2026-09-25\|/.test(last.payload.config.postgres_changes[0].filter), 'tomorrow\'s cards subscribed');
+  assert.ok(!last.payload.config.postgres_changes[0].filter.includes('2026-09-24'), 'today\'s cards dropped');
+});
+
+test('a DATA-driven scope change (no member input) is spread over the jitter window', async () => {
+  const { ctx, sockets, runTimers, fire, pendingDelays } = makeCtx([], { layout: true, rendered: TEN });
+  await tick();
+  joinOk(sockets[0]);
+  ctx.__scrollY = 600; fire('scroll');               // e.g. a board refresh moved the list; no wheel/click
+  const before = timeouts => timeouts;
+  runTimers();                                        // the 150 ms check runs; the re-join is scheduled
+  assert.equal(sockets[0].sent.filter(m => m.event === 'phx_join').length, 1, 'not re-joined in the same tick');
+  assert.ok(pendingDelays().some(d => d >= 0 && d < 5000), 'a jittered re-join is pending');
+});
+
+test('no re-scope while a join awaits confirmation; live is judged on the JOINED keys', async () => {
+  const { ctx, sockets, runTimers, fire } = makeCtx([HB(1000), CR(1.18, '2026-09-24T04:20:00Z', 4.8, '2026-09-24T04:20:00Z')],
+    { layout: true, rendered: [CARD, ...TEN] });
+  await tick();
+  joinOk(sockets[0]);
+  const S = () => ctx.KNS._streamNowOver(CARD, OCS(null, null, null)).live;
+  assert.equal(S(), true);
+  ctx.__scrollY = 600; fire('wheel'); fire('scroll'); runTimers();      // scroll: re-join sent, not confirmed
+  const joinsAfterScroll = sockets[0].sent.filter(m => m.event === 'phx_join').length;
+  ctx.__scrollY = 0; fire('wheel'); fire('scroll'); runTimers();        // layout moves again in the gap
+  assert.equal(sockets[0].sent.filter(m => m.event === 'phx_join').length, joinsAfterScroll,
+               'no second join while the first awaits confirmation (the wrap loop)');
+  assert.equal(S(), false, 'not live while the channel is unconfirmed');
 });
 
 test('more than 100 rendered cards split into bindings of at most 100 keys', async () => {

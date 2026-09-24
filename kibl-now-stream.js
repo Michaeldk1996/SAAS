@@ -12,10 +12,11 @@
  *   1. Hidden tab = no subscription. On `visibilitychange` to hidden the socket
  *      closes and the backstop stops; back to visible, the table is re-read and
  *      the channel re-joined. Nothing is labelled "● live" while paused.
- *   2. The subscription is scoped to the pre-match cards RENDERED in the match
- *      list (`card_key=in.(…)`, ≤100 keys per binding). No rendered card, no
- *      channel. The scope is re-read every 2 s; a change re-joins, and the
- *      re-join re-reads the table so nothing between the two joins is missed.
+ *   2. The subscription is scoped to the pre-match cards ON SCREEN (layout,
+ *      ±150 px; `card_key=in.(…)`, ≤100 keys per binding). Scrolling a card in
+ *      or switching day subscribes it at once; scrolling it off unsubscribes
+ *      it; no card on screen, no channel. Every confirmed subscription re-reads
+ *      the table, so nothing between joins is missed.
  *
  * It decides NOTHING about which book owns a card. The page's _mcNowPair asks
  * window.KiblNow.pairFor(m, book) and uses the answer only when the card's
@@ -57,6 +58,7 @@
   let ws = null, rtRetries = 0, ref = 0, paintTimer = null;
   let topic = null, joinRef = null, joined = false, gen = 0, rejoinTimer = null, chanRetries = 0;
   let scope = [];                  // card keys the live channel is filtered to
+  let joinedKeys = [];             // the keys of the channel actually JOINED (live is judged on these)
   let backstopTimer = null;
   const samples = [];              // {written_at, kibl, recvMs} — worker->screen measurement
   const stats = { joins: 0, leaves: 0, pushes: 0, paused: 0 };
@@ -112,7 +114,7 @@
              sideAt, kind: 'vendor-insert', src: 'stream',
              // Live only for a card this page is subscribed to (review 3rd pass,
              // finding 6): other surfaces can ask for an unrendered card.
-             live: healthy() && scope.includes(key) };
+             live: healthy() && joinedKeys.includes(key) };
   }
 
   function paintNow() {
@@ -150,16 +152,45 @@
     }
   }
 
-  // ── scope: the pre-match cards rendered in the match list ────────────────
+  // ── scope: the pre-match cards ON SCREEN (founder 2026-09-24T10:16Z) ──────
+  // Read from LAYOUT at the moment of each check, never from remembered
+  // observer state: renderMatches() replaces every card element, and an
+  // IntersectionObserver reports the removed ones as "not intersecting" — the
+  // first build (3d6c5793) emptied its scope on every repaint and looped
+  // (review round 3, finding 1). getBoundingClientRect() on the elements that
+  // exist NOW has no such gap. A card within VIEW_MARGIN_PX of the viewport
+  // counts, so a card about to scroll in is already live. Scroll, resize and
+  // any change to the list trigger a check; the 2 s tick is the backstop.
+  const VIEW_MARGIN_PX = 150;
+  let lastInput = 0, scopeTimer = null, listObserver = null;
+  function soon() { clearTimeout(scopeTimer); scopeTimer = setTimeout(rescope, 150); }
+  // A wheel, touch, key or click marks the next scope change as the member's
+  // own: applied at once. A change with no input behind it (a board refresh, a
+  // card starting) reaches every viewer together, so it is spread over 5 s.
+  for (const ev of ['wheel', 'touchmove', 'keydown', 'click', 'mousedown'])
+    try { window.addEventListener(ev, () => { lastInput = Date.now(); }, { passive: true, capture: true }); } catch (e) { /* no events */ }
+  for (const ev of ['scroll', 'resize'])
+    try { window.addEventListener(ev, soon, { passive: true }); } catch (e) { /* no events */ }
+  function onScreen(el) {
+    if (typeof el.getBoundingClientRect !== 'function' || typeof innerHeight !== 'number') return true;
+    const r = el.getBoundingClientRect();
+    if (!r || (r.width === 0 && r.height === 0)) return false;          // hidden (display:none)
+    return r.bottom >= -VIEW_MARGIN_PX && r.top <= innerHeight + VIEW_MARGIN_PX;
+  }
   function renderedKeys() {
     const list = document.getElementById('matchlist');
     if (!list || typeof ocsKeyOf !== 'function') return [];
+    if (!listObserver && typeof MutationObserver === 'function') {
+      listObserver = new MutationObserver(soon);        // a day-tab switch or a repaint
+      listObserver.observe(list, { childList: true, subtree: true });
+    }
     let all;
     try { all = matches; } catch (e) { return []; }   // the page's top-level `let matches`
     if (!Array.isArray(all)) return [];
     const byId = new Map(all.map(m => [String(m.id), m]));
     const keys = new Set();
     for (const el of list.querySelectorAll('.match-card[data-id]')) {
+      if (!onScreen(el)) continue;
       const m = byId.get(el.dataset.id);
       if (!m || m.live || m.finalScore) continue;
       if (typeof cardStartMs === 'function') {
@@ -185,7 +216,7 @@
   }
   function leave() {
     if (topic && ws && ws.readyState === 1) { send(ws, topic, 'phx_leave', {}); stats.leaves++; }
-    topic = null; joinRef = null; joined = false;
+    topic = null; joinRef = null; joined = false; joinedKeys = [];
   }
   function join() {
     clearTimeout(rejoinTimer); rejoinTimer = null;
@@ -194,6 +225,7 @@
     if (!scope.length) return;                 // nothing rendered, nothing to hear
     topic = `realtime:kibl-now-${++gen}`;
     joinRef = String(++ref);
+    joinedKeys = scope.slice();
     send(ws, topic, 'phx_join', {
       config: { broadcast: { ack: false, self: false }, presence: { key: '' },
                 postgres_changes: bindings(scope), private: false },
@@ -203,22 +235,26 @@
   }
   function rescope() {
     if (paused()) return;
+    // A join awaiting the server's confirmation: no re-scope until it lands.
+    // Between leave and confirm no card is "● live"; where that label wraps,
+    // card heights change, a card crosses the ±150 px edge and a re-scope would
+    // re-join again — the loop review round 4 (finding 1) reproduced. The
+    // confirmation repaints the labels back, then the check runs once.
+    if (topic && !joined) { soon(); return; }
     const next = renderedKeys();
     if (!next.length) {
       if (scope.length) { scope = []; leave(); repaint(); }
       return;
     }
-    // Only a NEW card re-joins. A card that leaves the list (it started, or a
-    // filter hid it) stays in the filter until the next re-join: it costs at
-    // most the few writes before its Closing point, while a re-join on every
-    // start would make every viewer re-join in the same 2 s tick (review 3rd
-    // pass, finding 4).
-    if (next.every(k => scope.includes(k))) return;
+    if (next.join('\n') === scope.join('\n')) return;
     scope = next;
     if (!ws || ws.readyState !== 1) { connect(); return; }
-    // A board refresh adds cards for every viewer at once: spread the re-joins.
     clearTimeout(rejoinTimer);
-    rejoinTimer = setTimeout(join, Math.floor(Math.random() * REJOIN_JITTER_MS));
+    // The member's own scroll / tab switch: re-join now. A data-driven change
+    // (no input in the last 3 s) is spread over REJOIN_JITTER_MS (review 3rd
+    // pass, finding 4: every viewer would otherwise re-join in the same tick).
+    if (Date.now() - lastInput < 3000) join();
+    else rejoinTimer = setTimeout(join, Math.floor(Math.random() * REJOIN_JITTER_MS));
   }
 
   // A refused, errored or closed channel is not live; re-join with backoff.
@@ -298,7 +334,7 @@
   document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); else resume(); });
 
   window.KiblNow = { pairFor, healthy, enabled: true, samples, stats,
-                     scope: () => scope.slice(), _rows: rows };
+                     scope: () => scope.slice(), viewport: typeof innerHeight === 'number', _rows: rows };
   if (!paused()) resume();
   setInterval(rescope, SCOPE_EVERY_MS);
   // Relative "updated … ago" text is rendered, not live — refresh it once a minute.
