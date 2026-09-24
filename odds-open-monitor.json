@@ -1716,6 +1716,32 @@
       "startTime": "2026-09-13T18:00:00.000Z",
       "tour": "ATP US Open"
     },
+    "id1201413374753326": {
+      "alerted": true,
+      "alertedAt": "2026-09-24T11:04:06Z",
+      "captureLagH": null,
+      "date": "2026-09-25",
+      "hoursOutAtAlert": 19.93,
+      "openAt": null,
+      "p1": "J. Brooksby",
+      "p2": "L. Sonego",
+      "postingLeadH": null,
+      "startTime": "2026-09-25T07:00:00.000Z",
+      "tour": "ATP Chengdu"
+    },
+    "id1201413374753344": {
+      "alerted": true,
+      "alertedAt": "2026-09-24T11:04:06Z",
+      "captureLagH": null,
+      "date": "2026-09-25",
+      "hoursOutAtAlert": 19.93,
+      "openAt": null,
+      "p1": "V. Kopriva",
+      "p2": "D. Shapovalov",
+      "postingLeadH": null,
+      "startTime": "2026-09-25T07:00:00.000Z",
+      "tour": "ATP Chengdu"
+    },
     "id1201413374923144": {
       "alerted": false,
       "captureLagH": 0.16,
@@ -1724,8 +1750,8 @@
       "openAt": "2026-09-22T01:50:10.423Z",
       "p1": "J. M. Cerundolo",
       "p2": "Y. Zhou",
-      "postingLeadH": 54.66,
-      "startTime": "2026-09-24T08:30:00.000Z",
+      "postingLeadH": 58.16,
+      "startTime": "2026-09-24T12:00:00.000Z",
       "tour": "ATP Chengdu"
     },
     "id1201413374923146": {
@@ -2004,6 +2030,44 @@
       "postingLeadH": 13.84,
       "startTime": "2026-09-24T07:20:00.000Z",
       "tour": "ATP Chengdu"
+    },
+    "id1204297974753252": {
+      "alerted": true,
+      "alertedAt": "2026-09-24T11:04:06Z",
+      "captureLagH": null,
+      "date": "2026-09-25",
+      "hoursOutAtAlert": 19.6,
+      "openAt": null,
+      "p1": "F. Marozsan",
+      "p2": "T. Daniel",
+      "postingLeadH": null,
+      "startTime": "2026-09-25T06:40:00.000Z",
+      "tour": "ATP Hangzhou"
+    },
+    "id1204297974753254": {
+      "alerted": false,
+      "captureLagH": 17.3,
+      "date": "2026-09-25",
+      "firstSeenAt": "2026-09-24T11:04:06Z",
+      "openAt": "2026-09-23T17:46:09.597Z",
+      "p1": "K. Jacquet",
+      "p2": "T. M. Etcheverry",
+      "postingLeadH": 35.73,
+      "startTime": "2026-09-25T05:30:00.000Z",
+      "tour": "ATP Hangzhou"
+    },
+    "id1204297974753258": {
+      "alerted": true,
+      "alertedAt": "2026-09-24T11:04:06Z",
+      "captureLagH": null,
+      "date": "2026-09-25",
+      "hoursOutAtAlert": 20.77,
+      "openAt": null,
+      "p1": "R. Hijikata",
+      "p2": "A. Rublev",
+      "postingLeadH": null,
+      "startTime": "2026-09-25T07:50:00.000Z",
+      "tour": "ATP Hangzhou"
     },
     "id1204297974921782": {
       "alerted": false,
@@ -2311,5 +2375,5 @@
   },
   "schema": "odds-open-monitor/1",
   "thresholdHours": 24.0,
-  "updatedAt": "2026-09-24T08:15:01Z"
+  "updatedAt": "2026-09-24T11:04:06Z"
 }
