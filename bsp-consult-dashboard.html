@@ -25970,21 +25970,24 @@ document.addEventListener('click', function(e){
 function tourxLineChartSvg(vals, field, color, kind, roundLabels, hi){
   if (!vals.length) return '';
   const W = 320, H = 148, padL = 16, padR = 16, padT = 30, padB = 22;
-  const all = vals.concat(field);
+  // TEN-263: a field average the store doesn't have (null, e.g. an untracked winners count) is
+  // missing, not 0 — it never enters the y-range and its point is skipped on the line.
+  const ok = v => v != null && Number.isFinite(Number(v));
+  const all = vals.concat(field).filter(ok);
   let mn = Math.min.apply(null, all), mx = Math.max.apply(null, all);
   const rg = (mx - mn) || 1; mn -= rg * 0.32; mx += rg * 0.42;
   const n = vals.length;
   const X = i => n === 1 ? W / 2 : padL + i * (W - padL - padR) / (n - 1);
   const Y = v => padT + (1 - (v - mn) / (mx - mn)) * (H - padT - padB);
   const pPts = vals.map((v, i) => X(i) + ',' + Y(v)).join(' ');
-  const fPts = field.map((v, i) => X(i) + ',' + Y(v)).join(' ');
+  const fPts = field.map((v, i) => ok(v) ? X(i) + ',' + Y(v) : null).filter(Boolean).join(' ');
   const areaD = 'M ' + X(0) + ' ' + Y(vals[0]) + ' ' + vals.map((v, i) => 'L ' + X(i) + ' ' + Y(v)).join(' ') + ' L ' + X(n - 1) + ' ' + (H - padB) + ' L ' + X(0) + ' ' + (H - padB) + ' Z';
   const gid = 'tourxgrad' + Math.random().toString(36).slice(2, 8);
   let kids = '';
   kids += `<defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${color}" stop-opacity="0.22"></stop><stop offset="100%" stop-color="${color}" stop-opacity="0"></stop></linearGradient></defs>`;
   kids += `<path d="${areaD}" fill="url(#${gid})"></path>`;
   if (hi != null) kids += `<line x1="${X(hi)}" y1="${padT - 8}" x2="${X(hi)}" y2="${H - padB + 2}" stroke="${color}" stroke-width="1" stroke-dasharray="3 3" opacity="0.5"></line>`;
-  if (field.length) kids += `<polyline points="${fPts}" fill="none" stroke="rgba(255,255,255,0.32)" stroke-width="1.4" stroke-dasharray="4 4"></polyline>`;
+  if (fPts) kids += `<polyline points="${fPts}" fill="none" stroke="rgba(255,255,255,0.32)" stroke-width="1.4" stroke-dasharray="4 4"></polyline>`;
   kids += `<polyline points="${pPts}" fill="none" stroke="${color}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></polyline>`;
   vals.forEach((v, i) => {
     const on = hi == null || hi === i;
@@ -32258,11 +32261,23 @@ function renderVals(){
     return {won:w==null?null:+w,total:t==null?null:+t,value:Number.isFinite(v)?v:null};
   }
 
-  const twoSided=(label,aV,bV,aTxt,bTxt,aDen,bDen)=>{
+  // TEN-263 (ruling 2026-09-24): the match-detail bar rule (fhStatBarWidth) — rates absolute, counts
+  // over max(p1, p2, floor) and ratings over their scale, both capped at 90%; a missing side draws
+  // no bar and never hands the other side a full one. Ratio rows (no kind) keep share-of-total, and
+  // draw nothing when either side is missing.
+  const twoSided=(label,aV,bV,aTxt,bTxt,aDen,bDen,kind,key)=>{
     const aNull=aV===null||aV===undefined,bNull=bV===null||bV===undefined;
-    const tot=(aNull?0:aV)+(bNull?0:bV);
-    const share=(v,isNull)=>(isNull||tot<=0||!v)?'0%':(v/tot*100).toFixed(1)+'%';
-    return {label,aVal:aNull?DASH:aTxt,bVal:bNull?DASH:bTxt,aColor:aNull?MISS:INK,bColor:bNull?MISS:INK,aDen:aNull?'':(aDen||''),bDen:bNull?'':(bDen||''),aW:share(aV,aNull),bW:share(bV,bNull)};
+    let aW, bW;
+    if(kind){
+      const k=kind==='count'?msBarFloor(key||label):kind==='rating'?msBarScale(key||label):undefined;
+      const w=(v,o)=>{const x=fhStatBarWidth(kind,v,o,k);return x==null?'0%':x.toFixed(1)+'%';};
+      aW=w(aNull?null:aV,bNull?null:bV); bW=w(bNull?null:bV,aNull?null:aV);
+    } else {
+      const tot=(aNull||bNull)?0:aV+bV;
+      const share=v=>(tot<=0||!v)?'0%':(v/tot*100).toFixed(1)+'%';
+      aW=share(aV); bW=share(bV);
+    }
+    return {label,aVal:aNull?DASH:aTxt,bVal:bNull?DASH:bTxt,aColor:aNull?MISS:INK,bColor:bNull?MISS:INK,aDen:aNull?'':(aDen||''),bDen:bNull?'':(bDen||''),aW,bW};
   };
 
   // A rate over zero attempts does not exist (0 break points faced is not a 0%
@@ -32277,12 +32292,12 @@ function renderVals(){
   // 71.7% and 40% sit in the same column exactly as the export has them.
   const pctRow=(label,name,p)=>{
     const a=cell(pA,name,p),b=cell(pB,name,p),av=rateOf(a),bv=rateOf(b);
-    return twoSided(label,av,bv,av===null?'':av+'%',bv===null?'':bv+'%',denOf(a),denOf(b));
+    return twoSided(label,av,bv,av===null?'':av+'%',bv===null?'':bv+'%',denOf(a),denOf(b),'pct');
   };
   const cntOf=c=>(!c)?null:(c.value!=null?c.value:(c.won!=null?c.won:null));
   const cntRow=(label,name,p)=>{
     const a=cntOf(cell(pA,name,p)),b=cntOf(cell(pB,name,p));
-    return twoSided(label,a,b,a===null?'':String(a),b===null?'':String(b));
+    return twoSided(label,a,b,a===null?'':String(a),b===null?'':String(b),'','','count',name);
   };
 
   // Ratings use the model's own layer-9 / layer-10 formulas on this match's box
@@ -32297,8 +32312,8 @@ function renderVals(){
   };
 
   const drRow=(lbl,p)=>{const v=drRat(p);return twoSided(lbl,v[0],v[1],v[0]===null?'':v[0].toFixed(2),v[1]===null?'':v[1].toFixed(2));};
-  const svRow=(lbl,p)=>{const v=svRat(p);return twoSided(lbl,v[0],v[1],v[0]===null?'':String(v[0]),v[1]===null?'':String(v[1]));};
-  const rtRow=(lbl,p)=>{const v=rtRat(p);return twoSided(lbl,v[0],v[1],v[0]===null?'':String(v[0]),v[1]===null?'':String(v[1]));};
+  const svRow=(lbl,p)=>{const v=svRat(p);return twoSided(lbl,v[0],v[1],v[0]===null?'':String(v[0]),v[1]===null?'':String(v[1]),'','','rating','serve');};
+  const rtRow=(lbl,p)=>{const v=rtRat(p);return twoSided(lbl,v[0],v[1],v[0]===null?'':String(v[0]),v[1]===null?'':String(v[1]),'','','rating','return');};
 
   // §4 panel order and row lists, with "Pressure points" dropped — the feed has
   // no such stat and synthesising one would print an invented metric beside real

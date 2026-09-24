@@ -1188,3 +1188,18 @@ test('price range: fewer than 3 priced meetings shows its count as a chip (n=2 l
   assert.match(sliceBlock(), /const FH_PRICE_THIN = 3;/);
   assert.match(sliceBlock(), /nP > 1 && nP < FH_PRICE_THIN \? `<span class="fh-nchip"[^`]*>n=\$\{nP\}<\/span>`/);
 });
+test('untracked counts are missing, not 0, downstream: the Live modal bar and the Tournament Reports field line', () => {
+  const f = new Function('tourxFmt', slice('tourxLineChartSvg') + '; return tourxLineChartSvg;')(v => String(v));
+  const svg = f([20, 22], [null, 18], '#5b9bff', 'count', ['R1', 'R2']);
+  assert.ok(!/NaN/.test(svg));
+  const pts = /stroke-dasharray="4 4"/.test(svg) && /<polyline points="([^"]+)" fill="none" stroke="rgba\(255,255,255,0\.32\)"/.exec(svg)[1];
+  assert.equal(pts.split(' ').length, 1, 'the missing field point is skipped, not drawn at 0');
+  const H = readFileSync(join(HERE, 'bsp-consult-dashboard.html'), 'utf8');
+  const ts = /const twoSided=\(label,aV,bV,aTxt,bTxt,aDen,bDen,kind,key\)=>\{[\s\S]*?\n  \};/.exec(H)[0];
+  const two = new Function('fhStatBarWidth', 'msBarFloor', 'msBarScale', 'DASH', 'MISS', 'INK', ts + '; return twoSided;')(
+    (k, v, o, x) => v == null ? null : k === 'pct' ? v : v / Math.max(v, o || 0, x || 0) * 90, () => 15, () => 400, '—', '#333', '#eee');
+  const r = two('Break Points Saved', 50, null, '50%', '', '', '', 'pct');
+  assert.deepEqual([r.aW, r.bW, r.bVal], ['50.0%', '0%', '—'], 'a dash side never hands the other a full bar');
+  const c = two('Double Faults', 1, 0, '1', '0', '', '', 'count', 'Double Faults');
+  assert.equal(c.aW, '6.0%', '1 v 0 double faults stays short');
+});
