@@ -12,10 +12,11 @@
  *   1. Hidden tab = no subscription. On `visibilitychange` to hidden the socket
  *      closes and the backstop stops; back to visible, the table is re-read and
  *      the channel re-joined. Nothing is labelled "● live" while paused.
- *   2. The subscription is scoped to the pre-match cards RENDERED in the match
- *      list (`card_key=in.(…)`, ≤100 keys per binding). No rendered card, no
- *      channel. The scope is re-read every 2 s; a change re-joins, and the
- *      re-join re-reads the table so nothing between the two joins is missed.
+ *   2. The subscription is scoped to the pre-match cards ON SCREEN
+ *      (IntersectionObserver over the match list; `card_key=in.(…)`, ≤100 keys
+ *      per binding). Scrolling a card in subscribes it at once, scrolling it
+ *      off unsubscribes it; no card on screen, no channel. Every confirmed
+ *      subscription re-reads the table, so nothing between joins is missed.
  *
  * It decides NOTHING about which book owns a card. The page's _mcNowPair asks
  * window.KiblNow.pairFor(m, book) and uses the answer only when the card's
@@ -150,16 +151,47 @@
     }
   }
 
-  // ── scope: the pre-match cards rendered in the match list ────────────────
+  // ── scope: the pre-match cards IN THE VIEWPORT (founder 2026-09-24T10:16Z) ─
+  // An IntersectionObserver tracks which rendered cards are on screen (with a
+  // small margin so a card about to scroll in is already live). A card scrolled
+  // into view subscribes at once; one scrolled off unsubscribes. Without
+  // IntersectionObserver (old browsers, the test VM) every rendered card counts.
+  const VIEW_MARGIN = '150px 0px';
+  const seen = new Set();                // data-ids currently intersecting
+  const observed = new WeakSet();
+  let io = null, lastInput = 0, scopeTimer = null;
+  if (typeof IntersectionObserver === 'function') {
+    io = new IntersectionObserver(entries => {
+      for (const e of entries) {
+        const id = e.target && e.target.dataset && e.target.dataset.id;
+        if (!id) continue;
+        if (e.isIntersecting) seen.add(id); else seen.delete(id);
+      }
+      soon();
+    }, { root: null, rootMargin: VIEW_MARGIN, threshold: 0 });
+  }
+  function observeCards(list) {
+    if (!io) return;
+    for (const el of list.querySelectorAll('.match-card[data-id]'))
+      if (!observed.has(el)) { observed.add(el); io.observe(el); }
+  }
+  // A scroll, tap or key press marks the next scope change as the member's own:
+  // applied at once. A change with no input behind it (a board refresh, a card
+  // starting) hits every viewer at the same moment, so it is spread over 5 s.
+  for (const ev of ['scroll', 'wheel', 'touchmove', 'keydown', 'click'])
+    try { window.addEventListener(ev, () => { lastInput = Date.now(); }, { passive: true, capture: true }); } catch (e) { /* no window events */ }
+  function soon() { clearTimeout(scopeTimer); scopeTimer = setTimeout(rescope, 200); }
   function renderedKeys() {
     const list = document.getElementById('matchlist');
     if (!list || typeof ocsKeyOf !== 'function') return [];
     let all;
     try { all = matches; } catch (e) { return []; }   // the page's top-level `let matches`
     if (!Array.isArray(all)) return [];
+    observeCards(list);
     const byId = new Map(all.map(m => [String(m.id), m]));
     const keys = new Set();
     for (const el of list.querySelectorAll('.match-card[data-id]')) {
+      if (io && !seen.has(el.dataset.id)) continue;      // rendered but off screen
       const m = byId.get(el.dataset.id);
       if (!m || m.live || m.finalScore) continue;
       if (typeof cardStartMs === 'function') {
@@ -208,17 +240,15 @@
       if (scope.length) { scope = []; leave(); repaint(); }
       return;
     }
-    // Only a NEW card re-joins. A card that leaves the list (it started, or a
-    // filter hid it) stays in the filter until the next re-join: it costs at
-    // most the few writes before its Closing point, while a re-join on every
-    // start would make every viewer re-join in the same 2 s tick (review 3rd
-    // pass, finding 4).
-    if (next.every(k => scope.includes(k))) return;
+    if (next.join('\n') === scope.join('\n')) return;
     scope = next;
     if (!ws || ws.readyState !== 1) { connect(); return; }
-    // A board refresh adds cards for every viewer at once: spread the re-joins.
     clearTimeout(rejoinTimer);
-    rejoinTimer = setTimeout(join, Math.floor(Math.random() * REJOIN_JITTER_MS));
+    // The member's own scroll / tab switch: re-join now. A data-driven change
+    // (no input in the last 3 s) is spread over REJOIN_JITTER_MS (review 3rd
+    // pass, finding 4: every viewer would otherwise re-join in the same tick).
+    if (Date.now() - lastInput < 3000) join();
+    else rejoinTimer = setTimeout(join, Math.floor(Math.random() * REJOIN_JITTER_MS));
   }
 
   // A refused, errored or closed channel is not live; re-join with backoff.
@@ -298,7 +328,7 @@
   document.addEventListener('visibilitychange', () => { if (document.hidden) pause(); else resume(); });
 
   window.KiblNow = { pairFor, healthy, enabled: true, samples, stats,
-                     scope: () => scope.slice(), _rows: rows };
+                     scope: () => scope.slice(), viewport: !!io, _rows: rows };
   if (!paused()) resume();
   setInterval(rescope, SCOPE_EVERY_MS);
   // Relative "updated … ago" text is rendered, not live — refresh it once a minute.

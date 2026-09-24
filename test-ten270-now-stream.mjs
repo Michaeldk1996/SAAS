@@ -36,14 +36,18 @@ const NOW = Date.parse('2026-09-24T04:30:00Z');
 // `matches`, a fetch that answers the heartbeat and card reads separately, and
 // captured timers / visibility listener so each cost rule can be driven.
 function makeCtx(restRows, opts = {}) {
-  const sockets = [], fetches = [], intervals = [], listeners = {}, timeouts = [];
+  const sockets = [], fetches = [], intervals = [], listeners = {}, timeouts = [], winListeners = {};
+  const ios = [];
   class FakeWS {
     constructor(url) { this.url = url; this.readyState = 0; this.sent = []; sockets.push(this); }
     send(s) { this.sent.push(JSON.parse(s)); }
     close() { this.readyState = 3; if (this.onclose) this.onclose(); }
   }
   const rendered = opts.rendered || [CARD];
-  const list = { querySelectorAll: () => ctx.__rendered.map(m => ({ dataset: { id: m.id } })) };
+  // Stable fake elements per card id, so an observer sees the same target.
+  const els = new Map();
+  const elOf = m => { if (!els.has(m.id)) els.set(m.id, { dataset: { id: m.id } }); return els.get(m.id); };
+  const list = { querySelectorAll: () => ctx.__rendered.map(elOf) };
   const hbRows = restRows.filter(r => r.kind === 'heartbeat');
   const cardRows = restRows.filter(r => r.kind !== 'heartbeat');
   const ctx = {
@@ -64,10 +68,13 @@ function makeCtx(restRows, opts = {}) {
     WebSocket: FakeWS,
     fetch: async (u) => { fetches.push(u); return { ok: true, json: async () =>
       (u.includes('kibl_now_card') ? cardRows : hbRows) }; },
-    window: { SUPABASE_URL: 'https://proj.example.co', SUPABASE_ANON_KEY: 'sb_publishable_TEST' },
+    window: { SUPABASE_URL: 'https://proj.example.co', SUPABASE_ANON_KEY: 'sb_publishable_TEST',
+              addEventListener: (ev, fn) => { (winListeners[ev] = winListeners[ev] || []).push(fn); } },
     newsTz: () => 'UTC',
     __rendered: rendered,
   };
+  if (opts.io) ctx.IntersectionObserver = class { constructor(cb, o) { this.cb = cb; this.o = o; this.t = new Set(); ios.push(this); }
+    observe(el) { this.t.add(el); } unobserve(el) { this.t.delete(el); } disconnect() {} };
   ctx.window.window = ctx.window;
   vm.createContext(ctx);
   // The shipped page helpers, then the shipped client.
@@ -82,7 +89,12 @@ function makeCtx(restRows, opts = {}) {
   vm.runInContext(client, ctx);
   const scopeTick = () => intervals.find(i => i.ms === 2000).fn();
   const runTimers = () => { for (const t of timeouts.splice(0)) if (t.fn) t.fn(); };
-  return { ctx, sockets, fetches, listeners, scopeTick, runTimers };
+  // Drive the viewport: `inView` card ids intersect, every other observed card does not.
+  const view = (inView) => { const io = ios[0];
+    io.cb([...io.t].map(el => ({ target: el, isIntersecting: inView.includes(el.dataset.id) }))); };
+  const userInput = () => (winListeners.scroll || []).forEach(f => f());
+  const pendingDelays = () => timeouts.filter(t => t.fn).map(t => t.ms);
+  return { ctx, sockets, fetches, listeners, scopeTick, runTimers, view, userInput, pendingDelays };
 }
 // Open the socket, accept the join, and confirm Postgres Changes is listening
 // (Supabase's `system` message): only now is the page really subscribed.
@@ -156,10 +168,51 @@ test('the scope follows the rendered list: a NEW card re-joins with the new filt
   assert.equal(fetches.length, reads + 2, 'every confirmed subscription re-reads the table (heartbeat + cards)');
   ctx.__rendered = [other];
   scopeTick(); runTimers();
-  assert.equal(joins().length, 2, 'a card LEAVING the list does not re-join (no start-time stampede)');
+  assert.equal(joins().length, 3, 'a card LEAVING the list re-joins without it (it no longer costs messages)');
+  assert.equal(joins().pop().payload.config.postgres_changes[0].filter, 'card_key=in.(2026-09-24|machac|rublev)');
   ctx.__rendered = [];
   scopeTick();
   assert.ok(sent.filter(m => m.event === 'phx_leave').length >= 2, 'no rendered card: the channel is left');
+});
+
+test('VIEWPORT: a card scrolled into view subscribes at once, one scrolled off unsubscribes (member input = no jitter)', async () => {
+  const other = { id: 'upcoming-2', date: '2026-09-24', p1: 'A. Rublev', p2: 'T. Machac' };
+  const { ctx, sockets, scopeTick, runTimers, view, userInput, pendingDelays } =
+    makeCtx([], { io: true, rendered: [CARD, other] });
+  await tick();
+  assert.equal(ctx.window.KiblNow.viewport, true);
+  assert.equal(sockets.length, 0, 'rendered but nothing observed on screen yet: no socket');
+  scopeTick();                                  // observes the rendered cards
+  view(['upcoming-1']);                          // only Borges–Ugo Carabelli is on screen
+  runTimers();                                   // the 200 ms settle
+  assert.equal(sockets.length, 1);
+  let j = joinOk(sockets[0]);
+  assert.equal(j.payload.config.postgres_changes[0].filter, `card_key=in.(${KEY})`, 'the off-screen card is NOT subscribed');
+  // the member scrolls: Rublev–Machac comes into view, Borges–Ugo Carabelli leaves
+  userInput(); view(['upcoming-2']);
+  const beforeSettle = sockets[0].sent.filter(m => m.event === 'phx_join').length;
+  runTimers();                                    // settle -> rescope -> immediate join (no jitter)
+  const joins = sockets[0].sent.filter(m => m.event === 'phx_join');
+  assert.equal(joins.length, beforeSettle + 1, 're-joined in the same turn as the scroll settles');
+  assert.equal(joins.pop().payload.config.postgres_changes[0].filter, 'card_key=in.(2026-09-24|machac|rublev)',
+               'scrolled-in card subscribed, scrolled-off card unsubscribed');
+  assert.ok(sockets[0].sent.some(m => m.event === 'phx_leave' && m.topic === j.topic), 'the old channel is left');
+  // everything scrolled off: the channel is left, nothing subscribed
+  userInput(); view([]); runTimers();
+  assert.equal(ctx.window.KiblNow.scope().length, 0, 'nothing on screen: nothing subscribed');
+});
+
+test('a data-driven scope change (no member input) is spread over the jitter window', async () => {
+  const other = { id: 'upcoming-2', date: '2026-09-24', p1: 'A. Rublev', p2: 'T. Machac' };
+  const { sockets, scopeTick, runTimers, view, pendingDelays } = makeCtx([], { io: true, rendered: [CARD, other] });
+  await tick();
+  scopeTick(); view(['upcoming-1']); runTimers();
+  joinOk(sockets[0]);
+  view(['upcoming-1', 'upcoming-2']);            // a board refresh drops a card into view; no input
+  runTimers();                                   // settle only: the re-join is now scheduled with jitter
+  const delays = pendingDelays();
+  assert.ok(delays.some(d => d >= 0 && d < 5000) , 'a jittered re-join is pending');
+  assert.equal(sockets[0].sent.filter(m => m.event === 'phx_join').length, 1, 'not re-joined in the same tick');
 });
 
 test('more than 100 rendered cards split into bindings of at most 100 keys', async () => {
