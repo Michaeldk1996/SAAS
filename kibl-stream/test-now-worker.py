@@ -132,6 +132,10 @@ nasty = 'p@ss"w#rd$%!\\ \'q=1'
 envx = {"KIBL_PASSWORD_B64": base64.b64encode(nasty.encode()).decode(), "KIBL_PASSWORD": "mangled", "OTHER": "x"}
 ok(W.decode_b64_env(envx) == ["KIBL_PASSWORD"] and envx["KIBL_PASSWORD"] == nasty,
    "NAME_B64 decodes over a mangled NAME, byte for byte, with quotes/#/$/%/!/backslash/=")
+envy = {"KIBL_USERNAME_B64": "!!not base64!!", "KIBL_USERNAME": "stale", "FOO_B64": base64.b64encode(b"x").decode(), "FOO": "keep"}
+ok(W.decode_b64_env(envy) == [] and W.decode_b64_env.failed == ["KIBL_USERNAME"] and envy["FOO"] == "keep",
+   "an undecodable value is reported by NAME, and an unrelated FOO_B64 never overwrites FOO")
+ok(W.broker_rtt_ms("127.0.0.1", "not-a-port", 1) is None, "a bad port is a dash, not a crash")
 
 print("\n5 · heartbeat")
 hb = e.heartbeat(NOW, True)

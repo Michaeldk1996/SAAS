@@ -319,10 +319,16 @@ def broker_rtt_ms(host, port, n=5):
         try:
             socket.create_connection((host, int(port)), timeout=10).close()
             out.append((time.time() - t0) * 1000.0)
-        except OSError:
+        except (OSError, ValueError):
+            # A measurement must never crash the worker (review 2nd pass, finding 3).
             pass
     out.sort()
     return round(out[len(out) // 2], 1) if out else None
+
+
+B64_SECRETS = ("KIBL_RMQ_HOST", "KIBL_RMQ_PORT", "KIBL_RMQ_VHOST", "KIBL_RMQ_USER",
+               "KIBL_RMQ_PASS", "KIBL_RMQ_QUEUE", "KIBL_USERNAME", "KIBL_PASSWORD",
+               "SUPABASE_URL", "SUPABASE_SECRET_KEY")
 
 
 def decode_b64_env(env):
@@ -336,13 +342,20 @@ def decode_b64_env(env):
     any parser, so every secret now travels as NAME_B64 and is decoded here.
     """
     import base64
-    done = []
-    for k in [k for k in list(env) if k.endswith("_B64")]:
+    done, failed = [], []
+    # Allowlist, not a suffix match: an unrelated FOO_B64 must never overwrite
+    # FOO (clean-context review, 2nd pass, finding 2).
+    for name in B64_SECRETS:
+        k = name + "_B64"
+        if k not in env:
+            continue
         try:
-            env[k[:-4]] = base64.b64decode(env[k]).decode("utf-8")
-            done.append(k[:-4])
+            # validate=True: junk characters are an error, not silently dropped.
+            env[name] = base64.b64decode(env[k], validate=True).decode("utf-8")
+            done.append(name)
         except (ValueError, UnicodeDecodeError):
-            pass
+            failed.append(name)
+    decode_b64_env.failed = failed
     return done
 
 
@@ -352,6 +365,10 @@ def main(env=None, log=print):
     env = dict(os.environ) if env is None else dict(env)
     if decoded:
         log(f"decoded {len(decoded)} base64 secret(s)")
+    if getattr(decode_b64_env, "failed", None):
+        # Names only, never values. A failed decode would otherwise fall back to
+        # the stale plain secret and fail later as a misleading auth error.
+        log(f"::warning::base64 secret(s) failed to decode: {', '.join(decode_b64_env.failed)}")
     conn, missing = C.read_conn_env(env)
     if missing:
         log(f"KIBL_RMQ_* not fully set (missing: {', '.join(missing)}) — nothing to connect to.")
