@@ -34,6 +34,9 @@ try { require('dotenv').config({ quiet: true }); } catch (_) { /* dotenv optiona
 // Importing the pipeline is side-effect free — it only self-runs under
 // `require.main === module`.
 const { buildSetStatsFromFixture, buildMatchStatsFromFixture } = require('./bsp-pipeline.js');
+// TEN-263 follow-up: the feed's untracked Winners / Unforced errors placeholder
+// ("0" for both players) is stored as null, never 0 — same rule as the pipeline.
+const { sanitizeFixture, sanitizePbpCache } = require('./match-stat-placeholders');
 
 const API_TENNIS_KEY = process.env.API_TENNIS_KEY;
 const API_TENNIS_BASE = 'https://api.api-tennis.com/tennis/';
@@ -59,13 +62,37 @@ const SETSTATS_INDEX_PATH = 'setstats-index.json';
 const MATCHSTATS_INDEX_PATH = 'matchstats-index.json';
 const PACE_MS = 150;
 
-// Ceiling on NEW point logs fetched per run. The Form tab's recent-form rows
-// reference ~600 distinct matches that have never been fetched, and doing them
-// all in one run would add ~90s of paced calls to a job that runs every 15 min.
-// The cache is permanent and restored between runs, so the backfill converges
-// over a few runs instead of arriving in one spike. Rows whose log has not been
-// reached yet simply have no Point-by-point tab (never a fabricated one).
-const MAX_FETCHES_PER_RUN = Number(process.env.PBP_MAX_FETCHES || 250);
+// Ceiling on NEW point logs fetched per run. Rows whose log has not been reached
+// yet simply have no Point-by-point tab and no set filter (never a fabricated one).
+//
+// TEN-263 follow-up (founder 2026-09-24, "raise the cap if the feed allows it"):
+// 250 -> 750. The api-tennis ULTRA plan does not meter request volume, so the
+// only budget is the job's runtime. MEASURED over the last 60 successful
+// pipeline.yml runs (to 2026-09-24): this step takes 82 s median / 90 s max at
+// 250 fetches (~0.3 s per paced fetch), and the whole job 13.1 min median /
+// 14.6 p90 / 17.3 max against its 30-min timeout-minutes. 500 more fetches is
+// ~150 s, which keeps the worst run near 20 min — 10 min of headroom.
+//
+// WHY THE CAP MATTERS MORE THAN IT LOOKS: the persistent cache rides the per-day
+// Actions cache key (bsp-caches-v<schema>-<day>), and only the FIRST run of a UTC
+// day saves it ("Cache hit occurred on the primary key ... not saving cache" on
+// every later run). So a run's fetches reach the page for that run (the shards
+// are written from the in-memory cache below) but persist only once a day. At
+// 250 the same backlog was re-fetched every run and 341 recent-form matches were
+// still deferred on run 4586 (2026-09-24). A cap above the backlog clears it in
+// ONE run, and the next day's first run makes that permanent.
+const MAX_FETCHES_PER_RUN = Number(process.env.PBP_MAX_FETCHES || 750);
+
+// The recent-form queue, NEWEST FIRST. It used to be walked in form-shard file
+// order (player key, alphabetical) with rows in each shard's own order, so a
+// capped run spent its budget on whichever players' files sorted first and the
+// newest matches — the ones the Form tab lists at the top — waited behind them:
+// 55 Form matches from 2026-06..09 had no per-set stats. Undated rows go last;
+// ties keep their first-seen order (Array.prototype.sort is stable).
+function orderFormQueue(formKeys, formRowDate) {
+  return [...formKeys].sort((a, b) =>
+    (formRowDate.get(b) || '').localeCompare(formRowDate.get(a) || ''));
+}
 
 // api-tennis labels the two players "First Player" / "Second Player", which map
 // to the dashboard's p1 / p2 respectively.
@@ -125,6 +152,7 @@ function compactPbp(raw) {
 // pipeline already makes. One reader means one place for the feed to surprise us.
 function parseFixture(r) {
   if (!r) return null;
+  sanitizeFixture(r);   // untracked W/UE placeholder -> null, per stat_period, before either sheet is built
   const p1Key = r.first_player_key ?? null, p2Key = r.second_player_key ?? null;
   return {
     raw: r.pointbypoint || null,
@@ -199,6 +227,12 @@ async function main() {
   const cache = fs.existsSync(CACHE_PATH)
     ? JSON.parse(fs.readFileSync(CACHE_PATH, 'utf8'))
     : {};
+  // Entries cached before the placeholder rule carry the untracked W/UE 0s in both
+  // the whole-match sheet and the per-set sheets. A cached match is never
+  // refetched, so the correction is applied to the stored shape here; the setstats/
+  // shards below are rewritten from it on this same run.
+  const placeholderSheets = sanitizePbpCache(cache);
+  if (placeholderSheets) console.log(`set-stats: ${placeholderSheets} cached sheet(s) carried the untracked W/UE placeholder (all four 0) — now null.`);
 
   const out = {};
   let fetched = 0, reused = 0, skipped = 0;
@@ -292,7 +326,7 @@ async function main() {
   console.log(`point-by-point: ${formKeys.size} distinct recent-form matches across ${formShardCount} player shard(s).`);
 
   let formResolved = 0, formDeferred = 0;
-  for (const ek of formKeys) {
+  for (const ek of orderFormQueue(formKeys, formRowDate)) {
     if (out[ek]) continue;                       // already covered by the window pass
     try {
       const entry = await resolve(ek);
@@ -441,4 +475,4 @@ if (require.main === module) {
   main().catch(e => { console.error('point-by-point: unexpected error —', e.message); process.exit(0); });
 }
 
-module.exports = { compactPbp, parseFixture, buildCacheEntry };
+module.exports = { compactPbp, parseFixture, buildCacheEntry, orderFormQueue, MAX_FETCHES_PER_RUN };

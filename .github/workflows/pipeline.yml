@@ -93,17 +93,36 @@ jobs:
       #
       # Safe here and only here: nothing has been generated, restored or installed yet,
       # and `reset --hard` does not touch untracked files in any case.
+      #
+      # SPLIT BUILDS — founder ruling 2026-09-24, option 1. The steps of this job come
+      # from the workflow file AT THE QUEUED SHA (github.sha); re-pointing only moves
+      # the checked-out files. When the tip changed .github/workflows/, a re-pointed
+      # run would execute the queued SHA's steps over the tip's files — a build no
+      # commit ever described. So: if .github/workflows/ differs between the queued
+      # SHA and the tip, build the queued SHA as-is (do not re-point), say why, and
+      # let the next tick — whose workflow definition IS the tip's — publish the tip.
+      # If the comparison itself fails, that is "not shown identical": same answer.
+      # Locked by tools/test-ten263-pipeline.js, which executes this block.
       - name: Re-point this run at the current tip of main
         run: |
           set -euo pipefail
           BEFORE=$(git rev-parse HEAD)
           if git fetch --quiet --depth=100 origin main; then
-            git reset --hard FETCH_HEAD
-            AFTER=$(git rev-parse HEAD)
-            if [ "$BEFORE" = "$AFTER" ]; then
-              echo "Already at the tip of main ($AFTER)."
+            TIP=$(git rev-parse FETCH_HEAD)
+            WF_RC=0
+            git diff --quiet "$BEFORE" "$TIP" -- .github/workflows/ || WF_RC=$?
+            if [ "$BEFORE" = "$TIP" ]; then
+              echo "Already at the tip of main ($TIP)."
+            elif [ "$WF_RC" -ne 0 ]; then
+              if [ "$WF_RC" -eq 1 ]; then
+                WHY=".github/workflows/ differs between the queued SHA and the tip ($(git diff --name-only "$BEFORE" "$TIP" -- .github/workflows/ | tr '\n' ' '))"
+              else
+                WHY="could not compare .github/workflows/ between the queued SHA and the tip (git diff exit $WF_RC)"
+              fi
+              echo "::warning title=Split build avoided::Building the queued SHA $BEFORE, NOT the tip $TIP: $WHY. This job's steps come from the queued SHA's workflow file, so running them over the tip's files would be a split build. The next tick runs the tip's workflow and publishes the tip."
             else
-              echo "Advanced $BEFORE -> $AFTER before building."
+              git reset --hard "$TIP"
+              echo "Advanced $BEFORE -> $TIP before building (.github/workflows/ identical)."
             fi
           else
             # A transient fetch failure must not throw away a run. Build the SHA we
@@ -327,10 +346,18 @@ jobs:
       # then fails, so "Assert site completeness" fails the run closed rather than publish it.
       # The step records its own start (UTC, whole seconds) for the build-stamp assert in
       # "Assert site completeness": the shipped index must carry a builtAt at or after it.
+      # Founder ruling 2026-09-24: a crash no longer passes silently. The site still
+      # deploys (the committed shards ship), and the LAST step of the job fails the
+      # run with the reason ("Fail the run if market-edge was not rebuilt"). This step
+      # only records what happened — the exit status goes into the job env — and never
+      # fails itself, so nothing between here and the deploy is skipped.
       - name: Build market-edge shards (best-effort)
         run: |
           echo "MARKET_EDGE_BUILD_START=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
-          node build-market-edge.js --quiet || true
+          ME_RC=0
+          node build-market-edge.js --quiet || ME_RC=$?
+          echo "MARKET_EDGE_BUILD_RC=$ME_RC" >> "$GITHUB_ENV"
+          if [ "$ME_RC" -ne 0 ]; then echo "::warning::build-market-edge.js exited $ME_RC; the committed market-edge floor will ship and the run is failed after the deploy."; fi
 
       # Per-tournament market performance (TEN-8 Tournaments Overview §4/§5):
       # flat-stake yields backing favourites/underdogs + favourite reliability,
@@ -986,8 +1013,8 @@ jobs:
             // Build stamp (TEN-263 follow-up, founder 2026-09-24): the index says when it was
             // last rebuilt, and the page shows it. The build step is best-effort, so a crashed
             // builder ships the committed floor, whose builtAt is older than this run (or absent).
-            // That is surfaced as a run WARNING, not a failure: turning it red is a deploy gate
-            // the founder has not ruled on (reported, not applied).
+            // Surfaced here as a WARNING only, so the deploy still goes ahead (founder ruling
+            // 2026-09-24); the final step of this job turns the RUN red on the same condition.
             const started = Date.parse(process.env.MARKET_EDGE_BUILD_START || "");
             const builtAt = Date.parse(idx.builtAt || "");
             if (!Number.isFinite(started)) console.log("::warning::market-edge stale: MARKET_EDGE_BUILD_START is not set, the market-edge build step did not run in this job");
@@ -1353,3 +1380,14 @@ jobs:
             echo "- See the *Build Trading Report splits* step log above; re-run once fixed."
           } >> "$GITHUB_STEP_SUMMARY"
           exit 1
+
+      # Founder ruling 2026-09-24 (TEN-263 follow-up): market-edge is a per-run output.
+      # When THIS run did not rebuild it — the builder exited non-zero, or the shipped
+      # index's builtAt predates this run's build step (the committed floor shipped),
+      # or the build step never ran — the site has still deployed, and this step then
+      # fails the run with the reason. Last in the job and gated on a successful deploy,
+      # so it never costs a deploy or a commit-back, and a failed deploy is not
+      # double-reported as a stale market-edge. Locked by tools/test-ten263-pipeline.js.
+      - name: Fail the run if market-edge was not rebuilt (post-deploy, loud)
+        if: always() && steps.deploy.outcome == 'success'
+        run: node tools/market-edge-rebuilt-check.js _site/market-edge-index.json

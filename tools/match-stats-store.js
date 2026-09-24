@@ -66,6 +66,12 @@
 
 const fs = require('fs');
 const path = require('path');
+// TEN-263 follow-up (founder 2026-09-24): the feed's untracked Winners / Unforced
+// errors placeholder ("0" for both players) is stored as null. The rule lives in
+// one place; this store applies it to the stored shape and, in sideDepths, reads a
+// placeholder 0 as "not held" — otherwise every guard below would see the nulled
+// sheet as SHALLOWER than the 0-carrying floor / live copy and refuse it.
+const { isPlaceholderWuePair, SHEET_WUE_KEYS, sanitizeMatchStatsStore } = require('../match-stat-placeholders');
 
 const PLAIN = 'historical-match-stats.json';
 // The committed floor. Plain minified JSON per the founder's Q1 ruling, and on its
@@ -104,12 +110,16 @@ function depth(matchStats) {
  */
 function sideDepths(matchStats) {
   if (!matchStats) return [-1, -1];
+  // An untracked-W/UE placeholder sheet holds no W/UE: its 0s count exactly like
+  // the nulls that replace them, so correcting a sheet is never "shallower".
+  const placeholder = isPlaceholderWuePair(matchStats);
   return ['p1', 'p2'].map((side) => {
     const s = matchStats[side];
     if (!s) return -1;
     let n = 0;
     for (const [k, v] of Object.entries(s)) {
       if (k === 'raw') continue;
+      if (placeholder && SHEET_WUE_KEYS.includes(k)) continue;
       if (v != null) n++;
     }
     return n;
@@ -235,11 +245,16 @@ function hydrate(root) {
   }
   const fromPlain = readJson(plainPath);
   if (!fromPlain) {
+    sanitizeMatchStatsStore(fromFloor);
     fs.writeFileSync(plainPath, JSON.stringify(fromFloor));
     console.log(`hydrate: ${PLAIN} <- ${FLOOR} (${census(fromFloor)}); nothing was restored.`);
     return 1;
   }
   const merged = mergeStores(fromFloor, fromPlain);
+  // AFTER the merge: a tie goes to the incumbent (the floor), and the floor still
+  // carries the pre-rule 0s, so sanitizing either input alone would not stick.
+  const fixed = sanitizeMatchStatsStore(merged);
+  if (fixed) console.log(`hydrate: ${fixed} sheet(s) carried the untracked W/UE placeholder (all four 0) — now null.`);
   fs.writeFileSync(plainPath, JSON.stringify(merged));
   console.log(
     `hydrate: ${PLAIN} = restored (${census(fromPlain)}) UNION committed ${FLOOR} ` +
@@ -286,6 +301,10 @@ function freeze(root, opts) {
     console.log(`freeze: ${PLAIN} absent or unreadable — nothing to freeze.`);
     return 0;
   }
+  // The committed floor is where the pre-rule 0s are most durable: correct the
+  // live store before it becomes the floor. The depth guards below read a
+  // placeholder 0 and a null alike (sideDepths), so this can never trip them.
+  sanitizeMatchStatsStore(live);
   const committed = readJson(floorPath);
 
   // NO FLOOR = REFUSE, unless explicitly bootstrapping. Every guard below is a
@@ -374,6 +393,7 @@ async function hydrateWithLive(root) {
   const cur = readJson(plainPath);
   if (!cur) return rc;
   const merged = mergeStores(cur, live);
+  sanitizeMatchStatsStore(merged);   // the deployed store still carries the pre-rule 0s
   const before = Object.keys(cur).length, after = Object.keys(merged).length;
   fs.writeFileSync(plainPath, JSON.stringify(merged));
   console.log(`hydrate: UNION deployed store (${census(live)}) -> ${census(merged)}; `

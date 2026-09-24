@@ -221,7 +221,9 @@ console.log('build stamp');
         if (got === want) ok(`assert ${want}: ${what}`);
         else fail(`assert ${got} (want ${want}) for: ${what}`);
       }
-      if (/- name: Build market-edge shards \(best-effort\)\n\s+run: \|\n\s+echo "MARKET_EDGE_BUILD_START=\$\(date -u \+%Y-%m-%dT%H:%M:%SZ\)" >> "\$GITHUB_ENV"\n\s+node build-market-edge\.js --quiet \|\| true\n/.test(yml)) ok('the build step records its start before building');
+      // The step records its start BEFORE building and the builder's exit status after
+      // (the post-deploy red step reads both — tools/test-ten263-pipeline.js).
+      if (/- name: Build market-edge shards \(best-effort\)\n\s+run: \|\n\s+echo "MARKET_EDGE_BUILD_START=\$\(date -u \+%Y-%m-%dT%H:%M:%SZ\)" >> "\$GITHUB_ENV"\n\s+ME_RC=0\n\s+node build-market-edge\.js --quiet \|\| ME_RC=\$\?\n/.test(yml)) ok('the build step records its start before building');
       else fail('the market-edge build step does not record MARKET_EDGE_BUILD_START before building');
     }
   } finally { fs.rmSync(tmp, { recursive: true, force: true }); }

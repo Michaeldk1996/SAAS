@@ -35,6 +35,11 @@ const { canonicalTournament } = require('./tournament-identity');
 // Layer #8 W/UE source resolver: api-tennis primary, @ATP_Entry OCR fallback,
 // never mixed within a match (see atp-entry-fallback.js).
 const { attachWue, lookupWue } = require('./atp-entry-fallback');
+// TEN-263 follow-up (founder 2026-09-24): an untracked Winners / Unforced errors
+// row arrives as a literal "0" for both players; it is read as NOT SENT (null),
+// never as a real 0. One rule, shared with build-point-by-point.js and
+// tools/match-stats-store.js — see match-stat-placeholders.js.
+const { sanitizeFixture, sanitizeFixtures, parseCount, sanitizeMatchStatsStore } = require('./match-stat-placeholders');
 
 // Atomic JSON write: write to a temp file in the same directory, then rename
 // over the target. rename(2) is atomic on the same filesystem, so a reader
@@ -183,7 +188,7 @@ async function fetchApiTennisFixtures(dateStartStr, dateStopStr) {
   const res = await fetch(url);
   const data = await res.json();
   if (!data.success) return [];
-  return Array.isArray(data.result) ? data.result : [];
+  return sanitizeFixtures(Array.isArray(data.result) ? data.result : []);
 }
 
 // get_H2H is confirmed live to sometimes OMIT real completed matches that
@@ -213,7 +218,7 @@ async function fetchH2HSupplement(firstPlayerKey, secondPlayerKey) {
   const res = await fetch(url);
   const data = await res.json();
   if (!data.success) return [];
-  return (Array.isArray(data.result) ? data.result : []).filter(f =>
+  return sanitizeFixtures(Array.isArray(data.result) ? data.result : []).filter(f =>
     (String(f.first_player_key) === String(secondPlayerKey) || String(f.second_player_key) === String(secondPlayerKey)) &&
     (f.event_winner === 'First Player' || f.event_winner === 'Second Player')
     // Qualifying-round meetings ARE counted here (Flashscore rule, TEN-8
@@ -394,7 +399,7 @@ async function fetchPlayerTournamentMatches(playerKey, hintKey) {
   const res = await fetch(url);
   const data = await res.json();
   if (!data.success) return [];
-  return (Array.isArray(data.result) ? data.result : [])
+  return sanitizeFixtures(Array.isArray(data.result) ? data.result : [])
     .filter(f =>
       f.tournament_name && f.tournament_name.includes(hintKey) &&
       f.tournament_round && f.event_qualification !== 'True' &&
@@ -1022,7 +1027,7 @@ async function fetchPlayerFixturesForYear(playerKey, year) {
   // API returns success with no `result` field for a player who has no
   // fixtures in the range (confirmed live for a player's prior-year window).
   // Callers spread this directly, so always hand back an array.
-  return Array.isArray(data.result) ? data.result : [];
+  return sanitizeFixtures(Array.isArray(data.result) ? data.result : []);
 }
 
 // Current-season per-surface record split by tier (ATP vs Challenger & ITF),
@@ -1092,7 +1097,7 @@ async function fetchRecentSinglesFixtures(playerKey) {
   const res = await fetch(url);
   const data = await res.json();
   if (!data.success) return []; // transient failure: don't cache, so a later call can retry
-  const result = Array.isArray(data.result) ? data.result : [];
+  const result = sanitizeFixtures(Array.isArray(data.result) ? data.result : []);
   _recentSinglesFixturesCache.set(cacheKey, result);
   return result;
 }
@@ -1253,8 +1258,8 @@ function aggregateStatsFromFixtures(fixtures, playerKey) {
         totals[key].total += total;
         totals[key].n++;
       } else {
-        const value = parseInt(stat.stat_value, 10);
-        if (!Number.isFinite(value)) continue;
+        const value = parseCount(stat.stat_value);   // null = not sent: not in sum, not in n
+        if (value == null) continue;
         totals[key].sum += value;
         totals[key].n++;
       }
@@ -1678,7 +1683,7 @@ async function fetchAtpFixturesForMonth(year, month) {
   try {
     const res = await fetch(url);
     const data = await res.json();
-    return Array.isArray(data.result) ? data.result : [];
+    return sanitizeFixtures(Array.isArray(data.result) ? data.result : []);
   } catch (err) {
     console.error(`get_fixtures failed for ${year}-${month}:`, err);
     return [];
@@ -2412,7 +2417,9 @@ function extractStatPairFromRows(rows, p1Key, p2Key) {
         const n = parseFloat(stat.stat_value);
         out[key] = Number.isFinite(n) ? n : null;
       } else {
-        out[key] = parseInt(stat.stat_value, 10) || 0;
+        // null when not sent — an empty / non-integer value, or the feed's
+        // untracked-W/UE placeholder (nulled by sanitizeFixture). Never `|| 0`.
+        out[key] = parseCount(stat.stat_value);
       }
     }
     if (Object.keys(raw).length > 0) out.raw = raw;
@@ -2427,6 +2434,7 @@ function extractStatPairFromRows(rows, p1Key, p2Key) {
 
 function buildMatchStatsFromFixture(fixture, p1Key, p2Key) {
   if (!Array.isArray(fixture.statistics) || fixture.statistics.length === 0) return null;
+  sanitizeFixture(fixture);   // idempotent; callers outside this file hand in raw fixtures
   const matchStats = fixture.statistics.filter(s => s.stat_period === 'match');
   if (matchStats.length === 0) return null;
   return extractStatPairFromRows(matchStats, p1Key, p2Key);
@@ -2447,6 +2455,7 @@ function buildMatchStatsFromFixture(fixture, p1Key, p2Key) {
 // null is the signal for the UI to hide the set selector rather than invent one.
 function buildSetStatsFromFixture(fixture, p1Key, p2Key) {
   if (!Array.isArray(fixture.statistics) || fixture.statistics.length === 0) return null;
+  sanitizeFixture(fixture);   // idempotent; per-set placeholders are nulled per stat_period
   const bySet = new Map();
   for (const s of fixture.statistics) {
     const m = /^set\s*(\d+)$/i.exec(String(s.stat_period || '').trim());
@@ -2476,7 +2485,14 @@ const HISTORICAL_STATS_CACHE_PATH = 'historical-match-stats.json';
 
 function loadHistoricalStatsCache() {
   if (fs.existsSync(HISTORICAL_STATS_CACHE_PATH)) {
-    return JSON.parse(fs.readFileSync(HISTORICAL_STATS_CACHE_PATH, 'utf8'));
+    const store = JSON.parse(fs.readFileSync(HISTORICAL_STATS_CACHE_PATH, 'utf8'));
+    // Entries cached before the placeholder rule carry the feed's untracked-W/UE
+    // 0s. The cache never refetches a finished match, so correct them here; the
+    // write-back below then persists the nulls (and freeze() carries them to the
+    // committed floor on its next daily refresh).
+    const fixed = sanitizeMatchStatsStore(store);
+    if (fixed) console.log(`historical-match-stats: ${fixed} stored sheet(s) carried the untracked W/UE placeholder (all four 0) — now null.`);
+    return store;
   }
   return {};
 }
@@ -2486,7 +2502,7 @@ async function fetchFixtureByMatchKey(matchKey) {
   const res = await fetch(url);
   const data = await res.json();
   if (!data.success) return null;
-  return data.result?.[0] || null;
+  return sanitizeFixture(data.result?.[0] || null);
 }
 
 // =================================================================
@@ -2552,7 +2568,9 @@ function extractProgressionMetrics(matchStats, playerKey, fallbackCtx) {
       const n = parseFloat(stat.stat_value);
       metrics[def.key] = Number.isFinite(n) ? n : null;
     } else {
-      metrics[def.key] = parseInt(stat.stat_value, 10) || 0;
+      // null when not sent, so the OCR fallback below can engage (a placeholder 0
+      // used to set wueSource 'api-tennis' and block it).
+      metrics[def.key] = parseCount(stat.stat_value);
     }
   }
 
@@ -2666,6 +2684,7 @@ async function fetchProgressionFixtures(windowStart, today) {
       const res = await fetch(url);
       const data = await res.json();
       if (Array.isArray(data.result)) {
+        sanitizeFixtures(data.result);
         anySuccess = true;
         for (const f of data.result) if (f && f.event_key != null) byKey.set(f.event_key, f);
       } else {
@@ -4335,9 +4354,15 @@ function aggregatePlayerWue(fixtures, playerKey, playerName) {
     const wStat = findMatchStat(matchStats, playerKey, 'Points', 'Winners');
     const ueStat = findMatchStat(matchStats, playerKey, 'Points', 'Unforced errors');
     let winners = null, unforced = null, source = null;
-    if (wStat && ueStat) {
-      winners = parseInt(wStat.stat_value, 10) || 0;
-      unforced = parseInt(ueStat.stat_value, 10) || 0;
+    // Both counts must be SENT. A null value (not sent, or the untracked
+    // placeholder nulled by sanitizeFixture) is absent, not 0 — it falls through
+    // to the OCR fallback exactly like a missing row, and never enters n or the
+    // pooled sums.
+    const wN = wStat ? parseCount(wStat.stat_value) : null;
+    const ueN = ueStat ? parseCount(ueStat.stat_value) : null;
+    if (wN != null && ueN != null) {
+      winners = wN;
+      unforced = ueN;
       source = 'api-tennis';
     } else {
       // @ATP_Entry OCR FALLBACK — only when api-tennis carries neither value.
@@ -4907,6 +4932,7 @@ async function fetchPlayerCareerHistory(playerKey) {
     data = await res.json();
   } catch (e) { return null; }
   if (!data || !data.success || !Array.isArray(data.result)) return null;
+  sanitizeFixtures(data.result);
 
   const byTournament = {};
   for (const f of data.result) {
@@ -7065,7 +7091,7 @@ if (require.main === module) {
   });
 }
 
-module.exports = { isCancelledFixture, profileRosterFloorVerdict, lastPublishedRosterCount, profilesWithoutTournamentHistory, PROFILE_ROSTER_BACKSTOP, PROFILE_ROSTER_RATIO, MAX_OPPONENT_BUILDS_PER_RUN, isIndoorTournament, loadTournamentCourtMap, fetchRecentSinglesFixtures, recentFormFromFixtures, buildTournamentProgression, extractProgressionMetrics, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
+module.exports = { aggregatePlayerWue, aggregateStatsFromFixtures, isCancelledFixture, profileRosterFloorVerdict, lastPublishedRosterCount, profilesWithoutTournamentHistory, PROFILE_ROSTER_BACKSTOP, PROFILE_ROSTER_RATIO, MAX_OPPONENT_BUILDS_PER_RUN, isIndoorTournament, loadTournamentCourtMap, fetchRecentSinglesFixtures, recentFormFromFixtures, buildTournamentProgression, extractProgressionMetrics, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
   // The Career-record pair. Exported together on purpose: their whole contract
   // is that the counts one returns are tallyable from the rows the other
   // returns, and that is what ten8-career-verify.js asserts.
