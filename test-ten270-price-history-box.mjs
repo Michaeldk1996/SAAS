@@ -135,3 +135,19 @@ test('source per card: Bet105 -> RPC, bet365 upcoming -> shard with its label, b
   assert.equal(B.cardData({ openingOdds: { bookmaker: 'bet105' } }, 'p1').source, 'rpc');
   assert.equal(B.cardData({ openingOdds: { bookmaker: '1xbet' } }, 'p1').source, null);
 });
+
+test('history ends at the start: a not-live Kibl row after the off never shows above the Close', () => {
+  // Gaston–Shimabukuro, 24.09 (live probe): started 05:06:01Z, Close 2.23 seen 05:04:40Z,
+  // then Kibl inserted 2.20 at 05:07Z without the live flag.
+  const rows = [{ at: Date.parse('2026-09-24T04:23:00Z'), price: 2.23 },
+                { at: Date.parse('2026-09-24T05:07:00Z'), price: 2.20 }];
+  const gaps = [{ gap: true, from: Date.parse('2026-09-24T05:05:00Z'), to: Date.parse('2026-09-24T05:20:00Z') },
+                { gap: true, from: Date.parse('2026-09-24T05:10:00Z'), to: Date.parse('2026-09-24T05:30:00Z') }];
+  const m = B.model({ book: 'Bet105', completed: true, historyAvailable: true, startAt: '2026-09-24T05:06:01Z',
+                      close: { price: 2.23, at: '2026-09-24T05:04:40Z' } }, rows, gaps);
+  assert.deepEqual(m.rows.filter(r => !r.gap).map(r => r.price), [2.23]);
+  const g = m.rows.filter(r => r.gap);
+  assert.equal(g.length, 1, 'a gap that starts after the off is dropped');
+  assert.equal(g[0].to, Date.parse('2026-09-24T05:06:01Z'), 'a gap running over the off is cut at the start');
+  assert.equal(B.model({ book: 'Bet105', historyAvailable: true }, rows, []).rows.length, 2, 'no start known: nothing is cut');
+});

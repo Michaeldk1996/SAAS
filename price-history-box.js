@@ -84,6 +84,14 @@
   // The box model. `card` = { book, open:{price, at}, close:{price, at}|null,
   // completed, live, updatedAt }; `rows` = this side's recorded rows (asc).
   function model(card, rows, gaps) {
+    // History ends at the start: Kibl can insert a not-live row after the off
+    // (Gaston–Shimabukuro 24.09: 2.20 at 05:07Z, started 05:06:01Z), and a row
+    // after the Close would contradict the Close.
+    const startAt = ms(card.startAt);
+    if (startAt != null) {
+      rows = rows.filter(r => r.at <= startAt);
+      gaps = (gaps || []).filter(g => g.from < startAt).map(g => g.to > startAt ? Object.assign({}, g, { to: startAt }) : g);
+    }
     const ch = changesOnly(rows);
     const openAt = card.open && ms(card.open.at);
     const items = ch.map((r, i) => {
@@ -205,6 +213,7 @@
     // a completed bet365 card waits for the post-match archive (ruled source).
     const source = bk === 'bet105' ? 'rpc' : (bk === 'bet365' && !completed ? 'shard' : null);
     return { book: bookName, bookKey: bk, open, close, completed, live, updatedAt,
+             startAt: (o && o.startTs) || null,
              historyAvailable: source != null, source,
              note: source === 'shard' ? BET365_NOTE : null };
   }
