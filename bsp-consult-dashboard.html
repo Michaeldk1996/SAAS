@@ -9796,7 +9796,7 @@ function renderMatches(){
         const surfLabel = m.surface.charAt(0).toUpperCase() + m.surface.slice(1);
         surfacePart = ` · H2H ${surfLabel}: ${surfP1Wins}-${surfaceMatches.length - surfP1Wins}`;
       }
-      h2hInlineHtml = `<span class="mc-h2h">· H2H ${m.h2h.record}${surfacePart}</span>`;
+      h2hInlineHtml = `<span class="mc-h2h">· H2H ${m.h2h.record}${h2hLevelMix(m.h2h)}${surfacePart}</span>`;
     }
     // Live / suspended / pending get a score line above the rows. Completed
     // matches show their result through the set-score cluster (mcSetCluster),
@@ -14086,13 +14086,15 @@ function fhLevelOf(level, tournament, tier){
   if (t === 'itf') return 'ITF';
   return 'CH';
 }
-// Meetings at EVERY level we hold, found by ID: api-tennis H2H (both player keys, ATP
-// only by our own filter) ∪ every match in p1's career-history (a player-key shard)
+// Meetings at EVERY level we hold, found by ID: api-tennis H2H (both player keys; ATP,
+// Challenger and ITF singles since the 2026-09-24 ruling) ∪ every match in p1's career-history (a player-key shard)
 // whose eventKey also appears in p2's career-history. De-duplicated by eventKey; the
 // fixture itself is never a previous meeting.
 function fhAllMeetingRows(m){
   const own = String(eventKeyOfMatch(m) || '');
-  const out = fhMeetingList(m).map(x => Object.assign({}, x, { _level: 'ATP', _src: 'h2h' }));
+  // The pipeline's list carries each meeting's level since the 2026-09-24 ruling (all of men's
+  // singles); a row without one predates it, when the list was ATP-only.
+  const out = fhMeetingList(m).map(x => Object.assign({}, x, { _level: ['ATP', 'CH', 'ITF'].includes(x.level) ? x.level : 'ATP', _src: 'h2h' }));
   const seen = new Set(out.map(x => String(x.eventKey)));
   const ch1 = (m._fhCh && m._fhCh[0]) || [], ch2 = (m._fhCh && m._fhCh[1]) || [];
   const in2 = new Map(ch2.filter(x => x && x.eventKey != null).map(x => [String(x.eventKey), x]));
@@ -16025,7 +16027,7 @@ function buildKeyPanels(m){
       <div class="akeypanel">
         <div class="akp-title"><span class="akp-ico">${AKP_PEOPLE_ICON}</span>Head-to-Head</div>
         <div class="akp-vals"><span>${m.h2h.p1Wins}</span><span>${m.h2h.p2Wins}</span></div>
-        <div class="akp-sub">${total} meeting${total === 1 ? '' : 's'} on record</div>
+        <div class="akp-sub">${total} meeting${total === 1 ? '' : 's'} on record${h2hLevelMix(m.h2h)}</div>
         <div class="akp-track"><div style="width:${bar}%"></div></div>
       </div>
     `);
@@ -16235,6 +16237,16 @@ function akFormBlock(m){
   return akCard('form', `${akHead('Recent form')}<div class="akf-grid">${col(m.p1, m.p1RecentFormMatches, m.p1RecentForm, ANALYSIS_P1_COLOR)}${col(m.p2, m.p2RecentFormMatches, m.p2RecentForm, ANALYSIS_P2_COLOR)}</div>`);
 }
 
+// TEN-263 (founder ruling 2026-09-24): an H2H record that includes Challenger or
+// ITF meetings says so, the same way the Form/H2H tab tags its rows — a 3-1 built
+// on ITF meetings must not read as an ATP record. Rows without a level predate
+// the ruling, when the list was ATP-only. '' for an all-ATP record.
+function h2hLevelMix(h){
+  const rows = (h && Array.isArray(h.matches)) ? h.matches : [];
+  const ch = rows.filter(r => r && r.level === 'CH').length, itf = rows.filter(r => r && r.level === 'ITF').length;
+  const parts = [ch ? ch + ' CH' : '', itf ? itf + ' ITF' : ''].filter(Boolean);
+  return parts.length ? ' · incl. ' + parts.join(', ') : '';
+}
 // --- block: head to head ---
 function akH2HBlock(m){
   const head = akHead('Head to head');
@@ -16261,7 +16273,7 @@ function akH2HBlock(m){
     last = `<div class="akh-last"><div class="akh-last-lbl">Last meeting</div>
       <div class="akh-last-line"><span style="font-family:'IBM Plex Mono',monospace;">${psEsc(lm.date || '')}</span> · <span>${psEsc(tourn)}</span>${sc ? ` · <span style="font-family:'IBM Plex Mono',monospace; color:${scoreColor};">${psEsc(sc)}</span>` : ''}</div></div>`;
   }
-  return akCard('h2h', `${head}${score}${last}<div class="akh-meet">${total} career meeting${total === 1 ? '' : 's'}</div>`);
+  return akCard('h2h', `${head}${score}${last}<div class="akh-meet">${total} career meeting${total === 1 ? '' : 's'}${psEsc(h2hLevelMix(h))}</div>`);
 }
 
 // --- block: tournament + conditions ---
@@ -16602,7 +16614,7 @@ function akReadBlock(m){
   }
   const h = m.h2h, tot = h ? h.p1Wins + h.p2Wins : 0;
   if (tot >= 2 && h.p1Wins !== h.p2Wins){
-    pts.push(`Head to head leans <b>${psEsc(h.p1Wins > h.p2Wins ? psShortName(m.p1) : psShortName(m.p2))}</b> at ${Math.max(h.p1Wins, h.p2Wins)}–${Math.min(h.p1Wins, h.p2Wins)}.`);
+    pts.push(`Head to head leans <b>${psEsc(h.p1Wins > h.p2Wins ? psShortName(m.p1) : psShortName(m.p2))}</b> at ${Math.max(h.p1Wins, h.p2Wins)}–${Math.min(h.p1Wins, h.p2Wins)}${psEsc(h2hLevelMix(h))}.`);
   }
   if (m._formLoaded){
     const w = (rows) => { const r = (rows || []).slice(0, 10); return r.length ? Math.round(r.filter(x => x.won).length / r.length * 100) : null; };
@@ -25956,12 +25968,16 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
     let aw = 0, bw = 0;
     mYears.forEach(y => y[1].forEach(r => { if (r[5] === a.short) aw++; else if (r[5] === b.short) bw++; }));
     const tot = aw + bw;
+    // TEN-263 (ruling 2026-09-24): a record built partly on Challenger / ITF meetings says so.
+    const lvN = lv => mYears.reduce((s, y) => s + y[1].filter(r => r[7] === lv).length, 0);
+    const lvParts = [lvN('CH') ? lvN('CH') + ' CH' : '', lvN('ITF') ? lvN('ITF') + ' ITF' : ''].filter(Boolean);
+    const lvMix = lvParts.length ? ' · incl. ' + lvParts.join(', ') : '';
     if (tot === 0) {
       view.h2h = { none: true, some: false, meetingsLine: 'No meetings on record' };
     } else {
       view.h2h = {
         none: false, some: true,
-        meetingsLine: tot + ' meetings on record',
+        meetingsLine: tot + ' meetings on record' + lvMix,
         meetingsOpen: S.meetOpen,
         meetLabel: S.meetOpen ? 'Hide previous meetings' : 'Show all ' + tot + ' previous meetings',
         meetChev: S.meetOpen ? 'rotate(180deg)' : 'rotate(0deg)',
@@ -25969,7 +25985,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
         aWins: String(aw), bWins: String(bw),
         aColor: aw > bw ? A_COL : DIM, bColor: bw > aw ? B_COL : DIM,
         aPct: tot ? Math.round(aw / tot * 100) : 50, bPct: tot ? Math.round(bw / tot * 100) : 50,
-        leadLine: aw === bw ? 'Level at ' + aw + '–' + bw : (aw > bw ? a.short : b.short) + ' leads ' + Math.max(aw, bw) + '–' + Math.min(aw, bw),
+        leadLine: (aw === bw ? 'Level at ' + aw + '–' + bw : (aw > bw ? a.short : b.short) + ' leads ' + Math.max(aw, bw) + '–' + Math.min(aw, bw)) + lvMix,
         years: mYears.map((y, yi) => {
           const rows = y[1].map((m, mi) => {
             const mkey = 'm' + yi + '_' + mi;
@@ -27235,6 +27251,9 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
           mt.result || '—',
           mt.p1Won ? sa : sb,
           mt.eventKey != null ? mt.eventKey : null,
+          // TEN-263 (ruling 2026-09-24): the meeting's level ('ATP' | 'CH' | 'ITF'); a row
+          // without one predates the ruling, when the list was ATP-only.
+          mt.level || 'ATP',
         ]);
       });
       const years = Object.keys(byYear).sort((x, y) => String(y).localeCompare(String(x))).map(y => [y, byYear[y]]);

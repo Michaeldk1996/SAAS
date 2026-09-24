@@ -247,6 +247,17 @@ function main() {
   const log = (...a) => { if (!quiet) console.log(...a); };
 
   const profiles = JSON.parse(fs.readFileSync(PROFILES_PATH, 'utf8')).players || {};
+  // TEN-263 (ruling 2026-09-24): market-edge is a per-run pipeline output. The pipeline's
+  // player-profiles.json is the eager board roster, so without this a run would refresh only
+  // the players on today's board and leave every other published shard as it was. Every
+  // player that already has a shard stays on the roster (its shard carries its name).
+  if (fs.existsSync(OUT_DIR)) {
+    for (const f of fs.readdirSync(OUT_DIR)) {
+      const m = /^(\d+)\.json$/.exec(f);
+      if (!m || profiles[m[1]]) continue;
+      try { const s = JSON.parse(fs.readFileSync(path.join(OUT_DIR, f), 'utf8')); if (s && s.name) profiles[m[1]] = { name: s.name }; } catch (e) { /* unreadable shard: rebuilt only if the profile roster has it */ }
+    }
+  }
   const speedMap = loadSpeedMap();
   log(speedMap ? 'court-speed map loaded' : 'court-speed map absent — venue/speed will be null on every row');
 

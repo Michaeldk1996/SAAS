@@ -526,7 +526,10 @@ function h2h(ctx) {
 
   const w1 = meetings.filter(m => m.p1Won).length;
   const w2 = meetings.length - w1;
-  const detail = `H2H ${w1}-${w2} (${meetings.length} meeting${meetings.length === 1 ? '' : 's'}; `
+  // TEN-263 (ruling 2026-09-24): meetings now span ATP, Challenger and ITF; the text says so.
+  const lvCH = meetings.filter(m => m.level === 'CH').length, lvITF = meetings.filter(m => m.level === 'ITF').length;
+  const lvMix = [lvCH ? lvCH + ' CH' : '', lvITF ? lvITF + ' ITF' : ''].filter(Boolean).join(', ');
+  const detail = `H2H ${w1}-${w2} (${meetings.length} meeting${meetings.length === 1 ? '' : 's'}${lvMix ? ', incl. ' + lvMix : ''}; `
     + `${sameSurf} on ${matchCat || 'surface'}, ${recent2y} in last 2y; `
     + `Nₑₓ ${nEff.toFixed(1)}, tier ${tier}).`;
 

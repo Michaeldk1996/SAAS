@@ -1,0 +1,32 @@
+# TEN-263 (founder ruling 2026-09-24): capture-freshness alarm. The live odds collector froze for
+# every book from 2 to 10 Sep and nothing fired. This run goes RED — GitHub's own notification,
+# the channel every alarm here uses — when no book in the board's captured series (matches.json
+# oddsMovement) has a new tick for 24 h. It writes nothing. Separate from the Tennis-Data
+# staleness alarm (odds-archive-staleness.yml) by design.
+# 24 h is a starting default: measured, it also fires on quiet boards with nothing to price
+# (see tools/odds-capture-freshness.py); the message prints the upcoming count.
+# ⚠ Actions `schedule:` is throttled on this repo (27% delivery measured; see pipeline-watchdog.yml).
+# Hourly means it still lands within a few hours of the 24 h mark; for a guaranteed fire add
+# workflow_dispatch of this file to the external pg_cron pinger.
+name: Odds capture freshness
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 * * * *'
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            matches.json
+            tools/odds-capture-freshness.py
+      - name: A new tick from some book within 24 h
+        run: python3 tools/odds-capture-freshness.py --max-hours 24

@@ -68,7 +68,7 @@ function sandbox() {
     return { fhCloseFor, fhFinishRow, fhRowFromForm, fhBestOf, fhMeetingList, fhMeetings, fhScoreLines,
       fhFormLineDefs, fhH2hLineDefs, fhPriceAvg, fhTodayPair, fhFormRowHtml, fhH2hRowHtml, fhBuildForm,
       fhBuildH2H, fhSetsFrom, fhRoundCode, fhStateFor, fhNameKey, fhOdd, fhH2hRecCard, fhPickBook,
-      fhSrcTitle, fhAllMeetingRows, fhLevelOf, fhH2hScopeNote, fhH2hGapNote,
+      fhSrcTitle, fhAllMeetingRows, fhLevelOf, fhH2hScopeNote, fhH2hGapNote, fhEligible,
       consts: { FH_HOT_MIN_ELIGIBLE, FH_PRICE_AVG_MARGIN_REMOVED, FH_H2H_SET1_MIRROR, FH_H2H_RET_COUNTS,
         FH_ELO_AT_TIME, FH_BOOK_ORDER, FH_SURF, FH_H2H_LEVELS } };
   `)();
@@ -510,4 +510,98 @@ test('H2H price header names the Bet365 fallback count; 0 priced reads the empty
   assert.ok(none.includes('0 of 4 meetings priced') && none.includes('No closing odds on record for these meetings'));
   assert.ok(!/Closing odds · Pinnacle/.test(none), 'no source is named for zero priced meetings');
   assert.ok(!none.includes('>0.00<'), 'unpriced rendered as zero');
+});
+
+// ── Founder rulings 2026-09-24 (comment dfc099be) ──
+// 5 · the pipeline's H2H covers all of men's singles; every meeting row carries its level.
+const PIPE = readFileSync(join(HERE, 'bsp-pipeline.js'), 'utf8');
+function slicePipe(name) {
+  const st = PIPE.indexOf(`function ${name}(`); assert.ok(st > 0, name + ' not in bsp-pipeline.js');
+  let d = 0, i = PIPE.indexOf('{', st); for (; i < PIPE.length; i++) { if (PIPE[i] === '{') d++; else if (PIPE[i] === '}') { d--; if (!d) break; } }
+  return PIPE.slice(st, i + 1);
+}
+const TYPES_SRC = /const H2H_EVENT_TYPES = new Set\(\[[^\]]*\]\);/.exec(PIPE);
+test('pipeline H2H: ATP, Challenger and ITF singles count; exhibitions, doubles and women do not', () => {
+  assert.ok(TYPES_SRC, 'H2H_EVENT_TYPES not found');
+  const T = new Function(`${TYPES_SRC[0]}\nreturn H2H_EVENT_TYPES;`)();
+  for (const t of ['Atp Singles', 'Challenger Men Singles', 'Itf Men Singles']) assert.ok(T.has(t), t);
+  for (const t of ['Exhibition Men', 'Atp Doubles', 'Wta Singles', 'Itf Women Singles', 'Boys Singles']) assert.ok(!T.has(t), t);
+  assert.match(slicePipe('fetchH2H'), /\.filter\(m => H2H_EVENT_TYPES\.has\(m\.event_type_type\)\)/, 'fetchH2H filters on the set');
+});
+test('pipeline H2H: every meeting row carries its level (ATP / CH / ITF)', () => {
+  const P = new Function(`${slicePipe('lastName')}\n${slicePipe('h2hLevelOf')}\n${slicePipe('buildH2HMatchList')}\nreturn { buildH2HMatchList };`)();
+  const raw = (ek, type) => ({ event_key: ek, event_type_type: type, event_date: '2026-01-0' + ek, tournament_name: 'X', tournament_key: 1,
+    event_first_player: 'J. Sinner', event_second_player: 'C. Alcaraz', event_winner: 'First Player', event_final_result: '2 - 0', event_qualification: 'False' });
+  const rows = P.buildH2HMatchList([raw(1, 'Atp Singles'), raw(2, 'Challenger Men Singles'), raw(3, 'Itf Men Singles')], 'J. Sinner', new Map());
+  assert.deepEqual(rows.map(r => [r.eventKey, r.level]).sort((a, b) => a[0] - b[0]), [[1, 'ATP'], [2, 'CH'], [3, 'ITF']]);
+});
+test('card / Key factors: a record with Challenger or ITF meetings says so; an all-ATP record says nothing', () => {
+  const H = new Function(`${slice('h2hLevelMix')}\nreturn h2hLevelMix;`)();
+  assert.equal(H({ matches: [{ level: 'ATP' }, { level: 'CH' }, { level: 'ITF' }, { level: 'ITF' }] }), ' · incl. 1 CH, 2 ITF');
+  assert.equal(H({ matches: [{ level: 'ATP' }, {}] }), '', 'control: ATP-only (and pre-ruling rows) add nothing');
+  assert.equal(H(null), '');
+  assert.match(html, /· H2H \$\{m\.h2h\.record\}\$\{h2hLevelMix\(m\.h2h\)\}/, 'the match card shows the mix');
+});
+test('Key factors H2H block (the live one) shows the level mix: executed, not grepped', () => {
+  const K = new Function(`
+    const ANALYSIS_P1_COLOR = '#5b9bff', ANALYSIS_P2_COLOR = '#e7e9ee';
+    const akHead = t => '<h>' + t + '</h>', akCard = (k, h) => h;
+    const psEsc = x => String(x), psShortName = x => String(x);
+    ${slice('h2hLevelMix')}\n${slice('akH2HBlock')}\nreturn akH2HBlock;`)();
+  const mk = (level, won) => ({ date: '2024-01-0' + (won ? 1 : 2), tournament: 'X', result: '2 - 0', p1Won: won, level });
+  const m = (rows) => ({ p1: 'A', p2: 'B', h2h: { p1Wins: rows.filter(r => r.p1Won).length, p2Wins: rows.filter(r => !r.p1Won).length, matches: rows } });
+  assert.match(K(m([mk('ATP', true), mk('ITF', true), mk('CH', false)])), /3 career meetings · incl\. 1 CH, 1 ITF/);
+  assert.doesNotMatch(K(m([mk('ATP', true), mk('ATP', false)])), /incl\./, 'control: an ATP-only record adds nothing');
+});
+test('H2H page: the record lines carry the level mix; each meeting row keeps its level', () => {
+  assert.match(html, /meetingsLine: tot \+ ' meetings on record' \+ lvMix,/);
+  assert.match(html, /Math\.min\(aw, bw\)\) \+ lvMix,/);
+  assert.match(html, /mt\.level \|\| 'ATP',\n\s*\]\);/);
+});
+test('model H2H layer: the detail text names the level mix; the math is unchanged', () => {
+  const { h2h } = require('./h2h-model/adjustments.js');
+  const rows = [{ date: '2025-06-01', surface: 'hard', p1Won: true, result: '2 - 0', level: 'ATP' },
+                { date: '2025-07-01', surface: 'hard', p1Won: true, result: '2 - 1', level: 'CH' }];
+  const ctx = (rs) => ({ match: { date: '2026-09-24', h2h: { matches: rs } }, surface: 'hard' });
+  const withLv = h2h(ctx(rows)), noLv = h2h(ctx(rows.map(({ level, ...r }) => r)));
+  assert.match(withLv.detail, /H2H 2-0 \(2 meetings, incl\. 1 CH;/);
+  assert.equal(withLv.deltaP1, noLv.deltaP1, 'the level changes the text, never the number');
+  assert.doesNotMatch(noLv.detail, /incl\./);
+});
+test('the Form/H2H tab takes each api-tennis meeting\'s own level (pre-ruling rows stay ATP)', () => {
+  const m = allLevels();
+  m.h2h.matches = m.h2h.matches.concat([{ eventKey: 20, date: '2026-03-09', p1Won: false, result: '1 - 2', surface: 'hard', tournament: 'Cap Cana', round: 'Qualifying', level: 'CH' }]);
+  const rows = S.fhAllMeetingRows(m);
+  assert.deepEqual(rows.map(x => [String(x.eventKey), x._level]), [['10', 'ATP'], ['20', 'CH'], ['30', 'ITF']]);
+  assert.equal(m._fhMeetDupes, 2, 'the CH meeting in both sources counts once');
+});
+// c · the set-1 mirror pair never counts one meeting twice.
+test('set-1 mirror pair: the two lines are complements over the same meetings', () => {
+  const mk = (s1) => S.fhFinishRow({ mid: Math.random().toString(36), won: s1[0] > s1[1], sets: [s1, [6, 3, null]], ret: false, wo: false, tourn: 'Umag', tier: 'atp', result: '2 - 0' });
+  const rows = [mk([6, 4, null]), mk([4, 6, null]), mk([7, 6, 5]), mk([3, 6, null])];
+  const d = S.fhH2hLineDefs('Sinner', 'Alcaraz'); const A = d.find(x => x.name === 'Sinner wins set 1'), B = d.find(x => x.name === 'Alcaraz wins set 1');
+  assert.ok(A && B && S.consts.FH_H2H_SET1_MIRROR === true);
+  const el = rows.filter(r => S.fhEligible(r, A));
+  assert.equal(el.filter(A.cov).length + el.filter(B.cov).length, el.length);
+  assert.equal(el.filter(r => A.cov(r) && B.cov(r)).length, 0);
+});
+test('market-edge per run: a player already published but off the board roster is rebuilt, not left stale', () => {
+  const { execFileSync } = require('node:child_process');
+  const root = mkdtempSync(join(tmpdir(), 'ten263me-'));
+  try {
+    for (const f of ['build-market-edge.js', 'build-odds-performance.js']) writeFileSync(join(root, f), readFileSync(join(HERE, f)));
+    mkdirSync(join(root, 'odds-archive')); mkdirSync(join(root, 'market-edge'));
+    const H = 'date,tournament,series,court,surface,round,bestof,winner,loser,wrank,lrank,comment,b365w,b365l,psw,psl,maxw,maxl,avgw,avgl,avgsrc';
+    writeFileSync(join(root, 'odds-archive', '2025.csv'), [H,
+      '2025-10-12,Shanghai Masters,Masters 1000,Outdoor,Hard,Semifinals,3,Sinner J.,Alcaraz C.,1,2,Completed,1.5,2.6,1.55,2.55,1.6,2.7,1.52,2.55,file',
+      '2025-05-02,Madrid Masters,Masters 1000,Outdoor,Clay,Quarterfinals,3,Alcaraz C.,Sinner J.,2,1,Completed,1.8,2.0,1.85,2.05,1.9,2.1,1.82,2.02,file'].join('\n') + '\n');
+    writeFileSync(join(root, 'player-profiles.json'), JSON.stringify({ players: { 5: { name: 'J. Sinner' } } }));
+    writeFileSync(join(root, 'market-edge', '6.json'), JSON.stringify({ name: 'C. Alcaraz', stale: true, matches: [] }));
+    execFileSync(process.execPath, ['build-market-edge.js', '--quiet'], { cwd: root });
+    const alc = JSON.parse(readFileSync(join(root, 'market-edge', '6.json'), 'utf8'));
+    assert.ok(!alc.stale, 'the off-roster shard was rewritten');
+    assert.equal(alc.matches.length, 2, 'both archive matches joined to the published player');
+    const idx = JSON.parse(readFileSync(join(root, 'market-edge-index.json'), 'utf8'));
+    assert.deepEqual(Object.keys(idx.players).sort(), ['5', '6']);
+  } finally { rmSync(root, { recursive: true, force: true }); }
 });

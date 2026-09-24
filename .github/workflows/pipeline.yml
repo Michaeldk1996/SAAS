@@ -318,6 +318,16 @@ jobs:
       - name: Build market performance shards (best-effort)
         run: node build-odds-performance.js || true
 
+      # TEN-263 (founder ruling 2026-09-24): market-edge/ is a pipeline output, rebuilt
+      # every run — never hand-built again. Same inputs as odds-performance (committed
+      # odds-archive/ CSVs + the profiles just refreshed) plus court-speed-map.json and
+      # playing-styles.json. No network calls. Every player that already has a shard stays on its
+      # roster, so a run refreshes every published player, not only today's board. Best-effort
+      # on a crash (the committed shards ship); an R1 basis violation writes the index first and
+      # then fails, so "Assert site completeness" fails the run closed rather than publish it.
+      - name: Build market-edge shards (best-effort)
+        run: node build-market-edge.js --quiet || true
+
       # Per-tournament market performance (TEN-8 Tournaments Overview §4/§5):
       # flat-stake yields backing favourites/underdogs + favourite reliability,
       # grouped by tournament from the same committed odds-archive/ CSVs. No

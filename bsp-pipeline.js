@@ -197,7 +197,8 @@ async function fetchApiTennisFixtures(dateStartStr, dateStopStr) {
 // matches for 2021-2023, 425 real Fritz matches for 2015-2026, each in one
 // call), so we scope it to firstPlayerKey and filter locally for matches
 // against secondPlayerKey — one extra request per H2H lookup, not a
-// monthly ATP-wide scan.
+// monthly ATP-wide scan. TEN-263: this backfill still asks for ATP singles only
+// (event_type_key=265); a Challenger / ITF meeting get_H2H omits is NOT backfilled.
 //
 // Date range: intentionally NOT limited to PROFILE_YEARS_BACK (that window
 // is specific to the tournament-profile builder's own reliability cutoff).
@@ -226,6 +227,18 @@ async function fetchH2HSupplement(firstPlayerKey, secondPlayerKey) {
   );
 }
 
+// TEN-263 (founder ruling 2026-09-24): H2H covers all of men's singles — ATP,
+// Challenger and ITF — not the ATP tour only. Exhibitions (and every other
+// event type: doubles, juniors, UTR, women's) stay out. One set, so the meeting
+// list, the record and the model's H2H layer all read the same population.
+const H2H_EVENT_TYPES = new Set(['Atp Singles', 'Challenger Men Singles', 'Itf Men Singles']);
+// Level of one meeting, carried on every h2h.matches row so every surface that
+// shows the record can say what it is built on (a 3-1 on ITF meetings must not
+// read as an ATP record).
+function h2hLevelOf(eventType) {
+  return eventType === 'Challenger Men Singles' ? 'CH' : eventType === 'Itf Men Singles' ? 'ITF' : 'ATP';
+}
+
 async function fetchH2H(firstPlayerKey, secondPlayerKey) {
   const url = `${API_TENNIS_BASE}?method=get_H2H&APIkey=${API_TENNIS_KEY}&first_player_key=${firstPlayerKey}&second_player_key=${secondPlayerKey}`;
   const res = await fetch(url);
@@ -237,12 +250,12 @@ async function fetchH2H(firstPlayerKey, secondPlayerKey) {
   const result = (data.result && typeof data.result === 'object' && !Array.isArray(data.result))
     ? data.result : {};
   // Exclude pure exhibitions (e.g. Six Kings Slam, tagged "Exhibition Men" by
-  // this API) — confirmed live these are NOT part of official ATP head-to-head
-  // records. Laver Cup / United Cup matches are correctly tagged "Atp Singles"
-  // by this API and DO count toward official H2H (confirmed), so they're kept.
-  // Same event_type_type === 'Atp Singles' check used to scope official
-  // head-to-head records — applied here for consistency.
-  const officialH2H = (Array.isArray(result.H2H) ? result.H2H : []).filter(m => m.event_type_type === 'Atp Singles');
+  // this API) — confirmed live these are NOT part of official head-to-head
+  // records. Laver Cup / United Cup matches are tagged "Atp Singles" and DO
+  // count, so they're kept. TEN-263: Challenger and ITF singles count too
+  // (H2H_EVENT_TYPES); measured on the 2026-09-24 board, get_H2H returned 24 ATP,
+  // 5 Challenger and 1 ITF meeting across 27 pairs.
+  const officialH2H = (Array.isArray(result.H2H) ? result.H2H : []).filter(m => H2H_EVENT_TYPES.has(m.event_type_type));
 
   // Backfill matches get_H2H omitted but the fixtures database actually has,
   // deduped by event_key so nothing already present gets double-counted.
@@ -309,6 +322,9 @@ function buildH2HMatchList(h2hMatches, player1Name, surfaceMap) {
         // setstats/{ek}.json and pbp/{ek}.json shards — without it an H2H row is
         // text with nothing to join to.
         eventKey: m.event_key,
+        // TEN-263: 'ATP' | 'CH' | 'ITF' (h2hLevelOf). Every reader that shows the
+        // record shows the level mix off this field.
+        level: h2hLevelOf(m.event_type_type),
       };
     })
     .sort((a, b) => new Date(b.date) - new Date(a.date));

@@ -239,6 +239,7 @@ Surface-specific rulings moved out of this file so they load only when relevant:
 | Player Profile export parity | `.claude/rules/player-profile.md` |
 | Records counting (Flashscore rules), walkovers, retirements | `.claude/rules/pipeline-records.md` |
 | Odds sources, book ladder, card rules, close rules | `.claude/rules/odds.md` |
+| Match analysis Form / H2H tabs — price order, display constants, all-level H2H, market-edge, odds alarms | `.claude/rules/modal-form-h2h.md` |
 | Odds archive (tennis-data closing prices): drop-in refresh, merge, never-thinner, readers | `.claude/rules/odds-archive.md` |
 | Deploy lane — claim, 45-min expiry, renew, takeover, waiter reports | `.claude/rules/deploy-lane.md` |
 | App shell — sidebar width, Stennisfy Model icon | `.claude/rules/app-shell.md` |
