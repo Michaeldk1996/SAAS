@@ -211,7 +211,8 @@ Before you claim the lane, get the commit fully ready (founder ruling TEN-273). 
    - Exit 7 means the commit is not ready; the output lists what is missing.
    - The hold is at most **30 min** and nothing extends it. After that it auto-releases. `renew` only answers "do I still hold it?".
    - A claim whose owner run has ended is released on the next `claim`.
-   - Other runs with ready commits queue with `deploy-lane.mjs ready`. If your granted claim lists a `batch`, land with `node tools/deploy-batch.mjs --ticket TEN-123 --sha <sha>`: one push for all of them, falling back to your commit alone if the combined tree fails.
+   - Other runs with ready commits queue with `deploy-lane.mjs ready` (withdraw with `unready`). If your granted claim lists a `batch`, land with `node tools/deploy-batch.mjs --ticket TEN-123 --sha <the sha you claimed with>`: one push for all of them, falling back to your commit alone if the combined tree fails.
+   - The pushed tree may differ from the suite-tested tree **only by `[skip ci]` data-bot commits**, and the clobber check is re-run against them. If a code commit landed in between, rebase, get a new receipt and claim again.
    - Waiting, dead owners, the 30-min waiter report and exit codes 0/1/2/3/6/7: `.claude/rules/deploy-lane.md`.
    - Post on your issue too, so the founder can see it.
 
@@ -219,7 +220,7 @@ CI enforces rebasing (step 1) independently: the deploy workflow refuses to publ
 
 After you push, before you measure anything on the live surface:
 
-6. Run `tools/check-live-build.sh <your-sha>` (batched in by another holder? use your `landedAs` sha). It tests whether your commit is **contained in** the live build, not whether the SHAs match — data commits land on main every 30–60s, so the live stamp is routinely ahead of your tip and an equality test would false-alarm constantly.
+6. Run `tools/check-live-build.sh <your-sha>`. If you landed with `deploy-batch.mjs`, use the `readBack` sha it prints: it equals your sha when your commit was pushed as is, and otherwise the cherry-pick means only the printed sha is on main. If another holder batched you in, use your `landedAs` sha. It tests whether your commit is **contained in** the live build, not whether the SHAs match — data commits land on main every 30–60s, so the live stamp is routinely ahead of your tip and an equality test would false-alarm constantly.
    - **exit 0** — your commit is in the live build. Measure.
    - **exit 1** — your commit is not in the live build. Either the tick has not run yet or something else published. Wait a tick and re-run. Do not measure.
    - **exit 2** — undetermined. That is a dash, not a pass. Report that you could not confirm the build and treat every probe result as unverified.

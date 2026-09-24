@@ -38,20 +38,28 @@ Keep posting on your issue so the founder can see it, but the tool's answer is w
    Any `claim`, `status`, `renew` or `release` at or after `expiresAt` releases the
    claim and posts a notice on your ticket. If the notice fails, the lane is still released.
 4. **Push, then release when your live read-back is done:**
-   `node tools/deploy-lane.mjs release --ticket TEN-123`. **The read-back is mandatory
-   even if the cap has already released the lane.** `tools/check-live-build.sh <sha>`
-   tests containment, so a later push does not invalidate it (see CLAUDE.md,
-   "Deploying — one lane at a time").
-5. **A claim whose owner run has ended is released on the next `claim`.** The owner
+   `node tools/deploy-lane.mjs release --ticket TEN-123` (this also withdraws any queue
+   entry of yours). **The read-back is mandatory even if the cap has already released
+   the lane.** `tools/check-live-build.sh <sha>` tests containment, so a later push does
+   not invalidate it (see CLAUDE.md, "Deploying — one lane at a time"). Landed with
+   `deploy-batch.mjs`? Read back the **`readBack` sha it prints**. It equals your sha
+   when your commit was pushed as is (holder alone, already on top of `origin/main`);
+   otherwise your commit was cherry-picked and only the printed sha is on main.
+5. **What you push must be what the suite passed, plus data-bot commits and nothing
+   else.** Data bots commit every minute, so the pushed tree can differ from the
+   suite-tested tree **only by `[skip ci]` data-bot commits**, and the clobber check is
+   re-run against those commits before the push. A code commit landing in between means
+   you rebase, get a new receipt and claim again.
+6. **A claim whose owner run has ended is released on the next `claim`.** The owner
    counts as ended when the board shows `cancelled`, `failed`, `succeeded`,
    `timed_out` or `error`. The tool records the evidence in the history
    (`released-dead-owner`), posts a best-effort notice on the owner's ticket, and gives
    you the lane. This happens at minute 1, not minute 30.
-6. **Exit 3 means the lane is held by a run that is alive, or whose state is
+7. **Exit 3 means the lane is held by a run that is alive, or whose state is
    `unknown`. Wait.** Re-run `claim` at least every 5 min. `unknown` (board
    unreachable, or the owner is a `session:`) is **not** dead: only the 30-min cap
    frees that claim.
-7. **Never wait silently.** At every `claim` after 30 min of waiting, the tool posts a
+8. **Never wait silently.** At every `claim` after 30 min of waiting, the tool posts a
    report on your ticket: who holds the lane, since when, and whether that run is alive.
    It repeats every 30 min while you wait.
 
@@ -62,24 +70,43 @@ Keep posting on your issue so the founder can see it, but the tool's answer is w
   same gate as `claim`: exit 0 means queued, exit 7 means not ready. Re-running it
   replaces your earlier entry. `status --ticket TEN-123` shows the queue and, once your
   commit has landed, its `landedAs`.
+- **An entry leaves the queue** when it lands; when you run
+  `deploy-lane.mjs unready --ticket TEN-123` (exit 0 withdrawn, 1 nothing queued) or
+  `release`; **60 min** after it was queued (`READY_TTL_MIN`); or, at batch time, when
+  its run has ended (best-effort notice, never landed, because nobody would do the
+  read-back).
 - **Holding the lane with other runs queued?** A granted `claim` lists them as `batch`.
   Land with `node tools/deploy-batch.mjs --ticket TEN-123 --sha <sha>` instead of a
   plain push. The tool:
-  - refuses with exit 1 unless you hold the lane;
-  - cherry-picks your commits, then each queued entry's in `readyAt` order, onto
-    `origin/main`. An entry that conflicts is skipped, stays queued and is marked
-    `conflict` with the reason;
+  - refuses with exit 1 unless you hold the lane, `--sha` **is the sha on your claim**
+    and that sha still has a green suite receipt. It also refuses a merge commit in
+    `merge-base..sha` ("rebase, don't merge") and your commit failing its own clobber
+    check against its merge-base;
+  - checks each queued entry exactly as a solo land would be checked. An entry that
+    fails is skipped, stays queued and is marked with a `status` and the reason:
+    `merge` (contains a merge commit), `not-rebased` (a code commit has landed since
+    it was queued), `clobber` (its own clobber check against its merge-base fails),
+    `conflict` (does not cherry-pick onto the batch);
+  - puts your commit first, as is if it already sits on top of `origin/main`, otherwise
+    cherry-picked; then cherry-picks each remaining entry in `readyAt` order;
   - on the combined tree, runs `tools/clobber-check.sh` against the `origin/main` it
     started from, then `tools/ci-suite.sh`;
   - makes one push. If the push is rejected because data bots landed, it replays onto
     the new tip, re-runs the clobber check and retries once;
-  - marks each included entry `landedAs` and posts a notice on its issue.
+  - marks each included entry `landedAs` and posts a notice on its issue. An entry
+    leaves the queue only if both its run and its sha match: a newer commit queued
+    during the batch stays queued;
+  - prints your `readBack` sha (JSON field and a `READ-BACK:` line on stderr).
 - **If anything on the combined tree fails (clobber check, suite, a code commit landing
   mid-batch), it falls back to one by one.** Only your own commit lands, as a normal
   land: it must still be rebased and pass the clobber check against its merge-base.
   The other entries stay queued, and the summary says why.
 - **Batched in?** Your commit landed under a new sha (`landedAs`, also in the notice).
   Do your live read-back with `tools/check-live-build.sh <landedAs>`.
+- **Old tool still in use.** Until every checkout and worktree runs this version of
+  `deploy-lane.mjs`, an old copy can still renew (extend) a claim and claim without the
+  ready gate. The store is shared on purpose, so do not add a version gate: it could
+  split the lane in two.
 
 **Exceptions, inline:**
 - **Same ticket, new run: no silent inheritance** (founder ruling TEN-261, kept). A new

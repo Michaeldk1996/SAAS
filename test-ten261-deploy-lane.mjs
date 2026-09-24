@@ -130,7 +130,7 @@ function gitFixture() {
   sh(bot, 'config', 'user.name', 'bot'); sh(bot, 'config', 'user.email', 'b@b');
   let n = 0;
   const onOrigin = (file, msg) => { sh(bot, 'pull', '-q', '--rebase', 'origin', 'main'); commit(bot, file, `${msg} ${++n}\n`, msg); sh(bot, 'push', '-q', 'origin', 'HEAD:main'); };
-  return { root, origin, work, bot, dataBot: () => onOrigin('data.json', 'data refresh [skip ci]'), codePush: (f = 'other.txt') => onOrigin(f, 'TEN-999: a code change') };
+  return { root, origin, work, bot, dataBot: () => onOrigin('data.json', 'data refresh [skip ci]'), codePush: (f = 'other.txt') => onOrigin(f, 'TEN-999: a code change\n\nIts body mentions [skip ci]; it is still code.') };
 }
 
 // ── the cases, each returning whether the rule held ──────────────────────────
@@ -412,6 +412,76 @@ const CASES = {
   },
 };
 
+Object.assign(CASES, {
+  // Queue hygiene · an entry is dropped READY_TTL_MIN after it was queued.
+  async readyEntriesExpire(mod) {
+    const board = await startBoard();
+    try {
+      const { lane, clock, file } = await rig(mod, board);
+      for (const r of ['run-A', 'run-B']) board.runs[r] = 'running';
+      await lane.ready(B, RDY(SHA.B));
+      clock.t = at(59.99);
+      const early = await lane.claim(A, RDY(SHA.A));
+      await lane.release(A);
+      clock.t = at(60);
+      const late = await lane.claim(A, RDY(SHA.A));
+      return early.batch.length === 1 && late.batch.length === 0 && lane.peek().queue.length === 0
+        && history(file).some((h) => h.event === 'ready-expired' && h.runId === 'run-B');
+    } finally { board.close(); }
+  },
+
+  // `unready` withdraws the caller's entry; `release` withdraws it too.
+  async unreadyAndReleaseWithdraw(mod) {
+    const board = await startBoard();
+    try {
+      const { lane } = await rig(mod, board);
+      for (const r of ['run-A', 'run-B']) board.runs[r] = 'running';
+      await lane.ready(B, RDY(SHA.B));
+      const w1 = await lane.unready(B);
+      const w2 = await lane.unready(B);
+      await lane.ready(A, RDY(SHA.A));
+      await lane.claim(A, RDY(SHA.A));
+      await lane.release(A);
+      return w1.code === 0 && w2.code === 1 && lane.peek().queue.length === 0;
+    } finally { board.close(); }
+  },
+
+  // At batch time, an entry whose owner run has ended is dropped (notice,
+  // history), never handed to the batch; unknown liveness is kept.
+  async deadOwnerEntryDropped(mod) {
+    const board = await startBoard();
+    try {
+      const { lane, file } = await rig(mod, board);
+      for (const r of ['run-A', 'run-B', 'run-C']) board.runs[r] = 'running';
+      await lane.ready(B, RDY(SHA.B));
+      await lane.ready(C, RDY(SHA.C));
+      await lane.ready(D, RDY(SHA.D)); // run-D is unknown to the board: liveness unknown
+      await lane.claim(A, RDY(SHA.A));
+      board.runs['run-B'] = 'failed';
+      const cands = await lane.batchCandidates(A);
+      return JSON.stringify(cands.map((e) => e.runId)) === '["run-C","run-D"]'
+        && lane.peek().queue.every((e) => e.runId !== 'run-B')
+        && board.comments.some((c) => c.issueId === 'issue-260' && /NOT landed/.test(c.body))
+        && history(file).some((h) => h.event === 'ready-dropped-dead-owner' && h.runId === 'run-B' && /failed/.test(h.evidence));
+    } finally { board.close(); }
+  },
+
+  // A landed entry leaves the queue only if run AND sha match: a newer commit the
+  // same run queued during the batch stays.
+  async recordBatchMatchesRunAndSha(mod) {
+    const board = await startBoard();
+    try {
+      const { lane } = await rig(mod, board);
+      await lane.ready(B, RDY(SHA.B));
+      await lane.ready(B, RDY(SHA.D)); // re-queued during A's batch
+      await lane.recordBatch(A, { landed: [{ ticket: B.ticket, runId: 'run-B', sha: SHA.B, landedAs: SHA.C }] });
+      const q = lane.peek().queue;
+      await lane.recordBatch(A, { landed: [{ ticket: B.ticket, runId: 'run-B', sha: SHA.D, landedAs: SHA.C }] });
+      return q.length === 1 && q[0].sha === SHA.D && lane.peek().queue.length === 0;
+    } finally { board.close(); }
+  },
+});
+
 // Each mutant cuts one mechanism out of the real source. Every anchor must
 // occur exactly once, or the mutant silently mutates nothing.
 const MUTANTS = [
@@ -436,9 +506,11 @@ const MUTANTS = [
   ['a red receipt is accepted', 'notReadyIsRefused',
     'receipt.sha !== sha || receipt.exit !== 0', 'receipt.sha !== sha'],
   ['a missing code commit is ignored', 'notReadyIsRefused',
-    "const code = commits.filter((c) => !c.body.includes('[skip ci]'));", 'const code = [];'],
+    "const code = commits.filter((c) => !c.subject.includes('[skip ci]'));", 'const code = [];'],
   ['data-bot commits count as not rebased', 'notReadyIsRefused',
-    "const code = commits.filter((c) => !c.body.includes('[skip ci]'));", 'const code = commits;'],
+    "const code = commits.filter((c) => !c.subject.includes('[skip ci]'));", 'const code = commits;'],
+  ['[skip ci] in the BODY counts as a data-bot commit', 'notReadyIsRefused',
+    "const code = commits.filter((c) => !c.subject.includes('[skip ci]'));", "const code = commits.filter((c) => !c.body.includes('[skip ci]'));"],
   ['review is not required', 'notReadyIsRefused', 'if (!reviewed) missing.push(', 'if (false) missing.push('],
   ['exit 4 is back in the table', 'noPathReturnsFourOrFive',
     'export const EXIT = { HOLD: 0,', 'export const EXIT = { EXPIRED_OWNER_ALIVE: 4, HOLD: 0,'],
@@ -469,6 +541,19 @@ const MUTANTS = [
     "const live = await liveness(c);\n        if (live.state === 'dead') {", "const live = await liveness(c);\n        if (live.state === 'dead' || c.ticket === me.ticket) {"],
   ['claim lists no batch candidates', 'claimListsTheBatch',
     'const batchFor = (s, me) => s.queue.filter((e) => e.runId !== me.runId);', 'const batchFor = () => [];'],
+  ['queued entries never expire', 'readyEntriesExpire',
+    'if (t - Date.parse(e.readyAt) >= READY_TTL_MIN * MIN)', 'if (false)'],
+  ['the ready TTL is 61 min', 'readyEntriesExpire', 'export const READY_TTL_MIN = 60;', 'export const READY_TTL_MIN = 61;'],
+  ['unready withdraws nothing', 'unreadyAndReleaseWithdraw',
+    "s.queue = s.queue.filter((e) => e.runId !== me.runId);\n      if (s.queue.length === before)", "if (s.queue.length === before)"],
+  ['release leaves the caller\'s entry queued', 'unreadyAndReleaseWithdraw',
+    "s.queue = s.queue.filter((e) => e.runId !== me.runId);\n      log(s, { event: 'released'", "log(s, { event: 'released'"],
+  ['a dead owner\'s entry is handed to the batch', 'deadOwnerEntryDropped',
+    "if (live.state !== 'dead') { keep.push(e); continue; }", 'if (true) { keep.push(e); continue; }'],
+  ['an unknown owner\'s entry is dropped as dead', 'deadOwnerEntryDropped',
+    "if (live.state !== 'dead') { keep.push(e); continue; }", "if (live.state === 'alive') { keep.push(e); continue; }"],
+  ['a landed entry is removed by run id only', 'recordBatchMatchesRunAndSha',
+    's.queue = s.queue.filter((e) => !(e.runId === l.runId && e.sha === l.sha));', 's.queue = s.queue.filter((e) => e.runId !== l.runId);'],
   ['ready appends instead of replacing the run\'s entry', 'claimListsTheBatch',
     's.queue = s.queue.filter((e) => e.runId !== me.runId);\n      s.queue.push(entry);', 's.queue.push(entry);'],
 ];
@@ -567,6 +652,8 @@ test('CLI: claim / ready / wait / renew / release / status with exit codes, thro
     assert.equal((await run(['ready', '--ticket', 'TEN-260', '--sha', shaB, '--reviewed'], 'run-B', 'issue-260')).status, 0);
     const st = await run(['status', '--ticket', 'TEN-260'], 'run-B', 'issue-260');
     assert.equal(st.status, 0); assert.equal(JSON.parse(st.stdout).queue[0].sha, shaB);
+    assert.equal((await run(['unready', '--ticket', 'TEN-260'], 'run-B', 'issue-260')).status, 0);
+    assert.equal((await run(['unready', '--ticket', 'TEN-260'], 'run-B', 'issue-260')).status, 1, 'nothing left to withdraw');
     assert.equal((await run(['renew', '--ticket', 'TEN-253'], 'run-A', 'issue-253')).status, 0);
     assert.equal((await run(['release', '--ticket', 'TEN-260'], 'run-B', 'issue-260')).status, 1);
     assert.equal((await run(['release', '--ticket', 'TEN-253'], 'run-A', 'issue-253')).status, 0);

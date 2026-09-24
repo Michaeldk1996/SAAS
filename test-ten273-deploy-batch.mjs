@@ -63,8 +63,11 @@ function startBoard() {
 }
 
 // ── real git fixture ─────────────────────────────────────────────────────────
+// Fixture commits are dated in the past, so a cherry-pick (dated now) can never
+// reproduce a fixture sha by accident — "S reached main" then means S itself.
+const PAST = { ...process.env, GIT_COMMITTER_DATE: '2026-01-01T00:00:00Z', GIT_AUTHOR_DATE: '2026-01-01T00:00:00Z' };
 function sh(cwd, ...args) {
-  const r = spawnSync('git', args, { cwd, encoding: 'utf8' });
+  const r = spawnSync('git', args, { cwd, encoding: 'utf8', env: PAST });
   if (r.status !== 0) throw new Error(`git ${args.join(' ')}: ${r.stderr}`);
   return r.stdout.trim();
 }
@@ -84,11 +87,17 @@ const A = { ticket: 'TEN-301', issueId: 'issue-A', runId: 'run-A', kind: 'paperc
 const B = { ticket: 'TEN-302', issueId: 'issue-B', runId: 'run-B', kind: 'paperclip' };
 const C = { ticket: 'TEN-303', issueId: 'issue-C', runId: 'run-C', kind: 'paperclip' };
 const Z = { ticket: 'TEN-304', issueId: 'issue-Z', runId: 'run-Z', kind: 'paperclip' };
+const W = { ticket: 'TEN-305', issueId: 'issue-W', runId: 'run-W', kind: 'paperclip' };
+const M = { ticket: 'TEN-306', issueId: 'issue-M', runId: 'run-M', kind: 'paperclip' };
 
 // origin/main: seed + one data-bot commit. Holder A edits a.txt, B edits b.txt,
 // C edits c.txt, Z edits b.txt the other way (conflicts with B). All branch off
-// the seed, so each is "rebased" (only a [skip ci] commit ahead of it).
-async function fixture({ entries = [B, C] } = {}) {
+// the seed, so each is "rebased" (only a [skip ci] commit ahead of it). W writes
+// data.json, which the data bot moved (its own clobber check fails); M carries a
+// merge commit. B2 is B's newer commit. `holderOnTip` builds the holder on top of
+// origin/main (so it can fast-forward); `beforeHolder` runs after the entries are
+// queued and before the holder commit is made and claimed.
+async function fixture({ entries = [B, C], holderOnTip = false, beforeHolder = null } = {}) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ten273-batch-'));
   const origin = path.join(root, 'origin.git');
   const work = path.join(root, 'work');
@@ -106,29 +115,38 @@ async function fixture({ entries = [B, C] } = {}) {
   let n = 0;
   const onOrigin = (file, msg) => { sh(bot, 'pull', '-q', '--rebase', 'origin', 'main'); commit(bot, file, `${msg} ${++n}\n`, msg); sh(bot, 'push', '-q', 'origin', 'HEAD:main'); };
   const dataBot = () => onOrigin('data.json', 'data refresh [skip ci]');
-  const codePush = () => onOrigin('other.txt', 'TEN-999: an unlaned code push');
-  const mk = (file, content, msg) => { sh(work, 'checkout', '-q', '--detach', seed); return commit(work, file, content, msg); };
-  const shas = { A: mk('a.txt', 'a.txt holder\n', 'TEN-301: holder change'), B: mk('b.txt', 'b.txt from B\n', 'TEN-302: B change'),
-    C: mk('c.txt', 'c.txt from C\n', 'TEN-303: C change'), Z: mk('b.txt', 'b.txt from Z\n', 'TEN-304: Z change') };
+  // A CODE commit whose BODY mentions [skip ci]: the marker only counts in the subject.
+  const codePush = () => onOrigin('other.txt', 'TEN-999: an unlaned code push\n\nThis body mentions [skip ci] but the commit is code.');
+  const mk = (file, content, msg, from = seed) => { sh(work, 'checkout', '-q', '--detach', from); return commit(work, file, content, msg); };
+  const shas = { B: mk('b.txt', 'b.txt from B\n', 'TEN-302: B change'), B2: mk('b2.txt', 'B again\n', 'TEN-302: B newer change'),
+    C: mk('c.txt', 'c.txt from C\n', 'TEN-303: C change'), Z: mk('b.txt', 'b.txt from Z\n', 'TEN-304: Z change'),
+    W: mk('data.json', 'W rewrote data\n', 'TEN-305: W writes data.json') };
+  const m1 = mk('m1.txt', 'm1\n', 'TEN-306: m1');
+  mk('m2.txt', 'm2\n', 'TEN-306: m2');
+  sh(work, '-c', 'core.hooksPath=/dev/null', 'merge', '-q', '--no-ff', '--no-edit', m1);
+  shas.M = sh(work, 'rev-parse', 'HEAD');
   sh(work, 'checkout', '-q', '--detach', seed);
   dataBot();
   const receipts = path.join(root, 'receipts');
   for (const s of Object.values(shas)) receipt(receipts, s);
 
   const board = await startBoard();
-  for (const r of ['run-A', 'run-B', 'run-C', 'run-Z']) board.runs[r] = 'running';
+  for (const r of ['run-A', 'run-B', 'run-C', 'run-Z', 'run-W', 'run-M']) board.runs[r] = 'running';
   const clock = { t: T0 };
   const notify = laneMod.paperclipNotify({ apiBase: board.base, apiKey: 'k', agentId: 'agent-x' });
   const lane = laneMod.createLane({ file: path.join(root, 'lane.json'), now: () => clock.t,
     liveness: laneMod.paperclipLiveness({ apiBase: board.base, apiKey: 'k' }), notify,
     suiteReceipt: laneMod.fileSuiteReceipts({ dir: receipts }), rebaseCheck: laneMod.gitRebaseCheck({ cwd: work }) });
-  const ids = { B: 'B', C: 'C', Z: 'Z' };
   for (const e of entries) {
     clock.t += MIN;
-    const key = ids[e.runId.slice(4)];
-    const r = await lane.ready(e, { sha: shas[key], reviewed: true });
+    const r = await lane.ready(e, { sha: shas[e.runId.slice(4)], reviewed: true });
     if (r.code !== 0) throw new Error(`ready ${e.ticket}: ${JSON.stringify(r)}`);
   }
+  if (beforeHolder) await beforeHolder({ codePush, dataBot });
+  if (holderOnTip) { sh(work, 'fetch', '-q', 'origin'); shas.A = mk('a.txt', 'a.txt holder\n', 'TEN-301: holder change', 'origin/main'); }
+  else shas.A = mk('a.txt', 'a.txt holder\n', 'TEN-301: holder change');
+  sh(work, 'checkout', '-q', '--detach', seed);
+  receipt(receipts, shas.A);
   clock.t += MIN;
   const claim = await lane.claim(A, { sha: shas.A, reviewed: true });
   if (claim.code !== 0) throw new Error(`claim: ${JSON.stringify(claim)}`);
@@ -136,11 +154,11 @@ async function fixture({ entries = [B, C] } = {}) {
   const suiteCalls = [];
   let suiteHook = null;
   let suiteOk = true;
-  const suite = async (sha) => { suiteCalls.push(sha); if (suiteHook) suiteHook(); return { ok: suiteOk, exit: suiteOk ? 0 : 1, log: `/tmp/ci-suite-${sha}.log`, output: `EXIT=${suiteOk ? 0 : 1}` }; };
+  const suite = async (sha) => { suiteCalls.push(sha); if (suiteHook) await suiteHook(); return { ok: suiteOk, exit: suiteOk ? 0 : 1, log: `/tmp/ci-suite-${sha}.log`, output: `EXIT=${suiteOk ? 0 : 1}` }; };
   const tipOf = () => sh(origin, 'rev-parse', 'main');
   const pushes = () => sh(origin, 'reflog', 'show', 'main').split('\n').filter(Boolean).length;
   const subjects = (from) => sh(origin, 'log', '--reverse', '--format=%s', `${from}..main`).split('\n').filter(Boolean);
-  return { root, origin, work, board, lane, clock, shas, claim, notify, suite, suiteCalls, dataBot, codePush,
+  return { root, origin, work, board, lane, clock, shas, claim, notify, suite, suiteCalls, dataBot, codePush, receipts, mk,
     setSuiteOk: (v) => { suiteOk = v; }, setSuiteHook: (f) => { suiteHook = f; }, tipOf, pushes, subjects,
     close: () => board.close() };
 }
@@ -188,7 +206,7 @@ const CASES = {
       const z = st.queue.find((e) => e.runId === 'run-Z');
       return r.code === 0 && r.mode === 'batch'
         && JSON.stringify(f.subjects(start)) === JSON.stringify(['TEN-301: holder change', 'TEN-302: B change', 'TEN-303: C change'])
-        && st.queue.length === 1 && !!z && z.status === 'conflict' && /CONFLICT|apply/.test(z.conflict) && z.sha === f.shas.Z
+        && st.queue.length === 1 && !!z && z.status === 'conflict' && /CONFLICT|apply/.test(z.reason) && z.sha === f.shas.Z
         && !!st.landed['run-B'] && !!st.landed['run-C'] && !st.landed['run-Z']
         && f.board.comments.every((c) => c.issueId !== 'issue-Z');
     } catch (e) { if (process.env.DEBUG_TEN273) console.error("CASE THREW:", e.message); return false; } finally { f.close(); }
@@ -250,6 +268,113 @@ const CASES = {
   },
 };
 
+Object.assign(CASES, {
+  // vii · the sha deploy-batch pushes must be the one the claim was granted for.
+  async shaMustBeTheClaimedSha(mod) {
+    const f = await fixture();
+    try {
+      const tip0 = f.tipOf();
+      const s2 = f.mk('a2.txt', 'untested\n', 'TEN-301: a later, untested commit', f.shas.A);
+      receipt(f.receipts, s2); // even a green receipt does not make it the claimed commit
+      const r = await batch(mod, f, A, s2);
+      return r.code === 1 && /not the sha you claimed/.test(r.detail) && f.tipOf() === tip0 && f.suiteCalls.length === 0;
+    } catch (e) { if (process.env.DEBUG_TEN273) console.error('CASE THREW:', e.message); return false; } finally { f.close(); }
+  },
+
+  // viii · the claimed sha's receipt is re-checked at batch time: gone or red → refused.
+  async receiptRecheckedAtBatchTime(mod) {
+    const f = await fixture();
+    try {
+      const tip0 = f.tipOf();
+      const file = path.join(f.receipts, `${f.shas.A}.json`);
+      fs.rmSync(file);
+      const gone = await batch(mod, f);
+      receipt(f.receipts, f.shas.A, 1);
+      const red = await batch(mod, f);
+      return gone.code === 1 && /no green suite receipt/.test(gone.detail) && red.code === 1 && /no green suite receipt/.test(red.detail)
+        && f.tipOf() === tip0 && f.suiteCalls.length === 0;
+    } catch (e) { if (process.env.DEBUG_TEN273) console.error('CASE THREW:', e.message); return false; } finally { f.close(); }
+  },
+
+  // ix · holder alone and already on top of origin/main: S ITSELF is pushed, so
+  //      check-live-build.sh <S> can find it; readBack is S.
+  async holderAloneFastForwardsItsOwnSha(mod) {
+    const f = await fixture({ entries: [], holderOnTip: true });
+    try {
+      const r = await batch(mod, f);
+      return r.code === 0 && r.mode === 'holder-only' && f.tipOf() === f.shas.A && r.readBack === f.shas.A && r.holder.pushedAsIs === true;
+    } catch (e) { if (process.env.DEBUG_TEN273) console.error('CASE THREW:', e.message); return false; } finally { f.close(); }
+  },
+
+  // x · an entry whose own clobber check fails (a data bot moved a file it writes
+  //     since its merge-base) is skipped, stays queued, marked `clobber`.
+  async entryClobberCheckSkips(mod) {
+    const f = await fixture({ entries: [B, W] });
+    try {
+      const start = f.tipOf();
+      const r = await batch(mod, f);
+      const w = f.lane.peek().queue.find((e) => e.runId === 'run-W');
+      return r.code === 0 && JSON.stringify(f.subjects(start)) === JSON.stringify(['TEN-301: holder change', 'TEN-302: B change'])
+        && !!w && w.status === 'clobber' && /data\.json/.test(w.reason);
+    } catch (e) { if (process.env.DEBUG_TEN273) console.error('CASE THREW:', e.message); return false; } finally { f.close(); }
+  },
+
+  // xi · an entry that contains a merge commit is skipped: "rebase, don't merge".
+  async mergeEntrySkipped(mod) {
+    const f = await fixture({ entries: [B, M] });
+    try {
+      const r = await batch(mod, f);
+      const m = f.lane.peek().queue.find((e) => e.runId === 'run-M');
+      return r.code === 0 && !!m && m.status === 'merge' && /rebase, don't merge/.test(m.reason) && !!f.lane.peek().landed['run-B'];
+    } catch (e) { if (process.env.DEBUG_TEN273) console.error('CASE THREW:', e.message); return false; } finally { f.close(); }
+  },
+
+  // xii · entries no longer rebased at batch time (a code commit landed after they
+  //       were queued) are skipped and left queued; the rebased holder lands alone.
+  async staleEntriesSkippedNotLanded(mod) {
+    const f = await fixture({ entries: [B, C], holderOnTip: true, beforeHolder: ({ codePush }) => codePush() });
+    try {
+      const r = await batch(mod, f);
+      const q = f.lane.peek().queue;
+      return r.code === 0 && r.mode === 'holder-only' && f.tipOf() === f.shas.A
+        && q.length === 2 && q.every((e) => e.status === 'not-rebased' && /code commit/.test(e.reason));
+    } catch (e) { if (process.env.DEBUG_TEN273) console.error('CASE THREW:', e.message); return false; } finally { f.close(); }
+  },
+
+  // xiii · a dead owner's entry is dropped at batch time, not landed.
+  async deadOwnerEntryNotLanded(mod) {
+    const f = await fixture();
+    try {
+      f.board.runs['run-B'] = 'cancelled';
+      const start = f.tipOf();
+      const r = await batch(mod, f);
+      const st = f.lane.peek();
+      return r.code === 0 && JSON.stringify(f.subjects(start)) === JSON.stringify(['TEN-301: holder change', 'TEN-303: C change'])
+        && !st.landed['run-B'] && st.queue.every((e) => e.runId !== 'run-B')
+        && f.board.comments.some((c) => c.issueId === 'issue-B' && /dropped/.test(c.body) && /NOT landed/.test(c.body))
+        && st.history.some((h) => h.event === 'ready-dropped-dead-owner' && h.runId === 'run-B');
+    } catch (e) { if (process.env.DEBUG_TEN273) console.error('CASE THREW:', e.message); return false; } finally { f.close(); }
+  },
+});
+
+Object.assign(CASES, {
+  // xiv · the holder's own claimed commit containing a merge is refused.
+  async holderMergeRefused(mod) {
+    const f = await fixture({ entries: [] });
+    try {
+      const other = f.mk('x.txt', 'x\n', 'TEN-301: side');
+      sh(f.work, 'checkout', '-q', '--detach', f.shas.A);
+      sh(f.work, '-c', 'core.hooksPath=/dev/null', 'merge', '-q', '--no-ff', '--no-edit', other);
+      const merged = sh(f.work, 'rev-parse', 'HEAD');
+      receipt(f.receipts, merged);
+      if ((await f.lane.release(A)).code !== 0 || (await f.lane.claim(A, { sha: merged, reviewed: true })).code !== 0) return false;
+      const tip0 = f.tipOf();
+      const r = await batch(mod, f, A, merged);
+      return r.code === 1 && /rebase, don't merge/.test(r.detail) && f.tipOf() === tip0;
+    } catch (e) { if (process.env.DEBUG_TEN273) console.error('CASE THREW:', e.message); return false; } finally { f.close(); }
+  },
+});
+
 const MUTANTS = [
   ['queued entries are never picked', 'combinesIntoOnePush',
     'const b = build(START, [holder, ...entries]);', 'const b = build(START, [holder]);'],
@@ -261,9 +386,9 @@ const MUTANTS = [
     "      included.push({ ...g, commits, landedAs: W(['rev-parse', 'HEAD']).stdout });",
     "      W(['push', '-q', 'origin', 'HEAD:refs/heads/main']);\n      included.push({ ...g, commits, landedAs: W(['rev-parse', 'HEAD']).stdout });"],
   ['a conflicting entry sinks the whole batch', 'conflictingEntryIsSkipped',
-    'skipped.push({ ...g, reason }); continue;', 'return { ok: false, reason };'],
+    "conflicts.push({ ticket: g.ticket, runId: g.runId, sha: g.sha, status: 'conflict', reason }); continue;", 'return { ok: false, reason };'],
   ['a conflict is not marked in the queue', 'conflictingEntryIsSkipped',
-    'const conflicts = extra.conflicts || [];', 'const conflicts = [];'],
+    'skipped.push(...b.conflicts);', ''],
   ['a conflicting cherry-pick is not aborted', 'conflictingEntryIsSkipped',
     "W(['cherry-pick', '--abort']);\n        W(['reset', '-q', '--hard', before]);", ''],
   ['a red combined suite is ignored', 'redSuiteFallsBackToHolderOnly',
@@ -271,7 +396,7 @@ const MUTANTS = [
   ['the fallback pushes the combined tree', 'redSuiteFallsBackToHolderOnly',
     'const b = build(tip, [holder]);', 'const b = build(tip, [holder, ...entries]);'],
   ['the fallback clears the others from the queue', 'redSuiteFallsBackToHolderOnly',
-    "return finish(why ? 'fallback' : 'holder-only', p.b,", "p.b.included.push(...entries.map((e) => ({ ...e, landedAs: e.sha })));\n    return finish(why ? 'fallback' : 'holder-only', p.b,"],
+    'return finish(fb.mode, p.b,', 'p.b.included.push(...entries.map((e) => ({ ...e, landedAs: e.sha })));\n    return finish(fb.mode, p.b,'],
   ['anyone may run the batch', 'nonHolderIsRefused',
     "if (held.code !== 0) return { code: 1, action: 'not-holder'", "if (false) return { code: 1, action: 'not-holder'"],
   ['no retry after a data-bot rejection', 'dataBotRejectionIsRetried', 'if (attempt >= 1) return', 'if (attempt >= 0) return'],
@@ -279,6 +404,24 @@ const MUTANTS = [
     'if (code.length) return { ok: false, reason: `a code commit', 'if (false) return { ok: false, reason: `a code commit'],
   ['the fallback skips the rebased check', 'codeCommitAbortsTheBatch',
     'const rb = rebaseCheck(sha);', 'const rb = { ok: true };'],
+  ['[skip ci] matched anywhere in the message, not the subject', 'codeCommitAbortsTheBatch',
+    "G(['log', '--format=%H%x1f%s%x1e', `${b.head}..${tip}`])", "G(['log', '--format=%H%x1f%B%x1e', `${b.head}..${tip}`])"],
+  ['any --sha is pushed, not only the claimed one', 'shaMustBeTheClaimedSha',
+    'if (held.claim.sha !== sha) return refuse(', 'if (false) return refuse('],
+  ['the receipt is not re-checked at batch time', 'receiptRecheckedAtBatchTime',
+    'if (!rec || rec.sha !== sha || rec.exit !== 0) return refuse(', 'if (false) return refuse('],
+  ['the holder is always cherry-picked (its sha never reaches main)', 'holderAloneFastForwardsItsOwnSha',
+    'if (g.holder && isAnc(onto, g.sha)) {', 'if (false) {'],
+  ['no per-entry clobber check', 'entryClobberCheckSkips',
+    "if (!ck.ok) { skip('clobber',", "if (false) { skip('clobber',"],
+  ['merge commits are not refused', 'mergeEntrySkipped',
+    "if (hasMerges(mb, e.sha)) { skip('merge',", "if (false) { skip('merge',"],
+  ['entries are not re-checked for rebased at batch time', 'staleEntriesSkippedNotLanded',
+    "if (!rb.ok) { skip('not-rebased', rb.detail); continue; }", ''],
+  ['the batch ignores dead owners (reads the raw queue)', 'deadOwnerEntryNotLanded',
+    'for (const e of await lane.batchCandidates(me)) {', 'for (const e of lane.peek().queue.filter((x) => x.runId !== me.runId)) {'],
+  ['a holder merge commit is not refused', 'holderMergeRefused',
+    'if (hasMerges(holderMb, sha)) return refuse(', 'if (false) return refuse('],
 ];
 
 async function loadMutant(find, replace) {
@@ -302,14 +445,19 @@ for (const [label, caseName, find, replace] of MUTANTS) {
   });
 }
 
-test('holder alone (nothing queued): a normal land, no combined suite run', async () => {
-  const f = await fixture({ entries: [] });
+test('a commit re-queued DURING the batch stays queued (removal matches run AND sha)', async () => {
+  const f = await fixture();
   try {
-    const start = f.tipOf();
+    f.setSuiteHook(async () => {
+      const r = await f.lane.ready(B, { sha: f.shas.B2, reviewed: true });
+      assert.equal(r.code, 0);
+    });
     const r = await batch(real, f);
-    assert.equal(r.code, 0); assert.equal(r.mode, 'holder-only');
-    assert.deepEqual(f.subjects(start), ['TEN-301: holder change']);
-    assert.equal(f.suiteCalls.length, 0, 'the holder already has its own receipt');
+    assert.equal(r.code, 0); assert.equal(r.mode, 'batch');
+    const st = f.lane.peek();
+    assert.equal(st.landed['run-B'].sha, f.shas.B, 'the batched B commit is the one recorded as landed');
+    const q = st.queue.filter((e) => e.runId === 'run-B');
+    assert.equal(q.length, 1); assert.equal(q[0].sha, f.shas.B2, 'the newer B commit is still queued');
   } finally { f.close(); }
 });
 

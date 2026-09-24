@@ -1985,8 +1985,22 @@ Batched owners do their read-back against `landedAs`.
   contract (`ci-suite.sh` receipt, then `--sha … --reviewed`, and `renew` before the push).
   The INSTALLED copy in `~/.stennisfy/bin` runs the old claim until it is reinstalled with
   `--install`, and until then it fails closed (exit 2 → "deploy lane refused").
-- A v1 store's claim keeps its old `expiresAt`, so a lease claim live at landing time
-  expires on its own schedule, at most 45 min.
+- **Correction (review of 8fe65cb8).** "A v1 claim ends within 45 min at most" was
+  wrong. Until every worktree runs the new tool, an old copy of `deploy-lane.mjs` can
+  still renew (extend) a claim and claim without the ready gate. No version gate was
+  added: the store is shared on purpose, and a gate could create two lanes.
+- **For the founder to confirm.** Data bots commit every minute, so the tree pushed to
+  main may differ from the suite-tested tree **only by `[skip ci]` data-bot commits**.
+  The clobber check is re-run against them before the push, and a code commit landing
+  in between aborts the push. Is "suite green on the tree minus data commits" the bar?
+- **Batch hardening after review.** `deploy-batch` now:
+  - pushes only the claimed sha, and only with a green receipt;
+  - checks each entry like a solo land (liveness, 60-min TTL, rebased, its own
+    merge-base clobber check, no merge commits);
+  - removes a landed entry only when both run and sha match;
+  - matches `[skip ci]` in the SUBJECT only (this commit's own body mentions it);
+  - fast-forwards the holder's own sha when it can, and always prints the `readBack`
+    sha.
 
 Tests: `test-ten261-deploy-lane.mjs` (the superseded lease cases are replaced, not kept),
 `test-ten273-deploy-batch.mjs`. Every mechanism is paired with a mutant of the real source.

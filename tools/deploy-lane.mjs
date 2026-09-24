@@ -35,12 +35,16 @@
 //     WAIT_REPORT_MIN it keeps waiting.
 //  6. `ready` queues a ready commit for the next holder to batch
 //     (tools/deploy-batch.mjs); `claim` lists the queued entries of other runs.
+//     An entry leaves the queue when it lands, when its run calls `unready` or
+//     `release`, READY_TTL_MIN after it was queued, or at batch time when its
+//     owner run has ended.
 //
 // ── CLI ──────────────────────────────────────────────────────────────────────
 //   node tools/deploy-lane.mjs claim   --ticket TEN-123 --sha <commit> --reviewed
 //   node tools/deploy-lane.mjs ready   --ticket TEN-123 --sha <commit> --reviewed
 //   node tools/deploy-lane.mjs renew   --ticket TEN-123     (do I still hold it?)
-//   node tools/deploy-lane.mjs release --ticket TEN-123
+//   node tools/deploy-lane.mjs release --ticket TEN-123     (also withdraws your queue entry)
+//   node tools/deploy-lane.mjs unready --ticket TEN-123     (withdraw your queued commit)
 //   node tools/deploy-lane.mjs status  [--ticket TEN-123]
 // Run id / issue id come from PAPERCLIP_RUN_ID / PAPERCLIP_TASK_ID. Without
 // them the owner is a "session" whose liveness cannot be checked, so only the
@@ -59,6 +63,9 @@ import { fileURLToPath } from 'node:url';
 
 export const MAX_HOLD_MIN = 30;
 export const WAIT_REPORT_MIN = 30;
+// A queued ready commit nobody has batched within this long is dropped: the run that
+// queued it has most likely moved on, and nobody would do its live read-back.
+export const READY_TTL_MIN = 60;
 const MIN = 60 * 1000;
 
 export const EXIT = { HOLD: 0, REFUSED: 1, USAGE: 2, WAIT: 3, ERROR: 6, NOT_READY: 7 };
@@ -180,6 +187,17 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
 
   const batchFor = (s, me) => s.queue.filter((e) => e.runId !== me.runId);
 
+  // Entries older than READY_TTL_MIN leave the queue. Called under the lock.
+  function pruneQueue(s) {
+    const t = now();
+    const keep = [];
+    for (const e of s.queue) {
+      if (t - Date.parse(e.readyAt) >= READY_TTL_MIN * MIN) log(s, { event: 'ready-expired', ticket: e.ticket, runId: e.runId, sha: e.sha, readyAt: e.readyAt });
+      else keep.push(e);
+    }
+    s.queue = keep;
+  }
+
   async function claim(me, opts = {}) {
     const ready = await readiness(opts);
     if (!ready.ok) return { code: EXIT.NOT_READY, action: 'not-ready', missing: ready.missing };
@@ -188,6 +206,7 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
       const t = now();
       for (const [id, w] of Object.entries(s.waiters)) if (t - Date.parse(w.lastSeen || w.since) > 2 * WAIT_REPORT_MIN * MIN) delete s.waiters[id];
       const auto = await autoRelease(s);
+      pruneQueue(s);
       const c = s.claim;
       let out;
       if (!c) {
@@ -246,6 +265,7 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
       const c = s.claim;
       if (!c || c.runId !== me.runId) return { code: EXIT.REFUSED, action: auto && auto.claim.runId === me.runId ? 'auto-released' : 'not-owner', claim: c };
       s.claim = null;
+      s.queue = s.queue.filter((e) => e.runId !== me.runId);
       log(s, { event: 'released', ticket: me.ticket, runId: me.runId });
       save(s);
       return { code: EXIT.HOLD, action: 'released' };
@@ -255,7 +275,9 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
   async function status(me) {
     return withLock(file, async (save) => {
       const s = readState(file);
-      if (await autoRelease(s)) save(s);
+      await autoRelease(s);
+      pruneQueue(s);
+      save(s);
       const c = s.claim;
       const mine = me && s.landed[me.runId] ? { landed: s.landed[me.runId] } : {};
       if (!c) return { code: EXIT.HOLD, action: 'free', waiters: s.waiters, queue: s.queue, ...mine };
@@ -271,6 +293,7 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
     return withLock(file, async (save) => {
       const s = readState(file);
       await autoRelease(s);
+      pruneQueue(s);
       const entry = { ticket: me.ticket, issueId: me.issueId || null, runId: me.runId, kind: me.kind, sha: r.sha, reviewed: true, readyAt: iso(now()) };
       s.queue = s.queue.filter((e) => e.runId !== me.runId);
       s.queue.push(entry);
@@ -280,20 +303,58 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
     });
   }
 
-  // Used by tools/deploy-batch.mjs to record the outcome of a batch.
-  async function recordBatch(me, { landed = [], conflicts = [] }) {
+  // Withdraw the caller's queued entry.
+  async function unready(me) {
+    return withLock(file, async (save) => {
+      const s = readState(file);
+      const before = s.queue.length;
+      s.queue = s.queue.filter((e) => e.runId !== me.runId);
+      if (s.queue.length === before) return { code: EXIT.REFUSED, action: 'not-queued' };
+      log(s, { event: 'unready', ticket: me.ticket, runId: me.runId });
+      save(s);
+      return { code: EXIT.HOLD, action: 'withdrawn', queue: s.queue };
+    });
+  }
+
+  // The holder's batch candidates: other runs' entries, oldest first, after
+  // dropping expired entries and entries whose owner run has ended (nobody would
+  // do their live read-back). A notice for a dropped entry is best-effort.
+  async function batchCandidates(me) {
+    return withLock(file, async (save) => {
+      const s = readState(file);
+      pruneQueue(s);
+      const keep = [];
+      for (const e of s.queue) {
+        if (e.runId === me.runId) { keep.push(e); continue; }
+        const live = await liveness(e);
+        if (live.state !== 'dead') { keep.push(e); continue; }
+        const notice = await notify({ to: 'owner', issueId: e.issueId,
+          body: `## Deploy lane: your queued commit was dropped — run ended\n\n\`${e.sha}\` (run \`${e.runId}\`) was queued with \`deploy-lane.mjs ready\`, ` +
+            `but that run is no longer active (${live.detail}), so nobody would do its live read-back. It was NOT landed. Re-queue it from a live run.` });
+        log(s, { event: 'ready-dropped-dead-owner', ticket: e.ticket, runId: e.runId, sha: e.sha, evidence: live.detail, notice: notice.ok ? notice.id : `failed: ${notice.error}` });
+      }
+      s.queue = keep;
+      save(s);
+      return batchFor(s, me).sort((a, b) => Date.parse(a.readyAt) - Date.parse(b.readyAt));
+    });
+  }
+
+  // Used by tools/deploy-batch.mjs to record the outcome of a batch. An entry
+  // leaves the queue only if BOTH its run and its sha match what was landed: a
+  // run that re-queued a newer commit during the batch keeps that entry.
+  async function recordBatch(me, { landed = [], skipped = [] }) {
     return withLock(file, async (save) => {
       const s = readState(file);
       const t = iso(now());
       for (const l of landed) {
         s.landed[l.runId] = { ticket: l.ticket, sha: l.sha, landedAs: l.landedAs, by: me.ticket, at: t };
-        s.queue = s.queue.filter((e) => e.runId !== l.runId);
+        s.queue = s.queue.filter((e) => !(e.runId === l.runId && e.sha === l.sha));
       }
-      for (const k of conflicts) {
+      for (const k of skipped) {
         const e = s.queue.find((x) => x.runId === k.runId && x.sha === k.sha);
-        if (e) { e.status = 'conflict'; e.conflict = k.reason; e.conflictAt = t; }
+        if (e) { e.status = k.status; e.reason = k.reason; e.skippedAt = t; }
       }
-      log(s, { event: 'batch', by: me.runId, landed: landed.map((l) => l.runId), conflicts: conflicts.map((k) => k.runId) });
+      log(s, { event: 'batch', by: me.runId, landed: landed.map((l) => l.runId), skipped: skipped.map((k) => `${k.runId}:${k.status}`) });
       save(s);
       return { queue: s.queue };
     });
@@ -301,7 +362,7 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
 
   const peek = () => readState(file);
 
-  return { claim, renew, release, status, ready, readiness, recordBatch, peek };
+  return { claim, renew, release, status, ready, unready, readiness, batchCandidates, recordBatch, peek, receipt: suiteReceipt };
 }
 
 // ── real adapters ────────────────────────────────────────────────────────────
@@ -372,7 +433,9 @@ export function gitRebaseCheck({ cwd = process.cwd() } = {}) {
     const l = git(['log', '--format=%H%x1f%s%x1f%B%x1e', `${sha}..origin/main`], { cwd });
     if (l.status !== 0) return { ok: false, codeCommits: [], dataCommits: 0, detail: `git log ${sha}..origin/main failed: ${l.stderr}` };
     const commits = l.stdout.split('\x1e').map((x) => x.trim()).filter(Boolean).map((x) => { const [h, subject, body] = x.split('\x1f'); return { sha: h, subject, body }; });
-    const code = commits.filter((c) => !c.body.includes('[skip ci]'));
+    // The marker must be in the SUBJECT: a code commit that merely mentions
+    // "[skip ci]" in its body (this very tool's commit did) is still code.
+    const code = commits.filter((c) => !c.subject.includes('[skip ci]'));
     const dataCommits = commits.length - code.length;
     return code.length
       ? { ok: false, codeCommits: code.map(({ sha: h, subject }) => ({ sha: h, subject })), dataCommits,
@@ -417,13 +480,13 @@ function parseArgs(argv) {
 }
 
 const USAGE = 'usage: node tools/deploy-lane.mjs claim|ready --ticket TEN-123 --sha <commit> --reviewed\n' +
-  '       node tools/deploy-lane.mjs renew|release --ticket TEN-123\n       node tools/deploy-lane.mjs status [--ticket TEN-123]';
+  '       node tools/deploy-lane.mjs renew|release|unready --ticket TEN-123\n       node tools/deploy-lane.mjs status [--ticket TEN-123]';
 
 async function main() {
   let a;
   try { a = parseArgs(process.argv.slice(2)); } catch (e) { console.error(`${e.message}\n${USAGE}`); process.exit(EXIT.USAGE); }
   const needsSha = a.cmd === 'claim' || a.cmd === 'ready';
-  if (!['claim', 'ready', 'renew', 'release', 'status'].includes(a.cmd) || (a.cmd !== 'status' && !a.ticket) || (needsSha && !a.sha)) {
+  if (!['claim', 'ready', 'unready', 'renew', 'release', 'status'].includes(a.cmd) || (a.cmd !== 'status' && !a.ticket) || (needsSha && !a.sha)) {
     console.error(USAGE);
     process.exit(EXIT.USAGE);
   }
