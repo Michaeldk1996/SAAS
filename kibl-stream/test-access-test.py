@@ -223,17 +223,24 @@ ok(AT.parse_ts("2026-09-23T10:00:00Z") is not None
 ok(AT.parse_ts(1_800_000_000).year == 2027 and AT.parse_ts(1_800_000_000_000).year == 2027,
    "parse_ts() distinguishes epoch seconds from milliseconds")
 
-print("\n8 · TEN-270 card_join — stream rows to OUR cards on names + start time")
+print("\n8 · TEN-270 card_join — ruling 1: both names, nearest fixture within ±24 h")
 import card_join as CJ  # noqa: E402
 CARDS = [
     # 07:00 UTC+2 = 05:00Z. Card order is the REVERSE of Kibl's fixture string.
     {"date": "2026-09-24", "time": "07:00", "p1": "C. Ugo Carabelli", "p2": "N. Borges",
      "tourBadge": "ATP", "tour": "ATP Chengdu", "odds": {"p1": 5.05, "p2": 1.17}},
-    {"date": "2026-09-24", "time": "08:30", "p1": "A. Rublev", "p2": "T. Machac",
-     "tourBadge": "ATP", "tour": "ATP Hangzhou"},
-    # Two cards on ONE key: ambiguous, both dropped rather than one guessed.
-    {"date": "2026-09-24", "time": "09:00", "p1": "J. Smith", "p2": "K. Jones", "tourBadge": "ATP"},
-    {"date": "2026-09-24", "time": "10:00", "p1": "L. Smith", "p2": "M. Jones", "tourBadge": "ATP"},
+    {"date": "2026-09-24", "time": "08:30", "p1": "A. Rublev", "p2": "T. Machac", "tourBadge": "ATP"},
+    # Kibl lists this one at the day's first session, 5 h early (measured shape).
+    {"date": "2026-09-24", "time": "09:00", "p1": "Y. Bu", "p2": "M. Zheng", "tourBadge": "ATP"},
+    # Two qualifying fixtures -> neither.
+    {"date": "2026-09-24", "time": "10:00", "p1": "J. Twin", "p2": "K. Dup", "tourBadge": "ATP"},
+    # Names match only a fixture 30 h away -> not matched.
+    {"date": "2026-09-24", "time": "11:00", "p1": "P. Far", "p2": "Q. Away", "tourBadge": "ATP"},
+    # Initials conflict with fixture 12 (Bob Smith vs Carl Stone) -> not matched.
+    {"date": "2026-09-24", "time": "12:00", "p1": "A. Smith", "p2": "C. Stone", "tourBadge": "ATP"},
+    # Two cards whose only candidate is ONE fixture -> neither card.
+    {"date": "2026-09-24", "time": "13:00", "p1": "R. Nadal", "p2": "C. Ruud", "tourBadge": "ATP"},
+    {"date": "2026-09-25", "time": "09:00", "p1": "R. Nadal", "p2": "C. Ruud", "tourBadge": "ATP"},
     # Already started before the capture: outside the pre-match denominator.
     {"date": "2026-09-23", "time": "09:00", "p1": "X. Early", "p2": "Y. Bird", "tourBadge": "ATP"},
 ]
@@ -242,7 +249,12 @@ FX = {
     2: {"name": "Andrey Rublev vs Tomas Machac", "scheduled_start": "2026-09-24T06:30:00Z"},
     3: {"name": "Iga Swiatek vs Coco Gauff", "scheduled_start": "2026-09-24T07:00:00Z"},
     4: {"name": "A Borges/B Cid vs C Dee/D Eff", "scheduled_start": "2026-09-24T05:00:00Z"},
-    5: {"name": "Pedro Borges vs Zed Unknown", "scheduled_start": "2026-09-24T05:00:00Z"},
+    6: {"name": "Yunchaokete Bu vs Mingze Zheng", "scheduled_start": "2026-09-24T02:00:00Z"},
+    7: {"name": "Jay Twin vs Kay Dup", "scheduled_start": "2026-09-24T08:00:00Z"},
+    8: {"name": "Jay Twin vs Kay Dup", "scheduled_start": "2026-09-24T09:00:00Z"},
+    10: {"name": "Pat Far vs Quin Away", "scheduled_start": "2026-09-25T15:00:00Z"},
+    12: {"name": "Bob Smith vs Carl Stone", "scheduled_start": "2026-09-24T10:00:00Z"},
+    14: {"name": "Rafael Nadal vs Casper Ruud", "scheduled_start": "2026-09-24T20:00:00Z"},
 }
 def srow(fid, fp, price, ins, **kw):
     r = {"fixture_id": fid, "fixture_participant_id": fp, "market_type_id": 1, "segment_id": 1,
@@ -259,7 +271,11 @@ CJ_ROWS = [
     srow(2, 201, 1.50, "2026-09-24T04:10:00Z", _league_id=962),  # tier disagreement
     srow(3, 301, 1.60, "2026-09-24T04:10:00Z", _league_id=20),   # WTA: not on board
     srow(4, 401, 1.90, "2026-09-24T04:10:00Z"),                  # doubles
-    srow(5, 501, 2.00, "2026-09-24T04:10:00Z"),                  # surname on board, key fails
+    srow(6, 601, 2.25, "2026-09-24T04:10:00Z"), srow(6, 602, 1.69, "2026-09-24T04:10:00Z"),
+    srow(7, 701, 2.00, "2026-09-24T04:10:00Z"), srow(8, 801, 2.00, "2026-09-24T04:10:00Z"),
+    srow(10, 1001, 2.00, "2026-09-24T04:10:00Z"),
+    srow(12, 1201, 2.00, "2026-09-24T04:10:00Z"),
+    srow(14, 1401, 2.00, "2026-09-24T04:10:00Z"),
     srow(9, 901, 2.00, "2026-09-24T04:10:00Z"),                  # no fixture record
 ]
 OPENERS = {1: [{"fixture_participant_id": 101, "price_decimal": 1.25, "observed_at": "2026-09-22T10:00:00Z"},
@@ -268,9 +284,16 @@ OPENERS = {1: [{"fixture_participant_id": 101, "price_decimal": 1.25, "observed_
 since = CJ.parse_ts("2026-09-24T00:00:00Z")
 res = CJ.join(CJ_ROWS, CARDS, FX, OPENERS, since=since)
 pc = {p["fixture_id"]: p for p in res["per_card"]}
-ok(res["cards_in_denominator"] == 4, f"started card outside denominator (got {res['cards_in_denominator']})")
-ok(len(res["ambiguous_card_keys"]) == 1, "two cards on one key: dropped, not guessed")
-ok(set(pc) == {1, 2}, f"exactly the two real matches join (got {sorted(pc)})")
+ok(res["cards_in_denominator"] == 8, f"started card outside denominator (got {res['cards_in_denominator']})")
+ok(set(pc) == {1, 2, 6}, f"exactly the three unambiguous matches join (got {sorted(pc)})")
+ok(pc[6]["start_delta_min"] == 300.0,
+   "a fixture Kibl lists 5 h early still matches — clock time is not a match condition")
+amb = {a["why"]: a for a in res["ambiguous_rule1"]}
+ok("two or more fixtures qualify" in amb and {f["fixture_id"] for f in amb["two or more fixtures qualify"]["fixtures"]} == {7, 8},
+   "two qualifying fixtures -> NEITHER, logged with both")
+ok("one fixture is the candidate of two cards" in amb, "one fixture claimed by two cards -> neither card")
+ok([a["card"] for a in res["names_match_outside_24h"]] == ["P. Far vs Q. Away"],
+   "names match 30 h away -> not matched, listed")
 p = pc[1]
 ok(p["now"] == {"p2": 1.18, "p1": 4.8},
    f"Now = latest real pre-match price, placed on the CARD's side by name (got {p['now']})")
@@ -281,18 +304,27 @@ ok(p["inplay_rows"] == 1 and p["updates"] == {"p2": 2, "p1": 2},
 ok(p["start_delta_min"] == -10.0, f"card 05:00Z vs Kibl 05:10Z = -10 min (got {p['start_delta_min']})")
 ok(res["league_disagreements"] and res["league_disagreements"][0]["fixture_id"] == 2,
    "routing-key 962 on an ATP card is REPORTED as a disagreement")
-un = {k: [x["fixture_id"] for x in v] for k, v in res["unmatched"].items()}
+un = {k: sorted(x["fixture_id"] for x in v) for k, v in res["unmatched"].items()}
 ok(un.get("not_on_board") == [3], f"WTA fixture -> not_on_board (got {un})")
 ok(un.get("name_not_two_singles_players") == [4], "doubles fixture never pairs")
-ok(un.get("surname_on_board") == [5], "a surname on the board but no key -> surname_on_board")
+ok(un.get("ambiguous_rule1") == [7, 8, 14], f"ambiguous fixtures counted (got {un.get('ambiguous_rule1')})")
+ok(un.get("names_match_outside_24h") == [10], "outside-window fixture counted")
+ok(12 not in pc, "initials conflict (A. Smith vs Bob Smith) never pairs — ruling D")
 ok(un.get("no_fixture_record") == [9], "no names -> counted, not guessed")
 lines = "\n".join(CJ.report_lines(res))
 ok("| ITF | 0 | — | — |" in lines, "ITF with no cards reads as a dash, not 0%")
-ok("| ATP | 4 | 2 of 4 | 2 of 4 |" in lines, "ATP match rate carries its denominator")
-# CONTROL: mutate the Open rule to take the LAST opener — the test must see it.
+ok("| ATP | 8 | 3 of 8 | 3 of 8 |" in lines, "ATP match rate carries its denominator")
+# CONTROL: reversed opener list must not change the Open.
 res_b = CJ.join(CJ_ROWS, CARDS, FX, {1: list(reversed(OPENERS[1]))}, since=since)
 ok({q["fixture_id"]: q for q in res_b["per_card"]}[1]["open"]["p2"] == 1.25,
    "CONTROL: Open is chosen by observed time, not list order")
+# CONTROL: the ±24 h window is load-bearing — at ±1 h the 02:00Z listing would drop.
+_w = CJ.WINDOW; CJ.WINDOW = CJ.timedelta(hours=1)
+ok(6 not in {q["fixture_id"] for q in CJ.join(CJ_ROWS, CARDS, FX, {}, since=since)["per_card"]},
+   "CONTROL: a narrower window drops the 5-h-early listing, so the test can see the rule")
+CJ.WINDOW = _w
+ok(CJ.card_key(CARDS[0]) == "2026-09-24|borges|carabelli",
+   "card_key is the page's ocsKeyOf shape (card date + sorted surname keys)")
 
 print(f"\nPASS {PASS}   FAIL {FAIL}")
 if FAIL:

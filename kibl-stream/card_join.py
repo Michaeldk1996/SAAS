@@ -1,39 +1,47 @@
 #!/usr/bin/env python3
-"""TEN-270 — join Kibl STREAM rows to OUR board cards. Report-only, pure functions.
+"""TEN-270 — join Kibl STREAM rows to OUR board cards. Pure functions.
 
-Founder brief 2026-09-24 00:48Z, change 1: "Match rows to our cards, not to
-Kibl's league. Join each stream row to a live card in matches.json on both
-player names plus start time. League comes from our card. Unmatched rows are
-dropped and counted, never guessed. Keep the routing-key league as a
-cross-check only, and report any disagreement."
+Used by BOTH the access-test harness (report) and the Now worker (writes), so
+the rule measured in the report is the rule that ships.
 
-WHAT THE JOIN IS
-  A stream row carries a fixture_id and no names (measured, probe run
-  35937443000: 27 fields, no name, no league). The fixture's names come from
-  Kibl's own fixture record (`kibl_fixtures`, else /info/fixtures). The match
-  itself is the EXISTING cross-feed key, `ten225_names.match_key(day, p1, p2)`
-  — UTC day + both surname keys, sorted — so the stream pairs to a card exactly
-  the way the poller's card path does. Not a second matcher.
+JOIN RULE 1 — FOUNDER RULING 2026-09-24T01:21Z, verbatim:
+  "Match a stream fixture to a card on both player names, choosing the nearest
+   fixture within ±24 h of the card's start time. Clock time is not a match
+   condition. If two candidate fixtures qualify, match neither and log it.
+   Unmatched rows are dropped and counted, never guessed. The routing-key
+   league is a cross-check only."
 
-  Start time: the card's `date`+`time` are api-tennis local time, UTC+2
-  (measured, [[apitennis-event-time-is-scheduled-only]]); both sides are keyed
-  on the UTC day, and the minutes between the card's start and Kibl's
-  scheduled start are REPORTED per match rather than used to drop anything —
-  the tolerance is the founder's call, not this file's.
+  As a test someone can apply:
+    * CANDIDATE = a Kibl fixture whose two players' surname keys are the card's
+      two surname keys (either order), with no given-initial conflict on either
+      pairing (ruling D), and whose Kibl scheduled start is within ±24 h of the
+      card's start. A fixture with no scheduled start cannot be measured and is
+      not a candidate.
+    * Exactly one candidate -> matched. Two or more -> NEITHER, logged with
+      names. Zero -> the card has no stream price.
+    * One fixture that is the sole candidate of two cards -> NEITHER card.
+  Exception, measured not assumed: Kibl lists some matches at the day's first
+  session (02:00Z) 300–570 min before the card (6 of 20, run 35940618497); the
+  ±24 h window is what keeps them. Clock time is never a match condition.
 
-PRE-MATCH vs IN-PLAY
-  The stream says so on every row: `betting_type_id` 1 = Prematch, 3 = Live
-  Fluid, and `is_live`. A row is pre-match match-winner only when market 1,
-  segment 1 (Full Game), betting_type 1 and is_live is not true — the card
-  path's own `is_match_winner()` test, restated here only because that module
-  cannot be imported without its Supabase side effects.
+  Why not the ±day match_key: it keys on a calendar day, and a match near
+  midnight lands on two different days on two feeds. The window has no edge.
+
+WHAT A STREAM ROW CARRIES
+  A fixture_id and no names (probe run 35937443000: 27 fields, no name, no
+  league). Names come from Kibl's own fixture record (`kibl_fixtures`, else
+  /info/fixtures). The card's `date`+`time` are api-tennis local time, UTC+2.
+
+PRE-MATCH ONLY (ruled): market 1, segment 1 (Full Game), betting_type_id 1,
+  is_live false. In-play rows (betting_type 3 or is_live true) are ignored.
 
 SIDES
-  A fixture's two sides are ordered by `fixture_participant_id`, lower = the
-  first-named player in Kibl's fixture string. That ordering is the card
-  path's documented ASSUMPTION (side_labels_for), adjudicated there against an
-  independent book. Here each side is named, then placed on the card by
-  surname key — and a side that cannot be placed is reported, never guessed.
+  Each Kibl side is placed on the card by NAME: a fixture's two
+  fixture_participant_ids ordered ascending are Kibl's first- and second-named
+  players (the card path's documented assumption, side_labels_for), and each is
+  matched to the card player with the same surname key. A side that cannot be
+  placed is reported, never guessed. Keys to the page are SURNAME keys, exactly
+  as odds_card_state keys its sides (`ocsNameKey`).
 """
 import collections
 from datetime import datetime, timedelta, timezone
@@ -42,9 +50,12 @@ import os
 import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
-from ten225_names import match_key, name_key, split_kibl_fixture_name  # noqa: E402
+from ten225_names import (  # noqa: E402
+    initials_conflict, match_key, name_key, split_kibl_fixture_name,
+)
 
 CARD_TZ = timezone(timedelta(hours=2))      # api-tennis event_time is UTC+2
+WINDOW = timedelta(hours=24)                # ruling 1
 TIER_LEAGUE = {"ATP": 19, "Challenger": 537, "ITF": 962}
 MIN_REAL_PRICE = 1.01
 
@@ -66,6 +77,12 @@ def card_start_utc(card):
         return None
 
 
+def card_key(card):
+    """The key the PAGE looks the card up by: ocsKeyOf(m) = ocsMatchKey(m.date, p1, p2).
+    Parity with the JS is already pinned by test-ten225-ocs-key.mjs."""
+    return match_key(card.get("date") or "", card.get("p1"), card.get("p2"))
+
+
 def card_tier(card):
     """League comes from OUR card. The board's tier label, verbatim."""
     b = (card.get("tourBadge") or "").strip()
@@ -81,7 +98,7 @@ def card_tier(card):
 
 def is_prematch_winner(r):
     return (r.get("market_type_id") == 1 and r.get("segment_id") == 1
-            and r.get("betting_type_id") == 1 and r.get("is_live") is not True)
+            and r.get("betting_type_id") == 1 and r.get("is_live") is False)
 
 
 def is_inplay(r):
@@ -97,41 +114,123 @@ def real_price(r):
     return p if p >= MIN_REAL_PRICE else None
 
 
-def index_cards(cards, since=None):
-    """{match_key: card} for pre-match cards; ambiguous keys dropped and counted."""
-    idx, dup, unkeyable, pool = {}, set(), [], []
+def _names_match(card, kp1, kp2):
+    """Both players, either order, surname keys equal and no initials conflict."""
+    c1, c2 = card.get("p1"), card.get("p2")
+    ck = (name_key(c1), name_key(c2))
+    kk = (name_key(kp1), name_key(kp2))
+    if None in ck or None in kk or ck[0] == ck[1]:
+        return False
+    for a, b in (((c1, kp1), (c2, kp2)), ((c1, kp2), (c2, kp1))):
+        if (name_key(a[0]) == name_key(a[1]) and name_key(b[0]) == name_key(b[1])
+                and not initials_conflict(*a) and not initials_conflict(*b)):
+            return True
+    return False
+
+
+def pre_match_cards(cards, now=None):
+    """Cards still before their start (and not live/finished) — the denominator."""
+    out = []
     for c in cards or []:
         st = card_start_utc(c)
-        if st is None or (since is not None and st < since):
+        if st is None or c.get("finalScore") or c.get("live"):
             continue
-        pool.append(c)
-        k = match_key(st.date().isoformat(), c.get("p1"), c.get("p2"))
-        if not k:
-            unkeyable.append(c)
+        if now is not None and st < now:
             continue
-        if k in idx:
-            dup.add(k)
-        idx[k] = c
-    for k in dup:
-        idx.pop(k, None)
-    return idx, pool, sorted(dup), unkeyable
+        out.append(c)
+    return out
+
+
+def pick(cards, fixtures):
+    """Ruling 1. cards: pre-match cards. fixtures: {fid: {name, scheduled_start}}.
+
+    Returns {"by_fixture": {fid: card}, "by_card": {card_key: fid},
+             "ambiguous": [...], "names_outside_24h": [...]}.
+    """
+    parsed = {}
+    for fid, fx in fixtures.items():
+        p1, p2 = split_kibl_fixture_name(fx.get("name"))
+        if p1 and p2:
+            parsed[fid] = (p1, p2, parse_ts(fx.get("scheduled_start")))
+    choice, ambiguous, outside = {}, [], []
+    for c in cards:
+        st = card_start_utc(c)
+        k = card_key(c)
+        if st is None or not k:
+            continue
+        cands, far = [], []
+        for fid, (p1, p2, sched) in parsed.items():
+            if not _names_match(c, p1, p2):
+                continue
+            if sched is None or abs(sched - st) > WINDOW:
+                far.append((fid, p1, p2, sched))
+                continue
+            cands.append((abs(sched - st), fid, p1, p2, sched))
+        if len(cands) == 1:
+            choice[k] = (c, cands[0][1])
+        elif len(cands) > 1:
+            ambiguous.append({"card": f"{c.get('p1')} vs {c.get('p2')}", "card_key": k,
+                              "why": "two or more fixtures qualify",
+                              "fixtures": [{"fixture_id": f, "fixture": f"{a} vs {b}",
+                                            "kibl_scheduled": s.isoformat() if s else None}
+                                           for _, f, a, b, s in sorted(cands)]})
+        elif far:
+            outside.append({"card": f"{c.get('p1')} vs {c.get('p2')}", "card_key": k,
+                            "fixtures": [{"fixture_id": f, "fixture": f"{a} vs {b}",
+                                          "kibl_scheduled": s.isoformat() if s else None}
+                                         for f, a, b, s in far]})
+    # A fixture chosen by two cards is ambiguous for BOTH.
+    claims = collections.defaultdict(list)
+    for k, (c, fid) in choice.items():
+        claims[fid].append(k)
+    by_fixture, by_card = {}, {}
+    for fid, ks in claims.items():
+        if len(ks) > 1:
+            ambiguous.append({"card": " / ".join(f"{choice[k][0].get('p1')} vs {choice[k][0].get('p2')}"
+                                                  for k in ks),
+                              "card_key": ks, "why": "one fixture is the candidate of two cards",
+                              "fixtures": [{"fixture_id": fid}]})
+            continue
+        by_fixture[fid] = choice[ks[0]][0]
+        by_card[ks[0]] = fid
+    return {"by_fixture": by_fixture, "by_card": by_card,
+            "ambiguous": ambiguous, "names_outside_24h": outside}
+
+
+def side_map(card, fixture_name, fpids):
+    """{fixture_participant_id: (card_side 'p1'|'p2', surname_key)} for the sides
+    that can be placed by name; {} when the fixture does not carry exactly two."""
+    p1, p2 = split_kibl_fixture_name(fixture_name)
+    fp = sorted(x for x in set(fpids) if x is not None)
+    if len(fp) != 2 or not (p1 and p2):
+        return {}
+    out = {}
+    for f, nm in zip(fp, (p1, p2)):
+        nk = name_key(nm)
+        if nk and nk == name_key(card.get("p1")) and not initials_conflict(nm, card.get("p1")):
+            out[f] = ("p1", nk)
+        elif nk and nk == name_key(card.get("p2")) and not initials_conflict(nm, card.get("p2")):
+            out[f] = ("p2", nk)
+    return out if len(out) == 2 and len({v[0] for v in out.values()}) == 2 else {}
 
 
 def join(rows, cards, fixtures, openers=None, since=None):
-    """rows: [(rec, row)] from the capture. cards: matches.json list.
+    """Report view. rows: [(rec, row)] from the capture. cards: matches.json list.
     fixtures: {fixture_id: {"name", "scheduled_start", "league_id"}}.
     openers: {fixture_id: [archive is_opener match-winner rows]}.
     since: only cards scheduled at/after this instant are in the denominator.
     """
     openers = openers or {}
-    idx, pool, dup_keys, unkeyable = index_cards(cards, since)
+    pool = pre_match_cards(cards, since)
+    chosen = pick(pool, fixtures)
     surnames_by_day = collections.defaultdict(set)
     for c in pool:
-        st = card_start_utc(c)
         for p in (c.get("p1"), c.get("p2")):
             nk = name_key(p)
             if nk:
-                surnames_by_day[st.date().isoformat()].add(nk)
+                surnames_by_day[card_start_utc(c).date().isoformat()].add(nk)
+    amb_fids = {f["fixture_id"] for a in chosen["ambiguous"] for f in a["fixtures"]}
+    far_fids = {f["fixture_id"] for a in chosen["names_outside_24h"] for f in a["fixtures"]}
 
     by_fx = collections.defaultdict(list)
     for rec, r in rows:
@@ -148,23 +247,25 @@ def join(rows, cards, fixtures, openers=None, since=None):
         if not fx:
             buckets["no_fixture_record"].append(dict(base, fixture="—"))
             continue
-        p1, p2 = split_kibl_fixture_name(fx.get("name"))
-        sched = parse_ts(fx.get("scheduled_start"))
         base.update(fixture=fx.get("name") or "—", kibl_scheduled=fx.get("scheduled_start"))
-        k = match_key(sched.date().isoformat(), p1, p2) if (sched and p1 and p2) else None
-        if not k:
+        p1, p2 = split_kibl_fixture_name(fx.get("name"))
+        if fid in chosen["by_fixture"]:
+            matched[fid] = (chosen["by_fixture"][fid], fx, items)
+        elif not (p1 and p2):
             buckets["name_not_two_singles_players"].append(base)
-            continue
-        base["match_key"] = k
-        if k in idx:
-            matched[fid] = (idx[k], fx, p1, p2, sched, items)
-            continue
-        day, ka, kb = k.split("|")
-        on_day = surnames_by_day.get(day, set())
-        buckets["surname_on_board" if (ka in on_day or kb in on_day) else "not_on_board"].append(base)
+        elif fid in amb_fids:
+            buckets["ambiguous_rule1"].append(base)
+        elif fid in far_fids:
+            buckets["names_match_outside_24h"].append(base)
+        else:
+            sched = parse_ts(fx.get("scheduled_start"))
+            day = sched.date().isoformat() if sched else ""
+            on_day = surnames_by_day.get(day, set())
+            hit = name_key(p1) in on_day or name_key(p2) in on_day
+            buckets["surname_on_board" if hit else "not_on_board"].append(base)
 
     per_card, disagreements = [], []
-    for fid, (card, fx, p1, p2, sched, items) in matched.items():
+    for fid, (card, fx, items) in matched.items():
         tier = card_tier(card)
         want = TIER_LEAGUE.get(tier)
         rk = sorted({r.get("_league_id") for _, r in items if r.get("_league_id") is not None})
@@ -173,36 +274,26 @@ def join(rows, cards, fixtures, openers=None, since=None):
                                   "card_tier": tier, "routing_key_league": rk})
         pre = [(rec, r) for rec, r in items if is_prematch_winner(r)]
         inplay = [(rec, r) for rec, r in items if is_inplay(r)]
-        # Sides: lower fixture_participant_id = first-named (the card path's
-        # documented assumption), then placed on the card by surname key.
-        fpids = sorted({r.get("fixture_participant_id") for _, r in pre
-                        if r.get("fixture_participant_id") is not None}
-                       | {o.get("fixture_participant_id") for o in openers.get(fid, [])
-                          if o.get("fixture_participant_id") is not None})
-        side_name = {}
-        if len(fpids) == 2:
-            side_name = {fpids[0]: p1, fpids[1]: p2}
-        card_side = {}
-        for fp, nm in side_name.items():
-            nk = name_key(nm)
-            if nk and nk == name_key(card.get("p1")):
-                card_side[fp] = "p1"
-            elif nk and nk == name_key(card.get("p2")):
-                card_side[fp] = "p2"
+        fpids = ({r.get("fixture_participant_id") for _, r in pre}
+                 | {o.get("fixture_participant_id") for o in openers.get(fid, [])})
+        sides = side_map(card, fx.get("name"), fpids)
+        sched = parse_ts(fx.get("scheduled_start"))
         out = {"fixture_id": fid, "card": f"{card.get('p1')} vs {card.get('p2')}",
                "tier": tier, "card_start_utc": card_start_utc(card).isoformat(),
                "kibl_scheduled": fx.get("scheduled_start"),
-               "start_delta_min": round((card_start_utc(card) - sched).total_seconds() / 60.0, 1),
+               "start_delta_min": (round((card_start_utc(card) - sched).total_seconds() / 60.0, 1)
+                                   if sched else None),
                "stream_rows": len(items), "prematch_winner_rows": len(pre),
-               "inplay_rows": len(inplay), "sides_placed": len(card_side),
+               "inplay_rows": len(inplay), "sides_placed": len(sides),
                "open": {}, "now": {}, "updates": {}, "last_update": None,
                "last_received": None, "card_odds": card.get("odds")}
-        for fp, side in card_side.items():
+        for fp, (side, _) in sides.items():
             mine = [r for _, r in pre if r.get("fixture_participant_id") == fp]
             cur = [r for r in mine if r.get("is_current") and real_price(r) is not None]
             out["updates"][side] = len(mine)
             if cur:
-                last = max(cur, key=lambda r: parse_ts(r.get("inserted_on")) or datetime.min.replace(tzinfo=timezone.utc))
+                last = max(cur, key=lambda r: parse_ts(r.get("inserted_on"))
+                           or datetime.min.replace(tzinfo=timezone.utc))
                 out["now"][side] = real_price(last)
             ops = sorted([o for o in openers.get(fid, []) if o.get("fixture_participant_id") == fp
                           and real_price(o) is not None],
@@ -221,14 +312,15 @@ def join(rows, cards, fixtures, openers=None, since=None):
             out["last_received"] = max(rcv).isoformat()
         per_card.append(out)
 
-    # Denominator: pre-match cards on the board, split by OUR tier.
     tiers = collections.Counter(card_tier(c) for c in pool)
     found = collections.Counter(p["tier"] for p in per_card)
     priced = collections.Counter(p["tier"] for p in per_card if p["prematch_winner_rows"])
     return {"cards_in_denominator": len(pool), "cards_by_tier": dict(tiers),
+            "cards_with_kibl_fixture": len(chosen["by_card"]),
             "cards_with_stream_rows_by_tier": dict(found),
             "cards_with_prematch_price_by_tier": dict(priced),
-            "ambiguous_card_keys": dup_keys, "unkeyable_cards": len(unkeyable),
+            "ambiguous_rule1": chosen["ambiguous"],
+            "names_match_outside_24h": chosen["names_outside_24h"],
             "stream_fixtures": len(by_fx), "matched_fixtures": len(matched),
             "unmatched": {k: v for k, v in buckets.items()},
             "unmatched_rows": {k: sum(x["rows"] for x in v) for k, v in buckets.items()},
@@ -239,31 +331,47 @@ def join(rows, cards, fixtures, openers=None, since=None):
 def report_lines(res, n_sample=10):
     """Markdown for the report. Missing is an em dash, never 0."""
     D = lambda v: "—" if v in (None, {}, []) else v  # noqa: E731
-    L = ["## TEN-270 · Stream rows → our board cards (names + start time)", ""]
-    L.append(f"Denominator: **{res['cards_in_denominator']}** pre-match cards on the live "
-             f"board (scheduled at/after capture start), by our tier {res['cards_by_tier'] or '—'}.")
+    L = ["## TEN-270 · Stream rows → our board cards (ruling 1: names, nearest within ±24 h)", ""]
+    n = res["cards_in_denominator"]
+    L.append(f"Denominator: **{n}** pre-match cards on the live board, by our tier "
+             f"{res['cards_by_tier'] or '—'}. Cards with exactly one Kibl fixture under ruling 1: "
+             f"**{res['cards_with_kibl_fixture']} of {n}**.")
     L.append("")
     L.append("| tier (from our card) | cards | with any stream row | with a pre-match match-winner price |")
     L.append("|---|---:|---:|---:|")
     for t in sorted(set(res["cards_by_tier"]) | {"ATP", "ITF"}):
-        n = res["cards_by_tier"].get(t, 0)
-        if n == 0:
+        c = res["cards_by_tier"].get(t, 0)
+        if c == 0:
             L.append(f"| {t} | 0 | — | — |")
         else:
             a = res["cards_with_stream_rows_by_tier"].get(t, 0)
             b = res["cards_with_prematch_price_by_tier"].get(t, 0)
-            L.append(f"| {t} | {n} | {a} of {n} | {b} of {n} |")
+            L.append(f"| {t} | {c} | {a} of {c} | {b} of {c} |")
+    L.append("")
+    L.append("### Ambiguous under ruling 1 — matched to NEITHER")
+    if not res["ambiguous_rule1"]:
+        L.append(f"None, on {n} card(s).")
+    for a in res["ambiguous_rule1"]:
+        L.append(f"- ⚠️ {a['card']} — {a['why']}: "
+                 + "; ".join(f"`{f['fixture_id']}` {f.get('fixture', '')} {f.get('kibl_scheduled') or ''}".strip()
+                             for f in a["fixtures"]))
+    if res["names_match_outside_24h"]:
+        L.append("")
+        L.append("Names match but Kibl's start is more than 24 h from the card (not matched):")
+        for a in res["names_match_outside_24h"]:
+            L.append(f"- {a['card']}: " + "; ".join(f"`{f['fixture_id']}` {f.get('kibl_scheduled') or '—'}"
+                                                   for f in a["fixtures"]))
     L.append("")
     L.append(f"Stream fixtures seen: **{res['stream_fixtures']}**; matched to a card: "
-             f"**{res['matched_fixtures']}**. Ambiguous card keys dropped: "
-             f"{len(res['ambiguous_card_keys'])}; unkeyable cards: {res['unkeyable_cards']}.")
+             f"**{res['matched_fixtures']}**.")
     L.append("")
     L.append("### Unmatched stream fixtures — dropped and counted, never guessed")
     L.append("| bucket | fixtures | rows |")
     L.append("|---|---:|---:|")
     for b, v in sorted(res["unmatched"].items()):
         L.append(f"| {b} | {len(v)} | {res['unmatched_rows'][b]} |")
-    for b in ("surname_on_board", "name_not_two_singles_players", "not_on_board"):
+    for b in ("surname_on_board", "ambiguous_rule1", "names_match_outside_24h",
+              "name_not_two_singles_players", "not_on_board"):
         v = res["unmatched"].get(b) or []
         if v:
             L.append("")
@@ -289,7 +397,7 @@ def report_lines(res, n_sample=10):
         o, nw, u = p["open"], p["now"], p["updates"]
         L.append(f"| {p['card']} | {p['tier']} | {D(o.get('p1'))} / {D(o.get('p2'))} | "
                  f"{D(nw.get('p1'))} / {D(nw.get('p2'))} | {D(u.get('p1'))} / {D(u.get('p2'))} | "
-                 f"{D(p['last_update'])} | {p['inplay_rows']} | {p['start_delta_min']} |")
+                 f"{D(p['last_update'])} | {p['inplay_rows']} | {D(p['start_delta_min'])} |")
     if not res["per_card"]:
         L.append("| — | — | — | — | — | — | — | — |")
     return L
