@@ -12,21 +12,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 2.21,
-      "p2": 1.53,
-      "bookmaker": "Sbo",
-      "seenAt": "2026-09-24T13:35:56.986Z"
+      "p1": 2.3,
+      "p2": 1.58,
+      "bookmaker": "bet365"
     },
     "bestOdds": {
       "p1": {
-        "price": 2.21,
-        "bookmaker": "Sbo"
+        "price": 2.3,
+        "bookmaker": "bet365"
       },
       "p2": {
-        "price": 1.53,
-        "bookmaker": "Sbo"
-      },
-      "seenAt": "2026-09-24T13:35:56.986Z"
+        "price": 1.58,
+        "bookmaker": "bet365"
+      }
     },
     "tournamentRound": "ATP Hangzhou - 1/8-finals",
     "p1Key": 1335,
@@ -2197,7 +2195,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1777_t-m-etcheverry.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-09-24T14:00:01Z",
+      "capturedAt": "2026-09-24T14:15:00Z",
       "startTime": "2026-09-25T05:30:00.000Z",
       "fixtureId": "id1204297974753254",
       "books": {
@@ -2222,6 +2220,10 @@
             [
               "2026-09-24T11:37:06.346Z",
               2.37
+            ],
+            [
+              "2026-09-24T14:10:26.576Z",
+              2.3
             ]
           ],
           "p2": [
@@ -2244,6 +2246,10 @@
             [
               "2026-09-24T11:37:06.346Z",
               1.54
+            ],
+            [
+              "2026-09-24T14:10:26.576Z",
+              1.58
             ]
           ]
         }
@@ -2266,24 +2272,24 @@
       "Sbo": {
         "p1": 2.21,
         "p2": 1.53,
-        "seenAt": "2026-09-24T13:38:14.143Z"
+        "seenAt": "2026-09-24T13:56:38.256Z"
       }
     },
     "bookNow": {
       "Sbo": {
         "p1": 2.21,
         "p2": 1.53,
-        "seenAt": "2026-09-24T13:38:14.143Z",
-        "since": "2026-09-24T13:38:14.143Z"
+        "seenAt": "2026-09-24T13:56:38.256Z",
+        "since": "2026-09-24T13:56:38.256Z"
       }
     },
     "bet365Now": {
-      "p1": 2.37,
-      "p2": 1.54,
+      "p1": 2.3,
+      "p2": 1.58,
       "bookmaker": "bet365",
-      "at": "2026-09-24T11:37:06.346Z",
-      "observedAt": "2026-09-24T13:30:04Z",
-      "src": "series"
+      "at": "2026-09-24T14:10:26.576Z",
+      "observedAt": "2026-09-24T14:22:39Z",
+      "src": "live"
     }
   },
   {
@@ -2299,21 +2305,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.43,
-      "p2": 2.44,
-      "bookmaker": "Sbo",
-      "seenAt": "2026-09-24T13:35:56.986Z"
+      "p1": 1.5,
+      "p2": 2.5,
+      "bookmaker": "bet365"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.43,
-        "bookmaker": "Sbo"
+        "price": 1.5,
+        "bookmaker": "bet365"
       },
       "p2": {
-        "price": 2.44,
-        "bookmaker": "Sbo"
-      },
-      "seenAt": "2026-09-24T13:35:56.986Z"
+        "price": 2.5,
+        "bookmaker": "bet365"
+      }
     },
     "tournamentRound": null,
     "p1Key": 824,
@@ -4770,23 +4774,31 @@
       "Betano": {
         "p1": 1.55,
         "p2": 2.47,
-        "seenAt": "2026-09-24T13:05:00.274Z"
+        "seenAt": "2026-09-24T12:51:07.602Z"
       },
       "Sbo": {
         "p1": 1.43,
         "p2": 2.44,
-        "seenAt": "2026-09-24T13:38:14.143Z"
+        "seenAt": "2026-09-24T13:56:38.256Z"
       }
     },
     "bookNow": {
       "Sbo": {
         "p1": 1.43,
         "p2": 2.44,
-        "seenAt": "2026-09-24T13:38:14.143Z",
-        "since": "2026-09-24T13:38:14.143Z"
+        "seenAt": "2026-09-24T13:56:38.256Z",
+        "since": "2026-09-24T13:56:38.256Z"
       }
     },
-    "oddsMovement": null
+    "oddsMovement": null,
+    "bet365Now": {
+      "p1": 1.5,
+      "p2": 2.5,
+      "bookmaker": "bet365",
+      "at": "2026-09-24T14:18:37.792Z",
+      "observedAt": "2026-09-24T14:22:39Z",
+      "src": "live"
+    }
   },
   {
     "id": "upcoming-12165810",
@@ -4804,7 +4816,7 @@
       "p1": 1.72,
       "p2": 2.14,
       "bookmaker": "1xBet",
-      "seenAt": "2026-09-24T13:35:56.986Z"
+      "seenAt": "2026-09-24T13:54:28.834Z"
     },
     "bestOdds": {
       "p1": {
@@ -4815,7 +4827,7 @@
         "price": 2.14,
         "bookmaker": "1xBet"
       },
-      "seenAt": "2026-09-24T13:35:56.986Z"
+      "seenAt": "2026-09-24T13:54:28.834Z"
     },
     "tournamentRound": "ATP Chengdu - 1/8-finals",
     "p1Key": 2169,
@@ -6844,24 +6856,37 @@
     "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2169_j-brooksby.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2843_l-sonego.jpg",
+    "openingOdds": {
+      "p1": 1.66,
+      "p2": 2.2,
+      "bookmaker": "bet365",
+      "seenAt": "2026-09-24T13:19:02.151Z",
+      "src": "vendor-sighting",
+      "vendor": "api-tennis"
+    },
     "bookOpens": {
       "Betano": {
         "p1": 1.7,
         "p2": 2.18,
-        "seenAt": "2026-09-24T13:05:00.274Z"
+        "seenAt": "2026-09-24T12:51:07.602Z"
+      },
+      "bet365": {
+        "p1": 1.66,
+        "p2": 2.2,
+        "seenAt": "2026-09-24T13:20:44.088Z"
       },
       "1xBet": {
         "p1": 1.72,
         "p2": 2.14,
-        "seenAt": "2026-09-24T13:38:14.143Z"
+        "seenAt": "2026-09-24T13:56:38.256Z"
       }
     },
     "bookNow": {
       "1xBet": {
         "p1": 1.72,
         "p2": 2.14,
-        "seenAt": "2026-09-24T13:38:14.143Z",
-        "since": "2026-09-24T13:38:14.143Z"
+        "seenAt": "2026-09-24T13:56:38.256Z",
+        "since": "2026-09-24T13:56:38.256Z"
       }
     },
     "oddsMovement": null
@@ -6879,21 +6904,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 3.7,
-      "p2": 1.18,
-      "bookmaker": "Sbo",
-      "seenAt": "2026-09-24T13:35:56.986Z"
+      "p1": 4.5,
+      "p2": 1.17,
+      "bookmaker": "bet365"
     },
     "bestOdds": {
       "p1": {
-        "price": 3.7,
-        "bookmaker": "Sbo"
+        "price": 4.5,
+        "bookmaker": "bet365"
       },
       "p2": {
-        "price": 1.18,
-        "bookmaker": "Sbo"
-      },
-      "seenAt": "2026-09-24T13:35:56.986Z"
+        "price": 1.17,
+        "bookmaker": "bet365"
+      }
     },
     "tournamentRound": "ATP Chengdu - 1/8-finals",
     "p1Key": 1083,
@@ -9242,23 +9265,31 @@
       "Betano": {
         "p1": 4.3,
         "p2": 1.22,
-        "seenAt": "2026-09-24T13:05:00.274Z"
+        "seenAt": "2026-09-24T12:51:07.602Z"
       },
       "Sbo": {
         "p1": 3.7,
         "p2": 1.18,
-        "seenAt": "2026-09-24T13:38:14.143Z"
+        "seenAt": "2026-09-24T13:56:38.256Z"
       }
     },
     "bookNow": {
       "Sbo": {
         "p1": 3.7,
         "p2": 1.18,
-        "seenAt": "2026-09-24T13:38:14.143Z",
-        "since": "2026-09-24T13:38:14.143Z"
+        "seenAt": "2026-09-24T13:56:38.256Z",
+        "since": "2026-09-24T13:56:38.256Z"
       }
     },
-    "oddsMovement": null
+    "oddsMovement": null,
+    "bet365Now": {
+      "p1": 4.5,
+      "p2": 1.17,
+      "bookmaker": "bet365",
+      "at": "2026-09-24T14:18:38.888Z",
+      "observedAt": "2026-09-24T14:22:39Z",
+      "src": "live"
+    }
   },
   {
     "id": "upcoming-12165812",
@@ -9273,21 +9304,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.36,
-      "p2": 2.58,
-      "bookmaker": "Sbo",
-      "seenAt": "2026-09-24T13:35:56.986Z"
+      "p1": 1.41,
+      "p2": 2.75,
+      "bookmaker": "bet365"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.36,
-        "bookmaker": "Sbo"
+        "price": 1.41,
+        "bookmaker": "bet365"
       },
       "p2": {
-        "price": 2.58,
-        "bookmaker": "Sbo"
-      },
-      "seenAt": "2026-09-24T13:35:56.986Z"
+        "price": 2.75,
+        "bookmaker": "bet365"
+      }
     },
     "tournamentRound": null,
     "p1Key": 10148,
@@ -11580,23 +11609,52 @@
       "Betano": {
         "p1": 1.44,
         "p2": 2.82,
-        "seenAt": "2026-09-24T13:05:00.274Z"
+        "seenAt": "2026-09-24T12:51:07.602Z"
       },
       "Sbo": {
         "p1": 1.36,
         "p2": 2.58,
-        "seenAt": "2026-09-24T13:38:14.143Z"
+        "seenAt": "2026-09-24T13:56:38.256Z"
       }
     },
     "bookNow": {
       "Sbo": {
         "p1": 1.36,
         "p2": 2.58,
-        "seenAt": "2026-09-24T13:38:14.143Z",
-        "since": "2026-09-24T13:38:14.143Z"
+        "seenAt": "2026-09-24T13:56:38.256Z",
+        "since": "2026-09-24T13:56:38.256Z"
       }
     },
-    "oddsMovement": null
+    "oddsMovement": {
+      "market": "Match Winner",
+      "capturedAt": "2026-09-24T14:15:00Z",
+      "startTime": "2026-09-25T06:40:00.000Z",
+      "fixtureId": "id1204297974753252",
+      "books": {
+        "bet365": {
+          "p1": [
+            [
+              "2026-09-24T14:18:38.257Z",
+              1.41
+            ]
+          ],
+          "p2": [
+            [
+              "2026-09-24T14:18:38.257Z",
+              2.75
+            ]
+          ]
+        }
+      }
+    },
+    "bet365Now": {
+      "p1": 1.41,
+      "p2": 2.75,
+      "bookmaker": "bet365",
+      "at": "2026-09-24T14:18:38.257Z",
+      "observedAt": "2026-09-24T14:22:39Z",
+      "src": "live"
+    }
   },
   {
     "id": "upcoming-12165814",
@@ -11611,21 +11669,21 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 3.15,
-      "p2": 1.36,
-      "bookmaker": "Betano",
-      "seenAt": "2026-09-24T13:35:56.986Z"
+      "p1": 3.1,
+      "p2": 1.37,
+      "bookmaker": "1xBet",
+      "seenAt": "2026-09-24T13:54:28.834Z"
     },
     "bestOdds": {
       "p1": {
-        "price": 3.15,
-        "bookmaker": "Betano"
+        "price": 3.1,
+        "bookmaker": "1xBet"
       },
       "p2": {
-        "price": 1.36,
-        "bookmaker": "Betano"
+        "price": 1.37,
+        "bookmaker": "1xBet"
       },
-      "seenAt": "2026-09-24T13:35:56.986Z"
+      "seenAt": "2026-09-24T13:54:28.834Z"
     },
     "tournamentRound": null,
     "p1Key": 3317,
@@ -14020,15 +14078,20 @@
       "Betano": {
         "p1": 3.3,
         "p2": 1.34,
-        "seenAt": "2026-09-24T13:05:00.274Z"
+        "seenAt": "2026-09-24T12:51:07.602Z"
+      },
+      "1xBet": {
+        "p1": 3.1,
+        "p2": 1.37,
+        "seenAt": "2026-09-24T13:56:38.256Z"
       }
     },
     "bookNow": {
-      "Betano": {
-        "p1": 3.15,
-        "p2": 1.36,
-        "seenAt": "2026-09-24T13:38:14.143Z",
-        "since": "2026-09-24T13:38:14.143Z"
+      "1xBet": {
+        "p1": 3.1,
+        "p2": 1.37,
+        "seenAt": "2026-09-24T13:56:38.256Z",
+        "since": "2026-09-24T13:56:38.256Z"
       }
     },
     "oddsMovement": null
@@ -14046,21 +14109,21 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 2.75,
-      "p2": 1.44,
-      "bookmaker": "bet365",
-      "seenAt": "2026-09-24T13:35:56.986Z"
+      "p1": 2.68,
+      "p2": 1.48,
+      "bookmaker": "1xBet",
+      "seenAt": "2026-09-24T13:54:28.834Z"
     },
     "bestOdds": {
       "p1": {
-        "price": 2.75,
-        "bookmaker": "bet365"
+        "price": 2.68,
+        "bookmaker": "1xBet"
       },
       "p2": {
-        "price": 1.44,
-        "bookmaker": "bet365"
+        "price": 1.48,
+        "bookmaker": "1xBet"
       },
-      "seenAt": "2026-09-24T13:35:56.986Z"
+      "seenAt": "2026-09-24T13:54:28.834Z"
     },
     "tournamentRound": null,
     "p1Key": 424,
@@ -16628,29 +16691,21 @@
       "1xBet": {
         "p1": 2.77,
         "p2": 1.46,
-        "seenAt": "2026-09-24T13:05:00.274Z"
+        "seenAt": "2026-09-24T12:51:07.602Z"
       },
-      "bet365": {
+      "Betano": {
         "p1": 2.75,
-        "p2": 1.44,
-        "seenAt": "2026-09-24T13:38:14.143Z"
+        "p2": 1.45,
+        "seenAt": "2026-09-24T13:20:44.088Z"
       }
     },
     "bookNow": {
-      "bet365": {
-        "p1": 2.75,
-        "p2": 1.44,
-        "seenAt": "2026-09-24T13:38:14.143Z",
-        "since": "2026-09-24T13:38:14.143Z"
+      "1xBet": {
+        "p1": 2.68,
+        "p2": 1.48,
+        "seenAt": "2026-09-24T13:56:38.256Z",
+        "since": "2026-09-24T13:56:38.256Z"
       }
-    },
-    "openingOdds": {
-      "p1": 2.75,
-      "p2": 1.44,
-      "bookmaker": "bet365",
-      "seenAt": "2026-09-24T13:36:17.648Z",
-      "src": "vendor-sighting",
-      "vendor": "api-tennis"
     },
     "oddsMovement": null
   },
@@ -16667,21 +16722,21 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.51,
-      "p2": 2.23,
-      "bookmaker": "Sbo",
-      "seenAt": "2026-09-24T13:35:56.986Z"
+      "p1": 1.57,
+      "p2": 2.37,
+      "bookmaker": "bet365",
+      "seenAt": "2026-09-24T13:54:28.834Z"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.51,
-        "bookmaker": "Sbo"
+        "price": 1.57,
+        "bookmaker": "bet365"
       },
       "p2": {
-        "price": 2.23,
-        "bookmaker": "Sbo"
+        "price": 2.37,
+        "bookmaker": "bet365"
       },
-      "seenAt": "2026-09-24T13:35:56.986Z"
+      "seenAt": "2026-09-24T13:54:28.834Z"
     },
     "tournamentRound": null,
     "p1Key": 2982,
@@ -19366,21 +19421,29 @@
       "Betano": {
         "p1": 1.57,
         "p2": 2.42,
-        "seenAt": "2026-09-24T13:05:00.274Z"
+        "seenAt": "2026-09-24T12:51:07.602Z"
       },
-      "Sbo": {
-        "p1": 1.51,
-        "p2": 2.23,
-        "seenAt": "2026-09-24T13:38:14.143Z"
+      "bet365": {
+        "p1": 1.57,
+        "p2": 2.37,
+        "seenAt": "2026-09-24T13:56:38.256Z"
       }
     },
     "bookNow": {
-      "Sbo": {
-        "p1": 1.51,
-        "p2": 2.23,
-        "seenAt": "2026-09-24T13:38:14.143Z",
-        "since": "2026-09-24T13:38:14.143Z"
+      "bet365": {
+        "p1": 1.57,
+        "p2": 2.37,
+        "seenAt": "2026-09-24T13:56:38.256Z",
+        "since": "2026-09-24T13:56:38.256Z"
       }
+    },
+    "openingOdds": {
+      "p1": 1.57,
+      "p2": 2.37,
+      "bookmaker": "bet365",
+      "seenAt": "2026-09-24T13:54:50.064Z",
+      "src": "vendor-sighting",
+      "vendor": "api-tennis"
     },
     "oddsMovement": null
   },
@@ -25326,21 +25389,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.26,
-      "p2": 3.85,
-      "bookmaker": "1xBet",
-      "seenAt": "2026-09-24T13:36:43.231Z"
+      "p1": 1.19,
+      "p2": 4.33,
+      "bookmaker": "bet365"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.26,
-        "bookmaker": "1xBet"
+        "price": 1.19,
+        "bookmaker": "bet365"
       },
       "p2": {
-        "price": 3.85,
-        "bookmaker": "1xBet"
-      },
-      "seenAt": "2026-09-24T13:36:43.231Z"
+        "price": 4.33,
+        "bookmaker": "bet365"
+      }
     },
     "tournamentRound": "ATP Hangzhou - 1/8-finals",
     "p1Key": 1093,
@@ -27595,7 +27656,7 @@
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/954_v-royer.jpg",
     "oddsMovement": {
       "market": "Match Winner",
-      "capturedAt": "2026-09-24T14:00:01Z",
+      "capturedAt": "2026-09-24T14:15:00Z",
       "startTime": "2026-09-26T05:30:00.000Z",
       "fixtureId": "id1204297974753260",
       "books": {
@@ -27722,8 +27783,8 @@
       "1xBet": {
         "p1": 1.26,
         "p2": 3.85,
-        "seenAt": "2026-09-24T13:38:14.143Z",
-        "since": "2026-09-24T13:05:00.274Z"
+        "seenAt": "2026-09-24T13:56:38.256Z",
+        "since": "2026-09-24T13:56:38.256Z"
       }
     },
     "bet365Now": {
@@ -27731,8 +27792,8 @@
       "p2": 4.33,
       "bookmaker": "bet365",
       "at": "2026-09-24T12:27:22.168Z",
-      "observedAt": "2026-09-24T13:30:04Z",
-      "src": "series"
+      "observedAt": "2026-09-24T14:22:39Z",
+      "src": "live"
     }
   },
   {
@@ -27751,7 +27812,7 @@
       "p1": 1.9,
       "p2": 1.9,
       "bookmaker": "bet365",
-      "seenAt": "2026-09-24T13:36:43.231Z"
+      "seenAt": "2026-09-24T13:55:10.228Z"
     },
     "bestOdds": {
       "p1": {
@@ -27762,7 +27823,7 @@
         "price": 1.9,
         "bookmaker": "bet365"
       },
-      "seenAt": "2026-09-24T13:36:43.231Z"
+      "seenAt": "2026-09-24T13:55:10.228Z"
     },
     "tournamentRound": null,
     "p1Key": 796,
@@ -29963,33 +30024,33 @@
     "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/796_b-yunchaokete.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1096_k-majchrzak.jpg",
+    "openingOdds": {
+      "p1": 1.9,
+      "p2": 1.9,
+      "bookmaker": "bet365",
+      "seenAt": "2026-09-24T13:19:29.885Z",
+      "src": "vendor-sighting",
+      "vendor": "api-tennis"
+    },
     "bookOpens": {
       "Betano": {
         "p1": 1.98,
         "p2": 1.83,
-        "seenAt": "2026-09-24T13:05:00.274Z"
+        "seenAt": "2026-09-24T12:51:07.602Z"
       },
       "bet365": {
         "p1": 1.9,
         "p2": 1.9,
-        "seenAt": "2026-09-24T13:38:14.143Z"
+        "seenAt": "2026-09-24T13:20:44.088Z"
       }
     },
     "bookNow": {
       "bet365": {
         "p1": 1.9,
         "p2": 1.9,
-        "seenAt": "2026-09-24T13:38:14.143Z",
-        "since": "2026-09-24T13:38:14.143Z"
+        "seenAt": "2026-09-24T13:56:38.256Z",
+        "since": "2026-09-24T13:20:44.088Z"
       }
-    },
-    "openingOdds": {
-      "p1": 1.9,
-      "p2": 1.9,
-      "bookmaker": "bet365",
-      "seenAt": "2026-09-24T13:36:49.363Z",
-      "src": "vendor-sighting",
-      "vendor": "api-tennis"
     },
     "oddsMovement": null
   },
@@ -40284,7 +40345,7 @@
       "p1": 2.1,
       "p2": 1.72,
       "bookmaker": "bet365",
-      "seenAt": "2026-09-24T13:37:05.399Z"
+      "seenAt": "2026-09-24T13:55:32.002Z"
     },
     "bestOdds": {
       "p1": {
@@ -40295,7 +40356,7 @@
         "price": 1.72,
         "bookmaker": "bet365"
       },
-      "seenAt": "2026-09-24T13:37:05.399Z"
+      "seenAt": "2026-09-24T13:55:32.002Z"
     },
     "tournamentRound": "ATP Chengdu - 1/16-finals",
     "p1Key": 1101,
@@ -42957,7 +43018,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-09-24T13:38:14.143Z"
+      "seenAt": "2026-09-24T13:56:38.256Z"
     },
     "closingOdds": {
       "p1": 2.37,
@@ -44913,7 +44974,7 @@
       "p1": 1.9,
       "p2": 1.9,
       "bookmaker": "bet365",
-      "seenAt": "2026-09-24T13:37:05.399Z"
+      "seenAt": "2026-09-24T13:55:32.002Z"
     },
     "bestOdds": {
       "p1": {
@@ -44924,7 +44985,7 @@
         "price": 1.9,
         "bookmaker": "bet365"
       },
-      "seenAt": "2026-09-24T13:37:05.399Z"
+      "seenAt": "2026-09-24T13:55:32.002Z"
     },
     "tournamentRound": "ATP Hangzhou - 1/16-finals",
     "p1Key": 954,
@@ -47759,7 +47820,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-09-24T13:38:14.143Z"
+      "seenAt": "2026-09-24T13:56:38.256Z"
     },
     "closingOdds": {
       "p1": 1.87,
@@ -47786,7 +47847,7 @@
       "p1": 1.83,
       "p2": 1.91,
       "bookmaker": "Betfair",
-      "seenAt": "2026-09-24T13:37:05.399Z"
+      "seenAt": "2026-09-24T13:55:32.002Z"
     },
     "bestOdds": {
       "p1": {
@@ -47797,7 +47858,7 @@
         "price": 1.96,
         "bookmaker": "Marathon"
       },
-      "seenAt": "2026-09-24T13:37:05.399Z"
+      "seenAt": "2026-09-24T13:55:32.002Z"
     },
     "tournamentRound": "ATP Hangzhou - 1/16-finals",
     "p1Key": 360,
@@ -50761,7 +50822,7 @@
       "p1": 2.19,
       "p2": 1.67,
       "bookmaker": "Marathon",
-      "seenAt": "2026-09-24T13:37:17.809Z"
+      "seenAt": "2026-09-24T13:55:43.969Z"
     },
     "bestOdds": {
       "p1": {
@@ -50772,7 +50833,7 @@
         "price": 1.7,
         "bookmaker": "Betano"
       },
-      "seenAt": "2026-09-24T13:37:17.809Z"
+      "seenAt": "2026-09-24T13:55:43.969Z"
     },
     "tournamentRound": "ATP Chengdu - 1/16-finals",
     "p1Key": 1900,
@@ -53696,7 +53757,7 @@
       "p1": 2.19,
       "p2": 1.67,
       "bookmaker": "Marathon",
-      "seenAt": "2026-09-24T13:37:17.809Z"
+      "seenAt": "2026-09-24T13:55:43.969Z"
     },
     "bestOdds": {
       "p1": {
@@ -53707,7 +53768,7 @@
         "price": 1.7,
         "bookmaker": "Betano"
       },
-      "seenAt": "2026-09-24T13:37:17.809Z"
+      "seenAt": "2026-09-24T13:55:43.969Z"
     },
     "tournamentRound": "ATP Chengdu - 1/16-finals",
     "p1Key": 427,
@@ -56586,7 +56647,7 @@
       "p1": 1.4,
       "p2": 2.92,
       "bookmaker": "Marathon",
-      "seenAt": "2026-09-24T13:37:17.809Z"
+      "seenAt": "2026-09-24T13:55:43.969Z"
     },
     "bestOdds": {
       "p1": {
@@ -56597,7 +56658,7 @@
         "price": 2.95,
         "bookmaker": "1xBet"
       },
-      "seenAt": "2026-09-24T13:37:17.809Z"
+      "seenAt": "2026-09-24T13:55:43.969Z"
     },
     "tournamentRound": "ATP Chengdu - 1/16-finals",
     "p1Key": 2413,
@@ -59253,7 +59314,7 @@
       "p1": 5.55,
       "p2": 1.14,
       "bookmaker": "Marathon",
-      "seenAt": "2026-09-24T13:37:17.809Z"
+      "seenAt": "2026-09-24T13:55:43.969Z"
     },
     "bestOdds": {
       "p1": {
@@ -59264,7 +59325,7 @@
         "price": 1.16,
         "bookmaker": "Betano"
       },
-      "seenAt": "2026-09-24T13:37:17.809Z"
+      "seenAt": "2026-09-24T13:55:43.969Z"
     },
     "tournamentRound": "ATP Chengdu - 1/16-finals",
     "p1Key": 566,
@@ -62005,7 +62066,7 @@
         }
       }
     },
-    "finishedAt": "2026-09-24T13:05:00.170Z",
+    "finishedAt": "2026-09-24T12:51:07.531Z",
     "openingOdds": {
       "p1": 5.5,
       "p2": 1.14,
@@ -62081,7 +62142,7 @@
       "p1": 2.25,
       "p2": 1.62,
       "bookmaker": "Betfair",
-      "seenAt": "2026-09-24T13:37:17.809Z"
+      "seenAt": "2026-09-24T13:55:43.969Z"
     },
     "bestOdds": {
       "p1": {
@@ -62092,7 +62153,7 @@
         "price": 1.65,
         "bookmaker": "Betano"
       },
-      "seenAt": "2026-09-24T13:37:17.809Z"
+      "seenAt": "2026-09-24T13:55:43.969Z"
     },
     "tournamentRound": "ATP Hangzhou - 1/16-finals",
     "p1Key": 2112,
@@ -64892,7 +64953,7 @@
       "p1": 2.25,
       "p2": 1.62,
       "bookmaker": "Betfair",
-      "seenAt": "2026-09-24T13:37:17.809Z"
+      "seenAt": "2026-09-24T13:55:43.969Z"
     },
     "bestOdds": {
       "p1": {
@@ -64903,7 +64964,7 @@
         "price": 1.62,
         "bookmaker": "Betano"
       },
-      "seenAt": "2026-09-24T13:37:17.809Z"
+      "seenAt": "2026-09-24T13:55:43.969Z"
     },
     "tournamentRound": "ATP Hangzhou - 1/16-finals",
     "p1Key": 796,
@@ -67366,7 +67427,7 @@
       "p1": 3.25,
       "p2": 1.33,
       "bookmaker": "Betfair",
-      "seenAt": "2026-09-24T13:37:17.809Z"
+      "seenAt": "2026-09-24T13:55:43.969Z"
     },
     "bestOdds": {
       "p1": {
@@ -67377,7 +67438,7 @@
         "price": 1.36,
         "bookmaker": "Betano"
       },
-      "seenAt": "2026-09-24T13:37:17.809Z"
+      "seenAt": "2026-09-24T13:55:43.969Z"
     },
     "tournamentRound": "ATP Hangzhou - 1/16-finals",
     "p1Key": 1274,
@@ -69752,7 +69813,7 @@
         }
       }
     },
-    "finishedAt": "2026-09-24T13:05:00.170Z",
+    "finishedAt": "2026-09-24T13:20:44.016Z",
     "openingOdds": {
       "p1": 3.2,
       "p2": 1.36,
@@ -69846,7 +69907,7 @@
       "p1": 2,
       "p2": 1.8,
       "bookmaker": "bet365",
-      "seenAt": "2026-09-24T13:37:17.809Z"
+      "seenAt": "2026-09-24T13:55:43.969Z"
     },
     "bestOdds": {
       "p1": {
@@ -69857,7 +69918,7 @@
         "price": 1.82,
         "bookmaker": "Betano"
       },
-      "seenAt": "2026-09-24T13:37:17.809Z"
+      "seenAt": "2026-09-24T13:55:43.969Z"
     },
     "tournamentRound": "ATP Hangzhou - 1/16-finals",
     "p1Key": 824,
@@ -72645,7 +72706,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-09-24T13:38:14.143Z"
+      "seenAt": "2026-09-24T13:56:38.257Z"
     },
     "closingOdds": {
       "p1": 2.1,
@@ -72672,7 +72733,7 @@
       "p1": 1.9,
       "p2": 1.9,
       "bookmaker": "bet365",
-      "seenAt": "2026-09-24T13:37:17.809Z"
+      "seenAt": "2026-09-24T13:55:43.969Z"
     },
     "bestOdds": {
       "p1": {
@@ -72683,7 +72744,7 @@
         "price": 2,
         "bookmaker": "Betfair"
       },
-      "seenAt": "2026-09-24T13:37:17.809Z"
+      "seenAt": "2026-09-24T13:55:43.969Z"
     },
     "tournamentRound": "ATP Hangzhou - 1/16-finals",
     "p1Key": 9608,
@@ -75711,7 +75772,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-09-24T13:38:14.143Z"
+      "seenAt": "2026-09-24T13:56:38.257Z"
     },
     "closingOdds": {
       "p1": 1.97,
@@ -75738,7 +75799,7 @@
       "p1": 1.57,
       "p2": 2.45,
       "bookmaker": "Betano",
-      "seenAt": "2026-09-24T13:37:17.809Z"
+      "seenAt": "2026-09-24T13:55:43.969Z"
     },
     "bestOdds": {
       "p1": {
@@ -75749,7 +75810,7 @@
         "price": 2.45,
         "bookmaker": "Betano"
       },
-      "seenAt": "2026-09-24T13:37:17.809Z"
+      "seenAt": "2026-09-24T13:55:43.969Z"
     },
     "tournamentRound": "ATP Chengdu - 1/16-finals",
     "p1Key": 2848,
@@ -78934,7 +78995,7 @@
       "p1": 1.88,
       "p2": 1.93,
       "bookmaker": "Betano",
-      "seenAt": "2026-09-24T13:37:17.809Z"
+      "seenAt": "2026-09-24T13:55:43.969Z"
     },
     "bestOdds": {
       "p1": {
@@ -78945,7 +79006,7 @@
         "price": 1.93,
         "bookmaker": "Betano"
       },
-      "seenAt": "2026-09-24T13:37:17.809Z"
+      "seenAt": "2026-09-24T13:55:43.969Z"
     },
     "tournamentRound": "ATP Chengdu - 1/16-finals",
     "p1Key": 68751,
@@ -81360,7 +81421,7 @@
       "p1": 1.5,
       "p2": 2.62,
       "bookmaker": "1xBet",
-      "seenAt": "2026-09-24T13:37:17.809Z"
+      "seenAt": "2026-09-24T13:55:43.969Z"
     },
     "bestOdds": {
       "p1": {
@@ -81371,7 +81432,7 @@
         "price": 2.62,
         "bookmaker": "1xBet"
       },
-      "seenAt": "2026-09-24T13:37:17.809Z"
+      "seenAt": "2026-09-24T13:55:43.969Z"
     },
     "tournamentRound": "ATP Chengdu - 1/16-finals",
     "p1Key": 1317,
@@ -84039,7 +84100,7 @@
         }
       }
     },
-    "finishedAt": "2026-09-24T13:05:00.170Z",
+    "finishedAt": "2026-09-24T12:51:07.531Z",
     "oddsMovement": null
   },
   {
@@ -84060,7 +84121,7 @@
       "p1": 1.53,
       "p2": 2.65,
       "bookmaker": "Pncl",
-      "seenAt": "2026-09-24T13:37:17.809Z"
+      "seenAt": "2026-09-24T13:55:43.969Z"
     },
     "bestOdds": {
       "p1": {
@@ -84071,7 +84132,7 @@
         "price": 2.65,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-09-24T13:37:17.809Z"
+      "seenAt": "2026-09-24T13:55:43.969Z"
     },
     "tournamentRound": "ATP Chengdu - 1/16-finals",
     "p1Key": 2834,
@@ -87000,7 +87061,7 @@
         }
       }
     },
-    "finishedAt": "2026-09-24T13:05:00.170Z",
+    "finishedAt": "2026-09-24T12:51:07.531Z",
     "openingOdds": {
       "p1": 1.54,
       "p2": 2.37,
@@ -87034,11 +87095,11 @@
       "vfP1": 0.634
     },
     "valueSnapshot": {
-      "fairP1": 0.6293,
-      "fairP2": 0.3707,
-      "edgeVsPinnacleP1": -0.0047,
-      "edgeVsPinnacleP2": 0.0047,
-      "ts": "2026-09-24T13:05:00.170Z"
+      "fairP1": 0.6283,
+      "fairP2": 0.3717,
+      "edgeVsPinnacleP1": -0.0057,
+      "edgeVsPinnacleP2": 0.0057,
+      "ts": "2026-09-24T12:51:07.531Z"
     }
   },
   {
@@ -87059,7 +87120,7 @@
       "p1": 2.26,
       "p2": 1.55,
       "bookmaker": "Sbo",
-      "seenAt": "2026-09-24T13:37:17.809Z"
+      "seenAt": "2026-09-24T13:55:43.969Z"
     },
     "bestOdds": {
       "p1": {
@@ -87070,7 +87131,7 @@
         "price": 1.55,
         "bookmaker": "Sbo"
       },
-      "seenAt": "2026-09-24T13:37:17.809Z"
+      "seenAt": "2026-09-24T13:55:43.969Z"
     },
     "tournamentRound": "ATP Hangzhou - 1/16-finals",
     "p1Key": 1308,
@@ -89984,7 +90045,7 @@
       "p1": 2.29,
       "p2": 1.69,
       "bookmaker": "Pncl",
-      "seenAt": "2026-09-24T13:37:17.809Z"
+      "seenAt": "2026-09-24T13:55:43.969Z"
     },
     "bestOdds": {
       "p1": {
@@ -89995,7 +90056,7 @@
         "price": 1.69,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-09-24T13:37:17.809Z"
+      "seenAt": "2026-09-24T13:55:43.969Z"
     },
     "tournamentRound": "ATP Hangzhou - 1/16-finals",
     "p1Key": 3317,
@@ -92932,7 +92993,7 @@
       "p1": 1.28,
       "p2": 3.7,
       "bookmaker": "Betano",
-      "seenAt": "2026-09-24T13:37:17.809Z"
+      "seenAt": "2026-09-24T13:55:43.969Z"
     },
     "bestOdds": {
       "p1": {
@@ -92943,7 +93004,7 @@
         "price": 3.7,
         "bookmaker": "Betano"
       },
-      "seenAt": "2026-09-24T13:37:17.809Z"
+      "seenAt": "2026-09-24T13:55:43.969Z"
     },
     "tournamentRound": "ATP Hangzhou - 1/16-finals",
     "p1Key": 10148,
@@ -95520,7 +95581,7 @@
       "p1": 4.86,
       "p2": 1.22,
       "bookmaker": "Pncl",
-      "seenAt": "2026-09-24T13:37:17.809Z"
+      "seenAt": "2026-09-24T13:55:43.969Z"
     },
     "bestOdds": {
       "p1": {
@@ -95531,7 +95592,7 @@
         "price": 1.22,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-09-24T13:37:17.809Z"
+      "seenAt": "2026-09-24T13:55:43.969Z"
     },
     "tournamentRound": "ATP Hangzhou - 1/16-finals",
     "p1Key": 876,
@@ -98348,7 +98409,7 @@
       "p1": 1.57,
       "p2": 2.42,
       "bookmaker": "Betano",
-      "seenAt": "2026-09-24T13:37:17.809Z"
+      "seenAt": "2026-09-24T13:55:43.969Z"
     },
     "bestOdds": {
       "p1": {
@@ -98359,7 +98420,7 @@
         "price": 2.42,
         "bookmaker": "Betano"
       },
-      "seenAt": "2026-09-24T13:37:17.809Z"
+      "seenAt": "2026-09-24T13:55:43.969Z"
     },
     "tournamentRound": "ATP Chengdu - 1/16-finals",
     "p1Key": 38264,
