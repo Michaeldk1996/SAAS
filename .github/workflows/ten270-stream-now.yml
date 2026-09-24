@@ -136,8 +136,13 @@ jobs:
         run: |
           set -euo pipefail
           APP=$(sed -n 's/^app *= *"\(.*\)"/\1/p' kibl-stream/fly.toml)
-          flyctl apps list --json | python3 -c "import json,sys;a=sys.argv[1];sys.exit(0 if any(x.get('Name')==a for x in json.load(sys.stdin)) else 1)" "$APP" \
-            || flyctl apps create "$APP"
+          # The app is created by the FOUNDER, not here: FLY_API_TOKEN is an
+          # app-scoped deploy token, which can deploy and set secrets for its
+          # own app but cannot create apps. So a missing app is a clear stop.
+          if ! flyctl status --app "$APP" >/dev/null 2>&1; then
+            echo "::error::Fly app '$APP' not found for this token — create it with: fly apps create $APP"
+            exit 1
+          fi
           # Values go over STDIN, one NAME=value per line — never argv, never echoed.
           python3 - <<'PY' | flyctl secrets import --app "$APP" --stage
           import os
