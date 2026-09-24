@@ -183,6 +183,28 @@ e6.closed.add("2026-09-24|machac|rublev")
 ok(e6.card_rows(W.time.monotonic() + 99) == [] and e6.dirty == {},
    "a card past its Closing point sends no card row and leaves the queue")
 
+print("\n4e · outage gaps (founder item 6)")
+from datetime import timedelta
+t0g = datetime(2026, 9, 24, 12, 0, tzinfo=timezone.utc)
+g = W.gap_record(t0g, t0g + timedelta(seconds=45), "disconnect")
+ok(g["seconds"] == 45.0 and g["lost_history"] is False and g["reason"] == "disconnect",
+   "a 45 s gap is recorded but did not lose history (queue keeps 120 s)")
+g = W.gap_record(t0g, t0g + timedelta(seconds=300), "restart")
+ok(g["lost_history"] is True and g["gap_from"] == "2026-09-24T12:00:00Z",
+   "a 300 s gap is flagged as lost history, times in UTC ISO")
+ok(W.gap_record(t0g, t0g, "x") is None and W.gap_record(None, t0g, "x") is None,
+   "no period, no row")
+calls = []
+C_real = W.C.sb_request
+W.C.sb_request = lambda env, m, path, body=None, prefer=None: (calls.append((m, path, body)) or (201, ""))
+W.write_gap({}, W.gap_record(t0g, t0g + timedelta(seconds=130), "disconnect"), lambda *_: None, True)
+W.C.sb_request = C_real
+ok(calls and calls[0][1] == "/rest/v1/kibl_now_gaps" and calls[0][2][0]["seconds"] == 130.0,
+   "the gap is written to kibl_now_gaps")
+src = open(os.path.join(HERE, "now_worker.py")).read()
+ok(src.index("write_gap(env, gap_record(gap_from") < src.index("retry += flush(env, seed(kc, eng, log)"),
+   "the gap is written when consumption resumes, before the re-seed")
+
 print("\n5 · heartbeat")
 hb = e.heartbeat(NOW, True)
 ok(hb["kind"] == "heartbeat" and hb["price"] is None and hb["card_key"] == "__stream__",

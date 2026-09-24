@@ -65,6 +65,22 @@ create table if not exists public.kibl_now_card (
     written_at        timestamptz not null default now()
 );
 
+-- Founder 2026-09-24 (item 6, answered): every period the worker was not
+-- consuming. A gap over the queue's 120 s TTL lost price history; the price
+-- history box shows it as "no data from–to". Browser access only through the
+-- price_history RPC — no anon grant on this table.
+create table if not exists public.kibl_now_gaps (
+    id            bigserial   primary key,
+    gap_from      timestamptz not null,
+    gap_to        timestamptz not null,
+    seconds       numeric     not null,
+    reason        text        not null,          -- 'restart' | 'disconnect'
+    lost_history  boolean     not null,          -- seconds > 120 (queue TTL)
+    created_at    timestamptz not null default now(),
+    constraint kibl_now_gaps_order check (gap_to > gap_from)
+);
+create index if not exists kibl_now_gaps_to_idx on public.kibl_now_gaps (gap_to);
+
 create index if not exists kibl_now_history_card_idx
     on public.kibl_now_history (card_key, side_key, kibl_inserted_on);
 
@@ -108,10 +124,12 @@ create trigger kibl_now_card_newer before update on public.kibl_now_card
 alter table public.kibl_now_price   enable row level security;
 alter table public.kibl_now_history enable row level security;
 alter table public.kibl_now_card    enable row level security;
+alter table public.kibl_now_gaps    enable row level security;
 
 revoke all on public.kibl_now_price   from anon, authenticated;
 revoke all on public.kibl_now_history from anon, authenticated;
 revoke all on public.kibl_now_card    from anon, authenticated;
+revoke all on public.kibl_now_gaps    from anon, authenticated;
 grant select on public.kibl_now_price to anon, authenticated;
 grant select on public.kibl_now_card  to anon, authenticated;
 

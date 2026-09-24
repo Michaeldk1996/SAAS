@@ -45,6 +45,10 @@ BOARD_URL = "https://michaeldk1996.github.io/SAAS/matches.json"
 TABLE_NOW = "kibl_now_price"
 TABLE_HIST = "kibl_now_history"
 TABLE_CARD = "kibl_now_card"   # ONE row per card, both sides: the only Realtime-published table
+TABLE_GAPS = "kibl_now_gaps"   # every period the worker was not consuming (founder 2026-09-24, item 6)
+# Kibl's queue keeps a message 120 s. A gap longer than this lost history; the
+# price-history box shows it as "no data from–to", never as a continuous line.
+QUEUE_TTL_S = 120
 HB_KEY = ("__stream__", "__hb__")
 # How long a card row waits after the first side of a move lands, so the other
 # side's row (Kibl sends them as separate participant rows, not always in one
@@ -369,6 +373,40 @@ def write_hb(env, row, log, enabled):
         log(f"::warning::heartbeat HTTP {st}: {body[:200]}")
 
 
+def gap_record(frm, to, reason):
+    """One not-consuming period -> a kibl_now_gaps row, or None if it is not a
+    period (to <= frm). Every gap is recorded; `lost_history` says whether it
+    outlived the queue's 120 s TTL, i.e. whether price changes were lost."""
+    if frm is None or to is None or to <= frm:
+        return None
+    secs = (to - frm).total_seconds()
+    return {"gap_from": iso(frm), "gap_to": iso(to), "seconds": round(secs, 1),
+            "reason": reason, "lost_history": secs > QUEUE_TTL_S}
+
+
+def write_gap(env, row, log, enabled):
+    if row is None:
+        return
+    log(f"gap {row['reason']}: {row['gap_from']} -> {row['gap_to']} ({row['seconds']} s"
+        f"{', history lost' if row['lost_history'] else ''})")
+    if not enabled:
+        return
+    st, body = C.sb_request(env, "POST", f"/rest/v1/{TABLE_GAPS}", [row], prefer="return=minimal")
+    if st not in (200, 201, 204):
+        log(f"::warning::gap write HTTP {st}: {body[:200]}")
+
+
+def last_heartbeat_at(env):
+    """The previous run's last heartbeat time (a crash or deploy writes nothing
+    on the way out, so this is where the restart gap starts), or None."""
+    st, body = C.sb_request(env, "GET", f"/rest/v1/{TABLE_NOW}?kind=eq.heartbeat&select=written_at")
+    try:
+        rows = json.loads(body) if st == 200 else []
+        return CJ.parse_ts(rows[0]["written_at"]) if rows else None
+    except (ValueError, KeyError, IndexError, TypeError):
+        return None
+
+
 def prune(env, log, enabled):
     """Price rows for cards long gone. History is kept — it is the product."""
     if not enabled:
@@ -496,6 +534,11 @@ def main(env=None, log=print):
 
     attempt, last_beat, last_prune, connected = 0, 0.0, 0.0, False
     retry, last_retry = [], 0.0
+    # Gap bookkeeping: the restart gap runs from the previous run's last
+    # heartbeat; a disconnect gap from the last loop turn while consuming.
+    gap_from = last_heartbeat_at(env) if enabled else None
+    gap_reason = "restart"
+    last_alive = None
     while True:
         try:
             refresh(force=True)
@@ -511,12 +554,15 @@ def main(env=None, log=print):
                                                     auto_ack=False):
                 if first:
                     first = False
+                    write_gap(env, gap_record(gap_from, datetime.now(timezone.utc), gap_reason), log, enabled)
+                    gap_from = None
                     try:
                         retry += flush(env, seed(kc, eng, log), log, enabled, eng)
                         flush_cards(env, eng.card_rows(time.monotonic(), force=True), log, enabled, eng)
                     except Exception as e:  # noqa: BLE001
                         log(f"::warning::seed failed — cards stay on the poller: "
                             f"{C.redact(e, secrets)[:160]}")
+                last_alive = datetime.now(timezone.utc)
                 if method is not None:
                     rcv = iso(datetime.now(timezone.utc))
                     try:
@@ -557,6 +603,9 @@ def main(env=None, log=print):
         except Exception as e:  # noqa: BLE001
             if connected:
                 write_hb(env, eng.heartbeat(datetime.now(timezone.utc), False, where), log, enabled)
+            if gap_from is None:
+                gap_from = last_alive or datetime.now(timezone.utc)
+                gap_reason = "disconnect"
             connected = False
             wait = C.backoff_for(attempt)
             attempt += 1
