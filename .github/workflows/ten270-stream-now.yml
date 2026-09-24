@@ -1,0 +1,153 @@
+name: TEN-270 Kibl stream -> live Now
+
+# MANUAL ONLY. Four actions:
+#   schema         apply kibl-stream/now-schema.sql (idempotent), then `verify`
+#   verify         prove, WITH THE PAGE'S OWN PUBLISHABLE KEY, that the browser
+#                  can SELECT kibl_now_price and nothing else: history refused,
+#                  inserts refused. Also that the table is in supabase_realtime.
+#   deploy-worker  build + deploy now_worker.py to Fly (kibl-stream/fly.toml,
+#                  region sea). Needs the FLY_API_TOKEN repository secret; the
+#                  Kibl + Supabase credentials go from GitHub secrets straight
+#                  into Fly secrets over stdin — never into a log or an argv.
+#   status         read the worker's heartbeat row and the price-table counts.
+#
+# Nothing here touches the poller, its tables, or its workflows.
+
+on:
+  workflow_dispatch:
+    inputs:
+      action:
+        description: 'schema | verify | deploy-worker | status'
+        required: true
+        default: 'status'
+
+concurrency:
+  group: ten270-stream-now
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Schema / verify / status
+        if: inputs.action != 'deploy-worker'
+        env:
+          ACTION: ${{ inputs.action }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+        run: |
+          python3 - <<'PY'
+          import json, os, sys, urllib.parse, urllib.request, urllib.error
+          act = os.environ["ACTION"]
+          url = os.environ["SUPABASE_URL"].rstrip("/")
+          ref = (urllib.parse.urlparse(url).hostname or "").split(".")[0]
+          print(f"::add-mask::{ref}")
+          def call(u, method="GET", body=None, key=None, bearer=None, prefer=None):
+              req = urllib.request.Request(u, method=method,
+                                           data=None if body is None else json.dumps(body).encode())
+              if key: req.add_header("apikey", key)
+              req.add_header("Authorization", "Bearer " + (bearer or key))
+              req.add_header("Content-Type", "application/json")
+              if prefer: req.add_header("Prefer", prefer)
+              try:
+                  with urllib.request.urlopen(req, timeout=60) as r:
+                      return r.status, r.read().decode()
+              except urllib.error.HTTPError as e:
+                  return e.code, e.read().decode()
+          def sql(q):
+              return call(f"https://api.supabase.com/v1/projects/{ref}/database/query", "POST",
+                          {"query": q}, bearer=os.environ["SUPABASE_ACCESS_TOKEN"])
+          bad = []
+          if act == "schema":
+              st, r = sql(open("kibl-stream/now-schema.sql").read())
+              print(f"schema apply HTTP {st}")
+              if st >= 400:
+                  print(r[:500]); sys.exit(1)
+          if act in ("schema", "verify"):
+              pk = os.environ["SUPABASE_PUBLISHABLE_KEY"]
+              st, r = call(f"{url}/rest/v1/kibl_now_price?select=card_key&limit=1", key=pk)
+              print(f"[publishable] SELECT kibl_now_price  -> HTTP {st}  (want 200)")
+              if st != 200: bad.append("price table not readable")
+              st, r = call(f"{url}/rest/v1/kibl_now_history?select=id&limit=1", key=pk)
+              print(f"[publishable] SELECT kibl_now_history -> HTTP {st}  (want 401/403)")
+              if st not in (401, 403): bad.append(f"history readable ({st})")
+              probe = {"card_key": "__rls_probe__", "side_key": "__rls_probe__", "kind": "heartbeat"}
+              st, r = call(f"{url}/rest/v1/kibl_now_price", "POST", [probe], key=pk)
+              print(f"[publishable] INSERT kibl_now_price -> HTTP {st}  (want 401/403)")
+              if st not in (401, 403):
+                  bad.append(f"publishable key could INSERT ({st})")
+                  call(f"{url}/rest/v1/kibl_now_price?card_key=eq.__rls_probe__", "DELETE",
+                       key=os.environ["SUPABASE_SECRET_KEY"])
+              st, r = call(f"{url}/rest/v1/odds_card_state?select=match_key&limit=1", key=pk)
+              print(f"[publishable] SELECT odds_card_state -> HTTP {st}  (unchanged: want 401)")
+              st, r = sql("select tablename from pg_publication_tables where pubname='supabase_realtime' "
+                          "and tablename in ('kibl_now_price','kibl_now_history') order by 1")
+              print(f"realtime publication -> {r}")
+              if "kibl_now_price" not in r: bad.append("price table not in supabase_realtime")
+              if "kibl_now_history" in r: bad.append("history table published")
+              st, r = sql("select polname, cmd, roles::text from pg_policy p join pg_class c on c.oid=p.polrelid "
+                          "where c.relname in ('kibl_now_price','kibl_now_history') order by 1")
+              print(f"policies -> {r}")
+          if act == "status":
+              sk = os.environ["SUPABASE_SECRET_KEY"]
+              st, r = call(f"{url}/rest/v1/kibl_now_price?kind=eq.heartbeat&select=written_at,note", key=sk)
+              print(f"heartbeat -> HTTP {st} {r[:1500]}")
+              st, r = call(f"{url}/rest/v1/kibl_now_price?kind=eq.price&select=card_key", key=sk,
+                           prefer="count=exact")
+              print(f"price rows -> HTTP {st} {len(json.loads(r)) if st == 200 else r[:200]}")
+          if bad:
+              print("::error::" + "; ".join(bad)); sys.exit(1)
+          PY
+
+      - name: Deploy the worker to Fly
+        if: inputs.action == 'deploy-worker'
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        run: |
+          if [ -z "$FLY_API_TOKEN" ]; then
+            echo "::error::FLY_API_TOKEN is not set — the founder has to create the Fly org and token first."
+            exit 1
+          fi
+          curl -fsSL https://fly.io/install.sh | sh
+          echo "$HOME/.fly/bin" >> "$GITHUB_PATH"
+
+      - name: Fly secrets + deploy
+        if: inputs.action == 'deploy-worker'
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+          KIBL_RMQ_HOST: ${{ secrets.KIBL_RMQ_HOST }}
+          KIBL_RMQ_PORT: ${{ secrets.KIBL_RMQ_PORT }}
+          KIBL_RMQ_VHOST: ${{ secrets.KIBL_RMQ_VHOST }}
+          KIBL_RMQ_USER: ${{ secrets.KIBL_RMQ_USER }}
+          KIBL_RMQ_PASS: ${{ secrets.KIBL_RMQ_PASS }}
+          KIBL_RMQ_QUEUE: ${{ secrets.KIBL_RMQ_QUEUE }}
+          KIBL_USERNAME: ${{ secrets.KIBL_USERNAME }}
+          KIBL_PASSWORD: ${{ secrets.KIBL_PASSWORD }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: |
+          set -euo pipefail
+          APP=$(sed -n 's/^app *= *"\(.*\)"/\1/p' kibl-stream/fly.toml)
+          flyctl apps list --json | python3 -c "import json,sys;a=sys.argv[1];sys.exit(0 if any(x.get('Name')==a for x in json.load(sys.stdin)) else 1)" "$APP" \
+            || flyctl apps create "$APP"
+          # Values go over STDIN, one NAME=value per line — never argv, never echoed.
+          python3 - <<'PY' | flyctl secrets import --app "$APP" --stage
+          import os
+          for k in ("KIBL_RMQ_HOST","KIBL_RMQ_PORT","KIBL_RMQ_VHOST","KIBL_RMQ_USER","KIBL_RMQ_PASS",
+                    "KIBL_RMQ_QUEUE","KIBL_USERNAME","KIBL_PASSWORD","SUPABASE_URL","SUPABASE_SECRET_KEY"):
+              v = os.environ.get(k, "").strip()
+              if not v:
+                  raise SystemExit(f"missing secret {k}")
+              print(f"{k}={v}")
+          PY
+          flyctl deploy --config kibl-stream/fly.toml --dockerfile kibl-stream/Dockerfile \
+                        --remote-only --ha=false --yes .
+          flyctl status --app "$APP"

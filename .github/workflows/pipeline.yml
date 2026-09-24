@@ -440,6 +440,9 @@ jobs:
           # row via PostgREST. Committed but not copied = silent 404 → the Live tab stays
           # dark even with the flag on. Public Supabase creds are injected below.
           cp live-tab.js _site/
+          # TEN-270: the Kibl stream -> live "Now" client. Same public creds as the
+          # Live tab; reads kibl_now_price only (SELECT-only policy).
+          cp kibl-now-stream.js _site/
           # TEN-206 ruling 7: the shared hold/break engine, lifted OUT of the
           # dashboard so the Live tab and the Player Profile run one engine. The
           # Live tab's inline renderer now CALLS it, so a missing copy here is
@@ -764,7 +767,7 @@ jobs:
           # every match and nothing else complains. bsp-pipeline.js writes it on
           # every run alongside matches.json.
           for f in index.html bsp-consult-dashboard.html auth.html auth.js analytics.js account.html funnel.html verify.html \
-                   live-tab.js \
+                   live-tab.js kibl-now-stream.js \
                    holdbreak-heatmap.js player-profile-v2.js \
                    matches.json player-profiles.json career-splits.json form-index.json \
                    player-index.json \
