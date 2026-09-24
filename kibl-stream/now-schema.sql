@@ -160,66 +160,78 @@ end $$;
 -- security definer: the page's publishable key gets EXECUTE on this function
 -- only — never SELECT on the tables it reads. Row caps bound every call.
 -- Sources, merged by the page on (side, Kibl inserted_on, price):
---   poller  kibl_line_observations for the card's Kibl fixture(s), side '1'/'2'
---           = lower/higher fixture_participant_id (ten225-kibl-card-state.py
---           side_labels_for); the page names the side from the fixture's
---           player1/player2 with its own name key.
---   stream  kibl_now_history rows already keyed by card_key/side_key.
---   gaps    kibl_now_gaps over the 120 s queue TTL (stream era), and sweep gaps
---           > 10 min between OK poller sweeps (poller era).
+--   poller  kibl_line_observations for the card's SELECTED Bet105 Kibl fixture —
+--           never one the orientation guard dashed. Side '1'/'2' = lower/higher
+--           fixture_participant_id, only where each side_id maps to exactly one
+--           participant (ten225-kibl-card-state.py side_labels_for).
+--   stream  kibl_now_history rows for the card, book bet105.
+--   gaps    the card's own span only: worker gaps over the 120 s queue TTL
+--           (stream era), and >10 min gaps between OK poller sweeps BEFORE the
+--           stream went live (the founder's gap rule is the worker's TTL once
+--           the stream exists; a poller stall then is not lost stream data).
+-- Review round 5 findings 1–3, 7–9 folded in.
+create index if not exists kibl_sweeps_started_idx on public.kibl_sweeps (started_at);
+
 create or replace function public.price_history(p_card_key text)
 returns jsonb
 language sql stable security definer
-set search_path = public
+set search_path = public, pg_temp
 as $fn$
   with fx as (
     select distinct ocs.fixture_id::bigint as fixture_id
-    from odds_card_state ocs
+    from public.odds_card_state ocs
     where ocs.match_key = p_card_key and ocs.id_space = 'kibl' and ocs.book = 'bet105'
-      and ocs.market = 'match winner' and ocs.fixture_id ~ '^[0-9]+$'
+      and ocs.market = 'match winner' and ocs.is_selected
+      and ocs.label is distinct from 'orientation-disagreement'
+      and ocs.fixture_id ~ '^[0-9]+$'
     limit 4
   ),
   mw as (
-    select o.fixture_id, o.fixture_participant_id, o.price_decimal, o.inserted_on, o.observed_at
-    from kibl_line_observations o join fx using (fixture_id)
+    select o.fixture_id, o.side_id, o.fixture_participant_id, o.price_decimal, o.inserted_on, o.observed_at
+    from public.kibl_line_observations o join fx using (fixture_id)
     where o.feed_source_id = 171 and o.market_type_id = 1 and o.segment_id = 1
-      and o.betting_type_id = 1 and coalesce(o.is_live, false) = false
-      and o.inserted_on is not null and o.fixture_participant_id is not null
+      and o.betting_type_id = 1 and o.is_live is not true
+      and o.inserted_on is not null and o.fixture_participant_id is not null and o.side_id is not null
   ),
   parts as (
-    select fixture_id, min(fixture_participant_id) as p_lo, max(fixture_participant_id) as p_hi,
-           count(distinct fixture_participant_id) as n
+    select fixture_id, min(fixture_participant_id) as p_lo,
+           count(distinct fixture_participant_id) as n_p, count(distinct side_id) as n_s,
+           count(distinct (side_id, fixture_participant_id)) as n_pairs
     from mw group by fixture_id
   ),
   poller as (
     select m.fixture_id, case when m.fixture_participant_id = p.p_lo then '1' else '2' end as side,
            m.price_decimal as price, m.inserted_on as at, m.observed_at as seen
     from mw m join parts p using (fixture_id)
-    where p.n = 2 and m.price_decimal >= 1.01
+    where p.n_p = 2 and p.n_s = 2 and p.n_pairs = 2 and m.price_decimal >= 1.01
     order by m.inserted_on desc
-    limit 600
+    limit 2000
   ),
   stream as (
     select h.side_key as side, h.price, h.kibl_inserted_on as at, h.received_at as seen, h.source
-    from kibl_now_history h
-    where h.card_key = p_card_key
+    from public.kibl_now_history h
+    where h.card_key = p_card_key and h.book = 'bet105'
     order by h.kibl_inserted_on desc
-    limit 600
+    limit 2000
   ),
   span as (
-    select least((select min(at) from poller), (select min(at) from stream)) as since
+    select least((select min(at) from poller), (select min(at) from stream)) as since,
+           greatest((select max(at) from poller), (select max(at) from stream)) as until
   ),
   gaps as (
     select g.gap_from, g.gap_to, g.seconds, g.reason
-    from kibl_now_gaps g, span
-    where g.lost_history and span.since is not null and g.gap_to >= span.since
+    from public.kibl_now_gaps g, span
+    where g.lost_history and span.since is not null
+      and g.gap_to >= span.since and g.gap_from <= span.until
     order by g.gap_from desc
-    limit 50
+    limit 100
   ),
   sweeps as (
     select s.started_at, lag(s.started_at) over (order by s.started_at) as prev
-    from kibl_sweeps s, span
-    where s.ok and span.since is not null and s.started_at >= span.since - interval '15 minutes'
+    from public.kibl_sweeps s, span
+    where s.ok and span.since is not null
+      and s.started_at >= span.since - interval '15 minutes'
+      and s.started_at <= least(span.until + interval '15 minutes', timestamptz '2026-09-24 07:44:35+00')
   ),
   sweep_gaps as (
     select prev as gap_from, started_at as gap_to,
@@ -227,14 +239,15 @@ as $fn$
     from sweeps
     where prev is not null and started_at - prev > interval '10 minutes'
     order by prev desc
-    limit 50
+    limit 100
   )
   select jsonb_build_object(
     'card_key',   p_card_key,
     'generated_at', now(),
+    'stream_live_since', timestamptz '2026-09-24 07:44:35+00',
     'fixtures',   coalesce((select jsonb_agg(jsonb_build_object('fixture_id', f.fixture_id,
                      'player1', kf.player1_name, 'player2', kf.player2_name))
-                   from fx f left join kibl_fixtures kf on kf.fixture_id = f.fixture_id), '[]'::jsonb),
+                   from fx f left join public.kibl_fixtures kf on kf.fixture_id = f.fixture_id), '[]'::jsonb),
     'poller',     coalesce((select jsonb_agg(to_jsonb(p)) from poller p), '[]'::jsonb),
     'stream',     coalesce((select jsonb_agg(to_jsonb(s)) from stream s), '[]'::jsonb),
     'gaps',       coalesce((select jsonb_agg(to_jsonb(g)) from gaps g), '[]'::jsonb),

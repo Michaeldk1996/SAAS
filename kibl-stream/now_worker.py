@@ -385,15 +385,21 @@ def gap_record(frm, to, reason):
 
 
 def write_gap(env, row, log, enabled):
+    """-> True when the row is written (or there is nothing to write). A failed
+    write returns False and the caller keeps the gap to retry — a lost gap row
+    would let the history box draw a continuous line over lost data (review
+    round 5, finding 4)."""
     if row is None:
-        return
+        return True
     log(f"gap {row['reason']}: {row['gap_from']} -> {row['gap_to']} ({row['seconds']} s"
         f"{', history lost' if row['lost_history'] else ''})")
     if not enabled:
-        return
+        return True
     st, body = C.sb_request(env, "POST", f"/rest/v1/{TABLE_GAPS}", [row], prefer="return=minimal")
     if st not in (200, 201, 204):
-        log(f"::warning::gap write HTTP {st}: {body[:200]}")
+        log(f"::warning::gap write HTTP {st}: {body[:200]} — will retry")
+        return False
+    return True
 
 
 def last_heartbeat_at(env):
@@ -539,6 +545,7 @@ def main(env=None, log=print):
     gap_from = last_heartbeat_at(env) if enabled else None
     gap_reason = "restart"
     last_alive = None
+    pending_gap, last_gap_try = None, 0.0
     while True:
         try:
             refresh(force=True)
@@ -554,16 +561,20 @@ def main(env=None, log=print):
                                                     auto_ack=False):
                 if first:
                     first = False
-                    write_gap(env, gap_record(gap_from, datetime.now(timezone.utc), gap_reason), log, enabled)
+                    row_g = gap_record(gap_from, datetime.now(timezone.utc), gap_reason)
                     gap_from = None
+                    if not write_gap(env, row_g, log, enabled):
+                        pending_gap, last_gap_try = row_g, time.time()
                     try:
                         retry += flush(env, seed(kc, eng, log), log, enabled, eng)
                         flush_cards(env, eng.card_rows(time.monotonic(), force=True), log, enabled, eng)
                     except Exception as e:  # noqa: BLE001
                         log(f"::warning::seed failed — cards stay on the poller: "
                             f"{C.redact(e, secrets)[:160]}")
-                last_alive = datetime.now(timezone.utc)
                 if method is not None:
+                    # Only a RECEIVED message proves the stream was alive: an idle
+                    # tick on a half-open socket is not (review round 5, finding 5).
+                    last_alive = datetime.now(timezone.utc)
                     rcv = iso(datetime.now(timezone.utc))
                     try:
                         payload = json.loads(body.decode("utf-8", "replace"))
@@ -585,6 +596,10 @@ def main(env=None, log=print):
                 if eng.dirty:
                     flush_cards(env, eng.card_rows(time.monotonic()), log, enabled, eng)
                 t = time.time()
+                if pending_gap is not None and t - last_gap_try >= 10:
+                    last_gap_try = t
+                    if write_gap(env, pending_gap, log, enabled):
+                        pending_gap = None
                 if retry and t - last_retry >= 10:
                     # Only rows still the newest for their side; a newer price
                     # that landed meanwhile is never overwritten by a retry.

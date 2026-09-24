@@ -202,8 +202,16 @@ W.C.sb_request = C_real
 ok(calls and calls[0][1] == "/rest/v1/kibl_now_gaps" and calls[0][2][0]["seconds"] == 130.0,
    "the gap is written to kibl_now_gaps")
 src = open(os.path.join(HERE, "now_worker.py")).read()
-ok(src.index("write_gap(env, gap_record(gap_from") < src.index("retry += flush(env, seed(kc, eng, log)"),
+ok(src.index("row_g = gap_record(gap_from") < src.index("retry += flush(env, seed(kc, eng, log)"),
    "the gap is written when consumption resumes, before the re-seed")
+W.C.sb_request = lambda *a, **k: (503, "down")
+ok(W.write_gap({}, W.gap_record(t0g, t0g + timedelta(seconds=130), "disconnect"), lambda *_: None, True) is False,
+   "a failed gap write reports failure, so the caller keeps it and retries")
+W.C.sb_request = C_real
+ok("pending_gap, last_gap_try = row_g" in src and "if write_gap(env, pending_gap" in src,
+   "the worker retries a failed gap write instead of dropping it")
+ok(src.index("if method is not None:\n                    # Only a RECEIVED") < src.index("last_alive = datetime.now(timezone.utc)"),
+   "last_alive moves only on a received message, not on an idle tick")
 
 print("\n5 · heartbeat")
 hb = e.heartbeat(NOW, True)

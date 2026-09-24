@@ -126,6 +126,9 @@ jobs:
               st, r = call(f"{url}/rest/v1/kibl_now_gaps?select=id&limit=1", key=pk)
               print(f"[publishable] SELECT kibl_now_gaps -> HTTP {st}  (want 401/403)")
               if st not in (401, 403): bad.append(f"gaps readable ({st})")
+              st, r = call(f"{url}/rest/v1/kibl_line_observations?select=row_key&limit=1", key=pk)
+              print(f"[publishable] SELECT kibl_line_observations -> HTTP {st}  (want 401/403)")
+              if st not in (401, 403): bad.append(f"line observations readable ({st})")
               st, r = call(f"{url}/rest/v1/kibl_now_card?select=card_key&order=written_at.desc&limit=5",
                            key=os.environ["SUPABASE_SECRET_KEY"])
               keys = [x["card_key"] for x in json.loads(r)] if st == 200 else []
