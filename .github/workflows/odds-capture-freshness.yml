@@ -3,8 +3,8 @@
 # the channel every alarm here uses — when no book in the board's captured series (matches.json
 # oddsMovement) has a new tick for 24 h. It writes nothing. Separate from the Tennis-Data
 # staleness alarm (odds-archive-staleness.yml) by design.
-# 24 h is a starting default: measured, it also fires on quiet boards with nothing to price
-# (see tools/odds-capture-freshness.py); the message prints the upcoming count.
+# Founder ruling 2026-09-24: keep 24 h, and go red only when at least one upcoming match is on
+# the board (a quiet board with nothing to price is not an outage); see tools/odds-capture-freshness.py.
 # ⚠ Actions `schedule:` is throttled on this repo (27% delivery measured; see pipeline-watchdog.yml).
 # Hourly means it still lands within a few hours of the 24 h mark; for a guaranteed fire add
 # workflow_dispatch of this file to the external pg_cron pinger.

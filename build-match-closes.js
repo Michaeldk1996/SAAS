@@ -40,7 +40,8 @@ const { readCsv, ourCandidateKeys, keyFromArchiveName, fullKey, archiveOverride 
 const ROOT = __dirname;
 const OUT_DIR = path.join(ROOT, 'match-closes');
 const INDEX = path.join(ROOT, 'match-closes-index.json');
-const CAPTURE_CATS = new Set(['ATP', 'Challenger']);    // bet365-history levels we price (no WTA)
+// bet365-history levels we price (no WTA). ITF Men + Davis Cup: founder ruling 2026-09-24.
+const CAPTURE_CATS = new Set(['ATP', 'Challenger', 'ITF Men', 'Davis Cup']);
 
 function price(v) { const f = parseFloat(v); return Number.isFinite(f) && f >= 1.01 && f <= 1000 ? f : null; }
 const pair = (a, b) => { const x = price(a), y = price(b); return x != null && y != null ? [x, y] : null; };
@@ -286,6 +287,6 @@ if (require.main === module) {
   const s = r.stats;
   console.log(`match-closes: ${r.players} player shards, archive through ${r.latest}; ` +
     `Tennis-Data ${s.priced}/${s.sides} resolved sides priced (${s.pin} Pinnacle, ${s.b365only} Bet365 only; ${s.oppKeyed} with opponent key); ` +
-    `captured Pinnacle ${s.capPin}; captured Bet365 ${s.capB365} of ${s.capSeen} ATP/Challenger fixtures ` +
+    `captured Pinnacle ${s.capPin}; captured Bet365 ${s.capB365} of ${s.capSeen} ATP/Challenger/ITF Men/Davis Cup fixtures ` +
     `(no actual start ${s.capNoStart}, unresolved ${s.capUnresolved}, one-sided ${s.capOneSided})`);
 }

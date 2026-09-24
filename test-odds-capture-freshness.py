@@ -28,11 +28,20 @@ check('a future-dated tick never keeps a frozen capture green',
 check('a timestamp without a zone reads as UTC', f.verdict([match({'bet365': '2026-09-04T23:00:00'})], P('2026-09-05T00:00:00Z'), 24)[0] == 0)
 check('a malformed book series is skipped, not a crash',
       f.verdict([{'oddsMovement': {'books': {'x': [1, 2]}}}] + board, P('2026-09-02T05:00:00Z'), 24)[0] == 0)
+# Founder ruling 2026-09-24: red only when at least one upcoming match is on the board.
+quiet = [match({'bet365': '2026-09-12T10:00:00Z'}, final=True), match({'bet365': '2026-09-12T09:00:00Z'}, final=True)]
+qc, qm = f.verdict(quiet, P('2026-09-14T10:00:00Z'), 24)
+check('a stale capture on a board with 0 upcoming matches stays green, and says so', qc == 0 and 'no upcoming match' in qm)
+check('control: the same stale capture with 1 upcoming match goes red',
+      f.verdict(quiet + [{'finalScore': None}], P('2026-09-14T10:00:00Z'), 24)[0] == 1)
+check('no tick at all on a board with 0 upcoming matches is quiet, not red',
+      f.verdict([{'finalScore': '2-0'}], P('2026-09-17T12:00:00Z'), 24)[0] == 0)
+check('the gate is one constant, set to 1', f.MIN_UPCOMING == 1)
 with tempfile.TemporaryDirectory() as d:
     p = os.path.join(d, 'matches.json'); json.dump({'matches': board}, open(p, 'w'))
     r = subprocess.run([sys.executable, os.path.join(HERE, 'tools', 'odds-capture-freshness.py'), '--matches', p, '--now', '2026-09-05T00:00:00Z'], capture_output=True, text=True)
     check('CLI exits 1 with one ::error:: line when stale', r.returncode == 1 and r.stdout.startswith('::error::odds capture stale'))
     r = subprocess.run([sys.executable, os.path.join(HERE, 'tools', 'odds-capture-freshness.py'), '--matches', p, '--now', '2026-09-02T05:00:00Z'], capture_output=True, text=True)
     check('CLI exits 0 when fresh', r.returncode == 0)
-print(f'RESULT: {10 - fails} passed, {fails} failed')
+print(f'RESULT: {14 - fails} passed, {fails} failed')
 sys.exit(1 if fails else 0)

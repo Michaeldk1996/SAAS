@@ -238,6 +238,44 @@ const H2H_EVENT_TYPES = new Set(['Atp Singles', 'Challenger Men Singles', 'Itf M
 function h2hLevelOf(eventType) {
   return eventType === 'Challenger Men Singles' ? 'CH' : eventType === 'Itf Men Singles' ? 'ITF' : 'ATP';
 }
+// TEN-263 (founder ruling 2026-09-24): who won a meeting is decided by PLAYER KEY,
+// never by surname. "Z. Zhang" is both Zhizhen (590) and Ze Zhang; a surname rule
+// orients their meetings by coin-flip. Every get_H2H / get_fixtures row carries
+// first_player_key / second_player_key. true = p1 was the fixture's first player,
+// false = second, null = the row doesn't carry p1 at all (not one of p1's meetings,
+// so it can't be oriented and is not counted).
+function h2hP1WasFirst(m, p1Key) {
+  const k = String(p1Key);
+  if (String(m.first_player_key) === k) return true;
+  if (String(m.second_player_key) === k) return false;
+  return null;
+}
+// TEN-263 (founder ruling 2026-09-24): a match never counts in its own H2H record.
+// get_H2H lists a finished board match among the pair's meetings, so the card,
+// the model's H2H layer and the H2H page all counted today's result as history.
+function h2hExcludeOwn(rows, ownEventKey) {
+  if (ownEventKey == null || ownEventKey === '') return rows || [];
+  return (rows || []).filter(m => String(m.event_key) !== String(ownEventKey));
+}
+// Final pass over the whole board before matches.json is written (the model reads
+// that file): the same rule for any match whose h2h was built before the rule
+// existed or carried over. Returns the number of rows removed.
+function stripOwnFixtureFromH2H(matches) {
+  let removed = 0;
+  for (const m of matches || []) {
+    const h = m && m.h2h;
+    if (!h || !Array.isArray(h.matches)) continue;
+    const own = String(eventKeyOf(m));
+    const kept = h.matches.filter(r => !(r && r.eventKey != null && String(r.eventKey) === own));
+    if (kept.length === h.matches.length) continue;
+    removed += h.matches.length - kept.length;
+    h.matches = kept;
+    h.p1Wins = kept.filter(r => r.p1Won).length;
+    h.p2Wins = kept.length - h.p1Wins;
+    h.record = `${h.p1Wins}-${h.p2Wins}`;
+  }
+  return removed;
+}
 
 async function fetchH2H(firstPlayerKey, secondPlayerKey) {
   const url = `${API_TENNIS_BASE}?method=get_H2H&APIkey=${API_TENNIS_KEY}&first_player_key=${firstPlayerKey}&second_player_key=${secondPlayerKey}`;
@@ -275,10 +313,11 @@ async function fetchH2H(firstPlayerKey, secondPlayerKey) {
   };
 }
 
-function summarizeH2H(h2hMatches, player1Name) {
+function summarizeH2H(h2hMatches, p1Key) {
   let p1Wins = 0, p2Wins = 0;
   for (const m of h2hMatches || []) {
-    const p1WasFirst = lastName(m.event_first_player) === lastName(player1Name);
+    const p1WasFirst = h2hP1WasFirst(m, p1Key);
+    if (p1WasFirst === null) continue;
     const winnerIsFirst = m.event_winner === 'First Player';
     const p1Won = p1WasFirst ? winnerIsFirst : !winnerIsFirst;
     if (p1Won) p1Wins++; else p2Wins++;
@@ -286,16 +325,17 @@ function summarizeH2H(h2hMatches, player1Name) {
   return { p1Wins, p2Wins, record: `${p1Wins}-${p2Wins}` };
 }
 
-// Full past-meeting list from get_H2H's raw H2H array — same last-name
-// comparison technique as summarizeH2H() above, so a match's winner here can
+// Full past-meeting list from get_H2H's raw H2H array — same player-key
+// orientation as summarizeH2H() above (h2hP1WasFirst), so a match's winner here can
 // never disagree with the overall record. get_H2H doesn't return a surface
 // field directly (confirmed live) — surface is derived from tournament_key
 // via the same surfaceMap already used elsewhere in the pipeline (e.g.
 // seasonRowFromFixtures), not a new lookup.
-function buildH2HMatchList(h2hMatches, player1Name, surfaceMap) {
+function buildH2HMatchList(h2hMatches, p1Key, surfaceMap) {
   return (h2hMatches || [])
+    .filter(m => h2hP1WasFirst(m, p1Key) !== null)
     .map(m => {
-      const p1WasFirst = lastName(m.event_first_player) === lastName(player1Name);
+      const p1WasFirst = h2hP1WasFirst(m, p1Key);
       const winnerIsFirst = m.event_winner === 'First Player';
       const p1Won = p1WasFirst ? winnerIsFirst : !winnerIsFirst;
       // event_final_result is always "player1 sets - player2 sets" in RAW
@@ -2116,8 +2156,9 @@ async function buildMatchObject(oddsEvent, apiTennisFixtures, surfaceMap, venueM
 
   const h2hData = await fetchH2H(p1Key, p2Key);
   if (h2hData) {
-    match.h2h = summarizeH2H(h2hData.headToHead, oddsEvent.home_team);
-    match.h2h.matches = buildH2HMatchList(h2hData.headToHead, oddsEvent.home_team, surfaceMap);
+    const h2hRows = h2hExcludeOwn(h2hData.headToHead, fixture.event_key);
+    match.h2h = summarizeH2H(h2hRows, p1Key);
+    match.h2h.matches = buildH2HMatchList(h2hRows, p1Key, surfaceMap);
   }
   // Recent form is a per-player stat (each player's own last-N results) and is
   // wholly independent of the odds feed and of H2H. It must populate whenever we
@@ -3060,8 +3101,9 @@ async function buildPastMatchObject(fixture, surfaceMap, venueMap) {
 
   const h2hData = await fetchH2H(p1Key, p2Key);
   if (h2hData) {
-    match.h2h = summarizeH2H(h2hData.headToHead, match.p1);
-    match.h2h.matches = buildH2HMatchList(h2hData.headToHead, match.p1, surfaceMap);
+    const h2hRows = h2hExcludeOwn(h2hData.headToHead, fixture.event_key);
+    match.h2h = summarizeH2H(h2hRows, p1Key);
+    match.h2h.matches = buildH2HMatchList(h2hRows, p1Key, surfaceMap);
   }
   // Recent form is a per-player stat (each player's own last-N results) and is
   // wholly independent of the odds feed and of H2H. It must populate whenever we
@@ -3225,8 +3267,9 @@ async function buildUpcomingMatchObject(fixture, surfaceMap, venueMap) {
 
   const h2hData = await fetchH2H(p1Key, p2Key);
   if (h2hData) {
-    match.h2h = summarizeH2H(h2hData.headToHead, match.p1);
-    match.h2h.matches = buildH2HMatchList(h2hData.headToHead, match.p1, surfaceMap);
+    const h2hRows = h2hExcludeOwn(h2hData.headToHead, fixture.event_key);
+    match.h2h = summarizeH2H(h2hRows, p1Key);
+    match.h2h.matches = buildH2HMatchList(h2hRows, p1Key, surfaceMap);
   }
   // Recent form is a per-player stat (each player's own last-N results) and is
   // wholly independent of the odds feed and of H2H. It must populate whenever we
@@ -6651,6 +6694,9 @@ async function runPipeline() {
   const oddsMovementForModel = new Map(matches.map(m => [m.id, m.oddsMovement]));
   extractOddsShards(matches);
 
+  // TEN-263: a match never counts in its own H2H (cards, model, H2H page).
+  const ownH2HRemoved = stripOwnFixtureFromH2H(matches);
+  console.log(`H2H: removed ${ownH2HRemoved} own-fixture row(s) from the board's H2H records.`);
   writeJsonAtomic('matches.json', matches);
   console.log(`Wrote ${matches.length} matches to matches.json`);
   const enriched = matches.filter(m => m.h2h !== null).length;

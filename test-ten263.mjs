@@ -529,11 +529,96 @@ test('pipeline H2H: ATP, Challenger and ITF singles count; exhibitions, doubles 
   assert.match(slicePipe('fetchH2H'), /\.filter\(m => H2H_EVENT_TYPES\.has\(m\.event_type_type\)\)/, 'fetchH2H filters on the set');
 });
 test('pipeline H2H: every meeting row carries its level (ATP / CH / ITF)', () => {
-  const P = new Function(`${slicePipe('lastName')}\n${slicePipe('h2hLevelOf')}\n${slicePipe('buildH2HMatchList')}\nreturn { buildH2HMatchList };`)();
+  const P = new Function(`${slicePipe('h2hP1WasFirst')}\n${slicePipe('h2hLevelOf')}\n${slicePipe('buildH2HMatchList')}\nreturn { buildH2HMatchList };`)();
   const raw = (ek, type) => ({ event_key: ek, event_type_type: type, event_date: '2026-01-0' + ek, tournament_name: 'X', tournament_key: 1,
-    event_first_player: 'J. Sinner', event_second_player: 'C. Alcaraz', event_winner: 'First Player', event_final_result: '2 - 0', event_qualification: 'False' });
-  const rows = P.buildH2HMatchList([raw(1, 'Atp Singles'), raw(2, 'Challenger Men Singles'), raw(3, 'Itf Men Singles')], 'J. Sinner', new Map());
+    event_first_player: 'J. Sinner', first_player_key: 1, event_second_player: 'C. Alcaraz', second_player_key: 2,
+    event_winner: 'First Player', event_final_result: '2 - 0', event_qualification: 'False' });
+  const rows = P.buildH2HMatchList([raw(1, 'Atp Singles'), raw(2, 'Challenger Men Singles'), raw(3, 'Itf Men Singles')], 1, new Map());
   assert.deepEqual(rows.map(r => [r.eventKey, r.level]).sort((a, b) => a[0] - b[0]), [[1, 'ATP'], [2, 'CH'], [3, 'ITF']]);
+});
+// ── Founder rulings 2026-09-24 (comment eece3eda) ──
+// 5 · who won a meeting is decided by player key, never surname.
+const PK = () => new Function(`${slicePipe('lastName')}\n${slicePipe('h2hP1WasFirst')}\n${slicePipe('h2hLevelOf')}\n${slicePipe('summarizeH2H')}\n${slicePipe('buildH2HMatchList')}\nreturn { summarizeH2H, buildH2HMatchList, h2hP1WasFirst };`)();
+test('pipeline H2H: two same-surname players (Zhizhen Zhang 590, Ze Zhang 36963) orient by player key', () => {
+  const P = PK();
+  // Zhizhen (590) v Ze (36963). Both print as "Z. Zhang": a surname rule reads every row as p1 = first player.
+  const row = (ek, firstKey, winner) => ({ event_key: ek, event_date: '2025-0' + ek + '-01', event_type_type: 'Challenger Men Singles', tournament_name: 'X', tournament_key: 1,
+    event_first_player: 'Z. Zhang', first_player_key: firstKey, event_second_player: 'Z. Zhang', second_player_key: firstKey === 590 ? 36963 : 590,
+    event_winner: winner, event_final_result: '2 - 1', event_qualification: 'False' });
+  // Meeting 1: Ze Zhang listed first and won. Meeting 2: Zhizhen listed first and won. Meeting 3: Ze first, Zhizhen won.
+  const raw = [row(1, 36963, 'First Player'), row(2, 590, 'First Player'), row(3, 36963, 'Second Player')];
+  const s = P.summarizeH2H(raw, 590);
+  assert.equal(s.record, '2-1', 'Zhizhen (p1) won meetings 2 and 3');
+  assert.equal(P.summarizeH2H(raw, 36963).record, '1-2', 'mirror: Ze Zhang as p1');
+  const list = P.buildH2HMatchList(raw, 590, new Map());
+  assert.deepEqual(list.map(r => [r.eventKey, r.p1Won]).sort((a, b) => a[0] - b[0]), [[1, false], [2, true], [3, true]]);
+  assert.equal(list.find(r => r.eventKey === 1).result, '1 - 2', 'score re-ordered p1-first by key');
+  // Control: the old surname rule reads p1 as the first player on every row of this pair, so it
+  // gets meetings 1 and 3 backwards. The key rule must not agree with it.
+  const lastName = n => (n || '').trim().split(/\s+/).pop().toLowerCase();
+  const bySurname = raw.map(m => (lastName(m.event_first_player) === lastName('Z. Zhang')) === (m.event_winner === 'First Player'));
+  assert.deepEqual(bySurname, [true, true, false], 'control: the surname rule');
+  assert.notDeepEqual(list.sort((a, b) => a.eventKey - b.eventKey).map(r => r.p1Won), bySurname, 'key orientation differs from surname orientation');
+  assert.equal(P.h2hP1WasFirst({ first_player_key: 1, second_player_key: 2 }, 3), null, 'a row without p1 is not oriented');
+  assert.equal(P.summarizeH2H([{ first_player_key: 1, second_player_key: 2, event_winner: 'First Player' }], 3).record, '0-0', '… and not counted');
+  for (const name of ['summarizeH2H', 'buildH2HMatchList']) assert.doesNotMatch(slicePipe(name), /lastName\(/, name + ' must not orient by surname');
+});
+// 3 · a match never counts in its own H2H (cards, model, H2H page all read m.h2h).
+test('pipeline H2H: a finished board match never appears in its own H2H record', () => {
+  const X = new Function(`${slicePipe('eventKeyOf')}\n${slicePipe('h2hExcludeOwn')}\n${slicePipe('stripOwnFixtureFromH2H')}\nreturn { h2hExcludeOwn, stripOwnFixtureFromH2H };`)();
+  const raw = [{ event_key: 12164701 }, { event_key: 11000001 }];
+  assert.deepEqual(X.h2hExcludeOwn(raw, 12164701).map(r => r.event_key), [11000001], 'build step drops the fixture itself');
+  assert.equal(X.h2hExcludeOwn(raw, null).length, 2, 'no own key: nothing dropped');
+  // Final pass over the board: Vukic v Jacquet shape — today's finished result sits in its own h2h.
+  const board = [
+    { id: 'past-12164701', finalScore: '6-4 6-4', h2h: { p1Wins: 1, p2Wins: 1, record: '1-1', matches: [{ eventKey: 12164701, p1Won: false }, { eventKey: 11000001, p1Won: true }] } },
+    { id: 'upcoming-12164702', h2h: { p1Wins: 0, p2Wins: 1, record: '0-1', matches: [{ eventKey: 11000002, p1Won: false }] } },
+    { id: 'past-12164703', h2h: null },
+  ];
+  assert.equal(X.stripOwnFixtureFromH2H(board), 1);
+  for (const m of board) {
+    const own = m.id.slice(m.id.indexOf('-') + 1);
+    assert.ok(!(m.h2h && m.h2h.matches.some(r => String(r.eventKey) === own)), m.id + ' appears in its own H2H');
+  }
+  assert.deepEqual([board[0].h2h.p1Wins, board[0].h2h.p2Wins, board[0].h2h.record], [1, 0, '1-0'], 'record recomputed without it');
+  assert.equal(board[1].h2h.record, '0-1', 'control: a record without its own fixture is untouched');
+  // Every build site excludes the fixture, and the final pass runs before matches.json is written (the model reads that file).
+  assert.equal((PIPE.match(/const h2hRows = h2hExcludeOwn\(h2hData\.headToHead, fixture\.event_key\);/g) || []).length, 3, 'all three H2H build sites');
+  assert.equal((PIPE.match(/match\.h2h = summarizeH2H\(h2hRows, p1Key\);\n\s*match\.h2h\.matches = buildH2HMatchList\(h2hRows, p1Key, surfaceMap\);/g) || []).length, 3, 'record and list both read the filtered rows, by key');
+  assert.doesNotMatch(PIPE, /summarizeH2H\(h2hData\.headToHead|buildH2HMatchList\(h2hData\.headToHead/, 'no site feeds the unfiltered list');
+  const pass = PIPE.indexOf('stripOwnFixtureFromH2H(matches);'), write = PIPE.indexOf("writeJsonAtomic('matches.json', matches);");
+  assert.ok(pass > 0 && write > pass, 'final pass runs before the first matches.json write');
+  assert.ok(PIPE.indexOf('buildModelOutput(matches)') > pass, 'and before the model');
+});
+test('H2H page: meetings are keyed and won by player key, never short name (ruling 2026-09-24)', () => {
+  assert.match(html, /H2H2\[ka \+ '\|' \+ kb\] = \{/, 'today\'s meetings keyed by the two player keys');
+  assert.match(html, /mt\.p1Won \? ka : kb,/, 'fixture meeting winner stored as a key');
+  assert.match(html, /String\(aWon \? a\.key : b\.key\),/, 'history meeting winner stored as a key');
+  assert.match(html, /const key = \[a\.key, b\.key\]\.join\('\|'\), rkey = \[b\.key, a\.key\]\.join\('\|'\);/, 'lookup by key pair');
+  assert.match(html, /if \(r\[5\] === aK\) aw\+\+; else if \(r\[5\] === bK\) bw\+\+;/, 'record counted by key');
+  assert.doesNotMatch(html, /r\[5\] === a\.short|m\[5\] === a\.short|H2H2\[sa \+/, 'control: no short-name winner or key remains');
+});
+test('H2H page: the career-history blend drops a finished board match between the pair (never in its own H2H), executed', () => {
+  const src = slice('h2hFromHist');
+  const run = (board, histA) => new Function('DV', 'H2H_ROUND', src + '\nreturn h2hFromHist;')(k => (k === 'matches' ? board : null), {})(
+    { key: '1', short: 'A. One', full: 'Al One', tourHist: histA }, { key: '2', short: 'B. Two', full: 'Bo Two', tourHist: [] });
+  const ed = (name, year, round, res) => ({ name, editions: [{ year, matches: [{ oppKey: '2', opp: 'B. Two', res, round, score: '2 - 0' }] }] });
+  const hist = [ed('Chengdu', 2026, 'R32', 'W'), ed('Davis Cup WG2 R1: THA vs DEN', 2026, 'RR', 'L'), ed('Belgrade', 2021, 'R16', 'W'), ed('Chengdu', 2024, 'QF', 'L')];
+  const fin = (tour, date, p1Key = 1, p2Key = 2) => ({ id: 'past-9', finalScore: '6-4 6-4', p1Key, p2Key, tour, date });
+  // Nothing finished on the board: all four history meetings count.
+  assert.equal(run([], hist).meetings.flatMap(y => y[1]).length, 4);
+  // Today's finished Chengdu match (either orientation) is dropped; the 2024 Chengdu meeting survives.
+  for (const b of [[fin('ATP Chengdu', '2026-09-23')], [fin('ATP Chengdu', '2026-09-23', 2, 1)]]) {
+    const r = run(b, hist); const rows = r.meetings.flatMap(y => y[1]);
+    assert.equal(rows.length, 3); assert.ok(!r.meetings.some(y => y[0] === '2026' && y[1].some(x => x[1] === 'Chengdu')), 'today\'s Chengdu row gone');
+    assert.ok(r.meetings.some(y => y[0] === '2024'), 'the earlier Chengdu meeting survives');
+  }
+  // A Davis Cup tie: board and history name the stage differently.
+  assert.equal(run([fin('ATP ATP Davis Cup - World Group II', '2026-09-20')], hist).meetings.flatMap(y => y[1]).length, 3, 'Davis Cup tie dropped');
+  // Controls: a finished match between OTHER keys, an unfinished board match, and "Belgrade 2" v a Belgrade meeting drop nothing.
+  assert.equal(run([fin('ATP Chengdu', '2026-09-23', 1, 3)], hist).meetings.flatMap(y => y[1]).length, 4, 'other pair');
+  assert.equal(run([Object.assign(fin('ATP Chengdu', '2026-09-23'), { finalScore: null })], hist).meetings.flatMap(y => y[1]).length, 4, 'not finished');
+  assert.equal(run([fin('ATP Belgrade 2', '2021-05-25')], hist).meetings.flatMap(y => y[1]).length, 4, 'Belgrade 2 is not Belgrade');
 });
 test('card / Key factors: a record with Challenger or ITF meetings says so; an all-ATP record says nothing', () => {
   const H = new Function(`${slice('h2hLevelMix')}\nreturn h2hLevelMix;`)();

@@ -10,16 +10,20 @@ tick for more than --max-hours (default 24, a starting default — see below).
 
 Exit 1 with one ::error:: line naming the newest tick, its age, every book's last tick and
 the board's upcoming-match count when the newest tick is older than --max-hours, or when
-the board carries no tick at all. Exit 0 otherwise. Separate from the Tennis-Data
+the board carries no tick at all, AND at least one upcoming match is on the board
+(founder ruling 2026-09-24: a quiet board with nothing to price is not an outage).
+Exit 0 otherwise; a stale-but-quiet board prints a plain note, not an error. Separate from the Tennis-Data
 staleness alarm (tools/odds-archive-staleness.py) by design.
 
 Measured before shipping (694 hourly samples of matches.json, 2026-08-01..09-21): a
 24 h rule fires on the real outage (09-02..09-10, 38 upcoming matches) AND on quiet
 boards with nothing to price (09-12/13: 46 h with 1 upcoming match; 09-14..16: 72 h
-with 0; 09-17: no ticks on the board at all). The upcoming count is printed so a reader
-can tell quiet from broken; whether to gate on it is the founder's call.
+with 0; 09-17: no ticks on the board at all). Founder ruling 2026-09-24: keep 24 h, and go
+red only when at least one upcoming match is on the board (MIN_UPCOMING).
 """
 import argparse, datetime, json, os, sys
+
+MIN_UPCOMING = 1   # founder ruling 2026-09-24: red only with >= 1 upcoming match on the board
 
 
 def parse(ts):
@@ -59,11 +63,17 @@ def verdict(matches, now, max_hours):
     """(exit_code, message)."""
     books = last_ticks(matches, now)
     up = upcoming(matches)
+    quiet = up < MIN_UPCOMING
     if not books:
+        if quiet:
+            return 0, f'odds capture: no tick on the board, but no upcoming match to price ({len(matches)} matches, 0 upcoming): quiet, not red.'
         return 1, f'odds capture: NO tick on the board from any book ({len(matches)} matches, {up} upcoming).'
     newest = max(books.values())
     age = (now - newest).total_seconds() / 3600
     per = ', '.join(f'{b} {t.strftime("%Y-%m-%d %H:%MZ")}' for b, t in sorted(books.items(), key=lambda kv: kv[1], reverse=True))
+    if age > max_hours and quiet:
+        return 0, (f'odds capture quiet: newest tick {newest.strftime("%Y-%m-%d %H:%MZ")} is {age:.1f} h old, '
+                   f'but no upcoming match on the board; last tick per book: {per}.')
     if age > max_hours:
         return 1, (f'odds capture stale: newest tick {newest.strftime("%Y-%m-%d %H:%MZ")} is {age:.1f} h old '
                    f'(alarm after {max_hours} h); last tick per book: {per}; board has {up} upcoming match(es).')

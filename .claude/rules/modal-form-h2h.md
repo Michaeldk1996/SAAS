@@ -41,6 +41,15 @@ Applies to the TEN-263 block in `bsp-consult-dashboard.html` (`fh*` functions), 
   ITF meetings says so** wherever it is shown: the match card, the Key factors H2H panel and
   block, the insight sentence ("· incl. 1 CH, 2 ITF"), and the Form/H2H tab's row tags.
   **Test:** a 3–1 built on ITF meetings never renders without its level mix.
+- **A match never counts in its own H2H record** (ruling 2026-09-24), on the cards, in the
+  model or on the H2H page. The pipeline drops the fixture's own eventKey at every H2H build
+  site (`h2hExcludeOwn`) and again in a final pass over the board before `matches.json` is
+  written (`stripOwnFixtureFromH2H`; the model reads that file). **Test:** a finished board
+  match whose own eventKey is in `h2h.matches` fails, and the record is recomputed without it.
+- **Who won a meeting is decided by player key, never surname** (ruling 2026-09-24):
+  `h2hP1WasFirst` compares `first_player_key` / `second_player_key` with p1's key; a row that
+  carries neither is not counted. **Test:** two same-surname players (Zhizhen Zhang 590, Ze
+  Zhang) orient by key, and `summarizeH2H` / `buildH2HMatchList` never call `lastName`.
 - The tab's meeting list = api-tennis H2H ∪ the career-history eventKey join. A shared
   eventKey counts only when both rows carry the same date and opposite results. The levels
   that count are one constant, `FH_H2H_LEVELS`.
@@ -52,9 +61,17 @@ Applies to the TEN-263 block in `bsp-consult-dashboard.html` (`fh*` functions), 
 - Inputs: `odds-archive/*.csv` (drop-in refresh), `player-profiles.json` (pipeline),
   `court-speed-map.json`, `playing-styles.json`.
 
-## Alarms (rulings 2026-09-23 / 2026-09-24): two separate workflows, both go red
+## Captured Bet365 covers ITF Men and Davis Cup (ruling 2026-09-24)
+- `archive-bet365-history.py` `TIERS` includes `'ITF Men'` and `'Davis Cup'`, and
+  `build-match-closes.js` `CAPTURE_CATS` prices them. ITF Women, BJK Cup, UTR and juniors stay
+  out. A Davis Cup tie bet365 never priced stays a dash with its cause (a recorded miss); it
+  is never filled. **Test:** `tier_of` keeps ITF Men and Davis Cup, drops ITF Women and BJK Cup.
+
+## Alarms (rulings 2026-09-23 / 2026-09-24): two separate workflows
 - **Tennis-Data staleness** (`odds-archive-staleness.yml`): red when the newest archive row
-  is more than 7 days old. The threshold is not ruled final; don't change it without a ruling.
+  is more than 7 days old. 7 days is ruled final (2026-09-24).
 - **Capture freshness** (`odds-capture-freshness.yml`): red when no book in the board's captured
-  series (`matches.json` `oddsMovement`) has ticked for 24 h. 24 h is a starting default. It
-  also fires on quiet boards with nothing to price; the message prints the upcoming count.
+  series (`matches.json` `oddsMovement`) has ticked for 24 h **and at least one upcoming match
+  is on the board** (`MIN_UPCOMING = 1`). A stale capture on a board with nothing to price is
+  quiet, not red. **Test:** a stale board with 0 upcoming stays green; the same board with 1
+  upcoming goes red.

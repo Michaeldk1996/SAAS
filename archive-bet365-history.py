@@ -98,9 +98,13 @@ FIXTURES_SLEEP = 2.5      # /v4/fixtures is metered; pace it so a sweep can't 42
 WINDOW_DAYS = 6
 RETENTION_DAYS = 180
 
-# Tiers we archive. ITF / UTR / Simulated Reality are excluded: Simulated Reality
-# is synthetic junk, and ITF/UTR are outside anything the product prices.
-TIERS = ('ATP', 'Challenger', 'WTA')      # 'WTA 125K' matched by prefix below
+# Tiers we archive. UTR / Simulated Reality / ITF Women / BJK Cup are excluded:
+# Simulated Reality is synthetic junk, and the rest are outside anything the product
+# prices. ITF Men and Davis Cup are IN (founder ruling 2026-09-24, TEN-263): the
+# product covers all of men's tennis, and these were the two largest causes of
+# unpriced Form / H2H rows. Some Davis Cup ties are not priced by bet365 at all;
+# those stay dashes with their cause (a recorded miss), never a filled price.
+TIERS = ('ATP', 'Challenger', 'WTA', 'ITF Men', 'Davis Cup')   # 'WTA 125K' matched by prefix below
 
 # Reduction: open + close + 22 interior points = 24 stored points per player.
 KEEP_POINTS = 24

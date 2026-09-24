@@ -25864,6 +25864,20 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
     // asymmetric — only one side records a given meeting — so reading a single side
     // would make the panel's result depend on selection order.
     const nkOf = nm => { const t = String(nm || '').toLowerCase().replace(/['’.\-]/g, ' ').split(' ').filter(Boolean); return t.length >= 2 ? t[t.length - 1] + '|' + t[0][0] : null; };
+    // TEN-263 (ruling 2026-09-24): a match never counts in its own H2H. Career history
+    // records today's finished board match too (no date or eventKey on the row), so a
+    // finished board match between these two keys removes its year + tournament here.
+    // Name key: drop every leading tour prefix ("ATP ATP Davis Cup"), cut the round/tie suffix
+    // (" - World Group II", ": THA vs DEN"), keep digits ("Belgrade 2" is not "Belgrade").
+    // Every Davis Cup tie keys as 'daviscup' (the board and history name the stage differently).
+    const tn = x => { const k = String(x || '').toLowerCase().split(/ - |:/)[0].replace(/^((atp|challenger|itf)\s+)+/, '').replace(/[^a-z0-9]/g, ''); return /^daviscup/.test(k) ? 'daviscup' : k; };
+    const ownMeet = {};
+    (DV('matches') || []).forEach(m => {
+      if (!m || !m.finalScore || m.p1Key == null || m.p2Key == null) return;
+      const ks = [String(m.p1Key), String(m.p2Key)];
+      if (!(ks.includes(String(a.key)) && ks.includes(String(b.key)))) return;
+      ownMeet[String(m.date || '').slice(0, 4) + '|' + tn(m.tour)] = 1;
+    });
     const collect = (owner, opp, ownerIsA) => {
       if (!Array.isArray(owner.tourHist)) return;
       const oppKey = opp.key, oppNk = nkOf(opp.full);
@@ -25876,6 +25890,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
         if (!(mk !== '' && mk === String(oppKey)) && !(mk === '' && oppNk && nkOf(mt.opp) === oppNk)) return;
         if (mt.res !== 'W' && mt.res !== 'L') return;
         const yr = String(ed.year || t.lastYear || '—');
+        if (ownMeet[yr + '|' + tn(t.name)]) return;   // today's finished board match itself
         const round = H2H_ROUND[mt.round] || mt.round || '—';
         const dk = yr + '|' + (t.name || '') + '|' + round;
         if (seen[dk]) return;                        // same meeting recorded by both players
@@ -25897,7 +25912,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
           '',                                        // surface not carried here -> renders as —
           round,                                     // round
           setsStr || '—',                            // set tally (player A first), shown in the score column
-          aWon ? a.short : b.short,                  // winner (short name)
+          String(aWon ? a.key : b.key),              // winner (player KEY; TEN-263 ruling 2026-09-24)
           null,                                      // no eventKey -> no per-meeting stat drill-in
         ]);
       })));
@@ -25957,7 +25972,10 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
     // years; career tournamentHistory (h2hFromHist) is the only source for pre-2021 and
     // fills the older tail (TEN-103). Fixtures own every year >= their earliest fixture year;
     // history fills strictly older years, so the union never double-counts a meeting.
-    const key = [a.short, b.short].join('|'), rkey = [b.short, a.short].join('|');
+    // TEN-263 (ruling 2026-09-24): meetings are keyed and won by PLAYER KEY, never by
+    // short name — "Z. Zhang" is both Zhizhen and Ze Zhang.
+    const key = [a.key, b.key].join('|'), rkey = [b.key, a.key].join('|');
+    const aK = String(a.key), bK = String(b.key);
     const fixMeet = H2H[key] ? H2H[key].meetings : (H2H[rkey] ? H2H[rkey].meetings : null);
     const hist = h2hFromHist(a, b);
     const byYear = {};
@@ -25966,7 +25984,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
     if (hist) hist.meetings.forEach(y => { const yn = parseInt(y[0], 10); if (isNaN(yn) || yn < cutoff) (byYear[y[0]] = byYear[y[0]] || []).push(...y[1]); });
     const mYears = Object.keys(byYear).sort((x, y) => String(y).localeCompare(String(x))).map(y => [y, byYear[y]]);
     let aw = 0, bw = 0;
-    mYears.forEach(y => y[1].forEach(r => { if (r[5] === a.short) aw++; else if (r[5] === b.short) bw++; }));
+    mYears.forEach(y => y[1].forEach(r => { if (r[5] === aK) aw++; else if (r[5] === bK) bw++; }));
     const tot = aw + bw;
     // TEN-263 (ruling 2026-09-24): a record built partly on Challenger / ITF meetings says so.
     const lvN = lv => mYears.reduce((s, y) => s + y[1].filter(r => r[7] === lv).length, 0);
@@ -25993,15 +26011,15 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
             return {
               // Score column carries the set tally: fixture rows from m[4] ("2 - 1"),
               // history rows from the tally h2hFromHist writes into the same slot.
-              date: m[0], tour: m[1], surf: m[2] || '—', round: m[3], score: m[4], winner: m[5],
+              date: m[0], tour: m[1], surf: m[2] || '—', round: m[3], score: m[4], winner: m[5] === aK ? a.short : m[5] === bK ? b.short : null, aWon: m[5] === aK,
               surfColor: (SURF[m[2]] || SURF.Hard).c, surfBd: (SURF[m[2]] || SURF.Hard).b,
-              winColor: m[5] === a.short ? A_COL : B_COL,
+              winColor: m[5] === aK ? A_COL : B_COL,
               open, chev: open ? '▾' : '→',
               hOpen: bindH(() => setState(s2 => ({ mOpen: s2.mOpen === mkey ? null : mkey, mView: 'stats', mSScope: 'match', mPScope: 's1' }))),
               detail: open ? meetingDetail(m[4], mkey, a.short, b.short, m[6], a.key, b.key) : null,
             };
           });
-          const wa = rows.filter(r => r.winner === a.short).length;
+          const wa = rows.filter(r => r.aWon).length;
           return { year: y[0], rows, summary: wa + '–' + (rows.length - wa) + ' ' + a.short };
         }),
       };
@@ -27238,7 +27256,9 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
     const roundLbl = fn('h2hRoundLabel');
     ms.forEach(m => {
       if (!m || !m.h2h || !m.p1 || !m.p2) return;
-      const sa = shortOf(m.p1), sb = shortOf(m.p2);
+      // Keyed by player key (TEN-263 ruling 2026-09-24); a card without keys has no ID join.
+      if (m.p1Key == null || m.p2Key == null) return;
+      const ka = String(m.p1Key), kb = String(m.p2Key);
       const meetings = Array.isArray(m.h2h.matches) ? m.h2h.matches : [];
       const byYear = {};
       meetings.forEach(mt => {
@@ -27249,7 +27269,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
           mt.surface || 'Hard',
           roundLbl ? roundLbl(mt.round) : (mt.round || '—'),
           mt.result || '—',
-          mt.p1Won ? sa : sb,
+          mt.p1Won ? ka : kb,
           mt.eventKey != null ? mt.eventKey : null,
           // TEN-263 (ruling 2026-09-24): the meeting's level ('ATP' | 'CH' | 'ITF'); a row
           // without one predates the ruling, when the list was ATP-only.
@@ -27257,7 +27277,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
         ]);
       });
       const years = Object.keys(byYear).sort((x, y) => String(y).localeCompare(String(x))).map(y => [y, byYear[y]]);
-      H2H2[sa + '|' + sb] = { a: m.h2h.p1Wins != null ? m.h2h.p1Wins : 0, b: m.h2h.p2Wins != null ? m.h2h.p2Wins : 0, meetings: years };
+      H2H2[ka + '|' + kb] = { a: m.h2h.p1Wins != null ? m.h2h.p1Wins : 0, b: m.h2h.p2Wins != null ? m.h2h.p2Wins : 0, meetings: years };
     });
 
     return { P: P2, H2H: H2H2, ROSTER: ROSTER2 };
