@@ -70,6 +70,8 @@ function sandbox() {
       fhBuildH2H, fhSetsFrom, fhRoundCode, fhStateFor, fhNameKey, fhOdd, fhH2hRecCard, fhPickBook,
       fhSrcTitle, fhAllMeetingRows, fhLevelOf, fhH2hScopeNote, fhH2hGapNote, fhEligible, fhFormDataRows,
       fhEloAt, fhEloKey, fhEloKeyOwners, fhEloBadge, fhPriceRangeSource, fhRecLevelMix, fhH2hEloSpan,
+      fhStatBarWidth, fhSheetModel, fhSheetStatsHtml, fhSheetRowHtml, fhRateCell, fhSheetTabs, fhSheetSeg, fhSheetInlineStats,
+      FH_BAR_FLOOR, FH_RATING_SCALE,
       consts: { FH_HOT_MIN_ELIGIBLE, FH_PRICE_AVG_MARGIN_REMOVED, FH_H2H_SET1_MIRROR, FH_H2H_RET_COUNTS,
         FH_ELO_AT_TIME, FH_BOOK_ORDER, FH_SURF, FH_H2H_LEVELS } };
   `)();
@@ -937,12 +939,83 @@ test('elo-history: an unchanged weekly report adds nothing; a new one appends; h
   assert.equal(h.snapshots.length, 2); assert.equal(h.snapshots[1].ratings['a|b'], 1815); assert.equal(h.snapshots[0].ratings['a|b'], 1800, 'earlier weeks untouched');
   assert.throws(() => appendSnapshot(h, { ratings: {} }, '2026-08-10'), /no ratings/);
 });
+test('elo retry (founder 2026-09-24): an unchanged Monday report triggers a Tuesday retry; a new Tuesday report is stored with Tuesday\'s asOf and stops the retries', async () => {
+  const { appendSnapshot, shouldFetch } = await import('./tools/build-elo-history.mjs');
+  const h = { snapshots: [{ asOf: '2026-09-21', ratings: { 'a|b': 1800 }, ambiguous: [], taLastUpdate: '2026-09-21', source: 'live' }] };
+  // Monday 09-28: the job runs; TA still prints 09-21 → nothing appended.
+  assert.equal(shouldFetch('2026-09-28', h).fetch, true, 'the Monday run stays');
+  assert.equal(appendSnapshot(h, { ratings: { 'a|b': 1800 }, taLastUpdate: '2026-09-21', generatedAt: '2026-09-28T20:01:00Z' }, '2026-09-28'), false, 'unchanged label: no new report');
+  assert.equal(h.snapshots.length, 1, 'a day with no new report appends nothing');
+  // Tuesday 09-29: retry, because nothing new has been stored since Monday.
+  const tue = shouldFetch('2026-09-29', h);
+  assert.equal(tue.fetch, true, 'Tuesday retry'); assert.match(tue.why, /retry/);
+  assert.equal(appendSnapshot(h, { ratings: { 'a|b': 1812 }, taLastUpdate: '2026-09-28', generatedAt: '2026-09-29T20:02:00Z' }, '2026-09-29'), true, 'TA moved: stored');
+  assert.equal(h.snapshots[1].asOf, '2026-09-29', 'asOf = the day we fetched it (Tuesday), never TA\'s label (Monday)');
+  assert.equal(h.snapshots[1].taLastUpdate, '2026-09-28', 'TA\'s printed label is stored beside asOf');
+  // Wednesday..Sunday: retries stopped. Next Monday runs again.
+  for (const d of ['2026-09-30', '2026-10-01', '2026-10-02', '2026-10-03', '2026-10-04']) assert.equal(shouldFetch(d, h).fetch, false, d + ': retries stopped');
+  assert.equal(shouldFetch('2026-10-05', h).fetch, true, 'next Monday');
+  // If TA stays late, the retries continue daily until it moves.
+  const late = { snapshots: [{ asOf: '2026-09-21', ratings: { 'a|b': 1 }, ambiguous: [], taLastUpdate: '2026-09-21' }] };
+  for (const d of ['2026-09-29', '2026-09-30', '2026-10-01', '2026-10-04']) assert.equal(shouldFetch(d, late).fetch, true, d + ': still retrying');
+});
+test('elo retry: TA\'s label decides a new report; without labels the ratings do', async () => {
+  const { isNewReport } = await import('./tools/build-elo-history.mjs');
+  assert.equal(isNewReport({ taLastUpdate: '2026-09-21', ratings: { 'a|b': 1 } }, { taLastUpdate: '2026-09-21', ratings: { 'a|b': 2 } }), false, 'same label, edited ratings: not a new report');
+  assert.equal(isNewReport({ taLastUpdate: '2026-09-21', ratings: { 'a|b': 1 } }, { taLastUpdate: '2026-09-28', ratings: { 'a|b': 1 } }), true, 'new label: new report');
+  assert.equal(isNewReport({ taLastUpdate: '2026-09-21', ratings: { 'a|b': 1 } }, { taLastUpdate: '2026-09-14', ratings: { 'a|b': 2 } }), false, 'an OLDER label (a stale cached page) is never a new report');
+  assert.equal(isNewReport({ ratings: { 'a|b': 1 } }, { taLastUpdate: '2026-09-28', ratings: { 'a|b': 1 } }), false, 'no stored label: identical ratings are the same report');
+  assert.equal(isNewReport({ ratings: { 'a|b': 1 } }, { taLastUpdate: '2026-09-28', ratings: { 'a|b': 2 } }), true);
+});
+test('elo retry: --append (the job\'s entry point) dates a live fetch by the fetch day and stores TA\'s label', async () => {
+  const { mkdtempSync, writeFileSync } = await import('node:fs');
+  const { tmpdir } = await import('node:os');
+  const { execFileSync } = await import('node:child_process');
+  const dir = mkdtempSync(join(tmpdir(), 'elo-'));
+  writeFileSync(join(dir, 'elo-history.json'), JSON.stringify({ schema: 'elo-history/1', snapshots: [{ asOf: '2026-09-21', ratings: { 'a|b': 1800 }, ambiguous: [], taLastUpdate: '2026-09-21' }] }));
+  writeFileSync(join(dir, 'elo-ratings.json'), JSON.stringify({ generatedAt: '2026-09-29T20:02:00.000Z', taLastUpdate: '2026-09-28', ratings: { 'a|b': 1812 }, ambiguous: [] }));
+  execFileSync('node', [join(HERE, 'tools/build-elo-history.mjs'), '--append'], { cwd: dir });
+  const out = JSON.parse(readFileSync(join(dir, 'elo-history.json'), 'utf8')).snapshots.at(-1);
+  assert.deepEqual([out.asOf, out.taLastUpdate, out.source], ['2026-09-29', '2026-09-28', 'live']);
+  // Same label again the next day: nothing appended, file unchanged.
+  const before = readFileSync(join(dir, 'elo-history.json'), 'utf8');
+  writeFileSync(join(dir, 'elo-ratings.json'), JSON.stringify({ generatedAt: '2026-09-30T20:02:00.000Z', taLastUpdate: '2026-09-28', ratings: { 'a|b': 1812 }, ambiguous: [] }));
+  execFileSync('node', [join(HERE, 'tools/build-elo-history.mjs'), '--append'], { cwd: dir });
+  assert.equal(readFileSync(join(dir, 'elo-history.json'), 'utf8'), before, 'no new report: nothing written');
+});
+test('elo staleness check: warn above 8 days; red is off until Michael rules', async () => {
+  const m = await import('./tools/build-elo-history.mjs');
+  assert.equal(m.ELO_STALE_WARN_DAYS, 8); assert.equal(m.ELO_STALE_RED_DAYS, null, 'red not ruled: off');
+  const h = { snapshots: [{ asOf: '2026-09-21', ratings: { 'a|b': 1 } }] };
+  assert.equal(m.eloStaleness('2026-09-28', h).level, 'ok', '7 days: ok');
+  assert.equal(m.eloStaleness('2026-09-29', h).level, 'warn', 'warn at 8 days');
+  assert.equal(m.eloStaleness('2026-12-30', h).level, 'warn', 'never red while the red threshold is off');
+  assert.equal(m.eloStaleness('2026-10-06', h, 8, 15).level, 'red', 'once a red threshold is set, reaching it is red');
+});
+test('elo.yml: daily cron, a gate that fetches on Monday or a retry day, commit only on a new report, staleness check every day', () => {
+  const y = readFileSync(join(HERE, '.github/workflows/elo.yml'), 'utf8');
+  assert.match(y, /cron: '0 20 \* \* \*'/, 'fires daily');
+  assert.match(y, /--should-fetch/);
+  assert.equal((y.match(/if: steps\.gate\.outputs\.fetch == 'true'/g) || []).length, 3, 'fetch, append and commit are gated');
+  assert.match(y, /git diff --quiet -- elo-history\.json;/, 'commits only when a new report was stored');
+  assert.match(y, /if: always\(\)\n\s+run: node tools\/build-elo-history\.mjs --check-stale/);
+  const src = readFileSync(join(HERE, 'fetch-elo.js'), 'utf8');
+  const re = new RegExp(/const lu = \/(.+)\/\.exec\(html\);/.exec(src)[1]);
+  assert.equal(re.exec('<p>Last update: 2026-09-21</p>')[1], '2026-09-21', 'the scraper reads TA\'s printed label');
+  assert.match(src, /\n\s+taLastUpdate,\n/, 'and writes it to elo-ratings.json');
+});
 test('elo-history.json (committed): schema, strictly increasing asOf, overall ratings only', () => {
   const eh = JSON.parse(readFileSync(join(HERE, 'elo-history.json'), 'utf8'));
   assert.equal(eh.schema, 'elo-history/1');
-  assert.ok(eh.snapshots.length >= 9, 'the 9 distinct reports since 2026-07-18');
-  assert.equal(eh.snapshots[0].asOf, '2026-07-18');
-  eh.snapshots.forEach((x, i) => { if (i) assert.ok(x.asOf > eh.snapshots[i - 1].asOf); assert.ok(Object.values(x.ratings).every(Number.isInteger)); assert.ok(x.ambiguous.includes('blanch|d')); });
+  const live = eh.snapshots.filter(x => x.asOf >= '2026-07-18'), wb = eh.snapshots.filter(x => x.asOf < '2026-07-18');
+  assert.ok(live.length >= 9, 'the 9 distinct reports since 2026-07-18');
+  assert.equal(live[0].asOf, '2026-07-18');
+  eh.snapshots.forEach((x, i) => { if (i) assert.ok(x.asOf > eh.snapshots[i - 1].asOf); assert.ok(Object.values(x.ratings).every(Number.isInteger)); assert.ok(Array.isArray(x.ambiguous)); });
+  live.filter(x => x.source === 'git').forEach(x => assert.ok(x.ambiguous.includes('blanch|d'), 'git-backfilled weeks carry the 2026-09-24 collisions'));
+  // Ruling 2026-09-24: the archived reports' asOf is the Wayback capture day, never TA's label.
+  assert.ok(wb.length >= 300 && wb[0].asOf === '2016-02-26');
+  wb.forEach(x => { assert.equal(x.source, 'wayback'); assert.equal(x.asOf, `${x.captureTimestamp.slice(0, 4)}-${x.captureTimestamp.slice(4, 6)}-${x.captureTimestamp.slice(6, 8)}`);
+    assert.ok(x.taLastUpdate <= x.asOf, 'a report is never used before it provably existed'); assert.match(x.captureUrl, /^https:\/\/web\.archive\.org\/web\/\d{14}/); assert.ok(x.players > 0); });
   assert.match(readFileSync(join(HERE, 'fetch-elo.js'), 'utf8'), /ambiguous: Object\.keys\(keyCount\)\.filter\(k => keyCount\[k\] > 1\)/, 'the scraper records its key collisions');
   assert.match(readFileSync(join(HERE, '.github/workflows/elo.yml'), 'utf8'), /node tools\/build-elo-history\.mjs --append[\s\S]*git add elo-ratings\.json elo-history\.json/, 'the weekly job appends and commits');
   assert.match(readFileSync(join(HERE, '.github/workflows/pipeline.yml'), 'utf8'), /cp elo-history\.json _site\//, 'the deploy ships it');
@@ -953,4 +1026,94 @@ test('elo-key-conflicts: a name key two feed players share is listed (J. D. Silv
   assert.deepEqual(c, { 'silva|j': ['2408', '69090'], 'zhang|z': ['36963', '590'] });
   assert.equal(eloKey('J. Reis Da Silva'), 'silva|j');
   assert.match(readFileSync(join(HERE, '.github/workflows/pipeline.yml'), 'utf8'), /- name: Build Elo key conflicts\n\s+run: node tools\/build-elo-key-conflicts\.mjs\n/, 'built every run, not best-effort');
+});
+
+// ── Match stats popup (founder rulings 2026-09-24): bar rule, zero v missing, counts, one decimal ──
+const SIDE = (o = {}) => Object.assign({
+  'Service:Aces': 5, 'Service:Double Faults': 1, 'Service:1st serve percentage': 61,
+  'Service:Break Points Saved': 100, 'Return:Break Points Converted': 66.7, 'Points:Winners': 28, 'Points:Unforced errors': 18,
+  raw: { 'Service:1st serve points won': { won: 35, total: 46 }, 'Service:2nd serve points won': { won: 15, total: 30 },
+    'Service:Break Points Saved': { won: 4, total: 4 }, 'Return:1st return points won': { won: 12, total: 43 },
+    'Return:2nd return points won': { won: 15, total: 27 }, 'Return:Break Points Converted': { won: 2, total: 3 },
+    'Points:Service Points Won': { won: 50, total: 76 }, 'Points:Return Points Won': { won: 27, total: 70 },
+    'Points:Total Points Won': { won: 77, total: 146 }, 'Games:Service games won': { won: 10, total: 10 },
+    'Games:Return games won': { won: 2, total: 10 }, 'Points:Net points won': { won: 9, total: 14 } } }, o);
+test('popup bars: 1 v 0 double faults does not fill the bar (value ÷ max(p1, p2, floor))', () => {
+  assert.equal(S.FH_BAR_FLOOR.df, 5);
+  assert.equal(S.fhStatBarWidth('count', 1, 0, S.FH_BAR_FLOOR.df), 20, '1 ÷ max(1, 0, 5)');
+  assert.equal(S.fhStatBarWidth('count', 0, 1, S.FH_BAR_FLOOR.df), 0);
+  assert.equal(S.fhStatBarWidth('count', 12, 6, S.FH_BAR_FLOOR.aces), 100, 'above the floor the larger side fills');
+  assert.deepEqual([S.FH_BAR_FLOOR.aces, S.FH_BAR_FLOOR.winners, S.FH_BAR_FLOOR.ue], [10, 30, 30]);
+});
+test('popup bars: 50% fills exactly half, whatever the opponent\'s value; ratings on a fixed scale', () => {
+  for (const other of [0, 10, 50, 90, null]) assert.equal(S.fhStatBarWidth('pct', 50, other), 50);
+  assert.equal(S.fhStatBarWidth('pct', 60.9, 61.9), 60.9);
+  assert.equal(S.fhStatBarWidth('rating', 200, 100, S.FH_RATING_SCALE.serve), 200 / S.FH_RATING_SCALE.serve * 100);
+  assert.equal(S.fhStatBarWidth('rating', 999, 0, 400), 100, 'capped at a full half');
+});
+test('popup bars: a dash side draws no bar, and the other side keeps its own width', () => {
+  assert.equal(S.fhStatBarWidth('pct', null, 50), null);
+  const html = S.fhSheetRowHtml({ label: 'Break points saved', kind: 'pct', a: { v: 50, txt: '50.0%', sub: '(2/4)', title: '' }, b: { v: null, txt: '—', sub: '', title: 'No break points faced' } });
+  const bars = [...html.matchAll(/class="fh-sbar" style="height:7px; width:([\d.]+)%/g)].map(m => +m[1]);
+  assert.deepEqual(bars, [50], 'one bar, 50% of its half — the dash never hands the opponent a full bar');
+  assert.match(html, /title="No break points faced"/);
+});
+test('popup values: every rate with its count, one decimal; real 0 v 0/0 v not sent', () => {
+  const c = (raw, extra) => S.fhRateCell(Object.assign({ raw: raw ? { k: raw } : {} }, extra || {}), 'k', 'No break points faced');
+  assert.deepEqual([c({ won: 0, total: 4 }).txt, c({ won: 0, total: 4 }).sub], ['0.0%', '(0/4)'], 'a real 0 with opportunities');
+  assert.deepEqual([c({ won: 1, total: 4 }).txt, c({ won: 2, total: 3 }).txt], ['25.0%', '66.7%'], 'always one decimal');
+  const zero = c(null, { k: null });
+  assert.deepEqual([zero.txt, zero.v, zero.title], ['—', null, 'No break points faced'], '0/0 is a dash with its reason');
+  assert.match(c(null).title, /Not in the feed/, 'never sent is a dash too, and says so');
+  const M = S.fhSheetModel({ own: SIDE(), opp: SIDE() });
+  const first = M.sections[0].rows.find(r => r.label === '1st serve %');
+  assert.deepEqual([first.a.txt, first.a.sub], ['60.5%', '(46/76)'], '1st serve % from its counts: 1st in ÷ (1st + 2nd serve points)');
+});
+test('popup: Dominance ratio = RPW% ÷ (100 − SPW%), number only; ratings from their components, dash when one is missing', () => {
+  const M = S.fhSheetModel({ own: SIDE(), opp: SIDE() });
+  assert.equal(M.dr[0].txt, (27 / 70 * 100 / (100 - 50 / 76 * 100)).toFixed(2));
+  assert.equal(M.dr[0].txt, '1.13', 'the design\'s 38.6 ÷ 34.2 reconciles');
+  const sr = M.sections[0].rows[0].a.v, want = 46 / 76 * 100 + 35 / 46 * 100 + 15 / 30 * 100 + 100 + 5 - 1;
+  assert.ok(Math.abs(sr - want) < 1e-9, 'serve rating = 1st in % + 1st won % + 2nd won % + service games won % + aces − double faults');
+  const noBp = SIDE({ 'Return:Break Points Converted': null }); delete noBp.raw['Return:Break Points Converted'];
+  const M2 = S.fhSheetModel({ own: noBp, opp: SIDE() });
+  assert.equal(M2.sections[1].rows[0].a.txt, '—', 'no break-point chances → no return rating (0/0 is not 0%)');
+  assert.match(M2.sections[1].rows[0].a.title, /break points converted/);
+  assert.ok(!/Pressure/i.test(S.fhSheetStatsHtml({ own: SIDE(), opp: SIDE() })), 'Pressure points: no source defines it, not built');
+  const bare = SIDE(); delete bare.raw['Games:Service games won']; bare['Games:Service games won'] = 100;
+  const M3 = S.fhSheetModel({ own: bare, opp: SIDE() });
+  assert.equal(M3.sections[0].rows[0].a.txt, '—', 'a rate sent without its count never feeds a rating');
+  assert.match(M3.sections[0].rows[0].a.title, /service games won/);
+});
+test('popup: winners/errors all 0 on both sides were not sent → dashes, with the note; real counts show', () => {
+  const z = { 'Points:Winners': 0, 'Points:Unforced errors': 0 };
+  const M = S.fhSheetModel({ own: SIDE(z), opp: SIDE(z) });
+  const w = M.sections[2].rows[0];
+  assert.deepEqual([w.a.txt, w.b.txt], ['—', '—']); assert.ok(M.partial);
+  assert.match(S.fhSheetStatsHtml({ own: SIDE(z), opp: SIDE(z) }), /Winners, errors and net points: only where the feed sends them/);
+  const M2 = S.fhSheetModel({ own: SIDE({ 'Points:Winners': 0 }), opp: SIDE() });
+  assert.equal(M2.sections[2].rows[0].a.txt, '0', 'a real 0 next to real counts stays 0');
+});
+test('popup layout: one control Match | Set n | Point by point, set tabs disabled with a tooltip; no name row; design section labels', () => {
+  const tabs = S.fhSheetTabs({ scope: 'match', nSets: 3, sets: null, setsLoading: false, hasPbp: true });
+  assert.deepEqual(tabs.map(t => t.label), ['Match', 'Set 1', 'Set 2', 'Set 3', 'Point by point']);
+  assert.ok(tabs.slice(1, 4).every(t => t.disabled && t.title === 'No per-set stats for this match'), 'Miami 2024: set tabs shown, disabled, never hidden');
+  const seg = S.fhSheetSeg(tabs);
+  assert.equal((seg.match(/aria-disabled="true"/g) || []).length, 3);
+  assert.ok(!/onclick="fhSheetScope\(1\)"/.test(seg), 'a disabled tab is not clickable');
+  const t2 = S.fhSheetTabs({ scope: 1, nSets: 2, sets: { 1: {}, 2: {} }, hasPbp: false });
+  assert.deepEqual(t2.map(t => !!t.disabled), [false, false, false, true]);
+  const html = S.fhSheetStatsHtml({ own: SIDE(), opp: SIDE() });
+  assert.ok(!/aform-panel-names/.test(html), 'no extra name row');
+  assert.ok(/>Service</.test(html) && />Return</.test(html) && />Points won</.test(html));
+  assert.match(html, /Dominance ratio/);
+  assert.match(readFileSync(join(HERE, 'bsp-consult-dashboard.html'), 'utf8'), /id="fhSheetBody"[^>]*line-height:normal;/, 'the sheet body uses the design line-height, not the page\'s 21px (row pitch 45px, as designed)');
+});
+test('popup data: an H2H meeting with no inline box score reads either board player\'s form row for the same eventKey, oriented to player A', () => {
+  const src = slice('fhSheetInlineStats');
+  const f = new Function('_formShards', 'matchStatsForFormRow', src + '; return fhSheetInlineStats;')(
+    { 7: [{ eventKey: 55, matchStats: { own: { x: 'B' }, opp: { x: 'A' } } }] }, () => null);
+  const got = f({ aKey: 3, bKey: 7 }, { ek: 55 });
+  assert.deepEqual([got.own.x, got.opp.x], ['A', 'B'], 'B\'s own row is flipped so own = player A');
+  assert.equal(f({ aKey: 3, bKey: 7 }, { ek: 56 }), null);
 });

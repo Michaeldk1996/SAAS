@@ -11,9 +11,13 @@ name: BSP weekly Elo refresh
 # Adjust the cron if the source's timing drifts. workflow_dispatch allows a manual
 # refresh from the Actions tab any time.
 
+# TEN-263 (founder ruling 2026-09-24): the Monday run stays. If Tennis Abstract's printed
+# "Last update" has not moved, the job retries the next day, and daily until a new report is
+# stored, then stops until next Monday. So the cron fires daily and the first step decides
+# (tools/build-elo-history.mjs shouldFetch); a manual dispatch always fetches.
 on:
   schedule:
-    - cron: '0 20 * * 1'    # Mondays 20:00 UTC (after TA's weekly update lands)
+    - cron: '0 20 * * *'    # daily 20:00 UTC; fetches on Monday, and on retry days only
   workflow_dispatch:
 
 concurrency:
@@ -36,19 +40,32 @@ jobs:
         with:
           node-version: '20'
 
+      - name: Decide (Monday, or a retry day?)
+        id: gate
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "Manual dispatch: fetching."; echo "fetch=true" >> "$GITHUB_OUTPUT"
+          else
+            node tools/build-elo-history.mjs --should-fetch
+          fi
+
       - name: Fetch + parse Tennis Abstract Elo
+        if: steps.gate.outputs.fetch == 'true'
         run: node fetch-elo.js
 
       # TEN-263 (founder ruling 2026-09-24): the Form tab reads Elo AT THE MATCH DATE, so every
       # new weekly report is appended to elo-history.json (append-only; unchanged ratings add
       # nothing). A failure here fails the job, so the history never silently stops growing.
       - name: Append to elo-history.json
+        if: steps.gate.outputs.fetch == 'true'
         run: node tools/build-elo-history.mjs --append
 
-      - name: Commit refreshed elo-ratings.json (only if changed)
+      # A day with no new report commits nothing: elo-ratings.json would differ only in generatedAt.
+      - name: Commit refreshed elo-ratings.json (only if a new report was stored)
+        if: steps.gate.outputs.fetch == 'true'
         run: |
-          if git diff --quiet -- elo-ratings.json elo-history.json; then
-            echo "No Elo changes to commit."
+          if git diff --quiet -- elo-history.json; then
+            echo "No new Tennis Abstract report; nothing to commit."
             exit 0
           fi
           git config user.name  "bsp-elo-bot"
@@ -65,3 +82,9 @@ jobs:
           done
           echo "::error::Could not push elo-ratings.json after 3 attempts."
           exit 1
+
+      # Warn when the newest stored report is ELO_STALE_WARN_DAYS (8) or more days old. Red is off
+      # (ELO_STALE_RED_DAYS = null) until Michael rules the threshold. Runs every day.
+      - name: Elo staleness check
+        if: always()
+        run: node tools/build-elo-history.mjs --check-stale

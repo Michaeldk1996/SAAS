@@ -14661,11 +14661,9 @@ function fhH2hOverall(){
 }
 
 // =====================================================================
-// MATCH STATS SHEET — header 2a + the existing match-detail body
-// (formPanelHtml: Stats / Point by point, set scope, the shared msBarHtml bars).
+// MATCH STATS SHEET — header 2a + the sheet body below (fhSheetInit / fhSheetRender).
 // Every clickable match on both tabs opens it.
 // =====================================================================
-let _fhSheetSeq = 0;
 function fhOpenSheet(mid){
   if (!_fh || !_fh.sheetMap[mid]) return;
   const e = _fh.sheetMap[mid], r = e.r;
@@ -14674,7 +14672,6 @@ function fhOpenSheet(mid){
   // picks up its scoped styles (:is(.modal-analysis, …) rules).
   const card = document.querySelector('#analysisModal .modal-analysis') || document.body;
   if (!host || host.parentNode !== card){ if (host) host.remove(); host = document.createElement('div'); host.id = 'fhSheet'; card.appendChild(host); }
-  const idPrefix = 'fhs' + (++_fhSheetSeq);
   const last = n => fhSurname(n);
   const scoreTxt = r.sets ? r.sets.map(x => x[0] + '-' + x[1]).join(' ') : '';
   const flipTxt = r.sets ? r.sets.map(x => x[1] + '-' + x[0]).join(' ') : '';
@@ -14687,7 +14684,6 @@ function fhOpenSheet(mid){
   const badge = (v, c) => `<span style="position:absolute; left:50%; bottom:-9px; transform:translateX(-50%); ${FH_MONO} font-size:10.5px; font-weight:700; color:${v == null ? FH_DASH : c}; background:#06070a; border:1px solid rgba(255,255,255,0.16); border-radius:999px; padding:1px 7px; white-space:nowrap;">${v == null ? FH_DASHC : v.toFixed(2)}</span>`;
   const yy = String(r.date || '').slice(2, 4);
   const meta = [r.tourn, r.surface || FH_DASHC, r.round, fhDDMM(r.date) + (yy ? '.' + yy : '')].join(' · ');
-  const asFormRow = r.formRow || { date: r.date, tournament: r.tournRaw, round: r.round, result: r.result, won: r.won, opponent: e.bName, eventKey: r.ek };
   host.innerHTML = `<div style="position:fixed; inset:0; z-index:110; background:rgba(3,5,9,0.72); display:flex; align-items:flex-start; justify-content:center; padding:40px 24px; overflow-y:auto; font-family:'Hanken Grotesk',sans-serif; color:#e7e9ee;">
       <div onclick="fhCloseSheet()" style="position:absolute; inset:0;"></div>
       <div style="position:relative; width:100%; max-width:760px; background:#0a0d14; border:1px solid rgba(91,155,255,0.3); border-radius:14px; padding:22px 24px 26px; display:flex; flex-direction:column; gap:16px;">
@@ -14712,14 +14708,256 @@ function fhOpenSheet(mid){
           </div>
           <div style="display:flex; justify-content:center;"><span style="${FH_MONO} font-size:10px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:#b4bccf; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.12); border-radius:999px; padding:4px 12px;">${fhEsc(winLine)}</span></div>
         </div>
-        <div class="fh-sheet-body">${formPanelHtml(asFormRow, idPrefix, e.aKey, e.aName)}</div>
+        <div id="fhSheetBody" class="fh-sheet-body" style="display:flex; flex-direction:column; gap:16px; line-height:normal;"></div>
       </div>
     </div>`;
-  const wrap = document.getElementById('formPanelWrap-' + idPrefix);
-  if (wrap){ wrap.classList.add('open'); ensureFormPanelTabs(idPrefix); }
   _fh.sheet = mid;
+  fhSheetInit(e, r);
 }
-function fhCloseSheet(){ const h = document.getElementById('fhSheet'); if (h) h.innerHTML = ''; if (_fh) _fh.sheet = null; }
+function fhCloseSheet(){ const h = document.getElementById('fhSheet'); if (h) h.innerHTML = ''; if (_fh){ _fh.sheet = null; _fh.sheetBody = null; } }
+// =====================================================================
+// MATCH STATS SHEET BODY (TEN-263, founder rulings 2026-09-24): one segmented control
+// (Match | Set 1 | … | Point by point), the design's Dominance ratio card and
+// SERVICE / RETURN / POINTS WON sections, every rate with its count, one decimal,
+// and the new bar rule. Values come from the same api-tennis box scores as before
+// (form-row inline, else the setstats/{ek} shard); nothing here changes a stat value.
+// The eight other match-detail panels still use msBarHtml (share of total) — not ruled.
+// =====================================================================
+// BAR RULE (ruling 2026-09-24, replaces share-of-total, including the design's):
+//   rate    → absolute: 60.9% fills 60.9% of that player's half, whatever the opponent's value
+//   count   → value ÷ max(player 1, player 2, floor)  (so 1 double fault v 0 is a short bar)
+//   rating  → value ÷ fixed scale (capped at a full half)
+//   missing → no bar on that side; the other side's bar is unaffected
+//   Dominance ratio → number only, no bar
+// Floors and scales are Michael's call: these are the proposed defaults.
+const FH_BAR_FLOOR = { aces: 10, df: 5, winners: 30, ue: 30 };
+const FH_RATING_SCALE = { serve: 400, return: 350 };
+function fhStatBarWidth(kind, v, other, k){
+  if (v == null || !Number.isFinite(v)) return null;                 // a dash draws no bar
+  if (kind === 'pct') return Math.max(0, Math.min(100, v));
+  if (kind === 'count'){
+    const o = other != null && Number.isFinite(other) ? other : 0;
+    const den = Math.max(v, o, k || 0);
+    return den > 0 ? Math.max(0, v) / den * 100 : 0;
+  }
+  if (kind === 'rating') return k > 0 ? Math.max(0, Math.min(100, v / k * 100)) : null;
+  return null;
+}
+// One side's cell for a won/total stat. A real 0 with opportunities is "0.0% (0/4)";
+// 0 opportunities (the feed's 0/0, stored as null) is a dash with `zeroTitle`; a stat the
+// feed never sent is a dash too, saying so. Rates are computed from the count shown, so
+// the one decimal is real precision, never a padded ".0".
+function fhRateCell(side, key, zeroTitle){
+  if (!side) return { v: null, txt: FH_DASHC, sub: '', title: 'No box score for this match' };
+  const raw = side.raw && side.raw[key];
+  if (raw && Number(raw.total) > 0){
+    const v = Number(raw.won) / Number(raw.total) * 100;
+    return { v, txt: v.toFixed(1) + '%', sub: '(' + raw.won + '/' + raw.total + ')', title: '', won: Number(raw.won), total: Number(raw.total) };
+  }
+  if ((raw && Number(raw.total) === 0) || (key in side && side[key] === null)) return { v: null, txt: FH_DASHC, sub: '', title: zeroTitle };
+  if (Number.isFinite(Number(side[key])) && side[key] !== null && side[key] !== ''){
+    const v = Number(side[key]);
+    return { v, txt: v.toFixed(1) + '%', sub: '', title: 'The feed sent this rate without its count' };
+  }
+  return { v: null, txt: FH_DASHC, sub: '', title: 'Not in the feed for this match' };
+}
+// 1st serve %: the feed's own figure is a whole number, so it is rebuilt from the
+// counts it rests on: 1st serves in ÷ (1st + 2nd serve points).
+function fhFirstInCell(side){
+  const r = side && side.raw, f = r && r['Service:1st serve points won'], s = r && r['Service:2nd serve points won'];
+  if (f && s && Number(f.total) + Number(s.total) > 0){
+    const won = Number(f.total), total = Number(f.total) + Number(s.total), v = won / total * 100;
+    return { v, txt: v.toFixed(1) + '%', sub: '(' + won + '/' + total + ')', title: '', won, total };
+  }
+  return fhRateCell(side, 'Service:1st serve percentage', 'No serve points');
+}
+function fhCountCell(side, key, missing){
+  const v = side ? side[key] : undefined;
+  if (missing || v == null || !Number.isFinite(Number(v))) return { v: null, txt: FH_DASHC, sub: '', title: missing || 'Not in the feed for this match' };
+  return { v: Number(v), txt: String(Number(v)), sub: '', title: '' };
+}
+// Serve / Return rating, ATP's rating components (atptour.com stats leaderboards,
+// https://www.atptour.com/en/stats/leaderboard?boardType=serve and ?boardType=return:
+// Serve = % 1st Serve, % 1st Serve Points Won, % 2nd Serve Points Won, % Service Games Won,
+// Avg. Aces/Match, Avg. Double Faults/Match; Return = % 1st Serve Return Points Won,
+// % 2nd Serve Return Points Won, % Return Games Won, % Break Points Converted). ATP's page
+// lists the components, not the arithmetic; the sum below (aces added, double faults
+// subtracted, as raw per-match counts) is the house formula ruled 2026-08-29 (TEN-103,
+// dna-apitennis-ratings.js / surface-ratings.js). Any component missing → a dash, and a
+// Return rating with 0 break-point chances is a dash (0/0 converted is not 0%).
+function fhRatingCell(parts, names){
+  const miss = parts.map((p, i) => p == null || !Number.isFinite(p) ? names[i] : null).filter(Boolean);
+  if (miss.length) return { v: null, txt: FH_DASHC, sub: '', title: 'Needs ' + miss.join(', ') };
+  const v = parts.reduce((s, x, i) => s + (names[i] === 'double faults' ? -x : x), 0);
+  return { v, txt: String(Math.round(v)), sub: '', title: '' };
+}
+function fhSheetModel(joined){
+  const A = joined ? joined.own : null, B = joined ? joined.opp : null;
+  const rate = (k, z) => [fhRateCell(A, k, z), fhRateCell(B, k, z)];
+  const first = [fhFirstInCell(A), fhFirstInCell(B)];
+  const f1 = rate('Service:1st serve points won', 'No 1st-serve points'), f2 = rate('Service:2nd serve points won', 'No 2nd-serve points');
+  const sgw = rate('Games:Service games won', 'No service games'), rgw = rate('Games:Return games won', 'No return games');
+  const r1 = rate('Return:1st return points won', 'No 1st-serve return points'), r2 = rate('Return:2nd return points won', 'No 2nd-serve return points');
+  const bps = rate('Service:Break Points Saved', 'No break points faced'), bpc = rate('Return:Break Points Converted', 'No break-point chances');
+  const aces = [fhCountCell(A, 'Service:Aces'), fhCountCell(B, 'Service:Aces')];
+  const dfs = [fhCountCell(A, 'Service:Double Faults'), fhCountCell(B, 'Service:Double Faults')];
+  // Winners / unforced errors: the pipeline reads a count the feed did not send as 0, so a
+  // match where all four are 0 carries none — dashes, never "0 | 0".
+  const wk = 'Points:Winners', uk = 'Points:Unforced errors';
+  const allZero = [A, B].every(s => s && [wk, uk].every(k => !Number(s[k])));
+  const noWue = allZero ? 'The feed sent no winners or errors for this match' : null;
+  const win = [fhCountCell(A, wk, noWue), fhCountCell(B, wk, noWue)], ue = [fhCountCell(A, uk, noWue), fhCountCell(B, uk, noWue)];
+  const net = rate('Points:Net points won', 'No net points'), spw = rate('Points:Service Points Won', 'No service points');
+  const rpw = rate('Points:Return Points Won', 'No return points'), tpw = rate('Points:Total Points Won', 'No points');
+  const SN = ['1st serve %', '1st serve points won', '2nd serve points won', 'service games won', 'aces', 'double faults'];
+  const RN = ['1st return points won', '2nd return points won', 'return games won', 'break points converted'];
+  // A rating is built only from rates with their counts (a rate the feed sent bare is not enough).
+  const cv = c => c.total != null ? c.v : null;
+  const sr = [0, 1].map(i => fhRatingCell([cv(first[i]), cv(f1[i]), cv(f2[i]), cv(sgw[i]), aces[i].v, dfs[i].v], SN));
+  const rr = [0, 1].map(i => fhRatingCell([cv(r1[i]), cv(r2[i]), cv(rgw[i]), cv(bpc[i])], RN));
+  // Dominance ratio = return points won % ÷ (100 − service points won %). Number only.
+  const dr = [0, 1].map(i => (rpw[i].v != null && spw[i].v != null && spw[i].v < 100)
+    ? { txt: (rpw[i].v / (100 - spw[i].v)).toFixed(2), title: 'Return points won ' + rpw[i].txt + ' ÷ (100 − service points won ' + spw[i].txt + ')' }
+    : { txt: FH_DASHC, title: 'Needs service and return points won' });
+  const row = (label, cells, kind, k) => ({ label, a: cells[0], b: cells[1], kind, k });
+  const sections = [
+    { title: 'Service', rows: [
+      row('Serve rating', sr, 'rating', FH_RATING_SCALE.serve), row('Aces', aces, 'count', FH_BAR_FLOOR.aces),
+      row('Double faults', dfs, 'count', FH_BAR_FLOOR.df), row('1st serve %', first, 'pct'),
+      row('1st serve points won', f1, 'pct'), row('2nd serve points won', f2, 'pct'), row('Break points saved', bps, 'pct') ] },
+    { title: 'Return', rows: [
+      row('Return rating', rr, 'rating', FH_RATING_SCALE.return), row('1st return points won', r1, 'pct'),
+      row('2nd return points won', r2, 'pct'), row('Break points converted', bpc, 'pct') ] },
+    { title: 'Points won', rows: [
+      row('Winners', win, 'count', FH_BAR_FLOOR.winners), row('Unforced errors', ue, 'count', FH_BAR_FLOOR.ue),
+      row('Net points won', net, 'pct'), row('Service points won', spw, 'pct'), row('Return points won', rpw, 'pct'),
+      row('Total points won', tpw, 'pct') ] },
+  ];
+  const partial = [win, ue, net].some(c => c[0].v == null || c[1].v == null);
+  return { dr, sections, partial };
+}
+function fhSheetRowHtml(s){
+  const aW = fhStatBarWidth(s.kind, s.a.v, s.b.v, s.k), bW = fhStatBarWidth(s.kind, s.b.v, s.a.v, s.k);
+  const val = (c, col) => `<span style="${FH_MONO} font-size:15px; font-weight:700; color:${c.v == null ? FH_DASH : col};">${fhEsc(c.txt)}</span>`;
+  const sub = c => c.sub ? `<span style="${FH_MONO} font-size:10px; color:#4b5672;">${fhEsc(c.sub)}</span>` : '';
+  const fill = (w, col) => w == null ? '' : `<span class="fh-sbar" style="height:7px; width:${w.toFixed(1)}%; background:${col}; border-radius:4px;"></span>`;
+  return `<div class="fh-srow" style="display:flex; flex-direction:column; gap:6px;">
+      <div style="display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:baseline; gap:12px;">
+        <span${s.a.title ? ` title="${fhEsc(s.a.title)}"` : ''} style="display:flex; align-items:baseline; gap:7px;">${val(s.a, '#5b9bff')}${sub(s.a)}</span>
+        <span style="${FH_MONO} font-size:9.5px; letter-spacing:0.14em; text-transform:uppercase; color:#8b96b5; text-align:center;">${fhEsc(s.label)}</span>
+        <span${s.b.title ? ` title="${fhEsc(s.b.title)}"` : ''} style="display:flex; align-items:baseline; gap:7px; justify-content:flex-end;">${sub(s.b)}${val(s.b, '#e7e9ee')}</span>
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+        <span class="fh-shalf" style="display:flex; justify-content:flex-end; height:7px; background:rgba(255,255,255,0.05); border-radius:4px;">${fill(aW, '#5b9bff')}</span>
+        <span class="fh-shalf" style="display:flex; height:7px; background:rgba(255,255,255,0.05); border-radius:4px;">${fill(bW, 'rgba(255,255,255,0.75)')}</span>
+      </div>
+    </div>`;
+}
+function fhSheetStatsHtml(joined, emptyMsg){
+  if (!joined) return `<div style="min-height:72px; display:flex; align-items:center; justify-content:center; text-align:center; font-size:12.5px; color:#4b5672;">${fhEsc(emptyMsg)}</div>`;
+  const M = fhSheetModel(joined);
+  const head = t => `<span style="display:block; text-align:center; ${FH_MONO} font-size:9.5px; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; color:#5b6880; background:#06070a; border-radius:8px; padding:8px 0;">${fhEsc(t)}</span>`;
+  const dr = `<div style="display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:14px; background:#06070a; border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:16px 20px;">
+      <span title="${fhEsc(M.dr[0].title)}" style="${FH_MONO} font-size:24px; font-weight:700; color:${M.dr[0].txt === FH_DASHC ? FH_DASH : '#5b9bff'};">${M.dr[0].txt}</span>
+      <span style="${FH_MONO} font-size:10px; font-weight:700; letter-spacing:0.16em; text-transform:uppercase; color:#8b96b5;">Dominance ratio</span>
+      <span title="${fhEsc(M.dr[1].title)}" style="${FH_MONO} font-size:24px; font-weight:700; color:${M.dr[1].txt === FH_DASHC ? FH_DASH : '#e7e9ee'}; text-align:right;">${M.dr[1].txt}</span>
+    </div>`;
+  const secs = M.sections.map(sec => `<div style="display:flex; flex-direction:column; gap:13px;">${head(sec.title)}${sec.rows.map(fhSheetRowHtml).join('')}</div>`).join('');
+  const note = M.partial ? `<span style="font-size:10.5px; color:#4b5672;">Winners, errors and net points: only where the feed sends them for the match.</span>` : '';
+  return dr + secs + note;
+}
+// The sheet's one segmented control, and the scope it shows. Set tabs are always drawn
+// (one per set in the score); a set with no per-set stats is disabled with a tooltip.
+function fhSheetSeg(tabs){
+  return `<div style="display:flex; width:max-content; margin:0 auto; gap:3px; background:#06070a; border:1px solid rgba(255,255,255,0.09); border-radius:9px; padding:3px;">${tabs.map(t => {
+    const on = t.on, off = t.disabled;
+    return `<span class="${off ? '' : 'seg'}"${off ? ` title="${fhEsc(t.title)}" aria-disabled="true"` : ` onclick="${t.onclick}"`} style="padding:5px 12px; border-radius:7px; font-size:11px; font-weight:${on ? 700 : 600}; color:${off ? '#2e3547' : on ? '#e7e9ee' : '#5b6880'}; background:${on ? 'rgba(91,155,255,0.22)' : 'transparent'}; border:1px solid ${on ? 'rgba(91,155,255,0.45)' : 'transparent'}; cursor:${off ? 'not-allowed' : 'pointer'}; white-space:nowrap;">${fhEsc(t.label)}</span>`;
+  }).join('')}</div>`;
+}
+// The control's tabs for a sheet state: Match, one per set in the score (disabled with a
+// tooltip when that set has no per-set stats), Point by point (disabled without a log).
+function fhSheetTabs(S){
+  const nSets = Math.max(S.nSets, 0);
+  const tabs = [{ label: 'Match', on: S.scope === 'match', onclick: "fhSheetScope('match')" }];
+  for (let i = 1; i <= nSets; i++){
+    const ok = !!(S.sets && S.sets[i]);
+    tabs.push({ label: 'Set ' + i, on: S.scope === i, disabled: !ok, title: S.setsLoading ? 'Loading per-set stats…' : 'No per-set stats for this match', onclick: `fhSheetScope(${i})` });
+  }
+  tabs.push({ label: 'Point by point', on: S.scope === 'pbp', disabled: !S.hasPbp, title: S.pbpLoading ? 'Loading…' : 'No point-by-point log for this match', onclick: "fhSheetScope('pbp')" });
+  return tabs;
+}
+function fhSheetRender(){
+  const S = _fh && _fh.sheetBody, host = document.getElementById('fhSheetBody');
+  if (!S || !host) return;
+  const tabs = fhSheetTabs(S);
+  let body;
+  if (S.scope === 'pbp'){
+    const sh = S.pbp;
+    if (!sh) body = `<div class="acomingsoon" style="padding:10px 0 2px;">Loading point-by-point…</div>`;
+    else {
+      const setNos = sh.sets.map(s => Number(s.set)).filter(Number.isFinite).sort((a, b) => a - b);
+      const cur = setNos.includes(S.pbpSet) ? S.pbpSet : setNos[0];
+      body = (setNos.length > 1 ? fhSheetSeg(setNos.map(n => ({ label: 'Set ' + n, on: n === cur, onclick: `fhSheetPbpSet(${n})` }))) : '')
+        + `<div class="fh-pbp">${buildPointByPointHtml({ p1: sh.p1, p2: sh.p2 }, sh, cur)}</div>`;
+    }
+  } else if (S.scope === 'match'){
+    body = S.matchLoading ? `<div class="acomingsoon" style="padding:10px 0 2px;">Loading match stats…</div>`
+      : fhSheetStatsHtml(S.match, 'Stats not available for this match.');
+  } else {
+    body = fhSheetStatsHtml(S.sets && S.sets[S.scope], 'No per-set stats for this match.');
+  }
+  host.innerHTML = fhSheetSeg(tabs) + body;
+}
+function fhSheetScope(sc){ const S = _fh && _fh.sheetBody; if (!S) return; S.scope = sc; if (sc === 'pbp') fhSheetLoadPbp(); fhSheetRender(); }
+function fhSheetPbpSet(n){ const S = _fh && _fh.sheetBody; if (!S) return; S.pbpSet = n; fhSheetRender(); }
+function fhSheetLoadPbp(){
+  const S = _fh.sheetBody;
+  if (S.pbp || S.pbpReq || !S.ek) return;
+  S.pbpReq = true;
+  loadPbpShard(S.ek).then(sh => { if (_fh && _fh.sheetBody === S){ S.pbp = sh && sh.sets && sh.sets.length ? sh : null; if (!S.pbp){ S.hasPbp = false; S.scope = 'match'; } fhSheetRender(); } });
+}
+// The whole-match box score for a sheet row, oriented to player A: the Form row's inline
+// copy; else (H2H) either board player's form-shard row for the same eventKey; else the
+// setstats shard. Same data as before, one more place looked.
+function fhSheetInlineStats(e, r){
+  if (r.formRow && r.formRow.matchStats) return matchStatsForFormRow(r.formRow);
+  const ek = String(r.ek || '');
+  if (!ek) return null;
+  for (const [key, flip] of [[e.aKey, false], [e.bKey, true]]){
+    const rows = (typeof _formShards !== 'undefined' && _formShards[String(key)]) || [];
+    const hit = rows.find(x => String(x.eventKey || '') === ek && x.matchStats);
+    if (hit) return flip ? { own: hit.matchStats.opp, opp: hit.matchStats.own } : { own: hit.matchStats.own, opp: hit.matchStats.opp };
+  }
+  return null;
+}
+function fhSheetInit(e, r){
+  const ek = String(r.ek || (r.formRow && r.formRow.eventKey) || '');
+  const inline = fhSheetInlineStats(e, r);
+  const S = { ek, scope: 'match', nSets: (r.sets || []).length, match: inline, matchLoading: !inline && !!ek,
+    sets: null, setsLoading: !!ek, hasPbp: false, pbpLoading: !!ek, pbp: null, pbpSet: 1 };
+  _fh.sheetBody = S;
+  fhSheetRender();
+  if (!ek){ S.matchLoading = S.setsLoading = S.pbpLoading = false; fhSheetRender(); return; }
+  Promise.all([loadPbpIndex(), loadMatchStatsIndex(), loadSetStatsIndex()]).then(([pbpIdx, msIdx, ssIdx]) => {
+    if (!_fh || _fh.sheetBody !== S) return;
+    S.hasPbp = pbpIdx.has(ek); S.pbpLoading = false;
+    const need = (!S.match && msIdx.has(ek)) || ssIdx.has(ek);
+    const done = shard => {
+      if (!_fh || _fh.sheetBody !== S) return;
+      if (!S.match && shard) S.match = matchStatsFromShard(shard, e.aKey);
+      S.matchLoading = false;
+      if (shard && shard.sets){
+        S.sets = {};
+        Object.keys(shard.sets).forEach(k => { const n = Number(k); const j = setStatsForFormRow(shard, e.aKey, n); if (Number.isFinite(n) && j) S.sets[n] = j; });
+        if (!S.nSets) S.nSets = Math.max(0, ...Object.keys(S.sets).map(Number));
+      }
+      S.setsLoading = false;
+      fhSheetRender();
+    };
+    if (need) loadSetStatsShard(ek).then(done); else done(null);
+  });
+}
+
 document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && _fh && _fh.sheet){ ev.stopPropagation(); fhCloseSheet(); } }, true);
 
 /* ---------- TOURNAMENT SUB-TAB ---------- */

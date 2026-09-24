@@ -47,9 +47,21 @@ Applies to the TEN-263 block in `bsp-consult-dashboard.html` (`fh*` functions), 
   shard: e.g. J. D. Silva / J. Reis Da Silva, Zhizhen / Ze Zhang), or a feed-marked namesake
   ("Dar. Blanch") gives a dash. Without the conflict list no number is shown at all. The
   surname-only fallback (`bySurname`) is never used here.
-- `elo-history.json` is **append-only**: `tools/build-elo-history.mjs --append` runs in the weekly
-  `elo.yml` job; an unchanged report adds nothing (its `asOf` stays the date the numbers were first
-  published). H2H meeting rows keep the "No number" variant (not ruled).
+- `elo-history.json` is **append-only**: `tools/build-elo-history.mjs --append` runs in `elo.yml`;
+  an unchanged report adds nothing (its `asOf` stays the date the numbers were first published).
+- **Retry until the report moves (ruling 2026-09-24):** the job runs every Monday. If TA's printed
+  "Last update" equals the last stored report's, it retries the next day, and daily until a new
+  report is stored, then stops until next Monday (`shouldFetch`). A live snapshot's `asOf` is **the
+  day we fetched it, never TA's label**; the label is stored beside it as `taLastUpdate`. A day with
+  no new report appends and commits nothing. **Test:** an unchanged Monday report triggers a Tuesday
+  retry; a new Tuesday report is stored with Tuesday's `asOf` and stops the retries.
+- **Staleness:** `ELO_STALE_WARN_DAYS = 8` (warns at 8 days old or more); `ELO_STALE_RED_DAYS = null` — red is off
+  until Michael rules the threshold.
+- **Archived reports (ruling 2026-09-24):** Wayback captures before 2026-07-18 are in the history
+  (`source: 'wayback'`, `captureUrl`, `captureTimestamp`, `taLastUpdate`, `players`). Their `asOf` is
+  **the capture day, not TA's label** — a report is never used before it provably existed. Several
+  captures of one report keep the earliest. Keys two players share within an archived report are
+  in its `ambiguous` and never resolve. archive.today is not used.
 
 ## H2H tab: Elo and labels (rulings 2026-09-24, H2H pixel pass)
 - **H2H meeting rows carry the opponent's Elo** on the Form basis above (overall, strictly before the
@@ -118,3 +130,19 @@ Applies to the TEN-263 block in `bsp-consult-dashboard.html` (`fh*` functions), 
   is on the board** (`MIN_UPCOMING = 1`). A stale capture on a board with nothing to price is
   quiet, not red. **Test:** a stale board with 0 upcoming stays green; the same board with 1
   upcoming goes red.
+
+## Match stats popup (rulings 2026-09-24): `fhSheet*` in the TEN-263 block
+- **One control** `Match | Set 1 | … | Point by point`, one set tab per set in the score. A set with no
+  per-set stats is a **disabled** tab with the tooltip "No per-set stats for this match" — never hidden.
+- **Every rate shows its count and one decimal**, computed from that count (`60.9% (46/76)`). A real
+  0 with opportunities is `0.0% (0/4)`; 0/0 is `—` with its reason; a stat the feed never sent is `—`.
+  Winners/unforced errors all 0 on both sides = not sent (`—`), never "0 | 0".
+- **Bars:** a rate fills its own value of that player's half; a count fills value ÷ max(p1, p2,
+  `FH_BAR_FLOOR`); a rating fills value ÷ `FH_RATING_SCALE`; a `—` side draws no bar and never moves
+  the other side. Dominance ratio (RPW% ÷ (100 − SPW%)) is a number only. **Floors and scales are
+  Michael's call** (defaults aces 10, DF 5, winners 30, UE 30; serve 400, return 350).
+  **Test:** 1 v 0 double faults does not fill; a `—` side draws no bar; 50% fills exactly half.
+- **Serve / Return rating:** ATP's leaderboard components, summed by the 2026-08-29 house rule; any
+  component missing or sent without its count → `—`; 0 break-point chances → no Return rating.
+- **"Pressure points" is not built**: no source defines it (open call). The other match-detail
+  panels still use `msBarHtml` (share of total): not ruled.

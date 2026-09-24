@@ -134,6 +134,11 @@ function lastToken(name) {
   const bySurname = {}, bySurnameElo = {};
   for (const t in tokCount) if (tokCount[t] === 1) { bySurname[t] = tokElo[t]; bySurnameElo[t] = tokSurface[t]; }
 
+  // TEN-263 (founder 2026-09-24): TA's own printed "Last update: YYYY-MM-DD". elo-history.json stores it
+  // beside our asOf (the fetch day) and uses it to tell a new report from an unchanged one. Absent = null.
+  const lu = /Last update:\s*(\d{4}-\d{2}-\d{2})/.exec(html);
+  const taLastUpdate = lu ? lu[1] : null;
+  console.log(`  Tennis Abstract "Last update": ${taLastUpdate || 'not printed'}.`);
   const withPeak = Object.values(elo).filter(r => r.peak).length;
   console.log(`Parsed ${rows} Elo rows -> ${Object.keys(ratings).length} keyed (overall + surface), ${Object.keys(bySurname).length} unique-token fallbacks.`);
   // Stated every run with its denominator, because a peak column that silently
@@ -143,7 +148,8 @@ function lastToken(name) {
   const out = {
     generatedAt: new Date().toISOString(),
     source: 'tennisabstract.com/reports/atp_elo_ratings.html',
-    refresh: 'weekly (Mondays)',
+    taLastUpdate,
+    refresh: 'weekly (Mondays), retried daily until the report moves',
     count: rows,
     ratings,       // back-compat: "lastToken|firstInitial" -> overall Elo (integer)
     bySurname,     // back-compat: unique last-token -> overall Elo
