@@ -17,7 +17,7 @@ on:
   workflow_dispatch:
     inputs:
       action:
-        description: 'schema | verify | deploy-worker | status'
+        description: 'schema | verify | deploy-worker | status | logs'
         required: true
         default: 'status'
 
@@ -36,7 +36,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Schema / verify / status
-        if: inputs.action != 'deploy-worker'
+        if: inputs.action != 'deploy-worker' && inputs.action != 'logs'
         env:
           ACTION: ${{ inputs.action }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -107,8 +107,8 @@ jobs:
               print("::error::" + "; ".join(bad)); sys.exit(1)
           PY
 
-      - name: Deploy the worker to Fly
-        if: inputs.action == 'deploy-worker'
+      - name: Install flyctl
+        if: inputs.action == 'deploy-worker' || inputs.action == 'logs'
         env:
           FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
         run: |
@@ -118,6 +118,16 @@ jobs:
           fi
           curl -fsSL https://fly.io/install.sh | sh
           echo "$HOME/.fly/bin" >> "$GITHUB_PATH"
+
+      - name: Worker logs (read-only)
+        if: inputs.action == 'logs'
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}
+        run: |
+          APP=$(sed -n 's/^app *= *"\(.*\)"/\1/p' kibl-stream/fly.toml)
+          flyctl machine list --app "$APP" || true
+          flyctl secrets list --app "$APP" || true
+          flyctl logs --app "$APP" --no-tail | tail -150 || true
 
       - name: Fly secrets + deploy
         if: inputs.action == 'deploy-worker'
