@@ -17,6 +17,7 @@
 FROM python:3.12-slim
 
 WORKDIR /app
+ENV PYTHONUNBUFFERED=1
 
 # pika pinned, not floated. This worker's whole value is being connected when
 # nobody is looking; a surprise minor on an always-on process is the kind of

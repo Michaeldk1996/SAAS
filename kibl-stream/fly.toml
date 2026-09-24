@@ -41,6 +41,9 @@ primary_region = "sjc"
   WORKER_VERSION = "0.3.0"
   # Writes are opt-in in the code; this deployment is the one place they are on.
   KIBL_NOW_WRITE = "1"
+  # Without this, print() is block-buffered in a container with no TTY and the
+  # worker's own log never reaches `fly logs` (measured: silent after start).
+  PYTHONUNBUFFERED = "1"
 
 # One machine, always on. `auto_stop_machines = false` is the whole point: a
 # worker that scales to zero is a worker that is not listening, and this exists
