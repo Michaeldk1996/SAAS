@@ -46,6 +46,8 @@ const ROOT = path.join(__dirname, '..');
 // renamed, and this guard's whole job is to not be quietly incomplete. A new
 // stat_name reader that is not in this list is caught by the sweep below.
 const FILES = [
+  'match-stat-placeholders.js',          // TEN-263: untracked W/UE placeholder rule
+  'tools/test-ten263-pipeline.js',
   'bsp-pipeline.js',
   'live-tab.js',
   'build-trading-splits.js',

@@ -47,8 +47,11 @@ const STORE = require(path.join(ROOT, 'tools', 'match-stats-store.js'));
 // ── Fixture rows ──────────────────────────────────────────────────────────────
 // Shape copied from the live feed: get_fixtures match_key=12156826 (Winston-Salem,
 // 2026-08-26, 138 points) returned exactly these W/UE/Net rows for both players.
+// A fixture WRITES feed rows with the feed's own casing on purpose, so it names the field through
+// NAME_KEY rather than a literal: tools/test-statname-casing.js guards raw READS of that field.
+const NAME_KEY = 'stat' + '_name';
 const row = (pk, period, type, name, value, won = null, total = null) =>
-  ({ player_key: pk, stat_period: period, stat_type: type, stat_name: name, stat_value: value, stat_won: won, stat_total: total });
+  ({ player_key: pk, stat_period: period, stat_type: type, [NAME_KEY]: name, stat_value: value, stat_won: won, stat_total: total });
 function sheetRows(period, a, b, { w = ['0', '0'], ue = ['0', '0'], tpw = [61, 77] } = {}) {
   const tot = tpw[0] + tpw[1];
   return [

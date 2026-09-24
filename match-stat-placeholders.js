@@ -41,13 +41,13 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 const PLACEHOLDER_MIN_POINTS = 10;
-const WUE_NAME = /^(winners|unforced errors)$/i;
+const WUE_NAME = /^(winners|unforced errors)$/;
 // Sheet keys as the pipeline writes them (MATCH_STAT_DEFS names).
 const SHEET_WUE_KEYS = ['Points:Winners', 'Points:Unforced errors'];
 const SHEET_TPW_KEY = 'Points:Total Points Won';
 
 function isWueRow(s) {
-  return !!s && s.stat_type === 'Points' && WUE_NAME.test(String(s.stat_name || '').trim());
+  return !!s && s.stat_type === 'Points' && WUE_NAME.test(String(s.stat_name || '').trim().toLowerCase());
 }
 
 // Strict count parse: an integer string or number, else null. "0" -> 0,
