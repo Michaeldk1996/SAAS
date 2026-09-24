@@ -1719,13 +1719,14 @@
     "id1201413374753326": {
       "alerted": true,
       "alertedAt": "2026-09-24T11:04:06Z",
-      "captureLagH": null,
+      "captureLagH": 0.16,
       "date": "2026-09-25",
+      "firstSeenAt": "2026-09-24T15:45:01Z",
       "hoursOutAtAlert": 19.93,
-      "openAt": null,
+      "openAt": "2026-09-24T15:35:39.891Z",
       "p1": "J. Brooksby",
       "p2": "L. Sonego",
-      "postingLeadH": null,
+      "postingLeadH": 13.41,
       "startTime": "2026-09-25T05:00:00.000Z",
       "tour": "ATP Chengdu"
     },
@@ -2455,5 +2456,5 @@
   },
   "schema": "odds-open-monitor/1",
   "thresholdHours": 24.0,
-  "updatedAt": "2026-09-24T15:30:01Z"
+  "updatedAt": "2026-09-24T15:45:01Z"
 }
