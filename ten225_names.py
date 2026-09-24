@@ -25,6 +25,7 @@ the original harness found. If either file moves, that assertion goes red.
 
 Stdlib only. No network, no secrets.
 """
+import datetime
 import unicodedata
 
 # The rotation number Kibl glues to the front of a fixture name ("6112 Suresh
@@ -200,3 +201,74 @@ def match_key(day, p1, p2):
         return None
     a, b = sorted((k1, k2))
     return f'{day[:10]}|{a}|{b}'
+
+
+# ── TEN-270 date-key ruling (founder 2026-09-24T10:16Z) ─────────────────────
+# "Make the card-state date key match the card and stream key." A vendor's own
+# start time is NOT the card's date: Kibl's scheduled_start is UTC (a 01:15
+# UTC+2 card is the previous UTC day) and Kibl re-lists matches at a provisional
+# time hours away (Medvedev-Royer, a 26 Sep 04:00 card, was listed on 25 Sep).
+# 16 of 142 carded matches were keyed to the wrong day between 2026-09-18 and
+# 2026-09-24, so the page (ocsKeyOf = card date) found no entry.
+BOARD_REKEY_DAYS = 2
+
+
+def board_pair_index(matches):
+    """matches.json -> {(surname_a, surname_b): {card match_key, ...}}."""
+    idx = {}
+    for m in matches or []:
+        k = match_key((m.get('date') or '')[:10], m.get('p1'), m.get('p2'))
+        if k:
+            _, a, b = k.split('|')
+            idx.setdefault((a, b), set()).add(k)
+    return idx
+
+
+def board_key_for(key, pair_index, days=BOARD_REKEY_DAYS):
+    """A vendor match_key -> (the board card's key, verdict).
+
+    verdict: 'same' (already the card's key), 'rekeyed', 'no_card' (no board
+    card with this pair within +/-days: the vendor key is kept, and the next run
+    re-keys once the card appears), or 'ambiguous' (two or more such cards: the
+    vendor key is kept, never a guessed card)."""
+    if not key or key.count('|') != 2:
+        return key, 'no_card'
+    day, a, b = key.split('|')
+    try:
+        d0 = datetime.date.fromisoformat(day)
+    except ValueError:
+        return key, 'no_card'
+    near = sorted(k for k in pair_index.get((a, b), ())
+                  if abs((datetime.date.fromisoformat(k[:10]) - d0).days) <= days)
+    if not near:
+        return key, 'no_card'
+    if len(near) > 1:
+        return (key, 'same') if key in near else (key, 'ambiguous')
+    return near[0], ('same' if near[0] == key else 'rekeyed')
+
+
+def rekey_rows_to_board(rows, matches, st=None):
+    """Rewrite each row's match_key to its board card's key, in place. Counts
+    every verdict in st (a Counter) under rekey_<verdict>.
+
+    Never MERGES two fixtures of one book onto one key (review round 3,
+    finding 3): a provisional and a real listing of the same match are two
+    fixture ids; moved onto one key, the selection pass sees two rows for one
+    side, drops the group, and the card goes blank. Such a move is undone and
+    counted rekey_fixture_collision — the row keeps its vendor key, exactly as
+    before this rule existed."""
+    idx = board_pair_index(matches)
+    plan = []
+    for r in rows:
+        k, verdict = board_key_for(r.get('match_key'), idx)
+        plan.append((r, r.get('match_key'), k, verdict))
+    owners = {}
+    for r, old, new, _ in plan:
+        owners.setdefault((new, r.get('book')), set()).add(str(r.get('fixture_id')))
+    for r, old, new, verdict in plan:
+        if verdict == 'rekeyed' and len(owners.get((new, r.get('book')), ())) > 1:
+            new, verdict = old, 'fixture_collision'
+        if st is not None:
+            st[f'rekey_{verdict}'] += 1
+        r['match_key'] = new
+    return rows

@@ -65,6 +65,7 @@ OUT = os.path.join(HERE, 'ten225-kibl-card-state.json')
 
 from ten225_names import match_key as mk_of, name_key, initials_conflict  # noqa: E402
 import ten225_orientation as ORI  # noqa: E402
+import ten225_names as NAMES  # noqa: E402
 import ten225_apitennis_odds as AT  # noqa: E402
 
 # The board file, read for its INDEPENDENT prices only. It is the api-tennis /
@@ -2131,6 +2132,22 @@ def main():
     if dashed:
         print(f'orientation guard dashed {len(dashed)} match(es)')
 
+    # TEN-270 date-key ruling (founder 2026-09-24T10:16Z): the key's DATE is the
+    # board card's, not Kibl's scheduled start (UTC, and sometimes a
+    # provisional listing hours away). Before selection and the upsert, so the
+    # card state, the stream (card_join.card_key) and the page (ocsKeyOf) agree.
+    rk = collections.Counter()
+    NAMES.rekey_rows_to_board(rows, matches, rk)
+    print(f'date key -> board card: {dict(sorted(rk.items()))}')
+    result['rekey'] = dict(rk)
+    # No board this run (review round 3, finding 4): the vendor keys would
+    # overwrite last run's card-dated keys and every re-keyed card would lose
+    # its entry until the next good run. So this run leaves match_key alone.
+    keep_stored_key = not matches
+    if keep_stored_key:
+        print('::warning::no matches.json this run — match_key is NOT written '
+              '(the stored card-dated key stays)')
+
     n = max(len(rows), 1)
     have_open = sum(1 for r in rows if r['open_price'] is not None)
     have_now = sum(1 for r in rows if r['now_price'] is not None)
@@ -2166,7 +2183,8 @@ def main():
     })
 
     if not a.dry_run and rows:
-        payload = [{k: v for k, v in r.items() if not k.startswith('_')}
+        payload = [{k: v for k, v in r.items() if not k.startswith('_')
+                    and not (keep_stored_key and k == 'match_key')}
                    for r in rows]
         sent, uerr = L.upsert(url, key, 'odds_card_state', payload,
                               'fixture_id,book,market,side,line')

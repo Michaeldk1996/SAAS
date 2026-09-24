@@ -75,6 +75,7 @@ sys.argv = _argv
 epoch, iso, sb, creds = L.epoch, L.iso, L.sb, L.creds
 
 from ten225_names import match_key as mk_of  # noqa: E402
+import ten225_names as NAMES  # noqa: E402
 
 # Book priority (founder ruling 2026-09-18T00:18Z): 1 kibl/Sports411, 2 bet365
 # via oddspapi, 3 api-tennis. This file fills ranks 2 and 3; rank 1 is filled by
@@ -541,6 +542,13 @@ def main():
         # the ruling that authorises it says so explicitly.
         tk, tkst = takeover_candidate_rows(matches, as_of)
         print(f'takeover candidate rows (ruling 4a): {len(tk)}  {dict(tkst)}')
+        # TEN-270 date-key ruling (founder 2026-09-24T10:16Z): an oddspapi key is
+        # dated by the fixture's own start; the card's date wins when exactly
+        # one board card carries the pair within +/-2 days.
+        rk = collections.Counter()
+        NAMES.rekey_rows_to_board(rows, matches, rk)
+        print(f'date key -> board card (oddspapi rows): {dict(sorted(rk.items()))}')
+        result['rekey'] = dict(rk)
         if not tk:
             print('  NOTE: 0 rows. m.bookOpens is pinned write-once by '
                   'bsp-pipeline.js and accrues FORWARD ONLY — a first sighting '
