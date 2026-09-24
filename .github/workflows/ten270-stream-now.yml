@@ -6,10 +6,15 @@ name: TEN-270 Kibl stream -> live Now
 #                  can SELECT kibl_now_price and nothing else: history refused,
 #                  inserts refused. Also that the table is in supabase_realtime.
 #   deploy-worker  build + deploy now_worker.py to Fly (kibl-stream/fly.toml,
-#                  region sea). Needs the FLY_API_TOKEN repository secret; the
+#                  region sjc). Needs the FLY_API_TOKEN repository secret; the
 #                  Kibl + Supabase credentials go from GitHub secrets straight
 #                  into Fly secrets over stdin — never into a log or an argv.
 #   status         read the worker's heartbeat row and the price-table counts.
+#   realtime-config  READ the project's Realtime settings; with `max_events` set,
+#                  PATCH max_events_per_second to it (08:58Z brief, item 4) and
+#                  read them back.
+#   usage          READ-ONLY: the API gateway's response bytes by route and
+#                  caller over the log window (08:58Z brief, egress question).
 #
 # Nothing here touches the poller, its tables, or its workflows.
 
@@ -17,9 +22,13 @@ on:
   workflow_dispatch:
     inputs:
       action:
-        description: 'schema | verify | deploy-worker | status | logs'
+        description: 'schema | verify | deploy-worker | status | logs | realtime-config | usage'
         required: true
         default: 'status'
+      max_events:
+        description: 'realtime-config only: new max_events_per_second (blank = read only)'
+        required: false
+        default: ''
 
 concurrency:
   group: ten270-stream-now
@@ -39,6 +48,7 @@ jobs:
         if: inputs.action != 'deploy-worker' && inputs.action != 'logs'
         env:
           ACTION: ${{ inputs.action }}
+          MAX_EVENTS: ${{ inputs.max_events }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
           SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
@@ -76,6 +86,17 @@ jobs:
               st, r = call(f"{url}/rest/v1/kibl_now_price?select=card_key&limit=1", key=pk)
               print(f"[publishable] SELECT kibl_now_price  -> HTTP {st}  (want 200)")
               if st != 200: bad.append("price table not readable")
+              st, r = call(f"{url}/rest/v1/kibl_now_card?select=card_key&limit=1", key=pk)
+              print(f"[publishable] SELECT kibl_now_card  -> HTTP {st}  (want 200)")
+              if st != 200: bad.append("card table not readable")
+              st, r = call(f"{url}/rest/v1/kibl_now_card", "POST",
+                           [{"card_key": "__rls_probe__", "a_side": "a", "a_price": 2, "a_at": "2026-01-01T00:00:00Z",
+                             "b_side": "b", "b_price": 2, "b_at": "2026-01-01T00:00:00Z"}], key=pk)
+              print(f"[publishable] INSERT kibl_now_card -> HTTP {st}  (want 401/403)")
+              if st not in (401, 403):
+                  bad.append(f"publishable key could INSERT a card row ({st})")
+                  call(f"{url}/rest/v1/kibl_now_card?card_key=eq.__rls_probe__", "DELETE",
+                       key=os.environ["SUPABASE_SECRET_KEY"])
               st, r = call(f"{url}/rest/v1/kibl_now_history?select=id&limit=1", key=pk)
               print(f"[publishable] SELECT kibl_now_history -> HTTP {st}  (want 401/403)")
               if st not in (401, 403): bad.append(f"history readable ({st})")
@@ -89,12 +110,13 @@ jobs:
               st, r = call(f"{url}/rest/v1/odds_card_state?select=match_key&limit=1", key=pk)
               print(f"[publishable] SELECT odds_card_state -> HTTP {st}  (unchanged: want 401)")
               st, r = sql("select tablename from pg_publication_tables where pubname='supabase_realtime' "
-                          "and tablename in ('kibl_now_price','kibl_now_history') order by 1")
+                          "and tablename in ('kibl_now_price','kibl_now_history','kibl_now_card') order by 1")
               print(f"realtime publication -> {r}")
-              if "kibl_now_price" not in r: bad.append("price table not in supabase_realtime")
+              if "kibl_now_card" not in r: bad.append("card table not in supabase_realtime")
+              if "kibl_now_price" in r: bad.append("per-side table still published (two messages per change)")
               if "kibl_now_history" in r: bad.append("history table published")
               st, r = sql("select polname, polcmd, polroles::regrole[]::text from pg_policy p join pg_class c on c.oid=p.polrelid "
-                          "where c.relname in ('kibl_now_price','kibl_now_history') order by 1")
+                          "where c.relname in ('kibl_now_price','kibl_now_history','kibl_now_card') order by 1")
               print(f"policies -> {r}")
           if act == "status":
               sk = os.environ["SUPABASE_SECRET_KEY"]
@@ -103,6 +125,48 @@ jobs:
               st, r = call(f"{url}/rest/v1/kibl_now_price?kind=eq.price&select=card_key", key=sk,
                            prefer="count=exact")
               print(f"price rows -> HTTP {st} {len(json.loads(r)) if st == 200 else r[:200]}")
+          if act == "realtime-config":
+              tok = os.environ["SUPABASE_ACCESS_TOKEN"]
+              api = f"https://api.supabase.com/v1/projects/{ref}/config/realtime"
+              st, r = call(api, bearer=tok)
+              print(f"realtime config (before) -> HTTP {st} {r[:1500]}")
+              want = os.environ.get("MAX_EVENTS", "").strip()
+              if want:
+                  if not want.isdigit() or int(want) < 1:
+                      print("::error::max_events must be a positive integer"); sys.exit(1)
+                  st, r = call(api, "PATCH", {"max_events_per_second": int(want)}, bearer=tok)
+                  print(f"PATCH max_events_per_second={want} -> HTTP {st} {r[:500]}")
+                  if st >= 400: bad.append(f"PATCH refused ({st})")
+                  st, r = call(api, bearer=tok)
+                  print(f"realtime config (after) -> HTTP {st} {r[:1500]}")
+          if act == "usage":
+              import datetime as dt
+              tok = os.environ["SUPABASE_ACCESS_TOKEN"]
+              base = f"https://api.supabase.com/v1/projects/{ref}/analytics/endpoints"
+              q = ("""select regexp_extract(r.path, r'^(/[a-z]+/v1/[^/?]*)') as route, r.method as method,
+                  substr(coalesce(h.user_agent, '-'), 1, 40) as ua, count(*) as n,
+                  sum(safe_cast(rh.content_length as int64)) as bytes,
+                  countif(rh.content_length is null) as no_len
+                  from edge_logs t cross join unnest(t.metadata) m cross join unnest(m.request) r
+                  cross join unnest(r.headers) h cross join unnest(m.response) resp
+                  cross join unnest(resp.headers) rh
+                  group by route, method, ua order by bytes desc limit 40""")
+              end = dt.datetime.now(dt.timezone.utc).replace(minute=0, second=0, microsecond=0)
+              for d in range(7):
+                  hi, lo = end - dt.timedelta(days=d), end - dt.timedelta(days=d + 1)
+                  qs = urllib.parse.urlencode({"sql": q, "iso_timestamp_start": lo.isoformat(),
+                                               "iso_timestamp_end": hi.isoformat()})
+                  st, r = call(f"{base}/logs.all?{qs}", bearer=tok)
+                  print(f"=== edge_logs {lo.isoformat()} .. {hi.isoformat()} -> HTTP {st}")
+                  try:
+                      for row in json.loads(r).get("result") or []:
+                          print(json.dumps(row))
+                      if json.loads(r).get("error"): print("error:", str(json.loads(r)["error"])[:400])
+                  except ValueError:
+                      print(r[:400])
+              for ep in ("usage.api-counts?interval=7day", "usage.api-requests-count"):
+                  st, r = call(f"{base}/{ep}", bearer=tok)
+                  print(f"=== {ep} -> HTTP {st} {r[:3000]}")
           if bad:
               print("::error::" + "; ".join(bad)); sys.exit(1)
           PY

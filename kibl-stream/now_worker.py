@@ -7,8 +7,10 @@ Founder brief 2026-09-24T01:21Z, "Build authorised". This process:
      (/info/fixtures) fresh, and joins them under JOIN RULE 1 (card_join.pick);
   2. consumes the Kibl RabbitMQ queue and takes ONLY pre-match full-match
      match-winner rows (betting_type_id 1, is_live false, market 1, segment 1);
-  3. writes the latest price per card and side to `kibl_now_price`, and every
-     accepted pre-match price change to `kibl_now_history`;
+  3. writes the latest price per card and side to `kibl_now_price`, ONE row per
+     card (both sides) to `kibl_now_card` — the only Realtime-published table,
+     so a change costs one message per viewer — and every accepted pre-match
+     price change to `kibl_now_history`;
   4. SEEDS every matched card from Kibl's /info/markets REST call (the current
      prices — the same call the poller makes) at start-up and after every
      reconnect, because the stream only sends CHANGES;
@@ -17,7 +19,7 @@ Founder brief 2026-09-24T01:21Z, "Build authorised". This process:
 
 WHAT IT DOES NOT TOUCH. It never writes `kibl_line_observations`, `kibl_fixtures`,
 `odds_card_state` or anything else the poller owns. The poller keeps running
-unchanged as the fallback. The only tables written are the two new ones.
+unchanged as the fallback. The only tables written are the three new ones.
 
 WRITES ARE OPT-IN: `KIBL_NOW_WRITE=1`. Without it every write is logged and
 counted, never sent — so a dry run cannot become a production write by default.
@@ -42,7 +44,12 @@ import sweep_bridge as B  # noqa: E402  — the sweep's own row key, for history
 BOARD_URL = "https://michaeldk1996.github.io/SAAS/matches.json"
 TABLE_NOW = "kibl_now_price"
 TABLE_HIST = "kibl_now_history"
+TABLE_CARD = "kibl_now_card"   # ONE row per card, both sides: the only Realtime-published table
 HB_KEY = ("__stream__", "__hb__")
+# How long a card row waits after the first side of a move lands, so the other
+# side's row (Kibl sends them as separate participant rows, not always in one
+# message) rides in the SAME row — one Realtime message per change, not two.
+COALESCE_S = 1.5
 CARDS_EVERY_S = 60
 FIXTURES_EVERY_S = 600
 HEARTBEAT_EVERY_S = 60
@@ -73,9 +80,12 @@ class NowEngine:
         self.fpids = collections.defaultdict(set)    # fixture -> participant ids seen
         self.pending = collections.defaultdict(dict)  # fixture -> fpid -> (row, source)
         self.latest = {}                             # (card_key, side_key) -> inserted_on
+        self.now_side = {}                           # (card_key, side_key) -> the Now row written
+        self.dirty = {}                              # card_key -> monotonic time the card row is due
         self.fid_key = {}                            # fixture -> card_key it was ever joined to
         self.count = collections.Counter()
         self.write_ok = True                         # did the last write land? (heartbeat -> page)
+        self.card_ok = True                          # did the last CARD row write land?
 
     # ── inputs ──────────────────────────────────────────────────────────────
     def set_cards(self, cards, now):
@@ -166,7 +176,33 @@ class NowEngine:
             return out
         self.latest[(ck, sk)] = ins
         self.count["now_written"] += 1
-        out.append(("now", dict(common, kind="price")))
+        now_row = dict(common, kind="price")
+        self.now_side[(ck, sk)] = now_row
+        # The card row goes out once, COALESCE_S after the first side of a move
+        # lands, carrying both sides — one Realtime message per change, not two.
+        self.dirty.setdefault(ck, time.monotonic() + COALESCE_S)
+        out.append(("now", now_row))
+        return out
+
+    def card_rows(self, now_mono, force=False):
+        """-> the due card rows (both sides known), clearing them from `dirty`.
+        A card with one side known stays pending until the other arrives."""
+        out = []
+        for ck, due in list(self.dirty.items()):
+            if not force and due > now_mono:
+                continue
+            sides = sorted(sk for (c, sk) in self.now_side if c == ck)
+            if len(sides) != 2:
+                continue
+            a, b = (self.now_side[(ck, s)] for s in sides)
+            del self.dirty[ck]
+            out.append({"card_key": ck, "book": a["book"], "book_name": a["book_name"],
+                        "feed_source_id": a["feed_source_id"], "fixture_id": a["fixture_id"],
+                        "a_side": sides[0], "a_price": a["price"], "a_at": a["kibl_inserted_on"],
+                        "b_side": sides[1], "b_price": b["price"], "b_at": b["kibl_inserted_on"],
+                        # The source of the side that moved last.
+                        "source": max((a, b), key=lambda r: CJ.parse_ts(r["kibl_inserted_on"]))["source"]})
+        self.count["card_written"] += len(out)
         return out
 
     def still_latest(self, r):
@@ -176,7 +212,7 @@ class NowEngine:
         return held is not None and CJ.parse_ts(r["kibl_inserted_on"]) == held
 
     def heartbeat(self, now, connected, extra=None):
-        body = {"connected": bool(connected), "write_ok": self.write_ok, "cards": len(self.cards),
+        body = {"connected": bool(connected), "write_ok": self.write_ok and self.card_ok, "cards": len(self.cards),
                 "matched": len(self.by_fixture), "ambiguous": len(self.ambiguous),
                 "closed": len(self.closed), "counts": dict(self.count)}
         body.update(extra or {})
@@ -292,6 +328,29 @@ def flush(env, writes, log, enabled, eng=None):
     return failed
 
 
+def flush_cards(env, rows, log, enabled, eng):
+    """Upsert the due card rows. A failed row is re-marked due in 10 s; the retry
+    is rebuilt from the engine's latest sides, so it can never write an older
+    price over a newer one."""
+    if not rows:
+        return
+    if not enabled:
+        for r in rows:
+            log(f"DRY card {r['card_key']} {r['a_side']} {r['a_price']} / {r['b_side']} {r['b_price']}")
+        return
+    st, body = C.sb_request(env, "POST", f"/rest/v1/{TABLE_CARD}?on_conflict=card_key",
+                            rows, prefer="resolution=merge-duplicates,return=minimal")
+    if st not in (200, 201, 204):
+        log(f"::warning::card upsert HTTP {st}: {body[:200]}")
+        due = time.monotonic() + 10
+        for r in rows:
+            eng.dirty.setdefault(r["card_key"], due)
+        eng.count["card_write_failed"] += len(rows)
+        eng.card_ok = False
+        return
+    eng.card_ok = True
+
+
 def write_hb(env, row, log, enabled):
     if not enabled:
         log("heartbeat " + json.dumps(row["note"]))
@@ -308,6 +367,7 @@ def prune(env, log, enabled):
         return
     cutoff = urllib.parse.quote(iso(datetime.now(timezone.utc) - PRUNE_AFTER))
     C.sb_request(env, "DELETE", f"/rest/v1/{TABLE_NOW}?kind=eq.price&written_at=lt.{cutoff}")
+    C.sb_request(env, "DELETE", f"/rest/v1/{TABLE_CARD}?written_at=lt.{cutoff}")
 
 
 def broker_rtt_ms(host, port, n=5):
@@ -445,6 +505,7 @@ def main(env=None, log=print):
                     first = False
                     try:
                         retry += flush(env, seed(kc, eng, log), log, enabled, eng)
+                        flush_cards(env, eng.card_rows(time.monotonic(), force=True), log, enabled, eng)
                     except Exception as e:  # noqa: BLE001
                         log(f"::warning::seed failed — cards stay on the poller: "
                             f"{C.redact(e, secrets)[:160]}")
@@ -464,6 +525,11 @@ def main(env=None, log=print):
                     # Ack everything, tennis or not: an unacked message counts
                     # against the vendor's backlog cap.
                     channel.basic_ack(method.delivery_tag)
+                # Card rows whose coalescing window has closed. The loop turns at
+                # least once a second (inactivity_timeout), so a row waits
+                # COALESCE_S to ~COALESCE_S + 1 s.
+                if eng.dirty:
+                    flush_cards(env, eng.card_rows(time.monotonic()), log, enabled, eng)
                 t = time.time()
                 if retry and t - last_retry >= 10:
                     # Only rows still the newest for their side; a newer price

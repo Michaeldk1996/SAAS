@@ -72,7 +72,12 @@ SBOBET, Marathon and BetVictor rank **below every unlisted book** — SBOBET car
   - **Pre-match only:** `betting_type_id` 1, `is_live` false, market 1, segment 1. In-play rows and 0.000 suspension markers never become a Now or a history point.
   - **Closing point:** the worker stops a card when our board marks it live or finished — not at its scheduled time.
   - **One book still:** the stream replaces a card's Now only when the card's SELECTED book is the stream's book, and only when its Kibl time is newer than the poller's. It passes the same suspended-pair test as every other Now. Test: a bet365-selected card never shows a Bet105 stream Now.
-  - **Browser access:** the page reads `kibl_now_price` only, with the publishable key, SELECT-only; `kibl_now_history` is not readable from the browser. Verify with `ten270-stream-now.yml` action `verify`.
+  - **Browser access:** the page reads `kibl_now_card` (prices) and the heartbeat row of `kibl_now_price`, with the publishable key, SELECT-only; `kibl_now_history` is not readable from the browser. Verify with `ten270-stream-now.yml` action `verify`.
+  - **Realtime cost (founder 2026-09-24T08:58Z).** Tests, each in `test-ten270-now-stream.mjs` / `kibl-stream/test-now-worker.py`:
+    - **One message per change:** only `kibl_now_card` (one row per card, both sides, each side with its own Kibl time) is in the `supabase_realtime` publication; `kibl_now_price` is not. The worker holds a card row `COALESCE_S` (1.5 s) after the first side moves so both sides ride in one row.
+    - **Hidden tab = no subscription:** on `visibilitychange` to hidden the channel is left, the socket closed and the backstop stopped; back to visible, the table is re-read and the channel re-joined.
+    - **"● live" means this page is receiving:** fresh heartbeat, broker connected, writes landing, tab visible AND the Realtime join acknowledged. A paused, refused or unjoined page shows the price with its real time, never "● live".
+    - **Scope = rendered pre-match cards:** the filter is `card_key=in.(…)` over the cards in `#matchlist` (≤100 keys per binding). No rendered pre-match card → no socket.
 
 ---
 

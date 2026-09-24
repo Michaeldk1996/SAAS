@@ -137,6 +137,43 @@ ok(W.decode_b64_env(envy) == [] and W.decode_b64_env.failed == ["KIBL_USERNAME"]
    "an undecodable value is reported by NAME, and an unrelated FOO_B64 never overwrites FOO")
 ok(W.broker_rtt_ms("127.0.0.1", "not-a-port", 1) is None, "a bad port is a dash, not a crash")
 
+print("\n4d · one card row per change (08:58Z brief, item 3)")
+e4 = eng()
+e4.accept(row(1, 101, 1.20, "2026-09-24T03:00:00Z"), "r")
+e4.accept(row(1, 102, 4.80, "2026-09-24T03:00:00Z"), "r")
+t0 = W.time.monotonic()
+ok(e4.card_rows(t0) == [], "a card row waits out its coalescing window")
+cr = e4.card_rows(t0 + W.COALESCE_S + 0.01)
+ok(len(cr) == 1 and {cr[0]["a_side"]: cr[0]["a_price"], cr[0]["b_side"]: cr[0]["b_price"]}
+   == {"borges": 1.20, "carabelli": 4.80} and cr[0]["card_key"] == "2026-09-24|borges|carabelli",
+   f"BOTH sides that moved together go out as ONE row (got {cr})")
+ok(e4.card_rows(t0 + 99) == [], "and once only")
+e4.accept(row(1, 101, 1.18, "2026-09-24T03:05:00Z", market_id=21), "r")
+cr = e4.card_rows(t0 + 99)
+ok(len(cr) == 1 and cr[0]["a_price"] == 1.18 and cr[0]["b_price"] == 4.80
+   and cr[0]["a_at"] == "2026-09-24T03:05:00Z" and cr[0]["b_at"] == "2026-09-24T03:00:00Z",
+   "a one-side move is one row carrying the unchanged side with ITS OWN Kibl time")
+e4.accept(row(1, 101, 1.30, "2026-09-24T02:00:00Z", market_id=22), "r", source="seed")
+ok(e4.card_rows(t0 + 999) == [], "an OLDER row (history only) sends no card message")
+e5 = eng()
+e5.accept(row(2, 201, 1.50, "2026-09-24T03:00:00Z"), "r")
+ok(e5.card_rows(W.time.monotonic() + 99, force=True) == [],
+   "one side known: no card row (never half a pair), still pending")
+e5.accept(row(2, 202, 2.60, "2026-09-24T03:00:00Z"), "r")
+ok(len(e5.card_rows(W.time.monotonic(), force=True)) == 1, "force (the seed) sends at once")
+e5.accept(row(2, 201, 1.45, "2026-09-24T03:10:00Z", market_id=23), "r")
+due = e5.card_rows(W.time.monotonic() + 99)
+C_real = W.C.sb_request
+W.C.sb_request = lambda *a, **k: (503, "down")
+W.flush_cards({"SUPABASE_URL": "x", "SUPABASE_SECRET_KEY": "y"}, due, lambda *_: None, True, e5)
+ok("2026-09-24|machac|rublev" in e5.dirty and e5.heartbeat(NOW, True)["note"]["write_ok"] is False,
+   "a failed card write is re-marked due and the heartbeat says writes are not landing")
+W.C.sb_request = lambda *a, **k: (201, "")
+W.flush_cards({"SUPABASE_URL": "x", "SUPABASE_SECRET_KEY": "y"},
+              e5.card_rows(W.time.monotonic() + 99), lambda *_: None, True, e5)
+W.C.sb_request = C_real
+ok(e5.dirty == {} and e5.card_ok is True, "the retry lands and write_ok recovers")
+
 print("\n5 · heartbeat")
 hb = e.heartbeat(NOW, True)
 ok(hb["kind"] == "heartbeat" and hb["price"] is None and hb["card_key"] == "__stream__",
