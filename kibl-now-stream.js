@@ -43,7 +43,9 @@
 
   function ms(v) { const t = v ? Date.parse(v) : NaN; return isFinite(t) ? t : null; }
   function healthy() {
-    if (!hb || !hb.note || hb.note.connected !== true) return false;
+    // Broker connected AND writes landing — a worker that is connected but
+    // failing its writes is holding prices the table does not have.
+    if (!hb || !hb.note || hb.note.connected !== true || hb.note.write_ok === false) return false;
     const t = ms(hb.written_at);
     return t != null && Date.now() - t < HB_STALE_MS;
   }
