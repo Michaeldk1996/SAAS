@@ -865,6 +865,8 @@
   [data-page="matches"] .match-card.cmpl .mc-sigpanel{ margin:0; }
 
   /* footer — one row: Market Signal disclosure (left) · See full analysis (right) */
+  [data-page="matches"] .mc-nowsrc{ padding:0 16px 9px; font-family:var(--mx-font-mono); font-size:10.5px; color:var(--mc-muted); }
+  [data-page="matches"] .mc-nowlive{ color:var(--mc-pos); margin-right:6px; }
   [data-page="matches"] .mc-foot{ margin-top:0; padding:10px 16px; border-top:1px solid rgba(255,255,255,0.05); display:flex; align-items:center; justify-content:space-between; gap:10px; }
   [data-page="matches"] .mc-msig{ display:inline-flex; align-items:center; gap:6px; background:none; border:0; padding:0; cursor:pointer; font-family:var(--mx-font-ui); font-size:12px; font-weight:700; letter-spacing:0.02em; color:var(--mc-muted); }
   [data-page="matches"] .mc-msig .chev{ font-size:10px; color:var(--mc-muted-2); display:inline-block; transition:transform 120ms ease; }
@@ -7705,6 +7707,29 @@ function mcPriceTitle(pair, px){
   const one = first + ' · seen ' + seenClock;
   return (one.length <= MC_TITLE_1LINE_MAX ? one : first + '\nseen ' + seenClock) + tail;
 }
+// TEN-270 item 6 (founder 2026-09-24): "Each card shows which book the Now came
+// from … and when it last updated." This SUPERSEDES ruling N (2026-09-18, no
+// book label on the card face) for this one line. The time is the price's own
+// clock — Kibl's insert time for Kibl, the book's for the rest — never the time
+// we looked. "live" appears only for a stream price while the stream is healthy;
+// with no clock the line says so rather than borrowing one.
+const MC_BOOK_NAMES = { bet105: 'Bet105', sports411: 'Sports411' };
+function mcAgoTxt(t){
+  const s = Math.max(0, Math.round((Date.now() - t) / 1000));
+  if (s < 60) return 'just now';
+  if (s < 3600) return Math.round(s / 60) + 'm ago';
+  if (s < 86400) return Math.round(s / 3600) + 'h ago';
+  return Math.round(s / 86400) + 'd ago';
+}
+function mcNowSrcHtml(pair){
+  if (!pair || !pair.book) return '';
+  const key = String(pair.book).toLowerCase();
+  const name = pair.bookName || MC_BOOK_NAMES[key] || mxBookLabel(pair.book);
+  const t = Date.parse(pair.at || '');
+  const when = isFinite(t) ? `updated ${ocsFmtClock(pair.at)} · ${mcAgoTxt(t)}` : 'update time —';
+  const live = (pair.src === 'stream' && pair.live) ? '<span class="mc-nowlive">● live</span>' : '';
+  return `<div class="mc-nowsrc">${live}${psEsc(name)} · ${when}</div>`;
+}
 function mcTitleAttr(txt){
   return txt ? ` title="${String(txt).replace(/"/g, '&quot;')}"` : '';
 }
@@ -8057,9 +8082,27 @@ function _mcAnyBookPair(m){
 // values together on the next publish and this renderer follows without a
 // second opinion. Reaching past a selected book for a better price here would
 // be the cross-book blend both rulings forbid, wearing the shape of a fix.
+// TEN-270 (founder 2026-09-24T01:21Z): the Kibl STREAM may replace the card's
+// Now — but only inside the whole-card rule. It is consulted ONLY when the
+// card's SELECTED book is the stream's book (so Open, Now and Close stay one
+// book), and it wins only when its price is NEWER by Kibl's own clock than the
+// poller's Now. A stream price is never older-but-shown, and never another
+// book's. `live` is true only while the worker's heartbeat is fresh.
+function _streamNowOver(m, o){
+  const K = window.KiblNow;
+  if (!K || !K.enabled || !o || !o.book) return null;
+  const sp = K.pairFor(m, o.book);
+  if (!sp) return null;
+  const pollAt = Date.parse(o.p1.nowTs || o.p2.nowTs || '');
+  const strAt = Date.parse(sp.at || '');
+  if (o.p1.now != null && o.p2.now != null && isFinite(pollAt) && !(strAt > pollAt)) return null;
+  return sp;
+}
 function _mcNowPair(m){
   const o = _ocsOf(m);
   if (o){
+    const sp = _streamNowOver(m, o);
+    if (sp) return sp;
     if (o.p1.now != null && o.p2.now != null)
       // `nowObs` is OUR observation clock, published alongside `nowTs` since the
       // 2026-09-18 source fix (see ten225-kibl-card-state.py). It is absent on
@@ -8128,6 +8171,8 @@ function _mcNowOf(m, who){
   // accepted, and the founder has already accepted it once on this exact leg.
   const o = _ocsOf(m);
   if (o){
+    const sp = _streamNowOver(m, o);
+    if (sp) return sp[who];
     const v = o[who].now;
     if (v != null) return v;
     if (String(o.book || '').toLowerCase() !== 'bet365') return null;
@@ -10221,6 +10266,7 @@ function renderMatches(){
       ${headHtml}
       ${isCompleted ? '' : scoreLineHtml}
       ${playersHtml}
+      ${(isCompleted || m.live || isPastDay) ? '' : mcNowSrcHtml(nowPair)}
       <div class="mc-foot">
         <button class="mc-msig mx-msigchip" data-msig="${eventKeyOfMatch(m)}" onclick="toggleSig(this)">Market Signal${isCompleted ? ' · final' : ''} <span class="chev">⌄</span></button>
         <a class="mc-analysis" onclick="openAnalysisModal('${m.id}')">See full analysis →</a>
@@ -31353,6 +31399,10 @@ window.DatabaseTab = (function(){
   window.FEATURE_PP2 = (typeof pp2FlagOn === 'function') ? pp2FlagOn() : false;
 </script>
 <script src="live-tab.js" defer></script>
+<!-- TEN-270: Kibl stream -> live "Now". Reads kibl_now_price with the publishable
+     key (SELECT-only); window.KiblNow is consulted by _mcNowPair. Absent or dark
+     (no creds, no table) = every card stays on the poller, exactly as before. -->
+<script src="kibl-now-stream.js" defer></script>
 <!-- TEN-206 ruling 7: the single hold/break heatmap engine, shared by the Live
      tab's DataEdge panel and the Player Profile's Playing-profile modal.
      Deliberately NOT deferred: the Live-tab renderer below is an inline IIFE

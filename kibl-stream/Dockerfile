@@ -1,5 +1,7 @@
-# TEN-253 A — NOT DEPLOYED. `fly deploy` has never been run from here, and the
-# standing instruction is that launch waits for the founder's go.
+# TEN-270 (founder 2026-09-24T01:21Z, build authorised): this image now runs the
+# Kibl stream -> live "Now" worker, now_worker.py. Deployed by
+# .github/workflows/ten270-stream-now.yml (action deploy-worker) once a Fly
+# token exists; it was never deployed before.
 #
 # Python, not Node (founder ruling 2026-09-23). The Node image pinned its major
 # because `py_str.mjs` needed JSON.parse source-text access and the worker would
@@ -27,11 +29,14 @@ RUN pip install --no-cache-dir 'pika==1.3.2'
 # image without them is an image that cannot key a row. If this COPY is ever
 # trimmed to "just the worker", the worker stops starting. That is the correct
 # failure, and the wrong fix is to copy the functions in beside it.
-COPY archive-kibl.py kibl_client.py ./
-COPY kibl-stream/sweep_bridge.py kibl-stream/consumer.py ./kibl-stream/
+# ten225_names.py too: archive-kibl.py imports it at module level, so the
+# TEN-253 image (which omitted it) could not have started at all.
+COPY archive-kibl.py kibl_client.py ten225_names.py ./
+COPY kibl-stream/sweep_bridge.py kibl-stream/consumer.py kibl-stream/card_join.py \
+     kibl-stream/now_worker.py ./kibl-stream/
 
 # No healthcheck here on purpose. Liveness for this worker is NOT "is the
 # process up" — a process can be up with a dead channel, which is the failure
 # the founder named. The real check reads kibl_stream_heartbeat; a container
 # healthcheck that passes on a silent worker would actively mislead.
-CMD ["python3", "kibl-stream/consumer.py"]
+CMD ["python3", "kibl-stream/now_worker.py"]
