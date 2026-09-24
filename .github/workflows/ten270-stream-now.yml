@@ -154,14 +154,17 @@ jobs:
             exit 1
           fi
           # Values go over STDIN, one NAME=value per line — never argv, never echoed.
+          # BASE64-ENCODED as NAME_B64: `secrets import` parses dotenv, which
+          # mangled a real password (quotes/#/$/\ are interpreted). The worker
+          # decodes NAME_B64 -> NAME at start-up (now_worker.decode_b64_env).
           python3 - <<'PY' | flyctl secrets import --app "$APP" --stage
-          import os
+          import base64, os
           for k in ("KIBL_RMQ_HOST","KIBL_RMQ_PORT","KIBL_RMQ_VHOST","KIBL_RMQ_USER","KIBL_RMQ_PASS",
                     "KIBL_RMQ_QUEUE","KIBL_USERNAME","KIBL_PASSWORD","SUPABASE_URL","SUPABASE_SECRET_KEY"):
               v = os.environ.get(k, "").strip()
               if not v:
                   raise SystemExit(f"missing secret {k}")
-              print(f"{k}={v}")
+              print(f"{k}_B64={base64.b64encode(v.encode()).decode()}")
           PY
           flyctl deploy --config kibl-stream/fly.toml --dockerfile kibl-stream/Dockerfile \
                         --remote-only --ha=false --yes .

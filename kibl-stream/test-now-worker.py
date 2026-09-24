@@ -126,6 +126,13 @@ W.C.sb_request = C_real
 ok(len(failed) == 2 and e3.write_ok is False and e3.heartbeat(NOW, True)["note"]["write_ok"] is False,
    "a failed write is returned for retry and the heartbeat says writes are not landing")
 
+print("\n4c · secrets survive transport")
+import base64
+nasty = 'p@ss"w#rd$%!\\ \'q=1'
+envx = {"KIBL_PASSWORD_B64": base64.b64encode(nasty.encode()).decode(), "KIBL_PASSWORD": "mangled", "OTHER": "x"}
+ok(W.decode_b64_env(envx) == ["KIBL_PASSWORD"] and envx["KIBL_PASSWORD"] == nasty,
+   "NAME_B64 decodes over a mangled NAME, byte for byte, with quotes/#/$/%/!/backslash/=")
+
 print("\n5 · heartbeat")
 hb = e.heartbeat(NOW, True)
 ok(hb["kind"] == "heartbeat" and hb["price"] is None and hb["card_key"] == "__stream__",

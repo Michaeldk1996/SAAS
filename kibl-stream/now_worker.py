@@ -325,8 +325,33 @@ def broker_rtt_ms(host, port, n=5):
     return round(out[len(out) // 2], 1) if out else None
 
 
+def decode_b64_env(env):
+    """`NAME_B64` -> `NAME` for every such key, in place; returns the names set.
+
+    ⚠️ WHY THIS EXISTS (TEN-270, 2026-09-24 07:40Z). The deploy piped the
+    credentials into `flyctl secrets import`, which parses DOTENV: quotes, `#`,
+    `$` and backslashes in a value are interpreted, not kept. Kibl's login then
+    answered "Incorrect username or password" from Fly while the poller, reading
+    the very same GitHub secrets, authenticated fine at 07:30Z. Base64 survives
+    any parser, so every secret now travels as NAME_B64 and is decoded here.
+    """
+    import base64
+    done = []
+    for k in [k for k in list(env) if k.endswith("_B64")]:
+        try:
+            env[k[:-4]] = base64.b64decode(env[k]).decode("utf-8")
+            done.append(k[:-4])
+        except (ValueError, UnicodeDecodeError):
+            pass
+    return done
+
+
 def main(env=None, log=print):
+    # kibl_client reads os.environ itself, so the decode must land THERE too.
+    decoded = decode_b64_env(os.environ)
     env = dict(os.environ) if env is None else dict(env)
+    if decoded:
+        log(f"decoded {len(decoded)} base64 secret(s)")
     conn, missing = C.read_conn_env(env)
     if missing:
         log(f"KIBL_RMQ_* not fully set (missing: {', '.join(missing)}) — nothing to connect to.")
