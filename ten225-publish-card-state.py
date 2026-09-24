@@ -97,7 +97,11 @@ def fetch_all(url, key, table, cols, extra=''):
             headers={'Authorization': f'Bearer {key}', 'apikey': key})
         try:
             with urllib.request.urlopen(req, timeout=300) as r:
-                rows = json.loads(r.read().decode('utf-8'))
+                body = r.read()
+                READ_STATS['gets'] += 1
+                READ_STATS['bytes'] += len(body)
+                READ_STATS[f'gets_{table}'] += 1
+                rows = json.loads(body.decode('utf-8'))
         except urllib.error.HTTPError as e:
             print(f'::error::{table} read failed ({e.code}): '
                   f'{e.read()[:300].decode("utf-8", "replace")}')
@@ -155,6 +159,59 @@ def _px(v):
 
 
 # -------------------------------------------------------------------- shaping
+# Egress (TEN-270, founder 2026-09-24T10:16Z): what this run pulled from
+# Supabase, printed in the report so before/after is measured, not estimated.
+READ_STATS = collections.Counter()
+ID_CHUNK = 150          # fixture ids per `in.(…)` GET — keeps the URL well under limits
+CARD_COLS = ('fixture_id,id_space,book,market,side,line,match_key,book_rank,'
+             'is_selected,ts_kind,open_price,open_ts,open_limit,open_observed_at,'
+             'now_price,now_ts,now_observed_at,'
+             'close_price,close_ts,close_within_60,start_ts,start_ts_source,start_reject_reason,'
+             'source,label')
+
+
+def read_inputs(url, key, window, fetch=None):
+    """The three reads build() needs, filtered ON THE SERVER to what it can use.
+
+    WHY (TEN-270 egress, measured 2026-09-24): this job pages the WHOLE of
+    odds_card_state (34,737 rows, 35 GETs) and oddspapi_fixtures (~50 GETs)
+    every ~5 min, to publish ~1,230 matches — 28,928 of the 34,737 rows were
+    then discarded as outside the board window or unselected. build() keeps
+    only `is_selected` match-winner rows whose match_key date is inside the
+    board window, and looks fixtures up only for the rows it keeps, so the
+    same filters applied by PostgREST give build() the identical input rows
+    (pinned by test-ten225-publish-reads.py) at a fraction of the bytes.
+
+    An empty board (window None) reads everything, as before: a window
+    computed from no data would be a guess.
+    """
+    fetch = fetch or fetch_all
+    lo, hi = window
+    extra = f'&market=eq.{urllib.parse.quote(MARKET)}&is_selected=eq.true'
+    if lo and hi:
+        hi_next = (datetime.fromisoformat(hi) + timedelta(days=1)).date().isoformat()
+        # match_key is 'YYYY-MM-DD|a|b', so a text range on it is a date range.
+        extra += f'&match_key=gte.{lo}&match_key=lt.{hi_next}'
+    # A stable order: offset paging over a table the sweep may be writing needs one.
+    extra += '&order=match_key.asc,fixture_id.asc,book.asc,side.asc,line.asc'
+    rows = fetch(url, key, 'odds_card_state', CARD_COLS, extra=extra)
+
+    def by_ids(table, cols, space):
+        ids = sorted({str(r.get('fixture_id')) for r in rows
+                      if r.get('id_space') == space and r.get('fixture_id') is not None})
+        out = {}
+        for i in range(0, len(ids), ID_CHUNK):
+            chunk = ','.join(ids[i:i + ID_CHUNK])
+            for r in fetch(url, key, table, cols, extra=f'&fixture_id=in.({chunk})'):
+                out[str(r['fixture_id'])] = r
+        return out
+
+    oddspapi_fx = by_ids('oddspapi_fixtures',
+                         'fixture_id,player1,player2,category_name,tournament_name', 'oddspapi')
+    kibl_fx = by_ids('kibl_fixtures', 'fixture_id,player1_name,player2_name,league_id', 'kibl')
+    return rows, oddspapi_fx, kibl_fx
+
+
 def side_names(row, oddspapi_fx, kibl_fx, board_fx):
     """This row's fixture -> (player1_name, player2_name), or (None, None).
 
@@ -398,27 +455,13 @@ def main():
     args = ap.parse_args()
 
     url, key = creds()
-    rows = fetch_all(
-        url, key, 'odds_card_state',
-        'fixture_id,id_space,book,market,side,line,match_key,book_rank,'
-        'is_selected,ts_kind,open_price,open_ts,open_limit,open_observed_at,'
-        'now_price,now_ts,now_observed_at,'
-        'close_price,close_ts,close_within_60,start_ts,start_ts_source,start_reject_reason,'
-        'source,label',
-        extra=f'&market=eq.{urllib.parse.quote(MARKET)}')
-    oddspapi_fx = {str(r['fixture_id']): r for r in fetch_all(
-        url, key, 'oddspapi_fixtures',
-        'fixture_id,player1,player2,category_name,tournament_name')}
-    kibl_fx = {str(r['fixture_id']): r for r in fetch_all(
-        url, key, 'kibl_fixtures',
-        'fixture_id,player1_name,player2_name,league_id')}
-
     matches = []
     if os.path.exists(MATCHES):
         with open(MATCHES) as fh:
             matches = json.load(fh)
     board_fx = board_index(matches)
     window = board_window(matches)
+    rows, oddspapi_fx, kibl_fx = read_inputs(url, key, window)
 
     by_key, st = build(rows, oddspapi_fx, kibl_fx, board_fx, window)
     cov = board_coverage(matches, by_key)
@@ -438,7 +481,9 @@ def main():
 
     size = os.path.getsize(args.out)
     print(f'## TEN-225 Part 3 — published {os.path.basename(args.out)}')
-    print(f'rows read       {len(rows)}')
+    print(f'rows read       {len(rows)}  (server-filtered: selected, match winner, in window)')
+    print(f'supabase reads  {READ_STATS["gets"]} GETs, {READ_STATS["bytes"]:,} bytes  '
+          + ' '.join(f'{k[5:]}={v}' for k, v in sorted(READ_STATS.items()) if k.startswith('gets_')))
     print(f'window          {window[0]} .. {window[1]}  '
           f'(board span +/- {WINDOW_MARGIN_DAYS}d)')
     print(f'matches written {len(by_key)}   ({size:,} bytes)')
