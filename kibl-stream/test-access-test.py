@@ -326,6 +326,33 @@ CJ.WINDOW = _w
 ok(CJ.card_key(CARDS[0]) == "2026-09-24|borges|carabelli",
    "card_key is the page's ocsKeyOf shape (card date + sorted surname keys)")
 
+print("\n9 · name ruling 2026-09-24: extra given names never block; compound surnames match whole")
+S = CJ.same_player
+ok(S("D. Vallejo", "Adolfo Daniel Vallejo"),
+   "Kibl's extra given name does not block: 'D. Vallejo' = 'Adolfo Daniel Vallejo' (failed under ruling D)")
+ok(S("J. M. Cerundolo", "Juan Manuel Cerundolo") and S("C. Ugo Carabelli", "Camilo Ugo Carabelli"),
+   "multi-initial boards and compound surnames still match their own player")
+ok(not S("C. Ugo Carabelli", "Carlos Carabelli") and not S("C. Ugo Carabelli", "Camilo Carabelli"),
+   "COMPOUND: 'C. Ugo Carabelli' never matches a plain Carabelli — the full surname must match")
+ok(not S("P. Carreno Busta", "Pedro Busta") and not S("P. Carreno Busta", "Pablo Busta"),
+   "COMPOUND: 'P. Carreno Busta' never matches a plain Busta")
+ok(S("P. Carreno Busta", "Pablo Carreño Busta") and S("F. Auger-Aliassime", "Felix Auger Aliassime"),
+   "accents and hyphens fold the same way on both sides")
+ok(not S("A. Smith", "Bob Smith") and not S("D. Vallejo", "Adolfo Vallejo"),
+   "an initial that matches NO given name still blocks (A vs Bob; D vs Adolfo alone)")
+cards9 = [{"date": "2026-09-24", "time": "13:00", "p1": "J. Cui", "p2": "D. Vallejo", "tourBadge": "ATP"},
+          {"date": "2026-09-24", "time": "13:00", "p1": "C. Ugo Carabelli", "p2": "F. Cina", "tourBadge": "ATP"}]
+fx9 = {21: {"name": "Jie Cui vs Adolfo Daniel Vallejo", "scheduled_start": "2026-09-24T09:00:00Z"},
+       22: {"name": "Carlos Carabelli vs Federico Cina", "scheduled_start": "2026-09-24T11:00:00Z"}}
+res9 = CJ.pick(cards9, fx9)
+ok(set(res9["by_fixture"]) == {21}, f"Cui–Vallejo joins; a plain 'Carabelli' fixture never joins the Ugo Carabelli card (got {sorted(res9['by_fixture'])})")
+sm = CJ.side_map(cards9[0], fx9[21]["name"], [7002, 7001])
+ok(sm == {7001: ("p1", "cui"), 7002: ("p2", "vallejo")},
+   f"and both Vallejo sides PLACE, keyed by the card's surname (got {sm})")
+fx9b = {**fx9, 23: {"name": "Jie Cui vs Daniel Vallejo", "scheduled_start": "2026-09-24T10:00:00Z"}}
+ok(not CJ.pick(cards9, fx9b)["by_fixture"].get(21) and CJ.pick(cards9, fx9b)["ambiguous"],
+   "exactly-one-candidate still holds: two Cui–Vallejo fixtures -> neither, logged")
+
 print(f"\nPASS {PASS}   FAIL {FAIL}")
 if FAIL:
     print("failed: " + ", ".join(_F))

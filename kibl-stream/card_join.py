@@ -51,7 +51,7 @@ import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 from ten225_names import (  # noqa: E402
-    initials_conflict, match_key, name_key, split_kibl_fixture_name,
+    match_key, name_key, nfd, split_kibl_fixture_name,
 )
 
 CARD_TZ = timezone(timedelta(hours=2))      # api-tennis event_time is UTC+2
@@ -114,18 +114,59 @@ def real_price(r):
     return p if p >= MIN_REAL_PRICE else None
 
 
-def _names_match(card, kp1, kp2):
-    """Both players, either order, surname keys equal and no initials conflict."""
-    c1, c2 = card.get("p1"), card.get("p2")
-    ck = (name_key(c1), name_key(c2))
-    kk = (name_key(kp1), name_key(kp2))
-    if None in ck or None in kk or ck[0] == ck[1]:
+def _board_parts(name):
+    """Our card's name -> (initials, surname tokens), accent-folded, lower-case.
+
+    'C. Ugo Carabelli' -> (['c'], ['ugo', 'carabelli'])
+    'J. M. Cerundolo'  -> (['j', 'm'], ['cerundolo'])
+    'Van de Zandschulp, Botic' -> (['b'], ['van', 'de', 'zandschulp'])
+    Leading one-letter tokens are initials; everything after them is surname.
+    """
+    raw = name or ""
+    if "," in raw:
+        sur, giv = raw.split(",", 1)
+        return [t[0] for t in nfd(giv).split()], nfd(sur).split()
+    toks = nfd(raw).split()
+    i = 0
+    while i < len(toks) - 1 and len(toks[i]) == 1:
+        i += 1
+    return [t[0] for t in toks[:i]], toks[i:]
+
+
+def same_player(board, kibl):
+    """NAME RULING, founder 2026-09-24T08:24Z: "extra given names on either side
+    must not block a match." As a test someone can apply:
+
+      * the board's FULL surname (every token after its initials) is the tail of
+        Kibl's name — so compound surnames match whole: 'C. Ugo Carabelli' never
+        matches 'Carlos Carabelli', 'P. Carreno Busta' never matches 'Pedro Busta';
+      * and the board's first initial matches ANY of Kibl's given names —
+        'D. Vallejo' matches 'Adolfo Daniel Vallejo' (the case that was missed);
+      * a side with no initial, or a Kibl name with no given name, is not a
+        conflict (unchanged from ruling D: one-sided absence never blocks).
+
+    Supersedes, FOR THE STREAM JOIN, ruling D's "given-name initials conflict =
+    drop" (which compared only Kibl's first given name). Exactly-one-candidate,
+    ambiguity and ±24 h are unchanged and live in pick().
+    """
+    ini, sur = _board_parts(board)
+    k = nfd(kibl or "").split()
+    if not sur or len(k) < len(sur) or k[-len(sur):] != sur:
         return False
-    for a, b in (((c1, kp1), (c2, kp2)), ((c1, kp2), (c2, kp1))):
-        if (name_key(a[0]) == name_key(a[1]) and name_key(b[0]) == name_key(b[1])
-                and not initials_conflict(*a) and not initials_conflict(*b)):
-            return True
-    return False
+    givens = k[:-len(sur)]
+    if not ini or not givens:
+        return True
+    return ini[0] in {g[0] for g in givens}
+
+
+def _names_match(card, kp1, kp2):
+    """Both players, either order, under same_player()."""
+    c1, c2 = card.get("p1"), card.get("p2")
+    s1, s2 = _board_parts(c1)[1], _board_parts(c2)[1]
+    if not s1 or not s2 or s1 == s2 or not (kp1 and kp2):
+        return False
+    return ((same_player(c1, kp1) and same_player(c2, kp2))
+            or (same_player(c1, kp2) and same_player(c2, kp1)))
 
 
 def pre_match_cards(cards, now=None):
@@ -205,12 +246,13 @@ def side_map(card, fixture_name, fpids):
     if len(fp) != 2 or not (p1 and p2):
         return {}
     out = {}
+    # Placed by the same rule that joined the fixture (same_player), keyed by
+    # the CARD's surname key — the key the page looks the side up by.
     for f, nm in zip(fp, (p1, p2)):
-        nk = name_key(nm)
-        if nk and nk == name_key(card.get("p1")) and not initials_conflict(nm, card.get("p1")):
-            out[f] = ("p1", nk)
-        elif nk and nk == name_key(card.get("p2")) and not initials_conflict(nm, card.get("p2")):
-            out[f] = ("p2", nk)
+        if same_player(card.get("p1"), nm) and name_key(card.get("p1")):
+            out[f] = ("p1", name_key(card.get("p1")))
+        elif same_player(card.get("p2"), nm) and name_key(card.get("p2")):
+            out[f] = ("p2", name_key(card.get("p2")))
     return out if len(out) == 2 and len({v[0] for v in out.values()}) == 2 else {}
 
 
