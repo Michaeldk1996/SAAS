@@ -186,18 +186,22 @@ jobs:
                   cross join unnest(resp.headers) rh
                   group by route, method, ua order by bytes desc limit 40""")
               end = dt.datetime.now(dt.timezone.utc).replace(minute=0, second=0, microsecond=0)
-              for d in range(7):
-                  hi, lo = end - dt.timedelta(days=d), end - dt.timedelta(days=d + 1)
+              for d in range(14):
+                  hi, lo = end - dt.timedelta(hours=12 * d), end - dt.timedelta(hours=12 * (d + 1))
                   qs = urllib.parse.urlencode({"sql": q, "iso_timestamp_start": lo.isoformat(),
                                                "iso_timestamp_end": hi.isoformat()})
                   st, r = call(f"{base}/logs.all?{qs}", bearer=tok)
                   print(f"=== edge_logs {lo.isoformat()} .. {hi.isoformat()} -> HTTP {st}")
+                  if st != 200:
+                      print("body:", r[:800])
+                      continue
                   try:
-                      for row in json.loads(r).get("result") or []:
+                      body = json.loads(r)
+                      for row in body.get("result") or []:
                           print(json.dumps(row))
-                      if json.loads(r).get("error"): print("error:", str(json.loads(r)["error"])[:400])
+                      if body.get("error"): print("error:", str(body["error"])[:800])
                   except ValueError:
-                      print(r[:400])
+                      print(r[:800])
               for ep in ("usage.api-counts?interval=7day", "usage.api-requests-count"):
                   st, r = call(f"{base}/{ep}", bearer=tok)
                   print(f"=== {ep} -> HTTP {st} {r[:3000]}")
