@@ -222,7 +222,12 @@ jobs:
                       where r.method = 'GET' and starts_with(r.path, '/rest/v1/')
                       group by path, qs, ua order by n desc limit 400""")
                   qs = urllib.parse.urlencode({"sql": q2, "iso_timestamp_start": z(lo), "iso_timestamp_end": z(hi)})
-                  st, r = call(f"{base}/logs.all?{qs}", bearer=tok)
+                  import time as _t
+                  for wait in (0, 45, 90, 120):          # the logs API throttles (429) after the window queries
+                      _t.sleep(wait)
+                      st, r = call(f"{base}/logs.all?{qs}", bearer=tok)
+                      if st != 429:
+                          break
                   body = json.loads(r) if st == 200 else {}
                   if st == 200 and not body.get("error"):
                       rows2, used = body.get("result") or [], field
