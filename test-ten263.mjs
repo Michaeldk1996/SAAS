@@ -71,7 +71,7 @@ function sandbox() {
       fhSrcTitle, fhAllMeetingRows, fhLevelOf, fhH2hScopeNote, fhH2hGapNote, fhEligible, fhFormDataRows,
       fhEloAt, fhEloKey, fhEloKeyOwners, fhEloBadge, fhPriceRangeSource, fhRecLevelMix, fhH2hEloSpan,
       fhStatBarWidth, fhSheetModel, fhSheetStatsHtml, fhSheetRowHtml, fhRateCell, fhSheetTabs, fhSheetSeg, fhSheetInlineStats,
-      FH_BAR_FLOOR, FH_RATING_SCALE,
+      FH_BAR_FLOOR, FH_RATING_SCALE, FH_BAR_CAP,
       consts: { FH_HOT_MIN_ELIGIBLE, FH_PRICE_AVG_MARGIN_REMOVED, FH_H2H_SET1_MIRROR, FH_H2H_RET_COUNTS,
         FH_ELO_AT_TIME, FH_BOOK_ORDER, FH_SURF, FH_H2H_LEVELS } };
   `)();
@@ -252,7 +252,7 @@ test('Form pixel pass: mirrored priced count, pill tooltip only with a figure, o
   assert.ok(/class="fh-dsub"[^>]*>10 of 10 priced</.test(h), 'the fully priced side mirrors its count when the other side is partial');
   assert.ok(/class="fh-dsub"[^>]*>8 of 10 priced</.test(h));
   assert.equal((h.match(/ title="v market on /g) || []).length, 2, 'pill tooltip names the book mix when the figure shows');
-  assert.ok(h.includes('<div class="fh-fwrap" style="line-height:normal;">'), 'design line-height (rows 51px, filter bar 34px)');
+  assert.ok(h.includes('<div class="fh-fwrap">') && /#aSectionForm, #aSectionH2H, #fhSheet\{ line-height:normal; \}/.test(sliceBlock()), 'design line-height, set once for the tab (rows 51px, filter bar 34px)');
   const thin = S.fhBuildForm(Object.assign({}, m, { id: 'upcoming-8', p2RecentFormMatches: rows.slice(0, 2), _fhCloses: [cl(10), cl(2)] }));
   assert.equal((thin.match(/ title="v market on /g) || []).length, 1, 'no pill tooltip on a thin side (its figure is a dash)');
   const r = S.fhRowFromForm({ opponent: 'C. Alcaraz', opponentKey: 1, date: '2026-03-15', tournament: 'US Open', round: 'ATP US Open - 1/64-finals', surface: 'hard', result: '2 - 3', won: false,
@@ -617,7 +617,8 @@ test('H2H pixel pass: header counts today\'s book, lead line carries the level m
   // Fixed dot columns: 4 meetings sit in 9-meeting columns, right-aligned; Form keeps stretched columns.
   assert.match(html, /const cols = opts\.fixedCols \? `repeat\(\$\{Math\.max\(1, rows\.length\)\},calc\(100% \/ \$\{Math\.max\(rows\.length, opts\.fixedCols\)\}\)\)`/);
   assert.match(html, /colHead: 'year', fixedCols: 9,/);
-  assert.equal((html.match(/<div class="fh-h2wrap" style="display:flex; flex-direction:column; gap:18px; line-height:normal;">/g) || []).length, 4, 'design line-height on every H2H state');
+  assert.equal((html.match(/<div class="fh-h2wrap" style="display:flex; flex-direction:column; gap:18px;">/g) || []).length, 4, 'every H2H state sits in the wrap');
+  assert.match(sliceBlock(), /#aSectionForm, #aSectionH2H, #fhSheet\{ line-height:normal; \}/, 'design line-height, set once, covers every H2H state');
 });
 test('H2H price header names the Bet365 fallback count; 0 priced reads the empty copy', () => {
   const mm = (date, p1Won, ek) => ({ date, tournament: 'Umag', round: 'ATP Umag - Final', surface: 'clay', p1Won, result: p1Won ? '2 - 0' : '0 - 2', qualifying: false, eventKey: ek });
@@ -983,13 +984,14 @@ test('elo retry: --append (the job\'s entry point) dates a live fetch by the fet
   execFileSync('node', [join(HERE, 'tools/build-elo-history.mjs'), '--append'], { cwd: dir });
   assert.equal(readFileSync(join(dir, 'elo-history.json'), 'utf8'), before, 'no new report: nothing written');
 });
-test('elo staleness check: warn above 8 days; red is off until Michael rules', async () => {
+test('elo staleness check (ruled 2026-09-24): warn at 8 days, red at 15', async () => {
   const m = await import('./tools/build-elo-history.mjs');
-  assert.equal(m.ELO_STALE_WARN_DAYS, 8); assert.equal(m.ELO_STALE_RED_DAYS, null, 'red not ruled: off');
+  assert.equal(m.ELO_STALE_WARN_DAYS, 8); assert.equal(m.ELO_STALE_RED_DAYS, 15);
   const h = { snapshots: [{ asOf: '2026-09-21', ratings: { 'a|b': 1 } }] };
   assert.equal(m.eloStaleness('2026-09-28', h).level, 'ok', '7 days: ok');
   assert.equal(m.eloStaleness('2026-09-29', h).level, 'warn', 'warn at 8 days');
-  assert.equal(m.eloStaleness('2026-12-30', h).level, 'warn', 'never red while the red threshold is off');
+  assert.equal(m.eloStaleness('2026-10-05', h).level, 'warn', '14 days: still a warning');
+  assert.equal(m.eloStaleness('2026-10-06', h).level, 'red', '15 days: red');
   assert.equal(m.eloStaleness('2026-10-06', h, 8, 15).level, 'red', 'once a red threshold is set, reaching it is red');
 });
 test('elo.yml: daily cron, a gate that fetches on Monday or a retry day, commit only on a new report, staleness check every day', () => {
@@ -1038,18 +1040,21 @@ const SIDE = (o = {}) => Object.assign({
     'Points:Service Points Won': { won: 50, total: 76 }, 'Points:Return Points Won': { won: 27, total: 70 },
     'Points:Total Points Won': { won: 77, total: 146 }, 'Games:Service games won': { won: 10, total: 10 },
     'Games:Return games won': { won: 2, total: 10 }, 'Points:Net points won': { won: 9, total: 14 } } }, o);
-test('popup bars: 1 v 0 double faults does not fill the bar (value ÷ max(p1, p2, floor))', () => {
-  assert.equal(S.FH_BAR_FLOOR.df, 5);
-  assert.equal(S.fhStatBarWidth('count', 1, 0, S.FH_BAR_FLOOR.df), 20, '1 ÷ max(1, 0, 5)');
+test('popup bars (ruled 2026-09-24): 1 v 0 double faults stays short; a count above its floor stops at 90%; floors aces 30, df 15, winners 80, ue 80', () => {
+  assert.deepEqual([S.FH_BAR_FLOOR.aces, S.FH_BAR_FLOOR.df, S.FH_BAR_FLOOR.winners, S.FH_BAR_FLOOR.ue], [30, 15, 80, 80]);
+  assert.equal(S.FH_BAR_CAP, 90);
+  assert.ok(Math.abs(S.fhStatBarWidth('count', 1, 0, S.FH_BAR_FLOOR.df) - 6) < 1e-9, '1 ÷ max(1, 0, 15) of the 90% cap = 6%');
   assert.equal(S.fhStatBarWidth('count', 0, 1, S.FH_BAR_FLOOR.df), 0);
-  assert.equal(S.fhStatBarWidth('count', 12, 6, S.FH_BAR_FLOOR.aces), 100, 'above the floor the larger side fills');
-  assert.deepEqual([S.FH_BAR_FLOOR.aces, S.FH_BAR_FLOOR.winners, S.FH_BAR_FLOOR.ue], [10, 30, 30]);
+  assert.equal(S.fhStatBarWidth('count', 45, 20, S.FH_BAR_FLOOR.aces), 90, 'above its floor the larger count stops at 90%, never a full half');
+  assert.equal(S.fhStatBarWidth('count', 20, 45, S.FH_BAR_FLOOR.aces), 40, 'the other side keeps its true proportion of the 90%');
 });
 test('popup bars: 50% fills exactly half, whatever the opponent\'s value; ratings on a fixed scale', () => {
   for (const other of [0, 10, 50, 90, null]) assert.equal(S.fhStatBarWidth('pct', 50, other), 50);
   assert.equal(S.fhStatBarWidth('pct', 60.9, 61.9), 60.9);
-  assert.equal(S.fhStatBarWidth('rating', 200, 100, S.FH_RATING_SCALE.serve), 200 / S.FH_RATING_SCALE.serve * 100);
-  assert.equal(S.fhStatBarWidth('rating', 999, 0, 400), 100, 'capped at a full half');
+  assert.deepEqual([S.FH_RATING_SCALE.serve, S.FH_RATING_SCALE.return], [400, 350]);
+  assert.equal(S.fhStatBarWidth('rating', 200, 100, S.FH_RATING_SCALE.serve), 45, 'half the scale = half of the 90%');
+  assert.equal(S.fhStatBarWidth('rating', 999, 0, 400), 90, 'a rating never fills its half');
+  assert.equal(S.fhStatBarWidth('pct', 100, 0), 100, 'a genuine 100.0% (4/4) fills 100%: a rate is exact');
 });
 test('popup bars: a dash side draws no bar, and the other side keeps its own width', () => {
   assert.equal(S.fhStatBarWidth('pct', null, 50), null);
@@ -1079,7 +1084,7 @@ test('popup: Dominance ratio = RPW% ÷ (100 − SPW%), number only; ratings from
   const M2 = S.fhSheetModel({ own: noBp, opp: SIDE() });
   assert.equal(M2.sections[1].rows[0].a.txt, '—', 'no break-point chances → no return rating (0/0 is not 0%)');
   assert.match(M2.sections[1].rows[0].a.title, /break points converted/);
-  assert.ok(!/Pressure/i.test(S.fhSheetStatsHtml({ own: SIDE(), opp: SIDE() })), 'Pressure points: no source defines it, not built');
+  assert.match(S.fhSheetStatsHtml({ own: SIDE(), opp: SIDE() }), />Pressure points</, 'Pressure points, on Michael\'s definition (2026-09-24)');
   const bare = SIDE(); delete bare.raw['Games:Service games won']; bare['Games:Service games won'] = 100;
   const M3 = S.fhSheetModel({ own: bare, opp: SIDE() });
   assert.equal(M3.sections[0].rows[0].a.txt, '—', 'a rate sent without its count never feeds a rating');
@@ -1107,7 +1112,10 @@ test('popup layout: one control Match | Set n | Point by point, set tabs disable
   assert.ok(!/aform-panel-names/.test(html), 'no extra name row');
   assert.ok(/>Service</.test(html) && />Return</.test(html) && />Points won</.test(html));
   assert.match(html, /Dominance ratio/);
-  assert.match(readFileSync(join(HERE, 'bsp-consult-dashboard.html'), 'utf8'), /id="fhSheetBody"[^>]*line-height:normal;/, 'the sheet body uses the design line-height, not the page\'s 21px (row pitch 45px, as designed)');
+  const H = readFileSync(join(HERE, 'bsp-consult-dashboard.html'), 'utf8');
+  assert.match(H, /#aSectionForm, #aSectionH2H, #fhSheet\{ line-height:normal; \}/, 'the design line-height is set once for Form, H2H and the popup (row pitch 45px, as designed)');
+  assert.equal((H.match(/fh-(fwrap|h2wrap)"[^>]*line-height:normal/g) || []).length, 0, 'no per-tab copies left');
+  assert.ok(!/\.modal-analysis\{[^}]*line-height:normal/.test(H), 'not on the whole shell: that moves the nine other tabs');
 });
 test('popup data: an H2H meeting with no inline box score reads either board player\'s form row for the same eventKey, oriented to player A', () => {
   const src = slice('fhSheetInlineStats');
@@ -1116,4 +1124,67 @@ test('popup data: an H2H meeting with no inline box score reads either board pla
   const got = f({ aKey: 3, bKey: 7 }, { ek: 55 });
   assert.deepEqual([got.own.x, got.opp.x], ['A', 'B'], 'B\'s own row is flipped so own = player A');
   assert.equal(f({ aKey: 3, bKey: 7 }, { ek: 56 }), null);
+});
+
+test('popup Pressure points (Michael 2026-09-24): saved + converted ÷ all break points played; numerator and denominator = the two rows\' sums', () => {
+  const M = S.fhSheetModel({ own: SIDE(), opp: SIDE() });
+  const pr = M.sections[2].rows.find(r => r.label === 'Pressure points');
+  const bps = M.sections[0].rows.find(r => r.label === 'Break points saved'), bpc = M.sections[1].rows.find(r => r.label === 'Break points converted');
+  assert.equal(pr.a.won, bps.a.won + bpc.a.won); assert.equal(pr.a.total, bps.a.total + bpc.a.total);
+  assert.deepEqual([pr.a.txt, pr.a.sub, pr.a.title], [(6 / 7 * 100).toFixed(1) + '%', '(6/7)', 'Break points saved + converted ÷ all break points played']);
+  // No break point faced, one chance converted: the 0/0 side adds nothing to either count.
+  const x = SIDE({ 'Service:Break Points Saved': null }); delete x.raw['Service:Break Points Saved'];
+  const M2 = S.fhSheetModel({ own: x, opp: SIDE() }).sections[2].rows.find(r => r.label === 'Pressure points');
+  assert.deepEqual([M2.a.won, M2.a.total], [2, 3]);
+  // No break point played at all → a dash with its reason.
+  const z = SIDE({ 'Service:Break Points Saved': null, 'Return:Break Points Converted': null }); delete z.raw['Service:Break Points Saved']; delete z.raw['Return:Break Points Converted'];
+  const M3 = S.fhSheetModel({ own: z, opp: SIDE() }).sections[2].rows.find(r => r.label === 'Pressure points');
+  assert.deepEqual([M3.a.txt, M3.a.title], ['—', 'No break points played']);
+  // A break-point row the feed never sent → a dash, never a partial ratio.
+  const w = SIDE(); delete w['Service:Break Points Saved']; delete w.raw['Service:Break Points Saved'];
+  assert.equal(S.fhSheetModel({ own: w, opp: SIDE() }).sections[2].rows.find(r => r.label === 'Pressure points').a.txt, '—');
+});
+test('point-by-point follows the header (player A left), not the feed order: a reversed feed is flipped', () => {
+  const src = ['fhPbpFlip', 'fhPbpAIsFirst', 'fhPbpForA', 'pbpSplitSet', 'pbpParseScore'].map(slice).join('\n');
+  const f = new Function('fhSurname', src + '; return { fhPbpFlip, fhPbpAIsFirst, fhPbpForA };')(n => String(n).split(' ').pop());
+  // Feed order: Hurkacz first. Header: Shevchenko (A) v Hurkacz (B), sets from A's side 3-6 2-6.
+  const games = (a, b) => { const g = []; let x = 0, y = 0; while (x < a || y < b){ if (x < a){ x++; g.push({ server: 'p1', winner: 'p1', score: x + ' - ' + y, points: [{ s: '40 - 15' }] }); } if (y < b){ y++; g.push({ server: 'p2', winner: 'p2', score: x + ' - ' + y, points: [{ s: '15 - 40', bp: true }] }); } } return g; };
+  const feed = { p1: 'H. Hurkacz', p2: 'A. Shevchenko', sets: [{ set: 1, games: games(6, 3) }, { set: 2, games: games(6, 2) }] };
+  const S1 = { aKey: 566, aName: 'A. Shevchenko', bName: 'H. Hurkacz', setScores: [[3, 6], [2, 6]] };
+  assert.equal(f.fhPbpAIsFirst(feed, S1), false, 'set scores against the header: A is the feed\'s second player');
+  const o = f.fhPbpForA(feed, S1);
+  assert.deepEqual([o.p1, o.p2], ['A. Shevchenko', 'H. Hurkacz'], 'A on the left');
+  const g0 = o.sets[0].games[0];
+  assert.deepEqual([g0.server, g0.winner, g0.score, g0.points[0].s], ['p2', 'p2', '0 - 1', '15 - 40'], 'server, winner, game and point scores all swap');
+  assert.equal(f.fhPbpAIsFirst(feed, Object.assign({}, S1, { feedP1Key: '2841' })), false, 'player keys decide first when known');
+  assert.equal(f.fhPbpAIsFirst(feed, Object.assign({}, S1, { feedP1Key: '566' })), true);
+  assert.equal(f.fhPbpForA(feed, Object.assign({}, S1, { feedP1Key: '566' })), feed, 'already in order: untouched');
+  assert.equal(f.fhPbpAIsFirst(feed, { aName: 'X. Smith', bName: 'Y. Jones' }), null, 'undecidable: the feed order stands (its name row says who is where)');
+});
+test('the Match Stats tab shows the same Serve / Return rating as the popup (6-part house sum, one function)', () => {
+  const H = readFileSync(join(HERE, 'bsp-consult-dashboard.html'), 'utf8');
+  assert.match(slice('msheetDerived'), /msheetHouseRatings\(stats\.p1, stats\.p2\)/);
+  assert.match(slice('msheetHouseRatings'), /fhSheetModel\(\{ own: a, opp: b \}\)/);
+  assert.ok(!/msheetRatingSum\(stats/.test(slice('msheetDerived')), 'the 4-part sum is no longer used');
+  const mh = new Function('fhSheetModel', slice('msheetHouseRatings') + '; return msheetHouseRatings;')(S.fhSheetModel);
+  const want = Math.round(S.fhSheetModel({ own: SIDE(), opp: SIDE() }).sections[0].rows[0].a.v);
+  assert.equal(mh(SIDE(), SIDE()).serve[0], want);
+  const noBp = SIDE({ 'Return:Break Points Converted': null }); delete noBp.raw['Return:Break Points Converted'];
+  assert.equal(mh(noBp, SIDE()).ret[0], null, '0 break-point chances → no Return rating, same as the popup');
+});
+test('every match-detail panel draws the popup\'s bar rule (msBarHtml → fhStatBarWidth)', () => {
+  const src = slice('msBarHtml') + slice('msBarFloor') + slice('msBarScale');
+  const bar = new Function('fhStatBarWidth', 'FH_BAR_FLOOR', 'FH_RATING_SCALE', src + '; return msBarHtml;')(S.fhStatBarWidth, S.FH_BAR_FLOOR, S.FH_RATING_SCALE);
+  const w = h => [...h.matchAll(/msheet-fill (p[12])" style="width:([\d.]+)%/g)].map(m => m[1] + ':' + m[2]);
+  assert.deepEqual(w(bar(1, 0, 'count', 'Service:Double Faults')), ['p1:6.0', 'p2:0.0'], '1 v 0 double faults stays short');
+  assert.deepEqual(w(bar(50, null, 'pct', 'Service:Break Points Saved')), ['p1:50.0'], 'a dash side draws no bar; 50% fills half');
+  assert.deepEqual(w(bar(50, 90, 'pct')), ['p1:50.0', 'p2:90.0'], 'rates are absolute');
+  assert.deepEqual(w(bar(40, 12, 'count', 'Points:Winners')), ['p1:45.0', 'p2:13.5'], 'winners floor 80');
+  assert.deepEqual(w(bar(290, 350, 'rating', 'serve')), ['p1:65.3', 'p2:78.8'], 'serve scale 400, 90% cap');
+  for (const call of ['msBarHtml(ownVal, oppVal, kind, key || label)', 'msBarHtml(p1Val, p2Val, kind, key || label)'])
+    assert.ok(readFileSync(join(HERE, 'bsp-consult-dashboard.html'), 'utf8').includes(call), call);
+});
+test('price range: fewer than 3 priced meetings shows its count as a chip (n=2 like n=1)', () => {
+  assert.match(sliceBlock(), /const FH_PRICE_THIN = 3;/);
+  assert.match(sliceBlock(), /nP > 1 && nP < FH_PRICE_THIN \? `<span class="fh-nchip"[^`]*>n=\$\{nP\}<\/span>`/);
 });

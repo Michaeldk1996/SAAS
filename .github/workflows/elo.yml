@@ -83,8 +83,8 @@ jobs:
           echo "::error::Could not push elo-ratings.json after 3 attempts."
           exit 1
 
-      # Warn when the newest stored report is ELO_STALE_WARN_DAYS (8) or more days old. Red is off
-      # (ELO_STALE_RED_DAYS = null) until Michael rules the threshold. Runs every day.
+      # Warn when the newest stored report is ELO_STALE_WARN_DAYS (8) or more days old; red at
+      # ELO_STALE_RED_DAYS (15), ruled 2026-09-24. Runs every day.
       - name: Elo staleness check
         if: always()
         run: node tools/build-elo-history.mjs --check-stale

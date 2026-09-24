@@ -55,8 +55,8 @@ Applies to the TEN-263 block in `bsp-consult-dashboard.html` (`fh*` functions), 
   day we fetched it, never TA's label**; the label is stored beside it as `taLastUpdate`. A day with
   no new report appends and commits nothing. **Test:** an unchanged Monday report triggers a Tuesday
   retry; a new Tuesday report is stored with Tuesday's `asOf` and stops the retries.
-- **Staleness:** `ELO_STALE_WARN_DAYS = 8` (warns at 8 days old or more); `ELO_STALE_RED_DAYS = null` — red is off
-  until Michael rules the threshold.
+- **Staleness (ruled 2026-09-24):** `ELO_STALE_WARN_DAYS = 8` warns at 8 days old or more;
+  `ELO_STALE_RED_DAYS = 15` fails the job at 15. **Test:** 7 days ok, 8 warns, 15 red.
 - **Archived reports (ruling 2026-09-24):** Wayback captures before 2026-07-18 are in the history
   (`source: 'wayback'`, `captureUrl`, `captureTimestamp`, `taLastUpdate`, `players`). Their `asOf` is
   **the capture day, not TA's label** — a report is never used before it provably existed. Several
@@ -131,18 +131,30 @@ Applies to the TEN-263 block in `bsp-consult-dashboard.html` (`fh*` functions), 
   quiet, not red. **Test:** a stale board with 0 upcoming stays green; the same board with 1
   upcoming goes red.
 
-## Match stats popup (rulings 2026-09-24): `fhSheet*` in the TEN-263 block
+## Match stats popup and every match-detail panel (rulings 2026-09-24)
 - **One control** `Match | Set 1 | … | Point by point`, one set tab per set in the score. A set with no
   per-set stats is a **disabled** tab with the tooltip "No per-set stats for this match" — never hidden.
 - **Every rate shows its count and one decimal**, computed from that count (`60.9% (46/76)`). A real
   0 with opportunities is `0.0% (0/4)`; 0/0 is `—` with its reason; a stat the feed never sent is `—`.
-  Winners/unforced errors all 0 on both sides = not sent (`—`), never "0 | 0".
-- **Bars:** a rate fills its own value of that player's half; a count fills value ÷ max(p1, p2,
-  `FH_BAR_FLOOR`); a rating fills value ÷ `FH_RATING_SCALE`; a `—` side draws no bar and never moves
-  the other side. Dominance ratio (RPW% ÷ (100 − SPW%)) is a number only. **Floors and scales are
-  Michael's call** (defaults aces 10, DF 5, winners 30, UE 30; serve 400, return 350).
-  **Test:** 1 v 0 double faults does not fill; a `—` side draws no bar; 50% fills exactly half.
-- **Serve / Return rating:** ATP's leaderboard components, summed by the 2026-08-29 house rule; any
-  component missing or sent without its count → `—`; 0 break-point chances → no Return rating.
-- **"Pressure points" is not built**: no source defines it (open call). The other match-detail
-  panels still use `msBarHtml` (share of total): not ruled.
+  Winners/unforced errors all 0 on both sides = not sent (`—`): a display guard until the pipeline
+  stores `null` for an unsent count.
+- **Bars — one rule, on the popup and all eight other match-detail panels** (`msBarHtml` →
+  `fhStatBarWidth`): a rate fills its own value of that player's half (a genuine 100.0% fills 100%);
+  a count fills value ÷ max(p1, p2, floor) and a rating value ÷ its scale, both mapped onto
+  `FH_BAR_CAP = 90` so they **never fill their half** (the larger side stops at 90%, the other keeps
+  its proportion); a `—` side draws no bar and never moves the other side. Dominance ratio
+  (RPW% ÷ (100 − SPW%)) is a number only. Ruled constants: `FH_BAR_FLOOR = {aces 30, df 15,
+  winners 80, ue 80}`, `FH_RATING_SCALE = {serve 400, return 350}`. **Test:** 1 v 0 double faults
+  stays short; a count above its floor stops at 90%; 100.0% fills 100%; a `—` side draws no bar.
+- **Serve / Return rating — one rule across the product:** ATP's leaderboard components, summed by the
+  2026-08-29 house rule (TEN-103); the Match Stats tab reads the popup's function (`msheetHouseRatings`),
+  so the same match shows the same number. Any component missing or sent without its count → `—`;
+  0 break-point chances → no Return rating (also in `surface-ratings.js`).
+- **Pressure points (Michael's definition, as TEN-243):** break points saved + converted ÷ all break
+  points the player played, shown `58.3% (7/12)`; 0 played → `—`. **Test:** its numerator and
+  denominator are the sums of the Break points saved and converted rows.
+- **Point by point follows the header** (player A on the left): the feed's order is flipped when A is
+  the feed's second player (player keys, else set scores, else names). **Test:** a reversed feed flips.
+- **Line-height:** the design's `normal` is set once for `#aSectionForm, #aSectionH2H, #fhSheet` — not
+  on the whole modal shell, which (measured) moves every leaf of the nine other tabs.
+- **Price range:** a range from fewer than `FH_PRICE_THIN = 3` priced meetings shows an `n=k` chip.

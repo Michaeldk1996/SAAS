@@ -13093,29 +13093,43 @@ function formShortDate(d){
 }
 // THE one diverging stat bar, shared by every match-detail surface: the modal
 // Match Stats sheet (msheetRowHtml) and all seven form-panel mounts
-// (formPanelStatRow). Fixed centre, total-normalised — each half is exactly
-// half the track; Player A's fill = a/(a+b) of the LEFT half drawn from the
-// centre leftward (the half's justify-content:flex-end anchors it there),
-// Player B's = b/(a+b) of the RIGHT half from the centre rightward. So neither
-// side ever fills its half unless the other is 0. A missing/non-positive side
-// contributes nothing rather than distorting the split. Colour is the player's
-// identity (A #6aaeff / B #e7e9ee, in .msheet-fill.p1/.p2), never who leads.
+// (formPanelStatRow). Fixed centre; Player A's fill is drawn from the centre
+// leftward, Player B's rightward, each by the popup's bar rule (fhStatBarWidth,
+// see msBarHtml). Colour is the player's identity (A #6aaeff / B #e7e9ee, in
+// .msheet-fill.p1/.p2), never who leads. The popup draws the same widths.
 // ONE implementation on purpose: do not inline a per-tab copy of this markup.
-function msBarHtml(rawA, rawB){
-  const mag = v => { const n = Number(v); return Number.isFinite(n) && n > 0 ? n : 0; };
-  const a = mag(rawA), b = mag(rawB), sum = a + b;
-  const pct = n => sum > 0 ? `${(n / sum * 100).toFixed(1)}%` : '0%';
+function msBarHtml(rawA, rawB, kind, key){
+  // TEN-263 (ruling 2026-09-24): the share-of-total bar is replaced everywhere by the popup's bar
+  // rule (fhStatBarWidth): a rate fills its own value; a count fills value ÷ max(p1, p2, floor)
+  // and a rating value ÷ its fixed scale, both capped at 90% of the half; a missing side
+  // (null) draws no bar and never moves the other side.
+  const n = v => { if (v == null || v === '') return null; const x = Number(v); return Number.isFinite(x) ? x : null; };
+  const a = n(rawA), b = n(rawB);
+  const K = kind === 'count' ? 'count' : kind === 'rating' ? 'rating' : 'pct';
+  const k = K === 'count' ? msBarFloor(key) : K === 'rating' ? msBarScale(key) : undefined;
+  const wa = fhStatBarWidth(K, a, b, k), wb = fhStatBarWidth(K, b, a, k);
+  const fill = (w, side) => w == null ? '' : `<span class="msheet-fill ${side}" style="width:${w.toFixed(1)}%;"></span>`;
   return `
       <div class="msheet-bar">
-        <div class="msheet-half p1"><span class="msheet-fill p1" style="width:${pct(a)};"></span></div>
-        <div class="msheet-half p2"><span class="msheet-fill p2" style="width:${pct(b)};"></span></div>
+        <div class="msheet-half p1">${fill(wa, 'p1')}</div>
+        <div class="msheet-half p2">${fill(wb, 'p2')}</div>
       </div>`;
 }
+// The ruled floor / scale for a stat, by its feed key or label.
+function msBarFloor(key){
+  const k = String(key || '').toLowerCase();
+  if (/aces/.test(k)) return FH_BAR_FLOOR.aces;
+  if (/double fault/.test(k)) return FH_BAR_FLOOR.df;
+  if (/unforced/.test(k)) return FH_BAR_FLOOR.ue;
+  if (/winners/.test(k)) return FH_BAR_FLOOR.winners;
+  return 0;
+}
+function msBarScale(key){ return /return/i.test(String(key || '')) ? FH_RATING_SCALE.return : FH_RATING_SCALE.serve; }
 
 // A stat row inside an expanded recent-match panel. Delegates its bar to the
 // shared msBarHtml so the geometry can never drift from the modal sheet's; only
 // the value/label cells (compact, leader-weighted) are the form panel's own.
-function formPanelStatRow(label, kind, ownVal, oppVal, lowerBetter){
+function formPanelStatRow(label, kind, ownVal, oppVal, lowerBetter, key){
   if (ownVal == null && oppVal == null) return '';
   const fmt = v => v == null ? '—' : (kind === 'pct' ? `${v}%` : v);
   // Export invariant (README shared match-detail component, Stats): both values
@@ -13133,7 +13147,7 @@ function formPanelStatRow(label, kind, ownVal, oppVal, lowerBetter){
         <span style="color:#4b5672;font-size:11px;text-transform:uppercase;letter-spacing:.04em;">${label}</span>
         <span style="text-align:right;color:${oppColor};font-weight:${oppWeight};">${fmt(oppVal)}</span>
       </div>
-      ${msBarHtml(ownVal, oppVal)}
+      ${msBarHtml(ownVal, oppVal, kind, key || label)}
     </div>
   `;
 }
@@ -13152,7 +13166,7 @@ function formPanelStatsBodyHtml(joined, playerName, opponentName, setNo){
   // rather than leaving a heading over nothing.
   const rows = MATCH_STAT_ORDER.map(([, groupLabel, statRows]) => {
     const body = statRows
-      .map(([key, label, kind, lowerBetter]) => formPanelStatRow(label, kind, joined.own[key], joined.opp[key], lowerBetter))
+      .map(([key, label, kind, lowerBetter]) => formPanelStatRow(label, kind, joined.own[key], joined.opp[key], lowerBetter, key))
       .filter(Boolean).join('');
     return body ? `<div class="msheet-grouphead">${groupLabel}</div>${body}` : '';
   }).filter(Boolean).join('');
@@ -13910,6 +13924,10 @@ function fhEnsureStyles(){
   }
   ['aLo', 'aHi', 'bLo', 'bHi'].forEach(x => r.push(`.fh-h2wrap:has(.prh-${x}:hover) .h2m{opacity:.32;} .fh-h2wrap:has(.prh-${x}:hover) .h2m.pr-${x}{opacity:1;}`));
   const css = `
+  /* TEN-263 (ruling 2026-09-24): the design's line-height, set once for the Form tab, the H2H tab and
+     the Match stats popup. Not on the whole modal shell: measured, that moves every leaf of the nine
+     other tabs (Key factors, Playing style, Overview, ...), which were built on the page's 21px. */
+  #aSectionForm, #aSectionH2H, #fhSheet{ line-height:normal; }
   #aSectionForm .seg, #aSectionH2H .seg, #fhSheet .seg{ cursor:pointer; transition:background .14s ease, color .14s ease, border-color .14s ease; }
   #aSectionForm .plink, #aSectionH2H .plink{ cursor:pointer; } #aSectionForm .plink:hover, #aSectionH2H .plink:hover{ text-decoration:underline; }
   .fh-elotip-pop{ opacity:0; visibility:hidden; transition:opacity .12s ease; pointer-events:none; }
@@ -14211,7 +14229,7 @@ function fhBuildForm(m){
         <span style="font-size:10.5px; color:#4b5672; padding-top:4px; border-top:1px solid rgba(255,255,255,0.06);">One dot per match, oldest → newest · filled = covered · empty = not covered · small grey = not eligible · hover a line to find its matches, click a dot for the match</span>
       </div>` : ''}
     </div>`;
-  return `<div class="fh-fwrap" style="line-height:normal;">
+  return `<div class="fh-fwrap">
     <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:18px;">${surf}${vr}${role}${vr}${mode}${valsHtml}</div>
     <div style="background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:16px; padding:22px 24px 6px;">
       <div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr);">${fhFormColumnHtml(A, thinAny)}${fhFormColumnHtml(B, thinAny)}</div>${srcLine}
@@ -14441,7 +14459,7 @@ function fhBuildH2H(m){
   // once the histories have loaded — until then the loading skeleton shows.
   if (!m._fhH2hData){
     fhEnsureH2hData(m).then(() => { if (_fh && _fh.m === m) fhH2h({}); });
-    return `<div class="fh-h2wrap" style="display:flex; flex-direction:column; gap:18px; line-height:normal;">${fhH2hSkeleton()}</div>`;
+    return `<div class="fh-h2wrap" style="display:flex; flex-direction:column; gap:18px;">${fhH2hSkeleton()}</div>`;
   }
   const E = fhMeetings(m);
   if (!E.length){
@@ -14452,7 +14470,7 @@ function fhBuildH2H(m){
         <span style="${FH_MONO} font-size:30px; font-weight:800; line-height:1;${r.dash ? ' color:' + FH_DASH + ';' : ''}">${fhEsc(r.rec)}</span>
         <span style="${FH_MONO} font-size:11px; color:#5b6880;">${fhEsc(r.meta)}</span>
       </div>`).join('');
-    return `<div class="fh-h2wrap" style="display:flex; flex-direction:column; gap:18px; line-height:normal;">
+    return `<div class="fh-h2wrap" style="display:flex; flex-direction:column; gap:18px;">
       <div style="background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:16px; padding:22px 24px; display:flex; flex-direction:column; gap:16px;">
         <div style="display:flex; flex-direction:column; align-items:center; text-align:center; gap:5px;">
           <span style="font-size:17px; font-weight:800;">No previous meetings on record</span>
@@ -14477,7 +14495,7 @@ function fhBuildH2H(m){
       ${todaySurf ? fhH2hRecCard('On ' + todaySurf.toLowerCase(), E.filter(r => r.surface === todaySurf), "Today's surface", FH_SURF[todaySurf], null, A, B, aS, bS) : ''}
     </div>`;
   if (!F.length){
-    return `<div class="fh-h2wrap" style="display:flex; flex-direction:column; gap:18px; line-height:normal;">${top}${cards}<div style="background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:14px; padding:28px; text-align:center; font-size:13px; color:#5b6880;">No meetings on ${SURF.toLowerCase()}.</div></div>`;
+    return `<div class="fh-h2wrap" style="display:flex; flex-direction:column; gap:18px;">${top}${cards}<div style="background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:14px; padding:28px; text-align:center; font-size:13px; color:#5b6880;">No meetings on ${SURF.toLowerCase()}.</div></div>`;
   }
   // ---- stats row (Sets won / Tiebreaks / Deciding sets) + breakdown drawers ----
   const withGames = F.filter(r => r.sets), withTally = F.filter(r => r.pS != null);
@@ -14576,7 +14594,7 @@ function fhBuildH2H(m){
         </div>`;
     }
     return `<div style="background:#06070a; border:1px solid rgba(255,255,255,0.07); border-radius:12px; padding:16px 18px; display:flex; flex-direction:column; gap:14px; min-width:0;">
-        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;"><span style="font-size:14px; font-weight:700; color:${s.color};">${fhEsc(s.name)}</span></div>
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;"><span style="font-size:14px; font-weight:700; color:${s.color};">${fhEsc(s.name)}</span>${nP > 1 && nP < FH_PRICE_THIN ? `<span class="fh-nchip" title="Range built from ${nP} priced meetings" style="${FH_MONO} font-size:10px; color:#e8a84e; border:1px solid rgba(232,168,78,0.4); border-radius:999px; padding:2px 9px;">n=${nP}</span>` : ''}</div>
         ${inner}
       </div>`;
   };
@@ -14630,7 +14648,7 @@ function fhBuildH2H(m){
       </div>
       <span style="font-size:10.5px; color:#4b5672; margin-top:8px;">Home = ${fhEsc(aS)}'s closing price, Away = ${fhEsc(bS)}'s. Elo is ${fhEsc(bS)}'s at the time (weekly Tennis Abstract snapshot before the match). Click a meeting for match stats.${fhEsc(fhH2hGapNote(m))}</span>
     </div>`;
-  return `<div class="fh-h2wrap" style="display:flex; flex-direction:column; gap:18px; line-height:normal;">${top}${cards}${statsHtml}${statPanel}${priceHtml}${hotHtml}${listHtml}</div>`;
+  return `<div class="fh-h2wrap" style="display:flex; flex-direction:column; gap:18px;">${top}${cards}${statsHtml}${statPanel}${priceHtml}${hotHtml}${listHtml}</div>`;
 }
 // H2H Match Row LOCKED with the opponent Elo (ruling 2026-09-24: same basis as Form). The level tag
 // sits in the group header, the book marker in the Home cell.
@@ -14708,7 +14726,7 @@ function fhOpenSheet(mid){
           </div>
           <div style="display:flex; justify-content:center;"><span style="${FH_MONO} font-size:10px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:#b4bccf; background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.12); border-radius:999px; padding:4px 12px;">${fhEsc(winLine)}</span></div>
         </div>
-        <div id="fhSheetBody" class="fh-sheet-body" style="display:flex; flex-direction:column; gap:16px; line-height:normal;"></div>
+        <div id="fhSheetBody" class="fh-sheet-body" style="display:flex; flex-direction:column; gap:16px;"></div>
       </div>
     </div>`;
   _fh.sheet = mid;
@@ -14726,21 +14744,28 @@ function fhCloseSheet(){ const h = document.getElementById('fhSheet'); if (h) h.
 // BAR RULE (ruling 2026-09-24, replaces share-of-total, including the design's):
 //   rate    → absolute: 60.9% fills 60.9% of that player's half, whatever the opponent's value
 //   count   → value ÷ max(player 1, player 2, floor)  (so 1 double fault v 0 is a short bar)
-//   rating  → value ÷ fixed scale (capped at a full half)
+//   rating  → value ÷ fixed scale
+//   count and rating bars never fill their half (ruling 2026-09-24): the scale maps to FH_BAR_CAP
+//   (90%), so the larger count, or a rating at its scale, stops at 90% and the other keeps its
+//   true proportion. A rate is exact, so a genuine 100.0% (4/4) still fills 100%.
 //   missing → no bar on that side; the other side's bar is unaffected
 //   Dominance ratio → number only, no bar
-// Floors and scales are Michael's call: these are the proposed defaults.
-const FH_BAR_FLOOR = { aces: 10, df: 5, winners: 30, ue: 30 };
+// Floors and scales ruled by Michael 2026-09-24.
+const FH_BAR_FLOOR = { aces: 30, df: 15, winners: 80, ue: 80 };
 const FH_RATING_SCALE = { serve: 400, return: 350 };
+const FH_BAR_CAP = 90;
+// Price range (ruling 2026-09-24): a range built from fewer than this many priced meetings shows its
+// count as a chip (n=1 already had one; n=2 now does too).
+const FH_PRICE_THIN = 3;
 function fhStatBarWidth(kind, v, other, k){
   if (v == null || !Number.isFinite(v)) return null;                 // a dash draws no bar
   if (kind === 'pct') return Math.max(0, Math.min(100, v));
   if (kind === 'count'){
     const o = other != null && Number.isFinite(other) ? other : 0;
     const den = Math.max(v, o, k || 0);
-    return den > 0 ? Math.max(0, v) / den * 100 : 0;
+    return den > 0 ? Math.min(FH_BAR_CAP, Math.max(0, v) / den * FH_BAR_CAP) : 0;
   }
-  if (kind === 'rating') return k > 0 ? Math.max(0, Math.min(100, v / k * 100)) : null;
+  if (kind === 'rating') return k > 0 ? Math.max(0, Math.min(FH_BAR_CAP, v / k * FH_BAR_CAP)) : null;
   return null;
 }
 // One side's cell for a won/total stat. A real 0 with opportunities is "0.0% (0/4)";
@@ -14754,7 +14779,7 @@ function fhRateCell(side, key, zeroTitle){
     const v = Number(raw.won) / Number(raw.total) * 100;
     return { v, txt: v.toFixed(1) + '%', sub: '(' + raw.won + '/' + raw.total + ')', title: '', won: Number(raw.won), total: Number(raw.total) };
   }
-  if ((raw && Number(raw.total) === 0) || (key in side && side[key] === null)) return { v: null, txt: FH_DASHC, sub: '', title: zeroTitle };
+  if ((raw && Number(raw.total) === 0) || (key in side && side[key] === null)) return { v: null, txt: FH_DASHC, sub: '', title: zeroTitle, zero: true };
   if (Number.isFinite(Number(side[key])) && side[key] !== null && side[key] !== ''){
     const v = Number(side[key]);
     return { v, txt: v.toFixed(1) + '%', sub: '', title: 'The feed sent this rate without its count' };
@@ -14809,6 +14834,19 @@ function fhSheetModel(joined){
   const win = [fhCountCell(A, wk, noWue), fhCountCell(B, wk, noWue)], ue = [fhCountCell(A, uk, noWue), fhCountCell(B, uk, noWue)];
   const net = rate('Points:Net points won', 'No net points'), spw = rate('Points:Service Points Won', 'No service points');
   const rpw = rate('Points:Return Points Won', 'No return points'), tpw = rate('Points:Total Points Won', 'No points');
+  // Pressure points (Michael's definition, 2026-09-24, as TEN-243): break points saved + break
+  // points converted ÷ all break points the player played, on serve and on return. A side whose
+  // break-point rows are missing is a dash; 0 break points played is a dash with its reason.
+  const PR_T = 'Break points saved + converted ÷ all break points played';
+  const pr = [0, 1].map(i => {
+    const a = bps[i], b = bpc[i];
+    const known = c => c.total != null || c.zero;
+    if (!known(a) || !known(b)) return { v: null, txt: FH_DASHC, sub: '', title: 'Needs break points saved and converted' };
+    const won = (a.won || 0) + (b.won || 0), total = (a.total || 0) + (b.total || 0);
+    if (!total) return { v: null, txt: FH_DASHC, sub: '', title: 'No break points played' };
+    const v = won / total * 100;
+    return { v, txt: v.toFixed(1) + '%', sub: '(' + won + '/' + total + ')', title: PR_T, won, total };
+  });
   const SN = ['1st serve %', '1st serve points won', '2nd serve points won', 'service games won', 'aces', 'double faults'];
   const RN = ['1st return points won', '2nd return points won', 'return games won', 'break points converted'];
   // A rating is built only from rates with their counts (a rate the feed sent bare is not enough).
@@ -14830,11 +14868,11 @@ function fhSheetModel(joined){
       row('2nd return points won', r2, 'pct'), row('Break points converted', bpc, 'pct') ] },
     { title: 'Points won', rows: [
       row('Winners', win, 'count', FH_BAR_FLOOR.winners), row('Unforced errors', ue, 'count', FH_BAR_FLOOR.ue),
-      row('Net points won', net, 'pct'), row('Service points won', spw, 'pct'), row('Return points won', rpw, 'pct'),
+      row('Net points won', net, 'pct'), row('Service points won', spw, 'pct'), row('Return points won', rpw, 'pct'), row('Pressure points', pr, 'pct'),
       row('Total points won', tpw, 'pct') ] },
   ];
   const partial = [win, ue, net].some(c => c[0].v == null || c[1].v == null);
-  return { dr, sections, partial };
+  return { dr, sections, partial, pr, bps, bpc };
 }
 function fhSheetRowHtml(s){
   const aW = fhStatBarWidth(s.kind, s.a.v, s.b.v, s.k), bW = fhStatBarWidth(s.kind, s.b.v, s.a.v, s.k);
@@ -14892,7 +14930,7 @@ function fhSheetRender(){
   const tabs = fhSheetTabs(S);
   let body;
   if (S.scope === 'pbp'){
-    const sh = S.pbp;
+    const sh = S.pbp && fhPbpForA(S.pbp, S);
     if (!sh) body = `<div class="acomingsoon" style="padding:10px 0 2px;">Loading point-by-point…</div>`;
     else {
       const setNos = sh.sets.map(s => Number(s.set)).filter(Number.isFinite).sort((a, b) => a - b);
@@ -14908,6 +14946,38 @@ function fhSheetRender(){
   }
   host.innerHTML = fhSheetSeg(tabs) + body;
 }
+// Point-by-point follows the header (player A on the left), not the feed's first/second
+// order (ruling 2026-09-24). The log stores every point and game score first-player-first, so
+// orienting it swaps server/winner and each "a - b". Who the feed's first player is: the per-set
+// box score's player keys first; else the set scores against the header's; else the names. When
+// none decides, the feed order stands and the log's own name row says who is where.
+function fhPbpFlip(sh){
+  const sw = v => v === 'p1' ? 'p2' : v === 'p2' ? 'p1' : v;
+  const fs = x => { const m = /^\s*(\S+)\s*-\s*(\S+)\s*$/.exec(String(x == null ? '' : x)); return m ? m[2] + ' - ' + m[1] : x; };
+  return Object.assign({}, sh, { p1: sh.p2, p2: sh.p1, sets: (sh.sets || []).map(st => Object.assign({}, st, {
+    games: (st.games || []).map(g => Object.assign({}, g, { server: sw(g.server), winner: sw(g.winner), score: fs(g.score),
+      points: (g.points || []).map(pt => Object.assign({}, pt, { s: fs(pt.s) })) })) })) });
+}
+function fhPbpAIsFirst(sh, S){
+  if (S.feedP1Key != null && S.aKey != null) return S.feedP1Key === String(S.aKey);
+  const want = (S.setScores || []).map(x => x[0] + '-' + x[1]).join(' ');
+  if (want && sh && Array.isArray(sh.sets)){
+    const got = sh.sets.map(st => { const { real, tbPts } = pbpSplitSet(st); const f = real.length ? pbpParseScore(real[real.length - 1].score) : null;
+      if (!f) return null; let a = f[0], b = f[1]; if (tbPts.length){ const l = tbPts[tbPts.length - 1]; if (l.a > l.b){ a = 7; b = 6; } else { a = 6; b = 7; } } return [a, b]; });
+    if (got.every(Boolean)){
+      const fwd = got.map(x => x[0] + '-' + x[1]).join(' '), rev = got.map(x => x[1] + '-' + x[0]).join(' ');
+      if (fwd === want && rev !== want) return true;
+      if (rev === want && fwd !== want) return false;
+    }
+  }
+  const sn = n => String(fhSurname(n) || '').toLowerCase();
+  if (sh && S.aName && S.bName && sn(S.aName) !== sn(S.bName)){
+    if (sn(sh.p1) === sn(S.aName) && sn(sh.p2) === sn(S.bName)) return true;
+    if (sn(sh.p1) === sn(S.bName) && sn(sh.p2) === sn(S.aName)) return false;
+  }
+  return null;
+}
+function fhPbpForA(sh, S){ return fhPbpAIsFirst(sh, S) === false ? fhPbpFlip(sh) : sh; }
 function fhSheetScope(sc){ const S = _fh && _fh.sheetBody; if (!S) return; S.scope = sc; if (sc === 'pbp') fhSheetLoadPbp(); fhSheetRender(); }
 function fhSheetPbpSet(n){ const S = _fh && _fh.sheetBody; if (!S) return; S.pbpSet = n; fhSheetRender(); }
 function fhSheetLoadPbp(){
@@ -14933,7 +15003,8 @@ function fhSheetInlineStats(e, r){
 function fhSheetInit(e, r){
   const ek = String(r.ek || (r.formRow && r.formRow.eventKey) || '');
   const inline = fhSheetInlineStats(e, r);
-  const S = { ek, scope: 'match', nSets: (r.sets || []).length, match: inline, matchLoading: !inline && !!ek,
+  const S = { ek, aKey: e.aKey, aName: e.aName, bName: e.bName, setScores: r.sets || null,
+    scope: 'match', nSets: (r.sets || []).length, match: inline, matchLoading: !inline && !!ek,
     sets: null, setsLoading: !!ek, hasPbp: false, pbpLoading: !!ek, pbp: null, pbpSet: 1 };
   _fh.sheetBody = S;
   fhSheetRender();
@@ -14945,6 +15016,7 @@ function fhSheetInit(e, r){
     const done = shard => {
       if (!_fh || _fh.sheetBody !== S) return;
       if (!S.match && shard) S.match = matchStatsFromShard(shard, e.aKey);
+      if (shard && shard.p1Key != null) S.feedP1Key = String(shard.p1Key);
       S.matchLoading = false;
       if (shard && shard.sets){
         S.sets = {};
@@ -15407,12 +15479,21 @@ function msheetPressure(p){
 // Dominance Ratio: (A's return points won %) / (B's return points won %). The
 // two figures are reciprocal (multiply to 1). Undefined — dash both — if either
 // player's return points won % is missing or zero (no divide-by-zero).
+function msheetHouseRatings(a, b){
+  if (!a || !b) return { serve: [null, null], ret: [null, null] };
+  const M = fhSheetModel({ own: a, opp: b });
+  const r = v => v == null ? null : Math.round(v);
+  const sr = M.sections[0].rows[0], rr = M.sections[1].rows[0];
+  return { serve: [r(sr.a.v), r(sr.b.v)], ret: [r(rr.a.v), r(rr.b.v)] };
+}
 function msheetDerived(stats){
   const d = { p1: {}, p2: {} };
-  d.p1.serveRating  = msheetRatingSum(stats.p1, MSHEET_SERVE_RATING_KEYS);
-  d.p2.serveRating  = msheetRatingSum(stats.p2, MSHEET_SERVE_RATING_KEYS);
-  d.p1.returnRating = msheetRatingSum(stats.p1, MSHEET_RETURN_RATING_KEYS);
-  d.p2.returnRating = msheetRatingSum(stats.p2, MSHEET_RETURN_RATING_KEYS);
+  // TEN-263 (ruling 2026-09-24): one Serve / Return rating across the product — the 6-part house
+  // sum (TEN-103, 2026-08-29) the Match stats popup uses, from the same function, so the same
+  // match shows the same number on both. 0 break-point chances → no Return rating (a dash).
+  const hr = msheetHouseRatings(stats.p1, stats.p2);
+  d.p1.serveRating  = hr.serve[0];  d.p2.serveRating  = hr.serve[1];
+  d.p1.returnRating = hr.ret[0];    d.p2.returnRating = hr.ret[1];
   const pr1 = msheetPressure(stats.p1), pr2 = msheetPressure(stats.p2);
   d.p1.pressurePct = pr1.pct; d.p1.pressureRaw = pr1.raw;
   d.p2.pressurePct = pr2.pct; d.p2.pressureRaw = pr2.raw;
@@ -15439,7 +15520,7 @@ function msheetDrHeadHtml(d){
 // right-aligned on the right, no inline hug and no placeholder when the fraction is
 // absent. The diverging bar beneath carries the comparison; its colour is the
 // player's side, never who is ahead.
-function msheetRowHtml(label, kind, p1Val, p2Val, p1Raw, p2Raw, alwaysShow){
+function msheetRowHtml(label, kind, p1Val, p2Val, p1Raw, p2Raw, alwaysShow, key){
   if (p1Val == null && p2Val == null) {
     if (!alwaysShow) return '';
     // Data source didn't supply this stat for this match — keep the row so the
@@ -15466,7 +15547,7 @@ function msheetRowHtml(label, kind, p1Val, p2Val, p1Raw, p2Raw, alwaysShow){
         <span class="msheet-label">${label}</span>
         <span class="msheet-val p2"><span class="msheet-pct">${num(p2Val)}</span>${frac(p2Raw)}</span>
       </div>
-      ${msBarHtml(p1Val, p2Val)}
+      ${msBarHtml(p1Val, p2Val, kind, key || label)}
     </div>
   `;
 }
@@ -15748,9 +15829,9 @@ function buildMatchStatsSheet(m, setNo){
         // plain integers (no raw fraction); Pressure Points carries its own
         // numerator/denominator fraction (e.g. "9/18").
         if (key === '@serveRating')
-          return msheetRowHtml(label, 'rating', derived.p1.serveRating, derived.p2.serveRating, null, null, true);
+          return msheetRowHtml(label, 'rating', derived.p1.serveRating, derived.p2.serveRating, null, null, true, 'serve');
         if (key === '@returnRating')
-          return msheetRowHtml(label, 'rating', derived.p1.returnRating, derived.p2.returnRating, null, null, true);
+          return msheetRowHtml(label, 'rating', derived.p1.returnRating, derived.p2.returnRating, null, null, true, 'return');
         if (key === '@pressure')
           return msheetRowHtml(label, 'pct', derived.p1.pressurePct, derived.p2.pressurePct, derived.p1.pressureRaw, derived.p2.pressureRaw, true);
         // Show the fraction wherever the feed carried real won/total counts —
@@ -15759,7 +15840,7 @@ function buildMatchStatsSheet(m, setNo){
         const p1Raw = stats.p1.raw ? stats.p1.raw[key] : null;
         const p2Raw = stats.p2.raw ? stats.p2.raw[key] : null;
         const alwaysShow = MSHEET_ALWAYS_SHOW.has(key);
-        return msheetRowHtml(label, kind, stats.p1[key], stats.p2[key], p1Raw, p2Raw, alwaysShow);
+        return msheetRowHtml(label, kind, stats.p1[key], stats.p2[key], p1Raw, p2Raw, alwaysShow, key);
       })
       .filter(Boolean)
       .join('');

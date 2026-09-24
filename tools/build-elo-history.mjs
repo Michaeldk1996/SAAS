@@ -36,10 +36,10 @@ const ROOT = process.cwd();
 const OUT = path.join(ROOT, 'elo-history.json');
 const SRC = path.join(ROOT, 'elo-ratings.json');
 const KNOWN_AMBIGUOUS_2026_09_24 = ['blanch|d', 'martin|a'];
-// Days since the newest stored report (by asOf) before the job warns / goes red. The red
-// threshold is Michael's call and not ruled yet (2026-09-24): null = red is off.
+// Days since the newest stored report (by asOf) before the job warns / goes red (ruled by
+// Michael 2026-09-24: warn at 8, red at 15).
 export const ELO_STALE_WARN_DAYS = 8;
-export const ELO_STALE_RED_DAYS = null;
+export const ELO_STALE_RED_DAYS = 15;
 
 const sameRatings = (a, b) => {
   const ka = Object.keys(a || {}), kb = Object.keys(b || {});
@@ -147,7 +147,7 @@ if (args[0] === '--from-git') {
   const msg = r.asOf == null ? 'Elo history is empty'
     : `newest Tennis Abstract report stored ${r.asOf} (TA label ${r.taLastUpdate || 'none'}), ${r.days} days old`;
   if (r.level === 'red') { console.log(`::error::Elo stale: ${msg} (red at ${ELO_STALE_RED_DAYS})`); process.exit(1); }
-  if (r.level === 'warn') console.log(`::warning::Elo stale: ${msg} (warns at ${ELO_STALE_WARN_DAYS}; red is off until ruled)`);
+  if (r.level === 'warn') console.log(`::warning::Elo stale: ${msg} (warns at ${ELO_STALE_WARN_DAYS}; red at ${ELO_STALE_RED_DAYS})`);
   else console.log(`Elo fresh: ${msg}.`);
 } else if (args.length) {
   throw new Error('usage: --append | --from-git <repo> | --should-fetch [day] | --check-stale [day]');
