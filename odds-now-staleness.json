@@ -1,20 +1,11 @@
 {
   "latest": {
-    "maxAgeMin": 60.1,
-    "measured": 6,
+    "maxAgeMin": 75.0,
+    "measured": 4,
     "stale": []
   },
   "note": "Age of the published bet365 NOW leg, measured as now - observedAt against the artefact Pages is serving. Capture staleness and publish staleness are both inside this number, which is what the visitor sees. Re-derive the threshold on TEN-187.",
   "samples": [
-    {
-      "at": "2026-09-19T23:02:19Z",
-      "maxAgeMin": 850.8,
-      "measured": 41,
-      "noBet365Line": 31,
-      "noClock": 0,
-      "stale": 41,
-      "thresholdMin": 120.0
-    },
     {
       "at": "2026-09-19T23:17:15Z",
       "maxAgeMin": 865.8,
@@ -3605,9 +3596,18 @@
       "noClock": 0,
       "stale": 0,
       "thresholdMin": 120.0
+    },
+    {
+      "at": "2026-09-24T10:30:01Z",
+      "maxAgeMin": 75.0,
+      "measured": 4,
+      "noBet365Line": 8,
+      "noClock": 0,
+      "stale": 0,
+      "thresholdMin": 120.0
     }
   ],
   "schema": "odds-now-staleness/1",
   "thresholdMin": 120.0,
-  "updatedAt": "2026-09-24T10:15:05Z"
+  "updatedAt": "2026-09-24T10:30:01Z"
 }
