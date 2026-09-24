@@ -130,8 +130,9 @@ jobs:
               # grant, so PostgREST answers 200 with []: zero rows is the pass.
               st, r = call(f"{url}/rest/v1/kibl_line_observations?select=row_key&limit=1", key=pk)
               try:
-                  n_obs = len(json.loads(r)) if st == 200 else 0
-              except ValueError:
+                  body_obs = json.loads(r) if st == 200 else []
+                  n_obs = len(body_obs) if isinstance(body_obs, list) else -1
+              except (ValueError, TypeError):
                   n_obs = -1
               print(f"[publishable] SELECT kibl_line_observations -> HTTP {st}, {n_obs} row(s)  (want 401/403, or 200 with 0 rows)")
               if st not in (401, 403) and not (st == 200 and n_obs == 0):

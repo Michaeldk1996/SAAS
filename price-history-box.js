@@ -194,6 +194,28 @@
     return p;
   }
 
+  // The odds shard, read by the box itself with the same 60 s TTL: the page's
+  // ensureOddsMovement memoises for the whole session, so a page left open
+  // would never show a newer 15-min capture (review finding 3). Resolves
+  // {om} on success, null when the shard can't be read (never "no changes").
+  const shardCache = new Map();
+  function fetchShard(ek) {
+    if (!ek) return Promise.resolve(null);
+    const hit = shardCache.get(ek);
+    if (hit && Date.now() - hit.at < CACHE_TTL_MS) return hit.p;
+    const p = fetch(`./odds/${encodeURIComponent(ek)}.json`, { cache: 'no-cache' })
+      .then(r => r.ok ? r.text() : (r.status === 404 ? '' : null))
+      .then(t => {
+        if (t == null) return null;
+        stats.fetches++; stats.bytes.push(t.length);
+        return { om: t ? JSON.parse(t) : null };     // 404: no shard yet = nothing recorded
+      })
+      .catch(() => null);
+    shardCache.set(ek, { at: Date.now(), p });
+    p.then(v => { if (v == null) shardCache.delete(ek); });
+    return p;
+  }
+
   function cardData(m, who) {
     const o = typeof _ocsOf === 'function' ? _ocsOf(m) : null;
     const pair = typeof _mcNowPair === 'function' ? _mcNowPair(m) : null;
@@ -209,9 +231,15 @@
                                 at: side ? side.closeTs || null : null } : null;
     const live = !completed && !!(pair && pair.src === 'stream' && pair.live);
     const updatedAt = completed ? (close && close.at) : (pair && pair.at) || null;
-    // Bet105: the price_history RPC. bet365: the odds shard on upcoming cards only;
-    // a completed bet365 card waits for the post-match archive (ruled source).
-    const source = bk === 'bet105' ? 'rpc' : (bk === 'bet365' && !completed ? 'shard' : null);
+    // Bet105: the price_history RPC. bet365: the odds shard on UPCOMING cards only,
+    // i.e. no result, not live, and before the card's start; the shard series is
+    // not cut at the off, so an underway card would show in-play ticks as moves
+    // (review finding 1). A completed bet365 card waits for the post-match
+    // archive (ruled source) and never falls back to the shard.
+    let startMs = NaN;
+    try { startMs = typeof cardStartMs === 'function' ? cardStartMs(m) : NaN; } catch (e) { startMs = NaN; }
+    const upcoming = !completed && !m.live && (!isFinite(startMs) || Date.now() < startMs);
+    const source = bk === 'bet105' ? 'rpc' : (bk === 'bet365' && upcoming ? 'shard' : null);
     return { book: bookName, bookKey: bk, open, close, completed, live, updatedAt,
              startAt: (o && o.startTs) || null,
              historyAvailable: source != null, source,
@@ -258,11 +286,9 @@
     b.innerHTML = html(model(card, [], [])).replace('no price change recorded', 'loading history…');
     place(target);
     if (!card.historyAvailable) { b.innerHTML = html(model(card, [], [])); place(target); return; }
-    let payload = null, om = null;
+    let payload = null, shard = null;
     if (card.source === 'shard') {
-      stats.fetches++;
-      om = (typeof ensureOddsMovement === 'function')
-        ? await ensureOddsMovement(m).then(x => (x && x.oddsMovement) || null, () => null) : null;
+      shard = await fetchShard(typeof eventKeyOfMatch === 'function' ? eventKeyOfMatch(m) : null);
     } else {
       payload = await fetchHistory(ocsKeyOf(m));
     }
@@ -275,8 +301,16 @@
       if (!target) { hide(); return; }
     }
     if (card.source === 'shard') {
-      // No shard for this card is an honest "no change recorded", not a failure.
-      b.innerHTML = html(model(card, shardRows(om, who), []));
+      // A shard that could not be read is "unavailable", never "no change"
+      // (review finding 2); a missing series (404 or no bet365 side) is
+      // "not recorded yet".
+      const rows = shard && shard.om ? shardRows(shard.om, who) : [];
+      const hasSeries = !!(shard && shard.om && shard.om.books && shard.om.books.bet365
+                           && Array.isArray(shard.om.books.bet365[who]));
+      let h = html(model(card, rows, []));
+      if (!shard) h = h.replace('no price change recorded', 'history unavailable — try again');
+      else if (!hasSeries) h = h.replace('no price change recorded', 'history not recorded yet');
+      b.innerHTML = h;
       place(target);
       return;
     }
@@ -321,7 +355,7 @@
     document.addEventListener('visibilitychange', () => { if (document.hidden) hide(); });
   }
 
-  const api = { sideRows, shardRows, changesOnly, gapRows, model, html, fmtWhen, fmtDelta, cardData, stats, _open: open };
+  const api = { sideRows, shardRows, fetchShard, changesOnly, gapRows, model, html, fmtWhen, fmtDelta, cardData, stats, _open: open };
   if (typeof window !== 'undefined') window.PriceHistoryBox = Object.assign(window.PriceHistoryBox || {}, api);
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })();

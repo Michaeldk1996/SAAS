@@ -151,3 +151,34 @@ test('history ends at the start: a not-live Kibl row after the off never shows a
   assert.equal(g[0].to, Date.parse('2026-09-24T05:06:01Z'), 'a gap running over the off is cut at the start');
   assert.equal(B.model({ book: 'Bet105', historyAvailable: true }, rows, []).rows.length, 2, 'no start known: nothing is cut');
 });
+
+test('bet365 shard only while the card is upcoming: live, past its start, or completed never read the shard (review 1)', () => {
+  const future = Date.now() + 3600e3, past = Date.now() - 60e3;
+  globalThis.cardStartMs = m => m._start;
+  try {
+    assert.equal(B.cardData({ openingOdds: { bookmaker: 'bet365' }, _start: future }, 'p1').source, 'shard');
+    assert.equal(B.cardData({ openingOdds: { bookmaker: 'bet365' }, _start: past }, 'p1').source, null,
+                 'past its start (underway, no result yet): in-play ticks would read as moves');
+    assert.equal(B.cardData({ openingOdds: { bookmaker: 'bet365' }, _start: future, live: true }, 'p1').source, null);
+    assert.equal(B.cardData({ openingOdds: { bookmaker: 'bet105' }, _start: past }, 'p1').source, 'rpc',
+                 'Bet105 is cut at the start by the model instead');
+  } finally { delete globalThis.cardStartMs; }
+});
+
+test('the shard is read with a 60 s cache; a read failure is "unavailable", a 404 is "nothing recorded" (review 2, 3)', async () => {
+  const realFetch = globalThis.fetch;
+  let calls = 0;
+  try {
+    globalThis.fetch = async () => { calls++; return { ok: true, status: 200, text: async () => JSON.stringify(OM) }; };
+    const a = await B.fetchShard('ek-ok');
+    assert.deepEqual(B.shardRows(a.om, 'p1').length, 6);
+    await B.fetchShard('ek-ok');
+    assert.equal(calls, 1, 'a second open within 60 s reuses the read');
+    globalThis.fetch = async () => ({ ok: false, status: 404, text: async () => '' });
+    assert.deepEqual(await B.fetchShard('ek-404'), { om: null }, '404: no shard yet');
+    globalThis.fetch = async () => { throw new Error('network'); };
+    assert.equal(await B.fetchShard('ek-down'), null, 'a failed read is not "no changes"');
+    globalThis.fetch = async () => ({ ok: false, status: 503, text: async () => '' });
+    assert.equal(await B.fetchShard('ek-503'), null);
+  } finally { globalThis.fetch = realFetch; }
+});
