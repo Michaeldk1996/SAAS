@@ -216,7 +216,10 @@ as $fn$
   ),
   span as (
     select least((select min(at) from poller), (select min(at) from stream)) as since,
-           greatest((select max(at) from poller), (select max(at) from stream)) as until
+           -- up to 3 days past the last change (capped at now): an outage AFTER
+           -- the last recorded move must still show (UI review finding 4)
+           least(now(), greatest((select max(at) from poller), (select max(at) from stream))
+                        + interval '3 days') as until
   ),
   gaps as (
     select g.gap_from, g.gap_to, g.seconds, g.reason

@@ -334,7 +334,7 @@
      query: a hand-written breakpoint would fight the track sizing and drift from the
      token. Full-bleed children (day dividers, the promo row, the empty state) opt out
      with grid-column:1/-1 so they still span the whole list rather than becoming cells. */
-  [data-page="matches"] #matchlist{ display:grid; grid-template-columns:repeat(auto-fill, minmax(430px, 1fr)); gap:12px; align-items:start; }
+  [data-page="matches"] #matchlist{ display:grid; grid-template-columns:repeat(auto-fill, minmax(430px, 1fr)); gap:12px; align-items:stretch; }
   /* TEN-179 item 1, HELD HALF — the Completed card does NOT fit a 430px track and is
      deliberately left single-column until the founder rules.
      The completed row is a rigid grid (200px name | max-content sets | 18px | 1px hairline
@@ -379,7 +379,7 @@
      disappear." It was doing one useful job (clipping the header/footer dividers to the
      14px corner radius), which the two rules below now do directly, on the two elements
      that actually reach a corner. Everything else is free to spill VISIBLY. */
-  [data-page="matches"] .match-card{ background:var(--mc-card); border:1px solid var(--mc-border-data); border-radius:var(--mc-r-match); padding:0; overflow:visible; transition:border-color 120ms; }
+  [data-page="matches"] .match-card{ background:var(--mc-card); border:1px solid var(--mc-border-data); border-radius:var(--mc-r-match); padding:0; overflow:visible; transition:border-color 120ms; display:flex; flex-direction:column; }
   [data-page="matches"] .match-card > :first-child{ border-top-left-radius:inherit; border-top-right-radius:inherit; }
   [data-page="matches"] .match-card > :last-child{ border-bottom-left-radius:inherit; border-bottom-right-radius:inherit; }
   [data-page="matches"] .match-card:hover{ border-color:var(--mc-border-hover); }
@@ -866,8 +866,22 @@
 
   /* footer — one row: Market Signal disclosure (left) · See full analysis (right) */
   [data-page="matches"] .mc-nowsrc{ padding:0 16px 9px; font-family:var(--mx-font-mono); font-size:10.5px; color:var(--mc-muted); }
+  /* TEN-270 item 6 — the price-history box (Oddsportal-style rows, our dark surface). */
+  [data-page="matches"] .phb{ position:fixed; z-index:9000; min-width:230px; max-height:320px; overflow-y:auto; white-space:nowrap;
+    background:var(--mc-card); border:1px solid var(--mc-border-data); border-radius:8px; box-shadow:0 8px 28px rgba(0,0,0,.45);
+    padding:8px 10px; font-family:var(--mx-font-mono); font-size:12px; color:var(--mc-text, #e6e6e6); }
+  [data-page="matches"] .phb-head{ display:flex; justify-content:space-between; gap:14px; padding-bottom:6px; margin-bottom:4px; border-bottom:1px solid rgba(255,255,255,.08); }
+  [data-page="matches"] .phb-book{ font-weight:700; }
+  [data-page="matches"] .phb-live{ color:#3dd68c; }
+  [data-page="matches"] .phb-upd, [data-page="matches"] .phb-note, [data-page="matches"] .phb-book2{ color:var(--mc-muted); }
+  [data-page="matches"] .phb-sec{ font-weight:700; margin-top:6px; }
+  [data-page="matches"] .phb-row{ display:grid; grid-template-columns:auto auto 1fr; gap:12px; align-items:baseline; padding:2px 0; }
+  [data-page="matches"] .phb-px{ font-weight:700; }
+  [data-page="matches"] .phb-d{ text-align:right; }
+  [data-page="matches"] .phb-gap{ color:var(--mc-muted); font-style:italic; padding:2px 0; }
+  [data-page="matches"] .phb-note{ padding:2px 0; }
   [data-page="matches"] .mc-nowlive{ color:var(--mc-pos); margin-right:6px; }
-  [data-page="matches"] .mc-foot{ margin-top:0; padding:10px 16px; border-top:1px solid rgba(255,255,255,0.05); display:flex; align-items:center; justify-content:space-between; gap:10px; }
+  [data-page="matches"] .mc-foot{ margin-top:auto; padding:10px 16px; border-top:1px solid rgba(255,255,255,0.05); display:flex; align-items:center; justify-content:space-between; gap:10px; }
   [data-page="matches"] .mc-msig{ display:inline-flex; align-items:center; gap:6px; background:none; border:0; padding:0; cursor:pointer; font-family:var(--mx-font-ui); font-size:12px; font-weight:700; letter-spacing:0.02em; color:var(--mc-muted); }
   [data-page="matches"] .mc-msig .chev{ font-size:10px; color:var(--mc-muted-2); display:inline-block; transition:transform 120ms ease; }
   [data-page="matches"] .mc-msig.has-signal, [data-page="matches"] .mc-msig.has-signal .chev{ color:var(--mc-brand); }
@@ -7731,7 +7745,10 @@ function mcNowSrcHtml(pair){
   return `<div class="mc-nowsrc">${live}${psEsc(name)} · ${when}</div>`;
 }
 function mcTitleAttr(txt){
-  return txt ? ` title="${String(txt).replace(/"/g, '&quot;')}"` : '';
+  // TEN-270 item 6 (founder 2026-09-24): the price-history box REPLACES the
+  // native tooltip on card prices. The text is kept as data-pt (probes/tests
+  // read it); a `title` here would pop a second box over the new one.
+  return txt ? ` data-pt="${String(txt).replace(/"/g, '&quot;')}"` : '';
 }
 // The provenance line under a Biggest Market Move figure. It used to be the
 // literal string "Bet365 open → now", and until this issue that was true by
@@ -10299,7 +10316,6 @@ function renderMatches(){
       ${headHtml}
       ${isCompleted ? '' : scoreLineHtml}
       ${playersHtml}
-      ${(isCompleted || m.live || isPastDay || mcStarted) ? '' : mcNowSrcHtml(nowPair)}
       <div class="mc-foot">
         <button class="mc-msig mx-msigchip" data-msig="${eventKeyOfMatch(m)}" onclick="toggleSig(this)">Market Signal${isCompleted ? ' · final' : ''} <span class="chev">⌄</span></button>
         <a class="mc-analysis" onclick="openAnalysisModal('${m.id}')">See full analysis →</a>
@@ -31894,6 +31910,7 @@ window.DatabaseTab = (function(){
      key (SELECT-only); window.KiblNow is consulted by _mcNowPair. Absent or dark
      (no creds, no table) = every card stays on the poller, exactly as before. -->
 <script src="kibl-now-stream.js" defer></script>
+<script src="price-history-box.js" defer></script>
 <!-- TEN-206 ruling 7: the single hold/break heatmap engine, shared by the Live
      tab's DataEdge panel and the Player Profile's Playing-profile modal.
      Deliberately NOT deferred: the Live-tab renderer below is an inline IIFE
