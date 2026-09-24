@@ -1203,3 +1203,22 @@ test('untracked counts are missing, not 0, downstream: the Live modal bar and th
   const c = two('Double Faults', 1, 0, '1', '0', '', '', 'count', 'Double Faults');
   assert.equal(c.aW, '6.0%', '1 v 0 double faults stays short');
 });
+test('review fixes: pbp never flips on a key that matches neither player; expanded rows orient too; Match Stats pressure = the popup\'s', () => {
+  const src = ['fhPbpFlip', 'fhPbpAIsFirst', 'fhPbpForA', 'pbpSplitSet', 'pbpParseScore'].map(slice).join('\n');
+  const f = new Function('fhSurname', src + '; return { fhPbpAIsFirst };')(n => String(n).split(' ').pop());
+  const feed = { p1: 'H. Hurkacz', p2: 'A. Shevchenko', sets: [] };
+  assert.equal(f.fhPbpAIsFirst(feed, { aKey: 566, feedP1Key: '2841', feedP2Key: '999', aName: 'A. Shevchenko', bName: 'H. Hurkacz' }), false, 'key on neither side → falls through to names');
+  assert.equal(f.fhPbpAIsFirst(feed, { aKey: 566, feedP1Key: '2841', feedP2Key: '999', aName: 'X. One', bName: 'Y. Two' }), null, 'and never a confident flip from a stray key');
+  assert.match(slice('switchFormPbpSet'), /formPbpHtml\(idPrefix, shard, setNo\)/);
+  assert.match(slice('formPbpHtml'), /fhPbpForA\(shard, S\)/);
+  assert.match(slice('msheetDerived'), /fhSheetModel\(\{ own: stats\.p1, opp: stats\.p2 \}\)\.pr/);
+});
+test('Live modal: untracked winners/UE (all 0 over 10+ points) are dashes, a real early 0-0 stays', () => {
+  const H = readFileSync(join(HERE, 'bsp-consult-dashboard.html'), 'utf8');
+  const g = /const wueUntracked=p=>\{[\s\S]*?\n  \};/.exec(H)[0];
+  const mk = (w, tp) => { const c = { A: { Winners: { value: w }, 'Unforced errors': { value: w }, 'Total Points Won': { won: 5, total: tp } }, B: { Winners: { value: w }, 'Unforced errors': { value: w } } };
+    return new Function('cntOf', 'cell', 'pA', 'pB', g + '; return wueUntracked;')(c => (!c) ? null : c.value, (pk, n) => c[pk][n], 'A', 'B'); };
+  assert.equal(mk(0, 138)(), true, 'all 0 over 138 points: not tracked');
+  assert.equal(mk(0, 6)(), false, 'under 10 points an all-zero sheet can be real');
+  assert.equal(mk(3, 138)(), false, 'real counts');
+});

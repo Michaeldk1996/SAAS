@@ -13375,8 +13375,20 @@ function switchFormTab(idPrefix, tab){
     const setNos = shard.sets.map(s => Number(s.set)).filter(n => Number.isFinite(n)).sort((a, b) => a - b);
     const firstSet = setNos.length ? setNos[0] : null;
     pbpPane.innerHTML = buildSetSelectorHtml(setNos, 'switchFormPbpSet', null)
-      + `<div id="formPbpBody-${idPrefix}">${buildPointByPointHtml({ p1: shard.p1, p2: shard.p2 }, shard, firstSet)}</div>`;
+      + `<div id="formPbpBody-${idPrefix}">${formPbpHtml(idPrefix, shard, firstSet)}</div>`;
   });
+}
+// TEN-263 (ruling 2026-09-24): an expanded row's point log follows the row's own order (the
+// row's player on the left, like its stats pane), not the feed's first/second — the same
+// orientation rule as the Match stats popup (fhPbpForA).
+function formPbpHtml(idPrefix, shard, setNo){
+  const ctx = formPanelCtx[idPrefix] || {};
+  const m = ctx.match || {}, ss = _setStatsShards[String(m.eventKey || '')];
+  const S = { aKey: ctx.playerKey, aName: ctx.playerName, bName: ctx.opponentName,
+    feedP1Key: ss && ss.p1Key != null ? String(ss.p1Key) : null, feedP2Key: ss && ss.p2Key != null ? String(ss.p2Key) : null,
+    setScores: Array.isArray(m.sets) ? m.sets.map(x => Array.isArray(x) ? x : [x.p, x.o]) : null };
+  const sh = fhPbpForA(shard, S);
+  return buildPointByPointHtml({ p1: sh.p1, p2: sh.p2 }, sh, setNo);
 }
 
 // Repaint one row's point log for the chosen set, from the shard already fetched
@@ -13389,7 +13401,7 @@ function switchFormPbpSet(el, setNo){
   const shard = _pbpShards[String(wrap.dataset.ek || '')];
   if (!body || !shard) return;
   wrap.querySelectorAll('#formPanePbp-' + idPrefix + ' .ms-setbtn').forEach(b => b.classList.toggle('active', b === el));
-  body.innerHTML = buildPointByPointHtml({ p1: shard.p1, p2: shard.p2 }, shard, setNo);
+  body.innerHTML = formPbpHtml(idPrefix, shard, setNo);
 }
 
 // Single-open-per-column accordion: opening a row in a given player column
@@ -14959,7 +14971,10 @@ function fhPbpFlip(sh){
       points: (g.points || []).map(pt => Object.assign({}, pt, { s: fs(pt.s) })) })) })) });
 }
 function fhPbpAIsFirst(sh, S){
-  if (S.feedP1Key != null && S.aKey != null) return S.feedP1Key === String(S.aKey);
+  if (S.feedP1Key != null && S.aKey != null){
+    if (S.feedP1Key === String(S.aKey)) return true;
+    if (S.feedP2Key != null && S.feedP2Key === String(S.aKey)) return false;
+  }
   const want = (S.setScores || []).map(x => x[0] + '-' + x[1]).join(' ');
   if (want && sh && Array.isArray(sh.sets)){
     const got = sh.sets.map(st => { const { real, tbPts } = pbpSplitSet(st); const f = real.length ? pbpParseScore(real[real.length - 1].score) : null;
@@ -15017,6 +15032,7 @@ function fhSheetInit(e, r){
       if (!_fh || _fh.sheetBody !== S) return;
       if (!S.match && shard) S.match = matchStatsFromShard(shard, e.aKey);
       if (shard && shard.p1Key != null) S.feedP1Key = String(shard.p1Key);
+      if (shard && shard.p2Key != null) S.feedP2Key = String(shard.p2Key);
       S.matchLoading = false;
       if (shard && shard.sets){
         S.sets = {};
@@ -15494,9 +15510,12 @@ function msheetDerived(stats){
   const hr = msheetHouseRatings(stats.p1, stats.p2);
   d.p1.serveRating  = hr.serve[0];  d.p2.serveRating  = hr.serve[1];
   d.p1.returnRating = hr.ret[0];    d.p2.returnRating = hr.ret[1];
-  const pr1 = msheetPressure(stats.p1), pr2 = msheetPressure(stats.p2);
-  d.p1.pressurePct = pr1.pct; d.p1.pressureRaw = pr1.raw;
-  d.p2.pressurePct = pr2.pct; d.p2.pressureRaw = pr2.raw;
+  // Pressure points: the popup's one implementation (Michael's definition, 2026-09-24), one decimal
+  // with its count; a missing break-point row is a dash, never a 0.
+  const PM = fhSheetModel({ own: stats.p1, opp: stats.p2 }).pr;
+  const pv = c => c.v == null ? null : c.v.toFixed(1), praw = c => c.total != null ? { won: c.won, total: c.total } : null;
+  d.p1.pressurePct = pv(PM[0]); d.p1.pressureRaw = praw(PM[0]);
+  d.p2.pressurePct = pv(PM[1]); d.p2.pressureRaw = praw(PM[1]);
   const ra = stats.p1['Points:Return Points Won'], rb = stats.p2['Points:Return Points Won'];
   if (ra == null || rb == null || ra <= 0 || rb <= 0){ d.drP1 = null; d.drP2 = null; }
   else { d.drP1 = Math.round((ra / rb) * 100) / 100; d.drP2 = Math.round((rb / ra) * 100) / 100; }
@@ -32295,8 +32314,18 @@ function renderVals(){
     return twoSided(label,av,bv,av===null?'':av+'%',bv===null?'':bv+'%',denOf(a),denOf(b),'pct');
   };
   const cntOf=c=>(!c)?null:(c.value!=null?c.value:(c.won!=null?c.won:null));
+  // TEN-263 (ruling 2026-09-24): the feed sends an untracked winners/UE count as a literal 0. The
+  // same rule as the pipeline (match-stat-placeholders.js): W and UE all 0 for both players over 10+
+  // points played = not tracked, so both show a dash; under 10 points an all-zero sheet can be real.
+  const wueUntracked=p=>{
+    const v=(pk,n)=>cntOf(cell(pk,n,p));
+    const all=[v(pA,'Winners'),v(pB,'Winners'),v(pA,'Unforced errors'),v(pB,'Unforced errors')];
+    const tp=cell(pA,'Total Points Won',p);
+    return all.every(x=>!x)&&!!tp&&tp.total!=null&&tp.total>=10;
+  };
   const cntRow=(label,name,p)=>{
-    const a=cntOf(cell(pA,name,p)),b=cntOf(cell(pB,name,p));
+    const wue=/^(winners|unforced errors)$/.test(String(name).toLowerCase())&&wueUntracked(p);
+    const a=wue?null:cntOf(cell(pA,name,p)),b=wue?null:cntOf(cell(pB,name,p));
     return twoSided(label,a,b,a===null?'':String(a),b===null?'':String(b),'','','count',name);
   };
 
