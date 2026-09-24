@@ -73,6 +73,24 @@ N.rekey_rows_to_board(one_book_two_sides, BOARD)
 ok(all(r['match_key'] == '2026-09-20|draxl|halys' for r in one_book_two_sides),
    'the two SIDE rows of one fixture are one owner, not a collision')
 
+# Founder ruling 2026-09-24: restore the two past Results Opens. Their cards
+# have left the board, so a committed memory maps vendor key -> card key.
+mem = N.load_card_key_memory()
+ok(mem == {'2026-09-19|kwon|suresh': '2026-09-18|kwon|suresh',
+           '2026-09-18|aliassime|halys': '2026-09-19|aliassime|halys'},
+   'the committed memory holds exactly the two ruled restores')
+st3 = collections.Counter()
+past = [{'fixture_id': 11, 'book': 'sports411', 'match_key': '2026-09-19|kwon|suresh'},
+        {'fixture_id': 12, 'book': 'bet105', 'match_key': '2026-09-18|aliassime|halys'},
+        {'fixture_id': 13, 'book': 'bet105', 'match_key': '2026-09-17|other|pair'}]
+N.rekey_rows_to_board(past, [], st3, memory=mem)
+ok([r['match_key'] for r in past] == ['2026-09-18|kwon|suresh', '2026-09-19|aliassime|halys', '2026-09-17|other|pair']
+   and st3['rekey_restored'] == 2, f'both restored with no board card; nothing else changes ({dict(st3)})')
+ok(past[0]['book'] == 'sports411', 'a restore never relabels the book (Sports411 stays Sports411)')
+for f in ('ten225-kibl-card-state.py', 'ten225-load-card-state.py'):
+    ok('memory=NAMES.load_card_key_memory()' in open(os.path.join(HERE, f)).read(),
+       f'{f} passes the committed memory to the re-key')
+
 # The page's own key function (sliced from the shipped HTML, run in node) must
 # produce the same key as the re-keyed card state for every board card.
 html = open(os.path.join(HERE, 'bsp-consult-dashboard.html'), encoding='utf-8').read()

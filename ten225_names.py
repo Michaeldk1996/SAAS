@@ -26,6 +26,8 @@ the original harness found. If either file moves, that assertion goes red.
 Stdlib only. No network, no secrets.
 """
 import datetime
+import json
+import os
 import unicodedata
 
 # The rotation number Kibl glues to the front of a fixture name ("6112 Suresh
@@ -247,7 +249,26 @@ def board_key_for(key, pair_index, days=BOARD_REKEY_DAYS):
     return near[0], ('same' if near[0] == key else 'rekeyed')
 
 
-def rekey_rows_to_board(rows, matches, st=None):
+# Founder ruling 2026-09-24 (answered): "restore the two past Results Opens
+# filed under the wrong date". Their cards have left matches.json, so the board
+# re-key alone can never reach them — and the builder re-writes their rows every
+# run for 45 days, so a one-off SQL fix would be undone. This committed map is
+# the durable record: vendor key -> the card's key. Delete after 2026-11-03,
+# when both fixtures leave the builder's 45-day window.
+CARD_KEY_MEMORY_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                    'ten225-card-key-memory.json')
+
+
+def load_card_key_memory(path=CARD_KEY_MEMORY_FILE):
+    try:
+        with open(path) as fh:
+            m = json.load(fh).get('keys') or {}
+        return {k: v for k, v in m.items() if isinstance(k, str) and isinstance(v, str)}
+    except (OSError, ValueError, AttributeError):
+        return {}
+
+
+def rekey_rows_to_board(rows, matches, st=None, memory=None):
     """Rewrite each row's match_key to its board card's key, in place. Counts
     every verdict in st (a Counter) under rekey_<verdict>.
 
@@ -260,13 +281,17 @@ def rekey_rows_to_board(rows, matches, st=None):
     idx = board_pair_index(matches)
     plan = []
     for r in rows:
-        k, verdict = board_key_for(r.get('match_key'), idx)
-        plan.append((r, r.get('match_key'), k, verdict))
+        old = r.get('match_key')
+        if memory and old in memory:
+            k, verdict = memory[old], 'restored'
+        else:
+            k, verdict = board_key_for(old, idx)
+        plan.append((r, old, k, verdict))
     owners = {}
     for r, old, new, _ in plan:
         owners.setdefault((new, r.get('book')), set()).add(str(r.get('fixture_id')))
     for r, old, new, verdict in plan:
-        if verdict == 'rekeyed' and len(owners.get((new, r.get('book')), ())) > 1:
+        if verdict in ('rekeyed', 'restored') and len(owners.get((new, r.get('book')), ())) > 1:
             new, verdict = old, 'fixture_collision'
         if st is not None:
             st[f'rekey_{verdict}'] += 1

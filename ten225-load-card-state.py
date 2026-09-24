@@ -546,7 +546,7 @@ def main():
         # dated by the fixture's own start; the card's date wins when exactly
         # one board card carries the pair within +/-2 days.
         rk = collections.Counter()
-        NAMES.rekey_rows_to_board(rows, matches, rk)
+        NAMES.rekey_rows_to_board(rows, matches, rk, memory=NAMES.load_card_key_memory())
         print(f'date key -> board card (oddspapi rows): {dict(sorted(rk.items()))}')
         result['rekey'] = dict(rk)
         if not tk:

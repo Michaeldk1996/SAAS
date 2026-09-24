@@ -2137,7 +2137,7 @@ def main():
     # provisional listing hours away). Before selection and the upsert, so the
     # card state, the stream (card_join.card_key) and the page (ocsKeyOf) agree.
     rk = collections.Counter()
-    NAMES.rekey_rows_to_board(rows, matches, rk)
+    NAMES.rekey_rows_to_board(rows, matches, rk, memory=NAMES.load_card_key_memory())
     print(f'date key -> board card: {dict(sorted(rk.items()))}')
     result['rekey'] = dict(rk)
     # No board this run (review round 3, finding 4): the vendor keys would
