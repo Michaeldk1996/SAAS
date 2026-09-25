@@ -113,6 +113,26 @@ jobs:
                   body = None
               rows = body.get("result") if isinstance(body, dict) and not body.get("error") else None
               return st, rows, r
+          _src = {}
+          def logsrc(want, lo, hi):
+              """The WHERE clause selecting one source (e.g. 'realtime') in `logs`, read
+              off the table itself: the changelog's `source_name` is absent on this
+              project (2026-09-25: "Field source_name does not exist"). Prints column
+              NAMES only, never a value (a row can carry headers)."""
+              if "cols" not in _src:
+                  st, rows, r = logq("select * from logs limit 1", lo, hi)
+                  _src["cols"] = sorted(rows[0].keys()) if rows else []
+                  print(f"logs columns -> HTTP {st} {_src['cols'] if rows is not None else r[:400]}")
+                  _src["col"] = next((c for c in ("source_name", "source", "log_source", "source_type", "type",
+                                                  "service", "service_name") if c in _src["cols"]), None)
+                  if _src["col"]:
+                      st, rows, r = logq(f"select {_src['col']} as src, count() as n, min(timestamp) as first, "
+                                         f"max(timestamp) as last from logs group by src order by n desc limit 30", lo, hi)
+                      print(f"logs by {_src['col']} -> HTTP {st} {json.dumps(rows) if rows is not None else r[:400]}")
+                      _src["vals"] = [str(x.get("src")) for x in (rows or [])]
+              col = _src.get("col")
+              val = next((v for v in _src.get("vals", []) if want in v.lower()), None)
+              return f"{col} = '{val}'" if col and val else None
           bad = []
           if act == "schema":
               st, r = sql(open("kibl-stream/now-schema.sql").read())
@@ -343,8 +363,9 @@ jobs:
               end = dt.datetime.now(dt.timezone.utc).replace(minute=0, second=0, microsecond=0)
               # A misspelt map key reads as '' (a silent zero), so the keys that
               # exist are printed first.
-              st, rows, r = logq("select arrayJoin(mapKeys(log_attributes)) as k, count() as n from logs "
-                                 "where source_name = 'edge_logs' group by k order by n desc limit 80",
+              EDGE = logsrc("edge", end - dt.timedelta(hours=1), end) or "1 = 0"
+              st, rows, r = logq(f"select arrayJoin(mapKeys(log_attributes)) as k, count() as n from logs "
+                                 f"where {EDGE} group by k order by n desc limit 80",
                                  end - dt.timedelta(hours=1), end)
               print(f"=== edge_logs attribute keys (last hour) -> HTTP {st} {json.dumps(rows) if rows is not None else r[:800]}")
               A = lambda k: f"log_attributes['{k}']"
@@ -352,7 +373,7 @@ jobs:
                   substring(if({A('request.headers.user_agent')} = '', '-', {A('request.headers.user_agent')}), 1, 40) as ua,
                   count() as n, sum(toInt64OrNull({A('response.headers.content_length')})) as bytes,
                   countIf({A('response.headers.content_length')} = '') as no_len
-                  from logs where source_name = 'edge_logs'
+                  from logs where {EDGE}
                   group by route, method, ua order by bytes desc limit 40""")
               for d in range(14):
                   hi, lo = end - dt.timedelta(hours=12 * d), end - dt.timedelta(hours=12 * (d + 1))
@@ -378,7 +399,7 @@ jobs:
               for field in ("request.search", "request.url"):
                   q2 = (f"""select {A('request.path')} as path, {A(field)} as qs,
                       substring(if({A('request.headers.user_agent')} = '', '-', {A('request.headers.user_agent')}), 1, 40) as ua,
-                      count() as n from logs where source_name = 'edge_logs'
+                      count() as n from logs where {EDGE}
                       and {A('request.method')} = 'GET' and startsWith({A('request.path')}, '/rest/v1/')
                       group by path, qs, ua order by n desc limit 400""")
                   st, rows, r = logq(q2, lo, hi)
@@ -437,6 +458,9 @@ jobs:
                   print(f"::error::window must be START..END in ISO Z, START < END (got {W!r})"); sys.exit(1)
               span_s = (dt.datetime.fromisoformat(W1[:-1]) - dt.datetime.fromisoformat(W0[:-1])).total_seconds()
               print(f"window {W0} .. {W1} = {span_s/60:.0f} min")
+              st, r = sql("select at, condition, kind, delivered, left(message, 160) as message from public.postmatch_alert_log "
+                          "where at > now() - interval '24 hours' order by at desc limit 20")
+              print(f"Alerts (postmatch_alert_log, last 24 h) -> HTTP {st} {r[:2500]}")
               def q(label, text):
                   st, r = sql(text)
                   print(f"{label} -> HTTP {st} {r[:900]}")
@@ -462,23 +486,23 @@ jobs:
                   return rows
               # What the logs hold for the window, before any count is read off them:
               # a source with no rows here is a retention/plan limit, not a zero.
-              lq("(ii-a) log sources in the window: rows, first, last",
-                 "select source_name, count() as n, min(timestamp) as first, max(timestamp) as last "
-                 "from logs group by source_name order by n desc")
+              RT = logsrc("realtime", z0, z1)
+              print(f"(ii-a) realtime source filter: {RT or '- (no source value containing realtime in the window)'}")
+              RT = RT or "1 = 0"
               lq("(ii-b) realtime_logs attribute keys",
                  "select arrayJoin(mapKeys(log_attributes)) as k, count() as n from logs "
-                 "where source_name = 'realtime_logs' group by k order by n desc limit 80")
+                 f"where {RT} group by k order by n desc limit 80")
               lq("(ii-c) realtime_logs message shapes (ids and digits masked), count each",
                  "select substring(replaceRegexpAll(replaceRegexpAll(event_message, 'eyJ[A-Za-z0-9_.-]+', '<jwt>'), "
                  "'[0-9a-fA-F-]{8,}|[0-9]+', '#'), 1, 160) as shape, count() as n from logs "
-                 "where source_name = 'realtime_logs' group by shape order by n desc limit 50")
+                 f"where {RT} group by shape order by n desc limit 50")
               lq("(ii-d) first 25 realtime_logs lines (tokens masked)",
                  "select timestamp, substring(replaceRegexpAll(event_message, 'eyJ[A-Za-z0-9_.-]+', '<jwt>'), 1, 300) as msg "
-                 "from logs where source_name = 'realtime_logs' order by timestamp limit 25")
+                 f"from logs where {RT} order by timestamp limit 25")
               rows = lq("(ii) realtime_logs lines matching join / leave|close|disconnect",
                         "select countIf(match(lower(event_message), 'join')) as joins, "
                         "countIf(match(lower(event_message), 'leave|close|disconnect')) as leaves, "
-                        "count() as events from logs where source_name = 'realtime_logs'")
+                        f"count() as events from logs where {RT}")
               row = rows[0] if rows else None
               if not row:
                   print("(ii) joins / leaves / connection-minutes: - (logs API gave no row; see (ii-a) for what the window holds)")
