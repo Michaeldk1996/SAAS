@@ -24,10 +24,10 @@
 //     place and gets its position; a new caller is not recorded).
 //  2. First come, first served. A ready `claim` joins the waiter queue with its
 //     wait-start time (`since`). A free lane goes ONLY to the head of the queue —
-//     the oldest `since` among waiters not dropped — whoever polls first. Every
-//     claim returns, and logs, its position and minutes waited.
-//  3. Waiters drop out when their run is confirmed ended (liveness, checked under
-//     the lock within a time budget), or when they have not called `claim` for
+//     the oldest `since` among waiters not dropped — never to whoever polls
+//     first. Every claim returns, and logs, its position and minutes waited.
+//  3. Waiters drop out when their run is confirmed ended (liveness, checked
+//     BEFORE the lock within a shared deadline), or when they have not called `claim` for
 //     WAITER_STALE_MIN — alive or not. A not-ready claim (exit 7) still counts as
 //     claiming: it refreshes the waiter and reports and logs its position. A run
 //     whose commit was batched in leaves the waiter queue.
@@ -107,22 +107,60 @@ export const READBACK_GRACE_MIN = 12;
 // counts as "the deploy is moving" (no pipeline-queued release, and it counts as
 // in progress for the 40-min clause) and the 10-min queued clock only runs while
 // nothing is in progress. false = the ruling's literal text.
-export const HEALTHY_QUEUE_PAUSES_CLOCK = true;
-// A commit is a DATA-BOT commit only if its subject carries [skip ci] AND its
-// author email is one of these — the authors of the last 500 [skip ci] commits
-// on origin/main (2026-09-25). A code commit titled "[skip ci]" by anyone else
-// is code.
+export const HEALTHY_QUEUE_PAUSES_CLOCK = true; // AWAITING THE FOUNDER'S CONFIRMATION; false = the literal ruling
+// A single failed GitHub read must not cut a healthy deploy off: the owner run's
+// last KNOWN state is reused if it is at most this old; older → unknown.
+export const PIPELINE_STALE_OK_MIN = 5;
+// A commit is a DATA-BOT commit only if ALL of:
+//  (a) its SUBJECT carries [skip ci];
+//  (b) its author email is a data bot — the bot authors of every [skip ci]
+//      commit on origin/main in the 30 days to 2026-09-25 (agent and human
+//      identities that also used [skip ci] are excluded);
+//  (c) it touches at least one file and EVERY file it touches is a data path:
+//      a .json / .jsonl / .json.gz / .csv file at the repo root or under a
+//      data directory — never code (.js .mjs .cjs .py .sh .yml .yaml .html
+//      .css), never package*.json, never .github/ or tools/.
+// Agents HAVE committed code as bsp-bot and bot@bspconsult.local with [skip ci]
+// in the title (TEN-232, 09-18: kibl_client.py, workflows) — (c) catches that.
 export const DATA_BOT_AUTHORS = new Set([
   'bsp-odds-bot@users.noreply.github.com',
   'bsp-admin-log-bot@users.noreply.github.com',
   'bsp-series-outcomes-bot@users.noreply.github.com',
-  'bsp-profile-cache-bot@users.noreply.github.com',
   'bsp-asap-bot@users.noreply.github.com',
-  'bsp-surface-bot@users.noreply.github.com',
   'bsp-bot@users.noreply.github.com',
-  'bot@bspconsult.local', // BSP Entry Lists / Styles (launchd)
+  'bsp-profile-cache-bot@users.noreply.github.com',
+  'bsp-surface-bot@users.noreply.github.com',
+  'bsp-wue-bot@users.noreply.github.com',
+  'bsp-radar-bot@users.noreply.github.com',
+  'bsp-elo-bot@users.noreply.github.com',
+  'bsp-clutch-bot@users.noreply.github.com',
+  'bsp-archetypes-bot@users.noreply.github.com',
+  'bsp-par-bot@users.noreply.github.com',
+  'bot@bspconsult.local', // BSP Entry Lists / Styles / Splits (launchd)
 ]);
-export const isDataCommit = ({ subject = '', authorEmail = '' }) => subject.includes('[skip ci]') && DATA_BOT_AUTHORS.has(authorEmail.toLowerCase());
+export const DATA_DIRS = ['style-meetings/', 'bet365-history/', 'odds-archive/', 'match-closes/', 'form/', 'career-history/'];
+export const DATA_EXTS = ['.json', '.jsonl', '.json.gz', '.csv'];
+const CODE_FILE = /\.(js|mjs|cjs|py|sh|ya?ml|html|css)$/i;
+export function isDataPath(f) {
+  const base = f.split('/').pop();
+  if (CODE_FILE.test(f) || /^package.*\.json$/i.test(base) || f.startsWith('.github/') || f.startsWith('tools/')) return false;
+  if (!DATA_EXTS.some((e) => f.toLowerCase().endsWith(e))) return false;
+  return !f.includes('/') || DATA_DIRS.some((d) => f.startsWith(d));
+}
+export const isDataCommit = ({ subject = '', authorEmail = '', files = [] }) =>
+  subject.includes('[skip ci]') && DATA_BOT_AUTHORS.has(authorEmail.toLowerCase()) && files.length > 0 && files.every(isDataPath);
+
+// The commits in `range` with subject, author email and every file touched.
+export function commitsIn(range, { cwd = process.cwd(), git: g = git } = {}) {
+  const l = g(['log', '--format=%x1e%H%x1f%s%x1f%ae', '--name-only', range], { cwd });
+  if (l.status !== 0) return { ok: false, error: l.stderr };
+  const commits = l.stdout.split('\x1e').map((x) => x.trim()).filter(Boolean).map((x) => {
+    const [head, ...files] = x.split('\n');
+    const [h, subject, authorEmail] = head.split('\x1f');
+    return { sha: h, subject, authorEmail, files: files.map((f) => f.trim()).filter(Boolean) };
+  });
+  return { ok: true, commits };
+}
 const QUEUED = new Set(['queued', 'waiting', 'pending', 'requested']);
 // A waiter that has not called `claim` for this long leaves the waiter queue —
 // alive or not: a claimant that stopped claiming is no longer a live claimant.
@@ -144,8 +182,9 @@ const LOCK_STALE_MS = 180000;
 const CHECK_LIVE_TIMEOUT_MS = 120000;
 const HISTORY_KEEP = 500;
 const DEFAULT_REPO = 'Michaeldk1996/SAAS';
-// Waiter and ready-entry liveness is checked UNDER the store lock: an overall
-// deadline per pass keeps that well inside LOCK_STALE_MS (plus at most one NET_TIMEOUT_MS call).
+// Holder, waiter and ready-entry liveness is checked BEFORE the store lock, under
+// one shared deadline per pass (plus at most one NET_TIMEOUT_MS call); nothing
+// inside the lock touches the network.
 export const BATCH_LIVENESS_BUDGET_MS = 60000;
 
 const iso = (ms) => new Date(ms).toISOString();
@@ -212,10 +251,11 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
   pipelineRuns = async () => ({ ok: false, detail: 'no pipeline adapter configured' }),
   alert = async () => ({ ok: false, error: 'no alert adapter configured' }),
   maxHoldMin = MAX_HOLD_MIN, pipelineQueuedMaxMin = PIPELINE_QUEUED_MAX_MIN, readbackGraceMin = READBACK_GRACE_MIN,
-  healthyQueue = HEALTHY_QUEUE_PAUSES_CLOCK, livenessBudgetMs = BATCH_LIVENESS_BUDGET_MS }) {
+  healthyQueue = HEALTHY_QUEUE_PAUSES_CLOCK, pipelineStaleOkMin = PIPELINE_STALE_OK_MIN, livenessBudgetMs = BATCH_LIVENESS_BUDGET_MS }) {
   const log = (s, event) => { s.history.push({ at: iso(now()), ...event }); s.history = s.history.slice(-HISTORY_KEEP); };
   const capMs = maxHoldMin == null ? null : maxHoldMin * MIN;
   const graceMs = readbackGraceMin * MIN;
+  const staleOkMs = pipelineStaleOkMin * MIN;
   const waitedMin = (w, t = now()) => Math.round((t - Date.parse(w.since)) / MIN);
   // A claim written by the TEN-261 tool: no version marker, and a lease expiry.
   const isLegacy = (c) => !!c && c.version !== 2 && !!c.expiresAt;
@@ -285,7 +325,7 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
     if (c) {
       pre.live = await liveness(c);
       if (capMs != null && !isLegacy(c) && (c.pushedAt || now() - Date.parse(c.takenAt) >= capMs)) {
-        pre.pr = await pipelineRuns({ since: c.pushedAt });
+        pre.pr = await pipelineRuns({ since: c.pushedAt, ownerRunId: c.ownerRun ? c.ownerRun.id : undefined });
       }
     }
     if (waiters) {
@@ -376,7 +416,14 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
     if (capMs == null) return { forced: null, live };
     const elapsed = t - Date.parse(c.takenAt);
     const pushedAt = c.pushedAt ? Date.parse(c.pushedAt) : null;
-    const pr = pre.pr;
+    let pr = pre.pr;
+    let lastKnown = false;
+    if (pr && pr.ok) c.lastKnownPipeline = { at: iso(t), runs: pr.runs };
+    else if (pr && c.lastKnownPipeline && t - Date.parse(c.lastKnownPipeline.at) <= staleOkMs) {
+      // One failed GitHub read: reuse the last known state (≤ PIPELINE_STALE_OK_MIN old).
+      pr = { ok: true, runs: c.lastKnownPipeline.runs, detail: pr.detail };
+      lastKnown = true;
+    }
     const known = !!(pr && pr.ok);
     const runs = known && pushedAt != null ? pr.runs : [];
     let owner = null;
@@ -385,7 +432,7 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
       .sort((a, b) => Date.parse(a.startedAt) - Date.parse(b.startedAt))[0] || null;
     if (owner) c.ownerRun = { id: owner.id, startedAt: owner.startedAt, status: owner.status, conclusion: owner.conclusion || null, completedAt: owner.completedAt || null, url: owner.url || null };
     const or = c.ownerRun;
-    const held = (state, extra = {}) => { c.pipeline = { checkedAt: iso(t), state, ...extra }; return { forced: null, live }; };
+    const held = (state, extra = {}) => { c.pipeline = { checkedAt: iso(t), state, ...(lastKnown ? { lastKnownAt: c.lastKnownPipeline.at } : {}), ...extra }; return { forced: null, live }; };
     if (owner && owner.status === 'in_progress') return held('owner-run-in-progress', { run: owner.url || owner.id });
     if (or && or.status === 'completed' && or.conclusion === 'success' && or.completedAt && t < Date.parse(or.completedAt) + graceMs) {
       return held('read-back-grace', { until: iso(Date.parse(or.completedAt) + graceMs) });
@@ -517,6 +564,15 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
         // the gate above) replaces the claimed one, so deploy-batch accepts it.
         c.renewedAt = iso(t);
         const from = c.sha;
+        if (ready.sha !== from && c.pushedAt) {
+          // Your push is out: a new commit is a new deploy. Confirm the pushed one
+          // (confirm-live releases the lane), then claim the new sha — at the back
+          // of the queue, like anyone else (founder: "a fix found during
+          // verification re-queues like anyone else").
+          save(s);
+          return { code: EXIT.REFUSED, action: 'pushed-confirm-first', claim: c,
+            detail: `you pushed ${c.readBack || from} at ${c.pushedAt}; run confirm-live on it first, then claim ${ready.sha} again (you will join the back of the queue)` };
+        }
         if (ready.sha !== from) {
           c.sha = ready.sha; c.suiteFinishedAt = (ready.receipt && ready.receipt.finishedAt) || null;
           log(s, { event: 'claim-sha-updated', ticket: me.ticket, runId: me.runId, from, to: ready.sha });
@@ -821,10 +877,10 @@ export function gitRebaseCheck({ cwd = process.cwd() } = {}) {
     const f = git(['fetch', 'origin', '--quiet'], { cwd });
     if (f.status !== 0) return { ok: false, codeCommits: [], dataCommits: 0, detail: `git fetch origin failed — cannot confirm rebased (${f.stderr.split('\n')[0]})` };
     if (git(['rev-parse', '--verify', '--quiet', `${sha}^{commit}`], { cwd }).status !== 0) return { ok: false, codeCommits: [], dataCommits: 0, detail: `${sha} is not a commit in this repository` };
-    const l = git(['log', '--format=%H%x1f%s%x1f%ae%x1e', `${sha}..origin/main`], { cwd });
-    if (l.status !== 0) return { ok: false, codeCommits: [], dataCommits: 0, detail: `git log ${sha}..origin/main failed: ${l.stderr}` };
-    const commits = l.stdout.split('\x1e').map((x) => x.trim()).filter(Boolean).map((x) => { const [h, subject, authorEmail] = x.split('\x1f'); return { sha: h, subject, authorEmail }; });
-    // Data = [skip ci] in the SUBJECT (a body mention is not) AND a data-bot author.
+    const l = commitsIn(`${sha}..origin/main`, { cwd });
+    if (!l.ok) return { ok: false, codeCommits: [], dataCommits: 0, detail: `git log ${sha}..origin/main failed: ${l.error}` };
+    const commits = l.commits;
+    // Data = [skip ci] in the SUBJECT AND a data-bot author AND only data paths.
     const code = commits.filter((c) => !isDataCommit(c));
     const dataCommits = commits.length - code.length;
     return code.length
@@ -863,12 +919,15 @@ async function gh(pathname, { token, method = 'GET', body, apiBase = GH_API } = 
   return r;
 }
 
-// pipeline.yml runs, newest first. startedAt = the earliest job started_at for
-// at most JOBS_CALLS_MAX runs (the earliest-started ones at/after `since`, the
-// candidates for "the owner's run"), else the run's run_started_at.
+// pipeline.yml runs, newest first. A run counts as STARTED only if one of its
+// jobs has a non-null started_at: live GitHub sets run_started_at == created_at
+// on every run, including the ~21% cancelled while still queued, which have no
+// jobs at all — such a run is never "the owner's run". Jobs are read for at most
+// JOBS_CALLS_MAX runs: the recorded owner run if there is one, else the earliest
+// created at/after `since` − 10 min that are not queued (not-cancelled first).
 const JOBS_CALLS_MAX = 3;
 export function githubPipelineRuns({ repo = DEFAULT_REPO, token = () => githubToken(), workflow = 'pipeline.yml', apiBase = GH_API } = {}) {
-  return async ({ since } = {}) => {
+  return async ({ since, ownerRunId } = {}) => {
     try {
       const tk = typeof token === 'function' ? token() : token;
       if (!tk) return { ok: false, detail: 'no GitHub token (GH_TOKEN or keychain)' };
@@ -876,16 +935,17 @@ export function githubPipelineRuns({ repo = DEFAULT_REPO, token = () => githubTo
       const r = await call(`/repos/${repo}/actions/workflows/${workflow}/runs?per_page=20`);
       if (!r.ok) return { ok: false, detail: `GitHub runs HTTP ${r.status}` };
       const runs = ((await r.json()).workflow_runs || []).map((run) => ({ id: run.id, status: run.status, conclusion: run.conclusion || null,
-        createdAt: run.created_at, startedAt: run.status === 'queued' || run.status === 'waiting' || run.status === 'pending' || run.status === 'requested' ? null : (run.run_started_at || null),
-        completedAt: run.status === 'completed' ? run.updated_at : null, url: run.html_url }));
+        createdAt: run.created_at, startedAt: null, completedAt: run.status === 'completed' ? run.updated_at : null, url: run.html_url }));
       const sinceMs = since ? Date.parse(since) : -Infinity;
-      const cands = runs.filter((x) => x.startedAt && Date.parse(x.startedAt) >= sinceMs - 10 * MIN)
-        .sort((a, b) => Date.parse(a.startedAt) - Date.parse(b.startedAt)).slice(0, JOBS_CALLS_MAX);
+      const cands = ownerRunId != null ? runs.filter((x) => x.id === ownerRunId)
+        : runs.filter((x) => !QUEUED.has(x.status) && Date.parse(x.createdAt) >= sinceMs - 10 * MIN)
+          .sort((a, b) => ((a.conclusion === 'cancelled') - (b.conclusion === 'cancelled')) || (Date.parse(a.createdAt) - Date.parse(b.createdAt)))
+          .slice(0, JOBS_CALLS_MAX);
       for (const x of cands) {
         const j = await call(`/repos/${repo}/actions/runs/${x.id}/jobs?per_page=50`);
         if (!j.ok) return { ok: false, detail: `GitHub jobs HTTP ${j.status}` };
         const starts = ((await j.json()).jobs || []).map((k) => k.started_at).filter(Boolean).sort();
-        if (starts[0]) x.startedAt = starts[0];
+        x.startedAt = starts[0] || null;
       }
       return { ok: true, runs };
     } catch (e) { return { ok: false, detail: `GitHub unreachable: ${e.message}` }; }

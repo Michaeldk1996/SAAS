@@ -12,8 +12,10 @@
 #       missing (TEN-273, tools/check-site-freshness.mjs)
 #   (d) the deploy lane forced a holder out (TEN-273 cap ruling): dispatched by
 #       tools/deploy-lane.mjs with input lane_alert naming the reason. It runs
-#       FIRST and fails the job; every other step carries `if: always()` so one
-#       alarm never masks another.
+#       FIRST and fails the job; every other step still runs after it
+#       (checkout and alarm (a) carry `if: ${{ !cancelled() }}`, alarms (b) and
+#       (c) `if: always()`), so one alarm never masks another — while a
+#       superseded (cancelled) watchdog run stops.
 #
 # WHY THIS IS A SEPARATE WORKFLOW, AND NOT A STEP INSIDE pipeline.yml
 # ───────────────────────────────────────────────────────────────────

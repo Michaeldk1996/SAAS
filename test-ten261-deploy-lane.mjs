@@ -168,7 +168,10 @@ function gitFixture() {
   };
   return { root, origin, work, bot, dataBot: () => onOrigin('data.json', 'data refresh [skip ci]'),
     codePush: (f = 'other.txt') => onOrigin(f, 'TEN-999: a code change\n\nIts body mentions [skip ci]; it is still code.'),
-    skipCiByHuman: () => onOrigin('sneaky.txt', 'TEN-998: a code change titled [skip ci]', 'dev@example.com') };
+    skipCiByHuman: () => onOrigin('sneaky.json', 'TEN-998: a change titled [skip ci] by a human', 'dev@example.com'),
+    // An AGENT committing code under a data-bot identity with [skip ci] (TEN-232 did).
+    botCodeSkipCi: () => onOrigin('lib.js', 'TEN-997: agent code under the bot identity [skip ci]', 'bsp-bot@users.noreply.github.com'),
+    botDataSkipCi: () => onOrigin('odds-card-state.json', 'chore(odds): publish odds_card_state projection [skip ci]', 'bsp-bot@users.noreply.github.com') };
 }
 
 // ── the cases, each returning whether the rule held ──────────────────────────
@@ -989,7 +992,7 @@ Object.assign(CASES, {
       pipe.runs = [run(1, 'in_progress', 20.5, 21)];
       clock.t = at(45); const held = await lane.renew(A);
       pipe.ok = false; live.code = 0;
-      clock.t = at(47); const r = await lane.confirmLive(A, { sha: SHA.A });
+      clock.t = at(51); const r = await lane.confirmLive(A, { sha: SHA.A }); // last known state 6 min old: the hold rules would release
       const h = state(file).history;
       return held.code === 0 && r.code === 0 && r.action === 'released-live-confirmed' && alerts.length === 0
         && !h.some((x) => x.event === 'cap-released') && h.some((x) => x.event === 'released-live-confirmed');
@@ -1134,6 +1137,90 @@ Object.assign(CASES, {
   },
 });
 
+// ── review of d096a3c3 ────────────────────────────────────────────────────────
+const isoAt = (m) => new Date(at(m)).toISOString();
+Object.assign(CASES, {
+  // B1 · the reproduced timeline, through the REAL GitHub adapter (fake API):
+  //      push 20; run 101 created 22, cancelled while queued at 32 (no jobs; live
+  //      GitHub still sets run_started_at = created_at); run 102 in progress since
+  //      34. At 41 the hold is kept — 102 is the owner's run, 101 never was.
+  async cancelledQueuedRunIsNotTheOwner(mod) {
+    const board = await startBoard();
+    try {
+      const x = await rig(mod, board, undefined, { defaults: true });
+      const lane = mod.createLane({ ...x.opts, pipelineRuns: mod.githubPipelineRuns({ repo: 'o/r', token: 't', apiBase: board.base }) });
+      board.runs['run-A'] = 'running'; board.runs['run-B'] = 'running';
+      await lane.claim(A, RDY(SHA.A));
+      x.clock.t = at(20); await lane.recordPush(A, { readBack: SHA.A, pushedHead: SHA.A });
+      board.gh.runs = [
+        { id: 102, status: 'in_progress', conclusion: null, created_at: isoAt(33), run_started_at: isoAt(33), updated_at: isoAt(34), html_url: 'u102' },
+        { id: 101, status: 'completed', conclusion: 'cancelled', created_at: isoAt(22), run_started_at: isoAt(22), updated_at: isoAt(32), html_url: 'u101' },
+      ];
+      board.gh.jobs['102'] = [{ started_at: isoAt(34) }];
+      x.clock.t = at(41); const r = await lane.renew(A);
+      const b = await lane.claim(B, RDY(SHA.B));
+      const c = lane.peek().claim;
+      return r.code === 0 && r.pipeline.state === 'owner-run-in-progress' && b.code === 3 && !!c && c.ownerRun && c.ownerRun.id === 102;
+    } catch (e) { if (process.env.DEBUG_TEN273) console.error('CASE THREW:', e.message); return false; } finally { board.close(); }
+  },
+
+  // B2 · an agent's CODE commit under a data-bot identity with [skip ci] in the
+  //      title is code: every file must be a data path. A real data-bot commit
+  //      by the same identity is data. REAL git.
+  async botIdentityCodeIsCode(mod) {
+    const g = gitFixture();
+    try {
+      const s1 = commit(g.work, 'app.txt', 'v2\n', 'TEN-253: the change');
+      g.botDataSkipCi();
+      const data = mod.gitRebaseCheck({ cwd: g.work })(s1);
+      g.botCodeSkipCi();
+      const code = mod.gitRebaseCheck({ cwd: g.work })(s1);
+      return data.ok === true && code.ok === false && code.codeCommits.length === 1 && /TEN-997/.test(code.codeCommits[0].subject)
+        && !mod.isDataPath('lib.js') && !mod.isDataPath('package.json') && !mod.isDataPath('.github/workflows/x.yml')
+        && mod.isDataPath('odds-card-state.json') && mod.isDataPath('style-meetings/a.json');
+    } catch (e) { if (process.env.DEBUG_TEN273) console.error('CASE THREW:', e.message); return false; }
+  },
+
+  // M1 · one failed GitHub read at 41, with the owner's run seen in progress at
+  //      38, keeps the hold (last known ≤ 5 min old); a failure with the last
+  //      known state older than 5 min is unknown → the plain cap.
+  async oneGithubFailureReusesTheLastKnownState(mod) {
+    const board = await startBoard();
+    try {
+      const { lane, clock, pipe } = await rig(mod, board, undefined, { defaults: true });
+      board.runs['run-A'] = 'running';
+      await lane.claim(A, RDY(SHA.A));
+      clock.t = at(30); await lane.recordPush(A, { readBack: SHA.A, pushedHead: SHA.A });
+      pipe.runs = [run(1, 'in_progress', 30.5, 31)];
+      clock.t = at(38); const r38 = await lane.renew(A);
+      pipe.ok = false;
+      clock.t = at(41); const r41 = await lane.renew(A);
+      clock.t = at(44); const r44 = await lane.renew(A);
+      return r38.code === 0 && r41.code === 0 && r41.pipeline.state === 'owner-run-in-progress' && !!r41.pipeline.lastKnownAt
+        && r44.code === 1 && r44.reason === 'cap-40min-no-run';
+    } catch (e) { if (process.env.DEBUG_TEN273) console.error('CASE THREW:', e.message); return false; } finally { board.close(); }
+  },
+
+  // L3 · after the push, a NEW sha does not ride the same hold: refused until
+  //      confirm-live releases the lane, then the new sha re-queues at the back.
+  async newShaAfterThePushReQueues(mod) {
+    const board = await startBoard();
+    try {
+      const { lane, clock, live } = await rig(mod, board);
+      for (const r of ['run-A', 'run-B']) board.runs[r] = 'running';
+      await lane.claim(A, RDY(SHA.A));
+      clock.t = at(5); await lane.recordPush(A, { readBack: SHA.A, pushedHead: SHA.A });
+      clock.t = at(6); const refused = await lane.claim(A, RDY(SHA.A2));
+      const kept = lane.peek().claim.sha === SHA.A;
+      clock.t = at(7); await lane.claim(B, RDY(SHA.B));
+      live.code = 0;
+      clock.t = at(8); await lane.confirmLive(A, { sha: SHA.A });
+      clock.t = at(9); const again = await lane.claim(A, RDY(SHA.A2));
+      return refused.code === 1 && refused.action === 'pushed-confirm-first' && kept && again.code === 3 && again.position === 2;
+    } catch (e) { if (process.env.DEBUG_TEN273) console.error('CASE THREW:', e.message); return false; } finally { board.close(); }
+  },
+});
+
 // Each mutant cuts one mechanism out of the real source. Every anchor must
 // occur exactly once, or the mutant silently mutates nothing.
 const MUTANTS = [
@@ -1163,8 +1250,6 @@ const MUTANTS = [
     'const code = commits.filter((c) => !isDataCommit(c));', 'const code = [];'],
   ['data-bot commits count as not rebased', 'notReadyIsRefused',
     'const code = commits.filter((c) => !isDataCommit(c));', 'const code = commits;'],
-  ['[skip ci] in the BODY counts as a data-bot commit', 'notReadyIsRefused',
-    "const l = git(['log', '--format=%H%x1f%s%x1f%ae%x1e'", "const l = git(['log', '--format=%H%x1f%B%x1f%ae%x1e'"],
   ['review is not required', 'notReadyIsRefused', 'if (!reviewed) missing.push(', 'if (false) missing.push('],
   ['exit 4 is back in the table', 'noPathReturnsFourOrFive',
     'export const EXIT = { HOLD: 0,', 'export const EXIT = { EXPIRED_OWNER_ALIVE: 4, HOLD: 0,'],
@@ -1299,13 +1384,26 @@ const MUTANTS = [
   ['(4) the flag ships off (the literal rule)', 'healthyQueueingIsNotStuck',
     'export const HEALTHY_QUEUE_PAUSES_CLOCK = true;', 'export const HEALTHY_QUEUE_PAUSES_CLOCK = false;'],
   ['(5) any [skip ci] subject is data, whoever wrote it', 'skipCiByANonBotIsCode',
-    "subject.includes('[skip ci]') && DATA_BOT_AUTHORS.has(authorEmail.toLowerCase());", "subject.includes('[skip ci]');"],
+    "subject.includes('[skip ci]') && DATA_BOT_AUTHORS.has(authorEmail.toLowerCase()) &&", "subject.includes('[skip ci]') &&"],
   ['(6) notices and alerts are sent inside the lock', 'noNetworkInsideTheLock',
     '    const out = await withLock(file, (save) => fn(save, fx));',
     '    const out = await withLock(file, async (save) => { const o = await fn(save, fx); for (const f of fx.splice(0)) await f(); return o; });'],
   ['(6) liveness and pipeline runs are fetched inside the lock', 'noNetworkInsideTheLock',
     '  async function status(me) {\n    const pre = await prefetch(me);\n    return locked(async (save, fx) => {\n      const s = readState(file);',
     '  async function status(me) {\n    return locked(async (save, fx) => {\n      const pre = await prefetch(me);\n      const s = readState(file);'],
+  // review of d096a3c3
+  ['(B1) a run with no started job falls back to its created time', 'cancelledQueuedRunIsNotTheOwner',
+    'x.startedAt = starts[0] || null;', 'x.startedAt = starts[0] || x.createdAt;'],
+  ['(B2) a data-bot author alone makes a commit data (files not checked)', 'botIdentityCodeIsCode',
+    ' && files.length > 0 && files.every(isDataPath);', ';'],
+  ['(B2) code files pass as data paths', 'botIdentityCodeIsCode',
+    "if (CODE_FILE.test(f) || /^package.*\\.json$/i.test(base) || f.startsWith('.github/') || f.startsWith('tools/')) return false;", ''],
+  ['(M1) a failed GitHub read never reuses the last known state', 'oneGithubFailureReusesTheLastKnownState',
+    'else if (pr && c.lastKnownPipeline && t - Date.parse(c.lastKnownPipeline.at) <= staleOkMs) {', 'else if (false) {'],
+  ['(M1) the last known state is trusted for 30 min', 'oneGithubFailureReusesTheLastKnownState',
+    'export const PIPELINE_STALE_OK_MIN = 5;', 'export const PIPELINE_STALE_OK_MIN = 30;'],
+  ['(L3) a new sha after the push rides the same hold', 'newShaAfterThePushReQueues',
+    'if (ready.sha !== from && c.pushedAt) {', 'if (false) {'],
 ];
 
 async function loadMutant(find, replace) {
@@ -1389,9 +1487,14 @@ test('githubPipelineRuns: runs newest first, an in-progress run carries its EARL
     board.gh.jobCalls = 0;
     const r = await real.githubPipelineRuns({ repo: 'o/r', token: 'tok', apiBase: board.base })({ since: '2026-09-25T01:39:00Z' });
     assert.equal(r.ok, true);
+    assert.equal(board.gh.jobCalls, 3, 'runs 4, 5, 7: created within 10 min before `since` or later, not queued');
+    // Started = a job with a started_at. Run 5 has no jobs: NOT started, whatever its run_started_at says.
     assert.deepEqual(r.runs.slice(0, 3).map((x) => [x.id, x.status, x.startedAt, x.conclusion, x.completedAt]),
-      [[7, 'in_progress', '2026-09-25T02:01:30Z', null, null], [6, 'queued', null, null, null], [5, 'completed', '2026-09-25T01:40:30Z', 'success', '2026-09-25T01:52:00Z']]);
-    assert.equal(board.gh.jobCalls, 3, 'runs 4, 5, 7: started within 10 min before `since` or later (a run can start just before the push while its first job starts after it)');
+      [[7, 'in_progress', '2026-09-25T02:01:30Z', null, null], [6, 'queued', null, null, null], [5, 'completed', null, 'success', '2026-09-25T01:52:00Z']]);
+    board.gh.jobCalls = 0;
+    const own = await real.githubPipelineRuns({ repo: 'o/r', token: 'tok', apiBase: board.base })({ since: '2026-09-25T01:00:00Z', ownerRunId: 7 });
+    assert.equal(board.gh.jobCalls, 1, 'a recorded owner run: only its jobs are read');
+    assert.equal(own.runs.find((x) => x.id === 7).startedAt, '2026-09-25T02:01:30Z');
     const none = await real.githubPipelineRuns({ repo: 'o/r', token: () => null, apiBase: board.base })();
     assert.equal(none.ok, false); assert.match(none.detail, /no GitHub token/);
     const down = await real.githubPipelineRuns({ repo: 'o/r', token: 'tok', apiBase: 'http://127.0.0.1:9' })();

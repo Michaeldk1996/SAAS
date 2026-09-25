@@ -1965,8 +1965,9 @@ Together they supersede the TEN-261 45-min renewable lease.
 **What the lane is now.**
 - **Ready before claiming.** `claim --sha S --reviewed` needs:
   - a `tools/ci-suite.sh` receipt for exactly S (exit 0);
-  - S rebased: only data-bot commits ahead of it (`[skip ci]` in the subject AND an
-    allowlisted data-bot author; a human's commit titled `[skip ci]` is code);
+  - S rebased: only data-bot commits ahead of it. A data-bot commit needs all three:
+    `[skip ci]` in the subject, an allowlisted data-bot author, and data paths only. A
+    human's commit titled `[skip ci]`, or an agent's code under a bot identity, is code;
   - the review attested.
   Otherwise exit 7.
 - **First come, first served.** The head of the waiter queue (the oldest wait-start)
@@ -1996,9 +1997,14 @@ Together they supersede the TEN-261 45-min renewable lease.
     read-back grace after it succeeds (Pages `max-age` 600 s + 2 min);
   - (iii) queued > 10 min → release, `pipeline-queued-10min`;
   - (iv) 40 min from `takenAt` with none of that → release, `cap-40min-no-run`.
-  "The owner's pipeline run" is the FIRST `pipeline.yml` run that started at or after
-  `pushedAt`, captured before the push and recorded on the claim once seen. Later ticks
-  never extend. GitHub unreachable is unknown, and never extends a hold.
+  "The owner's pipeline run" is the FIRST `pipeline.yml` run whose first JOB started at
+  or after `pushedAt` (captured before the push), recorded on the claim once seen. Later
+  ticks never extend. A run with no started job has not started. Live GitHub stamps
+  `run_started_at` = `created_at` on every run, including the ~21% cancelled while
+  queued, which is how a queued-cancelled run was once picked as the owner (review of
+  d096a3c3).
+  One failed GitHub read reuses the last known state if it is at most 5 min old; beyond
+  that, unknown, which never extends.
 - **A forced release:**
   - re-queues the holder at the back only if it had not pushed (and is alive);
   - logs the reason and posts on the ticket;
@@ -2011,20 +2017,26 @@ Together they supersede the TEN-261 45-min renewable lease.
   anything.
 
 **For the founder to confirm.**
-- **Healthy queueing** (`HEALTHY_QUEUE_PAUSES_CLOCK`, shipped on; `false` restores the
-  literal rule). The pipeline group allows one running and one pending run, so the
+- **Healthy queueing: AWAITING THE FOUNDER'S CONFIRMATION**
+  (`HEALTHY_QUEUE_PAUSES_CLOCK`, shipped on; one line, `false`, restores the literal
+  rule). The pipeline group allows one running and one pending run, so the
   owner's run can sit pending behind a tick that started before the push. While that
   tick runs, the deploy counts as moving: no `pipeline-queued-10min` release, and it
   counts as in progress for the 40-min clause. The 10-min queued clock only runs while
   nothing is in progress.
-- **Data-bot allowlist.** Built from the authors of the last 500 `[skip ci]` commits:
-  bsp-odds-bot, bsp-admin-log-bot, bsp-series-outcomes-bot, bsp-profile-cache-bot,
-  bsp-asap-bot, bsp-surface-bot, bsp-bot, and bot@bspconsult.local (the launchd
-  Entry Lists / Styles / Splits / Stats bots). Rarer data bots seen only in older
-  history are NOT on it: bsp-elo-bot, bsp-radar-bot, bsp-clutch-bot,
-  bsp-archetypes-bot, bsp-wue-bot, bsp-par-bot, bsp-atp-entry-bot. A commit by one of
-  those counts as code, which is the safe side: waiters must rebase. Add them if you
-  want.
+- **Data-bot allowlists** (30 days of `[skip ci]` commits on main to 2026-09-25).
+  - **Authors:** bsp-odds-bot, bsp-admin-log-bot, bsp-series-outcomes-bot,
+    bsp-asap-bot, bsp-bot, bsp-profile-cache-bot, bsp-surface-bot, bsp-wue-bot,
+    bsp-radar-bot, bsp-elo-bot, bsp-clutch-bot, bsp-archetypes-bot, bsp-par-bot, and
+    bot@bspconsult.local (the launchd Entry Lists / Styles / Splits bots).
+    bsp-atp-entry-bot has no `[skip ci]` commit in the window, so it is not listed.
+  - **Paths:** a `.json` / `.jsonl` / `.json.gz` / `.csv` file at the root or under
+    style-meetings/, bet365-history/, odds-archive/, match-closes/, form/ or
+    career-history/. Every file in the commit must pass. Code files, `package*.json`,
+    `.github/` and `tools/` never pass.
+  - **Result over those 30 days:** of 5,327 bot-authored `[skip ci]` commits, exactly
+    11 count as code, all of them the TEN-232 agent commits (kibl_client.py, probes,
+    workflows, `.md` reports).
 - **Silent live waiters.** A live Paperclip waiter that stops calling `claim` for 15 min
   loses its place (review fix; a capped holder that never re-claimed would otherwise
   reach the head and block everyone). A waiter that is re-preparing keeps its place as

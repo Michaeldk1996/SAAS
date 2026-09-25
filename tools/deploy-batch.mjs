@@ -42,7 +42,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { git as realGit, gitRebaseCheck, realLane, whoAmI, isDataCommit } from './deploy-lane.mjs';
+import { git as realGit, gitRebaseCheck, realLane, whoAmI, isDataCommit, commitsIn } from './deploy-lane.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const SUITE_TIMEOUT_MS = 25 * 60 * 1000;
@@ -160,9 +160,10 @@ export async function runBatch({ lane, me, sha, repo = process.cwd(), git = real
       if (attempt >= 1) return { ok: false, reason: `push rejected twice: ${p.stderr.split('\n')[0]}` };
       if (G(['fetch', 'origin', '--quiet']).status !== 0) return { ok: false, reason: 'git fetch origin failed after a rejected push' };
       const tip = G(['rev-parse', 'origin/main']).stdout;
-      const landed = G(['log', '--format=%H%x1f%s%x1f%ae%x1e', `${b.head}..${tip}`]).stdout.split('\x1e').map((x) => x.trim()).filter(Boolean)
-        .map((x) => { const [h, subject, authorEmail] = x.split('\x1f'); return { sha: h, subject, authorEmail }; });
-      const code = landed.filter((c) => !isDataCommit(c));
+      const lr = commitsIn(`${b.head}..${tip}`, { cwd: repo, git });
+      if (!lr.ok) return { ok: false, reason: `git log after a rejected push failed: ${lr.error}` };
+      // Data = [skip ci] subject AND a data-bot author AND only data paths.
+      const code = lr.commits.filter((c) => !isDataCommit(c));
       if (code.length) return { ok: false, reason: `a code commit landed on origin/main during the batch: ${code.map((c) => `${c.sha.slice(0, 8)} ${c.subject}`).join('; ')}` };
       const nb = build(tip, groups);
       if (!nb.ok || nb.conflicts.length) return { ok: false, reason: `replay onto the new origin/main failed: ${nb.reason || nb.conflicts.map((s) => s.reason).join('; ')}` };

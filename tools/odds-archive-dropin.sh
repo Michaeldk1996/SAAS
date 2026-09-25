@@ -187,7 +187,7 @@ ready_receipt
 # (rebase + a new receipt) and claim again, at the back of the queue.
 git config credential.helper osxkeychain   # this throwaway clone only: deploy-batch pushes through it
 export GIT_TERMINAL_PROMPT=0
-landed=0
+landed=0; UNAWARE=0
 for attempt in 1 2 3; do
   CLAIMED="$(git rev-parse HEAD)"
   errs=0; notready=0; LANE_HELD=0
@@ -209,6 +209,14 @@ for attempt in 1 2 3; do
   bash tools/clobber-check.sh "$BASE" "${OUT[@]}" > "$RUN/clobber.log" 2>&1 || failed "clobber check: another commit moved an archive file"
   node tools/deploy-batch.mjs --ticket "$TICKET" --sha "$CLAIMED" > "$RUN/batch-$attempt.json" 2>> "$RUN/batch.log"; bc=$?
   if [ $bc -eq 0 ]; then landed=1; break; fi
+  # Exit 1 "pushed-lane-unaware": the push DID land; only the lane failed to record it.
+  # Treat it as pushed — never as nothing pushed, never as a failed workbook.
+  ba="$(node -e 'try { console.log(JSON.parse(require("fs").readFileSync(process.argv[1], "utf8")).action || "") } catch { console.log("") }' "$RUN/batch-$attempt.json")"
+  if [ "$ba" = "pushed-lane-unaware" ]; then
+    landed=1; UNAWARE=1
+    log "deploy-batch pushed, but the lane could not record the push — live check without confirm-live"
+    break
+  fi
   node tools/deploy-lane.mjs release --ticket "$TICKET" >> "$RUN/lane.log" 2>&1; LANE_HELD=0
   code_landed "$CLAIMED" || failed "deploy-batch refused (exit $bc, see batch-$attempt.json)"
   ready_receipt
@@ -223,6 +231,10 @@ log "pushed; read-back sha $SHA"
 # the lane covers deploying only); exit 3 = not live yet, still holding.
 live=2; t=0
 while [ $t -lt 45 ]; do
+  if [ "$UNAWARE" = 1 ]; then  # the lane does not know our push: poll the site directly
+    bash tools/check-live-build.sh "$SHA" >> "$RUN/live.log" 2>&1; live=$?; [ $live -eq 0 ] && break
+    sleep 60; t=$((t + 1)); continue
+  fi
   node tools/deploy-lane.mjs confirm-live --ticket "$TICKET" --sha "$SHA" > "$RUN/live.log" 2>&1; cl=$?
   if [ $cl -eq 0 ]; then live=0; LANE_HELD=0; break; fi
   # exit 1: we no longer hold the lane (a forced release; our push is out, so we were not
@@ -236,10 +248,11 @@ while [ $t -lt 45 ]; do
 done
 [ "$LANE_HELD" = 1 ] && node tools/deploy-lane.mjs release --ticket "$TICKET" >> "$RUN/lane.log" 2>&1 && LANE_HELD=0
 mv "$F" "$INBOX/processed/$STAMP-$NAME"
+UNAWARE_NOTE=""; [ "$UNAWARE" = 1 ] && UNAWARE_NOTE=" (The deploy lane could not record this push; the lane was released by the job.)"
 if [ $live -eq 0 ]; then
-  notify "Merged $NAME: $BEFORE → $AFTER rows (+$ADDED, $CHANGED changed), through $LATEST. Live in build ${SHA:0:8}."
+  notify "Merged $NAME: $BEFORE → $AFTER rows (+$ADDED, $CHANGED changed), through $LATEST. Live in build ${SHA:0:8}.$UNAWARE_NOTE"
 else
-  notify "Merged and pushed $NAME ($BEFORE → $AFTER rows, through $LATEST) as ${SHA:0:8}, but the live build could not be confirmed within 45 min (check-live-build exit $live)."
+  notify "Merged and pushed $NAME ($BEFORE → $AFTER rows, through $LATEST) as ${SHA:0:8}, but the live build could not be confirmed within 45 min (check-live-build exit $live).$UNAWARE_NOTE"
 fi
 next
 exit 0

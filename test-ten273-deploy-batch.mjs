@@ -418,6 +418,23 @@ Object.assign(CASES, {
     } catch (e) { if (process.env.DEBUG_TEN273) console.error('CASE THREW:', e.message); return false; } finally { f.close(); }
   },
 
+  // xix · an AGENT's code commit under a data-bot identity with [skip ci] in the
+  //       title (TEN-232 did this) lands during the batch → code: no push over it.
+  async botIdentityCodeStopsThePush(mod) {
+    const f = await fixture();
+    try {
+      f.setSuiteHook(() => {
+        sh(f.bot, 'pull', '-q', '--rebase', 'origin', 'main');
+        sh(f.bot, 'config', 'user.email', 'bsp-bot@users.noreply.github.com');
+        commit(f.bot, 'lib.js', 'module.exports = 1;\n', 'TEN-997: agent code under the bot identity [skip ci]');
+        sh(f.bot, 'config', 'user.email', 'bsp-odds-bot@users.noreply.github.com');
+        sh(f.bot, 'push', '-q', 'origin', 'HEAD:main');
+      });
+      const r = await batch(mod, f);
+      return r.mode === 'fallback' && /code commit landed/.test(r.fallbackReason || '') && /TEN-997/.test(r.fallbackReason || '');
+    } catch (e) { if (process.env.DEBUG_TEN273) console.error('CASE THREW:', e.message); return false; } finally { f.close(); }
+  },
+
   // xiv · the holder's own claimed commit containing a merge is refused.
   async holderMergeRefused(mod) {
     const f = await fixture({ entries: [] });
@@ -468,8 +485,6 @@ const MUTANTS = [
     'if (code.length) return { ok: false, reason: `a code commit', 'if (false) return { ok: false, reason: `a code commit'],
   ['the fallback skips the rebased check', 'codeCommitAbortsTheBatch',
     'const rb = rebaseCheck(sha);', 'const rb = { ok: true };'],
-  ['[skip ci] matched anywhere in the message, not the subject', 'codeCommitAbortsTheBatch',
-    "G(['log', '--format=%H%x1f%s%x1f%ae%x1e', `${b.head}..${tip}`])", "G(['log', '--format=%H%x1f%B%x1f%ae%x1e', `${b.head}..${tip}`])"],
   ['any --sha is pushed, not only the claimed one', 'shaMustBeTheClaimedSha',
     'if (held.claim.sha !== sha) return refuse(', 'if (false) return refuse('],
   ['the receipt is not re-checked at batch time', 'receiptRecheckedAtBatchTime',
@@ -491,7 +506,9 @@ const MUTANTS = [
     "      const p = W(['push', '-q', 'origin', `${b.head}:refs/heads/main`]);\n      const pushedAt = new Date(clock()).toISOString();"],
   ['a failed recordPush is ignored', 'unrecordedPushIsLoud', 'const unrecorded = !rp || rp.code !== 0;', 'const unrecorded = false;'],
   ['the batch classifies data by subject alone', 'skipCiByANonBotStopsThePush',
-    'const code = landed.filter((c) => !isDataCommit(c));', "const code = landed.filter((c) => !c.subject.includes('[skip ci]'));"],
+    'const code = lr.commits.filter((c) => !isDataCommit(c));', "const code = lr.commits.filter((c) => !c.subject.includes('[skip ci]'));"],
+  ['the batch ignores which files a data-bot commit touches', 'botIdentityCodeStopsThePush',
+    'const code = lr.commits.filter((c) => !isDataCommit(c));', "const code = lr.commits.filter((c) => !isDataCommit({ ...c, files: ['admin-log.json'] }));"],
   ['a holder merge commit is not refused', 'holderMergeRefused',
     'if (hasMerges(holderMb, sha)) return refuse(', 'if (false) return refuse('],
 ];

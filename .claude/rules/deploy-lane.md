@@ -29,10 +29,18 @@ Keep posting on your issue so the founder can see it, but the tool's answer is w
    - **Suite green:** `tools/ci-suite.sh <sha>` exits 0. It runs `npm test` on exactly
      that sha in a fresh `git clone --depth 100`, and only on exit 0 does it write
      `~/.stennisfy/suite-receipts/<sha>.json`. Nothing else writes receipts.
-   - **Rebased:** after `git fetch origin`, every commit in `<sha>..origin/main` is a
-     **data-bot commit**: `[skip ci]` in its **subject** AND written by a data-bot author
-     (`DATA_BOT_AUTHORS` in `tools/deploy-lane.mjs`, built from the authors of the last
-     500 `[skip ci]` commits on main). A commit titled `[skip ci]` by anyone else is code.
+   - **Rebased:** after `git fetch origin`, every commit in `<sha>..origin/main` must
+     be a **data-bot commit**. All three must hold:
+     - `[skip ci]` is in its **subject**;
+     - its author is a data bot (`DATA_BOT_AUTHORS`: the bot authors of the last 30
+       days of `[skip ci]` commits on main);
+     - **every file it touches is a data path** (`isDataPath`): a `.json` / `.jsonl` /
+       `.json.gz` / `.csv` file at the repo root or under `style-meetings/`,
+       `bet365-history/`, `odds-archive/`, `match-closes/`, `form/` or
+       `career-history/`. A code file (`.js .mjs .cjs .py .sh .yml .yaml .html .css`),
+       `package*.json`, `.github/` or `tools/` makes it code. Agents have committed
+       code under bot identities with `[skip ci]` in the title (TEN-232).
+
      One missing code commit means you are not rebased.
    - **Reviewed:** the review is done. `--reviewed` is your attestation, and the claim
      records it.
@@ -84,6 +92,11 @@ Keep posting on your issue so the founder can see it, but the tool's answer is w
      on top of `origin/main`). Otherwise it was cherry-picked, and only `readBack` is on main.
    - **All verification after that runs without the lane.** If verification finds a
      fix, the fix gets ready and claims again, at the back of the queue like anyone else.
+   - **A new sha while you hold the lane:** before your push, `claim` with a new ready
+     sha updates the claim, and you keep the lane. **After your push**, a new sha is
+     refused (`pushed-confirm-first`, exit 1). Confirm the pushed commit first
+     (`confirm-live` releases the lane), then claim the new sha at the back of the
+     queue.
 5. **What you push must be what the suite passed, plus data-bot commits and nothing
    else.**
    - The pushed tree can differ from the suite-tested tree **only by `[skip ci]`
@@ -106,20 +119,26 @@ Keep posting on your issue so the founder can see it, but the tool's answer is w
      above** → released, reason `cap-40min-no-run`.
 
    Definitions and details:
-   - **"Your pipeline run"** is the **first** `pipeline.yml` run that started at or after
-     your push time. `pushedAt` is captured by `deploy-batch.mjs` just before the push,
+   - **"Your pipeline run"** is the **first** `pipeline.yml` run whose first **job**
+     started at or after your push time. A run with no started job has not started:
+     live GitHub stamps `run_started_at` = `created_at` on every run, including the
+     roughly 21% cancelled while still queued. `pushedAt` is captured by `deploy-batch.mjs` just before the push,
      because a run re-points to the tip of main when it starts. It is recorded on the
      claim once seen. **Only it extends the hold; later ticks never do.**
    - **"Queued"** means created at or after your push and not yet started.
-   - **[pending the founder] Healthy queueing** (`HEALTHY_QUEUE_PAUSES_CLOCK`, on). The
+   - **[AWAITING THE FOUNDER'S CONFIRMATION] Healthy queueing** (`HEALTHY_QUEUE_PAUSES_CLOCK`,
+     shipped on; one line flips it back to the ruling's literal text). The
      pipeline group allows one running and one pending run, so your run can sit pending
      behind a tick that started before your push. While such a tick is in progress,
      your deploy is moving: no (iii), and it counts as in progress for (iv). The 10-min
      queued clock only runs while nothing is in progress. Set the flag to `false` to
      restore the ruling's literal text.
-   - **GitHub unreachable = unknown**, and unknown **never** extends a hold: rule (iv)
-     applies as if no run were in progress. A grace already earned from a recorded
-     successful run still applies.
+   - **One failed GitHub read** reuses the last known state of your run if it is at
+     most **5 min** old (`PIPELINE_STALE_OK_MIN`). A single 502 does not cut off a run
+     seen in progress 3 min ago.
+   - **GitHub unreachable beyond that = unknown**, and unknown **never** extends a hold:
+     rule (iv) applies as if no run were in progress. A grace already earned from a
+     recorded successful run still applies.
    - `renew` and `claim` never extend anything. `renew` answers "do I still hold it?"
      (exit 0 yes, exit 1 no, with the reason).
    - **A forced release:**
@@ -188,7 +207,8 @@ Keep posting on your issue so the founder can see it, but the tool's answer is w
 
 - **The drop-in job:** run `bash tools/odds-archive-dropin.sh --install` right after the
   merge. The installed launchd copy calls `claim` without `--sha`, which now exits 2, so
-  until reinstalled it fails closed.
+  until reinstalled it fails closed. Its failed marker then blocks retries of that
+  workbook until the file is saved again.
 - **Old tool still in use:** a worktree that has not rebased onto this version runs the
   old TEN-261 tool against the same store. That tool can renew (extend) its own claim by
   45 min at a time, claim without the ready gate, take a free lane out of turn (it
