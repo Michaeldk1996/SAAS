@@ -22,6 +22,7 @@ Guards (each is killed by a mutant of its rule; see the TEN-270 report):
   8c. an unreadable state object stops the run without overwriting it
  13. dispatcher alarm SQL, never-overwrite-Vault, verify red on unsent alerts, read-only heartbeat-check
  11. completeness: the first 20 saved fixtures get ONE +24 h re-pull into _meta/verify/
+ 12. the daily archive yields the key: waits for it, pauses 60 s on a 429, never exits
   9. ticks land in CARD orientation, one row per change, in the schema's columns
  10. the schema: RLS on, no grant/policy on the table, RPC cut at the start
 """
@@ -977,6 +978,91 @@ for name, (a, b) in {
 }.items():
     check(f'CONTROL: alarm check catches "{name}"', a in PINGER and alarm_faults(PINGER.replace(a, b)) != [],
           f'anchor present={a in PINGER}')
+print('12. the daily archive yields the key (founder 2026-09-25)')
+os.environ.setdefault('SUPABASE_URL', URL)
+os.environ.setdefault('SUPABASE_SECRET_KEY', KEY)
+DAILY = [{'fixtureId': f'd{i}', 'startTime': '2026-09-20T08:00:00Z', 'trueStartTime': '2026-09-20T08:00:00Z'}
+         for i in range(3)]
+
+
+def daily(w, max_seconds=3000):
+    w.install()
+    raw.load_targets = lambda: [dict(f) for f in DAILY]
+    w.log = io.StringIO()
+    with contextlib.redirect_stdout(w.log):
+        code = raw.archive('odds-key', max_seconds)
+    beat = json.loads(gzip.decompress(w.objects[raw.HEARTBEAT_KEY]).decode())
+    return code, beat
+
+
+w = World(datetime(2026, 9, 24, 10, 7, 0, tzinfo=timezone.utc))
+w.loop_start = datetime(2026, 9, 24, 6, 0, tzinfo=timezone.utc)
+w.capture_at = datetime(2026, 9, 24, 10, 9, 30, tzinfo=timezone.utc)
+for f in DAILY:
+    w.hist[f['fixtureId']] = [(CLOSED, None)]
+code, beat = daily(w)
+first = hist_calls(w)[0][2] if hist_calls(w) else None
+check('an iteration still running: the daily run waits for its capture commit, then pulls',
+      first is not None and first >= w.capture_at and beat['savedThisRun'] == 3, (first, beat))
+check('...and reports the wait in its heartbeat', beat['keyWaitSeconds'] >= 140, beat.get('keyWaitSeconds'))
+check('the daily run keeps its ordering and never-re-pull rule (same queue as build_queue)',
+      [c[1] for c in hist_calls(w)] == ['d0', 'd1', 'd2'])
+w = World(datetime(2026, 9, 24, 10, 6, 0, tzinfo=timezone.utc))
+for f in DAILY:
+    w.hist[f['fixtureId']] = [(CLOSED, None)]
+w.hist['d0'] = [(None, 429), (CLOSED, None)]
+code, beat = daily(w)
+check('a 429: pause 60 s, the same fixture again, the run goes on (all 3 saved)',
+      beat['savedThisRun'] == 3 and beat['http429'] == 1 and raw.DAILY_429_PAUSE_S in w.sleeps
+      and code == 0, (beat, w.sleeps))
+w = World(datetime(2026, 9, 24, 10, 7, 0, tzinfo=timezone.utc))
+w.loop_start = datetime(2026, 9, 24, 6, 0, tzinfo=timezone.utc)      # never commits
+for f in DAILY:
+    w.hist[f['fixtureId']] = [(CLOSED, None)]
+try:
+    code, beat = daily(w, max_seconds=300)
+    ok = code == 0 and not hist_calls(w) and beat['keyWaitSeconds'] >= 280
+except SystemExit as e:
+    ok, beat = False, f'exited {e.code}'
+check('the key never frees: the budget runs out waiting, no call, no exit', ok, beat)
+w = World(datetime(2026, 9, 24, 10, 0, 30, tzinfo=timezone.utc))
+for f in DAILY:
+    w.hist[f['fixtureId']] = [(CLOSED, None)]
+code, beat = daily(w)
+check('the daily run also keeps to :05-:14 of the quarter hour',
+      all(raw.in_window(c[2]) for c in w.calls if c[0] == '/v4/historical-odds') and beat['savedThisRun'] == 3,
+      [c[2].strftime('%M:%S') for c in w.calls])
+check('default yield mode is window', raw.DAILY_YIELD_MODE == 'window' and beat['keyYieldMode'] == 'window')
+raw.DAILY_YIELD_MODE = 'gate'
+try:
+    w = World(datetime(2026, 9, 24, 10, 0, 30, tzinfo=timezone.utc))          # outside the window, loop idle
+    for f in DAILY:
+        w.hist[f['fixtureId']] = [(CLOSED, None)]
+    code, beat = daily(w)
+    first = hist_calls(w)[0][2] if hist_calls(w) else None
+    check('gate mode: no window — an idle loop at :00:30 lets the daily run pull at once',
+          first is not None and not raw.in_window(first) and beat['savedThisRun'] == 3
+          and beat['keyYieldMode'] == 'gate', (first, beat.get('savedThisRun')))
+    w = World(datetime(2026, 9, 24, 10, 0, 30, tzinfo=timezone.utc))
+    w.loop_start = datetime(2026, 9, 24, 6, 0, tzinfo=timezone.utc)
+    w.capture_at = datetime(2026, 9, 24, 10, 2, 0, tzinfo=timezone.utc)
+    for f in DAILY:
+        w.hist[f['fixtureId']] = [(CLOSED, None)]
+    code, beat = daily(w)
+    first = hist_calls(w)[0][2] if hist_calls(w) else None
+    check('gate mode: still waits for the running iteration\'s capture commit (10:02)',
+          first is not None and first >= w.capture_at and beat['savedThisRun'] == 3, first)
+finally:
+    raw.DAILY_YIELD_MODE = 'window'
+dw = World(datetime(2026, 9, 24, 10, 6, 0, tzinfo=timezone.utc))
+seen_timeout = []
+def _api(path, params, key, timeout=180, raw_=False, **kw):
+    seen_timeout.append(timeout)
+    return CLOSED, None
+dw.install()
+raw.api_get = lambda path, params, key, timeout=180, raw=False: _api(path, params, key, timeout)
+raw.daily_hist_get('d0', 'k', dw.t.timestamp() + 600, __import__('collections').Counter())
+check('the daily pull passes the post-match call timeout', seen_timeout == [raw.PM_CALL_TIMEOUT_S], seen_timeout)
 
 print()
 if FAILED:

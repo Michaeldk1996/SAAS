@@ -455,16 +455,23 @@ def archive(odds_key, max_seconds):
           f'{PRIORITY_DAYS}d, {len(queue)} to pull this run (budget '
           f'{max_seconds}s).')
 
-    t0 = time.time()
+    forget_idle()
+    print(f'key yield mode: {DAILY_YIELD_MODE}')
+    t0 = _clock_s()
     saved = failed = empty = 0
     errors = {}
     bytes_raw = bytes_gz = 0
+    yielding = collections.Counter()       # TEN-270: the daily run yields the key too
     for f in queue:
-        if time.time() - t0 > max_seconds:
+        if _clock_s() - t0 > max_seconds:
             print(f'time budget spent after {saved} saved; the rest resumes next run.')
             break
-        body, err = hist_get(f['fixtureId'], odds_key)
-        time.sleep(HIST_SLEEP)
+        body, err = daily_hist_get(f['fixtureId'], odds_key, t0 + max_seconds, yielding)
+        if err == 'budget':
+            print(f'time budget spent waiting for the key after {saved} saved; '
+                  f'the rest resumes next run.')
+            break
+        _sleep(HIST_SLEEP)
         if body is None:
             failed += 1
             errors[str(err)] = errors.get(str(err), 0) + 1
@@ -501,6 +508,8 @@ def archive(odds_key, max_seconds):
         'bytesRawThisRun': bytes_raw, 'bytesGzThisRun': bytes_gz,
         'bucketFixtures': len(have2), 'bucketBytes': sum(sizes2.values()),
         'bucketByMonth': sizes2, 'queueRemaining': max(0, len(queue) - saved - failed),
+        'keyWaitSeconds': int(yielding['waitS']), 'http429': yielding['http429'],
+        'keyYieldMode': DAILY_YIELD_MODE,
     }
     write_heartbeat(url, sb_key, datetime.now(timezone.utc), stats)
     print('\n=== RUN SUMMARY ===')
@@ -598,6 +607,15 @@ TICK_COLUMNS = ('card_key', 'side', 'price', 'at', 'active', 'fixture_id', 'play
 
 _now = lambda: datetime.now(timezone.utc)   # noqa: E731 — injectable in tests
 _sleep = time.sleep
+_clock_s = lambda: _now().timestamp()       # noqa: E731 — the daily run's budget clock
+DAILY_429_PAUSE_S = 60    # founder: on a 429 the daily run pauses ~60 s and continues
+DAILY_429_TRIES = 3       # per fixture; then it is counted failed and the run moves on
+# How the daily run yields (founder decision pending on the throughput cost):
+#   window — the post-match rule: :05-:14 of each quarter hour AND loop_idle()
+#   gate   — loop_idle() only, no window
+DAILY_YIELD_MODE = (os.environ.get('DAILY_YIELD_MODE') or 'window').strip()
+if DAILY_YIELD_MODE not in ('window', 'gate'):
+    DAILY_YIELD_MODE = 'window'
 CALLS = {}                                   # oddspapi path -> calls this run
 
 
@@ -868,6 +886,49 @@ def held_path(url, key, fixture_id, months):
         if any(r.get('name') == want for r in page):
             return f'{mo}/{want}'
     return False
+
+
+def wait_for_key(budget_end, counts):
+    """The daily run's form of key_is_ours(): it runs for hours on a budget, so
+    when the key is not ours it WAITS (polling every PM_LOOP_POLL_S) instead of
+    stopping, and gives up only when its own budget is spent. Same two tests:
+    the loop-free window of the quarter hour AND loop_idle()."""
+    while _clock_s() < budget_end:
+        now = _now()
+        if DAILY_YIELD_MODE == 'window' and not can_call(now):
+            # Outside the window: sleep to its next opening without asking
+            # GitHub anything (keeps the token well inside its hourly limit).
+            q = quarter_s(now)
+            wait = (PM_WINDOW[0] * 60 - q) if q < PM_WINDOW[0] * 60 else (900 - q + PM_WINDOW[0] * 60)
+            wait = max(1, min(wait, int(budget_end - _clock_s()) + 1))
+            _sleep(wait)
+            counts['waitS'] += wait
+            continue
+        if loop_idle(now)[0]:
+            return True
+        _sleep(PM_LOOP_POLL_S)
+        counts['waitS'] += PM_LOOP_POLL_S
+    return False
+
+
+def daily_hist_get(fixture_id, key, budget_end, counts):
+    """One daily-archive pull that yields to the live price loop: waits for the
+    key before the call, and on a 429 pauses DAILY_429_PAUSE_S and tries the
+    same fixture again (up to DAILY_429_TRIES) instead of stopping the run.
+    Returns (body, err); err == 'budget' when the time budget ran out waiting."""
+    for _ in range(DAILY_429_TRIES):
+        if not wait_for_key(budget_end, counts):
+            return None, 'budget'
+        body, err = api_get('/v4/historical-odds', {'fixtureId': fixture_id}, key,
+                            timeout=PM_CALL_TIMEOUT_S, raw=True)
+        if err != 429:
+            return body, err
+        forget_idle()
+        counts['http429'] += 1
+        print(f'429 on {fixture_id}: pausing {DAILY_429_PAUSE_S}s, then continuing.', flush=True)
+        _sleep(DAILY_429_PAUSE_S)
+        counts['waitS'] += DAILY_429_PAUSE_S
+    return None, 429
 
 
 def _tick_ids(payload):

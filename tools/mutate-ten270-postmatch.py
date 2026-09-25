@@ -99,6 +99,22 @@ PY_MUT = {
                                   "            'earlyAllInLate': True,"),
     'split guessed without a start': ("                'preStart': pre if start else None,",
                                       "                'preStart': pre,"),
+    'daily: loop gate removed': ("        if loop_idle(now)[0]:\n            return True\n        _sleep(PM_LOOP_POLL_S)",
+                                 "        return True\n        _sleep(PM_LOOP_POLL_S)"),
+    'daily: window dropped in window mode': ("        if DAILY_YIELD_MODE == 'window' and not can_call(now):",
+                                             "        if False:"),
+    'daily: a 429 fails the fixture (no pause/retry)': (
+        "        if err != 429:\n            return body, err", "        if True:\n            return body, err"),
+    'daily: no 60 s pause on a 429': ("        _sleep(DAILY_429_PAUSE_S)\n", ""),
+    'daily: exits when the key never frees': (
+        "        if err == 'budget':\n            print(", "        if err == 'budget':\n            die('no key'); print("),
+    'daily: gate mode still applies the window': (
+        "        if DAILY_YIELD_MODE == 'window' and not can_call(now):", "        if not can_call(now):"),
+    'daily: default mode is gate': ("DAILY_YIELD_MODE = (os.environ.get('DAILY_YIELD_MODE') or 'window').strip()",
+                                    "DAILY_YIELD_MODE = (os.environ.get('DAILY_YIELD_MODE') or 'gate').strip()"),
+    'daily: no call timeout': ("        body, err = api_get('/v4/historical-odds', {'fixtureId': fixture_id}, key,\n                            timeout=PM_CALL_TIMEOUT_S, raw=True)",
+                               "        body, err = api_get('/v4/historical-odds', {'fixtureId': fixture_id}, key, raw=True)"),
+    'daily: wait not reported': ("        'keyWaitSeconds': int(yielding['waitS']),", "        'keyWaitSeconds': 0,"),
     'failed verify upload is not a strike': ("        return strike(f'upload-{up[0]}')", "        counts['verifyFailed'] += 1\n        return"),
     'unreadable early copy is not a strike': (
         "        return strike('early copy unreadable' if early is None else 'late copy unreadable')",

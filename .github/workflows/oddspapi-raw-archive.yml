@@ -40,6 +40,7 @@ concurrency:
 
 permissions:
   contents: write
+  actions: read      # TEN-270: the key gate reads odds-now's run list (loop_idle)
 
 jobs:
   archive:
@@ -121,11 +122,16 @@ jobs:
             fi
           fi
 
+      # TEN-270 (founder 2026-09-25): every /v4/historical-odds call waits for
+      # the live price loop to leave the key (:05-:14 and loop_idle(), which
+      # reads odds-now's runs with this job's token); a 429 pauses 60 s.
       - name: Archive raw payloads
         env:
           ODDSPAPI_KEY: ${{ secrets.ODDSPAPI_KEY }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          GITHUB_TOKEN: ${{ github.token }}
+          DAILY_YIELD_MODE: window     # window | gate — founder decision pending (throughput)
         run: |
           BUDGET="${{ github.event_name == 'schedule' && '17000' || inputs.max_seconds }}"
           python3 archive-oddspapi-raw.py archive --max-seconds "$BUDGET"
