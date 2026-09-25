@@ -1,0 +1,62 @@
+[
+ {
+  "name": "regression_full",
+  "sql": "select r.run_id, count(*) n, count(*) filter (where not exists (select 1 from ten280_bot.alerts o where o.mode='backtest' and o.run_id=replace(r.run_id,'r','bt') and o.fixture_id=r.fixture_id and o.side_id=r.side_id and o.eval_at=r.eval_at)) not_in_old, (select count(*) from ten280_bot.alerts o where o.mode='backtest' and o.run_id=replace(r.run_id,'r','bt')) old_n from ten280_bot.alerts r where r.mode='backtest' and r.run_id in ('r5','r7','r10') group by 1 order by 1"
+ },
+ {
+  "name": "gate_run",
+  "sql": "select count(*) g5_alerts from ten280_bot.alerts where mode='backtest' and run_id='g5'"
+ },
+ {
+  "name": "split_by_tier",
+  "sql": "select run_id, tier, count(*) alerts, count(distinct fixture_id) matches, count(*) filter (where cur_price < 1.30) below_130 from ten280_bot.alerts where mode='backtest' and run_id in ('bt5','bt7','bt10','nf5','nf7','nf10') group by 1,2 order by 1,2"
+ },
+ {
+  "name": "detect_delay",
+  "sql": "select tier, cur_src, count(*) n, percentile_cont(array[0.5,0.9]) within group (order by extract(epoch from eval_at - cur_at)) secs from ten280_bot.alerts where mode='backtest' and run_id='nf5' group by 1,2 order by 1,2"
+ },
+ {
+  "name": "sample_below130",
+  "sql": "select message from ten280_bot.alerts where mode='backtest' and run_id='nf5' and cur_price < 1.30 order by eval_at desc limit 2"
+ },
+ {
+  "name": "config",
+  "sql": "select min_dropped_to_price from ten280_bot.config"
+ },
+ {
+  "name": "events",
+  "sql": "select e.id, e.kind, e.delivery, e.created_at, r.status_code, (r.content::jsonb -> 'result' ->> 'text') = (e.detail ->> 'text') as text_identical, r.content::jsonb -> 'result' ->> 'text' as echoed from ten280_bot.events e left join net._http_response r on r.id = e.net_request_id order by e.id"
+ },
+ {
+  "name": "live_alerts",
+  "sql": "select id, eval_at, tier, cur_price, pct_10m, cur_src, cur_at, sent_at, move_delay_s, delivery, message from ten280_bot.alerts where mode='live' order by id"
+ },
+ {
+  "name": "live_echo",
+  "sql": "select a.id, r.status_code, (r.content::jsonb -> 'result' ->> 'text') = a.message as text_identical from ten280_bot.alerts a left join net._http_response r on r.id = a.net_request_id where a.mode='live' order by a.id"
+ },
+ {
+  "name": "cron_health",
+  "sql": "select count(*) runs, count(*) filter (where d.status <> 'succeeded') failed, max(d.end_time - d.start_time) max_took from cron.job_run_details d join cron.job j using (jobid) where j.jobname = 'ten280-bet105-drop-bot' and d.start_time > now() - interval '3 hours'"
+ },
+ {
+  "name": "ocs_columns",
+  "sql": "select column_name, data_type from information_schema.columns where table_schema='public' and table_name='odds_card_state' order by ordinal_position"
+ },
+ {
+  "name": "ocs_bet365",
+  "sql": "select * from public.odds_card_state where book = 'bet365' and market = 'match winner' and match_key >= '2026-09-23' and match_key < '2026-09-29' order by match_key"
+ },
+ {
+  "name": "b365_ticks_summary",
+  "sql": "select substr(card_key,1,10) d, count(distinct card_key) cards, count(*) ticks, min(at) first_at, max(at) last_at from public.bet365_mw_ticks where card_key >= '2026-09-23' and card_key < '2026-09-29' group by 1 order by 1"
+ },
+ {
+  "name": "b365_ticks",
+  "sql": "select card_key, side, price, at, active, fixture_id, player, loaded_at from public.bet365_mw_ticks where card_key >= '2026-09-23' and card_key < '2026-09-29' order by card_key, side, at"
+ },
+ {
+  "name": "now_heartbeat",
+  "sql": "select written_at, note from public.kibl_now_price where kind = 'heartbeat'"
+ }
+]
