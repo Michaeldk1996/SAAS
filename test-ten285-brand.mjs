@@ -19,13 +19,16 @@ const HERE = dirname(fileURLToPath(import.meta.url));
 const read = f => readFileSync(join(HERE, f), 'utf8');
 const PIPELINE = read('.github/workflows/pipeline.yml');
 
-// Source .html files the pipeline copies into _site/ (any `cp … _site/…` line).
+// Source .html files the pipeline copies into _site/: every `cp … _site/…` command,
+// wherever it sits on a line (after `&&`, `;`, `||` too), with cp/mv/rsync alike.
 function publishedHtml(yml) {
   const out = new Set();
   for (const line of yml.split('\n')) {
-    const m = line.match(/^\s*cp\s+(.+?)\s+_site\/\S*/);
-    if (!m) continue;
-    for (const tok of m[1].split(/\s+/)) if (/^[\w.-]+\.html$/.test(tok)) out.add(tok);
+    for (const cmd of line.split(/&&|\|\||;/)) {
+      const m = cmd.match(/^\s*(?:cp|mv|rsync)\s+(?:-\S+\s+)*(.+?)\s+_site\/\S*(?:\s+\d?>>?\s*\S+)*\s*$/);
+      if (!m) continue;
+      for (const tok of m[1].split(/\s+/)) if (/^[\w.-]+\.html$/.test(tok)) out.add(tok);
+    }
   }
   return [...out].sort();
 }
@@ -55,9 +58,16 @@ function lockupProblems(html, container) {
   if (imgs.length !== 1) p.push(`${imgs.length} imgs in .${container}`);
   if (imgs[0] && !/src="assets\/logo-dark-transparent\.png"/.test(imgs[0])) p.push(`logo src: ${imgs[0]}`);
   if (/class="wm"|BSP CONSULT/i.test(block[1])) p.push('old wordmark still present');
-  const rule = html.match(new RegExp(`\\.${container} img\\s*\\{([^}]*)\\}`));
-  if (!rule) return [...p, `no .${container} img rule`];
-  const css = rule[1];
+  // EVERY rule targeting the logo (media queries included) plus any inline style.
+  const rules = [...html.matchAll(new RegExp(`\\.${container} img\\s*\\{([^}]*)\\}`, 'g'))].map(m => m[1]);
+  if (!rules.length) return [...p, `no .${container} img rule`];
+  if (imgs[0] && /\bstyle=/.test(imgs[0])) p.push('inline style on the logo');
+  for (const extra of rules.slice(1)) {
+    if (/(^|[;\s])height\s*:\s*(?!26px)/.test(extra)) p.push('a second rule changes the logo height');
+    for (const bad of ['border', 'box-shadow', 'border-radius', 'background', 'object-fit'])
+      if (new RegExp(`(^|[;\\s])${bad}\\s*:`).test(extra)) p.push(`box property ${bad} in a later .${container} img rule`);
+  }
+  const css = rules[0];
   if (!/(^|;)\s*height:\s*26px/.test(css)) p.push('height is not 26px');
   if (!/width:\s*auto/.test(css)) p.push('width is not auto');
   for (const bad of ['border', 'box-shadow', 'border-radius', 'background', 'object-fit'])
@@ -72,7 +82,9 @@ test('the published page list is read from the pipeline and is not empty', () =>
   for (const f of ['bsp-consult-dashboard.html', 'auth.html', 'account.html', 'funnel.html', 'verify.html', 'admin.html'])
     assert.ok(pages.includes(f), `${f} missing from ${pages}`);
   // mutant: a newly published page is picked up
-  assert.ok(publishedHtml(PIPELINE + '\n          cp newpage.html _site/\n').includes('newpage.html'));
+  for (const shape of ['cp newpage.html _site/', 'mkdir -p _site && cp newpage.html _site/', 'true; cp -f newpage.html _site/x/',
+                       'mv newpage.html _site/', 'rsync -a newpage.html _site/', 'cp newpage.html x.js _site/ 2>/dev/null || true'])
+    assert.ok(publishedHtml(PIPELINE + `\n          ${shape}\n`).includes('newpage.html'), `missed: ${shape}`);
 });
 
 test('every published page has exactly one ring-transparent.png favicon in <head>', () => {
@@ -113,6 +125,8 @@ test('lockup check kills its mutants', () => {
     shadowBack: good.replace(rule, '.brand-id img{ display:block; height:26px; width:auto; box-shadow:0 0 0 3px rgba(62,123,250,0.12); }'),
     wrongHeight: good.replace(rule, '.brand-id img{ display:block; height:38px; width:auto; }'),
     fixedWidth: good.replace(rule, '.brand-id img{ display:block; height:26px; width:38px; }'),
+    mediaTile: good.replace('</style>', '@media (max-width:600px){ .brand-id img{ height:40px; border-radius:10px } }\n</style>'),
+    inlineStyle: good.replace('<img src="assets/logo-dark-transparent.png" alt="Stennisfy">', '<img src="assets/logo-dark-transparent.png" alt="Stennisfy" style="border:1px solid #333">'),
   };
   for (const [name, html] of Object.entries(mutants))
     assert.notDeepEqual(lockupProblems(html, 'brand-id'), [], `mutant survived: ${name}`);
