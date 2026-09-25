@@ -65,7 +65,7 @@ begin
       kind        text        not null,      -- alert | recovered
       message     text        not null,
       request_id  bigint,                    -- the Telegram send's pg_net id
-      delivered   text        not null       -- 'sent' | 'unsent: …'
+      delivered   text        not null       -- 'queued' -> 'sent' | 'failed: …'; 'unsent: …'
   );
   alter table public.postmatch_dispatch_log enable row level security;
   alter table public.postmatch_alerts       enable row level security;
@@ -130,8 +130,8 @@ begin
                                  'disable_web_page_preview', true)
     ) into req;
     insert into public.postmatch_alert_log (condition, kind, message, request_id, delivered)
-    values (p_condition, p_kind, p_text, req, 'sent');
-    return 'sent';
+    values (p_condition, p_kind, p_text, req, 'queued');
+    return 'queued';
   end $fn$;
   revoke all on function public.postmatch_send_alert(text, text, text) from public;
   revoke all on function public.postmatch_send_alert(text, text, text) from anon, authenticated;
@@ -146,6 +146,17 @@ begin
     msg text;
     summary text := '';
   begin
+    -- A queued Telegram send is not a delivery: resolve it against pg_net.
+    update public.postmatch_alert_log l set delivered = case
+        when r.timed_out or r.error_msg is not null then 'failed: timeout/error'
+        when r.status_code between 200 and 299 then 'sent'
+        else 'failed: HTTP ' || r.status_code end
+      from net._http_response r
+      where l.delivered = 'queued' and r.id = l.request_id
+        and (r.status_code is not null or r.timed_out or r.error_msg is not null);
+    update public.postmatch_alert_log l set delivered = 'failed: no response'
+      where l.delivered = 'queued' and l.at < now() - interval '10 minutes'
+        and not exists (select 1 from net._http_response r where r.id = l.request_id);
     for c in
       with ours as (
         select d.sent_at, r.status_code, r.timed_out, r.error_msg, r.id as rid, d.request_id

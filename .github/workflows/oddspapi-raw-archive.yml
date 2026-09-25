@@ -131,7 +131,7 @@ jobs:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
           GITHUB_TOKEN: ${{ github.token }}
-          DAILY_YIELD_MODE: window     # window | gate — founder decision pending (throughput)
+          DAILY_YIELD_MODE: window     # founder ruled window 2026-09-25; gate available, not in use
         run: |
           BUDGET="${{ github.event_name == 'schedule' && '17000' || inputs.max_seconds }}"
           python3 archive-oddspapi-raw.py archive --max-seconds "$BUDGET"

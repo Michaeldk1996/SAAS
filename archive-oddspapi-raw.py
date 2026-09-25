@@ -610,7 +610,7 @@ _sleep = time.sleep
 _clock_s = lambda: _now().timestamp()       # noqa: E731 — the daily run's budget clock
 DAILY_429_PAUSE_S = 60    # founder: on a 429 the daily run pauses ~60 s and continues
 DAILY_429_TRIES = 3       # per fixture; then it is counted failed and the run moves on
-# How the daily run yields (founder decision pending on the throughput cost):
+# How the daily run yields (founder ruled `window` 2026-09-25; `gate` available, not in use):
 #   window — the post-match rule: :05-:14 of each quarter hour AND loop_idle()
 #   gate   — loop_idle() only, no window
 DAILY_YIELD_MODE = (os.environ.get('DAILY_YIELD_MODE') or 'window').strip()

@@ -20,6 +20,7 @@ Guards (each is killed by a mutant of its rule; see the TEN-270 report):
   8. the key is used only inside the loop-free window of each quarter hour
   8b. ...and only once the odds loop's current iteration is over (loop_idle)
   8c. an unreadable state object stops the run without overwriting it
+ 14. verify red without the alarm or on a failed send; sends resolved from pg_net
  13. dispatcher alarm SQL, never-overwrite-Vault, verify red on unsent alerts, read-only heartbeat-check
  11. completeness: the first 20 saved fixtures get ONE +24 h re-pull into _meta/verify/
  12. the daily archive yields the key: waits for it, pauses 60 s on a 429, never exits
@@ -978,6 +979,50 @@ for name, (a, b) in {
 }.items():
     check(f'CONTROL: alarm check catches "{name}"', a in PINGER and alarm_faults(PINGER.replace(a, b)) != [],
           f'anchor present={a in PINGER}')
+print('14. verify fails without the alarm; failed Telegram sends are surfaced (final review)')
+JOBS_OK = json.dumps([{'jobname': 'ten270-oddspapi-postmatch-check', 'active': True},
+                      {'jobname': 'ten270-oddspapi-postmatch-ping', 'active': True}])
+stmts, out, code, _ = run_schema_step('verify', answers={'from cron.job where jobname in': (200, JOBS_OK)})
+check('both cron jobs active: no job fault', 'post-match cron job' not in out, out[-300:])
+for why, ans in (('no jobs', (200, '[]')),
+                 ('checker inactive', (200, JOBS_OK.replace('"active": true}, {"jobname": "ten270-oddspapi-postmatch-ping"',
+                                                            '"active": false}, {"jobname": "ten270-oddspapi-postmatch-ping"')))):
+    stmts, out, code, _ = run_schema_step('verify', answers={'from cron.job where jobname in': ans})
+    check(f'verify red when the alarm is not installed ({why})',
+          code == 1 and 'post-match cron job' in out, out[-300:])
+stmts, out, code, _ = run_schema_step('verify', answers={'from cron.job where jobname in': (200, JOBS_OK),
+                                                           'from public.postmatch_alert_log': (500, 'relation does not exist')})
+check('verify red when the alert log is unreadable', code == 1 and 'post-match alert log unreadable' in out)
+FAILED_ROW = json.dumps([{'at': '2026-09-25T01:27:00Z', 'condition': 'dispatch_http', 'kind': 'alert',
+                          'message': 'ALERT - ...', 'delivered': 'failed: HTTP 401'}])
+stmts, out, code, _ = run_schema_step('verify', answers={'from cron.job where jobname in': (200, JOBS_OK),
+                                                           'from public.postmatch_alert_log': (200, FAILED_ROW)})
+check('a failed Telegram send (stored delivered) is printed and turns verify red',
+      code == 1 and 'failed: HTTP 401' in out and 'post-match alert(s) unsent' in out, out[-300:])
+q = [x for x in stmts if 'from public.postmatch_alert_log' in x][0]
+check("verify keys on the STORED delivered column (<> 'sent'), not a live pg_net join",
+      "l.delivered <> 'sent'" in q and '_http_response' not in q, q)
+
+
+def delivery_faults(text):
+    t = re.sub(r'--[^\n]*', '', text)
+    f = []
+    if "values (p_condition, p_kind, p_text, req, 'queued')" not in t:
+        f.append('a send is recorded as delivered before Telegram answers')
+    for need in ("when r.status_code between 200 and 299 then 'sent'", "else 'failed: HTTP ' || r.status_code end",
+                 "when r.timed_out or r.error_msg is not null then 'failed: timeout/error'",
+                 "set delivered = 'failed: no response'", "l.at < now() - interval '10 minutes'"):
+        if need not in t:
+            f.append(f'resolution missing: {need}')
+    return f
+
+
+check('queued sends are resolved from pg_net', delivery_faults(PINGER) == [], delivery_faults(PINGER))
+for name, (a, b) in {'a send recorded as sent at once': ("values (p_condition, p_kind, p_text, req, 'queued')",
+                                                          "values (p_condition, p_kind, p_text, req, 'sent')"),
+                     'no-response resolution dropped': ("set delivered = 'failed: no response'", "set delivered = 'queued'")}.items():
+    check(f'CONTROL: delivery check catches "{name}"', a in PINGER and delivery_faults(PINGER.replace(a, b)) != [])
+
 print('12. the daily archive yields the key (founder 2026-09-25)')
 os.environ.setdefault('SUPABASE_URL', URL)
 os.environ.setdefault('SUPABASE_SECRET_KEY', KEY)

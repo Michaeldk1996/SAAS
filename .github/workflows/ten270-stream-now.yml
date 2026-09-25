@@ -234,6 +234,13 @@ jobs:
                           "(select count(*) from vault.secrets where name in ('ops_telegram_bot_token', 'ops_telegram_chat_id')) as telegram_stored "
                           "from cron.job where jobname in ('ten270-oddspapi-postmatch-ping', 'ten270-oddspapi-postmatch-check') order by 1")
               print(f"post-match jobs -> HTTP {st} {r[:600]}  (want both active; pat_stored 1; telegram_stored 2)")
+              try:
+                  jobs = {j.get("jobname"): j.get("active") for j in json.loads(r)} if st == 200 else None
+              except (ValueError, AttributeError, TypeError):
+                  jobs = None
+              for jn in ("ten270-oddspapi-postmatch-ping", "ten270-oddspapi-postmatch-check"):
+                  if not jobs or jobs.get(jn) is not True:
+                      bad.append(f"post-match cron job {jn} missing or inactive")
               st, r = sql("select d.sent_at, d.request_id, d.note, r.status_code, r.timed_out, r.error_msg "
                           "from public.postmatch_dispatch_log d left join net._http_response r on r.id = d.request_id "
                           "order by d.sent_at desc limit 5")
@@ -244,17 +251,21 @@ jobs:
               print(f"checker job (last 3 runs) -> HTTP {st} {r[:900]}")
               st, r = sql("select condition, opened_at, last_sent_at, detail from public.postmatch_alerts where is_open")
               print(f"open alerts -> HTTP {st} {r[:900]}")
-              st, r = sql("select l.at, l.condition, l.kind, l.message, l.delivered, t.status_code as telegram_http "
-                          "from public.postmatch_alert_log l left join net._http_response t on t.id = l.request_id "
-                          "where l.at > now() - interval '7 days' and (l.delivered <> 'sent' "
-                          "or (t.status_code is not null and t.status_code not between 200 and 299)) "
+              # Keyed on the STORED delivery state (resolved by the checker from
+              # pg_net): anything but 'sent' in 7 days — unsent, queued, failed.
+              st, r = sql("select l.at, l.condition, l.kind, l.message, l.delivered "
+                          "from public.postmatch_alert_log l "
+                          "where l.at > now() - interval '7 days' and l.delivered <> 'sent' "
                           "order by l.at desc limit 20")
               try:
                   unsent = json.loads(r) if st == 200 else None
               except ValueError:
                   unsent = None
+              if not isinstance(unsent, (list, type(None))):
+                  unsent = None
               if unsent is None:
                   print(f"post-match unsent alerts -> HTTP {st} (unreadable) {r[:300]}")
+                  bad.append("post-match alert log unreadable")
               elif unsent:
                   print("::error::post-match ALERTS THAT NEVER REACHED TELEGRAM (last 7 days):")
                   for row in unsent:

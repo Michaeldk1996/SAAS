@@ -151,6 +151,12 @@ PINGER_MUT = {
                                     "values (p_condition, p_kind, p_text, 'sent');"),
     'checker on the dispatch minutes': ("'ten270-oddspapi-postmatch-check', '12,27,42,57 * * * *'",
                                         "'ten270-oddspapi-postmatch-check', '7,22,37,52 * * * *'"),
+    'telegram send counted as delivered when queued': ("values (p_condition, p_kind, p_text, req, 'queued');",
+                                                       "values (p_condition, p_kind, p_text, req, 'sent');"),
+    'non-2xx telegram answer resolved as sent': ("        when r.status_code between 200 and 299 then 'sent'",
+                                                 "        when true then 'sent'"),
+    'no-response telegram send never resolved': ("    update public.postmatch_alert_log l set delivered = 'failed: no response'",
+                                                 "    update public.postmatch_alert_log l set delivered = 'queued'"),
     'timeouts/errors not alarmed': ("exists (select 1 from ours where timed_out or error_msg is not null",
                                     "exists (select 1 from ours where false"),
 }
@@ -159,6 +165,10 @@ APPLIER_MUT = {
     'Telegram written without the repo secret': (
         "                  if not val:\n                      print(f\"{env_name} not set", "                  if False:\n                      print(f\"{env_name} not set"),
     'unsent alerts do not turn verify red': ('                  bad.append(f"{len(unsent)} post-match alert(s) unsent")\n', ""),
+    'verify green without the cron jobs': ('                      bad.append(f"post-match cron job {jn} missing or inactive")\n', '                      pass\n'),
+    'verify green on an unreadable alert log': ('                  bad.append("post-match alert log unreadable")\n', ''),
+    'verify keys on the live pg_net join': ("\"where l.at > now() - interval '7 days' and l.delivered <> 'sent' \"",
+                                           "\"left join net._http_response t on t.id = l.request_id where l.at > now() - interval '7 days' and l.delivered like 'unsent%' \""),
     'heartbeat-check writes': ('              q("(i-a) kibl_now_card rows', '              sql("insert into x values (1)")\n              q("(i-a) kibl_now_card rows'),
 }
 SQL_MUT = {
