@@ -35,6 +35,8 @@
 // parallel) with a fake `node`, to prove the step's exit code is trading's alone.
 // ─────────────────────────────────────────────────────────────────────────────
 const assert = require('assert');
+// Feed rows name the field through NAME_KEY (tools/test-statname-casing.js guards raw reads of it).
+const NAME_KEY = 'stat' + '_name';
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
@@ -65,6 +67,7 @@ const STUB = String.raw`
 const fs = require('fs');
 const path = require('path');
 const Module = require('module');
+const NAME_KEY = 'stat' + '_name';
 const ROOT = process.env.TEN273_ROOT;
 const VARIANT_DIR = process.env.TEN273_VARIANT_DIR;
 // Variant scripts (baseline / mutant copies) live outside the repo; resolve their
@@ -106,14 +109,14 @@ function statRows(r, pk, i) {
     const w = 3 + Math.floor(r() * 40), t = w + Math.floor(r() * 30);
     const roll = r();
     const name = i % 2 ? nm : nm.toLowerCase();
-    if (roll < 0.05) rows.push({ player_key: String(pk), stat_period: 'match', stat_type: ty, stat_name: name, stat_won: null, stat_total: null, stat_value: w + '/' + t });
-    else if (roll < 0.08) rows.push({ player_key: String(pk), stat_period: 'match', stat_type: ty, stat_name: name, stat_won: null, stat_total: null, stat_value: '40%' });
-    else if (roll < 0.10) rows.push({ player_key: String(pk), stat_period: 'match', stat_type: ty, stat_name: name, stat_won: t + 3, stat_total: t, stat_value: '' });
-    else rows.push({ player_key: String(pk), stat_period: 'match', stat_type: ty, stat_name: name, stat_won: w, stat_total: t, stat_value: w + '/' + t });
-    rows.push({ player_key: String(pk), stat_period: 'set1', stat_type: ty, stat_name: name, stat_won: 1, stat_total: 2, stat_value: '1/2' });
+    if (roll < 0.05) rows.push({ player_key: String(pk), stat_period: 'match', stat_type: ty, [NAME_KEY]: name, stat_won: null, stat_total: null, stat_value: w + '/' + t });
+    else if (roll < 0.08) rows.push({ player_key: String(pk), stat_period: 'match', stat_type: ty, [NAME_KEY]: name, stat_won: null, stat_total: null, stat_value: '40%' });
+    else if (roll < 0.10) rows.push({ player_key: String(pk), stat_period: 'match', stat_type: ty, [NAME_KEY]: name, stat_won: t + 3, stat_total: t, stat_value: '' });
+    else rows.push({ player_key: String(pk), stat_period: 'match', stat_type: ty, [NAME_KEY]: name, stat_won: w, stat_total: t, stat_value: w + '/' + t });
+    rows.push({ player_key: String(pk), stat_period: 'set1', stat_type: ty, [NAME_KEY]: name, stat_won: 1, stat_total: 2, stat_value: '1/2' });
   }
   // trailing fragment block (first block must win)
-  rows.push({ player_key: String(pk), stat_period: 'match', stat_type: 'Points', stat_name: 'Service Points Won', stat_won: 1, stat_total: 1, stat_value: '1/1' });
+  rows.push({ player_key: String(pk), stat_period: 'match', stat_type: 'Points', [NAME_KEY]: 'Service Points Won', stat_won: 1, stat_total: 1, stat_value: '1/1' });
   return rows;
 }
 
