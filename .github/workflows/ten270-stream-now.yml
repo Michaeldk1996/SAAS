@@ -17,6 +17,8 @@ name: TEN-270 Kibl stream -> live Now
 #                  new page has been live long enough for old tabs to reload).
 #   usage          READ-ONLY: the API gateway's response bytes by route and
 #                  caller over the log window (08:58Z brief, egress question).
+#   heartbeat-check  READ-ONLY: Realtime writes vs realtime_logs over `window`
+#                  (TEN-277, the founder's Realtime Messages readings).
 #
 # Nothing here touches the poller, its tables, or its workflows.
 
@@ -29,6 +31,10 @@ on:
         default: 'status'
       max_events:
         description: 'realtime-config only: new max_events_per_second (blank = read only)'
+        required: false
+        default: ''
+      window:
+        description: 'heartbeat-check only: START..END as ISO Z (blank = the first reading, 2026-09-24T08:54:00Z..2026-09-25T00:52:00Z)'
         required: false
         default: ''
 
@@ -51,6 +57,7 @@ jobs:
         env:
           ACTION: ${{ inputs.action }}
           MAX_EVENTS: ${{ inputs.max_events }}
+          WINDOW: ${{ inputs.window }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
           SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
@@ -84,6 +91,28 @@ jobs:
           def sql(q):
               return call(f"https://api.supabase.com/v1/projects/{ref}/database/query", "POST",
                           {"query": q}, bearer=os.environ["SUPABASE_ACCESS_TOKEN"])
+          # Logs API (TEN-277). `analytics/endpoints/logs.all` answers 410 since
+          # 2026-09-23. Its replacement takes ClickHouse SQL over ONE table, `logs`,
+          # filtered by source_name, with nested fields in the log_attributes map
+          # (log_attributes['request.path'], not unnest(metadata)). Same window
+          # params; they must end in Z. It throttles (429) after ~14 queries.
+          def z(x):
+              return x.strftime("%Y-%m-%dT%H:%M:%S.000Z")   # the API refuses "+00:00"
+          def logq(text, lo, hi):
+              import time as _t
+              qs = urllib.parse.urlencode({"sql": text, "iso_timestamp_start": z(lo), "iso_timestamp_end": z(hi)})
+              for wait in (0, 45, 90, 120):
+                  _t.sleep(wait)
+                  st, r = call(f"https://api.supabase.com/v1/projects/{ref}/analytics/endpoints/logs?{qs}",
+                               bearer=os.environ["SUPABASE_ACCESS_TOKEN"])
+                  if st != 429:
+                      break
+              try:
+                  body = json.loads(r) if st == 200 else None
+              except ValueError:
+                  body = None
+              rows = body.get("result") if isinstance(body, dict) and not body.get("error") else None
+              return st, rows, r
           bad = []
           if act == "schema":
               st, r = sql(open("kibl-stream/now-schema.sql").read())
@@ -311,32 +340,29 @@ jobs:
               import datetime as dt
               tok = os.environ["SUPABASE_ACCESS_TOKEN"]
               base = f"https://api.supabase.com/v1/projects/{ref}/analytics/endpoints"
-              q = ("""select regexp_extract(r.path, r'^(/[a-z]+/v1/[^/?]*)') as route, r.method as method,
-                  substr(coalesce(h.user_agent, '-'), 1, 40) as ua, count(*) as n,
-                  sum(safe_cast(rh.content_length as int64)) as bytes,
-                  countif(rh.content_length is null) as no_len
-                  from edge_logs t cross join unnest(t.metadata) m cross join unnest(m.request) r
-                  cross join unnest(r.headers) h cross join unnest(m.response) resp
-                  cross join unnest(resp.headers) rh
-                  group by route, method, ua order by bytes desc limit 40""")
               end = dt.datetime.now(dt.timezone.utc).replace(minute=0, second=0, microsecond=0)
+              # A misspelt map key reads as '' (a silent zero), so the keys that
+              # exist are printed first.
+              st, rows, r = logq("select arrayJoin(mapKeys(log_attributes)) as k, count() as n from logs "
+                                 "where source_name = 'edge_logs' group by k order by n desc limit 80",
+                                 end - dt.timedelta(hours=1), end)
+              print(f"=== edge_logs attribute keys (last hour) -> HTTP {st} {json.dumps(rows) if rows is not None else r[:800]}")
+              A = lambda k: f"log_attributes['{k}']"
+              q = (f"""select extract({A('request.path')}, '^(/[a-z]+/v1/[^/?]*)') as route, {A('request.method')} as method,
+                  substring(if({A('request.headers.user_agent')} = '', '-', {A('request.headers.user_agent')}), 1, 40) as ua,
+                  count() as n, sum(toInt64OrNull({A('response.headers.content_length')})) as bytes,
+                  countIf({A('response.headers.content_length')} = '') as no_len
+                  from logs where source_name = 'edge_logs'
+                  group by route, method, ua order by bytes desc limit 40""")
               for d in range(14):
                   hi, lo = end - dt.timedelta(hours=12 * d), end - dt.timedelta(hours=12 * (d + 1))
-                  z = lambda x: x.strftime("%Y-%m-%dT%H:%M:%S.000Z")   # the API refuses "+00:00"
-                  qs = urllib.parse.urlencode({"sql": q, "iso_timestamp_start": z(lo),
-                                               "iso_timestamp_end": z(hi)})
-                  st, r = call(f"{base}/logs.all?{qs}", bearer=tok)
+                  st, rows, r = logq(q, lo, hi)
                   print(f"=== edge_logs {lo.isoformat()} .. {hi.isoformat()} -> HTTP {st}")
-                  if st != 200:
+                  if rows is None:
                       print("body:", r[:800])
                       continue
-                  try:
-                      body = json.loads(r)
-                      for row in body.get("result") or []:
-                          print(json.dumps(row))
-                      if body.get("error"): print("error:", str(body["error"])[:800])
-                  except ValueError:
-                      print(r[:800])
+                  for row in rows:
+                      print(json.dumps(row))
               for ep in ("usage.api-counts?interval=7day", "usage.api-requests-count"):
                   st, r = call(f"{base}/{ep}", bearer=tok)
                   print(f"=== {ep} -> HTTP {st} {r[:3000]}")
@@ -349,22 +375,15 @@ jobs:
               sk = os.environ["SUPABASE_SECRET_KEY"]
               lo, hi = end - dt.timedelta(hours=12), end
               rows2, used = None, None
-              for field in ("r.search", "r.url"):
-                  q2 = (f"""select r.path as path, {field} as qs, substr(coalesce(h.user_agent, '-'), 1, 40) as ua,
-                      count(*) as n from edge_logs t cross join unnest(t.metadata) m
-                      cross join unnest(m.request) r cross join unnest(r.headers) h
-                      where r.method = 'GET' and starts_with(r.path, '/rest/v1/')
+              for field in ("request.search", "request.url"):
+                  q2 = (f"""select {A('request.path')} as path, {A(field)} as qs,
+                      substring(if({A('request.headers.user_agent')} = '', '-', {A('request.headers.user_agent')}), 1, 40) as ua,
+                      count() as n from logs where source_name = 'edge_logs'
+                      and {A('request.method')} = 'GET' and startsWith({A('request.path')}, '/rest/v1/')
                       group by path, qs, ua order by n desc limit 400""")
-                  qs = urllib.parse.urlencode({"sql": q2, "iso_timestamp_start": z(lo), "iso_timestamp_end": z(hi)})
-                  import time as _t
-                  for wait in (0, 45, 90, 120):          # the logs API throttles (429) after the window queries
-                      _t.sleep(wait)
-                      st, r = call(f"{base}/logs.all?{qs}", bearer=tok)
-                      if st != 429:
-                          break
-                  body = json.loads(r) if st == 200 else {}
-                  if st == 200 and not body.get("error"):
-                      rows2, used = body.get("result") or [], field
+                  st, rows, r = logq(q2, lo, hi)
+                  if rows is not None and any(x.get("qs") for x in rows):
+                      rows2, used = rows, field
                       break
                   print(f"replay query with {field} -> HTTP {st} {r[:400]}")
               if rows2 is not None:
@@ -378,7 +397,7 @@ jobs:
                       if g["k"] >= 6 or budget <= 0:
                           continue
                       qpart = row.get("qs") or ""
-                      if used == "r.url":
+                      if used == "request.url":
                           qpart = urllib.parse.urlparse(qpart).query
                           qpart = ("?" + qpart) if qpart else ""
                       req = urllib.request.Request(url + row["path"] + qpart)
@@ -410,9 +429,12 @@ jobs:
                   print(f"REPLAY TOTAL est GB per 12 h {tot:.3f}  per 30 days {tot * 60:.1f}")
           if act == "heartbeat-check":
               # READ-ONLY (founder usage question). Raw counts with denominators;
-              # no conclusions. Window fixed by the brief.
+              # no conclusions. Window = the `window` input (blank = the first reading).
               import datetime as dt
-              W0, W1 = "2026-09-24T08:54:00Z", "2026-09-25T00:52:00Z"
+              W = (os.environ.get("WINDOW") or "").strip()
+              W0, W1 = [x.strip() for x in W.split("..")] if W else ("2026-09-24T08:54:00Z", "2026-09-25T00:52:00Z")
+              if not (W0.endswith("Z") and W1.endswith("Z")) or W1 <= W0:
+                  print(f"::error::window must be START..END in ISO Z, START < END (got {W!r})"); sys.exit(1)
               span_s = (dt.datetime.fromisoformat(W1[:-1]) - dt.datetime.fromisoformat(W0[:-1])).total_seconds()
               print(f"window {W0} .. {W1} = {span_s/60:.0f} min")
               def q(label, text):
@@ -433,39 +455,39 @@ jobs:
               hb = int(span_s // 60)
               print(f"(i-c) kibl_now_price heartbeat writes: ~{hb} (derived: window {span_s:.0f} s / HEARTBEAT_EVERY_S 60 in now_worker.py; not counted from data - the row is overwritten)")
               print("(i-d) kibl_now_price price-side writes: ~ the stream rows of (i-b) (one side write per history row; the table keeps only the latest per side)")
-              tok = os.environ["SUPABASE_ACCESS_TOKEN"]
-              base = f"https://api.supabase.com/v1/projects/{ref}/analytics/endpoints/logs.all"
-              joins = leaves = None; why = ""
               z0 = dt.datetime.fromisoformat(W0[:-1]); z1 = dt.datetime.fromisoformat(W1[:-1])
-              mid = z0 + (z1 - z0) / 2
-              for lo, hi in ((z0, mid), (mid, z1)):
-                  qs = urllib.parse.urlencode({
-                      "sql": ("select countif(regexp_contains(lower(event_message), r'join')) as joins, "
-                              "countif(regexp_contains(lower(event_message), r'leave|close|disconnect')) as leaves, "
-                              "count(*) as events from realtime_logs"),
-                      "iso_timestamp_start": lo.strftime("%Y-%m-%dT%H:%M:%S.000Z"),
-                      "iso_timestamp_end": hi.strftime("%Y-%m-%dT%H:%M:%S.000Z")})
-                  st, r = call(f"{base}?{qs}", bearer=tok)
-                  print(f"(ii) realtime_logs {lo:%m-%d %H:%M}..{hi:%m-%d %H:%M} -> HTTP {st} {r[:600]}")
-                  try:
-                      row = (json.loads(r).get("result") or [None])[0] if st == 200 else None
-                  except (ValueError, AttributeError):
-                      row = None
-                  if not row:
-                      why = f"logs API gave no row (HTTP {st}); log retention or the plan may not cover this window"
-                      joins = leaves = None
-                      break
-                  joins = (joins or 0) + int(row.get("joins") or 0)
-                  leaves = (leaves or 0) + int(row.get("leaves") or 0)
-              if joins is None:
-                  print(f"(ii) joins / leaves / connection-minutes: - ({why})")
+              def lq(label, text):
+                  st, rows, r = logq(text, z0, z1)
+                  print(f"{label} -> HTTP {st} {json.dumps(rows)[:3000] if rows is not None else r[:800]}")
+                  return rows
+              # What the logs hold for the window, before any count is read off them:
+              # a source with no rows here is a retention/plan limit, not a zero.
+              lq("(ii-a) log sources in the window: rows, first, last",
+                 "select source_name, count() as n, min(timestamp) as first, max(timestamp) as last "
+                 "from logs group by source_name order by n desc")
+              lq("(ii-b) realtime_logs attribute keys",
+                 "select arrayJoin(mapKeys(log_attributes)) as k, count() as n from logs "
+                 "where source_name = 'realtime_logs' group by k order by n desc limit 80")
+              lq("(ii-c) realtime_logs message shapes (ids and digits masked), count each",
+                 "select substring(replaceRegexpAll(replaceRegexpAll(event_message, 'eyJ[A-Za-z0-9_.-]+', '<jwt>'), "
+                 "'[0-9a-fA-F-]{8,}|[0-9]+', '#'), 1, 160) as shape, count() as n from logs "
+                 "where source_name = 'realtime_logs' group by shape order by n desc limit 50")
+              lq("(ii-d) first 25 realtime_logs lines (tokens masked)",
+                 "select timestamp, substring(replaceRegexpAll(event_message, 'eyJ[A-Za-z0-9_.-]+', '<jwt>'), 1, 300) as msg "
+                 "from logs where source_name = 'realtime_logs' order by timestamp limit 25")
+              rows = lq("(ii) realtime_logs lines matching join / leave|close|disconnect",
+                        "select countIf(match(lower(event_message), 'join')) as joins, "
+                        "countIf(match(lower(event_message), 'leave|close|disconnect')) as leaves, "
+                        "count() as events from logs where source_name = 'realtime_logs'")
+              row = rows[0] if rows else None
+              if not row:
+                  print("(ii) joins / leaves / connection-minutes: - (logs API gave no row; see (ii-a) for what the window holds)")
               else:
-                  print(f"(ii) realtime_logs lines matching join: {joins}; matching leave|close|disconnect: {leaves} "
-                        f"(message-pattern counts over the window, not per-connection pairs)")
-                  print("(ii) connection-minutes: - (realtime_logs carries events, not per-connection start/end pairs, so durations cannot be summed)")
+                  print(f"(ii) realtime_logs lines matching join: {row.get('joins')}; matching leave|close|disconnect: {row.get('leaves')} "
+                        f"of {row.get('events')} (message-pattern counts over the window, not per-connection pairs)")
               stream_rows = sum(int(x.get("rows") or 0) for x in (hist or []) if x.get("source") == "stream") if hist else None
               print("(iii) arithmetic, raw:")
-              print("      billed: +468 (the founder's figure for this window)")
+              print("      billed: the founder's dashboard delta for this window (+468 for the first reading)")
               print(f"      price-event deliveries = card writes x subscribers: card writes ~ {stream_rows if stream_rows is not None else '-'} "
                     f"(stream history rows, (i-b)); subscribers: - (not derivable from the tables or the logs above) -> product: -")
               print(f"      kibl_now_price heartbeat events while published: ~{hb} writes x subscribers (-) -> -")
