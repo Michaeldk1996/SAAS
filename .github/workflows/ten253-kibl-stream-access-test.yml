@@ -42,7 +42,7 @@ jobs:
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
           TEN274_POLL_MIN: ${{ inputs.listen_minutes }}
           TEN274_POLL_S: ${{ inputs.drop_minutes }}
-          TEN274_START_AT: "2026-09-25T04:45:00Z"
+          TEN274_START_AT: ""
           TEN274_OUT: ${{ github.workspace }}/ten274-out
         run: python3 ten274-probe.py
       - name: Upload
