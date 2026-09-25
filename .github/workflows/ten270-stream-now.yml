@@ -242,7 +242,10 @@ jobs:
               for jn in ("ten270-oddspapi-postmatch-ping", "ten270-oddspapi-postmatch-check"):
                   if not jobs or jobs.get(jn) is not True:
                       bad.append(f"post-match cron job {jn} missing or inactive")
-              st, r = sql("select d.sent_at, d.request_id, d.note, r.status_code, r.timed_out, r.error_msg "
+              # GitHub's reply body on a failed dispatch names the reason (e.g. the
+              # token's repo or permission); it carries no secret.
+              st, r = sql("select d.sent_at, d.request_id, d.note, r.status_code, r.timed_out, r.error_msg, "
+                          "case when r.status_code not between 200 and 299 then left(r.content, 300) end as reply "
                           "from public.postmatch_dispatch_log d left join net._http_response r on r.id = d.request_id "
                           "order by d.sent_at desc limit 5")
               print(f"last 5 dispatches -> HTTP {st} {r[:1200]}")
