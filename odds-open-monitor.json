@@ -1716,6 +1716,18 @@
       "startTime": "2026-09-13T18:00:00.000Z",
       "tour": "ATP US Open"
     },
+    "id1201413374753320": {
+      "alerted": false,
+      "captureLagH": 0.78,
+      "date": "2026-09-27",
+      "firstSeenAt": "2026-09-25T13:00:00Z",
+      "openAt": "2026-09-25T12:12:55.006Z",
+      "p1": "A. Mannarino",
+      "p2": "D. Shapovalov",
+      "postingLeadH": 40.78,
+      "startTime": "2026-09-27T05:00:00.000Z",
+      "tour": "ATP Chengdu"
+    },
     "id1201413374753326": {
       "alerted": true,
       "alertedAt": "2026-09-24T11:04:06Z",
@@ -2545,5 +2557,5 @@
   },
   "schema": "odds-open-monitor/1",
   "thresholdHours": 24.0,
-  "updatedAt": "2026-09-25T12:45:00Z"
+  "updatedAt": "2026-09-25T13:00:00Z"
 }
