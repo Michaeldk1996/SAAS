@@ -14,6 +14,16 @@ BASE = "https://api.odds-api.io/v3"
 KEY = os.environ.get("ODDS_API_IO_KEY", "")
 if not KEY:
     print("ODDS_API_IO_KEY missing"); sys.exit(2)
+# Shape diagnostic only (run 1 was 401 on every keyed call). Never the value.
+_raw = KEY
+_clean = KEY.strip().strip('"').strip("'").strip()
+if _clean.lower().startswith("apikey="): _clean = _clean[7:]
+_cls = ("hex" if all(c in "0123456789abcdefABCDEF" for c in _clean) else
+        "hex+dash" if all(c in "0123456789abcdefABCDEF-" for c in _clean) else
+        "alnum" if _clean.isalnum() else "other")
+print("key shape: len", len(_raw), "clean_len", len(_clean), "changed_by_clean", _raw != _clean,
+      "inner_whitespace", any(c.isspace() for c in _clean), "class", _cls)
+KEY = _clean
 assert "/ws" not in BASE
 
 OUT = {"calls": [], "phases": {}}
@@ -70,6 +80,10 @@ s, h, b = get("/bookmakers/selected")
 OUT["phases"]["selected"] = {"status": s, "body": b}
 first = OUT["calls"][-1]["hdr"] if OUT["calls"] else {}
 print("A selected", s, "ratelimit", {k: v for k, v in first.items() if "ratelimit" in k})
+if s == 401:
+    print("key rejected (401) after cleaning; body:", b)
+    os.makedirs("out", exist_ok=True)
+    json.dump(OUT, open("out/probe.json", "w")); sys.exit(0)
 
 # B. leagues
 s, h, b = get("/leagues", sport="tennis", all="true")
