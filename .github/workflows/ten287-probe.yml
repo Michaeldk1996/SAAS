@@ -1,0 +1,26 @@
+# TEN-287 — odds-api.io Betfair Exchange + Superbet read-only probe.
+# Branch-only: fires on a push to ten287-probe and nothing else. No schedule, no dispatch, never on main.
+name: ten287-probe
+on:
+  push:
+    branches: [ten287-probe]
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: odds-api.io probe (REST only, read-only, encrypted output)
+        env:
+          ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
+        run: python3 tools/ten287-probe.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ten287-probe
+          path: |
+            out/probe.enc
+            out/pass.enc
+          retention-days: 1
