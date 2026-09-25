@@ -29238,13 +29238,19 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 4.04,
+      "p2": 1.24,
+      "bookmaker": "1xBet"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 4.04,
+        "bookmaker": "1xBet"
+      },
+      "p2": {
+        "price": 1.24,
+        "bookmaker": "1xBet"
+      }
     },
     "tournamentRound": "ATP Hangzhou - Quarter-finals",
     "p1Key": 1102,
