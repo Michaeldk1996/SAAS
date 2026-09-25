@@ -15,6 +15,7 @@ jobs:
       - name: Probe (REST only, no WebSocket)
         env:
           ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
+          SKIP_PERBOOK: '1'  # per-book listing already captured in run 36093189317
         run: python3 tools/ten280-oddsapiio-probe.py
       - uses: actions/upload-artifact@v4
         with:

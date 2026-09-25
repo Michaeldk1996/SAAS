@@ -118,7 +118,7 @@ print("C events 23-25 window", len(ev24), "upcoming", len(evup))
 s, h, books = get("/bookmakers")
 active = [x["name"] for x in books if x.get("active")] if isinstance(books, list) else []
 perbook = {}
-for name in active:
+for name in ([] if os.environ.get("SKIP_PERBOOK") else active):
     if not budget_ok(): perbook["_stopped_at_budget"] = name; break
     s, h, b = get("/events", sport="tennis", bookmaker=name, limit=5000,
                   **{"from": iso(now - timedelta(hours=3)), "to": iso(now + timedelta(hours=72))})
@@ -128,7 +128,7 @@ OUT["phases"]["events_by_book"] = perbook
 print("D per-book listing", len(perbook), "books; remaining", remaining())
 
 # E. odds for our two books, markets omitted, all upcoming/live events
-OURS = ["Betfair Exchange", "Superbet"]
+OURS = (OUT["phases"]["selected"]["body"] or {}).get("bookmakers") or ["Betfair Exchange", "Superbet"]  # the account's own selection, never changed
 ids = [e["id"] for e in evup if e.get("status") in ("pending", "live")]
 odds = {}
 for i in range(0, len(ids), 10):
