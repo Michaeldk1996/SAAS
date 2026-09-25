@@ -1,4 +1,6 @@
-# TEN-280 — read-only odds-api.io REST probe. Branch-only: fires on a push to
+# TEN-280 — odds-api.io probes, now the Bet105 drop bot's READ-ONLY status read.
+# Stop the bot (SQL): select cron.unschedule('ten280-bet105-drop-bot');
+# Branch-only: fires on a push to
 # ten280-probe and nothing else. No schedule, no dispatch, never on main.
 name: ten280-oddsapiio-probe
 on:
@@ -16,9 +18,8 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          TEN280_STEPS: tools/ten280-steps-live.json
+          # READ-ONLY status. The live install ran once (run 36099383252); a push never reinstalls.
+          TEN280_STEPS: tools/ten280-steps-status.json
         run: python3 tools/ten280-sql.py
       - uses: actions/upload-artifact@v4
         if: always()
