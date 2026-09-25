@@ -181,7 +181,21 @@ function fetchShards(dirRel, keys, opts = {}) {
       ok.set(k, t);
     });
   }
-  return { ok, failed };
+  // TEN-273 (founder ruling 2026-09-25): ONE more fetch per failed key, one at a time, then fail
+  // closed. A single shard failing once (a different key each time: 2984, 1863, 3604, 362, 1304)
+  // aborted 37 pipeline ticks 2026-09-19..25. A key that fails again stays in `failed` and the
+  // caller aborts exactly as before.
+  const retried = failed.splice(0);
+  for (const k of retried) {
+    const f = path.join(tmp, `${k}.json`);
+    try {
+      execFileSync('curl', ['-sS', '--max-time', String(opts.timeoutSec || 120), '-o', f, `${BASE}/${dirRel}/${k}.json`], { maxBuffer: 256 << 20 });
+    } catch (err) { /* checked below */ }
+    const t = fs.existsSync(f) ? fs.readFileSync(f, 'utf8') : '';
+    if (fs.existsSync(f)) fs.unlinkSync(f);
+    if (!t || t.trim().charAt(0) !== '{') failed.push(k); else ok.set(k, t);
+  }
+  return { ok, failed, retried };
 }
 
 /** The deployed per-player {n: tournaments, m: matches} index for tournament-history/. */
@@ -223,9 +237,10 @@ function hydrateTournamentHistory(players, opts = {}) {
     // holds, so a locally-cached shard that lost rows is caught, not trusted.
     if (!j || !Array.isArray(j.tournamentHistory) || j.tournamentHistory.length < index[k].n) need.push(k);
   }
-  let fetched = 0;
+  let fetched = 0, retried = 0;
   if (need.length) {
     const res = fetchShards('tournament-history', need, opts);
+    retried = res.retried.length;
     for (const [k, text] of res.ok) { fs.writeFileSync(path.join(dir, `${k}.json`), text); fetched++; }
   }
   // TWO DIFFERENT DEFICIENCIES, AND THEY MUST NOT SHARE A WORD.
@@ -250,7 +265,7 @@ function hydrateTournamentHistory(players, opts = {}) {
     rows += j.tournamentHistory.length;
   }
   return {
-    indexed: keys.length, attached, fetched, short, tournamentRows: rows,
+    indexed: keys.length, attached, fetched, retried, short, tournamentRows: rows,
     // missing.length === indexed - attached, by construction. The gate blocks on
     // `attached < indexed`, so THIS is the number that has to appear in its
     // message for the verdict and the count to agree.
