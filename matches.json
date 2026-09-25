@@ -2470,10 +2470,16 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 0,
+        "p2": 0
+      }
+    ],
+    "liveGameScore": "0 - 0",
     "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/824_j-faria.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1102_h-gaston.jpg",
@@ -2675,7 +2681,10 @@
       "edgeVsPinnacleP1": 0.0076,
       "edgeVsPinnacleP2": -0.0076,
       "ts": "2026-09-25T11:33:44.115Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12165828",
@@ -4886,10 +4895,16 @@
     "venue": null,
     "courtSpeed": null,
     "weather": null,
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
+    "live": true,
+    "liveStatus": "Set 1",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 0,
+        "p2": 0
+      }
+    ],
+    "liveGameScore": "0 - 0",
     "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/430_c-ruud.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1104_f-cerundolo.jpg",
@@ -5045,7 +5060,10 @@
       "at": "2026-09-25T06:06:01.503Z",
       "observedAt": "2026-09-25T11:46:37Z",
       "src": "live"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12165829",
@@ -122316,7 +122334,27 @@
       "edgeVsPinnacleP1": -0.0139,
       "edgeVsPinnacleP2": 0.0139,
       "ts": "2026-09-24T15:48:19.623Z"
-    }
+    },
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "3-6, 3-6",
+      "sets": [
+        {
+          "p1": 3,
+          "p2": 6
+        },
+        {
+          "p1": 3,
+          "p2": 6
+        }
+      ],
+      "p1Sets": 0,
+      "p2Sets": 2,
+      "winner": "p2"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "upcoming-12164720",
@@ -126571,7 +126609,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "7-6, 7-6",
+      "display": "7-6(4), 7-6(5)",
       "sets": [
         {
           "p1": 7,
@@ -129193,7 +129231,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-4, 6-7, 6-3",
+      "display": "6-4, 6-7(6), 6-3",
       "sets": [
         {
           "p1": 6,
@@ -132222,7 +132260,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "5-7, 6-7",
+      "display": "5-7, 6-7(5)",
       "sets": [
         {
           "p1": 5,
@@ -134848,7 +134886,7 @@
     "retired": false,
     "walkover": false,
     "finalScore": {
-      "display": "7-6, 5-7, 5-7",
+      "display": "7-6(4), 5-7, 5-7",
       "sets": [
         {
           "p1": 7,
@@ -152752,7 +152790,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7, 6-4, 7-5",
+      "display": "6-7(6), 6-4, 7-5",
       "sets": [
         {
           "p1": 6,
@@ -158975,7 +159013,7 @@
     "retired": false,
     "walkover": false,
     "finalScore": {
-      "display": "3-6, 6-1, 7-6",
+      "display": "3-6, 6-1, 7-6(4)",
       "sets": [
         {
           "p1": 3,
