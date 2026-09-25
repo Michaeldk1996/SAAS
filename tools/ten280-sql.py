@@ -24,6 +24,8 @@ def sql(q):
             return r.status, r.read().decode()
     except urllib.error.HTTPError as e:
         return e.code, e.read().decode()
+    except Exception as e:  # timeout / network: report it as a failed step, never crash before the artifact
+        return 599, json.dumps({"client_error": type(e).__name__})
 
 
 def main():
@@ -57,7 +59,8 @@ def main():
             print("   error:", str(rows)[:300])
         elif code >= 400:
             print("   error: (withheld — the statement carried a secret)")
-            failed = failed or st.get("required", False)
+        if code >= 400 and st.get("required", False):
+            failed = True   # a failed required step turns the run red
         out[st["name"]] = {"status": code, "rows": rows if "vault_from_env" not in st else "(withheld)"}
         if code >= 400 and st.get("stop_on_error"):
             break

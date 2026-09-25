@@ -51,7 +51,7 @@ def iso(dt): return dt.strftime("%Y-%m-%dT%H:%M:%SZ")
 
 s, sel = get("/bookmakers/selected")
 OUT["phases"]["selected"] = {"status": s, "body": sel}
-print("selected", s, sel)
+print("selected", s, (sel or {}).get("bookmakers"))
 BOOKS = (sel or {}).get("bookmakers") or []
 
 now = datetime.now(timezone.utc)
@@ -61,7 +61,7 @@ day0 = now.replace(hour=0, minute=0, second=0, microsecond=0)
 s, ev = get("/events", sport="tennis", limit=5000, **{"from": iso(day0 - timedelta(hours=12)), "to": iso(now + timedelta(hours=72))})
 evs = ev if isinstance(ev, list) else []
 OUT["phases"]["events"] = {"status": s, "n": len(evs), "body": evs}
-m = [e for e in evs if mens(e["league"]["name"])]
+m = [e for e in evs if mens((e.get("league") or {}).get("name"))]
 print("events", s, len(evs), "mens singles", len(m))
 
 if BOOKS:
@@ -104,7 +104,7 @@ for term in ("Chengdu", "Hangzhou", "Outright", "Winner", "Laver Cup"):
     srch[term] = {"status": s, "body": b}
 OUT["phases"]["search"] = srch
 # odds on every Chengdu/Hangzhou event (any market the books carry, no market filter)
-ch = [e["id"] for e in evs if any(t in e["league"]["name"] for t in ("Chengdu", "Hangzhou"))]
+ch = [e["id"] for e in evs if any(t in ((e.get("league") or {}).get("name") or "") for t in ("Chengdu", "Hangzhou"))]
 for term in ("Chengdu", "Hangzhou"):
     b = srch[term]["body"]
     for e in (b if isinstance(b, list) else []):
