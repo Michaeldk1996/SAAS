@@ -50,12 +50,21 @@ USAGE
   python3 archive-oddspapi-raw.py discover            # ~31 metered units
   python3 archive-oddspapi-raw.py archive --max-seconds 18000
   python3 archive-oddspapi-raw.py report              # bucket size, no odds API
+  python3 archive-oddspapi-raw.py postmatch           # 0 metered units; see below
+
+POSTMATCH (TEN-270, founder: "Find a way to archive it straight after the
+game.") Every 15 min at :07/:22/:37/:52, pulls each FINISHED board match that
+has an oddspapi fixtureId and no object yet, into the same canonical path, so
+the daily `archive` run skips it. Free /v4/historical-odds + /v4/account only;
+it stops on a 429 (the live price loop always wins the key). The match-winner
+ticks of bet365 cards are projected into `bet365_mw_ticks` for the hover box.
 
 Stdlib only. Reads ODDSPAPI_KEY, SUPABASE_URL, SUPABASE_SECRET_KEY from the
 environment (or .env for the odds key). Secrets are never printed.
 """
 
 import argparse
+import collections
 import gzip
 import io
 import json
@@ -131,9 +140,9 @@ def api_get(path, params, key, timeout=180, raw=False):
         return None, str(e)
 
 
-def meter(key, when):
+def meter(key, when, get=None):
     """Live meter read. /v4/account is itself unmetered."""
-    data, err = api_get('/v4/account', {}, key)
+    data, err = (get or api_get)('/v4/account', {}, key)
     if data is None:
         print(f'::warning::could not read the oddspapi meter {when} ({err}).')
         return None, None
@@ -235,12 +244,13 @@ def sb_list(url, key, prefix, limit=1000):
 
 
 def sb_upload(url, key, path, blob, content_type='application/json',
-              encoding='gzip'):
+              encoding='gzip', upsert=True):
+    headers = {'Content-Type': content_type,
+               'x-upsert': 'true' if upsert else 'false'}
+    if encoding:
+        headers['Content-Encoding'] = encoding
     _, err = sb_request('POST', f'/storage/v1/object/{BUCKET}/{path}', url, key,
-                        body=blob,
-                        headers={'Content-Type': content_type,
-                                 'Content-Encoding': encoding,
-                                 'x-upsert': 'true'})
+                        body=blob, headers=headers)
     return err
 
 
@@ -522,9 +532,494 @@ def report():
     return 0
 
 
+# -------------------------------------------------------------------- postmatch
+#
+# TEN-270, founder rulings (verbatim):
+#   "Find a way to archive it straight after the game."
+#   "Separate 15-min job, offset so it never runs at the same minute as the odds
+#    loop (e.g. :07, :22, :37, :52). On a 429 it backs off and retries next run;
+#    the live price loop always wins the key."
+#
+# WHAT IT DOES. Targets = board cards with a RESULT (id `past-…` AND a
+# finalScore), an oddspapi fixtureId in odds-fixture-map.json, no object in the
+# bucket yet, and at least PM_WAIT_MIN since this job first saw the result. Each
+# is pulled ONCE from /v4/historical-odds, accepted only when the last
+# match-winner tick of both sides is active=False (the market closed at the
+# end; a mid-match suspension is also inactive, which is why this is the second
+# check behind the result, never the first), and written to the SAME canonical
+# path object_path() gives the daily run — whose held_objects() then skips it.
+#
+# THE KEY. The odds loop ticks at :00/:15/:30/:45 (measured from its job logs:
+# 110 of 110 iterations started within 60 s of the quarter hour; median 113 s,
+# max 590 s long). GitHub delays scheduled runs, so the cron minute alone does
+# not keep us off the loop: every call is also gated on the wall clock being
+# inside PM_WINDOW minutes of the quarter hour. On a 429 the job waits one short
+# backoff, tries once more, and on a second 429 stops the run (exit 0) — the
+# next run resumes. A 404 is recorded under _meta/ and given up after
+# PM_MAX_404 runs, so a fixture oddspapi never serves is not retried forever.
+#
+# ZERO BILLABLE CALLS. free_get() refuses any path outside FREE_PATHS, and the
+# /v4/account meter is read before and after the pulls into the job log.
+
+SITE = 'https://michaeldk1996.github.io/SAAS/'
+PM_STATE_KEY = f'{META_PREFIX}/postmatch-state.json'
+PM_HEARTBEAT_KEY = f'{META_PREFIX}/postmatch-last-run.json'
+PM_WAIT_MIN = 30          # minutes after this job first sees the result
+PM_WINDOW = (5, 14)       # minutes into each quarter hour the key may be used
+PM_MAX_RUN_S = 480        # the workflow's timeout is 10 min
+PM_BACKOFF_S = 10         # the ONE short backoff before the retry on a 429
+PM_CALL_MARGIN_S = 30     # a call starts only if the window is still open this much later
+PM_CALL_TIMEOUT_S = 60    # a 1-4.5 MB payload took 3.8-7.6 s (measured 2026-09-10)
+PM_MAX_404 = 3            # runs that saw a 404 before the fixture is given up
+PM_MAX_DEFER = 8          # runs with an open market before it is left to the daily run
+PM_SEEN_KEEP_DAYS = 4
+PM_LOADED_KEEP_DAYS = 14
+FREE_PATHS = frozenset({'/v4/historical-odds', '/v4/account'})
+MW_BOOK, MW_MARKET, MW_OUTCOMES = 'bet365', '121', ('121', '122')  # 121 = participant1
+TICKS_TABLE = 'bet365_mw_ticks'
+TICK_COLUMNS = ('card_key', 'side', 'price', 'at', 'active', 'fixture_id', 'player')
+
+_now = lambda: datetime.now(timezone.utc)   # noqa: E731 — injectable in tests
+_sleep = time.sleep
+CALLS = {}                                   # oddspapi path -> calls this run
+
+
+class BillableCall(RuntimeError):
+    """A path outside FREE_PATHS was about to be called. Never caught."""
+
+
+def free_get(path, params, key, raw=False):
+    if path not in FREE_PATHS:
+        raise BillableCall(f'{path} is not a free oddspapi endpoint; the post-match '
+                           f'job makes zero billable calls.')
+    CALLS[path] = CALLS.get(path, 0) + 1
+    return api_get(path, params, key, timeout=PM_CALL_TIMEOUT_S, raw=raw)
+
+
+def iso(d):
+    return d.strftime('%Y-%m-%dT%H:%M:%SZ')
+
+
+def quarter_s(now):
+    return (now.minute % 15) * 60 + now.second
+
+
+def in_window(now):
+    return PM_WINDOW[0] * 60 <= quarter_s(now) < PM_WINDOW[1] * 60
+
+
+def can_call(now):
+    """A call may START only if the window is still open PM_CALL_MARGIN_S later."""
+    return in_window(now) and in_window(now + timedelta(seconds=PM_CALL_MARGIN_S))
+
+
+def wait_for_window(deadline):
+    """True once the clock is inside PM_WINDOW; False if that is past the run's
+    deadline. Never calls the key outside the window."""
+    now = _now()
+    if can_call(now):
+        return True
+    q = quarter_s(now)
+    wait = (PM_WINDOW[0] * 60 - q) if q < PM_WINDOW[0] * 60 else (900 - q + PM_WINDOW[0] * 60)
+    if now + timedelta(seconds=wait + 30) > deadline:
+        return False
+    print(f'waiting {wait}s for the odds loop to leave the key '
+          f'(:{PM_WINDOW[0]:02d}-:{PM_WINDOW[1]:02d} of each quarter hour).', flush=True)
+    _sleep(wait)
+    return can_call(_now())
+
+
+def postmatch_hist(fixture_id, key, counts):
+    """One free /v4/historical-odds call. On a 429: ONE short backoff, one
+    retry; a second 429 is returned as 429 and the caller stops the run."""
+    body, err = free_get('/v4/historical-odds', {'fixtureId': fixture_id}, key, raw=True)
+    if err == 429:
+        counts['http429'] += 1
+        _sleep(PM_BACKOFF_S)
+        body, err = free_get('/v4/historical-odds', {'fixtureId': fixture_id}, key, raw=True)
+        if err == 429:
+            counts['http429'] += 1
+    return body, err
+
+
+def _names():
+    if HERE not in sys.path:
+        sys.path.insert(0, HERE)
+    import ten225_names
+    return ten225_names
+
+
+def event_key(m):
+    parts = str(m.get('id') or '').split('-')
+    return '-'.join(parts[1:]) if len(parts) > 1 else ''
+
+
+def has_result(m):
+    """The board's result signal: the id flipped upcoming- -> past- AND a final
+    score is there. A past- card without one (interrupted) is not finished."""
+    return str(m.get('id') or '').startswith('past-') and bool(m.get('finalScore'))
+
+
+def merge_boards(*boards):
+    """Union by event key; a copy WITH a result wins over one without."""
+    out = {}
+    for b in boards:
+        for m in (b if isinstance(b, list) else (b or {}).get('matches') or []):
+            ek = event_key(m)
+            if ek and (ek not in out or (has_result(m) and not has_result(out[ek]))):
+                out[ek] = m
+    return list(out.values())
+
+
+def card_orientation(rec, m):
+    """'same' when oddspapi participant1 is the CARD's p1, 'swap' when it is the
+    card's p2, None when the map and the card disagree on who is playing."""
+    o = rec.get('orient')
+    if o not in ('same', 'swap'):
+        return None
+    rp = (rec.get('p1'), rec.get('p2'))
+    if not all(rp):
+        return o
+    if rp == (m.get('p1'), m.get('p2')):
+        return o
+    if rp == (m.get('p2'), m.get('p1')):
+        return 'swap' if o == 'same' else 'same'
+    return None
+
+
+def select_targets(matches, fmap, ocs, state, now, counts):
+    """Finished board cards -> post-match targets. Records first sightings."""
+    names = _names()
+    seen = state.setdefault('seen', {})
+    nf = state.setdefault('notFound', {})
+    by_key = (fmap or {}).get('byKey') or {}
+    ocs_by = (ocs or {}).get('byKey') or {}
+    out = []
+    for m in matches:
+        if not has_result(m):
+            continue
+        counts['finished'] += 1
+        ek = event_key(m)
+        seen.setdefault(ek, iso(now))
+        rec = by_key.get(ek) or {}
+        fid = rec.get('fixtureId')
+        if not fid:
+            counts['unmapped'] += 1
+            continue
+        ck = names.match_key((m.get('date') or '')[:10], m.get('p1'), m.get('p2'))
+        if not ck:
+            counts['noCardKey'] += 1
+            continue
+        if int((nf.get(fid) or {}).get('n') or 0) >= PM_MAX_404:
+            counts['gaveUp404'] += 1
+            continue
+        first = parse_iso(seen[ek]) or now
+        out.append({'eventKey': ek, 'fixtureId': fid, 'cardKey': ck,
+                    'orient': card_orientation(rec, m), 'startTime': rec.get('startTime'),
+                    'p1': m.get('p1'), 'p2': m.get('p2'),
+                    'bet365Card': (ocs_by.get(ck) or {}).get('book') == 'bet365',
+                    'seenAgeMin': (now - first).total_seconds() / 60.0})
+    return out
+
+
+def held_path(url, key, fixture_id, start_time):
+    """The object's path if the bucket holds this fixture, False if it does not,
+    None if that cannot be told (then the fixture is NOT pulled: a pull on an
+    unknown answer could overwrite the checkpoint)."""
+    d = parse_iso(start_time)
+    months = sorted({(d + timedelta(days=k)).strftime('%Y-%m') for k in (-1, 0, 1)}) \
+        if d else ['unknown']
+    want = f'{fixture_id}.json.gz'
+    for mo in months:
+        page, err = sb_request('POST', f'/storage/v1/object/list/{BUCKET}', url, key,
+                               body={'prefix': f'{mo}/', 'search': fixture_id,
+                                     'limit': 100, 'offset': 0,
+                                     'sortBy': {'column': 'name', 'order': 'asc'}})
+        if page is None or not isinstance(page, list) or len(page) >= 100:
+            return None
+        if any(r.get('name') == want for r in page):
+            return f'{mo}/{want}'
+    return False
+
+
+def payload_of(blob):
+    if isinstance(blob, dict):
+        return blob
+    if not isinstance(blob, (bytes, bytearray)):
+        return None
+    try:
+        if blob[:2] == b'\x1f\x8b':
+            blob = gzip.decompress(blob)
+        return json.loads(blob.decode('utf-8'))
+    except (OSError, ValueError):
+        return None
+
+
+def mw_ticks(payload):
+    """bet365 match-winner ticks per outcome, oldest first, or None when the
+    payload has no bet365 match-winner market."""
+    mkt = ((((payload or {}).get('bookmakers') or {}).get(MW_BOOK) or {})
+           .get('markets') or {}).get(MW_MARKET)
+    if not isinstance(mkt, dict):
+        return None
+    outs = mkt.get('outcomes') or {}
+    res = {}
+    for oc in MW_OUTCOMES:
+        ticks = [t for t in (((outs.get(oc) or {}).get('players') or {}).get('0') or [])
+                 if isinstance(t, dict) and parse_iso(t.get('createdAt'))]
+        res[oc] = sorted(ticks, key=lambda t: parse_iso(t['createdAt']))
+    return res
+
+
+def market_closed(ticks):
+    """Both sides' LAST tick is active=False. Missing either side = not closed."""
+    return bool(ticks) and all(ticks.get(oc) and ticks[oc][-1].get('active') is False
+                               for oc in MW_OUTCOMES)
+
+
+def tick_rows(ticks, target):
+    """Rows for bet365_mw_ticks in CARD orientation, one per change: a tick is
+    kept when its price or its active flag differs from the side's previous
+    kept tick. Prices below 1.01 are not prices and are never stored."""
+    if not ticks or target.get('orient') not in ('same', 'swap'):
+        return []
+    side_of = {'121': 'p1', '122': 'p2'} if target['orient'] == 'same' \
+        else {'121': 'p2', '122': 'p1'}
+    rows = []
+    for oc in MW_OUTCOMES:
+        side, prev = side_of[oc], None
+        for t in ticks.get(oc) or []:
+            try:
+                price = round(float(t.get('price')), 3)
+            except (TypeError, ValueError):
+                continue
+            if price < 1.01:
+                continue
+            active = t.get('active') if isinstance(t.get('active'), bool) else None
+            if prev and prev == (price, active):
+                continue
+            prev = (price, active)
+            rows.append({'card_key': target['cardKey'], 'side': side, 'price': price,
+                         'at': iso(parse_iso(t['createdAt'])), 'active': active,
+                         'fixture_id': target['fixtureId'], 'player': target[side]})
+    return rows
+
+
+def load_ticks(url, key, rows):
+    for i in range(0, len(rows), 500):
+        _, err = sb_request('POST', f'/rest/v1/{TICKS_TABLE}?on_conflict=card_key,side,at,price',
+                            url, key, body=rows[i:i + 500],
+                            headers={'Prefer': 'resolution=ignore-duplicates,return=minimal'})
+        if err:
+            return err
+    return None
+
+
+def project_ticks(url, key, target, payload, state, now, counts):
+    """bet365 cards only: the archived payload -> bet365_mw_ticks."""
+    if not target['bet365Card']:
+        counts['ticksNotBet365Card'] += 1
+        return
+    if target['orient'] is None:
+        counts['ticksOrientUnknown'] += 1
+        return
+    rows = tick_rows(mw_ticks(payload), target)
+    err = load_ticks(url, key, rows) if rows else None
+    if err:
+        counts['ticksLoadFailed'] += 1
+        print(f'::warning::{TICKS_TABLE} load failed for {target["cardKey"]}: {err[0]}')
+        return
+    counts['ticksCards'] += 1
+    counts['ticksRows'] += len(rows)
+    state.setdefault('loaded', {})[target['cardKey']] = {
+        'fixtureId': target['fixtureId'], 'at': iso(now), 'rows': len(rows)}
+
+
+def read_state(url, key):
+    got, _ = sb_download(url, key, PM_STATE_KEY)
+    st = payload_of(got)
+    return st if isinstance(st, dict) else {}
+
+
+def prune_state(state, now):
+    def fresh(ts, days):
+        d = parse_iso(ts)
+        return bool(d and now - d <= timedelta(days=days))
+    state['seen'] = {k: v for k, v in (state.get('seen') or {}).items()
+                     if fresh(v, PM_SEEN_KEEP_DAYS)}
+    state['loaded'] = {k: v for k, v in (state.get('loaded') or {}).items()
+                       if fresh((v or {}).get('at'), PM_LOADED_KEEP_DAYS)}
+    return state
+
+
+def put_json(url, key, path, obj):
+    return sb_upload(url, key, path, json.dumps(obj, indent=1, sort_keys=True).encode('utf-8'),
+                     encoding=None)
+
+
+def postmatch(odds_key, url, sb_key, matches, fmap, ocs):
+    """One post-match run. Returns (exit code, heartbeat dict)."""
+    CALLS.clear()
+    started = _now()
+    deadline = started + timedelta(seconds=PM_MAX_RUN_S)
+    counts = collections.Counter()
+    state = read_state(url, sb_key)
+    nf = state.setdefault('notFound', {})
+    deferred = state.setdefault('deferred', {})
+    loaded = state.setdefault('loaded', {})
+    targets = select_targets(matches, fmap, ocs, state, started, counts)
+
+    # Pass 1 — bucket only, no oddspapi call: skip what is held, project the
+    # ticks of held bet365 cards not yet in the table, collect the pull list.
+    pulls = []
+    for t in targets:
+        if (loaded.get(t['cardKey']) or {}).get('fixtureId') == t['fixtureId']:
+            counts['alreadyLoaded'] += 1
+            continue
+        held = held_path(url, sb_key, t['fixtureId'], t['startTime'])
+        if held is None:
+            counts['heldUnknown'] += 1
+            continue
+        if held:
+            counts['held'] += 1
+            if t['bet365Card'] and t['orient']:
+                got, err = sb_download(url, sb_key, held)
+                payload = payload_of(got)
+                if payload is None:
+                    counts['heldUnreadable'] += 1
+                    continue
+                project_ticks(url, sb_key, t, payload, state, started, counts)
+            continue
+        if t['seenAgeMin'] < PM_WAIT_MIN:
+            counts['waiting'] += 1
+            continue
+        if int(deferred.get(t['fixtureId']) or 0) >= PM_MAX_DEFER:
+            counts['deferCapped'] += 1
+            continue
+        pulls.append(t)
+
+    # Pass 2 — the key, inside the window only.
+    before = after = None
+    stop = None
+    if pulls and wait_for_window(deadline):
+        before, _ = meter(odds_key, 'before postmatch pulls', get=free_get)
+    elif pulls:
+        stop = 'window'
+    n = 0
+    for t in pulls:
+        if stop:
+            counts['notTried'] += 1
+            continue
+        if n:
+            _sleep(HIST_SLEEP)
+        if _now() > deadline or not can_call(_now()):
+            stop = 'window'
+            counts['notTried'] += 1
+            continue
+        n += 1
+        fid = t['fixtureId']
+        body, err = postmatch_hist(fid, odds_key, counts)
+        if err == 429:
+            stop = '429'
+            counts['stoppedOn429'] += 1
+            print(f'429 twice on {fid} — the live loop has the key; stopping, next run resumes.')
+            continue
+        if err == 404:
+            r = nf.setdefault(fid, {'n': 0, 'first': iso(_now()), 'eventKey': t['eventKey']})
+            r['n'] = int(r.get('n') or 0) + 1
+            r['last'] = iso(_now())
+            counts['http404'] += 1
+            continue
+        if body is None:
+            counts['failed'] += 1
+            counts[f'error-{err}'] += 1
+            continue
+        payload = payload_of(body)
+        if payload is None:
+            counts['failed'] += 1
+            counts['unparseable'] += 1
+            continue
+        ticks = mw_ticks(payload)
+        if ticks is not None and not market_closed(ticks):
+            deferred[fid] = int(deferred.get(fid) or 0) + 1
+            counts['deferredOpenMarket'] += 1
+            continue
+        if ticks is None:
+            counts['noBet365Market'] += 1
+        path = object_path({'fixtureId': fid, 'startTime': t['startTime'],
+                            'trueStartTime': None})
+        up = sb_upload(url, sb_key, path, gzip.compress(body, 6), upsert=False)
+        if up and up[0] in (400, 409) and ('uplicate' in str(up[1]) or 'exists' in str(up[1])):
+            counts['alreadyHeld'] += 1
+        elif up:
+            counts['failed'] += 1
+            counts[f'upload-{up[0]}'] += 1
+            continue
+        else:
+            counts['saved'] += 1
+        deferred.pop(fid, None)
+        nf.pop(fid, None)
+        project_ticks(url, sb_key, t, payload, state, _now(), counts)
+
+    if before is not None and can_call(_now()):
+        after, _ = meter(odds_key, 'after postmatch pulls', get=free_get)
+    elif before is not None:
+        print('meter after: not read — the window closed, and the loop owns the key now; '
+              'the meter delta for this run is unknown (—).')
+    delta = (after - before) if (before is not None and after is not None) else None
+    if delta:
+        print(f'::warning::the oddspapi meter moved by {delta} during this run. This job '
+              f'called only {sorted(CALLS)} (free_get refuses anything else), so the '
+              f'units belong to a concurrent job.')
+    finished = _now()
+    beat = {'startedAt': iso(started), 'finishedAt': iso(finished),
+            'targets': len(targets), 'pullCandidates': len(pulls), 'pulled': n,
+            'stoppedBy': stop, 'counts': dict(counts), 'http429': counts['http429'],
+            'oddspapiCalls': dict(CALLS), 'meterBefore': before, 'meterAfter': after,
+            'meterDelta': delta, 'waitMin': PM_WAIT_MIN, 'window': list(PM_WINDOW)}
+    for path, obj in ((PM_STATE_KEY, prune_state(state, finished)), (PM_HEARTBEAT_KEY, beat)):
+        err = put_json(url, sb_key, path, obj)
+        if err:
+            print(f'::warning::could not write {path}: {err[0]}')
+    print('\n=== POSTMATCH RUN ===')
+    print(json.dumps(beat, indent=1, sort_keys=True))
+    return (1 if counts['failed'] and not counts['saved'] else 0), beat
+
+
+def fetch_site_json(name, timeout=30):
+    req = urllib.request.Request(SITE + name, headers={'User-Agent': 'BSP-Consult-Dashboard/1.0'})
+    try:
+        with urllib.request.urlopen(req, timeout=timeout) as r:
+            return json.loads(r.read().decode('utf-8'))
+    except (urllib.error.URLError, TimeoutError, ValueError) as e:
+        print(f'::warning::live {name} unreadable ({e}); using the checkout copy only.')
+        return None
+
+
+def load_local_json(name):
+    try:
+        with open(os.path.join(HERE, name), encoding='utf-8') as fh:
+            return json.load(fh)
+    except (OSError, ValueError):
+        return None
+
+
+def postmatch_main(odds_key):
+    url, sb_key = supabase_creds()
+    # The live board is the page members see; the checkout's copy is at most one
+    # capture tick behind it and still holds cards the live board has dropped.
+    matches = merge_boards(fetch_site_json('matches.json'), load_local_json('matches.json'))
+    fmap = load_local_json('odds-fixture-map.json')
+    ocs = fetch_site_json('odds-card-state.json') or load_local_json('odds-card-state.json')
+    if not matches or not fmap:
+        die('no board or no fixture map — nothing to target.')
+    code, _ = postmatch(odds_key, url, sb_key, matches, fmap, ocs)
+    return code
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('cmd', choices=['discover', 'archive', 'report'])
+    ap.add_argument('cmd', choices=['discover', 'archive', 'report', 'postmatch'])
     ap.add_argument('--max-seconds', type=int, default=18000)
     ap.add_argument('--days', type=int, default=RETENTION_DAYS)
     a = ap.parse_args()
@@ -538,6 +1033,8 @@ def main():
     if a.cmd == 'discover':
         discover(key, a.days)
         return 0
+    if a.cmd == 'postmatch':
+        return postmatch_main(key)
     return archive(key, a.max_seconds)
 
 

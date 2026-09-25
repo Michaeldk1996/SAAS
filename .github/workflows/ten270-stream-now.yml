@@ -154,6 +154,19 @@ jobs:
               st, r = call(f"{url}/rest/v1/kibl_now_history?select=id&limit=1", key=pk)
               print(f"[publishable] SELECT kibl_now_history -> HTTP {st}  (want 401/403)")
               if st not in (401, 403): bad.append(f"history readable ({st})")
+              # TEN-270 post-match archive: the tick table is server-side only; the
+              # page reads one card at a time through bet365_history().
+              st, r = call(f"{url}/rest/v1/bet365_mw_ticks?select=card_key&limit=1", key=pk)
+              print(f"[publishable] SELECT bet365_mw_ticks -> HTTP {st}  (want 401/403)")
+              if st not in (401, 403): bad.append(f"bet365_mw_ticks readable ({st})")
+              st, r = call(f"{url}/rest/v1/rpc/bet365_history", "POST", {"p_card_key": "__rls_probe__"}, key=pk)
+              try:
+                  d = json.loads(r) if st == 200 else {}
+              except ValueError:
+                  d = {}
+              print(f"[publishable] rpc bet365_history(__rls_probe__) -> HTTP {st}, stored {d.get('stored')}, "
+                    f"rows {len(d.get('rows') or [])}  (want 200, 0 rows)")
+              if st != 200 or d.get("rows"): bad.append(f"bet365_history {st}")
               probe = {"card_key": "__rls_probe__", "side_key": "__rls_probe__", "kind": "heartbeat"}
               st, r = call(f"{url}/rest/v1/kibl_now_price", "POST", [probe], key=pk)
               print(f"[publishable] INSERT kibl_now_price -> HTTP {st}  (want 401/403)")

@@ -61,6 +61,20 @@
     return out.sort((a, b) => a.at - b.at);
   }
 
+  // bet365 on a COMPLETED card: the post-match archive (bet365_history RPC,
+  // founder 2026-09-24 "Completed matches: the archive history"). Rows are
+  // bet365's own ticks in card orientation, already cut at the start by the
+  // RPC; a suspended tick (active false) is not a price.
+  function archiveRows(payload, who) {
+    const out = [];
+    for (const r of (payload && payload.rows) || []) {
+      if (!r || r.side !== who || r.active === false) continue;
+      const t = ms(r.at), p = Number(r.price);
+      if (t != null && p >= 1.01) out.push({ at: t, price: p });
+    }
+    return out.sort((a, b) => a.at - b.at);
+  }
+
   // Keep only real CHANGES: a re-insert at the same price is not a price change.
   function changesOnly(rows) {
     const out = [];
@@ -114,7 +128,7 @@
       book: card.book, live: !!card.live, updatedAt: card.updatedAt ?? null,
       close: card.completed ? (card.close || null) : null,
       rows: rowsDesc, recordedFrom, open: card.open || null, historyAvailable: !!card.historyAvailable,
-      note: card.note || null,
+      note: card.note || null, emptyNote: card.emptyNote || null,
     };
   }
 
@@ -153,7 +167,7 @@
     }
     h += `<div class="phb-list">`;
     if (!mdl.historyAvailable) h += `<div class="phb-note">history not recorded for this book</div>`;
-    else if (!mdl.rows.length) h += `<div class="phb-note">no price change recorded</div>`;
+    else if (!mdl.rows.length) h += `<div class="phb-note">${esc(mdl.emptyNote || 'no price change recorded')}</div>`;
     for (const r of mdl.rows) {
       if (r.gap) { h += `<div class="phb-gap">no data ${esc(fmtWhen(r.from))} – ${esc(fmtWhen(r.to))}</div>`; continue; }
       const cls = r.delta == null || r.delta === 0 ? '' : (r.delta > 0 ? ' pos' : ' neg');
@@ -179,20 +193,22 @@
   const CACHE_TTL_MS = 60e3;         // a live price can move: re-read after a minute (review finding 3)
   const stats = { fetches: 0, bytes: [], opens: 0 };
 
-  function fetchHistory(cardKey) {
-    const hit = cache.get(cardKey);
+  function fetchHistory(cardKey, rpc) {
+    rpc = rpc || 'price_history';
+    const ck = rpc + '|' + cardKey;
+    const hit = cache.get(ck);
     if (hit && Date.now() - hit.at < CACHE_TTL_MS) return hit.p;
     const url = (window.SUPABASE_URL || '').replace(/\/$/, ''), key = window.SUPABASE_ANON_KEY || '';
     if (!url || url.startsWith('__') || !key || key.startsWith('__')) return Promise.resolve(null);
-    const p = fetch(`${url}/rest/v1/rpc/price_history`, {
+    const p = fetch(`${url}/rest/v1/rpc/${rpc}`, {
       method: 'POST',
       headers: { apikey: key, Authorization: `Bearer ${key}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({ p_card_key: cardKey }),
     }).then(r => r.ok ? r.text() : null)
       .then(t => { if (t == null) return null; stats.fetches++; stats.bytes.push(t.length); return JSON.parse(t); })
       .catch(() => null);
-    cache.set(cardKey, { at: Date.now(), p });
-    p.then(v => { if (v == null) cache.delete(cardKey); });  // a failure is retried next open
+    cache.set(ck, { at: Date.now(), p });
+    p.then(v => { if (v == null) cache.delete(ck); });  // a failure is retried next open
     return p;
   }
 
@@ -244,13 +260,31 @@
     let startMs = NaN;
     try { startMs = typeof cardStartMs === 'function' ? cardStartMs(m) : NaN; } catch (e) { startMs = NaN; }
     const upcoming = !completed && !m.live && (!isFinite(startMs) || Date.now() < startMs);
-    const source = bk === 'bet105' ? 'rpc' : (bk === 'bet365' && upcoming ? 'shard' : null);
+    const source = bk === 'bet105' ? 'rpc'
+      : (bk === 'bet365' ? (upcoming ? 'shard' : (completed ? 'archive' : null)) : null);
     return { book: bookName, bookKey: bk, open, close, completed, live, updatedAt,
              startAt: (o && o.startTs) || null,
              historyAvailable: source != null, source,
-             note: source === 'shard' ? BET365_NOTE : null };
+             note: source === 'shard' ? BET365_NOTE : (source === 'archive' ? ARCHIVE_NOTE : null) };
   }
   const BET365_NOTE = 'change times from bet365 · refreshed every 15 min';
+  const ARCHIVE_NOTE = 'change times from bet365 · archived after the match';
+  const ARCHIVE_NO_START = 'start time unknown — history not shown';
+
+  // A completed bet365 card from its bet365_history payload. `rpc()` resolves
+  // the payload or null on failure. Returns { card, rows, failed }.
+  async function loadArchive(card, who, rpc) {
+    const p = await rpc();
+    if (p == null) return { card, rows: [], failed: true };
+    // Not archived, the database selects another book, or the card key is fed by
+    // anything but exactly one oddspapi fixture: no archive source is present.
+    if (!(Number(p.stored) > 0) || p.selected === false || Number(p.fixtures) !== 1) {
+      return { card: Object.assign({}, card, { historyAvailable: false, note: null }), rows: [] };
+    }
+    // Archived, but no start to cut at: nothing can be shown as pre-match.
+    if (!p.start_ts) return { card: Object.assign({}, card, { emptyNote: ARCHIVE_NO_START }), rows: [] };
+    return { card, rows: archiveRows(p, who) };
+  }
 
   let box = null, hideTimer = null, current = null;
   function ensureBox() {
@@ -292,8 +326,11 @@
     place(target);
     if (!card.historyAvailable) { b.innerHTML = html(model(card, [], [])); place(target); return; }
     let payload = null, shard = null;
+    let arch = null;
     if (card.source === 'shard') {
       shard = await fetchShard(typeof eventKeyOfMatch === 'function' ? eventKeyOfMatch(m) : null);
+    } else if (card.source === 'archive') {
+      arch = await loadArchive(card, who, () => fetchHistory(ocsKeyOf(m), 'bet365_history'));
     } else {
       payload = await fetchHistory(ocsKeyOf(m));
     }
@@ -304,6 +341,13 @@
       const again = document.querySelector(`.match-card[data-id="${CSS.escape(el.dataset.id)}"] .mc-row.${who === 'p2' ? 'b' : 'a'}`);
       target = (again && again.querySelector(PRICE_SEL)) || null;
       if (!target) { hide(); return; }
+    }
+    if (arch) {
+      b.innerHTML = arch.failed
+        ? html(model(arch.card, [], [])).replace('no price change recorded', 'history unavailable — try again')
+        : html(model(arch.card, arch.rows, []));
+      place(target);
+      return;
     }
     if (card.source === 'shard') {
       // A shard that could not be read is "unavailable", never "no change"
@@ -360,7 +404,7 @@
     document.addEventListener('visibilitychange', () => { if (document.hidden) hide(); });
   }
 
-  const api = { sideRows, shardRows, fetchShard, changesOnly, gapRows, model, html, fmtWhen, fmtDelta, cardData, stats, _open: open };
+  const api = { archiveRows, loadArchive, ARCHIVE_NOTE, ARCHIVE_NO_START, sideRows, shardRows, fetchShard, changesOnly, gapRows, model, html, fmtWhen, fmtDelta, cardData, stats, _open: open };
   if (typeof window !== 'undefined') window.PriceHistoryBox = Object.assign(window.PriceHistoryBox || {}, api);
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })();

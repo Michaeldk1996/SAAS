@@ -259,3 +259,79 @@ as $fn$
 $fn$;
 revoke all on function public.price_history(text) from public;
 grant execute on function public.price_history(text) to anon, authenticated;
+
+-- ── bet365 post-match archive (TEN-270, founder 2026-09-24/25) ──────────────
+-- "Find a way to archive it straight after the game." / "Completed matches: the
+-- archive history." archive-oddspapi-raw.py `postmatch` (workflow
+-- oddspapi-postmatch.yml) writes the bet365 MATCH-WINNER ticks of each finished
+-- bet365 card here, from the raw /v4/historical-odds payload it just archived:
+--   card_key    ocsKeyOf(card) — the board card's date | surname keys
+--   side        'p1' | 'p2' in CARD orientation (odds-fixture-map `orient`)
+--   price, at   bet365's own price and tick time (createdAt)
+--   active      bet365's flag on that tick (false = market suspended)
+-- One row per CHANGE of (price, active) per side; the full tick series stays in
+-- the raw bucket. Pre-start and in-play rows are both stored; which is which is
+-- decided at READ time against odds_card_state.start_ts, because that start can
+-- be resolved after the load. Server-side only: RLS on, no policy, no grant.
+create table if not exists public.bet365_mw_ticks (
+    card_key          text        not null,
+    side              text        not null,
+    price             numeric(9,3) not null,
+    at                timestamptz not null,
+    active            boolean,
+    fixture_id        text        not null,   -- oddspapi fixtureId
+    player            text,                   -- the card's name for that side
+    loaded_at         timestamptz not null default now(),
+    constraint bet365_mw_ticks_side check (side in ('p1', 'p2')),
+    constraint bet365_mw_ticks_real check (price >= 1.01),
+    constraint bet365_mw_ticks_key unique (card_key, side, at, price)
+);
+create index if not exists bet365_mw_ticks_card_idx on public.bet365_mw_ticks (card_key, at);
+alter table public.bet365_mw_ticks enable row level security;
+revoke all on public.bet365_mw_ticks from anon, authenticated;
+
+-- bet365_history(card_key) — ONE completed card's archived bet365 history for
+-- the price-history box. Rows only when the card's SELECTED book is bet365 (one
+-- book per card), only when exactly one oddspapi fixture feeds the card key, and
+-- only at or before the card's start (odds_card_state.start_ts — the start the
+-- Close is judged against). No start known = no rows: nothing can be proven
+-- pre-match. `stored` says whether the card was archived at all, so the page can
+-- tell "not archived" from "archived, start unknown".
+create or replace function public.bet365_history(p_card_key text)
+returns jsonb
+language sql stable security definer
+set search_path = public, pg_temp
+as $fn$
+  with sel as (
+    select count(*) as n_sel, max(ocs.start_ts) as start_ts,
+           max(ocs.start_ts_source) as start_ts_source
+    from public.odds_card_state ocs
+    where ocs.match_key = p_card_key and ocs.book = 'bet365'
+      and ocs.market = 'match winner' and ocs.is_selected
+  ),
+  fx as (
+    select count(distinct t.fixture_id) as n_fx, count(*) as stored
+    from public.bet365_mw_ticks t
+    where t.card_key = p_card_key
+  ),
+  pre as (
+    select t.side, t.price, t.at, t.active
+    from public.bet365_mw_ticks t, sel, fx
+    where t.card_key = p_card_key and sel.n_sel > 0 and fx.n_fx = 1
+      and sel.start_ts is not null and t.at <= sel.start_ts
+    order by t.at desc
+    limit 2000
+  )
+  select jsonb_build_object(
+    'card_key',        p_card_key,
+    'generated_at',    now(),
+    'selected',        (select n_sel > 0 from sel),
+    'start_ts',        (select start_ts from sel),
+    'start_ts_source', (select start_ts_source from sel),
+    'fixtures',        (select n_fx from fx),
+    'stored',          (select stored from fx),
+    'rows',            coalesce((select jsonb_agg(to_jsonb(p)) from pre p), '[]'::jsonb)
+  );
+$fn$;
+revoke all on function public.bet365_history(text) from public;
+grant execute on function public.bet365_history(text) to anon, authenticated;

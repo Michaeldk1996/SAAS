@@ -124,16 +124,74 @@ test('bet365 upcoming: one row per move from the shard, the run-end repeat is no
   assert.deepEqual(B.shardRows(null, 'p1'), [], 'no shard: no rows, no invented history');
 });
 
-test('source per card: Bet105 -> RPC, bet365 upcoming -> shard with its label, bet365 completed -> not yet (archive)', () => {
+test('source per card: Bet105 -> RPC, bet365 upcoming -> shard, bet365 completed -> the post-match archive', () => {
   const up = B.cardData({ openingOdds: { bookmaker: 'bet365' } }, 'p1');
   assert.equal(up.source, 'shard');
   assert.equal(up.historyAvailable, true);
   assert.match(B.html(B.model(up, [], [])), /change times from bet365 · refreshed every 15 min/);
   const done = B.cardData({ openingOdds: { bookmaker: 'bet365' }, finalScore: '6-4 6-4' }, 'p1');
-  assert.equal(done.source, null, 'a completed bet365 card does not fall back to the shard');
-  assert.match(B.html(B.model(done, [], [])), /history not recorded for this book/);
+  assert.equal(done.source, 'archive', 'a completed bet365 card reads the archive, never the shard');
+  assert.match(B.html(B.model(done, [], [])), /change times from bet365 · archived after the match/);
+  assert.doesNotMatch(B.html(B.model(done, [], [])), /refreshed every 15 min/, 'the upcoming label is not true of archived data');
   assert.equal(B.cardData({ openingOdds: { bookmaker: 'bet105' } }, 'p1').source, 'rpc');
   assert.equal(B.cardData({ openingOdds: { bookmaker: '1xbet' } }, 'p1').source, null);
+});
+
+// TEN-270 post-match archive: completed bet365 cards read bet365_history.
+// The payload below is the RPC's own shape (kibl-stream/now-schema.sql).
+const ARCH = { card_key: '2026-09-24|fritz|zverev', selected: true, start_ts: '2026-09-24T08:00:00+00:00',
+  start_ts_source: 'oddspapi', fixtures: 1, stored: 9, rows: [
+    { side: 'p2', price: 1.20, at: '2026-09-24T07:50:00+00:00', active: true },
+    { side: 'p2', price: 1.45, at: '2026-09-24T07:00:00+00:00', active: true },
+    { side: 'p2', price: 1.45, at: '2026-09-24T06:30:00+00:00', active: false },   // suspended: not a price
+    { side: 'p2', price: 1.50, at: '2026-09-24T06:00:00+00:00', active: true },
+    { side: 'p1', price: 2.60, at: '2026-09-24T06:00:00+00:00', active: true },
+    { side: 'p1', price: 0,    at: '2026-09-24T07:10:00+00:00', active: true },    // not a price
+    { side: 'p1', price: 4.00, at: '2026-09-24T07:50:00+00:00', active: null },
+  ] };
+const rpcOf = p => async () => p;
+const DONE_M = { openingOdds: { bookmaker: 'bet365' }, finalScore: '6-4 6-4', p1: 'T. Fritz', p2: 'A. Zverev' };
+
+test('bet365 completed: the bet365_history archive, per side, suspended and sub-1.01 ticks dropped', async () => {
+  const card = B.cardData(DONE_M, 'p2');
+  assert.equal(card.source, 'archive');
+  const got = await B.loadArchive(card, 'p2', rpcOf(ARCH));
+  assert.deepEqual(got.rows.map(r => r.price), [1.50, 1.45, 1.20]);
+  const got1 = await B.loadArchive(card, 'p1', rpcOf(ARCH));
+  assert.deepEqual(got1.rows.map(r => r.price), [2.60, 4.00], 'the other side only; a zero is never a price');
+  const m = B.model(Object.assign({}, got.card, { open: { price: 1.50, at: '2026-09-24T06:00:00Z' },
+                                                 close: { price: 1.20, at: '2026-09-24T07:50:00Z' } }), got.rows, []);
+  assert.deepEqual(m.rows.map(r => `${r.price}:${r.delta}`), ['1.2:-0.25', '1.45:-0.05']);
+  assert.match(B.html(m), /change times from bet365 · archived after the match/);
+});
+
+test('an underway bet365 card (past its start, no result) reads neither the shard nor the archive', () => {
+  globalThis.cardStartMs = () => Date.now() - 60e3;
+  try {
+    assert.equal(B.cardData({ openingOdds: { bookmaker: 'bet365' } }, 'p1').source, null);
+  } finally { delete globalThis.cardStartMs; }
+});
+
+test('bet365 completed, no archive source: not archived / other book / not exactly one fixture -> "not recorded"; no start; failure', async () => {
+  const card = B.cardData(DONE_M, 'p1');
+  for (const [why, over] of [['not archived', { stored: 0 }], ['the database selects another book', { selected: false }],
+                             ['two fixtures feed the key', { fixtures: 2 }], ['no fixture', { fixtures: 0 }]]) {
+    const got = await B.loadArchive(card, 'p1', rpcOf(Object.assign({}, ARCH, over, { rows: [] })));
+    const h = B.html(B.model(got.card, got.rows, []));
+    assert.match(h, /history not recorded for this book/, why);
+    assert.doesNotMatch(h, /archived after the match|no price change recorded/, why);
+  }
+  const nostart = await B.loadArchive(card, 'p1', rpcOf(Object.assign({}, ARCH, { start_ts: null, rows: [] })));
+  assert.match(B.html(B.model(nostart.card, nostart.rows, [])), /start time unknown — history not shown/);
+  const fail = await B.loadArchive(card, 'p1', rpcOf(null));
+  assert.equal(fail.failed, true, 'a failed read is a failure, never an empty history');
+});
+
+test('bet365 archive: nothing after the card\'s start shows, even if a row slips through', async () => {
+  const card = Object.assign(B.cardData(DONE_M, 'p2'), { startAt: '2026-09-24T07:30:00Z' });
+  const got = await B.loadArchive(card, 'p2', rpcOf(ARCH));
+  const m = B.model(got.card, got.rows, []);
+  assert.deepEqual(m.rows.map(r => r.price), [1.45, 1.50], 'the 07:50 tick is after the 07:30 start');
 });
 
 test('history ends at the start: a not-live Kibl row after the off never shows above the Close', () => {

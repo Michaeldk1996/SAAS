@@ -1,0 +1,95 @@
+name: BSP oddspapi post-match archive
+
+# TEN-270. Founder rulings (verbatim):
+#   "Find a way to archive it straight after the game."
+#   "Separate 15-min job, offset so it never runs at the same minute as the odds
+#    loop (e.g. :07, :22, :37, :52). On a 429 it backs off and retries next run;
+#    the live price loop always wins the key. Report 429 counts for both jobs
+#    after 24 h."
+#
+# Pulls every FINISHED board match that has an oddspapi fixtureId and no object
+# in the private `oddspapi-raw` bucket yet, into the same canonical path the
+# daily oddspapi-raw-archive.yml uses (which then skips it), and projects the
+# bet365 match-winner ticks of bet365 cards into `bet365_mw_ticks` for the
+# price-history box. `archive-oddspapi-raw.py postmatch`.
+#
+# COST: zero billable calls. Only /v4/historical-odds (free, ~1 call / 5 s per
+# key) and /v4/account (the meter, read before and after the pulls). The script
+# refuses any other oddspapi path. No budget gate: the gate reserves metered
+# units, and this job spends none.
+#
+# THE KEY IS SHARED with the odds loop (odds-now.yml), which ticks at
+# :00/:15/:30/:45. GitHub delays scheduled runs, so the script also waits for
+# :05-:14 of the quarter hour before any call, and stops the run (exit 0) on a
+# second 429. GitHub delivers only a fraction of scheduled slots on this repo;
+# oddspapi-postmatch-pinger.sql is the pg_cron dispatcher that makes the 15-min
+# cadence real (NOT applied by this change).
+#
+# Commits nothing. The run's counts, 429s included, are in the job log and in
+# the bucket at _meta/postmatch-last-run.json.
+
+on:
+  schedule:
+    - cron: '7,22,37,52 * * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: bsp-oddspapi-postmatch
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  postmatch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: |
+            archive-oddspapi-raw.py
+            ten225_names.py
+            test-oddspapi-postmatch.py
+            test-archive-oddspapi-raw.py
+            kibl-stream/now-schema.sql
+            matches.json
+            odds-fixture-map.json
+            odds-card-state.json
+          sparse-checkout-cone-mode: false
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Guard — credentials present
+        env:
+          ODDSPAPI_KEY: ${{ secrets.ODDSPAPI_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: |
+          missing=
+          [ -z "$ODDSPAPI_KEY" ] && missing="$missing ODDSPAPI_KEY"
+          [ -z "$SUPABASE_URL" ] && missing="$missing SUPABASE_URL"
+          [ -z "$SUPABASE_SECRET_KEY" ] && missing="$missing SUPABASE_SECRET_KEY"
+          if [ -n "$missing" ]; then
+            echo "::error::missing secret(s):$missing"
+            exit 1
+          fi
+          echo "all three credentials present"
+
+      # Offline, before anything touches the key or the bucket: the target rule,
+      # the wait, the checkpoint, the 429 stop, the 404 record, zero billable.
+      - name: Unit tests (offline)
+        run: |
+          python3 test-archive-oddspapi-raw.py
+          python3 test-oddspapi-postmatch.py
+
+      - name: Post-match archive
+        env:
+          ODDSPAPI_KEY: ${{ secrets.ODDSPAPI_KEY }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: python3 archive-oddspapi-raw.py postmatch
