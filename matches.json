@@ -107065,11 +107065,17 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 2",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 6,
+        "p2": 2
+      }
+    ],
+    "liveGameScore": "15 - 30",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1335_k-jacquet.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1777_t-m-etcheverry.jpg",
     "oddsMovement": {
@@ -107249,7 +107255,10 @@
       "at": "2026-09-24T20:07:22.265Z",
       "observedAt": "2026-09-25T05:16:34Z",
       "src": "live"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12165810",
@@ -109300,11 +109309,22 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 2",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 5,
+        "p2": 7
+      },
+      {
+        "set": 2,
+        "p1": 1,
+        "p2": 2
+      }
+    ],
+    "liveGameScore": "40 - 0",
+    "liveServer": "p1",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2169_j-brooksby.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2843_l-sonego.jpg",
     "oddsMovement": {
@@ -109500,7 +109520,10 @@
       "at": "2026-09-25T03:06:22.127Z",
       "observedAt": "2026-09-25T04:45:01Z",
       "src": "series"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12165811",
@@ -112048,7 +112071,27 @@
       "at": "2026-09-25T02:38:23.644Z",
       "observedAt": "2026-09-25T04:30:01Z",
       "src": "series"
-    }
+    },
+    "retired": false,
+    "walkover": false,
+    "finalScore": {
+      "display": "2-6, 3-6",
+      "sets": [
+        {
+          "p1": 2,
+          "p2": 6
+        },
+        {
+          "p1": 3,
+          "p2": 6
+        }
+      ],
+      "p1Sets": 0,
+      "p2Sets": 2,
+      "winner": "p2"
+    },
+    "interrupted": false,
+    "partialScore": null
   },
   {
     "id": "upcoming-12164720",
