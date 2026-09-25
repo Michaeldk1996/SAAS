@@ -171,7 +171,9 @@ git -c user.name=bsp-ceo-bot -c user.email=bsp-ceo-bot@users.noreply.github.com 
 ready_receipt() {
   git fetch -q origin main || failed "git fetch origin main"
   git rebase -q origin/main || { git rebase --abort; failed "rebase onto origin/main"; }
-  bash tools/ci-suite.sh "$(git rev-parse HEAD)" > "$RUN/ci-suite-$(date -u +%H%M%S).log" 2>&1 || failed "tools/ci-suite.sh red or failed (see $RUN/ci-suite-*.log)"
+  # DEPLOY_LANE_TICKET: if we are already waiting for the lane, the suite checks in
+  # every 4 min, so a long suite never costs our place.
+  DEPLOY_LANE_TICKET="$TICKET" bash tools/ci-suite.sh "$(git rev-parse HEAD)" > "$RUN/ci-suite-$(date -u +%H%M%S).log" 2>&1 || failed "tools/ci-suite.sh red or failed (see $RUN/ci-suite-*.log)"
 }
 code_landed() {  # a CODE commit on origin/main that $1 lacks — the lane tool's one classifier
   # (data = [skip ci] in the subject AND a data-bot author); exit 0 = rebased, nothing landed

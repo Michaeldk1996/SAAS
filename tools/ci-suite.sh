@@ -88,17 +88,20 @@ echo "HEAD: $(git rev-parse HEAD)"
 # Keep a waiting place alive while the suite runs (see the header).
 LANE_TOOL="$REPO/tools/deploy-lane.mjs"
 if [ -n "${DEPLOY_LANE_TICKET:-}" ] && [ -f "$LANE_TOOL" ]; then
+  PARENT=$$   # the loop ends when this script is gone — even SIGKILLed (no trap runs then)
   (
     trap 'kill "$SP" 2>/dev/null; exit 0' TERM
     cd "$REPO" || exit 0   # not the throwaway clone: it is deleted on exit
     while :; do
+      kill -0 "$PARENT" 2>/dev/null || exit 0
       node "$LANE_TOOL" checkin --ticket "$DEPLOY_LANE_TICKET" > /dev/null 2>&1
       sleep "${CI_SUITE_CHECKIN_SEC:-240}" & SP=$!
       wait "$SP"
+      kill -0 "$PARENT" 2>/dev/null || exit 0
     done
   ) > /dev/null 2>&1 &
   CHECKIN_PID=$!
-  echo "deploy-lane check-in every ${CI_SUITE_CHECKIN_SEC:-240}s for $DEPLOY_LANE_TICKET while the suite runs"
+  echo "deploy-lane check-in every ${CI_SUITE_CHECKIN_SEC:-240}s for $DEPLOY_LANE_TICKET while the suite runs (loop pid $CHECKIN_PID)"
 fi
 echo "running npm test (log: $LOG) ..."
 npm test > "$LOG" 2>&1

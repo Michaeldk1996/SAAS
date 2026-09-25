@@ -1315,15 +1315,40 @@ Object.assign(CASES, {
         }
         clock.t = at(26); await lane.release(A);
         clock.t = at(26.2); const c = await lane.claim(C, RDY(SHA.C));
-        return { c, dropped: state(file).history.find((h) => h.event === 'waiter-dropped-stale' && h.runId === 'run-B') };
+        const h = state(file).history;
+        return { c, dropped: h.find((x) => x.event === 'waiter-dropped-stale' && x.runId === 'run-B'), logged: h.some((x) => x.event === 'checked-in') };
       };
       const kept = await run1(true);
       const lost = await run1(false);
       const { lane } = await rig(mod, board);
       const stranger = await lane.checkin(D);
-      return kept.c.code === 3 && kept.c.ahead[0].runId === 'run-B' && !kept.dropped
+      return kept.c.code === 3 && kept.c.ahead[0].runId === 'run-B' && !kept.dropped && !kept.logged
         && lost.c.code === 0 && !!lost.dropped && lost.dropped.at === new Date(at(17)).toISOString()
         && stranger.code === 1 && stranger.action === 'not-waiting' && !lane.peek().waiters['run-D'];
+    } catch (e) { if (process.env.DEBUG_TEN273) console.error('CASE THREW:', e.message); return false; } finally { board.close(); }
+  },
+});
+
+// ── review of 0aa9fcd7 ────────────────────────────────────────────────────────
+Object.assign(CASES, {
+  // On saved state the "queued behind a running tick → moving" HOLD still
+  // applies; only the release branches are skipped. Push 25, the owner's run
+  // queued behind tick 1 (started before the push): held at 39 and 40.5; a 502 at
+  // 42 with saved state 1.5 min old → still held.
+  async savedStateKeepsTheMovingHold(mod) {
+    const board = await startBoard();
+    try {
+      const { lane, clock, pipe, alerts } = await rig(mod, board, undefined, { defaults: true });
+      board.runs['run-A'] = 'running';
+      await lane.claim(A, RDY(SHA.A));
+      clock.t = at(25); await lane.recordPush(A, { readBack: SHA.A, pushedHead: SHA.A });
+      pipe.runs = [run(2, 'queued', 26), run(1, 'in_progress', 20, 21)];
+      clock.t = at(39); const r39 = await lane.renew(A);
+      clock.t = at(40.5); const r40 = await lane.renew(A);
+      pipe.ok = false;
+      clock.t = at(42); const r42 = await lane.renew(A);
+      return r39.code === 0 && r40.code === 0 && r42.code === 0 && r42.pipeline.state === 'queued-behind-a-running-tick'
+        && !!r42.pipeline.lastKnownAt && alerts.length === 0;
     } catch (e) { if (process.env.DEBUG_TEN273) console.error('CASE THREW:', e.message); return false; } finally { board.close(); }
   },
 });
@@ -1457,7 +1482,7 @@ const MUTANTS = [
   ['any in-progress run extends, even one that started before the push', 'capRule_healthyDeployKeptAt45',
     'else owner = runs.filter((r) => r.startedAt && Date.parse(r.startedAt) >= pushedAt)', 'else owner = runs.filter((r) => r.startedAt)'],
   ['a queued pipeline run never releases', 'capRule_queuedPast10Releases',
-    'if (min > pipelineQueuedMaxMin) {', 'if (false) {'],
+    'if (!lastKnown && min > pipelineQueuedMaxMin) {', 'if (false) {'],
   ['the queued limit is 20 min', 'capRule_queuedPast10Releases', 'export const PIPELINE_QUEUED_MAX_MIN = 10;', 'export const PIPELINE_QUEUED_MAX_MIN = 20;'],
   ['the plain cap is 41 min', 'capRule_fortyMinutesNoRun', 'export const MAX_HOLD_MIN = 40;', 'export const MAX_HOLD_MIN = 41;'],
   ['the plain cap never fires', 'capRule_fortyMinutesNoRun', 'if (elapsed >= capMs) {', 'if (false) {'],
@@ -1513,7 +1538,7 @@ const MUTANTS = [
     'if (ready.sha !== from && c.pushedAt) {', 'if (false) {'],
   // review of 1198c07c
   ['saved GitHub state can trigger the queued rule (a release on stale data)', 'savedStateNeverForcesARelease',
-    'if (!or && known && !lastKnown && pushedAt != null) {', 'if (!or && known && pushedAt != null) {'],
+    'if (!lastKnown && min > pipelineQueuedMaxMin) {', 'if (min > pipelineQueuedMaxMin) {'],
   ['any root .json is data (the old rule)', 'dataPathsAreWhatTheBotsWrite',
     '  if (DATA_FILES.has(f)) return true;', "  if (DATA_FILES.has(f) || (!f.includes('/') && /\\.json$/i.test(f))) return true;"],
   ['splits-matches/ is not a data directory', 'dataPathsAreWhatTheBotsWrite',
@@ -1530,9 +1555,14 @@ const MUTANTS = [
   ['a dropped waiter is not told', 'droppedWaiterIsLoggedAndRejoinsAtTheBack',
     "    if (fx && reason !== 'batched-in') {", '    if (false) {'],
   ['a check-in does not refresh the waiter', 'checkinKeepsThePlaceDuringASuite',
-    "      w.lastSeen = iso(now());\n      log(s, { event: 'checked-in'", "      log(s, { event: 'checked-in'"],
+    "      w.lastSeen = iso(now());\n      // Routine check-ins are NOT logged", "      // Routine check-ins are NOT logged"],
   ['a check-in joins a run that was not waiting', 'checkinKeepsThePlaceDuringASuite',
     "      if (!w) return { code: EXIT.REFUSED, action: 'not-waiting',", "      if (!w) { addWaiter(s, me, iso(now())); save(s); return { code: EXIT.HOLD, action: 'joined' }; }\n      if (false) return { code: EXIT.REFUSED, action: 'not-waiting',"],
+  // review of 0aa9fcd7
+  ['saved state loses the "moving" hold', 'savedStateKeepsTheMovingHold',
+    '    if (!or && known && pushedAt != null) {', '    if (!or && known && !lastKnown && pushedAt != null) {'],
+  ['routine check-ins are logged (they would push drops out of the history)', 'checkinKeepsThePlaceDuringASuite',
+    "      w.lastSeen = iso(now());\n      // Routine check-ins are NOT logged", "      w.lastSeen = iso(now()); log(s, { event: 'checked-in', ticket: me.ticket, runId: me.runId });\n      // Routine check-ins are NOT logged"],
 ];
 
 async function loadMutant(find, replace) {

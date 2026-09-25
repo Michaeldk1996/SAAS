@@ -20,7 +20,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import http from 'node:http';
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
@@ -633,9 +633,12 @@ test('CLI: deploy-batch usage is exit 2; a caller that does not hold the lane ge
 // "Confirm a waiter keeps checking in while its own suite is running, so a long
 // test run never costs it its place." With DEPLOY_LANE_TICKET set, the REAL
 // script runs `deploy-lane.mjs checkin` in the background while npm test runs,
-// and kills the loop on exit. Driven for real: a slow fake npm test, the real
-// lane CLI against a temp store holding the caller as a waiter.
-async function ciSuiteChecksIn(script) {
+// and the loop ends with the script — on a normal exit (trap) and when the
+// script is SIGKILLed (no trap runs: the loop watches its parent). Driven for
+// real: a slow fake npm test, the real lane CLI against a temp store holding
+// the caller as a waiter. Check-ins are not logged, so the observable is the
+// waiter's lastSeen. Cleanup kills the RECORDED loop pid, never by pattern.
+function checkinFixture(testMs) {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ten273-checkin-'));
   const origin = path.join(root, 'origin.git');
   const local = path.join(root, 'local');
@@ -644,39 +647,76 @@ async function ciSuiteChecksIn(script) {
   sh(local, 'config', 'user.name', 't'); sh(local, 'config', 'user.email', 't@t'); sh(local, 'symbolic-ref', 'HEAD', 'refs/heads/main');
   fs.mkdirSync(path.join(local, 'kibl-stream'));
   fs.writeFileSync(path.join(local, 'kibl-stream', 'README.md'), 'x\n');
-  fs.writeFileSync(path.join(local, 'package.json'), JSON.stringify({ name: 'x', private: true, scripts: { test: 'node -e "setTimeout(() => process.exit(0), 3500)"' } }));
+  fs.writeFileSync(path.join(local, 'package.json'), JSON.stringify({ name: 'x', private: true, scripts: { test: `node -e "setTimeout(() => process.exit(0), ${testMs})"` } }));
   sh(local, 'add', '.'); sh(local, '-c', 'core.hooksPath=/dev/null', 'commit', '-q', '-m', 'seed');
   sh(local, 'push', '-q', 'origin', 'main');
   fs.mkdirSync(path.join(local, 'tools'));
   fs.copyFileSync(LANE_SRC, path.join(local, 'tools', 'deploy-lane.mjs'));  // the lane tool the script calls
   const store = path.join(root, 'lane.json');
-  const t = new Date().toISOString();
+  const t0 = new Date(Date.now() - 1000).toISOString();
   fs.writeFileSync(store, JSON.stringify({ version: 2, claim: null, queue: [], landed: {}, history: [],
-    waiters: { 'run-W': { ticket: 'TEN-W', issueId: null, kind: 'paperclip', since: t, lastSeen: t, reportedAt: null, seq: 1 } } }));
-  const checkins = () => JSON.parse(fs.readFileSync(store, 'utf8')).history.filter((h) => h.event === 'checked-in' && h.runId === 'run-W').length;
-  const r = spawnSync('bash', [script, sh(local, 'rev-parse', 'HEAD')], { cwd: local, encoding: 'utf8', timeout: 30000,
-    env: { ...process.env, CI_SUITE_CLONE_URL: pathToFileURL(origin).href, CI_SUITE_NODE_MODULES: path.join(root, 'nm'), SUITE_RECEIPTS_DIR: path.join(root, 'receipts'),
-      DEPLOY_LANE_TICKET: 'TEN-W', DEPLOY_LANE_FILE: store, PAPERCLIP_RUN_ID: 'run-W', PAPERCLIP_API_URL: '', CI_SUITE_CHECKIN_SEC: '1' } });
-  const during = checkins();
-  await new Promise((res) => setTimeout(res, 2500));
-  const after = checkins();
-  spawnSync('pkill', ['-f', script]);                  // never leave a stray loop behind a mutant
-  return r.status === 0 && /check-in every 1s for TEN-W/.test(r.stdout) && during >= 2 && after === during;
+    waiters: { 'run-W': { ticket: 'TEN-W', issueId: null, kind: 'paperclip', since: t0, lastSeen: t0, reportedAt: null, seq: 1 } } }));
+  const lastSeen = () => JSON.parse(fs.readFileSync(store, 'utf8')).waiters['run-W'].lastSeen;
+  const env = { ...process.env, CI_SUITE_CLONE_URL: pathToFileURL(origin).href, CI_SUITE_NODE_MODULES: path.join(root, 'nm'), SUITE_RECEIPTS_DIR: path.join(root, 'receipts'),
+    DEPLOY_LANE_TICKET: 'TEN-W', DEPLOY_LANE_FILE: store, PAPERCLIP_RUN_ID: 'run-W', PAPERCLIP_API_URL: '', CI_SUITE_CHECKIN_SEC: '1' };
+  return { root, local, store, t0, lastSeen, env, sha: sh(local, 'rev-parse', 'HEAD') };
+}
+const sleepMs = (ms) => new Promise((res) => setTimeout(res, ms));
+const killPid = (pid) => { if (pid) { try { process.kill(Number(pid), 'SIGTERM'); } catch { /* already gone */ } } };
+
+async function ciSuiteChecksIn(script) {
+  const f = checkinFixture(3500);
+  const r = spawnSync('bash', [script, f.sha], { cwd: f.local, encoding: 'utf8', timeout: 30000, env: f.env });
+  const pid = (/loop pid (\d+)/.exec(r.stdout || '') || [])[1];
+  // The EXIT trap kills the loop and waits for it: gone the moment the script returns.
+  let goneAtExit = !!pid;
+  if (pid) { try { process.kill(Number(pid), 0); goneAtExit = false; } catch { /* gone */ } }
+  const during = f.lastSeen();
+  await sleepMs(2500);
+  const after = f.lastSeen();
+  killPid(pid);
+  return r.status === 0 && /check-in every 1s for TEN-W/.test(r.stdout) && goneAtExit && during > f.t0 && after === during;
+}
+
+// The script is SIGKILLed mid-suite (no trap runs): the loop must notice its
+// parent is gone and stop within one interval.
+async function ciSuiteLoopDiesWithItsParent(script) {
+  const f = checkinFixture(20000);
+  const ch = spawn('bash', [script, f.sha], { cwd: f.local, env: f.env });
+  let out = '';
+  ch.stdout.on('data', (d) => { out += d; });
+  for (let i = 0; i < 100 && !/loop pid \d+/.test(out); i++) await sleepMs(100);
+  const pid = (/loop pid (\d+)/.exec(out) || [])[1];
+  await sleepMs(2500);
+  const alive = f.lastSeen() > f.t0;
+  ch.kill('SIGKILL');
+  await sleepMs(1500);                         // one interval (1 s) + margin
+  const settled = f.lastSeen();
+  await sleepMs(2500);
+  const later = f.lastSeen();
+  killPid(pid);
+  return !!pid && alive && later === settled;
 }
 
 test('real ci-suite.sh: with DEPLOY_LANE_TICKET, checks in while npm test runs, and stops on exit', async () => {
-  fs.mkdirSync(path.join(os.tmpdir(), 'ten273-nm'), { recursive: true });
   assert.equal(await ciSuiteChecksIn(SUITE_SRC), true);
 });
-for (const [label, find, replace] of [
-  ['the check-in loop never starts', 'if [ -n "${DEPLOY_LANE_TICKET:-}" ] && [ -f "$LANE_TOOL" ]; then', 'if false; then'],
-  ['the check-in loop is not killed on exit', 'stop_checkin() { if [ -n "$CHECKIN_PID" ]; then kill', 'stop_checkin() { if false; then kill'],
+test('real ci-suite.sh: the check-in loop stops within one interval when the script is SIGKILLed', async () => {
+  assert.equal(await ciSuiteLoopDiesWithItsParent(SUITE_SRC), true);
+});
+for (const [label, fn, find, replace] of [
+  ['the check-in loop never starts', ciSuiteChecksIn, 'if [ -n "${DEPLOY_LANE_TICKET:-}" ] && [ -f "$LANE_TOOL" ]; then', 'if false; then'],
+  ['the check-in loop is not killed on exit', ciSuiteChecksIn, 'stop_checkin() { if [ -n "$CHECKIN_PID" ]; then kill', 'stop_checkin() { if false; then kill'],
+  ['the check-in loop does not watch its parent', ciSuiteLoopDiesWithItsParent,
+    '      wait "$SP"\n      kill -0 "$PARENT" 2>/dev/null || exit 0\n', '      wait "$SP"\n'],
 ]) {
   test(`mutant bites — ci-suite.sh: ${label}`, async () => {
     const src = fs.readFileSync(SUITE_SRC, 'utf8');
     assert.equal(src.split(find).length - 1, 1, `anchor must occur exactly once: ${find}`);
     const f = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'ten273-suite-mut-')), 'ci-suite.sh');
-    fs.writeFileSync(f, src.replace(find, replace));
-    assert.equal(await ciSuiteChecksIn(f), false);
+    let src2 = src.replace(find, replace);
+    if (fn === ciSuiteLoopDiesWithItsParent) src2 = src2.replace('      kill -0 "$PARENT" 2>/dev/null || exit 0\n      node', '      node');
+    fs.writeFileSync(f, src2);
+    assert.equal(await fn(f), false);
   });
 }

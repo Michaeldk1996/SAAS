@@ -488,7 +488,9 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
     if (or && or.status === 'completed' && or.conclusion === 'success' && or.completedAt && t < Date.parse(or.completedAt) + graceMs) {
       return held('read-back-grace', { until: iso(Date.parse(or.completedAt) + graceMs) });
     }
-    if (!or && known && !lastKnown && pushedAt != null) {
+    // On saved state (lastKnown) only the HOLDS apply (queued behind a running
+    // tick → moving); the release branch is skipped. Saved state never releases.
+    if (!or && known && pushedAt != null) {
       const queued = runs.filter((r) => QUEUED.has(r.status) && Date.parse(r.createdAt) >= pushedAt)
         .sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt))[0];
       if (queued) {
@@ -502,7 +504,7 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
           }
         }
         const min = (t - clockStart) / MIN;
-        if (min > pipelineQueuedMaxMin) {
+        if (!lastKnown && min > pipelineQueuedMaxMin) {
           return { forced: forced(s, c, 'pipeline-queued-10min', `pipeline run ${queued.id} has sat queued ${min.toFixed(1)} min${healthyQueue ? ' with nothing in progress ahead of it' : ''} (limit ${pipelineQueuedMaxMin})`, fx), live };
         }
       }
@@ -801,7 +803,8 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
         return { code: EXIT.REFUSED, action: 'dropped', detail: `${staleDetail(w)} — claim again to rejoin at the back` };
       }
       w.lastSeen = iso(now());
-      log(s, { event: 'checked-in', ticket: me.ticket, runId: me.runId });
+      // Routine check-ins are NOT logged: every 4 min per waiter would push the drop
+      // records (founder: "every drop is logged") out of the 500-event history.
       save(s);
       return { code: EXIT.HOLD, action: 'checked-in', since: w.since, lastSeen: w.lastSeen };
     });

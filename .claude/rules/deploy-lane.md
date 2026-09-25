@@ -75,7 +75,9 @@ Keep posting on your issue so the founder can see it, but the tool's answer is w
      `DEPLOY_LANE_TICKET=TEN-123 bash tools/ci-suite.sh <sha>` checks in
      (`deploy-lane.mjs checkin --ticket TEN-123`) every 4 min while `npm test` runs, so
      a long suite never costs you your place. `checkin` only refreshes an existing
-     place: it never joins, grants or checks readiness.
+     place: it never joins, grants or checks readiness, and routine check-ins are not
+     logged, so drop records stay in the history. The loop ends with the script, even
+     if the script is killed outright.
    - **Not ready still counts.** A claim that returns **exit 7** (you are re-preparing:
      rebasing, re-running `ci-suite.sh`) keeps your place, **reports your position**
      and is logged (`waiting-not-ready`), as long as you keep calling `claim`.
