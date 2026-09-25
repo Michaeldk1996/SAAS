@@ -94,8 +94,11 @@ jobs:
           # Logs API (TEN-277). `analytics/endpoints/logs.all` answers 410 since
           # 2026-09-23. Its replacement takes ClickHouse SQL over ONE table, `logs`,
           # filtered by source_name, with nested fields in the log_attributes map
-          # (log_attributes['request.path'], not unnest(metadata)). Same window
-          # params; they must end in Z. It throttles (429) after ~14 queries.
+          # (log_attributes['request.path'], not unnest(metadata)). The source column
+          # is `source` ('edge_logs', 'realtime_logs'; the changelog's `source_name`
+          # does not exist here). Keys are from Supabase's log field reference; a
+          # wrong key reads as '' — a silent zero — so each action prints the keys
+          # it found first. Window params must end in Z; ~14 queries then 429.
           def z(x):
               return x.strftime("%Y-%m-%dT%H:%M:%S.000Z")   # the API refuses "+00:00"
           def logq(text, lo, hi):
@@ -113,26 +116,6 @@ jobs:
                   body = None
               rows = body.get("result") if isinstance(body, dict) and not body.get("error") else None
               return st, rows, r
-          _src = {}
-          def logsrc(want, lo, hi):
-              """The WHERE clause selecting one source (e.g. 'realtime') in `logs`, read
-              off the table itself: the changelog's `source_name` is absent on this
-              project (2026-09-25: "Field source_name does not exist"). Prints column
-              NAMES only, never a value (a row can carry headers)."""
-              if "cols" not in _src:
-                  st, rows, r = logq("select * from logs limit 1", lo, hi)
-                  _src["cols"] = sorted(rows[0].keys()) if rows else []
-                  print(f"logs columns -> HTTP {st} {_src['cols'] if rows is not None else r[:400]}")
-                  _src["col"] = next((c for c in ("source_name", "source", "log_source", "source_type", "type",
-                                                  "service", "service_name") if c in _src["cols"]), None)
-                  if _src["col"]:
-                      st, rows, r = logq(f"select {_src['col']} as src, count() as n, min(timestamp) as first, "
-                                         f"max(timestamp) as last from logs group by src order by n desc limit 30", lo, hi)
-                      print(f"logs by {_src['col']} -> HTTP {st} {json.dumps(rows) if rows is not None else r[:400]}")
-                      _src["vals"] = [str(x.get("src")) for x in (rows or [])]
-              col = _src.get("col")
-              val = next((v for v in _src.get("vals", []) if want in v.lower()), None)
-              return f"{col} = '{val}'" if col and val else None
           bad = []
           if act == "schema":
               st, r = sql(open("kibl-stream/now-schema.sql").read())
@@ -363,7 +346,7 @@ jobs:
               end = dt.datetime.now(dt.timezone.utc).replace(minute=0, second=0, microsecond=0)
               # A misspelt map key reads as '' (a silent zero), so the keys that
               # exist are printed first.
-              EDGE = logsrc("edge", end - dt.timedelta(hours=1), end) or "1 = 0"
+              EDGE = "source = 'edge_logs'"
               st, rows, r = logq(f"select arrayJoin(mapKeys(log_attributes)) as k, count() as n from logs "
                                  f"where {EDGE} group by k order by n desc limit 80",
                                  end - dt.timedelta(hours=1), end)
@@ -486,29 +469,40 @@ jobs:
                   return rows
               # What the logs hold for the window, before any count is read off them:
               # a source with no rows here is a retention/plan limit, not a zero.
-              RT = logsrc("realtime", z0, z1)
-              print(f"(ii-a) realtime source filter: {RT or '- (no source value containing realtime in the window)'}")
-              RT = RT or "1 = 0"
-              lq("(ii-b) realtime_logs attribute keys",
-                 "select arrayJoin(mapKeys(log_attributes)) as k, count() as n from logs "
-                 f"where {RT} group by k order by n desc limit 80")
+              RT = "source = 'realtime_logs'"
+              M = lambda k: f"toFloat64OrNull(log_attributes['measurements.{k}'])"
+              lq("(ii-a) log sources in the window: rows, first, last (a source missing here = not retained, not zero)",
+                 "select source, count() as n, min(timestamp) as first, max(timestamp) as last "
+                 "from logs group by source order by n desc")
+              keys = lq("(ii-b) realtime_logs attribute keys",
+                        f"select arrayJoin(mapKeys(log_attributes)) as k, count() as n from logs "
+                        f"where {RT} group by k order by n desc limit 80")
               lq("(ii-c) realtime_logs message shapes (ids and digits masked), count each",
                  "select substring(replaceRegexpAll(replaceRegexpAll(event_message, 'eyJ[A-Za-z0-9_.-]+', '<jwt>'), "
-                 "'[0-9a-fA-F-]{8,}|[0-9]+', '#'), 1, 160) as shape, count() as n from logs "
+                 f"'[0-9a-fA-F-]{{8,}}|[0-9]+', '#'), 1, 160) as shape, count() as n from logs "
                  f"where {RT} group by shape order by n desc limit 50")
-              lq("(ii-d) first 25 realtime_logs lines (tokens masked)",
-                 "select timestamp, substring(replaceRegexpAll(event_message, 'eyJ[A-Za-z0-9_.-]+', '<jwt>'), 1, 300) as msg "
-                 f"from logs where {RT} order by timestamp limit 25")
-              rows = lq("(ii) realtime_logs lines matching join / leave|close|disconnect",
-                        "select countIf(match(lower(event_message), 'join')) as joins, "
-                        "countIf(match(lower(event_message), 'leave|close|disconnect')) as leaves, "
-                        f"count() as events from logs where {RT}")
-              row = rows[0] if rows else None
-              if not row:
-                  print("(ii) joins / leaves / connection-minutes: - (logs API gave no row; see (ii-a) for what the window holds)")
+              lq("(ii-d) first 30 measurement lines: connected / connected_cluster / limit / sum",
+                 f"select timestamp, substring(event_message, 1, 100) as msg, {M('connected')} as connected, "
+                 f"{M('connected_cluster')} as cluster, {M('limit')} as lim, {M('sum')} as sum from logs "
+                 f"where {RT} and log_attributes['measurements.connected'] != '' order by timestamp limit 30")
+              lq("(ii-e) measurement lines by hour: samples, max/avg connected, sum of measurements.sum",
+                 f"select toStartOfHour(timestamp) as hour, count() as samples, max({M('connected')}) as max_conn, "
+                 f"round(avg({M('connected')}), 2) as avg_conn, sum({M('sum')}) as sum_sum from logs "
+                 f"where {RT} and log_attributes['measurements.connected'] != '' group by hour order by hour")
+              tot = lq("(ii) window totals over the measurement lines",
+                       f"select count() as samples, min(timestamp) as first, max(timestamp) as last, "
+                       f"sum({M('connected')}) as conn_x_samples, max({M('connected')}) as max_conn, "
+                       f"countIf({M('connected')} > 0) as samples_with_conn, sum({M('sum')}) as sum_sum "
+                       f"from logs where {RT} and log_attributes['measurements.connected'] != ''")
+              t = tot[0] if tot else None
+              if not keys or not t or not t.get("samples"):
+                  # No keys / no samples is a retention or schema gap, never a zero.
+                  print("(ii) connection-minutes: - (no realtime measurement lines in the window; see (ii-a)/(ii-b))")
               else:
-                  print(f"(ii) realtime_logs lines matching join: {row.get('joins')}; matching leave|close|disconnect: {row.get('leaves')} "
-                        f"of {row.get('events')} (message-pattern counts over the window, not per-connection pairs)")
+                  cad = span_s / 60 / t["samples"]
+                  print(f"(ii) {t['samples']} measurement samples over {span_s/60:.0f} min = one per ~{cad:.2f} min; "
+                        f"connected summed over samples {t['conn_x_samples']} -> connection-minutes ~ {t['conn_x_samples'] * cad:.0f} "
+                        f"(assumes even sampling - check (ii-e)); peak {t['max_conn']}; measurements.sum total {t['sum_sum']}")
               stream_rows = sum(int(x.get("rows") or 0) for x in (hist or []) if x.get("source") == "stream") if hist else None
               print("(iii) arithmetic, raw:")
               print("      billed: the founder's dashboard delta for this window (+468 for the first reading)")
