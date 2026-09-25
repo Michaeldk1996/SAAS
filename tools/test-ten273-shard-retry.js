@@ -44,6 +44,7 @@ function startSite() {
     hits[u] = (hits[u] || 0) + 1;
     // a second request for a shard is a retry: count how many are in flight at once
     if (hits[u] === 2 && /^\/tournament-history\//.test(u)) {
+      (hits.retrySockets = hits.retrySockets || new Set()).add(req.socket.remotePort);
       retrying++; hits.maxRetryOverlap = Math.max(hits.maxRetryOverlap, retrying);
       const end = res.end.bind(res);
       res.end = (...a) => setTimeout(() => { retrying--; end(...a); }, 300);
@@ -82,6 +83,8 @@ async function hydrate(storeFile) {
   });
   site.srv.closeAllConnections(); site.srv.close();
   fs.rmSync(work, { recursive: true, force: true });
+  fs.rmSync(path.dirname(path.dirname(storeFile)), { recursive: true, force: true });   // the throwaway root
+  site.hits.retryConnections = site.hits.retrySockets ? site.hits.retrySockets.size : 0;
   return { th: JSON.parse(out), hits: site.hits };
 }
 
@@ -104,6 +107,9 @@ const CASES = {
   },
   'D. one at a time (the retries never overlap)': ({ hits }) => {
     assert.strictEqual(hits.maxRetryOverlap, 1, `retries in flight at once: ${hits.maxRetryOverlap}`);
+    // one fetch per key: each retry is its own curl (its own connection), never one batch — a
+    // batched curl --parallel runs sequentially on this HTTP/1.1 site but in parallel on Pages (HTTP/2)
+    assert.strictEqual(hits.retryConnections, 2, `retry connections: ${hits.retryConnections}`);
   },
 };
 
@@ -115,6 +121,9 @@ const MUTANTS = [
     "if (!t || t.trim().charAt(0) !== '{') failed.push(k); else ok.set(k, t);", "ok.set(k, t && t.trim().charAt(0) === '{' ? t : '{\"tournamentHistory\":[]}');"],
   ['two retries instead of one', 'C. one more fetch, not more (each failing shard is requested exactly twice)',
     'for (const k of retried) {', 'for (const k of [...retried, ...retried]) {'],
+  ['the retries are one batched curl --parallel (parallel on HTTP/2)', 'D. one at a time (the retries never overlap)',
+    "  const retried = failed.splice(0);\n  for (const k of retried) {",
+    "  const retried = failed.splice(0);\n  if (retried.length) { const a = ['-sS', '--parallel', '--max-time', '120']; retried.forEach((k) => a.push('-o', path.join(tmp, `${k}.json`), `${BASE}/${dirRel}/${k}.json`)); try { execFileSync('curl', a); } catch (e) {} }\n  for (const k of retried) {\n    if (fs.existsSync(path.join(tmp, `${k}.json`))) { const t0 = fs.readFileSync(path.join(tmp, `${k}.json`), 'utf8'); fs.unlinkSync(path.join(tmp, `${k}.json`)); if (t0.trim().charAt(0) === '{') { ok.set(k, t0); continue; } }\n    if (1) { failed.push(k); continue; }"],
   ['the retries run in parallel', 'D. one at a time (the retries never overlap)',
     "  const retried = failed.splice(0);\n  for (const k of retried) {",
     "  const retried = failed.splice(0);\n  if (retried.length) { const a = ['-sS', '--parallel', '--parallel-immediate', '--max-time', '120']; retried.forEach((k) => a.push('-o', path.join(tmp, `${k}.json`), `${BASE}/${dirRel}/${k}.json`)); try { execFileSync('curl', a); } catch (e) {} }\n  for (const k of retried) {\n    if (fs.existsSync(path.join(tmp, `${k}.json`))) { const t0 = fs.readFileSync(path.join(tmp, `${k}.json`), 'utf8'); fs.unlinkSync(path.join(tmp, `${k}.json`)); if (t0.trim().charAt(0) === '{') { ok.set(k, t0); continue; } }\n    if (1) { failed.push(k); continue; }"],
