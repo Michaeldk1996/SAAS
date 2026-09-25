@@ -1,0 +1,5 @@
+[
+ {"name":"ticks","sql":"select ten280_bot.load_ticks('2026-09-11 05:18:09.860093+00', '2026-09-25 05:18:09.860093+00'); select fixture_id, side_id, price, at, known_at, is_opener, src from pg_temp.t280 order by fixture_id, side_id, at","required":true},
+ {"name":"alerts","sql":"select run_id, fixture_id, side_id, eval_at, pct_10m, cur_price, ref_price from ten280_bot.alerts where mode='backtest' order by run_id, eval_at, fixture_id, side_id","required":true},
+ {"name":"stream_unmapped","sql":"select count(*) total, count(*) filter (where m.side_id is null) unmapped from (select h.row_key, coalesce((select o.side_id from public.kibl_line_observations o where o.row_key = h.row_key limit 1), case when h.side_key = ten280_bot.skey(f.player1_name) then 2 when h.side_key = ten280_bot.skey(f.player2_name) then 3 end) side_id from public.kibl_now_history h join public.kibl_fixtures f using (fixture_id)) m"}
+]
