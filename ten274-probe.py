@@ -106,7 +106,7 @@ _, fx = call("fixtures_atp", "/info/fixtures", {"league_id": ATP, "start_time": 
 fixtures = {f["fixture_id"]: f for f in fx if isinstance(f, dict) and f.get("fixture_id")}
 call("fixtures_states_atp", "/info/fixtures-states", {"league_id": ATP}, keep=50)
 call("fixtures_states_bare", "/info/fixtures-states", {}, keep=10)
-call("markets_last_updated", "/info/markets-last-updated", {}, keep=50)
+call("markets_last_updated", "/info/markets-last-updated", {}, keep=5000)
 call("markets_alerts_atp", "/info/markets-alerts", {"league_id": ATP, "feed_source_id": FSID}, keep=50)
 call("outcomes_bare", "/info/outcomes", {}, keep=10)
 some_fid = next(iter(fixtures), None)
@@ -136,6 +136,9 @@ for lab, path, params, keep in [
         ("outcomes_participants_atp", "/info/outcomes-participants", {"league_id": ATP}, 30),
         ("outcomes_seg_scores_atp", "/info/outcomes-segments-scores", {"league_id": ATP}, 30),
         ("alerts_atp_nofeed", "/info/markets-alerts", {"league_id": ATP}, 30),
+        ("alerts_171_all", "/info/markets-alerts", {"feed_source_id": FSID}, 200),
+        ("alerts_171_tennis", "/info/markets-alerts", {"feed_source_id": FSID, "league_id": "19,537,962,20,643,963"}, 200),
+        ("alerts_bare_window", "/info/markets-alerts", {"start_time": iso(t0 - timedelta(days=2)), "end_time": iso(t0 + timedelta(days=1))}, 200),
         ("fixtures_assoc", "/info/fixtures-associations", {"parent_fixture_id": ",".join(str(f.get("parent_fixture_id")) for f in props[:5])}, 30),
         ("fixtures_informations", "/info/fixtures-informations", {"fixture_id": fid_list}, 30),
         ("fixtures_participants_names", "/info/fixtures-participants-with-name", {"fixture_id": fid_list}, 30)]:
