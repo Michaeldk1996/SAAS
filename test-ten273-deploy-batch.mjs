@@ -24,7 +24,8 @@ import { spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const BATCH_SRC = path.join(HERE, 'tools', 'deploy-batch.mjs');
+// TEN273_BATCH_SRC runs the cases against another copy (e.g. the pre-change tool).
+const BATCH_SRC = process.env.TEN273_BATCH_SRC || path.join(HERE, 'tools', 'deploy-batch.mjs');
 const LANE_SRC = path.join(HERE, 'tools', 'deploy-lane.mjs');
 const SUITE_SRC = path.join(HERE, 'tools', 'ci-suite.sh');
 const MIN = 60 * 1000;
@@ -112,7 +113,8 @@ async function fixture({ entries = [B, C], holderOnTip = false, beforeHolder = n
   sh(work, 'push', '-q', 'origin', 'main');
   const seed = sh(work, 'rev-parse', 'HEAD');
   sh(root, 'clone', '-q', origin, bot);
-  sh(bot, 'config', 'user.name', 'bot'); sh(bot, 'config', 'user.email', 'b@b');
+  // The data bot commits as a real, allowlisted data-bot author.
+  sh(bot, 'config', 'user.name', 'bsp-odds-bot'); sh(bot, 'config', 'user.email', 'bsp-odds-bot@users.noreply.github.com');
   let n = 0;
   const onOrigin = (file, msg) => { sh(bot, 'pull', '-q', '--rebase', 'origin', 'main'); commit(bot, file, `${msg} ${++n}\n`, msg); sh(bot, 'push', '-q', 'origin', 'HEAD:main'); };
   const dataBot = () => onOrigin('data.json', 'data refresh [skip ci]');
@@ -160,13 +162,13 @@ async function fixture({ entries = [B, C], holderOnTip = false, beforeHolder = n
   const tipOf = () => sh(origin, 'rev-parse', 'main');
   const pushes = () => sh(origin, 'reflog', 'show', 'main').split('\n').filter(Boolean).length;
   const subjects = (from) => sh(origin, 'log', '--reverse', '--format=%s', `${from}..main`).split('\n').filter(Boolean);
-  return { root, origin, work, board, lane, clock, shas, claim, notify, suite, suiteCalls, dataBot, codePush, receipts, mk,
+  return { root, origin, work, bot, board, lane, clock, shas, claim, notify, suite, suiteCalls, dataBot, codePush, receipts, mk,
     setSuiteOk: (v) => { suiteOk = v; }, setSuiteHook: (f) => { suiteHook = f; }, tipOf, pushes, subjects,
     close: () => board.close() };
 }
 
-async function batch(mod, f, me = A, sha = f.shas.A) {
-  return mod.runBatch({ lane: f.lane, me, sha, repo: f.work, suite: f.suite, clobber: real.realClobberCheck({ cwd: f.work }), notify: f.notify });
+async function batch(mod, f, me = A, sha = f.shas.A, extra = {}) {
+  return mod.runBatch({ lane: f.lane, me, sha, repo: f.work, suite: f.suite, clobber: real.realClobberCheck({ cwd: f.work }), notify: f.notify, ...extra });
 }
 
 // ── the cases ────────────────────────────────────────────────────────────────
@@ -374,6 +376,48 @@ Object.assign(CASES, {
     } catch (e) { if (process.env.DEBUG_TEN273) console.error('CASE THREW:', e.message); return false; } finally { f.close(); }
   },
 
+  // xvi · pushedAt is captured BEFORE git push (the owner's run is the first to
+  //       start at/after it; a tick can start the moment the push lands).
+  async pushedAtIsCapturedBeforeThePush(mod) {
+    const f = await fixture({ entries: [] });
+    try {
+      let t = Date.parse('2026-09-25T09:00:00Z');
+      const clock = () => t;
+      const gitSpy = (args, opts) => { if (args[0] === 'push') t += 60000; return laneMod.git(args, opts); };
+      const r = await batch(mod, f, A, f.shas.A, { clock, git: gitSpy });
+      return r.code === 0 && f.lane.peek().claim.pushedAt === '2026-09-25T09:00:00.000Z';
+    } catch (e) { if (process.env.DEBUG_TEN273) console.error('CASE THREW:', e.message); return false; } finally { f.close(); }
+  },
+
+  // xvii · if the lane cannot record the push, deploy-batch says so loudly and
+  //        exits non-zero — the push landed, but the lane does not know it.
+  async unrecordedPushIsLoud(mod) {
+    const f = await fixture({ entries: [] });
+    try {
+      const start = f.tipOf();
+      const lane = { ...f.lane, recordPush: async () => ({ code: 1, action: 'not-owner' }) };
+      const r = await mod.runBatch({ lane, me: A, sha: f.shas.A, repo: f.work, suite: f.suite, clobber: real.realClobberCheck({ cwd: f.work }), notify: f.notify });
+      return r.code === 1 && r.action === 'pushed-lane-unaware' && f.tipOf() !== start && r.recordPush === 'not-owner';
+    } catch (e) { if (process.env.DEBUG_TEN273) console.error('CASE THREW:', e.message); return false; } finally { f.close(); }
+  },
+
+  // xviii · a code commit whose title says [skip ci] but whose author is not a
+  //         data bot lands during the batch → treated as code: no push over it.
+  async skipCiByANonBotStopsThePush(mod) {
+    const f = await fixture();
+    try {
+      f.setSuiteHook(() => {
+        sh(f.bot, 'pull', '-q', '--rebase', 'origin', 'main');
+        sh(f.bot, 'config', 'user.email', 'dev@example.com');
+        commit(f.bot, 'sneaky.txt', 'x\n', 'TEN-998: a code change titled [skip ci]');
+        sh(f.bot, 'config', 'user.email', 'bsp-odds-bot@users.noreply.github.com');
+        sh(f.bot, 'push', '-q', 'origin', 'HEAD:main');
+      });
+      const r = await batch(mod, f);
+      return r.mode === 'fallback' && /code commit landed/.test(r.fallbackReason || '') && sh(f.origin, 'log', '-1', '--format=%s', 'main') === 'TEN-998: a code change titled [skip ci]';
+    } catch (e) { if (process.env.DEBUG_TEN273) console.error('CASE THREW:', e.message); return false; } finally { f.close(); }
+  },
+
   // xiv · the holder's own claimed commit containing a merge is refused.
   async holderMergeRefused(mod) {
     const f = await fixture({ entries: [] });
@@ -397,7 +441,7 @@ const MUTANTS = [
   ['landedAs is not recorded for the entries', 'combinesIntoOnePush',
     'const landed = b.included.map((g) => ({', 'const landed = b.included.filter((g) => g.holder).map((g) => ({'],
   ['the push is not recorded on the claim (no readBack / pushedAt)', 'combinesIntoOnePush',
-    'await lane.recordPush(me, { readBack: hold.landedAs, pushedHead: b.head });', ''],
+    'try { rp = await lane.recordPush(me, { readBack: hold.landedAs, pushedHead: b.head, pushedAt }); }', "try { rp = { code: 0, action: 'recorded' }; }"],
   ['the batch notice does not tell the run to release', 'combinesIntoOnePush',
     'If you have nothing more to push, also run \\`node tools/deploy-lane.mjs release --ticket ${g.ticket}\\` to withdraw anything else you queued.', 'Done.'],
   ['no notice to the included entries', 'combinesIntoOnePush',
@@ -425,7 +469,7 @@ const MUTANTS = [
   ['the fallback skips the rebased check', 'codeCommitAbortsTheBatch',
     'const rb = rebaseCheck(sha);', 'const rb = { ok: true };'],
   ['[skip ci] matched anywhere in the message, not the subject', 'codeCommitAbortsTheBatch',
-    "G(['log', '--format=%H%x1f%s%x1e', `${b.head}..${tip}`])", "G(['log', '--format=%H%x1f%B%x1e', `${b.head}..${tip}`])"],
+    "G(['log', '--format=%H%x1f%s%x1f%ae%x1e', `${b.head}..${tip}`])", "G(['log', '--format=%H%x1f%B%x1f%ae%x1e', `${b.head}..${tip}`])"],
   ['any --sha is pushed, not only the claimed one', 'shaMustBeTheClaimedSha',
     'if (held.claim.sha !== sha) return refuse(', 'if (false) return refuse('],
   ['the receipt is not re-checked at batch time', 'receiptRecheckedAtBatchTime',
@@ -442,6 +486,12 @@ const MUTANTS = [
     'for (const e of await lane.batchCandidates(me)) {', 'for (const e of lane.peek().queue.filter((x) => x.runId !== me.runId)) {'],
   ['an entry already on main is batched (misleading notice)', 'alreadyOnMainEntryDroppedSilently',
     'if (mb === e.sha) { onMain.push(', 'if (false) { onMain.push('],
+  ['pushedAt is taken after the push', 'pushedAtIsCapturedBeforeThePush',
+    "      const pushedAt = new Date(clock()).toISOString();\n      const p = W(['push', '-q', 'origin', `${b.head}:refs/heads/main`]);",
+    "      const p = W(['push', '-q', 'origin', `${b.head}:refs/heads/main`]);\n      const pushedAt = new Date(clock()).toISOString();"],
+  ['a failed recordPush is ignored', 'unrecordedPushIsLoud', 'const unrecorded = !rp || rp.code !== 0;', 'const unrecorded = false;'],
+  ['the batch classifies data by subject alone', 'skipCiByANonBotStopsThePush',
+    'const code = landed.filter((c) => !isDataCommit(c));', "const code = landed.filter((c) => !c.subject.includes('[skip ci]'));"],
   ['a holder merge commit is not refused', 'holderMergeRefused',
     'if (hasMerges(holderMb, sha)) return refuse(', 'if (false) return refuse('],
 ];

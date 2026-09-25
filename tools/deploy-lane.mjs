@@ -36,19 +36,27 @@
 //     otherwise it joins at the back. It never inherits a HOLD: a dead holder is
 //     released and the lane goes to the head of the queue.
 //  5. Holding (founder, 02:05Z), evaluated on every claim/status/renew/confirm-live:
-//     (i) owner run dead → release, `owner-dead`; (ii) an owner pipeline run in
-//     progress → held (a healthy deploy is never cut off); (iii) an owner run
-//     queued > PIPELINE_QUEUED_MAX_MIN (10) → release, `pipeline-queued-10min`;
-//     (iv) MAX_HOLD_MIN (40) since takenAt and none in progress → release,
-//     `cap-40min-no-run`. GitHub unreachable = unknown: never extends. Renew and
-//     claim never extend. A forced release re-queues the holder at the BACK
-//     (unless dead), logs the reason, posts on its ticket and dispatches the
+//     (i) owner run dead → release, `owner-dead`; (ii) the owner's pipeline run
+//     in progress → held (a healthy deploy is never cut off), then
+//     READBACK_GRACE_MIN (12) after it completes successfully; (iii) the owner's
+//     run queued > PIPELINE_QUEUED_MAX_MIN (10) → release,
+//     `pipeline-queued-10min`; (iv) MAX_HOLD_MIN (40) since takenAt and none of
+//     that → release, `cap-40min-no-run`. The owner's run is the FIRST pipeline
+//     run that started at/after pushedAt, recorded once seen; later ticks never
+//     extend. HEALTHY_QUEUE_PAUSES_CLOCK (proposal, pending the founder): pending
+//     behind a tick that started before the push counts as moving. GitHub
+//     unreachable = unknown: never extends. Renew and claim never extend. A
+//     forced release re-queues the holder at the BACK only if it had not pushed
+//     (and is alive), logs the reason, posts on its ticket and dispatches the
 //     freshness alarm (pipeline-watchdog.yml lane_alert) — both best-effort.
 //     A legacy TEN-261 claim at cutover: its lease expiry is honoured once.
 //  6. The lane covers deploying only: `confirm-live --sha S` (S = the claimed
-//     sha or deploy-batch's recorded read-back sha; any other → exit 1) runs
-//     tools/check-live-build.sh S and releases the lane on exit 0
-//     (`released-live-confirmed`); on 1/2 it keeps holding (exit 3).
+//     sha or deploy-batch's recorded read-back sha; any other → exit 1) checks
+//     the SITE first (tools/check-live-build.sh S): live → released
+//     (`released-live-confirmed`), never a forced release; not live (1/2) → the
+//     hold rules run, and if it still holds, exit 3.
+//  Data-bot commits: [skip ci] in the subject AND an allowlisted author
+//  (DATA_BOT_AUTHORS). Nothing inside the store lock touches the network.
 //  7. Every land goes through tools/deploy-batch.mjs, which records readBack and
 //     pushedAt on the claim. A raw `git push` is outside the contract (this tool
 //     cannot block it).
@@ -89,6 +97,32 @@ import { fileURLToPath } from 'node:url';
 // naming the reason, in the same channel as the freshness alarm."
 export const MAX_HOLD_MIN = 40;
 export const PIPELINE_QUEUED_MAX_MIN = 10;
+// After the owner's pipeline run completes SUCCESSFULLY the hold stays this long,
+// so the live read-back can see it: Pages max-age 600 s + 2 min. (Review of
+// c003eb8f: "a healthy deploy is never cut off" must include its CDN lag.)
+export const READBACK_GRACE_MIN = 12;
+// PROPOSAL, PENDING THE FOUNDER (review of c003eb8f): the pipeline group allows
+// one running + one pending run, so the owner's run can sit pending behind a tick
+// that started before the push — healthy queueing, not stuck. While true, that
+// counts as "the deploy is moving" (no pipeline-queued release, and it counts as
+// in progress for the 40-min clause) and the 10-min queued clock only runs while
+// nothing is in progress. false = the ruling's literal text.
+export const HEALTHY_QUEUE_PAUSES_CLOCK = true;
+// A commit is a DATA-BOT commit only if its subject carries [skip ci] AND its
+// author email is one of these — the authors of the last 500 [skip ci] commits
+// on origin/main (2026-09-25). A code commit titled "[skip ci]" by anyone else
+// is code.
+export const DATA_BOT_AUTHORS = new Set([
+  'bsp-odds-bot@users.noreply.github.com',
+  'bsp-admin-log-bot@users.noreply.github.com',
+  'bsp-series-outcomes-bot@users.noreply.github.com',
+  'bsp-profile-cache-bot@users.noreply.github.com',
+  'bsp-asap-bot@users.noreply.github.com',
+  'bsp-surface-bot@users.noreply.github.com',
+  'bsp-bot@users.noreply.github.com',
+  'bot@bspconsult.local', // BSP Entry Lists / Styles (launchd)
+]);
+export const isDataCommit = ({ subject = '', authorEmail = '' }) => subject.includes('[skip ci]') && DATA_BOT_AUTHORS.has(authorEmail.toLowerCase());
 const QUEUED = new Set(['queued', 'waiting', 'pending', 'requested']);
 // A waiter that has not called `claim` for this long leaves the waiter queue —
 // alive or not: a claimant that stopped claiming is no longer a live claimant.
@@ -166,36 +200,56 @@ async function withLock(file, fn) {
 // suiteReceipt(sha)     -> {sha, tree, exit, startedAt, finishedAt, log} | null
 // rebaseCheck(sha)      -> {ok, codeCommits: [{sha, subject}], dataCommits: n, detail}
 // checkLive(sha)        -> {code: 0|1|2, output}   (tools/check-live-build.sh)
-// pipelineRuns()        -> {ok: true, runs: [{id, status, createdAt, startedAt, url}]} | {ok: false, detail}
-//                          (pipeline.yml runs; startedAt = the earliest job started_at)
+// pipelineRuns({since}) -> {ok: true, runs: [{id, status, conclusion, createdAt, startedAt, completedAt, url}]} | {ok: false, detail}
 // alert({reason, message}) -> {ok, error?}   (the freshness alarm's channel: pipeline-watchdog.yml)
-// maxHoldMin / pipelineQueuedMaxMin -> the founder's 40 / 10 (injectable for tests)
+//
+// LOCK DISCIPLINE: nothing inside the store lock touches the network. Liveness,
+// pipeline runs (and the keychain token they need) are fetched BEFORE the lock
+// against an unlocked snapshot and re-validated cheaply inside it (the claim
+// must be the same one); notices and alerts are sent AFTER the lock, and their
+// results are appended to the history under a second, short lock.
 export function createLane({ file, now = () => Date.now(), liveness, notify, suiteReceipt, rebaseCheck, checkLive,
   pipelineRuns = async () => ({ ok: false, detail: 'no pipeline adapter configured' }),
   alert = async () => ({ ok: false, error: 'no alert adapter configured' }),
-  maxHoldMin = MAX_HOLD_MIN, pipelineQueuedMaxMin = PIPELINE_QUEUED_MAX_MIN, livenessBudgetMs = BATCH_LIVENESS_BUDGET_MS }) {
+  maxHoldMin = MAX_HOLD_MIN, pipelineQueuedMaxMin = PIPELINE_QUEUED_MAX_MIN, readbackGraceMin = READBACK_GRACE_MIN,
+  healthyQueue = HEALTHY_QUEUE_PAUSES_CLOCK, livenessBudgetMs = BATCH_LIVENESS_BUDGET_MS }) {
   const log = (s, event) => { s.history.push({ at: iso(now()), ...event }); s.history = s.history.slice(-HISTORY_KEEP); };
   const capMs = maxHoldMin == null ? null : maxHoldMin * MIN;
+  const graceMs = readbackGraceMin * MIN;
   const waitedMin = (w, t = now()) => Math.round((t - Date.parse(w.since)) / MIN);
   // A claim written by the TEN-261 tool: no version marker, and a lease expiry.
   const isLegacy = (c) => !!c && c.version !== 2 && !!c.expiresAt;
+  const claimKey = (c) => (c ? `${c.runId}|${c.takenAt}` : null);
+
+  // Runs fn under the store lock with an effects list; effects (notices,
+  // alerts) run after the lock is released, and may return a patch applied
+  // to the store under a second, short lock.
+  async function locked(fn) {
+    const fx = [];
+    const out = await withLock(file, (save) => fn(save, fx));
+    if (fx.length) {
+      const patches = [];
+      for (const f of fx) { try { const p = await f(); if (p) patches.push(p); } catch { /* best-effort */ } }
+      if (patches.length) await withLock(file, async (save) => { const s = readState(file); for (const p of patches) p(s); save(s); });
+    }
+    return out;
+  }
 
   function newClaim(me, ready) {
     const t = now();
     return { version: 2, ticket: me.ticket, issueId: me.issueId || null, runId: me.runId, kind: me.kind,
       sha: ready.sha, reviewed: true, suiteFinishedAt: (ready.receipt && ready.receipt.finishedAt) || null,
-      takenAt: iso(t), renewedAt: iso(t), expiresAt: capMs == null ? null : iso(t + capMs), pushedAt: null, readBack: null };
+      takenAt: iso(t), renewedAt: iso(t), expiresAt: capMs == null ? null : iso(t + capMs), pushedAt: null, readBack: null, ownerRun: null };
   }
 
   function describe(c, live) {
     const hold = isLegacy(c) ? `a legacy TEN-261 lease claim, honoured once until ${c.legacyExpiresAt || c.expiresAt}, then freed`
-      : c.expiresAt ? `plain cap at ${c.expiresAt} (extended while its own pipeline run is in progress)` : 'no hold cap wired';
+      : c.expiresAt ? `plain cap at ${c.expiresAt} (extended while its own pipeline run is in progress, then ${readbackGraceMin} min of read-back grace)` : 'no hold cap wired';
     return `**${c.ticket}** (run \`${c.runId}\`), taken ${c.takenAt}, last checked ${c.renewedAt}, ${hold}.` +
       `${live ? ` Owner run: **${live.state}**${live.detail ? ` (${live.detail})` : ''}.` : ''}`;
   }
 
-  // The readiness gate. Pure reads plus a git fetch: it runs before the store
-  // lock is taken.
+  // The readiness gate: pure reads plus a git fetch, before any lock.
   async function readiness({ sha, reviewed } = {}) {
     const missing = [];
     if (!sha) return { ok: false, missing: ['sha: pass --sha <the commit you will push>'] };
@@ -209,8 +263,6 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
   }
 
   // ── the waiter queue (first come, first served) ────────────────────────────
-  // s.waiters[runId] = {ticket, issueId, kind, since, lastSeen, reportedAt, seq}.
-  // Order is by `since` (the wait-start time), oldest first; ties by `seq`.
   const order = (s) => Object.entries(s.waiters).map(([runId, w]) => ({ ...w, runId }))
     .sort((a, b) => (Date.parse(a.since) - Date.parse(b.since)) || ((a.seq || 0) - (b.seq || 0)));
 
@@ -220,17 +272,43 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
     return s.waiters[who.runId];
   }
 
+  // Pre-lock checks against an unlocked snapshot, under ONE shared deadline for
+  // every liveness call (holder, then the waiters ahead of the caller — which
+  // also covers the same-ticket waiter a new run might inherit from). Pipeline
+  // runs (and the token they need) are fetched here too, only when the hold
+  // rules need them.
+  async function prefetch(me, { waiters = false } = {}) {
+    const snap = readState(file);
+    const deadline = Date.now() + livenessBudgetMs;
+    const pre = { claimKey: claimKey(snap.claim), live: null, pr: null, waiterLive: new Map() };
+    const c = snap.claim;
+    if (c) {
+      pre.live = await liveness(c);
+      if (capMs != null && !isLegacy(c) && (c.pushedAt || now() - Date.parse(c.takenAt) >= capMs)) {
+        pre.pr = await pipelineRuns({ since: c.pushedAt });
+      }
+    }
+    if (waiters) {
+      for (const w of order(snap)) {
+        if (me && w.runId === me.runId) break;
+        if (Date.now() >= deadline) break;          // not reached: counts as still waiting
+        pre.waiterLive.set(w.runId, await liveness(w));
+      }
+    }
+    return pre;
+  }
+
   // The caller joins the queue (or is already in it). A NEW run of a ticket
   // that was already waiting inherits that wait-start time only if the old run
-  // is dead AND it last polled within WAITER_STALE_MIN. Otherwise: the back.
-  async function join(s, me) {
+  // is (pre-lock checked) dead AND it last polled within WAITER_STALE_MIN.
+  function join(s, me, pre) {
     const t = now();
     if (s.waiters[me.runId]) { s.waiters[me.runId].lastSeen = iso(t); return { w: s.waiters[me.runId] }; }
     for (const old of order(s)) {
       if (old.ticket !== me.ticket || old.runId === me.runId) continue;
       if (t - Date.parse(old.lastSeen || old.since) > WAITER_STALE_MIN * MIN) continue;
-      const live = await liveness(old);
-      if (live.state !== 'dead') continue;
+      const live = pre.waiterLive.get(old.runId);
+      if (!live || live.state !== 'dead') continue;
       delete s.waiters[old.runId];
       const w = addWaiter(s, me, old.since, { inheritedFrom: old.runId, reportedAt: old.reportedAt || null });
       log(s, { event: 'waiter-inherited', ticket: me.ticket, runId: me.runId, from: old.runId, since: old.since, evidence: live.detail });
@@ -241,15 +319,11 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
     return { w };
   }
 
-  // Waiters ahead of the caller, after dropping the dead ones (their run ended)
-  // and the silent ones: no `claim` for more than WAITER_STALE_MIN, alive or not
-  // — a claimant that stopped claiming is no longer a live claimant (a waiter
-  // polls every ≤ 5 min, and a not-ready claim still counts as polling).
-  // Liveness is checked under the store lock, so the pass has a deadline; a
-  // waiter not reached in time counts as still waiting.
-  async function ahead(s, me) {
+  // Waiters ahead of the caller, after dropping the silent ones (no `claim` for
+  // WAITER_STALE_MIN, alive or not) and the dead ones (pre-lock liveness). A
+  // waiter the pre-lock pass did not reach counts as still waiting.
+  function ahead(s, me, pre) {
     const t = now();
-    const deadline = Date.now() + livenessBudgetMs;
     const out = [];
     for (const w of order(s)) {
       if (w.runId === me.runId) break;
@@ -259,9 +333,8 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
         log(s, { event: 'waiter-dropped-stale', ticket: w.ticket, runId: w.runId, since: w.since, lastSeen: w.lastSeen });
         continue;
       }
-      if (Date.now() >= deadline) { out.push(w); continue; }
-      const live = await liveness(w);
-      if (live.state === 'dead') {
+      const live = pre.waiterLive.get(w.runId);
+      if (live && live.state === 'dead') {
         delete s.waiters[w.runId];
         log(s, { event: 'waiter-dropped-dead', ticket: w.ticket, runId: w.runId, since: w.since, evidence: live.detail });
         continue;
@@ -272,87 +345,130 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
   }
 
   // ── holding the lane: the founder's cap ruling (2026-09-25 02:05Z) ─────────
-  // Evaluated on every claim, status, renew and confirm-live:
   //  (i)   owner run dead                                  → release: owner-dead
-  //  (ii)  an owner pipeline run is in_progress             → hold (never cut off)
-  //  (iii) an owner pipeline run queued > PIPELINE_QUEUED_MAX_MIN → release: pipeline-queued-10min
-  //  (iv)  MAX_HOLD_MIN since takenAt, none in progress     → release: cap-40min-no-run
-  // "The owner's pipeline run": a pipeline.yml run whose earliest job started at
-  // or after the claim's pushedAt (a run re-points to the tip when it starts);
-  // queued = created at or after pushedAt and still queued/waiting/pending.
-  // GitHub unreachable = unknown: NEVER extends; the plain cap (iv) applies.
-  // A legacy TEN-261 claim: its lease expiry is honoured once, then it is freed.
-  async function enforce(s) {
+  //  (ii)  the owner's pipeline run is in_progress          → hold (never cut off)
+  //        …then READBACK_GRACE_MIN after it completes SUCCESSFULLY (the CDN's
+  //        max-age + 2 min, so the live read-back can see it); no grace after a
+  //        failed or cancelled run
+  //  (iii) the owner's run queued > PIPELINE_QUEUED_MAX_MIN   → release: pipeline-queued-10min
+  //  (iv)  MAX_HOLD_MIN since takenAt, none of the above      → release: cap-40min-no-run
+  // "The owner's pipeline run" is the FIRST pipeline.yml run that started at or
+  // after the claim's pushedAt; it is recorded on the claim once seen, and only
+  // it extends — later ticks never do. Queued = created at/after pushedAt and not
+  // yet started. HEALTHY_QUEUE_PAUSES_CLOCK (proposal, pending the founder):
+  // while another pipeline run is in progress ahead of it, the owner's queued
+  // run is "moving" — no (iii), and it counts as in progress for (iv); its
+  // queued clock only runs while nothing is in progress.
+  // GitHub unreachable = unknown: NEVER extends (a grace already earned from a
+  // recorded successful completion still applies).
+  function enforce(s, pre, fx) {
     const c = s.claim;
     if (!c) return { forced: null, live: null };
+    if (!pre || pre.claimKey !== claimKey(c)) return { forced: null, live: null, skipped: 'the claim changed since the pre-lock checks' };
     const t = now();
-    const live = await liveness(c);
-    if (live.state === 'dead') return { forced: await forced(s, c, 'owner-dead', live.detail), live };
+    const live = pre.live;
+    if (live && live.state === 'dead') return { forced: forced(s, c, 'owner-dead', live.detail, fx), live };
     if (isLegacy(c)) {
       if (!c.legacyExpiresAt) c.legacyExpiresAt = c.expiresAt; // honoured ONCE: later renewals by an old tool do not move it
-      if (t >= Date.parse(c.legacyExpiresAt)) return { forced: await forced(s, c, 'legacy-lease-expired', `TEN-261 lease claim honoured once, until ${c.legacyExpiresAt}`), live };
+      if (t >= Date.parse(c.legacyExpiresAt)) return { forced: forced(s, c, 'legacy-lease-expired', `TEN-261 lease claim honoured once, until ${c.legacyExpiresAt}`, fx), live };
       return { forced: null, live };
     }
     if (capMs == null) return { forced: null, live };
     const elapsed = t - Date.parse(c.takenAt);
     const pushedAt = c.pushedAt ? Date.parse(c.pushedAt) : null;
-    const pr = pushedAt != null || elapsed >= capMs ? await pipelineRuns() : null;
+    const pr = pre.pr;
     const known = !!(pr && pr.ok);
     const runs = known && pushedAt != null ? pr.runs : [];
-    const inProgress = runs.find((r) => r.status === 'in_progress' && r.startedAt && Date.parse(r.startedAt) >= pushedAt);
-    c.pipeline = { checkedAt: iso(t), state: !pr ? 'not-checked' : !known ? 'unknown' : inProgress ? 'in_progress' : 'none-in-progress',
-      detail: pr && !known ? pr.detail : undefined, run: inProgress ? (inProgress.url || inProgress.id) : undefined };
-    if (inProgress) return { forced: null, live };
-    const queued = runs.filter((r) => QUEUED.has(r.status) && Date.parse(r.createdAt) >= pushedAt)
-      .map((r) => ({ r, min: (t - Date.parse(r.createdAt)) / MIN })).sort((a, b) => b.min - a.min)[0];
-    if (queued && queued.min > pipelineQueuedMaxMin) {
-      return { forced: await forced(s, c, 'pipeline-queued-10min', `pipeline run ${queued.r.id} has sat queued ${queued.min.toFixed(1)} min (limit ${pipelineQueuedMaxMin})`), live };
+    let owner = null;
+    if (c.ownerRun) owner = runs.find((r) => r.id === c.ownerRun.id) || null;
+    else owner = runs.filter((r) => r.startedAt && Date.parse(r.startedAt) >= pushedAt)
+      .sort((a, b) => Date.parse(a.startedAt) - Date.parse(b.startedAt))[0] || null;
+    if (owner) c.ownerRun = { id: owner.id, startedAt: owner.startedAt, status: owner.status, conclusion: owner.conclusion || null, completedAt: owner.completedAt || null, url: owner.url || null };
+    const or = c.ownerRun;
+    const held = (state, extra = {}) => { c.pipeline = { checkedAt: iso(t), state, ...extra }; return { forced: null, live }; };
+    if (owner && owner.status === 'in_progress') return held('owner-run-in-progress', { run: owner.url || owner.id });
+    if (or && or.status === 'completed' && or.conclusion === 'success' && or.completedAt && t < Date.parse(or.completedAt) + graceMs) {
+      return held('read-back-grace', { until: iso(Date.parse(or.completedAt) + graceMs) });
+    }
+    if (!or && known && pushedAt != null) {
+      const queued = runs.filter((r) => QUEUED.has(r.status) && Date.parse(r.createdAt) >= pushedAt)
+        .sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt))[0];
+      if (queued) {
+        const moving = runs.some((r) => r.status === 'in_progress');
+        if (healthyQueue && moving) return held('queued-behind-a-running-tick', { run: queued.url || queued.id });
+        let clockStart = Date.parse(queued.createdAt);
+        if (healthyQueue) {
+          for (const r of runs) {
+            const done = r.completedAt ? Date.parse(r.completedAt) : NaN;
+            if (r.status === 'completed' && done > clockStart && done <= t) clockStart = done;
+          }
+        }
+        const min = (t - clockStart) / MIN;
+        if (min > pipelineQueuedMaxMin) {
+          return { forced: forced(s, c, 'pipeline-queued-10min', `pipeline run ${queued.id} has sat queued ${min.toFixed(1)} min${healthyQueue ? ' with nothing in progress ahead of it' : ''} (limit ${pipelineQueuedMaxMin})`, fx), live };
+        }
+      }
     }
     if (elapsed >= capMs) {
-      return { forced: await forced(s, c, 'cap-40min-no-run', known
-        ? `${maxHoldMin} min since the claim and no owner pipeline run in progress`
-        : `${maxHoldMin} min since the claim; GitHub unreachable (${pr ? pr.detail : 'not checked'}) — unknown never extends a hold`), live };
+      const why = !known && pushedAt != null
+        ? `${maxHoldMin} min since the claim; GitHub unreachable (${pr ? pr.detail : 'not checked'}) — unknown never extends a hold`
+        : or && or.status === 'completed' ? `${maxHoldMin} min since the claim; the owner's pipeline run ${or.id} ended (${or.conclusion || 'no conclusion'})${or.conclusion === 'success' ? ` and its ${readbackGraceMin}-min read-back grace is over` : ', no grace'}`
+          : `${maxHoldMin} min since the claim and no owner pipeline run in progress`;
+      return { forced: forced(s, c, 'cap-40min-no-run', why, fx), live };
     }
-    return { forced: null, live };
+    return held(known ? 'none-in-progress' : pushedAt != null ? 'unknown' : 'not-pushed', known ? {} : { detail: pr ? pr.detail : undefined });
   }
 
-  // A forced release: the lane is freed, the holder re-joins the queue at the
-  // BACK (unless its run is dead), the reason is logged, a notice goes on the
-  // holder's ticket and an alert to the freshness alarm's channel. Notice and
-  // alert are best-effort: a failure is logged and never keeps the lane held.
-  async function forced(s, c, reason, detail) {
+  // A forced release: the lane is freed; the holder re-joins the queue at the
+  // BACK only if it has NOT pushed (a pushed holder has nothing to wait for) and
+  // its run is alive. The reason is logged now; the ticket notice and the alarm
+  // go out AFTER the lock (best-effort: a failure is logged, never keeps the
+  // lane held).
+  function forced(s, c, reason, detail, fx) {
     const dead = reason === 'owner-dead';
+    const pushed = !!c.pushedAt;
+    const requeue = !dead && !pushed;
     const message = `deploy lane forced release (${reason}): ${c.ticket} run ${c.runId} — ${detail}. ` +
-      `Claim taken ${c.takenAt}${c.pushedAt ? `, pushed ${c.pushedAt}` : ', nothing pushed'}.`;
-    const notice = await notify({ to: 'owner', issueId: c.issueId,
-      body: dead
+      `Claim taken ${c.takenAt}${pushed ? `, pushed ${c.pushedAt}` : ', nothing pushed'}.`;
+    s.claim = null;
+    if (requeue) addWaiter(s, c, iso(now()), { requeuedAfterCap: true, requeueReason: reason });
+    log(s, { event: dead ? 'released-dead-owner' : 'cap-released', reason, ticket: c.ticket, runId: c.runId, evidence: detail,
+      takenAt: c.takenAt, pushedAt: c.pushedAt || null, requeued: requeue });
+    const result = { claim: c, reason, detail, requeued: requeue, notice: null, alert: null };
+    fx.push(async () => {
+      const body = dead
         ? `## Deploy lane released — owner run ended\n\nClaim: ${describe(c, { state: 'dead', detail })}\n\n` +
           `The owning run is no longer active, so the claim is released (founder ruling TEN-273). The lane goes to the ` +
           `longest-waiting live claimant. Nothing this ticket left unfinished has been finished or undone.`
         : `## Deploy lane CAP-RELEASED — ${reason}\n\n${detail}.\n\nClaim: ${describe(c)}\n\n` +
-          `The lane was released and your run is back in the queue, at the back. If your push is out, keep checking ` +
-          `\`tools/check-live-build.sh ${c.readBack || c.sha || '<your sha>'}\` — it tests containment, so a later push does not invalidate it. ` +
-          `If you have nothing more to push, run \`node tools/deploy-lane.mjs release --ticket ${c.ticket}\` to leave the queue.` });
-    let al;
-    try { al = await alert({ reason, message }); } catch (e) { al = { ok: false, error: e.message }; }
-    s.claim = null;
-    if (!dead) addWaiter(s, c, iso(now()), { requeuedAfterCap: true, requeueReason: reason });
-    log(s, { event: dead ? 'released-dead-owner' : 'cap-released', reason, ticket: c.ticket, runId: c.runId, evidence: detail,
-      takenAt: c.takenAt, pushedAt: c.pushedAt || null, requeued: !dead,
-      notice: notice.ok ? notice.id : `failed: ${notice.error}`, alert: al.ok ? 'dispatched' : `failed: ${al.error}` });
-    return { claim: c, reason, detail, notice, alert: al };
+          (pushed
+            ? `Your push is out, so you are NOT re-queued: do your live read-back without the lane with ` +
+              `\`tools/check-live-build.sh ${c.readBack || c.sha}\` (it tests containment, so a later push does not invalidate it).`
+            : `You had not pushed, so you are back in the queue, at the back. If you have nothing more to push, run ` +
+              `\`node tools/deploy-lane.mjs release --ticket ${c.ticket}\` to leave the queue.`);
+      const notice = await notify({ to: 'owner', issueId: c.issueId, body });
+      let al;
+      try { al = await alert({ reason, message }); } catch (e) { al = { ok: false, error: e.message }; }
+      result.notice = notice; result.alert = al;
+      return (st) => log(st, { event: 'forced-release-delivery', reason, ticket: c.ticket, runId: c.runId,
+        notice: notice.ok ? notice.id : `failed: ${notice.error}`, alert: al.ok ? 'dispatched' : `failed: ${al.error}` });
+    });
+    return result;
   }
 
-  async function waitReport(s, me, w, holder, live, position) {
+  function queueWaitReport(s, me, w, holder, live, position, fx, out) {
     const t = now();
     const waited = t - Date.parse(w.since);
-    if (!(waited > WAIT_REPORT_MIN * MIN && (!w.reportedAt || t - Date.parse(w.reportedAt) >= WAIT_REPORT_MIN * MIN))) return null;
+    if (!(waited > WAIT_REPORT_MIN * MIN && (!w.reportedAt || t - Date.parse(w.reportedAt) >= WAIT_REPORT_MIN * MIN))) return;
     const body = `## Deploy lane: ${me.ticket} has waited ${Math.round(waited / MIN)} min (position ${position})\n\n` +
       (holder ? `Lane held by ${describe(holder, live)}` : 'The lane is free; waiters ahead of you go first.') +
       `\n\nWaiting since ${w.since}.`;
-    const report = await notify({ to: 'founder', issueId: me.issueId, body });
-    if (report.ok) { w.reportedAt = iso(t); log(s, { event: 'wait-reported', ticket: me.ticket, runId: me.runId, holder: holder ? holder.runId : null, position }); }
-    return report;
+    fx.push(async () => {
+      const report = await notify({ to: 'founder', issueId: me.issueId, body });
+      out.waitReport = report;
+      if (!report.ok) return null;
+      return (st) => { const ww = st.waiters[me.runId]; if (ww) ww.reportedAt = iso(t); log(st, { event: 'wait-reported', ticket: me.ticket, runId: me.runId, holder: holder ? holder.runId : null, position }); };
+    });
   }
 
   const batchFor = (s, me) => s.queue.filter((e) => e.runId !== me.runId);
@@ -370,15 +486,16 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
 
   async function claim(me, opts = {}) {
     const ready = await readiness(opts);
+    const pre = await prefetch(me, { waiters: true });
     if (!ready.ok) {
       // A waiter that is re-preparing is still claiming: it keeps its place
       // while it keeps calling, and it is told (and the log records) where it stands.
-      return withLock(file, async (save) => {
+      return locked(async (save) => {
         const s = readState(file);
         const w = s.waiters[me.runId];
         if (!w) return { code: EXIT.NOT_READY, action: 'not-ready', missing: ready.missing };
         w.lastSeen = iso(now());
-        const before = await ahead(s, me);
+        const before = ahead(s, me, pre);
         const position = before.length + 1;
         const waited = waitedMin(w);
         log(s, { event: 'waiting-not-ready', ticket: me.ticket, runId: me.runId, position, waitedMin: waited, missing: ready.missing.map((m) => m.split(':')[0]) });
@@ -386,15 +503,15 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
         return { code: EXIT.NOT_READY, action: 'not-ready', missing: ready.missing, position, waitedMin: waited, since: w.since };
       });
     }
-    return withLock(file, async (save) => {
+    return locked(async (save, fx) => {
       const s = readState(file);
       const t = now();
       pruneQueue(s);
       // Join BEFORE enforcing, so a holder re-queued in this same call lands
       // behind this caller.
-      const joined = s.claim && s.claim.runId === me.runId ? null : await join(s, me);
-      const { forced: freed, live } = await enforce(s);
-      let c = s.claim;
+      const joined = s.claim && s.claim.runId === me.runId ? null : join(s, me, pre);
+      const { forced: freed, live } = enforce(s, pre, fx);
+      const c = s.claim;
       if (c && c.runId === me.runId) {
         // Calling claim again never extends the hold. A NEW ready sha (it passed
         // the gate above) replaces the claimed one, so deploy-batch accepts it.
@@ -407,8 +524,8 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
         save(s);
         return { code: EXIT.HOLD, action: 'already-held', claim: c, position: 0, shaUpdatedFrom: ready.sha !== from ? from : undefined, batch: batchFor(s, me) };
       }
-      const { w, inheritedFrom } = joined || await join(s, me);
-      const before = await ahead(s, me);
+      const { w, inheritedFrom } = joined || join(s, me, pre);
+      const before = ahead(s, me, pre);
       const position = before.length + 1;
       const waited = waitedMin(w, t);
       let out;
@@ -418,20 +535,21 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
         const reclaim = !!freed && freed.reason === 'owner-dead' && freed.claim.ticket === me.ticket;
         if (reclaim) {
           s.claim.reclaimedFrom = freed.claim.runId;
-          await notify({ to: 'owner', issueId: freed.claim.issueId,
+          fx.push(async () => { await notify({ to: 'owner', issueId: freed.claim.issueId,
             body: `## Deploy lane RE-CLAIMED by a new run of ${me.ticket}\n\nRun \`${me.runId}\` holds the lane now (previous run \`${freed.claim.runId}\` ended). ` +
-              `New run id recorded; nothing the old run left unfinished has been finished or undone.` });
+              `New run id recorded; nothing the old run left unfinished has been finished or undone.` }); return null; });
         } else if (freed) s.claim.releasedFrom = freed.claim.runId;
         log(s, { event: reclaim ? 're-claimed' : 'claimed', ticket: me.ticket, runId: me.runId, sha: ready.sha, position: 1, waitedMin: waited, inheritedFrom });
         out = { code: EXIT.HOLD, action: reclaim ? 're-claimed' : (freed && freed.reason === 'owner-dead' ? 'released-dead-owner' : 'claimed'), claim: s.claim, position: 1, waitedMin: waited,
           from: freed ? freed.claim : undefined, forcedRelease: freed ? { reason: freed.reason, detail: freed.detail } : undefined,
-          evidence: freed ? freed.detail : undefined, notice: freed ? freed.notice : undefined,
+          evidence: freed ? freed.detail : undefined,
           capReleased: freed && freed.reason !== 'owner-dead' ? freed.claim : undefined, batch: batchFor(s, me) };
+        if (freed) fx.push(async () => { out.notice = freed.notice; return null; });
       } else {
-        const report = await waitReport(s, me, w, c, live, position);
         log(s, { event: 'waiting', ticket: me.ticket, runId: me.runId, position, waitedMin: waited, holder: c ? c.runId : null, head: before[0] ? before[0].runId : null });
         out = { code: EXIT.WAIT, action: c ? 'wait' : 'wait-turn', claim: c, holder: c ? describe(c, live) : undefined, owner: live || undefined, position, waitedMin: waited, since: w.since,
-          ahead: before.map((x) => ({ ticket: x.ticket, runId: x.runId, since: x.since })), inheritedFrom, waitReport: report };
+          ahead: before.map((x) => ({ ticket: x.ticket, runId: x.runId, since: x.since })), inheritedFrom, waitReport: null };
+        queueWaitReport(s, me, w, c, live, position, fx, out);
       }
       save(s);
       return out;
@@ -440,12 +558,13 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
 
   // "Do I still hold it?" — never extends the hold.
   async function renew(me) {
-    return withLock(file, async (save) => {
+    const pre = await prefetch(me);
+    return locked(async (save, fx) => {
       const s = readState(file);
-      const { forced: freed } = await enforce(s);
-      save(s);
+      const { forced: freed } = enforce(s, pre, fx);
       const c = s.claim;
       if (!c || c.runId !== me.runId) {
+        save(s);
         const mine = freed && freed.claim.runId === me.runId;
         return { code: EXIT.REFUSED, action: mine ? 'cap-released' : 'not-owner', reason: mine ? freed.reason : undefined, claim: c };
       }
@@ -459,7 +578,7 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
   // Withdraws the caller's ready entry AND its place in the waiter queue whether
   // or not it holds the lane; releases the lane if it does.
   async function release(me) {
-    return withLock(file, async (save) => {
+    return locked(async (save) => {
       const s = readState(file);
       const c = s.claim;
       const queued = s.queue.length;
@@ -475,57 +594,62 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
   }
 
   // tools/deploy-batch.mjs records what it pushed: the holder's read-back sha
-  // and the push time, which is what "the owner's pipeline run" is measured from.
-  async function recordPush(me, { readBack, pushedHead }) {
-    return withLock(file, async (save) => {
+  // and the push time (captured BEFORE the push), which is what "the owner's
+  // pipeline run" is measured from. A new push resets the recorded owner run.
+  async function recordPush(me, { readBack, pushedHead, pushedAt }) {
+    return locked(async (save) => {
       const s = readState(file);
       const c = s.claim;
       if (!c || c.runId !== me.runId) return { code: EXIT.REFUSED, action: 'not-owner' };
-      c.readBack = readBack; c.pushedHead = pushedHead || readBack; c.pushedAt = iso(now());
-      log(s, { event: 'pushed', ticket: me.ticket, runId: me.runId, readBack, pushedHead: c.pushedHead });
+      c.readBack = readBack; c.pushedHead = pushedHead || readBack; c.pushedAt = pushedAt || iso(now()); c.ownerRun = null;
+      log(s, { event: 'pushed', ticket: me.ticket, runId: me.runId, readBack, pushedHead: c.pushedHead, pushedAt: c.pushedAt });
       save(s);
       return { code: EXIT.HOLD, action: 'recorded', claim: c };
     });
   }
 
-  // The lane covers deploying only: once the live build contains the sha, the
-  // lane is released. Only the claimed sha or the recorded read-back sha counts.
+  // The lane covers deploying only. The SITE is checked FIRST: once the live
+  // build contains the sha, the lane is released as released-live-confirmed —
+  // never as a forced release. Only if it is not live yet do the hold rules run.
+  // Only the claimed sha or the recorded read-back sha is accepted.
   async function confirmLive(me, { sha } = {}) {
-    const held = await renew(me);
-    if (held.code !== 0) return { code: EXIT.REFUSED, action: held.action, reason: held.reason, claim: held.claim };
-    const c = held.claim;
+    const c = readState(file).claim;
+    if (!c || c.runId !== me.runId) return { code: EXIT.REFUSED, action: 'not-owner', claim: c };
     if (sha !== c.sha && sha !== c.readBack) {
       return { code: EXIT.REFUSED, action: 'wrong-sha', detail: `${sha} is neither your claimed sha (${c.sha}) nor the read-back sha deploy-batch recorded (${c.readBack || 'none yet'})` };
     }
     const r = await checkLive(sha);
-    if (r.code !== 0) {
-      return { code: EXIT.WAIT, action: 'still-holding', live: r.code,
-        detail: r.code === 1 ? `${sha} is not in the live build yet — still holding the lane; poll again` : `live build undetermined (check-live-build exit ${r.code}) — still holding the lane; poll again`,
-        output: r.output };
+    if (r.code === 0) {
+      return locked(async (save) => {
+        const s = readState(file);
+        const cur = s.claim;
+        if (!cur || cur.runId !== me.runId) return { code: EXIT.REFUSED, action: 'not-owner', claim: cur };
+        s.claim = null;
+        delete s.waiters[me.runId];
+        log(s, { event: 'released-live-confirmed', ticket: me.ticket, runId: me.runId, sha, heldMin: Math.round((now() - Date.parse(cur.takenAt)) / MIN) });
+        save(s);
+        return { code: EXIT.HOLD, action: 'released-live-confirmed', sha, output: r.output };
+      });
     }
-    return withLock(file, async (save) => {
-      const s = readState(file);
-      const cur = s.claim;
-      if (!cur || cur.runId !== me.runId) return { code: EXIT.REFUSED, action: 'not-owner', claim: cur };
-      s.claim = null;
-      delete s.waiters[me.runId];
-      log(s, { event: 'released-live-confirmed', ticket: me.ticket, runId: me.runId, sha, heldMin: Math.round((now() - Date.parse(cur.takenAt)) / MIN) });
-      save(s);
-      return { code: EXIT.HOLD, action: 'released-live-confirmed', sha, output: r.output };
-    });
+    const held = await renew(me);
+    if (held.code !== 0) return { code: EXIT.REFUSED, action: held.action, reason: held.reason, claim: held.claim, live: r.code };
+    return { code: EXIT.WAIT, action: 'still-holding', live: r.code, pipeline: held.pipeline,
+      detail: r.code === 1 ? `${sha} is not in the live build yet — still holding the lane; poll again` : `live build undetermined (check-live-build exit ${r.code}) — still holding the lane; poll again`,
+      output: r.output };
   }
 
   async function status(me) {
-    return withLock(file, async (save) => {
+    const pre = await prefetch(me);
+    return locked(async (save, fx) => {
       const s = readState(file);
-      const { live } = await enforce(s);
+      const { live } = enforce(s, pre, fx);
       pruneQueue(s);
       save(s);
       const c = s.claim;
       const t = now();
       const waitQueue = order(s).map((w, i) => ({ position: i + 1, ticket: w.ticket, runId: w.runId, since: w.since, waitedMin: waitedMin(w, t), lastSeen: w.lastSeen }));
       const mine = me && s.landed[me.runId] ? { landed: s.landed[me.runId] } : {};
-      const rules = { capMin: maxHoldMin, pipelineQueuedMaxMin, waiterStaleMin: WAITER_STALE_MIN };
+      const rules = { capMin: maxHoldMin, pipelineQueuedMaxMin, readbackGraceMin, healthyQueue, waiterStaleMin: WAITER_STALE_MIN };
       if (!c) return { code: EXIT.HOLD, action: 'free', waitQueue, queue: s.queue, ...rules, ...mine };
       return { code: EXIT.HOLD, action: 'held', claim: c, holder: describe(c, live), legacy: isLegacy(c) || undefined, owner: live, waitQueue, queue: s.queue, ...rules, ...mine };
     });
@@ -536,7 +660,7 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
   async function ready(me, opts = {}) {
     const r = await readiness(opts);
     if (!r.ok) return { code: EXIT.NOT_READY, action: 'not-ready', missing: r.missing };
-    return withLock(file, async (save) => {
+    return locked(async (save) => {
       const s = readState(file);
       pruneQueue(s);
       const entry = { ticket: me.ticket, issueId: me.issueId || null, runId: me.runId, kind: me.kind, sha: r.sha, reviewed: true, readyAt: iso(now()) };
@@ -550,7 +674,7 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
 
   // Withdraw the caller's queued entry.
   async function unready(me) {
-    return withLock(file, async (save) => {
+    return locked(async (save) => {
       const s = readState(file);
       const before = s.queue.length;
       s.queue = s.queue.filter((e) => e.runId !== me.runId);
@@ -563,24 +687,35 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
 
   // The holder's batch candidates: other runs' entries, oldest first, after
   // dropping expired entries and entries whose owner run has ended (nobody would
-  // do their live read-back). A notice for a dropped entry is best-effort.
+  // do their live read-back). Liveness is checked BEFORE the lock under a
+  // deadline; an entry not reached is kept but not batched this round. The
+  // notice for a dropped entry goes out after the lock (best-effort).
   async function batchCandidates(me) {
-    return withLock(file, async (save) => {
+    const snap = readState(file);
+    const deadline = Date.now() + livenessBudgetMs;
+    const liveOf = new Map();
+    for (const e of snap.queue) {
+      if (e.runId === me.runId) continue;
+      if (Date.now() >= deadline) break;
+      liveOf.set(`${e.runId}|${e.sha}`, await liveness(e));
+    }
+    return locked(async (save, fx) => {
       const s = readState(file);
       pruneQueue(s);
       const keep = [];
       const unchecked = new Set();
-      const deadline = Date.now() + livenessBudgetMs;
       for (const e of s.queue) {
         if (e.runId === me.runId) { keep.push(e); continue; }
-        // Out of time: treat as unknown — kept, but not batched this round.
-        if (Date.now() >= deadline) { keep.push(e); unchecked.add(e); continue; }
-        const live = await liveness(e);
+        const live = liveOf.get(`${e.runId}|${e.sha}`);
+        if (!live) { keep.push(e); unchecked.add(e); continue; }
         if (live.state !== 'dead') { keep.push(e); continue; }
-        const notice = await notify({ to: 'owner', issueId: e.issueId,
-          body: `## Deploy lane: your queued commit was dropped — run ended\n\n\`${e.sha}\` (run \`${e.runId}\`) was queued with \`deploy-lane.mjs ready\`, ` +
-            `but that run is no longer active (${live.detail}), so nobody would do its live read-back. It was NOT landed. Re-queue it from a live run.` });
-        log(s, { event: 'ready-dropped-dead-owner', ticket: e.ticket, runId: e.runId, sha: e.sha, evidence: live.detail, notice: notice.ok ? notice.id : `failed: ${notice.error}` });
+        log(s, { event: 'ready-dropped-dead-owner', ticket: e.ticket, runId: e.runId, sha: e.sha, evidence: live.detail });
+        fx.push(async () => {
+          await notify({ to: 'owner', issueId: e.issueId,
+            body: `## Deploy lane: your queued commit was dropped — run ended\n\n\`${e.sha}\` (run \`${e.runId}\`) was queued with \`deploy-lane.mjs ready\`, ` +
+              `but that run is no longer active (${live.detail}), so nobody would do its live read-back. It was NOT landed. Re-queue it from a live run.` });
+          return null;
+        });
       }
       s.queue = keep;
       save(s);
@@ -592,7 +727,7 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
   // leaves the queue only if BOTH its run and its sha match what was landed: a
   // run that re-queued a newer commit during the batch keeps that entry.
   async function recordBatch(me, { landed = [], skipped = [], dropped = [] }) {
-    return withLock(file, async (save) => {
+    return locked(async (save) => {
       const s = readState(file);
       const t = iso(now());
       for (const l of landed) {
@@ -686,12 +821,11 @@ export function gitRebaseCheck({ cwd = process.cwd() } = {}) {
     const f = git(['fetch', 'origin', '--quiet'], { cwd });
     if (f.status !== 0) return { ok: false, codeCommits: [], dataCommits: 0, detail: `git fetch origin failed — cannot confirm rebased (${f.stderr.split('\n')[0]})` };
     if (git(['rev-parse', '--verify', '--quiet', `${sha}^{commit}`], { cwd }).status !== 0) return { ok: false, codeCommits: [], dataCommits: 0, detail: `${sha} is not a commit in this repository` };
-    const l = git(['log', '--format=%H%x1f%s%x1f%B%x1e', `${sha}..origin/main`], { cwd });
+    const l = git(['log', '--format=%H%x1f%s%x1f%ae%x1e', `${sha}..origin/main`], { cwd });
     if (l.status !== 0) return { ok: false, codeCommits: [], dataCommits: 0, detail: `git log ${sha}..origin/main failed: ${l.stderr}` };
-    const commits = l.stdout.split('\x1e').map((x) => x.trim()).filter(Boolean).map((x) => { const [h, subject, body] = x.split('\x1f'); return { sha: h, subject, body }; });
-    // The marker must be in the SUBJECT: a code commit that merely mentions
-    // "[skip ci]" in its body (this very tool's commit did) is still code.
-    const code = commits.filter((c) => !c.subject.includes('[skip ci]'));
+    const commits = l.stdout.split('\x1e').map((x) => x.trim()).filter(Boolean).map((x) => { const [h, subject, authorEmail] = x.split('\x1f'); return { sha: h, subject, authorEmail }; });
+    // Data = [skip ci] in the SUBJECT (a body mention is not) AND a data-bot author.
+    const code = commits.filter((c) => !isDataCommit(c));
     const dataCommits = commits.length - code.length;
     return code.length
       ? { ok: false, codeCommits: code.map(({ sha: h, subject }) => ({ sha: h, subject })), dataCommits,
@@ -729,25 +863,29 @@ async function gh(pathname, { token, method = 'GET', body, apiBase = GH_API } = 
   return r;
 }
 
-// pipeline.yml runs, newest first, with each in-progress run's earliest job start.
+// pipeline.yml runs, newest first. startedAt = the earliest job started_at for
+// at most JOBS_CALLS_MAX runs (the earliest-started ones at/after `since`, the
+// candidates for "the owner's run"), else the run's run_started_at.
+const JOBS_CALLS_MAX = 3;
 export function githubPipelineRuns({ repo = DEFAULT_REPO, token = () => githubToken(), workflow = 'pipeline.yml', apiBase = GH_API } = {}) {
-  return async () => {
+  return async ({ since } = {}) => {
     try {
       const tk = typeof token === 'function' ? token() : token;
       if (!tk) return { ok: false, detail: 'no GitHub token (GH_TOKEN or keychain)' };
       const call = (p) => gh(p, { token: tk, apiBase });
       const r = await call(`/repos/${repo}/actions/workflows/${workflow}/runs?per_page=20`);
       if (!r.ok) return { ok: false, detail: `GitHub runs HTTP ${r.status}` };
-      const runs = [];
-      for (const run of (await r.json()).workflow_runs || []) {
-        let startedAt = null;
-        if (run.status === 'in_progress') {
-          const j = await call(`/repos/${repo}/actions/runs/${run.id}/jobs?per_page=50`);
-          if (!j.ok) return { ok: false, detail: `GitHub jobs HTTP ${j.status}` };
-          const starts = ((await j.json()).jobs || []).map((x) => x.started_at).filter(Boolean).sort();
-          startedAt = starts[0] || null;
-        }
-        runs.push({ id: run.id, status: run.status, createdAt: run.created_at, startedAt, url: run.html_url });
+      const runs = ((await r.json()).workflow_runs || []).map((run) => ({ id: run.id, status: run.status, conclusion: run.conclusion || null,
+        createdAt: run.created_at, startedAt: run.status === 'queued' || run.status === 'waiting' || run.status === 'pending' || run.status === 'requested' ? null : (run.run_started_at || null),
+        completedAt: run.status === 'completed' ? run.updated_at : null, url: run.html_url }));
+      const sinceMs = since ? Date.parse(since) : -Infinity;
+      const cands = runs.filter((x) => x.startedAt && Date.parse(x.startedAt) >= sinceMs - 10 * MIN)
+        .sort((a, b) => Date.parse(a.startedAt) - Date.parse(b.startedAt)).slice(0, JOBS_CALLS_MAX);
+      for (const x of cands) {
+        const j = await call(`/repos/${repo}/actions/runs/${x.id}/jobs?per_page=50`);
+        if (!j.ok) return { ok: false, detail: `GitHub jobs HTTP ${j.status}` };
+        const starts = ((await j.json()).jobs || []).map((k) => k.started_at).filter(Boolean).sort();
+        if (starts[0]) x.startedAt = starts[0];
       }
       return { ok: true, runs };
     } catch (e) { return { ok: false, detail: `GitHub unreachable: ${e.message}` }; }
@@ -807,12 +945,20 @@ function parseArgs(argv) {
 
 const USAGE = 'usage: node tools/deploy-lane.mjs claim|ready --ticket TEN-123 --sha <commit> --reviewed\n' +
   '       node tools/deploy-lane.mjs confirm-live --ticket TEN-123 --sha <the sha you pushed>\n' +
+  '       node tools/deploy-lane.mjs rebased --sha <commit>   (exit 0 rebased, 7 not)\n' +
   '       node tools/deploy-lane.mjs renew|release|unready --ticket TEN-123\n       node tools/deploy-lane.mjs status [--ticket TEN-123]';
 
 async function main() {
   let a;
   try { a = parseArgs(process.argv.slice(2)); } catch (e) { console.error(`${e.message}\n${USAGE}`); process.exit(EXIT.USAGE); }
-  const needsSha = a.cmd === 'claim' || a.cmd === 'ready' || a.cmd === 'confirm-live';
+  const needsSha = a.cmd === 'claim' || a.cmd === 'ready' || a.cmd === 'confirm-live' || a.cmd === 'rebased';
+  if (a.cmd === 'rebased' && a.sha) {
+    // The one data-commit classifier, for shell callers (the drop-in job): exit 0 rebased, 7 not.
+    const full = git(['rev-parse', '--verify', '--quiet', `${a.sha}^{commit}`]);
+    const r = gitRebaseCheck()(full.status === 0 ? full.stdout : a.sha);
+    console.log(JSON.stringify(r, null, 2));
+    process.exit(r.ok ? EXIT.HOLD : EXIT.NOT_READY);
+  }
   if (!['claim', 'ready', 'unready', 'renew', 'release', 'status', 'confirm-live'].includes(a.cmd) || (a.cmd !== 'status' && !a.ticket) || (needsSha && !a.sha)) {
     console.error(USAGE);
     process.exit(EXIT.USAGE);
@@ -833,3 +979,6 @@ async function main() {
 }
 
 if (process.argv[1] && fs.realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)) main();
+
+// For the store-lock test only.
+export const _internals = { withLock, readState, writeState };

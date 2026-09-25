@@ -29,9 +29,11 @@ Keep posting on your issue so the founder can see it, but the tool's answer is w
    - **Suite green:** `tools/ci-suite.sh <sha>` exits 0. It runs `npm test` on exactly
      that sha in a fresh `git clone --depth 100`, and only on exit 0 does it write
      `~/.stennisfy/suite-receipts/<sha>.json`. Nothing else writes receipts.
-   - **Rebased:** after `git fetch origin`, every commit in `<sha>..origin/main` has
-     `[skip ci]` in its **subject** (a data bot). One missing code commit means you are
-     not rebased.
+   - **Rebased:** after `git fetch origin`, every commit in `<sha>..origin/main` is a
+     **data-bot commit**: `[skip ci]` in its **subject** AND written by a data-bot author
+     (`DATA_BOT_AUTHORS` in `tools/deploy-lane.mjs`, built from the authors of the last
+     500 `[skip ci]` commits on main). A commit titled `[skip ci]` by anyone else is code.
+     One missing code commit means you are not rebased.
    - **Reviewed:** the review is done. `--reviewed` is your attestation, and the claim
      records it.
 2. **Claim, and keep claiming until it is your turn:**
@@ -70,9 +72,14 @@ Keep posting on your issue so the founder can see it, but the tool's answer is w
      `node tools/deploy-lane.mjs confirm-live --ticket TEN-123 --sha <readBack>`. It
      accepts only your claimed sha or the `readBack` sha deploy-batch recorded; any
      other sha → exit 1.
-   - It runs `tools/check-live-build.sh <sha>`:
-     - on exit 0 it **releases the lane** (`released-live-confirmed`) and exits 0;
-     - on exit 1 (not live yet) or 2 (undetermined) it keeps holding and exits 3.
+   - It checks the **site first** (`tools/check-live-build.sh <sha>`):
+     - on exit 0 it **releases the lane** (`released-live-confirmed`) and exits 0, even
+       if the hold rules below would have released you at that moment. A confirmed
+       deploy is never reported as a forced release;
+     - on exit 1 (not live yet) or 2 (undetermined) the hold rules run. If you still
+       hold the lane it exits 3; if they released you, exit 1 with the reason.
+   - `check-live-build.sh` has no cache-bust option. CDN lag (Pages `max-age` 600 s) is
+     covered by the read-back grace in step 6.
    - `readBack` equals your sha when your commit was pushed as is (holder alone, already
      on top of `origin/main`). Otherwise it was cherry-picked, and only `readBack` is on main.
    - **All verification after that runs without the lane.** If verification finds a
@@ -84,33 +91,50 @@ Keep posting on your issue so the founder can see it, but the tool's answer is w
    - **If a code commit lands after your claim,** your claimed sha is no longer the
      tested tree. `release`, rebase, run `tools/ci-suite.sh` again and claim again;
      `deploy-batch.mjs` refuses to push over it.
-6. **How long you may hold the lane** (founder, 2026-09-25 02:05Z). Checked on every
-   `claim`, `status`, `renew` and `confirm-live`:
+6. **How long you may hold the lane** (founder, 2026-09-25 02:05Z). The hold and its
+   40-min clock start at your **claim**, so the clobber check, `deploy-batch.mjs` (and a
+   batch's combined suite) and the push all run inside it. Checked on every `claim`,
+   `status`, `renew` and `confirm-live`:
    - (i) **your run is dead** → released at once, reason `owner-dead`;
-   - (ii) **your pipeline run is in progress** → you keep the lane, even past 40 min;
-     a healthy deploy is never cut off;
+   - (ii) **your pipeline run is in progress** → you keep the lane, even past 40 min; a
+     healthy deploy is never cut off. After that run **completes successfully** you keep
+     it for another **12 min** (`READBACK_GRACE_MIN` = Pages `max-age` 600 s + 2 min), so
+     your read-back can see it. A failed or cancelled run gets no grace;
    - (iii) **your pipeline run has sat queued for more than 10 min**
      (`PIPELINE_QUEUED_MAX_MIN`) → released, reason `pipeline-queued-10min`;
-   - (iv) **40 min since the claim** (`MAX_HOLD_MIN`, from `takenAt`) **and no pipeline
-     run of yours in progress** → released, reason `cap-40min-no-run`.
+   - (iv) **40 min since the claim** (`MAX_HOLD_MIN`, from `takenAt`) **and none of the
+     above** → released, reason `cap-40min-no-run`.
 
    Definitions and details:
-   - **"Your pipeline run"** is a `pipeline.yml` run whose first job started at or after
-     your push time (`pushedAt`, recorded by `deploy-batch.mjs`), because a run
-     re-points to the tip of main when it starts.
-   - **"Queued"** means created at or after your push and still queued, waiting or
-     pending.
+   - **"Your pipeline run"** is the **first** `pipeline.yml` run that started at or after
+     your push time. `pushedAt` is captured by `deploy-batch.mjs` just before the push,
+     because a run re-points to the tip of main when it starts. It is recorded on the
+     claim once seen. **Only it extends the hold; later ticks never do.**
+   - **"Queued"** means created at or after your push and not yet started.
+   - **[pending the founder] Healthy queueing** (`HEALTHY_QUEUE_PAUSES_CLOCK`, on). The
+     pipeline group allows one running and one pending run, so your run can sit pending
+     behind a tick that started before your push. While such a tick is in progress,
+     your deploy is moving: no (iii), and it counts as in progress for (iv). The 10-min
+     queued clock only runs while nothing is in progress. Set the flag to `false` to
+     restore the ruling's literal text.
    - **GitHub unreachable = unknown**, and unknown **never** extends a hold: rule (iv)
-     applies as if no run were in progress.
+     applies as if no run were in progress. A grace already earned from a recorded
+     successful run still applies.
    - `renew` and `claim` never extend anything. `renew` answers "do I still hold it?"
      (exit 0 yes, exit 1 no, with the reason).
    - **A forced release:**
-     - puts you back in the queue at the back, unless your run is dead;
+     - puts you back in the queue at the back **only if you had not pushed** and your
+       run is alive. A holder whose push is out has nothing to wait for; the notice
+       says so and gives the read-back command;
      - logs the reason;
-     - posts on your ticket, saying to `release` if you have nothing more to push;
+     - posts on your ticket;
      - **dispatches the freshness alarm's channel**: a `pipeline-watchdog.yml` run with
-       `lane_alert` = the reason text, which goes red.
-     Notice and alarm are best-effort; a failure is logged and never keeps the lane held.
+       `lane_alert` = the reason text (with `%`, CR and LF escaped), which goes red.
+     Notice and alarm go out after the store lock is released, and are best-effort: a
+     failure is logged and never keeps the lane held.
+   - **Nothing inside the store lock touches the network.** Liveness, pipeline runs and
+     the GitHub token are fetched before it (one shared liveness deadline; at most 3
+     jobs calls), and notices and alarms are sent after it.
 7. **Never wait silently.** At every `claim` after 30 min of waiting, the tool posts a
    report on your ticket: who holds the lane, since when, whether that run is alive,
    and your position. It repeats every 30 min while you wait.
@@ -165,10 +189,13 @@ Keep posting on your issue so the founder can see it, but the tool's answer is w
 - **The drop-in job:** run `bash tools/odds-archive-dropin.sh --install` right after the
   merge. The installed launchd copy calls `claim` without `--sha`, which now exits 2, so
   until reinstalled it fails closed.
-- **Old tool still in use:** until every checkout and worktree rebases onto this
-  version, an old copy of `deploy-lane.mjs` can still renew (extend) a claim, claim
-  without the ready gate and take a free lane out of turn. The store is shared on
-  purpose, so there is no version gate: it could split the lane in two.
+- **Old tool still in use:** a worktree that has not rebased onto this version runs the
+  old TEN-261 tool against the same store. That tool can renew (extend) its own claim by
+  45 min at a time, claim without the ready gate, take a free lane out of turn (it
+  ignores the waiter queue), and take over a claim it sees as expired. The new tool
+  treats that claim as a legacy lease (below). The store is shared on purpose, so there
+  is no version gate: one could split the lane in two. Each worktree is safe once it
+  rebases.
 - **A claim written by the old tool** (no version marker, a lease `expiresAt`) is shown
   as a **legacy lease**, never as a hold cap. Its expiry is honoured **once**, even if
   an old tool renews it later, and then it is freed (reason `legacy-lease-expired`).
@@ -190,7 +217,8 @@ Keep posting on your issue so the founder can see it, but the tool's answer is w
   terminal) claim as `session:<ticket>`. Their liveness can't be checked:
   - a session **holder** is freed by `release`, `confirm-live` or the hold rules (6).
     It can never be confirmed dead, so a dead session holder is freed at 40 min
-    unless a pipeline run of its own is in progress;
+    unless its own pipeline run is in progress (or in its read-back grace). The old
+    rule — session claims never taken automatically, the founder decides — is gone;
   - a session **waiter** is dropped after 15 min without a `claim`, like every waiter;
   - a session's waiter reports go to its terminal (stderr), not to a ticket.
 - **Data bots are exempt** (founder ruling, 2026-09-23). These are the GitHub Actions
@@ -220,6 +248,8 @@ Only 0 lets you push. Codes 4 and 5 (TEN-261) are retired; no path returns them.
   - `MAX_HOLD_MIN`: 40 (from `takenAt`; extended only while your pipeline run is in progress);
   - `PIPELINE_QUEUED_MAX_MIN`: 10;
   - `WAITER_STALE_MIN`: 15 (all waiters);
+  - `READBACK_GRACE_MIN`: 12;
+  - `HEALTHY_QUEUE_PAUSES_CLOCK`: true (proposal, pending the founder);
   - `WAIT_REPORT_MIN`: 30;
   - `READY_TTL_MIN`: 60.
 - **Measured 2026-09-23:** push → live 19.3 and 21.9 min; Pages publishes every 9.9 min

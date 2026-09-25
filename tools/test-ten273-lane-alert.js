@@ -92,11 +92,29 @@ const CHECKS = {
     assert.strictEqual(st[0].name, STEP, `first step is "${st[0].name}"`);
     assert.match(st[0].if || '', /inputs\.lane_alert != ''/);
   },
-  'every other step still runs after it (if: always())'(yml) {
+  'every other step still runs after it (always() or !cancelled())'(yml) {
     const others = steps(yml).slice(1);
     assert.ok(others.length >= 4, `only ${others.length} other steps parsed`);
-    const missing = others.filter((s) => s.if !== 'always()').map((s) => s.name);
+    const missing = others.filter((s) => s.if !== 'always()' && s.if !== '${{ !cancelled() }}').map((s) => s.name);
     assert.deepStrictEqual(missing, [], `steps that would be skipped after the alert fails: ${missing.join(', ')}`);
+  },
+  'checkout and the wedge alarm use !cancelled() (a superseded run stops)'(yml) {
+    const st = steps(yml);
+    const want = ['uses actions/checkout@v4', 'Alarm — pipeline run wedged past its timeout'];
+    for (const n of want) {
+      const x = st.find((s) => s.name === n);
+      assert.ok(x, `no step ${n}`);
+      assert.strictEqual(x.if, '${{ !cancelled() }}', `${n}: if is ${x.if}`);
+    }
+  },
+  'executed: a CRLF + :: injection cannot start a second workflow command'(yml) {
+    const st = steps(yml)[0];
+    const d = fs.mkdtempSync(path.join(os.tmpdir(), 'ten273-alert-'));
+    const r = execStep(st, 'reason x\r\n::warning::pwned\n::add-mask::y 100%', d);
+    assert.strictEqual(r.status, 1);
+    const lines = r.stdout.split('\n').filter(Boolean);
+    assert.deepStrictEqual(lines.filter((l) => /^::(?!error::)/.test(l)), [], `injected command lines: ${lines.join(' | ')}`);
+    assert.ok(r.stdout.includes('reason x%0D%0A::warning::pwned%0A::add-mask::y 100%25'), `stdout: ${JSON.stringify(r.stdout)}`);
   },
   'executed: the step prints ::error:: with the reason text and fails the job'(yml) {
     const st = steps(yml)[0];
@@ -126,16 +144,20 @@ const CHECKS = {
 // Mutants of the REAL workflow text: each must fail the named check.
 const MUTANTS = [
   ['the alert step does not fail the job', 'executed: the step prints ::error:: with the reason text and fails the job',
-    "          printf '::error::deploy lane forced release — %s\\n' \"$LANE_ALERT\"\n          exit 1\n",
-    "          printf '::error::deploy lane forced release — %s\\n' \"$LANE_ALERT\"\n"],
+    "          printf '::error::deploy lane forced release — %s\\n' \"$msg\"\n          exit 1\n",
+    "          printf '::error::deploy lane forced release — %s\\n' \"$msg\"\n"],
   ['the reason text is dropped from the error', 'executed: the step prints ::error:: with the reason text and fails the job',
-    "printf '::error::deploy lane forced release — %s\\n' \"$LANE_ALERT\"", "printf '::error::deploy lane forced release\\n'"],
+    "printf '::error::deploy lane forced release — %s\\n' \"$msg\"", "printf '::error::deploy lane forced release\\n'"],
   ['the message is interpolated into the script', 'executed: the message cannot run as shell',
-    "printf '::error::deploy lane forced release — %s\\n' \"$LANE_ALERT\"", "eval \"echo ::error::deploy lane forced release — $LANE_ALERT\""],
-  ['the wedge alarm loses if: always()', 'every other step still runs after it (if: always())',
-    '        id: wedge\n        if: always()\n', '        id: wedge\n'],
-  ['checkout loses if: always()', 'every other step still runs after it (if: always())',
-    '      - uses: actions/checkout@v4\n        if: always()\n', '      - uses: actions/checkout@v4\n'],
+    "printf '::error::deploy lane forced release — %s\\n' \"$msg\"", "eval \"echo ::error::deploy lane forced release — $LANE_ALERT\""],
+  ['the wedge alarm loses its if', 'every other step still runs after it (always() or !cancelled())',
+    '        id: wedge\n        if: ${{ !cancelled() }}\n', '        id: wedge\n'],
+  ['checkout loses its if', 'every other step still runs after it (always() or !cancelled())',
+    '      - uses: actions/checkout@v4\n        if: ${{ !cancelled() }}\n', '      - uses: actions/checkout@v4\n'],
+  ['the wedge alarm keeps always() (a superseded run would not stop)', 'checkout and the wedge alarm use !cancelled() (a superseded run stops)',
+    '        id: wedge\n        if: ${{ !cancelled() }}\n', '        id: wedge\n        if: always()\n'],
+  ['the alert text is not escaped', 'executed: a CRLF + :: injection cannot start a second workflow command',
+    '          msg="${msg//$lf/$lf25}"\n', ''],
   ['the alert step is not first', 'the lane alert is the FIRST step, gated on a non-empty lane_alert',
     '    steps:\n', '    steps:\n      - uses: actions/setup-node@v4\n        if: always()\n\n'],
   ['no lane_alert input', 'workflow_dispatch declares a string input lane_alert, default empty',

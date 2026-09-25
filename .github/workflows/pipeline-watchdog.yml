@@ -95,17 +95,24 @@ jobs:
     steps:
       # (d) TEN-273: a deploy-lane forced release, in the freshness alarm's
       #     channel. The text arrives through env, never interpolated into the
-      #     script, so a message cannot run as shell.
+      #     script, so a message cannot run as shell; %, CR and LF are escaped
+      #     (workflow-command escaping), so it cannot start a second command.
       - name: Alarm — deploy lane forced release
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.lane_alert != '' }}
         env:
           LANE_ALERT: ${{ inputs.lane_alert }}
         run: |
-          printf '::error::deploy lane forced release — %s\n' "$LANE_ALERT"
+          pct='%'; pct25='%25'; cr=$'\r'; cr25='%0D'; lf=$'\n'; lf25='%0A'
+          msg="${LANE_ALERT//$pct/$pct25}"
+          msg="${msg//$cr/$cr25}"
+          msg="${msg//$lf/$lf25}"
+          printf '::error::deploy lane forced release — %s\n' "$msg"
           exit 1
 
+      # !cancelled(), not always(): these still run after the alert step fails,
+      # but a superseded (cancelled) watchdog run stops.
       - uses: actions/checkout@v4
-        if: always()
+        if: ${{ !cancelled() }}
 
       # (a) A pipeline run stuck past its own budget.
       #     timeout-minutes is READ FROM pipeline.yml rather than hardcoded, so
@@ -113,7 +120,7 @@ jobs:
       #     first time someone edits the workflow.
       - name: Alarm — pipeline run wedged past its timeout
         id: wedge
-        if: always()
+        if: ${{ !cancelled() }}
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

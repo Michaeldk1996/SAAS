@@ -203,7 +203,7 @@ Pushing to main does not deploy on its own. The deploy workflow is tick-only: yo
 
 Before you claim the lane, get the commit fully ready (founder rulings TEN-273). The lane is first come, first served, and it covers deploying only:
 
-1. **Rebased:** run `git fetch origin`. Every commit in `<sha>..origin/main` must be a data-bot commit (`[skip ci]` in its subject). If any code commit is missing from yours, rebase.
+1. **Rebased:** run `git fetch origin`. Every commit in `<sha>..origin/main` must be a data-bot commit: `[skip ci]` in its subject AND a data-bot author (`DATA_BOT_AUTHORS` in `tools/deploy-lane.mjs`). If any code commit is missing from yours, rebase.
 2. **Suite green:** `tools/ci-suite.sh <sha>` exits 0. It runs `npm test` in a fresh CI-shaped clone and writes the suite receipt that `claim` requires. Nothing else writes receipts.
 3. **Reviewed:** the review is done.
 4. **Clobber check:** `tools/clobber-check.sh <base> <files>` is clear. If it reports anything, stop and rebase.
@@ -216,9 +216,11 @@ Before you claim the lane, get the commit fully ready (founder rulings TEN-273).
    - Other runs with ready commits offer them with `deploy-lane.mjs ready` (withdraw with `unready`); that is not a place in the lane queue. A waiter whose commit is batched in leaves the queue.
    - **Every land goes through `node tools/deploy-batch.mjs --ticket TEN-123 --sha <the sha you claimed with>`.** It handles the solo case, pushes only the claimed, suite-green sha (plus any batch), and records your `readBack` sha and push time on the claim. A raw `git push` is outside the contract; this tool cannot block it.
    - The pushed tree may differ from the suite-tested tree **only by `[skip ci]` data-bot commits**, and the clobber check is re-run against them. If a code commit lands after your claim: `release`, rebase, run `ci-suite.sh` again, claim again.
-   - **Hold: 40 min from the claim, extended while your own pipeline run is in progress** (a healthy deploy is never cut off). You are released at once if your run is dead, if your pipeline run sits queued for more than 10 min, or at 40 min with no run of yours in progress.
+   - **Hold: 40 min from the claim** (the clobber check, `deploy-batch.mjs` and the push all run inside it).
+     - It is **extended while your own pipeline run is in progress**, then for **12 min of read-back grace** after that run succeeds. A healthy deploy is never cut off. Your run is the *first* `pipeline.yml` run to start after your push; later ticks never extend.
+     - You are released at once if your run is dead, if your pipeline run sits queued for more than 10 min, or at 40 min with none of the above. Pending behind a tick that started before your push counts as moving (a proposal pending the founder).
      - GitHub unreachable never extends a hold.
-     - A forced release puts you at the back of the queue, posts on your ticket, and turns a `pipeline-watchdog.yml` run red with the reason.
+     - A forced release puts you at the back of the queue only if you had not pushed, posts on your ticket, and turns a `pipeline-watchdog.yml` run red with the reason.
    - Waiting, dead claimants, same-ticket runs, the hold rules, cutover and exit codes 0/1/2/3/6/7: `.claude/rules/deploy-lane.md`.
    - Post on your issue too, so the founder can see it.
 
@@ -228,7 +230,7 @@ After you push:
 
 6. **Confirm your commit is live, and release the lane, in one step.** In your poll loop run `node tools/deploy-lane.mjs confirm-live --ticket TEN-123 --sha <readBack>`, using the `readBack` sha `deploy-batch.mjs` printed. It equals your sha when your commit was pushed as is; otherwise the cherry-pick means only `readBack` is on main.
    - `confirm-live` accepts only your claimed sha or that recorded `readBack`; any other sha → exit 1.
-   - It runs `tools/check-live-build.sh <sha>` and **releases the lane on exit 0**. On exit 1 or 2 it keeps holding and exits 3; poll again.
+   - It checks the **site first** (`tools/check-live-build.sh <sha>`) and **releases the lane on exit 0**, even if the hold rules would have released you at that moment. On exit 1 or 2 the hold rules run: still holding → exit 3, poll again; released → exit 1 with the reason (your push is out: read back without the lane).
    - Batched in by another holder? You never held the lane: read back your `landedAs` sha with `tools/check-live-build.sh`.
    - `check-live-build.sh` tests whether your commit is **contained in** the live build, not whether the SHAs match. Data commits land on main every 30–60 s, so the live stamp is routinely ahead of your tip and an equality test would false-alarm constantly.
 7. **Everything after that runs without the lane:** measuring, verifying, watching, reading logs. If verification finds a fix, that fix gets ready and claims again like anyone else.

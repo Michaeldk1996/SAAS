@@ -73,7 +73,7 @@ function startBoard() {
       const wr = req.url.match(/^\/repos\/[^/]+\/[^/]+\/actions\/workflows\/pipeline\.yml\/runs\?/);
       if (req.method === 'GET' && wr) { res.writeHead(200, { 'content-type': 'application/json' }); return res.end(JSON.stringify({ workflow_runs: gh.runs })); }
       const jr = req.url.match(/^\/repos\/[^/]+\/[^/]+\/actions\/runs\/(\d+)\/jobs/);
-      if (req.method === 'GET' && jr) { res.writeHead(200, { 'content-type': 'application/json' }); return res.end(JSON.stringify({ jobs: gh.jobs[jr[1]] || [] })); }
+      if (req.method === 'GET' && jr) { gh.jobCalls = (gh.jobCalls || 0) + 1; res.writeHead(200, { 'content-type': 'application/json' }); return res.end(JSON.stringify({ jobs: gh.jobs[jr[1]] || [] })); }
       const dr = req.url.match(/^\/repos\/([^/]+\/[^/]+)\/actions\/workflows\/pipeline-watchdog\.yml\/dispatches$/);
       if (req.method === 'POST' && dr) { gh.dispatches.push({ repo: dr[1], auth: req.headers.authorization, body: JSON.parse(body) }); res.writeHead(204); return res.end(); }
       res.writeHead(404); res.end('{}');
@@ -121,7 +121,7 @@ async function rig(mod, board, shared, { cap = 30, noCap = false, defaults = fal
   };
   if (!noCap && !defaults) opts.maxHoldMin = cap;
   const lane = mod.createLane(opts);
-  return { lane, clock, live, pipe, alerts, alertCfg, file: path.join(dir, 'lane.json') };
+  return { lane, clock, live, pipe, alerts, alertCfg, opts, file: path.join(dir, 'lane.json') };
 }
 const state = (file) => JSON.parse(fs.readFileSync(file, 'utf8'));
 
@@ -156,10 +156,19 @@ function gitFixture() {
   commit(work, 'data.json', '{}\n', 'seed data');
   sh(work, 'push', '-q', 'origin', 'main');
   sh(root, 'clone', '-q', origin, bot);
-  sh(bot, 'config', 'user.name', 'bot'); sh(bot, 'config', 'user.email', 'b@b');
+  // The bot commits as a real data bot (the allowlist keys on the author email).
+  sh(bot, 'config', 'user.name', 'bsp-odds-bot'); sh(bot, 'config', 'user.email', 'bsp-odds-bot@users.noreply.github.com');
   let n = 0;
-  const onOrigin = (file, msg) => { sh(bot, 'pull', '-q', '--rebase', 'origin', 'main'); commit(bot, file, `${msg} ${++n}\n`, msg); sh(bot, 'push', '-q', 'origin', 'HEAD:main'); };
-  return { root, origin, work, bot, dataBot: () => onOrigin('data.json', 'data refresh [skip ci]'), codePush: (f = 'other.txt') => onOrigin(f, 'TEN-999: a code change\n\nIts body mentions [skip ci]; it is still code.') };
+  const onOrigin = (file, msg, email) => {
+    sh(bot, 'pull', '-q', '--rebase', 'origin', 'main');
+    if (email) sh(bot, 'config', 'user.email', email);
+    commit(bot, file, `${msg} ${++n}\n`, msg);
+    if (email) sh(bot, 'config', 'user.email', 'bsp-odds-bot@users.noreply.github.com');
+    sh(bot, 'push', '-q', 'origin', 'HEAD:main');
+  };
+  return { root, origin, work, bot, dataBot: () => onOrigin('data.json', 'data refresh [skip ci]'),
+    codePush: (f = 'other.txt') => onOrigin(f, 'TEN-999: a code change\n\nIts body mentions [skip ci]; it is still code.'),
+    skipCiByHuman: () => onOrigin('sneaky.txt', 'TEN-998: a code change titled [skip ci]', 'dev@example.com') };
 }
 
 // ── the cases, each returning whether the rule held ──────────────────────────
@@ -192,7 +201,7 @@ const CASES = {
         && b30.code === 0 && b30.action === 'claimed' && b30.claim.runId === 'run-B' && b30.capReleased.runId === 'run-A'
         && a30.code === 1
         && !!w && w.since === new Date(at(30)).toISOString()
-        && !!notice && /check-live-build\.sh/.test(notice.body)
+        && !!notice && /release --ticket TEN-253/.test(notice.body)
         && history(file).some((h) => h.event === 'cap-released' && h.runId === 'run-A' && h.requeued === true);
     } finally { board.close(); }
   },
@@ -351,7 +360,14 @@ const CASES = {
   },
 
   // Two claimants race for a dead owner's lane: exactly one gets it, one notice.
+  // And the store lock itself: two slow read-modify-writes both land.
   async concurrentClaimsSerialise(mod) {
+    const dir0 = fs.mkdtempSync(path.join(os.tmpdir(), 'ten261-mx-'));
+    const f0 = path.join(dir0, 'lane.json');
+    const { withLock, readState } = mod._internals;
+    const bump = () => withLock(f0, async (save) => { const s = readState(f0); const n = (s.n || 0) + 1; await new Promise((r) => setTimeout(r, 80)); s.n = n; save(s); });
+    await Promise.all([bump(), bump()]);
+    if (JSON.parse(fs.readFileSync(f0, 'utf8')).n !== 2) return false;
     const board = await startBoard();
     try {
       const b = await rig(mod, board);
@@ -372,31 +388,31 @@ const CASES = {
   },
 
   // A holder whose lock is broken as stale (it was too slow) must not write, and
-  // must not remove the lock the new holder now owns.
+  // must not remove the lock the new holder now owns. (Nothing inside the lock
+  // touches the network any more, so the slow holder is simulated directly.)
   async staleLockBreakCannotDoubleTake(mod) {
-    const board = await startBoard();
-    try {
-      const b = await rig(mod, board);
-      const c = await rig(mod, board, b);
-      board.runs['run-A'] = 'running'; board.runs['run-B'] = 'running'; board.runs['run-C'] = 'running';
-      await b.lane.claim(A, RDY(SHA.A));
-      board.runs['run-A'] = 'cancelled';
-      b.clock.t = at(1);
-      board.setDelay(400);
-      const lock = `${b.file}.lock`;
-      const pb = b.lane.claim(B, RDY(SHA.B)).then((r) => ({ r }), (e) => ({ e }));
-      await new Promise((r) => setTimeout(r, 100));
-      const old = new Date(Date.now() - 10 * MIN);
-      fs.utimesSync(lock, old, old); // B's lock now looks abandoned
-      const pc = c.lane.claim(C, RDY(SHA.C)).then((r) => ({ r }), (e) => ({ e }));
-      const rb = await pb; // B resumes while C holds the lock
-      const cLockSurvived = fs.existsSync(lock);
-      const rc = await pc;
-      board.setDelay(0);
-      const holder = JSON.parse(fs.readFileSync(b.file, 'utf8')).claim.runId;
-      return !!rb.e && /lost the store lock/.test(rb.e.message) && cLockSurvived
-        && rc.r && rc.r.code === 0 && holder === 'run-C';
-    } finally { board.close(); }
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ten261-lock-'));
+    const file = path.join(dir, 'lane.json');
+    const lock = `${file}.lock`;
+    const { withLock, readState } = mod._internals;
+    let bEnteredResolve; const bEntered = new Promise((r) => { bEnteredResolve = r; });
+    const pb = withLock(file, async (save) => {
+      bEnteredResolve();
+      await new Promise((r) => setTimeout(r, 300));          // B is slow…
+      const s = readState(file); s.claim = { runId: 'run-B' }; save(s);
+    }).then((r) => ({ r }), (e) => ({ e }));
+    await bEntered;
+    const old = new Date(Date.now() - 10 * MIN);
+    fs.utimesSync(lock, old, old);                              // …so its lock looks abandoned
+    const pc = withLock(file, async (save) => {
+      const s = readState(file); s.claim = { runId: 'run-C' }; save(s);
+      await new Promise((r) => setTimeout(r, 400));           // C holds the lock while B resumes
+    }).then((r) => ({ r }), (e) => ({ e }));
+    const rb = await pb;
+    const cLockSurvived = fs.existsSync(lock);
+    await pc;
+    const holder = JSON.parse(fs.readFileSync(file, 'utf8')).claim.runId;
+    return !!rb.e && /lost the store lock/.test(rb.e.message) && cLockSurvived && holder === 'run-C';
   },
 
   // Same ticket, new run: no silent inheritance (founder ruling TEN-261, kept by
@@ -797,8 +813,9 @@ Object.assign(CASES, {
 // has sat queued for more than 10 minutes; 40 minutes pass with no run in
 // progress. A forced release posts a message naming the reason, in the same
 // channel as the freshness alarm." These run with the SHIPPED 40 / 10.
-const run = (id, status, createdMin, startedMin) => ({ id, status, createdAt: new Date(at(createdMin)).toISOString(),
-  startedAt: startedMin == null ? null : new Date(at(startedMin)).toISOString(), url: `https://github.com/x/actions/runs/${id}` });
+const run = (id, status, createdMin, startedMin, { conclusion = null, completedMin = null } = {}) => ({ id, status, conclusion,
+  createdAt: new Date(at(createdMin)).toISOString(), startedAt: startedMin == null ? null : new Date(at(startedMin)).toISOString(),
+  completedAt: completedMin == null ? null : new Date(at(completedMin)).toISOString(), url: `https://github.com/x/actions/runs/${id}` });
 Object.assign(CASES, {
   // A healthy deploy: pushed at 5, its pipeline run in progress since 6 — still
   // held at minute 45 (past 40). A run that started BEFORE the push is not the
@@ -815,11 +832,14 @@ Object.assign(CASES, {
       const r = await lane.renew(A);
       const b = await lane.claim(B, RDY(SHA.B));
       const kept = state(file).claim && state(file).claim.runId === 'run-A';
-      pipe.runs = [run(10, 'in_progress', 3, 4)]; // started before the push: not the owner's run
-      clock.t = at(46);
-      const b2 = await lane.claim(B, RDY(SHA.B));
-      return r.code === 0 && r.pipeline.state === 'in_progress' && b.code === 3 && kept
-        && b2.code === 0 && b2.forcedRelease.reason === 'cap-40min-no-run';
+      // A fresh claim whose only in-progress run started BEFORE its push: not its run.
+      const x = await rig(mod, board, undefined, { defaults: true });
+      await x.lane.claim(A, RDY(SHA.A));
+      x.clock.t = at(5); await x.lane.recordPush(A, { readBack: SHA.A, pushedHead: SHA.A });
+      x.pipe.runs = [run(10, 'in_progress', 3, 4)];
+      x.clock.t = at(45); const r2 = await x.lane.renew(A);
+      return r.code === 0 && r.pipeline.state === 'owner-run-in-progress' && b.code === 3 && kept
+        && r2.code === 1 && r2.reason === 'cap-40min-no-run';
     } catch (e) { if (process.env.DEBUG_TEN273) console.error('CASE THREW:', e.message); return false; } finally { board.close(); }
   },
 
@@ -884,7 +904,7 @@ Object.assign(CASES, {
       alertCfg.ok = false;
       clock.t = at(41); await lane.release(A); await lane.claim(B, RDY(SHA.B));
       clock.t = at(81); const st = await lane.status();
-      const h = state(file).history.filter((x) => x.event === 'cap-released');
+      const h = state(file).history.filter((x) => x.event === 'forced-release-delivery');
       return !!first && first.reason === 'cap-40min-no-run' && /cap-40min-no-run/.test(first.message)
         && /TEN-253/.test(first.message) && /run-A/.test(first.message)
         && alerts.length === 2 && alerts[1].reason === 'cap-40min-no-run' && st.action === 'free'
@@ -954,6 +974,166 @@ Object.assign(CASES, {
   },
 });
 
+// ── review of c003eb8f ────────────────────────────────────────────────────────
+Object.assign(CASES, {
+  // 1a · confirm-live checks the SITE first: live → released-live-confirmed,
+  //      even when the hold rules would force a release at that moment (here:
+  //      GitHub unreachable at minute 47, past 40). No false alarm.
+  async confirmLiveChecksTheSiteFirst(mod) {
+    const board = await startBoard();
+    try {
+      const { lane, clock, pipe, live, alerts, file } = await rig(mod, board, undefined, { defaults: true });
+      board.runs['run-A'] = 'running';
+      await lane.claim(A, RDY(SHA.A));
+      clock.t = at(20); await lane.recordPush(A, { readBack: SHA.A, pushedHead: SHA.A });
+      pipe.runs = [run(1, 'in_progress', 20.5, 21)];
+      clock.t = at(45); const held = await lane.renew(A);
+      pipe.ok = false; live.code = 0;
+      clock.t = at(47); const r = await lane.confirmLive(A, { sha: SHA.A });
+      const h = state(file).history;
+      return held.code === 0 && r.code === 0 && r.action === 'released-live-confirmed' && alerts.length === 0
+        && !h.some((x) => x.event === 'cap-released') && h.some((x) => x.event === 'released-live-confirmed');
+    } catch (e) { if (process.env.DEBUG_TEN273) console.error('CASE THREW:', e.message); return false; } finally { board.close(); }
+  },
+
+  // 1b · read-back grace: after the owner's run completes SUCCESSFULLY the hold
+  //      stays READBACK_GRACE_MIN (12); a failed owner run gets none.
+  async readBackGraceAfterASuccessfulRun(mod) {
+    const board = await startBoard();
+    try {
+      const ok = await rig(mod, board, undefined, { defaults: true });
+      board.runs['run-A'] = 'running';
+      await ok.lane.claim(A, RDY(SHA.A));
+      ok.clock.t = at(5); await ok.lane.recordPush(A, { readBack: SHA.A, pushedHead: SHA.A });
+      ok.pipe.runs = [run(1, 'completed', 5.5, 6, { conclusion: 'success', completedMin: 38 })];
+      ok.clock.t = at(49.9); const g1 = await ok.lane.renew(A);
+      ok.clock.t = at(50); const g2 = await ok.lane.renew(A);
+      const bad = await rig(mod, board, undefined, { defaults: true });
+      await bad.lane.claim(A, RDY(SHA.A));
+      bad.clock.t = at(5); await bad.lane.recordPush(A, { readBack: SHA.A, pushedHead: SHA.A });
+      bad.pipe.runs = [run(1, 'completed', 5.5, 6, { conclusion: 'failure', completedMin: 38 })];
+      bad.clock.t = at(40); const f1 = await bad.lane.renew(A);
+      return g1.code === 0 && g1.pipeline.state === 'read-back-grace' && g2.code === 1 && g2.reason === 'cap-40min-no-run'
+        && f1.code === 1 && f1.reason === 'cap-40min-no-run';
+    } catch (e) { if (process.env.DEBUG_TEN273) console.error('CASE THREW:', e.message); return false; } finally { board.close(); }
+  },
+
+  // 2 · only the FIRST run after the push is the owner's; it is recorded on the
+  //     claim, and a later tick in progress at 60 extends nothing.
+  async laterTickDoesNotExtend(mod) {
+    const board = await startBoard();
+    try {
+      const { lane, clock, pipe, file } = await rig(mod, board, undefined, { defaults: true });
+      board.runs['run-A'] = 'running';
+      await lane.claim(A, RDY(SHA.A));
+      clock.t = at(5); await lane.recordPush(A, { readBack: SHA.A, pushedHead: SHA.A });
+      pipe.runs = [run(1, 'in_progress', 5.5, 6)];
+      clock.t = at(10); await lane.renew(A);
+      const recorded = !!state(file).claim.ownerRun && state(file).claim.ownerRun.id === 1;
+      pipe.runs = [run(2, 'in_progress', 55, 56), run(1, 'completed', 5.5, 6, { conclusion: 'success', completedMin: 20 })];
+      clock.t = at(60); const r = await lane.renew(A);
+      return recorded && r.code === 1 && r.reason === 'cap-40min-no-run';
+    } catch (e) { if (process.env.DEBUG_TEN273) console.error('CASE THREW:', e.message); return false; } finally { board.close(); }
+  },
+
+  // 3 · a forced-out holder whose push is out is NOT re-queued (it has nothing to
+  //     wait for), and its notice says so; an unpushed one is.
+  async pushedHolderIsNotRequeued(mod) {
+    const board = await startBoard();
+    try {
+      const { lane, clock, file } = await rig(mod, board, undefined, { defaults: true });
+      board.runs['run-A'] = 'running';
+      await lane.claim(A, RDY(SHA.A));
+      clock.t = at(5); await lane.recordPush(A, { readBack: SHA.A, pushedHead: SHA.A });
+      clock.t = at(40); await lane.status();
+      const st = state(file);
+      const notice = board.comments.find((c) => c.issueId === 'issue-253' && /CAP-RELEASED/.test(c.body));
+      return st.claim === null && !st.waiters['run-A'] && st.history.some((h) => h.event === 'cap-released' && h.requeued === false)
+        && !!notice && /NOT re-queued/.test(notice.body) && notice.body.includes(`check-live-build.sh ${SHA.A}`);
+    } catch (e) { if (process.env.DEBUG_TEN273) console.error('CASE THREW:', e.message); return false; } finally { board.close(); }
+  },
+
+  // 4 · [pending the founder] healthy queueing: the owner's run pending behind a
+  //     tick that started BEFORE the push is "moving" — no release, and it counts
+  //     as in progress for the 40-min clause; its 10-min clock starts only when
+  //     nothing is in progress. With the flag off, the literal rule releases.
+  async healthyQueueingIsNotStuck(mod) {
+    const board = await startBoard();
+    try {
+      board.runs['run-A'] = 'running';
+      const setup = async (lane, rigx) => {
+        await lane.claim(A, RDY(SHA.A));
+        rigx.clock.t = at(1); await lane.recordPush(A, { readBack: SHA.A, pushedHead: SHA.A });
+      };
+      // the owner's run (2) pending behind tick 1, which started before the push
+      const on = await rig(mod, board, undefined, { defaults: true });
+      await setup(on.lane, on);
+      on.pipe.runs = [run(2, 'queued', 2), run(1, 'in_progress', -2, -1)];
+      on.clock.t = at(13); const h13 = await on.lane.renew(A);            // queued 11 min, but tick 1 is moving
+      on.pipe.runs = [run(2, 'queued', 2), run(1, 'completed', -2, -1, { conclusion: 'success', completedMin: 20.5 })];
+      on.clock.t = at(30); const h30 = await on.lane.renew(A);            // clock from 20.5: 9.5 min
+      on.clock.t = at(31); const r31 = await on.lane.renew(A);            // 10.5 min with nothing ahead
+      // "counts as in progress for the 40-min clause": tick 1 still running at 41
+      const on2 = await rig(mod, board, undefined, { defaults: true });
+      await setup(on2.lane, on2);
+      on2.pipe.runs = [run(2, 'queued', 2), run(1, 'in_progress', -2, -1)];
+      on2.clock.t = at(41); const h41 = await on2.lane.renew(A);
+      // the ruling's literal text (flag off): 11 min queued → released
+      const off = await rig(mod, board, undefined, { defaults: true });
+      const lit = mod.createLane({ ...off.opts, healthyQueue: false });
+      await setup(lit, off);
+      off.pipe.runs = [run(2, 'queued', 2), run(1, 'in_progress', -2, -1)];
+      off.clock.t = at(13); const l13 = await lit.renew(A);
+      return h13.code === 0 && h13.pipeline.state === 'queued-behind-a-running-tick' && h30.code === 0
+        && r31.code === 1 && r31.reason === 'pipeline-queued-10min' && h41.code === 0
+        && l13.code === 1 && l13.reason === 'pipeline-queued-10min';
+    } catch (e) { if (process.env.DEBUG_TEN273) console.error('CASE THREW:', e.message); return false; } finally { board.close(); }
+  },
+
+  // 5 · a commit is data only if its SUBJECT carries [skip ci] AND a data-bot wrote
+  //     it. A human's commit titled "[skip ci]" is code: not rebased. REAL git.
+  async skipCiByANonBotIsCode(mod) {
+    const board = await startBoard();
+    const g = gitFixture();
+    try {
+      const receipts = path.join(g.root, 'receipts');
+      const lane = mod.createLane({ file: path.join(g.root, 'lane.json'), now: () => T0,
+        liveness: mod.paperclipLiveness({ apiBase: board.base, apiKey: 'k' }),
+        notify: mod.paperclipNotify({ apiBase: board.base, apiKey: 'k', agentId: 'agent-x' }),
+        suiteReceipt: mod.fileSuiteReceipts({ dir: receipts }), rebaseCheck: mod.gitRebaseCheck({ cwd: g.work }) });
+      board.runs['run-A'] = 'running';
+      const s1 = commit(g.work, 'app.txt', 'v2\n', 'TEN-253: the change');
+      writeReceipt(receipts, s1, 0);
+      g.dataBot();
+      const withData = mod.gitRebaseCheck({ cwd: g.work })(s1);
+      g.skipCiByHuman();
+      const r = await lane.claim(A, RDY(s1));
+      return withData.ok === true && r.code === 7 && /rebased: 1 code commit.*TEN-998/.test(r.missing.join(' '));
+    } catch (e) { if (process.env.DEBUG_TEN273) console.error('CASE THREW:', e.message); return false; } finally { board.close(); }
+  },
+
+  // 6 · lock time: nothing inside the store lock touches the network. With the
+  //     board answering every call after 300 ms, a forced release (liveness,
+  //     pipeline runs, notice, alarm) never holds the lock for 150 ms.
+  async noNetworkInsideTheLock(mod) {
+    const board = await startBoard();
+    try {
+      const { lane, clock, file } = await rig(mod, board, undefined, { defaults: true });
+      board.runs['run-A'] = 'running';
+      await lane.claim(A, RDY(SHA.A));
+      board.setDelay(300);
+      clock.t = at(40);
+      const lock = `${file}.lock`;
+      let longest = 0; let since = null; let done = false;
+      const watch = (async () => { while (!done) { const t = Date.now(); if (fs.existsSync(lock)) { since ??= t; longest = Math.max(longest, t - since); } else since = null; await new Promise((r) => setImmediate(r)); } })();
+      const r = await lane.status();
+      done = true; await watch;
+      board.setDelay(0);
+      return r.action === 'free' && board.comments.some((c) => /CAP-RELEASED/.test(c.body)) && longest < 150;
+    } catch (e) { if (process.env.DEBUG_TEN273) console.error('CASE THREW:', e.message); return false; } finally { board.close(); }
+  },
+});
+
 // Each mutant cuts one mechanism out of the real source. Every anchor must
 // occur exactly once, or the mutant silently mutates nothing.
 const MUTANTS = [
@@ -967,12 +1147,12 @@ const MUTANTS = [
     'if (elapsed >= capMs) {', 'if (elapsed > capMs) {'],
   ['the injected cap is read as one minute longer', 'holdCapAutoReleases',
     'const capMs = maxHoldMin == null ? null : maxHoldMin * MIN;', 'const capMs = maxHoldMin == null ? null : (maxHoldMin + 1) * MIN;'],
-  ['the capped holder is not re-queued', 'holdCapAutoReleases', "if (!dead) addWaiter(s, c, iso(now()), { requeuedAfterCap: true, requeueReason: reason });", ''],
-  ['a dead owner is kept until the cap', 'deadOwnerReleasedAtOnce', "if (live.state === 'dead') return { forced: await forced(s, c, 'owner-dead', live.detail), live };", ''],
+  ['the capped holder is not re-queued', 'holdCapAutoReleases', "if (requeue) addWaiter(s, c, iso(now()), { requeuedAfterCap: true, requeueReason: reason });", ''],
+  ['a dead owner is kept until the cap', 'deadOwnerReleasedAtOnce', "if (live && live.state === 'dead') return { forced: forced(s, c, 'owner-dead', live.detail, fx), live };", ''],
   ['a dead owner gets no notice', 'deadOwnerReleasedAtOnce',
-    "const notice = await notify({ to: 'owner', issueId: c.issueId,\n      body: dead", "const notice = dead ? { ok: true, id: 'x' } : await notify({ to: 'owner', issueId: c.issueId,\n      body: dead"],
+    "const notice = await notify({ to: 'owner', issueId: c.issueId, body });", "const notice = dead ? { ok: true, id: 'x' } : await notify({ to: 'owner', issueId: c.issueId, body });"],
   ['the release records no evidence', 'deadOwnerReleasedAtOnce', 'reason, ticket: c.ticket, runId: c.runId, evidence: detail,', 'reason, ticket: c.ticket, runId: c.runId,'],
-  ['unknown liveness is treated as dead', 'unknownIsNotDead', "if (live.state === 'dead') return { forced: await forced(s, c, 'owner-dead'", "if (live.state !== 'alive') return { forced: await forced(s, c, 'owner-dead'"],
+  ['unknown liveness is treated as dead', 'unknownIsNotDead', "if (live && live.state === 'dead') return { forced: forced(s, c, 'owner-dead'", "if (live && live.state !== 'alive') return { forced: forced(s, c, 'owner-dead'"],
   ['claim skips the readiness gate', 'notReadyIsRefused',
     "if (!ready.ok) {\n      // A waiter that is re-preparing", "if (false) {\n      // A waiter that is re-preparing"],
   ['a missing receipt is accepted', 'notReadyIsRefused',
@@ -980,20 +1160,16 @@ const MUTANTS = [
   ['a red receipt is accepted', 'notReadyIsRefused',
     'receipt.sha !== sha || receipt.exit !== 0', 'receipt.sha !== sha'],
   ['a missing code commit is ignored', 'notReadyIsRefused',
-    "const code = commits.filter((c) => !c.subject.includes('[skip ci]'));", 'const code = [];'],
+    'const code = commits.filter((c) => !isDataCommit(c));', 'const code = [];'],
   ['data-bot commits count as not rebased', 'notReadyIsRefused',
-    "const code = commits.filter((c) => !c.subject.includes('[skip ci]'));", 'const code = commits;'],
+    'const code = commits.filter((c) => !isDataCommit(c));', 'const code = commits;'],
   ['[skip ci] in the BODY counts as a data-bot commit', 'notReadyIsRefused',
-    "const code = commits.filter((c) => !c.subject.includes('[skip ci]'));", "const code = commits.filter((c) => !c.body.includes('[skip ci]'));"],
+    "const l = git(['log', '--format=%H%x1f%s%x1f%ae%x1e'", "const l = git(['log', '--format=%H%x1f%B%x1f%ae%x1e'"],
   ['review is not required', 'notReadyIsRefused', 'if (!reviewed) missing.push(', 'if (false) missing.push('],
   ['exit 4 is back in the table', 'noPathReturnsFourOrFive',
     'export const EXIT = { HOLD: 0,', 'export const EXIT = { EXPIRED_OWNER_ALIVE: 4, HOLD: 0,'],
   ['an unknown owner returns the retired exit 4', 'noPathReturnsFourOrFive',
     "out = { code: EXIT.WAIT, action: c ? 'wait' : 'wait-turn'", "out = { code: live && live.state === 'unknown' ? 4 : EXIT.WAIT, action: c ? 'wait' : 'wait-turn'"],
-  ['a failed cap notice keeps the lane held', 'noticeFailureNeverKeepsTheLane',
-    "    s.claim = null;\n    if (!dead) addWaiter(s, c,", "    if (!dead && !notice.ok) return null;\n    s.claim = null;\n    if (!dead) addWaiter(s, c,"],
-  ['a failed dead-owner notice keeps the lane held', 'noticeFailureNeverKeepsTheLane',
-    "    s.claim = null;\n    if (!dead) addWaiter(s, c,", "    if (dead && !notice.ok) return null;\n    s.claim = null;\n    if (!dead) addWaiter(s, c,"],
   ['a waiter never reports', 'waiterPast30Reports', 'if (!(waited > WAIT_REPORT_MIN * MIN &&', 'if (!(false &&'],
   ['the report repeats every call instead of every 30 min', 'waiterPast30Reports',
     '(!w.reportedAt || t - Date.parse(w.reportedAt) >= WAIT_REPORT_MIN * MIN)', 'true'],
@@ -1004,7 +1180,7 @@ const MUTANTS = [
   ['a holder removes whatever lock is there on the way out', 'staleLockBreakCannotDoubleTake',
     '} finally { if (owns()) fs.rmSync(lock', '} finally { if (true) fs.rmSync(lock'],
   ['a new run of the same ticket renews the old claim', 'sameTicketNoSilentInheritance',
-    "if (!c || c.runId !== me.runId) {\n        const mine = freed", "if (!c || c.ticket !== me.ticket) {\n        const mine = freed"],
+    "if (!c || c.runId !== me.runId) {\n        save(s);\n        const mine = freed", "if (!c || c.ticket !== me.ticket) {\n        save(s);\n        const mine = freed"],
   ['a re-claim keeps the old run id', 'sameTicketNoSilentInheritance',
     "s.claim.reclaimedFrom = freed.claim.runId;", "s.claim.runId = freed.claim.runId; s.claim.reclaimedFrom = freed.claim.runId;"],
   ['a re-claim keeps the old expiry', 'sameTicketNoSilentInheritance',
@@ -1018,7 +1194,7 @@ const MUTANTS = [
   ['release by a non-holder leaves its entry queued', 'releaseAfterCapWithdrawsEntry',
     's.queue = s.queue.filter((e) => e.runId !== me.runId);\n      if (s.queue.length !== queued)', 'if (s.queue.length !== queued)'],
   ['batchCandidates has no overall deadline', 'batchLivenessDeadline',
-    'if (Date.now() >= deadline) { keep.push(e); unchecked.add(e); continue; }', ''],
+    '      if (Date.now() >= deadline) break;\n      liveOf.set(', '      liveOf.set('],
   ['entries past the deadline are batched anyway', 'batchLivenessDeadline',
     '.filter((e) => !unchecked.has(e))', ''],
   ['the liveness budget is 10 min', 'batchLivenessDeadline',
@@ -1048,23 +1224,23 @@ const MUTANTS = [
   ['(a) the wait is not logged with position and minutes', 'founderA_earlierWaiterWins',
     "log(s, { event: 'waiting', ticket: me.ticket, runId: me.runId, position, waitedMin: waited,", "log(s, { event: 'waiting', ticket: me.ticket, runId: me.runId,"],
   ['(b) confirm-live does not release on exit 0', 'founderB_noLaneAfterLiveConfirmed',
-    "      s.claim = null;\n      delete s.waiters[me.runId];\n      log(s, { event: 'released-live-confirmed'", "      delete s.waiters[me.runId];\n      log(s, { event: 'released-live-confirmed'"],
+    "        s.claim = null;\n        delete s.waiters[me.runId];\n        log(s, { event: 'released-live-confirmed'", "        delete s.waiters[me.runId];\n        log(s, { event: 'released-live-confirmed'"],
   ['(b) confirm-live releases on exit 1 (not live yet)', 'founderB_noLaneAfterLiveConfirmed',
-    'if (r.code !== 0) {\n      return { code: EXIT.WAIT, action: \'still-holding\'', 'if (r.code === 2) {\n      return { code: EXIT.WAIT, action: \'still-holding\''],
+    'if (r.code === 0) {\n      return locked(', 'if (r.code !== 2) {\n      return locked('],
   ['(c) renew extends the hold', 'founderC_renewalPastCapRefused',
     "c.renewedAt = iso(now());\n      save(s);", "c.renewedAt = iso(now()); c.takenAt = iso(now());\n      save(s);"],
   ['(c) the cap is measured from the last renewal', 'founderC_renewalPastCapRefused',
     'const elapsed = t - Date.parse(c.takenAt);', 'const elapsed = t - Date.parse(c.renewedAt);'],
   ['(c) no alert on the holder\'s ticket at the cap', 'founderC_renewalPastCapRefused',
-    "const notice = await notify({ to: 'owner', issueId: c.issueId,\n      body: dead", "const notice = !dead ? { ok: false, error: 'x' } : await notify({ to: 'owner', issueId: c.issueId,\n      body: dead"],
+    "const notice = await notify({ to: 'owner', issueId: c.issueId, body });", "const notice = !dead ? { ok: false, error: 'x' } : await notify({ to: 'owner', issueId: c.issueId, body });"],
   ['(d) dead waiters keep their place', 'founderD_deadClaimantRemoved',
-    "if (live.state === 'dead') {\n        delete s.waiters[w.runId];", "if (false) {\n        delete s.waiters[w.runId];"],
+    "if (live && live.state === 'dead') {\n        delete s.waiters[w.runId];", "if (false) {\n        delete s.waiters[w.runId];"],
   ['silent waiters never go stale', 'staleWaitersDropped', 'if (stale) {\n        delete s.waiters[w.runId];', 'if (false) {\n        delete s.waiters[w.runId];'],
   ['a live Paperclip waiter never goes stale (the pre-review rule)', 'staleWaitersDropped',
     'if (stale) {\n        delete s.waiters[w.runId];', "if (stale && w.kind !== 'paperclip') {\n        delete s.waiters[w.runId];"],
   ['the waiter stale window is 60 min', 'staleWaitersDropped', 'export const WAITER_STALE_MIN = 15;', 'export const WAITER_STALE_MIN = 60;'],
   ['a new run inherits even while the old run is alive', 'sameTicketWaiterInheritance',
-    "      if (live.state !== 'dead') continue;\n      delete s.waiters[old.runId];", "      delete s.waiters[old.runId];"],
+    "      if (!live || live.state !== 'dead') continue;\n      delete s.waiters[old.runId];", "      delete s.waiters[old.runId];"],
   ['a new run never inherits', 'sameTicketWaiterInheritance',
     'const w = addWaiter(s, me, old.since,', 'const w = addWaiter(s, me, iso(t),'],
   ['inheritance ignores the stale window', 'sameTicketWaiterInheritance',
@@ -1072,7 +1248,7 @@ const MUTANTS = [
   ['the cap is 45 min, not the founder\'s 40', 'capRuleConstants', 'export const MAX_HOLD_MIN = 40;', 'export const MAX_HOLD_MIN = 45;'],
   // review fixes
   ['a not-ready claim does not refresh the waiter (it goes stale while re-preparing)', 'notReadyWaiterKeepsPlace',
-    '        w.lastSeen = iso(now());\n        const before = await ahead(s, me);', '        const before = await ahead(s, me);'],
+    '        w.lastSeen = iso(now());\n        const before = ahead(s, me, pre);', '        const before = ahead(s, me, pre);'],
   ['a not-ready claim does not log its position', 'notReadyWaiterKeepsPlace',
     "log(s, { event: 'waiting-not-ready', ticket: me.ticket, runId: me.runId, position, waitedMin: waited,", "log(s, { event: 'waiting-not-ready', ticket: me.ticket, runId: me.runId,"],
   ['a batched-in waiter stays in the waiter queue', 'batchedWaiterLeavesQueue',
@@ -1085,24 +1261,51 @@ const MUTANTS = [
     'if (!c.legacyExpiresAt) c.legacyExpiresAt = c.expiresAt;', 'c.legacyExpiresAt = c.expiresAt;'],
   // cap ruling 02:05Z
   ['an in-progress pipeline run does not extend the hold', 'capRule_healthyDeployKeptAt45',
-    'if (inProgress) return { forced: null, live };', ''],
+    "if (owner && owner.status === 'in_progress') return held(", "if (false) return held("],
   ['any in-progress run extends, even one that started before the push', 'capRule_healthyDeployKeptAt45',
-    "r.status === 'in_progress' && r.startedAt && Date.parse(r.startedAt) >= pushedAt", "r.status === 'in_progress'"],
+    'else owner = runs.filter((r) => r.startedAt && Date.parse(r.startedAt) >= pushedAt)', 'else owner = runs.filter((r) => r.startedAt)'],
   ['a queued pipeline run never releases', 'capRule_queuedPast10Releases',
-    'if (queued && queued.min > pipelineQueuedMaxMin) {', 'if (false) {'],
+    'if (min > pipelineQueuedMaxMin) {', 'if (false) {'],
   ['the queued limit is 20 min', 'capRule_queuedPast10Releases', 'export const PIPELINE_QUEUED_MAX_MIN = 10;', 'export const PIPELINE_QUEUED_MAX_MIN = 20;'],
   ['the plain cap is 41 min', 'capRule_fortyMinutesNoRun', 'export const MAX_HOLD_MIN = 40;', 'export const MAX_HOLD_MIN = 41;'],
   ['the plain cap never fires', 'capRule_fortyMinutesNoRun', 'if (elapsed >= capMs) {', 'if (false) {'],
   ['a dead owner waits for the cap (status does not enforce)', 'capRule_deadOwnerReleasedImmediately',
-    "if (live.state === 'dead') return { forced: await forced(s, c, 'owner-dead', live.detail), live };", ''],
+    "if (live && live.state === 'dead') return { forced: forced(s, c, 'owner-dead', live.detail, fx), live };", ''],
   ['a forced release dispatches no alert', 'capRule_forcedReleaseAlerts',
     'try { al = await alert({ reason, message }); }', "try { al = { ok: false, error: 'not dispatched' }; }"],
   ['the alert does not name the reason', 'capRule_forcedReleaseAlerts',
     'const message = `deploy lane forced release (${reason}):', 'const message = `deploy lane forced release:'],
-  ['a failed alert keeps the lane held', 'capRule_forcedReleaseAlerts',
-    "    s.claim = null;\n    if (!dead) addWaiter(s, c,", "    if (!al.ok) return null;\n    s.claim = null;\n    if (!dead) addWaiter(s, c,"],
   ['GitHub unreachable extends the hold', 'capRule_githubUnreachableNeverExtends',
-    'if (inProgress) return { forced: null, live };', 'if (inProgress || !known) return { forced: null, live };'],
+    "if (owner && owner.status === 'in_progress') return held('owner-run-in-progress', { run: owner.url || owner.id });",
+    "if ((owner && owner.status === 'in_progress') || (pr && !pr.ok)) return held('owner-run-in-progress', { run: owner ? (owner.url || owner.id) : 'unknown' });"],
+  // review of c003eb8f
+  ['(1a) the hold rules run before the site is checked', 'confirmLiveChecksTheSiteFirst',
+    '    const r = await checkLive(sha);\n    if (r.code === 0) {',
+    '    const pre0 = await renew(me);\n    if (pre0.code !== 0) return { code: EXIT.REFUSED, action: pre0.action, reason: pre0.reason };\n    const r = await checkLive(sha);\n    if (r.code === 0) {'],
+  ['(1b) no read-back grace', 'readBackGraceAfterASuccessfulRun',
+    "if (or && or.status === 'completed' && or.conclusion === 'success' && or.completedAt && t < Date.parse(or.completedAt) + graceMs) {", 'if (false) {'],
+  ['(1b) a failed owner run gets the grace too', 'readBackGraceAfterASuccessfulRun',
+    "or.status === 'completed' && or.conclusion === 'success' && or.completedAt", "or.status === 'completed' && or.completedAt"],
+  ['(1b) the grace is 20 min', 'readBackGraceAfterASuccessfulRun', 'export const READBACK_GRACE_MIN = 12;', 'export const READBACK_GRACE_MIN = 20;'],
+  ['(2) any in-progress run after the push extends (every later tick)', 'laterTickDoesNotExtend',
+    'if (c.ownerRun) owner = runs.find((r) => r.id === c.ownerRun.id) || null;\n    else owner = ',
+    "owner = runs.find((r) => r.status === 'in_progress' && r.startedAt && Date.parse(r.startedAt) >= pushedAt) || "],
+  ['(2) the owner run is not recorded on the claim', 'laterTickDoesNotExtend', 'if (owner) c.ownerRun = {', 'if (false) c.ownerRun = {'],
+  ['(3) a pushed holder is re-queued (a phantom waiter)', 'pushedHolderIsNotRequeued', 'const requeue = !dead && !pushed;', 'const requeue = !dead;'],
+  ['(4) a pending run behind a running tick is not "moving"', 'healthyQueueingIsNotStuck',
+    "if (healthyQueue && moving) return held(", "if (false) return held("],
+  ['(4) the queued clock never pauses', 'healthyQueueingIsNotStuck',
+    'if (healthyQueue) {\n          for (const r of runs) {', 'if (false) {\n          for (const r of runs) {'],
+  ['(4) the flag ships off (the literal rule)', 'healthyQueueingIsNotStuck',
+    'export const HEALTHY_QUEUE_PAUSES_CLOCK = true;', 'export const HEALTHY_QUEUE_PAUSES_CLOCK = false;'],
+  ['(5) any [skip ci] subject is data, whoever wrote it', 'skipCiByANonBotIsCode',
+    "subject.includes('[skip ci]') && DATA_BOT_AUTHORS.has(authorEmail.toLowerCase());", "subject.includes('[skip ci]');"],
+  ['(6) notices and alerts are sent inside the lock', 'noNetworkInsideTheLock',
+    '    const out = await withLock(file, (save) => fn(save, fx));',
+    '    const out = await withLock(file, async (save) => { const o = await fn(save, fx); for (const f of fx.splice(0)) await f(); return o; });'],
+  ['(6) liveness and pipeline runs are fetched inside the lock', 'noNetworkInsideTheLock',
+    '  async function status(me) {\n    const pre = await prefetch(me);\n    return locked(async (save, fx) => {\n      const s = readState(file);',
+    '  async function status(me) {\n    return locked(async (save, fx) => {\n      const pre = await prefetch(me);\n      const s = readState(file);'],
 ];
 
 async function loadMutant(find, replace) {
@@ -1173,13 +1376,22 @@ test('githubPipelineRuns: runs newest first, an in-progress run carries its EARL
   const board = await startBoard();
   try {
     board.gh.runs = [
-      { id: 7, status: 'in_progress', created_at: '2026-09-25T02:00:00Z', html_url: 'u7' },
+      { id: 7, status: 'in_progress', created_at: '2026-09-25T02:00:00Z', run_started_at: '2026-09-25T02:01:00Z', html_url: 'u7' },
       { id: 6, status: 'queued', created_at: '2026-09-25T01:59:00Z', html_url: 'u6' },
+      { id: 5, status: 'completed', conclusion: 'success', created_at: '2026-09-25T01:40:00Z', run_started_at: '2026-09-25T01:40:30Z', updated_at: '2026-09-25T01:52:00Z', html_url: 'u5' },
+      { id: 4, status: 'completed', conclusion: 'failure', created_at: '2026-09-25T01:30:00Z', run_started_at: '2026-09-25T01:30:30Z', updated_at: '2026-09-25T01:35:00Z', html_url: 'u4' },
+      { id: 3, status: 'completed', conclusion: 'success', created_at: '2026-09-25T01:20:00Z', run_started_at: '2026-09-25T01:20:30Z', updated_at: '2026-09-25T01:25:00Z', html_url: 'u3' },
     ];
     board.gh.jobs['7'] = [{ started_at: '2026-09-25T02:03:00Z' }, { started_at: '2026-09-25T02:01:30Z' }, { started_at: null }];
-    const r = await real.githubPipelineRuns({ repo: 'o/r', token: 'tok', apiBase: board.base })();
+    const early = await real.githubPipelineRuns({ repo: 'o/r', token: 'tok', apiBase: board.base })({ since: '2026-09-25T01:00:00Z' });
+    assert.equal(early.ok, true);
+    assert.equal(board.gh.jobCalls, 3, 'jobs are fetched for at most 3 runs (the earliest started at/after since)');
+    board.gh.jobCalls = 0;
+    const r = await real.githubPipelineRuns({ repo: 'o/r', token: 'tok', apiBase: board.base })({ since: '2026-09-25T01:39:00Z' });
     assert.equal(r.ok, true);
-    assert.deepEqual(r.runs.map((x) => [x.id, x.status, x.startedAt]), [[7, 'in_progress', '2026-09-25T02:01:30Z'], [6, 'queued', null]]);
+    assert.deepEqual(r.runs.slice(0, 3).map((x) => [x.id, x.status, x.startedAt, x.conclusion, x.completedAt]),
+      [[7, 'in_progress', '2026-09-25T02:01:30Z', null, null], [6, 'queued', null, null, null], [5, 'completed', '2026-09-25T01:40:30Z', 'success', '2026-09-25T01:52:00Z']]);
+    assert.equal(board.gh.jobCalls, 3, 'runs 4, 5, 7: started within 10 min before `since` or later (a run can start just before the push while its first job starts after it)');
     const none = await real.githubPipelineRuns({ repo: 'o/r', token: () => null, apiBase: board.base })();
     assert.equal(none.ok, false); assert.match(none.detail, /no GitHub token/);
     const down = await real.githubPipelineRuns({ repo: 'o/r', token: 'tok', apiBase: 'http://127.0.0.1:9' })();

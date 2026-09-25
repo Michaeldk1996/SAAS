@@ -42,7 +42,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { git as realGit, gitRebaseCheck, realLane, whoAmI } from './deploy-lane.mjs';
+import { git as realGit, gitRebaseCheck, realLane, whoAmI, isDataCommit } from './deploy-lane.mjs';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const SUITE_TIMEOUT_MS = 25 * 60 * 1000;
@@ -64,10 +64,8 @@ export function realSuite({ cwd = process.cwd() } = {}) {
   };
 }
 
-// Data-bot commits carry the marker in the SUBJECT line; a body mention is not data.
-const isData = (subject) => subject.includes('[skip ci]');
 
-export async function runBatch({ lane, me, sha, repo = process.cwd(), git = realGit, suite, clobber, notify, rebaseCheck }) {
+export async function runBatch({ lane, me, sha, repo = process.cwd(), git = realGit, suite, clobber, notify, rebaseCheck, clock = () => Date.now() }) {
   const G = (args, cwd = repo) => git(args, { cwd });
   rebaseCheck = rebaseCheck || gitRebaseCheck({ cwd: repo });
   const refuse = (detail, extra = {}) => ({ code: 1, action: 'refused', detail, ...extra });
@@ -154,14 +152,17 @@ export async function runBatch({ lane, me, sha, repo = process.cwd(), git = real
   async function push(b, checkBase, groups) {
     for (let attempt = 0; ; attempt++) {
       if ((await lane.renew(me)).code !== 0) return { ok: false, fatal: true, reason: 'you no longer hold the lane (released at the hold cap?) — nothing pushed' };
+      // pushedAt is captured BEFORE the push: the owner's pipeline run is the
+      // first to start at/after it, and a tick can start the moment it lands.
+      const pushedAt = new Date(clock()).toISOString();
       const p = W(['push', '-q', 'origin', `${b.head}:refs/heads/main`]);
-      if (p.status === 0) return { ok: true, b, attempts: attempt + 1 };
+      if (p.status === 0) return { ok: true, b, attempts: attempt + 1, pushedAt };
       if (attempt >= 1) return { ok: false, reason: `push rejected twice: ${p.stderr.split('\n')[0]}` };
       if (G(['fetch', 'origin', '--quiet']).status !== 0) return { ok: false, reason: 'git fetch origin failed after a rejected push' };
       const tip = G(['rev-parse', 'origin/main']).stdout;
-      const landed = G(['log', '--format=%H%x1f%s%x1e', `${b.head}..${tip}`]).stdout.split('\x1e').map((x) => x.trim()).filter(Boolean)
-        .map((x) => { const [h, subject] = x.split('\x1f'); return { sha: h, subject }; });
-      const code = landed.filter((c) => !isData(c.subject));
+      const landed = G(['log', '--format=%H%x1f%s%x1f%ae%x1e', `${b.head}..${tip}`]).stdout.split('\x1e').map((x) => x.trim()).filter(Boolean)
+        .map((x) => { const [h, subject, authorEmail] = x.split('\x1f'); return { sha: h, subject, authorEmail }; });
+      const code = landed.filter((c) => !isDataCommit(c));
       if (code.length) return { ok: false, reason: `a code commit landed on origin/main during the batch: ${code.map((c) => `${c.sha.slice(0, 8)} ${c.subject}`).join('; ')}` };
       const nb = build(tip, groups);
       if (!nb.ok || nb.conflicts.length) return { ok: false, reason: `replay onto the new origin/main failed: ${nb.reason || nb.conflicts.map((s) => s.reason).join('; ')}` };
@@ -171,12 +172,14 @@ export async function runBatch({ lane, me, sha, repo = process.cwd(), git = real
     }
   }
 
-  async function finish(mode, b, extra) {
+  async function finish(mode, b, extra, pushedAt) {
     const landed = b.included.map((g) => ({ ticket: g.ticket, runId: g.runId, sha: g.sha, landedAs: g.landedAs }));
     const hold = b.included.find((x) => x.holder);
     // The claim learns what was pushed and when: confirm-live accepts this
     // read-back sha, and the owner's pipeline run is measured from pushedAt.
-    await lane.recordPush(me, { readBack: hold.landedAs, pushedHead: b.head });
+    let rp;
+    try { rp = await lane.recordPush(me, { readBack: hold.landedAs, pushedHead: b.head, pushedAt }); } catch (e) { rp = { code: 6, action: `error: ${e.message}` }; }
+    const unrecorded = !rp || rp.code !== 0;
     await lane.recordBatch(me, { landed, skipped });
     const notices = [];
     for (const g of b.included.filter((x) => !x.holder)) {
@@ -188,7 +191,11 @@ export async function runBatch({ lane, me, sha, repo = process.cwd(), git = real
       notices.push({ ticket: g.ticket, issueId: g.issueId, ok: n.ok, id: n.id, error: n.error });
     }
     const h = b.included.find((x) => x.holder);
-    return { code: 0, action: 'pushed', mode, readBack: h.landedAs, readBackCommand: `tools/check-live-build.sh ${h.landedAs}`,
+    if (unrecorded) {
+      process.stderr.write(`\n!!! deploy-batch: THE PUSH LANDED (${b.head}) BUT THE LANE DOES NOT KNOW IT (recordPush: ${rp && rp.action}).\n` +
+        `!!! confirm-live will not accept ${h.landedAs} and the hold rules cannot see your pipeline run. Tell the founder; do not push again.\n\n`);
+    }
+    return { code: unrecorded ? 1 : 0, action: unrecorded ? 'pushed-lane-unaware' : 'pushed', mode, recordPush: unrecorded ? (rp && rp.action) : undefined, readBack: h.landedAs, readBackCommand: `tools/check-live-build.sh ${h.landedAs}`,
       base: START, pushed: b.head, holder: { sha, landedAs: h.landedAs, pushedAsIs: h.landedAs === sha },
       included: landed.filter((l) => l.runId !== me.runId), notices, skipped,
       stillQueued: lane.peek().queue.map((e) => ({ ticket: e.ticket, runId: e.runId, sha: e.sha, status: e.status || 'queued', reason: e.reason })), ...extra };
@@ -213,7 +220,7 @@ export async function runBatch({ lane, me, sha, repo = process.cwd(), git = real
     if (!ck.ok) return refuseAndRecord(`clobber check failed for the holder's own commit — rebase:\n${ck.output}`, fb);
     const p = await push(b, mb, [holder]);
     if (!p.ok) return refuseAndRecord(p.reason, fb);
-    return finish(fb.mode, p.b, { fallbackReason: fb.fallbackReason, clobber: ck.output, pushAttempts: p.attempts });
+    return finish(fb.mode, p.b, { fallbackReason: fb.fallbackReason, clobber: ck.output, pushAttempts: p.attempts }, p.pushedAt);
   }
 
   try {
@@ -230,7 +237,7 @@ export async function runBatch({ lane, me, sha, repo = process.cwd(), git = real
     const p = await push(b, START, b.included);
     if (!p.ok && p.fatal) return refuseAndRecord(p.reason);
     if (!p.ok) return await fallback(p.reason);
-    return await finish('batch', p.b, { clobber: ck.output, suite: { exit: su.exit, log: su.log }, pushAttempts: p.attempts });
+    return await finish('batch', p.b, { clobber: ck.output, suite: { exit: su.exit, log: su.log }, pushAttempts: p.attempts }, p.pushedAt);
   } finally {
     if (wt) {
       G(['worktree', 'remove', '--force', wt]);

@@ -173,9 +173,9 @@ ready_receipt() {
   git rebase -q origin/main || { git rebase --abort; failed "rebase onto origin/main"; }
   bash tools/ci-suite.sh "$(git rev-parse HEAD)" > "$RUN/ci-suite-$(date -u +%H%M%S).log" 2>&1 || failed "tools/ci-suite.sh red or failed (see $RUN/ci-suite-*.log)"
 }
-code_landed() {  # a CODE commit on origin/main that $1 lacks (data bots mark [skip ci] in the subject)
-  git fetch -q origin main || return 0
-  git log --format=%s "$1..origin/main" | grep -qv '\[skip ci\]'
+code_landed() {  # a CODE commit on origin/main that $1 lacks — the lane tool's one classifier
+  # (data = [skip ci] in the subject AND a data-bot author); exit 0 = rebased, nothing landed
+  ! node tools/deploy-lane.mjs rebased --sha "$1" >> "$RUN/lane.log" 2>&1
 }
 ready_receipt
 
@@ -225,7 +225,13 @@ live=2; t=0
 while [ $t -lt 45 ]; do
   node tools/deploy-lane.mjs confirm-live --ticket "$TICKET" --sha "$SHA" > "$RUN/live.log" 2>&1; cl=$?
   if [ $cl -eq 0 ]; then live=0; LANE_HELD=0; break; fi
-  [ $cl -eq 1 ] && { LANE_HELD=0; bash tools/check-live-build.sh "$SHA" >> "$RUN/live.log" 2>&1; live=$?; [ $live -eq 0 ] && break; }
+  # exit 1: we no longer hold the lane (a forced release; our push is out, so we were not
+  # re-queued). Release anyway to withdraw anything left in the queues, then keep polling
+  # the live site ourselves, without the lane.
+  if [ $cl -eq 1 ]; then
+    node tools/deploy-lane.mjs release --ticket "$TICKET" >> "$RUN/lane.log" 2>&1; LANE_HELD=0
+    bash tools/check-live-build.sh "$SHA" >> "$RUN/live.log" 2>&1; live=$?; [ $live -eq 0 ] && break
+  fi
   sleep 60; t=$((t + 1))
 done
 [ "$LANE_HELD" = 1 ] && node tools/deploy-lane.mjs release --ticket "$TICKET" >> "$RUN/lane.log" 2>&1 && LANE_HELD=0

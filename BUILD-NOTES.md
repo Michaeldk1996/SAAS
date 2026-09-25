@@ -1965,7 +1965,8 @@ Together they supersede the TEN-261 45-min renewable lease.
 **What the lane is now.**
 - **Ready before claiming.** `claim --sha S --reviewed` needs:
   - a `tools/ci-suite.sh` receipt for exactly S (exit 0);
-  - S rebased: only `[skip ci]`-subject data-bot commits ahead of it;
+  - S rebased: only data-bot commits ahead of it (`[skip ci]` in the subject AND an
+    allowlisted data-bot author; a human's commit titled `[skip ci]` is code);
   - the review attested.
   Otherwise exit 7.
 - **First come, first served.** The head of the waiter queue (the oldest wait-start)
@@ -1986,17 +1987,20 @@ Together they supersede the TEN-261 45-min renewable lease.
   - records `readBack` and `pushedAt` on the claim.
   A raw `git push` is outside the contract, and the tool cannot block it.
 - **Released at live-confirm.** `confirm-live --sha` (the claimed sha or the recorded
-  `readBack`, nothing else) runs `check-live-build.sh` and releases the lane on exit 0.
-  Verification then runs without the lane.
+  `readBack`, nothing else) checks the SITE first and releases the lane on exit 0
+  (`released-live-confirmed`), never as a forced release. Verification then runs
+  without the lane.
 - **Hold rules**, evaluated on every claim/status/renew/confirm-live:
   - (i) owner run dead → release, `owner-dead`;
-  - (ii) an owner pipeline run in progress → held (never cut off);
+  - (ii) the owner's pipeline run in progress → held (never cut off), then 12 min of
+    read-back grace after it succeeds (Pages `max-age` 600 s + 2 min);
   - (iii) queued > 10 min → release, `pipeline-queued-10min`;
-  - (iv) 40 min from `takenAt` with none in progress → release, `cap-40min-no-run`.
-  "The owner's pipeline run" is a `pipeline.yml` run whose earliest job started at or
-  after `pushedAt`. GitHub unreachable is unknown, and never extends a hold.
+  - (iv) 40 min from `takenAt` with none of that → release, `cap-40min-no-run`.
+  "The owner's pipeline run" is the FIRST `pipeline.yml` run that started at or after
+  `pushedAt`, captured before the push and recorded on the claim once seen. Later ticks
+  never extend. GitHub unreachable is unknown, and never extends a hold.
 - **A forced release:**
-  - re-queues the holder at the back (unless dead);
+  - re-queues the holder at the back only if it had not pushed (and is alive);
   - logs the reason and posts on the ticket;
   - dispatches `pipeline-watchdog.yml` with `lane_alert`, whose first step prints
     `::error::` and fails the run: the freshness alarm's channel. Every other watchdog
@@ -2007,6 +2011,20 @@ Together they supersede the TEN-261 45-min renewable lease.
   anything.
 
 **For the founder to confirm.**
+- **Healthy queueing** (`HEALTHY_QUEUE_PAUSES_CLOCK`, shipped on; `false` restores the
+  literal rule). The pipeline group allows one running and one pending run, so the
+  owner's run can sit pending behind a tick that started before the push. While that
+  tick runs, the deploy counts as moving: no `pipeline-queued-10min` release, and it
+  counts as in progress for the 40-min clause. The 10-min queued clock only runs while
+  nothing is in progress.
+- **Data-bot allowlist.** Built from the authors of the last 500 `[skip ci]` commits:
+  bsp-odds-bot, bsp-admin-log-bot, bsp-series-outcomes-bot, bsp-profile-cache-bot,
+  bsp-asap-bot, bsp-surface-bot, bsp-bot, and bot@bspconsult.local (the launchd
+  Entry Lists / Styles / Splits / Stats bots). Rarer data bots seen only in older
+  history are NOT on it: bsp-elo-bot, bsp-radar-bot, bsp-clutch-bot,
+  bsp-archetypes-bot, bsp-wue-bot, bsp-par-bot, bsp-atp-entry-bot. A commit by one of
+  those counts as code, which is the safe side: waiters must rebase. Add them if you
+  want.
 - **Silent live waiters.** A live Paperclip waiter that stops calling `claim` for 15 min
   loses its place (review fix; a capped holder that never re-claimed would otherwise
   reach the head and block everyone). A waiter that is re-preparing keeps its place as
@@ -2030,6 +2048,11 @@ Together they supersede the TEN-261 45-min renewable lease.
   on purpose.
 - A claim written by the old tool is shown as a legacy lease (never "hold cap at"). Its
   expiry is honoured once, then it is freed (`legacy-lease-expired`).
+
+**Lock time.** Nothing inside the store lock touches the network. Liveness (one shared
+deadline, 60 s + one 10 s call), pipeline runs (1 list + at most 3 jobs calls, 10 s
+each) and the keychain token are fetched before it. Notices and alarms go out after it.
+The lock covers file I/O only.
 
 **Verification.** New lane cases are checked against the pre-change tool by hand
 (`TEN273_LANE_SRC=<old deploy-lane.mjs> node --test --test-name-pattern=…`), not in
