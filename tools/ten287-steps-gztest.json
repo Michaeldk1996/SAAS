@@ -1,0 +1,40 @@
+[
+ {
+  "name": "pgnet_version",
+  "sql": "select extname, extversion from pg_extension where extname in ('pg_net','pg_cron','supabase_vault')"
+ },
+ {
+  "name": "vault_key",
+  "vault_from_env": "ODDS_API_IO_KEY",
+  "vault_name": "ten287_odds_api_io_key",
+  "required": true,
+  "stop_on_error": true
+ },
+ {
+  "name": "key_shape",
+  "sql": "select length((select btrim(regexp_replace(decrypted_secret, '^apikey=', '', 'i'), E' \\t\\r\\n\"''') from vault.decrypted_secrets where name='ten287_odds_api_io_key')) as clean_len, (select btrim(regexp_replace(decrypted_secret, '^apikey=', '', 'i'), E' \\t\\r\\n\"''') from vault.decrypted_secrets where name='ten287_odds_api_io_key') ~ '^[0-9a-fA-F]{64}$' as hex64"
+ },
+ {
+  "name": "fire_noauth_default",
+  "sql": "select net.http_get(url := 'https://api.odds-api.io/v3/sports', timeout_milliseconds := 20000) as id"
+ },
+ {
+  "name": "fire_noauth_identity",
+  "sql": "select net.http_get(url := 'https://api.odds-api.io/v3/sports', headers := '{\"Accept-Encoding\":\"identity\"}'::jsonb, timeout_milliseconds := 20000) as id"
+ },
+ {
+  "name": "fire_keyed_updated",
+  "sql": "select net.http_get(url := 'https://api.odds-api.io/v3/odds/updated', params := jsonb_build_object('apiKey', (select btrim(regexp_replace(decrypted_secret, '^apikey=', '', 'i'), E' \\t\\r\\n\"''') from vault.decrypted_secrets where name='ten287_odds_api_io_key'), 'since', (extract(epoch from now())::bigint - 60)::text, 'bookmaker', 'Betfair Exchange', 'sport', 'tennis', 'markets', 'ML'), timeout_milliseconds := 20000) as id"
+ },
+ {
+  "sleep": 20
+ },
+ {
+  "name": "responses",
+  "sql": "select id, status_code, timed_out, error_msg, content_type, headers->>'Content-Encoding' as enc, headers->>'content-encoding' as enc2, headers->>'x-ratelimit-remaining' as rl, length(content) as len, left(content, 160) as head, (content is not null and left(ltrim(content),1) in ('[','{')) as looks_json from net._http_response where created > now() - interval '2 minutes' order by id"
+ },
+ {
+  "name": "parse_keyed",
+  "sql": "select id, jsonb_typeof(content::jsonb) as t, case when jsonb_typeof(content::jsonb)='array' then jsonb_array_length(content::jsonb) end as n from net._http_response where created > now() - interval '2 minutes' and content like '[%' order by id"
+ }
+]

@@ -9,20 +9,23 @@ permissions:
 jobs:
   probe:
     runs-on: ubuntu-latest
-    timeout-minutes: 350
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-      # Run 2: near-start sampler (the one-shot probe ran as run 36198963732; not re-run).
-      - name: odds-api.io near-start sampler, every 5 min (REST only, read-only, encrypted output)
+      # Run 3: pg_net gzip/keyed-call test for the TEN-287 recorder (Management-API SQL, encrypted output).
+      # The sampler already ran (run 36199876547); it is not re-run.
+      - name: SQL steps (encrypted output)
         env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
-          TEN287_MINUTES: "335"
-        run: python3 tools/ten287-sampler.py
+          TEN287_STEPS: tools/ten287-steps-gztest.json
+        run: python3 tools/ten287-sql.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: ten287-probe
+          name: ten287-sql
           path: |
-            out/samples.enc
-            out/spass.enc
+            out/result.enc
+            out/pass.enc
           retention-days: 1
