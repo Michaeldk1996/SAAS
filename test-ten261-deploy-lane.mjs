@@ -482,13 +482,74 @@ Object.assign(CASES, {
   },
 });
 
+Object.assign(CASES, {
+  // The holder re-claims with a NEW ready sha: the claim takes it (so deploy-batch
+  // accepts it) without extending the hold; a not-ready new sha → 7, claim unchanged.
+  async reclaimWithNewShaUpdatesTheClaim(mod) {
+    const board = await startBoard();
+    try {
+      const { lane, clock, file } = await rig(mod, board);
+      board.runs['run-A'] = 'running';
+      await lane.claim(A, RDY(SHA.A));
+      clock.t = at(10);
+      const r = await lane.claim(A, RDY(SHA.A2));
+      const bad = await lane.claim(A, RDY(sha40('9')));
+      const c = lane.peek().claim;
+      return r.code === 0 && r.claim.sha === SHA.A2 && r.claim.expiresAt === new Date(at(30)).toISOString()
+        && bad.code === 7 && c.sha === SHA.A2 && c.expiresAt === new Date(at(30)).toISOString()
+        && history(file).some((h) => h.event === 'claim-sha-updated' && h.from === SHA.A && h.to === SHA.A2);
+    } finally { board.close(); }
+  },
+
+  // After the cap auto-released A, A's release still exits 1 — but its queue entry goes.
+  async releaseAfterCapWithdrawsEntry(mod) {
+    const board = await startBoard();
+    try {
+      const { lane, clock } = await rig(mod, board);
+      for (const r of ['run-A', 'run-B']) board.runs[r] = 'running';
+      await lane.ready(A, RDY(SHA.A));
+      await lane.claim(A, RDY(SHA.A));
+      clock.t = at(30);
+      await lane.claim(B, RDY(SHA.B));
+      const r = await lane.release(A);
+      return r.code === 1 && lane.peek().queue.every((e) => e.runId !== 'run-A') && lane.peek().claim.runId === 'run-B';
+    } finally { board.close(); }
+  },
+
+  // batchCandidates holds the store lock: an overall deadline caps its liveness
+  // calls; entries not reached are kept in the queue but not batched this round.
+  async batchLivenessDeadline(mod) {
+    const board = await startBoard();
+    try {
+      if (!(mod.BATCH_LIVENESS_BUDGET_MS > 0 && mod.BATCH_LIVENESS_BUDGET_MS <= 60000)) return false;
+      const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ten273-budget-'));
+      const receipts = path.join(dir, 'receipts');
+      for (const x of Object.values(SHA)) writeReceipt(receipts, x);
+      const lane = mod.createLane({ file: path.join(dir, 'lane.json'), now: () => T0,
+        liveness: mod.paperclipLiveness({ apiBase: board.base, apiKey: 'k' }),
+        notify: mod.paperclipNotify({ apiBase: board.base, apiKey: 'k', agentId: 'agent-x' }),
+        suiteReceipt: mod.fileSuiteReceipts({ dir: receipts }), rebaseCheck: REBASED, livenessBudgetMs: 250 });
+      const E = { ticket: 'TEN-265', issueId: 'issue-265', runId: 'run-E', kind: 'paperclip' };
+      for (const r of ['run-A', 'run-B', 'run-C', 'run-D', 'run-E']) board.runs[r] = 'running';
+      await lane.ready(B, RDY(SHA.B)); await lane.ready(C, RDY(SHA.C)); await lane.ready(D, RDY(SHA.D)); await lane.ready(E, RDY(SHA.A2));
+      await lane.claim(A, RDY(SHA.A));
+      board.setDelay(150);
+      const t = Date.now();
+      const cands = await lane.batchCandidates(A);
+      const took = Date.now() - t;
+      board.setDelay(0);
+      return cands.length >= 1 && cands.length <= 2 && lane.peek().queue.length === 4 && took < 1000;
+    } finally { board.close(); }
+  },
+});
+
 // Each mutant cuts one mechanism out of the real source. Every anchor must
 // occur exactly once, or the mutant silently mutates nothing.
 const MUTANTS = [
   ['a renewal extends the hold (the TEN-261 lease)', 'holdCapAutoReleases',
     "c.renewedAt = iso(now());\n      save(s);", "c.renewedAt = iso(now()); c.expiresAt = iso(now() + MAX_HOLD_MIN * MIN);\n      save(s);"],
   ['a repeat claim extends the hold', 'holdCapAutoReleases',
-    "c.renewedAt = iso(t);\n        out = { code: EXIT.HOLD, action: 'already-held'", "c.renewedAt = iso(t); c.expiresAt = iso(t + MAX_HOLD_MIN * MIN);\n        out = { code: EXIT.HOLD, action: 'already-held'"],
+    "c.renewedAt = iso(t);\n        const from = c.sha;", "c.renewedAt = iso(t); c.expiresAt = iso(t + MAX_HOLD_MIN * MIN);\n        const from = c.sha;"],
   ['no auto-release at the cap', 'holdCapAutoReleases',
     'if (!c || now() < Date.parse(c.expiresAt)) return null;', 'if (true) return null;'],
   ['the cap is off by one (released after 30:00, not at it)', 'holdCapAutoReleases',
@@ -539,6 +600,18 @@ const MUTANTS = [
     "if (sameTicket) s.claim.reclaimedFrom = c.runId;", "if (sameTicket) { s.claim.expiresAt = c.expiresAt; s.claim.reclaimedFrom = c.runId; }"],
   ['a same-ticket new run takes the lane while the old run is alive', 'sameTicketNoSilentInheritance',
     "const live = await liveness(c);\n        if (live.state === 'dead') {", "const live = await liveness(c);\n        if (live.state === 'dead' || c.ticket === me.ticket) {"],
+  ['a re-claim with a new ready sha keeps the old sha', 'reclaimWithNewShaUpdatesTheClaim',
+    'if (ready.sha !== from) {', 'if (false) {'],
+  ['a re-claim with a new sha extends the hold', 'reclaimWithNewShaUpdatesTheClaim',
+    "log(s, { event: 'claim-sha-updated'", "c.expiresAt = iso(t + MAX_HOLD_MIN * MIN); log(s, { event: 'claim-sha-updated'"],
+  ['release by a non-holder leaves its entry queued', 'releaseAfterCapWithdrawsEntry',
+    's.queue = s.queue.filter((e) => e.runId !== me.runId);\n      if (s.queue.length !== queued)', 'if (s.queue.length !== queued)'],
+  ['batchCandidates has no overall deadline', 'batchLivenessDeadline',
+    'if (Date.now() >= deadline) { keep.push(e); unchecked.add(e); continue; }', ''],
+  ['entries past the deadline are batched anyway', 'batchLivenessDeadline',
+    '.filter((e) => !unchecked.has(e))', ''],
+  ['the liveness budget is 10 min', 'batchLivenessDeadline',
+    'export const BATCH_LIVENESS_BUDGET_MS = 60000;', 'export const BATCH_LIVENESS_BUDGET_MS = 600000;'],
   ['claim lists no batch candidates', 'claimListsTheBatch',
     'const batchFor = (s, me) => s.queue.filter((e) => e.runId !== me.runId);', 'const batchFor = () => [];'],
   ['queued entries never expire', 'readyEntriesExpire',
@@ -547,7 +620,7 @@ const MUTANTS = [
   ['unready withdraws nothing', 'unreadyAndReleaseWithdraw',
     "s.queue = s.queue.filter((e) => e.runId !== me.runId);\n      if (s.queue.length === before)", "if (s.queue.length === before)"],
   ['release leaves the caller\'s entry queued', 'unreadyAndReleaseWithdraw',
-    "s.queue = s.queue.filter((e) => e.runId !== me.runId);\n      log(s, { event: 'released'", "log(s, { event: 'released'"],
+    "s.queue = s.queue.filter((e) => e.runId !== me.runId);\n      if (s.queue.length !== queued)", 'if (s.queue.length !== queued)'],
   ['a dead owner\'s entry is handed to the batch', 'deadOwnerEntryDropped',
     "if (live.state !== 'dead') { keep.push(e); continue; }", 'if (true) { keep.push(e); continue; }'],
   ['an unknown owner\'s entry is dropped as dead', 'deadOwnerEntryDropped',

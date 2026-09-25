@@ -101,20 +101,23 @@ export async function runBatch({ lane, me, sha, repo = process.cwd(), git = real
   // Candidates: each entry passes the same gates as a solo land, or is skipped.
   const skipped = [];
   const entries = [];
+  const onMain = [];
   for (const e of await lane.batchCandidates(me)) {
     const skip = (status, reason) => skipped.push({ ticket: e.ticket, runId: e.runId, sha: e.sha, status, reason });
     if (G(['cat-file', '-e', `${e.sha}^{commit}`]).status !== 0) { skip('missing', `${e.sha} is not in this repository`); continue; }
     const mb = G(['merge-base', e.sha, START]).stdout;
     if (!mb) { skip('missing', 'no merge-base with origin/main'); continue; }
+    // Already an ancestor of origin/main: nothing to land, no notice, not a batch member.
+    if (mb === e.sha) { onMain.push({ ticket: e.ticket, runId: e.runId, sha: e.sha }); continue; }
     if (hasMerges(mb, e.sha)) { skip('merge', "contains a merge commit — rebase, don't merge"); continue; }
     const rb = rebaseCheck(e.sha);
     if (!rb.ok) { skip('not-rebased', rb.detail); continue; }
-    if (mb !== e.sha) {
-      const ck = clobber({ base: mb, files: filesOf(mb, e.sha) });
-      if (!ck.ok) { skip('clobber', `its own clobber check failed:\n${ck.output}`); continue; }
-    }
+    const ck = clobber({ base: mb, files: filesOf(mb, e.sha) });
+    if (!ck.ok) { skip('clobber', `its own clobber check failed:\n${ck.output}`); continue; }
     entries.push({ ...e, holder: false });
   }
+
+  if (onMain.length) await lane.recordBatch(me, { dropped: onMain });
 
   let wt = null;
   const W = (args) => G(args, wt);

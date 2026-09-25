@@ -75,6 +75,9 @@ export const EXIT = { HOLD: 0, REFUSED: 1, USAGE: 2, WAIT: 3, ERROR: 6, NOT_READ
 const NET_TIMEOUT_MS = 10000;
 const GIT_TIMEOUT_MS = 120000;
 const LOCK_STALE_MS = 180000;
+// batchCandidates checks entry owners' liveness UNDER the store lock: an overall
+// deadline keeps that well inside LOCK_STALE_MS (plus at most one NET_TIMEOUT_MS call).
+export const BATCH_LIVENESS_BUDGET_MS = 60000;
 
 const iso = (ms) => new Date(ms).toISOString();
 
@@ -127,7 +130,7 @@ async function withLock(file, fn) {
 // notify({to:'owner'|'founder', issueId, body}) -> {ok, id?, error?}
 // suiteReceipt(sha)     -> {sha, tree, exit, startedAt, finishedAt, log} | null
 // rebaseCheck(sha)      -> {ok, codeCommits: [{sha, subject}], dataCommits: n, detail}
-export function createLane({ file, now = () => Date.now(), liveness, notify, suiteReceipt, rebaseCheck }) {
+export function createLane({ file, now = () => Date.now(), liveness, notify, suiteReceipt, rebaseCheck, livenessBudgetMs = BATCH_LIVENESS_BUDGET_MS }) {
   const log = (s, event) => { s.history.push({ at: iso(now()), ...event }); s.history = s.history.slice(-100); };
 
   function newClaim(me, ready) {
@@ -214,9 +217,15 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
         log(s, { event: 'claimed', ticket: me.ticket, runId: me.runId, sha: ready.sha });
         out = { code: EXIT.HOLD, action: 'claimed', claim: s.claim, autoReleased: auto ? auto.claim : undefined, batch: batchFor(s, me) };
       } else if (c.runId === me.runId) {
-        // Calling claim again never extends the hold.
+        // Calling claim again never extends the hold. A NEW ready sha (it passed
+        // the gate above) replaces the claimed one, so deploy-batch accepts it.
         c.renewedAt = iso(t);
-        out = { code: EXIT.HOLD, action: 'already-held', claim: c, batch: batchFor(s, me) };
+        const from = c.sha;
+        if (ready.sha !== from) {
+          c.sha = ready.sha; c.suiteFinishedAt = (ready.receipt && ready.receipt.finishedAt) || null;
+          log(s, { event: 'claim-sha-updated', ticket: me.ticket, runId: me.runId, from, to: ready.sha });
+        }
+        out = { code: EXIT.HOLD, action: 'already-held', claim: c, shaUpdatedFrom: ready.sha !== from ? from : undefined, batch: batchFor(s, me) };
       } else {
         const live = await liveness(c);
         if (live.state === 'dead') {
@@ -263,9 +272,12 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
       const auto = await autoRelease(s);
       if (auto) save(s);
       const c = s.claim;
+      // Your queue entry is withdrawn whether or not you still hold the lane.
+      const queued = s.queue.length;
+      s.queue = s.queue.filter((e) => e.runId !== me.runId);
+      if (s.queue.length !== queued) { log(s, { event: 'unready', ticket: me.ticket, runId: me.runId, by: 'release' }); save(s); }
       if (!c || c.runId !== me.runId) return { code: EXIT.REFUSED, action: auto && auto.claim.runId === me.runId ? 'auto-released' : 'not-owner', claim: c };
       s.claim = null;
-      s.queue = s.queue.filter((e) => e.runId !== me.runId);
       log(s, { event: 'released', ticket: me.ticket, runId: me.runId });
       save(s);
       return { code: EXIT.HOLD, action: 'released' };
@@ -324,8 +336,12 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
       const s = readState(file);
       pruneQueue(s);
       const keep = [];
+      const unchecked = new Set();
+      const deadline = Date.now() + livenessBudgetMs;
       for (const e of s.queue) {
         if (e.runId === me.runId) { keep.push(e); continue; }
+        // Out of time: treat as unknown — kept, but not batched this round.
+        if (Date.now() >= deadline) { keep.push(e); unchecked.add(e); continue; }
         const live = await liveness(e);
         if (live.state !== 'dead') { keep.push(e); continue; }
         const notice = await notify({ to: 'owner', issueId: e.issueId,
@@ -335,20 +351,25 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
       }
       s.queue = keep;
       save(s);
-      return batchFor(s, me).sort((a, b) => Date.parse(a.readyAt) - Date.parse(b.readyAt));
+      return batchFor(s, me).filter((e) => !unchecked.has(e)).sort((a, b) => Date.parse(a.readyAt) - Date.parse(b.readyAt));
     });
   }
 
   // Used by tools/deploy-batch.mjs to record the outcome of a batch. An entry
   // leaves the queue only if BOTH its run and its sha match what was landed: a
   // run that re-queued a newer commit during the batch keeps that entry.
-  async function recordBatch(me, { landed = [], skipped = [] }) {
+  async function recordBatch(me, { landed = [], skipped = [], dropped = [] }) {
     return withLock(file, async (save) => {
       const s = readState(file);
       const t = iso(now());
       for (const l of landed) {
         s.landed[l.runId] = { ticket: l.ticket, sha: l.sha, landedAs: l.landedAs, by: me.ticket, at: t };
         s.queue = s.queue.filter((e) => !(e.runId === l.runId && e.sha === l.sha));
+      }
+      // Already on origin/main (landed some other way): dropped silently, no notice.
+      for (const d of dropped) {
+        s.queue = s.queue.filter((e) => !(e.runId === d.runId && e.sha === d.sha));
+        log(s, { event: 'ready-already-on-main', ticket: d.ticket, runId: d.runId, sha: d.sha });
       }
       for (const k of skipped) {
         const e = s.queue.find((x) => x.runId === k.runId && x.sha === k.sha);

@@ -144,8 +144,10 @@ Only 0 lets you push. Codes 4 and 5 (TEN-261) are retired; no path returns them.
 **Timings.** The 30-min cap is `MAX_HOLD_MIN`, the one constant in
 `tools/deploy-lane.mjs`; the waiter report interval is `WAIT_REPORT_MIN` (30). Measured
 2026-09-23: push → live 19.3 and 21.9 min; Pages publishes every 9.9 min median (p90
-13.2). The suite (~6 min) and the review now run before the claim, so the lane covers
-only the push and the wait for the build to go live. If the cap releases the lane before
-your build is live, your read-back is still yours to do. Change the numbers only on a
+13.2). Your own suite (~6 min) and review run before the claim. For a solo land the lane
+covers only the clobber check and the push. In batch mode, the combined tree's
+`ci-suite` (~6 min) also runs inside the lane. The read-back (push → live ≈ 20–26 min)
+usually outlives the 30-min hold. That is expected: the read-back is still yours to do
+after the lane is released. Change the numbers only on a
 founder ruling, in the tool and here together. Tests: `test-ten261-deploy-lane.mjs`,
 `test-ten273-deploy-batch.mjs`.

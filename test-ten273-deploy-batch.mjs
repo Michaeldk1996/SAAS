@@ -89,6 +89,7 @@ const C = { ticket: 'TEN-303', issueId: 'issue-C', runId: 'run-C', kind: 'paperc
 const Z = { ticket: 'TEN-304', issueId: 'issue-Z', runId: 'run-Z', kind: 'paperclip' };
 const W = { ticket: 'TEN-305', issueId: 'issue-W', runId: 'run-W', kind: 'paperclip' };
 const M = { ticket: 'TEN-306', issueId: 'issue-M', runId: 'run-M', kind: 'paperclip' };
+const E = { ticket: 'TEN-307', issueId: 'issue-E', runId: 'run-E', kind: 'paperclip' };
 
 // origin/main: seed + one data-bot commit. Holder A edits a.txt, B edits b.txt,
 // C edits c.txt, Z edits b.txt the other way (conflicts with B). All branch off
@@ -125,13 +126,14 @@ async function fixture({ entries = [B, C], holderOnTip = false, beforeHolder = n
   mk('m2.txt', 'm2\n', 'TEN-306: m2');
   sh(work, '-c', 'core.hooksPath=/dev/null', 'merge', '-q', '--no-ff', '--no-edit', m1);
   shas.M = sh(work, 'rev-parse', 'HEAD');
+  shas.E = seed; // an entry already on origin/main
   sh(work, 'checkout', '-q', '--detach', seed);
   dataBot();
   const receipts = path.join(root, 'receipts');
   for (const s of Object.values(shas)) receipt(receipts, s);
 
   const board = await startBoard();
-  for (const r of ['run-A', 'run-B', 'run-C', 'run-Z', 'run-W', 'run-M']) board.runs[r] = 'running';
+  for (const r of ['run-A', 'run-B', 'run-C', 'run-Z', 'run-W', 'run-M', 'run-E']) board.runs[r] = 'running';
   const clock = { t: T0 };
   const notify = laneMod.paperclipNotify({ apiBase: board.base, apiKey: 'k', agentId: 'agent-x' });
   const lane = laneMod.createLane({ file: path.join(root, 'lane.json'), now: () => clock.t,
@@ -358,6 +360,19 @@ Object.assign(CASES, {
 });
 
 Object.assign(CASES, {
+  // xv · an entry already on origin/main is dropped silently: no notice, not
+  //      landed, and it does not make this a batch.
+  async alreadyOnMainEntryDroppedSilently(mod) {
+    const f = await fixture({ entries: [E] });
+    try {
+      const r = await batch(mod, f);
+      const st = f.lane.peek();
+      return r.code === 0 && r.mode === 'holder-only' && st.queue.length === 0 && !st.landed['run-E']
+        && f.board.comments.every((c) => c.issueId !== 'issue-E')
+        && st.history.some((h) => h.event === 'ready-already-on-main' && h.runId === 'run-E');
+    } catch (e) { if (process.env.DEBUG_TEN273) console.error('CASE THREW:', e.message); return false; } finally { f.close(); }
+  },
+
   // xiv · the holder's own claimed commit containing a merge is refused.
   async holderMergeRefused(mod) {
     const f = await fixture({ entries: [] });
@@ -420,6 +435,8 @@ const MUTANTS = [
     "if (!rb.ok) { skip('not-rebased', rb.detail); continue; }", ''],
   ['the batch ignores dead owners (reads the raw queue)', 'deadOwnerEntryNotLanded',
     'for (const e of await lane.batchCandidates(me)) {', 'for (const e of lane.peek().queue.filter((x) => x.runId !== me.runId)) {'],
+  ['an entry already on main is batched (misleading notice)', 'alreadyOnMainEntryDroppedSilently',
+    'if (mb === e.sha) { onMain.push(', 'if (false) { onMain.push('],
   ['a holder merge commit is not refused', 'holderMergeRefused',
     'if (hasMerges(holderMb, sha)) return refuse(', 'if (false) return refuse('],
 ];
