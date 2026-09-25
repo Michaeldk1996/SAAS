@@ -70,6 +70,9 @@ jobs:
             matches.json
             odds-fixture-map.json
             odds-card-state.json
+            oddspapi-postmatch-pinger.sql
+            .github/workflows/
+            supabase/migrations/
           sparse-checkout-cone-mode: false
 
       - name: Set up Python
