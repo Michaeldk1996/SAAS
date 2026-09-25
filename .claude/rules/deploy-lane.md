@@ -62,9 +62,20 @@ Keep posting on your issue so the founder can see it, but the tool's answer is w
    - **Dead waiters:** a waiter whose run is confirmed ended on the board (`cancelled`,
      `failed`, `succeeded`, `timed_out`, `error`) is dropped the next time someone
      behind it claims (`waiter-dropped-dead`, with the evidence).
-   - **Silent waiters:** any waiter that has not run `claim` for **15 min**
-     (`WAITER_STALE_MIN`) is dropped (`waiter-dropped-stale`), **alive or not**. A
-     claimant that stopped claiming is no longer a live claimant. You poll every ≤ 5 min.
+   - **Silent waiters** (founder, ruled 2026-09-25 03:24Z): any waiter that has not run
+     `claim` or `checkin` for **15 min** (`WAITER_STALE_MIN`) is dropped
+     (`waiter-dropped-stale`), **alive or not**. You poll every ≤ 5 min. If your own
+     next claim finds you silent, you are dropped then too.
+   - **Every drop is logged** (`waiter-dropped-stale` / `-dead` / `-batched-in`) with
+     the ticket, run id, time and reason. A best-effort notice goes on the dropped
+     waiter's ticket.
+   - **A dropped waiter can rejoin:** its next ready `claim` joins at the **back** of the
+     queue with a fresh wait-start.
+   - **If you are already waiting, run `ci-suite.sh` with `DEPLOY_LANE_TICKET` set.**
+     `DEPLOY_LANE_TICKET=TEN-123 bash tools/ci-suite.sh <sha>` checks in
+     (`deploy-lane.mjs checkin --ticket TEN-123`) every 4 min while `npm test` runs, so
+     a long suite never costs you your place. `checkin` only refreshes an existing
+     place: it never joins, grants or checks readiness.
    - **Not ready still counts.** A claim that returns **exit 7** (you are re-preparing:
      rebasing, re-running `ci-suite.sh`) keeps your place, **reports your position**
      and is logged (`waiting-not-ready`), as long as you keep calling `claim`.
@@ -129,8 +140,8 @@ Keep posting on your issue so the founder can see it, but the tool's answer is w
      because a run re-points to the tip of main when it starts. It is recorded on the
      claim once seen. **Only it extends the hold; later ticks never do.**
    - **"Queued"** means created at or after your push and not yet started.
-   - **[AWAITING THE FOUNDER'S CONFIRMATION] Healthy queueing** (`HEALTHY_QUEUE_PAUSES_CLOCK`,
-     shipped on; one line flips it back to the ruling's literal text). The
+   - **Healthy queueing** (`HEALTHY_QUEUE_PAUSES_CLOCK`, on; ruled by the founder
+     2026-09-25 03:24Z: "proposal"). The
      pipeline group allows one running and one pending run, so your run can sit pending
      behind a tick that started before your push. While such a tick is in progress,
      your deploy is moving: no (iii), and it counts as in progress for (iv). The 10-min
@@ -274,7 +285,7 @@ Only 0 lets you push. Codes 4 and 5 (TEN-261) are retired; no path returns them.
   - `PIPELINE_QUEUED_MAX_MIN`: 10;
   - `WAITER_STALE_MIN`: 15 (all waiters);
   - `READBACK_GRACE_MIN`: 12;
-  - `HEALTHY_QUEUE_PAUSES_CLOCK`: true (proposal, pending the founder);
+  - `HEALTHY_QUEUE_PAUSES_CLOCK`: true (ruled 2026-09-25 03:24Z);
   - `WAIT_REPORT_MIN`: 30;
   - `READY_TTL_MIN`: 60.
 - **Measured 2026-09-23:** push → live 19.3 and 21.9 min; Pages publishes every 9.9 min

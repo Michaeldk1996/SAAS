@@ -628,3 +628,55 @@ test('CLI: deploy-batch usage is exit 2; a caller that does not hold the lane ge
   assert.equal(r.status, 1);
   assert.equal(JSON.parse(r.stdout).action, 'not-holder');
 });
+
+// ── ci-suite.sh keeps a waiting place alive (founder, 2026-09-25 03:24Z) ──────
+// "Confirm a waiter keeps checking in while its own suite is running, so a long
+// test run never costs it its place." With DEPLOY_LANE_TICKET set, the REAL
+// script runs `deploy-lane.mjs checkin` in the background while npm test runs,
+// and kills the loop on exit. Driven for real: a slow fake npm test, the real
+// lane CLI against a temp store holding the caller as a waiter.
+async function ciSuiteChecksIn(script) {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ten273-checkin-'));
+  const origin = path.join(root, 'origin.git');
+  const local = path.join(root, 'local');
+  sh(root, 'init', '-q', '--bare', '-b', 'main', origin);
+  sh(root, 'clone', '-q', origin, local);
+  sh(local, 'config', 'user.name', 't'); sh(local, 'config', 'user.email', 't@t'); sh(local, 'symbolic-ref', 'HEAD', 'refs/heads/main');
+  fs.mkdirSync(path.join(local, 'kibl-stream'));
+  fs.writeFileSync(path.join(local, 'kibl-stream', 'README.md'), 'x\n');
+  fs.writeFileSync(path.join(local, 'package.json'), JSON.stringify({ name: 'x', private: true, scripts: { test: 'node -e "setTimeout(() => process.exit(0), 3500)"' } }));
+  sh(local, 'add', '.'); sh(local, '-c', 'core.hooksPath=/dev/null', 'commit', '-q', '-m', 'seed');
+  sh(local, 'push', '-q', 'origin', 'main');
+  fs.mkdirSync(path.join(local, 'tools'));
+  fs.copyFileSync(LANE_SRC, path.join(local, 'tools', 'deploy-lane.mjs'));  // the lane tool the script calls
+  const store = path.join(root, 'lane.json');
+  const t = new Date().toISOString();
+  fs.writeFileSync(store, JSON.stringify({ version: 2, claim: null, queue: [], landed: {}, history: [],
+    waiters: { 'run-W': { ticket: 'TEN-W', issueId: null, kind: 'paperclip', since: t, lastSeen: t, reportedAt: null, seq: 1 } } }));
+  const checkins = () => JSON.parse(fs.readFileSync(store, 'utf8')).history.filter((h) => h.event === 'checked-in' && h.runId === 'run-W').length;
+  const r = spawnSync('bash', [script, sh(local, 'rev-parse', 'HEAD')], { cwd: local, encoding: 'utf8', timeout: 30000,
+    env: { ...process.env, CI_SUITE_CLONE_URL: pathToFileURL(origin).href, CI_SUITE_NODE_MODULES: path.join(root, 'nm'), SUITE_RECEIPTS_DIR: path.join(root, 'receipts'),
+      DEPLOY_LANE_TICKET: 'TEN-W', DEPLOY_LANE_FILE: store, PAPERCLIP_RUN_ID: 'run-W', PAPERCLIP_API_URL: '', CI_SUITE_CHECKIN_SEC: '1' } });
+  const during = checkins();
+  await new Promise((res) => setTimeout(res, 2500));
+  const after = checkins();
+  spawnSync('pkill', ['-f', script]);                  // never leave a stray loop behind a mutant
+  return r.status === 0 && /check-in every 1s for TEN-W/.test(r.stdout) && during >= 2 && after === during;
+}
+
+test('real ci-suite.sh: with DEPLOY_LANE_TICKET, checks in while npm test runs, and stops on exit', async () => {
+  fs.mkdirSync(path.join(os.tmpdir(), 'ten273-nm'), { recursive: true });
+  assert.equal(await ciSuiteChecksIn(SUITE_SRC), true);
+});
+for (const [label, find, replace] of [
+  ['the check-in loop never starts', 'if [ -n "${DEPLOY_LANE_TICKET:-}" ] && [ -f "$LANE_TOOL" ]; then', 'if false; then'],
+  ['the check-in loop is not killed on exit', 'stop_checkin() { if [ -n "$CHECKIN_PID" ]; then kill', 'stop_checkin() { if false; then kill'],
+]) {
+  test(`mutant bites — ci-suite.sh: ${label}`, async () => {
+    const src = fs.readFileSync(SUITE_SRC, 'utf8');
+    assert.equal(src.split(find).length - 1, 1, `anchor must occur exactly once: ${find}`);
+    const f = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'ten273-suite-mut-')), 'ci-suite.sh');
+    fs.writeFileSync(f, src.replace(find, replace));
+    assert.equal(await ciSuiteChecksIn(f), false);
+  });
+}

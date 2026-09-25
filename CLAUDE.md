@@ -212,13 +212,13 @@ Before you claim the lane, get the commit fully ready (founder rulings TEN-273).
    - The lane goes to the **longest-waiting live claimant**, not to whoever polls first.
    - Exit 3 prints your `position` and `waitedMin`; re-run `claim` every ≤ 5 min.
    - Exit 7 means the commit is not ready; the output lists what is missing. If you were already waiting, you keep your place and it still reports your position.
-   - **Any waiter silent for 15 min drops out, alive or not.** Dead waiters drop out.
+   - **Any waiter silent for 15 min drops out, alive or not** (ruled 2026-09-25 03:24Z). Every drop is logged with the task and time, and a dropped waiter can rejoin at the back. Dead waiters drop out. **If you are already waiting, run `ci-suite.sh` with `DEPLOY_LANE_TICKET` set** (`DEPLOY_LANE_TICKET=TEN-123 bash tools/ci-suite.sh <sha>`): it checks in every 4 min while the suite runs, so a long test run never costs you your place.
    - Other runs with ready commits offer them with `deploy-lane.mjs ready` (withdraw with `unready`); that is not a place in the lane queue. A waiter whose commit is batched in leaves the queue.
    - **Every land goes through `node tools/deploy-batch.mjs --ticket TEN-123 --sha <the sha you claimed with>`.** It handles the solo case, pushes only the claimed, suite-green sha (plus any batch), and records your `readBack` sha and push time on the claim. A raw `git push` is outside the contract; this tool cannot block it.
    - The pushed tree may differ from the suite-tested tree **only by `[skip ci]` data-bot commits**, and the clobber check is re-run against them. If a code commit lands after your claim: `release`, rebase, run `ci-suite.sh` again, claim again.
    - **Hold: 40 min from the claim** (the clobber check, `deploy-batch.mjs` and the push all run inside it).
      - It is **extended while your own pipeline run is in progress**, then for **12 min of read-back grace** after that run succeeds. A healthy deploy is never cut off. Your run is the *first* `pipeline.yml` run whose first job started after your push (a run cancelled while queued never started); later ticks never extend. One failed GitHub read reuses the last known state if it is ≤ 5 min old, and only to keep the lane, never to release it.
-     - You are released at once if your run is dead, if your pipeline run sits queued for more than 10 min, or at 40 min with none of the above. Pending behind a tick that started before your push counts as moving (**awaiting the founder's confirmation**; one line flips it back).
+     - You are released at once if your run is dead, if your pipeline run sits queued for more than 10 min, or at 40 min with none of the above. Pending behind a tick that started before your push counts as moving (ruled 2026-09-25 03:24Z).
      - GitHub unreachable never extends a hold.
      - A forced release puts you at the back of the queue only if you had not pushed, posts on your ticket, and turns a `pipeline-watchdog.yml` run red with the reason.
    - Waiting, dead claimants, same-ticket runs, the hold rules, cutover and exit codes 0/1/2/3/6/7: `.claude/rules/deploy-lane.md`.

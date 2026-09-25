@@ -43,7 +43,7 @@
 //     `pipeline-queued-10min`; (iv) MAX_HOLD_MIN (40) since takenAt and none of
 //     that → release, `cap-40min-no-run`. The owner's run is the FIRST pipeline
 //     run that started at/after pushedAt, recorded once seen; later ticks never
-//     extend. HEALTHY_QUEUE_PAUSES_CLOCK (proposal, pending the founder): pending
+//     extend. HEALTHY_QUEUE_PAUSES_CLOCK (ruled 2026-09-25 03:24Z): pending
 //     behind a tick that started before the push counts as moving. GitHub
 //     unreachable = unknown: never extends. Renew and claim never extend. A
 //     forced release re-queues the holder at the BACK only if it had not pushed
@@ -74,6 +74,7 @@
 //   node tools/deploy-lane.mjs renew        --ticket TEN-123   (do I still hold it?)
 //   node tools/deploy-lane.mjs release      --ticket TEN-123   (lane, waiter place and ready entry)
 //   node tools/deploy-lane.mjs unready      --ticket TEN-123   (withdraw your queued commit)
+//   node tools/deploy-lane.mjs checkin      --ticket TEN-123   (waiting: keep your place while busy)
 //   node tools/deploy-lane.mjs status       [--ticket TEN-123]
 // Run id / issue id come from PAPERCLIP_RUN_ID / PAPERCLIP_TASK_ID. Without
 // them the claimant is a "session" whose liveness cannot be checked.
@@ -101,13 +102,13 @@ export const PIPELINE_QUEUED_MAX_MIN = 10;
 // so the live read-back can see it: Pages max-age 600 s + 2 min. (Review of
 // c003eb8f: "a healthy deploy is never cut off" must include its CDN lag.)
 export const READBACK_GRACE_MIN = 12;
-// PROPOSAL, PENDING THE FOUNDER (review of c003eb8f): the pipeline group allows
+// RULED by the founder 2026-09-25 03:24Z ("proposal"): the pipeline group allows
 // one running + one pending run, so the owner's run can sit pending behind a tick
 // that started before the push — healthy queueing, not stuck. While true, that
 // counts as "the deploy is moving" (no pipeline-queued release, and it counts as
 // in progress for the 40-min clause) and the 10-min queued clock only runs while
 // nothing is in progress. false = the ruling's literal text.
-export const HEALTHY_QUEUE_PAUSES_CLOCK = true; // AWAITING THE FOUNDER'S CONFIRMATION; false = the literal ruling
+export const HEALTHY_QUEUE_PAUSES_CLOCK = true; // ruled 2026-09-25 03:24Z; false = the literal 02:05Z text
 // A single failed GitHub read must not cut a healthy deploy off: the owner run's
 // last KNOWN state is reused if it is at most this old; older → unknown.
 export const PIPELINE_STALE_OK_MIN = 5;
@@ -184,9 +185,11 @@ export function commitsIn(range, { cwd = process.cwd(), git: g = git } = {}) {
   return { ok: true, commits };
 }
 const QUEUED = new Set(['queued', 'waiting', 'pending', 'requested']);
-// A waiter that has not called `claim` for this long leaves the waiter queue —
-// alive or not: a claimant that stopped claiming is no longer a live claimant.
-// (A waiter polls every ≤ 5 min; a not-ready claim still counts as polling.)
+// A waiter that has not called `claim` (or `checkin`) for this long leaves the
+// waiter queue — alive or not. Founder, 2026-09-25 03:24Z: "Accept the 15-min
+// rule, on two conditions. A dropped waiter can rejoin at the back of the queue.
+// Every drop is logged with the task and time." A not-ready claim and a
+// `checkin` (ci-suite.sh runs one every 4 min) both count as checking in.
 export const WAITER_STALE_MIN = 15;
 export const WAIT_REPORT_MIN = 30;
 // A queued ready commit nobody has batched within this long is dropped: the run that
@@ -360,11 +363,36 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
     return pre;
   }
 
+  const isStale = (w, t = now()) => t - Date.parse(w.lastSeen || w.since) > WAITER_STALE_MIN * MIN;
+
+  // Every drop from the waiter queue (founder, 2026-09-25 03:24Z: "Every drop is
+  // logged with the task and time"): a history event with the ticket, run id,
+  // time and reason, and — after the lock, best-effort — a notice on the dropped
+  // waiter's ticket saying it can rejoin (at the back, with a fresh wait-start).
+  function dropWaiter(s, w, reason, detail, fx) {
+    delete s.waiters[w.runId];
+    log(s, { event: `waiter-dropped-${reason}`, reason, ticket: w.ticket, runId: w.runId, since: w.since, lastSeen: w.lastSeen || null, evidence: detail });
+    if (fx && reason !== 'batched-in') {
+      fx.push(async () => {
+        await notify({ to: 'owner', issueId: w.issueId,
+          body: `## Deploy lane: ${w.ticket} was dropped from the waiter queue (${reason})\n\n` +
+            `Run \`${w.runId}\`, waiting since ${w.since}: ${detail}. It can rejoin at any time — ` +
+            `\`node tools/deploy-lane.mjs claim --ticket ${w.ticket} --sha <sha> --reviewed\` — at the back of the queue, with a fresh wait-start. ` +
+            `While your suite runs, run tools/ci-suite.sh with DEPLOY_LANE_TICKET=${w.ticket} set so it keeps checking in.` });
+        return null;
+      });
+    }
+  }
+  const staleDetail = (w) => `no claim or check-in for more than ${WAITER_STALE_MIN} min (last ${w.lastSeen || w.since})`;
+
   // The caller joins the queue (or is already in it). A NEW run of a ticket
   // that was already waiting inherits that wait-start time only if the old run
-  // is (pre-lock checked) dead AND it last polled within WAITER_STALE_MIN.
-  function join(s, me, pre) {
+  // is (pre-lock checked) dead AND it last polled within WAITER_STALE_MIN. A
+  // caller whose own entry has gone silent is dropped (logged) and rejoins at
+  // the BACK with a fresh wait-start — even if nobody had pruned it yet.
+  function join(s, me, pre, fx) {
     const t = now();
+    if (s.waiters[me.runId] && isStale(s.waiters[me.runId], t)) dropWaiter(s, { ...s.waiters[me.runId], runId: me.runId }, 'stale', staleDetail(s.waiters[me.runId]), fx);
     if (s.waiters[me.runId]) { s.waiters[me.runId].lastSeen = iso(t); return { w: s.waiters[me.runId] }; }
     for (const old of order(s)) {
       if (old.ticket !== me.ticket || old.runId === me.runId) continue;
@@ -384,21 +412,19 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
   // Waiters ahead of the caller, after dropping the silent ones (no `claim` for
   // WAITER_STALE_MIN, alive or not) and the dead ones (pre-lock liveness). A
   // waiter the pre-lock pass did not reach counts as still waiting.
-  function ahead(s, me, pre) {
+  function ahead(s, me, pre, fx) {
     const t = now();
     const out = [];
     for (const w of order(s)) {
       if (w.runId === me.runId) break;
-      const stale = t - Date.parse(w.lastSeen || w.since) > WAITER_STALE_MIN * MIN;
+      const stale = isStale(w, t);
       if (stale) {
-        delete s.waiters[w.runId];
-        log(s, { event: 'waiter-dropped-stale', ticket: w.ticket, runId: w.runId, since: w.since, lastSeen: w.lastSeen });
+        dropWaiter(s, w, 'stale', staleDetail(w), fx);
         continue;
       }
       const live = pre.waiterLive.get(w.runId);
       if (live && live.state === 'dead') {
-        delete s.waiters[w.runId];
-        log(s, { event: 'waiter-dropped-dead', ticket: w.ticket, runId: w.runId, since: w.since, evidence: live.detail });
+        dropWaiter(s, w, 'dead', `its run has ended (${live.detail})`, fx);
         continue;
       }
       out.push(w);
@@ -417,7 +443,7 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
   // "The owner's pipeline run" is the FIRST pipeline.yml run that started at or
   // after the claim's pushedAt; it is recorded on the claim once seen, and only
   // it extends — later ticks never do. Queued = created at/after pushedAt and not
-  // yet started. HEALTHY_QUEUE_PAUSES_CLOCK (proposal, pending the founder):
+  // yet started. HEALTHY_QUEUE_PAUSES_CLOCK (ruled 2026-09-25 03:24Z):
   // while another pipeline run is in progress ahead of it, the owner's queued
   // run is "moving" — no (iii), and it counts as in progress for (iv); its
   // queued clock only runs while nothing is in progress.
@@ -562,12 +588,18 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
     if (!ready.ok) {
       // A waiter that is re-preparing is still claiming: it keeps its place
       // while it keeps calling, and it is told (and the log records) where it stands.
-      return locked(async (save) => {
+      return locked(async (save, fx) => {
         const s = readState(file);
         const w = s.waiters[me.runId];
         if (!w) return { code: EXIT.NOT_READY, action: 'not-ready', missing: ready.missing };
+        if (isStale(w)) {
+          // Gone silent: dropped (it rejoins at the back once it is ready again).
+          dropWaiter(s, { ...w, runId: me.runId }, 'stale', staleDetail(w), fx);
+          save(s);
+          return { code: EXIT.NOT_READY, action: 'not-ready', missing: ready.missing, dropped: 'stale' };
+        }
         w.lastSeen = iso(now());
-        const before = ahead(s, me, pre);
+        const before = ahead(s, me, pre, fx);
         const position = before.length + 1;
         const waited = waitedMin(w);
         log(s, { event: 'waiting-not-ready', ticket: me.ticket, runId: me.runId, position, waitedMin: waited, missing: ready.missing.map((m) => m.split(':')[0]) });
@@ -581,7 +613,7 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
       pruneQueue(s);
       // Join BEFORE enforcing, so a holder re-queued in this same call lands
       // behind this caller.
-      const joined = s.claim && s.claim.runId === me.runId ? null : join(s, me, pre);
+      const joined = s.claim && s.claim.runId === me.runId ? null : join(s, me, pre, fx);
       const { forced: freed, live } = enforce(s, pre, fx);
       const c = s.claim;
       if (c && c.runId === me.runId) {
@@ -605,8 +637,8 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
         save(s);
         return { code: EXIT.HOLD, action: 'already-held', claim: c, position: 0, shaUpdatedFrom: ready.sha !== from ? from : undefined, batch: batchFor(s, me) };
       }
-      const { w, inheritedFrom } = joined || join(s, me, pre);
-      const before = ahead(s, me, pre);
+      const { w, inheritedFrom } = joined || join(s, me, pre, fx);
+      const before = ahead(s, me, pre, fx);
       const position = before.length + 1;
       const waited = waitedMin(w, t);
       let out;
@@ -753,6 +785,28 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
     });
   }
 
+  // A waiter checks in while it is busy (e.g. its suite runs — tools/ci-suite.sh
+  // does this every 4 min when DEPLOY_LANE_TICKET is set), so a long test run
+  // never costs it its place. It ONLY refreshes lastSeen: no readiness check, no
+  // grant, and it never joins a run that is not already waiting. A waiter that
+  // has already gone silent is dropped (logged), not revived.
+  async function checkin(me) {
+    return locked(async (save, fx) => {
+      const s = readState(file);
+      const w = s.waiters[me.runId];
+      if (!w) return { code: EXIT.REFUSED, action: 'not-waiting', detail: 'not in the waiter queue: check-in only keeps an existing place' };
+      if (isStale(w)) {
+        dropWaiter(s, { ...w, runId: me.runId }, 'stale', staleDetail(w), fx);
+        save(s);
+        return { code: EXIT.REFUSED, action: 'dropped', detail: `${staleDetail(w)} — claim again to rejoin at the back` };
+      }
+      w.lastSeen = iso(now());
+      log(s, { event: 'checked-in', ticket: me.ticket, runId: me.runId });
+      save(s);
+      return { code: EXIT.HOLD, action: 'checked-in', since: w.since, lastSeen: w.lastSeen };
+    });
+  }
+
   // Withdraw the caller's queued entry.
   async function unready(me) {
     return locked(async (save) => {
@@ -815,7 +869,7 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
         s.landed[l.runId] = { ticket: l.ticket, sha: l.sha, landedAs: l.landedAs, by: me.ticket, at: t };
         s.queue = s.queue.filter((e) => !(e.runId === l.runId && e.sha === l.sha));
         // Its commit is on main: it no longer waits for the lane.
-        if (s.waiters[l.runId]) { delete s.waiters[l.runId]; log(s, { event: 'waiter-left', ticket: l.ticket, runId: l.runId, by: 'batch-landed' }); }
+        if (s.waiters[l.runId]) dropWaiter(s, { ...s.waiters[l.runId], runId: l.runId }, 'batched-in', `its commit landed in ${me.ticket}'s batch as ${l.landedAs}`, null);
       }
       // Already on origin/main (landed some other way): dropped silently, no notice.
       for (const d of dropped) {
@@ -834,7 +888,7 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
 
   const peek = () => readState(file);
 
-  return { claim, renew, release, confirmLive, recordPush, status, ready, unready, readiness, batchCandidates, recordBatch, peek, receipt: suiteReceipt };
+  return { claim, renew, release, confirmLive, recordPush, status, ready, unready, checkin, readiness, batchCandidates, recordBatch, peek, receipt: suiteReceipt };
 }
 
 // ── real adapters ────────────────────────────────────────────────────────────
@@ -1031,7 +1085,7 @@ function parseArgs(argv) {
 const USAGE = 'usage: node tools/deploy-lane.mjs claim|ready --ticket TEN-123 --sha <commit> --reviewed\n' +
   '       node tools/deploy-lane.mjs confirm-live --ticket TEN-123 --sha <the sha you pushed>\n' +
   '       node tools/deploy-lane.mjs rebased --sha <commit>   (exit 0 rebased, 7 not)\n' +
-  '       node tools/deploy-lane.mjs renew|release|unready --ticket TEN-123\n       node tools/deploy-lane.mjs status [--ticket TEN-123]';
+  '       node tools/deploy-lane.mjs renew|release|unready|checkin --ticket TEN-123\n       node tools/deploy-lane.mjs status [--ticket TEN-123]';
 
 async function main() {
   let a;
@@ -1044,7 +1098,7 @@ async function main() {
     console.log(JSON.stringify(r, null, 2));
     process.exit(r.ok ? EXIT.HOLD : EXIT.NOT_READY);
   }
-  if (!['claim', 'ready', 'unready', 'renew', 'release', 'status', 'confirm-live'].includes(a.cmd) || (a.cmd !== 'status' && !a.ticket) || (needsSha && !a.sha)) {
+  if (!['claim', 'ready', 'unready', 'renew', 'release', 'status', 'confirm-live', 'checkin'].includes(a.cmd) || (a.cmd !== 'status' && !a.ticket) || (needsSha && !a.sha)) {
     console.error(USAGE);
     process.exit(EXIT.USAGE);
   }

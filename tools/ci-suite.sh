@@ -22,8 +22,13 @@
 # The commit may not be on GitHub yet, so it is fetched into the clone from the
 # local repository.
 #
+# Already WAITING for the deploy lane? Run this with DEPLOY_LANE_TICKET set: while
+# npm test runs, a background loop runs `deploy-lane.mjs checkin` every 4 min, so
+# a long suite never costs you your place (a waiter silent for 15 min is dropped;
+# founder, 2026-09-25 03:24Z). The loop is killed on every exit path.
+#
 # Exit: the suite's own exit code; 2 usage / setup failure (no receipt written).
-# Test-only overrides: CI_SUITE_CLONE_URL, CI_SUITE_NODE_MODULES.
+# Test-only overrides: CI_SUITE_CLONE_URL, CI_SUITE_NODE_MODULES, CI_SUITE_CHECKIN_SEC.
 set -u
 
 # Every exit prints EXIT and the log path, including setup failures.
@@ -56,7 +61,11 @@ D="$(cd "$D" && pwd -P)"
 [ -n "$D" ] || fail "could not resolve the clone dir"
 LOG="$RECEIPTS/logs/${SHA}-$(date -u +%Y%m%dT%H%M%SZ).log"
 [ -n "$LOG" ] || fail "no log path"
-trap 'rm -rf "$D"' EXIT
+CHECKIN_PID=""
+stop_checkin() { if [ -n "$CHECKIN_PID" ]; then kill "$CHECKIN_PID" 2>/dev/null; wait "$CHECKIN_PID" 2>/dev/null; CHECKIN_PID=""; fi; }
+trap 'stop_checkin; rm -rf "$D"' EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
 
 STARTED="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
@@ -76,9 +85,25 @@ ln -s "$NODE_MODULES" "$D/node_modules" || fail "could not link node_modules int
 cd "$D" || fail "cannot cd into $D"
 echo "pwd:  $(pwd -P)"
 echo "HEAD: $(git rev-parse HEAD)"
+# Keep a waiting place alive while the suite runs (see the header).
+LANE_TOOL="$REPO/tools/deploy-lane.mjs"
+if [ -n "${DEPLOY_LANE_TICKET:-}" ] && [ -f "$LANE_TOOL" ]; then
+  (
+    trap 'kill "$SP" 2>/dev/null; exit 0' TERM
+    cd "$REPO" || exit 0   # not the throwaway clone: it is deleted on exit
+    while :; do
+      node "$LANE_TOOL" checkin --ticket "$DEPLOY_LANE_TICKET" > /dev/null 2>&1
+      sleep "${CI_SUITE_CHECKIN_SEC:-240}" & SP=$!
+      wait "$SP"
+    done
+  ) > /dev/null 2>&1 &
+  CHECKIN_PID=$!
+  echo "deploy-lane check-in every ${CI_SUITE_CHECKIN_SEC:-240}s for $DEPLOY_LANE_TICKET while the suite runs"
+fi
 echo "running npm test (log: $LOG) ..."
 npm test > "$LOG" 2>&1
 EXIT=$?
+stop_checkin
 FINISHED="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 
 if [ "$EXIT" -eq 0 ]; then

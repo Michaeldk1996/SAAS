@@ -1263,6 +1263,71 @@ Object.assign(CASES, {
   },
 });
 
+// ── founder, 2026-09-25 03:24Z: "Accept the 15-min rule, on two conditions. A
+// dropped waiter can rejoin at the back of the queue. Every drop is logged with
+// the task and time. Also confirm a waiter keeps checking in while its own suite
+// is running, so a long test run never costs it its place." ────────────────────
+Object.assign(CASES, {
+  // A dropped waiter is logged (ticket, run id, time, reason) and told on its
+  // ticket; its next claim joins at the BACK with a fresh wait-start. Also when
+  // nobody had pruned it yet: a silent waiter's own claim drops and rejoins it.
+  async droppedWaiterIsLoggedAndRejoinsAtTheBack(mod) {
+    const board = await startBoard();
+    try {
+      const { lane, clock, file } = await rig(mod, board);
+      for (const r of ['run-A', 'run-B', 'run-C', 'run-D']) board.runs[r] = 'running';
+      await lane.claim(A, RDY(SHA.A));
+      clock.t = at(1); await lane.claim(B, RDY(SHA.B));
+      clock.t = at(2); await lane.claim(C, RDY(SHA.C));
+      clock.t = at(10); await lane.claim(C, RDY(SHA.C));
+      clock.t = at(17); const c17 = await lane.claim(C, RDY(SHA.C));      // B silent 16 min: dropped
+      const ev = state(file).history.find((h) => h.event === 'waiter-dropped-stale' && h.runId === 'run-B');
+      const notice = board.comments.find((c) => c.issueId === 'issue-260' && /dropped/.test(c.body) && /rejoin/.test(c.body));
+      clock.t = at(18); const b18 = await lane.claim(B, RDY(SHA.B));      // rejoins at the back
+      // self-drop: D waits at 18.5, then goes silent; nobody behind prunes it
+      clock.t = at(18.5); await lane.claim(D, RDY(SHA.D));
+      clock.t = at(20); await lane.claim(C, RDY(SHA.C)); await lane.claim(B, RDY(SHA.B));
+      clock.t = at(28); await lane.claim(C, RDY(SHA.C)); await lane.claim(B, RDY(SHA.B));
+      clock.t = at(34); const d34 = await lane.claim(D, RDY(SHA.D));      // silent 15.5 min: back of the queue
+      return c17.position === 1 && !!ev && ev.reason === 'stale' && ev.ticket === 'TEN-260' && !!ev.at && ev.at === new Date(at(17)).toISOString()
+        && !!notice && b18.code === 3 && b18.position === 2 && b18.since === new Date(at(18)).toISOString()
+        && d34.code === 3 && d34.since === new Date(at(34)).toISOString() && d34.position === 3
+        && state(file).history.some((h) => h.event === 'waiter-dropped-stale' && h.runId === 'run-D' && h.reason === 'stale');
+    } catch (e) { if (process.env.DEBUG_TEN273) console.error('CASE THREW:', e.message); return false; } finally { board.close(); }
+  },
+
+  // Check-in while the suite runs: B's 25-min suite checks in every 4 min and B
+  // keeps its place; the same run without check-ins is dropped at 15. A check-in
+  // never joins a run that is not already waiting.
+  async checkinKeepsThePlaceDuringASuite(mod) {
+    const board = await startBoard();
+    try {
+      const run1 = async (withCheckins) => {
+        const { lane, clock, file } = await rig(mod, board);
+        for (const r of ['run-A', 'run-B', 'run-C']) board.runs[r] = 'running';
+        await lane.claim(A, RDY(SHA.A));
+        clock.t = at(1); await lane.claim(B, RDY(SHA.B));                // B starts its 25-min suite
+        clock.t = at(2); await lane.claim(C, RDY(SHA.C));
+        for (const m of [5, 9, 13, 17, 21, 25]) {
+          clock.t = at(m);
+          if (withCheckins) await lane.checkin(B);
+          if (m % 2 === 1 && m > 8) await lane.claim(C, RDY(SHA.C));      // C keeps polling
+        }
+        clock.t = at(26); await lane.release(A);
+        clock.t = at(26.2); const c = await lane.claim(C, RDY(SHA.C));
+        return { c, dropped: state(file).history.find((h) => h.event === 'waiter-dropped-stale' && h.runId === 'run-B') };
+      };
+      const kept = await run1(true);
+      const lost = await run1(false);
+      const { lane } = await rig(mod, board);
+      const stranger = await lane.checkin(D);
+      return kept.c.code === 3 && kept.c.ahead[0].runId === 'run-B' && !kept.dropped
+        && lost.c.code === 0 && !!lost.dropped && lost.dropped.at === new Date(at(17)).toISOString()
+        && stranger.code === 1 && stranger.action === 'not-waiting' && !lane.peek().waiters['run-D'];
+    } catch (e) { if (process.env.DEBUG_TEN273) console.error('CASE THREW:', e.message); return false; } finally { board.close(); }
+  },
+});
+
 // Each mutant cuts one mechanism out of the real source. Every anchor must
 // occur exactly once, or the mutant silently mutates nothing.
 const MUTANTS = [
@@ -1361,10 +1426,10 @@ const MUTANTS = [
   ['(c) no alert on the holder\'s ticket at the cap', 'founderC_renewalPastCapRefused',
     "const notice = await notify({ to: 'owner', issueId: c.issueId, body });", "const notice = !dead ? { ok: false, error: 'x' } : await notify({ to: 'owner', issueId: c.issueId, body });"],
   ['(d) dead waiters keep their place', 'founderD_deadClaimantRemoved',
-    "if (live && live.state === 'dead') {\n        delete s.waiters[w.runId];", "if (false) {\n        delete s.waiters[w.runId];"],
-  ['silent waiters never go stale', 'staleWaitersDropped', 'if (stale) {\n        delete s.waiters[w.runId];', 'if (false) {\n        delete s.waiters[w.runId];'],
+    "if (live && live.state === 'dead') {\n        dropWaiter(s, w, 'dead'", "if (false) {\n        dropWaiter(s, w, 'dead'"],
+  ['silent waiters never go stale', 'staleWaitersDropped', "if (stale) {\n        dropWaiter(s, w, 'stale'", "if (false) {\n        dropWaiter(s, w, 'stale'"],
   ['a live Paperclip waiter never goes stale (the pre-review rule)', 'staleWaitersDropped',
-    'if (stale) {\n        delete s.waiters[w.runId];', "if (stale && w.kind !== 'paperclip') {\n        delete s.waiters[w.runId];"],
+    "if (stale) {\n        dropWaiter(s, w, 'stale'", "if (stale && w.kind !== 'paperclip') {\n        dropWaiter(s, w, 'stale'"],
   ['the waiter stale window is 60 min', 'staleWaitersDropped', 'export const WAITER_STALE_MIN = 15;', 'export const WAITER_STALE_MIN = 60;'],
   ['a new run inherits even while the old run is alive', 'sameTicketWaiterInheritance',
     "      if (!live || live.state !== 'dead') continue;\n      delete s.waiters[old.runId];", "      delete s.waiters[old.runId];"],
@@ -1375,11 +1440,11 @@ const MUTANTS = [
   ['the cap is 45 min, not the founder\'s 40', 'capRuleConstants', 'export const MAX_HOLD_MIN = 40;', 'export const MAX_HOLD_MIN = 45;'],
   // review fixes
   ['a not-ready claim does not refresh the waiter (it goes stale while re-preparing)', 'notReadyWaiterKeepsPlace',
-    '        w.lastSeen = iso(now());\n        const before = ahead(s, me, pre);', '        const before = ahead(s, me, pre);'],
+    '        w.lastSeen = iso(now());\n        const before = ahead(s, me, pre, fx);', '        const before = ahead(s, me, pre, fx);'],
   ['a not-ready claim does not log its position', 'notReadyWaiterKeepsPlace',
     "log(s, { event: 'waiting-not-ready', ticket: me.ticket, runId: me.runId, position, waitedMin: waited,", "log(s, { event: 'waiting-not-ready', ticket: me.ticket, runId: me.runId,"],
   ['a batched-in waiter stays in the waiter queue', 'batchedWaiterLeavesQueue',
-    "if (s.waiters[l.runId]) { delete s.waiters[l.runId];", "if (false) { delete s.waiters[l.runId];"],
+    "if (s.waiters[l.runId]) dropWaiter(s, { ...s.waiters[l.runId], runId: l.runId }, 'batched-in'", "if (false) dropWaiter(s, { ...s.waiters[l.runId], runId: l.runId }, 'batched-in'"],
   ['confirm-live accepts any sha', 'confirmLiveChecksTheSha', 'if (sha !== c.sha && sha !== c.readBack) {', 'if (false) {'],
   ['confirm-live ignores the recorded read-back sha', 'confirmLiveChecksTheSha', 'if (sha !== c.sha && sha !== c.readBack) {', 'if (sha !== c.sha) {'],
   ['a legacy claim is read as a new one (cap text, new cap)', 'legacyClaimHonouredOnce',
@@ -1457,6 +1522,17 @@ const MUTANTS = [
     "  'bsp-atp-entry-bot@users.noreply.github.com',", ''],
   ['code files in a data directory pass', 'dataPathsAreWhatTheBotsWrite',
     "return DATA_DIRS.some((d) => f.startsWith(d)) && /\\.json(\\.gz)?$/i.test(f);", 'return DATA_DIRS.some((d) => f.startsWith(d));'],
+  // founder 03:24Z
+  ['a silent waiter\'s own claim keeps its old place', 'droppedWaiterIsLoggedAndRejoinsAtTheBack',
+    "    if (s.waiters[me.runId] && isStale(s.waiters[me.runId], t)) dropWaiter(", "    if (false) dropWaiter("],
+  ['a drop is logged without its reason', 'droppedWaiterIsLoggedAndRejoinsAtTheBack',
+    'log(s, { event: `waiter-dropped-${reason}`, reason, ticket: w.ticket,', 'log(s, { event: `waiter-dropped-${reason}`, ticket: w.ticket,'],
+  ['a dropped waiter is not told', 'droppedWaiterIsLoggedAndRejoinsAtTheBack',
+    "    if (fx && reason !== 'batched-in') {", '    if (false) {'],
+  ['a check-in does not refresh the waiter', 'checkinKeepsThePlaceDuringASuite',
+    "      w.lastSeen = iso(now());\n      log(s, { event: 'checked-in'", "      log(s, { event: 'checked-in'"],
+  ['a check-in joins a run that was not waiting', 'checkinKeepsThePlaceDuringASuite',
+    "      if (!w) return { code: EXIT.REFUSED, action: 'not-waiting',", "      if (!w) { addWaiter(s, me, iso(now())); save(s); return { code: EXIT.HOLD, action: 'joined' }; }\n      if (false) return { code: EXIT.REFUSED, action: 'not-waiting',"],
 ];
 
 async function loadMutant(find, replace) {

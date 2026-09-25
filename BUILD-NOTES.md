@@ -2016,10 +2016,18 @@ Together they supersede the TEN-261 45-min renewable lease.
 - **Retired:** exit codes 4 and 5, the takeover clobber check, and renewal extending
   anything.
 
-**For the founder to confirm.**
-- **Healthy queueing: AWAITING THE FOUNDER'S CONFIRMATION**
-  (`HEALTHY_QUEUE_PAUSES_CLOCK`, shipped on; one line, `false`, restores the literal
-  rule). The pipeline group allows one running and one pending run, so the
+**Founder rulings, 2026-09-25 03:24Z.** The contract is approved. Three points were
+ruled:
+- **Data-commit drift bar:** accepted.
+- **Silent waiters:** "Accept the 15-min rule, on two conditions. A dropped waiter can
+  rejoin at the back of the queue. Every drop is logged with the task and time. Also
+  confirm a waiter keeps checking in while its own suite is running." Implemented:
+  - every drop is logged with ticket, run id, time and reason, and noticed on the
+    ticket;
+  - the next claim rejoins at the back;
+  - `deploy-lane.mjs checkin`, with `ci-suite.sh` checking in every 4 min when
+    `DEPLOY_LANE_TICKET` is set.
+- **Healthy queueing: "proposal"** (`HEALTHY_QUEUE_PAUSES_CLOCK = true`). The pipeline group allows one running and one pending run, so the
   owner's run can sit pending behind a tick that started before the push. While that
   tick runs, the deploy counts as moving: no `pipeline-queued-10min` release, and it
   counts as in progress for the 40-min clause. The 10-min queued clock only runs while
