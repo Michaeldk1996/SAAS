@@ -2123,6 +2123,46 @@ def apply_orientation_guard(rows, dashed, st):
 
 # -------------------------------------------------------------------- plumbing
 
+def _priced(r):
+    return any(r.get(c) is not None
+               for c in ('open_price', 'now_price', 'close_price'))
+
+
+def kibl_payloads(rows, keep_stored_key=False):
+    """The Kibl upsert's request bodies, one per key set.
+
+    TEN-275 (review M1): is_selected is NOT in the payload of a priced row.
+    merge-duplicates overwrites every column it is sent, so sending the
+    filler's False reset each selected Kibl card to "no selected book" until
+    run_selection put it back — a blank card for that window (indefinitely on
+    a failure in between), and a real change every run that kept the delta
+    read from ever being empty. Omitted, an existing row keeps its stored
+    selection and a new row takes the column's DEFAULT false. A row with no
+    price at all still sends False: it can never be selected
+    (odds_card_state_selected_ck), and without the key a selected row losing
+    its last price would fail that CHECK.
+
+    Two bodies because PostgREST's bulk insert takes its column list from the
+    payload, so the two shapes cannot share a request."""
+    payload = [{k: v for k, v in r.items() if not k.startswith('_')
+                and not (keep_stored_key and k == 'match_key')
+                and not (k == 'is_selected' and _priced(r))}
+               for r in rows]
+    return [part for part in ([p for p in payload if 'is_selected' not in p],
+                              [p for p in payload if 'is_selected' in p]) if part]
+
+
+def upsert_kibl_rows(url, key, rows, keep_stored_key=False):
+    sent = 0
+    for part in kibl_payloads(rows, keep_stored_key):
+        s, err = L.upsert(url, key, 'odds_card_state', part,
+                          'fixture_id,book,market,side,line')
+        sent += s
+        if err:
+            return sent, err
+    return sent, None
+
+
 def fetch_all(url, key, table, cols, extra='', order='fixture_id.asc'):
     """Page a table. PostgREST caps a page at 1,000 rows and truncates silently
     past that, so the loop is not an optimisation — without it a full read is a
@@ -2588,12 +2628,8 @@ def main():
     })
 
     if not a.dry_run and rows:
-        payload = [{k: v for k, v in r.items() if not k.startswith('_')
-                    and not (keep_stored_key and k == 'match_key')}
-                   for r in rows]
-        sent, uerr = L.upsert(url, key, 'odds_card_state', payload,
-                              'fixture_id,book,market,side,line')
-        print(f'upserted {sent}/{len(payload)} kibl card rows'
+        sent, uerr = upsert_kibl_rows(url, key, rows, keep_stored_key)
+        print(f'upserted {sent}/{len(rows)} kibl card rows'
               + (f' — FAILED {uerr}' if uerr else ''))
         result['upserted'] = sent
         if uerr:

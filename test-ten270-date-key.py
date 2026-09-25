@@ -122,7 +122,10 @@ ok(all(N.board_key_for(k, IDX)[0] in page for k in ('2026-09-25|medvedev|royer',
 for f in ('ten225-kibl-card-state.py', 'ten225-load-card-state.py'):
     src = open(os.path.join(HERE, f), encoding='utf-8').read()
     src = src[src.index('def main('):]      # the run order; run_selection's own write-back comes later
-    i, j = src.find('NAMES.rekey_rows_to_board('), src.find("L.upsert(url, key, 'odds_card_state'")
+    # The Kibl writer upserts through upsert_kibl_rows() since TEN-275.
+    i = src.find('NAMES.rekey_rows_to_board(')
+    j = min([k for k in (src.find("L.upsert(url, key, 'odds_card_state'"),
+                         src.find('upsert_kibl_rows(url, key, rows')) if k >= 0], default=-1)
     ok(0 < i < j, f'{f} re-keys to the board card before it upserts odds_card_state')
 # Review round 3, finding 4: a run with no board must not write vendor keys over
 # the stored card-dated keys (source-order check, labelled as such).

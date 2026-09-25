@@ -27,12 +27,15 @@ LOCKED
      cached — a batched load may still be landing (review finding 1)
   f. no touch trigger (missing, disabled, wrong function, or the catalog RPC
      absent) -> full read, nothing saved, any old snapshot dropped (finding 4)
+  h. the Kibl upsert never sends a priced row's is_selected, so a stored
+     selection survives it and an unchanged run moves nothing (TEN-275, M1)
   s. the DDL creates the exact trigger names the job checks for; the
      oddspapi_fixtures trigger keeps the old stamp on a no-op (finding 1)
 
 MUTATION CONTROL — each reverts one change in a copy of the module and must
 turn its test red. Run by this file on every invocation; see the bottom.
 """
+import collections
 import json
 import os
 import shutil
@@ -781,9 +784,63 @@ def t_main_wires_the_cache(M, ok):
     shutil.rmtree(cache, ignore_errors=True)
 
 
+def t_h_upsert_keeps_selection(M, ok):
+    """TEN-275 (review M1): the Kibl upsert never resets a stored selection.
+    The card stays selected through the upsert — no window with no selected
+    book — and an unchanged run moves nothing (the delta stays empty)."""
+    cs = [card('101', 'bet105', 1, 'kibl', s, 'A', True, now=p, stamp=OLD)
+          for s, p in (('1', 1.5), ('2', 2.6))]
+    cs += [card('102', 'bet365', 2, 'oddspapi', s, 'A', False, now=p, stamp=OLD)
+           for s, p in (('1', 1.5), ('2', 2.6))]
+    pg = FakePG({'odds_card_state': cs}, SERVER_T0 + 60)
+    install(M, pg, tempfile.mkdtemp())
+    # The filler's own output for 101 (priced; is_selected False, as the
+    # filler always writes it), plus one new unpriced row that may never be
+    # selected, plus a private report field the upsert must strip.
+    built = [dict({k: v for k, v in r.items() if k != 'updated_at'},
+                  is_selected=False, _close_lag_min=3) for r in cs[:2]]
+    bare = card('109', 'bet105', 1, 'kibl', '1', 'C', False)
+    bare.pop('updated_at')
+    bare.update(open_price=None, open_ts=None, now_price=None, now_ts=None)
+    built.append(bare)
+    real_up, seen = pg._upsert, []
+
+    def up(table, rows, p, payload):
+        got = real_up(table, rows, p, payload)
+        seen.append({r['side']: r['is_selected'] for r in rows if r['fixture_id'] == '101'})
+        return got
+    pg._upsert = up
+    n, err = M.upsert_kibl_rows('https://x', 'k', built)
+    sent = [e for tb, pl in pg.posts for e in pl]
+    ok(err is None and n == 3, 'h: every Kibl row is upserted', (n, err))
+    ok(all('is_selected' not in e and '_close_lag_min' not in e
+           for e in sent if e['fixture_id'] == '101'),
+       'h: a priced Kibl row is upserted WITHOUT is_selected',
+       [sorted(e) for e in sent if e['fixture_id'] == '101'][:1])
+    ok([e.get('is_selected') for e in sent if e['fixture_id'] == '109'] == [False],
+       'h: an unpriced Kibl row still sends is_selected False',
+       [e for e in sent if e['fixture_id'] == '109'])
+    ok(all(len(set(map(frozenset, pl))) == 1 for _t, pl in pg.posts),
+       'h: each request carries ONE key set (PostgREST bulk columns)',
+       [sorted({frozenset(e) for e in pl}, key=len) for _t, pl in pg.posts])
+    ok(seen and all(s == {'1': True, '2': True} for s in seen),
+       'h: the selected Kibl card is never unselected by the upsert', seen)
+    ok(all(r['updated_at'] == _iso(OLD) for r in pg.t['odds_card_state'] if r['fixture_id'] == '101'),
+       'h: an unchanged run leaves the selected rows untouched (delta stays empty)',
+       [r['updated_at'] for r in pg.t['odds_card_state'] if r['fixture_id'] == '101'])
+    new = [r for r in pg.t['odds_card_state'] if r['fixture_id'] == '109']
+    ok(len(new) == 1 and not new[0].get('is_selected'),
+       'h: a new row lands unselected', new)
+    # main() writes odds_card_state through this path and no other.
+    body = M.main.__code__.co_names
+    ok('upsert_kibl_rows' in body and SRC.count("L.upsert(url, key, 'odds_card_state'") == 1,
+       'h: main upserts Kibl rows only through upsert_kibl_rows')
+
+
 TESTS = [t_a_recount_is_one_head, t_b_writes_only_changed, t_c_reference_cache,
          t_d_incremental, t_e_settling_not_cached, t_f_no_trigger_no_cache,
-         t_g_atomic, t_s_schema_names, t_main_wires_the_cache]
+         t_g_atomic, t_s_schema_names, t_main_wires_the_cache,
+         t_h_upsert_keeps_selection]
 
 
 def run(M, verbose):
@@ -880,6 +937,20 @@ MUTANTS = [
     ('main', 'each cache asks for the triggers itself',
      "        '', 'fixture_id.asc', 'updated_at', guarded=guarded)",
      "        '', 'fixture_id.asc', 'updated_at')"),
+    # TEN-275, review M1.
+    ('h', 'the upsert sends the filler\'s is_selected False again',
+     "                and not (k == 'is_selected' and _priced(r))}\n",
+     "}\n"),
+    ('h', 'an unpriced row drops is_selected too',
+     "    return any(r.get(c) is not None\n",
+     "    return True or any(r.get(c) is not None\n"),
+    ('h', 'both key sets in one request',
+     "    return [part for part in ([p for p in payload if 'is_selected' not in p],\n",
+     "    return [payload] or [part for part in ([p for p in payload if 'is_selected' not in p],\n"),
+    ('h', 'main upserts the whole payload inline again',
+     "        sent, uerr = upsert_kibl_rows(url, key, rows, keep_stored_key)\n",
+     "        sent, uerr = L.upsert(url, key, 'odds_card_state', rows,\n"
+     "                              'fixture_id,book,market,side,line')\n"),
     # The DDL (finding 1's trigger and finding 4's names). 'sql:<file>' target.
     ('s', 'no UPDATE trigger on oddspapi_fixtures',
      "CREATE OR REPLACE TRIGGER oddspapi_fixtures_touch_upd\n", "-- dropped\n", 'ls'),
