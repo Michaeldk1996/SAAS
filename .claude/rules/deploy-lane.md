@@ -34,11 +34,13 @@ Keep posting on your issue so the founder can see it, but the tool's answer is w
      - `[skip ci]` is in its **subject**;
      - its author is a data bot (`DATA_BOT_AUTHORS`: the bot authors of the last 30
        days of `[skip ci]` commits on main);
-     - **every file it touches is a data path** (`isDataPath`): a `.json` / `.jsonl` /
-       `.json.gz` / `.csv` file at the repo root or under `style-meetings/`,
-       `bet365-history/`, `odds-archive/`, `match-closes/`, `form/` or
-       `career-history/`. A code file (`.js .mjs .cjs .py .sh .yml .yaml .html .css`),
-       `package*.json`, `.github/` or `tools/` makes it code. Agents have committed
+     - **every file it touches is a file a data bot really writes** (`DATA_FILES` /
+       `DATA_DIRS` in `tools/deploy-lane.mjs`). The list comes from the files touched
+       by bot `[skip ci]` commits over 90 days, cross-checked against the `git add` and
+       commit-back lines of the bot workflows and launchd scripts. Hand-curated files
+       the code reads (`court-speed-map.json`, `tournament-surfaces.json`,
+       `player-atp-aliases.json`, anything config/schema-like) are **not** data. Code
+       files, `package*.json`, `.github/` and `tools/` never are. Agents have committed
        code under bot identities with `[skip ci]` in the title (TEN-232).
 
      One missing code commit means you are not rebased.
@@ -96,7 +98,8 @@ Keep posting on your issue so the founder can see it, but the tool's answer is w
      sha updates the claim, and you keep the lane. **After your push**, a new sha is
      refused (`pushed-confirm-first`, exit 1). Confirm the pushed commit first
      (`confirm-live` releases the lane), then claim the new sha at the back of the
-     queue.
+     queue. If the pushed build never goes live, `release` and investigate; the cap
+     frees the lane anyway.
 5. **What you push must be what the suite passed, plus data-bot commits and nothing
    else.**
    - The pushed tree can differ from the suite-tested tree **only by `[skip ci]`
@@ -134,8 +137,10 @@ Keep posting on your issue so the founder can see it, but the tool's answer is w
      queued clock only runs while nothing is in progress. Set the flag to `false` to
      restore the ruling's literal text.
    - **One failed GitHub read** reuses the last known state of your run if it is at
-     most **5 min** old (`PIPELINE_STALE_OK_MIN`). A single 502 does not cut off a run
-     seen in progress 3 min ago.
+     most **5 min** old (`PIPELINE_STALE_OK_MIN`), and **only to keep the lane**: run in
+     progress, or read-back grace. Saved state never causes a release. The queued rule
+     is skipped on it, leaving just the plain 40-min cap. A single 502 does not cut off
+     a run seen in progress 3 min ago.
    - **GitHub unreachable beyond that = unknown**, and unknown **never** extends a hold:
      rule (iv) applies as if no run were in progress. A grace already earned from a
      recorded successful run still applies.

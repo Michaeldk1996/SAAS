@@ -214,7 +214,10 @@ for attempt in 1 2 3; do
   ba="$(node -e 'try { console.log(JSON.parse(require("fs").readFileSync(process.argv[1], "utf8")).action || "") } catch { console.log("") }' "$RUN/batch-$attempt.json")"
   if [ "$ba" = "pushed-lane-unaware" ]; then
     landed=1; UNAWARE=1
-    log "deploy-batch pushed, but the lane could not record the push — live check without confirm-live"
+    # Pushed: verification runs WITHOUT the lane. Release it now, so it can neither
+    # hit the cap nor draw a false "you had not pushed" notice.
+    node tools/deploy-lane.mjs release --ticket "$TICKET" >> "$RUN/lane.log" 2>&1; LANE_HELD=0
+    log "deploy-batch pushed, but the lane could not record the push — lane released; live check without the lane"
     break
   fi
   node tools/deploy-lane.mjs release --ticket "$TICKET" >> "$RUN/lane.log" 2>&1; LANE_HELD=0
@@ -248,7 +251,7 @@ while [ $t -lt 45 ]; do
 done
 [ "$LANE_HELD" = 1 ] && node tools/deploy-lane.mjs release --ticket "$TICKET" >> "$RUN/lane.log" 2>&1 && LANE_HELD=0
 mv "$F" "$INBOX/processed/$STAMP-$NAME"
-UNAWARE_NOTE=""; [ "$UNAWARE" = 1 ] && UNAWARE_NOTE=" (The deploy lane could not record this push; the lane was released by the job.)"
+UNAWARE_NOTE=""; [ "$UNAWARE" = 1 ] && UNAWARE_NOTE=" (The deploy lane could not record this push; the job released the lane straight after pushing.)"
 if [ $live -eq 0 ]; then
   notify "Merged $NAME: $BEFORE → $AFTER rows (+$ADDED, $CHANGED changed), through $LATEST. Live in build ${SHA:0:8}.$UNAWARE_NOTE"
 else

@@ -153,7 +153,7 @@ function gitFixture() {
   sh(root, 'clone', '-q', origin, work);
   for (const d of [work]) { sh(d, 'config', 'user.name', 't'); sh(d, 'config', 'user.email', 't@t'); sh(d, 'symbolic-ref', 'HEAD', 'refs/heads/main'); }
   commit(work, 'app.txt', 'v1\n', 'seed');
-  commit(work, 'data.json', '{}\n', 'seed data');
+  commit(work, 'matches.json', '{}\n', 'seed data');
   sh(work, 'push', '-q', 'origin', 'main');
   sh(root, 'clone', '-q', origin, bot);
   // The bot commits as a real data bot (the allowlist keys on the author email).
@@ -166,9 +166,9 @@ function gitFixture() {
     if (email) sh(bot, 'config', 'user.email', 'bsp-odds-bot@users.noreply.github.com');
     sh(bot, 'push', '-q', 'origin', 'HEAD:main');
   };
-  return { root, origin, work, bot, dataBot: () => onOrigin('data.json', 'data refresh [skip ci]'),
+  return { root, origin, work, bot, dataBot: () => onOrigin('matches.json', 'data refresh [skip ci]'),
     codePush: (f = 'other.txt') => onOrigin(f, 'TEN-999: a code change\n\nIts body mentions [skip ci]; it is still code.'),
-    skipCiByHuman: () => onOrigin('sneaky.json', 'TEN-998: a change titled [skip ci] by a human', 'dev@example.com'),
+    skipCiByHuman: () => onOrigin('odds-fixture-map.json', 'TEN-998: a change titled [skip ci] by a human', 'dev@example.com'),
     // An AGENT committing code under a data-bot identity with [skip ci] (TEN-232 did).
     botCodeSkipCi: () => onOrigin('lib.js', 'TEN-997: agent code under the bot identity [skip ci]', 'bsp-bot@users.noreply.github.com'),
     botDataSkipCi: () => onOrigin('odds-card-state.json', 'chore(odds): publish odds_card_state projection [skip ci]', 'bsp-bot@users.noreply.github.com') };
@@ -1221,6 +1221,48 @@ Object.assign(CASES, {
   },
 });
 
+// ── review of 1198c07c ────────────────────────────────────────────────────────
+Object.assign(CASES, {
+  // Saved GitHub state only ever HOLDS the lane. Push 20, the owner's run queued
+  // since 21 with nothing running, a good read at 30, one 502 at 32: the queued
+  // rule must not fire on the saved state (it would say 11 min) — held; the
+  // plain 40-min cap still applies (released at 40 on the unknown path).
+  async savedStateNeverForcesARelease(mod) {
+    const board = await startBoard();
+    try {
+      const { lane, clock, pipe, alerts } = await rig(mod, board, undefined, { defaults: true });
+      board.runs['run-A'] = 'running';
+      await lane.claim(A, RDY(SHA.A));
+      clock.t = at(20); await lane.recordPush(A, { readBack: SHA.A, pushedHead: SHA.A });
+      pipe.runs = [run(1, 'queued', 21)];
+      clock.t = at(30); const r30 = await lane.renew(A);
+      pipe.ok = false;
+      clock.t = at(32); const r32 = await lane.renew(A);
+      clock.t = at(40); const r40 = await lane.renew(A);
+      return r30.code === 0 && r32.code === 0 && alerts.length === 1 && r40.code === 1 && r40.reason === 'cap-40min-no-run';
+    } catch (e) { if (process.env.DEBUG_TEN273) console.error('CASE THREW:', e.message); return false; } finally { board.close(); }
+  },
+
+  // The data paths are exactly what the data bots `git add` — not any root .json.
+  // Hand-curated files the code reads are not data, even from a bot identity;
+  // splits-matches/ (refresh-career-splits.sh) and the atp-entry bot are.
+  async dataPathsAreWhatTheBotsWrite(mod) {
+    const d = (subject, authorEmail, files) => mod.isDataCommit({ subject, authorEmail, files });
+    const S = 'chore: refresh [skip ci]';
+    return d(S, 'bot@bspconsult.local', ['career-splits.json', 'splits-matches-index.json', 'splits-matches/12345.json'])
+      && d(S, 'bsp-atp-entry-bot@users.noreply.github.com', ['atp-entry-harvest-state.json', 'atp-entry-harvest-queue.json'])
+      && d(S, 'bsp-radar-bot@users.noreply.github.com', ['radar-calibration.json', 'style-radar.json'])
+      && d(S, 'bsp-odds-bot@users.noreply.github.com', ['matches.json', 'underway-audit.jsonl', 'alert-state.json'])
+      && !d(S, 'bsp-bot@users.noreply.github.com', ['court-speed-map.json'])
+      && !d(S, 'bsp-odds-bot@users.noreply.github.com', ['matches.json', 'tournament-surfaces.json'])
+      && !d(S, 'bot@bspconsult.local', ['player-atp-aliases.json'])
+      && !d(S, 'bsp-bot@users.noreply.github.com', ['ten232-kibl-probe.json'])
+      && !d(S, 'bsp-bot@users.noreply.github.com', ['tsconfig.json'])
+      && !d(S, 'bsp-bot@users.noreply.github.com', ['bet365-history/x.js'])
+      && !d(S, 'bsp-bot@users.noreply.github.com', ['bet365-history/NOTES.md']);
+  },
+});
+
 // Each mutant cuts one mechanism out of the real source. Every anchor must
 // occur exactly once, or the mutant silently mutates nothing.
 const MUTANTS = [
@@ -1396,14 +1438,25 @@ const MUTANTS = [
     'x.startedAt = starts[0] || null;', 'x.startedAt = starts[0] || x.createdAt;'],
   ['(B2) a data-bot author alone makes a commit data (files not checked)', 'botIdentityCodeIsCode',
     ' && files.length > 0 && files.every(isDataPath);', ';'],
-  ['(B2) code files pass as data paths', 'botIdentityCodeIsCode',
-    "if (CODE_FILE.test(f) || /^package.*\\.json$/i.test(base) || f.startsWith('.github/') || f.startsWith('tools/')) return false;", ''],
+  ['(B2) every path counts as a data path', 'botIdentityCodeIsCode',
+    'export function isDataPath(f) {', 'export function isDataPath(f) { return true;'],
   ['(M1) a failed GitHub read never reuses the last known state', 'oneGithubFailureReusesTheLastKnownState',
     'else if (pr && c.lastKnownPipeline && t - Date.parse(c.lastKnownPipeline.at) <= staleOkMs) {', 'else if (false) {'],
   ['(M1) the last known state is trusted for 30 min', 'oneGithubFailureReusesTheLastKnownState',
     'export const PIPELINE_STALE_OK_MIN = 5;', 'export const PIPELINE_STALE_OK_MIN = 30;'],
   ['(L3) a new sha after the push rides the same hold', 'newShaAfterThePushReQueues',
     'if (ready.sha !== from && c.pushedAt) {', 'if (false) {'],
+  // review of 1198c07c
+  ['saved GitHub state can trigger the queued rule (a release on stale data)', 'savedStateNeverForcesARelease',
+    'if (!or && known && !lastKnown && pushedAt != null) {', 'if (!or && known && pushedAt != null) {'],
+  ['any root .json is data (the old rule)', 'dataPathsAreWhatTheBotsWrite',
+    '  if (DATA_FILES.has(f)) return true;', "  if (DATA_FILES.has(f) || (!f.includes('/') && /\\.json$/i.test(f))) return true;"],
+  ['splits-matches/ is not a data directory', 'dataPathsAreWhatTheBotsWrite',
+    "export const DATA_DIRS = ['style-meetings/', 'bet365-history/', 'splits-matches/'];", "export const DATA_DIRS = ['style-meetings/', 'bet365-history/'];"],
+  ['the atp-entry bot is not a data bot', 'dataPathsAreWhatTheBotsWrite',
+    "  'bsp-atp-entry-bot@users.noreply.github.com',", ''],
+  ['code files in a data directory pass', 'dataPathsAreWhatTheBotsWrite',
+    "return DATA_DIRS.some((d) => f.startsWith(d)) && /\\.json(\\.gz)?$/i.test(f);", 'return DATA_DIRS.some((d) => f.startsWith(d));'],
 ];
 
 async function loadMutant(find, replace) {

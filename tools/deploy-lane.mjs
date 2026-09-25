@@ -116,10 +116,15 @@ export const PIPELINE_STALE_OK_MIN = 5;
 //  (b) its author email is a data bot — the bot authors of every [skip ci]
 //      commit on origin/main in the 30 days to 2026-09-25 (agent and human
 //      identities that also used [skip ci] are excluded);
-//  (c) it touches at least one file and EVERY file it touches is a data path:
-//      a .json / .jsonl / .json.gz / .csv file at the repo root or under a
-//      data directory — never code (.js .mjs .cjs .py .sh .yml .yaml .html
-//      .css), never package*.json, never .github/ or tools/.
+//  (c) it touches at least one file and EVERY file it touches is a path a data
+//      bot really `git add`s: DATA_FILES / DATA_DIRS below, derived from the
+//      files touched by allowlisted-author [skip ci] commits over the 90 days to
+//      2026-09-25 and cross-checked against the `git add` / commit-back lines of
+//      the bot workflows and launchd scripts. Hand-curated files the code reads
+//      (court-speed-map.json, tournament-surfaces.json, player-atp-aliases.json,
+//      any *config* / *schema* / tsconfig / .eslintrc) are NOT data. Code
+//      (.js .mjs .cjs .py .sh .yml .yaml .html .css), package*.json, .github/
+//      and tools/ never are.
 // Agents HAVE committed code as bsp-bot and bot@bspconsult.local with [skip ci]
 // in the title (TEN-232, 09-18: kibl_client.py, workflows) — (c) catches that.
 export const DATA_BOT_AUTHORS = new Set([
@@ -136,16 +141,33 @@ export const DATA_BOT_AUTHORS = new Set([
   'bsp-clutch-bot@users.noreply.github.com',
   'bsp-archetypes-bot@users.noreply.github.com',
   'bsp-par-bot@users.noreply.github.com',
-  'bot@bspconsult.local', // BSP Entry Lists / Styles / Splits (launchd)
+  'bsp-atp-entry-bot@users.noreply.github.com',   // atp-entry-harvest.yml (scheduled 6x/day; commits only on change)
+  'bsp-splits-bot@users.noreply.github.com',      // career-splits.yml (manual dispatch)
+  'bot@bspconsult.local', // BSP Entry Lists / Styles / Splits (launchd refresh-*.sh)
 ]);
-export const DATA_DIRS = ['style-meetings/', 'bet365-history/', 'odds-archive/', 'match-closes/', 'form/', 'career-history/'];
-export const DATA_EXTS = ['.json', '.jsonl', '.json.gz', '.csv'];
+// Every file a data bot writes, with its writer.
+export const DATA_FILES = new Set([
+  'admin-log.json', 'series-outcomes.json',                                      // pipeline.yml commit-backs
+  'player-profiles-cache.json.gz', 'player-tournament-history.json.gz', 'historical-match-stats.floor.json',
+  'matches.json', 'odds-open-monitor.json', 'odds-quota-history.json', 'alert-state.json',   // odds-now / odds-history / scores
+  'odds-fixture-map.json', 'odds-capture-cadence.json', 'odds-now-staleness.json', 'underway-audit.jsonl',
+  'odds-card-state.json', 'kibl-entitlement-baseline.json',                       // ten232-kibl-archive.yml
+  '.bet365-history-targets.json.gz', '.oddspapi-raw-targets.json.gz',             // bet365-archive / oddspapi-raw-archive
+  'asapsports-signal.json', 'archetypes-classified.json', 'clutch-rating.json',   // weekly bots
+  'elo-ratings.json', 'elo-history.json', 'points-at-risk.json', 'surface-ratings.json', 'wue-store.json',
+  'radar-calibration.json', 'style-radar.json',                                   // style-radar.yml writes both
+  'atp-entry-harvest-state.json', 'atp-entry-harvest-queue.json',
+  'career-splits.json', 'splits-matches-index.json',                              // refresh-career-splits.sh / career-splits.yml
+  'playing-styles.json', 'matchup-matrix.json', 'holdbreak.json', 'situational.json', 'style-meetings-index.json', // refresh-playing-styles.sh
+  'entry_lists.json', 'entry_lists_advance.json',                                 // refresh-entry-lists*.sh
+]);
+export const DATA_DIRS = ['style-meetings/', 'bet365-history/', 'splits-matches/'];
 const CODE_FILE = /\.(js|mjs|cjs|py|sh|ya?ml|html|css)$/i;
 export function isDataPath(f) {
   const base = f.split('/').pop();
   if (CODE_FILE.test(f) || /^package.*\.json$/i.test(base) || f.startsWith('.github/') || f.startsWith('tools/')) return false;
-  if (!DATA_EXTS.some((e) => f.toLowerCase().endsWith(e))) return false;
-  return !f.includes('/') || DATA_DIRS.some((d) => f.startsWith(d));
+  if (DATA_FILES.has(f)) return true;
+  return DATA_DIRS.some((d) => f.startsWith(d)) && /\.json(\.gz)?$/i.test(f);
 }
 export const isDataCommit = ({ subject = '', authorEmail = '', files = [] }) =>
   subject.includes('[skip ci]') && DATA_BOT_AUTHORS.has(authorEmail.toLowerCase()) && files.length > 0 && files.every(isDataPath);
@@ -420,7 +442,10 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
     let lastKnown = false;
     if (pr && pr.ok) c.lastKnownPipeline = { at: iso(t), runs: pr.runs };
     else if (pr && c.lastKnownPipeline && t - Date.parse(c.lastKnownPipeline.at) <= staleOkMs) {
-      // One failed GitHub read: reuse the last known state (≤ PIPELINE_STALE_OK_MIN old).
+      // One failed GitHub read: reuse the last known state (≤ PIPELINE_STALE_OK_MIN old)
+      // — but ONLY to keep the lane (owner run in progress / read-back grace). Saved
+      // state never causes a release: the queued rule is skipped on it, leaving
+      // just the plain 40-min cap, exactly as when GitHub is unknown.
       pr = { ok: true, runs: c.lastKnownPipeline.runs, detail: pr.detail };
       lastKnown = true;
     }
@@ -437,7 +462,7 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
     if (or && or.status === 'completed' && or.conclusion === 'success' && or.completedAt && t < Date.parse(or.completedAt) + graceMs) {
       return held('read-back-grace', { until: iso(Date.parse(or.completedAt) + graceMs) });
     }
-    if (!or && known && pushedAt != null) {
+    if (!or && known && !lastKnown && pushedAt != null) {
       const queued = runs.filter((r) => QUEUED.has(r.status) && Date.parse(r.createdAt) >= pushedAt)
         .sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt))[0];
       if (queued) {

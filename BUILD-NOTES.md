@@ -2024,28 +2024,29 @@ Together they supersede the TEN-261 45-min renewable lease.
   tick runs, the deploy counts as moving: no `pipeline-queued-10min` release, and it
   counts as in progress for the 40-min clause. The 10-min queued clock only runs while
   nothing is in progress.
-- **Data-bot allowlists** (30 days of `[skip ci]` commits on main to 2026-09-25).
-  - **Authors:** bsp-odds-bot, bsp-admin-log-bot, bsp-series-outcomes-bot,
-    bsp-asap-bot, bsp-bot, bsp-profile-cache-bot, bsp-surface-bot, bsp-wue-bot,
-    bsp-radar-bot, bsp-elo-bot, bsp-clutch-bot, bsp-archetypes-bot, bsp-par-bot, and
-    bot@bspconsult.local (the launchd Entry Lists / Styles / Splits bots).
-    bsp-atp-entry-bot has no `[skip ci]` commit in the window, so it is not listed.
-  - **Paths:** a `.json` / `.jsonl` / `.json.gz` / `.csv` file at the root or under
-    style-meetings/, bet365-history/, odds-archive/, match-closes/, form/ or
-    career-history/. Every file in the commit must pass. Code files, `package*.json`,
-    `.github/` and `tools/` never pass.
-  - **Result over those 30 days:** of 5,327 bot-authored `[skip ci]` commits, exactly
-    11 count as code, all of them the TEN-232 agent commits (kibl_client.py, probes,
-    workflows, `.md` reports).
-- **Silent live waiters.** A live Paperclip waiter that stops calling `claim` for 15 min
-  loses its place (review fix; a capped holder that never re-claimed would otherwise
-  reach the head and block everyone). A waiter that is re-preparing keeps its place as
-  long as it keeps calling `claim`, even with exit 7.
-- **Data-bot drift.** The pushed tree may differ from the suite-tested tree only by
-  `[skip ci]` data-bot commits, with the clobber check re-run. A code commit landing in
-  between stops the push.
-- **The cost of first come, first served.** A free lane waits for its head waiter's next
-  poll (at most ~5 min).
+- **Data-bot allowlists** (in `tools/deploy-lane.mjs`).
+  - **Authors:** the bot authors of 30 days of `[skip ci]` commits, plus two bots whose
+    workflows still commit: bsp-odds-bot, bsp-admin-log-bot,
+    bsp-series-outcomes-bot, bsp-asap-bot, bsp-bot, bsp-profile-cache-bot,
+    bsp-surface-bot, bsp-wue-bot, bsp-radar-bot, bsp-elo-bot, bsp-clutch-bot,
+    bsp-archetypes-bot, bsp-par-bot, bsp-atp-entry-bot (atp-entry-harvest.yml, 6x/day,
+    commits only on change), bsp-splits-bot (career-splits.yml, manual), and
+    bot@bspconsult.local (the refresh-*.sh launchd bots).
+  - **Paths:** an explicit list of what those bots `git add`. It was derived from 90
+    days of their `[skip ci]` commits and cross-checked against the workflows' and
+    scripts' `git add` / commit-back lines. See `DATA_FILES` / `DATA_DIRS`: style-meetings/,
+    bet365-history/, splits-matches/. A bot writes `radar-calibration.json`
+    (style-radar.yml) and `kibl-entitlement-baseline.json` (ten232-kibl-archive.yml),
+    so both are on it. Hand-curated files (court-speed-map.json,
+    tournament-surfaces.json, player-atp-aliases.json, config/schema) are not.
+  - **Misclassification check.** Over 30 days, 12 of 5,332 bot `[skip ci]` commits
+    count as code. Over the full history (since 2026-07-08, under a year), 14 of 7,153
+    do. Every one is agent code under a bot identity (12 TEN-232 commits as bsp-bot,
+    plus two as bot@bspconsult.local: a workflow feat and a tools/ script). No real
+    data-bot commit is misclassified.
+- **Saved GitHub state only holds.** After one failed read, the last known state is
+  used to keep the lane (run in progress or grace), never to release it (review of
+  1198c07c).
 
 **Cutover.**
 - Run `bash tools/odds-archive-dropin.sh --install` right after the merge. The installed

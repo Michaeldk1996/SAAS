@@ -95,7 +95,7 @@ const E = { ticket: 'TEN-307', issueId: 'issue-E', runId: 'run-E', kind: 'paperc
 // origin/main: seed + one data-bot commit. Holder A edits a.txt, B edits b.txt,
 // C edits c.txt, Z edits b.txt the other way (conflicts with B). All branch off
 // the seed, so each is "rebased" (only a [skip ci] commit ahead of it). W writes
-// data.json, which the data bot moved (its own clobber check fails); M carries a
+// matches.json, which the data bot moved (its own clobber check fails); M carries a
 // merge commit. B2 is B's newer commit. `holderOnTip` builds the holder on top of
 // origin/main (so it can fast-forward); `beforeHolder` runs after the entries are
 // queued and before the holder commit is made and claimed.
@@ -108,7 +108,7 @@ async function fixture({ entries = [B, C], holderOnTip = false, beforeHolder = n
   sh(origin, 'config', 'core.logAllRefUpdates', 'always'); // one reflog line per push
   sh(root, 'clone', '-q', origin, work);
   sh(work, 'config', 'user.name', 't'); sh(work, 'config', 'user.email', 't@t'); sh(work, 'symbolic-ref', 'HEAD', 'refs/heads/main');
-  for (const f of ['a.txt', 'b.txt', 'c.txt', 'data.json']) fs.writeFileSync(path.join(work, f), `${f} v1\n`);
+  for (const f of ['a.txt', 'b.txt', 'c.txt', 'matches.json']) fs.writeFileSync(path.join(work, f), `${f} v1\n`);
   sh(work, 'add', '.'); sh(work, '-c', 'core.hooksPath=/dev/null', 'commit', '-q', '-m', 'seed');
   sh(work, 'push', '-q', 'origin', 'main');
   const seed = sh(work, 'rev-parse', 'HEAD');
@@ -117,13 +117,13 @@ async function fixture({ entries = [B, C], holderOnTip = false, beforeHolder = n
   sh(bot, 'config', 'user.name', 'bsp-odds-bot'); sh(bot, 'config', 'user.email', 'bsp-odds-bot@users.noreply.github.com');
   let n = 0;
   const onOrigin = (file, msg) => { sh(bot, 'pull', '-q', '--rebase', 'origin', 'main'); commit(bot, file, `${msg} ${++n}\n`, msg); sh(bot, 'push', '-q', 'origin', 'HEAD:main'); };
-  const dataBot = () => onOrigin('data.json', 'data refresh [skip ci]');
+  const dataBot = () => onOrigin('matches.json', 'data refresh [skip ci]');
   // A CODE commit whose BODY mentions [skip ci]: the marker only counts in the subject.
   const codePush = () => onOrigin('other.txt', 'TEN-999: an unlaned code push\n\nThis body mentions [skip ci] but the commit is code.');
   const mk = (file, content, msg, from = seed) => { sh(work, 'checkout', '-q', '--detach', from); return commit(work, file, content, msg); };
   const shas = { B: mk('b.txt', 'b.txt from B\n', 'TEN-302: B change'), B2: mk('b2.txt', 'B again\n', 'TEN-302: B newer change'),
     C: mk('c.txt', 'c.txt from C\n', 'TEN-303: C change'), Z: mk('b.txt', 'b.txt from Z\n', 'TEN-304: Z change'),
-    W: mk('data.json', 'W rewrote data\n', 'TEN-305: W writes data.json') };
+    W: mk('matches.json', 'W rewrote data\n', 'TEN-305: W writes matches.json') };
   const m1 = mk('m1.txt', 'm1\n', 'TEN-306: m1');
   mk('m2.txt', 'm2\n', 'TEN-306: m2');
   sh(work, '-c', 'core.hooksPath=/dev/null', 'merge', '-q', '--no-ff', '--no-edit', m1);
@@ -320,7 +320,7 @@ Object.assign(CASES, {
       const r = await batch(mod, f);
       const w = f.lane.peek().queue.find((e) => e.runId === 'run-W');
       return r.code === 0 && JSON.stringify(f.subjects(start)) === JSON.stringify(['TEN-301: holder change', 'TEN-302: B change'])
-        && !!w && w.status === 'clobber' && /data\.json/.test(w.reason);
+        && !!w && w.status === 'clobber' && /matches\.json/.test(w.reason);
     } catch (e) { if (process.env.DEBUG_TEN273) console.error('CASE THREW:', e.message); return false; } finally { f.close(); }
   },
 

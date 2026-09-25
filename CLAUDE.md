@@ -203,7 +203,7 @@ Pushing to main does not deploy on its own. The deploy workflow is tick-only: yo
 
 Before you claim the lane, get the commit fully ready (founder rulings TEN-273). The lane is first come, first served, and it covers deploying only:
 
-1. **Rebased:** run `git fetch origin`. Every commit in `<sha>..origin/main` must be a data-bot commit: `[skip ci]` in its subject AND a data-bot author (`DATA_BOT_AUTHORS`) AND only data paths (`isDataPath` in `tools/deploy-lane.mjs`: root/data-dir `.json`/`.jsonl`/`.json.gz`/`.csv`, never code, `package*.json`, `.github/` or `tools/`). If any code commit is missing from yours, rebase.
+1. **Rebased:** run `git fetch origin`. Every commit in `<sha>..origin/main` must be a data-bot commit: `[skip ci]` in its subject AND a data-bot author (`DATA_BOT_AUTHORS`) AND only files a data bot really writes (`DATA_FILES` / `DATA_DIRS` in `tools/deploy-lane.mjs`, taken from the bots' own `git add` lines; hand-curated files the code reads never count). If any code commit is missing from yours, rebase.
 2. **Suite green:** `tools/ci-suite.sh <sha>` exits 0. It runs `npm test` in a fresh CI-shaped clone and writes the suite receipt that `claim` requires. Nothing else writes receipts.
 3. **Reviewed:** the review is done.
 4. **Clobber check:** `tools/clobber-check.sh <base> <files>` is clear. If it reports anything, stop and rebase.
@@ -217,7 +217,7 @@ Before you claim the lane, get the commit fully ready (founder rulings TEN-273).
    - **Every land goes through `node tools/deploy-batch.mjs --ticket TEN-123 --sha <the sha you claimed with>`.** It handles the solo case, pushes only the claimed, suite-green sha (plus any batch), and records your `readBack` sha and push time on the claim. A raw `git push` is outside the contract; this tool cannot block it.
    - The pushed tree may differ from the suite-tested tree **only by `[skip ci]` data-bot commits**, and the clobber check is re-run against them. If a code commit lands after your claim: `release`, rebase, run `ci-suite.sh` again, claim again.
    - **Hold: 40 min from the claim** (the clobber check, `deploy-batch.mjs` and the push all run inside it).
-     - It is **extended while your own pipeline run is in progress**, then for **12 min of read-back grace** after that run succeeds. A healthy deploy is never cut off. Your run is the *first* `pipeline.yml` run whose first job started after your push (a run cancelled while queued never started); later ticks never extend. One failed GitHub read reuses the last known state if it is ≤ 5 min old.
+     - It is **extended while your own pipeline run is in progress**, then for **12 min of read-back grace** after that run succeeds. A healthy deploy is never cut off. Your run is the *first* `pipeline.yml` run whose first job started after your push (a run cancelled while queued never started); later ticks never extend. One failed GitHub read reuses the last known state if it is ≤ 5 min old, and only to keep the lane, never to release it.
      - You are released at once if your run is dead, if your pipeline run sits queued for more than 10 min, or at 40 min with none of the above. Pending behind a tick that started before your push counts as moving (**awaiting the founder's confirmation**; one line flips it back).
      - GitHub unreachable never extends a hold.
      - A forced release puts you at the back of the queue only if you had not pushed, posts on your ticket, and turns a `pipeline-watchdog.yml` run red with the reason.
