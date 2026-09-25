@@ -62,6 +62,29 @@ PY_MUT = {
         "        return False, f'odds-now runs unreadable ({err})'",
         "        return True, f'odds-now runs unreadable ({err})'"),
     'loop restart ignored (boundary only)': ("    since = max([boundary] + live)", "    since = boundary"),
+    'gate asks GitHub for in_progress runs only': (
+        "/runs?per_page=10')", "/runs?status=in_progress&per_page=10')"),
+    'queued/pending successor ignored': (
+        "        if any(r.get('status') in LOOP_WAITING for r in runs['workflow_runs']):",
+        "        if False:"),
+    'just-completed run ignored (no cooldown)': (
+        "            if done is None or (now - done).total_seconds() < LOOP_COOLDOWN_S:",
+        "            if False:"),
+    'end phase ignored (post-step meter read)': (
+        "    if any((now - t).total_seconds() >= LOOP_END_PHASE_MIN * 60 for t in live):",
+        "    if False:"),
+    'gh_get catches only URL errors': (
+        "    except Exception as e:                                 # noqa: BLE001 — any blip = busy",
+        "    except (urllib.error.URLError, TimeoutError, ValueError) as e:"),
+    'malformed GitHub body not guarded': (
+        "    try:\n        return _loop_idle(now)\n    except Exception as e:",
+        "    try:\n        return _loop_idle(now)\n    except ZeroDivisionError as e:"),
+    '"Bucket not found" read as empty state': (
+        "    return isinstance(body, dict) and str(body.get('statusCode')) == '404' \\\n        and 'bucket' not in str(body.get('message') or body.get('error') or '').lower()",
+        "    return isinstance(body, dict) and str(body.get('statusCode')) == '404'"),
+    'records cleared before a failed upload': (
+        "        if up and not duplicate:\n            counts['failed'] += 1",
+        "        deferred.pop(fid, None)\n        nf.pop(fid, None)\n        if up and not duplicate:\n            counts['failed'] += 1"),
     'unreadable state read as empty': ("        return {} if is_not_found(err) else None", "        return {}"),
     'duplicate: ticks from the unsaved pull': (
         "            if t['bet365Card'] and t['orient']:\n                project_from_bucket(t, path, _now())",

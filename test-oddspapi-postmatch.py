@@ -41,6 +41,7 @@ spec = importlib.util.spec_from_file_location('raw_pm', MOD)
 raw = importlib.util.module_from_spec(spec)
 sys.path.insert(0, HERE)
 spec.loader.exec_module(raw)
+REAL_GH_GET = raw.gh_get          # before any fake is installed
 
 FAILED = []
 
@@ -69,6 +70,9 @@ class World:
         self.loop_start = None    # an odds-now run in progress since this time
         self.capture_at = None    # ...whose capture commit lands on main at this time
         self.gh_err = None
+        self.other_runs = []      # extra odds-now runs: {'status', 'updated_at'}
+        self.gh_body = None       # a malformed GitHub body, returned as-is
+        self.upload_err = None    # e.g. (500, 'boom') for bucket uploads outside _meta/
 
     def now(self):
         return self.t
@@ -107,6 +111,8 @@ class World:
             return rows[body.get('offset', 0):body.get('offset', 0) + body['limit']], None
         if method == 'POST' and path.startswith(pre):
             p = path[len(pre):]
+            if self.upload_err and not p.startswith('_meta/'):
+                return None, self.upload_err
             if p in self.objects and (headers or {}).get('x-upsert') != 'true':
                 return None, (400, '{"statusCode":"409","error":"Duplicate",'
                                    '"message":"The resource already exists"}')
@@ -117,7 +123,7 @@ class World:
             if p == raw.PM_STATE_KEY and self.state_err:
                 return None, self.state_err
             if p not in self.objects:
-                return None, (400, '{"error":"not_found"}')
+                return None, (400, '{"statusCode":"404","error":"not_found","message":"Object not found"}')
             blob = self.objects[p]
             try:                                   # sb_request's own decode rule
                 return json.loads(blob.decode('utf-8')), None
@@ -137,8 +143,12 @@ class World:
         if self.gh_err:
             return None, self.gh_err
         if '/actions/workflows/' in path:
-            runs = [{'run_started_at': raw.iso(self.loop_start)}] if self.loop_start else []
-            return {'workflow_runs': runs}, None
+            assert 'status=' not in path, 'the gate must see queued/pending/completed runs too'
+            if self.gh_body is not None:
+                return self.gh_body, None
+            runs = [{'status': 'in_progress', 'run_started_at': raw.iso(self.loop_start)}] \
+                if self.loop_start else []
+            return {'workflow_runs': runs + self.other_runs}, None
         commits = [{'commit': {'message': 'chore(scores): refresh scores [skip ci]',
                                'committer': {'date': raw.iso(self.t)}}}]
         if self.capture_at and self.t >= self.capture_at:
@@ -425,6 +435,53 @@ w.hist['id13'] = [(CLOSED, None)]
 _, beat = run(w, M, FM, ocs())
 check('GitHub unreadable: fail closed, zero oddspapi calls', not w.calls, w.calls)
 
+def gate(t, **kw):
+    w = World(t)
+    for k, v in kw.items():
+        setattr(w, k, v)
+    w.install()
+    return raw.loop_idle(t)[0]
+
+
+Q7 = datetime(2026, 9, 24, 10, 7, 0, tzinfo=timezone.utc)
+ago = lambda s: raw.iso(Q7 - timedelta(seconds=s))                  # noqa: E731
+check('CONTROL: nothing running, nothing queued, last run long done -> idle',
+      gate(Q7, other_runs=[{'status': 'completed', 'updated_at': ago(3600)}]))
+for st in ('queued', 'pending', 'waiting', 'requested'):
+    check(f'no run iterating but a {st} successor -> busy (it uses the key on start)',
+          not gate(Q7, other_runs=[{'status': st}]))
+check('a run completed 60 s ago -> busy (successor may be starting)',
+      not gate(Q7, other_runs=[{'status': 'completed', 'updated_at': ago(60)}]))
+check('a run completed 5 min ago -> not busy on that account',
+      gate(Q7, other_runs=[{'status': 'completed', 'updated_at': ago(300)}]))
+check('a pending successor BEHIND an iterating run does not block once the iteration committed',
+      gate(Q7, loop_start=Q7 - timedelta(hours=2), capture_at=Q7 - timedelta(minutes=5),
+           other_runs=[{'status': 'pending'}]))
+check('an iterating run in its end phase (>= 314 min old) -> busy even after its capture commit',
+      not gate(Q7, loop_start=Q7 - timedelta(minutes=320), capture_at=Q7 - timedelta(minutes=5)))
+check('...and the same run at 300 min -> idle after its capture commit',
+      gate(Q7, loop_start=Q7 - timedelta(minutes=300), capture_at=Q7 - timedelta(minutes=5)))
+for body in ([], {'workflow_runs': None}, {'workflow_runs': [None]}, 'html'):
+    check(f'a malformed GitHub body ({type(body).__name__}) -> busy, no crash',
+          not gate(Q7, gh_body=body))
+
+
+import http.client
+_urlopen = raw.urllib.request.urlopen
+for exc in (ConnectionResetError('reset by peer'), http.client.IncompleteRead(b'partial'),
+            OSError('network down')):
+    def _raise(*a, _e=exc, **k):
+        raise _e
+    raw.urllib.request.urlopen = _raise
+    try:
+        got = REAL_GH_GET('/repos/x/y')
+        ok = got[0] is None and type(exc).__name__ in str(got[1])
+    except Exception as e:                    # noqa: BLE001 — the failure this guards
+        ok, got = False, repr(e)
+    finally:
+        raw.urllib.request.urlopen = _urlopen
+    check(f'gh_get() turns {type(exc).__name__} into an error answer, never a crash', ok, got)
+
 print('8c. an unreadable state is never overwritten')
 w = World(T0 + timedelta(minutes=30))
 w.objects[raw.PM_STATE_KEY] = ST
@@ -439,6 +496,56 @@ w.state_err = (400, '{"statusCode":"404","error":"not_found","message":"Object n
 code, beat = run(w, M, FM, ocs())
 check('state not found (first run): starts empty and writes it',
       code == 0 and raw.PM_STATE_KEY in w.objects, (code, sorted(w.objects)))
+
+w = World(T0 + timedelta(minutes=30))
+w.objects[raw.PM_STATE_KEY] = ST
+w.state_err = (400, '{"statusCode":"404","error":"Bucket not found","message":"Bucket not found"}')
+code, beat = run(w, M, FM, ocs())
+check('"Bucket not found" is not "no state yet": stop, nothing written',
+      code == 1 and not w.calls and w.objects[raw.PM_STATE_KEY] == ST, (code, w.calls))
+
+print('8d. a failed upload keeps the defer and 404 records')
+w = World(T0 + timedelta(minutes=30))
+w.objects[raw.PM_STATE_KEY] = json.dumps({'seen': {'13': '2026-09-24T09:00:00Z'},
+                                          'deferred': {'id13': 2},
+                                          'notFound': {'id13': {'n': 1}}}).encode()
+w.hist['id13'] = [(CLOSED, None)]
+w.upload_err = (500, 'internal')
+code, beat = run(w, M, FM, ocs())
+st = state_of(w)
+check('upload 500: counted failed, deferred and notFound records survive',
+      beat['counts'].get('failed') == 1 and st['deferred'].get('id13') == 2
+      and st['notFound'].get('id13', {}).get('n') == 1, (beat['counts'], st.get('deferred'), st.get('notFound')))
+
+print('8e. exactly one trigger: the workflow schedule OR the pg_cron pinger')
+WF_DIR = os.path.join(HERE, '.github', 'workflows')
+
+
+def trigger_faults(pm_yml, other_texts):
+    """The pinger is applied only by something that references its file. If any
+    workflow or migration references it, the post-match workflow must have no
+    `schedule:`; if none does, the workflow must keep it (or nothing fires)."""
+    pinger_applied = any('oddspapi-postmatch-pinger' in t for t in other_texts)
+    has_schedule = re.search(r'^\s*schedule:', pm_yml, re.M) is not None
+    if pinger_applied and has_schedule:
+        return ['both the pinger and the workflow schedule are active']
+    if not pinger_applied and not has_schedule:
+        return ['no trigger at all']
+    return []
+
+
+PM_YML = open(os.path.join(WF_DIR, 'oddspapi-postmatch.yml'), encoding='utf-8').read()
+OTHERS = [open(os.path.join(WF_DIR, f), encoding='utf-8').read() for f in sorted(os.listdir(WF_DIR))
+          if f.endswith(('.yml', '.yaml')) and f != 'oddspapi-postmatch.yml']
+MIG = os.path.join(HERE, 'supabase', 'migrations')
+OTHERS += [open(os.path.join(MIG, f), encoding='utf-8').read() for f in sorted(os.listdir(MIG))] \
+    if os.path.isdir(MIG) else []
+check('today: the schedule is the one trigger, the pinger is referenced by nothing',
+      trigger_faults(PM_YML, OTHERS) == [], trigger_faults(PM_YML, OTHERS))
+check('CONTROL: a schema step that applies the pinger while schedule: stays is caught',
+      trigger_faults(PM_YML, OTHERS + ['run: psql -f oddspapi-postmatch-pinger.sql']) != [])
+check('CONTROL: dropping schedule: without applying the pinger is caught',
+      trigger_faults(re.sub(r'^\s*schedule:.*$', '', PM_YML, flags=re.M), OTHERS) != [])
 
 print('9. ticks in CARD orientation, one row per change, in the schema\'s columns')
 w = World(T0 + timedelta(minutes=30))

@@ -575,6 +575,10 @@ GH_API = 'https://api.github.com'
 GH_REPO = 'Michaeldk1996/SAAS'
 LOOP_WORKFLOW = 'odds-now.yml'
 LOOP_COMMIT_PREFIX = 'chore(odds): capture tick'   # the loop's end-of-iteration push
+LOOP_WAITING = ('queued', 'pending', 'waiting', 'requested')   # a successor about to start
+LOOP_COOLDOWN_S = 120     # a run that completed this recently: its successor may be starting
+LOOP_END_PHASE_MIN = 314  # LOOP_MINUTES 330 minus one 15-min interval, minus 1: from here the
+                          # loop may exit and the post step reads /v4/account (odds-now.yml)
 PM_CALL_MARGIN_S = 30     # a call starts only if the window is still open this much later
 PM_CALL_TIMEOUT_S = 60    # a 1-4.5 MB payload took 3.8-7.6 s (measured 2026-09-10)
 PM_MAX_404 = 3            # runs that saw a 404 before the fixture is given up
@@ -658,26 +662,49 @@ def gh_get(path):
             return json.loads(r.read().decode('utf-8')), None
     except urllib.error.HTTPError as e:
         return None, e.code
-    except (urllib.error.URLError, TimeoutError, ValueError) as e:
-        return None, str(e)
+    except Exception as e:                                 # noqa: BLE001 — any blip = busy
+        return None, f'{type(e).__name__}: {e}'
 
 
 def loop_idle(now):
     """(idle?, why). The odds loop (odds-now.yml) runs one iteration per quarter
-    hour and ends each with a push of `chore(odds): capture tick N`. The key is
-    ours only when NO odds-now run is in progress, or that run's latest capture
-    commit is on main AFTER both the last quarter-hour boundary and the run's
-    own start (a restarted loop iterates at once, mid-quarter). Anything we
-    cannot read counts as busy: fail closed."""
-    runs, err = gh_get(f'/repos/{GH_REPO}/actions/workflows/{LOOP_WORKFLOW}/runs'
-                       f'?status=in_progress&per_page=5')
-    if runs is None:
+    hour and ends each with a push of `chore(odds): capture tick N`. Busy when:
+    a run is queued/pending/waiting/requested and none is iterating (the
+    successor uses the key as it starts); a run completed < LOOP_COOLDOWN_S ago;
+    the iterating run is in its end phase (final iteration + post-step meter
+    read); or its latest capture commit is not on main since both the last
+    quarter-hour boundary and the run's own start (a restarted loop iterates at
+    once, mid-quarter). A pending successor BEHIND an iterating run is only
+    waiting and does not block. Anything unreadable counts as busy."""
+    try:
+        return _loop_idle(now)
+    except Exception as e:                                 # noqa: BLE001 — odd body = busy
+        return False, f'odds-now state unreadable ({type(e).__name__})'
+
+
+def _loop_idle(now):
+    runs, err = gh_get(f'/repos/{GH_REPO}/actions/workflows/{LOOP_WORKFLOW}/runs?per_page=10')
+    if not isinstance(runs, dict) or not isinstance(runs.get('workflow_runs'), list):
         return False, f'odds-now runs unreadable ({err})'
-    live = [parse_iso(r.get('run_started_at')) for r in runs.get('workflow_runs') or []]
+    live = []
+    for r in runs['workflow_runs']:
+        st = r.get('status')
+        if st == 'in_progress':
+            live.append(parse_iso(r.get('run_started_at')))
+        elif st == 'completed':
+            done = parse_iso(r.get('updated_at'))
+            if done is None or (now - done).total_seconds() < LOOP_COOLDOWN_S:
+                return False, 'an odds-now run just completed; its successor may be starting'
     if not live:
-        return True, 'no odds-now run in progress'
+        # No run iterating. A queued/pending successor starts any second and uses
+        # the key at once (/v4/account pre-step, a metered NOW leg): busy.
+        if any(r.get('status') in LOOP_WAITING for r in runs['workflow_runs']):
+            return False, 'an odds-now run is queued to start'
+        return True, 'no odds-now run in progress or queued'
     if any(t is None for t in live):
         return False, 'an odds-now run has no start time'
+    if any((now - t).total_seconds() >= LOOP_END_PHASE_MIN * 60 for t in live):
+        return False, 'the odds-now run is in its end phase (final iteration / post meter read)'
     commits, err = gh_get(f'/repos/{GH_REPO}/commits?sha=main&per_page=30')
     if commits is None:
         return False, f'main commits unreadable ({err})'
@@ -913,8 +940,16 @@ def project_ticks(url, key, target, payload, state, now, counts):
 def is_not_found(err):
     """Storage answers a missing object with 404, or 400 carrying statusCode 404."""
     code, text = (err or (None, ''))[:2]
-    return code == 404 or (code == 400 and ('"404"' in str(text) or 'not_found' in str(text)
-                                            or 'not found' in str(text).lower()))
+    if code == 404:
+        return True
+    if code != 400:
+        return False
+    try:
+        body = json.loads(text)
+    except (TypeError, ValueError):
+        return False
+    return isinstance(body, dict) and str(body.get('statusCode')) == '404' \
+        and 'bucket' not in str(body.get('message') or body.get('error') or '').lower()
 
 
 def read_state(url, key):
@@ -1058,19 +1093,20 @@ def postmatch(odds_key, url, sb_key, matches, fmap, ocs):
         path = object_path({'fixtureId': fid, 'startTime': t['startTime'],
                             'trueStartTime': None})
         up = sb_upload(url, sb_key, path, gzip.compress(body, 6), upsert=False)
+        duplicate = bool(up) and up[0] in (400, 409) and ('uplicate' in str(up[1]) or 'exists' in str(up[1]))
+        if up and not duplicate:
+            counts['failed'] += 1
+            counts[f'upload-{up[0]}'] += 1
+            continue                      # failed: the defer / 404 records stay
         deferred.pop(fid, None)
         nf.pop(fid, None)
-        if up and up[0] in (400, 409) and ('uplicate' in str(up[1]) or 'exists' in str(up[1])):
+        if duplicate:
             # Another writer got there first: the HELD object is the record, so
             # the ticks come from it, never from this unsaved pull.
             counts['alreadyHeld'] += 1
             held_rec[fid] = {'path': path, 'cardKey': t['cardKey'], 'at': iso(_now())}
             if t['bet365Card'] and t['orient']:
                 project_from_bucket(t, path, _now())
-            continue
-        if up:
-            counts['failed'] += 1
-            counts[f'upload-{up[0]}'] += 1
             continue
         counts['saved'] += 1
         held_rec[fid] = {'path': path, 'cardKey': t['cardKey'], 'at': iso(_now())}
