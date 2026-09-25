@@ -96,6 +96,15 @@ begin
   n := ten280_bot.scan(t0, t0 + interval '120 min', 7, 'selftest', 'f7', interval '10 minutes', 1.30);
   if n <> 2 then raise exception 'SELFTEST: floor 1.30 expected 2 at 7%%, got %', n; end if;
 
+  -- 2b) Sub-minute live evaluation (30 s cron): a single instant is evaluated as is.
+  -- At +15:30, A (2.00 -> 1.88, 6.0%) and B (1.40 -> 1.29, 7.9%, floor off) fire, stamped
+  -- 10:15:30, not 10:15:00. D's +12 rise and E's late-known tick do not.
+  n := ten280_bot.scan(t0 + interval '15 min 30 sec', t0 + interval '15 min 30 sec', 5, 'selftest', 'sub');
+  if n <> 2 then raise exception 'SELFTEST: sub-minute tick expected 2 alerts, got %', n; end if;
+  if exists (select 1 from ten280_bot.alerts where mode='selftest' and run_id='sub' and eval_at <> t0 + interval '15 min 30 sec') then
+    raise exception 'SELFTEST: sub-minute tick was not evaluated at its own instant';
+  end if;
+
   -- 3) "Moved" wording.
   if ten280_bot.moved(0) <> 'just now' or ten280_bot.moved(59.9) <> 'just now' or ten280_bot.moved(60) <> '1 min ago'
      or ten280_bot.moved(179) <> '2 min ago' or ten280_bot.moved(3725) <> '62 min ago' then

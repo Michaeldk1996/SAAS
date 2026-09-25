@@ -1,0 +1,42 @@
+[
+ {
+  "name": "install_v4_selftest_gate",
+  "sql_files": [
+   "tools/ten280-drop-bot.sql",
+   "tools/ten280-drop-selftest.sql"
+  ],
+  "sql_tail": "do $$\ndeclare missing int; extra int;\nbegin\n  delete from ten280_bot.alerts where mode='backtest' and run_id='g5';\n  perform ten280_bot.load_ticks('2026-09-11 05:18:09.860093+00', '2026-09-25 05:18:09.860093+00');\n  perform ten280_bot.scan('2026-09-18 05:18:09.860093+00', '2026-09-20 05:18:09.860093+00', 5, 'backtest', 'g5', interval '10 minutes', 1.30);\n  select count(*) into missing from ten280_bot.alerts o where o.mode='backtest' and o.run_id='bt5' and o.eval_at <= '2026-09-20 05:18:09.860093+00'\n     and not exists (select 1 from ten280_bot.alerts n where n.mode='backtest' and n.run_id='g5' and n.fixture_id=o.fixture_id and n.side_id=o.side_id and n.eval_at=o.eval_at and n.cur_price=o.cur_price and n.ref_price=o.ref_price);\n  select count(*) into extra from ten280_bot.alerts n where n.mode='backtest' and n.run_id='g5'\n     and not exists (select 1 from ten280_bot.alerts o where o.mode='backtest' and o.run_id='bt5' and o.fixture_id=n.fixture_id and o.side_id=n.side_id and o.eval_at=n.eval_at and o.cur_price=n.cur_price and o.ref_price=n.ref_price);\n  if missing <> 0 or extra <> 0 or (select count(*) from ten280_bot.alerts where mode='backtest' and run_id='g5') = 0 then\n    raise exception 'REGRESSION GATE: vs the original 5%% backtest (18-20 Sep): % missing, % extra', missing, extra;\n  end if;\n  raise notice 'REGRESSION GATE PASS';\nend $$;",
+  "transaction": true,
+  "required": true,
+  "stop_on_error": true
+ },
+ {
+  "name": "cron_before",
+  "sql": "select jobid, jobname, schedule, active from cron.job where jobname='ten280-bet105-drop-bot'"
+ },
+ {
+  "name": "cron_30s",
+  "sql": "select cron.alter_job((select jobid from cron.job where jobname='ten280-bet105-drop-bot'), schedule := '30 seconds'); select jobid, jobname, schedule, active from cron.job where jobname='ten280-bet105-drop-bot'",
+  "required": true,
+  "stop_on_error": true
+ },
+ {
+  "sleep": 95
+ },
+ {
+  "name": "cron_runs_after",
+  "sql": "select d.start_time, d.status, d.end_time - d.start_time took from cron.job_run_details d join cron.job j using (jobid) where j.jobname='ten280-bet105-drop-bot' and d.start_time > now() - interval '3 minutes' order by d.start_time"
+ },
+ {
+  "name": "config",
+  "sql": "select min_dropped_to_price from ten280_bot.config"
+ },
+ {
+  "name": "live_alerts_since_v3",
+  "sql": "select id, eval_at, tier, cur_src, cur_at, sent_at, move_delay_s, delivery, message from ten280_bot.alerts where mode='live' and id > 1945 order by id"
+ },
+ {
+  "name": "events_all",
+  "sql": "select id, kind, delivery, created_at from ten280_bot.events order by id"
+ }
+]

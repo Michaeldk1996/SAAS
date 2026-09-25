@@ -205,7 +205,9 @@ create or replace function ten280_bot.scan(
     p_cooldown interval default interval '30 minutes') returns integer
 language plpgsql as $$
 declare
-  e   timestamptz := date_trunc('minute', p_from);
+  -- a single instant (the live tick) is evaluated AS IS, so a 30 s schedule sees
+  -- ticks known up to that second; a range (backtest / self-test) steps by whole minutes.
+  e   timestamptz := case when p_from = p_to then p_from else date_trunc('minute', p_from) end;
   n   integer := 0;
   c   record;
   op  record;
@@ -296,11 +298,12 @@ begin
    where v.delivery = 'queued' and r.id = v.net_request_id;
 end $$;
 
--- LIVE: one minute. Threshold/window/floor/cooldown are the founder's spec
+-- LIVE: one tick (pg_cron every 30 s since TEN-282). Threshold/window/floor/cooldown are the founder's spec
 -- (5% / 10 min / 30 min); the odds floor comes from ten280_bot.config (NULL = off). Loads 14 days so "first seen" looks far back.
 create or replace function ten280_bot.tick() returns integer
 language plpgsql as $$
-declare e timestamptz := date_trunc('minute', now()); n integer; a ten280_bot.alerts; rid bigint;
+-- evaluated at the tick instant (cron every 30 s, founder 2026-09-25)
+declare e timestamptz := now(); n integer; a ten280_bot.alerts; rid bigint;
         v_at timestamptz; msg text; fl numeric;
 begin
   -- one tick at a time: a manual call during a cron run can never double-send
@@ -311,7 +314,7 @@ begin
   perform ten280_bot.load_ticks(now() - interval '14 days', now());
   select min_dropped_to_price into fl from ten280_bot.config;
   n := ten280_bot.scan(e, e, 5, 'live', null, interval '10 minutes', fl);
-  for a in select * from ten280_bot.alerts where mode = 'live' and delivery = 'unsent' order by id limit 10 loop  -- Telegram burst cap; the rest go next minute
+  for a in select * from ten280_bot.alerts where mode = 'live' and delivery = 'unsent' order by id limit 10 loop  -- Telegram burst cap; the rest go next tick
     v_at := clock_timestamp();
     msg  := ten280_bot.render(a, v_at);
     rid  := ten280_bot.send(msg);

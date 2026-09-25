@@ -18,10 +18,10 @@ jobs:
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
-          # TEN-282 Part A: alert layout v3 (Pre-drop + Since open). Idempotent install inside
-          # one transaction with the self-test + regression gate; the one format-test send is
-          # guarded by an events row, so a re-push re-installs identical code and sends nothing.
-          TEN280_STEPS: tools/ten280-steps-v3.json
+          # TEN-282: layout v3 + live tick evaluated at its own instant, cron every 30 s (founder
+          # answer dbb2eed8). Idempotent install inside one transaction with the self-test +
+          # regression gate; alter_job is idempotent; this step file sends NOTHING to Telegram.
+          TEN280_STEPS: tools/ten280-steps-v4.json
         run: python3 tools/ten280-sql.py
       - name: odds-api.io rotation scan + outright check (REST only, read-only, encrypted)
         if: always()
