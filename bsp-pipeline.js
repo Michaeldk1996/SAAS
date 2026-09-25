@@ -237,6 +237,17 @@ async function fetchH2HSupplement(firstPlayerKey, secondPlayerKey) {
 // event type: doubles, juniors, UTR, women's) stay out. One set, so the meeting
 // list, the record and the model's H2H layer all read the same population.
 const H2H_EVENT_TYPES = new Set(['Atp Singles', 'Challenger Men Singles', 'Itf Men Singles']);
+// Team events and exhibitions count in a head-to-head exactly as the ATP counts
+// them in its official win-loss record (founder ruling 2026-09-25, TEN-273: "do as
+// the ATP"): Davis Cup, ATP Cup, United Cup, Laver Cup, the Olympics and the Next
+// Gen Finals count; Hopman Cup (an ITF-sanctioned mixed event) and exhibitions (UTS,
+// Six Kings Slam, …) do not. api-tennis tags Hopman Cup "Atp Singles", so the
+// event-type filter alone keeps it — this name test removes it. The dashboard's
+// career-history join applies the same list (FH_H2H_NOT_ATP_RECORD).
+const H2H_NOT_ATP_RECORD = /hopman cup|ultimate tennis showdown|\buts\b|six kings|exhibition|kooyong classic|mubadala world tennis/i;
+function h2hCountsInAtpRecord(m) {
+  return !H2H_NOT_ATP_RECORD.test(String((m && (m.tournament_name || m.tournament)) || ''));
+}
 // Level of one meeting, carried on every h2h.matches row so every surface that
 // shows the record can say what it is built on (a 3-1 on ITF meetings must not
 // read as an ATP record).
@@ -298,14 +309,14 @@ async function fetchH2H(firstPlayerKey, secondPlayerKey) {
   // count, so they're kept. TEN-263: Challenger and ITF singles count too
   // (H2H_EVENT_TYPES); measured on the 2026-09-24 board, get_H2H returned 24 ATP,
   // 5 Challenger and 1 ITF meeting across 27 pairs.
-  const officialH2H = (Array.isArray(result.H2H) ? result.H2H : []).filter(m => H2H_EVENT_TYPES.has(m.event_type_type));
+  const officialH2H = (Array.isArray(result.H2H) ? result.H2H : []).filter(m => H2H_EVENT_TYPES.has(m.event_type_type)).filter(h2hCountsInAtpRecord);
 
   // Backfill matches get_H2H omitted but the fixtures database actually has,
   // deduped by event_key so nothing already present gets double-counted.
   const seenKeys = new Set(officialH2H.map(m => m.event_key));
   const supplement = await fetchH2HSupplement(firstPlayerKey, secondPlayerKey);
   for (const m of supplement) {
-    if (!seenKeys.has(m.event_key) && m.event_type_type === 'Atp Singles') {
+    if (!seenKeys.has(m.event_key) && m.event_type_type === 'Atp Singles' && h2hCountsInAtpRecord(m)) {
       officialH2H.push(m);
       seenKeys.add(m.event_key);
     }
@@ -7097,7 +7108,7 @@ if (require.main === module) {
   });
 }
 
-module.exports = { tourLabelOf, aggregatePlayerWue, aggregateStatsFromFixtures, isCancelledFixture, profileRosterFloorVerdict, lastPublishedRosterCount, profilesWithoutTournamentHistory, PROFILE_ROSTER_BACKSTOP, PROFILE_ROSTER_RATIO, MAX_OPPONENT_BUILDS_PER_RUN, isIndoorTournament, loadTournamentCourtMap, fetchRecentSinglesFixtures, recentFormFromFixtures, buildTournamentProgression, extractProgressionMetrics, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
+module.exports = { fetchH2H, h2hCountsInAtpRecord, H2H_NOT_ATP_RECORD, tourLabelOf, aggregatePlayerWue, aggregateStatsFromFixtures, isCancelledFixture, profileRosterFloorVerdict, lastPublishedRosterCount, profilesWithoutTournamentHistory, PROFILE_ROSTER_BACKSTOP, PROFILE_ROSTER_RATIO, MAX_OPPONENT_BUILDS_PER_RUN, isIndoorTournament, loadTournamentCourtMap, fetchRecentSinglesFixtures, recentFormFromFixtures, buildTournamentProgression, extractProgressionMetrics, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
   // The Career-record pair. Exported together on purpose: their whole contract
   // is that the counts one returns are tallyable from the rows the other
   // returns, and that is what ten8-career-verify.js asserts.

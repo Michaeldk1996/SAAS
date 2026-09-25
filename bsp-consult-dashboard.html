@@ -14298,6 +14298,10 @@ function fhMeetingList(m){
 // Levels that count in the H2H tab (records, stats, prices, hot lines, list). One
 // constant, so a "tour level only" view is ['ATP'] — a one-line change.
 const FH_H2H_LEVELS = ['ATP', 'CH', 'ITF'];
+// Team events and exhibitions count exactly as in the ATP's official win-loss record
+// (ruling 2026-09-25, TEN-273: "do as the ATP"). Same list as the pipeline's
+// H2H_NOT_ATP_RECORD: Hopman Cup and exhibitions never enter the meeting list.
+const FH_H2H_NOT_ATP_RECORD = /hopman cup|ultimate tennis showdown|\buts\b|six kings|exhibition|kooyong classic|mubadala world tennis/i;
 // A meeting's level. Names that settle it come first: a junior event is never a pro
 // meeting (null: unclassified, never guessed), an ITF-named event (M15…, W25…, "ITF") is
 // ITF — the form shards' tier calls some of those 'challenger'. Then the tour level: the
@@ -14332,6 +14336,7 @@ function fhAllMeetingRows(m){
     if (!x || x.eventKey == null) continue;
     const ek = String(x.eventKey);
     if (!in2.has(ek) || ek === own) continue;
+    if (FH_H2H_NOT_ATP_RECORD.test(String(x.tournament || ''))) continue;
     // One match seen from both sides: same day, opposite results. (eventKey is api-tennis's
     // per-MATCH key; proven 30/30 on the 2026-09-23 board against get_fixtures, both player
     // keys.) A pair of rows that disagrees is not counted as a meeting.

@@ -92,6 +92,13 @@ Applies to the TEN-263 block in `bsp-consult-dashboard.html` (`fh*` functions), 
 - The pipeline keeps **ATP, Challenger and ITF singles** (`H2H_EVENT_TYPES`). Exhibitions,
   doubles, juniors, UTR and women's events stay out. **Test:** the set holds exactly these three
   singles types.
+- **Team events count exactly as the ATP counts them in its official win-loss record** (ruling
+  2026-09-25, TEN-273: "do as the ATP"). Davis Cup, ATP Cup, United Cup, Laver Cup, the Olympics
+  and the Next Gen Finals count. Hopman Cup (ITF-sanctioned, mixed) and exhibitions (UTS, Six Kings
+  Slam, Kooyong, Mubadala…) never do, even when api-tennis tags them "Atp Singles". One list,
+  applied in `fetchH2H` (`H2H_NOT_ATP_RECORD`) and in the career-history join
+  (`FH_H2H_NOT_ATP_RECORD`). **Test:** a Hopman Cup meeting never enters the list or the record;
+  a Laver Cup or United Cup meeting does; the two lists are identical.
 - **Every meeting row carries `level`** (ATP / CH / ITF). **A record that includes Challenger or
   ITF meetings says so** wherever it is shown: the match card, the Key factors H2H panel and
   block, the insight sentence ("· incl. 1 CH, 2 ITF"), and the Form/H2H tab's row tags.
