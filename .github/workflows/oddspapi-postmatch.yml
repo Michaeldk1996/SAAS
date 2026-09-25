@@ -25,18 +25,25 @@ name: BSP oddspapi post-match archive
 # on main since the quarter hour — read with this job's GITHUB_TOKEN). It stops
 # the run (exit 0) on the first 429.
 #
-# ONE TRIGGER ONLY. GitHub delivers only a fraction of scheduled slots on this
-# repo; oddspapi-postmatch-pinger.sql is the pg_cron dispatcher that makes the
-# 15-min cadence real (NOT applied). Applying it and deleting the `schedule:`
-# block below are ONE change — both active means two runs per slot.
+# ONE TRIGGER ONLY (founder 2026-09-25: "install the dispatcher and remove the
+# GitHub schedule"). The pg_cron job in oddspapi-postmatch-pinger.sql dispatches
+# this workflow at :07/:22/:37/:52; it is applied by ten270-stream-now.yml
+# action=schema. There is deliberately NO `schedule:` here — both active would
+# fire every slot twice (test-oddspapi-postmatch.py, section 8e).
+#
+# mode=verify-report prints the 20-fixture completeness table (read-only: no
+# oddspapi call, no write).
 #
 # Commits nothing. The run's counts, 429s included, are in the job log and in
 # the bucket at _meta/postmatch-last-run.json.
 
 on:
-  schedule:                    # remove when oddspapi-postmatch-pinger.sql is applied
-    - cron: '7,22,37,52 * * * *'
   workflow_dispatch:
+    inputs:
+      mode:
+        description: 'postmatch (the pinger''s run) | verify-report (read-only)'
+        required: false
+        default: 'postmatch'
 
 concurrency:
   group: bsp-oddspapi-postmatch
@@ -93,7 +100,15 @@ jobs:
           python3 test-archive-oddspapi-raw.py
           python3 test-oddspapi-postmatch.py
 
+      - name: Completeness report (read-only)
+        if: inputs.mode == 'verify-report'
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+        run: python3 archive-oddspapi-raw.py postmatch-verify-report | tee -a "$GITHUB_STEP_SUMMARY"
+
       - name: Post-match archive
+        if: inputs.mode != 'verify-report'
         env:
           ODDSPAPI_KEY: ${{ secrets.ODDSPAPI_KEY }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}

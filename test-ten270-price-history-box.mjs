@@ -131,8 +131,9 @@ test('source per card: Bet105 -> RPC, bet365 upcoming -> shard, bet365 completed
   assert.match(B.html(B.model(up, [], [])), /change times from bet365 · refreshed every 15 min/);
   const done = B.cardData({ openingOdds: { bookmaker: 'bet365' }, finalScore: '6-4 6-4' }, 'p1');
   assert.equal(done.source, 'archive', 'a completed bet365 card reads the archive, never the shard');
-  assert.match(B.html(B.model(done, [], [])), /change times from bet365 · archived after the match/);
-  assert.doesNotMatch(B.html(B.model(done, [], [])), /refreshed every 15 min/, 'the upcoming label is not true of archived data');
+  assert.match(B.html(B.model(done, [], [])), /change times from bet365 · refreshed every 15 min/,
+               'founder 2026-09-25: the same source line as upcoming');
+  assert.doesNotMatch(B.html(B.model(done, [], [])), /archived after the match/, 'the retired label is gone');
   assert.equal(B.cardData({ openingOdds: { bookmaker: 'bet105' } }, 'p1').source, 'rpc');
   assert.equal(B.cardData({ openingOdds: { bookmaker: '1xbet' } }, 'p1').source, null);
 });
@@ -162,7 +163,8 @@ test('bet365 completed: the bet365_history archive, per side, suspended and sub-
   const m = B.model(Object.assign({}, got.card, { open: { price: 1.50, at: '2026-09-24T06:00:00Z' },
                                                  close: { price: 1.20, at: '2026-09-24T07:50:00Z' } }), got.rows, []);
   assert.deepEqual(m.rows.map(r => `${r.price}:${r.delta}`), ['1.2:-0.25', '1.45:-0.05']);
-  assert.match(B.html(m), /change times from bet365 · archived after the match/);
+  assert.match(B.html(m), /change times from bet365 · refreshed every 15 min/);
+  assert.doesNotMatch(B.html(m), /archived after the match/, 'the retired label is gone');
 });
 
 test('an underway bet365 card (past its start, no result) reads neither the shard nor the archive', () => {
@@ -179,7 +181,7 @@ test('bet365 completed, no archive source: not archived / other book / not exact
     const got = await B.loadArchive(card, 'p1', rpcOf(Object.assign({}, ARCH, over, { rows: [] })));
     const h = B.html(B.model(got.card, got.rows, []));
     assert.match(h, /history not recorded for this book/, why);
-    assert.doesNotMatch(h, /archived after the match|no price change recorded/, why);
+    assert.doesNotMatch(h, /change times from bet365|no price change recorded/, why);
   }
   const nostart = await B.loadArchive(card, 'p1', rpcOf(Object.assign({}, ARCH, { start_ts: null, rows: [] })));
   assert.match(B.html(B.model(nostart.card, nostart.rows, [])), /start time unknown — history not shown/);

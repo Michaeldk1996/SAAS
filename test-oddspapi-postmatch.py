@@ -20,6 +20,7 @@ Guards (each is killed by a mutant of its rule; see the TEN-270 report):
   8. the key is used only inside the loop-free window of each quarter hour
   8b. ...and only once the odds loop's current iteration is over (loop_idle)
   8c. an unreadable state object stops the run without overwriting it
+ 11. completeness: the first 20 saved fixtures get ONE +24 h re-pull into _meta/verify/
   9. ticks land in CARD orientation, one row per change, in the schema's columns
  10. the schema: RLS on, no grant/policy on the table, RPC cut at the start
 """
@@ -111,7 +112,7 @@ class World:
             return rows[body.get('offset', 0):body.get('offset', 0) + body['limit']], None
         if method == 'POST' and path.startswith(pre):
             p = path[len(pre):]
-            if self.upload_err and not p.startswith('_meta/'):
+            if self.upload_err and not p.startswith('_meta/postmatch-'):
                 return None, self.upload_err
             if p in self.objects and (headers or {}).get('x-upsert') != 'true':
                 return None, (400, '{"statusCode":"409","error":"Duplicate",'
@@ -136,10 +137,13 @@ class World:
                 if (r['card_key'], r['side'], r['at'], r['price']) not in seen:
                     self.rows.append(r)
             return b'', None
+        if method == 'GET' and path == f'/storage/v1/bucket/{raw.BUCKET}':
+            return {'name': raw.BUCKET, 'public': False}, None
         raise AssertionError(f'unexpected Supabase call {method} {path}')
 
     def gh_get(self, path):
         """GitHub REST: the in-progress odds-now runs, and main's commits."""
+        self.gh_calls = getattr(self, 'gh_calls', 0) + 1
         if self.gh_err:
             return None, self.gh_err
         if '/actions/workflows/' in path:
@@ -157,6 +161,7 @@ class World:
         return commits, None
 
     def install(self):
+        raw.forget_idle()
         raw.gh_get = self.gh_get
         raw.api_get = self.api_get
         raw.sb_request = self.sb_request
@@ -517,35 +522,126 @@ check('upload 500: counted failed, deferred and notFound records survive',
       beat['counts'].get('failed') == 1 and st['deferred'].get('id13') == 2
       and st['notFound'].get('id13', {}).get('n') == 1, (beat['counts'], st.get('deferred'), st.get('notFound')))
 
-print('8e. exactly one trigger: the workflow schedule OR the pg_cron pinger')
+print('8f. GitHub read load: "idle" is cached until the next quarter hour, dropped on a 429')
+M3c = [card(str(30 + i), *PAIRS[i]) for i in range(3)]
+FM3c = fmap(*[(str(30 + i), f'id3{i}', 'same', *PAIRS[i]) for i in range(3)])
+ST3 = json.dumps({'seen': {str(30 + i): '2026-09-24T09:00:00Z' for i in range(3)}}).encode()
+w = World(datetime(2026, 9, 24, 10, 6, 0, tzinfo=timezone.utc))
+w.objects[raw.PM_STATE_KEY] = ST3
+w.loop_start = datetime(2026, 9, 24, 8, 0, tzinfo=timezone.utc)
+w.capture_at = datetime(2026, 9, 24, 10, 2, 0, tzinfo=timezone.utc)
+for i in range(3):
+    w.hist[f'id3{i}'] = [(CLOSED, None)]
+_, beat = run(w, M3c, FM3c, ocs())
+check('3 pulls after the capture commit: GitHub read ONCE (runs + commits = 2 requests), not per call',
+      beat['counts'].get('saved') == 3 and w.gh_calls == 2, (w.gh_calls, beat['counts']))
+w = World(datetime(2026, 9, 24, 10, 6, 0, tzinfo=timezone.utc))
+w.install()
+w.loop_start = datetime(2026, 9, 24, 8, 0, tzinfo=timezone.utc)
+w.capture_at = datetime(2026, 9, 24, 10, 2, 0, tzinfo=timezone.utc)
+raw.loop_idle(w.t)
+w.t = datetime(2026, 9, 24, 10, 16, 0, tzinfo=timezone.utc)                   # next quarter, no new commit
+check('the cache ends at the next quarter boundary: busy again until that iteration commits',
+      raw.loop_idle(w.t)[0] is False)
+w = World(datetime(2026, 9, 24, 10, 6, 0, tzinfo=timezone.utc))
+w.install()
+w.loop_start = datetime(2026, 9, 24, 10, 8, 0, tzinfo=timezone.utc) - timedelta(minutes=raw.LOOP_END_PHASE_MIN)
+w.capture_at = datetime(2026, 9, 24, 10, 2, 0, tzinfo=timezone.utc)
+raw.loop_idle(w.t)
+w.t = datetime(2026, 9, 24, 10, 9, 0, tzinfo=timezone.utc)                    # run entered its end phase
+check('the cache ends early when the run enters its end phase', raw.loop_idle(w.t)[0] is False)
+w = World(datetime(2026, 9, 24, 10, 6, 0, tzinfo=timezone.utc))
+w.objects[raw.PM_STATE_KEY] = ST3
+w.loop_start = datetime(2026, 9, 24, 8, 0, tzinfo=timezone.utc)
+w.capture_at = datetime(2026, 9, 24, 10, 2, 0, tzinfo=timezone.utc)
+w.hist['id30'] = [(None, 429)]
+run(w, M3c, FM3c, ocs())
+check('a 429 drops the cached "idle": the next gate check reads GitHub afresh (2 reads, not 1)',
+      w.gh_calls == 4, w.gh_calls)
+
+print('8e. exactly one trigger: the pg_cron pinger, applied by the schema action; no schedule:')
 WF_DIR = os.path.join(HERE, '.github', 'workflows')
+APPLIER = 'ten270-stream-now.yml'
 
 
-def trigger_faults(pm_yml, other_texts):
-    """The pinger is applied only by something that references its file. If any
-    workflow or migration references it, the post-match workflow must have no
-    `schedule:`; if none does, the workflow must keep it (or nothing fires)."""
-    pinger_applied = any('oddspapi-postmatch-pinger' in t for t in other_texts)
-    has_schedule = re.search(r'^\s*schedule:', pm_yml, re.M) is not None
-    if pinger_applied and has_schedule:
-        return ['both the pinger and the workflow schedule are active']
-    if not pinger_applied and not has_schedule:
-        return ['no trigger at all']
-    return []
+def trigger_faults(pm_yml, applier, other_texts):
+    """Founder 2026-09-25: dispatcher only. The post-match workflow has no
+    `schedule:`, the schema action applies the pinger SQL, and nothing else does
+    (a second applier would be a second, unreviewed install path)."""
+    faults = []
+    if re.search(r'^\s*schedule:', pm_yml, re.M):
+        faults.append('the workflow still has a schedule: (two triggers)')
+    if 'open("oddspapi-postmatch-pinger.sql")' not in applier:
+        faults.append('the schema action does not apply the pinger (no trigger)')
+    if any('oddspapi-postmatch-pinger' in t for t in other_texts):
+        faults.append('the pinger is applied from a second place')
+    return faults
 
 
 PM_YML = open(os.path.join(WF_DIR, 'oddspapi-postmatch.yml'), encoding='utf-8').read()
+APPLIER_YML = open(os.path.join(WF_DIR, APPLIER), encoding='utf-8').read()
 OTHERS = [open(os.path.join(WF_DIR, f), encoding='utf-8').read() for f in sorted(os.listdir(WF_DIR))
-          if f.endswith(('.yml', '.yaml')) and f != 'oddspapi-postmatch.yml']
+          if f.endswith(('.yml', '.yaml')) and f not in ('oddspapi-postmatch.yml', APPLIER)]
 MIG = os.path.join(HERE, 'supabase', 'migrations')
 OTHERS += [open(os.path.join(MIG, f), encoding='utf-8').read() for f in sorted(os.listdir(MIG))] \
     if os.path.isdir(MIG) else []
-check('today: the schedule is the one trigger, the pinger is referenced by nothing',
-      trigger_faults(PM_YML, OTHERS) == [], trigger_faults(PM_YML, OTHERS))
-check('CONTROL: a schema step that applies the pinger while schedule: stays is caught',
-      trigger_faults(PM_YML, OTHERS + ['run: psql -f oddspapi-postmatch-pinger.sql']) != [])
-check('CONTROL: dropping schedule: without applying the pinger is caught',
-      trigger_faults(re.sub(r'^\s*schedule:.*$', '', PM_YML, flags=re.M), OTHERS) != [])
+check('the pinger is the one trigger: no schedule:, applied by the schema action only',
+      trigger_faults(PM_YML, APPLIER_YML, OTHERS) == [], trigger_faults(PM_YML, APPLIER_YML, OTHERS))
+check('CONTROL: a schedule: put back is caught',
+      trigger_faults(PM_YML.replace('on:\n', "on:\n  schedule:\n    - cron: '7,22,37,52 * * * *'\n", 1),
+                     APPLIER_YML, OTHERS) != [])
+check('CONTROL: the schema action no longer applying the pinger is caught',
+      trigger_faults(PM_YML, APPLIER_YML.replace('open("oddspapi-postmatch-pinger.sql")', 'open("x.sql")'),
+                     OTHERS) != [])
+def applier_faults(text):
+    """The PAT store and the pinger apply run AFTER the schema is applied, so their
+    failures are warnings (odds.md): they must never feed `bad` (which fails the run)."""
+    i = text.find('POSTMATCH_DISPATCH_PAT") or "")')
+    j = text.find('if act in ("schema", "verify"):', i)
+    block = text[i:j] if i >= 0 and j > i else ''
+    faults = [] if block else ['post-match block not found']
+    if 'bad.append' in block:
+        faults.append('a post-match failure fails the schema run')
+    if block.count('::warning::') < 2:
+        faults.append('the PAT store and the pinger apply do not both warn')
+    return faults
+
+
+check('PAT store / pinger apply failures are warnings, not failures', applier_faults(APPLIER_YML) == [],
+      applier_faults(APPLIER_YML))
+check('CONTROL: a pinger failure fed to `bad` is caught', applier_faults(APPLIER_YML.replace(
+    'print(f"::warning::oddspapi-postmatch-pinger.sql not applied (HTTP {st})")',
+    'bad.append("pinger")')) != [])
+check('the pinger reads the vault secret by the ruled name, the applier stores it under that name',
+      "name = 'gh_postmatch_dispatch_pat'" in open(os.path.join(HERE, 'oddspapi-postmatch-pinger.sql')).read()
+      and "'gh_postmatch_dispatch_pat'" in APPLIER_YML)
+
+
+def pinger_faults(text):
+    """Fail-safe rules for the pinger SQL, on its text."""
+    t = re.sub(r'--[^\n]*', '', text)
+    faults = []
+    if not re.search(r'do \$outer\$.*exception when others then\s+raise warning.*end\s+\$outer\$;', t, re.S):
+        faults.append('not wrapped in a DO block that turns any failure into a warning')
+    if not re.search(r'if pat is null or length\(trim\(pat\)\) = 0 then\s+raise warning[^;]*;\s+return', t):
+        faults.append('a missing secret does not skip (and log) before the dispatch')
+    if "'select public.postmatch_dispatch()'" not in t:
+        faults.append('the job does not go through the fail-safe function')
+    if 'revoke all on function public.postmatch_dispatch() from anon, authenticated' not in t:
+        faults.append('the dispatch function is callable by the page key')
+    return faults
+
+
+PINGER = open(os.path.join(HERE, 'oddspapi-postmatch-pinger.sql'), encoding='utf-8').read()
+check('the pinger SQL is fail-safe', pinger_faults(PINGER) == [], pinger_faults(PINGER))
+for name, (a, b) in {
+        'the outer exception handler removed': ("exception when others then\n  raise warning 'TEN-270 post-match pinger NOT installed: % (%)', sqlerrm, sqlstate;\n", ''),
+        'the missing-secret skip removed': ("      return 'skipped: vault secret gh_postmatch_dispatch_pat missing';\n", ''),
+        'the job calls net.http_post directly': ("'select public.postmatch_dispatch()'", "'select net.http_post(1)'"),
+        'anon may call the dispatch': ('  revoke all on function public.postmatch_dispatch() from anon, authenticated;\n', ''),
+}.items():
+    check(f'CONTROL: pinger check catches "{name}"', a in PINGER and pinger_faults(PINGER.replace(a, b)) != [],
+          f'anchor present={a in PINGER}')
 
 print('9. ticks in CARD orientation, one row per change, in the schema\'s columns')
 w = World(T0 + timedelta(minutes=30))
@@ -651,6 +747,95 @@ for name, (a, b) in MUTANTS.items():
     present = a in sql
     check(f'CONTROL: the schema check catches "{name}"',
           present and schema_faults(sql.replace(a, b)) != [], f'anchor present={present}')
+
+print('11. completeness: first 20 pulls vs a +24 h re-pull held outside the archive')
+LETTERS = 'abcdefghijklmnopqrstuvwxyz'
+NAMES = [(f'A. P{LETTERS[i]}x', f'B. Q{LETTERS[i]}y') for i in range(21)]
+M21 = [card(str(100 + i), *NAMES[i]) for i in range(21)]
+FM21 = fmap(*[(str(100 + i), f'v{i:02d}', 'same', *NAMES[i]) for i in range(21)])
+LATE = payload([('2026-09-24T06:00:00Z', 1.50, True), ('2026-09-24T07:00:00Z', 1.45, True),
+                ('2026-09-24T07:30:00Z', 1.45, True), ('2026-09-24T07:45:00Z', 1.30, True),  # pre-start, late only
+                ('2026-09-24T09:00:00Z', 1.20, True), ('2026-09-24T10:00:00Z', 1.01, False)],
+               [('2026-09-24T06:00:00Z', 2.60, True), ('2026-09-24T09:00:00Z', 4.00, True),
+                ('2026-09-24T09:30:00Z', 4.50, True),                                        # in-play, late only
+                ('2026-09-24T10:00:00Z', 0, False)])
+keys21 = [raw._names().match_key('2026-09-24', a, b) for a, b in NAMES]
+OCS21 = {'byKey': {k: {'book': 'bet105', 'startTs': '2026-09-24T08:00:00+00:00'} for k in keys21}}
+w = World(datetime(2026, 9, 24, 10, 5, 0, tzinfo=timezone.utc))
+w.objects[raw.PM_STATE_KEY] = json.dumps({'seen': {str(100 + i): '2026-09-24T09:00:00Z'
+                                                   for i in range(21)}}).encode()
+for i in range(21):
+    w.hist[f'v{i:02d}'] = [(CLOSED, None), (LATE, None)]
+w.install()
+with contextlib.redirect_stdout(io.StringIO()):
+    _, beat = raw.postmatch('k', URL, KEY, M21, FM21, OCS21)
+st = state_of(w)
+check('21 fixtures saved, exactly the first 20 enrolled for a re-pull',
+      beat['counts'].get('saved') == 21 and len(st['verify']) == 20 and 'v20' not in st['verify'],
+      (beat['counts'], sorted(st['verify'])))
+canon = {p: b for p, b in w.objects.items() if p.startswith('2026-09/')}
+w.t = datetime(2026, 9, 25, 10, 5, 0, tzinfo=timezone.utc) - timedelta(minutes=30)   # < 24 h after the pull
+n0 = len(hist_calls(w))
+_, beat = run(w, M21, FM21, OCS21)
+check('before 24 h: no re-pull', len(hist_calls(w)) == n0, len(hist_calls(w)) - n0)
+w.t = datetime(2026, 9, 25, 10, 20, 0, tzinfo=timezone.utc)
+w.hist['v00'] = [(None, 429)]
+_, beat = run(w, M21, FM21, OCS21)
+check('a re-pull obeys the 429 rule: the first 429 stops the run',
+      beat['stoppedBy'] == '429' and [c[1] for c in hist_calls(w)][n0:] == ['v00'], hist_calls(w)[n0:])
+w.hist['v00'] = [(LATE, None)]
+w.t = datetime(2026, 9, 25, 10, 35, 0, tzinfo=timezone.utc)
+w.loop_start = datetime(2026, 9, 25, 8, 0, tzinfo=timezone.utc)                    # iterating, no commit
+n1 = len(hist_calls(w))
+_, beat = run(w, M21, FM21, OCS21)
+check('a re-pull obeys the loop gate: none while an iteration is running', len(hist_calls(w)) == n1)
+w.loop_start = None
+w.t = datetime(2026, 9, 25, 10, 50, 0, tzinfo=timezone.utc)
+_, beat = run(w, M21, FM21, OCS21)
+st = state_of(w)
+check('all 20 re-pulled once, into _meta/verify/', beat['counts'].get('verified') == 20
+      and all(f'{raw.PM_VERIFY_PREFIX}/v{i:02d}.json.gz' in w.objects for i in range(20))
+      and f'{raw.PM_VERIFY_PREFIX}/v20.json.gz' not in w.objects, beat['counts'])
+check('the canonical objects are untouched', all(w.objects[p] == b for p, b in canon.items()))
+rep = json.loads(w.objects[raw.PM_VERIFY_REPORT].decode())
+r = rep['fixtures']['v01']['result']
+check('per side, pre-start / in-play split at the card start',
+      (r['early']['121']['preStart'], r['early']['121']['inPlay'], r['late']['121']['preStart'],
+       r['late']['122']['inPlay']) == (3, 2, 4, 3), r)
+check('first and last tick time per copy', (r['early']['121']['first'], r['early']['121']['last'])
+      == ('2026-09-24T06:00:00Z', '2026-09-24T10:00:00Z'), r['early']['121'])
+check('every early tick is in the late copy; only-late ticks split 1 pre-start / 1 in-play',
+      r['earlyAllInLate'] is True and r['onlyInLate'] == {'total': 2, 'preStart': 1, 'inPlay': 1}, r)
+nostart = raw.compare_copies(json.loads(CLOSED), json.loads(LATE), None)
+check('no start known: the split is a dash (None), never a guess',
+      nostart['early']['121']['preStart'] is None and nostart['onlyInLate']['preStart'] is None, nostart)
+lost = raw.compare_copies(json.loads(LATE), json.loads(CLOSED), '2026-09-24T08:00:00Z')
+check('an early tick missing from the late copy reads earlyAllInLate = False', lost['earlyAllInLate'] is False)
+w.t += timedelta(days=1)
+n2 = len(hist_calls(w))
+_, beat = run(w, M21, FM21, OCS21)
+vw = World(T0)
+vw.install()
+vv = {'pulledAt': '2026-09-23T10:00:00Z', 'path': '2026-09/zz.json.gz', 'cardKey': 'k', 'done': False}
+vw.upload_err = (500, 'internal')
+c = __import__('collections').Counter()
+for _ in range(raw.PM_MAX_404):
+    raw.verify_one(URL, KEY, 'zz', vv, LATE, None, None, c)
+check('a failed verify upload is a strike; 3 strikes = recorded failed, not retried',
+      vv.get('errors') == raw.PM_MAX_404 and vv.get('done') is True and vv.get('result') is None
+      and vv.get('lastError') == 'upload-500', vv)
+vw.upload_err = None
+vv2 = dict(vv, errors=0, done=False)
+for _ in range(raw.PM_MAX_404):                                  # early copy missing -> unreadable
+    raw.verify_one(URL, KEY, 'zz', vv2, LATE, None, None, c)
+check('an unreadable early copy is a strike too (3-strike cap)',
+      vv2.get('errors') == raw.PM_MAX_404 and vv2.get('done') is True
+      and vv2.get('lastError') == 'early copy unreadable', vv2)
+check('after 20: no more re-pulls, ever', len(hist_calls(w)) == n2, hist_calls(w)[n2:])
+table = raw.verify_table(rep)
+check('the read-only report prints one row per side per fixture and the tally',
+      sum(1 for ln in table if ln.startswith('v')) == 40 and '20 of 20 enrolled fixture(s) compared' in table[-1],
+      table[-1])
 
 print()
 if FAILED:

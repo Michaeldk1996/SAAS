@@ -584,6 +584,12 @@ PM_CALL_TIMEOUT_S = 60    # a 1-4.5 MB payload took 3.8-7.6 s (measured 2026-09-
 PM_MAX_404 = 3            # runs that saw a 404 before the fixture is given up
 PM_MAX_DEFER = 8          # runs with an open market before it is left to the daily run
 PM_SEEN_KEEP_DAYS = 4
+# Founder 2026-09-25: "30 min, and measure completeness on the first 20 pulls
+# against a +24 h re-pull held outside the archive".
+PM_VERIFY_N = 20
+PM_VERIFY_AFTER_H = 24
+PM_VERIFY_PREFIX = f'{META_PREFIX}/verify'
+PM_VERIFY_REPORT = f'{PM_VERIFY_PREFIX}/report.json'
 PM_LOADED_KEEP_DAYS = 14
 FREE_PATHS = frozenset({'/v4/historical-odds', '/v4/account'})
 MW_BOOK, MW_MARKET, MW_OUTCOMES = 'bet365', '121', ('121', '122')  # 121 = participant1
@@ -676,10 +682,26 @@ def loop_idle(now):
     quarter-hour boundary and the run's own start (a restarted loop iterates at
     once, mid-quarter). A pending successor BEHIND an iterating run is only
     waiting and does not block. Anything unreadable counts as busy."""
+    global _IDLE_UNTIL
+    if _IDLE_UNTIL is not None and now < _IDLE_UNTIL:
+        return True, f'idle (cached until {iso(_IDLE_UNTIL)})'
+    _IDLE_UNTIL = None
     try:
         return _loop_idle(now)
     except Exception as e:                                 # noqa: BLE001 — odd body = busy
         return False, f'odds-now state unreadable ({type(e).__name__})'
+
+
+# GitHub read load: once THIS quarter's capture commit is seen, the loop does
+# not touch the key again until the next quarter-hour boundary (its next
+# iteration) — unless its run reaches the end phase first. So "idle" is cached
+# until the earlier of the two, and dropped at once on a 429 (forget_idle()).
+_IDLE_UNTIL = None
+
+
+def forget_idle():
+    global _IDLE_UNTIL
+    _IDLE_UNTIL = None
 
 
 def _loop_idle(now):
@@ -716,6 +738,9 @@ def _loop_idle(now):
     boundary = now.replace(minute=now.minute - now.minute % 15, second=0, microsecond=0)
     since = max([boundary] + live)
     if last and last >= since:
+        global _IDLE_UNTIL
+        _IDLE_UNTIL = min([boundary + timedelta(minutes=15)]
+                          + [t + timedelta(minutes=LOOP_END_PHASE_MIN) for t in live])
         return True, f'loop iteration done (capture commit {iso(last)})'
     return False, (f'odds-loop iteration in progress (no capture commit since {iso(since)}; '
                    f'last {iso(last) if last else "—"})')
@@ -811,6 +836,7 @@ def select_targets(matches, fmap, ocs, state, now, counts):
                     'orient': card_orientation(rec, m), 'startTime': rec.get('startTime'),
                     'p1': m.get('p1'), 'p2': m.get('p2'),
                     'bet365Card': (ocs_by.get(ck) or {}).get('book') == 'bet365',
+                    'startTs': (ocs_by.get(ck) or {}).get('startTs'),
                     'seenAgeMin': (now - first).total_seconds() / 60.0})
     return out
 
@@ -842,6 +868,39 @@ def held_path(url, key, fixture_id, months):
         if any(r.get('name') == want for r in page):
             return f'{mo}/{want}'
     return False
+
+
+def _tick_ids(payload):
+    """{outcome: set((createdAt, price, active))} of the bet365 match-winner ticks."""
+    t = mw_ticks(payload) or {}
+    return {oc: {(x.get('createdAt'), x.get('price'), x.get('active')) for x in t.get(oc) or []}
+            for oc in MW_OUTCOMES}
+
+
+def compare_copies(early, late, start_ts):
+    """The completeness measure for one fixture: the early (post-match) copy vs
+    the +24 h re-pull. Split pre-start / in-play only when a start is known —
+    otherwise those two counts are None (a dash), never a guess."""
+    start = parse_iso(start_ts)
+
+    def side(ids):
+        ts = sorted(parse_iso(c) for c, _, _ in ids if parse_iso(c))
+        pre = sum(1 for c, _, _ in ids if start and parse_iso(c) and parse_iso(c) <= start)
+        return {'ticks': len(ids),
+                'preStart': pre if start else None,
+                'inPlay': (len(ids) - pre) if start else None,
+                'first': iso(ts[0]) if ts else None, 'last': iso(ts[-1]) if ts else None}
+
+    e, l = _tick_ids(early), _tick_ids(late)
+    only_late = set().union(*[(l[oc] - e[oc]) for oc in MW_OUTCOMES])
+    olp = sum(1 for c, _, _ in only_late if start and parse_iso(c) and parse_iso(c) <= start)
+    return {'start': iso(start) if start else None,
+            'early': {oc: side(e[oc]) for oc in MW_OUTCOMES},
+            'late': {oc: side(l[oc]) for oc in MW_OUTCOMES},
+            'earlyAllInLate': all(e[oc] <= l[oc] for oc in MW_OUTCOMES),
+            'onlyInLate': {'total': len(only_late),
+                           'preStart': olp if start else None,
+                           'inPlay': (len(only_late) - olp) if start else None}}
 
 
 def payload_of(blob):
@@ -981,9 +1040,48 @@ def put_json(url, key, path, obj):
                      encoding=None)
 
 
+def verify_one(url, key, fid, v, body, err, ocs, counts):
+    """The +24 h re-pull of one enrolled fixture: stored under _meta/verify/
+    (never the canonical object), compared against the canonical early copy.
+    Every failure — the pull, the upload, an unreadable copy — is one strike;
+    after PM_MAX_404 strikes the fixture is recorded as failed, not retried."""
+    def strike(why):
+        v['errors'] = int(v.get('errors') or 0) + 1
+        v['lastError'] = why
+        counts['verifyFailed'] += 1
+        if v['errors'] >= PM_MAX_404:
+            v['done'] = True
+            v['result'] = None
+
+    if body is None:
+        return strike(str(err))
+    up = sb_upload(url, key, f'{PM_VERIFY_PREFIX}/{fid}.json.gz', gzip.compress(body, 6))
+    if up:
+        return strike(f'upload-{up[0]}')
+    got, derr = sb_download(url, key, v['path'])
+    early, late = payload_of(got), payload_of(body)
+    if early is None or late is None:
+        return strike('early copy unreadable' if early is None else 'late copy unreadable')
+    start = v.get('startTs') or (((ocs or {}).get('byKey') or {}).get(v.get('cardKey')) or {}).get('startTs')
+    v['result'] = compare_copies(early, late, start)
+    v['latePulledAt'] = iso(_now())
+    v['done'] = True
+    counts['verified'] += 1
+
+
+def verify_report(verify):
+    return {'generatedAt': iso(_now()), 'enrolled': len(verify), 'target': PM_VERIFY_N,
+            'afterHours': PM_VERIFY_AFTER_H,
+            'fixtures': {fid: {'cardKey': v.get('cardKey'), 'earlyPulledAt': v.get('pulledAt'),
+                               'latePulledAt': v.get('latePulledAt'), 'done': bool(v.get('done')),
+                               'lastError': v.get('lastError'), 'result': v.get('result')}
+                         for fid, v in sorted(verify.items())}}
+
+
 def postmatch(odds_key, url, sb_key, matches, fmap, ocs):
     """One post-match run. Returns (exit code, heartbeat dict)."""
     CALLS.clear()
+    forget_idle()
     started = _now()
     deadline = started + timedelta(seconds=PM_MAX_RUN_S)
     counts = collections.Counter()
@@ -1041,16 +1139,24 @@ def postmatch(odds_key, url, sb_key, matches, fmap, ocs):
             continue
         pulls.append(t)
 
+    # The completeness check: the first PM_VERIFY_N fixtures this job saves are
+    # re-pulled once, >= PM_VERIFY_AFTER_H after their pull, into _meta/verify/.
+    verify = state.setdefault('verify', {})
+    due = [fid for fid, v in sorted(verify.items())
+           if not v.get('done') and parse_iso(v.get('pulledAt'))
+           and started - parse_iso(v['pulledAt']) >= timedelta(hours=PM_VERIFY_AFTER_H)]
+    work = [('pull', t) for t in pulls] + [('verify', fid) for fid in due]
+
     # Pass 2 — the key: inside the window, and only once the loop's iteration
     # is over (checked before the first call and again before every call).
     before = after = None
     stop = None
-    if pulls and wait_for_window(deadline) and key_is_ours(deadline, counts):
+    if work and wait_for_window(deadline) and key_is_ours(deadline, counts):
         before, _ = meter(odds_key, 'before postmatch pulls', get=free_get)
-    elif pulls:
+    elif work:
         stop = 'window-or-loop'
     n = 0
-    for t in pulls:
+    for kind, t in work:
         if stop:
             counts['notTried'] += 1
             continue
@@ -1061,12 +1167,16 @@ def postmatch(odds_key, url, sb_key, matches, fmap, ocs):
             counts['notTried'] += 1
             continue
         n += 1
-        fid = t['fixtureId']
+        fid = t['fixtureId'] if kind == 'pull' else t
         body, err = postmatch_hist(fid, odds_key, counts)
         if err == 429:
+            forget_idle()
             stop = '429'
             counts['stoppedOn429'] += 1
             print(f'429 on {fid} — the live loop has the key; stopping, next run resumes.')
+            continue
+        if kind == 'verify':
+            verify_one(url, sb_key, fid, verify[fid], body, err, ocs, counts)
             continue
         if err == 404:
             r = nf.setdefault(fid, {'n': 0, 'first': iso(_now()), 'eventKey': t['eventKey']})
@@ -1110,6 +1220,10 @@ def postmatch(odds_key, url, sb_key, matches, fmap, ocs):
             continue
         counts['saved'] += 1
         held_rec[fid] = {'path': path, 'cardKey': t['cardKey'], 'at': iso(_now())}
+        if len(verify) < PM_VERIFY_N and fid not in verify:
+            verify[fid] = {'pulledAt': iso(_now()), 'path': path, 'cardKey': t['cardKey'],
+                           'startTs': t.get('startTs'), 'done': False}
+            counts['verifyEnrolled'] += 1
         project_ticks(url, sb_key, t, payload, state, _now(), counts)
 
     if before is not None and can_call(_now()) and loop_idle(_now())[0]:
@@ -1128,13 +1242,54 @@ def postmatch(odds_key, url, sb_key, matches, fmap, ocs):
             'stoppedBy': stop, 'counts': dict(counts), 'http429': counts['http429'],
             'oddspapiCalls': dict(CALLS), 'meterBefore': before, 'meterAfter': after,
             'meterDelta': delta, 'waitMin': PM_WAIT_MIN, 'window': list(PM_WINDOW)}
-    for path, obj in ((PM_STATE_KEY, prune_state(state, finished)), (PM_HEARTBEAT_KEY, beat)):
+    writes = [(PM_STATE_KEY, prune_state(state, finished)), (PM_HEARTBEAT_KEY, beat)]
+    if counts['verified'] or counts['verifyFailed'] or counts['verifyEnrolled']:
+        writes.append((PM_VERIFY_REPORT, verify_report(verify)))
+    for path, obj in writes:
         err = put_json(url, sb_key, path, obj)
         if err:
             print(f'::warning::could not write {path}: {err[0]}')
     print('\n=== POSTMATCH RUN ===')
     print(json.dumps(beat, indent=1, sort_keys=True))
     return (1 if counts['failed'] and not counts['saved'] else 0), beat
+
+
+def verify_table(report):
+    """The completeness report as printable lines. Read-only."""
+    def n(x):
+        return '—' if x is None else str(x)
+    out = [f'post-match completeness: {report.get("enrolled", 0)} of {report.get("target")} '
+           f'fixtures enrolled; late copy >= {report.get("afterHours")} h after the pull.',
+           f'{"fixture":<22} {"side":<4} {"early pre/in":>12} {"late pre/in":>12} '
+           f'{"early first..last":<35} {"late last":<20} {"early⊆late":<10} {"only late pre/in":>16}']
+    done = 0
+    for fid, f in sorted((report.get('fixtures') or {}).items()):
+        r = f.get('result')
+        if not r:
+            out.append(f'{fid:<22} {"—":<4} pending (late pull {"failed: " + str(f.get("lastError")) if f.get("lastError") else "not due yet"})')
+            continue
+        done += 1
+        for oc in MW_OUTCOMES:
+            e, l = r['early'][oc], r['late'][oc]
+            out.append(f'{fid:<22} {("p1" if oc == "121" else "p2"):<4} '
+                       f'{n(e["preStart"]) + "/" + n(e["inPlay"]):>12} {n(l["preStart"]) + "/" + n(l["inPlay"]):>12} '
+                       f'{n(e["first"]) + ".." + n(e["last"]):<35} {n(l["last"]):<20} '
+                       f'{("yes" if r["earlyAllInLate"] else "NO"):<10} '
+                       f'{n(r["onlyInLate"]["preStart"]) + "/" + n(r["onlyInLate"]["inPlay"]):>16}')
+    out.append(f'{done} of {len(report.get("fixtures") or {})} enrolled fixture(s) compared. '
+               f'p1/p2 are oddspapi participant1/2; pre/in split needs a known start (— otherwise).')
+    return out
+
+
+def postmatch_verify_report():
+    url, key = supabase_creds()
+    got, err = sb_download(url, key, PM_VERIFY_REPORT)
+    rep = payload_of(got)
+    if not isinstance(rep, dict):
+        print(f'no completeness report yet ({"not found" if is_not_found(err) else err}).')
+        return 0
+    print('\n'.join(verify_table(rep)))
+    return 0
 
 
 def fetch_site_json(name, timeout=30):
@@ -1170,13 +1325,16 @@ def postmatch_main(odds_key):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('cmd', choices=['discover', 'archive', 'report', 'postmatch'])
+    ap.add_argument('cmd', choices=['discover', 'archive', 'report', 'postmatch',
+                                    'postmatch-verify-report'])
     ap.add_argument('--max-seconds', type=int, default=18000)
     ap.add_argument('--days', type=int, default=RETENTION_DAYS)
     a = ap.parse_args()
 
     if a.cmd == 'report':
         return report()
+    if a.cmd == 'postmatch-verify-report':
+        return postmatch_verify_report()
 
     key = read_odds_key()
     if not key:

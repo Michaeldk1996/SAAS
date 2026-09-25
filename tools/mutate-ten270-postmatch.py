@@ -85,6 +85,32 @@ PY_MUT = {
     'records cleared before a failed upload': (
         "        if up and not duplicate:\n            counts['failed'] += 1",
         "        deferred.pop(fid, None)\n        nf.pop(fid, None)\n        if up and not duplicate:\n            counts['failed'] += 1"),
+    'verification enrols every fixture (no cap of 20)': (
+        "        if len(verify) < PM_VERIFY_N and fid not in verify:", "        if fid not in verify:"),
+    're-pull before 24 h': (
+        "           and started - parse_iso(v['pulledAt']) >= timedelta(hours=PM_VERIFY_AFTER_H)]",
+        "           ]"),
+    're-pull written over the canonical object': (
+        "    up = sb_upload(url, key, f'{PM_VERIFY_PREFIX}/{fid}.json.gz', gzip.compress(body, 6))",
+        "    up = sb_upload(url, key, v['path'], gzip.compress(body, 6))"),
+    're-pulled again after done': ("           if not v.get('done') and parse_iso(v.get('pulledAt'))",
+                                   "           if parse_iso(v.get('pulledAt'))"),
+    'early-in-late always true': ("            'earlyAllInLate': all(e[oc] <= l[oc] for oc in MW_OUTCOMES),",
+                                  "            'earlyAllInLate': True,"),
+    'split guessed without a start': ("                'preStart': pre if start else None,",
+                                      "                'preStart': pre,"),
+    'failed verify upload is not a strike': ("        return strike(f'upload-{up[0]}')", "        counts['verifyFailed'] += 1\n        return"),
+    'unreadable early copy is not a strike': (
+        "        return strike('early copy unreadable' if early is None else 'late copy unreadable')",
+        "        counts['verifyFailed'] += 1\n        return"),
+    'idle not cached (GitHub read per call)': ("        _IDLE_UNTIL = min([boundary + timedelta(minutes=15)]",
+                                               "        _IDLE_UNTIL = None and min([boundary + timedelta(minutes=15)]"),
+    'idle cache outlives the quarter': ("        _IDLE_UNTIL = min([boundary + timedelta(minutes=15)]",
+                                        "        _IDLE_UNTIL = min([boundary + timedelta(minutes=60)]"),
+    'idle cache ignores the end phase': ("                          + [t + timedelta(minutes=LOOP_END_PHASE_MIN) for t in live])",
+                                         "                          )"),
+    'idle cache kept after a 429': ("        if err == 429:\n            forget_idle()\n            stop = '429'",
+                                    "        if err == 429:\n            stop = '429'"),
     'unreadable state read as empty': ("        return {} if is_not_found(err) else None", "        return {}"),
     'duplicate: ticks from the unsaved pull': (
         "            if t['bet365Card'] and t['orient']:\n                project_from_bucket(t, path, _now())",
@@ -119,9 +145,9 @@ JS_MUT = {
     'fixtures != 1 not treated as not recorded': (
         " || Number(p.fixtures) !== 1) {", ") {"),
     'no-start shows rows anyway': ("if (!p.start_ts) return", "if (false) return"),
-    'archive label = upcoming label': (
-        "const ARCHIVE_NOTE = 'change times from bet365 · archived after the match';",
-        "const ARCHIVE_NOTE = 'change times from bet365 · refreshed every 15 min';"),
+    'completed bet365 loses the ruled source line': (
+        "note: (source === 'shard' || source === 'archive') ? BET365_NOTE : null };",
+        "note: source === 'shard' ? BET365_NOTE : null };"),
     'failed read = empty history': ("if (p == null) return { card, rows: [], failed: true };",
                                     "if (p == null) return { card, rows: [] };"),
 }

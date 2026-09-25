@@ -265,10 +265,10 @@
     return { book: bookName, bookKey: bk, open, close, completed, live, updatedAt,
              startAt: (o && o.startTs) || null,
              historyAvailable: source != null, source,
-             note: source === 'shard' ? BET365_NOTE : (source === 'archive' ? ARCHIVE_NOTE : null) };
+             // Founder 2026-09-25: completed bet365 cards carry the SAME source line as upcoming.
+             note: (source === 'shard' || source === 'archive') ? BET365_NOTE : null };
   }
   const BET365_NOTE = 'change times from bet365 · refreshed every 15 min';
-  const ARCHIVE_NOTE = 'change times from bet365 · archived after the match';
   const ARCHIVE_NO_START = 'start time unknown — history not shown';
 
   // A completed bet365 card from its bet365_history payload. `rpc()` resolves
@@ -404,7 +404,7 @@
     document.addEventListener('visibilitychange', () => { if (document.hidden) hide(); });
   }
 
-  const api = { archiveRows, loadArchive, ARCHIVE_NOTE, ARCHIVE_NO_START, sideRows, shardRows, fetchShard, changesOnly, gapRows, model, html, fmtWhen, fmtDelta, cardData, stats, _open: open };
+  const api = { archiveRows, loadArchive, ARCHIVE_NO_START, sideRows, shardRows, fetchShard, changesOnly, gapRows, model, html, fmtWhen, fmtDelta, cardData, stats, _open: open };
   if (typeof window !== 'undefined') window.PriceHistoryBox = Object.assign(window.PriceHistoryBox || {}, api);
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })();

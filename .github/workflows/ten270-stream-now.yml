@@ -55,6 +55,9 @@ jobs:
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
           SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          # TEN-270 post-match dispatcher: the PAT the pg_cron job dispatches with.
+          # Stored in Vault as gh_postmatch_dispatch_pat; never printed.
+          POSTMATCH_DISPATCH_PAT: ${{ secrets.POSTMATCH_DISPATCH_PAT }}
         run: |
           python3 - <<'PY'
           import json, os, sys, urllib.parse, urllib.request, urllib.error
@@ -83,6 +86,26 @@ jobs:
               print(f"schema apply HTTP {st}")
               if st >= 400:
                   print(r[:500]); sys.exit(1)
+              # TEN-270 post-match dispatcher (founder 2026-09-25). The PAT goes to
+              # Vault the way ten232-kibl-sweep-cron.py stores its own: delete +
+              # vault.create_secret under this job's OWN name. Absent PAT = the
+              # vault write is skipped and the pinger installs fail-safe (it
+              # dispatches nothing and logs a WARNING until the secret exists).
+              pat = (os.environ.get("POSTMATCH_DISPATCH_PAT") or "").strip()
+              if pat:
+                  lit = "'" + pat.replace("'", "''") + "'"
+                  st, r = sql("delete from vault.secrets where name = 'gh_postmatch_dispatch_pat'; "
+                              f"select vault.create_secret({lit}, 'gh_postmatch_dispatch_pat', "
+                              "'TEN-270 post-match dispatch PAT');")
+                  print(f"vault gh_postmatch_dispatch_pat store -> HTTP {st}")
+                  # A warning, not a failure: the schema above is already applied, and a
+                  # pinger with no secret dispatches nothing (odds.md, post-match trigger).
+                  if st >= 400: print(f"::warning::post-match PAT not stored in Vault (HTTP {st})")
+              else:
+                  print("POSTMATCH_DISPATCH_PAT not set: vault write skipped; the pinger installs but dispatches nothing")
+              st, r = sql(open("oddspapi-postmatch-pinger.sql").read())
+              print(f"oddspapi-postmatch-pinger.sql apply HTTP {st}")
+              if st >= 400: print(f"::warning::oddspapi-postmatch-pinger.sql not applied (HTTP {st})")
           if act in ("schema", "verify"):
               pk = os.environ["SUPABASE_PUBLISHABLE_KEY"]
               st, r = call(f"{url}/rest/v1/kibl_now_price?select=card_key&limit=1", key=pk)
@@ -186,6 +209,10 @@ jobs:
               st, r = sql("select polname, polcmd, polroles::regrole[]::text from pg_policy p join pg_class c on c.oid=p.polrelid "
                           "where c.relname in ('kibl_now_price','kibl_now_history','kibl_now_card') order by 1")
               print(f"policies -> {r}")
+              st, r = sql("select jobname, schedule, active, "
+                          "(select count(*) from vault.secrets where name = 'gh_postmatch_dispatch_pat') as pat_stored "
+                          "from cron.job where jobname = 'ten270-oddspapi-postmatch-ping'")
+              print(f"post-match pinger -> HTTP {st} {r[:300]}  (want one active job; pat_stored 1 once the secret is added)")
           if act == "status":
               sk = os.environ["SUPABASE_SECRET_KEY"]
               st, r = call(f"{url}/rest/v1/kibl_now_price?kind=eq.heartbeat&select=written_at,note", key=sk)
