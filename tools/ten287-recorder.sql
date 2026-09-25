@@ -71,7 +71,7 @@ create table if not exists ten287_rec.ticks (
     src             text not null,                        -- updated | multi | selftest
     state_md5       text not null
 );
-create unique index if not exists ticks_state_uq on ten287_rec.ticks (book, event_id, market, book_updated_at, state_md5);
+create unique index if not exists ticks_state_uq on ten287_rec.ticks (book, event_id, market, book_updated_at, state_md5) nulls not distinct;
 create index if not exists ticks_event_idx on ten287_rec.ticks (event_id, book, seen_at);
 
 create or replace function ten287_rec.num(p text) returns numeric
@@ -112,7 +112,7 @@ declare
   eid bigint := (p_ev->>'id')::bigint;
   bk  text; m jsonb; o jsonb; n int := 0; k int;
 begin
-  if eid is null then return 0; end if;
+  if eid is null or jsonb_typeof(p_ev) <> 'object' then return 0; end if;
   insert into ten287_rec.events as e (event_id, home, away, start_at, status, league, tier, bookmaker_ids, first_seen, last_seen)
   values (eid, p_ev->>'home', p_ev->>'away', (p_ev->>'date')::timestamptz, p_ev->>'status', p_ev->'league'->>'name',
           ten287_rec.tier(p_ev->'league'->>'name', p_ev->>'home'), p_ev->'bookmakerIds', p_seen, p_seen)
@@ -123,7 +123,8 @@ begin
       tier = ten287_rec.tier(coalesce(excluded.league, e.league), coalesce(excluded.home, e.home)),
       bookmaker_ids = coalesce(e.bookmaker_ids, '{}'::jsonb) || coalesce(excluded.bookmaker_ids, '{}'::jsonb),
       last_seen = greatest(e.last_seen, excluded.last_seen);
-  for bk in select jsonb_object_keys(coalesce(p_ev->'bookmakers', '{}'::jsonb)) loop
+  if jsonb_typeof(p_ev->'bookmakers') is distinct from 'object' then return 0; end if;
+  for bk in select jsonb_object_keys(p_ev->'bookmakers') loop
     if not bk = any ((select books from ten287_rec.config)) then continue; end if;
     for m in select * from jsonb_array_elements(case when jsonb_typeof(p_ev->'bookmakers'->bk) = 'array' then p_ev->'bookmakers'->bk else '[]'::jsonb end) loop
       if m->>'name' is distinct from 'ML' then continue; end if;
@@ -148,11 +149,12 @@ end $$;
 create or replace function ten287_rec.ingest() returns integer
 language plpgsql as $$
 declare
-  r record; body jsonb; ev jsonb; n int := 0; items int;
+  r record; body jsonb; ev jsonb; n int := 0; items int; bad int;
 begin
   for r in
     select q.id, q.kind, q.fired_at, x.status_code, x.content, x.error_msg, x.timed_out, x.created,
-           (x.headers->>'x-ratelimit-remaining')::int as rl
+           (select ten287_rec.num(h.value)::int from jsonb_each_text(coalesce(x.headers, '{}'::jsonb)) h
+             where lower(h.key) = 'x-ratelimit-remaining' limit 1) as rl
     from ten287_rec.requests q
     left join net._http_response x on x.id = q.id
     where q.processed_at is null
@@ -163,7 +165,7 @@ begin
       update ten287_rec.requests set processed_at = now(), note = 'lost: no pg_net response within 3 min' where id = r.id;
       continue;
     end if;
-    items := null;
+    items := null; bad := 0;
     if r.status_code = 200 then
       begin
         body := r.content::jsonb;
@@ -173,29 +175,37 @@ begin
       if jsonb_typeof(body) = 'array' then
         items := jsonb_array_length(body);
         for ev in select * from jsonb_array_elements(body) loop
-          n := n + ten287_rec.ingest_event(ev, r.created, case r.kind when 'events' then 'events' else r.kind end);
+          begin
+            n := n + ten287_rec.ingest_event(ev, r.created, r.kind);
+          exception when others then
+            bad := bad + 1;   -- one malformed event never blocks the rest, nor the next fire
+          end;
         end loop;
       end if;
     end if;
     update ten287_rec.requests set processed_at = now(), status_code = r.status_code, n_items = items,
            ratelimit_remaining = r.rl,
-           note = case when r.status_code = 200 and items is not null then null
+           note = case when r.status_code = 200 and items is not null
+                       then case when bad > 0 then bad || ' event(s) skipped: unparseable' end
                        else ten287_rec.scrub(coalesce(r.error_msg, left(r.content, 300)) || case when r.timed_out then ' (timed out)' else '' end) end
     where id = r.id;
   end loop;
   return n;
 end $$;
 
+-- Only a reading from the last 15 min counts: once the guard trips nothing fires, so the reading goes stale
+-- and after 15 min one tick fires again and re-reads the counter (self-releasing; re-trips if still low).
 create or replace function ten287_rec.budget_ok() returns boolean
 language sql stable as $$
   select coalesce((select ratelimit_remaining from ten287_rec.requests
-                   where ratelimit_remaining is not null order by id desc limit 1), 999999)
+                   where ratelimit_remaining is not null and fired_at > now() - interval '15 minutes'
+                   order by id desc limit 1), 999999)
          >= (select min_remaining from ten287_rec.config)
 $$;
 
 -- every 30 s
 create or replace function ten287_rec.tick() returns integer
-language plpgsql security definer set search_path = ten287_rec, public as $$
+language plpgsql security definer set search_path = pg_catalog, ten287_rec as $$
 declare bk text; rid bigint; key text := ten287_rec.api_key(); n int;
 begin
   n := ten287_rec.ingest();
@@ -212,7 +222,7 @@ end $$;
 
 -- every 10 min
 create or replace function ten287_rec.sweep() returns integer
-language plpgsql security definer set search_path = ten287_rec, public as $$
+language plpgsql security definer set search_path = pg_catalog, ten287_rec as $$
 declare key text := ten287_rec.api_key(); ids text; rid bigint; batches int := 0;
 begin
   if key is null or not ten287_rec.budget_ok() then return 0; end if;
@@ -227,7 +237,7 @@ begin
     from (select event_id, (row_number() over (order by event_id) - 1) / 10 as b
           from ten287_rec.events
           where tier is not null and status in ('pending', 'live')
-            and start_at between now() - interval '4 hours' and now() + interval '48 hours') s
+            and start_at between now() - interval '8 hours' and now() + interval '48 hours') s
     group by b
   loop
     select net.http_get(url := 'https://api.odds-api.io/v3/odds/multi?eventIds=' || ids

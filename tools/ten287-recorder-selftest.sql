@@ -28,16 +28,19 @@ begin
   if n <> 0 then raise exception 'SELFTEST: re-ingesting the same state wrote % rows, want 0', n; end if;
 
   select * into t from ten287_rec.ticks where event_id = -287001;
-  if t.book <> 'Betfair Exchange' or t.back_home <> 2.16 or t.back_away <> 1.52 or t.lay_home <> 2.92 or t.lay_away <> 1.87
-     or t.depth_home <> 55.89 or t.depth_away <> 469.1 or t.depth_lay_home <> 244.19 or t.depth_lay_away <> 64.56
-     or t.book_updated_at <> '2026-09-25 22:51:25.04+00' or t.seen_at <> '2026-09-25 22:56:26+00' then
+  if t.book is distinct from 'Betfair Exchange' or t.back_home is distinct from 2.16 or t.back_away is distinct from 1.52
+     or t.lay_home is distinct from 2.92 or t.lay_away is distinct from 1.87
+     or t.depth_home is distinct from 55.89 or t.depth_away is distinct from 469.1
+     or t.depth_lay_home is distinct from 244.19 or t.depth_lay_away is distinct from 64.56
+     or t.book_updated_at is distinct from '2026-09-25 22:51:25.04+00'::timestamptz
+     or t.seen_at is distinct from '2026-09-25 22:56:26+00'::timestamptz then
     raise exception 'SELFTEST: BFE tick parsed wrong: %', row_to_json(t);
   end if;
 
   n := ten287_rec.ingest_event(sb, '2026-09-25 22:56:26+00', 'selftest');
   if n <> 1 then raise exception 'SELFTEST: Superbet event wrote % ticks, want 1 (an unselected book must be skipped)', n; end if;
   select * into t from ten287_rec.ticks where event_id = -287002;
-  if t.book <> 'Superbet' or t.back_home <> 2.25 or t.back_away is not null or t.lay_home is not null or t.depth_home is not null then
+  if t.book is distinct from 'Superbet' or t.back_home is distinct from 2.25 or t.back_away is not null or t.lay_home is not null or t.depth_home is not null then
     raise exception 'SELFTEST: Superbet tick wrong (an unparseable "-" must be NULL, not a default): %', row_to_json(t);
   end if;
 
@@ -47,12 +50,30 @@ begin
      or (select tier from ten287_rec.events where event_id = -287003) is not null then
     raise exception 'SELFTEST: tier classification wrong';
   end if;
-  if (select bookmaker_ids->>'Betfair Exchange' from ten287_rec.events where event_id = -287001) <> '36117538' then
+  if (select bookmaker_ids->>'Betfair Exchange' from ten287_rec.events where event_id = -287001) is distinct from '36117538' then
     raise exception 'SELFTEST: Betfair event id not kept';
   end if;
-  if ten287_rec.scrub('https://x/?apiKey=abc123&a=1') <> 'https://x/?apiKey=***&a=1' then
+  if ten287_rec.scrub('https://x/?apiKey=abc123&a=1') is distinct from 'https://x/?apiKey=***&a=1' then
     raise exception 'SELFTEST: key scrub failed';
   end if;
+
+  -- a market with no updatedAt must still dedupe (nulls not distinct)
+  n := ten287_rec.ingest_event('{"id": -287004, "home": "X, Y", "away": "Z, W", "league": {"name": "ATP - T"},
+        "bookmakers": {"Superbet": [{"name": "ML", "odds": [{"home": "1.5", "away": "2.5"}]}]}}'::jsonb, now(), 'selftest');
+  n := n + ten287_rec.ingest_event('{"id": -287004, "home": "X, Y", "away": "Z, W", "league": {"name": "ATP - T"},
+        "bookmakers": {"Superbet": [{"name": "ML", "odds": [{"home": "1.5", "away": "2.5"}]}]}}'::jsonb, now(), 'selftest');
+  if n <> 1 then raise exception 'SELFTEST: null updatedAt wrote % rows for one state, want 1', n; end if;
+  -- malformed shapes return 0 instead of raising
+  if ten287_rec.ingest_event('{"id": -287005, "bookmakers": null}'::jsonb, now(), 'selftest') <> 0
+     or ten287_rec.ingest_event('{"id": -287006, "bookmakers": []}'::jsonb, now(), 'selftest') <> 0 then
+    raise exception 'SELFTEST: malformed bookmakers not tolerated';
+  end if;
+  -- budget guard: a fresh low reading blocks, a stale one does not
+  insert into ten287_rec.requests (id, kind, fired_at, processed_at, ratelimit_remaining) values (-1, 'selftest', now(), now(), 100);
+  if ten287_rec.budget_ok() then raise exception 'SELFTEST: budget guard did not trip on a fresh reading of 100'; end if;
+  update ten287_rec.requests set fired_at = now() - interval '20 minutes' where id = -1;
+  if not ten287_rec.budget_ok() then raise exception 'SELFTEST: budget guard did not release a stale reading'; end if;
+  delete from ten287_rec.requests where id = -1;
 
   delete from ten287_rec.ticks where event_id < 0;
   delete from ten287_rec.events where event_id < 0;
