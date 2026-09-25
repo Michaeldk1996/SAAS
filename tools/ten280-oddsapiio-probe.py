@@ -44,6 +44,9 @@ def get(path, **params):
         status = e.code; hdr = {k.lower(): v for k, v in e.headers.items()}; raw = e.read()
     except Exception as e:  # never echo the URL
         OUT["calls"].append({"path": path, "error": type(e).__name__}); return None, {}, None
+    if raw[:2] == b"\x1f\x8b":  # vendor gzips every response regardless of Accept-Encoding
+        import gzip
+        raw = gzip.decompress(raw)
     try:
         body = json.loads(raw.decode("utf-8"))
     except Exception:
