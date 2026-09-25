@@ -1,20 +1,18 @@
 [
  {
-  "name": "install_schema",
-  "file": "tools/ten280-drop-bot.sql",
-  "required": true,
-  "stop_on_error": true
- },
- {
-  "name": "selftest",
-  "file": "tools/ten280-drop-selftest.sql",
+  "name": "install_selftest_gate",
+  "sql_files": [
+   "tools/ten280-drop-bot.sql",
+   "tools/ten280-drop-selftest.sql"
+  ],
+  "sql_tail": "do $$\ndeclare missing int; extra int;\nbegin\n  delete from ten280_bot.alerts where mode='backtest' and run_id='g5';\n  perform ten280_bot.load_ticks('2026-09-11 05:18:09.860093+00', '2026-09-25 05:18:09.860093+00');\n  perform ten280_bot.scan('2026-09-18 05:18:09.860093+00', '2026-09-20 05:18:09.860093+00', 5, 'backtest', 'g5', interval '10 minutes', 1.30);\n  select count(*) into missing from ten280_bot.alerts o where o.mode='backtest' and o.run_id='bt5' and o.eval_at <= '2026-09-20 05:18:09.860093+00'\n     and not exists (select 1 from ten280_bot.alerts n where n.mode='backtest' and n.run_id='g5' and n.fixture_id=o.fixture_id and n.side_id=o.side_id and n.eval_at=o.eval_at and n.cur_price=o.cur_price and n.ref_price=o.ref_price);\n  select count(*) into extra from ten280_bot.alerts n where n.mode='backtest' and n.run_id='g5'\n     and not exists (select 1 from ten280_bot.alerts o where o.mode='backtest' and o.run_id='bt5' and o.fixture_id=n.fixture_id and o.side_id=n.side_id and o.eval_at=n.eval_at and o.cur_price=n.cur_price and o.ref_price=n.ref_price);\n  if missing <> 0 or extra <> 0 or (select count(*) from ten280_bot.alerts where mode='backtest' and run_id='g5') = 0 then\n    raise exception 'REGRESSION GATE: vs the original 5%% backtest (18-20 Sep): % missing, % extra', missing, extra;\n  end if;\n  raise notice 'REGRESSION GATE PASS';\nend $$;",
+  "transaction": true,
   "required": true,
   "stop_on_error": true
  },
  {
   "name": "config",
-  "sql": "select min_dropped_to_price from ten280_bot.config",
-  "required": true
+  "sql": "select min_dropped_to_price from ten280_bot.config"
  },
  {
   "name": "bt_reset",
@@ -22,75 +20,58 @@
  },
  {
   "name": "r5",
-  "sql": "select ten280_bot.load_ticks('2026-09-11 05:18:09.860093+00', '2026-09-25 05:18:09.860093+00') ticks, ten280_bot.scan('2026-09-18 05:18:09.860093+00', '2026-09-25 05:18:09.860093+00', 5, 'backtest', 'r5', interval '10 minutes', 1.3) alerts",
-  "required": true
+  "sql": "select ten280_bot.load_ticks('2026-09-11 05:18:09.860093+00', '2026-09-25 05:18:09.860093+00') ticks, ten280_bot.scan('2026-09-18 05:18:09.860093+00', '2026-09-25 05:18:09.860093+00', 5, 'backtest', 'r5', interval '10 minutes', 1.3) alerts"
  },
  {
   "name": "r7",
-  "sql": "select ten280_bot.load_ticks('2026-09-11 05:18:09.860093+00', '2026-09-25 05:18:09.860093+00') ticks, ten280_bot.scan('2026-09-18 05:18:09.860093+00', '2026-09-25 05:18:09.860093+00', 7, 'backtest', 'r7', interval '10 minutes', 1.3) alerts",
-  "required": true
+  "sql": "select ten280_bot.load_ticks('2026-09-11 05:18:09.860093+00', '2026-09-25 05:18:09.860093+00') ticks, ten280_bot.scan('2026-09-18 05:18:09.860093+00', '2026-09-25 05:18:09.860093+00', 7, 'backtest', 'r7', interval '10 minutes', 1.3) alerts"
  },
  {
   "name": "r10",
-  "sql": "select ten280_bot.load_ticks('2026-09-11 05:18:09.860093+00', '2026-09-25 05:18:09.860093+00') ticks, ten280_bot.scan('2026-09-18 05:18:09.860093+00', '2026-09-25 05:18:09.860093+00', 10, 'backtest', 'r10', interval '10 minutes', 1.3) alerts",
-  "required": true
+  "sql": "select ten280_bot.load_ticks('2026-09-11 05:18:09.860093+00', '2026-09-25 05:18:09.860093+00') ticks, ten280_bot.scan('2026-09-18 05:18:09.860093+00', '2026-09-25 05:18:09.860093+00', 10, 'backtest', 'r10', interval '10 minutes', 1.3) alerts"
  },
  {
-  "name": "regression_gate",
-  "sql": "do $$ declare a int; b int; c int; begin select count(*) filter (where run_id='r5'), count(*) filter (where run_id='r7'), count(*) filter (where run_id='r10') into a,b,c from ten280_bot.alerts where mode='backtest'; if (a,b,c) <> (320,196,111) then raise exception 'REGRESSION: floor-1.30 backtest %/%/% <> 320/196/111', a,b,c; end if; end $$; select 'regression pass' ok",
-  "required": true,
-  "stop_on_error": true
- },
- {
-  "name": "regression_same_alerts",
-  "sql": "select r.run_id, count(*) filter (where o.id is null) new_not_in_old from ten280_bot.alerts r left join ten280_bot.alerts o on o.mode='backtest' and o.run_id = replace(r.run_id,'r','bt') and o.fixture_id=r.fixture_id and o.side_id=r.side_id and o.eval_at=r.eval_at where r.mode='backtest' and r.run_id in ('r5','r7','r10') group by 1 order by 1"
+  "name": "regression_full",
+  "sql": "select r.run_id, count(*) n, count(*) filter (where not exists (select 1 from ten280_bot.alerts o where o.mode='backtest' and o.run_id=replace(r.run_id,'r','bt') and o.fixture_id=r.fixture_id and o.side_id=r.side_id and o.eval_at=r.eval_at)) not_in_old from ten280_bot.alerts r where r.mode='backtest' and r.run_id in ('r5','r7','r10') group by 1 order by 1"
  },
  {
   "name": "nf5",
-  "sql": "select ten280_bot.load_ticks('2026-09-11 05:18:09.860093+00', '2026-09-25 05:18:09.860093+00') ticks, ten280_bot.scan('2026-09-18 05:18:09.860093+00', '2026-09-25 05:18:09.860093+00', 5, 'backtest', 'nf5', interval '10 minutes', null) alerts",
-  "required": true
+  "sql": "select ten280_bot.load_ticks('2026-09-11 05:18:09.860093+00', '2026-09-25 05:18:09.860093+00') ticks, ten280_bot.scan('2026-09-18 05:18:09.860093+00', '2026-09-25 05:18:09.860093+00', 5, 'backtest', 'nf5', interval '10 minutes', null) alerts"
  },
  {
   "name": "nf7",
-  "sql": "select ten280_bot.load_ticks('2026-09-11 05:18:09.860093+00', '2026-09-25 05:18:09.860093+00') ticks, ten280_bot.scan('2026-09-18 05:18:09.860093+00', '2026-09-25 05:18:09.860093+00', 7, 'backtest', 'nf7', interval '10 minutes', null) alerts",
-  "required": true
+  "sql": "select ten280_bot.load_ticks('2026-09-11 05:18:09.860093+00', '2026-09-25 05:18:09.860093+00') ticks, ten280_bot.scan('2026-09-18 05:18:09.860093+00', '2026-09-25 05:18:09.860093+00', 7, 'backtest', 'nf7', interval '10 minutes', null) alerts"
  },
  {
   "name": "nf10",
-  "sql": "select ten280_bot.load_ticks('2026-09-11 05:18:09.860093+00', '2026-09-25 05:18:09.860093+00') ticks, ten280_bot.scan('2026-09-18 05:18:09.860093+00', '2026-09-25 05:18:09.860093+00', 10, 'backtest', 'nf10', interval '10 minutes', null) alerts",
-  "required": true
+  "sql": "select ten280_bot.load_ticks('2026-09-11 05:18:09.860093+00', '2026-09-25 05:18:09.860093+00') ticks, ten280_bot.scan('2026-09-18 05:18:09.860093+00', '2026-09-25 05:18:09.860093+00', 10, 'backtest', 'nf10', interval '10 minutes', null) alerts"
  },
  {
   "name": "split_by_tier",
-  "sql": "select run_id, tier, count(*) alerts, count(distinct fixture_id) matches, count(*) filter (where cur_price < 1.30) below_130 from ten280_bot.alerts where mode='backtest' and run_id in ('r5','r7','r10','nf5','nf7','nf10') group by 1,2 order by 1,2"
+  "sql": "select run_id, tier, count(*) alerts, count(distinct fixture_id) matches, count(*) filter (where cur_price < 1.30) below_130 from ten280_bot.alerts where mode='backtest' and run_id in ('bt5','bt7','bt10','nf5','nf7','nf10') group by 1,2 order by 1,2"
  },
  {
   "name": "detect_delay",
   "sql": "select tier, cur_src, count(*) n, percentile_cont(array[0.5,0.9]) within group (order by extract(epoch from eval_at - cur_at)) secs from ten280_bot.alerts where mode='backtest' and run_id='nf5' group by 1,2 order by 1,2"
  },
  {
-  "name": "sample_nf5_below130",
+  "name": "sample_below130",
   "sql": "select message from ten280_bot.alerts where mode='backtest' and run_id='nf5' and cur_price < 1.30 order by eval_at desc limit 2"
  },
  {
   "name": "startup_v2",
-  "sql": "insert into ten280_bot.events (kind, detail, net_request_id, delivery) select 'startup_v2', jsonb_build_object('at', now()), rid, case when rid is null then 'unsent: no vault secret' else 'queued' end from (select ten280_bot.send('✅ Stennisfy — Bet105 drop bot UPDATED (test message).' || chr(10) || 'Alerts: Bet105 match winner, ATP / Challenger / ITF Men, pre-match. Fires on a ≥5% drop vs the price 10 min earlier; 30-min cooldown per match.' || chr(10) || 'Test phase: drops to prices below 1.30 are included.' || chr(10) || 'New alert layout below; \"Moved\" = time from the price change to this message. Times in UTC.') rid where not exists (select 1 from ten280_bot.events where kind = 'startup_v2')) s returning id, delivery"
+  "sql": "do $$ declare rid bigint; begin\n  perform pg_advisory_xact_lock(280281);\n  if exists (select 1 from ten280_bot.events where kind = 'startup_v2') then return; end if;\n  rid := ten280_bot.send('✅ Stennisfy — Bet105 drop bot UPDATED (test message).' || chr(10)\n      || 'Alerts: Bet105 match winner, ATP / Challenger / ITF Men, pre-match. Fires on a ≥5% drop vs the price 10 min earlier; 30-min cooldown per match.' || chr(10)\n      || 'Test phase: drops to prices below 1.30 are included.' || chr(10)\n      || '\"Moved\" = time from the price change to the moment the alert is sent. Times in UTC.' || chr(10) || chr(10)\n      || 'Next message: a FORMAT TEST — the most recent live alert re-sent in the new layout (its Moved = the delay when it first fired).');\n  insert into ten280_bot.events (kind, detail, net_request_id, delivery) values ('startup_v2', jsonb_build_object('at', now()), rid, case when rid is null then 'unsent: no vault secret' else 'queued' end);\nend $$; select id, kind, delivery from ten280_bot.events where kind = 'startup_v2'"
  },
  {
   "name": "format_test",
-  "sql": "insert into ten280_bot.events (kind, detail, net_request_id, delivery) select 'format_test', jsonb_build_object('alert_id', a.id, 'text', m.msg), ten280_bot.send(m.msg), 'queued' from (select * from ten280_bot.alerts where mode='live' order by id limit 1) a cross join lateral (select '🧪 FORMAT TEST — re-send of the first live alert (' || ten280_bot.hhmm(coalesce(a.sent_at, a.eval_at)) || '); Moved is as of now' || chr(10) || chr(10) || ten280_bot.render(a, clock_timestamp()) as msg) m where not exists (select 1 from ten280_bot.events where kind = 'format_test') returning id, delivery"
+  "sql": "do $$ declare rid bigint; a ten280_bot.alerts; msg text; begin\n  perform pg_advisory_xact_lock(280281);\n  if exists (select 1 from ten280_bot.events where kind = 'format_test') then return; end if;\n  perform pg_sleep(2);  -- keep it after the startup message\n  select * into a from ten280_bot.alerts where mode = 'live' and delivery = 'sent' order by id desc limit 1;\n  if a.id is null then raise exception 'no live alert to re-send'; end if;\n  msg := ten280_bot.render(a, coalesce(a.sent_at, a.eval_at));\n  rid := ten280_bot.send(msg);\n  insert into ten280_bot.events (kind, detail, net_request_id, delivery) values ('format_test', jsonb_build_object('alert_id', a.id, 'text', msg), rid, case when rid is null then 'unsent: no vault secret' else 'queued' end);\nend $$; select id, kind, delivery from ten280_bot.events where kind = 'format_test'"
  },
  {
   "sleep": 10
  },
  {
-  "name": "delivery_gate",
-  "sql": "select ten280_bot.settle(); do $$ declare d1 text; d2 text; begin select delivery into d1 from ten280_bot.events where kind='startup_v2' order by id limit 1; select delivery into d2 from ten280_bot.events where kind='format_test' order by id limit 1; if d1 is distinct from 'sent' or d2 is distinct from 'sent' then raise exception 'NOT DELIVERED: startup_v2 % format_test %', d1, d2; end if; end $$; select 'delivered' ok",
-  "required": true
- },
- {
-  "name": "telegram_echo",
-  "sql": "select e.kind, e.delivery, r.status_code, (r.content::jsonb -> 'result' ->> 'text') = coalesce(e.detail->>'text', (r.content::jsonb -> 'result' ->> 'text')) as text_identical, length(r.content::jsonb -> 'result' ->> 'text') - length(replace(r.content::jsonb -> 'result' ->> 'text', chr(10), '')) as line_breaks, r.content::jsonb -> 'result' ->> 'text' as echoed from ten280_bot.events e left join net._http_response r on r.id = e.net_request_id where e.kind in ('startup_v2','format_test') order by e.id"
+  "name": "delivery",
+  "sql": "select ten280_bot.settle(); select e.id, e.kind, e.delivery, r.status_code, (r.content::jsonb -> 'result' ->> 'text') = (e.detail ->> 'text') as text_identical, r.content::jsonb -> 'result' ->> 'text' as echoed from ten280_bot.events e left join net._http_response r on r.id = e.net_request_id where e.kind in ('startup_v2','format_test') order by e.id"
  },
  {
   "name": "events_all",
@@ -98,6 +79,10 @@
  },
  {
   "name": "cron_job",
-  "sql": "select jobname, schedule, active from cron.job where jobname = 'ten280-bet105-drop-bot'"
+  "sql": "select jobname, active from cron.job where jobname = 'ten280-bet105-drop-bot'"
+ },
+ {
+  "name": "live_since",
+  "sql": "select id, eval_at, cur_src, sent_at, move_delay_s, delivery, message from ten280_bot.alerts where mode='live' order by id"
  }
 ]

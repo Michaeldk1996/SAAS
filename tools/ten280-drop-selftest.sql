@@ -83,11 +83,10 @@ begin
 
   -- 3) "Moved" wording.
   if ten280_bot.moved(0) <> 'just now' or ten280_bot.moved(59.9) <> 'just now' or ten280_bot.moved(60) <> '1 min ago'
-     or ten280_bot.moved(179) <> '2 min ago' or ten280_bot.moved(3725) <> '1 h 2 min ago' then
+     or ten280_bot.moved(179) <> '2 min ago' or ten280_bot.moved(3725) <> '62 min ago' then
     raise exception 'SELFTEST: moved() wording wrong';
   end if;
 
   delete from ten280_bot.alerts where mode = 'selftest';
   raise notice 'SELFTEST PASS';
 end $$;
-select 'SELFTEST PASS' as result;

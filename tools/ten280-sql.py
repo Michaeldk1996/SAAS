@@ -40,6 +40,10 @@ def main():
             tag = "v" + os.urandom(6).hex()
             q = (f"delete from vault.secrets where name = '{st['vault_name']}'; "
                  f"select vault.create_secret(${tag}${val}${tag}$, '{st['vault_name']}', 'TEN-280 Bet105 drop bot') is not null as stored")
+        elif "sql_files" in st:
+            # one statement batch, one transaction: install + self-test + gate commit together or not at all
+            body = "\n".join(open(f).read() for f in st["sql_files"]) + "\n" + st.get("sql_tail", "")
+            q = ("begin;\n" + body + "\ncommit;\nselect 'committed' as result;") if st.get("transaction") else body
         else:
             q = st["sql"] if "sql" in st else open(st["file"]).read()
         code, body = sql(q)

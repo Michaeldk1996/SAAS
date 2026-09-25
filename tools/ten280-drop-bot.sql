@@ -9,7 +9,6 @@
 --
 -- Private schema: not in PostgREST's exposed schemas, no grant to anon /
 -- authenticated, so no browser can read alerts or call the functions.
-begin;
 create schema if not exists ten280_bot;
 revoke all on schema ten280_bot from public, anon, authenticated;
 
@@ -154,8 +153,7 @@ language sql immutable as $$
   select case
     when p_secs is null then '—'
     when p_secs < 60 then 'just now'
-    when p_secs < 3600 then floor(p_secs / 60)::int || ' min ago'
-    else floor(p_secs / 3600)::int || ' h ' || floor(mod(p_secs, 3600) / 60)::int || ' min ago'
+    else floor(p_secs / 60)::int || ' min ago'
   end
 $$;
 
@@ -173,7 +171,7 @@ language sql stable as $$
     format('🟢 %s: %s @ %s', case when a.open_is_opener then 'Opening' else 'First seen' end,
            ten280_bot.px(a.open_price), ten280_bot.hhmm(a.open_at)),
     format('🔴 Odds now: %s @ %s', ten280_bot.px(a.cur_price), ten280_bot.hhmm(a.cur_at)),
-    format('📉 Drop: -%s%%', to_char(round(a.pct_10m, 1), 'FM9990.0')),
+    format('📉 Drop: -%s%%', to_char(round((a.ref_price - a.cur_price) / a.ref_price * 100, 1), 'FM9990.0')),
     format('⏱️ Moved: %s', ten280_bot.moved(extract(epoch from (p_at - a.cur_at))::numeric)),
     '🏦 Bookmaker: Bet105')
 $$;
@@ -302,8 +300,9 @@ begin
     v_at := clock_timestamp();
     msg  := ten280_bot.render(a, v_at);
     rid  := ten280_bot.send(msg);
-    update ten280_bot.alerts set net_request_id = rid, message = msg, sent_at = v_at,
-                                 move_delay_s = round(extract(epoch from (v_at - a.cur_at))::numeric, 3),
+    update ten280_bot.alerts set net_request_id = rid, message = msg,
+                                 sent_at = case when rid is not null then v_at end,
+                                 move_delay_s = case when rid is not null then round(extract(epoch from (v_at - a.cur_at))::numeric, 3) end,
                                  delivery = case when rid is null then 'unsent: no vault secret' else 'queued' end
      where id = a.id;
   end loop;
@@ -311,4 +310,3 @@ begin
 end $$;
 
 revoke all on all functions in schema ten280_bot from public, anon, authenticated;
-commit;
