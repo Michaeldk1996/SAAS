@@ -436,8 +436,9 @@ jobs:
               # no conclusions. Window = the `window` input (blank = the first reading).
               import datetime as dt
               W = (os.environ.get("WINDOW") or "").strip()
-              W0, W1 = [x.strip() for x in W.split("..")] if W else ("2026-09-24T08:54:00Z", "2026-09-25T00:52:00Z")
-              if not (W0.endswith("Z") and W1.endswith("Z")) or W1 <= W0:
+              parts = [x.strip() for x in W.split("..")] if W else ["2026-09-24T08:54:00Z", "2026-09-25T00:52:00Z"]
+              W0, W1 = (parts + ["", ""])[:2]
+              if len(parts) != 2 or not (W0.endswith("Z") and W1.endswith("Z")) or W1 <= W0:
                   print(f"::error::window must be START..END in ISO Z, START < END (got {W!r})"); sys.exit(1)
               span_s = (dt.datetime.fromisoformat(W1[:-1]) - dt.datetime.fromisoformat(W0[:-1])).total_seconds()
               print(f"window {W0} .. {W1} = {span_s/60:.0f} min")
@@ -512,20 +513,33 @@ jobs:
                  f"select extract({EA('request.path')}, '^/rest/v1/([^/?]+)') as tbl, {EA('request.method')} as method, "
                  f"count() as n from logs where {EDGE} and startsWith({EA('request.path')}, '/rest/v1/') "
                  f"and {EA('request.method')} in ('POST', 'PATCH', 'PUT', 'DELETE') group by tbl, method order by n desc limit 60")
-              ws = lq("(ii-h) browser websocket connects (/realtime/v1/websocket): time, status, origin_time",
+              def rows_out(label, rows, cap):
+                  # One line per row, uncapped, so the intervals below can be re-derived
+                  # from the log; a result AT the cap is truncated and says so.
+                  print(f"{label}: {'-' if rows is None else len(rows)} rows")
+                  for x in rows or []:
+                      print("      " + json.dumps(x))
+                  if rows is not None and len(rows) >= cap:
+                      print(f"::warning::{label} hit its {cap}-row cap - later rows are missing; narrow the window")
+                      bad.append(f"{label} truncated")
+              ws = ("(ii-h)",
                       f"select timestamp, {EA('response.status_code')} as status, {EA('response.origin_time')} as origin_time, "
                       f"substring({EA('request.headers.user_agent')}, 1, 24) as ua from logs "
-                      f"where {EDGE} and {EA('request.path')} = '/realtime/v1/websocket' order by timestamp limit 500")
-              ev = lq("(ii-i) Realtime tenant lifecycle (up = first client connected; no_users = last one gone)",
+                      f"where {EDGE} and {EA('request.path')} = '/realtime/v1/websocket' order by timestamp limit 2000")
+              ws = logq(ws[1], z0, z1)[1]
+              rows_out("(ii-h) browser websocket connects (/realtime/v1/websocket): time, status, origin_time (ms to upgrade, not session length)", ws, 2000)
+              ev = ("(ii-i) Realtime tenant lifecycle (up = first client connected; no_users = last one gone)",
                       "select timestamp, multiIf(match(event_message, 'is initializing'), 'up', "
                       "match(event_message, 'no connected users'), 'no_users', match(event_message, 'has been terminated'), 'terminated', "
                       "match(event_message, 'no active subscriptions'), 'no_subs', 'other') as ev from logs "
-                      f"where {RT} and ev != 'other' order by timestamp limit 500")
+                      f"where {RT} and ev != 'other' order by timestamp limit 2000")
+              ev = logq(ev[1], z0, z1)[1]
+              rows_out("(ii-i) Realtime tenant lifecycle (up = first client connected; no_users = last one gone)", ev, 2000)
               # Intervals with >= 1 connected client. The tenant stays up while any
               # client is connected; 'no connected users' is its own periodic check,
               # so each interval can run past the last disconnect by that check's lag.
               ivs = []
-              if ev is not None:
+              if ev:
                   cur = None
                   first_ev = next((x["ev"] for x in ev if x["ev"] in ("up", "no_users", "terminated")), None)
                   if first_ev in ("no_users", "terminated"):
@@ -538,28 +552,47 @@ jobs:
                           ivs.append((cur, t)); cur = None
                   if cur is not None:
                       ivs.append((cur, z1))
+              # Short visits all read up -> no_subs +12 min -> no_users +13 min: a server
+              # idle timer, not client time. So the LOWER bound on connected time takes
+              # LAG_MIN off every interval, and 0 for one only assumed open at the window
+              # start (no 'up' seen). The upper bound is the intervals as logged.
+              LAG_MIN = 13.0
               up_min = sum((b2 - a2).total_seconds() for a2, b2 in ivs) / 60
+              lo_min = sum(max(0.0, (b2 - a2).total_seconds() / 60 - LAG_MIN) for a2, b2 in ivs if a2 != z0)
               for a2, b2 in ivs:
-                  print(f"      up {a2:%m-%d %H:%M:%S} .. {b2:%m-%d %H:%M:%S}  {(b2 - a2).total_seconds() / 60:6.1f} min")
-              print(f"(ii-j) tenant up-intervals: {len(ivs)}, total {up_min:.0f} min of {span_s/60:.0f} "
-                    "(time with >= 1 connection, plus each interval's no-users check lag)" if ev is not None else "(ii-j) -")
+                  print(f"      up {a2:%m-%d %H:%M:%S} .. {b2:%m-%d %H:%M:%S}  {(b2 - a2).total_seconds() / 60:6.1f} min"
+                        + ("  (assumed open at window start)" if a2 == z0 else "") + ("  (still up at window end)" if b2 == z1 else ""))
+              if not ev:
+                  up_min = lo_min = None     # no lifecycle rows = not measured, never 0
+                  print("(ii-j) tenant up-intervals: - (no lifecycle rows in the window)")
+              else:
+                  print(f"(ii-j) tenant up-intervals: {len(ivs)}; connected time between {lo_min:.0f} min (each less {LAG_MIN:.0f} min idle-check lag) "
+                        f"and {up_min:.0f} min (as logged) of {span_s/60:.0f}")
               ot = [float(x["origin_time"]) for x in (ws or []) if str(x.get("origin_time") or "").replace(".", "", 1).isdigit()]
               print(f"(ii-k) websocket connects {len(ws) if ws is not None else '-'}; with a numeric origin_time {len(ot)}; "
                     f"origin_time sum {sum(ot):.0f}, max {max(ot) if ot else '-'} (units as logged; a session length only if it matches (ii-j))")
               inside = " or ".join(f"(written_at >= '{a2:%Y-%m-%dT%H:%M:%S}Z' and written_at < '{b2:%Y-%m-%dT%H:%M:%S}Z')" for a2, b2 in ivs) or "false"
-              inw = q("(ii-l) stream writes while >= 1 client was connected: history rows, card-seconds (~ kibl_now_card writes)",
+              inw = q("(ii-l) stream writes inside the up-intervals (an UPPER bound on writes while connected): history rows, card-seconds (~ kibl_now_card writes)",
                       "select count(*) as rows, count(distinct (card_key, date_trunc('second', written_at))) as card_seconds "
                       f"from public.kibl_now_history where source = 'stream' and ({inside})")
               iw = (inw or [{}])[0]
               stream_rows = sum(int(x.get("rows") or 0) for x in (hist or []) if x.get("source") == "stream") if hist else None
+              import re as _re
+              m = _re.search(r"RT_HEARTBEAT_MS\s*=\s*(\d+)", open("kibl-now-stream.js").read())
+              hb_s = int(m.group(1)) / 1000 if m else None     # the page's own client heartbeat
+              fmt = lambda v: "-" if v is None else f"{v:.0f}"
               print("(iii) arithmetic, raw (subscriber counts per message are not logged, so deliveries are bounds):")
               print("      billed: the founder's dashboard delta for this window (+468 for the first reading)")
-              print(f"      stream writes in the window {stream_rows}; of them while >= 1 client connected: rows {iw.get('rows', '-')}, "
+              print(f"      stream writes in the window {stream_rows}; inside the up-intervals (upper bound): rows {iw.get('rows', '-')}, "
                     f"card-seconds {iw.get('card_seconds', '-')}")
-              print(f"      kibl_now_price heartbeat-row writes while connected (1 per 60 s): ~{up_min:.0f} "
+              print(f"      kibl_now_price heartbeat-row writes inside the up-intervals (1 per 60 s): <= ~{fmt(up_min)} "
                     f"(delivered only to tabs still subscribed to kibl_now_price; published now: {'kibl_now_price' in pubs})")
-              print(f"      client heartbeats if >= 1 connection throughout the up-intervals (1 per 30 s): >= ~{2 * up_min:.0f} "
-                    "less 2 x the no-users check lag per interval")
+              if hb_s and lo_min is not None:
+                  print(f"      client heartbeats (kibl-now-stream.js RT_HEARTBEAT_MS = 1 per {hb_s:.0f} s per socket): "
+                        f">= {lo_min * 60 / hb_s:.0f} on the lower bound, <= {up_min * 60 / hb_s:.0f} x sockets on the upper; "
+                        "if heartbeats were billed, billed could not be below the lower figure")
+              else:
+                  print(f"      client heartbeats: - (heartbeat interval {'unread' if not hb_s else hb_s}; connected time {fmt(lo_min)})")
           if bad:
               print("::error::" + "; ".join(bad)); sys.exit(1)
           PY
