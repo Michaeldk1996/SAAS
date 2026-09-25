@@ -117,6 +117,31 @@ if some_fid:
     call("mapping_espn_fixture", "/mapping/espn", {"fixture_id": some_fid}, keep=20)
 call("mapping_donbest_league", "/mapping/donbest", {"league_id": ATP}, keep=20)
 
+# ── B2. endpoints we have never called (docs.kibl.io/api, 2026-09-25) ────────
+fid_list = ",".join(str(f) for f in list(fixtures)[:10])
+props = [f for f in fixtures.values() if f.get("fixture_type_id") != 2]
+for lab, path, params, keep in [
+        ("ref_states", "/reference/states", {}, 200), ("ref_alert_types", "/reference/market-alert-types", {}, 200),
+        ("ref_sides", "/reference/sides", {}, 200), ("ref_league_settings", "/reference/leagues-settings", {"league_id": ATP}, 20),
+        ("map_fixtures_171", "/mapping/fixtures", {"feed_source_id": FSID, "league_id": ATP}, 60),
+        ("map_fixtures_171_fid", "/mapping/fixtures", {"feed_source_id": FSID, "fixture_id": fid_list}, 60),
+        ("map_participants_171", "/mapping/participants", {"feed_source_id": FSID, "league_id": ATP}, 30),
+        ("map_markettypes_171", "/mapping/market-types", {"feed_source_id": FSID}, 60),
+        ("map_leagues_171", "/mapping/leagues", {"feed_source_id": FSID}, 60),
+        ("fixtures_extids", "/info/fixtures", {"fixture_id": fid_list, "include_external_ids": FSID}, 10),
+        ("fixtures_extids_all", "/info/fixtures", {"fixture_id": fid_list, "include_external_ids": True}, 10),
+        ("markets_extids", "/info/markets", {"feed_source_id": FSID, "fixture_id": fid_list, "include_external_ids": FSID}, 10),
+        ("markets_flat", "/info/markets-flat", {"feed_source_id": FSID, "fixture_id": fid_list}, 5),
+        ("outcomes_atp", "/info/outcomes", {"league_id": ATP}, 30),
+        ("outcomes_participants_atp", "/info/outcomes-participants", {"league_id": ATP}, 30),
+        ("outcomes_seg_scores_atp", "/info/outcomes-segments-scores", {"league_id": ATP}, 30),
+        ("alerts_atp_nofeed", "/info/markets-alerts", {"league_id": ATP}, 30),
+        ("fixtures_assoc", "/info/fixtures-associations", {"parent_fixture_id": ",".join(str(f.get("parent_fixture_id")) for f in props[:5])}, 30),
+        ("fixtures_informations", "/info/fixtures-informations", {"fixture_id": fid_list}, 30),
+        ("fixtures_participants_names", "/info/fixtures-participants-with-name", {"fixture_id": fid_list}, 30)]:
+    call(lab, path, params, keep=keep)
+
+
 def inventory(tag):
     rows_all = []
     for lab, extra in [("mk_all", {}), ("mk_opener", {"is_opener": True}), ("mk_bt3", {"betting_type_id": 3}),
@@ -180,7 +205,7 @@ end = time.time() + POLL_MIN * 60
 with gzip.open(obs_path, "wt") as fh:
     while time.time() < end:
         t_req = time.time()
-        p, meta = c.markets(feed_source_id=FSID, league_id=ATP, betting_type_id=3)
+        p, meta = c.markets(feed_source_id=FSID, league_id=ATP)
         t_rcv = now()
         rows = KiblClient.market_participants(p)
         polls.append({"t": iso(t_rcv), "status": meta.get("status"), "rows": len(rows),
@@ -199,6 +224,15 @@ with gzip.open(obs_path, "wt") as fh:
         polls[-1]["new"] = new
         if len(polls) % 20 == 0:
             print(f"[poll] {len(polls)} rows={len(rows)} new={new} distinct={len(seen)}")
+        if len(polls) % 10 == 1:
+            for lab, path in (("outcomes", "/info/outcomes"), ("states", "/info/fixtures-states"),
+                              ("seg_scores", "/info/outcomes-segments-scores")):
+                pp, _m = c.get(path, {"league_id": ATP})
+                for o in KiblClient.rows(pp):
+                    ok = (lab, json.dumps(o, sort_keys=True, default=str))
+                    if ok not in seen:
+                        seen[ok] = 1
+                        fh.write(json.dumps({"_kind": lab, "_observed_at": iso(now()), **o}, default=str) + "\n")
         if len(polls) == 1 or len(polls) % 200 == 0:
             if SB_URL and SB_KEY:
                 sb.setdefault("heartbeats", []).append(sb_get("/rest/v1/kibl_now_price?kind=eq.heartbeat&select=written_at,note"))
