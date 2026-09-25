@@ -5155,7 +5155,7 @@ window.EntryListsTab = (function(){
   .msig-p1{ text-align:right; color:var(--text); }
   .msig-p2{ text-align:left; color:var(--label); }
   .msig-p1.na, .msig-p2.na{ color:var(--label); font-weight:400; }
-  .msig-bar{ position:relative; height:6px; border-radius:4px; background:#2a3140; overflow:hidden; }
+  .msig-bar{ position:relative; height:6px; border-radius:4px; background:var(--bar-track); overflow:hidden; }
   .msig-bar i{ position:absolute; left:0; top:0; bottom:0; background:var(--periwinkle); border-radius:4px; }
   .msig-bar.na{ background:var(--surface); }
   .msig-bar.na i{ background:#2a3140; }
@@ -13824,8 +13824,8 @@ function fhTodayPair(m){
 // Row tooltip: which book and which source priced this row.
 function fhSrcTitle(r){ return r && r.book ? `${FH_BOOK[r.book]} close · ${FH_SRC[r.src] || ''}` : 'No Pinnacle or Bet365 close on record'; }
 // Level tag on H2H meetings (ATP / CH / ITF), same style as the B365 tag.
-function fhLevelTag(r){ return r && r.level ? `<span title="${r.level === 'ATP' ? 'ATP tour' : r.level === 'CH' ? 'Challenger' : 'ITF'}" style="${FH_MONO} font-size:8px; font-weight:700; letter-spacing:0.1em; color:#8b96b5; border:1px solid rgba(255,255,255,0.14); border-radius:3px; padding:0 3px;">${r.level}</span>` : ''; }
-function fhB365Tag(r){ return r && r.book === 'B' ? `<span title="${fhSrcTitle(r)} (no Pinnacle close for this match)" style="${FH_MONO} font-size:8px; font-weight:700; letter-spacing:0.1em; color:#8b96b5; border:1px solid rgba(255,255,255,0.14); border-radius:3px; padding:0 3px;">B365</span>` : ''; }
+function fhLevelTag(r){ return r && r.level ? `<span title="${r.level === 'ATP' ? 'ATP tour' : r.level === 'CH' ? 'Challenger' : 'ITF'}" style="${FH_MONO} font-size:8px; font-weight:700; letter-spacing:0.1em; color:#a3abba; border:0.33px solid rgba(255,255,255,0.045); border-radius:3px; padding:0 3px;">${r.level}</span>` : ''; }
+function fhB365Tag(r){ return r && r.book === 'B' ? `<span title="${fhSrcTitle(r)} (no Pinnacle close for this match)" style="${FH_MONO} font-size:8px; font-weight:700; letter-spacing:0.1em; color:#a3abba; border:0.33px solid rgba(255,255,255,0.045); border-radius:3px; padding:0 3px;">B365</span>` : ''; }
 // Source note: "Pinnacle" when every priced match is Pinnacle, else "Pinnacle, Bet365 where missing (N)".
 // Nothing priced → no source is named (a source for zero prices would be a false label).
 // Price range header: every figure in the section counts, today's price included (ruling 2026-09-24).
@@ -13900,9 +13900,9 @@ function fhHotLinesTable(rows, sc, opts){
   // meetings sit in the same columns as 9 (ruling 2026-09-24). Form keeps the stretched columns.
   const cols = opts.fixedCols ? `repeat(${Math.max(1, rows.length)},calc(100% / ${Math.max(rows.length, opts.fixedCols)}))` : `repeat(${Math.max(1, rows.length)},minmax(${opts.colMin},1fr))`;
   const jc = opts.fixedCols ? ' justify-content:end;' : '';
-  const cap = `${FH_MONO} font-size:8.5px; font-weight:600; letter-spacing:0.13em; color:#8b96b5;`;
-  const heads = rows.map(r => `<span class="seg" title="${fhEsc(opts.colTip(r))}" onclick="fhOpenSheet('${fhEsc(r.mid)}')" style="display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer;"><span style="width:6px; height:6px; border-radius:50%; background:${FH_SURF[r.surface] || '#8b96b5'};"></span><span style="${FH_MONO} font-size:8.5px; color:#8b96b5; white-space:nowrap;">${fhEsc(fhTournCode(r.tournRaw || r.tourn))}</span><span style="${FH_MONO} font-size:8.5px; color:#4b5672;${opts.colHead === 'date' ? ' white-space:nowrap;' : ''}">${fhEsc(opts.colHead === 'date' ? fhDDMM(r.date) : "'" + String(r.date).slice(2, 4))}</span></span>`).join('');
-  const head = `<div style="display:grid; grid-template-columns:minmax(150px,0.8fr) 72px 36px minmax(234px,1.6fr); align-items:end; gap:12px; padding:10px 0 8px; border-bottom:1px solid rgba(255,255,255,0.06);">
+  const cap = `${FH_MONO} font-size:8.5px; font-weight:600; letter-spacing:0.13em; color:#a3abba;`;
+  const heads = rows.map(r => `<span class="seg" title="${fhEsc(opts.colTip(r))}" onclick="fhOpenSheet('${fhEsc(r.mid)}')" style="display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer;"><span style="width:6px; height:6px; border-radius:50%; background:${FH_SURF[r.surface] || '#8b96b5'};"></span><span style="${FH_MONO} font-size:8.5px; color:#a3abba; white-space:nowrap;">${fhEsc(fhTournCode(r.tournRaw || r.tourn))}</span><span style="${FH_MONO} font-size:8.5px; color:#6e7a93;${opts.colHead === 'date' ? ' white-space:nowrap;' : ''}">${fhEsc(opts.colHead === 'date' ? fhDDMM(r.date) : "'" + String(r.date).slice(2, 4))}</span></span>`).join('');
+  const head = `<div style="display:grid; grid-template-columns:minmax(150px,0.8fr) 72px 36px minmax(234px,1.6fr); align-items:end; gap:12px; padding:10px 0 8px; border-bottom:0.33px solid rgba(255,255,255,0.03);">
       <span style="${cap}">LINE</span><span style="${cap}">COVERED</span><span></span>
       <div style="display:grid; grid-template-columns:${cols};${jc}">${heads}</div></div>`;
   const topK = sc.scored.length ? sc.scored[0].k : -1;
@@ -13916,18 +13916,18 @@ function fhHotLinesTable(rows, sc, opts){
       const tip = opts.dotTip(r) + ' · ' + (!e ? 'not eligible' + (why ? ' (' + why + ')' : '') : c ? 'covered' : 'not covered');
       return `<span style="display:flex; justify-content:center;"><span class="seg" title="${fhEsc(tip)}" onclick="fhOpenSheet('${fhEsc(r.mid)}')" style="width:${e ? '10px' : '6px'}; height:${e ? '10px' : '6px'}; border-radius:50%; background:${!e ? 'rgba(255,255,255,0.08)' : c ? opts.color : 'transparent'}; border:1.5px solid ${!e ? 'transparent' : opts.color}; box-sizing:border-box; cursor:pointer; flex:none;"></span></span>`;
     }).join('');
-    return `<div class="${opts.lineCls(x.k)}" style="display:grid; grid-template-columns:minmax(150px,0.8fr) 72px 36px minmax(234px,1.6fr); align-items:center; gap:12px; padding:11px 12px; margin:0 -12px; border-radius:10px; background:${isTop ? 'rgba(91,155,255,0.06)' : 'transparent'}; outline:${isTop ? '0.33px solid #2e4fa8' : 'none'}; outline-offset:-1px; cursor:default;">
+    return `<div class="${opts.lineCls(x.k)}" style="display:grid; grid-template-columns:minmax(150px,0.8fr) 72px 36px minmax(234px,1.6fr); align-items:center; gap:12px; padding:11px 12px; margin:0 -12px; border-radius:10px; background:${isTop ? 'rgba(106,154,248,0.08)' : 'transparent'}; outline:${isTop ? '0.33px solid #2e4fa8' : 'none'}; outline-offset:-1px; cursor:default;">
         <span style="display:flex; flex-direction:column; gap:3px; min-width:0;">
-          ${famLbl ? `<span style="${FH_MONO} font-size:9px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:#5b6880;">${fhEsc(famLbl)}</span>` : ''}
+          ${famLbl ? `<span style="${FH_MONO} font-size:9px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:#6e7a93;">${fhEsc(famLbl)}</span>` : ''}
           <span style="font-size:13.5px; font-weight:700;">${fhEsc(x.name)}</span>
-          ${isTop ? `<span style="${FH_MONO} font-size:9px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:#5b9bff;">Most covered</span>` : ''}
-          ${exp ? `<span style="${FH_MONO} font-size:9.5px; color:#8b96b5; white-space:nowrap;">priced in at ${fhOdd(opts.shortPriced)}</span>` : ''}
+          ${isTop ? `<span style="${FH_MONO} font-size:9px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:#6a9af8;">Most covered</span>` : ''}
+          ${exp ? `<span style="${FH_MONO} font-size:9.5px; color:#a3abba; white-space:nowrap;">priced in at ${fhOdd(opts.shortPriced)}</span>` : ''}
         </span>
         <span style="display:flex; flex-direction:column; gap:2px;">
-          <span style="${FH_MONO} font-size:15px; font-weight:700; color:#e7e9ee; white-space:nowrap;">${x.c} of ${x.n}</span>
-          ${hasBasis ? `<span style="${FH_MONO} font-size:9.5px; color:#5b6880; white-space:nowrap;">${fhEsc(x.L.basis)}</span>` : ''}
+          <span style="${FH_MONO} font-size:15px; font-weight:700; color:#ebf1f2; white-space:nowrap;">${x.c} of ${x.n}</span>
+          ${hasBasis ? `<span style="${FH_MONO} font-size:9.5px; color:#6e7a93; white-space:nowrap;">${fhEsc(x.L.basis)}</span>` : ''}
         </span>
-        <span style="height:5px; background:rgba(255,255,255,0.06); border-radius:3px; display:flex;"><span style="width:${x.r * 100}%; background:#5b9bff; border-radius:3px;"></span></span>
+        <span style="height:5px; background:#16234a; border-radius:3px; display:flex;"><span style="width:${x.r * 100}%; background:#6a9af8; border-radius:3px;"></span></span>
         <span style="display:grid; grid-template-columns:${cols}; align-items:center;${jc}">${dots}</span>
       </div>`;
   };
@@ -13935,7 +13935,7 @@ function fhHotLinesTable(rows, sc, opts){
   if (opts.showAll){
     FH_HOT_FAM.forEach(f => {
       const ls = sc.scored.filter(x => fhFamOf(x.L.g) === f[0]); if (!ls.length) return;
-      out.push(`<span style="${FH_MONO} font-size:9px; font-weight:700; letter-spacing:0.16em; text-transform:uppercase; color:#5b6880; padding:12px 0 4px;">${f[1]}</span>`);
+      out.push(`<span style="${FH_MONO} font-size:9px; font-weight:700; letter-spacing:0.16em; text-transform:uppercase; color:#6e7a93; padding:12px 0 4px;">${f[1]}</span>`);
       ls.forEach(x => out.push(lineHtml(x, '')));
     });
   } else {
@@ -21171,7 +21171,7 @@ function ppStatRows(defs, stats, color, samples){
           <span style="font-size:12.5px;color:#d9dbdf;">${d.label}</span>
           <span style="display:flex;align-items:baseline;gap:9px;"><span style="font-size:15px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:#ebf1f2;">${v}${d.suffix}</span><span style="font-size:10.5px;color:#6e7a93;font-family:'IBM Plex Mono',monospace;">${avgText}</span></span>
         </div>
-        <span style="height:6px;border-radius:4px;background:#0c0e16;display:block;overflow:hidden;"><span style="display:block;height:100%;width:${barW}%;background:${color};border-radius:4px;"></span></span>
+        <span style="height:6px;border-radius:4px;background:#16234a;display:block;overflow:hidden;"><span style="display:block;height:100%;width:${barW}%;background:${color};border-radius:4px;"></span></span>
       </div>`;
   }).join('');
 }
@@ -21302,11 +21302,11 @@ function ppTournamentResultHtml(p, name){
   // rebuilt profile has ALL of them absent and falls back cleanly to the original
   // five tiles rather than a half-migrated card. Basis is captioned below.
   const isSlam = /^Grand Slam/.test(ppTournamentCategory(name));
-  let wlTile = tile('W\u2013L record', `${t.won}\u2013${t.lost}`, 'career', '#F4F6FA');
-  let titlesTile = tile('Titles won', `${t.titles || 0}`, 'at this event', '#F4F6FA');
-  let bestTile = tile('Best result', pesc(t.bestResult || '\u2014'), pesc(bestYears.join(', ') || '\u2014'), '#F4F6FA');
-  let lastTile = tile('Last played', `${t.lastYear}`, `${edCount} edition${edCount === 1 ? '' : 's'}`, '#F4F6FA');
-  let winrateTile = tile('Win rate', `${wr}%`, 'career', '#F4F6FA');
+  let wlTile = tile('W\u2013L record', `${t.won}\u2013${t.lost}`, 'career', '#ebf1f2');
+  let titlesTile = tile('Titles won', `${t.titles || 0}`, 'at this event', '#ebf1f2');
+  let bestTile = tile('Best result', pesc(t.bestResult || '\u2014'), pesc(bestYears.join(', ') || '\u2014'), '#ebf1f2');
+  let lastTile = tile('Last played', `${t.lastYear}`, `${edCount} edition${edCount === 1 ? '' : 's'}`, '#ebf1f2');
+  let winrateTile = tile('Win rate', `${wr}%`, 'career', '#ebf1f2');
   let slamBasis = '';
   if (isSlam){
     const gs = p && p.gsCareer;
@@ -21319,15 +21319,15 @@ function ppTournamentResultHtml(p, name){
     if (rebuilt){
       const mdTot = md.won + md.lost;
       const mdWr = mdTot ? Math.round((md.won / mdTot) * 100) : 0;
-      wlTile = tile('W\u2013L record', `${md.won}\u2013${md.lost}`, 'main draw', '#F4F6FA');
-      winrateTile = tile('Win rate', `${mdWr}%`, 'main draw', '#F4F6FA');
+      wlTile = tile('W\u2013L record', `${md.won}\u2013${md.lost}`, 'main draw', '#ebf1f2');
+      winrateTile = tile('Win rate', `${mdWr}%`, 'main draw', '#ebf1f2');
       const gsTot = gs.won + gs.lost;
       const gsWr = gsTot ? Math.round((gs.won / gsTot) * 100) : 0;
-      titlesTile = tile('Grand Slam career', `${gs.won}\u2013${gs.lost}`, `${gsWr}% win rate \u00b7 all four majors`, '#F4F6FA');
+      titlesTile = tile('Grand Slam career', `${gs.won}\u2013${gs.lost}`, `${gsWr}% win rate \u00b7 all four majors`, '#ebf1f2');
       const pct = (c, s) => s > 0 ? `${Math.round((c / s) * 100)}%` : '\u2014';
       const smp = (c, s) => s > 0 ? `${c} of ${s} match${s === 1 ? '' : 'es'}` : 'no completed main-draw matches';
-      bestTile = tile('Over 3.5 \u00b7 this event', pct(o.count, o.sample), smp(o.count, o.sample), '#F4F6FA');
-      lastTile = tile('Over 3.5 \u00b7 all majors', pct(gso.count, gso.sample), smp(gso.count, gso.sample), '#F4F6FA');
+      bestTile = tile('Over 3.5 \u00b7 this event', pct(o.count, o.sample), smp(o.count, o.sample), '#ebf1f2');
+      lastTile = tile('Over 3.5 \u00b7 all majors', pct(gso.count, gso.sample), smp(gso.count, gso.sample), '#ebf1f2');
       // Explicit reconciliation of the two all-majors samples so a member never
       // has to subtract 15\u201321 (=36) vs 20/34 and wonder where the 2 went. The gap
       // is career main-draw total minus the completed-only over-3.5 sample, which
@@ -21979,7 +21979,7 @@ function buildPlayerProfileHtml(p){
           <span style="display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:700;"><span style="width:9px;height:9px;border-radius:50%;background:${d.color};"></span>${d.s}</span>
           <span style="font-size:16px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:${d.color};">${d.wr}%</span>
         </div>
-        <span style="height:6px;border-radius:4px;background:#0c0e16;display:block;overflow:hidden;"><span style="display:block;height:100%;width:${Math.max(0,Math.min(100,d.wr))}%;background:${d.color};border-radius:4px;"></span></span>
+        <span style="height:6px;border-radius:4px;background:#16234a;display:block;overflow:hidden;"><span style="display:block;height:100%;width:${Math.max(0,Math.min(100,d.wr))}%;background:${d.color};border-radius:4px;"></span></span>
         <div style="margin-top:8px;font-size:11.5px;color:#6e7a93;">${d.rc} career · ${d.wr}%</div>
         <div style="margin-top:2px;font-size:11.5px;color:#6e7a93;">${d.seasonRc ? `${d.seasonRc} · <span style="color:${d.color};">${d.seasonWr}%</span> in ${seasonYear}` : `No matches in ${seasonYear}`}</div>
       </div>`;
@@ -22542,7 +22542,7 @@ function buildPlayerProfileHtml(p){
         <div style="flex:1;">${rowsCr}</div>
         <div style="display:grid;grid-template-columns:58px 1fr 1fr 1fr 1fr;column-gap:8px;align-items:center;padding:11px 10px 3px;border-top:2px solid rgba(255,255,255,0.03);margin-top:4px;">
           <span style="font-size:14px;font-weight:800;color:#ebf1f2;">Total</span>
-          ${totCell(t.total,'#f2f4f8')}${totCell(t.clay,'#ebf1f2')}${totCell(t.hard,'#ebf1f2')}${totCell(t.grass,'#ebf1f2')}
+          ${totCell(t.total,'#ebf1f2')}${totCell(t.clay,'#ebf1f2')}${totCell(t.hard,'#ebf1f2')}${totCell(t.grass,'#ebf1f2')}
         </div>
       </div>`;
   } else {
@@ -24317,7 +24317,7 @@ function tourxSpeedPanelHtml(){
       const tint = tintOf(t);
       return `<div onclick="tourxSelectCondition('${tourxEsc(t.name)}')" style="display:flex;align-items:center;gap:10px;padding:7px 16px;cursor:pointer;background:${on ? hexA(tint,0.13) : 'transparent'};${on ? `box-shadow:inset 2px 0 0 ${tint};` : ''}">
           <span style="flex:1;min-width:0;font-size:12.5px;font-weight:${on ? 800 : 600};color:${on ? '#ebf1f2' : '#d9dbdf'};white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${t.name}</span>
-          <span style="width:48px;height:5px;border-radius:4px;background:#0c0e16;flex:none;overflow:hidden;"><span style="display:block;height:100%;width:${w}%;border-radius:4px;background:${on ? tint : 'rgba(255,255,255,0.22)'};"></span></span>
+          <span style="width:48px;height:5px;border-radius:4px;background:#16234a;flex:none;overflow:hidden;"><span style="display:block;height:100%;width:${w}%;border-radius:4px;background:${on ? tint : 'rgba(255,255,255,0.22)'};"></span></span>
           <span style="font-family:${MONO};font-size:12.5px;font-weight:700;color:${on ? tint : '#ebf1f2'};flex:none;">${t.abstractSpeed.toFixed(2)}</span>
         </div>`;
     }).join('');
@@ -24721,7 +24721,7 @@ function tourxReliabilityHtml(c){
           ${has ? `<span style="font-size:11px;font-weight:600;color:#ebf1f2;">${word}</span>` : ''}
         </span>
       </div>
-      ${has ? `<div style="height:4px;border-radius:4px;background:#0c0e16;overflow:hidden;margin-top:11px;"><span style="display:block;height:100%;width:${v}%;background:#0b1c4e;border-radius:4px;"></span></div>` : ''}
+      ${has ? `<div style="height:4px;border-radius:4px;background:#16234a;overflow:hidden;margin-top:11px;"><span style="display:block;height:100%;width:${v}%;background:#6a9af8;border-radius:4px;"></span></div>` : ''}
       <div style="font-size:12px;line-height:1.6;color:#6e7a93;margin-top:${has ? '9px' : '11px'};text-wrap:pretty;">${note}</div>
     </div>`;
 }

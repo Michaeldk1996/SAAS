@@ -1469,7 +1469,7 @@
           'style="position:absolute;top:14px;right:14px;color:rgba(91,155,255,0.3);">' +
           '<path d="' + b.icon + '"/></svg>' +
         '<div style="font-family:\'IBM Plex Mono\',monospace;font-weight:700;color:' +
-          (v.headline == null ? DASH_COLOUR : '#fff') + ';line-height:1;padding-right:28px;' +
+          (v.headline == null ? DASH_COLOUR : '#ebf1f2') + ';line-height:1;padding-right:28px;' +
           'font-size:' + sz + 'px;">' + esc(head) +
           (suffix ? '<span style="color:' + sufCol + ';">' + esc(suffix) + '</span>' : '') +
           '</div>' +
@@ -4619,7 +4619,7 @@
       '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
         'letter-spacing:0.12em;text-transform:uppercase;color:#6e7a93;">' + esc(cap) + '</span>' +
       '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:23px;font-weight:700;' +
-        'line-height:1.05;color:' + (colour || '#fff') + ';overflow:hidden;text-overflow:ellipsis;">' +
+        'line-height:1.05;color:' + (colour || '#ebf1f2') + ';overflow:hidden;text-overflow:ellipsis;">' +
         value + '</span>' +
       '<span style="font-size:10.5px;color:#6e7a93;">' + esc(sub == null ? '' : sub) + '</span>' +
       '</div>';
@@ -6571,7 +6571,7 @@
 
   // ── the four tiles (items 5-7) ───────────────────────────────────────────
   // `Player Stat Boxes.dc.html`:88-99 — a bordered box, centred, gap 8px, and a
-  // WHITE value (`valueColor: '#fff'`, :2262) whatever the sign. The sign lives
+  // WHITE value (`valueColor: '#ebf1f2'`, :2262) whatever the sign. The sign lives
   // on the pp only. The gate is the file's tileOf(): full colour at k >= 10,
   // greyed with a "*" at 5-9, a dash below 5.
   function calDesignTile(cap, value, pp, n, repeat) {
@@ -6587,7 +6587,7 @@
       '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
         'letter-spacing:0.14em;text-transform:uppercase;color:#6e7a93;">' + esc(cap) + '</span>' +
       '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:26px;font-weight:700;line-height:1;' +
-        'color:' + (value === DASH ? DASH_COLOUR : '#fff') + ';">' + esc(value) + '</span>' +
+        'color:' + (value === DASH ? DASH_COLOUR : '#ebf1f2') + ';">' + esc(value) + '</span>' +
       '<span style="display:flex;align-items:baseline;justify-content:center;gap:5px;' +
         'font-family:\'IBM Plex Mono\',monospace;font-size:11px;">' +
         '<span style="font-weight:700;color:' + ppColour + ';">' + esc(ppText) + '</span>' +
@@ -7087,7 +7087,7 @@
       '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
         'letter-spacing:0.14em;text-transform:uppercase;color:#6e7a93;">' + esc(cap) + '</span>' +
       '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:26px;font-weight:700;' +
-        'line-height:1;color:' + (value === DASH ? DASH_COLOUR : '#fff') + ';">' + esc(value) + '</span>' +
+        'line-height:1;color:' + (value === DASH ? DASH_COLOUR : '#ebf1f2') + ';">' + esc(value) + '</span>' +
       '<span style="font-size:10.5px;color:#6e7a93;">' + esc(sub) + '</span></div>';
   }
 

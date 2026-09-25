@@ -107,7 +107,7 @@
 }
 [data-page="series"] .sr-box::after {
   content: ''; width: 7px; height: 4px; margin-top: -2px;
-  border-left: 2px solid #fff; border-bottom: 2px solid #fff;
+  border-left: 2px solid var(--text); border-bottom: 2px solid var(--text);
   transform: rotate(-45deg); opacity: 0;
 }
 [data-page="series"] .sr-toggle input:checked + .sr-box {
