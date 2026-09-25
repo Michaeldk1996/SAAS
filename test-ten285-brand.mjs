@@ -64,6 +64,8 @@ function lockupProblems(html, container) {
   if (imgs[0] && /\bstyle=/.test(imgs[0])) p.push('inline style on the logo');
   for (const extra of rules.slice(1)) {
     if (/(^|[;\s])height\s*:\s*(?!26px)/.test(extra)) p.push('a second rule changes the logo height');
+    if (/(^|[;\s])(?:max-|min-)?width\s*:\s*(?!auto)/.test(extra)) p.push('a second rule changes the logo width');
+    if (/(^|[;\s])(?:transform|outline)\s*:/.test(extra)) p.push('a second rule transforms or outlines the logo');
     for (const bad of ['border', 'box-shadow', 'border-radius', 'background', 'object-fit'])
       if (new RegExp(`(^|[;\\s])${bad}\\s*:`).test(extra)) p.push(`box property ${bad} in a later .${container} img rule`);
   }
@@ -126,6 +128,8 @@ test('lockup check kills its mutants', () => {
     wrongHeight: good.replace(rule, '.brand-id img{ display:block; height:38px; width:auto; }'),
     fixedWidth: good.replace(rule, '.brand-id img{ display:block; height:26px; width:38px; }'),
     mediaTile: good.replace('</style>', '@media (max-width:600px){ .brand-id img{ height:40px; border-radius:10px } }\n</style>'),
+    mediaWidth: good.replace('</style>', '@media (max-width:600px){ .brand-id img{ width:38px } }\n</style>'),
+    mediaScale: good.replace('</style>', '@media (max-width:600px){ .brand-id img{ transform:scale(1.4) } }\n</style>'),
     inlineStyle: good.replace('<img src="assets/logo-dark-transparent.png" alt="Stennisfy">', '<img src="assets/logo-dark-transparent.png" alt="Stennisfy" style="border:1px solid #333">'),
   };
   for (const [name, html] of Object.entries(mutants))
