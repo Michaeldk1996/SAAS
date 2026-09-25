@@ -20,11 +20,13 @@
 #      tools/ci-suite.sh <sha> for the suite receipt; claim the lane with
 #      --sha <sha> --reviewed (waits on exit 3; exit 7 → rebase + new receipt, retry),
 #      clobber-check against origin/main, push only while `renew` says the lane is still
-#      held (30-min cap), poll until the live build contains the commit, release the lane
+#      held, then `confirm-live` in the poll loop: it releases the lane the moment the
+#      live build contains the commit
 #
 # Each run claims as its own session (session:ODDS-ARCHIVE-<stamp>), so a run that dies
-# holding the lane is NEVER silently inherited by the next one: the 30-min cap frees it
-# (deploy-lane.md step 3). `--reviewed` is this job's standing attestation: its only
+# holding the lane is NEVER silently inherited by the next one. A session holder
+# cannot be confirmed dead, so a dead run's claim is freed by the total-hold cap once the
+# founder sets it (MAX_HOLD_MIN; pending) — until then, by hand (deploy-lane.md). `--reviewed` is this job's standing attestation: its only
 # change is the output of the founder-reviewed refresh + builders above, validated and
 # never-thinner-guarded, and the full suite is green on it.
 #
@@ -198,8 +200,8 @@ bash tools/clobber-check.sh "$BASE" "${OUT[@]}" > "$RUN/clobber.log" 2>&1 || fai
 rebase_tested; r=$?; [ $r -eq 2 ] && failed "suite red after rebasing onto new code"; [ $r -ne 0 ] && failed "rebase onto origin/main"
 pushed=0
 for _ in 1 2 3; do
-  # The hold is capped at 30 min and never extended: push only while still holding it.
-  node tools/deploy-lane.mjs renew --ticket "$TICKET" >> "$RUN/lane.log" 2>&1 || { LANE_HELD=0; failed "the deploy lane auto-released before the push (30-min cap); nothing pushed"; }
+  # Nothing extends a hold past the total-hold cap: push only while still holding the lane.
+  node tools/deploy-lane.mjs renew --ticket "$TICKET" >> "$RUN/lane.log" 2>&1 || { LANE_HELD=0; failed "no longer holding the deploy lane (released at the hold cap?); nothing pushed"; }
   if GIT_TERMINAL_PROMPT=0 git -c credential.helper=osxkeychain push -q origin HEAD:main >> "$RUN/push.log" 2>&1; then pushed=1; break; fi
   rebase_tested; r=$?; [ $r -eq 2 ] && failed "suite red after rebasing onto new code"; [ $r -ne 0 ] && break
 done
@@ -207,15 +209,17 @@ done
 SHA="$(git rev-parse HEAD)"
 log "pushed $SHA"
 
-# Live check: the build must CONTAIN our commit. Renew every ~5 polls.
+# Live check: the build must CONTAIN our commit. `confirm-live` runs
+# tools/check-live-build.sh and releases the lane the moment it does (TEN-273:
+# the lane covers deploying only); exit 3 = not live yet, still holding.
 live=2; t=0
 while [ $t -lt 45 ]; do
-  [ $((t % 5)) -eq 0 ] && renew
-  bash tools/check-live-build.sh "$SHA" > "$RUN/live.log" 2>&1; live=$?
-  [ $live -eq 0 ] && break
+  node tools/deploy-lane.mjs confirm-live --ticket "$TICKET" --sha "$SHA" > "$RUN/live.log" 2>&1; cl=$?
+  if [ $cl -eq 0 ]; then live=0; LANE_HELD=0; break; fi
+  [ $cl -eq 1 ] && { LANE_HELD=0; bash tools/check-live-build.sh "$SHA" >> "$RUN/live.log" 2>&1; live=$?; [ $live -eq 0 ] && break; }
   sleep 60; t=$((t + 1))
 done
-node tools/deploy-lane.mjs release --ticket "$TICKET" >> "$RUN/lane.log" 2>&1 && LANE_HELD=0
+[ "$LANE_HELD" = 1 ] && node tools/deploy-lane.mjs release --ticket "$TICKET" >> "$RUN/lane.log" 2>&1 && LANE_HELD=0
 mv "$F" "$INBOX/processed/$STAMP-$NAME"
 if [ $live -eq 0 ]; then
   notify "Merged $NAME: $BEFORE → $AFTER rows (+$ADDED, $CHANGED changed), through $LATEST. Live in build ${SHA:0:8}."

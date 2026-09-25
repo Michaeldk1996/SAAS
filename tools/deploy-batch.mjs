@@ -153,7 +153,7 @@ export async function runBatch({ lane, me, sha, repo = process.cwd(), git = real
   // Push; if rejected because data-bot commits landed, replay and retry once.
   async function push(b, checkBase, groups) {
     for (let attempt = 0; ; attempt++) {
-      if ((await lane.renew(me)).code !== 0) return { ok: false, fatal: true, reason: 'the lane auto-released before the push — nothing pushed' };
+      if ((await lane.renew(me)).code !== 0) return { ok: false, fatal: true, reason: 'you no longer hold the lane (released at the hold cap?) — nothing pushed' };
       const p = W(['push', '-q', 'origin', `${b.head}:refs/heads/main`]);
       if (p.status === 0) return { ok: true, b, attempts: attempt + 1 };
       if (attempt >= 1) return { ok: false, reason: `push rejected twice: ${p.stderr.split('\n')[0]}` };

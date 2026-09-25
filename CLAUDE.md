@@ -201,35 +201,43 @@ Each task is a self-contained brief specifying what to build, what not to touch,
 
 Pushing to main does not deploy on its own. The deploy workflow is tick-only: your commit goes live on the next scheduled tick, after the pipeline runs and the CDN updates. Budget ~26 min median, ~35 min worst case from push to live. A measured run came in at 21.9 min. Do not plan around the fast case.
 
-Before you claim the lane, get the commit fully ready (founder ruling TEN-273). The lane is held only while deploying:
+Before you claim the lane, get the commit fully ready (founder rulings TEN-273). The lane is first come, first served, and it covers deploying only:
 
-1. **Rebased:** run `git fetch origin`. Every commit in `<sha>..origin/main` must be a data-bot `[skip ci]` commit. If any code commit is missing from yours, rebase.
+1. **Rebased:** run `git fetch origin`. Every commit in `<sha>..origin/main` must be a data-bot commit (`[skip ci]` in its subject). If any code commit is missing from yours, rebase.
 2. **Suite green:** `tools/ci-suite.sh <sha>` exits 0. It runs `npm test` in a fresh CI-shaped clone and writes the suite receipt that `claim` requires. Nothing else writes receipts.
 3. **Reviewed:** the review is done.
 4. **Clobber check:** `tools/clobber-check.sh <base> <files>` is clear. If it reports anything, stop and rebase.
 5. **Claim:** `node tools/deploy-lane.mjs claim --ticket TEN-123 --sha <sha> --reviewed`. **No exit 0, no push.**
+   - Your first ready claim puts you in the waiter queue.
+   - The lane goes to the **longest-waiting live claimant**, not to whoever polls first.
+   - Exit 3 prints your `position` and `waitedMin`; re-run `claim` every ≤ 5 min.
    - Exit 7 means the commit is not ready; the output lists what is missing.
-   - The hold is at most **30 min** and nothing extends it. After that it auto-releases. `renew` only answers "do I still hold it?".
-   - A claim whose owner run has ended is released on the next `claim`.
-   - Other runs with ready commits queue with `deploy-lane.mjs ready` (withdraw with `unready`). If your granted claim lists a `batch`, land with `node tools/deploy-batch.mjs --ticket TEN-123 --sha <the sha you claimed with>`: one push for all of them, falling back to your commit alone if the combined tree fails.
+   - Dead waiters and silent (15 min) session waiters drop out. A holder whose run has ended is released on the next `claim`.
+   - Other runs with ready commits offer them with `deploy-lane.mjs ready` (withdraw with `unready`); that is not a place in the lane queue. If your granted claim lists a `batch`, land with `node tools/deploy-batch.mjs --ticket TEN-123 --sha <the sha you claimed with>`: one push for all of them, falling back to your commit alone if the combined tree fails.
    - The pushed tree may differ from the suite-tested tree **only by `[skip ci]` data-bot commits**, and the clobber check is re-run against them. If a code commit landed in between, rebase, get a new receipt and claim again.
-   - Waiting, dead owners, the 30-min waiter report and exit codes 0/1/2/3/6/7: `.claude/rules/deploy-lane.md`.
+   - A total-hold cap (`MAX_HOLD_MIN`) exists, but its number is **pending the founder**, so no cap is wired yet.
+   - Waiting, dead claimants, same-ticket runs, the cap and exit codes 0/1/2/3/6/7: `.claude/rules/deploy-lane.md`.
    - Post on your issue too, so the founder can see it.
 
 CI enforces rebasing (step 1) independently: the deploy workflow refuses to publish a commit that is not a descendant of origin/main. Read its output — if the step fails with no message, that is this guard, and the answer is rebase and retry, not a retry on the same commit.
 
-After you push, before you measure anything on the live surface:
+After you push:
 
-6. Run `tools/check-live-build.sh <your-sha>`. If you landed with `deploy-batch.mjs`, use the `readBack` sha it prints: it equals your sha when your commit was pushed as is, and otherwise the cherry-pick means only the printed sha is on main. If another holder batched you in, use your `landedAs` sha. It tests whether your commit is **contained in** the live build, not whether the SHAs match — data commits land on main every 30–60s, so the live stamp is routinely ahead of your tip and an equality test would false-alarm constantly.
-   - **exit 0** — your commit is in the live build. Measure.
-   - **exit 1** — your commit is not in the live build. Either the tick has not run yet or something else published. Wait a tick and re-run. Do not measure.
-   - **exit 2** — undetermined. That is a dash, not a pass. Report that you could not confirm the build and treat every probe result as unverified.
+6. **Confirm your commit is live, and release the lane, in one step.** In your poll loop run `node tools/deploy-lane.mjs confirm-live --ticket TEN-123 --sha <your-sha>`.
+   - It runs `tools/check-live-build.sh <your-sha>` and **releases the lane on exit 0**. On exit 1 or 2 it keeps holding and exits 3; poll again.
+   - Landed with `deploy-batch.mjs`? Use the `readBack` sha it prints. It equals your sha when your commit was pushed as is; otherwise the cherry-pick means only the printed sha is on main.
+   - Batched in by another holder? You never held the lane: read back your `landedAs` sha with `tools/check-live-build.sh`.
+   - `check-live-build.sh` tests whether your commit is **contained in** the live build, not whether the SHAs match. Data commits land on main every 30–60 s, so the live stamp is routinely ahead of your tip and an equality test would false-alarm constantly.
+7. **Everything after that runs without the lane:** measuring, verifying, watching, reading logs. If verification finds a fix, that fix gets ready and claims again like anyone else.
 
-   Pass your sha. Run bare, it verifies nothing and returns 2 — "nothing checked" is a dash, not a pass.
+What `check-live-build.sh` returns, whether you call it directly or through `confirm-live`:
+- **exit 0**: your commit is in the live build. Measure.
+- **exit 1**: your commit is not in the live build. Either the tick has not run yet or something else published. Wait a tick and re-run. Do not measure.
+- **exit 2**: undetermined. That is a dash, not a pass. Report that you could not confirm the build and treat every probe result as unverified.
 
-Never report a pass, a fail, or a regression against a build that `check-live-build.sh` has not returned 0 for.
+Pass your sha. Run bare, it verifies nothing and returns 2. "Nothing checked" is a dash, not a pass.
 
-Release the lane when verification is complete: `node tools/deploy-lane.mjs release --ticket TEN-123`, and say so on your issue. **The live read-back is mandatory even if the 30-min cap released the lane first.** `check-live-build.sh` tests containment, so a later push does not invalidate it.
+Never report a pass, a fail, or a regression against a build that `check-live-build.sh` has not returned 0 for. If you must stop before your build is live, run `node tools/deploy-lane.mjs release --ticket TEN-123`, say so on your issue, and keep the read-back as your own open item.
 
 What the live build carries, for anything reading it directly: `build-info.json` at the site root — `commit` is the **full 40-char** sha of the tip of main at build time, alongside `tip`, `behindTip`, `onMain`, `runNumber`, `builtAt` — and the same sha as `<meta name="build-sha">` in the dashboard HTML, readable from the DOM without a second fetch. Both are written by the `Deploy ancestor guard + build stamp` step of `pipeline.yml`, regenerated every run, and neither is committed.
 
@@ -250,7 +258,7 @@ Surface-specific rulings moved out of this file so they load only when relevant:
 | Odds sources, book ladder, card rules, close rules | `.claude/rules/odds.md` |
 | Match analysis Form / H2H tabs — price order, display constants, all-level H2H, market-edge, odds alarms | `.claude/rules/modal-form-h2h.md` |
 | Odds archive (tennis-data closing prices): drop-in refresh, merge, never-thinner, readers | `.claude/rules/odds-archive.md` |
-| Deploy lane — ready gate (suite receipt, rebased, reviewed), 30-min cap, dead-owner release, batching, waiter reports | `.claude/rules/deploy-lane.md` |
+| Deploy lane — ready gate, first-come-first-served queue, confirm-live release, pending hold cap, batching, waiter reports | `.claude/rules/deploy-lane.md` |
 | App shell — sidebar width, Stennisfy Model icon | `.claude/rules/app-shell.md` |
 | Database Ratings board / Lines tab rulings | `.claude/rules/ratings.md`, `.claude/rules/lines.md` |
 

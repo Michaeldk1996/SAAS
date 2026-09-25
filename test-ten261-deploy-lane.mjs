@@ -1,23 +1,30 @@
-// TEN-261 → TEN-273 — the deploy lane is held only while deploying.
+// TEN-261 → TEN-273 — the deploy lane: first come, first served; held only
+// while deploying; a total-hold cap whose number the founder has not set yet.
 //
-// Founder ruling TEN-273 (2026-09-25) SUPERSEDES the TEN-261 lease: no renewal
-// extends a claim, a claim auto-releases 30 min after it is taken, a dead owner
-// is released on the next claim, and a claim needs a READY commit (green suite
-// receipt, rebased, reviewed). The TEN-261 cases that encoded the lease (renewal
-// extends, 45 min, exit 4, takeover clobber check, exit 5) are REPLACED below,
-// not kept alongside.
+// Founder ruling TEN-273 (2026-09-25 00:55Z) SUPERSEDES the TEN-261 lease and
+// the earlier TEN-273 draft where they conflict:
+//   - a free lane goes to the longest-waiting LIVE claimant (no re-claim race);
+//     dead claimants drop out; every claim records position and minutes waited;
+//   - the lane covers deploying only: `confirm-live` releases it the moment the
+//     live build contains the sha;
+//   - a total-hold cap (MAX_HOLD_MIN, from takenAt) that renew/claim can never
+//     extend. Its number is PENDING (null = not wired); these tests inject 30.
+// A claim still needs a READY commit (green suite receipt, rebased, reviewed).
 //
 // Each case is simulated end to end and paired with a mutant of
-// tools/deploy-lane.mjs that must make it fail. A case that still passes with
-// the mechanism cut out is not testing it.
+// tools/deploy-lane.mjs that must make it fail. The five FOUNDER cases (named
+// "founder 00:55Z (…)") are written against the API both the old and the new
+// tool share, so they can be run against origin/main's TEN-261 tool too:
+//   TEN273_LANE_SRC=/path/to/old/deploy-lane.mjs node --test --test-name-pattern='real lane: founder' test-ten261-deploy-lane.mjs
+// and must FAIL there.
 //
 // Nothing here reads the source for its assertions. The store is a real file,
 // liveness and notices go through the REAL Paperclip adapters over real HTTP
 // to a fake board server, suite receipts are real files read by the real
 // adapter, the readiness case runs the real git rebase check against a real
-// temp repo with a bare origin, and the CLI is spawned for real. The only
-// substitutes are the clock and, outside the readiness case, the rebase check
-// (whose fake returns the real one's shape).
+// temp repo with a bare origin, and the CLI is spawned for real. The
+// substitutes are the clock, the live-build check (whose fake returns the real
+// one's shape {code, output}) and, outside the readiness case, the rebase check.
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -29,7 +36,7 @@ import { spawn, spawnSync } from 'node:child_process';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const SRC = path.join(HERE, 'tools', 'deploy-lane.mjs');
+const SRC = process.env.TEN273_LANE_SRC || path.join(HERE, 'tools', 'deploy-lane.mjs');
 const MIN = 60 * 1000;
 const T0 = Date.parse('2026-09-23T08:00:00Z');
 const at = (m) => T0 + Math.round(m * MIN);
@@ -80,21 +87,29 @@ function writeReceipt(dir, sha, exit = 0) {
 }
 const REBASED = () => ({ ok: true, codeCommits: [], dataCommits: 2, detail: 'rebased (2 data-bot commit(s) ahead)' });
 
-async function rig(mod, board, shared) {
+// The cap is injected (30) — its shipped value is pending a founder number.
+// Parameters the old TEN-261 tool does not know are simply ignored by it.
+async function rig(mod, board, shared, { cap = 30, noCap = false } = {}) {
   const dir = shared ? path.dirname(shared.file) : fs.mkdtempSync(path.join(os.tmpdir(), 'ten261-'));
   const clock = shared ? shared.clock : { t: T0 };
   const receipts = path.join(dir, 'receipts');
   for (const s of Object.values(SHA)) writeReceipt(receipts, s);
-  const lane = mod.createLane({
+  const live = { code: 1, calls: [] };
+  const opts = {
     file: path.join(dir, 'lane.json'),
     now: () => clock.t,
     liveness: mod.paperclipLiveness({ apiBase: board.base, apiKey: 'k' }),
     notify: mod.paperclipNotify({ apiBase: board.base, apiKey: 'k', agentId: 'agent-x' }),
-    suiteReceipt: mod.fileSuiteReceipts({ dir: receipts }),
+    suiteReceipt: mod.fileSuiteReceipts ? mod.fileSuiteReceipts({ dir: receipts }) : undefined,
     rebaseCheck: REBASED,
-  });
-  return { lane, clock, file: path.join(dir, 'lane.json') };
+    checkLive: async (sha) => { live.calls.push(sha); return { code: live.code, output: `check-live-build exit ${live.code}` }; },
+    clobberCheck: () => ({ ok: true, output: 'clear' }), // the old tool's takeover check
+  };
+  if (!noCap) opts.maxHoldMin = cap;
+  const lane = mod.createLane(opts);
+  return { lane, clock, live, file: path.join(dir, 'lane.json') };
 }
+const state = (file) => JSON.parse(fs.readFileSync(file, 'utf8'));
 
 const A = { ticket: 'TEN-253', issueId: 'issue-253', runId: 'run-A', kind: 'paperclip' };
 const B = { ticket: 'TEN-260', issueId: 'issue-260', runId: 'run-B', kind: 'paperclip' };
@@ -135,8 +150,8 @@ function gitFixture() {
 
 // ── the cases, each returning whether the rule held ──────────────────────────
 const CASES = {
-  // a · the 30-min cap: auto-releases even while the owner is alive and renewing
-  //     (and re-claiming): held at 29:59, free at 30:00. Renewal never extends.
+  // The cap (injected 30): released even while the owner is alive and renewing
+  // (and re-claiming): held at 29:59, free at 30:00, holder re-queued at the BACK.
   async holdCapAutoReleases(mod) {
     const board = await startBoard();
     try {
@@ -157,12 +172,14 @@ const CASES = {
       clock.t = at(30);
       const b30 = await lane.claim(B, RDY(SHA.B));
       const a30 = await lane.renew(A);
-      const notice = board.comments.find((c) => c.issueId === 'issue-253' && /AUTO-RELEASED/.test(c.body));
+      const notice = board.comments.find((c) => c.issueId === 'issue-253' && /CAP-RELEASED/.test(c.body));
+      const w = state(file).waiters['run-A'];
       return b2959.code === 3 && b2959.claim.runId === 'run-A' && a2959.code === 0
-        && b30.code === 0 && b30.action === 'claimed' && b30.claim.runId === 'run-B' && b30.autoReleased.runId === 'run-A'
+        && b30.code === 0 && b30.action === 'claimed' && b30.claim.runId === 'run-B' && b30.capReleased.runId === 'run-A'
         && a30.code === 1
+        && !!w && w.since === new Date(at(30)).toISOString()
         && !!notice && /check-live-build\.sh/.test(notice.body)
-        && history(file).some((h) => h.event === 'auto-released' && h.runId === 'run-A');
+        && history(file).some((h) => h.event === 'cap-released' && h.runId === 'run-A' && h.requeued === true);
     } finally { board.close(); }
   },
 
@@ -201,7 +218,7 @@ const CASES = {
       board.setFailRuns(false);
       // A session claim (no Paperclip run id) can never be confirmed dead.
       const S = { ticket: 'TEN-270', issueId: null, runId: 'session:TEN-270', kind: 'session' };
-      await lane.release(B);
+      await lane.release(B); await lane.release(A); // A was re-queued at the cap: it leaves
       clock.t = at(31); const s0 = await lane.claim(S, RDY(SHA.C));
       clock.t = at(32); const s1 = await lane.claim(D, RDY(SHA.D));
       clock.t = at(61); const s30 = await lane.claim(D, RDY(SHA.D));
@@ -284,21 +301,24 @@ const CASES = {
       board.setFailComments(true);
       clock.t = at(30);
       const capped = await lane.claim(B, RDY(SHA.B));
-      board.runs['run-B'] = 'failed';
+      board.runs['run-B'] = 'failed'; board.runs['run-A'] = 'succeeded'; // A (re-queued at the cap) has finished
       clock.t = at(31);
       const dead = await lane.claim(C, RDY(SHA.C));
       return capped.code === 0 && capped.claim.runId === 'run-B' && dead.code === 0 && dead.claim.runId === 'run-C' && dead.notice.ok === false;
     } finally { board.close(); }
   },
 
-  // A waiter past 30 minutes reports who holds the lane, since when, and whether
-  // it is alive. Under the cap, a long wait is a chain of holders.
+  // A waiter past 30 minutes reports who holds the lane, since when, whether it
+  // is alive, and its position. Under FCFS + the cap, a long wait means others
+  // were ahead: C (since 0:30) and D (since 0:42) are ahead of B (since 1).
   async waiterPast30Reports(mod) {
     const board = await startBoard();
     try {
       const { lane, clock } = await rig(mod, board);
       for (const r of ['run-A', 'run-B', 'run-C', 'run-D']) board.runs[r] = 'running';
       await lane.claim(A, RDY(SHA.A));
+      clock.t = at(0.5); if ((await lane.claim(C, RDY(SHA.C))).code !== 3) return false;
+      clock.t = at(0.7); if ((await lane.claim(D, RDY(SHA.D))).code !== 3) return false;
       const rep = () => board.comments.filter((c) => c.issueId === 'issue-260' && /has waited/.test(c.body));
       const steps = [[1, 0], [15, 0], [29, 0], [30, 'C'], [32, 1], [40, 1], [60, 'D'], [63, 2]];
       for (const [m, want] of steps) {
@@ -309,7 +329,8 @@ const CASES = {
         if (r.code !== 3 || rep().length !== want) return false;
       }
       const body = rep()[0].body;
-      return /TEN-262/.test(body) && /run-C/.test(body) && /taken 2026-09-23T08:30:00/.test(body) && /alive/.test(body) && /has waited 31 min/.test(body);
+      return /TEN-262/.test(body) && /run-C/.test(body) && /taken 2026-09-23T08:30:00/.test(body) && /alive/.test(body)
+        && /has waited 31 min \(position 2\)/.test(body);
     } finally { board.close(); }
   },
 
@@ -543,21 +564,200 @@ Object.assign(CASES, {
   },
 });
 
+// ── founder ruling 2026-09-25 00:55Z ─────────────────────────────────────────
+// Written against the API the old (origin/main, TEN-261) tool shares, so each
+// can be run against it and must FAIL there. See the header.
+Object.assign(CASES, {
+  // (a) first come, first served: B waits from 1, C from 5, and A2 (a new run of
+  //     A's ticket) arrives the instant the lane frees. C and A2 poll FIRST; B
+  //     still gets the lane. (The live case: TEN-273 waiting from 23:41Z, TEN-270
+  //     took the lane at 00:07Z.)
+  async founderA_earlierWaiterWins(mod) {
+    const board = await startBoard();
+    try {
+      const { lane, clock, file } = await rig(mod, board);
+      const A2 = { ...A, runId: 'run-A2' };
+      for (const r of ['run-A', 'run-A2', 'run-B', 'run-C']) board.runs[r] = 'running';
+      await lane.claim(A, RDY(SHA.A));
+      clock.t = at(1); const b1 = await lane.claim(B, RDY(SHA.B));
+      clock.t = at(5); const c5 = await lane.claim(C, RDY(SHA.C));
+      clock.t = at(10); await lane.release(A);
+      clock.t = at(10.01); const cFirst = await lane.claim(C, RDY(SHA.C));
+      clock.t = at(10.02); const a2 = await lane.claim(A2, RDY(SHA.A2));
+      clock.t = at(10.03); const bWins = await lane.claim(B, RDY(SHA.B));
+      const ev = state(file).history.find((h) => h.event === 'waiting' && h.runId === 'run-C' && h.position === 2 && h.waitedMin === 5);
+      return b1.code === 3 && c5.code === 3
+        && cFirst.code === 3 && cFirst.position === 2 && cFirst.waitedMin === 5 && cFirst.ahead[0].runId === 'run-B'
+        && a2.code === 3 && a2.position === 3
+        && bWins.code === 0 && bWins.claim.runId === 'run-B' && bWins.position === 1 && bWins.waitedMin === 9
+        && !!ev && ev.waitedMin === 5
+        && state(file).history.some((h) => h.event === 'claimed' && h.runId === 'run-B' && h.position === 1 && h.waitedMin === 9);
+    } catch (e) { if (process.env.DEBUG_TEN273) console.error('CASE THREW:', e.message); return false; } finally { board.close(); }
+  },
+
+  // (b) the lane covers deploying only: confirm-live releases it once the live
+  //     build contains the sha; while it doesn't (exit 1) or can't tell (exit 2)
+  //     the lane stays held.
+  async founderB_noLaneAfterLiveConfirmed(mod) {
+    const board = await startBoard();
+    try {
+      const { lane, clock, live, file } = await rig(mod, board);
+      for (const r of ['run-A', 'run-B']) board.runs[r] = 'running';
+      await lane.claim(A, RDY(SHA.A));
+      clock.t = at(3); live.code = 1; const notYet = await lane.confirmLive(A, { sha: SHA.A });
+      clock.t = at(4); live.code = 2; const unsure = await lane.confirmLive(A, { sha: SHA.A });
+      const heldBetween = state(file).claim && state(file).claim.runId === 'run-A';
+      clock.t = at(5); live.code = 0; const done = await lane.confirmLive(A, { sha: SHA.A });
+      const after = state(file);
+      clock.t = at(6); const b = await lane.claim(B, RDY(SHA.B));
+      return notYet.code === 3 && unsure.code === 3 && heldBetween
+        && done.code === 0 && done.action === 'released-live-confirmed' && after.claim === null
+        && after.history.some((h) => h.event === 'released-live-confirmed' && h.sha === SHA.A)
+        && JSON.stringify(live.calls) === JSON.stringify([SHA.A, SHA.A, SHA.A])
+        && b.code === 0;
+    } catch (e) { if (process.env.DEBUG_TEN273) console.error('CASE THREW:', e.message); return false; } finally { board.close(); }
+  },
+
+  // (c) renewal past the cap is refused (cap injected: 30 min from takenAt),
+  //     however often the owner renewed before it; the holder goes to the back
+  //     of the queue with a fresh wait-start and an alert on its ticket.
+  async founderC_renewalPastCapRefused(mod) {
+    const board = await startBoard();
+    try {
+      const { lane, clock, file } = await rig(mod, board);
+      board.runs['run-A'] = 'running';
+      await lane.claim(A, RDY(SHA.A));
+      const early = [];
+      for (const m of [10, 20, 29.9]) { clock.t = at(m); early.push((await lane.renew(A)).code); }
+      clock.t = at(30); const r30 = await lane.renew(A);
+      clock.t = at(31); const r31 = await lane.renew(A);
+      const st = state(file);
+      return JSON.stringify(early) === '[0,0,0]' && r30.code === 1 && r31.code === 1 && st.claim === null
+        && !!st.waiters['run-A'] && st.waiters['run-A'].since === new Date(at(30)).toISOString()
+        && st.history.some((h) => h.event === 'cap-released' && h.runId === 'run-A')
+        && board.comments.some((c) => c.issueId === 'issue-253' && /CAP-RELEASED/.test(c.body));
+    } catch (e) { if (process.env.DEBUG_TEN273) console.error('CASE THREW:', e.message); return false; } finally { board.close(); }
+  },
+
+  // (d) a dead claimant drops out of the queue: B (ahead) dies while waiting; when
+  //     the lane frees, C gets it and B is gone from the queue, with evidence.
+  async founderD_deadClaimantRemoved(mod) {
+    const board = await startBoard();
+    try {
+      const { lane, clock, file } = await rig(mod, board);
+      for (const r of ['run-A', 'run-B', 'run-C']) board.runs[r] = 'running';
+      await lane.claim(A, RDY(SHA.A));
+      clock.t = at(1); await lane.claim(B, RDY(SHA.B));
+      clock.t = at(2); await lane.claim(C, RDY(SHA.C));
+      board.runs['run-B'] = 'cancelled';
+      clock.t = at(10); await lane.release(A);
+      clock.t = at(10.5); const c = await lane.claim(C, RDY(SHA.C));
+      const st = state(file);
+      return c.code === 0 && c.claim.runId === 'run-C' && !st.waiters['run-B']
+        && st.history.some((h) => h.event === 'waiter-dropped-dead' && h.runId === 'run-B' && /cancelled/.test(h.evidence));
+    } catch (e) { if (process.env.DEBUG_TEN273) console.error('CASE THREW:', e.message); return false; } finally { board.close(); }
+  },
+
+  // Session waiters (never confirmable alive) leave after WAITER_STALE_MIN
+  // without a claim; a live Paperclip waiter keeps its place however long.
+  async staleSessionWaiterDropped(mod) {
+    const board = await startBoard();
+    try {
+      const { lane, clock, file } = await rig(mod, board);
+      const S = { ticket: 'TEN-270', issueId: null, runId: 'session:TEN-270', kind: 'session' };
+      for (const r of ['run-A', 'run-B', 'run-C']) board.runs[r] = 'running';
+      await lane.claim(A, RDY(SHA.A));
+      clock.t = at(1); await lane.claim(S, RDY(SHA.D));
+      clock.t = at(2); await lane.claim(C, RDY(SHA.C));
+      clock.t = at(5); await lane.release(A);
+      clock.t = at(15.9); const early = await lane.claim(C, RDY(SHA.C));   // S silent 14.9 min: still ahead
+      clock.t = at(16.1); const late = await lane.claim(C, RDY(SHA.C));    // 15.1 min: dropped, C's turn
+      await lane.release(C);
+      // A live Paperclip waiter silent for 40 min keeps its place.
+      clock.t = at(17); await lane.claim(A, RDY(SHA.A));
+      clock.t = at(18); await lane.claim(B, RDY(SHA.B));
+      clock.t = at(19); await lane.claim(C, RDY(SHA.C));
+      clock.t = at(20); await lane.release(A);
+      clock.t = at(58); const c58 = await lane.claim(C, RDY(SHA.C));
+      return early.code === 3 && early.ahead[0].runId === 'session:TEN-270' && late.code === 0
+        && state(file).history.some((h) => h.event === 'waiter-dropped-stale' && h.runId === 'session:TEN-270')
+        && c58.code === 3 && c58.ahead[0].runId === 'run-B';
+    } finally { board.close(); }
+  },
+
+  // Same ticket, new run, while the ticket was WAITING (not holding): the new run
+  // inherits the ticket's wait-start only if the old run is dead AND it claims
+  // within WAITER_STALE_MIN of the old run's last claim. Otherwise the back.
+  // Why this is fair: the ticket's work never stopped waiting — Paperclip only
+  // cycled its run — and the dead-run proof plus the window keep two live runs
+  // of one ticket from holding two places, or a long-gone ticket from jumping in.
+  async sameTicketWaiterInheritance(mod) {
+    const board = await startBoard();
+    try {
+      const { lane, clock, file } = await rig(mod, board);
+      const B2 = { ...B, runId: 'run-B2' };
+      const B3 = { ...B, runId: 'run-B3' };
+      for (const r of ['run-A', 'run-B', 'run-B2', 'run-B3', 'run-C']) board.runs[r] = 'running';
+      await lane.claim(A, RDY(SHA.A));
+      clock.t = at(1); await lane.claim(B, RDY(SHA.B));
+      clock.t = at(3); await lane.claim(C, RDY(SHA.C));
+      // old run alive → B3 joins at the back
+      clock.t = at(4); const alive = await lane.claim(B3, RDY(SHA.D));
+      await lane.release(B3);
+      board.runs['run-B'] = 'cancelled';
+      clock.t = at(6); const inh = await lane.claim(B2, RDY(SHA.D));
+      clock.t = at(8); await lane.release(A);
+      clock.t = at(8.1); const c = await lane.claim(C, RDY(SHA.C));
+      clock.t = at(8.2); const b2 = await lane.claim(B2, RDY(SHA.D));
+      // outside the window: a dead run's place is not inherited
+      await lane.release(B2);
+      const B5 = { ...B, runId: 'run-B5' }; board.runs['run-B5'] = 'running';
+      clock.t = at(9); await lane.claim(C, RDY(SHA.C));        // C (waiting since 3) takes the lane
+      clock.t = at(10); await lane.claim(B3, RDY(SHA.D));      // B3 waits from 10, then its run ends
+      board.runs['run-B3'] = 'cancelled';
+      clock.t = at(26); const late = await lane.claim(B5, RDY(SHA.D)); // 16 min after B3's last claim
+      return alive.code === 3 && alive.position === 3
+        && inh.code === 3 && inh.position === 1 && inh.since === new Date(at(1)).toISOString() && inh.inheritedFrom === 'run-B'
+        && c.code === 3 && b2.code === 0
+        && state(file).history.some((h) => h.event === 'waiter-inherited' && h.from === 'run-B' && h.runId === 'run-B2')
+        && late.code === 3 && late.inheritedFrom === undefined && late.since === new Date(at(26)).toISOString();
+    } finally { board.close(); }
+  },
+
+  // The shipped cap is NOT wired (founder number pending): with no injected
+  // value, a live holder keeps the lane however long; renew never fails on time.
+  async capNotWiredByDefault(mod) {
+    const board = await startBoard();
+    try {
+      if (mod.MAX_HOLD_MIN !== null) return false;
+      const { lane, clock, file } = await rig(mod, board, undefined, { noCap: true });
+      for (const r of ['run-A', 'run-B']) board.runs[r] = 'running';
+      await lane.claim(A, RDY(SHA.A));
+      clock.t = at(500);
+      const r = await lane.renew(A);
+      const b = await lane.claim(B, RDY(SHA.B));
+      return r.code === 0 && r.minutesLeft === null && b.code === 3 && state(file).claim.expiresAt === null;
+    } finally { board.close(); }
+  },
+});
+
 // Each mutant cuts one mechanism out of the real source. Every anchor must
 // occur exactly once, or the mutant silently mutates nothing.
 const MUTANTS = [
   ['a renewal extends the hold (the TEN-261 lease)', 'holdCapAutoReleases',
-    "c.renewedAt = iso(now());\n      save(s);", "c.renewedAt = iso(now()); c.expiresAt = iso(now() + MAX_HOLD_MIN * MIN);\n      save(s);"],
+    "c.renewedAt = iso(now());\n      save(s);", "c.renewedAt = iso(now()); c.takenAt = iso(now());\n      save(s);"],
   ['a repeat claim extends the hold', 'holdCapAutoReleases',
-    "c.renewedAt = iso(t);\n        const from = c.sha;", "c.renewedAt = iso(t); c.expiresAt = iso(t + MAX_HOLD_MIN * MIN);\n        const from = c.sha;"],
+    "c.renewedAt = iso(t);\n        const from = c.sha;", "c.renewedAt = iso(t); c.takenAt = iso(t); c.expiresAt = iso(t + capMs);\n        const from = c.sha;"],
   ['no auto-release at the cap', 'holdCapAutoReleases',
-    'if (!c || now() < Date.parse(c.expiresAt)) return null;', 'if (true) return null;'],
+    'if (!c || capMs == null || now() < Date.parse(c.takenAt) + capMs) return null;', 'if (true) return null;'],
   ['the cap is off by one (released after 30:00, not at it)', 'holdCapAutoReleases',
-    'if (!c || now() < Date.parse(c.expiresAt)) return null;', 'if (!c || now() <= Date.parse(c.expiresAt)) return null;'],
-  ['the cap is 31 min', 'holdCapAutoReleases', 'export const MAX_HOLD_MIN = 30;', 'export const MAX_HOLD_MIN = 31;'],
+    'if (!c || capMs == null || now() < Date.parse(c.takenAt) + capMs) return null;', 'if (!c || capMs == null || now() <= Date.parse(c.takenAt) + capMs) return null;'],
+  ['the injected cap is read as one minute longer', 'holdCapAutoReleases',
+    'const capMs = maxHoldMin == null ? null : maxHoldMin * MIN;', 'const capMs = maxHoldMin == null ? null : (maxHoldMin + 1) * MIN;'],
+  ['the capped holder is not re-queued', 'holdCapAutoReleases', "addWaiter(s, c, iso(now()), { requeuedAfterCap: true });", ''],
   ['a dead owner is kept until the cap', 'deadOwnerReleasedAtOnce', "if (live.state === 'dead') {", 'if (false) {'],
   ['a dead owner gets no notice', 'deadOwnerReleasedAtOnce',
-    "const notice = await notify({ to: 'owner', issueId: c.issueId,\n            body: sameTicket", "const notice = { ok: true, id: 'x' } || await notify({ to: 'owner', issueId: c.issueId,\n            body: sameTicket"],
+    "const notice = await notify({ to: 'owner', issueId: c.issueId,\n            body: `## Deploy lane released — owner run ended", "const notice = { ok: true, id: 'x' } || await notify({ to: 'owner', issueId: c.issueId,\n            body: `## Deploy lane released — owner run ended"],
   ['the release records no evidence', 'deadOwnerReleasedAtOnce', 'evidence: live.detail, by: me.runId', 'by: me.runId'],
   ['unknown liveness is treated as dead', 'unknownIsNotDead', "if (live.state === 'dead') {", "if (live.state !== 'alive') {"],
   ['claim skips the readiness gate', 'notReadyIsRefused',
@@ -576,13 +776,13 @@ const MUTANTS = [
   ['exit 4 is back in the table', 'noPathReturnsFourOrFive',
     'export const EXIT = { HOLD: 0,', 'export const EXIT = { EXPIRED_OWNER_ALIVE: 4, HOLD: 0,'],
   ['an unknown owner returns the retired exit 4', 'noPathReturnsFourOrFive',
-    'out = await waiting(s, me, c, live, { code: EXIT.WAIT,', "out = await waiting(s, me, c, live, { code: live.state === 'unknown' ? 4 : EXIT.WAIT,"],
+    "out = { code: EXIT.WAIT, action: c ? 'wait' : 'wait-turn'", "out = { code: live && live.state === 'unknown' ? 4 : EXIT.WAIT, action: c ? 'wait' : 'wait-turn'"],
   ['a failed cap notice keeps the lane held', 'noticeFailureNeverKeepsTheLane',
-    "    s.claim = null;\n    log(s, { event: 'auto-released'", "    if (!notice.ok) return null;\n    s.claim = null;\n    log(s, { event: 'auto-released'"],
+    "    s.claim = null;\n    addWaiter(s, c, iso(now()), { requeuedAfterCap: true });", "    if (!notice.ok) return null;\n    s.claim = null;\n    addWaiter(s, c, iso(now()), { requeuedAfterCap: true });"],
   ['a failed dead-owner notice keeps the lane held', 'noticeFailureNeverKeepsTheLane',
-    "s.claim = newClaim(me, ready); delete s.waiters[me.runId];\n          if (sameTicket)",
-    "if (!notice.ok) { save(s); return { code: EXIT.WAIT, action: 'wait', claim: c }; }\n          s.claim = newClaim(me, ready); delete s.waiters[me.runId];\n          if (sameTicket)"],
-  ['a waiter never reports', 'waiterPast30Reports', 'if (waited > WAIT_REPORT_MIN * MIN &&', 'if (false &&'],
+    "          s.claim = null;\n          freed = { claim: c, evidence: live.detail, notice };",
+    "          if (!notice.ok) { save(s); return { code: EXIT.WAIT, action: 'wait', claim: c }; }\n          s.claim = null;\n          freed = { claim: c, evidence: live.detail, notice };"],
+  ['a waiter never reports', 'waiterPast30Reports', 'if (!(waited > WAIT_REPORT_MIN * MIN &&', 'if (!(false &&'],
   ['the report repeats every call instead of every 30 min', 'waiterPast30Reports',
     '(!w.reportedAt || t - Date.parse(w.reportedAt) >= WAIT_REPORT_MIN * MIN)', 'true'],
   ['no mutual exclusion on the store', 'concurrentClaimsSerialise',
@@ -592,14 +792,14 @@ const MUTANTS = [
   ['a holder removes whatever lock is there on the way out', 'staleLockBreakCannotDoubleTake',
     '} finally { if (owns()) fs.rmSync(lock', '} finally { if (true) fs.rmSync(lock'],
   ['a new run of the same ticket renews the old claim', 'sameTicketNoSilentInheritance',
-    "if (!c || c.runId !== me.runId) return { code: EXIT.REFUSED, action: auto && auto.claim.runId === me.runId ? 'auto-released' : 'not-owner', claim: c };\n      c.renewedAt",
+    "if (!c || c.runId !== me.runId) return { code: EXIT.REFUSED, action: capped && capped.claim.runId === me.runId ? 'cap-released' : 'not-owner', claim: c };\n      c.renewedAt",
     "if (!c || c.ticket !== me.ticket) return { code: EXIT.REFUSED, action: 'not-owner', claim: c };\n      c.renewedAt"],
   ['a re-claim keeps the old run id', 'sameTicketNoSilentInheritance',
-    "if (sameTicket) s.claim.reclaimedFrom = c.runId;", "if (sameTicket) { s.claim.runId = c.runId; s.claim.reclaimedFrom = c.runId; }"],
+    "s.claim.reclaimedFrom = freed.claim.runId;", "s.claim.runId = freed.claim.runId; s.claim.reclaimedFrom = freed.claim.runId;"],
   ['a re-claim keeps the old expiry', 'sameTicketNoSilentInheritance',
-    "if (sameTicket) s.claim.reclaimedFrom = c.runId;", "if (sameTicket) { s.claim.expiresAt = c.expiresAt; s.claim.reclaimedFrom = c.runId; }"],
+    "s.claim.reclaimedFrom = freed.claim.runId;", "s.claim.takenAt = freed.claim.takenAt; s.claim.expiresAt = freed.claim.expiresAt; s.claim.reclaimedFrom = freed.claim.runId;"],
   ['a same-ticket new run takes the lane while the old run is alive', 'sameTicketNoSilentInheritance',
-    "const live = await liveness(c);\n        if (live.state === 'dead') {", "const live = await liveness(c);\n        if (live.state === 'dead' || c.ticket === me.ticket) {"],
+    "live = await liveness(c);\n        if (live.state === 'dead') {", "live = await liveness(c);\n        if (live.state === 'dead' || c.ticket === me.ticket) {"],
   ['a re-claim with a new ready sha keeps the old sha', 'reclaimWithNewShaUpdatesTheClaim',
     'if (ready.sha !== from) {', 'if (false) {'],
   ['a re-claim with a new sha extends the hold', 'reclaimWithNewShaUpdatesTheClaim',
@@ -629,6 +829,37 @@ const MUTANTS = [
     's.queue = s.queue.filter((e) => !(e.runId === l.runId && e.sha === l.sha));', 's.queue = s.queue.filter((e) => e.runId !== l.runId);'],
   ['ready appends instead of replacing the run\'s entry', 'claimListsTheBatch',
     's.queue = s.queue.filter((e) => e.runId !== me.runId);\n      s.queue.push(entry);', 's.queue.push(entry);'],
+  // founder 00:55Z
+  ['(a) a free lane goes to whoever polls first', 'founderA_earlierWaiterWins',
+    'if (!c && before.length === 0) {', 'if (!c) {'],
+  ['(a) the queue is ordered newest first', 'founderA_earlierWaiterWins',
+    '(Date.parse(a.since) - Date.parse(b.since))', '(Date.parse(b.since) - Date.parse(a.since))'],
+  ['(a) the wait is not logged with position and minutes', 'founderA_earlierWaiterWins',
+    "log(s, { event: 'waiting', ticket: me.ticket, runId: me.runId, position, waitedMin: waited,", "log(s, { event: 'waiting', ticket: me.ticket, runId: me.runId,"],
+  ['(b) confirm-live does not release on exit 0', 'founderB_noLaneAfterLiveConfirmed',
+    "      s.claim = null;\n      delete s.waiters[me.runId];\n      log(s, { event: 'released-live-confirmed'", "      delete s.waiters[me.runId];\n      log(s, { event: 'released-live-confirmed'"],
+  ['(b) confirm-live releases on exit 1 (not live yet)', 'founderB_noLaneAfterLiveConfirmed',
+    'if (r.code !== 0) {\n      return { code: EXIT.WAIT, action: \'still-holding\'', 'if (r.code === 2) {\n      return { code: EXIT.WAIT, action: \'still-holding\''],
+  ['(c) renew extends the hold', 'founderC_renewalPastCapRefused',
+    "c.renewedAt = iso(now());\n      save(s);", "c.renewedAt = iso(now()); c.takenAt = iso(now());\n      save(s);"],
+  ['(c) the cap is measured from the last renewal', 'founderC_renewalPastCapRefused',
+    'now() < Date.parse(c.takenAt) + capMs) return null;', 'now() < Date.parse(c.renewedAt) + capMs) return null;'],
+  ['(c) no alert on the holder\'s ticket at the cap', 'founderC_renewalPastCapRefused',
+    "const notice = await notify({ to: 'owner', issueId: c.issueId,\n      body: `## Deploy lane CAP-RELEASED", "const notice = { ok: false, error: 'x' } || await notify({ to: 'owner', issueId: c.issueId,\n      body: `## Deploy lane CAP-RELEASED"],
+  ['(d) dead waiters keep their place', 'founderD_deadClaimantRemoved',
+    "if (live.state === 'dead' || (stale && live.state !== 'alive')) {", "if (stale && live.state !== 'alive') {"],
+  ['session waiters never go stale', 'staleSessionWaiterDropped',
+    "if (live.state === 'dead' || (stale && live.state !== 'alive')) {", "if (live.state === 'dead') {"],
+  ['a live Paperclip waiter goes stale too', 'staleSessionWaiterDropped',
+    "if (live.state === 'dead' || (stale && live.state !== 'alive')) {", "if (live.state === 'dead' || stale) {"],
+  ['the waiter stale window is 60 min', 'staleSessionWaiterDropped', 'export const WAITER_STALE_MIN = 15;', 'export const WAITER_STALE_MIN = 60;'],
+  ['a new run inherits even while the old run is alive', 'sameTicketWaiterInheritance',
+    "      if (live.state !== 'dead') continue;\n      delete s.waiters[old.runId];", "      delete s.waiters[old.runId];"],
+  ['a new run never inherits', 'sameTicketWaiterInheritance',
+    'const w = addWaiter(s, me, old.since,', 'const w = addWaiter(s, me, iso(t),'],
+  ['inheritance ignores the stale window', 'sameTicketWaiterInheritance',
+    "      if (t - Date.parse(old.lastSeen || old.since) > WAITER_STALE_MIN * MIN) continue;\n      const live", "      const live"],
+  ['a cap is wired before the founder gave a number', 'capNotWiredByDefault', 'export const MAX_HOLD_MIN = null;', 'export const MAX_HOLD_MIN = 30;'],
 ];
 
 async function loadMutant(find, replace) {
@@ -734,6 +965,9 @@ test('CLI: claim / ready / wait / renew / release / status with exit codes, thro
     g.codePush();
     assert.equal((await run(['claim', '--ticket', 'TEN-262', '--sha', shaA, '--reviewed'], 'run-C', 'issue-262')).status, 7, 'a code commit ahead: not rebased');
     assert.equal((await run(['claim', '--ticket', 'TEN-260', '--reviewed'], 'run-B', 'issue-260')).status, 2, 'claim needs --sha');
+    assert.equal((await run(['confirm-live', '--ticket', 'TEN-260'], 'run-B', 'issue-260')).status, 2, 'confirm-live needs --sha');
+    const notHolder = await run(['confirm-live', '--ticket', 'TEN-262', '--sha', shaA], 'run-C', 'issue-262');
+    assert.equal(notHolder.status, 1, 'confirm-live by a non-holder is refused before any live check');
     assert.equal((await run(['claim'], 'run-B', 'issue-260')).status, 2);
     assert.equal((await run(['claim', '--ticket', '--sha', 'x'], 'run-B', 'issue-260')).status, 2, 'a flag is not a ticket');
     assert.equal((await run(['claim', '--ticket', 'TEN-260', '--base', 'x'], 'run-B', 'issue-260')).status, 2, 'the retired --base is refused');

@@ -1,59 +1,69 @@
 #!/usr/bin/env node
-// TEN-261 → TEN-273 — the deploy lane: held only while deploying.
+// TEN-261 → TEN-273 — the deploy lane: first come, first served; held only
+// while deploying.
 //
 // FOUNDER, 2026-09-23 (TEN-261): "A lane with no time limit means one stalled
 // or crashed run blocks every other agent, silently."
-// FOUNDER, 2026-09-25 (TEN-273, items 2 + 3, SUPERSEDES the TEN-261 lease):
-// hold the lane only while deploying — claim only when the commit is fully
-// ready (suite green, review done, rebased); maximum hold 30 minutes, then it
-// auto-releases; a claim whose owner run is dead is released immediately. And
-// when several agents have a ready commit, combine them into one push.
-//
-// THE FAILURES IT PREVENTS. 2026-09-23: TEN-253's run 07fff3f5 announced the
-// lane in a comment, pushed, and was cancelled mid-poll; nothing expired it and
-// TEN-260 queued behind it blind. That gave the 45-min renewable lease. The
-// lease then let a live holder keep the lane for its whole suite, review and
-// rebase — work that does not need the lane — while everyone else waited.
+// FOUNDER, 2026-09-25 (TEN-273): claim only when the commit is fully ready
+// (suite green, review done, rebased); combine several ready commits into one push.
+// FOUNDER, 2026-09-25 00:55Z (TEN-273, SUPERSEDES the 30-min auto-release):
+//   "Claimants join a queue with their wait-start time. When the lane frees, the
+//   longest-waiting live claimant gets it. No re-claim race. Dead claimants drop
+//   out automatically. Log queue position and wait on every claim." — the case:
+//   TEN-273 waited from 23:41Z and TEN-270 took the lane at 00:07Z.
+//   "A task holds it from rebase/suite/push to 'live SHA confirmed is mine,' then
+//   releases. Verifying, watching and reading logs run without the lane."
+//   "Renewals can't extend a hold past a maximum total … Report it and wait for
+//   Michael's number before wiring it. At the cap: release, re-queue, log and alert."
 //
 // ── THE RULE (mirrored in .claude/rules/deploy-lane.md) ──────────────────────
 //  1. A claim needs a READY commit: `--sha S --reviewed`, a suite receipt for
 //     exactly S with exit 0 (written only by tools/ci-suite.sh), and S rebased
-//     (every commit in S..origin/main is a `[skip ci]` data-bot commit).
-//     Not ready → exit 7, listing what is missing. The store is not touched.
-//  2. A claim expires MAX_HOLD_MIN after it is taken, and that NEVER moves.
-//     Any claim/status/renew/release at or past expiresAt clears it
-//     (`auto-released`, best-effort notice on the owner's ticket).
-//  3. A claim held by another run whose owner is confirmed ended on the board
-//     is released on the spot (`released-dead-owner`, evidence recorded,
-//     best-effort notice) and the caller gets the lane. Liveness `unknown`
-//     (board unreachable, session owners) is NOT dead: only the cap frees it.
-//  4. Same ticket, new run: no silent inheritance. The old run must be dead;
-//     the new run then claims FRESH (its own run id, its own 30 min, notice
-//     says RE-CLAIMED). It can never renew or release the old run's claim.
-//  5. A waiter never waits silently: past WAIT_REPORT_MIN it reports who holds
-//     the lane, since when, and whether that run is alive — and again every
-//     WAIT_REPORT_MIN it keeps waiting.
-//  6. `ready` queues a ready commit for the next holder to batch
-//     (tools/deploy-batch.mjs); `claim` lists the queued entries of other runs.
-//     An entry leaves the queue when it lands, when its run calls `unready` or
-//     `release`, READY_TTL_MIN after it was queued, or at batch time when its
-//     owner run has ended.
+//     (every commit in S..origin/main has `[skip ci]` in its SUBJECT). Not
+//     ready → exit 7, listing what is missing; the store is not touched.
+//  2. First come, first served. A ready `claim` joins the waiter queue with its
+//     wait-start time (`since`). A free lane goes ONLY to the head of the queue —
+//     the oldest `since` among waiters not dropped — whoever polls first. Every
+//     claim returns, and logs, its position and minutes waited.
+//  3. Waiters drop out when their run is confirmed ended (liveness, checked under
+//     the lock within a time budget), or when they have not called `claim` for
+//     WAITER_STALE_MIN and are not confirmed alive (every session waiter). A live
+//     Paperclip waiter keeps its place however long it waits.
+//  4. A same-ticket NEW run inherits its ticket's wait-start only if the old run
+//     is dead AND it claims within WAITER_STALE_MIN of the old run's last claim;
+//     otherwise it joins at the back. It never inherits a HOLD: a dead holder is
+//     released and the lane goes to the head of the queue.
+//  5. A holder whose run is confirmed ended is released on the next claim
+//     (`released-dead-owner`, best-effort notice). Liveness `unknown` is not dead.
+//  6. The lane covers deploying only: `confirm-live --sha S` runs
+//     tools/check-live-build.sh S and releases the lane on exit 0
+//     (`released-live-confirmed`); on 1/2 it keeps holding (exit 3).
+//  7. Total-hold cap MAX_HOLD_MIN, measured from takenAt; renew and claim never
+//     extend it. At the cap: release, the holder re-joins the queue at the BACK
+//     with a fresh wait-start, history `cap-released`, best-effort alert. The
+//     NUMBER IS PENDING (founder): MAX_HOLD_MIN = null = no cap wired.
+//  8. A waiter never waits silently: past WAIT_REPORT_MIN it reports who holds
+//     the lane and its position, and again every WAIT_REPORT_MIN.
+//  9. `ready` queues a ready commit for the holder's batch (tools/deploy-batch.mjs).
+//     A ready entry is NOT a lane waiter unless its run also calls `claim`. It
+//     leaves the ready queue when it lands, on `unready` / `release`,
+//     READY_TTL_MIN after it was queued, or at batch time when its run has ended.
 //
 // ── CLI ──────────────────────────────────────────────────────────────────────
-//   node tools/deploy-lane.mjs claim   --ticket TEN-123 --sha <commit> --reviewed
-//   node tools/deploy-lane.mjs ready   --ticket TEN-123 --sha <commit> --reviewed
-//   node tools/deploy-lane.mjs renew   --ticket TEN-123     (do I still hold it?)
-//   node tools/deploy-lane.mjs release --ticket TEN-123     (also withdraws your queue entry)
-//   node tools/deploy-lane.mjs unready --ticket TEN-123     (withdraw your queued commit)
-//   node tools/deploy-lane.mjs status  [--ticket TEN-123]
+//   node tools/deploy-lane.mjs claim        --ticket TEN-123 --sha <commit> --reviewed
+//   node tools/deploy-lane.mjs confirm-live --ticket TEN-123 --sha <the sha you pushed>
+//   node tools/deploy-lane.mjs ready        --ticket TEN-123 --sha <commit> --reviewed
+//   node tools/deploy-lane.mjs renew        --ticket TEN-123   (do I still hold it?)
+//   node tools/deploy-lane.mjs release      --ticket TEN-123   (lane, waiter place and ready entry)
+//   node tools/deploy-lane.mjs unready      --ticket TEN-123   (withdraw your queued commit)
+//   node tools/deploy-lane.mjs status       [--ticket TEN-123]
 // Run id / issue id come from PAPERCLIP_RUN_ID / PAPERCLIP_TASK_ID. Without
-// them the owner is a "session" whose liveness cannot be checked, so only the
-// 30-min cap ever frees a session claim.
+// them the claimant is a "session" whose liveness cannot be checked.
 //
-// Exit codes: 0 you hold the lane (ready: queued) · 1 refused (not the owner /
-// not held any more) · 2 usage · 3 wait (held by a live or unknowable run) ·
-// 6 error (store unreadable, lock timeout) — never a hold · 7 not ready.
-// 4 and 5 (TEN-261's expired-owner-alive and takeover-refused) are retired.
+// Exit codes: 0 you hold the lane (ready: queued; confirm-live: released) ·
+// 1 refused (not the holder) · 2 usage · 3 wait (not your turn / held; for
+// confirm-live: not live yet, still holding) · 6 error (store unreadable, lock
+// timeout) — never a hold · 7 not ready. 4 and 5 (TEN-261) are retired.
 
 import fs from 'node:fs';
 import os from 'node:os';
@@ -61,7 +71,15 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
-export const MAX_HOLD_MIN = 30;
+// TODO(TEN-273): FOUNDER NUMBER PENDING. The total-hold cap is NOT WIRED while
+// this is null: "Renewals can't extend a hold past a maximum total … Report it
+// and wait for Michael's number before wiring it." Set it to that number (in
+// minutes, measured from takenAt) and nothing else; tests inject their own value.
+export const MAX_HOLD_MIN = null;
+// A waiter that has not called `claim` for this long and is not confirmed alive
+// (every session waiter; a Paperclip waiter the board cannot vouch for) leaves
+// the waiter queue. A live Paperclip waiter is kept however long it has waited.
+export const WAITER_STALE_MIN = 15;
 export const WAIT_REPORT_MIN = 30;
 // A queued ready commit nobody has batched within this long is dropped: the run that
 // queued it has most likely moved on, and nobody would do its live read-back.
@@ -75,8 +93,10 @@ export const EXIT = { HOLD: 0, REFUSED: 1, USAGE: 2, WAIT: 3, ERROR: 6, NOT_READ
 const NET_TIMEOUT_MS = 10000;
 const GIT_TIMEOUT_MS = 120000;
 const LOCK_STALE_MS = 180000;
-// batchCandidates checks entry owners' liveness UNDER the store lock: an overall
-// deadline keeps that well inside LOCK_STALE_MS (plus at most one NET_TIMEOUT_MS call).
+const CHECK_LIVE_TIMEOUT_MS = 120000;
+const HISTORY_KEEP = 500;
+// Waiter and ready-entry liveness is checked UNDER the store lock: an overall
+// deadline per pass keeps that well inside LOCK_STALE_MS (plus at most one NET_TIMEOUT_MS call).
 export const BATCH_LIVENESS_BUDGET_MS = 60000;
 
 const iso = (ms) => new Date(ms).toISOString();
@@ -130,19 +150,24 @@ async function withLock(file, fn) {
 // notify({to:'owner'|'founder', issueId, body}) -> {ok, id?, error?}
 // suiteReceipt(sha)     -> {sha, tree, exit, startedAt, finishedAt, log} | null
 // rebaseCheck(sha)      -> {ok, codeCommits: [{sha, subject}], dataCommits: n, detail}
-export function createLane({ file, now = () => Date.now(), liveness, notify, suiteReceipt, rebaseCheck, livenessBudgetMs = BATCH_LIVENESS_BUDGET_MS }) {
-  const log = (s, event) => { s.history.push({ at: iso(now()), ...event }); s.history = s.history.slice(-100); };
+// checkLive(sha)        -> {code: 0|1|2, output}   (tools/check-live-build.sh)
+// maxHoldMin            -> the total-hold cap in minutes, or null = no cap wired
+export function createLane({ file, now = () => Date.now(), liveness, notify, suiteReceipt, rebaseCheck, checkLive,
+  maxHoldMin = MAX_HOLD_MIN, livenessBudgetMs = BATCH_LIVENESS_BUDGET_MS }) {
+  const log = (s, event) => { s.history.push({ at: iso(now()), ...event }); s.history = s.history.slice(-HISTORY_KEEP); };
+  const capMs = maxHoldMin == null ? null : maxHoldMin * MIN;
+  const waitedMin = (w, t = now()) => Math.round((t - Date.parse(w.since)) / MIN);
 
   function newClaim(me, ready) {
     const t = now();
     return { ticket: me.ticket, issueId: me.issueId || null, runId: me.runId, kind: me.kind,
       sha: ready.sha, reviewed: true, suiteFinishedAt: (ready.receipt && ready.receipt.finishedAt) || null,
-      takenAt: iso(t), renewedAt: iso(t), expiresAt: iso(t + MAX_HOLD_MIN * MIN) };
+      takenAt: iso(t), renewedAt: iso(t), expiresAt: capMs == null ? null : iso(t + capMs) };
   }
 
   function describe(c, live) {
     return `**${c.ticket}** (run \`${c.runId}\`), taken ${c.takenAt}, last checked ${c.renewedAt}, ` +
-      `auto-releases ${c.expiresAt}.${live ? ` Owner run: **${live.state}**${live.detail ? ` (${live.detail})` : ''}.` : ''}`;
+      `${c.expiresAt ? `hold cap at ${c.expiresAt}` : 'no hold cap wired'}.${live ? ` Owner run: **${live.state}**${live.detail ? ` (${live.detail})` : ''}.` : ''}`;
   }
 
   // The readiness gate. Pure reads plus a git fetch: it runs before the store
@@ -159,38 +184,98 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
     return { ok: missing.length === 0, missing, sha, receipt, rebase };
   }
 
-  // Rule 2: the 30-min cap. Called under the lock by every command.
-  async function autoRelease(s) {
+  // ── the waiter queue (first come, first served) ────────────────────────────
+  // s.waiters[runId] = {ticket, issueId, kind, since, lastSeen, reportedAt}.
+  // Order is by `since` (the wait-start time), oldest first.
+  // Ties on `since` (same millisecond) go by `seq`, the order of joining.
+  const order = (s) => Object.entries(s.waiters).map(([runId, w]) => ({ ...w, runId }))
+    .sort((a, b) => (Date.parse(a.since) - Date.parse(b.since)) || ((a.seq || 0) - (b.seq || 0)));
+
+  function addWaiter(s, who, since, extra = {}) {
+    s.seq = (s.seq || 0) + 1;
+    s.waiters[who.runId] = { ticket: who.ticket, issueId: who.issueId || null, kind: who.kind, since, lastSeen: iso(now()), reportedAt: null, seq: s.seq, ...extra };
+    return s.waiters[who.runId];
+  }
+
+  // The caller joins the queue (or is already in it). A NEW run of a ticket
+  // that was already waiting inherits that wait-start time only if the old run
+  // is dead AND it last polled within WAITER_STALE_MIN: the ticket's work never
+  // stopped waiting, it only changed runs. Otherwise the new run joins at the back.
+  async function join(s, me) {
+    const t = now();
+    if (s.waiters[me.runId]) { s.waiters[me.runId].lastSeen = iso(t); return { w: s.waiters[me.runId] }; }
+    for (const old of order(s)) {
+      if (old.ticket !== me.ticket || old.runId === me.runId) continue;
+      if (t - Date.parse(old.lastSeen || old.since) > WAITER_STALE_MIN * MIN) continue;
+      const live = await liveness(old);
+      if (live.state !== 'dead') continue;
+      delete s.waiters[old.runId];
+      const w = addWaiter(s, me, old.since, { inheritedFrom: old.runId, reportedAt: old.reportedAt || null });
+      log(s, { event: 'waiter-inherited', ticket: me.ticket, runId: me.runId, from: old.runId, since: old.since, evidence: live.detail });
+      return { w, inheritedFrom: old.runId };
+    }
+    const w = addWaiter(s, me, iso(t));
+    log(s, { event: 'waiter-joined', ticket: me.ticket, runId: me.runId, since: w.since });
+    return { w };
+  }
+
+  // Waiters ahead of the caller, after dropping the dead ones (their run ended)
+  // and stale ones (no claim for more than WAITER_STALE_MIN and not confirmed
+  // alive — a session waiter can never be confirmed alive). A live Paperclip
+  // waiter is kept however long it has waited. Liveness is checked under the
+  // store lock, so the whole pass has a deadline; a waiter not reached in time
+  // counts as still waiting.
+  async function ahead(s, me) {
+    const t = now();
+    const deadline = Date.now() + livenessBudgetMs;
+    const out = [];
+    for (const w of order(s)) {
+      if (w.runId === me.runId) break;
+      if (Date.now() >= deadline) { out.push(w); continue; }
+      const live = await liveness(w);
+      const stale = t - Date.parse(w.lastSeen || w.since) > WAITER_STALE_MIN * MIN;
+      if (live.state === 'dead' || (stale && live.state !== 'alive')) {
+        delete s.waiters[w.runId];
+        log(s, { event: live.state === 'dead' ? 'waiter-dropped-dead' : 'waiter-dropped-stale', ticket: w.ticket, runId: w.runId, since: w.since, evidence: live.detail });
+        continue;
+      }
+      out.push(w);
+    }
+    return out;
+  }
+
+  // The total-hold cap, measured from takenAt; nothing extends it. Not wired
+  // while maxHoldMin is null. At the cap: release, the holder goes to the BACK
+  // of the waiter queue with a fresh wait-start, history `cap-released`, and a
+  // best-effort alert on the holder's ticket (a failed alert never blocks).
+  async function capRelease(s) {
     const c = s.claim;
-    if (!c || now() < Date.parse(c.expiresAt)) return null;
+    if (!c || capMs == null || now() < Date.parse(c.takenAt) + capMs) return null;
     const notice = await notify({ to: 'owner', issueId: c.issueId,
-      body: `## Deploy lane AUTO-RELEASED — ${MAX_HOLD_MIN}-min cap reached\n\nClaim: ${describe(c)}\n\n` +
-        `The lane is held at most ${MAX_HOLD_MIN} min (founder ruling TEN-273). Your live read-back is still yours to do: ` +
-        `\`tools/check-live-build.sh ${c.sha || '<your sha>'}\` tests containment, so a later push does not invalidate it.` });
+      body: `## Deploy lane CAP-RELEASED — ${maxHoldMin}-min total-hold cap reached\n\nClaim: ${describe(c)}\n\n` +
+        `The lane was released and your run is back in the queue, at the back. If your push is out, keep polling ` +
+        `\`tools/check-live-build.sh ${c.sha || '<your sha>'}\` — it tests containment, so a later push does not invalidate it.` });
     s.claim = null;
-    log(s, { event: 'auto-released', ticket: c.ticket, runId: c.runId, expiresAt: c.expiresAt, notice: notice.ok ? notice.id : `failed: ${notice.error}` });
+    addWaiter(s, c, iso(now()), { requeuedAfterCap: true });
+    log(s, { event: 'cap-released', ticket: c.ticket, runId: c.runId, takenAt: c.takenAt, capMin: maxHoldMin, requeued: true, notice: notice.ok ? notice.id : `failed: ${notice.error}` });
     return { claim: c, notice };
   }
 
-  async function waiting(s, me, c, live, extra) {
+  async function waitReport(s, me, w, holder, live, position) {
     const t = now();
-    const w = s.waiters[me.runId] || (s.waiters[me.runId] = { ticket: me.ticket, issueId: me.issueId || null, since: iso(t), reportedAt: null });
-    w.lastSeen = iso(t);
     const waited = t - Date.parse(w.since);
-    let report = null;
-    if (waited > WAIT_REPORT_MIN * MIN && (!w.reportedAt || t - Date.parse(w.reportedAt) >= WAIT_REPORT_MIN * MIN)) {
-      const body = `## Deploy lane: ${me.ticket} has waited ${Math.round(waited / MIN)} min\n\n` +
-        `Lane held by ${describe(c, live)}\n\nWaiting since ${w.since}. Not taking it: the owner run is not confirmed ended, ` +
-        `and the claim has not reached its ${MAX_HOLD_MIN}-min cap.`;
-      report = await notify({ to: 'founder', issueId: me.issueId, body });
-      if (report.ok) { w.reportedAt = iso(t); log(s, { event: 'wait-reported', ticket: me.ticket, runId: me.runId, holder: c.runId }); }
-    }
-    return { ...extra, waitedMin: Math.round(waited / MIN), waitReport: report };
+    if (!(waited > WAIT_REPORT_MIN * MIN && (!w.reportedAt || t - Date.parse(w.reportedAt) >= WAIT_REPORT_MIN * MIN))) return null;
+    const body = `## Deploy lane: ${me.ticket} has waited ${Math.round(waited / MIN)} min (position ${position})\n\n` +
+      (holder ? `Lane held by ${describe(holder, live)}` : 'The lane is free; waiters ahead of you go first.') +
+      `\n\nWaiting since ${w.since}.`;
+    const report = await notify({ to: 'founder', issueId: me.issueId, body });
+    if (report.ok) { w.reportedAt = iso(t); log(s, { event: 'wait-reported', ticket: me.ticket, runId: me.runId, holder: holder ? holder.runId : null, position }); }
+    return report;
   }
 
   const batchFor = (s, me) => s.queue.filter((e) => e.runId !== me.runId);
 
-  // Entries older than READY_TTL_MIN leave the queue. Called under the lock.
+  // Entries older than READY_TTL_MIN leave the ready queue. Called under the lock.
   function pruneQueue(s) {
     const t = now();
     const keep = [];
@@ -207,16 +292,14 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
     return withLock(file, async (save) => {
       const s = readState(file);
       const t = now();
-      for (const [id, w] of Object.entries(s.waiters)) if (t - Date.parse(w.lastSeen || w.since) > 2 * WAIT_REPORT_MIN * MIN) delete s.waiters[id];
-      const auto = await autoRelease(s);
       pruneQueue(s);
-      const c = s.claim;
+      // Join BEFORE the cap check, so a holder released at the cap in this same
+      // call lands behind this caller.
+      const joined = s.claim && s.claim.runId === me.runId ? null : await join(s, me);
+      const capped = await capRelease(s);
+      let c = s.claim;
       let out;
-      if (!c) {
-        s.claim = newClaim(me, ready); delete s.waiters[me.runId];
-        log(s, { event: 'claimed', ticket: me.ticket, runId: me.runId, sha: ready.sha });
-        out = { code: EXIT.HOLD, action: 'claimed', claim: s.claim, autoReleased: auto ? auto.claim : undefined, batch: batchFor(s, me) };
-      } else if (c.runId === me.runId) {
+      if (c && c.runId === me.runId) {
         // Calling claim again never extends the hold. A NEW ready sha (it passed
         // the gate above) replaces the claimed one, so deploy-batch accepts it.
         c.renewedAt = iso(t);
@@ -225,27 +308,49 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
           c.sha = ready.sha; c.suiteFinishedAt = (ready.receipt && ready.receipt.finishedAt) || null;
           log(s, { event: 'claim-sha-updated', ticket: me.ticket, runId: me.runId, from, to: ready.sha });
         }
-        out = { code: EXIT.HOLD, action: 'already-held', claim: c, shaUpdatedFrom: ready.sha !== from ? from : undefined, batch: batchFor(s, me) };
-      } else {
-        const live = await liveness(c);
+        save(s);
+        return { code: EXIT.HOLD, action: 'already-held', claim: c, position: 0, shaUpdatedFrom: ready.sha !== from ? from : undefined, batch: batchFor(s, me) };
+      }
+      // A holder whose run has ended is released on the spot. The lane then goes
+      // to the longest-waiting live claimant — not necessarily this caller.
+      let freed = null;
+      let live = null;
+      if (c) {
+        live = await liveness(c);
         if (live.state === 'dead') {
-          const sameTicket = c.ticket === me.ticket;
           const notice = await notify({ to: 'owner', issueId: c.issueId,
-            body: sameTicket
-              ? `## Deploy lane RE-CLAIMED by a new run of ${me.ticket}\n\nPrevious claim: ${describe(c, live)}\n\n` +
-                `That run has ended, so its claim is released and run \`${me.runId}\` claims the lane fresh: new run id recorded, ` +
-                `a new ${MAX_HOLD_MIN}-min hold. Nothing the old run left unfinished has been finished or undone.`
-              : `## Deploy lane released — owner run ended\n\nClaim: ${describe(c, live)}\n\n` +
-                `The owning run is no longer active, so the claim is released (founder ruling TEN-273) and ` +
-                `${me.ticket} (run \`${me.runId}\`) takes the lane. Nothing this ticket left unfinished has been finished or undone.` });
-          s.claim = newClaim(me, ready); delete s.waiters[me.runId];
-          if (sameTicket) s.claim.reclaimedFrom = c.runId; else s.claim.releasedFrom = c.runId;
+            body: `## Deploy lane released — owner run ended\n\nClaim: ${describe(c, live)}\n\n` +
+              `The owning run is no longer active, so the claim is released (founder ruling TEN-273). The lane goes to the ` +
+              `longest-waiting live claimant. Nothing this ticket left unfinished has been finished or undone.` });
           log(s, { event: 'released-dead-owner', ticket: c.ticket, runId: c.runId, evidence: live.detail, by: me.runId, notice: notice.ok ? notice.id : `failed: ${notice.error}` });
-          log(s, { event: sameTicket ? 're-claimed' : 'claimed', ticket: me.ticket, runId: me.runId, sha: ready.sha });
-          out = { code: EXIT.HOLD, action: sameTicket ? 're-claimed' : 'released-dead-owner', claim: s.claim, from: c, evidence: live.detail, notice, batch: batchFor(s, me) };
-        } else {
-          out = await waiting(s, me, c, live, { code: EXIT.WAIT, action: 'wait', claim: c, owner: live });
+          s.claim = null;
+          freed = { claim: c, evidence: live.detail, notice };
+          c = null;
         }
+      }
+      const { w, inheritedFrom } = joined || await join(s, me);
+      const before = await ahead(s, me);
+      const position = before.length + 1;
+      const waited = waitedMin(w, t);
+      if (!c && before.length === 0) {
+        s.claim = newClaim(me, ready);
+        delete s.waiters[me.runId];
+        const reclaim = freed && freed.claim.ticket === me.ticket;
+        if (reclaim) {
+          s.claim.reclaimedFrom = freed.claim.runId;
+          await notify({ to: 'owner', issueId: freed.claim.issueId,
+            body: `## Deploy lane RE-CLAIMED by a new run of ${me.ticket}\n\nRun \`${me.runId}\` holds the lane now (previous run \`${freed.claim.runId}\` ended). ` +
+              `New run id recorded; nothing the old run left unfinished has been finished or undone.` });
+        } else if (freed) s.claim.releasedFrom = freed.claim.runId;
+        log(s, { event: reclaim ? 're-claimed' : 'claimed', ticket: me.ticket, runId: me.runId, sha: ready.sha, position: 1, waitedMin: waited, inheritedFrom });
+        out = { code: EXIT.HOLD, action: reclaim ? 're-claimed' : (freed ? 'released-dead-owner' : 'claimed'), claim: s.claim, position: 1, waitedMin: waited,
+          from: freed ? freed.claim : undefined, evidence: freed ? freed.evidence : undefined, notice: freed ? freed.notice : undefined,
+          capReleased: capped ? capped.claim : undefined, batch: batchFor(s, me) };
+      } else {
+        const report = await waitReport(s, me, w, c, live, position);
+        log(s, { event: 'waiting', ticket: me.ticket, runId: me.runId, position, waitedMin: waited, holder: c ? c.runId : null, head: before[0] ? before[0].runId : null });
+        out = { code: EXIT.WAIT, action: c ? 'wait' : 'wait-turn', claim: c, owner: live || undefined, position, waitedMin: waited, since: w.since,
+          ahead: before.map((x) => ({ ticket: x.ticket, runId: x.runId, since: x.since })), inheritedFrom, waitReport: report };
       }
       save(s);
       return out;
@@ -256,27 +361,29 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
   async function renew(me) {
     return withLock(file, async (save) => {
       const s = readState(file);
-      const auto = await autoRelease(s);
-      if (auto) save(s);
+      const capped = await capRelease(s);
+      if (capped) save(s);
       const c = s.claim;
-      if (!c || c.runId !== me.runId) return { code: EXIT.REFUSED, action: auto && auto.claim.runId === me.runId ? 'auto-released' : 'not-owner', claim: c };
+      if (!c || c.runId !== me.runId) return { code: EXIT.REFUSED, action: capped && capped.claim.runId === me.runId ? 'cap-released' : 'not-owner', claim: c };
       c.renewedAt = iso(now());
       save(s);
-      return { code: EXIT.HOLD, action: 'held', claim: c, minutesLeft: Math.max(0, Math.floor((Date.parse(c.expiresAt) - now()) / MIN)) };
+      return { code: EXIT.HOLD, action: 'held', claim: c,
+        minutesLeft: capMs == null ? null : Math.max(0, Math.floor((Date.parse(c.takenAt) + capMs - now()) / MIN)) };
     });
   }
 
+  // Withdraws the caller's ready entry AND its place in the waiter queue whether
+  // or not it holds the lane; releases the lane if it does.
   async function release(me) {
     return withLock(file, async (save) => {
       const s = readState(file);
-      const auto = await autoRelease(s);
-      if (auto) save(s);
+      const capped = await capRelease(s);
       const c = s.claim;
-      // Your queue entry is withdrawn whether or not you still hold the lane.
       const queued = s.queue.length;
       s.queue = s.queue.filter((e) => e.runId !== me.runId);
-      if (s.queue.length !== queued) { log(s, { event: 'unready', ticket: me.ticket, runId: me.runId, by: 'release' }); save(s); }
-      if (!c || c.runId !== me.runId) return { code: EXIT.REFUSED, action: auto && auto.claim.runId === me.runId ? 'auto-released' : 'not-owner', claim: c };
+      if (s.queue.length !== queued) log(s, { event: 'unready', ticket: me.ticket, runId: me.runId, by: 'release' });
+      if (s.waiters[me.runId]) { delete s.waiters[me.runId]; log(s, { event: 'waiter-left', ticket: me.ticket, runId: me.runId }); }
+      if (!c || c.runId !== me.runId) { save(s); return { code: EXIT.REFUSED, action: capped && capped.claim.runId === me.runId ? 'cap-released' : 'not-owner', claim: c }; }
       s.claim = null;
       log(s, { event: 'released', ticket: me.ticket, runId: me.runId });
       save(s);
@@ -284,27 +391,53 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
     });
   }
 
-  async function status(me) {
+  // The lane covers deploying only: once the live build contains the sha, the
+  // lane is released. Verifying and watching happen without it.
+  async function confirmLive(me, { sha } = {}) {
+    const held = await renew(me);
+    if (held.code !== 0) return { code: EXIT.REFUSED, action: held.action, claim: held.claim };
+    const r = await checkLive(sha);
+    if (r.code !== 0) {
+      return { code: EXIT.WAIT, action: 'still-holding', live: r.code,
+        detail: r.code === 1 ? `${sha} is not in the live build yet — still holding the lane; poll again` : `live build undetermined (check-live-build exit ${r.code}) — still holding the lane; poll again`,
+        output: r.output };
+    }
     return withLock(file, async (save) => {
       const s = readState(file);
-      await autoRelease(s);
-      pruneQueue(s);
-      save(s);
       const c = s.claim;
-      const mine = me && s.landed[me.runId] ? { landed: s.landed[me.runId] } : {};
-      if (!c) return { code: EXIT.HOLD, action: 'free', waiters: s.waiters, queue: s.queue, ...mine };
-      const live = await liveness(c);
-      return { code: EXIT.HOLD, action: 'held', claim: c, owner: live, waiters: s.waiters, queue: s.queue, ...mine };
+      if (!c || c.runId !== me.runId) return { code: EXIT.REFUSED, action: 'not-owner', claim: c };
+      s.claim = null;
+      delete s.waiters[me.runId];
+      log(s, { event: 'released-live-confirmed', ticket: me.ticket, runId: me.runId, sha, heldMin: Math.round((now() - Date.parse(c.takenAt)) / MIN) });
+      save(s);
+      return { code: EXIT.HOLD, action: 'released-live-confirmed', sha, output: r.output };
     });
   }
 
-  // Item 3: a ready commit waits in the queue for the next holder's batch.
+  async function status(me) {
+    return withLock(file, async (save) => {
+      const s = readState(file);
+      await capRelease(s);
+      pruneQueue(s);
+      save(s);
+      const c = s.claim;
+      const t = now();
+      const waitQueue = order(s).map((w, i) => ({ position: i + 1, ticket: w.ticket, runId: w.runId, since: w.since, waitedMin: waitedMin(w, t), lastSeen: w.lastSeen }));
+      const mine = me && s.landed[me.runId] ? { landed: s.landed[me.runId] } : {};
+      if (!c) return { code: EXIT.HOLD, action: 'free', waitQueue, queue: s.queue, capMin: maxHoldMin, ...mine };
+      const live = await liveness(c);
+      return { code: EXIT.HOLD, action: 'held', claim: c, owner: live, waitQueue, queue: s.queue, capMin: maxHoldMin, ...mine };
+    });
+  }
+
+  // Item 3: a ready commit waits in the ready queue for the next holder's
+  // batch. Queuing it does NOT make the run a lane waiter; only `claim` does.
   async function ready(me, opts = {}) {
     const r = await readiness(opts);
     if (!r.ok) return { code: EXIT.NOT_READY, action: 'not-ready', missing: r.missing };
     return withLock(file, async (save) => {
       const s = readState(file);
-      await autoRelease(s);
+      await capRelease(s);
       pruneQueue(s);
       const entry = { ticket: me.ticket, issueId: me.issueId || null, runId: me.runId, kind: me.kind, sha: r.sha, reviewed: true, readyAt: iso(now()) };
       s.queue = s.queue.filter((e) => e.runId !== me.runId);
@@ -383,7 +516,7 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
 
   const peek = () => readState(file);
 
-  return { claim, renew, release, status, ready, unready, readiness, batchCandidates, recordBatch, peek, receipt: suiteReceipt };
+  return { claim, renew, release, confirmLive, status, ready, unready, readiness, batchCandidates, recordBatch, peek, receipt: suiteReceipt };
 }
 
 // ── real adapters ────────────────────────────────────────────────────────────
@@ -465,6 +598,16 @@ export function gitRebaseCheck({ cwd = process.cwd() } = {}) {
   };
 }
 
+export function checkLiveBuild({ cwd = process.cwd() } = {}) {
+  const script = path.join(path.dirname(fileURLToPath(import.meta.url)), 'check-live-build.sh');
+  return async (sha) => {
+    const r = spawnSync('bash', [script, sha], { cwd, encoding: 'utf8', timeout: CHECK_LIVE_TIMEOUT_MS });
+    // Killed by the timeout (it has hung in shallow clones) = undetermined, never a pass.
+    const code = r.status === 0 || r.status === 1 ? r.status : 2;
+    return { code, output: `${r.stdout || ''}${r.stderr || ''}`.trim().split('\n').slice(-6).join('\n') };
+  };
+}
+
 export function whoAmI(ticket, env = process.env) {
   return env.PAPERCLIP_RUN_ID
     ? { ticket, issueId: env.PAPERCLIP_TASK_ID || null, runId: env.PAPERCLIP_RUN_ID, kind: 'paperclip' }
@@ -482,6 +625,7 @@ export function realLane({ env = process.env, cwd = process.cwd() } = {}) {
     notify,
     suiteReceipt: fileSuiteReceipts(),
     rebaseCheck: gitRebaseCheck({ cwd }),
+    checkLive: checkLiveBuild({ cwd }),
   });
   return { lane, notify };
 }
@@ -501,13 +645,14 @@ function parseArgs(argv) {
 }
 
 const USAGE = 'usage: node tools/deploy-lane.mjs claim|ready --ticket TEN-123 --sha <commit> --reviewed\n' +
+  '       node tools/deploy-lane.mjs confirm-live --ticket TEN-123 --sha <the sha you pushed>\n' +
   '       node tools/deploy-lane.mjs renew|release|unready --ticket TEN-123\n       node tools/deploy-lane.mjs status [--ticket TEN-123]';
 
 async function main() {
   let a;
   try { a = parseArgs(process.argv.slice(2)); } catch (e) { console.error(`${e.message}\n${USAGE}`); process.exit(EXIT.USAGE); }
-  const needsSha = a.cmd === 'claim' || a.cmd === 'ready';
-  if (!['claim', 'ready', 'unready', 'renew', 'release', 'status'].includes(a.cmd) || (a.cmd !== 'status' && !a.ticket) || (needsSha && !a.sha)) {
+  const needsSha = a.cmd === 'claim' || a.cmd === 'ready' || a.cmd === 'confirm-live';
+  if (!['claim', 'ready', 'unready', 'renew', 'release', 'status', 'confirm-live'].includes(a.cmd) || (a.cmd !== 'status' && !a.ticket) || (needsSha && !a.sha)) {
     console.error(USAGE);
     process.exit(EXIT.USAGE);
   }
@@ -518,6 +663,7 @@ async function main() {
   let out;
   try {
     out = a.cmd === 'status' ? await lane.status(a.ticket ? me : null)
+      : a.cmd === 'confirm-live' ? await lane.confirmLive(me, { sha: a.sha })
       : needsSha ? await lane[a.cmd](me, { sha: a.sha, reviewed: a.reviewed })
       : await lane[a.cmd](me);
   } catch (e) { console.error(`deploy-lane: ${e.message}`); process.exit(EXIT.ERROR); }

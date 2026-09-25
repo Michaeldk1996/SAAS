@@ -1948,59 +1948,87 @@ surface, RAIN weather, status). Non-enumerated oranges left: weather `SUN`
 (L1838), and funnel demo oranges `#f0a95f`×2 / `#E8934B` gradient. These are
 identity/orange candidates but outside the founder's enumerated substitution set.
 
-## Deploy lane — held only while deploying; one build for several ready commits (TEN-273, 2026-09-25)
+## Deploy lane — ready gate, first come first served, held only while deploying, one build for several (TEN-273, 2026-09-25)
 
-Founder ruling TEN-273 items 2 and 3. It supersedes the TEN-261 45-min renewable lease.
+Founder rulings TEN-273: items 2 and 3, then the ruling at 00:55Z. Together they
+supersede the TEN-261 45-min renewable lease and the earlier 30-min auto-release.
 
-**Why.** The lease fixed the dead-holder problem. It created a new one: a live holder
-renewed through its suite, review and rebase, none of which needs the lane, so every
-other agent waited behind work that could have run in parallel. The ruling moves all of
-that before the claim, and nothing can hold the lane for long:
-- `claim --sha S --reviewed` is refused with exit 7 unless all three hold:
-  - a suite receipt for exactly S, exit 0 (written only by `tools/ci-suite.sh`, in a
-    fresh CI-shaped clone);
-  - S is rebased (only `[skip ci]` data-bot commits ahead; demanding zero commits ahead
-    would make claiming impossible, since data bots commit every minute);
+**Why.**
+- **The lease made others wait behind work that doesn't need the lane.** It fixed the
+  dead-holder problem, but a live holder renewed through its suite, review and rebase
+  while everyone else waited.
+- **Claims were a race.** TEN-273 waited from 23:41Z, and TEN-270 took the lane at
+  00:07Z because it polled first when the lane freed.
+- **The lane was held through verification.** The holder kept it while it watched and
+  read logs after its commit was already live.
+
+**What the lane is now.**
+- **Ready before claiming.** `claim --sha S --reviewed` is refused (exit 7) unless:
+  - a suite receipt exists for exactly S with exit 0 (only `tools/ci-suite.sh` writes
+    one, from a fresh CI-shaped clone);
+  - S is rebased: every commit ahead of it has `[skip ci]` in its subject. Requiring
+    zero commits ahead would make claiming impossible, since data bots commit every
+    minute;
   - the review is attested.
-- `MAX_HOLD_MIN = 30` is the one hold constant. `expiresAt` never moves, and any call at
-  or after it auto-releases the claim.
-- A dead owner is released on the next claim, not after the cap. `unknown` liveness is
-  not dead.
-- Exit codes 4 and 5 (expired-owner-alive, takeover-refused) are retired, along with the
-  takeover clobber check. The pusher's own pre-push clobber check is unchanged.
+- **First come, first served.**
+  - A ready claim joins a waiter queue with its wait-start time. A free lane goes only
+    to the head: the longest-waiting claimant still in the queue.
+  - Dead waiters drop out (a liveness check under the lock, time-boxed). So do session
+    waiters that have not claimed for 15 min (`WAITER_STALE_MIN`). A live Paperclip
+    waiter keeps its place.
+  - A new run of a waiting ticket inherits the wait-start only if the old run is dead
+    and the new run claims within 15 min. It never inherits a hold.
+  - Every claim returns and logs its position and minutes waited.
+- **Deploying only.** `confirm-live --sha S` runs `tools/check-live-build.sh S` and
+  releases the lane on exit 0. Verification then runs without the lane.
+- **Total-hold cap.** `MAX_HOLD_MIN` is measured from `takenAt`, and renew/claim never
+  extend it. At the cap the tool releases, puts the holder at the back of the queue,
+  logs `cap-released` and alerts.
+- **Dead holder.** A holder whose run has ended is released on the next claim. The lane
+  goes to the head of the queue. `unknown` is not dead.
+- **Retired:** exit codes 4 and 5 and the takeover clobber check. The pusher's own
+  pre-push clobber check is unchanged.
 
-**One build for several.** `deploy-lane.mjs ready` queues a ready commit. The holder's
-`tools/deploy-batch.mjs`:
-- cherry-picks the holder's commits plus each queued entry onto `origin/main`,
-  skipping any entry that conflicts;
-- clobber-checks and suite-runs the combined tree;
-- pushes once, retrying once over data-bot commits;
-- records each entry's `landedAs` and notifies its issue.
+**One build for several.** `ready` offers a ready commit to the holder's batch. That is
+not a place in the lane queue. `tools/deploy-batch.mjs`:
+- pushes only the claimed sha, and only while its receipt is green;
+- checks each entry like a solo land (liveness, 60-min TTL, rebased, its own merge-base
+  clobber check, no merge commits) and drops entries already on main without notice;
+- cherry-picks, clobber-checks and suite-runs the combined tree, and pushes once
+  (retrying once over data-bot commits);
+- records `landedAs` (removing an entry only when run and sha match) and notifies each
+  entry's issue;
+- fast-forwards the holder's own sha when it can, and prints the `readBack` sha;
+- falls back to the holder alone on any failure of the combined tree.
 
-Any failure on the combined tree falls back to landing the holder's commit alone.
-Batched owners do their read-back against `landedAs`.
+**For the founder to decide or confirm.**
+- **The cap number.** `MAX_HOLD_MIN` is `null`: no cap is wired, per the ruling ("wait
+  for Michael's number"). Until it is set:
+  - a holder that is alive but stuck keeps the lane until it releases;
+  - a dead **session** holder (it can never be confirmed dead) needs a human `release`.
+  - A solo land holds the lane ≈ 20–26 min (push → live); a batch adds ~6 min for the
+    combined suite.
+- **Data-bot drift.** The tree pushed to main may differ from the suite-tested tree only
+  by `[skip ci]` data-bot commits, with the clobber check re-run against them. A code
+  commit landing in between aborts the push. Is "suite green on the tree minus data
+  commits" the bar?
+- **The cost of first come, first served.** A free lane waits for its head waiter's next
+  poll (at most ~5 min). A head waiter that is alive but no longer polling keeps its
+  place. That is what the ruling asks for; the cap does not cover waiters.
 
 **Choices worth knowing.**
-- `tools/odds-archive-dropin.sh` (the launchd drop-in job) was updated to the new claim
-  contract (`ci-suite.sh` receipt, then `--sha … --reviewed`, and `renew` before the push).
-  The INSTALLED copy in `~/.stennisfy/bin` runs the old claim until it is reinstalled with
-  `--install`, and until then it fails closed (exit 2 → "deploy lane refused").
-- **Correction (review of 8fe65cb8).** "A v1 claim ends within 45 min at most" was
-  wrong. Until every worktree runs the new tool, an old copy of `deploy-lane.mjs` can
-  still renew (extend) a claim and claim without the ready gate. No version gate was
-  added: the store is shared on purpose, and a gate could create two lanes.
-- **For the founder to confirm.** Data bots commit every minute, so the tree pushed to
-  main may differ from the suite-tested tree **only by `[skip ci]` data-bot commits**.
-  The clobber check is re-run against them before the push, and a code commit landing
-  in between aborts the push. Is "suite green on the tree minus data commits" the bar?
-- **Batch hardening after review.** `deploy-batch` now:
-  - pushes only the claimed sha, and only with a green receipt;
-  - checks each entry like a solo land (liveness, 60-min TTL, rebased, its own
-    merge-base clobber check, no merge commits);
-  - removes a landed entry only when both run and sha match;
-  - matches `[skip ci]` in the SUBJECT only (this commit's own body mentions it);
-  - fast-forwards the holder's own sha when it can, and always prints the `readBack`
-    sha.
+- **Old copies of the tool.** Until every checkout and worktree runs the new tool, an old
+  copy can still renew (extend) a claim, skip the ready gate and take a free lane out of
+  turn. No version gate was added: the store is shared on purpose, and a gate could
+  create two lanes.
+- **The drop-in job.** `tools/odds-archive-dropin.sh` uses the new contract: a
+  `ci-suite.sh` receipt, `--sha … --reviewed`, `renew` before the push, and
+  `confirm-live` in its poll loop. The INSTALLED copy in `~/.stennisfy/bin` runs the old
+  claim until it is reinstalled with `--install`, and until then it fails closed.
+- **The founder's five cases also run against origin/main's tool.** They are written
+  against the API both versions share, so each can be run against origin/main's
+  TEN-261 tool (`TEN273_LANE_SRC=<old file>`), where it fails. That check is run by hand,
+  not in `npm test`, because origin/main will become the new tool once this lands.
 
-Tests: `test-ten261-deploy-lane.mjs` (the superseded lease cases are replaced, not kept),
+Tests: `test-ten261-deploy-lane.mjs` (superseded cases replaced, not kept) and
 `test-ten273-deploy-batch.mjs`. Every mechanism is paired with a mutant of the real source.
