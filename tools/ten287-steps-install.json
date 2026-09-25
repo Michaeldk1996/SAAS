@@ -1,0 +1,92 @@
+[
+ {
+  "name": "install_selftest",
+  "sql_files": [
+   "tools/ten287-recorder.sql",
+   "tools/ten287-recorder-selftest.sql"
+  ],
+  "transaction": true,
+  "required": true,
+  "stop_on_error": true
+ },
+ {
+  "name": "key_present",
+  "sql": "select ten287_rec.api_key() ~ '^[0-9a-fA-F]{64}$' as key_ok",
+  "required": true,
+  "stop_on_error": true
+ },
+ {
+  "name": "manual_sweep_1",
+  "sql": "select ten287_rec.sweep() as multi_batches, ten287_rec.tick() as ingested",
+  "required": true,
+  "stop_on_error": true
+ },
+ {
+  "sleep": 25
+ },
+ {
+  "name": "manual_sweep_2",
+  "sql": "select ten287_rec.tick() as ingested, ten287_rec.sweep() as multi_batches",
+  "required": true,
+  "stop_on_error": true
+ },
+ {
+  "sleep": 25
+ },
+ {
+  "name": "manual_tick_3",
+  "sql": "select ten287_rec.tick() as ingested",
+  "required": true,
+  "stop_on_error": true
+ },
+ {
+  "sleep": 25
+ },
+ {
+  "name": "manual_tick_4",
+  "sql": "select ten287_rec.tick() as ingested",
+  "required": true,
+  "stop_on_error": true
+ },
+ {
+  "name": "requests_manual",
+  "sql": "select kind, book, status_code, count(*) n, sum(n_items) items, min(ratelimit_remaining) rl_min, max(note) note from ten287_rec.requests group by 1,2,3 order by 1,2,3"
+ },
+ {
+  "name": "ticks_manual",
+  "sql": "select t.book, coalesce(e.tier,'(other)') tier, t.src, count(*) ticks, count(distinct t.event_id) events from ten287_rec.ticks t left join ten287_rec.events e using (event_id) group by 1,2,3 order by 1,2,3"
+ },
+ {
+  "name": "gate_schedule",
+  "sql": "do $$ begin if (select count(distinct book) from ten287_rec.ticks where src <> 'selftest') < 2 then raise exception 'GATE: live ticks missing for a book; not scheduling'; end if; end $$; select cron.schedule('ten287-recorder', '30 seconds', 'select ten287_rec.tick()') as rec_job, cron.schedule('ten287-recorder-sweep', '*/10 * * * *', 'select ten287_rec.sweep()') as sweep_job",
+  "required": true,
+  "stop_on_error": true
+ },
+ {
+  "sleep": 100
+ },
+ {
+  "name": "cron_jobs",
+  "sql": "select jobid, jobname, schedule, active from cron.job where jobname like 'ten287%' or jobname like 'ten280%' order by jobname"
+ },
+ {
+  "name": "cron_runs",
+  "sql": "select j.jobname, d.status, count(*) n, max(d.end_time - d.start_time) max_took, max(left(d.return_message,200)) msg from cron.job_run_details d join cron.job j using (jobid) where j.jobname like 'ten287%' and d.start_time > now() - interval '5 minutes' group by 1,2 order by 1,2"
+ },
+ {
+  "name": "requests_after",
+  "sql": "select kind, book, status_code, count(*) n, sum(n_items) items, min(ratelimit_remaining) rl_min, count(*) filter (where processed_at is null) open from ten287_rec.requests group by 1,2,3 order by 1,2,3"
+ },
+ {
+  "name": "ticks_after",
+  "sql": "select t.book, coalesce(e.tier,'(other)') tier, count(*) ticks, count(distinct t.event_id) events, max(t.seen_at) last_seen from ten287_rec.ticks t left join ten287_rec.events e using (event_id) group by 1,2 order by 1,2"
+ },
+ {
+  "name": "sample_ticks",
+  "sql": "select t.book, e.tier, e.home, e.away, t.back_home, t.back_away, t.lay_home, t.lay_away, t.depth_home, t.depth_away, t.book_updated_at, t.seen_at, t.src from ten287_rec.ticks t join ten287_rec.events e using (event_id) where e.tier is not null order by t.id desc limit 12"
+ },
+ {
+  "name": "bet105_bot_untouched",
+  "sql": "select jobname, schedule, active from cron.job where jobname = 'ten280-bet105-drop-bot'"
+ }
+]
