@@ -18,6 +18,10 @@
 -- gh_kibl_dispatch_pat or TEN-141's gh_workflow_pat: removing either of those
 -- jobs must not silently stop this one.
 --
+-- ONE TRIGGER ONLY: apply this file and delete the `schedule:` block from
+-- .github/workflows/oddspapi-postmatch.yml IN THE SAME CHANGE. With both active
+-- every slot fires twice (the second run queues behind the first and re-lists).
+--
 -- The dispatched workflow file must exist on main (workflow_dispatch resolves
 -- the file on the ref it is sent to).
 

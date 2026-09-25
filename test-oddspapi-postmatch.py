@@ -14,10 +14,12 @@ Guards (each is killed by a mutant of its rule; see the TEN-270 report):
   2. nothing is pulled until PM_WAIT_MIN after the job first saw the result
   3. a fixture the bucket holds is never pulled again (the object is the checkpoint)
   4. an open market (last match-winner tick active) is deferred, not saved
-  5. a 429 gets ONE short backoff, and a second 429 stops the run with exit 0
+  5. the FIRST 429 stops the run with exit 0 (no retry)
   6. a 404 is recorded under _meta/ and given up after PM_MAX_404 runs
   7. zero billable calls: only /v4/historical-odds and /v4/account are called
   8. the key is used only inside the loop-free window of each quarter hour
+  8b. ...and only once the odds loop's current iteration is over (loop_idle)
+  8c. an unreadable state object stops the run without overwriting it
   9. ticks land in CARD orientation, one row per change, in the schema's columns
  10. the schema: RLS on, no grant/policy on the table, RPC cut at the start
 """
@@ -62,6 +64,11 @@ class World:
         self.rows = []
         self.meter = 1000
         self.hidden = set()       # objects a listing misses (another writer, mid-race)
+        self.lists = 0            # storage list calls
+        self.state_err = None     # e.g. (500, 'boom'): the state object cannot be read
+        self.loop_start = None    # an odds-now run in progress since this time
+        self.capture_at = None    # ...whose capture commit lands on main at this time
+        self.gh_err = None
 
     def now(self):
         return self.t
@@ -89,6 +96,7 @@ class World:
     def sb_request(self, method, path, url, key, body=None, headers=None, timeout=180):
         pre = f'/storage/v1/object/{raw.BUCKET}/'
         if method == 'POST' and path == f'/storage/v1/object/list/{raw.BUCKET}':
+            self.lists += 1
             prefix, search = body['prefix'], body.get('search') or ''
             names = sorted(p[len(prefix):] for p in self.objects
                            if p.startswith(prefix) and p not in self.hidden)
@@ -106,6 +114,8 @@ class World:
             return {'Key': p}, None
         if method == 'GET' and path.startswith(pre):
             p = path[len(pre):]
+            if p == raw.PM_STATE_KEY and self.state_err:
+                return None, self.state_err
             if p not in self.objects:
                 return None, (400, '{"error":"not_found"}')
             blob = self.objects[p]
@@ -122,7 +132,22 @@ class World:
             return b'', None
         raise AssertionError(f'unexpected Supabase call {method} {path}')
 
+    def gh_get(self, path):
+        """GitHub REST: the in-progress odds-now runs, and main's commits."""
+        if self.gh_err:
+            return None, self.gh_err
+        if '/actions/workflows/' in path:
+            runs = [{'run_started_at': raw.iso(self.loop_start)}] if self.loop_start else []
+            return {'workflow_runs': runs}, None
+        commits = [{'commit': {'message': 'chore(scores): refresh scores [skip ci]',
+                               'committer': {'date': raw.iso(self.t)}}}]
+        if self.capture_at and self.t >= self.capture_at:
+            commits.append({'commit': {'message': 'chore(odds): capture tick 4 (free) [skip ci]',
+                                       'committer': {'date': raw.iso(self.capture_at)}}})
+        return commits, None
+
     def install(self):
+        raw.gh_get = self.gh_get
         raw.api_get = self.api_get
         raw.sb_request = self.sb_request
         raw._now = self.now
@@ -234,6 +259,31 @@ _, beat = run(w, M, FM, ocs())
 check('upload refuses to overwrite: the held copy is untouched, counted alreadyHeld',
       w.objects['2026-09/id12.json.gz'] == b'THE DAILY RUN\'S COPY'
       and beat['counts'].get('alreadyHeld') == 1, beat['counts'])
+HELD_COPY = payload([('2026-09-24T06:00:00Z', 1.70, True), ('2026-09-24T10:00:00Z', 1.60, False)],
+                    [('2026-09-24T06:00:00Z', 2.20, True), ('2026-09-24T10:00:00Z', 2.30, False)])
+w = World(T0 + timedelta(minutes=30))
+w.objects[raw.PM_STATE_KEY] = json.dumps({'seen': {'12': '2026-09-24T09:00:00Z'}}).encode()
+w.objects['2026-09/id12.json.gz'] = gzip.compress(HELD_COPY)
+w.hidden.add('2026-09/id12.json.gz')
+w.hist['id12'] = [(CLOSED, None)]
+_, beat = run(w, M, FM, ocs('2026-09-24|alcaraz|sinner'))
+check('on a duplicate, the bet365 ticks come from the HELD object, not the unsaved pull',
+      sorted(r['price'] for r in w.rows) == [1.6, 1.7, 2.2, 2.3], sorted(r['price'] for r in w.rows))
+
+print('3c. held is judged across EVERY month folder, and remembered')
+w = World(T0 + timedelta(minutes=30))
+w.objects[raw.PM_STATE_KEY] = json.dumps({'seen': {'12': '2026-09-24T09:00:00Z'}}).encode()
+w.objects['2026-07/id12.json.gz'] = gzip.compress(CLOSED)      # far from its startTime month
+w.objects['2026-08/other.json.gz'] = b'x'
+w.hist['id12'] = [(CLOSED, None)]
+_, beat = run(w, M, FM, ocs())
+check('a copy in a month far from startTime still counts as held: no pull',
+      not hist_calls(w) and beat['counts'].get('held') == 1, (w.calls, beat['counts']))
+n_lists = w.lists
+w.t += timedelta(minutes=15)
+_, beat = run(w, M, FM, ocs())
+check('the next run takes held from the state: zero storage listings',
+      w.lists == n_lists and beat['counts'].get('heldFromState') == 1, (w.lists - n_lists, beat['counts']))
 
 print('4. the market must be closed: last match-winner tick active=False')
 w = World(T0)
@@ -253,28 +303,24 @@ check('market_closed() needs BOTH sides inactive',
       not raw.market_closed(raw.mw_ticks(json.loads(payload(
           [('2026-09-24T10:00:00Z', 1.2, False)], [('2026-09-24T10:00:00Z', 4.0, True)])))))
 
-print('5. a 429: one short backoff, then the run stops (exit 0)')
+print('5. the FIRST 429 stops the run (exit 0), no retry')
 w = World(T0 + timedelta(minutes=30))
 M = [card('5', 'J. Sinner', 'C. Alcaraz'), card('6', 'A. Zverev', 'T. Fritz')]
 FM = fmap(('5', 'id5', 'same', 'J. Sinner', 'C. Alcaraz'), ('6', 'id6', 'same', 'A. Zverev', 'T. Fritz'))
 w.objects[raw.PM_STATE_KEY] = json.dumps({'seen': {'5': '2026-09-24T09:00:00Z',
                                                    '6': '2026-09-24T09:00:00Z'}}).encode()
-w.hist['id5'] = [(None, 429), (None, 429)]
+w.hist['id5'] = [(None, 429), (CLOSED, None)]
 w.hist['id6'] = [(CLOSED, None)]
 code, beat = run(w, M, FM, ocs())
-check('stopped on the second 429; the next fixture is not tried',
-      [c[1] for c in hist_calls(w)] == ['id5', 'id5'] and beat['stoppedBy'] == '429'
+check('stopped on the first 429: no retry, the next fixture is not tried',
+      [c[1] for c in hist_calls(w)] == ['id5'] and beat['stoppedBy'] == '429'
       and beat['counts'].get('notTried') == 1, (hist_calls(w), beat))
 check('exit 0 on a 429', code == 0)
-check('both 429s counted in the heartbeat', beat['http429'] == 2
-      and json.loads(w.objects[raw.PM_HEARTBEAT_KEY].decode())['http429'] == 2, beat)
-check('exactly one short backoff before the retry', w.sleeps.count(raw.PM_BACKOFF_S) == 1, w.sleeps)
-w = World(T0 + timedelta(minutes=30))
-w.objects[raw.PM_STATE_KEY] = json.dumps({'seen': {'5': '2026-09-24T09:00:00Z'}}).encode()
-w.hist['id5'] = [(None, 429), (CLOSED, None)]
-_, beat = run(w, M[:1], FM, ocs())
-check('a 429 then a 200: saved after the one backoff', beat['counts'].get('saved') == 1
-      and beat['http429'] == 1, beat)
+check('the 429 is counted in the heartbeat', beat['http429'] == 1
+      and json.loads(w.objects[raw.PM_HEARTBEAT_KEY].decode())['http429'] == 1, beat)
+w.t += timedelta(minutes=15)
+_, beat = run(w, M, FM, ocs())
+check('the next run resumes and saves both', beat['counts'].get('saved') == 2, beat['counts'])
 
 print('6. a 404 is recorded and given up after PM_MAX_404 runs')
 w = World(T0 + timedelta(minutes=30))
@@ -339,10 +385,60 @@ for i in range(3):
     w.hist[f'id2{i}'] = [(CLOSED, None)]
 _, beat = run(w, M3, FM3, ocs())
 check('a run that reaches :14 mid-queue stops calling (the rest wait for the next run)',
-      all(raw.in_window(c[2]) for c in w.calls) and beat['stoppedBy'] == 'window'
+      all(raw.in_window(c[2]) for c in w.calls) and beat['stoppedBy'] == 'window-or-loop'
       and beat['counts'].get('notTried') == 2, ([c[2].strftime('%M:%S') for c in w.calls], beat))
 check('the window never overlaps the measured loop median (0-113 s into the quarter)',
       raw.PM_WINDOW[0] * 60 > 113 and raw.PM_WINDOW[1] <= 15)
+
+print('8b. the loop gate: never while an odds-loop iteration is running')
+M = [card('13', 'J. Sinner', 'C. Alcaraz')]
+FM = fmap(('13', 'id13', 'same', 'J. Sinner', 'C. Alcaraz'))
+ST = json.dumps({'seen': {'13': '2026-09-24T09:00:00Z'}}).encode()
+w = World(datetime(2026, 9, 24, 10, 7, 0, tzinfo=timezone.utc))
+w.objects[raw.PM_STATE_KEY] = ST
+w.loop_start = datetime(2026, 9, 24, 6, 0, tzinfo=timezone.utc)
+w.capture_at = datetime(2026, 9, 24, 10, 9, 30, tzinfo=timezone.utc)   # a 570 s iteration
+w.hist['id13'] = [(CLOSED, None)]
+_, beat = run(w, M, FM, ocs())
+first = w.calls[0][2] if w.calls else None
+check('an iteration still running at :07 holds the job off until its capture commit (:09:30)',
+      first is not None and first >= w.capture_at and beat['counts'].get('saved') == 1, (first, beat['counts']))
+w = World(datetime(2026, 9, 24, 10, 7, 0, tzinfo=timezone.utc))
+w.objects[raw.PM_STATE_KEY] = ST
+w.loop_start = datetime(2026, 9, 24, 6, 0, tzinfo=timezone.utc)       # never commits this quarter
+w.hist['id13'] = [(CLOSED, None)]
+_, beat = run(w, M, FM, ocs())
+check('no capture commit this quarter: zero oddspapi calls, the run stops',
+      not w.calls and beat['stoppedBy'] == 'window-or-loop', (w.calls, beat['stoppedBy']))
+w = World(datetime(2026, 9, 24, 10, 8, 0, tzinfo=timezone.utc))
+w.objects[raw.PM_STATE_KEY] = ST
+w.capture_at = datetime(2026, 9, 24, 10, 2, 0, tzinfo=timezone.utc)
+w.loop_start = datetime(2026, 9, 24, 10, 7, 30, tzinfo=timezone.utc)  # restarted: iterates at once
+w.hist['id13'] = [(CLOSED, None)]
+_, beat = run(w, M, FM, ocs())
+check('a loop restarted mid-quarter after the last capture commit counts as running',
+      not w.calls, [c[2].strftime('%M:%S') for c in w.calls])
+w = World(datetime(2026, 9, 24, 10, 7, 0, tzinfo=timezone.utc))
+w.objects[raw.PM_STATE_KEY] = ST
+w.gh_err = 503
+w.hist['id13'] = [(CLOSED, None)]
+_, beat = run(w, M, FM, ocs())
+check('GitHub unreadable: fail closed, zero oddspapi calls', not w.calls, w.calls)
+
+print('8c. an unreadable state is never overwritten')
+w = World(T0 + timedelta(minutes=30))
+w.objects[raw.PM_STATE_KEY] = ST
+w.state_err = (500, 'upstream timeout')
+w.hist['id13'] = [(CLOSED, None)]
+code, beat = run(w, M, FM, ocs())
+check('state read fails (500): the run stops, no call, nothing written',
+      code == 1 and not w.calls and w.objects[raw.PM_STATE_KEY] == ST
+      and raw.PM_HEARTBEAT_KEY not in w.objects, (code, w.calls, sorted(w.objects)))
+w = World(T0)
+w.state_err = (400, '{"statusCode":"404","error":"not_found","message":"Object not found"}')
+code, beat = run(w, M, FM, ocs())
+check('state not found (first run): starts empty and writes it',
+      code == 0 and raw.PM_STATE_KEY in w.objects, (code, sorted(w.objects)))
 
 print('9. ticks in CARD orientation, one row per change, in the schema\'s columns')
 w = World(T0 + timedelta(minutes=30))
@@ -424,6 +520,8 @@ def schema_faults(text):
         faults.append('RPC rows are not capped')
     if 'revoke all on function public.bet365_history(text) from public' not in t:
         faults.append('EXECUTE not revoked from public')
+    if "'fixtures'," not in body:
+        faults.append('RPC does not return the fixture count')
     if 'grant execute on function public.bet365_history(text) to anon, authenticated' not in t:
         faults.append('EXECUTE not granted to anon, authenticated')
     return faults

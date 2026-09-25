@@ -19,17 +19,22 @@ name: BSP oddspapi post-match archive
 # units, and this job spends none.
 #
 # THE KEY IS SHARED with the odds loop (odds-now.yml), which ticks at
-# :00/:15/:30/:45. GitHub delays scheduled runs, so the script also waits for
-# :05-:14 of the quarter hour before any call, and stops the run (exit 0) on a
-# second 429. GitHub delivers only a fraction of scheduled slots on this repo;
-# oddspapi-postmatch-pinger.sql is the pg_cron dispatcher that makes the 15-min
-# cadence real (NOT applied by this change).
+# :00/:15/:30/:45 and has run up to 590 s. Before every call the script needs
+# BOTH :05-:14 of the quarter hour AND the loop's own evidence that its
+# iteration is over (no odds-now run in progress, or its `capture tick` commit
+# on main since the quarter hour — read with this job's GITHUB_TOKEN). It stops
+# the run (exit 0) on the first 429.
+#
+# ONE TRIGGER ONLY. GitHub delivers only a fraction of scheduled slots on this
+# repo; oddspapi-postmatch-pinger.sql is the pg_cron dispatcher that makes the
+# 15-min cadence real (NOT applied). Applying it and deleting the `schedule:`
+# block below are ONE change — both active means two runs per slot.
 #
 # Commits nothing. The run's counts, 429s included, are in the job log and in
 # the bucket at _meta/postmatch-last-run.json.
 
 on:
-  schedule:
+  schedule:                    # remove when oddspapi-postmatch-pinger.sql is applied
     - cron: '7,22,37,52 * * * *'
   workflow_dispatch:
 
@@ -39,6 +44,7 @@ concurrency:
 
 permissions:
   contents: read
+  actions: read                # the loop gate reads odds-now's in-progress runs
 
 jobs:
   postmatch:
@@ -92,4 +98,5 @@ jobs:
           ODDSPAPI_KEY: ${{ secrets.ODDSPAPI_KEY }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: python3 archive-oddspapi-raw.py postmatch

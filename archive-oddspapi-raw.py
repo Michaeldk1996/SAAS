@@ -553,9 +553,12 @@ def report():
 # 110 of 110 iterations started within 60 s of the quarter hour; median 113 s,
 # max 590 s long). GitHub delays scheduled runs, so the cron minute alone does
 # not keep us off the loop: every call is also gated on the wall clock being
-# inside PM_WINDOW minutes of the quarter hour. On a 429 the job waits one short
-# backoff, tries once more, and on a second 429 stops the run (exit 0) — the
-# next run resumes. A 404 is recorded under _meta/ and given up after
+# inside PM_WINDOW minutes of the quarter hour, AND on the loop's own evidence
+# that its current iteration is over (loop_idle(): no odds-now run in progress,
+# or its end-of-iteration capture commit is on main since both the last quarter
+# hour and the run's own start). The window alone is not enough: an iteration
+# ran 590 s once. On the FIRST 429 the run stops (exit 0), no retry — the next
+# run resumes. A 404 is recorded under _meta/ and given up after
 # PM_MAX_404 runs, so a fixture oddspapi never serves is not retried forever.
 #
 # ZERO BILLABLE CALLS. free_get() refuses any path outside FREE_PATHS, and the
@@ -567,7 +570,11 @@ PM_HEARTBEAT_KEY = f'{META_PREFIX}/postmatch-last-run.json'
 PM_WAIT_MIN = 30          # minutes after this job first sees the result
 PM_WINDOW = (5, 14)       # minutes into each quarter hour the key may be used
 PM_MAX_RUN_S = 480        # the workflow's timeout is 10 min
-PM_BACKOFF_S = 10         # the ONE short backoff before the retry on a 429
+PM_LOOP_POLL_S = 20       # while an odds-loop iteration is running, look again this often
+GH_API = 'https://api.github.com'
+GH_REPO = 'Michaeldk1996/SAAS'
+LOOP_WORKFLOW = 'odds-now.yml'
+LOOP_COMMIT_PREFIX = 'chore(odds): capture tick'   # the loop's end-of-iteration push
 PM_CALL_MARGIN_S = 30     # a call starts only if the window is still open this much later
 PM_CALL_TIMEOUT_S = 60    # a 1-4.5 MB payload took 3.8-7.6 s (measured 2026-09-10)
 PM_MAX_404 = 3            # runs that saw a 404 before the fixture is given up
@@ -630,16 +637,75 @@ def wait_for_window(deadline):
 
 
 def postmatch_hist(fixture_id, key, counts):
-    """One free /v4/historical-odds call. On a 429: ONE short backoff, one
-    retry; a second 429 is returned as 429 and the caller stops the run."""
+    """One free /v4/historical-odds call, never retried: a 429 is returned as
+    429 and the caller stops the run — the live loop always wins the key."""
     body, err = free_get('/v4/historical-odds', {'fixtureId': fixture_id}, key, raw=True)
     if err == 429:
         counts['http429'] += 1
-        _sleep(PM_BACKOFF_S)
-        body, err = free_get('/v4/historical-odds', {'fixtureId': fixture_id}, key, raw=True)
-        if err == 429:
-            counts['http429'] += 1
     return body, err
+
+
+# --------------------------------------------------------------- the loop gate
+def gh_get(path):
+    """GitHub REST read with the workflow's GITHUB_TOKEN. (data, None) | (None, err)."""
+    tok = os.environ.get('GITHUB_TOKEN') or os.environ.get('GH_TOKEN') or ''
+    h = {'Accept': 'application/vnd.github+json', 'User-Agent': 'BSP-Consult-Dashboard/1.0'}
+    if tok:
+        h['Authorization'] = f'Bearer {tok}'
+    try:
+        with urllib.request.urlopen(urllib.request.Request(GH_API + path, headers=h),
+                                    timeout=30) as r:
+            return json.loads(r.read().decode('utf-8')), None
+    except urllib.error.HTTPError as e:
+        return None, e.code
+    except (urllib.error.URLError, TimeoutError, ValueError) as e:
+        return None, str(e)
+
+
+def loop_idle(now):
+    """(idle?, why). The odds loop (odds-now.yml) runs one iteration per quarter
+    hour and ends each with a push of `chore(odds): capture tick N`. The key is
+    ours only when NO odds-now run is in progress, or that run's latest capture
+    commit is on main AFTER both the last quarter-hour boundary and the run's
+    own start (a restarted loop iterates at once, mid-quarter). Anything we
+    cannot read counts as busy: fail closed."""
+    runs, err = gh_get(f'/repos/{GH_REPO}/actions/workflows/{LOOP_WORKFLOW}/runs'
+                       f'?status=in_progress&per_page=5')
+    if runs is None:
+        return False, f'odds-now runs unreadable ({err})'
+    live = [parse_iso(r.get('run_started_at')) for r in runs.get('workflow_runs') or []]
+    if not live:
+        return True, 'no odds-now run in progress'
+    if any(t is None for t in live):
+        return False, 'an odds-now run has no start time'
+    commits, err = gh_get(f'/repos/{GH_REPO}/commits?sha=main&per_page=30')
+    if commits is None:
+        return False, f'main commits unreadable ({err})'
+    ticks = [parse_iso(((c.get('commit') or {}).get('committer') or {}).get('date'))
+             for c in commits if isinstance(c, dict)
+             and str((c.get('commit') or {}).get('message') or '').startswith(LOOP_COMMIT_PREFIX)]
+    ticks = [t for t in ticks if t]
+    last = max(ticks) if ticks else None
+    boundary = now.replace(minute=now.minute - now.minute % 15, second=0, microsecond=0)
+    since = max([boundary] + live)
+    if last and last >= since:
+        return True, f'loop iteration done (capture commit {iso(last)})'
+    return False, (f'odds-loop iteration in progress (no capture commit since {iso(since)}; '
+                   f'last {iso(last) if last else "—"})')
+
+
+def key_is_ours(deadline, counts):
+    """Wait (inside the window) until the loop's iteration is over. False = stop."""
+    while True:
+        now = _now()
+        if not can_call(now) or now > deadline:
+            return False
+        idle, why = loop_idle(now)
+        if idle:
+            return True
+        counts['loopBusyChecks'] += 1
+        print(f'key: {why}; looking again in {PM_LOOP_POLL_S}s.', flush=True)
+        _sleep(PM_LOOP_POLL_S)
 
 
 def _names():
@@ -722,13 +788,22 @@ def select_targets(matches, fmap, ocs, state, now, counts):
     return out
 
 
-def held_path(url, key, fixture_id, start_time):
-    """The object's path if the bucket holds this fixture, False if it does not,
-    None if that cannot be told (then the fixture is NOT pulled: a pull on an
-    unknown answer could overwrite the checkpoint)."""
-    d = parse_iso(start_time)
-    months = sorted({(d + timedelta(days=k)).strftime('%Y-%m') for k in (-1, 0, 1)}) \
-        if d else ['unknown']
+def bucket_months(url, key):
+    """Every top-level folder but _meta — the same set held_objects() walks —
+    or None when the listing fails. Read once per run."""
+    top, ok = sb_list(url, key, '')
+    if not ok:
+        return None
+    return sorted(m.get('name') for m in top if m.get('name') and m.get('name') != META_PREFIX)
+
+
+def held_path(url, key, fixture_id, months):
+    """The object's path if ANY month folder holds this fixture, False if none
+    does, None if that cannot be told (then the fixture is NOT pulled: a pull on
+    an unknown answer could overwrite the checkpoint). One small search-filtered
+    listing per folder, not a full walk of the bucket."""
+    if months is None:
+        return None
     want = f'{fixture_id}.json.gz'
     for mo in months:
         page, err = sb_request('POST', f'/storage/v1/object/list/{BUCKET}', url, key,
@@ -835,10 +910,22 @@ def project_ticks(url, key, target, payload, state, now, counts):
         'fixtureId': target['fixtureId'], 'at': iso(now), 'rows': len(rows)}
 
 
+def is_not_found(err):
+    """Storage answers a missing object with 404, or 400 carrying statusCode 404."""
+    code, text = (err or (None, ''))[:2]
+    return code == 404 or (code == 400 and ('"404"' in str(text) or 'not_found' in str(text)
+                                            or 'not found' in str(text).lower()))
+
+
 def read_state(url, key):
-    got, _ = sb_download(url, key, PM_STATE_KEY)
+    """The state object, {} when there is none yet, None when it cannot be read.
+    Only a not-found means "no state": any other failure must not be read as an
+    empty state, because the run would then overwrite the real one."""
+    got, err = sb_download(url, key, PM_STATE_KEY)
+    if got is None:
+        return {} if is_not_found(err) else None
     st = payload_of(got)
-    return st if isinstance(st, dict) else {}
+    return st if isinstance(st, dict) else None
 
 
 def prune_state(state, now):
@@ -849,6 +936,8 @@ def prune_state(state, now):
                      if fresh(v, PM_SEEN_KEEP_DAYS)}
     state['loaded'] = {k: v for k, v in (state.get('loaded') or {}).items()
                        if fresh((v or {}).get('at'), PM_LOADED_KEEP_DAYS)}
+    state['held'] = {k: v for k, v in (state.get('held') or {}).items()
+                     if fresh((v or {}).get('at'), PM_LOADED_KEEP_DAYS)}
     return state
 
 
@@ -864,31 +953,50 @@ def postmatch(odds_key, url, sb_key, matches, fmap, ocs):
     deadline = started + timedelta(seconds=PM_MAX_RUN_S)
     counts = collections.Counter()
     state = read_state(url, sb_key)
+    if state is None:
+        # Not "no state yet": the state exists and could not be read. Writing
+        # now would replace it (first sightings, 404 record) with an empty one.
+        print('::warning::post-match state unreadable (not a not-found) — stopping '
+              'without writing anything; the next run retries.')
+        return 1, {'stoppedBy': 'state-unreadable'}
     nf = state.setdefault('notFound', {})
     deferred = state.setdefault('deferred', {})
     loaded = state.setdefault('loaded', {})
+    held_rec = state.setdefault('held', {})
     targets = select_targets(matches, fmap, ocs, state, started, counts)
+
+    def project_from_bucket(t, path, when):
+        got, _ = sb_download(url, sb_key, path)
+        payload = payload_of(got)
+        if payload is None:
+            counts['heldUnreadable'] += 1
+            return
+        project_ticks(url, sb_key, t, payload, state, when, counts)
 
     # Pass 1 — bucket only, no oddspapi call: skip what is held, project the
     # ticks of held bet365 cards not yet in the table, collect the pull list.
+    months = False                      # listed lazily, once per run
     pulls = []
     for t in targets:
         if (loaded.get(t['cardKey']) or {}).get('fixtureId') == t['fixtureId']:
             counts['alreadyLoaded'] += 1
             continue
-        held = held_path(url, sb_key, t['fixtureId'], t['startTime'])
+        known = held_rec.get(t['fixtureId']) or {}
+        if known.get('path'):
+            held = known['path']        # recorded on an earlier run: no listing
+            counts['heldFromState'] += 1
+        else:
+            if months is False:
+                months = bucket_months(url, sb_key)
+            held = held_path(url, sb_key, t['fixtureId'], months)
         if held is None:
             counts['heldUnknown'] += 1
             continue
         if held:
             counts['held'] += 1
+            held_rec[t['fixtureId']] = {'path': held, 'cardKey': t['cardKey'], 'at': iso(started)}
             if t['bet365Card'] and t['orient']:
-                got, err = sb_download(url, sb_key, held)
-                payload = payload_of(got)
-                if payload is None:
-                    counts['heldUnreadable'] += 1
-                    continue
-                project_ticks(url, sb_key, t, payload, state, started, counts)
+                project_from_bucket(t, held, started)
             continue
         if t['seenAgeMin'] < PM_WAIT_MIN:
             counts['waiting'] += 1
@@ -898,13 +1006,14 @@ def postmatch(odds_key, url, sb_key, matches, fmap, ocs):
             continue
         pulls.append(t)
 
-    # Pass 2 — the key, inside the window only.
+    # Pass 2 — the key: inside the window, and only once the loop's iteration
+    # is over (checked before the first call and again before every call).
     before = after = None
     stop = None
-    if pulls and wait_for_window(deadline):
+    if pulls and wait_for_window(deadline) and key_is_ours(deadline, counts):
         before, _ = meter(odds_key, 'before postmatch pulls', get=free_get)
     elif pulls:
-        stop = 'window'
+        stop = 'window-or-loop'
     n = 0
     for t in pulls:
         if stop:
@@ -912,8 +1021,8 @@ def postmatch(odds_key, url, sb_key, matches, fmap, ocs):
             continue
         if n:
             _sleep(HIST_SLEEP)
-        if _now() > deadline or not can_call(_now()):
-            stop = 'window'
+        if not key_is_ours(deadline, counts):
+            stop = 'window-or-loop'
             counts['notTried'] += 1
             continue
         n += 1
@@ -922,7 +1031,7 @@ def postmatch(odds_key, url, sb_key, matches, fmap, ocs):
         if err == 429:
             stop = '429'
             counts['stoppedOn429'] += 1
-            print(f'429 twice on {fid} — the live loop has the key; stopping, next run resumes.')
+            print(f'429 on {fid} — the live loop has the key; stopping, next run resumes.')
             continue
         if err == 404:
             r = nf.setdefault(fid, {'n': 0, 'first': iso(_now()), 'eventKey': t['eventKey']})
@@ -949,22 +1058,28 @@ def postmatch(odds_key, url, sb_key, matches, fmap, ocs):
         path = object_path({'fixtureId': fid, 'startTime': t['startTime'],
                             'trueStartTime': None})
         up = sb_upload(url, sb_key, path, gzip.compress(body, 6), upsert=False)
+        deferred.pop(fid, None)
+        nf.pop(fid, None)
         if up and up[0] in (400, 409) and ('uplicate' in str(up[1]) or 'exists' in str(up[1])):
+            # Another writer got there first: the HELD object is the record, so
+            # the ticks come from it, never from this unsaved pull.
             counts['alreadyHeld'] += 1
-        elif up:
+            held_rec[fid] = {'path': path, 'cardKey': t['cardKey'], 'at': iso(_now())}
+            if t['bet365Card'] and t['orient']:
+                project_from_bucket(t, path, _now())
+            continue
+        if up:
             counts['failed'] += 1
             counts[f'upload-{up[0]}'] += 1
             continue
-        else:
-            counts['saved'] += 1
-        deferred.pop(fid, None)
-        nf.pop(fid, None)
+        counts['saved'] += 1
+        held_rec[fid] = {'path': path, 'cardKey': t['cardKey'], 'at': iso(_now())}
         project_ticks(url, sb_key, t, payload, state, _now(), counts)
 
-    if before is not None and can_call(_now()):
+    if before is not None and can_call(_now()) and loop_idle(_now())[0]:
         after, _ = meter(odds_key, 'after postmatch pulls', get=free_get)
     elif before is not None:
-        print('meter after: not read — the window closed, and the loop owns the key now; '
+        print('meter after: not read — the window closed or the loop is running; '
               'the meter delta for this run is unknown (—).')
     delta = (after - before) if (before is not None and after is not None) else None
     if delta:
