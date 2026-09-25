@@ -372,3 +372,39 @@ CREATE OR REPLACE TRIGGER odds_card_state_touch_upd
 -- The delta read's filter.
 CREATE INDEX IF NOT EXISTS odds_card_state_updated_idx
   ON odds_card_state (updated_at);
+
+-- ---------------------------------------------------------------------------
+-- TEN-270 review finding 4 — THE CARD JOB ASKS WHETHER THE TRIGGERS EXIST.
+--
+-- Every cache in ten225-kibl-card-state.py is only equal to a full read if the
+-- table's touch trigger is installed and enabled. odds_card_state's are above
+-- and this file runs before every card run; oddspapi_fixtures' and
+-- oddspapi_line_summary's live in ten225-line-summary-schema.sql, which only
+-- ten225-line-summary.yml applies. So the job must not ASSUME them: it calls
+-- this function (service key only) and falls back to a full read, and never
+-- saves a snapshot, for any table whose two triggers are not both present,
+-- enabled, and calling that table's own touch function. A missing function
+-- (this file not applied yet) is a 404, which the job treats the same way.
+-- Reads the catalog only; changes nothing.
+-- ---------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION ten270_touch_triggers()
+  RETURNS TABLE (tbl text, trg text, fn text, enabled boolean)
+  LANGUAGE sql STABLE AS $$
+  SELECT c.relname::text, t.tgname::text, p.proname::text,
+         t.tgenabled IN ('O', 'A')
+  FROM pg_trigger t
+  JOIN pg_class c ON c.oid = t.tgrelid
+  JOIN pg_namespace n ON n.oid = c.relnamespace
+  JOIN pg_proc p ON p.oid = t.tgfoid
+  WHERE n.nspname = 'public' AND NOT t.tgisinternal
+    AND c.relname IN ('odds_card_state', 'oddspapi_fixtures',
+                      'oddspapi_line_summary')
+  ORDER BY 1, 2
+$$;
+
+REVOKE EXECUTE ON FUNCTION ten270_touch_triggers() FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION ten270_touch_triggers() FROM anon, authenticated;
+GRANT EXECUTE ON FUNCTION ten270_touch_triggers() TO service_role;
+
+-- A new function is invisible to PostgREST until its schema cache reloads.
+NOTIFY pgrst, 'reload schema';

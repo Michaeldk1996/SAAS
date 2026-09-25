@@ -1148,6 +1148,17 @@ CARD_GRAIN = ('fixture_id', 'book', 'market', 'side', 'line')
 # two queries — so page N and page N+1 could overlap or skip a row.
 CARD_ORDER = 'fixture_id.asc,book.asc,market.asc,side.asc,line.asc.nullsfirst'
 SUMMARY_ORDER = 'fixture_id.asc,book.asc,side.asc,line.asc.nullsfirst'
+# Review finding 1: a reference table whose newest stamp is this recent may be
+# mid-load (the loader upserts in batches, one transaction each), so it is read
+# in full and NOT cached. The daily loader finishes in minutes; 30 min is the
+# margin, and it costs at most six full reads a day.
+REF_QUIET_S = 30 * 60
+# Review finding 4: the tables whose caches depend on a touch trigger, and the
+# catalog RPC that says whether it is installed (ten225-card-state-schema.sql).
+TOUCH_TABLES = ('odds_card_state', 'oddspapi_fixtures', 'oddspapi_line_summary')
+TOUCH_RPC = '/rest/v1/rpc/ten270_touch_triggers'
+# Review finding 2: grains per selection PATCH (bounded by URL length).
+PATCH_CHUNK = 40
 
 
 def sb_count(url, key, table, extra=''):
@@ -1209,7 +1220,62 @@ def _save_snapshot(name, obj):
     os.replace(tmp, p)
 
 
-def fetch_ref_cached(url, key, table, cols, extra, order, ts_col, now_s=None):
+def touch_guarded(url, key):
+    """Which of TOUCH_TABLES carry BOTH touch triggers, enabled, calling that
+    table's own touch function: (set, err).
+
+    One tiny RPC over the catalog. Any failure — the function not created yet
+    (404), a refused call, an unparseable body — is an EMPTY set, i.e. "no table
+    is guarded": every cache falls back to a full read and saves nothing. A
+    cache is only equal to a full read if every writer moves the stamp, and
+    only the trigger makes that true."""
+    got, err = sb('POST', TOUCH_RPC, url, key, body=b'{}',
+                  headers={'Content-Type': 'application/json'})
+    if got is None:
+        return set(), err
+    try:
+        rows = json.loads(got.decode('utf-8'))
+        have = collections.defaultdict(set)
+        for r in rows:
+            t = r.get('tbl')
+            if r.get('enabled') is True and r.get('fn') == f'{t}_touch':
+                have[t].add(r.get('trg'))
+    except Exception as e:                      # noqa: BLE001 — a bad answer is "none"
+        return set(), (0, f'unreadable trigger list: {e}')
+    return {t for t in TOUCH_TABLES
+            if {f'{t}_touch_ins', f'{t}_touch_upd'} <= have[t]}, None
+
+
+def _guarded(url, key, guarded):
+    if guarded is not None:
+        return guarded
+    g, err = touch_guarded(url, key)
+    if err:
+        print(f'::warning::touch-trigger check failed ({err}) — every table is '
+              f'read in full this run and no snapshot is saved')
+    return g
+
+
+def _drop_snapshot(name, table=None):
+    """Forget a snapshot. With `table`, only that table's entry of the
+    reference snapshot. Used when the trigger is missing: writes made while it
+    is absent are unstamped, so a snapshot (or a high-water mark) taken before
+    must never be merged with a delta read after it comes back."""
+    p = os.path.join(CACHE_DIR, name)
+    if table is None:
+        try:
+            os.remove(p)
+        except FileNotFoundError:
+            pass
+        return
+    snap = _load_snapshot(name)
+    if snap and table in (snap.get('tables') or {}):
+        del snap['tables'][table]
+        _save_snapshot(name, snap)
+
+
+def fetch_ref_cached(url, key, table, cols, extra, order, ts_col, now_s=None,
+                     guarded=None):
     """A daily-written reference table, re-read only when it has changed.
 
     The PROBE is two tiny requests: the exact row count (HEAD) and the newest
@@ -1220,28 +1286,45 @@ def fetch_ref_cached(url, key, table, cols, extra, order, ts_col, now_s=None):
     a full read, never a reuse.
 
     Why the probe sees every change:
-      oddspapi_fixtures.updated_at — its only writer
-        (ten225-load-line-summary.py, the `--fixtures` block) stamps every row
-        it upserts with the run's generatedAt.
-      oddspapi_line_summary.loaded_at — DEFAULT now() only, so an UPDATE left
-        it frozen; ten225-line-summary-schema.sql now carries a BEFORE UPDATE
-        trigger that bumps it whenever the row really changed.
+      Both stamps are set BY THE DATABASE (ten225-line-summary-schema.sql):
+      a BEFORE INSERT/UPDATE trigger writes the transaction's now() on every
+      insert and every real change, and keeps the old stamp on a no-op. The
+      loader upserts in batches, one transaction each, so every batch that
+      changes a row moves the newest stamp. (Its own generatedAt, one value per
+      run, did not: a probe taken after batch 1 already read the final value.)
     Rows are never deleted from either table; a delete would move the count.
+
+    NOT CACHED (full read, nothing saved) when the table's triggers are not
+    installed (touch_guarded), or its newest stamp is under REF_QUIET_S old —
+    a load may still be landing batches.
     """
     now_s = time.time() if now_s is None else now_s
+    if table not in _guarded(url, key, guarded):
+        # Review finding 4: no trigger, no cache — read, and forget any old one.
+        _drop_snapshot(REF_SNAPSHOT, table)
+        rows, err = fetch_all(url, key, table, cols, extra, order=order)
+        if not err:
+            print(f'::warning::{table}: touch trigger not installed — full read '
+                  f'({len(rows)} rows), not cached. Apply '
+                  f'ten225-line-summary-schema.sql to enable the cache.')
+        return rows, err, 'full'
     n, cerr = sb_count(url, key, table, extra)
     newest, nerr = (None, None) if cerr else sb_newest(url, key, table,
                                                       ts_col, extra)
     probe = None if (cerr or nerr) else {'n': n, 'newest': newest}
+    # Review finding 1: a stamp this recent may be a load still in progress.
+    ne = epoch(newest) if probe is not None and newest else None
+    settling = ne is not None and now_s - ne < REF_QUIET_S
     snap = _load_snapshot(REF_SNAPSHOT) or {}
     ent = (snap.get('tables') or {}).get(table)
-    if (probe is not None and ent and ent.get('probe') == probe
+    if (probe is not None and not settling and ent and ent.get('probe') == probe
             and ent.get('cols') == cols and ent.get('extra') == extra
             and now_s - float(ent.get('saved_at') or 0) < SNAPSHOT_MAX_AGE_S):
         print(f'{table}: snapshot reused ({n} rows, newest {ts_col} '
               f'{newest}) — not re-read')
         return ent['rows'], None, 'cached'
     why = ('probe failed' if probe is None else
+           f'written under {REF_QUIET_S // 60} min ago' if settling else
            'no snapshot' if not ent else
            'probe changed' if ent.get('probe') != probe else
            'query changed' if (ent.get('cols'), ent.get('extra')) != (cols, extra)
@@ -1250,11 +1333,14 @@ def fetch_ref_cached(url, key, table, cols, extra, order, ts_col, now_s=None):
     if err:
         return rows, err, 'full'
     print(f'{table}: full read ({why}) — {len(rows)} rows')
-    if probe is not None and len(rows) == n:
+    if probe is not None and not settling and len(rows) == n:
         snap.setdefault('tables', {})[table] = {
             'probe': probe, 'cols': cols, 'extra': extra, 'saved_at': now_s,
             'rows': rows}
         _save_snapshot(REF_SNAPSHOT, snap)
+    elif settling:
+        print(f'{table}: newest {ts_col} {newest} is under {REF_QUIET_S // 60} '
+              f'min old — a load may be in progress, not cached')
     elif probe is not None:
         print(f'::warning::{table} changed during the read ({n} counted, '
               f'{len(rows)} read) — not cached')
@@ -1265,7 +1351,7 @@ def _grain(r):
     return tuple(r.get(f) for f in CARD_GRAIN)
 
 
-def read_card_state(url, key, cols, now_s=None):
+def read_card_state(url, key, cols, now_s=None, guarded=None):
     """The WHOLE odds_card_state, as run_selection has always needed it — built
     from a local snapshot plus the rows changed since, when that provably
     equals a full read, and from a full read otherwise.
@@ -1279,7 +1365,8 @@ def read_card_state(url, key, cols, now_s=None):
     every row any writer has touched since — the fillers, this file's own
     write-back, and the schema's own backfill UPDATEs alike.
 
-    A FULL READ IS FORCED when: no snapshot; the column list changed; the last
+    A FULL READ IS FORCED when: the touch triggers are not installed (and
+    then nothing is saved and any old snapshot is dropped); no snapshot; the column list changed; the last
     full read is over 24 h old; the count or delta request failed; or the
     merged set's size differs from the server's exact count (a delete, a
     truncate, or a missed row). The mark is the max updated_at the SERVER
@@ -1287,9 +1374,16 @@ def read_card_state(url, key, cols, now_s=None):
     """
     now_s = time.time() if now_s is None else now_s
     ucols = cols + ',updated_at'
+    trig = 'odds_card_state' in _guarded(url, key, guarded)
+    if not trig:
+        # Review finding 4: the delta is only complete if every write moved
+        # updated_at. Without the trigger, forget the snapshot (its mark is
+        # no longer a promise) and save none.
+        _drop_snapshot(CARD_SNAPSHOT)
     total, cerr = sb_count(url, key, 'odds_card_state')
-    snap = _load_snapshot(CARD_SNAPSHOT)
-    why = ('count failed' if cerr else
+    snap = _load_snapshot(CARD_SNAPSHOT) if trig else None
+    why = ('touch trigger not installed' if not trig else
+           'count failed' if cerr else
            'no snapshot' if not snap else
            'query changed' if snap.get('cols') != ucols else
            'snapshot older than 24 h'
@@ -1328,14 +1422,68 @@ def read_card_state(url, key, cols, now_s=None):
     info['hwm'] = hwm
     # Saved AS READ — before select_winners mutates is_selected — so the
     # snapshot is the server's state, never this run's intentions.
-    _save_snapshot(CARD_SNAPSHOT, {'cols': ucols, 'full_at': full_at,
-                                   'hwm': hwm, 'rows': rows})
+    if trig:
+        _save_snapshot(CARD_SNAPSHOT, {'cols': ucols, 'full_at': full_at,
+                                       'hwm': hwm, 'rows': rows})
     return [dict(r) for r in rows], None, info
 
 
 # -------------------------------------------------- the book-priority selection
 
-def run_selection(url, key, dry_run=False):
+def _pgrst_val(v):
+    """A PostgREST logic-tree value, always double-quoted so a comma, dot,
+    colon or parenthesis inside it cannot split the tree."""
+    return '"' + str(v).replace('\\', '\\\\').replace('"', '\\"') + '"'
+
+
+def _grain_filter(r):
+    return 'and(' + ','.join(
+        f'{f}.is.null' if r.get(f) is None else f'{f}.eq.{_pgrst_val(r.get(f))}'
+        for f in CARD_GRAIN) + ')'
+
+
+def patch_selected(url, key, changes):
+    """Write is_selected — and NOTHING else — onto the rows whose value changed.
+
+    Review finding 2: the snapshot + delta read can be seconds stale, so a
+    write-back carrying whole rows could put a cached price over a fresher one
+    a filler just wrote. A PATCH names one column, so no price can move. It is
+    also a pure UPDATE, so the insert-tuple hazard that forced whole rows onto
+    the old upsert (run 35291839986) cannot arise: a PATCH never inserts.
+
+    `changes` is [(row, new_value)]. Deselections go first, so a card is never
+    momentarily selected on two books (a moment with none is the dash the
+    standing rules prefer). Each request names its grains in an `or=` tree and
+    returns the keys it touched; any grain not matched exactly once is an
+    error. Returns (rows_written, err)."""
+    sent = 0
+    for value in (False, True):
+        grp = [r for r, v in changes if v is value]
+        for i in range(0, len(grp), PATCH_CHUNK):
+            chunk = grp[i:i + PATCH_CHUNK]
+            q = urllib.parse.urlencode({
+                'select': ','.join(CARD_GRAIN),
+                'or': '(' + ','.join(_grain_filter(r) for r in chunk) + ')'})
+            got, err = sb('PATCH', f'/rest/v1/odds_card_state?{q}', url, key,
+                          body=json.dumps({'is_selected': value}).encode(),
+                          headers={'Content-Type': 'application/json',
+                                   'Prefer': 'return=representation'})
+            if got is None:
+                return sent, err
+            try:
+                back = collections.Counter(
+                    _grain(r) for r in json.loads(got.decode('utf-8')))
+            except Exception as e:              # noqa: BLE001 — reported
+                return sent, (0, f'unreadable PATCH response: {e}')
+            want = collections.Counter(_grain(r) for r in chunk)
+            if back != want:
+                return sent, (0, f'is_selected PATCH matched {sum(back.values())} '
+                                 f'rows for {len(chunk)} grains')
+            sent += len(chunk)
+    return sent, None
+
+
+def run_selection(url, key, dry_run=False, guarded=None):
     """Re-decide is_selected across EVERY source, then write it back.
 
     ⚠️ THIS MUST READ THE WHOLE TABLE, NOT THIS RUN'S ROWS. The three sources are
@@ -1346,12 +1494,13 @@ def run_selection(url, key, dry_run=False):
     a card ends up showing two books at once — or, worse, keeps showing the old
     one because nothing ever told it to stop.
 
-    The write-back sends the NOT NULL columns alongside is_selected: PostgREST
-    upserts as INSERT ... ON CONFLICT DO UPDATE, and a payload missing a NOT NULL
-    column can fail on the insert tuple even when every row is really an update.
-    No price column is in the payload, so this pass cannot alter a price.
+    The write-back is a PATCH of is_selected alone, per grain (patch_selected,
+    TEN-270 review finding 2): a PATCH is a pure UPDATE, so it has no insert
+    tuple to fail, and no price column is in it, so this pass cannot alter a
+    price — not even with a stale one from the snapshot.
     """
-    # EVERY column, not just the ones the pass changes. PostgREST upserts as
+    # The READ still takes every column selection looks at. History: the old
+    # write-back was an upsert, and PostgREST upserts as
     # INSERT ... ON CONFLICT DO UPDATE, so a partial payload is a partial INSERT
     # TUPLE on any row whose conflict does not fire. Run 35291839986 is why this
     # is spelled out: a payload of keys + is_selected produced a candidate row
@@ -1368,7 +1517,7 @@ def run_selection(url, key, dry_run=False):
     # TEN-270: the whole table, from snapshot + delta where that provably
     # equals a full read (see read_card_state). Still EVERY row — the rule
     # above is about what selection SEES, and that has not narrowed.
-    rows, err, rinfo = read_card_state(url, key, cols)
+    rows, err, rinfo = read_card_state(url, key, cols, guarded=guarded)
     if err:
         print(f'::error::reading odds_card_state for selection failed ({err})')
         return None, err
@@ -1384,28 +1533,25 @@ def run_selection(url, key, dry_run=False):
     st['read_mode'] = rinfo.get('mode')
     if dry_run:
         return st, None
-    # TEN-270: write back ONLY the rows whose is_selected changed. An
-    # unchanged row re-sent is a no-op UPDATE that cost ~210 KB per 1,000
-    # rows on every run. Each changed row still goes out WHOLE (every
-    # selection column, not keys + is_selected) for the insert-tuple reason
-    # above; `updated_at` is the server's and is never sent back.
-    fields = cols.split(',')
-    changed = [{f: r.get(f) for f in fields}
+    # TEN-270: write back ONLY the rows whose is_selected changed, and ONLY
+    # is_selected (review finding 2: never a price from the snapshot). See
+    # patch_selected. `updated_at` moves by the trigger, not by this file.
+    changed = [(r, bool(r['is_selected']))
                for r, w in zip(rows, was) if bool(r['is_selected']) != w]
     st['written'] = len(changed)
     sent, uerr = (0, None)
     if changed:
-        sent, uerr = L.upsert(url, key, 'odds_card_state', changed,
-                              'fixture_id,book,market,side,line')
+        sent, uerr = patch_selected(url, key, changed)
     print(f'selection write-back: {sent}/{len(changed)} changed rows '
-          f'(of {n_before})' + (f' — FAILED {uerr}' if uerr else ''))
+          f'(of {n_before}), is_selected only'
+          + (f' — FAILED {uerr}' if uerr else ''))
     if uerr:
         return st, uerr
 
-    # MUTATE, THEN COUNT. An upsert whose conflict never fires reports success
-    # and doubles the table; the only thing that can tell the two apart is the
-    # row count afterwards. Counted by the server (one HEAD, Content-Range)
-    # rather than by paging the fixture_id column back — same check, no body.
+    # MUTATE, THEN COUNT. A PATCH cannot insert, but the check stays: it is
+    # one HEAD, and it still catches the table growing under this pass (a
+    # filler whose grain constraint stopped matching). Counted by the server
+    # (Content-Range) rather than by paging the fixture_id column back.
     n_after, rerr = sb_count(url, key, 'odds_card_state')
     if rerr:
         print(f'::warning::could not re-count odds_card_state ({rerr}); the '
@@ -2078,10 +2224,14 @@ def main():
     # TEN-270: both tables are written by the DAILY line-summary loader, so a
     # 5-minute job re-reads them only when a count + newest-stamp probe says
     # they moved. See fetch_ref_cached().
+    # Review finding 4: ONE catalog call per run says which tables carry their
+    # touch triggers; every cache below consults it (none is trusted without).
+    guarded = _guarded(url, key, None)
+    print(f'touch triggers present on: {sorted(guarded) or "none"}')
     ofx, err, _ = fetch_ref_cached(
         url, key, 'oddspapi_fixtures',
         'fixture_id,player1,player2,scheduled_start,true_start,category_name',
-        '', 'fixture_id.asc', 'updated_at')
+        '', 'fixture_id.asc', 'updated_at', guarded=guarded)
     if err:
         print(f'::error::reading oddspapi_fixtures failed ({err})')
         return 1
@@ -2089,7 +2239,8 @@ def main():
         url, key, 'oddspapi_line_summary',
         'fixture_id,market,side,open_price,open_ts,close_price,'
         'start_ts,start_ts_source,start_reject_reason,flip_gap_seconds',
-        f'&market=eq.{urllib.parse.quote(MARKET)}', SUMMARY_ORDER, 'loaded_at')
+        f'&market=eq.{urllib.parse.quote(MARKET)}', SUMMARY_ORDER, 'loaded_at',
+        guarded=guarded)
     if err:
         print(f'::error::reading oddspapi_line_summary failed ({err})')
         return 1
@@ -2439,7 +2590,7 @@ def main():
     # has just landed can take a match off bet365 in the same run that created
     # it. Run it even on a dry run — it prints what it WOULD change, which is the
     # number worth reading before anything renders.
-    sel, serr = run_selection(url, key, dry_run=a.dry_run)
+    sel, serr = run_selection(url, key, dry_run=a.dry_run, guarded=guarded)
     result['selection'] = dict(sel) if sel else None
     if serr:
         result['error'] = str(serr)

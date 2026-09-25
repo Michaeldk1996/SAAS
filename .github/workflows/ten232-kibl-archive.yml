@@ -67,11 +67,13 @@ concurrency:
 # TEN-225 Part 3 — `write` so the publish step can commit odds-card-state.json.
 # The sweep, the card fill and every report in this job stay read-only; the one
 # writer is the publish step, and the one path it writes is that file.
-# `actions: read` is for the circuit-breaker step, which reads this workflow's
-# own run list to count consecutive failures.
+# `actions: write` — read for the circuit-breaker step, which reads this
+# workflow's own run list to count consecutive failures; write for the TEN-270
+# prune step, which deletes superseded ten270-* snapshot cache entries. This
+# workflow has one job, so this block is that job's grant.
 permissions:
   contents: write
-  actions: read
+  actions: write
 
 jobs:
   archive:
@@ -226,9 +228,11 @@ jobs:
       # Two caches because they change at different rates: the reference
       # snapshot (oddspapi_fixtures + line_summary) is rewritten about once a
       # day and is keyed on its own hash, so an unchanged file is not saved
-      # again; the card snapshot changes every run and is keyed per run.
-      # (The repo's Actions cache sits near its 10 GiB ceiling — see the
-      # pipeline's bsp-caches — so neither is saved when nothing changed.)
+      # again; the card snapshot is keyed on hour + hash and saved at most once
+      # per clock hour, and only when its bytes changed (review finding 3).
+      # Superseded entries are deleted after each save, so the steady state is
+      # ONE entry per prefix. (The repo's Actions cache sits near its 10 GiB
+      # ceiling — see the pipeline's bsp-caches.)
       - name: Restore reference snapshot
         id: refsnap
         if: |
@@ -242,6 +246,7 @@ jobs:
           restore-keys: ten270-ref-
 
       - name: Restore card snapshot
+        id: cardsnap
         if: |
           inputs.mode == 'cards' ||
           ((github.event_name == 'schedule' || inputs.mode == 'sweep') &&
@@ -298,6 +303,7 @@ jobs:
       # hashFiles() is '' when the file is absent, which skips the save rather
       # than raising a path warning on every run.
       - name: Save reference snapshot (only when it changed)
+        id: saveref
         if: >-
           steps.cards.outcome == 'success' &&
           hashFiles('.cache/ten225-ref-snapshot.json.gz') != '' &&
@@ -308,12 +314,72 @@ jobs:
           path: .cache/ten225-ref-snapshot.json.gz
           key: ten270-ref-${{ hashFiles('.cache/ten225-ref-snapshot.json.gz') }}
 
-      - name: Save card snapshot
+      # Review finding 3: the old step saved ten270-card-<run_id> on EVERY run
+      # (~288 entries a day). Now: key = ten270-card-<UTC hour>-<content hash>,
+      # saved only when the hash differs from the restored entry's AND the hour
+      # differs too. A restore up to an hour old is still exact: the delta reads
+      # every row stamped since that snapshot's server high-water mark, and the
+      # 24 h full-read ceiling is carried inside the snapshot (full_at).
+      - name: Decide card snapshot save (content changed, at most hourly)
+        id: cardkey
         if: steps.cards.outcome == 'success' && hashFiles('.cache/ten225-card-snapshot.json.gz') != ''
+        env:
+          PREV: ${{ steps.cardsnap.outputs.cache-matched-key }}
+        run: |
+          set -euo pipefail
+          h=$(sha256sum .cache/ten225-card-snapshot.json.gz | cut -c1-16)
+          hour=$(date -u +%Y%m%d%H)
+          re='^ten270-card-([0-9]{10})-([0-9a-f]{16})$'
+          prev_hour=$(printf '%s' "$PREV" | sed -nE "s/$re/\1/p")
+          prev_hash=$(printf '%s' "$PREV" | sed -nE "s/$re/\2/p")
+          save=true; why='content changed, new hour'
+          if [ "$prev_hash" = "$h" ]; then save=false; why='content unchanged'
+          elif [ "$prev_hour" = "$hour" ]; then save=false; why='already saved this hour'
+          fi
+          echo "card snapshot: save=$save ($why); restored '${PREV:-none}'"
+          { echo "save=$save"; echo "key=ten270-card-$hour-$h"; } >> "$GITHUB_OUTPUT"
+
+      - name: Save card snapshot
+        id: savecard
+        if: steps.cardkey.outputs.save == 'true'
         uses: actions/cache/save@v4
         with:
           path: .cache/ten225-card-snapshot.json.gz
-          key: ten270-card-${{ github.run_id }}-${{ github.run_attempt }}
+          key: ${{ steps.cardkey.outputs.key }}
+
+      # Delete every older entry under the prefix just saved, then report what
+      # the two prefixes hold. Best-effort: a failed prune is a warning, never
+      # a failed archive run (the sweep's prices are already written).
+      - name: Prune superseded snapshot caches
+        if: steps.savecard.outcome == 'success' || steps.saveref.outcome == 'success'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+          KEEP_CARD: ${{ steps.savecard.outcome == 'success' && steps.cardkey.outputs.key || '' }}
+          KEEP_REF: ${{ steps.saveref.outcome == 'success' && format('ten270-ref-{0}', hashFiles('.cache/ten225-ref-snapshot.json.gz')) || '' }}
+        run: |
+          set -uo pipefail
+          api="https://api.github.com/repos/$GITHUB_REPOSITORY/actions/caches"
+          auth=(-H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json")
+          list() { curl -sS --fail "${auth[@]}" "$api?key=$1&per_page=100"; }
+          for pair in "ten270-card-:$KEEP_CARD" "ten270-ref-:$KEEP_REF"; do
+            prefix=${pair%%:*}; keep=${pair#*:}
+            [ -n "$keep" ] || continue
+            ids=$(list "$prefix" | jq -r --arg k "$keep" \
+              '.actions_caches[] | select(.key != $k) | .id') \
+              || { echo "::warning::could not list $prefix caches"; continue; }
+            n=0
+            for id in $ids; do
+              curl -sS --fail -X DELETE "${auth[@]}" "$api/$id" >/dev/null \
+                && n=$((n+1)) || echo "::warning::could not delete cache $id"
+            done
+            echo "$prefix: kept $keep, deleted $n older"
+          done
+          for prefix in ten270-card- ten270-ref-; do
+            list "$prefix" | jq -r --arg p "$prefix" \
+              '"\($p) steady state: \(.actions_caches | length) entries, \([.actions_caches[].size_in_bytes] | add // 0) bytes"' \
+              | tee -a "$GITHUB_STEP_SUMMARY" || true
+          done
 
       # ------------------------------------------------------------- PART 3
       # PUBLISH. odds_card_state has RLS on and zero policies and the product is

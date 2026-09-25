@@ -12,13 +12,20 @@ So a fake that is wrong in shape fails the real code, not a copy of it.
 
 LOCKED
   a. the post-write recount is ONE counted HEAD, not a paged read
-  b. the selection write-back sends only rows whose is_selected changed,
-     each whole, never updated_at
+  b. the selection write-back PATCHes is_selected ALONE onto only the rows
+     whose value changed, deselections first; a price a filler writes mid-pass
+     survives it (review finding 2)
   c. a matching probe serves oddspapi_fixtures / line_summary from the
      snapshot; a changed count or newest stamp re-reads them
   d. odds_card_state: snapshot + delta == a full read; a deselection arrives
      via the delta; a count mismatch forces a full read; the high-water mark is
      the SERVER's max updated_at, never the runner clock
+  e. a reference table stamped under 30 min ago is read in full and never
+     cached — a batched load may still be landing (review finding 1)
+  f. no touch trigger (missing, disabled, wrong function, or the catalog RPC
+     absent) -> full read, nothing saved, any old snapshot dropped (finding 4)
+  s. the DDL creates the exact trigger names the job checks for; the
+     oddspapi_fixtures trigger keeps the old stamp on a no-op (finding 1)
 
 MUTATION CONTROL — each reverts one change in a copy of the module and must
 turn its test red. Run by this file on every invocation; see the bottom.
@@ -29,6 +36,7 @@ import shutil
 import sys
 import tempfile
 import types
+import urllib.error
 import urllib.parse
 import urllib.request
 from datetime import datetime, timezone
@@ -62,7 +70,58 @@ def _ep(v):
 
 TS_COLS = {'updated_at', 'loaded_at'}
 GRAIN = ('fixture_id', 'book', 'market', 'side', 'line')
-TOUCH = {'odds_card_state': 'updated_at', 'oddspapi_line_summary': 'loaded_at'}
+TOUCH = {'odds_card_state': 'updated_at', 'oddspapi_line_summary': 'loaded_at',
+         'oddspapi_fixtures': 'updated_at'}
+ALL_TRIGGERS = [{'tbl': t, 'trg': f'{t}_touch_{w}', 'fn': f'{t}_touch', 'enabled': True}
+                for t in TOUCH for w in ('ins', 'upd')]
+
+
+def _split_top(s):
+    """Split a PostgREST logic-tree body on top-level commas (parens and
+    double quotes respected)."""
+    out, depth, q, cur, i = [], 0, False, '', 0
+    while i < len(s):
+        ch = s[i]
+        if q and ch == '\\':
+            cur += s[i:i + 2]
+            i += 2
+            continue
+        if ch == '"':
+            q = not q
+        elif not q and ch == '(':
+            depth += 1
+        elif not q and ch == ')':
+            depth -= 1
+        if ch == ',' and depth == 0 and not q:
+            out.append(cur)
+            cur = ''
+        else:
+            cur += ch
+        i += 1
+    out.append(cur)
+    return out
+
+
+def _leaf(expr):
+    col, op, val = expr.split('.', 2)
+    if val.startswith('"'):
+        val = val[1:-1].replace('\\"', '"').replace('\\\\', '\\')
+    if op == 'is' and val == 'null':
+        return lambda r: r.get(col) is None
+    if op == 'eq':
+        return lambda r: r.get(col) is not None and str(r.get(col)) == val
+    raise AssertionError(f'fake PostgREST: unsupported leaf {expr}')
+
+
+def _or_tree(tree):
+    """`(and(a.eq."x",b.is.null),and(...))` -> predicate."""
+    assert tree.startswith('(') and tree.endswith(')'), tree
+    alts = []
+    for part in _split_top(tree[1:-1]):
+        assert part.startswith('and(') and part.endswith(')'), part
+        leaves = [_leaf(x) for x in _split_top(part[4:-1])]
+        alts.append(leaves)
+    return lambda r: any(all(f(r) for f in leaves) for leaves in alts)
 
 
 class Resp:
@@ -87,6 +146,9 @@ class FakePG:
         self.clock = clock          # server epoch; advanced by the test
         self.log = []               # (method, table, params, n_rows_returned)
         self.posts = []             # (table, payload rows)
+        self.patches = []           # (table, body, [grains matched])
+        self.triggers = list(ALL_TRIGGERS)   # what the catalog RPC reports
+        self.before_patch = None    # hook: a concurrent writer, run once
 
     def tick(self, s=1.0):
         self.clock += s
@@ -131,8 +193,16 @@ class FakePG:
         p = dict(params)
         method = req.get_method()
         rows = self.t.setdefault(table, [])
+        if method == 'POST' and table == 'rpc/ten270_touch_triggers':
+            self.log.append(('RPC', table, p, len(self.triggers or [])))
+            if self.triggers is None:          # the function does not exist
+                raise urllib.error.HTTPError(req.full_url, 404, 'Not Found', {},
+                                             __import__('io').BytesIO(b'{"code":"PGRST202"}'))
+            return Resp(json.dumps(self.triggers).encode())
         if method == 'POST':
             return self._upsert(table, rows, p, json.loads(req.data.decode()))
+        if method == 'PATCH':
+            return self._patch(table, rows, p, json.loads(req.data.decode()))
         got = self._filter(rows, params)
         if method == 'HEAD':
             hdrs = {k.lower(): v for k, v in req.header_items()}
@@ -169,6 +239,24 @@ class FakePG:
                     old[touch] = now          # the BEFORE UPDATE trigger
         self.log.append(('POST', table, p, len(payload)))
         return Resp(b'')
+
+    def _patch(self, table, rows, p, body):
+        if self.before_patch:
+            hook, self.before_patch = self.before_patch, None
+            hook()
+            rows = self.t[table]
+        pred = _or_tree(p['or'])
+        hit = [r for r in rows if pred(r)]
+        touch = TOUCH.get(table)
+        for r in hit:
+            if any(r.get(c) != v for c, v in body.items()):
+                r.update(body)
+                if touch:
+                    r[touch] = _iso(self.clock)
+        self.patches.append((table, body, [tuple(r.get(c) for c in GRAIN) for r in hit]))
+        self.log.append(('PATCH', table, p, len(hit)))
+        cols = p['select'].split(',')
+        return Resp(json.dumps([{c: r.get(c) for c in cols} for r in hit]).encode())
 
     # Direct writes by "another writer" — same trigger semantics.
     def update(self, table, pred, **changes):
@@ -262,48 +350,177 @@ def t_a_recount_is_one_head(M, ok):
     install(M, pg, cache)
     st, err = M.run_selection('https://x', 'k')
     ok(err is None, 'a: selection pass succeeds', err)
-    last_post = max(i for i, e in enumerate(pg.log) if e[0] == 'POST')
-    after = pg.log[last_post + 1:]
+    last_w = max(i for i, e in enumerate(pg.log) if e[0] in ('POST', 'PATCH'))
+    after = pg.log[last_w + 1:]
     ok([e[:2] for e in after] == [('HEAD', 'odds_card_state')],
        'a: after the write-back, exactly ONE request — a counted HEAD, no paged read',
        [e[:2] for e in after])
-    # Same semantics: an upsert that INSERTS instead of merging must still fail.
+    # Same semantics: a table that GROWS under the pass must still fail.
     pg2 = FakePG({'odds_card_state': card_table()}, SERVER_T0 + 60)
-    real = pg2._upsert
-
-    def dup(table, rows, p, payload):
-        p = dict(p, on_conflict='fixture_id,book,market,side,line,is_selected')
-        return real(table, rows, p, payload)
-    pg2._upsert = dup
+    pg2.before_patch = lambda: pg2.t['odds_card_state'].append(
+        card('new1', 'bet365', 2, 'oddspapi', '1', None, False))
     install(M, pg2, tempfile.mkdtemp())
     st2, err2 = M.run_selection('https://x', 'k')
     ok(err2 is not None and 'row count' in str(err2),
-       'a: a write-back that grows the table is still refused (count != n_before)', err2)
+       'a: a write-back pass over a table that grew is still refused (count != n_before)', err2)
     shutil.rmtree(cache, ignore_errors=True)
 
 
 def t_b_writes_only_changed(M, ok):
     pg = FakePG({'odds_card_state': card_table()}, SERVER_T0 + 60)
     install(M, pg, tempfile.mkdtemp())
+    # A filler lands a fresher price on k1 BETWEEN this pass's read and its
+    # write-back. The pass read 1.5; the server now holds 1.44.
+    k1 = ('k1', 'bet105', 'match winner', '1', None)
+    pg.before_patch = lambda: pg.update(
+        'odds_card_state', lambda r: grain(r) == k1, now_price=1.44)
     st, err = M.run_selection('https://x', 'k')
-    sent = [r for t, rows in pg.posts if t == 'odds_card_state' for r in rows]
-    ok(sorted(grain(r) for r in sent) == sorted(
+    ok(err is None, 'b: selection pass succeeds', err)
+    sent = [g for t, body, gs in pg.patches if t == 'odds_card_state' for g in gs]
+    ok(sorted(sent, key=str) == sorted(
         [('k1', 'bet105', 'match winner', s, None) for s in '12'] +
-        [('o1', 'bet365', 'match winner', s, None) for s in '12']),
-       'b: only the 4 rows whose is_selected flipped are sent (of 2,506)',
-       f'{len(sent)} sent')
-    ok(all(set(r) == set(COLS_ALL) for r in sent),
-       'b: each is sent WHOLE (every selection column) and without updated_at')
+        [('o1', 'bet365', 'match winner', s, None) for s in '12'], key=str),
+       'b: only the 4 rows whose is_selected flipped are written (of 2,506)',
+       f'{len(sent)} written')
+    ok(not [t for t, _ in pg.posts if t == 'odds_card_state'],
+       'b: no upsert of odds_card_state at all — the write-back is a PATCH',
+       len(pg.posts))
+    ok(all(body in ({'is_selected': True}, {'is_selected': False})
+           for t, body, _ in pg.patches),
+       'b: each PATCH body is is_selected ALONE — no price, no key, no updated_at',
+       [b for _, b, _ in pg.patches])
+    ok([b['is_selected'] for _, b, _ in pg.patches] == [False, True],
+       'b: deselections go before selections (never two books selected at once)',
+       [b['is_selected'] for _, b, _ in pg.patches])
+    row = {grain(r): r for r in pg.t['odds_card_state']}
+    ok(row[k1]['now_price'] == 1.44,
+       'b: a fresher price written mid-pass SURVIVES the write-back (no stale price)',
+       row[k1]['now_price'])
     ok(st.get('written') == 4, 'b: the pass counts what it wrote', st.get('written'))
-    sel = {grain(r): r['is_selected'] for r in pg.t['odds_card_state']}
+    sel = {g: r['is_selected'] for g, r in row.items()}
     ok(sel[('k1', 'bet105', 'match winner', '1', None)] is True
        and sel[('o1', 'bet365', 'match winner', '1', None)] is False
        and sel[('o2', 'bet365', 'match winner', '1', None)] is True,
        'b: the server ends in the selected state (kibl in, bet365 out on A; B kept)')
     # A second pass over the settled table writes nothing at all.
-    n = len(pg.posts)
+    n = len(pg.patches)
     M.run_selection('https://x', 'k')
-    ok(len(pg.posts) == n, 'b: a settled table -> zero rows written', len(pg.posts) - n)
+    ok(len(pg.patches) == n, 'b: a settled table -> zero rows written', len(pg.patches) - n)
+    # A grain value that needs quoting (comma, dot, paren, quote) still
+    # matches exactly one row.
+    odd = 'k,1.(x)"y'
+    t = card_table()
+    for r in t:
+        if r['fixture_id'] == 'k1':
+            r['fixture_id'] = odd
+    pg3 = FakePG({'odds_card_state': t}, SERVER_T0 + 60)
+    install(M, pg3, tempfile.mkdtemp())
+    st3, err3 = M.run_selection('https://x', 'k')
+    ok(err3 is None and st3.get('written') == 4
+       and all(r['is_selected'] for r in pg3.t['odds_card_state'] if r['fixture_id'] == odd),
+       'b: a fixture_id with , . ( ) " is filtered exactly', err3)
+
+
+def t_e_settling_not_cached(M, ok):
+    """Finding 1: a reference table written in the last 30 min may be mid-load."""
+    cache = tempfile.mkdtemp()
+    pg = FakePG(ref_tables(), SERVER_T0 + 60)
+    install(M, pg, cache)
+
+    def fx(now_s):
+        return M.fetch_ref_cached('https://x', 'k', 'oddspapi_fixtures', FX_COLS, '',
+                                  'fixture_id.asc', 'updated_at', now_s=now_s)
+    # Loader batch 1 of 3 has just landed (the trigger stamps the server clock).
+    pg.update('oddspapi_fixtures', lambda r: r['fixture_id'] < 'f00500',
+              category_name='ATP 250')
+    _r, e1, h1 = fx(SERVER_T0 + 120)
+    snap = M._load_snapshot(M.REF_SNAPSHOT) or {}
+    ok(h1 == 'full' and not e1 and 'oddspapi_fixtures' not in (snap.get('tables') or {}),
+       'e: newest stamp under 30 min old -> full read, NOTHING cached', h1)
+    # Batches 2 and 3 land. The next run must see them, not a half-load.
+    pg.tick(60)
+    pg.update('oddspapi_fixtures', lambda r: r['fixture_id'] >= 'f00500',
+              category_name='ATP 250')
+    rows, _e, h2 = fx(SERVER_T0 + 300)
+    ok(h2 == 'full' and all(r['category_name'] == 'ATP 250' for r in rows),
+       'e: the run after the load completes sees every batch', h2)
+    # Quiet for 30+ min -> cached from then on.
+    fx(SERVER_T0 + 3 * 3600)
+    _r, _e, h3 = fx(SERVER_T0 + 3 * 3600 + 300)
+    ok(h3 == 'cached', 'e: a table quiet for 30+ min is cached again', h3)
+    shutil.rmtree(cache, ignore_errors=True)
+
+
+def t_f_no_trigger_no_cache(M, ok):
+    """Finding 4: a missing trigger -> full reads, nothing saved, old dropped."""
+    cols = ','.join(COLS_ALL)
+    cache = tempfile.mkdtemp()
+    pg = FakePG(dict(ref_tables(), odds_card_state=card_table()), SERVER_T0 + 60)
+    install(M, pg, cache)
+    # Warm both caches with the triggers present.
+    M.read_card_state('https://x', 'k', cols)
+    M.fetch_ref_cached('https://x', 'k', 'oddspapi_fixtures', FX_COLS, '',
+                       'fixture_id.asc', 'updated_at')
+    _r, _e, info = M.read_card_state('https://x', 'k', cols)
+    ok(info['mode'] == 'delta', 'f: control — with triggers, the delta path runs', info['mode'])
+    # The card trigger is dropped (disabled) and the fixtures one never installed.
+    pg.triggers = [dict(t, enabled=(t['tbl'] != 'odds_card_state'))
+                   for t in ALL_TRIGGERS if t['tbl'] != 'oddspapi_fixtures']
+    _r, _e, info = M.read_card_state('https://x', 'k', cols)
+    ok(info['mode'] == 'full', 'f: card trigger disabled -> full read', info['mode'])
+    ok(not os.path.exists(os.path.join(cache, M.CARD_SNAPSHOT)),
+       'f: ...and the card snapshot is dropped, none saved')
+    _r, _e, h = M.fetch_ref_cached('https://x', 'k', 'oddspapi_fixtures', FX_COLS, '',
+                                   'fixture_id.asc', 'updated_at')
+    snap = M._load_snapshot(M.REF_SNAPSHOT) or {}
+    ok(h == 'full' and 'oddspapi_fixtures' not in (snap.get('tables') or {}),
+       'f: fixtures trigger missing -> full read, snapshot entry dropped', h)
+    # The trigger comes back: the first run is a full read (nothing to merge).
+    pg.triggers = list(ALL_TRIGGERS)
+    _r, _e, info = M.read_card_state('https://x', 'k', cols)
+    ok(info['mode'] == 'full', 'f: trigger back -> first read is full, not a stale delta',
+       info['mode'])
+    # The RPC itself missing (schema file not applied yet) = nothing guarded.
+    pg.triggers = None
+    ok(M.touch_guarded('https://x', 'k')[0] == set(),
+       'f: trigger RPC 404 -> no table guarded')
+    _r, _e, info = M.read_card_state('https://x', 'k', cols)
+    ok(info['mode'] == 'full', 'f: ...and the card read is full', info['mode'])
+    # A trigger calling the WRONG function does not count.
+    pg.triggers = [dict(t, fn='something_else') if t['trg'] == 'odds_card_state_touch_upd'
+                   else t for t in ALL_TRIGGERS]
+    ok('odds_card_state' not in M.touch_guarded('https://x', 'k')[0],
+       'f: a same-named trigger on another function is not a guard')
+    shutil.rmtree(cache, ignore_errors=True)
+
+
+SQL_LS_PATH = os.path.join(HERE, 'ten225-line-summary-schema.sql')
+SQL_CS_PATH = os.path.join(HERE, 'ten225-card-state-schema.sql')
+SQL = {'ls': open(SQL_LS_PATH).read(), 'cs': open(SQL_CS_PATH).read()}
+
+
+def t_s_schema_names(M, ok):
+    """The names touch_guarded() demands are the names the DDL creates, on the
+    right tables, and the fixtures trigger ignores the loader's own stamp."""
+    import re
+    ls, cs = SQL['ls'], SQL['cs']
+    for t, text in (('oddspapi_fixtures', ls), ('oddspapi_line_summary', ls),
+                    ('odds_card_state', cs)):
+        for w, ev in (('ins', 'INSERT'), ('upd', 'UPDATE')):
+            pat = (rf'CREATE OR REPLACE TRIGGER {t}_touch_{w}\s+BEFORE {ev} ON {t}\s+'
+                   rf'FOR EACH ROW\s+(WHEN \(.*?\)\s+)?EXECUTE FUNCTION {t}_touch\(\)')
+            ok(re.search(pat, text, re.S) is not None,
+               f's: {t}_touch_{w} is BEFORE {ev} ON {t} calling {t}_touch()')
+    m = re.search(r'FUNCTION oddspapi_fixtures_touch\(\).*?END \$\$', ls, re.S)
+    body = m.group(0) if m else ''
+    ok("NEW.updated_at := now();" in body and 'NEW.updated_at := OLD.updated_at;' in body,
+       's: fixtures touch stamps now() on change and KEEPS the old stamp on a no-op')
+    ok(re.search(r'TRIGGER oddspapi_fixtures_touch_upd\s+BEFORE UPDATE ON oddspapi_fixtures\s+'
+                 r'FOR EACH ROW EXECUTE', ls) is not None,
+       's: the fixtures UPDATE trigger has no WHEN gate (the loader sends updated_at)')
+    ok('ten270_touch_triggers' in cs and 'GRANT EXECUTE ON FUNCTION ten270_touch_triggers() '
+       'TO service_role' in cs and M.TOUCH_RPC.endswith('/ten270_touch_triggers'),
+       's: the catalog RPC exists in the card-state DDL and is the one the job calls')
 
 
 def t_c_reference_cache(M, ok):
@@ -329,7 +546,8 @@ def t_c_reference_cache(M, ok):
     (fx2, _, how1), (ls2, _, how2) = both()
     ok(how1 == how2 == 'cached' and not paged(pg.since(m1)),
        'c: matching probe -> NO paged read of either table', [e[:2] for e in paged(pg.since(m1))])
-    ok(len(pg.since(m1)) == 4, 'c: the probe is 4 tiny requests (2 HEAD + 2 single-row)',
+    ok(len([e for e in pg.since(m1) if e[0] != 'RPC']) == 4,
+       'c: the probe is 4 tiny requests (2 HEAD + 2 single-row)',
        [(e[0], e[1], e[2].get('limit')) for e in pg.since(m1)])
     ok(fx2 == fx1 and ls2 == ls1, 'c: the snapshot returns the same rows')
     # A daily-loader UPDATE of one match-winner row: count unchanged, newest
@@ -449,11 +667,15 @@ def t_main_wires_the_cache(M, ok):
     ok('oddspapi_fixtures' not in paged and 'oddspapi_line_summary' not in paged,
        'main: a second run with an unchanged probe pages NEITHER reference table',
        sorted(paged))
+    ok(sum(1 for e in pg.since(m) if e[0] == 'RPC') == 1,
+       'main: ONE trigger-catalog call per run, shared by every cache',
+       sum(1 for e in pg.since(m) if e[0] == 'RPC'))
     shutil.rmtree(cache, ignore_errors=True)
 
 
 TESTS = [t_a_recount_is_one_head, t_b_writes_only_changed, t_c_reference_cache,
-         t_d_incremental, t_main_wires_the_cache]
+         t_d_incremental, t_e_settling_not_cached, t_f_no_trigger_no_cache,
+         t_s_schema_names, t_main_wires_the_cache]
 
 
 def run(M, verbose):
@@ -494,8 +716,17 @@ MUTANTS = [
     ('b', 'write back every row',
      "for r, w in zip(rows, was) if bool(r['is_selected']) != w]",
      "for r, w in zip(rows, was)]"),
+    # Finding 2: the pre-review write-back — whole rows, snapshot prices and all.
+    ('b', 'write back WHOLE rows by upsert (snapshot prices)',
+     "        sent, uerr = patch_selected(url, key, changed)\n",
+     "        sent, uerr = L.upsert(url, key, 'odds_card_state', [\n"
+     "            {f: r.get(f) for f in cols.split(',')} for r, _v in changed],\n"
+     "            'fixture_id,book,market,side,line')\n"),
+    ('b', 'select before deselecting',
+     "    for value in (False, True):\n",
+     "    for value in (True, False):\n"),
     ('c', 'ignore the probe, always re-read',
-     "    if (probe is not None and ent and ent.get('probe') == probe",
+     "    if (probe is not None and not settling and ent and ent.get('probe') == probe",
      "    if (False and ent and ent.get('probe') == probe"),
     ('d', 'high-water mark from the runner clock',
      "    hwm = max(stamps)[1] if stamps else None\n",
@@ -506,12 +737,39 @@ MUTANTS = [
     ('d', 'delta without the overlap window',
      "        since = iso(epoch(snap['hwm']) - DELTA_OVERLAP_S)",
      "        since = iso(epoch(snap['hwm']) + DELTA_OVERLAP_S)"),
+    # Finding 1.
+    ('e', 'cache a table written minutes ago',
+     "    settling = ne is not None and now_s - ne < REF_QUIET_S\n",
+     "    settling = False\n"),
+    # Finding 4.
+    ('f', 'card delta without asking for the trigger',
+     "    trig = 'odds_card_state' in _guarded(url, key, guarded)\n",
+     "    trig = True\n"),
+    ('f', 'reference cache without asking for the trigger',
+     "    if table not in _guarded(url, key, guarded):\n",
+     "    if False:\n"),
+    ('f', 'any enabled trigger counts, whatever it calls',
+     "            if r.get('enabled') is True and r.get('fn') == f'{t}_touch':\n",
+     "            if r.get('enabled') is True:\n"),
     ('main', 'main reads oddspapi_fixtures directly again',
      "    ofx, err, _ = fetch_ref_cached(\n        url, key, 'oddspapi_fixtures',\n"
      "        'fixture_id,player1,player2,scheduled_start,true_start,category_name',\n"
-     "        '', 'fixture_id.asc', 'updated_at')",
+     "        '', 'fixture_id.asc', 'updated_at', guarded=guarded)",
      "    ofx, err = fetch_all(url, key, 'oddspapi_fixtures',\n"
      "        'fixture_id,player1,player2,scheduled_start,true_start,category_name')"),
+    ('main', 'each cache asks for the triggers itself',
+     "        '', 'fixture_id.asc', 'updated_at', guarded=guarded)",
+     "        '', 'fixture_id.asc', 'updated_at')"),
+    # The DDL (finding 1's trigger and finding 4's names). 'sql:<file>' target.
+    ('s', 'no UPDATE trigger on oddspapi_fixtures',
+     "CREATE OR REPLACE TRIGGER oddspapi_fixtures_touch_upd\n", "-- dropped\n", 'ls'),
+    ('s', 'fixtures no-op upsert takes the loader\'s stamp',
+     "    NEW.updated_at := OLD.updated_at;\n", "    NULL;\n", 'ls'),
+    ('s', 'fixtures UPDATE trigger gated by WHEN',
+     "  BEFORE UPDATE ON oddspapi_fixtures\n  FOR EACH ROW EXECUTE",
+     "  BEFORE UPDATE ON oddspapi_fixtures\n  FOR EACH ROW\n"
+     "  WHEN ((to_jsonb(OLD) - 'updated_at') IS DISTINCT FROM (to_jsonb(NEW) - 'updated_at'))\n"
+     "  EXECUTE", 'ls'),
 ]
 
 
@@ -521,13 +779,22 @@ if __name__ == '__main__':
     print(f'\ncontrol: {"GREEN" if not failed else f"{len(failed)} FAILED"}')
     print('\nmutation control (each must turn the suite red):')
     survivors = []
-    for letter, what, old, new in MUTANTS:
-        n = SRC.count(old)
+    for letter, what, old, new, *tgt in MUTANTS:
+        text = SQL[tgt[0]] if tgt else SRC
+        n = text.count(old)
         if n != 1:
             survivors.append(what)
             print(f'  SURVIVED {letter}: {what} — anchor found {n}x (vacuous)')
             continue
-        red = run(load(SRC.replace(old, new)), verbose=False)
+        if tgt:
+            keep = SQL[tgt[0]]
+            SQL[tgt[0]] = keep.replace(old, new)
+            try:
+                red = run(load(), verbose=False)
+            finally:
+                SQL[tgt[0]] = keep
+        else:
+            red = run(load(SRC.replace(old, new)), verbose=False)
         hit = [f for f in red if f.startswith(f'{letter}:') or f.startswith(f'{letter} ')
                or (letter == 'main' and f.startswith('main'))
                or f.startswith(f't_{letter}')]

@@ -235,21 +235,72 @@ CREATE INDEX IF NOT EXISTS oddspapi_line_summary_fixture_market_idx
 -- row's close/start can change on a re-summarise without a new capture.
 -- So an UPDATE that really changes the row bumps loaded_at; a no-op upsert
 -- (every column equal) does not, so an unchanged daily reload costs the Kibl
--- job nothing. INSERTs keep the DEFAULT.
+-- job nothing. An INSERT is stamped now() by its own trigger, so no writer's
+-- clock (or a replayed payload) can become the probe's newest value.
 -- ---------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION oddspapi_line_summary_touch() RETURNS trigger
   LANGUAGE plpgsql AS $$
 BEGIN
-  NEW.loaded_at := now();
+  IF TG_OP = 'INSERT' THEN
+    NEW.loaded_at := now();
+  ELSIF (to_jsonb(OLD) - 'loaded_at') IS DISTINCT FROM (to_jsonb(NEW) - 'loaded_at') THEN
+    NEW.loaded_at := now();
+  ELSE
+    -- A no-op upsert keeps the stamp, whatever the payload carried.
+    NEW.loaded_at := OLD.loaded_at;
+  END IF;
   RETURN NEW;
 END $$;
 
+CREATE OR REPLACE TRIGGER oddspapi_line_summary_touch_ins
+  BEFORE INSERT ON oddspapi_line_summary
+  FOR EACH ROW EXECUTE FUNCTION oddspapi_line_summary_touch();
+
 CREATE OR REPLACE TRIGGER oddspapi_line_summary_touch_upd
   BEFORE UPDATE ON oddspapi_line_summary
-  FOR EACH ROW
-  WHEN ((to_jsonb(OLD) - 'loaded_at') IS DISTINCT FROM (to_jsonb(NEW) - 'loaded_at'))
-  EXECUTE FUNCTION oddspapi_line_summary_touch();
+  FOR EACH ROW EXECUTE FUNCTION oddspapi_line_summary_touch();
 
 -- The probe's "newest loaded_at" read.
 CREATE INDEX IF NOT EXISTS oddspapi_line_summary_loaded_idx
   ON oddspapi_line_summary (loaded_at);
+
+-- ---------------------------------------------------------------------------
+-- TEN-270 review finding 1 — oddspapi_fixtures.updated_at MOVES PER BATCH.
+--
+-- The loader (ten225-load-line-summary.py --fixtures) stamps EVERY row with the
+-- run's one generatedAt and upserts in 500-row batches. So after the first
+-- batch the probe's "newest updated_at" already reads its final value, and a
+-- probe taken mid-load matched the probe taken after it: the Kibl job could
+-- cache a half-updated table for up to 24 h. Now the database stamps the row
+-- with the WRITING TRANSACTION's now() — one transaction per batch, so every
+-- batch that changes a row moves the probe — and ignores the loader's value.
+-- A no-op upsert (only the loader's generatedAt differs) keeps the old stamp,
+-- so an unchanged daily reload costs the Kibl job nothing.
+-- Why the ELSE branch and not a WHEN clause: the loader SENDS updated_at, and
+-- ON CONFLICT DO UPDATE SET updated_at = EXCLUDED.updated_at carries the BEFORE
+-- INSERT trigger's now() — a WHEN-gated trigger would let that through on
+-- every unchanged row.
+-- ---------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION oddspapi_fixtures_touch() RETURNS trigger
+  LANGUAGE plpgsql AS $$
+BEGIN
+  IF TG_OP = 'INSERT' THEN
+    NEW.updated_at := now();
+  ELSIF (to_jsonb(OLD) - 'updated_at') IS DISTINCT FROM (to_jsonb(NEW) - 'updated_at') THEN
+    NEW.updated_at := now();
+  ELSE
+    NEW.updated_at := OLD.updated_at;
+  END IF;
+  RETURN NEW;
+END $$;
+
+CREATE OR REPLACE TRIGGER oddspapi_fixtures_touch_ins
+  BEFORE INSERT ON oddspapi_fixtures
+  FOR EACH ROW EXECUTE FUNCTION oddspapi_fixtures_touch();
+
+CREATE OR REPLACE TRIGGER oddspapi_fixtures_touch_upd
+  BEFORE UPDATE ON oddspapi_fixtures
+  FOR EACH ROW EXECUTE FUNCTION oddspapi_fixtures_touch();
+
+CREATE INDEX IF NOT EXISTS oddspapi_fixtures_updated_idx
+  ON oddspapi_fixtures (updated_at);
