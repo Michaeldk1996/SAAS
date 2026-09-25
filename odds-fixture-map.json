@@ -2091,8 +2091,8 @@
     },
     "12165854": {
       "fixtureId": null,
-      "mappedAt": "2026-09-25T08:16:11Z",
-      "missRuns": 12,
+      "mappedAt": "2026-09-25T09:46:06Z",
+      "missRuns": 13,
       "missSince": "2026-09-24T14:22:39Z",
       "orient": null,
       "p1": "M. Damm",
@@ -2117,6 +2117,15 @@
       "p2": "D. Vallejo",
       "startTime": "2026-09-26T05:30:00.000Z",
       "tournamentId": 42979
+    },
+    "12165986": {
+      "fixtureId": "id1201413374753320",
+      "mappedAt": "2026-09-25T09:46:06Z",
+      "orient": "same",
+      "p1": "A. Mannarino",
+      "p2": "D. Shapovalov",
+      "startTime": "2026-09-27T05:00:00.000Z",
+      "tournamentId": 14133
     }
   },
   "missAudit": {
@@ -2126,12 +2135,12 @@
       "missResolutionHoursP50": 37.52,
       "missResolutionsMeasured": 89,
       "note": "ttlBitRuns counts runs where an expired MISS was the ONLY reason a billable /v4/fixtures call was made. projectedTtlUnitsPerDay uses the MEASURED run rate (measuredRunsPerDay), not an assumed 24/day; it is null until observedSpanDays is wide enough to measure one. Compare it against the <=24/day ceiling the TTL was chosen against. openMisses counts only fixtures still on the board.",
-      "observedSpanDays": 14.12,
+      "observedSpanDays": 14.18,
       "projectedTtlUnitsPerDay": 5.6,
-      "runs": 238,
-      "spentRuns": 137,
+      "runs": 239,
+      "spentRuns": 138,
       "ttlBitRuns": 79,
-      "ttlBitShare": 0.332,
+      "ttlBitShare": 0.331,
       "ttlHours": 1.0
     },
     "runs": [
@@ -4752,9 +4761,20 @@
         "ttlBit": true,
         "unmapped": 0,
         "upcoming": 17
+      },
+      {
+        "at": "2026-09-25T09:46:06Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 0,
+        "missExpired": 1,
+        "openMisses": 1,
+        "stale": 2,
+        "ttlBit": false,
+        "unmapped": 1,
+        "upcoming": 17
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-09-25T08:16:11Z"
+  "updatedAt": "2026-09-25T09:46:06Z"
 }
