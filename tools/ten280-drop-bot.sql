@@ -9,6 +9,7 @@
 --
 -- Private schema: not in PostgREST's exposed schemas, no grant to anon /
 -- authenticated, so no browser can read alerts or call the functions.
+begin;
 create schema if not exists ten280_bot;
 revoke all on schema ten280_bot from public, anon, authenticated;
 
@@ -39,6 +40,22 @@ create table if not exists ten280_bot.alerts (
     delivery        text        not null default 'unsent',  -- unsent | queued | sent | failed: ...
     created_at      timestamptz not null default now()
 );
+-- 2026-09-25 06:10Z brief: the source of the dropped-to price, when the alert
+-- went out, and the delay from the price change (Kibl's clock) to that send.
+alter table ten280_bot.alerts add column if not exists cur_src      text;
+alter table ten280_bot.alerts add column if not exists sent_at      timestamptz;
+alter table ten280_bot.alerts add column if not exists move_delay_s numeric;
+
+-- One-row config. min_dropped_to_price NULL = no odds floor (founder 2026-09-25
+-- 06:10Z: "remove it completely for now … disabled by default"). Set it to e.g.
+-- 1.30 to switch the floor back on: update ten280_bot.config set min_dropped_to_price = 1.30;
+create table if not exists ten280_bot.config (
+    id                   boolean primary key default true check (id),
+    min_dropped_to_price numeric
+);
+insert into ten280_bot.config (id, min_dropped_to_price) values (true, null) on conflict (id) do nothing;
+alter table ten280_bot.config enable row level security;
+
 create index if not exists alerts_cooldown_idx on ten280_bot.alerts (mode, run_id, fixture_id, eval_at);
 
 create table if not exists ten280_bot.events (          -- startup / test messages, run log
@@ -109,6 +126,7 @@ begin
       and o.betting_type_id = 1 and o.is_live is false and o.price_decimal >= 1.01
       and o.side_id in (2, 3)
       and o.inserted_on between p_from and p_to
+      and o.observed_at <= p_to          -- as known at p_to: a re-run over a past window is reproducible
   ),
   strm as (
     select h.fixture_id,
@@ -118,7 +136,7 @@ begin
                          when h.side_key = ten280_bot.skey(fx.player2_name) then 3 end) as side_id,
            h.price, h.kibl_inserted_on as at, h.written_at as known_at, false as is_opener, h.row_key, 'stream'::text as src
     from public.kibl_now_history h join fx using (fixture_id)
-    where h.price >= 1.01 and h.kibl_inserted_on between p_from and p_to
+    where h.price >= 1.01 and h.kibl_inserted_on between p_from and p_to and h.written_at <= p_to
       and not exists (select 1 from poll p where p.row_key = h.row_key)
   )
   select * from poll
@@ -130,16 +148,47 @@ begin
   return n;
 end $$;
 
+-- "Moved": time from the price change (Kibl insert time) to p_at.
+create or replace function ten280_bot.moved(p_secs numeric) returns text
+language sql immutable as $$
+  select case
+    when p_secs is null then '—'
+    when p_secs < 60 then 'just now'
+    when p_secs < 3600 then floor(p_secs / 60)::int || ' min ago'
+    else floor(p_secs / 3600)::int || ' h ' || floor(mod(p_secs, 3600) / 60)::int || ' min ago'
+  end
+$$;
+
+create or replace function ten280_bot.hhmm(p timestamptz) returns text
+language sql immutable as $$ select to_char(p at time zone 'UTC', 'HH24:MI') || ' UTC' $$;
+
+-- The alert text, exactly the founder's 2026-09-25 06:10Z layout.
+create or replace function ten280_bot.render(a ten280_bot.alerts, p_at timestamptz) returns text
+language sql stable as $$
+  select concat_ws(chr(10),
+    '🚨 PRICE DROP ALERT',
+    '',
+    format('🎾 Match: %s vs %s (%s)', coalesce(a.player_a, '—'), coalesce(a.player_b, '—'), coalesce(a.tier, '—')),
+    format('🎯 Line: Match Winner – %s', coalesce(a.side_player, '—')),
+    format('🟢 %s: %s @ %s', case when a.open_is_opener then 'Opening' else 'First seen' end,
+           ten280_bot.px(a.open_price), ten280_bot.hhmm(a.open_at)),
+    format('🔴 Odds now: %s @ %s', ten280_bot.px(a.cur_price), ten280_bot.hhmm(a.cur_at)),
+    format('📉 Drop: -%s%%', to_char(round(a.pct_10m, 1), 'FM9990.0')),
+    format('⏱️ Moved: %s', ten280_bot.moved(extract(epoch from (p_at - a.cur_at))::numeric)),
+    '🏦 Bookmaker: Bet105')
+$$;
+
 -- SCAN: evaluate every minute e in [p_from, p_to] exactly as the live bot does at
 -- e — current = the side's latest known price if it was inserted within the
 -- window, reference = the latest known price inserted at or before e - window —
 -- and record an alert when the reference-to-current drop >= threshold, the
--- current price >= floor, and the match has no alert in the last `cooldown`
+-- current price >= floor (NULL = no floor), and the match has no alert in the last `cooldown`
 -- (same mode + run). Reads pg_temp.t280 (load_ticks, or a self-test's own rows).
 -- Returns the number of alerts written.
+drop function if exists ten280_bot.scan(timestamptz, timestamptz, numeric, text, text, interval, numeric, interval);
 create or replace function ten280_bot.scan(
     p_from timestamptz, p_to timestamptz, p_threshold numeric, p_mode text, p_run text,
-    p_window interval default interval '10 minutes', p_floor numeric default 1.30,
+    p_window interval default interval '10 minutes', p_floor numeric default null,
     p_cooldown interval default interval '30 minutes') returns integer
 language plpgsql as $$
 declare
@@ -148,12 +197,12 @@ declare
   c   record;
   op  record;
   fx  record;
-  lbl text;
+  aid bigint;
 begin
   while e <= p_to loop
     for c in
       with cur as (
-        select distinct on (fixture_id, side_id) fixture_id, side_id, price as cur_price, at as cur_at
+        select distinct on (fixture_id, side_id) fixture_id, side_id, price as cur_price, at as cur_at, src as cur_src
         from pg_temp.t280
         -- only sides that moved inside the window can have dropped; their latest
         -- known tick is then this in-window one (a later tick would be in it too)
@@ -169,7 +218,7 @@ begin
           and x.at <= e - p_window and x.known_at <= e
         order by x.at desc limit 1) r
       where cur.cur_at > e - p_window
-        and cur.cur_price >= p_floor
+        and (p_floor is null or cur.cur_price >= p_floor)
         and (r.price - cur.cur_price) / r.price * 100 >= p_threshold
       order by pct_10m desc, fixture_id, side_id
     loop
@@ -184,23 +233,18 @@ begin
        order by at asc, is_opener desc limit 1;
       select f.league_id, f.player1_name, f.player2_name into fx
         from public.kibl_fixtures f where f.fixture_id = c.fixture_id;
-      lbl := case when op.is_opener then 'opened' else 'first seen' end;
       insert into ten280_bot.alerts (mode, run_id, threshold, fixture_id, side_id, league_id, tier,
-          player_a, player_b, side_player, eval_at, ref_price, ref_at, cur_price, cur_at, pct_10m,
-          open_price, open_at, open_is_opener, pct_open, message)
+          player_a, player_b, side_player, eval_at, ref_price, ref_at, cur_price, cur_at, cur_src, pct_10m,
+          open_price, open_at, open_is_opener, pct_open)
       values (p_mode, p_run, p_threshold, c.fixture_id, c.side_id, fx.league_id, ten280_bot.tier_of(fx.league_id),
           fx.player1_name, fx.player2_name,
           case c.side_id when 2 then fx.player1_name when 3 then fx.player2_name end,
-          e, c.ref_price, c.ref_at, c.cur_price, c.cur_at, c.pct_10m,
-          op.price, op.at, op.is_opener, round((c.cur_price - op.price) / op.price * 100, 2),
-          format('%s v %s — %s — Match Winner (%s): %s %s @ %s, dropped to %s (%s in 10 min, from %s) @ %s · since %s: %s · Bet105',
-                 coalesce(fx.player1_name, '—'), coalesce(fx.player2_name, '—'),
-                 coalesce(ten280_bot.tier_of(fx.league_id), '—'),
-                 coalesce(case c.side_id when 2 then fx.player1_name when 3 then fx.player2_name end, '—'),
-                 lbl, ten280_bot.px(op.price), ten280_bot.ts(op.at),
-                 ten280_bot.px(c.cur_price), ten280_bot.pct(-round(c.pct_10m, 1)), ten280_bot.px(c.ref_price),
-                 ten280_bot.ts(c.cur_at),
-                 lbl, ten280_bot.pct(round((c.cur_price - op.price) / op.price * 100, 1))));
+          e, c.ref_price, c.ref_at, c.cur_price, c.cur_at, c.cur_src, c.pct_10m,
+          op.price, op.at, op.is_opener, round((c.cur_price - op.price) / op.price * 100, 2))
+      returning id into aid;
+      -- backtest/self-test text is rendered as of the detection minute; the live
+      -- tick re-renders it at the moment it sends, so "Moved" is send-time.
+      update ten280_bot.alerts set message = ten280_bot.render(alerts, e) where id = aid;
       n := n + 1;
     end loop;
     e := e + interval '1 minute';
@@ -240,10 +284,11 @@ begin
 end $$;
 
 -- LIVE: one minute. Threshold/window/floor/cooldown are the founder's spec
--- (5% / 10 min / 1.30 / 30 min). Loads 14 days so "first seen" looks far back.
+-- (5% / 10 min / 30 min); the odds floor comes from ten280_bot.config (NULL = off). Loads 14 days so "first seen" looks far back.
 create or replace function ten280_bot.tick() returns integer
 language plpgsql as $$
-declare e timestamptz := date_trunc('minute', now()); n integer; a record; rid bigint;
+declare e timestamptz := date_trunc('minute', now()); n integer; a ten280_bot.alerts; rid bigint;
+        v_at timestamptz; msg text; fl numeric;
 begin
   -- one tick at a time: a manual call during a cron run can never double-send
   if not pg_try_advisory_xact_lock(280280) then
@@ -251,10 +296,14 @@ begin
   end if;
   perform ten280_bot.settle();
   perform ten280_bot.load_ticks(now() - interval '14 days', now());
-  n := ten280_bot.scan(e, e, 5, 'live', null);
-  for a in select id, message from ten280_bot.alerts where mode = 'live' and delivery = 'unsent' order by id limit 10 loop  -- Telegram burst cap; the rest go next minute
-    rid := ten280_bot.send(a.message);
-    update ten280_bot.alerts set net_request_id = rid,
+  select min_dropped_to_price into fl from ten280_bot.config;
+  n := ten280_bot.scan(e, e, 5, 'live', null, interval '10 minutes', fl);
+  for a in select * from ten280_bot.alerts where mode = 'live' and delivery = 'unsent' order by id limit 10 loop  -- Telegram burst cap; the rest go next minute
+    v_at := clock_timestamp();
+    msg  := ten280_bot.render(a, v_at);
+    rid  := ten280_bot.send(msg);
+    update ten280_bot.alerts set net_request_id = rid, message = msg, sent_at = v_at,
+                                 move_delay_s = round(extract(epoch from (v_at - a.cur_at))::numeric, 3),
                                  delivery = case when rid is null then 'unsent: no vault secret' else 'queued' end
      where id = a.id;
   end loop;
@@ -262,3 +311,4 @@ begin
 end $$;
 
 revoke all on all functions in schema ten280_bot from public, anon, authenticated;
+commit;

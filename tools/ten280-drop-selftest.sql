@@ -36,12 +36,19 @@ begin
     (-5, 2, 3.00, t0,                         t0,                         false, 'e1', 't'),
     (-5, 2, 2.70, t0 + interval '15 min',     t0 + interval '35 min',     false, 'e2', 't');
 
+  -- 1) DEFAULT = no odds floor (founder 2026-09-25 06:10Z). B (1.40 -> 1.29) now fires.
   n := ten280_bot.scan(t0, t0 + interval '120 min', 5, 'selftest', 'st5');
-  if n <> 3 then raise exception 'SELFTEST: expected 3 alerts at 5%%, got %', n; end if;
+  if n <> 4 then raise exception 'SELFTEST: expected 4 alerts at 5%% (no floor), got %', n; end if;
+  if not exists (select 1 from ten280_bot.alerts where mode='selftest' and run_id='st5' and fixture_id=-2 and cur_price = 1.29) then
+    raise exception 'SELFTEST: drop to 1.29 did not fire with the floor off';
+  end if;
 
   select * into r from ten280_bot.alerts where mode = 'selftest' and run_id = 'st5' and fixture_id = -1 order by eval_at limit 1;
   if r.side_id <> 2 or r.eval_at <> t0 + interval '15 min' or r.cur_price <> 1.88 or r.ref_price <> 2.00
-     or r.pct_10m <> 6.00 or r.open_price <> 2.00 or not r.open_is_opener or r.message not like '%: opened 2 @ 01.01 10:00 UTC, dropped to 1.88 (−6.0% in 10 min, from 2) @ 01.01 10:15 UTC · since opened: −6.0%' then
+     or r.pct_10m <> 6.00 or r.open_price <> 2.00 or not r.open_is_opener or r.cur_src <> 't'
+     or r.message <> concat_ws(chr(10), '🚨 PRICE DROP ALERT', '', '🎾 Match: — vs — (—)', '🎯 Line: Match Winner – —',
+                               '🟢 Opening: 2 @ 10:00 UTC', '🔴 Odds now: 1.88 @ 10:15 UTC', '📉 Drop: -6.0%',
+                               '⏱️ Moved: just now', '🏦 Bookmaker: Bet105') then
     raise exception 'SELFTEST: case A wrong: % | %', row_to_json(r), r.message;
   end if;
   if (select count(*) from ten280_bot.alerts where mode='selftest' and run_id='st5' and fixture_id=-1) <> 2 then
@@ -50,21 +57,35 @@ begin
   if exists (select 1 from ten280_bot.alerts where mode='selftest' and run_id='st5' and fixture_id=-1 and side_id=3) then
     raise exception 'SELFTEST: cooldown did not suppress the other side at +25';
   end if;
-  if exists (select 1 from ten280_bot.alerts where mode='selftest' and run_id='st5' and fixture_id in (-2, -3, -5)) then
-    raise exception 'SELFTEST: floor / below-threshold / late-knowledge case fired';
+  if exists (select 1 from ten280_bot.alerts where mode='selftest' and run_id='st5' and fixture_id in (-3, -5)) then
+    raise exception 'SELFTEST: below-threshold / late-knowledge case fired';
   end if;
   select * into r from ten280_bot.alerts where mode='selftest' and run_id='st5' and fixture_id=-4;
   if r.eval_at <> t0 + interval '22 min' or r.ref_price <> 2.20 or r.pct_10m <> 9.09 or r.open_is_opener
-     or r.message not like '%: first seen 2 @ 01.01 10:00 UTC, dropped to 2 (−9.1% in 10 min, from 2.2) @ 01.01 10:20 UTC · since first seen: +0.0%' then
+     or r.message <> concat_ws(chr(10), '🚨 PRICE DROP ALERT', '', '🎾 Match: — vs — (—)', '🎯 Line: Match Winner – —',
+                               '🟢 First seen: 2 @ 10:00 UTC', '🔴 Odds now: 2 @ 10:20 UTC', '📉 Drop: -9.1%',
+                               '⏱️ Moved: 2 min ago', '🏦 Bookmaker: Bet105') then
     raise exception 'SELFTEST: case D wrong: % | %', row_to_json(r), r.message;
   end if;
-
-  -- 7%: A at +15 (6.0) no; D (9.1) yes; A at +60 (6.9) no; the other side at +25
-  -- (8.0) now fires because nothing on match -1 fired before it.
   n := ten280_bot.scan(t0, t0 + interval '120 min', 7, 'selftest', 'st7');
-  if n <> 2 then raise exception 'SELFTEST: expected 2 alerts at 7%%, got %', n; end if;
+  if n <> 3 then raise exception 'SELFTEST: expected 3 alerts at 7%% (no floor), got %', n; end if;
   n := ten280_bot.scan(t0, t0 + interval '120 min', 10, 'selftest', 'st10');
   if n <> 0 then raise exception 'SELFTEST: expected 0 alerts at 10%%, got %', n; end if;
+
+  -- 2) FLOOR 1.30 switched back on: identical to the original rule (3 / 2 / 0, no B).
+  n := ten280_bot.scan(t0, t0 + interval '120 min', 5, 'selftest', 'f5', interval '10 minutes', 1.30);
+  if n <> 3 then raise exception 'SELFTEST: floor 1.30 expected 3 at 5%%, got %', n; end if;
+  if exists (select 1 from ten280_bot.alerts where mode='selftest' and run_id='f5' and fixture_id=-2) then
+    raise exception 'SELFTEST: floor 1.30 let the 1.29 drop through';
+  end if;
+  n := ten280_bot.scan(t0, t0 + interval '120 min', 7, 'selftest', 'f7', interval '10 minutes', 1.30);
+  if n <> 2 then raise exception 'SELFTEST: floor 1.30 expected 2 at 7%%, got %', n; end if;
+
+  -- 3) "Moved" wording.
+  if ten280_bot.moved(0) <> 'just now' or ten280_bot.moved(59.9) <> 'just now' or ten280_bot.moved(60) <> '1 min ago'
+     or ten280_bot.moved(179) <> '2 min ago' or ten280_bot.moved(3725) <> '1 h 2 min ago' then
+    raise exception 'SELFTEST: moved() wording wrong';
+  end if;
 
   delete from ten280_bot.alerts where mode = 'selftest';
   raise notice 'SELFTEST PASS';
