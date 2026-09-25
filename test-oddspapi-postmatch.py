@@ -20,6 +20,7 @@ Guards (each is killed by a mutant of its rule; see the TEN-270 report):
   8. the key is used only inside the loop-free window of each quarter hour
   8b. ...and only once the odds loop's current iteration is over (loop_idle)
   8c. an unreadable state object stops the run without overwriting it
+ 13. dispatcher alarm SQL, never-overwrite-Vault, verify red on unsent alerts, read-only heartbeat-check
  11. completeness: the first 20 saved fixtures get ONE +24 h re-pull into _meta/verify/
   9. ticks land in CARD orientation, one row per change, in the schema's columns
  10. the schema: RLS on, no grant/policy on the table, RPC cut at the start
@@ -579,7 +580,7 @@ def trigger_faults(pm_yml, applier, other_texts):
 
 
 PM_YML = open(os.path.join(WF_DIR, 'oddspapi-postmatch.yml'), encoding='utf-8').read()
-APPLIER_YML = open(os.path.join(WF_DIR, APPLIER), encoding='utf-8').read()
+APPLIER_YML = open(os.environ.get('POSTMATCH_APPLIER') or os.path.join(WF_DIR, APPLIER), encoding='utf-8').read()
 OTHERS = [open(os.path.join(WF_DIR, f), encoding='utf-8').read() for f in sorted(os.listdir(WF_DIR))
           if f.endswith(('.yml', '.yaml')) and f not in ('oddspapi-postmatch.yml', APPLIER)]
 MIG = os.path.join(HERE, 'supabase', 'migrations')
@@ -613,7 +614,7 @@ check('CONTROL: a pinger failure fed to `bad` is caught', applier_faults(APPLIER
     'print(f"::warning::oddspapi-postmatch-pinger.sql not applied (HTTP {st})")',
     'bad.append("pinger")')) != [])
 check('the pinger reads the vault secret by the ruled name, the applier stores it under that name',
-      "name = 'gh_postmatch_dispatch_pat'" in open(os.path.join(HERE, 'oddspapi-postmatch-pinger.sql')).read()
+      "name = 'gh_postmatch_dispatch_pat'" in open(os.environ.get('POSTMATCH_PINGER') or os.path.join(HERE, 'oddspapi-postmatch-pinger.sql')).read()
       and "'gh_postmatch_dispatch_pat'" in APPLIER_YML)
 
 
@@ -623,7 +624,7 @@ def pinger_faults(text):
     faults = []
     if not re.search(r'do \$outer\$.*exception when others then\s+raise warning.*end\s+\$outer\$;', t, re.S):
         faults.append('not wrapped in a DO block that turns any failure into a warning')
-    if not re.search(r'if pat is null or length\(trim\(pat\)\) = 0 then\s+raise warning[^;]*;\s+return', t):
+    if not re.search(r'if pat is null or length\(trim\(pat\)\) = 0 then\s+(insert[^;]*;\s+)?raise warning[^;]*;\s+return', t):
         faults.append('a missing secret does not skip (and log) before the dispatch')
     if "'select public.postmatch_dispatch()'" not in t:
         faults.append('the job does not go through the fail-safe function')
@@ -632,7 +633,7 @@ def pinger_faults(text):
     return faults
 
 
-PINGER = open(os.path.join(HERE, 'oddspapi-postmatch-pinger.sql'), encoding='utf-8').read()
+PINGER = open(os.environ.get('POSTMATCH_PINGER') or os.path.join(HERE, 'oddspapi-postmatch-pinger.sql'), encoding='utf-8').read()
 check('the pinger SQL is fail-safe', pinger_faults(PINGER) == [], pinger_faults(PINGER))
 for name, (a, b) in {
         'the outer exception handler removed': ("exception when others then\n  raise warning 'TEN-270 post-match pinger NOT installed: % (%)', sqlerrm, sqlstate;\n", ''),
@@ -836,6 +837,146 @@ table = raw.verify_table(rep)
 check('the read-only report prints one row per side per fixture and the tally',
       sum(1 for ln in table if ln.startswith('v')) == 40 and '20 of 20 enrolled fixture(s) compared' in table[-1],
       table[-1])
+
+print('13. the dispatcher alarm, the Vault writes, verify and heartbeat-check (founder 2026-09-25T00:53Z)')
+import textwrap
+_WF = APPLIER_YML
+_a = _WF.index("python3 - <<'PY'\n") + len("python3 - <<'PY'\n")
+SCHEMA_SCRIPT = textwrap.dedent(_WF[_a:_WF.index("\n          PY\n", _a)])
+
+
+def run_schema_step(action, env_extra=None, answers=None, script=None):
+    """Execute the workflow's own Schema/verify step with fake I/O. `answers`
+    maps a SQL substring to (status, body). Returns (sql statements, stdout, exit)."""
+    stmts, calls = [], []
+
+    def fake_sql(q):
+        stmts.append(q)
+        for key, ans in (answers or {}).items():
+            if key in q:
+                return ans
+        return 200, '[]'
+
+    def fake_call(u, method='GET', body=None, key=None, bearer=None, prefer=None):
+        calls.append((method, u))
+        return 200, '[]'
+
+    src = (script or SCHEMA_SCRIPT).replace('def call(', 'def _real_call(').replace('def sql(', 'def _real_sql(')
+    env = {'ACTION': action, 'MAX_EVENTS': '', 'SUPABASE_URL': 'https://abcdefgh.supabase.co',
+           'SUPABASE_SECRET_KEY': 'sk', 'SUPABASE_PUBLISHABLE_KEY': 'pk', 'SUPABASE_ACCESS_TOKEN': 'at'}
+    env.update(env_extra or {})
+    saved = {k: os.environ.get(k) for k in list(env) + ['POSTMATCH_DISPATCH_PAT', 'TELEGRAM_BOT_TOKEN',
+                                                        'TELEGRAM_OPS_CHAT_ID']}
+    for k in ('POSTMATCH_DISPATCH_PAT', 'TELEGRAM_BOT_TOKEN', 'TELEGRAM_OPS_CHAT_ID'):
+        os.environ.pop(k, None)
+    os.environ.update(env)
+    out, code, cwd = io.StringIO(), 0, os.getcwd()
+    try:
+        os.chdir(HERE)
+        with contextlib.redirect_stdout(out):
+            try:
+                exec(compile(src, 'schema-step', 'exec'), {'call': fake_call, 'sql': fake_sql, '__name__': '__wf__'})
+            except SystemExit as e:
+                code = e.code or 0
+    finally:
+        os.chdir(cwd)
+        for k, v in saved.items():
+            if v is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = v
+    return stmts, out.getvalue(), code, calls
+
+
+def vault_writes(stmts):
+    w = re.compile(r'(delete\s+from|update|insert\s+into)\s+vault\.secrets|vault\.(create|update)_secret', re.I)
+    return [q for q in stmts if w.search(q)]
+
+
+stmts, out, _, _ = run_schema_step('schema')
+check('no POSTMATCH_DISPATCH_PAT / Telegram repo secret: the schema action never deletes or overwrites Vault',
+      vault_writes(stmts) == [] and any('postmatch_dispatch()' in q for q in stmts), vault_writes(stmts))
+SECRET_VALUES = {'POSTMATCH_DISPATCH_PAT': 'github_pat_TESTVALUE', 'TELEGRAM_BOT_TOKEN': '123:TESTBOT',
+                 'TELEGRAM_OPS_CHAT_ID': '-100777'}
+stmts, out, _, _ = run_schema_step('schema', SECRET_VALUES)
+names = [n for n in ('gh_postmatch_dispatch_pat', 'ops_telegram_bot_token', 'ops_telegram_chat_id')
+         if any(f"vault.create_secret(" in q and f"'{n}'" in q for q in stmts)]
+check('with the repo secrets present: all three are stored under their Vault names',
+      names == ['gh_postmatch_dispatch_pat', 'ops_telegram_bot_token', 'ops_telegram_chat_id'], names)
+check('...and no secret value is ever printed', not any(v in out for v in SECRET_VALUES.values()))
+stmts, out, code, _ = run_schema_step('schema', SECRET_VALUES, {'vault.create_secret': (500, 'boom')})
+check('a failed Vault store is a ::warning::, never an ::error:: about it',
+      out.count('::warning::') >= 3 and 'not stored' not in ''.join(
+          ln for ln in out.splitlines() if ln.startswith('::error::')), out[-400:])
+assert SCHEMA_SCRIPT.count('    if pat:\n') == 1
+mutant = SCHEMA_SCRIPT.replace('    if pat:\n', '    if True:\n', 1)
+stmts, out, _, _ = run_schema_step('schema', script=mutant)
+check('CONTROL: a schema step that writes the PAT without the repo secret is caught',
+      vault_writes(stmts) != [])
+UNSENT = json.dumps([{'at': '2026-09-25T01:27:00Z', 'condition': 'dispatch_http', 'kind': 'alert',
+                      'message': 'ALERT - ...', 'delivered': 'unsent: telegram secret missing in vault',
+                      'telegram_http': None}])
+stmts, out, code, _ = run_schema_step('verify', answers={'from public.postmatch_alert_log': (200, UNSENT)})
+check('verify: an unsent alert is printed and turns the run red',
+      code == 1 and 'NEVER REACHED TELEGRAM' in out and 'post-match alert(s) unsent' in out, out[-300:])
+stmts, out, code, _ = run_schema_step('verify')
+check('verify: no unsent alert -> not red on that account', 'post-match alert(s) unsent' not in out)
+check('verify prints the last 5 dispatches, the checker runs and open alerts',
+      all(k in out for k in ('last 5 dispatches', 'checker job', 'open alerts')))
+stmts, out, code, calls = run_schema_step('heartbeat-check')
+mut = re.compile(r'\b(insert|update|delete|create|drop|alter|grant|revoke|truncate)\b', re.I)
+check('heartbeat-check is read-only: every statement is a SELECT, every other call a GET',
+      stmts and all(q.lstrip().lower().startswith('select') and not mut.search(q) for q in stmts)
+      and all(m == 'GET' for m, _ in calls), (stmts[:2], calls[:2]))
+check('heartbeat-check prints (i), (ii) and (iii), a dash where not derivable',
+      all(k in out for k in ('(i-a)', '(i-b)', '(ii)', '(iii)', '+468')) and ' - ' in out, out[-400:])
+
+
+def alarm_faults(text):
+    t = re.sub(r'--[^\n]*', '', text)
+    faults = []
+    hosts = set(re.findall(r"'https://([^/']+)/", t))
+    if hosts != {'api.github.com', 'api.telegram.org'}:
+        faults.append(f'unexpected hosts {sorted(hosts)}')
+    for m in re.finditer(r"url := '([^']*)'", t):
+        if 'api.telegram.org' in m.group(1) and not m.group(1).startswith('https://api.telegram.org/bot'):
+            faults.append('telegram url shape')
+    if not re.search(r"url := 'https://api\.github\.com/repos/Michaeldk1996/SAAS/actions/workflows/oddspapi-postmatch\.yml/dispatches'", t):
+        faults.append('dispatch url is not the post-match workflow on api.github.com')
+    if not re.search(r"url := 'https://api\.telegram\.org/bot' \|\| trim\(tok\) \|\| '/sendMessage'", t):
+        faults.append('telegram url is not api.telegram.org/bot<token>/sendMessage')
+    if 'insert into public.postmatch_dispatch_log (request_id) values (req)' not in t:
+        faults.append('dispatch ids are not recorded')
+    if 'left join net._http_response r on r.id = d.request_id' not in t:
+        faults.append('the checker does not read only our request ids')
+    if "status_code not between 200 and 299" not in t or "interval '45 minutes'" not in t:
+        faults.append('non-2xx / 45-min conditions missing')
+    if not re.search(r"'dispatch_error',\s+exists \(select 1 from ours where timed_out or error_msg is not null", t):
+        faults.append('pg_net timeout/error condition missing')
+    if not re.search(r"'dispatch_http'::text as condition,\s+exists \(select 1 from ours where status_code is not null\s+and status_code not between 200 and 299\)", t):
+        faults.append('non-2xx dispatch condition missing')
+    if "interval '6 hours'" not in t or "'RECOVERED - " not in t:
+        faults.append('6 h dedupe or recovered message missing')
+    if not re.search(r"delivered\)\s+values \(p_condition, p_kind, p_text, 'unsent: [^']*'\);\s+raise warning", t):
+        faults.append('a missing telegram secret is not recorded + warned')
+    cron = dict(re.findall(r"cron\.schedule\('([^']+)', '([^']+)'", t))
+    d, c = cron.get('ten270-oddspapi-postmatch-ping'), cron.get('ten270-oddspapi-postmatch-check')
+    if not d or not c or set(d.split()[0].split(',')) & set(c.split()[0].split(',')):
+        faults.append('checker not scheduled on minutes offset from the dispatcher')
+    return faults
+
+
+check('the alarm SQL keeps every rule', alarm_faults(PINGER) == [], alarm_faults(PINGER))
+for name, (a, b) in {
+        'a third host': ("'https://api.telegram.org/bot'", "'https://evil.example.org/bot'"),
+        'dispatch ids not recorded': ('    insert into public.postmatch_dispatch_log (request_id) values (req);\n', ''),
+        'no 6 h dedupe': ("interval '6 hours'", "interval '0 hours'"),
+        'unsent alert not recorded': ("values (p_condition, p_kind, p_text, 'unsent: telegram secret missing in vault');",
+                                      "values (p_condition, p_kind, p_text, 'sent');"),
+        'checker at the dispatch minutes': ("'12,27,42,57 * * * *'", "'7,22,37,52 * * * *'"),
+}.items():
+    check(f'CONTROL: alarm check catches "{name}"', a in PINGER and alarm_faults(PINGER.replace(a, b)) != [],
+          f'anchor present={a in PINGER}')
 
 print()
 if FAILED:

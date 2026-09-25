@@ -126,6 +126,25 @@ PY_MUT = {
         "        return 'swap' if o == 'same' else 'same'\n    return o"),
     'overwrite upload (upsert)': ("gzip.compress(body, 6), upsert=False)", "gzip.compress(body, 6), upsert=True)"),
 }
+PINGER_MUT = {
+    'telegram sent to another host': ("url := 'https://api.telegram.org/bot' || trim(tok) || '/sendMessage'",
+                                      "url := 'https://relay.example.org/bot' || trim(tok) || '/sendMessage'"),
+    'dispatch ids not recorded': ("    insert into public.postmatch_dispatch_log (request_id) values (req);\n", ""),
+    'no 6 h dedupe (alert every run)': ("or a.last_sent_at < now() - interval '6 hours'", "or a.last_sent_at < now() - interval '0 hours'"),
+    'unsent alert logged as sent': ("values (p_condition, p_kind, p_text, 'unsent: telegram secret missing in vault');",
+                                    "values (p_condition, p_kind, p_text, 'sent');"),
+    'checker on the dispatch minutes': ("'ten270-oddspapi-postmatch-check', '12,27,42,57 * * * *'",
+                                        "'ten270-oddspapi-postmatch-check', '7,22,37,52 * * * *'"),
+    'timeouts/errors not alarmed': ("exists (select 1 from ours where timed_out or error_msg is not null",
+                                    "exists (select 1 from ours where false"),
+}
+APPLIER_MUT = {
+    'PAT written without the repo secret': ("              if pat:\n", "              if True:\n"),
+    'Telegram written without the repo secret': (
+        "                  if not val:\n                      print(f\"{env_name} not set", "                  if False:\n                      print(f\"{env_name} not set"),
+    'unsent alerts do not turn verify red': ('                  bad.append(f"{len(unsent)} post-match alert(s) unsent")\n', ""),
+    'heartbeat-check writes': ('              q("(i-a) kibl_now_card rows', '              sql("insert into x values (1)")\n              q("(i-a) kibl_now_card rows'),
+}
 SQL_MUT = {
     'RPC drops the fixture count': ("    'fixtures',        (select n_fx from fx),\n", ""),
 }
@@ -153,13 +172,19 @@ JS_MUT = {
 }
 
 
-def run_py(mod_src=None, sql_src=None):
+def run_py(mod_src=None, sql_src=None, pinger_src=None, applier_src=None):
     d = tempfile.mkdtemp()
     env = dict(os.environ)
     try:
         if mod_src is not None:
             env['POSTMATCH_MODULE'] = os.path.join(d, 'archive-oddspapi-raw.py')
             open(env['POSTMATCH_MODULE'], 'w').write(mod_src)
+        if pinger_src is not None:
+            env['POSTMATCH_PINGER'] = os.path.join(d, 'pinger.sql')
+            open(env['POSTMATCH_PINGER'], 'w').write(pinger_src)
+        if applier_src is not None:
+            env['POSTMATCH_APPLIER'] = os.path.join(d, 'applier.yml')
+            open(env['POSTMATCH_APPLIER'], 'w').write(applier_src)
         if sql_src is not None:
             env['POSTMATCH_SCHEMA'] = os.path.join(d, 'now-schema.sql')
             open(env['POSTMATCH_SCHEMA'], 'w').write(sql_src)
@@ -187,6 +212,8 @@ def run_js(js_src):
 
 def main():
     py, sql, js = open(PY).read(), open(SQL).read(), open(JS).read()
+    pinger = open(os.path.join(ROOT, 'oddspapi-postmatch-pinger.sql')).read()
+    applier = open(os.path.join(ROOT, '.github', 'workflows', 'ten270-stream-now.yml')).read()
     base = [run_py()[0], run_js(js)[0]]
     print(f'baseline (unmutated): python suite exit {base[0]}, box suite exit {base[1]}')
     if any(base):
@@ -195,6 +222,8 @@ def main():
     killed = total = 0
     plan = ([('PY', n, py, a, b, lambda s: run_py(mod_src=s)) for n, (a, b) in PY_MUT.items()]
             + [('SQL', n, sql, a, b, lambda s: run_py(sql_src=s)) for n, (a, b) in SQL_MUT.items()]
+            + [('PINGER', n, pinger, a, b, lambda s: run_py(pinger_src=s)) for n, (a, b) in PINGER_MUT.items()]
+            + [('APPLIER', n, applier, a, b, lambda s: run_py(applier_src=s)) for n, (a, b) in APPLIER_MUT.items()]
             + [('JS', n, js, a, b, run_js) for n, (a, b) in JS_MUT.items()])
     for kind, name, src, a, b, runner in plan:
         total += 1

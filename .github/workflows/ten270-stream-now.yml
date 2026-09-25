@@ -24,7 +24,7 @@ on:
   workflow_dispatch:
     inputs:
       action:
-        description: 'schema | verify | deploy-worker | status | logs | realtime-config | usage | unpublish-price'
+        description: 'schema | verify | deploy-worker | status | logs | realtime-config | usage | unpublish-price | heartbeat-check'
         required: true
         default: 'status'
       max_events:
@@ -58,6 +58,10 @@ jobs:
           # TEN-270 post-match dispatcher: the PAT the pg_cron job dispatches with.
           # Stored in Vault as gh_postmatch_dispatch_pat; never printed.
           POSTMATCH_DISPATCH_PAT: ${{ secrets.POSTMATCH_DISPATCH_PAT }}
+          # bsp_alerts.py's Telegram bot + ops chat: copied into Vault for the
+          # dispatcher's dead-token alarm (ops_telegram_bot_token / _chat_id).
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_OPS_CHAT_ID: ${{ secrets.TELEGRAM_OPS_CHAT_ID }}
         run: |
           python3 - <<'PY'
           import json, os, sys, urllib.parse, urllib.request, urllib.error
@@ -102,7 +106,20 @@ jobs:
                   # pinger with no secret dispatches nothing (odds.md, post-match trigger).
                   if st >= 400: print(f"::warning::post-match PAT not stored in Vault (HTTP {st})")
               else:
-                  print("POSTMATCH_DISPATCH_PAT not set: vault write skipped; the pinger installs but dispatches nothing")
+                  print("POSTMATCH_DISPATCH_PAT not set: the Vault secret gh_postmatch_dispatch_pat is left exactly as it is")
+              # The alarm's Telegram credentials, same path: copy only when the repo
+              # secret exists, never printed, a failure is a warning.
+              for env_name, vault_name in (("TELEGRAM_BOT_TOKEN", "ops_telegram_bot_token"),
+                                           ("TELEGRAM_OPS_CHAT_ID", "ops_telegram_chat_id")):
+                  val = (os.environ.get(env_name) or "").strip()
+                  if not val:
+                      print(f"{env_name} not set: Vault {vault_name} left as it is (alerts are recorded as unsent until it exists)")
+                      continue
+                  lit = "'" + val.replace("'", "''") + "'"
+                  st, r = sql(f"delete from vault.secrets where name = '{vault_name}'; "
+                              f"select vault.create_secret({lit}, '{vault_name}', 'TEN-270 post-match alarm');")
+                  print(f"vault {vault_name} store -> HTTP {st}")
+                  if st >= 400: print(f"::warning::{vault_name} not stored in Vault (HTTP {st})")
               st, r = sql(open("oddspapi-postmatch-pinger.sql").read())
               print(f"oddspapi-postmatch-pinger.sql apply HTTP {st}")
               if st >= 400: print(f"::warning::oddspapi-postmatch-pinger.sql not applied (HTTP {st})")
@@ -187,6 +204,8 @@ jobs:
                   d = json.loads(r) if st == 200 else {}
               except ValueError:
                   d = {}
+              if not isinstance(d, dict):
+                  d = {}
               print(f"[publishable] rpc bet365_history(__rls_probe__) -> HTTP {st}, stored {d.get('stored')}, "
                     f"rows {len(d.get('rows') or [])}  (want 200, 0 rows)")
               if st != 200 or d.get("rows"): bad.append(f"bet365_history {st}")
@@ -209,10 +228,40 @@ jobs:
               st, r = sql("select polname, polcmd, polroles::regrole[]::text from pg_policy p join pg_class c on c.oid=p.polrelid "
                           "where c.relname in ('kibl_now_price','kibl_now_history','kibl_now_card') order by 1")
               print(f"policies -> {r}")
+              # TEN-270 post-match dispatcher + alarm (founder 2026-09-25T00:53Z).
               st, r = sql("select jobname, schedule, active, "
-                          "(select count(*) from vault.secrets where name = 'gh_postmatch_dispatch_pat') as pat_stored "
-                          "from cron.job where jobname = 'ten270-oddspapi-postmatch-ping'")
-              print(f"post-match pinger -> HTTP {st} {r[:300]}  (want one active job; pat_stored 1 once the secret is added)")
+                          "(select count(*) from vault.secrets where name = 'gh_postmatch_dispatch_pat') as pat_stored, "
+                          "(select count(*) from vault.secrets where name in ('ops_telegram_bot_token', 'ops_telegram_chat_id')) as telegram_stored "
+                          "from cron.job where jobname in ('ten270-oddspapi-postmatch-ping', 'ten270-oddspapi-postmatch-check') order by 1")
+              print(f"post-match jobs -> HTTP {st} {r[:600]}  (want both active; pat_stored 1; telegram_stored 2)")
+              st, r = sql("select d.sent_at, d.request_id, d.note, r.status_code, r.timed_out, r.error_msg "
+                          "from public.postmatch_dispatch_log d left join net._http_response r on r.id = d.request_id "
+                          "order by d.sent_at desc limit 5")
+              print(f"last 5 dispatches -> HTTP {st} {r[:1200]}")
+              st, r = sql("select j.jobname, d.status, d.return_message, d.start_time from cron.job_run_details d "
+                          "join cron.job j using (jobid) where j.jobname = 'ten270-oddspapi-postmatch-check' "
+                          "order by d.start_time desc limit 3")
+              print(f"checker job (last 3 runs) -> HTTP {st} {r[:900]}")
+              st, r = sql("select condition, opened_at, last_sent_at, detail from public.postmatch_alerts where is_open")
+              print(f"open alerts -> HTTP {st} {r[:900]}")
+              st, r = sql("select l.at, l.condition, l.kind, l.message, l.delivered, t.status_code as telegram_http "
+                          "from public.postmatch_alert_log l left join net._http_response t on t.id = l.request_id "
+                          "where l.at > now() - interval '7 days' and (l.delivered <> 'sent' "
+                          "or (t.status_code is not null and t.status_code not between 200 and 299)) "
+                          "order by l.at desc limit 20")
+              try:
+                  unsent = json.loads(r) if st == 200 else None
+              except ValueError:
+                  unsent = None
+              if unsent is None:
+                  print(f"post-match unsent alerts -> HTTP {st} (unreadable) {r[:300]}")
+              elif unsent:
+                  print("::error::post-match ALERTS THAT NEVER REACHED TELEGRAM (last 7 days):")
+                  for row in unsent:
+                      print("  " + json.dumps(row))
+                  bad.append(f"{len(unsent)} post-match alert(s) unsent")
+              else:
+                  print("post-match unsent alerts -> none")
           if act == "status":
               sk = os.environ["SUPABASE_SECRET_KEY"]
               st, r = call(f"{url}/rest/v1/kibl_now_price?kind=eq.heartbeat&select=written_at,note", key=sk)
@@ -344,6 +393,68 @@ jobs:
                                         "gb_12h": round(gb12, 3) if gb12 is not None else None,
                                         "gb_30d": round(gb12 * 60, 1) if gb12 is not None else None}))
                   print(f"REPLAY TOTAL est GB per 12 h {tot:.3f}  per 30 days {tot * 60:.1f}")
+          if act == "heartbeat-check":
+              # READ-ONLY (founder usage question). Raw counts with denominators;
+              # no conclusions. Window fixed by the brief.
+              import datetime as dt
+              W0, W1 = "2026-09-24T08:54:00Z", "2026-09-25T00:52:00Z"
+              span_s = (dt.datetime.fromisoformat(W1[:-1]) - dt.datetime.fromisoformat(W0[:-1])).total_seconds()
+              print(f"window {W0} .. {W1} = {span_s/60:.0f} min")
+              def q(label, text):
+                  st, r = sql(text)
+                  print(f"{label} -> HTTP {st} {r[:900]}")
+                  try:
+                      return json.loads(r) if st == 200 else None
+                  except ValueError:
+                      return None
+              q("(i-a) kibl_now_card rows whose LAST write is in the window (one row per card: a lower bound on writes)",
+                f"select count(*) as rows_last_written_in_window, (select count(*) from public.kibl_now_card) as rows_total "
+                f"from public.kibl_now_card where written_at >= '{W0}' and written_at < '{W1}'")
+              hist = q("(i-b) kibl_now_history rows in the window, by source (one per side change the worker wrote)",
+                       f"select source, count(*) as rows, count(distinct card_key) as cards, "
+                       f"count(distinct (card_key, date_trunc('second', written_at))) as card_seconds "
+                       f"from public.kibl_now_history where written_at >= '{W0}' and written_at < '{W1}' "
+                       f"group by source order by source")
+              hb = int(span_s // 60)
+              print(f"(i-c) kibl_now_price heartbeat writes: ~{hb} (derived: window {span_s:.0f} s / HEARTBEAT_EVERY_S 60 in now_worker.py; not counted from data - the row is overwritten)")
+              print("(i-d) kibl_now_price price-side writes: ~ the stream rows of (i-b) (one side write per history row; the table keeps only the latest per side)")
+              tok = os.environ["SUPABASE_ACCESS_TOKEN"]
+              base = f"https://api.supabase.com/v1/projects/{ref}/analytics/endpoints/logs.all"
+              joins = leaves = None; why = ""
+              z0 = dt.datetime.fromisoformat(W0[:-1]); z1 = dt.datetime.fromisoformat(W1[:-1])
+              mid = z0 + (z1 - z0) / 2
+              for lo, hi in ((z0, mid), (mid, z1)):
+                  qs = urllib.parse.urlencode({
+                      "sql": ("select countif(regexp_contains(lower(event_message), r'join')) as joins, "
+                              "countif(regexp_contains(lower(event_message), r'leave|close|disconnect')) as leaves, "
+                              "count(*) as events from realtime_logs"),
+                      "iso_timestamp_start": lo.strftime("%Y-%m-%dT%H:%M:%S.000Z"),
+                      "iso_timestamp_end": hi.strftime("%Y-%m-%dT%H:%M:%S.000Z")})
+                  st, r = call(f"{base}?{qs}", bearer=tok)
+                  print(f"(ii) realtime_logs {lo:%m-%d %H:%M}..{hi:%m-%d %H:%M} -> HTTP {st} {r[:600]}")
+                  try:
+                      row = (json.loads(r).get("result") or [None])[0] if st == 200 else None
+                  except (ValueError, AttributeError):
+                      row = None
+                  if not row:
+                      why = f"logs API gave no row (HTTP {st}); log retention or the plan may not cover this window"
+                      joins = leaves = None
+                      break
+                  joins = (joins or 0) + int(row.get("joins") or 0)
+                  leaves = (leaves or 0) + int(row.get("leaves") or 0)
+              if joins is None:
+                  print(f"(ii) joins / leaves / connection-minutes: - ({why})")
+              else:
+                  print(f"(ii) realtime_logs lines matching join: {joins}; matching leave|close|disconnect: {leaves} "
+                        f"(message-pattern counts over the window, not per-connection pairs)")
+                  print("(ii) connection-minutes: - (realtime_logs carries events, not per-connection start/end pairs, so durations cannot be summed)")
+              stream_rows = sum(int(x.get("rows") or 0) for x in (hist or []) if x.get("source") == "stream") if hist else None
+              print("(iii) arithmetic, raw:")
+              print("      billed: +468 (the founder's figure for this window)")
+              print(f"      price-event deliveries = card writes x subscribers: card writes ~ {stream_rows if stream_rows is not None else '-'} "
+                    f"(stream history rows, (i-b)); subscribers: - (not derivable from the tables or the logs above) -> product: -")
+              print(f"      kibl_now_price heartbeat events while published: ~{hb} writes x subscribers (-) -> -")
+              print(f"      heartbeats at 1 per 30 s per connection = connection-minutes x 2: connection-minutes - -> -")
           if bad:
               print("::error::" + "; ".join(bad)); sys.exit(1)
           PY
