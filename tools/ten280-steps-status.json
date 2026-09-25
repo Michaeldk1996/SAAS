@@ -1,0 +1,8 @@
+[
+ {"name":"cron_job","sql":"select jobname, schedule, active from cron.job where jobname = 'ten280-bet105-drop-bot'"},
+ {"name":"cron_last_runs","sql":"select d.status, d.return_message, d.start_time, d.end_time - d.start_time as took from cron.job_run_details d join cron.job j using (jobid) where j.jobname = 'ten280-bet105-drop-bot' order by d.start_time desc limit 10"},
+ {"name":"cron_failures_24h","sql":"select count(*) filter (where d.status <> 'succeeded') failed, count(*) runs from cron.job_run_details d join cron.job j using (jobid) where j.jobname = 'ten280-bet105-drop-bot' and d.start_time > now() - interval '24 hours'"},
+ {"name":"live_alerts","sql":"select tier, delivery, count(*) n, min(eval_at) first, max(eval_at) last from ten280_bot.alerts where mode = 'live' group by 1,2 order by 1,2"},
+ {"name":"live_recent","sql":"select eval_at, delivery, message from ten280_bot.alerts where mode = 'live' order by id desc limit 10"},
+ {"name":"events","sql":"select kind, delivery, created_at from ten280_bot.events order by id desc limit 5"}
+]
