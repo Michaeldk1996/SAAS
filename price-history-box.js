@@ -102,9 +102,11 @@
       const delta = prev == null ? null : Math.round((r.price - prev) * 1000) / 1000;
       return { at: r.at, price: r.price, delta };
     });
-    // The Open itself is its own bottom row, so the first change equal to it is not repeated.
-    if (items.length && card.open && items[0].price === card.open.price && openAt != null
-        && Math.abs(items[0].at - openAt) <= HIST_TOLERANCE_MS) items.shift();
+    // The Open itself is its own bottom row, so a first row at the Open's price is
+    // not a move and is not repeated, whenever it was sighted (a later first
+    // sighting at the same price still isn't a change; "history recorded from"
+    // below keeps its time).
+    if (items.length && card.open && card.open.price != null && items[0].price === card.open.price) items.shift();
     const first = ch.length ? ch[0].at : null;
     const recordedFrom = (first != null && openAt != null && first - openAt > HIST_TOLERANCE_MS) ? first : null;
     const rowsDesc = [...items, ...gaps].sort((a, b) => (b.at ?? b.to) - (a.at ?? a.to));
@@ -225,8 +227,11 @@
     const bookName = (typeof MC_BOOK_NAMES !== 'undefined' && MC_BOOK_NAMES[bk])
       || (typeof mxBookLabel === 'function' && bookRaw ? mxBookLabel(bookRaw) : bookRaw);
     const side = o ? o[who] : null;
-    const open = { price: typeof _openAnchorOf === 'function' ? _openAnchorOf(m, who) : null,
-                   at: side ? side.openTs || null : null };
+    // The Open's time: the card state's, else the card's own openingOdds sighting
+    // (the same fallback _openAnchorOf takes for the price) — never a shard time.
+    const oo = m.openingOdds || null;
+    const open = { price: typeof _openAnchorOf === 'function' ? _openAnchorOf(m, who) : (oo ? oo[who] ?? null : null),
+                   at: side ? side.openTs || null : (oo && oo.seenAt) || null };
     const close = completed ? { price: typeof _mcCloseOf === 'function' ? _mcCloseOf(m, who) : null,
                                 at: side ? side.closeTs || null : null } : null;
     const live = !completed && !!(pair && pair.src === 'stream' && pair.live);

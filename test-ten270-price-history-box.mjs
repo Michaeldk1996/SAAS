@@ -182,3 +182,17 @@ test('the shard is read with a 60 s cache; a read failure is "unavailable", a 40
     assert.equal(await B.fetchShard('ek-503'), null);
   } finally { globalThis.fetch = realFetch; }
 });
+
+test('a card with no card-state entry: the Open time is the card\'s own openingOdds sighting, and a first row at the Open price is not a move (live 12165868)', () => {
+  // Cerundolo–Davidovich Fokina, live 25.09: no odds-card-state entry; openingOdds 2.37/1.57
+  // seen 18:54Z (api-tennis bet365); the shard's only point is 2.37/1.54 at 20:42Z.
+  const m = { openingOdds: { p1: 2.37, p2: 1.57, bookmaker: 'bet365', seenAt: '2026-09-24T18:54:25.206Z' } };
+  const c1 = B.cardData(m, 'p1');
+  assert.equal(c1.open.at, '2026-09-24T18:54:25.206Z');
+  const shard = { books: { bet365: { p1: [['2026-09-24T20:42:50.122Z', 2.37]], p2: [['2026-09-24T20:42:50.122Z', 1.54]] } } };
+  const m1 = B.model(c1, B.shardRows(shard, 'p1'), []);
+  assert.equal(m1.rows.length, 0, 'the same price as the Open is not a move');
+  assert.equal(m1.recordedFrom, Date.parse('2026-09-24T20:42:50.122Z'), 'when recording began still shows');
+  const m2 = B.model(B.cardData(m, 'p2'), B.shardRows(shard, 'p2'), []);
+  assert.deepEqual(m2.rows.map(r => `${r.price}:${r.delta}`), ['1.54:-0.03'], 'a real move is measured from the Open');
+});
