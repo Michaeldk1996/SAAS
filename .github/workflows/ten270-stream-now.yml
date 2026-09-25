@@ -235,7 +235,8 @@ jobs:
                           "from cron.job where jobname in ('ten270-oddspapi-postmatch-ping', 'ten270-oddspapi-postmatch-check') order by 1")
               print(f"post-match jobs -> HTTP {st} {r[:600]}  (want both active; pat_stored 1; telegram_stored 2)")
               try:
-                  jobs = {j.get("jobname"): j.get("active") for j in json.loads(r)} if st == 200 else None
+                  # The Management API query endpoint answers 201, not 200.
+                  jobs = {j.get("jobname"): j.get("active") for j in json.loads(r)} if 200 <= st < 300 else None
               except (ValueError, AttributeError, TypeError):
                   jobs = None
               for jn in ("ten270-oddspapi-postmatch-ping", "ten270-oddspapi-postmatch-check"):
@@ -258,7 +259,7 @@ jobs:
                           "where l.at > now() - interval '7 days' and l.delivered <> 'sent' "
                           "order by l.at desc limit 20")
               try:
-                  unsent = json.loads(r) if st == 200 else None
+                  unsent = json.loads(r) if 200 <= st < 300 else None
               except ValueError:
                   unsent = None
               if not isinstance(unsent, (list, type(None))):
@@ -415,7 +416,7 @@ jobs:
                   st, r = sql(text)
                   print(f"{label} -> HTTP {st} {r[:900]}")
                   try:
-                      return json.loads(r) if st == 200 else None
+                      return json.loads(r) if 200 <= st < 300 else None
                   except ValueError:
                       return None
               q("(i-a) kibl_now_card rows whose LAST write is in the window (one row per card: a lower bound on writes)",
