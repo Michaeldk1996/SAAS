@@ -19,6 +19,10 @@
 //   A. fail once → passes: flaky attaches; every indexed player hydrates (the gate passes).
 //   B. fail twice → aborts: dead stays missing, attached < indexed (the gate aborts).
 //   C. one more fetch, not more: flaky and dead are each requested exactly twice.
+//   D. one at a time: the retries never overlap (each response is held 300 ms).
+// The module ALWAYS runs from a temp copy: its cache lives beside it (<root>/.deployed-cache), and
+// the real repo's cache must never hold this test's fake index (it did once, and the reconcile
+// gate that runs next in npm test read 0 indexed players).
 // Each case is then run against named mutants of the real source; every mutant must fail it.
 // ─────────────────────────────────────────────────────────────────────────────
 const assert = require('assert');
@@ -33,9 +37,17 @@ const SHARD = (k) => JSON.stringify({ key: k, tournamentHistory: [{ name: 'T', w
 
 function startSite() {
   const hits = {};
+  let retrying = 0;
+  hits.maxRetryOverlap = 0;
   const srv = http.createServer((req, res) => {
     const u = req.url.split('?')[0];
     hits[u] = (hits[u] || 0) + 1;
+    // a second request for a shard is a retry: count how many are in flight at once
+    if (hits[u] === 2 && /^\/tournament-history\//.test(u)) {
+      retrying++; hits.maxRetryOverlap = Math.max(hits.maxRetryOverlap, retrying);
+      const end = res.end.bind(res);
+      res.end = (...a) => setTimeout(() => { retrying--; end(...a); }, 300);
+    }
     if (u === '/tournament-history-index.json') { res.end(JSON.stringify({ players: { ok1: { n: 1 }, flaky: { n: 1 }, dead: { n: 1 } } })); return; }
     const m = /^\/tournament-history\/(\w+)\.json$/.exec(u);
     if (!m) { res.statusCode = 404; res.end('nope'); return; }
@@ -46,6 +58,14 @@ function startSite() {
   return new Promise((ok) => srv.listen(0, '127.0.0.1', () => ok({ srv, hits, base: `http://127.0.0.1:${srv.address().port}` })));
 }
 
+// A throwaway root holding a copy of the module (so its cache is throwaway too).
+function copyOf(src) {
+  const dir = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'ten273-shard-root-')), 'tools');
+  fs.mkdirSync(dir, { recursive: true });
+  const f = path.join(dir, 'deployed-store.js');
+  fs.writeFileSync(f, src);
+  return f;
+}
 // Run one hydrate through the given copy of deployed-store.js; → { th, hits }.
 async function hydrate(storeFile) {
   const site = await startSite();
@@ -82,6 +102,9 @@ const CASES = {
     assert.strictEqual(hits['/tournament-history/dead.json'], 2);
     assert.strictEqual(hits['/tournament-history/ok1.json'], 1);
   },
+  'D. one at a time (the retries never overlap)': ({ hits }) => {
+    assert.strictEqual(hits.maxRetryOverlap, 1, `retries in flight at once: ${hits.maxRetryOverlap}`);
+  },
 };
 
 // Named mutants of the real source: each must turn at least its named case red.
@@ -92,6 +115,9 @@ const MUTANTS = [
     "if (!t || t.trim().charAt(0) !== '{') failed.push(k); else ok.set(k, t);", "ok.set(k, t && t.trim().charAt(0) === '{' ? t : '{\"tournamentHistory\":[]}');"],
   ['two retries instead of one', 'C. one more fetch, not more (each failing shard is requested exactly twice)',
     'for (const k of retried) {', 'for (const k of [...retried, ...retried]) {'],
+  ['the retries run in parallel', 'D. one at a time (the retries never overlap)',
+    "  const retried = failed.splice(0);\n  for (const k of retried) {",
+    "  const retried = failed.splice(0);\n  if (retried.length) { const a = ['-sS', '--parallel', '--parallel-immediate', '--max-time', '120']; retried.forEach((k) => a.push('-o', path.join(tmp, `${k}.json`), `${BASE}/${dirRel}/${k}.json`)); try { execFileSync('curl', a); } catch (e) {} }\n  for (const k of retried) {\n    if (fs.existsSync(path.join(tmp, `${k}.json`))) { const t0 = fs.readFileSync(path.join(tmp, `${k}.json`), 'utf8'); fs.unlinkSync(path.join(tmp, `${k}.json`)); if (t0.trim().charAt(0) === '{') { ok.set(k, t0); continue; } }\n    if (1) { failed.push(k); continue; }"],
 ];
 
 (async () => {
@@ -100,17 +126,13 @@ const MUTANTS = [
     try { await fn(); pass++; console.log(`  ok   ${name}`); } catch (e) { fails.push(name); console.log(`  FAIL ${name}\n       ${String(e.message).split('\n')[0]}`); }
   };
   console.log('\nTEN-273 · deployed-store fetchShards: one retry, then fail closed\n');
-  const real = await hydrate(SRC);
+  const real = await hydrate(copyOf(fs.readFileSync(SRC, 'utf8')));
   for (const [name, fn] of Object.entries(CASES)) await check(`real: ${name}`, () => fn(real));
   for (const [label, caseName, find, replace] of MUTANTS) {
     await check(`mutant bites — ${label} → "${caseName.split(' (')[0]}" fails`, async () => {
       const src = fs.readFileSync(SRC, 'utf8');
       assert.strictEqual(src.split(find).length - 1, 1, `anchor must occur exactly once: ${find}`);
-      const dir = path.join(fs.mkdtempSync(path.join(os.tmpdir(), 'ten273-shard-mut-')), 'tools');
-      fs.mkdirSync(dir, { recursive: true });
-      const f = path.join(dir, 'deployed-store.js');
-      fs.writeFileSync(f, src.replace(find, replace));
-      const r = await hydrate(f);
+      const r = await hydrate(copyOf(src.replace(find, replace)));
       let failed = false;
       try { CASES[caseName](r); } catch { failed = true; }
       assert.ok(failed, `"${caseName}" still passes with the mechanism cut out`);

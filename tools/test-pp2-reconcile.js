@@ -65,7 +65,8 @@ const PLAYERS = STORE.players;
 // passes every §5.3 check vacuously — strictly worse than the July fossil, which
 // at least carried rows. Fail-closed on a short hydrate.
 const TH = DEPLOYED.hydrateTournamentHistory(PLAYERS);
-if (TH.error || TH.attached < TH.indexed) {
+// indexed 0 is not "all hydrated": an empty or foreign index walks nothing (TEN-273).
+if (TH.error || TH.attached < TH.indexed || !TH.indexed) {
   console.error('\n  ✗ tournament-history/ DID NOT HYDRATE FROM THE DEPLOYED STORE — ABORTING.');
   // Say WHICH deficiency tripped it and NAME the shard. The gate blocks on
   // `attached < indexed`, so it reports missingCount — which is exactly
