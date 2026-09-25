@@ -12,12 +12,17 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-      - name: Probe (REST only, no WebSocket)
+      - name: SQL steps (encrypted output)
         env:
-          ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
-        run: python3 tools/ten280-sbobet-probe.py
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          TEN280_STEPS: tools/ten280-steps-probe.json
+        run: python3 tools/ten280-sql.py
       - uses: actions/upload-artifact@v4
+        if: always()
         with:
-          name: ten280-probe
-          path: out/probe.json
+          name: ten280-sql
+          path: |
+            out/result.enc
+            out/pass.enc
           retention-days: 1

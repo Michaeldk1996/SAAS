@@ -1,0 +1,14 @@
+[
+ {"name":"hist_sources","sql":"select source, count(*) n, min(kibl_inserted_on) first_ins, max(kibl_inserted_on) last_ins, min(written_at) first_written, count(distinct card_key) cards, count(distinct fixture_id) fixtures, count(*) filter (where fixture_id is null) null_fixture from public.kibl_now_history group by source"},
+ {"name":"hist_leagues","sql":"select f.league_id, f.sport_id, count(distinct h.fixture_id) fixtures, count(*) rows from public.kibl_now_history h left join public.kibl_fixtures f using (fixture_id) group by 1,2 order by 3 desc"},
+ {"name":"hist_sample","sql":"select h.card_key, h.side_key, f.name, f.player1_name, f.player2_name, f.league_id, f.scheduled_start, h.price, h.kibl_inserted_on, h.received_at, h.source, h.book from public.kibl_now_history h left join public.kibl_fixtures f using (fixture_id) order by h.id desc limit 12"},
+ {"name":"hist_per_side","sql":"select percentile_cont(0.5) within group (order by n) med, max(n) mx, count(*) sides from (select card_key, side_key, count(*) n from public.kibl_now_history group by 1,2) s"},
+ {"name":"obs_shape","sql":"select feed_source_id, market_type_id, segment_id, betting_type_id, is_live, count(*) n, min(inserted_on) first_ins, max(inserted_on) last_ins, count(distinct fixture_id) fixtures from public.kibl_line_observations where inserted_on > now() - interval '8 days' group by 1,2,3,4,5 order by n desc limit 25"},
+ {"name":"obs_ml_sample","sql":"select o.fixture_id, f.name, f.league_id, o.side_id, o.participant_id, o.fixture_participant_id, o.point, o.alt_id, o.is_main, o.price_decimal, o.inserted_on, o.observed_at, o.is_opener, o.is_previous, o.is_current, o.is_live, o.market_status_id from public.kibl_line_observations o left join public.kibl_fixtures f using (fixture_id) where o.feed_source_id = 171 and o.market_type_id = 1 and o.segment_id = 1 order by o.inserted_on desc limit 24"},
+ {"name":"obs_ml_daily","sql":"select date_trunc('day', inserted_on) d, f.league_id, count(*) n, count(distinct o.fixture_id) fx from public.kibl_line_observations o left join public.kibl_fixtures f using (fixture_id) where o.feed_source_id = 171 and o.market_type_id = 1 and o.segment_id = 1 and o.inserted_on > now() - interval '8 days' group by 1,2 order by 1,2"},
+ {"name":"leagues","sql":"select league_id, sport_id, count(*) fx, min(name) sample from public.kibl_fixtures where sport_id = 5 group by 1,2 order by 3 desc limit 30"},
+ {"name":"gaps","sql":"select gap_from, gap_to, seconds, reason, lost_history from public.kibl_now_gaps where gap_to > now() - interval '8 days' order by gap_from"},
+ {"name":"ext","sql":"select extname, extversion from pg_extension where extname in ('pg_cron','pg_net','supabase_vault')"},
+ {"name":"cron_jobs","sql":"select jobname, schedule, active from cron.job order by jobname"},
+ {"name":"vault_names","sql":"select name from vault.secrets order by name"}
+]
