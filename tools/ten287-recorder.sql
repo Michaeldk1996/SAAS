@@ -125,7 +125,7 @@ begin
       last_seen = greatest(e.last_seen, excluded.last_seen);
   if jsonb_typeof(p_ev->'bookmakers') is distinct from 'object' then return 0; end if;
   for bk in select jsonb_object_keys(p_ev->'bookmakers') loop
-    if not bk = any ((select books from ten287_rec.config)) then continue; end if;
+    if not exists (select 1 from ten287_rec.config c where bk = any (c.books)) then continue; end if;
     for m in select * from jsonb_array_elements(case when jsonb_typeof(p_ev->'bookmakers'->bk) = 'array' then p_ev->'bookmakers'->bk else '[]'::jsonb end) loop
       if m->>'name' is distinct from 'ML' then continue; end if;
       o := m->'odds'->0;
