@@ -169,23 +169,23 @@ check('item 1 · the meta rule is a sibling span, not the cell\'s own border-lef
   assert(typeof I.renderHeader === 'function',
     'renderHeader is not exported — this lock points at nothing');
   const html = I.renderHeader(SUBJECT, HCTX);
-  const rules = html.match(/<span style="width:1px;[^"]*background:rgba\(255,255,255,0\.09\)[^"]*"><\/span>/g) || [];
+  const rules = html.match(/<span style="width:1px;align-self:stretch[^"]*background:rgba\(255,255,255,0\.03\)[^"]*"><\/span>/g) || [];
   assert.strictEqual(rules.length, 4,
     `expected 4 sibling rule spans in the live-state strip, found ${rules.length}`);
   rules.forEach((r) => {
     assert(/align-self:stretch/.test(r), `rule span does not stretch to its cell: ${r}`);
-    assert(/background:rgba\(255,255,255,0\.09\)/.test(r),
+    assert(/background:rgba\(255,255,255,0\.03\)/.test(r),
       `rule span is not the spec colour: ${r}`);
   });
   // The cells themselves must no longer carry the border the span replaced, or
   // the page paints two rules per boundary.
-  assert(!/border-left:1px solid rgba\(255,255,255,0\.09\)/.test(html),
+  assert(!/border-left:0\.33px solid rgba\(255,255,255,0\.03\)/.test(html),
     'a live-state cell still carries its own border-left — the strip paints two rules');
 });
 
 check('item 1 · the rule is SHORTER than the cell it divides, by a block margin', () => {
   const html = I.renderHeader(SUBJECT, HCTX);
-  const rules = html.match(/<span style="width:1px;[^"]*background:rgba\(255,255,255,0\.09\)[^"]*"><\/span>/g) || [];
+  const rules = html.match(/<span style="width:1px;align-self:stretch[^"]*background:rgba\(255,255,255,0\.03\)[^"]*"><\/span>/g) || [];
   assert(rules.length > 0, 'no rule spans — this lock never ran');
   rules.forEach((r) => {
     const mg = r.match(/margin:([0-9.]+)px 0/);
@@ -277,7 +277,7 @@ checkValues(`item 3 · no support line exceeds ${MAX_TOKENS} ${MIDDOT}-separated
 check('item 3 · the fix is not an ellipsis and not a smaller font', () => {
   // The support line's font size is pinned by §5's spec at 10.5px; a "fix" that
   // shrank it would satisfy the wrap complaint and violate the instruction.
-  const sizes = CODE.match(/font-size:10\.5px;color:#4b5672/g) || [];
+  const sizes = CODE.match(/font-size:10\.5px;color:#6e7a93/g) || [];
   assert(sizes.length >= 1, 'the box support line is no longer 10.5px — was the font shrunk?');
   assert(!/text-overflow:ellipsis/.test(CODE.slice(CODE.indexOf('class="pp2-box"'),
     CODE.indexOf('class="pp2-box"') + 1400)),
@@ -358,7 +358,7 @@ checkValues('item 5 · rendered insight titles are sentences and bodies carry ra
     assert(/Key insights/.test(html), 'the section title is gone');
     return;
   }
-  const titles = html.match(/letter-spacing:-0\.01em;line-height:1\.25;color:#fff;">([^<]+)</g) || [];
+  const titles = html.match(/letter-spacing:-0\.01em;line-height:1\.25;color:#ebf1f2;">([^<]+)</g) || [];
   assert(titles.length > 0, 'no insight titles rendered — this check never ran');
   titles.forEach((t) => assert(t.indexOf(MIDDOT) < 0,
     `an insight title still prints the label${MIDDOT}number shape: ${t}`));
@@ -443,8 +443,8 @@ check('item 7 · the per-box headline sizes are the SPEC\'s, not the capture\'s 
     'all eight sizes are equal — the capture\'s uniform 30px was implemented against the ruling');
 });
 
-checkValues('item 7 · the tourn unit suffix is tinted by SIGN, and green is #3dd68c', () => {
-  // `Player Stat Boxes.dc.html`:3223 — `hlSuffixColor: '#3dd68c'`. Ours renders
+checkValues('item 7 · the tourn unit suffix is tinted by SIGN, and green is #3ed68c', () => {
+  // `Player Stat Boxes.dc.html`:3223 — `hlSuffixColor: '#3ed68c'`. Ours renders
   // rgb(61,214,140) for a positive, which is that colour; the capture's white
   // `u` is the deviation, and it is the capture that is a layout reference.
   const v = I.buildBoxVals(SUBJECT, { archetype: null });
@@ -453,7 +453,7 @@ checkValues('item 7 · the tourn unit suffix is tinted by SIGN, and green is #3d
     assert(/^#(3dd68c|e0616f)$/.test(v.tourn.hlSuffixColor),
       `the tourn suffix colour is ${v.tourn.hlSuffixColor}, not the spec green/red pair`);
   }
-  assert(/hlSuffixColor: be\.pinPl >= 0 \? '#3dd68c' : '#e0616f'/.test(CODE),
+  assert(/hlSuffixColor: be\.pinPl >= 0 \? '#3ed68c' : '#da6259'/.test(CODE),
     'the suffix tint is no longer by sign');
 });
 
@@ -489,7 +489,7 @@ const mutants = [
    "border-radius:10px;padding:18px 16px;display:flex;flex-direction:column;gap:7px;' +\n        'min-height:' + (b.key === 'speed' ? 160 : 140) + 'px;",
    /different min-heights/],
   ['item 4 · support lines no longer bottom-pinned',
-   "color:#4b5672;line-height:1.4;margin-top:auto;", "color:#4b5672;line-height:1.4;",
+   "color:#6e7a93;line-height:1.4;margin-top:auto;", "color:#6e7a93;line-height:1.4;",
    /support lines are bottom-pinned/],
   ['item 5 · a title dropped from the table',
    "'opponent:vs. Lefties':  ['Handles left-handers well',        'Struggles against left-handers'],",
@@ -516,8 +516,8 @@ const mutants = [
    "key: 'speed', title: 'Court speed record', size: 30",
    /headline is 30px; the locked spec says 22px/],
   ['item 7 · the suffix tint hardcoded green',
-   "hlSuffixColor: be.pinPl >= 0 ? '#3dd68c' : '#e0616f',",
-   "hlSuffixColor: '#3dd68c',", /tint is no longer by sign/],
+   "hlSuffixColor: be.pinPl >= 0 ? '#3ed68c' : '#da6259',",
+   "hlSuffixColor: '#3ed68c',", /tint is no longer by sign/],
 ];
 
 // The assertion block the mutants are scored against, factored out so it can be
@@ -531,7 +531,7 @@ function scoreAgainst(MI, MCODE) {
   const rib = MI.renderRibbon({ filtered: HCTX.rows, ledgerOpen: false });
 
   // item 1
-  (hdr.match(/<span style="width:1px;[^"]*background:rgba\(255,255,255,0\.09\)[^"]*"><\/span>/g) || []).forEach((r) => {
+  (hdr.match(/<span style="width:1px;align-self:stretch[^"]*background:rgba\(255,255,255,0\.03\)[^"]*"><\/span>/g) || []).forEach((r) => {
     if (!/margin:([0-9.]+)px 0/.test(r)) throw new Error('rule span has no block margin');
   });
   if (/flex:none;align-self:stretch;display:flex;align-items:stretch/.test(hdr))
@@ -592,7 +592,7 @@ function scoreAgainst(MI, MCODE) {
     if (got !== SPEC_SIZES[b.key])
       throw new Error(`box "${b.key}" headline is ${got}px; the locked spec says ${SPEC_SIZES[b.key]}px`);
   });
-  if (!/hlSuffixColor: be\.pinPl >= 0 \? '#3dd68c' : '#e0616f'/.test(MCODE))
+  if (!/hlSuffixColor: be\.pinPl >= 0 \? '#3ed68c' : '#da6259'/.test(MCODE))
     throw new Error('the suffix tint is no longer by sign');
 }
 

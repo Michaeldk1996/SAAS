@@ -163,7 +163,7 @@ check('the launcher matches the export\'s chrome', () => {
   I.state.hbSurf = 'all';
   const html = I.hbLauncherHtml(SUBJECT);
   const want = [
-    ['background:#06070a', 'card background'],
+    ['background:#0c0e16', 'card background'],
     ['border-radius:11px', 'card radius'],
     ['padding:13px 15px', 'card padding'],
     ['width:30px;height:30px', 'icon tile size'],

@@ -336,14 +336,14 @@ test('EXECUTED: a never-fetched row dashes all three counts even on a shard that
   assert.equal(never.length, 3, 'expected three count cells');
   assert.deepEqual(never.map((c) => c.text), ['—', '—', '—'],
     'a never-fetched row must dash ALL THREE counts — the deployed shard\'s ALT: 0 must not reach the screen');
-  assert.deepEqual([...new Set(never.map((c) => c.colour))], ['#3f4860'],
+  assert.deepEqual([...new Set(never.map((c) => c.colour))], ['#6e7a93'],
     'all three dashes must use the no-data colour');
 
   // ...and the other direction: a REAL zero on a loaded row must survive.
   const real = cells(renderTournament(LOADED_NO_ALTS, 1));
   assert.deepEqual(real.map((c) => c.text), ['28', '16', '0'],
     'a loaded event with no alternates must print 0 — "no alternates" is not "never fetched"');
-  assert.equal(real[2].colour, '#e7e9ee', 'a real zero is real data and takes the data colour');
+  assert.equal(real[2].colour, '#ebf1f2', 'a real zero is real data and takes the data colour');
 });
 
 test('EXECUTED: the speed-series trend states the year SPAN, not the number of points', () => {
@@ -661,9 +661,9 @@ test('RULING: speed-panel columns stay NEUTRAL; only the selected row is tinted,
   assert.match(fn, /background:\$\{on \? hexA\(tint,0\.13\) : 'transparent'\}/);
   assert.match(fn, /box-shadow:inset 2px 0 0 \$\{tint\}/);
   assert.deepEqual(
-    Object.entries({ clay: '#e8a84e', hard: '#4db8ff', grass: '#2ab8a0' })
+    Object.entries({ clay: '#f2b45f', hard: '#6a9af8', grass: '#45d6b0' })
       .filter(([k, v]) => !fn.includes(`${k}:'${v}'`)), [],
-    'the tokens must be the design-system ones, unchanged');
+    'the tokens must be the 12a surface tokens (TEN-285)');
 
   // The COLUMN chrome must carry no hue — that is the "keep it neutral" half.
   const head = /height:41px[\s\S]*?\$\{rows\.length\} · med/.exec(fn);

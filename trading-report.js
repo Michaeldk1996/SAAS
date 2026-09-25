@@ -32,7 +32,7 @@
 //      Surface AND Tournament; BEFORE the search box and BEFORE any column tier
 //      filter. So typing a name never moves the bar, but picking a tournament does.
 //   6. AVATARS      → the shipped resolver chain stays (ATP alias → Wikimedia →
-//      api-tennis logo → monogram initials), not the export's bare #0f1420 circle.
+//      api-tennis logo → monogram initials), not the export's bare #0e1019 circle.
 //
 // SURFACE, and why it changed. The export's rule 3 is non-negotiable: "splits use
 // the surface of each player's own match, including under All surfaces. Never blend
@@ -120,9 +120,9 @@
   var SHARD_CONCURRENCY  = 6;
 
   // Export design tokens (README §"Design tokens"). Named once, used everywhere.
-  var GREEN = '#3dd68c', AMBER = '#e8a84e', RED = '#e0616f', DIM = '#5b6880', DASH = '#4b5672';
+  var GREEN = '#3ed68c', AMBER = '#e8a84e', RED = '#da6259', DIM = '#6e7a93', DASH = '#6e7a93';
   var TIER_COLOR = { above: GREEN, within: AMBER, below: RED };
-  var SURF_COLOR = { hard: '#4db8ff', clay: '#e8a84e', grass: '#2ab8a0' };
+  var SURF_COLOR = { hard: '#6a9af8', clay: '#f2b45f', grass: '#45d6b0' };
   var SURF_LABEL = { hard: 'Hard', clay: 'Clay', grass: 'Grass' };
   var MIN_TIER_DEN = 10;   // a cell is untiered below this denominator (README §"Cell display rules")
   var TIER_PTS     = 3;    // ±3 percentage points around the field average
@@ -775,9 +775,9 @@
              '</div>' +
              '<div class="tr-hdr-stats">' +
                pair(S.day === 'tomorrow' ? 'Tomorrow' : 'Today', String(slateCount), null) +
-               pair('Live', String(liveCount), S.day === 'tomorrow' ? DASH : '#5b9bff') +
+               pair('Live', String(liveCount), S.day === 'tomorrow' ? DASH : '#6a9af8') +
                pair('Window', S.win === '52w' ? '52w' : '24m', null) +
-               pair('Updated', updated, '#8b96b5') +
+               pair('Updated', updated, '#a3abba') +
              '</div>' +
            '</div>';
   }
@@ -829,7 +829,7 @@
       dropdownHtml('tour', V.tourSel || 'All tournaments', null, S.tourOpen, tourOpts) +
       segHtml('win', [['24m', '24 months'], ['52w', '52 weeks']], S.win, null) +
       '<label class="tr-searchwrap">' +
-        '<svg width="14" height="14" viewBox="0 0 20 20" fill="none" style="flex:none"><circle cx="9" cy="9" r="6" stroke="#5b6880" stroke-width="1.7"></circle><path d="m14 14 3 3" stroke="#5b6880" stroke-width="1.7" stroke-linecap="round"></path></svg>' +
+        '<svg width="14" height="14" viewBox="0 0 20 20" fill="none" style="flex:none"><circle cx="9" cy="9" r="6" stroke="#6e7a93" stroke-width="1.7"></circle><path d="m14 14 3 3" stroke="#6e7a93" stroke-width="1.7" stroke-linecap="round"></path></svg>' +
         '<input id="trSearch" type="text" placeholder="Search player" value="' + esc(S.q) + '">' +
       '</label>' +
     '</div>';
@@ -864,7 +864,7 @@
       var hidden = (V.tabFilters[mk] || []);
       var open = (S.menu === mk);
       var sorted = (S.sort === mk);
-      var funnelColor = (hidden.length || band) ? '#5b9bff' : '#5b6880';
+      var funnelColor = (hidden.length || band) ? '#6a9af8' : '#6e7a93';
       var fa = V.fieldAvg[mk];
       var field = (fa == null) ? '—' : (Math.round(fa * 100) + '%');
 

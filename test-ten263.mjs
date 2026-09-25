@@ -83,7 +83,7 @@ test('flagged rules (a)–(e) are single constants at the designed values', () =
   assert.equal(S.consts.FH_HOT_MIN_ELIGIBLE, 3);          // (a)
   assert.equal(S.consts.FH_PRICE_AVG_MARGIN_REMOVED, true); // (b)
   assert.equal(S.consts.FH_H2H_SET1_MIRROR, true);        // (c)
-  assert.equal(S.consts.FH_SURF.Grass, '#2ab8a0');        // (d) the live site's grass token
+  assert.equal(S.consts.FH_SURF.Grass, '#45d6b0');        // (d) the live site's grass token
   assert.equal(S.consts.FH_H2H_RET_COUNTS, true);         // (e)
   assert.deepEqual(S.consts.FH_H2H_LEVELS, ['ATP', 'CH', 'ITF']);  // §3b: every level, one constant
 });
@@ -847,7 +847,7 @@ test('card / Key factors: a record with Challenger or ITF meetings says so; an a
 });
 test('Key factors H2H block (the live one) shows the level mix: executed, not grepped', () => {
   const K = new Function(`
-    const ANALYSIS_P1_COLOR = '#5b9bff', ANALYSIS_P2_COLOR = '#e7e9ee';
+    const ANALYSIS_P1_COLOR = '#6a9af8', ANALYSIS_P2_COLOR = '#e7e9ee';
     const akHead = t => '<h>' + t + '</h>', akCard = (k, h) => h;
     const psEsc = x => String(x), psShortName = x => String(x);
     ${slice('h2hLevelMix')}\n${slice('akH2HBlock')}\nreturn akH2HBlock;`)();
@@ -1190,7 +1190,7 @@ test('price range: fewer than 3 priced meetings shows its count as a chip (n=2 l
 });
 test('untracked counts are missing, not 0, downstream: the Live modal bar and the Tournament Reports field line', () => {
   const f = new Function('tourxFmt', slice('tourxLineChartSvg') + '; return tourxLineChartSvg;')(v => String(v));
-  const svg = f([20, 22], [null, 18], '#5b9bff', 'count', ['R1', 'R2']);
+  const svg = f([20, 22], [null, 18], '#6a9af8', 'count', ['R1', 'R2']);
   assert.ok(!/NaN/.test(svg));
   const pts = /stroke-dasharray="4 4"/.test(svg) && /<polyline points="([^"]+)" fill="none" stroke="rgba\(255,255,255,0\.32\)"/.exec(svg)[1];
   assert.equal(pts.split(' ').length, 1, 'the missing field point is skipped, not drawn at 0');

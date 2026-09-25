@@ -490,6 +490,8 @@ jobs:
           # it under that name too, not just as index.html.
           cp bsp-consult-dashboard.html _site/bsp-consult-dashboard.html
           cp auth.html account.html funnel.html verify.html auth.js analytics.js _site/
+          # TEN-285: the 12a logo (sidebar) and ring mark (icon-only slots). Required.
+          mkdir -p _site/assets && cp assets/logo-dark-transparent.png assets/ring-transparent.png _site/assets/
           # TEN-107 Live tab: the standalone Live page reads the Supabase live_snapshot
           # row via PostgREST. Committed but not copied = silent 404 → the Live tab stays
           # dark even with the flag on. Public Supabase creds are injected below.
@@ -838,7 +840,8 @@ jobs:
                    tournament-history-index.json \
                    court-speed-map.json \
                    match-stat-event-coverage.json \
-                   series.js series.css; do
+                   series.js series.css \
+                   assets/logo-dark-transparent.png assets/ring-transparent.png; do
             [ -s "_site/$f" ] || { echo "MISSING from _site: $f"; exit 1; }
           done
           # style-meetings-index.json gates the "vs this style" detail list exactly

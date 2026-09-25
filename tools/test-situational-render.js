@@ -225,7 +225,7 @@ check('rows and head use the export\'s grid tracks', () => {
 check('the head row renders ONCE, not once per group', () => {
   const I = load(ROSTER, PBP_STORE);
   const html = I.renderSituational(SUBJECT);
-  const heads = html.split('border-bottom:1px solid rgba(255,255,255,0.12)').length - 1;
+  const heads = html.split('border-bottom:0.33px solid rgba(255,255,255,0.03)').length - 1;
   assert.strictEqual(heads, 1, `the column head renders ${heads} times; the export renders it once`);
   const recs = html.split('>Record<').length - 1;
   assert.strictEqual(recs, 1, `"Record" appears ${recs} times in the head`);

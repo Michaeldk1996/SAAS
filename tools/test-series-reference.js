@@ -247,15 +247,15 @@ assert(refCss.indexOf('[data-page="series"] .sr-ref {') === 0, '.sr-ref has no s
 const refRule = refCss.slice(0, refCss.indexOf('}') + 1);
 assert(/IBM Plex Mono/.test(refRule), 'the sub-line must be mono');
 assert(/font-size: 11\.5px/.test(refRule), 'TEN-204 2.4: the sub-line must be 11.5px');
-assert(/color: #5b6880/.test(refRule), 'the sub-line colour must be #5b6880');
+assert(/color: var\(--label\)/.test(refRule), 'the sub-line colour must be the 12a label token');
 const cellV = css.slice(css.indexOf('[data-page="series"] .sr-cell-v {'));
 const cellVRule = cellV.slice(0, cellV.indexOf('}'));
 const sizeOf = (rule) => Number((/font-size: ([\d.]+)px/.exec(rule) || [])[1]);
 assert(sizeOf(refRule) < sizeOf(cellVRule),
   'TEN-204 2.4: the sub-line must read SECONDARY to the strip values — it is ' +
   sizeOf(refRule) + 'px against the strip\'s ' + sizeOf(cellVRule) + 'px');
-assert(/\[data-page="series"\] \.sr-ref--none \{[^}]*color: #4b5672/.test(css),
-  'item 5: the unavailable state must be #4b5672');
+assert(/\[data-page="series"\] \.sr-ref--none \{[^}]*color: var\(--label\)/.test(css),
+  'item 5: the unavailable state must be the 12a label token (TEN-285 collapsed #4b5672 into label)');
 // The sub-line must WRAP, never elide. Measured at 320-360px: a nowrap sub-line makes
 // the card's min-content 370px inside a 288px grid track, so the card breaks out of its
 // column; the alternative escape (min-width:0) trades that for an ellipsis, i.e. a
@@ -266,7 +266,7 @@ assert(!/white-space:\s*nowrap/.test(refRule),
 assert(/white-space:\s*normal/.test(refRule), 'the sub-line must be allowed to wrap');
 assert(!/text-overflow:\s*ellipsis/.test(refRule),
   'an ellipsis on the sub-line would print a TRUNCATED reference — never a partial value');
-ok('the sub-line ships mono / 11.5px / #5b6880, secondary to the strip, dash state #4b5672');
+ok('the sub-line ships mono / 11.5px / label, secondary to the strip, dash state label');
 
 // …and nothing later in the file may quietly outrank those three declarations. The
 // review's point: a `[data-page="series"] .sr-card .sr-ref { font-size: 9px }` added
