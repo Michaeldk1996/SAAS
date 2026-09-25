@@ -53,6 +53,12 @@ CLOSE_PATH_MARKERS = ('odds_card_state', 'close_ts', 'close_reliable',
 # The pinned sites. Keyed by file; the value is the set of normalised code lines
 # that are allowed to mention event_time, each with why it is not a start time.
 ALLOWED = {
+    'tools/test-ten273-parallel-fetch.js': {
+        # TEN-273: stub api-tennis fixtures for the parallel-fetch equivalence test; never read as a start
+        "event_key: String(k * 1000 + i), event_date: dateStr, event_time: '12:00', event_status: status,",
+        "event_key: String(900000 + i), event_date: played ? '2026-09-20' : date, event_time: String(10 + (i % 9)) + ':30',",
+        "rows.push({ ...rows[1], event_key: '909999', event_date: '2026-09-21', event_time: '09:00', first_player_key: String(SLATE_KEYS[2]), event_first_player: 'P. Player' + SLATE_KEYS[2], second_player_key: '5002', event_second_player: 'P. Player5002' });",
+    },
     'refresh-scores.py': {
         # day/slot bookkeeping for the score patch, never a start instant
         "d, t = f.get('event_date'), f.get('event_time')",
