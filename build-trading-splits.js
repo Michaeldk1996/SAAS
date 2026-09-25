@@ -56,7 +56,12 @@ const INDEX_FILE = process.env.TS_INDEX || path.join(ROOT, 'trading-splits-index
 // founder reviews). MATCHES ruling 2026-09-05: log any player whose broad match
 // count diverges from the behind-the-splits count.
 const DIVERGENCE_FILE = process.env.TS_DIVERGENCE || path.join(ROOT, 'trading-splits-divergence.json');
-const PACE_MS = Number(process.env.TS_PACE_MS || 150);
+// TEN-273 item 5: the per-player get_fixtures windows are fetched through a
+// bounded pool (was: one at a time + a fixed 150 ms sleep, 5.8 min median).
+// Results land in roster slots and are PROCESSED serially in roster order below,
+// so the shards, index, divergence report and log lines are byte-identical to the
+// serial build. Override with TS_CONCURRENCY (1 = the old serial fetch order).
+const CONCURRENCY = Math.max(1, Math.floor(Number(process.env.TS_CONCURRENCY || 8)) || 8);
 // Test/cap knob only. Unset in CI => whole roster.
 const MAX_PLAYERS = process.env.TS_MAX_PLAYERS ? Number(process.env.TS_MAX_PLAYERS) : Infinity;
 // Optional explicit roster (comma-separated player_keys) for a targeted proof run.
@@ -405,6 +410,23 @@ async function buildPlayer(key, surfaceMap) {
   return { key, tiers, tiers52w, sampleMatches, usOpen, tally, windowByTier, windowByTier52w };
 }
 
+// Bounded-concurrency map. out[i] is ALWAYS items[i]'s result — slot-indexed, never
+// completion order. A throw is captured in its slot ({ thrown }) rather than
+// rejecting the pool, so the caller can re-raise it at exactly the point in roster
+// order where the serial loop would have thrown (after writing earlier shards).
+async function mapPool(items, concurrency, fn) {
+  const out = new Array(items.length);
+  let next = 0;
+  async function worker() {
+    while (next < items.length) {
+      const i = next++;
+      try { out[i] = { value: await fn(items[i], i) }; } catch (e) { out[i] = { threw: true, thrown: e }; }
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, worker));
+  return out;
+}
+
 function pruneTier(tb) {
   if (tb.all.m === 0) return null;
   const out = { all: tb.all };
@@ -436,10 +458,12 @@ async function main() {
   const cutTrees24 = [];
   const cutTrees52w = [];
 
-  for (const key of roster) {
+  const built = await mapPool(roster, CONCURRENCY, key => buildPlayer(key, surfaceMap));
+  for (let ri = 0; ri < roster.length; ri++) {
+    const key = roster[ri];
     calls++;
-    const r = await buildPlayer(key, surfaceMap);
-    await new Promise(res => setTimeout(res, PACE_MS));
+    if (built[ri].threw) throw built[ri].thrown;
+    const r = built[ri].value;
     if (r.tally) {
       fb.parsefailRows += r.tally.parsefail;
       fb.matchesWithParsefail += r.tally.matchesWithParsefail;

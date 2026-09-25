@@ -129,7 +129,13 @@ const HANDICAP_LINES = [1.5, 3.5, 5.5];
 // best-of split. Pinned from the first-set distribution near the coin flip.
 const FIRST_SET_LINE = 9.5;
 
-const PACE_MS = Number(process.env.SERIES_PACE_MS || 150);
+// TEN-273 item 5: the per-player history windows are fetched through a bounded pool
+// (was: one at a time + a fixed 150 ms sleep). Results land in slots and are
+// PROCESSED serially in the original player order, so series.json, the outcomes
+// ledger and the log lines are byte-identical to the serial build. Override with
+// SERIES_CONCURRENCY (1 = the old serial fetch order). The get_odds pass
+// (attachOdds) is NOT pooled — it stays serial and untouched.
+const CONCURRENCY = Math.max(1, Math.floor(Number(process.env.SERIES_CONCURRENCY || 8)) || 8);
 const MAX_PLAYERS = process.env.SERIES_MAX_PLAYERS ? Number(process.env.SERIES_MAX_PLAYERS) : Infinity;
 
 // Reproducible "now" for backtests: SERIES_NOW=YYYY-MM-DD. Default = real today.
@@ -1222,18 +1228,26 @@ async function main() {
   const distinct = [...byPlayer.keys()];
   const limit = Number.isFinite(MAX_PLAYERS) ? distinct.slice(0, MAX_PLAYERS) : distinct;
 
-  for (const pk of limit) {
+  // Slot-indexed pool: fetched[i] is ALWAYS limit[i]'s outcome, never completion order.
+  const fetched = new Array(limit.length);
+  let nextFetch = 0;
+  async function fetchWorker() {
+    while (nextFetch < limit.length) {
+      const i = nextFetch++;
+      try { fetched[i] = { fixtures: await fetchRecentSinglesFixtures(limit[i]) }; } catch (e) { fetched[i] = { failed: true, error: e }; }
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(CONCURRENCY, limit.length) }, fetchWorker));
+
+  for (let li = 0; li < limit.length; li++) {
+    const pk = limit[li];
     done++;
-    let fixtures;
-    try {
-      fixtures = await fetchRecentSinglesFixtures(pk);
-    } catch (e) {
+    if (fetched[li].failed) {
       failed++;
-      console.error(`build-series: fixture window failed for ${pk}: ${e.message}`);
-      await new Promise(r => setTimeout(r, PACE_MS));
+      console.error(`build-series: fixture window failed for ${pk}: ${fetched[li].error.message}`);
       continue;
     }
-    await new Promise(r => setTimeout(r, PACE_MS));
+    const fixtures = fetched[li].fixtures;
     if (!Array.isArray(fixtures) || !fixtures.length) continue;
 
     for (const tier of byPlayer.get(pk)) {

@@ -411,26 +411,43 @@ jobs:
       # longer green the pipeline. NOTE: on a failure the trading shards are simply
       # not refreshed this run — "keep last good rather than ship empty" persistence
       # is a separate open decision (there is no in-repo shard snapshot yet).
-      - name: Build Trading Report splits (isolated fail-loud)
-        id: trading_splits
-        continue-on-error: true
-        env:
-          API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
-        run: node build-trading-splits.js
-
-      # TEN-168 Series page data layer. Current streaks for today/tomorrow's slate,
-      # built from fetchRecentSinglesFixtures (same source as the Trading Report) +
-      # the committed playing-styles / tournament-surfaces maps + player-profiles.json
-      # (built earlier this run). Writes series.json only — read-only otherwise.
+      #
+      # TEN-168 Series page data layer — runs IN THIS STEP, in parallel (TEN-273 item 5).
+      # Current streaks for today/tomorrow's slate, built from fetchRecentSinglesFixtures
+      # (same source as the Trading Report) + the committed playing-styles /
+      # tournament-surfaces maps + player-profiles.json (built earlier this run). Writes
+      # series.json + series-outcomes.json only — read-only otherwise.
       # ISOLATED + best-effort (|| true): like the Trading Report, this newest surface
       # must never hold the core board's deploy hostage. The engine writes atomically
       # (tmp + rename) and refuses a partial write, and a committed series.json seed
       # is served if this run doesn't refresh it, so the page is never empty.
-      - name: Build Series streaks (best-effort)
+      #
+      # WHY ONE STEP (TEN-273): the two generators share only read-only inputs
+      # (player-profiles.json, tournament-surfaces.json) and write disjoint outputs
+      # (trading-splits*/ vs series*.json), so they run side by side. Exit handling is
+      # unchanged: the STEP's exit code is build-trading-splits.js's alone, so
+      # steps.trading_splits.outcome still means exactly "the trading generator
+      # failed" for the re-raise step at the end of the job; build-series.js keeps its
+      # `|| true` and can never change that outcome. `set +e` so a trading failure
+      # still waits for series to finish (and prints its log) before exiting.
+      - name: Build Trading Report splits (isolated fail-loud) + Series streaks (best-effort, parallel)
+        id: trading_splits
         continue-on-error: true
         env:
           API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
-        run: node build-series.js || true
+        run: |
+          set +e
+          SERIES_LOG="$RUNNER_TEMP/build-series.log"
+          ( node build-series.js > "$SERIES_LOG" 2>&1 || true ) &
+          SERIES_PID=$!
+          node build-trading-splits.js
+          TS_RC=$?
+          wait "$SERIES_PID"
+          echo "::group::Build Series streaks (best-effort) — log"
+          cat "$SERIES_LOG"
+          echo "::endgroup::"
+          echo "build-trading-splits.js exit code: ${TS_RC}"
+          exit "$TS_RC"
 
       # TEN-204 item 2.8 — FAIL-CLOSED row-integrity gate on the artifact this run just
       # wrote. `npm test` above runs the same gate, but it runs BEFORE build-series.js, so
