@@ -67,18 +67,23 @@ concurrency:
 # TEN-225 Part 3 — `write` so the publish step can commit odds-card-state.json.
 # The sweep, the card fill and every report in this job stay read-only; the one
 # writer is the publish step, and the one path it writes is that file.
-# `actions: write` — read for the circuit-breaker step, which reads this
-# workflow's own run list to count consecutive failures; write for the TEN-270
-# prune step, which deletes superseded ten270-* snapshot cache entries. This
-# workflow has one job, so this block is that job's grant.
+# `actions: read` is for the circuit-breaker step, which reads this workflow's
+# own run list to count consecutive failures. The ONE job that deletes cache
+# entries (prune-snapshot-caches, below) gets `actions: write` on its own and
+# checks nothing out, so no step that runs repo code ever holds it.
 permissions:
   contents: write
-  actions: write
+  actions: read
 
 jobs:
   archive:
     runs-on: ubuntu-latest
     timeout-minutes: 120
+    # What the prune job may keep: the keys this run CONFIRMED saving ('' =
+    # no save this run, so nothing under that prefix is pruned).
+    outputs:
+      keep_card: ${{ steps.savecard.outcome == 'success' && steps.cardkey.outputs.key || '' }}
+      keep_ref: ${{ steps.saveref.outcome == 'success' && steps.refkey.outputs.key || '' }}
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -302,17 +307,20 @@ jobs:
       # the previous snapshot, whose older mark just widens the next delta).
       # hashFiles() is '' when the file is absent, which skips the save rather
       # than raising a path warning on every run.
+      - name: Reference snapshot key
+        id: refkey
+        if: steps.cards.outcome == 'success' && hashFiles('.cache/ten225-ref-snapshot.json.gz') != ''
+        run: echo "key=ten270-ref-${{ hashFiles('.cache/ten225-ref-snapshot.json.gz') }}" >> "$GITHUB_OUTPUT"
+
       - name: Save reference snapshot (only when it changed)
         id: saveref
         if: >-
-          steps.cards.outcome == 'success' &&
-          hashFiles('.cache/ten225-ref-snapshot.json.gz') != '' &&
-          steps.refsnap.outputs.cache-matched-key !=
-          format('ten270-ref-{0}', hashFiles('.cache/ten225-ref-snapshot.json.gz'))
+          steps.refkey.outputs.key != '' &&
+          steps.refsnap.outputs.cache-matched-key != steps.refkey.outputs.key
         uses: actions/cache/save@v4
         with:
           path: .cache/ten225-ref-snapshot.json.gz
-          key: ten270-ref-${{ hashFiles('.cache/ten225-ref-snapshot.json.gz') }}
+          key: ${{ steps.refkey.outputs.key }}
 
       # Review finding 3: the old step saved ten270-card-<run_id> on EVERY run
       # (~288 entries a day). Now: key = ten270-card-<UTC hour>-<content hash>,
@@ -346,40 +354,6 @@ jobs:
         with:
           path: .cache/ten225-card-snapshot.json.gz
           key: ${{ steps.cardkey.outputs.key }}
-
-      # Delete every older entry under the prefix just saved, then report what
-      # the two prefixes hold. Best-effort: a failed prune is a warning, never
-      # a failed archive run (the sweep's prices are already written).
-      - name: Prune superseded snapshot caches
-        if: steps.savecard.outcome == 'success' || steps.saveref.outcome == 'success'
-        continue-on-error: true
-        env:
-          GH_TOKEN: ${{ github.token }}
-          KEEP_CARD: ${{ steps.savecard.outcome == 'success' && steps.cardkey.outputs.key || '' }}
-          KEEP_REF: ${{ steps.saveref.outcome == 'success' && format('ten270-ref-{0}', hashFiles('.cache/ten225-ref-snapshot.json.gz')) || '' }}
-        run: |
-          set -uo pipefail
-          api="https://api.github.com/repos/$GITHUB_REPOSITORY/actions/caches"
-          auth=(-H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json")
-          list() { curl -sS --fail "${auth[@]}" "$api?key=$1&per_page=100"; }
-          for pair in "ten270-card-:$KEEP_CARD" "ten270-ref-:$KEEP_REF"; do
-            prefix=${pair%%:*}; keep=${pair#*:}
-            [ -n "$keep" ] || continue
-            ids=$(list "$prefix" | jq -r --arg k "$keep" \
-              '.actions_caches[] | select(.key != $k) | .id') \
-              || { echo "::warning::could not list $prefix caches"; continue; }
-            n=0
-            for id in $ids; do
-              curl -sS --fail -X DELETE "${auth[@]}" "$api/$id" >/dev/null \
-                && n=$((n+1)) || echo "::warning::could not delete cache $id"
-            done
-            echo "$prefix: kept $keep, deleted $n older"
-          done
-          for prefix in ten270-card- ten270-ref-; do
-            list "$prefix" | jq -r --arg p "$prefix" \
-              '"\($p) steady state: \(.actions_caches | length) entries, \([.actions_caches[].size_in_bytes] | add // 0) bytes"' \
-              | tee -a "$GITHUB_STEP_SUMMARY" || true
-          done
 
       # ------------------------------------------------------------- PART 3
       # PUBLISH. odds_card_state has RLS on and zero policies and the product is
@@ -594,3 +568,62 @@ jobs:
         run: |
           set -o pipefail
           python3 -B ten232-kibl-sweep-cron.py | tee -a "$GITHUB_STEP_SUMMARY"
+
+  # TEN-270 re-review items 2-4 — prune superseded snapshot cache entries.
+  # A job of its own so `actions: write` (cache delete) is held by nothing
+  # else: no checkout, no repo code, only curl + jq against the cache API.
+  # Scoped to THIS run's ref, so a feature-branch run never touches main's
+  # entries; and it deletes nothing under a prefix until the key the archive
+  # job saved is itself visible in the list (a save that did not land prunes
+  # nothing). Best-effort: a failure here is a warning, not a failed archive.
+  prune-snapshot-caches:
+    needs: archive
+    if: >-
+      !cancelled() &&
+      (needs.archive.outputs.keep_card != '' || needs.archive.outputs.keep_ref != '')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    continue-on-error: true
+    permissions:
+      actions: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      KEEP_CARD: ${{ needs.archive.outputs.keep_card }}
+      KEEP_REF: ${{ needs.archive.outputs.keep_ref }}
+    steps:
+      - name: Prune superseded ten270-* caches on this ref
+        run: |
+          set -uo pipefail
+          api="https://api.github.com/repos/$GITHUB_REPOSITORY/actions/caches"
+          auth=(-H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json")
+          list() {
+            curl -sS --fail -G "${auth[@]}" --data-urlencode "key=$1" \
+              --data-urlencode "ref=$GITHUB_REF" --data-urlencode per_page=100 "$api"
+          }
+          for pair in "ten270-card-:$KEEP_CARD" "ten270-ref-:$KEEP_REF"; do
+            prefix=${pair%%:*}; keep=${pair#*:}
+            [ -n "$keep" ] || continue
+            body=$(list "$prefix") || { echo "::warning::could not list $prefix caches"; continue; }
+            seen=$(printf '%s' "$body" | jq --arg k "$keep" --arg r "$GITHUB_REF" \
+              '[.actions_caches[] | select(.key == $k and .ref == $r)] | length')
+            if [ "$seen" != "1" ]; then
+              echo "::warning::$keep not visible on $GITHUB_REF ($seen) — pruning nothing under $prefix"
+              continue
+            fi
+            ids=$(printf '%s' "$body" | jq -r --arg k "$keep" --arg r "$GITHUB_REF" \
+              '.actions_caches[] | select(.key != $k and .ref == $r) | .id')
+            n=0
+            for id in $ids; do
+              if curl -sS --fail -X DELETE "${auth[@]}" "$api/$id" >/dev/null; then
+                n=$((n+1))
+              else
+                echo "::warning::could not delete cache $id"
+              fi
+            done
+            echo "$prefix: kept $keep, deleted $n older on $GITHUB_REF"
+          done
+          for prefix in ten270-card- ten270-ref-; do
+            list "$prefix" | jq -r --arg p "$prefix" --arg r "$GITHUB_REF" \
+              '"\($p) on \($r): \(.actions_caches | length) entries, \([.actions_caches[].size_in_bytes] | add // 0) bytes"' \
+              | tee -a "$GITHUB_STEP_SUMMARY" || true
+          done

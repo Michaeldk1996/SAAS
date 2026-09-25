@@ -1157,8 +1157,11 @@ REF_QUIET_S = 30 * 60
 # catalog RPC that says whether it is installed (ten225-card-state-schema.sql).
 TOUCH_TABLES = ('odds_card_state', 'oddspapi_fixtures', 'oddspapi_line_summary')
 TOUCH_RPC = '/rest/v1/rpc/ten270_touch_triggers'
-# Review finding 2: grains per selection PATCH (bounded by URL length).
-PATCH_CHUNK = 40
+# Re-review item 1: the atomic selection write-back (one transaction per
+# call). One call per run; split, at card boundaries only, past this size.
+SET_SELECTED_RPC = '/rest/v1/rpc/ten270_set_selected'
+SET_SELECTED_MAX_ROWS = 5000
+SET_SELECTED_RETRY_S = 3
 
 
 def sb_count(url, key, table, extra=''):
@@ -1430,56 +1433,67 @@ def read_card_state(url, key, cols, now_s=None, guarded=None):
 
 # -------------------------------------------------- the book-priority selection
 
-def _pgrst_val(v):
-    """A PostgREST logic-tree value, always double-quoted so a comma, dot,
-    colon or parenthesis inside it cannot split the tree."""
-    return '"' + str(v).replace('\\', '\\\\').replace('"', '\\"') + '"'
+def _card_of(r):
+    """The card a row belongs to: its match_key (every book of one match shares
+    it). A row with no match_key is on no card and travels alone."""
+    mk = r.get('match_key')
+    return ('card', mk) if mk is not None else ('row',) + _grain(r)
 
 
-def _grain_filter(r):
-    return 'and(' + ','.join(
-        f'{f}.is.null' if r.get(f) is None else f'{f}.eq.{_pgrst_val(r.get(f))}'
-        for f in CARD_GRAIN) + ')'
+def _selection_calls(changes, max_rows=None):
+    """Split [(row, value)] into RPC payloads. ONE call unless the list is over
+    max_rows, and then only at card boundaries: both books of a card — the
+    deselect and the select that move it — always share one call, so no
+    commit ever leaves a card half-moved."""
+    max_rows = SET_SELECTED_MAX_ROWS if max_rows is None else max_rows
+    cards = collections.OrderedDict()
+    for r, v in changes:
+        cards.setdefault(_card_of(r), []).append(
+            dict({f: r.get(f) for f in CARD_GRAIN}, is_selected=bool(v)))
+    calls, cur = [], []
+    for grp in cards.values():
+        if cur and len(cur) + len(grp) > max_rows:
+            calls.append(cur)
+            cur = []
+        cur = cur + grp
+    if cur:
+        calls.append(cur)
+    return calls
 
 
-def patch_selected(url, key, changes):
-    """Write is_selected — and NOTHING else — onto the rows whose value changed.
+def set_selected(url, key, changes):
+    """Write is_selected — and NOTHING else — onto the rows whose value changed,
+    ATOMICALLY (TEN-270 re-review item 1).
 
-    Review finding 2: the snapshot + delta read can be seconds stale, so a
-    write-back carrying whole rows could put a cached price over a fresher one
-    a filler just wrote. A PATCH names one column, so no price can move. It is
-    also a pure UPDATE, so the insert-tuple hazard that forced whole rows onto
-    the old upsert (run 35291839986) cannot arise: a PATCH never inserts.
-
-    `changes` is [(row, new_value)]. Deselections go first, so a card is never
-    momentarily selected on two books (a moment with none is the dash the
-    standing rules prefer). Each request names its grains in an `or=` tree and
-    returns the keys it touched; any grain not matched exactly once is an
-    error. Returns (rows_written, err)."""
+    One POST to ten270_set_selected (ten225-card-state-schema.sql), which
+    applies every deselect then every select in ONE transaction and raises —
+    rolling the whole call back — unless each change matched exactly one row.
+    So a card is never left with no selected book, not between two requests
+    and not after a failed one. The payload is the grain + is_selected: no
+    price column, so a stale price from the snapshot cannot reach the table
+    (review finding 2). Split only past SET_SELECTED_MAX_ROWS, and then only
+    between cards (_selection_calls). Returns (rows_written, err)."""
     sent = 0
-    for value in (False, True):
-        grp = [r for r, v in changes if v is value]
-        for i in range(0, len(grp), PATCH_CHUNK):
-            chunk = grp[i:i + PATCH_CHUNK]
-            q = urllib.parse.urlencode({
-                'select': ','.join(CARD_GRAIN),
-                'or': '(' + ','.join(_grain_filter(r) for r in chunk) + ')'})
-            got, err = sb('PATCH', f'/rest/v1/odds_card_state?{q}', url, key,
-                          body=json.dumps({'is_selected': value}).encode(),
-                          headers={'Content-Type': 'application/json',
-                                   'Prefer': 'return=representation'})
-            if got is None:
-                return sent, err
-            try:
-                back = collections.Counter(
-                    _grain(r) for r in json.loads(got.decode('utf-8')))
-            except Exception as e:              # noqa: BLE001 — reported
-                return sent, (0, f'unreadable PATCH response: {e}')
-            want = collections.Counter(_grain(r) for r in chunk)
-            if back != want:
-                return sent, (0, f'is_selected PATCH matched {sum(back.values())} '
-                                 f'rows for {len(chunk)} grains')
-            sent += len(chunk)
+    for payload in _selection_calls(changes):
+        body = json.dumps({'p': payload}).encode()
+        for attempt in (1, 2):
+            got, err = sb('POST', SET_SELECTED_RPC, url, key, body=body,
+                          headers={'Content-Type': 'application/json'})
+            # 404 = PostgREST has not reloaded its schema cache since the
+            # schema step created the function. Nothing ran; retry once.
+            if got is None and err and err[0] == 404 and attempt == 1:
+                time.sleep(SET_SELECTED_RETRY_S)
+                continue
+            break
+        if got is None:
+            return sent, err
+        try:
+            n = json.loads(got.decode('utf-8'))
+        except Exception as e:                  # noqa: BLE001 — reported
+            return sent, (0, f'unreadable set_selected response: {e}')
+        if n != len(payload):
+            return sent, (0, f'set_selected wrote {n} rows for {len(payload)} changes')
+        sent += n
     return sent, None
 
 
@@ -1494,10 +1508,11 @@ def run_selection(url, key, dry_run=False, guarded=None):
     a card ends up showing two books at once — or, worse, keeps showing the old
     one because nothing ever told it to stop.
 
-    The write-back is a PATCH of is_selected alone, per grain (patch_selected,
-    TEN-270 review finding 2): a PATCH is a pure UPDATE, so it has no insert
-    tuple to fail, and no price column is in it, so this pass cannot alter a
-    price — not even with a stale one from the snapshot.
+    The write-back is is_selected alone, through ONE atomic RPC (set_selected,
+    TEN-270): an UPDATE only, so it has no insert tuple to fail; no price
+    column is in it, so this pass cannot alter a price — not even with a stale
+    one from the snapshot; and one transaction, so a card is never left with
+    no selected book.
     """
     # The READ still takes every column selection looks at. History: the old
     # write-back was an upsert, and PostgREST upserts as
@@ -1534,21 +1549,21 @@ def run_selection(url, key, dry_run=False, guarded=None):
     if dry_run:
         return st, None
     # TEN-270: write back ONLY the rows whose is_selected changed, and ONLY
-    # is_selected (review finding 2: never a price from the snapshot). See
-    # patch_selected. `updated_at` moves by the trigger, not by this file.
+    # is_selected (never a price from the snapshot), in one transaction. See
+    # set_selected. `updated_at` moves by the trigger, not by this file.
     changed = [(r, bool(r['is_selected']))
                for r, w in zip(rows, was) if bool(r['is_selected']) != w]
     st['written'] = len(changed)
     sent, uerr = (0, None)
     if changed:
-        sent, uerr = patch_selected(url, key, changed)
+        sent, uerr = set_selected(url, key, changed)
     print(f'selection write-back: {sent}/{len(changed)} changed rows '
           f'(of {n_before}), is_selected only'
           + (f' — FAILED {uerr}' if uerr else ''))
     if uerr:
         return st, uerr
 
-    # MUTATE, THEN COUNT. A PATCH cannot insert, but the check stays: it is
+    # MUTATE, THEN COUNT. The RPC only UPDATEs, but the check stays: it is
     # one HEAD, and it still catches the table growing under this pass (a
     # filler whose grain constraint stopped matching). Counted by the server
     # (Content-Range) rather than by paging the fixture_id column back.

@@ -12,9 +12,12 @@ So a fake that is wrong in shape fails the real code, not a copy of it.
 
 LOCKED
   a. the post-write recount is ONE counted HEAD, not a paged read
-  b. the selection write-back PATCHes is_selected ALONE onto only the rows
-     whose value changed, deselections first; a price a filler writes mid-pass
-     survives it (review finding 2)
+  b. the selection write-back sends grain + is_selected ALONE for only the
+     rows whose value changed, in ONE ten270_set_selected call; a price a
+     filler writes mid-pass survives it (review finding 2)
+  g. that call is all-or-nothing: a change matching no row rolls back every
+     deselect with it, so a card keeps its book; split only past the cap and
+     never inside a card; a 404 is retried once (re-review item 1)
   c. a matching probe serves oddspapi_fixtures / line_summary from the
      snapshot; a changed count or newest stamp re-reads them
   d. odds_card_state: snapshot + delta == a full read; a deselection arrives
@@ -147,6 +150,7 @@ class FakePG:
         self.log = []               # (method, table, params, n_rows_returned)
         self.posts = []             # (table, payload rows)
         self.patches = []           # (table, body, [grains matched])
+        self.sets = []              # ten270_set_selected payloads, per call
         self.triggers = list(ALL_TRIGGERS)   # what the catalog RPC reports
         self.before_patch = None    # hook: a concurrent writer, run once
 
@@ -199,6 +203,8 @@ class FakePG:
                 raise urllib.error.HTTPError(req.full_url, 404, 'Not Found', {},
                                              __import__('io').BytesIO(b'{"code":"PGRST202"}'))
             return Resp(json.dumps(self.triggers).encode())
+        if method == 'POST' and table == 'rpc/ten270_set_selected':
+            return self._set_selected(req, json.loads(req.data.decode())['p'])
         if method == 'POST':
             return self._upsert(table, rows, p, json.loads(req.data.decode()))
         if method == 'PATCH':
@@ -239,6 +245,35 @@ class FakePG:
                     old[touch] = now          # the BEFORE UPDATE trigger
         self.log.append(('POST', table, p, len(payload)))
         return Resp(b'')
+
+    def _set_selected(self, req, payload):
+        """ten270_set_selected as the DDL writes it: deselects, then selects,
+        each matching EXACTLY one row on the grain, in ONE transaction — any
+        miss raises and nothing is kept."""
+        if self.before_patch:
+            hook, self.before_patch = self.before_patch, None
+            hook()
+        self.sets.append(payload)
+        self.log.append(('RPC', 'rpc/ten270_set_selected', {}, len(payload)))
+        rows = self.t['odds_card_state']
+        saved = [dict(r) for r in rows]          # BEGIN
+        n = 0
+        for v in (False, True):
+            for e in payload:
+                assert set(e) == set(GRAIN) | {'is_selected'}, sorted(e)
+                if e['is_selected'] is not v:
+                    continue
+                hit = [r for r in rows if grain(r) == grain(e)]
+                if len(hit) != 1:                # RAISE -> ROLLBACK
+                    rows[:] = saved
+                    raise urllib.error.HTTPError(
+                        req.full_url, 400, 'Bad Request', {}, __import__('io').BytesIO(
+                            f'{{"code":"P0001","message":"matched {len(hit)} rows"}}'.encode()))
+                if hit[0]['is_selected'] is not v:
+                    hit[0]['is_selected'] = v
+                    hit[0]['updated_at'] = _iso(self.clock)
+                n += 1
+        return Resp(json.dumps(n).encode())       # COMMIT
 
     def _patch(self, table, rows, p, body):
         if self.before_patch:
@@ -350,7 +385,8 @@ def t_a_recount_is_one_head(M, ok):
     install(M, pg, cache)
     st, err = M.run_selection('https://x', 'k')
     ok(err is None, 'a: selection pass succeeds', err)
-    last_w = max(i for i, e in enumerate(pg.log) if e[0] in ('POST', 'PATCH'))
+    last_w = max(i for i, e in enumerate(pg.log) if e[0] in ('POST', 'PATCH')
+                 or e[1] == 'rpc/ten270_set_selected')
     after = pg.log[last_w + 1:]
     ok([e[:2] for e in after] == [('HEAD', 'odds_card_state')],
        'a: after the write-back, exactly ONE request — a counted HEAD, no paged read',
@@ -376,22 +412,19 @@ def t_b_writes_only_changed(M, ok):
         'odds_card_state', lambda r: grain(r) == k1, now_price=1.44)
     st, err = M.run_selection('https://x', 'k')
     ok(err is None, 'b: selection pass succeeds', err)
-    sent = [g for t, body, gs in pg.patches if t == 'odds_card_state' for g in gs]
+    ok(len(pg.sets) == 1, 'b: ONE set_selected call for the whole run', len(pg.sets))
+    sent = [grain(e) for call in pg.sets for e in call]
     ok(sorted(sent, key=str) == sorted(
         [('k1', 'bet105', 'match winner', s, None) for s in '12'] +
         [('o1', 'bet365', 'match winner', s, None) for s in '12'], key=str),
        'b: only the 4 rows whose is_selected flipped are written (of 2,506)',
        f'{len(sent)} written')
-    ok(not [t for t, _ in pg.posts if t == 'odds_card_state'],
-       'b: no upsert of odds_card_state at all — the write-back is a PATCH',
-       len(pg.posts))
-    ok(all(body in ({'is_selected': True}, {'is_selected': False})
-           for t, body, _ in pg.patches),
-       'b: each PATCH body is is_selected ALONE — no price, no key, no updated_at',
-       [b for _, b, _ in pg.patches])
-    ok([b['is_selected'] for _, b, _ in pg.patches] == [False, True],
-       'b: deselections go before selections (never two books selected at once)',
-       [b['is_selected'] for _, b, _ in pg.patches])
+    ok(not [t for t, _ in pg.posts if t == 'odds_card_state'] and not pg.patches,
+       'b: no upsert and no PATCH of odds_card_state — only the RPC',
+       (len(pg.posts), len(pg.patches)))
+    ok(all(set(e) == set(GRAIN) | {'is_selected'} for call in pg.sets for e in call),
+       'b: each change is grain + is_selected ALONE — no price, no updated_at',
+       [sorted(e) for call in pg.sets for e in call][:1])
     row = {grain(r): r for r in pg.t['odds_card_state']}
     ok(row[k1]['now_price'] == 1.44,
        'b: a fresher price written mid-pass SURVIVES the write-back (no stale price)',
@@ -403,9 +436,9 @@ def t_b_writes_only_changed(M, ok):
        and sel[('o2', 'bet365', 'match winner', '1', None)] is True,
        'b: the server ends in the selected state (kibl in, bet365 out on A; B kept)')
     # A second pass over the settled table writes nothing at all.
-    n = len(pg.patches)
+    n = len(pg.sets)
     M.run_selection('https://x', 'k')
-    ok(len(pg.patches) == n, 'b: a settled table -> zero rows written', len(pg.patches) - n)
+    ok(len(pg.sets) == n, 'b: a settled table -> no write call at all', len(pg.sets) - n)
     # A grain value that needs quoting (comma, dot, paren, quote) still
     # matches exactly one row.
     odd = 'k,1.(x)"y'
@@ -418,7 +451,63 @@ def t_b_writes_only_changed(M, ok):
     st3, err3 = M.run_selection('https://x', 'k')
     ok(err3 is None and st3.get('written') == 4
        and all(r['is_selected'] for r in pg3.t['odds_card_state'] if r['fixture_id'] == odd),
-       'b: a fixture_id with , . ( ) " is filtered exactly', err3)
+       'b: a fixture_id with , . ( ) " is written exactly', err3)
+
+
+def _sel(pg):
+    return {grain(r): r['is_selected'] for r in pg.t['odds_card_state']}
+
+
+def t_g_atomic(M, ok):
+    """Re-review item 1: the card moves books in ONE transaction."""
+    M.SET_SELECTED_RETRY_S = 0
+    pg = FakePG({'odds_card_state': card_table()}, SERVER_T0 + 60)
+    install(M, pg, tempfile.mkdtemp())
+    before = _sel(pg)
+    # The kibl side-2 row vanishes between the read and the write: the SELECT
+    # half of card A's move cannot land.
+    pg.before_patch = lambda: pg.t.__setitem__('odds_card_state', [
+        r for r in pg.t['odds_card_state']
+        if grain(r) != ('k1', 'bet105', 'match winner', '2', None)])
+    st, err = M.run_selection('https://x', 'k')
+    after = _sel(pg)
+    ok(err is not None, 'g: a change that matches no row fails the write-back', err)
+    ok(all(after[g] == before[g] for g in after),
+       'g: ...and NOTHING was applied — the deselects rolled back with it')
+    ok(after[('o1', 'bet365', 'match winner', '1', None)] is True,
+       'g: card A still has a selected book (bet365), not a dash')
+    # A 404 (schema cache not reloaded yet) is retried once, then succeeds.
+    pg2 = FakePG({'odds_card_state': card_table()}, SERVER_T0 + 60)
+    real, calls = pg2._set_selected, []
+
+    def flaky(req, payload):
+        calls.append(1)
+        if len(calls) == 1:
+            raise urllib.error.HTTPError(req.full_url, 404, 'Not Found', {},
+                                         __import__('io').BytesIO(b'{}'))
+        return real(req, payload)
+    pg2._set_selected = flaky
+    install(M, pg2, tempfile.mkdtemp())
+    st2, err2 = M.run_selection('https://x', 'k')
+    ok(err2 is None and len(calls) == 2 and st2.get('written') == 4,
+       'g: a 404 is retried once and then written', (err2, len(calls)))
+    # Chunking: only past the cap, and never inside a card.
+    def ch(fid, book, side, mk, v):
+        return (dict(card(fid, book, 1, 'kibl', side, mk, not v)), v)
+    changes = ([ch('k1', 'bet105', s, 'A', True) for s in '12']
+               + [ch('o1', 'bet365', s, 'A', False) for s in '12']
+               + [ch('k2', 'bet105', s, 'C', True) for s in '12']
+               + [ch('o3', 'bet365', s, 'C', False) for s in '12']
+               + [ch('z1', 'bet365', '1', None, False)])
+    ok(len(M._selection_calls(changes)) == 1,
+       'g: under the cap -> ONE call', len(M._selection_calls(changes)))
+    parts = M._selection_calls(changes, max_rows=3)
+    cards = {'A': {i for i, part in enumerate(parts) for e in part if e['fixture_id'] in ('k1', 'o1')},
+             'C': {i for i, part in enumerate(parts) for e in part if e['fixture_id'] in ('k2', 'o3')}}
+    ok(len(parts) > 1 and all(len(v) == 1 for v in cards.values())
+       and sum(len(p) for p in parts) == 9,
+       'g: over the cap -> split, but both books of a card share one call',
+       [[e['fixture_id'] for e in p] for p in parts])
 
 
 def t_e_settling_not_cached(M, ok):
@@ -518,6 +607,25 @@ def t_s_schema_names(M, ok):
     ok(re.search(r'TRIGGER oddspapi_fixtures_touch_upd\s+BEFORE UPDATE ON oddspapi_fixtures\s+'
                  r'FOR EACH ROW EXECUTE', ls) is not None,
        's: the fixtures UPDATE trigger has no WHEN gate (the loader sends updated_at)')
+    m = re.search(r'FUNCTION ten270_set_selected\(p jsonb\).*?END \$\$;', cs, re.S)
+    fn = m.group(0) if m else ''
+    ok('SECURITY DEFINER' in fn and 'SET search_path = pg_catalog, pg_temp' in fn,
+       's: set_selected is SECURITY DEFINER with a pinned search_path')
+    ok('UPDATE public.odds_card_state c' in fn and re.search(r'SET is_selected = v\s+WHERE', fn)
+       and 'price' not in fn.split('UPDATE', 1)[-1].split('GET DIAGNOSTICS')[0],
+       's: set_selected UPDATEs is_selected alone, on the qualified table')
+    ok(re.search(r'IF n <> 1 THEN\s+RAISE EXCEPTION', fn) is not None,
+       's: set_selected RAISES (rolls back) unless each change matched one row')
+    ok('FOREACH v IN ARRAY ARRAY[false, true] LOOP' in fn,
+       's: set_selected deselects before it selects')
+    ok('REVOKE EXECUTE ON FUNCTION ten270_set_selected(jsonb) FROM PUBLIC;' in cs
+       and 'REVOKE EXECUTE ON FUNCTION ten270_set_selected(jsonb) FROM anon, authenticated;' in cs
+       and 'GRANT EXECUTE ON FUNCTION ten270_set_selected(jsonb) TO service_role;' in cs
+       and M.SET_SELECTED_RPC.endswith('/ten270_set_selected'),
+       's: set_selected is service_role only, and is the RPC the job calls')
+    m = re.search(r'FUNCTION ten270_touch_triggers\(\).*?\$\$;', cs, re.S)
+    ok(m is not None and 'SET search_path = pg_catalog, pg_temp' in m.group(0),
+       's: touch_triggers pins its search_path')
     ok('ten270_touch_triggers' in cs and 'GRANT EXECUTE ON FUNCTION ten270_touch_triggers() '
        'TO service_role' in cs and M.TOUCH_RPC.endswith('/ten270_touch_triggers'),
        's: the catalog RPC exists in the card-state DDL and is the one the job calls')
@@ -675,7 +783,7 @@ def t_main_wires_the_cache(M, ok):
 
 TESTS = [t_a_recount_is_one_head, t_b_writes_only_changed, t_c_reference_cache,
          t_d_incremental, t_e_settling_not_cached, t_f_no_trigger_no_cache,
-         t_s_schema_names, t_main_wires_the_cache]
+         t_g_atomic, t_s_schema_names, t_main_wires_the_cache]
 
 
 def run(M, verbose):
@@ -718,13 +826,25 @@ MUTANTS = [
      "for r, w in zip(rows, was)]"),
     # Finding 2: the pre-review write-back — whole rows, snapshot prices and all.
     ('b', 'write back WHOLE rows by upsert (snapshot prices)',
-     "        sent, uerr = patch_selected(url, key, changed)\n",
+     "        sent, uerr = set_selected(url, key, changed)\n",
      "        sent, uerr = L.upsert(url, key, 'odds_card_state', [\n"
      "            {f: r.get(f) for f in cols.split(',')} for r, _v in changed],\n"
      "            'fixture_id,book,market,side,line')\n"),
-    ('b', 'select before deselecting',
-     "    for value in (False, True):\n",
-     "    for value in (True, False):\n"),
+    ('b', 'price columns ride along in the RPC payload',
+     "            dict({f: r.get(f) for f in CARD_GRAIN}, is_selected=bool(v)))",
+     "            dict(r, is_selected=bool(v)))"),
+    # Re-review item 1.
+    ('g', 'deselect and select as two separate calls',
+     "    for payload in _selection_calls(changes):\n",
+     "    for payload in [[x for c in _selection_calls(changes) for x in c\n"
+     "                     if x['is_selected'] is v] for v in (False, True)]:\n"),
+    ('g', 'chunk by plain slicing (splits a card)',
+     "    calls, cur = [], []\n",
+     "    flat = [x for g in cards.values() for x in g]\n"
+     "    return [flat[i:i + max_rows] for i in range(0, len(flat), max_rows)]\n"),
+    ('g', 'no retry on a 404',
+     "            if got is None and err and err[0] == 404 and attempt == 1:",
+     "            if False:"),
     ('c', 'ignore the probe, always re-read',
      "    if (probe is not None and not settling and ent and ent.get('probe') == probe",
      "    if (False and ent and ent.get('probe') == probe"),
@@ -770,6 +890,16 @@ MUTANTS = [
      "  BEFORE UPDATE ON oddspapi_fixtures\n  FOR EACH ROW\n"
      "  WHEN ((to_jsonb(OLD) - 'updated_at') IS DISTINCT FROM (to_jsonb(NEW) - 'updated_at'))\n"
      "  EXECUTE", 'ls'),
+    ('s', 'set_selected selects before deselecting',
+     "FOREACH v IN ARRAY ARRAY[false, true] LOOP", "FOREACH v IN ARRAY ARRAY[true, false] LOOP", 'cs'),
+    ('s', 'set_selected tolerates a miss',
+     "      IF n <> 1 THEN\n", "      IF n > 1 THEN\n", 'cs'),
+    ('s', 'set_selected not SECURITY DEFINER',
+     "  SECURITY DEFINER\n", "", 'cs'),
+    ('s', 'set_selected executable by anon',
+     "REVOKE EXECUTE ON FUNCTION ten270_set_selected(jsonb) FROM anon, authenticated;\n", "", 'cs'),
+    ('s', 'touch_triggers search_path unpinned',
+     "  LANGUAGE sql STABLE\n  SET search_path = pg_catalog, pg_temp\n", "  LANGUAGE sql STABLE\n", 'cs'),
 ]
 
 

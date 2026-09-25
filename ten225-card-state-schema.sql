@@ -389,7 +389,9 @@ CREATE INDEX IF NOT EXISTS odds_card_state_updated_idx
 -- ---------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION ten270_touch_triggers()
   RETURNS TABLE (tbl text, trg text, fn text, enabled boolean)
-  LANGUAGE sql STABLE AS $$
+  LANGUAGE sql STABLE
+  SET search_path = pg_catalog, pg_temp
+AS $$
   SELECT c.relname::text, t.tgname::text, p.proname::text,
          t.tgenabled IN ('O', 'A')
   FROM pg_trigger t
@@ -405,6 +407,69 @@ $$;
 REVOKE EXECUTE ON FUNCTION ten270_touch_triggers() FROM PUBLIC;
 REVOKE EXECUTE ON FUNCTION ten270_touch_triggers() FROM anon, authenticated;
 GRANT EXECUTE ON FUNCTION ten270_touch_triggers() TO service_role;
+
+-- ---------------------------------------------------------------------------
+-- TEN-270 re-review item 1 — THE SELECTION WRITE-BACK IS ONE TRANSACTION.
+--
+-- The selection pass moves a card from one book to another by deselecting the
+-- old row and selecting the new one. Sent as two requests, the gap between
+-- them — and FOREVER if the second failed — left the card with no selected
+-- book: price_history / bet365_history (granted to anon) went empty and a
+-- publish showed "—". This function takes the run's whole change list,
+-- applies every deselect and then every select inside the single transaction
+-- PostgREST wraps an RPC call in, and RAISES unless each change matched
+-- exactly one row. A raise rolls back the lot: all or nothing.
+--
+-- It writes is_selected and NOTHING else — no price column is named, so a
+-- stale price from the job's snapshot cannot reach the table.
+-- p = [{"fixture_id","book","market","side","line","is_selected"}, ...].
+-- SECURITY DEFINER with a pinned search_path (every name below is qualified),
+-- executable by service_role only.
+-- ---------------------------------------------------------------------------
+CREATE OR REPLACE FUNCTION ten270_set_selected(p jsonb)
+  RETURNS integer
+  LANGUAGE plpgsql
+  SECURITY DEFINER
+  SET search_path = pg_catalog, pg_temp
+AS $$
+DECLARE
+  e     jsonb;
+  v     boolean;
+  n     integer;
+  total integer := 0;
+BEGIN
+  IF p IS NULL OR jsonb_typeof(p) <> 'array' THEN
+    RAISE EXCEPTION 'ten270_set_selected: expected a JSON array';
+  END IF;
+  IF EXISTS (SELECT 1 FROM jsonb_array_elements(p) x
+              WHERE jsonb_typeof(x->'is_selected') IS DISTINCT FROM 'boolean') THEN
+    RAISE EXCEPTION 'ten270_set_selected: every change needs a boolean is_selected';
+  END IF;
+  -- Deselections first, so no moment inside the transaction has two books
+  -- selected on one card (the partial unique indexes, if any, never see it).
+  FOREACH v IN ARRAY ARRAY[false, true] LOOP
+    FOR e IN SELECT x FROM jsonb_array_elements(p) x
+              WHERE (x->>'is_selected')::boolean = v LOOP
+      UPDATE public.odds_card_state c
+         SET is_selected = v
+       WHERE c.fixture_id = e->>'fixture_id'
+         AND c.book       = e->>'book'
+         AND c.market     = e->>'market'
+         AND c.side       = e->>'side'
+         AND c.line IS NOT DISTINCT FROM (e->>'line')::numeric;
+      GET DIAGNOSTICS n = ROW_COUNT;
+      IF n <> 1 THEN
+        RAISE EXCEPTION 'ten270_set_selected: % matched % rows (want 1)', e, n;
+      END IF;
+      total := total + n;
+    END LOOP;
+  END LOOP;
+  RETURN total;
+END $$;
+
+REVOKE EXECUTE ON FUNCTION ten270_set_selected(jsonb) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION ten270_set_selected(jsonb) FROM anon, authenticated;
+GRANT EXECUTE ON FUNCTION ten270_set_selected(jsonb) TO service_role;
 
 -- A new function is invisible to PostgREST until its schema cache reloads.
 NOTIFY pgrst, 'reload schema';
