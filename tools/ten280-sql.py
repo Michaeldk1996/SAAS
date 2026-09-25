@@ -30,7 +30,18 @@ def main():
     steps = json.load(open(os.environ["TEN280_STEPS"]))
     out, failed = {}, False
     for st in steps:
-        q = st["sql"] if "sql" in st else open(st["file"]).read()
+        if "sleep" in st:
+            import time; time.sleep(st["sleep"]); continue
+        if "vault_from_env" in st:
+            # value -> Vault under the bot's OWN name; never printed, never in the artifact
+            val = os.environ.get(st["vault_from_env"], "")
+            if not val:
+                print(f"{st['name']}: {st['vault_from_env']} not set"); failed = True; break
+            tag = "v" + os.urandom(6).hex()
+            q = (f"delete from vault.secrets where name = '{st['vault_name']}'; "
+                 f"select vault.create_secret(${tag}${val}${tag}$, '{st['vault_name']}', 'TEN-280 Bet105 drop bot') is not null as stored")
+        else:
+            q = st["sql"] if "sql" in st else open(st["file"]).read()
         code, body = sql(q)
         try:
             rows = json.loads(body)
@@ -38,10 +49,12 @@ def main():
             rows = body
         n = len(rows) if isinstance(rows, list) else "-"
         print(f"{st['name']}: HTTP {code} rows {n}")
-        if code >= 400:
+        if code >= 400 and "vault_from_env" not in st:
             print("   error:", str(rows)[:300])
+        elif code >= 400:
+            print("   error: (withheld — the statement carried a secret)")
             failed = failed or st.get("required", False)
-        out[st["name"]] = {"status": code, "rows": rows}
+        out[st["name"]] = {"status": code, "rows": rows if "vault_from_env" not in st else "(withheld)"}
         if code >= 400 and st.get("stop_on_error"):
             break
     os.makedirs("out", exist_ok=True)

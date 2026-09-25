@@ -113,7 +113,8 @@ begin
   strm as (
     select h.fixture_id,
            coalesce((select o.side_id from public.kibl_line_observations o where o.row_key = h.row_key limit 1),
-                    case when h.side_key = ten280_bot.skey(fx.player1_name) then 2
+                    case when ten280_bot.skey(fx.player1_name) = ten280_bot.skey(fx.player2_name) then null  -- same surname: never guess
+                         when h.side_key = ten280_bot.skey(fx.player1_name) then 2
                          when h.side_key = ten280_bot.skey(fx.player2_name) then 3 end) as side_id,
            h.price, h.kibl_inserted_on as at, h.written_at as known_at, false as is_opener, h.row_key, 'stream'::text as src
     from public.kibl_now_history h join fx using (fixture_id)
@@ -192,14 +193,14 @@ begin
           case c.side_id when 2 then fx.player1_name when 3 then fx.player2_name end,
           e, c.ref_price, c.ref_at, c.cur_price, c.cur_at, c.pct_10m,
           op.price, op.at, op.is_opener, round((c.cur_price - op.price) / op.price * 100, 2),
-          format('%s v %s — %s — Match Winner (%s): %s %s @ %s, dropped to %s (%s) @ %s · 10-min move %s → %s (%s) · Bet105',
+          format('%s v %s — %s — Match Winner (%s): %s %s @ %s, dropped to %s (%s in 10 min, from %s) @ %s · since %s: %s · Bet105',
                  coalesce(fx.player1_name, '—'), coalesce(fx.player2_name, '—'),
                  coalesce(ten280_bot.tier_of(fx.league_id), '—'),
                  coalesce(case c.side_id when 2 then fx.player1_name when 3 then fx.player2_name end, '—'),
                  lbl, ten280_bot.px(op.price), ten280_bot.ts(op.at),
-                 ten280_bot.px(c.cur_price), ten280_bot.pct(round((c.cur_price - op.price) / op.price * 100, 1)),
+                 ten280_bot.px(c.cur_price), ten280_bot.pct(-round(c.pct_10m, 1)), ten280_bot.px(c.ref_price),
                  ten280_bot.ts(c.cur_at),
-                 ten280_bot.px(c.ref_price), ten280_bot.px(c.cur_price), ten280_bot.pct(-c.pct_10m)));
+                 lbl, ten280_bot.pct(round((c.cur_price - op.price) / op.price * 100, 1))));
       n := n + 1;
     end loop;
     e := e + interval '1 minute';
@@ -244,10 +245,14 @@ create or replace function ten280_bot.tick() returns integer
 language plpgsql as $$
 declare e timestamptz := date_trunc('minute', now()); n integer; a record; rid bigint;
 begin
+  -- one tick at a time: a manual call during a cron run can never double-send
+  if not pg_try_advisory_xact_lock(280280) then
+    return 0;
+  end if;
   perform ten280_bot.settle();
   perform ten280_bot.load_ticks(now() - interval '14 days', now());
   n := ten280_bot.scan(e, e, 5, 'live', null);
-  for a in select id, message from ten280_bot.alerts where mode = 'live' and delivery = 'unsent' order by id loop
+  for a in select id, message from ten280_bot.alerts where mode = 'live' and delivery = 'unsent' order by id limit 10 loop  -- Telegram burst cap; the rest go next minute
     rid := ten280_bot.send(a.message);
     update ten280_bot.alerts set net_request_id = rid,
                                  delivery = case when rid is null then 'unsent: no vault secret' else 'queued' end

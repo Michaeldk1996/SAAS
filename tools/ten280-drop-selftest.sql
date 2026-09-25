@@ -41,7 +41,7 @@ begin
 
   select * into r from ten280_bot.alerts where mode = 'selftest' and run_id = 'st5' and fixture_id = -1 order by eval_at limit 1;
   if r.side_id <> 2 or r.eval_at <> t0 + interval '15 min' or r.cur_price <> 1.88 or r.ref_price <> 2.00
-     or r.pct_10m <> 6.00 or r.open_price <> 2.00 or not r.open_is_opener or r.message not like '%: opened 2 @ 01.01 10:00 UTC, dropped to 1.88 (−6.0%) @ 01.01 10:15 UTC%' then
+     or r.pct_10m <> 6.00 or r.open_price <> 2.00 or not r.open_is_opener or r.message not like '%: opened 2 @ 01.01 10:00 UTC, dropped to 1.88 (−6.0% in 10 min, from 2) @ 01.01 10:15 UTC · since opened: −6.0%' then
     raise exception 'SELFTEST: case A wrong: % | %', row_to_json(r), r.message;
   end if;
   if (select count(*) from ten280_bot.alerts where mode='selftest' and run_id='st5' and fixture_id=-1) <> 2 then
@@ -55,7 +55,7 @@ begin
   end if;
   select * into r from ten280_bot.alerts where mode='selftest' and run_id='st5' and fixture_id=-4;
   if r.eval_at <> t0 + interval '22 min' or r.ref_price <> 2.20 or r.pct_10m <> 9.09 or r.open_is_opener
-     or r.message not like '%: first seen 2 @ 01.01 10:00 UTC, dropped to 2 (+0.0%) @ 01.01 10:20 UTC%' then
+     or r.message not like '%: first seen 2 @ 01.01 10:00 UTC, dropped to 2 (−9.1% in 10 min, from 2.2) @ 01.01 10:20 UTC · since first seen: +0.0%' then
     raise exception 'SELFTEST: case D wrong: % | %', row_to_json(r), r.message;
   end if;
 
