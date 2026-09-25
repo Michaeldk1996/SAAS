@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>BSP Consult · Verify your email</title>
+<link rel="icon" type="image/png" href="assets/ring-transparent.png">
 <script src="analytics.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -20,10 +21,8 @@
   .inner{ position:relative; padding:40px 40px 36px; }
 
   .brand-id{ display:flex; align-items:center; gap:11px; margin-bottom:30px; }
-  .brand-id img{ width:38px; height:38px; border-radius:10px; object-fit:cover; border:1px solid rgba(62,123,250,0.35); box-shadow:0 0 0 3px rgba(62,123,250,0.12); }
-  .brand-id .wm{ display:flex; flex-direction:column; gap:1px; }
-  .brand-id .wm b{ font-weight:800; letter-spacing:0.02em; font-size:15px; line-height:1; }
-  .brand-id .wm small{ font-size:9.5px; letter-spacing:0.14em; text-transform:uppercase; color:#6f7ba0; font-family:'IBM Plex Mono',monospace; }
+  /* TEN-285 founder ruling 2026-09-26: the full 12a logo, 26px tall, no box (as the dashboard sidebar). */
+  .brand-id img{ display:block; height:26px; width:auto; }
 
   .icon-badge{ width:56px; height:56px; border-radius:14px; display:flex; align-items:center; justify-content:center; background:rgba(62,123,250,0.12); border:1px solid rgba(62,123,250,0.32); margin-bottom:20px; }
 
@@ -56,8 +55,7 @@
       <div class="glow"></div>
       <div class="inner">
         <div class="brand-id">
-          <img src="assets/ring-transparent.png" alt="Stennisfy" style="object-fit:contain">
-          <div class="wm"><b>BSP CONSULT</b><small>Tennis edge</small></div>
+          <img src="assets/logo-dark-transparent.png" alt="Stennisfy">
         </div>
 
         <div class="icon-badge">

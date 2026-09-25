@@ -27,8 +27,19 @@ Functional: Hard `#6A9AF8` · Clay `#F2B45F` · Grass `#45D6B0` · `positive #3E
 - **Blue-ring roles**: probability bars, form bars, date underline, Today dot. Nothing else.
 - **No chrome gradients / shadows / blur.** Remaining sites must be on the data-viz list below.
 - **Logo**: `assets/logo-dark-transparent.png`, first item in the sidebar, rendered 26.0 × 138.8px,
-  no box behind it. Icon-only slots use `assets/ring-transparent.png`. `assets/bsp-logo.jpg` is gone;
-  both PNGs are copied into `_site/assets/` and asserted by "Assert site completeness".
+  no box behind it. Icon-only slots use `assets/ring-transparent.png`. `assets/bsp-logo.jpg` is
+  gone; both PNGs are copied into `_site/assets/` and asserted by "Assert site completeness".
+- **Brand outside the dashboard** (founder ruling TEN-285, 2026-09-26). The test:
+  - `verify.html` (`.brand-id`) and `funnel.html` (`.brand`) show `logo-dark-transparent.png`
+    at 26px tall, width auto.
+  - Neither has a tile (no border / shadow / radius / background on the img) and neither has a
+    "BSP CONSULT / Tennis edge" wordmark.
+  - Exception: the funnel footer's small ring beside the © line is not a lockup and is out of
+    this ruling.
+- **Favicon** (same ruling). Every page the pipeline copies into `_site/` has exactly one
+  `<link rel="icon" type="image/png" href="assets/ring-transparent.png">` in `<head>`. The page
+  list is read from `pipeline.yml`, so a newly published page must carry it too. Locked by
+  `test-ten285-brand.mjs`.
 - **Hairlines** are written `0.33px` (1 device px at 1x; the opacity carries the weight).
 
 ## Unmapped (no token home) and data-viz effects — left unchanged, PENDING founder ruling

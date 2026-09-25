@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>BSP Consult · Tennis Edge — Find the edge the bookmakers miss</title>
+<link rel="icon" type="image/png" href="assets/ring-transparent.png">
 <script src="analytics.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -23,10 +24,8 @@
   .nav{ position:sticky; top:0; z-index:20; background:rgba(11,12,16,0.82); backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px); border-bottom:1px solid rgba(255,255,255,0.06); }
   .nav-inner{ max-width:1180px; margin:0 auto; padding:0 32px; height:70px; display:flex; align-items:center; justify-content:space-between; }
   .brand{ display:flex; align-items:center; gap:11px; }
-  .brand img{ width:36px; height:36px; border-radius:10px; object-fit:cover; border:1px solid rgba(62,123,250,0.35); box-shadow:0 0 0 3px rgba(62,123,250,0.12); }
-  .brand .wm{ display:flex; flex-direction:column; gap:1px; }
-  .brand .wm b{ font-weight:800; letter-spacing:0.02em; font-size:15px; line-height:1; }
-  .brand .wm small{ font-size:9.5px; letter-spacing:0.14em; text-transform:uppercase; color:#6f7ba0; font-family:'IBM Plex Mono',monospace; }
+  /* TEN-285 founder ruling 2026-09-26: the full 12a logo, 26px tall, no box (as the dashboard sidebar). */
+  .brand img{ display:block; height:26px; width:auto; }
   .nav-links{ display:flex; align-items:center; gap:28px; }
   .nav-links a.link{ font-size:13.5px; color:#5b6880; }
   .nav-links a.link:hover{ color:#cfd4de; }
@@ -157,11 +156,7 @@
   <div class="nav">
     <div class="nav-inner">
       <div class="brand">
-        <img src="assets/ring-transparent.png" alt="Stennisfy" style="object-fit:contain">
-        <div class="wm">
-          <b>BSP CONSULT</b>
-          <small>Tennis edge</small>
-        </div>
+        <img src="assets/logo-dark-transparent.png" alt="Stennisfy">
       </div>
       <div class="nav-links">
         <a class="link" href="#features">Features</a>
