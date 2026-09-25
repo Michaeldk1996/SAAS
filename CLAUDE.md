@@ -230,7 +230,7 @@ After you push:
 
 6. **Confirm your commit is live, and release the lane, in one step.** In your poll loop run `node tools/deploy-lane.mjs confirm-live --ticket TEN-123 --sha <readBack>`, using the `readBack` sha `deploy-batch.mjs` printed. It equals your sha when your commit was pushed as is; otherwise the cherry-pick means only `readBack` is on main.
    - `confirm-live` accepts only your claimed sha or that recorded `readBack`; any other sha → exit 1.
-   - It checks the **site first** (`tools/check-live-build.sh <sha>`) and **releases the lane on exit 0**, even if the hold rules would have released you at that moment. On exit 1 or 2 the hold rules run: still holding → exit 3, poll again; released → exit 1 with the reason (your push is out: read back without the lane).
+   - It checks the **site first** (`tools/check-live-build.sh <your-sha>`) and **releases the lane on exit 0**, even if the hold rules would have released you at that moment. On exit 1 or 2 the hold rules run: still holding → exit 3, poll again; released → exit 1 with the reason (your push is out: read back without the lane).
    - Batched in by another holder? You never held the lane: read back your `landedAs` sha with `tools/check-live-build.sh`.
    - `check-live-build.sh` tests whether your commit is **contained in** the live build, not whether the SHAs match. Data commits land on main every 30–60 s, so the live stamp is routinely ahead of your tip and an equality test would false-alarm constantly.
 7. **Everything after that runs without the lane:** measuring, verifying, watching, reading logs. If verification finds a fix, that fix gets ready and claims again like anyone else.
