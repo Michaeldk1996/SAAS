@@ -20,28 +20,38 @@
 //  1. A claim needs a READY commit: `--sha S --reviewed`, a suite receipt for
 //     exactly S with exit 0 (written only by tools/ci-suite.sh), and S rebased
 //     (every commit in S..origin/main has `[skip ci]` in its SUBJECT). Not
-//     ready → exit 7, listing what is missing; the store is not touched.
+//     ready → exit 7, listing what is missing (a caller already waiting keeps its
+//     place and gets its position; a new caller is not recorded).
 //  2. First come, first served. A ready `claim` joins the waiter queue with its
 //     wait-start time (`since`). A free lane goes ONLY to the head of the queue —
 //     the oldest `since` among waiters not dropped — whoever polls first. Every
 //     claim returns, and logs, its position and minutes waited.
 //  3. Waiters drop out when their run is confirmed ended (liveness, checked under
 //     the lock within a time budget), or when they have not called `claim` for
-//     WAITER_STALE_MIN and are not confirmed alive (every session waiter). A live
-//     Paperclip waiter keeps its place however long it waits.
+//     WAITER_STALE_MIN — alive or not. A not-ready claim (exit 7) still counts as
+//     claiming: it refreshes the waiter and reports and logs its position. A run
+//     whose commit was batched in leaves the waiter queue.
 //  4. A same-ticket NEW run inherits its ticket's wait-start only if the old run
 //     is dead AND it claims within WAITER_STALE_MIN of the old run's last claim;
 //     otherwise it joins at the back. It never inherits a HOLD: a dead holder is
 //     released and the lane goes to the head of the queue.
-//  5. A holder whose run is confirmed ended is released on the next claim
-//     (`released-dead-owner`, best-effort notice). Liveness `unknown` is not dead.
-//  6. The lane covers deploying only: `confirm-live --sha S` runs
+//  5. Holding (founder, 02:05Z), evaluated on every claim/status/renew/confirm-live:
+//     (i) owner run dead → release, `owner-dead`; (ii) an owner pipeline run in
+//     progress → held (a healthy deploy is never cut off); (iii) an owner run
+//     queued > PIPELINE_QUEUED_MAX_MIN (10) → release, `pipeline-queued-10min`;
+//     (iv) MAX_HOLD_MIN (40) since takenAt and none in progress → release,
+//     `cap-40min-no-run`. GitHub unreachable = unknown: never extends. Renew and
+//     claim never extend. A forced release re-queues the holder at the BACK
+//     (unless dead), logs the reason, posts on its ticket and dispatches the
+//     freshness alarm (pipeline-watchdog.yml lane_alert) — both best-effort.
+//     A legacy TEN-261 claim at cutover: its lease expiry is honoured once.
+//  6. The lane covers deploying only: `confirm-live --sha S` (S = the claimed
+//     sha or deploy-batch's recorded read-back sha; any other → exit 1) runs
 //     tools/check-live-build.sh S and releases the lane on exit 0
 //     (`released-live-confirmed`); on 1/2 it keeps holding (exit 3).
-//  7. Total-hold cap MAX_HOLD_MIN, measured from takenAt; renew and claim never
-//     extend it. At the cap: release, the holder re-joins the queue at the BACK
-//     with a fresh wait-start, history `cap-released`, best-effort alert. The
-//     NUMBER IS PENDING (founder): MAX_HOLD_MIN = null = no cap wired.
+//  7. Every land goes through tools/deploy-batch.mjs, which records readBack and
+//     pushedAt on the claim. A raw `git push` is outside the contract (this tool
+//     cannot block it).
 //  8. A waiter never waits silently: past WAIT_REPORT_MIN it reports who holds
 //     the lane and its position, and again every WAIT_REPORT_MIN.
 //  9. `ready` queues a ready commit for the holder's batch (tools/deploy-batch.mjs).
@@ -71,14 +81,18 @@ import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
-// TODO(TEN-273): FOUNDER NUMBER PENDING. The total-hold cap is NOT WIRED while
-// this is null: "Renewals can't extend a hold past a maximum total … Report it
-// and wait for Michael's number before wiring it." Set it to that number (in
-// minutes, measured from takenAt) and nothing else; tests inject their own value.
-export const MAX_HOLD_MIN = null;
-// A waiter that has not called `claim` for this long and is not confirmed alive
-// (every session waiter; a Paperclip waiter the board cannot vouch for) leaves
-// the waiter queue. A live Paperclip waiter is kept however long it has waited.
+// FOUNDER, 2026-09-25 02:05Z: "Cap: 40 minutes from claim to live-confirm.
+// Auto-extend while the owner's pipeline run is actively running (in progress,
+// not queued). A healthy deploy is never cut off. Release immediately if: the
+// owner run is dead; its pipeline run has sat queued for more than 10 minutes;
+// 40 minutes pass with no run in progress. A forced release posts a message
+// naming the reason, in the same channel as the freshness alarm."
+export const MAX_HOLD_MIN = 40;
+export const PIPELINE_QUEUED_MAX_MIN = 10;
+const QUEUED = new Set(['queued', 'waiting', 'pending', 'requested']);
+// A waiter that has not called `claim` for this long leaves the waiter queue —
+// alive or not: a claimant that stopped claiming is no longer a live claimant.
+// (A waiter polls every ≤ 5 min; a not-ready claim still counts as polling.)
 export const WAITER_STALE_MIN = 15;
 export const WAIT_REPORT_MIN = 30;
 // A queued ready commit nobody has batched within this long is dropped: the run that
@@ -95,6 +109,7 @@ const GIT_TIMEOUT_MS = 120000;
 const LOCK_STALE_MS = 180000;
 const CHECK_LIVE_TIMEOUT_MS = 120000;
 const HISTORY_KEEP = 500;
+const DEFAULT_REPO = 'Michaeldk1996/SAAS';
 // Waiter and ready-entry liveness is checked UNDER the store lock: an overall
 // deadline per pass keeps that well inside LOCK_STALE_MS (plus at most one NET_TIMEOUT_MS call).
 export const BATCH_LIVENESS_BUDGET_MS = 60000;
@@ -151,27 +166,36 @@ async function withLock(file, fn) {
 // suiteReceipt(sha)     -> {sha, tree, exit, startedAt, finishedAt, log} | null
 // rebaseCheck(sha)      -> {ok, codeCommits: [{sha, subject}], dataCommits: n, detail}
 // checkLive(sha)        -> {code: 0|1|2, output}   (tools/check-live-build.sh)
-// maxHoldMin            -> the total-hold cap in minutes, or null = no cap wired
+// pipelineRuns()        -> {ok: true, runs: [{id, status, createdAt, startedAt, url}]} | {ok: false, detail}
+//                          (pipeline.yml runs; startedAt = the earliest job started_at)
+// alert({reason, message}) -> {ok, error?}   (the freshness alarm's channel: pipeline-watchdog.yml)
+// maxHoldMin / pipelineQueuedMaxMin -> the founder's 40 / 10 (injectable for tests)
 export function createLane({ file, now = () => Date.now(), liveness, notify, suiteReceipt, rebaseCheck, checkLive,
-  maxHoldMin = MAX_HOLD_MIN, livenessBudgetMs = BATCH_LIVENESS_BUDGET_MS }) {
+  pipelineRuns = async () => ({ ok: false, detail: 'no pipeline adapter configured' }),
+  alert = async () => ({ ok: false, error: 'no alert adapter configured' }),
+  maxHoldMin = MAX_HOLD_MIN, pipelineQueuedMaxMin = PIPELINE_QUEUED_MAX_MIN, livenessBudgetMs = BATCH_LIVENESS_BUDGET_MS }) {
   const log = (s, event) => { s.history.push({ at: iso(now()), ...event }); s.history = s.history.slice(-HISTORY_KEEP); };
   const capMs = maxHoldMin == null ? null : maxHoldMin * MIN;
   const waitedMin = (w, t = now()) => Math.round((t - Date.parse(w.since)) / MIN);
+  // A claim written by the TEN-261 tool: no version marker, and a lease expiry.
+  const isLegacy = (c) => !!c && c.version !== 2 && !!c.expiresAt;
 
   function newClaim(me, ready) {
     const t = now();
-    return { ticket: me.ticket, issueId: me.issueId || null, runId: me.runId, kind: me.kind,
+    return { version: 2, ticket: me.ticket, issueId: me.issueId || null, runId: me.runId, kind: me.kind,
       sha: ready.sha, reviewed: true, suiteFinishedAt: (ready.receipt && ready.receipt.finishedAt) || null,
-      takenAt: iso(t), renewedAt: iso(t), expiresAt: capMs == null ? null : iso(t + capMs) };
+      takenAt: iso(t), renewedAt: iso(t), expiresAt: capMs == null ? null : iso(t + capMs), pushedAt: null, readBack: null };
   }
 
   function describe(c, live) {
-    return `**${c.ticket}** (run \`${c.runId}\`), taken ${c.takenAt}, last checked ${c.renewedAt}, ` +
-      `${c.expiresAt ? `hold cap at ${c.expiresAt}` : 'no hold cap wired'}.${live ? ` Owner run: **${live.state}**${live.detail ? ` (${live.detail})` : ''}.` : ''}`;
+    const hold = isLegacy(c) ? `a legacy TEN-261 lease claim, honoured once until ${c.legacyExpiresAt || c.expiresAt}, then freed`
+      : c.expiresAt ? `plain cap at ${c.expiresAt} (extended while its own pipeline run is in progress)` : 'no hold cap wired';
+    return `**${c.ticket}** (run \`${c.runId}\`), taken ${c.takenAt}, last checked ${c.renewedAt}, ${hold}.` +
+      `${live ? ` Owner run: **${live.state}**${live.detail ? ` (${live.detail})` : ''}.` : ''}`;
   }
 
   // The readiness gate. Pure reads plus a git fetch: it runs before the store
-  // lock is taken and never writes the store.
+  // lock is taken.
   async function readiness({ sha, reviewed } = {}) {
     const missing = [];
     if (!sha) return { ok: false, missing: ['sha: pass --sha <the commit you will push>'] };
@@ -185,9 +209,8 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
   }
 
   // ── the waiter queue (first come, first served) ────────────────────────────
-  // s.waiters[runId] = {ticket, issueId, kind, since, lastSeen, reportedAt}.
-  // Order is by `since` (the wait-start time), oldest first.
-  // Ties on `since` (same millisecond) go by `seq`, the order of joining.
+  // s.waiters[runId] = {ticket, issueId, kind, since, lastSeen, reportedAt, seq}.
+  // Order is by `since` (the wait-start time), oldest first; ties by `seq`.
   const order = (s) => Object.entries(s.waiters).map(([runId, w]) => ({ ...w, runId }))
     .sort((a, b) => (Date.parse(a.since) - Date.parse(b.since)) || ((a.seq || 0) - (b.seq || 0)));
 
@@ -199,8 +222,7 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
 
   // The caller joins the queue (or is already in it). A NEW run of a ticket
   // that was already waiting inherits that wait-start time only if the old run
-  // is dead AND it last polled within WAITER_STALE_MIN: the ticket's work never
-  // stopped waiting, it only changed runs. Otherwise the new run joins at the back.
+  // is dead AND it last polled within WAITER_STALE_MIN. Otherwise: the back.
   async function join(s, me) {
     const t = now();
     if (s.waiters[me.runId]) { s.waiters[me.runId].lastSeen = iso(t); return { w: s.waiters[me.runId] }; }
@@ -220,23 +242,28 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
   }
 
   // Waiters ahead of the caller, after dropping the dead ones (their run ended)
-  // and stale ones (no claim for more than WAITER_STALE_MIN and not confirmed
-  // alive — a session waiter can never be confirmed alive). A live Paperclip
-  // waiter is kept however long it has waited. Liveness is checked under the
-  // store lock, so the whole pass has a deadline; a waiter not reached in time
-  // counts as still waiting.
+  // and the silent ones: no `claim` for more than WAITER_STALE_MIN, alive or not
+  // — a claimant that stopped claiming is no longer a live claimant (a waiter
+  // polls every ≤ 5 min, and a not-ready claim still counts as polling).
+  // Liveness is checked under the store lock, so the pass has a deadline; a
+  // waiter not reached in time counts as still waiting.
   async function ahead(s, me) {
     const t = now();
     const deadline = Date.now() + livenessBudgetMs;
     const out = [];
     for (const w of order(s)) {
       if (w.runId === me.runId) break;
+      const stale = t - Date.parse(w.lastSeen || w.since) > WAITER_STALE_MIN * MIN;
+      if (stale) {
+        delete s.waiters[w.runId];
+        log(s, { event: 'waiter-dropped-stale', ticket: w.ticket, runId: w.runId, since: w.since, lastSeen: w.lastSeen });
+        continue;
+      }
       if (Date.now() >= deadline) { out.push(w); continue; }
       const live = await liveness(w);
-      const stale = t - Date.parse(w.lastSeen || w.since) > WAITER_STALE_MIN * MIN;
-      if (live.state === 'dead' || (stale && live.state !== 'alive')) {
+      if (live.state === 'dead') {
         delete s.waiters[w.runId];
-        log(s, { event: live.state === 'dead' ? 'waiter-dropped-dead' : 'waiter-dropped-stale', ticket: w.ticket, runId: w.runId, since: w.since, evidence: live.detail });
+        log(s, { event: 'waiter-dropped-dead', ticket: w.ticket, runId: w.runId, since: w.since, evidence: live.detail });
         continue;
       }
       out.push(w);
@@ -244,21 +271,76 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
     return out;
   }
 
-  // The total-hold cap, measured from takenAt; nothing extends it. Not wired
-  // while maxHoldMin is null. At the cap: release, the holder goes to the BACK
-  // of the waiter queue with a fresh wait-start, history `cap-released`, and a
-  // best-effort alert on the holder's ticket (a failed alert never blocks).
-  async function capRelease(s) {
+  // ── holding the lane: the founder's cap ruling (2026-09-25 02:05Z) ─────────
+  // Evaluated on every claim, status, renew and confirm-live:
+  //  (i)   owner run dead                                  → release: owner-dead
+  //  (ii)  an owner pipeline run is in_progress             → hold (never cut off)
+  //  (iii) an owner pipeline run queued > PIPELINE_QUEUED_MAX_MIN → release: pipeline-queued-10min
+  //  (iv)  MAX_HOLD_MIN since takenAt, none in progress     → release: cap-40min-no-run
+  // "The owner's pipeline run": a pipeline.yml run whose earliest job started at
+  // or after the claim's pushedAt (a run re-points to the tip when it starts);
+  // queued = created at or after pushedAt and still queued/waiting/pending.
+  // GitHub unreachable = unknown: NEVER extends; the plain cap (iv) applies.
+  // A legacy TEN-261 claim: its lease expiry is honoured once, then it is freed.
+  async function enforce(s) {
     const c = s.claim;
-    if (!c || capMs == null || now() < Date.parse(c.takenAt) + capMs) return null;
+    if (!c) return { forced: null, live: null };
+    const t = now();
+    const live = await liveness(c);
+    if (live.state === 'dead') return { forced: await forced(s, c, 'owner-dead', live.detail), live };
+    if (isLegacy(c)) {
+      if (!c.legacyExpiresAt) c.legacyExpiresAt = c.expiresAt; // honoured ONCE: later renewals by an old tool do not move it
+      if (t >= Date.parse(c.legacyExpiresAt)) return { forced: await forced(s, c, 'legacy-lease-expired', `TEN-261 lease claim honoured once, until ${c.legacyExpiresAt}`), live };
+      return { forced: null, live };
+    }
+    if (capMs == null) return { forced: null, live };
+    const elapsed = t - Date.parse(c.takenAt);
+    const pushedAt = c.pushedAt ? Date.parse(c.pushedAt) : null;
+    const pr = pushedAt != null || elapsed >= capMs ? await pipelineRuns() : null;
+    const known = !!(pr && pr.ok);
+    const runs = known && pushedAt != null ? pr.runs : [];
+    const inProgress = runs.find((r) => r.status === 'in_progress' && r.startedAt && Date.parse(r.startedAt) >= pushedAt);
+    c.pipeline = { checkedAt: iso(t), state: !pr ? 'not-checked' : !known ? 'unknown' : inProgress ? 'in_progress' : 'none-in-progress',
+      detail: pr && !known ? pr.detail : undefined, run: inProgress ? (inProgress.url || inProgress.id) : undefined };
+    if (inProgress) return { forced: null, live };
+    const queued = runs.filter((r) => QUEUED.has(r.status) && Date.parse(r.createdAt) >= pushedAt)
+      .map((r) => ({ r, min: (t - Date.parse(r.createdAt)) / MIN })).sort((a, b) => b.min - a.min)[0];
+    if (queued && queued.min > pipelineQueuedMaxMin) {
+      return { forced: await forced(s, c, 'pipeline-queued-10min', `pipeline run ${queued.r.id} has sat queued ${queued.min.toFixed(1)} min (limit ${pipelineQueuedMaxMin})`), live };
+    }
+    if (elapsed >= capMs) {
+      return { forced: await forced(s, c, 'cap-40min-no-run', known
+        ? `${maxHoldMin} min since the claim and no owner pipeline run in progress`
+        : `${maxHoldMin} min since the claim; GitHub unreachable (${pr ? pr.detail : 'not checked'}) — unknown never extends a hold`), live };
+    }
+    return { forced: null, live };
+  }
+
+  // A forced release: the lane is freed, the holder re-joins the queue at the
+  // BACK (unless its run is dead), the reason is logged, a notice goes on the
+  // holder's ticket and an alert to the freshness alarm's channel. Notice and
+  // alert are best-effort: a failure is logged and never keeps the lane held.
+  async function forced(s, c, reason, detail) {
+    const dead = reason === 'owner-dead';
+    const message = `deploy lane forced release (${reason}): ${c.ticket} run ${c.runId} — ${detail}. ` +
+      `Claim taken ${c.takenAt}${c.pushedAt ? `, pushed ${c.pushedAt}` : ', nothing pushed'}.`;
     const notice = await notify({ to: 'owner', issueId: c.issueId,
-      body: `## Deploy lane CAP-RELEASED — ${maxHoldMin}-min total-hold cap reached\n\nClaim: ${describe(c)}\n\n` +
-        `The lane was released and your run is back in the queue, at the back. If your push is out, keep polling ` +
-        `\`tools/check-live-build.sh ${c.sha || '<your sha>'}\` — it tests containment, so a later push does not invalidate it.` });
+      body: dead
+        ? `## Deploy lane released — owner run ended\n\nClaim: ${describe(c, { state: 'dead', detail })}\n\n` +
+          `The owning run is no longer active, so the claim is released (founder ruling TEN-273). The lane goes to the ` +
+          `longest-waiting live claimant. Nothing this ticket left unfinished has been finished or undone.`
+        : `## Deploy lane CAP-RELEASED — ${reason}\n\n${detail}.\n\nClaim: ${describe(c)}\n\n` +
+          `The lane was released and your run is back in the queue, at the back. If your push is out, keep checking ` +
+          `\`tools/check-live-build.sh ${c.readBack || c.sha || '<your sha>'}\` — it tests containment, so a later push does not invalidate it. ` +
+          `If you have nothing more to push, run \`node tools/deploy-lane.mjs release --ticket ${c.ticket}\` to leave the queue.` });
+    let al;
+    try { al = await alert({ reason, message }); } catch (e) { al = { ok: false, error: e.message }; }
     s.claim = null;
-    addWaiter(s, c, iso(now()), { requeuedAfterCap: true });
-    log(s, { event: 'cap-released', ticket: c.ticket, runId: c.runId, takenAt: c.takenAt, capMin: maxHoldMin, requeued: true, notice: notice.ok ? notice.id : `failed: ${notice.error}` });
-    return { claim: c, notice };
+    if (!dead) addWaiter(s, c, iso(now()), { requeuedAfterCap: true, requeueReason: reason });
+    log(s, { event: dead ? 'released-dead-owner' : 'cap-released', reason, ticket: c.ticket, runId: c.runId, evidence: detail,
+      takenAt: c.takenAt, pushedAt: c.pushedAt || null, requeued: !dead,
+      notice: notice.ok ? notice.id : `failed: ${notice.error}`, alert: al.ok ? 'dispatched' : `failed: ${al.error}` });
+    return { claim: c, reason, detail, notice, alert: al };
   }
 
   async function waitReport(s, me, w, holder, live, position) {
@@ -288,17 +370,31 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
 
   async function claim(me, opts = {}) {
     const ready = await readiness(opts);
-    if (!ready.ok) return { code: EXIT.NOT_READY, action: 'not-ready', missing: ready.missing };
+    if (!ready.ok) {
+      // A waiter that is re-preparing is still claiming: it keeps its place
+      // while it keeps calling, and it is told (and the log records) where it stands.
+      return withLock(file, async (save) => {
+        const s = readState(file);
+        const w = s.waiters[me.runId];
+        if (!w) return { code: EXIT.NOT_READY, action: 'not-ready', missing: ready.missing };
+        w.lastSeen = iso(now());
+        const before = await ahead(s, me);
+        const position = before.length + 1;
+        const waited = waitedMin(w);
+        log(s, { event: 'waiting-not-ready', ticket: me.ticket, runId: me.runId, position, waitedMin: waited, missing: ready.missing.map((m) => m.split(':')[0]) });
+        save(s);
+        return { code: EXIT.NOT_READY, action: 'not-ready', missing: ready.missing, position, waitedMin: waited, since: w.since };
+      });
+    }
     return withLock(file, async (save) => {
       const s = readState(file);
       const t = now();
       pruneQueue(s);
-      // Join BEFORE the cap check, so a holder released at the cap in this same
-      // call lands behind this caller.
+      // Join BEFORE enforcing, so a holder re-queued in this same call lands
+      // behind this caller.
       const joined = s.claim && s.claim.runId === me.runId ? null : await join(s, me);
-      const capped = await capRelease(s);
+      const { forced: freed, live } = await enforce(s);
       let c = s.claim;
-      let out;
       if (c && c.runId === me.runId) {
         // Calling claim again never extends the hold. A NEW ready sha (it passed
         // the gate above) replaces the claimed one, so deploy-batch accepts it.
@@ -311,31 +407,15 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
         save(s);
         return { code: EXIT.HOLD, action: 'already-held', claim: c, position: 0, shaUpdatedFrom: ready.sha !== from ? from : undefined, batch: batchFor(s, me) };
       }
-      // A holder whose run has ended is released on the spot. The lane then goes
-      // to the longest-waiting live claimant — not necessarily this caller.
-      let freed = null;
-      let live = null;
-      if (c) {
-        live = await liveness(c);
-        if (live.state === 'dead') {
-          const notice = await notify({ to: 'owner', issueId: c.issueId,
-            body: `## Deploy lane released — owner run ended\n\nClaim: ${describe(c, live)}\n\n` +
-              `The owning run is no longer active, so the claim is released (founder ruling TEN-273). The lane goes to the ` +
-              `longest-waiting live claimant. Nothing this ticket left unfinished has been finished or undone.` });
-          log(s, { event: 'released-dead-owner', ticket: c.ticket, runId: c.runId, evidence: live.detail, by: me.runId, notice: notice.ok ? notice.id : `failed: ${notice.error}` });
-          s.claim = null;
-          freed = { claim: c, evidence: live.detail, notice };
-          c = null;
-        }
-      }
       const { w, inheritedFrom } = joined || await join(s, me);
       const before = await ahead(s, me);
       const position = before.length + 1;
       const waited = waitedMin(w, t);
+      let out;
       if (!c && before.length === 0) {
         s.claim = newClaim(me, ready);
         delete s.waiters[me.runId];
-        const reclaim = freed && freed.claim.ticket === me.ticket;
+        const reclaim = !!freed && freed.reason === 'owner-dead' && freed.claim.ticket === me.ticket;
         if (reclaim) {
           s.claim.reclaimedFrom = freed.claim.runId;
           await notify({ to: 'owner', issueId: freed.claim.issueId,
@@ -343,13 +423,14 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
               `New run id recorded; nothing the old run left unfinished has been finished or undone.` });
         } else if (freed) s.claim.releasedFrom = freed.claim.runId;
         log(s, { event: reclaim ? 're-claimed' : 'claimed', ticket: me.ticket, runId: me.runId, sha: ready.sha, position: 1, waitedMin: waited, inheritedFrom });
-        out = { code: EXIT.HOLD, action: reclaim ? 're-claimed' : (freed ? 'released-dead-owner' : 'claimed'), claim: s.claim, position: 1, waitedMin: waited,
-          from: freed ? freed.claim : undefined, evidence: freed ? freed.evidence : undefined, notice: freed ? freed.notice : undefined,
-          capReleased: capped ? capped.claim : undefined, batch: batchFor(s, me) };
+        out = { code: EXIT.HOLD, action: reclaim ? 're-claimed' : (freed && freed.reason === 'owner-dead' ? 'released-dead-owner' : 'claimed'), claim: s.claim, position: 1, waitedMin: waited,
+          from: freed ? freed.claim : undefined, forcedRelease: freed ? { reason: freed.reason, detail: freed.detail } : undefined,
+          evidence: freed ? freed.detail : undefined, notice: freed ? freed.notice : undefined,
+          capReleased: freed && freed.reason !== 'owner-dead' ? freed.claim : undefined, batch: batchFor(s, me) };
       } else {
         const report = await waitReport(s, me, w, c, live, position);
         log(s, { event: 'waiting', ticket: me.ticket, runId: me.runId, position, waitedMin: waited, holder: c ? c.runId : null, head: before[0] ? before[0].runId : null });
-        out = { code: EXIT.WAIT, action: c ? 'wait' : 'wait-turn', claim: c, owner: live || undefined, position, waitedMin: waited, since: w.since,
+        out = { code: EXIT.WAIT, action: c ? 'wait' : 'wait-turn', claim: c, holder: c ? describe(c, live) : undefined, owner: live || undefined, position, waitedMin: waited, since: w.since,
           ahead: before.map((x) => ({ ticket: x.ticket, runId: x.runId, since: x.since })), inheritedFrom, waitReport: report };
       }
       save(s);
@@ -361,14 +442,17 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
   async function renew(me) {
     return withLock(file, async (save) => {
       const s = readState(file);
-      const capped = await capRelease(s);
-      if (capped) save(s);
+      const { forced: freed } = await enforce(s);
+      save(s);
       const c = s.claim;
-      if (!c || c.runId !== me.runId) return { code: EXIT.REFUSED, action: capped && capped.claim.runId === me.runId ? 'cap-released' : 'not-owner', claim: c };
+      if (!c || c.runId !== me.runId) {
+        const mine = freed && freed.claim.runId === me.runId;
+        return { code: EXIT.REFUSED, action: mine ? 'cap-released' : 'not-owner', reason: mine ? freed.reason : undefined, claim: c };
+      }
       c.renewedAt = iso(now());
       save(s);
-      return { code: EXIT.HOLD, action: 'held', claim: c,
-        minutesLeft: capMs == null ? null : Math.max(0, Math.floor((Date.parse(c.takenAt) + capMs - now()) / MIN)) };
+      return { code: EXIT.HOLD, action: 'held', claim: c, pipeline: c.pipeline,
+        minutesLeft: capMs == null || isLegacy(c) ? null : Math.max(0, Math.floor((Date.parse(c.takenAt) + capMs - now()) / MIN)) };
     });
   }
 
@@ -377,13 +461,12 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
   async function release(me) {
     return withLock(file, async (save) => {
       const s = readState(file);
-      const capped = await capRelease(s);
       const c = s.claim;
       const queued = s.queue.length;
       s.queue = s.queue.filter((e) => e.runId !== me.runId);
       if (s.queue.length !== queued) log(s, { event: 'unready', ticket: me.ticket, runId: me.runId, by: 'release' });
       if (s.waiters[me.runId]) { delete s.waiters[me.runId]; log(s, { event: 'waiter-left', ticket: me.ticket, runId: me.runId }); }
-      if (!c || c.runId !== me.runId) { save(s); return { code: EXIT.REFUSED, action: capped && capped.claim.runId === me.runId ? 'cap-released' : 'not-owner', claim: c }; }
+      if (!c || c.runId !== me.runId) { save(s); return { code: EXIT.REFUSED, action: 'not-owner', claim: c }; }
       s.claim = null;
       log(s, { event: 'released', ticket: me.ticket, runId: me.runId });
       save(s);
@@ -391,11 +474,29 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
     });
   }
 
+  // tools/deploy-batch.mjs records what it pushed: the holder's read-back sha
+  // and the push time, which is what "the owner's pipeline run" is measured from.
+  async function recordPush(me, { readBack, pushedHead }) {
+    return withLock(file, async (save) => {
+      const s = readState(file);
+      const c = s.claim;
+      if (!c || c.runId !== me.runId) return { code: EXIT.REFUSED, action: 'not-owner' };
+      c.readBack = readBack; c.pushedHead = pushedHead || readBack; c.pushedAt = iso(now());
+      log(s, { event: 'pushed', ticket: me.ticket, runId: me.runId, readBack, pushedHead: c.pushedHead });
+      save(s);
+      return { code: EXIT.HOLD, action: 'recorded', claim: c };
+    });
+  }
+
   // The lane covers deploying only: once the live build contains the sha, the
-  // lane is released. Verifying and watching happen without it.
+  // lane is released. Only the claimed sha or the recorded read-back sha counts.
   async function confirmLive(me, { sha } = {}) {
     const held = await renew(me);
-    if (held.code !== 0) return { code: EXIT.REFUSED, action: held.action, claim: held.claim };
+    if (held.code !== 0) return { code: EXIT.REFUSED, action: held.action, reason: held.reason, claim: held.claim };
+    const c = held.claim;
+    if (sha !== c.sha && sha !== c.readBack) {
+      return { code: EXIT.REFUSED, action: 'wrong-sha', detail: `${sha} is neither your claimed sha (${c.sha}) nor the read-back sha deploy-batch recorded (${c.readBack || 'none yet'})` };
+    }
     const r = await checkLive(sha);
     if (r.code !== 0) {
       return { code: EXIT.WAIT, action: 'still-holding', live: r.code,
@@ -404,11 +505,11 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
     }
     return withLock(file, async (save) => {
       const s = readState(file);
-      const c = s.claim;
-      if (!c || c.runId !== me.runId) return { code: EXIT.REFUSED, action: 'not-owner', claim: c };
+      const cur = s.claim;
+      if (!cur || cur.runId !== me.runId) return { code: EXIT.REFUSED, action: 'not-owner', claim: cur };
       s.claim = null;
       delete s.waiters[me.runId];
-      log(s, { event: 'released-live-confirmed', ticket: me.ticket, runId: me.runId, sha, heldMin: Math.round((now() - Date.parse(c.takenAt)) / MIN) });
+      log(s, { event: 'released-live-confirmed', ticket: me.ticket, runId: me.runId, sha, heldMin: Math.round((now() - Date.parse(cur.takenAt)) / MIN) });
       save(s);
       return { code: EXIT.HOLD, action: 'released-live-confirmed', sha, output: r.output };
     });
@@ -417,16 +518,16 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
   async function status(me) {
     return withLock(file, async (save) => {
       const s = readState(file);
-      await capRelease(s);
+      const { live } = await enforce(s);
       pruneQueue(s);
       save(s);
       const c = s.claim;
       const t = now();
       const waitQueue = order(s).map((w, i) => ({ position: i + 1, ticket: w.ticket, runId: w.runId, since: w.since, waitedMin: waitedMin(w, t), lastSeen: w.lastSeen }));
       const mine = me && s.landed[me.runId] ? { landed: s.landed[me.runId] } : {};
-      if (!c) return { code: EXIT.HOLD, action: 'free', waitQueue, queue: s.queue, capMin: maxHoldMin, ...mine };
-      const live = await liveness(c);
-      return { code: EXIT.HOLD, action: 'held', claim: c, owner: live, waitQueue, queue: s.queue, capMin: maxHoldMin, ...mine };
+      const rules = { capMin: maxHoldMin, pipelineQueuedMaxMin, waiterStaleMin: WAITER_STALE_MIN };
+      if (!c) return { code: EXIT.HOLD, action: 'free', waitQueue, queue: s.queue, ...rules, ...mine };
+      return { code: EXIT.HOLD, action: 'held', claim: c, holder: describe(c, live), legacy: isLegacy(c) || undefined, owner: live, waitQueue, queue: s.queue, ...rules, ...mine };
     });
   }
 
@@ -437,7 +538,6 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
     if (!r.ok) return { code: EXIT.NOT_READY, action: 'not-ready', missing: r.missing };
     return withLock(file, async (save) => {
       const s = readState(file);
-      await capRelease(s);
       pruneQueue(s);
       const entry = { ticket: me.ticket, issueId: me.issueId || null, runId: me.runId, kind: me.kind, sha: r.sha, reviewed: true, readyAt: iso(now()) };
       s.queue = s.queue.filter((e) => e.runId !== me.runId);
@@ -498,6 +598,8 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
       for (const l of landed) {
         s.landed[l.runId] = { ticket: l.ticket, sha: l.sha, landedAs: l.landedAs, by: me.ticket, at: t };
         s.queue = s.queue.filter((e) => !(e.runId === l.runId && e.sha === l.sha));
+        // Its commit is on main: it no longer waits for the lane.
+        if (s.waiters[l.runId]) { delete s.waiters[l.runId]; log(s, { event: 'waiter-left', ticket: l.ticket, runId: l.runId, by: 'batch-landed' }); }
       }
       // Already on origin/main (landed some other way): dropped silently, no notice.
       for (const d of dropped) {
@@ -516,7 +618,7 @@ export function createLane({ file, now = () => Date.now(), liveness, notify, sui
 
   const peek = () => readState(file);
 
-  return { claim, renew, release, confirmLive, status, ready, unready, readiness, batchCandidates, recordBatch, peek, receipt: suiteReceipt };
+  return { claim, renew, release, confirmLive, recordPush, status, ready, unready, readiness, batchCandidates, recordBatch, peek, receipt: suiteReceipt };
 }
 
 // ── real adapters ────────────────────────────────────────────────────────────
@@ -608,6 +710,63 @@ export function checkLiveBuild({ cwd = process.cwd() } = {}) {
   };
 }
 
+// ── GitHub (the owner's pipeline run; the watchdog alert) ────────────────────
+// The token comes from GH_TOKEN, else the macOS keychain entry git uses for
+// github.com (`git credential-osxkeychain get`). It is read lazily, only when a
+// call needs it, and never printed.
+export function githubToken(env = process.env) {
+  if (env.GH_TOKEN) return env.GH_TOKEN;
+  const r = spawnSync('git', ['credential-osxkeychain', 'get'], { input: 'protocol=https\nhost=github.com\n\n', encoding: 'utf8', timeout: NET_TIMEOUT_MS });
+  const m = /^password=(.+)$/m.exec(r.stdout || '');
+  return m ? m[1].trim() : null;
+}
+
+const GH_API = 'https://api.github.com';
+async function gh(pathname, { token, method = 'GET', body, apiBase = GH_API } = {}) {
+  const r = await fetch(`${apiBase}${pathname}`, { method, signal: AbortSignal.timeout(NET_TIMEOUT_MS),
+    headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28', ...(body ? { 'Content-Type': 'application/json' } : {}) },
+    body: body ? JSON.stringify(body) : undefined });
+  return r;
+}
+
+// pipeline.yml runs, newest first, with each in-progress run's earliest job start.
+export function githubPipelineRuns({ repo = DEFAULT_REPO, token = () => githubToken(), workflow = 'pipeline.yml', apiBase = GH_API } = {}) {
+  return async () => {
+    try {
+      const tk = typeof token === 'function' ? token() : token;
+      if (!tk) return { ok: false, detail: 'no GitHub token (GH_TOKEN or keychain)' };
+      const call = (p) => gh(p, { token: tk, apiBase });
+      const r = await call(`/repos/${repo}/actions/workflows/${workflow}/runs?per_page=20`);
+      if (!r.ok) return { ok: false, detail: `GitHub runs HTTP ${r.status}` };
+      const runs = [];
+      for (const run of (await r.json()).workflow_runs || []) {
+        let startedAt = null;
+        if (run.status === 'in_progress') {
+          const j = await call(`/repos/${repo}/actions/runs/${run.id}/jobs?per_page=50`);
+          if (!j.ok) return { ok: false, detail: `GitHub jobs HTTP ${j.status}` };
+          const starts = ((await j.json()).jobs || []).map((x) => x.started_at).filter(Boolean).sort();
+          startedAt = starts[0] || null;
+        }
+        runs.push({ id: run.id, status: run.status, createdAt: run.created_at, startedAt, url: run.html_url });
+      }
+      return { ok: true, runs };
+    } catch (e) { return { ok: false, detail: `GitHub unreachable: ${e.message}` }; }
+  };
+}
+
+// The freshness alarm's channel: dispatch pipeline-watchdog.yml with lane_alert,
+// whose first step prints ::error:: and fails the run.
+export function githubAlert({ repo = DEFAULT_REPO, token = () => githubToken(), workflow = 'pipeline-watchdog.yml', ref = 'main', apiBase = GH_API } = {}) {
+  return async ({ message }) => {
+    try {
+      const tk = typeof token === 'function' ? token() : token;
+      if (!tk) return { ok: false, error: 'no GitHub token (GH_TOKEN or keychain)' };
+      const r = await gh(`/repos/${repo}/actions/workflows/${workflow}/dispatches`, { token: tk, method: 'POST', apiBase, body: { ref, inputs: { lane_alert: message.slice(0, 1000) } } });
+      return r.status === 204 || r.ok ? { ok: true } : { ok: false, error: `dispatch HTTP ${r.status}` };
+    } catch (e) { return { ok: false, error: e.message }; }
+  };
+}
+
 export function whoAmI(ticket, env = process.env) {
   return env.PAPERCLIP_RUN_ID
     ? { ticket, issueId: env.PAPERCLIP_TASK_ID || null, runId: env.PAPERCLIP_RUN_ID, kind: 'paperclip' }
@@ -626,6 +785,8 @@ export function realLane({ env = process.env, cwd = process.cwd() } = {}) {
     suiteReceipt: fileSuiteReceipts(),
     rebaseCheck: gitRebaseCheck({ cwd }),
     checkLive: checkLiveBuild({ cwd }),
+    pipelineRuns: githubPipelineRuns({ repo: env.GITHUB_REPOSITORY || DEFAULT_REPO }),
+    alert: githubAlert({ repo: env.GITHUB_REPOSITORY || DEFAULT_REPO }),
   });
   return { lane, notify };
 }

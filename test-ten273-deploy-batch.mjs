@@ -192,7 +192,8 @@ const CASES = {
         && !!lB && !!lC && isAnc(lB.landedAs) && isAnc(lC.landedAs) && subjOf(lB.landedAs) === 'TEN-302: B change' && subjOf(lC.landedAs) === 'TEN-303: C change'
         && st.queue.length === 0
         && !!nB && nB.body.includes(`landed in a batch by TEN-301 as ${lB.landedAs}`) && nB.body.includes(`tools/check-live-build.sh ${lB.landedAs}`)
-        && !!nC && nC.body.includes(lC.landedAs)
+        && !!nC && nC.body.includes(lC.landedAs) && nB.body.includes('release --ticket TEN-302')
+        && st.claim.readBack === r.readBack && !!st.claim.pushedAt
         && r.holder.landedAs && subjOf(r.holder.landedAs) === 'TEN-301: holder change';
     } catch (e) { if (process.env.DEBUG_TEN273) console.error("CASE THREW:", e.message); return false; } finally { f.close(); }
   },
@@ -395,6 +396,10 @@ const MUTANTS = [
     'const b = build(START, [holder, ...entries]);', 'const b = build(START, [holder]);'],
   ['landedAs is not recorded for the entries', 'combinesIntoOnePush',
     'const landed = b.included.map((g) => ({', 'const landed = b.included.filter((g) => g.holder).map((g) => ({'],
+  ['the push is not recorded on the claim (no readBack / pushedAt)', 'combinesIntoOnePush',
+    'await lane.recordPush(me, { readBack: hold.landedAs, pushedHead: b.head });', ''],
+  ['the batch notice does not tell the run to release', 'combinesIntoOnePush',
+    'If you have nothing more to push, also run \\`node tools/deploy-lane.mjs release --ticket ${g.ticket}\\` to withdraw anything else you queued.', 'Done.'],
   ['no notice to the included entries', 'combinesIntoOnePush',
     'for (const g of b.included.filter((x) => !x.holder)) {', 'for (const g of []) {'],
   ['each commit pushed separately', 'combinesIntoOnePush',

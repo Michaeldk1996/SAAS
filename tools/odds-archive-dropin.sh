@@ -15,19 +15,20 @@
 #   3. rebuild the committed readers of the archive: database-yield*.json and
 #      tournament-market.json (the ROI cards must equal the panel they open)
 #   4. full `npm test`, exit code read from the log
-#   5. get the commit READY before touching the lane (TEN-273): rebase (re-running the
-#      suite whenever a CODE commit landed since the last green run), then
-#      tools/ci-suite.sh <sha> for the suite receipt; claim the lane with
-#      --sha <sha> --reviewed (waits on exit 3; exit 7 → rebase + new receipt, retry),
-#      clobber-check against origin/main, push only while `renew` says the lane is still
-#      held, then `confirm-live` in the poll loop: it releases the lane the moment the
-#      live build contains the commit
+#   5. get the commit READY before touching the lane (TEN-273): rebase onto origin/main,
+#      then tools/ci-suite.sh <sha> for the suite receipt; claim the lane with
+#      --sha <sha> --reviewed (first come, first served: waits on exit 3; exit 7 →
+#      re-prepare, still claiming); if a CODE commit lands after the claim, release,
+#      re-prepare and claim again; land ONLY through tools/deploy-batch.mjs --sha <claimed>
+#      (the one enforced path: the claimed, suite-green sha, over [skip ci] data commits
+#      only); then `confirm-live` on its read-back sha in the poll loop: it releases the
+#      lane the moment the live build contains the commit
 #
 # Each run claims as its own session (session:ODDS-ARCHIVE-<stamp>), so a run that dies
-# holding the lane is NEVER silently inherited by the next one. A session holder
-# cannot be confirmed dead, so a dead run's claim is freed by the total-hold cap once the
-# founder sets it (MAX_HOLD_MIN; pending) — until then, by hand (deploy-lane.md). `--reviewed` is this job's standing attestation: its only
-# change is the output of the founder-reviewed refresh + builders above, validated and
+# holding the lane is NEVER silently inherited by the next one. A session holder cannot
+# be confirmed dead; the 40-min hold cap (extended only while its own pipeline run is in
+# progress) frees it. `--reviewed` is this job's standing attestation: its only change is
+# the output of the founder-reviewed refresh + builders above, validated and
 # never-thinner-guarded, and the full suite is green on it.
 #
 # Outcome of every run: ~/Stennisfy/odds-archive-inbox/LAST-RUN.txt, a macOS
@@ -136,20 +137,11 @@ suite() {  # $1 = log name
   renew
   grep -q '^suite_exit=0$' "$RUN/$1"
 }
-TESTED=""  # the origin/main commit the last green suite ran on top of
-rebase_tested() {  # rebase onto origin/main; re-run the suite if any CODE commit landed since TESTED
-  git fetch -q origin main || return 1
-  local moved; moved="$(git log --format=%s "$TESTED..origin/main" | grep -v '\[skip ci\]' || true)"
-  git rebase -q origin/main || { git rebase --abort; return 1; }
-  if [ -n "$moved" ]; then suite "suite-$(date -u +%H%M%S).log" || return 2; fi
-  TESTED="$(git rev-parse origin/main)"
-  return 0
-}
 
 log "run $STAMP: $NAME ($FP)"
 git clone -q --depth 100 "$REPO_URL" "$REPO" || failed "git clone"
 cd "$REPO" || failed "cd"
-BASE="$(git rev-parse HEAD)"; TESTED="$BASE"
+BASE="$(git rev-parse HEAD)"
 npm ci > "$RUN/npmci.log" 2>&1; echo "npmci_exit=$?" >> "$RUN/npmci.log"
 grep -q '^npmci_exit=0$' "$RUN/npmci.log" || failed "npm ci"
 
@@ -174,40 +166,57 @@ git add -- "${OUT[@]}" || failed "git add"
 git -c user.name=bsp-ceo-bot -c user.email=bsp-ceo-bot@users.noreply.github.com commit -q \
   -m "odds-archive: refresh $SEASON from tennis-data drop-in (+$ADDED rows, $CHANGED changed, through $LATEST)" || failed "git commit"
 
-# Ready before the lane (TEN-273): rebased, then a suite receipt for exactly this sha.
+# Ready before the lane (TEN-273): rebased, then a suite receipt (tools/ci-suite.sh, a fresh
+# CI-shaped clone) for exactly this sha. The in-place `npm test` above is not a receipt.
 ready_receipt() {
-  rebase_tested; r=$?; [ $r -eq 2 ] && failed "suite red after rebasing onto new code"; [ $r -ne 0 ] && failed "rebase onto origin/main"
+  git fetch -q origin main || failed "git fetch origin main"
+  git rebase -q origin/main || { git rebase --abort; failed "rebase onto origin/main"; }
   bash tools/ci-suite.sh "$(git rev-parse HEAD)" > "$RUN/ci-suite-$(date -u +%H%M%S).log" 2>&1 || failed "tools/ci-suite.sh red or failed (see $RUN/ci-suite-*.log)"
+}
+code_landed() {  # a CODE commit on origin/main that $1 lacks (data bots mark [skip ci] in the subject)
+  git fetch -q origin main || return 0
+  git log --format=%s "$1..origin/main" | grep -qv '\[skip ci\]'
 }
 ready_receipt
 
-# Lane: wait on exit 3 (up to 3 h); exit 7 (a code commit landed: not rebased) → rebase and
-# a new receipt, at most 3 times; retry a transient 6 twice; anything else is not ours to
-# resolve. Every answer, including the tool's 30-min waiter reports, is kept.
-errs=0; notready=0
-for _ in $(seq 1 40); do
-  node tools/deploy-lane.mjs claim --ticket "$TICKET" --sha "$(git rev-parse HEAD)" --reviewed >> "$RUN/lane.log" 2>&1; lc=$?
-  [ $lc -eq 0 ] && { LANE_HELD=1; break; }
-  if [ $lc -eq 6 ] && [ $errs -lt 2 ]; then errs=$((errs + 1)); sleep 30; continue; fi
-  if [ $lc -eq 7 ] && [ $notready -lt 3 ]; then notready=$((notready + 1)); ready_receipt; continue; fi
-  [ $lc -ne 3 ] && failed "deploy lane refused (exit $lc, see lane.log)"
-  sleep 270
+# Lane (TEN-273): claim the receipted sha — first come, first served: exit 3 = not our turn yet
+# (up to 3 h); exit 7 = not ready (re-prepare, still claiming). Land ONLY through
+# tools/deploy-batch.mjs --sha <claimed>: it pushes nothing but the claimed, suite-green sha,
+# rebasing over [skip ci] data commits only, with the clobber check re-run. If a CODE commit
+# lands after the claim, the claimed sha is no longer the tested tree: release, re-prepare
+# (rebase + a new receipt) and claim again, at the back of the queue.
+git config credential.helper osxkeychain   # this throwaway clone only: deploy-batch pushes through it
+export GIT_TERMINAL_PROMPT=0
+landed=0
+for attempt in 1 2 3; do
+  CLAIMED="$(git rev-parse HEAD)"
+  errs=0; notready=0; LANE_HELD=0
+  for _ in $(seq 1 40); do
+    node tools/deploy-lane.mjs claim --ticket "$TICKET" --sha "$CLAIMED" --reviewed >> "$RUN/lane.log" 2>&1; lc=$?
+    [ $lc -eq 0 ] && { LANE_HELD=1; break; }
+    if [ $lc -eq 6 ] && [ $errs -lt 2 ]; then errs=$((errs + 1)); sleep 30; continue; fi
+    if [ $lc -eq 7 ] && [ $notready -lt 3 ]; then notready=$((notready + 1)); ready_receipt; CLAIMED="$(git rev-parse HEAD)"; continue; fi
+    [ $lc -ne 3 ] && failed "deploy lane refused (exit $lc, see lane.log)"
+    sleep 270
+  done
+  [ "$LANE_HELD" = 1 ] || failed "deploy lane not granted after 3 h"
+  log "lane claimed as session:$TICKET for $CLAIMED"
+  if code_landed "$CLAIMED"; then
+    log "a code commit landed after the claim: release, re-prepare, claim again"
+    node tools/deploy-lane.mjs release --ticket "$TICKET" >> "$RUN/lane.log" 2>&1; LANE_HELD=0
+    ready_receipt; continue
+  fi
+  bash tools/clobber-check.sh "$BASE" "${OUT[@]}" > "$RUN/clobber.log" 2>&1 || failed "clobber check: another commit moved an archive file"
+  node tools/deploy-batch.mjs --ticket "$TICKET" --sha "$CLAIMED" > "$RUN/batch-$attempt.json" 2>> "$RUN/batch.log"; bc=$?
+  if [ $bc -eq 0 ]; then landed=1; break; fi
+  node tools/deploy-lane.mjs release --ticket "$TICKET" >> "$RUN/lane.log" 2>&1; LANE_HELD=0
+  code_landed "$CLAIMED" || failed "deploy-batch refused (exit $bc, see batch-$attempt.json)"
+  ready_receipt
 done
-[ "$LANE_HELD" = 1 ] || failed "deploy lane still held after 3 h"
-log "lane claimed as session:$TICKET"
-
-bash tools/clobber-check.sh "$BASE" "${OUT[@]}" > "$RUN/clobber.log" 2>&1 || failed "clobber check: another commit moved an archive file"
-rebase_tested; r=$?; [ $r -eq 2 ] && failed "suite red after rebasing onto new code"; [ $r -ne 0 ] && failed "rebase onto origin/main"
-pushed=0
-for _ in 1 2 3; do
-  # Nothing extends a hold past the total-hold cap: push only while still holding the lane.
-  node tools/deploy-lane.mjs renew --ticket "$TICKET" >> "$RUN/lane.log" 2>&1 || { LANE_HELD=0; failed "no longer holding the deploy lane (released at the hold cap?); nothing pushed"; }
-  if GIT_TERMINAL_PROMPT=0 git -c credential.helper=osxkeychain push -q origin HEAD:main >> "$RUN/push.log" 2>&1; then pushed=1; break; fi
-  rebase_tested; r=$?; [ $r -eq 2 ] && failed "suite red after rebasing onto new code"; [ $r -ne 0 ] && break
-done
-[ $pushed = 1 ] || failed "push to main"
-SHA="$(git rev-parse HEAD)"
-log "pushed $SHA"
+[ $landed = 1 ] || failed "could not land after 3 attempts (code kept landing on main)"
+SHA="$(node -e 'console.log(JSON.parse(require("fs").readFileSync(process.argv[1], "utf8")).readBack || "")' "$RUN/batch-$attempt.json")"
+[ -n "$SHA" ] || failed "deploy-batch printed no readBack sha"
+log "pushed; read-back sha $SHA"
 
 # Live check: the build must CONTAIN our commit. `confirm-live` runs
 # tools/check-live-build.sh and releases the lane the moment it does (TEN-273:

@@ -173,13 +173,18 @@ export async function runBatch({ lane, me, sha, repo = process.cwd(), git = real
 
   async function finish(mode, b, extra) {
     const landed = b.included.map((g) => ({ ticket: g.ticket, runId: g.runId, sha: g.sha, landedAs: g.landedAs }));
+    const hold = b.included.find((x) => x.holder);
+    // The claim learns what was pushed and when: confirm-live accepts this
+    // read-back sha, and the owner's pipeline run is measured from pushedAt.
+    await lane.recordPush(me, { readBack: hold.landedAs, pushedHead: b.head });
     await lane.recordBatch(me, { landed, skipped });
     const notices = [];
     for (const g of b.included.filter((x) => !x.holder)) {
       const n = await notify({ to: 'owner', issueId: g.issueId,
         body: `## Deploy lane: your commit landed in a batch by ${me.ticket} as ${g.landedAs}\n\n` +
           `\`${g.sha}\` was pushed to main in one batch with the lane holder's commit (founder ruling TEN-273): landed in a batch by ${me.ticket} as ${g.landedAs}; ` +
-          `run your live read-back with \`tools/check-live-build.sh ${g.landedAs}\`.` });
+          `run your live read-back with \`tools/check-live-build.sh ${g.landedAs}\`. You have left the lane queue. ` +
+          `If you have nothing more to push, also run \`node tools/deploy-lane.mjs release --ticket ${g.ticket}\` to withdraw anything else you queued.` });
       notices.push({ ticket: g.ticket, issueId: g.issueId, ok: n.ok, id: n.id, error: n.error });
     }
     const h = b.included.find((x) => x.holder);

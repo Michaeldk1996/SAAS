@@ -4,12 +4,16 @@
 # Founder ruling 2026-09-18 (item 5): KEEP `cancel-in-progress: false` on the
 # bsp-pipeline group, because a cancelled mid-write pipeline run is worse than
 # a late one. This workflow therefore only ever goes RED; it never touches a
-# run. Three independent alarms:
+# run. Independent alarms:
 #
 #   (a) a pipeline run has been in_progress past its own timeout-minutes
 #   (b) the DEPLOYED build-info.json is older than STALE_AFTER_MIN
 #   (c) the live build is > 30 min behind main while a run is queued or
 #       missing (TEN-273, tools/check-site-freshness.mjs)
+#   (d) the deploy lane forced a holder out (TEN-273 cap ruling): dispatched by
+#       tools/deploy-lane.mjs with input lane_alert naming the reason. It runs
+#       FIRST and fails the job; every other step carries `if: always()` so one
+#       alarm never masks another.
 #
 # WHY THIS IS A SEPARATE WORKFLOW, AND NOT A STEP INSIDE pipeline.yml
 # ───────────────────────────────────────────────────────────────────
@@ -52,14 +56,23 @@ name: BSP pipeline watchdog
 
 on:
   workflow_dispatch:
+    inputs:
+      lane_alert:
+        description: 'Deploy-lane forced release: the reason text (set by tools/deploy-lane.mjs; empty = a normal watchdog run)'
+        required: false
+        default: ''
+        type: string
   schedule:
     # Best-effort only — see the trigger-reliability note above.
     - cron: '*/15 * * * *'
 
 # Deliberately NOT the bsp-pipeline group: sharing it would make the watchdog
 # queue behind the very run it exists to report on.
+# A deploy-lane alert run gets a group of its own (per run id): with
+# cancel-in-progress, a scheduled watchdog run would otherwise cancel it and the
+# red alarm would read as "cancelled".
 concurrency:
-  group: bsp-pipeline-watchdog
+  group: ${{ github.event_name == 'workflow_dispatch' && inputs.lane_alert != '' && format('bsp-lane-alert-{0}', github.run_id) || 'bsp-pipeline-watchdog' }}
   cancel-in-progress: true
 
 permissions:
@@ -80,7 +93,19 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
+      # (d) TEN-273: a deploy-lane forced release, in the freshness alarm's
+      #     channel. The text arrives through env, never interpolated into the
+      #     script, so a message cannot run as shell.
+      - name: Alarm — deploy lane forced release
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.lane_alert != '' }}
+        env:
+          LANE_ALERT: ${{ inputs.lane_alert }}
+        run: |
+          printf '::error::deploy lane forced release — %s\n' "$LANE_ALERT"
+          exit 1
+
       - uses: actions/checkout@v4
+        if: always()
 
       # (a) A pipeline run stuck past its own budget.
       #     timeout-minutes is READ FROM pipeline.yml rather than hardcoded, so
@@ -88,6 +113,7 @@ jobs:
       #     first time someone edits the workflow.
       - name: Alarm — pipeline run wedged past its timeout
         id: wedge
+        if: always()
         env:
           GH_TOKEN: ${{ github.token }}
         run: |

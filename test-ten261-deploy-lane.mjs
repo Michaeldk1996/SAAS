@@ -45,6 +45,7 @@ const at = (m) => T0 + Math.round(m * MIN);
 function startBoard() {
   const runs = {};
   const comments = [];
+  const gh = { runs: [], jobs: {}, dispatches: [] };  // a fake GitHub REST API
   let failRuns = false;
   let delayMs = 0;
   let failComments = false;
@@ -69,11 +70,17 @@ function startBoard() {
         res.writeHead(201, { 'content-type': 'application/json' });
         return res.end(JSON.stringify({ id }));
       }
+      const wr = req.url.match(/^\/repos\/[^/]+\/[^/]+\/actions\/workflows\/pipeline\.yml\/runs\?/);
+      if (req.method === 'GET' && wr) { res.writeHead(200, { 'content-type': 'application/json' }); return res.end(JSON.stringify({ workflow_runs: gh.runs })); }
+      const jr = req.url.match(/^\/repos\/[^/]+\/[^/]+\/actions\/runs\/(\d+)\/jobs/);
+      if (req.method === 'GET' && jr) { res.writeHead(200, { 'content-type': 'application/json' }); return res.end(JSON.stringify({ jobs: gh.jobs[jr[1]] || [] })); }
+      const dr = req.url.match(/^\/repos\/([^/]+\/[^/]+)\/actions\/workflows\/pipeline-watchdog\.yml\/dispatches$/);
+      if (req.method === 'POST' && dr) { gh.dispatches.push({ repo: dr[1], auth: req.headers.authorization, body: JSON.parse(body) }); res.writeHead(204); return res.end(); }
       res.writeHead(404); res.end('{}');
     });
   });
   return new Promise((resolve) => srv.listen(0, '127.0.0.1', () => resolve({
-    base: `http://127.0.0.1:${srv.address().port}`, runs, comments,
+    base: `http://127.0.0.1:${srv.address().port}`, runs, comments, gh,
     setFailRuns: (v) => { failRuns = v; }, setDelay: (v) => { delayMs = v; }, setFailComments: (v) => { failComments = v; }, close: () => { srv.closeAllConnections(); srv.close(); },
   })));
 }
@@ -89,12 +96,17 @@ const REBASED = () => ({ ok: true, codeCommits: [], dataCommits: 2, detail: 'reb
 
 // The cap is injected (30) — its shipped value is pending a founder number.
 // Parameters the old TEN-261 tool does not know are simply ignored by it.
-async function rig(mod, board, shared, { cap = 30, noCap = false } = {}) {
+// `defaults: true` uses the shipped 40 / 10; otherwise the older cases inject a 30-min cap.
+// pipelineRuns / alert are fakes returning the real adapters' shapes.
+async function rig(mod, board, shared, { cap = 30, noCap = false, defaults = false } = {}) {
   const dir = shared ? path.dirname(shared.file) : fs.mkdtempSync(path.join(os.tmpdir(), 'ten261-'));
   const clock = shared ? shared.clock : { t: T0 };
   const receipts = path.join(dir, 'receipts');
   for (const s of Object.values(SHA)) writeReceipt(receipts, s);
   const live = { code: 1, calls: [] };
+  const pipe = { ok: true, runs: [], detail: 'GitHub runs HTTP 503', calls: 0 };
+  const alerts = [];
+  const alertCfg = { ok: true };
   const opts = {
     file: path.join(dir, 'lane.json'),
     now: () => clock.t,
@@ -104,10 +116,12 @@ async function rig(mod, board, shared, { cap = 30, noCap = false } = {}) {
     rebaseCheck: REBASED,
     checkLive: async (sha) => { live.calls.push(sha); return { code: live.code, output: `check-live-build exit ${live.code}` }; },
     clobberCheck: () => ({ ok: true, output: 'clear' }), // the old tool's takeover check
+    pipelineRuns: async () => { pipe.calls++; return pipe.ok ? { ok: true, runs: pipe.runs } : { ok: false, detail: pipe.detail }; },
+    alert: async (a) => { alerts.push(a); return alertCfg.ok ? { ok: true } : { ok: false, error: 'dispatch HTTP 500' }; },
   };
-  if (!noCap) opts.maxHoldMin = cap;
+  if (!noCap && !defaults) opts.maxHoldMin = cap;
   const lane = mod.createLane(opts);
-  return { lane, clock, live, file: path.join(dir, 'lane.json') };
+  return { lane, clock, live, pipe, alerts, alertCfg, file: path.join(dir, 'lane.json') };
 }
 const state = (file) => JSON.parse(fs.readFileSync(file, 'utf8'));
 
@@ -310,28 +324,30 @@ const CASES = {
 
   // A waiter past 30 minutes reports who holds the lane, since when, whether it
   // is alive, and its position. Under FCFS + the cap, a long wait means others
-  // were ahead: C (since 0:30) and D (since 0:42) are ahead of B (since 1).
+  // were ahead: C (since 0:30) and D (since 0:42) are ahead of B (since 1). Every
+  // waiter polls at least every 15 min, or it drops out of the queue.
   async waiterPast30Reports(mod) {
     const board = await startBoard();
     try {
       const { lane, clock } = await rig(mod, board);
       for (const r of ['run-A', 'run-B', 'run-C', 'run-D']) board.runs[r] = 'running';
       await lane.claim(A, RDY(SHA.A));
-      clock.t = at(0.5); if ((await lane.claim(C, RDY(SHA.C))).code !== 3) return false;
-      clock.t = at(0.7); if ((await lane.claim(D, RDY(SHA.D))).code !== 3) return false;
+      const who = { B: [B, SHA.B], C: [C, SHA.C], D: [D, SHA.D] };
       const rep = () => board.comments.filter((c) => c.issueId === 'issue-260' && /has waited/.test(c.body));
-      const steps = [[1, 0], [15, 0], [29, 0], [30, 'C'], [32, 1], [40, 1], [60, 'D'], [63, 2]];
-      for (const [m, want] of steps) {
+      // [minute, claimant, expected exit, expected report count after a B poll]
+      const steps = [[0.5, 'C', 3], [0.7, 'D', 3], [1, 'B', 3, 0], [10, 'C', 3], [10, 'D', 3], [15, 'B', 3, 0],
+        [20, 'C', 3], [20, 'D', 3], [29, 'B', 3, 0], [30, 'C', 0], [30.5, 'D', 3], [32, 'B', 3, 1], [40, 'B', 3, 1],
+        [45, 'D', 3], [50, 'B', 3, 1], [55, 'D', 3], [60, 'D', 0], [63, 'B', 3, 2]];
+      for (const [m, k, code, want] of steps) {
         clock.t = at(m);
-        if (want === 'C') { if ((await lane.claim(C, RDY(SHA.C))).code !== 0) return false; continue; }
-        if (want === 'D') { if ((await lane.claim(D, RDY(SHA.D))).code !== 0) return false; continue; }
-        const r = await lane.claim(B, RDY(SHA.B));
-        if (r.code !== 3 || rep().length !== want) return false;
+        const r = await lane.claim(who[k][0], RDY(who[k][1]));
+        if (r.code !== code) return false;
+        if (want !== undefined && rep().length !== want) return false;
       }
       const body = rep()[0].body;
       return /TEN-262/.test(body) && /run-C/.test(body) && /taken 2026-09-23T08:30:00/.test(body) && /alive/.test(body)
         && /has waited 31 min \(position 2\)/.test(body);
-    } finally { board.close(); }
+    } catch (e) { if (process.env.DEBUG_TEN273) console.error('CASE THREW:', e.message); return false; } finally { board.close(); }
   },
 
   // Two claimants race for a dead owner's lane: exactly one gets it, one notice.
@@ -658,9 +674,10 @@ Object.assign(CASES, {
     } catch (e) { if (process.env.DEBUG_TEN273) console.error('CASE THREW:', e.message); return false; } finally { board.close(); }
   },
 
-  // Session waiters (never confirmable alive) leave after WAITER_STALE_MIN
-  // without a claim; a live Paperclip waiter keeps its place however long.
-  async staleSessionWaiterDropped(mod) {
+  // Every waiter that has not claimed for WAITER_STALE_MIN leaves the queue —
+  // a session waiter, and a LIVE Paperclip waiter too: a claimant that stopped
+  // claiming is no longer a live claimant.
+  async staleWaitersDropped(mod) {
     const board = await startBoard();
     try {
       const { lane, clock, file } = await rig(mod, board);
@@ -673,15 +690,58 @@ Object.assign(CASES, {
       clock.t = at(15.9); const early = await lane.claim(C, RDY(SHA.C));   // S silent 14.9 min: still ahead
       clock.t = at(16.1); const late = await lane.claim(C, RDY(SHA.C));    // 15.1 min: dropped, C's turn
       await lane.release(C);
-      // A live Paperclip waiter silent for 40 min keeps its place.
+      // A LIVE Paperclip waiter that stops claiming drops out as well.
       clock.t = at(17); await lane.claim(A, RDY(SHA.A));
       clock.t = at(18); await lane.claim(B, RDY(SHA.B));
       clock.t = at(19); await lane.claim(C, RDY(SHA.C));
       clock.t = at(20); await lane.release(A);
-      clock.t = at(58); const c58 = await lane.claim(C, RDY(SHA.C));
+      clock.t = at(30); const c30 = await lane.claim(C, RDY(SHA.C));      // B silent 12 min: still ahead
+      clock.t = at(33.5); const c33 = await lane.claim(C, RDY(SHA.C));    // B silent 15.5 min, board says alive: dropped
+      const h = state(file).history;
       return early.code === 3 && early.ahead[0].runId === 'session:TEN-270' && late.code === 0
-        && state(file).history.some((h) => h.event === 'waiter-dropped-stale' && h.runId === 'session:TEN-270')
-        && c58.code === 3 && c58.ahead[0].runId === 'run-B';
+        && h.some((x) => x.event === 'waiter-dropped-stale' && x.runId === 'session:TEN-270')
+        && c30.code === 3 && c30.ahead[0].runId === 'run-B'
+        && c33.code === 0 && h.some((x) => x.event === 'waiter-dropped-stale' && x.runId === 'run-B');
+    } finally { board.close(); }
+  },
+
+  // A waiter that is re-preparing (its claims return 7: not ready) is still
+  // claiming: it keeps its place, and each not-ready claim reports and logs its
+  // position. It is not dropped as silent.
+  async notReadyWaiterKeepsPlace(mod) {
+    const board = await startBoard();
+    try {
+      const { lane, clock, file } = await rig(mod, board);
+      for (const r of ['run-A', 'run-B', 'run-C']) board.runs[r] = 'running';
+      await lane.claim(A, RDY(SHA.A));
+      clock.t = at(1); await lane.claim(B, RDY(SHA.B));
+      clock.t = at(2); await lane.claim(C, RDY(SHA.C));
+      const unready = sha40('7'); // no receipt: not ready
+      clock.t = at(12); const n1 = await lane.claim(B, RDY(unready));
+      clock.t = at(24); const n2 = await lane.claim(B, RDY(unready));
+      clock.t = at(25); await lane.release(A);
+      clock.t = at(26); const c = await lane.claim(C, RDY(SHA.C));
+      clock.t = at(27); const b = await lane.claim(B, RDY(SHA.B));
+      return n1.code === 7 && n1.position === 1 && n1.waitedMin === 11 && n2.code === 7 && n2.position === 1
+        && state(file).history.some((h) => h.event === 'waiting-not-ready' && h.runId === 'run-B' && h.position === 1 && h.waitedMin === 23)
+        && c.code === 3 && c.ahead[0].runId === 'run-B' && b.code === 0;
+    } finally { board.close(); }
+  },
+
+  // A waiter whose commit was batched in by the holder leaves the waiter queue:
+  // it has nothing left to push, and must not block the head.
+  async batchedWaiterLeavesQueue(mod) {
+    const board = await startBoard();
+    try {
+      const { lane, clock } = await rig(mod, board);
+      for (const r of ['run-A', 'run-B', 'run-C']) board.runs[r] = 'running';
+      await lane.claim(A, RDY(SHA.A));
+      clock.t = at(1); await lane.claim(B, RDY(SHA.B)); await lane.ready(B, RDY(SHA.B));
+      clock.t = at(2); await lane.claim(C, RDY(SHA.C));
+      await lane.recordBatch(A, { landed: [{ ticket: B.ticket, runId: 'run-B', sha: SHA.B, landedAs: SHA.D }] });
+      clock.t = at(3); await lane.release(A);
+      clock.t = at(4); const c = await lane.claim(C, RDY(SHA.C));
+      return !lane.peek().waiters['run-B'] && c.code === 0;
     } finally { board.close(); }
   },
 
@@ -724,20 +784,173 @@ Object.assign(CASES, {
     } finally { board.close(); }
   },
 
-  // The shipped cap is NOT wired (founder number pending): with no injected
-  // value, a live holder keeps the lane however long; renew never fails on time.
-  async capNotWiredByDefault(mod) {
+  // The founder's numbers, one constant each (2026-09-25 02:05Z).
+  async capRuleConstants(mod) {
+    return mod.MAX_HOLD_MIN === 40 && mod.PIPELINE_QUEUED_MAX_MIN === 10 && mod.WAITER_STALE_MIN === 15;
+  },
+});
+
+// ── founder cap ruling 2026-09-25 02:05Z ──────────────────────────────────────
+// "Cap: 40 minutes from claim to live-confirm. Auto-extend while the owner's
+// pipeline run is actively running (in progress, not queued). A healthy deploy is
+// never cut off. Release immediately if: the owner run is dead; its pipeline run
+// has sat queued for more than 10 minutes; 40 minutes pass with no run in
+// progress. A forced release posts a message naming the reason, in the same
+// channel as the freshness alarm." These run with the SHIPPED 40 / 10.
+const run = (id, status, createdMin, startedMin) => ({ id, status, createdAt: new Date(at(createdMin)).toISOString(),
+  startedAt: startedMin == null ? null : new Date(at(startedMin)).toISOString(), url: `https://github.com/x/actions/runs/${id}` });
+Object.assign(CASES, {
+  // A healthy deploy: pushed at 5, its pipeline run in progress since 6 — still
+  // held at minute 45 (past 40). A run that started BEFORE the push is not the
+  // owner's and extends nothing.
+  async capRule_healthyDeployKeptAt45(mod) {
     const board = await startBoard();
     try {
-      if (mod.MAX_HOLD_MIN !== null) return false;
-      const { lane, clock, file } = await rig(mod, board, undefined, { noCap: true });
+      const { lane, clock, pipe, file } = await rig(mod, board, undefined, { defaults: true });
       for (const r of ['run-A', 'run-B']) board.runs[r] = 'running';
       await lane.claim(A, RDY(SHA.A));
-      clock.t = at(500);
+      clock.t = at(5); await lane.recordPush(A, { readBack: SHA.A, pushedHead: SHA.A });
+      pipe.runs = [run(11, 'in_progress', 4, 6)];
+      clock.t = at(45);
       const r = await lane.renew(A);
       const b = await lane.claim(B, RDY(SHA.B));
-      return r.code === 0 && r.minutesLeft === null && b.code === 3 && state(file).claim.expiresAt === null;
-    } finally { board.close(); }
+      const kept = state(file).claim && state(file).claim.runId === 'run-A';
+      pipe.runs = [run(10, 'in_progress', 3, 4)]; // started before the push: not the owner's run
+      clock.t = at(46);
+      const b2 = await lane.claim(B, RDY(SHA.B));
+      return r.code === 0 && r.pipeline.state === 'in_progress' && b.code === 3 && kept
+        && b2.code === 0 && b2.forcedRelease.reason === 'cap-40min-no-run';
+    } catch (e) { if (process.env.DEBUG_TEN273) console.error('CASE THREW:', e.message); return false; } finally { board.close(); }
+  },
+
+  // The owner's run sits queued: at 9.9 min still held; past 10 min released,
+  // reason pipeline-queued-10min — long before the 40-min cap.
+  async capRule_queuedPast10Releases(mod) {
+    const board = await startBoard();
+    try {
+      const { lane, clock, pipe, file } = await rig(mod, board, undefined, { defaults: true });
+      for (const r of ['run-A', 'run-B']) board.runs[r] = 'running';
+      await lane.claim(A, RDY(SHA.A));
+      clock.t = at(1); await lane.recordPush(A, { readBack: SHA.A, pushedHead: SHA.A });
+      pipe.runs = [run(12, 'queued', 1.5)];
+      clock.t = at(11.4); const r = await lane.renew(A);
+      clock.t = at(12.6); const b = await lane.claim(B, RDY(SHA.B));
+      const h = state(file).history.find((x) => x.event === 'cap-released' && x.runId === 'run-A');
+      return r.code === 0 && b.code === 0 && b.forcedRelease.reason === 'pipeline-queued-10min'
+        && !!h && h.reason === 'pipeline-queued-10min' && /queued 11\.1 min/.test(h.evidence);
+    } catch (e) { if (process.env.DEBUG_TEN273) console.error('CASE THREW:', e.message); return false; } finally { board.close(); }
+  },
+
+  // 40 minutes with no pipeline run in progress: released, reason cap-40min-no-run.
+  async capRule_fortyMinutesNoRun(mod) {
+    const board = await startBoard();
+    try {
+      const { lane, clock, file } = await rig(mod, board, undefined, { defaults: true });
+      board.runs['run-A'] = 'running';
+      await lane.claim(A, RDY(SHA.A));
+      clock.t = at(39.99); const r1 = await lane.renew(A);
+      clock.t = at(40); const r2 = await lane.renew(A);
+      const h = state(file).history.find((x) => x.event === 'cap-released');
+      return r1.code === 0 && r2.code === 1 && r2.reason === 'cap-40min-no-run' && !!h && h.reason === 'cap-40min-no-run' && h.requeued === true;
+    } catch (e) { if (process.env.DEBUG_TEN273) console.error('CASE THREW:', e.message); return false; } finally { board.close(); }
+  },
+
+  // A dead owner is released immediately — by any of claim/status/renew/confirm-live,
+  // here a plain `status` at minute 1.
+  async capRule_deadOwnerReleasedImmediately(mod) {
+    const board = await startBoard();
+    try {
+      const { lane, clock, file, alerts } = await rig(mod, board, undefined, { defaults: true });
+      board.runs['run-A'] = 'running';
+      await lane.claim(A, RDY(SHA.A));
+      board.runs['run-A'] = 'cancelled';
+      clock.t = at(1); const st = await lane.status();
+      const h = state(file).history.find((x) => x.event === 'released-dead-owner');
+      return st.action === 'free' && !!h && h.reason === 'owner-dead' && /cancelled/.test(h.evidence)
+        && alerts.length === 1 && alerts[0].reason === 'owner-dead';
+    } catch (e) { if (process.env.DEBUG_TEN273) console.error('CASE THREW:', e.message); return false; } finally { board.close(); }
+  },
+
+  // A forced release reaches the freshness alarm's channel with the reason text;
+  // a failed dispatch is logged and never keeps the lane held.
+  async capRule_forcedReleaseAlerts(mod) {
+    const board = await startBoard();
+    try {
+      const { lane, clock, file, alerts, alertCfg } = await rig(mod, board, undefined, { defaults: true });
+      board.runs['run-A'] = 'running'; board.runs['run-B'] = 'running';
+      await lane.claim(A, RDY(SHA.A));
+      clock.t = at(40); await lane.status();
+      const first = alerts[0];
+      alertCfg.ok = false;
+      clock.t = at(41); await lane.release(A); await lane.claim(B, RDY(SHA.B));
+      clock.t = at(81); const st = await lane.status();
+      const h = state(file).history.filter((x) => x.event === 'cap-released');
+      return !!first && first.reason === 'cap-40min-no-run' && /cap-40min-no-run/.test(first.message)
+        && /TEN-253/.test(first.message) && /run-A/.test(first.message)
+        && alerts.length === 2 && alerts[1].reason === 'cap-40min-no-run' && st.action === 'free'
+        && h.length === 2 && h[0].alert === 'dispatched' && /^failed: dispatch HTTP 500/.test(h[1].alert);
+    } catch (e) { if (process.env.DEBUG_TEN273) console.error('CASE THREW:', e.message); return false; } finally { board.close(); }
+  },
+
+  // GitHub unreachable = unknown: it NEVER extends. Pushed, run state unknown →
+  // held at 39.99, released at 40 like any run-less hold, and the log says why.
+  async capRule_githubUnreachableNeverExtends(mod) {
+    const board = await startBoard();
+    try {
+      const { lane, clock, pipe, file } = await rig(mod, board, undefined, { defaults: true });
+      board.runs['run-A'] = 'running';
+      await lane.claim(A, RDY(SHA.A));
+      clock.t = at(2); await lane.recordPush(A, { readBack: SHA.A, pushedHead: SHA.A });
+      pipe.ok = false;
+      clock.t = at(39.99); const r1 = await lane.renew(A);
+      clock.t = at(40); const r2 = await lane.renew(A);
+      const h = state(file).history.find((x) => x.event === 'cap-released');
+      return r1.code === 0 && r1.pipeline.state === 'unknown' && r2.code === 1 && r2.reason === 'cap-40min-no-run'
+        && !!h && /unknown never extends/.test(h.evidence);
+    } catch (e) { if (process.env.DEBUG_TEN273) console.error('CASE THREW:', e.message); return false; } finally { board.close(); }
+  },
+
+  // confirm-live checks the sha: only the claimed sha, or the read-back sha
+  // deploy-batch recorded for this holder.
+  async confirmLiveChecksTheSha(mod) {
+    const board = await startBoard();
+    try {
+      const { lane, clock, live } = await rig(mod, board);
+      board.runs['run-A'] = 'running';
+      await lane.claim(A, RDY(SHA.A));
+      live.code = 0;
+      clock.t = at(2); const wrong = await lane.confirmLive(A, { sha: SHA.B });
+      const notChecked = live.calls.length === 0;
+      await lane.recordPush(A, { readBack: SHA.C, pushedHead: SHA.C });
+      clock.t = at(3); const ok = await lane.confirmLive(A, { sha: SHA.C });
+      return wrong.code === 1 && wrong.action === 'wrong-sha' && notChecked && ok.code === 0 && ok.action === 'released-live-confirmed';
+    } catch (e) { if (process.env.DEBUG_TEN273) console.error('CASE THREW:', e.message); return false; } finally { board.close(); }
+  },
+
+  // A claim written by the old TEN-261 tool (no version marker, a lease
+  // expiresAt) at cutover: shown as a legacy lease, never as a hold cap; its
+  // expiry is honoured ONCE (an old tool renewing it later does not move it),
+  // then it is freed.
+  async legacyClaimHonouredOnce(mod) {
+    const board = await startBoard();
+    try {
+      const { lane, clock, file } = await rig(mod, board);
+      const L = { ticket: 'TEN-250', issueId: 'issue-250', runId: 'run-L', kind: 'paperclip' };
+      for (const r of ['run-L', 'run-B']) board.runs[r] = 'running';
+      fs.writeFileSync(file, JSON.stringify({ version: 1, waiters: {}, history: [], claim: { ...L, takenAt: new Date(T0).toISOString(),
+        renewedAt: new Date(T0).toISOString(), expiresAt: new Date(at(45)).toISOString(), expiredReportedAt: null } }));
+      clock.t = at(10);
+      const st = await lane.status();
+      const b10 = await lane.claim(B, RDY(SHA.B));
+      const cur = state(file);
+      cur.claim.expiresAt = new Date(at(90)).toISOString(); // an old tool renews it
+      fs.writeFileSync(file, JSON.stringify(cur));
+      clock.t = at(44.9); const b44 = await lane.claim(B, RDY(SHA.B));
+      clock.t = at(45); const b45 = await lane.claim(B, RDY(SHA.B));
+      return st.action === 'held' && st.legacy === true && /legacy TEN-261 lease/.test(st.holder) && !/cap at/.test(st.holder)
+        && b10.code === 3 && /honoured once until 2026-09-23T08:45/.test(b10.holder) && !/cap at/.test(b10.holder)
+        && b44.code === 3 && b45.code === 0 && b45.forcedRelease.reason === 'legacy-lease-expired';
+    } catch (e) { if (process.env.DEBUG_TEN273) console.error('CASE THREW:', e.message); return false; } finally { board.close(); }
   },
 });
 
@@ -749,19 +962,19 @@ const MUTANTS = [
   ['a repeat claim extends the hold', 'holdCapAutoReleases',
     "c.renewedAt = iso(t);\n        const from = c.sha;", "c.renewedAt = iso(t); c.takenAt = iso(t); c.expiresAt = iso(t + capMs);\n        const from = c.sha;"],
   ['no auto-release at the cap', 'holdCapAutoReleases',
-    'if (!c || capMs == null || now() < Date.parse(c.takenAt) + capMs) return null;', 'if (true) return null;'],
+    'if (elapsed >= capMs) {', 'if (false) {'],
   ['the cap is off by one (released after 30:00, not at it)', 'holdCapAutoReleases',
-    'if (!c || capMs == null || now() < Date.parse(c.takenAt) + capMs) return null;', 'if (!c || capMs == null || now() <= Date.parse(c.takenAt) + capMs) return null;'],
+    'if (elapsed >= capMs) {', 'if (elapsed > capMs) {'],
   ['the injected cap is read as one minute longer', 'holdCapAutoReleases',
     'const capMs = maxHoldMin == null ? null : maxHoldMin * MIN;', 'const capMs = maxHoldMin == null ? null : (maxHoldMin + 1) * MIN;'],
-  ['the capped holder is not re-queued', 'holdCapAutoReleases', "addWaiter(s, c, iso(now()), { requeuedAfterCap: true });", ''],
-  ['a dead owner is kept until the cap', 'deadOwnerReleasedAtOnce', "if (live.state === 'dead') {", 'if (false) {'],
+  ['the capped holder is not re-queued', 'holdCapAutoReleases', "if (!dead) addWaiter(s, c, iso(now()), { requeuedAfterCap: true, requeueReason: reason });", ''],
+  ['a dead owner is kept until the cap', 'deadOwnerReleasedAtOnce', "if (live.state === 'dead') return { forced: await forced(s, c, 'owner-dead', live.detail), live };", ''],
   ['a dead owner gets no notice', 'deadOwnerReleasedAtOnce',
-    "const notice = await notify({ to: 'owner', issueId: c.issueId,\n            body: `## Deploy lane released — owner run ended", "const notice = { ok: true, id: 'x' } || await notify({ to: 'owner', issueId: c.issueId,\n            body: `## Deploy lane released — owner run ended"],
-  ['the release records no evidence', 'deadOwnerReleasedAtOnce', 'evidence: live.detail, by: me.runId', 'by: me.runId'],
-  ['unknown liveness is treated as dead', 'unknownIsNotDead', "if (live.state === 'dead') {", "if (live.state !== 'alive') {"],
+    "const notice = await notify({ to: 'owner', issueId: c.issueId,\n      body: dead", "const notice = dead ? { ok: true, id: 'x' } : await notify({ to: 'owner', issueId: c.issueId,\n      body: dead"],
+  ['the release records no evidence', 'deadOwnerReleasedAtOnce', 'reason, ticket: c.ticket, runId: c.runId, evidence: detail,', 'reason, ticket: c.ticket, runId: c.runId,'],
+  ['unknown liveness is treated as dead', 'unknownIsNotDead', "if (live.state === 'dead') return { forced: await forced(s, c, 'owner-dead'", "if (live.state !== 'alive') return { forced: await forced(s, c, 'owner-dead'"],
   ['claim skips the readiness gate', 'notReadyIsRefused',
-    "if (!ready.ok) return { code: EXIT.NOT_READY, action: 'not-ready', missing: ready.missing };", ''],
+    "if (!ready.ok) {\n      // A waiter that is re-preparing", "if (false) {\n      // A waiter that is re-preparing"],
   ['a missing receipt is accepted', 'notReadyIsRefused',
     'if (!receipt) missing.push(', 'if (false) missing.push('],
   ['a red receipt is accepted', 'notReadyIsRefused',
@@ -778,10 +991,9 @@ const MUTANTS = [
   ['an unknown owner returns the retired exit 4', 'noPathReturnsFourOrFive',
     "out = { code: EXIT.WAIT, action: c ? 'wait' : 'wait-turn'", "out = { code: live && live.state === 'unknown' ? 4 : EXIT.WAIT, action: c ? 'wait' : 'wait-turn'"],
   ['a failed cap notice keeps the lane held', 'noticeFailureNeverKeepsTheLane',
-    "    s.claim = null;\n    addWaiter(s, c, iso(now()), { requeuedAfterCap: true });", "    if (!notice.ok) return null;\n    s.claim = null;\n    addWaiter(s, c, iso(now()), { requeuedAfterCap: true });"],
+    "    s.claim = null;\n    if (!dead) addWaiter(s, c,", "    if (!dead && !notice.ok) return null;\n    s.claim = null;\n    if (!dead) addWaiter(s, c,"],
   ['a failed dead-owner notice keeps the lane held', 'noticeFailureNeverKeepsTheLane',
-    "          s.claim = null;\n          freed = { claim: c, evidence: live.detail, notice };",
-    "          if (!notice.ok) { save(s); return { code: EXIT.WAIT, action: 'wait', claim: c }; }\n          s.claim = null;\n          freed = { claim: c, evidence: live.detail, notice };"],
+    "    s.claim = null;\n    if (!dead) addWaiter(s, c,", "    if (dead && !notice.ok) return null;\n    s.claim = null;\n    if (!dead) addWaiter(s, c,"],
   ['a waiter never reports', 'waiterPast30Reports', 'if (!(waited > WAIT_REPORT_MIN * MIN &&', 'if (!(false &&'],
   ['the report repeats every call instead of every 30 min', 'waiterPast30Reports',
     '(!w.reportedAt || t - Date.parse(w.reportedAt) >= WAIT_REPORT_MIN * MIN)', 'true'],
@@ -792,14 +1004,13 @@ const MUTANTS = [
   ['a holder removes whatever lock is there on the way out', 'staleLockBreakCannotDoubleTake',
     '} finally { if (owns()) fs.rmSync(lock', '} finally { if (true) fs.rmSync(lock'],
   ['a new run of the same ticket renews the old claim', 'sameTicketNoSilentInheritance',
-    "if (!c || c.runId !== me.runId) return { code: EXIT.REFUSED, action: capped && capped.claim.runId === me.runId ? 'cap-released' : 'not-owner', claim: c };\n      c.renewedAt",
-    "if (!c || c.ticket !== me.ticket) return { code: EXIT.REFUSED, action: 'not-owner', claim: c };\n      c.renewedAt"],
+    "if (!c || c.runId !== me.runId) {\n        const mine = freed", "if (!c || c.ticket !== me.ticket) {\n        const mine = freed"],
   ['a re-claim keeps the old run id', 'sameTicketNoSilentInheritance',
     "s.claim.reclaimedFrom = freed.claim.runId;", "s.claim.runId = freed.claim.runId; s.claim.reclaimedFrom = freed.claim.runId;"],
   ['a re-claim keeps the old expiry', 'sameTicketNoSilentInheritance',
     "s.claim.reclaimedFrom = freed.claim.runId;", "s.claim.takenAt = freed.claim.takenAt; s.claim.expiresAt = freed.claim.expiresAt; s.claim.reclaimedFrom = freed.claim.runId;"],
   ['a same-ticket new run takes the lane while the old run is alive', 'sameTicketNoSilentInheritance',
-    "live = await liveness(c);\n        if (live.state === 'dead') {", "live = await liveness(c);\n        if (live.state === 'dead' || c.ticket === me.ticket) {"],
+    'if (!c && before.length === 0) {', 'if ((!c || c.ticket === me.ticket) && before.length === 0) {'],
   ['a re-claim with a new ready sha keeps the old sha', 'reclaimWithNewShaUpdatesTheClaim',
     'if (ready.sha !== from) {', 'if (false) {'],
   ['a re-claim with a new sha extends the hold', 'reclaimWithNewShaUpdatesTheClaim',
@@ -843,23 +1054,55 @@ const MUTANTS = [
   ['(c) renew extends the hold', 'founderC_renewalPastCapRefused',
     "c.renewedAt = iso(now());\n      save(s);", "c.renewedAt = iso(now()); c.takenAt = iso(now());\n      save(s);"],
   ['(c) the cap is measured from the last renewal', 'founderC_renewalPastCapRefused',
-    'now() < Date.parse(c.takenAt) + capMs) return null;', 'now() < Date.parse(c.renewedAt) + capMs) return null;'],
+    'const elapsed = t - Date.parse(c.takenAt);', 'const elapsed = t - Date.parse(c.renewedAt);'],
   ['(c) no alert on the holder\'s ticket at the cap', 'founderC_renewalPastCapRefused',
-    "const notice = await notify({ to: 'owner', issueId: c.issueId,\n      body: `## Deploy lane CAP-RELEASED", "const notice = { ok: false, error: 'x' } || await notify({ to: 'owner', issueId: c.issueId,\n      body: `## Deploy lane CAP-RELEASED"],
+    "const notice = await notify({ to: 'owner', issueId: c.issueId,\n      body: dead", "const notice = !dead ? { ok: false, error: 'x' } : await notify({ to: 'owner', issueId: c.issueId,\n      body: dead"],
   ['(d) dead waiters keep their place', 'founderD_deadClaimantRemoved',
-    "if (live.state === 'dead' || (stale && live.state !== 'alive')) {", "if (stale && live.state !== 'alive') {"],
-  ['session waiters never go stale', 'staleSessionWaiterDropped',
-    "if (live.state === 'dead' || (stale && live.state !== 'alive')) {", "if (live.state === 'dead') {"],
-  ['a live Paperclip waiter goes stale too', 'staleSessionWaiterDropped',
-    "if (live.state === 'dead' || (stale && live.state !== 'alive')) {", "if (live.state === 'dead' || stale) {"],
-  ['the waiter stale window is 60 min', 'staleSessionWaiterDropped', 'export const WAITER_STALE_MIN = 15;', 'export const WAITER_STALE_MIN = 60;'],
+    "if (live.state === 'dead') {\n        delete s.waiters[w.runId];", "if (false) {\n        delete s.waiters[w.runId];"],
+  ['silent waiters never go stale', 'staleWaitersDropped', 'if (stale) {\n        delete s.waiters[w.runId];', 'if (false) {\n        delete s.waiters[w.runId];'],
+  ['a live Paperclip waiter never goes stale (the pre-review rule)', 'staleWaitersDropped',
+    'if (stale) {\n        delete s.waiters[w.runId];', "if (stale && w.kind !== 'paperclip') {\n        delete s.waiters[w.runId];"],
+  ['the waiter stale window is 60 min', 'staleWaitersDropped', 'export const WAITER_STALE_MIN = 15;', 'export const WAITER_STALE_MIN = 60;'],
   ['a new run inherits even while the old run is alive', 'sameTicketWaiterInheritance',
     "      if (live.state !== 'dead') continue;\n      delete s.waiters[old.runId];", "      delete s.waiters[old.runId];"],
   ['a new run never inherits', 'sameTicketWaiterInheritance',
     'const w = addWaiter(s, me, old.since,', 'const w = addWaiter(s, me, iso(t),'],
   ['inheritance ignores the stale window', 'sameTicketWaiterInheritance',
     "      if (t - Date.parse(old.lastSeen || old.since) > WAITER_STALE_MIN * MIN) continue;\n      const live", "      const live"],
-  ['a cap is wired before the founder gave a number', 'capNotWiredByDefault', 'export const MAX_HOLD_MIN = null;', 'export const MAX_HOLD_MIN = 30;'],
+  ['the cap is 45 min, not the founder\'s 40', 'capRuleConstants', 'export const MAX_HOLD_MIN = 40;', 'export const MAX_HOLD_MIN = 45;'],
+  // review fixes
+  ['a not-ready claim does not refresh the waiter (it goes stale while re-preparing)', 'notReadyWaiterKeepsPlace',
+    '        w.lastSeen = iso(now());\n        const before = await ahead(s, me);', '        const before = await ahead(s, me);'],
+  ['a not-ready claim does not log its position', 'notReadyWaiterKeepsPlace',
+    "log(s, { event: 'waiting-not-ready', ticket: me.ticket, runId: me.runId, position, waitedMin: waited,", "log(s, { event: 'waiting-not-ready', ticket: me.ticket, runId: me.runId,"],
+  ['a batched-in waiter stays in the waiter queue', 'batchedWaiterLeavesQueue',
+    "if (s.waiters[l.runId]) { delete s.waiters[l.runId];", "if (false) { delete s.waiters[l.runId];"],
+  ['confirm-live accepts any sha', 'confirmLiveChecksTheSha', 'if (sha !== c.sha && sha !== c.readBack) {', 'if (false) {'],
+  ['confirm-live ignores the recorded read-back sha', 'confirmLiveChecksTheSha', 'if (sha !== c.sha && sha !== c.readBack) {', 'if (sha !== c.sha) {'],
+  ['a legacy claim is read as a new one (cap text, new cap)', 'legacyClaimHonouredOnce',
+    'const isLegacy = (c) => !!c && c.version !== 2 && !!c.expiresAt;', 'const isLegacy = () => false;'],
+  ['a legacy expiry follows the old tool\'s renewals', 'legacyClaimHonouredOnce',
+    'if (!c.legacyExpiresAt) c.legacyExpiresAt = c.expiresAt;', 'c.legacyExpiresAt = c.expiresAt;'],
+  // cap ruling 02:05Z
+  ['an in-progress pipeline run does not extend the hold', 'capRule_healthyDeployKeptAt45',
+    'if (inProgress) return { forced: null, live };', ''],
+  ['any in-progress run extends, even one that started before the push', 'capRule_healthyDeployKeptAt45',
+    "r.status === 'in_progress' && r.startedAt && Date.parse(r.startedAt) >= pushedAt", "r.status === 'in_progress'"],
+  ['a queued pipeline run never releases', 'capRule_queuedPast10Releases',
+    'if (queued && queued.min > pipelineQueuedMaxMin) {', 'if (false) {'],
+  ['the queued limit is 20 min', 'capRule_queuedPast10Releases', 'export const PIPELINE_QUEUED_MAX_MIN = 10;', 'export const PIPELINE_QUEUED_MAX_MIN = 20;'],
+  ['the plain cap is 41 min', 'capRule_fortyMinutesNoRun', 'export const MAX_HOLD_MIN = 40;', 'export const MAX_HOLD_MIN = 41;'],
+  ['the plain cap never fires', 'capRule_fortyMinutesNoRun', 'if (elapsed >= capMs) {', 'if (false) {'],
+  ['a dead owner waits for the cap (status does not enforce)', 'capRule_deadOwnerReleasedImmediately',
+    "if (live.state === 'dead') return { forced: await forced(s, c, 'owner-dead', live.detail), live };", ''],
+  ['a forced release dispatches no alert', 'capRule_forcedReleaseAlerts',
+    'try { al = await alert({ reason, message }); }', "try { al = { ok: false, error: 'not dispatched' }; }"],
+  ['the alert does not name the reason', 'capRule_forcedReleaseAlerts',
+    'const message = `deploy lane forced release (${reason}):', 'const message = `deploy lane forced release:'],
+  ['a failed alert keeps the lane held', 'capRule_forcedReleaseAlerts',
+    "    s.claim = null;\n    if (!dead) addWaiter(s, c,", "    if (!al.ok) return null;\n    s.claim = null;\n    if (!dead) addWaiter(s, c,"],
+  ['GitHub unreachable extends the hold', 'capRule_githubUnreachableNeverExtends',
+    'if (inProgress) return { forced: null, live };', 'if (inProgress || !known) return { forced: null, live };'],
 ];
 
 async function loadMutant(find, replace) {
@@ -922,6 +1165,40 @@ test('a receipt for another sha does not count (receipts are keyed by the exact 
     const r = await lane.claim(A, RDY(sha40('9')));
     assert.equal(r.code, 7); assert.match(r.missing.join('\n'), /no receipt/);
     assert.equal((await lane.claim(A, RDY('aaaa'))).code, 7, 'a short sha is not a receipt key');
+  } finally { board.close(); }
+});
+
+// ── the real GitHub adapters, over real HTTP to the fake API ──────────────────
+test('githubPipelineRuns: runs newest first, an in-progress run carries its EARLIEST job start; failures are unknown, never a run', async () => {
+  const board = await startBoard();
+  try {
+    board.gh.runs = [
+      { id: 7, status: 'in_progress', created_at: '2026-09-25T02:00:00Z', html_url: 'u7' },
+      { id: 6, status: 'queued', created_at: '2026-09-25T01:59:00Z', html_url: 'u6' },
+    ];
+    board.gh.jobs['7'] = [{ started_at: '2026-09-25T02:03:00Z' }, { started_at: '2026-09-25T02:01:30Z' }, { started_at: null }];
+    const r = await real.githubPipelineRuns({ repo: 'o/r', token: 'tok', apiBase: board.base })();
+    assert.equal(r.ok, true);
+    assert.deepEqual(r.runs.map((x) => [x.id, x.status, x.startedAt]), [[7, 'in_progress', '2026-09-25T02:01:30Z'], [6, 'queued', null]]);
+    const none = await real.githubPipelineRuns({ repo: 'o/r', token: () => null, apiBase: board.base })();
+    assert.equal(none.ok, false); assert.match(none.detail, /no GitHub token/);
+    const down = await real.githubPipelineRuns({ repo: 'o/r', token: 'tok', apiBase: 'http://127.0.0.1:9' })();
+    assert.equal(down.ok, false);
+  } finally { board.close(); }
+});
+
+test('githubAlert: dispatches pipeline-watchdog.yml on main with lane_alert = the message, bearer token in the header only', async () => {
+  const board = await startBoard();
+  try {
+    const r = await real.githubAlert({ repo: 'o/r', token: 'tok', apiBase: board.base })({ reason: 'owner-dead', message: 'deploy lane forced release (owner-dead): TEN-1' });
+    assert.equal(r.ok, true);
+    assert.equal(board.gh.dispatches.length, 1);
+    const d = board.gh.dispatches[0];
+    assert.equal(d.repo, 'o/r'); assert.equal(d.auth, 'Bearer tok');
+    assert.deepEqual(d.body, { ref: 'main', inputs: { lane_alert: 'deploy lane forced release (owner-dead): TEN-1' } });
+    assert.ok(!JSON.stringify(d.body).includes('tok'));
+    const down = await real.githubAlert({ repo: 'o/r', token: 'tok', apiBase: 'http://127.0.0.1:9' })({ reason: 'x', message: 'y' });
+    assert.equal(down.ok, false);
   } finally { board.close(); }
 });
 
