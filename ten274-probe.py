@@ -117,30 +117,38 @@ if some_fid:
     call("mapping_espn_fixture", "/mapping/espn", {"fixture_id": some_fid}, keep=20)
 call("mapping_donbest_league", "/mapping/donbest", {"league_id": ATP}, keep=20)
 
-inventory_rows = []
-for lab, extra in [("mk_all", {}), ("mk_opener", {"is_opener": True}), ("mk_bt3", {"betting_type_id": 3}),
-                   ("mk_bt2", {"betting_type_id": 2}), ("mk_live", {"is_live": True}),
-                   ("mk_nonmain", {"is_main": False})]:
-    p, meta = c.markets(feed_source_id=FSID, league_id=ATP, start_time=iso(win_s), end_time=iso(win_e), **extra)
-    rows = KiblClient.market_participants(p)
-    inv["calls"][lab] = {"status": meta.get("status"), "rows": len(rows), "vendor_msg": vendor_msg(p),
-                         "keys": keyset(rows), "sample": sample(rows, 3)}
-    for r in rows:
-        r["_pull"] = lab
-    inventory_rows += rows
-# No window: does it return in-play fixtures that a start window would miss?
-p, meta = c.markets(feed_source_id=FSID, league_id=ATP)
-rows = KiblClient.market_participants(p)
-inv["calls"]["mk_nowindow"] = {"status": meta.get("status"), "rows": len(rows), "vendor_msg": vendor_msg(p)}
-for r in rows:
-    r["_pull"] = "mk_nowindow"
-inventory_rows += rows
-with gzip.open(os.path.join(OUT, "inventory-rows.jsonl.gz"), "wt") as fh:
-    for r in inventory_rows:
-        fh.write(json.dumps(r) + "\n")
+def inventory(tag):
+    rows_all = []
+    for lab, extra in [("mk_all", {}), ("mk_opener", {"is_opener": True}), ("mk_bt3", {"betting_type_id": 3}),
+                       ("mk_bt2", {"betting_type_id": 2}), ("mk_live", {"is_live": True}),
+                       ("mk_nonmain", {"is_main": False}), ("mk_nowindow", None)]:
+        if extra is None:
+            p, meta = c.markets(feed_source_id=FSID, league_id=ATP)
+        else:
+            p, meta = c.markets(feed_source_id=FSID, league_id=ATP, start_time=iso(win_s), end_time=iso(win_e), **extra)
+        rows = KiblClient.market_participants(p)
+        inv["calls"][f"{tag}_{lab}"] = {"status": meta.get("status"), "rows": len(rows), "vendor_msg": vendor_msg(p),
+                                        "keys": keyset(rows), "sample": sample(rows, 3), "at": iso(now())}
+        for r in rows:
+            r["_pull"] = lab
+            r["_tag"] = tag
+        rows_all += rows
+    with gzip.open(os.path.join(OUT, f"inventory-rows-{tag}.jsonl.gz"), "wt") as fh:
+        for r in rows_all:
+            fh.write(json.dumps(r) + "\n")
+    return rows_all
+
+
+inventory_rows = inventory("t0")
 inv["fixtures"] = {str(k): v for k, v in fixtures.items()}
 json.dump(inv, open(os.path.join(OUT, "inventory.json"), "w"), indent=1, default=str)
 print(f"[inventory] fixtures={len(fixtures)} market rows={len(inventory_rows)}")
+
+START_AT = pts(os.environ.get("TEN274_START_AT", ""))
+if START_AT and START_AT > now() and POLL_MIN > 2:  # a <=2-min run is a smoke test
+    print(f"[wait] until {iso(START_AT)}")
+    time.sleep((START_AT - now()).total_seconds())
+    inventory("t1")
 
 # ── C. Supabase read-only: stream latency + card-row write rate ─────────────
 sb = {}
@@ -198,6 +206,7 @@ with gzip.open(obs_path, "wt") as fh:
         if wait > 0:
             time.sleep(wait)
 
+inventory("t2")
 # second pass of fixtures-states / fixtures for the live window
 call("fixtures_states_atp_end", "/info/fixtures-states", {"league_id": ATP}, keep=50)
 call("fixtures_atp_end", "/info/fixtures", {"league_id": ATP, "start_time": iso(win_s), "end_time": iso(win_e)}, keep=500)
