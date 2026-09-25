@@ -1,0 +1,68 @@
+[
+ {
+  "name": "before_1942",
+  "sql": "select id, tier, open_price, open_at, open_is_opener, ref_price, ref_at, cur_price, cur_at, pct_10m, pct_open, cur_src, sent_at, move_delay_s, message from ten280_bot.alerts where id = 1942"
+ },
+ {
+  "name": "install_v3_selftest_gate",
+  "sql_files": [
+   "tools/ten280-drop-bot.sql",
+   "tools/ten280-drop-selftest.sql"
+  ],
+  "sql_tail": "do $$\ndeclare missing int; extra int;\nbegin\n  delete from ten280_bot.alerts where mode='backtest' and run_id='g5';\n  perform ten280_bot.load_ticks('2026-09-11 05:18:09.860093+00', '2026-09-25 05:18:09.860093+00');\n  perform ten280_bot.scan('2026-09-18 05:18:09.860093+00', '2026-09-20 05:18:09.860093+00', 5, 'backtest', 'g5', interval '10 minutes', 1.30);\n  select count(*) into missing from ten280_bot.alerts o where o.mode='backtest' and o.run_id='bt5' and o.eval_at <= '2026-09-20 05:18:09.860093+00'\n     and not exists (select 1 from ten280_bot.alerts n where n.mode='backtest' and n.run_id='g5' and n.fixture_id=o.fixture_id and n.side_id=o.side_id and n.eval_at=o.eval_at and n.cur_price=o.cur_price and n.ref_price=o.ref_price);\n  select count(*) into extra from ten280_bot.alerts n where n.mode='backtest' and n.run_id='g5'\n     and not exists (select 1 from ten280_bot.alerts o where o.mode='backtest' and o.run_id='bt5' and o.fixture_id=n.fixture_id and o.side_id=n.side_id and o.eval_at=n.eval_at and o.cur_price=n.cur_price and o.ref_price=n.ref_price);\n  if missing <> 0 or extra <> 0 or (select count(*) from ten280_bot.alerts where mode='backtest' and run_id='g5') = 0 then\n    raise exception 'REGRESSION GATE: vs the original 5%% backtest (18-20 Sep): % missing, % extra', missing, extra;\n  end if;\n  raise notice 'REGRESSION GATE PASS';\nend $$;",
+  "transaction": true,
+  "required": true,
+  "stop_on_error": true
+ },
+ {
+  "name": "after_1942",
+  "sql": "select a.id, ten280_bot.render(a, coalesce(a.sent_at, a.eval_at)) as message from ten280_bot.alerts a where a.id = 1942"
+ },
+ {
+  "name": "format_test_v3",
+  "sql": "do $$ declare rid bigint; a ten280_bot.alerts; msg text; begin\n  perform pg_advisory_xact_lock(280281);\n  if exists (select 1 from ten280_bot.events where kind = 'format_test_v3') then return; end if;\n  select * into a from ten280_bot.alerts where id = 1942;\n  if a.id is null then raise exception 'alert 1942 missing'; end if;\n  msg := '🧪 FORMAT TEST — the 07:09 UTC alert re-sent in the new layout (not a new move):' || chr(10) || chr(10) || ten280_bot.render(a, coalesce(a.sent_at, a.eval_at));\n  rid := ten280_bot.send(msg);\n  insert into ten280_bot.events (kind, detail, net_request_id, delivery) values ('format_test_v3', jsonb_build_object('alert_id', a.id, 'text', msg), rid, case when rid is null then 'unsent: no vault secret' else 'queued' end);\nend $$; select id, kind, delivery from ten280_bot.events where kind = 'format_test_v3'"
+ },
+ {
+  "sleep": 10
+ },
+ {
+  "name": "delivery_v3",
+  "sql": "select ten280_bot.settle(); select e.id, e.kind, e.delivery, e.created_at, r.status_code, (r.content::jsonb -> 'result' ->> 'text') = (e.detail ->> 'text') as text_identical from ten280_bot.events e left join net._http_response r on r.id = e.net_request_id where e.kind = 'format_test_v3'"
+ },
+ {
+  "name": "config",
+  "sql": "select min_dropped_to_price from ten280_bot.config"
+ },
+ {
+  "name": "cron_jobs",
+  "sql": "select jobname, schedule, active from cron.job order by jobname"
+ },
+ {
+  "name": "pg_cron_version",
+  "sql": "select extname, extversion from pg_extension where extname in ('pg_cron','pg_net')"
+ },
+ {
+  "name": "cron_health",
+  "sql": "select count(*) runs, count(*) filter (where d.status <> 'succeeded') failed, max(d.end_time - d.start_time) max_took from cron.job_run_details d join cron.job j using (jobid) where j.jobname = 'ten280-bet105-drop-bot' and d.start_time > now() - interval '3 hours'"
+ },
+ {
+  "name": "live_delay",
+  "sql": "select tier, cur_src, count(*) n, percentile_cont(array[0.5,0.9]) within group (order by move_delay_s) delay_s, percentile_cont(0.5) within group (order by extract(epoch from eval_at - cur_at)) detect_s from ten280_bot.alerts where mode='live' and move_delay_s is not null group by 1,2 order by 1,2"
+ },
+ {
+  "name": "live_alerts",
+  "sql": "select id, eval_at, tier, cur_src, cur_at, sent_at, move_delay_s, delivery from ten280_bot.alerts where mode='live' order by id"
+ },
+ {
+  "name": "poller_lag_24h",
+  "sql": "select f.league_id, count(*) n, percentile_cont(array[0.5,0.9]) within group (order by extract(epoch from o.observed_at - o.inserted_on)) lag_s from public.kibl_line_observations o join public.kibl_fixtures f using (fixture_id) where o.feed_source_id = 171 and o.market_type_id = 1 and o.is_live is false and f.league_id in (19,537,962) and o.inserted_on > now() - interval '24 hours' and not coalesce(o.is_opener,false) group by 1 order by 1"
+ },
+ {
+  "name": "stream_leagues_24h",
+  "sql": "select f.league_id, count(*) n from public.kibl_now_history h join public.kibl_fixtures f using (fixture_id) where h.kibl_inserted_on > now() - interval '24 hours' group by 1 order by 1"
+ },
+ {
+  "name": "now_heartbeat",
+  "sql": "select written_at, note from public.kibl_now_price where kind = 'heartbeat'"
+ }
+]

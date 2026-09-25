@@ -160,7 +160,18 @@ $$;
 create or replace function ten280_bot.hhmm(p timestamptz) returns text
 language sql immutable as $$ select to_char(p at time zone 'UTC', 'HH24:MI') || ' UTC' $$;
 
--- The alert text, exactly the founder's 2026-09-25 06:10Z layout.
+-- Signed one-decimal percent for "Since open": U+2212 minus, '+' when up, '0.0%' flat.
+create or replace function ten280_bot.spct(p numeric) returns text
+language sql immutable as $$
+  select case when round(p, 1) = 0 then '0.0%' else ten280_bot.pct(round(p, 1)) end
+$$;
+
+-- The alert text: founder's 2026-09-25 10:18Z layout (comment 9097262f).
+--   Opening   = first captured price; " (first seen)" unless it is Kibl's own opener row.
+--   Pre-drop  = the reference the trigger is measured from: the price in force at the
+--               start of the 10-min window, stamped with ITS OWN Kibl time (ref_at).
+--   Drop (10 min) = the trigger, ref -> now.   Since open = open -> now, signed.
+-- Every figure is computed once from the raw prices (no double rounding).
 create or replace function ten280_bot.render(a ten280_bot.alerts, p_at timestamptz) returns text
 language sql stable as $$
   select concat_ws(chr(10),
@@ -168,10 +179,14 @@ language sql stable as $$
     '',
     format('🎾 Match: %s vs %s (%s)', coalesce(a.player_a, '—'), coalesce(a.player_b, '—'), coalesce(a.tier, '—')),
     format('🎯 Line: Match Winner – %s', coalesce(a.side_player, '—')),
-    format('🟢 %s: %s @ %s', case when a.open_is_opener then 'Opening' else 'First seen' end,
-           ten280_bot.px(a.open_price), ten280_bot.hhmm(a.open_at)),
+    format('🟢 Opening: %s @ %s%s', ten280_bot.px(a.open_price), ten280_bot.hhmm(a.open_at),
+           case when a.open_is_opener then '' else ' (first seen)' end),
+    format('🟠 Pre-drop: %s @ %s', ten280_bot.px(a.ref_price), ten280_bot.hhmm(a.ref_at)),
     format('🔴 Odds now: %s @ %s', ten280_bot.px(a.cur_price), ten280_bot.hhmm(a.cur_at)),
-    format('📉 Drop: -%s%%', to_char(round((a.ref_price - a.cur_price) / a.ref_price * 100, 1), 'FM9990.0')),
+    format('📉 Drop (10 min): −%s%%', to_char(round((a.ref_price - a.cur_price) / a.ref_price * 100, 1), 'FM9990.0')),
+    format('%s Since open: %s',
+           case sign(round((a.cur_price - a.open_price) / a.open_price * 100, 1)) when 1 then '↗️' when -1 then '↘️' else '➡️' end,
+           ten280_bot.spct((a.cur_price - a.open_price) / a.open_price * 100)),
     format('⏱️ Moved: %s', ten280_bot.moved(extract(epoch from (p_at - a.cur_at))::numeric)),
     '🏦 Bookmaker: Bet105')
 $$;

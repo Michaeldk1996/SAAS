@@ -47,7 +47,8 @@ begin
   if r.side_id <> 2 or r.eval_at <> t0 + interval '15 min' or r.cur_price <> 1.88 or r.ref_price <> 2.00
      or r.pct_10m <> 6.00 or r.open_price <> 2.00 or not r.open_is_opener or r.cur_src <> 't'
      or r.message <> concat_ws(chr(10), '🚨 PRICE DROP ALERT', '', '🎾 Match: — vs — (—)', '🎯 Line: Match Winner – —',
-                               '🟢 Opening: 2 @ 10:00 UTC', '🔴 Odds now: 1.88 @ 10:15 UTC', '📉 Drop: -6.0%',
+                               '🟢 Opening: 2 @ 10:00 UTC', '🟠 Pre-drop: 2 @ 10:00 UTC', '🔴 Odds now: 1.88 @ 10:15 UTC',
+                               '📉 Drop (10 min): −6.0%', '↘️ Since open: −6.0%',
                                '⏱️ Moved: just now', '🏦 Bookmaker: Bet105') then
     raise exception 'SELFTEST: case A wrong: % | %', row_to_json(r), r.message;
   end if;
@@ -63,9 +64,23 @@ begin
   select * into r from ten280_bot.alerts where mode='selftest' and run_id='st5' and fixture_id=-4;
   if r.eval_at <> t0 + interval '22 min' or r.ref_price <> 2.20 or r.pct_10m <> 9.09 or r.open_is_opener
      or r.message <> concat_ws(chr(10), '🚨 PRICE DROP ALERT', '', '🎾 Match: — vs — (—)', '🎯 Line: Match Winner – —',
-                               '🟢 First seen: 2 @ 10:00 UTC', '🔴 Odds now: 2 @ 10:20 UTC', '📉 Drop: -9.1%',
+                               '🟢 Opening: 2 @ 10:00 UTC (first seen)', '🟠 Pre-drop: 2.2 @ 10:12 UTC', '🔴 Odds now: 2 @ 10:20 UTC',
+                               '📉 Drop (10 min): −9.1%', '➡️ Since open: 0.0%',
                                '⏱️ Moved: 2 min ago', '🏦 Bookmaker: Bet105') then
     raise exception 'SELFTEST: case D wrong: % | %', row_to_json(r), r.message;
+  end if;
+  -- G: the founder's Glinka shape — risen from open, spiked, dropped 7% in 10 min.
+  -- The Pre-drop line is what makes "Drop −7.0%" and "Since open +1.7%" agree.
+  if ten280_bot.render(jsonb_populate_record(null::ten280_bot.alerts, jsonb_build_object(
+        'player_a', 'Daniil Glinka', 'player_b', 'Dino Prizmic', 'tier', 'Challenger', 'side_player', 'Daniil Glinka',
+        'open_price', 4.6, 'open_at', '2026-09-24 17:16:00+00', 'open_is_opener', false,
+        'ref_price', 5.03, 'ref_at', '2026-09-25 06:54:00+00',
+        'cur_price', 4.68, 'cur_at', '2026-09-25 07:04:27+00')), '2026-09-25 07:09:00+00')
+     <> concat_ws(chr(10), '🚨 PRICE DROP ALERT', '', '🎾 Match: Daniil Glinka vs Dino Prizmic (Challenger)',
+                  '🎯 Line: Match Winner – Daniil Glinka', '🟢 Opening: 4.6 @ 17:16 UTC (first seen)',
+                  '🟠 Pre-drop: 5.03 @ 06:54 UTC', '🔴 Odds now: 4.68 @ 07:04 UTC', '📉 Drop (10 min): −7.0%',
+                  '↗️ Since open: +1.7%', '⏱️ Moved: 4 min ago', '🏦 Bookmaker: Bet105') then
+    raise exception 'SELFTEST: case G (Glinka layout) wrong';
   end if;
   n := ten280_bot.scan(t0, t0 + interval '120 min', 7, 'selftest', 'st7');
   if n <> 3 then raise exception 'SELFTEST: expected 3 alerts at 7%% (no floor), got %', n; end if;
