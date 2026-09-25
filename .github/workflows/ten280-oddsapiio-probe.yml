@@ -1,0 +1,23 @@
+# TEN-280 — read-only odds-api.io REST probe. Branch-only: fires on a push to
+# ten280-probe and nothing else. No schedule, no dispatch, never on main.
+name: ten280-oddsapiio-probe
+on:
+  push:
+    branches: [ten280-probe]
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Probe (REST only, no WebSocket)
+        env:
+          ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
+        run: python3 tools/ten280-oddsapiio-probe.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ten280-probe
+          path: out/probe.json
+          retention-days: 1
