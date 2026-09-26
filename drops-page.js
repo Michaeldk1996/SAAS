@@ -500,10 +500,18 @@
       '<button class="do-link" data-act="reconnect">Reconnect</button></div>';
   }
 
-  function searchHtml() {
+  // card 518c56f0 Q1 = b: the view toggle sits in the search row (the export's rail + seg styles), where it fits
+  // the row's height, so the export's one-line filter rail is untouched
+  function viewsHtml(v) {
+    var vc = st.everLoaded && v ? v.vwCount : null;
+    return '<div class="do-rail do-views"><span class="do-rail-k">MATCHES</span>' + VIEWS.map(function (x) {
+      return seg(x[1] + ' ' + (vc ? vc[x[0]] : '—'), (st.S.vw || 'upcoming') === x[0], 'vw', x[0]);
+    }).join('') + '</div>';
+  }
+  function searchHtml(v) {
     return '<div class="do-search-row"><div class="do-search">' + ICON.search +
       '<input type="text" data-act="q" placeholder="Search players" value="' + esc(st.S.q) + '" aria-label="Search players"></div>' +
-      '<div class="do-actions">' +
+      '<div class="do-actions">' + viewsHtml(v) +
       '<button class="do-btn" data-act="refresh">' + ICON.refresh + (st.refreshing ? 'Refreshing…' : 'Refresh') + '</button>' +
       '<button class="do-btn do-btn-alerts" aria-disabled="true" title="Coming soon">' + ICON.bell + 'Alerts <span class="do-soon">COMING SOON</span></button>' +
       '</div></div>';
@@ -513,13 +521,9 @@
     return '<button class="do-seg' + (mono ? ' mono' : '') + (on ? ' on' : '') + '" data-act="' + act + '" data-v="' + esc(val) + '"' +
       (disabled ? ' disabled' : '') + (title ? ' title="' + esc(title) + '"' : '') + '>' + esc(label) + '</button>';
   }
-  function railsHtml(v) {
+  function railsHtml() {
     var S = st.S, win = st.windowH || 24;
     var r = '<div class="do-rails">';
-    var vc = st.everLoaded && v ? v.vwCount : null;
-    r += '<div class="do-rail"><span class="do-rail-k">MATCHES</span>' + VIEWS.map(function (x) {
-      return seg(x[1] + ' ' + (vc ? vc[x[0]] : '—'), (S.vw || 'upcoming') === x[0], 'vw', x[0]);
-    }).join('') + '</div>';
     r += '<div class="do-rail"><span class="do-rail-k">TIER</span>' + ['ATP', 'Challenger', 'ITF'].map(function (t) { return seg(t, S.tiers.indexOf(t) >= 0, 'tier', t); }).join('') + '</div>';
     r += '<div class="do-rail"><span class="do-rail-k">BOOKS</span>' + [['all', 'All'], ['sharp', 'Sharp'], ['soft', 'Soft']].map(function (b) { return seg(b[1], S.btype === b[0], 'btype', b[0]); }).join('') + '</div>';
     r += '<div class="do-rail"><span class="do-rail-k">WINDOW</span>' + WINDOWS.map(function (w) {
@@ -655,7 +659,7 @@
     var now = dataNow(), v = view(st.rows, st.S, now), fs = feedState(ageS(), st.reachable);
     var blank = !st.everLoaded || (st.S.mk.length === 1 && !TRACKED[st.S.mk[0]]);
     el.innerHTML = '<div class="do-wrap">' + headerHtml(v, fs, blank) + (fs === 'disconnected' && (st.everLoaded || !st.reachable) ? bannerHtml() : '') +
-      searchHtml() + railsHtml(v) + tabsHtml(v) + resultsHtml(v) + colsHtml() + listHtml(v, fs) +
+      searchHtml(v) + railsHtml() + tabsHtml(v) + resultsHtml(v) + colsHtml() + listHtml(v, fs) +
       (st.menu ? '<div class="do-clickaway" data-act="clickaway"></div>' : '') + '</div>';
     if (focusQ) { var q = el.querySelector('[data-act="q"]'); q.focus(); try { q.setSelectionRange(caret, caret); } catch (e) {} }
     if (focusRow) {
