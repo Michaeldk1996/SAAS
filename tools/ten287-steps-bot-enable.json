@@ -1,0 +1,41 @@
+[
+ {
+  "name": "enable_cron",
+  "sql": "select cron.schedule('ten287-superbet-drop-bot', '30 seconds', 'select ten287_bot.tick()') as jobid",
+  "required": true,
+  "stop_on_error": true
+ },
+ {
+  "name": "startup_message",
+  "sql": "select ten287_bot.startup() as net_request_id",
+  "required": true,
+  "stop_on_error": true
+ },
+ {
+  "sleep": 95
+ },
+ {
+  "name": "cron_jobs",
+  "sql": "select jobname, schedule, active from cron.job where jobname like 'ten28%' order by jobname"
+ },
+ {
+  "name": "bot_cron_runs",
+  "sql": "select d.status, count(*) n, max(d.end_time - d.start_time) max_took, max(left(d.return_message,200)) msg from cron.job_run_details d join cron.job j using (jobid) where j.jobname='ten287-superbet-drop-bot' and d.start_time > now() - interval '5 minutes' group by 1"
+ },
+ {
+  "name": "startup_delivery",
+  "sql": "select id, kind, delivery, created_at from ten287_bot.events order by id"
+ },
+ {
+  "name": "live_alerts",
+  "sql": "select id, tier, side_player, eval_at, pct_10m, open_kind, delivery, sent_at, move_delay_s from ten287_bot.alerts where mode='live' order by id"
+ },
+ {
+  "name": "bet105_bot_untouched",
+  "sql": "select jobname, schedule, active from cron.job where jobname='ten280-bet105-drop-bot'"
+ },
+ {
+  "name": "recorder_health_15m",
+  "sql": "select kind, status_code, count(*) n from ten287_rec.requests where fired_at > now() - interval '15 minutes' group by 1,2 order by 1,2"
+ }
+]

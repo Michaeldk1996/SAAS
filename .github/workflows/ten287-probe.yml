@@ -12,15 +12,15 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-      # Run 8: install the SUPERBET drop bot (founder 2026-09-26, comment 3840b895) + backtest example.
-      # Install + self-tests in ONE transaction. NOTHING scheduled, NOTHING sent in this run.
+      # Run 9: ENABLE the Superbet drop bot (founder 2026-09-26, comment 3840b895): schedule every 30 s +
+      # one startup test message (sent at most once; a re-push never re-sends it).
       - name: SQL steps (encrypted output)
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          TEN287_STEPS: tools/ten287-steps-bot-install.json
+          TEN287_STEPS: tools/ten287-steps-bot-enable.json
         run: python3 tools/ten287-sql.py
       - uses: actions/upload-artifact@v4
         if: always()
