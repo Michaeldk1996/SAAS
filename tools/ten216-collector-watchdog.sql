@@ -10,7 +10,9 @@
 -- RULE (a test): every 10 min, if now() - newest row > 60 min (120 min until the first OK heartbeat
 -- exists — change rows alone go quiet for up to ~60 min) and today is IN SEASON, condition
 -- `collector_stale` is open -> one Telegram alert, repeated every 3 h while it stays open, and a
--- RECOVERED message when a row lands again. Off-season = 1–26 Dec (UTC date); nothing alerts then.
+-- RECOVERED message when a row lands again. Off-season = 1–26 Dec (UTC date): no alert and no
+-- RECOVERED then (an open alert stays open). If the check itself errors, one 'watchdog_error'
+-- alert per 3 h + WARNING. The install refuses (raises) when the heartbeat table is missing.
 --
 -- WHERE IT GOES (measured 2026-09-26): the ops chat (Vault ops_telegram_bot_token /
 -- ops_telegram_chat_id) when both exist — they do NOT today; else the Superbet drop-bot chat
@@ -23,6 +25,11 @@ do $outer$
 begin
   create extension if not exists pg_cron;
   create extension if not exists pg_net;
+  -- The watchdog reads the heartbeat table: installed without it, every run would fail with
+  -- "relation does not exist" where nobody looks (review 2026-09-26). Refuse, loudly.
+  if to_regclass('public.ten216_test_polls') is null or to_regclass('public.ten216_test_odds_changes') is null then
+    raise exception 'TEN-216 watchdog NOT installed: install chart-apitennis-rpc.sql first (ten216_test_polls missing)';
+  end if;
 
   create table if not exists public.ten216_watch_alerts (
       condition     text        primary key,
@@ -88,6 +95,7 @@ begin
     newest timestamptz; stale boolean; a record; msg text; d date := (p_now at time zone 'UTC')::date;
     offseason boolean; has_hb boolean; limit_min int;
   begin
+  begin
     -- a queued send is not a delivery: resolve it against pg_net
     update public.ten216_watch_log l set delivered = case
         when r.timed_out or r.error_msg is not null then 'failed: timeout/error'
@@ -105,12 +113,17 @@ begin
              (select max(observed_at) from public.ten216_test_polls where ok))
       into newest;
     offseason := extract(month from d) = 12 and extract(day from d) <= 26;
+    -- Off-season: no alert — and no RECOVERED either: an alert still open on 1 Dec stays open
+    -- until a row really lands (review 2026-09-26: the season boundary is not a recovery).
+    if offseason then
+      return 'off-season';
+    end if;
     -- Until the first OK heartbeat exists (the collector picks up the heartbeat code at its next
     -- 5.5-h hand-off), only change rows can prove life, and api-tennis re-prices in ~30-min
     -- batches (longest measured quiet stretch 60 min 20 s, 26 Sep): 120 min then, 60 min after.
     has_hb := exists (select 1 from public.ten216_test_polls where ok);
     limit_min := case when has_hb then 60 else 120 end;
-    stale := not offseason and (newest is null or p_now - newest > make_interval(mins => limit_min));
+    stale := newest is null or p_now - newest > make_interval(mins => limit_min);
 
     select * into a from public.ten216_watch_alerts where condition = 'collector_stale';
     if stale then
@@ -134,14 +147,24 @@ begin
       return 'open';
     elsif coalesce(a.is_open, false) then
       msg := 'RECOVERED - Stennisfy api-tennis odds collector (TEN-216): rows landing again (newest '
-             || to_char(newest at time zone 'UTC', 'YYYY-MM-DD HH24:MI') || 'Z; down since '
-             || to_char(a.opened_at at time zone 'UTC', 'YYYY-MM-DD HH24:MI') || 'Z).';
+             || coalesce(to_char(newest at time zone 'UTC', 'YYYY-MM-DD HH24:MI') || 'Z', 'unknown') || '; down since '
+             || coalesce(to_char(a.opened_at at time zone 'UTC', 'YYYY-MM-DD HH24:MI') || 'Z', 'unknown') || ').';
       perform public.ten216_watch_send('collector_stale', 'recovered', msg);
       update public.ten216_watch_alerts set is_open = false, detail = null, updated_at = p_now
         where condition = 'collector_stale';
       return 'recovered';
     end if;
-    return case when offseason then 'off-season' else 'ok' end;
+    return 'ok';
+  exception when others then
+    -- The watchdog itself failed: say so (rate-limited to one message per 3 h), never fail silently.
+    if not exists (select 1 from public.ten216_watch_log
+                   where condition = 'watchdog_error' and at > p_now - interval '3 hours') then
+      perform public.ten216_watch_send('watchdog_error', 'alert',
+        'ALERT - Stennisfy TEN-216 collector WATCHDOG failed: ' || sqlerrm || ' (' || sqlstate || ')');
+    end if;
+    raise warning 'TEN-216 collector watchdog failed: % (%)', sqlerrm, sqlstate;
+    return 'error: ' || sqlerrm;
+  end;
   end $fn$;
   revoke all on function public.ten216_collector_check(timestamptz) from public, anon, authenticated;
 
