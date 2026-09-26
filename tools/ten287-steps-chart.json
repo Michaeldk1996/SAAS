@@ -1,6 +1,34 @@
 [
  {
-  "name": "rpc_emul",
-  "sql": "  with hb as (\n    select null::timestamptz observed_at where false\n  ), gaps as (\n    select prev_at, observed_at\n    from (select observed_at, lag(observed_at) over (order by observed_at) prev_at from hb) x\n    where prev_at is not null and observed_at - prev_at > interval '15 minutes'\n  )\n  select jsonb_build_object(\n    'rows', coalesce((\n      select jsonb_agg(jsonb_build_array(c.match_key, c.bookmaker, c.observed_at, c.selection,\n                                         c.price, c.change_kind, c.event_live)\n                       order by c.match_key, c.bookmaker, c.observed_at, c.id)\n      from public.ten216_test_odds_changes c\n      where c.market = 'Home/Away'\n        and c.match_key = any(array['12164719','12164720','12164721','12164722','12164723','12164724','12164725','12164726','12164727','12164728','12164729','12164730','12164731','12164732','12164733','12164734','12165514','12165515','12165516','12165517','12165518','12165519','12165520','12165521','12165553','12165577','12165793','12165806','12165810','12165811','12165812','12165814','12165823','12165825','12165826','12165827','12165828','12165829','12165830','12165847','12165848','12165854','12165868','12165884','12165986','12166000','12166007','12166049','12166087','12166088','12166089','12166114']::text[])\n        and c.observed_at >= '2026-09-26T03:55:00Z'::timestamptz), '[]'::jsonb),\n    'last_ok_poll_at', coalesce((select max(observed_at) from hb),\n                                (select max(observed_at) from public.ten216_test_odds_changes)),\n    'heartbeat_since', (select min(observed_at) from hb),\n    'down', coalesce((select jsonb_agg(jsonb_build_array(prev_at, observed_at) order by prev_at)\n                      from gaps), '[]'::jsonb)\n  );\n"
+  "name": "vault_names",
+  "sql": "select name, created_at, updated_at from vault.secrets order by name"
+ },
+ {
+  "name": "postmatch_alerts_recent",
+  "sql": "select at, condition, kind, delivered from public.postmatch_alert_log order by at desc limit 5"
+ },
+ {
+  "name": "bot_fns",
+  "sql": "select n.nspname, p.proname from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname in ('ten287_bot','ten280_bot','public') and (p.prosrc ilike '%telegram%') order by 1,2"
+ },
+ {
+  "name": "bot_sends_recent",
+  "sql": "select r.id, r.status_code, r.created from net._http_response r order by r.id desc limit 5"
+ },
+ {
+  "name": "cron_jobs",
+  "sql": "select jobname, schedule, active from cron.job order by jobname"
+ },
+ {
+  "name": "wh_rows_recent",
+  "sql": "select observed_at, match_key, selection, price, change_kind from public.ten216_test_odds_changes where bookmaker ilike '%william%' order by observed_at desc limit 12"
+ },
+ {
+  "name": "wh_books_names",
+  "sql": "select bookmaker, count(*), max(observed_at) from public.ten216_test_odds_changes where observed_at > now()-interval '8 hours' group by 1 order by 1"
+ },
+ {
+  "name": "b365_ha",
+  "sql": "select match_key, count(*) n, count(*) filter (where change_kind='removed') removed, min(observed_at), max(observed_at) from public.ten216_test_odds_changes where market='Home/Away' and bookmaker='bet365' and observed_at >= '2026-09-26T03:55:00Z' group by 1 order by 1"
  }
 ]

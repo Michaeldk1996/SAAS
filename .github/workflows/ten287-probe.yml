@@ -12,7 +12,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-      # Run 22: READ-ONLY — TEN-295 Wave 2: emulate chart_apitennis_series for the live board (dry run).
+      # Run 23: READ-ONLY — TEN-295: vault secret NAMES (no values), alert delivery, William Hill + bet365 rows.
       - name: SQL steps (encrypted output)
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
