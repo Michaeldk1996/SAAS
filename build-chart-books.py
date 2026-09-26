@@ -353,10 +353,16 @@ def main():
         # No Kibl Bet105 fixture matched to this card (0 candidates, no stream rows): our
         # card-state join's verdict, never "not priced" (founder 2026-09-26: "not offered"
         # needs evidence). A matched fixture with no pre-match rows IS "not priced".
-        unmatched = not (payload or {}).get('candidates') and not (payload or {}).get('stream')
+        # "Matched" = the RPC resolved a fixture (or the stream has rows for the card key).
+        # Two or more unselected candidates resolve to none: ambiguous, said so (review
+        # 2026-09-26).
+        pl = payload or {}
+        note = None
+        if not pl.get('fixtures') and not pl.get('stream'):
+            note = ('2+ Bet105 fixtures matched — ambiguous' if (pl.get('candidates') or 0) >= 2
+                    else 'no Bet105 fixture matched')
         if cs.put_chart(c, BET105, ser if (ser['p1'] or ser['p2']) else None,
-                        dict(BET105_META, checkedAt=checked,
-                             note='no Bet105 fixture matched' if unmatched else None),
+                        dict(BET105_META, checkedAt=checked, note=note),
                         cut_at=start_ts):
             wrote += 1
         else:
