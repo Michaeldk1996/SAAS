@@ -485,14 +485,23 @@ s3, g3 = bcb.apitennis_book_series([R('04:00:00', 'Home', '2.4', 'first_seen'), 
                                          [S + '05:10:00Z', S + '05:40:00Z']])
 check(s3['p1'] == [[S + '04:00:00.000Z', 2.4]] and g3 == [[S + '04:20:00.000Z', S + '04:50:00.000Z']],
       f'api-tennis: cut at the start; a collector-down gap inside the line (not before it, not after the cut) {s3} {g3}')
+_, g5 = bcb.apitennis_book_series([R('04:00:00', 'Home', '2.4', 'first_seen'), R('04:00:00', 'Away', '1.6', 'first_seen'),
+                                   R('05:00:00', 'Home', '1.0'), R('05:00:00', 'Away', '1.0'),
+                                   R('06:00:00', 'Home', '2.5'), R('06:00:00', 'Away', '1.55')])
+check(g5 == [[S + '05:00:00.000Z', S + '06:00:00.000Z']],
+      f'api-tennis: a running line that turns into a suspended pair stops (a gap), never carries the old price {g5}')
+check(bcb._scheduled_start({'date': '2026-09-26', 'time': '08:30'}) == '2026-09-26T08:30:00+02:00'
+      and cs.ts_iso(bcb._scheduled_start({'date': '2026-09-26', 'time': '08:30'})) == '2026-09-26T06:30:00.000Z',
+      'api-tennis: the scheduled fallback reads the card time as UTC+2 (08:30 -> 06:30Z), never UTC')
 _, g4 = bcb.apitennis_book_series([R('05:00:00', 'Home', None, 'removed'), R('06:00:00', 'Home', '2.4', 'first_seen'),
                                    R('06:00:00', 'Away', '1.6', 'first_seen')])
 check(g4 == [], 'api-tennis: a removal before the line began is not a gap')
 
 AT_ROWS = lambda mk, book, rows: [[mk, book] + r for r in rows]
-at_cards = [card(id='upcoming-12165868', date='2026-09-26', time='09:00'),            # J. M. Cerundolo
-            card(id='upcoming-12164721', p1='F. Cerundolo', p2='A. Zverev', date='2026-09-26', time='09:00'),
-            card(id='upcoming-555', p1='A. Nobody', p2='B. Else', date='2026-09-26', time='09:00'),
+# card times are api-tennis's UTC+2 wall clock: '11:00' = 09:00Z
+at_cards = [card(id='upcoming-12165868', date='2026-09-26', time='11:00'),            # J. M. Cerundolo
+            card(id='upcoming-12164721', p1='F. Cerundolo', p2='A. Zverev', date='2026-09-26', time='11:00'),
+            card(id='upcoming-555', p1='A. Nobody', p2='B. Else', date='2026-09-26', time='11:00'),
             card(id='past-444', p1='C. Old', p2='D. Match', date='2026-09-25', time='09:00', finalScore='6-4 6-4',
                  oddsMovement=copy.deepcopy(LEGACY)),
             card(id='upcoming-777', p1='E. Far', p2='F. Future', date='2026-10-09', time='09:00')]
@@ -565,6 +574,13 @@ check(coll.index('await writePoll({ poll_id: pollId, observed_at: observedAt.toI
       'collector: an OK heartbeat only after every change row landed; a failed poll says ok:false')
 wp = coll[coll.index('async function writePoll'):coll.index('async function rowCount')]
 check('process.exit' not in wp and 'throw' not in wp, 'collector: a failed heartbeat never stops the measurement')
+tk = coll[coll.index('async function tick'):]
+check('const next = new Map(state);' in tk and 'state.set(' not in tk[:tk.index('await insertRows(rows)')]
+      and 'state.delete(' not in tk[:tk.index('await insertRows(rows)')]
+      and tk.index('for (const [k, v] of next) state.set(k, v);') > tk.index('await insertRows(rows)'),
+      'collector: the quote state moves only after the poll\'s rows landed (a failed insert is re-sent, never lost)')
+ir = coll[coll.index('async function insertRows'):coll.index('async function rowCount')]
+check('body: JSON.stringify([row])' in ir, 'collector: a 409 retries its chunk row by row')
 check(bcb.APITENNIS_SINCE == '2026-09-26T03:55:00.000Z', 'api-tennis: nothing before our 26 Sep 03:55Z restart')
 
 print(f'\n{len(FAILS)} assertion(s) failed.')

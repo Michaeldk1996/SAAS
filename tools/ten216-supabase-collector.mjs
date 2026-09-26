@@ -136,6 +136,17 @@ async function insertRows(rows) {
     if (!res.ok) {
       const body = await res.text();
       if (res.status !== 409) throw new Error(`insert HTTP ${res.status}: ${body.slice(0, 300)}`);
+      // A 409 rejects the WHOLE chunk (review 2026-09-26): retry row by row so only the rows
+      // that truly exist already are skipped — never 499 silent losses behind an ok heartbeat.
+      for (const row of chunk) {
+        const r1 = await sbFetch(`/rest/v1/${TABLE}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+          body: JSON.stringify([row]),
+        });
+        if (r1.ok) written += 1;
+        else if (r1.status !== 409) throw new Error(`insert HTTP ${r1.status}: ${(await r1.text()).slice(0, 300)}`);
+      }
     } else {
       written += chunk.length;
     }
@@ -265,11 +276,15 @@ async function tick(state, startedAt) {
 
   const now = flattenOdds(json.result);
   const rows = [];
+  // Diff against a COPY: the live state moves only once this poll's rows landed. If the insert
+  // throws, the next poll re-diffs against the old state and re-sends the lost change rows —
+  // otherwise a lost `removed` row would read as "still quoted" for good (review 2026-09-26).
+  const next = new Map(state);
   const base = { observed_at: observedAt.toISOString(), poll_id: pollId };
 
   for (const [k, q] of now) {
     const meta = live.get(String(q.matchKey)) || {};
-    const prev = state.get(k);
+    const prev = next.get(k);
     const cur = normPrice(q.price);
     if (!prev || prev.price !== cur) {
       rows.push({
@@ -281,9 +296,9 @@ async function tick(state, startedAt) {
         change_kind: prev ? 'changed' : 'first_seen',
       });
     }
-    state.set(k, { ...q, price: cur, raw: q.price ?? null });
+    next.set(k, { ...q, price: cur, raw: q.price ?? null });
   }
-  for (const [k, prev] of [...state]) {
+  for (const [k, prev] of [...next]) {
     if (now.has(k)) continue;
     rows.push({
       ...base,
@@ -292,7 +307,7 @@ async function tick(state, startedAt) {
       price: null, prev_price: prev.raw ?? prev.price, change_kind: 'removed',
       tour: null, event_status: null, event_live: null,
     });
-    state.delete(k);
+    next.delete(k);
   }
 
   const count = await rowCount();
@@ -303,6 +318,8 @@ async function tick(state, startedAt) {
   }
 
   const written = await insertRows(rows);
+  state.clear();
+  for (const [k, v] of next) state.set(k, v);
   // Only after every change row landed: an ok heartbeat asserts the table holds this poll's
   // full state (a quote with no row at this poll was still quoted, unchanged).
   await writePoll({ poll_id: pollId, observed_at: observedAt.toISOString(), ok: true,
