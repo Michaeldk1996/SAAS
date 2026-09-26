@@ -589,8 +589,8 @@ check(bcb.APITENNIS_SINCE == '2026-09-26T03:55:00.000Z', 'api-tennis: nothing be
 wd = open(os.path.join(HERE, 'ten216-collector-watchdog.sql')).read()
 chk = wd[wd.index('function public.ten216_collector_check'):wd.index('$fn$;', wd.index('function public.ten216_collector_check'))]
 check("max(observed_at) from public.ten216_test_odds_changes" in chk and "from public.ten216_test_polls where ok" in chk
-      and "interval '60 minutes'" in chk,
-      'watchdog: stale = no change row AND no OK heartbeat for > 60 min')
+      and "limit_min := case when has_hb then 60 else 120 end" in chk and 'make_interval(mins => limit_min)' in chk,
+      'watchdog: stale = no change row AND no OK heartbeat for > 60 min (120 min before the first heartbeat exists)')
 check("extract(month from d) = 12 and extract(day from d) <= 26" in chk and 'not offseason and' in chk,
       'watchdog: in season only (off-season = 1-26 Dec)')
 check("interval '3 hours'" in chk and "'RECOVERED - " in chk, 'watchdog: repeats every 3 h while open; says RECOVERED')

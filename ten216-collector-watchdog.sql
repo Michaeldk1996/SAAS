@@ -7,7 +7,8 @@
 -- collector polls every 5 min; api-tennis re-prices ~every 30 min, so the heartbeat is what keeps a
 -- quiet-but-healthy collector from reading as down.
 --
--- RULE (a test): every 10 min, if now() - newest row > 60 min and today is IN SEASON, condition
+-- RULE (a test): every 10 min, if now() - newest row > 60 min (120 min until the first OK heartbeat
+-- exists — change rows alone go quiet for up to ~60 min) and today is IN SEASON, condition
 -- `collector_stale` is open -> one Telegram alert, repeated every 3 h while it stays open, and a
 -- RECOVERED message when a row lands again. Off-season = 1–26 Dec (UTC date); nothing alerts then.
 --
@@ -85,7 +86,7 @@ begin
   as $fn$
   declare
     newest timestamptz; stale boolean; a record; msg text; d date := (p_now at time zone 'UTC')::date;
-    offseason boolean;
+    offseason boolean; has_hb boolean; limit_min int;
   begin
     -- a queued send is not a delivery: resolve it against pg_net
     update public.ten216_watch_log l set delivered = case
@@ -104,13 +105,19 @@ begin
              (select max(observed_at) from public.ten216_test_polls where ok))
       into newest;
     offseason := extract(month from d) = 12 and extract(day from d) <= 26;
-    stale := not offseason and (newest is null or p_now - newest > interval '60 minutes');
+    -- Until the first OK heartbeat exists (the collector picks up the heartbeat code at its next
+    -- 5.5-h hand-off), only change rows can prove life, and api-tennis re-prices in ~30-min
+    -- batches (longest measured quiet stretch 60 min 20 s, 26 Sep): 120 min then, 60 min after.
+    has_hb := exists (select 1 from public.ten216_test_polls where ok);
+    limit_min := case when has_hb then 60 else 120 end;
+    stale := not offseason and (newest is null or p_now - newest > make_interval(mins => limit_min));
 
     select * into a from public.ten216_watch_alerts where condition = 'collector_stale';
     if stale then
       if not coalesce(a.is_open, false) or a.last_sent_at is null
          or a.last_sent_at < p_now - interval '3 hours' then
-        msg := 'ALERT - Stennisfy api-tennis odds collector (TEN-216): no new price row or heartbeat for '
+        msg := 'ALERT - Stennisfy api-tennis odds collector (TEN-216): no new price row or heartbeat (limit '
+               || limit_min || ' min) for '
                || coalesce(floor(extract(epoch from (p_now - newest)) / 60)::text || ' min (newest '
                   || to_char(newest at time zone 'UTC', 'YYYY-MM-DD HH24:MI') || 'Z)', 'ever')
                || '. The collector chain has stopped - the Odds-tab api-tennis lines go stale. '
