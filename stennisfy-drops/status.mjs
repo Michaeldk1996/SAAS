@@ -52,15 +52,23 @@ export function initials(n) {
   else s = s.split(/\s+/).slice(0, -1).join(' ');
   return new Set((s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().match(/[a-z]+/g) || []).map((t) => t[0]));
 }
-const sameS = (x, y) => { const a = nk(x); return !!a && a === nk(y); };
+// the JOIN surname key (line keys keep nk, the SQL's): accents stripped, "Carreno-Busta" = "Carreno Busta",
+// a trailing Jr / Sr / II / III dropped (third review of 68cdc26e: Lehečka, Damm Jr never joined)
+export function sk(n) {
+  let s = String(n == null ? '' : n).normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  if (s.includes(',')) s = s.split(',')[0];
+  s = s.replace(/-/g, ' ').trim().replace(/\s+(jr|sr|ii|iii|iv)\.?$/i, '');
+  return s.replace(/^.*\s/, '').toLowerCase().replace(/[^a-z]/g, '');
+}
+const sameS = (x, y) => { const a = sk(x); return !!a && a === sk(y); };
 // initials agree unless both names carry some and none are shared
 const sameI = (x, y) => { const i = initials(x), j = initials(y); return !i.size || !j.size || [...i].some((c) => j.has(c)); };
-// Surnames join. Initials: a tie between surname candidates is broken by both players agreeing (strict); a lone
-// candidate is refused only when BOTH players' initials conflict — one conflict is a middle-name quirk
-// (api-tennis lists Adolfo Daniel Vallejo as "D. Vallejo": second review of 36b4a518)
-export function samePair(a1, a2, b1, b2, strict) {
-  const orient = (x1, x2, y1, y2) => sameS(x1, y1) && sameS(x2, y2) &&
-    (strict ? sameI(x1, y1) && sameI(x2, y2) : sameI(x1, y1) || sameI(x2, y2));
+// Surnames join, and the initials of BOTH players must agree (every given name counts, so "Adolfo Daniel
+// Vallejo" is "D. Vallejo"); a name without given names agrees with anything. Refusing is labelled "unknown";
+// joining the wrong Wang v Zhang would be a guess (third review of 68cdc26e). A row that names only "Adolfo
+// Vallejo" still gets the match through its group (another book's row names him in full).
+export function samePair(a1, a2, b1, b2) {
+  const orient = (x1, x2, y1, y2) => sameS(x1, y1) && sameS(x2, y2) && sameI(x1, y1) && sameI(x2, y2);
   return orient(a1, a2, b1, b2) || orient(a1, a2, b2, b1);
 }
 // surname-pair bucket (a cheap pre-filter; same-surname pairs allowed — samePair decides)
@@ -90,21 +98,24 @@ function unique(cands, key) {
   cands.forEach((c) => by.set(String(key(c)), c));
   return by.size === 1 ? [...by.values()][0] : by.size > 1 ? 'ambiguous' : null;
 }
-// exactly one candidate on surnames + a start within 24 h; two or more -> the initials decide, else ambiguous
-function pick(row, cands, p1, p2, key) {
-  const u = unique(cands, key);
-  if (u !== 'ambiguous') return u;
-  return unique(cands.filter((c) => samePair(row.playerA, row.playerB, p1(c), p2(c), true)), key) || 'ambiguous';
-}
+// exactly one candidate (both players + a start within 24 h), else ambiguous
+function pick(row, cands, p1, p2, key) { return unique(cands, key); }
 export function matchFlip(row, flips) {
   const st = ms(row.scheduledStart);
   const c = (flips || []).filter((f) => samePair(row.playerA, row.playerB, f.p1, f.p2) &&
     (st == null || Math.abs(apiStartMs(f.date, f.time, false) - st) < JOIN_WINDOW_MS));
   return pick(row, c, (f) => f.p1, (f) => f.p2, (f) => f.eventKey);
 }
+export const jKey = (a, b) => { const x = sk(a), y = sk(b); return !x || !y ? null : x < y ? x + '|' + y : y + '|' + x; };
+export function indexFixtures(list) {
+  const m = new Map();
+  (list || []).forEach((f) => { const k = jKey(f.event_first_player, f.event_second_player); if (k) { if (!m.has(k)) m.set(k, []); m.get(k).push(f); } });
+  return m;
+}
 export function matchFixture(row, fixtures) {
   const st = ms(row.scheduledStart);
-  const c = (fixtures || []).filter((f) => !/\//.test(String(f.event_first_player) + String(f.event_second_player)) &&
+  const pool = fixtures instanceof Map ? fixtures.get(jKey(row.playerA, row.playerB)) || [] : fixtures || [];
+  const c = pool.filter((f) => !/\//.test(String(f.event_first_player) + String(f.event_second_player)) &&
     samePair(row.playerA, row.playerB, f.event_first_player, f.event_second_player) &&
     (st == null || Math.abs(apiStartMs(f.event_date, f.event_time, f.utc) - st) < JOIN_WINDOW_MS));
   return pick(row, c, (f) => f.event_first_player, (f) => f.event_second_player, (f) => f.event_key);
@@ -140,7 +151,8 @@ export function resolveMatch(row, ctx) {
     if (grace) return { ...out, status: 'not_started', via: 'no live sighting yet' };
     return unknownCut(!ctx.fixtures ? 'start passed, api-tennis not read yet' : fx ? 'ambiguous fixture' : 'no api-tennis fixture');
   }
-  const c = classifyFixture(fx), apiStart = apiStartMs(fx.event_date, fx.event_time, fx.utc);
+  const fresh = ctx.byKey && ctx.byKey.get(String(fx.event_key));        // asked by key since: fresher than the day list
+  const c = classifyFixture(fresh || fx), apiStart = apiStartMs(fx.event_date, fx.event_time, fx.utc);
   if (c === 'unknown') return { ...unknownCut('api-tennis: ' + fx.event_status), eventKey: String(fx.event_key), apiStatus: fx.event_status || null };
   out.eventKey = String(fx.event_key); out.apiStatus = fx.event_status || null; out.status = c; out.via = 'api-tennis fixture (live sighting missed)';
   if (c !== 'not_started') {
@@ -168,8 +180,14 @@ export function apiNeeds(rows, ctx, cache) {
     }
     const st = ms(r.scheduledStart);
     if (flip || st == null || ctx.now < st) continue;
-    // a vendor start runs hours late or a little early: the start's day and both neighbours
-    days.add(dayOf(st - 24 * H)); days.add(dayOf(st)); days.add(dayOf(st + 24 * H));
+    // the start's day; a neighbour day only when the start is within 6 h of midnight UTC (third review: cost)
+    days.add(dayOf(st)); days.add(dayOf(st - 6 * H)); days.add(dayOf(st + 6 * H));
+    // a fixture already joined from a day list is re-asked by key until terminal (the list refreshes every 15 min)
+    const fx = ctx.fixtures ? matchFixture(r, ctx.fixtures) : null;
+    if (fx && fx !== 'ambiguous' && !TERMINAL.test(String(fx.event_status))) {
+      const ek = String(fx.event_key), c = cache.keys.get(ek);
+      if (!(c && (c.fixture ? TERMINAL.test(String(c.fixture.event_status)) || ctx.now - c.at < KEY_TTL_MS : ctx.now - c.at < MISS_TTL_MS))) keys.add(ek);
+    }
   }
   return { keys: [...keys].slice(0, KEYS_PER_READ), days: [...days].sort() };
 }
@@ -185,11 +203,10 @@ export function applyCut(row, line, m, siblings) {
   if (openAt != null && openAt >= cut) return null;                     // no pre-match price at all: not a pre-match row
   if (row.preDrop && (at(row.preDrop) == null || at(row.preDrop) >= cut)) out.preDrop = null;
   if (row.droppedTo && (at(row.droppedTo) == null || at(row.droppedTo) >= cut)) out.droppedTo = null;
-  if (row.latest && at(row.latest) != null && at(row.latest) < cut) { out.latest = { ...row.latest, kind: 'last pre-match' }; return out; }
-  // the latest recorded price before the cut: the book's own series, the alert's prices, the open
+  // the latest recorded price before the cut: the book's own series, this row's and its repeat alerts' prices, the open
   const own = line && line.books && line.books[row.book];
   const cands = cutSeries(own && own.side, cut).map((p) => ({ at: p[0], price: String(p[1]) }))
-    .concat([out.droppedTo, out.preDrop, row.open].concat(siblings || []).filter((x) => x && at(x) != null && at(x) < cut).map((x) => ({ at: x.at, price: String(x.price) })));
+    .concat([row.latest, out.droppedTo, out.preDrop, row.open].concat(siblings || []).filter((x) => x && at(x) != null && at(x) < cut).map((x) => ({ at: x.at, price: String(x.price) })));
   cands.sort((a, b) => ms(a.at) - ms(b.at));
   const last = cands[cands.length - 1];
   out.latest = last ? { price: last.price, at: last.at, kind: 'last pre-match' } : null;
@@ -230,7 +247,7 @@ export function withStatus(rows, lines, ctx) {
       const keysAgree = !res[i].eventKey || !res[j].eventKey || res[i].eventKey === res[j].eventKey;
       // both rows must name both players' given names: a bare "Wang v Zheng" never groups two matches
       const named = [a.playerA, a.playerB, b.playerA, b.playerB].every((n) => initials(n).size);
-      if (named && keysAgree && samePair(a.playerA, a.playerB, b.playerA, b.playerB, true) && (ta == null || tb == null || Math.abs(ta - tb) < JOIN_WINDOW_MS)) { cluster[i] = j; break; }
+      if (named && keysAgree && samePair(a.playerA, a.playerB, b.playerA, b.playerB) && (ta == null || tb == null || Math.abs(ta - tb) < JOIN_WINDOW_MS)) { cluster[i] = j; break; }
     }
   }
   const best = new Map();
@@ -241,7 +258,7 @@ export function withStatus(rows, lines, ctx) {
   // last pre-match price, so repeat alerts never disagree on it (second review of 36b4a518)
   const selPts = new Map();
   rows.forEach((r, i) => {
-    const k = cluster[i] + '|' + nk(r.side) + '|' + r.book;
+    const k = cluster[i] + '|' + String(r.side) + '|' + r.book;
     const l = selPts.get(k) || [];
     [r.open, r.preDrop, r.droppedTo, r.latest].forEach((x) => { if (x && x.at && x.price != null) l.push(x); });
     selPts.set(k, l);
@@ -250,7 +267,7 @@ export function withStatus(rows, lines, ctx) {
   rows.forEach((r, i) => {
     const m = best.get(cluster[i]), lk = lineKey(r);
     if (lk && m.cutAt && !cutByLine.has(lk)) cutByLine.set(lk, m.cutAt);
-    const x = applyCut(r, lineByKey.get(lk), m, selPts.get(cluster[i] + '|' + nk(r.side) + '|' + r.book));
+    const x = applyCut(r, lineByKey.get(lk), m, selPts.get(cluster[i] + '|' + String(r.side) + '|' + r.book));
     if (x) outRows.push(x);
   });
   // a line is cut with its selection's match; the other side of the same match shares the cut
@@ -263,7 +280,7 @@ export function withStatus(rows, lines, ctx) {
 // retried after MISS_TTL_MS). Days are fetched in the background and used from the next read. The key is
 // never logged: errors are reported as a code.
 export function createApiTennis({ key, fetchImpl = fetch, now = () => Date.now(), log = () => {} }) {
-  const cache = { keys: new Map(), days: new Map(), inflight: new Set(), calls: 0, errors: 0, lastError: null };
+  const cache = { keys: new Map(), days: new Map(), inflight: new Set(), calls: 0, errors: 0, lastError: null, version: 0 };
   const base = 'https://api.api-tennis.com/tennis/?method=get_fixtures&timezone=UTC&APIkey=' + encodeURIComponent(key || '');
   async function get(q, timeoutMs) {
     cache.calls += 1;
@@ -294,15 +311,21 @@ export function createApiTennis({ key, fetchImpl = fetch, now = () => Date.now()
       if ((c && now() - c.at < ttl) || cache.inflight.has(d)) continue;
       cache.inflight.add(d);
       get(`&date_start=${d}&date_stop=${d}`, 45000).then((res) => {   // one day: ~2-6 MB; never awaited by the read
-        cache.days.set(d, { at: now(), list: res ? res.map(slim) : null });
+        cache.days.set(d, { at: now(), list: res ? res.map(slim) : null }); cache.version += 1;
       }).finally(() => cache.inflight.delete(d));
     }
     // the 72 h window + margin: nothing older is ever asked for again
-    for (const d of [...cache.days.keys()]) if (d < dayOf(now() - 5 * 24 * H)) cache.days.delete(d);
+    for (const d of [...cache.days.keys()]) if (d < dayOf(now() - 5 * 24 * H)) { cache.days.delete(d); cache.version += 1; }
     for (const [k, v] of [...cache.keys]) if (now() - v.at > 5 * 24 * H) cache.keys.delete(k);
     return cache;
   }
-  const fixtures = () => { const l = [...cache.days.values()].filter((c) => c.list); return l.length ? l.flatMap((c) => c.list) : null; };
+  // indexed by join-surname pair, rebuilt only when a day list changes (third review: a linear scan per row
+  // cost 1.3 s a read at 15k fixtures)
+  let idx = null, idxV = -1;
+  const fixtures = () => {
+    if (idxV !== cache.version) { const l = [...cache.days.values()].filter((c) => c.list); idx = l.length ? indexFixtures(l.flatMap((c) => c.list)) : null; idxV = cache.version; }
+    return idx;
+  };
   const byKey = () => new Map([...cache.keys].filter(([, v]) => v.fixture).map(([k, v]) => [k, v.fixture]));
   return { cache, fill, byKey, fixtures };
 }
