@@ -104,7 +104,7 @@ export function makeEnrich({ api, now = () => Date.now(), log = () => {} }) {
     const fresh = b.at && now() - Date.parse(b.at) <= BOARD_FRESH_MS;
     const board = new Map(fresh ? (b.matches || []).map((m) => [String(m.eventKey), m]) : []);
     const ctx = { flips: Array.isArray(snap.flips) ? snap.flips : [], board, now: now() };
-    try { if (api) await api.fill(apiNeeds(snap.rows, ctx, api.cache)); } catch (e) { log('api-tennis fill failed'); }
+    try { if (api) await api.fill(apiNeeds(snap.rows, { ...ctx, fixtures: api.fixtures() }, api.cache)); } catch (e) { log('api-tennis fill failed'); }
     return withStatus(snap.rows, Array.isArray(snap.lines) ? snap.lines : [], { ...ctx, byKey: api ? api.byKey() : new Map(), fixtures: api ? api.fixtures() : null });
   };
 }
