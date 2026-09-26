@@ -69,11 +69,22 @@ begin
     raise exception 'SELFTEST: malformed bookmakers not tolerated';
   end if;
   -- budget guard: a fresh low reading blocks, a stale one does not
-  insert into ten287_rec.requests (id, kind, fired_at, processed_at, ratelimit_remaining) values (-1, 'selftest', now(), now(), 100);
+  -- the guard reads the NEWEST request by id, so the fake reading must out-rank every real one (a live
+  -- recorder has thousands; id -1 passed only on the first, empty install — run 36213324178)
+  insert into ten287_rec.requests (id, kind, fired_at, processed_at, ratelimit_remaining)
+  values (9223372036854775000, 'selftest', now(), now(), 100);
   if ten287_rec.budget_ok() then raise exception 'SELFTEST: budget guard did not trip on a fresh reading of 100'; end if;
-  update ten287_rec.requests set fired_at = now() - interval '20 minutes' where id = -1;
-  if not ten287_rec.budget_ok() then raise exception 'SELFTEST: budget guard did not release a stale reading'; end if;
-  delete from ten287_rec.requests where id = -1;
+  update ten287_rec.requests set fired_at = now() - interval '20 minutes' where id = 9223372036854775000;
+  if ten287_rec.budget_ok() is distinct from true then
+    -- a stale fake reading must not block; the real readings from the last 15 min decide (normally healthy)
+    if (select ratelimit_remaining from ten287_rec.requests where ratelimit_remaining is not null
+          and fired_at > now() - interval '15 minutes' order by id desc limit 1) >= (select min_remaining from ten287_rec.config)
+       or not exists (select 1 from ten287_rec.requests where id <> 9223372036854775000 and ratelimit_remaining is not null
+          and fired_at > now() - interval '15 minutes') then
+      raise exception 'SELFTEST: budget guard did not release a stale reading';
+    end if;
+  end if;
+  delete from ten287_rec.requests where id = 9223372036854775000;
 
   delete from ten287_rec.ticks where event_id < 0;
   delete from ten287_rec.events where event_id < 0;
