@@ -237,7 +237,7 @@ function deadCount(pageHtml, name) {
   try {
     writeFileSync(join(d, name), pageHtml);
     if (name !== 'account.html') copyFileSync(join(HERE, 'account.html'), join(d, 'account.html'));
-    for (const f of ['player-profile-v2.js', 'live-tab.js', 'trading-report.js', 'series.js', 'holdbreak-heatmap.js', 'price-history-box.js', 'kibl-now-stream.js', 'auth.js', 'series.css'])
+    for (const f of ['player-profile-v2.js', 'live-tab.js', 'trading-report.js', 'series.js', 'holdbreak-heatmap.js', 'price-history-box.js', 'kibl-now-stream.js', 'auth.js', 'series.css', 'drops-page.js', 'drops-page.css'])
       try { copyFileSync(join(HERE, f), join(d, f)); } catch {}
     const r = spawnSync('python3', [join(HERE, 'tools/css-dead-declarations.py'), join(d, name)], { encoding: 'utf8' });
     const m = /: (\d+) dead declarations, (\d+) emptied rules/.exec(r.stdout || '');

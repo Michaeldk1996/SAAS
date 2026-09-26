@@ -54,7 +54,7 @@
     var by = {};
     (feedRows || []).forEach(function (r) {
       var k = [r.playerA, r.playerB, r.side, r.book, r.line].join('\u0001');
-      if (!by[k] || String(r.detectedAt) > String(by[k].detectedAt)) by[k] = r;
+      if (!by[k] || (Date.parse(r.detectedAt) || 0) > (Date.parse(by[k].detectedAt) || 0)) by[k] = r;
     });
     var out = [];
     Object.keys(by).forEach(function (k) {
@@ -96,27 +96,35 @@
     }
     if (S.min > 0 && !(r.drop >= S.min)) return false;
     if (S.starts > 0) {
-      if (!r.start) return false;
-      if ((Date.parse(r.start) - dataNow) / H > S.starts) return false;
+      var hrs2 = (Date.parse(r.start) - dataNow) / H;
+      if (!(hrs2 >= 0 && hrs2 <= S.starts)) return false;      // a passed or unknown start is not "starting within"
     }
     var q = fold(S.q);
     if (q && fold((r.playerA || '') + ' ' + (r.playerB || '')).indexOf(q) < 0) return false;
     return true;
   }
 
-  function sortRows(list, sort) {
+  function sortRows(list, sort, dataNow) {
     var t = function (s) { var v = Date.parse(s); return isFinite(v) ? v : null; };
+    var now = dataNow == null ? Date.now() : dataNow;
     var cmp = {
       drop: function (a, b) { return b.drop - a.drop; },
       recent: function (a, b) { return (t(b.movedAt) || 0) - (t(a.movedAt) || 0); },
-      soon: function (a, b) { var x = t(a.start), y = t(b.start); if (x == null) return 1; if (y == null) return -1; return x - y; },
+      // upcoming by start time, then matches whose scheduled start has passed (no live evidence either way)
+      soon: function (a, b) {
+        var x = t(a.start), y = t(b.start);
+        var px = x == null || x < now, py = y == null || y < now;
+        if (px !== py) return px ? 1 : -1;
+        if (x == null || y == null) return x == null ? 1 : -1;
+        return px ? y - x : x - y;
+      },
     }[sort] || function () { return 0; };
     // a started match sorts last in every order (drops.md)
     return list.slice().sort(function (a, b) { return (a.started - b.started) || cmp(a, b); });
   }
 
   function view(rows, S, dataNow) {
-    var list = sortRows(rows.filter(function (r) { return passes(r, S, dataNow, false); }), S.sort);
+    var list = sortRows(rows.filter(function (r) { return passes(r, S, dataNow, false); }), S.sort, dataNow);
     var mkCount = {};
     rows.forEach(function (r) { if (r.mk && passes(r, S, dataNow, true)) mkCount[r.mk] = (mkCount[r.mk] || 0) + 1; });
     var matches = {};
@@ -278,8 +286,12 @@
   function load() {
     return Promise.all([fetchJson('/status.json'), fetchJson('/drops.json', st.etag)]).then(function (x) {
       st.status = x[0].json; st.statusAt = Date.now(); st.reachable = true;
-      if (!x[1].notModified) { st.feedRows = x[1].json.rows || []; st.etag = x[1].etag; st.rows = buildRows(st.feedRows); }
-      if (!st.everLoaded) { st.everLoaded = true; st.S.books = books(); }
+      if (!x[1].notModified) { st.feedRows = x[1].json.rows || []; st.etag = x[1].etag; st.windowH = x[1].json.windowHours || null; st.rows = buildRows(st.feedRows); }
+      var before = st.knownBooks || [];
+      var allSel = !st.everLoaded || before.every(function (b) { return st.S.books.indexOf(b) >= 0; });
+      st.knownBooks = books();
+      if (allSel) st.S.books = st.knownBooks.slice();
+      st.everLoaded = true;
     }).catch(function () { st.reachable = false; });
   }
 
@@ -308,11 +320,13 @@
   };
   function lab(arr, v) { for (var i = 0; i < arr.length; i++) if (arr[i][0] === v) return arr[i][1]; return ''; }
 
-  function headerHtml(v, fs) {
-    var withDrop = v.list.length;
-    var biggest = withDrop ? Math.max.apply(null, v.list.map(function (r) { return r.drop; })).toFixed(1) + '%' : '—';
+  function headerHtml(v, fs, blank) {
+    var withDrop = blank ? '—' : String(v.list.length);
+    var biggest = !blank && v.list.length ? Math.max.apply(null, v.list.map(function (r) { return r.drop; })).toFixed(1) + '%' : '—';
     var a = ageS(), status;
-    if (fs === 'disconnected') {
+    if (!st.everLoaded && st.reachable) {
+      status = '<span class="do-status"><span class="do-dot off"></span><span class="do-status-t">Loading prices…</span></span>';
+    } else if (fs === 'disconnected') {
       var mins = a == null ? '—' : Math.max(1, Math.round(a / 60)) + ' min';
       status = '<span class="do-status"><span class="do-dot off"></span><span class="do-status-t">Prices updated <span class="do-mono">' + esc(mins) + '</span> ago</span></span>';
     } else {
@@ -322,8 +336,8 @@
       '<h1 class="do-h1">Dropping Odds</h1>' +
       '<div class="do-head-sub"><div class="do-subtitle">Lines flagged in the last 24h whose price has shortened since the market opened, across every bookmaker we track. Biggest drops first.</div>' + status + '</div></div>' +
       '<div class="do-stats">' +
-      '<div class="do-stat"><span class="do-stat-k">Drops</span><span class="do-stat-v" data-k="drops">' + withDrop + '</span></div>' +
-      '<div class="do-stat"><span class="do-stat-k">Biggest</span><span class="do-stat-v' + (withDrop ? '' : ' none') + '" data-k="biggest">' + biggest + '</span></div>' +
+      '<div class="do-stat"><span class="do-stat-k">Drops</span><span class="do-stat-v' + (withDrop === '—' ? ' none' : '') + '" data-k="drops">' + withDrop + '</span></div>' +
+      '<div class="do-stat"><span class="do-stat-k">Biggest</span><span class="do-stat-v' + (biggest === '—' ? ' none' : '') + '" data-k="biggest">' + biggest + '</span></div>' +
       '<div class="do-stat"><span class="do-stat-k">Window</span><span class="do-stat-v" data-k="window">' + esc(lab(WINDOWS, st.S.win)) + '</span></div>' +
       '</div></div>';
   }
@@ -349,7 +363,7 @@
       (disabled ? ' disabled' : '') + (title ? ' title="' + esc(title) + '"' : '') + '>' + esc(label) + '</button>';
   }
   function railsHtml() {
-    var S = st.S, win = (st.feedRows && st.status) ? 24 : 24;
+    var S = st.S, win = st.windowH || 24;
     var r = '<div class="do-rails">';
     r += '<div class="do-rail"><span class="do-rail-k">TIER</span>' + ['ATP', 'Challenger', 'ITF'].map(function (t) { return seg(t, S.tiers.indexOf(t) >= 0, 'tier', t); }).join('') + '</div>';
     r += '<div class="do-rail"><span class="do-rail-k">BOOKS</span>' + [['all', 'All'], ['sharp', 'Sharp'], ['soft', 'Soft']].map(function (b) { return seg(b[1], S.btype === b[0], 'btype', b[0]); }).join('') + '</div>';
@@ -364,11 +378,12 @@
 
   function tabsHtml(v) {
     var S = st.S, all = MARKETS.map(function (m) { return m[0]; });
-    var tracked = Object.keys(TRACKED).reduce(function (s, k) { return s + (v.mkCount[k] || 0); }, 0);
+    var loaded = st.everLoaded;
+    var tracked = loaded ? String(Object.keys(TRACKED).reduce(function (s, k) { return s + (v.mkCount[k] || 0); }, 0)) : '—';
     var t = '<div class="do-tabs-row"><div class="do-tabs do-hs">';
     t += '<button class="do-tab' + (S.mk.length === all.length ? ' on' : '') + '" data-act="mk" data-v="all">All markets<span class="do-tab-n">' + tracked + '</span></button>';
     MARKETS.forEach(function (m) {
-      var n = TRACKED[m[0]] ? String(v.mkCount[m[0]] || 0) : '—';
+      var n = TRACKED[m[0]] && loaded ? String(v.mkCount[m[0]] || 0) : '—';
       t += '<button class="do-tab' + (S.mk.length === 1 && S.mk[0] === m[0] ? ' on' : '') + '" data-act="mk" data-v="' + m[0] + '">' + m[1] + '<span class="do-tab-n">' + n + '</span></button>';
     });
     return t + '</div></div>';
@@ -397,7 +412,8 @@
     var bookVal = allB ? 'All' : S.books.length === 1 ? S.books[0] : S.books.length + ' books';
     var startsBody = STARTS.map(function (s) { return opt(s[1], S.starts === s[0], 'starts', s[0]); }).join('');
     var sortBody = SORT.map(function (s) { return opt(s[1], S.sort === s[0], 'sort', s[0]); }).join('');
-    var count = st.refreshing || !st.everLoaded ? 'Loading moves…' :
+    var untracked = S.mk.length === 1 && !TRACKED[S.mk[0]];
+    var count = st.refreshing || (!st.everLoaded && st.reachable) ? 'Loading moves…' : (!st.everLoaded || untracked) ? '—' :
       v.list.length + ' ' + (v.list.length === 1 ? 'move' : 'moves') + ' across ' + v.nMatches + ' ' + (v.nMatches === 1 ? 'match' : 'matches');
     return '<div class="do-results"><span class="do-results-l"><span class="do-count">' + count + '</span>' +
       '<span class="do-note">Drops are measured within one bookmaker.</span></span><div class="do-menus">' +
@@ -451,6 +467,7 @@
           '<b style="height:16px;width:96px"></b></div>';
       }).join('') + '</div>';
     }
+    if (!st.everLoaded) return '';
     var untracked = st.S.mk.length === 1 && !TRACKED[st.S.mk[0]];
     if (!v.list.length) {
       var h = untracked ? 'No drops on this market' : 'No moves above your threshold in this window';
@@ -466,13 +483,16 @@
   function render() {
     var el = root();
     if (!el) return;
-    var focusQ = document.activeElement && document.activeElement.getAttribute && document.activeElement.getAttribute('data-act') === 'q';
-    var caret = focusQ ? document.activeElement.selectionStart : null;
+    var ae = document.activeElement, focusQ = ae && ae.getAttribute && ae.getAttribute('data-act') === 'q';
+    var caret = focusQ ? ae.selectionStart : null;
+    var focusRow = ae && ae.classList && ae.classList.contains('do-row') ? ae.getAttribute('data-v') : null;
     var now = dataNow(), v = view(st.rows, st.S, now), fs = feedState(ageS(), st.reachable);
-    el.innerHTML = '<div class="do-wrap">' + headerHtml(v, fs) + (fs === 'disconnected' && (st.everLoaded || !st.reachable) ? bannerHtml() : '') +
+    var blank = !st.everLoaded || (st.S.mk.length === 1 && !TRACKED[st.S.mk[0]]);
+    el.innerHTML = '<div class="do-wrap">' + headerHtml(v, fs, blank) + (fs === 'disconnected' && (st.everLoaded || !st.reachable) ? bannerHtml() : '') +
       searchHtml() + railsHtml() + tabsHtml(v) + resultsHtml(v) + colsHtml() + listHtml(v, fs) +
       (st.menu ? '<div class="do-clickaway" data-act="clickaway"></div>' : '') + '</div>';
     if (focusQ) { var q = el.querySelector('[data-act="q"]'); q.focus(); try { q.setSelectionRange(caret, caret); } catch (e) {} }
+    if (focusRow) { var fr = el.querySelector('.do-row[data-v="' + focusRow.replace(/"/g, '') + '"]'); if (fr) fr.focus(); }
     renderModal();
   }
 
@@ -481,7 +501,15 @@
   function renderModal() {
     var ov = document.getElementById('doOverlay');
     var r = st.drawer && st.rows.filter(function (x) { return x.id === st.drawer; })[0];
-    if (!r) { if (ov) ov.remove(); return; }
+    if (!r) { if (ov) ov.remove(); st.modalKey = null; return; }
+    var key = [st.drawer, st.drBook, st.tip, st.etag].join('|');
+    if (ov && st.modalKey === key) {
+      var dl = ov.querySelector('.do-ov-drop');
+      if (dl) dl.textContent = '▼ ' + r.drop.toFixed(1) + '% · moved ' + ago(dataNow() - Date.parse(r.movedAt));
+      return;
+    }
+    st.modalKey = key;
+    var keepScroll = ov && ov.querySelector('.do-ov-scroll') ? ov.querySelector('.do-ov-scroll').scrollTop : 0;
     if (!ov) { ov = document.createElement('div'); ov.id = 'doOverlay'; ov.className = 'do-ov'; document.body.appendChild(ov); }
     var side = document.querySelector('.sf-sidebar');
     ov.style.setProperty('--do-shell-left', side ? side.getBoundingClientRect().width + 'px' : '0px');
@@ -530,6 +558,8 @@
       '<span class="do-ov-fn">Each drop compares a book\'s own first recorded price with its own current price.</span></span></div>' +
       '</div></div>';
     ov.innerHTML = html;
+    var sc = ov.querySelector('.do-ov-scroll');
+    if (sc && keepScroll) sc.scrollTop = keepScroll;
   }
 
   // ─── events ─────────────────────────────────────────────────────────────────
@@ -578,7 +608,7 @@
   function onKey(e) {
     if (e.key === 'Escape' && st.drawer) closeModal();
     var row = e.target.closest && e.target.closest('.do-row');
-    if (row && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); st.drawer = row.getAttribute('data-v'); renderModal(); }
+    if (row && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); st.drawer = row.getAttribute('data-v'); st.drBook = null; st.tip = false; renderModal(); }
   }
 
   function setActive(on) {

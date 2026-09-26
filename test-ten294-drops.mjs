@@ -446,7 +446,7 @@ test('page: no placeholder from the export ships', () => {
 });
 
 // ── executing the real page ──
-async function renderPage({ rows, ageS = 12, reachable = true, board = [], statusExtra = {} }) {
+async function renderPage({ rows, ageS = 12, reachable = true, board = [], statusExtra = {}, mk = null, leave = false }) {
   const root = { innerHTML: '', addEventListener() {}, closest: () => ({ classList: { contains: () => false } }), querySelector: () => null };
   const btn = { style: { display: 'none' } };
   const timers = [];
@@ -463,9 +463,12 @@ async function renderPage({ rows, ageS = 12, reachable = true, board = [], statu
   };
   sandbox.window = sandbox;
   vm.runInNewContext(read('drops-page.js'), sandbox);
+  if (mk) sandbox.window.DropsPage._state.S.mk = mk;
   sandbox.window.DropsPage.setActive(true);
+  let timersAfterLeave = null;
+  if (leave) { sandbox.window.DropsPage.setActive(false); const n = timers.length; for (let i = 0; i < 10; i++) await new Promise((r) => setImmediate(r)); timersAfterLeave = timers.slice(n); }
   for (let i = 0; i < 10; i++) await new Promise((r) => setImmediate(r));
-  return { html: root.innerHTML, btn, timers };
+  return { html: root.innerHTML, btn, timers, timersAfterLeave };
 }
 
 test('page render: live rows from the feed, market tabs honest, alerts disabled, sidebar revealed', async () => {
@@ -504,4 +507,56 @@ test('page render: past 5 min the export\'s banner as drawn, dimmed rows, "as of
   const down = (await renderPage({ rows: [], reachable: false })).html;
   assert.match(down, /FEED DISCONNECTED/);
   assert.doesNotMatch(down, /class="do-row"/);
+});
+
+// ── review folds (clean-context review of 8c441ec4): each test kills a mutation that survived ──
+test('page render: endpoint down before any read -> dashes and the banner, never zeros or a "no moves" claim', async () => {
+  const { html } = await renderPage({ rows: [], reachable: false });
+  assert.match(html, /data-k="drops">—</);
+  assert.match(html, /All markets<span class="do-tab-n">—<\/span>/);
+  assert.match(html, /Match winner<span class="do-tab-n">—<\/span>/);
+  assert.doesNotMatch(html, /No moves above your threshold/);
+  assert.doesNotMatch(html, /do-tab-n">0</);
+  assert.doesNotMatch(html, /data-k="drops">0</);
+  assert.match(html, /FEED DISCONNECTED/);
+});
+
+test('page render: an untracked market shows dashes in the header and count, never 0', async () => {
+  const out = await renderPage({ rows: [frow({ id: 'r1', open: 2, now: 1.8 })], mk: ['sh'] });
+  assert.match(out.html, /data-k="drops">—</);
+  assert.match(out.html, /<span class="do-count">—<\/span>/);
+  assert.match(out.html, /No drops on this market/);
+});
+
+test('page render: every feed string is escaped', async () => {
+  const evil = '<img src=x onerror=alert(1)>';
+  const { html } = await renderPage({ rows: [frow({ id: 'x"1', a: evil, b: 'Bob <b>', side: evil, open: 2, now: 1.8, book: 'Bet105' })] });
+  assert.ok(!html.includes('<img src=x'), 'raw markup from the feed reached the page');
+  assert.match(html, /&lt;img src=x onerror=alert\(1\)&gt; to win/);
+  assert.match(html, /vs Bob &lt;b&gt;/);
+});
+
+test('page: polling stops when the tab is left', async () => {
+  const out = await renderPage({ rows: [frow({ id: 'r1', open: 2, now: 1.8 })], leave: true });
+  assert.equal(out.timersAfterLeave.filter((ms) => ms === 30000).length, 0, 'a 30 s poll was scheduled after setActive(false)');
+});
+
+test('page: "Starts within" means an upcoming start; "Starting soonest" puts passed starts after upcoming ones', () => {
+  const rows = PAGE.buildRows([
+    frow({ id: 'past', a: 'Past One', b: 'Opp P', side: 'Past One', open: 3, now: 2, start: at(15 * HR) }),
+    frow({ id: 'soon', a: 'Soon One', b: 'Opp S', side: 'Soon One', open: 2, now: 1.9, start: at(-2 * HR) }),
+    frow({ id: 'late', a: 'Late One', b: 'Opp L', side: 'Late One', open: 2, now: 1.8, start: at(-10 * HR) }),
+  ]);
+  const ids = (S) => PAGE.view(rows, { ...PAGE.defaults(), ...S }, PT0).list.map((r) => r.id).join();
+  assert.equal(ids({ starts: 3 }), 'soon', 'a match 15 h past its start is not "starting within 3h"');
+  assert.equal(ids({ sort: 'soon' }), 'soon,late,past');
+});
+
+test('page: the banner time is UTC whatever the viewer\'s timezone', async () => {
+  const prev = process.env.TZ;
+  process.env.TZ = 'Asia/Singapore';
+  try {
+    const { html } = await renderPage({ rows: [frow({ id: 'r1', open: 2, now: 1.8 })], ageS: 12 * 60 });
+    assert.match(html, /as of <span class="do-mono">11:48 UTC<\/span>/);
+  } finally { if (prev === undefined) delete process.env.TZ; else process.env.TZ = prev; }
 });

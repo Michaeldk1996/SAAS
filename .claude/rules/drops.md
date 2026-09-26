@@ -30,6 +30,16 @@ answers on card 37612d3d (TEN-294 doc `design`). Suite: `test-ten294-drops.mjs`.
   Before the first good read, `/drops.json` answers 503, never an empty list.
   *Exception to CLAUDE.md's "no infrastructure warning" non-negotiable* (founder, card 79e9db02 Q3, 2026-09-26): this one banner, worded exactly as the export draws it. Nothing else on the page names a feed, bot or service. Source-by-source health lives in `/status.json` and the watchdog.
 
+- **The database link is verified TLS or nothing.** The Fly app verifies the pooler against the bundled Supabase Root 2021 CA and refuses to start without it.
+  **Test:** the connection URL carries no `ssl*` parameter (in node-postgres one overrides the CA silently). Failures are public only as a code, never the driver's text.
+
+- **A stall reaches the founder by Telegram**, in the same chat as the drop alerts. The watchdog runs outside the Fly app, in pg_cron.
+  **Test:** it alerts when the endpoint is unreachable 3 times in a row, when data is more than 5 min old, or when any source is past its limit. An alert counts as delivered only once confirmed *sent*.
+
+- **Access is open while the product is in search and development** (founder, card 37612d3d).
+  CORS allows exactly `https://michaeldk1996.github.io`. CORS is not access control.
+  *Revisit before members:* the gate would verify the Firebase ID token on the Fly app, which needs no database read.
+
 ## The Dropping Odds page (export `design_handoff_dropping_odds`, LOCKED; founder card 79e9db02, 2026-09-26)
 
 Mapping measured in TEN-297 doc `feed-mapping`. Page files: `drops-page.js`, `drops-page.css`; suite `test-ten294-drops.mjs`.
@@ -41,17 +51,10 @@ Mapping measured in TEN-297 doc `feed-mapping`. Page files: `drops-page.js`, `dr
   **Test:** "Since open" and "24h" return the same rows while the feed's `windowHours` is 24; 48h cannot be selected.
 - **BOOKS Sharp/Soft comes from `odds.md`'s ruled table** (Bet105 Sharp, Superbet Soft), never guessed. A book absent from that table is listed under neither group and only under "All".
 - **Markets: only Match winner is tracked.** The other four tabs show "No drops on this market" and their count is "—", never 0.
+- **Missing is a dash, never a zero or a "no moves" claim.** Before the first good read the header, tab counts and count line show "—"; with the endpoint unreachable and nothing read, the banner shows and the list is absent (never "No moves above your threshold"). On an untracked market the header and count line show "—".
+- **"Starts within N" means an upcoming start within N hours**; a match past its scheduled start never passes it, and "Starting soonest" lists upcoming matches first, then passed starts.
+  *Why:* Bet105 rows are never `started` (Kibl carries no live tennis on our account), so without this a match 15 h past its start read as "starting soonest" (review of 8c441ec4, measured on the live feed).
 - **Surface and event are not in the feed**: the Surface control is disabled at "—", the detail line omits the event, and search matches player names only.
 - **The price-move modal shows only recorded prices** (Q4): the row's own book's open, pre-drop, dropped-to and latest as dots on the last-24h axis (a price older than 24h is off the axis; the dashed open line still marks its level), dashed where snapshots are > 15% of the axis apart, nothing interpolated. The book strip holds only books that have a row for the same selection. Rank, Elo, surface, round and event are "—". There is no match-analysis link.
 - **Alerts is shown disabled with "Coming soon"** (Q5): no pop-over, no toggle, until a per-member alert backend exists.
 - **No placeholder ever ships.** **Test:** the page files contain none of the export's sample names (Morita, Beleza, Brandt…), no "Book A"–"Book G", no `randomuser.me`, and no "ILLUSTRATIVE".
-
-- **The database link is verified TLS or nothing.** The Fly app verifies the pooler against the bundled Supabase Root 2021 CA and refuses to start without it.
-  **Test:** the connection URL carries no `ssl*` parameter (in node-postgres one overrides the CA silently). Failures are public only as a code, never the driver's text.
-
-- **A stall reaches the founder by Telegram**, in the same chat as the drop alerts. The watchdog runs outside the Fly app, in pg_cron.
-  **Test:** it alerts when the endpoint is unreachable 3 times in a row, when data is more than 5 min old, or when any source is past its limit. An alert counts as delivered only once confirmed *sent*.
-
-- **Access is open while the product is in search and development** (founder, card 37612d3d).
-  CORS allows exactly `https://michaeldk1996.github.io`. CORS is not access control.
-  *Revisit before members:* the gate would verify the Firebase ID token on the Fly app, which needs no database read.
