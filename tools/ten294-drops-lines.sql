@@ -12,8 +12,9 @@
 --     candidate — two or more is ambiguous and that book is left out, never guessed;
 --   * pre-match only, TEN-295's rule for the recorder: a tick counts while `pending` AND before the event's first
 --     non-pending sighting on any book (the vendor flips live -> pending mid-match); Kibl: is_live false;
---   * same-price re-stamps collapse (a point only when the price changed); at most 400 points per side per book,
---     and ALWAYS the latest point even when older than the window (a quoting book that has not moved stays in);
+--   * same-price re-stamps collapse (a point only when the price changed); the series is the line's WHOLE recorded
+--     pre-match life (the pop-up's opening -> now axis, founder comment bef04c62), the newest 1000 points per side
+--     per book if longer, flagged `truncated` so the page never draws the unsent stretch as a gap;
 --   * lastSeen = the book's latest sighting of this line, re-stamps included — the page drops a book not seen in 24 h;
 --   * the side maps by surname key; a same-surname pair maps nothing for that book.
 -- Called by drops_api.snapshot() inside its one read per cadence; nothing here is per-viewer.
@@ -127,7 +128,8 @@ kept as (
 per_side as (
   select k1, k2, ks, book, w, min(first_px) first_px, min(first_at) first_at,
          coalesce(jsonb_agg(jsonb_build_array(at, round(px::numeric, 3)) order by at, id)
-                    filter (where rn = 1 or (rn <= 400 and at >= now() - make_interval(hours => p_hours))), '[]'::jsonb) series
+                    filter (where rn <= 1000), '[]'::jsonb) series,
+         count(*) > 1000 truncated     -- the whole recorded life (opening -> now axis); the newest 1000 if longer
     from kept group by 1, 2, 3, 4, 5
 ),
 per_book as (
@@ -139,7 +141,8 @@ per_book as (
            'first', (select jsonb_build_array(p.first_at, round(p.first_px::numeric, 3)) from per_side p
                       where p.k1 = b.k1 and p.k2 = b.k2 and p.ks = b.ks and p.book = b.book and p.w = 's'),
            'side',  coalesce((select p.series from per_side p where p.k1 = b.k1 and p.k2 = b.k2 and p.ks = b.ks and p.book = b.book and p.w = 's'), '[]'::jsonb),
-           'other', coalesce((select p.series from per_side p where p.k1 = b.k1 and p.k2 = b.k2 and p.ks = b.ks and p.book = b.book and p.w = 'o'), '[]'::jsonb)
+           'other', coalesce((select p.series from per_side p where p.k1 = b.k1 and p.k2 = b.k2 and p.ks = b.ks and p.book = b.book and p.w = 'o'), '[]'::jsonb),
+           'truncated', coalesce((select p.truncated from per_side p where p.k1 = b.k1 and p.k2 = b.k2 and p.ks = b.ks and p.book = b.book and p.w = 's'), false)
          ) j
     from (select distinct k1, k2, ks, book from per_side) b
 )

@@ -414,18 +414,69 @@ test('page staleness: green <= 90 s, amber past 90 s, disconnected past 5 min or
   assert.equal(PAGE.feedState(null, true), 'disconnected');
 });
 
-test('page Q4 chart: recorded prices only, last 24h, dashed across gaps, nothing interpolated', () => {
-  const [r] = PAGE.buildRows([frow({ id: 'c', open: 2.5, now: 2.0, openAgo: 30 * HR, pre: 2.3, preAgo: 8 * HR, dropped: 2.1, dropAgo: 7.9 * HR, latestAgo: 0.5 * HR })]);
-  const pts = PAGE.chartPoints(r, PT0);
-  assert.deepEqual(pts.map((p) => p.kind), ['pre', 'dropped', 'latest'], 'the 30h-old open is off the 24h axis');
-  const svg = PAGE.chartSvg(pts, r.open);
-  assert.equal((svg.match(/<circle/g) || []).length, 3, 'one dot per recorded price, none invented');
-  assert.equal((svg.match(/class="do-gap"/g) || []).length, 1, 'the 7.4h stretch (> 15% of the axis) is dashed');
+test('pop-up chart (bef04c62 item 2): the axis runs opening -> now at real UTC times; recorded points only; dashed past 3.6 h', () => {
+  // a 30 h life: first seen 30 h ago, a 6-min drop 8 h ago, latest 0.5 h ago
+  const series = [{ t: PT0 - 30 * HR, v: 2.5 }, { t: PT0 - 8 * HR, v: 2.3 }, { t: PT0 - 7.9 * HR, v: 2.1 }, { t: PT0 - 0.5 * HR, v: 2.0 }];
+  const pts = PAGE.seriesPoints(series);
+  assert.equal(pts.length, 4, 'the 30 h-old first price is ON the axis (no fixed 24 h window)');
+  assert.equal(pts[0].fr, 0, 'first recorded price = the left edge');
+  assert.equal(pts[3].fr, 1, 'latest recorded price = the right edge');
+  const svg = PAGE.chartSvg(pts, 2.5, 'now');
+  assert.equal((svg.match(/<circle/g) || []).length, 4, 'one dot per recorded price, none invented');
+  assert.equal((svg.match(/class="do-gap"/g) || []).length, 2, 'the 22 h and 7.4 h stretches are dashed');
   assert.equal((svg.match(/class="do-seg-l"/g) || []).length, 1, 'the 6-min drop is a solid segment');
   assert.match(svg, /class="do-open-ref"/, 'the open level is still marked');
-  // duplicates (same time and price) collapse to one dot
-  const [d] = PAGE.buildRows([frow({ id: 'd', open: 2, now: 1.8, dropped: 1.8, dropAgo: 1 * HR, latestAgo: 1 * HR })]);
-  assert.equal(PAGE.chartPoints(d, PT0).filter((p) => p.v === 1.8).length, 1);
+  assert.doesNotMatch(svg, /−24h|−12h|-24h|-12h/, 'no rolling-window labels');
+  const ticks = [...svg.matchAll(/class="do-tick"[^>]*>([^<]*)</g)].map((m) => m[1]);
+  assert.equal(ticks[0], 'first seen 25 Sep 06:00', 'left tick = the first recorded time, dated (the line spans two days)');
+  assert.equal(ticks[ticks.length - 1], 'now 26 Sep 11:30', 'right tick = the latest recorded time');
+  assert.ok(ticks.length >= 3 && ticks.length <= 5, 'a few real intermediate times, not a crowd: ' + ticks.join(' | '));
+  ticks.slice(1, -1).forEach((t) => assert.match(t, /^(\d+ Sep )?\d\d:00$/, 'intermediates sit on round UTC hours'));
+  // a completed line ends at its last recorded price, labelled as such (the caller passes the word)
+  assert.match(PAGE.chartSvg(pts, 2.5, 'last'), />last 26 Sep 11:30</);
+  // same-day line: time only
+  const day = PAGE.axisTicks(PT0 - 5 * HR, PT0 - 1 * HR, 'now');
+  assert.equal(day[0].label, 'first seen 07:00');
+  assert.equal(day[day.length - 1].label, 'now 11:00');
+  // a round hour 5 min after the first record would collide with the left label: skipped
+  const near = PAGE.axisTicks(PT0 - 4 * HR - 5 * 60e3, PT0 - 5 * 60e3, 'now');
+  assert.deepEqual(near.map((t) => t.label), ['first seen 07:55', '09:00', '10:00', '11:00', 'now 11:55'], '08:00 (2% in) would overprint the left label');
+  // no two labels overlap, even with a long dated end label (the live Damm case: 24 Sep 17:36 -> 26 Sep 06:29)
+  const ext = (x) => { const w = x.label.length * 6.1, c = x.fr * 942; return x.anchor === 'start' ? [c, c + w] : x.anchor === 'end' ? [c - w, c] : [c - w / 2, c + w / 2]; };
+  const damm = PAGE.axisTicks(Date.parse('2026-09-24T17:36:00Z'), Date.parse('2026-09-26T06:29:00Z'), 'now');
+  for (let i = 1; i < damm.length; i++) assert.ok(ext(damm[i])[0] >= ext(damm[i - 1])[1] + 14, 'labels clear each other: ' + damm.map((t) => t.label).join(' | '));
+  assert.ok(damm.length >= 3, 'still some real intermediate times');
+  // a single recorded price: one dot, one label, no line
+  const one = PAGE.chartSvg(PAGE.seriesPoints([{ t: PT0, v: 1.9 }]), 1.9, 'now');
+  assert.equal((one.match(/<circle/g) || []).length, 1);
+  assert.equal((one.match(/<line class="do-(gap|seg-l)"/g) || []).length, 0);
+});
+
+test('pop-up chart (bef04c62 item 1): the house style — the Database cumulative-profit chart\'s own values, never red', () => {
+  const dash = read('bsp-consult-dashboard.html');
+  const colFav = dash.match(/var COL_FAV='(#[0-9a-f]{6})'/i)[1], fillFav = dash.match(/FILL_FAV='([^']+)'/)[1];
+  assert.equal(PAGE.HOUSE_LINE.toLowerCase(), colFav.toLowerCase(), 'the line is the Database chart\'s blue');
+  assert.equal(PAGE.HOUSE_FILL, fillFav, 'the area is the Database chart\'s fill');
+  const svg = PAGE.chartSvg(PAGE.seriesPoints([{ t: PT0 - 2 * HR, v: 2.4 }, { t: PT0 - 1 * HR, v: 2.2 }, { t: PT0, v: 2.0 }]), 2.4, 'now');
+  assert.doesNotMatch(svg, /#DA6259|218,\s*98,\s*89/i, 'no red anywhere in the chart');
+  assert.match(svg, new RegExp('class="do-area"[^>]*fill="' + fillFav.replace(/[()]/g, '\\$&') + '"'));
+  assert.match(svg, new RegExp('class="do-seg-l"[^>]*stroke="' + colFav + '" stroke-width="2.6"', 'i'), 'the Database line weight');
+});
+
+test('pop-up chart: the endpoint sends the whole recorded life; a truncated series is not drawn as a gap', () => {
+  const sql = read('tools/ten294-drops-lines.sql').replace(/--.*$/gm, '');
+  assert.match(sql, /filter \(where rn <= 1000\), '\[\]'::jsonb\) series,\s*count\(\*\) > 1000 truncated/, 'no time window on the series');
+  assert.doesNotMatch(sql, /rn <= 400 and at >= now\(\)/);
+  assert.match(sql, /'truncated', coalesce\(/);
+  const [r] = PAGE.buildRows([frow({ id: 'superbet-60', book: 'Superbet', a: 'Pat Pi', b: 'Rho Rho', side: 'Pat Pi', open: 2.2, now: 1.9 })]);
+  const mk = (truncated) => ({ books: { 'Betfair Exchange': { first: [at(40 * HR), 2.30], side: [[at(20 * HR), 2.2], [at(2 * HR), 2.1]], other: [[at(2 * HR), 1.95]], truncated } } });
+  const full = PAGE.modalBooks(r, { rows: [r], line: mk(false), now: PT0 }).books.find((b) => b.book === 'Betfair Exchange');
+  assert.equal(full.series[0].v, 2.30, 'the first record opens the chart');
+  assert.equal(PAGE.seriesPoints(full.series)[0].fr, 0);
+  const cut = PAGE.modalBooks(r, { rows: [r], line: mk(true), now: PT0 }).books.find((b) => b.book === 'Betfair Exchange');
+  assert.equal(cut.truncated, true);
+  assert.equal(cut.series[0].v, 2.2, 'a truncated series starts at its oldest SENT point, not the first record');
+  assert.equal(cut.first.v, 2.30, 'the % still uses the first record');
 });
 
 test('page avatars: a board key only on an exact, unique two-player match', () => {
@@ -852,7 +903,7 @@ test('pop-up review 2: the SQL rules sit in the step that uses them (block comme
   const sql = read('tools/ten294-drops-lines.sql').replace(/\/\*[^]*?\*\//g, '').replace(/--.*$/gm, '');
   const cte = (name, next) => sql.slice(sql.indexOf(name + ' as ('), sql.indexOf(next + ' as ('));
   assert.match(cte('ko', 'pts'), /and o\.side_id in \(2, 3\)/, 'the side filter is in the Bet105 step itself');
-  assert.match(cte('per_side', 'per_book'), /filter \(where rn = 1 or \(rn <= 400 and at >= now\(\)/, 'the latest-point rule is in the series step');
+  assert.match(cte('per_side', 'per_book'), /filter \(where rn <= 1000\)[\s\S]*count\(\*\) > 1000 truncated/, 'the whole-life rule and its truncation flag are in the series step');
   assert.match(cte('per_book', 'zzz_end') || sql.slice(sql.indexOf('per_book as (')), /'lastSeen', \(select max\(p\.seen\) from pts p/);
   assert.match(cte('ko', 'pts'), /coalesce\(o\.last_seen_at, o\.inserted_on\) seen/);
   assert.match(cte('tk', 'ko'), /t\.seen_at seen/);
@@ -878,9 +929,9 @@ test('pop-up review: the endpoint\'s first price is the book\'s first record; a 
   assert.equal(bfe.first.v, 2.30, 'first = the endpoint\'s first record, not the first point on the axis');
   assert.equal(bfe.now.v, 2.10);
   assert.equal(mb.m, 2);
-  assert.equal(PAGE.seriesPoints(bfe.series, PT0).length, 0, 'but the chart shows nothing outside its 24 h axis');
+  assert.equal(PAGE.seriesPoints(bfe.series).length, 2, 'and the chart shows its whole recorded life (opening -> now)');
   const sql = read('tools/ten294-drops-lines.sql').replace(/--.*$/gm, '');
-  assert.match(sql, /filter \(where rn = 1 or \(rn <= 400 and at >= now\(\)/, 'the latest point always ships; the cap keeps the newest');
+  assert.match(sql, /filter \(where rn <= 1000\)/, 'the latest point always ships; the cap keeps the newest');
   assert.match(sql, /row_number\(\) over \(partition by k1, k2, ks, book, w order by at desc, id desc\) rn/);
   assert.match(sql, /and o\.side_id in \(2, 3\)/, 'the drop bot\'s side filter');
   assert.match(sql, /case when drops_api\.nk\(f\.player1_name\) = m\.ks then 2 when drops_api\.nk\(f\.player2_name\) = m\.ks then 3 end/, 'Kibl side 2 = player1, 3 = player2 (the bot\'s mapping)');
