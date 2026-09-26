@@ -292,7 +292,7 @@
     // .dc.html:489). An inline style cannot express :hover, so it lands here,
     // scoped to the one class that carries it. The selected row sets its own
     // inline background, which outranks this.
-    '.pp2-trow:hover{background:rgba(106,154,248,0.08);}' +
+    '.pp2-trow:hover{background:var(--nav-hover);}' +
     // A1/A3 · the box grid's responsive steps and the box hover border. Both are
     // states an inline style cannot express, so they land here with the rest.
     // The grid had NO media queries at all before this — the four-column track
@@ -307,24 +307,24 @@
     // real mouse — the probe caught both.
     '@media (max-width:1100px){.pp2-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;}}' +
     '@media (max-width:720px){.pp2-grid{grid-template-columns:minmax(0,1fr)!important;}}' +
-    '.pp2-box:hover{border-color:rgba(255,255,255,0.10)!important;}' +
+    '.pp2-box:hover{border-color:var(--line-open)!important;}' +
     // §5.2B — every clickable record in the Career modal's season table. The
     // design file gives these cells `cursor:{{ y.cursor }}` but NO style-hover,
     // so the hover token is the one the same file uses for its other clickable
     // data row (.dc.html:489) rather than a colour invented here.
     '.pp2-crec{transition:background .12s ease,color .12s ease;}' +
-    '.pp2-crec:hover{background:rgba(106,154,248,0.08);color:#6a9af8;}' +
+    '.pp2-crec:hover{background:var(--nav-hover);color:var(--periwinkle);}' +
     // §5.4 item 14 — the heat cell's hover, verbatim from the design file's own
     // stylesheet (`Player Stat Boxes.dc.html`:24-26). A win cell goes to green
     // 0.42 with an inset ring, a loss cell to red, a level cell to white 0.14.
     // These need !important for the same reason the file uses it: the cell
     // carries its own inline background and an inline declaration outranks a
     // selector. The empty-month cell has no class and therefore no hover.
-    '.calw:hover{background:rgba(61,214,140,0.42)!important;color:#ebf1f2!important;' +
+    '.calw:hover{background:rgba(61,214,140,0.42)!important;color:var(--text)!important;' +
     'box-shadow:inset 0 0 0 1px rgba(61,214,140,0.75)!important;}' +
-    '.call:hover{background:rgba(224,97,111,0.42)!important;color:#ebf1f2!important;' +
+    '.call:hover{background:rgba(224,97,111,0.42)!important;color:var(--text)!important;' +
     'box-shadow:inset 0 0 0 1px rgba(224,97,111,0.75)!important;}' +
-    '.caln:hover{background:rgba(106,154,248,0.08)!important;color:#ebf1f2!important;' +
+    '.caln:hover{background:var(--nav-hover)!important;color:var(--text)!important;' +
     'box-shadow:inset 0 0 0 1px rgba(255,255,255,0.22)!important;}' +
     // §5.4 Streaks item 8 — the run timeline scrolls sideways at a FIXED bar
     // pitch, so it needs the export's own scrollbar (Player Profile.dc.html:30:
@@ -343,12 +343,12 @@
     // 400 -> 700, border-bottom dotted rgba(255,255,255,0.22) -> solid
     // rgba(91,155,255,0.45), background transparent -> #06070a, z-index 1 -> 3.
     '.pp2-stk{position:absolute;top:8px;transform:translateX(-50%);cursor:pointer;z-index:1;' +
-    'padding:2px 5px;border-radius:5px;background:transparent;color:#a3abba;font-weight:400;' +
-    'border-bottom:0.33px dotted rgba(255,255,255,0.03);' +
+    'padding:2px 5px;border-radius:5px;background:transparent;color:var(--text-sub);font-weight:400;' +
+    'border-bottom:0.33px dotted var(--line-soft);' +
     'font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;letter-spacing:0.08em;white-space:nowrap;}' +
     '.pp2-stk .pp2-stk-n{display:none;}' +
-    '.pp2-stk:hover,.pp2-stk.on{background:#0c0e16;color:#ebf1f2;font-weight:700;z-index:3;' +
-    'border-bottom:0.33px solid #2e4fa8;}' +
+    '.pp2-stk:hover,.pp2-stk.on{background:var(--surface-inner);color:var(--text);font-weight:700;z-index:3;' +
+    'border-bottom:0.33px solid var(--seg-active-line);}' +
     '.pp2-stk:hover .pp2-stk-a,.pp2-stk.on .pp2-stk-a{display:none;}' +
     '.pp2-stk:hover .pp2-stk-n,.pp2-stk.on .pp2-stk-n{display:inline;}</style>';
 
@@ -699,7 +699,7 @@
     return '' +
       '<a href="#" class="pp2-back" data-pp2="back" ' +
       'style="display:inline-flex;align-items:center;gap:9px;font-size:13.5px;font-weight:600;' +
-      'color:#6e7a93;align-self:flex-start;text-decoration:none;">' +
+      'color:var(--label);align-self:flex-start;text-decoration:none;">' +
       '<svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" ' +
       'stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5l-5 5 5 5"/></svg>' +
       'Back to Players</a>';
@@ -750,7 +750,7 @@
       sN ? recordText(sWon, sLost) : 'no matches on record'));
 
     return '' +
-      '<div class="pp2-head" style="border-bottom:0.33px solid rgba(255,255,255,0.03);padding-bottom:26px;' +
+      '<div class="pp2-head" style="border-bottom:0.33px solid var(--line-soft);padding-bottom:26px;' +
       'display:flex;align-items:flex-start;gap:28px;flex-wrap:wrap;">' +
       renderAvatar(p, rank) +
       '<div style="flex:1;min-width:280px;display:flex;flex-direction:column;gap:11px;">' +
@@ -758,15 +758,15 @@
           '<span style="font-size:44px;font-weight:800;letter-spacing:-0.02em;line-height:1;white-space:nowrap;">' +
             esc(p.name) + '</span>' +
           (rank ? '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:13px;font-weight:600;' +
-            'color:#6e7a93;background:rgba(159,178,212,0.1);border:0.33px solid rgba(255,255,255,0.045);' +
+            'color:var(--label);background:rgba(159,178,212,0.1);border:0.33px solid var(--line);' +
             'border-radius:8px;padding:6px 12px;white-space:nowrap;">ATP No. ' + esc(rank) + '</span>' : '') +
         '</div>' +
         '<div style="font-size:18px;font-weight:700;color:' +
           (ctx.archetype ? '#ebf1f2' : DASH_COLOUR) + ';">' +
           esc(ctx.archetype || DASH) + '</div>' +
-        '<div style="display:flex;align-items:center;gap:14px;font-size:14px;color:#6e7a93;">' +
+        '<div style="display:flex;align-items:center;gap:14px;font-size:14px;color:var(--label);">' +
           '<span>' + esc(p.country || DASH) + '</span>' +
-          '<span style="width:1px;height:13px;background:rgba(255,255,255,0.03);"></span>' +
+          '<span style="width:1px;height:13px;background:var(--line-soft);"></span>' +
           '<span>' + (p.age == null ? DASH : 'Age ' + esc(p.age)) + '</span>' +
         '</div>' +
       '</div>' +
@@ -813,13 +813,13 @@
         // whatever that cell grows to. A hardcoded 55px would reproduce today's
         // capture and drift the moment a label wraps.
         '<span style="width:1px;align-self:stretch;margin:2.5px 0;' +
-        'background:rgba(255,255,255,0.03);"></span>' +
+        'background:var(--line-soft);"></span>' +
         '<div style="display:flex;flex-direction:column;justify-content:flex-end;gap:6px;padding:0 20px;">' +
         '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
-          'letter-spacing:0.14em;text-transform:uppercase;color:#6e7a93;white-space:nowrap;">' + label + '</div>' +
+          'letter-spacing:0.14em;text-transform:uppercase;color:var(--label);white-space:nowrap;">' + label + '</div>' +
         '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:15px;font-weight:700;' +
           'color:' + colour + ';white-space:nowrap;">' + value + '</div>' +
-        '<div style="font-size:12px;color:#6e7a93;white-space:nowrap;">' + sub + '</div>' +
+        '<div style="font-size:12px;color:var(--label);white-space:nowrap;">' + sub + '</div>' +
         '</div></div>';
     }
   }
@@ -828,12 +828,12 @@
     return '' +
       '<div style="width:118px;height:118px;position:relative;flex:none;">' +
       '<div style="width:100%;height:100%;border-radius:50%;display:flex;align-items:center;' +
-        'justify-content:center;background:#0b0c14;' +
-        'border:0.33px solid #2e4fa8;font-family:\'IBM Plex Mono\',monospace;font-size:34px;' +
-        'font-weight:700;color:#6a9af8;">' + esc(initials(p.name)) + '</div>' +
+        'justify-content:center;background:var(--avatar);' +
+        'border:0.33px solid var(--seg-active-line);font-family:\'IBM Plex Mono\',monospace;font-size:34px;' +
+        'font-weight:700;color:var(--periwinkle);">' + esc(initials(p.name)) + '</div>' +
       (rank ? '<div style="position:absolute;bottom:-8px;left:50%;transform:translateX(-50%);' +
-        'background:#6a9af8;color:#ebf1f2;font-family:\'IBM Plex Mono\',monospace;font-size:12px;' +
-        'font-weight:700;border-radius:999px;padding:3px 11px;border:2px solid #0e1019;">' +
+        'background:var(--periwinkle);color:var(--text);font-family:\'IBM Plex Mono\',monospace;font-size:12px;' +
+        'font-weight:700;border-radius:999px;padding:3px 11px;border:2px solid var(--surface);">' +
         esc(rank) + '</div>' : '') +
       '</div>';
   }
@@ -856,7 +856,7 @@
     var chipHtml = chips.map(function (m) {
       var w = !!m.won;
       return '<div class="pp2-chip" ' + sheetHook(m.date + '|' + (m.opponent || '')) +
-        'style="display:flex;gap:8px;padding:7px 10px;border:0.33px solid rgba(255,255,255,0.045);' +
+        'style="display:flex;gap:8px;padding:7px 10px;border:0.33px solid var(--line);' +
         'border-radius:8px;white-space:nowrap;flex:none;' + sheetCursor() + 'align-items:center;">' +
         '<div style="width:20px;height:20px;border-radius:5px;display:flex;align-items:center;' +
           'justify-content:center;font-family:\'IBM Plex Mono\',monospace;font-size:10px;font-weight:700;' +
@@ -867,7 +867,7 @@
           // name that is not the subject.
           '<div style="font-size:12px;font-weight:700;">' +
             esc(m.opponent ? surnameFirst(m.opponent) : DASH) + '</div>' +
-          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;color:#6e7a93;">' +
+          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;color:var(--label);">' +
             esc(eventName(m) + ' ' + roundLabel(m)) + ' ' + MIDDOT + ' ' +
             // Correction-pass item 4b: the export's chip meta is the SET SCORES
             // (space-joined — Player Profile.dc.html:1838 replaces its own ", "),
@@ -881,22 +881,22 @@
     }).join('');
 
     return '' +
-      '<div style="background:#0e1019;border:0.33px solid rgba(255,255,255,0.045);border-radius:12px;' +
+      '<div style="background:var(--surface);border:0.33px solid var(--line);border-radius:12px;' +
       'padding:16px 22px;display:grid;grid-template-columns:auto minmax(180px,1.2fr) auto minmax(0,2fr) auto;' +
       'gap:22px;align-items:center;">' +
         '<div style="white-space:nowrap;">' + eyebrow('Recent form') +
           '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:22px;font-weight:700;line-height:1;">' +
-            '<span style="line-height:1;color:#6a9af8;">' + (r.n ? rateText0(r.won, r.lost) : DASH) + '</span> ' +
-            '<span style="line-height:1;font-size:13px;font-weight:600;color:#6e7a93;">' +
+            '<span style="line-height:1;color:var(--periwinkle);">' + (r.n ? rateText0(r.won, r.lost) : DASH) + '</span> ' +
+            '<span style="line-height:1;font-size:13px;font-weight:600;color:var(--label);">' +
               (r.n ? recordText(r.won, r.lost) : 'no matches on record') + '</span>' +
           '</div></div>' +
         '<div><div style="display:flex;gap:4px;">' + (strip || '') + '</div>' +
           eyebrow('last ' + last18.length + ' ' + MIDDOT + ' oldest → most recent') + '</div>' +
-        '<div style="width:1px;height:44px;background:rgba(255,255,255,0.03);"></div>' +
+        '<div style="width:1px;height:44px;background:var(--line-soft);"></div>' +
         '<div style="display:flex;gap:8px;overflow:hidden;' +
           '-webkit-mask-image:linear-gradient(90deg,#000 82%,transparent);' +
           'mask-image:linear-gradient(90deg,#000 82%,transparent);">' + chipHtml + '</div>' +
-        '<a href="#" data-pp2="ledger" style="font-size:12.5px;font-weight:700;color:#6a9af8;' +
+        '<a href="#" data-pp2="ledger" style="font-size:12.5px;font-weight:700;color:var(--periwinkle);' +
           'white-space:nowrap;text-decoration:none;">' +
           (ctx.ledgerOpen ? 'Hide ledger' : 'Full ledger →') + '</a>' +
       '</div>';
@@ -908,7 +908,7 @@
   // #5b6880. One edit, page-wide reach.
   function eyebrow(text) {
     return '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
-      'letter-spacing:0.16em;text-transform:uppercase;color:#6e7a93;margin-top:6px;">' + text + '</div>';
+      'letter-spacing:0.16em;text-transform:uppercase;color:var(--label);margin-top:6px;">' + text + '</div>';
   }
 
   // ═══════════════════════════════════════════════════════════════════════════
@@ -1115,7 +1115,7 @@
       'background:' + (on ? '#0b1c4e' : 'transparent') + ';' +
       'border:0.33px solid ' + (on ? '#2e4fa8' : 'rgba(255,255,255,0.045)') + ';">' +
       '<span style="width:11px;height:11px;border-radius:3px;flex:none;' +
-        (on ? 'background:#6a9af8;' : 'border:0.33px solid rgba(255,255,255,0.10);') + '"></span>' +
+        (on ? 'background:var(--periwinkle);' : 'border:0.33px solid var(--line-open);') + '"></span>' +
       esc(label) + '</span>';
   }
 
@@ -1170,25 +1170,25 @@
       '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;' +
         'flex-wrap:wrap;margin-bottom:14px;">' +
         '<div style="font-size:20px;font-weight:800;letter-spacing:-0.015em;">Recent form</div>' +
-        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;color:#6e7a93;">' +
-          '<span style="color:#6a9af8;font-weight:700;">' + rateText0(r.won, r.lost) + ' win</span> ' +
+        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;color:var(--label);">' +
+          '<span style="color:var(--periwinkle);font-weight:700;">' + rateText0(r.won, r.lost) + ' win</span> ' +
           MIDDOT + ' ' + r.n + ' match' + (r.n === 1 ? '' : 'es') + '</div>' +
       '</div>';
 
     var legend = '' +
       '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">' +
-        '<span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:#6e7a93;">' +
+        '<span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--label);">' +
           '<span style="width:10px;height:10px;border-radius:3px;background:rgba(61,214,140,0.22);"></span>Win</span>' +
-        '<span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:#6e7a93;">' +
+        '<span style="display:inline-flex;align-items:center;gap:5px;font-size:11px;color:var(--label);">' +
           '<span style="width:10px;height:10px;border-radius:3px;background:rgba(224,97,111,0.22);"></span>Loss</span>' +
-        '<span style="width:1px;height:14px;background:rgba(255,255,255,0.03);"></span>' +
+        '<span style="width:1px;height:14px;background:var(--line-soft);"></span>' +
         priceChips +
       '</div>';
 
     var body;
     if (!rows.length) {
-      body = '<div style="border:0.33px dashed rgba(255,255,255,0.045);border-radius:10px;padding:26px;' +
-        'text-align:center;font-size:13px;color:#6e7a93;">No matches with these filters.</div>';
+      body = '<div style="border:0.33px dashed var(--line);border-radius:10px;padding:26px;' +
+        'text-align:center;font-size:13px;color:var(--label);">No matches with these filters.</div>';
     } else {
       // Newest first, grouped by event. A group header repeats only when the
       // event changes, so a player who played one event twice in the window
@@ -1202,7 +1202,7 @@
         if (ev !== lastEvent) {
           lastEvent = ev;
           out += '<div style="display:grid;grid-template-columns:52px minmax(150px,1fr) 44px ' +
-            'minmax(160px,0.9fr) 48px 48px;gap:10px;background:#0b1c4e;border-radius:7px;' +
+            'minmax(160px,0.9fr) 48px 48px;gap:10px;background:var(--seg-active);border-radius:7px;' +
             'padding:7px 8px;margin-top:12px;align-items:center;">' +
             '<div style="grid-column:1/3;display:flex;align-items:center;gap:8px;">' +
               '<span style="width:7px;height:7px;border-radius:2px;flex:none;background:' +
@@ -1219,8 +1219,8 @@
       body = '<div style="' + (capped ? 'max-height:560px;overflow-y:auto;' : '') + '">' + out + '</div>';
       if (ordered.length > LEDGER_CAP) {
         body += '<div style="display:flex;justify-content:center;margin-top:14px;">' +
-          '<span data-pp2="ledger-more" style="font-size:13px;font-weight:700;color:#6a9af8;' +
-            'padding:10px 18px;border:0.33px solid #2e4fa8;border-radius:11px;cursor:pointer;">' +
+          '<span data-pp2="ledger-more" style="font-size:13px;font-weight:700;color:var(--periwinkle);' +
+            'padding:10px 18px;border:0.33px solid var(--seg-active-line);border-radius:11px;cursor:pointer;">' +
             (state.ledgerExpanded ? 'Show less' : 'See all ' + ordered.length + ' results') + '</span>' +
         '</div>';
       }
@@ -1245,7 +1245,7 @@
     }
 
     return '' +
-      '<div class="pp2-ledger" style="background:#0e1019;border:0.33px solid rgba(255,255,255,0.045);' +
+      '<div class="pp2-ledger" style="background:var(--surface);border:0.33px solid var(--line);' +
         'border-radius:12px;padding:22px 24px;display:flex;flex-direction:column;">' +
         head +
         '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;">' + chips + '</div>' +
@@ -1255,7 +1255,7 @@
           eyebrow('oldest ' + '→' + ' most recent') + legend +
         '</div>' +
         body +
-        '<div style="font-size:11px;color:#6e7a93;line-height:1.55;margin-top:13px;">' +
+        '<div style="font-size:11px;color:var(--label);line-height:1.55;margin-top:13px;">' +
           esc(note) + ' Window: ' + all.length + ' match' + (all.length === 1 ? '' : 'es') +
           ' on record in this player’s recent-form feed.</div>' +
       '</div>';
@@ -1265,7 +1265,7 @@
   // #8b96b5) — the tracking stays 0.16em, where this had drifted to 0.1em.
   function ledgerEyebrow(text, align) {
     return '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:8.5px;font-weight:600;' +
-      'letter-spacing:0.16em;text-transform:uppercase;color:#a3abba;text-align:' + align + ';">' +
+      'letter-spacing:0.16em;text-transform:uppercase;color:var(--text-sub);text-align:' + align + ';">' +
       esc(text) + '</div>';
   }
 
@@ -1278,34 +1278,34 @@
     // whatever position he is listed in. The result already has three other
     // carriers on this row (the W/L dot, the sets colour, the score), so nothing
     // is lost by taking it off the typography.
-    var sub = 'font-size:13px;font-weight:700;color:#ebf1f2;';
-    var opp = 'font-size:13px;font-weight:400;color:#a3abba;';
+    var sub = 'font-size:13px;font-weight:700;color:var(--text);';
+    var opp = 'font-size:13px;font-weight:400;color:var(--text-sub);';
     // Correction-pass item 13: the export aligns the row's cells on `center`
     // (this read `baseline`) and sets the OUTER name span to 13px, which the
     // two inner spans then inherit — this inherited the card's 14px.
     return '<div class="pp2-ledger-row" ' + sheetHook(m.date + '|' + (m.opponent || '')) +
       'style="display:grid;grid-template-columns:52px minmax(150px,1fr) 44px minmax(160px,0.9fr) ' +
-      '48px 48px;gap:10px;padding:8px;border-bottom:0.33px solid rgba(255,255,255,0.03);' +
+      '48px 48px;gap:10px;padding:8px;border-bottom:0.33px solid var(--line-soft);' +
       'border-radius:6px;align-items:center;' + sheetCursor() + '">' +
-      '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:#6e7a93;">' +
+      '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--label);">' +
         esc(fmtDotDate(m.date)) + '</span>' +
       '<span style="font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' +
         // Item 8: the subject is a bare surname, the opponent surname-first.
         '<span style="' + sub + '">' + esc(surnameOf(x.subjectName || '') || 'Subject') + '</span>' +
-        '<span style="font-size:13px;color:#6e7a93;"> ' + ENDASH + ' </span>' +
+        '<span style="font-size:13px;color:var(--label);"> ' + ENDASH + ' </span>' +
         '<span style="' + opp + '">' +
           esc(m.opponent ? surnameFirst(m.opponent) : DASH) + '</span></span>' +
       // Item 9: nowrap as well as the short code — a code alone would still wrap
       // if a future feed string failed to map, and a wrapped row is the defect.
-      '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:#6e7a93;' +
+      '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:var(--label);' +
         'white-space:nowrap;">' + esc(roundLabel(m)) + '</span>' +
-      '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:#a3abba;' +
+      '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--text-sub);' +
         'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' +
           esc(scoreWithStatus(m, setScoreText(m))) + '</span>' +
       '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;font-weight:700;' +
-        'text-align:right;color:#ebf1f2;">' + oddsText(x.price) + '</span>' +
+        'text-align:right;color:var(--text);">' + oddsText(x.price) + '</span>' +
       '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;font-weight:700;' +
-        'text-align:right;color:#6e7a93;">' + oddsText(x.oppPrice) + '</span>' +
+        'text-align:right;color:var(--label);">' + oddsText(x.oppPrice) + '</span>' +
     '</div>';
   }
 
@@ -1461,7 +1461,7 @@
       var sufCol = v.hlSuffixColor || '#3ed68c';
       return '' +
         '<div class="pp2-box" data-pp2="box" data-box="' + b.key + '" ' +
-        'style="position:relative;background:#0e1019;border:0.33px solid rgba(255,255,255,0.045);' +
+        'style="position:relative;background:var(--surface);border:0.33px solid var(--line);' +
         'border-radius:10px;padding:18px 16px;display:flex;flex-direction:column;gap:7px;' +
         'min-height:140px;cursor:pointer;transition:border-color .14s;">' +
         '<svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" ' +
@@ -1474,7 +1474,7 @@
           (suffix ? '<span style="color:' + sufCol + ';">' + esc(suffix) + '</span>' : '') +
           '</div>' +
         '<div style="font-size:13.5px;font-weight:700;margin-top:4px;">' + esc(b.title) + '</div>' +
-        '<div style="font-size:10.5px;color:#6e7a93;line-height:1.4;margin-top:auto;">' +
+        '<div style="font-size:10.5px;color:var(--label);line-height:1.4;margin-top:auto;">' +
           esc(v.support == null ? DASH : v.support) + '</div>' +
         '</div>';
     }).join('');
@@ -1483,8 +1483,8 @@
       '<div>' +
         '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">' +
           '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;font-weight:600;' +
-            'letter-spacing:0.14em;text-transform:uppercase;color:#6e7a93;">Explore the profile</div>' +
-          '<div style="font-size:12px;color:#6e7a93;">Click a box for the full breakdown</div>' +
+            'letter-spacing:0.14em;text-transform:uppercase;color:var(--label);">Explore the profile</div>' +
+          '<div style="font-size:12px;color:var(--label);">Click a box for the full breakdown</div>' +
         '</div>' +
         '<div class="pp2-grid" style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;">' +
           cards + '</div>' +
@@ -1613,8 +1613,8 @@
     if (!list.length) {
       return '<div><div style="font-size:22px;font-weight:800;letter-spacing:-0.015em;' +
         'margin-bottom:16px;">Key insights</div>' +
-        '<div style="border:0.33px dashed rgba(255,255,255,0.045);border-radius:10px;padding:26px;' +
-        'text-align:center;font-size:13px;color:#6e7a93;">No splits clear the ten-match minimum.</div></div>';
+        '<div style="border:0.33px dashed var(--line);border-radius:10px;padding:26px;' +
+        'text-align:center;font-size:13px;color:var(--label);">No splits clear the ten-match minimum.</div></div>';
     }
     var cards = list.map(function (ins) {
       // `> 0`, not `>= 0`. A zero gap is filtered out above; this is the second
@@ -1649,7 +1649,7 @@
         // check scans this file as SOURCE with a regex, so a mention in a comment
         // reads as a painted hook and fails the check on markup that is correct.
         '<div data-insight="' + esc(ins.id) + '" ' +
-        'style="height:100%;background:#0e1019;border:0.33px solid rgba(255,255,255,0.045);' +
+        'style="height:100%;background:var(--surface);border:0.33px solid var(--line);' +
         'border-radius:12px;padding:24px 24px 26px;display:flex;flex-direction:column;gap:16px;">' +
           '<div style="width:36px;height:36px;border-radius:13px;display:flex;align-items:center;' +
             'justify-content:center;background:' + bg + ';color:' + col + ';">' +
@@ -1658,9 +1658,9 @@
             '<svg width="16" height="16" viewBox="0 0 20 20" fill="none">' +
             '<path d="' + path + '" stroke="currentColor" stroke-width="1.7" ' +
             'stroke-linecap="round" stroke-linejoin="round"/></svg></div>' +
-          '<div style="font-size:18.5px;font-weight:800;letter-spacing:-0.01em;line-height:1.25;color:#ebf1f2;">' +
+          '<div style="font-size:18.5px;font-weight:800;letter-spacing:-0.01em;line-height:1.25;color:var(--text);">' +
             esc(title) + '</div>' +
-          '<div style="font-size:13.5px;color:#6e7a93;line-height:1.7;">' +
+          '<div style="font-size:13.5px;color:var(--label);line-height:1.7;">' +
             // Everything README §6 requires of a body, in order and with no
             // adjective: the split RATE (one decimal, via rateText — the export's
             // own insight bodies read "58.3%", "23.8%"), its RECORD, the
@@ -2585,27 +2585,27 @@
   function modalShell(key, p, ctx, body) {
     var title = (BOXES.filter(function (b) { return b.key === key; })[0] || {}).title || '';
     return '' +
-      '<div class="pp2-scrim" data-pp2="scrim" style="position:fixed;inset:0;background:rgba(11,12,19,0.76);' +
+      '<div class="pp2-scrim" data-pp2="scrim" style="position:fixed;inset:0;background:var(--backdrop);' +
       'z-index:60;display:flex;align-items:flex-start;justify-content:center;' +
       'padding:28px 20px;overflow-y:auto;">' +
         '<div class="pp2-card" data-pp2="card" style="width:100%;max-width:' + (MODAL_WIDTH[key] || 900) + 'px;' +
-        'background:#0e1019;border:0.33px solid rgba(255,255,255,0.10);border-radius:16px;overflow:hidden;">' +
+        'background:var(--surface);border:0.33px solid var(--line-open);border-radius:16px;overflow:hidden;">' +
           '<div style="display:flex;gap:13px;padding:20px 22px;align-items:flex-start;' +
-            'border-bottom:0.33px solid rgba(255,255,255,0.03);">' +
+            'border-bottom:0.33px solid var(--line-soft);">' +
             '<div style="width:34px;height:34px;border-radius:10px;flex:none;display:flex;align-items:center;' +
-              'justify-content:center;background:#0b1c4e;color:#6a9af8;">' +
+              'justify-content:center;background:var(--seg-active);color:var(--periwinkle);">' +
               '<svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" ' +
               'stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="' +
               ((BOXES.filter(function (b) { return b.key === key; })[0] || {}).icon || '') + '"/></svg></div>' +
             '<div style="flex:1;">' +
               '<div style="font-size:17px;font-weight:800;">' + esc(title) + '</div>' +
-              '<div style="font-size:12.5px;color:#6e7a93;margin-top:2px;">' +
+              '<div style="font-size:12.5px;color:var(--label);margin-top:2px;">' +
                 esc(modalSubtitle(key, p, ctx)) + '</div>' +
             '</div>' +
             (key === 'career' ? headScopeHtml() : '') +
             '<button type="button" data-pp2="close" aria-label="Close" style="width:32px;height:32px;' +
-              'border-radius:9px;background:#0c0e16;border:0.33px solid rgba(255,255,255,0.045);' +
-              'color:#a3abba;cursor:pointer;font-size:15px;line-height:1;flex:none;' +
+              'border-radius:9px;background:var(--surface-inner);border:0.33px solid var(--line);' +
+              'color:var(--text-sub);cursor:pointer;font-size:15px;line-height:1;flex:none;' +
               (key === 'career' ? 'margin-left:12px;' : 'margin-left:auto;') +
               '">×</button>' +
           '</div>' +
@@ -2669,7 +2669,7 @@
   //   n < 5     no fill at all — only the track
   //
   // Track and fill are both 4px / radius 2 / no border, no shadow, no gradient.
-  var BAR_TRACK_BG = 'rgba(255,255,255,0.06)';
+  var BAR_TRACK_BG = 'var(--bar-track)';
   var BAR_FULL = '#6a9af8';
   var BAR_SMALL = '#6e7a93';
   // Takes the MATCH COUNT, not the percentage: the colour is a gate reading and
@@ -2710,7 +2710,7 @@
     else if (g === GATE.SMALL) {
       rate = Math.round(pct) + '%'; rateColour = '#6e7a93'; ratePx = SMALL_RATE_PX;
       mark = '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9px;font-weight:600;' +
-        'letter-spacing:0.12em;text-transform:uppercase;color:#6e7a93;">small sample</div>';
+        'letter-spacing:0.12em;text-transform:uppercase;color:var(--label);">small sample</div>';
     } else { rate = DASH; rateColour = DASH_COLOUR; ratePx = 19; }
 
     var thin = g === GATE.NONE || g === GATE.THIN;
@@ -2727,7 +2727,7 @@
       (clickable ? 'cursor:pointer;' : '') + '">' +
         '<div style="min-width:0;"><div style="font-size:14px;font-weight:700;' +
           (thin ? 'color:' + DIM_COLOUR + ';' : '') + '">' + esc(opts.label) + '</div>' +
-          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:#6e7a93;' +
+          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:var(--label);' +
             'margin-top:4px;">' + esc((thin && opts.thinMeta) ? opts.thinMeta : opts.meta) + '</div></div>' +
         // Minimal bar: 4px track, 4px fill, radius 2 on both, one solid colour.
         // The grid's align-items:center does the vertical centring, so the track
@@ -3126,8 +3126,8 @@
     var GRID = 'display:grid;grid-template-columns:46px 12px minmax(0,1.15fr) 38px 40px ' +
       'minmax(0,1.35fr) 48px 48px;gap:0 10px;align-items:center;';
     var head = HEAD.map(function (h) {
-      return '<div style="position:sticky;top:0;background:#131623;font-family:\'IBM Plex Mono\',monospace;' +
-        'font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#6e7a93;' +
+      return '<div style="position:sticky;top:0;background:var(--popup);font-family:\'IBM Plex Mono\',monospace;' +
+        'font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--label);' +
         'text-align:' + h[1] + ';padding:0 0 7px;">' + esc(h[0]) + '</div>';
     }).join('');
 
@@ -3144,18 +3144,18 @@
       multiYear: !opts.year
     });
 
-    return '<div style="' + (opts.span ? 'grid-column:1 / -1;' : '') + 'background:#0c0e16;' +
-      'border:0.33px solid #2e4fa8;border-radius:' + (opts.span ? 11 : 10) + 'px;' +
+    return '<div style="' + (opts.span ? 'grid-column:1 / -1;' : '') + 'background:var(--surface-inner);' +
+      'border:0.33px solid var(--seg-active-line);border-radius:' + (opts.span ? 11 : 10) + 'px;' +
       'padding:' + (opts.span ? '15px 17px' : '13px 15px') + ';margin:10px 0 14px;">' +
       '<div style="display:flex;align-items:center;gap:12px;margin-bottom:11px;">' +
         '<div style="font-size:14px;font-weight:700;">' + esc(opts.title) + '</div>' +
-        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;color:#a3abba;' +
+        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;color:var(--text-sub);' +
           'white-space:nowrap;">' + esc(recordText(opts.won, opts.lost) + ' ' + MIDDOT + ' ' +
           cellN + ' matches') + '</div>' +
         '<div data-pp2-drill-note="1" style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;' +
-          'color:#6e7a93;white-space:nowrap;">' + esc(note) + '</div>' +
+          'color:var(--label);white-space:nowrap;">' + esc(note) + '</div>' +
         '<button type="button" data-pp2="career-drill-close" style="margin-left:auto;background:none;' +
-          'border:0;color:#6e7a93;font-size:11px;font-family:\'IBM Plex Mono\',monospace;' +
+          'border:0;color:var(--label);font-size:11px;font-family:\'IBM Plex Mono\',monospace;' +
           'letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;">Close</button>' +
       '</div>' +
       (shown.length
@@ -3175,10 +3175,10 @@
       if (gk !== pg.lastEvent) {
         pg.lastEvent = gk;
         grp = '<div style="grid-column:1 / -1;display:flex;align-items:center;gap:10px;' +
-          'padding:9px 0 5px;border-top:0.33px solid rgba(255,255,255,0.03);">' +
-          '<div style="font-size:12.5px;font-weight:700;color:#ebf1f2;white-space:nowrap;">' +
+          'padding:9px 0 5px;border-top:0.33px solid var(--line-soft);">' +
+          '<div style="font-size:12.5px;font-weight:700;color:var(--text);white-space:nowrap;">' +
             esc(r.event || DASH) + '</div>' +
-          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;color:#6e7a93;' +
+          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;color:var(--label);' +
             'white-space:nowrap;">' + esc(eventMetaOf(r, pg.multiYear)) + '</div></div>';
       }
       var wl = r.won ? '#3ed68c' : '#da6259';
@@ -3191,20 +3191,20 @@
         return '<div ' + hook + 'style="' + cur + style + '">' + txt + '</div>';
       };
       return grp +
-        cell('font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:#6e7a93;padding:5px 0;',
+        cell('font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:var(--label);padding:5px 0;',
              esc(r.date ? fmtDotDate(r.date) + '.' : DASH)) +
         cell('width:8px;height:8px;border-radius:2px;background:' + wl + ';', '') +
-        cell('font-size:12.5px;color:#ebf1f2;overflow:hidden;text-overflow:ellipsis;' +
+        cell('font-size:12.5px;color:var(--text);overflow:hidden;text-overflow:ellipsis;' +
              'white-space:nowrap;padding:5px 0;', esc(r.opp ? surnameFirst(r.opp) : DASH)) +
-        cell('font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:#6e7a93;padding:5px 0;',
+        cell('font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--label);padding:5px 0;',
              esc(r.round || DASH)) +
         cell('font-family:\'IBM Plex Mono\',monospace;font-size:12px;font-weight:700;color:' + wl +
              ';padding:5px 0;', esc(r.sets || DASH)) +
-        cell('font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:#a3abba;' +
+        cell('font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:var(--text-sub);' +
              'white-space:nowrap;padding:5px 0;', esc(scoreWithStatus(r, r.setScores))) +
-        cell('font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;font-weight:700;color:#ebf1f2;' +
+        cell('font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;font-weight:700;color:var(--text);' +
              'text-align:right;padding:5px 0;', oddsText(r.price)) +
-        cell('font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:#6e7a93;' +
+        cell('font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:var(--label);' +
              'text-align:right;padding:5px 0;', oddsText(r.oppPrice));
     }).join('');
   }
@@ -3477,8 +3477,8 @@
   //   radius 9/7 and 11px — two different segmented controls, not one reused.
   var CAREER_TABS = [['record', 'Record'], ['ratings', 'Ratings']];
   function careerTabsHtml() {
-    return '<div style="display:flex;gap:3px;background:#0e1019;' +
-      'border:0.33px solid rgba(255,255,255,0.045);border-radius:10px;padding:3px;' +
+    return '<div style="display:flex;gap:3px;background:var(--surface);' +
+      'border:0.33px solid var(--line);border-radius:10px;padding:3px;' +
       'margin-bottom:18px;width:fit-content;">' +
       CAREER_TABS.map(function (t) {
         var on = (state.careerTab || 'record') === t[0];
@@ -3498,8 +3498,8 @@
   //   (`dnaScopeOn:false`) because this one control drives both tabs: the surface
   //   ladder under Record, the radar window under Ratings.
   function headScopeHtml() {
-    return '<span style="display:flex;gap:3px;margin-left:auto;background:#0e1019;' +
-      'border:0.33px solid rgba(255,255,255,0.045);border-radius:9px;padding:2px;flex:none;">' +
+    return '<span style="display:flex;gap:3px;margin-left:auto;background:var(--surface);' +
+      'border:0.33px solid var(--line);border-radius:9px;padding:2px;flex:none;">' +
       [['career', 'Career'], ['l52', 'Last 52']].map(function (t) {
         var on = (state.careerScope === 'l52' ? 'l52' : 'career') === t[0];
         return '<button type="button" data-pp2="career-scope" data-scope="' + t[0] + '" ' +
@@ -3538,7 +3538,7 @@
     };
   }
   function dnaTileHtml(t) {
-    return '<div style="background:#0c0e16;border:1px solid ' + t.bd + ';border-radius:10px;' +
+    return '<div style="background:var(--surface-inner);border:1px solid ' + t.bd + ';border-radius:10px;' +
       'padding:14px 15px;display:flex;flex-direction:column;align-items:center;text-align:center;">' +
       '<div style="display:flex;align-items:baseline;justify-content:center;gap:8px;">' +
         '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:21px;font-weight:' + t.weight +
@@ -3546,18 +3546,18 @@
         '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:15px;font-weight:700;' +
           'color:' + t.deltaColor + ';">' + esc(t.delta) + '</span>' +
       '</div>' +
-      '<div style="font-size:12.5px;font-weight:600;color:#d9dbdf;margin-top:6px;">' + esc(t.label) + '</div>' +
+      '<div style="font-size:12.5px;font-weight:600;color:var(--text-soft);margin-top:6px;">' + esc(t.label) + '</div>' +
       '<div style="display:flex;align-items:baseline;justify-content:center;gap:8px;margin-top:4px;">' +
-        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:#6e7a93;">' +
+        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:var(--label);">' +
           'tour average ' + esc(t.avg) + '</span>' +
         '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9px;font-weight:600;' +
-          'letter-spacing:0.12em;text-transform:uppercase;color:#6e7a93;">' + esc(t.mark) + '</span>' +
+          'letter-spacing:0.12em;text-transform:uppercase;color:var(--label);">' + esc(t.mark) + '</span>' +
       '</div>' +
     '</div>';
   }
   function dnaGroupHtml(label, tiles, first) {
     return '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;font-weight:600;' +
-      'letter-spacing:0.12em;text-transform:uppercase;color:#6e7a93;margin:' +
+      'letter-spacing:0.12em;text-transform:uppercase;color:var(--label);margin:' +
       (first ? '0 0 11px' : '22px 0 11px') + ';">' + esc(label) + '</div>' +
       '<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(216px,1fr));gap:10px;">' +
       tiles.map(dnaTileHtml).join('') + '</div>';
@@ -3568,7 +3568,7 @@
     var m = dnaModel(p);
     var sn = shortName(p);
     function stateBox(msg) {
-      return '<div style="border:0.33px dashed rgba(255,255,255,0.045);border-radius:10px;padding:26px;' +
+      return '<div style="border:0.33px dashed var(--line);border-radius:10px;padding:26px;' +
         'text-align:center;font-size:13px;color:' + DASH_COLOUR + ';line-height:1.6;">' + msg + '</div>';
     }
     if (m.state === 'no-store') {
@@ -3617,7 +3617,7 @@
       var xy = dnaPt(i, Math.max(0.3, a.pct / 100) + 0.12);
       return '<span style="position:absolute;left:' + (xy[0] + DNA_PAD).toFixed(1) + 'px;top:' +
         xy[1].toFixed(1) + 'px;transform:translate(-50%,-50%);font-family:\'IBM Plex Mono\',monospace;' +
-        'font-size:10.5px;font-weight:700;color:#6a9af8;background:rgba(6,7,10,0.85);padding:1px 4px;' +
+        'font-size:10.5px;font-weight:700;color:var(--periwinkle);background:rgba(6,7,10,0.85);padding:1px 4px;' +
         'border-radius:4px;white-space:nowrap;z-index:2;">' + esc(dnaFmt(a.rating, a.dp)) + '</span>';
     }).join('');
     var axisLabels = axes.map(function (a, i) {
@@ -3627,13 +3627,13 @@
         : xy[0] < DNA_CX - 4 ? 'translate(-100%,-50%) translateX(-8px)' : 'translate(-50%,20%)';
       return '<span style="position:absolute;left:' + (xy[0] + DNA_PAD).toFixed(1) + 'px;top:' +
         xy[1].toFixed(1) + 'px;transform:' + shift + ';font-family:\'IBM Plex Mono\',monospace;' +
-        'font-size:9.5px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:#a3abba;' +
+        'font-size:9.5px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-sub);' +
         'white-space:nowrap;">' + esc(a.label) + '</span>';
     }).join('');
 
     var HEADCELL = 'font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
-      'letter-spacing:0.14em;text-transform:uppercase;color:#6e7a93;';
-    var CELL = 'padding:7px 0;border-top:0.33px solid rgba(255,255,255,0.03);';
+      'letter-spacing:0.14em;text-transform:uppercase;color:var(--label);';
+    var CELL = 'padding:7px 0;border-top:0.33px solid var(--line-soft);';
     var rows = axes.map(function (a) {
       // The file's own "level" band, scaled by the axis's decimal place (:1315).
       var lvl = a.delta != null && Math.abs(a.delta) < (a.dp === 2 ? 0.02 : 0.5);
@@ -3641,14 +3641,14 @@
         : lvl ? DASH
         : (a.delta > 0 ? '+' : MINUS) + dnaFmt(Math.abs(a.delta), a.dp);
       var deltaCol = (a.delta == null || lvl) ? '#a3abba' : (a.delta > 0 ? DNA_GREEN : DNA_RED);
-      return '<span style="font-size:12px;color:#a3abba;' + CELL + '">' + esc(a.label) + '</span>' +
+      return '<span style="font-size:12px;color:var(--text-sub);' + CELL + '">' + esc(a.label) + '</span>' +
         '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;font-weight:400;' +
           'color:' + (a.rating == null ? DASH_COLOUR : '#ebf1f2') + ';text-align:right;' + CELL + '">' +
           esc(dnaFmt(a.rating, a.dp)) + '</span>' +
         '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;font-weight:700;' +
           'color:' + deltaCol + ';text-align:right;' + CELL + '">' + esc(deltaTxt) + '</span>' +
         '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;font-weight:400;' +
-          'color:#6e7a93;text-align:right;' + CELL + '">' + esc(dnaFmt(a.tour, a.dp)) + '</span>';
+          'color:var(--label);text-align:right;' + CELL + '">' + esc(dnaFmt(a.tour, a.dp)) + '</span>';
     }).join('');
 
     var tourN = (axes[0] && axes[0].tourN) || null;
@@ -3718,27 +3718,27 @@
     });
 
     return '' +
-      '<div style="background:#0c0e16;border:0.33px solid rgba(255,255,255,0.045);border-radius:12px;' +
+      '<div style="background:var(--surface-inner);border:0.33px solid var(--line);border-radius:12px;' +
         'padding:18px 20px 16px;margin-bottom:20px;display:flex;flex-direction:column;gap:14px;">' +
         '<div style="display:flex;align-items:baseline;gap:14px;flex-wrap:wrap;">' +
           '<span style="' + HEADCELL + '">Player DNA</span>' +
           '<span style="display:flex;align-items:center;gap:14px;margin-left:auto;">' +
             '<span style="display:flex;align-items:center;gap:6px;">' +
-              '<span style="width:14px;height:2px;background:#6a9af8;"></span>' +
+              '<span style="width:14px;height:2px;background:var(--periwinkle);"></span>' +
               '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
-                'letter-spacing:0.14em;text-transform:uppercase;color:#a3abba;">' + esc(sn) + '</span>' +
+                'letter-spacing:0.14em;text-transform:uppercase;color:var(--text-sub);">' + esc(sn) + '</span>' +
             '</span>' +
             '<span style="display:flex;align-items:center;gap:6px;">' +
-              '<span style="width:14px;height:0;border-top:2px dashed #6e7a93;"></span>' +
+              '<span style="width:14px;height:0;border-top:2px dashed var(--label);"></span>' +
               '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
-                'letter-spacing:0.14em;text-transform:uppercase;color:#6e7a93;">Tour average</span>' +
+                'letter-spacing:0.14em;text-transform:uppercase;color:var(--label);">Tour average</span>' +
             '</span>' +
           '</span>' +
         '</div>' +
         '<div style="position:relative;width:456px;max-width:100%;height:272px;margin:0 auto;">' +
           shape + '</div>' +
         '<div style="display:grid;grid-template-columns:minmax(0,1fr) 74px 70px 62px;gap:0 12px;' +
-          'align-items:center;border-top:0.33px solid rgba(255,255,255,0.03);padding-top:10px;">' +
+          'align-items:center;border-top:0.33px solid var(--line-soft);padding-top:10px;">' +
           '<span style="' + HEADCELL + '">Raw rating</span>' +
           '<span style="' + HEADCELL + 'text-align:right;">Player</span>' +
           '<span style="' + HEADCELL + 'text-align:right;">Δ vs tour</span>' +
@@ -3746,10 +3746,10 @@
           rows +
         '</div>' +
         '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
-          'letter-spacing:0.14em;text-transform:uppercase;color:#6e7a93;">' + esc(note) + '</div>' +
+          'letter-spacing:0.14em;text-transform:uppercase;color:var(--label);">' + esc(note) + '</div>' +
       '</div>' +
       tiles +
-      '<div style="font-size:12px;color:#6e7a93;margin-top:16px;line-height:1.6;">' + esc(foot) + '</div>';
+      '<div style="font-size:12px;color:var(--label);margin-top:16px;line-height:1.6;">' + esc(foot) + '</div>';
   }
 
   // §5.2 Career record — surface rows over the spine + Record by season.
@@ -3802,7 +3802,7 @@
         // The dated store has not answered. Saying "0 matches" here would be a
         // claim about the player made from a fact about the network.
         return careerTabsHtml() +
-          '<div style="border:0.33px dashed rgba(255,255,255,0.045);border-radius:10px;padding:26px;' +
+          '<div style="border:0.33px dashed var(--line);border-radius:10px;padding:26px;' +
             'text-align:center;font-size:13px;color:' + DASH_COLOUR + ';">' +
             (careerHistorySettled(p.key)
               ? 'No dated matches on record, so the last 52 weeks cannot be carved.'
@@ -3917,9 +3917,9 @@
         return '<div' + cellAttrs(can, yearStr + '|' + (h.id === 'total' ? '' : h.id)) +
           ' style="font-family:\'IBM Plex Mono\',monospace;font-size:' + (h.id === 'total' ? 14 : 13) + 'px;' +
           (h.id === 'total' ? 'font-weight:700;' : '') + 'font-variant-numeric:tabular-nums;text-align:right;' +
-          'padding:11px 0;border-top:0.33px solid rgba(255,255,255,0.03);' +
+          'padding:11px 0;border-top:0.33px solid var(--line-soft);' +
           (r ? '' : 'color:' + DIM_COLOUR + ';') + (can ? 'cursor:pointer;' : '') +
-          (on ? 'color:#6a9af8;' : '') + '">' + txt + '</div>';
+          (on ? 'color:var(--periwinkle);' : '') + '">' + txt + '</div>';
       }).join('');
       var drill = '';
       if (openCell !== null) {
@@ -3930,9 +3930,9 @@
       // both `y.onYear`).
       return '<div' + cellAttrs(yearCan, yearStr + '|') +
         ' style="font-family:\'IBM Plex Mono\',monospace;font-size:13px;font-weight:700;' +
-        'letter-spacing:0.02em;padding:11px 0;border-top:0.33px solid rgba(255,255,255,0.03);' +
+        'letter-spacing:0.02em;padding:11px 0;border-top:0.33px solid var(--line-soft);' +
         (yearCan ? 'cursor:pointer;' : 'color:' + DIM_COLOUR + ';') +
-        (openCell === '' ? 'color:#6a9af8;' : '') + '">' +
+        (openCell === '' ? 'color:var(--periwinkle);' : '') + '">' +
         esc(yearStr) + '</div>' + cellsHtml + drill;
     }).join('');
 
@@ -3953,7 +3953,7 @@
       'letter-spacing:0.18em;text-transform:uppercase;color:' +
       (openCareerCell === '' ? '#6a9af8' : '#a3abba') + ';padding:15px 0 13px;' +
       (careerCan ? 'cursor:pointer;' : '') +
-      'border-top:0.33px solid rgba(255,255,255,0.03);">Career</div>' +
+      'border-top:0.33px solid var(--line-soft);">Career</div>' +
       HEADS.slice(1).map(function (h) {
         var r = h.id === 'total' ? ct : cf[h.id];
         var can = cellCan(r);
@@ -3962,8 +3962,8 @@
           ' style="font-family:\'IBM Plex Mono\',monospace;font-size:' + (h.id === 'total' ? 14 : 13) + 'px;' +
           'font-weight:700;font-variant-numeric:tabular-nums;text-align:right;padding:15px 0 13px;' +
           (r ? '' : 'color:' + DIM_COLOUR + ';') + (can ? 'cursor:pointer;' : '') +
-          (on ? 'color:#6a9af8;' : '') +
-          'border-top:0.33px solid rgba(255,255,255,0.03);">' +
+          (on ? 'color:var(--periwinkle);' : '') +
+          'border-top:0.33px solid var(--line-soft);">' +
           (r ? (r.won || 0) + '/' + (r.lost || 0) : DASH) + '</div>';
       }).join('') +
       (openCareerCell !== null
@@ -3985,14 +3985,14 @@
       '<div style="display:flex;flex-direction:column;gap:7px;">' + rows + '</div>' +
       // Item 5 — the residual as a footnote, with the reason it cannot be resolved.
       (residN
-        ? '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:#6e7a93;' +
+        ? '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--label);' +
             'margin-top:10px;">' + residN + ' match' + (residN === 1 ? '' : 'es') +
             ' with no surface on record</div>'
         : '') +
       // The window's own coverage, so "last 52 weeks" is a stated span over a
       // stated number of rows rather than an unqualified claim.
       (isL52
-        ? '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:#6e7a93;' +
+        ? '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--label);' +
             'margin-top:10px;">' + l52.n + ' dated match' + (l52.n === 1 ? '' : 'es') +
             ' since ' + esc(l52.cutoff) +
             (l52.undated ? ' ' + MIDDOT + ' ' + l52.undated +
@@ -4004,14 +4004,14 @@
       '<div style="display:flex;align-items:baseline;justify-content:space-between;margin:24px 0 6px;">' +
         '<div style="font-size:20px;font-weight:800;">Record by season</div>' +
         '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;letter-spacing:0.12em;' +
-          'text-transform:uppercase;color:#6e7a93;">Wins / losses</div>' +
+          'text-transform:uppercase;color:var(--label);">Wins / losses</div>' +
       '</div>' +
-      '<div style="font-size:13px;color:#6e7a93;line-height:1.5;margin-bottom:14px;">' +
+      '<div style="font-size:13px;color:var(--label);line-height:1.5;margin-bottom:14px;">' +
         'Click any record to browse those matches ' + EMDASH + ' a surface cell for that surface ' +
         'alone, the year for all of them.</div>' +
       '<div style="display:grid;grid-template-columns:auto repeat(5,minmax(0,1fr));gap:0 14px;' +
         'align-items:center;">' + head + body + footer + '</div>' +
-      '<div style="font-size:11px;color:#6e7a93;margin-top:14px;line-height:1.6;">' +
+      '<div style="font-size:11px;color:var(--label);margin-top:14px;line-height:1.6;">' +
         'Season rows are the record we hold per year' + (fy ? ' from ' + fy : '') +
         '; the career line is their sum, so the two always agree. ' +
         (residN
@@ -4542,7 +4542,7 @@
     var head = '<div style="' + GRID + 'padding:14px 10px 0;">' +
       HEAD.map(function (h) {
         return '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9px;letter-spacing:0.1em;' +
-          'text-transform:uppercase;color:#6e7a93;text-align:' + h[1] + ';padding-bottom:9px;">' +
+          'text-transform:uppercase;color:var(--label);text-align:' + h[1] + ';padding-bottom:9px;">' +
           esc(h[0]) + '</span>';
       }).join('') + '</div>';
 
@@ -4551,13 +4551,13 @@
       var pin = t.pinN ? t.pinPl : null;
       return '<div style="flex:none;">' +
         '<div class="pp2-trow" data-pp2="tourn-row" data-t="' + esc(t.name) + '" style="' + GRID +
-          'padding:11px 10px;cursor:pointer;border-top:0.33px solid rgba(255,255,255,0.03);' +
+          'padding:11px 10px;cursor:pointer;border-top:0.33px solid var(--line-soft);' +
           'background:' + (open ? '#0b1c4e' : 'transparent') + ';">' +
           '<span style="font-size:13.5px;font-weight:700;white-space:nowrap;overflow:hidden;' +
             'text-overflow:ellipsis;">' + esc(t.display) + '</span>' +
-          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:#6e7a93;' +
+          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--label);' +
             'white-space:nowrap;">' + (t.surface ? esc(t.surface) : DASH) + '</span>' +
-          '<span style="font-size:12px;color:#a3abba;white-space:nowrap;overflow:hidden;' +
+          '<span style="font-size:12px;color:var(--text-sub);white-space:nowrap;overflow:hidden;' +
             'text-overflow:ellipsis;">' + (t.best ? esc(t.best) : DASH) + '</span>' +
           '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:13px;font-weight:700;' +
             'text-align:right;white-space:nowrap;">' + recordText(t.won, t.lost) + '</span>' +
@@ -4578,7 +4578,7 @@
               ' matches played — withdrawn pending the odds-join fix"' : '') + '>' +
             (pin == null ? DASH : signed(pin, 1, 'u')) +
             (t.pricedImpossible
-              ? '<span style="font-size:9px;color:#da6259;margin-left:4px;">!</span>' : '') + '</span>' +
+              ? '<span style="font-size:9px;color:var(--negative);margin-left:4px;">!</span>' : '') + '</span>' +
         '</div>' +
         (open ? renderTournDetail(p, t) : '') +
         '</div>';
@@ -4586,25 +4586,25 @@
 
     var j = tournJoin(p);
     return '' +
-      '<div style="font-size:13.5px;color:#6e7a93;margin-bottom:16px;line-height:1.5;">Search a ' +
+      '<div style="font-size:13.5px;color:var(--label);margin-bottom:16px;line-height:1.5;">Search a ' +
         'tournament to see ' + esc(possessive(shortName(p))) + ' full career win' + ENDASH +
         'loss record there.</div>' +
-      '<label style="display:flex;align-items:center;gap:12px;background:#0c0e16;' +
-        'border:0.33px solid rgba(255,255,255,0.045);border-radius:12px;padding:14px 18px;">' +
+      '<label style="display:flex;align-items:center;gap:12px;background:var(--surface-inner);' +
+        'border:0.33px solid var(--line);border-radius:12px;padding:14px 18px;">' +
         '<svg width="17" height="17" viewBox="0 0 20 20" fill="none" style="flex:none;">' +
           '<circle cx="9" cy="9" r="6" stroke="#6e7a93" stroke-width="1.7"></circle>' +
           '<path d="m14 14 3 3" stroke="#6e7a93" stroke-width="1.7" stroke-linecap="round"></path></svg>' +
         '<input type="search" data-pp2="tourn-search" value="' + esc(state.tournQuery || '') + '" ' +
           'placeholder="Search a tournament..." style="flex:1;background:transparent;border:0;' +
-          'outline:none;font-family:inherit;font-size:14px;color:#ebf1f2;min-width:0;"></label>' +
+          'outline:none;font-family:inherit;font-size:14px;color:var(--text);min-width:0;"></label>' +
       head +
       '<div style="max-height:calc(100vh - 250px);min-height:420px;overflow-y:auto;display:flex;' +
         'flex-direction:column;">' +
         (shown.length ? rows :
-          '<div style="border:0.33px dashed rgba(255,255,255,0.045);border-radius:10px;padding:26px;' +
-          'text-align:center;font-size:13px;color:#6e7a93;">No tournament matches that search.</div>') +
+          '<div style="border:0.33px dashed var(--line);border-radius:10px;padding:26px;' +
+          'text-align:center;font-size:13px;color:var(--label);">No tournament matches that search.</div>') +
       '</div>' +
-      '<div style="font-size:11px;color:#6e7a93;margin-top:14px;line-height:1.6;">' +
+      '<div style="font-size:11px;color:var(--label);margin-top:14px;line-height:1.6;">' +
         'Each W' + ENDASH + 'L is the sum of the editions listed beneath it. Backing is a flat 1u ' +
         'stake at the Pinnacle closing price, so an event Pinnacle never priced shows a dash rather ' +
         'than a zero' + (j.hasMarket ? '' : ' (the price shard has not loaded)') + '. ' +
@@ -4613,15 +4613,15 @@
   }
 
   function tile(cap, value, sub, colour) {
-    return '<div style="background:#0e1019;border:0.33px solid rgba(255,255,255,0.045);border-radius:11px;' +
+    return '<div style="background:var(--surface);border:0.33px solid var(--line);border-radius:11px;' +
       'padding:14px 15px;display:flex;flex-direction:column;align-items:center;text-align:center;' +
       'gap:8px;min-width:0;">' +
       '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
-        'letter-spacing:0.12em;text-transform:uppercase;color:#6e7a93;">' + esc(cap) + '</span>' +
+        'letter-spacing:0.12em;text-transform:uppercase;color:var(--label);">' + esc(cap) + '</span>' +
       '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:23px;font-weight:700;' +
         'line-height:1.05;color:' + (colour || '#ebf1f2') + ';overflow:hidden;text-overflow:ellipsis;">' +
         value + '</span>' +
-      '<span style="font-size:10.5px;color:#6e7a93;">' + esc(sub == null ? '' : sub) + '</span>' +
+      '<span style="font-size:10.5px;color:var(--label);">' + esc(sub == null ? '' : sub) + '</span>' +
       '</div>';
   }
 
@@ -4713,17 +4713,17 @@
     var MHEAD = [['Date', 'left'], ['', 'left'], ['Opponent', 'left'], ['Rd', 'left'],
                  ['Sets', 'left'], ['Set scores', 'left'], ['H', 'right'], ['A', 'right']];
     var mhead = MHEAD.map(function (h) {
-      return '<span style="position:sticky;top:0;background:#131623;font-family:\'IBM Plex Mono\',' +
-        'monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:#6e7a93;' +
+      return '<span style="position:sticky;top:0;background:var(--popup);font-family:\'IBM Plex Mono\',' +
+        'monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--label);' +
         'text-align:' + h[1] + ';padding:0 0 7px;">' + esc(h[0]) + '</span>';
     }).join('');
 
     var body = t.editions.map(function (e) {
       var grp = '<span style="grid-column:1 / -1;display:flex;align-items:center;gap:10px;' +
-        'padding:9px 0 5px;border-top:0.33px solid rgba(255,255,255,0.03);">' +
+        'padding:9px 0 5px;border-top:0.33px solid var(--line-soft);">' +
         '<span style="font-size:12.5px;font-weight:700;white-space:nowrap;">' +
           esc(t.display + ' ' + e.year) + '</span>' +
-        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;color:#6e7a93;' +
+        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;color:var(--label);' +
           'white-space:nowrap;">' + esc((e.finish || DASH) + ' ' + MIDDOT + ' ' +
           recordText(e.won, e.lost)) + '</span></span>';
       return grp + e.matches.map(function (m) {
@@ -4737,7 +4737,7 @@
           return '<span ' + hook + 'style="' + cur + style + '">' + txt + '</span>';
         };
         return '' +
-          cell('font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:#6e7a93;padding:5px 0;',
+          cell('font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--label);padding:5px 0;',
                m.date ? esc(fmtDotDate(m.date) + '.') : DASH) +
           cell('width:8px;height:8px;border-radius:2px;background:' + wl + ';', '') +
           // ⚠️ NAME FORM — the export contradicts itself and the file wins here.
@@ -4751,15 +4751,15 @@
           // silently reconciled in either direction.
           cell('font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:5px 0;',
                esc(m.opp || DASH)) +
-          cell('font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:#6e7a93;padding:5px 0;',
+          cell('font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:var(--label);padding:5px 0;',
                esc(m.round || DASH)) +
           cell('font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;font-weight:700;color:' + wl +
                ';padding:5px 0;', m.sets ? esc(m.sets) : (m.rawSets ? esc(m.rawSets) : DASH)) +
-          cell('font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:#a3abba;white-space:nowrap;' +
+          cell('font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--text-sub);white-space:nowrap;' +
                'padding:5px 0;', m.setScores ? esc(m.setScores) : DASH) +
-          cell('font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:#d9dbdf;text-align:right;' +
+          cell('font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--text-soft);text-align:right;' +
                'padding:5px 0;', oddsText(m.price)) +
-          cell('font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:#6e7a93;text-align:right;' +
+          cell('font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--label);text-align:right;' +
                'padding:5px 0;', oddsText(m.oppPrice));
       }).join('');
     }).join('');
@@ -4771,11 +4771,11 @@
       if (m.setScores) scored++;
     }); });
 
-    return '<div style="background:#0c0e16;border:0.33px solid #2e4fa8;border-radius:10px;' +
+    return '<div style="background:var(--surface-inner);border:0.33px solid var(--seg-active-line);border-radius:10px;' +
       'margin:7px 0 9px;padding:13px 15px;">' +
       '<div style="display:flex;align-items:center;gap:11px;margin-bottom:9px;">' +
         '<span style="font-size:13px;font-weight:700;white-space:nowrap;">' + esc(t.display) + '</span>' +
-        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:#a3abba;' +
+        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--text-sub);' +
           'white-space:nowrap;flex:none;">' + esc(recordText(t.won, t.lost) + ' ' + MIDDOT + ' ' +
           rateText0(t.won, t.lost) + ' ' + MIDDOT + ' showing ' + n + ' matches') + '</span>' +
       '</div>' +
@@ -4784,7 +4784,7 @@
       '<div style="max-height:calc(100vh - 430px);min-height:300px;overflow-y:auto;">' +
         '<div style="' + MGRID + '">' + mhead + body + '</div>' +
       '</div>' +
-      '<div style="font-size:10.5px;color:#6e7a93;line-height:1.5;margin-top:10px;">' +
+      '<div style="font-size:10.5px;color:var(--label);line-height:1.5;margin-top:10px;">' +
         'Sets are oriented from ' + esc(shortName(p)) + '&#39;s side off the result, not the feed&#39;s ' +
         'listing order. Dates reach ' + dated + ' of ' + n + ' rows and prices ' + priced + ' of ' + n +
         '; set scores reach ' + scored + ' of ' + n + ' because the career shard stores a match result ' +
@@ -4849,8 +4849,8 @@
     var tab = SPLIT_TABS.filter(function (t) { return t.id === state.splitTab; })[0] || SPLIT_TABS[0];
     var sc = splitScope(p.key, scope);
     if (!sc) {
-      return '<div style="border:0.33px dashed rgba(255,255,255,0.045);border-radius:10px;padding:26px;' +
-        'text-align:center;font-size:13px;color:#6e7a93;">No split data on record for this player.</div>';
+      return '<div style="border:0.33px dashed var(--line);border-radius:10px;padding:26px;' +
+        'text-align:center;font-size:13px;color:var(--label);">No split data on record for this player.</div>';
     }
     // ONE baseline since RULING Q1 round 2 — the two collapsed, which is the
     // point of the ruling.
@@ -4890,7 +4890,7 @@
     var head = '<div style="display:grid;grid-template-columns:' + grid + ';gap:0 10px;">' +
       heads.map(function (h, i) {
         return '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9px;font-weight:600;' +
-          'letter-spacing:0.12em;text-transform:uppercase;color:#6e7a93;' + (i ? 'text-align:right;' : '') +
+          'letter-spacing:0.12em;text-transform:uppercase;color:var(--label);' + (i ? 'text-align:right;' : '') +
           '">' + h + '</div>';
       }).join('') + '</div>';
 
@@ -4929,39 +4929,39 @@
             num(r ? pct1(r.brkPct) : DASH, r && r.brkPct != null ? '#a3abba' : DASH_COLOUR, 11.5);
         }
         return '<div style="display:grid;grid-template-columns:' + grid + ';gap:0 10px;' +
-          'padding:7px 0;border-top:0.33px solid rgba(255,255,255,0.03);align-items:baseline;">' +
+          'padding:7px 0;border-top:0.33px solid var(--line-soft);align-items:baseline;">' +
           '<div style="font-size:12.5px;font-weight:700;white-space:nowrap;' +
             (n ? '' : 'color:' + DASH_COLOUR + ';') + '">' + esc(m) + '</div>' + cells +
           '</div>';
       }).join('');
       return '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
-        'letter-spacing:0.14em;text-transform:uppercase;color:#6e7a93;padding:14px 0 6px;' +
-        'border-top:0.33px solid rgba(255,255,255,0.03);">' + g.label + '</div>' + rows;
+        'letter-spacing:0.14em;text-transform:uppercase;color:var(--label);padding:14px 0 6px;' +
+        'border-top:0.33px solid var(--line-soft);">' + g.label + '</div>' + rows;
     }).join('');
 
     var n52 = splitsFor(p.key);
     return '' +
       '<div style="display:flex;align-items:center;gap:14px;margin-bottom:12px;flex-wrap:wrap;">' +
-        '<div style="display:flex;gap:2px;background:#0e1019;border:0.33px solid rgba(255,255,255,0.045);' +
+        '<div style="display:flex;gap:2px;background:var(--surface);border:0.33px solid var(--line);' +
           'border-radius:9px;padding:2px;">' +
           scopeBtn('career', 'Career', scope === 'career') +
           scopeBtn('last52', 'Last 52 weeks', scope === 'last52') +
         '</div>' +
         '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;font-weight:600;' +
-          'letter-spacing:0.12em;text-transform:uppercase;color:#6e7a93;">' +
+          'letter-spacing:0.12em;text-transform:uppercase;color:var(--label);">' +
           (scope === 'career'
             ? 'Every tour match on record ' + MIDDOT + ' ' + (n52 && n52.matchesParsed != null ? n52.matchesParsed + ' matches' : DASH)
             : 'Rolling 12-month form ' + MIDDOT + ' ' + (n52 && n52.last52Count != null ? n52.last52Count + ' matches' : DASH)) +
         '</div>' +
         // margin-left:auto — the export pins the tab control to the right edge of
         // the same row as the scope switch.
-        '<div style="display:flex;gap:3px;background:#0e1019;border:0.33px solid rgba(255,255,255,0.045);' +
+        '<div style="display:flex;gap:3px;background:var(--surface);border:0.33px solid var(--line);' +
           'border-radius:9px;padding:2px;margin-left:auto;">' +
           SPLIT_TABS.map(function (t) { return tabBtn(t.id, t.label, t.id === tab.id); }).join('') +
         '</div>' +
       '</div>' +
       head + groups +
-      '<div style="font-size:11.5px;color:#6e7a93;margin-top:12px;line-height:1.6;">' + legend() + '</div>';
+      '<div style="font-size:11.5px;color:var(--label);margin-top:12px;line-height:1.6;">' + legend() + '</div>';
 
     function num(txt, colour, size) {
       return '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:' + size + 'px;color:' +
@@ -5267,8 +5267,8 @@
 
   var MARKET_TABS = [['winner', 'Match winner'], ['lines', 'Derived lines']];
   function marketTabsHtml() {
-    return '<div style="display:flex;gap:3px;background:#0e1019;' +
-      'border:0.33px solid rgba(255,255,255,0.045);border-radius:10px;padding:3px;' +
+    return '<div style="display:flex;gap:3px;background:var(--surface);' +
+      'border:0.33px solid var(--line);border-radius:10px;padding:3px;' +
       'margin-bottom:18px;width:fit-content;">' +
       MARKET_TABS.map(function (t) {
         var on = (state.marketTab === 'lines' ? 'lines' : 'winner') === t[0];
@@ -5287,11 +5287,11 @@
     var fmt = state.lcFmt === 'bo5' ? 'bo5' : 'bo3';
     var d = lineCoverage(p, fmt);
     var CAP = 'font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;'
-      + 'letter-spacing:0.14em;text-transform:uppercase;color:#6e7a93;';
+      + 'letter-spacing:0.14em;text-transform:uppercase;color:var(--label);';
     var GRID = 'display:grid;grid-template-columns:minmax(0,1fr) 58px 46px 72px 72px 88px;gap:0 12px;';
     var head = '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">' +
       '<span style="' + CAP + '">Coverage by line</span>' +
-      '<span style="display:flex;gap:3px;background:#0e1019;border:0.33px solid rgba(255,255,255,0.045);' +
+      '<span style="display:flex;gap:3px;background:var(--surface);border:0.33px solid var(--line);' +
         'border-radius:9px;padding:2px;margin-left:auto;">' +
         [['bo3', 'Best of 3'], ['bo5', 'Best of 5']].map(function (t) {
           var on = fmt === t[0];
@@ -5307,8 +5307,8 @@
 
     if (!d.n) {
       return '<div style="display:flex;flex-direction:column;gap:14px;">' + head +
-        '<div style="border:0.33px dashed rgba(255,255,255,0.045);border-radius:10px;padding:26px;' +
-          'text-align:center;font-size:13px;color:#6e7a93;">' +
+        '<div style="border:0.33px dashed var(--line);border-radius:10px;padding:26px;' +
+          'text-align:center;font-size:13px;color:var(--label);">' +
           'No completed ' + esc(d.fmtLabel) + ' match on record carries a scoreline to derive a line from.' +
           (d.excluded ? ' ' + d.excluded + ' retired or abandoned ' +
             (d.excluded === 1 ? 'match is' : 'matches are') + ' excluded.' : '') +
@@ -5317,7 +5317,7 @@
 
     var cols = ['Matches', 'Hit', 'Record', 'Rate', 'Avg margin'];
     var colHead = '<div style="' + GRID + 'align-items:flex-end;padding:0 4px 8px;' +
-      'border-bottom:0.33px solid rgba(255,255,255,0.03);"><span></span>' +
+      'border-bottom:0.33px solid var(--line-soft);"><span></span>' +
       cols.map(function (c) {
         return '<span style="' + CAP + 'text-align:right;">' + esc(c) + '</span>';
       }).join('') + '</div>';
@@ -5325,14 +5325,14 @@
     var body = d.groups.map(function (g) {
       return '<div style="display:flex;flex-direction:column;gap:0;">' +
         '<div style="display:flex;align-items:baseline;gap:10px;padding:10px 4px 5px;' +
-          'border-top:0.33px solid rgba(255,255,255,0.03);">' +
+          'border-top:0.33px solid var(--line-soft);">' +
           '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
-            'letter-spacing:0.14em;text-transform:uppercase;color:#a3abba;">' + esc(g.title) + '</span>' +
-          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:#6e7a93;">' +
+            'letter-spacing:0.14em;text-transform:uppercase;color:var(--text-sub);">' + esc(g.title) + '</span>' +
+          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:var(--label);">' +
             esc(g.meta) + '</span></div>' +
         '<div style="' + GRID + 'align-items:center;">' +
           g.rows.map(function (r) {
-            var bt = 'border-top:0.33px solid rgba(255,255,255,0.03);';
+            var bt = 'border-top:0.33px solid var(--line-soft);';
             var num = 'font-family:\'IBM Plex Mono\',monospace;text-align:right;padding:7px 0;'
               + bt + 'font-variant-numeric:tabular-nums;';
             return '<span style="display:flex;align-items:baseline;gap:8px;padding:' + r.pad + ';' +
@@ -5340,7 +5340,7 @@
                 '<span style="font-size:' + r.size + ';color:' + r.color + ';white-space:nowrap;' +
                   'overflow:hidden;text-overflow:ellipsis;">' + esc(r.label) + '</span>' +
                 (r.mark ? '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:8.5px;' +
-                  'font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:#6e7a93;' +
+                  'font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--label);' +
                   'white-space:nowrap;">' + esc(r.mark) + '</span>' : '') +
               '</span>' +
               '<span style="' + num + 'font-size:11px;color:' + r.nColor + ';">' + r.n + '</span>' +
@@ -5379,14 +5379,14 @@
     note += ' The favourite/underdog split needs a closing price to know which side was '
       + 'shorter, so it covers the ' + d.priced + ' priced of ' + d.n + '.';
     return '<div style="display:flex;flex-direction:column;gap:14px;">' + head + colHead + body +
-      '<div style="font-size:11.5px;color:#6e7a93;line-height:1.6;">' + esc(note) + '</div></div>';
+      '<div style="font-size:11.5px;color:var(--label);line-height:1.6;">' + esc(note) + '</div></div>';
   }
 
   function renderMarketModal(p) {
     var mk = marketFor(p.key);
     if (!mk || !mk.headline || !mk.headline.n) {
-      return '<div style="border:0.33px dashed rgba(255,255,255,0.045);border-radius:10px;padding:26px;' +
-        'text-align:center;font-size:13px;color:#6e7a93;">' +
+      return '<div style="border:0.33px dashed var(--line);border-radius:10px;padding:26px;' +
+        'text-align:center;font-size:13px;color:var(--label);">' +
         'No priced matches on record. The odds archive is tour main-draw only, so a player ' +
         'whose record is Challenger or qualifying has no priced row here.</div>';
     }
@@ -5412,7 +5412,7 @@
         'border:0.33px solid ' + (on ? '#2e4fa8' : 'rgba(255,255,255,0.045)') + ';">' +
         '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;">' +
           '<div style="font-size:17px;font-weight:800;letter-spacing:-0.015em;">' + c.label + '</div>' +
-          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:13px;font-weight:700;color:#ebf1f2;">' +
+          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:13px;font-weight:700;color:var(--text);">' +
             c.s.n + '</div></div>' +
         // The file's two figures: Yield, and "At 1u flat" — the units actually
         // returned. A 70% win rate at odds-on and a 40% win rate at 3.00 look the
@@ -5423,8 +5423,8 @@
         '</div>' +
         divBar(gap) +
         '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:10px;' +
-          'border-top:0.33px solid rgba(255,255,255,0.03);padding-top:13px;">' +
-          '<div style="font-size:13.5px;color:#a3abba;">Vs tour ' +
+          'border-top:0.33px solid var(--line-soft);padding-top:13px;">' +
+          '<div style="font-size:13.5px;color:var(--text-sub);">Vs tour ' +
             (tourY == null ? DASH : neg(tourY, 2, '%')) + '</div>' +
           '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:21px;font-weight:700;color:' +
             (gap == null ? DASH_COLOUR : gap >= 0 ? '#3ed68c' : '#da6259') + ';">' +
@@ -5448,9 +5448,9 @@
         var openable = !!b.n;
         return '<div ' + (openable ? 'data-pp2="market-band" data-band="' + esc(bid) + '" ' : '') +
           'style="display:grid;grid-template-columns:' + BGRID + ';gap:10px;' +
-          'padding:9px 4px;border-bottom:0.33px solid rgba(255,255,255,0.03);align-items:center;' +
+          'padding:9px 4px;border-bottom:0.33px solid var(--line-soft);align-items:center;' +
           (openable ? 'cursor:pointer;' : '') +
-          (open ? 'background:rgba(106,154,248,0.08);' : '') + '">' +
+          (open ? 'background:var(--nav-hover);' : '') + '">' +
           '<div style="font-size:14px;font-weight:700;white-space:nowrap;' +
             (b.n ? '' : 'color:' + DASH_COLOUR + ';') + '">' + esc(b.label) + '</div>' +
           bcell(b.n || DASH, '#a3abba', 12.5) +
@@ -5465,9 +5465,9 @@
       var gn = (mk.bands[g] || []).reduce(function (a, b) { return a + (b.n || 0); }, 0);
       return '<div style="display:flex;align-items:baseline;gap:10px;padding:12px 4px 6px;">' +
         '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:700;' +
-        'letter-spacing:0.14em;text-transform:uppercase;color:#a3abba;">' +
+        'letter-spacing:0.14em;text-transform:uppercase;color:var(--text-sub);">' +
         (g === 'favourite' ? 'Favourite' : 'Underdog') + '</div>' +
-        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:#6e7a93;">' + gn + '</div>' +
+        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:var(--label);">' + gn + '</div>' +
         '</div>' + bands;
     }).join('');
 
@@ -5483,31 +5483,31 @@
 
     return marketTabsHtml() +
       '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;letter-spacing:0.06em;' +
-        'color:#6e7a93;margin-bottom:14px;">' +
+        'color:var(--label);margin-bottom:14px;">' +
         'Pinnacle closing only ' + MIDDOT + ' ' + mk.headline.n + ' priced ' + MIDDOT + ' ' +
         recordText(mk.headline.wins, mk.headline.losses) + ' ' + MIDDOT + ' median odds ' +
         (mk.medianPrice == null ? DASH : mk.medianPrice.toFixed(2)) +
         ' ' + MIDDOT + ' tour baseline ' + (tourY == null ? DASH : neg(tourY, 2, '%')) + '</div>' +
       '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;">' + cards + '</div>' +
-      '<div style="border:0.33px solid rgba(255,255,255,0.045);border-radius:12px;padding:18px 20px 16px;' +
+      '<div style="border:0.33px solid var(--line);border-radius:12px;padding:18px 20px 16px;' +
         'margin-top:16px;">' +
         '<div style="display:flex;align-items:baseline;justify-content:space-between;gap:16px;flex-wrap:wrap;">' +
           '<div style="font-size:17px;font-weight:800;letter-spacing:-0.015em;">Price sensitivity</div>' +
           '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;letter-spacing:0.06em;' +
-            'color:#6e7a93;">Select a card above to filter ' + MIDDOT + ' click a band for its matches</div>' +
+            'color:var(--label);">Select a card above to filter ' + MIDDOT + ' click a band for its matches</div>' +
         '</div>' +
         '<div style="display:grid;grid-template-columns:' + BGRID + ';gap:10px;align-items:end;' +
-          'padding:0 4px 9px;border-bottom:0.33px solid rgba(255,255,255,0.03);margin-top:12px;">' +
+          'padding:0 4px 9px;border-bottom:0.33px solid var(--line-soft);margin-top:12px;">' +
           ['', 'n', 'Record', 'Win rate', 'Yield vs break even', 'Yield'].map(function (h, i) {
-            return '<div style="font-size:10px;font-weight:600;color:#6e7a93;' +
+            return '<div style="font-size:10px;font-weight:600;color:var(--label);' +
               (i === 4 ? 'text-align:center;' : i ? 'text-align:right;' : '') + '">' + h + '</div>';
           }).join('') + '</div>' + groups + priceNote() +
       '</div>' +
       cumulativeChart() +
       // §5's book rule, stated on the page rather than assumed, and restated for
       // R1: this modal no longer blends books at all.
-      '<div style="border:0.33px solid rgba(255,255,255,0.045);border-radius:10px;padding:14px 16px;' +
-        'margin-top:16px;font-size:12.5px;color:#6e7a93;line-height:1.65;">' +
+      '<div style="border:0.33px solid var(--line);border-radius:10px;padding:14px 16px;' +
+        'margin-top:16px;font-size:12.5px;color:var(--label);line-height:1.65;">' +
         'Every figure above is struck on <b>Pinnacle closing prices only</b> — ' + bk.pinnacle +
         ' priced matches. Pinnacle stops at ' + esc(marketPinnacleEnd(mk)) + '. ' +
         (excluded
@@ -5524,7 +5524,7 @@
       '</div>' +
       (marketBuiltText(mk)
         ? '<div data-market-built style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;' +
-            'color:#6e7a93;margin-top:8px;text-align:right;">' + esc(marketBuiltText(mk)) + '</div>'
+            'color:var(--label);margin-top:8px;text-align:right;">' + esc(marketBuiltText(mk)) + '</div>'
         : '');
 
     function fig(cap, val, colourVal) {
@@ -5532,7 +5532,7 @@
         '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:24px;font-weight:700;color:' +
         (colourVal == null ? DASH_COLOUR : colourVal >= 0 ? '#3ed68c' : '#da6259') + ';">' + val + '</div>' +
         '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9px;letter-spacing:0.12em;' +
-        'text-transform:uppercase;color:#6e7a93;">' + cap + '</div></div>';
+        'text-transform:uppercase;color:var(--label);">' + cap + '</div></div>';
     }
     function bcell(txt, colour, size) {
       return '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:' + size + 'px;' +
@@ -5546,7 +5546,7 @@
      * "exactly break even", which is a different fact.
      */
     function divBar(v) {
-      var track = '<div style="position:relative;height:9px;background:#16234a;' +
+      var track = '<div style="position:relative;height:9px;background:var(--bar-track);' +
         'border-radius:5px;display:block;">' +
         '<div style="position:absolute;left:50%;top:-3px;bottom:-3px;width:2px;' +
           'background:rgba(255,255,255,0.3);"></div>';
@@ -5595,7 +5595,7 @@
           ' in the outer band of ' + (straddle === 1 ? 'its' : 'their') + ' role at a price outside that ' +
           'band’s printed range — role is set by which side was shorter, not by 2.00.';
       }
-      return '<div style="font-size:12.5px;color:#6e7a93;line-height:1.6;margin-top:14px;">' + txt + '</div>';
+      return '<div style="font-size:12.5px;color:var(--label);line-height:1.6;margin-top:14px;">' + txt + '</div>';
     }
     function numWord(n) {
       return ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight',
@@ -5609,16 +5609,16 @@
       var shown = rows.slice(0, 40);
       var list = shown.map(function (m) {
         return '<div style="display:grid;grid-template-columns:62px 12px minmax(0,1.4fr) 58px 52px 58px;' +
-          'gap:0 10px;align-items:center;padding:5px 0;border-top:0.33px solid rgba(255,255,255,0.03);">' +
-          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:#6e7a93;">' +
+          'gap:0 10px;align-items:center;padding:5px 0;border-top:0.33px solid var(--line-soft);">' +
+          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--label);">' +
             esc(fmtDotDate(m.date)) + '</div>' +
           '<div style="width:8px;height:8px;border-radius:2px;background:' +
             (m.won ? '#3ed68c' : '#da6259') + ';"></div>' +
           '<div style="font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' +
             esc(surnameFirst(m.opp)) + '</div>' +
-          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:#a3abba;' +
+          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--text-sub);' +
             'text-align:right;">' + (m.price == null ? DASH : m.price.toFixed(2)) + '</div>' +
-          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:#6e7a93;' +
+          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:var(--label);' +
             'text-align:right;">' + esc(m.round || DASH) + '</div>' +
           '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;font-weight:700;' +
             'text-align:right;color:' + (m.pl >= 0 ? '#3ed68c' : '#da6259') + ';">' +
@@ -5632,18 +5632,18 @@
       // own matches are describing different sets. Say so rather than hide it.
       var recon = rows.length === b.n ? '' :
         ' ' + MIDDOT + ' band counts ' + b.n + ', ' + rows.length + ' rows carry a matching price';
-      return '<div style="background:#0c0e16;border:0.33px solid #2e4fa8;border-radius:11px;' +
+      return '<div style="background:var(--surface-inner);border:0.33px solid var(--seg-active-line);border-radius:11px;' +
         'padding:14px 16px;margin:10px 0 14px;">' +
         '<div style="display:flex;align-items:center;gap:12px;margin-bottom:6px;flex-wrap:wrap;">' +
           '<div style="font-size:14px;font-weight:700;">' + esc(b.label) + ' ' + MIDDOT + ' ' +
             (group === 'favourite' ? 'favourite' : 'underdog') + '</div>' +
-          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;color:#a3abba;">' +
+          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;color:var(--text-sub);">' +
             recordText(b.wins, b.losses) + ' ' + MIDDOT + ' ' +
             (b.units == null ? DASH : signed(b.units, 2, 'u')) + '</div>' +
-          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:#6e7a93;">' +
+          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:var(--label);">' +
             note + recon + '</div>' +
           '<button type="button" data-pp2="market-band" data-band="' + esc(bid) + '" ' +
-            'style="margin-left:auto;background:none;border:0;color:#6e7a93;font-size:11px;' +
+            'style="margin-left:auto;background:none;border:0;color:var(--label);font-size:11px;' +
             'font-family:\'IBM Plex Mono\',monospace;letter-spacing:0.08em;text-transform:uppercase;' +
             'cursor:pointer;">Close</button>' +
         '</div>' + list + '</div>';
@@ -5684,12 +5684,12 @@
       // affordances and removing working controls is a founder call.
       var controls =
         '<div style="display:flex;gap:8px;flex-wrap:wrap;">' +
-          '<div style="display:flex;gap:3px;background:#0e1019;border:0.33px solid rgba(255,255,255,0.045);' +
+          '<div style="display:flex;gap:3px;background:var(--surface);border:0.33px solid var(--line);' +
             'border-radius:9px;padding:2px;">' +
             segBtn('market-side', 'side', 'back', 'Back', side === 'back') +
             segBtn('market-side', 'side', 'fade', 'Fade', side === 'fade') +
           '</div>' +
-          '<div style="display:flex;gap:3px;background:#0e1019;border:0.33px solid rgba(255,255,255,0.045);' +
+          '<div style="display:flex;gap:3px;background:var(--surface);border:0.33px solid var(--line);' +
             'border-radius:9px;padding:2px;">' +
             ['all', 'Hard', 'Clay', 'Grass'].map(function (s) {
               return segBtn('market-surf', 'surf', s, s === 'all' ? 'All surfaces' : s, surf === s);
@@ -5699,8 +5699,8 @@
       var last = pts.length ? pts[pts.length - 1].c : null;
       var body;
       if (pts.length < 2) {
-        body = '<div style="border:0.33px dashed rgba(255,255,255,0.045);border-radius:10px;padding:26px;' +
-          'text-align:center;font-size:13px;color:#6e7a93;">' +
+        body = '<div style="border:0.33px dashed var(--line);border-radius:10px;padding:26px;' +
+          'text-align:center;font-size:13px;color:var(--label);">' +
           (pts.length ? 'One priced match in this filter — a cumulative line needs at least two points.'
             : 'No priced matches in this filter.') + '</div>';
       } else {
@@ -5758,16 +5758,16 @@
               grid.map(function (q) {
                 return '<div style="position:absolute;left:0;top:' + q.topPct + ';' +
                   'transform:translateY(-50%);font-family:\'IBM Plex Mono\',monospace;' +
-                  'font-size:10.5px;color:#6e7a93;white-space:nowrap;">' + q.label + '</div>';
+                  'font-size:10.5px;color:var(--label);white-space:nowrap;">' + q.label + '</div>';
               }).join('') +
             '</div>' +
             '<div style="position:relative;flex:1;height:300px;min-width:0;">' +
               grid.map(function (q) {
                 return '<div style="position:absolute;left:0;right:0;top:' + q.topPct + ';' +
-                  'height:1px;background:rgba(255,255,255,0.03);"></div>';
+                  'height:1px;background:var(--line-soft);"></div>';
               }).join('') +
               '<div style="position:absolute;left:0;right:0;top:' + (zeroY / H * 100).toFixed(2) + '%;' +
-                'height:1px;background:rgba(255,255,255,0.03);"></div>' +
+                'height:1px;background:var(--line-soft);"></div>' +
               '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none" ' +
                 'style="position:absolute;inset:0;width:100%;height:100%;display:block;">' +
                 '<path d="' + area + '" fill="rgba(91,155,255,0.13)"></path>' +
@@ -5782,24 +5782,24 @@
               ticks.map(function (t) {
                 return '<div style="position:absolute;left:' + t.leftPct + ';' +
                   'transform:translateX(-50%);font-family:\'IBM Plex Mono\',monospace;' +
-                  'font-size:10.5px;color:#6e7a93;">' + esc(t.label) + '</div>';
+                  'font-size:10.5px;color:var(--label);">' + esc(t.label) + '</div>';
               }).join('') +
             '</div>' +
           '</div>' +
           '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;letter-spacing:0.1em;' +
-            'text-transform:uppercase;color:#6e7a93;">' +
+            'text-transform:uppercase;color:var(--label);">' +
             'Horizontal: season ' + MIDDOT + ' vertical: cumulative units ' + MIDDOT +
             ' the bright rule is break even</div>';
       }
       // Head block, per the file: title + "Flat 1u per match at closing odds · N
       // matches" on the left, the signed total and its caption hard right.
-      return '<div style="border:0.33px solid rgba(255,255,255,0.045);border-radius:12px;' +
+      return '<div style="border:0.33px solid var(--line);border-radius:12px;' +
         'padding:18px 20px 14px;margin-top:16px;display:flex;flex-direction:column;gap:16px;">' +
         '<div style="display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;">' +
           '<div style="display:flex;flex-direction:column;gap:5px;">' +
             '<div style="font-size:17px;font-weight:800;letter-spacing:-0.015em;">' + esc(title) + '</div>' +
             '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;letter-spacing:0.05em;' +
-              'color:#6e7a93;">Flat 1u per match at closing odds ' + MIDDOT + ' ' +
+              'color:var(--label);">Flat 1u per match at closing odds ' + MIDDOT + ' ' +
               pts.length + ' match' + (pts.length === 1 ? '' : 'es') + '</div>' +
           '</div>' +
           '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;">' +
@@ -5807,7 +5807,7 @@
               'color:' + (last == null ? DASH_COLOUR : last >= 0 ? '#3ed68c' : '#da6259') + ';">' +
               (last == null ? DASH : signed(last, 1, 'u')) + '</div>' +
             '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9px;letter-spacing:0.12em;' +
-              'text-transform:uppercase;color:#6e7a93;">Profit at 1u flat</div>' +
+              'text-transform:uppercase;color:var(--label);">Profit at 1u flat</div>' +
           '</div>' +
         '</div>' +
         controls + body + '</div>';
@@ -6445,12 +6445,12 @@
   }
 
   function calTile(cap, value, sub, colour) {
-    return '<div style="background:#0e1019;border-radius:12px;padding:15px 16px;text-align:center;">' +
+    return '<div style="background:var(--surface);border-radius:12px;padding:15px 16px;text-align:center;">' +
       '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9px;font-weight:600;letter-spacing:0.14em;' +
-        'text-transform:uppercase;color:#6e7a93;">' + esc(cap) + '</div>' +
+        'text-transform:uppercase;color:var(--label);">' + esc(cap) + '</div>' +
       '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:26px;font-weight:700;margin-top:4px;' +
         'color:' + (value === DASH ? DASH_COLOUR : (colour || '#ebf1f2')) + ';">' + esc(value) + '</div>' +
-      '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:#6e7a93;margin-top:3px;">' +
+      '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--label);margin-top:3px;">' +
         esc(sub) + '</div></div>';
   }
   // Items 8 + 9. The file's segmented control is `display:inline-flex` with
@@ -6469,8 +6469,8 @@
       'white-space:nowrap;cursor:pointer;font-family:inherit;">' + esc(label) + '</button>';
   }
   function calSegWrap(inner, small, margin) {
-    return '<div style="display:inline-flex;gap:3px;background:#0e1019;' +
-      'border:0.33px solid rgba(255,255,255,0.045);border-radius:9px;padding:3px;' +
+    return '<div style="display:inline-flex;gap:3px;background:var(--surface);' +
+      'border:0.33px solid var(--line);border-radius:9px;padding:3px;' +
       (margin ? 'margin-bottom:' + margin + ';' : '') + '">' + inner + '</div>';
   }
 
@@ -6505,8 +6505,8 @@
     return renderCalTab(p, seg);
   }
   function calEmpty(text) {
-    return '<div style="border:0.33px dashed rgba(255,255,255,0.045);border-radius:10px;padding:26px;' +
-      'text-align:center;font-size:13px;color:#6e7a93;margin-top:14px;">' + esc(text) + '</div>';
+    return '<div style="border:0.33px dashed var(--line);border-radius:10px;padding:26px;' +
+      'text-align:center;font-size:13px;color:var(--label);margin-top:14px;">' + esc(text) + '</div>';
   }
   // ONE refusal sentence for BOTH tabs. Since ruling cal-2 the two tabs read the
   // same rows, so an empty segment has the same cause on either — and the
@@ -6565,7 +6565,7 @@
       (skipped ? ' ' + skipped + (skipped === 1 ? ' walkover' : ' walkovers') + ' given ' +
         (skipped === 1 ? 'is' : 'are') + ' excluded from the sequence — neither a win nor a ' +
         'loss — so the run either side of ' + (skipped === 1 ? 'it' : 'them') + ' continues.' : '');
-    return '<div style="margin-top:18px;font-size:11px;line-height:1.65;color:#6e7a93;' +
+    return '<div style="margin-top:18px;font-size:11px;line-height:1.65;color:var(--label);' +
       'max-width:900px;">' + esc(txt) + '</div>';
   }
 
@@ -6581,19 +6581,19 @@
       : full ? (pp > 0 ? '#3ed68c' : pp < 0 ? '#da6259' : '#a3abba')
         : some ? '#6e7a93' : DASH_COLOUR;
     var mark = full ? '' : (some ? '*' : '');
-    return '<div style="background:#0e1019;border:0.33px solid rgba(255,255,255,0.045);border-radius:12px;' +
+    return '<div style="background:var(--surface);border:0.33px solid var(--line);border-radius:12px;' +
       'padding:15px 16px;display:flex;flex-direction:column;align-items:center;text-align:center;' +
       'gap:8px;min-width:0;">' +
       '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
-        'letter-spacing:0.14em;text-transform:uppercase;color:#6e7a93;">' + esc(cap) + '</span>' +
+        'letter-spacing:0.14em;text-transform:uppercase;color:var(--label);">' + esc(cap) + '</span>' +
       '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:26px;font-weight:700;line-height:1;' +
         'color:' + (value === DASH ? DASH_COLOUR : '#ebf1f2') + ';">' + esc(value) + '</span>' +
       '<span style="display:flex;align-items:baseline;justify-content:center;gap:5px;' +
         'font-family:\'IBM Plex Mono\',monospace;font-size:11px;">' +
         '<span style="font-weight:700;color:' + ppColour + ';">' + esc(ppText) + '</span>' +
-        '<span style="color:#6e7a93;">' + esc(MIDDOT + ' n=' + n) + '</span>' +
-        '<span style="font-size:9px;color:#6e7a93;">' + mark + '</span></span>' +
-      '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:#6e7a93;">' +
+        '<span style="color:var(--label);">' + esc(MIDDOT + ' n=' + n) + '</span>' +
+        '<span style="font-size:9px;color:var(--label);">' + mark + '</span></span>' +
+      '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--label);">' +
         esc(repeat) + '</span></div>';
   }
 
@@ -6603,7 +6603,7 @@
     var scope = calScope(p);
     var eyebrowRow = '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px;">' +
       '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
-        'letter-spacing:0.14em;text-transform:uppercase;color:#6e7a93;">Calendar form ' + MIDDOT + ' career</span>' +
+        'letter-spacing:0.14em;text-transform:uppercase;color:var(--label);">Calendar form ' + MIDDOT + ' career</span>' +
       calSegWrap(CAL_SURFACES.map(function (s) {
         return calSegBtn('cal-surface', s.id, s.label, surf === s.id, true);
       }).join(''), true, null) + '</div>';
@@ -6649,27 +6649,27 @@
     // `padding:7px 0` plus a 1px top rule, which is what makes the rows flush.
     var GRID_TRACK = 'display:grid;grid-template-columns:86px repeat(12,minmax(0,1fr));gap:0 6px;min-width:880px;';
     var HEAD_CELL = 'font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
-      'letter-spacing:0.14em;text-transform:uppercase;color:#6e7a93;';
+      'letter-spacing:0.14em;text-transform:uppercase;color:var(--label);';
     var head =
-      '<span style="position:sticky;top:0;left:0;z-index:3;background:#131623;' + HEAD_CELL +
+      '<span style="position:sticky;top:0;left:0;z-index:3;background:var(--popup);' + HEAD_CELL +
         'padding:8px 8px 8px 10px;">Year</span>' +
       MON3.map(function (m) {
-        return '<span style="position:sticky;top:0;z-index:2;background:#131623;' + HEAD_CELL +
+        return '<span style="position:sticky;top:0;z-index:2;background:var(--popup);' + HEAD_CELL +
           'text-align:center;padding:8px 0;">' + m + '</span>';
       }).join('');
 
     var grid = info.grid;
     var body = grid.map(function (yr) {
-      return '<span style="position:sticky;left:0;z-index:1;background:#0e1019;' +
-        'font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;font-weight:700;color:#a3abba;' +
-        'padding:7px 8px 7px 10px;border-top:0.33px solid rgba(255,255,255,0.03);">' + esc(yr.year) + '</span>' +
+      return '<span style="position:sticky;left:0;z-index:1;background:var(--surface);' +
+        'font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;font-weight:700;color:var(--text-sub);' +
+        'padding:7px 8px 7px 10px;border-top:0.33px solid var(--line-soft);">' + esc(yr.year) + '</span>' +
         yr.cells.map(function (c, m) {
           var n = c.won + c.lost;
           // Item 13 — the empty month is the file's middot in #6e7a93, with no
           // pointer and no click target, not an em dash.
           if (!n) {
             return '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;text-align:center;' +
-              'color:#6e7a93;padding:7px 0;border-top:0.33px solid rgba(255,255,255,0.03);' +
+              'color:var(--label);padding:7px 0;border-top:0.33px solid var(--line-soft);' +
               'cursor:default;">' + MIDDOT + '</span>';
           }
           var on = state.calCell === yr.year + '|' + m;
@@ -6684,7 +6684,7 @@
             'style="font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;text-align:center;' +
             'color:' + (on ? '#ebf1f2' : '#ebf1f2') + ';background:' + bg + ';' +
             'outline:' + (on ? '1px solid #6a9af8' : 'none') + ';outline-offset:-1px;' +
-            'padding:7px 0;border-top:0.33px solid rgba(255,255,255,0.03);cursor:pointer;' +
+            'padding:7px 0;border-top:0.33px solid var(--line-soft);cursor:pointer;' +
             'transition:background .12s ease,color .12s ease;">' +
             c.won + ENDASH + c.lost + '</span>';
         }).join('');
@@ -6725,7 +6725,7 @@
       '<div style="max-height:400px;overflow-y:scroll;scrollbar-gutter:stable;">' +
       '<div style="' + GRID_TRACK + '">' + head + body + '</div></div>' +
       drill + footer +
-      '<div style="margin-top:16px;font-size:11px;line-height:1.65;color:#6e7a93;max-width:900px;">' +
+      '<div style="margin-top:16px;font-size:11px;line-height:1.65;color:var(--label);max-width:900px;">' +
       note + '</div></div>';
   }
   // Four dashed tiles, for the states where a surface holds nothing at all.
@@ -6772,7 +6772,7 @@
     var ROW_TRACK = 'display:grid;grid-template-columns:14px 44px minmax(0,1.1fr) minmax(0,1.3fr) ' +
       'minmax(0,1fr) 62px 62px 72px;gap:20px;';
     var HEAD = 'font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
-      'letter-spacing:0.14em;text-transform:uppercase;color:#6e7a93;';
+      'letter-spacing:0.14em;text-transform:uppercase;color:var(--label);';
     var colHead = '<div style="' + ROW_TRACK + 'margin:0 0 10px;width:100%;">' +
       '<span></span>' +
       '<span style="' + HEAD + '">Rd</span>' +
@@ -6790,17 +6790,17 @@
           var plCol = r.cents == null ? DASH_COLOUR
             : r.cents > 0 ? '#3ed68c' : r.cents < 0 ? '#da6259' : '#a3abba';
           return '<div ' + sheetHook(r.sheetId) + 'style="' + ROW_TRACK +
-            'align-items:center;padding:6px 0;border-top:0.33px solid rgba(255,255,255,0.03);' +
+            'align-items:center;padding:6px 0;border-top:0.33px solid var(--line-soft);' +
             sheetCursor() + '">' +
             '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;font-weight:700;' +
               'color:' + (r.won ? '#3ed68c' : '#da6259') + ';">' + (r.won ? 'W' : 'L') + '</span>' +
-            '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:#6e7a93;">' +
+            '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:var(--label);">' +
               esc(r.round || DASH) + '</span>' +
-            '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:#a3abba;' +
+            '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;color:var(--text-sub);' +
               'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(r.event || DASH) + '</span>' +
-            '<span style="font-size:12.5px;color:#ebf1f2;overflow:hidden;text-overflow:ellipsis;' +
+            '<span style="font-size:12.5px;color:var(--text);overflow:hidden;text-overflow:ellipsis;' +
               'white-space:nowrap;">' + esc(r.opp ? surnameFirst(r.opp) : DASH) + '</span>' +
-            '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:#a3abba;' +
+            '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:var(--text-sub);' +
               'white-space:nowrap;">' + esc(scoreWithStatus(r, r.score)) + '</span>' +
             '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;font-weight:700;' +
               'text-align:right;color:' + (r.price == null ? DASH_COLOUR : '#ebf1f2') + ';">' +
@@ -6813,23 +6813,23 @@
         }).join('') + '</div>';
     }).join('');
 
-    return '<div style="margin:12px 0 4px;background:#0c0e16;border:0.33px solid #2e4fa8;' +
+    return '<div style="margin:12px 0 4px;background:var(--surface-inner);border:0.33px solid var(--seg-active-line);' +
       'border-radius:10px;padding:13px 15px;box-sizing:border-box;">' +
       '<div style="display:flex;align-items:baseline;gap:11px;margin-bottom:3px;">' +
         '<span style="font-size:13px;font-weight:700;">' + esc(MON_FULL[dm] + ' ' + dy) + '</span>' +
-        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;color:#a3abba;">' +
+        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;color:var(--text-sub);">' +
           recordText(won, cell.length - won) + '</span>' +
         '<span style="margin-left:auto;font-family:\'IBM Plex Mono\',monospace;font-size:15px;' +
           'font-weight:700;white-space:nowrap;color:' + (priced ? sign : DASH_COLOUR) + ';">' +
           esc(totalLine) + '</span>' +
         '<button type="button" data-pp2="cal-cell-close" style="align-self:center;margin-left:4px;' +
-          'width:28px;height:28px;border-radius:8px;background:#0c0e16;' +
-          'border:0.33px solid rgba(255,255,255,0.045);color:#a3abba;cursor:pointer;display:flex;' +
+          'width:28px;height:28px;border-radius:8px;background:var(--surface-inner);' +
+          'border:0.33px solid var(--line);color:var(--text-sub);cursor:pointer;display:flex;' +
           'align-items:center;justify-content:center;">' +
           '<svg width="12" height="12" viewBox="0 0 20 20" fill="none"><path d="M5 5l10 10M15 5L5 15" ' +
           'stroke="currentColor" stroke-width="1.8" stroke-linecap="round"></path></svg></button></div>' +
       '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;font-weight:600;' +
-        'letter-spacing:0.12em;text-transform:uppercase;color:#6e7a93;margin-bottom:11px;' +
+        'letter-spacing:0.12em;text-transform:uppercase;color:var(--label);margin-bottom:11px;' +
         'line-height:1.5;">' +
         esc(dy + ' ' + MIDDOT + ' ' + MON3[dm].toUpperCase() + ' ' + MIDDOT + ' ' +
           order.join(' ' + MIDDOT + ' ').toUpperCase() + ' ' + MIDDOT + ' ' +
@@ -6848,31 +6848,31 @@
     var GRID_TRACK = 'display:grid;grid-template-columns:86px repeat(12,minmax(0,1fr));gap:0 6px;' +
       'min-width:880px;align-items:end;';
     var LAB = 'font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
-      'letter-spacing:0.14em;text-transform:uppercase;color:#6e7a93;';
+      'letter-spacing:0.14em;text-transform:uppercase;color:var(--label);';
     var CELL = 'font-family:\'IBM Plex Mono\',monospace;text-align:center;' +
-      'border-top:0.33px solid rgba(255,255,255,0.03);padding:13px 0;';
+      'border-top:0.33px solid var(--line-soft);padding:13px 0;';
 
     // Findings strip — :236-248 and the figures at :2290-2306. Per-surface yield
     // against the other surfaces combined, on the priced subset, with the
     // file's own n>=10 / 5-9 / <5 gate.
     var findings = calFindings(rows);
     var strip = '<div style="margin:18px 0 0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));' +
-      'gap:0;background:transparent;border:0.33px solid rgba(255,255,255,0.045);border-radius:10px;' +
+      'gap:0;background:transparent;border:0.33px solid var(--line);border-radius:10px;' +
       'overflow:hidden;">' + findings.map(function (d, i) {
         var full = d.n >= 10, some = d.n >= 5;
         var val = (d.value == null || !some) ? DASH : signed(d.value, 1, 'pp');
         return '<span style="display:flex;flex-direction:column;align-items:center;text-align:center;' +
-          'gap:6px;padding:15px 20px;border-left:1px solid ' +
-          (i === 0 ? 'transparent' : 'rgba(255,255,255,0.09)') + ';">' +
+          'gap:6px;padding:15px 20px;border-left:0.33px solid ' +
+          (i === 0 ? 'transparent' : 'var(--line-soft)') + ';">' +
           '<span style="' + LAB + '">' + esc(d.cap) + '</span>' +
           '<span style="display:flex;align-items:baseline;gap:9px;">' +
-            '<span style="font-size:13px;color:#ebf1f2;">' + esc(d.name) + '</span>' +
+            '<span style="font-size:13px;color:var(--text);">' + esc(d.name) + '</span>' +
             '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:' + (full ? '15px' : '11px') +
               ';font-weight:' + (full ? 700 : 400) + ';color:' +
               (d.value == null || !some ? DASH_COLOUR
                 : full ? (d.neutral ? '#ebf1f2' : d.value > 0 ? '#3ed68c' : d.value < 0 ? '#da6259' : '#a3abba')
                   : '#6e7a93') + ';">' + esc(val) + '</span>' +
-            '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9px;color:#6e7a93;">' +
+            '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9px;color:var(--label);">' +
               (full ? '' : some ? '*' : '') + '</span></span>' +
           '<span style="' + LAB + '">n=' + d.n + '</span></span>';
       }).join('') + '</div>';
@@ -6885,7 +6885,7 @@
     var chart = '<span></span>' +
       '<span style="grid-column:2 / -1;position:relative;display:grid;' +
         'grid-template-columns:repeat(12,minmax(0,1fr));gap:0 6px;height:66px;align-items:center;">' +
-      '<span style="position:absolute;left:0;right:0;top:50%;height:1px;background:rgba(255,255,255,0.03);"></span>' +
+      '<span style="position:absolute;left:0;right:0;top:50%;height:1px;background:var(--line-soft);"></span>' +
       months.map(function (x) {
         var inner;
         if (x.gap == null || !maxGap) {
@@ -6922,8 +6922,8 @@
     }
     var monthRow = dataRow('Month', function (x) {
       return '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;font-weight:600;' +
-        'letter-spacing:0.1em;text-transform:uppercase;text-align:center;color:#a3abba;padding:13px 0;' +
-        'border-top:0.33px solid rgba(255,255,255,0.03);">' + MON3[x.m] + '</span>';
+        'letter-spacing:0.1em;text-transform:uppercase;text-align:center;color:var(--text-sub);padding:13px 0;' +
+        'border-top:0.33px solid var(--line-soft);">' + MON3[x.m] + '</span>';
     });
     var nRow = dataRow('n', function (x) {
       return '<span style="' + CELL + 'font-size:11.5px;color:' + (x.n ? '#6e7a93' : '#6e7a93') + ';">' +
@@ -6954,9 +6954,9 @@
           (k < x.above ? 'rgba(91,155,255,0.62)' : 'rgba(255,255,255,0.07)') + ';"></span>';
       }
       return '<span style="display:flex;flex-direction:column;align-items:center;gap:5px;padding:13px 3px;' +
-        'border-top:0.33px solid rgba(255,255,255,0.03);">' +
+        'border-top:0.33px solid var(--line-soft);">' +
         '<span style="display:flex;gap:1px;width:100%;">' + segs + '</span>' +
-        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;color:#6e7a93;">' +
+        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;color:var(--label);">' +
           x.above + '/' + info.seasons + '</span></span>';
     }, 'align-self:start;');
 
@@ -7081,14 +7081,14 @@
   // a WHITE 26px value whatever the sign (no green/red on this tab), and a sub
   // in the page font at 10.5px/#4b5672 rather than mono.
   function streakTile(cap, value, sub) {
-    return '<div style="background:#0e1019;border:0.33px solid rgba(255,255,255,0.045);' +
+    return '<div style="background:var(--surface);border:0.33px solid var(--line);' +
       'border-radius:12px;padding:15px 16px;display:flex;flex-direction:column;' +
       'align-items:center;text-align:center;gap:8px;min-width:0;box-sizing:border-box;">' +
       '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
-        'letter-spacing:0.14em;text-transform:uppercase;color:#6e7a93;">' + esc(cap) + '</span>' +
+        'letter-spacing:0.14em;text-transform:uppercase;color:var(--label);">' + esc(cap) + '</span>' +
       '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:26px;font-weight:700;' +
         'line-height:1;color:' + (value === DASH ? DASH_COLOUR : '#ebf1f2') + ';">' + esc(value) + '</span>' +
-      '<span style="font-size:10.5px;color:#6e7a93;">' + esc(sub) + '</span></div>';
+      '<span style="font-size:10.5px;color:var(--label);">' + esc(sub) + '</span></div>';
   }
 
   // ── items 19-23 · WHAT FOLLOWS A RUN ─────────────────────────────────────
@@ -7148,12 +7148,12 @@
     var f = followStats(rows);
     var baseY = followYield(f.base);
     var HEAD = 'font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
-      'letter-spacing:0.2em;text-transform:uppercase;color:#6e7a93;padding-bottom:9px;';
+      'letter-spacing:0.2em;text-transform:uppercase;color:var(--label);padding-bottom:9px;';
     var TRACK = 'display:grid;grid-template-columns:118px 176px minmax(56px,0.6fr) ' +
       'minmax(76px,1fr) minmax(86px,1fr) minmax(72px,0.8fr);gap:0 16px;width:100%;align-items:stretch;';
     var MONO = 'font-family:\'IBM Plex Mono\',monospace;';
-    var RULE = 'border-top:0.33px solid rgba(255,255,255,0.03);';
-    var BRULE = 'border-top:0.33px solid rgba(255,255,255,0.03);';
+    var RULE = 'border-top:0.33px solid var(--line-soft);';
+    var BRULE = 'border-top:0.33px solid var(--line-soft);';
     var head = ['State', 'Next match', 'n', 'Yield', 'Vs baseline', 'n priced']
       .map(function (h, i) {
         return '<span style="' + HEAD + (i >= 2 ? 'text-align:right;' : '') + '">' + esc(h) + '</span>';
@@ -7173,49 +7173,49 @@
       var yCol = yg.show === 'full' && y != null
         ? (y > 0 ? '#3ed68c' : y < 0 ? '#da6259' : '#a3abba') : DASH_COLOUR;
       return '<span style="display:flex;align-items:center;font-size:15px;font-weight:800;' +
-          'letter-spacing:-0.015em;color:#ebf1f2;padding:11px 0;' + RULE + '">after ' + esc(id) + '</span>' +
+          'letter-spacing:-0.015em;color:var(--text);padding:11px 0;' + RULE + '">after ' + esc(id) + '</span>' +
         '<span style="display:flex;flex-direction:column;gap:4px;justify-content:center;padding:11px 0;' + RULE + '">' +
           '<span style="display:flex;align-items:baseline;gap:8px;">' +
-            '<span style="' + MONO + 'font-size:11px;color:#a3abba;">' +
+            '<span style="' + MONO + 'font-size:11px;color:var(--text-sub);">' +
               esc(nAll ? 'W' + b.w + ENDASH + 'L' + b.l : DASH) + '</span>' +
             '<span style="' + MONO + 'font-size:13px;color:' +
               (g.show === 'full' ? '#ebf1f2' : DASH_COLOUR) + ';">' + esc(rate) + '</span>' +
-            '<span style="' + MONO + 'font-size:9px;color:#6e7a93;">' + g.mark + '</span></span>' +
+            '<span style="' + MONO + 'font-size:9px;color:var(--label);">' + g.mark + '</span></span>' +
           '<span style="display:flex;height:5px;border-radius:2px;overflow:hidden;' +
             'background:rgba(224,97,111,0.28);">' +
             '<span style="width:' + (nAll ? (b.w / nAll * 100).toFixed(1) : 0) + '%;' +
             'background:rgba(61,214,140,0.55);"></span></span></span>' +
         '<span style="display:flex;align-items:center;justify-content:flex-end;' + MONO +
-          'font-size:11px;color:#6e7a93;padding:11px 0;' + RULE + '">' + nAll + '</span>' +
+          'font-size:11px;color:var(--label);padding:11px 0;' + RULE + '">' + nAll + '</span>' +
         '<span style="display:flex;align-items:baseline;justify-content:flex-end;gap:3px;padding:11px 0;' + RULE + '">' +
           '<span style="' + MONO + 'font-size:12px;color:' + yCol + ';">' + esc(yTxt) + '</span>' +
-          '<span style="' + MONO + 'font-size:9px;color:#6e7a93;">' + yg.mark + '</span></span>' +
+          '<span style="' + MONO + 'font-size:9px;color:var(--label);">' + yg.mark + '</span></span>' +
         '<span style="display:flex;align-items:center;justify-content:flex-end;' + MONO +
           'font-size:17px;font-weight:700;color:' +
           (vsOk ? (vs > 0 ? '#3ed68c' : vs < 0 ? '#da6259' : '#a3abba') : DASH_COLOUR) +
           ';padding:11px 0;' + RULE + '">' + (vsOk ? esc(signed(vs, 1, 'pp')) : DASH) + '</span>' +
         '<span style="display:flex;align-items:center;justify-content:flex-end;' + MONO +
-          'font-size:11px;color:#6e7a93;padding:11px 0;' + RULE + '">' + b.priced + '</span>';
+          'font-size:11px;color:var(--label);padding:11px 0;' + RULE + '">' + b.priced + '</span>';
     }).join('');
 
     var bn = f.base.w + f.base.l;
     var baseRow =
       '<span style="display:flex;align-items:center;font-size:15px;font-weight:800;' +
-        'letter-spacing:-0.015em;color:#a3abba;padding:11px 0;' + BRULE + '">baseline</span>' +
+        'letter-spacing:-0.015em;color:var(--text-sub);padding:11px 0;' + BRULE + '">baseline</span>' +
       '<span style="display:flex;align-items:baseline;gap:8px;padding:11px 0;' + BRULE + '">' +
-        '<span style="' + MONO + 'font-size:11.5px;color:#a3abba;">' +
+        '<span style="' + MONO + 'font-size:11.5px;color:var(--text-sub);">' +
           esc(bn ? 'W' + f.base.w + ENDASH + 'L' + f.base.l : DASH) + '</span>' +
-        '<span style="' + MONO + 'font-size:11px;color:#a3abba;">' +
+        '<span style="' + MONO + 'font-size:11px;color:var(--text-sub);">' +
           esc(bn ? (f.base.w / bn * 100).toFixed(1) + '%' : DASH) + '</span></span>' +
       '<span style="display:flex;align-items:center;justify-content:flex-end;' + MONO +
-        'font-size:11px;color:#6e7a93;padding:7px 0;' + BRULE + '">' + bn + '</span>' +
+        'font-size:11px;color:var(--label);padding:7px 0;' + BRULE + '">' + bn + '</span>' +
       '<span style="display:flex;align-items:center;justify-content:flex-end;' + MONO +
-        'font-size:11px;color:#a3abba;padding:7px 0;' + BRULE + '">' +
+        'font-size:11px;color:var(--text-sub);padding:7px 0;' + BRULE + '">' +
         (baseY == null ? DASH : esc(signed(baseY, 1, '%'))) + '</span>' +
       '<span style="display:flex;align-items:center;justify-content:flex-end;' + MONO +
-        'font-size:11px;color:#6e7a93;padding:7px 0;' + BRULE + '">' + DASH + '</span>' +
+        'font-size:11px;color:var(--label);padding:7px 0;' + BRULE + '">' + DASH + '</span>' +
       '<span style="display:flex;align-items:center;justify-content:flex-end;' + MONO +
-        'font-size:11px;color:#6e7a93;padding:7px 0;' + BRULE + '">' + f.base.priced + '</span>';
+        'font-size:11px;color:var(--label);padding:7px 0;' + BRULE + '">' + f.base.priced + '</span>';
 
     // Item 23 · the file's own note, with this player's real counts in it.
     var note = 'State is evaluated on the match immediately prior. A five-match win run ' +
@@ -7224,14 +7224,14 @@
       'denominators differ.';
 
     return '<div style="margin-top:26px;display:grid;grid-template-columns:minmax(0,1fr);gap:14px;' +
-      'align-items:stretch;"><div style="background:#0e1019;border:0.33px solid rgba(255,255,255,0.045);' +
+      'align-items:stretch;"><div style="background:var(--surface);border:0.33px solid var(--line);' +
       'border-radius:12px;padding:16px 18px;display:flex;flex-direction:column;min-width:0;' +
       'box-sizing:border-box;">' +
       '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
-        'letter-spacing:0.14em;text-transform:uppercase;color:#6e7a93;margin-bottom:10px;">' +
+        'letter-spacing:0.14em;text-transform:uppercase;color:var(--label);margin-bottom:10px;">' +
         'What follows a run ' + MIDDOT + ' career</div>' +
       '<div style="' + TRACK + '">' + head + body + baseRow + '</div>' +
-      '<div style="margin-top:auto;padding-top:12px;font-size:11px;line-height:1.65;color:#6e7a93;">' +
+      '<div style="margin-top:auto;padding-top:12px;font-size:11px;line-height:1.65;color:var(--label);">' +
         esc(note) + '</div></div></div>';
   }
 
@@ -7320,28 +7320,28 @@
     });
     var ticks = yrOrder.map(function (y) {
       return '<span style="width:' + (yrCount[y] * RW) + 'px;flex:none;box-sizing:border-box;' +
-        'border-left:0.33px solid rgba(255,255,255,0.03);font-family:\'IBM Plex Mono\',monospace;' +
-        'font-size:9.5px;font-weight:600;letter-spacing:0.12em;color:#6e7a93;padding:6px 0 0 5px;">' +
+        'border-left:0.33px solid var(--line-soft);font-family:\'IBM Plex Mono\',monospace;' +
+        'font-size:9.5px;font-weight:600;letter-spacing:0.12em;color:var(--label);padding:6px 0 0 5px;">' +
         esc(y) + '</span>';
     }).join('');
 
     var timeline =
       '<div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:26px 0 12px;">' +
         '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
-          'letter-spacing:0.14em;text-transform:uppercase;color:#6e7a93;">Run timeline ' +
+          'letter-spacing:0.14em;text-transform:uppercase;color:var(--label);">Run timeline ' +
           MIDDOT + ' career order</span>' +
-        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;color:#6e7a93;">' +
+        '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;color:var(--label);">' +
           runs.length + ' runs ' + MIDDOT + ' longest ' + maxRun + '</span></div>' +
       '<div class="pp2-xscroll" style="overflow-x:auto;padding-bottom:4px;">' +
         '<div style="width:' + (runs.length * RW - 1) + 'px;">' +
           '<div style="position:relative;display:flex;align-items:center;gap:1px;height:140px;">' +
             '<span style="position:absolute;left:0;right:0;top:50%;height:1px;' +
-              'background:rgba(255,255,255,0.03);"></span>' + bars + '</div>' +
+              'background:var(--line-soft);"></span>' + bars + '</div>' +
           '<div style="display:flex;">' + ticks + '</div></div></div>';
 
     // ── items 12-18 · the run detail ────────────────────────────────────────
     var detail = '<div style="margin:12px 0 0;font-family:\'IBM Plex Mono\',monospace;font-size:10px;' +
-      'letter-spacing:0.1em;text-transform:uppercase;color:#6e7a93;">Click a run for its matches</div>';
+      'letter-spacing:0.1em;text-transform:uppercase;color:var(--label);">Click a run for its matches</div>';
     var sel = runs[state.calRun];
     if (sel) {
       // Integer cents, per the money rule the rest of this modal already follows
@@ -7359,11 +7359,11 @@
       var TRACK = 'display:grid;grid-template-columns:14px 36px minmax(0,1.1fr) minmax(0,1fr) ' +
         '104px 48px 48px 56px;gap:0 14px;align-items:center;';
       var HEAD = 'font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
-        'letter-spacing:0.14em;text-transform:uppercase;color:#6e7a93;padding-bottom:7px;';
+        'letter-spacing:0.14em;text-transform:uppercase;color:var(--label);padding-bottom:7px;';
       // The OPPONENT cell is the one column the file leaves in the page font
       // (:300) — every other cell is mono — so the shared part stops short of
       // font-family and each cell adds its own.
-      var CELL = 'padding:6px 0;border-top:0.33px solid rgba(255,255,255,0.03);';
+      var CELL = 'padding:6px 0;border-top:0.33px solid var(--line-soft);';
       var MONOF = 'font-family:\'IBM Plex Mono\',monospace;';
       var colHead = '<span></span>' +
         '<span style="' + HEAD + '">Rd</span>' +
@@ -7383,13 +7383,13 @@
           : r.cents > 0 ? '#3ed68c' : r.cents < 0 ? '#da6259' : '#a3abba';
         return '<span ' + m + 'font-size:11px;font-weight:700;color:' +
             (r.won ? '#3ed68c' : '#da6259') + ';">' + (r.won ? 'W' : 'L') + '</span>' +
-          '<span ' + m + 'font-size:10.5px;color:#6e7a93;">' + esc(r.round || DASH) + '</span>' +
-          '<span ' + m + 'font-size:11px;color:#a3abba;overflow:hidden;text-overflow:ellipsis;' +
+          '<span ' + m + 'font-size:10.5px;color:var(--label);">' + esc(r.round || DASH) + '</span>' +
+          '<span ' + m + 'font-size:11px;color:var(--text-sub);overflow:hidden;text-overflow:ellipsis;' +
             'white-space:nowrap;">' + esc(r.event || DASH) + '</span>' +
-          '<span ' + t + 'font-size:12.5px;color:#ebf1f2;overflow:hidden;' +
+          '<span ' + t + 'font-size:12.5px;color:var(--text);overflow:hidden;' +
             'text-overflow:ellipsis;white-space:nowrap;">' +
             esc(r.opp ? surnameFirst(r.opp) : DASH) + '</span>' +
-          '<span ' + m + 'font-size:11.5px;color:#a3abba;white-space:nowrap;">' +
+          '<span ' + m + 'font-size:11.5px;color:var(--text-sub);white-space:nowrap;">' +
             esc(scoreWithStatus(r, r.score)) + '</span>' +
           '<span ' + m + 'font-size:11.5px;font-weight:700;text-align:right;color:' +
             (r.price == null ? DASH_COLOUR : '#ebf1f2') + ';">' +
@@ -7400,14 +7400,14 @@
           '<span ' + m + 'font-size:11.5px;text-align:right;color:' + plCol + ';">' +
             (r.cents == null ? DASH : signed(r.cents / 100, 2)) + '</span>';
       }).join('');
-      detail = '<div style="margin:12px 0 0;box-sizing:border-box;background:#0c0e16;' +
-        'border:0.33px solid #2e4fa8;border-radius:10px;padding:12px 14px;">' +
+      detail = '<div style="margin:12px 0 0;box-sizing:border-box;background:var(--surface-inner);' +
+        'border:0.33px solid var(--seg-active-line);border-radius:10px;padding:12px 14px;">' +
         '<div style="display:flex;align-items:baseline;gap:11px;margin-bottom:2px;">' +
           '<span style="font-size:12.5px;font-weight:700;">' +
             esc((sel.res === 'W' ? 'Winning run' : 'Losing run') + ' ' + MIDDOT + ' ' + sel.len +
               (sel.len === 1 ? ' match' : ' matches')) + '</span>' +
           '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;font-weight:600;' +
-            'letter-spacing:0.12em;text-transform:uppercase;color:#6e7a93;">' +
+            'letter-spacing:0.12em;text-transform:uppercase;color:var(--label);">' +
             esc(runSpan(sel, true)) + '</span>' +
           '<span style="margin-left:auto;font-family:\'IBM Plex Mono\',monospace;font-size:15px;' +
             'font-weight:700;text-align:right;white-space:nowrap;color:' +
@@ -7640,8 +7640,8 @@
 
   /** The §5.5 empty box, so the pending and settled copies cannot drift apart. */
   function speedEmptyBox(copy) {
-    return '<div style="border:0.33px dashed rgba(255,255,255,0.045);border-radius:10px;padding:26px;' +
-      'text-align:center;font-size:13px;color:#6e7a93;">' + copy + '</div>';
+    return '<div style="border:0.33px dashed var(--line);border-radius:10px;padding:26px;' +
+      'text-align:center;font-size:13px;color:var(--label);">' + copy + '</div>';
   }
 
   function renderSpeedModal(p) {
@@ -7700,7 +7700,7 @@
           '<div style="font-size:13px;font-weight:700;white-space:nowrap;color:' +
             (gate === GATE.THIN || gate === GATE.NONE ? '#6e7a93' : (on ? '#ebf1f2' : '#d9dbdf')) + ';">' +
             esc(b.band.label) + '</div>' +
-          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:#6e7a93;' +
+          '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:var(--label);' +
             'margin-top:3px;white-space:nowrap;">' + esc(meta) + '</div>' +
         '</div>' +
         '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:15px;font-weight:700;color:' +
@@ -7718,12 +7718,12 @@
     var surfLabel = (state.speedSurf || 'all') === 'all' ? 'Career' : 'Career ' + MIDDOT + ' ' + state.speedSurf;
     var trate = (gateFor(tn) === GATE.NONE || gateFor(tn) === GATE.THIN) ? DASH : Math.round(100 * tw / tn) + '%';
     var footer = '<div style="display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;' +
-      'padding:12px 13px 0;margin-top:6px;border-top:0.33px solid rgba(255,255,255,0.03);align-items:center;">' +
+      'padding:12px 13px 0;margin-top:6px;border-top:0.33px solid var(--line-soft);align-items:center;">' +
       '<div style="min-width:0;">' +
         '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
-          'letter-spacing:0.14em;text-transform:uppercase;color:#6e7a93;white-space:nowrap;">' +
+          'letter-spacing:0.14em;text-transform:uppercase;color:var(--label);white-space:nowrap;">' +
           esc(surfLabel) + '</div>' +
-        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:#6e7a93;' +
+        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:var(--label);' +
           'margin-top:4px;white-space:nowrap;">' + (tn ? tn + ' matches' : DASH) + '</div>' +
       '</div>' +
       '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">' +
@@ -7737,7 +7737,7 @@
           // would now name a number the units were not summed over. The word is
           // changed to keep the label true to its figure; the geometry is the
           // file's, untouched.
-          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9px;color:#6e7a93;white-space:nowrap;">' +
+          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9px;color:var(--label);white-space:nowrap;">' +
             (tpriced ? 'on ' + tpriced + ' priced' : '') + '</span>' +
         '</span>' +
         '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:12.5px;font-weight:600;color:' +
@@ -7756,9 +7756,9 @@
 
   function renderSpeedPanel(sel, bands) {
     if (!sel) {
-      return '<div style="background:#0c0e16;border:0.33px solid #2e4fa8;border-radius:10px;' +
-        'overflow:hidden;"><div style="border:0.33px dashed rgba(255,255,255,0.045);border-radius:10px;' +
-        'padding:26px;margin:18px;text-align:center;font-size:13px;color:#6e7a93;">' +
+      return '<div style="background:var(--surface-inner);border:0.33px solid var(--seg-active-line);border-radius:10px;' +
+        'overflow:hidden;"><div style="border:0.33px dashed var(--line);border-radius:10px;' +
+        'padding:26px;margin:18px;text-align:center;font-size:13px;color:var(--label);">' +
         'No band clears the five-match minimum, so none opens.</div></div>';
     }
     // §8.11 · the header states the band's record, rate and n, then how much of it
@@ -7768,12 +7768,12 @@
     var srate = (gateFor(sn) === GATE.NONE || gateFor(sn) === GATE.THIN) ? DASH : Math.round(100 * sel.won / sn) + '%';
     var shown = sel.rows.length;
     var head = '<div style="display:flex;align-items:center;gap:11px;padding:13px 16px;' +
-      'border-bottom:0.33px solid rgba(255,255,255,0.03);">' +
+      'border-bottom:0.33px solid var(--line-soft);">' +
       '<span style="font-size:13.5px;font-weight:700;white-space:nowrap;">' + esc(sel.band.label) + ' courts</span>' +
-      '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:#a3abba;' +
+      '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:var(--text-sub);' +
         'white-space:nowrap;flex:none;">' +
         recordText(sel.won, sel.lost) + ' ' + MIDDOT + ' ' + srate + ' ' + MIDDOT + ' ' + sn + ' matches</span>' +
-      '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:#6e7a93;' +
+      '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:var(--label);' +
         'white-space:nowrap;flex:none;margin-left:auto;">' +
         (shown < sn ? 'Showing ' + shown + ' of ' + sn : 'All ' + shown + ' matches') + '</span>' +
       '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:12.5px;font-weight:700;' +
@@ -7799,7 +7799,7 @@
           ? 'Indoors'
           : (m.surface ? String(m.surface).charAt(0).toUpperCase() + String(m.surface).slice(1) : null);
         out += '<div style="grid-column:1 / -1;display:flex;align-items:center;gap:10px;' +
-          'padding:8px 0 4px;border-top:0.33px solid rgba(255,255,255,0.03);">' +
+          'padding:8px 0 4px;border-top:0.33px solid var(--line-soft);">' +
           // tournDisplayName(name, level) APPENDS the tier ("Rome" -> "Rome Masters
           // 1000"), which §5.3 wants because its rows carry no separate meta line.
           // Here the tier already has its own column, so passing the level prints it
@@ -7808,7 +7808,7 @@
           // carry no tier either. Passing null takes the display-name map alone.
           '<span style="font-size:12.5px;font-weight:700;white-space:nowrap;">' +
             esc(tournDisplayName(m.event, null) + ' ' + m.date.slice(0, 4)) + '</span>' +
-          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;color:#6e7a93;white-space:nowrap;">' +
+          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;color:var(--label);white-space:nowrap;">' +
             esc([surfWord, m.level].filter(Boolean).join(' ' + MIDDOT + ' ')) + '</span>' +
         '</div>';
       }
@@ -7816,7 +7816,7 @@
       var cell = 'cursor:pointer;padding:5px 0;';
       out +=
         '<span ' + hook + 'style="' + cell + 'font-family:\'IBM Plex Mono\',monospace;font-size:11px;' +
-          'color:#6e7a93;">' + esc(shortDate(m.date)) + '</span>' +
+          'color:var(--label);">' + esc(shortDate(m.date)) + '</span>' +
         // §8.14 · a coloured square dot, not a "W"/"L" letter.
         '<span ' + hook + 'style="cursor:pointer;width:8px;height:8px;border-radius:2px;background:' +
           (m.won ? '#3ed68c' : '#da6259') + ';"></span>' +
@@ -7827,7 +7827,7 @@
         // which resolves R16/R32/R64/R128 from the proven draw size — the old build
         // read the ARCHIVE's prose ("1st Round") and printed R1-R4 at the Slams.
         '<span ' + hook + 'style="' + cell + 'font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;' +
-          'color:#6e7a93;">' + esc(m.round || DASH) + '</span>' +
+          'color:var(--label);">' + esc(m.round || DASH) + '</span>' +
         // §8.4 · SETS, from the player's side, coloured by result.
         '<span ' + hook + 'style="' + cell + 'font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;' +
           'font-weight:700;color:' + (m.sets ? (m.won ? '#3ed68c' : '#da6259') : DASH_COLOUR) + ';">' +
@@ -7840,9 +7840,9 @@
           'color:' + ((perSetScore(m) || matchStatus(m)) ? '#a3abba' : DASH_COLOUR) + ';white-space:nowrap;">' +
           esc(scoreWithStatus(m, perSetScore(m))) + '</span>' +
         '<span ' + hook + 'style="' + cell + 'font-family:\'IBM Plex Mono\',monospace;font-size:11px;' +
-          'color:#d9dbdf;text-align:right;">' + (m.price == null ? DASH : m.price.toFixed(2)) + '</span>' +
+          'color:var(--text-soft);text-align:right;">' + (m.price == null ? DASH : m.price.toFixed(2)) + '</span>' +
         '<span ' + hook + 'style="' + cell + 'font-family:\'IBM Plex Mono\',monospace;font-size:11px;' +
-          'color:#6e7a93;text-align:right;">' + (m.oppPrice == null ? DASH : m.oppPrice.toFixed(2)) + '</span>';
+          'color:var(--label);text-align:right;">' + (m.oppPrice == null ? DASH : m.oppPrice.toFixed(2)) + '</span>';
     });
     // §8.13 · one grid for the whole list. The group rows span it with
     // `grid-column:1/-1`, which is why they are emitted into the same container
@@ -7850,11 +7850,11 @@
     out = out ? '<div style="display:grid;grid-template-columns:52px 12px minmax(0,1.1fr) 38px 44px ' +
       'minmax(0,1.3fr) 48px 48px;gap:0 10px;align-items:center;">' + out + '</div>' : '';
 
-    return '<div style="background:#0c0e16;border:0.33px solid #2e4fa8;border-radius:10px;overflow:hidden;">' +
+    return '<div style="background:var(--surface-inner);border:0.33px solid var(--seg-active-line);border-radius:10px;overflow:hidden;">' +
       head +
       '<div style="height:calc(100vh - 340px);min-height:340px;max-height:560px;overflow-y:auto;padding:12px 18px;">' +
-        (out || '<div style="border:0.33px dashed rgba(255,255,255,0.045);border-radius:10px;padding:26px;' +
-          'text-align:center;font-size:13px;color:#6e7a93;">No matches in this band.</div>') +
+        (out || '<div style="border:0.33px dashed var(--line);border-radius:10px;padding:26px;' +
+          'text-align:center;font-size:13px;color:var(--label);">No matches in this band.</div>') +
       '</div></div>';
   }
 
@@ -7890,7 +7890,7 @@
       parts.push('The court-speed venue map has not loaded, so no match can be banded yet.');
     }
     parts.push('Units cover priced matches only ' + ENDASH + ' Pinnacle closing prices, the listed rows.');
-    return '<div style="font-size:12px;color:#6e7a93;margin-top:14px;line-height:1.6;">' +
+    return '<div style="font-size:12px;color:var(--label);margin-top:14px;line-height:1.6;">' +
       parts.join(' ') + '</div>';
   }
   /** The design writes the under-minimum count as a word ("three matches"). */
@@ -8091,13 +8091,13 @@
     // asserted it for all three, each of whom has 400+ real rows once it lands.
     // Only the store can tell the two apart, so it is asked first.
     if (!rows.total && !careerHistorySettled(p.key)) {
-      return '<div style="border:0.33px dashed rgba(255,255,255,0.045);border-radius:10px;padding:26px;' +
-        'text-align:center;font-size:13px;color:#6e7a93;">The career match store has not loaded, ' +
+      return '<div style="border:0.33px dashed var(--line);border-radius:10px;padding:26px;' +
+        'text-align:center;font-size:13px;color:var(--label);">The career match store has not loaded, ' +
         'so no opponent can be archetyped yet.</div>';
     }
     if (!rows.total) {
-      return '<div style="border:0.33px dashed rgba(255,255,255,0.045);border-radius:10px;padding:26px;' +
-        'text-align:center;font-size:13px;color:#6e7a93;">No matches on record, ' +
+      return '<div style="border:0.33px dashed var(--line);border-radius:10px;padding:26px;' +
+        'text-align:center;font-size:13px;color:var(--label);">No matches on record, ' +
         'so no opponent can be archetyped.</div>';
     }
     return renderStyleBubbles(rows) + renderStyleList(rows) + renderStyleNote(rows);
@@ -8155,12 +8155,12 @@
    */
   function renderStyleBubbles(rows) {
     var plotted = rows.filter(function (r) { return styleOpenable(r.won + r.lost); });
-    var card = 'background:#0c0e16;border:0.33px solid rgba(255,255,255,0.045);border-radius:12px;' +
+    var card = 'background:var(--surface-inner);border:0.33px solid var(--line);border-radius:12px;' +
       'padding:20px 22px 16px;margin-bottom:18px;display:flex;flex-direction:column;gap:14px;';
     if (!plotted.length) {
       return '<div style="' + card + '">' + styleEyebrow() +
-        '<div style="border:0.33px dashed rgba(255,255,255,0.045);border-radius:10px;padding:26px;' +
-        'text-align:center;font-size:13px;color:#6e7a93;">No archetype clears the five-match ' +
+        '<div style="border:0.33px dashed var(--line);border-radius:10px;padding:26px;' +
+        'text-align:center;font-size:13px;color:var(--label);">No archetype clears the five-match ' +
         'minimum, so the chart has nothing to plot.</div></div>';
     }
     // Plot order is the AXIS order (serve-first -> baseline-first), not the row
@@ -8184,11 +8184,11 @@
 
     var tickLabels = sc.ticks.map(function (t) {
       return '<span style="position:absolute;right:0;top:' + top(t) + ';transform:translateY(-50%);' +
-        'font-family:\'IBM Plex Mono\',monospace;font-size:10px;color:#6e7a93;">' + t + '%</span>';
+        'font-family:\'IBM Plex Mono\',monospace;font-size:10px;color:var(--label);">' + t + '%</span>';
     }).join('');
     var gridlines = sc.ticks.map(function (t) {
       return '<span style="position:absolute;left:0;right:0;top:' + top(t) + ';height:1px;' +
-        'background:rgba(255,255,255,0.03);"></span>';
+        'background:var(--line-soft);"></span>';
     }).join('');
 
     // The design's scale constant is 47 — the busiest archetype of a placeholder
@@ -8212,7 +8212,7 @@
       return '<span data-pp2="style-row" data-v="' + esc(r.axis.label) + '" title="' + esc(tip) + '" ' +
         'style="cursor:pointer;position:absolute;left:' + left + ';top:' + top(pct) + ';' +
         'transform:translate(-50%,-50%);width:' + size + 'px;height:' + size + 'px;border-radius:50%;' +
-        'background:' + blue(pct) + ';border:0.33px solid #2e4fa8;"></span>' +
+        'background:' + blue(pct) + ';border:0.33px solid var(--seg-active-line);"></span>' +
         // The value sits ABOVE the disc with a gap — translateY(-(r + 13)) is the
         // file's own `labelShift`. It may paint over the plot's top border into
         // the card's 14px flex gap, which is the clear space the amendment's
@@ -8220,7 +8220,7 @@
         // from spending all of that gap at once.
         '<span style="position:absolute;left:' + left + ';top:' + top(pct) + ';' +
         'transform:translate(-50%,-50%) translateY(-' + (size / 2 + 13) + 'px);' +
-        'font-family:\'IBM Plex Mono\',monospace;font-size:12px;font-weight:700;color:#ebf1f2;' +
+        'font-family:\'IBM Plex Mono\',monospace;font-size:12px;font-weight:700;color:var(--text);' +
         'white-space:nowrap;pointer-events:none;">' + Math.round(pct) + '%</span>';
     }
     // Hover and selection are CSS, not state: a repaint on mouseenter would tear
@@ -8245,7 +8245,7 @@
     elite.forEach(function (r) { pts += point(r, '92%'); labels += xlabel(r, '92%'); });
 
     var foot = 'position:absolute;bottom:0;font-family:\'IBM Plex Mono\',monospace;font-size:9px;' +
-      'letter-spacing:0.14em;text-transform:uppercase;color:#6e7a93;white-space:nowrap;';
+      'letter-spacing:0.14em;text-transform:uppercase;color:var(--label);white-space:nowrap;';
 
     return '<div style="' + card + '">' +
       styleEyebrow() +
@@ -8256,20 +8256,20 @@
           // and it is what keeps "WIN RATE" clear of "60%" (item 9).
           '<span style="position:absolute;left:-2px;top:50%;transform:translateY(-50%) rotate(-90deg);' +
             'font-family:\'IBM Plex Mono\',monospace;font-size:9px;letter-spacing:0.14em;' +
-            'text-transform:uppercase;color:#6e7a93;white-space:nowrap;">Win rate</span>' +
+            'text-transform:uppercase;color:var(--label);white-space:nowrap;">Win rate</span>' +
           tickLabels +
         '</div>' +
         '<div style="position:relative;height:' + STYLE_PLOT_H + 'px;' +
-          'border-left:0.33px solid rgba(255,255,255,0.03);' +
-          'border-bottom:0.33px solid rgba(255,255,255,0.03);">' +
+          'border-left:0.33px solid var(--line-soft);' +
+          'border-bottom:0.33px solid var(--line-soft);">' +
           gridlines +
           '<span style="position:absolute;left:0;right:0;top:' + top(50) + ';height:1px;' +
-            'background:rgba(255,255,255,0.03);"></span>' +
+            'background:var(--line-soft);"></span>' +
           (elite.length ? '<span style="position:absolute;left:86%;top:0;bottom:0;width:1px;' +
-            'border-left:0.33px dashed rgba(255,255,255,0.03);"></span>' : '') +
+            'border-left:0.33px dashed var(--line-soft);"></span>' : '') +
           '<span style="position:absolute;right:6px;top:' + top(50) + ';transform:translateY(-135%);' +
             'font-family:\'IBM Plex Mono\',monospace;font-size:9px;letter-spacing:0.1em;' +
-            'text-transform:uppercase;color:#6e7a93;">even</span>' +
+            'text-transform:uppercase;color:var(--label);">even</span>' +
           pts +
         '</div>' +
         '<span></span>' +
@@ -8283,7 +8283,7 @@
   }
   function styleEyebrow() {
     return '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
-      'letter-spacing:0.14em;text-transform:uppercase;color:#6e7a93;">' +
+      'letter-spacing:0.14em;text-transform:uppercase;color:var(--label);">' +
       'Win rate by archetype ' + MIDDOT + ' bubble size is match count</div>';
   }
 
@@ -8319,11 +8319,11 @@
     var trate = styleOpenable(tn) ? Math.round(100 * tw / tn) + '%' : DASH;
     var total = '<div style="display:grid;grid-template-columns:minmax(0,1fr) 300px 58px;' +
       'align-items:center;gap:16px;padding:13px 16px 0;margin-top:4px;' +
-      'border-top:0.33px solid rgba(255,255,255,0.03);">' +
+      'border-top:0.33px solid var(--line-soft);">' +
       '<div style="min-width:0;">' +
         '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
-          'letter-spacing:0.14em;text-transform:uppercase;color:#6e7a93;">Career</div>' +
-        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:#6e7a93;' +
+          'letter-spacing:0.14em;text-transform:uppercase;color:var(--label);">Career</div>' +
+        '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11.5px;color:var(--label);' +
           'margin-top:4px;">' + (tn ? recordText(tw, tl) + ' ' + MIDDOT + ' ' + tn + ' matches' : DASH) + '</div>' +
       '</div>' +
       '<span></span>' +
@@ -8354,7 +8354,7 @@
     var plColour = r.priced ? (r.cents >= 0 ? '#3ed68c' : '#da6259') : '#6e7a93';
 
     var headCell = 'font-family:\'IBM Plex Mono\',monospace;font-size:9px;letter-spacing:0.12em;' +
-      'text-transform:uppercase;color:#6e7a93;padding-bottom:7px;';
+      'text-transform:uppercase;color:var(--label);padding-bottom:7px;';
     // The file's first head cell is EMPTY — the W/L column carries no label.
     var heads = '<span></span>' +
       ['Date', 'Opponent', 'Event', 'Rd', 'Score'].map(function (h) {
@@ -8364,7 +8364,7 @@
         return '<span style="' + headCell + 'text-align:right;">' + h + '</span>';
       }).join('');
 
-    var cell = 'padding:6px 0;border-top:0.33px solid rgba(255,255,255,0.03);';
+    var cell = 'padding:6px 0;border-top:0.33px solid var(--line-soft);';
     var mono = 'font-family:\'IBM Plex Mono\',monospace;';
     var body = r.rows.slice().sort(function (a, b) {
       return a.date < b.date ? 1 : a.date > b.date ? -1 : 0;
@@ -8378,16 +8378,16 @@
       return '' +
         '<span ' + hook + 'style="' + cur + cell + mono + 'font-size:11px;font-weight:700;color:' +
           (m.won ? '#3ed68c' : '#da6259') + ';">' + (m.won ? 'W' : 'L') + '</span>' +
-        '<span ' + hook + 'style="' + cur + cell + mono + 'font-size:10.5px;color:#6e7a93;">' +
+        '<span ' + hook + 'style="' + cur + cell + mono + 'font-size:10.5px;color:var(--label);">' +
           esc(styleMonthYear(m.date)) + '</span>' +
         // The file's opponent cell is the page's sans face, not mono, and ellipses.
-        '<span ' + hook + 'style="' + cur + cell + 'font-size:12px;color:#ebf1f2;overflow:hidden;' +
+        '<span ' + hook + 'style="' + cur + cell + 'font-size:12px;color:var(--text);overflow:hidden;' +
           'text-overflow:ellipsis;white-space:nowrap;">' +
           esc(m.opp ? surnameFirst(m.opp) : DASH) + '</span>' +
-        '<span ' + hook + 'style="' + cur + cell + 'font-size:12px;color:#a3abba;overflow:hidden;' +
+        '<span ' + hook + 'style="' + cur + cell + 'font-size:12px;color:var(--text-sub);overflow:hidden;' +
           'text-overflow:ellipsis;white-space:nowrap;">' +
           esc(tournDisplayName(m.event, null) || DASH) + '</span>' +
-        '<span ' + hook + 'style="' + cur + cell + mono + 'font-size:10.5px;color:#6e7a93;">' +
+        '<span ' + hook + 'style="' + cur + cell + mono + 'font-size:10.5px;color:var(--label);">' +
           esc(m.round || DASH) + '</span>' +
         // Set scores where recentForm reaches, the retired/walkover marker either
         // way, and an honest dash outside that window — never an invented line.
@@ -8397,7 +8397,7 @@
         '<span ' + hook + 'style="' + cur + cell + mono + 'font-size:11.5px;font-weight:700;' +
           'text-align:right;color:' + (priced ? '#ebf1f2' : DASH_COLOUR) + ';">' +
           (priced ? m.price.toFixed(2) : DASH) + '</span>' +
-        '<span ' + hook + 'style="' + cur + cell + mono + 'font-size:11px;text-align:right;color:#6e7a93;">' +
+        '<span ' + hook + 'style="' + cur + cell + mono + 'font-size:11px;text-align:right;color:var(--label);">' +
           (m.oppPrice == null ? DASH : m.oppPrice.toFixed(2)) + '</span>' +
         // Item 29 · the file prints the P&L with NO "u" suffix; the unit is
         // stated once, in the header.
@@ -8407,12 +8407,12 @@
           (m.cents == null ? DASH : signed(m.cents / 100, 2)) + '</span>';
     }).join('');
 
-    return '<div style="background:#0c0e16;border:0.33px solid #2e4fa8;border-radius:10px;' +
+    return '<div style="background:var(--surface-inner);border:0.33px solid var(--seg-active-line);border-radius:10px;' +
       'padding:13px 15px;">' +
       '<div style="display:flex;align-items:baseline;gap:11px;margin-bottom:8px;">' +
         '<span style="font-size:12.5px;font-weight:700;">' + esc(r.axis.label) + '</span>' +
         '<span style="' + mono + 'font-size:10px;font-weight:600;letter-spacing:0.12em;' +
-          'text-transform:uppercase;color:#6e7a93;">' + recordText(r.won, r.lost) + ' ' + MIDDOT +
+          'text-transform:uppercase;color:var(--label);">' + recordText(r.won, r.lost) + ' ' + MIDDOT +
           ' ' + n + ' matches</span>' +
         '<span style="margin-left:auto;' + mono + 'font-size:14px;font-weight:700;color:' +
           plColour + ';">' + plText + '</span>' +
@@ -8449,7 +8449,7 @@
     var labelled = rows.total - rows.unlabelled;
     parts.push(labelled + ' of ' + rows.total + ' matches against a labelled opponent ' +
       MIDDOT + ' labels are current.');
-    return '<div style="font-size:12px;color:#6e7a93;margin-top:14px;line-height:1.6;">' +
+    return '<div style="font-size:12px;color:var(--label);margin-top:14px;line-height:1.6;">' +
       parts.join(' ') + '</div>';
   }
 
@@ -8795,7 +8795,7 @@
             // The two populations label rounds differently: recentForm carries the
             // api-tennis feed string (roundLabel), the shard carries the archive's
             // own prose (shortRound). Using one map on both prints raw prose.
-            'color:#6e7a93;">' + esc(fmtDotDate(m.date) + ' ' + MIDDOT + ' ' + eventName(m) + ' ' +
+            'color:var(--label);">' + esc(fmtDotDate(m.date) + ' ' + MIDDOT + ' ' + eventName(m) + ' ' +
             MIDDOT + ' ' + (x.fromShard ? shortRound(m.round) : roundLabel(m)) + ' ' + MIDDOT + ' ' +
             (m.surface ? String(m.surface) : DASH)) + '</span>' +
         '</div>' +
@@ -8806,7 +8806,7 @@
               esc(((won ? 'Won ' : 'Lost ') +
                 scoreWithStatus(m, (m.sets && m.sets.length) ? setScoreText(m, ' ') : ''))
                 .replace(' ' + DASH, '').trim()) + '</span>' +
-            '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:#6e7a93;">' +
+            '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:var(--label);">' +
               esc(priceLine) + '</span>' +
           '</div>' +
           // §8.2's entry point. Painted only where the match can actually feed a
@@ -8814,13 +8814,13 @@
           // dashed Summary tab is the dead affordance the Phase A ruling bans.
           (mpHasPanel(m)
             ? '<button type="button" data-pp2="match-page" data-v="' + esc(state.sheet) + '" ' +
-              'style="background:#0b1c4e;border:0.33px solid #2e4fa8;' +
-              'border-radius:8px;padding:6px 11px;color:#6a9af8;font-size:11.5px;font-weight:600;' +
+              'style="background:var(--seg-active);border:0.33px solid var(--seg-active-line);' +
+              'border-radius:8px;padding:6px 11px;color:var(--periwinkle);font-size:11.5px;font-weight:600;' +
               'cursor:pointer;white-space:nowrap;font-family:inherit;">Full match ' + RANGLE + '</button>'
             : '') +
-          '<span data-pp2="sheet-close" style="background:#0c0e16;' +
-            'border:0.33px solid rgba(255,255,255,0.045);border-radius:8px;width:30px;height:30px;' +
-            'color:#a3abba;font-size:15px;line-height:1;cursor:pointer;display:flex;' +
+          '<span data-pp2="sheet-close" style="background:var(--surface-inner);' +
+            'border:0.33px solid var(--line);border-radius:8px;width:30px;height:30px;' +
+            'color:var(--text-sub);font-size:15px;line-height:1;cursor:pointer;display:flex;' +
             'align-items:center;justify-content:center;">' + '×' + '</span>' +
         '</div>' +
       '</div>';
@@ -8828,13 +8828,13 @@
     var dA = drFor(mine, theirs), dB = drFor(theirs, mine);
     var dr = '' +
       '<div style="display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);' +
-        'align-items:center;gap:14px;background:#0c0e16;border:0.33px solid rgba(255,255,255,0.045);' +
+        'align-items:center;gap:14px;background:var(--surface-inner);border:0.33px solid var(--line);' +
         'border-radius:10px;padding:13px 16px;">' +
         '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:24px;font-weight:700;' +
           'color:' + (dA == null ? DASH_COLOUR : '#6a9af8') + ';">' +
           (dA == null ? DASH : dA.toFixed(2)) + '</span>' +
         '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;font-weight:700;' +
-          'letter-spacing:0.16em;text-transform:uppercase;color:#a3abba;">Dominance ratio</span>' +
+          'letter-spacing:0.16em;text-transform:uppercase;color:var(--text-sub);">Dominance ratio</span>' +
         '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:24px;font-weight:700;' +
           'text-align:right;color:' + (dB == null ? DASH_COLOUR : '#ebf1f2') + ';">' +
           (dB == null ? DASH : dB.toFixed(2)) + '</span>' +
@@ -8859,25 +8859,25 @@
                 '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:15px;font-weight:700;' +
                   'color:' + (a == null ? DASH_COLOUR : '#6a9af8') + ';">' + sheetText(row, a) + '</span>' +
                 (fa ? '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;' +
-                  'color:#6e7a93;">' + esc(fa) + '</span>' : '') +
+                  'color:var(--label);">' + esc(fa) + '</span>' : '') +
               '</span>' +
               '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;' +
-                'letter-spacing:0.14em;text-transform:uppercase;color:#a3abba;text-align:center;">' +
+                'letter-spacing:0.14em;text-transform:uppercase;color:var(--text-sub);text-align:center;">' +
                 esc(row.label) + '</span>' +
               '<span style="display:flex;flex-direction:column;gap:2px;align-items:flex-end;min-width:0;">' +
                 '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:15px;font-weight:700;' +
                   'text-align:right;color:' + (b == null ? DASH_COLOUR : '#ebf1f2') + ';">' +
                   sheetText(row, b) + '</span>' +
                 (fb ? '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;' +
-                  'color:#6e7a93;">' + esc(fb) + '</span>' : '') +
+                  'color:var(--label);">' + esc(fb) + '</span>' : '') +
               '</span>' +
             '</div>' +
             '<div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;">' +
               '<span style="display:flex;justify-content:flex-end;height:7px;' +
-                'background:#0c0e16;border-radius:4px;">' +
-                '<span style="height:7px;width:' + bars[0] + ';background:#6a9af8;border-radius:4px;">' +
+                'background:var(--surface-inner);border-radius:4px;">' +
+                '<span style="height:7px;width:' + bars[0] + ';background:var(--periwinkle);border-radius:4px;">' +
                 '</span></span>' +
-              '<span style="display:flex;height:7px;background:#0c0e16;' +
+              '<span style="display:flex;height:7px;background:var(--surface-inner);' +
                 'border-radius:4px;"><span style="height:7px;width:' + bars[1] +
                 ';background:rgba(255,255,255,0.75);border-radius:4px;"></span></span>' +
             '</div>' +
@@ -8887,7 +8887,7 @@
         '<div style="display:flex;flex-direction:column;gap:13px;">' +
           '<span style="display:block;text-align:center;font-family:\'IBM Plex Mono\',monospace;' +
             'font-size:9.5px;font-weight:700;letter-spacing:0.18em;text-transform:uppercase;' +
-            'color:#6e7a93;background:#0c0e16;border:0.33px solid rgba(255,255,255,0.045);' +
+            'color:var(--label);background:var(--surface-inner);border:0.33px solid var(--line);' +
             'border-radius:8px;padding:8px 0;">' + esc(sec.title) + '</span>' + rows +
         '</div>';
     }).join('');
@@ -8914,13 +8914,13 @@
 
     return '' +
       '<div class="pp2-sheet" data-pp2="sheet-scrim" style="position:fixed;inset:0;z-index:80;' +
-        'background:rgba(11,12,19,0.76);display:flex;align-items:flex-start;justify-content:center;' +
+        'background:var(--backdrop);display:flex;align-items:flex-start;justify-content:center;' +
         'padding:40px 24px;overflow-y:auto;">' +
-        '<div style="position:relative;width:100%;max-width:760px;background:#0e1019;' +
-          'border:0.33px solid #2e4fa8;border-radius:14px;padding:22px 24px 26px;' +
+        '<div style="position:relative;width:100%;max-width:760px;background:var(--surface);' +
+          'border:0.33px solid var(--seg-active-line);border-radius:14px;padding:22px 24px 26px;' +
           'display:flex;flex-direction:column;gap:16px;">' +
           head + dr + sections +
-          '<div style="font-size:11px;color:#6e7a93;line-height:1.55;">' + esc(note) + '</div>' +
+          '<div style="font-size:11px;color:var(--label);line-height:1.55;">' + esc(note) + '</div>' +
         '</div>' +
       '</div>';
   }
@@ -9119,7 +9119,7 @@
 
   function mpSeg(items, hook, active) {
     return '<div style="display:flex;justify-content:center;">' +
-      '<div style="display:flex;gap:4px;background:#0e1019;border:0.33px solid rgba(255,255,255,0.045);' +
+      '<div style="display:flex;gap:4px;background:var(--surface);border:0.33px solid var(--line);' +
         'border-radius:10px;padding:4px;">' +
       items.map(function (it) {
         var on = String(it.id) === String(active);
@@ -9127,14 +9127,14 @@
           'style="white-space:nowrap;padding:' + (hook === 'mp-tab' ? '8px 15px' : '7px 14px') + ';' +
           'border-radius:7px;font-size:' + (hook === 'mp-tab' ? '12.5' : '12') + 'px;font-weight:' +
           (on ? 700 : 600) + ';color:' + (on ? '#ebf1f2' : '#6e7a93') + ';background:' +
-          (on ? 'rgba(91,155,255,0.16)' : 'transparent') + ';border:1px solid ' +
-          (on ? 'rgba(91,155,255,0.4)' : 'rgba(255,255,255,0.08)') + ';cursor:pointer;font-family:inherit;">' +
+          (on ? 'rgba(91,155,255,0.16)' : 'transparent') + ';border:0.33px solid ' +
+          (on ? 'rgba(91,155,255,0.4)' : 'var(--line)') + ';cursor:pointer;font-family:inherit;">' +
           esc(it.label) + '</button>';
       }).join('') + '</div></div>';
   }
 
   var MP_CAP = 'font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:700;' +
-    'letter-spacing:0.16em;text-transform:uppercase;color:#6e7a93;';
+    'letter-spacing:0.16em;text-transform:uppercase;color:var(--label);';
 
   // ─── Summary ───────────────────────────────────────────────────────────────
   function mpSummary(p, x, shard, first) {
@@ -9161,12 +9161,12 @@
           'margin-left:8px;">' +
           '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:15px;font-weight:700;' +
             'text-align:center;margin-right:4px;padding:2px 6px;border-radius:5px;background:' +
-            (won ? 'rgba(91,155,255,0.16)' : 'transparent') + ';color:#ebf1f2;">' +
+            (won ? 'rgba(91,155,255,0.16)' : 'transparent') + ';color:var(--text);">' +
             (cells ? setsWon[mine] : DASH) + '</span>' +
           (cells || []).map(function (c) {
             var v = c[mine];
             return '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:13px;' +
-              'font-weight:700;text-align:center;color:#6e7a93;">' +
+              'font-weight:700;text-align:center;color:var(--label);">' +
               (v == null ? DASH : v) +
               (c.tb != null ? '<sup style="font-size:9px;font-weight:600;margin-left:1px;">' +
                 esc(String(c.tb)) + '</sup>' : '') +
@@ -9177,15 +9177,15 @@
 
     var scoreBlock = cells
       ? row(shortName(p), true) + row(oppName, false)
-      : '<div style="border:0.33px dashed rgba(255,255,255,0.045);border-radius:10px;padding:20px;' +
-        'text-align:center;font-size:12.5px;color:#6e7a93;">No set-by-set score on record for ' +
+      : '<div style="border:0.33px dashed var(--line);border-radius:10px;padding:20px;' +
+        'text-align:center;font-size:12.5px;color:var(--label);">No set-by-set score on record for ' +
         'this match, so the per-set columns cannot be drawn.</div>';
 
     // Match time: rendered, and dashed. See the note at the top of §8.2 — no
     // source we hold carries a duration, so every cell here is a dash and the
     // footnote names the reason. A zero here would read as a match that took no
     // time, which is exactly the fabrication the standing rules forbid.
-    var timeRow = '<div style="display:flex;align-items:center;border-top:0.33px solid rgba(255,255,255,0.03);' +
+    var timeRow = '<div style="display:flex;align-items:center;border-top:0.33px solid var(--line-soft);' +
       'margin-top:10px;padding:12px 2px 8px;">' +
       '<span style="width:14px;flex:none;"></span>' +
       '<span style="flex:1;' + MP_CAP + '">Match time</span>' +
@@ -9205,12 +9205,12 @@
       .filter(function (t) { return t && t !== DASH; }).join(' ' + MIDDOT + ' ');
 
     return '<div style="font-family:\'IBM Plex Mono\',monospace;text-align:center;font-size:11px;' +
-        'color:#6e7a93;margin-bottom:16px;">' + esc(meta) + '</div>' +
+        'color:var(--label);margin-bottom:16px;">' + esc(meta) + '</div>' +
       '<div style="max-width:560px;margin:0 auto;">' +
         '<div style="' + MP_CAP + 'margin-bottom:10px;">Score</div>' +
         '<div style="display:flex;flex-direction:column;gap:8px;padding:0 2px 4px;">' + scoreBlock + '</div>' +
         timeRow +
-        '<div style="font-size:11px;color:#6e7a93;line-height:1.55;margin-top:10px;">' +
+        '<div style="font-size:11px;color:var(--label);line-height:1.55;margin-top:10px;">' +
           'Match duration is not carried by any source we hold — api-tennis publishes a start ' +
           'time and no length, and neither the point log nor the box-score shard carries one — ' +
           'so the Match time row is a dash rather than a figure.' +
@@ -9267,15 +9267,15 @@
 
     if (!mine && !theirs) {
       return (segs.length > 1 ? mpSeg(segs, 'mp-set', sel) : '') +
-        '<div style="border:0.33px dashed rgba(255,255,255,0.045);border-radius:10px;padding:24px;' +
-        'text-align:center;font-size:12.5px;color:#6e7a93;margin-top:16px;">' +
+        '<div style="border:0.33px dashed var(--line);border-radius:10px;padding:24px;' +
+        'text-align:center;font-size:12.5px;color:var(--label);margin-top:16px;">' +
         'No box score on record for this match' + (sel === 'match' ? '' : ' at set ' + sel) + '.</div>';
     }
 
     var names = '<div style="display:flex;justify-content:space-between;font-size:13px;' +
       'font-weight:700;margin:18px 0 12px;">' +
-      '<span style="color:#6a9af8;">' + esc(shortName(p)) + '</span>' +
-      '<span style="color:#ebf1f2;">' + esc(m.opponent ? surnameFirst(m.opponent) : DASH) + '</span></div>';
+      '<span style="color:var(--periwinkle);">' + esc(shortName(p)) + '</span>' +
+      '<span style="color:var(--text);">' + esc(m.opponent ? surnameFirst(m.opponent) : DASH) + '</span></div>';
 
     var bands = SHEET_SECTIONS.map(function (sec) {
       var rows = sec.rows.map(function (r) {
@@ -9289,26 +9289,26 @@
             '<span style="display:flex;flex-direction:column;align-items:center;gap:1px;">' +
               '<span style="' + MP_CAP + 'font-weight:600;letter-spacing:0.14em;font-size:9.5px;">' +
                 esc(r.label) + '</span>' +
-              (r.lowerBetter ? '<span style="font-size:10px;color:#6e7a93;">lower is better</span>' : '') +
+              (r.lowerBetter ? '<span style="font-size:10px;color:var(--label);">lower is better</span>' : '') +
             '</span>' +
             '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:13px;color:' +
               (b == null ? DASH_COLOUR : '#ebf1f2') + ';">' + sheetText(r, b) + '</span>' +
           '</div>' +
           '<div style="display:flex;gap:4px;height:6px;">' +
             '<span style="flex:1;display:flex;justify-content:flex-end;">' +
-              '<span style="display:block;width:' + bars[0] + ';height:100%;background:#6a9af8;' +
+              '<span style="display:block;width:' + bars[0] + ';height:100%;background:var(--periwinkle);' +
                 'border-radius:3px;"></span></span>' +
             '<span style="flex:1;"><span style="display:block;width:' + bars[1] + ';height:100%;' +
               'background:#e7e9ee;border-radius:3px;"></span></span>' +
           '</div></div>';
       }).join('');
-      return '<div style="' + MP_CAP + 'text-align:center;padding:8px 0;background:#0e1019;' +
+      return '<div style="' + MP_CAP + 'text-align:center;padding:8px 0;background:var(--surface);' +
         'border-radius:8px;margin:16px 0;">' + esc(sec.title) + '</div>' +
         '<div style="display:flex;flex-direction:column;gap:14px;">' + rows + '</div>';
     }).join('');
 
     return (segs.length > 1 ? mpSeg(segs, 'mp-set', sel) : '') + names + bands +
-      '<div style="font-size:11px;color:#6e7a93;line-height:1.55;margin-top:14px;">' +
+      '<div style="font-size:11px;color:var(--label);line-height:1.55;margin-top:14px;">' +
         esc(sourceNote) + ' A stat the feed never recorded for this match shows a dash and an ' +
         'empty bar, never a zero.' +
         (segs.length > 1 ? '' : ' No per-set box score is on file for this match, so the set ' +
@@ -9320,8 +9320,8 @@
   function mpPoints(p, x, shard, first) {
     var m = x.m;
     if (!shard || !Array.isArray(shard.sets) || !shard.sets.length) {
-      return '<div style="border:0.33px dashed rgba(255,255,255,0.045);border-radius:10px;padding:24px;' +
-        'text-align:center;font-size:12.5px;color:#6e7a93;">No point log on record for this match.</div>';
+      return '<div style="border:0.33px dashed var(--line);border-radius:10px;padding:24px;' +
+        'text-align:center;font-size:12.5px;color:var(--label);">No point log on record for this match.</div>';
     }
     var segs = shard.sets.map(function (s, i) {
       return { id: String(s.set != null ? s.set : i + 1), label: 'Set ' + (s.set != null ? s.set : i + 1) };
@@ -9351,7 +9351,7 @@
         'stroke-width="1.8"><circle cx="12" cy="12" r="9"></circle>' +
         '<path d="M4 8a15 15 0 0116 0M4 16a15 15 0 0016 0"></path></svg>';
       var badge = '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:700;' +
-        'letter-spacing:0.08em;color:#da6259;background:rgba(224,97,111,0.1);' +
+        'letter-spacing:0.08em;color:var(--negative);background:rgba(224,97,111,0.1);' +
         'border:1px solid rgba(224,97,111,0.34);border-radius:5px;padding:3px 8px;' +
         'white-space:nowrap;">LOST SERVE</span>';
       var pts = (g.points || []).map(function (pt, i, all) {
@@ -9361,20 +9361,20 @@
         var txt = subjIsP1 ? String(pt.s || '')
           : (String(sp[1] || '').trim() + ' - ' + String(sp[0] || '').trim());
         return '<span style="display:inline-flex;align-items:center;gap:5px;' +
-          'font-family:\'IBM Plex Mono\',monospace;font-size:12px;color:#6e7a93;">' + esc(txt) +
+          'font-family:\'IBM Plex Mono\',monospace;font-size:12px;color:var(--label);">' + esc(txt) +
           (pt.bp ? '<span style="font-size:8.5px;font-weight:700;color:#e8a84e;' +
             'background:rgba(224,162,74,0.14);border:1px solid rgba(224,162,74,0.4);' +
             'border-radius:4px;padding:1px 5px;">BP</span>' : '') +
-          (pt.sp ? '<span style="font-size:8.5px;font-weight:700;color:#6a9af8;' +
-            'background:#0b1c4e;border:0.33px solid #2e4fa8;' +
+          (pt.sp ? '<span style="font-size:8.5px;font-weight:700;color:var(--periwinkle);' +
+            'background:var(--seg-active);border:0.33px solid var(--seg-active-line);' +
             'border-radius:4px;padding:1px 5px;">SP</span>' : '') +
-          (pt.mp ? '<span style="font-size:8.5px;font-weight:700;color:#3ed68c;' +
+          (pt.mp ? '<span style="font-size:8.5px;font-weight:700;color:var(--positive);' +
             'background:rgba(61,214,140,0.14);border:1px solid rgba(61,214,140,0.4);' +
             'border-radius:4px;padding:1px 5px;">MP</span>' : '') +
-          (i < all.length - 1 ? '<span style="color:#6e7a93;">,</span>' : '') +
+          (i < all.length - 1 ? '<span style="color:var(--label);">,</span>' : '') +
           '</span>';
       }).join('');
-      return '<div style="padding:16px 4px;border-bottom:0.33px solid rgba(255,255,255,0.03);">' +
+      return '<div style="padding:16px 4px;border-bottom:0.33px solid var(--line-soft);">' +
         '<div style="display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:12px;' +
           'margin-bottom:10px;">' +
           '<div style="display:flex;align-items:center;justify-content:flex-end;gap:8px;">' +
@@ -9382,7 +9382,7 @@
           '<div style="display:flex;align-items:center;justify-content:center;gap:9px;">' +
             '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:18px;font-weight:700;' +
               'color:' + (winnerIsSubject ? '#ebf1f2' : '#6e7a93') + ';">' + esc(gA) + '</span>' +
-            '<span style="color:#6e7a93;font-size:15px;">' + MIDDOT + '</span>' +
+            '<span style="color:var(--label);font-size:15px;">' + MIDDOT + '</span>' +
             '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:18px;font-weight:700;' +
               'color:' + (winnerIsSubject ? '#6e7a93' : '#ebf1f2') + ';">' + esc(gB) + '</span>' +
           '</div>' +
@@ -9398,7 +9398,7 @@
     // The export's tiebreak sub-block: a 10px/0.16em label, then the point rows.
     var tbBlock = split.tb.length ? (
       '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:10px;letter-spacing:0.16em;' +
-        'text-transform:uppercase;color:#6e7a93;padding:14px 4px 8px;">Tiebreak' +
+        'text-transform:uppercase;color:var(--label);padding:14px 4px 8px;">Tiebreak' +
         (tbPts != null ? ' ' + MIDDOT + ' ' + esc(String(tbPts)) + ' to the loser' : '') + '</div>' +
       '<div style="display:flex;flex-wrap:wrap;gap:5px;justify-content:center;align-items:center;' +
         'padding:0 4px 14px;">' +
@@ -9407,17 +9407,17 @@
           var txt = subjIsP1 ? String(t.score || '')
             : (String(sp2[1] || '').trim() + ' - ' + String(sp2[0] || '').trim());
           return '<span style="display:inline-flex;align-items:center;gap:5px;' +
-            'font-family:\'IBM Plex Mono\',monospace;font-size:12px;color:#6e7a93;">' + esc(txt) +
-            (i < split.tb.length - 1 ? '<span style="color:#6e7a93;">,</span>' : '') + '</span>';
+            'font-family:\'IBM Plex Mono\',monospace;font-size:12px;color:var(--label);">' + esc(txt) +
+            (i < split.tb.length - 1 ? '<span style="color:var(--label);">,</span>' : '') + '</span>';
         }).join('') +
       '</div>') : '';
     return mpSeg(segs, 'mp-point-set', sel) +
-      '<div style="background:#0e1019;border:0.33px solid rgba(255,255,255,0.045);border-radius:9px;' +
+      '<div style="background:var(--surface);border:0.33px solid var(--line);border-radius:9px;' +
         'text-align:center;font-size:11px;font-family:\'IBM Plex Mono\',monospace;letter-spacing:0.16em;' +
-        'color:#ebf1f2;padding:11px;margin:10px 0 4px;">SET ' + esc(String(sel)) + ' ' + MIDDOT + ' ' +
+        'color:var(--text);padding:11px;margin:10px 0 4px;">SET ' + esc(String(sel)) + ' ' + MIDDOT + ' ' +
         nGames + ' GAMES</div>' +
       '<div style="display:flex;flex-direction:column;">' + games + '</div>' + tbBlock +
-      '<div style="font-size:11px;color:#6e7a93;line-height:1.55;margin-top:12px;">' +
+      '<div style="font-size:11px;color:var(--label);line-height:1.55;margin-top:12px;">' +
         'The running score reads from ' + esc(shortName(p)) + '&#39;s side. BP, SP and MP are the ' +
         'feed&#39;s own break-, set- and match-point flags — they are not inferred from the score.' +
         (split.tb.length
@@ -9455,23 +9455,23 @@
     // join error. Painting it would hand the reader the wrong man's points, so
     // the tab says so instead — the same refusal renderSheet makes.
     if (tab.id !== 'summary' && shard && !mpOrient(shard, p.key) && !mpOrient(ssShard, p.key)) {
-      body = '<div style="border:0.33px dashed rgba(255,255,255,0.045);border-radius:10px;padding:24px;' +
-        'text-align:center;font-size:12.5px;color:#6e7a93;">This match&#39;s log names neither ' +
+      body = '<div style="border:0.33px dashed var(--line);border-radius:10px;padding:24px;' +
+        'text-align:center;font-size:12.5px;color:var(--label);">This match&#39;s log names neither ' +
         'player by key, so it cannot be oriented and is not shown.</div>';
     }
 
-    return '<div style="margin:4px 0 10px;padding:16px 16px 8px;background:#0e1019;' +
-      'border:0.33px solid rgba(255,255,255,0.045);border-radius:12px;">' +
+    return '<div style="margin:4px 0 10px;padding:16px 16px 8px;background:var(--surface);' +
+      'border:0.33px solid var(--line);border-radius:12px;">' +
       (tabs.length > 1
         ? '<div style="margin-bottom:14px;">' + mpSeg(tabs, 'mp-tab', tab.id) + '</div>'
         : '') +
       body +
       (pending
-        ? '<div style="font-size:11px;color:#6e7a93;text-align:center;padding:8px 0;">' +
+        ? '<div style="font-size:11px;color:var(--label);text-align:center;padding:8px 0;">' +
           'Loading this match&#39;s log…</div>'
         : '') +
       (tabs.length < MP_TABS.length
-        ? '<div style="font-size:11px;color:#6e7a93;line-height:1.55;margin-top:6px;">' +
+        ? '<div style="font-size:11px;color:var(--label);line-height:1.55;margin-top:6px;">' +
           MP_TABS.filter(function (t) { return !avail[t.id]; })
             .map(function (t) { return t.label; }).join(' and ') +
           (tabs.length === MP_TABS.length - 1 ? ' is' : ' are') +
@@ -9501,22 +9501,22 @@
     // A data-pp2 the mount cannot handle is a dead control, and the reconcile
     // suite's hook audit is what caught it here.
     return '<div style="position:fixed;inset:0;z-index:80;' +
-      'background:#0c0e16;overflow-y:auto;">' +
+      'background:var(--surface-inner);overflow-y:auto;">' +
       '<div style="max-width:1000px;margin:0 auto;padding:26px 34px 70px;display:flex;' +
         'flex-direction:column;gap:18px;">' +
         '<button type="button" data-pp2="match-page-close" style="display:inline-flex;' +
-          'align-items:center;gap:9px;font-size:13.5px;font-weight:600;color:#6e7a93;' +
+          'align-items:center;gap:9px;font-size:13.5px;font-weight:600;color:var(--label);' +
           'align-self:flex-start;cursor:pointer;background:none;border:0;padding:0;' +
           'font-family:inherit;">' +
           '<svg width="16" height="16" viewBox="0 0 20 20" fill="none" aria-hidden="true">' +
           '<path d="M12 5l-5 5 5 5" stroke="currentColor" stroke-width="1.7" ' +
           'stroke-linecap="round" stroke-linejoin="round"></path></svg>Back to profile</button>' +
         '<div style="display:flex;flex-direction:column;gap:5px;' +
-          'border-bottom:0.33px solid rgba(255,255,255,0.03);padding-bottom:18px;">' +
+          'border-bottom:0.33px solid var(--line-soft);padding-bottom:18px;">' +
           '<span style="font-size:26px;font-weight:800;letter-spacing:-0.02em;">' +
-            esc(shortName(p)) + ' <span style="color:#6e7a93;">v</span> ' +
+            esc(shortName(p)) + ' <span style="color:var(--label);">v</span> ' +
             esc(m.opponent ? surnameFirst(m.opponent) : DASH) + '</span>' +
-          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;color:#6e7a93;">' +
+          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;color:var(--label);">' +
             esc(meta) + '</span>' +
         '</div>' +
         renderMatchPanel(p, ctx, state.matchPage) +
@@ -9538,8 +9538,8 @@
     else {
       // Not yet built. The modal opens and says so — a box that silently does
       // nothing reads as a broken page.
-      body = '<div style="border:0.33px dashed rgba(255,255,255,0.045);border-radius:10px;padding:26px;' +
-        'text-align:center;font-size:13px;color:#6e7a93;">Not built yet.</div>';
+      body = '<div style="border:0.33px dashed var(--line);border-radius:10px;padding:26px;' +
+        'text-align:center;font-size:13px;color:var(--label);">Not built yet.</div>';
     }
     return modalShell(k, p, ctx, body);
   }
@@ -9682,8 +9682,8 @@
   /** The segmented control the export uses for Hold|Break — and, restyled to
    *  match it, for the surface filter. */
   function hbSegHtml(hook, items, active) {
-    return '<span style="display:inline-flex;gap:3px;background:#0c0e16;' +
-      'border:0.33px solid rgba(255,255,255,0.045);border-radius:9px;padding:3px;">' +
+    return '<span style="display:inline-flex;gap:3px;background:var(--surface-inner);' +
+      'border:0.33px solid var(--line);border-radius:9px;padding:3px;">' +
       items.map(function (it) {
         var on = it.id === active;
         return '<button type="button" data-pp2="' + hook + '" data-v="' + esc(it.id) + '" ' +
@@ -9702,13 +9702,13 @@
     var HEAD = ['Global', 'S1', 'S2', 'S3', 'S4', 'S5'];
     function headCell(t) {
       return '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
-        'letter-spacing:0.14em;text-transform:uppercase;color:#6e7a93;text-align:center;">' +
+        'letter-spacing:0.14em;text-transform:uppercase;color:var(--label);text-align:center;">' +
         esc(t) + '</span>';
     }
     // The 10px track between GLOBAL and S1 carries a 1x34px rule, so the two
     // halves of the row read as separate scales rather than one six-set run.
     var divider = '<span style="display:flex;justify-content:center;">' +
-      '<span style="width:1px;height:34px;background:rgba(255,255,255,0.03);"></span></span>';
+      '<span style="width:1px;height:34px;background:var(--line-soft);"></span></span>';
 
     var head = '<span></span>' + headCell(HEAD[0]) + '<span></span>' +
       HEAD.slice(1).map(headCell).join('');
@@ -9716,9 +9716,9 @@
     var rows = model.rows.map(function (r) {
       return '' +
         '<span style="display:flex;flex-direction:column;gap:2px;">' +
-          '<span style="font-size:13.5px;font-weight:700;color:#ebf1f2;white-space:nowrap;">' +
+          '<span style="font-size:13.5px;font-weight:700;color:var(--text);white-space:nowrap;">' +
             esc(r.bucket) + '</span>' +
-          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;color:#6a9af8;">' +
+          '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;color:var(--periwinkle);">' +
             esc(r.sub) + '</span>' +
         '</span>' +
         hbGlobalCellHtml(r) + divider + r.cells.map(hbCellHtml).join('');
@@ -9760,7 +9760,7 @@
         (cov.from && cov.to ? ' ' + MIDDOT + ' ' + cov.from + ' ' + ENDASH + ' ' + cov.to
           : cov.windowMonths ? ' ' + MIDDOT + ' ' + cov.windowMonths + '-month window' : '') + '.';
     }
-    return '<div style="font-size:11.5px;color:#6e7a93;line-height:1.6;">' + legend + prov + '</div>';
+    return '<div style="font-size:11.5px;color:var(--label);line-height:1.6;">' + legend + prov + '</div>';
   }
 
   /**
@@ -9785,7 +9785,7 @@
 
     var body;
     if (!E || !HB) {
-      body = '<div style="border:0.33px dashed rgba(255,255,255,0.045);border-radius:10px;padding:26px;' +
+      body = '<div style="border:0.33px dashed var(--line);border-radius:10px;padding:26px;' +
         'text-align:center;font-size:13px;color:' + DASH_COLOUR + ';">Hold/break data is not loaded.</div>';
     } else {
       var cov = hbCoverage(p);
@@ -9794,7 +9794,7 @@
         // words — sixty dashes read as a rendering fault, not as an absence.
         var rosterN = (HB.meta && HB.meta.players) || null;
         var winN = (HB.meta && HB.meta.windowMonths) || null;
-        body = '<div style="border:0.33px dashed rgba(255,255,255,0.045);border-radius:10px;padding:26px;' +
+        body = '<div style="border:0.33px dashed var(--line);border-radius:10px;padding:26px;' +
           'text-align:center;font-size:13px;color:' + DASH_COLOUR + ';line-height:1.6;">' +
           esc(sn) + ' has no point-by-point data on record, so holds and breaks by game cannot be shown.' +
           (rosterN && winN ? '<br>The rollup covers ' + rosterN + ' players over the last ' +
@@ -9824,10 +9824,10 @@
 
     return '' +
       '<div class="pp2-sheet" data-pp2="heat-scrim" style="position:fixed;inset:0;z-index:80;' +
-        'background:rgba(11,12,19,0.76);display:flex;align-items:flex-start;justify-content:center;' +
+        'background:var(--backdrop);display:flex;align-items:flex-start;justify-content:center;' +
         'padding:40px 24px;overflow-y:auto;">' +
-        '<div style="position:relative;width:100%;max-width:760px;background:#0e1019;' +
-          'border:0.33px solid #2e4fa8;border-radius:14px;padding:22px 24px 24px;' +
+        '<div style="position:relative;width:100%;max-width:760px;background:var(--surface);' +
+          'border:0.33px solid var(--seg-active-line);border-radius:14px;padding:22px 24px 24px;' +
           'display:flex;flex-direction:column;gap:16px;">' +
 
           '<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:16px;">' +
@@ -9836,8 +9836,8 @@
                 'Hold / break heatmap</span>' +
               '<span style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">' +
                 '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9.5px;font-weight:600;' +
-                  'letter-spacing:0.14em;text-transform:uppercase;color:#6e7a93;background:#0c0e16;' +
-                  'border:0.33px solid rgba(255,255,255,0.045);border-radius:9px;padding:8px 14px;">' +
+                  'letter-spacing:0.14em;text-transform:uppercase;color:var(--label);background:var(--surface-inner);' +
+                  'border:0.33px solid var(--line);border-radius:9px;padding:8px 14px;">' +
                   esc(scope) + '</span>' +
                 hbSegHtml('hb-surf', HB_SURFACES, surf) +
               '</span>' +
@@ -9845,18 +9845,18 @@
             '<div style="display:flex;align-items:center;gap:12px;flex:none;">' +
               hbSegHtml('hb-mode', HB_MODES, mode) +
               '<button type="button" data-pp2="heat-close" aria-label="Close" ' +
-                'style="background:#0c0e16;border:0.33px solid rgba(255,255,255,0.045);' +
-                'border-radius:8px;width:30px;height:30px;color:#a3abba;font-size:15px;line-height:1;' +
+                'style="background:var(--surface-inner);border:0.33px solid var(--line);' +
+                'border-radius:8px;width:30px;height:30px;color:var(--text-sub);font-size:15px;line-height:1;' +
                 'cursor:pointer;flex:none;">' + TIMES + '</button>' +
             '</div>' +
           '</div>' +
 
           '<div style="display:flex;align-items:center;justify-content:space-between;gap:12px;">' +
-            '<span style="font-size:15px;font-weight:700;color:#6a9af8;">' + esc(sn) + '</span>' +
+            '<span style="font-size:15px;font-weight:700;color:var(--periwinkle);">' + esc(sn) + '</span>' +
             (pill
               ? '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:12px;font-weight:700;' +
-                'letter-spacing:0.1em;text-transform:uppercase;color:#ebf1f2;background:#0c0e16;' +
-                'border:0.33px solid rgba(255,255,255,0.045);border-radius:9px;padding:7px 14px;">' +
+                'letter-spacing:0.1em;text-transform:uppercase;color:var(--text);background:var(--surface-inner);' +
+                'border:0.33px solid var(--line);border-radius:9px;padding:7px 14px;">' +
                 esc(pill) + '</span>'
               : '') +
           '</div>' +
@@ -9891,7 +9891,7 @@
     var E = hbEngine();
     var HB = hbStore();
     if (!E || !HB) {
-      return '<div style="border:0.33px dashed rgba(255,255,255,0.045);border-radius:12px;padding:18px;' +
+      return '<div style="border:0.33px dashed var(--line);border-radius:12px;padding:18px;' +
         'font-size:12.5px;color:' + DASH_COLOUR + ';">Hold/break data is not loaded.</div>';
     }
 
@@ -9903,7 +9903,7 @@
     if (!cov) {
       var rosterN = (HB.meta && HB.meta.players) || null;
       var winN = (HB.meta && HB.meta.windowMonths) || null;
-      return '<div style="border:0.33px dashed rgba(255,255,255,0.045);border-radius:12px;padding:18px;' +
+      return '<div style="border:0.33px dashed var(--line);border-radius:12px;padding:18px;' +
         'font-size:12.5px;color:' + DASH_COLOUR + ';line-height:1.6;">' +
         esc(sn) + ' has no point-by-point data on record, so holds and breaks by game cannot be shown.' +
         (rosterN && winN
@@ -9932,12 +9932,12 @@
     // reported rather than restyled.
     return '' +
       '<div data-pp2="heat" style="cursor:pointer;display:flex;align-items:center;' +
-        'justify-content:space-between;gap:14px;background:#0c0e16;' +
-        'border:0.33px solid rgba(255,255,255,0.045);border-radius:11px;padding:13px 15px;">' +
+        'justify-content:space-between;gap:14px;background:var(--surface-inner);' +
+        'border:0.33px solid var(--line);border-radius:11px;padding:13px 15px;">' +
         '<span style="display:flex;align-items:center;gap:11px;min-width:0;">' +
           '<span style="width:30px;height:30px;border-radius:9px;' +
-            'background:#0b1c4e;border:0.33px solid #2e4fa8;' +
-            'display:flex;align-items:center;justify-content:center;flex:none;color:#6a9af8;">' +
+            'background:var(--seg-active);border:0.33px solid var(--seg-active-line);' +
+            'display:flex;align-items:center;justify-content:center;flex:none;color:var(--periwinkle);">' +
             '<svg width="12" height="12" viewBox="0 0 12 12" fill="none">' +
               '<rect x="0.8" y="0.8" width="4" height="4" stroke="currentColor" stroke-width="1.2"/>' +
               '<rect x="7.2" y="0.8" width="4" height="4" stroke="currentColor" stroke-width="1.2"/>' +
@@ -9947,14 +9947,14 @@
           '</span>' +
           '<span style="display:flex;flex-direction:column;gap:3px;min-width:0;">' +
             '<span style="font-size:13.5px;font-weight:700;">Hold / break heatmap</span>' +
-            '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:#6e7a93;">' +
+            '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:10.5px;color:var(--label);">' +
               'hold and break by service-game pair, set by set</span>' +
           '</span>' +
         '</span>' +
         '<span style="display:flex;align-items:baseline;gap:10px;flex:none;">' +
           '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:13px;font-weight:700;' +
-            'color:#ebf1f2;">' + esc(hold.globalLabel) + '</span>' +
-          '<span style="font-size:12px;color:#6e7a93;">Open ' + RANGLE + '</span>' +
+            'color:var(--text);">' + esc(hold.globalLabel) + '</span>' +
+          '<span style="font-size:12px;color:var(--label);">Open ' + RANGLE + '</span>' +
         '</span>' +
       '</div>';
   }
@@ -10005,8 +10005,8 @@
   // column 9-13px wider than the design and pushed RECORD 27px to its left.
   var SIT_TRACKS = 'grid-template-columns:minmax(0,1fr) 62px 62px 48px 62px;gap:0 12px;';
   var SIT_EYEBROW = "font-family:'IBM Plex Mono',monospace;font-size:9.5px;font-weight:600;"
-    + 'letter-spacing:0.14em;text-transform:uppercase;color:#6e7a93;';
-  var SIT_CELLBD = 'border-top:0.33px solid rgba(255,255,255,0.03);';
+    + 'letter-spacing:0.14em;text-transform:uppercase;color:var(--label);';
+  var SIT_CELLBD = 'border-top:0.33px solid var(--line-soft);';
   var SIT_MUT = '#a3abba', SIT_DIM = '#6e7a93', SIT_BRIGHT = '#ebf1f2';
 
   var SIT_GROUPS = [
@@ -10142,7 +10142,7 @@
           '<span style="font-size:12.5px;color:' + (hard ? SIT_DIM : '#d9dbdf') + ';' +
             'overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + esc(label) + '</span>' +
           (soft ? '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:8.5px;' +
-            'font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:#6e7a93;' +
+            'font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--label);' +
             'white-space:nowrap;">small sample</span>' : '') +
         '</div>' +
         cell(n ? w + ENDASH + l : DASH, n ? SIT_MUT : SIT_FAINT, '12px') +
@@ -10165,7 +10165,7 @@
       return '<div style="text-align:right;' + SIT_EYEBROW + '">' + t + '</div>';
     };
     return '<div style="display:grid;' + SIT_TRACKS + 'align-items:flex-end;' +
-      'padding:0 4px 8px;border-bottom:0.33px solid rgba(255,255,255,0.03);">' +
+      'padding:0 4px 8px;border-bottom:0.33px solid var(--line-soft);">' +
       '<div></div>' + h('Record') + h('Rate') + h('Tour') + h('Vs tour') + '</div>';
   }
 
@@ -10187,7 +10187,7 @@
 
     // Nothing at all. Said in words, with no empty table.
     if (!groups.length) {
-      return '<div style="border:0.33px dashed rgba(255,255,255,0.045);border-radius:12px;padding:18px;' +
+      return '<div style="border:0.33px dashed var(--line);border-radius:12px;padding:18px;' +
         'margin-top:14px;font-size:12.5px;color:' + DASH_COLOUR + ';">' +
         esc(shortName(p)) + ' has no set-by-set or point-by-point data on record, so in-play ' +
         'states cannot be shown.</div>';
@@ -10204,7 +10204,7 @@
         '<div style="display:flex;flex-direction:column;gap:2px;">' +
           '<button type="button" data-pp2="sit-toggle" data-v="' + esc(g.title) + '" ' +
             'style="display:flex;align-items:center;gap:9px;width:100%;background:none;' +
-            'border:0;border-top:0.33px solid rgba(255,255,255,0.03);padding:8px 4px;' +
+            'border:0;border-top:0.33px solid var(--line-soft);padding:8px 4px;' +
             'cursor:pointer;text-align:left;' + SIT_EYEBROW + '">' +
             // The export draws the caret as a 10x10 stroked path, not a text glyph.
             '<svg width="10" height="10" viewBox="0 0 10 10" fill="none" style="flex:none;' +
@@ -10239,7 +10239,7 @@
         '<span style="font-size:20px;font-weight:800;">Situational</span>' +
         sitHeadHtml() +
         '<div style="display:flex;flex-direction:column;">' + body + '</div>' +
-        '<div style="font-size:11.5px;color:#6e7a93;line-height:1.6;">' + note + '</div>' +
+        '<div style="font-size:11.5px;color:var(--label);line-height:1.6;">' + note + '</div>' +
       '</div>';
   }
 
@@ -10264,7 +10264,7 @@
     var sd = fromASetDown(p);
     if (!sd || !sd.scanned) return '';
     var tour = tourFromASetDown();
-    return '<div style="font-size:11.5px;color:#6e7a93;line-height:1.6;margin-top:14px;">' +
+    return '<div style="font-size:11.5px;color:var(--label);line-height:1.6;margin-top:14px;">' +
       'The box&#39;s &ldquo;from a set down&rdquo; record rests on the ' + sd.n + ' of ' +
       sd.scanned + ' matches on record that carry ordered set scores, not the career figure ' +
       'shown in Career record &mdash; the career spine stores a set COUNT, which cannot tell ' +

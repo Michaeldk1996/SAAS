@@ -49,6 +49,9 @@
     --nav-active:rgba(0,122,255,0.16);
     --nav-active-line:rgba(106,154,248,0.18);
     --avatar:#0B0C14;
+    /* design-file computed values with no HANDOFF name (promo icon tile, Portal 12a) */
+    --promo-tile:#172137;
+    --promo-glyph:#5B9CFF;
   }
   /* ============================================================
      ACCOUNT SETTINGS (TEN-8) — rebuilt against the Claude Design
@@ -60,57 +63,52 @@
      render; see BUILD-NOTES for the binding log.
      ============================================================ */
   :root{
-    --sf-page:var(--page); --sf-sidebar:var(--nav-panel); --sf-card:var(--surface);
+    --sf-page:var(--page); --sf-card:var(--surface);
     --sf-border-subtle:var(--line); --sf-border-data:var(--line);
     --sf-border-hover:rgba(91,155,255,0.22);
-    --sf-brand:var(--periwinkle); --sf-brand-hi:#7ba4ff; --sf-brand-tint:var(--navy);
-    --sf-brand-wash:var(--nav-hover); --sf-brand-line:rgba(91,155,255,0.35);
-    --sf-text:var(--text); --sf-text-3:var(--nav-idle); --sf-muted:var(--label); --sf-muted-2:var(--label);
+    --sf-brand:var(--periwinkle); --sf-brand-tint:var(--navy); --sf-brand-line:rgba(91,155,255,0.35);
+    --sf-text:var(--text); --sf-text-3:var(--nav-idle); --sf-muted:var(--label);
     --sf-neg:#e0616f; --sf-pos:var(--positive);
     --sf-toggle-on:#5b9bff;
     --sf-font-ui:'Hanken Grotesk',sans-serif; --sf-font-mono:'IBM Plex Mono',monospace;
   }
   *{ box-sizing:border-box; }
   body{ margin:0; background:var(--sf-page); color:var(--sf-text); font-family:var(--sf-font-ui);
-    -webkit-font-smoothing:antialiased; padding-left:250px; }
+    -webkit-font-smoothing:antialiased; padding-left:252px; }
   a{ color:var(--sf-brand); text-decoration:none; }
   ::selection{ background:var(--seg-active); }
 
   /* ---------- global sidebar (mounted verbatim from the dashboard shell;
        on this standalone page the ANALYSE items are anchors to the dashboard
        rather than in-page data-tab buttons — see BUILD-NOTES) ---------- */
-  .sf-sidebar{ position:fixed; left:0; top:0; bottom:0; width:250px; background:var(--sf-sidebar);
-    border-right:0.33px solid var(--sf-border-subtle); display:flex; flex-direction:column;
-    padding:22px 16px; z-index:60; font-family:var(--sf-font-ui); overflow-y:auto; }
-  .sf-brand{ display:flex; align-items:center; gap:12px; padding:0 8px 2px; text-decoration:none; }
-  .sf-brand-mark{ width:40px; height:40px; border-radius:12px; flex:none; display:grid; place-items:center;
-    font-family:var(--sf-font-ui); font-weight:800; font-size:19px; color:var(--text);
-    background:var(--navy); border:0.5px solid var(--seg-active-line); }
-  .sf-brand-name{ font-family:var(--sf-font-ui); font-weight:800; font-size:17px; letter-spacing:-0.01em; color:var(--sf-text); line-height:1; }
-  .sf-brand-sub{ font-family:var(--sf-font-mono); font-size:9px; letter-spacing:0.22em; text-transform:uppercase; color:var(--sf-muted); margin-top:4px; }
-  .sf-navlabel{ font-family:var(--sf-font-ui); font-size:11px; font-weight:700; letter-spacing:0.16em; text-transform:uppercase; color:var(--sf-muted); padding:0 10px; margin:26px 0 8px; }
-  .sf-nav{ display:flex; flex-direction:column; gap:2px; }
-  .sf-nav a{ display:flex; align-items:center; gap:12px; width:100%; text-align:left; background:none;
-    border:none; border-radius:9px; padding:10px 12px; font-family:var(--sf-font-ui); font-size:14px;
-    font-weight:500; color:var(--sf-text-3); cursor:pointer; text-decoration:none; }
-  .sf-nav a svg{ width:17px; height:17px; flex:none; stroke:currentColor; stroke-width:1.6; }
-  .sf-nav a:hover{ color:var(--sf-text); background:var(--nav-hover); }
-  .sf-nav a.active{ background:var(--sf-brand-tint); color:var(--sf-text); font-weight:600; }
-  .sf-nav a.active svg{ color:var(--sf-brand); }
-  .sf-foot{ margin-top:auto; padding-top:16px; }
-  .sf-userchip{ display:flex; align-items:center; gap:11px; padding:10px 12px; border-radius:12px;
-    border:0.33px solid var(--sf-border-data); background:var(--sf-card); cursor:pointer; text-decoration:none; color:inherit; }
-  .sf-userchip:hover{ background:var(--nav-hover); border-color:var(--sf-border-subtle); }
-  .sf-userav{ width:34px; height:34px; border-radius:50%; flex:none; display:grid; place-items:center;
-    background:var(--navy); border:0.5px solid var(--seg-active-line); color:var(--text); font-family:var(--sf-font-mono); font-weight:700; font-size:12px; }
+  /* 12a shell (TEN-286, measured against design/reference/portal-12a.html): 252px aside,
+     floating nav-panel, 3px-gap nav, user row + filled Upgrade; same values as the dashboard. */
+  .sf-sidebar{ position:fixed; left:0; top:0; bottom:0; width:252px; box-sizing:border-box; display:flex;
+    padding:18px 0 18px 18px; z-index:60; font-family:var(--sf-font-ui); line-height:normal; }
+  .sf-panel{ flex:1; min-height:0; display:flex; flex-direction:column; box-sizing:border-box; padding:20px 12px 14px;
+    background:var(--nav-panel); border:0.33px solid var(--line-panel); border-radius:22px; overflow-y:auto; }
+  .sf-brand{ display:block; margin:0 8px 26px; text-decoration:none; }
+  .sf-logo{ display:block; height:26px; width:auto; }
+  .sf-nav{ display:flex; flex-direction:column; gap:3px; }
+  .sf-nav a{ display:flex; align-items:center; gap:12px; width:100%; box-sizing:border-box; text-align:left; background:none;
+    border:0.5px solid transparent; border-radius:12px; padding:10px 12px; font-family:var(--sf-font-ui); font-size:13.5px;
+    font-weight:600; color:var(--nav-idle); cursor:pointer; text-decoration:none; }
+  .sf-nav a svg{ width:17px; height:17px; flex:none; stroke:currentColor; stroke-width:1.6; color:var(--nav-icon-idle); }
+  .sf-nav a::after{ content:''; flex:none; width:6px; height:6px; border-radius:50%; margin-left:auto; background:transparent; }
+  .sf-nav a:hover{ background:var(--nav-hover); }
+  .sf-nav a.active, .sf-nav a.active:hover{ background:var(--nav-active); border-color:var(--nav-active-line); color:var(--text); font-weight:700; }
+  .sf-nav a.active svg{ color:var(--periwinkle); }
+  .sf-nav a.active::after{ background:var(--lime); }
+  .sf-foot{ margin-top:auto; padding-top:24px; display:flex; flex-direction:column; gap:10px; }
+  .sf-userchip{ display:flex; align-items:center; gap:10px; padding:6px 8px; cursor:pointer; text-decoration:none; color:inherit; }
+  .sf-userav{ width:30px; height:30px; box-sizing:border-box; border-radius:50%; flex:none; display:flex; align-items:center; justify-content:center;
+    background:var(--navy); border:0.5px solid var(--seg-active-line); color:var(--text); font-family:var(--sf-font-mono); font-weight:700; font-size:11px; }
   .sf-userinfo{ min-width:0; flex:1; display:flex; flex-direction:column; }
-  .sf-username{ font-family:var(--sf-font-ui); font-size:13px; font-weight:600; color:var(--sf-text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .sf-userplan{ font-family:var(--sf-font-ui); font-size:11px; color:var(--sf-muted); margin-top:1px; }
-  .sf-chev{ color:var(--sf-muted); flex:none; }
-  .sf-upgrade{ display:block; width:100%; margin-top:10px; padding:11px; text-align:center;
-    border:0.33px solid var(--sf-border-data); border-radius:9px; background:none; color:var(--sf-text);
-    font-family:var(--sf-font-ui); font-size:13px; font-weight:600; cursor:pointer; text-decoration:none; }
-  .sf-upgrade:hover{ border-color:var(--sf-brand); color:var(--text); }
+  .sf-username{ font-family:var(--sf-font-ui); font-size:12px; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .sf-userplan{ font-family:var(--sf-font-ui); font-size:10.5px; color:var(--nav-idle); }
+  .sf-upgrade, .sf-upgrade:hover{ display:block; width:100%; box-sizing:border-box; padding:10px; text-align:center;
+    border:0.33px solid var(--periwinkle); border-radius:10px; background:var(--periwinkle); color:var(--page);
+    font-family:var(--sf-font-ui); font-size:13px; font-weight:700; cursor:pointer; text-decoration:none; }
 
   /* ---------- content column ---------- */
   #loadwrap{ display:flex; justify-content:center; padding:120px; color:var(--sf-muted); font-size:14px; }
@@ -273,10 +271,10 @@
 
 <!-- ===== GLOBAL SIDEBAR (Stennisfy app shell) ===== -->
 <aside class="sf-sidebar">
+  <div class="sf-panel">
   <a class="sf-brand" href="bsp-consult-dashboard.html">
     <img class="sf-logo" src="assets/logo-dark-transparent.png" alt="Stennisfy" height="26">
   </a>
-  <div class="sf-navlabel">Analyse</div>
   <nav class="sf-nav">
     <a href="bsp-consult-dashboard.html#matches"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6.5h14M3 10h14M3 13.5h14"/></svg>Matches</a>
     <a href="bsp-consult-dashboard.html#players"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 10a3 3 0 100-6 3 3 0 000 6ZM4.5 16a5.5 5.5 0 0111 0"/></svg>Players</a>
@@ -292,9 +290,9 @@
         <span class="sf-username" id="acctLabel">alex.morgan</span>
         <span class="sf-userplan" id="acctPlan">Free plan</span>
       </span>
-      <svg class="sf-chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>
     </a>
     <a class="sf-upgrade" href="account.html">Upgrade to Pro</a>
+  </div>
   </div>
 </aside>
 
@@ -726,26 +724,6 @@
   /* per element). Colours and hairlines only; layout is untouched.    */
   /* ================================================================= */
   html, body{ background:var(--page); }
-  .sf-sidebar{ background:var(--nav-panel); border-right:0.33px solid var(--line-panel); }
-  .sf-brand{ align-items:center; }
-  .sf-logo{ display:block; height:26px; width:auto; }
-  .sf-navlabel{ color:var(--label); }
-  /* nav item: idle / hover / active + 6px marker dot (lime only when active) */
-  .sf-nav a{ color:var(--nav-idle); border:0.5px solid transparent; }
-  .sf-nav a svg{ color:var(--nav-icon-idle); }
-  .sf-nav a:hover{ background:var(--nav-hover); color:var(--nav-idle); }
-  .sf-nav a::after{ content:''; flex:none; width:6px; height:6px; border-radius:50%; margin-left:auto; background:transparent; }
-  .sf-nav a.active, .sf-nav a.active:hover{ background:var(--nav-active); border:0.5px solid var(--nav-active-line); color:var(--text); }
-  .sf-nav a.active svg{ color:var(--periwinkle); }
-  .sf-nav a.active::after{ background:var(--lime); }
-  /* sidebar user block + primary button */
-  .sf-userchip{ background:var(--surface); border-color:var(--line); }
-  .sf-userchip:hover{ background:var(--nav-hover); border-color:var(--line); }
-  .sf-userav{ background:var(--navy); color:var(--text); }
-  .sf-username{ color:var(--text); }
-  .sf-userplan{ color:var(--nav-idle); }
-  .sf-chev{ color:var(--label); }
-  .sf-upgrade, .sf-upgrade:hover{ background:var(--periwinkle); border:0.33px solid var(--periwinkle); color:var(--page); }
   /* header live dot = lime, flat (the settled state stays label) */
   [data-page="matches"] .mx-datastatus:not(.settled) .dot{ background:var(--lime) !important; }
   /* date strip: selected = text + blue-ring underline; Today dot = blue-ring */

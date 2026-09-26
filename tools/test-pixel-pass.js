@@ -169,12 +169,12 @@ check('item 1 · the meta rule is a sibling span, not the cell\'s own border-lef
   assert(typeof I.renderHeader === 'function',
     'renderHeader is not exported — this lock points at nothing');
   const html = I.renderHeader(SUBJECT, HCTX);
-  const rules = html.match(/<span style="width:1px;align-self:stretch[^"]*background:rgba\(255,255,255,0\.03\)[^"]*"><\/span>/g) || [];
+  const rules = html.match(/<span style="width:1px;align-self:stretch[^"]*background:var\(--line-soft\)[^"]*"><\/span>/g) || [];
   assert.strictEqual(rules.length, 4,
     `expected 4 sibling rule spans in the live-state strip, found ${rules.length}`);
   rules.forEach((r) => {
     assert(/align-self:stretch/.test(r), `rule span does not stretch to its cell: ${r}`);
-    assert(/background:rgba\(255,255,255,0\.03\)/.test(r),
+    assert(/background:var\(--line-soft\)/.test(r),
       `rule span is not the spec colour: ${r}`);
   });
   // The cells themselves must no longer carry the border the span replaced, or
@@ -185,7 +185,7 @@ check('item 1 · the meta rule is a sibling span, not the cell\'s own border-lef
 
 check('item 1 · the rule is SHORTER than the cell it divides, by a block margin', () => {
   const html = I.renderHeader(SUBJECT, HCTX);
-  const rules = html.match(/<span style="width:1px;align-self:stretch[^"]*background:rgba\(255,255,255,0\.03\)[^"]*"><\/span>/g) || [];
+  const rules = html.match(/<span style="width:1px;align-self:stretch[^"]*background:var\(--line-soft\)[^"]*"><\/span>/g) || [];
   assert(rules.length > 0, 'no rule spans — this lock never ran');
   rules.forEach((r) => {
     const mg = r.match(/margin:([0-9.]+)px 0/);
@@ -277,7 +277,7 @@ checkValues(`item 3 · no support line exceeds ${MAX_TOKENS} ${MIDDOT}-separated
 check('item 3 · the fix is not an ellipsis and not a smaller font', () => {
   // The support line's font size is pinned by §5's spec at 10.5px; a "fix" that
   // shrank it would satisfy the wrap complaint and violate the instruction.
-  const sizes = CODE.match(/font-size:10\.5px;color:#6e7a93/g) || [];
+  const sizes = CODE.match(/font-size:10\.5px;color:var\(--label\)/g) || [];
   assert(sizes.length >= 1, 'the box support line is no longer 10.5px — was the font shrunk?');
   assert(!/text-overflow:ellipsis/.test(CODE.slice(CODE.indexOf('class="pp2-box"'),
     CODE.indexOf('class="pp2-box"') + 1400)),
@@ -489,7 +489,7 @@ const mutants = [
    "border-radius:10px;padding:18px 16px;display:flex;flex-direction:column;gap:7px;' +\n        'min-height:' + (b.key === 'speed' ? 160 : 140) + 'px;",
    /different min-heights/],
   ['item 4 · support lines no longer bottom-pinned',
-   "color:#6e7a93;line-height:1.4;margin-top:auto;", "color:#6e7a93;line-height:1.4;",
+   "color:var(--label);line-height:1.4;margin-top:auto;", "color:var(--label);line-height:1.4;",
    /support lines are bottom-pinned/],
   ['item 5 · a title dropped from the table',
    "'opponent:vs. Lefties':  ['Handles left-handers well',        'Struggles against left-handers'],",
@@ -531,7 +531,7 @@ function scoreAgainst(MI, MCODE) {
   const rib = MI.renderRibbon({ filtered: HCTX.rows, ledgerOpen: false });
 
   // item 1
-  (hdr.match(/<span style="width:1px;align-self:stretch[^"]*background:rgba\(255,255,255,0\.03\)[^"]*"><\/span>/g) || []).forEach((r) => {
+  (hdr.match(/<span style="width:1px;align-self:stretch[^"]*background:var\(--line-soft\)[^"]*"><\/span>/g) || []).forEach((r) => {
     if (!/margin:([0-9.]+)px 0/.test(r)) throw new Error('rule span has no block margin');
   });
   if (/flex:none;align-self:stretch;display:flex;align-items:stretch/.test(hdr))

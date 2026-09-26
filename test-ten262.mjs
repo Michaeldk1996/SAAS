@@ -348,15 +348,17 @@ function checkRetiredFile(j = JSON.parse(readFileSync(RETIRED_FILE, 'utf8'))) {
   return null;
 }
 
-// 2 + 3 · the app shell, read off BOTH published pages: sidebar 250px (and the body
+// 2 + 3 · the app shell, read off BOTH published pages: sidebar 252px (and the body
 // offset that makes room for it), and the design's star as the Stennisfy Model icon.
+// 252px is founder ruling TEN-286 (2026-09-26, the 12a design's aside), which
+// SUPERSEDES TEN-262 #2's 250px — 250 is now a mutant below, not an accepted value.
 const STAR = 'M10 3l1.9 3.9 4.3.6-3.1 3 .7 4.3L10 16.8 6.3 18.8l.7-4.3-3.1-3 4.3-.6z';
 function checkShell(pages) {
   for (const [file, html] of Object.entries(pages)) {
     const side = /\.sf-sidebar\{\s*position:fixed;[^}]*?width:(\d+)px/.exec(html);
     const body = /body\{[^}]*?padding-left:(\d+)px/.exec(html);
-    if (!side || side[1] !== '250') return `${file}: sidebar width ${side && side[1]}px`;
-    if (!body || body[1] !== '250') return `${file}: body offset ${body && body[1]}px`;
+    if (!side || side[1] !== '252') return `${file}: sidebar width ${side && side[1]}px`;
+    if (!body || body[1] !== '252') return `${file}: body offset ${body && body[1]}px`;
     const item = /<(?:a|button)[^>]*(?:#edge|data-tab="edge")[^>]*>([\s\S]*?)Stennisfy Model<\/(?:a|button)>/.exec(html);
     if (!item) return file + ': no Stennisfy Model nav item';
     const d = [...item[1].matchAll(/<path d="([^"]+)"/g)].map(m => m[1]);
@@ -365,7 +367,7 @@ function checkShell(pages) {
   return null;
 }
 const SHELL = { 'bsp-consult-dashboard.html': SRC, 'account.html': readFileSync(join(HERE, 'account.html'), 'utf8') };
-test('TEN-262 app shell · sidebar 250px + star icon on both pages', () => { assert.equal(checkShell(SHELL), null); });
+test('TEN-262/TEN-286 app shell · sidebar 252px + star icon on both pages', () => { assert.equal(checkShell(SHELL), null); });
 
 // 6 · the "Archive through" line: the date is meta.dateRange[1] (the store's latest
 // match), and past 14 days it adds ". Updates pending." Painted by the real renderChrome
@@ -538,9 +540,10 @@ test('CONTROL: every TEN-262 mutant is caught', { skip: !HAVE && 'published stor
   };
   for (const [name, v] of Object.entries(variants)) if (checkRetiredFile(v) === null) survived.push('retired:' + name);
   const shellMutants = {
-    width236: { ...SHELL, 'account.html': SHELL['account.html'].replace('width:250px;', 'width:236px;') },
+    width236: { ...SHELL, 'account.html': SHELL['account.html'].replace('width:252px;', 'width:236px;') },
+    width250superseded: { ...SHELL, 'bsp-consult-dashboard.html': SRC.replace('width:252px;', 'width:250px;') },
     lineChartIcon: { ...SHELL, 'account.html': SHELL['account.html'].replace(STAR, 'M4 4v12h12"/><path d="M6.5 12.5l3-3.5 2.5 2 4-5.5') },
-    bodyOffset: { ...SHELL, 'bsp-consult-dashboard.html': SRC.replace('padding-left:250px;', 'padding-left:236px;') },
+    bodyOffset: { ...SHELL, 'bsp-consult-dashboard.html': SRC.replace('padding-left:252px;', 'padding-left:250px;') },
   };
   for (const [name, v] of Object.entries(shellMutants)) if (checkShell(v) === null) survived.push('shell:' + name);
   assert.deepEqual(survived, [], 'mutants survived: ' + survived.join(', '));

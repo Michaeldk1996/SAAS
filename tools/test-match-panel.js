@@ -208,7 +208,7 @@ check('the point score reads from the SUBJECT’s side, both orientations', () =
   // anywhere is satisfied by an UNFLIPPED render and proves nothing. (A mutant
   // that dropped the flip entirely passed the first version of this check.)
   const firstPoint = (html) => {
-    const m = html.match(/font-size:12px;color:#6e7a93;">([^<]*)</);
+    const m = html.match(/font-size:12px;color:var\(--label\);">([^<]*)</);
     return m ? m[1].trim() : null;
   };
   const asP1 = load(FULL());
@@ -362,7 +362,7 @@ check('the full-screen page carries the export’s own chrome', () => {
   I.state.matchPage = SHEET_ID;
   const html = I.renderMatchPage(SUBJECT, I.build(SUBJECT));
   for (const needle of [
-    'position:fixed;inset:0;z-index:80', 'background:#0c0e16', 'max-width:1000px',
+    'position:fixed;inset:0;z-index:80', 'background:var\(--surface-inner\)', 'max-width:1000px',
     'padding:26px 34px 70px', 'Back to profile', 'font-size:26px;font-weight:800',
     'color:#6e7a93', 'data-pp2="match-page-close"',
   ]) {

@@ -184,7 +184,7 @@ check('item 3 · column heads are Global and S1-S5, not "Set 1" and "All"', () =
   // export does not have an opinion about — banning the string everywhere would
   // have deleted them to satisfy a check about column headings.
   const grid = html.slice(html.indexOf('class="pp2-hb-grid"'));
-  const head = grid.slice(0, grid.indexOf('font-size:13.5px;font-weight:700;color:#ebf1f2'));
+  const head = grid.slice(0, grid.indexOf('font-size:13.5px;font-weight:700;color:var\(--text\)'));
   assert.ok(head.length > 100, 'the head row slice is too short to be real');
   assert.ok(!/Set 1|Set 2|Set 3/.test(head), 'the old "Set N" heads are still rendering');
   assert.ok(!/>All</.test(head), 'the old trailing "All" head is still rendering');
@@ -196,7 +196,7 @@ check('item 3 · column heads are Global and S1-S5, not "Set 1" and "All"', () =
 check('item 4 · the legend note is BELOW the grid, at the export\'s size and colour', () => {
   const html = sheet(I);
   const gridAt = html.indexOf('class="pp2-hb-grid"');
-  const noteAt = html.indexOf('font-size:11.5px;color:#6e7a93;line-height:1.6');
+  const noteAt = html.indexOf('font-size:11.5px;color:var\(--label\);line-height:1.6');
   assert.ok(noteAt > -1, 'the note is not at the export\'s 11.5px/label/1.6 (:1174)');
   assert.ok(noteAt > gridAt, 'the note is above the grid; the export puts it below');
   // Both sample thresholds, stated exactly as the design does (:1394).
@@ -217,7 +217,7 @@ check('item 4 · the header carries the title and the controls, and no paragraph
 check('item 5 · ONE context chip, in the export\'s shape', () => {
   const html = sheet(I);
   // :1132 — mono 9.5/600, 0.14em, uppercase, #5b6880 on #06070a, radius 9, pad 8/14
-  assert.ok(/font-size:9\.5px;font-weight:600;letter-spacing:0\.14em;text-transform:uppercase;color:#6e7a93;background:#0c0e16/.test(html),
+  assert.ok(/font-size:9\.5px;font-weight:600;letter-spacing:0\.14em;text-transform:uppercase;color:var\(--label\);background:var\(--surface-inner\)/.test(html),
     'the scope chip is not the export\'s chrome');
   assert.ok(/All surfaces/.test(html), 'the scope chip does not name the surface scope');
   // The old HOLD/BREAK pill pair plus a trailing "all surfaces" must be gone.
@@ -229,10 +229,10 @@ check('item 5 · ONE context chip, in the export\'s shape', () => {
 check('item 6 · subject name in the blue accent, overall pill right-aligned', () => {
   const html = sheet(I);
   // :1144 — 15px/700 #5b9bff
-  assert.ok(/font-size:15px;font-weight:700;color:#6a9af8/.test(html),
+  assert.ok(/font-size:15px;font-weight:700;color:var\(--periwinkle\)/.test(html),
     'the subject name is not 15px/700 in the blue accent');
   // :1145 — the pill
-  assert.ok(/font-size:12px;font-weight:700;letter-spacing:0\.1em;text-transform:uppercase;color:#ebf1f2/.test(html),
+  assert.ok(/font-size:12px;font-weight:700;letter-spacing:0\.1em;text-transform:uppercase;color:var\(--text\)/.test(html),
     'the overall pill is not the export\'s chrome');
   const label = ENGINE.heatFor(HB, SUBJECT.key, 'HOLD', I.HB_BEST_OF, 'all').globalLabel;
   assert.ok(html.includes(label), `the pill should carry the engine's "${label}" verbatim`);
@@ -312,7 +312,7 @@ check('item 9 · no cell anywhere prints a bare zero in place of missing data', 
 check('item 10 · row sub-labels are the blue accent, not grey', () => {
   const html = sheet(I);
   // :1158 — mono 9.5px #5b9bff
-  assert.ok(/font-size:9\.5px;color:#6a9af8/.test(html),
+  assert.ok(/font-size:9\.5px;color:var\(--periwinkle\)/.test(html),
     'the row sub-label is not mono 9.5px in the blue accent');
   assert.ok(/1st svc game/.test(html), 'the row sub-labels are missing');
   // the old grey
@@ -332,7 +332,7 @@ check('KEEP · the surface filter is still a working control', () => {
 
 check('KEEP · surfaces use the SAME segmented chrome as Hold|Break', () => {
   const html = sheet(I);
-  const seg = 'background:#0c0e16;border:0.33px solid rgba(255,255,255,0.045);border-radius:9px;padding:3px;';
+  const seg = 'background:var(--surface-inner);border:0.33px solid var(--line);border-radius:9px;padding:3px;';
   const n = (html.split(seg).length - 1);
   assert.strictEqual(n, 2, `expected two segmented controls in the same chrome, found ${n}`);
   // The old four loud pills carried their own border on the unselected state.
@@ -400,17 +400,17 @@ function scoreAgainst(M) {
     if (!html.includes('>' + h + '</span>')) throw new Error(`column head "${h}" is missing`);
   });
   {
-    const head = grid.slice(0, grid.indexOf('font-size:13.5px;font-weight:700;color:#ebf1f2'));
+    const head = grid.slice(0, grid.indexOf('font-size:13.5px;font-weight:700;color:var(--text)'));
     if (/Set 1|Set 2/.test(head)) throw new Error('the old "Set N" heads are still rendering');
   }
   {
     const gridAt = html.indexOf('class="pp2-hb-grid"');
-    const noteAt = html.indexOf('font-size:11.5px;color:#6e7a93;line-height:1.6');
+    const noteAt = html.indexOf('font-size:11.5px;color:var(--label);line-height:1.6');
     if (noteAt < 0) throw new Error("the note is not at the export's 11.5px/label/1.6");
     if (noteAt < gridAt) throw new Error('the note is above the grid');
     if (!/cells on five to nine games are muted/.test(html)) throw new Error('the 5-9 threshold is not stated');
   }
-  if (!/font-size:15px;font-weight:700;color:#6a9af8/.test(html))
+  if (!/font-size:15px;font-weight:700;color:var\(--periwinkle\)/.test(html))
     throw new Error('the subject name is not 15px/700 in the blue accent');
   {
     const cells = grid.split('data-pp2="hb-cell"').slice(1)
@@ -430,13 +430,13 @@ function scoreAgainst(M) {
   }
   if (!grid.includes('rgba(255,255,255,0.03)')) throw new Error("no sub-five cell at the export's 0.03");
   if (!/>raw<\/span>/.test(grid)) throw new Error('a sub-five cell does not print the "raw" label');
-  if (!/font-size:9\.5px;color:#6a9af8/.test(html))
+  if (!/font-size:9\.5px;color:var\(--periwinkle\)/.test(html))
     throw new Error('the row sub-label is not in the blue accent');
   ['all', 'hard', 'clay', 'grass'].forEach((s) => {
     if (!html.includes(`data-pp2="hb-surf" data-v="${s}"`)) throw new Error(`the "${s}" surface control is gone`);
   });
   {
-    const seg = 'background:#0c0e16;border:0.33px solid rgba(255,255,255,0.045);border-radius:9px;padding:3px;';
+    const seg = 'background:var(--surface-inner);border:0.33px solid var(--line);border-radius:9px;padding:3px;';
     if ((html.split(seg).length - 1) !== 2) throw new Error('the two segmented controls do not share chrome');
   }
   if (!/Green from 30%, amber from 18%/.test(brk)) throw new Error('break note states the hold thresholds');
@@ -484,7 +484,7 @@ const mutants = [
    "bg = 'rgba(255,255,255,0.03)'; ink = '#8b96b5'; fracInk = '#4b5672'; sub = '';",
    /does not print the "raw" label/],
   ['item 10 · sub-labels back to grey',
-   "'<span style=\"font-family:\\'IBM Plex Mono\\',monospace;font-size:9.5px;color:#6a9af8;\">' +\n            esc(r.sub)",
+   "'<span style=\"font-family:\\'IBM Plex Mono\\',monospace;font-size:9.5px;color:var(--periwinkle);\">' +\n            esc(r.sub)",
    "'<span style=\"font-family:\\'IBM Plex Mono\\',monospace;font-size:9.5px;color:#4b5672;\">' +\n            esc(r.sub)",
    /sub-label is not in the blue accent/],
   ['KEEP · the surface filter deleted',

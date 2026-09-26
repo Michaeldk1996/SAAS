@@ -1305,7 +1305,7 @@ check('the drill opens, groups by event, and its P&L is the priced rows only', (
   I.state.calTab = 'calendar'; I.state.calSurface = 'all';
   I.state.calCell = '2026|0';                       // January 2026 — 12 rows, 0 priced
   let html = I.renderSeasonModal(CAL_P);
-  assert(html.includes('#2e4fa8'), 'the drill did not open');
+  assert(html.includes('var(--seg-active-line)'), 'the drill did not open');
   assert(html.includes('January 2026'), 'the drill header names the wrong month');
   assert(html.includes('3–09') || html.includes('3–9'), 'the drill record is not 3-9');
   assert(html.includes('no priced match in this month'),
@@ -2441,7 +2441,7 @@ checkCareer('item 23 · an under-minimum archetype stays listed, dashed, dim and
         `${p.name}: thin archetype ${r.axis.label} does not carry the file's meta line`);
     });
     // The file's DIM (#6e7a93), not its FAINT (#6e7a93) — item 23 names it.
-    assert(html.indexOf('font-size:14px;font-weight:700;color:#6e7a93;') > -1,
+    assert(html.indexOf('font-size:14px;font-weight:700;color:var(--label);') > -1,
       `${p.name}: the under-minimum name is not the file's DIM colour`);
     if (++found >= 3) break;
   }
@@ -2667,13 +2667,13 @@ checkCareer('items 5,12,17-21,25,27-29 · the shell, rows and drill carry the fi
       'height:240px;border-left:1px solid rgba(255,255,255,0.12);border-bottom:1px solid rgba(255,255,255,0.12);'],
     // item 9 · tick labels right-aligned in the gutter, rotated label at its left
     ['item 9 · rotated label left of the ticks', 'left:-2px;top:50%;transform:translateY(-50%) rotate(-90deg);'],
-    ['item 9 · tick label', 'font-size:10px;color:#6e7a93;'],
+    ['item 9 · tick label', 'font-size:10px;color:var(--label);'],
     // item 11 · the EVEN rule and its right-aligned, uppercased label
     ['item 11 · even rule', 'height:1px;background:rgba(255,255,255,0.28);'],
     ['item 11 · EVEN label right-aligned', 'right:6px;top:'],
-    ['item 11 · EVEN uppercased', 'text-transform:uppercase;color:#6e7a93;">even<'],
+    ['item 11 · EVEN uppercased', 'text-transform:uppercase;color:var(--label);">even<'],
     // item 12 · the value label above the bubble
-    ['item 12 · value label above the bubble', 'font-size:12px;font-weight:700;color:#ebf1f2;white-space:nowrap;pointer-events:none;'],
+    ['item 12 · value label above the bubble', 'font-size:12px;font-weight:700;color:var(--text);white-space:nowrap;pointer-events:none;'],
     // item 13 · disc
     ['item 13 · disc border', 'border-radius:50%;'],
     ['item 13 · disc fill', 'background:rgba(91,155,255,'],
@@ -2685,9 +2685,9 @@ checkCareer('items 5,12,17-21,25,27-29 · the shell, rows and drill carry the fi
     // items 17-19 · the row is a card with the minimal bar
     ['item 17 · row card grid', 'grid-template-columns:minmax(0,1fr) 300px 58px;gap:16px;align-items:center;border-radius:10px;padding:13px 16px;'],
     ['item 18 · row name', 'font-size:14px;font-weight:700;'],
-    ['item 18 · row meta', 'font-size:11.5px;color:#6e7a93;'],
-    ['item 19 · minimal bar track', 'height:4px;border-radius:2px;background:rgba(255,255,255,0.06);'],
-    ['item 19 · minimal bar fill', 'background:#6a9af8;border-radius:2px;'],
+    ['item 18 · row meta', 'font-size:11.5px;color:var(--label);'],
+    ['item 19 · minimal bar track (12a bar-track token)', 'height:4px;border-radius:2px;background:var(--bar-track);'],
+    ['item 19 · minimal bar fill', 'background:var(--periwinkle);border-radius:2px;'],
     // item 20 · units above the rate
     ['item 20 · right column stacks', 'display:flex;flex-direction:column;align-items:flex-end;gap:4px;'],
     ['item 20 · units', 'font-size:12px;font-weight:700;color:#'],
@@ -2697,7 +2697,7 @@ checkCareer('items 5,12,17-21,25,27-29 · the shell, rows and drill carry the fi
     // item 25 · the CAREER footer
     ['item 25 · Career eyebrow', '>Career<'],
     // items 26-28 · the drill
-    ['item 26 · drill container', 'border:0.33px solid #2e4fa8;border-radius:10px;padding:13px 15px;'],
+    ['item 26 · drill container', 'border:0.33px solid var(--seg-active-line);border-radius:10px;padding:13px 15px;'],
     ['item 28 · drill grid',
       'grid-template-columns:16px 64px minmax(0,1.1fr) minmax(0,1fr) 38px 104px 48px 48px 58px;gap:0 12px;'],
     ['item 28 · drill head Score', '>Score<'],
@@ -2714,8 +2714,8 @@ checkCareer('items 5,12,17-21,25,27-29 · the shell, rows and drill carry the fi
   assert(new RegExp('u \\u00b7 [+\\u2212]\\d+\\.\\d% \\u00b7 ' + open.priced + ' priced').test(html),
     `${subject.name}: the drill header does not carry "Xu · Y% · ${open.priced} priced"`);
   // item 29 · the drill's P&L column carries no "u" — the unit is in the header
-  assert(html.indexOf('text-align:right;color:#3ed68c;">+') > -1 ||
-         html.indexOf('text-align:right;color:#da6259;">−') > -1,
+  assert(html.indexOf('text-align:right;color:var(--positive);">+') > -1 ||
+         html.indexOf('text-align:right;color:var(--negative);">−') > -1,
     `${subject.name}: no signed P&L cell rendered`);
   // item 29 · "Oct 2026" dates
   assert(/>(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) \d{4}</.test(html),
@@ -2761,7 +2761,7 @@ checkCareer('item 30 · unpriced drill rows dash and stay out of the priced coun
     assert(unpriced > 0 && open.priced === open.rows.length - unpriced,
       `${p.name}/${open.axis.label}: priced count includes an unpriced row`);
     // Three dashed money cells per unpriced row.
-    const dashes = (html.match(/text-align:right;color:#6e7a93;">—</g) || []).length;
+    const dashes = (html.match(/text-align:right;color:var\(--label\);">—</g) || []).length;
     assert(dashes >= unpriced,
       `${p.name}/${open.axis.label}: ${dashes} dashed money cells for ${unpriced} unpriced rows`);
     n++;
@@ -3923,7 +3923,7 @@ mustFail('the name-form check would catch a whitespace token swap', () => {
 check('item 7 · ledger dates are dd.mm and the header prose is not', () => {
   assert.strictEqual(I.fmtDotDate('2026-09-13'), '13.09');
   const html = ledgerHtmlFor(ZVEREV);
-  const dates = (html.match(/font-size:11px;color:#6e7a93;">([^<]+)</g) || [])
+  const dates = (html.match(/font-size:11px;color:var\(--label\);">([^<]+)</g) || [])
     .map(s => s.replace(/.*">|</g, ''));
   assert(dates.length > 0, 'no ledger date cells found');
   dates.forEach(d => assert(/^\d{2}\.\d{2}$/.test(d), `ledger date "${d}" is not dd.mm`));
@@ -3967,7 +3967,7 @@ check('item 9 · every ledger round cell is a short code on one line', () => {
   assert(cells > 5000, `only ${cells} rows inspected`);
   assert.strictEqual(long, 0, `${long} of ${cells} round cells are still prose`);
   const html = ledgerHtmlFor(ZVEREV);
-  assert(/font-size:10.5px;color:#6e7a93;white-space:nowrap/.test(html),
+  assert(/font-size:10.5px;color:var\(--label\);white-space:nowrap/.test(html),
     'the round cell does not set white-space:nowrap');
   console.log(`        ${cells} round cells, all <=4 chars and nowrap`);
 });
@@ -4066,13 +4066,13 @@ check('items 12/15 · every eyebrow matches the export .cap', () => {
   const e = I.eyebrow('Recent form');
   assert(/font-size:9\.5px/.test(e), `eyebrow size drifted: ${e}`);
   assert(/letter-spacing:0\.16em/.test(e), `eyebrow tracking drifted: ${e}`);
-  assert(/color:#6e7a93/.test(e), `eyebrow colour drifted: ${e}`);
+  assert(/color:var\(--label\)/.test(e), `eyebrow colour drifted: ${e}`);
   const le = I.ledgerEyebrow('Rd', 'left');
-  assert(/font-size:8\.5px/.test(le) && /letter-spacing:0\.16em/.test(le) && /color:#a3abba/.test(le),
+  assert(/font-size:8\.5px/.test(le) && /letter-spacing:0\.16em/.test(le) && /color:var\(--text-sub\)/.test(le),
     `group-header label drifted: ${le}`);
 });
 mustFail('the eyebrow check would catch the pre-correction values', () => {
-  const e = 'font-size:10.5px;letter-spacing:0.14em;color:#6e7a93;';
+  const e = 'font-size:10.5px;letter-spacing:0.14em;color:var(--label);';
   assert(/font-size:9\.5px/.test(e), 'eyebrow size drifted');
 });
 
@@ -4188,10 +4188,10 @@ mustFail('the match-sheet check would catch a net-points value invented on a sid
   // ruling: a value painted where the store carries nothing. (Its twin — a
   // dash painted where the store DOES carry a value — is what the live check
   // above catches, and is the defect that shipped.)
-  const html = 'color:#6a9af8;">12</span>...Net points won';
+  const html = 'color:var(--periwinkle);">12</span>...Net points won';
   const at = html.indexOf('Net points won');
   const held = false; // this side carries no Points:Net points won
-  const dashed = /color:#6e7a93;">—</.test(html.slice(0, at));
+  const dashed = /color:var\(--label\);">—</.test(html.slice(0, at));
   assert(held || dashed, 'Net points won rendered a value on a side that carries none');
 });
 
@@ -4455,7 +4455,7 @@ mustFail('[neg] the row=column check would catch the live build\'s uncarved Hard
 // an override silently half-lands.
 check('item 3 · the bar is minimal: 4px track and fill, radius 2, ONE solid colour', () => {
   const html = renderCareer(CM_PLAYER);
-  const tracks = (html.match(/height:4px;border-radius:2px;background:rgba\(255,255,255,0\.06\);/g) || []);
+  const tracks = (html.match(/height:4px;border-radius:2px;background:var\(--bar-track\);/g) || []);
   assert(tracks.length >= 4, `only ${tracks.length} minimal tracks rendered (expected one per surface row)`);
   const fills = (html.match(/height:4px;width:[\d.]+%;background:([^;]+);border-radius:2px;/g) || []);
   assert(fills.length >= 3, `only ${fills.length} bar fills rendered`);
@@ -4502,12 +4502,12 @@ check('item 3 · under the gate the track is drawn and the fill is not', () => {
       clay: null, hard: { won: 3, lost: 1 }, grass: null, indoor: null }],
   };
   const html = renderCareer(thin);
-  const tracks = (html.match(/height:4px;border-radius:2px;background:rgba\(255,255,255,0\.06\);/g) || []);
+  const tracks = (html.match(/height:4px;border-radius:2px;background:var\(--bar-track\);/g) || []);
   assert(tracks.length >= 4, 'the track disappeared along with the fill');
   assert(!/height:4px;width:[\d.]+%/.test(html), 'a 4-match row still painted a fill');
 });
 mustFail('[neg] the sub-gate check would catch a fill painted at n=4', () => {
-  const html = '<div style="height:4px;width:75.0%;background:#6a9af8;border-radius:2px;">';
+  const html = '<div style="height:4px;width:75.0%;background:var(--periwinkle);border-radius:2px;">';
   assert(!/height:4px;width:[\d.]+%/.test(html), 'a 4-match row still painted a fill');
 });
 
@@ -4539,8 +4539,8 @@ check('item 9 · the §9 sample gate is applied to the ROW rate', () => {
     'the 4-match Grass row opens, against §9');
 });
 mustFail('[neg] the gate check would catch the shipped full-size white 83.3%', () => {
-  const html = 'font-size:19px;font-weight:700;color:#ebf1f2;">83.3%<div>small sample</div>';
-  assert(new RegExp('font-size:15px;font-weight:700;color:#6e7a93;">83%').test(html),
+  const html = 'font-size:19px;font-weight:700;color:var(--text);">83.3%<div>small sample</div>';
+  assert(new RegExp('font-size:15px;font-weight:700;color:var(--label);">83%').test(html),
     'a small-sample rate rendered full size and white');
 });
 
@@ -4549,18 +4549,18 @@ check('item 10 · the row card carries the file\'s background, grid and meta spa
   assert(/grid-template-columns:minmax\(0,1fr\) 300px 58px;gap:16px/.test(html), 'grid tracks drifted');
   assert(/border-radius:10px;padding:13px 16px/.test(html), 'radius/padding drifted');
   assert(/background:#0c0e16;/.test(html), 'the row has no background — it was transparent live');
-  assert(/font-size:11\.5px;color:#6e7a93;margin-top:4px/.test(html),
+  assert(/font-size:11\.5px;color:var\(--label\);margin-top:4px/.test(html),
     'the meta line lost its 4px offset from the name');
 });
 mustFail('[neg] the card check would catch the shipped transparent row', () => {
   const html = 'border-radius:10px;padding:13px 16px;border:1px solid rgba(255,255,255,0.07);';
-  assert(/background:#0c0e16;/.test(html), 'the row has no background');
+  assert(/background:var\(--surface-inner\);/.test(html), 'the row has no background');
 });
 
 check('items 11-13,15 · the season table head, helper and footer are the file\'s', () => {
   const html = renderCareer(CM_PLAYER);
   // 11 — the eyebrow the founder found missing
-  assert(/letter-spacing:0\.12em;text-transform:uppercase;color:#6e7a93;">Wins \/ losses</.test(html),
+  assert(/letter-spacing:0\.12em;text-transform:uppercase;color:var\(--label\);">Wins \/ losses</.test(html),
     'the WINS / LOSSES eyebrow is missing from the title line');
   // 12 — the file's helper copy, not the invented one
   assert(/Click any record to browse those matches/.test(html), 'the helper copy is not the file\'s');
@@ -4577,8 +4577,8 @@ check('items 11-13,15 · the season table head, helper and footer are the file\'
     'the CAREER footer label is not in the eyebrow style');
 });
 mustFail('[neg] the head check would catch the shipped zero bottom-padding', () => {
-  const html = 'color:#6a9af8;text-align:right;">Hard<';
-  assert(/color:#6a9af8;padding-bottom:11px;[^>]*>Hard</.test(html), 'the Hard head has no padding');
+  const html = 'color:var(--periwinkle);text-align:right;">Hard<';
+  assert(/color:var\(--periwinkle\);padding-bottom:11px;[^>]*>Hard</.test(html), 'the Hard head has no padding');
 });
 
 check('items 16-17 · records OPEN — surface rows and season cells carry click hooks', () => {
@@ -4934,7 +4934,7 @@ check('item 18-19 · drill rows open the match sheet and reuse the LEDGER\'s pri
     html = I.renderCareerModal(withForm, { archetype: null });
   } finally { Object.assign(I.state, saved); }
   // the drill card itself
-  assert(/border:0.33px solid #2e4fa8/.test(html), 'the drill card border is not the file\'s');
+  assert(/border:0.33px solid var\(--seg-active-line\)/.test(html), 'the drill card border is not the file\'s');
   assert(/grid-template-columns:46px 12px minmax\(0,1\.15fr\) 38px 40px minmax\(0,1\.35fr\) 48px 48px/.test(html),
     'the drill grid tracks are not the file\'s');
   assert(/max-height:340px;overflow-y:auto/.test(html), 'the drill list has no 340px scroll cap');
@@ -5068,15 +5068,15 @@ check('the bold name in a ledger row is the SUBJECT, in both orders', () => {
   const fn = src.slice(src.indexOf('function ledgerRowHtml'));
   const body = fn.slice(0, fn.indexOf('\n  }\n'));
   // the subject span's weight must not depend on the result
-  assert(/var sub = 'font-size:13px;font-weight:700;color:#ebf1f2;'/.test(body),
+  assert(/var sub = 'font-size:13px;font-weight:700;color:var\(--text\);'/.test(body),
     'the subject name is still conditionally bold');
-  assert(/var opp = 'font-size:13px;font-weight:400;color:#a3abba;'/.test(body),
+  assert(/var opp = 'font-size:13px;font-weight:400;color:var\(--text-sub\);'/.test(body),
     'the opponent name can still take the bold');
   assert(!/subjWin \? '700' : '400'/.test(body), 'emphasis still keys on who won');
 });
 mustFail('[neg] the bold check would catch the shipped winner-keyed emphasis', () => {
   const body = "var sub = 'font-size:13px;font-weight:' + (subjWin ? '700' : '400') + ';color:'";
-  assert(/var sub = 'font-size:13px;font-weight:700;color:#ebf1f2;'/.test(body),
+  assert(/var sub = 'font-size:13px;font-weight:700;color:var\(--text\);'/.test(body),
     'the subject name is still conditionally bold');
 });
 
@@ -5112,14 +5112,14 @@ mustFail('[neg] the subtitle check would catch the rejected coverage wording', (
 check('§5.3 item 5 · the search field is the file\'s label + 17px magnifier, not a bare input', () => {
   assert(/<svg width="17" height="17"[^>]*>\s*<circle cx="9" cy="9" r="6"/.test(T_HTML),
     'the 17px magnifier is missing');
-  assert(/<label style="display:flex;align-items:center;gap:12px;background:#0c0e16;/.test(T_HTML),
+  assert(/<label style="display:flex;align-items:center;gap:12px;background:var\(--surface-inner\);/.test(T_HTML),
     'the field is not the file\'s label wrapper');
   assert(/border-radius:12px;padding:14px 18px;/.test(T_HTML), 'the field radius/padding drifted');
   assert(/placeholder="Search a tournament\.\.\."/.test(T_HTML), 'the placeholder drifted');
 });
 mustFail('[neg] the search check would catch the shipped bare input', () => {
   const shipped = '<input type="search" data-pp2="tourn-search" placeholder="Search a tournament..." ' +
-    'style="width:100%;background:#0c0e16;border:1px solid rgba(255,255,255,0.09);">';
+    'style="width:100%;background:var(--surface-inner);border:1px solid rgba(255,255,255,0.09);">';
   assert(/<svg width="17" height="17"/.test(shipped), 'the 17px magnifier is missing');
 });
 
@@ -5130,11 +5130,11 @@ check('§5.3 items 6-7 · six columns on the file\'s grid, with SURFACE and BACK
     assert(T_HTML.indexOf('>' + h + '</span>') > 0, `the ${h} column head is missing`);
   });
   assert(T_HTML.indexOf('>Seasons<') < 0, 'the SEASONS column was not removed');
-  assert(/font-size:9px;letter-spacing:0\.1em;text-transform:uppercase;color:#6e7a93/.test(T_HTML),
+  assert(/font-size:9px;letter-spacing:0\.1em;text-transform:uppercase;color:var\(--label\)/.test(T_HTML),
     'the head eyebrow is not 9px / 0.1em / #6e7a93');
-  assert(/padding:11px 10px;cursor:pointer;border-top:0\.33px solid rgba\(255,255,255,0\.03\)/.test(T_HTML),
+  assert(/padding:11px 10px;cursor:pointer;border-top:0\.33px solid var\(--line-soft\)/.test(T_HTML),
     'the row padding or border-top drifted');
-  assert(/\.pp2-trow:hover\{background:rgba\(106,154,248,0\.08\);\}/.test(PP2_SRC),
+  assert(/\.pp2-trow:hover\{background:var\(--nav-hover\);\}/.test(PP2_SRC),
     'the row has no hover fill');
 });
 mustFail('[neg] the column check would catch the shipped five-column table', () => {
@@ -5234,14 +5234,14 @@ check('§5.3 items 13-14 · the detail is the file\'s container and carries the 
   I.state.tournOpen = 'Australian Open';
   const open = I.renderTournModal(ZVEREV);
   I.state.tournOpen = null;
-  assert(open.indexOf('background:#0c0e16;border:0.33px solid #2e4fa8;border-radius:10px;' +
+  assert(open.indexOf('background:var(--surface-inner);border:0.33px solid var(--seg-active-line);border-radius:10px;' +
     'margin:7px 0 9px;padding:13px 15px;') > 0, 'the detail container drifted from the file');
   assert(/showing \d+ matches/.test(open), 'the header meta line is missing');
   assert(/font-size:13px;font-weight:700;white-space:nowrap;">Australian Open</.test(open),
     'the detail header name is missing');
 });
 mustFail('[neg] the detail check would catch the shipped header-less container', () => {
-  const shipped = '<div style="background:#0c0e16;border:0.33px solid #2e4fa8;' +
+  const shipped = '<div style="background:var(--surface-inner);border:0.33px solid var(--seg-active-line);' +
     'border-radius:10px;margin:7px 0 9px;padding:13px 15px;"><div>2026 · WON</div></div>';
   assert(/showing \d+ matches/.test(shipped), 'the header meta line is missing');
 });
@@ -5253,7 +5253,7 @@ check('§5.3 item 15 · five tiles, and a Slam\'s middle three differ from a non
   assert(slam && other, 'the fixture has no Slam/non-Slam pair to compare');
   const sHtml = I.renderTournDetail(ZVEREV, slam);
   const oHtml = I.renderTournDetail(ZVEREV, other);
-  const tiles = h => (h.match(/letter-spacing:0\.12em;text-transform:uppercase;color:#6e7a93;">([^<]+)</g) || [])
+  const tiles = h => (h.match(/letter-spacing:0\.12em;text-transform:uppercase;color:var\(--label\);">([^<]+)</g) || [])
     .map(x => x.replace(/.*">/, '').replace(/</, ''));
   assert.deepStrictEqual(tiles(sHtml),
     ['W–L record', 'Grand Slam career', 'Over 3.5 sets · this event',
@@ -5262,12 +5262,12 @@ check('§5.3 item 15 · five tiles, and a Slam\'s middle three differ from a non
     ['W–L record', 'Best result', 'Sets won', 'Last played', 'Backing him here']);
   assert(/grid-template-columns:repeat\(5,minmax\(0,1fr\)\);gap:10px/.test(sHtml),
     'the tile grid is not 5 x gap 10');
-  assert(/background:#0e1019;border:0\.33px solid rgba\(255,255,255,0\.045\);border-radius:11px;padding:14px 15px/
+  assert(/background:var\(--surface\);border:0\.33px solid var\(--line\);border-radius:11px;padding:14px 15px/
     .test(sHtml), 'the tile box drifted from the file');
   assert(/font-size:23px;font-weight:700/.test(sHtml), 'the tile figure is not mono 23/700');
 });
 mustFail('[neg] the tile check would catch a detail with no tiles at all', () => {
-  const shipped = '<div style="background:#0c0e16;"><div>2026</div></div>';
+  const shipped = '<div style="background:var(--surface-inner);"><div>2026</div></div>';
   assert(/grid-template-columns:repeat\(5,minmax\(0,1fr\)\);gap:10px/.test(shipped),
     'the tile grid is not 5 x gap 10');
 });
@@ -5313,7 +5313,7 @@ check('§5.3 items 16-18 · the match grid is the file\'s, with DATE, SET SCORES
   ['Date', 'Opponent', 'Rd', 'Sets', 'Set scores', 'H', 'A'].forEach((h) => {
     assert(open.indexOf('>' + h + '</span>') > 0, `the ${h} match column head is missing`);
   });
-  assert(/position:sticky;top:0;background:#131623/.test(open), 'the match head is not sticky');
+  assert(/position:sticky;top:0;background:var\(--popup\)/.test(open), 'the match head is not sticky');
   assert(/width:8px;height:8px;border-radius:2px;background:(#3ed68c|#da6259)/.test(open),
     'the W/L marker is not the file\'s 8px radius-2 square');
 });
@@ -5356,11 +5356,11 @@ check('§5.3 item 17 · edition group rows read "<Event> <year>" with finish and
   const open = I.renderTournModal(ZVEREV);
   I.state.tournOpen = null;
   assert(/>Australian Open 20\d\d</.test(open), 'the group row is not "<Event> <year>"');
-  assert(!/letter-spacing:0\.12em;text-transform:uppercase;color:#6e7a93;margin-bottom:4px;">20\d\d/
+  assert(!/letter-spacing:0\.12em;text-transform:uppercase;color:var\(--label\);margin-bottom:4px;">20\d\d/
     .test(open), 'the rejected "2026 · WON" eyebrow is still there');
 });
 mustFail('[neg] the group-row check would catch the shipped year eyebrow', () => {
-  const shipped = '<div style="letter-spacing:0.12em;text-transform:uppercase;color:#6e7a93;' +
+  const shipped = '<div style="letter-spacing:0.12em;text-transform:uppercase;color:var(--label);' +
     'margin-bottom:4px;">2026 · Won</div>';
   assert(/>Australian Open 20\d\d</.test(shipped), 'the group row is not "<Event> <year>"');
 });
@@ -5397,7 +5397,7 @@ check('§5.3 item 20 · both lists scroll under the file\'s caps', () => {
     'the match list has no scroll cap');
 });
 mustFail('[neg] the scroll-cap check would catch the shipped uncapped list', () => {
-  const shipped = '<div style="background:#0c0e16;padding:13px 15px;">';
+  const shipped = '<div style="background:var(--surface-inner);padding:13px 15px;">';
   assert(shipped.indexOf('max-height:calc(100vh - 430px)') > 0, 'the match list has no scroll cap');
 });
 

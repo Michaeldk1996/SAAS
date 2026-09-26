@@ -721,7 +721,7 @@
     // BOTH metrics (higher break% is good for the returner, higher hold% for the
     // server). GLOBAL cell has deviation 0 → neutral, so it never colours itself.
     function hbCellStyle(pct, rowGlobalPct) {
-      if (pct == null || rowGlobalPct == null) return 'background:#0e1019;';
+      if (pct == null || rowGlobalPct == null) return 'background:var(--surface);';
       const d = pct - rowGlobalPct;
       if (Math.abs(d) <= HB_NEUTRAL_BAND) return 'background:rgba(120,132,156,0.10);';
       const t = Math.min(1, (Math.abs(d) - HB_NEUTRAL_BAND) / (HB_FULL_DEV - HB_NEUTRAL_BAND));
@@ -738,8 +738,8 @@
       // and self-heal once the rebuilt shard propagates, rather than “undefined/n”.
       const has = !!(cell && cell.n > 0 && cell.pct != null && cell.won != null);
       if (!has) {
-        return `<div style="border-radius:7px;padding:8px 3px;text-align:center;background:#0e1019;">
-          <div style="font-size:15px;font-weight:700;font-family:'IBM Plex Mono',monospace;line-height:1;color:#6e7a93;">—</div>
+        return `<div style="border-radius:7px;padding:8px 3px;text-align:center;background:var(--surface);">
+          <div style="font-size:15px;font-weight:700;font-family:'IBM Plex Mono',monospace;line-height:1;color:var(--label);">—</div>
         </div>`;
       }
       const thin = cell.n < HB_DESAT_N;
@@ -756,12 +756,12 @@
     // the number that survives at every rank tier; the visual weight says so.
     function hbGlobalCell(g) {
       if (!g.n) {
-        return `<div style="border-radius:8px;padding:9px 4px;text-align:center;background:#0e1019;border:0.33px solid rgba(255,255,255,0.045);">
-          <div style="font-size:16px;font-weight:700;font-family:'IBM Plex Mono',monospace;line-height:1;color:#6e7a93;">—</div>
+        return `<div style="border-radius:8px;padding:9px 4px;text-align:center;background:var(--surface);border:0.33px solid var(--line);">
+          <div style="font-size:16px;font-weight:700;font-family:'IBM Plex Mono',monospace;line-height:1;color:var(--label);">—</div>
         </div>`;
       }
-      return `<div style="border-radius:8px;padding:9px 4px;text-align:center;background:rgba(143,160,192,0.22);border:0.33px solid rgba(255,255,255,0.045);box-shadow:inset 0 0 0 1px rgba(143,160,192,0.10);">
-        <div style="font-size:19px;font-weight:800;font-family:'IBM Plex Mono',monospace;line-height:1;color:#ebf1f2;">${Math.round(g.pct)}%</div>
+      return `<div style="border-radius:8px;padding:9px 4px;text-align:center;background:rgba(143,160,192,0.22);border:0.33px solid var(--line);box-shadow:inset 0 0 0 1px rgba(143,160,192,0.10);">
+        <div style="font-size:19px;font-weight:800;font-family:'IBM Plex Mono',monospace;line-height:1;color:var(--text);">${Math.round(g.pct)}%</div>
         <div style="font-size:10px;font-family:'IBM Plex Mono',monospace;margin-top:4px;color:rgba(231,233,238,0.82);white-space:nowrap;">${g.won}/${g.n}</div>
       </div>`;
     }
@@ -775,17 +775,17 @@
       const cols = `58px 92px 13px repeat(${HB_SETCOLS.length},1fr)`;   // label | GLOBAL | rule | S1..S5
       const head = `<div style="display:grid;grid-template-columns:${cols};gap:5px;margin-bottom:6px;align-items:end;">
         <span></span>
-        <span style="font-size:10px;letter-spacing:0.10em;color:#d9dbdf;font-weight:800;font-family:'IBM Plex Mono',monospace;text-align:center;">GLOBAL</span>
+        <span style="font-size:10px;letter-spacing:0.10em;color:var(--text-soft);font-weight:800;font-family:'IBM Plex Mono',monospace;text-align:center;">GLOBAL</span>
         <span></span>
-        ${HB_SETCOLS.map(s => `<span style="font-size:9.5px;letter-spacing:0.04em;color:#6e7a93;font-family:'IBM Plex Mono',monospace;text-align:center;">S${s}</span>`).join('')}
+        ${HB_SETCOLS.map(s => `<span style="font-size:9.5px;letter-spacing:0.04em;color:var(--label);font-family:'IBM Plex Mono',monospace;text-align:center;">S${s}</span>`).join('')}
       </div>`;
       const rows = HB_BUCKETS.map(b => {
         const rowCells = HB_SETCOLS.map(s => (node[s] || {})[b[0]]);
         const g = hbSum(rowCells);
         return `<div style="display:grid;grid-template-columns:${cols};gap:5px;margin-bottom:5px;align-items:stretch;">
           <div style="display:flex;flex-direction:column;justify-content:center;">
-            <span style="font-size:11.5px;font-weight:700;color:#d9dbdf;white-space:nowrap;">${b[1]}</span>
-            <span style="font-size:8px;color:#6e7a93;line-height:1.15;">${b[2]}</span>
+            <span style="font-size:11.5px;font-weight:700;color:var(--text-soft);white-space:nowrap;">${b[1]}</span>
+            <span style="font-size:8px;color:var(--label);line-height:1.15;">${b[2]}</span>
           </div>
           ${hbGlobalCell(g)}
           ${HB_DIVIDER}
@@ -798,8 +798,8 @@
     function hbPlayerBlock(pd, name, logo, metric) {
       const node = pd && (metric === 'hold' ? (pd.serve && pd.serve.all) : (pd.return && pd.return.all));
       const av = logo
-        ? `<img src="${esc(logo)}" alt="" loading="lazy" referrerpolicy="no-referrer" style="width:30px;height:30px;border-radius:50%;object-fit:cover;background:#0e1019;flex-shrink:0;">`
-        : `<span style="width:30px;height:30px;border-radius:50%;background:#0e1019;flex-shrink:0;display:inline-block;"></span>`;
+        ? `<img src="${esc(logo)}" alt="" loading="lazy" referrerpolicy="no-referrer" style="width:30px;height:30px;border-radius:50%;object-fit:cover;background:var(--surface);flex-shrink:0;">`
+        : `<span style="width:30px;height:30px;border-radius:50%;background:var(--surface);flex-shrink:0;display:inline-block;"></span>`;
       const pillLbl = metric === 'hold' ? 'HOLD' : 'BREAK';
       let pill = '—';
       if (node) {
@@ -810,11 +810,11 @@
       }
       const nm = `<div style="display:flex;align-items:center;gap:9px;margin-bottom:12px;min-width:0;">
         ${av}
-        <span style="font-size:13px;font-weight:800;color:#ebf1f2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;">${esc(name || '—')}</span>
-        <span style="font-size:11px;font-weight:800;font-family:'IBM Plex Mono',monospace;color:#ebf1f2;background:#0e1019;border:1px solid #262B35;border-radius:999px;padding:4px 10px;white-space:nowrap;">${pillLbl} ${pill}</span>
+        <span style="font-size:13px;font-weight:800;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;">${esc(name || '—')}</span>
+        <span style="font-size:11px;font-weight:800;font-family:'IBM Plex Mono',monospace;color:var(--text);background:var(--surface);border:1px solid #262B35;border-radius:999px;padding:4px 10px;white-space:nowrap;">${pillLbl} ${pill}</span>
       </div>`;
       if (!node) {
-        return `<div style="flex:1;min-width:330px;">${nm}<div style="font-size:12px;color:#6e7a93;">No ${metric} history yet.</div></div>`;
+        return `<div style="flex:1;min-width:330px;">${nm}<div style="font-size:12px;color:var(--label);">No ${metric} history yet.</div></div>`;
       }
       return `<div style="flex:1;min-width:330px;">${nm}${hbGrid(node)}</div>`;
     }
@@ -832,10 +832,10 @@
       const head = `<div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
         <div style="min-width:0;">
           <div style="display:flex;align-items:center;gap:7px;">
-            <span style="font-size:14px;font-weight:800;color:#ebf1f2;">Hold/Break HeatMap</span>
-            <span title="${esc(tip)}" style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;border:1px solid #40506b;color:#a3abba;font-size:10px;font-weight:700;cursor:help;flex-shrink:0;">i</span>
+            <span style="font-size:14px;font-weight:800;color:var(--text);">Hold/Break HeatMap</span>
+            <span title="${esc(tip)}" style="display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:50%;border:1px solid #40506b;color:var(--text-sub);font-size:10px;font-weight:700;cursor:help;flex-shrink:0;">i</span>
           </div>
-          <div style="margin-top:8px;"><span style="display:inline-block;font-size:9.5px;font-weight:700;letter-spacing:0.07em;font-family:'IBM Plex Mono',monospace;color:#a3abba;background:#0e1019;border:1px solid #262B35;border-radius:999px;padding:3px 10px;">${chip}</span></div>
+          <div style="margin-top:8px;"><span style="display:inline-block;font-size:9.5px;font-weight:700;letter-spacing:0.07em;font-family:'IBM Plex Mono',monospace;color:var(--text-sub);background:var(--surface);border:1px solid #262B35;border-radius:999px;padding:3px 10px;">${chip}</span></div>
         </div>
         <div class="ltm-toggle" style="margin:0;">${tog('hold', 'HOLD')}${tog('break', 'BREAK')}</div>
       </div>`;

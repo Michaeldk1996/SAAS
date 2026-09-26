@@ -114,6 +114,8 @@ Each is phrased as a test you can apply. Surface-specific rulings live in `.clau
 
 - **Palette = theme 12a "Ink solid" (founder brief TEN-285, 2026-09-25).** Every rendered colour is a 12a token (`.claude/rules/theme-12a.md`), `transparent`, or on that file's founder-reviewed unmapped list. **Test:** the computed-style audit over every tab and open state reports zero values outside those three sets. The old palettes (`#5b9bff` / `#3e7bfa` blues, `#e7e9ee` / `#fff` text tiers, `#3dd68c` / `#e0616f`) are retired.
 
+- **Layout = the 12a design file (founder brief TEN-286, 2026-09-26).** The reference is `design/reference/portal-12a.html` (never published). It renders only with JavaScript: open it in headless Chrome, measure **computed styles** relative to the portal frame (the `<aside>`'s parent), and compare at the same DPR. **The design file's computed values beat any label text and any HANDOFF.md number** where they disagree (its label strip says "#10131F surfaces, 6% hairlines"; it computes `#0E1019` and 0.045 — computed wins). **Test:** the component comparator (review A) reports delta 0 or a listed data-driven exemption for every component; `test-ten286-layout.mjs` locks the values on the shipped source.
+
 - **Blue.** `periwinkle #6A9AF8` answers *whose* number this is — links, favourite names, selection, controls — never *whether* the number is good. `blue-ring #007AFF` is only probability bars, form bars, the date underline and the Today dot. **Test:** if blue signals quality or performance, it's wrong; `#007AFF` on anything outside those four roles is wrong.
 
 - **Green / red.** `positive #3ED68C` / `negative #DA6259` answer **"is this value trustworthy"** or **"which direction did this move"** — never **"which player is better."** Direction is permitted only where the measured thing is itself directional. A count or rate beside another player's is a *comparison* and takes identity colour or neutral. **Test:** is the colour answering trustworthy-or-direction, or ranking two players? If it ranks, neutralise. *Exceptions, canonical tokens only:* Playing Styles matchup edge and dominance; Odds-tab movement deltas; LOST SERVE and BP markers. The Clay tag never renders green — it is `clay #F2B45F`. The retired hues `#3dd68c` / `#e0616f` / `#3ECF8E` / `#E8607A` appearing in any UI file is a bug.
@@ -266,8 +268,8 @@ Surface-specific rulings moved out of this file so they load only when relevant:
 | Match analysis Form / H2H tabs — price order, display constants, all-level H2H, market-edge, odds alarms | `.claude/rules/modal-form-h2h.md` |
 | Odds archive (tennis-data closing prices): drop-in refresh, merge, never-thinner, readers | `.claude/rules/odds-archive.md` |
 | Deploy lane — ready gate, first-come-first-served queue, deploy-batch as the one land path, confirm-live release, 40-min pipeline-aware hold, cutover, waiter reports | `.claude/rules/deploy-lane.md` |
-| App shell — sidebar width, Stennisfy Model icon | `.claude/rules/app-shell.md` |
-| Theme 12a — tokens, hairlines, logo, unmapped/data-viz lists | `.claude/rules/theme-12a.md` |
+| App shell — 252px sidebar + floating panel, no user-row chevron, nav glyphs | `.claude/rules/app-shell.md` |
+| Theme 12a — tokens, hairlines, logo, layout reference, unmapped/data-viz lists | `.claude/rules/theme-12a.md` |
 | Database Ratings board / Lines tab rulings | `.claude/rules/ratings.md`, `.claude/rules/lines.md` |
 
 Full rationale and superseded decisions live in `BUILD-NOTES.md`, not here.
