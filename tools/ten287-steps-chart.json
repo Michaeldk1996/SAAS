@@ -1,46 +1,26 @@
 [
  {
-  "name": "indexes",
-  "sql": "select indexname, indexdef from pg_indexes where schemaname='public' and tablename='ten216_test_odds_changes'"
+  "name": "ha_since",
+  "sql": "select change_kind, count(*) n, count(distinct match_key) m from public.ten216_test_odds_changes where market='Home/Away' and observed_at >= '2026-09-26T03:55:00Z' group by 1"
  },
  {
-  "name": "ha_books",
-  "sql": "select bookmaker, count(*) n, count(distinct match_key) matches, min(observed_at) first_at, max(observed_at) last_at from public.ten216_test_odds_changes where market='Home/Away' group by 1 order by 2 desc"
+  "name": "flicker",
+  "sql": "with r as (select match_key, bookmaker, selection, observed_at, change_kind, lag(change_kind) over (partition by match_key,bookmaker,selection order by observed_at,id) prev, lag(observed_at) over (partition by match_key,bookmaker,selection order by observed_at,id) prev_at, lead(change_kind) over (partition by match_key,bookmaker,selection order by observed_at,id) nxt from public.ten216_test_odds_changes where market='Home/Away' and observed_at >= '2026-09-26T03:55:00Z') select count(*) filter (where change_kind='removed') removed, count(*) filter (where change_kind='removed' and nxt='first_seen') removed_then_back, count(*) filter (where change_kind='removed' and nxt is null) removed_final, percentile_cont(0.5) within group (order by extract(epoch from observed_at-prev_at)) filter (where change_kind='first_seen' and prev='removed') gap_p50_s, max(observed_at-prev_at) filter (where change_kind='first_seen' and prev='removed') gap_max from r"
  },
  {
-  "name": "ha_kinds",
-  "sql": "select change_kind, selection, count(*) from public.ten216_test_odds_changes where market='Home/Away' group by 1,2 order by 1,2"
+  "name": "removed_live",
+  "sql": "with r as (select match_key, bookmaker, selection, observed_at, change_kind, event_live, lead(change_kind) over (partition by match_key,bookmaker,selection order by observed_at,id) nxt from public.ten216_test_odds_changes where market='Home/Away' and observed_at >= '2026-09-26T03:55:00Z') select coalesce(r.event_live::text,'null') live, count(*) from r where change_kind='removed' and nxt='first_seen' group by 1"
  },
  {
-  "name": "reappear",
-  "sql": "with r as (select match_key, bookmaker, selection, observed_at, change_kind, lag(change_kind) over (partition by match_key,bookmaker,selection order by observed_at, id) prev from public.ten216_test_odds_changes where market='Home/Away') select count(*) filter (where change_kind='removed') removed, count(*) filter (where change_kind='first_seen' and prev='removed') reappeared, count(distinct match_key||bookmaker) filter (where change_kind='removed') pairs_removed from r"
+  "name": "prelive_flicker",
+  "sql": "with r as (select match_key, bookmaker, selection, observed_at, change_kind, lead(change_kind) over (partition by match_key,bookmaker,selection order by observed_at,id) nxt, lead(event_live) over (partition by match_key,bookmaker,selection order by observed_at,id) nxt_live from public.ten216_test_odds_changes where market='Home/Away' and observed_at >= '2026-09-26T03:55:00Z') select count(*) n, count(distinct match_key) matches, count(distinct match_key||bookmaker) pairs from r where change_kind='removed' and nxt='first_seen' and nxt_live is false"
  },
  {
-  "name": "slot_gaps_24h",
-  "sql": "with s as (select generate_series(date_trunc('hour', now()-interval '24 hours'), now()-interval '10 minutes', interval '5 minutes') t), p as (select distinct observed_at from public.ten216_test_odds_changes where observed_at > now()-interval '25 hours') select count(*) slots, count(*) filter (where not exists (select 1 from p where p.observed_at >= s.t and p.observed_at < s.t+interval '5 minutes')) empty_slots from s"
+  "name": "prelive_flicker_sample",
+  "sql": "with r as (select match_key, bookmaker, selection, observed_at, change_kind, price, prev_price, lead(change_kind) over (partition by match_key,bookmaker,selection order by observed_at,id) nxt, lead(observed_at) over (partition by match_key,bookmaker,selection order by observed_at,id) nxt_at, lead(price) over (partition by match_key,bookmaker,selection order by observed_at,id) nxt_price, lead(event_live) over (partition by match_key,bookmaker,selection order by observed_at,id) nxt_live from public.ten216_test_odds_changes where market='Home/Away' and observed_at >= '2026-09-26T03:55:00Z') select match_key, bookmaker, selection, observed_at removed_at, prev_price, nxt_at back_at, nxt_price from r where change_kind='removed' and nxt='first_seen' and nxt_live is false order by observed_at limit 15"
  },
  {
-  "name": "polls_24h",
-  "sql": "select count(distinct poll_id) polls, min(observed_at), max(observed_at) from public.ten216_test_odds_changes where observed_at > now()-interval '24 hours'"
- },
- {
-  "name": "max_poll_gap",
-  "sql": "with p as (select distinct observed_at t from public.ten216_test_odds_changes where observed_at > now()-interval '24 hours') select max(d) max_gap, percentile_cont(0.5) within group (order by extract(epoch from d)) p50_s from (select t - lag(t) over (order by t) d from p) x"
- },
- {
-  "name": "maxobs_cost",
-  "sql": "explain (analyze, format text) select max(observed_at) from public.ten216_test_odds_changes"
- },
- {
-  "name": "same_poll_pairs",
-  "sql": "select count(*) filter (where n=1) single_side, count(*) filter (where n=2) both_sides from (select match_key,bookmaker,poll_id,count(*) n from public.ten216_test_odds_changes where market='Home/Away' and change_kind<>'removed' group by 1,2,3) x"
- },
- {
-  "name": "damm_ha",
-  "sql": "select observed_at, bookmaker, selection, price, change_kind, event_live from public.ten216_test_odds_changes where match_key='12165854' and market='Home/Away' order by observed_at, bookmaker, selection"
- },
- {
-  "name": "polls_table",
-  "sql": "select to_regclass('public.ten216_test_polls') t"
+  "name": "live_rows",
+  "sql": "select coalesce(event_live::text,'null') live, change_kind, count(*) from public.ten216_test_odds_changes where market='Home/Away' and observed_at >= '2026-09-26T03:55:00Z' group by 1,2 order by 1,2"
  }
 ]
