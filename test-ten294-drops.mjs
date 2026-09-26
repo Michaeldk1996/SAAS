@@ -1,0 +1,232 @@
+// TEN-294 — the drops endpoint (founder ruling 2026-09-26: path B′; design doc `design`, card 37612d3d).
+// Each ruling in .claude/rules/drops.md is driven through the REAL service (createDropsService) with an
+// injected reader that returns drops_api.snapshot()'s shape, or read off the real config files.
+
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+import zlib from 'node:zlib';
+import { fileURLToPath } from 'node:url';
+import {
+  createDropsService, nextReadDelay, sourceStates, freshness,
+  READ_INTERVAL_MS, MIN_GAP_MS, AMBER_AFTER_S, PAUSED_AFTER_S, STALE_AFTER_S, DEFAULT_ORIGINS,
+} from './stennisfy-drops/server.mjs';
+
+const ROOT = path.dirname(fileURLToPath(import.meta.url));
+const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
+const T0 = Date.parse('2026-09-26T12:00:00Z');
+const iso = (msAgo, base = T0) => new Date(base - msAgo).toISOString();
+
+// drops_api.snapshot()'s shape (tools/ten294-drops-api.sql)
+function snapshot({ rows = [ROW], dbNow = T0, bot = 5_000 } = {}) {
+  return {
+    schema: 1, dbNow: new Date(dbNow).toISOString(), windowHours: 24, rows,
+    sources: [
+      { id: 'kibl-stream', label: 'Kibl stream (ATP)', lastAt: iso(10_000, dbNow) },
+      { id: 'kibl-poller', label: 'Kibl poller (Challenger/ITF)', lastAt: iso(200_000, dbNow) },
+      { id: 'superbet-recorder', label: 'Superbet recorder', lastAt: iso(20_000, dbNow) },
+      { id: 'bet105-bot', label: 'Bet105 drop bot', lastAt: bot == null ? null : iso(bot, dbNow) },
+      { id: 'superbet-bot', label: 'Superbet drop bot', lastAt: iso(15_000, dbNow) },
+    ],
+  };
+}
+const ROW = { id: 'bet105-1', book: 'Bet105', tier: 'ATP', playerA: 'A One', playerB: 'B Two', side: 'A One',
+  line: 'Match Winner', open: { price: '2.1', at: iso(3_600_000), kind: 'book opener' },
+  preDrop: { price: '2', at: iso(700_000) }, droppedTo: { price: '1.85', at: iso(60_000) },
+  dropPct: 7.5, sinceOpenPct: -11.9, detectedAt: iso(50_000), latest: { price: '1.83', at: iso(20_000) },
+  started: false, pastScheduledStart: false };
+
+function harness({ reader, origins } = {}) {
+  let clock = T0;
+  let reads = 0;
+  const svc = createDropsService({
+    readSnapshot: reader ? async () => { reads += 1; return reader(clock); } : async () => { reads += 1; return snapshot({ dbNow: clock }); },
+    now: () => clock, origins,
+  });
+  return { svc, tick: (ms) => { clock += ms; }, reads: () => reads };
+}
+function call(svc, url, headers = {}, method = 'GET') {
+  let status, hdrs, body;
+  const res = { writeHead: (s, h) => { status = s; hdrs = h || {}; }, end: (b) => { body = b; } };
+  svc.handle({ url, method, headers }, res);
+  return { status, headers: hdrs, body };
+}
+
+// ---- Ruling 1: B′ — a separate Fly app, never Pages, never kibl-stream ----
+
+const tomlTables = (src) => src.split('\n').map((l) => l.replace(/#.*$/, '').trim()).filter((l) => /^\[\[?[^\]]+\]\]?$/.test(l));
+
+test('B′: the endpoint host is the stennisfy-drops Fly app — not *.github.io and not kibl-stream', () => {
+  const app = read('stennisfy-drops/fly.toml').match(/^app\s*=\s*"([^"]+)"/m)[1];
+  const host = `${app}.fly.dev`;
+  assert.equal(app, 'stennisfy-drops');
+  assert.doesNotMatch(host, /\.github\.io$/);
+  assert.doesNotMatch(host, /kibl-stream/);
+  assert.ok(tomlTables(read('stennisfy-drops/fly.toml')).includes('[http_service]'), 'the drops app serves HTTP');
+});
+
+test('B′: kibl-stream/fly.toml has no [http_service] and no [[services]] block', () => {
+  const t = tomlTables(read('kibl-stream/fly.toml'));
+  assert.ok(t.length > 0, 'parsed some tables (a vacuous parse would pass)');
+  assert.ok(!t.includes('[http_service]') && !t.includes('[[services]]'), `service block found: ${t}`);
+  // control: the same parser DOES see a service block when one is present
+  assert.ok(tomlTables('[[vm]]\n[http_service]\n  internal_port = 1').includes('[http_service]'));
+});
+
+test('B′: every drops page fetches only from the drops app (skips OUT LOUD until the page exists)', (t) => {
+  const pages = fs.readdirSync(ROOT).filter((f) => /^drops.*\.(html|js|mjs)$/.test(f));
+  if (!pages.length) { t.skip('no drops page yet — the page is built against its Claude Design export'); return; }
+  for (const p of pages) {
+    const hosts = [...read(p).matchAll(/https?:\/\/([a-z0-9.-]+)/gi)].map((m) => m[1].toLowerCase());
+    const dataHosts = hosts.filter((h) => !/fonts\.(googleapis|gstatic)\.com$/.test(h));
+    assert.ok(dataHosts.includes('stennisfy-drops.fly.dev'), `${p} never names the drops app`);
+    for (const h of dataHosts) {
+      assert.doesNotMatch(h, /\.github\.io$|kibl-stream|supabase/, `${p} fetches from ${h}`);
+    }
+  }
+});
+
+test('CORS allows exactly the Pages origin (origins carry no path)', () => {
+  assert.deepEqual(DEFAULT_ORIGINS, ['https://michaeldk1996.github.io']);
+  assert.match(read('stennisfy-drops/fly.toml'), /ALLOWED_ORIGINS = "https:\/\/michaeldk1996\.github\.io"/);
+});
+
+// ---- Ruling 2: one read fanned out to every viewer ----
+
+test('fan-out: 500 viewers x every route = zero extra database reads', async () => {
+  const h = harness();
+  await h.svc.readOnce();
+  assert.equal(h.reads(), 1);
+  for (let i = 0; i < 500; i++) {
+    call(h.svc, '/status.json'); call(h.svc, '/drops.json'); call(h.svc, '/health');
+  }
+  assert.equal(h.reads(), 1, 'a request triggered a database read');
+});
+
+test('cadence: never faster than the bots write (>= MIN_GAP), never slower than one tick; aligned after the Bet105 tick', () => {
+  assert.equal(READ_INTERVAL_MS, 30_000);
+  for (let botAgo = 0; botAgo <= 120_000; botAgo += 1_000) {
+    const d = nextReadDelay(snapshot({ bot: botAgo }), T0);
+    assert.ok(d >= MIN_GAP_MS && d <= READ_INTERVAL_MS, `botAgo=${botAgo} -> ${d}`);
+  }
+  // bot finished 5 s ago -> next tick ends ~25 s from now, read 3 s after it
+  assert.equal(nextReadDelay(snapshot({ bot: 5_000 }), T0), 28_000);
+  // bot finished 24 s ago -> its next tick lands 9 s from now, inside the 10 s floor -> skip to the tick after (clamped to 30 s)
+  assert.equal(MIN_GAP_MS, 10_000);
+  assert.equal(nextReadDelay(snapshot({ bot: 24_000 }), T0), 30_000);
+  assert.equal(nextReadDelay(snapshot({ bot: 20_000 }), T0), 13_000);
+  // no bot heartbeat -> plain 30 s
+  assert.equal(nextReadDelay(snapshot({ bot: null }), T0), 30_000);
+});
+
+// ---- Ruling 3: never present stale drops as current ----
+
+test('generatedAt advances ONLY on a successful read; a failing reader leaves the true age growing', async () => {
+  let fail = false;
+  const h = harness({ reader: (clock) => { if (fail) throw new Error('db down'); return snapshot({ dbNow: clock }); } });
+  await h.svc.readOnce();
+  const first = h.svc.status().generatedAt;
+  fail = true;
+  h.tick(95_000); await h.svc.readOnce();
+  let s = h.svc.status();
+  assert.equal(s.generatedAt, first, 'a failed read moved the clock');
+  assert.equal(s.ageS, 95);
+  assert.equal(s.freshness, 'amber');
+  assert.equal(s.lastError, 'db down');
+  assert.equal(call(h.svc, '/health').status, 503);
+  h.tick(210_000); await h.svc.readOnce();
+  s = h.svc.status();
+  assert.equal(s.freshness, 'paused');
+  // last good rows still served (with their age), never replaced by an empty list
+  assert.equal(JSON.parse(call(h.svc, '/drops.json').body).rows.length, 1);
+  fail = false; h.tick(1_000); await h.svc.readOnce();
+  assert.equal(h.svc.status().freshness, 'ok');
+  assert.notEqual(h.svc.status().generatedAt, first);
+});
+
+test('freshness thresholds: amber past 3x the interval (90 s), paused past 5 min — both edges', () => {
+  assert.equal(AMBER_AFTER_S, 3 * READ_INTERVAL_MS / 1000);
+  assert.equal(PAUSED_AFTER_S, 300);
+  assert.equal(freshness(90), 'ok'); assert.equal(freshness(90.5), 'amber');
+  assert.equal(freshness(300), 'amber'); assert.equal(freshness(300.5), 'paused');
+  assert.equal(freshness(null), 'none');
+});
+
+test('a malformed snapshot is a failed read, not an empty board', async () => {
+  const h = harness({ reader: () => ({ rows: null, sources: [] }) });
+  await h.svc.readOnce();
+  assert.equal(h.svc.status().generatedAt, null);
+  assert.equal(call(h.svc, '/drops.json').status, 503);
+});
+
+test('before the first good read /drops.json is 503 "no snapshot yet", never [] (which would read as "no drops")', () => {
+  const h = harness();
+  const r = call(h.svc, '/drops.json');
+  assert.equal(r.status, 503);
+  assert.match(r.body, /no snapshot yet/);
+});
+
+test('per-source staleness: each source against its own limit, age measured on the DB clock plus snapshot age', () => {
+  const snap = snapshot();
+  snap.sources.find((s) => s.id === 'kibl-stream').lastAt = iso((STALE_AFTER_S['kibl-stream'] + 1) * 1000);
+  snap.sources.find((s) => s.id === 'superbet-bot').lastAt = null;
+  const st = Object.fromEntries(sourceStates(snap).map((s) => [s.id, s.state]));
+  assert.deepEqual(st, { 'kibl-stream': 'stale', 'kibl-poller': 'ok', 'superbet-recorder': 'ok', 'bet105-bot': 'ok', 'superbet-bot': 'unknown' });
+  // the poller (200 s old) is fine at its 900 s limit, but not 710 s later
+  assert.equal(sourceStates(snapshot(), 710).find((s) => s.id === 'kibl-poller').state, 'stale');
+  for (const s of snapshot().sources) assert.ok(s.id in STALE_AFTER_S, `no limit for ${s.id}`);
+});
+
+// ---- transport: 304s make unchanged rows nearly free; CORS ----
+
+test('ETag: unchanged rows answer 304; a new alert changes the ETag; gzip on request', async () => {
+  let rows = [ROW];
+  const h = harness({ reader: (clock) => snapshot({ rows, dbNow: clock }) });
+  await h.svc.readOnce();
+  const a = call(h.svc, '/drops.json');
+  assert.equal(a.status, 200);
+  assert.equal(call(h.svc, '/drops.json', { 'if-none-match': a.headers.ETag }).status, 304);
+  h.tick(30_000); await h.svc.readOnce();                       // same rows, new read
+  assert.equal(call(h.svc, '/drops.json', { 'if-none-match': a.headers.ETag }).status, 304);
+  rows = [ROW, { ...ROW, id: 'superbet-9', book: 'Superbet' }];
+  h.tick(30_000); await h.svc.readOnce();
+  const b = call(h.svc, '/drops.json', { 'if-none-match': a.headers.ETag, 'accept-encoding': 'gzip, br' });
+  assert.equal(b.status, 200);
+  assert.equal(b.headers['Content-Encoding'], 'gzip');
+  assert.equal(JSON.parse(zlib.gunzipSync(b.body)).rows.length, 2);
+  assert.equal(JSON.parse(call(h.svc, '/status.json').body).rowsEtag, b.headers.ETag, 'status.json names the current rowsEtag');
+});
+
+test('CORS: the Pages origin is echoed; any other origin gets no allow header', async () => {
+  const h = harness();
+  await h.svc.readOnce();
+  assert.equal(call(h.svc, '/status.json', { origin: 'https://michaeldk1996.github.io' }).headers['Access-Control-Allow-Origin'], 'https://michaeldk1996.github.io');
+  assert.equal(call(h.svc, '/status.json', { origin: 'https://evil.example' }).headers['Access-Control-Allow-Origin'], undefined);
+  assert.equal(call(h.svc, '/drops.json', {}, 'POST').status, 405);
+});
+
+test('status.json max-age never outlives the next read', async () => {
+  const h = harness();
+  await h.svc.readOnce();
+  h.svc.state.nextReadAtMs = T0 + 12_400;
+  assert.match(call(h.svc, '/status.json').headers['Cache-Control'], /max-age=12$/);
+});
+
+// ---- the SQL: rows are the bots' live alerts, read-only, no vendor calls, no public grant ----
+
+test('snapshot SQL: live bot alerts only, security definer with a pinned search_path, no anon grant, no vendor call', () => {
+  const sql = read('tools/ten294-drops-api.sql').replace(/--.*$/gm, '');
+  assert.match(sql, /from ten280_bot\.alerts a[\s\S]*?where a\.mode = 'live'/);
+  assert.match(sql, /from ten287_bot\.alerts a[\s\S]*?where a\.mode = 'live'/);
+  assert.match(sql, /security definer\s+set search_path = pg_catalog, pg_temp/);
+  assert.match(sql, /revoke all on function drops_api\.snapshot\(integer\) from public, anon, authenticated/);
+  assert.match(sql, /grant execute on function drops_api\.snapshot\(integer\) to drops_reader/);
+  assert.doesNotMatch(sql, /grant [^;]* to (anon|authenticated|public)\b/i);
+  assert.doesNotMatch(sql, /net\.http_|http_(get|post)|insert into|update ten2|delete from (?!pg_temp)/i);
+  // "Latest" comes from the bots' own loaders, never a second definition of a pre-match price
+  assert.match(sql, /ten280_bot\.load_ticks\(/);
+  assert.match(sql, /ten287_bot\.load_ticks\('Superbet'/);
+  // "started" is live evidence only; a passed scheduled time is its own field
+  assert.match(sql, /'started', exists \(select 1 from public\.kibl_line_observations o\s+where o\.fixture_id = a\.fixture_id and o\.is_live is true\)/);
+});

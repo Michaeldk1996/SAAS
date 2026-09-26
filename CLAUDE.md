@@ -271,6 +271,7 @@ Surface-specific rulings moved out of this file so they load only when relevant:
 | App shell — 252px sidebar + floating panel, no user-row chevron, nav glyphs | `.claude/rules/app-shell.md` |
 | Theme 12a — tokens, hairlines, logo, layout reference, unmapped/data-viz lists | `.claude/rules/theme-12a.md` |
 | Database Ratings board / Lines tab rulings | `.claude/rules/ratings.md`, `.claude/rules/lines.md` |
+| Pre-match drops page — B′ Fly endpoint, what a row is, Dropped to vs Latest, 24 h window, freshness, watchdog | `.claude/rules/drops.md` |
 
 Full rationale and superseded decisions live in `BUILD-NOTES.md`, not here.
 
