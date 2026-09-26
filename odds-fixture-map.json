@@ -2215,15 +2215,16 @@
       "tournamentId": 42979
     },
     "12166157": {
-      "fixtureId": null,
-      "mappedAt": "2026-09-26T18:30:48Z",
+      "fixtureId": "id1204297974753274",
+      "mappedAt": "2026-09-26T19:30:49Z",
+      "missHeldH": 1.0,
       "missRuns": 1,
       "missSince": "2026-09-26T18:30:48Z",
-      "orient": null,
+      "orient": "same",
       "p1": "D. Medvedev",
       "p2": "C. Wong",
-      "startTime": null,
-      "tournamentId": null
+      "startTime": "2026-09-27T11:30:00.000Z",
+      "tournamentId": 42979
     }
   },
   "missAudit": {
@@ -2231,14 +2232,14 @@
       "measuredRunsPerDay": 17.2,
       "missResolutionHoursMax": 146.78,
       "missResolutionHoursP50": 37.52,
-      "missResolutionsMeasured": 91,
+      "missResolutionsMeasured": 92,
       "note": "ttlBitRuns counts runs where an expired MISS was the ONLY reason a billable /v4/fixtures call was made. projectedTtlUnitsPerDay uses the MEASURED run rate (measuredRunsPerDay), not an assumed 24/day; it is null until observedSpanDays is wide enough to measure one. Compare it against the <=24/day ceiling the TTL was chosen against. openMisses counts only fixtures still on the board.",
-      "observedSpanDays": 15.54,
+      "observedSpanDays": 15.58,
       "projectedTtlUnitsPerDay": 5.7,
-      "runs": 267,
-      "spentRuns": 157,
-      "ttlBitRuns": 88,
-      "ttlBitShare": 0.33,
+      "runs": 268,
+      "spentRuns": 158,
+      "ttlBitRuns": 89,
+      "ttlBitShare": 0.332,
       "ttlHours": 1.0
     },
     "runs": [
@@ -5178,9 +5179,20 @@
         "ttlBit": false,
         "unmapped": 1,
         "upcoming": 10
+      },
+      {
+        "at": "2026-09-26T19:30:49Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 0,
+        "missExpired": 1,
+        "openMisses": 1,
+        "stale": 1,
+        "ttlBit": true,
+        "unmapped": 0,
+        "upcoming": 10
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-09-26T18:30:48Z"
+  "updatedAt": "2026-09-26T19:30:49Z"
 }
