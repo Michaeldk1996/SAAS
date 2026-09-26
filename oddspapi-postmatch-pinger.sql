@@ -18,9 +18,12 @@
 --                              schema action writes it ONLY when the
 --                              POSTMATCH_DISPATCH_PAT repo secret exists — it
 --                              never deletes or overwrites it otherwise.
---   ops_telegram_bot_token     bsp_alerts.py's bot (TELEGRAM_BOT_TOKEN) and
---   ops_telegram_chat_id       ops chat (TELEGRAM_OPS_CHAT_ID), copied in by the
---                              schema action when those repo secrets exist.
+--   ten287_telegram_bot_token  THE ops alert route: the Superbet drop-bot chat
+--   ten287_telegram_chat_id    (founder 2026-09-27, TEN-295 comment 054dc038 item 3:
+--                              "the official ops alert route ... so nothing is
+--                              unsent"). Stored by the TEN-287 bot install; the
+--                              former ops_telegram_* pair never existed in Vault,
+--                              so every alarm until then was recorded 'unsent'.
 --
 -- THE ALARM. A dead token means GitHub never runs anything, so the alert has to
 -- start here. Every dispatch records its pg_net request id; a second job,
@@ -104,7 +107,7 @@ begin
   revoke all on function public.postmatch_dispatch() from public;
   revoke all on function public.postmatch_dispatch() from anon, authenticated;
 
-  -- One message to the ops chat, or a recorded 'unsent' row + WARNING.
+  -- One message to the ops route (the Superbet drop-bot chat), or a recorded 'unsent' row + WARNING.
   create or replace function public.postmatch_send_alert(p_condition text, p_kind text, p_text text)
   returns text
   language plpgsql security definer
@@ -115,8 +118,8 @@ begin
     chat text;
     req bigint;
   begin
-    select decrypted_secret into tok from vault.decrypted_secrets where name = 'ops_telegram_bot_token' limit 1;
-    select decrypted_secret into chat from vault.decrypted_secrets where name = 'ops_telegram_chat_id' limit 1;
+    select decrypted_secret into tok from vault.decrypted_secrets where name = 'ten287_telegram_bot_token' limit 1;
+    select decrypted_secret into chat from vault.decrypted_secrets where name = 'ten287_telegram_chat_id' limit 1;
     if tok is null or length(trim(tok)) = 0 or chat is null or length(trim(chat)) = 0 then
       insert into public.postmatch_alert_log (condition, kind, message, delivered)
       values (p_condition, p_kind, p_text, 'unsent: telegram secret missing in vault');

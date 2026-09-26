@@ -901,14 +901,15 @@ check('no POSTMATCH_DISPATCH_PAT / Telegram repo secret: the schema action never
 SECRET_VALUES = {'POSTMATCH_DISPATCH_PAT': 'github_pat_TESTVALUE', 'TELEGRAM_BOT_TOKEN': '123:TESTBOT',
                  'TELEGRAM_OPS_CHAT_ID': '-100777'}
 stmts, out, _, _ = run_schema_step('schema', SECRET_VALUES)
-names = [n for n in ('gh_postmatch_dispatch_pat', 'ops_telegram_bot_token', 'ops_telegram_chat_id')
-         if any(f"vault.create_secret(" in q and f"'{n}'" in q for q in stmts)]
-check('with the repo secrets present: all three are stored under their Vault names',
-      names == ['gh_postmatch_dispatch_pat', 'ops_telegram_bot_token', 'ops_telegram_chat_id'], names)
+written = [q for q in vault_writes(stmts)]
+check('with the repo secrets present: only the PAT is stored; the Telegram route (the drop-bot chat, '
+      'Vault ten287_telegram_*, TEN-295 item 3) is never written by this action',
+      len(written) == 1 and "'gh_postmatch_dispatch_pat'" in written[0]
+      and not any('telegram' in q for q in written), written)
 check('...and no secret value is ever printed', not any(v in out for v in SECRET_VALUES.values()))
 stmts, out, code, _ = run_schema_step('schema', SECRET_VALUES, {'vault.create_secret': (500, 'boom')})
 check('a failed Vault store is a ::warning::, never an ::error:: about it',
-      out.count('::warning::') >= 3 and 'not stored' not in ''.join(
+      out.count('::warning::') >= 1 and 'not stored' not in ''.join(
           ln for ln in out.splitlines() if ln.startswith('::error::')), out[-400:])
 assert SCHEMA_SCRIPT.count('    if pat:\n') == 1
 mutant = SCHEMA_SCRIPT.replace('    if pat:\n', '    if True:\n', 1)
@@ -969,6 +970,20 @@ def alarm_faults(text):
 
 
 check('the alarm SQL keeps every rule', alarm_faults(PINGER) == [], alarm_faults(PINGER))
+
+
+def route_ok(text):
+    t = re.sub(r'--[^\n]*', '', text)
+    i = t.index('function public.postmatch_send_alert')
+    snd = t[i:t.index('$fn$;', i)]
+    return ("name = 'ten287_telegram_bot_token'" in snd and "name = 'ten287_telegram_chat_id'" in snd
+            and 'ops_telegram' not in snd)
+
+
+check('the alarm sends to the Superbet drop-bot chat, the official ops route (TEN-295 item 3)', route_ok(PINGER))
+check('CONTROL: an alarm reading the never-stored ops_telegram_* pair is caught',
+      "'ten287_telegram_chat_id'" in PINGER
+      and not route_ok(PINGER.replace("'ten287_telegram_chat_id'", "'ops_telegram_chat_id'")))
 for name, (a, b) in {
         'a third host': ("'https://api.telegram.org/bot'", "'https://evil.example.org/bot'"),
         'dispatch ids not recorded': ('    insert into public.postmatch_dispatch_log (request_id) values (req);\n', ''),

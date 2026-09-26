@@ -4157,6 +4157,21 @@ function closeCutMs(m, ocsStartMs, onsetFn) {
   const o = onsetFn ? onsetFn() : NaN;
   return Number.isFinite(o) ? o - 1 : NaN;
 }
+// Keep a close carried from an earlier run? Only when it is a pre-cut quote from `book` AND the
+// series, re-read at today's cut, does not yield a DIFFERENT close (TEN-295, founder 2026-09-27
+// comment 054dc038 item 2). A carried close derived under an earlier cut (the scheduled start)
+// is still "before the start", so a before-the-cut test alone froze it: Shang v Mannarino kept
+// bet365 1.37 / 3.00 (08:17:46Z) although bet365 moved to 1.44 / 2.75 at 08:45:19Z, before the
+// 08:47:59Z actual start; Sun v Safiullin kept 4.50 / 1.17 against 4.50 / 1.20 at 10:05:33Z.
+// `derived` is { p1, p2, at } off the same series, or null when the series yields no close
+// (then a valid carried close stands — a thinner re-read never erases a proven close).
+function keepCarriedClose(prior, derived, cutMs, book) {
+  if (!prior || prior.bookmaker !== book || !Number.isFinite(cutMs)) return false;
+  const at = Date.parse(prior.at);
+  if (!Number.isFinite(at) || at > cutMs) return false;
+  if (!derived) return true;
+  return derived.p1 === prior.p1 && derived.p2 === prior.p2 && derived.at === prior.at;
+}
 
 // TEN-295: the card-state key, CHARACTER FOR CHARACTER the dashboard's (and ten225_names.py's) —
 // test-ten295-odds-chart.mjs fails if this copy and bsp-consult-dashboard.html's ever differ.
@@ -6649,21 +6664,20 @@ async function runPipeline() {
       // scheduled start removes the inference entirely.
       const startMs = closeCutMs(m, ocsStartByKey.get(ocsMatchKey(m.date, m.p1, m.p2)), () => inPlayOnset(s));
       const prior = carried && carried.closingOdds;
-      // Preserve a prior close only if it is a genuine pre-start quote AND from
-      // bet365 (the book we now pin both legs to) — otherwise it is re-derived
-      // from `ref`, so a close pinned cross-book by an earlier run is corrected
-      // rather than frozen (TEN-124 bet365 single-book journey).
-      const priorOk = prior && prior.bookmaker === ref && Number.isFinite(startMs)
-        && Number.isFinite(Date.parse(prior.at)) && Date.parse(prior.at) <= startMs;
-      if (priorOk) {
+      // Preserve a prior close only if it is a genuine pre-start quote from bet365 (the book
+      // we now pin both legs to) AND the series re-read at this cut gives the same close
+      // (keepCarriedClose) — otherwise it is re-derived from `ref`, so a close pinned
+      // cross-book, in-play, or under an earlier cut is corrected rather than frozen
+      // (TEN-124 bet365 single-book journey; TEN-295 item 2).
+      const c1 = Number.isFinite(startMs) ? lastAtOrBefore(p1, startMs) : null;
+      const c2 = Number.isFinite(startMs) ? lastAtOrBefore(p2, startMs) : null;
+      const derivedClose = (c1 && c2) ? { p1: c1[1], p2: c2[1], bookmaker: ref, at: c1[0] } : null;
+      if (keepCarriedClose(prior, derivedClose, startMs, ref)) {
         m.closingOdds = prior; closePreserved++;
-      } else if (Number.isFinite(startMs)) {
-        const c1 = lastAtOrBefore(p1, startMs), c2 = lastAtOrBefore(p2, startMs);
-        if (c1 && c2) {
-          m.closingOdds = { p1: c1[1], p2: c2[1], bookmaker: ref, at: c1[0] };
-          if (prior) closeHealed++; else closeDerived++;   // prior present == corrupt/cross-book pin replaced
-        } else { closeDashed++; }                           // no pre-start quote -> dash
-      } else { closeDashed++; }                             // no PROVEN pre-first-ball reference -> dash (TEN-124 tighten)
+      } else if (derivedClose) {
+        m.closingOdds = derivedClose;
+        if (prior) closeHealed++; else closeDerived++;     // prior present == corrupt/cross-book/early pin replaced
+      } else { closeDashed++; }                             // no pre-start quote, or no PROVEN pre-first-ball reference -> dash (TEN-124 tighten)
     }
   }
   // TEN-198 — the raw api-tennis sighting is a CARRIER into the block above, not a
@@ -6731,7 +6745,7 @@ async function runPipeline() {
       + ` ${vendorSightingHeld} carried vendor pin(s) held against a bet365-less oddspapi stream;`
       + ` ${vendorPostMatchRejected} post-match sighting(s) REJECTED (a settled fixture's live api-tennis price is not an open).`);
   }
-  console.log(`Odds snapshots — opening: ${openDerived} derived / ${openPreserved} preserved / ${openFromArchive} re-pinned earlier from the bet365 archive; closing (completed only): ${closeDerived} derived / ${closePreserved} preserved / ${closeHealed} healed (cross-book/in-play pin replaced) / ${closeDashed} dashed (no proven pre-first-ball reference).`);
+  console.log(`Odds snapshots — opening: ${openDerived} derived / ${openPreserved} preserved / ${openFromArchive} re-pinned earlier from the bet365 archive; closing (completed only): ${closeDerived} derived / ${closePreserved} preserved / ${closeHealed} healed (cross-book/in-play/superseded pin replaced) / ${closeDashed} dashed (no proven pre-first-ball reference).`);
   console.log(`bet365 NOW (upcoming only, TEN-179 item 1) — ${nowFromLive} kept from the hourly metered read / ${nowPinned} derived from the 3-hourly series / ${nowCarried} carried forward; ${crossBookDropped} upcoming match(es) dropped a cross-book open rather than fall back to another book.`);
   // TEN-225 ruling 4a — the per-book first sighting. Printed with its counters so the
   // Actions log shows the capture growing (or not) rather than leaving it to be inferred

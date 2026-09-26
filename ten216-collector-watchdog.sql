@@ -14,10 +14,10 @@
 -- RECOVERED then (an open alert stays open). If the check itself errors, one 'watchdog_error'
 -- alert per 3 h + WARNING. The install refuses (raises) when the heartbeat table is missing.
 --
--- WHERE IT GOES (measured 2026-09-26): the ops chat (Vault ops_telegram_bot_token /
--- ops_telegram_chat_id) when both exist — they do NOT today; else the Superbet drop-bot chat
--- (Vault ten287_telegram_bot_token / ten287_telegram_chat_id), the one Telegram route measured
--- delivering (HTTP 200). Every send is logged in ten216_watch_log with the channel used, and
+-- WHERE IT GOES: the Superbet drop-bot chat (Vault ten287_telegram_bot_token /
+-- ten287_telegram_chat_id) — the official ops alert route (founder 2026-09-27, TEN-295 comment
+-- 054dc038 item 3; the ops_telegram_* pair it used to try first never existed in Vault). Every
+-- send is logged in ten216_watch_log with the channel used, and
 -- resolved against pg_net: 'queued' -> 'sent' | 'failed: HTTP n' | 'failed: timeout/error' |
 -- 'failed: no response' (10 min). No secret at all -> 'unsent' + RAISE WARNING. Never silent.
 -- Hosts: api.telegram.org only. Reads no market data beyond two max(observed_at).
@@ -44,7 +44,7 @@ begin
       at          timestamptz not null default now(),
       condition   text        not null,
       kind        text        not null,      -- alert | recovered
-      channel     text,                      -- ops | ten287-drop-bot | none
+      channel     text,                      -- ten287-drop-bot | none
       message     text        not null,
       request_id  bigint,
       delivered   text        not null       -- 'queued' -> 'sent' | 'failed: …'; 'unsent: …'
@@ -60,15 +60,10 @@ begin
   set search_path = public, pg_temp
   as $fn$
   declare
-    tok text; chat text; ch text := 'ops'; req bigint;
+    tok text; chat text; ch text := 'ten287-drop-bot'; req bigint;
   begin
-    select decrypted_secret into tok  from vault.decrypted_secrets where name = 'ops_telegram_bot_token' limit 1;
-    select decrypted_secret into chat from vault.decrypted_secrets where name = 'ops_telegram_chat_id' limit 1;
-    if coalesce(length(trim(tok)), 0) = 0 or coalesce(length(trim(chat)), 0) = 0 then
-      ch := 'ten287-drop-bot';
-      select decrypted_secret into tok  from vault.decrypted_secrets where name = 'ten287_telegram_bot_token' limit 1;
-      select decrypted_secret into chat from vault.decrypted_secrets where name = 'ten287_telegram_chat_id' limit 1;
-    end if;
+    select decrypted_secret into tok  from vault.decrypted_secrets where name = 'ten287_telegram_bot_token' limit 1;
+    select decrypted_secret into chat from vault.decrypted_secrets where name = 'ten287_telegram_chat_id' limit 1;
     if coalesce(length(trim(tok)), 0) = 0 or coalesce(length(trim(chat)), 0) = 0 then
       insert into public.ten216_watch_log (condition, kind, channel, message, delivered)
       values (p_condition, p_kind, 'none', p_text, 'unsent: no telegram secret in vault');

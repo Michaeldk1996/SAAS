@@ -65,10 +65,6 @@ jobs:
           # TEN-270 post-match dispatcher: the PAT the pg_cron job dispatches with.
           # Stored in Vault as gh_postmatch_dispatch_pat; never printed.
           POSTMATCH_DISPATCH_PAT: ${{ secrets.POSTMATCH_DISPATCH_PAT }}
-          # bsp_alerts.py's Telegram bot + ops chat: copied into Vault for the
-          # dispatcher's dead-token alarm (ops_telegram_bot_token / _chat_id).
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_OPS_CHAT_ID: ${{ secrets.TELEGRAM_OPS_CHAT_ID }}
         run: |
           python3 - <<'PY'
           import json, os, sys, urllib.parse, urllib.request, urllib.error
@@ -139,19 +135,9 @@ jobs:
                   if st >= 400: print(f"::warning::post-match PAT not stored in Vault (HTTP {st})")
               else:
                   print("POSTMATCH_DISPATCH_PAT not set: the Vault secret gh_postmatch_dispatch_pat is left exactly as it is")
-              # The alarm's Telegram credentials, same path: copy only when the repo
-              # secret exists, never printed, a failure is a warning.
-              for env_name, vault_name in (("TELEGRAM_BOT_TOKEN", "ops_telegram_bot_token"),
-                                           ("TELEGRAM_OPS_CHAT_ID", "ops_telegram_chat_id")):
-                  val = (os.environ.get(env_name) or "").strip()
-                  if not val:
-                      print(f"{env_name} not set: Vault {vault_name} left as it is (alerts are recorded as unsent until it exists)")
-                      continue
-                  lit = "'" + val.replace("'", "''") + "'"
-                  st, r = sql(f"delete from vault.secrets where name = '{vault_name}'; "
-                              f"select vault.create_secret({lit}, '{vault_name}', 'TEN-270 post-match alarm');")
-                  print(f"vault {vault_name} store -> HTTP {st}")
-                  if st >= 400: print(f"::warning::{vault_name} not stored in Vault (HTTP {st})")
+              # The alarm's Telegram route is the Superbet drop-bot chat (Vault
+              # ten287_telegram_*, founder 2026-09-27 TEN-295 item 3), stored by the
+              # TEN-287 bot install — this action never writes it.
               st, r = sql(open("oddspapi-postmatch-pinger.sql").read())
               print(f"oddspapi-postmatch-pinger.sql apply HTTP {st}")
               if st >= 400: print(f"::warning::oddspapi-postmatch-pinger.sql not applied (HTTP {st})")
@@ -263,7 +249,7 @@ jobs:
               # TEN-270 post-match dispatcher + alarm (founder 2026-09-25T00:53Z).
               st, r = sql("select jobname, schedule, active, "
                           "(select count(*) from vault.secrets where name = 'gh_postmatch_dispatch_pat') as pat_stored, "
-                          "(select count(*) from vault.secrets where name in ('ops_telegram_bot_token', 'ops_telegram_chat_id')) as telegram_stored "
+                          "(select count(*) from vault.secrets where name in ('ten287_telegram_bot_token', 'ten287_telegram_chat_id')) as telegram_stored "
                           "from cron.job where jobname in ('ten270-oddspapi-postmatch-ping', 'ten270-oddspapi-postmatch-check') order by 1")
               print(f"post-match jobs -> HTTP {st} {r[:600]}  (want both active; pat_stored 1; telegram_stored 2)")
               try:

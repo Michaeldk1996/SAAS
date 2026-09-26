@@ -597,6 +597,28 @@ test('pipeline close (founder card f8b311c9): the card state\'s ACTUAL start is 
   assert.ok(pipe.includes('const startMs = closeCutMs(m, ocsStartByKey.get(ocsMatchKey(m.date, m.p1, m.p2)), () => inPlayOnset(s));'));
 });
 
+test('pipeline: a carried close derived under an earlier cut is re-derived (TEN-295 item 2)', () => {
+  const keep = new Function(`${slice('keepCarriedClose', pipe)} return keepCarriedClose;`)();
+  const T = s => Date.parse(s);
+  // Shang v Mannarino, real series: carried 1.37/3.00 @08:17:46Z; bet365 1.44/2.75 @08:45:19Z; actual start 08:47:59Z.
+  const shangPrior = { p1: 1.37, p2: 3, bookmaker: 'bet365', at: '2026-09-24T08:17:46.756Z' };
+  const shangNow = { p1: 1.44, p2: 2.75, bookmaker: 'bet365', at: '2026-09-24T08:45:19.063Z' };
+  assert.equal(keep(shangPrior, shangNow, T('2026-09-24T08:47:59Z'), 'bet365'), false, 'Shang heals to 1.44/2.75');
+  // Sun v Safiullin: carried 4.50/1.17 @23 Sep 22:26Z; 4.50/1.20 @10:05:33Z; actual start 10:06:06Z.
+  assert.equal(keep({ p1: 4.5, p2: 1.17, bookmaker: 'bet365', at: '2026-09-23T22:26:02.218Z' },
+                    { p1: 4.5, p2: 1.2, bookmaker: 'bet365', at: '2026-09-24T10:05:33.952Z' },
+                    T('2026-09-24T10:06:06Z'), 'bet365'), false, 'Sun heals (one leg moved)');
+  assert.equal(keep(shangNow, { ...shangNow }, T('2026-09-24T08:47:59Z'), 'bet365'), true, 'unchanged close is kept');
+  assert.equal(keep(shangPrior, null, T('2026-09-24T08:47:59Z'), 'bet365'), true, 'a re-read with no close never erases a proven one');
+  assert.equal(keep({ ...shangNow, at: '2026-09-24T08:48:10Z' }, null, T('2026-09-24T08:47:59Z'), 'bet365'), false, 'in-play carried close is not kept');
+  assert.equal(keep({ ...shangNow, bookmaker: 'Pinnacle' }, null, T('2026-09-24T08:47:59Z'), 'bet365'), false, 'cross-book carried close is not kept');
+  assert.equal(keep(shangNow, null, NaN, 'bet365'), false, 'no proven cut -> not kept');
+  assert.equal(keep(null, shangNow, T('2026-09-24T08:47:59Z'), 'bet365'), false);
+  // the close block decides with it, against the series re-read at the same cut
+  assert.ok(pipe.includes('if (keepCarriedClose(prior, derivedClose, startMs, ref)) {'));
+  assert.ok(!/priorOk/.test(pipe), 'the old before-the-cut-only test is gone');
+});
+
 test('pipeline: the carry-forward counts a chart-only match as having movement', () => {
   const i = pipe.indexOf('  const hasMovement = m => m && m.oddsMovement && (');
   assert.ok(i > 0, 'hasMovement found');
