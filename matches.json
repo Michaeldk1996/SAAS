@@ -12,21 +12,21 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.3,
-      "p2": 3.6,
+      "p1": 1.27,
+      "p2": 3.8,
       "bookmaker": "Betano",
-      "seenAt": "2026-09-26T17:34:10.632Z"
+      "seenAt": "2026-09-26T17:46:18.213Z"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.3,
+        "price": 1.27,
         "bookmaker": "Betano"
       },
       "p2": {
-        "price": 3.6,
+        "price": 3.8,
         "bookmaker": "Betano"
       },
-      "seenAt": "2026-09-26T17:34:10.632Z"
+      "seenAt": "2026-09-26T17:46:18.213Z"
     },
     "tournamentRound": "",
     "p1Key": 2382,
@@ -2206,6 +2206,22 @@
               [
                 "2026-09-26T17:33:58.751Z",
                 1.24
+              ],
+              [
+                "2026-09-26T17:52:28.120Z",
+                1.26
+              ],
+              [
+                "2026-09-26T17:52:42.991Z",
+                1.24
+              ],
+              [
+                "2026-09-26T17:58:10.652Z",
+                1.26
+              ],
+              [
+                "2026-09-26T17:58:54.316Z",
+                1.24
               ]
             ],
             "p2": [
@@ -2259,6 +2275,22 @@
               ],
               [
                 "2026-09-26T17:33:58.751Z",
+                3.65
+              ],
+              [
+                "2026-09-26T17:52:28.120Z",
+                3.5
+              ],
+              [
+                "2026-09-26T17:52:42.991Z",
+                3.65
+              ],
+              [
+                "2026-09-26T17:58:10.652Z",
+                3.5
+              ],
+              [
+                "2026-09-26T17:58:54.316Z",
                 3.65
               ]
             ]
@@ -2702,6 +2734,30 @@
               [
                 "2026-09-26T17:35:52.452Z",
                 1.27
+              ],
+              [
+                "2026-09-26T17:45:53.373Z",
+                1.26
+              ],
+              [
+                "2026-09-26T17:46:38.285Z",
+                1.27
+              ],
+              [
+                "2026-09-26T17:46:58.332Z",
+                1.26
+              ],
+              [
+                "2026-09-26T17:56:24.430Z",
+                1.27
+              ],
+              [
+                "2026-09-26T17:57:19.402Z",
+                1.26
+              ],
+              [
+                "2026-09-26T17:58:44.428Z",
+                1.27
               ]
             ],
             "p2": [
@@ -2892,6 +2948,30 @@
               [
                 "2026-09-26T17:43:43.290Z",
                 4.5
+              ],
+              [
+                "2026-09-26T17:48:53.218Z",
+                4.7
+              ],
+              [
+                "2026-09-26T17:52:19.354Z",
+                4.6
+              ],
+              [
+                "2026-09-26T17:55:54.394Z",
+                4.7
+              ],
+              [
+                "2026-09-26T17:56:24.430Z",
+                4.6
+              ],
+              [
+                "2026-09-26T17:57:19.402Z",
+                4.7
+              ],
+              [
+                "2026-09-26T17:58:59.442Z",
+                4.6
               ]
             ]
           },
@@ -2950,6 +3030,10 @@
               [
                 "2026-09-26T17:15:48.063Z",
                 1.3
+              ],
+              [
+                "2026-09-26T17:46:06.407Z",
+                1.27
               ]
             ],
             "p2": [
@@ -2984,6 +3068,10 @@
               [
                 "2026-09-26T17:15:48.063Z",
                 3.6
+              ],
+              [
+                "2026-09-26T17:46:06.407Z",
+                3.8
               ]
             ]
           },
@@ -3049,7 +3137,7 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-09-26T17:45:35.354Z"
+            "checkedAt": "2026-09-26T18:00:00.000Z"
           },
           "Pinnacle +30s": {
             "source": "Oddspapi",
@@ -3061,13 +3149,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-09-26T17:45:35.354Z"
+            "checkedAt": "2026-09-26T18:00:00.000Z"
           },
           "Bet105": {
             "source": "Kibl",
             "group": "sharp",
             "clock": "Kibl insert",
-            "checkedAt": "2026-09-26T17:27:34.000Z",
+            "checkedAt": "2026-09-26T17:46:19.000Z",
             "note": "no Bet105 fixture matched"
           },
           "Pinnacle (api-tennis)": {
@@ -3085,7 +3173,7 @@
               ]
             ],
             "firstSeen": "2026-09-26T09:26:04.987Z",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           },
           "Betano": {
             "source": "api-tennis",
@@ -3102,7 +3190,7 @@
               ]
             ],
             "firstSeen": "2026-09-26T05:46:35.255Z",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           },
           "1xBet": {
             "source": "api-tennis",
@@ -3115,7 +3203,7 @@
               ]
             ],
             "firstSeen": "2026-09-26T06:47:03.801Z",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           },
           "BetVictor": {
             "source": "api-tennis",
@@ -3128,25 +3216,25 @@
               ]
             ],
             "firstSeen": "2026-09-26T06:16:48.937Z",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           },
           "Betfair Sportsbook (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           },
           "Marathon": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           },
           "bet365 (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           },
           "Sbobet": {
             "source": "api-tennis",
@@ -3159,7 +3247,7 @@
               ]
             ],
             "firstSeen": "2026-09-26T09:46:15.791Z",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           },
           "William Hill": {
             "source": "api-tennis",
@@ -3172,7 +3260,7 @@
               ]
             ],
             "firstSeen": "2026-09-26T10:46:45.251Z",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           }
         }
       }
@@ -3211,10 +3299,10 @@
     },
     "bookNow": {
       "Betano": {
-        "p1": 1.3,
-        "p2": 3.6,
-        "seenAt": "2026-09-26T17:38:02.970Z",
-        "since": "2026-09-26T17:38:02.970Z"
+        "p1": 1.27,
+        "p2": 3.8,
+        "seenAt": "2026-09-26T17:48:10.630Z",
+        "since": "2026-09-26T17:48:10.630Z"
       }
     },
     "pinnacleOpen": {
@@ -3244,10 +3332,10 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 3.1,
-      "p2": 1.42,
-      "bookmaker": "Pncl",
-      "seenAt": "2026-09-26T17:35:23.812Z"
+      "p1": 3,
+      "p2": 1.4,
+      "bookmaker": "bet365",
+      "seenAt": "2026-09-26T17:46:21.545Z"
     },
     "bestOdds": {
       "p1": {
@@ -3258,7 +3346,7 @@
         "price": 1.42,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-09-26T17:35:23.812Z"
+      "seenAt": "2026-09-26T17:46:21.545Z"
     },
     "tournamentRound": "ATP Chengdu - Quarter-finals",
     "p1Key": 438,
@@ -6184,6 +6272,10 @@
               [
                 "2026-09-26T04:29:01.924Z",
                 3.15
+              ],
+              [
+                "2026-09-26T17:59:14.431Z",
+                3.1
               ]
             ],
             "p2": [
@@ -6687,32 +6779,32 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-09-26T17:45:01.000Z"
+            "checkedAt": "2026-09-26T18:00:01.000Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-09-26T17:45:35.354Z"
+            "checkedAt": "2026-09-26T18:00:35.717Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-09-26T17:45:35.354Z"
+            "checkedAt": "2026-09-26T18:00:35.717Z"
           },
           "Bet105": {
             "source": "Kibl",
             "group": "sharp",
             "clock": "Kibl insert",
-            "checkedAt": "2026-09-26T17:27:34.000Z"
+            "checkedAt": "2026-09-26T17:46:19.000Z"
           },
           "Pinnacle (api-tennis)": {
             "source": "api-tennis",
             "group": "sharp",
             "clock": "seen by us every 5 min",
             "firstSeen": "2026-09-26T03:55:20.714Z",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           },
           "Betano": {
             "source": "api-tennis",
@@ -6726,37 +6818,41 @@
               [
                 "2026-09-26T09:26:04.987Z",
                 "2026-09-26T16:45:28.624Z"
+              ],
+              [
+                "2026-09-26T17:46:06.407Z",
+                null
               ]
             ],
             "firstSeen": "2026-09-26T05:46:35.255Z",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           },
           "1xBet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "firstSeen": "2026-09-26T03:55:20.714Z",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           },
           "BetVictor": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "firstSeen": "2026-09-26T03:55:20.714Z",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           },
           "Betfair Sportsbook (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "firstSeen": "2026-09-26T03:55:20.714Z",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           },
           "Marathon": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           },
           "bet365 (api-tennis)": {
             "source": "api-tennis",
@@ -6777,11 +6873,11 @@
               ],
               [
                 "2026-09-26T16:45:28.624Z",
-                null
+                "2026-09-26T17:46:06.407Z"
               ]
             ],
             "firstSeen": "2026-09-26T06:16:48.937Z",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           },
           "Sbobet": {
             "source": "api-tennis",
@@ -6794,13 +6890,13 @@
               ]
             ],
             "firstSeen": "2026-09-26T09:46:15.791Z",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           },
           "William Hill": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           }
         }
       }
@@ -6851,34 +6947,34 @@
       }
     },
     "bookNow": {
-      "Betano": {
-        "p1": 3.1,
-        "p2": 1.38,
-        "seenAt": "2026-09-26T17:38:02.971Z",
-        "since": "2026-09-26T17:04:46.583Z"
+      "bet365": {
+        "p1": 3,
+        "p2": 1.4,
+        "seenAt": "2026-09-26T17:48:10.630Z",
+        "since": "2026-09-26T17:48:10.630Z"
       },
       "Betfair": {
         "p1": 3,
         "p2": 1.36,
-        "seenAt": "2026-09-26T17:38:02.971Z",
+        "seenAt": "2026-09-26T17:48:10.630Z",
         "since": "2026-09-25T16:21:00.401Z"
       },
       "BetVictor": {
         "p1": 3,
         "p2": 1.33,
-        "seenAt": "2026-09-26T17:38:02.971Z",
+        "seenAt": "2026-09-26T17:48:10.630Z",
         "since": "2026-09-25T11:53:58.427Z"
       },
       "Pncl": {
         "p1": 3.1,
         "p2": 1.42,
-        "seenAt": "2026-09-26T17:38:02.971Z",
+        "seenAt": "2026-09-26T17:48:10.630Z",
         "since": "2026-09-25T16:21:00.401Z"
       },
       "1xBet": {
         "p1": 3.2,
         "p2": 1.36,
-        "seenAt": "2026-09-26T17:38:02.971Z",
+        "seenAt": "2026-09-26T17:48:10.630Z",
         "since": "2026-09-25T16:21:00.401Z"
       }
     },
@@ -6907,7 +7003,7 @@
       "p1": 1.73,
       "p2": 2.1,
       "bookmaker": "Betfair",
-      "seenAt": "2026-09-26T17:35:23.812Z"
+      "seenAt": "2026-09-26T17:46:21.545Z"
     },
     "bestOdds": {
       "p1": {
@@ -6918,7 +7014,7 @@
         "price": 2.2,
         "bookmaker": "Betano"
       },
-      "seenAt": "2026-09-26T17:35:23.812Z"
+      "seenAt": "2026-09-26T17:46:21.545Z"
     },
     "tournamentRound": "ATP Chengdu - Quarter-finals",
     "p1Key": 2169,
@@ -9893,6 +9989,10 @@
               [
                 "2026-09-26T17:31:52.503Z",
                 1.96
+              ],
+              [
+                "2026-09-26T17:48:13.322Z",
+                1.95
               ]
             ],
             "p2": [
@@ -10428,25 +10528,25 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-09-26T17:45:01.000Z"
+            "checkedAt": "2026-09-26T18:00:01.000Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-09-26T17:45:35.354Z"
+            "checkedAt": "2026-09-26T18:00:35.717Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-09-26T17:45:35.354Z"
+            "checkedAt": "2026-09-26T18:00:35.717Z"
           },
           "Bet105": {
             "source": "Kibl",
             "group": "sharp",
             "clock": "Kibl insert",
-            "checkedAt": "2026-09-26T17:27:34.000Z"
+            "checkedAt": "2026-09-26T17:46:19.000Z"
           },
           "Pinnacle (api-tennis)": {
             "source": "api-tennis",
@@ -10463,42 +10563,42 @@
               ]
             ],
             "firstSeen": "2026-09-26T08:47:56.787Z",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           },
           "Betano": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "firstSeen": "2026-09-26T03:55:20.714Z",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           },
           "1xBet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "firstSeen": "2026-09-26T03:55:20.714Z",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           },
           "BetVictor": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "firstSeen": "2026-09-26T03:55:20.714Z",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           },
           "Betfair Sportsbook (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "firstSeen": "2026-09-26T03:55:20.714Z",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           },
           "Marathon": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "firstSeen": "2026-09-26T03:55:20.714Z",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           },
           "bet365 (api-tennis)": {
             "source": "api-tennis",
@@ -10523,7 +10623,7 @@
               ]
             ],
             "firstSeen": "2026-09-26T03:55:20.714Z",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           },
           "Sbobet": {
             "source": "api-tennis",
@@ -10536,7 +10636,7 @@
               ]
             ],
             "firstSeen": "2026-09-26T09:46:15.791Z",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           },
           "William Hill": {
             "source": "api-tennis",
@@ -10549,7 +10649,7 @@
               ]
             ],
             "firstSeen": "2026-09-26T10:46:45.251Z",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           }
         }
       }
@@ -10613,31 +10713,31 @@
       "1xBet": {
         "p1": 1.73,
         "p2": 2.13,
-        "seenAt": "2026-09-26T17:38:02.971Z",
+        "seenAt": "2026-09-26T17:48:10.630Z",
         "since": "2026-09-25T15:23:54.921Z"
       },
       "Marathon": {
         "p1": 1.72,
         "p2": 2.11,
-        "seenAt": "2026-09-26T17:38:02.971Z",
+        "seenAt": "2026-09-26T17:48:10.630Z",
         "since": "2026-09-25T16:21:00.401Z"
       },
       "Betfair": {
         "p1": 1.73,
         "p2": 2.1,
-        "seenAt": "2026-09-26T17:38:02.971Z",
+        "seenAt": "2026-09-26T17:48:10.630Z",
         "since": "2026-09-25T16:21:00.401Z"
       },
       "BetVictor": {
         "p1": 1.67,
         "p2": 2.1,
-        "seenAt": "2026-09-26T17:38:02.971Z",
+        "seenAt": "2026-09-26T17:48:10.630Z",
         "since": "2026-09-25T16:21:00.401Z"
       },
       "Betano": {
         "p1": 1.67,
         "p2": 2.2,
-        "seenAt": "2026-09-26T17:38:02.971Z",
+        "seenAt": "2026-09-26T17:48:10.630Z",
         "since": "2026-09-25T16:21:00.401Z"
       }
     },
@@ -10666,7 +10766,7 @@
       "p1": 1.73,
       "p2": 2.1,
       "bookmaker": "Betfair",
-      "seenAt": "2026-09-26T17:35:23.812Z"
+      "seenAt": "2026-09-26T17:46:21.545Z"
     },
     "bestOdds": {
       "p1": {
@@ -10677,7 +10777,7 @@
         "price": 2.1,
         "bookmaker": "Betfair"
       },
-      "seenAt": "2026-09-26T17:35:23.812Z"
+      "seenAt": "2026-09-26T17:46:21.545Z"
     },
     "tournamentRound": "ATP Hangzhou - Quarter-finals",
     "p1Key": 10148,
@@ -13435,25 +13535,25 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-09-26T17:45:01.000Z"
+            "checkedAt": "2026-09-26T18:00:01.000Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-09-26T17:45:35.354Z"
+            "checkedAt": "2026-09-26T18:00:35.717Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-09-26T17:45:35.354Z"
+            "checkedAt": "2026-09-26T18:00:35.717Z"
           },
           "Bet105": {
             "source": "Kibl",
             "group": "sharp",
             "clock": "Kibl insert",
-            "checkedAt": "2026-09-26T17:27:34.000Z"
+            "checkedAt": "2026-09-26T17:46:19.000Z"
           },
           "Pinnacle (api-tennis)": {
             "source": "api-tennis",
@@ -13466,42 +13566,42 @@
               ]
             ],
             "firstSeen": "2026-09-26T08:47:56.787Z",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           },
           "Betano": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "firstSeen": "2026-09-26T03:55:20.714Z",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           },
           "1xBet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "firstSeen": "2026-09-26T03:55:20.714Z",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           },
           "BetVictor": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "firstSeen": "2026-09-26T03:55:20.714Z",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           },
           "Betfair Sportsbook (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "firstSeen": "2026-09-26T03:55:20.714Z",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           },
           "Marathon": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "firstSeen": "2026-09-26T03:55:20.714Z",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           },
           "bet365 (api-tennis)": {
             "source": "api-tennis",
@@ -13522,14 +13622,14 @@
               ]
             ],
             "firstSeen": "2026-09-26T03:55:20.714Z",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           },
           "Sbobet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "firstSeen": "2026-09-26T09:46:15.791Z",
-            "checkedAt": "2026-09-26T17:41:03.592Z",
+            "checkedAt": "2026-09-26T17:56:14.537Z",
             "gaps": [
               [
                 "2026-09-26T12:17:27.875Z",
@@ -13541,7 +13641,7 @@
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-26T17:41:03.592Z",
+            "checkedAt": "2026-09-26T17:56:14.537Z",
             "firstSeen": "2026-09-26T12:47:43.630Z",
             "gaps": [
               [
@@ -13612,37 +13712,37 @@
       "Sbo": {
         "p1": 1.73,
         "p2": 1.93,
-        "seenAt": "2026-09-26T17:38:02.971Z",
+        "seenAt": "2026-09-26T17:48:10.630Z",
         "since": "2026-09-26T17:04:46.583Z"
       },
       "Marathon": {
         "p1": 1.75,
         "p2": 2.06,
-        "seenAt": "2026-09-26T17:38:02.971Z",
+        "seenAt": "2026-09-26T17:48:10.630Z",
         "since": "2026-09-25T16:21:00.401Z"
       },
       "Betfair": {
         "p1": 1.73,
         "p2": 2.1,
-        "seenAt": "2026-09-26T17:38:02.971Z",
+        "seenAt": "2026-09-26T17:48:10.630Z",
         "since": "2026-09-25T16:21:00.401Z"
       },
       "BetVictor": {
         "p1": 1.73,
         "p2": 2,
-        "seenAt": "2026-09-26T17:38:02.971Z",
+        "seenAt": "2026-09-26T17:48:10.630Z",
         "since": "2026-09-25T16:21:00.401Z"
       },
       "1xBet": {
         "p1": 1.75,
         "p2": 2.06,
-        "seenAt": "2026-09-26T17:38:02.971Z",
+        "seenAt": "2026-09-26T17:48:10.630Z",
         "since": "2026-09-25T16:21:00.401Z"
       },
       "Betano": {
         "p1": 1.75,
         "p2": 2.1,
-        "seenAt": "2026-09-26T17:38:02.971Z",
+        "seenAt": "2026-09-26T17:48:10.630Z",
         "since": "2026-09-25T16:21:00.401Z"
       }
     },
@@ -13668,21 +13768,21 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 4.5,
-      "p2": 1.2,
+      "p1": 4.2,
+      "p2": 1.22,
       "bookmaker": "WilliamHill",
-      "seenAt": "2026-09-26T17:35:23.812Z"
+      "seenAt": "2026-09-26T17:46:21.545Z"
     },
     "bestOdds": {
       "p1": {
-        "price": 4.5,
+        "price": 4.2,
         "bookmaker": "WilliamHill"
       },
       "p2": {
-        "price": 1.2,
+        "price": 1.22,
         "bookmaker": "WilliamHill"
       },
-      "seenAt": "2026-09-26T17:35:23.812Z"
+      "seenAt": "2026-09-26T17:46:21.545Z"
     },
     "tournamentRound": "ATP Hangzhou - Quarter-finals",
     "p1Key": 1102,
@@ -16935,12 +17035,20 @@
               [
                 "2026-09-26T17:15:48.063Z",
                 4.5
+              ],
+              [
+                "2026-09-26T17:46:06.407Z",
+                4.2
               ]
             ],
             "p2": [
               [
                 "2026-09-26T17:15:48.063Z",
                 1.2
+              ],
+              [
+                "2026-09-26T17:46:06.407Z",
+                1.22
               ]
             ]
           }
@@ -16950,31 +17058,31 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-09-26T17:45:01.000Z"
+            "checkedAt": "2026-09-26T18:00:01.000Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-09-26T17:45:35.354Z"
+            "checkedAt": "2026-09-26T18:00:35.717Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-09-26T17:45:35.354Z"
+            "checkedAt": "2026-09-26T18:00:35.717Z"
           },
           "Bet105": {
             "source": "Kibl",
             "group": "sharp",
             "clock": "Kibl insert",
-            "checkedAt": "2026-09-26T17:27:34.000Z"
+            "checkedAt": "2026-09-26T17:46:19.000Z"
           },
           "Pinnacle (api-tennis)": {
             "source": "api-tennis",
             "group": "sharp",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           },
           "Betano": {
             "source": "api-tennis",
@@ -16995,31 +17103,31 @@
               ]
             ],
             "firstSeen": "2026-09-26T09:26:04.987Z",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           },
           "1xBet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           },
           "BetVictor": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           },
           "Betfair Sportsbook (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           },
           "Marathon": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           },
           "bet365 (api-tennis)": {
             "source": "api-tennis",
@@ -17040,7 +17148,7 @@
               ]
             ],
             "firstSeen": "2026-09-26T06:47:03.801Z",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           },
           "Sbobet": {
             "source": "api-tennis",
@@ -17057,13 +17165,13 @@
               ]
             ],
             "firstSeen": "2026-09-26T09:46:15.791Z",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           },
           "William Hill": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-26T17:41:03.592Z",
+            "checkedAt": "2026-09-26T17:56:14.537Z",
             "firstSeen": "2026-09-26T17:15:48.063Z"
           }
         }
@@ -17104,17 +17212,17 @@
         "seenAt": "2026-09-26T10:05:54.258Z"
       },
       "WilliamHill": {
-        "p1": 4.5,
-        "p2": 1.2,
-        "seenAt": "2026-09-26T17:38:02.971Z"
+        "p1": 4.2,
+        "p2": 1.22,
+        "seenAt": "2026-09-26T17:48:10.630Z"
       }
     },
     "bookNow": {
       "WilliamHill": {
-        "p1": 4.5,
-        "p2": 1.2,
-        "seenAt": "2026-09-26T17:38:02.971Z",
-        "since": "2026-09-26T17:38:02.971Z"
+        "p1": 4.2,
+        "p2": 1.22,
+        "seenAt": "2026-09-26T17:48:10.630Z",
+        "since": "2026-09-26T17:48:10.630Z"
       }
     },
     "pinnacleOpen": {
@@ -17144,21 +17252,21 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 3.04,
-      "p2": 1.39,
-      "bookmaker": "1xBet",
-      "seenAt": "2026-09-26T17:35:23.812Z"
+      "p1": 2.95,
+      "p2": 1.4,
+      "bookmaker": "Betano",
+      "seenAt": "2026-09-26T17:46:21.545Z"
     },
     "bestOdds": {
       "p1": {
-        "price": 3.04,
-        "bookmaker": "1xBet"
+        "price": 2.95,
+        "bookmaker": "Betano"
       },
       "p2": {
-        "price": 1.39,
-        "bookmaker": "1xBet"
+        "price": 1.4,
+        "bookmaker": "Betano"
       },
-      "seenAt": "2026-09-26T17:35:23.812Z"
+      "seenAt": "2026-09-26T17:46:21.545Z"
     },
     "tournamentRound": "ATP Chengdu - Quarter-finals",
     "p1Key": 374,
@@ -19904,6 +20012,10 @@
               [
                 "2026-09-26T16:15:06.150Z",
                 3.0
+              ],
+              [
+                "2026-09-26T17:46:06.407Z",
+                2.95
               ]
             ],
             "p2": [
@@ -19926,6 +20038,10 @@
               [
                 "2026-09-26T16:15:06.150Z",
                 1.39
+              ],
+              [
+                "2026-09-26T17:46:06.407Z",
+                1.4
               ]
             ]
           },
@@ -19957,38 +20073,38 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-09-26T17:45:35.354Z"
+            "checkedAt": "2026-09-26T18:00:35.717Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-09-26T17:45:35.354Z"
+            "checkedAt": "2026-09-26T18:00:35.717Z"
           },
           "Bet105": {
             "source": "Kibl",
             "group": "sharp",
             "clock": "Kibl insert",
-            "checkedAt": "2026-09-26T17:27:34.000Z",
+            "checkedAt": "2026-09-26T17:46:19.000Z",
             "note": "no Bet105 fixture matched"
           },
           "Pinnacle +30s": {
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-09-26T17:45:01.000Z"
+            "checkedAt": "2026-09-26T18:00:01.000Z"
           },
           "Pinnacle (api-tennis)": {
             "source": "api-tennis",
             "group": "sharp",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           },
           "Betano": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-26T17:41:03.592Z",
+            "checkedAt": "2026-09-26T17:56:14.537Z",
             "firstSeen": "2026-09-26T13:17:59.108Z",
             "gaps": [
               [
@@ -19997,7 +20113,7 @@
               ],
               [
                 "2026-09-26T16:45:28.624Z",
-                null
+                "2026-09-26T17:46:06.407Z"
               ]
             ]
           },
@@ -20005,12 +20121,16 @@
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-26T17:41:03.592Z",
+            "checkedAt": "2026-09-26T17:56:14.537Z",
             "firstSeen": "2026-09-26T13:33:08.870Z",
             "gaps": [
               [
                 "2026-09-26T13:48:17.349Z",
                 "2026-09-26T16:45:28.624Z"
+              ],
+              [
+                "2026-09-26T17:46:06.407Z",
+                null
               ]
             ]
           },
@@ -20018,37 +20138,37 @@
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           },
           "Betfair Sportsbook (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           },
           "Marathon": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           },
           "bet365 (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           },
           "Sbobet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           },
           "William Hill": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           }
         }
       }
@@ -20066,11 +20186,11 @@
       }
     },
     "bookNow": {
-      "1xBet": {
-        "p1": 3.04,
-        "p2": 1.39,
-        "seenAt": "2026-09-26T17:38:02.971Z",
-        "since": "2026-09-26T17:38:02.971Z"
+      "Betano": {
+        "p1": 2.95,
+        "p2": 1.4,
+        "seenAt": "2026-09-26T17:48:10.630Z",
+        "since": "2026-09-26T17:48:10.630Z"
       }
     }
   },
@@ -20088,20 +20208,20 @@
     "value": null,
     "odds": {
       "p1": 2.38,
-      "p2": 1.53,
-      "bookmaker": "BetVictor",
-      "seenAt": "2026-09-26T17:35:23.812Z"
+      "p2": 1.57,
+      "bookmaker": "WilliamHill",
+      "seenAt": "2026-09-26T17:46:21.545Z"
     },
     "bestOdds": {
       "p1": {
         "price": 2.38,
-        "bookmaker": "BetVictor"
+        "bookmaker": "WilliamHill"
       },
       "p2": {
-        "price": 1.53,
-        "bookmaker": "BetVictor"
+        "price": 1.57,
+        "bookmaker": "WilliamHill"
       },
-      "seenAt": "2026-09-26T17:35:23.812Z"
+      "seenAt": "2026-09-26T17:46:21.545Z"
     },
     "tournamentRound": null,
     "p1Key": 2834,
@@ -23108,6 +23228,20 @@
                 1.53
               ]
             ]
+          },
+          "William Hill": {
+            "p1": [
+              [
+                "2026-09-26T17:46:06.407Z",
+                2.38
+              ]
+            ],
+            "p2": [
+              [
+                "2026-09-26T17:46:06.407Z",
+                1.57
+              ]
+            ]
           }
         },
         "meta": {
@@ -23115,38 +23249,38 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-09-26T17:45:35.354Z"
+            "checkedAt": "2026-09-26T18:00:35.717Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-09-26T17:45:35.354Z"
+            "checkedAt": "2026-09-26T18:00:35.717Z"
           },
           "Bet105": {
             "source": "Kibl",
             "group": "sharp",
             "clock": "Kibl insert",
             "note": "no Bet105 fixture matched",
-            "checkedAt": "2026-09-26T17:27:34.000Z"
+            "checkedAt": "2026-09-26T17:46:19.000Z"
           },
           "Pinnacle (api-tennis)": {
             "source": "api-tennis",
             "group": "sharp",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           },
           "Betano": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           },
           "1xBet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-26T17:41:03.592Z",
+            "checkedAt": "2026-09-26T17:56:14.537Z",
             "firstSeen": "2026-09-26T13:33:08.870Z",
             "gaps": [
               [
@@ -23163,44 +23297,51 @@
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-26T17:41:03.592Z",
-            "firstSeen": "2026-09-26T17:15:48.063Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z",
+            "firstSeen": "2026-09-26T17:15:48.063Z",
+            "gaps": [
+              [
+                "2026-09-26T17:46:06.407Z",
+                null
+              ]
+            ]
           },
           "Betfair Sportsbook (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           },
           "Marathon": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           },
           "bet365 (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           },
           "Sbobet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           },
           "William Hill": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z",
+            "firstSeen": "2026-09-26T17:46:06.407Z"
           },
           "Pinnacle +30s": {
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-09-26T17:45:01.000Z"
+            "checkedAt": "2026-09-26T18:00:01.000Z"
           }
         }
       }
@@ -23211,18 +23352,18 @@
         "p2": 1.45,
         "seenAt": "2026-09-26T13:46:57.103Z"
       },
-      "BetVictor": {
+      "WilliamHill": {
         "p1": 2.38,
-        "p2": 1.53,
-        "seenAt": "2026-09-26T17:38:02.971Z"
+        "p2": 1.57,
+        "seenAt": "2026-09-26T17:48:10.630Z"
       }
     },
     "bookNow": {
-      "BetVictor": {
+      "WilliamHill": {
         "p1": 2.38,
-        "p2": 1.53,
-        "seenAt": "2026-09-26T17:38:02.971Z",
-        "since": "2026-09-26T17:38:02.971Z"
+        "p2": 1.57,
+        "seenAt": "2026-09-26T17:48:10.630Z",
+        "since": "2026-09-26T17:48:10.630Z"
       }
     }
   },
@@ -23239,21 +23380,21 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": 1.81,
-      "p2": 1.85,
-      "bookmaker": "Sbo",
-      "seenAt": "2026-09-26T17:35:23.812Z"
+      "p1": 1.9,
+      "p2": 1.9,
+      "bookmaker": "1xBet",
+      "seenAt": "2026-09-26T17:46:21.545Z"
     },
     "bestOdds": {
       "p1": {
-        "price": 1.81,
-        "bookmaker": "Sbo"
+        "price": 1.9,
+        "bookmaker": "1xBet"
       },
       "p2": {
-        "price": 1.85,
-        "bookmaker": "Sbo"
+        "price": 1.9,
+        "bookmaker": "1xBet"
       },
-      "seenAt": "2026-09-26T17:35:23.812Z"
+      "seenAt": "2026-09-26T17:46:21.545Z"
     },
     "tournamentRound": "ATP Hangzhou - Quarter-finals",
     "p1Key": 1057,
@@ -25674,6 +25815,30 @@
               [
                 "2026-09-26T17:41:28.364Z",
                 2.02
+              ],
+              [
+                "2026-09-26T17:46:03.259Z",
+                2.0
+              ],
+              [
+                "2026-09-26T17:47:33.334Z",
+                1.98
+              ],
+              [
+                "2026-09-26T17:49:53.226Z",
+                1.99
+              ],
+              [
+                "2026-09-26T17:51:19.413Z",
+                1.98
+              ],
+              [
+                "2026-09-26T17:54:19.466Z",
+                1.99
+              ],
+              [
+                "2026-09-26T17:55:24.445Z",
+                1.98
               ]
             ],
             "p2": [
@@ -25792,6 +25957,14 @@
               [
                 "2026-09-26T17:41:28.364Z",
                 1.96
+              ],
+              [
+                "2026-09-26T17:46:03.259Z",
+                1.99
+              ],
+              [
+                "2026-09-26T17:47:33.334Z",
+                2.0
               ]
             ]
           },
@@ -25808,6 +25981,14 @@
               [
                 "2026-09-26T13:02:05.135Z",
                 1.87
+              ],
+              [
+                "2026-09-26T17:51:11.122Z",
+                1.85
+              ],
+              [
+                "2026-09-26T17:54:01.013Z",
+                1.9
               ]
             ],
             "p2": [
@@ -25822,6 +26003,14 @@
               [
                 "2026-09-26T13:02:05.135Z",
                 1.9
+              ],
+              [
+                "2026-09-26T17:51:11.122Z",
+                1.92
+              ],
+              [
+                "2026-09-26T17:54:01.013Z",
+                1.88
               ]
             ]
           },
@@ -25848,6 +26037,10 @@
               [
                 "2026-09-26T15:34:40.201Z",
                 1.88
+              ],
+              [
+                "2026-09-26T17:46:06.407Z",
+                1.9
               ]
             ],
             "p2": [
@@ -25858,6 +26051,10 @@
               [
                 "2026-09-26T15:34:40.201Z",
                 1.91
+              ],
+              [
+                "2026-09-26T17:46:06.407Z",
+                1.9
               ]
             ]
           },
@@ -25902,6 +26099,116 @@
                 1.85
               ]
             ]
+          },
+          "Pinnacle +30s": {
+            "p1": [
+              [
+                "2026-09-26T17:49:17.716Z",
+                1.862
+              ],
+              [
+                "2026-09-26T17:49:27.405Z",
+                1.909
+              ],
+              [
+                "2026-09-26T17:49:38.915Z",
+                1.892
+              ],
+              [
+                "2026-09-26T17:49:46.182Z",
+                1.917
+              ],
+              [
+                "2026-09-26T17:50:08.573Z",
+                1.909
+              ],
+              [
+                "2026-09-26T17:50:19.712Z",
+                1.9
+              ],
+              [
+                "2026-09-26T17:50:25.131Z",
+                1.892
+              ],
+              [
+                "2026-09-26T17:51:23.763Z",
+                1.877
+              ],
+              [
+                "2026-09-26T17:51:33.411Z",
+                1.869
+              ],
+              [
+                "2026-09-26T17:54:13.938Z",
+                1.943
+              ],
+              [
+                "2026-09-26T17:55:08.647Z",
+                1.961
+              ],
+              [
+                "2026-09-26T17:55:45.639Z",
+                1.952
+              ],
+              [
+                "2026-09-26T17:58:21.437Z",
+                1.943
+              ]
+            ],
+            "p2": [
+              [
+                "2026-09-26T17:49:17.716Z",
+                2.029
+              ],
+              [
+                "2026-09-26T17:49:22.568Z",
+                2.04
+              ],
+              [
+                "2026-09-26T17:49:27.405Z",
+                1.98
+              ],
+              [
+                "2026-09-26T17:49:38.915Z",
+                2.0
+              ],
+              [
+                "2026-09-26T17:49:46.182Z",
+                1.97
+              ],
+              [
+                "2026-09-26T17:50:08.573Z",
+                1.98
+              ],
+              [
+                "2026-09-26T17:50:19.712Z",
+                1.99
+              ],
+              [
+                "2026-09-26T17:51:23.763Z",
+                2.009
+              ],
+              [
+                "2026-09-26T17:51:33.411Z",
+                2.02
+              ],
+              [
+                "2026-09-26T17:54:13.938Z",
+                1.943
+              ],
+              [
+                "2026-09-26T17:55:08.647Z",
+                1.925
+              ],
+              [
+                "2026-09-26T17:55:45.639Z",
+                1.934
+              ],
+              [
+                "2026-09-26T17:58:21.437Z",
+                1.943
+              ]
+            ]
           }
         },
         "meta": {
@@ -25909,32 +26216,32 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-09-26T17:45:35.354Z"
+            "checkedAt": "2026-09-26T18:00:35.717Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-09-26T17:45:35.354Z"
+            "checkedAt": "2026-09-26T18:00:35.717Z"
           },
           "Bet105": {
             "source": "Kibl",
             "group": "sharp",
             "clock": "Kibl insert",
             "note": "no Bet105 fixture matched",
-            "checkedAt": "2026-09-26T17:27:34.000Z"
+            "checkedAt": "2026-09-26T17:46:19.000Z"
           },
           "Pinnacle (api-tennis)": {
             "source": "api-tennis",
             "group": "sharp",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           },
           "Betano": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-26T17:41:03.592Z",
+            "checkedAt": "2026-09-26T17:56:14.537Z",
             "firstSeen": "2026-09-26T13:17:59.108Z",
             "gaps": [
               [
@@ -25947,7 +26254,7 @@
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-26T17:41:03.592Z",
+            "checkedAt": "2026-09-26T17:56:14.537Z",
             "firstSeen": "2026-09-26T13:33:08.870Z",
             "gaps": [
               [
@@ -25956,7 +26263,7 @@
               ],
               [
                 "2026-09-26T16:15:06.150Z",
-                null
+                "2026-09-26T17:46:06.407Z"
               ]
             ]
           },
@@ -25964,7 +26271,7 @@
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-26T17:41:03.592Z",
+            "checkedAt": "2026-09-26T17:56:14.537Z",
             "firstSeen": "2026-09-26T13:48:17.349Z",
             "gaps": [
               [
@@ -25977,19 +26284,19 @@
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           },
           "Marathon": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           },
           "bet365 (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-26T17:41:03.592Z",
+            "checkedAt": "2026-09-26T17:56:14.537Z",
             "firstSeen": "2026-09-26T16:15:06.150Z",
             "gaps": [
               [
@@ -26002,20 +26309,26 @@
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-26T17:41:03.592Z",
-            "firstSeen": "2026-09-26T16:45:28.624Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z",
+            "firstSeen": "2026-09-26T16:45:28.624Z",
+            "gaps": [
+              [
+                "2026-09-26T17:46:06.407Z",
+                null
+              ]
+            ]
           },
           "William Hill": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           },
           "Pinnacle +30s": {
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-09-26T17:45:01.000Z"
+            "checkedAt": "2026-09-26T18:00:01.000Z"
           }
         }
       }
@@ -26056,11 +26369,11 @@
       }
     },
     "bookNow": {
-      "Sbo": {
-        "p1": 1.81,
-        "p2": 1.85,
-        "seenAt": "2026-09-26T17:38:02.971Z",
-        "since": "2026-09-26T17:04:46.583Z"
+      "1xBet": {
+        "p1": 1.9,
+        "p2": 1.9,
+        "seenAt": "2026-09-26T17:48:10.630Z",
+        "since": "2026-09-26T17:48:10.630Z"
       }
     }
   },
@@ -26077,13 +26390,21 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 1.24,
+      "p2": 4.04,
+      "bookmaker": "1xBet",
+      "seenAt": "2026-09-26T17:46:21.545Z"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 1.24,
+        "bookmaker": "1xBet"
+      },
+      "p2": {
+        "price": 4.04,
+        "bookmaker": "1xBet"
+      },
+      "seenAt": "2026-09-26T17:46:21.545Z"
     },
     "tournamentRound": null,
     "p1Key": 1093,
@@ -28528,6 +28849,21 @@
     "liveServer": null,
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1093_d-medvedev.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/2227_c-wong.jpg",
+    "bookOpens": {
+      "1xBet": {
+        "p1": 1.24,
+        "p2": 4.04,
+        "seenAt": "2026-09-26T17:48:10.630Z"
+      }
+    },
+    "bookNow": {
+      "1xBet": {
+        "p1": 1.24,
+        "p2": 4.04,
+        "seenAt": "2026-09-26T17:48:10.630Z",
+        "since": "2026-09-26T17:48:10.630Z"
+      }
+    },
     "oddsMovement": {
       "chart": {
         "books": {
@@ -28544,6 +28880,10 @@
               [
                 "2026-09-26T17:32:21.223Z",
                 1.21
+              ],
+              [
+                "2026-09-26T17:47:20.989Z",
+                1.23
               ]
             ],
             "p2": [
@@ -28558,6 +28898,10 @@
               [
                 "2026-09-26T17:32:21.223Z",
                 4.15
+              ],
+              [
+                "2026-09-26T17:47:20.989Z",
+                3.9
               ]
             ]
           },
@@ -28582,6 +28926,10 @@
               [
                 "2026-09-26T17:35:33.499Z",
                 1.24
+              ],
+              [
+                "2026-09-26T17:47:38.395Z",
+                1.26
               ]
             ],
             "p2": [
@@ -28596,6 +28944,32 @@
               [
                 "2026-09-26T17:30:33.480Z",
                 3.75
+              ],
+              [
+                "2026-09-26T17:46:23.268Z",
+                4.7
+              ],
+              [
+                "2026-09-26T17:47:38.395Z",
+                4.4
+              ],
+              [
+                "2026-09-26T17:51:24.500Z",
+                4.5
+              ]
+            ]
+          },
+          "1xBet": {
+            "p1": [
+              [
+                "2026-09-26T17:46:06.407Z",
+                1.24
+              ]
+            ],
+            "p2": [
+              [
+                "2026-09-26T17:46:06.407Z",
+                4.04
               ]
             ]
           }
@@ -28605,83 +28979,75 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-09-26T17:45:35.354Z"
+            "checkedAt": "2026-09-26T18:00:35.717Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-09-26T17:45:35.354Z"
+            "checkedAt": "2026-09-26T18:00:35.717Z"
           },
           "Bet105": {
             "source": "Kibl",
             "group": "sharp",
             "clock": "Kibl insert",
             "note": "no Bet105 fixture matched",
-            "checkedAt": "2026-09-26T17:27:34.000Z"
+            "checkedAt": "2026-09-26T17:46:19.000Z"
           },
           "Pinnacle (api-tennis)": {
             "source": "api-tennis",
             "group": "sharp",
             "clock": "seen by us every 5 min",
-            "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           },
           "Betano": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           },
           "1xBet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z",
+            "firstSeen": "2026-09-26T17:46:06.407Z"
           },
           "BetVictor": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           },
           "Betfair Sportsbook (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           },
           "Marathon": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           },
           "bet365 (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           },
           "Sbobet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           },
           "William Hill": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-26T17:41:03.592Z"
+            "checkedAt": "2026-09-26T17:56:14.537Z"
           }
         }
       }
@@ -28705,7 +29071,7 @@
       "p1": 2.37,
       "p2": 1.57,
       "bookmaker": "bet365",
-      "seenAt": "2026-09-26T17:36:28.524Z"
+      "seenAt": "2026-09-26T17:46:39.953Z"
     },
     "bestOdds": {
       "p1": {
@@ -28716,7 +29082,7 @@
         "price": 1.68,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-09-26T17:36:28.524Z"
+      "seenAt": "2026-09-26T17:46:39.953Z"
     },
     "tournamentRound": "ATP Chengdu - 1/16-finals",
     "p1Key": 1101,
@@ -31816,7 +32182,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-09-26T17:38:02.971Z"
+      "seenAt": "2026-09-26T17:48:10.630Z"
     },
     "closingOdds": {
       "p1": 2.37,
@@ -33984,14 +34350,14 @@
             "group": "soft",
             "clock": "recorded by us",
             "note": "not recorded — our recording began 26 Sep",
-            "checkedAt": "2026-09-26T17:45:35.354Z"
+            "checkedAt": "2026-09-26T18:00:35.717Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
             "note": "not recorded — our recording began 26 Sep",
-            "checkedAt": "2026-09-26T17:45:35.354Z"
+            "checkedAt": "2026-09-26T18:00:35.717Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -34105,7 +34471,7 @@
       "p1": 2,
       "p2": 1.8,
       "bookmaker": "bet365",
-      "seenAt": "2026-09-26T17:36:28.524Z"
+      "seenAt": "2026-09-26T17:46:39.953Z"
     },
     "bestOdds": {
       "p1": {
@@ -34116,7 +34482,7 @@
         "price": 1.83,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-09-26T17:36:28.524Z"
+      "seenAt": "2026-09-26T17:46:39.953Z"
     },
     "tournamentRound": "ATP Hangzhou - 1/16-finals",
     "p1Key": 954,
@@ -37425,7 +37791,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-09-26T17:38:02.972Z"
+      "seenAt": "2026-09-26T17:48:10.631Z"
     },
     "closingOdds": {
       "p1": 1.87,
@@ -37452,7 +37818,7 @@
       "p1": 1.9,
       "p2": 1.9,
       "bookmaker": "bet365",
-      "seenAt": "2026-09-26T17:36:28.524Z"
+      "seenAt": "2026-09-26T17:46:39.953Z"
     },
     "bestOdds": {
       "p1": {
@@ -37463,7 +37829,7 @@
         "price": 1.91,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-09-26T17:36:28.524Z"
+      "seenAt": "2026-09-26T17:46:39.953Z"
     },
     "tournamentRound": "ATP Hangzhou - 1/16-finals",
     "p1Key": 360,
@@ -40883,7 +41249,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-09-26T17:38:02.972Z"
+      "seenAt": "2026-09-26T17:48:10.631Z"
     },
     "closingOdds": {
       "p1": 1.97,
@@ -40923,7 +41289,7 @@
       "p1": 1.44,
       "p2": 2.75,
       "bookmaker": "bet365",
-      "seenAt": "2026-09-26T17:36:37.428Z"
+      "seenAt": "2026-09-26T17:46:48.841Z"
     },
     "bestOdds": {
       "p1": {
@@ -40934,7 +41300,7 @@
         "price": 2.81,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-09-26T17:36:37.428Z"
+      "seenAt": "2026-09-26T17:46:48.841Z"
     },
     "tournamentRound": "ATP Chengdu - 1/16-finals",
     "p1Key": 388,
@@ -43496,14 +43862,14 @@
             "group": "soft",
             "clock": "recorded by us",
             "note": "not recorded — our recording began 26 Sep",
-            "checkedAt": "2026-09-26T17:45:35.354Z"
+            "checkedAt": "2026-09-26T18:00:35.717Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
             "note": "not recorded — our recording began 26 Sep",
-            "checkedAt": "2026-09-26T17:45:35.354Z"
+            "checkedAt": "2026-09-26T18:00:35.717Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -43631,7 +43997,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-09-26T17:38:02.972Z"
+      "seenAt": "2026-09-26T17:48:10.631Z"
     },
     "closingOdds": {
       "p1": 1.41,
@@ -43671,7 +44037,7 @@
       "p1": 2.1,
       "p2": 1.72,
       "bookmaker": "bet365",
-      "seenAt": "2026-09-26T17:36:37.428Z"
+      "seenAt": "2026-09-26T17:46:48.841Z"
     },
     "bestOdds": {
       "p1": {
@@ -43682,7 +44048,7 @@
         "price": 1.72,
         "bookmaker": "bet365"
       },
-      "seenAt": "2026-09-26T17:36:37.428Z"
+      "seenAt": "2026-09-26T17:46:48.841Z"
     },
     "tournamentRound": "ATP Chengdu - 1/16-finals",
     "p1Key": 1900,
@@ -47225,7 +47591,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-09-26T17:38:02.972Z"
+      "seenAt": "2026-09-26T17:48:10.631Z"
     },
     "closingOdds": {
       "p1": 2.1,
@@ -47265,7 +47631,7 @@
       "p1": 2.2,
       "p2": 1.66,
       "bookmaker": "bet365",
-      "seenAt": "2026-09-26T17:36:37.428Z"
+      "seenAt": "2026-09-26T17:46:48.841Z"
     },
     "bestOdds": {
       "p1": {
@@ -47276,7 +47642,7 @@
         "price": 1.75,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-09-26T17:36:37.428Z"
+      "seenAt": "2026-09-26T17:46:48.841Z"
     },
     "tournamentRound": "ATP Chengdu - 1/16-finals",
     "p1Key": 427,
@@ -50562,7 +50928,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-09-26T17:38:02.972Z"
+      "seenAt": "2026-09-26T17:48:10.631Z"
     },
     "closingOdds": {
       "p1": 2.2,
@@ -50602,7 +50968,7 @@
       "p1": 1.44,
       "p2": 2.75,
       "bookmaker": "bet365",
-      "seenAt": "2026-09-26T17:36:37.428Z"
+      "seenAt": "2026-09-26T17:46:48.841Z"
     },
     "bestOdds": {
       "p1": {
@@ -50613,7 +50979,7 @@
         "price": 2.88,
         "bookmaker": "Betfair"
       },
-      "seenAt": "2026-09-26T17:36:37.428Z"
+      "seenAt": "2026-09-26T17:46:48.841Z"
     },
     "tournamentRound": "ATP Chengdu - 1/16-finals",
     "p1Key": 2413,
@@ -53668,7 +54034,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-09-26T17:38:02.972Z"
+      "seenAt": "2026-09-26T17:48:10.631Z"
     },
     "closingOdds": {
       "p1": 1.37,
@@ -53708,7 +54074,7 @@
       "p1": 4.5,
       "p2": 1.2,
       "bookmaker": "bet365",
-      "seenAt": "2026-09-26T17:36:37.428Z"
+      "seenAt": "2026-09-26T17:46:48.841Z"
     },
     "bestOdds": {
       "p1": {
@@ -53719,7 +54085,7 @@
         "price": 1.22,
         "bookmaker": "WilliamHill"
       },
-      "seenAt": "2026-09-26T17:36:37.428Z"
+      "seenAt": "2026-09-26T17:46:48.841Z"
     },
     "tournamentRound": "ATP Chengdu - 1/16-finals",
     "p1Key": 566,
@@ -57244,7 +57610,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-09-26T17:38:02.972Z"
+      "seenAt": "2026-09-26T17:48:10.631Z"
     },
     "closingOdds": {
       "p1": 5,
@@ -57271,7 +57637,7 @@
       "p1": 2.1,
       "p2": 1.72,
       "bookmaker": "bet365",
-      "seenAt": "2026-09-26T17:36:37.428Z"
+      "seenAt": "2026-09-26T17:46:48.841Z"
     },
     "bestOdds": {
       "p1": {
@@ -57282,7 +57648,7 @@
         "price": 1.81,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-09-26T17:36:37.428Z"
+      "seenAt": "2026-09-26T17:46:48.841Z"
     },
     "tournamentRound": "ATP Hangzhou - 1/16-finals",
     "p1Key": 2112,
@@ -60490,7 +60856,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-09-26T17:38:02.972Z"
+      "seenAt": "2026-09-26T17:48:10.631Z"
     },
     "closingOdds": {
       "p1": 2.1,
@@ -60517,7 +60883,7 @@
       "p1": 2.2,
       "p2": 1.66,
       "bookmaker": "bet365",
-      "seenAt": "2026-09-26T17:36:37.428Z"
+      "seenAt": "2026-09-26T17:46:48.841Z"
     },
     "bestOdds": {
       "p1": {
@@ -60528,7 +60894,7 @@
         "price": 1.79,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-09-26T17:36:37.428Z"
+      "seenAt": "2026-09-26T17:46:48.841Z"
     },
     "tournamentRound": "ATP Hangzhou - 1/16-finals",
     "p1Key": 796,
@@ -63538,7 +63904,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-09-26T17:38:02.972Z"
+      "seenAt": "2026-09-26T17:48:10.631Z"
     },
     "closingOdds": {
       "p1": 2.3,
@@ -63578,7 +63944,7 @@
       "p1": 3.4,
       "p2": 1.33,
       "bookmaker": "bet365",
-      "seenAt": "2026-09-26T17:36:37.428Z"
+      "seenAt": "2026-09-26T17:46:48.841Z"
     },
     "bestOdds": {
       "p1": {
@@ -63589,7 +63955,7 @@
         "price": 1.37,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-09-26T17:36:37.428Z"
+      "seenAt": "2026-09-26T17:46:48.841Z"
     },
     "tournamentRound": "ATP Hangzhou - 1/16-finals",
     "p1Key": 1274,
@@ -66399,14 +66765,14 @@
             "group": "soft",
             "clock": "recorded by us",
             "note": "not recorded — our recording began 26 Sep",
-            "checkedAt": "2026-09-26T17:45:35.354Z"
+            "checkedAt": "2026-09-26T18:00:35.717Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
             "note": "not recorded — our recording began 26 Sep",
-            "checkedAt": "2026-09-26T17:45:35.354Z"
+            "checkedAt": "2026-09-26T18:00:35.717Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -66549,7 +66915,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-09-26T17:38:02.972Z"
+      "seenAt": "2026-09-26T17:48:10.631Z"
     },
     "closingOdds": {
       "p1": 3.4,
@@ -66589,7 +66955,7 @@
       "p1": 2.1,
       "p2": 1.72,
       "bookmaker": "bet365",
-      "seenAt": "2026-09-26T17:36:37.428Z"
+      "seenAt": "2026-09-26T17:46:48.841Z"
     },
     "bestOdds": {
       "p1": {
@@ -66600,7 +66966,7 @@
         "price": 1.75,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-09-26T17:36:37.428Z"
+      "seenAt": "2026-09-26T17:46:48.841Z"
     },
     "tournamentRound": "ATP Hangzhou - 1/16-finals",
     "p1Key": 824,
@@ -70050,7 +70416,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-09-26T17:38:02.972Z"
+      "seenAt": "2026-09-26T17:48:10.631Z"
     },
     "closingOdds": {
       "p1": 2.1,
@@ -70090,7 +70456,7 @@
       "p1": 2.1,
       "p2": 1.72,
       "bookmaker": "bet365",
-      "seenAt": "2026-09-26T17:36:37.428Z"
+      "seenAt": "2026-09-26T17:46:48.841Z"
     },
     "bestOdds": {
       "p1": {
@@ -70101,7 +70467,7 @@
         "price": 1.85,
         "bookmaker": "Sbo"
       },
-      "seenAt": "2026-09-26T17:36:37.428Z"
+      "seenAt": "2026-09-26T17:46:48.841Z"
     },
     "tournamentRound": "ATP Hangzhou - 1/16-finals",
     "p1Key": 9608,
@@ -73551,7 +73917,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-09-26T17:38:02.972Z"
+      "seenAt": "2026-09-26T17:48:10.631Z"
     },
     "closingOdds": {
       "p1": 1.97,
@@ -73578,7 +73944,7 @@
       "p1": 2.62,
       "p2": 1.5,
       "bookmaker": "bet365",
-      "seenAt": "2026-09-26T17:36:37.428Z"
+      "seenAt": "2026-09-26T17:46:48.841Z"
     },
     "bestOdds": {
       "p1": {
@@ -73589,7 +73955,7 @@
         "price": 1.61,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-09-26T17:36:37.428Z"
+      "seenAt": "2026-09-26T17:46:48.841Z"
     },
     "tournamentRound": "ATP Hangzhou - 1/16-finals",
     "p1Key": 590,
@@ -77100,7 +77466,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-09-26T17:38:02.972Z"
+      "seenAt": "2026-09-26T17:48:10.631Z"
     },
     "closingOdds": {
       "p1": 2.37,
@@ -77127,7 +77493,7 @@
       "p1": 1.57,
       "p2": 2.37,
       "bookmaker": "bet365",
-      "seenAt": "2026-09-26T17:36:37.428Z"
+      "seenAt": "2026-09-26T17:46:48.841Z"
     },
     "bestOdds": {
       "p1": {
@@ -77138,7 +77504,7 @@
         "price": 2.45,
         "bookmaker": "Betano"
       },
-      "seenAt": "2026-09-26T17:36:37.428Z"
+      "seenAt": "2026-09-26T17:46:48.841Z"
     },
     "tournamentRound": "ATP Chengdu - 1/16-finals",
     "p1Key": 2848,
@@ -80878,7 +81244,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-09-26T17:38:02.972Z"
+      "seenAt": "2026-09-26T17:48:10.631Z"
     },
     "closingOdds": {
       "p1": 1.5,
@@ -80918,7 +81284,7 @@
       "p1": 1.9,
       "p2": 1.9,
       "bookmaker": "bet365",
-      "seenAt": "2026-09-26T17:36:37.428Z"
+      "seenAt": "2026-09-26T17:46:48.841Z"
     },
     "bestOdds": {
       "p1": {
@@ -80929,7 +81295,7 @@
         "price": 2,
         "bookmaker": "WilliamHill"
       },
-      "seenAt": "2026-09-26T17:36:37.428Z"
+      "seenAt": "2026-09-26T17:46:48.841Z"
     },
     "tournamentRound": "ATP Chengdu - 1/16-finals",
     "p1Key": 68751,
@@ -83779,7 +84145,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-09-26T17:38:02.972Z"
+      "seenAt": "2026-09-26T17:48:10.631Z"
     },
     "closingOdds": {
       "p1": 1.77,
@@ -83819,7 +84185,7 @@
       "p1": 1.5,
       "p2": 2.62,
       "bookmaker": "bet365",
-      "seenAt": "2026-09-26T17:36:37.428Z"
+      "seenAt": "2026-09-26T17:46:48.841Z"
     },
     "bestOdds": {
       "p1": {
@@ -83830,7 +84196,7 @@
         "price": 2.75,
         "bookmaker": "Marathon"
       },
-      "seenAt": "2026-09-26T17:36:37.428Z"
+      "seenAt": "2026-09-26T17:46:48.841Z"
     },
     "tournamentRound": "ATP Chengdu - 1/16-finals",
     "p1Key": 1317,
@@ -87058,7 +87424,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-09-26T17:38:02.972Z"
+      "seenAt": "2026-09-26T17:48:10.631Z"
     }
   },
   {
@@ -87079,7 +87445,7 @@
       "p1": 1.5,
       "p2": 2.62,
       "bookmaker": "bet365",
-      "seenAt": "2026-09-26T17:36:37.428Z"
+      "seenAt": "2026-09-26T17:46:48.841Z"
     },
     "bestOdds": {
       "p1": {
@@ -87090,7 +87456,7 @@
         "price": 2.65,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-09-26T17:36:37.428Z"
+      "seenAt": "2026-09-26T17:46:48.841Z"
     },
     "tournamentRound": "ATP Chengdu - 1/16-finals",
     "p1Key": 2834,
@@ -90653,7 +91019,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-09-26T17:38:02.972Z"
+      "seenAt": "2026-09-26T17:48:10.631Z"
     },
     "closingOdds": {
       "p1": 1.47,
@@ -90693,7 +91059,7 @@
       "p1": 2.2,
       "p2": 1.66,
       "bookmaker": "bet365",
-      "seenAt": "2026-09-26T17:36:37.428Z"
+      "seenAt": "2026-09-26T17:46:48.841Z"
     },
     "bestOdds": {
       "p1": {
@@ -90704,7 +91070,7 @@
         "price": 1.66,
         "bookmaker": "bet365"
       },
-      "seenAt": "2026-09-26T17:36:37.428Z"
+      "seenAt": "2026-09-26T17:46:48.841Z"
     },
     "tournamentRound": "ATP Hangzhou - 1/16-finals",
     "p1Key": 1308,
@@ -94261,7 +94627,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-09-26T17:38:02.972Z"
+      "seenAt": "2026-09-26T17:48:10.631Z"
     },
     "closingOdds": {
       "p1": 2.2,
@@ -94301,7 +94667,7 @@
       "p1": 2.2,
       "p2": 1.66,
       "bookmaker": "bet365",
-      "seenAt": "2026-09-26T17:36:37.428Z"
+      "seenAt": "2026-09-26T17:46:48.841Z"
     },
     "bestOdds": {
       "p1": {
@@ -94312,7 +94678,7 @@
         "price": 1.69,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-09-26T17:36:37.428Z"
+      "seenAt": "2026-09-26T17:46:48.841Z"
     },
     "tournamentRound": "ATP Hangzhou - 1/16-finals",
     "p1Key": 3317,
@@ -97616,7 +97982,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-09-26T17:38:02.972Z"
+      "seenAt": "2026-09-26T17:48:10.631Z"
     },
     "closingOdds": {
       "p1": 2.2,
@@ -97656,7 +98022,7 @@
       "p1": 1.28,
       "p2": 3.75,
       "bookmaker": "bet365",
-      "seenAt": "2026-09-26T17:36:37.428Z"
+      "seenAt": "2026-09-26T17:46:48.841Z"
     },
     "bestOdds": {
       "p1": {
@@ -97667,7 +98033,7 @@
         "price": 3.75,
         "bookmaker": "bet365"
       },
-      "seenAt": "2026-09-26T17:36:37.428Z"
+      "seenAt": "2026-09-26T17:46:48.841Z"
     },
     "tournamentRound": "ATP Hangzhou - 1/16-finals",
     "p1Key": 10148,
@@ -100643,7 +101009,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-09-26T17:38:02.972Z"
+      "seenAt": "2026-09-26T17:48:10.631Z"
     },
     "closingOdds": {
       "p1": 1.25,
@@ -100683,7 +101049,7 @@
       "p1": 4.5,
       "p2": 1.2,
       "bookmaker": "bet365",
-      "seenAt": "2026-09-26T17:36:37.428Z"
+      "seenAt": "2026-09-26T17:46:48.841Z"
     },
     "bestOdds": {
       "p1": {
@@ -100694,7 +101060,7 @@
         "price": 1.22,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-09-26T17:36:37.428Z"
+      "seenAt": "2026-09-26T17:46:48.841Z"
     },
     "tournamentRound": "ATP Hangzhou - 1/16-finals",
     "p1Key": 876,
@@ -104066,7 +104432,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-09-26T17:38:02.972Z"
+      "seenAt": "2026-09-26T17:48:10.631Z"
     },
     "closingOdds": {
       "p1": 4.5,
@@ -104106,7 +104472,7 @@
       "p1": 1.7,
       "p2": 2.25,
       "bookmaker": "Pncl",
-      "seenAt": "2026-09-26T17:36:37.428Z"
+      "seenAt": "2026-09-26T17:46:48.841Z"
     },
     "bestOdds": {
       "p1": {
@@ -104117,7 +104483,7 @@
         "price": 2.42,
         "bookmaker": "Betano"
       },
-      "seenAt": "2026-09-26T17:36:37.428Z"
+      "seenAt": "2026-09-26T17:46:48.841Z"
     },
     "tournamentRound": "ATP Chengdu - 1/16-finals",
     "p1Key": 38264,
@@ -106543,14 +106909,14 @@
             "group": "soft",
             "clock": "recorded by us",
             "note": "not recorded — our recording began 26 Sep",
-            "checkedAt": "2026-09-26T17:45:35.354Z"
+            "checkedAt": "2026-09-26T18:00:35.717Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
             "note": "not recorded — our recording began 26 Sep",
-            "checkedAt": "2026-09-26T17:45:35.354Z"
+            "checkedAt": "2026-09-26T18:00:35.717Z"
           },
           "Pinnacle +30s": {
             "source": "Oddspapi",
@@ -106644,7 +107010,7 @@
       "p1": 2.3,
       "p2": 1.61,
       "bookmaker": "bet365",
-      "seenAt": "2026-09-26T17:37:19.598Z"
+      "seenAt": "2026-09-26T17:47:30.291Z"
     },
     "bestOdds": {
       "p1": {
@@ -106655,7 +107021,7 @@
         "price": 1.62,
         "bookmaker": "Betfair"
       },
-      "seenAt": "2026-09-26T17:37:19.598Z"
+      "seenAt": "2026-09-26T17:47:30.291Z"
     },
     "tournamentRound": "ATP Hangzhou - 1/8-finals",
     "p1Key": 1335,
@@ -109791,7 +110157,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-09-26T17:38:02.972Z"
+      "seenAt": "2026-09-26T17:48:10.632Z"
     },
     "closingOdds": {
       "p1": 2.37,
@@ -109818,7 +110184,7 @@
       "p1": 1.5,
       "p2": 2.62,
       "bookmaker": "bet365",
-      "seenAt": "2026-09-26T17:37:19.598Z"
+      "seenAt": "2026-09-26T17:47:30.291Z"
     },
     "bestOdds": {
       "p1": {
@@ -109829,7 +110195,7 @@
         "price": 2.67,
         "bookmaker": "Betano"
       },
-      "seenAt": "2026-09-26T17:37:19.598Z"
+      "seenAt": "2026-09-26T17:47:30.291Z"
     },
     "tournamentRound": "ATP Hangzhou - 1/8-finals",
     "p1Key": 824,
@@ -113250,7 +113616,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-09-26T17:38:02.972Z"
+      "seenAt": "2026-09-26T17:48:10.632Z"
     },
     "closingOdds": {
       "p1": 1.47,
@@ -113290,7 +113656,7 @@
       "p1": 1.66,
       "p2": 2.2,
       "bookmaker": "bet365",
-      "seenAt": "2026-09-26T17:37:19.598Z"
+      "seenAt": "2026-09-26T17:47:30.291Z"
     },
     "bestOdds": {
       "p1": {
@@ -113301,7 +113667,7 @@
         "price": 2.2,
         "bookmaker": "bet365"
       },
-      "seenAt": "2026-09-26T17:37:19.598Z"
+      "seenAt": "2026-09-26T17:47:30.291Z"
     },
     "tournamentRound": "ATP Chengdu - 1/8-finals",
     "p1Key": 2169,
@@ -116458,7 +116824,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-09-26T17:38:02.972Z"
+      "seenAt": "2026-09-26T17:48:10.632Z"
     },
     "closingOdds": {
       "p1": 1.77,
@@ -116485,7 +116851,7 @@
       "p1": 4.5,
       "p2": 1.2,
       "bookmaker": "bet365",
-      "seenAt": "2026-09-26T17:37:19.598Z"
+      "seenAt": "2026-09-26T17:47:30.291Z"
     },
     "bestOdds": {
       "p1": {
@@ -116496,7 +116862,7 @@
         "price": 1.22,
         "bookmaker": "Betano"
       },
-      "seenAt": "2026-09-26T17:37:19.598Z"
+      "seenAt": "2026-09-26T17:47:30.291Z"
     },
     "tournamentRound": "ATP Chengdu - 1/8-finals",
     "p1Key": 1083,
@@ -119874,7 +120240,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-09-26T17:38:02.972Z"
+      "seenAt": "2026-09-26T17:48:10.632Z"
     },
     "closingOdds": {
       "p1": 4,
@@ -119901,7 +120267,7 @@
       "p1": 1.4,
       "p2": 3,
       "bookmaker": "bet365",
-      "seenAt": "2026-09-26T17:37:19.598Z"
+      "seenAt": "2026-09-26T17:47:30.291Z"
     },
     "bestOdds": {
       "p1": {
@@ -119912,7 +120278,7 @@
         "price": 3,
         "bookmaker": "bet365"
       },
-      "seenAt": "2026-09-26T17:37:19.598Z"
+      "seenAt": "2026-09-26T17:47:30.291Z"
     },
     "tournamentRound": "ATP Hangzhou - 1/8-finals",
     "p1Key": 10148,
@@ -123192,7 +123558,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-09-26T17:38:02.972Z"
+      "seenAt": "2026-09-26T17:48:10.632Z"
     },
     "closingOdds": {
       "p1": 1.37,
@@ -123219,7 +123585,7 @@
       "p1": 3.4,
       "p2": 1.33,
       "bookmaker": "bet365",
-      "seenAt": "2026-09-26T17:37:19.598Z"
+      "seenAt": "2026-09-26T17:47:30.291Z"
     },
     "bestOdds": {
       "p1": {
@@ -123230,7 +123596,7 @@
         "price": 1.33,
         "bookmaker": "bet365"
       },
-      "seenAt": "2026-09-26T17:37:19.598Z"
+      "seenAt": "2026-09-26T17:47:30.291Z"
     },
     "tournamentRound": "ATP Hangzhou - 1/8-finals",
     "p1Key": 3317,
@@ -126744,7 +127110,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-09-26T17:38:02.972Z"
+      "seenAt": "2026-09-26T17:48:10.632Z"
     },
     "closingOdds": {
       "p1": 3.4,
@@ -126784,7 +127150,7 @@
       "p1": 2.75,
       "p2": 1.44,
       "bookmaker": "bet365",
-      "seenAt": "2026-09-26T17:37:19.598Z"
+      "seenAt": "2026-09-26T17:47:30.291Z"
     },
     "bestOdds": {
       "p1": {
@@ -126795,7 +127161,7 @@
         "price": 1.52,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-09-26T17:37:19.598Z"
+      "seenAt": "2026-09-26T17:47:30.291Z"
     },
     "tournamentRound": "ATP Chengdu - 1/8-finals",
     "p1Key": 424,
@@ -130979,7 +131345,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-09-26T17:38:02.972Z"
+      "seenAt": "2026-09-26T17:48:10.632Z"
     },
     "closingOdds": {
       "p1": 2.62,
@@ -131006,7 +131372,7 @@
       "p1": 1.44,
       "p2": 2.75,
       "bookmaker": "bet365",
-      "seenAt": "2026-09-26T17:37:19.598Z"
+      "seenAt": "2026-09-26T17:47:30.291Z"
     },
     "bestOdds": {
       "p1": {
@@ -131017,7 +131383,7 @@
         "price": 2.77,
         "bookmaker": "1xBet"
       },
-      "seenAt": "2026-09-26T17:37:19.598Z"
+      "seenAt": "2026-09-26T17:47:30.291Z"
     },
     "tournamentRound": "ATP Chengdu - 1/8-finals",
     "p1Key": 2982,
@@ -135077,7 +135443,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-09-26T17:38:02.972Z"
+      "seenAt": "2026-09-26T17:48:10.632Z"
     },
     "closingOdds": {
       "p1": 1.5,
@@ -135104,7 +135470,7 @@
       "p1": 1.83,
       "p2": 1.83,
       "bookmaker": "bet365",
-      "seenAt": "2026-09-26T17:37:19.598Z"
+      "seenAt": "2026-09-26T17:47:30.291Z"
     },
     "bestOdds": {
       "p1": {
@@ -135115,7 +135481,7 @@
         "price": 1.99,
         "bookmaker": "1xBet"
       },
-      "seenAt": "2026-09-26T17:37:19.598Z"
+      "seenAt": "2026-09-26T17:47:30.291Z"
     },
     "tournamentRound": "",
     "p1Key": 430,
@@ -137363,7 +137729,7 @@
     "interrupted": false,
     "partialScore": null,
     "finalScore": {
-      "display": "6-7, 6-4, 10-8",
+      "display": "6-7(4), 6-4, 10-8",
       "sets": [
         {
           "p1": 6,
@@ -138771,7 +139137,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-09-26T17:38:02.972Z"
+      "seenAt": "2026-09-26T17:48:10.632Z"
     },
     "closingOdds": {
       "p1": 1.8,
@@ -138798,7 +139164,7 @@
       "p1": 1.72,
       "p2": 2,
       "bookmaker": "bet365",
-      "seenAt": "2026-09-26T17:37:19.598Z"
+      "seenAt": "2026-09-26T17:47:30.291Z"
     },
     "bestOdds": {
       "p1": {
@@ -138809,7 +139175,7 @@
         "price": 2.25,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-09-26T17:37:19.598Z"
+      "seenAt": "2026-09-26T17:47:30.291Z"
     },
     "tournamentRound": "",
     "p1Key": 902,
@@ -141827,7 +142193,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-09-26T17:38:02.972Z"
+      "seenAt": "2026-09-26T17:48:10.632Z"
     },
     "closingOdds": {
       "p1": 1.69,
@@ -141854,7 +142220,7 @@
       "p1": 1.56,
       "p2": 2.51,
       "bookmaker": "Pncl",
-      "seenAt": "2026-09-26T17:37:19.598Z"
+      "seenAt": "2026-09-26T17:47:30.291Z"
     },
     "bestOdds": {
       "p1": {
@@ -141865,7 +142231,7 @@
         "price": 2.51,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-09-26T17:37:19.598Z"
+      "seenAt": "2026-09-26T17:47:30.291Z"
     },
     "tournamentRound": "",
     "p1Key": 50323,
@@ -145003,7 +145369,7 @@
       "p1": 1.28,
       "p2": 3.99,
       "bookmaker": "Pncl",
-      "seenAt": "2026-09-26T17:34:10.632Z"
+      "seenAt": "2026-09-26T17:46:18.213Z"
     },
     "bestOdds": {
       "p1": {
@@ -145014,7 +145380,7 @@
         "price": 3.99,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-09-26T17:34:10.632Z"
+      "seenAt": "2026-09-26T17:46:18.213Z"
     },
     "tournamentRound": "ATP Hangzhou - 1/8-finals",
     "p1Key": 1093,
@@ -148884,7 +149250,7 @@
       "p1": 2.09,
       "p2": 1.81,
       "bookmaker": "Pncl",
-      "seenAt": "2026-09-26T17:34:10.632Z"
+      "seenAt": "2026-09-26T17:46:18.213Z"
     },
     "bestOdds": {
       "p1": {
@@ -148895,7 +149261,7 @@
         "price": 1.81,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-09-26T17:34:10.632Z"
+      "seenAt": "2026-09-26T17:46:18.213Z"
     },
     "tournamentRound": "ATP Hangzhou - 1/8-finals",
     "p1Key": 796,
@@ -152401,7 +152767,7 @@
       "p1": 2.04,
       "p2": 1.85,
       "bookmaker": "Pncl",
-      "seenAt": "2026-09-26T17:34:10.632Z"
+      "seenAt": "2026-09-26T17:46:18.213Z"
     },
     "bestOdds": {
       "p1": {
@@ -152412,7 +152778,7 @@
         "price": 1.88,
         "bookmaker": "1xBet"
       },
-      "seenAt": "2026-09-26T17:34:10.632Z"
+      "seenAt": "2026-09-26T17:46:18.213Z"
     },
     "tournamentRound": "ATP Chengdu - 1/8-finals",
     "p1Key": 38264,
@@ -156312,7 +156678,7 @@
       "p1": 1.88,
       "p2": 2.01,
       "bookmaker": "Pncl",
-      "seenAt": "2026-09-26T17:34:10.632Z"
+      "seenAt": "2026-09-26T17:46:18.213Z"
     },
     "bestOdds": {
       "p1": {
@@ -156323,7 +156689,7 @@
         "price": 2.01,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-09-26T17:34:10.632Z"
+      "seenAt": "2026-09-26T17:46:18.213Z"
     },
     "tournamentRound": "ATP Chengdu - 1/8-finals",
     "p1Key": 1852,
@@ -160014,7 +160380,7 @@
       "p1": 2.14,
       "p2": 1.78,
       "bookmaker": "Pncl",
-      "seenAt": "2026-09-26T17:34:10.632Z"
+      "seenAt": "2026-09-26T17:46:18.213Z"
     },
     "bestOdds": {
       "p1": {
@@ -160025,7 +160391,7 @@
         "price": 1.78,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-09-26T17:34:10.632Z"
+      "seenAt": "2026-09-26T17:46:18.213Z"
     },
     "tournamentRound": "ATP Hangzhou - 1/8-finals",
     "p1Key": 1925,
@@ -164120,7 +164486,7 @@
       "p1": 3.19,
       "p2": 1.4,
       "bookmaker": "Pncl",
-      "seenAt": "2026-09-26T17:34:10.632Z"
+      "seenAt": "2026-09-26T17:46:18.213Z"
     },
     "bestOdds": {
       "p1": {
@@ -164131,7 +164497,7 @@
         "price": 1.4,
         "bookmaker": "Betfair"
       },
-      "seenAt": "2026-09-26T17:34:10.632Z"
+      "seenAt": "2026-09-26T17:46:18.213Z"
     },
     "tournamentRound": "ATP Chengdu - 1/8-finals",
     "p1Key": 1317,
@@ -168218,7 +168584,7 @@
       "p1": 2.31,
       "p2": 1.67,
       "bookmaker": "Pncl",
-      "seenAt": "2026-09-26T17:34:10.632Z"
+      "seenAt": "2026-09-26T17:46:18.213Z"
     },
     "bestOdds": {
       "p1": {
@@ -168229,7 +168595,7 @@
         "price": 1.67,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-09-26T17:34:10.632Z"
+      "seenAt": "2026-09-26T17:46:18.213Z"
     },
     "tournamentRound": "ATP Chengdu - 1/8-finals",
     "p1Key": 388,
@@ -171524,7 +171890,7 @@
       "p1": 1.58,
       "p2": 2.5,
       "bookmaker": "Pncl",
-      "seenAt": "2026-09-26T17:34:10.632Z"
+      "seenAt": "2026-09-26T17:46:18.213Z"
     },
     "bestOdds": {
       "p1": {
@@ -171535,7 +171901,7 @@
         "price": 2.5,
         "bookmaker": "Betfair"
       },
-      "seenAt": "2026-09-26T17:34:10.632Z"
+      "seenAt": "2026-09-26T17:46:18.213Z"
     },
     "tournamentRound": "ATP Hangzhou - 1/8-finals",
     "p1Key": 2227,
@@ -175885,7 +176251,7 @@
       "p1": 2.7,
       "p2": 1.47,
       "bookmaker": "Betano",
-      "seenAt": "2026-09-26T17:34:10.632Z"
+      "seenAt": "2026-09-26T17:46:18.213Z"
     },
     "bestOdds": {
       "p1": {
@@ -175896,7 +176262,7 @@
         "price": 1.47,
         "bookmaker": "Betano"
       },
-      "seenAt": "2026-09-26T17:34:10.632Z"
+      "seenAt": "2026-09-26T17:46:18.213Z"
     },
     "tournamentRound": "",
     "p1Key": 372,
@@ -179168,7 +179534,7 @@
       "p1": 1.29,
       "p2": 3.6,
       "bookmaker": "Betano",
-      "seenAt": "2026-09-26T17:34:10.632Z"
+      "seenAt": "2026-09-26T17:46:18.213Z"
     },
     "bestOdds": {
       "p1": {
@@ -179179,7 +179545,7 @@
         "price": 3.6,
         "bookmaker": "Betano"
       },
-      "seenAt": "2026-09-26T17:34:10.632Z"
+      "seenAt": "2026-09-26T17:46:18.213Z"
     },
     "tournamentRound": "",
     "p1Key": 1980,
@@ -185973,21 +186339,21 @@
             "source": "Kibl",
             "group": "sharp",
             "clock": "Kibl insert",
-            "checkedAt": "2026-09-26T17:27:34.000Z"
+            "checkedAt": "2026-09-26T17:46:19.000Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
             "note": "not recorded — our recording began 26 Sep",
-            "checkedAt": "2026-09-26T17:45:35.354Z"
+            "checkedAt": "2026-09-26T18:00:35.717Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
             "note": "not recorded — our recording began 26 Sep",
-            "checkedAt": "2026-09-26T17:45:35.354Z"
+            "checkedAt": "2026-09-26T18:00:35.717Z"
           },
           "Pinnacle +30s": {
             "source": "Oddspapi",
