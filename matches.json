@@ -173844,11 +173844,22 @@
     "venue": null,
     "courtSpeed": null,
     "weather": null,
-    "live": false,
-    "liveStatus": null,
-    "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "live": true,
+    "liveStatus": "Set 2",
+    "liveScore": [
+      {
+        "set": 1,
+        "p1": 6,
+        "p2": 2
+      },
+      {
+        "set": 2,
+        "p1": 5,
+        "p2": 5
+      }
+    ],
+    "liveGameScore": "0 - 40",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/1980_a-zverev.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/1106_a-de-minaur.jpg",
     "oddsMovement": {
@@ -174864,7 +174875,10 @@
       "edgeVsPinnacleP1": 0.0095,
       "edgeVsPinnacleP2": -0.0095,
       "ts": "2026-09-26T08:31:47.137Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12165884",
@@ -177056,11 +177070,11 @@
         }
       ]
     },
-    "live": false,
-    "liveStatus": null,
+    "live": true,
+    "liveStatus": "Set 3",
     "liveScore": null,
-    "liveGameScore": null,
-    "liveServer": null,
+    "liveGameScore": "0 - 0",
+    "liveServer": "p2",
     "p1PhotoUrl": "https://api.api-tennis.com/logo-tennis/2227_c-wong.jpg",
     "p2PhotoUrl": "https://api.api-tennis.com/logo-tennis/9217_d-vallejo.jpg",
     "oddsMovement": {
@@ -178729,7 +178743,10 @@
       "edgeVsPinnacleP1": 0.0065,
       "edgeVsPinnacleP2": -0.0065,
       "ts": "2026-09-25T14:21:13.137Z"
-    }
+    },
+    "interrupted": false,
+    "partialScore": null,
+    "finalScore": null
   },
   {
     "id": "upcoming-12164720",
