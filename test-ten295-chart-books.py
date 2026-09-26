@@ -97,7 +97,9 @@ for (const m of matches.filter(x => x.oddsMovement && x.oddsMovement.books && Ob
   const a = run(JSON.parse(JSON.stringify(m)));
   const m2 = JSON.parse(JSON.stringify(m));
   m2.oddsMovement.chart = { books: { 'Pinnacle +30s': { p1: [['2026-09-25T08:21:00.000Z', 1.9], ['2026-09-26T02:40:00.000Z', 2.35]], p2: [['2026-09-25T08:21:00.000Z', 1.9], ['2026-09-26T02:40:00.000Z', 1.657]] },
-                                     Superbet: { p1: [['2026-09-25T10:00:00.000Z', 2.2]], p2: [['2026-09-25T10:00:00.000Z', 1.7]] } },
+                                     Superbet: { p1: [['2026-09-25T10:00:00.000Z', 2.2]], p2: [['2026-09-25T10:00:00.000Z', 1.7]] },
+                                     // Wave 2: the api-tennis "Pinnacle" shares the model's anchor-book NAME — it must stay chart-only
+                                     Pinnacle: { p1: [['2026-09-26T04:00:00.000Z', 1.5]], p2: [['2026-09-26T04:00:00.000Z', 2.6]] } },
                             meta: { 'Pinnacle +30s': { source: 'Oddspapi', group: 'sharp', clock: 'book tick', checkedAt: '2026-09-26T04:00:00.000Z' } } };
   out.push({ id: m.id, same: a === run(m2), n: a.length });
 }
@@ -233,13 +235,16 @@ def fake_rpc(name, args, timeout=60):
     calls.append(name)
     if name == 'chart_book_series':
         return dict(payload, kibl_sweep_ok_at='2026-09-26T04:12:06+00:00')
+    if name == 'chart_apitennis_series':
+        return {'rows': [], 'last_ok_poll_at': None, 'down': []}
     return ph
 
 
 bcb.rpc = fake_rpc
 rc = bcb.main()
 out = json.load(open(bcb.MATCHES))[0]['oddsMovement']
-check(rc == 0 and calls == ['chart_book_series', 'chart_bet105_history'], f'main(): one series call + one Bet105 read per card {calls}')
+check(rc == 0 and calls == ['chart_book_series', 'chart_bet105_history', 'chart_apitennis_series'],
+      f'main(): one series call + one Bet105 read per card + one api-tennis call {calls}')
 check({k: v for k, v in out.items() if k != 'chart'} == LEGACY, 'main(): the written file keeps the legacy fields byte-identical')
 check(out['chart']['meta']['Bet105']['group'] == 'sharp' and out['chart']['books']['Bet105']['p1'][0][1] == 2.4,
       'main(): Bet105 line written, Sharp')
@@ -451,6 +456,116 @@ wf = open(os.path.join(HERE, '.github/workflows/odds-now.yml')).read()
 step = wf[wf.index('- name: Run the capture loop'):wf.index('./odds-capture-loop.sh')]
 check('SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}' in step and 'SUPABASE_URL' in step,
       'the loop step carries the Supabase secrets')
+
+# ── 7. Wave 2: the 9 api-tennis books (founder 2026-09-26: comment d5bf3dda, cards 78ec4dd2 + 31e4beef)
+S = '2026-09-26T'
+R = lambda t, sel, price, kind='changed', live=False: [S + t + 'Z', sel, price, kind, live]
+ser, gaps = bcb.apitennis_book_series([
+    R('04:00:00', 'Home', '2.40', 'first_seen'), R('04:00:00', 'Away', '1.60', 'first_seen'),
+    R('04:30:00', 'Away', '1.62'),                                  # one side moves: a pair point
+    R('05:00:00', 'Home', None, 'removed'),                         # the book pulls one side -> gap
+    R('06:00:00', 'Home', '1.30', 'first_seen'),                    # back, but a suspended pair (54% over)
+    R('06:00:00', 'Away', '1.30'),
+    R('06:30:00', 'Home', '2.40'), R('06:30:00', 'Away', '1.62'),   # a real pair: the gap closes, same price
+    R('07:00:00', 'Home', '2.30'),
+    R('08:00:00', 'Home', '2.20', live=True),                       # in-play: the line ends before this
+    R('09:00:00', 'Home', '2.10'),
+], cut=S + '10:00:00Z')
+check(ser['p1'] == [[S + '04:00:00.000Z', 2.4], [S + '07:00:00.000Z', 2.3]]
+      and ser['p2'] == [[S + '04:00:00.000Z', 1.6], [S + '04:30:00.000Z', 1.62]],
+      f'api-tennis: Home -> p1, Away -> p2, pair points, changes only, nothing in-play {ser}')
+check(gaps == [[S + '05:00:00.000Z', S + '06:30:00.000Z']],
+      f'api-tennis: a removed side opens a gap; a suspended pair does NOT close it; a real pair does {gaps}')
+_, g2 = bcb.apitennis_book_series([R('04:00:00', 'Home', '2.4', 'first_seen'), R('04:00:00', 'Away', '1.6', 'first_seen'),
+                                   R('05:00:00', 'Away', None, 'removed')])
+check(g2 == [[S + '05:00:00.000Z', None]], f'api-tennis: still pulled = an open gap {g2}')
+s3, g3 = bcb.apitennis_book_series([R('04:00:00', 'Home', '2.4', 'first_seen'), R('04:00:00', 'Away', '1.6', 'first_seen'),
+                                    R('06:00:00', 'Home', '2.3')], cut=S + '05:00:00Z',
+                                   down=[[S + '04:20:00Z', S + '04:50:00Z'], [S + '03:00:00Z', S + '03:30:00Z'],
+                                         [S + '05:10:00Z', S + '05:40:00Z']])
+check(s3['p1'] == [[S + '04:00:00.000Z', 2.4]] and g3 == [[S + '04:20:00.000Z', S + '04:50:00.000Z']],
+      f'api-tennis: cut at the start; a collector-down gap inside the line (not before it, not after the cut) {s3} {g3}')
+_, g4 = bcb.apitennis_book_series([R('05:00:00', 'Home', None, 'removed'), R('06:00:00', 'Home', '2.4', 'first_seen'),
+                                   R('06:00:00', 'Away', '1.6', 'first_seen')])
+check(g4 == [], 'api-tennis: a removal before the line began is not a gap')
+
+AT_ROWS = lambda mk, book, rows: [[mk, book] + r for r in rows]
+at_cards = [card(id='upcoming-12165868', date='2026-09-26', time='09:00'),            # J. M. Cerundolo
+            card(id='upcoming-12164721', p1='F. Cerundolo', p2='A. Zverev', date='2026-09-26', time='09:00'),
+            card(id='upcoming-555', p1='A. Nobody', p2='B. Else', date='2026-09-26', time='09:00'),
+            card(id='past-444', p1='C. Old', p2='D. Match', date='2026-09-25', time='09:00', finalScore='6-4 6-4',
+                 oddsMovement=copy.deepcopy(LEGACY)),
+            card(id='upcoming-777', p1='E. Far', p2='F. Future', date='2026-10-09', time='09:00')]
+before_legacy = json.dumps(at_cards[3]['oddsMovement'], sort_keys=True)
+payload = {'rows': AT_ROWS('12165868', 'Pncl', [R('04:00:00', 'Home', '2.40', 'first_seen'), R('04:00:00', 'Away', '1.60', 'first_seen')])
+                   + AT_ROWS('12165868', 'Betfair', [R('04:00:00', 'Home', '2.30', 'first_seen'), R('04:00:00', 'Away', '1.55', 'first_seen'),
+                                                     R('08:30:00', 'Home', '2.25', live=True)])
+                   + AT_ROWS('12165868', 'Unibet', [R('04:00:00', 'Home', '2.3', 'first_seen'), R('04:00:00', 'Away', '1.5', 'first_seen')])
+                   + AT_ROWS('12164721', 'Pncl', [R('04:10:00', 'Home', '3.10', 'first_seen'), R('04:10:00', 'Away', '1.35', 'first_seen')]),
+           'last_ok_poll_at': S + '09:40:00Z', 'down': []}
+cnt = bcb.apply_apitennis(at_cards, payload, S + '09:45:00.000Z', {})
+jm, fc, nob, old, far = at_cards
+ch = lambda c: c['oddsMovement']['chart']
+check(cs.chart_series(jm, 'Pinnacle')['p1'] == [[S + '04:00:00.000Z', 2.4]]
+      and cs.chart_series(fc, 'Pinnacle')['p1'] == [[S + '04:10:00.000Z', 3.1]],
+      'api-tennis: joined by EVENT KEY — the Cerundolo brothers keep their own lines')
+check(ch(jm)['meta']['Pinnacle']['group'] == 'sharp' and ch(jm)['meta']['Betfair Sportsbook']['group'] == 'soft'
+      and 'Betfair' not in ch(jm)['books'] and 'Unibet' not in ch(jm)['meta'] and 'Unibet (api-tennis)' not in ch(jm)['meta'],
+      'api-tennis: Pncl = "Pinnacle" (Sharp), Betfair = "Betfair Sportsbook" (Soft); a 10th book is not charted')
+mp = ch(jm)['meta']['Pinnacle']
+check(mp['source'] == 'api-tennis' and mp['clock'] == 'seen by us every 5 min' and mp['firstSeen'] == S + '04:00:00.000Z'
+      and mp['checkedAt'] == S + '08:30:00.000Z',
+      f'api-tennis meta: our clock, first seen, checkedAt capped at the event\'s first in-play row (any book) {mp}')
+nob_m = at_cards[2]  # no rows, scheduled 09:00 -> checkedAt = the scheduled start, not the later OK poll
+check(ch(jm)['meta']['Betfair Sportsbook']['checkedAt'] == S + '08:30:00.000Z',
+      'api-tennis: the event\'s first in-play row (any book) also caps checkedAt')
+nb = ch(jm)['meta']['Betano']
+check('Betano' not in ch(jm)['books'] and nb.get('note') is None and nb['checkedAt'],
+      f'api-tennis: event polled, book never quoted it -> meta only, no note ("not priced for this match") {nb}')
+check(all(ch(nob)['meta'][l].get('note') == 'api-tennis lists no odds for this match' for l in ('Pinnacle', 'William Hill'))
+      and ch(nob)['meta']['Pinnacle']['checkedAt'] == S + '09:00:00.000Z',
+      'api-tennis: an event in the collector window with no row at all; checkedAt capped at the scheduled start')
+check(all(ch(old)['meta'][l].get('note') == 'not recorded — our recording began 26 Sep' for l in ('Pinnacle', 'Sbobet'))
+      and json.dumps({k: v for k, v in old['oddsMovement'].items() if k != 'chart'}, sort_keys=True)
+          == json.dumps({k: v for k, v in json.loads(before_legacy).items()}, sort_keys=True),
+      'api-tennis: a card before 26 Sep 03:55Z reads "not recorded", legacy fields untouched')
+check(all(ch(far)['meta'][l].get('checkedAt') is None and not ch(far)['meta'][l].get('note') for l in ('Pinnacle',)),
+      'api-tennis: a card beyond the collector window is "not checked yet", never "no odds"')
+check(sorted(ch(jm)['meta']) == sorted(['Pinnacle', 'Betano', '1xBet', 'BetVictor', 'Betfair Sportsbook', 'Marathon',
+                                        'bet365 (api-tennis)', 'Sbobet', 'William Hill']),
+      'api-tennis: all 9 configured books carry a verdict on every card')
+check(cnt['lines'] == {'Pinnacle': 2, 'Betfair Sportsbook': 1}, f'api-tennis log counts {cnt}')
+# a re-read that now shows a gap: gaps REPLACE, points merge
+payload['rows'] += AT_ROWS('12165868', 'Pncl', [R('05:00:00', 'Home', None, 'removed')])
+bcb.apply_apitennis(at_cards, payload, S + '09:50:00.000Z', {})
+check(ch(jm)['meta']['Pinnacle'].get('gaps') == [[S + '05:00:00.000Z', None]], 'api-tennis: a new gap lands on re-read')
+payload['rows'] += AT_ROWS('12165868', 'Pncl', [R('05:30:00', 'Home', '2.5', 'first_seen')])
+bcb.apply_apitennis(at_cards, payload, S + '09:55:00.000Z', {})
+check(ch(jm)['meta']['Pinnacle'].get('gaps') == [[S + '05:00:00.000Z', S + '05:30:00.000Z']]
+      and cs.chart_series(jm, 'Pinnacle')['p1'][-1] == [S + '05:30:00.000Z', 2.5],
+      f'api-tennis: the gap closes on re-read (replaced, not appended) {ch(jm)["meta"]["Pinnacle"].get("gaps")}')
+
+vc = [card(id='upcoming-900', p1='G. One', p2='H. Two', date='2026-09-26', time='20:00')]
+bcb.apply_apitennis(vc, {'rows': AT_ROWS('900', 'Victor Chandler', [R('04:00:00', 'Home', '2.0', 'first_seen'), R('04:00:00', 'Away', '1.8', 'first_seen')]),
+                         'last_ok_poll_at': S + '09:40:00Z', 'down': []}, S + '09:45:00.000Z', {})
+check(cs.chart_series(vc[0], 'BetVictor')['p1'] == [[S + '04:00:00.000Z', 2.0]], 'api-tennis: "Victor Chandler" is BetVictor (odds.md Book names)')
+at_sql = open(os.path.join(HERE, 'chart-apitennis-rpc.sql')).read()
+check('security definer' in at_sql
+      and 'grant execute on function public.chart_apitennis_series(text[], timestamptz) to service_role' in at_sql
+      and 'from public, anon, authenticated' in at_sql and 'to anon' not in at_sql,
+      'api-tennis RPC: security definer, service_role only')
+check("c.market = 'Home/Away'" in at_sql and 'c.match_key = any(p_keys)' in at_sql and 'c.observed_at >= p_since' in at_sql,
+      'api-tennis RPC: match winner only, by event key, since the recording start')
+check('ten216_test_polls enable row level security' in at_sql and "interval '15 minutes'" in at_sql,
+      'api-tennis RPC: heartbeat table RLS-on; >15 min between OK polls = collector down')
+coll = open(os.path.join(HERE, 'tools/ten216-supabase-collector.mjs')).read()
+ins = coll.index('const written = await insertRows(rows);')
+check(coll.index('await writePoll({ poll_id: pollId, observed_at: observedAt.toISOString(), ok: true', ins) > ins
+      and 'ok: false' in coll[coll.index("success!=1"):coll.index("success!=1") + 300],
+      'collector: an OK heartbeat only after every change row landed; a failed poll says ok:false')
+wp = coll[coll.index('async function writePoll'):coll.index('async function rowCount')]
+check('process.exit' not in wp and 'throw' not in wp, 'collector: a failed heartbeat never stops the measurement')
+check(bcb.APITENNIS_SINCE == '2026-09-26T03:55:00.000Z', 'api-tennis: nothing before our 26 Sep 03:55Z restart')
 
 print(f'\n{len(FAILS)} assertion(s) failed.')
 sys.exit(1 if FAILS else 0)

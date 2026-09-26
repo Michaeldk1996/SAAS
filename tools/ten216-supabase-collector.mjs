@@ -8,8 +8,9 @@
  *     Change-rows every poll throughout.
  *   - polling: 5-minute.
  *
- * ISOLATION. This writes to exactly two objects, both test-prefixed:
+ * ISOLATION. This writes to exactly three objects, all test-prefixed:
  *   table  public.ten216_test_odds_changes   (RLS on, zero policies -> anon cannot read)
+ *   table  public.ten216_test_polls          (one heartbeat row per poll; TEN-295 Wave 2)
  *   bucket ten216-test-raw                   (private)
  * It reads api-tennis and writes Supabase. It touches no repo file, no matches.json,
  * no model-output.json, no existing table, bucket, policy or pg_cron job.
@@ -25,6 +26,7 @@ const API_KEY = must('API_TENNIS_KEY');
 const SB_URL  = must('SUPABASE_URL').replace(/\/+$/, '');
 const SB_KEY  = must('SUPABASE_SECRET_KEY');
 const TABLE   = 'ten216_test_odds_changes';
+const POLLS   = 'ten216_test_polls';
 const BUCKET  = 'ten216-test-raw';
 
 const INTERVAL_MIN = Number(process.env.INTERVAL_MIN || 5);
@@ -141,6 +143,29 @@ async function insertRows(rows) {
   return written;
 }
 
+/** TEN-295 Wave 2 — one heartbeat row per poll. The change log only records MOVES, and
+ *  api-tennis re-prices about every 30 min, so ~5 of every 6 polls leave no row there
+ *  (measured 26 Sep 03:55-09:13Z: 64 polls, 13 with change rows). The chart's "last
+ *  checked" and its collector-down gaps are read from here. BEST-EFFORT: a failed heartbeat
+ *  is logged and never stops the measurement (before chart-apitennis-rpc.sql is installed
+ *  the table does not exist — one warning, then silence). */
+let pollsWarned = false;
+async function writePoll(row) {
+  try {
+    const res = await sbFetch(`/rest/v1/${POLLS}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+      body: JSON.stringify(row),
+    });
+    if (!res.ok && res.status !== 409 && !pollsWarned) {
+      pollsWarned = true;
+      console.log(`  heartbeat not written (HTTP ${res.status}; non-fatal, warned once)`);
+    }
+  } catch (e) {
+    if (!pollsWarned) { pollsWarned = true; console.log(`  heartbeat not written (${e.message}; non-fatal, warned once)`); }
+  }
+}
+
 async function rowCount() {
   const res = await sbFetch(`/rest/v1/${TABLE}?select=id`, {
     headers: { Prefer: 'count=exact', Range: '0-0' },
@@ -217,7 +242,11 @@ async function tick(state, startedAt) {
   const { start, stop } = windowDates();
 
   const { text: rawText, json } = await apiTennis('get_odds', { date_start: start, date_stop: stop });
-  if (json?.success !== 1) { console.log(`  ${iso(observedAt)} get_odds success!=1 — skipping tick`); return; }
+  if (json?.success !== 1) {
+    console.log(`  ${iso(observedAt)} get_odds success!=1 — skipping tick`);
+    await writePoll({ poll_id: pollId, observed_at: observedAt.toISOString(), ok: false });
+    return;
+  }
 
   // event_live / event_status drive the Closing definition (last price before live).
   const live = new Map();
@@ -274,6 +303,11 @@ async function tick(state, startedAt) {
   }
 
   const written = await insertRows(rows);
+  // Only after every change row landed: an ok heartbeat asserts the table holds this poll's
+  // full state (a quote with no row at this poll was still quoted, unchanged).
+  await writePoll({ poll_id: pollId, observed_at: observedAt.toISOString(), ok: true,
+                    matches: Object.keys(json.result || {}).length, quotes: now.size,
+                    rows_written: written });
 
   // Raw fidelity: every poll for the first 24h, then hourly.
   const ageH = (observedAt - startedAt) / 3600000;
