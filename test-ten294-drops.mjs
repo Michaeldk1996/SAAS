@@ -276,17 +276,15 @@ test('snapshot SQL is cheap at 2 reads/min: no bot loader calls (they full-scan)
   assert.match(sql, /when ten280_bot\.skey\(fx\.player1_name\) = ten280_bot\.skey\(fx\.player2_name\) then null/, 'same surname -> never guess');
   assert.match(sql, /p\.fixture_id = a\.fixture_id and p\.feed_source_id = 171/, 'stream latest is Bet105 only');
   assert.match(sql, /coalesce\(k\.event_status, ev\.status\) = 'pending'/);
-  // "started" = live evidence only, and the Kibl scan runs only near the scheduled time
-  assert.match(sql, /'started', case when fx\.scheduled_start is null then null\s+when fx\.scheduled_start > v_now \+ interval '3 hours' then false\s+else exists \(select 1 from public\.kibl_line_observations o\s+where o\.fixture_id = a\.fixture_id and o\.is_live is true\) end/);
-  assert.match(sql, /'started', coalesce\(ev\.status in \('live', 'settled', 'finished', 'ended'\), false\)/);
-  assert.doesNotMatch(sql, /status <> 'pending'/, 'cancelled / postponed are not "started"');
+  // no vendor "started" flag and no per-fixture is_live scan: status is api-tennis's (card 518c56f0)
+  assert.doesNotMatch(sql, /'started'|'pastScheduledStart'|o\.is_live is true/);
   // the poller watermark moves on every sweep (last_seen_at), not only on a new price (observed_at); `is not null`
   // + plain desc so the ascending index serves it backwards (a `nulls last` sort is a full sort). The PLAN is
   // checked in the database by tools/ten294-steps-install.json (plan_* steps) — a regex cannot see a plan.
   assert.match(sql, /select o\.last_seen_at from public\.kibl_line_observations o\s+where o\.feed_source_id = 171 and o\.last_seen_at is not null\s+order by o\.last_seen_at desc limit 1/);
   assert.doesNotMatch(sql, /nulls last/);
   const steps = JSON.parse(read('tools/ten294-steps-install.json')).map((x) => x.name);
-  for (const n of ['plan_poller_watermark', 'plan_poller_latest', 'plan_started', 'plan_superbet_latest']) assert.ok(steps.includes(n), n);
+  for (const n of ['plan_poller_watermark', 'plan_poller_latest', 'plan_superbet_latest']) assert.ok(steps.includes(n), n);
 });
 
 test('watchdog SQL: safe JSON cast, anti-flap recovery, send back-off, own vault names, not scheduled by the install', () => {
@@ -1051,15 +1049,24 @@ test('status: no live sighting — not started before the start; after it, api-t
   const up = { ...damm, scheduledStart: '2026-09-26T12:00:00Z' };
   const none = { flips: [], board: new Map(), byKey: new Map(), fixtures: null, now: NOW_S };
   assert.equal(STATUS.resolveMatch(up, none).status, 'not_started');
-  assert.equal(STATUS.apiNeeds([up], none, { keys: new Map() }).dates, null, 'no call before the start');
+  assert.deepEqual(STATUS.apiNeeds([up], none, { keys: new Map() }).days, [], 'no call before the start');
   const passed = { ...damm };                                     // 06:55Z, 4 h ago, no sighting
-  assert.equal(STATUS.resolveMatch(passed, none).status, 'unknown', 'api-tennis not read: unknown, never a guess');
-  assert.deepEqual(STATUS.apiNeeds([passed], none, { keys: new Map() }).dates, ['2026-09-25', '2026-09-27']);
-  const fx = [{ event_key: 12165854, event_status: 'Finished', event_live: '0', event_date: '2026-09-26', event_time: '08:55', event_first_player: 'M. Damm', event_second_player: 'H. Hurkacz' }];
+  const u = STATUS.resolveMatch(passed, none);
+  assert.equal(u.status, 'unknown', 'api-tennis not read: unknown, never a guess');
+  assert.equal(u.cutAt, Z('2026-09-26T06:55:00Z'), 'and CUT at the passed scheduled start: an unknown row never shows in-play prices');
+  assert.deepEqual(STATUS.apiNeeds([passed], none, { keys: new Map() }).days, ['2026-09-25', '2026-09-26'], 'one day per call: the start\'s day and the day before');
+  const fx = [{ event_key: 12165854, event_status: 'Finished', event_live: '0', event_date: '2026-09-26', event_time: '06:55', utc: true, event_first_player: 'M. Damm', event_second_player: 'H. Hurkacz' }];
   const m = STATUS.resolveMatch(passed, { ...none, fixtures: fx });
   assert.equal(m.status, 'finished');
   assert.equal(m.cutKind, 'scheduled', 'the live moment is unknown: cut at the earlier scheduled start');
-  assert.equal(m.cutAt, Z('2026-09-26T06:55:00Z'), 'min(vendor 06:55Z, api-tennis 08:55+02:00 = 06:55Z)');
+  assert.equal(m.cutAt, Z('2026-09-26T06:55:00Z'), 'api-tennis\'s start, asked in UTC');
+  // the vendor start 1 h EARLIER than api-tennis's: the earlier (conservative) one
+  assert.equal(STATUS.resolveMatch({ ...passed, scheduledStart: '2026-09-26T05:55:00Z' }, { ...none, fixtures: fx }).cutAt, Z('2026-09-26T05:55:00Z'));
+  // the vendor start 20 h early (a wrong start): api-tennis's, never 20 h of real pre-match prices thrown away
+  assert.equal(STATUS.resolveMatch({ ...passed, scheduledStart: '2026-09-25T10:55:00Z' }, { ...none, fixtures: fx }).cutAt, Z('2026-09-26T06:55:00Z'));
+  // Cancelled / Postponed: unknown, cut at the passed start
+  const cx = STATUS.resolveMatch(passed, { ...none, fixtures: [{ ...fx[0], event_status: 'Cancelled' }] });
+  assert.equal(cx.status, 'unknown'); assert.ok(cx.cutAt);
   // two fixtures on the same pair within 24 h: ambiguous, never guessed
   assert.equal(STATUS.resolveMatch(passed, { ...none, fixtures: [...fx, { ...fx[0], event_key: 1 }] }).status, 'unknown');
   // doubles never join
@@ -1075,7 +1082,13 @@ test('status: the live-sighting join needs both surnames, a start within 24 h an
   assert.equal(STATUS.matchFlip({ playerA: 'Hugo Gaston', playerB: 'Andrey Rublev', scheduledStart: '2026-09-27T22:00:00Z' },
     [{ eventKey: '12166049', liveAt: 'x', date: '2026-09-27', time: '04:00', p1: 'H. Gaston', p2: 'A. Rublev' }]).eventKey, '12166049');
   // compound surname: last token of the surname part on both sides
-  assert.equal(STATUS.pairKey('Inaki Montes-De La Torre', 'Michael Agwi'), STATUS.pairKey('I. Montes-De La Torre', 'M. Agwi'));
+  assert.ok(STATUS.samePair('Inaki Montes-De La Torre', 'Michael Agwi', 'I. Montes-De La Torre', 'M. Agwi'));
+  // first initials must agree when both carry one: another Wang v Zheng is not this one
+  assert.ok(!STATUS.samePair('Jiri Wang', 'Wei Zheng', 'J. Zheng', 'W. Wang'));
+  assert.ok(STATUS.samePair('Jiri Wang', 'Wei Zheng', 'W. Zheng', 'J. Wang'));
+  // a same-surname pair is told apart by initials (F. v J. Cerundolo), never dropped as "no key"
+  const cer = { playerA: 'Francisco Cerundolo', playerB: 'Juan Manuel Cerundolo', scheduledStart: '2026-09-26T10:00:00Z' };
+  assert.equal(STATUS.matchFlip(cer, [{ eventKey: '7', liveAt: 'x', date: '2026-09-26', time: '12:00', p1: 'J. Cerundolo', p2: 'F. Cerundolo' }]).eventKey, '7');
 });
 
 test('status: api-tennis vocabulary — terminal words, live flags, bare numbers', () => {
@@ -1156,4 +1169,76 @@ test('page: a cut row reads "last pre-match", its chart ends there, and the boar
   const mb = PAGE.modalBooks(r, { rows: [r], chart: SHARD_CHART, cardSide: 'p1', now: PT0, cutAt: cut });
   mb.books.forEach((b) => b.series.forEach((p) => assert.ok(p.t < Date.parse(cut), b.book + ' has no point at or after the cut')));
   assert.equal(mb.books.find((b) => b.book === 'Superbet').now.v, 2.85, 'Superbet\'s 1 h-old price was in play; its last pre-match was 2.85');
+});
+
+test('status review (ba48b81d): exact boundaries, the pre-match fallback, one match = one status', () => {
+  const live = '2026-09-26T07:08:16Z';
+  const ctx = { flips, board: new Map(), byKey: new Map([['12165991', { event_status: 'Finished' }]]), fixtures: null, now: NOW_S };
+  // a price recorded AT the live sighting is in play
+  const atCut = { ...singh, latest: { at: live, price: '1.9' } };
+  const lineAt = { ...singhLine, books: { Superbet: { ...singhLine.books.Superbet, side: [['2026-09-25T10:00:00Z', 3.55], [live, 1.9]] } } };
+  const r1 = STATUS.withStatus([atCut], [lineAt], ctx);
+  assert.equal(r1.rows[0].latest.price, '3.55', 'the tick at exactly the live time is not pre-match');
+  assert.deepEqual(r1.lines[0].books.Superbet.side.map((p) => p[1]), [3.55]);
+  // no own series in lines: the latest recorded price before the cut among the alert's prices, never the open by default
+  const noLine = { ...singh, droppedTo: { at: '2026-09-26T06:50:00Z', price: '2.85' }, preDrop: { at: '2026-09-26T06:40:00Z', price: '3.1' } };
+  const r2 = STATUS.withStatus([noLine], [], ctx).rows[0];
+  assert.equal(r2.latest.price, '2.85', 'the alert price at 06:50 was pre-match: the row keeps it');
+  // one match, two vendors, starts 20 h apart, only one row joins the sighting: both rows share the status
+  const kibl = { ...damm, id: 'bet105-x', scheduledStart: '2026-09-27T02:55:00Z' };   // Kibl's start 20 h late
+  const sb = { ...damm, id: 'superbet-x', book: 'Superbet', scheduledStart: '2026-09-26T06:55:00Z' };
+  const onlyOne = [{ ...flips[0], date: '2026-09-26', time: '08:55' }];
+  const both = STATUS.withStatus([kibl, sb], [], { flips: onlyOne, board: new Map(), byKey: new Map([['12165854', { event_status: 'Finished' }]]), fixtures: null, now: NOW_S }).rows;
+  assert.deepEqual(both.map((r) => r.match.status), ['finished', 'finished'], 'never Upcoming and Completed at once');
+  assert.ok(both.every((r) => r.match.cutAt === flips[0].liveAt));
+  // the reviewer's case: NO live sighting; one vendor's start is right (passed -> api-tennis says Finished), the
+  // other's is 20 h late (in the future -> alone it would read "not started"): the match is Completed for both
+  const fxs = [{ event_key: 12165854, event_status: 'Finished', event_live: '0', event_date: '2026-09-26', event_time: '06:55', utc: true, event_first_player: 'M. Damm', event_second_player: 'H. Hurkacz' }];
+  const late = { ...damm, id: 'bet105-late', scheduledStart: '2026-09-27T02:55:00Z' };
+  assert.equal(STATUS.resolveMatch(late, { flips: [], board: new Map(), fixtures: fxs, now: NOW_S }).status, 'not_started', 'alone, the late row reads not started');
+  const pair = STATUS.withStatus([late, sb], [], { flips: [], board: new Map(), byKey: new Map(), fixtures: fxs, now: NOW_S }).rows;
+  assert.deepEqual(pair.map((r) => r.match.status), ['finished', 'finished'], 'one match, one view');
+  // the board never overrides an api-tennis Finished
+  const stale = { ...ctx, byKey: new Map([['12165854', { event_status: 'Finished' }]]), board: new Map([['12165854', { status: 'Set 3', live: '1' }]]) };
+  assert.equal(STATUS.resolveMatch(damm, stale).status, 'finished');
+});
+
+test('status review: api-tennis load is bounded — 20 keys a read, empty answers cached, days in the background, failures cached', async () => {
+  let clock = NOW_S; const calls = [];
+  const fetchImpl = async (u) => { calls.push(u); return { json: async () => ({ success: 1, result: [] }) }; };
+  const api = STATUS.createApiTennis({ key: 'k', fetchImpl, now: () => clock });
+  const manyFlips = Array.from({ length: 30 }, (_, i) => ({ eventKey: String(100 + i), liveAt: '2026-09-26T08:00:00Z', date: '2026-09-26', time: '10:00', p1: 'A. P' + String.fromCharCode(97 + i), p2: 'B. Q' + String.fromCharCode(97 + i) }));
+  const rows = manyFlips.map((f, i) => ({ ...damm, id: 'r' + i, playerA: 'Al P' + String.fromCharCode(97 + i), playerB: 'Bo Q' + String.fromCharCode(97 + i), side: 'Al P' + String.fromCharCode(97 + i), scheduledStart: '2026-09-26T08:00:00Z' }));
+  const ctx = { flips: manyFlips, board: new Map(), now: clock };
+  const needs = STATUS.apiNeeds(rows, ctx, api.cache);
+  assert.equal(needs.keys.length, 20, 'at most 20 event keys a read');
+  await api.fill(needs);
+  assert.equal(calls.length, 20);
+  assert.equal(STATUS.apiNeeds(rows.slice(0, 20), ctx, api.cache).keys.length, 0, 'an empty answer is not asked again at once');
+  clock += 11 * 60e3;
+  assert.equal(STATUS.apiNeeds(rows.slice(0, 20), { ...ctx, now: clock }, api.cache).keys.length, 20, 'retried after 10 min');
+  // days: the read never waits for a day (a day can take 45 s); a failed day is not retried for 10 min
+  let release; const slow = new Promise((r) => { release = r; }); const dayCalls = [];
+  const api2 = STATUS.createApiTennis({ key: 'k', now: () => clock, fetchImpl: async (u) => { dayCalls.push(u); await slow; throw new Error('x'); } });
+  const t0 = Date.now(); await api2.fill({ keys: [], days: ['2026-09-26'] });
+  assert.ok(Date.now() - t0 < 200, 'fill returned without waiting for the day');
+  assert.ok(/date_start=2026-09-26&date_stop=2026-09-26/.test(dayCalls[0]) && /timezone=UTC/.test(dayCalls[0]), 'one day per call, asked in UTC');
+  await api2.fill({ keys: [], days: ['2026-09-26'] });
+  assert.equal(dayCalls.length, 1, 'a day in flight is not asked twice');
+  release(); await new Promise((r) => setTimeout(r, 10));
+  await api2.fill({ keys: [], days: ['2026-09-26'] });
+  assert.equal(dayCalls.length, 1, 'a failed day is cached (not re-asked every 30 s)');
+  assert.equal(api2.fixtures(), null, 'and gives no fixtures');
+});
+
+test('page review: the cut applies to the other side and to other flagged rows too', () => {
+  const cut = at(2 * HR);
+  const M = { status: 'finished', apiStatus: 'Finished', liveAt: cut, cutAt: cut, cutKind: 'live' };
+  const [r] = PAGE.buildRows([frow({ id: 'c1', open: 3.3, now: 3.05, latestAgo: 2.5 * HR, match: M })]);
+  const mb = PAGE.modalBooks(r, { rows: [r], chart: SHARD_CHART, cardSide: 'p1', now: PT0, cutAt: cut });
+  mb.books.forEach((b) => (b.other || []).forEach((p) => assert.ok(p.t < Date.parse(cut), b.book + ' other side cut')));
+  const rows = PAGE.buildRows([frow({ id: 'o1', open: 2, now: 1.8, latestAgo: 2.5 * HR, match: M }),
+    frow({ id: 'o2', book: 'Superbet', open: 2, now: 1.7, latestAgo: 1 * HR, dropAgo: 1.5 * HR, preAgo: 1.6 * HR, match: M })]);
+  const fb = PAGE.modalBooks(rows[0], { rows, now: PT0, cutAt: cut }).books.find((b) => b.book === 'Superbet');
+  fb.series.forEach((p) => assert.ok(p.t < Date.parse(cut), 'a flagged row\'s in-play points are not plotted'));
 });

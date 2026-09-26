@@ -19,12 +19,14 @@ answers on card 37612d3d (TEN-294 doc `design`). Suite: `test-ten294-drops.mjs`.
 
 - **Match status is api-tennis's, never a vendor's `pending`** (founder comment bef04c62 + card 518c56f0, 2026-09-26; supersedes the "Started" badge). Evidence: TEN-297 doc `status-feasibility` (Superbet: 21 of 27 alerts with a live time fired after the match went live).
   **Test:** every row carries `status` ∈ `not_started | in_play | finished | unknown`, from:
-  - **`liveAt`** = our 10-second live poller's first live sighting (`live_flip_log`), joined on both surname keys, a start within 24 h, and exactly one candidate;
+  - **`liveAt`** = our 10-second live poller's first live sighting (`live_flip_log`), joined on both players (surname key, plus the first initial when both names carry one), a start within 24 h, and exactly one candidate;
   - **in play** = on the current live board (`live_snapshot`), or went live and api-tennis `get_fixtures` by `event_key` is not terminal;
   - **finished** = api-tennis `event_status` is `Finished`, `Retired` or `Walk Over` (the status word wins over `event_live`);
-  - **not started** = no live sighting and api-tennis does not show it started; **unknown** = no single api-tennis fixture (labelled, never passed off as a status).
+  - **not started** = no live sighting and the start has not passed, or api-tennis shows it not started; **unknown** = no single api-tennis fixture, or Cancelled/Postponed (labelled, never passed off as a status).
+  - **One match, one status:** rows of the same two players with starts within 24 h share the best-evidenced status (a live sighting beats a schedule), so one match is never in two views.
+  - api-tennis is asked in UTC (`timezone=UTC`; its default zone moves with daylight saving); by-day lists are fetched one day per call in the background, and empty or failed answers are cached 10 min.
 - **Three views: Upcoming · In play · Completed** (card 518c56f0 Q1 = b). **Test:** a row is in exactly one view: Upcoming = `not_started` or `unknown` (badged "Status unknown"), In play = `in_play`, Completed = `finished`. A match leaves Upcoming the moment it goes live.
-- **A row's prices stop at the live start** (Q2 = a). **Test:** "now" on an In-play or Completed row, every chart and every strip cell use only prices recorded before `liveAt`; "now" is labelled **"Last pre-match"**. With no `liveAt` (a live sighting we missed), the cut is the earlier of the vendor's and api-tennis's scheduled start, and the label says "cut at scheduled start". No in-play price is ever a pre-match figure; nothing is invented after the cut.
+- **A row's prices stop at the live start** (Q2 = a). **Test:** "now" on an In-play or Completed row, every chart and every strip cell use only prices recorded before `liveAt`; "now" is labelled **"Last pre-match"**. With no `liveAt`, the cut is the scheduled start once it has passed: api-tennis's when a fixture is joined (the vendor's only when earlier by ≤ 3 h), else the vendor's; this includes **unknown** rows. The label says "cut at scheduled start". A row with no recorded price before the cut is not served. No in-play price is ever a pre-match figure; nothing is invented after the cut.
 - **The endpoint holds 72 h** (Q4 = b): alerts and their lines from the last 72 h.
 - **TEN-299 split** (Q3 = a): this page and endpoint apply the live cut; the Telegram drop bots' own in-play filter stays with TEN-299, on the same `liveAt` signal.
 

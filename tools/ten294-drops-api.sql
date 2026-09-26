@@ -87,16 +87,8 @@ begin
                                       when p.side_key = ten280_bot.skey(fx.player1_name) then 2
                                       when p.side_key = ten280_bot.skey(fx.player2_name) then 3 end) = a.side_id
                          order by p.kibl_inserted_on desc limit 1)
-                     ) t order by t.at desc limit 1),
-        -- live evidence only; a passed scheduled time is reported separately, never as "started".
-        -- Checked only from 3 h before the scheduled time (Kibl's earliest measured early start: 860 min is the
-        -- one outlier, p95 -4.1 min): a not-yet-started fixture would otherwise scan all its rows every 30 s.
-        -- Unknown schedule -> null (not known), never a confident false.
-        'started', case when fx.scheduled_start is null then null
-                        when fx.scheduled_start > v_now + interval '3 hours' then false
-                        else exists (select 1 from public.kibl_line_observations o
-                                      where o.fixture_id = a.fixture_id and o.is_live is true) end,
-        'pastScheduledStart', fx.scheduled_start is not null and fx.scheduled_start <= v_now
+                     ) t order by t.at desc limit 1)
+        -- no vendor "started" flag: match status is api-tennis's, joined by the Fly app (drops.md, card 518c56f0)
       ) as j
     from ten280_bot.alerts a
     left join public.kibl_fixtures fx on fx.fixture_id = a.fixture_id
@@ -129,10 +121,8 @@ begin
                             where k.event_id = a.event_id and k.book = a.book and k.book_updated_at is not null
                               and coalesce(k.event_status, ev.status) = 'pending') t
                     where t.price >= 1.01
-                    order by t.book_updated_at desc, t.seen_at desc limit 1),
-        -- live evidence only: cancelled / postponed are NOT "started"
-        'started', coalesce(ev.status in ('live', 'settled', 'finished', 'ended'), false),
-        'pastScheduledStart', ev.start_at is not null and ev.start_at <= v_now
+                    order by t.book_updated_at desc, t.seen_at desc limit 1)
+        -- no vendor "started" flag: Superbet's status says pending in play (TEN-299); api-tennis decides
       ) as j
     from ten287_bot.alerts a
     left join ten287_rec.events ev on ev.event_id = a.event_id
