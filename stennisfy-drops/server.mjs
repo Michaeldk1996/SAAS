@@ -107,7 +107,8 @@ export function createDropsService({ readSnapshot, now = () => Date.now(), origi
     try {
       const snap = await readSnapshot();
       if (!snap || !Array.isArray(snap.rows) || !Array.isArray(snap.sources)) throw new Error('snapshot shape');
-      const body = Buffer.from(JSON.stringify({ schema: 1, windowHours: snap.windowHours ?? null, rows: snap.rows }));
+      // lines: every recorded book quoting each flagged line (the pop-up); an older snapshot without it -> []
+      const body = Buffer.from(JSON.stringify({ schema: 1, windowHours: snap.windowHours ?? null, rows: snap.rows, lines: Array.isArray(snap.lines) ? snap.lines : [] }));
       const etag = '"' + crypto.createHash('sha1').update(body).digest('base64url') + '"';
       if (etag !== state.rowsEtag) {
         state.rowsBody = body;

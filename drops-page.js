@@ -9,7 +9,8 @@
  *   Q1  a row is one selection × bookmaker; drop = (open − now) / open, shortened rows only
  *   Q2  WINDOW "Since open" is the default and means everything the feed holds (24h); 48h disabled
  *   Q3  past 5 min, or with the endpoint unreachable, the export's FEED DISCONNECTED banner as drawn
- *   Q4  the modal plots only recorded prices; missing fields "—"; strip = books with a row
+ *   Q4  the pop-up plots only recorded prices; missing fields "—"
+ *   777a3192 (pop-up rebuild): every recorded book quoting the selection; board-matched rows get metadata + link
  *   Q5  Alerts shown disabled, "Coming soon"
  * Mapping measured in TEN-297 doc `feed-mapping`.
  *
@@ -211,6 +212,96 @@
     return '<svg viewBox="0 0 ' + W + ' ' + HH + '" width="100%">' + k.join('') + '</svg>';
   }
 
+  // ─── the price-move pop-up's books (founder comment 777a3192, decisions 1–4, 7) ───────────────
+  // Every book we record a pre-match price for, on this selection. Sources, in order:
+  //   'board'    a board-matched card's TEN-295 chart shard: Pinnacle +30s, Bet105, Superbet, Betfair Exchange;
+  //   'endpoint' the drops endpoint's `lines` (tools/ten294-drops-lines.sql): Bet105, Superbet, Betfair Exchange;
+  //   'flagged'  neither available: only the books with a flagged move (drop rows) — the summary says so.
+  // Sharp/Soft is odds.md's table (the page filter's own source), never the data's.
+  var STRIP_CLASS = { 'Pinnacle +30s': 'sharp', Bet105: 'sharp', Superbet: 'soft', 'Betfair Exchange': 'soft' };
+  var EXCHANGES = { 'Betfair Exchange': true };      // no margin on an exchange (decision 4)
+  function stripName(n) { return String(n || '').replace(/\s*\(recorded by us\)\s*$/i, ''); }
+  // the SQL's drops_api.nk(): surname part of "Last, First", its last token, lower-case, a–z only
+  function nk(n) {
+    var s = String(n == null ? '' : n);
+    if (s.indexOf(',') >= 0) s = s.split(',')[0];
+    s = s.replace(/^.*\s/, '').toLowerCase();
+    return s.replace(/[^a-z]/g, '');
+  }
+  function lineKey(r) { var a = nk(r.playerA), b = nk(r.playerB); return (a < b ? a + '|' + b : b + '|' + a) + '|' + nk(r.side); }
+  function tsPoints(list) {   // [[at, price], …] -> [{t, v}] sorted, real prices only
+    return (list || []).map(function (p) { return { t: Date.parse(p[0]), v: num(p[1]) }; })
+      .filter(function (p) { return isFinite(p.t) && p.v != null; }).sort(function (a, b) { return a.t - b.t; });
+  }
+  function rowPoints(r) {
+    return [[r.openAt, r.open], [r.preDrop && r.preDrop.at, r.preDrop && r.preDrop.price],
+      [r.droppedTo && r.droppedTo.at, r.droppedTo && r.droppedTo.price], [r.latest && r.latest.at, r.now]];
+  }
+  function marginOf(book, side, other) {
+    if (EXCHANGES[book] || !side.length || !other.length) return null;
+    var a = side[side.length - 1].v, b = other[other.length - 1].v;
+    return a > 0 && b > 0 ? (1 / a + 1 / b - 1) * 100 : null;
+  }
+  // ctx: { rows, line (endpoint), chart (shard chart), cardSide ('p1'|'p2'|null) }
+  function modalBooks(r, ctx) {
+    ctx = ctx || {};
+    var raw = {}, source = 'flagged';
+    if (ctx.chart && ctx.chart.books && ctx.cardSide) {
+      Object.keys(ctx.chart.books).forEach(function (n) {
+        var b = ctx.chart.books[n] || {}, os = ctx.cardSide === 'p1' ? 'p2' : 'p1';
+        var side = tsPoints(b[ctx.cardSide]);
+        if (side.length) raw[stripName(n)] = { side: side, other: tsPoints(b[os]), first: side[0] };
+      });
+      if (Object.keys(raw).length) source = 'board';
+    }
+    if (source === 'flagged' && ctx.line && ctx.line.books) {
+      Object.keys(ctx.line.books).forEach(function (n) {
+        var b = ctx.line.books[n] || {}, side = tsPoints(b.side), f = b.first ? tsPoints([b.first])[0] : null;
+        if (side.length) raw[stripName(n)] = { side: side, other: tsPoints(b.other), first: f || side[0] };
+      });
+      if (Object.keys(raw).length) source = 'endpoint';
+    }
+    if (source === 'flagged') {
+      (ctx.rows || []).forEach(function (x) {
+        if (x.playerA === r.playerA && x.playerB === r.playerB && x.side === r.side && x.mk === r.mk && x !== r) {
+          raw[x.book] = { side: tsPoints(rowPoints(x)), other: [], first: { t: Date.parse(x.openAt), v: x.open }, row: x };
+        }
+      });
+    }
+    // the row's own book is always present and always reads exactly as its list row (Q1)
+    var own = raw[r.book] || { other: [] };
+    var seen = {};
+    own.side = (own.side || []).concat(tsPoints(rowPoints(r))).filter(function (p) {
+      var k = p.t + '|' + p.v; if (seen[k]) return false; seen[k] = 1; return true;
+    }).sort(function (a, b) { return a.t - b.t; });
+    own.first = { t: Date.parse(r.openAt), v: r.open };
+    own.nowOverride = { t: Date.parse(r.latest && r.latest.at), v: r.now };
+    raw[r.book] = own;
+    var out = Object.keys(raw).map(function (n) {
+      var b = raw[n], isOwn = n === r.book;
+      var now = isOwn ? b.nowOverride : b.side[b.side.length - 1];
+      var first = b.first;
+      var drop = first && first.v && now && now.v ? (first.v - now.v) / first.v * 100 : null;
+      return { book: n, cls: STRIP_CLASS[n] || BOOK_CLASS[n] || null, own: isOwn, first: first, now: now,
+        drop: isOwn ? r.drop : drop, series: b.side, other: b.other, margin: marginOf(n, b.side, b.other) };
+    });
+    var rank = function (b) { return b.cls === 'sharp' ? 0 : b.cls === 'soft' ? 1 : 2; };
+    var order = ['Pinnacle +30s', 'Bet105', 'Superbet', 'Betfair Exchange'];
+    out.sort(function (a, b) { return rank(a) - rank(b) || ((order.indexOf(a.book) + 99) % 99) - ((order.indexOf(b.book) + 99) % 99) || a.book.localeCompare(b.book); });
+    var big = out.filter(function (b) { return b.drop != null && b.drop >= 10; });
+    var sharp = out.filter(function (b) { return b.cls === 'sharp'; });
+    return { source: source, books: out, n: big.length, m: out.length,
+      p: big.filter(function (b) { return b.cls === 'sharp'; }).length, q: sharp.length };
+  }
+  function summaryText(mb) {
+    var what = mb.source === 'flagged' ? 'books with a flagged move on this line' : 'books we record quoting this line';
+    return 'Down 10% or more at ' + mb.n + ' of ' + mb.m + ' ' + what + ' (' + mb.p + ' of ' + mb.q + ' sharp).';
+  }
+  function seriesPoints(series, dataNow) {
+    return (series || []).map(function (p) { return { t: p.t, fr: 1 - (dataNow - p.t) / (24 * H), v: p.v }; })
+      .filter(function (p) { return p.fr >= 0 && p.fr <= 1.0001; }).map(function (p) { p.fr = Math.min(1, p.fr); return p; });
+  }
+
   // Avatar key: an exact, unordered two-player match against today's board (matches.json names
   // are "D. Medvedev"). Both players must match one board card, and only one card may match,
   // or the row keeps the export's #1B2A55 fallback — never a guessed face.
@@ -228,13 +319,15 @@
     if (hits.length !== 1) return null;
     var m = hits[0];
     var key = nameSig(m.p1) === s ? m.p1Key : nameSig(m.p2) === s ? m.p2Key : null;
-    return key == null ? null : { key: String(key), photoName: nameSig(m.p1) === s ? m.p1 : m.p2 };
+    return key == null ? null : { key: String(key), photoName: nameSig(m.p1) === s ? m.p1 : m.p2, card: m,
+      cardSide: nameSig(m.p1) === s ? 'p1' : 'p2' };
   }
 
   var PURE = { BOOK_CLASS: BOOK_CLASS, MARKETS: MARKETS, TRACKED: TRACKED, WINDOWS: WINDOWS, buildRows: buildRows, defaults: defaults,
     passes: passes, sortRows: sortRows, view: view, ago: ago, hhmmUTC: hhmmUTC, feedState: feedState, chartPoints: chartPoints,
     chartSvg: chartSvg, boardKeyFor: boardKeyFor, tierOf: tierOf, AMBER_AFTER_S: AMBER_AFTER_S, DISCONNECTED_AFTER_S: DISCONNECTED_AFTER_S,
-    ENDPOINT: ENDPOINT };
+    ENDPOINT: ENDPOINT, STRIP_CLASS: STRIP_CLASS, modalBooks: modalBooks, summaryText: summaryText, lineKey: lineKey, nk: nk,
+    seriesPoints: seriesPoints, marginOf: marginOf };
   if (typeof module === 'object' && module.exports) module.exports = PURE;
   if (typeof document === 'undefined') return;
 
@@ -286,7 +379,11 @@
   function load() {
     return Promise.all([fetchJson('/status.json'), fetchJson('/drops.json', st.etag)]).then(function (x) {
       st.status = x[0].json; st.statusAt = Date.now(); st.reachable = true;
-      if (!x[1].notModified) { st.feedRows = x[1].json.rows || []; st.etag = x[1].etag; st.windowH = x[1].json.windowHours || null; st.rows = buildRows(st.feedRows); }
+      if (!x[1].notModified) {
+        st.feedRows = x[1].json.rows || []; st.etag = x[1].etag; st.windowH = x[1].json.windowHours || null; st.rows = buildRows(st.feedRows);
+        st.lines = {};
+        (Array.isArray(x[1].json.lines) ? x[1].json.lines : []).forEach(function (l) { if (l && l.key) st.lines[l.key] = l; });
+      }
       var before = st.knownBooks || [];
       var allSel = !st.everLoaded || before.every(function (b) { return st.S.books.indexOf(b) >= 0; });
       st.knownBooks = books();
@@ -506,24 +603,58 @@
     var ov = document.getElementById('doOverlay');
     var r = st.drawer && st.rows.filter(function (x) { return x.id === st.drawer; })[0];
     if (!r) { if (ov) ov.remove(); st.modalKey = null; return; }
-    var key = [st.drawer, st.drBook, st.tip, st.etag].join('|');
+    // decision 5: metadata + the analysis link only for a row matched to exactly one board card
+    var hit = null;
+    try { hit = boardKeyFor(r, typeof matches !== 'undefined' ? matches : []); } catch (e) { hit = null; }   // eslint-disable-line no-undef
+    var card = hit && hit.card;
+    if (card && !card._oddsLoaded && typeof ensureOddsMovement === 'function' && !card._doShardAsked) {   // eslint-disable-line no-undef
+      card._doShardAsked = true;
+      ensureOddsMovement(card).then(function () { st.modalKey = null; renderModal(); }).catch(function () {});   // eslint-disable-line no-undef
+    }
+    var chart = card && card._oddsLoaded && card.oddsMovement ? card.oddsMovement.chart : null;
+    var key = [st.drawer, st.drBook, st.tip, st.etag, chart ? 'b' : '-'].join('|');
+    var now = dataNow();
     if (ov && st.modalKey === key) {
       var dl = ov.querySelector('.do-ov-drop');
-      if (dl) dl.textContent = '▼ ' + r.drop.toFixed(1) + '% · moved ' + ago(dataNow() - Date.parse(r.movedAt));
+      if (dl) dl.textContent = '▼ ' + r.drop.toFixed(1) + '% · moved ' + ago(now - Date.parse(r.movedAt));
       return;
     }
     st.modalKey = key;
     var keepScroll = ov && ov.querySelector('.do-ov-scroll') ? ov.querySelector('.do-ov-scroll').scrollTop : 0;
     if (!ov) { ov = document.createElement('div'); ov.id = 'doOverlay'; ov.className = 'do-ov'; document.body.appendChild(ov); }
-    var side = document.querySelector('.sf-sidebar');
-    ov.style.setProperty('--do-shell-left', side ? side.getBoundingClientRect().width + 'px' : '0px');
-    var now = dataNow();
-    // Q4: the strip holds only books that have a row for this same selection
-    var same = st.rows.filter(function (x) { return x.playerA === r.playerA && x.playerB === r.playerB && x.side === r.side && x.mk === r.mk; });
-    same.sort(function (a, b) { return (a.cls === 'sharp' ? 0 : 1) - (b.cls === 'sharp' ? 0 : 1); });
-    var sel = (st.drBook && same.filter(function (x) { return x.book === st.drBook; })[0]) || r;
-    var pts = chartPoints(sel, now);
+    var shell = document.querySelector('.sf-sidebar');
+    ov.style.setProperty('--do-shell-left', shell ? shell.getBoundingClientRect().width + 'px' : '0px');
+
+    var mb = modalBooks(r, { rows: st.rows, line: (st.lines || {})[lineKey(r)], chart: chart, cardSide: hit && hit.cardSide });
+    var ownB = mb.books.filter(function (b) { return b.own; })[0];
+    var sel = (st.drBook && mb.books.filter(function (b) { return b.book === st.drBook; })[0]) || ownB;
     var cls = r.cls || 'soft';
+    var pct = function (b) {
+      if (b.drop == null) return '<span class="d none">—</span>';
+      return b.drop > 0 ? '<span class="d">▼ ' + b.drop.toFixed(1) + '%</span>' : '<span class="d up">▲ ' + Math.abs(b.drop).toFixed(1) + '%</span>';
+    };
+    // players line: rank + Elo only for a matched card (never the export's placeholder values)
+    var rankOf = function (name) {
+      if (!card) return null;
+      var sg = nameSig(name), rk = nameSig(card.p1) === sg ? card.p1Rank : nameSig(card.p2) === sg ? card.p2Rank : null;
+      return rk != null && rk !== '' ? '#' + rk : null;
+    };
+    var eloOf = function (name) {
+      if (!card || typeof psEloFor !== 'function' || typeof eloRatings === 'undefined') return null;   // eslint-disable-line no-undef
+      var e = psEloFor(eloRatings, name);   // eslint-disable-line no-undef
+      var v = e && typeof e === 'object' ? (e.rating != null ? e.rating : e.elo) : e;
+      return v != null && isFinite(+v) ? String(Math.round(+v)) : null;
+    };
+    var nm = function (n) {
+      return '<span class="nm' + (n === r.side ? ' backed' : '') + '">' + esc(n) + '</span><span class="rk">' + esc(rankOf(n) || '—') + ' · Elo ' + esc(eloOf(n) || '—') + '</span>';
+    };
+    var ev = '—', surf = '—', rd = '—';
+    if (card) {
+      ev = card.tour || '—';
+      surf = card.surface ? String(card.surface).charAt(0).toUpperCase() + String(card.surface).slice(1) : '—';
+      var rb = typeof roundBadgeText === 'function' ? roundBadgeText(card.tournamentRound) : null;   // eslint-disable-line no-undef
+      rd = rb || '—';
+    }
     var startTxt = '—', cd = '—';
     if (r.start && isFinite(Date.parse(r.start))) {
       var d = new Date(r.start);
@@ -531,36 +662,38 @@
       var mins = Math.round((Date.parse(r.start) - now) / 60000);
       cd = r.started ? 'started' : mins >= 0 ? 'in ' + Math.floor(mins / 60) + 'h ' + (mins % 60) + 'm' : 'past start';
     }
-    var nm = function (n) { return '<span class="nm' + (n === r.side ? ' backed' : '') + '">' + esc(n) + '</span><span class="rk">— · Elo —</span>'; };
-    var big = same.filter(function (x) { return x.drop >= 10; });
-    var sharpN = same.filter(function (x) { return x.cls === 'sharp'; }).length, bigSharp = big.filter(function (x) { return x.cls === 'sharp'; }).length;
+    var margin = ownB && ownB.margin != null ? ownB.margin.toFixed(1) + '%' : (EXCHANGES[r.book] ? '—' : null);
+    var pts = seriesPoints(sel.series, now);
+    var capP = sel.first && sel.now ? price2(sel.first.v) + ' → ' + price2(sel.now.v) + (sel.drop != null ? ' · ' + (sel.drop > 0 ? '▼ ' : '▲ ') + Math.abs(sel.drop).toFixed(1) + '%' : '') : price2(sel.now && sel.now.v);
     var html = '<div class="do-ov-scrim" data-act="close"></div><div class="do-ov-box" role="dialog" aria-modal="true" aria-label="Price move"><div class="do-ov-scroll">' +
       '<div class="do-ov-head"><div class="do-ov-hl">' +
-      '<span class="do-ov-eye">Price move · Match winner · ' + esc(r.book) + (r.cls ? '<span class="do-ov-btag ' + cls + '">' + cls.toUpperCase() + '</span>' : '') + '</span>' +
+      '<span class="do-ov-eye">Price move · Match winner · ' + esc(r.book) + (r.cls ? '<span class="do-ov-btag ' + cls + '">' + cls.toUpperCase() + '</span>' : '') +
+        (margin ? '<span class="do-ov-mg">Margin ' + esc(margin) + '</span>' : '') + '</span>' +
       '<span class="do-ov-sel">' + esc(r.side) + ' to win</span>' +
       '<span class="do-ov-pl">' + nm(r.playerA) + '<span>v</span>' + nm(r.playerB) + '</span>' +
-      '<span class="do-ov-meta">— · — · — · <span class="st">' + esc(startTxt) + '</span> <span class="do-mono">(' + esc(cd) + ')</span></span></div>' +
+      '<span class="do-ov-meta">' + esc(ev) + ' · ' + esc(surf) + ' · ' + esc(rd) + ' · <span class="st">' + esc(startTxt) + '</span> <span class="do-mono">(' + esc(cd) + ')</span></span></div>' +
       '<div class="do-ov-hr"><div class="do-ov-px"><span class="do-ov-pxl">' +
       '<span class="do-ov-open' + (st.tip ? ' tip' : '') + '" data-act="tip">' + price2(r.open) + '<span class="do-ov-tip">Open is the first price Stennisfy recorded, not necessarily the bookmaker\'s opening line.</span></span>' +
       '<span class="do-ov-arrow">→</span><span class="do-ov-now">' + price2(r.now) + '</span></span>' +
       '<span class="do-ov-drop">▼ ' + r.drop.toFixed(1) + '% · moved ' + esc(ago(now - Date.parse(r.movedAt))) + '</span></div>' +
       '<button class="do-ov-x" data-act="close" aria-label="Close">✕</button></div></div>' +
       '<div class="do-ov-chart"><span class="do-ov-cap"><span class="do-ov-cap-k">PRICE HISTORY · <b>' + esc(sel.book.toUpperCase()) + '</b> · LAST 24H</span>' +
-      '<span class="do-ov-cap-p">' + price2(sel.open) + ' → ' + price2(sel.now) + ' · ▼ ' + sel.drop.toFixed(1) + '%</span>' +
-      (sel !== r ? '<button class="do-ov-back" data-act="back">Back to ' + esc(r.book) + '</button>' :
-        same.length > 1 ? '<span class="do-ov-cap-r">Click a book below to see its chart</span>' : '') + '</span>' +
-      chartSvg(pts, sel.open) +
+      '<span class="do-ov-cap-p' + (sel.drop != null && sel.drop <= 0 ? ' up' : '') + '">' + esc(capP) + '</span>' +
+      (!sel.own ? '<button class="do-ov-back" data-act="back">Back to ' + esc(r.book) + '</button>' :
+        mb.books.length > 1 ? '<span class="do-ov-cap-r">Click a book below to see its chart</span>' : '') + '</span>' +
+      chartSvg(pts, sel.first && sel.first.v) +
       '<span class="do-ov-note">Each dot is a recorded snapshot. Dashed stretches had no snapshots; nothing is interpolated.</span></div>' +
-      '<div class="do-ov-strip" style="grid-template-columns:repeat(' + same.length + ', minmax(0,1fr))">' + same.map(function (b) {
-        var isSel = b === sel, own = b === r, c = b.cls || 'soft';
+      '<div class="do-ov-strip" style="grid-template-columns:repeat(' + mb.books.length + ', minmax(0,1fr))">' + mb.books.map(function (b) {
+        var isSel = b === sel, c = b.cls || 'soft';
         return '<div class="do-ov-cell' + (isSel ? ' sel' : ' pick') + '" data-act="book" data-v="' + esc(b.book) + '"><span class="bar"></span>' +
           '<span class="do-ov-c1">' + esc(b.book) + (b.cls ? '<span class="t ' + c + '">' + c.toUpperCase() + '</span>' : '') + '</span>' +
-          '<span class="do-ov-c2"><span class="n">' + price2(b.now) + '</span><span class="o">from ' + price2(b.open) + '</span></span>' +
-          '<span class="do-ov-c3"><span class="d">▼ ' + b.drop.toFixed(1) + '%</span><span class="r">' + (own ? 'this row' : '') + '</span></span></div>';
+          '<span class="do-ov-c2"><span class="n">' + price2(b.now && b.now.v) + '</span><span class="o">from ' + price2(b.first && b.first.v) + '</span></span>' +
+          '<span class="do-ov-c3">' + pct(b) + '<span class="r">' + (b.own ? 'this row' : '') + '</span></span></div>';
       }).join('') + '</div>' +
-      '<div class="do-ov-foot"><span class="do-ov-foot-l"><span class="do-ov-sum">Down 10% or more at ' + big.length + ' of ' + same.length + ' books with a flagged move on this line (' + bigSharp + ' of ' + sharpN + ' sharp).</span>' +
-      '<span class="do-ov-fn">Each drop compares a book\'s own first recorded price with its own current price.</span></span></div>' +
-      '</div></div>';
+      '<div class="do-ov-foot"><span class="do-ov-foot-l"><span class="do-ov-sum">' + esc(summaryText(mb)) + '</span>' +
+      '<span class="do-ov-fn">Each drop compares a book\'s own first recorded price with its own current price.</span></span>' +
+      (card && typeof openAnalysisModal === 'function' ? '<a class="do-ov-link" href="#" data-act="analysis" data-v="' + esc(card.id) + '">Open match analysis →</a>' : '') +   // eslint-disable-line no-undef
+      '</div></div></div>';
     ov.innerHTML = html;
     var sc = ov.querySelector('.do-ov-scroll');
     if (sc && keepScroll) sc.scrollTop = keepScroll;
@@ -601,6 +734,10 @@
       case 'close': closeModal(); return;
       case 'back': st.drBook = null; renderModal(); return;
       case 'tip': st.tip = !st.tip; renderModal(); return;
+      case 'analysis':
+        e.preventDefault(); closeModal();
+        if (typeof openAnalysisModal === 'function') openAnalysisModal(v);   // eslint-disable-line no-undef
+        return;
       default: return;
     }
     render();

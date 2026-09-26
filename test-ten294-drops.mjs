@@ -431,7 +431,9 @@ test('page Q4 chart: recorded prices only, last 24h, dashed across gaps, nothing
 test('page avatars: a board key only on an exact, unique two-player match', () => {
   const r = { playerA: 'Daniil Medvedev', playerB: 'Valentin Royer', side: 'Daniil Medvedev' };
   const card = { p1: 'D. Medvedev', p2: 'V. Royer', p1Key: 1093, p2Key: 954 };
-  assert.deepEqual(PAGE.boardKeyFor(r, [card]), { key: '1093', photoName: 'D. Medvedev' });
+  const hit = PAGE.boardKeyFor(r, [card]);
+  assert.equal(hit.key, '1093'); assert.equal(hit.photoName, 'D. Medvedev');
+  assert.equal(hit.card, card, 'the matched card itself (the pop-up reads its metadata)'); assert.equal(hit.cardSide, 'p1');
   assert.equal(PAGE.boardKeyFor({ ...r, side: 'Valentin Royer' }, [card]).key, '954');
   assert.equal(PAGE.boardKeyFor(r, [card, { ...card }]), null, 'two matching cards: no guess');
   assert.equal(PAGE.boardKeyFor(r, [{ ...card, p2: 'X. Other' }]), null, 'one player matching is not a match');
@@ -663,4 +665,142 @@ test('page review 2: "Starting soonest" is stable for unknown starts and orders 
   assert.equal(ids[0], 'up');
   assert.deepEqual(ids.slice(1, 3), ['p1', 'p15'], 'passed starts after upcoming, most recent first');
   assert.deepEqual(ids.slice(3).sort(), ['u1', 'u2'], 'unknown starts last');
+});
+
+// ════ Price-move pop-up rebuild (founder comment 777a3192: decisions 1–7) ════
+const SHARD_CHART = { books: {
+  'Pinnacle +30s': { p1: [[at(20 * HR), 3.32], [at(2 * HR), 3.06]], p2: [[at(20 * HR), 1.35], [at(2 * HR), 1.42]] },
+  // the shard's first Bet105 price (3.40) differs from the alert's open (3.30): the own book must read as its list row
+  Bet105: { p1: [[at(20 * HR), 3.40], [at(3 * HR), 3.05]], p2: [[at(20 * HR), 1.36], [at(3 * HR), 1.43]] },
+  Superbet: { p1: [[at(10 * HR), 2.85], [at(1 * HR), 2.82]], p2: [[at(10 * HR), 1.40], [at(1 * HR), 1.42]] },
+  'Betfair Exchange (recorded by us)': { p1: [[at(9 * HR), 3.00], [at(1 * HR), 3.15]], p2: [[at(9 * HR), 1.49], [at(1 * HR), 1.46]] },
+}, meta: {} };
+const MROW = frow({ id: 'bet105-9', a: 'Adrian Mannarino', b: 'Denis Shapovalov', side: 'Adrian Mannarino', open: 3.3, now: 3.05, latestAgo: 3 * HR });
+
+test('pop-up decision 1: a board-matched row shows every book in its chart shard, both sides, own book = its list row', () => {
+  const [r] = PAGE.buildRows([MROW]);
+  const mb = PAGE.modalBooks(r, { rows: [r], chart: SHARD_CHART, cardSide: 'p1' });
+  assert.equal(mb.source, 'board');
+  assert.deepEqual(mb.books.map((b) => b.book), ['Pinnacle +30s', 'Bet105', 'Superbet', 'Betfair Exchange'], 'Sharp first, then Soft; "(recorded by us)" dropped from the label');
+  const own = mb.books.find((b) => b.own);
+  assert.equal(own.book, 'Bet105'); assert.equal(own.first.v, 3.3); assert.equal(own.now.v, 3.05); assert.equal(own.drop, r.drop);
+  const bfe = mb.books.find((b) => b.book === 'Betfair Exchange');
+  assert.ok(bfe.drop < 0, 'a lengthened book is kept and shown as lengthened, never dropped');
+  assert.equal(bfe.margin, null, 'decision 4: no margin on an exchange');
+  const sb = mb.books.find((b) => b.book === 'Superbet');
+  assert.equal(sb.margin.toFixed(2), ((1 / 2.82 + 1 / 1.42 - 1) * 100).toFixed(2), 'margin from the two sides\' latest recorded prices');
+  assert.equal(PAGE.summaryText(mb), 'Down 10% or more at 0 of 4 books we record quoting this line (0 of 2 sharp).');
+});
+
+test('pop-up decision 1: an unmatched row uses the endpoint lines; without them only flagged books, and the summary says so', () => {
+  const r0 = frow({ id: 'superbet-16', book: 'Superbet', tier: 'Challenger', a: 'Nishesh Basavareddy', b: 'Dylan Dietrich', side: 'Nishesh Basavareddy', open: 1.68, now: 1.44 });
+  const [r] = PAGE.buildRows([r0]);
+  const line = { key: PAGE.lineKey(r), books: {
+    Superbet: { first: [at(8 * HR), 1.68], side: [[at(8 * HR), 1.68], [at(2 * HR), 1.44]], other: [[at(8 * HR), 2.1], [at(2 * HR), 2.6]] },
+    'Betfair Exchange': { first: [at(8 * HR), 1.32], side: [[at(8 * HR), 1.32], [at(1 * HR), 1.54]], other: [] } } };
+  const mb = PAGE.modalBooks(r, { rows: [r], line });
+  assert.equal(mb.source, 'endpoint');
+  assert.deepEqual(mb.books.map((b) => b.book), ['Superbet', 'Betfair Exchange']);
+  assert.equal(PAGE.summaryText(mb), 'Down 10% or more at 1 of 2 books we record quoting this line (0 of 0 sharp).');
+  const flagged = PAGE.modalBooks(r, { rows: [r] });
+  assert.equal(flagged.source, 'flagged');
+  assert.equal(flagged.m, 1, 'never padded');
+  assert.match(PAGE.summaryText(flagged), /1 of 1 books with a flagged move on this line/);
+});
+
+test('pop-up: the strip\'s Sharp/Soft is odds.md\'s table, and the JS line key is the SQL surname key', () => {
+  const odds = read('.claude/rules/odds.md');
+  for (const [book, cls] of Object.entries(PAGE.STRIP_CLASS)) {
+    const label = book === 'Betfair Exchange' ? 'Betfair Exchange \\(recorded by us\\)' : book.replace('+', '\\+');
+    const m = odds.match(new RegExp('\\|\\s*' + label + '\\s*\\|\\s*(Sharp|Soft)\\s*\\|'));
+    assert.ok(m, book); assert.equal(m[1].toLowerCase(), cls, book);
+  }
+  // the SQL's drops_api.nk(): "Last, First" and "First Last" both key to the last surname token, a–z only
+  for (const [n, k] of [['Davidovich Fokina, Alejandro', 'fokina'], ['Alejandro Davidovich Fokina', 'fokina'], ['Cerundolo, Juan Manuel', 'cerundolo'], ['Díaz', 'daz']]) {
+    assert.equal(PAGE.nk(n), k, n);
+  }
+  const sql = read('tools/ten294-drops-lines.sql');
+  assert.match(sql, /case when p like '%,%' then split_part\(p, ',', 1\) else p end/);
+  assert.match(sql, /'\^\.\*\\s', ''\)\), '\[\^a-z\]', '', 'g'\)/);
+});
+
+test('pop-up SQL: pre-match = pending AND before the first non-pending sighting; ambiguous joins dropped; ids on their indexes', () => {
+  const sql = read('tools/ten294-drops-lines.sql').replace(/--.*$/gm, '');
+  assert.match(sql, /t\.event_status is distinct from 'pending'/);
+  assert.match(sql, /\(lf\.at is null or t\.book_updated_at < lf\.at\)/);
+  assert.match(sql, /o\.is_live is false/);
+  assert.equal((sql.match(/case when count\(\*\) = 1 then min\(/g) || []).length, 2, 'exactly one candidate at each vendor, never a guess');
+  assert.match(sql, /prev is distinct from px/, 'same-price re-stamps collapse');
+  assert.doesNotMatch(sql, /_id::text/, 'a text cast on an id defeats its index');
+  assert.doesNotMatch(sql, /= any \(\(select/, 'the x = any((select arr)) trap');
+  assert.match(read('tools/ten294-drops-api.sql'), /'lines', drops_api\.lines\(p_hours\)/);
+  const steps = JSON.parse(read('tools/ten294-steps-install.json')).map((x) => x.name);
+  assert.ok(steps.indexOf('install_lines') < steps.indexOf('install'), 'lines installed before the snapshot that calls it');
+  for (const n of ['lines_grants', 'lines_plan', 'lines_time']) assert.ok(steps.includes(n), n);
+});
+
+test('pop-up endpoint: /drops.json carries the snapshot\'s lines, and an older snapshot without them serves []', async () => {
+  const lines = [{ key: 'a|b|a', books: { Superbet: { first: [iso(1000), 2], side: [], other: [] } } }];
+  const h = harness({ reader: (clock) => ({ ...snapshot({ dbNow: clock }), lines }) });
+  await h.svc.readOnce();
+  assert.deepEqual(JSON.parse(call(h.svc, '/drops.json').body).lines, lines);
+  const h2 = harness();
+  await h2.svc.readOnce();
+  assert.deepEqual(JSON.parse(call(h2.svc, '/drops.json').body).lines, []);
+});
+
+// executing the real pop-up: matched (shard + board metadata + link) and unmatched (dashes, no link)
+async function openPopup({ rows, board = [], lines = [], chart = null, elo = null }) {
+  const overlay = { writes: 0, _h: '', style: { setProperty() {} }, remove() {}, querySelector: () => null };
+  Object.defineProperty(overlay, 'innerHTML', { get: () => overlay._h, set: (v) => { overlay.writes += 1; overlay._h = v; } });
+  let mounted = false;
+  const root = { innerHTML: '', addEventListener() {}, closest: () => ({ classList: { contains: () => false } }), querySelector: () => null };
+  const status = { schema: 1, generatedAt: new Date(PT0 - 10000).toISOString(), serverNow: new Date(PT0).toISOString(), ageS: 10, freshness: 'ok', sources: [] };
+  const res = (body) => ({ status: 200, ok: true, headers: { get: () => '"e1"' }, json: async () => body });
+  const sandbox = {
+    document: { readyState: 'complete', activeElement: null, querySelector: () => null, addEventListener() {},
+      getElementById: (id) => (id === 'dropsRoot' ? root : id === 'doOverlay' ? (mounted ? overlay : null) : null),
+      body: { appendChild: () => { mounted = true; } }, createElement: () => overlay },
+    location: { search: '' }, localStorage: { getItem: () => null }, URLSearchParams,
+    fetch: async (url) => res(url.endsWith('/status.json') ? status : { schema: 1, windowHours: 24, rows, lines }),
+    setTimeout: () => 0, clearTimeout() {}, setInterval: () => 0, clearInterval() {},
+    Date: class extends Date { constructor(...a) { super(...(a.length ? a : [PT0])); } static now() { return PT0; } },
+    Promise, JSON, Math, String, Number, Object, Array, isFinite, parseFloat, RegExp, Error,
+    matches: board,
+    ensureOddsMovement: async (m) => { m.oddsMovement = chart ? { chart } : null; m._oddsLoaded = true; return m; },
+    eloRatings: elo || { ratings: {} },
+    psEloFor: (e, name) => { const p = String(name).toLowerCase().split(' '); return e.ratings[p[p.length - 1] + '|' + p[0][0]] ?? null; },
+    roundBadgeText: (r) => (/quarter/i.test(r || '') ? 'QF' : null),
+    openAnalysisModal: () => {},
+  };
+  sandbox.window = sandbox;
+  vm.runInNewContext(read('drops-page.js'), sandbox);
+  const P = sandbox.window.DropsPage;
+  P.setActive(true);
+  for (let i = 0; i < 10; i++) await new Promise((r) => setImmediate(r));
+  return { P, overlay, open: async (id) => { P._state.drawer = id; P.setActive(true); for (let i = 0; i < 10; i++) await new Promise((r) => setImmediate(r)); return overlay._h; } };
+}
+
+test('pop-up render: a board-matched row shows the shard\'s books, real rank/Elo/event/round and the analysis link', async () => {
+  const card = { id: 'upcoming-1', p1: 'A. Mannarino', p2: 'D. Shapovalov', p1Key: 1, p2Key: 2, p1Rank: 78, p2Rank: 50, tour: 'ATP Chengdu', surface: 'hard', tournamentRound: 'ATP Chengdu - Quarter-finals' };
+  const x = await openPopup({ rows: [MROW], board: [card], chart: SHARD_CHART, elo: { ratings: { 'mannarino|a': 1663, 'shapovalov|d': 1788 } } });
+  const html = await x.open('bet105-9');
+  assert.equal((html.match(/class="do-ov-cell/g) || []).length, 4);
+  assert.match(html, /Adrian Mannarino<\/span><span class="rk">#78 · Elo 1663<\/span>/);
+  assert.match(html, /Denis Shapovalov<\/span><span class="rk">#50 · Elo 1788<\/span>/);
+  assert.match(html, /ATP Chengdu · Hard · QF · /);
+  assert.match(html, /class="do-ov-link"[^>]*data-v="upcoming-1">Open match analysis →<\/a>/);
+  assert.match(html, /Margin \d+\.\d%/);
+  assert.match(html, /books we record quoting this line/);
+});
+
+test('pop-up render: an unmatched row dashes rank/Elo/event/round, has no link, and never shows the export\'s placeholder values', async () => {
+  const r0 = frow({ id: 'superbet-29', book: 'Superbet', tier: 'ITF Men', a: 'Stepan Baum', b: 'Matyas Cerny', side: 'Stepan Baum', open: 3.35, now: 2.12 });
+  const x = await openPopup({ rows: [r0] });
+  const html = await x.open('superbet-29');
+  assert.match(html, /Stepan Baum<\/span><span class="rk">— · Elo —<\/span>/);
+  assert.match(html, /<span class="do-ov-meta">— · — · — · /);
+  assert.doesNotMatch(html, /do-ov-link/);
+  assert.match(html, /1 of 1 books with a flagged move on this line/);
+  for (const bad of ['1716', '1668', '#132', '#189', 'Monteverde', 'Book A', 'Clay']) assert.ok(!html.includes(bad), bad);
 });

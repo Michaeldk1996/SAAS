@@ -224,6 +224,7 @@
 .do-ov { position: fixed; top: 0; bottom: 0; right: 0; left: var(--do-shell-left, 252px); z-index: 1000; font-family: 'Hanken Grotesk', sans-serif; color: #EBF1F2; font-size: 16px; line-height: normal; }
 .do-ov-scrim { position: absolute; inset: 0; z-index: 40; background: rgba(3,4,7,0.62); }
 .do-ov-box {
+  box-sizing: content-box;   /* the dashboard's global border-box took the 1.25px borders out of the export's 1040px (measured: chart 986 vs 988) */
   position: absolute; z-index: 41; left: 50%; top: 50%; transform: translate(-50%,-50%); width: 1040px; max-width: calc(100% - 48px);
   max-height: calc(100% - 64px); border-radius: 16px; background: #0E1019; border: 1.25px solid rgba(235,241,242,0.066);
   box-shadow: 0 30px 80px rgba(0,0,0,0.55); display: flex; flex-direction: column; overflow: hidden;
@@ -295,4 +296,13 @@
 .do-ov-foot { display: flex; justify-content: space-between; align-items: center; gap: 16px; flex-wrap: wrap; padding: 14px 26px; }
 .do-ov-foot-l { display: flex; flex-direction: column; gap: 3px; }
 .do-ov-sum { font-size: 12.5px; color: #D9DBDF; }
+/* README §10 footer link: 12.5px / 700 #6A9AF8 — only for a board-matched row (decision 5) */
+.do-ov-link { font-size: 12.5px; font-weight: 700; color: #6A9AF8; text-decoration: none; cursor: pointer; }
+.do-ov-link:hover { color: #8FB3FA; }
+/* decision 4: the row's book margin sits in the eyebrow (the export has no margin slot); same mono eyebrow type */
+.do-ov-mg { color: #6E7A93; }
+.do-ov-mg::before { content: '·'; margin-right: 8px; }
+/* a book whose price lengthened since its first record: shown, muted, never red */
+.do-ov-c3 .d.up, .do-ov-c3 .d.none { color: #6E7A93; }
+.do-ov-cap-p.up { color: #6E7A93; }
 .do-ov-fn { font-size: 10.5px; color: #6E7A93; }

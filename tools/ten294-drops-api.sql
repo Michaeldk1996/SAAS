@@ -169,8 +169,9 @@ begin
                   order by d.runid desc limit 1))
   ) into v_src;
 
+  -- TEN-294 pop-up: every recorded book quoting each flagged line (tools/ten294-drops-lines.sql)
   return jsonb_build_object('schema', 1, 'dbNow', v_now, 'windowHours', p_hours,
-                            'rows', v_rows, 'sources', v_src);
+                            'rows', v_rows, 'sources', v_src, 'lines', drops_api.lines(p_hours));
 end $$;
 
 revoke all on function drops_api.snapshot(integer) from public, anon, authenticated;
