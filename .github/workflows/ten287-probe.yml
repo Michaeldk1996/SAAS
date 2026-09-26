@@ -12,19 +12,16 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-      # Run 6: READ-ONLY measurements for the odds-source strategy report (no writes, no install).
-      - name: SQL steps (encrypted output)
+      # Run 7: READ-ONLY odds-api.io historical/closing-lines probe for the odds-source strategy report.
+      - name: odds-api.io historical probe (REST only, read-only, encrypted output)
         env:
-          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
-          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
-          TEN287_STEPS: tools/ten287-steps-strategy.json
-        run: python3 tools/ten287-sql.py
+        run: python3 tools/ten287-histprobe.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: ten287-sql
           path: |
-            out/result.enc
-            out/pass.enc
+            out/hist.enc
+            out/hpass.enc
           retention-days: 1
