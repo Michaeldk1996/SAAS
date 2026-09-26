@@ -14,7 +14,7 @@ ns = {"__name__": "ten287_helpers"}
 exec(compile(src, spec, "exec"), ns)
 get, OUT, KEY = ns["get"], ns["OUT"], ns["KEY"]
 
-BOOKS = "Betfair Exchange,Superbet,Bet365,Sbobet,Pinnacle"
+BOOKS = "Betfair Exchange,Superbet,Bet365,Sbobet"  # Pinnacle: 400 "not a valid bookmaker" (run 36205243367)
 
 # /historical/events requires a league (measured: 400 "Missing league parameter"); one per tier, slugs from probe run 36198963732
 LEAGUES = ["atp-chengdu-china", "challenger-san-diego-2-usa", "tennis-itf-men-pardubice-r16"]
