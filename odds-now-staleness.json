@@ -1,6 +1,6 @@
 {
   "latest": {
-    "maxAgeMin": 613.8,
+    "maxAgeMin": 626.6,
     "measured": 4,
     "stale": [
       "C. Wong v D. Vallejo (ATP Hangzhou, 2026-09-26)",
@@ -11,15 +11,6 @@
   },
   "note": "Age of the published bet365 NOW leg, measured as now - observedAt against the artefact Pages is serving. Capture staleness and publish staleness are both inside this number, which is what the visitor sees. Re-derive the threshold on TEN-187.",
   "samples": [
-    {
-      "at": "2026-09-22T00:48:11Z",
-      "maxAgeMin": 29.9,
-      "measured": 19,
-      "noBet365Line": 14,
-      "noClock": 0,
-      "stale": 0,
-      "thresholdMin": 120.0
-    },
     {
       "at": "2026-09-22T01:03:18Z",
       "maxAgeMin": 33.3,
@@ -3610,9 +3601,18 @@
       "noClock": 0,
       "stale": 4,
       "thresholdMin": 120.0
+    },
+    {
+      "at": "2026-09-26T13:49:48Z",
+      "maxAgeMin": 626.6,
+      "measured": 4,
+      "noBet365Line": 6,
+      "noClock": 0,
+      "stale": 4,
+      "thresholdMin": 120.0
     }
   ],
   "schema": "odds-now-staleness/1",
   "thresholdMin": 120.0,
-  "updatedAt": "2026-09-26T13:36:56Z"
+  "updatedAt": "2026-09-26T13:49:48Z"
 }
