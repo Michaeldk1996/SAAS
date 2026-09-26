@@ -17,9 +17,16 @@ answers on card 37612d3d (TEN-294 doc `design`). Suite: `test-ten294-drops.mjs`.
   "Dropped to" is the alert's price. "Latest" is the side's latest *pre-match* price, read with the bot loader's own filters and side mapping (per alert, on indexes; calling the loader itself full-scans the Kibl tables).
   **Test:** a row's "Latest" is never labelled as, or substituted for, "Dropped to", and a missing value renders "—".
 
-- **The page shows the last 24 h of drops. A match that has started stays on the page, badged "Started" and sorted last.**
-  **Test:** "Started" is shown only on live evidence (a Kibl `is_live` row, or a Superbet status of live/settled/finished/ended; cancelled or postponed is *not* started).
-  A passed scheduled time alone is `pastScheduledStart`, never "Started". Kibl matches start a median 11 min early (n=17).
+- **Match status is api-tennis's, never a vendor's `pending`** (founder comment bef04c62 + card 518c56f0, 2026-09-26; supersedes the "Started" badge). Evidence: TEN-297 doc `status-feasibility` (Superbet: 21 of 27 alerts with a live time fired after the match went live).
+  **Test:** every row carries `status` ∈ `not_started | in_play | finished | unknown`, from:
+  - **`liveAt`** = our 10-second live poller's first live sighting (`live_flip_log`), joined on both surname keys, a start within 24 h, and exactly one candidate;
+  - **in play** = on the current live board (`live_snapshot`), or went live and api-tennis `get_fixtures` by `event_key` is not terminal;
+  - **finished** = api-tennis `event_status` is `Finished`, `Retired` or `Walk Over` (the status word wins over `event_live`);
+  - **not started** = no live sighting and api-tennis does not show it started; **unknown** = no single api-tennis fixture (labelled, never passed off as a status).
+- **Three views: Upcoming · In play · Completed** (card 518c56f0 Q1 = b). **Test:** a row is in exactly one view: Upcoming = `not_started` or `unknown` (badged "Status unknown"), In play = `in_play`, Completed = `finished`. A match leaves Upcoming the moment it goes live.
+- **A row's prices stop at the live start** (Q2 = a). **Test:** "now" on an In-play or Completed row, every chart and every strip cell use only prices recorded before `liveAt`; "now" is labelled **"Last pre-match"**. With no `liveAt` (a live sighting we missed), the cut is the earlier of the vendor's and api-tennis's scheduled start, and the label says "cut at scheduled start". No in-play price is ever a pre-match figure; nothing is invented after the cut.
+- **The endpoint holds 72 h** (Q4 = b): alerts and their lines from the last 72 h.
+- **TEN-299 split** (Q3 = a): this page and endpoint apply the live cut; the Telegram drop bots' own in-play filter stays with TEN-299, on the same `liveAt` signal.
 
 - **One database read per cadence, fanned out from memory.**
   **Test:** any number of requests on any route triggers zero database reads.
@@ -46,9 +53,9 @@ Mapping measured in TEN-297 doc `feed-mapping`. Page files: `drops-page.js`, `dr
 
 - **A row is one selection × bookmaker, and its drop is the export's: `(open − now) / open`.** "Open" is the feed's `open.price`, "now" its `latest.price`. Repeat alerts on the same selection at the same book collapse to one row (the newest alert). Only rows whose price has **shortened** since open are listed; a row with no `open` or no `latest` is not listed.
   **Test:** for every rendered row, the drop figure equals `(open − latest) / open × 100` to one decimal, and is > 0. The bot's `dropPct` is never the drop figure.
-  The subtitle says the list is lines **flagged in the last 24h**, because only bot-alerted selections reach the feed.
-- **WINDOW: "Since open" is the default and means everything the feed holds — 24h of flagged moves.** 12h and 24h filter on the alert's `detectedAt`. 48h is not backed (the feed holds 24h) and is shown disabled.
-  **Test:** "Since open" and "24h" return the same rows while the feed's `windowHours` is 24; 48h cannot be selected.
+  The subtitle says the list is lines **flagged in the last N h** (N = the feed's `windowHours`), because only bot-alerted selections reach the feed.
+- **WINDOW: "Since open" is the default and means everything the feed holds** (`windowHours`, 72 h since card 518c56f0 Q4). 12h / 24h / 48h filter on the alert's `detectedAt`; a window longer than the feed holds is shown disabled.
+  **Test:** "Since open" returns every row the feed holds; a window > `windowHours` cannot be selected.
 - **BOOKS Sharp/Soft comes from `odds.md`'s ruled table** (Bet105 Sharp, Superbet Soft), never guessed. A book absent from that table is listed under neither group and only under "All".
 - **Markets: only Match winner is tracked.** The other four tabs show "No drops on this market" and their count is "—", never 0.
 - **Missing is a dash, never a zero or a "no moves" claim.** Before the first good read the header and tab counts show "—" and the count line says "Loading moves…" while the request is in flight; with the endpoint unreachable and nothing read, the banner shows and the list is absent (never "No moves above your threshold"). On an untracked market the header and count line show "—".
