@@ -12,7 +12,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-      # Run 15: READ-ONLY — TEN-295 Damm v Hurkacz per-book trace (recorder events/ticks/RPC). Writes nothing.
+      # Run 16: READ-ONLY — TEN-295 card-state Bet105 rows per board card (selected or not). Writes nothing.
       - name: SQL steps (encrypted output)
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
