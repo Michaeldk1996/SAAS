@@ -16,10 +16,15 @@ get, OUT, KEY = ns["get"], ns["OUT"], ns["KEY"]
 
 BOOKS = "Betfair Exchange,Superbet,Bet365,Sbobet,Pinnacle"
 
-s, h, ev = get("/historical/events", sport="tennis", **{"from": "2026-09-23T00:00:00Z", "to": "2026-09-25T23:59:59Z"})
-OUT["phases"]["hist_events"] = {"status": s, "n": len(ev) if isinstance(ev, list) else None,
-                                "sample": ev[:3] if isinstance(ev, list) else ev}
-print("historical/events", s, len(ev) if isinstance(ev, list) else ev)
+# /historical/events requires a league (measured: 400 "Missing league parameter"); one per tier, slugs from probe run 36198963732
+LEAGUES = ["atp-chengdu-china", "challenger-san-diego-2-usa", "tennis-itf-men-pardubice-r16"]
+ev, OUT["phases"]["hist_events"] = [], {}
+for lg in LEAGUES:
+    s, h, b = get("/historical/events", sport="tennis", league=lg, **{"from": "2026-09-20T00:00:00Z", "to": "2026-09-26T00:00:00Z"})
+    OUT["phases"]["hist_events"][lg] = {"status": s, "n": len(b) if isinstance(b, list) else None,
+                                        "sample": b[:2] if isinstance(b, list) else b}
+    if isinstance(b, list): ev += b
+    print("historical/events", lg, s, len(b) if isinstance(b, list) else b)
 
 
 def tier(e):
@@ -46,7 +51,7 @@ for t, v in picks.items():
 OUT["phases"]["historical_odds"] = ho
 print("historical/odds", [(x["tier"], x["status"]) for x in ho])
 
-sl = ",".join(x for x in leagues.values() if x)
+sl = ",".join(LEAGUES)
 s, h, b = get("/historical/closing-lines", sport="tennis", leagues=sl, markets="ML", bookmakers=BOOKS,
               limit=100, **{"from": "2026-09-23T00:00:00Z", "to": "2026-09-25T23:59:59Z"})
 OUT["phases"]["closing_lines"] = {"status": s, "leagues": sl, "hdr": {k: v for k, v in h.items() if k.startswith("x-")},
