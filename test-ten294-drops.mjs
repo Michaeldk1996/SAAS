@@ -324,6 +324,8 @@ test('watchdog arming: own vault names from the drop-alert chat, scheduled once,
   const at = (n) => steps.findIndex((x) => x.name === n);
   assert.ok(at('selftest_send') < iSleep && iSleep < at('settle') && at('settle') < at('selftest_delivered'));
   const wf = read('.github/workflows/ten294-drops.yml');
+  // flyctl resolves --config against a positional dir -> deploy from the app dir, no positional (run 36220018511)
+  assert.match(wf, /working-directory: stennisfy-drops\n\s+run: flyctl deploy --remote-only --config fly\.toml --ha=false --yes\n/);
   assert.match(wf, /watchdog:\n\s+needs: deploy/);
   assert.match(wf, /TELEGRAM_CHAT_ID: \$\{\{ secrets\.TELEGRAM_CHAT_ID \}\}/);
   assert.match(wf, /watchdog NOT installed/, 'never armed against an endpoint that is not up');

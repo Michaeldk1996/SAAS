@@ -128,7 +128,10 @@ jobs:
           PY
       - name: Deploy
         if: steps.gate.outputs.go == '1'
-        run: flyctl deploy --remote-only --config stennisfy-drops/fly.toml --ha=false --yes stennisfy-drops
+        # run FROM the app dir: with a positional dir flyctl resolves --config relative to it
+        # (run 36220018511: 'stennisfy-drops/fly.toml/fly.toml' not found). Build context = this dir.
+        working-directory: stennisfy-drops
+        run: flyctl deploy --remote-only --config fly.toml --ha=false --yes
       - name: Read back
         if: steps.gate.outputs.go == '1'
         run: |
