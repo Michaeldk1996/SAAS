@@ -196,7 +196,7 @@ export function createApiTennis({ key, fetchImpl = fetch, now = () => Date.now()
   }
   async function fill(needs) {
     if (!key) return cache;
-    const ks = needs.keys.slice(0, 8);                     // bounded per read; the rest next cycle
+    const ks = needs.keys.slice(0, 20);                    // bounded per read (a restart resolves in one); the rest next cycle
     await Promise.all(ks.map(async (ek) => {
       const res = await get('&event_key=' + encodeURIComponent(ek));
       const f = res && res.find((x) => String(x.event_key) === String(ek));
