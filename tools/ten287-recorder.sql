@@ -40,6 +40,21 @@ create table if not exists ten287_rec.requests (
     note          text                        -- error text, key-scrubbed
 );
 create index if not exists requests_open_idx on ten287_rec.requests (processed_at) where processed_at is null;
+alter table ten287_rec.requests add column if not exists event_id bigint;   -- movements requests only
+
+-- TEN-287 Superbet drops path (founder 2026-09-26, comment 3840b895): the alert's Opening is odds-api.io's
+-- /odds/movements `opening` — the VENDOR'S FIRST RECORD, never the book's post time. One row per event x book;
+-- status 404 / other = no opening from the vendor (the alert then falls back to our first sighting, labelled so).
+create table if not exists ten287_rec.openings (
+    event_id    bigint not null,
+    book        text   not null,
+    open_home   numeric,
+    open_away   numeric,
+    open_at     timestamptz,          -- the vendor's opening.timestamp (ms)
+    status_code integer,
+    fetched_at  timestamptz not null default now(),
+    primary key (event_id, book)
+);
 
 create table if not exists ten287_rec.events (
     event_id      bigint primary key,
@@ -152,7 +167,7 @@ declare
   r record; body jsonb; ev jsonb; n int := 0; items int; bad int;
 begin
   for r in
-    select q.id, q.kind, q.fired_at, x.status_code, x.content, x.error_msg, x.timed_out, x.created,
+    select q.id, q.kind, q.book, q.event_id, q.fired_at, x.status_code, x.content, x.error_msg, x.timed_out, x.created,
            (select ten287_rec.num(h.value)::int from jsonb_each_text(coalesce(x.headers, '{}'::jsonb)) h
              where lower(h.key) = 'x-ratelimit-remaining' limit 1) as rl
     from ten287_rec.requests q
@@ -172,7 +187,16 @@ begin
       exception when others then
         body := null;
       end;
-      if jsonb_typeof(body) = 'array' then
+      if r.kind = 'movements' then
+        items := case when jsonb_typeof(body -> 'movements') = 'array' then jsonb_array_length(body -> 'movements') end;
+        insert into ten287_rec.openings as o (event_id, book, open_home, open_away, open_at, status_code, fetched_at)
+        values (r.event_id, r.book, ten287_rec.num(body #>> '{opening,home}'), ten287_rec.num(body #>> '{opening,away}'),
+                case when ten287_rec.num(body #>> '{opening,timestamp}') is not null
+                     then to_timestamp(ten287_rec.num(body #>> '{opening,timestamp}') / 1000.0) end,
+                200, now())
+        on conflict (event_id, book) do update set open_home = excluded.open_home, open_away = excluded.open_away,
+               open_at = excluded.open_at, status_code = 200, fetched_at = now();
+      elsif jsonb_typeof(body) = 'array' then
         items := jsonb_array_length(body);
         for ev in select * from jsonb_array_elements(body) loop
           begin
@@ -182,6 +206,12 @@ begin
           end;
         end loop;
       end if;
+    end if;
+    if r.kind = 'movements' and r.status_code is distinct from 200 then
+      insert into ten287_rec.openings as o (event_id, book, status_code, fetched_at)
+      values (r.event_id, r.book, r.status_code, now())
+      on conflict (event_id, book) do update set status_code = excluded.status_code, fetched_at = now()
+        where o.status_code is distinct from 200;          -- a stored opening is never overwritten by a later failure
     end if;
     update ten287_rec.requests set processed_at = now(), status_code = r.status_code, n_items = items,
            ratelimit_remaining = r.rl,
@@ -223,7 +253,7 @@ end $$;
 -- every 10 min
 create or replace function ten287_rec.sweep() returns integer
 language plpgsql security definer set search_path = pg_catalog, ten287_rec as $$
-declare key text := ten287_rec.api_key(); ids text; rid bigint; batches int := 0;
+declare key text := ten287_rec.api_key(); ids text; rid bigint; batches int := 0; eid bigint;
 begin
   if key is null or not ten287_rec.budget_ok() then return 0; end if;
   select net.http_get(url := 'https://api.odds-api.io/v3/events',
@@ -246,6 +276,23 @@ begin
              timeout_milliseconds := 30000) into rid;
     insert into ten287_rec.requests (id, kind) values (rid, 'multi');
     batches := batches + 1;
+  end loop;
+  -- Superbet openings (vendor first record) for men's-singles events we price and have no opening for.
+  -- At most 30 per sweep; a failed fetch is retried after 1 h; a stored opening is never re-fetched.
+  for eid in
+    select e.event_id from ten287_rec.events e
+    where e.tier is not null and e.status = 'pending'
+      and exists (select 1 from ten287_rec.ticks t where t.event_id = e.event_id and t.book = 'Superbet')
+      and not exists (select 1 from ten287_rec.openings o where o.event_id = e.event_id and o.book = 'Superbet'
+                      and (o.status_code = 200 or o.fetched_at > now() - interval '1 hour'))
+      and not exists (select 1 from ten287_rec.requests q where q.kind = 'movements' and q.event_id = e.event_id
+                      and q.processed_at is null)
+    order by e.start_at nulls last limit 30
+  loop
+    select net.http_get(url := 'https://api.odds-api.io/v3/odds/movements',
+             params := jsonb_build_object('apiKey', key, 'eventId', eid::text, 'bookmaker', 'Superbet', 'market', 'ML'),
+             timeout_milliseconds := 20000) into rid;
+    insert into ten287_rec.requests (id, kind, book, event_id) values (rid, 'movements', 'Superbet', eid);
   end loop;
   return batches;
 end $$;

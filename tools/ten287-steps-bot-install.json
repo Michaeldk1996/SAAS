@@ -1,0 +1,71 @@
+[
+ {
+  "name": "vault_tg_token",
+  "vault_from_env": "TELEGRAM_BOT_TOKEN",
+  "vault_name": "ten287_telegram_bot_token",
+  "required": true,
+  "stop_on_error": true
+ },
+ {
+  "name": "vault_tg_chat",
+  "vault_from_env": "TELEGRAM_CHAT_ID",
+  "vault_name": "ten287_telegram_chat_id",
+  "required": true,
+  "stop_on_error": true
+ },
+ {
+  "name": "install_recorder_and_bot_selftests",
+  "sql_files": [
+   "tools/ten287-recorder.sql",
+   "tools/ten287-recorder-selftest.sql",
+   "tools/ten287-drop-bot.sql",
+   "tools/ten287-drop-selftest.sql"
+  ],
+  "transaction": true,
+  "required": true,
+  "stop_on_error": true
+ },
+ {
+  "name": "cron_before",
+  "sql": "select jobname, schedule, active from cron.job where jobname like 'ten28%' order by jobname"
+ },
+ {
+  "name": "fetch_openings",
+  "sql": "select ten287_rec.sweep() as sweep_batches"
+ },
+ {
+  "sleep": 45
+ },
+ {
+  "name": "ingest_openings",
+  "sql": "select ten287_rec.ingest() as ingested"
+ },
+ {
+  "name": "openings",
+  "sql": "select status_code, count(*) n, count(*) filter (where open_home is not null) with_price from ten287_rec.openings group by 1 order by 1"
+ },
+ {
+  "name": "superbet_ticks_available",
+  "sql": "select e.tier, count(distinct t.event_id) events, count(*) ticks, min(t.book_updated_at) first_at, max(t.book_updated_at) last_at from ten287_rec.ticks t join ten287_rec.events e using (event_id) where t.book='Superbet' and e.tier is not null and t.event_status='pending' group by 1 order by 1"
+ },
+ {
+  "name": "backtest",
+  "sql": "delete from ten287_bot.alerts where mode='backtest' and run_id='bt1'; select ten287_bot.load_ticks('Superbet', '2026-09-25 23:00+00', now()) as loaded, ten287_bot.scan('Superbet', '2026-09-26 00:10+00', now(), 5, 'backtest', 'bt1') as alerts"
+ },
+ {
+  "name": "backtest_alerts",
+  "sql": "select id, tier, player_a, player_b, side_player, eval_at, ref_price, ref_at, cur_price, cur_at, pct_10m, open_price, open_at, open_kind, message from ten287_bot.alerts where mode='backtest' and run_id='bt1' order by eval_at"
+ },
+ {
+  "name": "backtest_by_tier",
+  "sql": "select tier, count(*) from ten287_bot.alerts where mode='backtest' and run_id='bt1' group by 1 order by 1"
+ },
+ {
+  "name": "live_alerts_none",
+  "sql": "select count(*) live_alerts from ten287_bot.alerts where mode='live'"
+ },
+ {
+  "name": "bet105_bot_untouched",
+  "sql": "select jobname, schedule, active from cron.job where jobname='ten280-bet105-drop-bot'"
+ }
+]

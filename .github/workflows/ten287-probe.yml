@@ -12,16 +12,21 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-      # Run 7: READ-ONLY odds-api.io historical/closing-lines probe for the odds-source strategy report.
-      - name: odds-api.io historical probe (REST only, read-only, encrypted output)
+      # Run 8: install the SUPERBET drop bot (founder 2026-09-26, comment 3840b895) + backtest example.
+      # Install + self-tests in ONE transaction. NOTHING scheduled, NOTHING sent in this run.
+      - name: SQL steps (encrypted output)
         env:
-          ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
-        run: python3 tools/ten287-histprobe.py
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TEN287_STEPS: tools/ten287-steps-bot-install.json
+        run: python3 tools/ten287-sql.py
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: ten287-sql
           path: |
-            out/hist.enc
-            out/hpass.enc
+            out/result.enc
+            out/pass.enc
           retention-days: 1
