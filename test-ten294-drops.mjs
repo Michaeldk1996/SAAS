@@ -421,7 +421,7 @@ test('pop-up chart (bef04c62 item 2): the axis runs opening -> now at real UTC t
   assert.equal(pts.length, 4, 'the 30 h-old first price is ON the axis (no fixed 24 h window)');
   assert.equal(pts[0].fr, 0, 'first recorded price = the left edge');
   assert.equal(pts[3].fr, 1, 'latest recorded price = the right edge');
-  const svg = PAGE.chartSvg(pts, 2.5, 'now');
+  const svg = PAGE.chartSvg(pts, 2.5, 'latest');
   assert.equal((svg.match(/<circle/g) || []).length, 4, 'one dot per recorded price, none invented');
   assert.equal((svg.match(/class="do-gap"/g) || []).length, 2, 'the 22 h and 7.4 h stretches are dashed');
   assert.equal((svg.match(/class="do-seg-l"/g) || []).length, 1, 'the 6-min drop is a solid segment');
@@ -429,26 +429,30 @@ test('pop-up chart (bef04c62 item 2): the axis runs opening -> now at real UTC t
   assert.doesNotMatch(svg, /−24h|−12h|-24h|-12h/, 'no rolling-window labels');
   const ticks = [...svg.matchAll(/class="do-tick"[^>]*>([^<]*)</g)].map((m) => m[1]);
   assert.equal(ticks[0], 'first seen 25 Sep 06:00', 'left tick = the first recorded time, dated (the line spans two days)');
-  assert.equal(ticks[ticks.length - 1], 'now 26 Sep 11:30', 'right tick = the latest recorded time');
+  assert.equal(ticks[ticks.length - 1], 'latest 26 Sep 11:30', 'right tick = the latest recorded time (not the clock: "latest", never "now")');
   assert.ok(ticks.length >= 3 && ticks.length <= 5, 'a few real intermediate times, not a crowd: ' + ticks.join(' | '));
   ticks.slice(1, -1).forEach((t) => assert.match(t, /^(\d+ Sep )?\d\d:00$/, 'intermediates sit on round UTC hours'));
+  const multi = PAGE.axisTicks(Date.parse('2026-09-24T15:27:00Z'), Date.parse('2026-09-26T11:09:00Z'), 'latest');
+  let dayNow = 24;
+  multi.slice(1, -1).forEach((t) => { const d = new Date(t.t).getUTCDate(); if (d !== dayNow) assert.match(t.label, new RegExp('^' + d + ' Sep '), 'a tick on a new day is dated: ' + multi.map((x) => x.label).join(' | ')); dayNow = d; });
   // a completed line ends at its last recorded price, labelled as such (the caller passes the word)
   assert.match(PAGE.chartSvg(pts, 2.5, 'last'), />last 26 Sep 11:30</);
   // same-day line: time only
-  const day = PAGE.axisTicks(PT0 - 5 * HR, PT0 - 1 * HR, 'now');
+  const day = PAGE.axisTicks(PT0 - 5 * HR, PT0 - 1 * HR, 'latest');
   assert.equal(day[0].label, 'first seen 07:00');
-  assert.equal(day[day.length - 1].label, 'now 11:00');
+  assert.equal(day[day.length - 1].label, 'latest 11:00');
   // a round hour 5 min after the first record would collide with the left label: skipped
-  const near = PAGE.axisTicks(PT0 - 4 * HR - 5 * 60e3, PT0 - 5 * 60e3, 'now');
-  assert.deepEqual(near.map((t) => t.label), ['first seen 07:55', '09:00', '10:00', '11:00', 'now 11:55'], '08:00 (2% in) would overprint the left label');
+  const near = PAGE.axisTicks(PT0 - 4 * HR - 5 * 60e3, PT0 - 5 * 60e3, 'latest');
+  assert.deepEqual(near.map((t) => t.label), ['first seen 07:55', '09:00', '10:00', '11:00', 'latest 11:55'], '08:00 (2% in) would overprint the left label');
   // no two labels overlap, even with a long dated end label (the live Damm case: 24 Sep 17:36 -> 26 Sep 06:29)
   const ext = (x) => { const w = x.label.length * 6.1, c = x.fr * 942; return x.anchor === 'start' ? [c, c + w] : x.anchor === 'end' ? [c - w, c] : [c - w / 2, c + w / 2]; };
-  const damm = PAGE.axisTicks(Date.parse('2026-09-24T17:36:00Z'), Date.parse('2026-09-26T06:29:00Z'), 'now');
+  const damm = PAGE.axisTicks(Date.parse('2026-09-24T17:36:00Z'), Date.parse('2026-09-26T06:29:00Z'), 'latest');
   for (let i = 1; i < damm.length; i++) assert.ok(ext(damm[i])[0] >= ext(damm[i - 1])[1] + 14, 'labels clear each other: ' + damm.map((t) => t.label).join(' | '));
   assert.ok(damm.length >= 3, 'still some real intermediate times');
   // a single recorded price: one dot, one label, no line
-  const one = PAGE.chartSvg(PAGE.seriesPoints([{ t: PT0, v: 1.9 }]), 1.9, 'now');
+  const one = PAGE.chartSvg(PAGE.seriesPoints([{ t: PT0, v: 1.9 }]), 1.9, 'latest');
   assert.equal((one.match(/<circle/g) || []).length, 1);
+  assert.match(one, /text-anchor="end">first seen 12:00</, 'a single price is labelled where its dot is (the right edge)');
   assert.equal((one.match(/<line class="do-(gap|seg-l)"/g) || []).length, 0);
 });
 
@@ -477,6 +481,11 @@ test('pop-up chart: the endpoint sends the whole recorded life; a truncated seri
   assert.equal(cut.truncated, true);
   assert.equal(cut.series[0].v, 2.2, 'a truncated series starts at its oldest SENT point, not the first record');
   assert.equal(cut.first.v, 2.30, 'the % still uses the first record');
+  // the row's OWN book truncated: row points older than the oldest sent point are not merged (no false gap)
+  const own = { books: { Superbet: { first: [at(72 * HR), 2.2], side: [[at(10 * HR), 2.05], [at(1 * HR), 1.9]], other: [[at(1 * HR), 2.0]], truncated: true } } };
+  const ob = PAGE.modalBooks(r, { rows: [r], line: own, now: PT0 }).books.find((b) => b.own);
+  assert.ok(ob.series.every((p) => p.t >= PT0 - 10 * HR), 'the chart starts at the oldest sent point: ' + ob.series.map((p) => new Date(p.t).toISOString()).join(','));
+  assert.equal(ob.first.v, 2.2, 'the row still reads open -> now (Q1)');
 });
 
 test('page avatars: a board key only on an exact, unique two-player match', () => {
@@ -945,4 +954,19 @@ test('pop-up review: a board card only counts for the same event (dated within 3
   const old = { ...today, date: '2026-09-23' };
   assert.equal(PAGE.boardKeyFor(r, [old]), null, 'three days earlier is another event');
   assert.equal(PAGE.boardKeyFor(r, [old, today]).card, today, 'the old card no longer makes today\'s ambiguous');
+});
+
+test('pop-up chart review (bcee4794): a flagged-only row says only its move is loaded; the rendered chart is house blue', async () => {
+  const x = pageSandbox({ feed: () => [frow({ id: 'r1', open: 2, now: 1.8 })] });
+  await x.activate();
+  x.st.drawer = 'r1';
+  await x.activate();
+  const h = x.overlay._h;
+  assert.match(h, /FIRST SEEN → LATEST · UTC/);
+  assert.match(h, /Only this move's recorded prices are loaded here; dashed stretches join them, nothing is interpolated\./,
+    'no endpoint line and no board shard: the stretches between the row\'s four prices are not claimed as "no snapshots"');
+  assert.doesNotMatch(h, /Dashed stretches had no snapshots/);
+  const chart = h.slice(h.indexOf('<svg'), h.indexOf('</svg>'));
+  assert.doesNotMatch(chart, /#DA6259|218,98,89/i);
+  assert.match(chart, />latest \d/);
 });
