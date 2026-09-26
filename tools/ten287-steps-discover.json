@@ -1,0 +1,18 @@
+[
+ {
+  "name": "tables",
+  "sql": "select table_schema, table_name, (select count(*) from information_schema.columns c where c.table_schema=t.table_schema and c.table_name=t.table_name) ncol from information_schema.tables t where table_schema not in ('pg_catalog','information_schema','auth','storage','realtime','supabase_functions','extensions','graphql','graphql_public','pgsodium','pgsodium_masks','vault','net','cron','supabase_migrations','_realtime','pgbouncer','_analytics') order by 1,2"
+ },
+ {
+  "name": "columns",
+  "sql": "select table_name, string_agg(column_name||':'||data_type, ', ' order by ordinal_position) cols from information_schema.columns where table_schema='public' and (table_name like 'kibl%' or table_name like 'odds%' or table_name like 'bet365%' or table_name like 'oddspapi%' or table_name like '%line_summary%' or table_name like 'apitennis%') group by 1 order by 1"
+ },
+ {
+  "name": "cron_jobs",
+  "sql": "select jobname, schedule, active from cron.job order by jobname"
+ },
+ {
+  "name": "postmatch_dispatch_recent",
+  "sql": "select j.jobname, d.status, count(*) n, max(d.start_time) last, max(left(d.return_message,160)) msg from cron.job_run_details d join cron.job j using (jobid) where j.jobname like '%postmatch%' and d.start_time > now() - interval '48 hours' group by 1,2 order by 1,2"
+ }
+]

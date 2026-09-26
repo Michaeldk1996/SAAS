@@ -12,14 +12,13 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-      # Run 4: INSTALL the TEN-287 recorder (founder answer b758d347: recorder only, no alerts). Install +
-      # self-test in ONE transaction; cron scheduled only after live ticks arrive for both books. Sends nothing.
+      # Run 5: READ-ONLY schema discovery for the odds-source strategy report (no writes, no install).
       - name: SQL steps (encrypted output)
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
           ODDS_API_IO_KEY: ${{ secrets.ODDS_API_IO_KEY }}
-          TEN287_STEPS: tools/ten287-steps-install.json
+          TEN287_STEPS: tools/ten287-steps-discover.json
         run: python3 tools/ten287-sql.py
       - uses: actions/upload-artifact@v4
         if: always()
