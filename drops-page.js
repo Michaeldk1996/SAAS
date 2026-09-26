@@ -176,20 +176,22 @@
   var PLOT_W = 942, CH_W = 6.1, TICK_GAP = 14;
   function axisTicks(t0, t1, endWord) {
     var span = t1 - t0, multiDay = new Date(t0).getUTCDate() !== new Date(t1).getUTCDate() || span > 24 * H;
+    if (!(span > 0)) return [{ t: t0, fr: 1, label: 'first seen ' + tickLabel(t0, false), anchor: 'end', end: true }];   // one price: the dot sits at the right edge
     var first = { t: t0, fr: 0, label: 'first seen ' + tickLabel(t0, multiDay), anchor: 'start', end: true };
-    if (!(span > 0)) return [first];
     var last = { t: t1, fr: 1, label: endWord + ' ' + tickLabel(t1, multiDay), anchor: 'end', end: true };
     var ext = function (x) {             // the label's [left, right] in px
       var w = x.label.length * CH_W, c = x.fr * PLOT_W;
       return x.anchor === 'start' ? [c, c + w] : x.anchor === 'end' ? [c - w, c] : [c - w / 2, c + w / 2];
     };
     var step = TICK_STEPS.filter(function (s) { return span / s <= 4; })[0] || TICK_STEPS[TICK_STEPS.length - 1];
-    var ticks = [first], rightEdge = ext(first)[1], lastLeft = ext(last)[0];
+    var ticks = [first], rightEdge = ext(first)[1], lastLeft = ext(last)[0], day = new Date(t0).getUTCDate();
     for (var t = Math.ceil(t0 / step) * step; t < t1; t += step) {
-      var x = { t: t, fr: (t - t0) / span, label: tickLabel(t, multiDay && new Date(t).getUTCHours() === 0), anchor: 'middle' };
+      // an intermediate on a new UTC day carries its date, so "12:00" is never ambiguous on a multi-day axis
+      var newDay = multiDay && new Date(t).getUTCDate() !== day;
+      var x = { t: t, fr: (t - t0) / span, label: tickLabel(t, newDay), anchor: 'middle' };
       var e = ext(x);
       if (e[0] < rightEdge + TICK_GAP || e[1] > lastLeft - TICK_GAP) continue;
-      ticks.push(x); rightEdge = e[1];
+      ticks.push(x); rightEdge = e[1]; day = new Date(t).getUTCDate();
     }
     ticks.push(last);
     return ticks;
@@ -297,7 +299,10 @@
     var srcLast = own.side && own.side.length ? own.side[own.side.length - 1].v : null;
     if (srcLast == null || Math.abs(srcLast - r.now) > 0.005) own.margin = null;   // a pair older than the price shown is not its margin
     var seen = {};
-    own.side = (own.side || []).concat(tsPoints(rowPoints(r))).filter(function (p) {
+    // a truncated source's series starts at its oldest SENT point: row points older than that would open a
+    // false gap across a stretch that was recorded but not sent (review of bcee4794)
+    var sentFrom = own.truncated && own.side && own.side.length ? own.side[0].t : -Infinity;
+    own.side = (own.side || []).concat(tsPoints(rowPoints(r)).filter(function (p) { return p.t >= sentFrom; })).filter(function (p) {
       var k = p.t + '|' + p.v; if (seen[k]) return false; seen[k] = 1; return true;
     }).sort(function (a, b) { return a.t - b.t; });
     own.first = { t: Date.parse(r.openAt), v: r.open };
@@ -715,12 +720,14 @@
       '<span class="do-ov-arrow">→</span><span class="do-ov-now">' + price2(r.now) + '</span></span>' +
       '<span class="do-ov-drop">▼ ' + r.drop.toFixed(1) + '% · moved ' + esc(ago(now - Date.parse(r.movedAt))) + '</span></div>' +
       '<button class="do-ov-x" data-act="close" aria-label="Close">✕</button></div></div>' +
-      '<div class="do-ov-chart"><span class="do-ov-cap"><span class="do-ov-cap-k">PRICE HISTORY · <b>' + esc(sel.book.toUpperCase()) + '</b> · FIRST SEEN → NOW · UTC</span>' +
+      '<div class="do-ov-chart"><span class="do-ov-cap"><span class="do-ov-cap-k">PRICE HISTORY · <b>' + esc(sel.book.toUpperCase()) + '</b> · FIRST SEEN → LATEST · UTC</span>' +
       '<span class="do-ov-cap-p' + (sel.drop != null && sel.drop <= 0 ? ' up' : '') + '">' + esc(capP) + '</span>' +
       (!sel.own ? '<button class="do-ov-back" data-act="back">Back to ' + esc(r.book) + '</button>' :
         mb.books.length > 1 ? '<span class="do-ov-cap-r">Click a book below to see its chart</span>' : '') + '</span>' +
-      chartSvg(pts, sel.first && sel.first.v, 'now') +
-      '<span class="do-ov-note">Each dot is a recorded snapshot. Dashed stretches had no snapshots; nothing is interpolated.' +
+      chartSvg(pts, sel.first && sel.first.v, 'latest') +
+      '<span class="do-ov-note">' + (mb.source === 'flagged'
+        ? 'Each dot is a recorded snapshot. Only this move\'s recorded prices are loaded here; dashed stretches join them, nothing is interpolated.'
+        : 'Each dot is a recorded snapshot. Dashed stretches had no snapshots; nothing is interpolated.') +
         (sel.truncated ? ' Earlier snapshots were not sent; the chart starts at the oldest one loaded.' : '') + '</span></div>' +
       '<div class="do-ov-strip" style="grid-template-columns:repeat(' + mb.books.length + ', minmax(0,1fr))">' + mb.books.map(function (b) {
         var isSel = b === sel, c = b.cls || 'soft';
