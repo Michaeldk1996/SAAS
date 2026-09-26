@@ -1,6 +1,9 @@
 [
- {"name":"flips","sql":"select event_key, first_live_seen_at, event_date, event_time, first_player, second_player from public.live_flip_log where first_live_seen_at >= now() - interval '60 hours'"},
- {"name":"alerts287","sql":"select a.id, a.eval_at, a.player_a, a.player_b, a.side_player, a.book, a.ref_price, a.cur_price, a.cur_at, ev.start_at from ten287_bot.alerts a left join ten287_rec.events ev on ev.event_id=a.event_id where a.mode='live' and a.eval_at >= now() - interval '24 hours' order by a.eval_at"},
- {"name":"alerts280","sql":"select a.id, a.eval_at, a.player_a, a.player_b, a.side_player, a.ref_price, a.cur_price, a.cur_at, fx.scheduled_start from ten280_bot.alerts a left join public.kibl_fixtures fx on fx.fixture_id=a.fixture_id where a.mode='live' and a.eval_at >= now() - interval '24 hours' order by a.eval_at"},
- {"name":"now","sql":"select now()"}
+ {"name":"def287","sql":"select pg_get_functiondef('ten287_bot.load_ticks(text,timestamptz,timestamptz)'::regprocedure) d"},
+ {"name":"def280","sql":"select p.oid::regprocedure::text sig, pg_get_functiondef(p.oid) d from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='ten280_bot' and p.proname in ('load_ticks','tick','scan')"},
+ {"name":"tick287","sql":"select pg_get_functiondef('ten287_bot.tick()'::regprocedure) d"},
+ {"name":"ext","sql":"select extname from pg_extension order by 1"},
+ {"name":"flipcols","sql":"select column_name, data_type from information_schema.columns where table_name='live_flip_log' order by ordinal_position"},
+ {"name":"flipn","sql":"select count(*), min(first_live_seen_at) from public.live_flip_log"},
+ {"name":"normtest","sql":"select normalize('Lehečka', NFD) n, regexp_replace(normalize('Lehečka', NFD), '[\\u0300-\\u036f]', '', 'g') s"}
 ]
