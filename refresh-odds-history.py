@@ -1239,7 +1239,12 @@ def first_appearance():
         if m.get('finalScore') and m.get('date'):
             rec = fmap.get(event_key(m)) or {}
             metas = ((m.get('oddsMovement') or {}).get('chart') or {}).get('meta') or {}
-            if rec.get('fixtureId') and any(BOOK_LABELS[b] not in metas for b in BOOKS if b != LEGACY_BOOK):
+            # Never checked — or last verdict was "no Oddspapi fixture matched" and the
+            # mapper has since found it (review 2026-09-26: that verdict must not stick).
+            if rec.get('fixtureId') and any(
+                    BOOK_LABELS[b] not in metas
+                    or (metas[BOOK_LABELS[b]].get('note') and not chart_series.chart_series(m, BOOK_LABELS[b]))
+                    for b in BOOKS if b != LEGACY_BOOK):
                 backfill.append((m, rec))
         if m.get('finalScore') or not m.get('date'):
             continue
@@ -1315,7 +1320,7 @@ def first_appearance():
     # the push and the stale-NOW monitor behind it.
     started = time.monotonic()
     budget_cut = 0
-    unpriced = 0
+    unpriced = backfilled = 0
     for idx, (m, rec) in enumerate(targets):
         if time.monotonic() - started > SWEEP_BUDGET_S and not (
                 idx < len(unopened)):
@@ -1366,14 +1371,17 @@ def first_appearance():
         _store(m, books_out, now_iso, rec['fixtureId'], rec.get('startTime'), merge=had_series)
         if had_series:
             refreshed += 1
+        elif m.get('finalScore'):
+            backfilled += 1                 # a completed card's first check — not an opening
         else:
             captured += 1
             newly_opened.add(id(m))
             opened.append(m)
 
-    # A card Oddspapi does not list at all (the hourly mapping run recorded a miss) gets
-    # that verdict too — "not listed by Oddspapi", with the mapping run's time. A card the
-    # mapper has never seen gets nothing: not checked is not "not priced".
+    # A card the hourly mapping run could not match to any Oddspapi fixture gets that
+    # verdict — "no Oddspapi fixture matched", with the mapping run's time. It is OUR join's
+    # verdict, never "not priced" (27 Damm Jr misses were a join bug). A card the mapper has
+    # never seen gets nothing: not checked is not "not priced".
     not_listed = 0
     for m in matches:
         rec = fmap.get(event_key(m))
@@ -1384,13 +1392,13 @@ def first_appearance():
                 continue
             chart_series.put_chart(m, BOOK_LABELS[b], None,
                                    dict(CHART_META[b], checkedAt=rec['mappedAt'],
-                                        note='not listed by Oddspapi'))
+                                        note='no Oddspapi fixture matched'))
             not_listed += 1
 
     write_matches(matches)
     print(f'Chart verdicts: {len(backfill)} completed card(s) queued for a first Pinnacle +30s '
-          f'check; {unpriced} fixture(s) asked and not priced (404); {not_listed} card(s) not '
-          f'listed by Oddspapi.')
+          f'check ({backfilled} got a line); {unpriced} fixture(s) asked and not priced (404); '
+          f'{not_listed} card x book verdict(s) "no Oddspapi fixture matched".')
 
     # open_monitor() stamps firstSeenAt — the instant WE first held a price for
     # this fixture. That field is the whole point of sweeping at 15 minutes: it

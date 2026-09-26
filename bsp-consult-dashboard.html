@@ -16433,7 +16433,7 @@ function buildOddsSection(m){
   const chartWrap = '<div style="border:0.33px solid var(--line); border-radius:14px; padding:14px 10px; margin-top:12px;">'+chartBody+'</div>';
   // TEN-295: one entry per source shown, from its own meta — never one hard-coded vendor.
   const foot = '<div class="aodds-foot" style="font-size:12px; color:var(--label); margin-top:16px; line-height:1.5;">Sources (Match Winner): '
-    + withData.concat(noData).map(b=>'<b>'+escapeHtml(b.name)+'</b> — '+escapeHtml(aOddsSourceText(b.name, b.meta))).join(' · ')
+    + withData.concat(noData.filter(b=>!b.meta.unchecked && b.meta.checkedAt)).map(b=>'<b>'+escapeHtml(b.name)+'</b> — '+escapeHtml(aOddsSourceText(b.name, b.meta))).join(' · ')
     + '. Lines step until a book re-posts and stop at the last time we checked that source; a source not checked in the last 60 min reads “no recent data”. Only the winner market is recorded, so other markets show no data rather than invented values.</div>';
   const chartSec = moveHead+chartWrap+foot;
 
@@ -16443,7 +16443,9 @@ function buildOddsSection(m){
 // A book with no line for this match: a dash on both sides and the verdict — never a zero,
 // never another book's price (founder 2026-09-26).
 function aOddsNoPriceRow(name, group, mt, GRID, mono){
-  const why = (mt && mt.note) || (mt && mt.unchecked ? 'not checked yet' : 'not priced for this match');
+  // "not priced" only when the source was really checked (a checkedAt); a verdict with no
+  // check time is "not checked yet" (review 2026-09-26).
+  const why = (mt && mt.note) || (mt && !mt.unchecked && mt.checkedAt ? 'not priced for this match' : 'not checked yet');
   return '<div class="aodds-row aodds-nodata" data-book="'+escapeHtml(name)+'" data-group="'+group+'" style="display:grid; '+GRID+' padding:13px 18px; border-top:0.33px solid var(--line-soft); align-items:center; gap:10px;">'
     +'<span style="display:flex; align-items:center; gap:8px; font-size:13.5px; font-weight:600;"><span style="color:var(--label); font-size:11px;">·</span><span>'+escapeHtml(name)
       +'<span class="aodds-src" style="display:block; font-size:11px; font-weight:400; color:var(--label); margin-top:2px;">'+escapeHtml(why)+'</span></span></span>'

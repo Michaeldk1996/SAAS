@@ -309,12 +309,22 @@ bcb.apply_odds_api([old, new], {'books': ['Superbet', 'Betfair Exchange'], 'even
 mo = old['oddsMovement']['chart']['meta']; mn = new['oddsMovement']['chart']['meta']
 check(mo['Superbet'].get('note') == 'not recorded — our recording began 26 Sep' and not old['oddsMovement']['chart']['books'],
       'a card played before the recorder began: "not recorded", no line')
-check('note' not in mn['Superbet'] and mn['Superbet']['checkedAt'] == '2026-09-26T04:00:00.000Z'
+check(mn['Superbet'].get('note') == 'no recorded event matched' and mn['Superbet']['checkedAt'] == '2026-09-26T04:00:00.000Z'
       and mn['Betfair Exchange (recorded by us)']['checkedAt'] is None,
-      'a card in the recording window: checked, no line, checkedAt = the recorder poll (none recorded -> none claimed)')
+      'no event joined -> "no recorded event matched" (our join), never "not priced"; no poll -> no checkedAt')
+jc = card(id='upcoming-12165854', p1='M. Damm', p2='H. Hurkacz', date='2026-09-26')
+bcb.apply_odds_api([jc], {'books': ['Superbet', 'Betfair Exchange'],
+                          'events': [EV(74753338, 'Damm Jr, Martin', 'Hurkacz, Hubert', '2026-09-26T06:40:00+00:00',
+                                        {'Superbet': [['2026-09-26T05:00:00+00:00', 2.8, 1.4]]})],
+                          'polled_ok_at': {'Superbet': '2026-09-26T04:00:00+00:00', 'Betfair Exchange': '2026-09-26T04:00:00+00:00'}},
+                   '2026-09-26T04:20:00.000Z', card_state={})
+mj = jc['oddsMovement']['chart']
+check('Superbet' in mj['books'] and 'note' not in mj['meta']['Betfair Exchange (recorded by us)']
+      and mj['meta']['Betfair Exchange (recorded by us)']['checkedAt'],
+      'joined event, one book absent -> that book is "not priced" (checked, no note)')
 
 # (c) the free sweep backfills a completed, mapped card once, cut at its start, and a card
-# Oddspapi does not list gets "not listed by Oddspapi"
+# the mapper could not match gets "no Oddspapi fixture matched"
 _fmap_saved = open(hist.FIXTURE_MAP_FILE).read()
 hist.CARD_STATE_FILE = os.path.join(tmp2, 'ocs.json')      # never the repo's own file
 done_c = card(id='past-7', date='2026-09-25', finalScore='6-4 6-4', oddsMovement=copy.deepcopy(LEGACY))
@@ -336,8 +346,18 @@ asked.clear()
 hist.first_appearance()
 check(asked == [], f'…and never swept again once it holds a verdict {asked}')
 mm = (got[1].get('oddsMovement') or {}).get('chart', {}).get('meta', {}).get('Pinnacle +30s', {})
-check(mm.get('note') == 'not listed by Oddspapi' and mm.get('checkedAt') == '2026-09-26T06:16:05.000Z',
-      f'unlisted by Oddspapi -> that verdict, with the mapping run time {mm}')
+check(mm.get('note') == 'no Oddspapi fixture matched' and mm.get('checkedAt') == '2026-09-26T06:16:05.000Z',
+      f'a mapper miss -> "no Oddspapi fixture matched" (our join), never "not priced" {mm}')
+# …and that verdict does not stick: once the mapper finds the fixture, the card is checked
+got[0]['oddsMovement']['chart']['meta']['Pinnacle +30s'] = {'source': 'Oddspapi', 'group': 'sharp', 'clock': 'book tick',
+                                                            'checkedAt': '2026-09-26T05:00:00.000Z', 'note': 'no Oddspapi fixture matched'}
+del got[0]['oddsMovement']['chart']['books']['Pinnacle +30s']
+json.dump(got, open(hist.MATCHES, 'w'))
+asked.clear()
+hist.first_appearance()
+again = json.load(open(hist.MATCHES))[0]['oddsMovement']['chart']
+check(asked == [('idX', ('pinnacle+30',))] and 'Pinnacle +30s' in again['books'] and 'note' not in again['meta']['Pinnacle +30s'],
+      f'a stale "no fixture matched" verdict is re-checked once mapped, and the line clears the note {asked}')
 open(hist.FIXTURE_MAP_FILE, 'w').write(_fmap_saved)
 
 # main() (the 3-hourly leg), fixtures + join stubbed

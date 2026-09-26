@@ -239,6 +239,11 @@ def apply_odds_api(cards, payload, now, card_state=None):
     # configured book gets a row on every card"): checked and no line -> meta only, which
     # the page renders as a dash + "not priced for this match", or — for a card played
     # before our recording began — "not recorded" (never "not priced": we did not look).
+    #   * event joined, this book had nothing -> no note ("not priced for this match");
+    #   * NO recorded event joined the card -> "no recorded event matched" — our join, not
+    #     the book, is the open question (review 2026-09-26: a failed join must never read
+    #     "not priced"; Damm Jr v Hurkacz would have);
+    #   * no successful recorder poll yet -> no checkedAt -> the page says "not checked yet".
     none = 0
     for c in cards:
         for book in payload.get('books') or []:
@@ -246,8 +251,12 @@ def apply_odds_api(cards, payload, now, card_state=None):
             if cs.chart_series(c, label):
                 continue
             checked = _min_iso(now, polled.get(book)) if polled.get(book) else None
-            note = (f'not recorded — our recording began {RECORDING_SINCE[8:10]} Sep'
-                    if (c.get('date') or '9999') < RECORDING_SINCE else None)
+            if (c.get('date') or '9999') < RECORDING_SINCE:
+                note = f'not recorded — our recording began {RECORDING_SINCE[8:10]} Sep'
+            elif id(c) not in joined:
+                note = 'no recorded event matched'
+            else:
+                note = None
             cs.put_chart(c, label, None, {'source': 'odds-api.io', 'group': 'soft', 'clock': clock,
                                           'checkedAt': checked, 'note': note},
                          cut_at=cs.card_start(c, card_state, None))

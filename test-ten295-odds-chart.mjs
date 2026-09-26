@@ -222,6 +222,11 @@ test('every configured book gets a row on every card; subheading "X of Y books p
   assert.deepEqual(rows.slice(0, 4), [['Pinnacle +30s', 'sharp'], ['Bet105', 'sharp'], ['Superbet', 'soft'],
                                       ['Betfair Exchange (recorded by us)', 'soft']]);
   assert.ok(rowOf(h, 'Pinnacle +30s').includes('not checked yet'), 'no meta at all = not checked, never "not priced"');
+  const m2 = fixture({ withPin: false });
+  m2.oddsMovement.chart.meta['Pinnacle +30s'] = { source: 'Oddspapi', group: 'sharp', clock: 'book tick', checkedAt: null };
+  A.reset();
+  assert.ok(rowOf(A.buildOddsSection(m2), 'Pinnacle +30s').includes('not checked yet'),
+            'a verdict with no check time is "not checked yet", never "not priced"');
   assert.ok(rowOf(h, 'Superbet').includes('not recorded — our recording began 26 Sep'), 'the writer\'s note wins');
   assert.ok(/class="aodds-priced">2 of 4 books priced</.test(h), 'Bet105 + Betfair Exchange priced, of 4 configured');
 });
