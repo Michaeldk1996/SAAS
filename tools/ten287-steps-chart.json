@@ -1,34 +1,38 @@
 [
  {
-  "name": "vault_names",
-  "sql": "select name, created_at, updated_at from vault.secrets order by name"
+  "name": "install_rpc",
+  "file": "tools/chart-apitennis-rpc.sql",
+  "required": true,
+  "stop_on_error": true
  },
  {
-  "name": "postmatch_alerts_recent",
-  "sql": "select at, condition, kind, delivered from public.postmatch_alert_log order by at desc limit 5"
+  "name": "install_watchdog",
+  "file": "tools/ten216-collector-watchdog.sql",
+  "required": true,
+  "stop_on_error": true
  },
  {
-  "name": "bot_fns",
-  "sql": "select n.nspname, p.proname from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname in ('ten287_bot','ten280_bot','public') and (p.prosrc ilike '%telegram%') order by 1,2"
+  "name": "privileges",
+  "sql": "select has_function_privilege('anon','public.chart_apitennis_series(text[],timestamptz)','execute') anon_rpc, has_function_privilege('authenticated','public.chart_apitennis_series(text[],timestamptz)','execute') auth_rpc, has_function_privilege('service_role','public.chart_apitennis_series(text[],timestamptz)','execute') svc_rpc, has_table_privilege('anon','public.ten216_test_polls','select') anon_polls, has_function_privilege('anon','public.ten216_collector_check(timestamptz)','execute') anon_check, (select relrowsecurity from pg_class where oid='public.ten216_test_polls'::regclass) polls_rls, (select relrowsecurity from pg_class where oid='public.ten216_watch_log'::regclass) log_rls"
  },
  {
-  "name": "bot_sends_recent",
-  "sql": "select r.id, r.status_code, r.created from net._http_response r order by r.id desc limit 5"
+  "name": "rpc_call",
+  "sql": "select jsonb_array_length(x->'rows') n_rows, x->>'last_ok_poll_at' last_ok, x->'down' down, x->>'heartbeat_since' hb_since, length(x::text) bytes from (select public.chart_apitennis_series(array['12166088','12166089','12166000'], '2026-09-26T03:55:00Z') x) s"
  },
  {
-  "name": "cron_jobs",
-  "sql": "select jobname, schedule, active from cron.job order by jobname"
+  "name": "cron",
+  "sql": "select jobname, schedule, active, command from cron.job where jobname='ten216-collector-watchdog'"
  },
  {
-  "name": "wh_rows_recent",
-  "sql": "select observed_at, match_key, selection, price, change_kind from public.ten216_test_odds_changes where bookmaker ilike '%william%' order by observed_at desc limit 12"
+  "name": "selftest",
+  "sql": "do $t$\ndeclare r text := ''; x jsonb;\nbegin\n  r := r || 'now=' || public.ten216_collector_check(now());\n  r := r || ' | +3h(no hb, limit120)=' || public.ten216_collector_check(now() + interval '3 hours');\n  r := r || ' | +3h10m=' || public.ten216_collector_check(now() + interval '190 minutes');\n  r := r || ' | 10 Dec(off-season)=' || public.ten216_collector_check('2026-12-10T12:00:00Z'::timestamptz + (now() - now()));\n  insert into public.ten216_test_polls (poll_id, observed_at, ok) values ('selftest', now(), true);\n  r := r || ' | hb now, +70m(limit60)=' || public.ten216_collector_check(now() + interval '70 minutes');\n  r := r || ' | hb now, +30m=' || public.ten216_collector_check(now() + interval '30 minutes');\n  select string_agg(kind || ':' || coalesce(channel,'-') || ':' || delivered, ', ' order by id) into x from (select * from public.ten216_watch_log order by id) l;\n  r := r || ' | log=' || coalesce(x::text, 'none');\n  select public.chart_apitennis_series(array['12166088'], '2026-09-26T03:55:00Z') into x;\n  r := r || ' | rpc down after hb=' || (x->'down')::text || ' last_ok=' || (x->>'last_ok_poll_at');\n  raise exception 'SELFTEST (rolled back) %', r;\nend $t$"
  },
  {
-  "name": "wh_books_names",
-  "sql": "select bookmaker, count(*), max(observed_at) from public.ten216_test_odds_changes where observed_at > now()-interval '8 hours' group by 1 order by 1"
+  "name": "after_selftest_clean",
+  "sql": "select (select count(*) from public.ten216_watch_log) log_rows, (select count(*) from public.ten216_watch_alerts) alert_rows, (select count(*) from public.ten216_test_polls) polls_rows"
  },
  {
-  "name": "b365_ha",
-  "sql": "select match_key, count(*) n, count(*) filter (where change_kind='removed') removed, min(observed_at), max(observed_at) from public.ten216_test_odds_changes where market='Home/Away' and bookmaker='bet365' and observed_at >= '2026-09-26T03:55:00Z' group by 1 order by 1"
+  "name": "live_check",
+  "sql": "select public.ten216_collector_check() result"
  }
 ]
