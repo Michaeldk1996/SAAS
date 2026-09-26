@@ -1,39 +1,5 @@
 [
  {
-  "name": "ten299_base_287",
-  "sql": "select ten287_bot.load_ticks('Superbet', now() - interval '15 days', now()) loaded, ten287_bot.scan('Superbet', now() - interval '24 hours', now(), 5, 'backtest', 'ten299-base-' || to_char(now(), 'YYYYMMDDHH24MI')) alerts"
- },
- {
-  "name": "ten299_base_280",
-  "sql": "select ten280_bot.load_ticks(now() - interval '15 days', now()) loaded, ten280_bot.scan(now() - interval '24 hours', now(), 5, 'backtest', 'ten299-base-' || to_char(now(), 'YYYYMMDDHH24MI')) alerts"
- },
- {
-  "name": "install_live_cut",
-  "file": "tools/ten299-live-cut.sql",
-  "required": true,
-  "stop_on_error": true
- },
- {
-  "name": "ten299_cut_287",
-  "sql": "select ten287_bot.load_ticks('Superbet', now() - interval '15 days', now()) loaded, ten287_bot.scan('Superbet', now() - interval '24 hours', now(), 5, 'backtest', 'ten299-cut-' || to_char(now(), 'YYYYMMDDHH24MI')) alerts"
- },
- {
-  "name": "ten299_cut_280",
-  "sql": "select ten280_bot.load_ticks(now() - interval '15 days', now()) loaded, ten280_bot.scan(now() - interval '24 hours', now(), 5, 'backtest', 'ten299-cut-' || to_char(now(), 'YYYYMMDDHH24MI')) alerts"
- },
- {
-  "name": "ten299_summary",
-  "sql": "with r as (select 'Superbet' bot, run_id, player_a, player_b, side_player, eval_at from ten287_bot.alerts where mode = 'backtest' and run_id like 'ten299-%' and eval_at >= now() - interval '25 hours' union all select 'Bet105', run_id, player_a, player_b, side_player, eval_at from ten280_bot.alerts where mode = 'backtest' and run_id like 'ten299-%' and eval_at >= now() - interval '25 hours') select bot, split_part(run_id, '-', 2) kind, run_id, count(*) n, count(*) filter (where player_a ilike '%karan singh%' or player_b ilike '%karan singh%') singh_jubb from r group by 1, 2, 3 order by run_id desc, bot limit 8"
- },
- {
-  "name": "ten299_live_24h",
-  "sql": "select 'Superbet' bot, count(*) n from ten287_bot.alerts where mode = 'live' and eval_at >= now() - interval '24 hours' union all select 'Bet105', count(*) from ten280_bot.alerts where mode = 'live' and eval_at >= now() - interval '24 hours'"
- },
- {
-  "name": "ten299_cut_timing",
-  "sql": "select round(extract(epoch from (clock_timestamp() - now())) * 1000) ms_before, ten287_bot.load_ticks('Superbet', now() - interval '14 days', now()) n287, ten280_bot.load_ticks(now() - interval '14 days', now()) n280, round(extract(epoch from (clock_timestamp() - now())) * 1000) ms_after"
- },
- {
   "name": "install_lines",
   "file": "tools/ten294-drops-lines.sql",
   "required": true,
@@ -122,5 +88,43 @@
  {
   "name": "status_inputs",
   "sql": "with s as (select drops_api.snapshot(72) j) select jsonb_array_length(j->'rows') rows_n, jsonb_array_length(j->'flips') flips_n, j->'board'->>'at' board_at, jsonb_array_length(j->'board'->'matches') board_n, jsonb_array_length(j->'lines') lines_n, length(j::text) bytes from s"
+ },
+ {
+  "name": "ten299_base_287",
+  "sql": "select ten287_bot.load_ticks('Superbet', now() - interval '15 days', now()) loaded, ten287_bot.scan('Superbet', now() - interval '24 hours', now(), 5, 'backtest', 'ten299-base-' || to_char(now(), 'YYYYMMDDHH24MI')) alerts"
+ },
+ {
+  "name": "ten299_base_280",
+  "sql": "select ten280_bot.load_ticks(now() - interval '15 days', now()) loaded, ten280_bot.scan(now() - interval '24 hours', now(), 5, 'backtest', 'ten299-base-' || to_char(now(), 'YYYYMMDDHH24MI')) alerts"
+ },
+ {
+  "name": "install_live_cut",
+  "file": "tools/ten299-live-cut.sql",
+  "required": true,
+  "stop_on_error": true
+ },
+ {
+  "name": "ten299_cut_287",
+  "sql": "select ten287_bot.load_ticks('Superbet', now() - interval '15 days', now()) loaded, ten287_bot.scan('Superbet', now() - interval '24 hours', now(), 5, 'backtest', 'ten299-cut-' || to_char(now(), 'YYYYMMDDHH24MI')) alerts"
+ },
+ {
+  "name": "ten299_cut_280",
+  "sql": "select ten280_bot.load_ticks(now() - interval '15 days', now()) loaded, ten280_bot.scan(now() - interval '24 hours', now(), 5, 'backtest', 'ten299-cut-' || to_char(now(), 'YYYYMMDDHH24MI')) alerts"
+ },
+ {
+  "name": "ten299_summary",
+  "sql": "with r as (select 'Superbet' bot, run_id, player_a, player_b, side_player, eval_at from ten287_bot.alerts where mode = 'backtest' and run_id like 'ten299-%' and eval_at >= now() - interval '25 hours' union all select 'Bet105', run_id, player_a, player_b, side_player, eval_at from ten280_bot.alerts where mode = 'backtest' and run_id like 'ten299-%' and eval_at >= now() - interval '25 hours') select bot, split_part(run_id, '-', 2) kind, run_id, count(*) n, count(*) filter (where player_a ilike '%karan singh%' or player_b ilike '%karan singh%') singh_jubb from r group by 1, 2, 3 order by run_id desc, bot limit 8"
+ },
+ {
+  "name": "ten299_live_24h",
+  "sql": "select 'Superbet' bot, count(*) n from ten287_bot.alerts where mode = 'live' and eval_at >= now() - interval '24 hours' union all select 'Bet105', count(*) from ten280_bot.alerts where mode = 'live' and eval_at >= now() - interval '24 hours'"
+ },
+ {
+  "name": "ten299_cut_timing",
+  "sql": "select round(extract(epoch from (clock_timestamp() - now())) * 1000) ms_before, ten287_bot.load_ticks('Superbet', now() - interval '14 days', now()) n287, ten280_bot.load_ticks(now() - interval '14 days', now()) n280, round(extract(epoch from (clock_timestamp() - now())) * 1000) ms_after"
+ },
+ {
+  "name": "ten299_after_cut",
+  "sql": "select 'Superbet' bot, count(*) n from ten287_bot.alerts a join drops_live.cuts_287(now() - interval '4 days') c using (event_id) where a.mode = 'backtest' and a.run_id like 'ten299-cut-%' and a.eval_at >= c.cut_at union all select 'Bet105', count(*) from ten280_bot.alerts a join drops_live.cuts_280(now() - interval '4 days') c using (fixture_id) where a.mode = 'backtest' and a.run_id like 'ten299-cut-%' and a.eval_at >= c.cut_at"
  }
 ]

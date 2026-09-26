@@ -1346,10 +1346,16 @@ test('TEN-299: both bots drop every tick at or after the live start, in one guar
   assert.match(code, /raise exception 'TEN-299 guard: % Bet105 ticks left after the live cut'/);
   assert.match(code, /raise exception 'TEN-299 guard: no live sightings/);
   // the cut, in each bot's load_ticks, before its count; at-or-after (>=), never after only
-  for (const [tbl, key, fn] of [['t287', 'event_id', 'cuts_287'], ['t280', 'fixture_id', 'cuts_280']]) {
-    const re = new RegExp('delete from pg_temp\\.' + tbl + ' t using drops_live\\.' + fn + "\\(greatest\\(p_from, p_to - interval '4 days'\\) - interval '2 days'\\) c\\s+where t\\." + key + ' = c\\.' + key + ' and t\\.at >= c\\.cut_at;\\s+select count\\(\\*\\) into n from ' + tbl + ';');
-    assert.match(code, re, tbl + ': the cut sits right before the count');
+  for (const [tbl, key, fn, ct] of [['t287', 'event_id', 'cuts_287', 'cut287'], ['t280', 'fixture_id', 'cuts_280', 'cut280']]) {
+    const re = new RegExp('create temp table ' + ct + ' as select \\* from drops_live\\.' + fn + "\\(greatest\\(p_from, p_to - interval '4 days'\\) - interval '2 days'\\);\\s+delete from pg_temp\\." + tbl + ' t using pg_temp\\.' + ct + ' c\\s+where t\\.' + key + ' = c\\.' + key + ' and t\\.at >= c\\.cut_at;\\s+select count\\(\\*\\) into n from ' + tbl + ';');
+    assert.match(code, re, tbl + ': the cuts are kept and applied right before the count');
+    // the scan evaluates nothing at or after a match's cut (review of 43f06494: the 10-min window / late-recorded tick)
+    assert.match(code, new RegExp('where known_at <= e and at <= e and at > e - p_window\\s+and not exists \\(select 1 from pg_temp\\.' + ct + ' x where x\\.' + key + ' = ' + tbl + '\\.' + key + ' and x\\.cut_at <= e\\)'), tbl + ' scan');
   }
+  // an odd sighting date/time never throws (it would stop both bots); empty surname keys never join
+  assert.match(code, /case when f\.event_date ~ '\^\\d\{4\}-\\d\\d-\\d\\d\$'/);
+  assert.match(code, /case when f\.event_time ~ '\^\\d\\d:\\d\\d\$' then f\.event_time else '00:00' end/);
+  assert.equal((code.match(/where ev\.h <> '' and ev\.a <> '' and drops_live\.ini_ok/g) || []).length, 4, 'all four join legs');
   // the bots' own filters are untouched (the live definitions + the delete)
   assert.match(code, /coalesce\(t\.event_status, e\.status\) = 'pending'/);
   assert.match(code, /o\.is_live is false and o\.price_decimal >= 1\.01/);
@@ -1362,6 +1368,9 @@ test('TEN-299: both bots drop every tick at or after the live start, in one guar
   // installed from the drops workflow, measured before and after with the bots' real scan (backtest mode only)
   const steps = JSON.parse(read('tools/ten294-steps-install.json')).map((s) => s.name);
   for (const n of ['ten299_base_287', 'ten299_base_280', 'install_live_cut', 'ten299_cut_287', 'ten299_cut_280', 'ten299_summary']) assert.ok(steps.includes(n), n);
+  // last in the install: a TEN-299 failure (e.g. the poller down) never blocks the drops endpoint's own steps
+  assert.ok(steps.indexOf('ten299_base_287') > steps.indexOf('install') && steps.indexOf('ten299_base_287') > steps.indexOf('install_lines'));
+  assert.ok(steps.includes('ten299_after_cut'), 'the measurement counts backtest alerts at or after a cut (must be 0)');
   assert.ok(steps.indexOf('ten299_base_287') < steps.indexOf('install_live_cut') && steps.indexOf('install_live_cut') < steps.indexOf('ten299_cut_287'));
   const st = JSON.parse(read('tools/ten294-steps-install.json'));
   assert.deepEqual(st.find((s) => s.name === 'install_live_cut'), { name: 'install_live_cut', file: 'tools/ten299-live-cut.sql', required: true, stop_on_error: true });

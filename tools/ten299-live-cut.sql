@@ -10,9 +10,10 @@
 -- A match with no sighting is not cut here (the vendor's start is not a live signal: Superbet's ran up to 1 h 52 min
 -- late). Measured 2026-09-27: every in-play Superbet alert of the last 24 h joined a sighting (30 of 30).
 --
--- WHAT CHANGES. Each bot's load_ticks deletes, from its tick table, every tick recorded at or after the cut. Its
--- scan is unchanged, so an alert needs a current AND a reference price that are both pre-match: nothing fires
--- once a match has started, and a drop is always measured against a pre-match price.
+-- WHAT CHANGES. Each bot's load_ticks deletes every tick recorded at or after the cut (so current AND reference
+-- prices are pre-match: a drop is always measured against a pre-match price) and keeps the cuts in a temp
+-- table; its scan evaluates nothing at or after a match's cut (review of 43f06494: a pre-match tick still inside
+-- the 10-min window, or one recorded late, would otherwise alert minutes after the start).
 -- Cost: the cut covers matches scheduled in the 4 days before the window's end (+2 days of slack); a 10-minute
 -- detector never needs older (measured 2026-09-27: the full 16 days cost 0.68 s a tick for Bet105).
 -- load_ticks below are the LIVE definitions (read from the database 2026-09-27) plus that one delete, nothing else.
@@ -47,7 +48,9 @@ create or replace function drops_live.flips(p_from timestamptz)
 returns table(event_key text, live_at timestamptz, sched timestamptz, p1 text, p2 text, k1 text, k2 text)
 language sql stable set search_path = pg_catalog, pg_temp as $$
   select f.event_key, f.first_live_seen_at,
-         ((f.event_date || ' ' || coalesce(nullif(f.event_time, ''), '00:00'))::timestamp at time zone 'Europe/Berlin'),
+         case when f.event_date ~ '^\d{4}-\d\d-\d\d$'
+              then ((f.event_date || ' ' || case when f.event_time ~ '^\d\d:\d\d$' then f.event_time else '00:00' end)::timestamp
+                    at time zone 'Europe/Berlin') end,   -- an odd value never throws (it would stop both bots)
          f.first_player, f.second_player, drops_live.sk(f.first_player), drops_live.sk(f.second_player)
     from public.live_flip_log f
    where f.first_live_seen_at >= p_from
@@ -69,10 +72,10 @@ language sql stable set search_path = pg_catalog, pg_temp as $$
   ), fl as (select * from drops_live.flips(p_from - interval '1 day')),
   m as (
     select ev.event_id, ev.start_at, fl.event_key, fl.live_at from ev join fl on fl.k1 = ev.h and fl.k2 = ev.a
-     where drops_live.ini_ok(fl.p1, ev.home) and drops_live.ini_ok(fl.p2, ev.away) and abs(extract(epoch from fl.sched - ev.start_at)) < 86400
+     where ev.h <> '' and ev.a <> '' and drops_live.ini_ok(fl.p1, ev.home) and drops_live.ini_ok(fl.p2, ev.away) and abs(extract(epoch from fl.sched - ev.start_at)) < 86400
     union
     select ev.event_id, ev.start_at, fl.event_key, fl.live_at from ev join fl on fl.k1 = ev.a and fl.k2 = ev.h
-     where drops_live.ini_ok(fl.p1, ev.away) and drops_live.ini_ok(fl.p2, ev.home) and abs(extract(epoch from fl.sched - ev.start_at)) < 86400
+     where ev.h <> '' and ev.a <> '' and drops_live.ini_ok(fl.p1, ev.away) and drops_live.ini_ok(fl.p2, ev.home) and abs(extract(epoch from fl.sched - ev.start_at)) < 86400
   )
   select event_id, drops_live.cut_of(min(start_at), array_agg(distinct event_key), array_agg(live_at order by live_at))
     from m group by event_id
@@ -90,10 +93,10 @@ language sql stable set search_path = pg_catalog, pg_temp as $$
   ), fl as (select * from drops_live.flips(p_from - interval '1 day')),
   m as (
     select ev.fixture_id, ev.st, fl.event_key, fl.live_at from ev join fl on fl.k1 = ev.h and fl.k2 = ev.a
-     where drops_live.ini_ok(fl.p1, ev.p1) and drops_live.ini_ok(fl.p2, ev.p2) and abs(extract(epoch from fl.sched - ev.st)) < 86400
+     where ev.h <> '' and ev.a <> '' and drops_live.ini_ok(fl.p1, ev.p1) and drops_live.ini_ok(fl.p2, ev.p2) and abs(extract(epoch from fl.sched - ev.st)) < 86400
     union
     select ev.fixture_id, ev.st, fl.event_key, fl.live_at from ev join fl on fl.k1 = ev.a and fl.k2 = ev.h
-     where drops_live.ini_ok(fl.p1, ev.p2) and drops_live.ini_ok(fl.p2, ev.p1) and abs(extract(epoch from fl.sched - ev.st)) < 86400
+     where ev.h <> '' and ev.a <> '' and drops_live.ini_ok(fl.p1, ev.p2) and drops_live.ini_ok(fl.p2, ev.p1) and abs(extract(epoch from fl.sched - ev.st)) < 86400
   )
   select fixture_id, drops_live.cut_of(min(st), array_agg(distinct event_key), array_agg(live_at order by live_at))
     from m group by fixture_id
@@ -127,7 +130,10 @@ begin
   -- TEN-299 (founder comment 8585095a, card 518c56f0): no price at or after the match's live start is
   -- pre-match; with the in-play ticks gone, no alert fires on a started match and every drop is measured
   -- against a pre-match price. The cut is drops_live.cuts_287 (tools/ten299-live-cut.sql).
-  delete from pg_temp.t287 t using drops_live.cuts_287(greatest(p_from, p_to - interval '4 days') - interval '2 days') c
+  -- the cuts stay in pg_temp.cut287 for this bot's scan, which evaluates nothing at or after a cut
+  drop table if exists pg_temp.cut287;
+  create temp table cut287 as select * from drops_live.cuts_287(greatest(p_from, p_to - interval '4 days') - interval '2 days');
+  delete from pg_temp.t287 t using pg_temp.cut287 c
    where t.event_id = c.event_id and t.at >= c.cut_at;
   select count(*) into n from t287;
   return n;
@@ -176,9 +182,151 @@ begin
   -- TEN-299 (founder comment 8585095a, card 518c56f0): no price at or after the match's live start is
   -- pre-match; with the in-play ticks gone, no alert fires on a started match and every drop is measured
   -- against a pre-match price. The cut is drops_live.cuts_280 (tools/ten299-live-cut.sql).
-  delete from pg_temp.t280 t using drops_live.cuts_280(greatest(p_from, p_to - interval '4 days') - interval '2 days') c
+  -- the cuts stay in pg_temp.cut280 for this bot's scan, which evaluates nothing at or after a cut
+  drop table if exists pg_temp.cut280;
+  create temp table cut280 as select * from drops_live.cuts_280(greatest(p_from, p_to - interval '4 days') - interval '2 days');
+  delete from pg_temp.t280 t using pg_temp.cut280 c
    where t.fixture_id = c.fixture_id and t.at >= c.cut_at;
   select count(*) into n from t280;
+  return n;
+end $fn$
+;
+
+-- ── the bots' scan: the live definitions + the at-or-after-the-cut exclusion ──
+create or replace function ten287_bot.scan(p_book text, p_from timestamp with time zone, p_to timestamp with time zone, p_threshold numeric, p_mode text, p_run text, p_window interval DEFAULT '00:10:00'::interval, p_floor numeric DEFAULT NULL::numeric, p_cooldown interval DEFAULT '00:30:00'::interval)
+ RETURNS integer
+ LANGUAGE plpgsql
+AS $fn$
+declare
+  e   timestamptz := case when p_from = p_to then p_from else date_trunc('minute', p_from) end;
+  n   integer := 0;
+  c   record; op record; ev record; aid bigint;
+  o_price numeric; o_at timestamptz; o_kind text;
+begin
+  while e <= p_to loop
+    for c in
+      with cur as (
+        select distinct on (event_id, side) event_id, side, price as cur_price, at as cur_at
+        from pg_temp.t287
+        where known_at <= e and at <= e and at > e - p_window
+          -- TEN-299: a match is not evaluated once e reaches its live start (a pre-match tick still inside the
+          -- 10-min window, or one recorded late, would otherwise alert after the start)
+          and not exists (select 1 from pg_temp.cut287 x where x.event_id = t287.event_id and x.cut_at <= e)
+        order by event_id, side, at desc, known_at desc
+      )
+      select cur.*, r.price as ref_price, r.at as ref_at,
+             round((r.price - cur.cur_price) / r.price * 100, 2) as pct_10m
+      from cur
+      cross join lateral (
+        select x.price, x.at from pg_temp.t287 x
+        where x.event_id = cur.event_id and x.side = cur.side and x.at <= e - p_window and x.known_at <= e
+        order by x.at desc, x.known_at desc limit 1) r
+      where (p_floor is null or cur.cur_price >= p_floor)
+        and (r.price - cur.cur_price) / r.price * 100 >= p_threshold
+      order by pct_10m desc, event_id, side
+    loop
+      if exists (select 1 from ten287_bot.alerts a
+                 where a.mode = p_mode and a.run_id is not distinct from p_run and a.book = p_book
+                   and a.threshold = p_threshold and a.event_id = c.event_id and a.eval_at > e - p_cooldown) then
+        continue;
+      end if;
+      select e2.home, e2.away, e2.tier into ev from ten287_rec.events e2 where e2.event_id = c.event_id;
+      -- Opening: the vendor's first record when we have it, else our own first sighting of that side.
+      select case c.side when 'home' then o.open_home else o.open_away end, o.open_at
+        into o_price, o_at
+        from ten287_rec.openings o where o.event_id = c.event_id and o.book = p_book and o.status_code = 200;
+      if o_price is not null and o_price >= 1.01 and o_at is not null then
+        o_kind := 'vendor first record';
+      else
+        select price, at into op from pg_temp.t287
+         where event_id = c.event_id and side = c.side and known_at <= e order by at asc limit 1;
+        o_price := op.price; o_at := op.at; o_kind := 'first seen';
+      end if;
+      insert into ten287_bot.alerts (mode, run_id, book, threshold, event_id, side, tier, player_a, player_b, side_player,
+          eval_at, ref_price, ref_at, cur_price, cur_at, pct_10m, open_price, open_at, open_kind, pct_open)
+      values (p_mode, p_run, p_book, p_threshold, c.event_id, c.side, ev.tier,
+          ten287_bot.disp(ev.home), ten287_bot.disp(ev.away),
+          ten287_bot.disp(case c.side when 'home' then ev.home else ev.away end),
+          e, c.ref_price, c.ref_at, c.cur_price, c.cur_at, c.pct_10m, o_price, o_at, o_kind,
+          case when o_price is not null then round((c.cur_price - o_price) / o_price * 100, 2) end)
+      returning id into aid;
+      update ten287_bot.alerts set message = ten287_bot.render(alerts, e) where id = aid;
+      n := n + 1;
+      o_price := null; o_at := null; o_kind := null;
+    end loop;
+    e := e + interval '1 minute';
+  end loop;
+  return n;
+end $fn$
+;
+
+create or replace function ten280_bot.scan(p_from timestamp with time zone, p_to timestamp with time zone, p_threshold numeric, p_mode text, p_run text, p_window interval DEFAULT '00:10:00'::interval, p_floor numeric DEFAULT NULL::numeric, p_cooldown interval DEFAULT '00:30:00'::interval)
+ RETURNS integer
+ LANGUAGE plpgsql
+AS $fn$
+declare
+  -- a single instant (the live tick) is evaluated AS IS, so a 30 s schedule sees
+  -- ticks known up to that second; a range (backtest / self-test) steps by whole minutes.
+  e   timestamptz := case when p_from = p_to then p_from else date_trunc('minute', p_from) end;
+  n   integer := 0;
+  c   record;
+  op  record;
+  fx  record;
+  aid bigint;
+begin
+  while e <= p_to loop
+    for c in
+      with cur as (
+        select distinct on (fixture_id, side_id) fixture_id, side_id, price as cur_price, at as cur_at, src as cur_src
+        from pg_temp.t280
+        -- only sides that moved inside the window can have dropped; their latest
+        -- known tick is then this in-window one (a later tick would be in it too)
+        where known_at <= e and at <= e and at > e - p_window
+          -- TEN-299: a match is not evaluated once e reaches its live start (a pre-match tick still inside the
+          -- 10-min window, or one recorded late, would otherwise alert after the start)
+          and not exists (select 1 from pg_temp.cut280 x where x.fixture_id = t280.fixture_id and x.cut_at <= e)
+        order by fixture_id, side_id, at desc
+      )
+      select cur.*, r.price as ref_price, r.at as ref_at,
+             round((r.price - cur.cur_price) / r.price * 100, 2) as pct_10m
+      from cur
+      cross join lateral (
+        select x.price, x.at from pg_temp.t280 x
+        where x.fixture_id = cur.fixture_id and x.side_id = cur.side_id
+          and x.at <= e - p_window and x.known_at <= e
+        order by x.at desc limit 1) r
+      where cur.cur_at > e - p_window
+        and (p_floor is null or cur.cur_price >= p_floor)
+        and (r.price - cur.cur_price) / r.price * 100 >= p_threshold
+      order by pct_10m desc, fixture_id, side_id
+    loop
+      if exists (select 1 from ten280_bot.alerts a
+                 where a.mode = p_mode and a.run_id is not distinct from p_run
+                   and a.threshold = p_threshold
+                   and a.fixture_id = c.fixture_id and a.eval_at > e - p_cooldown) then
+        continue;
+      end if;
+      select price, at, is_opener into op from pg_temp.t280
+       where fixture_id = c.fixture_id and side_id = c.side_id and known_at <= e
+       order by at asc, is_opener desc limit 1;
+      select f.league_id, f.player1_name, f.player2_name into fx
+        from public.kibl_fixtures f where f.fixture_id = c.fixture_id;
+      insert into ten280_bot.alerts (mode, run_id, threshold, fixture_id, side_id, league_id, tier,
+          player_a, player_b, side_player, eval_at, ref_price, ref_at, cur_price, cur_at, cur_src, pct_10m,
+          open_price, open_at, open_is_opener, pct_open)
+      values (p_mode, p_run, p_threshold, c.fixture_id, c.side_id, fx.league_id, ten280_bot.tier_of(fx.league_id),
+          fx.player1_name, fx.player2_name,
+          case c.side_id when 2 then fx.player1_name when 3 then fx.player2_name end,
+          e, c.ref_price, c.ref_at, c.cur_price, c.cur_at, c.cur_src, c.pct_10m,
+          op.price, op.at, op.is_opener, round((c.cur_price - op.price) / op.price * 100, 2))
+      returning id into aid;
+      -- backtest/self-test text is rendered as of the detection minute; the live
+      -- tick re-renders it at the moment it sends, so "Moved" is send-time.
+      update ten280_bot.alerts set message = ten280_bot.render(alerts, e) where id = aid;
+      n := n + 1;
+    end loop;
+    e := e + interval '1 minute';
+  end loop;
   return n;
 end $fn$
 ;
@@ -195,6 +343,8 @@ begin
   perform ten280_bot.load_ticks(now() - interval '3 days', now());
   select count(*) into c from pg_temp.t280 t join drops_live.cuts_280(now() - interval '5 days') x using (fixture_id) where t.at >= x.cut_at;
   if c <> 0 then raise exception 'TEN-299 guard: % Bet105 ticks left after the live cut', c; end if;
+  perform ten287_bot.scan('Superbet', now(), now(), 5, 'selftest', 'ten299-guard', interval '10 minutes', null, interval '0 minutes');
+  perform ten280_bot.scan(now(), now(), 5, 'selftest', 'ten299-guard', interval '10 minutes', null, interval '0 minutes');
   select count(*) into k from drops_live.flips(now() - interval '3 days');
   if k = 0 then raise exception 'TEN-299 guard: no live sightings in 3 days (the poller is down): not installing a cut that cannot fire'; end if;
 end $$;
