@@ -51,7 +51,7 @@ Mapping measured in TEN-297 doc `feed-mapping`. Page files: `drops-page.js`, `dr
   **Test:** "Since open" and "24h" return the same rows while the feed's `windowHours` is 24; 48h cannot be selected.
 - **BOOKS Sharp/Soft comes from `odds.md`'s ruled table** (Bet105 Sharp, Superbet Soft), never guessed. A book absent from that table is listed under neither group and only under "All".
 - **Markets: only Match winner is tracked.** The other four tabs show "No drops on this market" and their count is "—", never 0.
-- **Missing is a dash, never a zero or a "no moves" claim.** Before the first good read the header, tab counts and count line show "—"; with the endpoint unreachable and nothing read, the banner shows and the list is absent (never "No moves above your threshold"). On an untracked market the header and count line show "—".
+- **Missing is a dash, never a zero or a "no moves" claim.** Before the first good read the header and tab counts show "—" and the count line says "Loading moves…" while the request is in flight; with the endpoint unreachable and nothing read, the banner shows and the list is absent (never "No moves above your threshold"). On an untracked market the header and count line show "—".
 - **"Starts within N" means an upcoming start within N hours**; a match past its scheduled start never passes it, and "Starting soonest" lists upcoming matches first, then passed starts.
   *Why:* Bet105 rows are never `started` (Kibl carries no live tennis on our account), so without this a match 15 h past its start read as "starting soonest" (review of 8c441ec4, measured on the live feed).
 - **Surface and event are not in the feed**: the Surface control is disabled at "—", the detail line omits the event, and search matches player names only.

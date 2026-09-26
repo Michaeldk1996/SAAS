@@ -156,12 +156,14 @@ test('the entry-list renderer tells a real zero apart from no data', () => {
 });
 
 // ------------------------------------------------------------- brief items
-test('item 1.1/1.4: the sidebar is the bundle\'s 11 items, in order', () => {
+// SUPERSEDED count: TEN-286 locked design/reference/portal-12a.html, whose nav carries Dropping Odds between
+// Trading Report and Series; TEN-294 (founder, 2026-09-26) builds that page. Entry Lists stays removed.
+test('item 1.1/1.4: the sidebar is the 12a portal\'s 12 items, in order', () => {
   const navStart = DASH.indexOf('<nav class="sf-nav" id="mainNav">');
   const nav = DASH.slice(navStart, DASH.indexOf('</nav>', navStart));
   const labels = [...nav.matchAll(/<button[^>]*data-tab="([^"]+)"[^>]*>(?:<svg[\s\S]*?<\/svg>)?([^<]*)<\/button>/g)]
     .map((m) => m[2].trim());
-  assert.deepEqual(labels, ['Matches', 'Live', 'Trading Report', 'Series', 'Players', 'Head to Head',
+  assert.deepEqual(labels, ['Matches', 'Live', 'Trading Report', 'Dropping Odds', 'Series', 'Players', 'Head to Head',
     'Tournaments', 'Database', 'Stennisfy Model', 'Playing Styles', 'News']);
   // match a real BUTTON, not any mention: the comment that replaced the item
   // names the alias on purpose, and a comment is not a nav item.

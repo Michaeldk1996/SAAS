@@ -560,3 +560,107 @@ test('page: the banner time is UTC whatever the viewer\'s timezone', async () =>
     assert.match(html, /as of <span class="do-mono">11:48 UTC<\/span>/);
   } finally { if (prev === undefined) delete process.env.TZ; else process.env.TZ = prev; }
 });
+
+// ── second review (of eac4f55b): lock every fix, in a sandbox that keeps the modal and the key handler ──
+function pageSandbox({ feed, windowHours = 24, hang = false, ageS = 12 }) {
+  const root = { innerHTML: '', addEventListener() {}, closest: () => ({ classList: { contains: () => false } }), querySelector: () => null };
+  const overlay = { writes: 0, _h: '', style: { setProperty() {} }, className: '', id: '', remove() { overlay.gone = true; }, querySelector: () => null };
+  Object.defineProperty(overlay, 'innerHTML', { get: () => overlay._h, set: (v) => { overlay.writes += 1; overlay._h = v; } });
+  let mounted = false; const keys = [];
+  const status = () => ({ schema: 1, generatedAt: new Date(PT0 - ageS * 1000).toISOString(), serverNow: new Date(PT0).toISOString(), ageS, freshness: 'ok', sources: [] });
+  const res = (body) => ({ status: 200, ok: true, headers: { get: () => '"e1"' }, json: async () => body });
+  const sandbox = {
+    document: { readyState: 'complete', activeElement: null, querySelector: () => null,
+      getElementById: (id) => (id === 'dropsRoot' ? root : id === 'doOverlay' ? (mounted ? overlay : null) : null),
+      addEventListener: (t, f) => { if (t === 'keydown') keys.push(f); },
+      body: { appendChild: () => { mounted = true; } }, createElement: () => overlay },
+    location: { search: '' }, localStorage: { getItem: () => null }, URLSearchParams,
+    fetch: (url) => (hang ? new Promise(() => {}) : Promise.resolve(res(url.endsWith('/status.json') ? status() : { schema: 1, windowHours, rows: feed() }))),
+    setTimeout: () => 0, clearTimeout() {}, setInterval: () => 0, clearInterval() {},
+    Date: class extends Date { constructor(...a) { super(...(a.length ? a : [PT0])); } static now() { return PT0; } },
+    Promise, JSON, Math, String, Number, Object, Array, isFinite, parseFloat, RegExp, Error, matches: [],
+  };
+  sandbox.window = sandbox;
+  vm.runInNewContext(read('drops-page.js'), sandbox);
+  const flush = async () => { for (let i = 0; i < 10; i++) await new Promise((r) => setImmediate(r)); };
+  const P = sandbox.window.DropsPage;
+  return { P, st: P._state, root, overlay, keys, flush, activate: async () => { P.setActive(true); await flush(); } };
+}
+
+test('page review 2: the count line is never "0 moves" when the endpoint is down, and nothing reads 0 in flight', async () => {
+  const down = (await renderPage({ rows: [], reachable: false })).html;
+  assert.match(down, /<span class="do-count">—<\/span>/);
+  const x = pageSandbox({ feed: () => [], hang: true });
+  x.P.setActive(true); await x.flush();
+  assert.match(x.root.innerHTML, /<span class="do-count">Loading moves…<\/span>/);
+  assert.match(x.root.innerHTML, /Loading prices…/);
+  assert.doesNotMatch(x.root.innerHTML, /do-tab-n">0<|data-k="drops">0</);
+});
+
+test('page review 2: the open modal is rebuilt only when what it shows changes', async () => {
+  const x = pageSandbox({ feed: () => [frow({ id: 'r1', open: 2, now: 1.8 })] });
+  await x.activate();
+  x.st.drawer = 'r1';
+  await x.activate();
+  const w = x.overlay.writes;
+  assert.ok(w >= 1, 'the modal was drawn');
+  await x.activate(); await x.activate();          // two more renders with nothing new: no rebuild
+  assert.equal(x.overlay.writes, w);
+  x.st.drBook = 'Bet105'; x.st.tip = true;         // what it shows changed: rebuilt once
+  await x.activate();
+  assert.equal(x.overlay.writes, w + 1);
+});
+
+test('page review 2: Enter on a row opens it with the chart on its own book and the tooltip closed', async () => {
+  const x = pageSandbox({ feed: () => [frow({ id: 'r1', open: 2, now: 1.8 })] });
+  await x.activate();
+  x.st.drBook = 'Superbet'; x.st.tip = true;
+  const row = { getAttribute: () => 'r1' };
+  x.keys[0]({ key: 'Enter', preventDefault() {}, target: { closest: (s) => (s === '.do-row' ? row : null) } });
+  assert.equal(x.st.drawer, 'r1');
+  assert.equal(x.st.drBook, null);
+  assert.equal(x.st.tip, false);
+});
+
+test('page review 2: a book that appears later joins only an all-books selection', async () => {
+  let rows = [frow({ id: 'r1', open: 2, now: 1.8 })];
+  const x = pageSandbox({ feed: () => rows });
+  await x.activate();
+  assert.deepEqual([...x.st.S.books].sort(), ['Bet105', 'Superbet']);
+  rows = rows.concat([frow({ id: 'p1', book: 'Pinnacle', a: 'Pat Pi', b: 'Rho Rho', side: 'Pat Pi', open: 2, now: 1.7 })]);
+  await x.activate();
+  assert.ok(x.st.S.books.includes('Pinnacle'), 'all books were selected, so the new one joins');
+  // the member narrowed the list to Bet105; Pinnacle then appears: it must not be added
+  const z = pageSandbox({ feed: () => (z.st.knownBooks ? rows : rows.slice(0, 1)) });
+  await z.activate(); z.st.S.books = ['Bet105'];
+  await z.activate();
+  assert.deepEqual(z.st.S.books, ['Bet105'], 'a narrowed selection is never widened behind the member\'s back');
+});
+
+test('page review 2: repeat alerts collapse to the newest INSTANT, whatever the timestamp format', () => {
+  const a = { ...frow({ id: 'older', open: 2, now: 1.8 }), detectedAt: '2026-09-26T11:00:00Z' };
+  const b = { ...frow({ id: 'newer', open: 2, now: 1.8 }), detectedAt: '2026-09-26T11:00:00.900+00:00' };
+  assert.deepEqual(PAGE.buildRows([a, b]).map((r) => r.id), ['newer']);
+  assert.deepEqual(PAGE.buildRows([b, a]).map((r) => r.id), ['newer']);
+});
+
+test('page review 2: the Since-open label reads the feed\'s own window', async () => {
+  const x = pageSandbox({ feed: () => [frow({ id: 'r1', open: 2, now: 1.8 })], windowHours: 12 });
+  await x.activate();
+  assert.match(x.root.innerHTML, /title="Everything the feed holds: the last 12h of flagged moves"/);
+});
+
+test('page review 2: "Starting soonest" is stable for unknown starts and orders passed starts most-recent first', () => {
+  const rows = PAGE.buildRows([
+    frow({ id: 'u1', a: 'Un One', b: 'Op A', side: 'Un One', open: 2, now: 1.8, start: null }),
+    frow({ id: 'p15', a: 'Past Far', b: 'Op B', side: 'Past Far', open: 2, now: 1.8, start: at(15 * HR) }),
+    frow({ id: 'p1', a: 'Past Near', b: 'Op C', side: 'Past Near', open: 2, now: 1.8, start: at(1 * HR) }),
+    frow({ id: 'up', a: 'Up Soon', b: 'Op D', side: 'Up Soon', open: 2, now: 1.8, start: at(-1 * HR) }),
+    frow({ id: 'u2', a: 'Un Two', b: 'Op E', side: 'Un Two', open: 2, now: 1.8, start: null }),
+  ]);
+  for (const r of rows) if (r.id.startsWith('u') && r.id !== 'up') r.start = null;
+  const ids = PAGE.sortRows(rows, 'soon', PT0).map((r) => r.id);
+  assert.equal(ids[0], 'up');
+  assert.deepEqual(ids.slice(1, 3), ['p1', 'p15'], 'passed starts after upcoming, most recent first');
+  assert.deepEqual(ids.slice(3).sort(), ['u1', 'u2'], 'unknown starts last');
+});

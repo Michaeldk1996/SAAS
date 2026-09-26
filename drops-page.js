@@ -115,7 +115,7 @@
         var x = t(a.start), y = t(b.start);
         var px = x == null || x < now, py = y == null || y < now;
         if (px !== py) return px ? 1 : -1;
-        if (x == null || y == null) return x == null ? 1 : -1;
+        if (x == null || y == null) return x == null && y == null ? 0 : x == null ? 1 : -1;
         return px ? y - x : x - y;
       },
     }[sort] || function () { return 0; };
@@ -492,7 +492,11 @@
       searchHtml() + railsHtml() + tabsHtml(v) + resultsHtml(v) + colsHtml() + listHtml(v, fs) +
       (st.menu ? '<div class="do-clickaway" data-act="clickaway"></div>' : '') + '</div>';
     if (focusQ) { var q = el.querySelector('[data-act="q"]'); q.focus(); try { q.setSelectionRange(caret, caret); } catch (e) {} }
-    if (focusRow) { var fr = el.querySelector('.do-row[data-v="' + focusRow.replace(/"/g, '') + '"]'); if (fr) fr.focus(); }
+    if (focusRow) {
+      var sel = typeof CSS !== 'undefined' && CSS.escape ? CSS.escape(focusRow) : focusRow.replace(/["\\]/g, '\\$&');
+      var fr = null; try { fr = el.querySelector('.do-row[data-v="' + sel + '"]'); } catch (e) {}
+      if (fr) fr.focus({ preventScroll: true });     // never scroll the page back to a row
+    }
     renderModal();
   }
 
