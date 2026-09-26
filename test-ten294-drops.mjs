@@ -1054,7 +1054,9 @@ test('status: no live sighting — not started before the start; after it, api-t
   const u = STATUS.resolveMatch(passed, none);
   assert.equal(u.status, 'unknown', 'api-tennis not read: unknown, never a guess');
   assert.equal(u.cutAt, Z('2026-09-26T06:55:00Z'), 'and CUT at the passed scheduled start: an unknown row never shows in-play prices');
-  assert.deepEqual(STATUS.apiNeeds([passed], none, { keys: new Map() }).days, ['2026-09-25', '2026-09-26', '2026-09-27'], 'one day per call: the start\'s day and both neighbours (a vendor start can be early across midnight)');
+  assert.deepEqual(STATUS.apiNeeds([passed], none, { keys: new Map() }).days, ['2026-09-26'], 'one day per call: the start\'s day');
+  // a start within 6 h of midnight UTC also asks the neighbouring day (a vendor start can be early or late across it)
+  assert.deepEqual(STATUS.apiNeeds([{ ...damm, scheduledStart: '2026-09-25T23:30:00Z' }], none, { keys: new Map() }).days, ['2026-09-25', '2026-09-26']);
   const fx = [{ event_key: 12165854, event_status: 'Finished', event_live: '0', event_date: '2026-09-26', event_time: '06:55', utc: true, event_first_player: 'M. Damm', event_second_player: 'H. Hurkacz' }];
   const m = STATUS.resolveMatch(passed, { ...none, fixtures: fx });
   assert.equal(m.status, 'finished');
@@ -1083,10 +1085,17 @@ test('status: the live-sighting join needs both surnames, a start within 24 h an
     [{ eventKey: '12166049', liveAt: 'x', date: '2026-09-27', time: '04:00', p1: 'H. Gaston', p2: 'A. Rublev' }]).eventKey, '12166049');
   // compound surname: last token of the surname part on both sides
   assert.ok(STATUS.samePair('Inaki Montes-De La Torre', 'Michael Agwi', 'I. Montes-De La Torre', 'M. Agwi'));
-  // initials only BREAK A TIE: a single surname candidate joins even when the initials differ
-  // (live: api-tennis lists Adolfo Vallejo as "D. Vallejo")
-  const vallejo = { playerA: 'Coleman Wong', playerB: 'Adolfo Vallejo', scheduledStart: '2026-09-26T11:30:00Z' };
-  assert.equal(STATUS.matchFlip(vallejo, [{ eventKey: '12165884', liveAt: 'x', date: '2026-09-26', time: '13:30', p1: 'C. Wong', p2: 'D. Vallejo' }]).eventKey, '12165884');
+  // both players' initials must agree, every given name counting: "Adolfo Daniel Vallejo" is api-tennis's "D. Vallejo"
+  const vf = [{ eventKey: '12165884', liveAt: '2026-09-26T13:20:00Z', date: '2026-09-26', time: '13:30', p1: 'C. Wong', p2: 'D. Vallejo' }];
+  const vSb = { id: 'v1', book: 'Superbet', playerA: 'Coleman Wong', playerB: 'Adolfo Daniel Vallejo', side: 'Coleman Wong', scheduledStart: '2026-09-26T11:30:00Z', open: { at: '2026-09-25T10:00:00Z', price: '2.5' }, latest: { at: '2026-09-26T11:00:00Z', price: '2.3' } };
+  const vK = { ...vSb, id: 'v2', book: 'Bet105', playerB: 'Adolfo Vallejo', scheduledStart: '2026-09-26T12:15:00Z' };
+  assert.equal(STATUS.matchFlip(vSb, vf).eventKey, '12165884');
+  assert.equal(STATUS.matchFlip(vK, vf), null, 'the Kibl row names only "Adolfo": alone it is refused, never guessed');
+  const vg = STATUS.withStatus([vSb, vK], [], { flips: vf, board: new Map(), byKey: new Map(), fixtures: null, now: Date.parse('2026-09-26T14:00:00Z') }).rows;
+  assert.deepEqual(vg.map((r) => r.match.eventKey), ['12165884', '12165884'], '...and gets the match through its group');
+  // accents, hyphens and a Jr suffix join (third review): Lehečka / Carreno-Busta / Damm Jr
+  assert.ok(STATUS.samePair('Jiří Lehečka', 'Pablo Carreno Busta', 'J. Lehecka', 'P. Carreno-Busta'));
+  assert.ok(STATUS.samePair('Martin Damm Jr', 'Hubert Hurkacz', 'M. Damm', 'H. Hurkacz'));
   // two surname candidates: the initials decide; neither agreeing -> ambiguous
   const wz = { playerA: 'Jiri Wang', playerB: 'Wei Zheng', scheduledStart: '2026-09-26T10:00:00Z' };
   const two = [{ eventKey: '1', liveAt: 'x', date: '2026-09-26', time: '12:00', p1: 'J. Zheng', p2: 'W. Wang' }, { eventKey: '2', liveAt: 'x', date: '2026-09-26', time: '12:30', p1: 'W. Zheng', p2: 'J. Wang' }];
@@ -1094,7 +1103,8 @@ test('status: the live-sighting join needs both surnames, a start within 24 h an
   assert.equal(STATUS.matchFlip(wz, [two[0], { ...two[0], eventKey: '3' }]), null, 'both players\' initials conflict: not this match');
   // two candidates, each agreeing on one player only: the tie cannot be broken -> ambiguous
   const half = [{ eventKey: '4', liveAt: 'x', date: '2026-09-26', time: '12:00', p1: 'J. Wang', p2: 'X. Zheng' }, { eventKey: '5', liveAt: 'x', date: '2026-09-26', time: '12:30', p1: 'X. Wang', p2: 'W. Zheng' }];
-  assert.equal(STATUS.matchFlip(wz, half), 'ambiguous');
+  assert.equal(STATUS.matchFlip(wz, half), null, 'each conflicts on one player: neither is this match');
+  assert.equal(STATUS.matchFlip(wz, [two[1], { ...two[1], eventKey: '9' }]), 'ambiguous', 'two full matches: ambiguous, never picked');
   // a same-surname pair is told apart by initials (F. v J. Cerundolo), never dropped as "no key"
   const cer = { playerA: 'Francisco Cerundolo', playerB: 'Juan Manuel Cerundolo', scheduledStart: '2026-09-26T10:00:00Z' };
   assert.equal(STATUS.matchFlip(cer, [{ eventKey: '7', liveAt: 'x', date: '2026-09-26', time: '12:00', p1: 'J. Cerundolo', p2: 'F. Cerundolo' }]).eventKey, '7');
@@ -1262,7 +1272,11 @@ test('status second review (36b4a518): the 30-min grace believes a live fixture;
   assert.equal(m.status, 'in_play');
   assert.equal(m.cutAt, Z('2026-09-26T12:00:00Z'));
   assert.equal(STATUS.resolveMatch(row, { flips: [], board: new Map(), fixtures: null, now }).status, 'not_started', 'no fixture yet: the poller is trusted for 30 min');
-  assert.deepEqual(STATUS.apiNeeds([row], { flips: [], board: new Map(), now }, { keys: new Map() }).days, ['2026-09-25', '2026-09-26', '2026-09-27'], 'asked as soon as the start passed');
+  assert.deepEqual(STATUS.apiNeeds([row], { flips: [], board: new Map(), now }, { keys: new Map() }).days, ['2026-09-26'], 'asked as soon as the start passed');
+  // a fixture joined from a day list is re-asked by key until terminal; the fresher by-key answer wins
+  const needs = STATUS.apiNeeds([row], { flips: [], board: new Map(), fixtures: fx, now }, { keys: new Map() });
+  assert.deepEqual(needs.keys, ['5']);
+  assert.equal(STATUS.resolveMatch(row, { flips: [], board: new Map(), fixtures: fx, byKey: new Map([['5', { event_status: 'Finished' }]]), now }).status, 'finished');
   // repeat alerts of one selection x book: every row gets the same, latest, pre-cut price
   const ctx = { flips, board: new Map(), byKey: new Map([['12165991', { event_status: 'Finished' }]]), fixtures: null, now: NOW_S };
   const a = { ...singh, id: 's1', latest: { at: '2026-09-26T08:47:00Z', price: '1.01' }, droppedTo: { at: '2026-09-26T06:59:00Z', price: '3.2' }, preDrop: null };
@@ -1300,4 +1314,22 @@ test('status second review: the tie-break, middle-name initials, anchor-only gro
   const fl = [F('K1', '04:00', 'J. Wang', 'W. Zheng', '2026-09-23'), F('K2', '22:00', 'J. Wang', 'W. Zheng', '2026-09-25')];
   const two = STATUS.withStatus([r1, r2], [], { flips: fl, board: new Map(), byKey: new Map([['K1', { event_status: 'Finished' }]]), fixtures: null, now: Date.parse('2026-09-26T00:00:00Z') }).rows;
   assert.deepEqual(two.map((r) => [r.match.eventKey, r.match.status]), [['K1', 'finished'], ['K2', 'in_play']]);
+});
+
+test('status third review (68cdc26e): repeat alerts agree even when pre-match; a same-surname pair never swaps prices; fixtures are indexed', () => {
+  const ctx = { flips, board: new Map(), byKey: new Map([['12165991', { event_status: 'Finished' }]]), fixtures: null, now: NOW_S };
+  const a = { ...singh, id: 'p1', latest: { at: '2026-09-26T05:00:00Z', price: '1.8' }, droppedTo: null, preDrop: null };
+  const b = { ...singh, id: 'p2', latest: { at: '2026-09-26T06:30:00Z', price: '1.6' }, droppedTo: null, preDrop: null };
+  assert.deepEqual(STATUS.withStatus([a, b], [], ctx).rows.map((r) => r.latest.price), ['1.6', '1.6'], 'both: the later pre-match price');
+  // Karolina v Kristyna Pliskova: each side keeps its own prices
+  const pf = [{ eventKey: '44', liveAt: '2026-09-26T10:06:00Z', date: '2026-09-26', time: '12:00', p1: 'Ka. Pliskova', p2: 'Kr. Pliskova' }];
+  const base = { book: 'Superbet', playerA: 'Karolina Pliskova', playerB: 'Kristyna Pliskova', scheduledStart: '2026-09-26T10:00:00Z', open: { at: '2026-09-25T10:00:00Z', price: '2' }, preDrop: null };
+  const kA = { ...base, id: 'k1', side: 'Karolina Pliskova', latest: { at: '2026-09-26T11:00:00Z', price: '1.1' }, droppedTo: { at: '2026-09-26T09:00:00Z', price: '1.4' } };
+  const kB = { ...base, id: 'k2', side: 'Kristyna Pliskova', latest: { at: '2026-09-26T11:00:00Z', price: '9' }, droppedTo: { at: '2026-09-26T09:00:00Z', price: '2.9' } };
+  const pr = STATUS.withStatus([kA, kB], [], { flips: pf, board: new Map(), byKey: new Map(), fixtures: null, now: NOW_S }).rows;
+  assert.deepEqual(pr.map((r) => [r.side, r.latest.price]), [['Karolina Pliskova', '1.4'], ['Kristyna Pliskova', '2.9']]);
+  // the by-day lists are indexed by surname pair; matchFixture reads the index
+  const idx = STATUS.indexFixtures([{ event_key: 1, event_first_player: 'M. Damm', event_second_player: 'H. Hurkacz', event_date: '2026-09-26', event_time: '06:55', utc: true }]);
+  assert.ok(idx instanceof Map && idx.get('damm|hurkacz').length === 1);
+  assert.equal(STATUS.matchFixture(damm, idx).event_key, 1);
 });
