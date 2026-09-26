@@ -15,7 +15,9 @@
  },
  {
   "name": "install_watchdog",
-  "sql_files": ["tools/ten294-drops-watchdog.sql"],
+  "sql_files": [
+   "tools/ten294-drops-watchdog.sql"
+  ],
   "transaction": true,
   "required": true,
   "stop_on_error": true
@@ -28,18 +30,20 @@
  },
  {
   "name": "selftest_send",
-  "sql": "select drops_watch.send('selftest', 'selftest', E'🧪 DROPS WATCHDOG — TEST PING\\n\\nThe stall-alert path for the drops page is installed: pg_cron checks https://stennisfy-drops.fly.dev/health every minute and alerts this chat when the endpoint is unreachable 3 times in a row or its data is stale. No action needed.') is not null as queued",
+  "sql": "do $$ begin if drops_watch.send('selftest', 'selftest', E'🧪 DROPS WATCHDOG — TEST PING\\n\\nThe stall-alert path for the drops page is installed: pg_cron checks https://stennisfy-drops.fly.dev/health every minute and alerts this chat when the endpoint is unreachable 3 times in a row or its data is stale. No action needed.') is null then raise exception 'selftest ping not queued: %', (select delivery from drops_watch.messages where kind = 'selftest' order by id desc limit 1); end if; end $$; select 'queued' as selftest",
   "required": true,
   "stop_on_error": true
  },
- {"sleep": 75},
+ {
+  "sleep": 75
+ },
  {
   "name": "settle",
   "sql": "select drops_watch.tick() as condition"
  },
  {
   "name": "selftest_delivered",
-  "sql": "do $$ begin if not exists (select 1 from drops_watch.messages where kind = 'selftest' and delivery = 'sent' and created_at > now() - interval '10 minutes') then raise exception 'selftest ping not confirmed sent: %', (select delivery from drops_watch.messages where kind = 'selftest' order by id desc limit 1); end if; end $$; select 'sent' as selftest",
+  "sql": "do $$ declare d text := (select delivery from drops_watch.messages where kind = 'selftest' order by id desc limit 1); begin if d is distinct from 'sent' then raise exception 'selftest ping not confirmed sent: %', d; end if; end $$; select 'sent' as selftest",
   "required": true
  },
  {

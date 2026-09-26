@@ -148,7 +148,7 @@ jobs:
       # a skipped deploy (no token) still leaves `deploy` green — never arm the watchdog on an endpoint that isn't up
       - name: Endpoint answers /health
         run: |
-          code=$(curl -s -o health.json -w '%{http_code}' https://stennisfy-drops.fly.dev/health || true)
+          code=$(curl -s --max-time 20 -o health.json -w '%{http_code}' https://stennisfy-drops.fly.dev/health || true)
           python3 -c 'import json;h=json.load(open("health.json"));print("health",h["ok"],h["freshness"])' \
             || { echo "::error::no /health body (HTTP $code) — watchdog NOT installed"; exit 1; }
       - name: Install + schedule the watchdog, test ping (encrypted output)

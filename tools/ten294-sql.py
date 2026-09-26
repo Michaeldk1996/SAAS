@@ -36,7 +36,7 @@ def main():
             import time; time.sleep(st["sleep"]); continue
         if "vault_from_env" in st:
             # value -> Vault under the bot's OWN name; never printed, never in the artifact
-            val = os.environ.get(st["vault_from_env"], "")
+            val = os.environ.get(st["vault_from_env"], "").strip()   # a pasted trailing newline breaks a chat id
             if not val:
                 print(f"{st['name']}: {st['vault_from_env']} not set"); failed = True; break
             tag = "v" + os.urandom(6).hex()

@@ -310,10 +310,19 @@ test('watchdog arming: own vault names from the drop-alert chat, scheduled once,
   assert.equal(by.vault_tg_chat.vault_from_env, 'TELEGRAM_CHAT_ID', 'the drop alerts\' chat (founder Q5), not the ops chat');
   assert.match(by.schedule.sql, /cron\.schedule\('ten294_drops_watchdog', '\* \* \* \* \*', 'select drops_watch\.tick\(\)'\)/);
   // queued is not delivered: the run goes red unless pg_net saw a 2xx from Telegram
-  assert.equal(by.selftest_delivered.required, true);
-  assert.match(by.selftest_delivered.sql, /delivery = 'sent'/);
-  const names = steps.map((x) => x.name ?? 'sleep');
-  assert.ok(names.indexOf('selftest_send') < names.indexOf('sleep') && names.indexOf('sleep') < names.indexOf('selftest_delivered'));
+  // and it judges THIS run's ping (the newest), never an earlier run's that is still inside a time window
+  for (const n of ['selftest_send', 'selftest_delivered']) {
+    assert.equal(by[n].required, true, n);
+    assert.match(by[n].sql, /raise exception/, `${n}: a notice returns 2xx and the gate goes vacuous`);
+  }
+  assert.match(by.selftest_send.sql, /if drops_watch\.send\([^]*\) is null then raise exception/);
+  assert.match(by.selftest_delivered.sql, /where kind = 'selftest' order by id desc limit 1\); begin if d is distinct from 'sent' then raise exception/);
+  assert.doesNotMatch(by.selftest_delivered.sql, /interval/);
+  // one tick must settle the response before the gate reads it (pg_cron every 60 s + the explicit settle tick)
+  const iSleep = steps.findIndex((x) => 'sleep' in x);
+  assert.ok(steps[iSleep].sleep >= 60, 'sleep >= 60 s');
+  const at = (n) => steps.findIndex((x) => x.name === n);
+  assert.ok(at('selftest_send') < iSleep && iSleep < at('settle') && at('settle') < at('selftest_delivered'));
   const wf = read('.github/workflows/ten294-drops.yml');
   assert.match(wf, /watchdog:\n\s+needs: deploy/);
   assert.match(wf, /TELEGRAM_CHAT_ID: \$\{\{ secrets\.TELEGRAM_CHAT_ID \}\}/);
