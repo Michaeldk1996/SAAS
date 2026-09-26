@@ -18,9 +18,15 @@ create table if not exists drops_watch.config (
     health_url    text    not null default 'https://stennisfy-drops.fly.dev/health',
     unreachable_n integer not null default 3,         -- consecutive failed checks before "unreachable"
     stale_n       integer not null default 2,         -- consecutive not-ok health bodies before "stale"
+    recover_n     integer not null default 3,         -- consecutive ok bodies before "recovered" (no flapping)
+    backoff_after integer not null default 5,         -- failed sends in a row before backing off to backoff_every
+    backoff_every interval not null default interval '15 minutes',
     repeat_every  interval not null default interval '30 minutes'
 );
 insert into drops_watch.config (id) values (true) on conflict (id) do nothing;
+alter table drops_watch.config add column if not exists recover_n integer not null default 3;
+alter table drops_watch.config add column if not exists backoff_after integer not null default 5;
+alter table drops_watch.config add column if not exists backoff_every interval not null default interval '15 minutes';
 
 create table if not exists drops_watch.checks (
     id           bigint primary key,                  -- the pg_net request id
@@ -48,6 +54,17 @@ create table if not exists drops_watch.state (
     since      timestamptz not null default now()
 );
 insert into drops_watch.state (id) values (true) on conflict (id) do nothing;
+
+-- A body that is not valid JSON must not raise: one bad response would otherwise roll back every tick until
+-- pg_net forgets it (~6 h) — no checks, no alerts (second review).
+create or replace function drops_watch.try_jsonb(p text) returns jsonb
+language plpgsql immutable as $$
+begin
+  if p is null or left(ltrim(p), 1) <> '{' then return null; end if;
+  return p::jsonb;
+exception when others then
+  return null;
+end $$;
 
 create or replace function drops_watch.skey(p_name text) returns text
 language sql stable as $$
@@ -97,6 +114,12 @@ begin
     return 'stale: data ' || coalesce(last_ok->>'ageS', '?') || 's old (' || coalesce(last_ok->>'freshness', '?') || ')'
            || coalesce('; sources ' || worst, '');
   end if;
+  -- recovery needs recover_n good bodies in a row; until then a bad state holds (no alert/recovery flapping)
+  if (select count(*) filter (where body is not null and (body->>'ok')::boolean is true)
+        from (select * from drops_watch.checks where processed_at is not null
+               order by id desc limit cfg.recover_n) c) < cfg.recover_n then
+    return 'holding';
+  end if;
   return 'ok';
 end $$;
 
@@ -110,7 +133,7 @@ begin
   -- 1. ingest check responses (pg_net keeps them ~6 h)
   update drops_watch.checks c
      set processed_at = now(), status_code = r.status_code,
-         body = case when r.content is not null and left(ltrim(r.content), 1) = '{' then r.content::jsonb end,
+         body = drops_watch.try_jsonb(r.content),
          error = r.error_msg
     from net._http_response r
    where c.processed_at is null and r.id = c.id;
@@ -128,8 +151,12 @@ begin
 
   -- 2. condition
   cond := drops_watch.condition();
-  v_kind := split_part(cond, ':', 1);          -- ok | unreachable | stale — the detail (ages) changes every tick
+  v_kind := split_part(cond, ':', 1);          -- ok | unreachable | stale | holding — the detail changes every tick
   select * into st from drops_watch.state;   -- state.condition holds the KIND only
+  if v_kind = 'holding' then                  -- neither clearly bad nor K-times good: keep the current state
+    v_kind := st.condition;
+    if v_kind <> 'ok' then cond := st.condition || ': recovering'; end if;
+  end if;
 
   -- 3. alert / repeat / recovery
   if v_kind is distinct from st.condition then
@@ -145,8 +172,12 @@ begin
   elsif v_kind <> 'ok' then
     select max(created_at) into last_sent from drops_watch.messages
      where delivery = 'sent' and kind in ('alert', 'repeat') and created_at >= st.since;
-    -- nothing CONFIRMED sent for this episode yet (lost to a TLS timeout) -> send again, once no send is in flight
-    if (last_sent is null and not exists (select 1 from drops_watch.messages where delivery = 'queued'))
+    -- nothing CONFIRMED sent for this episode yet (lost to a TLS timeout) -> send again, once no send is in
+    -- flight; after backoff_after failures in a row (bad token/chat, missing secret) only every backoff_every
+    if (last_sent is null and not exists (select 1 from drops_watch.messages where delivery = 'queued')
+        and (select count(*) from drops_watch.messages where created_at >= st.since and delivery like 'failed%') < cfg.backoff_after)
+       or (last_sent is null and not exists (select 1 from drops_watch.messages where delivery = 'queued')
+        and not exists (select 1 from drops_watch.messages where created_at > now() - cfg.backoff_every))
        or last_sent < now() - cfg.repeat_every then
       msg := format(E'⚠️ DROPS PAGE STILL: %s\n\nSince %s UTC (%s min).', cond,
                     to_char(st.since at time zone 'UTC', 'HH24:MI'), round(extract(epoch from now() - st.since) / 60));
@@ -158,6 +189,7 @@ begin
   select net.http_get(url := cfg.health_url, timeout_milliseconds := 10000) into rid;
   insert into drops_watch.checks (id) values (rid);
   delete from drops_watch.checks where fired_at < now() - interval '3 days';
+  delete from drops_watch.messages where created_at < now() - interval '30 days';
   return cond;
 end $$;
 

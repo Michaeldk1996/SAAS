@@ -81,7 +81,9 @@ jobs:
         run: |
           # Rotating on every deploy would lock the RUNNING machine out whenever the deploy itself then fails
           # (independent review) — so the credential is set only when the app has none yet.
-          if flyctl secrets list -a stennisfy-drops --json | python3 -c 'import json,sys;sys.exit(0 if any(x.get("Name",x.get("name"))=="DROPS_DB_URL_B64" for x in json.load(sys.stdin)) else 1)'; then
+          # A FAILED list must fail the step, never read as "absent" and rotate a live credential (second review).
+          flyctl secrets list -a stennisfy-drops --json > fly-secrets.json
+          if python3 -c 'import json,sys;sys.exit(0 if any(x.get("Name",x.get("name"))=="DROPS_DB_URL_B64" for x in json.load(open("fly-secrets.json"))) else 1)'; then
             echo "DROPS_DB_URL_B64 already set — credential unchanged"; exit 0
           fi
           python3 - <<'PY'
@@ -98,7 +100,10 @@ jobs:
           # the SESSION pooler (IPv4, Supabase-CA chain verified 2026-09-26); the direct db.<ref> host is IPv6-only
           pools = api('/config/database/pooler')
           pools = pools if isinstance(pools, list) else [pools]
-          host = next(p['db_host'] for p in pools if p.get('db_host'))
+          # the PRIMARY's session-mode pooler, never a read replica's entry
+          cand = [p for p in pools if p.get('db_host') and str(p.get('database_type', 'PRIMARY')).upper() == 'PRIMARY']
+          cand.sort(key=lambda p: 0 if p.get('pool_mode') == 'session' else 1)
+          host = cand[0]['db_host']
           print(f'::add-mask::{host}')
           pw = secrets.token_urlsafe(32)
           print(f'::add-mask::{pw}')

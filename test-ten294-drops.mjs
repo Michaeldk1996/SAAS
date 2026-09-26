@@ -267,12 +267,37 @@ test('snapshot SQL is cheap at 2 reads/min: no bot loader calls (they full-scan)
   assert.doesNotMatch(sql, /load_ticks\s*\(/, 'a bot loader full-scans kibl_line_observations + kibl_now_history');
   // Latest keeps the loaders' filters: Bet105 poller = feed 171, ML, full match, not live, >= 1.01; Superbet = pending
   assert.match(sql, /o\.feed_source_id = 171 and o\.betting_type_id = 1\s+and o\.is_live is false and o\.price_decimal >= 1\.01/);
-  assert.match(sql, /ten280_bot\.skey\(fx\.player1_name\) <> ten280_bot\.skey\(fx\.player2_name\)/, 'same surname -> never guess');
+  assert.match(sql, /o\.price_decimal >= 1\.01 and o\.inserted_on is not null/, 'a row with no clock never wins "latest"');
+  // stream side = load_ticks' mapping: row_key -> poller side_id first, surname key only as the fallback
+  assert.match(sql, /select o\.side_id from public\.kibl_line_observations o where o\.row_key = hr\.row_key/);
+  assert.match(sql, /when ten280_bot\.skey\(fx\.player1_name\) = ten280_bot\.skey\(fx\.player2_name\) then null/, 'same surname -> never guess');
+  assert.match(sql, /p\.fixture_id = a\.fixture_id and p\.feed_source_id = 171/, 'stream latest is Bet105 only');
   assert.match(sql, /coalesce\(k\.event_status, ev\.status\) = 'pending'/);
   // "started" = live evidence only, and the Kibl scan runs only near the scheduled time
-  assert.match(sql, /'started', coalesce\(fx\.scheduled_start <= v_now \+ interval '3 hours', false\)\s+and exists \(select 1 from public\.kibl_line_observations o\s+where o\.fixture_id = a\.fixture_id and o\.is_live is true\)/);
+  assert.match(sql, /'started', case when fx\.scheduled_start is null then null\s+when fx\.scheduled_start > v_now \+ interval '3 hours' then false\s+else exists \(select 1 from public\.kibl_line_observations o\s+where o\.fixture_id = a\.fixture_id and o\.is_live is true\) end/);
   assert.match(sql, /'started', coalesce\(ev\.status in \('live', 'settled', 'finished', 'ended'\), false\)/);
   assert.doesNotMatch(sql, /status <> 'pending'/, 'cancelled / postponed are not "started"');
-  // the poller watermark moves on every sweep (last_seen_at), not only on a new price (observed_at)
-  assert.match(sql, /select o\.last_seen_at from public\.kibl_line_observations o where o\.feed_source_id = 171\s+order by o\.last_seen_at desc/);
+  // the poller watermark moves on every sweep (last_seen_at), not only on a new price (observed_at); `is not null`
+  // + plain desc so the ascending index serves it backwards (a `nulls last` sort is a full sort). The PLAN is
+  // checked in the database by tools/ten294-steps-install.json (plan_* steps) — a regex cannot see a plan.
+  assert.match(sql, /select o\.last_seen_at from public\.kibl_line_observations o\s+where o\.feed_source_id = 171 and o\.last_seen_at is not null\s+order by o\.last_seen_at desc limit 1/);
+  assert.doesNotMatch(sql, /nulls last/);
+  const steps = JSON.parse(read('tools/ten294-steps-install.json')).map((x) => x.name);
+  for (const n of ['plan_poller_watermark', 'plan_poller_latest', 'plan_started', 'plan_superbet_latest']) assert.ok(steps.includes(n), n);
+});
+
+test('watchdog SQL: safe JSON cast, anti-flap recovery, send back-off, own vault names, not scheduled by the install', () => {
+  const sql = read('tools/ten294-drops-watchdog.sql').replace(/--.*$/gm, '');
+  assert.match(sql, /body = drops_watch\.try_jsonb\(r\.content\)/);
+  assert.match(sql, /exception when others then\s+return null;/);
+  assert.doesNotMatch(sql, /r\.content::jsonb/, 'a raw cast raises on a bad body and rolls back every tick');
+  assert.match(sql, /recover_n\s+integer not null default 3/);
+  assert.match(sql, /return 'holding';/);
+  assert.match(sql, /backoff_after/);
+  assert.match(sql, /'ten294_telegram_bot_token'/);
+  assert.match(sql, /'ten294_telegram_chat_id'/);
+  assert.doesNotMatch(sql, /cron\.schedule/, 'the install never starts the watchdog; scheduling is a separate explicit step');
+  // state compares the condition KIND, never the detail text (ages change every tick -> an alert a minute)
+  assert.match(sql, /v_kind := split_part\(cond, ':', 1\)/);
+  assert.match(sql, /if v_kind is distinct from st\.condition then/);
 });

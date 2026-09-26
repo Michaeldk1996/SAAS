@@ -64,25 +64,36 @@ begin
                           from public.kibl_line_observations o
                          where o.fixture_id = a.fixture_id and o.market_type_id = 1 and o.segment_id = 1
                            and o.side_id = a.side_id and o.feed_source_id = 171 and o.betting_type_id = 1
-                           and o.is_live is false and o.price_decimal >= 1.01
-                         order by o.inserted_on desc nulls last limit 1)
+                           and o.is_live is false and o.price_decimal >= 1.01 and o.inserted_on is not null
+                         order by o.inserted_on desc limit 1)
                        union all
-                       -- stream: the Now price for this fixture, mapped to a side by load_ticks' surname rule
-                       -- (same surname on both sides -> never guess)
+                       -- stream: the Now price for this fixture (Bet105 feed only), mapped to a side EXACTLY as
+                       -- load_ticks maps stream rows: the history row's row_key -> the poller's side_id (PK
+                       -- lookup), and only if that fails the surname key (same surname on both sides -> never
+                       -- guess). kibl_now_price is small (3-day prune); history via kibl_now_history_card_idx.
                        (select p.price, p.kibl_inserted_on
                           from public.kibl_now_price p
-                         where p.kind = 'price' and p.fixture_id = a.fixture_id and p.price >= 1.01
-                           and ten280_bot.skey(fx.player1_name) <> ten280_bot.skey(fx.player2_name)
-                           and p.side_key = ten280_bot.skey(case a.side_id when 2 then fx.player1_name
-                                                                            when 3 then fx.player2_name end)
+                          cross join lateral (
+                            select h.row_key from public.kibl_now_history h
+                             where h.card_key = p.card_key and h.side_key = p.side_key
+                             order by h.kibl_inserted_on desc limit 1) hr
+                         where p.kind = 'price' and p.fixture_id = a.fixture_id and p.feed_source_id = 171
+                           and p.price >= 1.01 and p.kibl_inserted_on is not null
+                           and coalesce(
+                                 (select o.side_id from public.kibl_line_observations o where o.row_key = hr.row_key),
+                                 case when ten280_bot.skey(fx.player1_name) = ten280_bot.skey(fx.player2_name) then null
+                                      when p.side_key = ten280_bot.skey(fx.player1_name) then 2
+                                      when p.side_key = ten280_bot.skey(fx.player2_name) then 3 end) = a.side_id
                          order by p.kibl_inserted_on desc limit 1)
-                     ) t order by t.at desc nulls last limit 1),
+                     ) t order by t.at desc limit 1),
         -- live evidence only; a passed scheduled time is reported separately, never as "started".
         -- Checked only from 3 h before the scheduled time (Kibl's earliest measured early start: 860 min is the
         -- one outlier, p95 -4.1 min): a not-yet-started fixture would otherwise scan all its rows every 30 s.
-        'started', coalesce(fx.scheduled_start <= v_now + interval '3 hours', false)
-                   and exists (select 1 from public.kibl_line_observations o
-                                where o.fixture_id = a.fixture_id and o.is_live is true),
+        -- Unknown schedule -> null (not known), never a confident false.
+        'started', case when fx.scheduled_start is null then null
+                        when fx.scheduled_start > v_now + interval '3 hours' then false
+                        else exists (select 1 from public.kibl_line_observations o
+                                      where o.fixture_id = a.fixture_id and o.is_live is true) end,
         'pastScheduledStart', fx.scheduled_start is not null and fx.scheduled_start <= v_now
       ) as j
     from ten280_bot.alerts a
@@ -111,12 +122,12 @@ begin
         'detectedAt', a.eval_at,
         -- load_ticks' filters (book, pending, updatedAt present, price >= 1.01), on ticks_event_idx
         'latest', (select jsonb_build_object('price', ten287_bot.px(t.price), 'at', t.book_updated_at)
-                     from (select case a.side when 'home' then k.back_home else k.back_away end as price, k.book_updated_at
+                     from (select case a.side when 'home' then k.back_home else k.back_away end as price, k.book_updated_at, k.seen_at
                              from ten287_rec.ticks k
                             where k.event_id = a.event_id and k.book = a.book and k.book_updated_at is not null
                               and coalesce(k.event_status, ev.status) = 'pending') t
                     where t.price >= 1.01
-                    order by t.book_updated_at desc limit 1),
+                    order by t.book_updated_at desc, t.seen_at desc limit 1),
         -- live evidence only: cancelled / postponed are NOT "started"
         'started', coalesce(ev.status in ('live', 'settled', 'finished', 'ended'), false),
         'pastScheduledStart', ev.start_at is not null and ev.start_at <= v_now
@@ -137,8 +148,11 @@ begin
     jsonb_build_object('id', 'kibl-poller', 'label', 'Kibl poller (Challenger/ITF)',
       -- last_seen_at moves on EVERY sweep that sees a row; observed_at is first-seen only and stands
       -- still on a flat market (independent review) — kibl_lo_last_seen_idx
-      'lastAt', (select o.last_seen_at from public.kibl_line_observations o where o.feed_source_id = 171
-                  order by o.last_seen_at desc nulls last limit 1)),
+      -- `is not null` + plain desc matches the ascending index read backwards (desc NULLS FIRST); a
+      -- `nulls last` sort would force a full sort twice a minute (second review). Plan checked by EXPLAIN.
+      'lastAt', (select o.last_seen_at from public.kibl_line_observations o
+                  where o.feed_source_id = 171 and o.last_seen_at is not null
+                  order by o.last_seen_at desc limit 1)),
     jsonb_build_object('id', 'superbet-recorder', 'label', 'Superbet recorder',
       'lastAt', (select r.processed_at from ten287_rec.requests r
                   where r.kind = 'updated' and r.book = 'Superbet' and r.status_code = 200
