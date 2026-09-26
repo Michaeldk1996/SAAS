@@ -804,3 +804,43 @@ test('pop-up render: an unmatched row dashes rank/Elo/event/round, has no link, 
   assert.match(html, /1 of 1 books with a flagged move on this line/);
   for (const bad of ['1716', '1668', '#132', '#189', 'Monteverde', 'Book A', 'Clay']) assert.ok(!html.includes(bad), bad);
 });
+
+// ── review of f143a345: lock each fix and the mutations that survived ──
+test('pop-up review: the backed side can be the card\'s p2; the margin uses one source\'s own pair, not the feed\'s fresher price', () => {
+  const r0 = frow({ id: 'bet105-10', a: 'Denis Shapovalov', b: 'Adrian Mannarino', side: 'Adrian Mannarino', open: 3.3, now: 2.5, latestAgo: 0.1 * HR });
+  const [r] = PAGE.buildRows([r0]);
+  const chart = { books: { Bet105: { p1: [[at(20 * HR), 1.36], [at(3 * HR), 1.43]], p2: [[at(20 * HR), 3.40], [at(3 * HR), 3.05]] } } };
+  const mb = PAGE.modalBooks(r, { rows: [r], chart, cardSide: 'p2' });
+  const own = mb.books.find((b) => b.own);
+  assert.ok(own.series.some((p) => p.v === 3.05), 'the p2 series is the backed side\'s');
+  assert.equal(own.margin.toFixed(2), ((1 / 3.05 + 1 / 1.43 - 1) * 100).toFixed(2), 'the shard\'s own pair (3.05 / 1.43), never the feed\'s 2.50 against a stale 1.43');
+});
+
+test('pop-up review: the endpoint\'s first price is the book\'s first record; a quoting book that has not moved in 24 h stays in', () => {
+  const [r] = PAGE.buildRows([frow({ id: 'superbet-50', book: 'Superbet', a: 'Pat Pi', b: 'Rho Rho', side: 'Pat Pi', open: 2.2, now: 1.9 })]);
+  const line = { books: {
+    Superbet: { first: [at(30 * HR), 2.2], side: [[at(2 * HR), 1.9]], other: [[at(2 * HR), 2.0]] },
+    'Betfair Exchange': { first: [at(40 * HR), 2.30], side: [[at(30 * HR), 2.10]], other: [[at(30 * HR), 1.95]] } } };
+  const mb = PAGE.modalBooks(r, { rows: [r], line });
+  const bfe = mb.books.find((b) => b.book === 'Betfair Exchange');
+  assert.ok(bfe, 'a flat book (last move 30 h ago) is still quoting');
+  assert.equal(bfe.first.v, 2.30, 'first = the endpoint\'s first record, not the first point on the axis');
+  assert.equal(bfe.now.v, 2.10);
+  assert.equal(mb.m, 2);
+  assert.equal(PAGE.seriesPoints(bfe.series, PT0).length, 0, 'but the chart shows nothing outside its 24 h axis');
+  const sql = read('tools/ten294-drops-lines.sql').replace(/--.*$/gm, '');
+  assert.match(sql, /filter \(where rn = 1 or \(rn <= 400 and at >= now\(\)/, 'the latest point always ships; the cap keeps the newest');
+  assert.match(sql, /row_number\(\) over \(partition by k1, k2, ks, book, w order by at desc, id desc\) rn/);
+  assert.match(sql, /and o\.side_id in \(2, 3\)/, 'the drop bot\'s side filter');
+  assert.match(sql, /case when drops_api\.nk\(f\.player1_name\) = m\.ks then 2 when drops_api\.nk\(f\.player2_name\) = m\.ks then 3 end/, 'Kibl side 2 = player1, 3 = player2 (the bot\'s mapping)');
+  assert.match(sql, /case when drops_api\.nk\(e\.home\) = m\.ks then t\.back_home when drops_api\.nk\(e\.away\) = m\.ks then t\.back_away end ps/);
+  assert.ok(read('tools/ten294-drops-lines.sql').indexOf('create schema if not exists drops_api') < read('tools/ten294-drops-lines.sql').indexOf('create or replace function drops_api.nk'), 'installs on a fresh DB');
+});
+
+test('pop-up review: a board card only counts for the same event (dated within 36 h of the row\'s start)', () => {
+  const r = { playerA: 'Daniil Medvedev', playerB: 'Valentin Royer', side: 'Daniil Medvedev', start: '2026-09-26T08:00:00Z' };
+  const today = { p1: 'D. Medvedev', p2: 'V. Royer', p1Key: 1, p2Key: 2, date: '2026-09-26' };
+  const old = { ...today, date: '2026-09-23' };
+  assert.equal(PAGE.boardKeyFor(r, [old]), null, 'three days earlier is another event');
+  assert.equal(PAGE.boardKeyFor(r, [old, today]).card, today, 'the old card no longer makes today\'s ambiguous');
+});

@@ -12,9 +12,13 @@
 --     candidate — two or more is ambiguous and that book is left out, never guessed;
 --   * pre-match only, TEN-295's rule for the recorder: a tick counts while `pending` AND before the event's first
 --     non-pending sighting on any book (the vendor flips live -> pending mid-match); Kibl: is_live false;
---   * same-price re-stamps collapse (a point only when the price changed); at most 400 points per side per book;
+--   * same-price re-stamps collapse (a point only when the price changed); at most 400 points per side per book,
+--     and ALWAYS the latest point even when older than the window (a quoting book that has not moved stays in);
 --   * the side maps by surname key; a same-surname pair maps nothing for that book.
 -- Called by drops_api.snapshot() inside its one read per cadence; nothing here is per-viewer.
+create schema if not exists drops_api;   -- this file installs before ten294-drops-api.sql (review: a fresh DB)
+revoke all on schema drops_api from public, anon, authenticated;
+
 create or replace function drops_api.nk(p text) returns text
 language sql immutable set search_path = pg_catalog, pg_temp as $$
   -- surname key for "First Last" (Kibl, alerts) and "Last, First" (odds-api.io): last token of the surname part
@@ -102,6 +106,7 @@ ko as (
     join public.kibl_line_observations o on o.fixture_id = f.fixture_id
    where o.market_type_id = 1 and o.segment_id = 1 and o.feed_source_id = 171 and o.betting_type_id = 1
      and o.is_live is false and o.price_decimal >= 1.01 and o.inserted_on is not null
+     and o.side_id in (2, 3)            -- the drop bot's own filter: any other side_id is not a player
      and drops_api.nk(f.player1_name) <> drops_api.nk(f.player2_name)
 ),
 pts as (   -- one stream of (selection, book, which side, time, price)
@@ -121,7 +126,7 @@ kept as (
 per_side as (
   select k1, k2, ks, book, w, min(first_px) first_px, min(first_at) first_at,
          coalesce(jsonb_agg(jsonb_build_array(at, round(px::numeric, 3)) order by at, id)
-                    filter (where rn <= 400 and at >= now() - make_interval(hours => p_hours)), '[]'::jsonb) series
+                    filter (where rn = 1 or (rn <= 400 and at >= now() - make_interval(hours => p_hours))), '[]'::jsonb) series
     from kept group by 1, 2, 3, 4, 5
 ),
 per_book as (

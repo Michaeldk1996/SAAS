@@ -270,6 +270,7 @@
     }
     // the row's own book is always present and always reads exactly as its list row (Q1)
     var own = raw[r.book] || { other: [] };
+    own.margin = marginOf(r.book, own.side || [], own.other || []);   // the source's own pair, never the feed's fresher side
     var seen = {};
     own.side = (own.side || []).concat(tsPoints(rowPoints(r))).filter(function (p) {
       var k = p.t + '|' + p.v; if (seen[k]) return false; seen[k] = 1; return true;
@@ -283,7 +284,7 @@
       var first = b.first;
       var drop = first && first.v && now && now.v ? (first.v - now.v) / first.v * 100 : null;
       return { book: n, cls: STRIP_CLASS[n] || BOOK_CLASS[n] || null, own: isOwn, first: first, now: now,
-        drop: isOwn ? r.drop : drop, series: b.side, other: b.other, margin: marginOf(n, b.side, b.other) };
+        drop: isOwn ? r.drop : drop, series: b.side, other: b.other, margin: isOwn ? b.margin : marginOf(n, b.side, b.other) };
     });
     var rank = function (b) { return b.cls === 'sharp' ? 0 : b.cls === 'soft' ? 1 : 2; };
     var order = ['Pinnacle +30s', 'Bet105', 'Superbet', 'Betfair Exchange'];
@@ -312,9 +313,13 @@
   function boardKeyFor(r, board) {
     var a = nameSig(r.playerA), b = nameSig(r.playerB), s = nameSig(r.side);
     if (!a || !b || !s) return null;
+    var st = Date.parse(r.start);
     var hits = (board || []).filter(function (m) {
       var x = nameSig(m.p1), y = nameSig(m.p2);
-      return (x === a && y === b) || (x === b && y === a);
+      if (!((x === a && y === b) || (x === b && y === a))) return false;
+      // the same event only: a board card dated within 36 h of the row's start (the board keeps past days)
+      var cd = Date.parse((m.date || '') + 'T12:00:00Z');
+      return !(isFinite(st) && isFinite(cd) && Math.abs(cd - st) > 36 * H);
     });
     if (hits.length !== 1) return null;
     var m = hits[0];
@@ -631,6 +636,7 @@
     var cls = r.cls || 'soft';
     var pct = function (b) {
       if (b.drop == null) return '<span class="d none">—</span>';
+      if (Math.abs(b.drop) < 0.05) return '<span class="d none">0.0%</span>';
       return b.drop > 0 ? '<span class="d">▼ ' + b.drop.toFixed(1) + '%</span>' : '<span class="d up">▲ ' + Math.abs(b.drop).toFixed(1) + '%</span>';
     };
     // players line: rank + Elo only for a matched card (never the export's placeholder values)
