@@ -157,26 +157,44 @@
     return ageS > AMBER_AFTER_S ? 'amber' : 'connected';
   }
 
-  // The modal chart (Q4): the row's recorded prices only, on the last-24h axis ending at data time.
-  function chartPoints(r, dataNow) {
-    var raw = [['open', r.openAt, r.open], ['pre', r.preDrop && r.preDrop.at, num(r.preDrop && r.preDrop.price)],
-      ['dropped', r.droppedTo && r.droppedTo.at, num(r.droppedTo && r.droppedTo.price)], ['latest', r.latest && r.latest.at, r.now]];
-    var seen = {}, pts = [];
-    raw.forEach(function (p) {
-      var t = Date.parse(p[1]);
-      if (!isFinite(t) || p[2] == null) return;
-      var fr = 1 - (dataNow - t) / (24 * H);
-      if (fr < 0 || fr > 1.0001) return;       // older than 24h: off the axis (the dashed open line keeps its level)
-      var key = t + '|' + p[2];
-      if (seen[key]) return;
-      seen[key] = 1;
-      pts.push({ kind: p[0], t: t, fr: Math.min(1, fr), v: p[2] });
-    });
-    pts.sort(function (a, b) { return a.t - b.t; });
-    return pts;
+  // The pop-up chart (founder comment bef04c62, items 1–2). House style = the Database cumulative-profit
+  // chart's own values (bsp-consult-dashboard.html COL_FAV / FILL_FAV / its gridlines): line #6a9af8 at 2.6,
+  // area rgba(91,155,255,0.11), grid rgba(255,255,255,0.06). Direction is carried by ▼/▲ and the red/green %s,
+  // never by the line. The x-axis runs from the line's first recorded price to its latest (opening → now),
+  // ticked at real UTC times; a stretch of more than GAP_MS between recorded points is dashed.
+  var HOUSE_LINE = '#6a9af8', HOUSE_FILL = 'rgba(91,155,255,0.11)', HOUSE_GRID = 'rgba(255,255,255,0.06)';
+  var GAP_MS = 3.6 * H;                               // the previous rule's 15% of a 24 h axis, kept as a duration
+  var TICK_STEPS = [0.25, 0.5, 1, 2, 3, 6, 12, 24, 48, 72, 168].map(function (h) { return h * H; });
+  var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  function tickLabel(t, withDay) {
+    var d = new Date(t), hm = ('0' + d.getUTCHours()).slice(-2) + ':' + ('0' + d.getUTCMinutes()).slice(-2);
+    return withDay ? d.getUTCDate() + ' ' + MON[d.getUTCMonth()] + ' ' + hm : hm;
   }
-
-  function chartSvg(pts, openPrice) {
+  // Real-time ticks: the two ends (first seen, now/last) plus round UTC times between them, ≤ 5 in all.
+  // An intermediate is kept only where its label clears its neighbours' (10 px IBM Plex Mono ≈ 6.1 px a
+  // character on the 942 px plot), so a long dated end label never overprints one.
+  var PLOT_W = 942, CH_W = 6.1, TICK_GAP = 14;
+  function axisTicks(t0, t1, endWord) {
+    var span = t1 - t0, multiDay = new Date(t0).getUTCDate() !== new Date(t1).getUTCDate() || span > 24 * H;
+    var first = { t: t0, fr: 0, label: 'first seen ' + tickLabel(t0, multiDay), anchor: 'start', end: true };
+    if (!(span > 0)) return [first];
+    var last = { t: t1, fr: 1, label: endWord + ' ' + tickLabel(t1, multiDay), anchor: 'end', end: true };
+    var ext = function (x) {             // the label's [left, right] in px
+      var w = x.label.length * CH_W, c = x.fr * PLOT_W;
+      return x.anchor === 'start' ? [c, c + w] : x.anchor === 'end' ? [c - w, c] : [c - w / 2, c + w / 2];
+    };
+    var step = TICK_STEPS.filter(function (s) { return span / s <= 4; })[0] || TICK_STEPS[TICK_STEPS.length - 1];
+    var ticks = [first], rightEdge = ext(first)[1], lastLeft = ext(last)[0];
+    for (var t = Math.ceil(t0 / step) * step; t < t1; t += step) {
+      var x = { t: t, fr: (t - t0) / span, label: tickLabel(t, multiDay && new Date(t).getUTCHours() === 0), anchor: 'middle' };
+      var e = ext(x);
+      if (e[0] < rightEdge + TICK_GAP || e[1] > lastLeft - TICK_GAP) continue;
+      ticks.push(x); rightEdge = e[1];
+    }
+    ticks.push(last);
+    return ticks;
+  }
+  function chartSvg(pts, openPrice, endWord) {
     var W = 988, HH = 210, padT = 12, padB = 22, padL = 2, padR = 44;
     var vs = pts.map(function (p) { return p.v; }).concat(openPrice != null ? [openPrice] : []);
     var lo = Math.min.apply(null, vs), hi = Math.max.apply(null, vs);
@@ -188,26 +206,28 @@
     var k = [];
     if (pts.length > 1) {
       var base = HH - padB;
-      k.push('<polygon points="' + pts.map(function (p) { return f(X(p.fr)) + ',' + f(Y(p.v)); }).join(' ') + ' ' + f(X(pts[pts.length - 1].fr)) + ',' + base + ' ' + f(X(pts[0].fr)) + ',' + base + '" fill="rgba(218,98,89,0.08)"/>');
+      k.push('<polygon class="do-area" points="' + pts.map(function (p) { return f(X(p.fr)) + ',' + f(Y(p.v)); }).join(' ') + ' ' + f(X(pts[pts.length - 1].fr)) + ',' + base + ' ' + f(X(pts[0].fr)) + ',' + base + '" fill="' + HOUSE_FILL + '"/>');
     }
     [0, 0.5, 1].forEach(function (g) {
       var y = padT + g * (HH - padT - padB);
-      k.push('<line x1="' + padL + '" x2="' + (W - padR) + '" y1="' + f(y) + '" y2="' + f(y) + '" stroke="rgba(235,241,242,0.06)"/>');
+      k.push('<line x1="' + padL + '" x2="' + (W - padR) + '" y1="' + f(y) + '" y2="' + f(y) + '" stroke="' + HOUSE_GRID + '"/>');
       k.push('<text x="' + (W - padR + 6) + '" y="' + f(y + 3.5) + '" fill="#6E7A93" font-size="10" font-family="IBM Plex Mono">' + (hi - g * (hi - lo)).toFixed(2) + '</text>');
     });
-    [['−24h', 0, 'start'], ['−12h', 0.5, 'middle'], ['now', 1, 'end']].forEach(function (x) {
-      k.push('<text x="' + f(X(x[1])) + '" y="' + (HH - 5) + '" fill="#6E7A93" font-size="10" font-family="IBM Plex Mono" text-anchor="' + x[2] + '">' + x[0] + '</text>');
-    });
+    if (pts.length) {
+      axisTicks(pts[0].t, pts[pts.length - 1].t, endWord || 'now').forEach(function (x) {
+        k.push('<text class="do-tick" x="' + f(X(x.fr)) + '" y="' + (HH - 5) + '" fill="#6E7A93" font-size="10" font-family="IBM Plex Mono" text-anchor="' + x.anchor + '">' + esc(x.label) + '</text>');
+      });
+    }
     if (openPrice != null && pts.length > 1) {
       k.push('<line class="do-open-ref" x1="' + padL + '" x2="' + (W - padR) + '" y1="' + f(Y(openPrice)) + '" y2="' + f(Y(openPrice)) + '" stroke="rgba(235,241,242,0.18)" stroke-dasharray="3 5"/>');
     }
     for (var i = 1; i < pts.length; i++) {
-      var gap = pts[i].fr - pts[i - 1].fr > 0.15;
-      k.push('<line class="' + (gap ? 'do-gap' : 'do-seg-l') + '" x1="' + f(X(pts[i - 1].fr)) + '" y1="' + f(Y(pts[i - 1].v)) + '" x2="' + f(X(pts[i].fr)) + '" y2="' + f(Y(pts[i].v)) + '" stroke="' + (gap ? '#6E7A93' : '#DA6259') + '" stroke-width="' + (gap ? 1.2 : 1.8) + '"' + (gap ? ' stroke-dasharray="3 4"' : '') + '/>');
+      var gap = pts[i].t - pts[i - 1].t > GAP_MS;
+      k.push('<line class="' + (gap ? 'do-gap' : 'do-seg-l') + '" x1="' + f(X(pts[i - 1].fr)) + '" y1="' + f(Y(pts[i - 1].v)) + '" x2="' + f(X(pts[i].fr)) + '" y2="' + f(Y(pts[i].v)) + '" stroke="' + (gap ? '#6E7A93' : HOUSE_LINE) + '" stroke-width="' + (gap ? 1.2 : 2.6) + '" stroke-linecap="round"' + (gap ? ' stroke-dasharray="3 4"' : '') + '/>');
     }
     pts.forEach(function (p, j) {
       var last = j === pts.length - 1;
-      k.push('<circle class="do-dot-p" cx="' + f(X(p.fr)) + '" cy="' + f(Y(p.v)) + '" r="' + (last ? 4 : 2.8) + '" fill="' + (last ? '#EBF1F2' : '#10121B') + '" stroke="' + (last ? '#EBF1F2' : '#DA6259') + '" stroke-width="1.5"/>');
+      k.push('<circle class="do-dot-p" cx="' + f(X(p.fr)) + '" cy="' + f(Y(p.v)) + '" r="' + (last ? 4.5 : 2.8) + '" fill="' + (last ? HOUSE_LINE : '#0A0D14') + '" stroke="' + HOUSE_LINE + '" stroke-width="1.5"/>');
     });
     return '<svg viewBox="0 0 ' + W + ' ' + HH + '" width="100%">' + k.join('') + '</svg>';
   }
@@ -260,7 +280,7 @@
         var seenAt = Date.parse(b.lastSeen);
         // a book whose last sighting is older than the window has stopped quoting: left out, never shown as current
         if (ctx.now != null && isFinite(seenAt) && ctx.now - seenAt > 24 * H) return;
-        if (side.length) raw[stripName(n)] = { side: side, other: tsPoints(b.other), first: f || side[0], seen: isFinite(seenAt) ? seenAt : null };
+        if (side.length) raw[stripName(n)] = { side: side, other: tsPoints(b.other), first: f || side[0], seen: isFinite(seenAt) ? seenAt : null, truncated: b.truncated === true };
       });
       if (Object.keys(raw).length) source = 'endpoint';
     }
@@ -285,11 +305,15 @@
     raw[r.book] = own;
     var out = Object.keys(raw).map(function (n) {
       var b = raw[n], isOwn = n === r.book;
+      // the chart starts at the book's first recorded price (opening → now); a first price the series
+      // does not carry is added as its own recorded point, never interpolated
+      // (a truncated endpoint series is not: its unsent stretch would read as a gap with no snapshots)
+      if (!b.truncated && b.first && isFinite(b.first.t) && b.first.v != null && b.side && b.side.length && b.first.t < b.side[0].t) b.side = [b.first].concat(b.side);
       var now = isOwn ? b.nowOverride : b.side[b.side.length - 1];
       var first = b.first;
       var drop = first && first.v && now && now.v ? (first.v - now.v) / first.v * 100 : null;
       return { book: n, cls: STRIP_CLASS[n] || BOOK_CLASS[n] || null, own: isOwn, first: first, now: now,
-        drop: isOwn ? r.drop : drop, series: b.side, other: b.other, margin: isOwn ? b.margin : marginOf(n, b.side, b.other) };
+        drop: isOwn ? r.drop : drop, series: b.side, other: b.other, truncated: !!b.truncated, margin: isOwn ? b.margin : marginOf(n, b.side, b.other) };
     });
     var rank = function (b) { return b.cls === 'sharp' ? 0 : b.cls === 'soft' ? 1 : 2; };
     var order = ['Pinnacle +30s', 'Bet105', 'Superbet', 'Betfair Exchange'];
@@ -303,9 +327,12 @@
     var what = mb.source === 'flagged' ? 'books with a flagged move on this line' : 'books we record quoting this line';
     return 'Down 10% or more at ' + mb.n + ' of ' + mb.m + ' ' + what + ' (' + mb.p + ' of ' + mb.q + ' sharp).';
   }
-  function seriesPoints(series, dataNow) {
-    return (series || []).map(function (p) { return { t: p.t, fr: 1 - (dataNow - p.t) / (24 * H), v: p.v }; })
-      .filter(function (p) { return p.fr >= 0 && p.fr <= 1.0001; }).map(function (p) { p.fr = Math.min(1, p.fr); return p; });
+  // Opening → now (bef04c62 item 2): the axis spans this book's first recorded price to its latest one.
+  function seriesPoints(series) {
+    var s = (series || []).filter(function (p) { return isFinite(p.t) && p.v != null; }).slice().sort(function (a, b) { return a.t - b.t; });
+    if (!s.length) return [];
+    var t0 = s[0].t, span = s[s.length - 1].t - t0;
+    return s.map(function (p) { return { t: p.t, fr: span > 0 ? (p.t - t0) / span : 1, v: p.v }; });
   }
 
   // Avatar key: an exact, unordered two-player match against today's board (matches.json names
@@ -334,10 +361,10 @@
   }
 
   var PURE = { BOOK_CLASS: BOOK_CLASS, MARKETS: MARKETS, TRACKED: TRACKED, WINDOWS: WINDOWS, buildRows: buildRows, defaults: defaults,
-    passes: passes, sortRows: sortRows, view: view, ago: ago, hhmmUTC: hhmmUTC, feedState: feedState, chartPoints: chartPoints,
+    passes: passes, sortRows: sortRows, view: view, ago: ago, hhmmUTC: hhmmUTC, feedState: feedState,
     chartSvg: chartSvg, boardKeyFor: boardKeyFor, tierOf: tierOf, AMBER_AFTER_S: AMBER_AFTER_S, DISCONNECTED_AFTER_S: DISCONNECTED_AFTER_S,
     ENDPOINT: ENDPOINT, STRIP_CLASS: STRIP_CLASS, modalBooks: modalBooks, summaryText: summaryText, lineKey: lineKey, nk: nk,
-    seriesPoints: seriesPoints, marginOf: marginOf };
+    seriesPoints: seriesPoints, marginOf: marginOf, axisTicks: axisTicks, HOUSE_LINE: HOUSE_LINE, HOUSE_FILL: HOUSE_FILL, GAP_MS: GAP_MS };
   if (typeof module === 'object' && module.exports) module.exports = PURE;
   if (typeof document === 'undefined') return;
 
@@ -674,7 +701,7 @@
       cd = r.started ? 'started' : mins >= 0 ? 'in ' + Math.floor(mins / 60) + 'h ' + (mins % 60) + 'm' : 'past start';
     }
     var margin = ownB && ownB.margin != null ? ownB.margin.toFixed(1) + '%' : (EXCHANGES[r.book] ? '—' : null);
-    var pts = seriesPoints(sel.series, now);
+    var pts = seriesPoints(sel.series);
     var capP = sel.first && sel.now ? price2(sel.first.v) + ' → ' + price2(sel.now.v) + (sel.drop != null ? ' · ' + (Math.abs(sel.drop) < 0.05 ? '' : sel.drop > 0 ? '▼ ' : '▲ ') + Math.abs(sel.drop).toFixed(1) + '%' : '') : price2(sel.now && sel.now.v);
     var html = '<div class="do-ov-scrim" data-act="close"></div><div class="do-ov-box" role="dialog" aria-modal="true" aria-label="Price move"><div class="do-ov-scroll">' +
       '<div class="do-ov-head"><div class="do-ov-hl">' +
@@ -688,12 +715,13 @@
       '<span class="do-ov-arrow">→</span><span class="do-ov-now">' + price2(r.now) + '</span></span>' +
       '<span class="do-ov-drop">▼ ' + r.drop.toFixed(1) + '% · moved ' + esc(ago(now - Date.parse(r.movedAt))) + '</span></div>' +
       '<button class="do-ov-x" data-act="close" aria-label="Close">✕</button></div></div>' +
-      '<div class="do-ov-chart"><span class="do-ov-cap"><span class="do-ov-cap-k">PRICE HISTORY · <b>' + esc(sel.book.toUpperCase()) + '</b> · LAST 24H</span>' +
+      '<div class="do-ov-chart"><span class="do-ov-cap"><span class="do-ov-cap-k">PRICE HISTORY · <b>' + esc(sel.book.toUpperCase()) + '</b> · FIRST SEEN → NOW · UTC</span>' +
       '<span class="do-ov-cap-p' + (sel.drop != null && sel.drop <= 0 ? ' up' : '') + '">' + esc(capP) + '</span>' +
       (!sel.own ? '<button class="do-ov-back" data-act="back">Back to ' + esc(r.book) + '</button>' :
         mb.books.length > 1 ? '<span class="do-ov-cap-r">Click a book below to see its chart</span>' : '') + '</span>' +
-      chartSvg(pts, sel.first && sel.first.v) +
-      '<span class="do-ov-note">Each dot is a recorded snapshot. Dashed stretches had no snapshots; nothing is interpolated.</span></div>' +
+      chartSvg(pts, sel.first && sel.first.v, 'now') +
+      '<span class="do-ov-note">Each dot is a recorded snapshot. Dashed stretches had no snapshots; nothing is interpolated.' +
+        (sel.truncated ? ' Earlier snapshots were not sent; the chart starts at the oldest one loaded.' : '') + '</span></div>' +
       '<div class="do-ov-strip" style="grid-template-columns:repeat(' + mb.books.length + ', minmax(0,1fr))">' + mb.books.map(function (b) {
         var isSel = b === sel, c = b.cls || 'soft';
         return '<div class="do-ov-cell' + (isSel ? ' sel' : ' pick') + '" data-act="book" data-v="' + esc(b.book) + '"><span class="bar"></span>' +
