@@ -40,7 +40,7 @@ as $fn$
     group by t.event_id
   ),
   tk as (
-    select t.event_id, t.book, t.book_updated_at as at, t.back_home, t.back_away,
+    select t.id, t.event_id, t.book, t.book_updated_at as at, t.back_home, t.back_away,
            lag(t.back_home) over w as prev_home, lag(t.back_away) over w as prev_away
     from ten287_rec.ticks t
     join ev using (event_id)
@@ -53,14 +53,14 @@ as $fn$
     window w as (partition by t.event_id, t.book order by t.book_updated_at, t.id)
   ),
   ch as (
-    select event_id, book, at, back_home, back_away,
-           row_number() over (partition by event_id, book order by at desc) as rn_desc
+    select id, event_id, book, at, back_home, back_away,
+           row_number() over (partition by event_id, book order by at desc, id desc) as rn_desc
     from tk
     where prev_home is distinct from back_home or prev_away is distinct from back_away
   ),
   per_book as (
     select event_id, book,
-           jsonb_agg(jsonb_build_array(at, back_home, back_away) order by at) as rows
+           jsonb_agg(jsonb_build_array(at, back_home, back_away) order by at, id) as rows
     from ch
     where rn_desc <= 3000
     group by event_id, book
