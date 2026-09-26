@@ -2091,8 +2091,8 @@
     },
     "12165854": {
       "fixtureId": null,
-      "mappedAt": "2026-09-26T02:16:20Z",
-      "missRuns": 25,
+      "mappedAt": "2026-09-26T04:16:15Z",
+      "missRuns": 26,
       "missSince": "2026-09-24T14:22:39Z",
       "orient": null,
       "p1": "M. Damm",
@@ -2102,11 +2102,11 @@
     },
     "12165868": {
       "fixtureId": "id1201413374753332",
-      "mappedAt": "2026-09-24T15:31:38Z",
+      "mappedAt": "2026-09-26T04:16:15Z",
       "orient": "same",
       "p1": "J. M. Cerundolo",
       "p2": "A. Davidovich Fokina",
-      "startTime": "2026-09-26T03:00:00.000Z",
+      "startTime": "2026-09-26T05:00:00.000Z",
       "tournamentId": 14133
     },
     "12165884": {
@@ -2192,12 +2192,12 @@
       "missResolutionHoursP50": 37.52,
       "missResolutionsMeasured": 90,
       "note": "ttlBitRuns counts runs where an expired MISS was the ONLY reason a billable /v4/fixtures call was made. projectedTtlUnitsPerDay uses the MEASURED run rate (measuredRunsPerDay), not an assumed 24/day; it is null until observedSpanDays is wide enough to measure one. Compare it against the <=24/day ceiling the TTL was chosen against. openMisses counts only fixtures still on the board.",
-      "observedSpanDays": 14.91,
+      "observedSpanDays": 14.95,
       "projectedTtlUnitsPerDay": 5.8,
-      "runs": 253,
-      "spentRuns": 151,
+      "runs": 254,
+      "spentRuns": 152,
       "ttlBitRuns": 87,
-      "ttlBitShare": 0.344,
+      "ttlBitShare": 0.343,
       "ttlHours": 1.0
     },
     "runs": [
@@ -4983,9 +4983,20 @@
         "ttlBit": false,
         "unmapped": 0,
         "upcoming": 16
+      },
+      {
+        "at": "2026-09-26T04:16:15Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 1,
+        "missExpired": 1,
+        "openMisses": 1,
+        "stale": 2,
+        "ttlBit": false,
+        "unmapped": 0,
+        "upcoming": 16
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-09-26T02:16:20Z"
+  "updatedAt": "2026-09-26T04:16:15Z"
 }
