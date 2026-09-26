@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-25T22:42:46.532Z",
+  "generatedAt": "2026-09-26T22:35:34.615Z",
   "source": "tennis_atp (TML mirror) + Match Charting Project (rally/winner, R&D use only)",
   "window": "2000-2026",
   "note": "Each axis is a 0-100 percentile within the full classified field (50 = typical). MCP-dependent axes (counter/attacking/defender) fall back to base components and are flagged partial when a player has < 10 charted matches.",
@@ -1386,9 +1386,9 @@
       "badges": [],
       "pressure_score": null,
       "mcp_charted": 0,
-      "win_pct": 50,
+      "win_pct": 48.5,
       "clay_wr": 56,
-      "hard_wr": 50,
+      "hard_wr": 45,
       "grass_wr": 0,
       "top10_wins": 0,
       "archetype_label": "Solid Baseliner"
@@ -3040,9 +3040,9 @@
       "badges": [],
       "pressure_score": null,
       "mcp_charted": 4,
-      "win_pct": 58.3,
+      "win_pct": 56,
       "clay_wr": 57,
-      "hard_wr": 63,
+      "hard_wr": 56,
       "grass_wr": 50,
       "top10_wins": 0,
       "archetype_label": "Attacking Baseliner"
@@ -4477,7 +4477,7 @@
       "source": "challenger"
     },
     {
-      "name": "Duje Ajdukovic",
+      "name": "D. Ajdukovic",
       "archetype_data_coverage": "challenger",
       "partial_axes": [],
       "badges": [],
@@ -4486,7 +4486,8 @@
       "hard_wr": 58,
       "grass_wr": 0,
       "matches": 210,
-      "source": "challenger"
+      "source": "challenger",
+      "player_key": "392"
     },
     {
       "name": "Nikola Milojevic",
