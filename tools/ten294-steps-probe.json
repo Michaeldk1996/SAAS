@@ -1,1 +1,6 @@
-[{"name":"board","sql":"select updated_at, match_count, jsonb_typeof(board) t, left(board::text, 1500) head from public.live_snapshot"}]
+[
+ {"name":"flips","sql":"select event_key, first_live_seen_at, event_date, event_time, first_player, second_player from public.live_flip_log where first_live_seen_at >= now() - interval '60 hours'"},
+ {"name":"alerts287","sql":"select a.id, a.eval_at, a.player_a, a.player_b, a.side_player, a.book, a.ref_price, a.cur_price, a.cur_at, ev.start_at from ten287_bot.alerts a left join ten287_rec.events ev on ev.event_id=a.event_id where a.mode='live' and a.eval_at >= now() - interval '24 hours' order by a.eval_at"},
+ {"name":"alerts280","sql":"select a.id, a.eval_at, a.player_a, a.player_b, a.side_player, a.ref_price, a.cur_price, a.cur_at, fx.scheduled_start from ten280_bot.alerts a left join public.kibl_fixtures fx on fx.fixture_id=a.fixture_id where a.mode='live' and a.eval_at >= now() - interval '24 hours' order by a.eval_at"},
+ {"name":"now","sql":"select now()"}
+]
