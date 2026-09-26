@@ -1,0 +1,34 @@
+[
+ {
+  "name": "cols_ten287_rec_events",
+  "sql": "select column_name, data_type from information_schema.columns where table_schema='ten287_rec' and table_name='events' order by ordinal_position"
+ },
+ {
+  "name": "cols_ten287_rec_ticks",
+  "sql": "select column_name, data_type from information_schema.columns where table_schema='ten287_rec' and table_name='ticks' order by ordinal_position"
+ },
+ {
+  "name": "cols_ten287_bot_alerts",
+  "sql": "select column_name, data_type from information_schema.columns where table_schema='ten287_bot' and table_name='alerts' order by ordinal_position"
+ },
+ {
+  "name": "cols_public_kibl_fixtures",
+  "sql": "select column_name, data_type from information_schema.columns where table_schema='public' and table_name='kibl_fixtures' order by ordinal_position"
+ },
+ {
+  "name": "cols_ten280_bot_alerts",
+  "sql": "select column_name, data_type from information_schema.columns where table_schema='ten280_bot' and table_name='alerts' order by ordinal_position"
+ },
+ {
+  "name": "ten287_config",
+  "sql": "select * from ten287_rec.config"
+ },
+ {
+  "name": "ticks_books_24h",
+  "sql": "select book, count(*) n, count(distinct event_id) ev from ten287_rec.ticks where seen_at > now()-interval '24 hours' group by 1 order by 2 desc"
+ },
+ {
+  "name": "skey_fns",
+  "sql": "select n.nspname, p.proname, pg_get_function_arguments(p.oid) args from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname in ('ten280_bot','ten287_bot','ten287_rec') order by 1,2"
+ }
+]

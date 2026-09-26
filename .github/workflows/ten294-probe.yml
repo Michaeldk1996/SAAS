@@ -1,0 +1,28 @@
+# TEN-294 pop-up feasibility probe: READ-ONLY SQL steps, results ENCRYPTED to tools/ten294-pub.pem.
+# Branch-only (ten294-probe); never merged. No Fly, no deploy, no writes.
+name: ten294-probe
+on:
+  push:
+    branches: [ten294-probe]
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: SQL steps (encrypted output)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          TEN294_STEPS: tools/ten294-steps-probe.json
+        run: python3 tools/ten294-sql.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ten294-probe
+          path: |
+            out/result.enc
+            out/pass.enc
+          retention-days: 2
