@@ -45,9 +45,24 @@ export function initial(n) {
   const c = s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().match(/[a-z]/);
   return c ? c[0] : '';
 }
-const same = (x, y) => { const a = nk(x), b = nk(y), i = initial(x), j = initial(y); return !!a && a === b && (!i || !j || i === j); };
-// both players, in either order
-export function samePair(a1, a2, b1, b2) { return (same(a1, b1) && same(a2, b2)) || (same(a1, b2) && same(a2, b1)); }
+// every given name's initial: "Adolfo Daniel Vallejo" -> {a, d}; "D. Vallejo" -> {d}; "Vallejo" -> {}
+export function initials(n) {
+  let s = String(n == null ? '' : n).trim();
+  if (s.includes(',')) s = s.split(',').slice(1).join(' ');
+  else s = s.split(/\s+/).slice(0, -1).join(' ');
+  return new Set((s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().match(/[a-z]+/g) || []).map((t) => t[0]));
+}
+const sameS = (x, y) => { const a = nk(x); return !!a && a === nk(y); };
+// initials agree unless both names carry some and none are shared
+const sameI = (x, y) => { const i = initials(x), j = initials(y); return !i.size || !j.size || [...i].some((c) => j.has(c)); };
+// Surnames join. Initials: a tie between surname candidates is broken by both players agreeing (strict); a lone
+// candidate is refused only when BOTH players' initials conflict — one conflict is a middle-name quirk
+// (api-tennis lists Adolfo Daniel Vallejo as "D. Vallejo": second review of 36b4a518)
+export function samePair(a1, a2, b1, b2, strict) {
+  const orient = (x1, x2, y1, y2) => sameS(x1, y1) && sameS(x2, y2) &&
+    (strict ? sameI(x1, y1) && sameI(x2, y2) : sameI(x1, y1) || sameI(x2, y2));
+  return orient(a1, a2, b1, b2) || orient(a1, a2, b2, b1);
+}
 // surname-pair bucket (a cheap pre-filter; same-surname pairs allowed — samePair decides)
 export function spKey(a, b) { const x = nk(a), y = nk(b); return !x || !y ? null : x < y ? x + '|' + y : y + '|' + x; }
 
@@ -75,18 +90,24 @@ function unique(cands, key) {
   cands.forEach((c) => by.set(String(key(c)), c));
   return by.size === 1 ? [...by.values()][0] : by.size > 1 ? 'ambiguous' : null;
 }
+// exactly one candidate on surnames + a start within 24 h; two or more -> the initials decide, else ambiguous
+function pick(row, cands, p1, p2, key) {
+  const u = unique(cands, key);
+  if (u !== 'ambiguous') return u;
+  return unique(cands.filter((c) => samePair(row.playerA, row.playerB, p1(c), p2(c), true)), key) || 'ambiguous';
+}
 export function matchFlip(row, flips) {
   const st = ms(row.scheduledStart);
   const c = (flips || []).filter((f) => samePair(row.playerA, row.playerB, f.p1, f.p2) &&
     (st == null || Math.abs(apiStartMs(f.date, f.time, false) - st) < JOIN_WINDOW_MS));
-  return unique(c, (f) => f.eventKey);
+  return pick(row, c, (f) => f.p1, (f) => f.p2, (f) => f.eventKey);
 }
 export function matchFixture(row, fixtures) {
   const st = ms(row.scheduledStart);
   const c = (fixtures || []).filter((f) => !/\//.test(String(f.event_first_player) + String(f.event_second_player)) &&
     samePair(row.playerA, row.playerB, f.event_first_player, f.event_second_player) &&
     (st == null || Math.abs(apiStartMs(f.event_date, f.event_time, f.utc) - st) < JOIN_WINDOW_MS));
-  return unique(c, (f) => f.event_key);
+  return pick(row, c, (f) => f.event_first_player, (f) => f.event_second_player, (f) => f.event_key);
 }
 
 // One row's status. ctx: { flips, board: Map(eventKey -> {status, live}), byKey: Map(eventKey -> fixture),
@@ -110,10 +131,15 @@ export function resolveMatch(row, ctx) {
   }
   // no live sighting
   if (vendorStart == null) return { ...out, via: 'no scheduled start' };
-  if (now - vendorStart < MISSED_FLIP_AFTER_MS) return { ...out, status: 'not_started', via: 'no live sighting' };
-  if (!ctx.fixtures) return unknownCut('start passed, api-tennis not read yet');
-  const fx = matchFixture(row, ctx.fixtures);
-  if (!fx || fx === 'ambiguous') return unknownCut(fx ? 'ambiguous fixture' : 'no api-tennis fixture');
+  if (now < vendorStart) return { ...out, status: 'not_started', via: 'no live sighting' };
+  // the start has passed with no live sighting: api-tennis's fixture decides; in the first 30 min, without a
+  // fixture, trust the 10-second poller (it has not seen the match go live)
+  const fx = ctx.fixtures ? matchFixture(row, ctx.fixtures) : null;
+  const grace = now - vendorStart < MISSED_FLIP_AFTER_MS;
+  if (!fx || fx === 'ambiguous') {
+    if (grace) return { ...out, status: 'not_started', via: 'no live sighting yet' };
+    return unknownCut(!ctx.fixtures ? 'start passed, api-tennis not read yet' : fx ? 'ambiguous fixture' : 'no api-tennis fixture');
+  }
   const c = classifyFixture(fx), apiStart = apiStartMs(fx.event_date, fx.event_time, fx.utc);
   if (c === 'unknown') return { ...unknownCut('api-tennis: ' + fx.event_status), eventKey: String(fx.event_key), apiStatus: fx.event_status || null };
   out.eventKey = String(fx.event_key); out.apiStatus = fx.event_status || null; out.status = c; out.via = 'api-tennis fixture (live sighting missed)';
@@ -141,15 +167,16 @@ export function apiNeeds(rows, ctx, cache) {
       continue;
     }
     const st = ms(r.scheduledStart);
-    if (flip || st == null || ctx.now - st < MISSED_FLIP_AFTER_MS) continue;
-    days.add(dayOf(st)); days.add(dayOf(st - 24 * H));                        // a vendor start runs late, never 24 h early
+    if (flip || st == null || ctx.now < st) continue;
+    // a vendor start runs hours late or a little early: the start's day and both neighbours
+    days.add(dayOf(st - 24 * H)); days.add(dayOf(st)); days.add(dayOf(st + 24 * H));
   }
   return { keys: [...keys].slice(0, KEYS_PER_READ), days: [...days].sort() };
 }
 
 // The cut: everything recorded at or after cutAt is in play.
 function cutSeries(list, cut) { return (list || []).filter((p) => { const t = ms(p[0]); return t != null && t < cut; }); }
-export function applyCut(row, line, m) {
+export function applyCut(row, line, m, siblings) {
   const out = { ...row, match: m };
   if (!m.cutAt) return out;
   const cut = ms(m.cutAt);
@@ -162,7 +189,7 @@ export function applyCut(row, line, m) {
   // the latest recorded price before the cut: the book's own series, the alert's prices, the open
   const own = line && line.books && line.books[row.book];
   const cands = cutSeries(own && own.side, cut).map((p) => ({ at: p[0], price: String(p[1]) }))
-    .concat([out.droppedTo, out.preDrop, row.open].filter((x) => x && at(x) != null && at(x) < cut).map((x) => ({ at: x.at, price: String(x.price) })));
+    .concat([out.droppedTo, out.preDrop, row.open].concat(siblings || []).filter((x) => x && at(x) != null && at(x) < cut).map((x) => ({ at: x.at, price: String(x.price) })));
   cands.sort((a, b) => ms(a.at) - ms(b.at));
   const last = cands[cands.length - 1];
   out.latest = last ? { price: last.price, at: last.at, kind: 'last pre-match' } : null;
@@ -194,22 +221,36 @@ function better(a, b) {
 }
 export function withStatus(rows, lines, ctx) {
   const res = rows.map((r) => resolveMatch(r, ctx));
+  // a row joins the group of the FIRST earlier row (the group's anchor) with the same players (initials agreeing
+  // when both carry one), a start within 24 h, and no different event key — never chained through a third row
   const cluster = rows.map((_, i) => i);
   for (let i = 0; i < rows.length; i++) {
     for (let j = 0; j < i; j++) {
       const a = rows[i], b = rows[j], ta = ms(a.scheduledStart), tb = ms(b.scheduledStart);
-      if (samePair(a.playerA, a.playerB, b.playerA, b.playerB) && (ta == null || tb == null || Math.abs(ta - tb) < JOIN_WINDOW_MS)) { cluster[i] = cluster[j]; break; }
+      const keysAgree = !res[i].eventKey || !res[j].eventKey || res[i].eventKey === res[j].eventKey;
+      // both rows must name both players' given names: a bare "Wang v Zheng" never groups two matches
+      const named = [a.playerA, a.playerB, b.playerA, b.playerB].every((n) => initials(n).size);
+      if (named && keysAgree && samePair(a.playerA, a.playerB, b.playerA, b.playerB, true) && (ta == null || tb == null || Math.abs(ta - tb) < JOIN_WINDOW_MS)) { cluster[i] = j; break; }
     }
   }
   const best = new Map();
   res.forEach((m, i) => best.set(cluster[i], better(m, best.get(cluster[i]))));
   const lineByKey = new Map((lines || []).map((l) => [l.key, l]));
   const lineKey = (r) => { const pk = spKey(r.playerA, r.playerB); return pk ? pk + '|' + nk(r.side) : null; };
+  // every recorded price of the same selection at the same book (all its alert rows) is a candidate for its
+  // last pre-match price, so repeat alerts never disagree on it (second review of 36b4a518)
+  const selPts = new Map();
+  rows.forEach((r, i) => {
+    const k = cluster[i] + '|' + nk(r.side) + '|' + r.book;
+    const l = selPts.get(k) || [];
+    [r.open, r.preDrop, r.droppedTo, r.latest].forEach((x) => { if (x && x.at && x.price != null) l.push(x); });
+    selPts.set(k, l);
+  });
   const cutByLine = new Map(), outRows = [];
   rows.forEach((r, i) => {
     const m = best.get(cluster[i]), lk = lineKey(r);
     if (lk && m.cutAt && !cutByLine.has(lk)) cutByLine.set(lk, m.cutAt);
-    const x = applyCut(r, lineByKey.get(lk), m);
+    const x = applyCut(r, lineByKey.get(lk), m, selPts.get(cluster[i] + '|' + nk(r.side) + '|' + r.book));
     if (x) outRows.push(x);
   });
   // a line is cut with its selection's match; the other side of the same match shares the cut
