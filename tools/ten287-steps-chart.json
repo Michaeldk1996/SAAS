@@ -1,24 +1,10 @@
 [
- {
-  "name": "install",
-  "file": "tools/ten295-chart-books-rpc.sql",
-  "required": true,
-  "stop_on_error": true
- },
- {
-  "name": "grants",
-  "sql": "select has_function_privilege('anon','public.chart_bet105_history(text)','execute') anon_b105, has_function_privilege('authenticated','public.chart_bet105_history(text)','execute') auth_b105, has_function_privilege('service_role','public.chart_bet105_history(text)','execute') svc_b105, has_function_privilege('anon','public.chart_book_series(timestamptz,timestamptz)','execute') anon_cbs"
- },
- {
-  "name": "b105_cov",
-  "sql": "select k, (j->>'selected')::bool sel, (j->>'candidates')::int cands, jsonb_array_length(j->'poller') poller, jsonb_array_length(j->'stream') stream from unnest(array['2026-09-26|medvedev|royer','2026-09-26|bu|majchrzak','2026-09-26|cina|muller','2026-09-26|harris|vacherot','2026-09-26|damm|hurkacz','2026-09-26|vallejo|wong','2026-09-26|cobolli|tien','2026-09-26|minaur|zverev','2026-09-26|alcaraz|fritz','2026-09-27|mannarino|shapovalov','2026-09-27|basilashvili|brooksby','2026-09-27|jacquet|marozsan','2026-09-27|gaston|rublev','2026-09-23|baez|brooksby','2026-09-23|hu|kopriva','2026-09-23|royer|walton','2026-09-23|jacquet|vukic','2026-09-24|cerundolo|zhou','2026-09-24|duckworth|sonego','2026-09-24|griekspoor|shapovalov','2026-09-24|mannarino|shang','2026-09-24|hurkacz|shevchenko','2026-09-24|bellucci|majchrzak','2026-09-24|bu|zheng','2026-09-24|cui|vallejo','2026-09-24|atmane|faria','2026-09-24|gaston|shimabukuro','2026-09-24|wong|zhang','2026-09-24|basilashvili|kecmanovic','2026-09-24|kouame|muller','2026-09-24|damm|mochizuki','2026-09-24|harris|kovacevic','2026-09-24|daniel|sweeny','2026-09-24|hijikata|svrcina','2026-09-24|bolt|marozsan','2026-09-24|safiullin|sun','2026-09-24|carabelli|cina','2026-09-25|etcheverry|jacquet','2026-09-25|faria|gaston','2026-09-25|brooksby|sonego','2026-09-25|kopriva|shapovalov','2026-09-25|daniel|marozsan','2026-09-25|hijikata|rublev','2026-09-25|basilashvili|zandschulp','2026-09-25|mannarino|tabilo','2026-09-25|cerundolo|ruud','2026-09-25|mensik|nakashima','2026-09-25|bublik|jodar']) k, lateral (select public.chart_bet105_history(k) j) x order by 1"
- },
- {
-  "name": "cbs_summary",
-  "sql": "with r as (select public.chart_book_series(now() - interval '4 days', now() + interval '10 days') j) select jsonb_array_length(j->'events') n_events, length(j::text) bytes from r"
- },
- {
-  "name": "cbs_board",
-  "sql": "select e->>'event_id' id, e->>'home' home, e->>'away' away, e->>'start_at' st, e->>'tier' tier, (select jsonb_object_agg(k, jsonb_array_length(v)) from jsonb_each(e->'books') b(k,v)) books from jsonb_array_elements(public.chart_book_series(now() - interval '4 days', now() + interval '10 days')->'events') e where e->>'home' ~* '(hurkacz|damm|cobolli|tien|zverev|minaur|alcaraz|fritz)' or e->>'away' ~* '(hurkacz|damm|cobolli|tien|zverev|minaur|alcaraz|fritz)'"
- }
+ {"name": "raw_ticks", "sql": "select t.id, t.book, t.event_id, t.market, t.back_home, t.back_away, t.book_updated_at, t.seen_at, t.event_status from ten287_rec.ticks t where t.event_id = 74753338 order by t.book, t.book_updated_at, t.id"},
+ {"name": "raw_event", "sql": "select * from ten287_rec.events where event_id = 74753338"},
+ {"name": "raw_polls", "sql": "select book, max(processed_at) filter (where status_code = 200) last_ok from ten287_rec.requests where kind = 'updated' group by 1"},
+ {"name": "rpc_event", "sql": "select e from jsonb_array_elements(public.chart_book_series(now() - interval '4 days', now() + interval '10 days')->'events') e where e->>'event_id' = '74753338'"},
+ {"name": "rpc_meta", "sql": "with r as (select public.chart_book_series(now() - interval '4 days', now() + interval '10 days') j) select j->'books' books, j->'polled_ok_at' polled, j->'kibl_sweep_ok_at' kibl from r"},
+ {"name": "b105", "sql": "select public.chart_bet105_history('2026-09-26|damm|hurkacz') j"},
+ {"name": "b105_raw_obs", "sql": "select o.fixture_id, o.side_id, o.fixture_participant_id, o.price_decimal, o.inserted_on, o.is_live from public.kibl_line_observations o where o.fixture_id in (select ocs.fixture_id::bigint from public.odds_card_state ocs where ocs.match_key='2026-09-26|damm|hurkacz' and ocs.book='bet105' and ocs.is_selected) and o.feed_source_id=171 and o.market_type_id=1 and o.segment_id=1 and o.betting_type_id=1 order by o.inserted_on"},
+ {"name": "b105_fixture", "sql": "select kf.* from public.kibl_fixtures kf where kf.fixture_id in (select ocs.fixture_id::bigint from public.odds_card_state ocs where ocs.match_key='2026-09-26|damm|hurkacz' and ocs.book='bet105')"}
 ]

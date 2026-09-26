@@ -12,7 +12,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-      # Run 17: TEN-295 coverage — install chart_bet105_history + untagged-singles chart_book_series (service_role only) + measure.
+      # Run 18: READ-ONLY — TEN-295 raw inputs for the Damm v Hurkacz clean-context recompute.
       - name: SQL steps (encrypted output)
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
