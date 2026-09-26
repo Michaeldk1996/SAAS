@@ -14,10 +14,13 @@ Every timestamp is **Kibl insert time, never book-post time** — label it that 
 
 > **Sports411 (id 43) is a different book** (sports411.ag, a Bookmaker EU clone), no longer entitled. Its rows keep the sports411 label and are frozen history — never relabelled as Bet105.
 
-**Oddspapi — bet365 only. The only ageable Open/Close.**
-5,000 requests/month, hard. ~53 units/day, ~44% at reset. Metered leg runs every 30 min.
-Pinnacle and Bet105 are **not entitled** here — they 403 and still bill.
-*Which bet365:* oddspapi's unqualified bet365, distinct from the nine country variants it lists separately (NJ, AR, BR, DE, ES, FR, GR, IT, NL). Which physical site it scrapes is unknown; oddspapi does not say. api-tennis's bet365 is the same book — 94.5% identical, n=820.
+**Oddspapi — pinnacle+30 only (founder 2026-09-26, TEN-287 card 89e3671d; bet365 and plain pinnacle 403).**
+5,000 requests/month, hard. Metered leg runs every 30 min. The subscription (`/v4/account`) carries `pinnacle+30` and nothing else: `bookmakers=bet365` → 403 "Restricted bookmakers: bet365", `pinnacle` → 403, `pinnacle+30` → 200 (measured 2026-09-26). One book per call — a batch with any non-entitled book 403s in full.
+Tests (`test-ten295-chart-books.py`):
+- `refresh-odds-history.py` `BOOKS == ('pinnacle+30',)`; both legs (the 3-hourly `main()` and the 15-min `--first-appearance`) write it ONLY to `m.oddsMovement.chart.books['Pinnacle +30s']`, never to `m.oddsMovement.books` (the model's field; "Pinnacle" there is the model's anchor key), and never touch `books`, `capturedAt`, `startTime` or `fixtureId`.
+- The bet365-only paths (open-monitor, firstSeenAt OPEN pin, the legacy `books` write) run only while `'bet365'` is in `BOOKS`.
+- The bet365 series already in `m.oddsMovement.books` is frozen history (last tick 25 Sep 22:34Z). It is kept and shown as "bet365 (Oddspapi, capture ended 26 Sep)".
+- Still on bet365 and out of this rule until their own issue lands: `refresh-odds.py` (card `bet365Now`), `archive-bet365-history.py`, `archive-oddspapi-raw.py` and the post-match archive below — every bet365 call there now 403s.
 
 **The bet365 post-match archive** (TEN-270, founder 2026-09-24/25: "Find a way to archive it straight after the game"; "Separate 15-min job … the live price loop always wins the key"). `archive-oddspapi-raw.py postmatch`, workflow `oddspapi-postmatch.yml`. Tests in `test-oddspapi-postmatch.py`; mutants reproducible with `python3 tools/mutate-ten270-postmatch.py`:
 - **Target** = a board card with a result (`past-` id AND a `finalScore`), an oddspapi `fixtureId` in `odds-fixture-map.json`, no object in the bucket, and at least 30 min since this job first saw the result. It is pulled once and saved only when both sides' last match-winner tick is `active=False`; otherwise it is deferred (at most 8 runs, then left to the daily run).
@@ -38,6 +41,34 @@ Their stored "last odds before start" **is** a usable Close: bet365 agrees with 
 Wired as a **dash-filler only** — bet365 only, ATP and Challenger, never overriding an ageable close, labelled no-timestamp/no-lag-check. WTA and team events excluded.
 
 **Tennis-Data.co.uk** — Pinnacle closes, ATP main tour, pre-2026.
+
+**odds-api.io — Superbet + Betfair Exchange, shown to members** (founder 2026-09-26, TEN-287 card 89e3671d: "show them to members now"; the ToS §9 written-consent risk is accepted by the founder). Our recorder `ten287_rec` (pg_cron, 30 s) holds them; the vendor has no history for Betfair Exchange, so that book is **self-recorded, forward only (from 26 Sep 2026)**. The book list is `ten287_rec.config.books` — a slot swap needs no code change.
+
+---
+
+## The odds-movement chart (Odds tab) — TEN-295, founder 2026-09-26
+
+- **Chart-only field.** Every chart line is `m.oddsMovement.chart = {books: {label: {p1, p2}}, meta: {label: {source, group, clock, checkedAt}}}`. Test: after a writer runs, `m.oddsMovement.books` holds exactly what it held before, and the model's price for a fixed fixture is byte-identical (`test-ten295-chart-books.py`).
+- **Books, labels, groups, clocks** (writers: `refresh-odds-history.py`, `build-chart-books.py` every 15 min in `odds-capture-loop.sh`):
+
+  | Label | Group | Source | Clock |
+  |---|---|---|---|
+  | Pinnacle +30s | Sharp | Oddspapi `/v4/historical-odds` | book tick |
+  | Bet105 | Sharp | Kibl `price_history(card_key)` — the price-history box's own rows, pre-match only | Kibl insert |
+  | Superbet | Soft | odds-api.io via `chart_book_series()` | vendor updatedAt |
+  | Betfair Exchange (recorded by us) | Soft | odds-api.io, back price, polled by us every 30 s | recorded by us |
+  | any other `config.books` entry | Soft | odds-api.io | vendor updatedAt, labelled "<book> (odds-api.io)" |
+  | bet365 (Oddspapi, capture ended 26 Sep) | Soft | legacy `m.oddsMovement.books.bet365` | book tick; checkedAt = `capturedAt` |
+
+- **odds-api.io join to a card:** both surnames (`ten225_names.name_key`), either orientation, card date ±1 day of the vendor start, unique on both sides (two board entries with one event key are one card). Ambiguous or none → skipped and counted in the log. p1/p2 follow the card. Pre-match only: a tick counts while the vendor says `pending` and before the event's first non-`pending` sighting on any book. A pair with a side below 1.01 or an overround over 20% is a suspended market and gives no point.
+- **checkedAt** is never later than the source's own read: odds-api.io = the recorder's last HTTP 200 poll of that book; Bet105 = the Kibl poller's last OK sweep; Pinnacle +30s = the run's successful read. Capped at the event's first live sighting / the card's `startTs`. It only moves forward.
+- **Display** (`bsp-consult-dashboard.html` `buildOddsSection`, tests in `test-ten295-odds-chart.mjs`, which executes the real renderer):
+  - Chart-line chips and the per-book table are grouped **Sharp** then **Soft**, each with a group header.
+  - Default line on: Pinnacle +30s, else the first Sharp book with data.
+  - A line is stepped only up to its own checkedAt (capped at the start), never to the grid's right edge.
+  - An upcoming match whose book was last checked over 60 min ago shows **"no recent data"** in the row and the chip; its last price is not a Now (dash) and never wins the best-price highlight.
+  - A source with meta but no points is a "no data" row of dashes, never a line.
+  - The footnote lists each shown source with its clock — never a single hard-coded vendor.
 
 ---
 

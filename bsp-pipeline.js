@@ -4164,18 +4164,23 @@ function extractOddsShards(matches) {
   let bytes = 0, points = 0;
   for (const m of matches) {
     const om = m.oddsMovement;
-    const books = om && om.books;
+    const books = (om && om.books) || {};
+    // TEN-295 (founder 2026-09-26): the chart-only multi-source series
+    // (Pinnacle +30s, Bet105, the odds-api.io books) ride in the shard beside the
+    // legacy `books`, never inside it — `books` is what the edge model reads.
+    const chart = om && om.chart && om.chart.books && Object.keys(om.chart.books).length ? om.chart : null;
     const ek = eventKeyOf(m);
     // Strip unconditionally, shard only what is real and addressable. A match
     // with no event key would be unreachable from the client anyway, so leaving
     // its timeline inline would be pure weight.
     m.oddsMovement = null;
-    if (!ek || !books || !Object.keys(books).length) continue;
+    if (!ek || (!Object.keys(books).length && !chart)) continue;
     // Two board entries can share an event key while a fixture is resolving (the
     // feed re-dates it, so the same match briefly exists as both upcoming- and
     // past-). Last-write-wins would let the thinner series clobber the richer
     // one, so keep whichever has more real points and index the key once.
-    const nPoints = Object.values(books).reduce((n, b) => n + ((b.p1 || []).length + (b.p2 || []).length), 0);
+    const nPoints = [...Object.values(books), ...Object.values(chart ? chart.books : {})]
+      .reduce((n, b) => n + ((b.p1 || []).length + (b.p2 || []).length), 0);
     if (bestPoints.has(ek)) {
       if (nPoints <= bestPoints.get(ek)) continue;
       bytes -= fs.statSync(`${ODDS_SHARD_DIR}/${ek}.json`).size;   // this rewrite replaces it
@@ -4185,7 +4190,9 @@ function extractOddsShards(matches) {
     }
     bestPoints.set(ek, nPoints);
     const file = `${ODDS_SHARD_DIR}/${ek}.json`;
-    writeJsonAtomic(file, { eventKey: ek, market: om.market || 'Match Winner', capturedAt: om.capturedAt || null, books }, true);
+    const shard = { eventKey: ek, market: om.market || 'Match Winner', capturedAt: om.capturedAt || null, books };
+    if (chart) shard.chart = { books: chart.books, meta: chart.meta || {} };
+    writeJsonAtomic(file, shard, true);
     bytes += fs.statSync(file).size;
     points += nPoints;
   }
@@ -5908,8 +5915,12 @@ async function runPipeline() {
   // by a full rebuild, so carry the prior values forward for any match this run
   // produced none for.
   const hasOdds = m => m && m.odds && m.odds.p1 && m.odds.p2;
-  const hasMovement = m => m && m.oddsMovement && m.oddsMovement.books
-    && Object.keys(m.oddsMovement.books).length > 0;
+  // TEN-295: a match whose only series is the chart-only field counts too, or a
+  // rebuild would drop its Pinnacle +30s / Bet105 / odds-api.io lines.
+  const hasMovement = m => m && m.oddsMovement && (
+    (m.oddsMovement.books && Object.keys(m.oddsMovement.books).length > 0)
+    || (m.oddsMovement.chart && m.oddsMovement.chart.books
+        && Object.keys(m.oddsMovement.chart.books).length > 0));
   try {
     const prior = JSON.parse(fs.readFileSync('matches.json', 'utf8'));
     const priorIndex = new Map();

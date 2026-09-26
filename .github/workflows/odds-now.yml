@@ -89,6 +89,9 @@ jobs:
           ODDSPAPI_KEY: ${{ secrets.ODDSPAPI_KEY }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_OPS_CHAT_ID: ${{ secrets.TELEGRAM_OPS_CHAT_ID }}
+          # TEN-295: build-chart-books.py reads price_history + chart_book_series.
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
           # Used only to dispatch this same workflow as the loop's successor.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |

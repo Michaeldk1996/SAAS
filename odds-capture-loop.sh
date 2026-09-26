@@ -21,6 +21,11 @@
 #     script measures the meter either side and errors if that ever stops
 #     being free.
 #
+# Every INTERVAL_MIN (15), after the sweep:  build-chart-books.py
+#     No oddspapi call at all. TEN-295 (founder 2026-09-26): the chart's Bet105 line
+#     (Kibl price_history) and odds-api.io lines (chart_book_series over our
+#     recorder) into m.oddsMovement.chart. A failure is a warning, never a red run.
+#
 # Every METERED_EVERY-th (2nd, i.e. 30 min):  refresh-odds.py
 #     ~1-2 billable /v4/odds-by-tournaments units. This is the NOW leg.
 #
@@ -76,7 +81,8 @@ FREE_BILLED=0                            # set by a BILLED_RC(9) from the free s
 # Detection without consequence, in a green run. See driver_moved() below.
 BOOT_SHA="$(git rev-parse HEAD 2>/dev/null || echo unknown)"
 DRIVER_FILES="odds-capture-loop.sh ci-commit-push.sh refresh-odds.py \
-refresh-odds-history.py metered-spend-guard.py check-now-staleness.py bsp_alerts.py"
+refresh-odds-history.py metered-spend-guard.py check-now-staleness.py bsp_alerts.py \
+build-chart-books.py chart_series.py ten225_names.py"
 
 # --- the interrupt contract ---------------------------------------------------
 # GitHub sends SIGTERM and then hard-kills. We do not start new API work on the
@@ -231,6 +237,11 @@ while [ "$STOPPING" -eq 0 ]; do
     fi
   fi
 
+  # TEN-295 — the chart's Bet105 + odds-api.io lines. Supabase only, zero oddspapi
+  # units; after the sweep so it writes onto the matches.json the sweep just wrote.
+  python3 build-chart-books.py || \
+    echo "::warning::build-chart-books.py exited non-zero at iteration $ITER."
+
   # FOUNDER RULING 2026-09-11 item 3 — "Fix the metered re-spend, all three causes.
   # Spend guard, not a lock." METERED_DUE is set in four places here and cleared in
   # one, so the arming logic alone cannot hold a flat-hourly cadence: a REDO re-arm
@@ -318,6 +329,9 @@ while [ "$STOPPING" -eq 0 ]; do
       SWEEP_BUDGET_S=0 python3 refresh-odds-history.py --first-appearance
       [ $? -eq 9 ] && FREE_BILLED=1
     fi
+    # The reset discarded this tick's chart lines too; they cost no quota to redo.
+    python3 build-chart-books.py || \
+      echo "::warning::build-chart-books.py (recompute) exited non-zero at iteration $ITER."
     # 'captured', not 'redo': the reset above discarded the tick recorded before the
     # push, so this replay is the ONLY tick this iteration will ever have. Labelling it
     # 'redo' excluded it from the gap population and made a real capture read as a

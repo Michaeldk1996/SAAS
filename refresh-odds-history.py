@@ -12,8 +12,9 @@ increments the request counter — verified against the live /v4/account meter)
 but rate-limited to ~1 call / 5s. The only quota call is the single /v4/fixtures
 lookup used to resolve fixtureIds + names, i.e. exactly ONE unit per run.
 
-bet365 is the ONLY book the subscription entitles us to, and a mixed request
-403s in full — see the BOOKS note below. The meter is printed before and after
+pinnacle+30 is the ONLY book the subscription entitles us to since 26 Sep 2026 (it was
+bet365 before), and a mixed request 403s in full — see the BOOKS note below. Books other
+than bet365 are written to the chart-only m.oddsMovement.chart, never to `books`. The meter is printed before and after
 every run so real consumption is visible in the Actions log rather than inferred.
 
     python3 refresh-odds-history.py
@@ -29,6 +30,9 @@ the API. No interpolation, no synthesised opening.
 """
 import json, os, sys, time, urllib.request, urllib.parse, urllib.error
 from datetime import datetime, timedelta, timezone
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import chart_series                  # noqa: E402 — TEN-295 chart-only writer
 
 try:
     import bsp_alerts            # the single outbound alert path (TEN-179 item 4)
@@ -59,8 +63,28 @@ OUTCOME_P1, OUTCOME_P2 = '121', '122'    # 121 = fixture participant1, 122 = par
 # discarded along with it. Batching is not merely useless here, it IS the
 # failure. One book, one call, no batching. Do not add a book back until the
 # subscription carries it (/v4/account -> subscriptions[].bookmakers).
-BOOKS = ('bet365',)
-BOOK_LABELS = {'bet365': 'bet365'}
+#
+# 2026-09-26 (TEN-295, founder answer 1 on TEN-287 card 89e3671d): "Switch the Oddspapi
+# scripts to pinnacle+30 only". The subscription now carries pinnacle+30 and nothing
+# else — measured: bookmakers=bet365 -> 403 "Restricted bookmakers: bet365", plain
+# pinnacle -> 403, pinnacle+30 -> 200.
+#
+# pinnacle+30 is written ONLY to the chart-only field m.oddsMovement.chart under the
+# label "Pinnacle +30s" (chart_series.put_chart). It never enters m.oddsMovement.books:
+# the edge model reads that field (adjustment #17 counts its keys; the anchor reads
+# books.Pinnacle), and "Pinnacle" there is the model's anchor key. The frozen bet365
+# history already in `books` is kept exactly as it is.
+#
+# The bet365-only paths — the open-monitor, the firstSeenAt OPEN pin, the
+# `books`/`capturedAt`/`startTime`/`fixtureId` writes the pipeline turns into
+# openingOdds / bet365Now / the bet365-history pin — run only while 'bet365' is in
+# BOOKS (BET365_ACTIVE). Otherwise they would label Pinnacle prices "bet365" or raise
+# false "no bet365 opening" alarms.
+BOOKS = ('pinnacle+30',)
+BOOK_LABELS = {'bet365': 'bet365', 'pinnacle+30': 'Pinnacle +30s'}
+LEGACY_BOOK = 'bet365'                     # the only book written to oddsMovement.books
+BET365_ACTIVE = LEGACY_BOOK in BOOKS
+CHART_META = {'pinnacle+30': {'source': 'Oddspapi', 'group': 'sharp', 'clock': 'book tick'}}
 
 # --- TEN-179 item 3: the open-monitor (founder authorised 2026-09-10) --------
 # A fixture whose bet365 market has genuinely opened but which we never captured
@@ -626,7 +650,7 @@ def seed_from_live(committed):
         return committed
 
     def has_movement(m):
-        return bool((m.get('oddsMovement') or {}).get('books'))
+        return bool((m.get('oddsMovement') or {}).get('books')) or chart_series.has_chart(m)
 
     def observed_at(m):
         return _parse(((m.get('bet365Now') or {}).get('observedAt')))
@@ -708,9 +732,7 @@ def main():
     # (only when it has no movement yet) and let the pipeline preserve it forever
     # after that. This is what makes completed matches render the same per-book
     # breakdown + movement chart as upcoming ones instead of the reduced view.
-    def has_movement(m):
-        om = m.get('oddsMovement') or {}
-        return bool(om.get('books'))
+    has_movement = _holds
 
     targets = []
     for m in matches:
@@ -777,7 +799,7 @@ def main():
             continue            # already reported as unjoined above
         fx = j['fixtureId']
         swap = j['orient'] == 'swap'
-        had_series = bool((m.get('oddsMovement') or {}).get('books'))
+        had_series = _holds(m)
         books_out = {}
 
         for b in BOOKS:
@@ -793,24 +815,9 @@ def main():
         if books_out:
             pts = sum(len(s) for bk in books_out.values() for s in bk.values() if s)
             total_points += pts
-            m['oddsMovement'] = {
-                'market': 'Match Winner',
-                'capturedAt': now_iso,
-                # The fixture's real UTC start instant, carried so the pipeline's
-                # closing cutoff has a PROVEN pre-first-ball reference instead of
-                # inferring one from bet365's own tick cadence. See the TEN-179
-                # note in bsp-pipeline.js. Stripped into the odds shard along with
-                # the rest of oddsMovement, so it never reaches the client.
-                'startTime': j.get('startTime'),
-                # TEN-179 item 1: the oddspapi fixtureId, so the pipeline can join this
-                # match to bet365-history/YYYY-MM.json and pin the EARLIER of the archived
-                # open and this capture's first point. Same book, same endpoint — the two
-                # only differ when the live capture first reached the fixture after its
-                # market opened. Stripped with the rest of oddsMovement; never sent to the
-                # client.
-                'fixtureId': fx,
-                'books': books_out,
-            }
+            # startTime / fixtureId ride on the legacy bet365 write only (see _store): the
+            # pipeline uses them for the bet365 closing cutoff and the bet365-history pin.
+            _store(m, books_out, now_iso, fx, j.get('startTime'), merge=False)
             captured += 1
             # Only a series this run CREATED is a first sighting. Re-capturing a fixture
             # we have held for days and stamping firstSeenAt = now would make
@@ -825,6 +832,7 @@ def main():
     write_matches(matches)
 
     cov = ', '.join(f'{BOOK_LABELS[b]}:{book_hits[b]}' for b in BOOKS)
+    book_txt = '/'.join(BOOK_LABELS[b] for b in BOOKS)
     print(f'oddspapi history capture: {captured} match(es) with movement, '
           f'{total_points} price points total.')
     print(f'Book coverage (matches with a series) [{cov}].')
@@ -839,17 +847,22 @@ def main():
     gap_settled = [m for m in gap_no_history if m.get('finalScore')]
     gap_upcoming = [m for m in gap_no_history if not m.get('finalScore')]
     if gap_settled:
-        print(f'GAP (COMPLETED, joined but no bet365 history — open/close lost): '
+        print(f'GAP (COMPLETED, joined but no {book_txt} history — open/close lost): '
               f'{len(gap_settled)} match(es):')
         for m in gap_settled:
             print(f'  - {m.get("date")} {m.get("tour")}: {m.get("p1")} vs {m.get("p2")}')
     if gap_upcoming:
-        print(f'Pending (upcoming, no bet365 price posted yet — normal, will retry): '
+        print(f'Pending (upcoming, no {book_txt} price posted yet — normal, will retry): '
               f'{len(gap_upcoming)} match(es):')
         for m in gap_upcoming:
             print(f'  - {m.get("date")} {m.get("tour")}: {m.get("p1")} vs {m.get("p2")}')
 
-    alerts = open_monitor(targets, joined, now_iso, newly_opened=newly_opened)
+    # The open-monitor is about the bet365 OPEN pin; with bet365 out of BOOKS it would
+    # raise a false "no bet365 opening" on every fixture (TEN-295).
+    if BET365_ACTIVE:
+        open_monitor(targets, joined, now_iso, newly_opened=newly_opened)
+    else:
+        print('Open-monitor: skipped — bet365 is not in BOOKS (TEN-295), so there is no bet365 OPEN to watch.')
 
     quota_after = log_quota(key, 'after run')
     report_consumption(quota_before, quota_after, hist_calls)
@@ -882,7 +895,7 @@ def main():
     if unjoined or gap_settled:
         print(f'::error::Capture shortfall: {captured}/{len(targets)} match(es) got '
               f'movement — {len(unjoined)} unjoined, {len(gap_settled)} completed '
-              f'match(es) joined but with no bet365 history (their open/close are '
+              f'match(es) joined but with no {book_txt} history (their open/close are '
               f'lost for good). Anything captured WAS written and committed; this '
               f'run is failed so the shortfall is not reported as success.',
               file=sys.stderr)
@@ -890,7 +903,7 @@ def main():
     if not captured:
         if gap_upcoming:
             print(f'::notice::Captured 0 of {len(targets)} target match(es): every '
-                  f'remaining target is an upcoming match with no bet365 price '
+                  f'remaining target is an upcoming match with no {book_txt} price '
                   f'posted yet. Nothing was capturable — not a failure.')
         else:
             print(f'::error::Captured movement on 0 of {len(targets)} target '
@@ -1216,7 +1229,7 @@ def first_appearance():
         if not rec.get('fixtureId'):
             unmapped.append(m)
             continue
-        if (m.get('oddsMovement') or {}).get('books'):
+        if _holds(m):
             already_open.append((m, rec))   # OPEN pinned; swept now for NOW freshness
         else:
             unopened.append((m, rec))       # OPEN unpinned — the time-critical set
@@ -1293,7 +1306,7 @@ def first_appearance():
         swap = rec.get('orient') == 'swap'
         joined[id(m)] = {'fixtureId': rec['fixtureId'], 'orient': rec.get('orient'),
                          'startTime': rec.get('startTime')}
-        had_series = bool((m.get('oddsMovement') or {}).get('books'))
+        had_series = _holds(m)
         books_out = {}
         for b in BOOKS:
             time.sleep(HIST_SLEEP)
@@ -1313,18 +1326,13 @@ def first_appearance():
             # that did not happen, and do not blank an existing series on a 404.
             continue
 
+        # MERGE, never replace (both paths). oddspapi prunes historical density with age,
+        # so a refetched series can be SHORTER at the old end than the one we hold; the
+        # legacy path unions in _merge_movement, the chart path in put_chart.
+        _store(m, books_out, now_iso, rec['fixtureId'], rec.get('startTime'), merge=had_series)
         if had_series:
-            # MERGE, never replace. oddspapi prunes historical density with age, so a
-            # refetched series can be SHORTER at the old end than the one we hold — and
-            # the OPEN pin is "the last bet365 quote at or before firstSeenAt", which
-            # lives at exactly that end. Replacing wholesale would silently move the
-            # open to a later, worse price. Union on timestamp, keep both ends.
-            m['oddsMovement'] = _merge_movement(m['oddsMovement'], books_out, now_iso)
             refreshed += 1
         else:
-            m['oddsMovement'] = {'market': 'Match Winner', 'capturedAt': now_iso,
-                                 'startTime': rec.get('startTime'),
-                                 'fixtureId': rec['fixtureId'], 'books': books_out}
             captured += 1
             newly_opened.add(id(m))
             opened.append(m)
@@ -1345,14 +1353,20 @@ def first_appearance():
     # resolve the open to the CURRENT price. Deriving an open from the current price is
     # precisely what the founder's standing rule forbids. Only fixtures whose series
     # this call actually created may claim a first sighting.
-    open_monitor([m for m, _ in targets], joined, now_iso, newly_opened=newly_opened)
+    if BET365_ACTIVE:
+        open_monitor([m for m, _ in targets], joined, now_iso, newly_opened=newly_opened)
 
     for m in opened:
-        ser = ((m.get('oddsMovement') or {}).get('books') or {}).get('bet365') or {}
+        ser = {}
+        for b in BOOKS:
+            ser = (((m.get('oddsMovement') or {}).get('books') or {}).get(BOOK_LABELS[b])
+                   if b == LEGACY_BOOK else chart_series.chart_series(m, BOOK_LABELS[b])) or {}
+            if ser:
+                break
         pts = [p[0] for side in ('p1', 'p2') for p in (ser.get(side) or []) if p]
         first = min(pts) if pts else None
         lag = _parse(first)
-        lag_txt = (f'{(now - lag).total_seconds() / 60.0:.1f} min after bet365\'s first '
+        lag_txt = (f'{(now - lag).total_seconds() / 60.0:.1f} min after the book\'s first '
                    f'quote') if lag else 'lag unknown'
         print(f'  OPENED {m.get("date")} {m.get("tour")}: {m.get("p1")} v {m.get("p2")} '
               f'— first sighted {lag_txt}.')
@@ -1435,6 +1449,40 @@ def _merge_movement(existing, books_new, now_iso):
     out['market'] = out.get('market') or 'Match Winner'
     out['capturedAt'] = now_iso                 # we really did observe, just now
     return out
+
+
+def _holds(m):
+    """True when the match already holds a series for any book in BOOKS — the legacy
+    `books` field for bet365, the chart for everything else."""
+    om = m.get('oddsMovement') or {}
+    for b in BOOKS:
+        if b == LEGACY_BOOK:
+            if (om.get('books') or {}).get(BOOK_LABELS[b]):
+                return True
+        elif chart_series.chart_series(m, BOOK_LABELS[b]):
+            return True
+    return False
+
+
+def _store(m, books_out, now_iso, fixture_id, start_time, merge):
+    """Write one capture. bet365 (only while BET365_ACTIVE) keeps its legacy path into
+    oddsMovement.books; every other book goes to oddsMovement.chart via put_chart, which
+    touches nothing else on the match — in particular not `capturedAt`, which the
+    pipeline reads as "when bet365 was last looked at"."""
+    legacy = {k: v for k, v in books_out.items() if k == BOOK_LABELS[LEGACY_BOOK]}
+    if legacy:
+        if merge:
+            m['oddsMovement'] = _merge_movement(m['oddsMovement'], legacy, now_iso)
+        else:
+            om = dict(m.get('oddsMovement') or {})
+            om.update({'market': 'Match Winner', 'capturedAt': now_iso, 'startTime': start_time,
+                       'fixtureId': fixture_id, 'books': legacy})
+            m['oddsMovement'] = om
+    for b in BOOKS:
+        label = BOOK_LABELS[b]
+        if b == LEGACY_BOOK or label not in books_out:
+            continue
+        chart_series.put_chart(m, label, books_out[label], dict(CHART_META[b], checkedAt=now_iso))
 
 
 def _absorb(data, book, swap, books_out, book_hits):
