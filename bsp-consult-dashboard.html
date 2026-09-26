@@ -11365,8 +11365,12 @@ function renderEdgeModel(id){
   //   • not confirmed, match not yet started → one muted "awaiting" label
   //   • match already started (≤ 0h)         → one muted "Match in play." label
   const gateState = e.stage1 && e.stage1.baseState && e.stage1.baseState.state;
-  const startTs = m && (m.startTs || (m.date && m.time ? `${m.date}T${m.time}:00Z` : null));
-  const hoursToStart = startTs ? (new Date(startTs).getTime() - Date.now()) / 3.6e6 : null;
+  // TEN-295 (founder 2026-09-26, card f8b311c9): the REAL start — the card state's actual start,
+  // else m.startTs, else the Oddspapi fixture start, else `date`+`time` in the account zone
+  // (aOddsStartMs). Reading `date`+`time` as UTC flipped "Match in play." ~2 h late. Display only:
+  // runModel's output is untouched.
+  const startMsGate = m ? aOddsStartMs(m) : NaN;
+  const hoursToStart = Number.isFinite(startMsGate) ? (startMsGate - Date.now()) / 3.6e6 : null;
   const stateConfirmed = gateState === 2 && hoursToStart != null && hoursToStart > 0 && hoursToStart <= 30;
   if (!stateConfirmed){
     const reason = (hoursToStart != null && hoursToStart <= 0)

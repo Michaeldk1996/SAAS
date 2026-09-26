@@ -4145,6 +4145,49 @@ function profilesWithoutTournamentHistory(playerProfiles) {
 // derivation build-point-by-point.js uses — split m.id on the first '-'.
 const ODDS_SHARD_DIR = 'odds';
 const ODDS_INDEX_PATH = 'odds-index.json';
+// The pre-first-ball cutoff for a finished card's CLOSE, most proven first (TEN-124 / TEN-179;
+// TEN-295 founder 2026-09-26 card f8b311c9 put the card state's ACTUAL start first):
+//   card-state startTs > m.startTs > the joined Oddspapi fixture's UTC start > in-play onset − 1 ms.
+// onsetFn is lazy: the cadence proxy is only computed when nothing proven exists.
+function closeCutMs(m, ocsStartMs, onsetFn) {
+  if (Number.isFinite(ocsStartMs)) return ocsStartMs;
+  if (typeof m.startTs === 'string' && m.startTs && Number.isFinite(Date.parse(m.startTs))) return Date.parse(m.startTs);
+  const fixtureStart = m.oddsMovement && m.oddsMovement.startTime;
+  if (typeof fixtureStart === 'string' && fixtureStart && Number.isFinite(Date.parse(fixtureStart))) return Date.parse(fixtureStart);
+  const o = onsetFn ? onsetFn() : NaN;
+  return Number.isFinite(o) ? o - 1 : NaN;
+}
+
+// TEN-295: the card-state key, CHARACTER FOR CHARACTER the dashboard's (and ten225_names.py's) —
+// test-ten295-odds-chart.mjs fails if this copy and bsp-consult-dashboard.html's ever differ.
+function ocsNfd(s){
+  return String(s || '').normalize('NFD')
+    // Unicode combining marks (category Mn), which is what Python's
+    // `unicodedata.category(c) != 'Mn'` filter drops.
+    .replace(/\p{Mn}/gu, '')
+    .toLowerCase().replace(/,/g, ' ').replace(/\./g, ' ')
+    // U+002D, then the dash range U+2010..U+2015, then the apostrophes.
+    .replace(/[-‐-―'‘’ʼ]/g, ' ')
+    .split(/\s+/).filter(Boolean).join(' ');
+}
+function ocsNameKey(name){
+  const raw = String(name || '');
+  const s = ocsNfd(raw.includes(',') ? raw.split(',')[0] : raw);
+  // Last alphabetic token of length > 1 — NOT the longest, which fails every
+  // full-name-vs-initial pair ('Zverev, Alexander' has 'alexander' as its
+  // longest token and 'A. Zverev' has 'zverev').
+  const toks = s.split(' ').filter(t => t.length > 1 && /^\p{L}+$/u.test(t));
+  return toks.length ? toks[toks.length - 1] : null;
+}
+function ocsMatchKey(day, p1, p2){
+  const k1 = ocsNameKey(p1), k2 = ocsNameKey(p2);
+  // Never a partial key, and never a key for two players who reduce to one
+  // surname — that key could not tell the sides apart, and the standing rule is
+  // to drop on ambiguity rather than guess.
+  if (!day || !k1 || !k2 || k1 === k2) return null;
+  return `${String(day).slice(0, 10)}|${[k1, k2].sort().join('|')}`;
+}
+
 function eventKeyOf(m) {
   // Two id shapes on the board: prefixed fixture ids ("upcoming-12149520" /
   // "past-12149488" — the event key follows the first hyphen) and a bare 32-hex
@@ -6101,6 +6144,22 @@ async function runPipeline() {
     console.log(`  bet365 archive unreadable (${e.message}) — opens fall back to the live capture only.`);
   }
 
+  // TEN-295 (founder 2026-09-26, card f8b311c9: "make the pipeline close prefer the card-state
+  // actual start"): odds-card-state.json `startTs` — the clock the card's own Close is judged
+  // against — keyed by the card-state key. Fail-soft: absent or unreadable leaves the old order.
+  const ocsStartByKey = new Map();
+  try {
+    if (fs.existsSync('odds-card-state.json')) {
+      const ocs = JSON.parse(fs.readFileSync('odds-card-state.json', 'utf8'));
+      for (const [k, e] of Object.entries((ocs && ocs.byKey) || {})) {
+        const t = e && typeof e.startTs === 'string' ? Date.parse(e.startTs) : NaN;
+        if (Number.isFinite(t)) ocsStartByKey.set(k, t);
+      }
+    }
+  } catch (e) {
+    console.log(`  odds-card-state.json unreadable (${e.message}) — closes cut on startTs / fixture start / onset.`);
+  }
+
   // TEN-179 / founder ruling 2026-09-11 — the first-sighting anchor for OPEN.
   // odds-open-monitor.json is written by open_monitor() in refresh-odds-history.py and
   // carries, per oddspapi fixtureId, `firstSeenAt`: the instant WE first held a bet365
@@ -6570,6 +6629,10 @@ async function runPipeline() {
     // never approximate — dash where the pre-match close is missing).
     if (m.finalScore) {
       // Preference order for the pre-first-ball cutoff, most proven first:
+      //   0. odds-card-state `startTs` — the ACTUAL start (TEN-295, founder 2026-09-26 card
+      //      f8b311c9). The scheduled starts below run late when a match goes on early:
+      //      Harris v Kovacevic began 10:31:59Z against a 10:35Z schedule, and its close was
+      //      pinned at 10:32:14Z — an in-play price.
       //   1. m.startTs           — real epoch, present only on Odds-API merges.
       //   2. oddsMovement.startTime — the joined oddspapi fixture's own UTC start
       //      (TEN-179). Also a real scheduled instant, and present on exactly the
@@ -6584,12 +6647,7 @@ async function runPipeline() {
       // 1.062/10.00 against a true pre-match 1.10/7.00. That is the exact TEN-124
       // failure the founder ruled out, reached by a different route. A real
       // scheduled start removes the inference entirely.
-      const fixtureStart = m.oddsMovement && m.oddsMovement.startTime;
-      const startMs = (typeof m.startTs === 'string' && m.startTs)
-        ? Date.parse(m.startTs)
-        : (typeof fixtureStart === 'string' && fixtureStart && Number.isFinite(Date.parse(fixtureStart)))
-          ? Date.parse(fixtureStart)
-          : (() => { const o = inPlayOnset(s); return Number.isFinite(o) ? o - 1 : NaN; })();
+      const startMs = closeCutMs(m, ocsStartByKey.get(ocsMatchKey(m.date, m.p1, m.p2)), () => inPlayOnset(s));
       const prior = carried && carried.closingOdds;
       // Preserve a prior close only if it is a genuine pre-start quote AND from
       // bet365 (the book we now pin both legs to) — otherwise it is re-derived

@@ -569,6 +569,34 @@ test('pipeline: extractOddsShards writes chart beside books, indexes a chart-onl
   } finally { process.chdir(cwd); }
 });
 
+test('model display gate (founder card f8b311c9): "Match in play." flips at the REAL start, not the UTC-read card time', () => {
+  const gate = slice('renderEdgeModel');
+  assert.ok(gate.includes('const startMsGate = m ? aOddsStartMs(m) : NaN;'), 'the gate reads aOddsStartMs');
+  assert.ok(!/\$\{m\.date\}T\$\{m\.time\}:00Z/.test(gate), 'no date+time read as UTC left in the gate');
+  // and aOddsStartMs itself (executed): card state > startTs > fixture > account zone
+  const A = build();
+  assert.equal(A.aOddsStartMs({ date: '2026-09-24', time: '14:00', __testOcs: { startTs: '2026-09-24T11:50:00Z' } }), Date.parse('2026-09-24T11:50:00Z'));
+  assert.equal(A.aOddsStartMs({ date: '2026-09-24', time: '14:00' }), Date.parse('2026-09-24T12:00:00Z'));
+});
+
+test('pipeline close (founder card f8b311c9): the card state\'s ACTUAL start is cut first; the key helpers match the page', () => {
+  for (const n of ['ocsNfd', 'ocsNameKey', 'ocsMatchKey'])
+    assert.equal(slice(n, pipe), slice(n), `${n}: the pipeline's copy must be the dashboard's, character for character`);
+  const cut = new Function(`${slice('closeCutMs', pipe)} return closeCutMs;`)();
+  const T = s => Date.parse(s);
+  const m = { startTs: '2026-09-24T10:40:00Z', oddsMovement: { startTime: '2026-09-24T10:35:00.000Z' } };
+  assert.equal(cut(m, T('2026-09-24T10:31:59Z'), () => 0), T('2026-09-24T10:31:59Z'), 'card-state actual start first (Harris v Kovacevic)');
+  assert.equal(cut(m, NaN, () => 0), T('2026-09-24T10:40:00Z'), 'then m.startTs');
+  assert.equal(cut({ oddsMovement: m.oddsMovement }, undefined, () => 0), T('2026-09-24T10:35:00Z'), 'then the Oddspapi fixture start');
+  let called = 0;
+  assert.equal(cut({}, NaN, () => { called++; return 5000; }), 4999, 'then the in-play onset - 1 ms');
+  cut(m, T('2026-09-24T10:31:59Z'), () => { called++; return 0; });
+  assert.equal(called, 1, 'the onset proxy is only computed when nothing proven exists');
+  assert.ok(Number.isNaN(cut({}, NaN, () => NaN)), 'nothing -> NaN (the close dashes)');
+  // the close block uses it, keyed by the card-state key
+  assert.ok(pipe.includes('const startMs = closeCutMs(m, ocsStartByKey.get(ocsMatchKey(m.date, m.p1, m.p2)), () => inPlayOnset(s));'));
+});
+
 test('pipeline: the carry-forward counts a chart-only match as having movement', () => {
   const i = pipe.indexOf('  const hasMovement = m => m && m.oddsMovement && (');
   assert.ok(i > 0, 'hasMovement found');
