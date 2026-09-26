@@ -1,20 +1,20 @@
 {
   "latest": {
-    "maxAgeMin": 114.9,
-    "measured": 9,
-    "stale": []
+    "maxAgeMin": 143.0,
+    "measured": 8,
+    "stale": [
+      "D. Medvedev v V. Royer (ATP Hangzhou, 2026-09-26)",
+      "Y. Bu v K. Majchrzak (ATP Hangzhou, 2026-09-26)",
+      "F. Cina v A. Muller (ATP Chengdu, 2026-09-26)",
+      "V. Vacherot v L. Harris (ATP Chengdu, 2026-09-26)",
+      "C. Wong v D. Vallejo (ATP Hangzhou, 2026-09-26)",
+      "A. Mannarino v D. Shapovalov (ATP Chengdu, 2026-09-27)",
+      "J. Brooksby v N. Basilashvili (ATP Chengdu, 2026-09-27)",
+      "F. Marozsan v K. Jacquet (ATP Hangzhou, 2026-09-27)"
+    ]
   },
   "note": "Age of the published bet365 NOW leg, measured as now - observedAt against the artefact Pages is serving. Capture staleness and publish staleness are both inside this number, which is what the visitor sees. Re-derive the threshold on TEN-187.",
   "samples": [
-    {
-      "at": "2026-09-21T16:33:14Z",
-      "maxAgeMin": 1008.0,
-      "measured": 2,
-      "noBet365Line": 34,
-      "noClock": 0,
-      "stale": 2,
-      "thresholdMin": 120.0
-    },
     {
       "at": "2026-09-21T17:03:15Z",
       "maxAgeMin": 1038.0,
@@ -3605,9 +3605,18 @@
       "noClock": 0,
       "stale": 0,
       "thresholdMin": 120.0
+    },
+    {
+      "at": "2026-09-26T05:46:10Z",
+      "maxAgeMin": 143.0,
+      "measured": 8,
+      "noBet365Line": 5,
+      "noClock": 0,
+      "stale": 8,
+      "thresholdMin": 120.0
     }
   ],
   "schema": "odds-now-staleness/1",
   "thresholdMin": 120.0,
-  "updatedAt": "2026-09-26T05:18:03Z"
+  "updatedAt": "2026-09-26T05:46:10Z"
 }
