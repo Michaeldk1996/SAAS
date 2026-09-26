@@ -244,6 +244,19 @@ check({k: v for k, v in out.items() if k != 'chart'} == LEGACY, 'main(): the wri
 check(out['chart']['meta']['Bet105']['group'] == 'sharp' and out['chart']['books']['Bet105']['p1'][0][1] == 2.4,
       'main(): Bet105 line written, Sharp')
 check(out['chart']['meta']['Bet105']['checkedAt'] <= '2026-09-26T04:12:06.000Z', 'Bet105 checkedAt <= the Kibl poller sweep')
+# no Kibl Bet105 fixture matched -> "no Bet105 fixture matched", never "not priced"
+json.dump([card(id='upcoming-12166088', p1='A. Zverev', p2='A. De Minaur', date='2026-09-26')], open(bcb.MATCHES, 'w'))
+bcb.rpc = lambda name, args, timeout=60: (dict(payload, kibl_sweep_ok_at='2026-09-26T04:12:06+00:00') if name == 'chart_book_series'
+                                          else {'candidates': 0, 'fixtures': [], 'poller': [], 'stream': []})
+bcb.main()
+z = json.load(open(bcb.MATCHES))[0]['oddsMovement']['chart']['meta']['Bet105']
+check(z.get('note') == 'no Bet105 fixture matched', f'0 Kibl candidates -> "no Bet105 fixture matched" {z}')
+bcb.rpc = lambda name, args, timeout=60: (dict(payload, kibl_sweep_ok_at='2026-09-26T04:12:06+00:00') if name == 'chart_book_series'
+                                          else {'candidates': 1, 'fixtures': [], 'poller': [], 'stream': []})
+json.dump([card(id='upcoming-12166088', p1='A. Zverev', p2='A. De Minaur', date='2026-09-26')], open(bcb.MATCHES, 'w'))
+bcb.main()
+z2 = json.load(open(bcb.MATCHES))[0]['oddsMovement']['chart']['meta']['Bet105']
+check('note' not in z2 and z2.get('checkedAt'), f'a matched fixture with no rows -> "not priced" (checked, no note) {z2}')
 
 # ── 2. refresh-odds-history.py: pinnacle+30 into the chart, both legs ────────
 check(hist.BOOKS == ('pinnacle+30',) and not hist.BET365_ACTIVE, 'Oddspapi BOOKS == (pinnacle+30,), bet365 paths off')

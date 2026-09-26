@@ -350,8 +350,14 @@ def main():
             continue
         ser = bet105_series(payload, c, start_ts)
         checked = _min_iso(now, kibl_ok, start_ts) if kibl_ok else None
+        # No Kibl Bet105 fixture matched to this card (0 candidates, no stream rows): our
+        # card-state join's verdict, never "not priced" (founder 2026-09-26: "not offered"
+        # needs evidence). A matched fixture with no pre-match rows IS "not priced".
+        unmatched = not (payload or {}).get('candidates') and not (payload or {}).get('stream')
         if cs.put_chart(c, BET105, ser if (ser['p1'] or ser['p2']) else None,
-                        dict(BET105_META, checkedAt=checked, note=None), cut_at=start_ts):
+                        dict(BET105_META, checkedAt=checked,
+                             note='no Bet105 fixture matched' if unmatched else None),
+                        cut_at=start_ts):
             wrote += 1
         else:
             empty += 1
