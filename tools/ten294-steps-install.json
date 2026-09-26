@@ -25,10 +25,6 @@
   "sql": "explain select o.price_decimal, o.inserted_on from public.kibl_line_observations o where o.fixture_id = (select fixture_id from ten280_bot.alerts where mode='live' order by id desc limit 1) and o.market_type_id = 1 and o.segment_id = 1 and o.side_id = 2 and o.feed_source_id = 171 and o.betting_type_id = 1 and o.is_live is false and o.price_decimal >= 1.01 and o.inserted_on is not null order by o.inserted_on desc limit 1"
  },
  {
-  "name": "plan_started",
-  "sql": "explain select exists (select 1 from public.kibl_line_observations o where o.fixture_id = (select fixture_id from ten280_bot.alerts where mode='live' order by id desc limit 1) and o.is_live is true)"
- },
- {
   "name": "plan_superbet_latest",
   "sql": "explain select k.back_home, k.book_updated_at from ten287_rec.ticks k where k.event_id = (select event_id from ten287_bot.alerts where mode='live' order by id desc limit 1) and k.book = 'Superbet' and k.book_updated_at is not null order by k.book_updated_at desc, k.seen_at desc limit 1"
  },
@@ -58,7 +54,7 @@
  },
  {
   "name": "summary",
-  "sql": "with s as (select drops_api.snapshot(72) j), r as (select x from s, jsonb_array_elements(s.j->'rows') x) select x->>'book' book, x->>'tier' tier, count(*) n, count(*) filter (where x->'latest' is null or x->'latest' = 'null'::jsonb) no_latest, count(*) filter (where (x->>'started')::boolean) started, count(*) filter (where (x->>'pastScheduledStart')::boolean) past_sched, count(*) filter (where x->'open' = 'null'::jsonb) no_open, min(x->>'detectedAt') first_at, max(x->>'detectedAt') last_at from r group by 1, 2 order by 1, 2"
+  "sql": "with s as (select drops_api.snapshot(72) j), r as (select x from s, jsonb_array_elements(s.j->'rows') x) select x->>'book' book, x->>'tier' tier, count(*) n, count(*) filter (where x->'latest' is null or x->'latest' = 'null'::jsonb) no_latest, count(*) filter (where x->'open' = 'null'::jsonb) no_open, min(x->>'detectedAt') first_at, max(x->>'detectedAt') last_at from r group by 1, 2 order by 1, 2"
  },
  {
   "name": "recount",
