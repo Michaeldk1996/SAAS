@@ -1,12 +1,7 @@
 [
- {"name": "config", "sql": "select * from ten287_rec.config"},
- {"name": "status_vals", "sql": "select book, event_status, count(*) n from ten287_rec.ticks group by 1,2 order by 1,2"},
- {"name": "events_sample", "sql": "select event_id, home, away, start_at, status, league, tier from ten287_rec.events where tier is not null order by start_at desc limit 25"},
- {"name": "events_status", "sql": "select status, tier, count(*) from ten287_rec.events group by 1,2 order by 1,2"},
- {"name": "tick_totals", "sql": "select book, count(*) ticks, count(distinct event_id) ev, min(book_updated_at), max(book_updated_at), max(seen_at) from ten287_rec.ticks group by 1"},
- {"name": "live_after_start", "sql": "select t.book, count(*) filter (where t.book_updated_at > e.start_at) after_sched, count(*) filter (where t.event_status <> 'pending') not_pending, count(*) n from ten287_rec.ticks t join ten287_rec.events e using (event_id) group by 1"},
- {"name": "price_extremes", "sql": "select book, count(*) filter (where back_home < 1.01 or back_away < 1.01) sub101, count(*) filter (where back_home is null or back_away is null) nulls, count(*) filter (where 1/back_home + 1/back_away > 1.2) over20, count(*) filter (where 1/back_home + 1/back_away < 0.95) under95 from ten287_rec.ticks where back_home > 0 and back_away > 0 or back_home is null or back_away is null group by 1"},
- {"name": "one_event", "sql": "with e as (select event_id from ten287_rec.ticks where book='Betfair Exchange' group by 1 order by count(*) desc limit 1) select t.book, t.back_home, t.back_away, t.book_updated_at, t.seen_at, t.event_status, t.src from ten287_rec.ticks t join e using (event_id) order by t.book, t.book_updated_at limit 80"},
- {"name": "fn_exists", "sql": "select n.nspname, p.proname, p.prosecdef from pg_proc p join pg_namespace n on n.oid=p.pronamespace where p.proname in ('price_history','chart_book_series','bet365_history')"},
- {"name": "roles", "sql": "select current_user, (select rolname from pg_roles where rolname='service_role')"}
+ {"name": "install_rpc", "file": "tools/ten295-chart-books-rpc.sql", "required": true, "stop_on_error": true},
+ {"name": "grants", "sql": "select has_function_privilege('anon', 'public.chart_book_series(timestamptz,timestamptz)', 'execute') anon_exec, has_function_privilege('authenticated', 'public.chart_book_series(timestamptz,timestamptz)', 'execute') auth_exec, has_function_privilege('service_role', 'public.chart_book_series(timestamptz,timestamptz)', 'execute') svc_exec"},
+ {"name": "summary", "sql": "with r as (select public.chart_book_series(now() - interval '4 days', now() + interval '10 days') j) select j->'books' books, j->'polled_ok_at' polled, j->'kibl_sweep_ok_at' kibl, jsonb_array_length(j->'events') n_events, length(j::text) bytes from r"},
+ {"name": "full", "sql": "select public.chart_book_series(now() - interval '4 days', now() + interval '10 days') j"},
+ {"name": "raw_one", "sql": "with e as (select event_id from ten287_rec.ticks where book='Superbet' group by 1 order by count(*) desc limit 1) select t.id, t.book, t.event_id, t.back_home, t.back_away, t.book_updated_at, t.seen_at, t.event_status from ten287_rec.ticks t join e using (event_id) order by t.book, t.book_updated_at, t.id"}
 ]
