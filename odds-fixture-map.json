@@ -1953,14 +1953,14 @@
     },
     "12165577": {
       "fixtureId": "id1204297974753260",
-      "mappedAt": "2026-09-24T12:15:02Z",
-      "missHeldH": 22.39,
+      "mappedAt": "2026-09-26T00:16:06Z",
+      "missHeldH": 58.41,
       "missRuns": 14,
       "missSince": "2026-09-23T13:51:29Z",
       "orient": "same",
       "p1": "D. Medvedev",
       "p2": "V. Royer",
-      "startTime": "2026-09-26T05:30:00.000Z",
+      "startTime": "2026-09-26T07:50:00.000Z",
       "tournamentId": 42979
     },
     "12165806": {
@@ -2010,11 +2010,11 @@
     },
     "12165823": {
       "fixtureId": "id1204297974753266",
-      "mappedAt": "2026-09-24T12:15:02Z",
+      "mappedAt": "2026-09-26T00:16:06Z",
       "orient": "same",
       "p1": "Y. Bu",
       "p2": "K. Majchrzak",
-      "startTime": "2026-09-26T05:30:00.000Z",
+      "startTime": "2026-09-26T06:40:00.000Z",
       "tournamentId": 42979
     },
     "12165825": {
@@ -2091,8 +2091,8 @@
     },
     "12165854": {
       "fixtureId": null,
-      "mappedAt": "2026-09-25T23:16:06Z",
-      "missRuns": 23,
+      "mappedAt": "2026-09-26T00:16:06Z",
+      "missRuns": 24,
       "missSince": "2026-09-24T14:22:39Z",
       "orient": null,
       "p1": "M. Damm",
@@ -2156,6 +2156,33 @@
       "p2": "A. Rublev",
       "startTime": "2026-09-27T05:30:00.000Z",
       "tournamentId": 42979
+    },
+    "12166087": {
+      "fixtureId": "id1201944875052546",
+      "mappedAt": "2026-09-26T00:16:06Z",
+      "orient": "same",
+      "p1": "F. Cobolli",
+      "p2": "L. Tien",
+      "startTime": "2026-09-26T12:00:00.000Z",
+      "tournamentId": 19448
+    },
+    "12166088": {
+      "fixtureId": "id1201944875052548",
+      "mappedAt": "2026-09-26T00:16:06Z",
+      "orient": "same",
+      "p1": "A. Zverev",
+      "p2": "A. De Minaur",
+      "startTime": "2026-09-26T13:10:00.000Z",
+      "tournamentId": 19448
+    },
+    "12166089": {
+      "fixtureId": "id1201944875052550",
+      "mappedAt": "2026-09-26T00:16:06Z",
+      "orient": "same",
+      "p1": "C. Alcaraz",
+      "p2": "T. Fritz",
+      "startTime": "2026-09-26T18:00:00.000Z",
+      "tournamentId": 19448
     }
   },
   "missAudit": {
@@ -2165,12 +2192,12 @@
       "missResolutionHoursP50": 37.52,
       "missResolutionsMeasured": 90,
       "note": "ttlBitRuns counts runs where an expired MISS was the ONLY reason a billable /v4/fixtures call was made. projectedTtlUnitsPerDay uses the MEASURED run rate (measuredRunsPerDay), not an assumed 24/day; it is null until observedSpanDays is wide enough to measure one. Compare it against the <=24/day ceiling the TTL was chosen against. openMisses counts only fixtures still on the board.",
-      "observedSpanDays": 14.74,
+      "observedSpanDays": 14.78,
       "projectedTtlUnitsPerDay": 5.9,
-      "runs": 250,
-      "spentRuns": 149,
+      "runs": 251,
+      "spentRuns": 150,
       "ttlBitRuns": 87,
-      "ttlBitShare": 0.348,
+      "ttlBitShare": 0.347,
       "ttlHours": 1.0
     },
     "runs": [
@@ -4923,9 +4950,20 @@
         "ttlBit": true,
         "unmapped": 0,
         "upcoming": 13
+      },
+      {
+        "at": "2026-09-26T00:16:06Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 2,
+        "missExpired": 1,
+        "openMisses": 1,
+        "stale": 6,
+        "ttlBit": false,
+        "unmapped": 3,
+        "upcoming": 16
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-09-25T23:16:06Z"
+  "updatedAt": "2026-09-26T00:16:06Z"
 }
