@@ -368,6 +368,8 @@ def norm(name):
 
 def surname_od(name):
     """oddspapi names are 'Lastname, Firstname' — take the part before the comma."""
+    # TEN-295: 'Damm Jr, Martin' keyed as 'dammjr' and never matched 'M. Damm'.
+    name = chart_series.strip_suffix(name)
     base = name.split(',')[0] if ',' in (name or '') else (name or '')
     return norm(base)
 
@@ -380,7 +382,7 @@ def surname_board(name):
     'X.' initial is the surname; that is what has to match a 2-letter oddspapi
     surname exactly rather than as a substring.
     """
-    parts = (name or '').split()
+    parts = chart_series.strip_suffix(name).split()
     if parts and parts[0].endswith('.'):
         parts = parts[1:]
     return norm(' '.join(parts))
@@ -1228,7 +1230,17 @@ def first_appearance():
 
     # --- target selection (item 5: unopened FIRST, then refresh within budget) ---
     unopened, already_open, unmapped = [], [], []
+    # TEN-295 coverage pass (founder 2026-09-26: "every configured book gets a row on every
+    # card"): a COMPLETED board card whose chart has never been checked for a chart book is
+    # swept ONCE — /v4/historical-odds is free — after the upcoming work and inside the same
+    # wall clock. Its line is cut at the card's start by put_chart.
+    backfill = []
     for m in matches:
+        if m.get('finalScore') and m.get('date'):
+            rec = fmap.get(event_key(m)) or {}
+            metas = ((m.get('oddsMovement') or {}).get('chart') or {}).get('meta') or {}
+            if rec.get('fixtureId') and any(BOOK_LABELS[b] not in metas for b in BOOKS if b != LEGACY_BOOK):
+                backfill.append((m, rec))
         if m.get('finalScore') or not m.get('date'):
             continue
         rec = fmap.get(event_key(m)) or {}
@@ -1262,7 +1274,7 @@ def first_appearance():
     per_fixture_s = max(HIST_SLEEP * len(BOOKS), 0.001)   # never divide by zero
     room = max(0, int(SWEEP_BUDGET_S / per_fixture_s) - len(unopened))
     refresh, dropped = already_open[:room], already_open[room:]
-    targets = unopened + refresh
+    targets = unopened + refresh + backfill
 
     if not targets:
         print(f'First-appearance sweep: 0 fixture(s) resolvable from cache '
@@ -1303,6 +1315,7 @@ def first_appearance():
     # the push and the stale-NOW monitor behind it.
     started = time.monotonic()
     budget_cut = 0
+    unpriced = 0
     for idx, (m, rec) in enumerate(targets):
         if time.monotonic() - started > SWEEP_BUDGET_S and not (
                 idx < len(unopened)):
@@ -1329,6 +1342,15 @@ def first_appearance():
                 if herr != 404:
                     print(f'::warning::historical-odds {b} failed for {m.get("id")} '
                           f'(fixture {rec["fixtureId"]}): HTTP {herr}.')
+                elif b != LEGACY_BOOK:
+                    # A verdict, not a line: the book was asked and has no price for this
+                    # fixture (TEN-295). A held series is never blanked by it.
+                    chart_series.put_chart(m, BOOK_LABELS[b], None,
+                                           dict(CHART_META[b], checkedAt=now_iso, note=None),
+                                           cut_at=chart_series.card_start(
+                                               m, chart_series.load_card_state(CARD_STATE_FILE),
+                                               rec.get('startTime')))
+                    unpriced += 1
                 continue
             _absorb(data, b, swap, books_out, book_hits)
 
@@ -1349,7 +1371,26 @@ def first_appearance():
             newly_opened.add(id(m))
             opened.append(m)
 
+    # A card Oddspapi does not list at all (the hourly mapping run recorded a miss) gets
+    # that verdict too — "not listed by Oddspapi", with the mapping run's time. A card the
+    # mapper has never seen gets nothing: not checked is not "not priced".
+    not_listed = 0
+    for m in matches:
+        rec = fmap.get(event_key(m))
+        if not m.get('date') or not rec or rec.get('fixtureId') or not rec.get('mappedAt'):
+            continue
+        for b in BOOKS:
+            if b == LEGACY_BOOK or chart_series.chart_series(m, BOOK_LABELS[b]):
+                continue
+            chart_series.put_chart(m, BOOK_LABELS[b], None,
+                                   dict(CHART_META[b], checkedAt=rec['mappedAt'],
+                                        note='not listed by Oddspapi'))
+            not_listed += 1
+
     write_matches(matches)
+    print(f'Chart verdicts: {len(backfill)} completed card(s) queued for a first Pinnacle +30s '
+          f'check; {unpriced} fixture(s) asked and not priced (404); {not_listed} card(s) not '
+          f'listed by Oddspapi.')
 
     # open_monitor() stamps firstSeenAt — the instant WE first held a price for
     # this fixture. That field is the whole point of sweeping at 15 minutes: it

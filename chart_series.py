@@ -20,6 +20,35 @@ from datetime import datetime, timezone
 GROUPS = ('sharp', 'soft')
 PRICE_FLOOR = 1.01            # .claude/rules/odds.md: strictly below 1.01 is not a price
 
+# Generational suffixes a vendor appends to a surname. Oddspapi and odds-api.io both list
+# "Damm Jr, Martin"; our board says "M. Damm". Keyed on the suffix, the join dropped the
+# match for every book (TEN-295 coverage pass, 2026-09-26: 27 straight Oddspapi mapping
+# misses since 24 Sep, and the odds-api.io event fetched then discarded). Stripped for the
+# cross-feed JOIN only — ten225_names.name_key (the card-state key, mirrored in the page)
+# is unchanged.
+NAME_SUFFIXES = {'jr', 'sr', 'ii', 'iii', 'iv'}
+
+
+def strip_suffix(name):
+    """'Damm Jr, Martin' -> 'Damm, Martin'; 'Martin Damm Jr.' -> 'Martin Damm'.
+    Only the surname part (before a comma, else the whole name) loses suffix tokens, and
+    never its last remaining token."""
+    s = name or ''
+    head, sep, tail = s.partition(',')
+
+    def drop(part):
+        toks = part.split()
+        kept = [t for t in toks if t.lower().strip('.') not in NAME_SUFFIXES]
+        return ' '.join(kept) if kept else part.strip()
+    return drop(head) + (sep + tail if sep else '')
+
+
+def join_key(name):
+    """The surname key the chart writers JOIN on: ten225_names.name_key after the
+    generational suffix is stripped."""
+    from ten225_names import name_key
+    return name_key(strip_suffix(name))
+
 
 def ts_iso(v):
     """Any ISO-8601 instant -> 'YYYY-MM-DDTHH:MM:SS.mmmZ' (UTC), else None.
@@ -152,6 +181,15 @@ def put_chart(m, label, series, meta, cut_at=None):
         checked = cut
     old_checked = mt.get('checkedAt')
     mt.update({k: meta[k] for k in ('source', 'group', 'clock') if meta.get(k)})
+    # `note` says WHY a checked source has no line ("recording began 26 Sep"); a line
+    # that exists clears it.
+    if held.get('p1') or held.get('p2'):
+        mt.pop('note', None)
+    elif 'note' in meta:
+        if meta['note']:
+            mt['note'] = meta['note']
+        else:
+            mt.pop('note', None)
     # checkedAt only ever moves forward
     mt['checkedAt'] = max(x for x in (checked, old_checked, '') if x is not None) or None
     metas[label] = mt

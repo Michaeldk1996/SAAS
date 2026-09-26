@@ -4168,7 +4168,10 @@ function extractOddsShards(matches) {
     // TEN-295 (founder 2026-09-26): the chart-only multi-source series
     // (Pinnacle +30s, Bet105, the odds-api.io books) ride in the shard beside the
     // legacy `books`, never inside it — `books` is what the edge model reads.
-    const chart = om && om.chart && om.chart.books && Object.keys(om.chart.books).length ? om.chart : null;
+    // A chart with only verdicts (meta, no lines) still ships: the page shows each
+    // checked book as "not priced for this match" instead of "not checked yet".
+    const chart = om && om.chart && ((om.chart.books && Object.keys(om.chart.books).length)
+      || (om.chart.meta && Object.keys(om.chart.meta).length)) ? om.chart : null;
     const ek = eventKeyOf(m);
     // Strip unconditionally, shard only what is real and addressable. A match
     // with no event key would be unreachable from the client anyway, so leaving
@@ -4179,7 +4182,7 @@ function extractOddsShards(matches) {
     // feed re-dates it, so the same match briefly exists as both upcoming- and
     // past-). Last-write-wins would let the thinner series clobber the richer
     // one, so keep whichever has more real points and index the key once.
-    const nPoints = [...Object.values(books), ...Object.values(chart ? chart.books : {})]
+    const nPoints = [...Object.values(books), ...Object.values((chart && chart.books) || {})]
       .reduce((n, b) => n + ((b.p1 || []).length + (b.p2 || []).length), 0);
     if (bestPoints.has(ek)) {
       if (nPoints <= bestPoints.get(ek)) continue;
@@ -4191,7 +4194,7 @@ function extractOddsShards(matches) {
     bestPoints.set(ek, nPoints);
     const file = `${ODDS_SHARD_DIR}/${ek}.json`;
     const shard = { eventKey: ek, market: om.market || 'Match Winner', capturedAt: om.capturedAt || null, books };
-    if (chart) shard.chart = { books: chart.books, meta: chart.meta || {} };
+    if (chart) shard.chart = { books: chart.books || {}, meta: chart.meta || {} };
     writeJsonAtomic(file, shard, true);
     bytes += fs.statSync(file).size;
     points += nPoints;
@@ -5919,8 +5922,9 @@ async function runPipeline() {
   // rebuild would drop its Pinnacle +30s / Bet105 / odds-api.io lines.
   const hasMovement = m => m && m.oddsMovement && (
     (m.oddsMovement.books && Object.keys(m.oddsMovement.books).length > 0)
-    || (m.oddsMovement.chart && m.oddsMovement.chart.books
-        && Object.keys(m.oddsMovement.chart.books).length > 0));
+    || (m.oddsMovement.chart && ((m.oddsMovement.chart.books
+        && Object.keys(m.oddsMovement.chart.books).length > 0)
+        || (m.oddsMovement.chart.meta && Object.keys(m.oddsMovement.chart.meta).length > 0))));
   try {
     const prior = JSON.parse(fs.readFileSync('matches.json', 'utf8'));
     const priorIndex = new Map();

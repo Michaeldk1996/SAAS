@@ -45,6 +45,10 @@ CARD_STATE = os.path.join(HERE, 'odds-card-state.json')
 JOIN_DAYS = 1
 RPC_BACK_DAYS = 4
 RPC_AHEAD_DAYS = 10
+# Our odds-api.io recorder (ten287_rec) went live 2026-09-26 00:00Z. A card played before
+# that has no Superbet / Betfair Exchange line because we were not recording — never
+# because the book did not price it (TEN-295 coverage pass).
+RECORDING_SINCE = '2026-09-26'
 # Wall clock for the per-card Bet105 reads, inside the loop's 15-min tick (the sweep
 # before it is budgeted at 480 s).
 BET105_BUDGET_S = float(os.environ.get('BET105_BUDGET_S', '180'))
@@ -101,20 +105,22 @@ def bet105_series(payload, card, start_ts=None):
     fx = {}
     for f in payload.get('fixtures') or []:
         if f:
-            fx[str(f.get('fixture_id'))] = {'1': name_key(f.get('player1') or ''),
-                                            '2': name_key(f.get('player2') or '')}
+            fx[str(f.get('fixture_id'))] = {'1': cs.join_key(f.get('player1') or ''),
+                                            '2': cs.join_key(f.get('player2') or '')}
     cut = cs.ts_iso(start_ts) if start_ts else None
     out = {}
     for who in ('p1', 'p2'):
-        key = name_key(card.get(who) or '')
+        key = name_key(card.get(who) or '')          # the stream's side key (ocsNameKey)
+        jkey = cs.join_key(card.get(who) or '')
         pts = []
         if key:
             for r in payload.get('stream') or []:
                 if r and r.get('side') == key:
                     pts.append([r.get('at'), r.get('price')])
+        if jkey:
             for r in payload.get('poller') or []:
                 names = r and fx.get(str(r.get('fixture_id')))
-                if names and names.get(str(r.get('side'))) == key:
+                if names and names.get(str(r.get('side'))) == jkey:
                     pts.append([r.get('at'), r.get('price')])
         pts = cs.clean_points(pts)
         if cut:
@@ -137,13 +143,13 @@ def join_events(cards, events):
               'ambiguous_card': 0, 'unkeyable': 0}
     by_pair = {}
     for c in cards:
-        k1, k2 = name_key(c.get('p1') or ''), name_key(c.get('p2') or '')
+        k1, k2 = cs.join_key(c.get('p1') or ''), cs.join_key(c.get('p2') or '')
         if not (k1 and k2) or k1 == k2 or not c.get('date'):
             continue
         by_pair.setdefault(frozenset((k1, k2)), []).append(c)
     ev_cards = {}
     for e in events:
-        h, a = name_key(e.get('home') or ''), name_key(e.get('away') or '')
+        h, a = cs.join_key(e.get('home') or ''), cs.join_key(e.get('away') or '')
         start = _dt(e.get('start_at'))
         if not (h and a) or h == a or start is None:
             counts['unkeyable'] += 1
@@ -174,9 +180,9 @@ def join_events(cards, events):
             counts['ambiguous_card'] += len(lst)
             continue
         e, cands = lst[0]
-        h = name_key(e.get('home') or '')
+        h = cs.join_key(e.get('home') or '')
         for c in cands:
-            joined[id(c)] = (e, 'same' if name_key(c.get('p1') or '') == h else 'swap')
+            joined[id(c)] = (e, 'same' if cs.join_key(c.get('p1') or '') == h else 'swap')
         counts['joined'] += 1
     return joined, counts
 
@@ -229,20 +235,40 @@ def apply_odds_api(cards, payload, now, card_state=None):
                                          'clock': clock, 'checkedAt': checked},
                          cut_at=cs.card_start(c, card_state, e.get('start_at')))
             lines[label] = lines.get(label, 0) + 1
+    # Every configured book gets a verdict on every card (founder 2026-09-26: "every
+    # configured book gets a row on every card"): checked and no line -> meta only, which
+    # the page renders as a dash + "not priced for this match", or — for a card played
+    # before our recording began — "not recorded" (never "not priced": we did not look).
+    none = 0
+    for c in cards:
+        for book in payload.get('books') or []:
+            label, clock = odds_api_label(book)
+            if cs.chart_series(c, label):
+                continue
+            checked = _min_iso(now, polled.get(book)) if polled.get(book) else None
+            note = (f'not recorded — our recording began {RECORDING_SINCE[8:10]} Sep'
+                    if (c.get('date') or '9999') < RECORDING_SINCE else None)
+            cs.put_chart(c, label, None, {'source': 'odds-api.io', 'group': 'soft', 'clock': clock,
+                                          'checkedAt': checked, 'note': note},
+                         cut_at=cs.card_start(c, card_state, None))
+            none += 1
     counts['lines'] = lines
+    counts['checked_no_line'] = none
     return counts
 
 
 def bet105_cards(cards, card_state):
-    """Cards whose SELECTED book is Bet105 (odds-card-state), with their card key and
-    startTs. A completed card is refreshed until a read lands after its finish."""
+    """EVERY board card with a card key, with its startTs from odds-card-state (TEN-295
+    coverage pass: Bet105 was read only where it was the card's SELECTED book, which hid it
+    on e.g. Cina v Muller; chart_bet105_history falls back to the card's one unselected
+    Bet105 fixture). A completed card is re-read until a read lands at/after its start."""
     out = []
     by_key = (card_state or {}).get('byKey') or {}
     for c in cards:
         k = match_key(c.get('date') or '', c.get('p1') or '', c.get('p2') or '')
-        ent = by_key.get(k) if k else None
-        if not ent or str(ent.get('book') or '').lower() != 'bet105':
+        if not k:
             continue
+        ent = by_key.get(k) or {}
         if c.get('finalScore'):
             # Done once a read has landed at or after the start (checkedAt is capped at
             # startTs, so it can never pass the finish — review 2026-09-26), or after the
@@ -291,7 +317,8 @@ def main():
               f'event(s): {c["joined"]} joined, {c["no_card"]} with no board card, '
               f'{c["ambiguous_event"]} matching 2+ cards, {c["ambiguous_card"]} competing for one '
               f'card, {c["unkeyable"]} unkeyable (all skipped, never guessed). Lines written: '
-              f'{c["lines"] or "none"}. Recorder polls OK at {series_payload.get("polled_ok_at")}.')
+              f'{c["lines"] or "none"}; {c["checked_no_line"]} card x book verdicts with no line. '
+              f'Recorder polls OK at {series_payload.get("polled_ok_at")}.')
 
     # 2) Bet105, per card, the price-history box's own rows.
     kibl_ok = (series_payload or {}).get('kibl_sweep_ok_at')
@@ -307,19 +334,19 @@ def main():
                   f'(their held lines keep their checkedAt).')
             break
         try:
-            payload = rpc('price_history', {'p_card_key': key}, timeout=30)
+            payload = rpc('chart_bet105_history', {'p_card_key': key}, timeout=30)
         except Exception as e:
             failed += 1
-            print(f'::warning::price_history failed for {key} ({type(e).__name__}).')
+            print(f'::warning::chart_bet105_history failed for {key} ({type(e).__name__}).')
             continue
         ser = bet105_series(payload, c, start_ts)
         checked = _min_iso(now, kibl_ok, start_ts) if kibl_ok else None
         if cs.put_chart(c, BET105, ser if (ser['p1'] or ser['p2']) else None,
-                        dict(BET105_META, checkedAt=checked), cut_at=start_ts):
+                        dict(BET105_META, checkedAt=checked, note=None), cut_at=start_ts):
             wrote += 1
         else:
             empty += 1
-    print(f'Bet105: {len(targets)} card(s) with Bet105 selected: {wrote} with a line, {empty} with '
+    print(f'Bet105: {len(targets)} board card(s) read: {wrote} with a line, {empty} with '
           f'no pre-match rows, {failed} read failure(s), {cut} deferred by the budget. Kibl poller OK at {kibl_ok or "unknown"}.')
 
     write_matches(matches)

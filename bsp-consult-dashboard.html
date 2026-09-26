@@ -12135,7 +12135,8 @@ function loadOddsShard(eventKey){
       : null)
     // TEN-295: a shard may carry only the chart-only series (no legacy books).
     .then(d => { _oddsShards[ek] = (d && ((d.books && Object.keys(d.books).length)
-                                          || (d.chart && d.chart.books && Object.keys(d.chart.books).length))) ? d : null; return _oddsShards[ek]; })
+                                          || (d.chart && ((d.chart.books && Object.keys(d.chart.books).length)
+                                                          || (d.chart.meta && Object.keys(d.chart.meta).length))))) ? d : null; return _oddsShards[ek]; })
     .catch(err => { console.warn(`odds shard ${ek} load failed:`, err.message); _oddsShards[ek] = null; return null; });
   return _oddsShardPromises[ek];
 }
@@ -16084,27 +16085,45 @@ function aOddsStep(series, grid){
 const AODDS_STALE_MS = 60 * 60e3;
 const AODDS_LEGACY_BET365 = 'bet365 (Oddspapi, capture ended 26 Sep)';
 const AODDS_ORDER = ['Pinnacle +30s', 'Bet105', 'Superbet', 'Betfair Exchange (recorded by us)'];
+// TEN-295 coverage pass (founder 2026-09-26): EVERY configured book gets a row on EVERY
+// card, in this fixed order, with its group fixed here (the locked spec: Pinnacle +30s and
+// Bet105 Sharp; Superbet and Betfair Exchange Soft). A book with no line shows a dash and
+// its verdict: the writer's note, else "not priced for this match" when the source was
+// checked, else "not checked yet". The subheading counts "X of Y books priced", Y = this list.
+const AODDS_CONFIG = {
+  'Pinnacle +30s': { group: 'sharp', source: 'Oddspapi', clock: 'book tick' },
+  'Bet105': { group: 'sharp', source: 'Kibl', clock: 'Kibl insert' },
+  'Superbet': { group: 'soft', source: 'odds-api.io', clock: 'vendor updatedAt' },
+  'Betfair Exchange (recorded by us)': { group: 'soft', source: 'odds-api.io', clock: 'recorded by us' },
+};
 function aOddsBooksOf(m){
   const om = (m && m.oddsMovement) || null;
   const books = {}, meta = {};
-  if (!om) return { books, meta };
-  const ch = om.chart || null;
+  const ch = (om && om.chart) || null;
   const cb = (ch && ch.books) || {}, cm = (ch && ch.meta) || {};
   Object.keys(cm).concat(Object.keys(cb)).forEach(k => {
     if (k in meta) return;
     const mt = cm[k] || {};
     books[k] = cb[k] || { p1: [], p2: [] };
-    meta[k] = { source: mt.source || null, group: mt.group === 'sharp' ? 'sharp' : 'soft',
-                clock: mt.clock || null, checkedAt: mt.checkedAt || null, legacy: false };
+    const cf = AODDS_CONFIG[k];
+    meta[k] = { source: mt.source || (cf && cf.source) || null,
+                group: cf ? cf.group : (mt.group === 'sharp' ? 'sharp' : 'soft'),
+                clock: mt.clock || (cf && cf.clock) || null, checkedAt: mt.checkedAt || null,
+                note: mt.note || null, legacy: false };
   });
   // Legacy capture (founder 2026-09-26: bet365 is 403 on Oddspapi, the capture ended).
-  const lb = om.books || {};
+  const lb = (om && om.books) || {};
   Object.keys(lb).forEach(k => {
     const name = k === 'bet365' ? AODDS_LEGACY_BET365 : k;
     if (name in meta) return;
     books[name] = lb[k];
     meta[name] = { source: 'Oddspapi', group: /pinnacle/i.test(k) ? 'sharp' : 'soft',
                    clock: 'book tick', checkedAt: om.capturedAt || null, legacy: true };
+  });
+  AODDS_ORDER.forEach(k => {
+    if (k in meta) return;
+    books[k] = { p1: [], p2: [] };
+    meta[k] = Object.assign({}, AODDS_CONFIG[k], { checkedAt: null, note: null, legacy: false, unchecked: true });
   });
   return { books, meta };
 }
@@ -16122,8 +16141,10 @@ function aOddsSourceText(name, mt){
   if (!mt) return '';
   if (mt.legacy && name === AODDS_LEGACY_BET365) return 'Oddspapi (book ticks; capture ended 26 Sep)';
   if (mt.clock === 'recorded by us') return (mt.source || 'odds-api.io') + ', recorded by us (polled every 30 s)';
+  // Bet105's own feed: Kibl, our Bet105 partner feed (poller archive + live stream);
+  // every time on it is when Kibl stored the price (odds.md: "Kibl insert time").
+  if (mt.clock === 'Kibl insert') return 'Kibl feed (our Bet105 source) · time = when Kibl stored the price';
   const clock = mt.clock === 'book tick' ? 'book ticks'
-    : mt.clock === 'Kibl insert' ? 'Kibl insert time'
     : mt.clock === 'vendor updatedAt' ? 'vendor update time' : (mt.clock || '');
   return (mt.source || '—') + (clock ? ' (' + clock + ')' : '');
 }
@@ -16219,7 +16240,7 @@ function aOddsHover(uid,i){ const r=document.getElementById(uid); if(!r) return;
 function buildOddsSection(m){
   const src = aOddsBooksOf(m);
   const hasHist = Object.keys(src.books).some(k => aOddsHasSeries(src.books[k]));
-  if(!hasHist) return buildOddsReduced(m);
+  if(!hasHist) return buildOddsReduced(m) + aOddsUnpricedTable(m, src);
 
   // CLOSING odds = last pre-match snapshot. The captured timeline keeps recording IN-PLAY prices
   // after a match starts, so for in-progress/completed matches we must cap every book's series to
@@ -16377,18 +16398,13 @@ function buildOddsSection(m){
       +triple(b.dogOpen, b.dogReal, b.dogNow, bestDog, b.stale)
     +'</div>';
   // A source we read that has no price for this match: a row of dashes, never a line.
-  const noDataRow = b=>
-    '<div class="aodds-row aodds-nodata" data-book="'+escapeHtml(b.name)+'" data-group="'+b.group+'" style="display:grid; '+GRID+' padding:13px 18px; border-top:0.33px solid var(--line-soft); align-items:center; gap:10px;">'
-      +'<span style="display:flex; align-items:center; gap:8px; font-size:13.5px; font-weight:600;"><span style="color:var(--label); font-size:11px;">·</span><span>'+escapeHtml(b.name)
-        +'<span class="aodds-src" style="display:block; font-size:11px; font-weight:400; color:var(--label); margin-top:2px;">no data</span></span></span>'
-      +'<span></span><span style="'+mono+' text-align:right; color:var(--label);">—</span><span></span>'
-      +'<span></span><span style="'+mono+' text-align:right; color:var(--label);">—</span><span></span>'
-    +'</div>';
+  const noDataRow = b=> aOddsNoPriceRow(b.name, b.group, b.meta, GRID, mono);
+  // Fixed order inside each group (aOddsSortBooks): a book with no line keeps its slot.
   const rowsHtml = ['sharp','soft'].map(g=>{
-    const rs = withData.filter(b=>b.group===g), nd = noData.filter(b=>b.group===g);
-    if(!rs.length && !nd.length) return '';
+    const gs = bookObjs.filter(b=>b.group===g);
+    if(!gs.length) return '';
     return '<div class="aodds-grouphead" data-group="'+g+'" style="padding:9px 18px; border-top:0.33px solid var(--line-soft); background:var(--surface); font-size:10px; font-weight:800; letter-spacing:0.12em; text-transform:uppercase; color:var(--periwinkle);">'+GROUP_LABEL[g]+'</div>'
-      + rs.map(bookRow).join('') + nd.map(noDataRow).join('');
+      + gs.map(b=> (b.favReal.length || b.dogReal.length) ? bookRow(b) : noDataRow(b)).join('');
   }).join('');
   const table = '<div style="border:0.33px solid var(--line); border-radius:14px; overflow:hidden;">'+tableHead+rowsHtml+'</div>';
   const booksSec = booksHead+table;
@@ -16404,7 +16420,8 @@ function buildOddsSection(m){
         +'<span style="'+mono+' font-size:12px; font-weight:700; color:'+chgColor+';">'+chg+'</span></div></div>';
   const aChip = chip(favName, bestFav!=null?bestFav.toFixed(2):'·', pctTxt(favMove), pctColor(favMove), aColor, 'rgba(91,155,255,0.08)', 'rgba(91,155,255,0.35)');
   const bChip = chip(dogName, bestDog!=null?bestDog.toFixed(2):'·', pctTxt(dogMove), pctColor(dogMove), bColor, 'rgba(123,145,180,0.08)', 'rgba(123,145,180,0.3)');
-  const subline = escapeHtml(p1Fav?favName:dogName)+' favoured · '+enabled.length+' of '+withData.length+' books shown'+(dateSpan?' · '+dateSpan:'');
+  const nPriced = AODDS_ORDER.filter(k => withData.some(b => b.name === k)).length;
+  const subline = escapeHtml(p1Fav?favName:dogName)+' favoured · <span class="aodds-priced">'+nPriced+' of '+AODDS_ORDER.length+' books priced</span>'+(dateSpan?' · '+dateSpan:'');
   const moveHead = '<div style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin:28px 0 6px;">'
     +'<div><span style="font-size:17px; font-weight:800;">Odds movement</span>'
       +'<div style="font-size:12.5px; color:var(--label); margin-top:6px;">'+subline+'</div></div>'
@@ -16421,6 +16438,35 @@ function buildOddsSection(m){
   const chartSec = moveHead+chartWrap+foot;
 
   return '<div>'+control+booksSec+chartSec+'</div>';
+}
+
+// A book with no line for this match: a dash on both sides and the verdict — never a zero,
+// never another book's price (founder 2026-09-26).
+function aOddsNoPriceRow(name, group, mt, GRID, mono){
+  const why = (mt && mt.note) || (mt && mt.unchecked ? 'not checked yet' : 'not priced for this match');
+  return '<div class="aodds-row aodds-nodata" data-book="'+escapeHtml(name)+'" data-group="'+group+'" style="display:grid; '+GRID+' padding:13px 18px; border-top:0.33px solid var(--line-soft); align-items:center; gap:10px;">'
+    +'<span style="display:flex; align-items:center; gap:8px; font-size:13.5px; font-weight:600;"><span style="color:var(--label); font-size:11px;">·</span><span>'+escapeHtml(name)
+      +'<span class="aodds-src" style="display:block; font-size:11px; font-weight:400; color:var(--label); margin-top:2px;">'+escapeHtml(why)+'</span></span></span>'
+    +'<span></span><span style="'+mono+' text-align:right; color:var(--label);">—</span><span></span>'
+    +'<span></span><span style="'+mono+' text-align:right; color:var(--label);">—</span><span></span>'
+  +'</div>';
+}
+// No book has a line for this match: the reduced view keeps its snapshots, and the
+// per-book table still lists every configured book with its verdict.
+function aOddsUnpricedTable(m, src){
+  const GRID = 'grid-template-columns:1.5fr 1fr 1.4fr 0.8fr 1fr 1.4fr 0.8fr;', mono = "font-family:'IBM Plex Mono',monospace;";
+  const names = aOddsSortBooks(Object.keys(src.meta), src.meta);
+  const heads = { sharp:'Sharp', soft:'Soft' };
+  const rows = ['sharp','soft'].map(g=>{
+    const gs = names.filter(n=>src.meta[n].group===g);
+    if(!gs.length) return '';
+    return '<div class="aodds-grouphead" data-group="'+g+'" style="padding:9px 18px; border-top:0.33px solid var(--line-soft); background:var(--surface); font-size:10px; font-weight:800; letter-spacing:0.12em; text-transform:uppercase; color:var(--periwinkle);">'+heads[g]+'</div>'
+      + gs.map(n=>aOddsNoPriceRow(n, g, src.meta[n], GRID, mono)).join('');
+  }).join('');
+  return '<div class="aodds-unpriced" style="margin-top:24px;">'
+    +'<div style="display:flex; align-items:center; gap:10px; margin-bottom:6px;"><span style="font-size:10px; font-weight:800; letter-spacing:0.1em; color:var(--periwinkle); border:0.33px solid var(--seg-active-line); border-radius:6px; padding:4px 9px;">BOOKS</span><span style="font-size:17px; font-weight:800;">Per-book movement</span></div>'
+    +'<div style="font-size:13px; color:var(--label); margin-bottom:14px;"><span class="aodds-priced">0 of '+AODDS_ORDER.length+' books priced</span></div>'
+    +'<div style="border:0.33px solid var(--line); border-radius:14px; overflow:hidden;">'+rows+'</div></div>';
 }
 
 function buildOddsReduced(m){
