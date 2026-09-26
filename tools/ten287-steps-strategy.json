@@ -1,0 +1,62 @@
+[
+ {
+  "name": "ocs_by_date_source",
+  "sql": "select split_part(match_key,'|',1) d, source, book, count(distinct match_key) fixtures, count(distinct match_key) filter (where is_selected) selected from odds_card_state where split_part(match_key,'|',1) between '2026-09-14' and '2026-09-27' group by 1,2,3 order by 1,2,3"
+ },
+ {
+  "name": "oddspapi_fixtures_by_day_cat",
+  "sql": "select coalesce(true_start,scheduled_start)::date d, category_name, count(*) n from oddspapi_fixtures where coalesce(true_start,scheduled_start) >= now() - interval '14 days' group by 1,2 order by 1,2"
+ },
+ {
+  "name": "oddspapi_summary_by_day_cat",
+  "sql": "select s.start_ts::date d, f.category_name, count(distinct s.fixture_id) fixtures, count(*) filter (where s.close_reliable) reliable_rows, count(*) rows_, percentile_cont(0.5) within group (order by s.close_lag_minutes) med_close_lag_min, percentile_cont(0.5) within group (order by extract(epoch from (s.start_ts - s.first_tick_ts))/3600) med_open_lead_h from oddspapi_line_summary s left join oddspapi_fixtures f using (fixture_id) where s.market ilike '%winner%' and s.start_ts >= now() - interval '21 days' group by 1,2 order by 1,2"
+ },
+ {
+  "name": "oddspapi_summary_markets",
+  "sql": "select market, count(*) from oddspapi_line_summary group by 1 order by 2 desc limit 12"
+ },
+ {
+  "name": "bet365_mw_ticks_by_day",
+  "sql": "select loaded_at::date d, count(distinct card_key) cards, count(*) ticks from bet365_mw_ticks group by 1 order by 1 desc limit 10"
+ },
+ {
+  "name": "postmatch_dispatch_log",
+  "sql": "select * from postmatch_dispatch_log order by 1 desc limit 5"
+ },
+ {
+  "name": "postmatch_alert_log",
+  "sql": "select * from postmatch_alert_log order by 1 desc limit 5"
+ },
+ {
+  "name": "postmatch_net_status",
+  "sql": "select r.status_code, count(*) n, max(r.created) last from net._http_response r where r.id in (select (to_jsonb(l)->>'request_id')::bigint from postmatch_dispatch_log l) group by 1"
+ },
+ {
+  "name": "kibl_leagues",
+  "sql": "select f.league_id, count(*) fixtures, min(f.name) sample_name, min(f.scheduled_start) mn, max(f.scheduled_start) mx from kibl_fixtures f where f.scheduled_start >= now() - interval '7 days' group by 1 order by 2 desc limit 20"
+ },
+ {
+  "name": "kibl_cover_7d",
+  "sql": "with o as (select fixture_id, league_id, side_id from kibl_line_observations where observed_at >= now() - interval '7 days' and market_type_id = 1 and segment_id = 1 and betting_type_id = 1 and price_decimal >= 1.01 group by 1,2,3) select league_id, count(distinct fixture_id) fixtures_any, count(distinct fixture_id) filter (where fixture_id in (select fixture_id from o o2 group by 1 having count(distinct side_id) >= 2)) both_sides from o group by 1 order by 2 desc limit 20"
+ },
+ {
+  "name": "kibl_open_lead_7d",
+  "sql": "with x as (select f.league_id, f.fixture_id, min(o.inserted_on) first_ins, f.scheduled_start from kibl_line_observations o join kibl_fixtures f using (fixture_id) where o.observed_at >= now() - interval '7 days' and o.market_type_id=1 and o.segment_id=1 and o.betting_type_id=1 and o.price_decimal >= 1.01 group by 1,2,4) select league_id, count(*) n, percentile_cont(0.5) within group (order by extract(epoch from scheduled_start-first_ins)/3600) med_lead_h, percentile_cont(0.1) within group (order by extract(epoch from scheduled_start-first_ins)/3600) p10_lead_h from x group by 1 order by 2 desc limit 10"
+ },
+ {
+  "name": "ocs_close_lag_kibl_vs_oddspapi",
+  "sql": "select source, book, ts_kind, count(*) filter (where close_price is not null) closes, percentile_cont(0.5) within group (order by extract(epoch from start_ts-close_ts)/60) filter (where close_price is not null and start_ts is not null) med_close_lag_min, count(*) filter (where close_price is not null and start_ts is not null and start_ts - close_ts <= interval '60 minutes') within60, count(*) filter (where start_ts is null) no_start, count(*) rows_ from odds_card_state where split_part(match_key,'|',1) >= '2026-09-10' group by 1,2,3 order by 1,2,3"
+ },
+ {
+  "name": "ocs_start_sources",
+  "sql": "select source, start_ts_source, count(*) from odds_card_state where split_part(match_key,'|',1) >= '2026-09-10' group by 1,2 order by 1,2"
+ },
+ {
+  "name": "rec_so_far",
+  "sql": "select t.book, coalesce(e.tier,'(other)') tier, count(distinct t.event_id) events, count(*) ticks, min(t.seen_at) first, max(t.seen_at) last from ten287_rec.ticks t left join ten287_rec.events e using (event_id) group by 1,2 order by 1,2"
+ },
+ {
+  "name": "rec_requests",
+  "sql": "select kind, status_code, count(*) n, count(*) filter (where note like 'lost%') lost from ten287_rec.requests group by 1,2 order by 1,2"
+ }
+]
