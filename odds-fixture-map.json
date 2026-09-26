@@ -2195,6 +2195,24 @@
       "p2": "A. Davidovich Fokina",
       "startTime": "2026-09-27T06:10:00.000Z",
       "tournamentId": 14133
+    },
+    "12166122": {
+      "fixtureId": "id1201413374753318",
+      "mappedAt": "2026-09-26T13:18:45Z",
+      "orient": "same",
+      "p1": "L. Harris",
+      "p2": "H. Hurkacz",
+      "startTime": "2026-09-27T08:30:00.000Z",
+      "tournamentId": 14133
+    },
+    "12166123": {
+      "fixtureId": "id1204297974753276",
+      "mappedAt": "2026-09-26T13:18:45Z",
+      "orient": "same",
+      "p1": "R. Safiullin",
+      "p2": "Y. Bu",
+      "startTime": "2026-09-27T07:50:00.000Z",
+      "tournamentId": 42979
     }
   },
   "missAudit": {
@@ -2204,12 +2222,12 @@
       "missResolutionHoursP50": 37.52,
       "missResolutionsMeasured": 91,
       "note": "ttlBitRuns counts runs where an expired MISS was the ONLY reason a billable /v4/fixtures call was made. projectedTtlUnitsPerDay uses the MEASURED run rate (measuredRunsPerDay), not an assumed 24/day; it is null until observedSpanDays is wide enough to measure one. Compare it against the <=24/day ceiling the TTL was chosen against. openMisses counts only fixtures still on the board.",
-      "observedSpanDays": 15.28,
-      "projectedTtlUnitsPerDay": 5.8,
-      "runs": 261,
-      "spentRuns": 155,
+      "observedSpanDays": 15.33,
+      "projectedTtlUnitsPerDay": 5.7,
+      "runs": 262,
+      "spentRuns": 156,
       "ttlBitRuns": 88,
-      "ttlBitShare": 0.337,
+      "ttlBitShare": 0.336,
       "ttlHours": 1.0
     },
     "runs": [
@@ -5083,9 +5101,20 @@
         "ttlBit": false,
         "unmapped": 0,
         "upcoming": 11
+      },
+      {
+        "at": "2026-09-26T13:18:45Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 0,
+        "missExpired": 0,
+        "openMisses": 0,
+        "stale": 2,
+        "ttlBit": false,
+        "unmapped": 2,
+        "upcoming": 13
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-09-26T10:07:24Z"
+  "updatedAt": "2026-09-26T13:18:45Z"
 }
