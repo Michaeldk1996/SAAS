@@ -1,7 +1,7 @@
 [
- {"name": "install_rpc", "file": "tools/ten295-chart-books-rpc.sql", "required": true, "stop_on_error": true},
- {"name": "grants", "sql": "select has_function_privilege('anon', 'public.chart_book_series(timestamptz,timestamptz)', 'execute') anon_exec, has_function_privilege('authenticated', 'public.chart_book_series(timestamptz,timestamptz)', 'execute') auth_exec, has_function_privilege('service_role', 'public.chart_book_series(timestamptz,timestamptz)', 'execute') svc_exec"},
- {"name": "summary", "sql": "with r as (select public.chart_book_series(now() - interval '4 days', now() + interval '10 days') j) select j->'books' books, j->'polled_ok_at' polled, j->'kibl_sweep_ok_at' kibl, jsonb_array_length(j->'events') n_events, length(j::text) bytes from r"},
- {"name": "full", "sql": "select public.chart_book_series(now() - interval '4 days', now() + interval '10 days') j"},
- {"name": "raw_one", "sql": "with e as (select event_id from ten287_rec.ticks where book='Superbet' group by 1 order by count(*) desc limit 1) select t.id, t.book, t.event_id, t.back_home, t.back_away, t.book_updated_at, t.seen_at, t.event_status from ten287_rec.ticks t join e using (event_id) order by t.book, t.book_updated_at, t.id"}
+ {"name": "raw_ticks", "sql": "select t.id, t.book, t.event_id, t.market, t.back_home, t.back_away, t.book_updated_at, t.seen_at, t.event_status from ten287_rec.ticks t where t.event_id = 74753332 order by t.book, t.book_updated_at, t.id"},
+ {"name": "raw_event", "sql": "select * from ten287_rec.events where event_id = 74753332"},
+ {"name": "raw_polls", "sql": "select book, max(processed_at) filter (where status_code = 200) last_ok from ten287_rec.requests where kind = 'updated' group by 1"},
+ {"name": "kibl_sweep", "sql": "select max(started_at) from public.kibl_sweeps where ok"},
+ {"name": "rpc", "sql": "select public.chart_book_series(now() - interval '4 days', now() + interval '10 days') j"}
 ]
