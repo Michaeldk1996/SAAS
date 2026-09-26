@@ -1,6 +1,6 @@
 {
   "latest": {
-    "maxAgeMin": 415.6,
+    "maxAgeMin": 430.9,
     "measured": 5,
     "stale": [
       "D. Medvedev v V. Royer (ATP Hangzhou, 2026-09-26)",
@@ -12,15 +12,6 @@
   },
   "note": "Age of the published bet365 NOW leg, measured as now - observedAt against the artefact Pages is serving. Capture staleness and publish staleness are both inside this number, which is what the visitor sees. Re-derive the threshold on TEN-187.",
   "samples": [
-    {
-      "at": "2026-09-21T21:18:13Z",
-      "maxAgeMin": 1293.0,
-      "measured": 21,
-      "noBet365Line": 15,
-      "noClock": 0,
-      "stale": 2,
-      "thresholdMin": 120.0
-    },
     {
       "at": "2026-09-21T21:33:14Z",
       "maxAgeMin": 1308.0,
@@ -3611,9 +3602,18 @@
       "noClock": 0,
       "stale": 5,
       "thresholdMin": 120.0
+    },
+    {
+      "at": "2026-09-26T10:34:05Z",
+      "maxAgeMin": 430.9,
+      "measured": 5,
+      "noBet365Line": 5,
+      "noClock": 0,
+      "stale": 5,
+      "thresholdMin": 120.0
     }
   ],
   "schema": "odds-now-staleness/1",
   "thresholdMin": 120.0,
-  "updatedAt": "2026-09-26T10:18:48Z"
+  "updatedAt": "2026-09-26T10:34:05Z"
 }
