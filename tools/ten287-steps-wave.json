@@ -1,0 +1,22 @@
+[
+ {
+  "name": "ten216_recent",
+  "sql": "select count(*) filter (where observed_at > now() - interval '20 minutes') rows_20m, count(distinct poll_id) filter (where observed_at > now() - interval '20 minutes') polls_20m, max(observed_at) last_row, count(*) total_rows, min(observed_at) first_row from public.ten216_test_odds_changes"
+ },
+ {
+  "name": "ten216_books_20m",
+  "sql": "select bookmaker, count(*) rows_, count(distinct match_key) matches from public.ten216_test_odds_changes where observed_at > now() - interval '20 minutes' group by 1 order by 2 desc"
+ },
+ {
+  "name": "rec_bfe_sb_series",
+  "sql": "select t.book, coalesce(e.tier,'(other)') tier, count(distinct t.event_id) events, count(*) ticks, min(t.book_updated_at) first_at, max(t.book_updated_at) last_at from ten287_rec.ticks t left join ten287_rec.events e using (event_id) group by 1,2 order by 1,2"
+ },
+ {
+  "name": "superbet_bot",
+  "sql": "select mode, delivery, count(*) from ten287_bot.alerts where mode='live' group by 1,2"
+ },
+ {
+  "name": "cron",
+  "sql": "select jobname, active from cron.job where jobname like 'ten28%' order by 1"
+ }
+]
