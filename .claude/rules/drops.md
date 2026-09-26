@@ -29,7 +29,10 @@ answers on card 37612d3d (TEN-294 doc `design`). Suite: `test-ten294-drops.mjs`.
 - **Three views: Upcoming · In play · Completed** (card 518c56f0 Q1 = b). **Test:** a row is in exactly one view: Upcoming = `not_started` or `unknown` (badged "Status unknown"), In play = `in_play`, Completed = `finished`. A match leaves Upcoming the moment it goes live.
 - **A row's prices stop at the live start** (Q2 = a). **Test:** "now" on an In-play or Completed row, every chart and every strip cell use only prices recorded before `liveAt`; "now" is labelled **"Last pre-match"**. With no `liveAt`, the cut is the scheduled start once it has passed: api-tennis's when a fixture is joined (the vendor's only when earlier by ≤ 3 h), else the vendor's; this includes **unknown** rows. The label says "cut at scheduled start". A row with no recorded price before the cut is not served. No in-play price is ever a pre-match figure; nothing is invented after the cut.
 - **The endpoint holds 72 h** (Q4 = b): alerts and their lines from the last 72 h.
-- **TEN-299 split** (Q3 = a): this page and endpoint apply the live cut; the Telegram drop bots' own in-play filter stays with TEN-299, on the same `liveAt` signal.
+- **The Telegram drop bots stop at the live start too** (TEN-299, founder comment 8585095a, 2026-09-27; installed from `tools/ten299-live-cut.sql` by the drops workflow).
+  **Test:** each bot's `load_ticks` removes every tick at or after its match's cut, and each bot's `scan` evaluates nothing at or after the cut. So no alert fires on a started or finished match, and every drop is measured against a pre-match price. A backtest of the last 24 h holds 0 alerts at or after a cut (`ten299_after_cut`).
+  The cut is the live sighting, joined as the endpoint joins; when ambiguous, the vendor's scheduled start. A match with no sighting is not cut (the vendor start is not a live signal).
+  ⚠️ The bots' branches (`ten280-probe`, `ten287-probe`) still carry the pre-TEN-299 `load_ticks`/`scan`: a re-install from them reverts this until the drops workflow runs again.
 
 - **One database read per cadence, fanned out from memory.**
   **Test:** any number of requests on any route triggers zero database reads.
