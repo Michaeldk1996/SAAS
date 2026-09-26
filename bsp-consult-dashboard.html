@@ -16047,6 +16047,8 @@ const AODDS_WARN_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentCol
 // ===== Odds tab (Handoff #16) — real per-book opening→now history from m.oddsMovement =====
 // Per-book SVG line-dash identities so all books are distinguishable in one color per panel.
 const AODDS_DASH = { 'Pinnacle':'', 'bet365':'8 5', 'William Hill':'10 4 1.6 4', '1xBet':'15 6', 'Betsson':'2 5', 'Betano':'9 4 2 4', 'Betfair':'1.6 4.5',
+  // legacy Oddspapi keys are shown with " (Oddspapi)" (founder 2026-09-26) — they keep their pattern
+  'Pinnacle (Oddspapi)':'', 'William Hill (Oddspapi)':'10 4 1.6 4', '1xBet (Oddspapi)':'15 6', 'Betsson (Oddspapi)':'2 5', 'Betano (Oddspapi)':'9 4 2 4', 'Betfair (Oddspapi)':'1.6 4.5',
   'Pinnacle +30s (Oddspapi)':'', 'Pinnacle (api-tennis)':'4 3', 'Bet105':'2 5', 'Superbet':'15 6', 'Betfair Exchange (recorded by us)':'1.6 4.5', 'bet365 (Oddspapi, capture ended 26 Sep)':'8 5' };
 const AODDS_DASHCYCLE = ['', '8 5', '2 5', '15 6', '10 4 1.6 4', '9 4 2 4'];
 const AODDS_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
@@ -16188,10 +16190,25 @@ function aOddsSourceText(name, mt){
   return (mt.source || '—') + (clock ? ' (' + clock + ')' : '');
 }
 function aOddsShort(name){
+  // A sourced name keeps its source in the 8-char tooltip label too (review 2026-09-26).
+  const src = / \((Oddspapi|api-tennis)\)$/.exec(name);
+  if (src && !({ 'Pinnacle +30s (Oddspapi)':1, 'Pinnacle (api-tennis)':1, 'Betfair Sportsbook (api-tennis)':1 })[name])
+    return name.slice(0, name.length - src[0].length).slice(0, 5) + (src[1] === 'Oddspapi' ? ' OP' : ' AT');
   return ({ 'Pinnacle +30s (Oddspapi)':'Pin +30s', 'Betfair Exchange (recorded by us)':'BF Exch', [AODDS_LEGACY_BET365]:'b365 OP',
             'Pinnacle (api-tennis)':'Pin AT', 'Betfair Sportsbook (api-tennis)':'BF Sport', 'bet365 (api-tennis)':'b365 AT', 'William Hill':'W Hill',
             'BetVictor':'BetVictr' })[name]
     || (name.length > 8 ? name.slice(0, 8) : name);
+}
+// The Odds tab's start (founder 2026-09-26), most proven first: the card state's ACTUAL start
+// (odds-card-state `startTs`, the clock the Close is judged against); m.startTs; the joined Oddspapi
+// fixture's UTC start (shard `startTime`); else the scheduled `date`+`time` in api-tennis's account
+// zone (Europe/Berlin, DST-safe) — the same order as the pipeline's closing cut.
+function aOddsStartMs(m){
+  let o = null;
+  try { o = (typeof _ocsOf === 'function') ? _ocsOf(m) : null; } catch (e) { o = null; }
+  const cands = [o && o.startTs, m && m.startTs, m && m.oddsMovement && m.oddsMovement.startTime];
+  for (const c of cands){ const t = c ? Date.parse(c) : NaN; if (Number.isFinite(t)) return t; }
+  return cardStartMs(m);
 }
 // Step a real [ms, price] series onto the grid, but ONLY up to endMs (the book's own
 // checkedAt, capped at the start): past it we have not looked, so nothing is drawn.
@@ -16303,10 +16320,11 @@ function buildOddsSection(m){
   // points at or before match start (mirrors the pipeline's lastBeforeStart in bsp-pipeline.js,
   // which treats m.time as UTC). Upcoming matches have no in-play points, so startMs sits in the
   // future and preMatch() keeps the whole series unchanged.
-  // TEN-295 (founder 2026-09-26, comment 5dafce2b): the start is cardStartMs() — m.startTs, else
-  // `date`+`time` read in api-tennis's ACCOUNT zone (Europe/Berlin, DST-safe; TEN-80). Read as
-  // UTC it landed ~2 h late: a card stayed "upcoming" and in-play ticks drew as pre-match.
-  const startMs = cardStartMs(m);
+  // TEN-295 (founder 2026-09-26, comment 5dafce2b: "cards switch to started at the real start
+  // time"): aOddsStartMs() — the card state's ACTUAL start, else the scheduled `date`+`time` in the
+  // account zone. Read as UTC it landed ~2 h late; even the scheduled time ran 1–255 min after
+  // the actual start on 26 Sep, drawing in-play ticks as pre-match (review 2026-09-26).
+  const startMs = aOddsStartMs(m);
   // Points become [ms, price] here: sources write different ISO shapes, and the grid and
   // the step compare instants, which a string compare only gets right by accident.
   const preMatch = pts => (pts||[]).map(p=>[Date.parse(p[0]), Number(p[1])])
@@ -17134,7 +17152,7 @@ function akOddsMoveSvg(m){
   if (!Object.keys(om.books).length) return '';
   // Same closing-odds rule as buildOddsSection: the capture keeps running in-play, so
   // cap the series at match start or an in-progress match shows post-lock prices.
-  const startMs = cardStartMs(m);   // TEN-295: account zone, DST-safe (was read as UTC, ~2 h late)
+  const startMs = aOddsStartMs(m);   // TEN-295: the actual start, else the account-zone schedule
   const preMatch = pts => (Number.isFinite(startMs) ? (pts||[]).filter(p=>Date.parse(p[0])<=startMs) : (pts||[]));
   // Pinnacle is the sharpest line and the Odds tab's default, so prefer it — but
   // only if it actually quoted a movement here. Otherwise take the book with the

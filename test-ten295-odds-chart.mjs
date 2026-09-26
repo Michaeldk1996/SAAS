@@ -48,11 +48,12 @@ export function build(src = html) {
     let _aOdds = { m:null, snapshot:'now', off:null, mktOpen:false };
     const buildOddsReduced = () => 'REDUCED';
     const psEsc = x => String(x);
-    ${s('acctTzOffsetMin')} ${s('cardStartMs')} ${s('escapeHtml')} ${s('aOddsDash')} ${s('aOddsClock')} ${s('aOddsDay')} ${s('aOddsAxis')}
+    const _ocsOf = m => (m && m.__testOcs) || null;   // the page's card-state reader, stubbed
+    ${s('acctTzOffsetMin')} ${s('cardStartMs')} ${s('aOddsStartMs')} ${s('escapeHtml')} ${s('aOddsDash')} ${s('aOddsClock')} ${s('aOddsDay')} ${s('aOddsAxis')}
     ${s('aOddsStep')} ${s('aOddsBooksOf')} ${s('aOddsHasSeries')} ${s('aOddsSortBooks')}
     ${s('aOddsSourceText')} ${s('aOddsShort')} ${s('aOddsStepTo')} ${s('aOddsPulledAt')} ${s('aOddsSpark')}
     ${s('aOddsChartSvg')} ${s('aOddsNoPriceRow')} ${s('aOddsUnpricedTable')} ${s('buildOddsSection')} ${s('akOddsMoveSvg')}
-    return { buildOddsSection, akOddsMoveSvg, aOddsBooksOf, aOddsStepTo, aOddsSourceText, cardStartMs,
+    return { buildOddsSection, akOddsMoveSvg, aOddsBooksOf, aOddsStepTo, aOddsSourceText, cardStartMs, aOddsStartMs, aOddsShort,
              reset: () => { _aOdds = { m:null, snapshot:'now', off:null, mktOpen:false }; },
              state: () => _aOdds };
   `)();
@@ -434,6 +435,18 @@ test('start time: the card time is the account zone (Europe/Berlin), not UTC —
   assert.equal(A.cardStartMs({ date: '2026-10-26', time: '14:00' }), Date.parse('2026-10-26T13:00:00Z'), 'CET after 25 Oct');
   assert.equal(A.cardStartMs({ date: '2026-09-24', time: '14:00', startTs: '2026-09-24T12:07:00Z' }),
                Date.parse('2026-09-24T12:07:00Z'), 'a real startTs wins');
+  // the card state's ACTUAL start beats the schedule: a match that began 2 h early draws nothing after it
+  const early = JSON.parse(JSON.stringify(m)); early.__testOcs = { startTs: '2026-09-24T10:00:00Z' };
+  early.oddsMovement.books.bet365.p1.splice(1, 0, ['2026-09-24T11:00:00.000Z', 7.7]);
+  early.oddsMovement.books.bet365.p2.splice(1, 0, ['2026-09-24T11:00:00.000Z', 1.1]);
+  A.reset();
+  assert.equal(A.aOddsStartMs(early), Date.parse('2026-09-24T10:00:00Z'));
+  assert.ok(!/>7\.70</.test(A.buildOddsSection(early)), 'a tick after the actual (card-state) start is not drawn');
+  assert.ok(!/7\.70/.test(A.akOddsMoveSvg(early)), 'nor in the mini-chart');
+  const withFixture = JSON.parse(JSON.stringify(m)); withFixture.oddsMovement.startTime = '2026-09-24T10:30:00.000Z';
+  assert.equal(A.aOddsStartMs(withFixture), Date.parse('2026-09-24T10:30:00Z'), 'no card-state start -> the Oddspapi fixture start');
+  withFixture.__testOcs = { startTs: '2026-09-24T10:00:00Z' };
+  assert.equal(A.aOddsStartMs(withFixture), Date.parse('2026-09-24T10:00:00Z'), 'the card-state start wins over it');
   // an unfinished card past its real start is no longer "upcoming": a stale book is not tagged
   const now = Date.now(), st = new Date(now - 60 * 60e3);           // started 1 h ago (real time)
   const loc = new Intl.DateTimeFormat('sv-SE', { timeZone: 'Europe/Berlin', year: 'numeric', month: '2-digit', day: '2-digit',
@@ -459,6 +472,9 @@ test('labels: a book from two sources always shows its source; no two rows ever 
   const chips = [...h.matchAll(/class="aodds-chip" data-book="([^"]*)"/g)].map(x => x[1]);
   assert.ok(chips.includes('Pinnacle +30s (Oddspapi)') && chips.includes('Pinnacle (api-tennis)'));
   assert.ok(h.includes('<b>Pinnacle +30s (Oddspapi)</b>'), 'the footnote uses the sourced name');
+  const shorts = ['Pinnacle +30s (Oddspapi)', 'Pinnacle (api-tennis)', 'Pinnacle (Oddspapi)', 'Marathon', 'Marathon (Oddspapi)',
+                  'Betfair Sportsbook (api-tennis)', 'Betfair (Oddspapi)', 'bet365 (api-tennis)', 'bet365 (Oddspapi, capture ended 26 Sep)'].map(A.aOddsShort);
+  assert.equal(new Set(shorts).size, shorts.length, `tooltip short labels collide: ${shorts}`);
 });
 
 // ── the TEN-216 collector's tick(), EXECUTED with stubbed I/O (review 2026-09-26) ───────
@@ -508,7 +524,11 @@ test('collector: a run whose polls all fail exits RED (4) instead of finishing g
       .catch(e => { if (e.message !== 'exit') throw e; });
     assert.equal(code, 4, 'all polls failed -> exit 4');
     code = null; clock = 0;
-    await run(async () => {}, fakeProc, quiet, async () => { clock += 5 * 60000; }, 16, 5, 0, new Map(), new Date());
+    await run(async () => false, fakeProc, quiet, async () => { clock += 5 * 60000; }, 16, 5, 0, new Map(), new Date())
+      .catch(e => { if (e.message !== 'exit') throw e; });
+    assert.equal(code, 4, 'every poll rejected by api-tennis (success != 1, HTTP 200) -> exit 4, never green');
+    code = null; clock = 0;
+    await run(async () => true, fakeProc, quiet, async () => { clock += 5 * 60000; }, 16, 5, 0, new Map(), new Date());
     assert.equal(code, null, 'healthy run exits normally');
   } finally { Date.now = realNow; }
 });
@@ -532,7 +552,7 @@ test('pipeline: extractOddsShards writes chart beside books, indexes a chart-onl
                     meta: { 'Pinnacle +30s': { source: 'Oddspapi', group: 'sharp', clock: 'book tick', checkedAt: '2026-09-26T04:00:00.000Z' } } };
     const ms = [
       { id: 'upcoming-1', oddsMovement: { market: 'Match Winner', capturedAt: 'c', books: { bet365: { p1: [['t', 2]], p2: [] } }, chart } },
-      { id: 'upcoming-2', oddsMovement: { chart } },                       // chart only
+      { id: 'upcoming-2', oddsMovement: { chart, startTime: '2026-09-26T05:00:00.000Z' } },   // chart only
       { id: 'upcoming-3', oddsMovement: { chart: { books: {}, meta: chart.meta } } },   // verdicts only: shipped too
     ];
     run(ms);
@@ -541,8 +561,10 @@ test('pipeline: extractOddsShards writes chart beside books, indexes a chart-onl
     assert.deepEqual(s1.chart, { books: chart.books, meta: chart.meta }, 'chart rides beside books');
     assert.deepEqual(s2.books, {}, 'a chart-only shard has empty legacy books');
     assert.ok(s2.chart.books['Pinnacle +30s']);
+    assert.equal(s2.startTime, '2026-09-26T05:00:00.000Z', 'the Oddspapi fixture start rides in the shard');
     assert.deepEqual(JSON.parse(rf('odds-index.json', 'utf8')), ['1', '2', '3']);
     assert.deepEqual(JSON.parse(rf('odds/3.json', 'utf8')).chart, { books: {}, meta: chart.meta }, 'verdicts reach the page');
+    assert.equal(s1.startTime, undefined, 'no fixture start -> no field (additive only)');
     assert.ok(ms.every(m => m.oddsMovement === null), 'stripped from the board as before');
   } finally { process.chdir(cwd); }
 });

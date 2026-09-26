@@ -53,7 +53,7 @@ Wired as a **dash-filler only** — bet365 only, ATP and Challenger, never overr
 
   | Label | Group | Source | Clock |
   |---|---|---|---|
-  | Pinnacle +30s (Oddspapi) — stored key `Pinnacle +30s` | Sharp | Oddspapi `/v4/historical-odds` | book tick |
+  | Pinnacle +30s | Sharp | Oddspapi `/v4/historical-odds` (stored label; shown on the page as "Pinnacle +30s (Oddspapi)") | book tick |
   | Bet105 | Sharp | Kibl `chart_bet105_history(card_key)` — for EVERY board card: its selected Bet105 fixture, else its only Bet105 fixture (two or more → none), never one the orientation guard dashed; same rows and naming as the price-history box, pre-match only | Kibl insert |
   | Superbet | Soft | odds-api.io via `chart_book_series()` | vendor updatedAt |
   | Betfair Exchange (recorded by us) | Soft | odds-api.io, back price, polled by us every 30 s | recorded by us |

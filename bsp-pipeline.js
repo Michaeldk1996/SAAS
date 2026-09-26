@@ -4195,6 +4195,10 @@ function extractOddsShards(matches) {
     const file = `${ODDS_SHARD_DIR}/${ek}.json`;
     const shard = { eventKey: ek, market: om.market || 'Match Winner', capturedAt: om.capturedAt || null, books };
     if (chart) shard.chart = { books: chart.books || {}, meta: chart.meta || {} };
+    // TEN-295 (founder 2026-09-26: "cards switch to started at the real start time"): the joined
+    // Oddspapi fixture's own UTC start rides along, so the Odds tab can cut a card that has no
+    // card-state start at a real instant rather than the account-zone schedule. Additive only.
+    if (om && typeof om.startTime === 'string' && om.startTime) shard.startTime = om.startTime;
     writeJsonAtomic(file, shard, true);
     bytes += fs.statSync(file).size;
     points += nPoints;

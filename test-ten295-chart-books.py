@@ -591,8 +591,13 @@ chk = wd[wd.index('function public.ten216_collector_check'):wd.index('$fn$;', wd
 check("max(observed_at) from public.ten216_test_odds_changes" in chk and "from public.ten216_test_polls where ok" in chk
       and "limit_min := case when has_hb then 60 else 120 end" in chk and 'make_interval(mins => limit_min)' in chk,
       'watchdog: stale = no change row AND no OK heartbeat for > 60 min (120 min before the first heartbeat exists)')
-check("extract(month from d) = 12 and extract(day from d) <= 26" in chk and 'not offseason and' in chk,
-      'watchdog: in season only (off-season = 1-26 Dec)')
+check("extract(month from d) = 12 and extract(day from d) <= 26" in chk
+      and chk.index("return 'off-season'") < chk.index("'RECOVERED - "),
+      'watchdog: in season only (off-season = 1-26 Dec); the season boundary is never a RECOVERED')
+check("to_regclass('public.ten216_test_polls') is null" in wd and 'raise exception' in wd,
+      'watchdog: the install refuses (raises) without the heartbeat table')
+check("'watchdog_error'" in chk and "interval '3 hours'" in chk and 'raise warning' in chk,
+      'watchdog: its own failure alerts (rate-limited) instead of failing silently')
 check("interval '3 hours'" in chk and "'RECOVERED - " in chk, 'watchdog: repeats every 3 h while open; says RECOVERED')
 snd = wd[wd.index('function public.ten216_watch_send'):wd.index('$fn$;', wd.index('function public.ten216_watch_send'))]
 check(snd.index("'ops_telegram_bot_token'") < snd.index("'ten287_telegram_bot_token'") and "'unsent: no telegram secret in vault'" in snd
@@ -600,7 +605,8 @@ check(snd.index("'ops_telegram_bot_token'") < snd.index("'ten287_telegram_bot_to
       'watchdog: ops chat first, else the measured-working drop-bot chat; no secret = unsent + WARNING, channel logged')
 check("'failed: no response'" in chk and "'sent'" in chk, 'watchdog: every send is resolved against pg_net')
 check("cron.schedule('ten216-collector-watchdog', '*/10 * * * *'" in wd
-      and 'exception when others then\n  raise warning' not in wd and wd.count('exception when others') == 1,
+      and 'exception when others then\n  raise warning' not in wd and wd.count('exception when others') == 2
+      and wd[wd.rindex('$fn$;'):].count('exception when others then null') == 1,
       'watchdog: every 10 min; the install is NOT wrapped in an error-swallowing handler (fails visibly)')
 check('from public, anon, authenticated' in wd and 'enable row level security' in wd, 'watchdog: tables RLS-on, functions revoked')
 cl = open(os.path.join(HERE, 'tools/ten216-supabase-collector.mjs')).read()

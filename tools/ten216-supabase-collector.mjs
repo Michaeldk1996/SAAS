@@ -256,7 +256,7 @@ async function tick(state, startedAt) {
   if (json?.success !== 1) {
     console.log(`  ${iso(observedAt)} get_odds success!=1 — skipping tick`);
     await writePoll({ poll_id: pollId, observed_at: observedAt.toISOString(), ok: false });
-    return;
+    return false;   // not an OK poll (e.g. api-tennis cod 1006, sent as HTTP 200) — counts as a failure
   }
 
   // event_live / event_status drive the Closing definition (last price before live).
@@ -337,9 +337,11 @@ async function tick(state, startedAt) {
   }
 
   const by = k => rows.filter(r => r.change_kind === k).length;
+  const okPoll = true;
   console.log(`  ${iso(observedAt)} matches=${Object.keys(json.result).length} quotes=${now.size} ` +
               `rows=${rows.length} (first_seen=${by('first_seen')} changed=${by('changed')} ` +
               `removed=${by('removed')}) written=${written} table=${count ?? '-'} | ${rawNote}`);
+  return okPoll;
 }
 
 // ---------------------------------------------------------------------- main
@@ -355,7 +357,10 @@ console.log(`state rebuilt: ${state.size} live quotes from ${rowsRead}/${total ?
 let n = 0, okTicks = 0, failRun = 0;
 while ((Date.now() - t0) / 60000 < LOOP_MIN) {
   n += 1;
-  try { await tick(state, startedAt); okTicks += 1; failRun = 0; }
+  try {
+    if (await tick(state, startedAt)) { okTicks += 1; failRun = 0; }
+    else { failRun += 1; }
+  }
   catch (e) { failRun += 1; console.error(`  tick ${n} failed (continuing): ${e.message}`); }
   if ((Date.now() - t0) / 60000 + INTERVAL_MIN >= LOOP_MIN) break;
   await sleep(INTERVAL_MIN * 60000);
