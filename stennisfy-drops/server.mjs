@@ -15,6 +15,7 @@
 import http from 'node:http';
 import zlib from 'node:zlib';
 import crypto from 'node:crypto';
+import fs from 'node:fs';
 
 export const READ_INTERVAL_MS = 30_000;    // the bots' tick
 export const MIN_GAP_MS = 10_000;          // floor between two reads, whatever the alignment says
@@ -32,6 +33,34 @@ export const STALE_AFTER_S = {
 };
 
 export const DEFAULT_ORIGINS = ['https://michaeldk1996.github.io'];
+
+// Supabase's own root CA (public; https://supabase-downloads.s3-ap-southeast-1.amazonaws.com/prod/ssl/
+// prod-ca-2021.crt). The pooler's chain does NOT verify against the public roots (measured 2026-09-26:
+// SELF_SIGNED_CERT_IN_CHAIN without it, authorized=true with it).
+export const CA_FILE = new URL('./supabase-ca-2021.crt', import.meta.url);
+
+// node-postgres lets `sslmode` in the URL OVERRIDE the ssl object (it becomes {}), silently dropping the CA
+// (independent review, 2026-09-26). So the URL's ssl parameters are stripped and TLS is set here only.
+export function dbConfig(url, ca) {
+  if (!url) throw new Error('no database url');
+  if (!ca) throw new Error('no CA: refusing an unverified database connection');
+  const u = new URL(url);
+  for (const k of ['sslmode', 'sslrootcert', 'sslcert', 'sslkey', 'ssl', 'uselibpqcompat']) u.searchParams.delete(k);
+  return {
+    connectionString: u.toString(), max: 1,
+    idleTimeoutMillis: 20_000,          // below the read interval: never hold an idle socket the server may drop
+    connectionTimeoutMillis: 10_000, query_timeout: 25_000, statement_timeout: 20_000,
+    ssl: { ca, rejectUnauthorized: true, servername: u.hostname },
+  };
+}
+
+// What the public sees of a failure: a code, never the driver's text (it can carry the database host).
+export function errorCode(e) {
+  const m = String(e && (e.code || e.message) || e);
+  if (/snapshot shape/.test(m)) return 'bad_snapshot';
+  if (/timeout/i.test(m)) return 'db_timeout';
+  return 'db_error';
+}
 
 const ms = (t) => (t == null ? null : new Date(t).getTime());
 
@@ -52,7 +81,8 @@ export function nextReadDelay(snapshot, nowMs) {
   if (last == null || !Number.isFinite(last)) return READ_INTERVAL_MS;
   let target = last + READ_INTERVAL_MS + ALIGN_MARGIN_MS;
   while (target - nowMs < MIN_GAP_MS) target += READ_INTERVAL_MS;   // already passed: the tick after
-  return Math.min(READ_INTERVAL_MS, Math.max(MIN_GAP_MS, target - nowMs));
+  // ceiling = one tick + the margin, so a read right after a bot run still lands AFTER the next one
+  return Math.min(READ_INTERVAL_MS + ALIGN_MARGIN_MS, Math.max(MIN_GAP_MS, target - nowMs));
 }
 
 export function freshness(ageS) {
@@ -89,9 +119,9 @@ export function createDropsService({ readSnapshot, now = () => Date.now(), origi
       state.lastError = null;
     } catch (e) {
       state.failures += 1;
-      state.lastError = String(e && e.message ? e.message : e).slice(0, 200);
+      state.lastError = errorCode(e);                  // public
       state.lastErrorAtMs = now();
-      log(`read failed: ${state.lastError}`);
+      log(`read failed (${state.lastError}): ${String(e && e.message ? e.message : e).slice(0, 300)}`);   // logs only
     }
   }
 
@@ -175,12 +205,9 @@ async function main() {
   const { default: pg } = await import('pg');
   const url = Buffer.from(process.env.DROPS_DB_URL_B64 || '', 'base64').toString('utf8');
   if (!url) { console.error('DROPS_DB_URL_B64 not set'); process.exit(1); }
-  // Verify the server certificate against Supabase's CA when the deploy supplies it (DB_CA_B64); without it the
-  // link is still TLS-encrypted but unauthenticated, and /status.json says so.
-  const ca = process.env.DB_CA_B64 ? Buffer.from(process.env.DB_CA_B64, 'base64').toString('utf8') : null;
-  const pool = new pg.Pool({ connectionString: url, max: 1, idleTimeoutMillis: 60_000, statement_timeout: 20_000,
-                             ssl: ca ? { ca, rejectUnauthorized: true } : { rejectUnauthorized: false } });
-  if (!ca) console.log('::warning:: DB_CA_B64 not set — TLS without certificate verification');
+  const pool = new pg.Pool(dbConfig(url, fs.readFileSync(CA_FILE, 'utf8')));
+  // an idle client the server drops emits 'error' on the pool; unhandled, it would kill the process and the cache
+  pool.on('error', (e) => console.log(new Date().toISOString(), `pool error (${errorCode(e)}): ${e.message}`));
   const readSnapshot = async () => (await pool.query('select drops_api.snapshot() as j')).rows[0].j;
   const origins = (process.env.ALLOWED_ORIGINS || DEFAULT_ORIGINS.join(',')).split(',').map((s) => s.trim()).filter(Boolean);
   const svc = createDropsService({ readSnapshot, origins, log: (m) => console.log(new Date().toISOString(), m) });

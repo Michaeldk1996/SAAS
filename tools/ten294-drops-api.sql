@@ -11,8 +11,9 @@
 --
 -- FOUNDER ANSWERS (card 37612d3d, 2026-09-26):
 --   Q3 "Dropped to" is the alert's price; "Latest" is a SEPARATE field, the side's latest pre-match price
---      with its own clock, taken from the SAME tick loader the bot uses (so the side mapping and the
---      pre-match filter are the bot's, not a second definition).
+--      with its own clock, read with EXACTLY the bot loader's filters and side mapping (ten280_bot.load_ticks /
+--      ten287_bot.load_ticks) but per alert on existing indexes: calling the loaders themselves would
+--      full-scan kibl_line_observations + kibl_now_history every 30 s (independent review, 2026-09-26).
 --   Q4 rows = alerts detected in the last 24 h; a started match is flagged, never dropped silently.
 create schema if not exists drops_api;
 revoke all on schema drops_api from public, anon, authenticated;
@@ -27,6 +28,7 @@ grant usage on schema drops_api to drops_reader;
 create or replace function drops_api.snapshot(p_hours integer default 24) returns jsonb
 language plpgsql security definer
 set search_path = pg_catalog, pg_temp
+stable
 as $$
 declare
   v_now   timestamptz := now();
@@ -34,11 +36,6 @@ declare
   v_rows  jsonb;
   v_src   jsonb;
 begin
-  -- The bots' own loaders, over a window that covers every row's drop (cur_at >= v_from - 10 min) and a
-  -- little before, so "latest" is the side's latest known pre-match price. Session temp tables; dropped below.
-  perform ten280_bot.load_ticks(v_from - interval '2 hours', v_now);
-  perform ten287_bot.load_ticks('Superbet', v_from - interval '2 hours', v_now);
-
   with b105 as (
     select a.eval_at,
       jsonb_build_object(
@@ -61,12 +58,31 @@ begin
                              then round((a.cur_price - a.open_price) / a.open_price * 100, 1) end,
         'detectedAt', a.eval_at,
         'latest', (select jsonb_build_object('price', ten280_bot.px(t.price), 'at', t.at)
-                     from pg_temp.t280 t
-                    where t.fixture_id = a.fixture_id and t.side_id = a.side_id and t.known_at <= v_now
-                    order by t.at desc, t.known_at desc limit 1),
-        -- live evidence only; a passed scheduled time is reported separately, never as "started"
-        'started', exists (select 1 from public.kibl_line_observations o
-                            where o.fixture_id = a.fixture_id and o.is_live is true),
+                     from (
+                       -- poller: load_ticks' filters, on kibl_lo_line_idx (fixture, market, segment, side, ...)
+                       (select o.price_decimal as price, o.inserted_on as at
+                          from public.kibl_line_observations o
+                         where o.fixture_id = a.fixture_id and o.market_type_id = 1 and o.segment_id = 1
+                           and o.side_id = a.side_id and o.feed_source_id = 171 and o.betting_type_id = 1
+                           and o.is_live is false and o.price_decimal >= 1.01
+                         order by o.inserted_on desc nulls last limit 1)
+                       union all
+                       -- stream: the Now price for this fixture, mapped to a side by load_ticks' surname rule
+                       -- (same surname on both sides -> never guess)
+                       (select p.price, p.kibl_inserted_on
+                          from public.kibl_now_price p
+                         where p.kind = 'price' and p.fixture_id = a.fixture_id and p.price >= 1.01
+                           and ten280_bot.skey(fx.player1_name) <> ten280_bot.skey(fx.player2_name)
+                           and p.side_key = ten280_bot.skey(case a.side_id when 2 then fx.player1_name
+                                                                            when 3 then fx.player2_name end)
+                         order by p.kibl_inserted_on desc limit 1)
+                     ) t order by t.at desc nulls last limit 1),
+        -- live evidence only; a passed scheduled time is reported separately, never as "started".
+        -- Checked only from 3 h before the scheduled time (Kibl's earliest measured early start: 860 min is the
+        -- one outlier, p95 -4.1 min): a not-yet-started fixture would otherwise scan all its rows every 30 s.
+        'started', coalesce(fx.scheduled_start <= v_now + interval '3 hours', false)
+                   and exists (select 1 from public.kibl_line_observations o
+                                where o.fixture_id = a.fixture_id and o.is_live is true),
         'pastScheduledStart', fx.scheduled_start is not null and fx.scheduled_start <= v_now
       ) as j
     from ten280_bot.alerts a
@@ -93,11 +109,16 @@ begin
         'sinceOpenPct', case when a.open_price > 0 and a.cur_price is not null
                              then round((a.cur_price - a.open_price) / a.open_price * 100, 1) end,
         'detectedAt', a.eval_at,
-        'latest', (select jsonb_build_object('price', ten287_bot.px(t.price), 'at', t.at)
-                     from pg_temp.t287 t
-                    where t.event_id = a.event_id and t.side = a.side and t.known_at <= v_now
-                    order by t.at desc, t.known_at desc limit 1),
-        'started', ev.status is not null and ev.status <> 'pending',
+        -- load_ticks' filters (book, pending, updatedAt present, price >= 1.01), on ticks_event_idx
+        'latest', (select jsonb_build_object('price', ten287_bot.px(t.price), 'at', t.book_updated_at)
+                     from (select case a.side when 'home' then k.back_home else k.back_away end as price, k.book_updated_at
+                             from ten287_rec.ticks k
+                            where k.event_id = a.event_id and k.book = a.book and k.book_updated_at is not null
+                              and coalesce(k.event_status, ev.status) = 'pending') t
+                    where t.price >= 1.01
+                    order by t.book_updated_at desc limit 1),
+        -- live evidence only: cancelled / postponed are NOT "started"
+        'started', coalesce(ev.status in ('live', 'settled', 'finished', 'ended'), false),
         'pastScheduledStart', ev.start_at is not null and ev.start_at <= v_now
       ) as j
     from ten287_bot.alerts a
@@ -114,8 +135,10 @@ begin
       'lastAt', (select p.written_at from public.kibl_now_price p where p.kind = 'heartbeat'
                   order by p.written_at desc limit 1)),
     jsonb_build_object('id', 'kibl-poller', 'label', 'Kibl poller (Challenger/ITF)',
-      'lastAt', (select o.observed_at from public.kibl_line_observations o where o.feed_source_id = 171
-                  order by o.observed_at desc limit 1)),
+      -- last_seen_at moves on EVERY sweep that sees a row; observed_at is first-seen only and stands
+      -- still on a flat market (independent review) — kibl_lo_last_seen_idx
+      'lastAt', (select o.last_seen_at from public.kibl_line_observations o where o.feed_source_id = 171
+                  order by o.last_seen_at desc nulls last limit 1)),
     jsonb_build_object('id', 'superbet-recorder', 'label', 'Superbet recorder',
       'lastAt', (select r.processed_at from ten287_rec.requests r
                   where r.kind = 'updated' and r.book = 'Superbet' and r.status_code = 200
@@ -131,9 +154,6 @@ begin
                     and d.status = 'succeeded'
                   order by d.runid desc limit 1))
   ) into v_src;
-
-  drop table if exists pg_temp.t280;
-  drop table if exists pg_temp.t287;
 
   return jsonb_build_object('schema', 1, 'dbNow', v_now, 'windowHours', p_hours,
                             'rows', v_rows, 'sources', v_src);

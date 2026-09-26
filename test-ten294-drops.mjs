@@ -10,8 +10,10 @@ import zlib from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 import {
   createDropsService, nextReadDelay, sourceStates, freshness,
-  READ_INTERVAL_MS, MIN_GAP_MS, AMBER_AFTER_S, PAUSED_AFTER_S, STALE_AFTER_S, DEFAULT_ORIGINS,
+  READ_INTERVAL_MS, MIN_GAP_MS, ALIGN_MARGIN_MS, AMBER_AFTER_S, PAUSED_AFTER_S, STALE_AFTER_S, DEFAULT_ORIGINS,
+  dbConfig, errorCode, CA_FILE,
 } from './stennisfy-drops/server.mjs';
+import crypto from 'node:crypto';
 
 const ROOT = path.dirname(fileURLToPath(import.meta.url));
 const read = (p) => fs.readFileSync(path.join(ROOT, p), 'utf8');
@@ -104,17 +106,20 @@ test('fan-out: 500 viewers x every route = zero extra database reads', async () 
   assert.equal(h.reads(), 1, 'a request triggered a database read');
 });
 
-test('cadence: never faster than the bots write (>= MIN_GAP), never slower than one tick; aligned after the Bet105 tick', () => {
+test('cadence: never faster than the bots write (>= MIN_GAP), never slower than one tick + margin; aligned after the Bet105 tick', () => {
   assert.equal(READ_INTERVAL_MS, 30_000);
+  assert.equal(ALIGN_MARGIN_MS, 3_000);
   for (let botAgo = 0; botAgo <= 120_000; botAgo += 1_000) {
     const d = nextReadDelay(snapshot({ bot: botAgo }), T0);
-    assert.ok(d >= MIN_GAP_MS && d <= READ_INTERVAL_MS, `botAgo=${botAgo} -> ${d}`);
+    assert.ok(d >= MIN_GAP_MS && d <= READ_INTERVAL_MS + ALIGN_MARGIN_MS, `botAgo=${botAgo} -> ${d}`);
   }
+  // bot JUST finished -> read 3 s after its NEXT run, not 0 s after it (review finding: a 30 s cap lost this)
+  assert.equal(nextReadDelay(snapshot({ bot: 0 }), T0), 33_000);
   // bot finished 5 s ago -> next tick ends ~25 s from now, read 3 s after it
   assert.equal(nextReadDelay(snapshot({ bot: 5_000 }), T0), 28_000);
-  // bot finished 24 s ago -> its next tick lands 9 s from now, inside the 10 s floor -> skip to the tick after (clamped to 30 s)
+  // bot finished 24 s ago -> its next tick lands 9 s from now, inside the 10 s floor -> skip to the tick after (clamped to 33 s)
   assert.equal(MIN_GAP_MS, 10_000);
-  assert.equal(nextReadDelay(snapshot({ bot: 24_000 }), T0), 30_000);
+  assert.equal(nextReadDelay(snapshot({ bot: 24_000 }), T0), 33_000);
   assert.equal(nextReadDelay(snapshot({ bot: 20_000 }), T0), 13_000);
   // no bot heartbeat -> plain 30 s
   assert.equal(nextReadDelay(snapshot({ bot: null }), T0), 30_000);
@@ -133,7 +138,7 @@ test('generatedAt advances ONLY on a successful read; a failing reader leaves th
   assert.equal(s.generatedAt, first, 'a failed read moved the clock');
   assert.equal(s.ageS, 95);
   assert.equal(s.freshness, 'amber');
-  assert.equal(s.lastError, 'db down');
+  assert.equal(s.lastError, 'db_error');
   assert.equal(call(h.svc, '/health').status, 503);
   h.tick(210_000); await h.svc.readOnce();
   s = h.svc.status();
@@ -176,6 +181,37 @@ test('per-source staleness: each source against its own limit, age measured on t
   // the poller (200 s old) is fine at its 900 s limit, but not 710 s later
   assert.equal(sourceStates(snapshot(), 710).find((s) => s.id === 'kibl-poller').state, 'stale');
   for (const s of snapshot().sources) assert.ok(s.id in STALE_AFTER_S, `no limit for ${s.id}`);
+});
+
+// ---- the database link: verified TLS or nothing (review blocker: sslmode in the URL dropped the CA) ----
+
+test('dbConfig: strips every URL ssl parameter, verifies against the bundled Supabase CA, refuses without one', () => {
+  const ca = fs.readFileSync(CA_FILE, 'utf8');
+  const c = dbConfig('postgresql://u.ref:p%40ss@aws-0-eu-west-1.pooler.supabase.com:5432/postgres?sslmode=require&sslrootcert=x&application_name=drops', ca);
+  assert.doesNotMatch(c.connectionString, /ssl/i, 'an ssl URL parameter would override the ssl object');
+  assert.match(c.connectionString, /application_name=drops/, 'unrelated parameters survive');
+  assert.equal(c.ssl.ca, ca);
+  assert.equal(c.ssl.rejectUnauthorized, true);
+  assert.equal(c.ssl.servername, 'aws-0-eu-west-1.pooler.supabase.com');
+  assert.ok(c.idleTimeoutMillis < READ_INTERVAL_MS && c.connectionTimeoutMillis > 0 && c.query_timeout > 0);
+  assert.throws(() => dbConfig('postgresql://u:p@h/db', null), /no CA/);
+  // the workflow never builds an sslmode URL
+  assert.doesNotMatch(read('.github/workflows/ten294-drops.yml'), /sslmode/);
+});
+
+test('the bundled CA is Supabase Root 2021 (fingerprint pinned)', () => {
+  const x = new crypto.X509Certificate(fs.readFileSync(CA_FILE));
+  assert.match(x.subject, /CN=Supabase Root 2021 CA/);
+  assert.equal(x.fingerprint256, '80:70:25:AD:50:D4:ED:21:9D:2C:9C:7D:29:9C:00:4F:82:4E:B0:0C:F7:F6:5A:FE:F6:07:D0:7B:72:E6:CA:FA');
+  assert.match(read('stennisfy-drops/Dockerfile'), /COPY server\.mjs supabase-ca-2021\.crt/);
+});
+
+test('a failure is public only as a code — the driver text (which can name the database host) stays in the logs', async () => {
+  const h = harness({ reader: () => { throw new Error('getaddrinfo ENOTFOUND aws-0-eu-west-1.pooler.supabase.com'); } });
+  await h.svc.readOnce();
+  for (const route of ['/status.json', '/health']) assert.doesNotMatch(call(h.svc, route).body, /supabase|pooler|ENOTFOUND/, route);
+  assert.equal(errorCode(new Error('Query read timeout')), 'db_timeout');
+  assert.equal(errorCode(new Error('snapshot shape')), 'bad_snapshot');
 });
 
 // ---- transport: 304s make unchanged rows nearly free; CORS ----
@@ -223,10 +259,20 @@ test('snapshot SQL: live bot alerts only, security definer with a pinned search_
   assert.match(sql, /revoke all on function drops_api\.snapshot\(integer\) from public, anon, authenticated/);
   assert.match(sql, /grant execute on function drops_api\.snapshot\(integer\) to drops_reader/);
   assert.doesNotMatch(sql, /grant [^;]* to (anon|authenticated|public)\b/i);
-  assert.doesNotMatch(sql, /net\.http_|http_(get|post)|insert into|update ten2|delete from (?!pg_temp)/i);
-  // "Latest" comes from the bots' own loaders, never a second definition of a pre-match price
-  assert.match(sql, /ten280_bot\.load_ticks\(/);
-  assert.match(sql, /ten287_bot\.load_ticks\('Superbet'/);
-  // "started" is live evidence only; a passed scheduled time is its own field
-  assert.match(sql, /'started', exists \(select 1 from public\.kibl_line_observations o\s+where o\.fixture_id = a\.fixture_id and o\.is_live is true\)/);
+  assert.doesNotMatch(sql, /net\.http_|http_(get|post)|insert into|update ten2|delete from/i);
+});
+
+test('snapshot SQL is cheap at 2 reads/min: no bot loader calls (they full-scan), started time-gated, watermarks on indexes', () => {
+  const sql = read('tools/ten294-drops-api.sql').replace(/--.*$/gm, '');
+  assert.doesNotMatch(sql, /load_ticks\s*\(/, 'a bot loader full-scans kibl_line_observations + kibl_now_history');
+  // Latest keeps the loaders' filters: Bet105 poller = feed 171, ML, full match, not live, >= 1.01; Superbet = pending
+  assert.match(sql, /o\.feed_source_id = 171 and o\.betting_type_id = 1\s+and o\.is_live is false and o\.price_decimal >= 1\.01/);
+  assert.match(sql, /ten280_bot\.skey\(fx\.player1_name\) <> ten280_bot\.skey\(fx\.player2_name\)/, 'same surname -> never guess');
+  assert.match(sql, /coalesce\(k\.event_status, ev\.status\) = 'pending'/);
+  // "started" = live evidence only, and the Kibl scan runs only near the scheduled time
+  assert.match(sql, /'started', coalesce\(fx\.scheduled_start <= v_now \+ interval '3 hours', false\)\s+and exists \(select 1 from public\.kibl_line_observations o\s+where o\.fixture_id = a\.fixture_id and o\.is_live is true\)/);
+  assert.match(sql, /'started', coalesce\(ev\.status in \('live', 'settled', 'finished', 'ended'\), false\)/);
+  assert.doesNotMatch(sql, /status <> 'pending'/, 'cancelled / postponed are not "started"');
+  // the poller watermark moves on every sweep (last_seen_at), not only on a new price (observed_at)
+  assert.match(sql, /select o\.last_seen_at from public\.kibl_line_observations o where o\.feed_source_id = 171\s+order by o\.last_seen_at desc/);
 });
