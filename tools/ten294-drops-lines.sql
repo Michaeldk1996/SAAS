@@ -14,6 +14,7 @@
 --     non-pending sighting on any book (the vendor flips live -> pending mid-match); Kibl: is_live false;
 --   * same-price re-stamps collapse (a point only when the price changed); at most 400 points per side per book,
 --     and ALWAYS the latest point even when older than the window (a quoting book that has not moved stays in);
+--   * lastSeen = the book's latest sighting of this line, re-stamps included — the page drops a book not seen in 24 h;
 --   * the side maps by surname key; a same-surname pair maps nothing for that book.
 -- Called by drops_api.snapshot() inside its one read per cadence; nothing here is per-viewer.
 create schema if not exists drops_api;   -- this file installs before ten294-drops-api.sql (review: a fresh DB)
@@ -84,7 +85,7 @@ live_from as (
    group by 1
 ),
 tk as (
-  select m.k1, m.k2, m.ks, t.book, t.id::text id, t.book_updated_at at,
+  select m.k1, m.k2, m.ks, t.book, t.id::text id, t.book_updated_at at, t.seen_at seen,
          case when drops_api.nk(e.home) = m.ks then t.back_home when drops_api.nk(e.away) = m.ks then t.back_away end ps,
          case when drops_api.nk(e.home) = m.ks then t.back_away when drops_api.nk(e.away) = m.ks then t.back_home end po
     from m
@@ -98,7 +99,7 @@ tk as (
 ),
 -- ── Bet105 (Kibl poller, the drop bot's own feed) ──
 ko as (
-  select m.k1, m.k2, m.ks, 'Bet105'::text book, o.row_key id, o.inserted_on at,
+  select m.k1, m.k2, m.ks, 'Bet105'::text book, o.row_key id, o.inserted_on at, coalesce(o.last_seen_at, o.inserted_on) seen,
          o.side_id, o.price_decimal px,
          case when drops_api.nk(f.player1_name) = m.ks then 2 when drops_api.nk(f.player2_name) = m.ks then 3 end side_s
     from m
@@ -110,9 +111,9 @@ ko as (
      and drops_api.nk(f.player1_name) <> drops_api.nk(f.player2_name)
 ),
 pts as (   -- one stream of (selection, book, which side, time, price)
-  select k1, k2, ks, book, id, at, 's' w, ps px from tk where ps >= 1.01
-  union all select k1, k2, ks, book, id, at, 'o', po from tk where po >= 1.01
-  union all select k1, k2, ks, book, id, at, case when side_id = side_s then 's' else 'o' end, px from ko where side_s is not null
+  select k1, k2, ks, book, id, at, seen, 's' w, ps px from tk where ps >= 1.01
+  union all select k1, k2, ks, book, id, at, seen, 'o', po from tk where po >= 1.01
+  union all select k1, k2, ks, book, id, at, seen, case when side_id = side_s then 's' else 'o' end, px from ko where side_s is not null
 ),
 chg as (   -- same-price re-stamps collapse
   select *, lag(px) over (partition by k1, k2, ks, book, w order by at, id) prev from pts
@@ -133,6 +134,8 @@ per_book as (
   select k1, k2, ks, book,
          jsonb_build_object(
            'source', case when book = 'Bet105' then 'Kibl' else 'odds-api.io' end,
+           -- every sighting, re-stamps included (the series collapses them): a book not seen lately is not quoting
+           'lastSeen', (select max(p.seen) from pts p where p.k1 = b.k1 and p.k2 = b.k2 and p.ks = b.ks and p.book = b.book),
            'first', (select jsonb_build_array(p.first_at, round(p.first_px::numeric, 3)) from per_side p
                       where p.k1 = b.k1 and p.k2 = b.k2 and p.ks = b.ks and p.book = b.book and p.w = 's'),
            'side',  coalesce((select p.series from per_side p where p.k1 = b.k1 and p.k2 = b.k2 and p.ks = b.ks and p.book = b.book and p.w = 's'), '[]'::jsonb),

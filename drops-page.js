@@ -257,7 +257,10 @@
     if (source === 'flagged' && ctx.line && ctx.line.books) {
       Object.keys(ctx.line.books).forEach(function (n) {
         var b = ctx.line.books[n] || {}, side = tsPoints(b.side), f = b.first ? tsPoints([b.first])[0] : null;
-        if (side.length) raw[stripName(n)] = { side: side, other: tsPoints(b.other), first: f || side[0] };
+        var seenAt = Date.parse(b.lastSeen);
+        // a book whose last sighting is older than the window has stopped quoting: left out, never shown as current
+        if (ctx.now != null && isFinite(seenAt) && ctx.now - seenAt > 24 * H) return;
+        if (side.length) raw[stripName(n)] = { side: side, other: tsPoints(b.other), first: f || side[0], seen: isFinite(seenAt) ? seenAt : null };
       });
       if (Object.keys(raw).length) source = 'endpoint';
     }
@@ -271,6 +274,8 @@
     // the row's own book is always present and always reads exactly as its list row (Q1)
     var own = raw[r.book] || { other: [] };
     own.margin = marginOf(r.book, own.side || [], own.other || []);   // the source's own pair, never the feed's fresher side
+    var srcLast = own.side && own.side.length ? own.side[own.side.length - 1].v : null;
+    if (srcLast == null || Math.abs(srcLast - r.now) > 0.005) own.margin = null;   // a pair older than the price shown is not its margin
     var seen = {};
     own.side = (own.side || []).concat(tsPoints(rowPoints(r))).filter(function (p) {
       var k = p.t + '|' + p.v; if (seen[k]) return false; seen[k] = 1; return true;
@@ -630,7 +635,7 @@
     var shell = document.querySelector('.sf-sidebar');
     ov.style.setProperty('--do-shell-left', shell ? shell.getBoundingClientRect().width + 'px' : '0px');
 
-    var mb = modalBooks(r, { rows: st.rows, line: (st.lines || {})[lineKey(r)], chart: chart, cardSide: hit && hit.cardSide });
+    var mb = modalBooks(r, { rows: st.rows, line: (st.lines || {})[lineKey(r)], chart: chart, cardSide: hit && hit.cardSide, now: now });
     var ownB = mb.books.filter(function (b) { return b.own; })[0];
     var sel = (st.drBook && mb.books.filter(function (b) { return b.book === st.drBook; })[0]) || ownB;
     var cls = r.cls || 'soft';
@@ -670,7 +675,7 @@
     }
     var margin = ownB && ownB.margin != null ? ownB.margin.toFixed(1) + '%' : (EXCHANGES[r.book] ? '—' : null);
     var pts = seriesPoints(sel.series, now);
-    var capP = sel.first && sel.now ? price2(sel.first.v) + ' → ' + price2(sel.now.v) + (sel.drop != null ? ' · ' + (sel.drop > 0 ? '▼ ' : '▲ ') + Math.abs(sel.drop).toFixed(1) + '%' : '') : price2(sel.now && sel.now.v);
+    var capP = sel.first && sel.now ? price2(sel.first.v) + ' → ' + price2(sel.now.v) + (sel.drop != null ? ' · ' + (Math.abs(sel.drop) < 0.05 ? '' : sel.drop > 0 ? '▼ ' : '▲ ') + Math.abs(sel.drop).toFixed(1) + '%' : '') : price2(sel.now && sel.now.v);
     var html = '<div class="do-ov-scrim" data-act="close"></div><div class="do-ov-box" role="dialog" aria-modal="true" aria-label="Price move"><div class="do-ov-scroll">' +
       '<div class="do-ov-head"><div class="do-ov-hl">' +
       '<span class="do-ov-eye">Price move · Match winner · ' + esc(r.book) + (r.cls ? '<span class="do-ov-btag ' + cls + '">' + cls.toUpperCase() + '</span>' : '') +
@@ -694,7 +699,7 @@
         return '<div class="do-ov-cell' + (isSel ? ' sel' : ' pick') + '" data-act="book" data-v="' + esc(b.book) + '"><span class="bar"></span>' +
           '<span class="do-ov-c1">' + esc(b.book) + (b.cls ? '<span class="t ' + c + '">' + c.toUpperCase() + '</span>' : '') + '</span>' +
           '<span class="do-ov-c2"><span class="n">' + price2(b.now && b.now.v) + '</span><span class="o">from ' + price2(b.first && b.first.v) + '</span></span>' +
-          '<span class="do-ov-c3">' + pct(b) + '<span class="r">' + (b.own ? 'this row' : '') + '</span></span></div>';
+          '<span class="do-ov-c3">' + pct(b) + '<span class="r">' + (b.own ? 'this row' : b.now && isFinite(b.now.t) ? esc('moved ' + ago(now - b.now.t)) : '') + '</span></span></div>';
       }).join('') + '</div>' +
       '<div class="do-ov-foot"><span class="do-ov-foot-l"><span class="do-ov-sum">' + esc(summaryText(mb)) + '</span>' +
       '<span class="do-ov-fn">Each drop compares a book\'s own first recorded price with its own current price.</span></span>' +

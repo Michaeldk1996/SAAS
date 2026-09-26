@@ -813,7 +813,58 @@ test('pop-up review: the backed side can be the card\'s p2; the margin uses one 
   const mb = PAGE.modalBooks(r, { rows: [r], chart, cardSide: 'p2' });
   const own = mb.books.find((b) => b.own);
   assert.ok(own.series.some((p) => p.v === 3.05), 'the p2 series is the backed side\'s');
-  assert.equal(own.margin.toFixed(2), ((1 / 3.05 + 1 / 1.43 - 1) * 100).toFixed(2), 'the shard\'s own pair (3.05 / 1.43), never the feed\'s 2.50 against a stale 1.43');
+  assert.equal(own.margin, null, 'the source\'s latest (3.05) is not the price shown (2.50): its pair is not this price\'s margin');
+  const [r2] = PAGE.buildRows([{ ...r0, latest: { at: at(3 * HR), price: '3.05' } }]);
+  const own2 = PAGE.modalBooks(r2, { rows: [r2], chart, cardSide: 'p2' }).books.find((b) => b.own);
+  assert.equal(own2.margin.toFixed(2), ((1 / 3.05 + 1 / 1.43 - 1) * 100).toFixed(2), 'the shard\'s own pair when it is the price shown');
+});
+
+test('pop-up review 2: an endpoint book not seen for 24 h is not quoting; every other book shows its own age', async () => {
+  const [r] = PAGE.buildRows([frow({ id: 'superbet-60', book: 'Superbet', a: 'Pat Pi', b: 'Rho Rho', side: 'Pat Pi', open: 2.2, now: 1.9 })]);
+  const line = { key: PAGE.lineKey(r), books: {
+    Superbet: { first: [at(30 * HR), 2.2], side: [[at(2 * HR), 1.9]], other: [[at(2 * HR), 2.0]], lastSeen: at(0.1 * HR) },
+    'Betfair Exchange': { first: [at(40 * HR), 2.30], side: [[at(30 * HR), 2.10]], other: [[at(30 * HR), 1.95]], lastSeen: at(28 * HR) },
+    Bet105: { first: [at(40 * HR), 2.40], side: [[at(30 * HR), 2.25]], other: [[at(30 * HR), 1.70]], lastSeen: at(0.5 * HR) } } };
+  const mb = PAGE.modalBooks(r, { rows: [r], line, now: PT0 });
+  assert.deepEqual(mb.books.map((b) => b.book).sort(), ['Bet105', 'Superbet'], 'BFE last seen 28 h ago is left out; Bet105 re-seen 30 min ago at an unchanged price stays');
+  assert.equal(mb.m, 2);
+  const x = await openPopup({ rows: [frow({ id: 'superbet-60', book: 'Superbet', a: 'Pat Pi', b: 'Rho Rho', side: 'Pat Pi', open: 2.2, now: 1.9 })], lines: [line] });
+  const html = await x.open('superbet-60');
+  assert.match(html, /Bet105<span class="t sharp">SHARP<\/span>[^]*?<span class="r">moved 30h ago<\/span>/, 'a held price carries its own age, never reads as fresh');
+  assert.doesNotMatch(html, /Betfair Exchange/);
+});
+
+test('pop-up review 2: an unchanged price reads 0.0% in the strip and the caption', async () => {
+  const r0 = frow({ id: 'superbet-61', book: 'Superbet', a: 'Pat Pi', b: 'Rho Rho', side: 'Pat Pi', open: 2.2, now: 1.9 });
+  const line = { key: PAGE.lineKey({ playerA: 'Pat Pi', playerB: 'Rho Rho', side: 'Pat Pi' }), books: {
+    Superbet: { first: [at(30 * HR), 2.2], side: [[at(2 * HR), 1.9]], other: [], lastSeen: at(0.1 * HR) },
+    'Betfair Exchange': { first: [at(20 * HR), 2.10], side: [[at(20 * HR), 2.10]], other: [], lastSeen: at(0.1 * HR) } } };
+  const x = await openPopup({ rows: [r0], lines: [line] });
+  let html = await x.open('superbet-61');
+  assert.match(html, /<span class="d none">0\.0%<\/span>/);
+  x.P._state.drBook = 'Betfair Exchange';
+  html = await x.open('superbet-61');
+  assert.match(html, /2\.10 → 2\.10 · 0\.0%/);
+  assert.doesNotMatch(html, /▲ 0\.0%/);
+});
+
+test('pop-up review 2: the SQL rules sit in the step that uses them (block comments stripped, not just --)', () => {
+  const sql = read('tools/ten294-drops-lines.sql').replace(/\/\*[^]*?\*\//g, '').replace(/--.*$/gm, '');
+  const cte = (name, next) => sql.slice(sql.indexOf(name + ' as ('), sql.indexOf(next + ' as ('));
+  assert.match(cte('ko', 'pts'), /and o\.side_id in \(2, 3\)/, 'the side filter is in the Bet105 step itself');
+  assert.match(cte('per_side', 'per_book'), /filter \(where rn = 1 or \(rn <= 400 and at >= now\(\)/, 'the latest-point rule is in the series step');
+  assert.match(cte('per_book', 'zzz_end') || sql.slice(sql.indexOf('per_book as (')), /'lastSeen', \(select max\(p\.seen\) from pts p/);
+  assert.match(cte('ko', 'pts'), /coalesce\(o\.last_seen_at, o\.inserted_on\) seen/);
+  assert.match(cte('tk', 'ko'), /t\.seen_at seen/);
+});
+
+test('pop-up review 2: the board date window is ±36 h around noon UTC of the card\'s date (live UTC+2 / Kibl drift cases)', () => {
+  const card = (date) => ({ p1: 'H. Gaston', p2: 'A. Rublev', p1Key: 1, p2Key: 2, date });
+  const r = (start) => ({ playerA: 'Hugo Gaston', playerB: 'Andrey Rublev', side: 'Hugo Gaston', start });
+  assert.ok(PAGE.boardKeyFor(r('2026-09-27T22:00:00Z'), [card('2026-09-27')]), 'the live Kibl drift case (row 27 22:00Z vs card 27)');
+  assert.ok(PAGE.boardKeyFor(r('2026-09-26T01:00:00Z'), [card('2026-09-27')]), '35 h before the anchor');
+  assert.equal(PAGE.boardKeyFor(r('2026-09-25T23:00:00Z'), [card('2026-09-27')]), null, '37 h before the anchor');
+  assert.equal(PAGE.boardKeyFor(r('2026-09-29T01:00:00Z'), [card('2026-09-27')]), null, '37 h after the anchor');
 });
 
 test('pop-up review: the endpoint\'s first price is the book\'s first record; a quoting book that has not moved in 24 h stays in', () => {
