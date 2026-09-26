@@ -185,9 +185,40 @@ cst = {'byKey': {'2026-09-26|cerundolo|fokina': {'book': 'bet105', 'startTs': '2
                  '2026-09-27|gaston|rublev': {'book': 'bet365'}}}
 t = bcb.bet105_cards([card(), card(id='upcoming-2', p1='H. Gaston', p2='A. Rublev', date='2026-09-27')], cst)
 check([k for _, k, _ in t] == ['2026-09-26|cerundolo|fokina'], 'only cards whose selected book is Bet105')
-done = card(finalScore='6-4 6-4', finishedAt='2026-09-26T09:00:00Z')
-cs.put_chart(done, 'Bet105', None, dict(bcb.BET105_META, checkedAt='2026-09-26T09:05:00Z'))
-check(bcb.bet105_cards([done], cst) == [], 'a completed card read after its finish is not re-read')
+# (review 2026-09-26) the stop rule must be reachable by the REAL writer: checkedAt is
+# capped at startTs, so "read after the finish" could never fire — driven through main().
+tmpb = tempfile.mkdtemp()
+bcb.MATCHES, bcb.CARD_STATE = os.path.join(tmpb, 'matches.json'), os.path.join(tmpb, 'ocs.json')
+json.dump([card(finalScore='6-4 6-4', finishedAt='2026-09-26T09:00:00Z')], open(bcb.MATCHES, 'w'))
+json.dump(cst, open(bcb.CARD_STATE, 'w'))
+seen = []
+bcb.rpc = lambda name, args, timeout=60: (seen.append(name) or
+    ({'events': [], 'polled_ok_at': {}, 'kibl_sweep_ok_at': '2026-09-26T09:30:00+00:00'} if name == 'chart_book_series' else ph))
+_now = cs.now_iso
+cs.now_iso = lambda: '2026-09-26T10:00:00.000Z'      # after the 07:00 start
+bcb.main(); bcb.main()
+cs.now_iso = _now
+got = json.load(open(bcb.MATCHES))[0]['oddsMovement']['chart']
+check(seen.count('price_history') == 1, f'a completed Bet105 card is read once after its start, then left alone {seen}')
+check(got['meta']['Bet105']['checkedAt'] == '2026-09-26T07:00:00.000Z', 'Bet105 checkedAt capped at the card start')
+check(all(p[0] <= '2026-09-26T07:00:00.000Z' for sd in ('p1', 'p2') for p in got['books']['Bet105'][sd]),
+      'no Bet105 point after the start')
+
+# odds-api.io: cut at the card start (odds-card-state), else the vendor's scheduled start
+late = card(date='2026-09-26')
+ev_late = dict(events[0], start_at='2026-09-26T01:30:00+00:00', live_from='2026-09-26T01:45:00+00:00',
+               books={'Superbet': rows})
+bcb.apply_odds_api([late], dict(payload, events=[ev_late]), '2026-09-26T04:20:00.000Z', card_state={})
+lser = late['oddsMovement']['chart']['books']['Superbet']
+check(all(p[0] <= '2026-09-26T01:30:00.000Z' for p in lser['p1'] + lser['p2'])
+      and late['oddsMovement']['chart']['meta']['Superbet']['checkedAt'] == '2026-09-26T01:30:00.000Z',
+      f'a point after the scheduled start (before the vendor live flip) is dropped: {lser}')
+late2 = card(date='2026-09-26')
+bcb.apply_odds_api([late2], dict(payload, events=[ev_late]), '2026-09-26T04:20:00.000Z',
+                   card_state={'byKey': {'2026-09-26|cerundolo|fokina': {'startTs': '2026-09-26T01:20:00+00:00'}}})
+check(late2['oddsMovement']['chart']['meta']['Superbet']['checkedAt'] == '2026-09-26T01:20:00.000Z'
+      and all(p[0] <= '2026-09-26T01:20:00.000Z' for p in late2['oddsMovement']['chart']['books']['Superbet']['p1']),
+      'the card\'s actual startTs wins over the scheduled start')
 
 # main() end to end, network stubbed
 tmp = tempfile.mkdtemp()
@@ -267,6 +298,36 @@ check({k: v for k, v in om.items() if k != 'chart'} == LEGACY and 'Pinnacle +30s
       'main(): chart written, legacy fields untouched (never a wholesale replace)')
 check(not os.path.exists(hist.OPEN_MONITOR_FILE), 'main(): the bet365 open-monitor did not run')
 
+# Pinnacle +30s cut at the card start (review 2026-09-26: oddspapi keeps ticking in-play)
+hist.CARD_STATE_FILE = os.path.join(tmp2, 'ocs.json')
+json.dump({'byKey': {'2026-09-26|cerundolo|fokina': {'startTs': '2026-09-26T02:00:00+00:00'}}}, open(hist.CARD_STATE_FILE, 'w'))
+pc = card()
+outp, hits = {}, {'pinnacle+30': 0}
+hist._absorb(PIN, 'pinnacle+30', True, outp, hits)
+hist._store(pc, outp, '2026-09-26T04:40:00.000Z', 'idX', '2026-09-26T05:00:00.000Z', merge=False)
+ps = cs.chart_series(pc, 'Pinnacle +30s')
+check(all(p[0] <= '2026-09-26T02:00:00.000Z' for p in ps['p1'] + ps['p2']) and len(ps['p1']) == 1
+      and pc['oddsMovement']['chart']['meta']['Pinnacle +30s']['checkedAt'] == '2026-09-26T02:00:00.000Z',
+      f'Pinnacle +30s: in-play ticks dropped, checkedAt capped at startTs {ps}')
+
+# a completed card holding the frozen bet365 series is NOT re-targeted by the 3-hourly leg
+json.dump([card(date='2026-09-25', finalScore='6-4 6-4', oddsMovement=copy.deepcopy(LEGACY))], open(hist.MATCHES, 'w'))
+asked.clear()
+try:
+    hist.main()
+except SystemExit:
+    pass
+check(asked == [], f'completed card with legacy movement not re-targeted (no new fail-loud gaps) {asked}')
+
+# no OPEN pin without bet365 -> the sweep budget can cut fixtures pinnacle+30 never prices
+json.dump([card(date='2099-01-01'), card(id='upcoming-5', p1='H. Gaston', p2='A. Rublev', date='2099-01-01')],
+          open(hist.MATCHES, 'w'))
+asked.clear()
+hist.SWEEP_BUDGET_S = 5.5
+hist.first_appearance()
+hist.SWEEP_BUDGET_S = 480.0
+check(len(asked) == 1 and asked[0][0] == 'idX', f'unopened fixtures are budget-cut when bet365 is off (soonest kept) {asked}')
+
 # ── 6. the RPC and the wiring ────────────────────────────────────────────────
 sql = open(os.path.join(HERE, 'chart-books-rpc.sql')).read()
 check('security definer' in sql and 'grant execute on function public.chart_book_series(timestamptz, timestamptz) to service_role' in sql
@@ -274,6 +335,7 @@ check('security definer' in sql and 'grant execute on function public.chart_book
 check("t.event_status = 'pending'" in sql and "is distinct from 'pending'" in sql and 't.book_updated_at < lf.at' in sql,
       'RPC: pre-match only, cut at the first non-pending sighting')
 check('cfg.books' in sql and 'status_code = 200' in sql, 'RPC: books from config, heartbeat = last HTTP 200 poll')
+check('order by at, id)' in sql, 'RPC: deterministic order for two changes at one instant')
 loop = open(os.path.join(HERE, 'odds-capture-loop.sh')).read()
 check(loop.count('python3 build-chart-books.py') == 2, 'loop runs the writer on the normal and the push-race path')
 check('build-chart-books.py chart_series.py ten225_names.py' in loop, 'the writer is a DRIVER file (restart on change)')

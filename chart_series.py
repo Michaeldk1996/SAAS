@@ -93,14 +93,42 @@ def merge_side(old, new):
     return changes_only(clean_points(list(old or []) + list(new or [])))
 
 
-def put_chart(m, label, series, meta):
+def card_start(m, card_state=None, fallback=None):
+    """The instant a chart line must stop at (review 2026-09-26, TEN-295): the card's
+    ACTUAL start from odds-card-state (`startTs`, the clock the Close is judged against),
+    else the source's scheduled start (`fallback`). A price after it is in-play and is
+    never drawn as pre-match; on a late start the scheduled fallback can drop a few real
+    pre-start points — missing, never invented."""
+    try:
+        from ten225_names import match_key
+        k = match_key(m.get('date') or '', m.get('p1') or '', m.get('p2') or '')
+    except Exception:
+        k = None
+    ent = (((card_state or {}).get('byKey') or {}).get(k) or {}) if k else {}
+    return ts_iso(ent.get('startTs')) or ts_iso(fallback)
+
+
+def load_card_state(path):
+    try:
+        import json
+        with open(path) as fh:
+            return json.load(fh)
+    except Exception:
+        return {}
+
+
+def put_chart(m, label, series, meta, cut_at=None):
     """Write one source's series + meta onto m.oddsMovement.chart.
 
     series  {'p1': [...], 'p2': [...]} in CARD orientation, or None to update meta only.
     meta    {'source', 'group', 'clock', 'checkedAt'}; checkedAt None keeps the held one.
 
+    cut_at  the card's start (card_start): points after it are dropped — held ones too —
+            and checkedAt is capped at it.
+
     Returns True when the match now carries a non-empty series for `label`.
     """
+    cut = ts_iso(cut_at) if cut_at else None
     if meta.get('group') not in GROUPS:
         raise ValueError(f'chart group must be one of {GROUPS}: {meta.get("group")!r}')
     om = dict(m.get('oddsMovement') or {})
@@ -108,13 +136,20 @@ def put_chart(m, label, series, meta):
     books = dict(chart.get('books') or {})
     metas = dict(chart.get('meta') or {})
     held = books.get(label) or {}
-    if series is not None:
-        merged = {side: merge_side(held.get(side), series.get(side)) for side in ('p1', 'p2')}
+    if series is not None or (cut and held):
+        merged = {side: merge_side(held.get(side), (series or {}).get(side)) for side in ('p1', 'p2')}
+        if cut:
+            merged = {side: [p for p in pts if p[0] <= cut] for side, pts in merged.items()}
         if merged['p1'] or merged['p2']:
             books[label] = merged
             held = merged
+        else:
+            books.pop(label, None)
+            held = {}
     mt = dict(metas.get(label) or {})
     checked = ts_iso(meta.get('checkedAt')) if meta.get('checkedAt') else None
+    if checked and cut and checked > cut:
+        checked = cut
     old_checked = mt.get('checkedAt')
     mt.update({k: meta[k] for k in ('source', 'group', 'clock') if meta.get(k)})
     # checkedAt only ever moves forward

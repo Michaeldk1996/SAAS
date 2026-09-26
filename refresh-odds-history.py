@@ -105,6 +105,7 @@ OPEN_MONITOR_FILE = os.path.join(HERE, 'odds-open-monitor.json')
 # only zero-quota route from one of our matches to an oddspapi fixtureId, which
 # is what lets --first-appearance sweep every 15 minutes without billing.
 FIXTURE_MAP_FILE = os.path.join(HERE, 'odds-fixture-map.json')
+CARD_STATE_FILE = os.path.join(HERE, 'odds-card-state.json')   # TEN-295: the chart's start cut
 HIST_SLEEP = 5.5        # /v4/historical-odds cools down at ~1 call / 5s
 MAX_RETRY = 4          # 429 backoff attempts before giving up on a call
 
@@ -732,7 +733,12 @@ def main():
     # (only when it has no movement yet) and let the pipeline preserve it forever
     # after that. This is what makes completed matches render the same per-book
     # breakdown + movement chart as upcoming ones instead of the reduced view.
-    has_movement = _holds
+    # Upcoming: refreshed while it has no series in BOOKS. Completed: captured once, only
+    # when it holds NO movement at all — a completed card carrying the frozen bet365
+    # series is not re-targeted for pinnacle+30 (it would add unrecoverable-gap exits to
+    # the fail-loud policy the founder has not re-ruled; review 2026-09-26).
+    def has_movement(m):
+        return _holds(m) or bool((m.get('oddsMovement') or {}).get('books'))
 
     targets = []
     for m in matches:
@@ -1244,6 +1250,12 @@ def first_appearance():
     # before *now*, which on a started match can be an IN-PLAY tick. Sorting "soonest
     # first" put them at the head of the queue, so they were the one group the budget
     # cut could never reach.
+    # The never-cut guarantee protects an unpinned bet365 OPEN. With bet365 out of BOOKS
+    # there is no OPEN pin (TEN-295), and a fixture pinnacle+30 never prices would stay
+    # "unopened" and be swept every tick outside the budget — so it joins the budgeted set.
+    if not BET365_ACTIVE:
+        already_open = unopened + already_open
+        unopened = []
     underway = [pr for pr in already_open if starts_at(pr) <= now]
     already_open = [pr for pr in already_open if starts_at(pr) > now]
     already_open.sort(key=starts_at)        # soonest first; the cut falls at the far end
@@ -1478,11 +1490,15 @@ def _store(m, books_out, now_iso, fixture_id, start_time, merge):
             om.update({'market': 'Match Winner', 'capturedAt': now_iso, 'startTime': start_time,
                        'fixtureId': fixture_id, 'books': legacy})
             m['oddsMovement'] = om
+    cut = chart_series.card_start(m, chart_series.load_card_state(CARD_STATE_FILE), start_time)
     for b in BOOKS:
         label = BOOK_LABELS[b]
         if b == LEGACY_BOOK or label not in books_out:
             continue
-        chart_series.put_chart(m, label, books_out[label], dict(CHART_META[b], checkedAt=now_iso))
+        # Cut at the card's start: oddspapi keeps ticking in-play, and the page's own cut
+        # (m.date + m.time read as UTC) lands ~2 h late (review 2026-09-26).
+        chart_series.put_chart(m, label, books_out[label], dict(CHART_META[b], checkedAt=now_iso),
+                               cut_at=cut)
 
 
 def _absorb(data, book, swap, books_out, book_hits):

@@ -31,7 +31,7 @@ Kibl poller's last OK sweep; both capped at now, and at the event's first live s
 Reads SUPABASE_URL / SUPABASE_SECRET_KEY. Stdlib only. Exit 0 on a partial failure (it
 runs 4x an hour; a red run that often hides real signals) — every failure is logged.
 """
-import json, os, sys, urllib.error, urllib.parse, urllib.request
+import json, os, sys, time, urllib.error, urllib.parse, urllib.request
 from datetime import datetime, timedelta, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -45,6 +45,9 @@ CARD_STATE = os.path.join(HERE, 'odds-card-state.json')
 JOIN_DAYS = 1
 RPC_BACK_DAYS = 4
 RPC_AHEAD_DAYS = 10
+# Wall clock for the per-card Bet105 reads, inside the loop's 15-min tick (the sweep
+# before it is budgeted at 480 s).
+BET105_BUDGET_S = float(os.environ.get('BET105_BUDGET_S', '180'))
 
 BET105 = 'Bet105'
 BET105_META = {'source': 'Kibl', 'group': 'sharp', 'clock': 'Kibl insert'}
@@ -202,7 +205,7 @@ def event_series(rows, orient):
     return {'p1': cs.changes_only(cs.clean_points(p1)), 'p2': cs.changes_only(cs.clean_points(p2))}
 
 
-def apply_odds_api(cards, payload, now):
+def apply_odds_api(cards, payload, now, card_state=None):
     """Write every joined event's books onto its card. Returns the log counts."""
     joined, counts = join_events(cards, payload.get('events') or [])
     polled = payload.get('polled_ok_at') or {}
@@ -220,8 +223,11 @@ def apply_odds_api(cards, payload, now):
             checked = _min_iso(now, polled.get(book), e.get('live_from'))
             if polled.get(book) is None:
                 checked = None      # no recorded poll: never claim a check
+            # Cut at the card's actual start, else the vendor's scheduled one: the vendor's
+            # live flip lags the off by ~14-16 min (review 2026-09-26).
             cs.put_chart(c, label, ser, {'source': 'odds-api.io', 'group': 'soft',
-                                         'clock': clock, 'checkedAt': checked})
+                                         'clock': clock, 'checkedAt': checked},
+                         cut_at=cs.card_start(c, card_state, e.get('start_at')))
             lines[label] = lines.get(label, 0) + 1
     counts['lines'] = lines
     return counts
@@ -238,8 +244,11 @@ def bet105_cards(cards, card_state):
         if not ent or str(ent.get('book') or '').lower() != 'bet105':
             continue
         if c.get('finalScore'):
+            # Done once a read has landed at or after the start (checkedAt is capped at
+            # startTs, so it can never pass the finish — review 2026-09-26), or after the
+            # finish when no start is recorded.
             held = (((c.get('oddsMovement') or {}).get('chart') or {}).get('meta') or {}).get(BET105) or {}
-            done_at = cs.ts_iso(c.get('finishedAt')) if c.get('finishedAt') else None
+            done_at = cs.ts_iso(ent.get('startTs')) or cs.ts_iso(c.get('finishedAt'))
             if held.get('checkedAt') and (done_at is None or held['checkedAt'] >= done_at):
                 continue
         out.append((c, k, ent.get('startTs')))
@@ -277,7 +286,7 @@ def main():
               f'lines this tick; held lines keep their old checkedAt and read "no recent data" '
               f'once it ages.')
     if series_payload:
-        c = apply_odds_api(cards, series_payload, now)
+        c = apply_odds_api(cards, series_payload, now, card_state)
         print(f'odds-api.io: books {series_payload.get("books")}; {c["events"]} recorded '
               f'event(s): {c["joined"]} joined, {c["no_card"]} with no board card, '
               f'{c["ambiguous_event"]} matching 2+ cards, {c["ambiguous_card"]} competing for one '
@@ -287,8 +296,16 @@ def main():
     # 2) Bet105, per card, the price-history box's own rows.
     kibl_ok = (series_payload or {}).get('kibl_sweep_ok_at')
     targets = bet105_cards(cards, card_state)
-    wrote = empty = failed = 0
-    for c, key, start_ts in targets:
+    wrote = empty = failed = cut = 0
+    t_start = time.monotonic()
+    # Upcoming cards first, so a budget cut only ever defers a completed card's re-read.
+    targets.sort(key=lambda t: bool(t[0].get('finalScore')))
+    for i, (c, key, start_ts) in enumerate(targets):
+        if time.monotonic() - t_start > BET105_BUDGET_S:
+            cut = len(targets) - i
+            print(f'::warning::Bet105 budget {BET105_BUDGET_S:.0f}s spent — {cut} card(s) wait one tick '
+                  f'(their held lines keep their checkedAt).')
+            break
         try:
             payload = rpc('price_history', {'p_card_key': key}, timeout=30)
         except Exception as e:
@@ -298,12 +315,12 @@ def main():
         ser = bet105_series(payload, c, start_ts)
         checked = _min_iso(now, kibl_ok, start_ts) if kibl_ok else None
         if cs.put_chart(c, BET105, ser if (ser['p1'] or ser['p2']) else None,
-                        dict(BET105_META, checkedAt=checked)):
+                        dict(BET105_META, checkedAt=checked), cut_at=start_ts):
             wrote += 1
         else:
             empty += 1
     print(f'Bet105: {len(targets)} card(s) with Bet105 selected: {wrote} with a line, {empty} with '
-          f'no pre-match rows, {failed} read failure(s). Kibl poller OK at {kibl_ok or "unknown"}.')
+          f'no pre-match rows, {failed} read failure(s), {cut} deferred by the budget. Kibl poller OK at {kibl_ok or "unknown"}.')
 
     write_matches(matches)
     return 0
