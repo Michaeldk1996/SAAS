@@ -16,12 +16,14 @@ import http from 'node:http';
 import zlib from 'node:zlib';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
+import { withStatus, apiNeeds, createApiTennis } from './status.mjs';
 
 export const READ_INTERVAL_MS = 30_000;    // the bots' tick
 export const MIN_GAP_MS = 10_000;          // floor between two reads, whatever the alignment says
 export const ALIGN_MARGIN_MS = 3_000;      // after the bot's expected finish
 export const AMBER_AFTER_S = 90;           // 3 x the read interval (founder, design §5)
 export const PAUSED_AFTER_S = 300;         // rows dim, "as of HH:MM" (design §5)
+export const WINDOW_HOURS = 72;            // founder card 518c56f0 Q4
 
 // Per-source staleness, in seconds of age at read time. Proposal in design §5; tuned on measured data.
 export const STALE_AFTER_S = {
@@ -92,7 +94,22 @@ export function freshness(ageS) {
   return 'ok';
 }
 
-export function createDropsService({ readSnapshot, now = () => Date.now(), origins = DEFAULT_ORIGINS, log = () => {} }) {
+export const BOARD_FRESH_MS = 120e3;       // the 10 s live poller's board; older than this it is not "now"
+
+// Status + the live cut (status.mjs). Never throws: api-tennis trouble leaves the database-side status
+// (live sightings + board) and the cut in place, and the rest reads "unknown" — never un-cut prices.
+export function makeEnrich({ api, now = () => Date.now(), log = () => {} }) {
+  return async function enrich(snap) {
+    const b = snap.board || {};
+    const fresh = b.at && now() - Date.parse(b.at) <= BOARD_FRESH_MS;
+    const board = new Map(fresh ? (b.matches || []).map((m) => [String(m.eventKey), m]) : []);
+    const ctx = { flips: Array.isArray(snap.flips) ? snap.flips : [], board, now: now() };
+    try { if (api) await api.fill(apiNeeds(snap.rows, ctx, api.cache)); } catch (e) { log('api-tennis fill failed'); }
+    return withStatus(snap.rows, Array.isArray(snap.lines) ? snap.lines : [], { ...ctx, byKey: api ? api.byKey() : new Map(), fixtures: api ? api.fixtures() : null });
+  };
+}
+
+export function createDropsService({ readSnapshot, enrich = null, now = () => Date.now(), origins = DEFAULT_ORIGINS, log = () => {} }) {
   const state = {
     snapshot: null,          // last GOOD snapshot
     generatedAtMs: null,     // when that good read finished (our clock)
@@ -108,7 +125,9 @@ export function createDropsService({ readSnapshot, now = () => Date.now(), origi
       const snap = await readSnapshot();
       if (!snap || !Array.isArray(snap.rows) || !Array.isArray(snap.sources)) throw new Error('snapshot shape');
       // lines: every recorded book quoting each flagged line (the pop-up); an older snapshot without it -> []
-      const body = Buffer.from(JSON.stringify({ schema: 1, windowHours: snap.windowHours ?? null, rows: snap.rows, lines: Array.isArray(snap.lines) ? snap.lines : [] }));
+      // enrich: each row's match status and the live cut (drops.md) — rows/lines are served ONLY enriched
+      const fed = enrich ? await enrich(snap) : { rows: snap.rows, lines: Array.isArray(snap.lines) ? snap.lines : [] };
+      const body = Buffer.from(JSON.stringify({ schema: 1, windowHours: snap.windowHours ?? null, rows: fed.rows, lines: fed.lines }));
       const etag = '"' + crypto.createHash('sha1').update(body).digest('base64url') + '"';
       if (etag !== state.rowsEtag) {
         state.rowsBody = body;
@@ -209,9 +228,14 @@ async function main() {
   const pool = new pg.Pool(dbConfig(url, fs.readFileSync(CA_FILE, 'utf8')));
   // an idle client the server drops emits 'error' on the pool; unhandled, it would kill the process and the cache
   pool.on('error', (e) => console.log(new Date().toISOString(), `pool error (${errorCode(e)}): ${e.message}`));
-  const readSnapshot = async () => (await pool.query('select drops_api.snapshot() as j')).rows[0].j;
+  // 72 h: founder card 518c56f0 Q4 (Completed goes back 72 h)
+  const readSnapshot = async () => (await pool.query('select drops_api.snapshot($1) as j', [WINDOW_HOURS])).rows[0].j;
   const origins = (process.env.ALLOWED_ORIGINS || DEFAULT_ORIGINS.join(',')).split(',').map((s) => s.trim()).filter(Boolean);
-  const svc = createDropsService({ readSnapshot, origins, log: (m) => console.log(new Date().toISOString(), m) });
+  const log = (m) => console.log(new Date().toISOString(), m);
+  // the api-tennis key comes from the Fly secret only, and is never logged (status.mjs reports codes)
+  if (!process.env.API_TENNIS_KEY) log('API_TENNIS_KEY not set: finished checks off, missed live sightings read "unknown"');
+  const api = createApiTennis({ key: process.env.API_TENNIS_KEY || '', log });
+  const svc = createDropsService({ readSnapshot, enrich: makeEnrich({ api, log }), origins, log });
   await svc.start();
   const port = Number(process.env.PORT || 8080);
   http.createServer(svc.handle).listen(port, '0.0.0.0', () => console.log(`stennisfy-drops on :${port}`));

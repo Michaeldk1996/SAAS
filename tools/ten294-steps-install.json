@@ -38,27 +38,27 @@
  },
  {
   "name": "time_1",
-  "sql": "select round(extract(epoch from (clock_timestamp() - now())) * 1000) ms, length(s.j::text) bytes from (select drops_api.snapshot() j) s"
+  "sql": "select round(extract(epoch from (clock_timestamp() - now())) * 1000) ms, length(s.j::text) bytes from (select drops_api.snapshot(72) j) s"
  },
  {
   "name": "time_2",
-  "sql": "select round(extract(epoch from (clock_timestamp() - now())) * 1000) ms, length(s.j::text) bytes from (select drops_api.snapshot() j) s"
+  "sql": "select round(extract(epoch from (clock_timestamp() - now())) * 1000) ms, length(s.j::text) bytes from (select drops_api.snapshot(72) j) s"
  },
  {
   "name": "time_3",
-  "sql": "select round(extract(epoch from (clock_timestamp() - now())) * 1000) ms, length(s.j::text) bytes from (select drops_api.snapshot() j) s"
+  "sql": "select round(extract(epoch from (clock_timestamp() - now())) * 1000) ms, length(s.j::text) bytes from (select drops_api.snapshot(72) j) s"
  },
  {
   "name": "time_4",
-  "sql": "select round(extract(epoch from (clock_timestamp() - now())) * 1000) ms, length(s.j::text) bytes from (select drops_api.snapshot() j) s"
+  "sql": "select round(extract(epoch from (clock_timestamp() - now())) * 1000) ms, length(s.j::text) bytes from (select drops_api.snapshot(72) j) s"
  },
  {
   "name": "time_5",
-  "sql": "select round(extract(epoch from (clock_timestamp() - now())) * 1000) ms, length(s.j::text) bytes from (select drops_api.snapshot() j) s"
+  "sql": "select round(extract(epoch from (clock_timestamp() - now())) * 1000) ms, length(s.j::text) bytes from (select drops_api.snapshot(72) j) s"
  },
  {
   "name": "summary",
-  "sql": "with s as (select drops_api.snapshot() j), r as (select x from s, jsonb_array_elements(s.j->'rows') x) select x->>'book' book, x->>'tier' tier, count(*) n, count(*) filter (where x->'latest' is null or x->'latest' = 'null'::jsonb) no_latest, count(*) filter (where (x->>'started')::boolean) started, count(*) filter (where (x->>'pastScheduledStart')::boolean) past_sched, count(*) filter (where x->'open' = 'null'::jsonb) no_open, min(x->>'detectedAt') first_at, max(x->>'detectedAt') last_at from r group by 1, 2 order by 1, 2"
+  "sql": "with s as (select drops_api.snapshot(72) j), r as (select x from s, jsonb_array_elements(s.j->'rows') x) select x->>'book' book, x->>'tier' tier, count(*) n, count(*) filter (where x->'latest' is null or x->'latest' = 'null'::jsonb) no_latest, count(*) filter (where (x->>'started')::boolean) started, count(*) filter (where (x->>'pastScheduledStart')::boolean) past_sched, count(*) filter (where x->'open' = 'null'::jsonb) no_open, min(x->>'detectedAt') first_at, max(x->>'detectedAt') last_at from r group by 1, 2 order by 1, 2"
  },
  {
   "name": "recount",
@@ -66,7 +66,7 @@
  },
  {
   "name": "sources",
-  "sql": "select drops_api.snapshot()->'sources' src, now() db_now"
+  "sql": "select drops_api.snapshot(72)->'sources' src, now() db_now"
  },
  {
   "name": "bot_phase",
@@ -74,7 +74,7 @@
  },
  {
   "name": "full",
-  "sql": "select drops_api.snapshot() j"
+  "sql": "select drops_api.snapshot(72) j"
  },
  {
   "name": "lines_grants",
@@ -83,10 +83,14 @@
  },
  {
   "name": "lines_plan",
-  "sql": "explain (analyze, buffers, format text) select drops_api.lines(24)"
+  "sql": "explain (analyze, buffers, format text) select drops_api.lines(72)"
  },
  {
   "name": "lines_time",
-  "sql": "select round(extract(epoch from (clock_timestamp() - now())) * 1000) ms, jsonb_array_length(l) n, length(l::text) bytes from (select drops_api.lines(24) l) x"
+  "sql": "select round(extract(epoch from (clock_timestamp() - now())) * 1000) ms, jsonb_array_length(l) n, length(l::text) bytes from (select drops_api.lines(72) l) x"
+ },
+ {
+  "name": "status_inputs",
+  "sql": "with s as (select drops_api.snapshot(72) j) select jsonb_array_length(j->'rows') rows_n, jsonb_array_length(j->'flips') flips_n, j->'board'->>'at' board_at, jsonb_array_length(j->'board'->'matches') board_n, jsonb_array_length(j->'lines') lines_n, length(j::text) bytes from s"
  }
 ]

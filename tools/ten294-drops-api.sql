@@ -14,7 +14,7 @@
 --      with its own clock, read with EXACTLY the bot loader's filters and side mapping (ten280_bot.load_ticks /
 --      ten287_bot.load_ticks) but per alert on existing indexes: calling the loaders themselves would
 --      full-scan kibl_line_observations + kibl_now_history every 30 s (independent review, 2026-09-26).
---   Q4 rows = alerts detected in the last 24 h; a started match is flagged, never dropped silently.
+--   Q4 rows = alerts detected in the window (72 h since card 518c56f0 Q4: the server calls snapshot(72)).
 create schema if not exists drops_api;
 revoke all on schema drops_api from public, anon, authenticated;
 
@@ -35,6 +35,8 @@ declare
   v_from  timestamptz := now() - make_interval(hours => p_hours);
   v_rows  jsonb;
   v_src   jsonb;
+  v_flips jsonb;
+  v_board jsonb;
 begin
   with b105 as (
     select a.eval_at,
@@ -169,9 +171,38 @@ begin
                   order by d.runid desc limit 1))
   ) into v_src;
 
+  -- Match status (founder comment bef04c62 + card 518c56f0; drops.md). The Fly app joins these to the rows:
+  --   flips  our 10-second live poller's first live sightings (public.live_flip_log), singles only, and only
+  --          for a player pair that has a row — the join itself (24 h, exactly one) is the app's (status.mjs);
+  --   board  the live poller's current live board (public.live_snapshot), keys + status only.
+  with rk as (
+    select distinct least(drops_api.nk(r->>'playerA'), drops_api.nk(r->>'playerB')) k1,
+                    greatest(drops_api.nk(r->>'playerA'), drops_api.nk(r->>'playerB')) k2
+      from jsonb_array_elements(v_rows) r
+  ), fl as (
+    select f.*, least(drops_api.nk(f.first_player), drops_api.nk(f.second_player)) k1,
+                greatest(drops_api.nk(f.first_player), drops_api.nk(f.second_player)) k2
+      from public.live_flip_log f
+     where f.first_live_seen_at >= v_from - interval '48 hours'
+       and coalesce(f.first_player, '') not like '%/%' and coalesce(f.second_player, '') not like '%/%'
+  )
+  select coalesce(jsonb_agg(jsonb_build_object('eventKey', fl.event_key, 'liveAt', fl.first_live_seen_at,
+                                               'date', fl.event_date, 'time', fl.event_time,
+                                               'p1', fl.first_player, 'p2', fl.second_player)
+                            order by fl.first_live_seen_at), '[]'::jsonb) into v_flips
+    from fl join rk on rk.k1 = fl.k1 and rk.k2 = fl.k2;
+
+  select jsonb_build_object('at', s.updated_at, 'matches',
+           coalesce((select jsonb_agg(jsonb_build_object('eventKey', m->>'event_key', 'status', m->>'event_status', 'live', m->>'event_live'))
+                       from jsonb_array_elements(case when jsonb_typeof(s.board->'matches') = 'array' then s.board->'matches' else '[]'::jsonb end) m),
+                    '[]'::jsonb))
+    into v_board
+    from public.live_snapshot s where s.id = 1;
+
   -- TEN-294 pop-up: every recorded book quoting each flagged line (tools/ten294-drops-lines.sql)
   return jsonb_build_object('schema', 1, 'dbNow', v_now, 'windowHours', p_hours,
-                            'rows', v_rows, 'sources', v_src, 'lines', drops_api.lines(p_hours));
+                            'rows', v_rows, 'sources', v_src, 'lines', drops_api.lines(p_hours),
+                            'flips', v_flips, 'board', v_board);
 end $$;
 
 revoke all on function drops_api.snapshot(integer) from public, anon, authenticated;
