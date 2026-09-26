@@ -16249,7 +16249,11 @@ function aOddsChartSvg(enabled, grid, favColor, dogColor, favName, dogName, snap
   const nLab=Math.min(6,N); for(let k=0;k<nLab;k++){ const i=nLab<2?0:Math.round(k*(N-1)/(nLab-1)); const lb = i===0?'Open':(i===N-1?'Now':aOddsAxis(grid[i])); s+='<text x="'+X(i).toFixed(1)+'" y="'+(H-8)+'" text-anchor="middle" font-size="9.5" font-family="\'IBM Plex Mono\',monospace" fill="#6e7a93">'+lb+'</text>'; }
   // One polyline per unbroken run: a null inside a line is a gap (TEN-295 Wave 2), never bridged.
   const lineRuns=(vals,Y)=>{ const runs=[]; let p=''; for(let i=0;i<vals.length;i++){ if(vals[i]==null){ if(p){ runs.push(p); p=''; } continue; } p+=(p?' ':'')+X(i).toFixed(1)+','+Y(vals[i]).toFixed(1); } if(p) runs.push(p); return runs; };
-  enabled.forEach(b=>{ lineRuns(b.favVals,YA).forEach(pa=>{ s+='<polyline points="'+pa+'" fill="none" stroke="'+favColor+'" stroke-width="2" stroke-dasharray="'+b.dash+'" stroke-linecap="round" stroke-linejoin="round" opacity="0.92"/>'; }); lineRuns(b.dogVals,YB).forEach(pb=>{ s+='<polyline points="'+pb+'" fill="none" stroke="'+dogColor+'" stroke-width="2" stroke-dasharray="'+b.dash+'" stroke-linecap="round" stroke-linejoin="round" opacity="0.92"/>'; }); });
+  // A one-column run beside a gap is a real price held too briefly for a segment: a dot, so it
+  // is never silently lost (review 2026-09-26). Only on books with gaps — Wave 1 output unchanged.
+  const runSvg=(pts,color,b)=>{ if(pts.indexOf(' ')<0 && (b.meta.gaps||[]).length){ const xy=pts.split(','); return '<circle class="aodds-run1" cx="'+xy[0]+'" cy="'+xy[1]+'" r="2.4" fill="'+color+'" opacity="0.92"/>'; }
+    return '<polyline points="'+pts+'" fill="none" stroke="'+color+'" stroke-width="2" stroke-dasharray="'+b.dash+'" stroke-linecap="round" stroke-linejoin="round" opacity="0.92"/>'; };
+  enabled.forEach(b=>{ lineRuns(b.favVals,YA).forEach(pa=>{ s+=runSvg(pa,favColor,b); }); lineRuns(b.dogVals,YB).forEach(pb=>{ s+=runSvg(pb,dogColor,b); }); });
   // Snapshot emphasis — the Opening/Now toggle highlights that column with a vertical guide,
   // enlarged dots and (for a readable number of books) per-book value pills, so the selected
   // snapshot's prices read at a glance. The column lands on the Open/Now x-axis label.
@@ -16479,7 +16483,8 @@ function buildOddsSection(m){
         +'<span style="'+mono+' font-size:12px; font-weight:700; color:'+chgColor+';">'+chg+'</span></div></div>';
   const aChip = chip(favName, bestFav!=null?bestFav.toFixed(2):'·', pctTxt(favMove), pctColor(favMove), aColor, 'rgba(91,155,255,0.08)', 'rgba(91,155,255,0.35)');
   const bChip = chip(dogName, bestDog!=null?bestDog.toFixed(2):'·', pctTxt(dogMove), pctColor(dogMove), bColor, 'rgba(123,145,180,0.08)', 'rgba(123,145,180,0.3)');
-  const nPriced = AODDS_ORDER.filter(k => withData.some(b => b.name === k)).length;
+  // A book out of its feed right now (an open gap) is not "priced" (review 2026-09-26).
+  const nPriced = AODDS_ORDER.filter(k => withData.some(b => b.name === k && b.pulled == null)).length;
   const subline = escapeHtml(p1Fav?favName:dogName)+' favoured · <span class="aodds-priced">'+nPriced+' of '+AODDS_ORDER.length+' books priced</span>'+(dateSpan?' · '+dateSpan:'');
   const moveHead = '<div style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px; margin:28px 0 6px;">'
     +'<div><span style="font-size:17px; font-weight:800;">Odds movement</span>'

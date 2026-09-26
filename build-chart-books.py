@@ -101,8 +101,12 @@ APITENNIS_WINDOW_DAYS = 2
 
 
 def _scheduled_start(m):
+    """The card's scheduled start as a UTC instant. `date`/`time` are api-tennis's ACCOUNT wall
+    clock, ~UTC+2 (bsp-pipeline.js closing cutoff; odds.md card-state key) — read as UTC the
+    cut lands ~2 h into the match (review 2026-09-26: Cina v Muller stepped to 08:30Z on a
+    06:30Z start). A late real start only drops real pre-start points; never adds in-play ones."""
     t = m.get('time') or ''
-    return f"{m.get('date')}T{t[:5]}:00Z" if m.get('date') and len(t) >= 5 and t[2] == ':' else None
+    return f"{m.get('date')}T{t[:5]}:00+02:00" if m.get('date') and len(t) >= 5 and t[2] == ':' else None
 
 
 def apitennis_book_series(rows, cut=None, down=()):
@@ -110,9 +114,9 @@ def apitennis_book_series(rows, cut=None, down=()):
     order) -> ({'p1','p2'}, gaps). Home -> p1, Away -> p2.
 
     A point is a PAIR, emitted at a poll where both sides are quoted and the pair passes the
-    odds.md guards (both >= 1.01, overround <= 20%; a failing pair gives no point, as on the
-    Wave 1 lines). A `removed` row on either side opens a GAP — the book stopped quoting —
-    which closes when both sides are quoted again: the page never draws across it. Rows
+    odds.md guards (both >= 1.01, overround <= 20%). A `removed` row on either side, or a pair
+    failing the guards (a suspended market), opens a GAP, which closes at the next poll with a
+    valid quoted pair: the page never draws across it. Rows
     after `cut` (the card's start) or at/after the first in-play row are dropped. `down`
     ([[from, to], ...]) = the collector was not polling: a gap for any line already open."""
     cut = cs.ts_iso(cut) if cut else None
@@ -154,7 +158,11 @@ def apitennis_book_series(rows, cut=None, down=()):
                 open_gap = t
             continue
         if not (h >= cs.PRICE_FLOOR and a >= cs.PRICE_FLOOR) or 1.0 / h + 1.0 / a > 1.20:
-            continue                          # a suspended pair: no point, and a gap stays open
+            # A suspended pair is not a price (odds.md price guards): the line stops here
+            # rather than carrying the last good price across the suspension (review 2026-09-26).
+            if started and open_gap is None:
+                open_gap = t
+            continue
         if open_gap is not None:
             gaps.append([open_gap, t])
             open_gap = None

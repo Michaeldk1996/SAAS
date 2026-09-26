@@ -384,6 +384,26 @@ test('wave 2: a book gone from the feed reads "not in feed since", no Now, never
   assert.ok(!/font-size:22px; font-weight:800;">9\.90</.test(h), 'never in the summary');
 });
 
+test('wave 2: a one-column run beside a gap is a dot; a book out of its feed is not "priced"', () => {
+  const now = Date.now();
+  const A = build(); A.reset();
+  const m = fixture({ now, withAt: true });
+  m.oddsMovement.chart.books['Betano'] = { p1: [[iso(now - 5 * H), 2.5], [iso(now - 2 * H), 2.4]], p2: [[iso(now - 5 * H), 1.55], [iso(now - 2 * H), 1.6]] };
+  m.oddsMovement.chart.meta['Betano'].gaps = [[iso(now - 5 * H + 60e3), iso(now - 2 * H)]];
+  A.buildOddsSection(m);
+  A.state().off = Object.fromEntries(Object.keys(A.aOddsBooksOf(m).books).filter(b => b !== 'Betano').map(b => [b, true]));
+  const h = A.buildOddsSection(m);
+  assert.ok((h.match(/class="aodds-run1"/g) || []).length >= 2, 'the 1-min price before the gap is a dot on both panels');
+  const A2 = build(); A2.reset();
+  const h2 = A2.buildOddsSection(fixture({ now, withAt: true }));   // 6 priced
+  const m3 = fixture({ now, withAt: true }); m3.oddsMovement.chart.meta['Betano'].gaps = [[iso(now - H), null]];
+  A2.reset();
+  assert.ok(/6 of 13 books priced/.test(h2) && /5 of 13 books priced/.test(A2.buildOddsSection(m3)), 'Betano out of the feed -> 5 of 13');
+  // Wave 1 books (no gaps) never get dots
+  A2.reset();
+  assert.ok(!A2.buildOddsSection(fixture({ now })).includes('aodds-run1'));
+});
+
 test('wave 2: the Key Factors mini-chart never picks a book with a gap', () => {
   const now = Date.now();
   const A = build();
@@ -394,6 +414,40 @@ test('wave 2: the Key Factors mini-chart never picks a book with a gap', () => {
   assert.ok(A.akOddsMoveSvg(m).includes('<polyline'), 'drawn without a gap');
   m.oddsMovement.chart.meta['Betano'].gaps = [[iso(now - 6 * H), iso(now - 4 * H)]];
   assert.ok(!A.akOddsMoveSvg(m).includes('<polyline'), 'left out with one');
+});
+
+// ── the TEN-216 collector's tick(), EXECUTED with stubbed I/O (review 2026-09-26) ───────
+const coll = readFileSync(join(HERE, 'tools/ten216-supabase-collector.mjs'), 'utf8');
+test('collector: a failed insert is re-sent by the next poll; an ok heartbeat only after rows land', async () => {
+  const sliceFn = (sig) => { const st = coll.indexOf(sig); assert.ok(st >= 0, sig); let d = 0, i = coll.indexOf('{', st);
+    for (; i < coll.length; i++) { if (coll[i] === '{') d++; else if (coll[i] === '}') { d--; if (d === 0) break; } } return coll.slice(st, i + 1); };
+  const constLine = (name) => { const st = coll.indexOf(`const ${name}`); return coll.slice(st, coll.indexOf(';\n', st) + 1); };
+  const inserts = [], polls = [];
+  let failNext = true, odds = { m1: { 'Home/Away': { Home: { Pncl: '2.00' }, Away: { Pncl: '1.80' } } } };
+  const make = new Function('env', `
+    const INTERVAL_MIN = 5, MAX_ROWS = 1e9, SEP = String.fromCharCode(1);
+    const iso = d => new Date(d).toISOString(), ymd = d => new Date(d).toISOString().slice(0, 10);
+    ${constLine('keyOf')} ${sliceFn('const normPrice')};
+    const windowDates = () => ({ start: 'a', stop: 'b' });
+    const apiTennis = async (m) => m === 'get_odds' ? { text: '{}', json: { success: 1, result: env.odds() } } : { json: { result: [] } };
+    const insertRows = async (rows) => { if (env.fail()) throw new Error('insert HTTP 500'); env.inserts.push(...rows); return rows.length; };
+    const rowCount = async () => 0, uploadRaw = async () => {}, gzipSync = () => Buffer.from('');
+    const writePoll = async (r) => { env.polls.push(r); };
+    const console = { log() {}, error() {} };
+    ${sliceFn('function flattenOdds')} ${sliceFn('async function tick')}
+    return tick;`);
+  const tick = make({ odds: () => odds, fail: () => { const f = failNext; failNext = false; return f; }, inserts, polls });
+  const state = new Map(), t0 = new Date();
+  await assert.rejects(tick(state, t0), /insert HTTP 500/);          // poll 1: the insert fails
+  assert.equal(polls.length, 0, 'no heartbeat for a poll whose rows did not land');
+  assert.equal(state.size, 0, 'the state did not move');
+  await tick(state, t0);                                              // poll 2: re-sent
+  assert.deepEqual(inserts.map(r => [r.selection, r.price, r.change_kind]).sort(),
+                   [['Away', '1.80', 'first_seen'], ['Home', '2.00', 'first_seen']]);
+  assert.equal(polls.length, 1); assert.equal(polls[0].ok, true);
+  odds = { m1: { 'Home/Away': { Home: { Pncl: '2.00' } } } };        // Away pulled
+  await tick(state, t0);
+  assert.deepEqual(inserts.slice(2).map(r => [r.selection, r.change_kind]), [['Away', 'removed']], 'the removal is recorded');
 });
 
 // ── the pipeline carries `chart` into the shard (bsp-pipeline.js, EXECUTED) ──────────
