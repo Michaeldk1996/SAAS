@@ -126,6 +126,16 @@ jobs:
                          input=f'DROPS_DB_URL_B64={b64}\n', text=True, check=True, capture_output=True)
           print('credential set, secret staged')
           PY
+      - name: api-tennis key -> Fly secret (match status; never printed)
+        if: steps.gate.outputs.go == '1'
+        env:
+          API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
+        run: |
+          # drops.md "Match status is api-tennis's": the finished check reads get_fixtures by event_key.
+          if [ -z "$API_TENNIS_KEY" ]; then echo "::error::API_TENNIS_KEY repo secret is missing"; exit 1; fi
+          # stdin, never argv; staged, so the deploy below applies it with the new image
+          printf 'API_TENNIS_KEY=%s\n' "$API_TENNIS_KEY" | flyctl secrets import --stage -a stennisfy-drops > /dev/null
+          echo "API_TENNIS_KEY staged"
       - name: Deploy
         if: steps.gate.outputs.go == '1'
         # run FROM the app dir: with a positional dir flyctl resolves --config relative to it
