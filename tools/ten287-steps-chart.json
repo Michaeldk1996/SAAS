@@ -1,14 +1,54 @@
 [
  {
-  "name": "selftest",
-  "sql": "do $t$\ndeclare r text := ''; x jsonb; lg text;\nbegin\n  r := r || 'now=' || public.ten216_collector_check(now());\n  r := r || ' | +3h(no hb, limit120)=' || public.ten216_collector_check(now() + interval '3 hours');\n  r := r || ' | +3h10m=' || public.ten216_collector_check(now() + interval '190 minutes');\n  r := r || ' | 10 Dec with the alert open (expect off-season, NOT recovered)=' || public.ten216_collector_check('2026-12-10T12:00:00Z'::timestamptz);\n  r := r || ' | alert still open=' || (select is_open::text from public.ten216_watch_alerts where condition='collector_stale');\n  insert into public.ten216_test_polls (poll_id, observed_at, ok) values ('selftest', now(), true);\n  r := r || ' | hb now, +70m(limit60)=' || public.ten216_collector_check(now() + interval '70 minutes');\n  r := r || ' | hb now, +30m=' || public.ten216_collector_check(now() + interval '30 minutes');\n  select string_agg(kind || ':' || coalesce(channel,'-') || ':' || delivered, ', ' order by id) into lg from public.ten216_watch_log;\n  r := r || ' | log=' || coalesce(lg, 'none');\n  select public.chart_apitennis_series(array['12166088'], '2026-09-26T03:55:00Z') into x;\n  r := r || ' | rpc down after hb=' || (x->'down')::text || ' last_ok=' || (x->>'last_ok_poll_at');\n  raise exception 'SELFTEST (rolled back) %', r;\nend $t$"
+  "name": "hb",
+  "sql": "select count(*) total, count(*) filter (where ok) ok_n, count(*) filter (where not ok) fail_n, min(observed_at) first_at, max(observed_at) latest_at, max(observed_at) filter (where ok) latest_ok, now() db_now from public.ten216_test_polls where poll_id <> 'selftest'"
  },
  {
-  "name": "after_selftest_clean",
-  "sql": "select (select count(*) from public.ten216_watch_log) log_rows, (select count(*) from public.ten216_watch_alerts) alert_rows, (select count(*) from public.ten216_test_polls) polls_rows, (select max(observed_at) from public.ten216_test_odds_changes) newest_change"
+  "name": "hb_gaps",
+  "sql": "select prev_at, observed_at, observed_at-prev_at gap from (select observed_at, lag(observed_at) over (order by observed_at) prev_at from public.ten216_test_polls where ok) x where observed_at-prev_at > interval '10 minutes' order by 1"
  },
  {
-  "name": "cron_runs",
+  "name": "hb_per_hour",
+  "sql": "select date_trunc('hour',observed_at) h, count(*) n, count(*) filter (where ok) ok from public.ten216_test_polls group by 1 order by 1"
+ },
+ {
+  "name": "watch_state",
+  "sql": "select public.ten216_collector_check(now()) as check_now, (select exists(select 1 from public.ten216_test_polls where ok)) has_hb, (select max(observed_at) from public.ten216_test_odds_changes) newest_change"
+ },
+ {
+  "name": "watch_alerts",
+  "sql": "select * from public.ten216_watch_alerts"
+ },
+ {
+  "name": "watch_log",
+  "sql": "select id, at, condition, kind, channel, delivered, left(message,160) msg from public.ten216_watch_log order by id"
+ },
+ {
+  "name": "watch_cron",
+  "sql": "select status, count(*), min(start_time), max(start_time) from cron.job_run_details where jobid=(select jobid from cron.job where jobname='ten216-collector-watchdog') group by 1"
+ },
+ {
+  "name": "watch_cron_last",
   "sql": "select status, return_message, start_time from cron.job_run_details where jobid=(select jobid from cron.job where jobname='ten216-collector-watchdog') order by start_time desc limit 3"
+ },
+ {
+  "name": "pm_log",
+  "sql": "select delivered, condition, count(*), min(at), max(at) from public.postmatch_alert_log group by 1,2 order by 1,2"
+ },
+ {
+  "name": "pm_open",
+  "sql": "select condition, is_open, opened_at, last_sent_at, left(detail,200) from public.postmatch_alerts"
+ },
+ {
+  "name": "vault_names",
+  "sql": "select name from vault.secrets where name like '%telegram%' order by 1"
+ },
+ {
+  "name": "pm_send_src",
+  "sql": "select position('ops_telegram' in pg_get_functiondef('public.postmatch_send_alert(text,text,text)'::regprocedure))>0 uses_ops"
+ },
+ {
+  "name": "crons",
+  "sql": "select jobname, schedule, active from cron.job order by 1"
  }
 ]
