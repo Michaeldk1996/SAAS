@@ -12,7 +12,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-      # Run 14: TEN-295 — reinstall chart_book_series (review fix: deterministic tie-break), service_role only.
+      # Run 15: READ-ONLY — TEN-295 Damm v Hurkacz per-book trace (recorder events/ticks/RPC). Writes nothing.
       - name: SQL steps (encrypted output)
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
