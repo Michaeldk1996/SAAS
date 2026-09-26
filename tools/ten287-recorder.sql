@@ -193,9 +193,10 @@ begin
         values (r.event_id, r.book, ten287_rec.num(body #>> '{opening,home}'), ten287_rec.num(body #>> '{opening,away}'),
                 case when ten287_rec.num(body #>> '{opening,timestamp}') is not null
                      then to_timestamp(ten287_rec.num(body #>> '{opening,timestamp}') / 1000.0) end,
-                200, now())
+                case when ten287_rec.num(body #>> '{opening,home}') is not null then 200 else -1 end, now())   -- -1: 200 but no opening → retried after 1 h
         on conflict (event_id, book) do update set open_home = excluded.open_home, open_away = excluded.open_away,
-               open_at = excluded.open_at, status_code = 200, fetched_at = now();
+               open_at = excluded.open_at, status_code = excluded.status_code, fetched_at = now()
+          where o.status_code is distinct from 200;
       elsif jsonb_typeof(body) = 'array' then
         items := jsonb_array_length(body);
         for ev in select * from jsonb_array_elements(body) loop

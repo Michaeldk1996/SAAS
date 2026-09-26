@@ -49,6 +49,8 @@ create table if not exists ten287_bot.alerts (
     created_at      timestamptz not null default now()
 );
 create index if not exists alerts_cooldown_idx on ten287_bot.alerts (mode, run_id, book, event_id, eval_at);
+-- the 30-s load reads one book over a time range
+create index if not exists ticks_book_upd_idx on ten287_rec.ticks (book, book_updated_at);
 
 create table if not exists ten287_bot.config (
     id                   boolean primary key default true check (id),
@@ -111,7 +113,7 @@ begin
     join ten287_rec.events e using (event_id)
     cross join lateral (values ('home', t.back_home), ('away', t.back_away)) s(side, price)
     where t.book = p_book and e.tier is not null
-      and t.event_status = 'pending'
+      and coalesce(t.event_status, e.status) = 'pending'   -- a tick without a status falls back to the event's current one
       and s.price >= 1.01 and t.book_updated_at is not null
       and t.book_updated_at between p_from and p_to and t.seen_at <= p_to
   ),
@@ -165,7 +167,7 @@ begin
         select distinct on (event_id, side) event_id, side, price as cur_price, at as cur_at
         from pg_temp.t287
         where known_at <= e and at <= e and at > e - p_window
-        order by event_id, side, at desc
+        order by event_id, side, at desc, known_at desc
       )
       select cur.*, r.price as ref_price, r.at as ref_at,
              round((r.price - cur.cur_price) / r.price * 100, 2) as pct_10m
@@ -173,7 +175,7 @@ begin
       cross join lateral (
         select x.price, x.at from pg_temp.t287 x
         where x.event_id = cur.event_id and x.side = cur.side and x.at <= e - p_window and x.known_at <= e
-        order by x.at desc limit 1) r
+        order by x.at desc, x.known_at desc limit 1) r
       where (p_floor is null or cur.cur_price >= p_floor)
         and (r.price - cur.cur_price) / r.price * 100 >= p_threshold
       order by pct_10m desc, event_id, side
@@ -267,7 +269,9 @@ create or replace function ten287_bot.startup() returns bigint
 language plpgsql as $$
 declare rid bigint; msg text;
 begin
-  if exists (select 1 from ten287_bot.events where kind = 'startup' and delivery in ('queued', 'sent')) then
+  perform pg_advisory_xact_lock(287287);
+  -- any earlier attempt that actually went out (queued, sent, or failed after sending) blocks a repeat
+  if exists (select 1 from ten287_bot.events where kind = 'startup' and delivery <> 'unsent: no vault secret') then
     return null;
   end if;
   msg := concat_ws(chr(10),
