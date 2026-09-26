@@ -1,0 +1,57 @@
+[
+ {
+  "name": "vault_tg_token",
+  "vault_from_env": "TELEGRAM_BOT_TOKEN",
+  "vault_name": "ten294_telegram_bot_token",
+  "required": true,
+  "stop_on_error": true
+ },
+ {
+  "name": "vault_tg_chat",
+  "vault_from_env": "TELEGRAM_CHAT_ID",
+  "vault_name": "ten294_telegram_chat_id",
+  "required": true,
+  "stop_on_error": true
+ },
+ {
+  "name": "install_watchdog",
+  "sql_files": ["tools/ten294-drops-watchdog.sql"],
+  "transaction": true,
+  "required": true,
+  "stop_on_error": true
+ },
+ {
+  "name": "schedule",
+  "sql": "select cron.schedule('ten294_drops_watchdog', '* * * * *', 'select drops_watch.tick()') as jobid",
+  "required": true,
+  "stop_on_error": true
+ },
+ {
+  "name": "selftest_send",
+  "sql": "select drops_watch.send('selftest', 'selftest', E'🧪 DROPS WATCHDOG — TEST PING\\n\\nThe stall-alert path for the drops page is installed: pg_cron checks https://stennisfy-drops.fly.dev/health every minute and alerts this chat when the endpoint is unreachable 3 times in a row or its data is stale. No action needed.') is not null as queued",
+  "required": true,
+  "stop_on_error": true
+ },
+ {"sleep": 75},
+ {
+  "name": "settle",
+  "sql": "select drops_watch.tick() as condition"
+ },
+ {
+  "name": "selftest_delivered",
+  "sql": "do $$ begin if not exists (select 1 from drops_watch.messages where kind = 'selftest' and delivery = 'sent' and created_at > now() - interval '10 minutes') then raise exception 'selftest ping not confirmed sent: %', (select delivery from drops_watch.messages where kind = 'selftest' order by id desc limit 1); end if; end $$; select 'sent' as selftest",
+  "required": true
+ },
+ {
+  "name": "messages",
+  "sql": "select id, kind, condition, delivery, created_at from drops_watch.messages order by id desc limit 5"
+ },
+ {
+  "name": "checks",
+  "sql": "select id, fired_at, status_code, body->>'ok' ok, body->>'ageS' age_s, body->>'freshness' freshness, error from drops_watch.checks order by id desc limit 5"
+ },
+ {
+  "name": "state_and_job",
+  "sql": "select s.condition, s.since, j.jobname, j.schedule, j.active from drops_watch.state s, cron.job j where j.jobname = 'ten294_drops_watchdog'"
+ }
+]

@@ -4,6 +4,8 @@
 #           results ENCRYPTED to tools/ten294-pub.pem (public repo; Bet105 prices are partner-granted).
 #   deploy  only when FLY_DROPS_API_TOKEN exists: region check, drops_reader credential (SCRAM verifier, set
 #           once, never printed), Fly secret, flyctl deploy, then a read-back of /status.json.
+#   watchdog  once /health answers: Telegram secrets -> Vault (own names), install + schedule drops_watch,
+#           send a test ping and go red unless Telegram CONFIRMED it (pg_net 2xx).
 name: ten294-drops
 on:
   push:
@@ -136,3 +138,32 @@ jobs:
             sleep 10
           done
           echo "::error::no good /status.json after 2 min"; exit 1
+
+  watchdog:
+    needs: deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      # a skipped deploy (no token) still leaves `deploy` green — never arm the watchdog on an endpoint that isn't up
+      - name: Endpoint answers /health
+        run: |
+          code=$(curl -s -o health.json -w '%{http_code}' https://stennisfy-drops.fly.dev/health || true)
+          python3 -c 'import json;h=json.load(open("health.json"));print("health",h["ok"],h["freshness"])' \
+            || { echo "::error::no /health body (HTTP $code) — watchdog NOT installed"; exit 1; }
+      - name: Install + schedule the watchdog, test ping (encrypted output)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          TEN294_STEPS: tools/ten294-steps-watchdog.json
+        run: python3 tools/ten294-sql.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ten294-watchdog
+          path: |
+            out/result.enc
+            out/pass.enc
+          retention-days: 2

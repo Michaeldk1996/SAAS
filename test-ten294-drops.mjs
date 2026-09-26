@@ -301,3 +301,21 @@ test('watchdog SQL: safe JSON cast, anti-flap recovery, send back-off, own vault
   assert.match(sql, /v_kind := split_part\(cond, ':', 1\)/);
   assert.match(sql, /if v_kind is distinct from st\.condition then/);
 });
+
+test('watchdog arming: own vault names from the drop-alert chat, scheduled once, test ping must be CONFIRMED sent', () => {
+  const steps = JSON.parse(read('tools/ten294-steps-watchdog.json'));
+  const by = Object.fromEntries(steps.filter((x) => x.name).map((x) => [x.name, x]));
+  assert.equal(by.vault_tg_token.vault_name, 'ten294_telegram_bot_token');
+  assert.equal(by.vault_tg_chat.vault_name, 'ten294_telegram_chat_id');
+  assert.equal(by.vault_tg_chat.vault_from_env, 'TELEGRAM_CHAT_ID', 'the drop alerts\' chat (founder Q5), not the ops chat');
+  assert.match(by.schedule.sql, /cron\.schedule\('ten294_drops_watchdog', '\* \* \* \* \*', 'select drops_watch\.tick\(\)'\)/);
+  // queued is not delivered: the run goes red unless pg_net saw a 2xx from Telegram
+  assert.equal(by.selftest_delivered.required, true);
+  assert.match(by.selftest_delivered.sql, /delivery = 'sent'/);
+  const names = steps.map((x) => x.name ?? 'sleep');
+  assert.ok(names.indexOf('selftest_send') < names.indexOf('sleep') && names.indexOf('sleep') < names.indexOf('selftest_delivered'));
+  const wf = read('.github/workflows/ten294-drops.yml');
+  assert.match(wf, /watchdog:\n\s+needs: deploy/);
+  assert.match(wf, /TELEGRAM_CHAT_ID: \$\{\{ secrets\.TELEGRAM_CHAT_ID \}\}/);
+  assert.match(wf, /watchdog NOT installed/, 'never armed against an endpoint that is not up');
+});
