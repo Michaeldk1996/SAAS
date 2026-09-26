@@ -48,9 +48,11 @@ Design-file values with no HANDOFF name (the promo icon tile): `promo-tile #1721
 - **No chrome gradients / shadows / blur.** Remaining sites must be on the data-viz list below.
 - **Logo**: `assets/logo-dark-transparent.png`, first item in the sidebar panel (margin `0 8px 26px`), rendered
   26.0 × 138.8px, no box behind it. Icon-only slots use `assets/ring-transparent.png`.
-- **Brand outside the dashboard** (founder ruling TEN-285, 2026-09-26): `verify.html` (`.brand-id`) and
-  `funnel.html` (`.brand`) show `logo-dark-transparent.png` at 26px, width auto, no tile, no "BSP CONSULT /
-  Tennis edge" wordmark. Exception: the funnel footer's small ring beside the © line. **Favicon**: every page
+- **Brand outside the dashboard** (founder rulings TEN-285, 2026-09-26): `verify.html` (`.brand-id`),
+  `funnel.html` (`.brand`) and `auth.html` (`.brand`) show `logo-dark-transparent.png` at 26px, width auto, no
+  tile, no old wordmark ("BSP CONSULT / Tennis edge", "STENNISFY / ANALYTICS"). The funnel footer shows the
+  ring with no box and the line "© 2026 Stennisfy". Page titles and body copy are unchanged (founder: leave).
+  **Favicon**: every page
   the pipeline publishes has exactly one `<link rel="icon" type="image/png" href="assets/ring-transparent.png">`
   in `<head>`. Locked by `test-ten285-brand.mjs`.
 - **Hairlines** are written `0.33px`. Compared with the design **in the same browser at the same DPR** they are
