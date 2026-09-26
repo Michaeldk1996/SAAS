@@ -150,6 +150,8 @@ const GLYPHS = {
   'Matches': [['path', 'M3 6.5h14M3 10h14M3 13.5h14']],
   'Live': [['path', 'M10 8.5a1.5 1.5 0 100 3 1.5 1.5 0 000-3M6.8 6.8a4.5 4.5 0 000 6.4M13.2 6.8a4.5 4.5 0 010 6.4M4.6 4.6a7.6 7.6 0 000 10.8M15.4 4.6a7.6 7.6 0 010 10.8']],
   'Trading Report': [['path', 'M3.5 15.5 7 10l3 2.5 4-7M13 3.5h3.5V7']],
+  // TEN-294: the 12a portal reference carries Dropping Odds between Trading Report and Series
+  'Dropping Odds': [['path', 'M3.5 5.5 8 10l3-2.5 5.5 6M16.5 9.5v4h-4']],
   'Series': [['path', 'M3 14.5c2.5 0 3.2-3.4 5-3.4s2.3 2.2 4 2.2 2.6-4.8 5-4.8']],
   'Players': [['path', 'M10 10a3 3 0 100-6 3 3 0 000 6ZM4.5 16a5.5 5.5 0 0111 0']],
   'Head to Head': [['path', 'M7 4v12M13 4v12M3.5 8.5h3M13.5 11.5h3']],
@@ -171,11 +173,12 @@ function glyphProblems(html) {
   if (Object.keys(got).length !== Object.keys(GLYPHS).length) p.push(`nav has ${Object.keys(got).length} items`);
   return p;
 }
-test('C · all 11 nav glyphs are the design paths, element for element', () => {
+test('C · all 12 nav glyphs are the design paths, element for element', () => {
   assert.deepEqual(glyphProblems(DASH), []);
   const mut = {
     liveCircle: DASH.replace('<svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M10 8.5a1.5', '<svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="10" r="2.2"/><path d="M10 8.5a1.5'),
     oldTrading: DASH.replace('M3.5 15.5 7 10l3 2.5 4-7M13 3.5h3.5V7', 'M3 16V4M3 16h14M7 13l3-4 3 2 3.5-5'),
+    dropsGlyph: DASH.replace('M3.5 5.5 8 10l3-2.5 5.5 6M16.5 9.5v4h-4', 'M3.5 5.5 8 10l3-2.5 5.5 6'),
   };
   for (const [name, html] of Object.entries(mut)) assert.notDeepEqual(glyphProblems(html), [], `mutant survived: ${name}`);
 });

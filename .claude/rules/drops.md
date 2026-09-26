@@ -26,9 +26,25 @@ answers on card 37612d3d (TEN-294 doc `design`). Suite: `test-ten294-drops.mjs`.
   Reads run every 30 s (the bots' tick), aligned to 3 s after the Bet105 bot's run: never less than 10 s apart and never more than 33 s.
 
 - **Stale data is never presented as current.**
-  **Test:** `generatedAt` advances only on a successful read. The page shows "Updated Xs ago", turns amber past 90 s (3× the read interval), and past 5 min dims its rows and labels them "as of HH:MM UTC".
+  **Test:** `generatedAt` advances only on a successful read. The page shows "Live · updated Xs ago" from `generatedAt` (data time, never the fetch time), its dot turns amber past 90 s (3× the read interval), and past 5 min — or when the endpoint cannot be reached — it switches to the disconnected state: rows dimmed, "Prices updated N min ago", and the export's banner as drawn: **FEED DISCONNECTED** · "Showing prices as of HH:MM UTC. New moves will not appear until the feed reconnects." · **Reconnect** (a refetch).
   Before the first good read, `/drops.json` answers 503, never an empty list.
-  *User-facing wording names data time only, never a feed, bot or service* (non-negotiable: no infrastructure warnings to end users). Source-by-source health lives in `/status.json` and the watchdog.
+  *Exception to CLAUDE.md's "no infrastructure warning" non-negotiable* (founder, card 79e9db02 Q3, 2026-09-26): this one banner, worded exactly as the export draws it. Nothing else on the page names a feed, bot or service. Source-by-source health lives in `/status.json` and the watchdog.
+
+## The Dropping Odds page (export `design_handoff_dropping_odds`, LOCKED; founder card 79e9db02, 2026-09-26)
+
+Mapping measured in TEN-297 doc `feed-mapping`. Page files: `drops-page.js`, `drops-page.css`; suite `test-ten294-drops.mjs`.
+
+- **A row is one selection × bookmaker, and its drop is the export's: `(open − now) / open`.** "Open" is the feed's `open.price`, "now" its `latest.price`. Repeat alerts on the same selection at the same book collapse to one row (the newest alert). Only rows whose price has **shortened** since open are listed; a row with no `open` or no `latest` is not listed.
+  **Test:** for every rendered row, the drop figure equals `(open − latest) / open × 100` to one decimal, and is > 0. The bot's `dropPct` is never the drop figure.
+  The subtitle says the list is lines **flagged in the last 24h**, because only bot-alerted selections reach the feed.
+- **WINDOW: "Since open" is the default and means everything the feed holds — 24h of flagged moves.** 12h and 24h filter on the alert's `detectedAt`. 48h is not backed (the feed holds 24h) and is shown disabled.
+  **Test:** "Since open" and "24h" return the same rows while the feed's `windowHours` is 24; 48h cannot be selected.
+- **BOOKS Sharp/Soft comes from `odds.md`'s ruled table** (Bet105 Sharp, Superbet Soft), never guessed. A book absent from that table is listed under neither group and only under "All".
+- **Markets: only Match winner is tracked.** The other four tabs show "No drops on this market" and their count is "—", never 0.
+- **Surface and event are not in the feed**: the Surface control is disabled at "—", the detail line omits the event, and search matches player names only.
+- **The price-move modal shows only recorded prices** (Q4): the row's own book's open, pre-drop, dropped-to and latest as dots on the last-24h axis (a price older than 24h is off the axis; the dashed open line still marks its level), dashed where snapshots are > 15% of the axis apart, nothing interpolated. The book strip holds only books that have a row for the same selection. Rank, Elo, surface, round and event are "—". There is no match-analysis link.
+- **Alerts is shown disabled with "Coming soon"** (Q5): no pop-over, no toggle, until a per-member alert backend exists.
+- **No placeholder ever ships.** **Test:** the page files contain none of the export's sample names (Morita, Beleza, Brandt…), no "Book A"–"Book G", no `randomuser.me`, and no "ILLUSTRATIVE".
 
 - **The database link is verified TLS or nothing.** The Fly app verifies the pooler against the bundled Supabase Root 2021 CA and refuses to start without it.
   **Test:** the connection URL carries no `ssl*` parameter (in node-postgres one overrides the CA silently). Failures are public only as a code, never the driver's text.

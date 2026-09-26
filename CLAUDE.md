@@ -144,7 +144,7 @@ Each is phrased as a test you can apply. Surface-specific rulings live in `.clau
 
 ## Non-negotiables
 
-- Never show a pipeline health banner or infrastructure warning to end users
+- Never show a pipeline health banner or infrastructure warning to end users. *Exception:* the Dropping Odds page's "FEED DISCONNECTED" banner, worded exactly as its export draws it (founder, TEN-297 card 79e9db02 Q3) — see `.claude/rules/drops.md`.
 - Never highlight the better stat between two players with colour — neutral display only
 - Never show "went the distance (4+ sets)" for best-of-three tournaments
 - Recent form always includes Challenger and ITF — never ATP-only

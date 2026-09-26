@@ -12,6 +12,8 @@
      deploy on push via the pipeline allowlist. Scoped under [data-page="series"];
      inert unless FEATURE_SERIES reveals the tab. -->
 <link rel="stylesheet" href="./series.css">
+<!-- TEN-294 Dropping Odds page (export design_handoff_dropping_odds). Scoped under [data-page="drops"]. -->
+<link rel="stylesheet" href="./drops-page.css">
 <style>
   /* TEN-285 theme 12a "Ink solid" — HANDOFF.md §1 tokens, verbatim. Every colour
      on the page resolves to one of these (or to the founder-reviewed unmapped list). */
@@ -2946,6 +2948,9 @@
          trading-report.js reveal it. Deploying with the flag OFF changes nothing
          live. Reuses the Live tab's gate — the Live tab + Matches board are untouched. -->
     <button data-tab="trading" id="tradingTabBtn" style="display:none"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 15.5 7 10l3 2.5 4-7M13 3.5h3.5V7"/></svg>Trading Report</button>
+    <!-- TEN-294 Dropping Odds: hidden by default; drops-page.js reveals it when FEATURE_DROPS is on.
+         Glyph = the export sidebar's path (App Sidebar 12a.dc.html). -->
+    <button data-tab="drops" id="dropsTabBtn" style="display:none"><svg viewBox="0 0 20 20" fill="none" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 5.5 8 10l3-2.5 5.5 6M16.5 9.5v4h-4"/></svg>Dropping Odds</button>
     <!-- TEN-168 Series tab: current-streak cards for today/tomorrow's slate.
          Hidden by default (display:none); series.js reveals it when FEATURE_SERIES
          is on. Sits alongside the Trading Report (shared foundations) so a later
@@ -3137,6 +3142,9 @@
     <div id="tradingGrid"></div>
   </div>
 </div>
+
+<!-- DROPPING ODDS (TEN-294) — rendered entirely by drops-page.js from stennisfy-drops.fly.dev. -->
+<div class="tabpage" data-page="drops"><div id="dropsRoot"></div></div>
 
 <!-- SERIES TAB (TEN-168) — current-streak cards; all rendering owned by series.js,
      gated on FEATURE_SERIES. Styling is in series.css ([data-page="series"] .sr-*). -->
@@ -5460,6 +5468,8 @@ document.getElementById('mainNav').addEventListener('click', e => {
   // TEN-168: Series page loads its cards on entry. No poll loop (static daily
   // artifact). No-op unless FEATURE_SERIES loaded series.js.
   if (window.SeriesPage) window.SeriesPage.setActive(tab === 'series');
+  // TEN-294: Dropping Odds polls its endpoint only while shown. No-op unless drops-page.js loaded.
+  if (window.DropsPage) window.DropsPage.setActive(tab === 'drops');
 });
 
 // TEN-151: resolve a #trading deep-link on load. Runs on DOMContentLoaded, which
@@ -32135,6 +32145,8 @@ window.DatabaseTab = (function(){
   })();
 </script>
 <script src="series.js" defer></script>
+<!-- TEN-294 Dropping Odds. FEATURE_DROPS (default ON; ?drops=0 or localStorage stennisfy.flags.drops=0 = off) is read inside the file. -->
+<script src="drops-page.js" defer></script>
 
 <!-- TEN-150 / TEN-242: Entry Lists feature flag. The nav button it used to reveal
      is GONE (item 1.1) - entry lists are the middle SECTION of Tournaments now, and

@@ -330,3 +330,178 @@ test('watchdog arming: own vault names from the drop-alert chat, scheduled once,
   assert.match(wf, /TELEGRAM_CHAT_ID: \$\{\{ secrets\.TELEGRAM_CHAT_ID \}\}/);
   assert.match(wf, /watchdog NOT installed/, 'never armed against an endpoint that is not up');
 });
+
+// ════ The Dropping Odds page (drops-page.js; founder card 79e9db02, drops.md "The Dropping Odds page") ════
+// Pure rules drive the REAL module (createRequire); rendering EXECUTES the real file in a vm sandbox with a
+// fake document and a fake fetch returning the endpoint's real payload shape — a regex over the source can't
+// see what the page renders.
+import { createRequire } from 'node:module';
+import vm from 'node:vm';
+const PAGE = createRequire(import.meta.url)('./drops-page.js');
+const PT0 = Date.parse('2026-09-26T12:00:00Z');
+const at = (msAgo) => new Date(PT0 - msAgo).toISOString();
+const HR = 3600e3;
+function frow(o) {
+  return { id: o.id, book: o.book || 'Bet105', line: 'Match Winner', tier: o.tier || 'ATP', playerA: o.a || 'Alan Alpha', playerB: o.b || 'Bruno Beta',
+    side: o.side || o.a || 'Alan Alpha', open: { at: at(o.openAgo ?? 20 * HR), kind: 'book opener', price: String(o.open) },
+    preDrop: { at: at(o.preAgo ?? 2 * HR), price: String(o.pre ?? o.open) }, droppedTo: { at: at(o.dropAgo ?? 1.9 * HR), price: String(o.dropped ?? o.now) },
+    latest: { at: at(o.latestAgo ?? 1 * HR), price: String(o.now) }, dropPct: o.botPct ?? 6, sinceOpenPct: 0, detectedAt: at(o.detAgo ?? 1.9 * HR),
+    started: o.started ?? false, pastScheduledStart: false, scheduledStart: o.start ?? at(-3 * HR) };
+}
+
+test('page Q1: one row per selection x book, drop = (open - latest)/open, shortened only, never the bot figure', () => {
+  const rows = PAGE.buildRows([
+    frow({ id: 'a1', open: 2.0, now: 1.8, botPct: 99, detAgo: 5 * HR }),
+    frow({ id: 'a2', open: 2.0, now: 1.8, botPct: 7, detAgo: 1 * HR }),          // repeat alert, same selection x book
+    frow({ id: 'b1', book: 'Superbet', open: 2.0, now: 1.9 }),                     // same selection, other book: own row
+    frow({ id: 'c1', a: 'Cid Gamma', b: 'Dan Delta', side: 'Cid Gamma', open: 1.59, now: 2.02 }),  // lengthened: not listed
+    frow({ id: 'd1', a: 'Eli Eps', b: 'Fox Zeta', side: 'Eli Eps', open: 1.5, now: 1.5 }),         // flat: not listed
+  ]);
+  assert.deepEqual(rows.map((r) => r.id).sort(), ['a2', 'b1'], 'newest alert wins; lengthened and flat rows are not listed');
+  const a = rows.find((r) => r.id === 'a2');
+  assert.equal(a.drop.toFixed(1), '10.0');
+  assert.notEqual(a.drop, 7, 'the bot figure is never the drop');
+  assert.equal(rows.find((r) => r.id === 'b1').drop.toFixed(1), '5.0');
+  // a row with no open or no latest is not listed (never a guessed price)
+  assert.equal(PAGE.buildRows([{ ...frow({ id: 'x', open: 2, now: 1.8 }), open: null }]).length, 0);
+  assert.equal(PAGE.buildRows([{ ...frow({ id: 'y', open: 2, now: 1.8 }), latest: { at: null, price: null } }]).length, 0);
+});
+
+test('page Q2: "Since open" = everything the feed holds; 12h/24h cut on detectedAt; 48h is disabled in the markup', async () => {
+  const rows = PAGE.buildRows([frow({ id: 'r1', open: 2, now: 1.8, detAgo: 2 * HR }), frow({ id: 'r2', a: 'Gus Eta', b: 'Hal Theta', side: 'Gus Eta', open: 3, now: 2.5, detAgo: 20 * HR })]);
+  const S = PAGE.defaults();
+  const ids = (win) => PAGE.view(rows, { ...S, win }, PT0).list.map((r) => r.id).sort().join();
+  assert.equal(S.win, 'open');
+  assert.equal(ids('open'), ids('24h'), 'Since open and 24h hold the same rows while the feed keeps 24h');
+  assert.equal(ids('12h'), 'r1');
+  const html = (await renderPage({ rows: [frow({ id: 'r1', open: 2, now: 1.8 })] })).html;
+  assert.match(html, /data-act="win" data-v="48h" disabled/);
+  assert.match(html, /data-act="win" data-v="open"[^>]*title="Everything the feed holds: the last 24h of flagged moves"/);
+});
+
+test('page BOOKS: Sharp/Soft is odds.md\'s ruled table, not a guess', () => {
+  const odds = read('.claude/rules/odds.md');
+  for (const [book, cls] of Object.entries(PAGE.BOOK_CLASS)) {
+    const m = odds.match(new RegExp('\\|\\s*' + book + '\\s*\\|\\s*(Sharp|Soft)\\s*\\|'));
+    assert.ok(m, `${book} is in odds.md's table`);
+    assert.equal(m[1].toLowerCase(), cls, book);
+  }
+  const rows = PAGE.buildRows([frow({ id: 's1', open: 2, now: 1.8 }), frow({ id: 's2', book: 'Superbet', a: 'Ivo Iota', b: 'Jon Kappa', side: 'Ivo Iota', open: 2, now: 1.7 })]);
+  const only = (btype) => PAGE.view(rows, { ...PAGE.defaults(), btype }, PT0).list.map((r) => r.book).join();
+  assert.equal(only('sharp'), 'Bet105');
+  assert.equal(only('soft'), 'Superbet');
+});
+
+test('page: a started match sorts last in every order; tier maps ITF Men -> ITF', () => {
+  const rows = PAGE.buildRows([
+    frow({ id: 'st', a: 'Big Drop', b: 'Opp One', side: 'Big Drop', open: 4, now: 2, started: true, start: at(1 * HR) }),
+    frow({ id: 'n1', a: 'Small Drop', b: 'Opp Two', side: 'Small Drop', open: 2, now: 1.9, tier: 'ITF Men', start: at(-1 * HR) }),
+  ]);
+  for (const sort of ['drop', 'recent', 'soon']) {
+    const l = PAGE.view(rows, { ...PAGE.defaults(), sort }, PT0).list;
+    assert.equal(l.at(-1).id, 'st', sort);
+  }
+  assert.equal(rows.find((r) => r.id === 'n1').tier, 'ITF');
+  assert.equal(PAGE.tierOf('WTA 250'), null);
+});
+
+test('page staleness: green <= 90 s, amber past 90 s, disconnected past 5 min or unreachable', () => {
+  assert.equal(PAGE.feedState(90, true), 'connected');
+  assert.equal(PAGE.feedState(91, true), 'amber');
+  assert.equal(PAGE.feedState(300, true), 'amber');
+  assert.equal(PAGE.feedState(301, true), 'disconnected');
+  assert.equal(PAGE.feedState(5, false), 'disconnected');
+  assert.equal(PAGE.feedState(null, true), 'disconnected');
+});
+
+test('page Q4 chart: recorded prices only, last 24h, dashed across gaps, nothing interpolated', () => {
+  const [r] = PAGE.buildRows([frow({ id: 'c', open: 2.5, now: 2.0, openAgo: 30 * HR, pre: 2.3, preAgo: 8 * HR, dropped: 2.1, dropAgo: 7.9 * HR, latestAgo: 0.5 * HR })]);
+  const pts = PAGE.chartPoints(r, PT0);
+  assert.deepEqual(pts.map((p) => p.kind), ['pre', 'dropped', 'latest'], 'the 30h-old open is off the 24h axis');
+  const svg = PAGE.chartSvg(pts, r.open);
+  assert.equal((svg.match(/<circle/g) || []).length, 3, 'one dot per recorded price, none invented');
+  assert.equal((svg.match(/class="do-gap"/g) || []).length, 1, 'the 7.4h stretch (> 15% of the axis) is dashed');
+  assert.equal((svg.match(/class="do-seg-l"/g) || []).length, 1, 'the 6-min drop is a solid segment');
+  assert.match(svg, /class="do-open-ref"/, 'the open level is still marked');
+  // duplicates (same time and price) collapse to one dot
+  const [d] = PAGE.buildRows([frow({ id: 'd', open: 2, now: 1.8, dropped: 1.8, dropAgo: 1 * HR, latestAgo: 1 * HR })]);
+  assert.equal(PAGE.chartPoints(d, PT0).filter((p) => p.v === 1.8).length, 1);
+});
+
+test('page avatars: a board key only on an exact, unique two-player match', () => {
+  const r = { playerA: 'Daniil Medvedev', playerB: 'Valentin Royer', side: 'Daniil Medvedev' };
+  const card = { p1: 'D. Medvedev', p2: 'V. Royer', p1Key: 1093, p2Key: 954 };
+  assert.deepEqual(PAGE.boardKeyFor(r, [card]), { key: '1093', photoName: 'D. Medvedev' });
+  assert.equal(PAGE.boardKeyFor({ ...r, side: 'Valentin Royer' }, [card]).key, '954');
+  assert.equal(PAGE.boardKeyFor(r, [card, { ...card }]), null, 'two matching cards: no guess');
+  assert.equal(PAGE.boardKeyFor(r, [{ ...card, p2: 'X. Other' }]), null, 'one player matching is not a match');
+});
+
+test('page: no placeholder from the export ships', () => {
+  const src = read('drops-page.js') + read('drops-page.css');
+  for (const bad of ['Morita', 'Beleza', 'Brandt', 'Ferrante', 'Keller', 'Voss', 'Sorokin', 'randomuser', 'ILLUSTRATIVE', 'Monteverde', 'Kestrel']) {
+    assert.ok(!src.includes(bad), bad);
+  }
+  assert.doesNotMatch(src, /Book [A-G]\b/);
+});
+
+// ── executing the real page ──
+async function renderPage({ rows, ageS = 12, reachable = true, board = [], statusExtra = {} }) {
+  const root = { innerHTML: '', addEventListener() {}, closest: () => ({ classList: { contains: () => false } }), querySelector: () => null };
+  const btn = { style: { display: 'none' } };
+  const timers = [];
+  const status = { schema: 1, generatedAt: new Date(PT0 - ageS * 1000).toISOString(), serverNow: new Date(PT0).toISOString(), ageS, freshness: ageS > 300 ? 'paused' : 'ok', rowCount: rows.length, sources: [], ...statusExtra };
+  const res = (body) => ({ status: 200, ok: true, headers: { get: () => '"e1"' }, json: async () => body });
+  const sandbox = {
+    document: { readyState: 'complete', getElementById: (id) => (id === 'dropsRoot' ? root : id === 'dropsTabBtn' ? btn : null), querySelector: () => null,
+      addEventListener() {}, activeElement: null, body: { appendChild() {} }, createElement: () => ({ style: { setProperty() {} } }) },
+    location: { search: '' }, localStorage: { getItem: () => null }, URLSearchParams,
+    fetch: async (url) => { if (!reachable) throw new Error('down'); return res(url.endsWith('/status.json') ? status : { schema: 1, windowHours: 24, rows }); },
+    setTimeout: (f, ms) => { timers.push(ms); return timers.length; }, clearTimeout() {}, setInterval: () => 0, clearInterval() {},
+    Date: class extends Date { constructor(...a) { super(...(a.length ? a : [PT0])); } static now() { return PT0; } },
+    Promise, JSON, Math, String, Number, Object, Array, isFinite, parseFloat, RegExp, Error, matches: board,
+  };
+  sandbox.window = sandbox;
+  vm.runInNewContext(read('drops-page.js'), sandbox);
+  sandbox.window.DropsPage.setActive(true);
+  for (let i = 0; i < 10; i++) await new Promise((r) => setImmediate(r));
+  return { html: root.innerHTML, btn, timers };
+}
+
+test('page render: live rows from the feed, market tabs honest, alerts disabled, sidebar revealed', async () => {
+  const { html, btn, timers } = await renderPage({ rows: [
+    frow({ id: 'r1', open: 2.62, now: 1.97 }),
+    frow({ id: 'r2', a: 'Cid Gamma', b: 'Dan Delta', side: 'Cid Gamma', open: 1.59, now: 2.02 }),   // lengthened: absent
+  ] });
+  assert.equal(btn.style.display, '', 'FEATURE_DROPS on by default reveals the sidebar button');
+  assert.equal((html.match(/class="do-row"/g) || []).length, 1);
+  assert.match(html, /<span class="do-fig-n">24\.8<span class="do-fig-p">%<\/span>/, '(2.62 - 1.97) / 2.62');
+  assert.match(html, /<span class="do-px-o">2\.62<\/span><span class="do-px-a">→<\/span><span class="do-px-n">1\.97<\/span>/);
+  assert.match(html, /1 move across 1 match/);
+  assert.match(html, /Match winner<span class="do-tab-n">1<\/span>/);
+  for (const m of ['Set handicap', 'Game handicap', 'Total games', 'Total sets']) {
+    assert.match(html, new RegExp(m + '<span class="do-tab-n">—</span>'), `${m}: untracked is "—", never 0`);
+  }
+  assert.match(html, /Live · updated 12s ago/);
+  assert.doesNotMatch(html, /FEED DISCONNECTED/);
+  assert.match(html, /do-btn-alerts" aria-disabled="true" title="Coming soon"/);
+  assert.match(html, /data-act="menu" data-v="surf" aria-disabled="true"/);
+  assert.match(html, /placeholder="Search players"/);
+  assert.ok(timers.includes(30000), 'polls on the endpoint\'s own 30 s cadence');
+  assert.doesNotMatch(html, /ILLUSTRATIVE|illustrative/);
+});
+
+test('page render: past 5 min the export\'s banner as drawn, dimmed rows, "as of" in UTC; unreachable too', async () => {
+  const stale = (await renderPage({ rows: [frow({ id: 'r1', open: 2, now: 1.8 })], ageS: 12 * 60 })).html;
+  assert.match(stale, /FEED DISCONNECTED/);
+  assert.match(stale, /Showing prices as of <span class="do-mono">11:48 UTC<\/span>\. New moves will not appear until the feed reconnects\./);
+  assert.match(stale, /class="do-list stale"/);
+  assert.match(stale, /Prices updated <span class="do-mono">12 min<\/span> ago/);
+  assert.doesNotMatch(stale, /Live · updated/, 'never a fake-fresh line');
+  const amber = (await renderPage({ rows: [frow({ id: 'r1', open: 2, now: 1.8 })], ageS: 120 })).html;
+  assert.match(amber, /do-dot amber/);
+  assert.doesNotMatch(amber, /FEED DISCONNECTED/);
+  const down = (await renderPage({ rows: [], reachable: false })).html;
+  assert.match(down, /FEED DISCONNECTED/);
+  assert.doesNotMatch(down, /class="do-row"/);
+});

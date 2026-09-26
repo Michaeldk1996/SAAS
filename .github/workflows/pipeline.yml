@@ -772,6 +772,9 @@ jobs:
           # absent/failed build never blocks the deploy (the page dashes to its honest
           # empty state instead of a broken tab).
           cp series.js series.css _site/ 2>/dev/null || true
+          # TEN-294 Dropping Odds page: module + stylesheet. Its data is NOT a site file - the page
+          # reads stennisfy-drops.fly.dev - so there is no JSON to copy. Asserted below.
+          cp drops-page.js drops-page.css _site/ 2>/dev/null || true
           cp series.json _site/ 2>/dev/null || true
           cp trading-splits-index.json _site/ 2>/dev/null || true
           cp -r trading-splits _site/ 2>/dev/null || true
@@ -841,6 +844,7 @@ jobs:
                    court-speed-map.json \
                    match-stat-event-coverage.json \
                    series.js series.css \
+                   drops-page.js drops-page.css \
                    assets/logo-dark-transparent.png assets/ring-transparent.png; do
             [ -s "_site/$f" ] || { echo "MISSING from _site: $f"; exit 1; }
           done
