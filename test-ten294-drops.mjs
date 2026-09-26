@@ -1333,3 +1333,37 @@ test('status third review (68cdc26e): repeat alerts agree even when pre-match; a
   assert.ok(idx instanceof Map && idx.get('damm|hurkacz').length === 1);
   assert.equal(STATUS.matchFixture(damm, idx).event_key, 1);
 });
+
+// ════ TEN-299: the Telegram drop bots stop at the live start (founder comment 8585095a) ════
+test('TEN-299: both bots drop every tick at or after the live start, in one guarded transaction', () => {
+  const sql = read('tools/ten299-live-cut.sql');
+  const code = sql.replace(/--.*$/gm, '');
+  // one transaction, guard last
+  assert.match(code, /^\s*begin;/m);
+  assert.ok(code.trimEnd().endsWith('commit;'), 'commit is the last statement');
+  assert.ok(code.indexOf('do $$') > code.indexOf('ten280_bot.load_ticks(p_from timestamp'), 'the guard runs after both definitions');
+  assert.match(code, /raise exception 'TEN-299 guard: % Superbet ticks left after the live cut'/);
+  assert.match(code, /raise exception 'TEN-299 guard: % Bet105 ticks left after the live cut'/);
+  assert.match(code, /raise exception 'TEN-299 guard: no live sightings/);
+  // the cut, in each bot's load_ticks, before its count; at-or-after (>=), never after only
+  for (const [tbl, key, fn] of [['t287', 'event_id', 'cuts_287'], ['t280', 'fixture_id', 'cuts_280']]) {
+    const re = new RegExp('delete from pg_temp\\.' + tbl + ' t using drops_live\\.' + fn + "\\(greatest\\(p_from, p_to - interval '4 days'\\) - interval '2 days'\\) c\\s+where t\\." + key + ' = c\\.' + key + ' and t\\.at >= c\\.cut_at;\\s+select count\\(\\*\\) into n from ' + tbl + ';');
+    assert.match(code, re, tbl + ': the cut sits right before the count');
+  }
+  // the bots' own filters are untouched (the live definitions + the delete)
+  assert.match(code, /coalesce\(t\.event_status, e\.status\) = 'pending'/);
+  assert.match(code, /o\.is_live is false and o\.price_decimal >= 1\.01/);
+  // the join mirrors status.mjs: surname key, given-name initials, 24 h, exactly one (else the scheduled start)
+  assert.match(code, /'\\s\+\(jr\|sr\|ii\|iii\|iv\)\\\.\?\$'/, 'Jr / Sr / II suffix dropped');
+  assert.match(code, /normalize\(/, 'accents stripped');
+  assert.match(code, /abs\(extract\(epoch from fl\.sched - ev\.start_at\)\) < 86400/);
+  assert.match(code, /case when cardinality\(p_keys\) = 1 then p_live\[1\] else p_start end/);
+  assert.match(code, /at time zone 'Europe\/Berlin'/, 'the sighting\'s scheduled time is the API default zone');
+  // installed from the drops workflow, measured before and after with the bots' real scan (backtest mode only)
+  const steps = JSON.parse(read('tools/ten294-steps-install.json')).map((s) => s.name);
+  for (const n of ['ten299_base_287', 'ten299_base_280', 'install_live_cut', 'ten299_cut_287', 'ten299_cut_280', 'ten299_summary']) assert.ok(steps.includes(n), n);
+  assert.ok(steps.indexOf('ten299_base_287') < steps.indexOf('install_live_cut') && steps.indexOf('install_live_cut') < steps.indexOf('ten299_cut_287'));
+  const st = JSON.parse(read('tools/ten294-steps-install.json'));
+  assert.deepEqual(st.find((s) => s.name === 'install_live_cut'), { name: 'install_live_cut', file: 'tools/ten299-live-cut.sql', required: true, stop_on_error: true });
+  st.filter((s) => /^ten299_(base|cut)_(287|280)$/.test(s.name)).forEach((s) => assert.match(s.sql, /'backtest'/, s.name + ' never writes a live alert'));
+});
