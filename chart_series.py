@@ -151,6 +151,7 @@ def put_chart(m, label, series, meta, cut_at=None):
 
     series  {'p1': [...], 'p2': [...]} in CARD orientation, or None to update meta only.
     meta    {'source', 'group', 'clock', 'checkedAt'}; checkedAt None keeps the held one.
+            Optional 'gaps' ([[fromIso, toIso|None], ...]) and 'firstSeen' replace the held ones.
 
     cut_at  the card's start (card_start): points after it are dropped — held ones too —
             and checkedAt is capped at it.
@@ -181,6 +182,14 @@ def put_chart(m, label, series, meta, cut_at=None):
         checked = cut
     old_checked = mt.get('checkedAt')
     mt.update({k: meta[k] for k in ('source', 'group', 'clock') if meta.get(k)})
+    # TEN-295 Wave 2: a source that re-reads its whole history each tick (api-tennis) also
+    # REPLACES its `gaps` (intervals it did not quote — never drawn across) and `firstSeen`.
+    for k in ('gaps', 'firstSeen'):
+        if k in meta:
+            if meta[k]:
+                mt[k] = meta[k]
+            else:
+                mt.pop(k, None)
     # `note` says WHY a checked source has no line ("recording began 26 Sep"); a line
     # that exists clears it.
     if held.get('p1') or held.get('p2'):

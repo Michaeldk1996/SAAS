@@ -16094,7 +16094,15 @@ function aOddsStep(series, grid){
 //   * a book with no points is a "no data" row of dashes — never a line.
 const AODDS_STALE_MS = 60 * 60e3;
 const AODDS_LEGACY_BET365 = 'bet365 (Oddspapi, capture ended 26 Sep)';
-const AODDS_ORDER = ['Pinnacle +30s', 'Bet105', 'Superbet', 'Betfair Exchange (recorded by us)'];
+// TEN-295 Wave 2 (founder 2026-09-26: comment d5bf3dda, cards 78ec4dd2 + 31e4beef): + the 9
+// api-tennis books. Sharp = Pinnacle (both lines) + Bet105; everything else Soft. Two
+// Pinnacles, two Betfairs and two bet365s are DIFFERENT lines, labelled by source.
+const AODDS_ORDER = ['Pinnacle +30s', 'Pinnacle', 'Bet105',
+  'Betano', '1xBet', 'BetVictor', 'Betfair Sportsbook', 'Marathon', 'bet365 (api-tennis)', 'Sbobet', 'William Hill',
+  'Superbet', 'Betfair Exchange (recorded by us)'];
+// Chart lines on when the Odds tab opens (founder card 78ec4dd2: "sharp_both").
+const AODDS_DEFAULT_ON = ['Pinnacle +30s', 'Bet105'];
+const AODDS_AT_CLOCK = 'seen by us every 5 min';
 // TEN-295 coverage pass (founder 2026-09-26): EVERY configured book gets a row on EVERY
 // card, in this fixed order, with its group fixed here (the locked spec: Pinnacle +30s and
 // Bet105 Sharp; Superbet and Betfair Exchange Soft). A book with no line shows a dash and
@@ -16105,6 +16113,15 @@ const AODDS_CONFIG = {
   'Bet105': { group: 'sharp', source: 'Kibl', clock: 'Kibl insert' },
   'Superbet': { group: 'soft', source: 'odds-api.io', clock: 'vendor updatedAt' },
   'Betfair Exchange (recorded by us)': { group: 'soft', source: 'odds-api.io', clock: 'recorded by us' },
+  'Pinnacle': { group: 'sharp', source: 'api-tennis', clock: AODDS_AT_CLOCK },
+  'Betano': { group: 'soft', source: 'api-tennis', clock: AODDS_AT_CLOCK },
+  '1xBet': { group: 'soft', source: 'api-tennis', clock: AODDS_AT_CLOCK },
+  'BetVictor': { group: 'soft', source: 'api-tennis', clock: AODDS_AT_CLOCK },
+  'Betfair Sportsbook': { group: 'soft', source: 'api-tennis', clock: AODDS_AT_CLOCK },
+  'Marathon': { group: 'soft', source: 'api-tennis', clock: AODDS_AT_CLOCK },
+  'bet365 (api-tennis)': { group: 'soft', source: 'api-tennis', clock: AODDS_AT_CLOCK },
+  'Sbobet': { group: 'soft', source: 'api-tennis', clock: AODDS_AT_CLOCK },
+  'William Hill': { group: 'soft', source: 'api-tennis', clock: AODDS_AT_CLOCK },
 };
 function aOddsBooksOf(m){
   const om = (m && m.oddsMovement) || null;
@@ -16119,21 +16136,23 @@ function aOddsBooksOf(m){
     meta[k] = { source: mt.source || (cf && cf.source) || null,
                 group: cf ? cf.group : (mt.group === 'sharp' ? 'sharp' : 'soft'),
                 clock: mt.clock || (cf && cf.clock) || null, checkedAt: mt.checkedAt || null,
-                note: mt.note || null, legacy: false };
+                note: mt.note || null, legacy: false,
+                gaps: Array.isArray(mt.gaps) ? mt.gaps : [], firstSeen: mt.firstSeen || null };
   });
   // Legacy capture (founder 2026-09-26: bet365 is 403 on Oddspapi, the capture ended).
   const lb = (om && om.books) || {};
   Object.keys(lb).forEach(k => {
-    const name = k === 'bet365' ? AODDS_LEGACY_BET365 : k;
+    // A legacy Oddspapi key never takes over a live label (Wave 2 added "Pinnacle").
+    const name = k === 'bet365' ? AODDS_LEGACY_BET365 : ((k in AODDS_CONFIG) ? k + ' (Oddspapi)' : k);
     if (name in meta) return;
     books[name] = lb[k];
     meta[name] = { source: 'Oddspapi', group: /pinnacle/i.test(k) ? 'sharp' : 'soft',
-                   clock: 'book tick', checkedAt: om.capturedAt || null, legacy: true };
+                   clock: 'book tick', checkedAt: om.capturedAt || null, legacy: true, gaps: [] };
   });
   AODDS_ORDER.forEach(k => {
     if (k in meta) return;
     books[k] = { p1: [], p2: [] };
-    meta[k] = Object.assign({}, AODDS_CONFIG[k], { checkedAt: null, note: null, legacy: false, unchecked: true });
+    meta[k] = Object.assign({}, AODDS_CONFIG[k], { checkedAt: null, note: null, legacy: false, unchecked: true, gaps: [] });
   });
   return { books, meta };
 }
@@ -16154,20 +16173,36 @@ function aOddsSourceText(name, mt){
   // Bet105's own feed: Kibl, our Bet105 partner feed (poller archive + live stream);
   // every time on it is when Kibl stored the price (odds.md: "Kibl insert time").
   if (mt.clock === 'Kibl insert') return 'Kibl feed (our Bet105 source) · time = when Kibl stored the price';
+  // api-tennis gives current prices only: every point is when WE first saw it (founder
+  // 2026-09-26: "first seen" honesty; nothing before our recording began 26 Sep 03:55Z).
+  if (mt.clock === AODDS_AT_CLOCK) return 'api-tennis · seen by us every 5 min'
+    + (mt.firstSeen ? ' · first seen ' + aOddsDay(mt.firstSeen) + ' ' + aOddsClock(mt.firstSeen) : '');
   const clock = mt.clock === 'book tick' ? 'book ticks'
     : mt.clock === 'vendor updatedAt' ? 'vendor update time' : (mt.clock || '');
   return (mt.source || '—') + (clock ? ' (' + clock + ')' : '');
 }
 function aOddsShort(name){
-  return ({ 'Pinnacle +30s':'Pin +30s', 'Betfair Exchange (recorded by us)':'BF Exch', [AODDS_LEGACY_BET365]:'bet365' })[name]
+  return ({ 'Pinnacle +30s':'Pin +30s', 'Betfair Exchange (recorded by us)':'BF Exch', [AODDS_LEGACY_BET365]:'bet365',
+            'Pinnacle':'Pin (AT)', 'Betfair Sportsbook':'BF Sport', 'bet365 (api-tennis)':'b365 AT', 'William Hill':'W Hill',
+            'BetVictor':'BetVictr' })[name]
     || (name.length > 8 ? name.slice(0, 8) : name);
 }
 // Step a real [ms, price] series onto the grid, but ONLY up to endMs (the book's own
 // checkedAt, capped at the start): past it we have not looked, so nothing is drawn.
-function aOddsStepTo(series, grid, endMs){
+function aOddsStepTo(series, grid, endMs, gaps){
   const out = aOddsStep(series, grid);
   if (endMs != null) for (let i = 0; i < grid.length; i++) if (grid[i] > endMs) out[i] = null;
+  // TEN-295 Wave 2: [from, to) intervals the book did not quote (or our collector was not
+  // polling; to = null = still not quoting) — never drawn across.
+  (gaps || []).forEach(g => { const f = Date.parse(g[0]), t = g[1] == null ? Infinity : Date.parse(g[1]);
+    if (Number.isFinite(f)) for (let i = 0; i < grid.length; i++) if (grid[i] >= f && grid[i] < t) out[i] = null; });
   return out;
+}
+// The open gap (the book is not in its feed now), as ms, else null.
+function aOddsPulledAt(mt){
+  const g = (mt && mt.gaps || []).find(x => x && x[1] == null);
+  const f = g ? Date.parse(g[0]) : NaN;
+  return Number.isFinite(f) ? f : null;
 }
 
 // Inline sparkline for a book's own real series; green if the price rose over the window, red if it fell.
@@ -16212,8 +16247,9 @@ function aOddsChartSvg(enabled, grid, favColor, dogColor, favName, dogName, snap
   s+=panel(pTopA,pBotA,mnA,mxA,favColor,favName);
   s+=panel(pTopB,pBotB,mnB,mxB,dogColor,dogName);
   const nLab=Math.min(6,N); for(let k=0;k<nLab;k++){ const i=nLab<2?0:Math.round(k*(N-1)/(nLab-1)); const lb = i===0?'Open':(i===N-1?'Now':aOddsAxis(grid[i])); s+='<text x="'+X(i).toFixed(1)+'" y="'+(H-8)+'" text-anchor="middle" font-size="9.5" font-family="\'IBM Plex Mono\',monospace" fill="#6e7a93">'+lb+'</text>'; }
-  const linePts=(vals,Y)=>{ let p=''; for(let i=0;i<vals.length;i++){ if(vals[i]==null) continue; p+=(p?' ':'')+X(i).toFixed(1)+','+Y(vals[i]).toFixed(1); } return p; };
-  enabled.forEach(b=>{ const pa=linePts(b.favVals,YA); if(pa) s+='<polyline points="'+pa+'" fill="none" stroke="'+favColor+'" stroke-width="2" stroke-dasharray="'+b.dash+'" stroke-linecap="round" stroke-linejoin="round" opacity="0.92"/>'; const pb=linePts(b.dogVals,YB); if(pb) s+='<polyline points="'+pb+'" fill="none" stroke="'+dogColor+'" stroke-width="2" stroke-dasharray="'+b.dash+'" stroke-linecap="round" stroke-linejoin="round" opacity="0.92"/>'; });
+  // One polyline per unbroken run: a null inside a line is a gap (TEN-295 Wave 2), never bridged.
+  const lineRuns=(vals,Y)=>{ const runs=[]; let p=''; for(let i=0;i<vals.length;i++){ if(vals[i]==null){ if(p){ runs.push(p); p=''; } continue; } p+=(p?' ':'')+X(i).toFixed(1)+','+Y(vals[i]).toFixed(1); } if(p) runs.push(p); return runs; };
+  enabled.forEach(b=>{ lineRuns(b.favVals,YA).forEach(pa=>{ s+='<polyline points="'+pa+'" fill="none" stroke="'+favColor+'" stroke-width="2" stroke-dasharray="'+b.dash+'" stroke-linecap="round" stroke-linejoin="round" opacity="0.92"/>'; }); lineRuns(b.dogVals,YB).forEach(pb=>{ s+='<polyline points="'+pb+'" fill="none" stroke="'+dogColor+'" stroke-width="2" stroke-dasharray="'+b.dash+'" stroke-linecap="round" stroke-linejoin="round" opacity="0.92"/>'; }); });
   // Snapshot emphasis — the Opening/Now toggle highlights that column with a vertical guide,
   // enlarged dots and (for a readable number of books) per-book value pills, so the selected
   // snapshot's prices read at a glance. The column lands on the Open/Now x-axis label.
@@ -16298,26 +16334,36 @@ function buildOddsSection(m){
   let grid = Array.from(tset).sort((a,b)=>a-b);
   const MAX=30;
   if(grid.length>MAX){ const step=(grid.length-1)/(MAX-1); const g=[]; for(let k=0;k<MAX;k++) g.push(grid[Math.round(k*step)]); grid=Array.from(new Set(g)); }
+  // Every gap edge inside the window stays a column (after the downsample), or a gap that
+  // falls between two columns would be drawn straight across.
+  { const lo = grid[0], hi = grid[grid.length-1], extra = [];
+    allBooks.forEach(bk=>{ (src.meta[bk].gaps||[]).forEach(g=>{ [g[0], g[1]].forEach(x=>{ const t = x==null ? NaN : Date.parse(x);
+      if (Number.isFinite(t) && t > lo && t < hi) extra.push(t); }); }); });
+    if (extra.length) grid = Array.from(new Set(grid.concat(extra))).sort((a,b)=>a-b); }
   const N=grid.length;
 
   // Chips control which bookmaker LINES appear on the chart only. The per-book table always
   // shows every book. Default the chart to Pinnacle-only (fall back to the first book, e.g. Umag
   // where Pinnacle doesn't quote) so it doesn't open cluttered with every line at once.
-  // TEN-295: the default line is Pinnacle +30s, else the first Sharp book with data.
+  // TEN-295 Wave 2 (founder card 78ec4dd2, "sharp_both"): on by default = Pinnacle +30s and
+  // Bet105 (whichever of them has data); neither -> the first Sharp line with data, else the
+  // first line with data. Every other line starts off, toggleable.
   const quoted = allBooks.filter(bk=>aOddsHasSeries(src.books[bk]) && endOf(bk)!=null);
   if(_aOdds.off==null){
-    const keep = quoted.indexOf('Pinnacle +30s')>=0 ? 'Pinnacle +30s'
-      : (quoted.find(bk=>src.meta[bk].group==='sharp') || quoted[0]);
-    const def={}; allBooks.forEach(bk=>{ if(bk!==keep) def[bk]=true; });
+    let keep = AODDS_DEFAULT_ON.filter(bk=>quoted.indexOf(bk)>=0);
+    if(!keep.length){ const f = quoted.find(bk=>src.meta[bk].group==='sharp') || quoted[0]; keep = f ? [f] : []; }
+    const def={}; allBooks.forEach(bk=>{ if(keep.indexOf(bk)<0) def[bk]=true; });
     _aOdds.off = def;
   }
   const off=_aOdds.off||{};
   const bookObjs = allBooks.map((bk,idx)=>{
     const favReal=preMatch(src.books[bk][favSide]), dogReal=preMatch(src.books[bk][dogSide]);
-    const end=endOf(bk), stale=staleOf(bk);
+    const end=endOf(bk), stale=staleOf(bk), gaps=src.meta[bk].gaps||[];
+    // Pulled = the book is out of its feed (an open gap) and has not come back: history, but no "now".
+    const pulled=aOddsPulledAt(src.meta[bk]);
     return {
-      name:bk, dash:aOddsDash(bk,idx), off:!!off[bk], group:src.meta[bk].group, meta:src.meta[bk], stale,
-      favVals:aOddsStepTo(favReal, grid, end), dogVals:aOddsStepTo(dogReal, grid, end),
+      name:bk, dash:aOddsDash(bk,idx), off:!!off[bk], group:src.meta[bk].group, meta:src.meta[bk], stale:stale||pulled!=null, pulled,
+      favVals:aOddsStepTo(favReal, grid, end, gaps), dogVals:aOddsStepTo(dogReal, grid, end, gaps),
       favReal:favReal.map(p=>p[1]), dogReal:dogReal.map(p=>p[1]),
       favOpen:favReal.length?favReal[0][1]:null, favNow:favReal.length?favReal[favReal.length-1][1]:null,
       dogOpen:dogReal.length?dogReal[0][1]:null, dogNow:dogReal.length?dogReal[dogReal.length-1][1]:null,
@@ -16357,10 +16403,13 @@ function buildOddsSection(m){
     +'</div>'+mkt+'</div>';
   const GROUP_LABEL = { sharp:'Sharp', soft:'Soft' };
   const staleTag = '<span class="aodds-stale" style="font-size:11px; font-weight:500; color:var(--label); margin-left:6px;">no recent data</span>';
+  const tagOf = b => b.pulled!=null
+    ? '<span class="aodds-stale aodds-pulled" style="font-size:11px; font-weight:500; color:var(--label); margin-left:6px;">not in feed since '+aOddsClock(b.pulled)+'</span>'
+    : (b.stale ? staleTag : '');
   const chipOf = b=>{ const on=!b.off; const bd=on?'#6a9af8':'rgba(255,255,255,0.10)', bg=on?'#6a9af8':'transparent', mark=on?'✓':'';
       return '<span class="aodds-chip" data-book="'+escapeHtml(b.name)+'" data-group="'+b.group+'" onclick="aOddsToggleBook(\''+b.name.replace(/'/g,"\\'")+'\')" style="display:inline-flex; align-items:center; gap:7px; cursor:pointer; font-size:12.5px; color:var(--text);">'
         +'<span style="width:15px; height:15px; border-radius:4px; border:1px solid '+bd+'; background:'+bg+'; color:var(--page); font-size:10px; font-weight:800; display:flex; align-items:center; justify-content:center;">'+mark+'</span>'
-        +escapeHtml(b.name)+(b.stale?staleTag:'')+'</span>'; };
+        +escapeHtml(b.name)+tagOf(b)+'</span>'; };
   const linesGroup = '<div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-left:auto;">'
     +'<span style="font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:var(--label);">Chart lines</span>'
     +['sharp','soft'].map(g=>{ const bs=withData.filter(b=>b.group===g); if(!bs.length) return '';
@@ -16402,7 +16451,7 @@ function buildOddsSection(m){
   };
   const bookRow = b=>
     '<div class="aodds-row" data-book="'+escapeHtml(b.name)+'" data-group="'+b.group+'" style="display:grid; '+GRID+' padding:13px 18px; border-top:0.33px solid var(--line-soft); align-items:center; gap:10px;">'
-      +'<span style="display:flex; align-items:center; gap:8px; font-size:13.5px; font-weight:600;"><span style="color:var(--periwinkle); font-size:11px;">↗</span><span>'+escapeHtml(b.name)+(b.stale?staleTag:'')
+      +'<span style="display:flex; align-items:center; gap:8px; font-size:13.5px; font-weight:600;"><span style="color:var(--periwinkle); font-size:11px;">↗</span><span>'+escapeHtml(b.name)+tagOf(b)
         +'<span class="aodds-src" style="display:block; font-size:11px; font-weight:400; color:var(--label); margin-top:2px;">'+escapeHtml(aOddsSourceText(b.name, b.meta))+'</span></span></span>'
       +triple(b.favOpen, b.favReal, b.favNow, bestFav, b.stale)
       +triple(b.dogOpen, b.dogReal, b.dogNow, bestDog, b.stale)
@@ -17061,7 +17110,9 @@ function akTournamentBlock(m){
 function akOddsMoveSvg(m){
   // TEN-295: the same book set the Odds tab shows — chart-only series ∪ legacy books.
   const om = { books: {} };
-  { const src = aOddsBooksOf(m); Object.keys(src.books).forEach(k => { if (aOddsHasSeries(src.books[k])) om.books[k] = src.books[k]; }); }
+  // A book with a gap is left out: this reduced read joins its points, so it would draw
+  // straight across the hours the book was not quoting (TEN-295 Wave 2).
+  { const src = aOddsBooksOf(m); Object.keys(src.books).forEach(k => { if (aOddsHasSeries(src.books[k]) && !(src.meta[k].gaps||[]).length) om.books[k] = src.books[k]; }); }
   // Empty at first paint on every match: the per-match odds shard is loaded lazily
   // and repaints this block when it lands. Measuring here without waiting for that
   // load reads as "no odds history" on a board where all 31 matches in fact carry

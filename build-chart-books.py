@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""TEN-295 (TEN-287 Wave 1, founder 2026-09-26 card 89e3671d) — the chart's Bet105 and
-odds-api.io lines.
+"""TEN-295 (TEN-287 Wave 1, founder 2026-09-26 card 89e3671d; Wave 2 comment d5bf3dda) —
+the chart's Bet105, odds-api.io and api-tennis lines.
 
     python3 build-chart-books.py
 
@@ -16,6 +16,10 @@ m.oddsMovement.chart (never m.oddsMovement.books — see chart_series.py):
     (e.g. to Bet365) needs no code change: an unlisted book is labelled
     "<book> (odds-api.io)". Betfair Exchange is labelled "Betfair Exchange (recorded by
     us)" — the vendor keeps no history for it, we record it every 30 s (founder answer 3).
+  * api-tennis books (Wave 2; Pinnacle sharp, the other 8 soft) — `chart_apitennis_series()`
+    (chart-apitennis-rpc.sql) over the TEN-216 collector's change log, joined by EVENT KEY.
+    Our clock ("seen by us every 5 min"), first point = first time WE saw the price, gaps
+    where the book stopped quoting or the collector was down. See apply_apitennis().
 
 Join of an odds-api.io event to a board card (spec B2): both surnames (last token,
 accent-folded: ten225_names.name_key), either orientation, card date within ±1 day of
@@ -65,6 +69,168 @@ ODDS_API_LABELS = {
 
 def odds_api_label(book):
     return ODDS_API_LABELS.get(book, (f'{book} (odds-api.io)', 'vendor updatedAt'))
+
+
+# ── TEN-295 Wave 2 (founder 2026-09-26: comment d5bf3dda, cards 78ec4dd2 + 31e4beef) ──
+# The 9 api-tennis books, match winner only, from the TEN-216 collector's change log
+# (chart-apitennis-rpc.sql). Joined by EVENT KEY (card id = api-tennis event key), never by
+# name. Home/Away = the card's p1/p2 (the pipeline builds both from the same feed).
+# api-tennis name -> (chart label, group). Anything else api-tennis returns is not charted.
+APITENNIS_BOOKS = {
+    'Pncl': ('Pinnacle', 'sharp'),
+    'Betano': ('Betano', 'soft'),
+    '1xBet': ('1xBet', 'soft'),
+    'BetVictor': ('BetVictor', 'soft'),
+    'Betfair': ('Betfair Sportsbook', 'soft'),     # the SPORTSBOOK (~6.1% margin), not the Exchange
+    'Marathon': ('Marathon', 'soft'),
+    'bet365': ('bet365 (api-tennis)', 'soft'),
+    'Sbo': ('Sbobet', 'soft'),
+    'WilliamHill': ('William Hill', 'soft'),
+}
+# Vendor aliases (odds.md "Book names": `Victor Chandler` = BetVictor; the collector's rows
+# carry "BetVictor" today).
+APITENNIS_ALIASES = {'Victor Chandler': 'BetVictor'}
+APITENNIS_CLOCK = 'seen by us every 5 min'
+# Founder ruling: no backfill before 26 Sep 03:55Z. The collector chain was DOWN from
+# 22 Sep 12:42Z (run cancelled) to its restart at 26 Sep 03:45Z, whose first poll (03:55:20Z)
+# re-read every quote; nothing earlier is charted — an older row would carry a price across
+# the 3.6 days nobody looked.
+APITENNIS_SINCE = '2026-09-26T03:55:00.000Z'
+# The collector polls get_odds for today .. today + WINDOW_DAYS (tools/ten216-supabase-collector.mjs).
+APITENNIS_WINDOW_DAYS = 2
+
+
+def _scheduled_start(m):
+    t = m.get('time') or ''
+    return f"{m.get('date')}T{t[:5]}:00Z" if m.get('date') and len(t) >= 5 and t[2] == ':' else None
+
+
+def apitennis_book_series(rows, cut=None, down=()):
+    """One book's change rows [[at, selection, price, change_kind, event_live], ...] (time
+    order) -> ({'p1','p2'}, gaps). Home -> p1, Away -> p2.
+
+    A point is a PAIR, emitted at a poll where both sides are quoted and the pair passes the
+    odds.md guards (both >= 1.01, overround <= 20%; a failing pair gives no point, as on the
+    Wave 1 lines). A `removed` row on either side opens a GAP — the book stopped quoting —
+    which closes when both sides are quoted again: the page never draws across it. Rows
+    after `cut` (the card's start) or at/after the first in-play row are dropped. `down`
+    ([[from, to], ...]) = the collector was not polling: a gap for any line already open."""
+    cut = cs.ts_iso(cut) if cut else None
+    side = {'Home': None, 'Away': None}
+    p1, p2, gaps = [], [], []
+    open_gap = None
+    started = False
+    by_t = {}
+    order = []
+    for r in rows or []:
+        t = cs.ts_iso(r[0])
+        if t is None:
+            continue
+        if t not in by_t:
+            by_t[t] = []
+            order.append(t)
+        by_t[t].append(r)
+    for t in sorted(order):
+        if cut and t > cut:
+            break
+        grp = by_t[t]
+        if any(g[4] is True for g in grp):
+            cut = t                           # first in-play row: the pre-match line ends here
+            break
+        for g in grp:
+            sel = g[1]
+            if sel not in side:
+                continue
+            if g[3] == 'removed':
+                side[sel] = None
+            else:
+                try:
+                    side[sel] = float(g[2])
+                except (TypeError, ValueError):
+                    side[sel] = None
+        h, a = side['Home'], side['Away']
+        if h is None or a is None:
+            if started and open_gap is None:
+                open_gap = t
+            continue
+        if not (h >= cs.PRICE_FLOOR and a >= cs.PRICE_FLOOR) or 1.0 / h + 1.0 / a > 1.20:
+            continue                          # a suspended pair: no point, and a gap stays open
+        if open_gap is not None:
+            gaps.append([open_gap, t])
+            open_gap = None
+        started = True
+        p1.append([t, round(h, 3)])
+        p2.append([t, round(a, 3)])
+    if open_gap is not None:
+        gaps.append([open_gap, None])
+    ser = {'p1': cs.changes_only(cs.clean_points(p1)), 'p2': cs.changes_only(cs.clean_points(p2))}
+    if ser['p1']:
+        first = ser['p1'][0][0]
+        for f, to in down or ():
+            f, to = cs.ts_iso(f), cs.ts_iso(to)
+            if f and to and to > first and (cut is None or f < cut):
+                gaps.append([max(f, first), to])
+    gaps = _merge_gaps(gaps)
+    return ser, gaps
+
+
+def _merge_gaps(gaps):
+    out = []
+    for f, to in sorted(gaps, key=lambda g: g[0]):
+        if out and (out[-1][1] is None or f <= out[-1][1]):
+            if out[-1][1] is not None and (to is None or to > out[-1][1]):
+                out[-1][1] = to
+            continue
+        out.append([f, to])
+    return out
+
+
+def apply_apitennis(cards, payload, now, card_state=None):
+    """Write the 9 api-tennis books onto every card. Returns log counts."""
+    rows_by = {}
+    for r in payload.get('rows') or []:
+        if not isinstance(r, (list, tuple)) or len(r) < 7:
+            continue
+        book = APITENNIS_ALIASES.get(str(r[1]), str(r[1]))
+        rows_by.setdefault(str(r[0]), {}).setdefault(book, []).append([r[2], r[3], r[4], r[5], r[6]])
+    last_ok = cs.ts_iso(payload.get('last_ok_poll_at'))
+    down = payload.get('down') or []
+    today = now[:10]
+    horizon = (datetime.fromisoformat(today) + timedelta(days=APITENNIS_WINDOW_DAYS)).strftime('%Y-%m-%d')
+    lines, verdicts = {}, 0
+    for c in cards:
+        ek = event_key(c)
+        books = rows_by.get(ek) or {}
+        cut = cs.card_start(c, card_state, _scheduled_start(c))
+        # api-tennis's own in-play flag, from ANY book of this event, also ends every line.
+        live_at = [cs.ts_iso(r[0]) for rs in books.values() for r in rs if r[4] is True]
+        cut = _min_iso(cut, *live_at) if live_at else cut
+        checked = _min_iso(now, last_ok, cut) if last_ok else None
+        for book, (label, group) in APITENNIS_BOOKS.items():
+            meta = {'source': 'api-tennis', 'group': group, 'clock': APITENNIS_CLOCK, 'checkedAt': checked}
+            ser, gaps = apitennis_book_series(books.get(book), cut, down)
+            if ser['p1'] or ser['p2']:
+                meta.update(gaps=gaps, firstSeen=ser['p1'][0][0] if ser['p1'] else ser['p2'][0][0])
+                cs.put_chart(c, label, ser, meta, cut_at=cut)
+                lines[label] = lines.get(label, 0) + 1
+                continue
+            # No line: say why, never guess (founder 2026-09-26: "not offered" needs evidence).
+            if (c.get('date') or '9999') < APITENNIS_SINCE[:10] or (cut and cut < APITENNIS_SINCE):
+                note = 'not recorded — our recording began 26 Sep'
+            elif not books:
+                # The collector polls get_odds for today .. +2 days; an event in that window
+                # with no row at all is one api-tennis does not price.
+                note = ('api-tennis lists no odds for this match'
+                        if (c.get('date') or '') <= horizon and checked else None)
+                if not note:
+                    meta['checkedAt'] = None
+            else:
+                note = None               # the event was polled; this book never quoted it
+            meta.update(note=note, gaps=None, firstSeen=None)
+            cs.put_chart(c, label, None, meta, cut_at=cut)
+            verdicts += 1
+    return {'lines': lines, 'verdicts': verdicts, 'events': len(rows_by), 'last_ok': last_ok,
+            'down': len(down)}
 
 
 # ── Supabase ──────────────────────────────────────────────────────────────────
@@ -369,6 +535,20 @@ def main():
             empty += 1
     print(f'Bet105: {len(targets)} board card(s) read: {wrote} with a line, {empty} with '
           f'no pre-match rows, {failed} read failure(s), {cut} deferred by the budget. Kibl poller OK at {kibl_ok or "unknown"}.')
+
+    # 3) The 9 api-tennis books (Wave 2), one call for every card, joined by event key.
+    try:
+        keys = sorted({event_key(c) for c in cards})
+        at_payload = rpc('chart_apitennis_series', {'p_keys': keys, 'p_since': APITENNIS_SINCE})
+    except Exception as e:
+        at_payload = None
+        print(f'::warning::chart_apitennis_series failed ({type(e).__name__}: {e}) — no api-tennis '
+              f'lines this tick; held lines keep their checkedAt and read "no recent data" once it ages.')
+    if at_payload:
+        c = apply_apitennis(cards, at_payload, now, card_state)
+        print(f'api-tennis: {c["events"]} board event(s) with match-winner rows; lines written: '
+              f'{c["lines"] or "none"}; {c["verdicts"]} card x book verdicts with no line; last OK poll '
+              f'{c["last_ok"]}; {c["down"]} collector-down gap(s).')
 
     write_matches(matches)
     return 0
