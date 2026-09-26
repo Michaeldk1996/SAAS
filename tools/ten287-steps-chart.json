@@ -1,54 +1,37 @@
 [
  {
-  "name": "hb",
-  "sql": "select count(*) total, count(*) filter (where ok) ok_n, count(*) filter (where not ok) fail_n, min(observed_at) first_at, max(observed_at) latest_at, max(observed_at) filter (where ok) latest_ok, now() db_now from public.ten216_test_polls where poll_id <> 'selftest'"
+  "name": "install_pinger",
+  "file": "oddspapi-postmatch-pinger.sql",
+  "required": true
  },
  {
-  "name": "hb_gaps",
-  "sql": "select prev_at, observed_at, observed_at-prev_at gap from (select observed_at, lag(observed_at) over (order by observed_at) prev_at from public.ten216_test_polls where ok) x where observed_at-prev_at > interval '10 minutes' order by 1"
+  "name": "install_watchdog",
+  "file": "ten216-collector-watchdog.sql",
+  "required": true
  },
  {
-  "name": "hb_per_hour",
-  "sql": "select date_trunc('hour',observed_at) h, count(*) n, count(*) filter (where ok) ok from public.ten216_test_polls group by 1 order by 1"
+  "name": "routes",
+  "required": true,
+  "sql": "select position('ten287_telegram_bot_token' in pg_get_functiondef('public.postmatch_send_alert(text,text,text)'::regprocedure))>0 pm_ten287, position('ops_telegram' in pg_get_functiondef('public.postmatch_send_alert(text,text,text)'::regprocedure))>0 pm_ops, position('ten287_telegram_bot_token' in pg_get_functiondef('public.ten216_watch_send(text,text,text)'::regprocedure))>0 wd_ten287, position('ops_telegram' in pg_get_functiondef('public.ten216_watch_send(text,text,text)'::regprocedure))>0 wd_ops, (select count(*) from cron.job where jobname in ('ten270-oddspapi-postmatch-ping','ten270-oddspapi-postmatch-check','ten216-collector-watchdog') and active) jobs_active"
  },
  {
-  "name": "watch_state",
-  "sql": "select public.ten216_collector_check(now()) as check_now, (select exists(select 1 from public.ten216_test_polls where ok)) has_hb, (select max(observed_at) from public.ten216_test_odds_changes) newest_change"
+  "name": "send_tests",
+  "required": true,
+  "sql": "select public.postmatch_send_alert('route_test','test','TEST (TEN-295 item 3) - TEN-270 post-match dispatcher alarm: this chat is now the official ops alert route. No action needed.') pm, public.ten216_watch_send('route_test','test','TEST (TEN-295 item 3) - TEN-216 collector watchdog: this chat is now the official ops alert route. No action needed.') wd"
  },
  {
-  "name": "watch_alerts",
-  "sql": "select * from public.ten216_watch_alerts"
+  "sleep": 45
  },
  {
-  "name": "watch_log",
-  "sql": "select id, at, condition, kind, channel, delivered, left(message,160) msg from public.ten216_watch_log order by id"
+  "name": "delivery",
+  "sql": "select 'ten270' src, l.at, l.delivered, l.request_id, r.status_code, r.timed_out, r.error_msg, (r.content::jsonb->>'ok') tg_ok, (r.content::jsonb->'result'->>'message_id') tg_msg_id from public.postmatch_alert_log l left join net._http_response r on r.id=l.request_id where l.condition='route_test' union all select 'ten216', l.at, l.delivered, l.request_id, r.status_code, r.timed_out, r.error_msg, (r.content::jsonb->>'ok'), (r.content::jsonb->'result'->>'message_id') from public.ten216_watch_log l left join net._http_response r on r.id=l.request_id where l.condition='route_test'"
  },
  {
-  "name": "watch_cron",
-  "sql": "select status, count(*), min(start_time), max(start_time) from cron.job_run_details where jobid=(select jobid from cron.job where jobname='ten216-collector-watchdog') group by 1"
+  "name": "watch_check",
+  "sql": "select public.ten216_collector_check(now()) r"
  },
  {
-  "name": "watch_cron_last",
-  "sql": "select status, return_message, start_time from cron.job_run_details where jobid=(select jobid from cron.job where jobname='ten216-collector-watchdog') order by start_time desc limit 3"
- },
- {
-  "name": "pm_log",
-  "sql": "select delivered, condition, count(*), min(at), max(at) from public.postmatch_alert_log group by 1,2 order by 1,2"
- },
- {
-  "name": "pm_open",
-  "sql": "select condition, is_open, opened_at, last_sent_at, left(detail,200) from public.postmatch_alerts"
- },
- {
-  "name": "vault_names",
-  "sql": "select name from vault.secrets where name like '%telegram%' order by 1"
- },
- {
-  "name": "pm_send_src",
-  "sql": "select position('ops_telegram' in pg_get_functiondef('public.postmatch_send_alert(text,text,text)'::regprocedure))>0 uses_ops"
- },
- {
-  "name": "crons",
-  "sql": "select jobname, schedule, active from cron.job order by 1"
+  "name": "wd_log_after",
+  "sql": "select id, condition, kind, channel, delivered from public.ten216_watch_log order by id"
  }
 ]

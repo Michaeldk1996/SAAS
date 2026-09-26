@@ -12,7 +12,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-      # Run 26: READ-ONLY — TEN-295 follow-up: heartbeat, watchdog + TEN-270 alert state.
+      # Run 27: TEN-295 item 3 — alarms routed to the drop-bot chat (install) + one test alert each.
       - name: SQL steps (encrypted output)
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
