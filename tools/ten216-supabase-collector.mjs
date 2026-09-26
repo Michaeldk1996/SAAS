@@ -352,12 +352,18 @@ const startedAt = firstSeen ? new Date(firstSeen) : new Date();
 console.log(`state rebuilt: ${state.size} live quotes from ${rowsRead}/${total ?? '-'} rows; ` +
             `collection started ${iso(startedAt)}`);
 
-let n = 0;
+let n = 0, okTicks = 0, failRun = 0;
 while ((Date.now() - t0) / 60000 < LOOP_MIN) {
   n += 1;
-  try { await tick(state, startedAt); }
-  catch (e) { console.error(`  tick ${n} failed (continuing): ${e.message}`); }
+  try { await tick(state, startedAt); okTicks += 1; failRun = 0; }
+  catch (e) { failRun += 1; console.error(`  tick ${n} failed (continuing): ${e.message}`); }
   if ((Date.now() - t0) / 60000 + INTERVAL_MIN >= LOOP_MIN) break;
   await sleep(INTERVAL_MIN * 60000);
 }
-console.log(`loop done after ${n} ticks, ${((Date.now() - t0) / 60000).toFixed(1)} min`);
+console.log(`loop done after ${n} ticks (${okTicks} OK), ${((Date.now() - t0) / 60000).toFixed(1)} min`);
+// TEN-295 (founder 2026-09-26: "a failed run must fail visibly"): a run whose polls failed is RED,
+// never a green run that recorded nothing. Exit 4 still hands off (only 2 and 3 end the chain).
+if (okTicks === 0 || failRun >= 3) {
+  console.error(`::error::collector run FAILED: ${okTicks} of ${n} polls OK, last ${failRun} failed in a row`);
+  process.exit(4);
+}

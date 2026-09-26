@@ -37,6 +37,7 @@ runs 4x an hour; a red run that often hides real signals) — every failure is l
 """
 import json, os, sys, time, urllib.error, urllib.parse, urllib.request
 from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import chart_series as cs                       # noqa: E402
@@ -76,12 +77,16 @@ def odds_api_label(book):
 # (chart-apitennis-rpc.sql). Joined by EVENT KEY (card id = api-tennis event key), never by
 # name. Home/Away = the card's p1/p2 (the pipeline builds both from the same feed).
 # api-tennis name -> (chart label, group). Anything else api-tennis returns is not charted.
+# Founder 2026-09-26 (comment 5dafce2b): a book that appears from two sources carries its source
+# in the label — "Pinnacle (api-tennis)" beside "Pinnacle +30s (Oddspapi)", "Betfair Sportsbook
+# (api-tennis)" beside "Betfair Exchange (recorded by us)", "bet365 (api-tennis)" beside the
+# legacy "bet365 (Oddspapi, capture ended 26 Sep)". No two rows ever read the same.
 APITENNIS_BOOKS = {
-    'Pncl': ('Pinnacle', 'sharp'),
+    'Pncl': ('Pinnacle (api-tennis)', 'sharp'),
     'Betano': ('Betano', 'soft'),
     '1xBet': ('1xBet', 'soft'),
     'BetVictor': ('BetVictor', 'soft'),
-    'Betfair': ('Betfair Sportsbook', 'soft'),     # the SPORTSBOOK (~6.1% margin), not the Exchange
+    'Betfair': ('Betfair Sportsbook (api-tennis)', 'soft'),     # the SPORTSBOOK (~6.1% margin), not the Exchange
     'Marathon': ('Marathon', 'soft'),
     'bet365': ('bet365 (api-tennis)', 'soft'),
     'Sbo': ('Sbobet', 'soft'),
@@ -91,6 +96,7 @@ APITENNIS_BOOKS = {
 # carry "BetVictor" today).
 APITENNIS_ALIASES = {'Victor Chandler': 'BetVictor'}
 APITENNIS_CLOCK = 'seen by us every 5 min'
+ACCOUNT_TZ = ZoneInfo('Europe/Berlin')   # api-tennis account zone (card date/time)
 # Founder ruling: no backfill before 26 Sep 03:55Z. The collector chain was DOWN from
 # 22 Sep 12:42Z (run cancelled) to its restart at 26 Sep 03:45Z, whose first poll (03:55:20Z)
 # re-read every quote; nothing earlier is charted — an older row would carry a price across
@@ -102,11 +108,18 @@ APITENNIS_WINDOW_DAYS = 2
 
 def _scheduled_start(m):
     """The card's scheduled start as a UTC instant. `date`/`time` are api-tennis's ACCOUNT wall
-    clock, ~UTC+2 (bsp-pipeline.js closing cutoff; odds.md card-state key) — read as UTC the
-    cut lands ~2 h into the match (review 2026-09-26: Cina v Muller stepped to 08:30Z on a
-    06:30Z start). A late real start only drops real pre-start points; never adds in-play ones."""
+    clock — Europe/Berlin, DST-aware, the same zone as the page's cardStartMs() (TEN-80). Read
+    as UTC the cut lands ~2 h into the match (review 2026-09-26: Cina v Muller stepped to
+    08:30Z on a 06:30Z start); a fixed +02:00 would be 1 h off after the 25 Oct clock change.
+    A late real start only drops real pre-start points; never adds in-play ones."""
     t = m.get('time') or ''
-    return f"{m.get('date')}T{t[:5]}:00+02:00" if m.get('date') and len(t) >= 5 and t[2] == ':' else None
+    if not (m.get('date') and len(t) >= 5 and t[2] == ':'):
+        return None
+    try:
+        local = datetime.fromisoformat(f"{m['date'][:10]}T{t[:5]}:00").replace(tzinfo=ACCOUNT_TZ)
+    except ValueError:
+        return None
+    return local.astimezone(timezone.utc).isoformat()
 
 
 def apitennis_book_series(rows, cut=None, down=()):

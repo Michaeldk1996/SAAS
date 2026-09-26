@@ -16047,7 +16047,7 @@ const AODDS_WARN_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentCol
 // ===== Odds tab (Handoff #16) — real per-book opening→now history from m.oddsMovement =====
 // Per-book SVG line-dash identities so all books are distinguishable in one color per panel.
 const AODDS_DASH = { 'Pinnacle':'', 'bet365':'8 5', 'William Hill':'10 4 1.6 4', '1xBet':'15 6', 'Betsson':'2 5', 'Betano':'9 4 2 4', 'Betfair':'1.6 4.5',
-  'Pinnacle +30s':'', 'Bet105':'2 5', 'Superbet':'15 6', 'Betfair Exchange (recorded by us)':'1.6 4.5', 'bet365 (Oddspapi, capture ended 26 Sep)':'8 5' };
+  'Pinnacle +30s (Oddspapi)':'', 'Pinnacle (api-tennis)':'4 3', 'Bet105':'2 5', 'Superbet':'15 6', 'Betfair Exchange (recorded by us)':'1.6 4.5', 'bet365 (Oddspapi, capture ended 26 Sep)':'8 5' };
 const AODDS_DASHCYCLE = ['', '8 5', '2 5', '15 6', '10 4 1.6 4', '9 4 2 4'];
 const AODDS_CHECK = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
 const AODDS_CHEV = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;"><polyline points="6 9 12 15 18 9"></polyline></svg>';
@@ -16097,11 +16097,16 @@ const AODDS_LEGACY_BET365 = 'bet365 (Oddspapi, capture ended 26 Sep)';
 // TEN-295 Wave 2 (founder 2026-09-26: comment d5bf3dda, cards 78ec4dd2 + 31e4beef): + the 9
 // api-tennis books. Sharp = Pinnacle (both lines) + Bet105; everything else Soft. Two
 // Pinnacles, two Betfairs and two bet365s are DIFFERENT lines, labelled by source.
-const AODDS_ORDER = ['Pinnacle +30s', 'Pinnacle', 'Bet105',
-  'Betano', '1xBet', 'BetVictor', 'Betfair Sportsbook', 'Marathon', 'bet365 (api-tennis)', 'Sbobet', 'William Hill',
+const AODDS_ORDER = ['Pinnacle +30s (Oddspapi)', 'Pinnacle (api-tennis)', 'Bet105',
+  'Betano', '1xBet', 'BetVictor', 'Betfair Sportsbook (api-tennis)', 'Marathon', 'bet365 (api-tennis)', 'Sbobet', 'William Hill',
   'Superbet', 'Betfair Exchange (recorded by us)'];
 // Chart lines on when the Odds tab opens (founder card 78ec4dd2: "sharp_both").
-const AODDS_DEFAULT_ON = ['Pinnacle +30s', 'Bet105'];
+const AODDS_DEFAULT_ON = ['Pinnacle +30s (Oddspapi)', 'Bet105'];
+// Founder 2026-09-26 (comment 5dafce2b): a book that appears from two sources shows its source in
+// its NAME, so no two rows ever read the same. The stored chart key "Pinnacle +30s" (written since
+// Wave 1) is shown as "Pinnacle +30s (Oddspapi)"; the api-tennis labels carry "(api-tennis)" from
+// the writer; a legacy Oddspapi `books` key always gets " (Oddspapi)".
+const AODDS_ALIAS = { 'Pinnacle +30s': 'Pinnacle +30s (Oddspapi)' };
 const AODDS_AT_CLOCK = 'seen by us every 5 min';
 // TEN-295 coverage pass (founder 2026-09-26): EVERY configured book gets a row on EVERY
 // card, in this fixed order, with its group fixed here (the locked spec: Pinnacle +30s and
@@ -16109,15 +16114,15 @@ const AODDS_AT_CLOCK = 'seen by us every 5 min';
 // its verdict: the writer's note, else "not priced for this match" when the source was
 // checked, else "not checked yet". The subheading counts "X of Y books priced", Y = this list.
 const AODDS_CONFIG = {
-  'Pinnacle +30s': { group: 'sharp', source: 'Oddspapi', clock: 'book tick' },
+  'Pinnacle +30s (Oddspapi)': { group: 'sharp', source: 'Oddspapi', clock: 'book tick' },
   'Bet105': { group: 'sharp', source: 'Kibl', clock: 'Kibl insert' },
   'Superbet': { group: 'soft', source: 'odds-api.io', clock: 'vendor updatedAt' },
   'Betfair Exchange (recorded by us)': { group: 'soft', source: 'odds-api.io', clock: 'recorded by us' },
-  'Pinnacle': { group: 'sharp', source: 'api-tennis', clock: AODDS_AT_CLOCK },
+  'Pinnacle (api-tennis)': { group: 'sharp', source: 'api-tennis', clock: AODDS_AT_CLOCK },
   'Betano': { group: 'soft', source: 'api-tennis', clock: AODDS_AT_CLOCK },
   '1xBet': { group: 'soft', source: 'api-tennis', clock: AODDS_AT_CLOCK },
   'BetVictor': { group: 'soft', source: 'api-tennis', clock: AODDS_AT_CLOCK },
-  'Betfair Sportsbook': { group: 'soft', source: 'api-tennis', clock: AODDS_AT_CLOCK },
+  'Betfair Sportsbook (api-tennis)': { group: 'soft', source: 'api-tennis', clock: AODDS_AT_CLOCK },
   'Marathon': { group: 'soft', source: 'api-tennis', clock: AODDS_AT_CLOCK },
   'bet365 (api-tennis)': { group: 'soft', source: 'api-tennis', clock: AODDS_AT_CLOCK },
   'Sbobet': { group: 'soft', source: 'api-tennis', clock: AODDS_AT_CLOCK },
@@ -16128,10 +16133,11 @@ function aOddsBooksOf(m){
   const books = {}, meta = {};
   const ch = (om && om.chart) || null;
   const cb = (ch && ch.books) || {}, cm = (ch && ch.meta) || {};
-  Object.keys(cm).concat(Object.keys(cb)).forEach(k => {
+  Object.keys(cm).concat(Object.keys(cb)).forEach(key => {
+    const k = AODDS_ALIAS[key] || key;
     if (k in meta) return;
-    const mt = cm[k] || {};
-    books[k] = cb[k] || { p1: [], p2: [] };
+    const mt = cm[key] || {};
+    books[k] = cb[key] || { p1: [], p2: [] };
     const cf = AODDS_CONFIG[k];
     meta[k] = { source: mt.source || (cf && cf.source) || null,
                 group: cf ? cf.group : (mt.group === 'sharp' ? 'sharp' : 'soft'),
@@ -16142,8 +16148,8 @@ function aOddsBooksOf(m){
   // Legacy capture (founder 2026-09-26: bet365 is 403 on Oddspapi, the capture ended).
   const lb = (om && om.books) || {};
   Object.keys(lb).forEach(k => {
-    // A legacy Oddspapi key never takes over a live label (Wave 2 added "Pinnacle").
-    const name = k === 'bet365' ? AODDS_LEGACY_BET365 : ((k in AODDS_CONFIG) ? k + ' (Oddspapi)' : k);
+    // A legacy Oddspapi key always shows its source (founder 2026-09-26: no two rows read the same).
+    const name = k === 'bet365' ? AODDS_LEGACY_BET365 : k + ' (Oddspapi)';
     if (name in meta) return;
     books[name] = lb[k];
     meta[name] = { source: 'Oddspapi', group: /pinnacle/i.test(k) ? 'sharp' : 'soft',
@@ -16182,8 +16188,8 @@ function aOddsSourceText(name, mt){
   return (mt.source || '—') + (clock ? ' (' + clock + ')' : '');
 }
 function aOddsShort(name){
-  return ({ 'Pinnacle +30s':'Pin +30s', 'Betfair Exchange (recorded by us)':'BF Exch', [AODDS_LEGACY_BET365]:'bet365',
-            'Pinnacle':'Pin (AT)', 'Betfair Sportsbook':'BF Sport', 'bet365 (api-tennis)':'b365 AT', 'William Hill':'W Hill',
+  return ({ 'Pinnacle +30s (Oddspapi)':'Pin +30s', 'Betfair Exchange (recorded by us)':'BF Exch', [AODDS_LEGACY_BET365]:'b365 OP',
+            'Pinnacle (api-tennis)':'Pin AT', 'Betfair Sportsbook (api-tennis)':'BF Sport', 'bet365 (api-tennis)':'b365 AT', 'William Hill':'W Hill',
             'BetVictor':'BetVictr' })[name]
     || (name.length > 8 ? name.slice(0, 8) : name);
 }
@@ -16297,7 +16303,10 @@ function buildOddsSection(m){
   // points at or before match start (mirrors the pipeline's lastBeforeStart in bsp-pipeline.js,
   // which treats m.time as UTC). Upcoming matches have no in-play points, so startMs sits in the
   // future and preMatch() keeps the whole series unchanged.
-  const startMs = Date.parse(`${m.date}T${/^\d{2}:\d{2}/.test(m.time||'') ? m.time : '00:00'}:00Z`);
+  // TEN-295 (founder 2026-09-26, comment 5dafce2b): the start is cardStartMs() — m.startTs, else
+  // `date`+`time` read in api-tennis's ACCOUNT zone (Europe/Berlin, DST-safe; TEN-80). Read as
+  // UTC it landed ~2 h late: a card stayed "upcoming" and in-play ticks drew as pre-match.
+  const startMs = cardStartMs(m);
   // Points become [ms, price] here: sources write different ISO shapes, and the grid and
   // the step compare instants, which a string compare only gets right by accident.
   const preMatch = pts => (pts||[]).map(p=>[Date.parse(p[0]), Number(p[1])])
@@ -17125,7 +17134,7 @@ function akOddsMoveSvg(m){
   if (!Object.keys(om.books).length) return '';
   // Same closing-odds rule as buildOddsSection: the capture keeps running in-play, so
   // cap the series at match start or an in-progress match shows post-lock prices.
-  const startMs = Date.parse(`${m.date}T${/^\d{2}:\d{2}/.test(m.time||'') ? m.time : '00:00'}:00Z`);
+  const startMs = cardStartMs(m);   // TEN-295: account zone, DST-safe (was read as UTC, ~2 h late)
   const preMatch = pts => (Number.isFinite(startMs) ? (pts||[]).filter(p=>Date.parse(p[0])<=startMs) : (pts||[]));
   // Pinnacle is the sharpest line and the Odds tab's default, so prefer it — but
   // only if it actually quoted a movement here. Otherwise take the book with the

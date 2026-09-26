@@ -490,9 +490,10 @@ _, g5 = bcb.apitennis_book_series([R('04:00:00', 'Home', '2.4', 'first_seen'), R
                                    R('06:00:00', 'Home', '2.5'), R('06:00:00', 'Away', '1.55')])
 check(g5 == [[S + '05:00:00.000Z', S + '06:00:00.000Z']],
       f'api-tennis: a running line that turns into a suspended pair stops (a gap), never carries the old price {g5}')
-check(bcb._scheduled_start({'date': '2026-09-26', 'time': '08:30'}) == '2026-09-26T08:30:00+02:00'
-      and cs.ts_iso(bcb._scheduled_start({'date': '2026-09-26', 'time': '08:30'})) == '2026-09-26T06:30:00.000Z',
-      'api-tennis: the scheduled fallback reads the card time as UTC+2 (08:30 -> 06:30Z), never UTC')
+check(cs.ts_iso(bcb._scheduled_start({'date': '2026-09-26', 'time': '08:30'})) == '2026-09-26T06:30:00.000Z'
+      and cs.ts_iso(bcb._scheduled_start({'date': '2026-10-26', 'time': '08:30'})) == '2026-10-26T07:30:00.000Z',
+      'the scheduled fallback reads the card time in the account zone (Europe/Berlin): CEST 08:30 -> 06:30Z, '
+      'CET after the 25 Oct change 08:30 -> 07:30Z — never UTC, never a fixed +02:00')
 _, g4 = bcb.apitennis_book_series([R('05:00:00', 'Home', None, 'removed'), R('06:00:00', 'Home', '2.4', 'first_seen'),
                                    R('06:00:00', 'Away', '1.6', 'first_seen')])
 check(g4 == [], 'api-tennis: a removal before the line began is not a gap')
@@ -515,44 +516,45 @@ payload = {'rows': AT_ROWS('12165868', 'Pncl', [R('04:00:00', 'Home', '2.40', 'f
 cnt = bcb.apply_apitennis(at_cards, payload, S + '09:45:00.000Z', {})
 jm, fc, nob, old, far = at_cards
 ch = lambda c: c['oddsMovement']['chart']
-check(cs.chart_series(jm, 'Pinnacle')['p1'] == [[S + '04:00:00.000Z', 2.4]]
-      and cs.chart_series(fc, 'Pinnacle')['p1'] == [[S + '04:10:00.000Z', 3.1]],
+check(cs.chart_series(jm, 'Pinnacle (api-tennis)')['p1'] == [[S + '04:00:00.000Z', 2.4]]
+      and cs.chart_series(fc, 'Pinnacle (api-tennis)')['p1'] == [[S + '04:10:00.000Z', 3.1]],
       'api-tennis: joined by EVENT KEY — the Cerundolo brothers keep their own lines')
-check(ch(jm)['meta']['Pinnacle']['group'] == 'sharp' and ch(jm)['meta']['Betfair Sportsbook']['group'] == 'soft'
+check(ch(jm)['meta']['Pinnacle (api-tennis)']['group'] == 'sharp' and ch(jm)['meta']['Betfair Sportsbook (api-tennis)']['group'] == 'soft'
+      and 'Pinnacle' not in ch(jm)['meta'] and 'Betfair Sportsbook' not in ch(jm)['meta']
       and 'Betfair' not in ch(jm)['books'] and 'Unibet' not in ch(jm)['meta'] and 'Unibet (api-tennis)' not in ch(jm)['meta'],
-      'api-tennis: Pncl = "Pinnacle" (Sharp), Betfair = "Betfair Sportsbook" (Soft); a 10th book is not charted')
-mp = ch(jm)['meta']['Pinnacle']
+      'api-tennis: Pncl = "Pinnacle (api-tennis)" (Sharp), Betfair = "Betfair Sportsbook (api-tennis)" (Soft) — source in the label; a 10th book is not charted')
+mp = ch(jm)['meta']['Pinnacle (api-tennis)']
 check(mp['source'] == 'api-tennis' and mp['clock'] == 'seen by us every 5 min' and mp['firstSeen'] == S + '04:00:00.000Z'
       and mp['checkedAt'] == S + '08:30:00.000Z',
       f'api-tennis meta: our clock, first seen, checkedAt capped at the event\'s first in-play row (any book) {mp}')
 nob_m = at_cards[2]  # no rows, scheduled 09:00 -> checkedAt = the scheduled start, not the later OK poll
-check(ch(jm)['meta']['Betfair Sportsbook']['checkedAt'] == S + '08:30:00.000Z',
+check(ch(jm)['meta']['Betfair Sportsbook (api-tennis)']['checkedAt'] == S + '08:30:00.000Z',
       'api-tennis: the event\'s first in-play row (any book) also caps checkedAt')
 nb = ch(jm)['meta']['Betano']
 check('Betano' not in ch(jm)['books'] and nb.get('note') is None and nb['checkedAt'],
       f'api-tennis: event polled, book never quoted it -> meta only, no note ("not priced for this match") {nb}')
-check(all(ch(nob)['meta'][l].get('note') == 'api-tennis lists no odds for this match' for l in ('Pinnacle', 'William Hill'))
-      and ch(nob)['meta']['Pinnacle']['checkedAt'] == S + '09:00:00.000Z',
+check(all(ch(nob)['meta'][l].get('note') == 'api-tennis lists no odds for this match' for l in ('Pinnacle (api-tennis)', 'William Hill'))
+      and ch(nob)['meta']['Pinnacle (api-tennis)']['checkedAt'] == S + '09:00:00.000Z',
       'api-tennis: an event in the collector window with no row at all; checkedAt capped at the scheduled start')
-check(all(ch(old)['meta'][l].get('note') == 'not recorded — our recording began 26 Sep' for l in ('Pinnacle', 'Sbobet'))
+check(all(ch(old)['meta'][l].get('note') == 'not recorded — our recording began 26 Sep' for l in ('Pinnacle (api-tennis)', 'Sbobet'))
       and json.dumps({k: v for k, v in old['oddsMovement'].items() if k != 'chart'}, sort_keys=True)
           == json.dumps({k: v for k, v in json.loads(before_legacy).items()}, sort_keys=True),
       'api-tennis: a card before 26 Sep 03:55Z reads "not recorded", legacy fields untouched')
-check(all(ch(far)['meta'][l].get('checkedAt') is None and not ch(far)['meta'][l].get('note') for l in ('Pinnacle',)),
+check(all(ch(far)['meta'][l].get('checkedAt') is None and not ch(far)['meta'][l].get('note') for l in ('Pinnacle (api-tennis)',)),
       'api-tennis: a card beyond the collector window is "not checked yet", never "no odds"')
-check(sorted(ch(jm)['meta']) == sorted(['Pinnacle', 'Betano', '1xBet', 'BetVictor', 'Betfair Sportsbook', 'Marathon',
+check(sorted(ch(jm)['meta']) == sorted(['Pinnacle (api-tennis)', 'Betano', '1xBet', 'BetVictor', 'Betfair Sportsbook (api-tennis)', 'Marathon',
                                         'bet365 (api-tennis)', 'Sbobet', 'William Hill']),
       'api-tennis: all 9 configured books carry a verdict on every card')
-check(cnt['lines'] == {'Pinnacle': 2, 'Betfair Sportsbook': 1}, f'api-tennis log counts {cnt}')
+check(cnt['lines'] == {'Pinnacle (api-tennis)': 2, 'Betfair Sportsbook (api-tennis)': 1}, f'api-tennis log counts {cnt}')
 # a re-read that now shows a gap: gaps REPLACE, points merge
 payload['rows'] += AT_ROWS('12165868', 'Pncl', [R('05:00:00', 'Home', None, 'removed')])
 bcb.apply_apitennis(at_cards, payload, S + '09:50:00.000Z', {})
-check(ch(jm)['meta']['Pinnacle'].get('gaps') == [[S + '05:00:00.000Z', None]], 'api-tennis: a new gap lands on re-read')
+check(ch(jm)['meta']['Pinnacle (api-tennis)'].get('gaps') == [[S + '05:00:00.000Z', None]], 'api-tennis: a new gap lands on re-read')
 payload['rows'] += AT_ROWS('12165868', 'Pncl', [R('05:30:00', 'Home', '2.5', 'first_seen')])
 bcb.apply_apitennis(at_cards, payload, S + '09:55:00.000Z', {})
-check(ch(jm)['meta']['Pinnacle'].get('gaps') == [[S + '05:00:00.000Z', S + '05:30:00.000Z']]
-      and cs.chart_series(jm, 'Pinnacle')['p1'][-1] == [S + '05:30:00.000Z', 2.5],
-      f'api-tennis: the gap closes on re-read (replaced, not appended) {ch(jm)["meta"]["Pinnacle"].get("gaps")}')
+check(ch(jm)['meta']['Pinnacle (api-tennis)'].get('gaps') == [[S + '05:00:00.000Z', S + '05:30:00.000Z']]
+      and cs.chart_series(jm, 'Pinnacle (api-tennis)')['p1'][-1] == [S + '05:30:00.000Z', 2.5],
+      f'api-tennis: the gap closes on re-read (replaced, not appended) {ch(jm)["meta"]["Pinnacle (api-tennis)"].get("gaps")}')
 
 vc = [card(id='upcoming-900', p1='G. One', p2='H. Two', date='2026-09-26', time='20:00')]
 bcb.apply_apitennis(vc, {'rows': AT_ROWS('900', 'Victor Chandler', [R('04:00:00', 'Home', '2.0', 'first_seen'), R('04:00:00', 'Away', '1.8', 'first_seen')]),
@@ -582,6 +584,30 @@ check('const next = new Map(state);' in tk and 'state.set(' not in tk[:tk.index(
 ir = coll[coll.index('async function insertRows'):coll.index('async function rowCount')]
 check('body: JSON.stringify([row])' in ir, 'collector: a 409 retries its chunk row by row')
 check(bcb.APITENNIS_SINCE == '2026-09-26T03:55:00.000Z', 'api-tennis: nothing before our 26 Sep 03:55Z restart')
+
+# ── 8. collector outage alert (founder 2026-09-26, comment 5dafce2b item 4) ──────────────
+wd = open(os.path.join(HERE, 'ten216-collector-watchdog.sql')).read()
+chk = wd[wd.index('function public.ten216_collector_check'):wd.index('$fn$;', wd.index('function public.ten216_collector_check'))]
+check("max(observed_at) from public.ten216_test_odds_changes" in chk and "from public.ten216_test_polls where ok" in chk
+      and "interval '60 minutes'" in chk,
+      'watchdog: stale = no change row AND no OK heartbeat for > 60 min')
+check("extract(month from d) = 12 and extract(day from d) <= 26" in chk and 'not offseason and' in chk,
+      'watchdog: in season only (off-season = 1-26 Dec)')
+check("interval '3 hours'" in chk and "'RECOVERED - " in chk, 'watchdog: repeats every 3 h while open; says RECOVERED')
+snd = wd[wd.index('function public.ten216_watch_send'):wd.index('$fn$;', wd.index('function public.ten216_watch_send'))]
+check(snd.index("'ops_telegram_bot_token'") < snd.index("'ten287_telegram_bot_token'") and "'unsent: no telegram secret in vault'" in snd
+      and 'raise warning' in snd and "channel" in snd,
+      'watchdog: ops chat first, else the measured-working drop-bot chat; no secret = unsent + WARNING, channel logged')
+check("'failed: no response'" in chk and "'sent'" in chk, 'watchdog: every send is resolved against pg_net')
+check("cron.schedule('ten216-collector-watchdog', '*/10 * * * *'" in wd
+      and 'exception when others then\n  raise warning' not in wd and wd.count('exception when others') == 1,
+      'watchdog: every 10 min; the install is NOT wrapped in an error-swallowing handler (fails visibly)')
+check('from public, anon, authenticated' in wd and 'enable row level security' in wd, 'watchdog: tables RLS-on, functions revoked')
+cl = open(os.path.join(HERE, 'tools/ten216-supabase-collector.mjs')).read()
+check('if (okTicks === 0 || failRun >= 3)' in cl and 'process.exit(4)' in cl, 'collector: a run whose polls failed exits 4 (red)')
+wfc = open(os.path.join(HERE, '.github/workflows/ten216-collector.yml')).read()
+check('|| true' not in wfc and 'if [ "$rc" = "2" ] || [ "$rc" = "3" ]' in wfc and 'exit $rc' in wfc,
+      'collector workflow: exit 4 is red AND hands off; nothing swallowed')
 
 print(f'\n{len(FAILS)} assertion(s) failed.')
 sys.exit(1 if FAILS else 0)
