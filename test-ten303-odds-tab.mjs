@@ -47,6 +47,10 @@ const rowsOf = h => [...h.matchAll(/class="aox-row[^"]*" data-book="([^"]*)" dat
 const rowHtml = (h, book) => { const i = h.indexOf(`data-book="${book}"`, h.indexOf('class="aox-row')); const j = h.indexOf('class="aox-row', i + 10); return h.slice(i, j < 0 ? h.indexOf('class="aox-foot', i) : j); };
 const cellTxt = (row, cls, side) => { const mm = new RegExp(`class="${cls}" data-side="${side}" style="[^"]*">([^<]*)<`).exec(row); return mm && mm[1]; };
 const colorOf = (row, cls, side) => { const mm = new RegExp(`class="${cls}" data-side="${side}" style="[^"]*color:([^;"]+)`).exec(row); return mm && mm[1]; };
+// A test that pins its fixture to a fixed instant must pin the renderer's clock too: the page reads Date.now()
+// for staleness (60-min rule), so a fixed fixture silently turns stale once the wall clock passes it (the
+// 2026-09-27 ~09:00Z pipeline gate failure). atClock() freezes Date.now for the test body and restores it.
+const atClock = (now, fn) => { const real = Date.now; Date.now = () => now; try { return fn(); } finally { Date.now = real; } };
 const unesc = s => s.replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&amp;/g, '&');
 const tipOf = (h, book) => { const r = rowHtml(h, book); const mm = /class="aox-book"[\s\S]*?data-aotip="([^"]*)"/.exec(r); return mm ? unesc(mm[1]) : ''; };
 
@@ -297,6 +301,7 @@ test('start time: in-play points never draw (the page start is aOddsStartMs)', (
 
 test('pop-up: real window, stat boxes from the real series (earliest on ties), book tabs in table order', () => {
   const now = Date.parse('2026-09-27T08:00:00Z');
+  atClock(now, () => {
   const A = build();
   const m = fixture({ now, withAt: true });
   m.oddsMovement.chart.books['Pinnacle +30s'].p1 = [[iso(now - 20 * H), 2.5], [iso(now - 10 * H), 2.6], [iso(now - 6 * H), 2.6], [iso(now - 2 * H), 2.35]];
@@ -314,6 +319,7 @@ test('pop-up: real window, stat boxes from the real series (earliest on ties), b
   assert.deepEqual(tabs, D.rows.filter(r => !r.noData).map(r => r.name), 'one tab per row with a line, table order, stale included');
   // no hard-coded "last 72 hours", no Catmull-Rom
   assert.ok(!mv.includes('72 hours') && !/class="aox-line" d="[^"]*C/.test(mv));
+  });
 });
 
 // ── review fold-in (clean-context review 2026-09-27) ─ mutants: the last pair reused as a no-vig NOW; pairing
@@ -455,6 +461,7 @@ function vertices(d) {
 //    mutants: a gap breaks the line again (a second M) · the flat run is interpolated (an L / slope) ──
 test('1a: a stored series with a 3-hour no-change gap (and a feed gap) draws ONE flat segment — no break, no interpolated point', () => {
   const now = Date.parse('2026-09-27T08:00:00Z');
+  atClock(now, () => {
   const A = build();
   const t0 = now - 8 * H;
   const s = [[t0, 2.50], [t0 + 1 * H, 2.40], [t0 + 4 * H, 2.60]];     // 2.40 held for 3 h, then 2.60
@@ -477,6 +484,7 @@ test('1a: a stored series with a 3-hour no-change gap (and a feed gap) draws ONE
   A.state().mv = 'Pinnacle';
   const mv = A.buildOddsSection(m); const pd = /class="aox-line" d="([^"]+)"/.exec(mv.slice(mv.indexOf('class="aox-mv"')))[1];
   assert.equal((pd.match(/M/g) || []).length, 1, 'pop-up: one line across the feed gap: ' + pd);
+  });
 });
 //    mutant: the raw (unrounded) price is plotted — 1.4695 draws at 1.4695, not 1.47 ──
 test('1a: every plotted y-value is a stored price at display precision (the NOW column rounding)', () => {
@@ -539,6 +547,7 @@ test('1c: the tooltip ALSO line reads "api-tennis · not in feed since HH:MM"', 
 //    mutant: the stat boxes read raw prices again (1.404 beats 1.401 though both show 1.40) ──
 test('pop-up stat boxes: HIGHEST / LOWEST compare displayed prices; a displayed tie keeps the earliest time', () => {
   const now = Date.parse('2026-09-27T08:00:00Z');
+  atClock(now, () => {
   const A = build();
   const m = fixture({ now, withAt: true });
   m.oddsMovement.chart.books['Pinnacle +30s'].p1 = [[iso(now - 20 * H), 1.30], [iso(now - 10 * H), 1.401], [iso(now - 6 * H), 1.404], [iso(now - 2 * H), 1.35]];
@@ -547,4 +556,5 @@ test('pop-up stat boxes: HIGHEST / LOWEST compare displayed prices; a displayed 
   const mv = h.slice(h.indexOf('class="aox-mv"'));
   const stats = [...mv.matchAll(/class="aox-stat"[^>]*>([^<]*)<\/span><span[^>]*>([^<]*)</g)].map(x => [x[1], x[2]]);
   assert.deepEqual(stats[1], ['1.40', '27 Sep, 00:00'], 'HIGHEST = the first 1.40 (10 h before now, Europe/Brussels)');
+  });
 });
