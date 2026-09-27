@@ -3,7 +3,7 @@
 //   1. every Odds-tab colour token equals the value in `Odds Tab - Spec.md` ("Colour tokens used on this tab"),
 //      read from the spec file itself (mutant: a value mapped through 12a again, e.g. text #EBF1F2);
 //   2. the RENDERED nav-selected background (the last rule the cascade applies) is the design hex #171D2F, and the
-//      modal surface is the design's #0B0C13 (mutant: the 12a --seg-active / --popup rule back on top);
+//      modal surface is the design's #0A0D14 (mutant: the 12a --seg-active / --popup rule back on top);
 //   3. the 12a engine leaves both design-verbatim zones alone (mutant: the DESIGN_ZONES exemption removed).
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -55,14 +55,16 @@ function applied(src, selector, prop) {
 const rootVar = (src, name) => new RegExp('--' + name + ':\\s*([^;]+);').exec(src)[1].trim();
 const resolve = (src, v) => { const m = /^var\(--([\w-]+)\)$/.exec(v || ''); return m ? rootVar(src, m[1]) : v; };
 
-test('2: the rendered nav-selected background is the design #171D2F; the modal surface is the design #0B0C13', () => {
+test('2: the rendered nav-selected background is the design #171D2F; the modal surface is the design #0A0D14', () => {
   const navSel = resolve(HTML, applied(HTML, '.modal-analysis .asidenav-item.active', 'background'));
   assert.equal(norm(navSel), '#171D2F');
-  assert.equal(norm(resolve(HTML, applied(HTML, '.modal-analysis', 'background'))), '#0B0C13');
+  assert.equal(norm(resolve(HTML, applied(HTML, '.modal-analysis', 'background'))), '#0A0D14');
   assert.equal(norm(applied(HTML, '.modal-analysis .asidenav-item', 'color')), '#5B6880');
   assert.equal(norm(applied(HTML, '.modal-analysis .asidenav-item:hover', 'background')), 'RGBA(255,255,255,0.04)');
   // review fold-in: text the Odds tab does not colour itself inherits the design #E7E9EE (not the 12a #EBF1F2)
   assert.equal(norm(applied(HTML, '#aSectionOdds', 'color')), '#E7E9EE');
+  // and the extract's type base, so the tab's boxes are the design's height (the modal inherits 14px / 1.5)
+  assert.equal(applied(HTML, '#aSectionOdds, #aoddsTip', 'line-height') || applied(HTML, '#aSectionOdds', 'line-height'), 'normal');
   assert.equal(norm(applied(HTML, '.modal-analysis .ahead2 .close', 'color')), '#5B6880');
   assert.equal(norm(applied(HTML, '.modal-analysis .asidenav-download', 'border-top-color')), 'RGBA(255,255,255,0.07)');
   // mutant: the 12a rule re-appended after the design block wins the cascade again

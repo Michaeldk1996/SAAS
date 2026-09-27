@@ -33798,13 +33798,18 @@ if(document.querySelector('.tabpage[data-page="live"]')&&document.querySelector(
      export, not the 12a re-tone. Chrome + left nav = the Claude Design screenshots (board doc colour-table;
      sampled values, +-1); Odds tab hover states = Odds Tab - Spec.md. Shared by every Match analysis tab.
      tools/theme-12a/recolour.mjs skips this block (DESIGN_ZONES). Hairlines keep the modal's 0.33px width. */
-  .modal-analysis{ background:var(--page); border-color:rgba(255,255,255,0.09); }
+  /* surface #0A0D14 = the extract's own card; the Claude Design screenshots render that value (and the spec's
+     #0A0D14 Market/No-vig track) as #0B0C13, so both references agree on #0A0D14. */
+  .modal-analysis{ background:#0A0D14; border-color:rgba(255,255,255,0.09); }
   .modal-analysis .ahead2{ border-bottom-color:rgba(255,255,255,0.07); }
   .modal-analysis .asidenav{ border-right-color:rgba(255,255,255,0.07); }
   .modal-analysis .asidenav-download{ border-top-color:rgba(255,255,255,0.07); }
   .modal-analysis .ahead2 .close{ color:#5B6880; }
   .modal-analysis .ahead2 .close:hover{ color:#E7E9EE; background:rgba(255,255,255,0.04); }
   #aSectionOdds{ color:#E7E9EE; }
+  /* the extract's type base (browser default: 16px, line-height normal) — the modal's inherited 14px / 1.5
+     made every tile and row 3-5px taller than the design (deployed measure 2026-09-27: tile 61px vs 56px). */
+  #aSectionOdds, #aoddsTip{ font-size:16px; line-height:normal; }
   .modal-analysis .atitleblock .atitle{ color:#E7E9EE; }
   .modal-analysis .atitleblock .acontext{ color:#5B6880; }
   .modal-analysis .asidenav-item{ color:#5B6880; }
