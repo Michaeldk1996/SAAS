@@ -1,6 +1,6 @@
 {
   "latest": {
-    "maxAgeMin": 1672.7,
+    "maxAgeMin": 1687.7,
     "measured": 1,
     "stale": [
       "A. Mannarino v D. Shapovalov (ATP Chengdu, 2026-09-27)"
@@ -8,15 +8,6 @@
   },
   "note": "Age of the published bet365 NOW leg, measured as now - observedAt against the artefact Pages is serving. Capture staleness and publish staleness are both inside this number, which is what the visitor sees. Re-derive the threshold on TEN-187.",
   "samples": [
-    {
-      "at": "2026-09-22T17:46:54Z",
-      "maxAgeMin": 46.9,
-      "measured": 16,
-      "noBet365Line": 3,
-      "noClock": 0,
-      "stale": 0,
-      "thresholdMin": 120.0
-    },
     {
       "at": "2026-09-22T18:01:50Z",
       "maxAgeMin": 46.8,
@@ -3607,9 +3598,18 @@
       "noClock": 0,
       "stale": 1,
       "thresholdMin": 120.0
+    },
+    {
+      "at": "2026-09-27T07:30:51Z",
+      "maxAgeMin": 1687.7,
+      "measured": 1,
+      "noBet365Line": 7,
+      "noClock": 0,
+      "stale": 1,
+      "thresholdMin": 120.0
     }
   ],
   "schema": "odds-now-staleness/1",
   "thresholdMin": 120.0,
-  "updatedAt": "2026-09-27T07:15:50Z"
+  "updatedAt": "2026-09-27T07:30:51Z"
 }
