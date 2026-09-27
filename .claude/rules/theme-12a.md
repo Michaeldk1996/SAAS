@@ -31,6 +31,10 @@ Design-file values with no HANDOFF name (the promo icon tile): `promo-tile #1721
 - **Every rendered colour is a token.** The computed-style audit (every tab + modal / drawer / Market Signal /
   hover / selected-date / Completed states) reports only tokens, `transparent`, or the unmapped list below.
   Chrome stores alpha in 8 bits, so `0.045` reads back `0.043`: compare `round(a*255)`, not the string.
+  **Exception — the Match analysis modal** (founder 2026-09-27, TEN-303 comment 2b0ef96f): its chrome + left
+  nav (all tabs) and the Odds tab keep the DESIGN EXPORT's values (`<style id="design-verbatim-analysis">` and
+  `AODDS_C`); the audit reads them against `Odds Tab - Spec.md` / board doc `colour-table`, not the token set.
+  The engine skips both (`tools/theme-12a/recolour.mjs` `DESIGN_ZONES`); locked by `test-ten303-colours.mjs`.
 - **The 12a token block is one block, identical on both pages, and holds every colour the design renders**
   (31 computed values). Locked by `test-ten286-layout.mjs` (mutants: a drifted `--label`, the stale label-text
   `#10131F`, a dropped `--promo-tile`).
