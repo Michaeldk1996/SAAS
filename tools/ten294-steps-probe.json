@@ -1,2 +1,18 @@
-[{"name":"runs","sql":"select j.jobname, count(*) filter (where d.status='succeeded') ok, count(*) filter (where d.status<>'succeeded') bad, max(d.end_time) last, (array_agg(left(d.return_message,160) order by d.runid desc) filter (where d.status<>'succeeded'))[1] last_err from cron.job j join cron.job_run_details d on d.jobid=j.jobid where j.jobname in ('ten280-bet105-drop-bot','ten287-superbet-drop-bot') and d.start_time >= now() - interval '10 minutes' group by 1"},
- {"name":"defs","sql":"select p.oid::regprocedure::text f, position('drops_live' in pg_get_functiondef(p.oid)) > 0 has_cut, position('cut28' in pg_get_functiondef(p.oid)) > 0 has_scan_cut from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname in ('ten280_bot','ten287_bot') and p.proname in ('load_ticks','scan')"}]
+[
+{
+"name": "cols",
+"sql": "select table_schema, table_name, string_agg(column_name||':'||data_type, ', ' order by ordinal_position) cols\n from information_schema.columns\n where (table_schema='public' and (table_name like 'kibl%' or table_name like 'ten216%' or table_name like 'oddspapi%' or table_name like 'odds%'))\n    or table_schema like 'ten287%' or table_schema like 'ten280%' or table_schema like 'kibl%' or table_schema like 'ten225%'\n group by 1,2 order by 1,2"
+},
+{
+"name": "cron",
+"sql": "select jobid, jobname, schedule, active, left(command,200) cmd from cron.job order by jobid"
+},
+{
+"name": "cron_hist_span",
+"sql": "select j.jobname, min(d.start_time) first, max(d.start_time) last, count(*) n from cron.job_run_details d join cron.job j using(jobid) group by 1 order by 1"
+},
+{
+"name": "sizes",
+"sql": "select n.nspname, c.relname, c.reltuples::bigint est from pg_class c join pg_namespace n on n.oid=c.relnamespace where c.relkind='r' and ((n.nspname='public' and (c.relname like 'kibl%' or c.relname like 'ten216%' or c.relname like 'oddspapi%')) or n.nspname like 'ten287%' or n.nspname like 'kibl%' or n.nspname like 'ten225%') order by 1,2"
+}
+]
