@@ -2192,55 +2192,7 @@
   .yr-table .yr-na{ color:var(--label); }
   .yr-table .yr-preera td{ font-style:italic; color:var(--label); font-family:'Hanken Grotesk', sans-serif; border-bottom-style:dashed; }
 
-  /* Weather tab (match-time forecast) */
-  .wx-cardlabel{ font-size:11px; color:var(--label); text-transform:uppercase; letter-spacing:0.12em; font-weight:600; margin-bottom:16px; }
-  .wx-stats{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-bottom:18px; }
-  .wx-stat{ border:0.33px solid var(--line); border-radius:16px; background:var(--surface); padding:22px 18px; display:flex; flex-direction:column; align-items:center; text-align:center; }
-  .wx-stat .wx-icon{ display:flex; margin-bottom:0; }
-  .wx-stat .wx-icon svg{ width:30px; height:30px; }
-  .wx-stat .wx-lbl{ font-size:10.5px; letter-spacing:0.09em; text-transform:uppercase; color:var(--label); font-weight:600; margin-top:14px; }
-  .wx-stat .wx-num{ font-family:'IBM Plex Mono', monospace; font-size:32px; font-weight:600; color:var(--text); margin-top:8px; line-height:1; letter-spacing:-0.01em; }
-  .wx-stat .wx-sub{ font-size:12.5px; color:var(--text-sub); margin-top:9px; }
-  .wx-summary{ border:0.33px solid var(--line); border-radius:12px; background:var(--surface-inner); padding:15px 18px; display:flex; gap:11px; align-items:flex-start; font-size:13.5px; color:var(--text-sub); line-height:1.55; }
-  .wx-summary .wx-summary-ico{ color:var(--periwinkle); display:flex; flex:none; margin-top:1px; }
-  .wx-summary .wx-summary-ico svg{ width:15px; height:15px; }
-  /* Tournament-week forecast strip */
-  .wxw-head{ display:flex; align-items:center; justify-content:space-between; margin:28px 0 14px; gap:12px; }
-  .wxw-ctx{ font-size:12px; color:var(--label); font-family:'IBM Plex Mono', monospace; text-align:right; }
-  .wxw-grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:10px; }
-  .wxw-day{ position:relative; border:0.33px solid var(--line); border-radius:14px; background:var(--surface); padding:14px 10px 15px; display:flex; flex-direction:column; align-items:center; gap:9px; }
-  .wxw-day.is-match{ background:var(--nav-hover); border-color:var(--seg-active-line); }
-  .wxw-day--na{ justify-content:flex-start; }
-  .wxw-badge{ position:absolute; top:-8px; font-size:8.5px; font-weight:800; letter-spacing:0.08em; text-transform:uppercase; color:var(--page); background:var(--periwinkle); border-radius:5px; padding:2px 7px; font-family:'IBM Plex Mono', monospace; }
-  .wxw-dhead{ text-align:center; }
-  .wxw-dow{ font-size:12.5px; font-weight:800; color:var(--text); }
-  .wxw-day.is-match .wxw-dow{ color:var(--text); }
-  .wxw-date{ font-size:10px; color:var(--label); font-family:'IBM Plex Mono', monospace; margin-top:1px; }
-  .wxw-ico{ display:flex; }
-  .wxw-ico svg{ width:26px; height:26px; }
-  .wxw-cond{ font-size:10.5px; color:var(--label); text-align:center; line-height:1.25; min-height:26px; }
-  .wxw-temp{ display:flex; align-items:baseline; gap:5px; }
-  .wxw-hi{ font-size:17px; font-weight:800; font-family:'IBM Plex Mono', monospace; color:var(--text); }
-  .wxw-lo{ font-size:12px; color:var(--label); font-family:'IBM Plex Mono', monospace; }
-  .wxw-rows{ width:100%; border-top:0.33px solid var(--line-soft); padding-top:8px; display:flex; flex-direction:column; gap:5px; }
-  .wxw-row{ display:flex; align-items:center; justify-content:space-between; gap:4px; font-size:10px; font-family:'IBM Plex Mono', monospace; }
-  .wxw-rl{ color:var(--label); white-space:nowrap; }
-  .wxw-rv{ color:var(--text-sub); white-space:nowrap; }
-  .wxw-na{ font-size:10px; color:var(--label); text-align:center; line-height:1.3; margin-top:14px; }
-  .wxw-note{ margin-top:14px; }
-  /* Clickable day cards: the selected day drives the per-day read block below. */
-  .wxw-day.is-clickable{ cursor:pointer; transition:border-color .15s ease, background .15s ease, box-shadow .15s ease; }
-  .wxw-day.is-clickable:hover{ border-color:var(--line-open); }
-  .wxw-day.is-selected{ background:var(--seg-active); border-color:var(--seg-active-line);  }
-  .wxw-day.is-selected .wxw-dow{ color:var(--text); }
-  .wxw-dayread{ margin-top:14px; }
-  .wxw-dayread .wxw-dr-head{ display:block; font-size:12.5px; font-weight:800; color:var(--text); margin-bottom:5px; font-family:'IBM Plex Mono', monospace; letter-spacing:0.01em; }
-  .wxw-dayread .wxw-dr-body{ display:block; }
-  @media (max-width:760px){
-    .wxw-grid{ grid-template-columns:repeat(3,1fr); }
-    .wxw-head{ flex-direction:column; align-items:flex-start; gap:4px; }
-    .wxw-ctx{ text-align:left; }
-  }
+  /* Weather tab (TEN-304 Wave B): styled inline from the spec — see buildWeatherSection. */
 
   /* Form tab (last-10-results form, per player) */
   /* Slim one-line info strip — an icon and a sentence, not a paragraph block. */
@@ -5700,6 +5652,13 @@ function cardFmtStart(m, withDate){
     : { hour:'2-digit', minute:'2-digit', hour12:false, timeZone:newsTz() };
   try { return new Date(ms).toLocaleString('en-GB', opts); }
   catch (e){ delete opts.timeZone; return new Date(ms).toLocaleString('en-GB', opts); }
+}
+// Match-analysis header subtitle (TEN-304 ruling): "ATP Chengdu · Quarter-finals · 18:00" — the start
+// is cardStartMs(m) in the viewer's zone (cardFmtStart), the same instant the Weather tab's MATCH badge
+// shows in venue time. No usable instant → no time appended (never a fabricated one).
+function aContextLine(m, roundText){
+  const t = isFinite(cardStartMs(m)) ? cardFmtStart(m, false) : '';
+  return [m.tour, roundText, t].filter(Boolean).join(' · ');
 }
 
 // TEN-8: the member's LOCAL calendar day of a real start instant, both as an
@@ -12801,314 +12760,528 @@ function wmoWeather(code){
   if (code >= 95) return { icon: BSP_ICONS.wxRain, label: 'Thunderstorms', tint: RAIN };
   return { icon: BSP_ICONS.wxCloud, label: '—', tint: CLOUD };
 }
-// Rain % → design's risk colour (≥60 red, ≥35 amber, else neutral).
-function wxRainColor(pct){ return pct == null ? '#a3abba' : pct >= 60 ? '#da6259' : pct >= 35 ? '#E8B341' : '#a3abba'; }
-
-// How rain reads on this surface — used in the week summary. General clay/
-// hard/grass physics applied to the real forecast, matching the tone of
-// weatherImpactPhrase() above.
-const SURFACE_WET_EFFECT = {
-  clay: 'slower, heavier clay',
-  hard: 'a slower, tackier hard court',
-  grass: 'a slick, low-bouncing grass court',
+// ── sfTip — the ONE shared custom tooltip (TEN-304 brief §3.3) ─────────────────────────────────────
+// The TEN-303 Odds-tab tooltip's look and behaviour, under a generic name so every tab can use it.
+// API:
+//   · mark any element with sfTipAttr(html) → ` data-sftip="<escaped html>"`; add tabindex="0" so
+//     keyboard focus shows it too. The attribute holds the tooltip BODY as HTML.
+//   · sfTipHtml(title, lines) builds the standard body: a title + a key/value grid, lines = [[key,
+//     value, colour?], …] (title or lines may be empty). Any other HTML body is allowed.
+//   · initSfTips() — idempotent; ONE delegated listener set on document (hover + focus) and ONE
+//     fixed element (#sfTip), shown SF_TIP_DELAY_MS after the pointer/focus lands, hidden on leave,
+//     blur or Escape. Call sfTipHide() before re-rendering a section that carries tips.
+const SF_TIP_DELAY_MS = 250;
+const SF_TIP_C = {
+  pop: '#131623',                  // TEN-303 pop-up #131623 (12a popup)
+  bd: 'rgba(255,255,255,0.045)',   // TEN-303 tipBd rgba(255,255,255,0.09) → 12a line
+  text: '#EBF1F2',                 // #E7E9EE → 12a text
+  sub: '#A3ABBA',                  // #8B96B5 → 12a text-sub
+  label: '#6E7A93',                // #5B6880 → 12a label
+  hw: '0.33px',                    // spec 1.25px border → 12a hairline
 };
-// Plain-English read of the week's arc, generated entirely from the real
-// forecast numbers (no invented narrative): the wettest window, the wet/dry
-// trend across the week, and the humidity backdrop. Returns '' if too few
-// days have data to say anything honest.
-function weatherWeekSummary(week, surface){
-  const days = (week || []).filter(d => d.available && d.rain != null);
-  if (days.length < 3) return '';
-  const avg = a => a.reduce((s, x) => s + x, 0) / a.length;
-  const maxRain = Math.max(...days.map(d => d.rain));
-  const wettest = days.filter(d => d.rain === maxRain);
-  const wetDays = days.filter(d => d.rain >= 50);
-  const mid = Math.ceil(days.length / 2);
-  const trendDelta = avg(days.slice(mid).map(d => d.rain)) - avg(days.slice(0, mid).map(d => d.rain));
-  const wetEffect = SURFACE_WET_EFFECT[surface] || 'slower, heavier conditions';
-  const parts = [];
-  if (wetDays.length) {
-    const names = wetDays.map(d => d.dow);
-    const span = names.length === 1 ? names[0] : `${names[0]}\u2013${names[names.length - 1]}`;
-    parts.push(`${span} bring${wetDays.length === 1 ? 's' : ''} the wettest window (up to ${maxRain}% rain) — expect ${wetEffect} and possible schedule delays`);
-  } else if (maxRain >= 35) {
-    parts.push(`${wettest[0].dow} carries the highest rain risk (${maxRain}%), but the week stays mostly playable`);
-  } else {
-    parts.push(`rain risk stays low all week (peaking at ${maxRain}%), so play should run to schedule`);
+let _sfTipTimer = null, _sfTipFor = null;
+function sfTipAttr(html){ return ' data-sftip="' + escapeHtml(html) + '"'; }
+function sfTipHtml(title, lines){
+  const C = SF_TIP_C, mono = "font-family:'IBM Plex Mono',monospace;";
+  return (title ? '<div style="font-size:13px; font-weight:700; color:' + C.text + ';">' + escapeHtml(title) + '</div>' : '')
+    + (lines && lines.length ? '<div style="display:grid; grid-template-columns:auto minmax(0,1fr); gap:4px 12px;' + (title ? ' margin-top:8px;' : '') + ' align-items:baseline;">'
+      + lines.map(l => '<span style="' + mono + ' font-size:9px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:' + C.label + '; white-space:nowrap;">' + escapeHtml(l[0]) + '</span>'
+        + '<span style="' + mono + ' font-size:11px; color:' + (l[2] || C.sub) + ';">' + escapeHtml(l[1]) + '</span>').join('') + '</div>' : '');
+}
+function sfTipEl(){
+  let t = document.getElementById('sfTip');
+  if (!t){
+    const C = SF_TIP_C;
+    t = document.createElement('div');
+    t.id = 'sfTip'; t.setAttribute('role', 'tooltip');
+    t.style.cssText = 'position:fixed; z-index:200; display:none; box-sizing:border-box; max-width:320px; pointer-events:none; line-height:normal;'
+      + " font-family:'Hanken Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif; -webkit-font-smoothing:antialiased;"
+      + ' background:' + C.pop + '; border:' + C.hw + ' solid ' + C.bd + '; border-radius:10px; padding:10px 12px;';
+    document.body.appendChild(t);
   }
-  if (Math.abs(trendDelta) >= 12) {
-    parts.push(trendDelta < 0
-      ? 'conditions dry out toward the weekend, so the later rounds should play faster'
-      : 'conditions turn wetter later in the week, which can slow the court for the closing rounds');
-  }
-  const hums = days.map(d => d.humidity).filter(x => x != null);
-  const his = days.map(d => d.hi).filter(x => x != null);
-  if (hums.length && avg(hums) >= 65) {
-    parts.push('cool, humid air keeps the ball low and rewards patient baseline play over big serving');
-  } else if (his.length && Math.max(...his) >= 30) {
-    parts.push('the hottest days speed the court up and lift the bounce, favouring aggressive first-strike tennis');
-  }
-  const sentence = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
-  const rest = parts.slice(1);
-  return rest.length ? `${sentence}; ${rest.join('; ')}.` : `${sentence}.`;
+  return t;
+}
+function sfTipHide(){ clearTimeout(_sfTipTimer); _sfTipFor = null; const t = document.getElementById('sfTip'); if (t) t.style.display = 'none'; }
+// Below the element, left-aligned; flips above / to the left where it would clip the viewport or the modal.
+function sfTipShow(el){
+  if (!el || !el.isConnected) return;
+  const t = sfTipEl();
+  t.innerHTML = el.getAttribute('data-sftip') || '';
+  t.style.display = 'block'; t.style.left = '0px'; t.style.top = '0px';
+  const r = el.getBoundingClientRect(), w = t.offsetWidth, h = t.offsetHeight;
+  const box = el.closest('.modal-analysis');
+  const b = box ? box.getBoundingClientRect() : { left: 0, top: 0, right: window.innerWidth, bottom: window.innerHeight };
+  const L = Math.max(0, b.left), T = Math.max(0, b.top), R = Math.min(window.innerWidth, b.right), B = Math.min(window.innerHeight, b.bottom);
+  let x = r.left, y = r.bottom + 6;
+  if (y + h > B && r.top - 6 - h >= T) y = r.top - 6 - h;
+  if (x + w > R) x = Math.max(L, r.right - w);
+  t.style.left = Math.round(x) + 'px'; t.style.top = Math.round(y) + 'px';
+}
+function initSfTips(){
+  if (initSfTips.done) return;
+  initSfTips.done = true;
+  const on = e => {
+    const el = e.target && e.target.closest ? e.target.closest('[data-sftip]') : null;
+    if (!el || el === _sfTipFor) return;
+    sfTipHide(); _sfTipFor = el;
+    _sfTipTimer = setTimeout(() => { if (_sfTipFor === el) sfTipShow(el); }, SF_TIP_DELAY_MS);
+  };
+  const off = e => {
+    const el = e.target && e.target.closest ? e.target.closest('[data-sftip]') : null;
+    if (!el || (e.relatedTarget && el.contains(e.relatedTarget))) return;
+    if (el === _sfTipFor) sfTipHide();
+  };
+  document.addEventListener('mouseover', on); document.addEventListener('mouseout', off);
+  document.addEventListener('focusin', on); document.addEventListener('focusout', off);
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && _sfTipFor) sfTipHide(); });
 }
 
-// ---------- "How conditions affect play" — derived from the live forecast -----
-// The three cards (Court pace / Serve advantage / Rally length) each show ONE
-// scalar in [0,1]: the bar fill is its position, the verdict word is its band.
-// They are computed from the same number, so word and fill can never disagree.
-// The scalar has no data-layer field — it is DERIVED from the forecast values
-// already bound on this tab (temperature, wind, humidity) plus the court surface.
-//
-// Physical direction (README "How conditions affect play"): hot/dry/thin air ->
-// faster court, serve advantage up, rallies shorter; cold/humid/heavy air -> the
-// reverse; wind reduces serve advantage and lengthens rallies; surface sets the
-// baseline the weather moves from (clay slower & longer; grass/fast hard the
-// other end). Right-hand pole = higher scalar = fuller bar, matching the export:
-// Court pace fuller = slower; Serve advantage fuller = more server-favoured;
-// Rally length fuller = longer.
-//
-// THRESHOLDS AND COEFFICIENTS ARE A PRODUCT DECISION. They live only in this one
-// object — Michael rules on them; change them here and nowhere else. The vocab
-// arrays are the CLOSED verdict set read from the design export, [low, mid, high]
-// aligned to the scalar bands.
-const WX_IMPACT_MODEL = {
-  courtPace: {                 // fuller = slower
-    label: 'Court pace', endL: 'Faster', endR: 'Slower',
-    surfaceBase: { clay: 0.68, hard: 0.50, grass: 0.34 },
-    temp:     { center: 20, coef: -0.012 },  // warmer -> faster court -> lower
-    humidity: { center: 55, coef:  0.004 },  // humid/heavy air -> slower -> higher
-    wind:     { threshold: 8, coef: 0 },     // negligible on pace
-    neutralLo: 0.42, neutralHi: 0.58,
-    vocab: ['Faster', 'Neutral', 'Slower'],
+// ══ TEN-304 Wave B — Match analysis → Weather tab ════════════════════════════════════════════════
+// Spec: design/handoff-weather/Weather Tab - Paperclip.md (§1–§6 markup + wxFor/wIcon, ported to the
+// dashboard's template strings). Rules: .claude/rules/modal-weather.md. Data (lazy, on tab open):
+// weather-index.json (m.tour → {indoor, file}) + weather/<slug>.json (build-weather.js, Open-Meteo).
+// Every time on this tab is VENUE-LOCAL (the file's IANA tz); the MATCH badge is cardStartMs(m) — the
+// same instant as the modal header — converted to the venue zone.
+
+// Every cut-off, window and count the tab uses — change them HERE and nowhere else.
+// ⚠️ THRESHOLDS ARE PLACEHOLDERS (TEN-304 brief §2 defaults) until the founder rules; the
+// "THRESHOLDS TBD — MICHAEL" chip stays on the tab while they are.
+const WX_CONFIG = {
+  thresholds: {                                        // PLACEHOLDER — not decided (founder)
+    gusts: { watch: 25, concern: 35 },                 // wind gusts, km/h
+    feels: { watch: 30, concern: 35 },                 // feels-like, °C
+    rain: { watch: 30, concern: 60 },                  // rain chance, %
   },
-  serveAdvantage: {            // fuller = more server-favoured
-    label: 'Serve advantage', endL: 'Returner', endR: 'Server',
-    base: 0.50,
-    surfaceBase: { clay: -0.03, hard: 0.05, grass: 0.10 },  // added to base
-    temp:     { center: 20, coef:  0.008 },  // hot/thin air -> serve up
-    humidity: { center: 55, coef: -0.0018 }, // humid/heavy -> returner
-    wind:     { threshold: 8, coef: -0.012 },// wind above threshold cuts serve edge
-    neutralLo: 0.40, neutralHi: 0.60,
-    vocab: ['Reduced', 'Neutral', 'Elevated'],
+  window: { fromHour: 10, toHour: 23 },                // playing window, venue-local hours, inclusive — day-card flags only
+  staleHours: { amber: 6, unavailable: 24 },           // forecast age: ≥6 h amber freshness line, >24 h unavailable
+  stripDays: 7,                                        // strip = 7 days from venue-local today, always incl. match day
+  lowConfFromOffset: 3,                                // strip days ≥3 days after today dim + LOW CONFIDENCE (spec: i >= 3)
+};
+// Every word on the tab — the founder edits wording here, no code change. {x} = filled at render.
+const WX_COPY = {
+  thresholdsChip: 'THRESHOLDS TBD — MICHAEL',
+  thresholdsTip: 'Severity cut-offs are not decided yet. Neutral / amber / red states here are placeholders.',
+  thresholdsLine: { gusts: 'Gusts: watch ≥ {watch} · concern ≥ {concern} km/h', feels: 'Feels like: watch ≥ {watch}° · concern ≥ {concern}°', rain: 'Rain chance: watch ≥ {watch}% · concern ≥ {concern}%' },
+  stripTitle: 'Next 7 days',
+  venueTimeNote: 'Times shown in venue local time',
+  viewerTimeNote: 'Times shown in your time zone',
+  fresh: 'Forecast updated {ago} · {source}',
+  freshUnavailable: 'Forecast unavailable · last successful update {when} · {source}',
+  ago: { now: 'just now', min: '{n} min ago', hours: '{n}h ago', days: '{n}d ago' },
+  bannerTag: 'UNAVAILABLE',
+  banner: 'No forecast returned for this venue. Values show as dashes until the feed is back.',
+  matchBadge: 'MATCH · {time}',
+  matchBadgeTbc: 'MATCH · TBC',
+  noConcern: 'No concern',
+  unavailable: 'Unavailable',
+  lowConf: 'LOW CONFIDENCE',
+  legend: { n: 'No concern', a: 'Watch', r: 'Concern', note: 'Days 4+ ahead are less reliable and shown dimmed.' },
+  atMatch: 'At match time',
+  atMatchTbc: '{date} · time TBC',
+  pastValues: 'forecast values',
+  flag: { wind: 'Gusts {v} km/h', heat: 'Feels like {v}°', rain: 'Rain {v}%' },
+  verdictLead: 'Main factor at match time: {name} — {what}',
+  verdictWhat: { wind: 'gusts {v} km/h', heat: 'feels like {v}°', rain: 'rain {v}%' },
+  verdictNone: 'No weather concern at match time.',
+  verdictPartial: 'No concern in the match-time values available; the rest are missing.',
+  verdictUnavailable: 'Match-time forecast unavailable.',
+  verdictNoTime: 'Match time not set — no hourly forecast yet.',
+  sev: { r: 'CONCERN', a: 'WATCH', n: 'NO CONCERN', u: 'UNAVAILABLE' },
+  names: { wind: 'Wind', heat: 'Heat', rain: 'Rain', pace: 'Conditions / pace' },
+  units: { wind: 'km/h gusts', heat: 'feels like', rain: 'chance' },
+  metrics: { wind: ['GUSTS', 'AVERAGE'], heat: ['TEMPERATURE', 'HUMIDITY'], rain: ['CHANCE', 'AMOUNT'] },
+  detail: { wind: 'Average {avg}', heat: '{temp} · {hum} humidity', rain: '{mm} expected' },
+  effectCaption: 'EFFECT ON PLAY',
+  effect: {
+    heat: { hot: 'Hot air is thinner, so the ball travels faster and bounces higher. Serves gain pop, and long rallies drain stamina faster, especially late in the match.', calm: 'Mild temperature. Ball speed and player stamina should be close to normal.' },
+    wind: { hot: 'Gusts push the ball off line and disrupt the ball toss. First-serve percentages and unforced errors usually suffer, and players rely more on margin and spin.', calm: 'Light wind. Little effect on serve toss or ball flight.' },
+    rain: { hot: 'Rain can stop play, and delays break momentum. Damp air and balls play heavier and slower, which favours longer rallies.', calm: 'Low chance of rain. Delays are unlikely.' },
   },
-  rallyLength: {               // fuller = longer rallies
-    label: 'Rally length', endL: 'Shorter', endR: 'Longer',
-    surfaceBase: { clay: 0.66, hard: 0.50, grass: 0.36 },
-    temp:     { center: 20, coef: -0.010 },  // hot/dry -> shorter
-    humidity: { center: 55, coef:  0.003 },  // humid/heavy -> longer
-    wind:     { threshold: 8, coef:  0.010 },// wind -> longer rallies
-    neutralLo: 0.42, neutralHi: 0.58,
-    vocab: ['Shorter', 'Neutral', 'Longer'],
+  pace: {
+    tag: 'FROM TOURNAMENT', detail: 'Court speed · {tour} · {surface} court',
+    usual: 'AS USUAL', slower: 'PLAYS SLOWER', quicker: 'PLAYS QUICKER',
+    asUsual: 'Conditions should leave the court playing close to its usual {speed} ({label}).',
+    shifted: 'Base court speed is {speed} ({label}). Today’s {cause} should make it play {dir} than that.',
+    causeSlower: 'damp air', causeQuicker: 'heat', dirSlower: 'slower', dirQuicker: 'quicker',
+    windAdds: ' Wind adds variance on top.',
   },
+  indoorTitle: 'Indoor event — weather not a factor.',
+  indoorSub: 'Played under a roof. No week strip or match-time factors are shown.',
+  tip: { gusts: 'Max gusts', wind: 'Avg wind', feels: 'Feels-like max', rain: 'Rain chance max', mm: 'Rain total', window: 'Hours', windowVal: '{from}:00–{to}:00 venue time', values: 'Values', pastVal: 'archived forecast, not observed', source: 'Source', fetched: 'Fetched' },
+  loading: 'Loading forecast…',
+};
+// Colours: the spec's SOURCE values (right) mapped through the 12a rules (.claude/rules/theme-12a.md,
+// the TEN-285 recolour engine's role mapping — the engine makes 0 edits here). Spec values with no 12a
+// home are kept and listed as unmapped.
+const WX_C = {
+  text: '#EBF1F2',                 // primary #E7E9EE → text
+  sub: '#A3ABBA',                  // secondary #AAB3C8 → text-sub
+  muted: '#A3ABBA',                // muted #8B96B5 → text-sub
+  dim: '#6E7A93',                  // dim #5B6880 (and neutral dot) → label
+  faint: '#6E7A93',                // faint #4B5672 → label
+  card: '#0E1019',                 // card surface #0E1019 → surface
+  lead: '#131623',                 // lead tile #131623 → popup
+  bd: 'rgba(255,255,255,0.045)',   // card border rgba(255,255,255,0.06) → line
+  box: 'rgba(255,255,255,0.045)',  // metric box border rgba(255,255,255,0.05) → line
+  rule: 'rgba(255,255,255,0.03)',  // border-top rules rgba(255,255,255,0.05 / 0.06) → line-soft
+  dashBd: 'rgba(255,255,255,0.045)', // banner / "+1" border rgba(255,255,255,0.14) → line
+  tagBd: 'rgba(255,255,255,0.10)', // FROM TOURNAMENT dashed rgba(255,255,255,0.2) → line-open
+  bar: 'rgba(255,255,255,0.10)',   // neutral severity bar rgba(255,255,255,0.08) → line-open
+  amber: '#E8A84E',                // WATCH #E8A84E — UNMAPPED (no 12a amber)
+  red: '#DA6259',                  // CONCERN #E0616F (retired hue) → negative
+  amberBd: 'rgba(232,168,78,0.35)', // lead tile border, amber — UNMAPPED
+  redBd: 'rgba(218,98,89,0.35)',   // lead tile border rgba(224,97,111,0.35) → negative at the spec alpha — UNMAPPED
+  chipBd: 'rgba(232,168,78,0.45)', // THRESHOLDS chip dashed border — UNMAPPED
+  unavail: 'rgba(255,255,255,0.15)', // UNAVAILABLE dot — UNMAPPED (data marker)
+  match: '#6A9AF8',                // match accent #6AAEFF → periwinkle
+  matchBd: '#2E4FA8',              // match-day border rgba(106,174,255,0.75) → seg-active-line
+  badgeInk: '#0B0C13',             // MATCH badge text #06070A → page
+  hw: '0.33px',                    // spec 1.25px borders → 12a hairline
+  hw1: '0.33px',                   // spec 1px borders → 12a hairline
 };
 
-function wxSurfaceKey(surface){
-  return /clay/i.test(surface) ? 'clay' : /grass/i.test(surface) ? 'grass' : 'hard';
+// Lazy data: the index once per session (a failed read is not cached, so the next open retries),
+// each venue file once. Same fetch idiom as the other lazy shards (cache:'no-cache').
+let _wxIndex = null, _wxIndexPromise = null;
+const _wxFiles = {}, _wxFilePromises = {};
+let _aWxMatch = null, _aWx = { m: null };
+function loadWeatherIndex(){
+  if (_wxIndex) return Promise.resolve(_wxIndex);
+  if (_wxIndexPromise) return _wxIndexPromise;
+  _wxIndexPromise = fetch('./weather-index.json', { cache: 'no-cache' })
+    .then(r => r.ok ? r.json() : null)
+    .then(d => { if (!d || !d.tours) throw new Error('bad weather index'); _wxIndex = d; return d; })
+    .catch(err => { console.warn('weather-index.json load failed:', err.message); _wxIndexPromise = null; return { tours: {} }; });
+  return _wxIndexPromise;
 }
-
-// The single scalar for one scale, clamped to [0,1].
-function wxScalar(cfg, temp, humidity, wind, surfKey){
-  let s = (cfg.base != null ? cfg.base : 0) + (cfg.surfaceBase[surfKey] != null ? cfg.surfaceBase[surfKey] : cfg.surfaceBase.hard);
-  s += (temp - cfg.temp.center) * cfg.temp.coef;
-  s += (humidity - cfg.humidity.center) * cfg.humidity.coef;
-  s += Math.max(0, wind - cfg.wind.threshold) * cfg.wind.coef;
-  return Math.max(0, Math.min(1, s));
+function loadWeatherFile(file){
+  const f = String(file || '');
+  if (!/^weather\/[a-z0-9-]+\.json$/.test(f)) return Promise.resolve(null);
+  if (f in _wxFiles) return Promise.resolve(_wxFiles[f]);
+  if (_wxFilePromises[f]) return _wxFilePromises[f];
+  _wxFilePromises[f] = fetch('./' + f, { cache: 'no-cache' })
+    .then(r => r.ok ? r.json() : null)
+    .then(d => { if (!d || d.v !== 1) throw new Error('bad weather file'); _wxFiles[f] = d; return d; })
+    .catch(err => { console.warn(f + ' load failed:', err.message); delete _wxFilePromises[f]; return null; });
+  return _wxFilePromises[f];
 }
-
-// The verdict word = the band the scalar falls in. Word and fill share the scalar.
-function wxVerdict(cfg, s){
-  if (s < cfg.neutralLo) return cfg.vocab[0];
-  if (s > cfg.neutralHi) return cfg.vocab[2];
-  return cfg.vocab[1];
-}
-
-// Returns the three cards' render data. When the core forecast is absent, the
-// card carries em dashes and NO fill — a neutral verdict would be a claim made
-// from nothing, so it is withheld.
-function weatherImpact(w, surface){
-  const cfgs = [WX_IMPACT_MODEL.courtPace, WX_IMPACT_MODEL.serveAdvantage, WX_IMPACT_MODEL.rallyLength];
-  // Null-safe: Number(null) is 0, which would fabricate a 0°C verdict from a
-  // missing field. Treat null/undefined/'' as absent so the card em-dashes.
-  const num = v => (v === null || v === undefined || v === '') ? NaN : Number(v);
-  const temp = num(w.temperature), hum = num(w.humidity), wind = num(w.windSpeed);
-  const have = Number.isFinite(temp) && Number.isFinite(hum);
-  const surfKey = wxSurfaceKey(surface);
-  return cfgs.map(cfg => {
-    if (!have) return { label: cfg.label, endL: cfg.endL, endR: cfg.endR, available: false };
-    const s = wxScalar(cfg, temp, hum, Number.isFinite(wind) ? wind : 0, surfKey);
-    return { label: cfg.label, endL: cfg.endL, endR: cfg.endR, available: true,
-             verdict: wxVerdict(cfg, s), pct: Math.round(s * 100) };
+function ensureWeather(m){
+  return loadWeatherIndex().then(idx => {
+    const entry = (m && idx.tours && idx.tours[m.tour]) || null;
+    if (!entry || entry.indoor === true || !entry.file) return { entry, file: null };
+    return loadWeatherFile(entry.file).then(file => ({ entry, file }));
   });
 }
-
-// Export-measured section: caps section head, then a repeat(3,1fr) card row.
-// Every literal below is read from design-export/matches-upcoming.html.
-function weatherImpactSection(w, surface){
-  const cards = weatherImpact(w, surface).map(im => {
-    const verdict = im.available ? escapeHtml(im.verdict) : '—';
-    const verdictColor = im.available ? 'var(--text)' : '#6e7a93';
-    const fill = im.available ? `<div style="width:${im.pct}%; height:100%; background:#5b6880;"></div>` : '';
-    return `
-      <div style="background:var(--surface); border:0.33px solid var(--line); border-radius:12px; padding:20px 22px;">
-        <div style="font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:var(--label); margin-bottom:11px;">${escapeHtml(im.label)}</div>
-        <div style="font-size:21px; font-weight:800; color:${verdictColor}; margin-bottom:12px;">${verdict}</div>
-        <div style="height:8px; border-radius:5px; background:var(--surface-inner); overflow:hidden;">${fill}</div>
-        <div style="display:flex; justify-content:space-between; margin-top:6px; font-size:9px; color:var(--label);"><span>${escapeHtml(im.endL)}</span><span>${escapeHtml(im.endR)}</span></div>
-      </div>`;
-  }).join('');
-  return `
-    <div class="wx-cardlabel" style="margin:22px 0 14px;">How conditions affect play</div>
-    <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:18px;">${cards}</div>`;
+// Called when the Weather tab opens. Never blocks another tab: the section paints a loading line and
+// repaints when the files land (guarded, so a fast reopen of another match is never overwritten).
+function openWeatherTab(){
+  const m = _aWxMatch;
+  if (!m) return;
+  if (_aWx.m === m && _aWx.ready) { renderWeatherSection(); return; }
+  ensureWeather(m).then(r => {
+    if (_aWxMatch !== m) return;
+    _aWx = { m, entry: r.entry, file: r.file, ready: true };
+    renderWeatherSection();
+  });
+}
+function renderWeatherSection(){
+  const el = document.getElementById('aSectionWeather');
+  if (!el) return;
+  sfTipHide();
+  el.innerHTML = (_aWx.ready && _aWx.m === _aWxMatch)
+    ? buildWeatherSection(_aWx.m, _aWx.entry, _aWx.file, Date.now())
+    : '<div style="font-size:13px; color:' + WX_C.dim + ';">' + escapeHtml(WX_COPY.loading) + '</div>';
+  initSfTips();
+}
+// TEST-ONLY: ?wxForce=unavailable forces the unavailable state (TEN-304 brief §4). Nothing else is read.
+function wxForced(){
+  try { return new URLSearchParams(location.search).get('wxForce') === 'unavailable' ? 'unavailable' : null; }
+  catch (e) { return null; }
 }
 
-// ---------- Per-day weather read (clickable day cards) ----------------------
-// Rain probability -> plain-English schedule-risk clause, using the same
-// thresholds as wxRainColor() (>=60 high / >=35 moderate / else low).
-function wxRainRiskPhrase(rain){
-  if (rain == null) return '';
-  if (rain >= 60) return `high rain risk (${rain}%) — expect possible interruptions or schedule delays`;
-  if (rain >= 35) return `moderate rain risk (${rain}%) — some chance of stoppages`;
-  return `low rain risk (${rain}%) — play should run to schedule`;
+function wxNum(v){ return (typeof v === 'number' && Number.isFinite(v)) ? v : null; }
+function wxFmt(tpl, o){ return String(tpl).replace(/\{(\w+)\}/g, (_, k) => (o && o[k] != null ? String(o[k]) : '')); }
+// Severity of one value against its config cut-offs; a missing value is UNAVAILABLE ('u'), never 0.
+function wxSev(kind, v){
+  if (v == null) return 'u';
+  const t = WX_CONFIG.thresholds[kind];
+  return v >= t.concern ? 'r' : v >= t.watch ? 'a' : 'n';
 }
-// Plain-terms conditions line for one day. The match day uses the precise
-// forecast-at-match-time temperature (sharper than the daily high); other days
-// use the daily high, which is what drives how the court plays.
-function wxDayConditionLine(d, isMatch, w){
-  const cond = wmoWeather(d.code).label;
-  const bits = [];
-  if (isMatch && w && w.temperature != null) bits.push(`${Math.round(w.temperature)}°C at match time`);
-  else if (d.hi != null) bits.push(`${d.hi}°C high`);
-  if (cond && cond !== '—') bits.push(cond.toLowerCase());
-  if (d.wind != null) bits.push(`${d.wind} km/h wind`);
-  if (d.rain != null) bits.push(`${d.rain}% rain`);
-  return bits.join(', ');
+function wxRank(s){ return s === 'r' ? 2 : s === 'a' ? 1 : 0; }
+// Venue-local calendar date / hour / HH:MM of an instant, via the IANA zone (Intl; DST-safe).
+function wxLocalParts(ms, tz){
+  if (!Number.isFinite(ms)) return null;
+  let parts;
+  try { parts = new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' }).formatToParts(new Date(ms)); }
+  catch (e) { return null; }
+  const g = t => (parts.find(p => p.type === t) || {}).value;
+  const hh = g('hour') === '24' ? '00' : g('hour');
+  return { date: g('year') + '-' + g('month') + '-' + g('day'), hour: +hh, hm: hh + ':' + g('minute') };
 }
-// The full read block for one day: plain-terms conditions, what that does to the
-// court (reusing weatherImpactPhrase), and any rain schedule risk. On the match
-// day the court read uses the exact match-time forecast; other days build a
-// pseudo-forecast from that day's high/wind/humidity so the same deterministic
-// rules apply. Zero tokens — templated from the numbers like the rest of the tab.
-function wxDayReadHtml(state, i){
-  const d = (state.week || [])[i];
-  if (!d || !d.available) return '';
-  const isMatch = !!d.isMatch;
-  const w = state.w;
-  const condLine = wxDayConditionLine(d, isMatch, w);
-  const pseudo = (isMatch && w) ? w : { temperature: d.hi, windSpeed: d.wind, humidity: d.humidity };
-  const court = (pseudo.temperature != null) ? weatherImpactPhrase(pseudo, state.surface) : '';
-  const rain = wxRainRiskPhrase(d.rain);
-  const sentences = [];
-  if (court) sentences.push(court);
-  if (rain) sentences.push(rain.charAt(0).toUpperCase() + rain.slice(1) + '.');
-  const headLabel = `${d.dow}${isMatch ? ' · match day' : ''}`;
-  return `<span class="wxw-dr-head">${escapeHtml(headLabel)} — ${escapeHtml(condLine)}</span>`
-       + `<span class="wxw-dr-body">${sentences.join(' ')}</span>`;
+function wxAddDays(date, n){ const t = Date.parse(date + 'T00:00:00Z') + n * 864e5; return new Date(t).toISOString().slice(0, 10); }
+function wxDayDiff(a, b){ return Math.round((Date.parse(b + 'T00:00:00Z') - Date.parse(a + 'T00:00:00Z')) / 864e5); }
+function wxDow(date){ return ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][new Date(date + 'T00:00:00Z').getUTCDay()]; }
+// "Jul 20" — the month from a fixed table (ICU's en-GB short month reads "Sept").
+function wxMonDay(date){ return ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][+date.slice(5, 7) - 1] + ' ' + (+date.slice(8, 10)); }
+function wxStamp(ms, tz){ const p = wxLocalParts(ms, tz); return p ? wxMonDay(p.date) + ', ' + p.hm : '—'; }
+function wxAgo(ms, nowMs){
+  const A = WX_COPY.ago, min = Math.floor((nowMs - ms) / 60000);
+  if (min < 1) return A.now;
+  if (min < 60) return wxFmt(A.min, { n: min });
+  const h = Math.floor(min / 60);
+  return h < 48 ? wxFmt(A.hours, { n: h }) : wxFmt(A.days, { n: Math.floor(h / 24) });
 }
-// Module-level state so the inline day-card onclick can re-render the read block
-// after the modal's innerHTML has already been painted.
-let _aWxState = null;
-function aSelectWxDay(i){
-  if (!_aWxState) return;
-  const d = (_aWxState.week || [])[i];
-  if (!d || !d.available) return;
-  _aWxState.sel = i;
-  const root = document.getElementById('aSectionWeather');
-  if (root){
-    root.querySelectorAll('.wxw-day[data-wxidx]').forEach(el => {
-      el.classList.toggle('is-selected', Number(el.getAttribute('data-wxidx')) === i);
-    });
+// WMO weather code → the spec's three icons (sun / cloud / rain); snow and fog draw the cloud.
+function wxIconKind(code){
+  if (code == null) return null;
+  if (code <= 1) return 'sun';
+  if ((code >= 51 && code <= 67) || (code >= 80 && code <= 82) || code >= 95) return 'rain';
+  return 'cloud';
+}
+// Spec wIcon, as an SVG string.
+function wIcon(type, size, color){
+  const s = size || 30;
+  const svg = ch => '<svg width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="' + color + '" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" style="display:block; flex-shrink:0;">' + ch + '</svg>';
+  if (type === 'rain') return svg('<path d="M6 14.5a4 4 0 010-8 5 5 0 019.6-1.5A3.5 3.5 0 0117 14.5H6z"/><path d="M8 17.5l-1 2.5M12 17.5l-1 2.5M16 17.5l-1 2.5"/>');
+  if (type === 'sun') return svg('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M19.1 4.9l-1.4 1.4M6.3 17.7l-1.4 1.4"/>');
+  return svg('<path d="M6 16a4 4 0 010-8 5 5 0 019.6-1.5A3.5 3.5 0 0117 16H6z"/>');
+}
+
+// The tab's state, computed from the data (spec wxFor, minus the mock's STATE switcher).
+function wxModel(m, entry, file, nowMs, forced){
+  const CF = WX_CONFIG, CP = WX_COPY;
+  if (entry && entry.indoor === true) return { indoor: true };
+  const H = file && file.hourly;
+  const tzOk = !!(file && file.tz && wxLocalParts(nowMs, file.tz));
+  const valid = !!(tzOk && H && Array.isArray(H.time) && H.time.length);
+  const fetchedMs = file ? Date.parse(file.fetchedAt || '') : NaN;
+  const ageH = Number.isFinite(fetchedMs) ? (nowMs - fetchedMs) / 3600e3 : NaN;
+  const unavail = forced === 'unavailable' || !entry || !valid || !(ageH <= CF.staleHours.unavailable);
+  const zone = tzOk ? file.tz : (typeof newsTz === 'function' ? newsTz() : undefined);
+  const source = (file && file.source) || 'Open-Meteo';
+  const fresh = unavail
+    ? { text: wxFmt(CP.freshUnavailable, { when: Number.isFinite(fetchedMs) ? wxStamp(fetchedMs, zone) : '—', source }), tone: 'unavail' }
+    : { text: wxFmt(CP.fresh, { ago: wxAgo(fetchedMs, nowMs), source }), tone: ageH >= CF.staleHours.amber ? 'amber' : 'ok' };
+
+  const nowP = wxLocalParts(nowMs, zone) || wxLocalParts(nowMs, 'UTC');
+  const today = nowP.date;
+  const startMs = cardStartMs(m);
+  const mp = wxLocalParts(startMs, zone);                  // venue-local start (same instant as the header)
+  const matchDate = mp ? mp.date : (/^\d{4}-\d{2}-\d{2}$/.test((m && m.date) || '') ? m.date : null);
+  const N = CF.stripDays;
+  let start = today;
+  if (matchDate && matchDate < today) start = matchDate;
+  else if (matchDate && wxDayDiff(today, matchDate) > N - 1) start = wxAddDays(matchDate, -(N - 1));
+  const dates = Array.from({ length: N }, (_, i) => wxAddDays(start, i));
+
+  // hourly rows by venue-local date
+  const byDate = {};
+  if (valid) H.time.forEach((t, i) => { const d = String(t).slice(0, 10); (byDate[d] = byDate[d] || []).push([i, +String(t).slice(11, 13)]); });
+  const col = k => (valid && Array.isArray(H[k])) ? H[k] : [];
+  const val = (k, i) => wxNum(col(k)[i]);
+  // Worst value in the playing window; null when the window has no hours or ANY hour is missing
+  // (a severity is never read from partial data).
+  const winVals = (date, k) => {
+    const rows = (byDate[date] || []).filter(([, h]) => h >= CF.window.fromHour && h <= CF.window.toHour);
+    if (!rows.length) return null;
+    const v = rows.map(([i]) => val(k, i));
+    return v.some(x => x == null) ? null : v;
+  };
+  const D = file && file.daily, dIdx = date => (D && Array.isArray(D.date)) ? D.date.indexOf(date) : -1;
+  const dval = (k, j) => (j >= 0 && D && Array.isArray(D[k])) ? wxNum(D[k][j]) : null;
+  const rnd = v => v == null ? null : Math.round(v);
+
+  const days = dates.map(date => {
+    const off = wxDayDiff(today, date), isMatch = date === matchDate;
+    const lowConf = off >= CF.lowConfFromOffset, past = off < 0;
+    const base = { date, dow: wxDow(date), label: wxMonDay(date), isMatch, lowConf, past };
+    if (unavail) return Object.assign(base, { unavail: true, icon: null, hi: null, lo: null, flags: [], reason: 'u' });
+    const j = dIdx(date);
+    const g = winVals(date, 'gusts'), f = winVals(date, 'feels'), rc = winVals(date, 'rainChance'), w = winVals(date, 'wind'), mm = winVals(date, 'rainMm');
+    const mx = a => a ? rnd(Math.max.apply(null, a)) : null;
+    const agg = { gusts: mx(g), feels: mx(f), rain: mx(rc), wind: w ? rnd(w.reduce((s, x) => s + x, 0) / w.length) : null,
+      mm: mm ? mm.reduce((s, x) => s + x, 0) : null };
+    const F = [['wind', 'gusts', agg.gusts], ['heat', 'feels', agg.feels], ['rain', 'rain', agg.rain]]
+      .map(([id, kind, v]) => ({ id, v, sev: wxSev(kind, v) }));
+    const flags = F.filter(x => x.sev === 'r' || x.sev === 'a').sort((x, y) => wxRank(y.sev) - wxRank(x.sev))
+      .map(x => ({ id: x.id, sev: x.sev, text: wxFmt(CP.flag[x.id], { v: x.v }) }));
+    const reason = flags.length ? 'flag' : F.some(x => x.sev === 'u') ? 'u' : 'n';
+    return Object.assign(base, { unavail: false, icon: wxIconKind(dval('code', j)), hi: rnd(dval('hi', j)), lo: rnd(dval('lo', j)), flags, reason, agg });
+  });
+
+  // at match time: the venue-local hour containing the start instant
+  const hk = mp ? mp.date + 'T' + String(mp.hour).padStart(2, '0') + ':00' : null;
+  const hi = (!unavail && valid && hk) ? H.time.indexOf(hk) : -1;
+  const at = k => hi >= 0 ? val(k, hi) : null;
+  const mt = { gusts: rnd(at('gusts')), wind: rnd(at('wind')), feels: rnd(at('feels')), temp: rnd(at('temp')), hum: rnd(at('humidity')),
+    rain: rnd(at('rainChance')), mm: at('rainMm') };
+  const dash = v => v == null ? '—' : v;
+  const F = [
+    { id: 'wind', sev: wxSev('gusts', mt.gusts), big: mt.gusts == null ? '—' : String(mt.gusts), value: mt.gusts == null ? '—' : mt.gusts + ' km/h',
+      metrics: [mt.gusts == null ? '—' : mt.gusts + ' km/h', mt.wind == null ? '—' : mt.wind + ' km/h'], hl: [true, false],
+      detail: wxFmt(CP.detail.wind, { avg: mt.wind == null ? '—' : mt.wind + ' km/h' }), what: mt.gusts },
+    { id: 'heat', sev: wxSev('feels', mt.feels), big: mt.feels == null ? '—' : mt.feels + '°', value: mt.feels == null ? '—' : mt.feels + '°',
+      metrics: [mt.temp == null ? '—' : mt.temp + '°', mt.hum == null ? '—' : mt.hum + '%'], hl: [true, true],
+      detail: wxFmt(CP.detail.heat, { temp: mt.temp == null ? '—' : mt.temp + '°', hum: mt.hum == null ? '—' : mt.hum + '%' }), what: mt.feels },
+    { id: 'rain', sev: wxSev('rain', mt.rain), big: mt.rain == null ? '—' : mt.rain + '%', value: mt.rain == null ? '—' : mt.rain + '%',
+      metrics: [mt.rain == null ? '—' : mt.rain + '%', mt.mm == null ? '—' : mt.mm.toFixed(1) + ' mm'], hl: [true, false],
+      detail: wxFmt(CP.detail.rain, { mm: mt.mm == null ? '—' : mt.mm.toFixed(1) + ' mm' }), what: mt.rain },
+  ].map(f => Object.assign(f, { name: CP.names[f.id], unit: CP.units[f.id], keys: CP.metrics[f.id],
+    effect: f.sev === 'u' ? '' : (f.sev === 'r' || f.sev === 'a') ? CP.effect[f.id].hot : CP.effect[f.id].calm }));
+  if (unavail || hi < 0) F.forEach(f => { f.sev = 'u'; f.effect = ''; f.detail = '—'; f.value = '—'; f.big = '—'; f.metrics = ['—', '—']; });
+  F.sort((x, y) => wxRank(y.sev) - wxRank(x.sev));
+  const leadF = wxRank(F[0].sev) > 0 ? F[0] : null;
+
+  // Conditions / pace — base court speed from the Tournament tab's data (m.courtSpeed, read only).
+  const cs = (m && m.courtSpeed) || {}, spd = wxNum(cs.abstractSpeed), spdLabel = cs.category || '';
+  const on = id => { const x = F.find(f => f.id === id); return !!x && (x.sev === 'r' || x.sev === 'a'); };
+  const shift = on('rain') ? 'slower' : on('heat') ? 'quicker' : 'usual';
+  const P = CP.pace, speedTxt = spd == null ? null : spd.toFixed(2);
+  const paceEffect = (unavail || speedTxt == null) ? ''
+    : shift === 'usual' ? wxFmt(P.asUsual, { speed: speedTxt, label: spdLabel })
+    : wxFmt(P.shifted, { speed: speedTxt, label: spdLabel, cause: shift === 'slower' ? P.causeSlower : P.causeQuicker, dir: shift === 'slower' ? P.dirSlower : P.dirQuicker })
+      + (on('wind') ? P.windAdds : '');
+  const tourName = String((m && m.tour) || '').replace(/^ATP\s+/, '') || '—';
+  const pace = { id: 'pace', name: CP.names.pace, value: (unavail || speedTxt == null) ? '—' : speedTxt,
+    sevL: speedTxt == null ? '' : P[shift], detail: wxFmt(P.detail, { tour: tourName, surface: String((m && m.surface) || '').toLowerCase() || '—' }), effect: paceEffect };
+
+  let verdict;
+  if (unavail) verdict = CP.verdictUnavailable;
+  else if (!mp) verdict = CP.verdictNoTime;
+  else if (hi < 0) verdict = CP.verdictUnavailable;
+  else if (leadF) verdict = wxFmt(CP.verdictLead, { name: leadF.name, what: wxFmt(CP.verdictWhat[leadF.id], { v: leadF.what }) });
+  else if (F.some(f => f.sev === 'u')) verdict = F.every(f => f.sev === 'u') ? CP.verdictUnavailable : CP.verdictPartial;
+  else verdict = CP.verdictNone;
+  const matchDay = matchDate ? wxDow(matchDate) + ' ' + wxMonDay(matchDate) : '—';
+  return {
+    indoor: false, unavail, fresh, source, zone, venueZone: tzOk, fetchedMs, nowMs, today,
+    range: wxMonDay(dates[0]) + ' – ' + wxMonDay(dates[N - 1]),
+    days, badge: mp ? wxFmt(CP.matchBadge, { time: mp.hm }) : CP.matchBadgeTbc,
+    atHead: mp ? matchDay + ' · ' + mp.hm + (wxDayDiff(today, mp.date) < 0 || (startMs < nowMs) ? ' · ' + CP.pastValues : '') : wxFmt(CP.atMatchTbc, { date: matchDay }),
+    verdict, verdictSev: (unavail || F.every(f => f.sev === 'u')) ? 'u' : leadF ? leadF.sev : 'n', lead: leadF, factors: F, pace,
+  };
+}
+
+// Render (spec §1–§6 markup; colours through WX_C).
+function buildWeatherSection(m, entry, file, nowMs){
+  const C = WX_C, CP = WX_COPY, CF = WX_CONFIG, hw = C.hw, hw1 = C.hw1, mono = "font-family:'IBM Plex Mono',monospace;";
+  const vm = wxModel(m, entry, file, nowMs, wxForced());
+  const sevC = s => s === 'r' ? C.red : s === 'a' ? C.amber : C.bar;
+  const dotC = s => s === 'r' ? C.red : s === 'a' ? C.amber : s === 'u' ? C.unavail : C.dim;
+  const T = CF.thresholds;
+  const chipTip = '<div style="font-size:12px; line-height:1.45; color:' + SF_TIP_C.text + '; max-width:280px;">' + escapeHtml(CP.thresholdsTip) + '</div>'
+    + '<div style="display:flex; flex-direction:column; gap:3px; margin-top:8px; ' + mono + ' font-size:11px; color:' + SF_TIP_C.sub + ';">'
+    + ['gusts', 'feels', 'rain'].map(k => '<span>' + escapeHtml(wxFmt(CP.thresholdsLine[k], T[k])) + '</span>').join('') + '</div>';
+  const chipRow = '<div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:18px;">'
+    + '<span class="wx-tbd" tabindex="0"' + sfTipAttr(chipTip) + ' style="margin-left:auto; ' + mono + ' font-size:9.5px; font-weight:600; letter-spacing:0.14em; color:' + C.amber + '; padding:4px 8px; border-radius:6px; border:' + hw1 + ' dashed ' + C.chipBd + '; white-space:nowrap;">' + escapeHtml(CP.thresholdsChip) + '</span></div>';
+  const wrap = inner => '<div class="wx-tab" style="line-height:normal; color:' + C.text + ';">' + chipRow + inner + '</div>';
+
+  if (vm.indoor) {
+    return wrap('<div class="wx-indoor" style="display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; text-align:center; padding:64px 24px; border-radius:16px; background:' + C.card + '; border:' + hw + ' solid ' + C.bd + ';">'
+      + '<svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="' + C.dim + '" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>'
+      + '<span style="font-size:20px; font-weight:800;">' + escapeHtml(CP.indoorTitle) + '</span>'
+      + '<span style="font-size:13px; color:' + C.dim + ';">' + escapeHtml(CP.indoorSub) + '</span></div>');
   }
-  const read = document.getElementById('wxwDayRead');
-  if (read) read.innerHTML = wxDayReadHtml(_aWxState, i);
-}
 
-function buildWeatherSection(m){
-  const w = m.weather;
-  if (!w) {
-    return `<div class="acomingsoon">Weather not available for this match — either the venue isn't mapped yet, or conditions couldn't be retrieved for this date.</div>`;
-  }
-  // Task 3: completed matches carry real historical conditions (w.historical),
-  // labelled "Weather on match day"; upcoming matches keep the forecast wording.
-  const wxLabel = w.historical ? 'Weather on match day' : 'Forecast at match time';
-  const forecastCard = `
-    <div class="wx-cardlabel">${wxLabel}</div>
-    <div class="wx-stats">
-      <div class="wx-stat">
-        <div class="wx-icon" style="color:#e8a05a">${BSP_ICONS.thermometer}</div>
-        <div class="wx-lbl">Temperature</div>
-        <div class="wx-num">${w.temperature}°C</div>
-        <div class="wx-sub">${tempLabel(w.temperature)}</div>
-      </div>
-      <div class="wx-stat">
-        <div class="wx-icon" style="color:var(--text-sub)">${BSP_ICONS.wind}</div>
-        <div class="wx-lbl">Wind</div>
-        <div class="wx-num">${w.windSpeed}</div>
-        <div class="wx-sub">${windLabel(w.windSpeed)} · km/h</div>
-      </div>
-      <div class="wx-stat">
-        <div class="wx-icon" style="color:var(--periwinkle)">${BSP_ICONS.droplet}</div>
-        <div class="wx-lbl">Humidity</div>
-        <div class="wx-num">${w.humidity}%</div>
-        <div class="wx-sub">${humidityLabel(w.humidity)}</div>
-      </div>
-    </div>
-  `;
-  const summary = `<div class="wx-summary"><span class="wx-summary-ico">${BSP_ICONS.info}</span><span>${wxLabel}: ${w.temperature}°C, wind ${w.windSpeed} km/h, humidity ${w.humidity}%. ${weatherImpactPhrase(w, m.surface)}</span></div>`;
+  // §1 week strip header (+ the one venue-time note) and the freshness line
+  const freshC = vm.fresh.tone === 'unavail' ? C.muted : vm.fresh.tone === 'amber' ? C.amber : C.dim;
+  let h = '<div class="wx-head" style="display:flex; align-items:baseline; justify-content:space-between; gap:8px 16px; flex-wrap:wrap; margin-bottom:12px;">'
+    + '<span style="display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;"><span style="font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:' + C.dim + ';">' + escapeHtml(CP.stripTitle) + '</span>'
+    + '<span style="' + mono + ' font-size:12px; color:' + C.faint + ';">' + escapeHtml(vm.range) + '</span>'
+    + '<span class="wx-tznote" style="font-size:11.5px; color:' + C.faint + ';">' + escapeHtml(vm.venueZone ? CP.venueTimeNote : CP.viewerTimeNote) + '</span></span>'
+    + '<span class="wx-fresh" style="' + mono + ' font-size:11.5px; color:' + freshC + ';">' + escapeHtml(vm.fresh.text) + '</span></div>';
+  if (vm.unavail) h += '<div class="wx-banner" style="display:flex; align-items:center; gap:10px; padding:11px 14px; margin-bottom:12px; border-radius:10px; background:' + C.card + '; border:' + hw + ' dashed ' + C.dashBd + '; font-size:13px; color:' + C.sub + ';">'
+    + '<span style="' + mono + ' font-size:9.5px; font-weight:700; letter-spacing:0.14em; color:' + C.muted + ';">' + escapeHtml(CP.bannerTag) + '</span>' + escapeHtml(CP.banner) + '</div>';
 
-  // Section 2 — tournament-week Mon–Sun strip (only when the real week is on file).
-  let weekSection = '';
-  let weekNote = '';
-  if (Array.isArray(w.week) && w.week.length) {
-    // Default selected day = the match day; fall back to the first day with data.
-    let selIdx = w.week.findIndex(d => d.available && d.isMatch);
-    if (selIdx < 0) selIdx = w.week.findIndex(d => d.available);
-    _aWxState = { week: w.week, surface: m.surface, w: w, sel: selIdx };
-    const cards = w.week.map((d, i) => {
-      if (!d.available) {
-        const dow = new Date(d.date + 'T00:00:00Z').toLocaleDateString('en-US', { weekday: 'short', timeZone: 'UTC' });
-        const dlabel = new Date(d.date + 'T00:00:00Z').toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
-        return `<div class="wxw-day wxw-day--na">
-          <div class="wxw-dhead"><div class="wxw-dow">${dow}</div><div class="wxw-date">${dlabel}</div></div>
-          <div class="wxw-na">Data not available</div>
-        </div>`;
-      }
-      const cond = wmoWeather(d.code);
-      const rainColor = wxRainColor(d.rain);
-      const selCls = i === selIdx ? ' is-selected' : '';
-      return `<div class="wxw-day is-clickable${d.isMatch ? ' is-match' : ''}${selCls}" data-wxidx="${i}" role="button" tabindex="0" onclick="aSelectWxDay(${i})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();aSelectWxDay(${i})}">
-        ${d.isMatch ? '<span class="wxw-badge">Match</span>' : ''}
-        <div class="wxw-dhead"><div class="wxw-dow">${d.dow}</div><div class="wxw-date">${d.label}</div></div>
-        <span class="wxw-ico" style="color:${cond.tint}">${cond.icon}</span>
-        <div class="wxw-cond">${cond.label}</div>
-        <div class="wxw-temp"><span class="wxw-hi">${d.hi != null ? d.hi + '°' : '—'}</span><span class="wxw-lo">${d.lo != null ? d.lo + '°' : ''}</span></div>
-        <div class="wxw-rows">
-          <div class="wxw-row"><span class="wxw-rl">Rain</span><span class="wxw-rv" style="color:${rainColor}">${d.rain != null ? d.rain + '%' : '—'}</span></div>
-          <div class="wxw-row"><span class="wxw-rl">Wind</span><span class="wxw-rv">${d.wind != null ? d.wind + ' km/h' : '—'}</span></div>
-          <div class="wxw-row"><span class="wxw-rl">Hum</span><span class="wxw-rv">${d.humidity != null ? d.humidity + '%' : '—'}</span></div>
-        </div>
-      </div>`;
-    }).join('');
-    // Per-day read block: swaps to the selected card's day (default = match day).
-    const dayRead = selIdx >= 0
-      ? `<div class="wx-summary wxw-dayread"><span class="wx-summary-ico">${BSP_ICONS.info}</span><span id="wxwDayRead">${wxDayReadHtml(_aWxState, selIdx)}</span></div>`
-      : '';
-    weekSection = `
-      <div class="wxw-head">
-        <span class="wx-cardlabel" style="margin:0;">Tournament week · Mon–Sun</span>
-        <span class="wxw-ctx">${escapeHtml(m.tour || '')}${w.weekRange ? ' · ' + w.weekRange : ''}</span>
-      </div>
-      <div class="wxw-grid">${cards}</div>${dayRead}`;
-
-    const prose = weatherWeekSummary(w.week, m.surface);
-    if (prose) {
-      weekNote = `<div class="wx-summary wxw-note"><span class="wx-summary-ico">${BSP_ICONS.info}</span><span>${prose}</span></div>`;
+  // §2 the 7 day cards
+  const TP = CP.tip;
+  const cards = vm.days.map(d => {
+    const top = d.flags && d.flags[0], v = d.unavail ? 'u' : top ? top.sev : d.reason === 'u' ? 'u' : 'n';
+    const reason = d.unavail || d.reason === 'u' ? CP.unavailable : top ? top.text : CP.noConcern;
+    const rw = top ? 700 : 500, rc = top ? C.text : C.dim;
+    const icon = d.icon ? wIcon(d.icon, 26, C.muted) : '<span style="' + mono + ' font-size:18px; color:' + C.dim + '; height:26px; line-height:26px;">—</span>';
+    const deg = x => x == null ? '—' : x + '°';
+    const more = d.flags && d.flags.length > 1
+      ? '<span class="wx-more" tabindex="0"' + sfTipAttr('<div style="display:flex; flex-direction:column; gap:5px;">' + d.flags.slice(1).map(f => '<span style="display:flex; align-items:center; gap:7px; font-size:12px; color:' + SF_TIP_C.text + ';"><span style="width:7px; height:7px; border-radius:50%; background:' + dotC(f.sev) + '; flex-shrink:0;"></span>' + escapeHtml(f.text) + '</span>').join('') + '</div>')
+        + ' style="' + mono + ' font-size:9.5px; font-weight:700; color:' + C.sub + '; padding:1px 4px; border-radius:3px; border:' + hw1 + ' solid ' + C.dashBd + '; flex-shrink:0;">+' + (d.flags.length - 1) + '</span>' : '';
+    let tip = '';
+    if (!d.unavail) {
+      const a = d.agg, u = (x, s) => x == null ? '—' : x + s;
+      const L = [[TP.gusts, u(a.gusts, ' km/h')], [TP.wind, u(a.wind, ' km/h')], [TP.feels, u(a.feels, '°')],
+        [TP.rain, u(a.rain, '%')], [TP.mm, a.mm == null ? '—' : a.mm.toFixed(1) + ' mm'],
+        [TP.window, wxFmt(TP.windowVal, { from: String(CF.window.fromHour).padStart(2, '0'), to: String(CF.window.toHour).padStart(2, '0') })]];
+      if (d.past) L.push([TP.values, TP.pastVal]);
+      L.push([TP.source, vm.source], [TP.fetched, wxStamp(vm.fetchedMs, vm.zone)]);
+      tip = ' tabindex="0"' + sfTipAttr(sfTipHtml(d.dow + ' ' + d.label, L));
     }
+    return '<div class="wx-day' + (d.isMatch ? ' is-match' : '') + '" data-date="' + d.date + '"' + tip + ' style="position:relative; display:flex; flex-direction:column; align-items:center; gap:7px; padding:16px 8px 12px; border-radius:12px; background:' + C.card + '; border:' + hw + ' solid ' + (d.isMatch ? C.matchBd : C.bd) + '; min-width:0;">'
+      + '<span class="wx-sevedge" style="position:absolute; top:-1px; left:12px; right:12px; height:3px; border-radius:0 0 3px 3px; background:' + (v === 'r' || v === 'a' ? sevC(v) : 'transparent') + ';"></span>'
+      + (d.isMatch ? '<span class="wx-badge" style="position:absolute; top:-10px; left:50%; transform:translateX(-50%); ' + mono + ' font-size:8.5px; font-weight:700; letter-spacing:0.12em; color:' + C.badgeInk + '; background:' + C.match + '; border-radius:4px; padding:2px 7px; white-space:nowrap;">' + escapeHtml(vm.badge) + '</span>' : '')
+      + '<div style="display:flex; flex-direction:column; align-items:center; gap:7px; opacity:' + (d.lowConf ? 0.55 : 1) + ';">'
+      + '<span style="display:flex; align-items:baseline; gap:6px;"><span style="font-size:13.5px; font-weight:700;">' + d.dow + '</span><span style="' + mono + ' font-size:10.5px; color:' + C.dim + ';">' + d.label + '</span></span>'
+      + icon
+      + '<span style="display:flex; align-items:baseline; gap:6px; ' + mono + '"><span class="wx-hi" style="font-size:16px; font-weight:700;">' + deg(d.hi) + '</span><span class="wx-lo" style="font-size:11.5px; color:' + C.dim + ';">' + deg(d.lo) + '</span></span>'
+      + '</div>'
+      + '<div style="width:100%; min-height:34px; padding-top:9px; border-top:' + hw1 + ' solid ' + C.rule + '; display:flex; align-items:flex-start; justify-content:center; gap:6px;">'
+      + '<span class="wx-dot" style="width:7px; height:7px; border-radius:50%; background:' + dotC(v) + '; margin-top:4px; flex-shrink:0;"></span>'
+      + '<span class="wx-reason" style="font-size:11.5px; line-height:1.35; font-weight:' + rw + '; color:' + rc + '; text-align:center;">' + escapeHtml(reason) + '</span>' + more + '</div>'
+      + (d.lowConf ? '<span style="' + mono + ' font-size:8.5px; letter-spacing:0.12em; color:' + C.dim + ';">' + escapeHtml(CP.lowConf) + '</span>' : '')
+      + '</div>';
+  }).join('');
+  h += '<div class="wx-strip" style="display:grid; grid-template-columns:repeat(7, minmax(0,1fr)); gap:8px; padding-top:10px;">' + cards + '</div>';
+  const lg = (c, t) => '<span style="display:flex; align-items:center; gap:6px;"><span style="width:7px; height:7px; border-radius:50%; background:' + c + ';"></span>' + escapeHtml(t) + '</span>';
+  h += '<div style="display:flex; align-items:center; gap:16px; flex-wrap:wrap; margin-top:10px; font-size:11.5px; color:' + C.dim + ';">'
+    + lg(C.dim, CP.legend.n) + lg(C.amber, CP.legend.a) + lg(C.red, CP.legend.r) + '<span>' + escapeHtml(CP.legend.note) + '</span></div>';
+
+  // §3 at match time
+  h += '<div style="display:flex; align-items:baseline; justify-content:space-between; gap:16px; margin:28px 0 12px;"><span style="font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:' + C.dim + ';">' + escapeHtml(CP.atMatch) + '</span>'
+    + '<span class="wx-athead" style="' + mono + ' font-size:12px; color:' + C.match + ';">' + escapeHtml(vm.atHead) + '</span></div>';
+  h += '<div class="wx-verdict" style="display:flex; align-items:center; gap:12px; padding:15px 18px; margin-bottom:12px; border-radius:14px; background:' + C.card + '; border:' + hw + ' solid ' + C.bd + ';">'
+    + '<span style="width:10px; height:10px; border-radius:50%; background:' + (vm.verdictSev === 'u' ? C.unavail : vm.verdictSev === 'n' ? C.dim : sevC(vm.verdictSev)) + '; flex-shrink:0;"></span>'
+    + '<span style="font-size:17px; font-weight:800; line-height:1.3;">' + escapeHtml(vm.verdict) + '</span></div>';
+
+  const paceAttrs = ' role="button" tabindex="0" onclick="aGoTab(\'tournament\')" onkeydown="if(event.key===\'Enter\'||event.key===\' \'){event.preventDefault();aGoTab(\'tournament\')}"';
+  const paceCss = ' cursor:pointer; transition:background .14s ease, color .14s ease, border-color .14s ease;';
+  const tag = extra => '<span style="' + (extra || '') + mono + ' font-size:8.5px; letter-spacing:0.12em; color:' + C.muted + '; padding:2px 5px; border-radius:3px; border:' + hw1 + ' dashed ' + C.tagBd + ';">' + escapeHtml(CP.pace.tag) + '</span>';
+  const P = vm.pace;
+  if (vm.lead) {
+    const L = vm.lead, lc = sevC(L.sev);
+    const leadTile = '<div class="wx-lead" data-factor="' + L.id + '" style="position:relative; display:flex; flex-direction:column; gap:14px; padding:22px 22px 18px; border-radius:16px; background:' + C.lead + '; border:' + hw + ' solid ' + (L.sev === 'r' ? C.redBd : C.amberBd) + '; overflow:hidden;">'
+      + '<span style="position:absolute; top:0; left:0; right:0; height:3px; background:' + lc + ';"></span>'
+      + '<div style="display:flex; align-items:center; justify-content:space-between; gap:10px;"><span style="display:flex; align-items:center; gap:10px;">' + wIcon(L.id === 'wind' ? 'cloud' : L.id === 'heat' ? 'sun' : 'rain', 26, lc)
+      + '<span style="font-size:13px; font-weight:800; letter-spacing:0.12em; text-transform:uppercase;">' + escapeHtml(L.name) + '</span></span>'
+      + '<span style="' + mono + ' font-size:10px; font-weight:700; letter-spacing:0.14em; color:' + lc + ';">' + escapeHtml(CP.sev[L.sev]) + '</span></div>'
+      + '<div style="display:flex; align-items:baseline; gap:10px;"><span class="wx-big" style="' + mono + ' font-size:46px; font-weight:700; letter-spacing:-0.02em; color:' + lc + ';">' + escapeHtml(L.big) + '</span><span style="font-size:14px; color:' + C.sub + ';">' + escapeHtml(L.unit) + '</span></div>'
+      + '<div style="display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:10px;">'
+      + L.keys.map((k, i) => '<div style="display:flex; flex-direction:column; gap:4px; padding:10px 12px; border-radius:10px; background:' + C.card + '; border:' + hw1 + ' solid ' + C.box + ';"><span style="' + mono + ' font-size:9px; letter-spacing:0.14em; color:' + C.dim + ';">' + k + '</span><span style="' + mono + ' font-size:16px; font-weight:700; color:' + (L.hl[i] ? lc : C.text) + ';">' + escapeHtml(L.metrics[i]) + '</span></div>').join('')
+      + '</div>'
+      + '<div style="display:flex; flex-direction:column; gap:5px; padding-top:12px; border-top:' + hw1 + ' solid ' + C.rule + ';"><span style="' + mono + ' font-size:9px; letter-spacing:0.14em; color:' + C.dim + ';">' + escapeHtml(CP.effectCaption) + '</span><span style="font-size:13px; line-height:1.5; color:' + C.sub + '; text-wrap:pretty;">' + escapeHtml(L.effect) + '</span></div>'
+      + '</div>';
+    const compact = (t, isPace) => {
+      const s = isPace ? 'n' : t.sev, hot = s === 'r' || s === 'a';
+      return '<div class="wx-tile" data-factor="' + t.id + '"' + (isPace ? paceAttrs : '') + ' style="position:relative; flex:1; display:flex; align-items:center; gap:12px; padding:12px 16px; border-radius:12px; background:' + C.card + '; border:' + hw + ' solid ' + C.bd + '; overflow:hidden;' + (isPace ? paceCss : '') + '">'
+        + '<span style="position:absolute; left:0; top:10px; bottom:10px; width:3px; border-radius:0 3px 3px 0; background:' + (hot ? sevC(s) : C.bar) + ';"></span>'
+        + '<span style="display:flex; flex-direction:column; gap:3px; min-width:0; flex:1;"><span style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;"><span style="font-size:12px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:' + (isPace || hot ? C.text : C.muted) + ';">' + escapeHtml(t.name) + '</span>' + (isPace ? tag() : '') + '</span>'
+        + '<span style="font-size:11.5px; color:' + C.dim + '; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">' + escapeHtml(t.detail) + '</span>'
+        + '<span class="wx-effect" style="font-size:11.5px; line-height:1.45; color:' + C.muted + '; text-wrap:pretty;">' + escapeHtml(t.effect) + '</span></span>'
+        + '<span style="display:flex; flex-direction:column; align-items:flex-end; gap:3px; flex-shrink:0;"><span class="wx-val" style="' + mono + ' font-size:18px; font-weight:700; color:' + (s === 'r' ? C.red : s === 'a' ? C.amber : s === 'u' ? C.dim : C.sub) + ';">' + escapeHtml(t.value) + '</span>'
+        + '<span class="wx-sevl" style="' + mono + ' font-size:9px; letter-spacing:0.14em; color:' + (isPace ? C.muted : hot ? sevC(s) : C.dim) + ';">' + escapeHtml(isPace ? t.sevL : CP.sev[s]) + '</span></span></div>';
+    };
+    h += '<div class="wx-tiles" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:10px;">' + leadTile
+      + '<div style="display:flex; flex-direction:column; gap:8px;">' + vm.factors.slice(1).map(t => compact(t, false)).join('') + compact(P, true) + '</div></div>';
+  } else {
+    const tile = (t, isPace) => {
+      const s = isPace ? 'n' : t.sev;
+      return '<div class="wx-tile" data-factor="' + t.id + '"' + (isPace ? paceAttrs : '') + ' style="display:flex; flex-direction:column; gap:8px; padding:14px 16px; border-radius:12px; background:' + C.card + '; border:' + hw + ' solid ' + C.bd + ';' + (isPace ? paceCss : '') + '">'
+        + '<span style="display:flex; align-items:center; justify-content:space-between; gap:8px;"><span style="font-size:12px; font-weight:700; letter-spacing:0.1em; text-transform:uppercase; color:' + C.muted + ';">' + escapeHtml(t.name) + '</span><span class="wx-dot" style="width:7px; height:7px; border-radius:50%; background:' + (isPace ? C.dim : dotC(s)) + ';"></span></span>'
+        + '<span class="wx-val" style="' + mono + ' font-size:20px; font-weight:700; color:' + (s === 'u' ? C.dim : C.sub) + ';">' + escapeHtml(t.value) + '</span>'
+        + '<span style="font-size:11.5px; color:' + C.dim + ';">' + escapeHtml(t.detail) + '</span>'
+        + '<span class="wx-effect" style="font-size:11.5px; line-height:1.45; color:' + C.muted + '; text-wrap:pretty;">' + escapeHtml(t.effect) + '</span>'
+        + (isPace ? tag('align-self:flex-start; ') : '') + '</div>';
+    };
+    h += '<div class="wx-tiles" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(160px, 1fr)); gap:8px;">' + vm.factors.map(t => tile(t, false)).join('') + tile(P, true) + '</div>';
   }
-
-  const impactSection = weatherImpactSection(w, m.surface);
-
-  return `${forecastCard}${impactSection}${summary}${weekSection}${weekNote}`;
+  return wrap(h);
 }
 
 /* ---------- FORM TAB ---------- */
@@ -18546,7 +18719,9 @@ function openAnalysisModal(matchId){
   document.querySelector('#aP2Avatar img, #aP2Avatar .avatar-fallback').style.borderColor = 'rgba(255,255,255,0.045)';
 
   const roundText = h2hRoundLabel(m.tournamentRound);
-  document.getElementById('aContext').textContent = `${m.tour}${roundText ? ' • ' + roundText : ''}`;
+  // TEN-304 ruling: the subtitle carries the start time in the viewer's zone (cardFmtStart, newsTz),
+  // written as the ruling's example reads: "ATP Chengdu · Quarter-finals · 18:00". No instant → no time.
+  document.getElementById('aContext').textContent = aContextLine(m, roundText);
 
   // Founder ruling (2026-08-01): a COMPLETED match shows a minimal result beside the
   // fixture line in the shell — the sets score ONLY ("1–2"), plain mono, no pill, no
@@ -18650,7 +18825,10 @@ function openAnalysisModal(matchId){
 
   document.getElementById('aSectionOverview').innerHTML = buildYearlyTables(m);
 
-  document.getElementById('aSectionWeather').innerHTML = buildWeatherSection(m);
+  // TEN-304: the Weather tab loads its files lazily when the tab opens (openWeatherTab); until then
+  // it holds a loading line for THIS match.
+  _aWxMatch = m;
+  renderWeatherSection();
 
   _aOdds = { m:m, novig:false, market:'Match Winner', mv:null };
   // Paint immediately from what is inline (the reduced view), then upgrade to the
@@ -18697,6 +18875,7 @@ document.getElementById('aTabs').addEventListener('click', e => {
   document.querySelectorAll('.asection').forEach(s => s.classList.remove('active'));
   document.querySelector(`.asection[data-asection="${btn.dataset.atab}"]`).classList.add('active');
   syncAnalysisLiveBar(btn.dataset.atab);
+  if (btn.dataset.atab === 'weather') openWeatherTab();
 });
 
 // Download report — scoped print of the modal's current content. Shows every
