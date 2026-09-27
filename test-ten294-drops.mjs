@@ -507,6 +507,10 @@ test('box chart (TEN-301 items 3-5): a stale line stops short of now; short hist
   assert.equal(new Set(stepPts(held.lines[0]).map((p) => p[1])).size, 1, 'at that one price');
   // ...never confirmed since (the sighting IS the first price): the dot alone
   assert.equal(PAGE.boxChart(one, 2.1, PAGE.endOf(one, PT0 - 4 * HR, null, PT0)).single, true);
+  // ...nor on a cut row with no sighting: the carry to the live start is not a confirmation (review of d49f63fa)
+  const cutOne = PAGE.boxChart(one, 2.1, PAGE.endOf(one, null, at(1 * HR), PT0));
+  assert.equal(cutOne.single, true); assert.equal(cutOne.hasOpen, false);
+  assert.equal(PAGE.boxChart(one, 2.1, PAGE.endOf(one, PT0 - 2 * HR, at(1 * HR), PT0)).single, false, 'sighted before the start: a held line');
 });
 
 test('box chart (TEN-301): a stretch the book was recorded NOT quoting (odds.md api-tennis gap) is the only break; an open gap ends the line', () => {
@@ -529,6 +533,16 @@ test('box chart (TEN-301): a stretch the book was recorded NOT quoting (odds.md 
   assert.equal(b('Betano').seen, PT0 - 3 * HR, 'an open gap: the book left the feed there — its last sighting');
   assert.equal(b('Pinnacle +30s').seen, PT0 - 20 * 60e3, 'Oddspapi: a read of this fixture\'s own ticks');
   assert.equal(b('Superbet').seen, null, 'odds-api.io checkedAt is a whole-book poll, not a sighting of this line');
+  // a collector outage (odds.md: > 15 min between heartbeats) is a gap on EVERY api-tennis line open then: not a
+  // break (founder, TEN-301). Mannarino 26 Sep 20:07:38 -> 20:24:53 is the measured collector hand-off.
+  const OUT = ['2026-09-26T20:07:38.185Z', '2026-09-26T20:24:53.086Z'];
+  const api = (first, gaps) => ({ source: 'api-tennis', checkedAt: at(10 * 60e3), firstSeen: first, gaps });
+  const meta = { A: api(at(20 * HR), [OUT]), B: api(at(20 * HR), [OUT]), C: api('2026-09-26T21:00:00Z', []), 'Pinnacle +30s': { source: 'Oddspapi' } };
+  assert.deepEqual(PAGE.shardHoles(meta.A, meta), [], 'every api-tennis book quoting then carries it: the outage, drawn through');
+  const meta2 = { ...meta, C: api(at(20 * HR), []) };
+  assert.deepEqual(PAGE.shardHoles(meta2.A, meta2), [[Date.parse(OUT[0]), Date.parse(OUT[1])]], 'another book kept quoting: this book left the feed — a break');
+  const solo = { A: api(at(20 * HR), [OUT]) };
+  assert.equal(PAGE.shardHoles(solo.A, solo).length, 1, 'one api-tennis book alone: cannot tell an outage from a removal — a break');
 });
 
 test('box colours (8585095a colour ruling): red with a flat tint, the named values exact; neutrals on the 12a tokens', () => {

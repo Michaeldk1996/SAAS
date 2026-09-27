@@ -195,22 +195,15 @@
     var lt = seenOk && seen > last.t ? seen : last.t;
     return { label: 'Latest ' + hm(lt), t: lt, v: last.v, axisT: now != null && now > lt ? now : lt, confirmed: lt > last.t };
   }
-  // X labels: 5 (0/25/50/75/100%) from 2 h up, 3 (0/50/100%) below, on the grid's ticks; never a repeated label
+  // X labels: 5 (0/25/50/75/100%) from 2 h up, 3 (0/50/100%) below, on the grid's ticks. With the axis never
+  // under MIN_SPAN_MS, labels are ≥ 30 min apart, so no two read the same.
   function axisTicks(a0, a1) {
-    var span = a1 - a0;
-    var sets = span >= 2 * H ? [[0, 0.25, 0.5, 0.75, 1], [0, 0.5, 1], [0, 1]] : [[0, 0.5, 1], [0, 1]];
-    for (var s = 0; s < sets.length; s++) {
-      var prevDay = null, seenL = {}, dup = false;
-      var ticks = sets[s].map(function (f) {
-        var t = a0 + f * span, day = dayOf(t), label = day !== prevDay ? day + ', ' + hm(t) : hm(t);
-        prevDay = day;
-        if (seenL[hm(t) + day]) dup = true;
-        seenL[hm(t) + day] = 1;
-        return { x: (f * 1000).toFixed(1), left: (f * 100) + '%', tf: f === 0 ? 'none' : f === 1 ? 'translateX(-100%)' : 'translateX(-50%)', label: label };
-      });
-      if (!dup) return ticks;
-    }
-    return ticks;
+    var span = a1 - a0, prevDay = null;
+    return (span >= 2 * H ? [0, 0.25, 0.5, 0.75, 1] : [0, 0.5, 1]).map(function (f) {
+      var t = a0 + f * span, day = dayOf(t), label = day !== prevDay ? day + ', ' + hm(t) : hm(t);
+      prevDay = day;
+      return { x: (f * 1000).toFixed(1), left: (f * 100) + '%', tf: f === 0 ? 'none' : f === 1 ? 'translateX(-100%)' : 'translateX(-50%)', label: label };
+    });
   }
   // the chart's geometry (pY in 0..1 from the top; x in 0..1000 over the axis)
   // holes: [[from, to], …] ms — stretches the book was recorded NOT quoting (odds.md: an api-tennis `meta.gaps`
@@ -220,7 +213,8 @@
     var first = rec[0], last = rec[rec.length - 1];
     var endT = end && end.t > last.t ? end.t : last.t;
     // one recorded price: a line only when a later sighting confirmed it (item 5); otherwise the dot alone
-    var single = rec.length < 2 && !(endT > first.t);
+    // (a cut row's carry to the start is not a sighting)
+    var single = rec.length < 2 && !(end && end.confirmed && endT > first.t);
     // the open chip sits at the book's first price: keep it inside the Y range
     var vs = rec.map(function (p) { return p.v; }).concat(!single && openV != null ? [openV] : []);
     var lo = Math.min.apply(null, vs), hi = Math.max.apply(null, vs);
@@ -348,10 +342,24 @@
     if (open) ck = isFinite(ck) ? Math.min(ck, Date.parse(open[0])) : Date.parse(open[0]);
     return isFinite(ck) && lastT != null && ck >= lastT ? ck : null;
   }
-  // stretches a shard book was recorded not quoting (odds.md: api-tennis gaps); an open one ends the line (shardSeen)
-  function shardHoles(meta) {
-    return ((meta && meta.gaps) || []).map(function (g) { return [Date.parse(g && g[0]), g && g[1] != null ? Date.parse(g[1]) : null]; })
-      .filter(function (g) { return isFinite(g[0]) && g[1] != null && isFinite(g[1]); });
+  // stretches a shard book was recorded not quoting (odds.md: api-tennis gaps); an open one ends the line (shardSeen).
+  // odds.md also writes a collector outage (> 15 min between heartbeats) as a gap on every line open then. An
+  // outage is no checks at all, not a book leaving the feed, and the founder ruled it is never a break (TEN-301):
+  // a closed gap carried identically by EVERY api-tennis book quoting when it began (two or more) is that outage.
+  function shardHoles(meta, allMeta) {
+    var closed = function (m) {
+      return ((m && m.gaps) || []).filter(function (g) { return g && g[1] != null && isFinite(Date.parse(g[0])) && isFinite(Date.parse(g[1])); });
+    };
+    var api = Object.keys(allMeta || {}).map(function (k) { return allMeta[k]; }).filter(function (m) { return m && m.source === 'api-tennis' && m.firstSeen; });
+    return closed(meta).filter(function (g) {
+      if (!meta || meta.source !== 'api-tennis') return true;
+      var from = Date.parse(g[0]);
+      var quoting = api.filter(function (m) {
+        return Date.parse(m.firstSeen) < from && !(m.gaps || []).some(function (h) { return h && Date.parse(h[0]) < from && (h[1] == null || Date.parse(h[1]) > from) && !(h[0] === g[0] && h[1] === g[1]); });
+      });
+      var carriers = quoting.filter(function (m) { return (m.gaps || []).some(function (h) { return h && h[0] === g[0] && h[1] === g[1]; }); });
+      return !(quoting.length >= 2 && carriers.length === quoting.length);
+    }).map(function (g) { return [Date.parse(g[0]), Date.parse(g[1])]; });
   }
   // ctx: { rows, line (endpoint), chart (shard chart), cardSide ('p1'|'p2'|null) }
   function modalBooks(r, ctx) {
@@ -420,7 +428,7 @@
         : lb && isFinite(Date.parse(lb.lastSeen)) && lbLast != null && bLast != null && Math.abs(lbLast - bLast) < 0.005 ? Date.parse(lb.lastSeen)
         : shardSeen(b.meta, b.side && b.side.length ? b.side[b.side.length - 1].t : null);
       if (seenAt != null && isFinite(cut)) seenAt = Math.min(seenAt, cut - 1);
-      return { book: n, cls: STRIP_CLASS[n] || 'soft', own: isOwn, first: first, now: now, seen: seenAt, holes: shardHoles(b.meta),
+      return { book: n, cls: STRIP_CLASS[n] || 'soft', own: isOwn, first: first, now: now, seen: seenAt, holes: shardHoles(b.meta, ctx.chart && ctx.chart.meta),
         opener: isOwn && r.openKind === 'book opener',
         drop: isOwn ? r.drop : drop, series: b.side, other: b.other, truncated: !!b.truncated, margin: isOwn ? b.margin : marginOf(n, b.side, b.other) };
     });
@@ -474,7 +482,7 @@
     boardKeyFor: boardKeyFor, tierOf: tierOf, AMBER_AFTER_S: AMBER_AFTER_S, DISCONNECTED_AFTER_S: DISCONNECTED_AFTER_S,
     ENDPOINT: ENDPOINT, STRIP_CLASS: STRIP_CLASS, modalBooks: modalBooks, summaryText: summaryText, lineKey: lineKey, nk: nk,
     seriesPoints: seriesPoints, marginOf: marginOf, MIN_SPAN_MS: MIN_SPAN_MS, RECENT_MS: RECENT_MS, BOOK_ORDER: BOOK_ORDER,
-    boxChart: boxChart, endOf: endOf, bookSplit: bookSplit, dropCell: dropCell, startLine: startLine };
+    boxChart: boxChart, endOf: endOf, shardHoles: shardHoles, bookSplit: bookSplit, dropCell: dropCell, startLine: startLine };
   if (typeof module === 'object' && module.exports) module.exports = PURE;
   if (typeof document === 'undefined') return;
 
@@ -840,7 +848,7 @@
           (ch.area ? '<path class="do-area" d="' + ch.area + '"></path>' : '') +
           ch.lines.map(function (pl) { return '<polyline class="do-line" points="' + pl + '" vector-effect="non-scaling-stroke"></polyline>'; }).join('') +
           '</svg>' +
-          (ch.hasOpen ? '<span class="do-ov-openchip" style="top:' + ch.openTop + ';left:calc(' + ch.openLeft + ' + 8px)">' + openWord + ' <span>' + price2(sel.first.v) + '</span></span>' : '') +
+          (ch.hasOpen ? '<span class="do-ov-openchip" style="top:' + ch.openTop + ';left:min(calc(' + ch.openLeft + ' + 8px), calc(100% - 132px))">' + openWord + ' <span>' + price2(sel.first.v) + '</span></span>' : '') +
           '<span class="do-ov-enddot" style="top:' + ch.endDot + ';left:' + ch.endLeft + '"></span></div>' +
         '<div class="do-ov-endc"><div class="do-ov-endbox" style="top:' + ch.endTop + '"><div class="do-ov-endw">' + esc(ch.endWord) + '</div><div class="do-ov-endv"><span>' + ch.endLbl + '</span></div></div></div>' +
         '</div>' +
