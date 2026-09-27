@@ -4165,11 +4165,15 @@ function closeCutMs(m, ocsStartMs, onsetFn) {
 // 08:47:59Z actual start; Sun v Safiullin kept 4.50 / 1.17 against 4.50 / 1.20 at 10:05:33Z.
 // `derived` is { p1, p2, at } off the same series, or null when the series yields no close
 // (then a valid carried close stands — a thinner re-read never erases a proven close).
-function keepCarriedClose(prior, derived, cutMs, book) {
+// `cutIsActual`: the cut IS the card state's actual start. Only then may a later pre-cut tick
+// replace a carried close — on a fallback cut (scheduled start, onset) the later tick can be
+// in-play (Harris v Kovacevic without its card-state row: the 10:35Z schedule would re-read the
+// 10:32:14Z in-play 1.50 over the proven 1.47), so a pre-cut carried close is kept as before.
+function keepCarriedClose(prior, derived, cutMs, book, cutIsActual) {
   if (!prior || prior.bookmaker !== book || !Number.isFinite(cutMs)) return false;
   const at = Date.parse(prior.at);
   if (!Number.isFinite(at) || at > cutMs) return false;
-  if (!derived) return true;
+  if (!derived || !cutIsActual) return true;
   return derived.p1 === prior.p1 && derived.p2 === prior.p2 && derived.at === prior.at;
 }
 
@@ -6662,7 +6666,8 @@ async function runPipeline() {
       // 1.062/10.00 against a true pre-match 1.10/7.00. That is the exact TEN-124
       // failure the founder ruled out, reached by a different route. A real
       // scheduled start removes the inference entirely.
-      const startMs = closeCutMs(m, ocsStartByKey.get(ocsMatchKey(m.date, m.p1, m.p2)), () => inPlayOnset(s));
+      const ocsStartMs = ocsStartByKey.get(ocsMatchKey(m.date, m.p1, m.p2));
+      const startMs = closeCutMs(m, ocsStartMs, () => inPlayOnset(s));
       const prior = carried && carried.closingOdds;
       // Preserve a prior close only if it is a genuine pre-start quote from bet365 (the book
       // we now pin both legs to) AND the series re-read at this cut gives the same close
@@ -6672,7 +6677,7 @@ async function runPipeline() {
       const c1 = Number.isFinite(startMs) ? lastAtOrBefore(p1, startMs) : null;
       const c2 = Number.isFinite(startMs) ? lastAtOrBefore(p2, startMs) : null;
       const derivedClose = (c1 && c2) ? { p1: c1[1], p2: c2[1], bookmaker: ref, at: c1[0] } : null;
-      if (keepCarriedClose(prior, derivedClose, startMs, ref)) {
+      if (keepCarriedClose(prior, derivedClose, startMs, ref, Number.isFinite(ocsStartMs))) {
         m.closingOdds = prior; closePreserved++;
       } else if (derivedClose) {
         m.closingOdds = derivedClose;

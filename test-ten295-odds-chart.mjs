@@ -594,7 +594,7 @@ test('pipeline close (founder card f8b311c9): the card state\'s ACTUAL start is 
   assert.equal(called, 1, 'the onset proxy is only computed when nothing proven exists');
   assert.ok(Number.isNaN(cut({}, NaN, () => NaN)), 'nothing -> NaN (the close dashes)');
   // the close block uses it, keyed by the card-state key
-  assert.ok(pipe.includes('const startMs = closeCutMs(m, ocsStartByKey.get(ocsMatchKey(m.date, m.p1, m.p2)), () => inPlayOnset(s));'));
+  assert.ok(pipe.includes('const ocsStartMs = ocsStartByKey.get(ocsMatchKey(m.date, m.p1, m.p2));\n      const startMs = closeCutMs(m, ocsStartMs, () => inPlayOnset(s));'));
 });
 
 test('pipeline: a carried close derived under an earlier cut is re-derived (TEN-295 item 2)', () => {
@@ -603,19 +603,26 @@ test('pipeline: a carried close derived under an earlier cut is re-derived (TEN-
   // Shang v Mannarino, real series: carried 1.37/3.00 @08:17:46Z; bet365 1.44/2.75 @08:45:19Z; actual start 08:47:59Z.
   const shangPrior = { p1: 1.37, p2: 3, bookmaker: 'bet365', at: '2026-09-24T08:17:46.756Z' };
   const shangNow = { p1: 1.44, p2: 2.75, bookmaker: 'bet365', at: '2026-09-24T08:45:19.063Z' };
-  assert.equal(keep(shangPrior, shangNow, T('2026-09-24T08:47:59Z'), 'bet365'), false, 'Shang heals to 1.44/2.75');
+  assert.equal(keep(shangPrior, shangNow, T('2026-09-24T08:47:59Z'), 'bet365', true), false, 'Shang heals to 1.44/2.75');
   // Sun v Safiullin: carried 4.50/1.17 @23 Sep 22:26Z; 4.50/1.20 @10:05:33Z; actual start 10:06:06Z.
   assert.equal(keep({ p1: 4.5, p2: 1.17, bookmaker: 'bet365', at: '2026-09-23T22:26:02.218Z' },
                     { p1: 4.5, p2: 1.2, bookmaker: 'bet365', at: '2026-09-24T10:05:33.952Z' },
-                    T('2026-09-24T10:06:06Z'), 'bet365'), false, 'Sun heals (one leg moved)');
-  assert.equal(keep(shangNow, { ...shangNow }, T('2026-09-24T08:47:59Z'), 'bet365'), true, 'unchanged close is kept');
-  assert.equal(keep(shangPrior, null, T('2026-09-24T08:47:59Z'), 'bet365'), true, 'a re-read with no close never erases a proven one');
-  assert.equal(keep({ ...shangNow, at: '2026-09-24T08:48:10Z' }, null, T('2026-09-24T08:47:59Z'), 'bet365'), false, 'in-play carried close is not kept');
-  assert.equal(keep({ ...shangNow, bookmaker: 'Pinnacle' }, null, T('2026-09-24T08:47:59Z'), 'bet365'), false, 'cross-book carried close is not kept');
-  assert.equal(keep(shangNow, null, NaN, 'bet365'), false, 'no proven cut -> not kept');
-  assert.equal(keep(null, shangNow, T('2026-09-24T08:47:59Z'), 'bet365'), false);
-  // the close block decides with it, against the series re-read at the same cut
-  assert.ok(pipe.includes('if (keepCarriedClose(prior, derivedClose, startMs, ref)) {'));
+                    T('2026-09-24T10:06:06Z'), 'bet365', true), false, 'Sun heals (one leg moved)');
+  assert.equal(keep(shangNow, { ...shangNow }, T('2026-09-24T08:47:59Z'), 'bet365', true), true, 'unchanged close is kept');
+  assert.equal(keep(shangPrior, null, T('2026-09-24T08:47:59Z'), 'bet365', true), true, 'a re-read with no close never erases a proven one');
+  assert.equal(keep({ ...shangNow, at: '2026-09-24T08:48:10Z' }, null, T('2026-09-24T08:47:59Z'), 'bet365', true), false, 'in-play carried close is not kept');
+  assert.equal(keep({ ...shangNow, bookmaker: 'Pinnacle' }, null, T('2026-09-24T08:47:59Z'), 'bet365', true), false, 'cross-book carried close is not kept');
+  assert.equal(keep(shangNow, null, NaN, 'bet365', true), false, 'no proven cut -> not kept');
+  assert.equal(keep(null, shangNow, T('2026-09-24T08:47:59Z'), 'bet365', true), false);
+  // Review 2026-09-27: on a FALLBACK cut (no card-state start this run) a later pre-cut tick can be
+  // in-play — Harris v Kovacevic cut at its 10:35Z schedule re-reads the 10:32:14Z in-play 1.50.
+  const harrisPrior = { p1: 1.47, p2: 2.62, bookmaker: 'bet365', at: '2026-09-24T07:30:25.489Z' };
+  const harrisInPlay = { p1: 1.5, p2: 2.62, bookmaker: 'bet365', at: '2026-09-24T10:32:14.239Z' };
+  assert.equal(keep(harrisPrior, harrisInPlay, T('2026-09-24T10:35:00Z'), 'bet365', false), true,
+               'fallback cut: the proven pre-start close is kept, never the in-play re-read');
+  assert.equal(keep(shangPrior, shangNow, T('2026-09-24T08:45:00Z'), 'bet365', false), true, 'fallback cut: old rule');
+  // the close block decides with it, against the series re-read at the same cut, flagging the actual start
+  assert.ok(pipe.includes('if (keepCarriedClose(prior, derivedClose, startMs, ref, Number.isFinite(ocsStartMs))) {'));
   assert.ok(!/priorOk/.test(pipe), 'the old before-the-cut-only test is gone');
 });
 
