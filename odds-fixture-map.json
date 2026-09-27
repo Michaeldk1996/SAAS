@@ -2417,8 +2417,8 @@
     },
     "12166376": {
       "fixtureId": null,
-      "mappedAt": "2026-09-27T14:45:17Z",
-      "missRuns": 1,
+      "mappedAt": "2026-09-27T15:46:55Z",
+      "missRuns": 2,
       "missSince": "2026-09-27T14:45:17Z",
       "orient": null,
       "p1": "J. Cui",
@@ -2452,6 +2452,15 @@
       "p2": "D. Shapovalov",
       "startTime": "2026-09-28T11:00:00.000Z",
       "tournamentId": 14133
+    },
+    "12166418": {
+      "fixtureId": "id1204297974753268",
+      "mappedAt": "2026-09-27T15:46:55Z",
+      "orient": "same",
+      "p1": "D. Medvedev",
+      "p2": "R. Safiullin",
+      "startTime": "2026-09-28T11:30:00.000Z",
+      "tournamentId": 42979
     }
   },
   "missAudit": {
@@ -2461,12 +2470,12 @@
       "missResolutionHoursP50": 22.39,
       "missResolutionsMeasured": 101,
       "note": "ttlBitRuns counts runs where an expired MISS was the ONLY reason a billable /v4/fixtures call was made. projectedTtlUnitsPerDay uses the MEASURED run rate (measuredRunsPerDay), not an assumed 24/day; it is null until observedSpanDays is wide enough to measure one. Compare it against the <=24/day ceiling the TTL was chosen against. openMisses counts only fixtures still on the board.",
-      "observedSpanDays": 16.39,
+      "observedSpanDays": 16.43,
       "projectedTtlUnitsPerDay": 5.4,
-      "runs": 286,
-      "spentRuns": 165,
+      "runs": 287,
+      "spentRuns": 166,
       "ttlBitRuns": 89,
-      "ttlBitShare": 0.311,
+      "ttlBitShare": 0.31,
       "ttlHours": 1.0
     },
     "runs": [
@@ -5615,9 +5624,20 @@
         "ttlBit": false,
         "unmapped": 9,
         "upcoming": 24
+      },
+      {
+        "at": "2026-09-27T15:46:55Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 0,
+        "missExpired": 1,
+        "openMisses": 1,
+        "stale": 2,
+        "ttlBit": false,
+        "unmapped": 1,
+        "upcoming": 23
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-09-27T14:45:17Z"
+  "updatedAt": "2026-09-27T15:46:55Z"
 }
