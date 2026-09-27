@@ -2252,6 +2252,15 @@
       "p2": "T. Fritz",
       "startTime": "2026-09-27T14:30:00.000Z",
       "tournamentId": 19448
+    },
+    "12166292": {
+      "fixtureId": "id1201413374753314",
+      "mappedAt": "2026-09-27T10:35:42Z",
+      "orient": "same",
+      "p1": "N. Basilashvili",
+      "p2": "A. Davidovich Fokina",
+      "startTime": "2026-09-28T09:00:00.000Z",
+      "tournamentId": 14133
     }
   },
   "missAudit": {
@@ -2261,12 +2270,12 @@
       "missResolutionHoursP50": 37.52,
       "missResolutionsMeasured": 92,
       "note": "ttlBitRuns counts runs where an expired MISS was the ONLY reason a billable /v4/fixtures call was made. projectedTtlUnitsPerDay uses the MEASURED run rate (measuredRunsPerDay), not an assumed 24/day; it is null until observedSpanDays is wide enough to measure one. Compare it against the <=24/day ceiling the TTL was chosen against. openMisses counts only fixtures still on the board.",
-      "observedSpanDays": 16.17,
+      "observedSpanDays": 16.21,
       "projectedTtlUnitsPerDay": 5.5,
-      "runs": 281,
-      "spentRuns": 162,
+      "runs": 282,
+      "spentRuns": 163,
       "ttlBitRuns": 89,
-      "ttlBitShare": 0.317,
+      "ttlBitShare": 0.316,
       "ttlHours": 1.0
     },
     "runs": [
@@ -5360,9 +5369,20 @@
         "ttlBit": false,
         "unmapped": 0,
         "upcoming": 9
+      },
+      {
+        "at": "2026-09-27T10:35:42Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 0,
+        "missExpired": 0,
+        "openMisses": 0,
+        "stale": 1,
+        "ttlBit": false,
+        "unmapped": 1,
+        "upcoming": 10
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-09-27T05:30:54Z"
+  "updatedAt": "2026-09-27T10:35:42Z"
 }
