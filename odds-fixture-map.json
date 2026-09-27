@@ -2261,6 +2261,105 @@
       "p2": "A. Davidovich Fokina",
       "startTime": "2026-09-28T09:00:00.000Z",
       "tournamentId": 14133
+    },
+    "12166334": {
+      "fixtureId": null,
+      "mappedAt": "2026-09-27T12:49:22Z",
+      "missRuns": 1,
+      "missSince": "2026-09-27T12:49:22Z",
+      "orient": null,
+      "p1": "K. Jacquet",
+      "p2": "A. Rublev",
+      "startTime": null,
+      "tournamentId": null
+    },
+    "12166335": {
+      "fixtureId": null,
+      "mappedAt": "2026-09-27T12:49:22Z",
+      "missRuns": 1,
+      "missSince": "2026-09-27T12:49:22Z",
+      "orient": null,
+      "p1": "R. Hijikata",
+      "p2": "C. Ugo Carabelli",
+      "startTime": null,
+      "tournamentId": null
+    },
+    "12166336": {
+      "fixtureId": null,
+      "mappedAt": "2026-09-27T12:49:22Z",
+      "missRuns": 1,
+      "missSince": "2026-09-27T12:49:22Z",
+      "orient": null,
+      "p1": "Z. Svajda",
+      "p2": "A. Kovacevic",
+      "startTime": null,
+      "tournamentId": null
+    },
+    "12166337": {
+      "fixtureId": null,
+      "mappedAt": "2026-09-27T12:49:22Z",
+      "missRuns": 1,
+      "missSince": "2026-09-27T12:49:22Z",
+      "orient": null,
+      "p1": "S. Tsitsipas",
+      "p2": "Y. Nishioka",
+      "startTime": null,
+      "tournamentId": null
+    },
+    "12166338": {
+      "fixtureId": null,
+      "mappedAt": "2026-09-27T12:49:22Z",
+      "missRuns": 1,
+      "missSince": "2026-09-27T12:49:22Z",
+      "orient": null,
+      "p1": "A. Fils",
+      "p2": "M. Damm",
+      "startTime": null,
+      "tournamentId": null
+    },
+    "12166339": {
+      "fixtureId": null,
+      "mappedAt": "2026-09-27T12:49:22Z",
+      "missRuns": 1,
+      "missSince": "2026-09-27T12:49:22Z",
+      "orient": null,
+      "p1": "J. Munar",
+      "p2": "M. Giron",
+      "startTime": null,
+      "tournamentId": null
+    },
+    "12166340": {
+      "fixtureId": null,
+      "mappedAt": "2026-09-27T12:49:22Z",
+      "missRuns": 1,
+      "missSince": "2026-09-27T12:49:22Z",
+      "orient": null,
+      "p1": "L. Sonego",
+      "p2": "K. Majchrzak",
+      "startTime": null,
+      "tournamentId": null
+    },
+    "12166341": {
+      "fixtureId": null,
+      "mappedAt": "2026-09-27T12:49:22Z",
+      "missRuns": 1,
+      "missSince": "2026-09-27T12:49:22Z",
+      "orient": null,
+      "p1": "D. Vallejo",
+      "p2": "T. Daniel",
+      "startTime": null,
+      "tournamentId": null
+    },
+    "12166342": {
+      "fixtureId": null,
+      "mappedAt": "2026-09-27T12:49:22Z",
+      "missRuns": 1,
+      "missSince": "2026-09-27T12:49:22Z",
+      "orient": null,
+      "p1": "S. Mochizuki",
+      "p2": "J. Faria",
+      "startTime": null,
+      "tournamentId": null
     }
   },
   "missAudit": {
@@ -2270,12 +2369,12 @@
       "missResolutionHoursP50": 37.52,
       "missResolutionsMeasured": 92,
       "note": "ttlBitRuns counts runs where an expired MISS was the ONLY reason a billable /v4/fixtures call was made. projectedTtlUnitsPerDay uses the MEASURED run rate (measuredRunsPerDay), not an assumed 24/day; it is null until observedSpanDays is wide enough to measure one. Compare it against the <=24/day ceiling the TTL was chosen against. openMisses counts only fixtures still on the board.",
-      "observedSpanDays": 16.26,
+      "observedSpanDays": 16.3,
       "projectedTtlUnitsPerDay": 5.5,
-      "runs": 283,
-      "spentRuns": 163,
+      "runs": 284,
+      "spentRuns": 164,
       "ttlBitRuns": 89,
-      "ttlBitShare": 0.314,
+      "ttlBitShare": 0.313,
       "ttlHours": 1.0
     },
     "runs": [
@@ -5391,9 +5490,20 @@
         "ttlBit": false,
         "unmapped": 0,
         "upcoming": 8
+      },
+      {
+        "at": "2026-09-27T12:49:22Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 0,
+        "missExpired": 0,
+        "openMisses": 0,
+        "stale": 9,
+        "ttlBit": false,
+        "unmapped": 9,
+        "upcoming": 16
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-09-27T10:35:42Z"
+  "updatedAt": "2026-09-27T12:49:22Z"
 }
