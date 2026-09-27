@@ -185,7 +185,7 @@ Do **not** wire the proprietary methodology behind the rendered verdict, and do 
 ## Known bugs
 
 1. **H2H surface filter** — does not work correctly on the H2H page
-2. **Weather** — live on 44 of 53 cards (2026-09-27). The weather hour was read 2 h late until TEN-304 Wave A (Berlin wall clock read as UTC); model layer #12 is OFF until an indoor check is in too. Rules: `.claude/rules/modal-weather.md`
+2. **Weather** — the Match analysis → Weather tab is the TEN-304 Wave B rebuild of the locked handoff: it reads its own per-venue Open-Meteo files (`weather-index.json` + `weather/`, built by `build-weather.js` in the pipeline, re-fetched every 3 h, never committed), shows venue-local times, and a tournament with no mapped venue shows the unavailable state. Open: the severity cut-offs are PLACEHOLDERS until the founder rules (the "THRESHOLDS TBD — MICHAEL" chip stays), and model layer #12 is OFF until an indoor check is in. Rules: `.claude/rules/modal-weather.md`
 3. **Form bars** — had rendering issues on Today's Matches; check current state before touching
 4. **Modal filter pills** — should show tournament names with an "All surfaces" dropdown, not surface-type pills
 
@@ -264,7 +264,7 @@ Surface-specific rulings moved out of this file so they load only when relevant:
 |---|---|
 | Overview tab identity/outcome, nested Match Stats block | `.claude/rules/modal-overview.md` |
 | Key Factors — model card, soft-book gap, tournament tier | `.claude/rules/modal-key-factors.md` |
-| Weather "How conditions affect play" cards | `.claude/rules/modal-weather.md` |
+| Weather tab — venue files, venue-local times, MATCH badge vs header, severity config, model layer #12, venues | `.claude/rules/modal-weather.md` |
 | Match Stats tone rules, point-log, score header | `.claude/rules/modal-match-stats.md` |
 | Player Profile export parity | `.claude/rules/player-profile.md` |
 | Records counting (Flashscore rules), walkovers, retirements | `.claude/rules/pipeline-records.md` |
