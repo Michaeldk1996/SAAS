@@ -3,6 +3,8 @@
 // Each test names the mutation that makes it fail; tools/test-ten304-mutants.js runs them.
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { build, makeFile, elements, text } from './tools/ten304-weather-harness.mjs';
 
 const NOW = Date.parse('2026-09-27T04:00:00Z');                       // 12:00 in Chengdu
@@ -20,6 +22,7 @@ test('a factor with a null headline value renders "—", is UNAVAILABLE, and is 
   const html = render(f);
   const lead = elements(html, 'wx-lead');
   assert.equal(lead.length, 1);
+  assert.match(text(elements(html, 'wx-verdict')[0]), /^Main factor at match time: Heat — feels like 36°$/);
   assert.match(lead[0], /data-factor="heat"/, 'heat (a real CONCERN value) leads, not the missing wind');
   const wind = elements(html, 'wx-tile').find(t => /data-factor="wind"/.test(t));
   assert.ok(wind, 'wind tile rendered');
@@ -48,9 +51,41 @@ test('a forecast older than the cut-off → unavailable, with the real last-upda
   const fresh = text(elements(html, 'wx-fresh')[0]);
   assert.match(fresh, /last successful update Sep 26, 08:00/, fresh);           // 00:00Z = 08:00 venue time
   assert.ok(!fresh.includes('update —'));
+  assert.match(fresh, /· Open-Meteo$/, 'the real provider is named');
   assert.ok(elements(html, 'wx-day').every(d => text(elements(d, 'wx-hi')[0]) === '—'));
   // control: 2 h old is not unavailable
   assert.equal(elements(render(file(() => ({}))), 'wx-banner').length, 0);
+});
+
+// Mutation: badge in the viewer zone; header formatted in UTC. The renderer runs in a child process
+// whose REAL process zone is set with TZ (no zone preference: newsTz() is undefined, as on the page).
+test('Chengdu match viewed with TZ=Asia/Shanghai vs TZ=UTC: badge (venue time) and header (viewer time) are one instant', () => {
+  const harness = new URL('./tools/ten304-weather-harness.mjs', import.meta.url).href;
+  const child = `import { build, makeFile, elements, text } from ${JSON.stringify(harness)};
+    const M = ${JSON.stringify(M)}, ENTRY = ${JSON.stringify(ENTRY)};
+    const R = build({});
+    const f = makeFile({ from: '2026-09-25', fetchedAt: ${JSON.stringify(FETCHED)} });
+    const html = R.buildWeatherSection(M, ENTRY, f, ${NOW});
+    console.log(JSON.stringify({ header: R.aContextLine(M, 'Quarter-finals'), badge: text(elements(html, 'wx-badge')[0]),
+      athead: text(elements(html, 'wx-athead')[0]), start: R.cardStartMs(M) }));`;
+  const out = {};
+  for (const tz of ['Asia/Shanghai', 'UTC']) {
+    const r = spawnSync(process.execPath, ['--input-type=module', '-e', child], { env: Object.assign({}, process.env, { TZ: tz }), encoding: 'utf8' });
+    assert.equal(r.status, 0, r.stderr);
+    out[tz] = JSON.parse(r.stdout.trim().split('\n').pop());
+  }
+  // header = viewer's clock; badge = Chengdu's clock (UTC+8) of the SAME instant, whoever views it
+  assert.equal(out['Asia/Shanghai'].header, 'ATP Chengdu · Quarter-finals · 16:00');
+  assert.equal(out['UTC'].header, 'ATP Chengdu · Quarter-finals · 08:00');
+  for (const tz of ['Asia/Shanghai', 'UTC']) {
+    assert.equal(out[tz].badge, 'MATCH · 16:00', tz);
+    assert.equal(out[tz].athead, 'Sun Sep 27 · 16:00', tz);
+    assert.equal(out[tz].start, Date.parse('2026-09-27T08:00:00Z'), tz);
+  }
+  // the header's clock time, read in the viewer's zone, is the badge's instant
+  const hm = s => s.slice(-5), at = (hhmm, offH) => Date.parse('2026-09-27T' + hhmm + ':00Z') - offH * 3600e3;
+  assert.equal(at(hm(out['UTC'].header), 0), at(hm(out['UTC'].badge), 8));
+  assert.equal(at(hm(out['Asia/Shanghai'].header), 8), at(hm(out['Asia/Shanghai'].badge), 8));
 });
 
 // Mutation: build the badge from m.time as a wall clock, or format it in the viewer's zone.
@@ -109,4 +144,20 @@ test('the test-only ?wxForce=unavailable param forces the unavailable state; not
   const f = file(() => ({}));
   assert.equal(elements(build({ search: '?wxForce=unavailable' }).buildWeatherSection(M, ENTRY, f, NOW), 'wx-banner').length, 1);
   assert.equal(elements(build({ search: '?wxForce=1' }).buildWeatherSection(M, ENTRY, f, NOW), 'wx-banner').length, 0);
+});
+
+// Mutation: a <script src> to the pixel fixture/harness in the dashboard, or a cp of tools/ into _site.
+test('the test-only pixel fixture never ships: not referenced by the dashboard, not in the deploy allowlist', async () => {
+  const { readFileSync } = await import('node:fs');
+  const root = new URL('./', import.meta.url);
+  const page = readFileSync(new URL('bsp-consult-dashboard.html', root), 'utf8');
+  for (const s of ['ten304-weather-fixture', 'ten304-weather-harness', '__wxDiff', '__wxCol']) assert.ok(!page.includes(s), s);
+  const yml = readFileSync(new URL('.github/workflows/pipeline.yml', root), 'utf8');
+  const assemble = yml.slice(yml.indexOf('name: Assemble site'));
+  const copies = assemble.split('\n').filter(l => /^\s*(cp|rsync)\s/.test(l));
+  assert.ok(copies.length > 10, 'the assemble step was found');
+  assert.ok(!copies.some(l => /tools|ten304-weather-f/.test(l)), copies.filter(l => /tools/.test(l)).join('\n'));
+  // …and the files the tab DOES fetch are published
+  assert.ok(copies.some(l => /cp weather-index\.json _site\//.test(l)), 'weather-index.json copied');
+  assert.ok(copies.some(l => /cp -r weather _site\//.test(l)), 'weather/ copied');
 });

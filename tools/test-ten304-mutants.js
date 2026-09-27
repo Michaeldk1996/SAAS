@@ -16,6 +16,11 @@ const MUTANTS = [
   ['header without the start time', "return [m.tour, roundText, t].filter(Boolean).join(' · ');", "return [m.tour, roundText].filter(Boolean).join(' · ');"],
   ['missing time guessed as noon', 'const mp = wxLocalParts(startMs, zone);', "const mp = wxLocalParts(Number.isFinite(startMs) ? startMs : Date.parse(m.date + 'T12:00:00Z'), zone);"],
   ['test-only param accepts anything', "get('wxForce') === 'unavailable'", "get('wxForce') != null"],
+  ['an UNAVAILABLE factor can lead', "function wxRank(s){ return s === 'r' ? 2 : s === 'a' ? 1 : 0; }", "function wxRank(s){ return s === 'r' || s === 'u' ? 2 : s === 'a' ? 1 : 0; }"],
+  ['stale: last-update time dashed', "when: Number.isFinite(fetchedMs) ? wxStamp(fetchedMs, zone) : '—'", "when: '—'"],
+  ['day card takes the window BEST value', 'const mx = a => a ? rnd(Math.max.apply(null, a)) : null;', 'const mx = a => a ? rnd(Math.min.apply(null, a)) : null;'],
+  ['header time in UTC, not the viewer zone', "{ hour:'2-digit', minute:'2-digit', hour12:false, timeZone:newsTz() };", "{ hour:'2-digit', minute:'2-digit', hour12:false, timeZone:'UTC' };"],
+  ['indoor flag ignored', 'if (entry && entry.indoor === true) return { indoor: true };', ''],
 ];
 let caught = 0;
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ten304-mut-'));
