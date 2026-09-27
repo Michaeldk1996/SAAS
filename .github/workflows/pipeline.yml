@@ -482,6 +482,14 @@ jobs:
       - name: Build Lines field distribution (best-effort)
         run: node build-lines-field.js || true
 
+      # TEN-304: the Weather tab's per-venue forecasts (Open-Meteo free endpoint, founder ruling;
+      # no key). One call per OUTDOOR venue on the board, venue-local hourly (2 past + 8 forecast
+      # days). Writes weather-index.json + weather/<slug>.json only; matches.json is never touched.
+      # A failed fetch carries the last good file from the live site with its original fetchedAt,
+      # so the tab can show its age. Best-effort: with no file, the tab shows its unavailable state.
+      - name: Build weather files (best-effort)
+        run: node build-weather.js || true
+
       - name: Assemble site
         run: |
           mkdir -p _site
@@ -648,6 +656,9 @@ jobs:
           # which is exactly how the movement chart went missing for three days.
           cp odds-index.json _site/ 2>/dev/null || true
           cp -r odds _site/ 2>/dev/null || true
+          # TEN-304: Weather tab files (lazy, read when the tab opens).
+          cp weather-index.json _site/ 2>/dev/null || true
+          cp -r weather _site/ 2>/dev/null || true
           # BET365 HISTORY ARCHIVE (TEN-179 item 1): per-month shards of the
           # reduced open->close series, written by bet365-archive.yml. Published
           # so a later change can read it, but deliberately NOT on any startup
