@@ -50,6 +50,8 @@ const MUTANTS = [
   ['archive: a failed live read is not retried', 'for (let i = 0; i < 3; i++) {\n    try { const a = await getJson(url', 'for (let i = 2; i < 3; i++) {\n    try { const a = await getJson(url', 'bwt'],
   ['archive: a revised start keeps the old hour', '(moved && fAt >= Date.parse(old.fetchedAt))', 'false', 'bwt'],
   ['unavailable started match still says "forecast, not observed"', "(archived && !unavail ? ' · ' + CP.pastValues : '')", "(archived ? ' · ' + CP.pastValues : '')"],
+  ['WX_C text mapped through 12a again', "  text: '#E7E9EE',                   // primary", "  text: '#EBF1F2',                   // primary"],
+  ['WX_C hairline mapped through 12a again', "  hw: '1.25px',", "  hw: '0.33px',"],
   ['archived day tooltip shows the match row fetch time', '[TP.fetched, wxStamp(d.fetchedMs, vm.zone)]', '[TP.fetched, wxStamp(vm.fetchedMs, vm.zone)]'],
 ];
 let caught = 0;

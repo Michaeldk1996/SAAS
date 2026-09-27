@@ -333,6 +333,7 @@ const DESIGN_ZONES = {
   'bsp-consult-dashboard.html': [
     ['const AODDS_C = {', '\n};'],                                            // Odds tab tokens (Odds Tab - Spec.md)
     ['<style id="design-verbatim-analysis">', '</style>'],                   // Match analysis modal chrome + nav
+    ['const WX_C = {', '\n};'],                                               // Weather tab tokens (Weather Tab - Paperclip.md, TEN-304)
   ],
 };
 function zones(file, src, table = DATAVIZ_ZONES) {
