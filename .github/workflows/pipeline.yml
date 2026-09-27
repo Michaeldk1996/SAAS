@@ -521,6 +521,9 @@ jobs:
           # to the legacy renderer, so the rebuild would look shipped while being
           # unreachable. Required; asserted below.
           cp player-profile-v2.js _site/
+          # TEN-310: the Match analysis Market edge compute (window.MarketEdgeCore). Not
+          # copied = 404 => the tab renders nothing. Required; asserted below.
+          cp market-edge-core.js _site/
           # TEN-206 §5.5/§5.7: the court-speed venue map (build-court-speed-map.js)
           # and the per-player market-edge shards + index (build-market-edge.js).
           # The shards also feed the full ledger's two closing-odds columns.
@@ -844,7 +847,7 @@ jobs:
           # every run alongside matches.json.
           for f in index.html bsp-consult-dashboard.html auth.html auth.js analytics.js account.html funnel.html verify.html \
                    live-tab.js kibl-now-stream.js price-history-box.js \
-                   holdbreak-heatmap.js player-profile-v2.js \
+                   holdbreak-heatmap.js player-profile-v2.js market-edge-core.js \
                    matches.json player-profiles.json career-splits.json form-index.json \
                    player-index.json \
                    points-at-risk.json \

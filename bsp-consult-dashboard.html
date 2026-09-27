@@ -5338,6 +5338,7 @@ window.EntryListsTab = (function(){
         <div class="asidenav-item" data-atab="tournament"><span class="aicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg></span><span>Tournament</span></div>
         <div class="asidenav-item" data-atab="weather"><span class="aicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path></svg></span><span>Weather</span></div>
         <div class="asidenav-item" data-atab="odds"><span class="aicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="8" cy="7" rx="5" ry="2.4"></ellipse><path d="M3 7v5c0 1.3 2.2 2.4 5 2.4s5-1.1 5-2.4V7"></path><ellipse cx="16" cy="14" rx="5" ry="2.4"></ellipse><path d="M11 14v5c0 1.3 2.2 2.4 5 2.4s5-1.1 5-2.4v-5"></path></svg></span><span>Odds</span></div>
+        <div class="asidenav-item" data-atab="marketedge"><span class="aicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16l4-5 3 3 5-7 4 5M4 20h16"></path></svg></span><span>Market edge</span></div>
         <div class="asidenav-download" onclick="printAnalysisReport()"><span class="aicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg></span><span>Download report</span></div>
       </div>
       <div class="abody">
@@ -5351,6 +5352,7 @@ window.EntryListsTab = (function(){
         <div class="asection" data-asection="tournament" id="aSectionTournament"></div>
         <div class="asection" data-asection="weather" id="aSectionWeather"></div>
         <div class="asection" data-asection="odds" id="aSectionOdds"></div>
+        <div class="asection" data-asection="marketedge" id="aSectionMarketEdge"></div>
         <div class="asection" data-asection="news" id="aSectionNews"></div>
       </div>
     </div>
@@ -13970,6 +13972,16 @@ function fhPickBook(pairs){
 //      pipeline run from the committed tennis-data archive (odds-archive/*.csv, psw/psl
 //      = Pinnacle, b365w/b365l = Bet365). Walkovers carry no price. ----
 const _fhCl = {}, _fhClP = {};
+// The shard's column arrays → row objects (also read by the Market edge tab, TEN-310).
+function fhParseCloses(d){
+  const two = (a, b) => (a != null && b != null ? [a, b] : null);
+  return d && Array.isArray(d.rows)
+    ? { rows: d.rows.map(x => ({ date: x[0], opp: x[1], won: x[2] === 1, P: two(x[3], x[4]), B: two(x[5], x[6]), ret: x[7] === 1,
+          oppKey: x[8] != null ? String(x[8]) : null })),
+        cap: (d.cap || []).map(x => ({ date: x[0], oppKey: x[1] != null ? String(x[1]) : null, P: two(x[2], x[3]), B: two(x[4], x[5]),
+          ek: x[6] != null ? String(x[6]) : null })) }
+    : null;
+}
 function fhLoadCloses(key){
   const k = String(key == null ? '' : key);
   if (!k) return Promise.resolve(null);
@@ -13977,16 +13989,7 @@ function fhLoadCloses(key){
   if (_fhClP[k]) return _fhClP[k];
   _fhClP[k] = fetch(`./match-closes/${encodeURIComponent(k)}.json`, { cache: 'no-cache' })
     .then(r => r.ok ? r.json() : null)
-    .then(d => {
-      const two = (a, b) => (a != null && b != null ? [a, b] : null);
-      _fhCl[k] = d && Array.isArray(d.rows)
-        ? { rows: d.rows.map(x => ({ date: x[0], opp: x[1], won: x[2] === 1, P: two(x[3], x[4]), B: two(x[5], x[6]), ret: x[7] === 1,
-              oppKey: x[8] != null ? String(x[8]) : null })),
-            cap: (d.cap || []).map(x => ({ date: x[0], oppKey: x[1] != null ? String(x[1]) : null, P: two(x[2], x[3]), B: two(x[4], x[5]),
-              ek: x[6] != null ? String(x[6]) : null })) }
-        : null;
-      return _fhCl[k];
-    })
+    .then(d => { _fhCl[k] = fhParseCloses(d); return _fhCl[k]; })
     .catch(() => { delete _fhClP[k]; return null; });   // a network error is retried on the next open, not cached
   return _fhClP[k];
 }
@@ -15326,6 +15329,413 @@ function fhSheetInit(e, r){
 }
 
 document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && _fh && _fh.sheet){ ev.stopPropagation(); fhCloseSheet(); } }, true);
+
+// =====================================================================
+// TEN-310 · MATCH ANALYSIS → MARKET EDGE TAB. Design: handoff/Market Edge (`Market Edge Tab.dc.html`,
+// `Market Edge Tab - Paperclip.md`, locked 2026-09-27). Compute: market-edge-core.js (MarketEdgeCore).
+// DATA: career-history/{key}.json (dates, set scores, eventKey, RET/W/O, format) joined to
+// match-closes/{key}.json through the Form/H2H picker (fhCloseFor → fhPickBook: Pinnacle close,
+// else Bet365 close, one book and one source per match). Both shards are lazy, per player, rebuilt
+// by the pipeline; nothing here is hand-built. Loaded only when the tab opens.
+// =====================================================================
+// Team events and non-standard formats: never a derived-lines row (their sets are not a standard
+// best-of-3 even when the score looks like one). NextGen arrives flagged `altFormat` by the history.
+const ME_NONSTD_EVENT = /laver cup|davis cup|united cup|atp cup|hopman cup|next ?gen/i;
+// One career-history row → a normalised row (own player's side), priced through the Form/H2H rule.
+// Pre-2021 history rows carry the TOURNAMENT's start date on every round, so their Tennis-Data
+// close is looked for across the tournament fortnight; the matched Tennis-Data row's date (the real
+// match day) then dates the row. Exactly one candidate with the same opponent and result, else unpriced.
+function meRowFromCareer(x, cl, selfKey, selfName, idx){
+  const qual = !!x.qualifying || /^qualif/i.test(String(x.round || ''));
+  const r = {
+    mid: fhSafeId('me' + selfKey + '_' + idx + '_' + (x.eventKey != null ? x.eventKey : x.date)),
+    date: x.date, tourn: fhTournClean(x.tournament), tournRaw: x.tournament,
+    surface: fhSurfName(x.surface), round: fhRoundCode(x.round, qual),
+    opp: x.opponent, oppKey: null, won: !!x.won, result: x.result,
+    sets: fhSetsFrom(x.sets), ret: !!x.retired, wo: !!x.walkover, qualifying: qual, tier: x.level === 'atp' ? 'atp' : x.level,
+    ek: x.eventKey != null ? x.eventKey : null, selfKey, selfName, price: null, oppPrice: null, book: null, src: null,
+    level: fhLevelOf(x.level, x.tournament, null),
+    alt: x.altFormat ? String(x.altFormat) : (ME_NONSTD_EVENT.test(String(x.tournament || '')) ? 'team event' : null),
+  };
+  fhFinishRow(r);
+  // The history's own best-of, where it records one, beats the Slam-name inference.
+  if ((x.bestOf === 3 || x.bestOf === 5) && x.bestOf !== r.bo){
+    r.bo = x.bestOf;
+    if (!r.wo && !r.ret && r.pS != null && (r.won ? r.pS : r.oS) < (r.bo === 5 ? 3 : 2)) r.ret = true;
+    r.complete = !r.ret && !r.wo && r.pS != null;
+  }
+  if (!r.wo && cl){
+    const d0 = fhDayNum(r.date), nk = fhNameKey(r.opp), hi = d0 + (x.src === 'archive' ? 14 : 1);
+    const hits = d0 == null || !nk ? [] : (cl.rows || []).filter(y => { const d = fhDayNum(y.date); return d != null && d >= d0 - 1 && d <= hi && fhNameKey(y.opp) === nk && y.won === r.won; });
+    const td = hits.length === 1 ? hits[0] : null;
+    if (td && x.src === 'archive') r.date = td.date;
+    const c = fhCloseFor(cl, td ? td.date : r.date, r.opp, r.won, td ? td.oppKey : null, r.ek);
+    if (c){ r.price = c.price; r.oppPrice = c.oppPrice; r.book = c.book; r.src = c.src; }
+    if (td && td.oppKey) r.oppKey = td.oppKey;
+    if (td && td.ret) r.retSettle = true;
+  }
+  // Settlement: a retirement is what the feed flags or what Tennis-Data (the price's own archive)
+  // marks as not "Completed" — the same rows the player-profile Market edge leaves out. A completed
+  // match whose stored set list is shorter than its result ("3 - 0" with two sets) is NOT a
+  // retirement: its result stands; only the set-score lines cannot read it (`setsOk`).
+  r.retSettle = !!(r.retSettle || x.retired);
+  const res = /^\s*(\d+)\s*-\s*(\d+)\s*$/.exec(String(x.result || ''));
+  r.setsOk = !!(r.sets && res && r.sets.length === (+res[1]) + (+res[2]) && r.done && r.done.length === r.sets.length);
+  r.day = fhDayNum(r.date);
+  return r;
+}
+// A player's normalised rows, ATP tour level only (the price archive is ATP main draw; the
+// other levels are counted out loud, never silently dropped): `rows.notTour` = the count left out.
+function meRowsFor(career, cl, selfKey, selfName){
+  const rows = [];
+  let notTour = 0;
+  (career || []).forEach((x, i) => {
+    if (!x) return;
+    const r = meRowFromCareer(x, cl, selfKey, selfName, i);
+    if (r.level !== 'ATP'){ notTour++; return; }
+    rows.push(r);
+  });
+  rows.notTour = notTour;
+  return rows;
+}
+
+// ---- design values (Market Edge Tab - Paperclip.md), each mapped onto the 12a token the site's
+//      theme mapping gives it (tools/theme-12a/recolour.mjs roles; same mapping as the Form/H2H tabs).
+//      Source value in the comment. Chart strokes/fills are data-viz and keep the file's values. ----
+const ME_C = {
+  text: '#EBF1F2',                 // #E7E9EE → text (player A, win bar, values)
+  b: '#6E7A93',                    // #6B7590 player B line → label (grey tier)
+  aFill: 'rgba(235,241,242,0.08)', // rgba(231,233,238,0.08) chart area A
+  bFill: 'rgba(110,122,147,0.05)', // rgba(107,117,144,0.05) chart area B
+  track: 'rgba(235,241,242,0.25)', // rgba(231,233,238,0.25) loss part of the split bar
+  up: '#3ED68C', dn: '#DA6259',    // #3DD68C / #E0616F → positive / negative (+/− only)
+  m1: '#A3ABBA',                   // #8B96B5 → text-sub (captions, card titles, events, chart labels)
+  m2: '#6E7A93',                   // #5B6880 → label (sub-lines, dates, idle seg, Needs, Not covered)
+  m3: '#6E7A93',                   // #4B5672 → label (column headers, footnotes, stat labels)
+  blue: '#6A9AF8',                 // #5B9BFF → periwinkle (TODAY, In band header, TODAY'S BAND)
+  card: '#0E1019', inner: '#0C0E16',                       // surface / surface-inner (already tokens)
+  wash: 'rgba(106,154,248,0.08)',  // today's band rgba(91,155,255,0.06) → nav-hover
+  ring: 'rgba(106,154,248,0.18)',  // inset ring rgba(91,155,255,0.25) → nav-active-line
+  segOnBg: '#0B1C4E', segOnBd: 'rgba(255,255,255,0.10)',   // rgba(91,155,255,0.16) / 0.22 → seg-active / line-open
+  hiBg: '#0C0E16', hiBd: 'rgba(255,255,255,0.10)',         // top-2 rgba(255,255,255,0.05) / 0.16 → surface-inner / line-open
+  sel: '#0B1C4E',                  // selected pop-up row rgba(91,155,255,0.1) → seg-active
+  chipBd: '#2E4FA8',               // TODAY'S BAND border rgba(91,155,255,0.35) → seg-active-line
+  line: 'rgba(255,255,255,0.045)', lineSoft: 'rgba(255,255,255,0.03)', lineOpen: 'rgba(255,255,255,0.10)', hw: '0.33px',
+  backdrop: 'rgba(11,12,19,0.76)', // overlay rgba(3,5,9,0.72) → backdrop
+  // chart (data-viz, unchanged)
+  loss: 'rgba(255,255,255,0.014)', grid: 'rgba(255,255,255,0.06)', tick: 'rgba(255,255,255,0.045)', zero: 'rgba(255,255,255,0.40)',
+};
+// §4.5 thin-sample floor and §4.2 Needs basis: PROVISIONAL until the founder rules (TEN-310).
+// Both live in market-edge-core.js (ME_THIN_FLOOR = 5, ME_NEEDS = n / Σ price).
+const ME_NOPRICE_MSG = 'Derived lines need today’s price.';
+let _me = null;
+function meStateFor(m){
+  if (!_me || _me.m !== m) _me = { m, S: { meView: 'lines', meScope: 'career', meBand: null, meLine: null, meLineScope: 'all' },
+    data: [null, null], state: ['idle', 'idle'], idx: null };
+  return _me;
+}
+// Lazy, per player, only when the tab opens: career-history + closes. A failed load is not cached
+// (the next open retries) and renders as unknown, never as "0 priced".
+function meLoad(m){
+  const E = meStateFor(m);
+  [[m.p1Key, m.p1, 0], [m.p2Key, m.p2, 1]].forEach(([key, name, i]) => {
+    if (E.state[i] === 'ready' || E.state[i] === 'loading') return;
+    if (key == null){ E.state[i] = 'ready'; E.data[i] = Object.assign([], { notTour: 0 }); return; }
+    E.state[i] = 'loading';
+    Promise.all([loadCareerHistory(key), fhLoadCloses(key)]).then(([ch, cl]) => {
+      if (_me !== E) return;
+      const answered = String(key) in _careerHistoryShards;
+      if (!answered){ E.state[i] = 'failed'; E.data[i] = null; }
+      else { E.state[i] = 'ready'; E.data[i] = meRowsFor(ch, cl, String(key), name); }
+      meRender();
+    }).catch(() => { if (_me === E){ E.state[i] = 'failed'; meRender(); } });
+  });
+  meRender();
+}
+function openMarketEdgeTab(){ if (_aFormMatch) meLoad(_aFormMatch); }
+function meSet(patch){ if (!_me) return; Object.assign(_me.S, patch); meRender(); }
+function meRender(){
+  const E = _me; if (!E) return;
+  meEnsureStyles();
+  const el = document.getElementById('aSectionMarketEdge');
+  if (el){ if (typeof aOddsTipHide === 'function') aOddsTipHide(); el.innerHTML = buildMarketEdgeSection(E.m); }
+  meRenderPop();
+  if (typeof initAOddsTips === 'function') initAOddsTips();
+}
+// Signed figure with the true minus sign; a value that rounds to zero is "±0". Rounded half away from
+// zero on the magnitude (3.15 → 3.2, −3.15 → −3.2): toFixed alone reads the binary 3.1499… and gives 3.1.
+function meSg(v, dp, u){ const f = Math.pow(10, dp), a = Math.round(Math.abs(Number(v)) * f + 1e-7) / f, r = Number(v) < 0 ? -a : a;
+  return (r > 0 ? '+' : r < 0 ? '−' : '±') + a.toFixed(dp) + (u || ''); }
+const mePct0 = v => (v == null ? '—' : Math.round(v * 100) + '%');
+const mePct1 = v => (v == null ? '—' : (Math.round(v * 1000) / 10).toFixed(1) + '%');
+const meUC = v => (v > 0 ? ME_C.up : v < 0 ? ME_C.dn : ME_C.m1);
+function meDMY(iso){ const x = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || '')); return x ? `${x[3]}.${x[2]}.${x[1].slice(2)}` : FH_DASHC; }
+// The per-player models for the current scope (null while loading / failed).
+function meModels(E){
+  const core = window.MarketEdgeCore;
+  const hdr = aHeaderOdds(E.m), px = [parseFloat(hdr.p1), parseFloat(hdr.p2)].map(v => (Number.isFinite(v) && v >= 1.01 ? v : null));
+  const refDay = fhRefDay(E.m);
+  return [0, 1].map(i => {
+    const rows = E.data[i];
+    if (E.state[i] !== 'ready' || !rows || !core) return { state: E.state[i] === 'failed' ? 'failed' : 'loading', today: px[i] };
+    const name = i ? E.m.p2 : E.m.p1;
+    const M = core.playerModel(rows, { scope: E.S.meScope, refDay, todayPrice: px[i], surname: fhSurname(name) });
+    return Object.assign(M, { state: 'ready', today: px[i], rows });
+  });
+}
+const meSegT = on => ({ weight: on ? 700 : 600, color: on ? ME_C.text : ME_C.m2, bg: on ? ME_C.segOnBg : 'transparent', bd: on ? ME_C.segOnBd : 'transparent' });
+function meSegHtml(items){
+  return `<div style="display:inline-flex; gap:3px; background:${ME_C.inner}; border:${ME_C.hw} solid ${ME_C.line}; border-radius:8px; padding:2px;">`
+    + items.map(t => { const s = meSegT(t.on); return `<span class="seg" onclick="${t.onclick}" style="padding:5px 12px; border-radius:6px; font-size:12px; font-weight:${s.weight}; color:${s.color}; background:${s.bg}; border:${ME_C.hw} solid ${s.bd}; cursor:pointer; white-space:nowrap;">${t.label}</span>`; }).join('') + '</div>';
+}
+const ME_CARD = `background:${ME_C.card}; border:${ME_C.hw} solid ${ME_C.line}; border-radius:14px; padding:20px 22px; display:flex; flex-direction:column; gap:16px; min-width:0;`;
+const ME_TITLE = `${FH_MONO} font-size:10px; font-weight:700; letter-spacing:0.16em; text-transform:uppercase; color:${ME_C.m1};`;
+const ME_COLH = `${FH_MONO} font-size:9px; letter-spacing:0.1em; text-transform:uppercase; color:${ME_C.m3};`;
+const ME_FOOT = `font-size:11px; color:${ME_C.m3};`;
+const ME_HINT = `font-size:11.5px; color:${ME_C.m2};`;
+const ME_PGRID = 'display:grid; grid-template-columns:repeat(auto-fit,minmax(min(460px,100%),1fr)); gap:16px; align-items:start;';
+const ME_BCOLS = 'minmax(92px,1fr) minmax(110px,1.4fr) 52px 52px 56px';
+const ME_LCOLS = 'minmax(0,1.1fr) 104px 104px 44px';
+const meScopeLbl = S => (S.meScope === 'l52' ? 'Last 52 weeks' : 'Career');
+function meScopeSeg(S){ return meSegHtml([['l52', 'Last 52 weeks'], ['career', 'Career']].map(t => ({ label: t[1], on: S.meScope === t[0], onclick: `meSet({meScope:'${t[0]}'})` }))); }
+// While a shard loads the body keeps its loaded height (measured: 2 group labels + 8 band rows = 282px,
+// 6 line rows × 38px = 228px), so nothing moves when the data lands (TEN-310 §4.9).
+const meLoadingRow = (pad, h) => `<div style="min-height:${h}px;"><div style="padding:${pad}; font-size:11.5px; color:${ME_C.m2};">Loading…</div></div>`;
+
+// §2 Price sensitivity — one player's column.
+function meBandsCol(E, i, M){
+  const name = i ? E.m.p2 : E.m.p1, core = window.MarketEdgeCore;
+  const head = `<div style="display:grid; grid-template-columns:${ME_BCOLS}; gap:0 8px; align-items:end; padding:0 8px 7px; border-bottom:${ME_C.hw} solid ${ME_C.lineSoft};">`
+    + `<span style="${ME_COLH}">Price</span><span style="${ME_COLH}">Wins · losses</span><span style="${ME_COLH} text-align:right;">Won</span><span style="${ME_COLH} text-align:right;">Needs</span><span style="${ME_COLH} text-align:right;">1u stake</span></div>`;
+  let body;
+  if (M.state !== 'ready') body = `<div class="me-bands-body">${M.state === 'failed' ? `<div style="padding:7px 8px; font-size:11.5px; color:${ME_C.m2};">History unavailable — reopen the tab to retry.</div>` : meLoadingRow('7px 8px', 282)}</div>`;
+  else {
+    body = '<div class="me-bands-body" style="display:flex; flex-direction:column;">' + [['fav', 'As favourite'], ['dog', 'As underdog']].map(g => `<span style="${FH_MONO} font-size:9px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:${ME_C.m1}; padding:10px 8px 4px;">${g[1]}</span>`
+      + M.bands.filter(b => b.gk === g[0]).map(b => {
+        const isToday = b.i === M.tb, n = b.n, click = n > 0;
+        const winW = n ? (b.w / n * 100).toFixed(1) + '%' : '0%';
+        return `<div class="${click ? 'seg me-row' : ''}"${click ? ` onclick="meSet({meBand:'${i ? 'b' : 'a'}${b.i}'})"` : ''} data-me-band="${i ? 'b' : 'a'}${b.i}" style="display:grid; grid-template-columns:${ME_BCOLS}; gap:0 8px; align-items:center; padding:7px 8px; border-radius:7px; background:${isToday ? ME_C.wash : 'transparent'}; box-shadow:inset 0 0 0 1px ${isToday ? ME_C.ring : 'transparent'}; cursor:${click ? 'pointer' : 'default'};">`
+          + `<span style="display:flex; align-items:center; gap:6px; min-width:0;"><span style="${FH_MONO} font-size:11.5px; font-weight:700; white-space:nowrap;">${b.label}</span>${isToday ? `<span style="${FH_MONO} font-size:8.5px; font-weight:700; letter-spacing:0.1em; color:${ME_C.blue};">TODAY</span>` : ''}</span>`
+          + `<span style="display:flex; align-items:center; gap:8px; min-width:0;"><span style="flex:1; display:flex; gap:2px; height:7px;"><span style="width:${winW}; background:${ME_C.text}; border-radius:3px 0 0 3px;"></span><span style="flex:1; background:${ME_C.track}; border-radius:0 3px 3px 0;"></span></span><span style="${FH_MONO} font-size:10px; color:${ME_C.m1}; white-space:nowrap; min-width:48px; text-align:right;">${b.w}–${b.l}</span></span>`
+          + `<span style="${FH_MONO} font-size:11.5px; font-weight:700; text-align:right;">${mePct0(b.won)}</span>`
+          + `<span style="${FH_MONO} font-size:11px; color:${ME_C.m2}; text-align:right;">${mePct0(b.needs)}</span>`
+          + `<span style="${FH_MONO} font-size:11.5px; font-weight:700; text-align:right; color:${n ? meUC(b.units) : ME_C.m1};">${n ? meSg(b.units, 1, 'u') : '—'}</span></div>`;
+      }).join('')).join('') + '</div>';
+  }
+  return `<div style="display:flex; flex-direction:column; min-width:0;"><span style="font-size:13px; font-weight:700; padding-bottom:8px;">${fhEsc(name)}</span>${head}${body}</div>`;
+}
+function mePriceCard(E, MM){
+  const S = E.S;
+  return `<div style="min-width:0; display:flex; flex-direction:column; overflow-x:auto;"><div class="me-card me-price" style="${ME_CARD}">`
+    + `<div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; flex-wrap:wrap;"><span style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;"><span style="${ME_TITLE}">Price sensitivity</span>${meScopeSeg(S)}</span><span style="${ME_HINT}">Click a band for every match priced in it</span></div>`
+    + `<div style="${ME_PGRID}">${meBandsCol(E, 0, MM[0])}${meBandsCol(E, 1, MM[1])}</div>`
+    + `<span style="${ME_FOOT}">Won = win rate at closing odds in the band. Needs = break-even win rate at the band's average price. 1u stake = profit backing him 1u on every match in the band. ${meScopeLbl(S)}.</span></div></div>`;
+}
+// §3 Profit at 1u flat — one shared DATE axis for both players (TEN-310 §4.3).
+function meChartCard(E, MM){
+  const S = E.S, core = window.MarketEdgeCore, names = [E.m.p1, E.m.p2];
+  const ready = MM[0].state === 'ready' && MM[1].state === 'ready';
+  const C = ready ? core.chartModel(MM[0].series, MM[1].series, S.meScope) : null;
+  const col = [[ME_C.text, ME_C.aFill, '2.6'], [ME_C.b, ME_C.bFill, '2']];
+  const legend = [0, 1].map(i => {
+    const M = MM[i], has = M.state === 'ready' && M.priced.length > 0;
+    const nTxt = M.state === 'ready' ? M.priced.length + ' priced' : M.state === 'failed' ? '—' : '';
+    return `<span style="display:flex; align-items:center; gap:8px;"><span style="width:16px; height:3px; border-radius:2px; background:${col[i][0]};"></span><span style="font-size:13px; font-weight:700;">${fhEsc(names[i])}</span><span style="${FH_MONO} font-size:10.5px; color:${ME_C.m2};">${nTxt}</span>`
+      + (has ? `<span style="${FH_MONO} font-size:14px; font-weight:700; color:${meUC(M.units)};">${meSg(M.units, 1, 'u')}</span>` : '') + '</span>';
+  }).join('');
+  let plot;
+  if (!ready || !C){
+    const msg = !ready ? (MM[0].state === 'failed' || MM[1].state === 'failed' ? '' : 'Loading…') : '';
+    plot = `<div style="display:flex; gap:12px;"><div style="position:relative; width:52px; height:300px; flex:none;"></div><div style="position:relative; flex:1; min-width:0; height:300px; display:flex; align-items:center;"><span style="font-size:11.5px; color:${ME_C.m2};">${msg}</span></div></div><div style="margin:-6px 0 0 64px; position:relative; height:16px;"></div>`;
+  } else {
+    const H = C.H, pct = y => (y / H * 100).toFixed(2) + '%';
+    const yl = C.grid.map(g => `<span style="position:absolute; right:0; top:${pct(g.y)}; transform:translateY(-50%); ${FH_MONO} font-size:11.5px; font-weight:500; color:${ME_C.m1};">${g.v === 0 ? '0' : meSg(g.v, 0, 'u')}</span>`).join('');
+    const ser = [C.a, C.b];
+    const pts = s => s.pts.map(p => p[0].toFixed(1) + ',' + p[1].toFixed(1)).join(' ');
+    const area = s => `M${s.pts[0][0].toFixed(1)} ${C.zeroY.toFixed(1)} ` + s.pts.map(p => 'L' + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join(' ') + ` L${s.pts[s.pts.length - 1][0].toFixed(1)} ${C.zeroY.toFixed(1)} Z`;
+    const order = [1, 0].filter(i => ser[i]);            // B drawn first, A on top
+    const svg = `<svg class="me-chart-svg" viewBox="0 0 1000 200" preserveAspectRatio="none" style="width:100%; height:100%; display:block; overflow:visible;">`
+      + `<rect x="0" y="${C.zeroY.toFixed(1)}" width="1000" height="${Math.max(0, H - C.zeroY).toFixed(1)}" fill="${ME_C.loss}"></rect>`
+      + C.grid.map(g => `<line x1="0" y1="${g.y.toFixed(1)}" x2="1000" y2="${g.y.toFixed(1)}" stroke="${ME_C.grid}" stroke-width="1" vector-effect="non-scaling-stroke"></line>`).join('')
+      + C.ticks.map(t => `<line x1="${t.x.toFixed(1)}" y1="0" x2="${t.x.toFixed(1)}" y2="200" stroke="${ME_C.tick}" stroke-width="1" vector-effect="non-scaling-stroke"></line>`).join('')
+      + order.map(i => `<path d="${area(ser[i])}" fill="${col[i][1]}" stroke="none"></path>`).join('')
+      + `<line x1="0" y1="${C.zeroY.toFixed(1)}" x2="1000" y2="${C.zeroY.toFixed(1)}" stroke="${ME_C.zero}" stroke-width="1.5" vector-effect="non-scaling-stroke"></line>`
+      + order.map(i => `<polyline data-me-series="${i ? 'b' : 'a'}" points="${pts(ser[i])}" fill="none" stroke="${col[i][0]}" stroke-width="${col[i][2]}" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"></polyline>`).join('')
+      + '</svg>';
+    const dots = order.map(i => { const p = ser[i].pts[ser[i].pts.length - 1];
+      return `<span style="position:absolute; left:calc(${(p[0] / 10).toFixed(2)}% - 4.5px); top:${pct(p[1])}; width:9px; height:9px; margin-top:-4.5px; border-radius:50%; background:${col[i][0]}; box-shadow:0 0 0 3px ${ME_C.card};"></span>`; }).join('');
+    const xl = C.ticks.map((t, k) => `<span style="position:absolute; left:${(t.f * 100).toFixed(1)}%; transform:${k === 0 ? 'none' : k === C.ticks.length - 1 ? 'translateX(-100%)' : 'translateX(-50%)'}; ${FH_MONO} font-size:11.5px; color:${ME_C.m1}; white-space:nowrap;">${t.label}</span>`).join('');
+    plot = `<div style="display:flex; gap:12px;"><div style="position:relative; width:52px; height:300px; flex:none;">${yl}</div>`
+      + `<div style="position:relative; flex:1; min-width:0; height:300px;">${svg}<span style="position:absolute; left:8px; top:${pct(C.zeroY)}; transform:translateY(-50%); padding:2px 7px; border-radius:5px; background:${ME_C.card}; ${FH_MONO} font-size:9.5px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:${ME_C.m1};">Break even</span>${dots}</div></div>`
+      + `<div class="me-xlabels" style="margin:-6px 0 0 64px; position:relative; height:16px;">${xl}</div>`;
+  }
+  return `<div style="min-width:0; display:flex; flex-direction:column; overflow-x:auto;"><div class="me-card me-chart" style="${ME_CARD}">`
+    + `<div style="display:flex; align-items:flex-end; justify-content:space-between; gap:12px 20px; flex-wrap:wrap;"><span style="${ME_TITLE}">Profit at 1u flat</span><div style="display:flex; align-items:center; gap:22px; flex-wrap:wrap; min-height:18px;">${legend}</div></div>`
+    + plot
+    + `<span style="${ME_FOOT}">Cumulative units, flat 1u at closing odds on every priced match, oldest to newest; each line spans that player's own matches. The bright rule is break even. ${meScopeLbl(S)}.</span></div></div>`;
+}
+// §4 Derived lines at today's price — one player's column.
+function meLinesCol(E, i, M){
+  const name = i ? E.m.p2 : E.m.p1, core = window.MarketEdgeCore;
+  const L = M.state === 'ready' ? M.lines : null;
+  const bandLbl = L && L.tb >= 0 ? `In band = ${core.BANDS[L.tb].label} · n=${L.inBand.length}` : '';
+  const head = `<div style="display:grid; grid-template-columns:${ME_LCOLS}; gap:0 10px; align-items:end; padding:0 10px 7px; border-bottom:${ME_C.hw} solid ${ME_C.lineSoft};">`
+    + `<span style="${ME_COLH}">Line</span><span style="${ME_COLH} text-align:right;">All</span><span style="${ME_COLH} text-align:right; color:${ME_C.blue};">In band</span><span style="${ME_COLH} text-align:right;">Diff</span></div>`;
+  let body;
+  if (M.state !== 'ready') body = M.state === 'failed' ? `<div style="padding:7px 10px; font-size:11.5px; color:${ME_C.m2};">History unavailable — reopen the tab to retry.</div>` : meLoadingRow('7px 10px', 228);
+  else body = L.rows.map(r => {
+    const aTxt = r.aPct == null ? `— · n=${r.aN}` : `${r.aC}/${r.aN} · ${r.aPct}%`;
+    const bTxt = r.bPct == null ? `— · n=${r.bN}` : `${r.bC}/${r.bN} · ${r.bPct}%`;
+    const d = r.diff;
+    return `<div class="seg me-row" onclick="meSet({meLine:'${i ? 'b' : 'a'}|${r.li}', meLineScope:'all'})" data-me-line="${i ? 'b' : 'a'}|${r.li}" style="display:grid; grid-template-columns:${ME_LCOLS}; gap:0 10px; align-items:center; cursor:pointer; padding:7px 10px; border-bottom:${ME_C.hw} solid ${ME_C.lineSoft}; border-radius:6px;">`
+      + `<span style="font-size:12.5px; font-weight:600;">${fhEsc(r.label)}</span>`
+      + `<span style="${FH_MONO} font-size:11px; color:${ME_C.m2}; text-align:right; white-space:nowrap;">${aTxt}</span>`
+      + `<span style="justify-self:end; ${FH_MONO} font-size:12px; font-weight:700; white-space:nowrap; background:${r.top ? ME_C.hiBg : 'transparent'}; border:${ME_C.hw} solid ${r.top ? ME_C.hiBd : 'transparent'}; border-radius:6px; padding:3px 8px;">${bTxt}</span>`
+      + `<span style="${FH_MONO} font-size:11px; font-weight:700; text-align:right; color:${d == null ? ME_C.m1 : meUC(d)};">${d == null ? '' : meSg(d, 0, '')}</span></div>`;
+  }).join('');
+  return `<div style="display:flex; flex-direction:column; min-width:0;"><div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; padding-bottom:8px;"><span style="font-size:13px; font-weight:700;">${fhEsc(name)}</span><span style="${FH_MONO} font-size:10px; color:${ME_C.m2};">${bandLbl}</span></div>${head}${body}</div>`;
+}
+function meLinesCard(E, MM){
+  const S = E.S, noPrice = MM[0].today == null || MM[1].today == null;
+  const body = noPrice
+    ? `<div class="me-noprice" style="padding:28px 0; text-align:center; font-size:12.5px; color:${ME_C.m2};">${ME_NOPRICE_MSG}</div>`
+    : `<div style="${ME_PGRID}">${meLinesCol(E, 0, MM[0])}${meLinesCol(E, 1, MM[1])}</div>`;
+  return `<div style="min-width:0; display:flex; flex-direction:column; overflow-x:auto;"><div class="me-card me-lines" style="${ME_CARD}">`
+    + `<div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; flex-wrap:wrap;"><span style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;"><span style="${ME_TITLE}">Derived lines at today's price</span>${meScopeSeg(S)}</span><span style="${ME_HINT}">Click a line for the matches behind it</span></div>`
+    + body
+    + `<span style="${ME_FOOT}">Coverage from set scores, not settled line markets, so no yield is shown. In band = matches priced in the same band as today. Highlighted = the two most covered lines in today's band. ${meScopeLbl(S)}.</span></div></div>`;
+}
+// The pill: "CLOSING ODDS" (proposal, TEN-310 §4.6) — hover = book split + latest match in scope.
+function mePillTip(MM){
+  const ok = MM.filter(M => M.state === 'ready');
+  if (ok.length < 2) return '';
+  const P = ok.reduce((s, M) => s + M.book.P, 0), B = ok.reduce((s, M) => s + M.book.B, 0);
+  const last = ok.map(M => M.lastDate).filter(Boolean).sort().pop();
+  return ' tabindex="0" data-aotip="' + escapeHtml(aOddsTipHtml('Closing odds', [['Pinnacle', String(P)], ['Bet365', String(B) + (B ? ' (no Pinnacle close)' : '')], ['Latest match', last ? fhLongDate(last) : '—']])) + '"';
+}
+function buildMarketEdgeSection(m){
+  const E = meStateFor(m), S = E.S, MM = meModels(E);
+  const view = meSegHtml([['winner', 'Match winner'], ['lines', 'Derived lines']].map(t => ({ label: t[1], on: S.meView === t[0], onclick: `meSet({meView:'${t[0]}'})` })));
+  const top = `<div style="display:flex; align-items:center; justify-content:space-between; gap:10px 16px; flex-wrap:wrap;"><div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;"><div style="display:flex; flex-direction:column; align-items:flex-start; gap:10px;">${view}</div></div>`
+    + `<span class="me-pill"${mePillTip(MM)} style="${FH_MONO} font-size:9.5px; font-weight:600; letter-spacing:0.12em; color:${ME_C.m2}; border:${ME_C.hw} solid ${ME_C.line}; border-radius:999px; padding:2px 8px; cursor:default;">CLOSING ODDS</span></div>`;
+  const cards = S.meView === 'winner' ? mePriceCard(E, MM) + meChartCard(E, MM) : meLinesCard(E, MM);
+  return `<div class="me-pane" style="padding:6px 4px 2px; font-family:'Hanken Grotesk',system-ui,sans-serif; color:${ME_C.text};"><div style="display:flex; flex-direction:column; gap:14px; max-width:1040px; margin:0 auto;">${top}<div style="display:grid; grid-template-columns:minmax(0,1fr); gap:14px; align-items:start;">${cards}</div></div></div>`;
+}
+
+// ---- §5 / §6 pop-ups (mounted on the modal card, like the stats sheet) ----
+function meSheetOk(r){
+  const I = _me && _me.idx, ek = r.ek != null ? String(r.ek) : '';
+  return !!(I && ek && (I.ms.has(ek) || I.ss.has(ek) || I.pbp.has(ek)));
+}
+function meEnsureIdx(){
+  if (!_me || _me.idx || _me.idxP) return;
+  const E = _me;
+  E.idxP = Promise.all([loadMatchStatsIndex(), loadSetStatsIndex(), loadPbpIndex()]).then(([ms, ss, pbp]) => { E.idx = { ms, ss, pbp }; if (_me === E) meRenderPop(); });
+}
+function meOpenRow(mid){
+  const E = _me; if (!E || !E.rowMap || !E.rowMap[mid]) return;
+  const x = E.rowMap[mid];
+  fhStateFor(E.m).sheetMap[mid] = { r: x.r, aName: x.name, aKey: x.key, bName: x.r.opp, bKey: x.r.oppKey };
+  E.selMid = mid;
+  meRenderPop();
+  fhOpenSheet(mid);
+}
+function meScoreTxt(r){ return r.sets ? r.sets.map(x => x[0] + '-' + x[1]).join(' ') : FH_DASHC; }
+function mePopShell(title, chip, sub, inner, foot, closeJs){
+  return `<div class="me-pop-overlay" onclick="if(event.target===this)${closeJs}" style="position:fixed; inset:0; z-index:85; background:${ME_C.backdrop}; display:flex; align-items:flex-start; justify-content:center; padding:40px 24px; overflow-y:auto; font-family:'Hanken Grotesk',system-ui,sans-serif; color:${ME_C.text}; line-height:normal; font-size:16px;">`
+    + `<div class="me-pop" style="position:relative; width:100%; max-width:860px; background:${ME_C.card}; border:${ME_C.hw} solid ${ME_C.line}; border-radius:14px; padding:20px 22px 14px; display:flex; flex-direction:column; gap:16px;">`
+    + `<div style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px;"><div style="display:flex; flex-direction:column; gap:5px; min-width:0;"><span style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;"><span class="me-pop-title" style="font-size:17px; font-weight:800; letter-spacing:-0.01em;">${fhEsc(title)}</span>${chip}</span><span class="me-pop-sub" style="${FH_MONO} font-size:10.5px; color:${ME_C.m2};">${fhEsc(sub)}</span></div>`
+    + `<span class="seg me-x" onclick="${closeJs}" style="width:30px; height:30px; flex:none; border-radius:8px; border:${ME_C.hw} solid ${ME_C.line}; display:flex; align-items:center; justify-content:center; font-size:13px; color:${ME_C.m1}; cursor:pointer;">✕</span></div>`
+    + inner + `<span style="${ME_FOOT}">${foot}</span></div></div>`;
+}
+const meStatBox = (l, v, c, big) => `<div style="background:${ME_C.inner}; border:${ME_C.hw} solid ${ME_C.line}; border-radius:10px; padding:${big ? '10px 12px' : '8px 12px'}; display:flex; flex-direction:column; gap:${big ? 4 : 3}px; ${big ? 'min-width:0;' : 'min-width:84px;'}"><span style="${ME_COLH}">${l}</span><span class="me-stat" data-me-stat="${l}" style="${FH_MONO} font-size:${big ? 16 : 15}px; font-weight:700; color:${c}; white-space:nowrap;">${v}</span></div>`;
+function meBookNote(rows){ const nb = rows.filter(r => r.book === 'B').length; return rows.length ? (nb ? `Pinnacle, Bet365 where missing (${nb})` : 'Pinnacle') : ''; }
+function meRowsHtml(list, cols, cells, E, name, key){
+  return list.map(r => {
+    const ok = meSheetOk(r), sel = E.selMid === r.mid;
+    if (ok) E.rowMap[r.mid] = { r, name, key };
+    return `<div style="padding:0 22px;"><div class="${ok ? 'seg me-row' : ''}" data-me-row="${r.mid}"${ok ? ` onclick="meOpenRow('${r.mid}')"` : ''} title="${ok ? '' : 'No stats on file for this match'}" style="display:grid; grid-template-columns:${cols}; gap:0 8px; align-items:center; padding:6px; border-radius:6px; background:${sel ? ME_C.sel : 'transparent'}; cursor:${ok ? 'pointer' : 'default'}; border-bottom:${ME_C.hw} solid ${ME_C.lineSoft};">${cells(r)}</div></div>`;
+  }).join('');
+}
+function meTableHead(cols, labels){
+  return `<div style="display:grid; grid-template-columns:${cols}; gap:0 8px; align-items:center; padding:7px 28px 6px; border-top:${ME_C.hw} solid ${ME_C.lineSoft}; border-bottom:${ME_C.hw} solid ${ME_C.lineSoft};">`
+    + labels.map(l => l === '' ? '<span></span>' : `<span style="${ME_COLH}${/^(Price|Opp|P&amp;L|Line)$/.test(l) ? ' text-align:right;' : ''}">${l}</span>`).join('') + '</div>';
+}
+const ME_BAND_TCOLS = '64px 10px minmax(0,1.3fr) minmax(0,1fr) 34px minmax(0,0.9fr) 46px 42px 56px';
+const ME_LINE_TCOLS = '64px 10px minmax(0,1.3fr) minmax(0,1fr) minmax(0,0.9fr) 46px 96px';
+function meCommonCells(r){
+  return `<span style="${FH_MONO} font-size:10.5px; color:${ME_C.m2};">${meDMY(r.date)}</span>`
+    + `<span style="width:8px; height:8px; border-radius:2px; background:${r.won ? ME_C.up : ME_C.dn};"></span>`
+    + `<span style="font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${fhEsc(r.opp)}">${fhEsc(r.opp)}</span>`
+    + `<span style="font-size:11.5px; color:${ME_C.m1}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${fhEsc(r.tourn)}</span>`;
+}
+function meBandPopHtml(E, MM){
+  const k = E.S.meBand[0], i = k === 'b' ? 1 : 0, bi = +E.S.meBand.slice(1), M = MM[i];
+  if (!M || M.state !== 'ready' || !M.bands[bi] || !M.bands[bi].n) return '';
+  const b = M.bands[bi], core = window.MarketEdgeCore, name = i ? E.m.p2 : E.m.p1, key = String(i ? E.m.p2Key : E.m.p1Key);
+  const chip = bi === M.tb ? `<span style="${FH_MONO} font-size:9px; font-weight:700; letter-spacing:0.12em; color:${ME_C.blue}; border:${ME_C.hw} solid ${ME_C.chipBd}; border-radius:999px; padding:2px 8px;">TODAY'S BAND</span>` : '';
+  const sub = [b.gk === 'fav' ? 'As favourite' : 'As underdog', meScopeLbl(E.S), 'closing odds', meBookNote(b.rows)].filter(Boolean).join(' · ');
+  const stats = `<div style="display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px;">`
+    + meStatBox('Record', 'W' + b.w + '–L' + b.l, ME_C.text, true) + meStatBox('Won', mePct1(b.won), ME_C.text, true)
+    + meStatBox('Needs', mePct1(b.needs), ME_C.m1, true)
+    + meStatBox('Yield', b.yield == null ? '—' : meSg(b.yield * 100, 1, '%'), b.yield == null ? ME_C.m1 : meUC(b.yield), true)
+    + meStatBox('At 1u flat', meSg(b.units, 1, 'u'), meUC(b.units), true) + '</div>';
+  const cells = r => meCommonCells(r)
+    + `<span style="${FH_MONO} font-size:10px; color:${ME_C.m2};">${fhEsc(r.round || FH_DASHC)}</span>`
+    + `<span style="${FH_MONO} font-size:10.5px; color:${ME_C.m1}; white-space:nowrap;">${meScoreTxt(r)}</span>`
+    + `<span style="${FH_MONO} font-size:11px; font-weight:700; text-align:right;" title="${fhEsc(fhSrcTitle(r))}">${fhOdd(r.price)}</span>`
+    + `<span style="${FH_MONO} font-size:10.5px; color:${ME_C.m2}; text-align:right;">${fhOdd(r.oppPrice)}</span>`
+    + `<span style="${FH_MONO} font-size:11px; font-weight:700; text-align:right; color:${r.won ? ME_C.up : ME_C.dn};">${meSg(core.plCents(r) / 100, 2, 'u')}</span>`;
+  const table = `<div style="margin:0 -22px;">${meTableHead(ME_BAND_TCOLS, ['Date', '', 'Opponent', 'Event', 'Rd', 'Score', 'Price', 'Opp', 'P&amp;L'])}${meRowsHtml(b.rows, ME_BAND_TCOLS, cells, E, name, key)}</div>`;
+  return mePopShell(name + ' · priced ' + b.label, chip, sub, stats + table, 'Every match with a closing price in this band, newest first. Flat 1u stake. Click a match for its stats.', "meSet({meBand:null})");
+}
+function meLinePopHtml(E, MM){
+  const [k, liS] = E.S.meLine.split('|'), i = k === 'b' ? 1 : 0, li = +liS, M = MM[i];
+  if (!M || M.state !== 'ready' || !M.lines || !M.lines.rows[li]) return '';
+  const L = M.lines, row = L.rows[li], core = window.MarketEdgeCore, name = i ? E.m.p2 : E.m.p1, key = String(i ? E.m.p2Key : E.m.p1Key);
+  const sc = E.S.meLineScope === 'band' ? 'band' : 'all';
+  const list = (sc === 'band' ? L.inBand : L.all).slice().reverse();          // newest first
+  const n = list.length, cov = list.filter(row.fn).length, rateOk = n > 0 && n >= core.ME_THIN_FLOOR;
+  const seg = meSegHtml([['all', 'All matches'], ['band', 'In today’s band']].map(t => ({ label: t[1], on: sc === t[0], onclick: `meSet({meLineScope:'${t[0]}'})` })));
+  const stats = `<div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">${seg}<div style="display:flex; gap:8px;">`
+    + meStatBox('Covered', cov + ' of ' + n, ME_C.text, false) + meStatBox('Rate', rateOk ? Math.round(cov / n * 100) + '%' : '—', ME_C.text, false)
+    + meStatBox('Not covered', String(n - cov), ME_C.m1, false) + '</div></div>';
+  const cells = r => { const c = row.fn(r); return meCommonCells(r)
+    + `<span style="${FH_MONO} font-size:10.5px; color:${ME_C.m1}; white-space:nowrap;">${meScoreTxt(r)}</span>`
+    + `<span style="${FH_MONO} font-size:11px; font-weight:700; text-align:right;" title="${fhEsc(fhSrcTitle(r))}">${fhOdd(r.price)}</span>`
+    + `<span style="justify-self:end; ${FH_MONO} font-size:10.5px; font-weight:700; color:${c ? ME_C.up : ME_C.m2}; white-space:nowrap;">${c ? 'Covered' : 'Not covered'}</span>`; };
+  const sub = (sc === 'band' ? 'Priced ' + core.BANDS[L.tb].label + ' (today’s band)' : 'All priced matches') + ' · ' + meScopeLbl(E.S) + ' · Bo3 · closing odds';
+  const table = `<div style="margin:0 -22px;">${meTableHead(ME_LINE_TCOLS, ['Date', '', 'Opponent', 'Event', 'Score', 'Price', 'Line'])}${meRowsHtml(list, ME_LINE_TCOLS, cells, E, name, key)}</div>`;
+  return mePopShell(name + ' · ' + row.label, '', sub, stats + table, 'Coverage is read from set scores, not a settled line market. Square = match result. Click a match for its stats.', "meSet({meLine:null})");
+}
+function meRenderPop(){
+  const E = _me; if (!E) return;
+  const card = document.querySelector('#analysisModal .modal-analysis') || document.body;
+  let host = document.getElementById('mePop');
+  if (!host || host.parentNode !== card){ if (host) host.remove(); host = document.createElement('div'); host.id = 'mePop'; card.appendChild(host); }
+  const MM = (E.S.meBand || E.S.meLine) ? meModels(E) : null;
+  E.rowMap = {};
+  if (MM) meEnsureIdx();
+  host.innerHTML = !MM ? '' : E.S.meBand ? meBandPopHtml(E, MM) : meLinePopHtml(E, MM);
+}
+// Escape closes the pop-up. Bubble phase: while the stats sheet is open its capture-phase handler
+// closes the sheet and stops the event, so one Escape never closes both.
+document.addEventListener('keydown', ev => {
+  if (ev.key !== 'Escape' || !_me || !(_me.S.meBand || _me.S.meLine)) return;
+  meSet({ meBand: null, meLine: null });
+});
+// Hover / transition rules (the extract's .seg and style-hover), injected once.
+function meEnsureStyles(){
+  if (document.getElementById('meStyles')) return;
+  const el = document.createElement('style'); el.id = 'meStyles';
+  el.textContent = `
+  #aSectionMarketEdge, #mePop{ line-height:normal; font-size:16px; }
+  #aSectionMarketEdge .seg, #mePop .seg{ cursor:pointer; transition:background .14s ease, color .14s ease, border-color .14s ease; }
+  #aSectionMarketEdge .me-row:hover, #mePop .me-row:hover{ background:${ME_C.wash} !important; }
+  #mePop .me-x:hover{ color:${ME_C.text} !important; border-color:${ME_C.lineOpen} !important; }
+  .modal-analysis.printing #aSectionMarketEdge{ display:none !important; }`;
+  document.head.appendChild(el);
+}
 
 /* ---------- TOURNAMENT SUB-TAB ---------- */
 // Note: deliberately does not include anything derived from "court speed
@@ -18709,6 +19119,14 @@ function renderStyleSection(m){
   // form shards here would clobber the meeting rows with the old last-40 list.
 }
 
+// The modal header's two price pills, exactly as printed: an upcoming match shows m.bestOdds' two prices;
+// completed, suspended and live matches show none. Also the Market edge tab's "today's price" (TEN-310:
+// same value, same source), so the tab can never disagree with the header above it.
+function aHeaderOdds(m){
+  const upcoming = !m.finalScore && !(m.interrupted && m.partialScore) && !(m.live && (m.liveScore || []).length);
+  if (!upcoming) return { p1: '', p2: '' };
+  return { p1: m.bestOdds?.p1?.price ? m.bestOdds.p1.price.toFixed(2) : '', p2: m.bestOdds?.p2?.price ? m.bestOdds.p2.price.toFixed(2) : '' };
+}
 function openAnalysisModal(matchId){
   const m = matches.find(x => x.id === matchId);
   if (!m) return;
@@ -18742,9 +19160,11 @@ function openAnalysisModal(matchId){
     p2Pill.textContent = String(p2Won);
     setLine.innerHTML = setSpans(m.liveScore);
   } else {
-    // Upcoming match — market odds pills (p1 blue, p2 orange).
-    p1Pill.textContent = m.bestOdds?.p1?.price ? m.bestOdds.p1.price.toFixed(2) : '';
-    p2Pill.textContent = m.bestOdds?.p2?.price ? m.bestOdds.p2.price.toFixed(2) : '';
+    // Upcoming match — market odds pills (p1 blue, p2 orange). aHeaderOdds is also the Market edge
+    // tab's "today's price" (TEN-310: same value, same source).
+    const ho = aHeaderOdds(m);
+    p1Pill.textContent = ho.p1;
+    p2Pill.textContent = ho.p2;
     if (p1Pill.textContent) p1Pill.className = 'aodds p1';
     if (p2Pill.textContent) p2Pill.className = 'aodds p2';
     setLine.innerHTML = '';
@@ -18866,6 +19286,12 @@ function openAnalysisModal(matchId){
   _aWxMatch = m;
   renderWeatherSection();
 
+  // TEN-310: the Market edge tab loads nothing until it is opened (openMarketEdgeTab); a new match
+  // starts from its defaults with no pop-up.
+  _me = null;
+  const meEl = document.getElementById('aSectionMarketEdge'); if (meEl) meEl.innerHTML = '';
+  const mePopEl = document.getElementById('mePop'); if (mePopEl) mePopEl.innerHTML = '';
+
   _aOdds = { m:m, novig:false, market:'Match Winner', mv:null };
   // Paint immediately from what is inline (the reduced view), then upgrade to the
   // full per-book movement chart once the lazy timeline shard lands. Re-rendering
@@ -18912,6 +19338,7 @@ document.getElementById('aTabs').addEventListener('click', e => {
   document.querySelector(`.asection[data-asection="${btn.dataset.atab}"]`).classList.add('active');
   syncAnalysisLiveBar(btn.dataset.atab);
   if (btn.dataset.atab === 'weather') openWeatherTab();
+  if (btn.dataset.atab === 'marketedge') openMarketEdgeTab();
 });
 
 // Download report — scoped print of the modal's current content. Shows every
@@ -32618,6 +33045,8 @@ window.DatabaseTab = (function(){
      that parses at this point in the document, and a deferred module would not
      exist yet. It is ~6 KB of pure functions with no side effects. -->
 <script src="holdbreak-heatmap.js"></script>
+<!-- TEN-310: the Match analysis Market edge compute (window.MarketEdgeCore). -->
+<script src="market-edge-core.js"></script>
 <!-- TEN-206: the rebuilt Player Profile. Guarded by window.FEATURE_PP2, which
      pp2Bridge() sets immediately before the first mount — the module reads the
      flag at parse time, so it must be set BEFORE this tag executes for the

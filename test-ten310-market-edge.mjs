@@ -1,0 +1,275 @@
+// TEN-310 — Match analysis → Market edge tab. Runs the page's own data layer and renderer (sliced out of
+// bsp-consult-dashboard.html) and the real market-edge-core.js over committed snapshots of the deployed
+// career-history + match-closes shards (Sinner 2072, Alcaraz 2382; tools/fixtures/ten310/). No gitignored
+// store is read. Brief §6 checks 1–7, plus the §4 edge cases.
+import { test as nodeTest } from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync, writeFileSync, mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { spawnSync } from 'node:child_process';
+import { buildUI, HTML, CORE_PATH } from './tools/ten310-harness.mjs';
+
+const HERE = dirname(fileURLToPath(import.meta.url));
+const FX = join(HERE, 'tools/fixtures/ten310');
+const rd = (f) => JSON.parse(readFileSync(join(FX, f), 'utf8'));
+// `--mutant-run` = the child the mutation test spawns: run checks 1–6 once, register no tests.
+const MUTANT = process.argv.includes('--mutant-run');
+const test = MUTANT ? () => {} : nodeTest;
+const MINUS = '−';
+
+// ---- rendered-HTML readers (text as the user sees it) ----
+const texts = (html) => html.replace(/<[^>]*>/g, '\u0001').split('\u0001').map((s) => s.trim()).filter(Boolean);
+function chunk(html, attr, key) {
+  const at = html.indexOf(`${attr}="${key}"`);
+  if (at < 0) return null;
+  const i = html.lastIndexOf('<', at);          // from the row's own opening tag
+  let j = html.indexOf(`${attr}="`, at + attr.length + key.length + 3); if (j >= 0) j = html.lastIndexOf('<', j);
+  return html.slice(i, j < 0 ? html.length : j);
+}
+const unitsOf = (s) => (s === '—' ? null : (s.startsWith(MINUS) ? -1 : 1) * parseFloat(s.replace(/^[+−±]/, '')));
+function bandRow(html, key) {
+  const c = chunk(html, 'data-me-band', key); if (!c) return null;
+  const t = texts(c.slice(c.indexOf('>') + 1)).filter((x) => x !== 'TODAY');
+  const [w, l] = t[1].split('–').map(Number);
+  return { label: t[0], today: c.includes('>TODAY<'), w, l, won: t[2], needs: t[3], u: unitsOf(t[4]), uTxt: t[4], clickable: /onclick="meSet\(\{meBand:/.test(c.slice(0, c.indexOf('>'))), raw: c };
+}
+function lineRow(html, key) {
+  const c = chunk(html, 'data-me-line', key); if (!c) return null;
+  const t = texts(c.slice(c.indexOf('>') + 1));
+  const cell = (s) => { const m = /^(\d+)\/(\d+) · (\d+)%$/.exec(s); const d = /^— · n=(\d+)$/.exec(s); return m ? { c: +m[1], n: +m[2], pct: +m[3] } : d ? { c: null, n: +d[1], pct: null } : null; };
+  return { label: t[0], all: cell(t[1]), band: cell(t[2]), diff: t[3] || '' };
+}
+function legend(html) {
+  const out = [];
+  const re = /(\d+) priced<\/span>(?:<span[^>]*>([^<]*)<\/span>)?/g; let m;
+  while ((m = re.exec(html))) out.push({ n: +m[1], end: m[2] ? unitsOf(m[2]) : null });
+  return out;
+}
+function series(html, k) {
+  const m = new RegExp(`data-me-series="${k}" points="([^"]*)"`).exec(html);
+  return m ? m[1].split(' ').map((p) => p.split(',').map(Number)) : null;
+}
+// y (viewBox 0..200) → units, from two rendered y-axis labels
+function yToUnits(html) {
+  const re = /top:([\d.]+)%; transform:translateY\(-50%\); font-family:'IBM Plex Mono',monospace; font-size:11.5px; font-weight:500;[^>]*>([^<]*)</g;
+  const g = []; let m; while ((m = re.exec(html))) g.push({ y: +m[1] * 2, v: m[2] === '0' ? 0 : unitsOf(m[2].replace(/u$/, '')) });
+  assert.ok(g.length >= 2, 'two y labels');
+  const [a, b] = [g[0], g[g.length - 1]];
+  return (y) => a.v + (y - a.y) * (b.v - a.v) / (b.y - a.y);
+}
+function stat(html, l) { const m = new RegExp(`data-me-stat="${l}"[^>]*>([^<]*)<`).exec(html); return m ? m[1] : null; }
+
+// ---- the fixture match: Sinner (A, 1.54) v Alcaraz (B, 2.62) — the design's own demo prices ----
+const M = { id: 'upcoming-x', p1: 'J. Sinner', p2: 'C. Alcaraz', p1Key: 2072, p2Key: 2382, date: '2026-09-27',
+  bestOdds: { p1: { price: 1.54 }, p2: { price: 2.62 } } };
+function load(ui) {
+  return [['2072', 'J. Sinner'], ['2382', 'C. Alcaraz']].map(([k, n]) => ui.meRowsFor(rd(`career-history-${k}.json`).matches, ui.fhParseCloses(rd(`match-closes-${k}.json`)), k, n));
+}
+// Independent oracle for the mutation check: its own band edges and its own P&L, from the rows.
+const EDGES = [1.01, 1.21, 1.41, 1.65, 2.0, 2.5, 3.5, 6.0, Infinity];
+function oracle(rows, scope, refDay) {
+  const pr = rows.filter((r) => r.day != null && r.day < refDay && (scope === 'career' || r.day >= refDay - 364)
+    && !r.wo && !r.retSettle && r.book && r.price != null && r.oppPrice != null && r.price >= 1.01);
+  const bands = EDGES.slice(0, -1).map(() => ({ w: 0, l: 0, cents: 0 }));
+  pr.forEach((r) => { const p = Math.round(r.price * 1000) / 1000; const i = EDGES.findIndex((e, k) => p >= e && p < EDGES[k + 1]);
+    const b = bands[i]; if (r.won) b.w++; else b.l++; b.cents += r.won ? Math.round(r.price * 100) - 100 : -100; });
+  return { n: pr.length, bands };
+}
+
+// Checks 1–5 for one render, one player, one scope. Throws AssertionError on any mismatch.
+function checkPlayer(ui, R, k, rows, scope) {
+  const core = ui.core, refDay = Date.UTC(2026, 8, 27) / 86400000, i = k === 'a' ? 0 : 1;
+  const bands = [0, 1, 2, 3, 4, 5, 6, 7].map((b) => bandRow(R.html, k + b));
+  assert.ok(bands.every(Boolean), 'eight band rows');
+  const O = oracle(rows, scope, refDay);
+  // the oracle: every band's record and 1u stake
+  bands.forEach((b, j) => {
+    assert.equal(b.w, O.bands[j].w, `${k}${j} ${scope} wins`); assert.equal(b.l, O.bands[j].l, `${k}${j} ${scope} losses`);
+    if (b.w + b.l) assert.equal(b.u, Number(meRound(O.bands[j].cents / 100)), `${k}${j} ${scope} 1u`);
+  });
+  const leg = legend(R.html)[i];
+  // (2) Σ band n = legend "N priced"; Σ band 1u = legend end = chart end (0.1u)
+  const sumN = bands.reduce((s, b) => s + b.w + b.l, 0);
+  assert.equal(sumN, leg.n, 'Σ band n = N priced'); assert.equal(sumN, O.n, 'N priced = oracle');
+  const sumU = O.bands.reduce((s, b) => s + b.cents, 0) / 100;
+  if (sumN) {
+    assert.ok(Math.abs(leg.end - sumU) <= 0.05 + 1e-9, `legend end ${leg.end} vs Σ ${sumU}`);
+    assert.ok(Math.abs(bands.reduce((s, b) => s + (b.u || 0), 0) - sumU) <= 0.05 * 8 + 1e-9, 'Σ rendered band 1u ≈ Σ');
+    const pts = series(R.html, k), y2u = yToUnits(R.html);
+    assert.ok(Math.abs(y2u(pts[pts.length - 1][1]) - sumU) <= 0.1, `chart end ${y2u(pts[pts.length - 1][1])} vs ${sumU}`);
+    // (6) points in date order on the shared axis
+    for (let j = 1; j < pts.length; j++) assert.ok(pts[j][0] >= pts[j - 1][0], 'x never goes back in time');
+  } else assert.equal(leg.end, null, 'no end value on 0 priced');
+  // (1) Σ band W vs "Wins match" All numerator: band = every priced played match (Bo5 incl.), lines =
+  //     completed Bo3 only. The documented difference = the wins among priced rows that are not Bo3-complete.
+  const wins = lineRow(R.html, `${k}|0`);
+  assert.equal(wins.label, 'Wins match');
+  const priced = rows.filter((r) => core.inScope(r, scope, refDay) && core.inWinner(r));
+  const notBo3 = priced.filter((r) => !core.inBo3(r));
+  assert.equal(wins.all.n, sumN - notBo3.length, 'lines denominator = priced − not-Bo3');
+  if (wins.all.c != null) assert.equal(bands.reduce((s, b) => s + b.w, 0) - wins.all.c, notBo3.filter((r) => r.won).length, 'Σ band W − Wins match = wins outside Bo3');
+  // (3) band pop-up = its row; pop-up row count = band n
+  bands.forEach((b, j) => {
+    const n = b.w + b.l;
+    if (!n) { assert.ok(!b.clickable, 'n = 0 band not clickable'); assert.equal(b.won, '—'); assert.equal(b.uTxt, '—'); return; }
+    assert.ok(b.clickable, 'band with rows is clickable');
+    const P = R.band(k + j);
+    assert.equal(stat(P, 'Record'), `W${b.w}–L${b.l}`);
+    assert.equal(stat(P, 'At 1u flat'), b.uTxt);
+    assert.equal((P.match(/data-me-row="/g) || []).length, n, 'pop-up rows = band n');
+    const y = stat(P, 'Yield');
+    if (n < core.ME_THIN_FLOOR) assert.equal(y, '—'); else assert.ok(Math.abs(unitsOf(y.replace('%', '')) - b.u / n * 100) <= 5 / n + 0.051, `yield ${y} vs ${b.u}/${n}`);
+    if (n < core.ME_THIN_FLOOR) assert.equal(b.won, '—', 'thin sample dashes Won'); else assert.equal(b.won, Math.round(b.w / n * 100) + '%');
+  });
+  // (4) line pop-up "Covered x of n" = the card's All / In band cell; (5) today's band = "In band = …"
+  const today = bands.findIndex((b) => b.today);
+  const lbl = [...R.html.matchAll(/In band = ([^<]*) · n=(\d+)/g)][i];
+  assert.ok(today >= 0 && lbl, 'a TODAY band and an In band label');
+  assert.equal(lbl[1], bands[today].label, 'today band = In band label');
+  for (let li = 0; li < 6; li++) {
+    const L = lineRow(R.html, `${k}|${li}`);
+    const all = stat(R.line(`${k}|${li}`, 'all'), 'Covered'), band = stat(R.line(`${k}|${li}`, 'band'), 'Covered');
+    assert.equal(all, `${L.all.c != null ? L.all.c : coveredOf(ui, R, k, li, 'all')} of ${L.all.n}`, `line ${k}|${li} all`);
+    assert.equal(+band.split(' of ')[1], L.band.n, `line ${k}|${li} in-band n`);
+    assert.equal(+band.split(' of ')[1], +lbl[2], 'In band n = pop-up n');
+    if (L.band.c != null) assert.equal(band, `${L.band.c} of ${L.band.n}`);
+  }
+}
+const meRound = (v) => ((v < 0 ? -1 : 1) * Math.round(Math.abs(v) * 10 + 1e-7) / 10).toFixed(1);
+function coveredOf(ui, R, k, li, sc) { const M = R.MM[k === 'a' ? 0 : 1]; const L = M.lines; const list = sc === 'band' ? L.inBand : L.all; return list.filter(L.rows[li].fn).length; }
+
+function runChecks(src) {
+  const ui = buildUI(src ? { src } : {});
+  const rows = load(ui);
+  for (const scope of ['career', 'l52']) {
+    const R = ui.render(M, { meScope: scope, meView: 'winner' }, rows);
+    const RL = ui.render(M, { meScope: scope, meView: 'lines' }, rows);
+    const both = Object.assign({}, R, { html: R.html + RL.html });
+    checkPlayer(ui, both, 'a', rows[0], scope);
+    checkPlayer(ui, both, 'b', rows[1], scope);
+  }
+  return { ui, rows };
+}
+
+test('§6 checks 1–6: bands, legend, chart, pop-ups and lines agree — Sinner + Alcaraz, both scopes', () => {
+  const { ui, rows } = runChecks();
+  // the fixture is not empty: every check above ran on real rows
+  const R = ui.render(M, { meScope: 'career', meView: 'winner' }, rows);
+  const lg = legend(R.html);
+  assert.ok(lg[0].n > 300 && lg[1].n > 300, `career priced ${lg[0].n} / ${lg[1].n}`);
+  // (6) a player whose first priced match is later starts right of the left edge (Alcaraz 2020 v Sinner 2019)
+  const a = series(R.html, 'a'), b = series(R.html, 'b');
+  assert.equal(a[0][0], 0, 'Sinner starts at the left edge');
+  assert.ok(b[0][0] > 50, `Alcaraz starts right of the edge (x=${b[0][0]})`);
+  // scope switch recomputes the counts and the axis labels
+  const R52 = ui.render(M, { meScope: 'l52', meView: 'winner' }, rows);
+  assert.ok(legend(R52.html)[0].n < lg[0].n, 'l52 is a subset');
+  const xl = (h) => { const i = h.indexOf('class="me-xlabels"'); return texts(h.slice(h.indexOf('>', i) + 1)).slice(0, 6); };
+  assert.deepEqual(xl(R.html).map((s) => /^\d{4}$/.test(s)), [true, true, true, true, true, true], 'career labels are years');
+  assert.ok(xl(R52.html).every((s) => /^[A-Z][a-z]{2}$/.test(s)), 'l52 labels are months');
+  assert.equal(xl(R.html)[0], '2019', 'first label = first priced year');
+});
+
+test('§6 check 7: one-line mutants of the band bucketing / P&L make checks 1–3 fail', () => {
+  const core = readFileSync(CORE_PATH, 'utf8');
+  const MUT = [
+    ['bucketing: closed upper edge', 'if (m >= BANDS[i].lo && m < BANDS[i].hi) return i;', 'if (m > BANDS[i].lo && m <= BANDS[i].hi) return i;'],
+    ['bucketing: 1.01 band ends at 1.19', "lo: 1010, hi: 1210", "lo: 1010, hi: 1200"],
+    ['P&L: win pays the price, not price − 1', 'return r.won ? Math.round(Number(r.price) * 100) - 100 : -100;', 'return r.won ? Math.round(Number(r.price) * 100) : -100;'],
+    ['P&L: loss costs nothing', 'return r.won ? Math.round(Number(r.price) * 100) - 100 : -100;', 'return r.won ? Math.round(Number(r.price) * 100) - 100 : 0;'],
+    ['record: wins counted as losses', 'rows.forEach((r) => { if (r.won) w++;', 'rows.forEach((r) => { if (!r.won) w++;'],
+    ['settlement: retirements settled', "if (r.retSettle) return 'retired';", ''],
+  ];
+  const dir = mkdtempSync(join(tmpdir(), 'ten310-mut-'));
+  // control: the unmutated core must pass the same child run, or a "caught" mutant proves nothing
+  const ctl = spawnSync(process.execPath, [fileURLToPath(import.meta.url), '--mutant-run'], { encoding: 'utf8' });
+  assert.equal(ctl.status, 0, `control run must pass: ${(ctl.stderr || '').slice(0, 300)}`);
+  let caught = 0;
+  for (const [name, from, to] of MUT) {
+    assert.equal(core.split(from).length, 2, `mutant anchor present once: ${name}`);
+    const p = join(dir, 'core.js'); writeFileSync(p, core.replace(from, to));
+    const r = spawnSync(process.execPath, [fileURLToPath(import.meta.url), '--mutant-run'], { env: Object.assign({}, process.env, { TEN310_CORE: p }), encoding: 'utf8' });
+    assert.equal(r.status, 3, `mutant "${name}" must fail an assertion (exit 3), got ${r.status}: ${(r.stderr || '').slice(0, 300)}`);
+    caught++;
+  }
+  console.log(`# mutants: ${caught} caught, 0 survived`);
+});
+
+test('§4 edge cases: half-open bands, 2.00 is underdog, match-tiebreak is not a set, floors, dashes', () => {
+  const ui = buildUI(), core = ui.core;
+  assert.equal(core.bandOf(1.205), 0); assert.equal(core.bandOf(1.21), 1); assert.equal(core.bandOf(1.2), 0);
+  assert.equal(core.bandOf(1.649), 2); assert.equal(core.bandOf(1.65), 3); assert.equal(core.bandOf(1.999), 3);
+  assert.equal(core.bandOf(2.0), 4); assert.equal(core.isFavPrice(2.0), false); assert.equal(core.bandOf(6.0), 7);
+  assert.equal(core.bandOf(1.0), -1); assert.equal(core.bandOf(null), -1);
+  // career rows → rows: a 10-8 match-tiebreak decider is a non-standard format, never a tiebreak set
+  const ch = [
+    { date: '2026-03-01', level: 'atp', tournament: 'Doha', round: 'R32', opponent: 'X. Alpha', result: '2 - 1', won: true, eventKey: 1, src: 'fixtures', sets: [{ p: 6, o: 4 }, { p: 4, o: 6 }, { p: 10, o: 8 }] },
+    { date: '2026-03-03', level: 'atp', tournament: 'Doha', round: 'R16', opponent: 'Y. Beta', result: '2 - 0', won: true, eventKey: 2, src: 'fixtures', sets: [{ p: 7, o: 6, pTb: 7, oTb: 5 }, { p: 6, o: 3 }] },
+    { date: '2026-03-05', level: 'atp', tournament: 'Doha', round: 'QF', opponent: 'Z. Gamma', result: '2 - 0', won: true, eventKey: 3, src: 'fixtures', sets: [{ p: 6, o: 2 }] },
+    { date: '2026-03-07', level: 'atp', tournament: 'Doha', round: 'SF', opponent: 'W. Delta', result: '-', won: true, eventKey: 4, src: 'fixtures', walkover: true },
+  ];
+  const cl = ui.fhParseCloses({ rows: [
+    ['2026-03-01', 'Alpha X.', 1, 2.0, 1.8, null, null, 0, null], ['2026-03-03', 'Beta Y.', 1, 1.205, 4.5, null, null, 0, null],
+    ['2026-03-05', 'Gamma Z.', 1, 1.5, 2.6, null, null, 0, null]], cap: [] });
+  const rows = ui.meRowsFor(ch, cl, '9', 'A. Test');
+  assert.equal(core.whyNotBo3(rows[0]), 'format', '10-8 decider');
+  assert.equal(core.lineDefs(true, 'Test')[5][1](rows[1]), true, '7-6 is a tiebreak');
+  assert.equal(core.whyNotBo3(rows[2]), 'set scores incomplete', '"2 - 0" with one stored set');
+  assert.equal(core.whyNotPriced(rows[2]), '', 'its result still settles the match-winner bet');
+  assert.equal(core.whyNotPriced(rows[3]), 'walkover');
+  assert.equal(rows[0].price, 2.0); assert.equal(core.bandOf(rows[0].price), 4, '2.00 sits in the underdog ladder');
+  // render: thin samples, n = 0 bands, one player with no priced matches, no header price
+  const empty = Object.assign([], { notTour: 0 });
+  const m = { id: 'x', p1: 'A. Test', p2: 'B. None', p1Key: 9, p2Key: 10, date: '2026-09-27', bestOdds: { p1: { price: 1.21 }, p2: { price: 4.4 } } };
+  const R = ui.render(m, { meView: 'winner' }, [rows, empty]);
+  const b1 = bandRow(R.html, 'a0');   // the 1.205 row: 1.01 – 1.20
+  assert.deepEqual([b1.w, b1.l, b1.won], [1, 0, '—'], 'n < 5: W–L kept, Won dashed'); assert.equal(b1.uTxt, '+0.2u', '1u still shown (a sum)');
+  assert.ok(bandRow(R.html, 'a1').today && bandRow(R.html, 'a1').w + bandRow(R.html, 'a1').l === 0, 'header 1.21 = TODAY on 1.21 – 1.40');
+  const b0 = bandRow(R.html, 'b0');
+  assert.deepEqual([b0.w, b0.l, b0.won, b0.uTxt, b0.clickable], [0, 0, '—', '—', false]);
+  assert.ok(b0.raw.includes(`color:#A3ABBA;">—<`), 'n = 0 1u dash in the muted colour');
+  const lg = legend(R.html);
+  assert.equal(lg[1].n, 0); assert.equal(lg[1].end, null); assert.equal(series(R.html, 'b'), null, 'no line for 0 priced');
+  const RL = ui.render(m, { meView: 'lines' }, [rows, empty]);
+  assert.deepEqual(lineRow(RL.html, 'b|0').all, { c: null, n: 0, pct: null }, 'no data = dash, not 0%');
+  // no price in the header: no TODAY anywhere, derived lines show the empty state, match winner still renders
+  const done = Object.assign({}, m, { finalScore: { p1Sets: 2, p2Sets: 0 } });
+  const RN = ui.render(done, { meView: 'lines' }, [rows, empty]);
+  assert.ok(RN.html.includes('Derived lines need today’s price.')); assert.ok(!RN.html.includes('data-me-line='));
+  const RW = ui.render(done, { meView: 'winner' }, [rows, empty]);
+  assert.ok(!RW.html.includes('>TODAY<') && RW.html.includes('data-me-band="a0"'));
+  // loading: frames + column headers + a muted Loading… row, at the loaded height
+  const RLd = ui.render(m, { meView: 'winner' }, [null, null]);
+  assert.ok(RLd.html.includes('Loading…') && RLd.html.includes('>1u stake<') && RLd.html.includes('min-height:282px'));
+  // real figures never wear the sample-data pill; signed figures use U+2212 and ±0
+  assert.ok(!/sample data/i.test(R.html + R.band('a0') + RL.html), 'no "sample data" anywhere');
+  assert.ok(R.html.includes('>CLOSING ODDS<'));
+  assert.equal(ui.render(m, {}, [rows, empty]).E && true, true);
+});
+
+test('wiring: Market edge is the last tab after Odds; today = the header price; lazy load; not in Download report', () => {
+  const r0 = HTML.indexOf('<div class="asidenav" id="aTabs">'), rail = HTML.slice(r0, HTML.indexOf('asidenav-download', r0));
+  const tabs = [...rail.matchAll(/data-atab="([a-z0-9]+)"/g)].map((x) => x[1]);
+  assert.deepEqual(tabs.slice(-2), ['odds', 'marketedge']); assert.equal(tabs.length, 12);
+  assert.ok(rail.includes('<path d="M4 16l4-5 3 3 5-7 4 5M4 20h16"></path></svg></span><span>Market edge</span>'));
+  assert.equal((HTML.match(/data-atab="marketedge"/g) || []).length, 1, 'one entry');
+  // the header pills and the tab read one function
+  assert.ok(/const ho = aHeaderOdds\(m\);\s*p1Pill\.textContent = ho\.p1;\s*p2Pill\.textContent = ho\.p2;/.test(HTML));
+  const ui = buildUI();
+  assert.deepEqual(ui.aHeaderOdds(M), { p1: '1.54', p2: '2.62' });
+  assert.deepEqual(ui.aHeaderOdds(Object.assign({}, M, { live: true, liveScore: [{ p1: 1, p2: 0 }] })), { p1: '', p2: '' });
+  // loaded only when the tab opens, never at modal open; never the monolithic profiles file
+  const open = HTML.slice(HTML.indexOf('\nfunction openAnalysisModal('), HTML.indexOf('\nfunction printAnalysisReport('));
+  assert.ok(!/meLoad\(|openMarketEdgeTab\(\)/.test(open.slice(0, open.indexOf("document.getElementById('aTabs').addEventListener"))), 'no load at modal open');
+  assert.ok(open.includes("if (btn.dataset.atab === 'marketedge') openMarketEdgeTab();"));
+  const block = HTML.slice(HTML.indexOf('TEN-310 · MATCH ANALYSIS → MARKET EDGE TAB'), HTML.indexOf('/* ---------- TOURNAMENT SUB-TAB'));
+  assert.ok(!block.includes('player-profiles.json') && !/fetch\(/.test(block), 'the tab fetches only through the shared lazy loaders');
+  assert.ok(block.includes('.modal-analysis.printing #aSectionMarketEdge{ display:none !important; }'), 'kept out of Download report');
+  assert.ok(/<script src="market-edge-core\.js"><\/script>/.test(HTML));
+});
+
+if (process.argv.includes('--mutant-run')) {
+  try { runChecks(); process.exit(0); } catch (e) { process.exit(e instanceof assert.AssertionError || e.code === 'ERR_ASSERTION' ? 3 : 4); }
+}

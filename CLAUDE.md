@@ -138,7 +138,7 @@ Each is phrased as a test you can apply. Surface-specific rulings live in `.clau
 
 - **Empty states fabricate nothing.** Em dash, an explicit "no data" label, or nothing. **Test:** every value traces to real source data or it isn't a number.
 
-- **Modal tab rail.** Exactly **eleven** tabs, **News second**: Key factors, News, Playing style, Form, H2H, Match Stats, Progression, Overview, Tournament, Weather, Odds. **Test:** count = 11 and position 2 = News.
+- **Modal tab rail.** Exactly **twelve** tabs, **News second**, **Market edge last** (founder brief TEN-310, 2026-09-27): Key factors, News, Playing style, Form, H2H, Match Stats, Progression, Overview, Tournament, Weather, Odds, Market edge. **Test:** count = 12, position 2 = News, position 12 = Market edge (`test-ten310-market-edge.mjs`).
 
 - **Match-detail view toggle.** Every nested match-detail instance offers exactly two views: **Stats** and **Point by point**. Summary is removed product-wide. **Test:** a Summary button anywhere is wrong.
 
@@ -270,6 +270,7 @@ Surface-specific rulings moved out of this file so they load only when relevant:
 | Records counting (Flashscore rules), walkovers, retirements | `.claude/rules/pipeline-records.md` |
 | Odds sources, book ladder, card rules, close rules | `.claude/rules/odds.md` |
 | Match analysis Form / H2H tabs — price order, display constants, all-level H2H, market-edge, odds alarms | `.claude/rules/modal-form-h2h.md` |
+| Match analysis Market edge tab — data path, populations, settlement, today's price, provisional Needs / floor / pill | `.claude/rules/modal-market-edge.md` |
 | Odds archive (tennis-data closing prices): drop-in refresh, merge, never-thinner, readers | `.claude/rules/odds-archive.md` |
 | Deploy lane — ready gate, first-come-first-served queue, deploy-batch as the one land path, confirm-live release, 40-min pipeline-aware hold, cutover, waiter reports | `.claude/rules/deploy-lane.md` |
 | App shell — 252px sidebar + floating panel, no user-row chevron, nav glyphs | `.claude/rules/app-shell.md` |
