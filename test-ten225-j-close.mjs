@@ -170,14 +170,14 @@ test('it is carried forward, or it would vanish on the next pipeline run', () =>
 });
 
 // ── the label ─────────────────────────────────────────────────────────────
-test('the hover names bet365 and says it has no timestamp and no lag check', () => {
-  assert.match(html, /last pre-match price · api-tennis · no timestamp, no lag check/);
-  // And it is checked BEFORE the ordinary close title, because on a card this
-  // fills, _ocsOf / closingOdds name a book that did not supply the number.
-  const t = /const _closeTitle = who => \{([\s\S]*?)\n    \};/.exec(html)?.[1] || '';
-  const iJ = t.indexOf('mxCloseIsJ');
-  const iBook = t.indexOf('const book =');
-  assert.ok(iJ > -1 && iJ < iBook, 'the J branch is not first in the title');
+test('TEN-295 (founder 2026-09-27): the J close no longer fills or labels the COMPLETED Close — it is Pinnacle only', () => {
+  // "The close is Pinnacle's closing price ... Never another book." The completed Close slot and
+  // its hover read m.pinClose; the J close survives only in _mcCloseOf (the underway fallback).
+  assert.ok(html.includes("const p1Close = finalScore ? _mcPinCloseOf(m, 'p1') : null;"));
+  assert.ok(html.includes("closeTitle: mxPinCloseTitle(m, 'p1')") && html.includes("closeTitle: mxPinCloseTitle(m, 'p2')"));
+  assert.doesNotMatch(html, /last pre-match price · api-tennis · no timestamp, no lag check/,
+                      'no hover left that dresses the J close as the card Close');
+  assert.match(html, /return o\[who\]\.close \?\? mxJClose\(m, who\);/, 'the underway fallback keeps J');
 });
 
 test('CONTROL: the assertions above fail on a source without the wiring', () => {

@@ -138,6 +138,22 @@ test('source per card: Bet105 -> RPC, bet365 upcoming -> shard, bet365 completed
   assert.equal(B.cardData({ openingOdds: { bookmaker: '1xbet' } }, 'p1').source, null);
 });
 
+test('TEN-295: the Closing odds row is the PINNACLE close, named by its source; none -> dash', () => {
+  const pin = { p1: 1.534, p2: 2.65, p1At: '2026-09-24T10:10:08.224Z', p2At: '2026-09-24T10:10:08.224Z',
+                source: 'Pinnacle +30s (Oddspapi)', startTs: '2026-09-24T10:31:59.000Z', startBasis: 'actual' };
+  globalThis._mcPinClose = m => (m && m.finalScore ? m.pinClose || null : null);
+  globalThis._mcCloseOf = () => 1.99;   // the card book's close must never reach this row
+  try {
+    const done = B.cardData({ openingOdds: { bookmaker: 'bet105' }, finalScore: '6-4 6-4', pinClose: pin }, 'p1');
+    assert.deepEqual(done.close, { price: 1.534, at: '2026-09-24T10:10:08.224Z', source: 'Pinnacle +30s (Oddspapi)' });
+    assert.equal(done.book, 'bet105', 'the header and the list stay the card book');
+    assert.match(B.html(B.model(done, [], [])), /Closing odds · Pinnacle \+30s \(Oddspapi\)[\s\S]*1\.53/);
+    const none = B.cardData({ openingOdds: { bookmaker: 'bet105' }, finalScore: '6-4 6-4' }, 'p1');
+    assert.equal(none.close.price, null, 'no Pinnacle close -> dash, never the card book close');
+    assert.match(B.html(B.model(none, [], [])), /Closing odds<\/div><div class="phb-row"><span class="phb-when">[^<]*<\/span><b class="phb-px">—/);
+  } finally { delete globalThis._mcPinClose; delete globalThis._mcCloseOf; }
+});
+
 // TEN-270 post-match archive: completed bet365 cards read bet365_history.
 // The payload below is the RPC's own shape (kibl-stream/now-schema.sql).
 const ARCH = { card_key: '2026-09-24|fritz|zverev', selected: true, start_ts: '2026-09-24T08:00:00+00:00',

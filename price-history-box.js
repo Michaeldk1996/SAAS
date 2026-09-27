@@ -4,7 +4,7 @@
  * devices). Replaces the old one-line native tooltip. Layout, top to bottom:
  *   header   the card's book, "● live" only while the stream is connected and
  *            writing for this card, otherwise "last updated [time]"
- *   Closing odds (completed cards only) — the card's existing Close
+ *   Closing odds (completed cards only) — the Pinnacle close (m.pinClose) named by its source (TEN-295)
  *   changes  newest first: DD.MM. HH:MM · price · change vs the previous price,
  *            coloured with the "Biggest market move" classes (.mc-drift.pos up,
  *            .neg down); gap rows ("no data from–to") where a recorder was down
@@ -161,7 +161,7 @@
     let h = `<div class="phb-head"><span class="phb-book">${book}</span>${head}</div>`;
     if (mdl.note) h += `<div class="phb-note phb-src">${esc(mdl.note)}</div>`;
     if (mdl.close) {
-      h += `<div class="phb-sec">Closing odds</div>`
+      h += `<div class="phb-sec">Closing odds${mdl.close.source ? ' · ' + esc(mdl.close.source) : ''}</div>`
          + `<div class="phb-row"><span class="phb-when">${esc(fmtWhen(ms(mdl.close.at)))}</span>`
          + `<b class="phb-px">${esc(fmtPrice(mdl.close.price))}</b><span class="phb-d"></span></div>`;
     }
@@ -248,10 +248,14 @@
     const oo = m.openingOdds || null;
     const open = { price: typeof _openAnchorOf === 'function' ? _openAnchorOf(m, who) : (oo ? oo[who] ?? null : null),
                    at: side ? side.openTs || null : (oo && oo.seenAt) || null };
-    const close = completed ? { price: typeof _mcCloseOf === 'function' ? _mcCloseOf(m, who) : null,
-                                at: side ? side.closeTs || null : null } : null;
+    // TEN-295 (founder 2026-09-27, card f09c2fd5): the Closing odds row is PINNACLE's close,
+    // named by its source — not the card book's; the header and the list stay the card's book.
+    const pc = completed && typeof _mcPinClose === 'function' ? _mcPinClose(m) : null;
+    const close = completed ? { price: pc ? (pc[who] ?? null) : null,
+                                at: pc ? (pc[who + 'At'] || null) : null,
+                                source: pc ? pc.source : null } : null;
     const live = !completed && !!(pair && pair.src === 'stream' && pair.live);
-    const updatedAt = completed ? (close && close.at) : (pair && pair.at) || null;
+    const updatedAt = completed ? (side ? side.closeTs || null : null) : (pair && pair.at) || null;
     // Bet105: the price_history RPC. bet365: the odds shard on UPCOMING cards only,
     // i.e. no result, not live, and before the card's start; the shard series is
     // not cut at the off, so an underway card would show in-play ticks as moves

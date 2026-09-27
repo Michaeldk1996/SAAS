@@ -626,6 +626,56 @@ test('pipeline: a carried close derived under an earlier cut is re-derived (TEN-
   assert.ok(!/priorOk/.test(pipe), 'the old before-the-cut-only test is gone');
 });
 
+test('pipeline: the board close is PINNACLE (founder 2026-09-27 item 1) — source ladder, actual start, dash', () => {
+  const F = new Function(`${constSrc('PIN_CLOSE_SOURCES', pipe)} ${slice('pinnacleCloseOf', pipe)} ${slice('berlinWallMs', pipe)}
+    ${slice('pinCloseStart', pipe)} return { pinnacleCloseOf, pinCloseStart, berlinWallMs };`)();
+  const T = s => Date.parse(s);
+  // Harris v Kovacevic, real Pinnacle +30s ticks around the 10:31:59Z actual start.
+  const m = { date: '2026-09-24', time: '12:35', oddsMovement: { startTime: '2026-09-24T10:35:00.000Z', chart: { books: {
+    'Pinnacle +30s': { p1: [['2026-09-24T09:40:00.000Z', 1.55], ['2026-09-24T10:10:08.224Z', 1.534], ['2026-09-24T10:32:14.000Z', 1.6]],
+                       p2: [['2026-09-24T09:40:00.000Z', 2.6], ['2026-09-24T10:10:08.224Z', 2.65], ['2026-09-24T10:32:14.000Z', 2.4]] },
+    'Pinnacle (api-tennis)': { p1: [['2026-09-24T10:20:00.000Z', 1.5]], p2: [['2026-09-24T10:20:00.000Z', 2.7]] },
+    'Bet105': { p1: [['2026-09-24T10:31:00.000Z', 1.526]], p2: [['2026-09-24T10:31:00.000Z', 2.64]] } } } } };
+  const st = F.pinCloseStart(m, T('2026-09-24T10:31:59Z'));
+  assert.deepEqual(st, { ms: T('2026-09-24T10:31:59Z'), basis: 'actual', ageRefMs: T('2026-09-24T10:31:59Z') });
+  assert.deepEqual(F.pinnacleCloseOf(m, st.ms, st.basis, st.ageRefMs), { p1: 1.534, p2: 2.65, p1At: '2026-09-24T10:10:08.224Z',
+    p2At: '2026-09-24T10:10:08.224Z', source: 'Pinnacle +30s (Oddspapi)', startTs: '2026-09-24T10:31:59.000Z', startBasis: 'actual',
+    ageRefTs: '2026-09-24T10:31:59.000Z' },
+    'the last Pinnacle +30s tick BEFORE the actual start — never the 10:32:14 in-play tick, never Bet105');
+  // Oddspapi missing a leg -> the api-tennis Pinnacle, both legs from ONE source
+  const oneLeg = structuredClone(m); oneLeg.oddsMovement.chart.books['Pinnacle +30s'].p2 = [];
+  assert.equal(F.pinnacleCloseOf(oneLeg, st.ms, 'actual').source, 'Pinnacle (api-tennis)');
+  assert.equal(F.pinnacleCloseOf(oneLeg, st.ms, 'actual').p1, 1.5, 'never a p1 from one source beside a p2 from another');
+  // neither Pinnacle source with a pre-start pair -> null (dash), never another book
+  const none = structuredClone(oneLeg); delete none.oddsMovement.chart.books['Pinnacle (api-tennis)'];
+  assert.equal(F.pinnacleCloseOf(none, st.ms, 'actual'), null);
+  assert.equal(F.pinnacleCloseOf(m, NaN, null), null, 'no start -> dash');
+  const floor = structuredClone(m); floor.oddsMovement.chart.books['Pinnacle +30s'].p1[1][1] = 1.0;
+  assert.equal(F.pinnacleCloseOf(floor, st.ms, 'actual').p1, 1.55, 'a price below 1.01 is not a price');
+  // no actual start -> the EARLIEST scheduled start (a later one can sit after the real off)
+  assert.deepEqual(F.pinCloseStart(m, undefined), { ms: T('2026-09-24T10:35:00Z'), basis: 'scheduled', ageRefMs: T('2026-09-24T10:35:00Z') });
+  const moved = { ...m, time: '14:45', oddsMovement: { ...m.oddsMovement, startTime: '2026-09-24T08:30:00.000Z' } };
+  assert.equal(F.pinCloseStart(moved, NaN).ms, T('2026-09-24T08:30:00Z'), 'Cerundolo v Zhou: Oddspapi 08:30Z beats the card 12:45Z');
+  assert.equal(F.pinCloseStart(moved, NaN).ageRefMs, T('2026-09-24T12:45:00Z'), '...but its AGE runs to the latest schedule');
+  assert.equal(F.pinnacleCloseOf(m, T('2026-09-24T10:31:59Z'), 'scheduled', T('2026-09-24T12:45:00Z')).ageRefTs,
+               '2026-09-24T12:45:00.000Z', 'ageRefTs = the latest schedule');
+  assert.equal(F.pinnacleCloseOf(moved, T('2026-09-24T08:30:00Z'), 'scheduled', T('2026-09-24T12:45:00Z')), null,
+               'no Pinnacle tick before the earliest schedule -> dash, never a later tick');
+  assert.equal(F.pinCloseStart({ date: '2026-09-24', time: '12:35' }, NaN).ms, T('2026-09-24T10:35:00Z'), 'card clock is Berlin (CEST)');
+  assert.equal(F.berlinWallMs('2026-12-10', '12:25'), T('2026-12-10T11:25:00Z'), 'Berlin winter time (CET)');
+  assert.ok(Number.isNaN(F.pinCloseStart({}, NaN).ms));
+  // the pipeline derives it on finished cards only, and the model never sees it
+  assert.ok(pipe.includes('let pc = hasChart ? pinnacleCloseOf(m, st.ms, st.basis, st.ageRefMs) : null;'));
+  // a proven prior pin is carried (no chart / no pair this run) only while it is still pre-start
+  const still = new Function(`${slice('pinCloseStillPreStart', pipe)} return pinCloseStillPreStart;`)();
+  const prior = { p1At: '2026-09-24T10:10:08.224Z', p2At: '2026-09-24T10:10:08.224Z' };
+  assert.equal(still(prior, T('2026-09-24T10:31:59Z')), true);
+  assert.equal(still(prior, T('2026-09-24T10:05:00Z')), false, 'an earlier start learned later makes it in-play -> dropped');
+  assert.equal(still(null, T('2026-09-24T10:31:59Z')), false);
+  assert.ok(pipe.includes('if (!pc && pinCloseStillPreStart(prior, st.ms)) { pc = prior; pcCarried++; }'));
+  assert.ok(pipe.includes("if (!m.finalScore) { if ('pinClose' in m) delete m.pinClose; continue; }"));
+});
+
 test('pipeline: the carry-forward counts a chart-only match as having movement', () => {
   const i = pipe.indexOf('  const hasMovement = m => m && m.oddsMovement && (');
   assert.ok(i > 0, 'hasMovement found');

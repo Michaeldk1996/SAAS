@@ -4177,6 +4177,78 @@ function keepCarriedClose(prior, derived, cutMs, book, cutIsActual) {
   return derived.p1 === prior.p1 && derived.p2 === prior.p2 && derived.at === prior.at;
 }
 
+// TEN-295 (founder 2026-09-27, comment 054dc038 item 1; card f09c2fd5 "close_slot_two_books"):
+// THE BOARD CLOSE IS PINNACLE'S CLOSING PRICE. Source Pinnacle +30s (Oddspapi), else Pinnacle
+// (api-tennis) — both legs from ONE source; per leg the last real price (>= 1.01) strictly
+// before the start. Start = the card state's ACTUAL start, else the scheduled start (never the
+// in-play onset). Neither source with a pre-start tick on both legs -> null (the page dashes).
+// Never another book, never an estimate. Read from the chart-only series
+// (m.oddsMovement.chart.books, stored keys) — the edge model never reads m.pinClose.
+const PIN_CLOSE_SOURCES = [['Pinnacle +30s', 'Pinnacle +30s (Oddspapi)'],
+                           ['Pinnacle (api-tennis)', 'Pinnacle (api-tennis)']];
+function pinnacleCloseOf(m, startMs, startBasis, ageRefMs) {
+  if (!Number.isFinite(startMs)) return null;
+  const books = (m && m.oddsMovement && m.oddsMovement.chart && m.oddsMovement.chart.books) || {};
+  const leg = arr => {
+    let best = null, bestT = -Infinity;
+    for (const pt of arr || []) {
+      const t = Date.parse(pt && pt[0]), px = pt && Number(pt[1]);
+      if (Number.isFinite(t) && t < startMs && px >= 1.01 && t >= bestT) { best = pt; bestT = t; }
+    }
+    return best;
+  };
+  for (const [key, source] of PIN_CLOSE_SOURCES) {
+    const s = books[key];
+    if (!s) continue;
+    const a = leg(s.p1), b = leg(s.p2);
+    if (a && b) return { p1: Number(a[1]), p2: Number(b[1]), p1At: a[0], p2At: b[0], source,
+                         startTs: new Date(startMs).toISOString(), startBasis,
+                         // the instant a leg's AGE is measured to (within-60): the actual start, else
+                         // the LATEST schedule — the earliest cuts safely, but aging to it would call
+                         // a close fresh that is hours old when the order of play moved (review
+                         // 2026-09-27: Wong v Vallejo 11:30Z vs 13:40Z, 14 min vs ~144 min).
+                         ageRefTs: new Date(Number.isFinite(ageRefMs) ? Math.max(ageRefMs, startMs) : startMs).toISOString() };
+  }
+  return null;
+}
+// The card's scheduled wall clock is the api-tennis account zone, Europe/Berlin (DST-aware) —
+// the page's cardStartMs and build-chart-books.py's _scheduled_start read it the same way.
+function berlinWallMs(date, time) {
+  if (typeof date !== 'string' || typeof time !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(date)
+      || !/^\d{1,2}:\d{2}$/.test(time)) return NaN;
+  const guess = Date.parse(`${date}T${time.padStart(5, '0')}:00Z`);
+  if (!Number.isFinite(guess)) return NaN;
+  const off = at => {
+    const p = Object.fromEntries(new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Berlin', hourCycle: 'h23',
+      year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+      .formatToParts(new Date(at)).map(x => [x.type, x.value]));
+    return Date.parse(`${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}:00Z`) - at;
+  };
+  const first = guess - off(guess);
+  return guess - off(first);
+}
+// The start the Pinnacle close is cut at: the card state's actual start, else the EARLIEST
+// scheduled one (m.startTs, the Oddspapi fixture's UTC start, the card's Berlin wall clock).
+// Schedules disagree when an order of play moves (27 Sep, Cerundolo v Zhou: Oddspapi 08:30Z,
+// card 12:45Z); a too-late cut can take an in-play price, a too-early one only an older real
+// pre-start price — so the earliest wins.
+function pinCloseStart(m, ocsStartMs) {
+  if (Number.isFinite(ocsStartMs)) return { ms: ocsStartMs, basis: 'actual', ageRefMs: ocsStartMs };
+  const c = [m && m.startTs, m && m.oddsMovement && m.oddsMovement.startTime]
+    .map(v => (typeof v === 'string' && v ? Date.parse(v) : NaN))
+    .concat([berlinWallMs(m && m.date, m && m.time)])
+    .filter(Number.isFinite);
+  return c.length ? { ms: Math.min(...c), basis: 'scheduled', ageRefMs: Math.max(...c) }
+                  : { ms: NaN, basis: null, ageRefMs: NaN };
+}
+// A pin carried from an earlier run stands only while both legs are still before today's cut —
+// a start learned later (the actual one) can put a carried close in-play.
+function pinCloseStillPreStart(pc, startMs) {
+  if (!pc || !Number.isFinite(startMs)) return !!pc;
+  const a = Date.parse(pc.p1At), b = Date.parse(pc.p2At);
+  return Number.isFinite(a) && Number.isFinite(b) && a < startMs && b < startMs;
+}
+
 // TEN-295: the card-state key, CHARACTER FOR CHARACTER the dashboard's (and ten225_names.py's) —
 // test-ten295-odds-chart.mjs fails if this copy and bsp-consult-dashboard.html's ever differ.
 function ocsNfd(s){
@@ -6080,8 +6152,9 @@ async function runPipeline() {
       // The `since` clock would then equal `seenAt` forever and the change
       // detector would be a no-op that still reported changes.
       if (!pm.openingOdds && !pm.closingOdds && !pm.bet365Now && !pm.bookOpens
-          && !pm.bookNow) continue;
+          && !pm.pinClose && !pm.bookNow) continue;
       const rec = { openingOdds: pm.openingOdds || null, closingOdds: pm.closingOdds || null,
+                    pinClose: pm.pinClose || null,   // TEN-295: the Pinnacle board close
                     bookOpens: pm.bookOpens || null,
                     bookNow: pm.bookNow || null,
                     apiTennisClose: pm.apiTennisClose || null,
@@ -6749,6 +6822,32 @@ async function runPipeline() {
       + ` (write-once, OPEN anchor only: excluded from drift, the open→close journey, the movement sorts and CLV);`
       + ` ${vendorSightingHeld} carried vendor pin(s) held against a bet365-less oddspapi stream;`
       + ` ${vendorPostMatchRejected} post-match sighting(s) REJECTED (a settled fixture's live api-tennis price is not an open).`);
+  }
+  // TEN-295 item 1 — m.pinClose, the Pinnacle board close (pinnacleCloseOf), on every FINISHED
+  // card. Re-derived whenever this run holds the chart series; a run without them (or a re-read
+  // with no pre-start pair) carries the prior pin while it is still before the cut — never
+  // invents one.
+  {
+    const pcSrc = { 'Pinnacle +30s (Oddspapi)': 0, 'Pinnacle (api-tennis)': 0 };
+    let pcDash = 0, pcCarried = 0, pcActual = 0;
+    for (const m of matches) {
+      if (!m.finalScore) { if ('pinClose' in m) delete m.pinClose; continue; }
+      const carried = priorOdds.get(`id:${m.id}`)
+        || priorOdds.get(`np:${m.date}|${normalizeName(m.p1)}|${normalizeName(m.p2)}`);
+      const prior = carried && carried.pinClose;
+      const st = pinCloseStart(m, ocsStartByKey.get(ocsMatchKey(m.date, m.p1, m.p2)));
+      const hasChart = !!(m.oddsMovement && m.oddsMovement.chart && m.oddsMovement.chart.books);
+      let pc = hasChart ? pinnacleCloseOf(m, st.ms, st.basis, st.ageRefMs) : null;
+      // No chart this run, or a re-read with no pre-start pair: a proven prior pin stands — never
+      // erased by a thinner read — but only while it is still before today's cut.
+      if (!pc && pinCloseStillPreStart(prior, st.ms)) { pc = prior; pcCarried++; }
+      if (pc) { m.pinClose = pc; pcSrc[pc.source] = (pcSrc[pc.source] || 0) + 1; if (pc.startBasis === 'actual') pcActual++; }
+      else { delete m.pinClose; pcDash++; }
+    }
+    const fin = matches.filter(m => m.finalScore).length;
+    console.log(`Pinnacle board close (TEN-295) over ${fin} finished card(s): `
+      + Object.entries(pcSrc).map(([k, v]) => `${v} ${k}`).join(' / ')
+      + ` / ${pcDash} dash (${pcCarried} carried from the prior run; ${pcActual} cut at the card-state actual start).`);
   }
   console.log(`Odds snapshots — opening: ${openDerived} derived / ${openPreserved} preserved / ${openFromArchive} re-pinned earlier from the bet365 archive; closing (completed only): ${closeDerived} derived / ${closePreserved} preserved / ${closeHealed} healed (cross-book/in-play/superseded pin replaced) / ${closeDashed} dashed (no proven pre-first-ball reference).`);
   console.log(`bet365 NOW (upcoming only, TEN-179 item 1) — ${nowFromLive} kept from the hourly metered read / ${nowPinned} derived from the 3-hourly series / ${nowCarried} carried forward; ${crossBookDropped} upcoming match(es) dropped a cross-book open rather than fall back to another book.`);

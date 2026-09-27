@@ -7910,6 +7910,56 @@ function mxCloseAgeMin(m, who){
   if (!Number.isFinite(c) || !Number.isFinite(st) || st < c) return null;
   return Math.round((st - c) / 60000);
 }
+// ───────────── TEN-295 (founder 2026-09-27 comment 054dc038 item 1; card f09c2fd5) ──
+// THE COMPLETED CARD'S CLOSE IS PINNACLE'S CLOSING PRICE: m.pinClose, derived by the
+// pipeline (bsp-pipeline.js pinnacleCloseOf) — Pinnacle +30s (Oddspapi), else Pinnacle
+// (api-tennis), each leg the last real price before the card-state actual start (the
+// scheduled start only where none exists). None -> dash. Never another book, never the card
+// state's / matches.json's / the J close. Card f09c2fd5 "close_slot_two_books": the Close
+// slot shows it LABELLED WITH ITS SOURCE; the Open stays the card's own book; an open->close
+// move dashes whenever the two are different books.
+// Numbers follow the standing within-60 rule (TEN-253 ruling 2): a Pinnacle close whose older
+// leg last MOVED > 60 min before the start is shown muted and feeds no figure.
+function _mcPinClose(m){
+  const c = m && m.finalScore ? m.pinClose : null;
+  if (!c || !(c.p1 >= 1.01) || !(c.p2 >= 1.01)) return null;
+  if (mxIsSuspendedPair(c.p1, c.p2, { id: (m && (m.id || m.matchKey)) || null,
+                                      book: c.source || null, path: 'pinClose' })) return null;
+  return c;
+}
+function _mcPinCloseOf(m, who){ const c = _mcPinClose(m); return c ? (c[who] ?? null) : null; }
+// A leg's age in ms: from its last price change to `ageRefTs` — the actual start, else the
+// LATEST scheduled start (the pipeline cuts at the earliest; aging to it would call a close
+// fresh that is hours old when the order of play moved). null when unknown, never a guess.
+function mxPinCloseAgeMs(m, who){
+  const c = _mcPinClose(m);
+  if (!c) return null;
+  const t = Date.parse(c[who + 'At'] || ''), st = Date.parse(c.ageRefTs || c.startTs || '');
+  if (!Number.isFinite(t) || !Number.isFinite(st) || st < t) return null;
+  return st - t;
+}
+function mxPinCloseAgeMin(m, who){
+  const ms = mxPinCloseAgeMs(m, who);
+  return ms == null ? null : Math.round(ms / 60000);
+}
+function _mcPinCloseW60(m){   // exact: 60 min 29 s is older than 60, whatever the rounding shows
+  const a1 = mxPinCloseAgeMs(m, 'p1'), a2 = mxPinCloseAgeMs(m, 'p2');
+  return a1 != null && a2 != null && a1 <= 3600e3 && a2 <= 3600e3;
+}
+function _mcPinCloseDerivedOf(m, who){ return _mcPinCloseW60(m) ? _mcPinCloseOf(m, who) : null; }
+// Is the card's Open from Pinnacle too? Only then may an open->close move be measured.
+function _mcOpenIsPinnacle(m){ return /pinnacle|pncl/i.test(String(ocsBookOf(m) || '')); }
+function _mcPinCloseMoveOf(m, who){ return _mcOpenIsPinnacle(m) ? _mcPinCloseDerivedOf(m, who) : null; }
+// Hover: "Pinnacle +30s (Oddspapi) · 1.53 · last price change 22 min before the actual start".
+function mxPinCloseTitle(m, who){
+  const c = _mcPinClose(m);
+  if (!c || c[who] == null) return '';
+  const age = mxPinCloseAgeMin(m, who);
+  return `${c.source} · ${mxOddsTxt(c[who])}`
+    + (age != null ? ` · last price change ${mxAgeText(age)} before the ${c.startBasis === 'actual' ? 'actual' : 'scheduled'} start` : '')
+    + (_mcPinCloseW60(m) ? '' : ' · older than 60 min, not used in any figure')
+    + ((_mcOpenIsPinnacle(m) || _openAnchorOf(m, who) == null) ? '' : ' · open is another book: no move shown');
+}
 // Founder format: minutes under an hour, "Xh Ym" over it.
 function mxAgeText(min){
   if (min == null) return '';
@@ -8217,7 +8267,7 @@ function _mcNowOf(m, who){
 }
 function upsetScore(m){ // winner's closing odds — bigger underdog win = bigger upset
   const fscore = m.finalScore; if (!fscore) return -1;
-  const c = _mcCloseDerivedOf(m, fscore.winner); return c == null ? -1 : c;
+  const c = _mcPinCloseDerivedOf(m, fscore.winner); return c == null ? -1 : c;   // TEN-295: the Pinnacle close
 }
 // TEN-179 item 3 — the single source of truth for "is the card in the drift view?".
 // It reads state.sort DIRECTLY, with no second flag, so the sort control and the card
@@ -8567,7 +8617,7 @@ function mcOpenCoverage(list, covered){
   };
 }
 function closingScore(m){ // strongest closing favourite first (lowest favourite close)
-  const c1 = _mcCloseDerivedOf(m, 'p1'), c2 = _mcCloseDerivedOf(m, 'p2');
+  const c1 = _mcPinCloseDerivedOf(m, 'p1'), c2 = _mcPinCloseDerivedOf(m, 'p2');   // TEN-295
   if (c1 == null && c2 == null) return Infinity;
   if (c1 == null) return c2; if (c2 == null) return c1;
   return Math.min(c1, c2);
@@ -8578,7 +8628,8 @@ function closingScore(m){ // strongest closing favourite first (lowest favourite
 function moveScore(m){
   // TEN-198: vendor pin excluded — this is a signed % move, the "never to drift" leg.
   const o1 = _openDerivedOf(m, 'p1'), o2 = _openDerivedOf(m, 'p2');
-  const c1 = _mcCloseDerivedOf(m, 'p1'), c2 = _mcCloseDerivedOf(m, 'p2');
+  // TEN-295: a move needs one book at both ends — the Pinnacle close only against a Pinnacle open.
+  const c1 = _mcPinCloseMoveOf(m, 'p1'), c2 = _mcPinCloseMoveOf(m, 'p2');
   const p1 = (o1 != null && c1 != null && o1 > 0) ? Math.abs(c1 / o1 - 1) : 0;
   const p2 = (o2 != null && c2 != null && o2 > 0) ? Math.abs(c2 / o2 - 1) : 0;
   return Math.max(p1, p2);
@@ -8589,7 +8640,7 @@ function moveScore(m){
 // score -1 and sink to the bottom.
 function marketWrongScore(m){
   const fscore = m.finalScore; if (!fscore) return -1;
-  const c1 = _mcCloseDerivedOf(m, 'p1'), c2 = _mcCloseDerivedOf(m, 'p2');
+  const c1 = _mcPinCloseDerivedOf(m, 'p1'), c2 = _mcPinCloseDerivedOf(m, 'p2');   // TEN-295
   if (c1 == null || c2 == null) return -1;
   const favWho = c1 < c2 ? 'p1' : 'p2';
   return fscore.winner !== favWho ? (1 / Math.min(c1, c2)) : -1;
@@ -8605,15 +8656,19 @@ function _mcOddsLanded(){
   // that provably cannot rank the card that lit it.
   return matches.some(m => m.finalScore && !_openPinIsVendor(m)
     && m.openingOdds && (m.openingOdds.p1 != null || m.openingOdds.p2 != null)
-    && (_mcCloseDerivedOf(m, 'p1') != null || _mcCloseDerivedOf(m, 'p2') != null));
+    && (_mcPinCloseDerivedOf(m, 'p1') != null || _mcPinCloseDerivedOf(m, 'p2') != null));   // TEN-295
 }
 function syncSortDropdown(completed){
   const menu = document.getElementById('sortMenu');
   const label = document.getElementById('sortBtnLabel');
   if (!menu || !label) return;
   const oddsLanded = _mcOddsLanded();
+  // TEN-295: a move needs a Pinnacle open beside the Pinnacle close; while no card has one the
+  // sort stays dimmed instead of ranking every card at 0 (review 2026-09-27: 0 of 46).
+  const moveLanded = oddsLanded && matches.some(m => m.finalScore && !_openPinIsVendor(m)
+    && (_mcPinCloseMoveOf(m, 'p1') != null || _mcPinCloseMoveOf(m, 'p2') != null));
   const opts = completed
-    ? [['time','Finish time',false],['move','Biggest move',!oddsLanded],['upset','Biggest upset',false],['marketwrong','Market got it wrong',!oddsLanded]]
+    ? [['time','Finish time',false],['move','Biggest move',!moveLanded],['upset','Biggest upset',false],['marketwrong','Market got it wrong',!oddsLanded]]
     // TEN-179 item 3 (design handoff) — Upcoming offers exactly Time | Drift. This
     // replaces 'Biggest odds gap' and 'Surface' (the surface control itself was already
     // hidden on this page). Drift is deliberately NOT disabled by _mcOddsLanded(): its
@@ -9960,8 +10015,12 @@ function renderMatches(){
     // the one completed-card binding that bypassed the accessor, which would
     // have paired a published Open with a matches.json Close — the cross-source
     // blend the same ruling forbids across books.
-    const p1Close = finalScore ? _mcCloseOf(m, 'p1') : null;
-    const p2Close = finalScore ? _mcCloseOf(m, 'p2') : null;
+    // TEN-295 (founder 2026-09-27, card f09c2fd5): the completed Close slot is PINNACLE's
+    // close (_mcPinCloseOf), labelled with its source — never the card book's close.
+    const p1Close = finalScore ? _mcPinCloseOf(m, 'p1') : null;
+    const p2Close = finalScore ? _mcPinCloseOf(m, 'p2') : null;
+    // The Open stays the card's book: no open->close move unless that book is Pinnacle too.
+    const pinCrossBook = !!finalScore && !_mcOpenIsPinnacle(m);
     // "Book name and Open timestamp always shown" (founder, 2026-09-18). The
     // completed card's odds column is 4 fixed cells wide with no room for a
     // provenance line, so on the CARD it is the cell title and the full line is
@@ -10116,31 +10175,7 @@ function renderMatches(){
         kind: _vendorSeen ? 'sighting' : (o ? (o.tsKind || null) : 'book-tick'),
       }, px);
     };
-    // The CLOSE's own book and its own cut instant. It follows `_mcCloseOf`,
-    // which is where the price came from — odds_card_state where it covers the
-    // fixture, else matches.json's pinned close — so the label can never name a
-    // book that did not supply the number above it. A close has no observation
-    // clock of its own: it is a historical cut, not something we re-observe.
-    const _closeTitle = who => {
-      // TEN-225 item 4 — the J fallback names its own book and says plainly what
-      // it is not: no clock, so no lag check. Checked FIRST, because on a card
-      // this fills, `_ocsOf`/`closingOdds` name a book that did not supply the
-      // number.
-      if (mxCloseIsJ(m, who))
-        return mcPriceTitle({ book: 'bet365', at: null, kind: 'sighting',
-                              note: 'last pre-match price · api-tennis · no timestamp, no lag check' },
-                            _mcCloseOf(m, who));
-      const o = _ocsOf(m);
-      const book = o ? o.book : ((m.closingOdds && m.closingOdds.bookmaker) || null);
-      if (!book) return '';
-      // TEN-253 ruling 2 — the founder's hover, verbatim shape:
-      // "[book] · last seen X min before start" (hours and minutes over 60).
-      const age = o ? mxCloseAgeMin(m, who) : null;
-      if (age != null) return `${mxBookLabel(book)} · last seen ${mxAgeText(age)} before start`;
-      return mcPriceTitle({ book, at: o ? (o[who].closeTs || null) : null,
-                            kind: o ? (o.closeTsKind || o.tsKind || null) : 'book-tick' },
-                          _mcCloseOf(m, who));
-    };
+    // (The completed Close's hover is mxPinCloseTitle — TEN-295: the Close is Pinnacle's.)
     const _nowTitleFor = who => {
       const px = mcDriftRight(who);
       // Underway, book gone quiet. The value is the last price before the off and
@@ -10279,13 +10314,13 @@ function renderMatches(){
             <span class="mc-id">${mcAvatarHtml(m.p1PhotoUrl, m.p1, m.p1Key, 'a')}<span class="mc-nameline"><span class="mc-name"${profileLinkAttrs(m.p1Key, m.p1)}>${m.p1}</span>${p1IsFavorite ? '<span class="mc-fav-tag">FAV</span>' : ''}</span></span>
             ${(m.retired || m.walkover) ? mcTermCell(m, 'p1', boardSetCols) : mcSetCluster(finalScore, 'p1', false, boardSetCols)}
             <span class="mc-vdiv"></span>
-            ${mcJourney(p1Open, p1Close, openAnchorOnly, { openTitle: _openTitle('p1'), closeTitle: _closeTitle('p1'), closeOlder: mxCloseIsOlder(m, 'p1') || (p1Close != null && !_mcCloseW60(m) && !!_ocsOf(m)) })}
+            ${mcJourney(p1Open, p1Close, openAnchorOnly || pinCrossBook, { openTitle: _openTitle('p1'), closeTitle: mxPinCloseTitle(m, 'p1'), closeOlder: p1Close != null && !_mcPinCloseW60(m) })}
           </div>
           <div class="mc-row b${p2IsWinner ? ' winner' : ''}">
             <span class="mc-id">${mcAvatarHtml(m.p2PhotoUrl, m.p2, m.p2Key, 'b')}<span class="mc-nameline"><span class="mc-name"${profileLinkAttrs(m.p2Key, m.p2)}>${m.p2}</span>${(hasFavLine && !p1IsFavorite) ? '<span class="mc-fav-tag">FAV</span>' : ''}</span></span>
             ${(m.retired || m.walkover) ? mcTermCell(m, 'p2', boardSetCols) : mcSetCluster(finalScore, 'p2', false, boardSetCols)}
             <span class="mc-vdiv"></span>
-            ${mcJourney(p2Open, p2Close, openAnchorOnly, { openTitle: _openTitle('p2'), closeTitle: _closeTitle('p2'), closeOlder: mxCloseIsOlder(m, 'p2') || (p2Close != null && !_mcCloseW60(m) && !!_ocsOf(m)) })}
+            ${mcJourney(p2Open, p2Close, openAnchorOnly || pinCrossBook, { openTitle: _openTitle('p2'), closeTitle: mxPinCloseTitle(m, 'p2'), closeOlder: p2Close != null && !_mcPinCloseW60(m) })}
           </div>
         </div>`
       : `<div class="mc-players up">
@@ -10332,17 +10367,18 @@ function renderMatches(){
   //     honestly deferred — never fabricated from partial data (README §5.3 data-defensive).
   if (state.view === 'completed') {
     const openOf  = (m, who) => (m.finalScore ? _openDerivedOf(m, who) : null); // TEN-198: vendor pin excluded — this feeds the signed-% 'Biggest market move' panel.
-    // TEN-253: the card's OWN book and a within-60 close only. The old binding read
-    // m.closingOdds straight off matches.json beside a card-state Open, i.e. two
-    // books in one move figure, and it could never see the within-60 flag.
-    const closeOf = (m, who) => (m.finalScore ? _mcCloseDerivedOf(m, who) : null);
+    // TEN-295 (founder 2026-09-27, card f09c2fd5): the close is PINNACLE's (within-60 only,
+    // TEN-253 ruling 2); the open->close move needs a Pinnacle open — two books in one move
+    // figure is the blend TEN-253 removed, so a cross-book move is not measured.
+    const pinCloseOf = (m, who) => (m.finalScore ? _mcPinCloseDerivedOf(m, who) : null);
+    const moveCloseOf = (m, who) => (m.finalScore ? _mcPinCloseMoveOf(m, who) : null);
 
     // 1. Biggest market move — per (match, player) with both legs recorded.
     let bmv = null;
     filtered.forEach(m => {
       if (!m.finalScore) return;
       ['p1', 'p2'].forEach(who => {
-        const o = openOf(m, who), c = closeOf(m, who);
+        const o = openOf(m, who), c = moveCloseOf(m, who);
         if (o == null || c == null || o <= 0) return;
         const d = oddsPctDelta(o, c);
         if (d.pct === 0) return;
@@ -10358,7 +10394,7 @@ function renderMatches(){
     filtered.forEach(m => {
       const fs = m.finalScore; if (!fs) return;
       const w = fs.winner, l = w === 'p1' ? 'p2' : 'p1';
-      const wc = closeOf(m, w), lc = closeOf(m, l);
+      const wc = pinCloseOf(m, w), lc = pinCloseOf(m, l);
       if (wc == null || lc == null || wc <= lc) return;
       upsetRows.push({ winner: w === 'p1' ? m.p1 : m.p2, loser: l === 'p1' ? m.p1 : m.p2, price: wc });
     });
@@ -16632,18 +16668,10 @@ function buildOddsReduced(m){
     if (!_ocsRow) return which === 'open' ? m.openingOdds : m.closingOdds;
     const v1 = _ocsRow.p1[which], v2 = _ocsRow.p2[which];
     if (v1 == null && v2 == null) return { bookmaker: _ocsRow.book };
-    // TEN-253 ruling 2 — the close states its age, and an older one says it
-    // is not used in any figure. The worse (older) leg is the one reported.
-    let note = '';
-    if (which === 'close'){
-      const a1 = mxCloseAgeMin(m, 'p1'), a2 = mxCloseAgeMin(m, 'p2');
-      const age = (a1 == null && a2 == null) ? null : Math.max(a1 ?? -1, a2 ?? -1);
-      if (age != null) note = `last seen ${mxAgeText(age)} before start`
-        + (_mcCloseW60(m) ? '' : ' · older than 60 min, not used in any figure');
-    }
+    // (The Closing row reads the Pinnacle close — pinSnap below, TEN-295 — not this snapshot.)
     return { p1: v1, p2: v2, bookmaker: _ocsRow.book,
              at: _ocsRow.p1[tsField] || _ocsRow.p2[tsField] || null,
-             src: _ocsRow.source === 'api-tennis' ? 'vendor-sighting' : 'archive', note };
+             src: _ocsRow.source === 'api-tennis' ? 'vendor-sighting' : 'archive' };
   };
   // The OPENING row is unconditional: it is the slot 3a names, and a panel that
   // vanishes cannot report that it has nothing. The CLOSING row stays
@@ -16651,7 +16679,19 @@ function buildOddsReduced(m){
   // not missing data, it is data that does not exist yet, and dashing it would
   // read as a gap rather than as a match that has not started.
   const openingRow = ocRow('Opening', ocSnap('open', 'openTs'), true);
-  const closingRow = ocRow('Closing', ocSnap('close', 'closeTs'), !!m.finalScore);
+  // TEN-295 (founder 2026-09-27, card f09c2fd5): the Closing row is PINNACLE's close, named by
+  // its source; none -> dashes (never the card book's close).
+  const pinSnap = (() => {
+    const c = _mcPinClose(m);
+    if (!c) return null;
+    const a1 = mxPinCloseAgeMin(m, 'p1'), a2 = mxPinCloseAgeMin(m, 'p2');
+    const age = (a1 == null && a2 == null) ? null : Math.max(a1 ?? -1, a2 ?? -1);
+    return { p1: c.p1, p2: c.p2, bookmaker: c.source,
+             at: [c.p1At, c.p2At].filter(Boolean).sort().pop() || null,
+             note: (age != null ? `last price change ${mxAgeText(age)} before the ${c.startBasis === 'actual' ? 'actual' : 'scheduled'} start` : '')
+                   + (_mcPinCloseW60(m) ? '' : ' · older than 60 min, not used in any figure') };
+  })();
+  const closingRow = ocRow('Closing', pinSnap, !!m.finalScore);
   // TEN-225 ruling 2 (founder, 2026-09-18) — "…and in the detail panel / drawer
   // where a slot already exists." This IS that slot: the same three-column
   // snapshot table, one more row, no new element. It carries the book the CARD is
