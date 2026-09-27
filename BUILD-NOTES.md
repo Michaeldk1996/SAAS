@@ -2092,3 +2092,17 @@ Every mechanism is paired with a mutant of the real source.
 - **Why layer #12 is off.** It read that late hour and has no indoor check. It applied on 12 of 53 deployed cards on 2026-09-27. The config's `gated` flag was never read by `weather()`, so the switch needed a guard in the layer itself.
 - **Santiago.** atptour.com is behind Cloudflare and renders the surface field client-side, so no scripted ATP read was possible. The founder set outdoor clay by ruling.
 - **Brussels.** The European Open moved from Antwerp to Brussels Expo in 2025 ("Hard (indoor)"). Coordinates come from Open-Meteo geocoding (50.85045, 4.34878) and were added to `tournament-venues.json` directly, because that cache only re-geocodes after 90 days (next on 2026-10-05) and its rewrite is not committed back.
+
+## TEN-308 · api-tennis Berlin time at every site (2026-09-27)
+
+- **What was wrong.** api-tennis `event_date`/`event_time` is the Europe/Berlin wall clock. The sites fixed here read it three wrong ways. As UTC: the Edge Model's `preMatchCutoffMs`, so its 3 h buffer was really 1 h in CEST (2 h in CET); also the pipeline's upcoming `computeDay` commence and `refresh-scores.py` `_start_ms`/`_fixture_ms`. With a fixed +2: `kibl-stream/card_join.py`, `stennisfy-drops/status.mjs` and `ten225-369-trace.py`, all 1 h early after 25 Oct. By a month rule: `ten225-board-states.mjs`. By date only: `build-series.js`'s slate tag, which compared the Berlin date to the UTC today. The page's `cardStartMs` used the tz database but looked the offset up at the wall time read as UTC, so on 25 Oct 01:00–02:59 it came out 1 h late (01:30 → 02:30).
+- **One method.** `berlin-time.js`: try the offsets in force a day either side of the wall time and keep the ones that read back as that wall clock. The repeated hour takes the earlier (CEST) instant; the spring gap uses the pre-change offset. Python's zoneinfo fold=0 does the same, so the Node, page and Python readers agree to the minute (tested on the same cases). `berlinWallMs` moved out of `bsp-pipeline.js` so `h2h-model/price.js` and `build-series.js` can use it without loading the pipeline.
+- **Why the earlier instant.** For a close cut, the earlier instant can only drop a real pre-start price, never take an in-play one. Postgres `at time zone` (`tools/ten299-live-cut.sql`) picks the later, standard-time instant in the repeated hour. That differs only for a Berlin 02:00–02:59 start on 25 Oct, and was reported rather than changed.
+- **Not changed (reported).** The past-fixture `computeDay(fixture.event_date)` is date-only against the UTC today, the same class as `build-series.js`. It was not in the ruling's list, and the page re-buckets from `m.date` anyway (`matchDayBucket`).
+- **Review fold (clean-context pass).** Brute force over 14,400 minutes found 0 mismatches between the Node, page and drops readers and zoneinfo fold=0, and the tests fail on the old code. Folded in:
+  - an upcoming fixture with no time keeps its bare date, as before;
+  - `pinCloseStart` no longer adds a Berlin reading of `date`/`time` on a `startTs` record. There `date`/`time` are UTC, so the Berlin term was 1–2 h early and won the minimum;
+  - `card_join.card_start_utc` takes `startTs` first;
+  - the page builds its offset formatter once.
+
+  Reported, not changed: `refresh-odds-history.py` subtracts one median offset measured per run. A board spanning 25 Oct is 1 h off on one side, inside its 6 h join tolerance.

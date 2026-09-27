@@ -32,6 +32,7 @@ require('dotenv').config();
 const fs = require('fs');
 const { backfillProfilesHistory, backfillMatchesTournamentHistory, buildArchiveHistories } = require('./career-backfill');
 const { canonicalTournament } = require('./tournament-identity');
+const { berlinWallMs } = require('./berlin-time');
 // Layer #8 W/UE source resolver: api-tennis primary, @ATP_Entry OCR fallback,
 // never mixed within a match (see atp-entry-fallback.js).
 const { attachWue, lookupWue } = require('./atp-entry-fallback');
@@ -153,6 +154,15 @@ function surfaceFromEvent(event) {
   if (s.includes('wimbledon')) return 'grass';
   if (s.includes('roland garros') || s.includes('french open')) return 'clay';
   return 'hard';
+}
+
+// TEN-308: computeDay's input for an api-tennis fixture. event_date + event_time is the Berlin
+// wall clock, so the instant goes through berlinWallMs — read as UTC, `m.day` flipped to 'past'
+// 2 h late and a 00:00–01:59 Berlin start landed on the next UTC day. No usable time → the bare
+// date, as before.
+function apiTennisCommence(date, time) {
+  const ms = berlinWallMs(date, time);
+  return Number.isFinite(ms) ? new Date(ms).toISOString() : date;
 }
 
 function computeDay(commenceTime) {
@@ -3275,7 +3285,7 @@ async function buildUpcomingMatchObject(fixture, surfaceMap, venueMap) {
   // Combine event_date + event_time so computeDay() gets a real datetime.
   // Passing date-only would land a not-yet-played match at 00:00, which
   // computeDay classifies as 'past' (matchDate < now) for today's fixtures.
-  const commence = `${fixture.event_date}T${fixture.event_time || '00:00'}:00`;
+  const commence = apiTennisCommence(fixture.event_date, fixture.event_time);
 
   const match = {
     id: `upcoming-${fixture.event_key}`,
@@ -4220,22 +4230,9 @@ function pinnacleCloseOf(m, startMs, startBasis, ageRefMs) {
   }
   return null;
 }
-// The card's scheduled wall clock is the api-tennis account zone, Europe/Berlin (DST-aware) —
-// the page's cardStartMs and build-chart-books.py's _scheduled_start read it the same way.
-function berlinWallMs(date, time) {
-  if (typeof date !== 'string' || typeof time !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(date)
-      || !/^\d{1,2}:\d{2}$/.test(time)) return NaN;
-  const guess = Date.parse(`${date}T${time.padStart(5, '0')}:00Z`);
-  if (!Number.isFinite(guess)) return NaN;
-  const off = at => {
-    const p = Object.fromEntries(new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Berlin', hourCycle: 'h23',
-      year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
-      .formatToParts(new Date(at)).map(x => [x.type, x.value]));
-    return Date.parse(`${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}:00Z`) - at;
-  };
-  const first = guess - off(guess);
-  return guess - off(first);
-}
+// The card's scheduled wall clock is the api-tennis account zone, Europe/Berlin (DST-aware):
+// berlinWallMs (berlin-time.js, TEN-308) — the page's cardStartMs and build-chart-books.py's
+// _scheduled_start read it the same way.
 // TEN-304: the instant fetchMatchWeather looks the forecast hour up at — the api-tennis Berlin
 // wall clock converted through the tz database (CEST +2 / CET +1 after 25 Oct), as a UTC ISO
 // string; null when the fixture has no usable time, so no weather is read at a guessed hour.
@@ -4252,7 +4249,9 @@ function pinCloseStart(m, ocsStartMs) {
   if (Number.isFinite(ocsStartMs)) return { ms: ocsStartMs, basis: 'actual', ageRefMs: ocsStartMs };
   const c = [m && m.startTs, m && m.oddsMovement && m.oddsMovement.startTime]
     .map(v => (typeof v === 'string' && v ? Date.parse(v) : NaN))
-    .concat([berlinWallMs(m && m.date, m && m.time)])
+    // TEN-308: date/time is the Berlin wall clock only on a record without startTs; on an
+    // odds-API record it is UTC and read as Berlin would land 1–2 h early and win the min.
+    .concat(m && m.startTs ? [] : [berlinWallMs(m && m.date, m && m.time)])
     .filter(Number.isFinite);
   return c.length ? { ms: Math.min(...c), basis: 'scheduled', ageRefMs: Math.max(...c) }
                   : { ms: NaN, basis: null, ageRefMs: NaN };
@@ -7338,4 +7337,4 @@ module.exports = { fetchH2H, h2hCountsInAtpRecord, H2H_NOT_ATP_RECORD, tourLabel
   _standingRows: () => atpStandingRows,
   _setStandingRowsForTest: (rows) => { atpStandingRows = rows; },
   // TEN-304 — weather hour at the real (Berlin wall clock) start, venue map
-  weatherStartIso, fetchMatchWeather, TOURNAMENT_VENUE_HINTS };
+  weatherStartIso, fetchMatchWeather, TOURNAMENT_VENUE_HINTS, computeDay, apiTennisCommence };

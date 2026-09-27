@@ -5669,7 +5669,9 @@ function newsFmtDateTime(ts){
 // (+120 CEST / +60 CET); fall back to CEST if longOffset is unavailable.
 function acctTzOffsetMin(ms){
   try {
-    const parts = new Intl.DateTimeFormat('en-US', { timeZone:'Europe/Berlin', timeZoneName:'longOffset' }).formatToParts(ms);
+    // built once (TEN-308: cardStartMs now reads the offset 3–4 times per card)
+    const fmt = acctTzOffsetMin.fmt || (acctTzOffsetMin.fmt = new Intl.DateTimeFormat('en-US', { timeZone:'Europe/Berlin', timeZoneName:'longOffset' }));
+    const parts = fmt.formatToParts(ms);
     const tzn = (parts.find(p => p.type === 'timeZoneName') || {}).value || '';
     const mt = /GMT([+-])(\d{2}):?(\d{2})?/.exec(tzn);
     if (mt){ const sign = mt[1] === '-' ? -1 : 1; return sign * (parseInt(mt[2], 10) * 60 + parseInt(mt[3] || '0', 10)); }
@@ -5682,9 +5684,18 @@ function cardStartMs(m){
     // No startTs → api-tennis-only record whose `time` is the feed ACCOUNT zone
     // (Central European), NOT UTC. The baked `...:00Z` parse alone reads it 1–2h
     // LATE (TEN-80: cards lingered underway, "Underway" chip fired ~2h late).
-    // Correct by the account zone's real offset for that calendar date (DST-safe).
+    // TEN-308: the offset is the one in force AT THE START, not at the wall clock read
+    // as UTC — on a change day those differ (25 Oct 01:30 Berlin came out 02:30). Same
+    // method as berlin-time.js: try the offsets a day either side, keep the ones that
+    // read back as this wall clock; the repeated 02:00–02:59 takes the earlier (CEST)
+    // instant, the spring gap the pre-change offset.
     const naive = Date.parse(`${m.date}T${m.time.slice(0,5)}:00Z`);
-    if (isFinite(naive)) return naive - acctTzOffsetMin(naive) * 60000;
+    if (isFinite(naive)){
+      const before = acctTzOffsetMin(naive - 86400000), after = acctTzOffsetMin(naive + 86400000);
+      const hits = [naive - before * 60000, naive - after * 60000]
+        .filter(ms => ms + acctTzOffsetMin(ms) * 60000 === naive);
+      return hits.length ? Math.min(...hits) : naive - before * 60000;
+    }
   }
   return NaN;
 }

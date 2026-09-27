@@ -58,6 +58,7 @@ try { require('dotenv').config({ quiet: true }); } catch (_) { /* optional */ }
 
 const { fetchRecentSinglesFixtures } = require('./bsp-pipeline.js');
 const { setsFromScores } = require('./trading-sequence-metrics.js');
+const { berlinWallMs } = require('./berlin-time.js');
 
 const ROOT = process.env.SERIES_ROOT || __dirname;
 const SURFACES_FILE = path.join(ROOT, 'tournament-surfaces.json');
@@ -310,6 +311,14 @@ async function apiGet(url) {
   return Array.isArray(j.result) ? j.result : [];
 }
 
+// TEN-308: event_date is the Berlin calendar day; TODAY_STR is the UTC one. Tag by the UTC day
+// of the real start (a 00:30 Berlin start is the previous UTC day); no usable time → as dated.
+function slateDayOf(fx, today = TODAY_STR, tomorrow = TOMORROW_STR) {
+  const startMs = berlinWallMs(String(fx.event_date || ''), String(fx.event_time || ''));
+  const d = Number.isFinite(startMs) ? ymd(new Date(startMs)) : String(fx.event_date || '');
+  return d === today ? 'today' : d === tomorrow ? 'tomorrow' : null;
+}
+
 // ── slate: every ATP + Challenger singles fixture today/tomorrow. One get_fixtures
 //    date-range call, NO event_type_key filter (that would drop Challenger). ─────
 async function fetchSlate() {
@@ -319,8 +328,7 @@ async function fetchSlate() {
   for (const fx of rows) {
     const tier = tierOf(fx);
     if (!tier) continue;                         // ATP/Challenger singles only
-    const d = String(fx.event_date || '');
-    const day = d === TODAY_STR ? 'today' : d === TOMORROW_STR ? 'tomorrow' : null;
+    const day = slateDayOf(fx);
     if (!day) continue;
     out.push({ fx, tier, day });
   }
@@ -1531,5 +1539,6 @@ if (require.main === module) {
     altFormatOf, ALT_FORMAT_TOURNAMENT_KEYS,
     loadSurfaceMap, loadStyleMap, MAX_GAP_DAYS, MIN_LEN, VIEW_FLOOR_DEFAULT,
     streakReference, HISTORY_WINDOW_YEARS,
+    slateDayOf,
   };
 }

@@ -79,6 +79,10 @@ For current build state, open build state — do not rely on a snapshot in this 
 
 **Name matching.** The Odds API and API-Tennis use different name formats; matching is by last name. Watch for silent match-merge failures on busy days.
 
+**api-tennis times are the Europe/Berlin wall clock** (founder ruling TEN-304 → TEN-308, 2026-09-27). An api-tennis `event_date` + `event_time`, and a card's `date` + `time` when it has no `startTs`, is Berlin local time: CEST until 25 Oct 2026, CET after. It becomes an instant only through the tz database: `berlin-time.js` (`berlinWallMs`) in Node, `zoneinfo('Europe/Berlin')` in Python, `at time zone 'Europe/Berlin'` in SQL. The page's `cardStartMs` and `stennisfy-drops/status.mjs` carry inline copies of the same method because they cannot require a file. In the repeated hour (25 Oct 02:00–02:59) the Node, page and Python readers take the earlier (CEST) instant.
+- **Test:** 14:00 Berlin on 24 Oct is 12:00Z; 14:00 on 26 Oct is 13:00Z; 01:30 on 25 Oct is 23:30Z on the 24th; 02:30 on 25 Oct is 00:30Z. Every site passes all four in `tools/test-ten308-berlin-time.js` / `test-ten308-berlin-time.py`. A UTC read, a fixed +2, or an offset looked up at the wall time read as UTC fails them.
+- **Exceptions:** a record with a `startTs` uses it (a UTC instant; on odds-API records `date`/`time` are UTC too). Our own api-tennis calls made with `&timezone=UTC` are UTC.
+
 ---
 
 ## Design system — the export is canonical

@@ -30,7 +30,8 @@ JOIN RULE 1 — FOUNDER RULING 2026-09-24T01:21Z, verbatim:
 WHAT A STREAM ROW CARRIES
   A fixture_id and no names (probe run 35937443000: 27 fields, no name, no
   league). Names come from Kibl's own fixture record (`kibl_fixtures`, else
-  /info/fixtures). The card's `date`+`time` are api-tennis local time, UTC+2.
+  /info/fixtures). The card's `date`+`time` are api-tennis local time, the
+  Europe/Berlin wall clock (CEST +2 until 25 Oct 2026, CET +1 after; TEN-308).
 
 PRE-MATCH ONLY (ruled): market 1, segment 1 (Full Game), betting_type_id 1,
   is_live false. In-play rows (betting_type 3 or is_live true) are ignored.
@@ -45,6 +46,7 @@ SIDES
 """
 import collections
 from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 
 import os
 import sys
@@ -54,7 +56,10 @@ from ten225_names import (  # noqa: E402
     match_key, name_key, nfd, split_kibl_fixture_name,
 )
 
-CARD_TZ = timezone(timedelta(hours=2))      # api-tennis event_time is UTC+2
+# api-tennis event_date/event_time is the Europe/Berlin wall clock: CEST (+2) until 25 Oct 2026,
+# CET (+1) after (TEN-308). A fixed +2 put the card pool and join window 1 h early in winter.
+# zoneinfo fold=0 takes the EARLIER instant in the repeated 02:00-02:59, as berlin-time.js does.
+CARD_TZ = ZoneInfo('Europe/Berlin')
 WINDOW = timedelta(hours=24)                # ruling 1
 TIER_LEAGUE = {"ATP": 19, "Challenger": 537, "ITF": 962}
 MIN_REAL_PRICE = 1.01
@@ -70,6 +75,9 @@ def parse_ts(v):
 
 
 def card_start_utc(card):
+    st = parse_ts(card.get("startTs"))   # a UTC instant wins; date/time are UTC on such a record
+    if st is not None:
+        return st
     d, t = (card.get("date") or "")[:10], (card.get("time") or "")[:5]
     try:
         return datetime.fromisoformat(f"{d}T{t}:00").replace(tzinfo=CARD_TZ).astimezone(timezone.utc)

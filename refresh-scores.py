@@ -23,6 +23,7 @@ pipeline). Idempotent and safe to run repeatedly.
 """
 import json, os, sys, urllib.request, urllib.error
 from datetime import datetime, timezone, timedelta
+from zoneinfo import ZoneInfo
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 MATCHES = os.path.join(HERE, 'matches.json')
@@ -198,9 +199,22 @@ def fetch_odds(key, event_key, p1_is_first):
     return parse_home_away(block, p1_is_first)
 
 
+# api-tennis event_date/event_time (a card's date/time without startTs) is the
+# Europe/Berlin wall clock, CEST until 25 Oct 2026 and CET after (TEN-308). zoneinfo
+# fold=0 takes the EARLIER instant in the repeated 02:00-02:59, as berlin-time.js does.
+ACCOUNT_TZ = ZoneInfo('Europe/Berlin')
+
+
+def berlin_wall_ms(d, hhmm):
+    """'YYYY-MM-DD' + 'HH:MM' Berlin wall clock -> epoch ms. ValueError when unparseable."""
+    local = datetime.fromisoformat(f'{d[:10]}T{hhmm}:00').replace(tzinfo=ACCOUNT_TZ)
+    return local.astimezone(timezone.utc).timestamp() * 1000
+
+
 def _start_ms(m):
     """Match start instant in epoch-ms, mirroring cardStartMs() in the client:
-    prefer the ISO startTs, else fall back to date + HH:MM parsed as UTC.
+    prefer the ISO startTs, else date + HH:MM on the api-tennis Europe/Berlin
+    wall clock (TEN-308: read as UTC it was 2 h late in CEST, 1 h in CET).
     Returns None when neither yields a usable instant (never a guess)."""
     ts = m.get('startTs')
     if isinstance(ts, str) and ts:
@@ -211,10 +225,21 @@ def _start_ms(m):
     d, t = m.get('date'), m.get('time')
     if d and isinstance(t, str) and len(t) >= 5 and t[2] == ':':
         try:
-            return datetime.fromisoformat(f'{d}T{t[:5]}:00+00:00').timestamp() * 1000
+            return berlin_wall_ms(d, t[:5])
         except ValueError:
             pass
     return None
+
+
+def _fixture_ms(f):
+    """An api-tennis fixture's scheduled start (Berlin wall clock) in epoch-ms; None if unusable."""
+    d, t = f.get('event_date'), f.get('event_time')
+    if not d:
+        return None
+    try:
+        return berlin_wall_ms(d, (t or "00:00")[:5])
+    except ValueError:
+        return None
 
 
 def audit_underway(matches, index, now):
@@ -341,15 +366,6 @@ def main():
         if fk is None or sk is None:
             continue
         index[(f.get('event_date'), frozenset({str(fk), str(sk)}))] = f
-
-    def _fixture_ms(f):
-        d, t = f.get('event_date'), f.get('event_time')
-        if not d:
-            return None
-        try:
-            return datetime.fromisoformat(f'{d}T{(t or "00:00")[:5]}:00+00:00').timestamp() * 1000
-        except ValueError:
-            return None
 
     finals = lives = unchanged = odds_added = interrupted_n = 0
     skew_joins = 0

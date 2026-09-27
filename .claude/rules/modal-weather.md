@@ -6,9 +6,8 @@ Founder rulings from TEN-304 (2026-09-27). Rationale is in `BUILD-NOTES.md`.
 - **Open-Meteo's free endpoint is the weather source.** The founder has accepted its licence, so there is no key, no account and no other provider. **Test:** every weather fetch goes to `api.open-meteo.com` / `archive-api.open-meteo.com`, and no weather key exists in the repo or its secrets.
 
 ## Match time
-- **An api-tennis `event_date` + `event_time` is the Europe/Berlin wall clock**: CEST until 25 Oct 2026, CET after. Convert it to an instant with the tz database (`berlinWallMs` / `weatherStartIso` in `bsp-pipeline.js`), never by reading it as UTC and never with a fixed +2.
+- **An api-tennis `event_date` + `event_time` is the Europe/Berlin wall clock.** The weather hour is looked up at `weatherStartIso` (`bsp-pipeline.js`, through `berlin-time.js`). The rule for every reader is in `CLAUDE.md` → Data sources → *api-tennis times*.
   - **Test:** 14:00 on 24 Oct is 12:00Z and 14:00 on 26 Oct is 13:00Z (`tools/test-ten304-weather-hour.js`).
-  - **Exception:** only the weather path is fixed so far. Other readers of api-tennis times are reported on TEN-304 and are not changed without a founder ruling.
 - **A fixture with no time gets no match-time weather.** **Test:** `weatherStartIso(date, null)` returns null, and nothing is read at a guessed noon or midnight.
 
 ## Model layer #12 (weather)

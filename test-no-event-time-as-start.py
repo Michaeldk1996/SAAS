@@ -71,7 +71,7 @@ ALLOWED = {
         "time: fixture.event_time || null,",                                # displayed clock
         "const pastMatchDateTime = `${fixture.event_date}T${(fixture.event_time || '12:00')}:00Z`;",
         "// Combine event_date + event_time so computeDay() gets a real datetime.",
-        "const commence = `${fixture.event_date}T${fixture.event_time || '00:00'}:00`;",
+        "const commence = apiTennisCommence(fixture.event_date, fixture.event_time);",   # TEN-308: Berlin wall -> instant for the day bucket
     },
     'build-series.js': {
         "time: String(fx.event_time || ''),",                               # displayed clock

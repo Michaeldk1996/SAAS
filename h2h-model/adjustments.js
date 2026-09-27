@@ -1405,4 +1405,4 @@ function runAll(ctx) {
 
 // h2h + setDominance exported for unit tests (pure fns; today's live board is
 // all Tier 3, so the tier-1/2 + dominance paths can only be exercised directly).
-module.exports = { runAll, clamp, weather, h2h, setDominance, winnerUE, recentFormParts, qualityForm, fatigue, fatigueUnits, serve, inTournamentServeDelta, serveSharedRow, returnPressure, inTournamentReturnDelta, returnSharedRow };
+module.exports = { runAll, clamp, timingWeight, weather, h2h, setDominance, winnerUE, recentFormParts, qualityForm, fatigue, fatigueUnits, serve, inTournamentServeDelta, serveSharedRow, returnPressure, inTournamentReturnDelta, returnSharedRow };

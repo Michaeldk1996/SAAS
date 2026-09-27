@@ -75,10 +75,23 @@ export function samePair(a1, a2, b1, b2) {
 export function spKey(a, b) { const x = nk(a), y = nk(b); return !x || !y ? null : x < y ? x + '|' + y : y + '|' + x; }
 
 // api-tennis times: our own calls ask for UTC (&timezone=UTC); the live poller's sightings carry the API's
-// default zone (Europe/Berlin), used only inside the 24 h join window, where an hour does not matter
+// default zone, the Europe/Berlin wall clock (CEST until 25 Oct 2026, CET after), read through the tz
+// database (TEN-308) — never a fixed +02:00. Same method as the repo's berlin-time.js (this app ships
+// alone, so it carries its own copy): the offsets a day either side, kept if they read back; the repeated
+// 02:00–02:59 takes the earlier instant, the spring gap the pre-change offset.
+const BERLIN_FMT = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/Berlin', hourCycle: 'h23',
+  year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+function berlinOffsetMs(at) {
+  const p = Object.fromEntries(BERLIN_FMT.formatToParts(new Date(at)).map((x) => [x.type, x.value]));
+  return Date.parse(`${p.year}-${p.month}-${p.day}T${p.hour}:${p.minute}:00Z`) - Math.floor(at / 60000) * 60000;
+}
 export function apiStartMs(date, time, utc) {
-  const t = Date.parse(`${date}T${/^\d\d:\d\d$/.test(String(time)) ? time : '00:00'}:00${utc ? 'Z' : '+02:00'}`);
-  return Number.isFinite(t) ? t : null;
+  const wall = Date.parse(`${date}T${/^\d\d:\d\d$/.test(String(time)) ? time : '00:00'}:00Z`);
+  if (!Number.isFinite(wall)) return null;
+  if (utc) return wall;
+  const before = berlinOffsetMs(wall - 86400000), after = berlinOffsetMs(wall + 86400000);
+  const hits = [wall - before, wall - after].filter((ms) => ms + berlinOffsetMs(ms) === wall);
+  return hits.length ? Math.min(...hits) : wall - before;
 }
 const ms = (x) => { const t = Date.parse(x); return Number.isFinite(t) ? t : null; };
 

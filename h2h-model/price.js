@@ -18,6 +18,7 @@
  */
 
 const config = require('./config');
+const { berlinWallMs } = require('../berlin-time');
 
 const dec = (x) => (typeof x === 'number' && isFinite(x) && x > 1 ? x : null);
 const impl = (price) => { const p = dec(price); return p ? 1 / p : null; };
@@ -56,12 +57,15 @@ function vfP1(p1, p2) {
   return i1 / (i1 + i2);
 }
 
-// Scheduled start parsed as UTC, minus the venue-local buffer. Ticks after
-// this are treated as potentially in-play and excluded from the pre-match line.
+// Scheduled start minus the buffer. Ticks after this are treated as potentially
+// in-play and excluded from the pre-match line. The start is `startTs` (a UTC
+// instant, odds-API records) when there is one, else `date` + `time`, which is
+// the api-tennis Europe/Berlin wall clock (TEN-308). Read as UTC, as it was, the
+// 3 h buffer was really 1 h in CEST and 2 h in CET.
 function preMatchCutoffMs(match) {
-  if (!match.date || !match.time) return null;
-  const t = Date.parse(`${match.date}T${match.time}:00Z`);
-  if (isNaN(t)) return null;
+  let t = typeof match.startTs === 'string' && match.startTs ? Date.parse(match.startTs) : NaN;
+  if (!Number.isFinite(t)) t = berlinWallMs(match.date, match.time);
+  if (!Number.isFinite(t)) return null;
   return t - config.marketCutoffBufferHours * 3600 * 1000;
 }
 

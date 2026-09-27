@@ -59,6 +59,7 @@ import urllib.parse
 import urllib.request
 from collections import Counter, defaultdict
 from datetime import datetime, timedelta, timezone
+from zoneinfo import ZoneInfo
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ODDSPAPI = 'https://api.oddspapi.io'
@@ -73,10 +74,17 @@ OUT = os.path.join(HERE, 'ten225-369-trace.json')
 FROM = datetime(2026, 9, 1, tzinfo=timezone.utc)
 TO = datetime(2026, 9, 7, tzinfo=timezone.utc)
 
-# api-tennis event_time is UTC+2 (measured and re-confirmed in doc
-# `start-time-check` 1b). Converting it is the ONLY use of event_time here, and
-# it is used to compute a residual for diagnosis -- never as a start time.
-APITENNIS_UTC_OFFSET_MIN = 120
+# api-tennis event_time is the Europe/Berlin wall clock (UTC+2 in CEST, as doc
+# `start-time-check` 1b measured; UTC+1 in CET after 25 Oct 2026 -- TEN-308, tz
+# database, never a fixed offset). Converting it is the ONLY use of event_time
+# here, and it is used to compute a residual for diagnosis -- never as a start time.
+APITENNIS_TZ = ZoneInfo('Europe/Berlin')
+
+
+def apitennis_utc(ed, et):
+    """event_date + event_time (Berlin wall clock) -> aware UTC datetime. ValueError if unparseable."""
+    local = datetime.strptime(f'{ed} {et}', '%Y-%m-%d %H:%M').replace(tzinfo=APITENNIS_TZ)
+    return local.astimezone(timezone.utc)
 
 # Residual magnitude above which a pair is examined individually.
 BIG_RESIDUAL_MIN = 60.0
@@ -343,10 +351,9 @@ def main():
         if not ed or not et:
             continue
         try:
-            local = datetime.strptime(f'{ed} {et}', '%Y-%m-%d %H:%M').replace(tzinfo=timezone.utc)
+            at_utc = apitennis_utc(ed, et)
         except ValueError:
             continue
-        at_utc = local - timedelta(minutes=APITENNIS_UTC_OFFSET_MIN)
         # Look on the UTC day and its neighbours -- a 02:00 local fixture lands
         # on the previous UTC day.
         cands = []

@@ -314,7 +314,10 @@ test('pipeline: a carried close derived under an earlier cut is re-derived (TEN-
 });
 
 test('pipeline: the board close is PINNACLE (founder 2026-09-27 item 1) — source ladder, actual start, dash', () => {
-  const F = new Function(`${constSrc('PIN_CLOSE_SOURCES', pipe)} ${slice('pinnacleCloseOf', pipe)} ${slice('berlinWallMs', pipe)}
+  // TEN-308: berlinWallMs moved to berlin-time.js (one reader for every site); the pipeline requires it.
+  const bt = readFileSync(join(HERE, 'berlin-time.js'), 'utf8');
+  assert.ok(pipe.includes("const { berlinWallMs } = require('./berlin-time');"));
+  const F = new Function(`${constSrc('PIN_CLOSE_SOURCES', pipe)} ${slice('pinnacleCloseOf', pipe)} ${constSrc('BERLIN_FMT', bt)} ${slice('berlinOffsetMs', bt)} ${slice('berlinWallMs', bt)}
     ${slice('pinCloseStart', pipe)} return { pinnacleCloseOf, pinCloseStart, berlinWallMs };`)();
   const T = s => Date.parse(s);
   // Harris v Kovacevic, real Pinnacle +30s ticks around the 10:31:59Z actual start.

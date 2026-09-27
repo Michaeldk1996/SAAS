@@ -22,21 +22,18 @@
  * settled looks identical to one genuinely in play, and telling them apart is
  * exactly what item 3 is about.
  */
+import berlinTime from './berlin-time.js';
+const { berlinWallMs } = berlinTime;
 const BASE = 'https://michaeldk1996.github.io/SAAS';
 
 async function j(p){ const r = await fetch(`${BASE}/${p}`, { cache: 'no-store' });
   if (!r.ok) throw new Error(`${p} ${r.status}`); return r.json(); }
 
 // ── the shipped helpers, reproduced only where the measurement needs them ──
-const ACCT_TZ_STD = 60, ACCT_TZ_DST = 120;
-function acctTzOffsetMin(ms){ const d = new Date(ms), mo = d.getUTCMonth();
-  return (mo >= 2 && mo <= 9) ? ACCT_TZ_DST : ACCT_TZ_STD; }
+// TEN-308: the Berlin wall clock goes through the tz database (berlin-time.js), not a month rule.
 function cardStartMs(m){
   if (m && m.startTs != null){ const t = new Date(m.startTs).getTime(); if (isFinite(t)) return t; }
-  if (m && m.date && /^\d{2}:\d{2}/.test(m.time || '')){
-    const naive = Date.parse(`${m.date}T${m.time.slice(0,5)}:00Z`);
-    if (isFinite(naive)) return naive - acctTzOffsetMin(naive) * 60000;
-  }
+  if (m && m.date && /^\d{2}:\d{2}/.test(m.time || '')) return berlinWallMs(m.date, m.time.slice(0, 5));
   return NaN;
 }
 const isFinished = m => !m.live && !!m.finalScore;
