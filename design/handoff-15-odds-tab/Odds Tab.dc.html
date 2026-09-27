@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:#06070a; -webkit-font-smoothing:antialiased; }
+  a{ color:#5b9bff; text-decoration:none; } a:hover{ color:#82b4ff; }
+  .seg{ cursor:pointer; transition:background .14s ease, color .14s ease, border-color .14s ease; }
+  .nav{ cursor:pointer; transition:background .14s ease, color .14s ease; }
+  .nav:hover{ background:rgba(255,255,255,0.04); color:#e7e9ee; }
+  .row:hover{ background:rgba(255,255,255,0.015); }
+  .mcard{ transition:border-color 120ms ease; }
+  .mcard:focus-visible{ border-color:rgba(91,155,255,0.22); outline:2px solid rgba(91,155,255,0.35); outline-offset:2px; }
+  ::-webkit-scrollbar{ width:10px; height:10px; } ::-webkit-scrollbar-thumb{ background:rgba(255,255,255,0.08); border-radius:6px; }
+  .tourlist::-webkit-scrollbar{ display:none; }
+  .tourgrid{ }
+  @media (max-width:1100px){ .tourgrid{ grid-template-columns:minmax(0,1fr) !important; } }
+  .sigtoggle{ cursor:pointer; transition:color .14s ease; } .sigtoggle:hover{ color:#5b6880; }
+  .oddlink{ transition:background .14s ease, border-color .14s ease; } .oddlink:hover{ background:rgba(91,155,255,0.18) !important; border-color:rgba(91,155,255,0.55) !important; }
+  .pcard{ transition:border-color .14s ease, box-shadow .14s ease, transform .14s ease; } .pcard:hover{ border-color:rgba(91,155,255,0.45) !important; box-shadow:0 0 0 1px rgba(91,155,255,0.2); transform:translateY(-2px); }
+  .sigpanel{ animation:sigIn .2s cubic-bezier(.2,.7,.3,1); }
+  @keyframes sigIn{ from{ opacity:0; transform:translateY(-6px); } to{ opacity:1; transform:translateY(0); } }
+  .elotip-pop{ opacity:0; visibility:hidden; transition:opacity .12s ease; pointer-events:none; }
+  .elotip:hover .elotip-pop{ opacity:1; visibility:visible; }
+  .h2m{ transition:opacity .12s; }
+  
+  .h2wrap:has(.hl-0:hover) .h2m{ opacity:.32; } .h2wrap:has(.hl-0:hover) .h2m.cov-0{ opacity:1; }
+  .h2wrap:has(.hl-1:hover) .h2m{ opacity:.32; } .h2wrap:has(.hl-1:hover) .h2m.cov-1{ opacity:1; }
+  .h2wrap:has(.hl-2:hover) .h2m{ opacity:.32; } .h2wrap:has(.hl-2:hover) .h2m.cov-2{ opacity:1; }
+  .h2wrap:has(.hl-3:hover) .h2m{ opacity:.32; } .h2wrap:has(.hl-3:hover) .h2m.cov-3{ opacity:1; }
+  .h2wrap:has(.hl-4:hover) .h2m{ opacity:.32; } .h2wrap:has(.hl-4:hover) .h2m.cov-4{ opacity:1; }
+  .h2wrap:has(.hl-5:hover) .h2m{ opacity:.32; } .h2wrap:has(.hl-5:hover) .h2m.cov-5{ opacity:1; }
+  .h2wrap:has(.hl-6:hover) .h2m{ opacity:.32; } .h2wrap:has(.hl-6:hover) .h2m.cov-6{ opacity:1; }
+  .h2wrap:has(.hl-7:hover) .h2m{ opacity:.32; } .h2wrap:has(.hl-7:hover) .h2m.cov-7{ opacity:1; }
+  .h2wrap:has(.hl-8:hover) .h2m{ opacity:.32; } .h2wrap:has(.hl-8:hover) .h2m.cov-8{ opacity:1; }
+  .h2wrap:has(.hl-9:hover) .h2m{ opacity:.32; } .h2wrap:has(.hl-9:hover) .h2m.cov-9{ opacity:1; }
+  .h2wrap:has(.hl-10:hover) .h2m{ opacity:.32; } .h2wrap:has(.hl-10:hover) .h2m.cov-10{ opacity:1; }
+  .h2wrap:has(.hl-11:hover) .h2m{ opacity:.32; } .h2wrap:has(.hl-11:hover) .h2m.cov-11{ opacity:1; }
+  .h2wrap:has(.prh-aLo:hover) .h2m{ opacity:.32; } .h2wrap:has(.prh-aLo:hover) .h2m.pr-aLo{ opacity:1; }
+  .h2wrap:has(.prh-aHi:hover) .h2m{ opacity:.32; } .h2wrap:has(.prh-aHi:hover) .h2m.pr-aHi{ opacity:1; }
+  .h2wrap:has(.prh-bLo:hover) .h2m{ opacity:.32; } .h2wrap:has(.prh-bLo:hover) .h2m.pr-bLo{ opacity:1; }
+  .h2wrap:has(.prh-bHi:hover) .h2m{ opacity:.32; } .h2wrap:has(.prh-bHi:hover) .h2m.pr-bHi{ opacity:1; }
+  body:has(.fl-0-0:hover) .fm0{ opacity:.32; } body:has(.fl-0-0:hover) .fm0.fc-0-0{ opacity:1; }
+  body:has(.fl-0-1:hover) .fm0{ opacity:.32; } body:has(.fl-0-1:hover) .fm0.fc-0-1{ opacity:1; }
+  body:has(.fl-0-2:hover) .fm0{ opacity:.32; } body:has(.fl-0-2:hover) .fm0.fc-0-2{ opacity:1; }
+  body:has(.fl-0-3:hover) .fm0{ opacity:.32; } body:has(.fl-0-3:hover) .fm0.fc-0-3{ opacity:1; }
+  body:has(.fl-0-4:hover) .fm0{ opacity:.32; } body:has(.fl-0-4:hover) .fm0.fc-0-4{ opacity:1; }
+  body:has(.fl-0-5:hover) .fm0{ opacity:.32; } body:has(.fl-0-5:hover) .fm0.fc-0-5{ opacity:1; }
+  body:has(.fl-0-6:hover) .fm0{ opacity:.32; } body:has(.fl-0-6:hover) .fm0.fc-0-6{ opacity:1; }
+  body:has(.fl-0-7:hover) .fm0{ opacity:.32; } body:has(.fl-0-7:hover) .fm0.fc-0-7{ opacity:1; }
+  body:has(.fl-0-8:hover) .fm0{ opacity:.32; } body:has(.fl-0-8:hover) .fm0.fc-0-8{ opacity:1; }
+  body:has(.fl-0-9:hover) .fm0{ opacity:.32; } body:has(.fl-0-9:hover) .fm0.fc-0-9{ opacity:1; }
+  body:has(.fl-1-0:hover) .fm1{ opacity:.32; } body:has(.fl-1-0:hover) .fm1.fc-1-0{ opacity:1; }
+  body:has(.fl-1-1:hover) .fm1{ opacity:.32; } body:has(.fl-1-1:hover) .fm1.fc-1-1{ opacity:1; }
+  body:has(.fl-1-2:hover) .fm1{ opacity:.32; } body:has(.fl-1-2:hover) .fm1.fc-1-2{ opacity:1; }
+  body:has(.fl-1-3:hover) .fm1{ opacity:.32; } body:has(.fl-1-3:hover) .fm1.fc-1-3{ opacity:1; }
+  body:has(.fl-1-4:hover) .fm1{ opacity:.32; } body:has(.fl-1-4:hover) .fm1.fc-1-4{ opacity:1; }
+  body:has(.fl-1-5:hover) .fm1{ opacity:.32; } body:has(.fl-1-5:hover) .fm1.fc-1-5{ opacity:1; }
+  body:has(.fl-1-6:hover) .fm1{ opacity:.32; } body:has(.fl-1-6:hover) .fm1.fc-1-6{ opacity:1; }
+  body:has(.fl-1-7:hover) .fm1{ opacity:.32; } body:has(.fl-1-7:hover) .fm1.fc-1-7{ opacity:1; }
+  body:has(.fl-1-8:hover) .fm1{ opacity:.32; } body:has(.fl-1-8:hover) .fm1.fc-1-8{ opacity:1; }
+  body:has(.fl-1-9:hover) .fm1{ opacity:.32; } body:has(.fl-1-9:hover) .fm1.fc-1-9{ opacity:1; }
+  .plink{ cursor:pointer; }
+  .plink:hover{ text-decoration:underline; }
+  image-slot::part(empty){ display:none; }
+  image-slot::part(frame){ background:transparent; }
+  .wirerow { border-bottom:1px solid rgba(255,255,255,0.09); cursor:pointer; }
+  .wirerow:last-child { border-bottom:0; }
+  .wirerow:hover { border-color:rgba(91,155,255,0.22); background:rgba(255,255,255,0.02); }
+  .wirerow:hover .newscaret { color:#e7e9ee; }
+</style>
+</helmet>
+<section style="min-height:100vh; background:#06070a; font-family:'Hanken Grotesk',sans-serif; color:#e7e9ee; padding:32px; display:flex; justify-content:center; align-items:flex-start;">
+<div data-screen-label="Odds tab" style="width:100%; max-width:1262px; background:#0a0d14; border:1px solid rgba(255,255,255,0.09); border-radius:20px; padding:24px 28px;">
+
+            <div style="display:flex; flex-direction:column; gap:14px; margin-bottom:24px;">
+              <div style="display:flex; align-items:center; gap:12px 16px; flex-wrap:wrap;"><div style="display:flex; align-items:center; gap:2px; padding:3px; border-radius:9px; background:#0a0d14; border:1px solid rgba(255,255,255,0.09);"><sc-for list="{{ analysis.odds.priceModes }}" as="pm" hint-placeholder-count="2"><span class="seg" onClick="{{ pm.onClick }}" title="{{ pm.tip }}" style="padding:5px 11px; border-radius:7px; font-size:11.5px; white-space:nowrap; cursor:pointer; font-weight:{{ pm.w }}; color:{{ pm.c }}; background:{{ pm.bg }}; border:1px solid {{ pm.bd }};">{{ pm.label }}</span></sc-for></div><span style="margin-left:auto;"><span title="Placeholder prices until the live feed is connected" style="display:inline-flex; align-items:center; gap:6px; font-family:'IBM Plex Mono',monospace; font-size:9.5px; font-weight:600; letter-spacing:0.14em; color:#8b96b5; padding:4px 8px; border-radius:6px; border:1px dashed rgba(255,255,255,0.18);"><span style="width:5px; height:5px; border-radius:50%; background:#5b6880;"></span>SAMPLE DATA</span></span></div>
+              <div style="display:grid; grid-template-columns:repeat(auto-fill, minmax(150px, 1fr)); gap:8px;"><sc-for list="{{ analysis.odds.mkts }}" as="mk" hint-placeholder-count="7"><div class="seg" onClick="{{ mk.onClick }}" style="display:flex; flex-direction:column; gap:4px; padding:11px 13px; border-radius:10px; cursor:pointer; background:{{ mk.cbg }}; border:1.25px solid {{ mk.pbd }};" style-hover="border-color:rgba(106,154,248,0.3);"><span style="font-family:'IBM Plex Mono',monospace; font-size:9px; letter-spacing:0.14em; color:#5b6880;">{{ mk.fam }}</span><span style="font-size:13px; font-weight:{{ mk.w }}; color:{{ mk.c }};">{{ mk.name }}</span></div></sc-for></div>
+              </div>
+            <div style="display:flex; align-items:center; justify-content:space-between; gap:14px 20px; flex-wrap:wrap; margin-bottom:6px;">
+              <div style="display:flex; align-items:center; gap:10px;">
+                <span style="font-size:10px; font-weight:800; letter-spacing:0.1em; color:#5b9bff; background:transparent; border:1px solid rgba(91,155,255,0.35); border-radius:6px; padding:4px 9px;">BOOKS</span>
+                <span style="font-size:17px; font-weight:800;">Per-book movement</span>
+              </div>
+              <sc-if value="{{ analysis.odds.hasSteam }}" hint-placeholder-val="{{ false }}"><span class="seg" onClick="{{ analysis.odds.onSteamClick }}" style="display:inline-flex; align-items:center; gap:10px; cursor:pointer;"><span style="font-size:10px; font-weight:800; letter-spacing:0.16em; color:#06070a; background:#5b9bff; border-radius:6px; padding:4px 9px;">STEAM</span><span style="font-size:12px; color:#e7e9ee;">{{ analysis.odds.steam.text }}</span></span></sc-if>
+            </div>
+            <div style="font-size:13px; color:#5b6880; margin-bottom:14px;">{{ analysis.odds.tableSub }}</div>
+            <div style="overflow-x:auto;"><div style="min-width:0; display:flex; flex-direction:column; gap:6px;">
+              <div style="display:grid; grid-template-columns:minmax(84px,0.8fr) minmax(0,1.9fr) 48px minmax(0,1.9fr) 48px; gap:10px 12px; padding:12px 20px 11px; border-radius:12px; background:#0E1019; border:1.25px solid rgba(255,255,255,0.06); align-items:end;">
+                <span></span><span style="text-align:center; font-size:13px; font-weight:700; color:{{ analysis.odds.aColor }}; padding-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.08);">{{ analysis.odds.aName }}</span><span></span><span style="text-align:center; font-size:13px; font-weight:700; color:{{ analysis.odds.bColor }}; padding-bottom:8px; border-bottom:1px solid rgba(255,255,255,0.08);">{{ analysis.odds.bName }}</span><span></span>
+                <span style="font-family:'IBM Plex Mono',monospace; font-size:10.5px; font-weight:700; letter-spacing:0.12em; color:#aab3c8;">BOOK</span><span style="display:grid; grid-template-columns:minmax(0,1fr) 64px minmax(0,1fr); gap:8px; font-family:'IBM Plex Mono',monospace; font-size:10.5px; font-weight:700; letter-spacing:0.12em; color:#aab3c8;"><span style="text-align:right;">OPEN</span><span></span><span>NOW</span></span><span style="text-align:center; font-family:'IBM Plex Mono',monospace; font-size:10.5px; font-weight:700; letter-spacing:0.12em; color:#aab3c8;">NET</span><span style="display:grid; grid-template-columns:minmax(0,1fr) 64px minmax(0,1fr); gap:8px; font-family:'IBM Plex Mono',monospace; font-size:10.5px; font-weight:700; letter-spacing:0.12em; color:#aab3c8;"><span style="text-align:right;">OPEN</span><span></span><span>NOW</span></span><span style="text-align:center; font-family:'IBM Plex Mono',monospace; font-size:10.5px; font-weight:700; letter-spacing:0.12em; color:#aab3c8;">NET</span>
+              </div>
+              <sc-for list="{{ analysis.odds.groups }}" as="g" hint-placeholder-count="2">
+                <div style="display:flex; align-items:center; gap:10px; padding:12px 4px 4px;"><span style="font-family:'IBM Plex Mono',monospace; font-size:9.5px; font-weight:700; letter-spacing:0.18em; color:{{ g.c }};">{{ g.head }}</span><span style="flex:1; height:1px; background:rgba(255,255,255,0.06);"></span></div>
+                <sc-for list="{{ g.rows }}" as="bk" hint-placeholder-count="3"><div style="display:grid; grid-template-columns:minmax(84px,0.8fr) minmax(0,1.9fr) 48px minmax(0,1.9fr) 48px; gap:12px; align-items:center; padding:12px 20px; border-radius:12px; background:#0e1019; border:1.25px solid rgba(255,255,255,0.05); cursor:pointer;" style-hover="border-color:rgba(106,154,248,0.25); background:#11141f;" onClick="{{ bk.onOpen }}" title="Open odds movement"><span style="display:flex; flex-direction:column; gap:3px;"><span style="font-size:13.5px; font-weight:600;">{{ bk.name }}</span><span style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:#4b5672;">{{ bk.marginLbl }}</span></span><span style="display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:8px; white-space:nowrap;"><span style="font-family:'IBM Plex Mono',monospace; font-size:13px; color:#8b96b5; text-align:right;">{{ bk.aOpen }}</span>{{ bk.aSparkS }}<span style="font-family:'IBM Plex Mono',monospace; font-size:13.5px; font-weight:700; color:{{ bk.aNumColor }};">{{ bk.aNow }}</span></span><span style="font-family:'IBM Plex Mono',monospace; font-size:12.5px; font-weight:700; text-align:center; color:{{ bk.aDeltaColor }};">{{ bk.aDelta }}</span><span style="display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:8px; white-space:nowrap;"><span style="font-family:'IBM Plex Mono',monospace; font-size:13px; color:#8b96b5; text-align:right;">{{ bk.bOpen }}</span>{{ bk.bSparkS }}<span style="font-family:'IBM Plex Mono',monospace; font-size:13.5px; font-weight:700; color:{{ bk.bNumColor }};">{{ bk.bNow }}</span></span><span style="font-family:'IBM Plex Mono',monospace; font-size:12.5px; font-weight:700; text-align:center; color:{{ bk.bDeltaColor }};">{{ bk.bDelta }}</span></div></sc-for>
+              </sc-for>
+            </div></div>
+
+            <sc-if value="{{ analysis.odds.mvOpen }}" hint-placeholder-val="{{ false }}">
+              <div onClick="{{ analysis.odds.mvClose }}" style="position:fixed; inset:0; z-index:60; background:rgba(4,5,9,0.62); display:flex; align-items:center; justify-content:center; padding:24px;">
+                <div onClick="{{ analysis.odds.mvStop }}" style="width:100%; max-width:1080px; border-radius:18px; background:#131623; border:1.25px solid rgba(255,255,255,0.07); box-shadow:0 30px 80px rgba(0,0,0,0.55); padding:20px 22px 16px; display:flex; flex-direction:column; gap:14px; max-height:calc(100vh - 48px); overflow-y:auto; box-sizing:border-box;">
+                  <div style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px;">
+                    <div style="display:flex; flex-direction:column; gap:5px;">
+                      <span style="display:flex; align-items:baseline; gap:10px;"><span style="font-size:18px; font-weight:800;">{{ analysis.odds.mvBookName }}</span><span style="font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:0.14em; color:#5b6880; text-transform:uppercase;">{{ analysis.odds.mvBookCls }} · {{ analysis.odds.mvBookMargin }}</span></span>
+                      <span style="font-size:12px; color:#5b6880;">Odds movement · {{ analysis.odds.mvSub }}</span>
+                    </div>
+                    <span class="seg" onClick="{{ analysis.odds.mvClose }}" style="width:32px; height:32px; display:flex; align-items:center; justify-content:center; border-radius:8px; border:1px solid rgba(255,255,255,0.1); color:#8b96b5; cursor:pointer; font-size:14px; flex-shrink:0;" style-hover="color:#e7e9ee; border-color:rgba(255,255,255,0.2);">✕</span>
+                  </div>
+                  <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(360px, 1fr)); gap:12px;">
+                    <sc-for list="{{ analysis.odds.mvSplit }}" as="sp" hint-placeholder-count="2">
+                      <div style="display:flex; flex-direction:column; gap:12px; padding:16px 16px 14px; border-radius:14px; background:#0e1019; border:1px solid rgba(255,255,255,0.05);">
+                        <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;"><span style="display:flex; align-items:center; gap:8px; font-size:14px; font-weight:700;"><span style="width:8px; height:8px; background:{{ sp.color }};"></span>{{ sp.name }}</span><span style="display:flex; align-items:baseline; gap:8px; font-family:'IBM Plex Mono',monospace;"><span style="font-size:20px; font-weight:700;">{{ sp.now }}</span><span style="font-size:12px; font-weight:700; color:{{ sp.chgColor }};">{{ sp.chg }}</span></span></div>
+                        {{ sp.chart }}
+                        <div style="display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:8px;"><div style="display:flex; flex-direction:column; gap:4px; padding:10px 12px; border-radius:10px; background:#131623; border:1px solid rgba(255,255,255,0.05);"><span style="font-family:'IBM Plex Mono',monospace; font-size:9px; font-weight:600; letter-spacing:0.14em; color:#5b6880;">OPENING</span><span style="font-family:'IBM Plex Mono',monospace; font-size:18px; font-weight:700; color:{{ sp.color }};">{{ sp.opV }}</span><span style="font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:#5b6880; white-space:nowrap;">{{ sp.opT }}</span></div><div style="display:flex; flex-direction:column; gap:4px; padding:10px 12px; border-radius:10px; background:#131623; border:1px solid rgba(255,255,255,0.05);"><span style="font-family:'IBM Plex Mono',monospace; font-size:9px; font-weight:600; letter-spacing:0.14em; color:#5b6880;">HIGHEST</span><span style="font-family:'IBM Plex Mono',monospace; font-size:18px; font-weight:700; color:#3dd68c;">{{ sp.hiV }}</span><span style="font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:#5b6880; white-space:nowrap;">{{ sp.hiT }}</span></div><div style="display:flex; flex-direction:column; gap:4px; padding:10px 12px; border-radius:10px; background:#131623; border:1px solid rgba(255,255,255,0.05);"><span style="font-family:'IBM Plex Mono',monospace; font-size:9px; font-weight:600; letter-spacing:0.14em; color:#5b6880;">LOWEST</span><span style="font-family:'IBM Plex Mono',monospace; font-size:18px; font-weight:700; color:#e0616f;">{{ sp.loV }}</span><span style="font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:#5b6880; white-space:nowrap;">{{ sp.loT }}</span></div></div>
+                      </div>
+                    </sc-for>
+                  </div>
+                  <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+                    <span style="display:flex; gap:6px; flex-wrap:wrap;"><sc-for list="{{ analysis.odds.mvBookTabs }}" as="bt" hint-placeholder-count="7"><span class="seg" onClick="{{ bt.onClick }}" style="padding:5px 10px; border-radius:4px; font-size:11.5px; cursor:pointer; white-space:nowrap; font-weight:{{ bt.w }}; color:{{ bt.c }}; background:{{ bt.bg }}; border:1px solid {{ bt.bd }};">{{ bt.name }}</span></sc-for></span>
+                  </div>
+                </div>
+              </div>
+            </sc-if>
+            <div style="font-size:12px; color:#5b6880; margin-top:16px; line-height:1.5;">{{ analysis.odds.footNote }}</div>
+          
+</div>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1330,&quot;height&quot;:1000}}">
+class Component extends DCLogic {
+  // Odds tab, extracted verbatim from Match Analysis Odds LOCKED.dc.html (locked 2026-09-26).
+  // The wrapper card stands in for the match-analysis content pane (1500px modal − 238px nav = 1262px, padding 24px 28px).
+  state = {};
+  oddsFor(AN, S) {
+    const el = React.createElement;
+    const A = '#6aaeff', B = '#e7e9ee', UP = '#3dd68c', DN = '#e0616f', MODEL = '#b8e05a';
+    const BOOKS = [['Pinnacle', 'sharp'], ['Betfair', 'sharp'], ['bet365', 'soft'], ['William Hill', 'soft'], ['Betano', 'soft'], ['Betsson', 'soft'], ['1xBet', 'soft']];
+    const NB = BOOKS.length;
+    const novig = !!S.maOddsNovig;
+    const checked = S.maOddsBooks || { Pinnacle: true };
+    let h = 0; const sd = String(AN.seed || 'x') + '|odds'; for (let i = 0; i < sd.length; i++) h = (h * 31 + sd.charCodeAt(i)) >>> 0;
+    const pr = n => { h = (h * 1103515245 + 12345) >>> 0; return h % n; };
+    const ba = parseFloat(AN.aOdds) || 2.1, bb = parseFloat(AN.bOdds) || 1.7;
+    const pNow = (1 / ba) / (1 / ba + 1 / bb), pOpen = Math.min(0.93, pNow + 0.07);
+    const modelP = Math.min(0.95, pNow + 0.028), fairA = 1 / modelP, fairB = 1 / (1 - modelP);
+    const N = 9;
+    const pct = v => (v * 100).toFixed(0) + '%';
+    const edgeOf = (price, fair) => (price / fair - 1) * 100;
+    const fmtE = e => { const r = +e.toFixed(1); return (r > 0 ? '+' : r < 0 ? '\u2212' : '\u00b1') + Math.abs(r).toFixed(1) + '%'; };
+    const eCol = e => e >= 1 ? UP : e <= -1 ? DN : '#8b96b5';
+    const spark = (ser, col) => { const mn = Math.min.apply(null, ser), mx = Math.max.apply(null, ser), rng = (mx - mn) || 1; const pts = ser.map((v, j) => (j / (N - 1) * 56 + 2) + ',' + (20 - (v - mn) / rng * 17).toFixed(1)).join(' '); return el('svg', { width: 62, height: 22, viewBox: '0 0 62 22' }, [el('polyline', { key: 'p', points: pts, fill: 'none', stroke: col, strokeWidth: 1.6, strokeLinecap: 'round', strokeLinejoin: 'round' }), el('circle', { key: 'c', cx: 60, cy: 20 - (ser[N - 1] - mn) / rng * 17, r: 2, fill: col })]); };
+    const sparkL = (ser, col) => { const mn = Math.min.apply(null, ser), mx = Math.max.apply(null, ser), rng = (mx - mn) || 1, yy = v => 26 - (v - mn) / rng * 22; const pts = ser.map((v, j) => (j / (N - 1) * 116 + 3) + ',' + yy(v).toFixed(1)).join(' '); return el('svg', { width: 124, height: 30, viewBox: '0 0 124 30' }, [el('polyline', { key: 'p', points: pts, fill: 'none', stroke: col, strokeWidth: 1.8, strokeLinecap: 'round', strokeLinejoin: 'round' }), el('circle', { key: 'o', cx: 3, cy: yy(ser[0]), r: 2, fill: col, opacity: 0.5 }), el('circle', { key: 'c', cx: 119, cy: yy(ser[N - 1]), r: 2.6, fill: col })]); };
+    const sparkS = (ser, col) => { const mn = Math.min.apply(null, ser), mx = Math.max.apply(null, ser), rng = (mx - mn) || 1, Wd = 64, yy = v => 18 - (v - mn) / rng * 14, xx = j => 4 + j / (N - 1) * (Wd - 8); const pts = ser.map((v, j) => xx(j).toFixed(1) + ',' + yy(v).toFixed(1)).join(' '); return el('svg', { width: Wd, height: 22, viewBox: '0 0 ' + Wd + ' 22', style: { flexShrink: 0, display: 'block' } }, [el('line', { key: 'b', x1: 4, x2: Wd - 4, y1: yy(ser[0]), y2: yy(ser[0]), stroke: 'rgba(255,255,255,0.12)', strokeWidth: 1, strokeDasharray: '2 3' }), el('polyline', { key: 'p', points: pts, fill: 'none', stroke: col, strokeWidth: 1.6, strokeLinecap: 'round', strokeLinejoin: 'round' }), el('circle', { key: 'o', cx: xx(0), cy: yy(ser[0]), r: 2.4, fill: '#0e1019', stroke: col, strokeWidth: 1.3 }), el('circle', { key: 'c', cx: xx(N - 1), cy: yy(ser[N - 1]), r: 2.8, fill: col })]); };
+    const midV = 'L3';
+    const midG = (ser, col) => {
+      if (midV === 'L1') return sparkS(ser, col);
+      const Wd = 64, H2 = 22, o = ser[0], n = ser[N - 1], mn = Math.min.apply(null, ser), mx = Math.max.apply(null, ser), rng = (mx - mn) || 1;
+      const dc = n < o ? DN : n > o ? UP : '#8b96b5', yy = v => 18 - (v - mn) / rng * 14, xx = j => 4 + j / (N - 1) * (Wd - 8);
+      const svg = kids => el('svg', { width: Wd, height: H2, viewBox: '0 0 ' + Wd + ' ' + H2, style: { flexShrink: 0, display: 'block' } }, kids);
+      if (midV === 'L2') { const y1 = n < o ? 6 : n > o ? 16 : 11, y2 = n < o ? 16 : n > o ? 6 : 11; const ang = Math.atan2(y2 - y1, 50), hx = 56, hy = y2;
+        return svg([el('line', { key: 'l', x1: 6, y1, x2: hx - 2, y2: hy, stroke: dc, strokeWidth: 1.6, strokeLinecap: 'round' }), el('circle', { key: 'o', cx: 6, cy: y1, r: 2.4, fill: '#0e1019', stroke: dc, strokeWidth: 1.3 }),
+          el('polygon', { key: 'h', points: [[hx + 4 * Math.cos(ang), hy + 4 * Math.sin(ang)], [hx - 4 * Math.cos(ang) + 3.5 * Math.sin(ang), hy - 4 * Math.sin(ang) - 3.5 * Math.cos(ang)], [hx - 4 * Math.cos(ang) - 3.5 * Math.sin(ang), hy - 4 * Math.sin(ang) + 3.5 * Math.cos(ang)]].map(q => q.map(v => v.toFixed(1)).join(',')).join(' '), fill: dc })]); }
+      if (midV === 'L3') { const P = ser.map((v, j) => [xx(j), yy(v)]); let d = 'M' + P[0].join(','); for (let i = 0; i < P.length - 1; i++) { const p0 = P[i - 1] || P[i], p1 = P[i], q = P[i + 1], p3 = P[i + 2] || q; d += ' C' + (p1[0] + (q[0] - p0[0]) / 6).toFixed(1) + ',' + (p1[1] + (q[1] - p0[1]) / 6).toFixed(1) + ' ' + (q[0] - (p3[0] - p1[0]) / 6).toFixed(1) + ',' + (q[1] - (p3[1] - p1[1]) / 6).toFixed(1) + ' ' + q[0].toFixed(1) + ',' + q[1].toFixed(1); }
+        return svg([el('path', { key: 'a', d: d + ' L' + xx(N - 1) + ',21 L' + xx(0) + ',21 Z', fill: col, opacity: 0.12 }), el('path', { key: 'l', d, fill: 'none', stroke: col, strokeWidth: 1.6, strokeLinecap: 'round' })]); }
+      if (midV === 'L4') { const X = v => 5 + (v - mn) / rng * (Wd - 10);
+        return svg([el('line', { key: 't', x1: 5, x2: Wd - 5, y1: 11, y2: 11, stroke: 'rgba(255,255,255,0.1)', strokeWidth: 4, strokeLinecap: 'round' }), el('line', { key: 'm', x1: X(Math.min(o, n)), x2: X(Math.max(o, n)), y1: 11, y2: 11, stroke: dc, strokeWidth: 4, strokeLinecap: 'round', opacity: 0.85 }), el('line', { key: 'o', x1: X(o), x2: X(o), y1: 5, y2: 17, stroke: '#8b96b5', strokeWidth: 1.5 }), el('circle', { key: 'n', cx: X(n), cy: 11, r: 3.6, fill: '#e7e9ee', stroke: '#0e1019', strokeWidth: 1.5 })]); }
+      const pts = ser.map((v, j) => j ? xx(j) + ',' + yy(ser[j - 1]) + ' ' + xx(j) + ',' + yy(v) : xx(j) + ',' + yy(v)).join(' ');
+      return svg([el('polyline', { key: 'l', points: pts, fill: 'none', stroke: col, strokeWidth: 1.5, strokeLinejoin: 'miter' }), el('circle', { key: 'c', cx: xx(N - 1), cy: yy(n), r: 2.6, fill: col })]);
+    };
+    const books = BOOKS.map(([bk, cls], bi) => {
+      const sharp = cls === 'sharp';
+      const m = sharp ? 0.02 + pr(10) / 1000 : 0.045 + pr(35) / 1000;
+      const off0 = bi === 0 ? 0 : (pr(40) - 20) / 1000, off1 = bi === 0 ? 0 : (pr(30) - 15) / 1000;
+      const p0 = pOpen + off0, p1 = bi === NB - 1 ? p0 + 0.012 : pNow + off1;
+      const pS = []; for (let i = 0; i < N; i++) { const t = i / (N - 1); pS.push(p0 + (p1 - p0) * t + (i === 0 || i === N - 1 ? 0 : (pr(9) - 4) / 1000)); }
+      const prA = p => novig ? 1 / p : 1 / (p * (1 + m)), prB = p => novig ? 1 / (1 - p) : 1 / ((1 - p) * (1 + m));
+      const aS = pS.map(p => +prA(p).toFixed(2)), bS = pS.map(p => +prB(p).toFixed(2));
+      const aP = pS.map(p => novig ? p : p * (1 + m)), bP = pS.map(p => novig ? 1 - p : (1 - p) * (1 + m));
+      const aD = +(aS[N - 1] - aS[0]).toFixed(2), bD = +(bS[N - 1] - bS[0]).toFixed(2);
+      const aE = edgeOf(aS[N - 1], fairA), bE = edgeOf(bS[N - 1], fairB);
+      const chk = !!checked[bk];
+      return { name: bk, cls, sharp, marginLbl: novig ? 'margin removed' : 'margin ' + (m * 100).toFixed(1) + '%',
+        aOpen: aS[0].toFixed(2), bOpen: bS[0].toFixed(2), aNow: aS[N - 1].toFixed(2), bNow: bS[N - 1].toFixed(2),
+        aDelta: (aD >= 0 ? '+' : '') + aD.toFixed(2), aDeltaColor: aD >= 0 ? UP : DN, bDelta: (bD >= 0 ? '+' : '') + bD.toFixed(2), bDeltaColor: bD >= 0 ? UP : DN,
+        aEdgeRaw: aE, bEdgeRaw: bE, aEdge: fmtE(aE), bEdge: fmtE(bE), aEdgeColor: eCol(aE), bEdgeColor: eCol(bE),
+        aSpark: spark(aS, A), bSpark: spark(bS, B), aSparkL: sparkL(aS, A), bSparkL: sparkL(bS, B), aSparkS: midG(aS, A), bSparkS: midG(bS, B), aS, bS, aP, bP, checked: chk,
+        pillBg: chk ? 'rgba(91,155,255,0.14)' : 'transparent', pillBd: chk ? 'rgba(91,155,255,0.45)' : 'rgba(255,255,255,0.1)', pillC: chk ? '#e7e9ee' : '#8b96b5', pillW: chk ? 700 : 500, cardBg: chk ? 'rgba(91,155,255,0.08)' : '#0a0d14', segBg: chk ? 'rgba(91,155,255,0.16)' : 'transparent', ulC: chk ? '#5b9bff' : 'transparent', dotC: chk ? '#5b9bff' : 'rgba(255,255,255,0.14)',
+        chkBg: chk ? 'rgba(91,155,255,0.22)' : 'transparent', chkBd: chk ? 'rgba(91,155,255,0.45)' : 'rgba(255,255,255,0.15)', chkMark: chk ? '\u2713' : '',
+        onToggle: () => this.setState(st => { const c = Object.assign({}, st.maOddsBooks || { Pinnacle: true }); c[bk] = !c[bk]; return { maOddsBooks: c }; }) };
+    });
+    const maxA = Math.max.apply(null, books.map(b => +b.aNow)), maxB = Math.max.apply(null, books.map(b => +b.bNow));
+    books.forEach(b => {
+      b.aBest = (+b.aNow === maxA); b.bBest = (+b.bNow === maxB);
+      b.aCellBg = b.aBest ? 'rgba(61,214,140,0.12)' : 'transparent'; b.bCellBg = b.bBest ? 'rgba(61,214,140,0.12)' : 'transparent';
+      b.aNumColor = b.aBest ? UP : '#e7e9ee'; b.bNumColor = b.bBest ? UP : '#e7e9ee';
+    });
+    books.forEach((b, i) => { b.zebra = (b.sharp ? i : i - 2) % 2 ? 'rgba(255,255,255,0.022)' : 'transparent'; });
+    const maxD = Math.max.apply(null, books.map(b => Math.max(Math.abs(+b.aDelta), Math.abs(+b.bDelta)))) || 1;
+    books.forEach(b => ['a', 'b'].forEach(x => { const d = +b[x + 'Delta'], w = Math.abs(d) / maxD * 50; b[x + 'MovW'] = w.toFixed(1) + '%'; b[x + 'MovL'] = (d >= 0 ? 50 : 50 - w).toFixed(1) + '%'; }));
+    const groups = [
+      { head: 'SHARP', topBd: 'transparent', c: '#82b4ff', sub: 'Low-margin books that move first on informed money', rows: books.filter(b => b.sharp) },
+      { head: 'SOFT', topBd: 'rgba(255,255,255,0.07)', c: '#8b96b5', sub: 'Recreational books, higher margins, slower to adjust', rows: books.filter(b => !b.sharp) },
+    ];
+    const cnt = f => books.filter(f).length, lst = f => books.filter(f).map(b => b.name);
+    const cands = [
+      { n: cnt(b => +b.aNow < +b.aOpen), who: AN.aName, dir: 'shortened', list: lst(b => +b.aNow < +b.aOpen) },
+      { n: cnt(b => +b.aNow > +b.aOpen), who: AN.aName, dir: 'drifted', list: lst(b => +b.aNow > +b.aOpen) },
+      { n: cnt(b => +b.bNow < +b.bOpen), who: AN.bName, dir: 'shortened', list: lst(b => +b.bNow < +b.bOpen) },
+      { n: cnt(b => +b.bNow > +b.bOpen), who: AN.bName, dir: 'drifted', list: lst(b => +b.bNow > +b.bOpen) },
+    ].filter(c => c.n >= 3).sort((x, y) => y.n - x.n);
+    let steam = null;
+    if (cands.length) { const c = cands[0]; steam = { count: c.n, dir: c.dir, who: c.who, text: c.n + ' of ' + NB + ' books ' + c.dir + ' on ' + c.who, list: c.list }; }
+    const ref = books[0];
+    const fvOf = (name, color, mk, fair, side) => {
+      const best = books.reduce((x, y) => +y[side + 'Now'] > +x[side + 'Now'] ? y : x, books[0]);
+      const e = edgeOf(+mk, fair), be = best[side + 'EdgeRaw'];
+      return { name, color, refLabel: 'PINNACLE' + (novig ? ' \u00b7 NO-VIG' : ''), market: mk, fair: fair.toFixed(2), edge: fmtE(e), edgeColor: eCol(e),
+        bestLine: 'Best price ' + best[side + 'Now'] + ' at ' + best.name + ' \u00b7 ' + fmtE(be) + ' edge' };
+    };
+    const fairValue = [fvOf(AN.aName, A, ref.aNow, fairA, 'a'), fvOf(AN.bName, B, ref.bNow, fairB, 'b')];
+    const model = { aFair: fairA.toFixed(2), bFair: fairB.toFixed(2), aP: pct(modelP), bP: pct(1 - modelP) };
+    const mvB = S.maMvBook ? books.find(b => b.name === S.maMvBook) : null;
+    const sel = mvB ? [mvB] : books.filter(b => b.checked), use = sel.length ? sel : [books[0]], f = use[0];
+    books.forEach(b => { b.onOpen = () => this.setState({ maMvBook: b.name }); });
+    const W = 640, H = 262, PADL = 44, PADR = 150, T = 16, BT = 236;
+    const X = j => PADL + j / (N - 1) * (W - PADL - PADR), Y = v => T + (1 - v) * (BT - T);
+    const kids = [];
+    [1, 0.5, 0].forEach((v, gi) => {
+      kids.push(el('line', { key: 'g' + gi, x1: PADL, y1: Y(v), x2: W - PADR, y2: Y(v), stroke: 'rgba(255,255,255,0.06)', strokeWidth: 1, strokeDasharray: v === 0.5 ? '3 5' : undefined }));
+      kids.push(el('text', { key: 'gy' + gi, x: PADL - 10, y: Y(v) + 4, fill: '#5b6880', fontSize: 12, fontFamily: 'IBM Plex Mono, monospace', textAnchor: 'end' }, pct(v)));
+    });
+    use.forEach((b, bi) => {
+      kids.push(el('polyline', { key: 'a' + bi, points: b.aP.map((v, j) => X(j) + ',' + Y(v)).join(' '), fill: 'none', stroke: A, strokeWidth: 2.4, strokeLinejoin: 'round', strokeLinecap: 'round', opacity: bi === 0 ? 1 : 0.35 }));
+      kids.push(el('polyline', { key: 'b' + bi, points: b.bP.map((v, j) => X(j) + ',' + Y(v)).join(' '), fill: 'none', stroke: B, strokeWidth: 2.4, strokeLinejoin: 'round', strokeLinecap: 'round', opacity: bi === 0 ? 1 : 0.35 }));
+    });
+    const endY = [Y(f.aP[N - 1]), Y(f.bP[N - 1])];
+    if (Math.abs(endY[0] - endY[1]) < 34) { const m = (endY[0] + endY[1]) / 2, d = endY[0] <= endY[1] ? -17 : 17; endY[0] = m + d; endY[1] = m - d; }
+    [[f.aP, A, AN.aName, endY[0], 'ae'], [f.bP, B, AN.bName, endY[1], 'be']].forEach(([ps, col, nm, ly, k]) => {
+      kids.push(el('circle', { key: k + 'o', cx: X(0), cy: Y(ps[0]), r: 3, fill: col, opacity: 0.6 }));
+      kids.push(el('circle', { key: k + 'c', cx: X(N - 1), cy: Y(ps[N - 1]), r: 4, fill: col, stroke: '#0a0d14', strokeWidth: 2 }));
+      kids.push(el('text', { key: k + 'p', x: X(N - 1) + 14, y: ly - 2, fill: col, fontSize: 15, fontWeight: 700, fontFamily: 'IBM Plex Mono, monospace' }, pct(ps[N - 1])));
+      kids.push(el('text', { key: k + 'n', x: X(N - 1) + 14, y: ly + 13, fill: '#8b96b5', fontSize: 12, fontFamily: 'Hanken Grotesk, sans-serif' }, nm));
+    });
+    kids.push(el('text', { key: 'x0', x: PADL, y: BT + 22, fill: '#5b6880', fontSize: 13, fontFamily: 'Hanken Grotesk, sans-serif' }, 'Open'));
+    kids.push(el('text', { key: 'x1', x: W - PADR, y: BT + 22, fill: '#5b6880', fontSize: 13, fontFamily: 'Hanken Grotesk, sans-serif', textAnchor: 'end' }, 'Now'));
+    const chart = el('svg', { viewBox: '0 0 ' + W + ' ' + H, width: '100%', style: { display: 'block', height: 'auto' } }, kids);
+    const chip = (name, color, side, fair, bd, bg) => {
+      const s = f[side + 'S'], p = f[side + 'P'], chg = (s[N - 1] - s[0]) / s[0] * 100, e = edgeOf(s[N - 1], fair);
+      return { full: name, open: s[0].toFixed(2), name: String(name || '').toUpperCase(), color, bd, bg, prob: pct(p[N - 1]), price: s[N - 1].toFixed(2), chg: (chg >= 0 ? '+' : '') + chg.toFixed(1) + '%', chgColor: chg >= 0 ? UP : DN,
+      };
+    };
+    const chips = [chip(AN.aName, A, 'a', fairA, 'rgba(91,155,255,0.35)', 'rgba(91,155,255,0.08)'), chip(AN.bName, B, 'b', fairB, 'rgba(123,145,180,0.3)', 'rgba(123,145,180,0.08)')];
+    const oddsChart = (series, o) => {
+      const Wd = o.w || 640, Ht = o.h || 260, PL = o.axisRight ? 12 : 44, PR = o.axisRight ? 48 : (o.endLabels ? 96 : 14), TT = 10, BB = Ht - 28;
+      const all = [].concat.apply([], series.map(q => q.ser)), lo = Math.min.apply(null, all) * 0.96, hi = Math.max.apply(null, all) * 1.04;
+      const lg = Math.log, Y = v => TT + (1 - (lg(v) - lg(lo)) / (lg(hi) - lg(lo))) * (BB - TT), X = j => PL + j / (N - 1) * (Wd - PL - PR);
+      const nice = [1.05, 1.1, 1.15, 1.2, 1.25, 1.3, 1.4, 1.5, 1.6, 1.7, 1.8, 1.9, 2, 2.2, 2.4, 2.6, 2.8, 3, 3.25, 3.5, 3.75, 4, 4.5, 5, 5.5, 6, 7, 8, 10, 12, 15].filter(v => v > lo && v < hi);
+      const step = Math.max(1, Math.ceil(nice.length / (o.ticks || 5))), ticks = nice.filter((v, i) => i % step === 0);
+      const K = [];
+      ticks.forEach((v, i) => {
+        K.push(el('line', { key: 'g' + i, x1: PL, x2: Wd - PR, y1: Y(v), y2: Y(v), stroke: 'rgba(255,255,255,' + (o.faint ? 0.035 : 0.055) + ')', strokeWidth: 1 }));
+        K.push(el('text', { key: 't' + i, x: o.axisRight ? Wd - PR + 10 : PL - 10, y: Y(v) + 4, fill: '#5b6880', fontSize: 11, fontFamily: 'IBM Plex Mono, monospace', textAnchor: o.axisRight ? 'start' : 'end' }, v.toFixed(2)));
+      });
+      const tIdx = o.tIdx || [0, 2, 4, 6, 8];
+      tIdx.forEach((j, i) => {
+        if (o.vgrid) K.push(el('line', { key: 'v' + i, x1: X(j), x2: X(j), y1: TT, y2: BB, stroke: 'rgba(255,255,255,0.04)', strokeDasharray: '2 4' }));
+        K.push(el('text', { key: 'x' + i, x: X(j), y: BB + 20, fill: j === N - 1 ? '#8b96b5' : '#5b6880', fontSize: 11, fontFamily: 'IBM Plex Mono, monospace', textAnchor: i === 0 ? 'start' : i === tIdx.length - 1 ? 'end' : 'middle' }, TL[j]));
+      });
+      series.forEach((q, qi) => {
+        const pts = q.ser.map((v, j) => o.step && j ? X(j) + ',' + Y(q.ser[j - 1]) + ' ' + X(j) + ',' + Y(v) : X(j) + ',' + Y(v)).join(' ');
+        if (o.area && !q.ghost) K.push(el('polygon', { key: 'ar' + qi, points: X(0) + ',' + BB + ' ' + pts + ' ' + X(N - 1) + ',' + BB, fill: q.col, opacity: 0.05 }));
+        K.push(el('polyline', { key: 'l' + qi, points: pts, fill: 'none', stroke: q.col, strokeWidth: q.ghost ? 1.2 : 2, strokeLinejoin: 'round', strokeLinecap: 'round', opacity: q.ghost ? 0.3 : 1 }));
+        if (!q.ghost) {
+          const ex = X(N - 1), ey = Y(q.ser[N - 1]);
+          K.push(el('circle', { key: 'e' + qi, cx: ex, cy: ey, r: 3.5, fill: q.col, stroke: '#0e1019', strokeWidth: 2 }));
+          if (o.endLabels) { K.push(el('text', { key: 'en' + qi, x: ex + 10, y: q.ly - 2, fill: '#e7e9ee', fontSize: 13, fontWeight: 700, fontFamily: 'IBM Plex Mono, monospace' }, q.ser[N - 1].toFixed(2))); K.push(el('text', { key: 'nn' + qi, x: ex + 10, y: q.ly + 12, fill: q.col, fontSize: 11.5, fontFamily: 'Hanken Grotesk, sans-serif' }, q.name)); }
+        }
+      });
+      const endYs = series.filter(q => !q.ghost).map(q => Y(q.ser[N - 1]));
+      return { K, Y, endYs, svg: () => el('svg', { viewBox: '0 0 ' + Wd + ' ' + Ht, width: '100%', style: { display: 'block', height: 'auto' } }, K) };
+    };
+    const TL = (() => { const base = new Date(2026, 8, 26, 18, 0); const D = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']; return Array.from({ length: N }, (_, j) => { if (j === N - 1) return 'Now'; const d = new Date(base.getTime() - (N - 1 - j) * 9 * 3600e3); return D[d.getDay()] + ' ' + String(d.getHours()).padStart(2, '0') + ':00'; }); })();
+    const mkSeries = () => { const out = []; use.forEach((bk, bi) => { out.push({ ser: bk.aS, col: A, name: AN.aName, ghost: bi > 0 }); out.push({ ser: bk.bS, col: B, name: AN.bName, ghost: bi > 0 }); }); return out; };
+    const withLabels = (o) => { const pre = oddsChart(mkSeries(), o); let [ya, yb] = pre.endYs; if (Math.abs(ya - yb) < 30) { const m = (ya + yb) / 2, d = ya <= yb ? -15 : 15; ya = m + d; yb = m - d; } const ser = mkSeries(); let k = 0; ser.forEach(q => { if (!q.ghost) { q.ly = k === 0 ? ya : yb; k++; } }); return oddsChart(ser, o).svg(); };
+    const mvChart1 = withLabels({ endLabels: true, h: 220 });
+    const mvChart2 = oddsChart(mkSeries(), { area: true }).svg();
+    const MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'], p2 = n => String(n).padStart(2, '0');
+    const TS = (() => { const now = new Date(2026, 8, 26, 17, 52).getTime(); return Array.from({ length: N }, (_, j) => new Date(now - (N - 1 - j) * 8.6 * 3600e3 - (j === N - 1 ? 0 : pr(47)) * 60e3)); })();
+    const hm = d => p2(d.getHours()) + ':' + p2(d.getMinutes()), dm = d => d.getDate() + ' ' + MON[d.getMonth()];
+    const playerChart = (ser, col, ghosts) => {
+      const Wd = 480, Ht = 236, PL = 42, PR = 12, TT = 12, BB = 190;
+      const all = ser.concat.apply(ser, ghosts), mn0 = Math.min.apply(null, all), mx0 = Math.max.apply(null, all), span = (mx0 - mn0) || 0.1;
+      const stp = [0.02, 0.05, 0.1, 0.2, 0.25, 0.5, 1].find(v => span / v <= 4) || 1, lo = Math.floor((mn0 - span * 0.08) / stp) * stp, hi = Math.ceil((mx0 + span * 0.08) / stp) * stp;
+      const X = j => PL + j / (N - 1) * (Wd - PL - PR), Y = v => TT + (1 - (v - lo) / (hi - lo)) * (BB - TT);
+      const path = sr => { const P = sr.map((v, j) => [X(j), Y(v)]); let d = 'M' + P[0][0].toFixed(1) + ',' + P[0][1].toFixed(1); for (let i = 0; i < P.length - 1; i++) { const p0 = P[i - 1] || P[i], p1 = P[i], q = P[i + 1], p3 = P[i + 2] || q; const c1 = [p1[0] + (q[0] - p0[0]) / 6, p1[1] + (q[1] - p0[1]) / 6], c2 = [q[0] - (p3[0] - p1[0]) / 6, q[1] - (p3[1] - p1[1]) / 6]; d += ' C' + c1.map(n => n.toFixed(1)).join(',') + ' ' + c2.map(n => n.toFixed(1)).join(',') + ' ' + q[0].toFixed(1) + ',' + q[1].toFixed(1); } return d; };
+      const K = [];
+      for (let v = lo, i = 0; v <= hi + 1e-9; v += stp, i++) {
+        K.push(el('line', { key: 'g' + i, x1: PL, x2: Wd - PR, y1: Y(v), y2: Y(v), stroke: 'rgba(255,255,255,0.07)', strokeDasharray: '4 4' }));
+        K.push(el('text', { key: 't' + i, x: PL - 8, y: Y(v) + 4, fill: '#5b6880', fontSize: 11, fontFamily: 'IBM Plex Mono, monospace', textAnchor: 'end' }, v.toFixed(2)));
+      }
+      K.push(el('line', { key: 'ax', x1: PL, x2: Wd - PR, y1: BB, y2: BB, stroke: 'rgba(255,255,255,0.12)' }));
+      let prevDay = '';
+      [0, 2, 4, 6, 8].forEach((j, i) => {
+        const d = TS[j], anc = i === 0 ? 'start' : i === 4 ? 'end' : 'middle', day = dm(d);
+        K.push(el('text', { key: 'xh' + i, x: X(j), y: BB + 18, fill: '#8b96b5', fontSize: 11, fontFamily: 'IBM Plex Mono, monospace', textAnchor: anc }, hm(d)));
+        if (day !== prevDay) K.push(el('text', { key: 'xd' + i, x: X(j), y: BB + 33, fill: '#5b6880', fontSize: 10.5, fontFamily: 'Hanken Grotesk, sans-serif', textAnchor: anc }, day));
+        prevDay = day;
+      });
+      ghosts.forEach((g, gi) => K.push(el('path', { key: 'gh' + gi, d: path(g), fill: 'none', stroke: col, strokeWidth: 1.2, opacity: 0.25 })));
+      const d = path(ser);
+      K.push(el('path', { key: 'ar', d: d + ' L' + X(N - 1) + ',' + BB + ' L' + X(0) + ',' + BB + ' Z', fill: col, opacity: 0.07 }));
+      K.push(el('path', { key: 'ln', d, fill: 'none', stroke: col, strokeWidth: 2, strokeLinecap: 'round' }));
+      K.push(el('circle', { key: 'e', cx: X(N - 1), cy: Y(ser[N - 1]), r: 3.5, fill: col, stroke: '#0e1019', strokeWidth: 2 }));
+      return el('svg', { viewBox: '0 0 ' + Wd + ' ' + Ht, width: '100%', style: { display: 'block', height: 'auto' } }, K);
+    };
+    const stamp = d => dm(d) + ', ' + hm(d);
+    const mvSplit = [['a', AN.aName, A], ['b', AN.bName, B]].map(([x, name, col]) => { const ser = f[x + 'S'], chg = (ser[N - 1] - ser[0]) / ser[0] * 100;
+      let hiI = 0, loI = 0; ser.forEach((v, i) => { if (v > ser[hiI]) hiI = i; if (v < ser[loI]) loI = i; });
+      return { name, color: col, open: ser[0].toFixed(2), now: ser[N - 1].toFixed(2), chg: (chg >= 0 ? '+' : '') + chg.toFixed(1) + '%', chgColor: chg >= 0 ? UP : DN,
+        opV: ser[0].toFixed(2), opT: stamp(TS[0]), hiV: ser[hiI].toFixed(2), hiT: stamp(TS[hiI]), loV: ser[loI].toFixed(2), loT: stamp(TS[loI]),
+        chart: playerChart(ser, col, []) }; });
+    const mvChart4 = oddsChart(mkSeries(), { axisRight: true, faint: true, h: 240 }).svg();
+    const mvChart5 = oddsChart(mkSeries(), { step: true, vgrid: true, axisRight: true }).svg();
+    const mvOptsL = [['M0', 'Current'], ['M1', 'Clean card · end labels'], ['M2', 'Hero prices · soft area'], ['M3', 'One chart per player'], ['M4', 'No card · axis right'], ['M5', 'Inset frame · step lines']], mvCur = S.maMvV || 'M1';
+    const priceModes = [[false, 'Market', 'Prices as quoted, bookmaker margin included'], [true, 'No-vig', 'Margin stripped: prices and probabilities sum to 100%']].map(([v, l, tip]) => { const on = novig === v; return { label: l, tip, w: on ? 700 : 600, c: on ? '#e7e9ee' : '#5b6880', bg: on ? 'rgba(91,155,255,0.16)' : 'transparent', bd: on ? 'rgba(91,155,255,0.22)' : 'transparent', onClick: () => this.setState({ maOddsNovig: v }) }; });
+    const favName = pNow >= 0.5 ? AN.aName : AN.bName;
+    return {
+      ...(() => {
+        const nSel = books.filter(b => b.checked).length;
+        return {
+          booksLabel: nSel === 0 ? 'Pinnacle' : nSel === 1 ? books.find(b => b.checked).name : nSel + ' of ' + NB,
+          bookMenuOpen: !!S.maOddsBookMenu, toggleBookMenu: () => this.setState(st => ({ maOddsBookMenu: !st.maOddsBookMenu })),
+          onAllBooks: () => this.setState({ maOddsBooks: books.reduce((o, b) => { o[b.name] = true; return o; }, {}) }),
+          onResetBooks: () => this.setState({ maOddsBooks: { Pinnacle: true } }) };
+      })(),
+      ...(() => {
+        const MK = [['Match Winner', 'Winner'], ['1st set winner', 'Winner'], ['Game handicap', 'Games'], ['Total games', 'Games'], ['Set betting', 'Sets'], ['Set handicap', 'Sets'], ['Tiebreak in match', 'Sets']];
+        const LINES = { 'Game handicap': ['-4.5', '-3.5', '-2.5', '-1.5'], 'Total games': ['20.5', '21.5', '22.5', '23.5'], 'Set handicap': ['-1.5', '+1.5'] };
+        const cur = S.maMarket || 'Match Winner', curFam = (MK.find(m => m[0] === cur) || MK[0])[1], ln = S.maMktLine || {};
+        const qo = [['K1', 'Drop-down · grouped list'], ['K2', 'Underline tabs'], ['K3', 'Square chips'], ['K4', 'Family switch + lines'], ['K5', 'Market tiles']], qc = S.maMktV || 'K1';
+        const item = ([name, fam]) => { const on = name === cur; return { name, fam: fam.toUpperCase(), tick: on ? '\u2713' : '', w: on ? 700 : 500, c: on ? '#e7e9ee' : '#8b96b5', bg: on ? 'rgba(91,155,255,0.1)' : 'transparent', ul: on ? '#5b9bff' : 'transparent', pbg: on ? 'rgba(91,155,255,0.14)' : 'transparent', pbd: on ? 'rgba(91,155,255,0.45)' : 'rgba(255,255,255,0.1)', cbg: on ? 'rgba(91,155,255,0.08)' : '#0e1019', onClick: () => this.setState({ maMarket: name, maMktOpen: false }) }; };
+        const lines = LINES[cur] || [], curLine = ln[cur] || lines[Math.floor(lines.length / 2)];
+        return { q1: qc === 'K1', q2: qc === 'K2', q3: qc === 'K3', q4: qc === 'K4', q5: qc === 'K5', mkOptName: qo.find(o => o[0] === qc)[1],
+          mkOpts: qo.map(([id]) => { const on = id === qc; return { id, c: on ? '#e7e9ee' : '#5b6880', bg: on ? 'rgba(91,155,255,0.16)' : 'transparent', bd: on ? 'rgba(91,155,255,0.45)' : 'rgba(255,255,255,0.09)', onClick: () => this.setState({ maMktV: id }) }; }),
+          mktName: cur + (curLine ? ' ' + curLine : ''), mktOpen: !!S.maMktOpen, mktToggle: () => this.setState(st => ({ maMktOpen: !st.maMktOpen })),
+          mkts: MK.map(item), mktGroups: ['Winner', 'Games', 'Sets'].map(g => ({ head: g.toUpperCase(), items: MK.filter(m => m[1] === g).map(item) })),
+          mktFams: ['Winner', 'Games', 'Sets'].map(g => { const on = g === curFam; return { name: g, w: on ? 700 : 500, c: on ? '#e7e9ee' : '#8b96b5', bg: on ? 'rgba(91,155,255,0.16)' : 'transparent', onClick: () => this.setState({ maMarket: MK.find(m => m[1] === g)[0] }) }; }),
+          famItems: MK.filter(m => m[1] === curFam).map(item), hasLines: lines.length > 0,
+          mktLines: lines.map(v => { const on = v === curLine; return { v, w: on ? 700 : 500, c: on ? '#e7e9ee' : '#8b96b5', bg: on ? 'rgba(91,155,255,0.14)' : 'transparent', bd: on ? 'rgba(91,155,255,0.45)' : 'rgba(255,255,255,0.1)', onClick: () => this.setState(st => ({ maMktLine: Object.assign({}, st.maMktLine, { [cur]: v }) })) }; }) };
+      })(),
+      mvOpen: !!mvB, mvClose: () => this.setState({ maMvBook: null }), mvStop: e => e.stopPropagation(),
+      mvBookName: mvB ? mvB.name : '', mvBookCls: mvB ? mvB.cls : '', mvBookMargin: mvB ? mvB.marginLbl : '',
+      mvBookTabs: books.map(b => { const on = mvB && b.name === mvB.name; return { name: b.name, w: on ? 700 : 500, c: on ? '#e7e9ee' : '#8b96b5', bg: on ? 'rgba(91,155,255,0.14)' : 'transparent', bd: on ? 'rgba(91,155,255,0.45)' : 'rgba(255,255,255,0.1)', onClick: () => this.setState({ maMvBook: b.name }) }; }),
+      mvChart1, mvChart2, mvSplit, mvChart4, mvChart5, m0: mvCur === 'M0', m1: mvCur === 'M1', m2: mvCur === 'M2', m3: mvCur === 'M3', m4: mvCur === 'M4', m5: mvCur === 'M5',
+      mvName: mvOptsL.find(o => o[0] === mvCur)[1], mvBook: 'DECIMAL ODDS \u00b7 ' + use.map(b => b.name.toUpperCase()).join(' \u00b7 '),
+      mvSub: 'Decimal odds · ' + (novig ? 'no-vig' : 'as quoted') + ' · last 72 hours',
+      mvOpts: mvOptsL.map(([id]) => { const on = id === mvCur; return { id, c: on ? '#e7e9ee' : '#5b6880', bg: on ? 'rgba(91,155,255,0.16)' : 'transparent', bd: on ? 'rgba(91,155,255,0.45)' : 'rgba(255,255,255,0.09)', onClick: () => this.setState({ maMvV: id }) }; }),
+      books, groups, chart, chips, model, fairValue, priceModes, novig, aName: AN.aName, bName: AN.bName, aColor: A, bColor: B, steam, hasSteam: !!steam,
+      onSteamClick: steam ? (() => this.setState({ maOddsBooks: steam.list.reduce((o, n) => { o[n] = true; return o; }, {}) })) : null,
+      fvSub: 'Stennisfy Model fair price against the sharpest market price. Positive edge means the market pays more than the model thinks it should.',
+      tableSub: (novig ? 'No-vig prices, margin stripped. ' : 'Prices as quoted. ') + 'Each book from opening to now, with the net change. Click a book for its odds movement.',
+      subline: 'Implied probability on one scale \u00b7 ' + (novig ? 'no-vig' : 'margin included') + ' \u00b7 ' + favName + ' favoured \u00b7 ' + use.length + ' of ' + NB + ' books shown',
+      footNote: 'Sample data: prices, model values and movements are placeholders until the live feed is connected. Match Winner only. Lines step until a book re-posts.',
+    };
+  }
+
+  renderVals() {
+    const AN = { seed: 'm0' + 'ATP Washington' + 'J. Sinner', aName: 'J. Sinner', bName: 'C. Alcaraz', aOdds: '1.54', bOdds: '2.62' };
+    return { analysis: { odds: this.oddsFor(AN, this.state) } };
+  }
+}
+</script>
+</body>
+</html>
