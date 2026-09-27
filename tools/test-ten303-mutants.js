@@ -40,6 +40,8 @@ const MUTANTS = [
   ['follow-up 2: the modal surface back to the 12a pop-up', '.modal-analysis{ background:#0A0D14;', '.modal-analysis{ background:var(--popup);'],
   ['review: stat boxes read raw prices', '    aOddsDispSeries(s).forEach(p => { if (!hi || p[1] > hi[1]) hi = p;', '    s.forEach(p => { if (!hi || p[1] > hi[1]) hi = p;'],
   ['review: the Odds tab inherits the 12a text', '  #aSectionOdds{ color:#E7E9EE; }', '  #aSectionOdds{ color:#EBF1F2; }'],
+  ['deployed measure: the tab inherits the modal line-height', '  #aSectionOdds{ font-size:16px; line-height:normal; }', '  #aSectionOdds{ font-size:16px; }'],
+  ['deployed measure: the tab inherits the modal font-size', '  #aSectionOdds{ font-size:16px; line-height:normal; }', '  #aSectionOdds{ line-height:normal; }'],
   ['§6.5 the shipped shape is a curve', "const AODDS_LINE_SHAPE = 'step';", "const AODDS_LINE_SHAPE = 'monotone';"],
 ];
 let survived = 0;

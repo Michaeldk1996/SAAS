@@ -64,7 +64,8 @@ test('2: the rendered nav-selected background is the design #171D2F; the modal s
   // review fold-in: text the Odds tab does not colour itself inherits the design #E7E9EE (not the 12a #EBF1F2)
   assert.equal(norm(applied(HTML, '#aSectionOdds', 'color')), '#E7E9EE');
   // and the extract's type base, so the tab's boxes are the design's height (the modal inherits 14px / 1.5)
-  assert.equal(applied(HTML, '#aSectionOdds, #aoddsTip', 'line-height') || applied(HTML, '#aSectionOdds', 'line-height'), 'normal');
+  assert.equal(applied(HTML, '#aSectionOdds', 'line-height'), 'normal');
+  assert.equal(applied(HTML, '#aSectionOdds', 'font-size'), '16px');
   assert.equal(norm(applied(HTML, '.modal-analysis .ahead2 .close', 'color')), '#5B6880');
   assert.equal(norm(applied(HTML, '.modal-analysis .asidenav-download', 'border-top-color')), 'RGBA(255,255,255,0.07)');
   // mutant: the 12a rule re-appended after the design block wins the cascade again
