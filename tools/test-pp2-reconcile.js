@@ -1047,7 +1047,7 @@ check('flat-stake yield recomputes from the shard rows, over the TEN-310 basis',
       `${k}: basis rows give ${y.toFixed(2)}% but the headline says ${s.headline.yield}%`);
     checked++;
   }
-  console.log(`        ${checked} shards: headline n and yield both re-derived from the Pinnacle rows`);
+  console.log(`        ${checked} shards: headline n and yield both re-derived from the rows on the basis`);
 });
 
 mustFail('yield check would catch a doctored row', () => {

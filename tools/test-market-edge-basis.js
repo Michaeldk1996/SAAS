@@ -17,6 +17,7 @@
  */
 const fs = require('fs');
 const path = require('path');
+const core = require('../market-edge-core.js');
 
 const DIR = path.join(__dirname, '..', 'market-edge');
 const INDEX = path.join(__dirname, '..', 'market-edge-index.json');
@@ -47,13 +48,18 @@ function checkShard(name, s) {
     bad.push(`${name}: curve has ${s.curve.length} points against headline n=${s.headline.n}`);
   }
   for (const m of (s.matches || [])) {
-    if (m.inBasis !== true) { bad.push(`${name}: a priced row (book=${m.book}) is out of the basis`); break; }
+    if (m.inBasis !== (m.band != null)) { bad.push(`${name}: row ${m.date} (book=${m.book}, band ${m.band}) inBasis=${m.inBasis} — every banded priced row is on the basis, nothing else`); break; }
+    if (!m.inBasis) continue;
     // role and band follow the price alone (the tab's rule), never the opponent's price. `price` on the
     // row is rounded to 2dp and the band stamp comes from the unrounded price, so the role is checked
     // against the stamp, and the stamp against the rounded price everywhere but at the 2.00 edge.
     const expectRole = m.band ? (m.band[0] === 'f' ? 'fav' : 'dog') : null;
     if (m.band == null || m.role !== expectRole) { bad.push(`${name}: row ${m.date} price ${m.price} role ${m.role} band ${m.band} — role must follow the band (price < 2.00 = favourite)`); break; }
     if (Math.abs(m.price - 2.0) > 0.006 && (m.price < 2.0) !== (m.role === 'fav')) { bad.push(`${name}: row ${m.date} price ${m.price} is ${m.role} — favourite is price < 2.00`); break; }
+    // the stamp is the core's band for the price (rows at a band edge may differ only by the 2dp rounding)
+    const ids = ['f101_120', 'f121_140', 'f141_164', 'f165_199', 'd200_249', 'd250_349', 'd350_599', 'd600_up'];
+    const EDGES = [1.21, 1.41, 1.65, 2.0, 2.5, 3.5, 6.0];
+    if (m.band !== ids[core.bandOf(m.price)] && !EDGES.some((e) => Math.abs(m.price - e) < 0.006)) { bad.push(`${name}: row ${m.date} price ${m.price} stamped ${m.band}, the core says ${ids[core.bandOf(m.price)]}`); break; }
   }
   // reconciliation: favourite + underdog = headline; no level role any more; bands cover the headline
   if (s.roles && s.headline) {
@@ -128,6 +134,9 @@ function controls() {
     ['units dropped from a priced summary', (s) => { s.headline.units = null; }],
     ['the cumulative curve drawn over a wider population', (s) => { s.curve.push({ d: '2030-01-01', c: 0 }); }],
     ['a priced row left out of the basis', (s) => { s.matches[0].inBasis = false; }],
+    ['a row stamped into the neighbouring band', (s) => {
+      const m = s.matches.find((x) => x.band === 'f121_140' && x.price > 1.25 && x.price < 1.35); m.band = 'f101_120'; m.role = 'fav';
+    }],
     ['a row given the opponent-relative role (a 2.10 favourite)', (s) => {
       const m = s.matches.find((x) => x.price >= 2.1); m.role = 'fav';
     }],
@@ -157,7 +166,7 @@ function controls() {
 console.log('negative controls');
 const fired = controls();
 console.log(`  ${fired} control(s) fired`);
-if (fired < 11) fail(`only ${fired} of 11 controls fired`);
+if (fired < 12) fail(`only ${fired} of 12 controls fired`);
 
 // ── build stamp (TEN-263 follow-up, founder 2026-09-24) ─────────────────────
 // 1. The REAL builder, run in a temp root over the committed archive, writes builtAt

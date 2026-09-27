@@ -163,7 +163,9 @@ function pickBook(row) {
  * book per row (`pickBook`). Every priced row is on the basis; `inBasis` stays on the rows for the
  * renderer and is true for each of them.
  */
-const isYieldBasis = (side) => side.book === 'pinnacle' || side.book === 'bet365-archive';
+// The 1.01 floor (CLAUDE.md odds invariant) is the core's too: a price below it has no band, so it is
+// on no basis — never in the headline while missing from the bands.
+const isYieldBasis = (side) => (side.book === 'pinnacle' || side.book === 'bet365-archive') && core.bandOf(side.price) >= 0;
 
 function emptyAgg() {
   // profitCents, not profit. Summing `price - 1` as a float reorders with the row

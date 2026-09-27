@@ -892,7 +892,7 @@ test('market-edge per run: a player already published but off the board roster i
   const { execFileSync } = require('node:child_process');
   const root = mkdtempSync(join(tmpdir(), 'ten263me-'));
   try {
-    for (const f of ['build-market-edge.js', 'build-odds-performance.js']) writeFileSync(join(root, f), readFileSync(join(HERE, f)));
+    for (const f of ['build-market-edge.js', 'build-odds-performance.js', 'market-edge-core.js']) writeFileSync(join(root, f), readFileSync(join(HERE, f)));
     mkdirSync(join(root, 'odds-archive')); mkdirSync(join(root, 'market-edge'));
     const H = 'date,tournament,series,court,surface,round,bestof,winner,loser,wrank,lrank,comment,b365w,b365l,psw,psl,maxw,maxl,avgw,avgl,avgsrc';
     writeFileSync(join(root, 'odds-archive', '2025.csv'), [H,

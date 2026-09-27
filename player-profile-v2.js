@@ -5057,12 +5057,12 @@
   // §5.8 · DERIVED LINES  (Market edge -> "Derived lines" tab)
   //
   // Founder brief 2026-09-18: "Everything in it is arithmetic on a scoreline."
-  // Nothing here is a settled market and nothing here is a yield, so R1's
-  // Pinnacle-closing rule does not bind the hit rates — it binds only the
-  // favourite/underdog SPLIT, which needs a price to know which side was
-  // shorter, and that split is drawn from the same closing price the role cards
-  // use. A row is a coverage rate: how often his own scoreline landed on the
-  // right side of a line, never how a bet settled.
+  // Nothing here is a settled market and nothing here is a yield. Only the
+  // favourite/underdog SPLIT needs a price: since TEN-310 (2026-09-27) the split is
+  // the Market edge rule — favourite = his closing price under 2.00 — on the price
+  // the career spine carries (its Pinnacle closing join). A row is a coverage rate:
+  // how often his own scoreline landed on the right side of a line, never how a
+  // bet settled.
   //
   // Ruling: RET and abandoned matches are EXCLUDED and counted in the note. A
   // games handicap off a match that stopped at 3-3 is not a handicap result.
@@ -5172,8 +5172,10 @@
       var need = Math.max(sc.w, sc.l);
       if (need !== def.setsToWin) continue;
       var g = lineGames(r);
-      var role = (r.price != null && r.oppPrice != null)
-        ? (r.price < r.oppPrice ? 'fav' : (r.price > r.oppPrice ? 'dog' : null)) : null;
+      // TEN-310: favourite = price under 2.00 (the Market edge rule), not "the shorter side".
+      var MEC = window.MarketEdgeCore;
+      var role = (r.price != null && r.price >= 1.01)
+        ? ((MEC ? MEC.isFavPrice(r.price) : r.price < 2) ? 'fav' : 'dog') : null;
       pool.push({ sc: sc, g: g, role: role });
     }
     var withGames = pool.filter(function (m) { return !!m.g; }).length;
@@ -5402,8 +5404,8 @@
     var side = state.marketSide === 'fade' ? 'fade' : 'back';
     var surf = state.marketSurf || 'all';
     var tourY = mk.tour && mk.tour.all ? mk.tour.all.yield : null;
-    // Only rows on the R1 basis may be summed. The shard already marks them, so
-    // this never re-derives the rule — it reads the flag the builder wrote.
+    // Only rows on the basis may be summed (TEN-310: every banded priced row). The shard marks
+    // them, so this never re-derives the rule — it reads the flag the builder wrote.
     var basisRows = (mk.matches || []).filter(function (m) { return m.inBasis; });
 
     var cards = [
@@ -5579,10 +5581,10 @@
       var txt;
       if (sel === 'favourite') {
         txt = 'Bands are set on his own closing price, across the ' + nFav + ' match' +
-          (nFav === 1 ? '' : 'es') + ' the market made ' + him + ' favourite.';
+          (nFav === 1 ? '' : 'es') + ' that closed ' + him + ' under 2.00 (favourite).';
       } else if (sel === 'underdog') {
         txt = 'Bands are set on his own closing price, across the ' + nDog + ' match' +
-          (nDog === 1 ? '' : 'es') + ' the market made ' + him + ' underdog.';
+          (nDog === 1 ? '' : 'es') + ' that closed ' + him + ' at 2.00 or longer (underdog).';
       } else {
         txt = 'Bands are set on his own closing price. The ' + numWord(nBands) + ' bands cover ' +
           (lvl ? 'the ' + banded : 'all ' + banded) + ' banded match' + (banded === 1 ? '' : 'es') +
