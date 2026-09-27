@@ -16,7 +16,9 @@
 //     before that start (a later pre-start fetch replaces it; none after the start ever does).
 //   · days[<venue-local date>]: that day's hourly rows + daily code/hi/lo, from the last
 //     fetch made before the day's playing window opened (ARCHIVE_WINDOW_FROM_HOUR, venue time).
-// Pruned to ARCHIVE_KEEP_DAYS back. Carried from the live copy like the forecast files.
+// Pruned to ARCHIVE_KEEP_DAYS back. DURABLE (founder 2026-09-27): each run merges the COMMITTED copy (this
+// checkout) with the live one, newer entry wins, and pipeline.yml commits weather/archive/ back — so a failed
+// live read or a crashed run no longer loses history.
 //
 // Source: Open-Meteo's free endpoint (founder ruling TEN-304: licence accepted,
 // no key). One call per OUTDOOR venue, never per match. Hourly for 2 past + 8
@@ -177,13 +179,14 @@ async function getJson(url, fetchImpl) {
 function defaultStartMs(m) {
   const t = m && m.startTs != null ? Date.parse(m.startTs) : NaN;
   if (Number.isFinite(t)) return t;
-  const iso = require('./bsp-pipeline.js').weatherStartIso(m && m.date, m && m.time);
-  return iso ? Date.parse(iso) : NaN;
+  const ms = require('./berlin-time.js').berlinWallMs(m && m.date, m && m.time);
+  // the api-tennis 02:00Z placeholder is no time — never archive a forecast for a fake hour (the page's apiStartMs)
+  return Number.isFinite(ms) && ((ms % 86400000) + 86400000) % 86400000 !== 7200000 ? ms : NaN;
 }
 
 // The live archive: 404 = none published yet (start empty); any other failure is retried with backoff,
 // then reported — the build starts that venue's archive from this run rather than blocking the run.
-// ⚠️ Durability limit: the live site is the only copy (see .claude/rules/modal-weather.md).
+// The committed copy (readCommittedArchive) is the durable one; this live read is the second source.
 async function readLiveArchive(url, fetchImpl, log, retryDelayMs = 1500) {
   for (let i = 0; i < 3; i++) {
     try { const a = await getJson(url + '?t=' + Date.now(), fetchImpl); return (a && a.v === 1 && a.days && a.matches) ? a : null; }
@@ -194,6 +197,23 @@ async function readLiveArchive(url, fetchImpl, log, retryDelayMs = 1500) {
     }
   }
   return null;
+}
+
+// The committed archive in this checkout (the durable copy — pipeline.yml commits it back). Missing or
+// unreadable → null (never throws). Read BEFORE this run writes the same path.
+function readCommittedArchive(file) {
+  try { const a = JSON.parse(fs.readFileSync(file, 'utf8')); return (a && a.v === 1 && a.days && a.matches) ? a : null; } catch (e) { return null; }
+}
+// Two copies of one venue's archive (committed + live) → one: per day / per match the entry with the
+// later fetchedAt wins (both copies only ever hold pre-start / pre-window entries). Pure — tested directly.
+function mergeArchives(a, b) {
+  if (!a) return b || null;
+  if (!b) return a;
+  const pick = (x, y) => (!x ? y : !y ? x : (Date.parse(y.fetchedAt) > Date.parse(x.fetchedAt) ? y : x));
+  const out = Object.assign({}, a, { tz: a.tz || b.tz, venue: a.venue || b.venue, days: {}, matches: {} });
+  for (const k of new Set([...Object.keys(a.days), ...Object.keys(b.days)])) out.days[k] = pick(a.days[k], b.days[k]);
+  for (const k of new Set([...Object.keys(a.matches), ...Object.keys(b.matches)])) out.matches[k] = pick(a.matches[k], b.matches[k]);
+  return out;
 }
 
 async function build({ outDir = '.', matchesPath = 'matches.json', fetchImpl = fetch, now = () => new Date(),
@@ -227,7 +247,8 @@ async function build({ outDir = '.', matchesPath = 'matches.json', fetchImpl = f
     // archive: fold this run's file (fetched or carried) in; always written so it is never dropped
     const venueMatches = matches.filter(m => m && tours[m.tour] && tours[m.tour].key === v.key)
       .map(m => ({ key: matchKeyOf(m), startMs: startMsOf(m) }));
-    const arch = updateArchive(await readLiveArchive(SITE + v.archive, fetchImpl, log, retryDelayMs), file, venueMatches, now().getTime());
+    const prevArch = mergeArchives(readCommittedArchive(path.join(outDir, v.archive)), await readLiveArchive(SITE + v.archive, fetchImpl, log, retryDelayMs));
+    const arch = updateArchive(prevArch, file, venueMatches, now().getTime());
     fs.writeFileSync(path.join(outDir, v.archive), JSON.stringify(arch));
     status[v.key] += ` · archive ${Object.keys(arch.days).length} days / ${Object.keys(arch.matches).length} matches`;
   }
@@ -237,10 +258,14 @@ async function build({ outDir = '.', matchesPath = 'matches.json', fetchImpl = f
   for (let i = 0; i < off.length; i += 8) {
     await Promise.all(off.slice(i, i + 8).map(async k => {
       const rel = `weather/archive/${slugOf(k)}.json`;
-      const prev = await readLiveArchive(SITE + rel, fetchImpl, log, retryDelayMs);
+      const local = path.join(outDir, rel);
+      const prev = mergeArchives(readCommittedArchive(local), await readLiveArchive(SITE + rel, fetchImpl, log, retryDelayMs));
       if (!prev) return;
       const arch = updateArchive(prev, null, [], now().getTime());
-      if (!Object.keys(arch.days).length && !Object.keys(arch.matches).length) return;   // fully pruned → let it go
+      if (!Object.keys(arch.days).length && !Object.keys(arch.matches).length) {   // fully pruned → let it go (and un-commit it)
+        try { fs.unlinkSync(local); } catch (e) { /* not in this checkout */ }
+        return;
+      }
       fs.writeFileSync(path.join(outDir, rel), JSON.stringify(arch));
       status[k] = `off the board · archive carried: ${Object.keys(arch.days).length} days / ${Object.keys(arch.matches).length} matches`;
     }));
@@ -252,7 +277,7 @@ async function build({ outDir = '.', matchesPath = 'matches.json', fetchImpl = f
   return { index, status };
 }
 
-module.exports = { planVenues, toFile, forecastUrl, slugOf, build, updateArchive, localParts, matchKeyOf, INDOOR_NO_VENUE, HOURLY, DAILY, REFRESH_HOURS,
+module.exports = { defaultStartMs, planVenues, toFile, forecastUrl, slugOf, build, updateArchive, mergeArchives, localParts, matchKeyOf, INDOOR_NO_VENUE, HOURLY, DAILY, REFRESH_HOURS,
   ARCHIVE_WINDOW_FROM_HOUR, ARCHIVE_KEEP_DAYS };
 
 if (require.main === module) {

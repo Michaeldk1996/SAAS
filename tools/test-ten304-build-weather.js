@@ -156,8 +156,9 @@ const tmp = () => { const d = fs.mkdtempSync(path.join(os.tmpdir(), 'ten304-bw-'
     const a = JSON.parse(fs.readFileSync(path.join(d, 'weather/archive/chengdu.json'), 'utf8'));
     assert.ok(a.matches['999'], 'the live archive is carried');                               // mutation: ignore the live copy
     assert.strictEqual(a.matches['12166157'].fetchedAt, '2026-09-27T04:00:00.000Z', 'this run\'s pre-start fetch archived');
+    fs.rmSync(path.join(d, 'weather/archive/chengdu.json'));                                  // no committed copy either
     await run(null);
-    assert.ok(!JSON.parse(fs.readFileSync(path.join(d, 'weather/archive/chengdu.json'), 'utf8')).matches['999'], '404 → starts empty');
+    assert.ok(!JSON.parse(fs.readFileSync(path.join(d, 'weather/archive/chengdu.json'), 'utf8')).matches['999'], '404 + no committed copy → starts empty');
   });
   await check('archive: a venue OFF the board keeps its published archive (carried + pruned), never dropped', async () => {
     const d = tmp();                                                                          // board = Chengdu only
@@ -190,6 +191,42 @@ const tmp = () => { const d = fs.mkdtempSync(path.join(os.tmpdir(), 'ten304-bw-'
     a = B.updateArchive(a, f, [{ key: '5', startMs: START + 2 * 3600e3 }], NOWA);             // moved to 18:00 local, same carried file
     assert.deepStrictEqual(a.matches['5'].hourly.time, ['2026-09-27T10:00:00Z']);             // mutation: same-fetchedAt never replaces
     assert.strictEqual(a.matches['5'].start, '2026-09-27T10:00:00.000Z');
+  });
+  // ── durable archive: committed via the pipeline's commit-back (founder 2026-09-27) ─────────────────
+  const E1 = (at, start) => ({ fetchedAt: at, start, hourly: { time: [start.replace('.000Z', 'Z')], temp: [1] } });
+  await check('archive: committed + live copies merge; per day / match the later fetch wins', () => {
+    const a = { v: 1, venue: 'Chengdu', tz: 'Asia/Shanghai', days: { '2026-09-26': { fetchedAt: '2026-09-26T01:00:00.000Z' } },
+      matches: { '1': E1('2026-09-26T01:00:00.000Z', '2026-09-26T08:00:00.000Z'), '2': E1('2026-09-26T05:00:00.000Z', '2026-09-26T09:00:00.000Z') } };
+    const b = { v: 1, venue: 'Chengdu', tz: 'Asia/Shanghai', days: { '2026-09-27': { fetchedAt: '2026-09-27T01:00:00.000Z' } },
+      matches: { '2': E1('2026-09-26T03:00:00.000Z', '2026-09-26T09:00:00.000Z'), '3': E1('2026-09-26T06:00:00.000Z', '2026-09-26T10:00:00.000Z') } };
+    const m = B.mergeArchives(a, b);
+    assert.deepStrictEqual(Object.keys(m.days).sort(), ['2026-09-26', '2026-09-27']);
+    assert.deepStrictEqual(Object.keys(m.matches).sort(), ['1', '2', '3']);
+    assert.strictEqual(m.matches['2'].fetchedAt, '2026-09-26T05:00:00.000Z');                // mutation: the older copy wins
+    assert.strictEqual(B.mergeArchives(null, b), b); assert.strictEqual(B.mergeArchives(a, null), a);
+  });
+  await check('archive: the live read fails 3x but the COMMITTED copy keeps the history (the durable fix)', async () => {
+    const d = tmp();
+    fs.writeFileSync(path.join(d, 'm.json'), JSON.stringify([{ id: 'upcoming-1', tour: 'ATP Chengdu', startTs: '2026-09-27T08:00:00Z' }]));
+    fs.mkdirSync(path.join(d, 'weather/archive'), { recursive: true });
+    fs.writeFileSync(path.join(d, 'weather/archive/chengdu.json'), JSON.stringify({ v: 1, venue: 'Chengdu', tz: 'Asia/Shanghai', days: {},
+      matches: { '999': E1('2026-09-26T01:00:00.000Z', '2026-09-26T08:00:00.000Z') } }));
+    await B.build({ outDir: d, matchesPath: path.join(d, 'm.json'), hints: HINTS, coords: COORDS, log: () => {}, retryDelayMs: 0, now: () => new Date('2026-09-27T04:00:00Z'),
+      fetchImpl: async u => /open-meteo/.test(u) ? ok(omResponse())() : { ok: false, status: 503, json: async () => null } });
+    const a = JSON.parse(fs.readFileSync(path.join(d, 'weather/archive/chengdu.json'), 'utf8'));
+    assert.ok(a.matches['999'], 'committed history kept');                                   // mutation: ignore the committed copy
+    assert.ok(a.matches['1'], "and this run's pre-start fetch added");
+  });
+  await check('archive: an off-board venue whose archive is fully pruned is deleted from the checkout (commit-back commits the deletion)', async () => {
+    const d = tmp();
+    const H2 = Object.assign({}, HINTS, { Hangzhou: { city: 'Hangzhou', country: 'CN', indoor: false } });
+    const C2 = Object.assign({}, COORDS, { Hangzhou: { lat: 30.29, lon: 120.16, tz: 'Asia/Shanghai' } });
+    fs.mkdirSync(path.join(d, 'weather/archive'), { recursive: true });
+    const f = path.join(d, 'weather/archive/hangzhou.json');
+    fs.writeFileSync(f, JSON.stringify({ v: 1, venue: 'Hangzhou', tz: 'Asia/Shanghai', days: {}, matches: { '7': E1('2026-09-01T01:00:00.000Z', '2026-09-01T08:00:00.000Z') } }));
+    await B.build({ outDir: d, matchesPath: path.join(d, 'm.json'), hints: H2, coords: C2, log: () => {}, retryDelayMs: 0, now: () => new Date('2026-09-27T04:00:00Z'),
+      fetchImpl: async u => /open-meteo/.test(u) ? ok(omResponse())() : { ok: false, status: 404, json: async () => null } });
+    assert.ok(!fs.existsSync(f));
   });
   console.log(`\nRESULT: ${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);

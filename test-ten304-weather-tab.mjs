@@ -415,3 +415,24 @@ test('the 12a engine leaves WX_C alone (design-verbatim zone); without the zone 
     assert.notEqual(wx(out(M.recolourFile('bsp-consult-dashboard.html', HTML))), wx(HTML), 'control: without the zone the engine re-tones WX_C');
   } finally { rmSync(d, { recursive: true, force: true }); }
 });
+
+// ── the api-tennis 02:00Z placeholder (founder ruling 27 Sep; 33 of 34 cards first published at it were revised) ──
+// Mutation: apiStartMs returns cardStartMs unchanged (the placeholder read as a real 02:00Z start).
+test('api-tennis 02:00Z placeholder = no time: "MATCH · TBC", "time TBC", no header time — CEST and CET; a real 02:05Z is a time', () => {
+  const E = Object.assign({}, ENTRY, { tz: 'Asia/Shanghai' });
+  const R = build({ viewerTz: 'UTC' });
+  const view = m => { const h = R.buildWeatherSection(m, E, null, NOW); return { badge: text(elements(h, 'wx-badge')[0]), head: text(elements(h, 'wx-athead')[0]), header: R.aContextLine(m, 'Quarter-finals') }; };
+  const cest = view(Object.assign({}, M, { time: '04:00' }));                 // 04:00 Berlin CEST = 02:00Z
+  assert.equal(cest.badge, 'MATCH · TBC'); assert.equal(cest.head, 'Sun Sep 27 · time TBC'); assert.equal(cest.header, 'ATP Chengdu · Quarter-finals');
+  const cet = view(Object.assign({}, M, { date: '2026-10-26', time: '03:00' })); // 03:00 Berlin CET = 02:00Z (after 25 Oct)
+  assert.equal(cet.badge, 'MATCH · TBC');
+  const real = view(Object.assign({}, M, { time: '04:05' }));                 // 02:05Z: a real time, 10:05 Chengdu
+  assert.equal(real.badge, 'MATCH · 10:05'); assert.match(real.header, / · 02:05$/);
+  const cet4 = view(Object.assign({}, M, { date: '2026-10-26', time: '04:00' })); // 04:00 CET = 03:00Z: real, 11:00 Chengdu
+  assert.equal(cet4.badge, 'MATCH · 11:00');
+  const ts = view(Object.assign({}, M, { time: '04:00', startTs: '2026-09-27T02:00:00Z' }));   // an explicit startTs is trusted
+  assert.equal(ts.badge, 'MATCH · 10:00');
+  // the build never archives a forecast for the placeholder hour
+  assert.ok(Number.isNaN(BW.defaultStartMs({ date: '2026-09-27', time: '04:00' })));
+  assert.equal(BW.defaultStartMs({ date: '2026-09-27', time: '04:05' }), Date.parse('2026-09-27T02:05:00Z'));
+});

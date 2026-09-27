@@ -1291,7 +1291,7 @@ jobs:
           fi
           git config user.name "bsp-admin-log-bot"
           git config user.email "bsp-admin-log-bot@users.noreply.github.com"
-          # All four commit-backs below push through tools/commitback-push.sh (TEN-267):
+          # All five commit-backs below push through tools/commitback-push.sh (TEN-267):
           # it takes main's side when the autostash re-apply of this run's uncommitted
           # build output (matches.json) conflicts with a concurrent odds-bot tick, and
           # still fails on a conflict in any ledger these steps own. Locked by
@@ -1313,6 +1313,23 @@ jobs:
           git config user.name "bsp-series-outcomes-bot"
           git config user.email "bsp-series-outcomes-bot@users.noreply.github.com"
           tools/commitback-push.sh "chore(series): append streak outcome evaluations [skip ci]" series-outcomes.json
+
+      # TEN-304 (founder 2026-09-27): the completed-match weather ARCHIVE is committed so its history
+      # survives a failed read of the live site. build-weather.js (run earlier) merges the committed copy
+      # with the live one and writes weather/archive/<venue>.json; this step commits any change (incl. a
+      # fully-pruned file's deletion). One writer (this job, bsp-pipeline concurrency group), so a conflict
+      # on an archive file is a hard failure (COMMITBACK_OWNED), never a silent take-main's-side.
+      # Runs after the deploy, like the ledgers above, so a git failure can never cost a deploy.
+      - name: Commit weather archive (only if changed)
+        run: |
+          if [ -z "$(git status --porcelain -- weather/archive)" ]; then
+            echo "Weather archive unchanged — nothing to commit."
+            exit 0
+          fi
+          git config user.name "bsp-weather-bot"
+          git config user.email "bsp-weather-bot@users.noreply.github.com"
+          COMMITBACK_OWNED="$(git ls-files -co --exclude-standard -- weather/archive | tr '\n' ' ')" \
+            tools/commitback-push.sh "chore(weather): archive pre-start forecasts [skip ci]" weather/archive
 
       # TEN-206 founder ruling Q2(d) ch-1, 2026-09-16 — the daily half of "key per day
       # + commit one gzipped file daily". Runs AFTER the deploy has published, like the

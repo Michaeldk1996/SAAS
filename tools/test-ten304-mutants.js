@@ -45,13 +45,17 @@ const MUTANTS = [
   ['archive: a post-start fetch is archived', ' || !(fAt < m.startMs)) continue;', ') continue;', 'bwt'],
   ['archive: an older fetch replaces a newer one', 'const newer = old => !old || fAt > Date.parse(old.fetchedAt);', 'const newer = old => true;', 'bwt'],
   ['archive: a day archived after its window opened', '!(fAt < Math.min(...win.map(r => r.ms))) || ', '', 'bwt'],
-  ['archive: the live copy is not carried', 'updateArchive(await readLiveArchive(SITE + v.archive, fetchImpl, log, retryDelayMs), file', 'updateArchive(null, file', 'bwt'],
+  ['archive: the live copy is not carried', 'await readLiveArchive(SITE + v.archive, fetchImpl, log, retryDelayMs));', 'null);', 'bwt'],
   ['archive: a venue off the board loses its archive', 'const off = Object.keys(coords || {}).filter(', 'const off = [].filter(', 'bwt'],
   ['archive: a failed live read is not retried', 'for (let i = 0; i < 3; i++) {\n    try { const a = await getJson(url', 'for (let i = 2; i < 3; i++) {\n    try { const a = await getJson(url', 'bwt'],
   ['archive: a revised start keeps the old hour', '(moved && fAt >= Date.parse(old.fetchedAt))', 'false', 'bwt'],
   ['unavailable started match still says "forecast, not observed"', "(archived && !unavail ? ' · ' + CP.pastValues : '')", "(archived ? ' · ' + CP.pastValues : '')"],
   ['WX_C text mapped through 12a again', "  text: '#E7E9EE',                   // primary", "  text: '#EBF1F2',                   // primary"],
   ['WX_C hairline mapped through 12a again', "  hw: '1.25px',", "  hw: '0.33px',"],
+  ['02:00Z placeholder read as a real start', "if (!(m && m.startTs != null) && isFinite(ms) && ((ms % 86400000) + 86400000) % 86400000 === 7200000) return NaN;", ''],
+  ['build archives the placeholder hour', "return Number.isFinite(ms) && ((ms % 86400000) + 86400000) % 86400000 !== 7200000 ? ms : NaN;", 'return Number.isFinite(ms) ? ms : NaN;', 'bw'],
+  ['archive: the committed copy is ignored', 'const prevArch = mergeArchives(readCommittedArchive(path.join(outDir, v.archive)), ', 'const prevArch = mergeArchives(null, ', 'bwt'],
+  ['archive: the older of two copies wins', '(Date.parse(y.fetchedAt) > Date.parse(x.fetchedAt) ? y : x)', '(Date.parse(y.fetchedAt) > Date.parse(x.fetchedAt) ? x : y)', 'bwt'],
   ['archived day tooltip shows the match row fetch time', '[TP.fetched, wxStamp(d.fetchedMs, vm.zone)]', '[TP.fetched, wxStamp(vm.fetchedMs, vm.zone)]'],
 ];
 let caught = 0;

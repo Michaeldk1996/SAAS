@@ -1177,7 +1177,8 @@ Object.assign(CASES, {
       const code = mod.gitRebaseCheck({ cwd: g.work })(s1);
       return data.ok === true && code.ok === false && code.codeCommits.length === 1 && /TEN-997/.test(code.codeCommits[0].subject)
         && !mod.isDataPath('lib.js') && !mod.isDataPath('package.json') && !mod.isDataPath('.github/workflows/x.yml')
-        && mod.isDataPath('odds-card-state.json') && mod.isDataPath('style-meetings/a.json');
+        && mod.isDataPath('odds-card-state.json') && mod.isDataPath('style-meetings/a.json')
+        && mod.isDataPath('weather/archive/chengdu.json') && !mod.isDataPath('weather/chengdu.json');   // TEN-304: only the committed archive
     } catch (e) { if (process.env.DEBUG_TEN273) console.error('CASE THREW:', e.message); return false; }
   },
 
@@ -1542,7 +1543,7 @@ const MUTANTS = [
   ['any root .json is data (the old rule)', 'dataPathsAreWhatTheBotsWrite',
     '  if (DATA_FILES.has(f)) return true;', "  if (DATA_FILES.has(f) || (!f.includes('/') && /\\.json$/i.test(f))) return true;"],
   ['splits-matches/ is not a data directory', 'dataPathsAreWhatTheBotsWrite',
-    "export const DATA_DIRS = ['style-meetings/', 'bet365-history/', 'splits-matches/'];", "export const DATA_DIRS = ['style-meetings/', 'bet365-history/'];"],
+    "export const DATA_DIRS = ['style-meetings/', 'bet365-history/', 'splits-matches/', 'weather/archive/'];", "export const DATA_DIRS = ['style-meetings/', 'bet365-history/', 'weather/archive/'];"],
   ['the atp-entry bot is not a data bot', 'dataPathsAreWhatTheBotsWrite',
     "  'bsp-atp-entry-bot@users.noreply.github.com',", ''],
   ['code files in a data directory pass', 'dataPathsAreWhatTheBotsWrite',

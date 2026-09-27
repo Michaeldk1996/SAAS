@@ -142,6 +142,9 @@ node_modules
 # career-history store, like career-history/ itself. Never committed.
 lines-field.json
 
-# TEN-304: Weather tab files — built each pipeline run by build-weather.js, never committed
+# TEN-304: Weather tab files — built each pipeline run by build-weather.js, never committed.
+# EXCEPT weather/archive/ (completed-match archived forecasts): committed by the pipeline's
+# commit-back so its history survives a failed read of the live site (founder 2026-09-27).
 /weather-index.json
-/weather/
+/weather/*
+!/weather/archive/

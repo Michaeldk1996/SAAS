@@ -27,7 +27,7 @@ export function constSrc(name, src = HTML) {
   return src.slice(start, src.indexOf(';\n', start) + 1);
 }
 export const CONSTS = ['AODDS_C', 'WX_CONFIG', 'WX_COPY', 'WX_C'];
-export const FNS = ['acctTzOffsetMin', 'cardStartMs', 'cardFmtStart', 'aContextLine', 'escapeHtml', 'aOddsTipHtml',
+export const FNS = ['acctTzOffsetMin', 'cardStartMs', 'apiStartMs', 'cardFmtStart', 'aContextLine', 'escapeHtml', 'aOddsTipHtml',
   'wxForced', 'wxNum', 'wxFmt', 'wxSev', 'wxRank', 'wxLocalParts', 'wxAddDays', 'wxDayDiff', 'wxDow', 'wxMonDay', 'wxStamp',
   'wxAgo', 'wxIconKind', 'wIcon', 'wxStarted', 'wxArchMatchRow', 'wxArchiveFile', 'wxFirstSlot', 'wxBoard', 'wxModel', 'buildWeatherSection'];
 
@@ -95,7 +95,7 @@ export function buildCache({ src = HTML, server }) {
     ${constSrc('WX_CONFIG', src)}
     ${decl}
     function renderWeatherSection(){ __renders.push(_aWx.ready && _aWx.m === _aWxMatch ? { tour: _aWx.m.tour, entry: _aWx.entry, fetchedAt: _aWx.file && _aWx.file.fetchedAt, arch: _aWx.arch || null } : 'loading'); }
-    ${['acctTzOffsetMin', 'cardStartMs', 'wxStarted', 'loadWeatherIndex', 'wxFileDue', 'loadWeatherFile', 'ensureWeather', 'wxOnMatchesReload', 'openWeatherTab'].map(n => slice(n, src)).join('\n')}
+    ${['acctTzOffsetMin', 'cardStartMs', 'apiStartMs', 'wxStarted', 'loadWeatherIndex', 'wxFileDue', 'loadWeatherFile', 'ensureWeather', 'wxOnMatchesReload', 'openWeatherTab'].map(n => slice(n, src)).join('\n')}
     return { openWeatherTab, wxOnMatchesReload, setMatch: m => { _aWxMatch = m; } };
   `)(fetch, document, { now: () => clock.now, parse: s => Date.parse(s) }, { warn() {} }, renders);
   return { api, clock, calls, renders, dom };

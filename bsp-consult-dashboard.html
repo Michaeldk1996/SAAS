@@ -5656,8 +5656,17 @@ function cardFmtStart(m, withDate){
 // Match-analysis header subtitle (TEN-304 ruling): "ATP Chengdu · Quarter-finals · 18:00" — the start
 // is cardStartMs(m) in the viewer's zone (cardFmtStart), the same instant the Weather tab's MATCH badge
 // shows in venue time. No usable instant → no time appended (never a fabricated one).
+// TEN-304 (founder 2026-09-27): api-tennis first publishes a fixture at a 02:00Z PLACEHOLDER (04:00 Berlin in
+// CEST, 03:00 in CET) before the real order of play — 33 of 34 cards first published at it (Chengdu / Hangzhou,
+// 19–27 Sep, 771 matches.json revisions) were later revised. It is NOT a start: a card with no startTs whose start
+// is exactly 02:00:00Z has no time (header without a time; Weather tab "MATCH · TBC", dashes).
+function apiStartMs(m){
+  const ms = cardStartMs(m);
+  if (!(m && m.startTs != null) && isFinite(ms) && ((ms % 86400000) + 86400000) % 86400000 === 7200000) return NaN;
+  return ms;
+}
 function aContextLine(m, roundText){
-  const t = isFinite(cardStartMs(m)) ? cardFmtStart(m, false) : '';
+  const t = isFinite(apiStartMs(m)) ? cardFmtStart(m, false) : '';
   return [m.tour, roundText, t].filter(Boolean).join(' · ');
 }
 
@@ -12921,7 +12930,7 @@ function ensureWeather(m){
 // Started = its start instant has passed, or the board says it is live / finished (a `past-` card; a finished
 // match with no time is still finished). Such a match shows only the archived pre-start forecast.
 function wxStarted(m, nowMs){
-  const s = cardStartMs(m);
+  const s = apiStartMs(m);
   return (Number.isFinite(s) && s <= nowMs) || !!(m && (m.live === true || /^past-/.test(String(m.id || ''))));
 }
 // matches.json reloaded (every few minutes): the index may have changed, and an open Weather tab is
@@ -13011,7 +13020,7 @@ function wIcon(type, size, color){
 function wxModel(m, entry, file, nowMs, forced, arch){
   const CF = WX_CONFIG, CP = WX_COPY;
   if (entry && entry.indoor === true) return { indoor: true };
-  const startMs = cardStartMs(m);
+  const startMs = apiStartMs(m);                                // the 02:00Z placeholder = no time (TBC)
   // A started / completed match: ONLY our archived pre-start forecast (founder ruling TEN-304) — the current
   // file is never read for it. No archived match-time row → the unavailable state.
   const archived = wxStarted(m, nowMs);
@@ -13176,7 +13185,7 @@ function wxArchiveFile(arch, mrow){
 function wxFirstSlot(m, startMs, zone){
   const day = wxLocalParts(startMs, zone);
   if (!day) return true;
-  const same = wxBoard().filter(x => x && x.tour === m.tour).map(x => cardStartMs(x))
+  const same = wxBoard().filter(x => x && x.tour === m.tour).map(x => apiStartMs(x))
     .filter(ms => Number.isFinite(ms) && (wxLocalParts(ms, zone) || {}).date === day.date);
   return !same.length || startMs <= Math.min.apply(null, same);
 }
