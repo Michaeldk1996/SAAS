@@ -306,7 +306,7 @@ function runRedStep({ rc, start, index }) {
   return { status: r.status, out: r.stdout + r.stderr, summary: fs.existsSync(summary) ? fs.readFileSync(summary, 'utf8') : '' };
 }
 const START = '2026-09-24T14:05:00Z';
-const fresh = { priceBasis: 'Pinnacle closing only', builtAt: '2026-09-24T14:05:03.120Z', builtFromCommit: 'abc' };
+const fresh = { priceBasis: 'Pinnacle closing, else Bet365 closing', builtAt: '2026-09-24T14:05:03.120Z', builtFromCommit: 'abc' };
 
 check('rebuilt this run (rc 0, builtAt after the step start) → green', () => {
   const r = runRedStep({ rc: '0', start: START, index: fresh });

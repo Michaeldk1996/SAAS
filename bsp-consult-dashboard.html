@@ -15432,8 +15432,8 @@ const ME_C = {
   // chart (data-viz, unchanged)
   loss: 'rgba(255,255,255,0.014)', grid: 'rgba(255,255,255,0.06)', tick: 'rgba(255,255,255,0.045)', zero: 'rgba(255,255,255,0.40)',
 };
-// §4.5 thin-sample floor and §4.2 Needs basis: PROVISIONAL until the founder rules (TEN-310).
-// Both live in market-edge-core.js (ME_THIN_FLOOR = 5, ME_NEEDS = n / Σ price).
+// §4.5 thin-sample floor and §4.2 Needs basis: ruled 2026-09-27 (TEN-310) — n < 5 and n / Σ price.
+// Both live in market-edge-core.js (ME_THIN_FLOOR, ME_NEEDS).
 const ME_NOPRICE_MSG = 'Derived lines need today’s price.';
 let _me = null;
 function meStateFor(m){

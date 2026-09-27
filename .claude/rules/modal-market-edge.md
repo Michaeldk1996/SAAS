@@ -1,7 +1,8 @@
-# Match analysis — Market edge tab (founder brief TEN-310, 2026-09-27)
+# Market edge — Match analysis tab and the player-profile basis (founder brief TEN-310, 2026-09-27)
 
-Applies to the TEN-310 block in `bsp-consult-dashboard.html` (`me*` functions, `buildMarketEdgeSection`) and
-`market-edge-core.js` (`MarketEdgeCore`). Design: `Market Edge Tab.dc.html` + `Market Edge Tab - Paperclip.md`
+Applies to the TEN-310 block in `bsp-consult-dashboard.html` (`me*` functions, `buildMarketEdgeSection`),
+`market-edge-core.js` (`MarketEdgeCore`), and the player-profile Market edge's basis (`build-market-edge.js`,
+`player-profile-v2.js` §5.8). Design: `Market Edge Tab.dc.html` + `Market Edge Tab - Paperclip.md`
 (handoff 16). Tests: `test-ten310-market-edge.mjs` (fixtures: `tools/fixtures/ten310/`, snapshots of the deployed shards).
 
 ## Data
@@ -27,12 +28,25 @@ Applies to the TEN-310 block in `bsp-consult-dashboard.html` (`me*` functions, `
 - **Profit chart:** cumulative 1u P&L in date order on one date axis shared by both players (a later career starts
   further right); six labels at even fractions of the real date range (years on Career, months on Last 52 weeks).
 
-## Provisional — founder has not ruled (report, don't resolve)
-- **Needs** = n / Σ price (exact flat-stake break-even; equals 100 / mean price). Constant `ME_NEEDS`.
-- **Thin-sample floor** = 5 (`ME_THIN_FLOOR`): below it Won, Yield and line % are "—"; W–L and 1u stay.
-- **Pill** reads "CLOSING ODDS" with a hover of the book split and the latest match. "SAMPLE DATA" never shows.
-
-## Not the same as the player-profile Market edge (pending ruling, TEN-310 report)
-The profile's `build-market-edge.js` uses Pinnacle only (R1), role = shorter price than the opponent, and Tennis-Data
-rows. This tab uses the Form/H2H price rule, role = price < 2.00, and the career-history join. The same player can
-show different band records on the two surfaces until the founder rules which basis both use.
+## Rulings (founder, 2026-09-27, TEN-310 question card) — each one is a test
+- **Needs = n / Σ price** (= 100 / mean closing price in the band; the flat-stake break-even), shown at any n > 0.
+  Not 100 / band midpoint. `ME_NEEDS` in `market-edge-core.js`. **Test:** a band of prices 1.10, 1.30 shows
+  2 / 2.40 = 83%.
+- **Thin-sample floor = 5** (`ME_THIN_FLOOR`), both tables and both pop-ups: n < 5 → Won, Yield and line % read
+  "—"; W–L and 1u stay (1u is a sum). n = 0 → not clickable, Won "—", 1u "—". **Test:** a 1–0 band prints "—".
+- **Pill = "CLOSING ODDS"**, hover = Pinnacle / Bet365 split + latest match date in scope. "SAMPLE DATA" never
+  renders. **Test:** `test-ten310-market-edge.mjs` finds no "sample data" in the tab or its pop-ups.
+- **Today's price = the modal header's price** (`aHeaderOdds`, best across books), not the Form/H2H
+  Pinnacle-else-Bet365 current price. Exception inline: the Form/H2H tabs keep their own today rule.
+- **Retirements are not settled** in the Match winner view (bands, chart): a match the feed flags retired or
+  Tennis-Data marks not "Completed" is out. Walkovers never count.
+- **One basis for both Market edge surfaces** — the player-profile Market edge (`build-market-edge.js`,
+  `market-edge/{key}.json`) uses this tab's rules, through `market-edge-core.js`: Pinnacle close, else Bet365
+  close; favourite = price < 2.00 (no "level" role); the half-open band ladder; the same cents P&L; the tour
+  baseline on the same basis. This supersedes R1 (2026-09-17, "Pinnacle closing only"). **Test:**
+  `tools/test-market-edge-basis.js` (11 controls) and the pipeline's market-edge assert
+  (`priceBasis === "Pinnacle closing, else Bet365 closing"`, Bet365 sides in the tour baseline).
+  **Known residual:** the two surfaces count different ROWS — the profile counts Tennis-Data archive rows, the
+  tab counts career-history rows joined to their closes (it needs set scores and eventKeys) — so a band can
+  still differ where career-history lacks a match (e.g. Sinner Feb–Jun 2021) or the feed flags a retirement
+  Tennis-Data does not. Not ruled; reported on TEN-310.

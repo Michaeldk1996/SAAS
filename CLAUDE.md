@@ -270,7 +270,7 @@ Surface-specific rulings moved out of this file so they load only when relevant:
 | Records counting (Flashscore rules), walkovers, retirements | `.claude/rules/pipeline-records.md` |
 | Odds sources, book ladder, card rules, close rules | `.claude/rules/odds.md` |
 | Match analysis Form / H2H tabs — price order, display constants, all-level H2H, market-edge, odds alarms | `.claude/rules/modal-form-h2h.md` |
-| Match analysis Market edge tab — data path, populations, settlement, today's price, provisional Needs / floor / pill | `.claude/rules/modal-market-edge.md` |
+| Market edge (Match analysis tab + player-profile basis) — data path, populations, settlement, today's price, Needs, floor, pill, shared basis | `.claude/rules/modal-market-edge.md` |
 | Odds archive (tennis-data closing prices): drop-in refresh, merge, never-thinner, readers | `.claude/rules/odds-archive.md` |
 | Deploy lane — ready gate, first-come-first-served queue, deploy-batch as the one land path, confirm-live release, 40-min pipeline-aware hold, cutover, waiter reports | `.claude/rules/deploy-lane.md` |
 | App shell — 252px sidebar + floating panel, no user-row chevron, nav glyphs | `.claude/rules/app-shell.md` |

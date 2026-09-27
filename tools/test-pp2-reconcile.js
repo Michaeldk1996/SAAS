@@ -997,69 +997,54 @@ check('per-row book counts sum to the headline, and the label is never blended',
   }
 });
 
-// ★ Founder ruling R1, 2026-09-17, SUPERSEDES ruling B where they conflict:
-//   "Headline yield, role cards, price bands and the cumulative chart use
-//    Pinnacle closing only. No fallback to Bet365 or any other book inside those
-//    figures. Bet365 may appear on rows, labelled by book, but is excluded from
-//    every yield/units figure."
-//
-// This check used to assert the OPPOSITE — that the Bet365 fallback was
-// load-bearing (`b > 0`), which is exactly what ruling B required and exactly
-// what R1 forbids. It is inverted here rather than deleted: an absent check
-// would let the fallback creep back into the headline unnoticed. Both halves of
-// R1 are locked, because only asserting the first half would pass a build that
-// achieved "no Bet365 in the headline" by dropping the Bet365 rows entirely —
-// the rows must survive, labelled, outside the basis.
-check('R1 · no Bet365 inside the headline basis, and Bet365 rows still survive labelled', () => {
+// ★ Founder ruling TEN-310, 2026-09-27, SUPERSEDES R1 (Pinnacle closing only): the profile's Market
+//   edge uses the Match analysis Market edge tab's rules — Pinnacle close, else Bet365 close, one book
+//   per match, every priced row in every figure. Locked both ways: Bet365 rows are IN the headline
+//   (the fallback is load-bearing again), and the book mix adds up to the headline n exactly.
+check('TEN-310 · Bet365 fallback rows are inside the headline basis, and the book mix adds to n', () => {
   const b = MK_KEYS.reduce((a, k) => a + MARKET[k].headline.book.bet365, 0);
   const p = MK_KEYS.reduce((a, k) => a + MARKET[k].headline.book.pinnacle, 0);
-  assert.strictEqual(b, 0, `${b} Bet365 rows are inside the headline basis — R1 forbids any`);
-  assert(p > 0, 'no Pinnacle rows at all — the basis is empty, not Pinnacle-only');
-  // Half two: the excluded rows are still carried, still labelled by book.
-  let rows = 0, shards = 0;
+  assert(b > 0, 'no Bet365 row in any headline — the Pinnacle-only (R1) build is back');
+  assert(p > 0, 'no Pinnacle rows at all — the basis is empty');
   for (const k of MK_KEYS) {
-    const off = (MARKET[k].matches || []).filter(m => m.book && m.book !== 'pinnacle');
-    if (off.length) { shards++; rows += off.length; }
+    const h = MARKET[k].headline;
+    assert.strictEqual(h.book.pinnacle + h.book.bet365, h.n, `${k}: book mix ${JSON.stringify(h.book)} does not add to n=${h.n}`);
+    const off = (MARKET[k].matches || []).filter(m => m.book && !m.inBasis);
+    assert.strictEqual(off.length, 0, `${k}: ${off.length} priced rows left out of the basis`);
   }
-  assert(rows > 0, 'no non-Pinnacle row survives anywhere — R1 excludes them from the '
-    + 'basis, it does not delete them');
-  console.log(`        headline basis: ${p} Pinnacle rows, ${b} Bet365 ` +
-    `· ${rows} non-Pinnacle rows kept and labelled across ${shards} shards (outside every yield)`);
+  console.log(`        headline basis: ${p} Pinnacle + ${b} Bet365 rows across ${MK_KEYS.length} shards, every priced row counted`);
 });
 
-mustFail('the R1 check would catch a Bet365 row readmitted to the headline basis', () => {
-  const headline = { book: { pinnacle: 300, bet365: 5 } };
-  assert.strictEqual(headline.book.bet365, 0, 'readmitted Bet365 row not caught');
+mustFail('the TEN-310 check would catch the Pinnacle-only build coming back', () => {
+  const shards = [{ headline: { book: { pinnacle: 300, bet365: 0 } } }];
+  assert(shards.reduce((a, s) => a + s.headline.book.bet365, 0) > 0, 'Pinnacle-only build not caught');
 });
 
-mustFail('the R1 check would catch a build that deleted the Bet365 rows instead of excluding them', () => {
-  const shards = [{ matches: [{ book: 'pinnacle' }, { book: 'pinnacle' }] }];
-  const rows = shards.reduce((a, s) => a + s.matches.filter(m => m.book !== 'pinnacle').length, 0);
-  assert(rows > 0, 'deleted-rather-than-excluded not caught');
+mustFail('the TEN-310 check would catch a priced row left out of the basis', () => {
+  const h = { n: 305, book: { pinnacle: 300, bet365: 4 } };
+  assert.strictEqual(h.book.pinnacle + h.book.bet365, h.n, 'dropped row not caught');
 });
 
-check('flat-stake yield recomputes from the shard rows, over the R1 basis', () => {
+check('flat-stake yield recomputes from the shard rows, over the TEN-310 basis', () => {
   // Recompute the headline from the per-row P&L rather than trusting the
   // summary. A summary that cannot be re-derived from its own rows is a claim,
   // not a measurement.
   //
-  // The recompute is over the PINNACLE rows, not over every row: under R1 the
-  // headline's population is Pinnacle-only while `matches` also carries the
-  // labelled Bet365 rows for display. Summing all of them was this check's own
-  // bug — it read shard 207 as "rows give 2.23% but the headline says 2.4%"
-  // when the headline was right and the check was using the pre-R1 population.
+  // The recompute is over the rows ON THE BASIS (`inBasis`). Since TEN-310 that is every priced
+  // row, Pinnacle or Bet365 fallback; under R1 it was the Pinnacle subset only. Reading the flag
+  // (not the book) keeps this check on whatever basis the builder declares.
   // Scope is every shard with a yield, not the first 40: the mismatch sat at
   // index 40+ and a head-slice would have missed it.
   let checked = 0;
   for (const k of MK_KEYS) {
     const s = MARKET[k];
     if (s.headline.yield == null) continue;
-    const pin = (s.matches || []).filter(m => m.book === 'pinnacle');
+    const pin = (s.matches || []).filter(m => m.inBasis);
     assert.strictEqual(pin.length, s.headline.n,
-      `${k}: headline n ${s.headline.n} != ${pin.length} Pinnacle rows`);
+      `${k}: headline n ${s.headline.n} != ${pin.length} rows on the basis`);
     const y = 100 * pin.reduce((a, m) => a + (m.pl || 0), 0) / pin.length;
     assert(Math.abs(y - s.headline.yield) < 0.06,
-      `${k}: Pinnacle rows give ${y.toFixed(2)}% but the headline says ${s.headline.yield}%`);
+      `${k}: basis rows give ${y.toFixed(2)}% but the headline says ${s.headline.yield}%`);
     checked++;
   }
   console.log(`        ${checked} shards: headline n and yield both re-derived from the Pinnacle rows`);
@@ -3280,9 +3265,10 @@ check('the all-stores table covers every data store the module reads', () => {
   const src = fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8');
   const read = new Set((src.match(/window\.[A-Za-z_][A-Za-z0-9_]*/g) || [])
     .map(s => s.replace('window.', '')));
-  // Not data stores: the feature flag, the module's own export, and the two
-  // shared helper singletons (logic, not data — they carry no player rows).
-  const NOT_STORES = new Set(['FEATURE_PP2', 'PlayerProfileV2', 'RoundClassify', 'HoldBreakHeatmap']);
+  // Not data stores: the feature flag, the module's own export, and the shared
+  // helper singletons (logic, not data — they carry no player rows). MarketEdgeCore
+  // (TEN-310) is the Market edge compute both surfaces share.
+  const NOT_STORES = new Set(['FEATURE_PP2', 'PlayerProfileV2', 'RoundClassify', 'HoldBreakHeatmap', 'MarketEdgeCore']);
   // Host callbacks the mount calls back into (navigation, not data). Exempt from
   // the coverage table but NOT from scrutiny: the module must not assume the
   // host defined them, so each is asserted to be typeof-guarded at its call

@@ -2420,8 +2420,17 @@
   // The ladder is role-specific since the 8-band ruling (2026-09-18): a price
   // alone no longer names a band, because 1.95 is band `f165_199` for a favourite
   // and band `d200_249` for an underdog. Passing the role is not optional.
+  // TEN-310 (2026-09-27): shards now stamp each row's `band` (the builder's own bucketing via
+  // market-edge-core.js), and the drill reads that first. This mirror is the fallback for a row
+  // without one, on the same rule: the half-open ladder, role = price < 2.00.
   function priceBandId(price, role) {
     if (price == null) return null;
+    var MEC = window.MarketEdgeCore;
+    if (MEC) {
+      var i = MEC.bandOf(price);
+      var ids = ['f101_120', 'f121_140', 'f141_164', 'f165_199', 'd200_249', 'd250_349', 'd350_599', 'd600_up'];
+      return i < 0 ? null : ids[i];
+    }
     if (role === 'fav') {
       return price <= 1.2 ? 'f101_120' : price <= 1.4 ? 'f121_140' : price <= 1.64 ? 'f141_164' : 'f165_199';
     }
@@ -5026,11 +5035,10 @@
 
   // §5.8 Market edge — role cards, price bands, band drill, cumulative chart.
   //
-  // ★ Founder ruling R1, 2026-09-17, SUPERSEDING `market-1`:
-  //   "Headline yield, role cards, price bands and the cumulative profit chart use
-  //    Pinnacle closing only. No fallback to Bet365 or any other book inside those
-  //    figures. Bet365 may appear on ledger rows, labelled by book, but is excluded
-  //    from every yield and every units figure."
+  // ★ Founder ruling TEN-310, 2026-09-27, SUPERSEDING R1 (Pinnacle closing only):
+  //   "Both use this tab's rules" — the same basis as the Match analysis Market edge
+  //   tab: Pinnacle close, else Bet365 close (one book per match); favourite = price
+  //   under 2.00; the half-open 8-band ladder of market-edge-core.js.
   //
   // The basis is enforced in build-market-edge.js (one `isYieldBasis` predicate at
   // every aggregation point) and locked by tools/test-market-edge-basis.js. This
@@ -5474,7 +5482,6 @@
     var bk = mk.headline.book || { pinnacle: 0, bet365: 0 };
     var lvl = mk.roles.level && mk.roles.level.n ? mk.roles.level.n : 0;
     var cov = mk.coverage || {};
-    var excluded = cov.excludedNonPinnacle || 0;
 
     // §5.1 tab row — `Match winner | Derived lines`, default Match winner. The
     // row and its body ship together (founder ruling Q3): no dead affordance.
@@ -5484,7 +5491,7 @@
     return marketTabsHtml() +
       '<div style="font-family:\'IBM Plex Mono\',monospace;font-size:11px;letter-spacing:0.06em;' +
         'color:var(--label);margin-bottom:14px;">' +
-        'Pinnacle closing only ' + MIDDOT + ' ' + mk.headline.n + ' priced ' + MIDDOT + ' ' +
+        esc(mk.priceBasis || 'Pinnacle closing, else Bet365 closing') + ' ' + MIDDOT + ' ' + mk.headline.n + ' priced ' + MIDDOT + ' ' +
         recordText(mk.headline.wins, mk.headline.losses) + ' ' + MIDDOT + ' median odds ' +
         (mk.medianPrice == null ? DASH : mk.medianPrice.toFixed(2)) +
         ' ' + MIDDOT + ' tour baseline ' + (tourY == null ? DASH : neg(tourY, 2, '%')) + '</div>' +
@@ -5504,18 +5511,13 @@
           }).join('') + '</div>' + groups + priceNote() +
       '</div>' +
       cumulativeChart() +
-      // §5's book rule, stated on the page rather than assumed, and restated for
-      // R1: this modal no longer blends books at all.
+      // §5's book rule, stated on the page rather than assumed. TEN-310 (2026-09-27): the same basis
+      // as the Match analysis Market edge tab — Pinnacle close, else Bet365 close, one book per match.
       '<div style="border:0.33px solid var(--line);border-radius:10px;padding:14px 16px;' +
         'margin-top:16px;font-size:12.5px;color:var(--label);line-height:1.65;">' +
-        'Every figure above is struck on <b>Pinnacle closing prices only</b> — ' + bk.pinnacle +
-        ' priced matches. Pinnacle stops at ' + esc(marketPinnacleEnd(mk)) + '. ' +
-        (excluded
-          ? esc(shortName(p)) + ' has ' + excluded + ' further match' + (excluded === 1 ? '' : 'es') +
-            ' the Tennis-Data archive priced at Bet365&#39;s close and Pinnacle did not; ' +
-            'those rows appear on the full ledger, labelled by book, and are excluded from every ' +
-            'yield and every units figure here. '
-          : 'Every priced match on record was priced by Pinnacle, so nothing is excluded. ') +
+        'Every figure above is struck on closing prices: <b>Pinnacle, else Bet365 where Pinnacle has none</b> — ' +
+        bk.pinnacle + ' Pinnacle and ' + bk.bet365 + ' Bet365 (Tennis-Data archive close), one book per match. ' +
+        'Pinnacle stops at ' + esc(marketPinnacleEnd(mk)) + '. Favourite = closing price under 2.00. ' +
         'The de-vig always uses both prices from the same book. ' +
         'Bet365 pre-match snapshots from the live odds feed are a different artefact and are ' +
         'not blended into anything above.' +
@@ -5604,7 +5606,7 @@
     function bandDetail(group, b, bid) {
       var role = group === 'favourite' ? 'fav' : 'dog';
       var rows = basisRows.filter(function (m) {
-        return m.role === role && priceBandId(m.price, role) === b.id;
+        return m.role === role && (m.band || priceBandId(m.price, role)) === b.id;
       }).sort(function (a, c) { return a.date < c.date ? 1 : a.date > c.date ? -1 : 0; });
       var shown = rows.slice(0, 40);
       var list = shown.map(function (m) {

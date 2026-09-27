@@ -43,6 +43,9 @@ const fs = require('fs');
 const path = require('path');
 
 const base = require('./build-odds-performance.js');
+// TEN-310 (founder ruling 2026-09-27): the profile's Market edge uses the Match analysis Market edge
+// tab's rules, through the same compute — bands, role and P&L come from market-edge-core.js.
+const core = require('./market-edge-core.js');
 const { readCsv, keyFromArchiveName, ourCandidateKeys, fullKey, devig, LEVEL_ALIASES, archiveOverride } = base;
 
 const ROOT = __dirname;
@@ -52,10 +55,11 @@ const INDEX_PATH = path.join(ROOT, 'market-edge-index.json');
 const PROFILES_PATH = path.join(ROOT, 'player-profiles.json');
 const SPEED_MAP_PATH = path.join(ROOT, 'court-speed-map.json');
 
-// 2 — the 8-band role-specific price ladder (founder ruling 2026-09-18). Band ids
-// and labels both changed, so a v1 shard in the browser cache cannot be read by
-// the v2 renderer's drill: the id set no longer overlaps.
-const SCHEMA_VERSION = 2;
+// 3 — TEN-310 basis (2026-09-27): Pinnacle close, else Bet365 close; favourite = price < 2.00;
+// half-open bands. Band ids are unchanged from v2 (the 8-band ladder of 2026-09-18).
+const SCHEMA_VERSION = 3;
+// The basis every figure is struck on. Printed on the page; asserted by the pipeline.
+const PRICE_BASIS = 'Pinnacle closing, else Bet365 closing';
 
 /**
  * TEN-206 §5.5 — venue + Tennis Abstract speed, stamped per row so the Court speed
@@ -102,45 +106,34 @@ const GATE_FULL = 10;
 const GATE_SMALL = 5;
 
 /**
- * Price bands — the design's own ladder, not a re-derived one.
+ * Price bands — the 8-band ladder (founder ruling 2026-09-18), ids and labels unchanged.
  *
- * ★ Founder ruling, 2026-09-18: "the file wins — 8 bands. Four is useless when
- *   434 of 534 land in one row." The locked export's `Player Stat Boxes.dc.html`
- *   :3117-3128 prints EIGHT bands, four per role, and its note at :3165 reads
- *   "The eight bands cover all 537 priced matches". The v7 README §5.8 still
- *   prints the superseded 4-band ladder (Under 1.50 · 1.50–2.00 · 2.00–3.00 ·
- *   Over 3.00); spec order says the .dc.html wins.
- *
- * The ladder is ROLE-SPECIFIC: the favourite ladder runs 1.01–1.99, the underdog
- * ladder 2.00–6.00+. That is the design's own arithmetic — its four favourite
- * bands sum to its favourite card (363) and its four underdog bands to its
- * underdog card (174), so a row is banded inside its role, never across roles.
- *
- * ⚠ The two ladders do NOT quite tile the price line, because role is decided by
- * "was he the shorter price", not by 2.00. A 1.95 quote against a 1.85 opponent
- * is an underdog priced below 2.00; an arbed close can make a favourite priced
- * above it. So the outer band of each ladder is a catch-all in its open
- * direction — fav's last band takes everything above 1.64, dog's first takes
- * everything below 2.50. Every role row therefore lands in exactly one band and
- * the bands still sum to the role card (§4 reconciliation). The rows whose price
- * sits outside its band's printed range are counted into `bandStraddle` and
- * published rather than silently absorbed.
+ * ★ TEN-310 ruling (2026-09-27): "Both use this tab's rules." A row's band is decided by its own price
+ *   alone, through market-edge-core.js `bandOf` — half-open [1.01,1.21) [1.21,1.41) [1.41,1.65)
+ *   [1.65,2.00) | [2.00,2.50) [2.50,3.50) [3.50,6.00) [6.00,∞) — and its role follows: favourite =
+ *   price < 2.00, underdog = 2.00 and above. This replaces "role = the shorter price" and the outer
+ *   catch-all bands it needed; no row can sit outside its band's printed range any more, so
+ *   `bandStraddle` is 0 by construction.
  */
 const FAV_BANDS = [
-  { id: 'f101_120', label: '1.01 – 1.20', test: (p) => p <= 1.2 },
-  { id: 'f121_140', label: '1.21 – 1.40', test: (p) => p <= 1.4 },
-  { id: 'f141_164', label: '1.41 – 1.64', test: (p) => p <= 1.64 },
-  { id: 'f165_199', label: '1.65 – 1.99', test: () => true },
+  { id: 'f101_120', label: '1.01 – 1.20' },
+  { id: 'f121_140', label: '1.21 – 1.40' },
+  { id: 'f141_164', label: '1.41 – 1.64' },
+  { id: 'f165_199', label: '1.65 – 1.99' },
 ];
 const DOG_BANDS = [
-  { id: 'd200_249', label: '2.00 – 2.49', test: (p) => p < 2.5 },
-  { id: 'd250_349', label: '2.50 – 3.49', test: (p) => p < 3.5 },
-  { id: 'd350_599', label: '3.50 – 5.99', test: (p) => p < 6.0 },
-  { id: 'd600_up', label: '6.00 +', test: () => true },
+  { id: 'd200_249', label: '2.00 – 2.49' },
+  { id: 'd250_349', label: '2.50 – 3.49' },
+  { id: 'd350_599', label: '3.50 – 5.99' },
+  { id: 'd600_up', label: '6.00 +' },
 ];
 const PRICE_BANDS = { fav: FAV_BANDS, dog: DOG_BANDS };
-/** True when `price` falls outside the printed range of the band it was put in. */
-const OUT_OF_RANGE = { fav: (p) => p >= 2.0, dog: (p) => p < 2.0 };
+/** The band (from the shared core) of a price: { role, band } or null below the 1.01 floor. */
+function bandFor(price) {
+  const i = core.bandOf(price);
+  if (i < 0) return null;
+  return i < 4 ? { role: 'fav', band: FAV_BANDS[i] } : { role: 'dog', band: DOG_BANDS[i - 4] };
+}
 
 const num = (v) => {
   const f = parseFloat(v);
@@ -164,20 +157,13 @@ function pickBook(row) {
 }
 
 /**
- * ★ R1 — founder ruling, 2026-09-17. SUPERSEDES `market-1` where they conflict.
- *
- * "Headline yield, role cards, price bands and the cumulative profit chart use
- *  Pinnacle closing only. No fallback to Bet365 or any other book inside those
- *  figures — neither the Tennis-Data archive close nor Oddspapi. Bet365 may
- *  appear on ledger rows, labelled by book, but is excluded from every yield and
- *  every units figure."
- *
- * One predicate, used at every aggregation point, so the basis cannot drift apart
- * between the headline and the bands. Rows the predicate rejects are still carried
- * in `matches[]` with their own `book` label — the ledger reads those — they are
- * simply never summed into a yield or a unit count.
+ * ★ TEN-310 ruling (2026-09-27) — SUPERSEDES R1 (2026-09-17, "Pinnacle closing only").
+ * "Both use this tab's rules": every figure — headline, role cards, bands, the cumulative curve and
+ * the tour baseline — is struck on the Form/H2H price rule: Pinnacle close, else Bet365 close, one
+ * book per row (`pickBook`). Every priced row is on the basis; `inBasis` stays on the rows for the
+ * renderer and is true for each of them.
  */
-const isYieldBasis = (side) => side.book === 'pinnacle';
+const isYieldBasis = (side) => side.book === 'pinnacle' || side.book === 'bet365-archive';
 
 function emptyAgg() {
   // profitCents, not profit. Summing `price - 1` as a float reorders with the row
@@ -192,7 +178,7 @@ function addTo(a, side) {
   a.expSum += side.p;
   a.varSum += side.p * (1 - side.p);
   const cents = Math.round(side.price * 100);
-  a.profitCents += side.won ? cents - 100 : -100;
+  a.profitCents += core.plCents(side);          // the tab's P&L, the same function
   a.priceCents += cents;
   if (side.book === 'pinnacle') a.pinnacle += 1; else a.bet365 += 1;
 }
@@ -374,15 +360,11 @@ function main() {
           oppArchetype: archetypeOf(s.opp),
           opp: s.opp, won: s.won, p: s.p, price: s.price, oppPrice: s.oppPrice,
           book: bk.book, bookLabel: bk.label,
-          // role: strictly "was he the shorter price". An exact tie is neither, and is
-          // counted as such rather than shoved into one card to make a sum work.
-          role: s.price < s.oppPrice ? 'fav' : s.price > s.oppPrice ? 'dog' : 'level',
+          // role: the tab's rule (TEN-310) — favourite = price < 2.00, from the shared core.
+          role: core.isFavPrice(s.price) ? 'fav' : 'dog',
         };
-        // R1 (founder, 2026-09-17) — the tour baseline is what every player's yield
-        // is compared against, so it must rest on the SAME basis as the yields:
-        // Pinnacle closing only. Left blended, a Pinnacle-only player yield would
-        // be measured against a part-Bet365 field and the "vs tour" gap would be a
-        // book-mix artefact rather than a finding.
+        // The tour baseline rests on the SAME basis as the player yields (TEN-310: Pinnacle,
+        // else Bet365), or the "vs tour" gap would be a book-mix artefact rather than a finding.
         if (isYieldBasis(side)) {
           addTo(tour.all, side);
           if (level) { tour.level[level] = tour.level[level] || emptyAgg(); addTo(tour.level[level], side); }
@@ -425,13 +407,12 @@ function main() {
     const all = emptyAgg(); const fav = emptyAgg(); const dog = emptyAgg(); const lvl = emptyAgg();
     const bands = { fav: {}, dog: {} };
     const bySurface = {};
-    let bandStraddle = 0;
+    const bandStraddle = 0;   // TEN-310: a band is decided by the price alone, so none can straddle
     FAV_BANDS.forEach((b) => { bands.fav[b.id] = emptyAgg(); });
     DOG_BANDS.forEach((b) => { bands.dog[b.id] = emptyAgg(); });
 
-    // R1: every aggregate below — headline, roles, bands, per-surface and the
-    // cumulative curve — is struck on Pinnacle closing only. `sides` keeps every
-    // priced row for `matches[]`; `basis` is the subset that may be summed.
+    // Every aggregate below — headline, roles, bands, per-surface and the cumulative curve — is
+    // struck on the TEN-310 basis (Pinnacle, else Bet365 close): every priced row.
     const basis = sides.filter(isYieldBasis);
     let cumCents = 0;
     const curve = [];
@@ -440,18 +421,15 @@ function main() {
       if (s.role === 'fav') addTo(fav, s);
       else if (s.role === 'dog') addTo(dog, s);
       else addTo(lvl, s);
-      if (s.role !== 'level') {
-        const band = PRICE_BANDS[s.role].find((b) => b.test(s.price));
-        addTo(bands[s.role][band.id], s);
-        if (OUT_OF_RANGE[s.role](s.price)) bandStraddle += 1;
-      }
+      const bf = bandFor(s.price);
+      if (bf) addTo(bands[bf.role][bf.band.id], s);
       const surf = s.surface || 'Unknown';
       bySurface[surf] = bySurface[surf] || emptyAgg();
       addTo(bySurface[surf], s);
       // Integer cents, for the same reason emptyAgg() carries cents: this running
       // total is what the cumulative chart plots, so a float drift here is a
       // visible drift in the line.
-      cumCents += s.won ? Math.round(s.price * 100) - 100 : -100;
+      cumCents += core.plCents(s);
       curve.push({ d: s.date, c: Math.round(cumCents) / 100 });
     });
 
@@ -466,16 +444,12 @@ function main() {
       name: rec.name,
       // §5: every figure below is a CLOSING price. The label is not decoration — the
       // page prints it, and the book mix says how much of it is Pinnacle.
-      // R1: the basis is now a single book. This string is printed on the page, so it
-      // must name the basis the numbers were actually struck on — not the join's
-      // wider reach. `matches[]` still carries Bet365-archive rows, labelled.
-      priceBasis: 'Pinnacle closing only',
+      // This string is printed on the page, so it names the basis the numbers were struck on.
+      priceBasis: PRICE_BASIS,
       builtAt: stamp.builtAt,
       builtFromCommit: stamp.builtFromCommit,
       headline: summarise(all),
-      // Median over the BASIS, not over every priced row: the headline names a
-      // Pinnacle-only sample, so a median drawn from a wider set would describe a
-      // different population than the figure beside it.
+      // Median over the same basis as the headline.
       medianPrice: r2(median(basis.map((s) => s.price))),
       roles: { all: summarise(all), favourite: summarise(fav), underdog: summarise(dog), level: summarise(lvl) },
       bands: { favourite: bandOut('fav'), underdog: bandOut('dog') },
@@ -485,16 +459,13 @@ function main() {
       coverage: {
         firstPriced: basis.length ? basis[0].date : null,
         lastPriced: basis.length ? basis[basis.length - 1].date : null,
-        // Disclosure, not decoration: how many priced rows the R1 basis excluded.
-        // Without it "603 priced" and a ledger showing 727 priced rows read as a
-        // bug rather than as two different, correctly-labelled populations.
+        // Priced rows left out of the basis: 0 since TEN-310 (every priced row counts). Kept so a
+        // future narrower basis has to say how much it drops.
         pricedAnyBook: sides.length,
         excludedNonPinnacle: sides.length - basis.length,
         pinnacleEndByLevel: pinnacleEnd,
         bet365ArchiveEndByLevel: bet365End,
-        // Rows banded inside their role but priced outside that band's printed
-        // range — a sub-2.00 underdog or an arbed favourite above it. Published
-        // because the alternative is a label that quietly lies about its rows.
+        // Rows priced outside their band's printed range: 0 by construction since TEN-310.
         bandStraddle,
       },
       // Per-row detail for the drills. Every row carries its own book so the modal can
@@ -512,10 +483,11 @@ function main() {
         oppArchetype: s.oppArchetype,
         opp: s.opp, won: s.won, price: r2(s.price), oppPrice: r2(s.oppPrice),
         book: s.book, role: s.role,
-        // Per-row P&L in units, struck in cents. `inBasis` is what the modal reads
-        // to grey a row out of the yield: the row is real and priced, it is simply
-        // not on the R1 basis.
-        pl: (s.won ? Math.round(s.price * 100) - 100 : -100) / 100,
+        // The band this row was counted in, from its unrounded price (a 3-decimal close such as
+        // 1.205 would re-band as 1.21 if the page re-derived it from `price` above).
+        band: bandFor(s.price) ? bandFor(s.price).band.id : null,
+        // Per-row P&L in units, struck in cents (the shared core's formula).
+        pl: core.plCents(s) / 100,
         inBasis: isYieldBasis(s),
       })),
     };
@@ -527,7 +499,7 @@ function main() {
 
   fs.writeFileSync(INDEX_PATH, JSON.stringify({
     schemaVersion: SCHEMA_VERSION,
-    priceBasis: 'Pinnacle closing only',
+    priceBasis: PRICE_BASIS,
     builtAt: stamp.builtAt,
     builtFromCommit: stamp.builtFromCommit,
     tour: { all: tourSummary, level: tourByLevel },
@@ -537,14 +509,11 @@ function main() {
 
   log(`archive rows ${stats.rows}, ${stats.incomplete} retired/walkover excluded, ${stats.unpriced} unpriced dropped`);
   log(`player-sides ${stats.sides}, joined to a profile ${stats.joined}, exact price ties ${stats.ties}`);
-  log(`tour baseline (R1, Pinnacle closing only): ${tourSummary.n} priced sides, yield ${tourSummary.yield}%, `
+  log(`tour baseline (${PRICE_BASIS}): ${tourSummary.n} priced sides, yield ${tourSummary.yield}%, `
     + `book mix ${tourSummary.book.pinnacle} Pinnacle / ${tourSummary.book.bet365} Bet365-archive`);
-  if (tourSummary.book.bet365 !== 0) {
-    throw new Error(`R1 violated: ${tourSummary.book.bet365} non-Pinnacle sides reached the tour baseline`);
-  }
   log(`shards written: ${shipped}`);
   return 0;
 }
 
 if (require.main === module) process.exit(main());
-module.exports = { pickBook, summarise, PRICE_BANDS, GATE_FULL, GATE_SMALL };
+module.exports = { pickBook, summarise, PRICE_BANDS, bandFor, PRICE_BASIS, GATE_FULL, GATE_SMALL };

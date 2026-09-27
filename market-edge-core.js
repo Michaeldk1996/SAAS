@@ -13,9 +13,11 @@
  *   wo, ret, complete, bo (3|5), sets ([[own, opp, tb]…] finished sets only → `done`),
  *   pS, oS, tot, diff, tbN, alt (non-standard format reason or null), rr (round rank)
  *
- * PROVISIONAL (founder has not ruled; TEN-310 §4.2 / §4.5 — report, don't resolve):
+ * RULED (founder, TEN-310 question card, 2026-09-27; .claude/rules/modal-market-edge.md):
  *   ME_THIN_FLOOR = 5          a rate (Won, Yield, line %) needs n >= 5, else "—"
  *   ME_NEEDS = 'sumPrice'      Needs = n / Σ price (exact flat-stake break-even)
+ *   Both Market edge surfaces use these rules: the player-profile builder (build-market-edge.js) requires
+ *   this file for bandOf / isFavPrice / plCents.
  */
 (function (root) {
   'use strict';

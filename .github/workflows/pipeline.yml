@@ -1027,7 +1027,8 @@ jobs:
             if (apiNames < 253) { console.error(`court-speed-map.json resolves ${apiNames} api-tennis venue names, down from the 253 the shipped dictionary holds — the join would silently miss matches the bands used to cover`); process.exit(1); }
             console.log(`TEN-228: court-speed-map.json schema ok — ${venues} rated venues, ${apiNames} api-tennis name(s) joined, built with career-history present.`);
           '
-          # TEN-228 · §5.8 Market edge, founder ruling R1 (Pinnacle closing only).
+          # TEN-228 · §5.8 Market edge. Basis = founder ruling TEN-310 (2026-09-27, supersedes R1):
+          # Pinnacle close, else Bet365 close; favourite = price < 2.00 (market-edge-core.js).
           # Same trap as court-speed, one file over: market-edge/ and its index ship
           # under a TOLERANT `cp -r … 2>/dev/null || true` (lines 365-366) and were
           # in no assert at all. R1 changes the shard SCHEMA — priceBasis, `units`
@@ -1047,8 +1048,8 @@ jobs:
           node -e '
             const fs = require("fs");
             const idx = JSON.parse(fs.readFileSync("_site/market-edge-index.json","utf8"));
-            if (idx.priceBasis !== "Pinnacle closing only") {
-              console.error(`market-edge-index.json priceBasis is ${JSON.stringify(idx.priceBasis)}, not "Pinnacle closing only" — founder ruling R1 (2026-09-17) regressed, or a pre-R1 index shipped`);
+            if (idx.priceBasis !== "Pinnacle closing, else Bet365 closing") {
+              console.error(`market-edge-index.json priceBasis is ${JSON.stringify(idx.priceBasis)}, not "Pinnacle closing, else Bet365 closing" — founder ruling TEN-310 (2026-09-27) regressed, or a pre-TEN-310 index shipped`);
               process.exit(1);
             }
             // Build stamp (TEN-263 follow-up, founder 2026-09-24): the index says when it was
@@ -1062,14 +1063,10 @@ jobs:
             else if (!Number.isFinite(builtAt) || builtAt < started) console.log(`::warning::market-edge stale: index builtAt ${JSON.stringify(idx.builtAt || null)} is older than this run build step (${process.env.MARKET_EDGE_BUILD_START}); build-market-edge.js failed and the committed floor shipped`);
             else console.log(`market-edge build stamp ok: builtAt ${idx.builtAt}, commit ${idx.builtFromCommit || "unknown"}`);
             const tour = (idx.tour && idx.tour.all) || {};
-            // The tour baseline is the number every player yield is compared
-            // against, so a single Bet365-archive side in it makes the comparison a
-            // book-mix artefact. build-market-edge.js throws on this too; asserted
-            // again here because the shards are COMMITTED — the build that made
-            // them and the build that ships them are different runs, and a stale
-            // commit is exactly what this catches.
-            if (!tour.book || tour.book.bet365 !== 0) {
-              console.error(`market-edge tour baseline carries ${tour.book && tour.book.bet365} non-Pinnacle sides — R1 violated`);
+            // The tour baseline is struck on the SAME basis as the player yields (TEN-310): Pinnacle,
+            // else Bet365. A baseline with no Bet365 side at all is the superseded Pinnacle-only build.
+            if (!tour.book || !(tour.book.bet365 > 0) || tour.book.pinnacle + tour.book.bet365 !== tour.n) {
+              console.error(`market-edge tour baseline book mix ${JSON.stringify(tour.book)} over n=${tour.n} — not the TEN-310 basis (a stale Pinnacle-only build?)`);
               process.exit(1);
             }
             const files = fs.readdirSync("_site/market-edge").filter(f => f.endsWith(".json"));
@@ -1081,13 +1078,13 @@ jobs:
             for (const f of files) {
               const s = JSON.parse(fs.readFileSync(`_site/market-edge/${f}`,"utf8"));
               if (!s.headline || !s.headline.n) continue;
-              if (s.priceBasis !== "Pinnacle closing only") { console.error(`${f}: priceBasis ${JSON.stringify(s.priceBasis)} — pre-R1 shard shipped`); process.exit(1); }
-              if (s.headline.units == null) { console.error(`${f}: headline.units absent on a shard with ${s.headline.n} priced rows — the role cards "At 1u flat" figure would dash. Pre-R1 shard shipped?`); process.exit(1); }
-              if (s.headline.book.bet365 !== 0) { console.error(`${f}: ${s.headline.book.bet365} Bet365 sides in the headline — R1 violated`); process.exit(1); }
+              if (s.priceBasis !== "Pinnacle closing, else Bet365 closing") { console.error(`${f}: priceBasis ${JSON.stringify(s.priceBasis)} — pre-TEN-310 shard shipped`); process.exit(1); }
+              if (s.headline.units == null) { console.error(`${f}: headline.units absent on a shard with ${s.headline.n} priced rows — the role cards "At 1u flat" figure would dash`); process.exit(1); }
+              if (s.headline.book.pinnacle + s.headline.book.bet365 !== s.headline.n) { console.error(`${f}: headline book mix ${JSON.stringify(s.headline.book)} does not add to n=${s.headline.n} — TEN-310 basis violated`); process.exit(1); }
               if (++checked >= 40) break;
             }
             if (!checked) { console.error("market-edge/: no shard carries a priced sample — the whole join is empty"); process.exit(1); }
-            console.log(`TEN-228 R1: market-edge schema ok — ${files.length} shards, ${checked} sampled, Pinnacle-only basis, tour baseline ${tour.yield}% over ${tour.n} sides.`);
+            console.log(`TEN-310: market-edge schema ok — ${files.length} shards, ${checked} sampled, Pinnacle-else-Bet365 basis, tour baseline ${tour.yield}% over ${tour.n} sides (${tour.book.bet365} Bet365).`);
           '
           echo "All referenced files present in _site."
           # career-history-index.json gates EVERY career-spine surface — Calendar,
