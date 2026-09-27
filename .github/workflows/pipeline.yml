@@ -1321,6 +1321,9 @@ jobs:
       # on an archive file is a hard failure (COMMITBACK_OWNED), never a silent take-main's-side.
       # Runs after the deploy, like the ledgers above, so a git failure can never cost a deploy.
       - name: Commit weather archive (only if changed)
+        # never skips the floor commit-backs below: a failed archive push self-heals next run (the
+        # merged archive already deployed, and the next build re-reads it from the live site)
+        continue-on-error: true
         run: |
           if [ -z "$(git status --porcelain -- weather/archive)" ]; then
             echo "Weather archive unchanged — nothing to commit."
@@ -1328,7 +1331,7 @@ jobs:
           fi
           git config user.name "bsp-weather-bot"
           git config user.email "bsp-weather-bot@users.noreply.github.com"
-          COMMITBACK_OWNED="$(git ls-files -co --exclude-standard -- weather/archive | tr '\n' ' ')" \
+          COMMITBACK_OWNED="admin-log.json series-outcomes.json player-profiles-cache.json.gz player-tournament-history.json.gz historical-match-stats.floor.json $(git ls-files -co --exclude-standard -- weather/archive | tr '\n' ' ')" \
             tools/commitback-push.sh "chore(weather): archive pre-start forecasts [skip ci]" weather/archive
 
       # TEN-206 founder ruling Q2(d) ch-1, 2026-09-16 — the daily half of "key per day

@@ -10,6 +10,7 @@ Founder rulings from TEN-304 (2026-09-27). Rationale is in `BUILD-NOTES.md`.
   - **Test:** 14:00 on 24 Oct is 12:00Z and 14:00 on 26 Oct is 13:00Z (`tools/test-ten304-weather-hour.js`).
 - **The api-tennis 02:00Z placeholder is no time** (founder ruling, 27 Sep): a card with no `startTs` whose start is exactly **02:00:00Z** (04:00 Berlin in CEST, 03:00 in CET) shows "MATCH · TBC", "{date} · time TBC", dashes, no header time, and is never archived at that hour (`apiStartMs` on the page, `defaultStartMs` in `build-weather.js`). Evidence: 34 of 236 cards on `origin/main` (771 `matches.json` revisions, 19–27 Sep) were first published at it, all Chengdu/Hangzhou, and 33 were later revised. **Test:** 04:00 CEST and 03:00 CET → TBC; 04:05 CEST and 04:00 CET → real times; an explicit `startTs` at 02:00Z is trusted.
   - **Known cost:** a real start at exactly 02:00Z (11:00 Tokyo, 10:00 China) also shows TBC until api-tennis sends another time.
+  - **Unverified after 25 Oct:** all evidence is CEST. The rule assumes the placeholder stays at 02:00Z (03:00 Berlin CET); if api-tennis keeps the 04:00 wall clock instead, re-measure and re-rule.
 - **A fixture with no time gets no match-time weather.** **Test:** `weatherStartIso(date, null)` returns null, and nothing is read at a guessed noon or midnight.
 
 ## Model layer #12 (weather)

@@ -52,7 +52,7 @@ const MUTANTS = [
   ['unavailable started match still says "forecast, not observed"', "(archived && !unavail ? ' · ' + CP.pastValues : '')", "(archived ? ' · ' + CP.pastValues : '')"],
   ['WX_C text mapped through 12a again', "  text: '#E7E9EE',                   // primary", "  text: '#EBF1F2',                   // primary"],
   ['WX_C hairline mapped through 12a again', "  hw: '1.25px',", "  hw: '0.33px',"],
-  ['02:00Z placeholder read as a real start', "if (!(m && m.startTs != null) && isFinite(ms) && ((ms % 86400000) + 86400000) % 86400000 === 7200000) return NaN;", ''],
+  ['02:00Z placeholder read as a real start', "if (!(m && m.startTs != null && isFinite(Date.parse(m.startTs))) && isFinite(ms) && ((ms % 86400000) + 86400000) % 86400000 === 7200000) return NaN;", ''],
   ['build archives the placeholder hour', "return Number.isFinite(ms) && ((ms % 86400000) + 86400000) % 86400000 !== 7200000 ? ms : NaN;", 'return Number.isFinite(ms) ? ms : NaN;', 'bw'],
   ['archive: the committed copy is ignored', 'const prevArch = mergeArchives(readCommittedArchive(path.join(outDir, v.archive)), ', 'const prevArch = mergeArchives(null, ', 'bwt'],
   ['archive: the older of two copies wins', '(Date.parse(y.fetchedAt) > Date.parse(x.fetchedAt) ? y : x)', '(Date.parse(y.fetchedAt) > Date.parse(x.fetchedAt) ? x : y)', 'bwt'],

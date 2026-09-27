@@ -5662,7 +5662,7 @@ function cardFmtStart(m, withDate){
 // is exactly 02:00:00Z has no time (header without a time; Weather tab "MATCH · TBC", dashes).
 function apiStartMs(m){
   const ms = cardStartMs(m);
-  if (!(m && m.startTs != null) && isFinite(ms) && ((ms % 86400000) + 86400000) % 86400000 === 7200000) return NaN;
+  if (!(m && m.startTs != null && isFinite(Date.parse(m.startTs))) && isFinite(ms) && ((ms % 86400000) + 86400000) % 86400000 === 7200000) return NaN;
   return ms;
 }
 function aContextLine(m, roundText){
