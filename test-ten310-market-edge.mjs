@@ -9,7 +9,7 @@ import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
-import { buildUI, HTML, CORE_PATH } from './tools/ten310-harness.mjs';
+import { buildUI, HTML, CORE_PATH, slice, constSrc } from './tools/ten310-harness.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const FX = join(HERE, 'tools/fixtures/ten310');
@@ -266,10 +266,45 @@ test('wiring: Market edge is the last tab after Odds; today = the header price; 
   assert.ok(open.includes("if (btn.dataset.atab === 'marketedge') openMarketEdgeTab();"));
   const block = HTML.slice(HTML.indexOf('TEN-310 · MATCH ANALYSIS → MARKET EDGE TAB'), HTML.indexOf('/* ---------- TOURNAMENT SUB-TAB'));
   assert.ok(!block.includes('player-profiles.json') && !/fetch\(/.test(block), 'the tab fetches only through the shared lazy loaders');
-  assert.ok(block.includes('.modal-analysis.printing #aSectionMarketEdge{ display:none !important; }'), 'kept out of Download report');
+  const print = HTML.slice(HTML.indexOf('.modal-analysis.printing .asection{'), HTML.indexOf('.modal-analysis.printing .asection{') + 400);
+  assert.ok(print.includes('.modal-analysis.printing #aSectionMarketEdge, .modal-analysis.printing #mePop{ display:none !important; }'), 'kept out of Download report (static print CSS)');
   assert.ok(/<script src="market-edge-core\.js"><\/script>/.test(HTML));
 });
 
 if (process.argv.includes('--mutant-run')) {
   try { runChecks(); process.exit(0); } catch (e) { process.exit(e instanceof assert.AssertionError || e.code === 'ERR_ASSERTION' ? 3 : 4); }
 }
+
+test('pinned headline figures on the frozen fixtures (Career / Last 52 weeks, ref 2026-09-27)', () => {
+  const ui = buildUI(), rows = load(ui), refDay = Date.UTC(2026, 8, 27) / 86400000;
+  const pick = (M) => [M.priced.length, M.book.P, M.book.B, M.bo3.length, Math.round(M.units * 100), M.bands[0].w, M.bands[0].l];
+  // [priced, Pinnacle, Bet365, Bo3, units×100, 1.01–1.20 W, L] — recomputed independently by the TEN-310 review
+  assert.deepEqual(pick(ui.core.playerModel(rows[0], { scope: 'career', refDay })), [382, 331, 51, 269, 2240, 193, 9]);
+  assert.deepEqual(pick(ui.core.playerModel(rows[1], { scope: 'career', refDay })), [330, 292, 38, 226, 2355, 161, 19]);
+  assert.deepEqual(pick(ui.core.playerModel(rows[0], { scope: 'l52', refDay })).slice(0, 5), [59, 13, 46, 48, 235]);
+  assert.deepEqual(pick(ui.core.playerModel(rows[1], { scope: 'l52', refDay })).slice(0, 5), [38, 8, 30, 27, -279]);
+});
+
+test('meLoad: a failed closes fetch or a missing player key is unknown history, never "0 priced"', async () => {
+  const ui = buildUI();
+  const run = async ({ key, closes }) => {
+    const env = new Function('ui', 'cls', `
+      let _me = null; const _careerHistoryShards = {}, _fhCl = {};
+      const loadCareerHistory = k => { _careerHistoryShards[String(k)] = []; return Promise.resolve([]); };
+      const fhLoadCloses = k => { if (cls === 'ok') _fhCl[String(k)] = null; return Promise.resolve(null); };   // 'ok' = answered (404, no shard); else a failed fetch
+      const meRowsFor = ui.meRowsFor, meRender = () => {};
+      ${slice('meStateFor')}
+      ${slice('meLoad')}
+      return { go: m => { meLoad(m); return new Promise(r => setTimeout(() => r(_me.state.slice()), 20)); } };
+    `)(ui, closes);
+    return env.go({ id: 'x', p1: 'A', p2: 'B', p1Key: key, p2Key: 7, date: '2026-09-27' });
+  };
+  assert.deepEqual(await run({ key: 5, closes: 'failed' }), ['failed', 'failed']);
+  assert.deepEqual(await run({ key: 5, closes: 'ok' }), ['ready', 'ready']);
+  assert.deepEqual((await run({ key: null, closes: 'ok' }))[0], 'none');
+  // and what the page shows for them
+  const R = ui.render({ id: 'x', p1: 'A. One', p2: 'B. Two', p1Key: 5, p2Key: 7, date: '2026-09-27', bestOdds: { p1: { price: 1.5 }, p2: { price: 2.6 } } },
+    { meView: 'winner' }, [null, null], ['failed', 'none']);
+  assert.ok(!/\d+ priced/.test(R.html), 'no "N priced" for unknown history');
+  assert.ok(R.html.includes('History unavailable') && R.html.includes('No history on file for this player.'));
+});

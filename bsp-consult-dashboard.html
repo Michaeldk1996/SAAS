@@ -2465,6 +2465,8 @@
     .modal-analysis .aanalysis-body-wrap{ display:block !important; }
     .modal-analysis .abody{ overflow:visible !important; }
     .modal-analysis.printing .asection{ display:block !important; page-break-inside:avoid; margin-bottom:20px; }
+    /* TEN-310: Market edge is not part of the Download report (brief §1). */
+    .modal-analysis.printing #aSectionMarketEdge, .modal-analysis.printing #mePop{ display:none !important; }
   }
   /* Pipeline-health banner: makes a missed/failed automated run immediately
      obvious instead of silently serving stale data. */
@@ -15366,10 +15368,14 @@ function meRowFromCareer(x, cl, selfKey, selfName, idx){
   }
   if (!r.wo && cl){
     const d0 = fhDayNum(r.date), nk = fhNameKey(r.opp), hi = d0 + (x.src === 'archive' ? 14 : 1);
-    const hits = d0 == null || !nk ? [] : (cl.rows || []).filter(y => { const d = fhDayNum(y.date); return d != null && d >= d0 - 1 && d <= hi && fhNameKey(y.opp) === nk && y.won === r.won; });
+    const inWin = y => { const d = fhDayNum(y.date); return d != null && d >= d0 - 1 && d <= hi && y.won === r.won; };
+    let hits = d0 == null || !nk ? [] : (cl.rows || []).filter(y => inWin(y) && fhNameKey(y.opp) === nk);
+    // One surname a prefix of the other ("A. Ramos" / "Ramos-Vinolas A.", "G. Mpetshi Perricard" / "Mpetshi G."):
+    // accepted only when exactly one row in the window qualifies, with the same result.
+    if (!hits.length && d0 != null && nk.length >= 4) hits = (cl.rows || []).filter(y => { const k2 = fhNameKey(y.opp); return inWin(y) && k2.length >= 4 && k2 !== nk && (k2.startsWith(nk) || nk.startsWith(k2)); });
     const td = hits.length === 1 ? hits[0] : null;
     if (td && x.src === 'archive') r.date = td.date;
-    const c = fhCloseFor(cl, td ? td.date : r.date, r.opp, r.won, td ? td.oppKey : null, r.ek);
+    const c = fhCloseFor(cl, td ? td.date : r.date, td ? td.opp : r.opp, r.won, td ? td.oppKey : null, r.ek);
     if (c){ r.price = c.price; r.oppPrice = c.oppPrice; r.book = c.book; r.src = c.src; }
     if (td && td.oppKey) r.oppKey = td.oppKey;
     if (td && td.ret) r.retSettle = true;
@@ -15441,11 +15447,13 @@ function meLoad(m){
   const E = meStateFor(m);
   [[m.p1Key, m.p1, 0], [m.p2Key, m.p2, 1]].forEach(([key, name, i]) => {
     if (E.state[i] === 'ready' || E.state[i] === 'loading') return;
-    if (key == null){ E.state[i] = 'ready'; E.data[i] = Object.assign([], { notTour: 0 }); return; }
+    if (key == null){ E.state[i] = 'none'; E.data[i] = null; return; }      // no player key: history unknown, never "0 priced"
     E.state[i] = 'loading';
     Promise.all([loadCareerHistory(key), fhLoadCloses(key)]).then(([ch, cl]) => {
       if (_me !== E) return;
-      const answered = String(key) in _careerHistoryShards;
+      // answered = the shard was read (or the index says he has none); a failed closes fetch is not cached
+      // (_fhCl), and without it every row would read unpriced — so it is a failure too, never "0 priced".
+      const answered = String(key) in _careerHistoryShards && String(key) in _fhCl;
       if (!answered){ E.state[i] = 'failed'; E.data[i] = null; }
       else { E.state[i] = 'ready'; E.data[i] = meRowsFor(ch, cl, String(key), name); }
       meRender();
@@ -15454,7 +15462,7 @@ function meLoad(m){
   meRender();
 }
 function openMarketEdgeTab(){ if (_aFormMatch) meLoad(_aFormMatch); }
-function meSet(patch){ if (!_me) return; Object.assign(_me.S, patch); meRender(); }
+function meSet(patch){ if (!_me) return; if ('meBand' in patch || 'meLine' in patch) _me.selMid = null; Object.assign(_me.S, patch); meRender(); }
 function meRender(){
   const E = _me; if (!E) return;
   meEnsureStyles();
@@ -15469,7 +15477,7 @@ function meSg(v, dp, u){ const f = Math.pow(10, dp), a = Math.round(Math.abs(Num
   return (r > 0 ? '+' : r < 0 ? '−' : '±') + a.toFixed(dp) + (u || ''); }
 const mePct0 = v => (v == null ? '—' : Math.round(v * 100) + '%');
 const mePct1 = v => (v == null ? '—' : (Math.round(v * 1000) / 10).toFixed(1) + '%');
-const meUC = v => (v > 0 ? ME_C.up : v < 0 ? ME_C.dn : ME_C.m1);
+const meUC = (v, dp) => { const f = Math.pow(10, dp == null ? 1 : dp), r = Math.round(Math.abs(v) * f + 1e-7); return !r ? ME_C.m1 : v > 0 ? ME_C.up : ME_C.dn; };
 function meDMY(iso){ const x = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(iso || '')); return x ? `${x[3]}.${x[2]}.${x[1].slice(2)}` : FH_DASHC; }
 // The per-player models for the current scope (null while loading / failed).
 function meModels(E){
@@ -15478,7 +15486,7 @@ function meModels(E){
   const refDay = fhRefDay(E.m);
   return [0, 1].map(i => {
     const rows = E.data[i];
-    if (E.state[i] !== 'ready' || !rows || !core) return { state: E.state[i] === 'failed' ? 'failed' : 'loading', today: px[i] };
+    if (E.state[i] !== 'ready' || !rows || !core) return { state: E.state[i] === 'failed' || E.state[i] === 'none' ? E.state[i] : 'loading', today: px[i] };
     const name = i ? E.m.p2 : E.m.p1;
     const M = core.playerModel(rows, { scope: E.S.meScope, refDay, todayPrice: px[i], surname: fhSurname(name) });
     return Object.assign(M, { state: 'ready', today: px[i], rows });
@@ -15501,6 +15509,8 @@ const meScopeLbl = S => (S.meScope === 'l52' ? 'Last 52 weeks' : 'Career');
 function meScopeSeg(S){ return meSegHtml([['l52', 'Last 52 weeks'], ['career', 'Career']].map(t => ({ label: t[1], on: S.meScope === t[0], onclick: `meSet({meScope:'${t[0]}'})` }))); }
 // While a shard loads the body keeps its loaded height (measured: 2 group labels + 8 band rows = 282px,
 // 6 line rows × 38px = 228px), so nothing moves when the data lands (TEN-310 §4.9).
+// A player whose history is unknown: the load failed, or he has no player key. Never "0 priced".
+const meNoHist = (M, pad) => `<div style="padding:${pad}; font-size:11.5px; color:${ME_C.m2};">${M.state === 'none' ? 'No history on file for this player.' : 'History unavailable — reopen the tab to retry.'}</div>`;
 const meLoadingRow = (pad, h) => `<div style="min-height:${h}px;"><div style="padding:${pad}; font-size:11.5px; color:${ME_C.m2};">Loading…</div></div>`;
 
 // §2 Price sensitivity — one player's column.
@@ -15509,7 +15519,7 @@ function meBandsCol(E, i, M){
   const head = `<div style="display:grid; grid-template-columns:${ME_BCOLS}; gap:0 8px; align-items:end; padding:0 8px 7px; border-bottom:${ME_C.hw} solid ${ME_C.lineSoft};">`
     + `<span style="${ME_COLH}">Price</span><span style="${ME_COLH}">Wins · losses</span><span style="${ME_COLH} text-align:right;">Won</span><span style="${ME_COLH} text-align:right;">Needs</span><span style="${ME_COLH} text-align:right;">1u stake</span></div>`;
   let body;
-  if (M.state !== 'ready') body = `<div class="me-bands-body">${M.state === 'failed' ? `<div style="padding:7px 8px; font-size:11.5px; color:${ME_C.m2};">History unavailable — reopen the tab to retry.</div>` : meLoadingRow('7px 8px', 282)}</div>`;
+  if (M.state !== 'ready') body = `<div class="me-bands-body">${M.state === 'loading' ? meLoadingRow('7px 8px', 282) : meNoHist(M, '7px 8px')}</div>`;
   else {
     body = '<div class="me-bands-body" style="display:flex; flex-direction:column;">' + [['fav', 'As favourite'], ['dog', 'As underdog']].map(g => `<span style="${FH_MONO} font-size:9px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:${ME_C.m1}; padding:10px 8px 4px;">${g[1]}</span>`
       + M.bands.filter(b => b.gk === g[0]).map(b => {
@@ -15520,7 +15530,7 @@ function meBandsCol(E, i, M){
           + `<span style="display:flex; align-items:center; gap:8px; min-width:0;"><span style="flex:1; display:flex; gap:2px; height:7px;"><span style="width:${winW}; background:${ME_C.text}; border-radius:3px 0 0 3px;"></span><span style="flex:1; background:${ME_C.track}; border-radius:0 3px 3px 0;"></span></span><span style="${FH_MONO} font-size:10px; color:${ME_C.m1}; white-space:nowrap; min-width:48px; text-align:right;">${b.w}–${b.l}</span></span>`
           + `<span style="${FH_MONO} font-size:11.5px; font-weight:700; text-align:right;">${mePct0(b.won)}</span>`
           + `<span style="${FH_MONO} font-size:11px; color:${ME_C.m2}; text-align:right;">${mePct0(b.needs)}</span>`
-          + `<span style="${FH_MONO} font-size:11.5px; font-weight:700; text-align:right; color:${n ? meUC(b.units) : ME_C.m1};">${n ? meSg(b.units, 1, 'u') : '—'}</span></div>`;
+          + `<span style="${FH_MONO} font-size:11.5px; font-weight:700; text-align:right; color:${n ? meUC(b.units, 1) : ME_C.m1};">${n ? meSg(b.units, 1, 'u') : '—'}</span></div>`;
       }).join('')).join('') + '</div>';
   }
   return `<div style="display:flex; flex-direction:column; min-width:0;"><span style="font-size:13px; font-weight:700; padding-bottom:8px;">${fhEsc(name)}</span>${head}${body}</div>`;
@@ -15535,18 +15545,20 @@ function mePriceCard(E, MM){
 // §3 Profit at 1u flat — one shared DATE axis for both players (TEN-310 §4.3).
 function meChartCard(E, MM){
   const S = E.S, core = window.MarketEdgeCore, names = [E.m.p1, E.m.p2];
-  const ready = MM[0].state === 'ready' && MM[1].state === 'ready';
-  const C = ready ? core.chartModel(MM[0].series, MM[1].series, S.meScope) : null;
+  // drawn once neither player is still loading; a player with unknown history simply has no line
+  const ready = MM.every(M => M.state !== 'loading') && MM.some(M => M.state === 'ready');
+  const ser0 = M => (M.state === 'ready' ? M.series : []);
+  const C = ready ? core.chartModel(ser0(MM[0]), ser0(MM[1]), S.meScope) : null;
   const col = [[ME_C.text, ME_C.aFill, '2.6'], [ME_C.b, ME_C.bFill, '2']];
   const legend = [0, 1].map(i => {
     const M = MM[i], has = M.state === 'ready' && M.priced.length > 0;
-    const nTxt = M.state === 'ready' ? M.priced.length + ' priced' : M.state === 'failed' ? '—' : '';
+    const nTxt = M.state === 'ready' ? M.priced.length + ' priced' : M.state === 'loading' ? '' : '—';
     return `<span style="display:flex; align-items:center; gap:8px;"><span style="width:16px; height:3px; border-radius:2px; background:${col[i][0]};"></span><span style="font-size:13px; font-weight:700;">${fhEsc(names[i])}</span><span style="${FH_MONO} font-size:10.5px; color:${ME_C.m2};">${nTxt}</span>`
-      + (has ? `<span style="${FH_MONO} font-size:14px; font-weight:700; color:${meUC(M.units)};">${meSg(M.units, 1, 'u')}</span>` : '') + '</span>';
+      + (has ? `<span style="${FH_MONO} font-size:14px; font-weight:700; color:${meUC(M.units, 1)};">${meSg(M.units, 1, 'u')}</span>` : '') + '</span>';
   }).join('');
   let plot;
   if (!ready || !C){
-    const msg = !ready ? (MM[0].state === 'failed' || MM[1].state === 'failed' ? '' : 'Loading…') : '';
+    const msg = MM.some(M => M.state === 'loading') ? 'Loading…' : '';
     plot = `<div style="display:flex; gap:12px;"><div style="position:relative; width:52px; height:300px; flex:none;"></div><div style="position:relative; flex:1; min-width:0; height:300px; display:flex; align-items:center;"><span style="font-size:11.5px; color:${ME_C.m2};">${msg}</span></div></div><div style="margin:-6px 0 0 64px; position:relative; height:16px;"></div>`;
   } else {
     const H = C.H, pct = y => (y / H * 100).toFixed(2) + '%';
@@ -15583,7 +15595,8 @@ function meLinesCol(E, i, M){
   const head = `<div style="display:grid; grid-template-columns:${ME_LCOLS}; gap:0 10px; align-items:end; padding:0 10px 7px; border-bottom:${ME_C.hw} solid ${ME_C.lineSoft};">`
     + `<span style="${ME_COLH}">Line</span><span style="${ME_COLH} text-align:right;">All</span><span style="${ME_COLH} text-align:right; color:${ME_C.blue};">In band</span><span style="${ME_COLH} text-align:right;">Diff</span></div>`;
   let body;
-  if (M.state !== 'ready') body = M.state === 'failed' ? `<div style="padding:7px 10px; font-size:11.5px; color:${ME_C.m2};">History unavailable — reopen the tab to retry.</div>` : meLoadingRow('7px 10px', 228);
+  if (M.state !== 'ready') body = M.state === 'loading' ? meLoadingRow('7px 10px', 228) : meNoHist(M, '7px 10px');
+  else if (!L) body = `<div class="me-noprice" style="padding:28px 0; text-align:center; font-size:12.5px; color:${ME_C.m2};">${ME_NOPRICE_MSG}</div>`;
   else body = L.rows.map(r => {
     const aTxt = r.aPct == null ? `— · n=${r.aN}` : `${r.aC}/${r.aN} · ${r.aPct}%`;
     const bTxt = r.bPct == null ? `— · n=${r.bN}` : `${r.bC}/${r.bN} · ${r.bPct}%`;
@@ -15592,12 +15605,12 @@ function meLinesCol(E, i, M){
       + `<span style="font-size:12.5px; font-weight:600;">${fhEsc(r.label)}</span>`
       + `<span style="${FH_MONO} font-size:11px; color:${ME_C.m2}; text-align:right; white-space:nowrap;">${aTxt}</span>`
       + `<span style="justify-self:end; ${FH_MONO} font-size:12px; font-weight:700; white-space:nowrap; background:${r.top ? ME_C.hiBg : 'transparent'}; border:${ME_C.hw} solid ${r.top ? ME_C.hiBd : 'transparent'}; border-radius:6px; padding:3px 8px;">${bTxt}</span>`
-      + `<span style="${FH_MONO} font-size:11px; font-weight:700; text-align:right; color:${d == null ? ME_C.m1 : meUC(d)};">${d == null ? '' : meSg(d, 0, '')}</span></div>`;
+      + `<span style="${FH_MONO} font-size:11px; font-weight:700; text-align:right; color:${d == null ? ME_C.m1 : meUC(d, 0)};">${d == null ? '' : meSg(d, 0, '')}</span></div>`;
   }).join('');
   return `<div style="display:flex; flex-direction:column; min-width:0;"><div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; padding-bottom:8px;"><span style="font-size:13px; font-weight:700;">${fhEsc(name)}</span><span style="${FH_MONO} font-size:10px; color:${ME_C.m2};">${bandLbl}</span></div>${head}${body}</div>`;
 }
 function meLinesCard(E, MM){
-  const S = E.S, noPrice = MM[0].today == null || MM[1].today == null;
+  const S = E.S, noPrice = MM[0].today == null && MM[1].today == null;
   const body = noPrice
     ? `<div class="me-noprice" style="padding:28px 0; text-align:center; font-size:12.5px; color:${ME_C.m2};">${ME_NOPRICE_MSG}</div>`
     : `<div style="${ME_PGRID}">${meLinesCol(E, 0, MM[0])}${meLinesCol(E, 1, MM[1])}</div>`;
@@ -15679,8 +15692,8 @@ function meBandPopHtml(E, MM){
   const stats = `<div style="display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px;">`
     + meStatBox('Record', 'W' + b.w + '–L' + b.l, ME_C.text, true) + meStatBox('Won', mePct1(b.won), ME_C.text, true)
     + meStatBox('Needs', mePct1(b.needs), ME_C.m1, true)
-    + meStatBox('Yield', b.yield == null ? '—' : meSg(b.yield * 100, 1, '%'), b.yield == null ? ME_C.m1 : meUC(b.yield), true)
-    + meStatBox('At 1u flat', meSg(b.units, 1, 'u'), meUC(b.units), true) + '</div>';
+    + meStatBox('Yield', b.yield == null ? '—' : meSg(b.yield * 100, 1, '%'), b.yield == null ? ME_C.m1 : meUC(b.yield * 100, 1), true)
+    + meStatBox('At 1u flat', meSg(b.units, 1, 'u'), meUC(b.units, 1), true) + '</div>';
   const cells = r => meCommonCells(r)
     + `<span style="${FH_MONO} font-size:10px; color:${ME_C.m2};">${fhEsc(r.round || FH_DASHC)}</span>`
     + `<span style="${FH_MONO} font-size:10.5px; color:${ME_C.m1}; white-space:nowrap;">${meScoreTxt(r)}</span>`
@@ -15733,8 +15746,7 @@ function meEnsureStyles(){
   #aSectionMarketEdge, #mePop{ line-height:normal; font-size:16px; }
   #aSectionMarketEdge .seg, #mePop .seg{ cursor:pointer; transition:background .14s ease, color .14s ease, border-color .14s ease; }
   #aSectionMarketEdge .me-row:hover, #mePop .me-row:hover{ background:${ME_C.wash} !important; }
-  #mePop .me-x:hover{ color:${ME_C.text} !important; border-color:${ME_C.lineOpen} !important; }
-  .modal-analysis.printing #aSectionMarketEdge{ display:none !important; }`;
+  #mePop .me-x:hover{ color:${ME_C.text} !important; border-color:${ME_C.lineOpen} !important; }`;
   document.head.appendChild(el);
 }
 
