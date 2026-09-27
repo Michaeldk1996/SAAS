@@ -49,7 +49,7 @@ const tmp = () => { const d = fs.mkdtempSync(path.join(os.tmpdir(), 'ten304-bw-'
     const d = tmp(), calls = [];
     await B.build({ outDir: d, matchesPath: path.join(d, 'm.json'), hints: HINTS, coords: COORDS, log: () => {},
       now: () => new Date('2026-09-27T04:00:00Z'), fetchImpl: async u => { calls.push(u); return ok(omResponse())(); } });
-    assert.strictEqual(calls.length, 1);                                                    // mutation: one call per match
+    assert.strictEqual(calls.filter(u => /open-meteo/.test(u)).length, 1);                 // mutation: one call per match
     const f = JSON.parse(fs.readFileSync(path.join(d, 'weather/chengdu.json'), 'utf8'));
     assert.strictEqual(f.tz, 'Asia/Shanghai'); assert.strictEqual(f.fetchedAt, '2026-09-27T04:00:00.000Z');
     assert.strictEqual(f.hourly.gusts[5], null);                                            // mutation: `|| 0` in toFile
@@ -60,6 +60,7 @@ const tmp = () => { const d = fs.mkdtempSync(path.join(os.tmpdir(), 'ten304-bw-'
   await check('fetch fails → the last good live copy is carried with its ORIGINAL fetchedAt (the tab can age it)', async () => {
     const d = tmp(), prev = { v: 1, venue: 'Chengdu', tz: 'Asia/Shanghai', fetchedAt: '2026-09-26T01:00:00.000Z', hourly: { time: [] }, daily: {} };
     await B.build({ outDir: d, matchesPath: path.join(d, 'm.json'), hints: HINTS, coords: COORDS, log: () => {},
+      now: () => new Date('2026-09-27T04:00:00Z'),
       fetchImpl: async u => { if (/open-meteo/.test(u)) throw new Error('down'); return ok(prev)(); } });
     const f = JSON.parse(fs.readFileSync(path.join(d, 'weather/chengdu.json'), 'utf8'));
     assert.strictEqual(f.fetchedAt, '2026-09-26T01:00:00.000Z');                            // mutation: restamp fetchedAt
@@ -71,6 +72,20 @@ const tmp = () => { const d = fs.mkdtempSync(path.join(os.tmpdir(), 'ten304-bw-'
     assert.ok(!fs.existsSync(path.join(d, 'weather/chengdu.json')));
     const idx = JSON.parse(fs.readFileSync(path.join(d, 'weather-index.json'), 'utf8'));
     assert.strictEqual(idx.tours['ATP Chengdu'].file, null);
+  });
+  await check('refresh every 3 h: a live copy under 3 h old is carried with NO Open-Meteo call; at 3 h it is re-fetched', async () => {
+    const live = { v: 1, venue: 'Chengdu', tz: 'Asia/Shanghai', fetchedAt: '2026-09-27T01:30:00.000Z', hourly: { time: ['x'] }, daily: {} };
+    const run = async nowIso => { const d = tmp(), calls = [];
+      await B.build({ outDir: d, matchesPath: path.join(d, 'm.json'), hints: HINTS, coords: COORDS, log: () => {}, now: () => new Date(nowIso),
+        fetchImpl: async u => { calls.push(u); return ok(/open-meteo/.test(u) ? omResponse() : live)(); } });
+      return { om: calls.filter(u => /open-meteo/.test(u)).length, f: JSON.parse(fs.readFileSync(path.join(d, 'weather/chengdu.json'), 'utf8')) }; };
+    assert.strictEqual(B.REFRESH_HOURS, 3);
+    const fresh = await run('2026-09-27T04:29:00Z');                                        // 2 h 59 min old
+    assert.strictEqual(fresh.om, 0);                                                        // mutation: fetch every run
+    assert.strictEqual(fresh.f.fetchedAt, live.fetchedAt);
+    const due = await run('2026-09-27T04:30:00Z');                                          // 3 h old
+    assert.strictEqual(due.om, 1);                                                          // mutation: never refresh
+    assert.strictEqual(due.f.fetchedAt, '2026-09-27T04:30:00.000Z');
   });
   console.log(`\nRESULT: ${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);

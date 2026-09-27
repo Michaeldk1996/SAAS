@@ -14,6 +14,11 @@
 // hour and every daily high/low is venue-local. Past hours are ARCHIVED FORECAST
 // values, not observations (Open-Meteo docs, `past_days`): `pastHours:'forecast'`.
 //
+// Refresh cadence: the pipeline runs every ~10 min, but a venue is re-fetched only
+// when the live copy is REFRESH_HOURS (3 h) old or more; until then the live copy
+// is carried as is (original fetchedAt). The live site is the store — these files
+// are built, published and never committed (.gitignore).
+//
 // A failed fetch never writes a guess: the last good file is carried over from
 // the live site with its ORIGINAL fetchedAt, so the tab can say how old it is
 // (6–24 h amber, >24 h unavailable — TEN-304 brief §2.4). No last good copy →
@@ -24,6 +29,7 @@ const path = require('path');
 
 const SITE = 'https://michaeldk1996.github.io/SAAS/';
 const SOURCE = 'Open-Meteo';
+const REFRESH_HOURS = 3;
 const HOURLY = ['temperature_2m', 'relative_humidity_2m', 'apparent_temperature', 'precipitation_probability',
   'precipitation', 'wind_speed_10m', 'wind_gusts_10m'];
 const DAILY = ['weather_code', 'temperature_2m_max', 'temperature_2m_min'];
@@ -98,16 +104,23 @@ async function build({ outDir = '.', matchesPath = 'matches.json', fetchImpl = f
   fs.mkdirSync(path.join(outDir, 'weather'), { recursive: true });
   const status = {};
   for (const v of Object.values(venues)) {
-    let file = null;
-    try {
-      file = toFile(v.key, v.lat, v.lon, await getJson(forecastUrl(v.lat, v.lon), fetchImpl), now().toISOString());
-      status[v.key] = file ? 'fetched' : 'bad-response';
-    } catch (e) { status[v.key] = 'fetch-failed: ' + e.message; }
-    if (!file) {                                          // carry the last good copy, original fetchedAt kept
+    let file = null, prev = null;
+    try {                                                 // the last good copy, as published
+      const p = await getJson(SITE + v.file + '?t=' + Date.now(), fetchImpl);
+      if (p && p.v === 1 && p.hourly && p.fetchedAt && Number.isFinite(Date.parse(p.fetchedAt))) prev = p;
+    } catch (e) { /* none published yet, or the site is unreachable */ }
+    const prevAgeH = prev ? (now().getTime() - Date.parse(prev.fetchedAt)) / 3600e3 : Infinity;
+    if (prev && prevAgeH >= 0 && prevAgeH < REFRESH_HOURS) {
+      file = prev; status[v.key] = 'fresh (' + prev.fetchedAt + '), not re-fetched';
+    } else {
       try {
-        const prev = await getJson(SITE + v.file + '?t=' + Date.now(), fetchImpl);
-        if (prev && prev.v === 1 && prev.hourly && prev.fetchedAt) { file = prev; status[v.key] += ' → carried ' + prev.fetchedAt; }
-      } catch (e) { status[v.key] += ' → no last good copy'; }
+        file = toFile(v.key, v.lat, v.lon, await getJson(forecastUrl(v.lat, v.lon), fetchImpl), now().toISOString());
+        status[v.key] = file ? 'fetched' : 'bad-response';
+      } catch (e) { status[v.key] = 'fetch-failed: ' + e.message; }
+      if (!file) {                                        // carry the last good copy, original fetchedAt kept
+        if (prev) { file = prev; status[v.key] += ' → carried ' + prev.fetchedAt; }
+        else status[v.key] += ' → no last good copy';
+      }
     }
     if (file) fs.writeFileSync(path.join(outDir, v.file), JSON.stringify(file));
     else for (const t of Object.values(tours)) if (t.key === v.key) t.file = null;
@@ -119,7 +132,7 @@ async function build({ outDir = '.', matchesPath = 'matches.json', fetchImpl = f
   return { index, status };
 }
 
-module.exports = { planVenues, toFile, forecastUrl, slugOf, build, INDOOR_NO_VENUE, HOURLY, DAILY };
+module.exports = { planVenues, toFile, forecastUrl, slugOf, build, INDOOR_NO_VENUE, HOURLY, DAILY, REFRESH_HOURS };
 
 if (require.main === module) {
   const { TOURNAMENT_VENUE_HINTS } = require('./bsp-pipeline.js');

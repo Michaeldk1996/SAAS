@@ -484,7 +484,9 @@ jobs:
 
       # TEN-304: the Weather tab's per-venue forecasts (Open-Meteo free endpoint, founder ruling;
       # no key). One call per OUTDOOR venue on the board, venue-local hourly (2 past + 8 forecast
-      # days). Writes weather-index.json + weather/<slug>.json only; matches.json is never touched.
+      # days), and only when the published copy is 3 h old or more (REFRESH_HOURS) — younger copies are
+      # carried from the live site as is. Writes weather-index.json + weather/<slug>.json only (built and
+      # published every run, never committed); matches.json is never touched.
       # A failed fetch carries the last good file from the live site with its original fetchedAt,
       # so the tab can show its age. Best-effort: with no file, the tab shows its unavailable state.
       - name: Build weather files (best-effort)
