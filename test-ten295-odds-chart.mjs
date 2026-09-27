@@ -2,17 +2,10 @@
 // chart, EXECUTED. The renderer functions are SLICED out of the shipped HTML and run; a
 // regex over the source would pass on code that never runs.
 //
-// Rules under test (.claude/rules/odds.md "The odds-movement chart"):
-//   * books shown = m.oddsMovement.chart ∪ legacy m.oddsMovement.books; legacy bet365 is
-//     "bet365 (Oddspapi, capture ended 26 Sep)", Soft, checkedAt = capturedAt;
-//   * Sharp / Soft grouping in the chips and the table (group header rows);
-//   * default line on = Pinnacle +30s, else the first Sharp book with data;
-//   * a line is stepped only up to its own checkedAt — never to the grid's right edge;
-//   * an upcoming book last checked > 60 min ago reads "no recent data" in its row and
-//     chip, has no Now (dash) and never wins the best-price highlight;
-//   * meta without points = a "no data" row of dashes, never a line or a chip;
-//   * the footnote lists every shown source with its clock (no hard-coded vendor);
-//   * the Key Factors mini-chart still draws from the new shape.
+// Rules under test (.claude/rules/odds.md "The odds-movement chart"): the Key Factors mini-chart draws
+// from the chart-only shape and never across a gap; the page's start (aOddsStartMs) cuts every line;
+// the TEN-216 collector and the pipeline's shard / close rules. The Odds TAB itself (rows, stale books,
+// no-vig, tiles, pop-up) is test-ten303-odds-tab.mjs since TEN-303.
 //
 // Run: node --test test-ten295-odds-chart.mjs
 import { test } from 'node:test';
@@ -40,21 +33,24 @@ function constSrc(name, src = html) {
   return src.slice(start, src.indexOf(';\n', start) + 1);
 }
 
+// TEN-303 rebuilt the Odds tab (test-ten303-odds-tab.mjs owns its markup); this file keeps the TEN-295
+// data rules that outlive it: the Key Factors mini-chart and the page's start cut.
 export function build(src = html) {
   const s = n => slice(n, src), c = n => constSrc(n, src);
   return new Function(`
-    ${c('AODDS_DASH')} ${c('AODDS_DASHCYCLE')} ${c('AODDS_CHECK')} ${c('AODDS_MARKETS')}
-    ${c('AODDS_STALE_MS')} ${c('AODDS_LEGACY_BET365')} ${c('AODDS_ORDER')} ${c('AODDS_DEFAULT_ON')} ${c('AODDS_ALIAS')} ${c('AODDS_AT_CLOCK')} ${c('AODDS_CONFIG')}
-    let _aOdds = { m:null, snapshot:'now', off:null, mktOpen:false };
+    ${['AODDS_STALE_MS', 'AODDS_LEGACY_BET365', 'AODDS_ORDER', 'AODDS_ALIAS', 'AODDS_AT_CLOCK', 'AODDS_CONFIG', 'AODDS_BOOKS',
+       'AODDS_MARKET_TILES', 'AODDS_STEAM', 'AODDS_LINE_SHAPE', 'AODDS_C', 'AODDS_RECV', 'AODDS_CHECKED'].map(c).join(' ')}
+    let _aOdds = { m:null, novig:false, market:'Match Winner', mv:null };
+    const newsTz = () => 'Europe/Brussels';
     const buildOddsReduced = () => 'REDUCED';
     const psEsc = x => String(x);
     const _ocsOf = m => (m && m.__testOcs) || null;   // the page's card-state reader, stubbed
-    ${s('acctTzOffsetMin')} ${s('cardStartMs')} ${s('aOddsStartMs')} ${s('escapeHtml')} ${s('aOddsDash')} ${s('aOddsClock')} ${s('aOddsDay')} ${s('aOddsAxis')}
-    ${s('aOddsStep')} ${s('aOddsBooksOf')} ${s('aOddsHasSeries')} ${s('aOddsSortBooks')}
-    ${s('aOddsSourceText')} ${s('aOddsShort')} ${s('aOddsStepTo')} ${s('aOddsPulledAt')} ${s('aOddsSpark')}
-    ${s('aOddsChartSvg')} ${s('aOddsNoPriceRow')} ${s('aOddsUnpricedTable')} ${s('buildOddsSection')} ${s('akOddsMoveSvg')}
-    return { buildOddsSection, akOddsMoveSvg, aOddsBooksOf, aOddsStepTo, aOddsSourceText, cardStartMs, aOddsStartMs, aOddsShort,
-             reset: () => { _aOdds = { m:null, snapshot:'now', off:null, mktOpen:false }; },
+    ${['acctTzOffsetMin', 'cardStartMs', 'aOddsStartMs', 'escapeHtml', 'aOddsStep', 'aOddsBooksOf', 'aOddsHasSeries', 'aOddsPulledAt',
+       'aOddsHM', 'aOddsDM', 'aOddsStamp', 'aOddsWhen', 'aOddsFmt', 'aOddsSrcTitle', 'aOddsGapsMs', 'aOddsInGap', 'aOddsPairTicks',
+       'aOddsNoVig', 'aOddsRowsOf', 'aOddsMonotone', 'aOddsLinePaths', 'aOddsSparkSvg', 'aOddsMvChart', 'aOddsTipHtml', 'aOddsStatusOf',
+       'aOddsBookTip', 'buildOddsSection', 'aOddsMvHtml', 'akOddsMoveSvg'].map(s).join(' ')}
+    return { buildOddsSection, akOddsMoveSvg, aOddsBooksOf, cardStartMs, aOddsStartMs,
+             reset: () => { _aOdds = { m:null, novig:false, market:'Match Winner', mv:null }; },
              state: () => _aOdds };
   `)();
 }
@@ -107,187 +103,6 @@ function fixture({ now = Date.now(), superbetChecked = now - 5 * 60e3, withPin =
   return m;
 }
 
-// Wave 2: the 8 api-tennis Soft books, in the fixed order (founder comment d5bf3dda).
-const AT_SOFT = ['Betano', '1xBet', 'BetVictor', 'Betfair Sportsbook (api-tennis)', 'Marathon', 'bet365 (api-tennis)', 'Sbobet', 'William Hill'];
-const attrs = (h, cls, attr) => [...h.matchAll(new RegExp(`class="${cls}"[^>]*?data-${attr}="([^"]*)"`, 'g'))].map(x => x[1]);
-const rowOf = (h, book) => {
-  const i = h.indexOf(`data-book="${book}"`, h.indexOf('class="aodds-row'));
-  const j = h.indexOf('class="aodds-row', i + 10);
-  return h.slice(i, j < 0 ? h.indexOf('class="aodds-foot', i) : j);
-};
-
-test('Sharp then Soft: group heads, row order and chip groups', () => {
-  const A = build(); A.reset();
-  const h = A.buildOddsSection(fixture());
-  assert.deepEqual(attrs(h, 'aodds-grouphead', 'group'), ['sharp', 'soft']);
-  const rows = [...h.matchAll(/class="aodds-row[^"]*" data-book="([^"]*)" data-group="([^"]*)"/g)].map(x => [x[1], x[2]]);
-  assert.deepEqual(rows, [
-    ['Pinnacle +30s (Oddspapi)', 'sharp'], ['Pinnacle (api-tennis)', 'sharp'], ['Bet105', 'sharp'],
-    ...AT_SOFT.map(b => [b, 'soft']),
-    ['Superbet', 'soft'], ['Betfair Exchange (recorded by us)', 'soft'],
-    ['bet365 (Oddspapi, capture ended 26 Sep)', 'soft']]);
-  // every Sharp row sits between the Sharp head and the Soft head
-  const iSharp = h.indexOf('aodds-grouphead" data-group="sharp"'), iSoft = h.indexOf('aodds-grouphead" data-group="soft"');
-  assert.ok(iSharp < h.indexOf('data-book="Bet105" data-group="sharp"', h.indexOf('aodds-row')) && h.indexOf('data-book="Bet105" data-group="sharp"', h.indexOf('aodds-row')) < iSoft);
-  const chipGroups = [...h.matchAll(/class="aodds-chipgroup" data-group="([^"]*)"/g)].map(x => x[1]);
-  assert.deepEqual(chipGroups, ['sharp', 'soft']);
-  const chips = [...h.matchAll(/class="aodds-chip" data-book="([^"]*)" data-group="([^"]*)"/g)].map(x => x[1]);
-  assert.deepEqual(chips, ['Pinnacle +30s (Oddspapi)', 'Bet105', 'Superbet', 'Betfair Exchange (recorded by us)', 'bet365 (Oddspapi, capture ended 26 Sep)']);
-});
-
-test('labels: legacy bet365 renamed, per-source footnote, no hard-coded vendor line', () => {
-  const A = build(); A.reset();
-  const h = A.buildOddsSection(fixture());
-  assert.ok(!/data-book="bet365"/.test(h), 'the legacy key is never shown bare');
-  const foot = h.slice(h.indexOf('class="aodds-foot'));
-  for (const want of ['<b>Pinnacle +30s (Oddspapi)</b> — Oddspapi (book ticks)', '<b>Bet105</b> — Kibl feed (our Bet105 source) · time = when Kibl stored the price',
-                      '<b>Superbet</b> — odds-api.io (vendor update time)',
-                      '<b>Betfair Exchange (recorded by us)</b> — odds-api.io, recorded by us (polled every 30 s)',
-                      '<b>bet365 (Oddspapi, capture ended 26 Sep)</b> — Oddspapi (book ticks; capture ended 26 Sep)'])
-    assert.ok(foot.includes(want), `footnote lacks: ${want}`);
-  assert.ok(!h.includes('oddspapi.io</b> historical odds'), 'the old single-vendor footnote is gone');
-  assert.ok(rowOf(h, 'Bet105').includes('Kibl feed (our Bet105 source) · time = when Kibl stored the price'),
-            'row carries its real source description, not the placeholder "Kibl (Kibl insert time)"');
-  assert.ok(!h.includes('Kibl (Kibl insert time)'));
-});
-
-test('default lines on (founder card 78ec4dd2 "sharp_both"): Pinnacle +30s + Bet105, all else off', () => {
-  let A = build(); A.reset();
-  A.buildOddsSection(fixture({ withAt: true }));
-  let off = A.state().off;
-  assert.equal(off['Pinnacle +30s (Oddspapi)'], undefined);
-  assert.equal(off['Bet105'], undefined);
-  for (const b of ['Pinnacle (api-tennis)', 'Betano', 'Superbet', 'Betfair Exchange (recorded by us)', 'bet365 (Oddspapi, capture ended 26 Sep)'])
-    assert.equal(off[b], true, `${b} starts off`);
-  A = build(); A.reset();
-  A.buildOddsSection(fixture({ withPin: false, withAt: true }));
-  off = A.state().off;
-  assert.equal(off['Bet105'], undefined, 'no Pinnacle +30s -> Bet105 alone');
-  assert.equal(off['Pinnacle (api-tennis)'], true, 'the api-tennis Pinnacle stays off');
-  assert.equal(off['Superbet'], true);
-  // neither default line has data -> the first Sharp line with data (the api-tennis Pinnacle)
-  A = build(); A.reset();
-  A.buildOddsSection(fixture({ withPin: false, bet105MetaOnly: true, withAt: true }));
-  off = A.state().off;
-  assert.equal(off['Pinnacle (api-tennis)'], undefined, 'fallback: first Sharp line with data');
-  assert.equal(off['Betano'], true);
-});
-
-test('no recent data: stale upcoming book tagged in row + chip, no Now, never best', () => {
-  const now = Date.now();
-  const A = build(); A.reset();
-  const h = A.buildOddsSection(fixture({ now, superbetChecked: now - 2 * H }));
-  const row = rowOf(h, 'Superbet');
-  assert.ok(row.includes('no recent data'), 'stale row tagged');
-  assert.ok(!rowOf(h, 'Betfair Exchange (recorded by us)').includes('no recent data'), 'fresh row untagged');
-  const chip = h.slice(h.indexOf('class="aodds-chip" data-book="Superbet"'), h.indexOf('</span></span>', h.indexOf('class="aodds-chip" data-book="Superbet"')) + 14);
-  assert.ok(chip.includes('no recent data'), 'stale chip tagged');
-  assert.ok(/font-size:15px;[^>]*>—</.test(row) && !/font-size:15px;[^>]*>2\.60</.test(row),
-            'a stale last price is not shown as Now (its Open 2.60 still is)');
-  // best-price highlight (#3ed68c on the Now number) must not land on the stale 2.60
-  assert.ok(!/color:#3ed68c[^>]*>2\.60</.test(h), 'stale price never wins best');
-  // The summary chip shows the best FRESH p1 now: 2.46 (BF Exch) beats 2.40 / 2.35
-  const fav = h.slice(h.indexOf('>Odds movement<'));
-  assert.ok(/font-size:22px; font-weight:800;">2\.46</.test(fav), 'summary best = 2.46');
-  // the same staleness at checkedAt 30 min is fresh
-  const A2 = build(); A2.reset();
-  assert.ok(!rowOf(A2.buildOddsSection(fixture({ now, superbetChecked: now - 30 * 60e3 })), 'Superbet').includes('no recent data'));
-});
-
-test('a completed match never reads "no recent data"', () => {
-  const A = build(); A.reset();
-  const m = fixture({ superbetChecked: Date.now() - 5 * H });
-  m.finalScore = { winner: 'p1' };
-  assert.ok(!A.buildOddsSection(m).includes('class="aodds-stale"'));
-});
-
-test('no carry-forward past checkedAt: the stale line stops short of the right edge', () => {
-  const now = Date.now();
-  const A = build(); A.reset();
-  const m = fixture({ now, superbetChecked: now - 2 * H });
-  A.buildOddsSection(m);                          // sets the default toggles
-  A.state().off = { 'Pinnacle +30s (Oddspapi)': true, 'Bet105': true, 'Betfair Exchange (recorded by us)': true,
-                    'bet365 (Oddspapi, capture ended 26 Sep)': true };   // Superbet only
-  const h = A.buildOddsSection(m);
-  const lines = [...h.matchAll(/<polyline points="([^"]+)" fill="none" stroke="[^"]+" stroke-width="2" stroke-dasharray="15 6"/g)];
-  assert.equal(lines.length, 2, 'Superbet drawn on both panels');
-  const W = 884, padR = 54;
-  for (const l of lines) {
-    const xs = l[1].split(' ').map(p => Number(p.split(',')[0]));
-    assert.ok(Math.max(...xs) < W - padR - 1, `line ends at ${Math.max(...xs)} — before the right edge ${W - padR}`);
-  }
-  // and the step itself: nothing after endMs
-  const v = A.aOddsStepTo([[10, 2.0]], [5, 10, 20, 30], 20);
-  assert.deepEqual(v, [null, 2.0, 2.0, null]);
-});
-
-test('meta without points: a dash row "not priced for this match", in its fixed slot, no chip, no line', () => {
-  const A = build(); A.reset();
-  const h = A.buildOddsSection(fixture({ bet105MetaOnly: true }));
-  const row = rowOf(h, 'Bet105');
-  assert.ok(/class="aodds-row aodds-nodata" data-book="Bet105"/.test(h));
-  assert.ok(row.includes('not priced for this match') && (row.match(/—/g) || []).length >= 2);
-  assert.ok(!/>0\.00</.test(row), 'never a zero');
-  assert.ok(!h.includes('class="aodds-chip" data-book="Bet105"'));
-  // fixed order: Bet105 keeps its slot after Pinnacle +30s even with no line
-  const rows = [...h.matchAll(/class="aodds-row[^"]*" data-book="([^"]*)"/g)].map(x => x[1]);
-  assert.deepEqual(rows.slice(0, 3), ['Pinnacle +30s (Oddspapi)', 'Pinnacle (api-tennis)', 'Bet105']);
-});
-
-test('every configured book gets a row on every card; subheading "X of Y books priced"', () => {
-  const A = build(); A.reset();
-  const m = fixture({ withPin: false });
-  delete m.oddsMovement.chart.books['Superbet'];
-  m.oddsMovement.chart.meta['Superbet'].note = 'not recorded — our recording began 26 Sep';
-  const h = A.buildOddsSection(m);
-  const rows = [...h.matchAll(/class="aodds-row[^"]*" data-book="([^"]*)" data-group="([^"]*)"/g)].map(x => [x[1], x[2]]);
-  assert.deepEqual(rows.slice(0, 13), [['Pinnacle +30s (Oddspapi)', 'sharp'], ['Pinnacle (api-tennis)', 'sharp'], ['Bet105', 'sharp'],
-                                       ...AT_SOFT.map(b => [b, 'soft']), ['Superbet', 'soft'],
-                                       ['Betfair Exchange (recorded by us)', 'soft']]);
-  assert.ok(rowOf(h, 'Pinnacle +30s (Oddspapi)').includes('not checked yet'), 'no meta at all = not checked, never "not priced"');
-  const m2 = fixture({ withPin: false });
-  m2.oddsMovement.chart.meta['Pinnacle +30s'] = { source: 'Oddspapi', group: 'sharp', clock: 'book tick', checkedAt: null };
-  A.reset();
-  assert.ok(rowOf(A.buildOddsSection(m2), 'Pinnacle +30s (Oddspapi)').includes('not checked yet'),
-            'a verdict with no check time is "not checked yet", never "not priced"');
-  assert.ok(rowOf(h, 'Superbet').includes('not recorded — our recording began 26 Sep'), 'the writer\'s note wins');
-  assert.ok(/class="aodds-priced">2 of 13 books priced</.test(h), 'Bet105 + Betfair Exchange priced, of 13 configured');
-});
-
-test('Bet105 is Sharp by the locked spec, whatever a writer stored', () => {
-  const A = build(); A.reset();
-  const m = fixture();
-  m.oddsMovement.chart.meta['Bet105'].group = 'soft';
-  const h = A.buildOddsSection(m);
-  assert.ok(/class="aodds-row" data-book="Bet105" data-group="sharp"/.test(h));
-});
-
-test('legacy fallback: a shard with only the frozen bet365 books still renders', () => {
-  const A = build(); A.reset();
-  const h = A.buildOddsSection(fixture({ legacyOnly: true }));
-  assert.notEqual(h, 'REDUCED');
-  assert.deepEqual(attrs(h, 'aodds-grouphead', 'group'), ['sharp', 'soft'], 'configured books keep their rows');
-  assert.ok(/class="aodds-priced">0 of 13 books priced</.test(h), 'legacy bet365 is not a configured book');
-  assert.ok(h.includes('data-book="bet365 (Oddspapi, capture ended 26 Sep)"'));
-  assert.equal(A.state().off['bet365 (Oddspapi, capture ended 26 Sep)'], undefined, 'the only book is on');
-  // capturedAt 26 h ago on an upcoming card -> no recent data
-  assert.ok(rowOf(h, 'bet365 (Oddspapi, capture ended 26 Sep)').includes('no recent data'));
-});
-
-test('nothing at all -> the reduced view + every configured book as a dash row, never an invented line', () => {
-  const A = build(); A.reset();
-  const h0 = A.buildOddsSection({ id: 'x', p1: 'A. B', p2: 'C. D', date: '2026-10-01', time: '10:00', oddsMovement: null });
-  assert.ok(h0.startsWith('REDUCED'));
-  assert.equal((h0.match(/class="aodds-row aodds-nodata"/g) || []).length, 13);
-  assert.ok(/0 of 13 books priced/.test(h0) && !h0.includes('<polyline'));
-  const h1 = A.buildOddsSection({ id: 'x', p1: 'A. B', p2: 'C. D', date: '2026-10-01', time: '10:00',
-    oddsMovement: { books: {}, chart: { books: {}, meta: { Bet105: { group: 'sharp', checkedAt: iso(Date.now()) },
-      Superbet: { group: 'soft', checkedAt: iso(Date.now()), note: 'not recorded — our recording began 26 Sep' } } } } });
-  assert.ok(h1.startsWith('REDUCED'));
-  assert.ok(rowOf(h1, 'Bet105').includes('not priced for this match'));
-  assert.ok(rowOf(h1, 'Superbet').includes('not recorded — our recording began 26 Sep'));
-  assert.ok(rowOf(h1, 'Pinnacle +30s (Oddspapi)').includes('not checked yet'));
-});
 
 test('Key Factors mini-chart draws from the chart-only shape', () => {
   const A = build();
@@ -295,114 +110,6 @@ test('Key Factors mini-chart draws from the chart-only shape', () => {
   delete m.oddsMovement.books;                     // chart only
   const svg = A.akOddsMoveSvg(m);
   assert.ok(svg.includes('<polyline'), 'draws a line');
-});
-
-test('an old six-book shard: legacy "Pinnacle" never takes the api-tennis label or a default slot', () => {
-  const A = build(); A.reset();
-  const m = fixture({ withAt: true });
-  m.oddsMovement.books.Pinnacle = { p1: [[iso(Date.now() - 40 * H), 2.2]], p2: [[iso(Date.now() - 40 * H), 1.7]] };
-  const h = A.buildOddsSection(m);
-  assert.equal(A.state().off['Pinnacle +30s (Oddspapi)'], undefined, 'Pinnacle +30s is on');
-  assert.equal(A.state().off['Pinnacle (Oddspapi)'], true, 'the legacy anchor-key book starts off');
-  assert.ok(rowOf(h, 'Pinnacle (api-tennis)').includes('api-tennis · seen by us every 5 min'), '"Pinnacle (api-tennis)" stays the api-tennis line');
-  // the legacy Pinnacle is Sharp, listed after the configured Sharp books
-  const rows = [...h.matchAll(/class="aodds-row[^"]*" data-book="([^"]*)" data-group="sharp"/g)].map(x => x[1]);
-  assert.deepEqual(rows, ['Pinnacle +30s (Oddspapi)', 'Pinnacle (api-tennis)', 'Bet105', 'Pinnacle (Oddspapi)']);
-});
-
-// ── Wave 2 (founder 2026-09-26: comment d5bf3dda, cards 78ec4dd2 + 31e4beef) ─────────
-test('wave 2: 13 configured books, Sharp = Pinnacle +30s / Pinnacle / Bet105, labels by source', () => {
-  const A = build(); A.reset();
-  const h = A.buildOddsSection(fixture({ withAt: true }));
-  const rows = [...h.matchAll(/class="aodds-row[^"]*" data-book="([^"]*)" data-group="([^"]*)"/g)].map(x => [x[1], x[2]]);
-  assert.deepEqual(rows.filter(r => r[1] === 'sharp').map(r => r[0]), ['Pinnacle +30s (Oddspapi)', 'Pinnacle (api-tennis)', 'Bet105']);
-  assert.deepEqual(rows.filter(r => r[1] === 'soft').map(r => r[0]),
-    [...AT_SOFT, 'Superbet', 'Betfair Exchange (recorded by us)', 'bet365 (Oddspapi, capture ended 26 Sep)']);
-  assert.ok(/class="aodds-priced">6 of 13 books priced</.test(h), 'Pin +30s, Pinnacle, Bet105, Betano, Superbet, BF Exch');
-  // two Betfairs, two bet365s: never merged
-  assert.ok(h.includes('data-book="Betfair Sportsbook (api-tennis)"') && h.includes('data-book="Betfair Exchange (recorded by us)"'));
-  assert.ok(h.includes('data-book="bet365 (api-tennis)"') && h.includes('data-book="bet365 (Oddspapi, capture ended 26 Sep)"'));
-  // api-tennis provenance: our clock + first seen
-  const src = rowOf(h, 'Betano');
-  assert.ok(/api-tennis · seen by us every 5 min · first seen [A-Z][a-z]{2} \d+ \d\d:\d\d/.test(src), src.slice(0, 400));
-  // a Sharp api-tennis book never displaces the default Sharp lines, and a group is fixed by config
-  const m = fixture({ withAt: true }); m.oddsMovement.chart.meta['Betano'].group = 'sharp';
-  A.reset(); assert.ok(/data-book="Betano" data-group="soft"/.test(A.buildOddsSection(m)), 'Betano is Soft whatever the writer stored');
-});
-
-test('wave 2: a gap is never drawn across — step nulls it, the chart splits the line', () => {
-  const A = build();
-  // the step: [from, to) nulled; an open gap (to = null) nulls to the end
-  assert.deepEqual(A.aOddsStepTo([[10, 2.0], [40, 2.2]], [10, 20, 30, 40, 50], null, [[iso(15).replace(/.*/, '')]]),
-                   [2.0, 2.0, 2.0, 2.2, 2.2], 'an unparseable gap changes nothing');
-  const g = [[new Date(20).toISOString(), new Date(40).toISOString()]];
-  assert.deepEqual(A.aOddsStepTo([[10, 2.0], [40, 2.2]], [10, 20, 30, 40, 50], null, g), [2.0, null, null, 2.2, 2.2]);
-  assert.deepEqual(A.aOddsStepTo([[10, 2.0]], [10, 20, 30], null, [[new Date(20).toISOString(), null]]), [2.0, null, null]);
-  // rendered: Betano only, with a 2 h hole in the middle -> two polylines per panel
-  const now = Date.now();
-  const m = fixture({ now, withAt: true });
-  m.oddsMovement.chart.books['Betano'] = { p1: [[iso(now - 10 * H), 2.5], [iso(now - 3 * H), 2.4]],
-                                           p2: [[iso(now - 10 * H), 1.55], [iso(now - 3 * H), 1.6]] };
-  m.oddsMovement.chart.meta['Betano'].gaps = [[iso(now - 7 * H), iso(now - 5 * H)]];
-  A.reset(); A.buildOddsSection(m);
-  A.state().off = Object.fromEntries(Object.keys(A.aOddsBooksOf(m).books).filter(b => b !== 'Betano').map(b => [b, true]));
-  const h = A.buildOddsSection(m);
-  const dash = h.match(/data-book="Betano"/) && [...h.matchAll(/<polyline points="([^"]+)" fill="none" stroke="([^"]+)" stroke-width="2" stroke-dasharray="([^"]*)"/g)];
-  assert.equal(dash.length, 4, `two runs on each of the two panels, got ${dash.length}`);
-  // the runs do not touch: the first ends before the gap's start column, the next starts at its end
-  const xs = dash.map(d => d[1].split(' ').map(p => Number(p.split(',')[0])));
-  assert.ok(Math.max(...xs[0]) < Math.min(...xs[1]), 'a visible break between the runs');
-});
-
-test('wave 2: gap edges survive the 30-column downsample', () => {
-  const now = Date.now();
-  const A = build(); A.reset();
-  const m = fixture({ now, withAt: true });
-  // 80 real Pinnacle +30s points -> the grid is downsampled to <= 30 columns
-  const pts = side => Array.from({ length: 80 }, (_, i) => [iso(now - 40 * H + i * 30 * 60e3), side === 'p1' ? 2 + i / 1000 : 1.7 - i / 1000]);
-  m.oddsMovement.chart.books['Pinnacle +30s'] = { p1: pts('p1'), p2: pts('p2') };
-  // a 20-min Betano hole that would fall between two sampled columns
-  m.oddsMovement.chart.books['Betano'] = { p1: [[iso(now - 30 * H), 2.5]], p2: [[iso(now - 30 * H), 1.55]] };
-  m.oddsMovement.chart.meta['Betano'].gaps = [[iso(now - 20 * H - 7 * 60e3), iso(now - 20 * H + 13 * 60e3)]];
-  A.buildOddsSection(m);
-  A.state().off = Object.fromEntries(Object.keys(A.aOddsBooksOf(m).books).filter(b => b !== 'Betano').map(b => [b, true]));
-  const h = A.buildOddsSection(m);
-  const runs = [...h.matchAll(/<polyline points="([^"]+)" fill="none" stroke="[^"]+" stroke-width="2"/g)];   // chart lines, not sparklines
-  assert.equal(runs.length, 4, 'the short hole still splits the line on both panels');
-});
-
-test('wave 2: a book gone from the feed reads "not in feed since", no Now, never best', () => {
-  const now = Date.now();
-  const A = build(); A.reset();
-  const m = fixture({ now, withAt: true });
-  m.oddsMovement.chart.books['Betano'] = { p1: [[iso(now - 5 * H), 9.9]], p2: [[iso(now - 5 * H), 9.9]] };
-  m.oddsMovement.chart.meta['Betano'].gaps = [[iso(now - 2 * H), null]];
-  const h = A.buildOddsSection(m);
-  const row = rowOf(h, 'Betano');
-  assert.ok(/not in feed since \d\d:\d\d/.test(row), 'tagged');
-  assert.ok(!/font-size:15px;[^>]*>9\.90</.test(row), 'no Now');
-  assert.ok(!/color:#3ed68c[^>]*>9\.90</.test(h), 'never the best price');
-  assert.ok(!/font-size:22px; font-weight:800;">9\.90</.test(h), 'never in the summary');
-});
-
-test('wave 2: a one-column run beside a gap is a dot; a book out of its feed is not "priced"', () => {
-  const now = Date.now();
-  const A = build(); A.reset();
-  const m = fixture({ now, withAt: true });
-  m.oddsMovement.chart.books['Betano'] = { p1: [[iso(now - 5 * H), 2.5], [iso(now - 2 * H), 2.4]], p2: [[iso(now - 5 * H), 1.55], [iso(now - 2 * H), 1.6]] };
-  m.oddsMovement.chart.meta['Betano'].gaps = [[iso(now - 5 * H + 60e3), iso(now - 2 * H)]];
-  A.buildOddsSection(m);
-  A.state().off = Object.fromEntries(Object.keys(A.aOddsBooksOf(m).books).filter(b => b !== 'Betano').map(b => [b, true]));
-  const h = A.buildOddsSection(m);
-  assert.ok((h.match(/class="aodds-run1"/g) || []).length >= 2, 'the 1-min price before the gap is a dot on both panels');
-  const A2 = build(); A2.reset();
-  const h2 = A2.buildOddsSection(fixture({ now, withAt: true }));   // 6 priced
-  const m3 = fixture({ now, withAt: true }); m3.oddsMovement.chart.meta['Betano'].gaps = [[iso(now - H), null]];
-  A2.reset();
-  assert.ok(/6 of 13 books priced/.test(h2) && /5 of 13 books priced/.test(A2.buildOddsSection(m3)), 'Betano out of the feed -> 5 of 13');
-  // Wave 1 books (no gaps) never get dots
-  A2.reset();
-  assert.ok(!A2.buildOddsSection(fixture({ now })).includes('aodds-run1'));
 });
 
 test('wave 2: the Key Factors mini-chart never picks a book with a gap', () => {
@@ -454,27 +161,7 @@ test('start time: the card time is the account zone (Europe/Berlin), not UTC —
   const u = fixture({ now, superbetChecked: now - 3 * H });
   u.date = loc.slice(0, 10); u.time = loc.slice(11, 16);
   A.reset();
-  assert.ok(!A.buildOddsSection(u).includes('class="aodds-stale"'), 'started -> never "no recent data"');
-});
-
-test('labels: a book from two sources always shows its source; no two rows ever read the same', () => {
-  const A = build(); A.reset();
-  const m = fixture({ withAt: true });
-  m.oddsMovement.books.Pinnacle = { p1: [[iso(Date.now() - 40 * H), 2.2]], p2: [[iso(Date.now() - 40 * H), 1.7]] };
-  const h = A.buildOddsSection(m);
-  const rows = [...h.matchAll(/class="aodds-row[^"]*" data-book="([^"]*)"/g)].map(x => x[1]);
-  assert.equal(new Set(rows).size, rows.length, `duplicate row names: ${rows}`);
-  for (const want of ['Pinnacle +30s (Oddspapi)', 'Pinnacle (api-tennis)', 'Pinnacle (Oddspapi)',
-                      'Betfair Sportsbook (api-tennis)', 'Betfair Exchange (recorded by us)',
-                      'bet365 (api-tennis)', 'bet365 (Oddspapi, capture ended 26 Sep)'])
-    assert.ok(rows.includes(want), `row ${want}`);
-  assert.ok(!rows.some(r => /^(Pinnacle|Pinnacle \+30s|Betfair|bet365)$/.test(r)), 'never a bare shared brand');
-  const chips = [...h.matchAll(/class="aodds-chip" data-book="([^"]*)"/g)].map(x => x[1]);
-  assert.ok(chips.includes('Pinnacle +30s (Oddspapi)') && chips.includes('Pinnacle (api-tennis)'));
-  assert.ok(h.includes('<b>Pinnacle +30s (Oddspapi)</b>'), 'the footnote uses the sourced name');
-  const shorts = ['Pinnacle +30s (Oddspapi)', 'Pinnacle (api-tennis)', 'Pinnacle (Oddspapi)', 'Marathon', 'Marathon (Oddspapi)',
-                  'Betfair Sportsbook (api-tennis)', 'Betfair (Oddspapi)', 'bet365 (api-tennis)', 'bet365 (Oddspapi, capture ended 26 Sep)'].map(A.aOddsShort);
-  assert.equal(new Set(shorts).size, shorts.length, `tooltip short labels collide: ${shorts}`);
+  assert.ok(!A.buildOddsSection(u).includes('aox-stale'), 'started -> never "no recent data"');
 });
 
 // ── the TEN-216 collector's tick(), EXECUTED with stubbed I/O (review 2026-09-26) ───────
