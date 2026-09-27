@@ -19,9 +19,13 @@ Founder rulings from TEN-304 (2026-09-27). Rationale is in `BUILD-NOTES.md`.
 - **Brussels (European Open, Brussels Expo) is indoor hard.**
 - **Laver Cup has no venue on purpose** (rotating arena). Its Weather tab shows the **indoor panel**.
 
-## Tab display — ruled, NOT BUILT YET (TEN-304 Wave B)
-Everything in this section is ruled but not yet in the code; Wave B builds it. Until Wave B ships, none of these texts or controls exist on the page, so don't treat them as delivered.
-- **The modal header subtitle carries the start time** in the viewer's zone, like the rest of the dashboard: "ATP Chengdu · Quarter-finals · 18:00". This is the one allowed header change.
-- **The Weather tab shows every time in venue-local time**, with one "Times shown in venue local time" note in the week-strip header.
-- **The MATCH badge is the same instant as the header, converted to venue time.**
-- **Severity cut-offs, which 7 days the strip shows, and the missing-time state stay on the TEN-304 brief's defaults**, behind one config object, until the founder rules. The "THRESHOLDS TBD — MICHAEL" chip stays visible until then.
+## Tab display (TEN-304 Wave B)
+Spec: `design/handoff-weather/Weather Tab - Paperclip.md`. Code: `WX_CONFIG` / `WX_COPY` / `wxModel` / `buildWeatherSection` in `bsp-consult-dashboard.html`. Tests: `test-ten304-weather-tab.mjs` (executes the page's renderer) + `tools/test-ten304-mutants.js`.
+- **The modal header subtitle carries the start time** in the viewer's zone, like the rest of the dashboard: "ATP Chengdu · Quarter-finals · 18:00". This is the one allowed header change. No usable start → no time appended.
+- **The Weather tab shows every time in venue-local time** (the forecast file's IANA zone), with one "Times shown in venue local time" note in the week-strip header. With no forecast file the zone is unknown: the note says "Times shown in your time zone".
+- **The MATCH badge is the same instant as the header, converted to venue time.** **Test:** a Chengdu match viewed with `TZ=Asia/Shanghai` and `TZ=UTC` shows header 16:00 / 08:00 and badge 16:00 in both.
+- **Severity cut-offs, the playing window, the strip length and the staleness limits live in `WX_CONFIG` only** (placeholders: gusts watch ≥ 25 / concern ≥ 35 km/h, feels-like ≥ 30 / ≥ 35°, rain chance ≥ 30 / ≥ 60 %). The "THRESHOLDS TBD — MICHAEL" chip stays visible until the founder rules. **Test:** changing a config cut-off flips the rendered severity.
+- **State comes from the data, never a switcher:** indoor flag → the indoor panel only; no forecast, or a fetch more than 24 h old → the unavailable state with the real last-update time; 6–24 h old → amber freshness line. `?wxForce=unavailable` is the only override (test-only).
+- **A missing value is "—" and UNAVAILABLE, never 0, and never the lead factor.**
+- **Day-card flags use the worst hourly value in the playing window (10:00–23:00 venue-local)**; an hour outside it never flags the card. Hi/lo are the daily values.
+- **Forecast files are built by `build-weather.js` in every pipeline run and published, never committed.** A venue is re-fetched from Open-Meteo only when the published copy is 3 h old or more; a failed fetch carries the last good copy with its original `fetchedAt`. **Test:** `tools/test-ten304-build-weather.js`.
