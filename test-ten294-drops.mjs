@@ -437,7 +437,9 @@ test('box chart (8585095a items 10-15): recorded prices only, straight segments,
   assert.equal(ch.gridY.length, 5);
   assert.equal(ch.gaps.length, 2, 'the 22 h and 7.4 h stretches (> 3.6 h) are dashed');
   assert.equal(ch.runs.length, 1, 'the 6-min drop is the one solid run');
-  assert.match(ch.area, /^M0\.0,[\d.]+ L.* L1000\.0,300 L0\.0,300 Z$/);
+  assert.equal(ch.area.split('M').length - 1, 1, 'the fill covers the solid run only, never a dashed stretch');
+  const full = PAGE.boxChart([{ t: PT0 - 3 * HR, v: 2.4 }, { t: PT0 - 2 * HR, v: 2.2 }, { t: PT0 - 1 * HR, v: 2.0 }], 2.4, { label: 'Now', t: PT0 - 1 * HR, v: 2.0 });
+  assert.match(full.area, /^M0\.0,[\d.]+ L[\d.,]+ L1000\.0,[\d.]+ L1000\.0,300 L0\.0,300 Z$/, 'a gap-free line: the export\'s own area path');
   assert.equal(ch.hasOpen, true);
   assert.equal(ch.endLbl, '2.00'); assert.equal(ch.endWord, 'Latest 11:30');
   // Y range: min/max padded 12%, min span 0.2
@@ -447,10 +449,10 @@ test('box chart (8585095a items 10-15): recorded prices only, straight segments,
   assert.equal(one.single, true); assert.deepEqual(one.runs, []); assert.equal(one.area, ''); assert.equal(one.hasOpen, false);
   // the end (data rule 25)
   const s2 = [{ t: PT0 - 3 * HR, v: 2.2 }, { t: PT0 - 2 * HR, v: 2.0 }];
-  assert.deepEqual(PAGE.endOf(s2, PT0 - 5 * 60e3, null, PT0), { label: 'Now', t: PT0 - 5 * 60e3, v: 2.0 }, 'confirmed 5 min ago: Now, carried to the confirmation');
+  assert.deepEqual(PAGE.endOf(s2, PT0 - 5 * 60e3, null, PT0), { label: 'Now', t: PT0 - 5 * 60e3, v: 2.0, confirmed: true }, 'confirmed 5 min ago: Now, carried to the confirmation');
   assert.deepEqual(PAGE.endOf(s2, PT0 - 40 * 60e3, null, PT0), { label: 'Latest 10:00', t: PT0 - 2 * HR, v: 2.0 }, 'not confirmed recently: Latest HH:MM, the line ends there');
   assert.deepEqual(PAGE.endOf(s2, null, null, PT0).label, 'Latest 10:00', 'no sighting at all: never "Now"');
-  assert.deepEqual(PAGE.endOf(s2, PT0, at(1 * HR), PT0), { label: 'Last pre-match', t: PT0 - 1 * HR, v: 2.0 }, 'a cut row ends at the live start');
+  assert.deepEqual(PAGE.endOf(s2, PT0, at(1 * HR), PT0), { label: 'Last pre-match', t: PT0 - 1 * HR, v: 2.0, confirmed: true }, 'a cut row ends at the live start (seen after it)');
 });
 
 test('box colours (8585095a colour ruling): red with a flat tint, the named values exact; neutrals on the 12a tokens', () => {
@@ -858,7 +860,7 @@ test('box render: a board-matched row: full names, event · round, no rank / Elo
   assert.match(html, /class="do-ov-link"[^>]*data-v="upcoming-1">Open match analysis →<\/a>/);
   assert.match(html, /books we record quoting this line/);
   // the table: Sharp first then Soft, the handoff's name / suffix split, the full name in the tooltip
-  const books = [...html.matchAll(/class="do-ov-tr[^"]*" data-act="book" data-v="([^"]+)" title="([^"]+)"/g)].map((m) => m[1]);
+  const books = [...html.matchAll(/class="do-ov-tr[^"]*" role="button" tabindex="0" data-act="book" data-v="([^"]+)" title="([^"]+)"/g)].map((m) => m[1]);
   assert.deepEqual(books, ['Pinnacle +30s', 'Bet105', 'Superbet', 'Betfair Exchange']);
   assert.match(html, /title="Pinnacle \+30s"><span class="do-ov-tt sharp"><span>SHARP<\/span><\/span><span class="do-ov-tb"><span class="n"><span>Pinnacle<\/span><\/span><span class="s"><span>\+30s<\/span><\/span><\/span>/);
 });
@@ -914,8 +916,8 @@ test('box review: an unchanged book reads a muted 0.0%, a lengthened one a muted
   assert.doesNotMatch(html, /class="do-ov-back"/, 'the row\'s own book: no Back link');
   x.P._state.drBook = 'Betfair Exchange';
   html = await x.open('superbet-61');
-  assert.match(html, /<span class="do-ov-back" data-act="back">Back to Superbet<\/span>/);
-  assert.match(html, /class="do-ov-tr sel" data-act="book" data-v="Betfair Exchange"/);
+  assert.match(html, /<span class="do-ov-back" role="button" tabindex="0" data-act="back">Back to Superbet<\/span>/);
+  assert.match(html, /class="do-ov-tr sel" role="button" tabindex="0" data-act="book" data-v="Betfair Exchange"/);
   assert.match(html, /One price recorded so far\. The line appears once a second snapshot arrives\./, 'BFE has one price: dot + label only');
   assert.doesNotMatch(html, /do-ov-openchip|class="do-line"/);
 });
@@ -1393,3 +1395,48 @@ test('TEN-299: both bots drop every tick at or after the live start, in one guar
   assert.deepEqual(st.find((s) => s.name === 'install_live_cut'), { name: 'install_live_cut', file: 'tools/ten299-live-cut.sql', required: true, stop_on_error: true });
   st.filter((s) => /^ten299_(base|cut)_(287|280)$/.test(s.name)).forEach((s) => assert.match(s.sql, /'backtest'/, s.name + ' never writes a live alert'));
 });
+
+test('box review (a37fc857): a confirmation belongs to its own price; carries stop at the last sighting; a confirmed carry is solid; the end label stays on the plot', () => {
+  // board shard ends at 1.90 5 h ago; the endpoint saw 1.70 an hour ago (a different price): no "Now" for the shard's line
+  const [r] = PAGE.buildRows([frow({ id: 'bet105-77', a: 'Pat Pi', b: 'Rho Rho', side: 'Pat Pi', open: 2.2, now: 1.7, latestAgo: 1 * HR })]);
+  const chart = { books: { Superbet: { p1: [[at(20 * HR), 2.10], [at(5 * HR), 1.90]], p2: [[at(20 * HR), 1.80], [at(5 * HR), 1.95]] } } };
+  const line = { key: PAGE.lineKey(r), books: { Superbet: { first: [at(20 * HR), 2.1], side: [[at(20 * HR), 2.1], [at(1 * HR), 1.7]], other: [], lastSeen: at(2 * 60e3) } } };
+  const sb = PAGE.modalBooks(r, { rows: [r], chart, cardSide: 'p1', line, now: PT0 }).books.find((b) => b.book === 'Superbet');
+  assert.equal(sb.seen, null, 'the endpoint confirmed 1.70, not the shard\'s 1.90');
+  const line2 = { ...line, books: { Superbet: { ...line.books.Superbet, side: [[at(20 * HR), 2.1], [at(5 * HR), 1.9]] } } };
+  assert.equal(PAGE.modalBooks(r, { rows: [r], chart, cardSide: 'p1', line: line2, now: PT0 }).books.find((b) => b.book === 'Superbet').seen, PT0 - 2 * 60e3, 'same price: the confirmation carries');
+  // a cut row: the carry stops at the book's last sighting when it came before the start
+  const s2 = [{ t: PT0 - 5 * HR, v: 2.2 }, { t: PT0 - 3 * HR, v: 2.0 }];
+  assert.deepEqual(PAGE.endOf(s2, PT0 - 2.9 * HR, at(1 * HR), PT0), { label: 'Last pre-match', t: PT0 - 2.9 * HR, v: 2.0, confirmed: true });
+  assert.equal(PAGE.endOf(s2, null, at(1 * HR), PT0).t, PT0 - 1 * HR, 'no sighting: to the start');
+  // a confirmed carry longer than 3.6 h is a recorded hold: solid, not a gap
+  const hold = PAGE.boxChart([{ t: PT0 - 6 * HR, v: 2.2 }, { t: PT0 - 5 * HR, v: 2.0 }], 2.2, { label: 'Now', t: PT0 - 60e3, v: 2.0, confirmed: true });
+  assert.equal(hold.gaps.length, 0); assert.equal(hold.runs.length, 1);
+  assert.match(hold.runs[0], / 1000\.0,/, 'the solid line reaches the confirmation');
+  // the end label box is clamped to 10–90% of the plot height; the open chip stays inside the range
+  const low = PAGE.boxChart([{ t: PT0 - 2 * HR, v: 3.0 }, { t: PT0 - HR, v: 1.2 }], 3.0, { label: 'Latest 11:00', t: PT0 - HR, v: 1.2 });
+  assert.equal(low.endTop, '90.00%'); assert.ok(parseFloat(low.endDot) > 88);
+  const trunc = PAGE.boxChart([{ t: PT0 - 2 * HR, v: 2.0 }, { t: PT0 - HR, v: 1.9 }], 3.5, { label: 'Latest 11:00', t: PT0 - HR, v: 1.9 });
+  assert.ok(parseFloat(trunc.openTop) >= 0 && parseFloat(trunc.openTop) <= 100, 'open chip ' + trunc.openTop);
+});
+
+test('box review (a37fc857): book names are escaped in the tooltip; the rows and Back are keyboard buttons; the colour reads exactly the figure shown', async () => {
+  const r0 = frow({ id: 'superbet-62', book: 'Superbet', a: 'Pat Pi', b: 'Rho Rho', side: 'Pat Pi', open: 2.2, now: 1.9 });
+  const evil = 'Bad"><img src=x onerror=alert(1)>';
+  const line = { key: PAGE.lineKey({ playerA: 'Pat Pi', playerB: 'Rho Rho', side: 'Pat Pi' }), books: {
+    Superbet: { first: [at(30 * HR), 2.2], side: [[at(2 * HR), 1.9]], other: [], lastSeen: at(0.1 * HR) },
+    [evil]: { first: [at(20 * HR), 2.10], side: [[at(20 * HR), 2.10], [at(3 * HR), 2.0]], other: [], lastSeen: at(0.1 * HR) } } };
+  const x = await openPopup({ rows: [r0], lines: [line] });
+  const html = await x.open('superbet-62');
+  assert.doesNotMatch(html, /<img src=x/);
+  assert.match(html, /title="Bad&quot;&gt;&lt;img src=x onerror=alert\(1\)&gt;"/);
+  assert.equal((html.match(/class="do-ov-tr[^"]*" role="button" tabindex="0"/g) || []).length, 2);
+  assert.deepEqual(PAGE.dropCell(9.95), { txt: '▼ ' + (9.95).toFixed(1) + '%', c: parseFloat((9.95).toFixed(1)) >= 10 ? 'big' : 'small' }, 'the colour reads exactly the text shown');
+  // Enter on a focused book row switches the chart
+  const y = pageSandbox({ feed: () => [frow({ id: 'r9', open: 2, now: 1.8 })] });
+  await y.activate(); y.st.drawer = 'r9'; await y.activate();
+  let clicked = false; const rowEl = { click: () => { clicked = true; } };
+  y.keys[0]({ key: 'Enter', preventDefault() {}, target: { closest: (sel) => (/role="button"/.test(sel) ? rowEl : null) } });
+  assert.ok(clicked, 'Enter activates the focused row');
+});
+

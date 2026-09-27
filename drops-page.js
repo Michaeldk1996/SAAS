@@ -182,8 +182,11 @@
     var last = series[series.length - 1];
     if (!last) return null;
     var cut = cutAt ? Date.parse(cutAt) : NaN;
-    if (isFinite(cut)) return { label: 'Last pre-match', t: Math.max(last.t, cut), v: last.v };
-    if (seen != null && isFinite(seen) && now != null && now - seen <= RECENT_MS) return { label: 'Now', t: Math.max(last.t, seen), v: last.v };
+    var seenOk = seen != null && isFinite(seen);
+    // a cut row ends at the start, or at the book's last sighting when it stopped quoting before it
+    if (isFinite(cut)) return seenOk && seen < cut ? { label: 'Last pre-match', t: Math.max(last.t, seen), v: last.v, confirmed: true }
+      : { label: 'Last pre-match', t: Math.max(last.t, cut), v: last.v, confirmed: seenOk };
+    if (seenOk && now != null && now - seen <= RECENT_MS) return { label: 'Now', t: Math.max(last.t, seen), v: last.v, confirmed: true };
     return { label: 'Latest ' + hm(last.t), t: last.t, v: last.v };
   }
   // the chart's geometry, as the export computes it (pY in 0..1 from the top; x in 0..1000)
@@ -191,8 +194,9 @@
     var rec = (series || []).filter(function (p) { return isFinite(p.t) && p.v != null; });
     var single = rec.length < 2;
     var pts = rec.slice();
-    if (end && pts.length && end.t > pts[pts.length - 1].t) pts.push({ t: end.t, v: end.v, carried: true });
-    var vs = pts.map(function (p) { return p.v; });
+    if (end && pts.length && end.t > pts[pts.length - 1].t) pts.push({ t: end.t, v: end.v, carried: true, confirmed: !!end.confirmed });
+    // the open chip sits at the book's first price: keep it inside the Y range
+    var vs = pts.map(function (p) { return p.v; }).concat(!single && openV != null ? [openV] : []);
     var lo = Math.min.apply(null, vs), hi = Math.max.apply(null, vs);
     if (hi - lo < 0.1) { lo -= 0.1; hi += 0.1; }
     var pad = (hi - lo) * 0.12; lo -= pad; hi += pad;
@@ -203,7 +207,9 @@
     // solid runs and dashed gaps (rule 26)
     var runs = [], gaps = [], cur = [pts[0]];
     for (var i = 1; i < pts.length; i++) {
-      if (pts[i].t - pts[i - 1].t > GAP_MS) { runs.push(cur); gaps.push([pts[i - 1], pts[i]]); cur = [pts[i]]; } else cur.push(pts[i]);
+      // a carry confirmed by a sighting is a recorded hold, never a gap
+      var gap = pts[i].t - pts[i - 1].t > GAP_MS && !(pts[i].carried && pts[i].confirmed);
+      if (gap) { runs.push(cur); gaps.push([pts[i - 1], pts[i]]); cur = [pts[i]]; } else cur.push(pts[i]);
     }
     runs.push(cur);
     var prevDay = null;
@@ -221,7 +227,9 @@
       ticks: ticks,
       runs: single ? [] : runs.filter(function (r) { return r.length > 1; }).map(function (r) { return r.map(xy).join(' '); }),
       gaps: single ? [] : gaps.map(function (g) { return [xy(g[0]).split(','), xy(g[1]).split(',')]; }),
-      area: single ? '' : 'M' + pts.map(xy).join(' L') + ' L' + (fr(t1) * 1000).toFixed(1) + ',300 L' + (fr(t0) * 1000).toFixed(1) + ',300 Z',
+      area: single ? '' : runs.filter(function (r) { return r.length > 1; }).map(function (r) {
+        return 'M' + r.map(xy).join(' L') + ' L' + (fr(r[r.length - 1].t) * 1000).toFixed(1) + ',300 L' + (fr(r[0].t) * 1000).toFixed(1) + ',300 Z';
+      }).join(' '),
       hasOpen: !single && openV != null,
       openTop: openV != null ? (pY(openV) * 100).toFixed(2) + '%' : '0%',
       endDot: endP.toFixed(2) + '%',
@@ -236,7 +244,7 @@
     return { name: s.replace(/\s*[(+].*$/, ''), sub: (s.match(/[(+].*$/) || [''])[0].replace(/^\(|\)$/g, '').trim() };
   }
   // drop cell (data rule 27): shortened red by size, lengthened a muted ▲, flat a muted 0.0%, unknown "—"
-  function r1(d) { return Math.round(d * 10) / 10; }
+  function r1(d) { return parseFloat(d.toFixed(1)); }   // exactly the figure shown
   function dropCell(d) {
     if (d == null || !isFinite(d)) return { txt: '—', c: 'muted' };
     if (Math.abs(d) < 0.05) return { txt: '0.0%', c: 'muted' };
@@ -251,7 +259,7 @@
     if (r.status === 'in_play') tail = 'live';
     else if (r.status === 'finished') tail = 'finished';
     else {
-      var mins = Math.round((t - now) / 60000);
+      var mins = Math.floor((t - now) / 60000);
       tail = mins >= 0 ? 'in ' + Math.floor(mins / 60) + 'h ' + (mins % 60) + 'm' : 'past start';
     }
     return { start: hm(t), cd: tail };
@@ -349,8 +357,13 @@
       var first = b.first;
       var drop = first && first.v && now && now.v ? (first.v - now.v) / first.v * 100 : null;
       // the book's last confirmed sighting (data rule 25): its own source's, else the endpoint line's for that book
+      // (a board shard's series borrows the endpoint's sighting only when the endpoint's latest price IS the
+      // shard's last price: a confirmation belongs to the price it confirmed — review of a37fc857)
       var lb = ctx.line && ctx.line.books && (ctx.line.books[n] || ctx.line.books[n + ' (recorded by us)']);
-      var seenAt = b.seen != null ? b.seen : lb && isFinite(Date.parse(lb.lastSeen)) ? Date.parse(lb.lastSeen) : null;
+      var lbLast = lb && lb.side && lb.side.length ? num(lb.side[lb.side.length - 1][1]) : null;
+      var bLast = b.side && b.side.length ? b.side[b.side.length - 1].v : null;
+      var seenAt = b.seen != null ? b.seen
+        : lb && isFinite(Date.parse(lb.lastSeen)) && lbLast != null && bLast != null && Math.abs(lbLast - bLast) < 0.005 ? Date.parse(lb.lastSeen) : null;
       if (seenAt != null && isFinite(cut)) seenAt = Math.min(seenAt, cut - 1);
       return { book: n, cls: STRIP_CLASS[n] || 'soft', own: isOwn, first: first, now: now, seen: seenAt,
         opener: isOwn && r.openKind === 'book opener',
@@ -359,7 +372,7 @@
     var rank = function (b) { return b.cls === 'sharp' ? 0 : 1; };
     var pos = function (b) { var i = BOOK_ORDER.indexOf(b.book); return i < 0 ? BOOK_ORDER.length : i; };
     out.sort(function (a, b) { return rank(a) - rank(b) || pos(a) - pos(b) || a.book.localeCompare(b.book); });
-    var big = out.filter(function (b) { return b.drop != null && Math.round(b.drop * 10) / 10 >= 10; });   // as shown (one decimal)
+    var big = out.filter(function (b) { return b.drop != null && parseFloat(b.drop.toFixed(1)) >= 10; });   // as shown (one decimal)
     var sharp = out.filter(function (b) { return b.cls === 'sharp'; });
     return { source: source, books: out, n: big.length, m: out.length,
       p: big.filter(function (b) { return b.cls === 'sharp'; }).length, q: sharp.length };
@@ -710,7 +723,8 @@
       ensureOddsMovement(card).then(function () { st.modalKey = null; renderModal(); }).catch(function () {});   // eslint-disable-line no-undef
     }
     var chart = card && card._oddsLoaded && card.oddsMovement ? card.oddsMovement.chart : null;
-    var key = [st.drawer, st.drBook, st.tip, st.etag, chart ? 'b' : '-'].join('|');
+    // + the minute: "Now" (15 min) and the countdown must age even when no new data arrives (review of a37fc857)
+    var key = [st.drawer, st.drBook, st.tip, st.etag, chart ? 'b' : '-', Math.floor(dataNow() / 60000)].join('|');
     var now = dataNow();
     if (ov && st.modalKey === key) {
       var dl = ov.querySelector('.do-ov-dropc span');
@@ -760,7 +774,7 @@
           (sl ? '<span class="do-ov-start"><span>' + esc(sl.start) + '</span> (<span>' + esc(sl.cd) + '</span>)</span>' : '') + '</div>' +
         '<button class="do-ov-x" data-act="close" aria-label="Close">✕</button>' +
       '</div>' +
-      '<div class="do-ov-chart"><span class="do-ov-backrow">' + (!sel.own ? '<span class="do-ov-back" data-act="back">Back to ' + esc(r.book) + '</span>' : '') + '</span>' +
+      '<div class="do-ov-chart"><span class="do-ov-backrow">' + (!sel.own ? '<span class="do-ov-back" role="button" tabindex="0" data-act="back">Back to ' + esc(r.book) + '</span>' : '') + '</span>' +
       (ch ? '<div class="do-ov-cw">' +
         '<div class="do-ov-yax">' + ch.gridY.map(function (g) { return '<span style="top:' + g.top + '"><span>' + g.label + '</span></span>'; }).join('') + '</div>' +
         '<div class="do-ov-plot"><svg viewBox="0 0 1000 300" preserveAspectRatio="none">' +
@@ -779,7 +793,7 @@
       '<div class="do-ov-tbl"><div class="do-ov-th"><span>TYPE</span><span>BOOK</span><span class="r">NOW</span><span class="r">OPEN</span><span class="r">DROP</span></div>' +
       mb.books.map(function (b) {
         var sp = bookSplit(b.book), dc = dropCell(b.own ? r.drop : b.drop), c = b.cls === 'sharp' ? 'sharp' : 'soft';
-        return '<div class="do-ov-tr' + (b === sel ? ' sel' : '') + '" data-act="book" data-v="' + esc(b.book) + '" title="' + esc(b.book) + '">' +
+        return '<div class="do-ov-tr' + (b === sel ? ' sel' : '') + '" role="button" tabindex="0" data-act="book" data-v="' + esc(b.book) + '" title="' + esc(b.book) + '">' +
           '<span class="do-ov-tt ' + c + '"><span>' + c.toUpperCase() + '</span></span>' +
           '<span class="do-ov-tb"><span class="n"><span>' + esc(sp.name) + '</span></span><span class="s"><span>' + esc(sp.sub) + '</span></span></span>' +
           '<span class="r"><span class="do-ov-tn"><span>' + price2(b.now && b.now.v) + '</span></span></span>' +
@@ -845,6 +859,9 @@
   }
   function onKey(e) {
     if (e.key === 'Escape' && st.drawer) closeModal();
+    // the box's book rows and "Back to" are keyboard-reachable (role=button, tabindex=0)
+    var act = e.target.closest && e.target.closest('.do-ov [role="button"][data-act]');
+    if (act && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); act.click(); return; }
     var row = e.target.closest && e.target.closest('.do-row');
     if (row && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); st.drawer = row.getAttribute('data-v'); st.drBook = null; st.tip = false; renderModal(); }
   }
