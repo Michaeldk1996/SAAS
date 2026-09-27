@@ -20,6 +20,9 @@ const MUTANTS = [
   ['stale: last-update time dashed', "when: Number.isFinite(fetchedMs) ? wxStamp(fetchedMs, zone) : '—'", "when: '—'"],
   ['day card takes the window BEST value', 'const mx = a => a ? rnd(Math.max.apply(null, a)) : null;', 'const mx = a => a ? rnd(Math.min.apply(null, a)) : null;'],
   ['header time in UTC, not the viewer zone', "{ hour:'2-digit', minute:'2-digit', hour12:false, timeZone:newsTz() };", "{ hour:'2-digit', minute:'2-digit', hour12:false, timeZone:'UTC' };"],
+  ['shared tooltip delay 250 → 0 (TEN-303 initAOddsTips)', '_aoTipTimer = setTimeout(() => { if (_aoTipFor === el) aOddsTipShow(el); }, 250);', '_aoTipTimer = setTimeout(() => { if (_aoTipFor === el) aOddsTipShow(el); }, 0);'],
+  ['shared tooltip ignores keyboard focus', "document.addEventListener('focusin', on); document.addEventListener('focusout', off);", "document.addEventListener('focusout', off);"],
+  ['Weather day card loses its shared tooltip', "tip = ' tabindex=\"0\"' + tipAttr(aOddsTipHtml(d.dow + ' ' + d.label, L));", "tip = '';"],
   ['indoor flag ignored', 'if (entry && entry.indoor === true) return { indoor: true };', ''],
 ];
 let caught = 0;

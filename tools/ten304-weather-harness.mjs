@@ -26,8 +26,8 @@ export function constSrc(name, src = HTML) {
   assert.ok(start > 0, `const ${name} not found`);
   return src.slice(start, src.indexOf(';\n', start) + 1);
 }
-export const CONSTS = ['SF_TIP_C', 'WX_CONFIG', 'WX_COPY', 'WX_C'];
-export const FNS = ['acctTzOffsetMin', 'cardStartMs', 'cardFmtStart', 'aContextLine', 'escapeHtml', 'sfTipAttr', 'sfTipHtml',
+export const CONSTS = ['AODDS_C', 'WX_CONFIG', 'WX_COPY', 'WX_C'];
+export const FNS = ['acctTzOffsetMin', 'cardStartMs', 'cardFmtStart', 'aContextLine', 'escapeHtml', 'aOddsTipHtml',
   'wxForced', 'wxNum', 'wxFmt', 'wxSev', 'wxRank', 'wxLocalParts', 'wxAddDays', 'wxDayDiff', 'wxDow', 'wxMonDay', 'wxStamp',
   'wxAgo', 'wxIconKind', 'wIcon', 'wxModel', 'buildWeatherSection'];
 
@@ -43,6 +43,47 @@ export function build({ src = HTML, over = {}, viewerTz, search = '' } = {}) {
     ${FNS.map(n => slice(n, src)).join('\n')}
     return { buildWeatherSection, wxModel, aContextLine, cardStartMs, cardFmtStart, WX_CONFIG, WX_COPY, WX_C };
   `)(viewerTz, search);
+}
+
+// The SHARED tooltip (TEN-303's aOddsTip*, which the Weather tab uses) run against a minimal fake DOM:
+// document listeners, one #aoddsTip element and a manual clock. Each fake element carries the attributes
+// parsed from the rendered markup. Returns { fire(type, el), tick(ms), tip(), delays }.
+export function buildTips({ src = HTML } = {}) {
+  const listeners = {}, timers = [], delays = [];
+  let now = 0, tipEl = null;
+  const mkEl = attrs => ({ attrs, isConnected: true, style: {}, innerHTML: '', id: '',
+    getAttribute: k => (k in attrs ? attrs[k] : null), setAttribute(k, v) { this[k] = v; },
+    closest(sel) { const m = /^\[([\w-]+)\]$/.exec(sel); return m && m[1] in attrs ? this : (sel === '.modal-analysis' ? null : null); },
+    contains: () => false, getBoundingClientRect: () => ({ left: 10, top: 10, right: 60, bottom: 30, width: 50, height: 20 }),
+    offsetWidth: 100, offsetHeight: 40, appendChild() {} });
+  const document = {
+    addEventListener: (t, f) => (listeners[t] = listeners[t] || []).push(f),
+    getElementById: id => (id === 'aoddsTip' ? tipEl : null),
+    createElement: () => { const e = mkEl({}); return e; },
+    body: { appendChild: e => { tipEl = e; } },
+  };
+  const window = { innerWidth: 1000, innerHeight: 800 };
+  const setTimeout = (f, ms) => { delays.push(ms); timers.push({ at: now + ms, f }); return timers.length; };
+  const clearTimeout = id => { if (timers[id - 1]) timers[id - 1].f = null; };
+  const api = new Function('document', 'window', 'setTimeout', 'clearTimeout', `
+    ${constSrc('AODDS_C', src)}
+    ${slice('escapeHtml', src)}
+    let _aoTipTimer = null, _aoTipFor = null;
+    ${['aOddsTipEl', 'aOddsTipHide', 'aOddsTipShow', 'initAOddsTips'].map(n => slice(n, src)).join('\n')}
+    return { initAOddsTips, aOddsTipHide };
+  `)(document, window, setTimeout, clearTimeout);
+  return {
+    api, delays, mkEl,
+    fire: (type, el) => (listeners[type] || []).forEach(f => f({ target: el, relatedTarget: null })),
+    tick: ms => { now += ms; timers.forEach(t => { if (t.f && t.at <= now) { const f = t.f; t.f = null; f(); } }); },
+    tip: () => (tipEl && tipEl.style.display === 'block' ? tipEl.innerHTML : null),
+    listenerTypes: () => Object.keys(listeners),
+  };
+}
+// Attributes of every element in `html` whose class starts with `cls` (first tag only), entities decoded.
+export function attrsOf(html, cls) {
+  return elements(html, cls).map(e => { const tag = e.slice(0, e.indexOf('>') + 1), o = {}; let m;
+    const re = /([\w-]+)="([^"]*)"/g; while ((m = re.exec(tag))) o[m[1]] = text(m[2]); return o; });
 }
 
 // ---- synthetic data in the exact shape build-weather.js publishes ----

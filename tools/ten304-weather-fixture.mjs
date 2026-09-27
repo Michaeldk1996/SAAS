@@ -201,10 +201,11 @@ for (const ref of REFS) {
   const row = rows.find(x => x.ref === ref); Object.assign(row, { columnDiffPct: +(r.diff * 100).toFixed(2), columnInkDiffPct: +(r.ink * 100).toFixed(2), columnAt: { dx: r.dx, dy: r.dy } });
   console.error(ref, 'column', row.columnDiffPct, 'ink', row.columnInkDiffPct, r.dx, r.dy);
 }
-// ── phase 3 · behaviour in the real page: sfTip (250 ms delay, hover + keyboard focus), pace tile ──
+// ── phase 3 · behaviour in the real page: the shared TEN-303 tooltip (#aoddsTip: 250 ms delay, hover +
+//    keyboard focus), native title= count, pace tile ──
 await send('Emulation.setDeviceMetricsOverride', { width: 924, height: 2600, deviceScaleFactor: 1, mobile: false });
 await show('c');
-const tipText = () => ev(`(() => { const t = document.getElementById('sfTip'); return t && t.style.display !== 'none' ? t.innerText.replace(/\\s+/g, ' ').trim() : null; })()`);
+const tipText = () => ev(`(() => { const t = document.getElementById('aoddsTip'); return t && t.style.display !== 'none' ? t.innerText.replace(/\\s+/g, ' ').trim() : null; })()`);
 const hover = async sel => { const c = await ev(`(() => { const r = document.querySelector(${JSON.stringify(sel)}).getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + Math.min(8, r.height / 2) }; })()`);
   await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: 5, y: 5 }); await new Promise(r => setTimeout(r, 50));
   await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: c.x, y: c.y }); };

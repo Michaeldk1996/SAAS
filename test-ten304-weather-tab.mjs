@@ -5,7 +5,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { build, makeFile, elements, text } from './tools/ten304-weather-harness.mjs';
+import { build, buildTips, attrsOf, makeFile, elements, text, HTML } from './tools/ten304-weather-harness.mjs';
 
 const NOW = Date.parse('2026-09-27T04:00:00Z');                       // 12:00 in Chengdu
 const FETCHED = '2026-09-27T02:00:00Z';                               // 2 h old
@@ -160,4 +160,35 @@ test('the test-only pixel fixture never ships: not referenced by the dashboard, 
   // …and the files the tab DOES fetch are published
   assert.ok(copies.some(l => /cp weather-index\.json _site\//.test(l)), 'weather-index.json copied');
   assert.ok(copies.some(l => /cp -r weather _site\//.test(l)), 'weather/ copied');
+});
+
+// Mutation: the shared delay changed (250 → 0), the focusin listener dropped, or a Weather tip moved to
+// another attribute / a second tooltip. The Weather tab's chip, "+1" and day cards are driven through
+// TEN-303's REAL initAOddsTips / aOddsTipShow (sliced from the page) with a fake DOM and clock.
+test('Weather tooltips use the ONE shared tooltip: data-aotip + tabindex, 250 ms delay, hover and keyboard focus', () => {
+  const f = file((d, h) => d === '2026-09-27' && h === 14 ? { gusts: 40, feels: 36 } : {});   // two flags → "+1"
+  const html = render(f);
+  const targets = { chip: attrsOf(html, 'wx-tbd'), more: attrsOf(html, 'wx-more'), day: attrsOf(html, 'wx-day') };
+  assert.equal(targets.chip.length, 1); assert.ok(targets.more.length >= 1); assert.equal(targets.day.length, 7);
+  for (const [k, list] of Object.entries(targets)) for (const a of list) {
+    assert.equal(a.tabindex, '0', k + ' is keyboard-focusable');
+    assert.ok(a['data-aotip'] && a['data-aotip'].length > 20, k + ' carries a shared-tooltip body');
+    assert.ok(!('title' in a) && !('data-sftip' in a), k + ': no native title, no second tooltip');
+  }
+  assert.ok(!/data-sftip|\bsfTip|SF_TIP/.test(HTML), 'no second tooltip component on the page');
+  assert.match(targets.chip[0]['data-aotip'], /Gusts: watch ≥ 25 · concern ≥ 35 km\/h/);
+  assert.match(targets.more[0]['data-aotip'], /Feels like 36°/);
+  assert.match(targets.day[0]['data-aotip'], /Max gusts.*40 km\/h.*Open-Meteo/s);
+  for (const type of ['focusin', 'mouseover']) {
+    for (const a of [targets.chip[0], targets.more[0], targets.day[0]]) {
+      const T = buildTips(); T.api.initAOddsTips();
+      const el = T.mkEl(a);
+      T.fire(type, el);
+      assert.equal(T.tip(), null, type + ': nothing before the delay');
+      assert.deepEqual(T.delays, [250], type + ': the shared 250 ms delay');
+      T.tick(249); assert.equal(T.tip(), null);
+      T.tick(1); assert.equal(T.tip(), a['data-aotip'], type + ': the body shows after 250 ms');
+      T.fire(type === 'focusin' ? 'focusout' : 'mouseout', el); assert.equal(T.tip(), null, 'hidden on leave / blur');
+    }
+  }
 });

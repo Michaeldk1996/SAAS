@@ -12760,88 +12760,14 @@ function wmoWeather(code){
   if (code >= 95) return { icon: BSP_ICONS.wxRain, label: 'Thunderstorms', tint: RAIN };
   return { icon: BSP_ICONS.wxCloud, label: '—', tint: CLOUD };
 }
-// ── sfTip — the ONE shared custom tooltip (TEN-304 brief §3.3) ─────────────────────────────────────
-// The TEN-303 Odds-tab tooltip's look and behaviour, under a generic name so every tab can use it.
-// API:
-//   · mark any element with sfTipAttr(html) → ` data-sftip="<escaped html>"`; add tabindex="0" so
-//     keyboard focus shows it too. The attribute holds the tooltip BODY as HTML.
-//   · sfTipHtml(title, lines) builds the standard body: a title + a key/value grid, lines = [[key,
-//     value, colour?], …] (title or lines may be empty). Any other HTML body is allowed.
-//   · initSfTips() — idempotent; ONE delegated listener set on document (hover + focus) and ONE
-//     fixed element (#sfTip), shown SF_TIP_DELAY_MS after the pointer/focus lands, hidden on leave,
-//     blur or Escape. Call sfTipHide() before re-rendering a section that carries tips.
-const SF_TIP_DELAY_MS = 250;
-const SF_TIP_C = {
-  pop: '#131623',                  // TEN-303 pop-up #131623 (12a popup)
-  bd: 'rgba(255,255,255,0.045)',   // TEN-303 tipBd rgba(255,255,255,0.09) → 12a line
-  text: '#EBF1F2',                 // #E7E9EE → 12a text
-  sub: '#A3ABBA',                  // #8B96B5 → 12a text-sub
-  label: '#6E7A93',                // #5B6880 → 12a label
-  hw: '0.33px',                    // spec 1.25px border → 12a hairline
-};
-let _sfTipTimer = null, _sfTipFor = null;
-function sfTipAttr(html){ return ' data-sftip="' + escapeHtml(html) + '"'; }
-function sfTipHtml(title, lines){
-  const C = SF_TIP_C, mono = "font-family:'IBM Plex Mono',monospace;";
-  return (title ? '<div style="font-size:13px; font-weight:700; color:' + C.text + ';">' + escapeHtml(title) + '</div>' : '')
-    + (lines && lines.length ? '<div style="display:grid; grid-template-columns:auto minmax(0,1fr); gap:4px 12px;' + (title ? ' margin-top:8px;' : '') + ' align-items:baseline;">'
-      + lines.map(l => '<span style="' + mono + ' font-size:9px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:' + C.label + '; white-space:nowrap;">' + escapeHtml(l[0]) + '</span>'
-        + '<span style="' + mono + ' font-size:11px; color:' + (l[2] || C.sub) + ';">' + escapeHtml(l[1]) + '</span>').join('') + '</div>' : '');
-}
-function sfTipEl(){
-  let t = document.getElementById('sfTip');
-  if (!t){
-    const C = SF_TIP_C;
-    t = document.createElement('div');
-    t.id = 'sfTip'; t.setAttribute('role', 'tooltip');
-    t.style.cssText = 'position:fixed; z-index:200; display:none; box-sizing:border-box; max-width:320px; pointer-events:none; line-height:normal;'
-      + " font-family:'Hanken Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif; -webkit-font-smoothing:antialiased;"
-      + ' background:' + C.pop + '; border:' + C.hw + ' solid ' + C.bd + '; border-radius:10px; padding:10px 12px;';
-    document.body.appendChild(t);
-  }
-  return t;
-}
-function sfTipHide(){ clearTimeout(_sfTipTimer); _sfTipFor = null; const t = document.getElementById('sfTip'); if (t) t.style.display = 'none'; }
-// Below the element, left-aligned; flips above / to the left where it would clip the viewport or the modal.
-function sfTipShow(el){
-  if (!el || !el.isConnected) return;
-  const t = sfTipEl();
-  t.innerHTML = el.getAttribute('data-sftip') || '';
-  t.style.display = 'block'; t.style.left = '0px'; t.style.top = '0px';
-  const r = el.getBoundingClientRect(), w = t.offsetWidth, h = t.offsetHeight;
-  const box = el.closest('.modal-analysis');
-  const b = box ? box.getBoundingClientRect() : { left: 0, top: 0, right: window.innerWidth, bottom: window.innerHeight };
-  const L = Math.max(0, b.left), T = Math.max(0, b.top), R = Math.min(window.innerWidth, b.right), B = Math.min(window.innerHeight, b.bottom);
-  let x = r.left, y = r.bottom + 6;
-  if (y + h > B && r.top - 6 - h >= T) y = r.top - 6 - h;
-  if (x + w > R) x = Math.max(L, r.right - w);
-  t.style.left = Math.round(x) + 'px'; t.style.top = Math.round(y) + 'px';
-}
-function initSfTips(){
-  if (initSfTips.done) return;
-  initSfTips.done = true;
-  const on = e => {
-    const el = e.target && e.target.closest ? e.target.closest('[data-sftip]') : null;
-    if (!el || el === _sfTipFor) return;
-    sfTipHide(); _sfTipFor = el;
-    _sfTipTimer = setTimeout(() => { if (_sfTipFor === el) sfTipShow(el); }, SF_TIP_DELAY_MS);
-  };
-  const off = e => {
-    const el = e.target && e.target.closest ? e.target.closest('[data-sftip]') : null;
-    if (!el || (e.relatedTarget && el.contains(e.relatedTarget))) return;
-    if (el === _sfTipFor) sfTipHide();
-  };
-  document.addEventListener('mouseover', on); document.addEventListener('mouseout', off);
-  document.addEventListener('focusin', on); document.addEventListener('focusout', off);
-  document.addEventListener('keydown', e => { if (e.key === 'Escape' && _sfTipFor) sfTipHide(); });
-}
-
 // ══ TEN-304 Wave B — Match analysis → Weather tab ════════════════════════════════════════════════
 // Spec: design/handoff-weather/Weather Tab - Paperclip.md (§1–§6 markup + wxFor/wIcon, ported to the
 // dashboard's template strings). Rules: .claude/rules/modal-weather.md. Data (lazy, on tab open):
 // weather-index.json (m.tour → {indoor, file}) + weather/<slug>.json (build-weather.js, Open-Meteo).
 // Every time on this tab is VENUE-LOCAL (the file's IANA tz); the MATCH badge is cardStartMs(m) — the
 // same instant as the modal header — converted to the venue zone.
+// Tooltips: the ONE shared custom tooltip, TEN-303's (data-aotip + initAOddsTips / aOddsTipHide /
+// aOddsTipHtml): one delegated listener set, 250 ms delay, hover and keyboard focus. No second one.
 
 // Every cut-off, window and count the tab uses — change them HERE and nowhere else.
 // ⚠️ THRESHOLDS ARE PLACEHOLDERS (TEN-304 brief §2 defaults) until the founder rules; the
@@ -12987,11 +12913,11 @@ function openWeatherTab(){
 function renderWeatherSection(){
   const el = document.getElementById('aSectionWeather');
   if (!el) return;
-  sfTipHide();
+  aOddsTipHide();
   el.innerHTML = (_aWx.ready && _aWx.m === _aWxMatch)
     ? buildWeatherSection(_aWx.m, _aWx.entry, _aWx.file, Date.now())
     : '<div style="font-size:13px; color:' + WX_C.dim + ';">' + escapeHtml(WX_COPY.loading) + '</div>';
-  initSfTips();
+  initAOddsTips();
 }
 // TEST-ONLY: ?wxForce=unavailable forces the unavailable state (TEN-304 brief §4). Nothing else is read.
 function wxForced(){
@@ -13166,14 +13092,15 @@ function wxModel(m, entry, file, nowMs, forced){
 function buildWeatherSection(m, entry, file, nowMs){
   const C = WX_C, CP = WX_COPY, CF = WX_CONFIG, hw = C.hw, hw1 = C.hw1, mono = "font-family:'IBM Plex Mono',monospace;";
   const vm = wxModel(m, entry, file, nowMs, wxForced());
+  const tipAttr = html => ' data-aotip="' + escapeHtml(html) + '"', TC = AODDS_C;   // the shared (TEN-303) tooltip
   const sevC = s => s === 'r' ? C.red : s === 'a' ? C.amber : C.bar;
   const dotC = s => s === 'r' ? C.red : s === 'a' ? C.amber : s === 'u' ? C.unavail : C.dim;
   const T = CF.thresholds;
-  const chipTip = '<div style="font-size:12px; line-height:1.45; color:' + SF_TIP_C.text + '; max-width:280px;">' + escapeHtml(CP.thresholdsTip) + '</div>'
-    + '<div style="display:flex; flex-direction:column; gap:3px; margin-top:8px; ' + mono + ' font-size:11px; color:' + SF_TIP_C.sub + ';">'
+  const chipTip = '<div style="font-size:12px; line-height:1.45; color:' + TC.text + '; max-width:280px;">' + escapeHtml(CP.thresholdsTip) + '</div>'
+    + '<div style="display:flex; flex-direction:column; gap:3px; margin-top:8px; ' + mono + ' font-size:11px; color:' + TC.sub + ';">'
     + ['gusts', 'feels', 'rain'].map(k => '<span>' + escapeHtml(wxFmt(CP.thresholdsLine[k], T[k])) + '</span>').join('') + '</div>';
   const chipRow = '<div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:18px;">'
-    + '<span class="wx-tbd" tabindex="0"' + sfTipAttr(chipTip) + ' style="margin-left:auto; ' + mono + ' font-size:9.5px; font-weight:600; letter-spacing:0.14em; color:' + C.amber + '; padding:4px 8px; border-radius:6px; border:' + hw1 + ' dashed ' + C.chipBd + '; white-space:nowrap;">' + escapeHtml(CP.thresholdsChip) + '</span></div>';
+    + '<span class="wx-tbd" tabindex="0"' + tipAttr(chipTip) + ' style="margin-left:auto; ' + mono + ' font-size:9.5px; font-weight:600; letter-spacing:0.14em; color:' + C.amber + '; padding:4px 8px; border-radius:6px; border:' + hw1 + ' dashed ' + C.chipBd + '; white-space:nowrap;">' + escapeHtml(CP.thresholdsChip) + '</span></div>';
   const wrap = inner => '<div class="wx-tab" style="line-height:normal; color:' + C.text + ';">' + chipRow + inner + '</div>';
 
   if (vm.indoor) {
@@ -13202,7 +13129,7 @@ function buildWeatherSection(m, entry, file, nowMs){
     const icon = d.icon ? wIcon(d.icon, 26, C.muted) : '<span style="' + mono + ' font-size:18px; color:' + C.dim + '; height:26px; line-height:26px;">—</span>';
     const deg = x => x == null ? '—' : x + '°';
     const more = d.flags && d.flags.length > 1
-      ? '<span class="wx-more" tabindex="0"' + sfTipAttr('<div style="display:flex; flex-direction:column; gap:5px;">' + d.flags.slice(1).map(f => '<span style="display:flex; align-items:center; gap:7px; font-size:12px; color:' + SF_TIP_C.text + ';"><span style="width:7px; height:7px; border-radius:50%; background:' + dotC(f.sev) + '; flex-shrink:0;"></span>' + escapeHtml(f.text) + '</span>').join('') + '</div>')
+      ? '<span class="wx-more" tabindex="0"' + tipAttr('<div style="display:flex; flex-direction:column; gap:5px;">' + d.flags.slice(1).map(f => '<span style="display:flex; align-items:center; gap:7px; font-size:12px; color:' + TC.text + ';"><span style="width:7px; height:7px; border-radius:50%; background:' + dotC(f.sev) + '; flex-shrink:0;"></span>' + escapeHtml(f.text) + '</span>').join('') + '</div>')
         + ' style="' + mono + ' font-size:9.5px; font-weight:700; color:' + C.sub + '; padding:1px 4px; border-radius:3px; border:' + hw1 + ' solid ' + C.dashBd + '; flex-shrink:0;">+' + (d.flags.length - 1) + '</span>' : '';
     let tip = '';
     if (!d.unavail) {
@@ -13212,7 +13139,7 @@ function buildWeatherSection(m, entry, file, nowMs){
         [TP.window, wxFmt(TP.windowVal, { from: String(CF.window.fromHour).padStart(2, '0'), to: String(CF.window.toHour).padStart(2, '0') })]];
       if (d.past) L.push([TP.values, TP.pastVal]);
       L.push([TP.source, vm.source], [TP.fetched, wxStamp(vm.fetchedMs, vm.zone)]);
-      tip = ' tabindex="0"' + sfTipAttr(sfTipHtml(d.dow + ' ' + d.label, L));
+      tip = ' tabindex="0"' + tipAttr(aOddsTipHtml(d.dow + ' ' + d.label, L));
     }
     return '<div class="wx-day' + (d.isMatch ? ' is-match' : '') + '" data-date="' + d.date + '"' + tip + ' style="position:relative; display:flex; flex-direction:column; align-items:center; gap:7px; padding:16px 8px 12px; border-radius:12px; background:' + C.card + '; border:' + hw + ' solid ' + (d.isMatch ? C.matchBd : C.bd) + '; min-width:0;">'
       + '<span class="wx-sevedge" style="position:absolute; top:-1px; left:12px; right:12px; height:3px; border-radius:0 0 3px 3px; background:' + (v === 'r' || v === 'a' ? sevC(v) : 'transparent') + ';"></span>'
