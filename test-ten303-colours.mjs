@@ -28,7 +28,11 @@ test('1: every Odds-tab colour token is the Odds Tab - Spec.md value, verbatim (
   const rows = [...sec.matchAll(/^\| ([^|]+?) \| (#[0-9A-Fa-f]{6}) \|/gm)].map(m => [m[1].trim(), m[2]]);
   assert.equal(rows.length, Object.keys(SPEC_KEYS).length, 'spec table rows: ' + rows.map(r => r[0]));
   const C = build().AODDS_C;
-  for (const [name, hex] of rows) for (const k of SPEC_KEYS[name]) assert.equal(norm(C[k]), norm(hex), `${name} (${k})`);
+  // founder rulings over the spec table (question card 9e0ac649, 2026-09-27): the BOOKS tag + STEAM chip blue is the
+  // Claude Design screenshot's #6A9AF8, not the table's #5B9BFF (mutant: the blue back to #5B9BFF)
+  const RULED = { blue: '#6A9AF8' };
+  for (const [name, hex] of rows) for (const k of SPEC_KEYS[name]) assert.equal(norm(C[k]), norm(RULED[k] || hex), `${name} (${k})`);
+  assert.equal(norm(C.booksBd), 'RGBA(106,154,248,0.35)', 'BOOKS border follows the ruled blue at the spec alpha');
   // the prose values the spec gives outside the table (§1–§6) — a sample that the 12a map used to change
   const prose = { segOnBg: 'rgba(91,155,255,0.16)', tileBd: 'rgba(255,255,255,0.1)', tileOnBd: 'rgba(91,155,255,0.45)',
     rowBd: 'rgba(255,255,255,0.05)', backdrop: 'rgba(4,5,9,0.62)', steamInk: '#06070A', hw125: '1.25px' };

@@ -558,3 +558,23 @@ test('pop-up stat boxes: HIGHEST / LOWEST compare displayed prices; a displayed 
   assert.deepEqual(stats[1], ['1.40', '27 Sep, 00:00'], 'HIGHEST = the first 1.40 (10 h before now, Europe/Brussels)');
   });
 });
+// ── founder card 9e0ac649 (2026-09-27): a book out of its feed holds its last caught price to the LAST CHECK ──
+//    mutant: the line stops at the 'not in feed since' time (the open gap's start) ──
+test('a book with an open feed gap holds its last price flat to the last check, not to "not in feed since"', () => {
+  const now = Date.parse('2026-09-27T08:00:00Z');
+  atClock(now, () => {
+    const A = build();
+    const m = fixture({ now, withAt: true });
+    m.oddsMovement.chart.books['Betano'] = { p1: [[iso(now - 6 * H), 2.5], [iso(now - 4 * H), 2.4]], p2: [[iso(now - 6 * H), 1.6], [iso(now - 4 * H), 1.65]] };
+    m.oddsMovement.chart.meta['Betano'].gaps = [[iso(now - 3 * H), null]];         // pulled 3 h ago
+    m.oddsMovement.chart.meta['Betano'].checkedAt = iso(now - 2 * 60e3);           // still checked 2 min ago
+    // the row's end drives both charts (sparkline span, pop-up axis t1): it is the last check, not the pull time
+    const r = A.aOddsRowsOf(m, { nowMs: now }).rows.find(x => x.name === 'Betano');
+    assert.ok(r.stale && r.pulled === now - 3 * H, 'the book is out of its feed');
+    assert.equal(r.end, now - 2 * 60e3, 'the line runs to the last check');
+    // and the pop-up axis ends there: its last x label is the last check's clock (Europe/Brussels = UTC+2)
+    A.open(m); A.state().mv = 'Betano';
+    const mv = A.buildOddsSection(m); const xs = [...mv.slice(mv.indexOf('class="aox-mv"')).matchAll(/class="aox-xt"[^>]*>([^<]+)</g)].map(x => x[1]);
+    assert.equal(xs[4], '09:58', 'the pop-up x axis ends at the last check: ' + xs);
+  });
+});

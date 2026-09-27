@@ -42,6 +42,8 @@ const MUTANTS = [
   ['review: the Odds tab inherits the 12a text', '  #aSectionOdds{ color:#E7E9EE; }', '  #aSectionOdds{ color:#EBF1F2; }'],
   ['deployed measure: the tab inherits the modal line-height', '  #aSectionOdds{ font-size:16px; line-height:normal; }', '  #aSectionOdds{ font-size:16px; }'],
   ['deployed measure: the tab inherits the modal font-size', '  #aSectionOdds{ font-size:16px; line-height:normal; }', '  #aSectionOdds{ line-height:normal; }'],
+  ['founder card 9e0ac649: the STEAM / BOOKS blue back to the spec #5B9BFF', "  blue: '#6A9AF8',", "  blue: '#5B9BFF',"],
+  ['founder card 9e0ac649: a pulled book stops at "not in feed since"', 'end: endOf(key, last.t),', 'end: aOddsPulledAt(mt) != null ? Math.max(last.t, aOddsPulledAt(mt)) : endOf(key, last.t),'],
   ['§6.5 the shipped shape is a curve', "const AODDS_LINE_SHAPE = 'step';", "const AODDS_LINE_SHAPE = 'monotone';"],
 ];
 let survived = 0;
