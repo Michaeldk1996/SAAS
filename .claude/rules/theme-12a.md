@@ -49,7 +49,9 @@ Design-file values with no HANDOFF name (the promo icon tile): `promo-tile #1721
   liquidity `label`); other tabs otherwise follow HANDOFF §4 (colours/surfaces/outlines only).
 - **Lime count = 2**: header live dot + active-nav dot (a `::after`).
 - **Blue-ring roles**: probability bars, form bars, date underline, Today dot. Nothing else.
-- **No chrome gradients / shadows / blur.** Remaining sites must be on the data-viz list below.
+- **No chrome gradients / shadows / blur.** Remaining sites must be on the data-viz list below — except the Odds
+  tab's pop-up shadow `0 30px 80px rgba(0,0,0,0.55)` (Odds Tab - Spec.md §6) and tooltip shadow
+  `0 12px 32px rgba(0,0,0,0.5)` (founder TEN-303 brief §4), per the Match analysis exception above.
 - **Logo**: `assets/logo-dark-transparent.png`, first item in the sidebar panel (margin `0 8px 26px`), rendered
   26.0 × 138.8px, no box behind it. Icon-only slots use `assets/ring-transparent.png`.
 - **Brand outside the dashboard** (founder rulings TEN-285, 2026-09-26): `verify.html` (`.brand-id`),
@@ -59,7 +61,8 @@ Design-file values with no HANDOFF name (the promo icon tile): `promo-tile #1721
   **Favicon**: every page
   the pipeline publishes has exactly one `<link rel="icon" type="image/png" href="assets/ring-transparent.png">`
   in `<head>`. Locked by `test-ten285-brand.mjs`.
-- **Hairlines** are written `0.33px`. Compared with the design **in the same browser at the same DPR** they are
+- **Hairlines** are written `0.33px` — except the Odds tab, whose borders keep the spec's `1px` / `1.25px`
+  (`AODDS_C.hw1` / `hw125`; Match analysis exception above). Compared with the design **in the same browser at the same DPR** they are
   identical (1px at DPR 1; 0.5px computed = 1 device px at DPR 2 — measure with
   `--force-device-scale-factor`, never CDP-emulated DPR). No pseudo-element workaround (TEN-286 item 19, closed).
 

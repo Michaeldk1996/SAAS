@@ -61,6 +61,10 @@ test('2: the rendered nav-selected background is the design #171D2F; the modal s
   assert.equal(norm(resolve(HTML, applied(HTML, '.modal-analysis', 'background'))), '#0B0C13');
   assert.equal(norm(applied(HTML, '.modal-analysis .asidenav-item', 'color')), '#5B6880');
   assert.equal(norm(applied(HTML, '.modal-analysis .asidenav-item:hover', 'background')), 'RGBA(255,255,255,0.04)');
+  // review fold-in: text the Odds tab does not colour itself inherits the design #E7E9EE (not the 12a #EBF1F2)
+  assert.equal(norm(applied(HTML, '#aSectionOdds', 'color')), '#E7E9EE');
+  assert.equal(norm(applied(HTML, '.modal-analysis .ahead2 .close', 'color')), '#5B6880');
+  assert.equal(norm(applied(HTML, '.modal-analysis .asidenav-download', 'border-top-color')), 'RGBA(255,255,255,0.07)');
   // mutant: the 12a rule re-appended after the design block wins the cascade again
   const m = HTML.replace('</body>', '<style>.modal-analysis .asidenav-item.active{ background:var(--seg-active); }</style></body>');
   assert.equal(norm(resolve(m, applied(m, '.modal-analysis .asidenav-item.active', 'background'))), '#0B1C4E', 'mutant survived');

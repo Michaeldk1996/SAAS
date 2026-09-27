@@ -534,3 +534,17 @@ test('1c: the tooltip ALSO line reads "api-tennis · not in feed since HH:MM"', 
   const src = />Source<\/span><span style="([^"]*)">/.exec(tip);
   assert.equal(mm[1], src[1], 'same value styling as the SOURCE line');
 });
+
+// ── review fold-in: HIGHEST / LOWEST on the DISPLAYED prices, earliest on a tie ──
+//    mutant: the stat boxes read raw prices again (1.404 beats 1.401 though both show 1.40) ──
+test('pop-up stat boxes: HIGHEST / LOWEST compare displayed prices; a displayed tie keeps the earliest time', () => {
+  const now = Date.parse('2026-09-27T08:00:00Z');
+  const A = build();
+  const m = fixture({ now, withAt: true });
+  m.oddsMovement.chart.books['Pinnacle +30s'].p1 = [[iso(now - 20 * H), 1.30], [iso(now - 10 * H), 1.401], [iso(now - 6 * H), 1.404], [iso(now - 2 * H), 1.35]];
+  A.open(m); A.state().mv = 'Pinnacle';
+  const h = A.buildOddsSection(m);
+  const mv = h.slice(h.indexOf('class="aox-mv"'));
+  const stats = [...mv.matchAll(/class="aox-stat"[^>]*>([^<]*)<\/span><span[^>]*>([^<]*)</g)].map(x => [x[1], x[2]]);
+  assert.deepEqual(stats[1], ['1.40', '27 Sep, 00:00'], 'HIGHEST = the first 1.40 (10 h before now, Europe/Brussels)');
+});

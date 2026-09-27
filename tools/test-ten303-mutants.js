@@ -38,6 +38,8 @@ const MUTANTS = [
   ['follow-up 2: the Odds-tab text re-toned by 12a', "  text: '#E7E9EE',           // Text", "  text: '#EBF1F2',           // Text"],
   ['follow-up 2: the nav-selected bg back to the 12a navy', '.modal-analysis .asidenav-item.active{ background:#171D2F;', '.modal-analysis .asidenav-item.active{ background:#0B1C4E;'],
   ['follow-up 2: the modal surface back to the 12a pop-up', '.modal-analysis{ background:var(--page);', '.modal-analysis{ background:var(--popup);'],
+  ['review: stat boxes read raw prices', '    aOddsDispSeries(s).forEach(p => { if (!hi || p[1] > hi[1]) hi = p;', '    s.forEach(p => { if (!hi || p[1] > hi[1]) hi = p;'],
+  ['review: the Odds tab inherits the 12a text', '  #aSectionOdds{ color:#E7E9EE; }', '  #aSectionOdds{ color:#EBF1F2; }'],
   ['§6.5 the shipped shape is a curve', "const AODDS_LINE_SHAPE = 'step';", "const AODDS_LINE_SHAPE = 'monotone';"],
 ];
 let survived = 0;

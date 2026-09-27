@@ -1230,8 +1230,7 @@
 
   /* ---- Header ---- */
   .modal-analysis .ahead2{ position:relative; padding:20px 48px 20px 24px; border-bottom:0.33px solid var(--border); display:flex; align-items:center; justify-content:space-between; gap:24px; flex-shrink:0; flex-wrap:wrap; }
-  .modal-analysis .ahead2 .close{ position:absolute; top:18px; right:20px; cursor:pointer; color:var(--text-faint); font-size:16px; line-height:1; padding:4px; border-radius:8px; }
-  .modal-analysis .ahead2 .close:hover{ color:var(--text); background:var(--panel-2); }
+  .modal-analysis .ahead2 .close{ position:absolute; top:18px; right:20px; cursor:pointer; font-size:16px; line-height:1; padding:4px; border-radius:8px; }
   .modal-analysis .atitleblock{ flex:1 1 0; min-width:0; }
   .modal-analysis .atitleblock .atitle{ font-family:'Hanken Grotesk', sans-serif; font-weight:800; font-size:18px; letter-spacing:-0.01em; margin-bottom:3px; }
   .modal-analysis .atitleblock .acontext{ font-family:'Hanken Grotesk', sans-serif; font-size:12.5px; font-weight:500; }
@@ -16741,7 +16740,8 @@ function aOddsMvHtml(m, D, marginLbl){
     const s = r.series[x];
     const open = s.length ? s[0] : null;
     let hi = null, lo = null;
-    s.forEach(p => { if (!hi || p[1] > hi[1]) hi = p; if (!lo || p[1] < lo[1]) lo = p; });   // ties keep the earliest
+    // on the DISPLAYED prices (the chart's own points), ties keep the earliest: 1.401 then 1.404 both read 1.40 → the first
+    aOddsDispSeries(s).forEach(p => { if (!hi || p[1] > hi[1]) hi = p; if (!lo || p[1] < lo[1]) lo = p; });
     const shown = r.stale ? r[x + 'Last'] : r[x + 'Now'];
     const chg = (!r.stale && open && r[x + 'Now'] != null) ? (r[x + 'Now'] - open[1]) / open[1] * 100 : null;
     const right = r.stale
@@ -16930,7 +16930,7 @@ function buildOddsReduced(m){
 
   // Header summary tiles use each player's best available price.
   const tile = (name, price, isFav, isA) => {
-    if (price == null) return `<div class="aodds-tile ${isA?'fav':'dog'}"><span class="aot-name">${name}</span><span class="aot-imp">no price</span></div>`;
+    if (price == null) return `<div class="aodds-tile ${isA?'fav':'dog'}"><span class="aot-name">${name}</span><span class="aot-imp">${AODDS_DASH}</span></div>`;
     return `<div class="aodds-tile ${isA?'fav':'dog'}">
       <span class="aot-name">${name}</span>
       <span class="aot-right">
@@ -16964,10 +16964,10 @@ function buildOddsReduced(m){
   const rowHtml = book => {
     const a = rows[book].a, b = rows[book].b;
     const aCell = a == null
-      ? `<span class="aodds-price na">·</span>`
+      ? `<span class="aodds-price na">${AODDS_DASH}</span>`
       : `<span class="aodds-price${a === bestA ? ' best' : ''}">${a.toFixed(2)}</span>`;
     const bCell = b == null
-      ? `<span class="aodds-price na">·</span>`
+      ? `<span class="aodds-price na">${AODDS_DASH}</span>`
       : `<span class="aodds-price${b === bestB ? ' best' : ''}">${b.toFixed(2)}</span>`;
     return `<div class="aodds-brow">
       <span class="aob-name">${book}</span>
@@ -33588,6 +33588,10 @@ if(document.querySelector('.tabpage[data-page="live"]')&&document.querySelector(
   .modal-analysis{ background:var(--page); border-color:rgba(255,255,255,0.09); }
   .modal-analysis .ahead2{ border-bottom-color:rgba(255,255,255,0.07); }
   .modal-analysis .asidenav{ border-right-color:rgba(255,255,255,0.07); }
+  .modal-analysis .asidenav-download{ border-top-color:rgba(255,255,255,0.07); }
+  .modal-analysis .ahead2 .close{ color:#5B6880; }
+  .modal-analysis .ahead2 .close:hover{ color:#E7E9EE; background:rgba(255,255,255,0.04); }
+  #aSectionOdds{ color:#E7E9EE; }
   .modal-analysis .atitleblock .atitle{ color:#E7E9EE; }
   .modal-analysis .atitleblock .acontext{ color:#5B6880; }
   .modal-analysis .asidenav-item{ color:#5B6880; }
