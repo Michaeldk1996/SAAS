@@ -1,37 +1,29 @@
 [
  {
-  "name": "install_pinger",
-  "file": "oddspapi-postmatch-pinger.sql",
-  "required": true
+  "name": "dispatch",
+  "sql": "select public.postmatch_dispatch() r, now() at"
  },
  {
-  "name": "install_watchdog",
-  "file": "ten216-collector-watchdog.sql",
-  "required": true
+  "sleep": 25
  },
  {
-  "name": "routes",
-  "required": true,
-  "sql": "select position('ten287_telegram_bot_token' in pg_get_functiondef('public.postmatch_send_alert(text,text,text)'::regprocedure))>0 pm_ten287, position('ops_telegram' in pg_get_functiondef('public.postmatch_send_alert(text,text,text)'::regprocedure))>0 pm_ops, position('ten287_telegram_bot_token' in pg_get_functiondef('public.ten216_watch_send(text,text,text)'::regprocedure))>0 wd_ten287, position('ops_telegram' in pg_get_functiondef('public.ten216_watch_send(text,text,text)'::regprocedure))>0 wd_ops, (select count(*) from cron.job where jobname in ('ten270-oddspapi-postmatch-ping','ten270-oddspapi-postmatch-check','ten216-collector-watchdog') and active) jobs_active"
+  "name": "response",
+  "sql": "select d.sent_at, d.request_id, d.note, r.status_code, r.timed_out, r.error_msg, case when r.status_code between 200 and 299 then null else left(r.content, 600) end reply, r.headers->>'x-accepted-github-permissions' accepted_perms from public.postmatch_dispatch_log d left join net._http_response r on r.id=d.request_id order by d.sent_at desc limit 3"
  },
  {
-  "name": "send_tests",
-  "required": true,
-  "sql": "select public.postmatch_send_alert('route_test','test','TEST (TEN-295 item 3) - TEN-270 post-match dispatcher alarm: this chat is now the official ops alert route. No action needed.') pm, public.ten216_watch_send('route_test','test','TEST (TEN-295 item 3) - TEN-216 collector watchdog: this chat is now the official ops alert route. No action needed.') wd"
+  "name": "history",
+  "sql": "select coalesce(r.status_code::text, case when r.id is null then 'no response' else 'err' end) status, count(*), min(d.sent_at), max(d.sent_at) from public.postmatch_dispatch_log d left join net._http_response r on r.id=d.request_id group by 1 order by 1"
  },
  {
-  "sleep": 45
+  "name": "first_last",
+  "sql": "select min(sent_at), max(sent_at), count(*) from public.postmatch_dispatch_log"
  },
  {
-  "name": "delivery",
-  "sql": "select 'ten270' src, l.at, l.delivered, l.request_id, r.status_code, r.timed_out, r.error_msg, (r.content::jsonb->>'ok') tg_ok, (r.content::jsonb->'result'->>'message_id') tg_msg_id from public.postmatch_alert_log l left join net._http_response r on r.id=l.request_id where l.condition='route_test' union all select 'ten216', l.at, l.delivered, l.request_id, r.status_code, r.timed_out, r.error_msg, (r.content::jsonb->>'ok'), (r.content::jsonb->'result'->>'message_id') from public.ten216_watch_log l left join net._http_response r on r.id=l.request_id where l.condition='route_test'"
+  "name": "alerts",
+  "sql": "select condition, is_open, opened_at, last_sent_at from public.postmatch_alerts"
  },
  {
-  "name": "watch_check",
-  "sql": "select public.ten216_collector_check(now()) r"
- },
- {
-  "name": "wd_log_after",
-  "sql": "select id, condition, kind, channel, delivered from public.ten216_watch_log order by id"
+  "name": "alert_log_recent",
+  "sql": "select at, condition, kind, delivered from public.postmatch_alert_log where at > now() - interval '3 hours' order by at"
  }
 ]
