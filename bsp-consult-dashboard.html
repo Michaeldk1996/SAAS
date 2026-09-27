@@ -16239,7 +16239,9 @@ const AODDS_MARKET_TILES = [
 ];
 // STEAM (founder's call, TEN-303 13a): shown when at least minBooks live books AND at least
 // minShareOfN of N (N = live books with an open and a now) moved the same way on one player.
-const AODDS_STEAM = { minBooks: 3, minShareOfN: 0 };
+// minMovePct (founder ruling 2026-09-27, TEN-303 comment fdf4bb3f): a book counts toward n only if its as-quoted move
+// |now − open| / open is at least this many percent; below it the book still counts toward N.
+const AODDS_STEAM = { minBooks: 3, minShareOfN: 0, minMovePct: 3 };
 // Line shape for the sparklines and the pop-up (founder's call, TEN-303 §3.7.4): 'step' (step-after,
 // the price holds until the book re-posts) | 'monotone' (monotone cubic, never overshoots).
 const AODDS_LINE_SHAPE = 'step';
@@ -16425,7 +16427,8 @@ function aOddsRowsOf(m, opts){
   // as-quoted prices in both modes — stripping the margin can flip a book's direction, not the market's.
   const moving = live.filter(r => ['a', 'b'].every(x => r[x + 'QOpen'] != null && r[x + 'QNow'] != null));
   const N = moving.length;
-  const cnt = (x, f) => moving.filter(r => f(num(r[x + 'QNow']), num(r[x + 'QOpen']))).length;
+  const bigMove = (nw, op) => Math.abs(nw - op) / op * 100 >= AODDS_STEAM.minMovePct - 1e-9;
+  const cnt = (x, f) => moving.filter(r => { const nw = num(r[x + 'QNow']), op = num(r[x + 'QOpen']); return f(nw, op) && bigMove(nw, op); }).length;
   const cands = [
     { n: cnt('a', (nw, op) => nw < op), who: m.p1, dir: 'shortened' },
     { n: cnt('a', (nw, op) => nw > op), who: m.p1, dir: 'drifted' },

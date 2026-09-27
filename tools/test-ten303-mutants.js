@@ -22,9 +22,10 @@ const MUTANTS = [
     "let won = false; rows.forEach(r => { r[x + 'Best'] = !won && best != null && !r.noData && !r.stale && num(r[x + 'Now']) === best; if (r[x + 'Best']) won = true; });"],
   ['review: a negative net with U+2212', "(d >= 0 ? '+' : '-') + Math.abs(d).toFixed(2)", "(d >= 0 ? '+' : '\\u2212') + Math.abs(d).toFixed(2)"],
   ['review: the STEAM threshold ignored', '.filter(c => c.n >= AODDS_STEAM.minBooks && c.n >= AODDS_STEAM.minShareOfN * N)', '.filter(c => c.n >= 1)'],
-  ['review: STEAM read on the displayed (no-vig) prices', "const cnt = (x, f) => moving.filter(r => f(num(r[x + 'QNow']), num(r[x + 'QOpen']))).length;", "const cnt = (x, f) => moving.filter(r => f(num(r[x + 'Now']), num(r[x + 'Open']))).length;"],
+  ['review: STEAM read on the displayed (no-vig) prices', "const nw = num(r[x + 'QNow']), op = num(r[x + 'QOpen']);", "const nw = num(r[x + 'Now']), op = num(r[x + 'Open']);"],
   ['review: the pop-up x axis by tick index', 'const X = t => PL + (t - t0) / tspan * (Wd - PL - PR), Y = v => TT', 'const X = t => PL + (s.filter(p => p[0] < t).length) / Math.max(1, s.length - 1) * (Wd - PL - PR), Y = v => TT'],
   ['review: a legacy "<Book> (Oddspapi)" key as its own row', 'if (bk) bk.sources.push(k);', 'if (false) bk.sources.push(k);'],
+  ['ruling fdf4bb3f: the STEAM minimum move per book dropped', 'return f(nw, op) && bigMove(nw, op); }).length;', 'return f(nw, op); }).length;'],
   ['§6.5 the shipped shape is a curve', "const AODDS_LINE_SHAPE = 'step';", "const AODDS_LINE_SHAPE = 'monotone';"],
 ];
 let survived = 0;

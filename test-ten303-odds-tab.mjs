@@ -54,7 +54,7 @@ const tipOf = (h, book) => { const r = rowHtml(h, book); const mm = /class="aox-
 //    STEAM counting every book (moving = rows) ──
 test('§6.1 a stale book: NOW and NET "—", never green, outside STEAM n and N', () => {
   const now = Date.now();
-  const A = build(undefined, { AODDS_STEAM: '{ minBooks: 3, minShareOfN: 0 }' });
+  const A = build(undefined, { AODDS_STEAM: '{ minBooks: 3, minShareOfN: 0, minMovePct: 0 }' });
   const m = fixture({ now, withAt: true, superbetChecked: now - 2 * H });   // Superbet: last check 2 h ago, the HIGHEST p1 (2.60)
   A.open(m);
   const h = A.buildOddsSection(m);
@@ -351,17 +351,17 @@ test('best price: every tied live book is green', () => {
 test('STEAM follows the configured threshold; it reads the as-quoted move in both modes', () => {
   const now = Date.now();
   const m = fixture({ now });          // Pinnacle and Bet105 shortened on p1: 2 books
-  assert.equal(build(undefined, { AODDS_STEAM: '{ minBooks: 3, minShareOfN: 0 }' }).aOddsRowsOf(m, { nowMs: now }).steam, null);
-  assert.equal(build(undefined, { AODDS_STEAM: '{ minBooks: 2, minShareOfN: 0 }' }).aOddsRowsOf(m, { nowMs: now }).steam.text, '2 of 4 books shortened on J. Sinner');
-  assert.equal(build(undefined, { AODDS_STEAM: '{ minBooks: 2, minShareOfN: 0.6 }' }).aOddsRowsOf(m, { nowMs: now }).steam, null, '2 < 60% of 4');
-  const A = build(undefined, { AODDS_STEAM: '{ minBooks: 2, minShareOfN: 0 }' });
+  assert.equal(build(undefined, { AODDS_STEAM: '{ minBooks: 3, minShareOfN: 0, minMovePct: 0 }' }).aOddsRowsOf(m, { nowMs: now }).steam, null);
+  assert.equal(build(undefined, { AODDS_STEAM: '{ minBooks: 2, minShareOfN: 0, minMovePct: 0 }' }).aOddsRowsOf(m, { nowMs: now }).steam.text, '2 of 4 books shortened on J. Sinner');
+  assert.equal(build(undefined, { AODDS_STEAM: '{ minBooks: 2, minShareOfN: 0.6, minMovePct: 0 }' }).aOddsRowsOf(m, { nowMs: now }).steam, null, '2 < 60% of 4');
+  const A = build(undefined, { AODDS_STEAM: '{ minBooks: 2, minShareOfN: 0, minMovePct: 0 }' });
   assert.equal(A.aOddsRowsOf(m, { nowMs: now, novig: true }).steam.text, '2 of 4 books shortened on J. Sinner', 'same in No-vig');
   // p1 flat as quoted, p2 shortened: stripping the margin makes p1 "drift" — STEAM must still read the market
   const m1 = fixture({ now });
   for (const k of ['Bet105', 'Superbet', 'Betfair Exchange (recorded by us)']) { delete m1.oddsMovement.chart.books[k]; }
   delete m1.oddsMovement.books;
   m1.oddsMovement.chart.books['Pinnacle +30s'] = { p1: [[iso(now - 20 * H), 2.5], [iso(now - 2 * H), 2.5]], p2: [[iso(now - 20 * H), 1.578], [iso(now - 2 * H), 1.5]] };
-  const B = build(undefined, { AODDS_STEAM: '{ minBooks: 1, minShareOfN: 0 }' });
+  const B = build(undefined, { AODDS_STEAM: '{ minBooks: 1, minShareOfN: 0, minMovePct: 0 }' });
   assert.equal(B.aOddsRowsOf(m1, { nowMs: now }).steam.text, '1 of 1 books shortened on C. Alcaraz');
   assert.equal(B.aOddsRowsOf(m1, { nowMs: now, novig: true }).steam.text, '1 of 1 books shortened on C. Alcaraz', 'No-vig reads the same market move');
 });
@@ -389,4 +389,30 @@ test('a legacy "<Book> (Oddspapi)" key joins that book\'s row as its last fallba
   assert.equal(pin.key, 'Pinnacle +30s (Oddspapi)');
   delete m.oddsMovement.chart.books['Pinnacle +30s'];
   assert.equal(A.aOddsRowsOf(m, { nowMs: now }).rows.find(r => r.name === 'Pinnacle').key, 'Pinnacle (Oddspapi)');
+});
+
+// ── founder ruling 2026-09-27 (comment fdf4bb3f): a book counts toward n only if |now − open| / open ≥ minMovePct ──
+//    mutant: the minimum-move filter dropped from the STEAM count (`&& bigMove(nw, op)` removed) ──
+test('STEAM minimum move: 5 books each 1.40 → 1.41 never show STEAM at the shipped default X = 3%', () => {
+  const now = Date.now();
+  const A = build();                                  // the SHIPPED config: minBooks 3, minMovePct 3
+  const five = (to) => {
+    const m = fixture({ now });
+    for (const k of Object.keys(m.oddsMovement.chart.books)) delete m.oddsMovement.chart.books[k];
+    delete m.oddsMovement.books;
+    const t0 = iso(now - 5 * H), t1 = iso(now - 1 * H);
+    const meta = { source: 'api-tennis', group: 'soft', clock: 'seen by us every 5 min', checkedAt: iso(now - 2 * 60e3) };
+    for (const k of ['Betano', '1xBet', 'BetVictor', 'Marathon', 'Sbobet']) {
+      m.oddsMovement.chart.books[k] = { p1: [[t0, 1.40], [t1, to]], p2: [[t0, 3.0], [t1, 3.0]] };
+      m.oddsMovement.chart.meta[k] = meta;
+    }
+    return m;
+  };
+  const small = A.aOddsRowsOf(five(1.41), { nowMs: now });
+  assert.equal(small.N, 5, 'all five still count toward N');
+  assert.equal(small.steam, null, '+0.7% per book is below X = 3%: no STEAM');
+  A.open(five(1.41));
+  assert.ok(!A.buildOddsSection(five(1.41)).includes('aox-steam'), 'no chip rendered');
+  // control: the same five books moving 1.40 → 1.45 (+3.6%) do show it
+  assert.equal(A.aOddsRowsOf(five(1.45), { nowMs: now }).steam.text, '5 of 5 books drifted on J. Sinner');
 });
