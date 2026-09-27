@@ -165,81 +165,96 @@
     return ageS > AMBER_AFTER_S ? 'amber' : 'connected';
   }
 
-  // The pop-up chart (founder comment bef04c62, items 1–2). House style = the Database cumulative-profit
-  // chart's own values (bsp-consult-dashboard.html COL_FAV / FILL_FAV / its gridlines): line #6a9af8 at 2.6,
-  // area rgba(91,155,255,0.11), grid rgba(255,255,255,0.06). Direction is carried by ▼/▲ and the red/green %s,
-  // never by the line. The x-axis runs from the line's first recorded price to its latest (opening → now),
-  // ticked at real UTC times; a stretch of more than GAP_MS between recorded points is dashed.
-  var HOUSE_LINE = '#6a9af8', HOUSE_FILL = 'rgba(91,155,255,0.11)', HOUSE_GRID = 'rgba(255,255,255,0.06)';
-  var GAP_MS = 3.6 * H;                               // the previous rule's 15% of a 24 h axis, kept as a duration
-  var TICK_STEPS = [0.25, 0.5, 1, 2, 3, 6, 12, 24, 48, 72, 168].map(function (h) { return h * H; });
+  // ─── the price-move box (founder comment 8585095a, LOCKED `handoff/Price Move Box/`, 2026-09-27) ───────
+  // The Database chart type: [Y labels 52px] [plot] [end label 84px], 260px high, SVG viewBox 1000×300.
+  // Recorded prices only: straight segments, no per-snapshot dots, no open line. A stretch of more than
+  // GAP_MS with no recorded price is drawn dashed (thin, lower opacity), never solid; nothing is interpolated.
+  var GAP_MS = 3.6 * H;
+  var RECENT_MS = 15 * 60e3;           // "Now" only for a price confirmed on a check this recent (data rule 25)
   var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  function tickLabel(t, withDay) {
-    var d = new Date(t), hm = ('0' + d.getUTCHours()).slice(-2) + ':' + ('0' + d.getUTCMinutes()).slice(-2);
-    return withDay ? d.getUTCDate() + ' ' + MON[d.getUTCMonth()] + ' ' + hm : hm;
+  function hm(t) { var d = new Date(t); return ('0' + d.getUTCHours()).slice(-2) + ':' + ('0' + d.getUTCMinutes()).slice(-2); }
+  function dayOf(t) { var d = new Date(t); return d.getUTCDate() + ' ' + MON[d.getUTCMonth()]; }
+  // data rule 25: where the line ends and what the end label says
+  //   a row cut at the live start -> "Last pre-match", the line carried to the start (the price in force then)
+  //   a price confirmed within RECENT_MS -> "Now", the line carried to that confirmation
+  //   otherwise -> "Latest HH:MM", the line ends at the last recorded price
+  function endOf(series, seen, cutAt, now) {
+    var last = series[series.length - 1];
+    if (!last) return null;
+    var cut = cutAt ? Date.parse(cutAt) : NaN;
+    if (isFinite(cut)) return { label: 'Last pre-match', t: Math.max(last.t, cut), v: last.v };
+    if (seen != null && isFinite(seen) && now != null && now - seen <= RECENT_MS) return { label: 'Now', t: Math.max(last.t, seen), v: last.v };
+    return { label: 'Latest ' + hm(last.t), t: last.t, v: last.v };
   }
-  // Real-time ticks: the two ends (first seen, now/last) plus round UTC times between them, ≤ 5 in all.
-  // An intermediate is kept only where its label clears its neighbours' (10 px IBM Plex Mono ≈ 6.1 px a
-  // character on the 942 px plot), so a long dated end label never overprints one.
-  var PLOT_W = 942, CH_W = 6.1, TICK_GAP = 14;
-  function axisTicks(t0, t1, endWord) {
-    var span = t1 - t0, multiDay = new Date(t0).getUTCDate() !== new Date(t1).getUTCDate() || span > 24 * H;
-    if (!(span > 0)) return [{ t: t0, fr: 1, label: 'first seen ' + tickLabel(t0, false), anchor: 'end', end: true }];   // one price: the dot sits at the right edge
-    var first = { t: t0, fr: 0, label: 'first seen ' + tickLabel(t0, multiDay), anchor: 'start', end: true };
-    var last = { t: t1, fr: 1, label: endWord + ' ' + tickLabel(t1, multiDay), anchor: 'end', end: true };
-    var ext = function (x) {             // the label's [left, right] in px
-      var w = x.label.length * CH_W, c = x.fr * PLOT_W;
-      return x.anchor === 'start' ? [c, c + w] : x.anchor === 'end' ? [c - w, c] : [c - w / 2, c + w / 2];
-    };
-    var step = TICK_STEPS.filter(function (s) { return span / s <= 4; })[0] || TICK_STEPS[TICK_STEPS.length - 1];
-    var ticks = [first], rightEdge = ext(first)[1], lastLeft = ext(last)[0], day = new Date(t0).getUTCDate();
-    for (var t = Math.ceil(t0 / step) * step; t < t1; t += step) {
-      // an intermediate on a new UTC day carries its date, so "12:00" is never ambiguous on a multi-day axis
-      var newDay = multiDay && new Date(t).getUTCDate() !== day;
-      var x = { t: t, fr: (t - t0) / span, label: tickLabel(t, newDay), anchor: 'middle' };
-      var e = ext(x);
-      if (e[0] < rightEdge + TICK_GAP || e[1] > lastLeft - TICK_GAP) continue;
-      ticks.push(x); rightEdge = e[1]; day = new Date(t).getUTCDate();
-    }
-    ticks.push(last);
-    return ticks;
-  }
-  function chartSvg(pts, openPrice, endWord) {
-    var W = 988, HH = 210, padT = 12, padB = 22, padL = 2, padR = 44;
-    var vs = pts.map(function (p) { return p.v; }).concat(openPrice != null ? [openPrice] : []);
+  // the chart's geometry, as the export computes it (pY in 0..1 from the top; x in 0..1000)
+  function boxChart(series, openV, end) {
+    var rec = (series || []).filter(function (p) { return isFinite(p.t) && p.v != null; });
+    var single = rec.length < 2;
+    var pts = rec.slice();
+    if (end && pts.length && end.t > pts[pts.length - 1].t) pts.push({ t: end.t, v: end.v, carried: true });
+    var vs = pts.map(function (p) { return p.v; });
     var lo = Math.min.apply(null, vs), hi = Math.max.apply(null, vs);
     if (hi - lo < 0.1) { lo -= 0.1; hi += 0.1; }
     var pad = (hi - lo) * 0.12; lo -= pad; hi += pad;
-    var X = function (fr) { return padL + fr * (W - padL - padR); };
-    var Y = function (v) { return padT + (hi - v) / (hi - lo) * (HH - padT - padB); };
-    var f = function (n) { return (Math.round(n * 100) / 100).toString(); };
-    var k = [];
-    if (pts.length > 1) {
-      var base = HH - padB;
-      k.push('<polygon class="do-area" points="' + pts.map(function (p) { return f(X(p.fr)) + ',' + f(Y(p.v)); }).join(' ') + ' ' + f(X(pts[pts.length - 1].fr)) + ',' + base + ' ' + f(X(pts[0].fr)) + ',' + base + '" fill="' + HOUSE_FILL + '"/>');
-    }
-    [0, 0.5, 1].forEach(function (g) {
-      var y = padT + g * (HH - padT - padB);
-      k.push('<line x1="' + padL + '" x2="' + (W - padR) + '" y1="' + f(y) + '" y2="' + f(y) + '" stroke="' + HOUSE_GRID + '"/>');
-      k.push('<text x="' + (W - padR + 6) + '" y="' + f(y + 3.5) + '" fill="#6E7A93" font-size="10" font-family="IBM Plex Mono">' + (hi - g * (hi - lo)).toFixed(2) + '</text>');
-    });
-    if (pts.length) {
-      axisTicks(pts[0].t, pts[pts.length - 1].t, endWord || 'now').forEach(function (x) {
-        k.push('<text class="do-tick" x="' + f(X(x.fr)) + '" y="' + (HH - 5) + '" fill="#6E7A93" font-size="10" font-family="IBM Plex Mono" text-anchor="' + x.anchor + '">' + esc(x.label) + '</text>');
-      });
-    }
-    if (openPrice != null && pts.length > 1) {
-      k.push('<line class="do-open-ref" x1="' + padL + '" x2="' + (W - padR) + '" y1="' + f(Y(openPrice)) + '" y2="' + f(Y(openPrice)) + '" stroke="rgba(235,241,242,0.18)" stroke-dasharray="3 5"/>');
-    }
+    var pY = function (v) { return (hi - v) / (hi - lo); };
+    var t0 = pts[0].t, t1 = pts[pts.length - 1].t, span = t1 - t0;
+    var fr = function (t) { return span > 0 ? (t - t0) / span : 1; };
+    var xy = function (p) { return (fr(p.t) * 1000).toFixed(1) + ',' + (pY(p.v) * 300).toFixed(1); };
+    // solid runs and dashed gaps (rule 26)
+    var runs = [], gaps = [], cur = [pts[0]];
     for (var i = 1; i < pts.length; i++) {
-      var gap = pts[i].t - pts[i - 1].t > GAP_MS;
-      k.push('<line class="' + (gap ? 'do-gap' : 'do-seg-l') + '" x1="' + f(X(pts[i - 1].fr)) + '" y1="' + f(Y(pts[i - 1].v)) + '" x2="' + f(X(pts[i].fr)) + '" y2="' + f(Y(pts[i].v)) + '" stroke="' + (gap ? '#6E7A93' : HOUSE_LINE) + '" stroke-width="' + (gap ? 1.2 : 2.6) + '" stroke-linecap="round"' + (gap ? ' stroke-dasharray="3 4"' : '') + '/>');
+      if (pts[i].t - pts[i - 1].t > GAP_MS) { runs.push(cur); gaps.push([pts[i - 1], pts[i]]); cur = [pts[i]]; } else cur.push(pts[i]);
     }
-    pts.forEach(function (p, j) {
-      var last = j === pts.length - 1;
-      k.push('<circle class="do-dot-p" cx="' + f(X(p.fr)) + '" cy="' + f(Y(p.v)) + '" r="' + (last ? 4.5 : 2.8) + '" fill="' + (last ? HOUSE_LINE : '#0A0D14') + '" stroke="' + HOUSE_LINE + '" stroke-width="1.5"/>');
-    });
-    return '<svg viewBox="0 0 ' + W + ' ' + HH + '" width="100%">' + k.join('') + '</svg>';
+    runs.push(cur);
+    var prevDay = null;
+    var ticks = single ? [{ x: '1000.0', left: '100%', tf: 'translateX(-100%)', label: dayOf(t1) + ', ' + hm(t1) }]
+      : [0, 0.25, 0.5, 0.75, 1].map(function (f) {
+        var t = t0 + f * span, day = dayOf(t), label = day !== prevDay ? day + ', ' + hm(t) : hm(t);
+        prevDay = day;
+        return { x: (f * 1000).toFixed(1), left: (f * 100) + '%', tf: f === 0 ? 'none' : f === 1 ? 'translateX(-100%)' : 'translateX(-50%)', label: label };
+      });
+    var endP = pY(end ? end.v : pts[pts.length - 1].v) * 100;
+    return {
+      single: single,
+      gridY: [0, 0.25, 0.5, 0.75, 1].map(function (g) { return { y: (g * 300).toFixed(1), top: (g * 100) + '%', label: (hi - g * (hi - lo)).toFixed(2) }; }),
+      vticks: [0, 250, 500, 750, 1000],
+      ticks: ticks,
+      runs: single ? [] : runs.filter(function (r) { return r.length > 1; }).map(function (r) { return r.map(xy).join(' '); }),
+      gaps: single ? [] : gaps.map(function (g) { return [xy(g[0]).split(','), xy(g[1]).split(',')]; }),
+      area: single ? '' : 'M' + pts.map(xy).join(' L') + ' L' + (fr(t1) * 1000).toFixed(1) + ',300 L' + (fr(t0) * 1000).toFixed(1) + ',300 Z',
+      hasOpen: !single && openV != null,
+      openTop: openV != null ? (pY(openV) * 100).toFixed(2) + '%' : '0%',
+      endDot: endP.toFixed(2) + '%',
+      endTop: Math.min(90, Math.max(10, endP)).toFixed(2) + '%',
+      endLbl: (end ? end.v : pts[pts.length - 1].v).toFixed(2),
+      endWord: end ? end.label : 'Now'
+    };
+  }
+  // table: "Pinnacle +30s" -> Pinnacle / +30s; "Pinnacle (api-tennis)" -> Pinnacle / api-tennis (the handoff's split)
+  function bookSplit(n) {
+    var s = String(n || '');
+    return { name: s.replace(/\s*[(+].*$/, ''), sub: (s.match(/[(+].*$/) || [''])[0].replace(/^\(|\)$/g, '').trim() };
+  }
+  // drop cell (data rule 27): shortened red by size, lengthened a muted ▲, flat a muted 0.0%, unknown "—"
+  function r1(d) { return Math.round(d * 10) / 10; }
+  function dropCell(d) {
+    if (d == null || !isFinite(d)) return { txt: '—', c: 'muted' };
+    if (Math.abs(d) < 0.05) return { txt: '0.0%', c: 'muted' };
+    if (d < 0) return { txt: '▲ ' + Math.abs(d).toFixed(1) + '%', c: 'muted' };
+    return { txt: '▼ ' + d.toFixed(1) + '%', c: r1(d) >= 10 ? 'big' : 'small' };   // the threshold reads the figure shown
+  }
+  // start line (data rule 28)
+  function startLine(r, now) {
+    var t = Date.parse(r.start);
+    if (!isFinite(t)) return null;
+    var tail;
+    if (r.status === 'in_play') tail = 'live';
+    else if (r.status === 'finished') tail = 'finished';
+    else {
+      var mins = Math.round((t - now) / 60000);
+      tail = mins >= 0 ? 'in ' + Math.floor(mins / 60) + 'h ' + (mins % 60) + 'm' : 'past start';
+    }
+    return { start: hm(t), cd: tail };
   }
 
   // ─── the price-move pop-up's books (founder comment 777a3192, decisions 1–4, 7) ───────────────
@@ -248,7 +263,11 @@
   //   'endpoint' the drops endpoint's `lines` (tools/ten294-drops-lines.sql): Bet105, Superbet, Betfair Exchange;
   //   'flagged'  neither available: only the books with a flagged move (drop rows) — the summary says so.
   // Sharp/Soft is odds.md's table (the page filter's own source), never the data's.
-  var STRIP_CLASS = { 'Pinnacle +30s': 'sharp', Bet105: 'sharp', Superbet: 'soft', 'Betfair Exchange': 'soft' };
+  // odds.md (founder comment d5bf3dda): Sharp = Pinnacle +30s, Pinnacle (api-tennis), Bet105; every other book Soft
+  var STRIP_CLASS = { 'Pinnacle +30s': 'sharp', 'Pinnacle (api-tennis)': 'sharp', Bet105: 'sharp' };
+  // the dashboard's AODDS_ORDER (Sharp then Soft, stable; never re-sorted by drop)
+  var BOOK_ORDER = ['Pinnacle +30s', 'Pinnacle (api-tennis)', 'Bet105', 'Betano', '1xBet', 'BetVictor', 'Betfair Sportsbook (api-tennis)',
+    'Marathon', 'bet365 (api-tennis)', 'Sbobet', 'William Hill', 'Superbet', 'Betfair Exchange'];
   var EXCHANGES = { 'Betfair Exchange': true };      // no margin on an exchange (decision 4)
   function stripName(n) { return String(n || '').replace(/\s*\(recorded by us\)\s*$/i, ''); }
   // the SQL's drops_api.nk(): surname part of "Last, First", its last token, lower-case, a–z only
@@ -329,13 +348,18 @@
       var now = isOwn ? b.nowOverride : b.side[b.side.length - 1];
       var first = b.first;
       var drop = first && first.v && now && now.v ? (first.v - now.v) / first.v * 100 : null;
-      return { book: n, cls: STRIP_CLASS[n] || BOOK_CLASS[n] || null, own: isOwn, first: first, now: now,
+      // the book's last confirmed sighting (data rule 25): its own source's, else the endpoint line's for that book
+      var lb = ctx.line && ctx.line.books && (ctx.line.books[n] || ctx.line.books[n + ' (recorded by us)']);
+      var seenAt = b.seen != null ? b.seen : lb && isFinite(Date.parse(lb.lastSeen)) ? Date.parse(lb.lastSeen) : null;
+      if (seenAt != null && isFinite(cut)) seenAt = Math.min(seenAt, cut - 1);
+      return { book: n, cls: STRIP_CLASS[n] || 'soft', own: isOwn, first: first, now: now, seen: seenAt,
+        opener: isOwn && r.openKind === 'book opener',
         drop: isOwn ? r.drop : drop, series: b.side, other: b.other, truncated: !!b.truncated, margin: isOwn ? b.margin : marginOf(n, b.side, b.other) };
     });
-    var rank = function (b) { return b.cls === 'sharp' ? 0 : b.cls === 'soft' ? 1 : 2; };
-    var order = ['Pinnacle +30s', 'Bet105', 'Superbet', 'Betfair Exchange'];
-    out.sort(function (a, b) { return rank(a) - rank(b) || ((order.indexOf(a.book) + 99) % 99) - ((order.indexOf(b.book) + 99) % 99) || a.book.localeCompare(b.book); });
-    var big = out.filter(function (b) { return b.drop != null && b.drop >= 10; });
+    var rank = function (b) { return b.cls === 'sharp' ? 0 : 1; };
+    var pos = function (b) { var i = BOOK_ORDER.indexOf(b.book); return i < 0 ? BOOK_ORDER.length : i; };
+    out.sort(function (a, b) { return rank(a) - rank(b) || pos(a) - pos(b) || a.book.localeCompare(b.book); });
+    var big = out.filter(function (b) { return b.drop != null && Math.round(b.drop * 10) / 10 >= 10; });   // as shown (one decimal)
     var sharp = out.filter(function (b) { return b.cls === 'sharp'; });
     return { source: source, books: out, n: big.length, m: out.length,
       p: big.filter(function (b) { return b.cls === 'sharp'; }).length, q: sharp.length };
@@ -379,9 +403,10 @@
 
   var PURE = { BOOK_CLASS: BOOK_CLASS, MARKETS: MARKETS, TRACKED: TRACKED, WINDOWS: WINDOWS, buildRows: buildRows, defaults: defaults,
     passes: passes, sortRows: sortRows, view: view, ago: ago, hhmmUTC: hhmmUTC, feedState: feedState,
-    chartSvg: chartSvg, boardKeyFor: boardKeyFor, tierOf: tierOf, AMBER_AFTER_S: AMBER_AFTER_S, DISCONNECTED_AFTER_S: DISCONNECTED_AFTER_S,
+    boardKeyFor: boardKeyFor, tierOf: tierOf, AMBER_AFTER_S: AMBER_AFTER_S, DISCONNECTED_AFTER_S: DISCONNECTED_AFTER_S,
     ENDPOINT: ENDPOINT, STRIP_CLASS: STRIP_CLASS, modalBooks: modalBooks, summaryText: summaryText, lineKey: lineKey, nk: nk,
-    seriesPoints: seriesPoints, marginOf: marginOf, axisTicks: axisTicks, HOUSE_LINE: HOUSE_LINE, HOUSE_FILL: HOUSE_FILL, GAP_MS: GAP_MS };
+    seriesPoints: seriesPoints, marginOf: marginOf, GAP_MS: GAP_MS, RECENT_MS: RECENT_MS, BOOK_ORDER: BOOK_ORDER,
+    boxChart: boxChart, endOf: endOf, bookSplit: bookSplit, dropCell: dropCell, startLine: startLine };
   if (typeof module === 'object' && module.exports) module.exports = PURE;
   if (typeof document === 'undefined') return;
 
@@ -688,8 +713,8 @@
     var key = [st.drawer, st.drBook, st.tip, st.etag, chart ? 'b' : '-'].join('|');
     var now = dataNow();
     if (ov && st.modalKey === key) {
-      var dl = ov.querySelector('.do-ov-drop');
-      if (dl) dl.textContent = '▼ ' + r.drop.toFixed(1) + '% · ' + movedText(r, now);
+      var dl = ov.querySelector('.do-ov-dropc span');
+      if (dl) dl.textContent = movedText(r, now);
       return;
     }
     st.modalKey = key;
@@ -701,74 +726,67 @@
     var mb = modalBooks(r, { rows: st.rows, line: (st.lines || {})[lineKey(r)], chart: chart, cardSide: hit && hit.cardSide, now: now, cutAt: r.cutAt });
     var ownB = mb.books.filter(function (b) { return b.own; })[0];
     var sel = (st.drBook && mb.books.filter(function (b) { return b.book === st.drBook; })[0]) || ownB;
-    var cls = r.cls || 'soft';
-    var pct = function (b) {
-      if (b.drop == null) return '<span class="d none">—</span>';
-      if (Math.abs(b.drop) < 0.05) return '<span class="d none">0.0%</span>';
-      return b.drop > 0 ? '<span class="d">▼ ' + b.drop.toFixed(1) + '%</span>' : '<span class="d up">▲ ' + Math.abs(b.drop).toFixed(1) + '%</span>';
-    };
-    // players line: rank + Elo only for a matched card (never the export's placeholder values)
-    var rankOf = function (name) {
-      if (!card) return null;
-      var sg = nameSig(name), rk = nameSig(card.p1) === sg ? card.p1Rank : nameSig(card.p2) === sg ? card.p2Rank : null;
-      return rk != null && rk !== '' ? '#' + rk : null;
-    };
-    var eloOf = function (name) {
-      if (!card || typeof psEloFor !== 'function' || typeof eloRatings === 'undefined') return null;   // eslint-disable-line no-undef
-      var e = psEloFor(eloRatings, name);   // eslint-disable-line no-undef
-      var v = e && typeof e === 'object' ? (e.rating != null ? e.rating : e.elo) : e;
-      return v != null && isFinite(+v) ? String(Math.round(+v)) : null;
-    };
-    var nm = function (n) {
-      return '<span class="nm' + (n === r.side ? ' backed' : '') + '">' + esc(n) + '</span><span class="rk">' + esc(rankOf(n) || '—') + ' · Elo ' + esc(eloOf(n) || '—') + '</span>';
-    };
-    var ev = '—', surf = '—', rd = '—';
+    var cls = r.cls || STRIP_CLASS[r.book] || 'soft';
+    // header (price-led). Players line: full names, no rank / Elo; event and round only from a matched card,
+    // and a segment that does not exist is left out (data rules 29, 30)
+    var tail = [];
     if (card) {
-      ev = card.tour || '—';
-      surf = card.surface ? String(card.surface).charAt(0).toUpperCase() + String(card.surface).slice(1) : '—';
+      if (card.tour) tail.push(String(card.tour));
       var rb = typeof roundBadgeText === 'function' ? roundBadgeText(card.tournamentRound) : null;   // eslint-disable-line no-undef
-      rd = rb || '—';
+      if (rb) tail.push(String(rb));
     }
-    var startTxt = '—', cd = '—';
-    if (r.start && isFinite(Date.parse(r.start))) {
-      var d = new Date(r.start);
-      startTxt = ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2);
-      var mins = Math.round((Date.parse(r.start) - now) / 60000);
-      cd = r.status === 'in_play' ? 'in play' : r.status === 'finished' ? String(r.apiStatus || 'finished').toLowerCase()
-        : mins >= 0 ? 'in ' + Math.floor(mins / 60) + 'h ' + (mins % 60) + 'm' : 'past start';
-    }
-    var margin = ownB && ownB.margin != null ? ownB.margin.toFixed(1) + '%' : (EXCHANGES[r.book] ? '—' : null);
-    var pts = seriesPoints(sel.series);
-    var capP = sel.first && sel.now ? price2(sel.first.v) + ' → ' + price2(sel.now.v) + (sel.drop != null ? ' · ' + (Math.abs(sel.drop) < 0.05 ? '' : sel.drop > 0 ? '▼ ' : '▲ ') + Math.abs(sel.drop).toFixed(1) + '%' : '') : price2(sel.now && sel.now.v);
+    var sl = startLine(r, now);
+    var dropBig = r1(r.drop) >= 10;
+    // chart: the selected book's recorded prices, its end (rule 25), its open chip (rule 24)
+    var series = (sel.series || []).filter(function (p) { return isFinite(p.t) && p.v != null; }).slice().sort(function (a, b) { return a.t - b.t; });
+    var end = endOf(series, sel.seen, r.cutAt, now);
+    var ch = series.length ? boxChart(series, sel.first && sel.first.v, end) : null;
+    var openWord = sel.opener ? 'Open' : 'First seen';
+    var nameSpan = function (n) {
+      return '<span class="do-ov-nm' + (n === r.side ? ' backed' : '') + '"><span>' + esc(n) + '</span></span>';
+    };
     var html = '<div class="do-ov-scrim" data-act="close"></div><div class="do-ov-box" role="dialog" aria-modal="true" aria-label="Price move"><div class="do-ov-scroll">' +
-      '<div class="do-ov-head"><div class="do-ov-hl">' +
-      '<span class="do-ov-eye">Price move · Match winner · ' + esc(r.book) + (r.cls ? '<span class="do-ov-btag ' + cls + '">' + cls.toUpperCase() + '</span>' : '') +
-        (margin ? '<span class="do-ov-mg">Margin ' + esc(margin) + '</span>' : '') + '</span>' +
-      '<span class="do-ov-sel">' + esc(r.side) + ' to win</span>' +
-      '<span class="do-ov-pl">' + nm(r.playerA) + '<span>v</span>' + nm(r.playerB) + '</span>' +
-      '<span class="do-ov-meta">' + esc(ev) + ' · ' + esc(surf) + ' · ' + esc(rd) + ' · <span class="st">' + esc(startTxt) + '</span> <span class="do-mono">(' + esc(cd) + ')</span></span></div>' +
-      '<div class="do-ov-hr"><div class="do-ov-px"><span class="do-ov-pxl">' +
-      '<span class="do-ov-open' + (st.tip ? ' tip' : '') + '" data-act="tip">' + price2(r.open) + '<span class="do-ov-tip">Open is the first price Stennisfy recorded, not necessarily the bookmaker\'s opening line.</span></span>' +
-      '<span class="do-ov-arrow">→</span><span class="do-ov-now">' + price2(r.now) + '</span></span>' +
-      '<span class="do-ov-drop">▼ ' + r.drop.toFixed(1) + '% · ' + esc(movedText(r, now)) + '</span></div>' +
-      '<button class="do-ov-x" data-act="close" aria-label="Close">✕</button></div></div>' +
-      '<div class="do-ov-chart"><span class="do-ov-cap"><span class="do-ov-cap-k">PRICE HISTORY · <b>' + esc(sel.book.toUpperCase()) + '</b> · FIRST SEEN → ' + (r.cutAt ? 'LAST PRE-MATCH' : 'LATEST') + ' · UTC</span>' +
-      '<span class="do-ov-cap-p' + (sel.drop != null && sel.drop <= 0 ? ' up' : '') + '">' + esc(capP) + '</span>' +
-      (!sel.own ? '<button class="do-ov-back" data-act="back">Back to ' + esc(r.book) + '</button>' :
-        mb.books.length > 1 ? '<span class="do-ov-cap-r">Click a book below to see its chart</span>' : '') + '</span>' +
-      chartSvg(pts, sel.first && sel.first.v, r.cutAt ? 'last pre-match' : 'latest') +
-      '<span class="do-ov-note">' + (mb.source === 'flagged'
-        ? 'Each dot is a recorded snapshot. Only this move\'s recorded prices are loaded here; dashed stretches join them, nothing is interpolated.'
-        : 'Each dot is a recorded snapshot. Dashed stretches had no snapshots; nothing is interpolated.') +
-        (sel.truncated ? ' Earlier snapshots were not sent; the chart starts at the oldest one loaded.' : '') + '</span></div>' +
-      '<div class="do-ov-strip" style="grid-template-columns:repeat(' + mb.books.length + ', minmax(0,1fr))">' + mb.books.map(function (b) {
-        var isSel = b === sel, c = b.cls || 'soft';
-        return '<div class="do-ov-cell' + (isSel ? ' sel' : ' pick') + '" data-act="book" data-v="' + esc(b.book) + '"><span class="bar"></span>' +
-          '<span class="do-ov-c1">' + esc(b.book) + (b.cls ? '<span class="t ' + c + '">' + c.toUpperCase() + '</span>' : '') + '</span>' +
-          '<span class="do-ov-c2"><span class="n">' + price2(b.now && b.now.v) + '</span><span class="o">from ' + price2(b.first && b.first.v) + '</span></span>' +
-          '<span class="do-ov-c3">' + pct(b) + '<span class="r">' + (b.own ? 'this row' : b.now && isFinite(b.now.t) ? esc('moved ' + ago(now - b.now.t)) : '') + '</span></span></div>';
+      '<div class="do-ov-head">' +
+        '<div class="do-ov-dropb"><span class="do-ov-dropf ' + (dropBig ? 'big' : 'small') + '"><span>▼ ' + r.drop.toFixed(1) + '%</span></span>' +
+          '<span class="do-ov-dropc">DROP · <span>' + esc(movedText(r, now)) + '</span></span></div>' +
+        '<div class="do-ov-mid">' +
+          '<span class="do-ov-eye"><span>Match winner</span> · <span>' + esc(r.book) + '</span><span class="do-ov-btag ' + cls + '"><span>' + cls.toUpperCase() + '</span></span></span>' +
+          '<span class="do-ov-sel"><span>' + esc(r.side) + ' to win</span></span>' +
+          '<span class="do-ov-pl">' + nameSpan(r.playerA) + '<span class="do-ov-v">v</span>' + nameSpan(r.playerB) +
+            (tail.length ? '<span class="do-ov-evr">· ' + tail.map(function (x) { return '<span>' + esc(x) + '</span>'; }).join(' · ') + '</span>' : '') + '</span>' +
+        '</div>' +
+        '<div class="do-ov-right"><span class="do-ov-pxl"><span class="do-ov-open"><span>' + price2(r.open) + '</span></span><span class="do-ov-arrow">→</span>' +
+          '<span class="do-ov-now"><span>' + price2(r.now) + '</span></span></span>' +
+          (sl ? '<span class="do-ov-start"><span>' + esc(sl.start) + '</span> (<span>' + esc(sl.cd) + '</span>)</span>' : '') + '</div>' +
+        '<button class="do-ov-x" data-act="close" aria-label="Close">✕</button>' +
+      '</div>' +
+      '<div class="do-ov-chart"><span class="do-ov-backrow">' + (!sel.own ? '<span class="do-ov-back" data-act="back">Back to ' + esc(r.book) + '</span>' : '') + '</span>' +
+      (ch ? '<div class="do-ov-cw">' +
+        '<div class="do-ov-yax">' + ch.gridY.map(function (g) { return '<span style="top:' + g.top + '"><span>' + g.label + '</span></span>'; }).join('') + '</div>' +
+        '<div class="do-ov-plot"><svg viewBox="0 0 1000 300" preserveAspectRatio="none">' +
+          ch.vticks.map(function (x) { return '<line class="do-vt" x1="' + x + '" y1="0" x2="' + x + '" y2="300" vector-effect="non-scaling-stroke"></line>'; }).join('') +
+          ch.gridY.map(function (g) { return '<line class="do-hg" x1="0" y1="' + g.y + '" x2="1000" y2="' + g.y + '" vector-effect="non-scaling-stroke"></line>'; }).join('') +
+          (ch.area ? '<path class="do-area" d="' + ch.area + '"></path>' : '') +
+          ch.runs.map(function (pl) { return '<polyline class="do-line" points="' + pl + '" vector-effect="non-scaling-stroke"></polyline>'; }).join('') +
+          ch.gaps.map(function (g) { return '<line class="do-gap" x1="' + g[0][0] + '" y1="' + g[0][1] + '" x2="' + g[1][0] + '" y2="' + g[1][1] + '" vector-effect="non-scaling-stroke"></line>'; }).join('') +
+          '</svg>' +
+          (ch.hasOpen ? '<span class="do-ov-openchip" style="top:' + ch.openTop + '">' + openWord + ' <span>' + price2(sel.first.v) + '</span></span>' : '') +
+          '<span class="do-ov-enddot" style="top:' + ch.endDot + '"></span></div>' +
+        '<div class="do-ov-endc"><div class="do-ov-endbox" style="top:' + ch.endTop + '"><div class="do-ov-endw">' + esc(ch.endWord) + '</div><div class="do-ov-endv"><span>' + ch.endLbl + '</span></div></div></div>' +
+        '</div>' +
+        '<div class="do-ov-xax">' + ch.ticks.map(function (t) { return '<span style="left:' + t.left + ';transform:' + t.tf + '"><span>' + esc(t.label) + '</span></span>'; }).join('') + '</div>' : '') +
+      '<span class="do-ov-note"><span>' + (ch && ch.single ? 'One price recorded so far. The line appears once a second snapshot arrives.' : sel.truncated ? 'Earlier prices were not sent; the chart starts at the oldest one loaded.' : '') + '</span></span></div>' +
+      '<div class="do-ov-tbl"><div class="do-ov-th"><span>TYPE</span><span>BOOK</span><span class="r">NOW</span><span class="r">OPEN</span><span class="r">DROP</span></div>' +
+      mb.books.map(function (b) {
+        var sp = bookSplit(b.book), dc = dropCell(b.own ? r.drop : b.drop), c = b.cls === 'sharp' ? 'sharp' : 'soft';
+        return '<div class="do-ov-tr' + (b === sel ? ' sel' : '') + '" data-act="book" data-v="' + esc(b.book) + '" title="' + esc(b.book) + '">' +
+          '<span class="do-ov-tt ' + c + '"><span>' + c.toUpperCase() + '</span></span>' +
+          '<span class="do-ov-tb"><span class="n"><span>' + esc(sp.name) + '</span></span><span class="s"><span>' + esc(sp.sub) + '</span></span></span>' +
+          '<span class="r"><span class="do-ov-tn"><span>' + price2(b.now && b.now.v) + '</span></span></span>' +
+          '<span class="r"><span class="do-ov-to">' + (b.first && b.first.v != null ? 'from <span>' + price2(b.first.v) + '</span>' : '') + '</span></span>' +
+          '<span class="r"><span class="do-ov-td ' + dc.c + '"><span>' + dc.txt + '</span></span></span></div>';
       }).join('') + '</div>' +
-      '<div class="do-ov-foot"><span class="do-ov-foot-l"><span class="do-ov-sum">' + esc(summaryText(mb)) + '</span>' +
+      '<div class="do-ov-foot"><span class="do-ov-foot-l"><span class="do-ov-sum"><span>' + esc(summaryText(mb)) + '</span></span>' +
       '<span class="do-ov-fn">Each drop compares a book\'s own first recorded price with its own current price.</span></span>' +
       (card && typeof openAnalysisModal === 'function' ? '<a class="do-ov-link" href="#" data-act="analysis" data-v="' + esc(card.id) + '">Open match analysis →</a>' : '') +   // eslint-disable-line no-undef
       '</div></div></div>';
