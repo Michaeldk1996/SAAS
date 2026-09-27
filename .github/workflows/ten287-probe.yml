@@ -12,7 +12,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-      # Run 28: TEN-295 — one post-match dispatch with the renewed PAT (never read or printed) + response.
+      # Run 29: READ-ONLY — TEN-270 alarm state after the renewed PAT.
       - name: SQL steps (encrypted output)
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}

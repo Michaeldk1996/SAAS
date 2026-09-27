@@ -1,29 +1,22 @@
 [
  {
-  "name": "dispatch",
-  "sql": "select public.postmatch_dispatch() r, now() at"
- },
- {
-  "sleep": 25
- },
- {
-  "name": "response",
-  "sql": "select d.sent_at, d.request_id, d.note, r.status_code, r.timed_out, r.error_msg, case when r.status_code between 200 and 299 then null else left(r.content, 600) end reply, r.headers->>'x-accepted-github-permissions' accepted_perms from public.postmatch_dispatch_log d left join net._http_response r on r.id=d.request_id order by d.sent_at desc limit 3"
- },
- {
-  "name": "history",
-  "sql": "select coalesce(r.status_code::text, case when r.id is null then 'no response' else 'err' end) status, count(*), min(d.sent_at), max(d.sent_at) from public.postmatch_dispatch_log d left join net._http_response r on r.id=d.request_id group by 1 order by 1"
- },
- {
-  "name": "first_last",
-  "sql": "select min(sent_at), max(sent_at), count(*) from public.postmatch_dispatch_log"
- },
- {
   "name": "alerts",
-  "sql": "select condition, is_open, opened_at, last_sent_at from public.postmatch_alerts"
+  "sql": "select condition, is_open, opened_at, last_sent_at, updated_at from public.postmatch_alerts"
  },
  {
-  "name": "alert_log_recent",
-  "sql": "select at, condition, kind, delivered from public.postmatch_alert_log where at > now() - interval '3 hours' order by at"
+  "name": "alert_log",
+  "sql": "select at, condition, kind, delivered, left(message,140) msg from public.postmatch_alert_log where at > '2026-09-27T01:40:00Z' order by at"
+ },
+ {
+  "name": "dispatches",
+  "sql": "select d.sent_at, r.status_code from public.postmatch_dispatch_log d left join net._http_response r on r.id=d.request_id where d.sent_at > '2026-09-27T01:40:00Z' order by d.sent_at"
+ },
+ {
+  "name": "checker",
+  "sql": "select status, return_message, start_time from cron.job_run_details where jobid=(select jobid from cron.job where jobname='ten270-oddspapi-postmatch-check') order by start_time desc limit 3"
+ },
+ {
+  "name": "missed",
+  "sql": "select count(*) filter (where d.sent_at > '2026-09-25T02:08:00Z' and d.sent_at < '2026-09-27T01:45:00Z') cron_attempts_in_gap from public.postmatch_dispatch_log d"
  }
 ]
