@@ -279,13 +279,11 @@
 .do-ov-plot .do-hg { stroke: rgba(255,255,255,0.06); stroke-width: 1; }
 .do-ov-plot .do-area { fill: rgba(224,97,111,0.10); stroke: none; }
 .do-ov-plot .do-line { fill: none; stroke: #E0616F; stroke-width: 2.6; stroke-linejoin: round; stroke-linecap: round; }
-/* data rule 26: a stretch with no recorded price is dashed, thin, lower opacity */
-.do-ov-plot .do-gap { stroke: #E0616F; stroke-width: 1.2; stroke-dasharray: 4 5; opacity: 0.5; }
 .do-ov-openchip {
   position: absolute; left: 8px; transform: translateY(-50%); padding: 2px 7px; border-radius: 5px; background: #0E1019;
   font-family: 'IBM Plex Mono', monospace; font-size: 9.5px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #D9DBDF;
 }
-.do-ov-enddot { position: absolute; right: -4.5px; width: 9px; height: 9px; margin-top: -4.5px; border-radius: 50%; background: #E0616F; box-shadow: 0 0 0 3px #0E1019; }
+.do-ov-enddot { position: absolute; left: 100%; margin-left: -4.5px; width: 9px; height: 9px; margin-top: -4.5px; border-radius: 50%; background: #E0616F; box-shadow: 0 0 0 3px #0E1019; }
 .do-ov-endc { position: relative; width: 84px; height: 260px; flex: none; }
 .do-ov-endbox { position: absolute; left: 0; right: 0; transform: translateY(-50%); padding: 7px 9px; border-radius: 9px; background: rgba(224,97,111,0.11); border: 1px solid rgba(224,97,111,0.3); }
 .do-ov-endw { font-size: 11px; font-weight: 700; color: #FF7B88; }

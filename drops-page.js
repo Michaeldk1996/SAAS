@@ -167,74 +167,110 @@
 
   // ─── the price-move box (founder comment 8585095a, LOCKED `handoff/Price Move Box/`, 2026-09-27) ───────
   // The Database chart type: [Y labels 52px] [plot] [end label 84px], 260px high, SVG viewBox 1000×300.
-  // Recorded prices only: straight segments, no per-snapshot dots, no open line. A stretch of more than
-  // GAP_MS with no recorded price is drawn dashed (thin, lower opacity), never solid; nothing is interpolated.
-  var GAP_MS = 3.6 * H;
+  // TEN-301 (founder, 2026-09-27): ONE continuous step line. The recorders write a price only when it changes
+  // and the pollers re-check every book each cycle, so the stretch between two recorded changes is a confirmed
+  // hold: the price runs flat to the next change's time, then moves vertically there. Never a diagonal slide,
+  // never a dashed piece, the flat fill under all of it. The line stops only at the end data rule 25 names.
   var RECENT_MS = 15 * 60e3;           // "Now" only for a price confirmed on a check this recent (data rule 25)
+  var MIN_SPAN_MS = 60 * 60e3;         // the X axis never spans less than an hour
   var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
   function hm(t) { var d = new Date(t); return ('0' + d.getUTCHours()).slice(-2) + ':' + ('0' + d.getUTCMinutes()).slice(-2); }
   function dayOf(t) { var d = new Date(t); return d.getUTCDate() + ' ' + MON[d.getUTCMonth()]; }
-  // data rule 25: where the line ends and what the end label says
-  //   a row cut at the live start -> "Last pre-match", the line carried to the start (the price in force then)
-  //   a price confirmed within RECENT_MS -> "Now", the line carried to that confirmation
-  //   otherwise -> "Latest HH:MM", the line ends at the last recorded price
+  // data rule 25: where the line ends (t), where the axis ends (axisT) and what the end label says
+  //   a row cut at the live start -> "Last pre-match", the line carried to the start (the price in force then),
+  //     or to the book's last sighting when it stopped quoting before it; the axis ends at the start
+  //   a price confirmed within RECENT_MS -> "Now", the line and the axis end at that confirmation
+  //   otherwise -> "Latest HH:MM" = the book's last confirmed sighting (else its last change); the line ends
+  //     there and the axis runs on to now, so a stale line visibly stops short
   function endOf(series, seen, cutAt, now) {
     var last = series[series.length - 1];
     if (!last) return null;
     var cut = cutAt ? Date.parse(cutAt) : NaN;
     var seenOk = seen != null && isFinite(seen);
-    // a cut row ends at the start, or at the book's last sighting when it stopped quoting before it
-    if (isFinite(cut)) return seenOk && seen < cut ? { label: 'Last pre-match', t: Math.max(last.t, seen), v: last.v, confirmed: true }
-      : { label: 'Last pre-match', t: Math.max(last.t, cut), v: last.v, confirmed: seenOk };
-    if (seenOk && now != null && now - seen <= RECENT_MS) return { label: 'Now', t: Math.max(last.t, seen), v: last.v, confirmed: true };
-    return { label: 'Latest ' + hm(last.t), t: last.t, v: last.v };
+    if (isFinite(cut)) {
+      var ct = seenOk && seen < cut ? Math.max(last.t, seen) : Math.max(last.t, cut);
+      return { label: 'Last pre-match', t: ct, v: last.v, axisT: Math.max(ct, cut), confirmed: seenOk };
+    }
+    if (seenOk && now != null && now - seen <= RECENT_MS) { var nt = Math.max(last.t, seen); return { label: 'Now', t: nt, v: last.v, axisT: nt, confirmed: true }; }
+    var lt = seenOk && seen > last.t ? seen : last.t;
+    return { label: 'Latest ' + hm(lt), t: lt, v: last.v, axisT: now != null && now > lt ? now : lt, confirmed: lt > last.t };
   }
-  // the chart's geometry, as the export computes it (pY in 0..1 from the top; x in 0..1000)
-  function boxChart(series, openV, end) {
+  // X labels: 5 (0/25/50/75/100%) from 2 h up, 3 (0/50/100%) below, on the grid's ticks; never a repeated label
+  function axisTicks(a0, a1) {
+    var span = a1 - a0;
+    var sets = span >= 2 * H ? [[0, 0.25, 0.5, 0.75, 1], [0, 0.5, 1], [0, 1]] : [[0, 0.5, 1], [0, 1]];
+    for (var s = 0; s < sets.length; s++) {
+      var prevDay = null, seenL = {}, dup = false;
+      var ticks = sets[s].map(function (f) {
+        var t = a0 + f * span, day = dayOf(t), label = day !== prevDay ? day + ', ' + hm(t) : hm(t);
+        prevDay = day;
+        if (seenL[hm(t) + day]) dup = true;
+        seenL[hm(t) + day] = 1;
+        return { x: (f * 1000).toFixed(1), left: (f * 100) + '%', tf: f === 0 ? 'none' : f === 1 ? 'translateX(-100%)' : 'translateX(-50%)', label: label };
+      });
+      if (!dup) return ticks;
+    }
+    return ticks;
+  }
+  // the chart's geometry (pY in 0..1 from the top; x in 0..1000 over the axis)
+  // holes: [[from, to], …] ms — stretches the book was recorded NOT quoting (odds.md: an api-tennis `meta.gaps`
+  // entry, the book out of the feed or suspended). A hold is never drawn across one: the only breaks in the line.
+  function boxChart(series, openV, end, holes) {
     var rec = (series || []).filter(function (p) { return isFinite(p.t) && p.v != null; });
-    var single = rec.length < 2;
-    var pts = rec.slice();
-    if (end && pts.length && end.t > pts[pts.length - 1].t) pts.push({ t: end.t, v: end.v, carried: true, confirmed: !!end.confirmed });
+    var first = rec[0], last = rec[rec.length - 1];
+    var endT = end && end.t > last.t ? end.t : last.t;
+    // one recorded price: a line only when a later sighting confirmed it (item 5); otherwise the dot alone
+    var single = rec.length < 2 && !(endT > first.t);
     // the open chip sits at the book's first price: keep it inside the Y range
-    var vs = pts.map(function (p) { return p.v; }).concat(!single && openV != null ? [openV] : []);
+    var vs = rec.map(function (p) { return p.v; }).concat(!single && openV != null ? [openV] : []);
     var lo = Math.min.apply(null, vs), hi = Math.max.apply(null, vs);
     if (hi - lo < 0.1) { lo -= 0.1; hi += 0.1; }
     var pad = (hi - lo) * 0.12; lo -= pad; hi += pad;
     var pY = function (v) { return (hi - v) / (hi - lo); };
-    var t0 = pts[0].t, t1 = pts[pts.length - 1].t, span = t1 - t0;
-    var fr = function (t) { return span > 0 ? (t - t0) / span : 1; };
-    var xy = function (p) { return (fr(p.t) * 1000).toFixed(1) + ',' + (pY(p.v) * 300).toFixed(1); };
-    // solid runs and dashed gaps (rule 26)
-    var runs = [], gaps = [], cur = [pts[0]];
-    for (var i = 1; i < pts.length; i++) {
-      // a carry confirmed by a sighting is a recorded hold, never a gap
-      var gap = pts[i].t - pts[i - 1].t > GAP_MS && !(pts[i].carried && pts[i].confirmed);
-      if (gap) { runs.push(cur); gaps.push([pts[i - 1], pts[i]]); cur = [pts[i]]; } else cur.push(pts[i]);
-    }
-    runs.push(cur);
-    var prevDay = null;
-    var ticks = single ? [{ x: '1000.0', left: '100%', tf: 'translateX(-100%)', label: dayOf(t1) + ', ' + hm(t1) }]
-      : [0, 0.25, 0.5, 0.75, 1].map(function (f) {
-        var t = t0 + f * span, day = dayOf(t), label = day !== prevDay ? day + ', ' + hm(t) : hm(t);
-        prevDay = day;
-        return { x: (f * 1000).toFixed(1), left: (f * 100) + '%', tf: f === 0 ? 'none' : f === 1 ? 'translateX(-100%)' : 'translateX(-50%)', label: label };
-      });
-    var endP = pY(end ? end.v : pts[pts.length - 1].v) * 100;
+    // the axis: first seen -> the end's axis time (now, or the live start), at least an hour (padded before first seen)
+    var a1 = Math.max(endT, end && end.axisT != null ? end.axisT : endT), a0 = Math.min(first.t, a1 - MIN_SPAN_MS);
+    var fx = function (t) { return (t - a0) / (a1 - a0) * 1000; };
+    var P = function (t, v) { return fx(t).toFixed(1) + ',' + (pY(v) * 300).toFixed(1); };
+    // the step line: each price held flat from its change to the next change (the last to the line's end),
+    // joined by a vertical move at each change's time; a hole removes the hold inside it
+    var pieces = [];
+    rec.forEach(function (p, k) { pieces.push({ s: p.t, e: k + 1 < rec.length ? rec[k + 1].t : endT, v: p.v }); });
+    (holes || []).forEach(function (h) {
+      var hs = h[0], he = h[1] == null ? Infinity : h[1];
+      if (!(he > hs)) return;
+      pieces = [].concat.apply([], pieces.map(function (q) {
+        if (q.e <= hs || q.s >= he) return [q];
+        var out = [];
+        if (q.s < hs) out.push({ s: q.s, e: hs, v: q.v });
+        if (q.e > he) out.push({ s: he, e: q.e, v: q.v });
+        return out;
+      }));
+    });
+    var lines = [], cur = null, prevE = null;
+    pieces.forEach(function (q) {
+      if (cur && q.s === prevE) cur.push(P(q.s, q.v));
+      else { cur = [P(q.s, q.v)]; lines.push(cur); }
+      cur.push(P(q.e, q.v));
+      prevE = q.e;
+    });
+    lines = lines.map(function (l) { return l.filter(function (p, k) { return k === 0 || p !== l[k - 1]; }); });
+    var endP = pY(last.v) * 100;
     return {
       single: single,
       gridY: [0, 0.25, 0.5, 0.75, 1].map(function (g) { return { y: (g * 300).toFixed(1), top: (g * 100) + '%', label: (hi - g * (hi - lo)).toFixed(2) }; }),
       vticks: [0, 250, 500, 750, 1000],
-      ticks: ticks,
-      runs: single ? [] : runs.filter(function (r) { return r.length > 1; }).map(function (r) { return r.map(xy).join(' '); }),
-      gaps: single ? [] : gaps.map(function (g) { return [xy(g[0]).split(','), xy(g[1]).split(',')]; }),
-      area: single ? '' : runs.filter(function (r) { return r.length > 1; }).map(function (r) {
-        return 'M' + r.map(xy).join(' L') + ' L' + (fr(r[r.length - 1].t) * 1000).toFixed(1) + ',300 L' + (fr(r[0].t) * 1000).toFixed(1) + ',300 Z';
+      ticks: single ? [{ x: '1000.0', left: '100%', tf: 'translateX(-100%)', label: dayOf(last.t) + ', ' + hm(last.t) }] : axisTicks(a0, a1),
+      lines: single ? [] : lines.map(function (l) { return l.join(' '); }),
+      area: single ? '' : lines.map(function (l) {
+        return 'M' + l.join(' L') + ' L' + l[l.length - 1].split(',')[0] + ',300 L' + l[0].split(',')[0] + ',300 Z';
       }).join(' '),
       hasOpen: !single && openV != null,
       openTop: openV != null ? (pY(openV) * 100).toFixed(2) + '%' : '0%',
+      openLeft: single ? '0%' : (fx(first.t) / 10).toFixed(2) + '%',
       endDot: endP.toFixed(2) + '%',
+      endLeft: single ? '100%' : (fx(endT) / 10).toFixed(2) + '%',
       endTop: Math.min(90, Math.max(10, endP)).toFixed(2) + '%',
-      endLbl: (end ? end.v : pts[pts.length - 1].v).toFixed(2),
+      endLbl: last.v.toFixed(2),
       endWord: end ? end.label : 'Now'
     };
   }
@@ -299,6 +335,24 @@
     var a = side[side.length - 1].v, b = other[other.length - 1].v;
     return a > 0 && b > 0 ? (1 / a + 1 / b - 1) * 100 : null;
   }
+  // A board shard book's last confirmed sighting of its line (TEN-301), where the shard's check is per line:
+  //   api-tennis — the collector re-reads every event's odds each poll and logs a book leaving the feed as a gap,
+  //     so `checkedAt` confirms the line unless a gap is still open (then its start is the last sighting);
+  //   Oddspapi (Pinnacle +30s) — `checkedAt` is a read of this fixture's own tick history.
+  // Kibl / odds-api.io `checkedAt` is a whole-book poll, not a sighting of this line: those books take the
+  // endpoint's per-line `lastSeen` instead (above), else none.
+  function shardSeen(meta, lastT) {
+    if (!meta || (meta.source !== 'api-tennis' && meta.source !== 'Oddspapi')) return null;
+    var ck = Date.parse(meta.checkedAt);
+    var open = (meta.gaps || []).filter(function (g) { return g && g[1] == null; })[0];
+    if (open) ck = isFinite(ck) ? Math.min(ck, Date.parse(open[0])) : Date.parse(open[0]);
+    return isFinite(ck) && lastT != null && ck >= lastT ? ck : null;
+  }
+  // stretches a shard book was recorded not quoting (odds.md: api-tennis gaps); an open one ends the line (shardSeen)
+  function shardHoles(meta) {
+    return ((meta && meta.gaps) || []).map(function (g) { return [Date.parse(g && g[0]), g && g[1] != null ? Date.parse(g[1]) : null]; })
+      .filter(function (g) { return isFinite(g[0]) && g[1] != null && isFinite(g[1]); });
+  }
   // ctx: { rows, line (endpoint), chart (shard chart), cardSide ('p1'|'p2'|null) }
   function modalBooks(r, ctx) {
     ctx = ctx || {};
@@ -311,7 +365,7 @@
       Object.keys(ctx.chart.books).forEach(function (n) {
         var b = ctx.chart.books[n] || {}, os = ctx.cardSide === 'p1' ? 'p2' : 'p1';
         var side = pre(tsPoints(b[ctx.cardSide]));
-        if (side.length) raw[stripName(n)] = { side: side, other: pre(tsPoints(b[os])), first: side[0] };
+        if (side.length) raw[stripName(n)] = { side: side, other: pre(tsPoints(b[os])), first: side[0], meta: (ctx.chart.meta || {})[n] || null };
       });
       if (Object.keys(raw).length) source = 'board';
     }
@@ -363,9 +417,10 @@
       var lbLast = lb && lb.side && lb.side.length ? num(lb.side[lb.side.length - 1][1]) : null;
       var bLast = b.side && b.side.length ? b.side[b.side.length - 1].v : null;
       var seenAt = b.seen != null ? b.seen
-        : lb && isFinite(Date.parse(lb.lastSeen)) && lbLast != null && bLast != null && Math.abs(lbLast - bLast) < 0.005 ? Date.parse(lb.lastSeen) : null;
+        : lb && isFinite(Date.parse(lb.lastSeen)) && lbLast != null && bLast != null && Math.abs(lbLast - bLast) < 0.005 ? Date.parse(lb.lastSeen)
+        : shardSeen(b.meta, b.side && b.side.length ? b.side[b.side.length - 1].t : null);
       if (seenAt != null && isFinite(cut)) seenAt = Math.min(seenAt, cut - 1);
-      return { book: n, cls: STRIP_CLASS[n] || 'soft', own: isOwn, first: first, now: now, seen: seenAt,
+      return { book: n, cls: STRIP_CLASS[n] || 'soft', own: isOwn, first: first, now: now, seen: seenAt, holes: shardHoles(b.meta),
         opener: isOwn && r.openKind === 'book opener',
         drop: isOwn ? r.drop : drop, series: b.side, other: b.other, truncated: !!b.truncated, margin: isOwn ? b.margin : marginOf(n, b.side, b.other) };
     });
@@ -418,7 +473,7 @@
     passes: passes, sortRows: sortRows, view: view, ago: ago, hhmmUTC: hhmmUTC, feedState: feedState,
     boardKeyFor: boardKeyFor, tierOf: tierOf, AMBER_AFTER_S: AMBER_AFTER_S, DISCONNECTED_AFTER_S: DISCONNECTED_AFTER_S,
     ENDPOINT: ENDPOINT, STRIP_CLASS: STRIP_CLASS, modalBooks: modalBooks, summaryText: summaryText, lineKey: lineKey, nk: nk,
-    seriesPoints: seriesPoints, marginOf: marginOf, GAP_MS: GAP_MS, RECENT_MS: RECENT_MS, BOOK_ORDER: BOOK_ORDER,
+    seriesPoints: seriesPoints, marginOf: marginOf, MIN_SPAN_MS: MIN_SPAN_MS, RECENT_MS: RECENT_MS, BOOK_ORDER: BOOK_ORDER,
     boxChart: boxChart, endOf: endOf, bookSplit: bookSplit, dropCell: dropCell, startLine: startLine };
   if (typeof module === 'object' && module.exports) module.exports = PURE;
   if (typeof document === 'undefined') return;
@@ -732,7 +787,9 @@
       return;
     }
     st.modalKey = key;
-    var keepScroll = ov && ov.querySelector('.do-ov-scroll') ? ov.querySelector('.do-ov-scroll').scrollTop : 0;
+    // a box opens at its top, header in view (TEN-301 item 7); only a re-render of the SAME row keeps its scroll
+    var keepScroll = ov && st.modalRow === st.drawer && ov.querySelector('.do-ov-scroll') ? ov.querySelector('.do-ov-scroll').scrollTop : 0;
+    st.modalRow = st.drawer;
     if (!ov) { ov = document.createElement('div'); ov.id = 'doOverlay'; ov.className = 'do-ov'; document.body.appendChild(ov); }
     var shell = document.querySelector('.sf-sidebar');
     ov.style.setProperty('--do-shell-left', shell ? shell.getBoundingClientRect().width + 'px' : '0px');
@@ -754,7 +811,7 @@
     // chart: the selected book's recorded prices, its end (rule 25), its open chip (rule 24)
     var series = (sel.series || []).filter(function (p) { return isFinite(p.t) && p.v != null; }).slice().sort(function (a, b) { return a.t - b.t; });
     var end = endOf(series, sel.seen, r.cutAt, now);
-    var ch = series.length ? boxChart(series, sel.first && sel.first.v, end) : null;
+    var ch = series.length ? boxChart(series, sel.first && sel.first.v, end, sel.holes) : null;
     var openWord = sel.opener ? 'Open' : 'First seen';
     var nameSpan = function (n) {
       return '<span class="do-ov-nm' + (n === r.side ? ' backed' : '') + '"><span>' + esc(n) + '</span></span>';
@@ -781,11 +838,10 @@
           ch.vticks.map(function (x) { return '<line class="do-vt" x1="' + x + '" y1="0" x2="' + x + '" y2="300" vector-effect="non-scaling-stroke"></line>'; }).join('') +
           ch.gridY.map(function (g) { return '<line class="do-hg" x1="0" y1="' + g.y + '" x2="1000" y2="' + g.y + '" vector-effect="non-scaling-stroke"></line>'; }).join('') +
           (ch.area ? '<path class="do-area" d="' + ch.area + '"></path>' : '') +
-          ch.runs.map(function (pl) { return '<polyline class="do-line" points="' + pl + '" vector-effect="non-scaling-stroke"></polyline>'; }).join('') +
-          ch.gaps.map(function (g) { return '<line class="do-gap" x1="' + g[0][0] + '" y1="' + g[0][1] + '" x2="' + g[1][0] + '" y2="' + g[1][1] + '" vector-effect="non-scaling-stroke"></line>'; }).join('') +
+          ch.lines.map(function (pl) { return '<polyline class="do-line" points="' + pl + '" vector-effect="non-scaling-stroke"></polyline>'; }).join('') +
           '</svg>' +
-          (ch.hasOpen ? '<span class="do-ov-openchip" style="top:' + ch.openTop + '">' + openWord + ' <span>' + price2(sel.first.v) + '</span></span>' : '') +
-          '<span class="do-ov-enddot" style="top:' + ch.endDot + '"></span></div>' +
+          (ch.hasOpen ? '<span class="do-ov-openchip" style="top:' + ch.openTop + ';left:calc(' + ch.openLeft + ' + 8px)">' + openWord + ' <span>' + price2(sel.first.v) + '</span></span>' : '') +
+          '<span class="do-ov-enddot" style="top:' + ch.endDot + ';left:' + ch.endLeft + '"></span></div>' +
         '<div class="do-ov-endc"><div class="do-ov-endbox" style="top:' + ch.endTop + '"><div class="do-ov-endw">' + esc(ch.endWord) + '</div><div class="do-ov-endv"><span>' + ch.endLbl + '</span></div></div></div>' +
         '</div>' +
         '<div class="do-ov-xax">' + ch.ticks.map(function (t) { return '<span style="left:' + t.left + ';transform:' + t.tf + '"><span>' + esc(t.label) + '</span></span>'; }).join('') + '</div>' : '') +
@@ -806,7 +862,7 @@
       '</div></div></div>';
     ov.innerHTML = html;
     var sc = ov.querySelector('.do-ov-scroll');
-    if (sc && keepScroll) sc.scrollTop = keepScroll;
+    if (sc) sc.scrollTop = keepScroll;
   }
 
   // ─── events ─────────────────────────────────────────────────────────────────

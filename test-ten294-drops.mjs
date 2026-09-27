@@ -426,33 +426,109 @@ test('page staleness: green <= 90 s, amber past 90 s, disconnected past 5 min or
   assert.equal(PAGE.feedState(null, true), 'disconnected');
 });
 
-test('box chart (8585095a items 10-15): recorded prices only, straight segments, 5 evenly spaced real times, dashed gaps, no dots, no open line', () => {
-  // a 30 h life: first 30 h ago, a 6-min drop 8 h ago, latest 0.5 h ago
+// TEN-301: the vertices of a step line, as numbers
+const stepPts = (pl) => pl.split(' ').map((p) => p.split(',').map(Number));
+test('box chart (TEN-301): ONE continuous step line — flat holds, vertical moves at each change, one flat fill, no dashes', () => {
+  // a 30 h life: first 30 h ago, a 6-min drop 8 h ago, a change 0.5 h ago; confirmed 5 min ago
   const series = [{ t: PT0 - 30 * HR, v: 2.5 }, { t: PT0 - 8 * HR, v: 2.3 }, { t: PT0 - 7.9 * HR, v: 2.1 }, { t: PT0 - 0.5 * HR, v: 2.0 }];
-  const ch = PAGE.boxChart(series, 2.5, { label: 'Latest 11:30', t: PT0 - 0.5 * HR, v: 2.0 });
+  const end = PAGE.endOf(series, PT0 - 5 * 60e3, null, PT0);
+  const ch = PAGE.boxChart(series, 2.5, end);
   assert.equal(ch.single, false);
-  assert.deepEqual(ch.ticks.map((t) => t.label), ['25 Sep, 06:00', '13:22', '20:45', '26 Sep, 04:07', '11:30'], 'opening -> end at 0/25/50/75/100%, date on the first label and each day change');
+  assert.equal(ch.lines.length, 1, 'one polyline: the 22 h and 7.4 h holds are confirmed holds, not gaps');
+  assert.equal(ch.area.split('M').length - 1, 1, 'one fill under the whole line, no holes');
+  assert.equal('gaps' in ch, false, 'no dashed segments exist any more');
+  const pts = stepPts(ch.lines[0]);
+  for (let i = 1; i < pts.length; i++) assert.ok(pts[i][0] === pts[i - 1][0] || pts[i][1] === pts[i - 1][1], `segment ${i} is flat or vertical, never a diagonal slide: ${pts[i - 1]} -> ${pts[i]}`);
+  const hi = +ch.gridY[0].label, lo = +ch.gridY[4].label, yOf = (v) => ((hi - v) / (hi - lo)) * 300;
+  assert.equal(pts[0][0], 0); assert.ok(Math.abs(pts[0][1] - yOf(2.5)) <= 1, 'the line starts at the first recorded price (the open chip\'s value)');
+  // the 2.5 hold runs flat to the 8 h-ago change, then moves vertically there
+  const x8 = (22 * HR) / (30 * HR - 5 * 60e3) * 1000;
+  assert.ok(pts.some((p, i) => i > 0 && Math.abs(p[0] - x8) < 0.2 && Math.abs(pts[i - 1][0] - x8) < 0.2 && p[1] !== pts[i - 1][1]), 'a vertical move at the change time');
+  assert.ok(Math.abs(pts[1][1] - pts[0][1]) < 0.05 && Math.abs(pts[1][0] - x8) < 0.2, 'the open price held flat until then');
+  assert.equal(pts[pts.length - 1][0], 1000, '"Now": the line reaches the confirmation, the axis end');
+  assert.match(ch.area, /^M0\.0,[\d.]+ (L[\d.]+,[\d.]+ )+L1000\.0,300 L0\.0,300 Z$/);
+  assert.equal(ch.ticks.length, 5, '5 labels on a long span');
+  assert.equal(ch.ticks[0].label, '25 Sep, 06:00'); assert.equal(ch.ticks[4].label, '11:55', 'first seen -> the confirmation');
+  assert.ok(ch.ticks.filter((t) => /Sep, /.test(t.label)).length === 2, 'the date on the first label and at the day change');
   assert.deepEqual(ch.ticks.map((t) => t.tf), ['none', 'translateX(-50%)', 'translateX(-50%)', 'translateX(-50%)', 'translateX(-100%)']);
   assert.deepEqual(ch.vticks, [0, 250, 500, 750, 1000]);
   assert.equal(ch.gridY.length, 5);
-  assert.equal(ch.gaps.length, 2, 'the 22 h and 7.4 h stretches (> 3.6 h) are dashed');
-  assert.equal(ch.runs.length, 1, 'the 6-min drop is the one solid run');
-  assert.equal(ch.area.split('M').length - 1, 1, 'the fill covers the solid run only, never a dashed stretch');
-  const full = PAGE.boxChart([{ t: PT0 - 3 * HR, v: 2.4 }, { t: PT0 - 2 * HR, v: 2.2 }, { t: PT0 - 1 * HR, v: 2.0 }], 2.4, { label: 'Now', t: PT0 - 1 * HR, v: 2.0 });
-  assert.match(full.area, /^M0\.0,[\d.]+ L[\d.,]+ L1000\.0,[\d.]+ L1000\.0,300 L0\.0,300 Z$/, 'a gap-free line: the export\'s own area path');
-  assert.equal(ch.hasOpen, true);
-  assert.equal(ch.endLbl, '2.00'); assert.equal(ch.endWord, 'Latest 11:30');
+  assert.equal(ch.hasOpen, true); assert.equal(ch.openLeft, '0.00%');
+  assert.equal(ch.endLbl, '2.00'); assert.equal(ch.endWord, 'Now'); assert.equal(ch.endLeft, '100.00%');
   // Y range: min/max padded 12%, min span 0.2
   assert.equal(ch.gridY[0].label, (2.5 + 0.06).toFixed(2)); assert.equal(ch.gridY[4].label, (2.0 - 0.06).toFixed(2));
-  // one recorded price: no line, no area, no open chip; dot + end label only
-  const one = PAGE.boxChart([{ t: PT0, v: 1.9 }], 1.9, { label: 'Now', t: PT0, v: 1.9 });
-  assert.equal(one.single, true); assert.deepEqual(one.runs, []); assert.equal(one.area, ''); assert.equal(one.hasOpen, false);
+  // one recorded price, never confirmed later: no line, no area, no open chip; dot + end label only
+  const one = PAGE.boxChart([{ t: PT0, v: 1.9 }], 1.9, PAGE.endOf([{ t: PT0, v: 1.9 }], null, null, PT0));
+  assert.equal(one.single, true); assert.deepEqual(one.lines, []); assert.equal(one.area, ''); assert.equal(one.hasOpen, false);
   // the end (data rule 25)
   const s2 = [{ t: PT0 - 3 * HR, v: 2.2 }, { t: PT0 - 2 * HR, v: 2.0 }];
-  assert.deepEqual(PAGE.endOf(s2, PT0 - 5 * 60e3, null, PT0), { label: 'Now', t: PT0 - 5 * 60e3, v: 2.0, confirmed: true }, 'confirmed 5 min ago: Now, carried to the confirmation');
-  assert.deepEqual(PAGE.endOf(s2, PT0 - 40 * 60e3, null, PT0), { label: 'Latest 10:00', t: PT0 - 2 * HR, v: 2.0 }, 'not confirmed recently: Latest HH:MM, the line ends there');
-  assert.deepEqual(PAGE.endOf(s2, null, null, PT0).label, 'Latest 10:00', 'no sighting at all: never "Now"');
-  assert.deepEqual(PAGE.endOf(s2, PT0, at(1 * HR), PT0), { label: 'Last pre-match', t: PT0 - 1 * HR, v: 2.0, confirmed: true }, 'a cut row ends at the live start (seen after it)');
+  assert.deepEqual(PAGE.endOf(s2, PT0 - 5 * 60e3, null, PT0), { label: 'Now', t: PT0 - 5 * 60e3, v: 2.0, axisT: PT0 - 5 * 60e3, confirmed: true }, 'confirmed 5 min ago: Now, carried to the confirmation');
+  assert.deepEqual(PAGE.endOf(s2, PT0 - 40 * 60e3, null, PT0), { label: 'Latest 11:20', t: PT0 - 40 * 60e3, v: 2.0, axisT: PT0, confirmed: true }, 'confirmed 40 min ago: Latest = that sighting, the line ends there, the axis runs to now');
+  assert.deepEqual(PAGE.endOf(s2, null, null, PT0), { label: 'Latest 10:00', t: PT0 - 2 * HR, v: 2.0, axisT: PT0, confirmed: false }, 'no sighting at all: never "Now", the line ends at the last change');
+  assert.deepEqual(PAGE.endOf(s2, PT0, at(1 * HR), PT0), { label: 'Last pre-match', t: PT0 - 1 * HR, v: 2.0, axisT: PT0 - 1 * HR, confirmed: true }, 'a cut row ends at the live start (seen after it)');
+});
+
+test('box chart (TEN-301 items 3-5): a stale line stops short of now; short histories fill the width; X labels never repeat; a held single price is a line', () => {
+  // item 3: "Latest HH:MM" — the line stops at the last sighting, the axis runs on to now
+  const s = [{ t: PT0 - 10 * HR, v: 2.2 }, { t: PT0 - 6 * HR, v: 2.0 }];
+  const stale = PAGE.boxChart(s, 2.2, PAGE.endOf(s, PT0 - 2 * HR, null, PT0));
+  assert.equal(stale.endWord, 'Latest 10:00');
+  assert.equal(stepPts(stale.lines[0]).pop()[0], 800, 'the line ends at the sighting (8 of 10 h)');
+  assert.equal(stale.endLeft, '80.00%', 'the end dot sits where the line ends');
+  assert.equal(stale.ticks[stale.ticks.length - 1].label, '12:00', 'the axis ends at now');
+  // item 4: 2.5 h of history spans the full width: first seen at 0, the confirmation at 1000
+  const short = [{ t: PT0 - 2.5 * HR, v: 1.8 }, { t: PT0 - 1 * HR, v: 1.7 }];
+  const sc = PAGE.boxChart(short, 1.8, PAGE.endOf(short, PT0 - 60e3, null, PT0));
+  const sp = stepPts(sc.lines[0]);
+  assert.equal(sp[0][0], 0); assert.equal(sp[sp.length - 1][0], 1000);
+  assert.equal(sc.ticks.length, 5); assert.equal(new Set(sc.ticks.map((t) => t.label)).size, 5);
+  // under 2 h: 3 labels on the 0/50/100% grid ticks
+  const s90 = [{ t: PT0 - 90 * 60e3, v: 1.8 }, { t: PT0 - 30 * 60e3, v: 1.7 }];
+  const c90 = PAGE.boxChart(s90, 1.8, PAGE.endOf(s90, PT0, null, PT0));
+  assert.deepEqual(c90.ticks.map((t) => t.label), ['26 Sep, 10:30', '11:15', '12:00']);
+  assert.deepEqual(c90.ticks.map((t) => t.x), ['0.0', '500.0', '1000.0']);
+  // minimum span 60 min: 20 min of history sits at the right of a 60-min axis, padded before first seen
+  const s20 = [{ t: PT0 - 20 * 60e3, v: 1.8 }, { t: PT0 - 10 * 60e3, v: 1.7 }];
+  const c20 = PAGE.boxChart(s20, 1.8, PAGE.endOf(s20, PT0, null, PT0));
+  assert.equal(stepPts(c20.lines[0])[0][0], 666.7, 'first seen 40 min into the 60-min axis');
+  assert.equal(c20.openLeft, '66.67%', 'the open chip stays on the line\'s first point');
+  assert.deepEqual(c20.ticks.map((t) => t.label), ['26 Sep, 11:00', '11:30', '12:00']);
+  // no repeated label ever, across spans from 60 min to 3 days
+  for (const mins of [1, 30, 60, 61, 75, 119, 120, 121, 150, 180, 240, 600, 1440, 4320]) {
+    const ser = [{ t: PT0 - mins * 60e3, v: 2 }, { t: PT0 - 100, v: 1.9 }];
+    const c = PAGE.boxChart(ser, 2, PAGE.endOf(ser, PT0, null, PT0));
+    assert.equal(new Set(c.ticks.map((t) => t.label)).size, c.ticks.length, `${mins} min: ${c.ticks.map((t) => t.label)}`);
+  }
+  // item 5: one recorded price that a later sighting confirmed: a flat line first seen -> now, chip + Now
+  const one = [{ t: PT0 - 4 * HR, v: 2.1 }];
+  const held = PAGE.boxChart(one, 2.1, PAGE.endOf(one, PT0 - 2 * 60e3, null, PT0));
+  assert.equal(held.single, false); assert.equal(held.hasOpen, true); assert.equal(held.endWord, 'Now');
+  assert.deepEqual(stepPts(held.lines[0]).map((p) => p[0]), [0, 1000], 'flat from first seen to the confirmation');
+  assert.equal(new Set(stepPts(held.lines[0]).map((p) => p[1])).size, 1, 'at that one price');
+  // ...never confirmed since (the sighting IS the first price): the dot alone
+  assert.equal(PAGE.boxChart(one, 2.1, PAGE.endOf(one, PT0 - 4 * HR, null, PT0)).single, true);
+});
+
+test('box chart (TEN-301): a stretch the book was recorded NOT quoting (odds.md api-tennis gap) is the only break; an open gap ends the line', () => {
+  const s = [{ t: PT0 - 10 * HR, v: 2.2 }, { t: PT0 - 4 * HR, v: 2.0 }];
+  const ch = PAGE.boxChart(s, 2.2, PAGE.endOf(s, PT0, null, PT0), [[PT0 - 8 * HR, PT0 - 7 * HR]]);
+  assert.equal(ch.lines.length, 2, 'the hold is not drawn across the hole');
+  assert.equal(ch.area.split('M').length - 1, 2, 'nor filled');
+  assert.ok(Math.abs(stepPts(ch.lines[0]).pop()[0] - 200) < 0.3); assert.ok(Math.abs(stepPts(ch.lines[1])[0][0] - 300) < 0.3);
+  // shard meta -> the sighting and the holes
+  const [r] = PAGE.buildRows([frow({ id: 'bet105-301', a: 'Pat Pi', b: 'Rho Rho', side: 'Pat Pi', open: 2.2, now: 1.7, latestAgo: 1 * HR })]);
+  const chart = { books: { 'Pinnacle (api-tennis)': { p1: [[at(20 * HR), 2.10]], p2: [[at(20 * HR), 1.80]] }, Betano: { p1: [[at(20 * HR), 2.0]], p2: [[at(20 * HR), 1.8]] },
+      Superbet: { p1: [[at(20 * HR), 2.0]], p2: [[at(20 * HR), 1.8]] }, 'Pinnacle +30s': { p1: [[at(20 * HR), 2.3], [at(9 * HR), 2.2]], p2: [[at(20 * HR), 1.7]] } },
+    meta: { 'Pinnacle (api-tennis)': { source: 'api-tennis', checkedAt: at(10 * 60e3), gaps: [[at(12 * HR), at(11 * HR)]] },
+      Betano: { source: 'api-tennis', checkedAt: at(10 * 60e3), gaps: [[at(3 * HR), null]] },
+      Superbet: { source: 'odds-api.io', checkedAt: at(60e3) }, 'Pinnacle +30s': { source: 'Oddspapi', checkedAt: at(20 * 60e3) } } };
+  const bs = PAGE.modalBooks(r, { rows: [r], chart, cardSide: 'p1', now: PT0 }).books;
+  const b = (n) => bs.find((x) => x.book === n);
+  assert.equal(b('Pinnacle (api-tennis)').seen, PT0 - 10 * 60e3, 'api-tennis: the collector\'s check confirms the line');
+  assert.deepEqual(b('Pinnacle (api-tennis)').holes, [[PT0 - 12 * HR, PT0 - 11 * HR]]);
+  assert.equal(b('Betano').seen, PT0 - 3 * HR, 'an open gap: the book left the feed there — its last sighting');
+  assert.equal(b('Pinnacle +30s').seen, PT0 - 20 * 60e3, 'Oddspapi: a read of this fixture\'s own ticks');
+  assert.equal(b('Superbet').seen, null, 'odds-api.io checkedAt is a whole-book poll, not a sighting of this line');
 });
 
 test('box colours (8585095a colour ruling): red with a flat tint, the named values exact; neutrals on the 12a tokens', () => {
@@ -471,7 +547,8 @@ test('box colours (8585095a colour ruling): red with a flat tint, the named valu
   assert.match(box, /\.do-ov-endc \{ position: relative; width: 84px; height: 260px; flex: none; \}/);
   assert.match(box, /@media \(max-width: 1179\.98px\) \{[^}]*\}\s*\.do-ov-box \{ left: 0; right: 0; top: 64px; bottom: 0; transform: none; width: 100%;[^}]*border-radius: 16px 16px 0 0; \}/, 'below 1180px: the bottom sheet');
   const svg = PAGE.boxChart([{ t: PT0 - 2 * HR, v: 2.4 }, { t: PT0, v: 2.0 }], 2.4, { label: 'Now', t: PT0, v: 2.0 });
-  assert.equal(svg.runs.length, 1);
+  assert.equal(svg.lines.length, 1);
+  assert.doesNotMatch(css + read('drops-page.js'), /do-gap|stroke-dasharray/, 'TEN-301: no dashed segment is styled or drawn');
 });
 
 test('pop-up chart: the endpoint sends the whole recorded life; a truncated series is not drawn as a gap', () => {
@@ -678,6 +755,19 @@ test('page review 2: the open modal is rebuilt only when what it shows changes',
   x.st.drBook = 'Bet105'; x.st.tip = true;         // what it shows changed: rebuilt once
   await x.activate();
   assert.equal(x.overlay.writes, w + 1);
+});
+
+test('TEN-301 item 7: a box opens scrolled to its top (header in view); only a re-render of the same row keeps its scroll', async () => {
+  const x = pageSandbox({ feed: () => [frow({ id: 'r1', open: 2, now: 1.8 }), frow({ id: 'r2', a: 'Cal Co', b: 'Dan Do', side: 'Cal Co', open: 3, now: 2.5 })] });
+  const sc = { scrollTop: 0 };
+  x.overlay.querySelector = (s) => (s === '.do-ov-scroll' ? sc : null);
+  await x.activate();
+  x.st.drawer = 'r1'; await x.activate();
+  sc.scrollTop = 420;                                   // the reader scrolled down to the book table
+  x.st.drBook = 'Bet105'; await x.activate();           // switching the chart's book re-renders the same row
+  assert.equal(sc.scrollTop, 420, 'same row: the scroll is kept');
+  x.st.drawer = 'r2'; x.st.drBook = null; await x.activate();
+  assert.equal(sc.scrollTop, 0, 'another row: opens at the top, the eyebrow and header in view');
 });
 
 test('page review 2: Enter on a row opens it with the chart on its own book and the tooltip closed', async () => {
@@ -918,8 +1008,18 @@ test('box review: an unchanged book reads a muted 0.0%, a lengthened one a muted
   html = await x.open('superbet-61');
   assert.match(html, /<span class="do-ov-back" role="button" tabindex="0" data-act="back">Back to Superbet<\/span>/);
   assert.match(html, /class="do-ov-tr sel" role="button" tabindex="0" data-act="book" data-v="Betfair Exchange"/);
-  assert.match(html, /One price recorded so far\. The line appears once a second snapshot arrives\./, 'BFE has one price: dot + label only');
-  assert.doesNotMatch(html, /do-ov-openchip|class="do-line"/);
+  // TEN-301 item 5: BFE has one price, confirmed 6 min ago: a flat line, the FIRST SEEN chip and "Now"
+  assert.doesNotMatch(html, /One price recorded so far/);
+  assert.equal((html.match(/class="do-line"/g) || []).length, 1);
+  assert.match(html, /class="do-ov-openchip"[^>]*>First seen <span>2\.10<\/span>/);
+  assert.match(html, /<div class="do-ov-endw">Now<\/div>/);
+  // one price never confirmed since (its only sighting is the price itself): the dot and the note only
+  line.books['Betfair Exchange'].lastSeen = at(20 * HR);
+  const x2 = await openPopup({ rows: [r0], lines: [line] });
+  x2.P._state.drBook = 'Betfair Exchange';
+  const html2 = await x2.open('superbet-61');
+  assert.match(html2, /One price recorded so far\. The line appears once a second snapshot arrives\./, 'dot + label only');
+  assert.doesNotMatch(html2, /do-ov-openchip|class="do-line"/);
 });
 
 test('pop-up review 2: the SQL rules sit in the step that uses them (block comments stripped, not just --)', () => {
@@ -1407,12 +1507,16 @@ test('box review (a37fc857): a confirmation belongs to its own price; carries st
   assert.equal(PAGE.modalBooks(r, { rows: [r], chart, cardSide: 'p1', line: line2, now: PT0 }).books.find((b) => b.book === 'Superbet').seen, PT0 - 2 * 60e3, 'same price: the confirmation carries');
   // a cut row: the carry stops at the book's last sighting when it came before the start
   const s2 = [{ t: PT0 - 5 * HR, v: 2.2 }, { t: PT0 - 3 * HR, v: 2.0 }];
-  assert.deepEqual(PAGE.endOf(s2, PT0 - 2.9 * HR, at(1 * HR), PT0), { label: 'Last pre-match', t: PT0 - 2.9 * HR, v: 2.0, confirmed: true });
+  assert.deepEqual(PAGE.endOf(s2, PT0 - 2.9 * HR, at(1 * HR), PT0), { label: 'Last pre-match', t: PT0 - 2.9 * HR, v: 2.0, axisT: PT0 - 1 * HR, confirmed: true });
   assert.equal(PAGE.endOf(s2, null, at(1 * HR), PT0).t, PT0 - 1 * HR, 'no sighting: to the start');
-  // a confirmed carry longer than 3.6 h is a recorded hold: solid, not a gap
+  // a cut row whose book stopped quoting before the start: the line stops at the sighting, the axis runs to the start
+  const cutC = PAGE.boxChart(s2, 2.2, PAGE.endOf(s2, PT0 - 2.9 * HR, at(1 * HR), PT0));
+  assert.ok(Math.abs(stepPts(cutC.lines[0]).pop()[0] - 525) < 0.2, 'ends at 2.1 of 4 h');
+  assert.equal(cutC.ticks[cutC.ticks.length - 1].label, '11:00', 'the axis ends at the live start (last pre-match)');
+  // a confirmed carry is a recorded hold: one line to the confirmation
   const hold = PAGE.boxChart([{ t: PT0 - 6 * HR, v: 2.2 }, { t: PT0 - 5 * HR, v: 2.0 }], 2.2, { label: 'Now', t: PT0 - 60e3, v: 2.0, confirmed: true });
-  assert.equal(hold.gaps.length, 0); assert.equal(hold.runs.length, 1);
-  assert.match(hold.runs[0], / 1000\.0,/, 'the solid line reaches the confirmation');
+  assert.equal(hold.lines.length, 1);
+  assert.match(hold.lines[0], / 1000\.0,/, 'the line reaches the confirmation');
   // the end label box is clamped to 10–90% of the plot height; the open chip stays inside the range
   const low = PAGE.boxChart([{ t: PT0 - 2 * HR, v: 3.0 }, { t: PT0 - HR, v: 1.2 }], 3.0, { label: 'Latest 11:00', t: PT0 - HR, v: 1.2 });
   assert.equal(low.endTop, '90.00%'); assert.ok(parseFloat(low.endDot) > 88);
