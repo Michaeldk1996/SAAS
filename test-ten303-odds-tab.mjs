@@ -101,6 +101,8 @@ test('§6.2 no row mixes two sources: Pinnacle in both feeds draws only Pinnacle
   const h = A.buildOddsSection(m);
   const row = rowHtml(h, 'Pinnacle');
   assert.equal(cellTxt(row, 'aox-open', 'a'), '2.50'); assert.equal(cellTxt(row, 'aox-now', 'a'), '2.35');
+  assert.equal(cellTxt(row, 'aox-net', 'a'), '-0.15', 'net: a hyphen, never U+2212');
+  assert.equal(cellTxt(row, 'aox-net', 'b'), '+0.08');
   assert.equal(rowsOf(h).filter(r => r.book === 'Pinnacle').length, 1, 'one row per bookmaker');
   assert.ok(!/data-book="Pinnacle \(api-tennis\)"|data-book="Pinnacle \+30s/.test(h), 'no sourced row name');
   const tip = tipOf(h, 'Pinnacle');
@@ -260,8 +262,11 @@ test('no line: a dash row with its verdict — never a zero, never opens a pop-u
   assert.ok(rowHtml(h, 'Superbet').includes('>not recorded — our recording began 26 Sep<'), 'the writer\'s note wins');
   assert.ok(rowHtml(h, 'Betano').includes('>not checked yet<'));
   // nothing at all -> the reduced view + the 12 no-data rows
-  const h0 = A.buildOddsSection({ id: 'x', p1: 'A. B', p2: 'C. D', date: '2026-10-01', time: '10:00', oddsMovement: null });
+  const h0 = A.buildOddsSection({ id: 'x', p1: 'A. B', p2: 'C. D', date: '2026-10-01', time: '10:00', oddsMovement: null, _oddsLoaded: true });
   assert.ok(h0.includes('REDUCED') && (h0.match(/class="aox-row aox-nodata"/g) || []).length === 12);
+  // before the lazy shard lands: a loading line, no verdict rows, no reduced view
+  const hl = A.buildOddsSection({ id: 'x', p1: 'A. B', p2: 'C. D', date: '2026-10-01', time: '10:00' });
+  assert.ok(hl.includes('aox-loading') && !hl.includes('aox-row') && !hl.includes('REDUCED'));
 });
 
 test('a gap is never drawn across; a book gone from the feed reads "Not in feed since", no Now, never best', () => {
@@ -312,4 +317,76 @@ test('pop-up: real window, stat boxes from the real series (earliest on ties), b
   assert.deepEqual(tabs, D.rows.filter(r => !r.noData).map(r => r.name), 'one tab per row with a line, table order, stale included');
   // no hard-coded "last 72 hours", no Catmull-Rom
   assert.ok(!mv.includes('72 hours') && !/class="aox-line" d="[^"]*C/.test(mv));
+});
+
+// ── review fold-in (clean-context review 2026-09-27) ─ mutants: the last pair reused as a no-vig NOW; pairing
+//    without the gap check; only the first tied book green; STEAM threshold ignored; the pop-up x axis by tick index;
+//    a legacy "<Book> (Oddspapi)" key as its own row ──
+test('no-vig: a latest tick with no matched pair (inside a gap) reads "—", never the last pair', () => {
+  const now = Date.now();
+  const A = build();
+  const m = fixture({ now, withAt: true });
+  m.oddsMovement.chart.books['Betano'] = { p1: [[iso(now - 5 * H), 2.5], [iso(now - 3 * H), 2.6]], p2: [[iso(now - 5 * H), 1.55]] };
+  m.oddsMovement.chart.meta['Betano'].gaps = [[iso(now - 4 * H), iso(now - 2 * H)]];   // closed: the book is back in its feed
+  const row = A.aOddsRowsOf(m, { nowMs: now, novig: true }).rows.find(r => r.name === 'Betano');
+  assert.equal(row.stale, false);
+  assert.deepEqual(row.ticks.map(t => t.pair), [true, false], 'a tick inside a gap has no pair');
+  assert.equal(row.aNow, null); assert.equal(row.bNow, null);
+  A.open(m); A.state().novig = true;
+  const h = A.buildOddsSection(m);
+  assert.equal(cellTxt(rowHtml(h, 'Betano'), 'aox-now', 'a'), '\u2014');
+});
+
+test('best price: every tied live book is green', () => {
+  const A = build();
+  const m = fixture({ withAt: true });
+  m.oddsMovement.chart.books['Betano'].p1[0][1] = 2.46;   // ties Betfair Exchange's 2.46 at the top
+  m.oddsMovement.chart.books['Superbet'].p1[0][1] = 2.3;
+  A.open(m);
+  const h = A.buildOddsSection(m);
+  const greens = rowsOf(h).filter(r => colorOf(rowHtml(h, r.book), 'aox-now', 'a') === A.AODDS_C.up).map(r => r.book).sort();
+  assert.deepEqual(greens, ['Betano', 'Betfair Exchange']);
+});
+
+test('STEAM follows the configured threshold; it reads the as-quoted move in both modes', () => {
+  const now = Date.now();
+  const m = fixture({ now });          // Pinnacle and Bet105 shortened on p1: 2 books
+  assert.equal(build(undefined, { AODDS_STEAM: '{ minBooks: 3, minShareOfN: 0 }' }).aOddsRowsOf(m, { nowMs: now }).steam, null);
+  assert.equal(build(undefined, { AODDS_STEAM: '{ minBooks: 2, minShareOfN: 0 }' }).aOddsRowsOf(m, { nowMs: now }).steam.text, '2 of 4 books shortened on J. Sinner');
+  assert.equal(build(undefined, { AODDS_STEAM: '{ minBooks: 2, minShareOfN: 0.6 }' }).aOddsRowsOf(m, { nowMs: now }).steam, null, '2 < 60% of 4');
+  const A = build(undefined, { AODDS_STEAM: '{ minBooks: 2, minShareOfN: 0 }' });
+  assert.equal(A.aOddsRowsOf(m, { nowMs: now, novig: true }).steam.text, '2 of 4 books shortened on J. Sinner', 'same in No-vig');
+  // p1 flat as quoted, p2 shortened: stripping the margin makes p1 "drift" — STEAM must still read the market
+  const m1 = fixture({ now });
+  for (const k of ['Bet105', 'Superbet', 'Betfair Exchange (recorded by us)']) { delete m1.oddsMovement.chart.books[k]; }
+  delete m1.oddsMovement.books;
+  m1.oddsMovement.chart.books['Pinnacle +30s'] = { p1: [[iso(now - 20 * H), 2.5], [iso(now - 2 * H), 2.5]], p2: [[iso(now - 20 * H), 1.578], [iso(now - 2 * H), 1.5]] };
+  const B = build(undefined, { AODDS_STEAM: '{ minBooks: 1, minShareOfN: 0 }' });
+  assert.equal(B.aOddsRowsOf(m1, { nowMs: now }).steam.text, '1 of 1 books shortened on C. Alcaraz');
+  assert.equal(B.aOddsRowsOf(m1, { nowMs: now, novig: true }).steam.text, '1 of 1 books shortened on C. Alcaraz', 'No-vig reads the same market move');
+});
+
+test('pop-up x axis is real time: 5 labels evenly spaced from the first tick to the last check', () => {
+  const A = build();
+  const t0 = Date.parse('2026-09-26T00:00:00Z');
+  // uneven ticks: index spacing would put the middle label at the 3rd tick (00:10), time spacing at 04:00Z
+  const s = [[t0, 1.5], [t0 + 5 * 60e3, 1.6], [t0 + 10 * 60e3, 1.7], [t0 + 15 * 60e3, 1.8], [t0 + 8 * H, 1.9]];
+  const svg = A.aOddsMvChart(s, '#6A9AF8', t0, t0 + 8 * H, []);
+  const xs = [...svg.matchAll(/class="aox-xt" x="([\d.]+)"[^>]*>([^<]*)</g)];
+  assert.deepEqual(xs.map(x => x[2]), ['02:00', '04:00', '06:00', '08:00', '10:00'], 'Europe/Brussels = UTC+2');
+  assert.deepEqual(xs.map(x => +x[1]), [42, 148.5, 255, 361.5, 468]);
+});
+
+test('a legacy "<Book> (Oddspapi)" key joins that book\'s row as its last fallback — never a second row', () => {
+  const now = Date.now();
+  const A = build();
+  const m = fixture({ now });
+  m.oddsMovement.books.Pinnacle = { p1: [[iso(now - 40 * H), 2.2]], p2: [[iso(now - 40 * H), 1.7]] };
+  A.open(m);
+  const rows = rowsOf(A.buildOddsSection(m));
+  assert.equal(rows.filter(r => /Pinnacle/.test(r.book)).length, 1);
+  const pin = A.aOddsRowsOf(m, { nowMs: now }).rows.find(r => r.name === 'Pinnacle');
+  assert.equal(pin.key, 'Pinnacle +30s (Oddspapi)');
+  delete m.oddsMovement.chart.books['Pinnacle +30s'];
+  assert.equal(A.aOddsRowsOf(m, { nowMs: now }).rows.find(r => r.name === 'Pinnacle').key, 'Pinnacle (Oddspapi)');
 });

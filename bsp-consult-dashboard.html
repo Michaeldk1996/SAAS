@@ -16086,7 +16086,6 @@ function unavailableKeyCardHtml(iconSvg, title, subtitle){
 // history, no opening snapshot, no other markets. So we render only what's
 // real (current per-book prices, implied probability, best-price highlight)
 // and honestly state what the feed can't support. Nothing is fabricated.
-const AODDS_EXT_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;"><path d="M10 6H6a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-4"></path><path d="M14 4h6v6"></path><path d="M20 4l-9 9"></path></svg>`;
 const AODDS_WARN_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><path d="M12 3 2 20h20L12 3Z"></path><path d="M12 10v5"></path><circle cx="12" cy="18" r="0.8" fill="currentColor"></circle></svg>`;
 
 let _aOdds = { m:null, novig:false, market:'Match Winner', mv:null };
@@ -16341,7 +16340,8 @@ function aOddsNoVig(a, b){ const s = 1 / a + 1 / b; return [a * s, b * s]; }
 // Every row of the tab, derived from the match's shard (aOddsBooksOf) — pure, no DOM.
 function aOddsRowsOf(m, opts){
   opts = opts || {};
-  const books = opts.books || AODDS_BOOKS, novig = !!opts.novig;
+  let books = opts.books || AODDS_BOOKS;
+  const novig = !!opts.novig;
   const nowMs = opts.nowMs != null ? opts.nowMs : Date.now();
   const src = aOddsBooksOf(m);
   // Closing odds = last pre-match price: every series is cut at the real start (aOddsStartMs).
@@ -16366,9 +16366,16 @@ function aOddsRowsOf(m, opts){
     return !Number.isFinite(ck) || nowMs - ck > AODDS_STALE_MS;
   };
   const mapped = new Set(); books.forEach(bk => bk.sources.forEach(s => mapped.add(s)));
-  // A source no row maps is still shown (under its own label) — never dropped silently.
-  const extra = Object.keys(src.books).filter(k => !mapped.has(k) && has(k))
-    .map(k => ({ name: k, group: src.meta[k].group === 'sharp' ? 'sharp' : 'soft', sources: [k] }));
+  // A source no row maps: "<Book> (…)" (e.g. a legacy "Pinnacle (Oddspapi)") joins that book's row as its
+  // last fallback — one row per bookmaker; anything else is shown under its own label, never dropped.
+  const extra = [];
+  books = books.map(bk => Object.assign({}, bk, { sources: bk.sources.slice() }));
+  Object.keys(src.books).filter(k => !mapped.has(k) && has(k)).forEach(k => {
+    const base = k.replace(/ \(.*\)$/, '').toLowerCase();
+    const bk = books.find(b => b.name.toLowerCase() === base);
+    if (bk) bk.sources.push(k);
+    else extra.push({ name: k, group: src.meta[k].group === 'sharp' ? 'sharp' : 'soft', sources: [k] });
+  });
   const rows = books.concat(extra).map((bk, order) => {
     const key = bk.sources.find(has) || null;
     const alt = bk.sources.find(k => k !== key && has(k)) || null;
@@ -16397,6 +16404,10 @@ function aOddsRowsOf(m, opts){
       row[x + 'Last'] = s.length ? s[s.length - 1][1] : null;
       // A stale price is history, never a "now". No-vig: the latest tick must be a matched pair.
       row[x + 'Now'] = row.stale ? null : novig ? (last.pair ? nv[x][nv[x].length - 1][1] : null) : row[x + 'Last'];
+      // as-quoted open / now, for STEAM (a market move reads the same in both price modes)
+      const q = x === 'a' ? s1 : s2;
+      row[x + 'QOpen'] = q.length ? q[0][1] : null;
+      row[x + 'QNow'] = row.stale || !q.length ? null : q[q.length - 1][1];
     });
     return row;
   });
@@ -16410,10 +16421,11 @@ function aOddsRowsOf(m, opts){
   });
   const rank = r => (r.noData ? 2 : r.stale ? 1 : 0);
   rows.sort((p, q) => ((p.group === 'sharp' ? 0 : 1) - (q.group === 'sharp' ? 0 : 1)) || (rank(p) - rank(q)) || (p.order - q.order));
-  // STEAM: N = live books with an open and a now on this match; stale books count in neither.
-  const moving = live.filter(r => ['a', 'b'].every(x => r[x + 'Open'] != null && r[x + 'Now'] != null));
+  // STEAM: N = live books with an open and a now on this match; stale books count in neither. Read on the
+  // as-quoted prices in both modes — stripping the margin can flip a book's direction, not the market's.
+  const moving = live.filter(r => ['a', 'b'].every(x => r[x + 'QOpen'] != null && r[x + 'QNow'] != null));
   const N = moving.length;
-  const cnt = (x, f) => moving.filter(r => f(num(r[x + 'Now']), num(r[x + 'Open']))).length;
+  const cnt = (x, f) => moving.filter(r => f(num(r[x + 'QNow']), num(r[x + 'QOpen']))).length;
   const cands = [
     { n: cnt('a', (nw, op) => nw < op), who: m.p1, dir: 'shortened' },
     { n: cnt('a', (nw, op) => nw > op), who: m.p1, dir: 'drifted' },
@@ -16694,11 +16706,14 @@ function buildOddsSection(m){
     return '<div class="aox-grouphead" data-group="' + g + '" style="display:flex; align-items:center; gap:10px; padding:12px 4px 4px;"><span style="' + mono + ' font-size:9.5px; font-weight:700; letter-spacing:0.18em; color:' + c + ';">' + h + '</span>'
       + '<span style="flex:1; height:1px; background:' + C.groupRule + ';"></span></div>' + rs.map(row).join('');
   }).join('');
-  const table = '<div style="overflow-x:auto;"><div style="min-width:0; display:flex; flex-direction:column; gap:6px;">' + colHead + groups + '</div></div>';
+  // The shard is lazy: until it lands there is nothing to verdict yet (never "not checked yet" rows).
+  const loading = !m.oddsMovement && !m._oddsLoaded;
+  const body = loading ? '<div class="aox-loading" style="padding:12px 4px; font-size:13px; color:' + C.label + ';">Loading bookmaker odds\u2026</div>' : groups;
+  const table = '<div style="overflow-x:auto;"><div style="min-width:0; display:flex; flex-direction:column; gap:6px;">' + colHead + body + '</div></div>';
 
   // §5 footnote.
   const foot = '<div class="aox-foot" style="font-size:12px; color:' + C.label + '; margin-top:16px; line-height:1.5;">Match Winner only. Lines step until a book re-posts. Hover a book for its source.</div>';
-  return '<div class="aox" style="-webkit-font-smoothing:antialiased;">' + (D.hasSeries ? '' : buildOddsReduced(m)) + top + head + table + aOddsMvHtml(m, D, marginLbl) + foot + '</div>';
+  return '<div class="aox" style="-webkit-font-smoothing:antialiased;">' + (D.hasSeries || loading ? '' : buildOddsReduced(m)) + top + head + table + aOddsMvHtml(m, D, marginLbl) + foot + '</div>';
 }
 
 // §6 odds movement pop-up for the chosen book (a row with a line; stale books included).
@@ -16941,7 +16956,7 @@ function buildOddsReduced(m){
       ? `<span class="aodds-price na">·</span>`
       : `<span class="aodds-price${b === bestB ? ' best' : ''}">${b.toFixed(2)}</span>`;
     return `<div class="aodds-brow">
-      <span class="aob-name"><span class="aob-ext">${AODDS_EXT_ICON}</span>${book}</span>
+      <span class="aob-name">${book}</span>
       <span class="aob-cell">${aCell}</span>
       <span class="aob-cell">${bCell}</span>
     </div>`;
