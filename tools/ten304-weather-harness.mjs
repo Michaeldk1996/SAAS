@@ -80,6 +80,32 @@ export function buildTips({ src = HTML } = {}) {
     listenerTypes: () => Object.keys(listeners),
   };
 }
+// The Weather data layer (lazy loads, refetch, matches-reload hook, openWeatherTab) with a fake fetch, a
+// settable clock and a fake DOM. renderWeatherSection is a recorder (the renderer is tested elsewhere).
+export function buildCache({ src = HTML, server }) {
+  const decl = src.slice(src.indexOf('\nlet _wxIndex = null'), src.indexOf('\nfunction loadWeatherIndex('));
+  const clock = { now: 0 }, calls = [], renders = [];
+  const fetch = async url => { calls.push(url); const r = server(url.replace(/^\.\//, ''), clock.now); return r == null ? { ok: false, json: async () => null } : { ok: true, json: async () => JSON.parse(JSON.stringify(r)) }; };
+  const dom = { tabActive: false, modalOpen: false };
+  const document = { getElementById: id => id === 'aSectionWeather' ? { classList: { contains: c => c === 'active' && dom.tabActive } }
+    : id === 'analysisModal' ? { classList: { contains: c => c === 'open' && dom.modalOpen } } : null };
+  const api = new Function('fetch', 'document', 'Date', 'console', '__renders', `
+    ${constSrc('WX_CONFIG', src)}
+    ${decl}
+    function renderWeatherSection(){ __renders.push(_aWx.ready && _aWx.m === _aWxMatch ? { tour: _aWx.m.tour, entry: _aWx.entry, fetchedAt: _aWx.file && _aWx.file.fetchedAt } : 'loading'); }
+    ${['loadWeatherIndex', 'wxFileDue', 'loadWeatherFile', 'ensureWeather', 'wxOnMatchesReload', 'openWeatherTab'].map(n => slice(n, src)).join('\n')}
+    return { openWeatherTab, wxOnMatchesReload, setMatch: m => { _aWxMatch = m; } };
+  `)(fetch, document, { now: () => clock.now, parse: s => Date.parse(s) }, { warn() {} }, renders);
+  return { api, clock, calls, renders, dom };
+}
+// printAnalysisReport with a fake modal / window; `openWeatherTab` is injected (a promise the test settles).
+export function buildReport({ src = HTML, openWeatherTab }) {
+  const log = [];
+  const modal = { classList: { add: c => log.push('add:' + c), remove: c => log.push('remove:' + c) } };
+  const fn = new Function('document', 'window', 'openWeatherTab', 'setTimeout', `${slice('printAnalysisReport', src)}; return printAnalysisReport;`)(
+    { querySelector: () => modal }, { addEventListener() {}, print: () => log.push('print') }, openWeatherTab, (f, ms) => { log.push('cap:' + ms); });
+  return { print: fn, log };
+}
 // Attributes of every element in `html` whose class starts with `cls` (first tag only), entities decoded.
 export function attrsOf(html, cls) {
   return elements(html, cls).map(e => { const tag = e.slice(0, e.indexOf('>') + 1), o = {}; let m;
@@ -89,22 +115,33 @@ export function attrsOf(html, cls) {
 // ---- synthetic data in the exact shape build-weather.js publishes ----
 const pad = n => String(n).padStart(2, '0');
 export function addDays(date, n) { return new Date(Date.parse(date + 'T00:00:00Z') + n * 864e5).toISOString().slice(0, 10); }
-// A venue file covering `days` days from `from` (venue-local). `hour(date, h)` returns overrides for that
-// hour ({gusts, feels, …}); the base is a calm hour. `day(date)` returns {code, hi, lo} overrides.
+// Venue-local date + hour of an instant (Intl, the IANA zone) — used only to BUILD fixtures.
+function localParts(ms, tz) {
+  const p = Object.fromEntries(new Intl.DateTimeFormat('en-CA', { timeZone: tz, year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', hourCycle: 'h23' }).formatToParts(new Date(ms)).map(x => [x.type, x.value]));
+  return { date: `${p.year}-${p.month}-${p.day}`, hour: +p.hour % 24 };
+}
+// A venue file covering `days` venue-local days from `from`, in build-weather.js's v2 shape: hourly.time
+// are TRUE UTC instants, one per real hour (a DST day has 23 or 25). `hour(date, h)` returns overrides
+// for the venue-local hour ({gusts, feels, …}); the base is a calm hour. `day(date)` → {code, hi, lo}.
 export function makeFile({ tz = 'Asia/Shanghai', venue = 'Chengdu', fetchedAt, from, days = 10, hour = () => ({}), day = () => ({}) }) {
   const H = { time: [], temp: [], humidity: [], feels: [], rainChance: [], rainMm: [], wind: [], gusts: [] };
   const D = { date: [], code: [], hi: [], lo: [] };
+  const last = addDays(from, days - 1);
   for (let d = 0; d < days; d++) {
-    const date = addDays(from, d);
-    const dd = Object.assign({ code: 3, hi: 26, lo: 18 }, day(date));
+    const date = addDays(from, d), dd = Object.assign({ code: 3, hi: 26, lo: 18 }, day(date));
     D.date.push(date); D.code.push(dd.code); D.hi.push(dd.hi); D.lo.push(dd.lo);
-    for (let h = 0; h < 24; h++) {
-      const v = Object.assign({ temp: 22, humidity: 55, feels: 22, rainChance: 5, rainMm: 0, wind: 8, gusts: 14 }, hour(date, h));
-      H.time.push(`${date}T${pad(h)}:00`);
-      for (const k of ['temp', 'humidity', 'feels', 'rainChance', 'rainMm', 'wind', 'gusts']) H[k].push(v[k] === undefined ? null : v[k]);
-    }
   }
-  return { v: 1, venue, lat: 0, lon: 0, tz, source: 'Open-Meteo', fetchedAt, pastHours: 'forecast', hourly: H, daily: D };
+  // walk real hours from 14 h before `from` 00:00Z (covers every zone) and keep those whose local date is in range
+  for (let ms = Date.parse(from + 'T00:00:00Z') - 14 * 3600e3; ; ms += 3600e3) {
+    const lp = localParts(ms, tz);
+    if (lp.date > last) break;
+    if (lp.date < from) continue;
+    const v = Object.assign({ temp: 22, humidity: 55, feels: 22, rainChance: 5, rainMm: 0, wind: 8, gusts: 14 }, hour(lp.date, lp.hour));
+    H.time.push(new Date(ms).toISOString().replace('.000Z', 'Z'));
+    for (const k of ['temp', 'humidity', 'feels', 'rainChance', 'rainMm', 'wind', 'gusts']) H[k].push(v[k] === undefined ? null : v[k]);
+  }
+  return { v: 2, venue, lat: 0, lon: 0, tz, source: 'Open-Meteo', fetchedAt, pastHours: 'forecast', hourly: H, daily: D };
 }
 
 // ---- reading the rendered string (no DOM needed: the renderer returns markup) ----

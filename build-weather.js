@@ -10,8 +10,19 @@
 //
 // Source: Open-Meteo's free endpoint (founder ruling TEN-304: licence accepted,
 // no key). One call per OUTDOOR venue, never per match. Hourly for 2 past + 8
-// forecast days, requested in the venue's own zone (timezone=auto), so every
-// hour and every daily high/low is venue-local. Past hours are ARCHIVED FORECAST
+// forecast days, requested with timezone=auto so every DAILY high/low/code is
+// the venue's local day.
+//
+// ⚠️ DST: with timezone=auto Open-Meteo labels EVERY hour with the UTC offset in
+// force at the START of the range (utc_offset_seconds) and never switches — e.g.
+// Sydney 3–6 Oct 2026 comes back as 72 rows at a fixed +10, including a 02:00 on
+// 4 Oct that does not exist. So the hourly labels are converted here to TRUE UTC
+// instants (label − utc_offset_seconds, ISO with Z) and the page buckets them to
+// venue-local days/hours with the IANA zone. timezone=GMT (or unixtime) was not
+// used for the whole request because the daily arrays would then be UTC days (or
+// fixed-offset midnights) — daily stays on timezone=auto, which is the venue-local
+// day at that fixed offset: after a DST change its edges are 1 h off, the hi/lo of
+// a day are not materially affected. Past hours are ARCHIVED FORECAST
 // values, not observations (Open-Meteo docs, `past_days`): `pastHours:'forecast'`.
 //
 // Refresh cadence: the pipeline runs every ~10 min, but a venue is re-fetched only
@@ -73,14 +84,18 @@ function forecastUrl(lat, lon) {
 // Open-Meteo response → our file. A missing array or value stays null (the tab dashes it).
 function toFile(key, lat, lon, data, fetchedAt) {
   const h = data && data.hourly, d = data && data.daily;
-  if (!h || !Array.isArray(h.time) || !h.time.length || !data.timezone) return null;
+  const off = data && data.utc_offset_seconds;
+  if (!h || !Array.isArray(h.time) || !h.time.length || !data.timezone || typeof off !== 'number' || !Number.isFinite(off)) return null;
+  const instant = label => { const t = Date.parse(String(label) + ':00Z'); return Number.isFinite(t) ? new Date(t - off * 1000).toISOString().replace('.000Z', 'Z') : null; };
+  const times = h.time.map(instant);
+  if (times.some(t => t == null)) return null;
   const col = (obj, k, n) => Array.from({ length: n }, (_, i) =>
     (obj && Array.isArray(obj[k]) && typeof obj[k][i] === 'number' && Number.isFinite(obj[k][i])) ? obj[k][i] : null);
   const n = h.time.length, nd = d && Array.isArray(d.time) ? d.time.length : 0;
   return {
-    v: 1, venue: key, lat, lon, tz: data.timezone, source: SOURCE, fetchedAt, pastHours: 'forecast',
+    v: 2, venue: key, lat, lon, tz: data.timezone, source: SOURCE, fetchedAt, pastHours: 'forecast',
     hourly: {
-      time: h.time.slice(),                                  // venue-local 'YYYY-MM-DDTHH:MM'
+      time: times,                                           // TRUE UTC instants 'YYYY-MM-DDTHH:MM:SSZ' (see DST note above)
       temp: col(h, 'temperature_2m', n), humidity: col(h, 'relative_humidity_2m', n),
       feels: col(h, 'apparent_temperature', n), rainChance: col(h, 'precipitation_probability', n),
       rainMm: col(h, 'precipitation', n), wind: col(h, 'wind_speed_10m', n), gusts: col(h, 'wind_gusts_10m', n),
@@ -107,7 +122,7 @@ async function build({ outDir = '.', matchesPath = 'matches.json', fetchImpl = f
     let file = null, prev = null;
     try {                                                 // the last good copy, as published
       const p = await getJson(SITE + v.file + '?t=' + Date.now(), fetchImpl);
-      if (p && p.v === 1 && p.hourly && p.fetchedAt && Number.isFinite(Date.parse(p.fetchedAt))) prev = p;
+      if (p && p.v === 2 && p.hourly && p.fetchedAt && Number.isFinite(Date.parse(p.fetchedAt))) prev = p;
     } catch (e) { /* none published yet, or the site is unreachable */ }
     const prevAgeH = prev ? (now().getTime() - Date.parse(prev.fetchedAt)) / 3600e3 : Infinity;
     if (prev && prevAgeH >= 0 && prevAgeH < REFRESH_HOURS) {

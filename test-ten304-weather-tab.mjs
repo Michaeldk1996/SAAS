@@ -5,7 +5,10 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { build, buildTips, attrsOf, makeFile, elements, text, HTML } from './tools/ten304-weather-harness.mjs';
+import { createRequire } from 'node:module';
+import { build, buildTips, buildCache, buildReport, attrsOf, makeFile, elements, text, HTML } from './tools/ten304-weather-harness.mjs';
+// build-weather.js itself (the mutant runner points TEN304_BW at a mutated copy)
+const BW = createRequire(import.meta.url)(process.env.TEN304_BW || './build-weather.js');
 
 const NOW = Date.parse('2026-09-27T04:00:00Z');                       // 12:00 in Chengdu
 const FETCHED = '2026-09-27T02:00:00Z';                               // 2 h old
@@ -191,4 +194,96 @@ test('Weather tooltips use the ONE shared tooltip: data-aotip + tabindex, 250 ms
       T.fire(type === 'focusin' ? 'focusout' : 'mouseout', el); assert.equal(T.tip(), null, 'hidden on leave / blur');
     }
   }
+});
+
+// ── review fold-in (TEN-304 Wave B) ─────────────────────────────────────────────────────────────────
+// Mutation: build-weather.js keeps Open-Meteo's fixed-offset labels as if they were true instants
+// (`t - off * 1000` → `t`), or the page buckets hours in UTC instead of the venue's IANA zone.
+test('DST: a Sydney match after the 4 Oct 2026 change reads the RIGHT hour (real toFile → page renderer)', () => {
+  // Open-Meteo, timezone=auto, Sydney 3–8 Oct 2026: every label at the FIXED +10 of the range start.
+  const time = []; for (let h = 0; h < 6 * 24; h++) time.push(`2026-10-0${3 + Math.floor(h / 24)}T${String(h % 24).padStart(2, '0')}:00`);
+  const base = (v) => time.map(() => v);
+  const gusts = base(12), feels = base(20);
+  gusts[time.indexOf('2026-10-05T15:00')] = 41;     // label 15:00 (+10) = 05:00Z = 16:00 AEDT, the match hour
+  feels[time.indexOf('2026-10-05T09:00')] = 33;     // label 09:00 (+10) = 23:00Z 4 Oct = 10:00 AEDT 5 Oct: IN the window
+  feels[time.indexOf('2026-10-06T09:00')] = 34;     // label 09:00 (+10) 6 Oct = 10:00 AEDT 6 Oct: in 6 Oct's window
+  const f = BW.toFile('Sydney', -33.9, 151.2, { timezone: 'Australia/Sydney', utc_offset_seconds: 36000,
+    hourly: { time, temperature_2m: base(18), relative_humidity_2m: base(50), apparent_temperature: feels, precipitation_probability: base(5),
+      precipitation: base(0), wind_speed_10m: base(8), wind_gusts_10m: gusts },
+    daily: { time: ['2026-10-03', '2026-10-04', '2026-10-05', '2026-10-06', '2026-10-07', '2026-10-08'], weather_code: base(3).slice(0, 6),
+      temperature_2m_max: base(22).slice(0, 6), temperature_2m_min: base(14).slice(0, 6) } }, '2026-10-05T00:00:00Z');
+  // 16:00 AEDT 5 Oct = 05:00Z = 07:00 Berlin (CEST), the api-tennis wall clock
+  const m = { tour: 'ATP Sydney', date: '2026-10-05', time: '07:00', surface: 'Hard' };
+  const html = build({ viewerTz: 'UTC' }).buildWeatherSection(m, { key: 'Sydney', indoor: false, file: 'weather/sydney.json' }, f, Date.parse('2026-10-05T01:00:00Z'));
+  assert.equal(text(elements(html, 'wx-badge')[0]), 'MATCH · 16:00');
+  const lead = elements(html, 'wx-lead');
+  assert.equal(lead.length, 1, 'the 41 km/h gust at the true match hour leads');
+  assert.match(lead[0], /data-factor="wind"/); assert.match(text(lead[0]), /41/);
+  const d5 = elements(html, 'wx-day').find(x => /data-date="2026-10-05"/.test(x));
+  assert.equal(text(elements(d5, 'wx-reason')[0]).replace(/\+1$/, ''), 'Gusts 41 km/h');
+  assert.match(d5, /Feels like 33°/, '10:00 AEDT is inside the playing window');
+});
+
+// Mutation: wxFileDue never says due for a cached file; the matches reload no longer marks the index stale.
+test('session cache: a venue file ≥ 3 h old is fetched again on open; a matches reload re-reads the index and the open tab', async () => {
+  const H = 3600e3, T0 = Date.parse('2026-09-27T04:00:00Z');
+  let fileAt = T0 - 2 * H, tours = { 'ATP Chengdu': ENTRY };
+  const server = url => url === 'weather-index.json' ? { v: 1, tours } : url === 'weather/chengdu.json' ? file(() => ({}), { fetchedAt: new Date(fileAt).toISOString() }) : null;
+  const C = buildCache({ server });
+  C.clock.now = T0; C.api.setMatch(M);
+  await C.api.openWeatherTab();
+  assert.deepEqual(C.calls, ['./weather-index.json', './weather/chengdu.json']);
+  C.clock.now = T0 + 0.5 * H; await C.api.openWeatherTab();
+  assert.equal(C.calls.length, 2, 'a 2.5 h old copy is not refetched');
+  fileAt = T0 + 0.9 * H;                                          // the pipeline published a fresh one
+  C.clock.now = T0 + 1.1 * H; await C.api.openWeatherTab();       // cached copy now 3.1 h old
+  assert.deepEqual(C.calls.slice(2), ['./weather/chengdu.json']);
+  assert.equal(C.renders.pop().fetchedAt, new Date(fileAt).toISOString(), 'the fresh file is rendered');
+  // a refetch that fails keeps the last good copy
+  const C2 = buildCache({ server: (u, now) => (now > T0 + H && u !== 'weather-index.json') ? null : server(u) });
+  C2.clock.now = T0; C2.api.setMatch(M); await C2.api.openWeatherTab();
+  C2.clock.now = T0 + 5 * H; await C2.api.openWeatherTab();
+  assert.equal(C2.calls.length, 3); assert.ok(C2.renders.pop().fetchedAt, 'last good copy kept, never blank');
+  C2.clock.now = T0 + 5 * H + 60e3; await C2.api.openWeatherTab();
+  assert.equal(C2.calls.length, 3, 'no refetch storm: at most once per refetchGapMin');
+  // matches reload: the index is re-read; an OPEN Weather tab re-renders; a new tournament appears
+  const M2 = Object.assign({}, M, { tour: 'ATP Hangzhou' });
+  C.api.setMatch(M2); await C.api.openWeatherTab();
+  assert.equal(C.renders.pop().entry, null, 'not in the index yet');
+  tours = Object.assign({}, tours, { 'ATP Hangzhou': { key: 'Hangzhou', indoor: true, file: null } });
+  C.dom.tabActive = true; C.dom.modalOpen = true;
+  const n = C.calls.length; C.api.wxOnMatchesReload(); await new Promise(r => setTimeout(r, 0)); await new Promise(r => setTimeout(r, 0));
+  assert.deepEqual(C.calls.slice(n), ['./weather-index.json']);
+  assert.deepEqual(C.renders.pop().entry, { key: 'Hangzhou', indoor: true, file: null });
+});
+
+// Mutation: printAnalysisReport prints without waiting for the Weather load.
+test('Download report waits for the Weather section before printing (tab never opened)', async () => {
+  let done; const wx = new Promise(r => { done = r; });
+  const R = buildReport({ openWeatherTab: () => wx });
+  const p = R.print();
+  await new Promise(r => setTimeout(r, 0));
+  assert.ok(!R.log.includes('print'), 'not printed while the Weather files load');
+  done(); await p;
+  assert.deepEqual(R.log.filter(x => x !== 'cap:8000'), ['add:printing', 'print']);
+});
+
+// Mutation: the pace shift reads an UNAVAILABLE rain as calm (the old `on('rain') ? … : on('heat') ? 'quicker'`).
+test('pace: "PLAYS QUICKER" needs heat hot AND rain calm — an UNAVAILABLE rain gives no status and no copy', () => {
+  const pace = f => elements(render(f), 'wx-tile').find(t => /data-factor="pace"/.test(t));
+  const noRain = pace(file((d, h) => d === '2026-09-27' && h === 16 ? { feels: 32, rainChance: null } : {}));
+  assert.equal(text(elements(noRain, 'wx-sevl')[0]), ''); assert.equal(text(elements(noRain, 'wx-effect')[0]), '');
+  assert.equal(text(elements(noRain, 'wx-val')[0]), '1.17', 'the court speed itself still shows');
+  const calmRain = pace(file((d, h) => d === '2026-09-27' && h === 16 ? { feels: 32, rainChance: 5 } : {}));
+  assert.equal(text(elements(calmRain, 'wx-sevl')[0]), 'PLAYS QUICKER');   // control
+});
+
+// Mutation: drop `|| uncovered` (an old match renders a dashed strip with an "ok" freshness line).
+test('a match day outside the forecast file → the unavailable state, with the real last-update time', () => {
+  const old = Object.assign({}, M, { date: '2026-09-10' });
+  const html = render(file(() => ({})), {}, old);
+  assert.equal(elements(html, 'wx-banner').length, 1);
+  assert.match(text(elements(html, 'wx-fresh')[0]), /^Forecast unavailable · last successful update Sep 27, 10:00 · Open-Meteo$/);
+  assert.equal(text(elements(html, 'wx-verdict')[0]), 'Match-time forecast unavailable.');
+  assert.equal(elements(render(file(() => ({}))), 'wx-banner').length, 0, 'control: an in-range match is available');
 });

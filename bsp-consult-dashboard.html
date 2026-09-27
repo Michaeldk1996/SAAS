@@ -6950,6 +6950,7 @@ async function loadMatches(){
     })();
     matchesLoadedOnce = true;
     dataLoadedAt = new Date();
+    if (typeof wxOnMatchesReload === 'function') wxOnMatchesReload();   // TEN-304: Weather index + open tab re-read
     document.getElementById('dataStatus').classList.remove('error');
     // TEN-225 item 2: data age, not page load. See mxHeaderStatusHtml().
     document.getElementById('dataStatus').innerHTML = mxHeaderStatusHtml();
@@ -12782,6 +12783,8 @@ const WX_CONFIG = {
   staleHours: { amber: 6, unavailable: 24 },           // forecast age: ≥6 h amber freshness line, >24 h unavailable
   stripDays: 7,                                        // strip = 7 days from venue-local today, always incl. match day
   lowConfFromOffset: 3,                                // strip days ≥3 days after today dim + LOW CONFIDENCE (spec: i >= 3)
+  refetchHours: 3,                                     // a cached venue file this old (its fetchedAt) is fetched again on open
+  refetchGapMin: 5,                                    // …but never more often than this per file (a server that has nothing newer)
 };
 // Every word on the tab — the founder edits wording here, no code change. {x} = filled at render.
 const WX_COPY = {
@@ -12866,29 +12869,38 @@ const WX_C = {
   hw1: '0.33px',                   // spec 1px borders → 12a hairline
 };
 
-// Lazy data: the index once per session (a failed read is not cached, so the next open retries),
-// each venue file once. Same fetch idiom as the other lazy shards (cache:'no-cache').
-let _wxIndex = null, _wxIndexPromise = null;
-const _wxFiles = {}, _wxFilePromises = {};
+// Lazy data (same fetch idiom as the other lazy shards, cache:'no-cache'). The index is fetched on first
+// open and again after every matches.json reload (the board can gain a tournament); a venue file is
+// fetched again on open once its fetchedAt is WX_CONFIG.refetchHours old (the pipeline re-fetches every
+// 3 h), at most once per refetchGapMin. A failed refetch keeps the last good copy — never a blank tab.
+let _wxIndex = null, _wxIndexPromise = null, _wxIndexStale = false;
+const _wxFiles = {}, _wxFilePromises = {}, _wxFileTried = {};
 let _aWxMatch = null, _aWx = { m: null };
 function loadWeatherIndex(){
-  if (_wxIndex) return Promise.resolve(_wxIndex);
+  if (_wxIndex && !_wxIndexStale) return Promise.resolve(_wxIndex);
   if (_wxIndexPromise) return _wxIndexPromise;
   _wxIndexPromise = fetch('./weather-index.json', { cache: 'no-cache' })
     .then(r => r.ok ? r.json() : null)
-    .then(d => { if (!d || !d.tours) throw new Error('bad weather index'); _wxIndex = d; return d; })
-    .catch(err => { console.warn('weather-index.json load failed:', err.message); _wxIndexPromise = null; return { tours: {} }; });
+    .then(d => { if (!d || !d.tours) throw new Error('bad weather index'); _wxIndex = d; _wxIndexStale = false; _wxIndexPromise = null; return d; })
+    .catch(err => { console.warn('weather-index.json load failed:', err.message); _wxIndexPromise = null; return _wxIndex || { tours: {} }; });
   return _wxIndexPromise;
+}
+function wxFileDue(f, nowMs){
+  const d = _wxFiles[f];
+  if (!d) return true;
+  const age = nowMs - Date.parse(d.fetchedAt || '');
+  return !(age < WX_CONFIG.refetchHours * 3600e3) && !(nowMs - (_wxFileTried[f] || 0) < WX_CONFIG.refetchGapMin * 60e3);
 }
 function loadWeatherFile(file){
   const f = String(file || '');
   if (!/^weather\/[a-z0-9-]+\.json$/.test(f)) return Promise.resolve(null);
-  if (f in _wxFiles) return Promise.resolve(_wxFiles[f]);
+  if (!wxFileDue(f, Date.now())) return Promise.resolve(_wxFiles[f]);
   if (_wxFilePromises[f]) return _wxFilePromises[f];
+  _wxFileTried[f] = Date.now();
   _wxFilePromises[f] = fetch('./' + f, { cache: 'no-cache' })
     .then(r => r.ok ? r.json() : null)
-    .then(d => { if (!d || d.v !== 1) throw new Error('bad weather file'); _wxFiles[f] = d; return d; })
-    .catch(err => { console.warn(f + ' load failed:', err.message); delete _wxFilePromises[f]; return null; });
+    .then(d => { if (!d || d.v !== 2) throw new Error('bad weather file'); _wxFiles[f] = d; delete _wxFilePromises[f]; return d; })
+    .catch(err => { console.warn(f + ' load failed:', err.message); delete _wxFilePromises[f]; return _wxFiles[f] || null; });
   return _wxFilePromises[f];
 }
 function ensureWeather(m){
@@ -12898,13 +12910,21 @@ function ensureWeather(m){
     return loadWeatherFile(entry.file).then(file => ({ entry, file }));
   });
 }
+// matches.json reloaded (every few minutes): the index may have changed, and an open Weather tab is
+// re-read (and re-aged) so it never sits amber / unavailable while a fresh file is on the server.
+function wxOnMatchesReload(){
+  _wxIndexStale = true;
+  const sec = document.getElementById('aSectionWeather'), modal = document.getElementById('analysisModal');
+  if (_aWxMatch && sec && sec.classList.contains('active') && modal && modal.classList.contains('open')) openWeatherTab();
+}
 // Called when the Weather tab opens. Never blocks another tab: the section paints a loading line and
 // repaints when the files land (guarded, so a fast reopen of another match is never overwritten).
+// Returns a promise that settles once the section shows this match's data (Download report awaits it).
 function openWeatherTab(){
   const m = _aWxMatch;
-  if (!m) return;
-  if (_aWx.m === m && _aWx.ready) { renderWeatherSection(); return; }
-  ensureWeather(m).then(r => {
+  if (!m) return Promise.resolve();
+  if (_aWx.m === m && _aWx.ready) renderWeatherSection();       // paint the cached copy at once…
+  return ensureWeather(m).then(r => {                             // …then any refetched one
     if (_aWxMatch !== m) return;
     _aWx = { m, entry: r.entry, file: r.file, ready: true };
     renderWeatherSection();
@@ -12980,9 +13000,16 @@ function wxModel(m, entry, file, nowMs, forced){
   const H = file && file.hourly;
   const tzOk = !!(file && file.tz && wxLocalParts(nowMs, file.tz));
   const valid = !!(tzOk && H && Array.isArray(H.time) && H.time.length);
+  // hourly rows: TRUE instants (build-weather.js converts Open-Meteo's fixed-offset labels), bucketed
+  // to venue-local date + hour with the IANA zone, so a DST change inside the file is exact.
+  const rowsAt = valid ? H.time.map(t => { const ms = Date.parse(t); const p = wxLocalParts(ms, file.tz); return p ? { ms, date: p.date, hour: p.hour } : null; }) : [];
   const fetchedMs = file ? Date.parse(file.fetchedAt || '') : NaN;
   const ageH = Number.isFinite(fetchedMs) ? (nowMs - fetchedMs) / 3600e3 : NaN;
-  const unavail = forced === 'unavailable' || !entry || !valid || !(ageH <= CF.staleHours.unavailable);
+  const startMs = cardStartMs(m);
+  // A match day the file does not cover (an old match, or one beyond the forecast) has no forecast.
+  const coverDate = (() => { const p = wxLocalParts(startMs, valid ? file.tz : undefined); return p ? p.date : (/^\d{4}-\d{2}-\d{2}$/.test((m && m.date) || '') ? m.date : null); })();
+  const uncovered = valid && !!coverDate && !rowsAt.some(r => r && r.date === coverDate);
+  const unavail = forced === 'unavailable' || !entry || !valid || !(ageH <= CF.staleHours.unavailable) || uncovered;
   const zone = tzOk ? file.tz : (typeof newsTz === 'function' ? newsTz() : undefined);
   const source = (file && file.source) || 'Open-Meteo';
   const fresh = unavail
@@ -12991,7 +13018,6 @@ function wxModel(m, entry, file, nowMs, forced){
 
   const nowP = wxLocalParts(nowMs, zone) || wxLocalParts(nowMs, 'UTC');
   const today = nowP.date;
-  const startMs = cardStartMs(m);
   const mp = wxLocalParts(startMs, zone);                  // venue-local start (same instant as the header)
   const matchDate = mp ? mp.date : (/^\d{4}-\d{2}-\d{2}$/.test((m && m.date) || '') ? m.date : null);
   const N = CF.stripDays;
@@ -13002,7 +13028,7 @@ function wxModel(m, entry, file, nowMs, forced){
 
   // hourly rows by venue-local date
   const byDate = {};
-  if (valid) H.time.forEach((t, i) => { const d = String(t).slice(0, 10); (byDate[d] = byDate[d] || []).push([i, +String(t).slice(11, 13)]); });
+  rowsAt.forEach((r, i) => { if (r) (byDate[r.date] = byDate[r.date] || []).push([i, r.hour]); });
   const col = k => (valid && Array.isArray(H[k])) ? H[k] : [];
   const val = (k, i) => wxNum(col(k)[i]);
   // Worst value in the playing window; null when the window has no hours or ANY hour is missing
@@ -13035,9 +13061,8 @@ function wxModel(m, entry, file, nowMs, forced){
     return Object.assign(base, { unavail: false, icon: wxIconKind(dval('code', j)), hi: rnd(dval('hi', j)), lo: rnd(dval('lo', j)), flags, reason, agg });
   });
 
-  // at match time: the venue-local hour containing the start instant
-  const hk = mp ? mp.date + 'T' + String(mp.hour).padStart(2, '0') + ':00' : null;
-  const hi = (!unavail && valid && hk) ? H.time.indexOf(hk) : -1;
+  // at match time: the hourly row whose hour contains the start instant
+  const hi = (!unavail && mp) ? rowsAt.findIndex(r => r && r.ms <= startMs && startMs < r.ms + 3600e3) : -1;
   const at = k => hi >= 0 ? val(k, hi) : null;
   const mt = { gusts: rnd(at('gusts')), wind: rnd(at('wind')), feels: rnd(at('feels')), temp: rnd(at('temp')), hum: rnd(at('humidity')),
     rain: rnd(at('rainChance')), mm: at('rainMm') };
@@ -13060,16 +13085,19 @@ function wxModel(m, entry, file, nowMs, forced){
 
   // Conditions / pace — base court speed from the Tournament tab's data (m.courtSpeed, read only).
   const cs = (m && m.courtSpeed) || {}, spd = wxNum(cs.abstractSpeed), spdLabel = cs.category || '';
-  const on = id => { const x = F.find(f => f.id === id); return !!x && (x.sev === 'r' || x.sev === 'a'); };
-  const shift = on('rain') ? 'slower' : on('heat') ? 'quicker' : 'usual';
+  const sevOf = id => { const x = F.find(f => f.id === id); return x ? x.sev : 'u'; };
+  const on = id => sevOf(id) === 'r' || sevOf(id) === 'a';
+  // spec: slower = rain amber/red; quicker = heat amber/red AND rain calm; as usual = both calm. Calm means
+  // AVAILABLE and below watch — an UNAVAILABLE rain (or heat) leaves the pace unknown: no status, no copy.
+  const shift = on('rain') ? 'slower' : sevOf('rain') !== 'n' ? null : on('heat') ? 'quicker' : sevOf('heat') === 'n' ? 'usual' : null;
   const P = CP.pace, speedTxt = spd == null ? null : spd.toFixed(2);
-  const paceEffect = (unavail || speedTxt == null) ? ''
+  const paceEffect = (unavail || speedTxt == null || shift == null) ? ''
     : shift === 'usual' ? wxFmt(P.asUsual, { speed: speedTxt, label: spdLabel })
     : wxFmt(P.shifted, { speed: speedTxt, label: spdLabel, cause: shift === 'slower' ? P.causeSlower : P.causeQuicker, dir: shift === 'slower' ? P.dirSlower : P.dirQuicker })
       + (on('wind') ? P.windAdds : '');
   const tourName = String((m && m.tour) || '').replace(/^ATP\s+/, '') || '—';
   const pace = { id: 'pace', name: CP.names.pace, value: (unavail || speedTxt == null) ? '—' : speedTxt,
-    sevL: speedTxt == null ? '' : P[shift], detail: wxFmt(P.detail, { tour: tourName, surface: String((m && m.surface) || '').toLowerCase() || '—' }), effect: paceEffect };
+    sevL: (speedTxt == null || shift == null) ? '' : P[shift], detail: wxFmt(P.detail, { tour: tourName, surface: String((m && m.surface) || '').toLowerCase() || '—' }), effect: paceEffect };
 
   let verdict;
   if (unavail) verdict = CP.verdictUnavailable;
@@ -18810,12 +18838,17 @@ document.getElementById('aTabs').addEventListener('click', e => {
 // analysis, then restores the normal single-tab view once printing is done.
 // A real custom PDF export (formatted, non-browser-print) is a bigger build —
 // this is the reasonable v1 scope.
+// TEN-304: the Weather section loads lazily (index + venue file), so the report first loads it (capped
+// at 8 s) and prints the real Weather section even when the tab was never opened.
 function printAnalysisReport(){
   const modal = document.querySelector('.modal-analysis');
-  modal.classList.add('printing');
-  const cleanup = () => modal.classList.remove('printing');
-  window.addEventListener('afterprint', cleanup, { once: true });
-  window.print();
+  const wx = typeof openWeatherTab === 'function' ? openWeatherTab() : null;
+  return Promise.race([Promise.resolve(wx), new Promise(r => setTimeout(r, 8000))]).catch(() => {}).then(() => {
+    modal.classList.add('printing');
+    const cleanup = () => modal.classList.remove('printing');
+    window.addEventListener('afterprint', cleanup, { once: true });
+    window.print();
+  });
 }
 
 function closeAnalysisModal(){ document.getElementById('analysisModal').classList.remove('open'); }
