@@ -1,18 +1,74 @@
 [
 {
-"name": "cols",
-"sql": "select table_schema, table_name, string_agg(column_name||':'||data_type, ', ' order by ordinal_position) cols\n from information_schema.columns\n where (table_schema='public' and (table_name like 'kibl%' or table_name like 'ten216%' or table_name like 'oddspapi%' or table_name like 'odds%'))\n    or table_schema like 'ten287%' or table_schema like 'ten280%' or table_schema like 'kibl%' or table_schema like 'ten225%'\n group by 1,2 order by 1,2"
+"name": "now",
+"sql": "select now() now"
 },
 {
-"name": "cron",
-"sql": "select jobid, jobname, schedule, active, left(command,200) cmd from cron.job order by jobid"
+"name": "kibl_sweeps",
+"sql": "select sweep_id, started_at, finished_at, ok, rows_seen, rows_new, api_calls, left(note,120) note from public.kibl_sweeps order by started_at"
 },
 {
-"name": "cron_hist_span",
-"sql": "select j.jobname, min(d.start_time) first, max(d.start_time) last, count(*) n from cron.job_run_details d join cron.job j using(jobid) group by 1 order by 1"
+"name": "kibl_ping",
+"sql": "select d.start_time, d.status, left(d.return_message,80) msg from cron.job_run_details d join cron.job j using(jobid) where j.jobname='ten232-kibl-sweep-ping' order by d.start_time"
 },
 {
-"name": "sizes",
-"sql": "select n.nspname, c.relname, c.reltuples::bigint est from pg_class c join pg_namespace n on n.oid=c.relnamespace where c.relkind='r' and ((n.nspname='public' and (c.relname like 'kibl%' or c.relname like 'ten216%' or c.relname like 'oddspapi%')) or n.nspname like 'ten287%' or n.nspname like 'kibl%' or n.nspname like 'ten225%') order by 1,2"
+"name": "kibl_now_gaps",
+"sql": "select * from public.kibl_now_gaps order by gap_from"
+},
+{
+"name": "kibl_now_hb",
+"sql": "select card_key, side_key, kind, written_at, note from public.kibl_now_price where kind='heartbeat'"
+},
+{
+"name": "kibl_stream_span",
+"sql": "select min(observed_at) first, max(observed_at) last, count(*) n from public.kibl_line_observations where sweep_id='stream'"
+},
+{
+"name": "kibl_stream_gaps",
+"sql": "select a, b, extract(epoch from b-a)/60 mins from (select observed_at b, lag(observed_at) over (order by observed_at) a from public.kibl_line_observations where sweep_id='stream') x where b-a > interval '15 minutes' order by a"
+},
+{
+"name": "kibl_lastseen_171",
+"sql": "select date_trunc('hour', last_seen_at) h, count(*) from public.kibl_line_observations where feed_source_id=171 and last_seen_at > now()-interval '73 hours' group by 1 order by 1"
+},
+{
+"name": "at_polls",
+"sql": "select poll_id, observed_at, ok, matches, quotes, rows_written from public.ten216_test_polls order by observed_at"
+},
+{
+"name": "at_change_polls",
+"sql": "select poll_id, min(observed_at) t0, max(observed_at) t1, count(*) n from public.ten216_test_odds_changes group by poll_id order by 2"
+},
+{
+"name": "at_watch_log",
+"sql": "select at, condition, kind, channel, left(message,200) message, delivered from public.ten216_watch_log order by at"
+},
+{
+"name": "at_watch_alerts",
+"sql": "select * from public.ten216_watch_alerts"
+},
+{
+"name": "rec_kinds",
+"sql": "select kind, book, status_code, (note is not null) has_note, count(*), min(fired_at) first, max(fired_at) last from ten287_rec.requests group by 1,2,3,4 order by 1,2,3"
+},
+{
+"name": "rec_updated",
+"sql": "select book, fired_at, processed_at, status_code, left(note,60) note from ten287_rec.requests where kind='updated' order by fired_at"
+},
+{
+"name": "rec_sweeps",
+"sql": "select kind, fired_at, status_code from ten287_rec.requests where kind in ('events','multi') order by fired_at"
+},
+{
+"name": "rec_cron",
+"sql": "select d.start_time, d.status, left(d.return_message,80) msg from cron.job_run_details d join cron.job j using(jobid) where j.jobname='ten287-recorder' order by d.start_time"
+},
+{
+"name": "rec_ticks_span",
+"sql": "select book, min(seen_at), max(seen_at), count(*) from ten287_rec.ticks group by 1"
+},
+{
+"name": "op_ledger",
+"sql": "select * from public.oddspapi_budget_ledger order by created_at"
 }
 ]
