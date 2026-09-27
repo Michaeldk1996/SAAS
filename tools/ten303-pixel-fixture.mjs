@@ -5,8 +5,8 @@
 //
 // It feeds the SHIPPED renderer (sliced out of bsp-consult-dashboard.html, the same functions the tab
 // runs) the design's own demo match and seed — Sinner v Alcaraz, the 7 books and 9 snapshots that
-// `Odds Tab.dc.html`'s oddsFor() generates — inside the extract's wrapper card, with the spec's SOURCE
-// palette (before the 12a mapping) so the geometry can be diffed against 01-odds-tab.png / 02-odds-tab.png.
+// `Odds Tab.dc.html`'s oddsFor() generates — inside the extract's wrapper card, with the SHIPPED colour tokens,
+// so geometry AND colour can be diffed against the extract / 01-odds-tab.png / 02-odds-tab.png.
 // Writes tab.html (the tab) and popup.html (the Pinnacle pop-up open).
 import fs from 'node:fs';
 import path from 'node:path';
@@ -37,17 +37,8 @@ demo.books.forEach(bk => {
 const m = { id: 'upcoming-0', p1: AN.aName, p2: AN.bName, startTs: iso(TS[TS.length - 1] + 3600e3),
   oddsMovement: { market: 'Match Winner', books: {}, chart } };
 const BOOKS = JSON.stringify(demo.books.map(bk => ({ name: bk.name, group: bk.cls, sources: [bk.name] })));
-// The spec's source palette (spec § Colour tokens + the per-element values), before the 12a mapping.
-const SPEC_C = JSON.stringify({ a: '#6aaeff', b: '#e7e9ee', up: '#3dd68c', dn: '#e0616f', text: '#e7e9ee', sub: '#8b96b5', label: '#5b6880',
-  label3: '#4b5672', caps: '#aab3c8', blue: '#5b9bff', sharp: '#82b4ff', soft: '#8b96b5', row: '#0e1019', pop: '#131623', segTrack: '#0a0d14',
-  steamInk: '#06070a', segOnBg: 'rgba(91,155,255,0.16)', segOnBd: 'rgba(91,155,255,0.22)', segTrackBd: 'rgba(255,255,255,0.09)',
-  tileBd: 'rgba(255,255,255,0.1)', tileOnBg: 'rgba(91,155,255,0.08)', tileOnBd: 'rgba(91,155,255,0.45)', booksBd: 'rgba(91,155,255,0.35)',
-  hdrBd: 'rgba(255,255,255,0.06)', nameRule: 'rgba(255,255,255,0.08)', groupRule: 'rgba(255,255,255,0.06)', rowBd: 'rgba(255,255,255,0.05)',
-  popBd: 'rgba(255,255,255,0.07)', panelBd: 'rgba(255,255,255,0.05)', closeBd: 'rgba(255,255,255,0.1)', tabBd: 'rgba(255,255,255,0.1)',
-  tabOnBg: 'rgba(91,155,255,0.14)', tabOnBd: 'rgba(91,155,255,0.45)', tipBd: 'rgba(255,255,255,0.09)', backdrop: 'rgba(4,5,9,0.62)',
-  popShadow: '0 30px 80px rgba(0,0,0,0.55)', tipShadow: '0 12px 32px rgba(0,0,0,0.5)', grid: 'rgba(255,255,255,0.07)',
-  axis: 'rgba(255,255,255,0.12)', hw1: '1px', hw125: '1.25px' });
-const over = { AODDS_BOOKS: BOOKS, AODDS_C: SPEC_C };
+// Colours: the SHIPPED AODDS_C (the spec's values verbatim since the TEN-303 follow-up), so the diff proves them.
+const over = { AODDS_BOOKS: BOOKS };
 const consts = CONSTS.map(n => (over[n] ? `const ${n} = ${over[n]};` : constSrc(n, html))).join('\n');
 const fns = FNS.map(n => slice(n, html)).join('\n');
 

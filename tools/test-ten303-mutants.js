@@ -28,6 +28,16 @@ const MUTANTS = [
   ['ruling fdf4bb3f: the STEAM minimum move per book dropped', 'return f(nw, op) && bigMove(nw, op); }).length;', 'return f(nw, op); }).length;'],
   ['founder pick 09-27: the shipped minimum move back to 3%', 'const AODDS_STEAM = { minBooks: 3, minShareOfN: 0, minMovePct: 5 };', 'const AODDS_STEAM = { minBooks: 3, minShareOfN: 0, minMovePct: 3 };'],
   ['founder pick 09-27: STEAM read on raw feed prices, not the displayed ones', "const nw = num(r[x + 'QNow']), op = num(r[x + 'QOpen']);", "const nw = +r[x + 'QNow'], op = +r[x + 'QOpen'];"],
+  ['follow-up 1a: the flat run is interpolated (a slope to the next price)', "run.forEach((q, k) => { d += ' H' + f(X(q[1])); if (k + 1 < run.length) d += ' V' + f(Y(run[k + 1][2])); });",
+    "run.forEach((q, k) => { if (k + 1 < run.length) d += ' L' + f(X(run[k + 1][0])) + ',' + f(Y(run[k + 1][2])); else d += ' H' + f(X(q[1])); });"],
+  ['follow-up 1a: the line breaks between prices (a gap)', "run.forEach((q, k) => { d += ' H' + f(X(q[1])); if (k + 1 < run.length) d += ' V' + f(Y(run[k + 1][2])); });",
+    "run.forEach((q, k) => { d += ' H' + f(X(q[1])); if (k + 1 < run.length) d += ' M' + f(X(run[k + 1][0])) + ',' + f(Y(run[k + 1][2])); });"],
+  ['follow-up 1a: the raw (unrounded) price is plotted', 'const v = +aOddsFmt(p[1]); if (!Number.isFinite(v)) return;', 'const v = p[1]; if (!Number.isFinite(v)) return;'],
+  ['follow-up 1b: the missing-price mark is an en dash', "const AODDS_DASH = '\\u2014';", "const AODDS_DASH = '\\u2013';"],
+  ['follow-up 1c: ALSO keeps the source key', 'const feed = (r.altMeta && r.altMeta.source) || aOddsSrcTitle(r.alt);', 'const feed = aOddsSrcTitle(r.alt);'],
+  ['follow-up 2: the Odds-tab text re-toned by 12a', "  text: '#E7E9EE',           // Text", "  text: '#EBF1F2',           // Text"],
+  ['follow-up 2: the nav-selected bg back to the 12a navy', '.modal-analysis .asidenav-item.active{ background:#171D2F;', '.modal-analysis .asidenav-item.active{ background:#0B1C4E;'],
+  ['follow-up 2: the modal surface back to the 12a pop-up', '.modal-analysis{ background:var(--page);', '.modal-analysis{ background:var(--popup);'],
   ['§6.5 the shipped shape is a curve', "const AODDS_LINE_SHAPE = 'step';", "const AODDS_LINE_SHAPE = 'monotone';"],
 ];
 let survived = 0;
@@ -36,7 +46,7 @@ for (const [name, from, to] of MUTANTS) {
   if (html.split(from).length !== 2) { console.error(`✖ anchor not found exactly once: ${name}`); survived++; continue; }
   const file = path.join(dir, 'm.html');
   fs.writeFileSync(file, html.replace(from, to));
-  const r = spawnSync(process.execPath, ['--test', path.join(ROOT, 'test-ten303-odds-tab.mjs')], { env: Object.assign({}, process.env, { TEN303_HTML: file }), encoding: 'utf8' });
+  const r = spawnSync(process.execPath, ['--test', path.join(ROOT, 'test-ten303-odds-tab.mjs'), path.join(ROOT, 'test-ten303-colours.mjs')], { env: Object.assign({}, process.env, { TEN303_HTML: file }), encoding: 'utf8' });
   if (r.status === 0) { console.error(`✖ SURVIVED: ${name}`); survived++; } else console.log(`✔ caught: ${name}`);
 }
 fs.rmSync(dir, { recursive: true, force: true });

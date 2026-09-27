@@ -326,8 +326,17 @@ const DATAVIZ_ZONES = {
   'holdbreak-heatmap.js': [['', null]],                                  // the whole cell engine
   'player-profile-v2.js': [['var HB_FAINT =', 'function hbSegHtml(']],   // hbCellHtml + hbGlobalCellHtml
 };
-function zones(file, src) {
-  return (DATAVIZ_ZONES[file] || []).map(([a, b]) => {
+// Design-verbatim zones (founder, TEN-303 follow-up 2026-09-27, comment 2b0ef96f): a surface built to a
+// LOCKED Claude Design export keeps the export's colour values exactly — the engine never re-tones them.
+// Each zone is [start anchor, end anchor]; both must exist (a missing anchor throws, never silently maps).
+const DESIGN_ZONES = {
+  'bsp-consult-dashboard.html': [
+    ['const AODDS_C = {', '\n};'],                                            // Odds tab tokens (Odds Tab - Spec.md)
+    ['<style id="design-verbatim-analysis">', '</style>'],                   // Match analysis modal chrome + nav
+  ],
+};
+function zones(file, src, table = DATAVIZ_ZONES) {
+  return (table[file] || []).map(([a, b]) => {
     const s0 = a ? src.indexOf(a) : 0;
     if (s0 < 0) throw new Error(`dataviz anchor missing in ${file}: ${a}`);
     const e0 = b ? src.indexOf(b, s0) : src.length;
@@ -338,6 +347,7 @@ function zones(file, src) {
 export function recolourFile(file, src) {
   const css = cssRanges(file, src);
   const dz = zones(file, src);
+  const vz = zones(file, src, DESIGN_ZONES);
   const comments = commentRanges(file, src);
   const hits = []; const edits = [];
   let out = ''; let last = 0; let m;
@@ -359,6 +369,7 @@ export function recolourFile(file, src) {
     const lineTo = src.slice(lineStart, i);
     if (inRanges(comments, i)) continue;
     if (inRanges(dz, i)) { hits.push({ file, off: i, line: src.slice(0, i).split('\n').length, lit, key: normKey(parse(lit)), prop: '', sel: 'heatmap cell', mode: 'js', token: null, skip: 'dataviz-heatmap-cell' }); continue; }
+    if (inRanges(vz, i)) { hits.push({ file, off: i, line: src.slice(0, i).split('\n').length, lit, key: normKey(parse(lit)), prop: '', sel: 'design-verbatim', mode: inCss ? 'css' : 'js', token: null, skip: 'design-verbatim' }); continue; }
     if (!inCss && /(^|[\s;{}])\/\/[^'"`]*$/.test(lineTo) && ((lineTo.split('//')[0].match(/['"`]/g) || []).length % 2 === 0)) continue;
     const prop = propAt(src, i);
     const sel = selectorAt(src, i, inCss);
