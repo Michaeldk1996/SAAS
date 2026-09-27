@@ -16241,7 +16241,8 @@ const AODDS_MARKET_TILES = [
 // minShareOfN of N (N = live books with an open and a now) moved the same way on one player.
 // minMovePct (founder ruling 2026-09-27, TEN-303 comment fdf4bb3f): a book counts toward n only if its as-quoted move
 // |now − open| / open is at least this many percent; below it the book still counts toward N.
-const AODDS_STEAM = { minBooks: 3, minShareOfN: 0, minMovePct: 3 };
+// Shipped 5% / 3 books, on the displayed prices (founder pick 2026-09-27, TEN-303 question card ea5851d3).
+const AODDS_STEAM = { minBooks: 3, minShareOfN: 0, minMovePct: 5 };
 // Line shape for the sparklines and the pop-up (founder's call, TEN-303 §3.7.4): 'step' (step-after,
 // the price holds until the book re-posts) | 'monotone' (monotone cubic, never overshoots).
 const AODDS_LINE_SHAPE = 'step';

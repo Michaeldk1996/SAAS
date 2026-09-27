@@ -393,9 +393,9 @@ test('a legacy "<Book> (Oddspapi)" key joins that book\'s row as its last fallba
 
 // ── founder ruling 2026-09-27 (comment fdf4bb3f): a book counts toward n only if |now − open| / open ≥ minMovePct ──
 //    mutant: the minimum-move filter dropped from the STEAM count (`&& bigMove(nw, op)` removed) ──
-test('STEAM minimum move: 5 books each 1.40 → 1.41 never show STEAM at the shipped default X = 3%', () => {
+test('STEAM minimum move: 5 books each 1.40 → 1.41 never show STEAM at X = 3%', () => {
   const now = Date.now();
-  const A = build();                                  // the SHIPPED config: minBooks 3, minMovePct 3
+  const A = build(undefined, { AODDS_STEAM: '{ minBooks: 3, minShareOfN: 0, minMovePct: 3 }' });
   const five = (to) => {
     const m = fixture({ now });
     for (const k of Object.keys(m.oddsMovement.chart.books)) delete m.oddsMovement.chart.books[k];
@@ -415,4 +415,31 @@ test('STEAM minimum move: 5 books each 1.40 → 1.41 never show STEAM at the shi
   assert.ok(!A.buildOddsSection(five(1.41)).includes('aox-steam'), 'no chip rendered');
   // control: the same five books moving 1.40 → 1.45 (+3.6%) do show it
   assert.equal(A.aOddsRowsOf(five(1.45), { nowMs: now }).steam.text, '5 of 5 books drifted on J. Sinner');
+});
+
+// ── founder pick 2026-09-27 (TEN-303 question card): SHIPPED default X = 5%, 3 books, on displayed prices ──
+//    mutant: AODDS_STEAM.minMovePct back to 3 (the +3.6% case shows STEAM) ──
+test('STEAM shipped default: X = 5% with 3 books — +3.6% moves do not count, +5.7% do, and a 3-of-5 mix counts only the big movers', () => {
+  const now = Date.now();
+  const A = build();                                  // the SHIPPED config
+  const mk = (tos) => {
+    const m = fixture({ now });
+    for (const k of Object.keys(m.oddsMovement.chart.books)) delete m.oddsMovement.chart.books[k];
+    delete m.oddsMovement.books;
+    const t0 = iso(now - 5 * H), t1 = iso(now - 1 * H);
+    const meta = { source: 'api-tennis', group: 'soft', clock: 'seen by us every 5 min', checkedAt: iso(now - 2 * 60e3) };
+    ['Betano', '1xBet', 'BetVictor', 'Marathon', 'Sbobet'].forEach((k, i) => {
+      m.oddsMovement.chart.books[k] = { p1: [[t0, 1.40], [t1, tos[i]]], p2: [[t0, 3.0], [t1, 3.0]] };
+      m.oddsMovement.chart.meta[k] = meta;
+    });
+    return m;
+  };
+  const mid = A.aOddsRowsOf(mk([1.45, 1.45, 1.45, 1.45, 1.45]), { nowMs: now });
+  assert.equal(mid.N, 5);
+  assert.equal(mid.steam, null, '+3.6% per book is below the shipped X = 5%');
+  assert.equal(A.aOddsRowsOf(mk([1.48, 1.48, 1.48, 1.48, 1.48]), { nowMs: now }).steam.text, '5 of 5 books drifted on J. Sinner');
+  assert.equal(A.aOddsRowsOf(mk([1.48, 1.48, 1.48, 1.45, 1.41]), { nowMs: now }).steam.text, '3 of 5 books drifted on J. Sinner');
+  assert.equal(A.aOddsRowsOf(mk([1.48, 1.48, 1.45, 1.45, 1.41]), { nowMs: now }).steam, null, 'only 2 books clear 5%: below 3 books');
+  // displayed-price basis (founder pick): 1.40 → 1.4695 (+4.96% raw) is shown as 1.47 (+5.0%) and counts
+  assert.equal(A.aOddsRowsOf(mk([1.4695, 1.4695, 1.4695, 1.40, 1.40]), { nowMs: now }).steam.text, '3 of 5 books drifted on J. Sinner');
 });
