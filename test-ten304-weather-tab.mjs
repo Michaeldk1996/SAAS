@@ -326,7 +326,20 @@ test('completed match: the archived pre-start forecast shows, labelled "forecast
     assert.equal(elements(h, 'wx-banner').length, 1);
     assert.equal(text(elements(h, 'wx-verdict')[0]), 'Match-time forecast unavailable.');
     assert.ok(!/38/.test(text(elements(h, 'wx-tiles')[0] || '')), 'never the current forecast for a past date');
+    assert.ok(!text(elements(h, 'wx-athead')[0]).includes('not observed'), 'no archived label when nothing archived is shown');
   }
+});
+
+// Mutation: archived day tooltips stamp the MATCH row's fetch time instead of the day's own.
+test('completed match: each archived day card says when ITS forecast was fetched', () => {
+  const f = t => makeFile({ from: '2026-09-25', fetchedAt: t });
+  const mk = [{ key: '12166157', startMs: Date.parse('2026-09-27T08:00:00Z') }];
+  const arch = BW.updateArchive(BW.updateArchive(null, f('2026-09-27T01:00:00Z'), mk, LATER), f('2026-09-27T04:00:00Z'), mk, LATER);
+  const html = build({}).buildWeatherSection(PAST, ENTRY, null, LATER, arch);
+  const tipOf = date => attrsOf(html, 'wx-day').find(a => a['data-date'] === date)['data-aotip'];
+  assert.ok(tipOf('2026-09-27').includes('Sep 27, 09:00'), 'the 27th: fetched 01:00Z (before its window)');
+  assert.ok(tipOf('2026-09-28').includes('Sep 27, 12:00'), 'the 28th: the later pre-window fetch');
+  assert.equal(text(elements(html, 'wx-fresh')[0]), 'Archived forecast · fetched Sep 27, 12:00 · Open-Meteo');
 });
 
 // Mutation: the partial verdict loses its {missing} list (or lists an available factor).

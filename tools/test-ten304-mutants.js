@@ -35,17 +35,22 @@ const MUTANTS = [
   ['indoor flag ignored', 'if (entry && entry.indoor === true) return { indoor: true };', ''],
   // founder rulings, 27 Sep 06:54Z
   ['started match reads the CURRENT forecast file', 'const archived = wxStarted(m, nowMs);', 'const archived = false;'],
-  ['archived match loses "forecast, not observed"', "(archived ? ' · ' + CP.pastValues : '')", "''"],
+  ['archived match loses "forecast, not observed"', "(archived && !unavail ? ' · ' + CP.pastValues : '')", "''"],
   ['partial verdict loses its Missing: list', "missing: ['wind', 'heat', 'rain'].filter(id => sevOf(id) === 'u')", "missing: ['wind', 'heat', 'rain'].filter(id => true)"],
   ['venue zone ignores the index tz (no file → viewer zone)', '(file && file.tz) || (entry && entry.tz) || null', '(file && file.tz) || null'],
   ['every match counted first on court (no note)', 'return !same.length || startMs <= Math.min.apply(null, same);', 'return true;'],
   ['no match counted first on court (note everywhere)', 'return !same.length || startMs <= Math.min.apply(null, same);', 'return false;'],
   ['Escape no longer closes the shared tooltip', "document.addEventListener('keydown', e => { if (e.key === 'Escape' && _aoTipFor) aOddsTipHide(); });", ''],
   ['Download report prints "Loading forecast…"', 'if (wxEl && _aWxMatch && !(_aWx.ready && _aWx.m === _aWxMatch))', 'if (false)'],
-  ['archive: a post-start fetch is archived', '!(fAt < m.startMs) || ', '', 'bwt'],
+  ['archive: a post-start fetch is archived', ' || !(fAt < m.startMs)) continue;', ') continue;', 'bwt'],
   ['archive: an older fetch replaces a newer one', 'const newer = old => !old || fAt > Date.parse(old.fetchedAt);', 'const newer = old => true;', 'bwt'],
   ['archive: a day archived after its window opened', '!(fAt < Math.min(...win.map(r => r.ms))) || ', '', 'bwt'],
-  ['archive: the live copy is not carried', 'updateArchive(await readLiveArchive(SITE + v.archive, fetchImpl, log), file', 'updateArchive(null, file', 'bwt'],
+  ['archive: the live copy is not carried', 'updateArchive(await readLiveArchive(SITE + v.archive, fetchImpl, log, retryDelayMs), file', 'updateArchive(null, file', 'bwt'],
+  ['archive: a venue off the board loses its archive', 'const off = Object.keys(coords || {}).filter(', 'const off = [].filter(', 'bwt'],
+  ['archive: a failed live read is not retried', 'for (let i = 0; i < 3; i++) {\n    try { const a = await getJson(url', 'for (let i = 2; i < 3; i++) {\n    try { const a = await getJson(url', 'bwt'],
+  ['archive: a revised start keeps the old hour', '(moved && fAt >= Date.parse(old.fetchedAt))', 'false', 'bwt'],
+  ['unavailable started match still says "forecast, not observed"', "(archived && !unavail ? ' · ' + CP.pastValues : '')", "(archived ? ' · ' + CP.pastValues : '')"],
+  ['archived day tooltip shows the match row fetch time', '[TP.fetched, wxStamp(d.fetchedMs, vm.zone)]', '[TP.fetched, wxStamp(vm.fetchedMs, vm.zone)]'],
 ];
 let caught = 0;
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ten304-mut-'));

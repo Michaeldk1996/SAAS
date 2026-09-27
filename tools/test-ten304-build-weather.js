@@ -159,6 +159,38 @@ const tmp = () => { const d = fs.mkdtempSync(path.join(os.tmpdir(), 'ten304-bw-'
     await run(null);
     assert.ok(!JSON.parse(fs.readFileSync(path.join(d, 'weather/archive/chengdu.json'), 'utf8')).matches['999'], '404 → starts empty');
   });
+  await check('archive: a venue OFF the board keeps its published archive (carried + pruned), never dropped', async () => {
+    const d = tmp();                                                                          // board = Chengdu only
+    const H2 = Object.assign({}, HINTS, { Hangzhou: { city: 'Hangzhou', country: 'CN', indoor: false } });
+    const C2 = Object.assign({}, COORDS, { Hangzhou: { lat: 30.29, lon: 120.16, tz: 'Asia/Shanghai' } });
+    const live = { v: 1, venue: 'Hangzhou', tz: 'Asia/Shanghai', source: 'Open-Meteo', days: {},
+      matches: { '777': { fetchedAt: '2026-09-26T01:00:00.000Z', start: '2026-09-26T08:00:00.000Z', hourly: { time: ['2026-09-26T08:00:00Z'], temp: [30] } } } };
+    await B.build({ outDir: d, matchesPath: path.join(d, 'm.json'), hints: H2, coords: C2, log: () => {}, retryDelayMs: 0, now: () => new Date('2026-09-27T04:00:00Z'),
+      fetchImpl: async u => /open-meteo/.test(u) ? ok(omResponse())() : /archive\/hangzhou/.test(u) ? ok(live)() : { ok: false, status: 404, json: async () => null } });
+    const f = path.join(d, 'weather/archive/hangzhou.json');                                  // mutation: drop the off-board carry
+    assert.ok(fs.existsSync(f) && JSON.parse(fs.readFileSync(f, 'utf8')).matches['777'], 'carried');
+    const d2 = tmp();                                                                         // fully pruned → not written
+    await B.build({ outDir: d2, matchesPath: path.join(d2, 'm.json'), hints: H2, coords: C2, log: () => {}, retryDelayMs: 0, now: () => new Date('2026-10-30T04:00:00Z'),
+      fetchImpl: async u => /open-meteo/.test(u) ? ok(omResponse())() : /archive\/hangzhou/.test(u) ? ok(live)() : { ok: false, status: 404, json: async () => null } });
+    assert.ok(!fs.existsSync(path.join(d2, 'weather/archive/hangzhou.json')));
+  });
+  await check('archive: a failed live read is RETRIED before starting over (503, 503, then the real copy)', async () => {
+    const d = tmp(); let n = 0;
+    fs.writeFileSync(path.join(d, 'm.json'), JSON.stringify([{ id: 'upcoming-1', tour: 'ATP Chengdu', startTs: '2026-09-27T08:00:00Z' }]));
+    const live = { v: 1, venue: 'Chengdu', tz: 'Asia/Shanghai', source: 'Open-Meteo', days: {},
+      matches: { '999': { fetchedAt: '2026-09-26T01:00:00.000Z', start: '2026-09-26T08:00:00.000Z', hourly: { time: ['2026-09-26T08:00:00Z'], temp: [30] } } } };
+    await B.build({ outDir: d, matchesPath: path.join(d, 'm.json'), hints: HINTS, coords: COORDS, log: () => {}, retryDelayMs: 0, now: () => new Date('2026-09-27T04:00:00Z'),
+      fetchImpl: async u => /open-meteo/.test(u) ? ok(omResponse())() : /archive\/chengdu/.test(u) ? (++n < 3 ? { ok: false, status: 503, json: async () => null } : ok(live)()) : { ok: false, status: 404, json: async () => null } });
+    assert.strictEqual(n, 3);                                                                 // mutation: no retry
+    assert.ok(JSON.parse(fs.readFileSync(path.join(d, 'weather/archive/chengdu.json'), 'utf8')).matches['999']);
+  });
+  await check('archive: a revised start re-reads the same pre-start fetch (the entry follows the new start)', () => {
+    const f = F('2026-09-27T04:00:00.000Z');
+    let a = B.updateArchive(null, f, [{ key: '5', startMs: START }], NOWA);
+    a = B.updateArchive(a, f, [{ key: '5', startMs: START + 2 * 3600e3 }], NOWA);             // moved to 18:00 local, same carried file
+    assert.deepStrictEqual(a.matches['5'].hourly.time, ['2026-09-27T10:00:00Z']);             // mutation: same-fetchedAt never replaces
+    assert.strictEqual(a.matches['5'].start, '2026-09-27T10:00:00.000Z');
+  });
   console.log(`\nRESULT: ${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);
 })();

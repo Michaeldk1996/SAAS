@@ -5,7 +5,7 @@
 //
 // Writes, for every tournament on the board (matches.json):
 //   weather-index.json            m.tour → { key, indoor, tz, file, archive }   (tiny, eager)
-//   weather/<slug>.json           one outdoor venue's forecast     (lazy, ~9 KB)
+//   weather/<slug>.json           one outdoor venue's forecast     (lazy, ~12 KB)
 //   weather/archive/<slug>.json   that venue's ARCHIVED forecasts  (lazy, completed matches only)
 // matches.json is never touched (protected file). `tz` is the venue's IANA zone from
 // tournament-venues.json, so the tab shows venue time even with no forecast file.
@@ -153,7 +153,9 @@ function updateArchive(prev, file, venueMatches, nowMs) {
       a.days[date] = { fetchedAt: file.fetchedAt, code: dv('code', j), hi: dv('hi', j), lo: dv('lo', j), hourly: pick(day.map(r => r.i)) };
     }
     for (const m of venueMatches || []) {
-      if (!m || !m.key || !Number.isFinite(m.startMs) || !(fAt < m.startMs) || !newer(a.matches[m.key])) continue;
+      if (!m || !m.key || !Number.isFinite(m.startMs) || !(fAt < m.startMs)) continue;
+      const old = a.matches[m.key], moved = !!old && Date.parse(old.start) !== m.startMs;   // a revised start re-reads the same fetch
+      if (!(newer(old) || (moved && fAt >= Date.parse(old.fetchedAt)))) continue;
       const r = rows.find(x => x.ms <= m.startMs && m.startMs < x.ms + 3600e3);
       if (r) a.matches[m.key] = { fetchedAt: file.fetchedAt, start: new Date(m.startMs).toISOString(), hourly: pick([r.i]) };
     }
@@ -179,18 +181,23 @@ function defaultStartMs(m) {
   return iso ? Date.parse(iso) : NaN;
 }
 
-// The live archive: 404 = none published yet (start empty); any other failure is retried, and
-// reported — the build then starts from empty rather than blocking the run.
-async function readLiveArchive(url, fetchImpl, log) {
+// The live archive: 404 = none published yet (start empty); any other failure is retried with backoff,
+// then reported — the build starts that venue's archive from this run rather than blocking the run.
+// ⚠️ Durability limit: the live site is the only copy (see .claude/rules/modal-weather.md).
+async function readLiveArchive(url, fetchImpl, log, retryDelayMs = 1500) {
   for (let i = 0; i < 3; i++) {
     try { const a = await getJson(url + '?t=' + Date.now(), fetchImpl); return (a && a.v === 1 && a.days && a.matches) ? a : null; }
-    catch (e) { if (/HTTP 404/.test(e.message)) return null; if (i === 2) { log(`  ⚠️ archive read failed (${e.message}) — rebuilt from this run only: ${url}`); return null; } }
+    catch (e) {
+      if (/HTTP 404/.test(e.message)) return null;
+      if (i === 2) { log(`  ⚠️ archive read failed (${e.message}) — rebuilt from this run only: ${url}`); return null; }
+      if (retryDelayMs) await new Promise(r => setTimeout(r, retryDelayMs * (i + 1) * (i + 1)));
+    }
   }
   return null;
 }
 
 async function build({ outDir = '.', matchesPath = 'matches.json', fetchImpl = fetch, now = () => new Date(),
-                       hints, coords, log = console.log, startMsOf = defaultStartMs } = {}) {
+                       hints, coords, log = console.log, startMsOf = defaultStartMs, retryDelayMs = 1500 } = {}) {
   const raw = JSON.parse(fs.readFileSync(matchesPath, 'utf8'));
   const matches = Array.isArray(raw) ? raw : (raw.matches || []);
   const { tours, venues } = planVenues(matches, hints, coords);
@@ -220,9 +227,23 @@ async function build({ outDir = '.', matchesPath = 'matches.json', fetchImpl = f
     // archive: fold this run's file (fetched or carried) in; always written so it is never dropped
     const venueMatches = matches.filter(m => m && tours[m.tour] && tours[m.tour].key === v.key)
       .map(m => ({ key: matchKeyOf(m), startMs: startMsOf(m) }));
-    const arch = updateArchive(await readLiveArchive(SITE + v.archive, fetchImpl, log), file, venueMatches, now().getTime());
+    const arch = updateArchive(await readLiveArchive(SITE + v.archive, fetchImpl, log, retryDelayMs), file, venueMatches, now().getTime());
     fs.writeFileSync(path.join(outDir, v.archive), JSON.stringify(arch));
     status[v.key] += ` · archive ${Object.keys(arch.days).length} days / ${Object.keys(arch.matches).length} matches`;
+  }
+  // Venues OFF the board this run: their published archive is carried (pruned) — a site deploy replaces
+  // every file, so an archive not written here would vanish with its history.
+  const off = Object.keys(coords || {}).filter(k => !venues[k] && hints && hints[k] && hints[k].indoor !== true);
+  for (let i = 0; i < off.length; i += 8) {
+    await Promise.all(off.slice(i, i + 8).map(async k => {
+      const rel = `weather/archive/${slugOf(k)}.json`;
+      const prev = await readLiveArchive(SITE + rel, fetchImpl, log, retryDelayMs);
+      if (!prev) return;
+      const arch = updateArchive(prev, null, [], now().getTime());
+      if (!Object.keys(arch.days).length && !Object.keys(arch.matches).length) return;   // fully pruned → let it go
+      fs.writeFileSync(path.join(outDir, rel), JSON.stringify(arch));
+      status[k] = `off the board · archive carried: ${Object.keys(arch.days).length} days / ${Object.keys(arch.matches).length} matches`;
+    }));
   }
   const index = { v: 1, generatedAt: now().toISOString(), source: SOURCE, tours };
   fs.writeFileSync(path.join(outDir, 'weather-index.json'), JSON.stringify(index));

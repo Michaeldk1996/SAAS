@@ -13079,7 +13079,9 @@ function wxModel(m, entry, file, nowMs, forced, arch){
     const flags = F.filter(x => x.sev === 'r' || x.sev === 'a').sort((x, y) => wxRank(y.sev) - wxRank(x.sev))
       .map(x => ({ id: x.id, sev: x.sev, text: wxFmt(CP.flag[x.id], { v: x.v }) }));
     const reason = flags.length ? 'flag' : F.some(x => x.sev === 'u') ? 'u' : 'n';
-    return Object.assign(base, { unavail: false, icon: wxIconKind(dval('code', j)), hi: rnd(dval('hi', j)), lo: rnd(dval('lo', j)), flags, reason, agg });
+    const dFetched = (D && Array.isArray(D.fetchedAt) && j >= 0) ? Date.parse(D.fetchedAt[j]) : NaN;   // an archived day's own fetch
+    return Object.assign(base, { unavail: false, icon: wxIconKind(dval('code', j)), hi: rnd(dval('hi', j)), lo: rnd(dval('lo', j)), flags, reason, agg,
+      fetchedMs: Number.isFinite(dFetched) ? dFetched : fetchedMs });
   });
 
   // at match time: the hourly row whose hour contains the start instant
@@ -13134,7 +13136,7 @@ function wxModel(m, entry, file, nowMs, forced, arch){
     mayStartLater: !unavail && !!mp && !wxFirstSlot(m, startMs, zone),
     range: wxMonDay(dates[0]) + ' – ' + wxMonDay(dates[N - 1]),
     days, badge: mp ? wxFmt(CP.matchBadge, { time: mp.hm }) : CP.matchBadgeTbc,
-    atHead: mp ? matchDay + ' · ' + mp.hm + (archived ? ' · ' + CP.pastValues : '') : wxFmt(CP.atMatchTbc, { date: matchDay }),
+    atHead: mp ? matchDay + ' · ' + mp.hm + (archived && !unavail ? ' · ' + CP.pastValues : '') : wxFmt(CP.atMatchTbc, { date: matchDay }),
     verdict, verdictSev: (unavail || F.every(f => f.sev === 'u')) ? 'u' : leadF ? leadF.sev : 'n', lead: leadF, factors: F, pace,
   };
 }
@@ -13160,11 +13162,11 @@ function wxArchMatchRow(arch, m, startMs){
 // The archive's days as a forecast file (same shape build-weather.js writes), fetchedAt = the match row's.
 function wxArchiveFile(arch, mrow){
   const H = { time: [], temp: [], humidity: [], feels: [], rainChance: [], rainMm: [], wind: [], gusts: [] };
-  const D = { date: [], code: [], hi: [], lo: [] };
+  const D = { date: [], code: [], hi: [], lo: [], fetchedAt: [] };            // fetchedAt per archived day
   Object.keys(arch.days || {}).sort().forEach(date => {
     const x = arch.days[date], h = (x && x.hourly) || {};
     (h.time || []).forEach((t, i) => Object.keys(H).forEach(k => H[k].push(k === 'time' ? t : (Array.isArray(h[k]) ? h[k][i] : null))));
-    D.date.push(date); D.code.push(x.code); D.hi.push(x.hi); D.lo.push(x.lo);
+    D.date.push(date); D.code.push(x.code); D.hi.push(x.hi); D.lo.push(x.lo); D.fetchedAt.push(x.fetchedAt);
   });
   return { v: 2, tz: arch.tz, source: arch.source, fetchedAt: mrow.fetchedAt, pastHours: 'forecast', hourly: H, daily: D };
 }
@@ -13229,7 +13231,7 @@ function buildWeatherSection(m, entry, file, nowMs, arch){
         [TP.rain, u(a.rain, '%')], [TP.mm, a.mm == null ? '—' : a.mm.toFixed(1) + ' mm'],
         [TP.window, wxFmt(TP.windowVal, { from: String(CF.window.fromHour).padStart(2, '0'), to: String(CF.window.toHour).padStart(2, '0') })]];
       if (d.past || vm.archived) L.push([TP.values, TP.pastVal]);
-      L.push([TP.source, vm.source], [TP.fetched, wxStamp(vm.fetchedMs, vm.zone)]);
+      L.push([TP.source, vm.source], [TP.fetched, wxStamp(d.fetchedMs, vm.zone)]);
       tip = ' tabindex="0"' + tipAttr(aOddsTipHtml(d.dow + ' ' + d.label, L));
     }
     return '<div class="wx-day' + (d.isMatch ? ' is-match' : '') + '" data-date="' + d.date + '"' + tip + ' style="position:relative; display:flex; flex-direction:column; align-items:center; gap:7px; padding:16px 8px 12px; border-radius:12px; background:' + C.card + '; border:' + hw + ' solid ' + (d.isMatch ? C.matchBd : C.bd) + '; min-width:0;">'
