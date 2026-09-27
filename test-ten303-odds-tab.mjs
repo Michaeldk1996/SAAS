@@ -9,7 +9,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { build, constSrc } from './tools/ten303-odds-harness.mjs';
+import { build, constSrc, slice, FNS } from './tools/ten303-odds-harness.mjs';
 
 const H = 3600e3;
 const iso = ms => new Date(ms).toISOString();
@@ -106,7 +106,7 @@ test('§6.2 no row mixes two sources: Pinnacle in both feeds draws only Pinnacle
   assert.equal(rowsOf(h).filter(r => r.book === 'Pinnacle').length, 1, 'one row per bookmaker');
   assert.ok(!/data-book="Pinnacle \(api-tennis\)"|data-book="Pinnacle \+30s/.test(h), 'no sourced row name');
   const tip = tipOf(h, 'Pinnacle');
-  assert.ok(tip.includes('>Pinnacle +30s<') && tip.includes('Oddspapi \u00b7 book ticks') && tip.includes('Pinnacle (api-tennis) \u00b7 live'), tip);
+  assert.ok(tip.includes('>Pinnacle +30s<') && tip.includes('Oddspapi \u00b7 book ticks') && tip.includes('>api-tennis \u00b7 live<'), tip);
   // no Pinnacle +30s -> the whole row is the api-tennis line
   delete m.oddsMovement.chart.books['Pinnacle +30s'];
   const p2 = A.aOddsRowsOf(m, { nowMs: now }).rows.find(r => r.name === 'Pinnacle');
@@ -176,7 +176,7 @@ test('§6.5 a drawn line never leaves [series min, series max]', () => {
   const s = [[t0, 1.5], [t0 + 1 * H, 1.5], [t0 + 2 * H, 2.0], [t0 + 3 * H, 2.0], [t0 + 4 * H, 1.6], [t0 + 5 * H, 1.6]];
   const X = t => (t - t0) / 1000, Y = v => 1000 - v * 100;       // 1:1 back-mappable
   for (const shape of ['step', 'monotone']) {
-    const P = A.aOddsLinePaths(s, t0, t0 + 6 * H, [], X, Y, 1000, shape);
+    const P = A.aOddsLinePaths(s, t0, t0 + 6 * H, X, Y, 1000, shape);
     const ys = [...P.line.matchAll(/[MLHVC ,]?(-?\d+(?:\.\d+)?)/g)];
     // collect every y coordinate: V args, and the second of each x,y pair
     const nums = P.line.replace(/[MC]/g, ' ').trim();
@@ -191,7 +191,7 @@ test('§6.5 a drawn line never leaves [series min, series max]', () => {
     for (const y of yv) assert.ok(y <= hi && y >= lo, `${shape}: y ${y} outside [${lo}, ${hi}]`);
   }
   // the shipped charts use the configured shape (step): the pop-up line has no curve at all
-  const svg = A.aOddsMvChart(s, '#6A9AF8', t0, t0 + 6 * H, []);
+  const svg = A.aOddsMvChart(s, '#6A9AF8', t0, t0 + 6 * H);
   const d = /class="aox-line" d="([^"]+)"/.exec(svg)[1];
   assert.ok(!/C/.test(d) && /H/.test(d) && /V/.test(d), d);
 });
@@ -269,12 +269,9 @@ test('no line: a dash row with its verdict — never a zero, never opens a pop-u
   assert.ok(hl.includes('aox-loading') && !hl.includes('aox-row') && !hl.includes('REDUCED'));
 });
 
-test('a gap is never drawn across; a book gone from the feed reads "Not in feed since", no Now, never best', () => {
+test('a book gone from the feed reads "Not in feed since", no Now, never best', () => {
   const now = Date.now();
   const A = build();
-  const t0 = now - 10 * H;
-  const P = A.aOddsLinePaths([[t0, 2.5], [now - 3 * H, 2.4]], t0, now, [[now - 7 * H, now - 5 * H]], t => (t - t0) / 1e5, v => 100 - v * 10, 100);
-  assert.equal((P.line.match(/M/g) || []).length, 2, 'two runs');
   const m = fixture({ now, withAt: true });
   m.oddsMovement.chart.books['Betano'] = { p1: [[iso(now - 5 * H), 9.9]], p2: [[iso(now - 5 * H), 9.9]] };
   m.oddsMovement.chart.meta['Betano'].gaps = [[iso(now - 2 * H), null]];
@@ -442,4 +439,98 @@ test('STEAM shipped default: X = 5% with 3 books — +3.6% moves do not count, +
   assert.equal(A.aOddsRowsOf(mk([1.48, 1.48, 1.45, 1.45, 1.41]), { nowMs: now }).steam, null, 'only 2 books clear 5%: below 3 books');
   // displayed-price basis (founder pick): 1.40 → 1.4695 (+4.96% raw) is shown as 1.47 (+5.0%) and counts
   assert.equal(A.aOddsRowsOf(mk([1.4695, 1.4695, 1.4695, 1.40, 1.40]), { nowMs: now }).steam.text, '3 of 5 books drifted on J. Sinner');
+});
+
+// ── founder follow-up 2026-09-27 (comment 2b0ef96f) 1a: the charts draw exactly what is stored ──
+// Parse a step/line path into its vertices [x, y] (M / H / V / L commands).
+function vertices(d) {
+  const out = []; let x = null, y = null;
+  for (const tok of d.split(/(?=[MHVLZ])/)) {
+    const c = tok[0], a = tok.slice(1).trim().split(/[ ,]+/).filter(Boolean).map(Number);
+    if (c === 'M' || c === 'L') { x = a[0]; y = a[1]; } else if (c === 'H') x = a[0]; else if (c === 'V') y = a[0]; else continue;
+    out.push([c, x, y]);
+  }
+  return out;
+}
+//    mutants: a gap breaks the line again (a second M) · the flat run is interpolated (an L / slope) ──
+test('1a: a stored series with a 3-hour no-change gap (and a feed gap) draws ONE flat segment — no break, no interpolated point', () => {
+  const now = Date.parse('2026-09-27T08:00:00Z');
+  const A = build();
+  const t0 = now - 8 * H;
+  const s = [[t0, 2.50], [t0 + 1 * H, 2.40], [t0 + 4 * H, 2.60]];     // 2.40 held for 3 h, then 2.60
+  const X = t => (t - t0) / 36e3, Y = v => 1000 - v * 100;
+  const P = A.aOddsLinePaths(s, t0, t0 + 6 * H, X, Y, 1000);
+  assert.equal((P.line.match(/M/g) || []).length, 1, 'one line, no break: ' + P.line);
+  assert.ok(!/[LC]/.test(P.line), 'no slope, no curve: ' + P.line);
+  const v = vertices(P.line);
+  const flat = v.findIndex(p => p[0] === 'H' && Math.abs(p[1] - X(t0 + 4 * H)) < 0.06 && Math.abs(p[2] - Y(2.40)) < 0.06);
+  assert.ok(flat > 0 && Math.abs(v[flat - 1][1] - X(t0 + 1 * H)) < 0.06, 'one H from the 2.40 tick to the next tick at 2.40: ' + P.line);
+  assert.ok(Math.abs(P.end[0] - X(t0 + 6 * H)) < 0.06, 'ends at the last check');
+  // the same through the page renderer: a row whose source dropped the book for 2 h inside that 3 h
+  const m = fixture({ now, withAt: true });
+  m.oddsMovement.chart.books['Pinnacle +30s'].p1 = s.map(p => [iso(p[0]), p[1]]);
+  m.oddsMovement.chart.meta['Pinnacle +30s'].gaps = [[iso(t0 + 1.5 * H), iso(t0 + 3.5 * H)]];
+  A.open(m);
+  const row = rowHtml(A.buildOddsSection(m), 'Pinnacle');
+  const d = /<svg class="aox-spark"[\s\S]*?<path d="[^"]*"[^>]*\/><path d="([^"]+)"/.exec(row)[1];
+  assert.equal((d.match(/M/g) || []).length, 1, 'sparkline: one line across the feed gap: ' + d);
+  A.state().mv = 'Pinnacle';
+  const mv = A.buildOddsSection(m); const pd = /class="aox-line" d="([^"]+)"/.exec(mv.slice(mv.indexOf('class="aox-mv"')))[1];
+  assert.equal((pd.match(/M/g) || []).length, 1, 'pop-up: one line across the feed gap: ' + pd);
+});
+//    mutant: the raw (unrounded) price is plotted — 1.4695 draws at 1.4695, not 1.47 ──
+test('1a: every plotted y-value is a stored price at display precision (the NOW column rounding)', () => {
+  const A = build();
+  const t0 = Date.parse('2026-09-26T00:00:00Z');
+  const s = [[t0, 1.4695], [t0 + 1 * H, 1.4712], [t0 + 2 * H, 1.52], [t0 + 3 * H, 1.068], [t0 + 4 * H, 2.345]];
+  const allowed = new Set(s.map(p => +A.aOddsFmt(p[1])));          // the NOW column's own formatter
+  const X = t => (t - t0) / 36e3, Y = v => 1000 - v * 100;
+  const back = y => Math.round((1000 - y) * 10) / 1000;              // path y has 1 decimal → v to 3 dp
+  const P = A.aOddsLinePaths(s, t0, t0 + 5 * H, X, Y, 1000);
+  const ys = vertices(P.line).map(p => back(p[2]));
+  for (const v of ys) assert.ok(allowed.has(v), `y ${v} is not a stored price at display precision (${[...allowed]})`);
+  assert.ok(ys.includes(1.47) && !ys.includes(1.4695) && !ys.includes(1.4712), 'raw 1.4695 / 1.4712 draw as the displayed 1.47');
+  // 1.4695 and 1.4712 both display 1.47: one flat run, not a step between them
+  assert.equal(vertices(P.line).filter(p => p[0] === 'V').length, 3, 'three changes after rounding: 1.47 → 1.52 → 1.068 → the 2.345 tick');
+  // the sparkline's y-range is the plotted range: back-map every vertex through its own scale
+  const r = { noData: false, stale: false, first: t0, end: t0 + 5 * H, series: { a: s } };
+  const d = /<path d="[^"]*"[^>]*\/><path d="([^"]+)"/.exec(A.aOddsSparkSvg(r, 'a', '#fff'))[1];
+  const mn = Math.min(...allowed), mx = Math.max(...allowed);
+  for (const p of vertices(d)) { const v = mn + (18 - p[2]) / 14 * (mx - mn);
+    assert.ok([...allowed].some(a => Math.abs(a - v) < 0.012), `sparkline y ${p[2]} → ${v.toFixed(3)} not a displayed price`); }
+});
+// ── founder follow-up 1b: ONE missing-price mark on the tab, the design's DASH, defined once ──
+//    mutants: a stale NOW rendered with U+2013 · a second literal dash in the tab's code ──
+test('1b: every missing price on the tab (NOW, NET, margin, pop-up header, stat boxes) is AODDS_DASH (U+2014), defined once', () => {
+  const now = Date.now();
+  const A = build();
+  const m = fixture({ now, withAt: true });
+  m.oddsMovement.chart.meta['Betano'].gaps = [[iso(now - 2 * H), null]];          // stale: NOW / NET dashed
+  A.open(m);
+  const h = A.buildOddsSection(m);
+  const row = rowHtml(h, 'Betano');
+  for (const x of ['a', 'b']) { assert.equal(cellTxt(row, 'aox-now', x), '\u2014'); assert.equal(cellTxt(row, 'aox-net', x), '\u2014'); }
+  A.state().mv = 'Betano';
+  const all = A.buildOddsSection(m);
+  assert.ok(!/[\u2013\u2012\u2212]/.test(all.replace(/<svg[\s\S]*?<\/svg>/g, '')), 'no en dash / figure dash / minus as a value mark');
+  // defined once: no dash literal in the tab's functions — every one goes through AODDS_DASH
+  const code = FNS.map(n => slice(n)).join('\n').replace(/\/\/[^\n]*/g, '');
+  const lits = code.match(/'[^'\n]*\u2014[^'\n]*'|"[^"\n]*\u2014[^"\n]*"/g) || [];
+  assert.deepEqual(lits.filter(l => !/ \u2014 /.test(l)), [], 'a value dash literal outside AODDS_DASH');
+  assert.equal(constSrc('AODDS_DASH').trim(), "const AODDS_DASH = '\\u2014';");
+});
+// ── founder follow-up 1c: ALSO reads "<feed> · <status>", in the tooltip's label/value styling ──
+//    mutant: the ALSO value keeps the source key ("Pinnacle (api-tennis) · …") ──
+test('1c: the tooltip ALSO line reads "api-tennis · not in feed since HH:MM"', () => {
+  const now = Date.now();
+  const A = build();
+  const m = fixture({ now, withAt: true });
+  m.oddsMovement.chart.meta['Pinnacle (api-tennis)'].gaps = [[iso(now - 2 * H), null]];
+  A.open(m);
+  const tip = tipOf(A.buildOddsSection(m), 'Pinnacle');
+  const mm = />Also<\/span><span style="([^"]*)">([^<]*)</.exec(tip);
+  assert.ok(mm, tip);
+  assert.match(mm[2], /^api-tennis · not in feed since \d\d:\d\d$/);
+  const src = />Source<\/span><span style="([^"]*)">/.exec(tip);
+  assert.equal(mm[1], src[1], 'same value styling as the SOURCE line');
 });

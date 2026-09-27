@@ -39,7 +39,7 @@ export function build(src = html) {
   const s = n => slice(n, src), c = n => constSrc(n, src);
   return new Function(`
     ${['AODDS_STALE_MS', 'AODDS_LEGACY_BET365', 'AODDS_ORDER', 'AODDS_ALIAS', 'AODDS_AT_CLOCK', 'AODDS_CONFIG', 'AODDS_BOOKS',
-       'AODDS_MARKET_TILES', 'AODDS_STEAM', 'AODDS_LINE_SHAPE', 'AODDS_C', 'AODDS_RECV', 'AODDS_CHECKED'].map(c).join(' ')}
+       'AODDS_MARKET_TILES', 'AODDS_STEAM', 'AODDS_LINE_SHAPE', 'AODDS_DASH', 'AODDS_C', 'AODDS_RECV', 'AODDS_CHECKED'].map(c).join(' ')}
     let _aOdds = { m:null, novig:false, market:'Match Winner', mv:null };
     const newsTz = () => 'Europe/Brussels';
     const buildOddsReduced = () => 'REDUCED';
@@ -47,7 +47,7 @@ export function build(src = html) {
     const _ocsOf = m => (m && m.__testOcs) || null;   // the page's card-state reader, stubbed
     ${['acctTzOffsetMin', 'cardStartMs', 'aOddsStartMs', 'escapeHtml', 'aOddsStep', 'aOddsBooksOf', 'aOddsHasSeries', 'aOddsPulledAt',
        'aOddsHM', 'aOddsDM', 'aOddsStamp', 'aOddsWhen', 'aOddsFmt', 'aOddsSrcTitle', 'aOddsGapsMs', 'aOddsInGap', 'aOddsPairTicks',
-       'aOddsNoVig', 'aOddsRowsOf', 'aOddsMonotone', 'aOddsLinePaths', 'aOddsSparkSvg', 'aOddsMvChart', 'aOddsTipHtml', 'aOddsStatusOf',
+       'aOddsNoVig', 'aOddsRowsOf', 'aOddsMonotone', 'aOddsDispSeries', 'aOddsLinePaths', 'aOddsSparkSvg', 'aOddsMvChart', 'aOddsTipHtml', 'aOddsStatusOf',
        'aOddsBookTip', 'buildOddsSection', 'aOddsMvHtml', 'akOddsMoveSvg'].map(s).join(' ')}
     return { buildOddsSection, akOddsMoveSvg, aOddsBooksOf, cardStartMs, aOddsStartMs,
              reset: () => { _aOdds = { m:null, novig:false, market:'Match Winner', mv:null }; },

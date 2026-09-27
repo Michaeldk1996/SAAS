@@ -16257,6 +16257,9 @@ const AODDS_STEAM = { minBooks: 3, minShareOfN: 0, minMovePct: 5 };
 // Line shape for the sparklines and the pop-up (founder's call, TEN-303 §3.7.4): 'step' (step-after,
 // the price holds until the book re-posts) | 'monotone' (monotone cubic, never overshoots).
 const AODDS_LINE_SHAPE = 'step';
+// The one missing-price mark on this tab (NOW, NET, margin, pop-up header, stat boxes, opening & closing):
+// the locked design's DASH (U+2014 em dash, handoff "Weather Tab" `DASH = '\u2014'`; CLAUDE.md absent value).
+const AODDS_DASH = '\u2014';
 // Spec colour tokens (§ "Colour tokens used on this tab"), mapped through the TEN-285 12a recolour
 // rules (tools/theme-12a/recolour.mjs mapColour) — source value in each comment. Hairlines 0.33px.
 const AODDS_C = {
@@ -16325,7 +16328,7 @@ function aOddsStamp(ms){ return aOddsDM(ms) + ', ' + aOddsHM(ms); }
 function aOddsWhen(ms, nowMs){ return aOddsDM(ms) === aOddsDM(nowMs) ? aOddsHM(ms) : aOddsStamp(ms); }
 // odds.md decimals: 3 below 1.10 only where the third is non-zero; else 2.
 function aOddsFmt(v){
-  if (v == null || !Number.isFinite(v)) return '—';
+  if (v == null || !Number.isFinite(v)) return AODDS_DASH;
   if (v < 1.10){ const s = v.toFixed(3); if (s[s.length - 1] !== '0') return s; }
   return v.toFixed(2);
 }
@@ -16472,63 +16475,56 @@ function aOddsMonotone(P){
   }
   return d;
 }
-// A real [ms, price] series as drawn paths: each price holds from its tick until the next tick, a
-// gap, or t1 (the last check) — never across a gap. Returns the line, its area (closed to baseY)
-// and the end point.
-function aOddsLinePaths(pts, t0, t1, G, X, Y, baseY, shape){
-  if (!pts || !pts.length) return { line: '', area: '', end: null };
+// A stored series at display precision (the NOW column's rounding, aOddsFmt), change-only: the
+// prices a chart may plot — nothing else (founder, TEN-303 follow-up 1a).
+function aOddsDispSeries(pts){
+  const out = [];
+  (pts || []).forEach(p => { const v = +aOddsFmt(p[1]); if (!Number.isFinite(v)) return;
+    if (!out.length || out[out.length - 1][1] !== v) out.push([p[0], v]); });
+  return out;
+}
+// A stored [ms, price] series as drawn paths: ONE line, no breaks. Each caught price holds flat from its
+// tick until the next caught price (step-after — the store is change-only, so the flat run is true),
+// and the last one holds until t1 (the last check of that source), never past it. No point is
+// interpolated or smoothed; every vertex's y is a stored price at display precision (founder, TEN-303
+// follow-up 1a: a period the feed dropped the book is not drawn as a gap either).
+// Returns the line, its area (closed to baseY) and the end point.
+function aOddsLinePaths(pts, t0, t1, X, Y, baseY, shape){
+  const P = aOddsDispSeries(pts).filter(p => p[0] <= t1);
+  if (!P.length) return { line: '', area: '', end: null };
   shape = shape || AODDS_LINE_SHAPE;
-  const cuts = new Set(pts.map(p => p[0]));
-  (G || []).forEach(g => [g[0], g[1]].forEach(t => { if (Number.isFinite(t) && t > t0 && t < t1) cuts.add(t); }));
-  cuts.add(t1);
-  const ts = Array.from(cuts).filter(t => t >= pts[0][0] && t <= t1).sort((a, b) => a - b);
-  const runs = []; let cur = null, j = 0, v = null;
-  for (let i = 0; i < ts.length - 1; i++){
-    const t = ts[i];
-    while (j < pts.length && pts[j][0] <= t){ v = pts[j][1]; j++; }
-    if (v == null || aOddsInGap(t, G)){ cur = null; continue; }
-    if (!cur){ cur = []; runs.push(cur); }
-    cur.push([t, ts[i + 1], v]);
-  }
-  // One tick seen at the last check itself: a zero-length run (the round cap draws it as a dot).
-  if (!runs.length && !aOddsInGap(pts[0][0], G)) runs.push([[pts[0][0], pts[0][0], pts[0][1]]]);
+  const run = P.map((p, i) => [p[0], i + 1 < P.length ? P[i + 1][0] : Math.max(t1, p[0]), p[1]]);
   const f = n => n.toFixed(1);
-  let line = '', area = '', end = null;
-  runs.forEach(run => {
-    let d;
-    if (shape === 'monotone'){
-      const P = run.map(s => [X(s[0]), Y(s[2])]); const z = run[run.length - 1]; P.push([X(z[1]), Y(z[2])]);
-      d = aOddsMonotone(P);
-    } else {
-      d = 'M' + f(X(run[0][0])) + ',' + f(Y(run[0][2]));
-      run.forEach((s, k) => { d += ' H' + f(X(s[1])); if (k + 1 < run.length) d += ' V' + f(Y(run[k + 1][2])); });
-    }
-    const z = run[run.length - 1];
-    line += (line ? ' ' : '') + d;
-    area += (area ? ' ' : '') + d + ' L' + f(X(z[1])) + ',' + baseY + ' L' + f(X(run[0][0])) + ',' + baseY + ' Z';
-    end = [X(z[1]), Y(z[2])];
-  });
-  return { line, area, end };
+  let d;
+  if (shape === 'monotone'){
+    const V = run.map(q => [X(q[0]), Y(q[2])]); const z = run[run.length - 1]; V.push([X(z[1]), Y(z[2])]);
+    d = aOddsMonotone(V);
+  } else {
+    d = 'M' + f(X(run[0][0])) + ',' + f(Y(run[0][2]));
+    run.forEach((q, k) => { d += ' H' + f(X(q[1])); if (k + 1 < run.length) d += ' V' + f(Y(run[k + 1][2])); });
+  }
+  const z = run[run.length - 1];
+  return { line: d, area: d + ' L' + f(X(z[1])) + ',' + baseY + ' L' + f(X(run[0][0])) + ',' + baseY + ' Z', end: [X(z[1]), Y(z[2])] };
 }
 // Spec §4 sparkline L3 (64×22, soft area), drawn with AODDS_LINE_SHAPE over real time.
 function aOddsSparkSvg(r, x, col){
   const s = r.noData ? [] : r.series[x];
   let kids = '';
   if (s.length){
-    const vals = s.map(p => p[1]), mn = Math.min.apply(null, vals), mx = Math.max.apply(null, vals), rng = (mx - mn) || 1;
+    const vals = aOddsDispSeries(s).map(p => p[1]), mn = Math.min.apply(null, vals), mx = Math.max.apply(null, vals), rng = (mx - mn) || 1;
     const t0 = r.first, t1 = Math.max(r.end, s[s.length - 1][0]), span = (t1 - t0) || 1;
-    const P = aOddsLinePaths(s, t0, t1, r.gaps, t => 4 + (t - t0) / span * 56, v => 18 - (v - mn) / rng * 14, 21);
+    const P = aOddsLinePaths(s, t0, t1, t => 4 + (t - t0) / span * 56, v => 18 - (v - mn) / rng * 14, 21);
     kids = '<path d="' + P.area + '" fill="' + col + '" opacity="0.12"/><path d="' + P.line + '" fill="none" stroke="' + col + '" stroke-width="1.6" stroke-linecap="round"/>';
   }
   return '<svg class="aox-spark" width="64" height="22" viewBox="0 0 64 22" style="flex-shrink:0; display:block;' + (r.stale ? ' opacity:0.4;' : '') + '">' + kids + '</svg>';
 }
 // Spec §6 player chart (viewBox 480×236): x = real time, first tick → last check.
-function aOddsMvChart(s, col, t0, t1, G){
+function aOddsMvChart(s, col, t0, t1){
   const C = AODDS_C, Wd = 480, PL = 42, PR = 12, TT = 12, BB = 190;
   const mono = "IBM Plex Mono, monospace";
   let K = '';
   if (s.length){
-    const vals = s.map(p => p[1]), mn0 = Math.min.apply(null, vals), mx0 = Math.max.apply(null, vals), span = (mx0 - mn0) || 0.1;
+    const vals = aOddsDispSeries(s).map(p => p[1]), mn0 = Math.min.apply(null, vals), mx0 = Math.max.apply(null, vals), span = (mx0 - mn0) || 0.1;
     const stp = [0.02, 0.05, 0.1, 0.2, 0.25, 0.5, 1, 2, 5].find(v => span / v <= 4) || 5;
     const lo = Math.floor((mn0 - span * 0.08) / stp) * stp, hi = Math.ceil((mx0 + span * 0.08) / stp) * stp;
     const tspan = (t1 - t0) || 1;
@@ -16546,7 +16542,7 @@ function aOddsMvChart(s, col, t0, t1, G){
       if (day !== prevDay) K += '<text x="' + x + '" y="' + (BB + 33) + '" fill="' + C.label + '" font-size="10.5" font-family="Hanken Grotesk, sans-serif" text-anchor="' + anc + '">' + escapeHtml(day) + '</text>';
       prevDay = day;
     }
-    const P = aOddsLinePaths(s, t0, t1, G, X, Y, BB);
+    const P = aOddsLinePaths(s, t0, t1, X, Y, BB);
     K += '<path class="aox-area" d="' + P.area + '" fill="' + col + '" opacity="0.07"/>'
       + '<path class="aox-line" d="' + P.line + '" fill="none" stroke="' + col + '" stroke-width="2" stroke-linecap="round"/>';
     if (P.end) K += '<circle cx="' + P.end[0].toFixed(1) + '" cy="' + P.end[1].toFixed(1) + '" r="3.5" fill="' + col + '" stroke="' + C.row + '" stroke-width="2"/>';
@@ -16590,7 +16586,10 @@ function aOddsBookTip(r, D){
   else if (!r.stale && r.margin != null) L.push(['Margin', (r.margin * 100).toFixed(1) + '%']);
   if (r.alt){
     const ast = aOddsStatusOf(r.altMeta, r.altStale, aOddsPulledAt(r.altMeta), D.upcoming, D.nowMs);
-    L.push(['Also', aOddsSrcTitle(r.alt) + (ast ? ' · ' + ast[0].charAt(0).toLowerCase() + ast[0].slice(1) : '')]);
+    // "api-tennis · not in feed since 02:46": the other source by its FEED name (the SOURCE line's
+    // wording), then its status — founder follow-up 1c; the row name already says which book.
+    const feed = (r.altMeta && r.altMeta.source) || aOddsSrcTitle(r.alt);
+    L.push(['Also', feed + (ast ? ' · ' + ast[0].charAt(0).toLowerCase() + ast[0].slice(1) : '')]);
   }
   return aOddsTipHtml(aOddsSrcTitle(r.key), L);
 }
@@ -16701,11 +16700,11 @@ function buildOddsSection(m){
   };
   const net = (r, x) => {
     const o = r.noData ? null : r[x + 'Open'], n = r.noData ? null : r[x + 'Now'];
-    if (o == null || n == null) return '<span class="aox-net" data-side="' + x + '" style="' + mono + ' font-size:12.5px; font-weight:700; text-align:center; color:' + C.label + ';">—</span>';
+    if (o == null || n == null) return '<span class="aox-net" data-side="' + x + '" style="' + mono + ' font-size:12.5px; font-weight:700; text-align:center; color:' + C.label + ';">' + AODDS_DASH + '</span>';
     const d = +(+aOddsFmt(n) - +aOddsFmt(o)).toFixed(2);
     return '<span class="aox-net" data-side="' + x + '" style="' + mono + ' font-size:12.5px; font-weight:700; text-align:center; color:' + (d >= 0 ? C.up : C.dn) + ';">' + (d >= 0 ? '+' : '-') + Math.abs(d).toFixed(2) + '</span>';
   };
-  const marginLbl = r => r.noData ? r.verdict : r.stale ? 'no recent data' : novig ? 'margin removed' : r.margin == null ? 'margin —' : 'margin ' + (r.margin * 100).toFixed(1) + '%';
+  const marginLbl = r => r.noData ? r.verdict : r.stale ? 'no recent data' : novig ? 'margin removed' : r.margin == null ? 'margin ' + AODDS_DASH : 'margin ' + (r.margin * 100).toFixed(1) + '%';
   const row = r => {
     const open = r.noData ? '' : ' onclick="aOddsOpenMv(this.dataset.book)"';
     return '<div class="aox-row' + (r.noData ? ' aox-nodata' : '') + (r.stale ? ' aox-stale' : '') + '" data-book="' + escapeHtml(r.name) + '" data-group="' + r.group + '" data-src="' + escapeHtml(r.key || '') + '"' + open
@@ -16750,12 +16749,12 @@ function aOddsMvHtml(m, D, marginLbl){
       : chg == null ? '' : '<span class="aox-chg" style="font-size:12px; font-weight:700; color:' + (chg >= 0 ? C.up : C.dn) + ';">' + (chg >= 0 ? '+' : '-') + Math.abs(chg).toFixed(1) + '%</span>';
     const box = (cap, p, col2) => '<div style="display:flex; flex-direction:column; gap:4px; padding:10px 12px; border-radius:10px; background:' + C.pop + '; border:' + C.hw1 + ' solid ' + C.panelBd + ';">'
       + '<span style="' + mono + ' font-size:9px; font-weight:600; letter-spacing:0.14em; color:' + C.label + ';">' + cap + '</span>'
-      + '<span class="aox-stat" style="' + mono + ' font-size:18px; font-weight:700; color:' + col2 + ';">' + (p ? aOddsFmt(p[1]) : '—') + '</span>'
+      + '<span class="aox-stat" style="' + mono + ' font-size:18px; font-weight:700; color:' + col2 + ';">' + (p ? aOddsFmt(p[1]) : AODDS_DASH) + '</span>'
       + '<span style="' + mono + ' font-size:10.5px; color:' + C.label + '; white-space:nowrap;">' + (p ? aOddsStamp(p[0]) : '') + '</span></div>';
     return '<div class="aox-panel" data-side="' + x + '" style="display:flex; flex-direction:column; gap:12px; padding:16px 16px 14px; border-radius:14px; background:' + C.row + '; border:' + C.hw1 + ' solid ' + C.panelBd + ';">'
       + '<div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;"><span style="display:flex; align-items:center; gap:8px; font-size:14px; font-weight:700;"><span style="width:8px; height:8px; background:' + col + ';"></span>' + escapeHtml(name) + '</span>'
       + '<span style="display:flex; align-items:baseline; gap:8px; ' + mono + '"><span class="aox-mvnow" style="font-size:20px; font-weight:700;">' + aOddsFmt(shown) + '</span>' + right + '</span></div>'
-      + aOddsMvChart(s, col, t0, t1, r.gaps)
+      + aOddsMvChart(s, col, t0, t1)
       + '<div style="display:grid; grid-template-columns:repeat(3, minmax(0,1fr)); gap:8px;">' + box('OPENING', open, col) + box('HIGHEST', hi, C.up) + box('LOWEST', lo, C.dn) + '</div></div>';
   };
   const tabs = D.rows.filter(x => !x.noData).map(x => { const on = x.name === r.name;
@@ -16817,8 +16816,8 @@ function buildOddsReduced(m){
   const ocRow = (label, snap, always) => {
     const present = snap && (snap.p1 != null || snap.p2 != null);
     if (!present && !always) return '';
-    const a = present && snap.p1 != null ? snap.p1.toFixed(2) : '—';
-    const b = present && snap.p2 != null ? snap.p2.toFixed(2) : '—';
+    const a = present && snap.p1 != null ? snap.p1.toFixed(2) : AODDS_DASH;
+    const b = present && snap.p2 != null ? snap.p2.toFixed(2) : AODDS_DASH;
     const book = snap && snap.bookmaker
       ? (snap.vendor ? `${snap.bookmaker} via ${snap.vendor}` : snap.bookmaker)
       : '';

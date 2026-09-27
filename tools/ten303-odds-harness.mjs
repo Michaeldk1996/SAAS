@@ -24,10 +24,10 @@ export function constSrc(name, src = HTML) {
   return src.slice(start, src.indexOf(';\n', start) + 1);
 }
 export const CONSTS = ['AODDS_STALE_MS', 'AODDS_LEGACY_BET365', 'AODDS_ORDER', 'AODDS_ALIAS', 'AODDS_AT_CLOCK', 'AODDS_CONFIG',
-  'AODDS_BOOKS', 'AODDS_MARKET_TILES', 'AODDS_STEAM', 'AODDS_LINE_SHAPE', 'AODDS_C', 'AODDS_RECV', 'AODDS_CHECKED'];
+  'AODDS_BOOKS', 'AODDS_MARKET_TILES', 'AODDS_STEAM', 'AODDS_LINE_SHAPE', 'AODDS_DASH', 'AODDS_C', 'AODDS_RECV', 'AODDS_CHECKED'];
 export const FNS = ['acctTzOffsetMin', 'cardStartMs', 'aOddsStartMs', 'escapeHtml', 'aOddsStep', 'aOddsBooksOf', 'aOddsHasSeries',
   'aOddsPulledAt', 'aOddsHM', 'aOddsDM', 'aOddsStamp', 'aOddsWhen', 'aOddsFmt', 'aOddsSrcTitle', 'aOddsGapsMs', 'aOddsInGap',
-  'aOddsPairTicks', 'aOddsNoVig', 'aOddsRowsOf', 'aOddsMonotone', 'aOddsLinePaths', 'aOddsSparkSvg', 'aOddsMvChart', 'aOddsTipHtml',
+  'aOddsPairTicks', 'aOddsNoVig', 'aOddsRowsOf', 'aOddsMonotone', 'aOddsDispSeries', 'aOddsLinePaths', 'aOddsSparkSvg', 'aOddsMvChart', 'aOddsTipHtml',
   'aOddsStatusOf', 'aOddsBookTip', 'aOddsTipHide', 'initAOddsTips', 'renderOddsSection', 'aOddsSetMode', 'aOddsSetMarket',
   'aOddsOpenMv', 'aOddsCloseMv', 'buildOddsSection', 'aOddsMvHtml', 'akOddsMoveSvg'];
 
@@ -46,7 +46,7 @@ export function build(src = HTML, over = {}) {
     const _ocsOf = m => (m && m.__testOcs) || null;
     ${FNS.map(n => slice(n, src)).join('\n')}
     return { buildOddsSection, aOddsRowsOf, aOddsLinePaths, aOddsMvChart, aOddsSparkSvg, aOddsSetMarket, aOddsSetMode, aOddsOpenMv,
-             aOddsCloseMv, renderOddsSection, akOddsMoveSvg, aOddsBooksOf, cardStartMs, aOddsStartMs, AODDS_C,
+             aOddsCloseMv, renderOddsSection, akOddsMoveSvg, aOddsBooksOf, cardStartMs, aOddsStartMs, AODDS_C, aOddsFmt, aOddsDispSeries,
              open: m => { _aOdds = { m, novig:false, market:'Match Winner', mv:null }; },
              state: () => _aOdds, section: () => SECTION.innerHTML };
   `)();
