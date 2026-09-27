@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-09-26T23:01:59.384135Z",
+  "generatedAt": "2026-09-27T23:01:14.137246Z",
   "source": "protennislive",
-  "sourcePublished": "2026-09-26T16:18:36Z",
+  "sourcePublished": "2026-09-27T14:52:24Z",
   "tournaments": [
     {
       "tour": "ATP",
@@ -16,7 +16,7 @@
       "tier": "ATP 250",
       "surface": "Hard",
       "status": "active",
-      "sourcePublished": "2026-09-26T10:44:29Z",
+      "sourcePublished": "2026-09-27T13:32:12Z",
       "counts": {
         "MD": 32,
         "Q": 16,
@@ -384,7 +384,7 @@
       "tier": "ATP 250",
       "surface": "Hard",
       "status": "active",
-      "sourcePublished": "2026-09-26T16:18:36Z",
+      "sourcePublished": "2026-09-27T14:52:24Z",
       "counts": {
         "MD": 32,
         "Q": 16,
@@ -742,24 +742,134 @@
     {
       "tour": "ATP",
       "tournamentId": "747",
-      "name": "China Open (Beijing)",
+      "name": "China Open",
       "city": "Beijing",
       "country": "China",
-      "week_label": null,
-      "startDate": "2026-09-28",
-      "endDate": null,
+      "week_label": "30 September — 6 October 2026",
+      "startDate": "2026-09-30",
+      "endDate": "2026-10-06",
       "weekStart": "2026-09-28",
       "tier": "ATP 500",
       "surface": "Hard",
-      "status": "pending",
-      "pendingReason": "placeholder",
-      "sourcePublished": null,
+      "status": "active",
+      "sourcePublished": "2026-09-27T12:18:58Z",
       "counts": {
         "MD": null,
-        "Q": null,
-        "ALT": null
+        "Q": 15,
+        "ALT": 0
       },
-      "sections": []
+      "sections": [
+        {
+          "title": "Qualifying",
+          "players": [
+            {
+              "name": "ROYER, Valentin",
+              "rank": null,
+              "country": "FRA",
+              "status": "DA",
+              "playerKey": "954"
+            },
+            {
+              "name": "CUI, Jie",
+              "rank": null,
+              "country": "CHN",
+              "status": "WC",
+              "playerKey": "1274"
+            },
+            {
+              "name": "ALTMAIER, Daniel",
+              "rank": 67,
+              "country": "GER",
+              "status": "SEED",
+              "playerKey": "1099"
+            },
+            {
+              "name": "HANFMANN, Yannick",
+              "rank": 54,
+              "country": "GER",
+              "status": "SEED",
+              "playerKey": "1764"
+            },
+            {
+              "name": "MACHAC, Tomas",
+              "rank": null,
+              "country": "CZE",
+              "status": "DA",
+              "playerKey": "2981"
+            },
+            {
+              "name": "TE, Rigele",
+              "rank": null,
+              "country": "CHN",
+              "status": "WC",
+              "playerKey": "663"
+            },
+            {
+              "name": "DUCKWORTH, James",
+              "rank": 65,
+              "country": "AUS",
+              "status": "SEED",
+              "playerKey": "1900"
+            },
+            {
+              "name": "KECMANOVIC, Miomir",
+              "rank": 60,
+              "country": "SRB",
+              "status": "SEED",
+              "playerKey": "2848"
+            },
+            {
+              "name": "MANNARINO, Adrian",
+              "rank": null,
+              "country": "FRA",
+              "status": "DA",
+              "playerKey": "438"
+            },
+            {
+              "name": "ZHOU, Yi",
+              "rank": null,
+              "country": "CHN",
+              "status": "WC",
+              "playerKey": "39862"
+            },
+            {
+              "name": "Carreno Busta, Pablo",
+              "rank": 69,
+              "country": "ESP",
+              "status": "SEED",
+              "playerKey": null
+            },
+            {
+              "name": "LANDALUCE, Martin",
+              "rank": 62,
+              "country": "ESP",
+              "status": "SEED",
+              "playerKey": "39864"
+            },
+            {
+              "name": "TRUNGELLITI, Marco",
+              "rank": null,
+              "country": "ARG",
+              "status": "DA",
+              "playerKey": "395"
+            },
+            {
+              "name": "MOLCAN, Alex",
+              "rank": null,
+              "country": "SVK",
+              "status": "DA",
+              "playerKey": "436"
+            },
+            {
+              "name": "KOPRIVA, Vit",
+              "rank": 71,
+              "country": "CZE",
+              "status": "SEED",
+              "playerKey": "1083"
+            }
+          ]
+        }
+      ]
     }
   ]
 }
