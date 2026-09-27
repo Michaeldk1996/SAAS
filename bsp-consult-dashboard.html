@@ -12842,34 +12842,35 @@ const WX_COPY = {
   tip: { gusts: 'Max gusts', wind: 'Avg wind', feels: 'Feels-like max', rain: 'Rain chance max', mm: 'Rain total', window: 'Hours', windowVal: '{from}:00–{to}:00 venue time', values: 'Values', pastVal: 'archived forecast, not observed', source: 'Source', fetched: 'Fetched' },
   loading: 'Loading forecast…',
 };
-// Colours: the spec's SOURCE values (right) mapped through the 12a rules (.claude/rules/theme-12a.md,
-// the TEN-285 recolour engine's role mapping — the engine makes 0 edits here). Spec values with no 12a
-// home are kept and listed as unmapped.
+// Colours + widths: the Weather handoff spec VERBATIM (founder ruling TEN-303 follow-up, 2026-09-27: the Match
+// analysis modal matches the design export, not the 12a re-tone). A DESIGN_ZONES entry in
+// tools/theme-12a/recolour.mjs keeps the engine off this object; test-ten304-weather-tab.mjs locks the values.
 const WX_C = {
-  text: '#EBF1F2',                 // primary #E7E9EE → text
-  sub: '#A3ABBA',                  // secondary #AAB3C8 → text-sub
-  muted: '#A3ABBA',                // muted #8B96B5 → text-sub
-  dim: '#6E7A93',                  // dim #5B6880 (and neutral dot) → label
-  faint: '#6E7A93',                // faint #4B5672 → label
-  card: '#0E1019',                 // card surface #0E1019 → surface
-  lead: '#131623',                 // lead tile #131623 → popup
-  bd: 'rgba(255,255,255,0.045)',   // card border rgba(255,255,255,0.06) → line
-  box: 'rgba(255,255,255,0.045)',  // metric box border rgba(255,255,255,0.05) → line
-  rule: 'rgba(255,255,255,0.03)',  // border-top rules rgba(255,255,255,0.05 / 0.06) → line-soft
-  dashBd: 'rgba(255,255,255,0.045)', // banner / "+1" border rgba(255,255,255,0.14) → line
-  tagBd: 'rgba(255,255,255,0.10)', // FROM TOURNAMENT dashed rgba(255,255,255,0.2) → line-open
-  bar: 'rgba(255,255,255,0.10)',   // neutral severity bar rgba(255,255,255,0.08) → line-open
-  amber: '#E8A84E',                // WATCH #E8A84E — UNMAPPED (no 12a amber)
-  red: '#DA6259',                  // CONCERN #E0616F (retired hue) → negative
-  amberBd: 'rgba(232,168,78,0.35)', // lead tile border, amber — UNMAPPED
-  redBd: 'rgba(218,98,89,0.35)',   // lead tile border rgba(224,97,111,0.35) → negative at the spec alpha — UNMAPPED
-  chipBd: 'rgba(232,168,78,0.45)', // THRESHOLDS chip dashed border — UNMAPPED
-  unavail: 'rgba(255,255,255,0.15)', // UNAVAILABLE dot — UNMAPPED (data marker)
-  match: '#6A9AF8',                // match accent #6AAEFF → periwinkle
-  matchBd: '#2E4FA8',              // match-day border rgba(106,174,255,0.75) → seg-active-line
-  badgeInk: '#0B0C13',             // MATCH badge text #06070A → page
-  hw: '0.33px',                    // spec 1.25px borders → 12a hairline
-  hw1: '0.33px',                   // spec 1px borders → 12a hairline
+  text: '#E7E9EE',                   // primary
+  sub: '#AAB3C8',                    // secondary
+  muted: '#8B96B5',                  // muted
+  dim: '#5B6880',                    // dim (and the neutral severity dot)
+  faint: '#4B5672',                  // faint
+  card: '#0E1019',                   // card surface
+  lead: '#131623',                   // lead tile surface
+  bd: 'rgba(255,255,255,0.06)',      // card border (1.25px)
+  box: 'rgba(255,255,255,0.05)',     // metric box border (1px)
+  rule: 'rgba(255,255,255,0.05)',    // day-card reason row, border-top 1px
+  ruleFx: 'rgba(255,255,255,0.06)',  // EFFECT ON PLAY block, border-top 1px
+  dashBd: 'rgba(255,255,255,0.14)',  // unavailable banner (1.25px dashed) / "+1" chip (1px)
+  tagBd: 'rgba(255,255,255,0.2)',    // FROM TOURNAMENT tag, 1px dashed
+  bar: 'rgba(255,255,255,0.08)',     // neutral severity bar
+  amber: '#E8A84E',                  // WATCH
+  red: '#E0616F',                    // CONCERN
+  amberBd: 'rgba(232,168,78,0.35)',  // lead tile border, amber
+  redBd: 'rgba(224,97,111,0.35)',    // lead tile border, red
+  chipBd: 'rgba(232,168,78,0.45)',   // THRESHOLDS chip, 1px dashed
+  unavail: 'rgba(255,255,255,0.15)', // UNAVAILABLE dot
+  match: '#6AAEFF',                  // match accent: MATCH badge, match-day header
+  matchBd: 'rgba(106,174,255,0.75)', // match-day card border
+  badgeInk: '#06070A',               // MATCH badge text
+  hw: '1.25px',                      // card / tile / banner borders
+  hw1: '1px',                        // chip, tag, metric box, rules
 };
 
 // Lazy data (same fetch idiom as the other lazy shards, cache:'no-cache'). The index is fetched on first
@@ -13278,7 +13279,7 @@ function buildWeatherSection(m, entry, file, nowMs, arch){
       + '<div style="display:grid; grid-template-columns:repeat(2, minmax(0,1fr)); gap:10px;">'
       + L.keys.map((k, i) => '<div style="display:flex; flex-direction:column; gap:4px; padding:10px 12px; border-radius:10px; background:' + C.card + '; border:' + hw1 + ' solid ' + C.box + ';"><span style="' + mono + ' font-size:9px; letter-spacing:0.14em; color:' + C.dim + ';">' + k + '</span><span style="' + mono + ' font-size:16px; font-weight:700; color:' + (L.hl[i] ? lc : C.text) + ';">' + escapeHtml(L.metrics[i]) + '</span></div>').join('')
       + '</div>'
-      + '<div style="display:flex; flex-direction:column; gap:5px; padding-top:12px; border-top:' + hw1 + ' solid ' + C.rule + ';"><span style="' + mono + ' font-size:9px; letter-spacing:0.14em; color:' + C.dim + ';">' + escapeHtml(CP.effectCaption) + '</span><span style="font-size:13px; line-height:1.5; color:' + C.sub + '; text-wrap:pretty;">' + escapeHtml(L.effect) + '</span></div>'
+      + '<div style="display:flex; flex-direction:column; gap:5px; padding-top:12px; border-top:' + hw1 + ' solid ' + C.ruleFx + ';"><span style="' + mono + ' font-size:9px; letter-spacing:0.14em; color:' + C.dim + ';">' + escapeHtml(CP.effectCaption) + '</span><span style="font-size:13px; line-height:1.5; color:' + C.sub + '; text-wrap:pretty;">' + escapeHtml(L.effect) + '</span></div>'
       + '</div>';
     const compact = (t, isPace) => {
       const s = isPace ? 'n' : t.sev, hot = s === 'r' || s === 'a';
