@@ -3,299 +3,373 @@
   "venues": {
     "Australian Open": {
       "lat": -37.814,
-      "lon": 144.96332
+      "lon": 144.96332,
+      "tz": "Australia/Melbourne"
     },
     "French Open": {
       "lat": 48.85341,
-      "lon": 2.3488
+      "lon": 2.3488,
+      "tz": "Europe/Paris"
     },
     "Roland Garros": {
       "lat": 48.85341,
-      "lon": 2.3488
+      "lon": 2.3488,
+      "tz": "Europe/Paris"
     },
     "Wimbledon": {
       "lat": 51.42212,
-      "lon": -0.20805
+      "lon": -0.20805,
+      "tz": "Europe/London"
     },
     "US Open": {
       "lat": 40.71427,
-      "lon": -74.00597
+      "lon": -74.00597,
+      "tz": "America/New_York"
     },
     "Indian Wells": {
       "lat": 33.7207,
-      "lon": -116.21677
+      "lon": -116.21677,
+      "tz": "America/Los_Angeles"
     },
     "Miami": {
       "lat": 25.77427,
-      "lon": -80.19366
+      "lon": -80.19366,
+      "tz": "America/New_York"
     },
     "Monte Carlo": {
       "lat": 43.73141,
-      "lon": 7.41903
+      "lon": 7.41903,
+      "tz": "Europe/Monaco"
     },
     "Madrid": {
       "lat": 40.4165,
-      "lon": -3.70256
+      "lon": -3.70256,
+      "tz": "Europe/Madrid"
     },
     "Rome": {
       "lat": 41.89193,
-      "lon": 12.51133
+      "lon": 12.51133,
+      "tz": "Europe/Rome"
     },
     "Montreal": {
       "lat": 45.50884,
-      "lon": -73.58781
+      "lon": -73.58781,
+      "tz": "America/Toronto"
     },
     "Toronto": {
       "lat": 43.70643,
-      "lon": -79.39864
+      "lon": -79.39864,
+      "tz": "America/Toronto"
     },
     "Cincinnati": {
       "lat": 39.12711,
-      "lon": -84.51439
+      "lon": -84.51439,
+      "tz": "America/New_York"
     },
     "Shanghai": {
       "lat": 31.22222,
-      "lon": 121.45806
+      "lon": 121.45806,
+      "tz": "Asia/Shanghai"
     },
     "Paris": {
       "lat": 48.85341,
-      "lon": 2.3488
+      "lon": 2.3488,
+      "tz": "Europe/Paris"
     },
     "Turin": {
       "lat": 45.07049,
-      "lon": 7.68682
+      "lon": 7.68682,
+      "tz": "Europe/Rome"
     },
     "Rotterdam": {
       "lat": 51.9225,
-      "lon": 4.47917
+      "lon": 4.47917,
+      "tz": "Europe/Amsterdam"
     },
     "Dubai": {
       "lat": 25.07725,
-      "lon": 55.30927
+      "lon": 55.30927,
+      "tz": "Asia/Dubai"
     },
     "Acapulco": {
       "lat": 16.84942,
-      "lon": -99.90891
+      "lon": -99.90891,
+      "tz": "America/Mexico_City"
     },
     "Rio de Janeiro": {
       "lat": -22.90642,
-      "lon": -43.18223
+      "lon": -43.18223,
+      "tz": "America/Sao_Paulo"
     },
     "Barcelona": {
       "lat": 41.38879,
-      "lon": 2.15899
+      "lon": 2.15899,
+      "tz": "Europe/Madrid"
     },
     "Halle": {
       "lat": 51.48158,
-      "lon": 11.97947
+      "lon": 11.97947,
+      "tz": "Europe/Berlin"
     },
     "London": {
       "lat": 51.50853,
-      "lon": -0.12574
+      "lon": -0.12574,
+      "tz": "Europe/London"
     },
     "Hamburg": {
       "lat": 53.55073,
-      "lon": 9.99302
+      "lon": 9.99302,
+      "tz": "Europe/Berlin"
     },
     "Washington": {
       "lat": 38.89511,
-      "lon": -77.03637
+      "lon": -77.03637,
+      "tz": "America/New_York"
     },
     "Beijing": {
       "lat": 39.9075,
-      "lon": 116.39723
+      "lon": 116.39723,
+      "tz": "Asia/Shanghai"
     },
     "Tokyo": {
       "lat": 35.6895,
-      "lon": 139.69171
+      "lon": 139.69171,
+      "tz": "Asia/Tokyo"
     },
     "Vienna": {
       "lat": 48.20849,
-      "lon": 16.37208
+      "lon": 16.37208,
+      "tz": "Europe/Vienna"
     },
     "Basel": {
       "lat": 47.55839,
-      "lon": 7.57327
+      "lon": 7.57327,
+      "tz": "Europe/Zurich"
     },
     "Auckland": {
       "lat": -36.84853,
-      "lon": 174.76349
+      "lon": 174.76349,
+      "tz": "Pacific/Auckland"
     },
     "Adelaide": {
       "lat": -34.92866,
-      "lon": 138.59863
+      "lon": 138.59863,
+      "tz": "Australia/Adelaide"
     },
     "Brisbane": {
       "lat": -27.46794,
-      "lon": 153.02809
+      "lon": 153.02809,
+      "tz": "Australia/Brisbane"
     },
     "Sydney": {
       "lat": -33.86785,
-      "lon": 151.20732
+      "lon": 151.20732,
+      "tz": "Australia/Sydney"
     },
     "Hong Kong": {
       "lat": 22.27832,
-      "lon": 114.17469
+      "lon": 114.17469,
+      "tz": "Asia/Hong_Kong"
     },
     "Chengdu": {
       "lat": 30.66667,
-      "lon": 104.06667
+      "lon": 104.06667,
+      "tz": "Asia/Shanghai"
     },
     "Zhuhai": {
       "lat": 22.27694,
-      "lon": 113.56778
+      "lon": 113.56778,
+      "tz": "Asia/Shanghai"
     },
     "Hangzhou": {
       "lat": 30.29365,
-      "lon": 120.16142
+      "lon": 120.16142,
+      "tz": "Asia/Shanghai"
     },
     "Pune": {
       "lat": 18.51957,
-      "lon": 73.85535
+      "lon": 73.85535,
+      "tz": "Asia/Kolkata"
     },
     "Doha": {
       "lat": 25.28545,
-      "lon": 51.53096
+      "lon": 51.53096,
+      "tz": "Asia/Qatar"
     },
     "Marseille": {
       "lat": 43.29695,
-      "lon": 5.38107
+      "lon": 5.38107,
+      "tz": "Europe/Paris"
     },
     "Delray Beach": {
       "lat": 26.46146,
-      "lon": -80.07282
+      "lon": -80.07282,
+      "tz": "America/New_York"
     },
     "Dallas": {
       "lat": 32.78306,
-      "lon": -96.80667
+      "lon": -96.80667,
+      "tz": "America/Chicago"
     },
     "Montpellier": {
       "lat": 43.61093,
-      "lon": 3.87635
+      "lon": 3.87635,
+      "tz": "Europe/Paris"
     },
     "Cordoba": {
       "lat": -31.40648,
-      "lon": -64.18853
+      "lon": -64.18853,
+      "tz": "America/Argentina/Cordoba"
     },
     "Buenos Aires": {
       "lat": -34.61315,
-      "lon": -58.37723
+      "lon": -58.37723,
+      "tz": "America/Argentina/Buenos_Aires"
     },
     "Santiago": {
       "lat": -33.45694,
-      "lon": -70.64827
+      "lon": -70.64827,
+      "tz": "America/Santiago"
     },
     "Los Cabos": {
       "lat": 18.54417,
-      "lon": -103.16722
+      "lon": -103.16722,
+      "tz": "America/Mexico_City"
     },
     "Marrakech": {
       "lat": 31.63416,
-      "lon": -7.99994
+      "lon": -7.99994,
+      "tz": "Africa/Casablanca"
     },
     "Munich": {
       "lat": 48.13743,
-      "lon": 11.57549
+      "lon": 11.57549,
+      "tz": "Europe/Berlin"
     },
     "Bucharest": {
       "lat": 44.43225,
-      "lon": 26.10626
+      "lon": 26.10626,
+      "tz": "Europe/Bucharest"
     },
     "Estoril": {
       "lat": 38.70571,
-      "lon": -9.39773
+      "lon": -9.39773,
+      "tz": "Europe/Lisbon"
     },
     "Geneva": {
       "lat": 46.20222,
-      "lon": 6.14569
+      "lon": 6.14569,
+      "tz": "Europe/Zurich"
     },
     "Lyon": {
       "lat": 45.74906,
-      "lon": 4.84789
+      "lon": 4.84789,
+      "tz": "Europe/Paris"
     },
     "Gstaad": {
       "lat": 46.47215,
-      "lon": 7.28685
+      "lon": 7.28685,
+      "tz": "Europe/Zurich"
     },
     "Bastad": {
       "lat": 56.42689,
-      "lon": 12.85339
+      "lon": 12.85339,
+      "tz": "Europe/Stockholm"
     },
     "Newport": {
       "lat": 39.09145,
-      "lon": -84.49578
+      "lon": -84.49578,
+      "tz": "America/New_York"
     },
     "Umag": {
       "lat": 45.43139,
-      "lon": 13.52389
+      "lon": 13.52389,
+      "tz": "Europe/Zagreb"
     },
     "Kitzbuhel": {
       "lat": 47.44637,
-      "lon": 12.39215
+      "lon": 12.39215,
+      "tz": "Europe/Vienna"
     },
     "Winston-Salem": {
       "lat": 36.09986,
-      "lon": -80.24422
+      "lon": -80.24422,
+      "tz": "America/New_York"
     },
     "Tel Aviv": {
       "lat": 32.08088,
-      "lon": 34.78057
+      "lon": 34.78057,
+      "tz": "Asia/Jerusalem"
     },
     "Almaty": {
       "lat": 43.25249,
-      "lon": 76.9115
+      "lon": 76.9115,
+      "tz": "Asia/Almaty"
     },
     "Astana": {
       "lat": 51.1801,
-      "lon": 71.44598
+      "lon": 71.44598,
+      "tz": "Asia/Almaty"
     },
     "Antwerp": {
       "lat": 51.22047,
-      "lon": 4.40026
+      "lon": 4.40026,
+      "tz": "Europe/Brussels"
     },
     "Stockholm": {
       "lat": 59.32938,
-      "lon": 18.06871
+      "lon": 18.06871,
+      "tz": "Europe/Stockholm"
     },
     "Metz": {
       "lat": 49.11911,
-      "lon": 6.17269
+      "lon": 6.17269,
+      "tz": "Europe/Paris"
     },
     "Belgrade": {
       "lat": 44.80401,
-      "lon": 20.46513
+      "lon": 20.46513,
+      "tz": "Europe/Belgrade"
     },
     "Eastbourne": {
       "lat": 50.76871,
-      "lon": 0.28453
+      "lon": 0.28453,
+      "tz": "Europe/London"
     },
     "Hertogenbosch": {
       "lat": 51.69917,
-      "lon": 5.30417
+      "lon": 5.30417,
+      "tz": "Europe/Amsterdam"
     },
     "Mallorca": {
       "lat": 39.6078,
-      "lon": 3.01197
+      "lon": 3.01197,
+      "tz": "Europe/Madrid"
     },
     "Stuttgart": {
       "lat": 48.78232,
-      "lon": 9.17702
+      "lon": 9.17702,
+      "tz": "Europe/Berlin"
     },
     "Ho Chi Minh City": {
       "lat": 10.82302,
-      "lon": 106.62965
+      "lon": 106.62965,
+      "tz": "Asia/Ho_Chi_Minh"
     },
     "Houston": {
       "lat": 29.76328,
-      "lon": -95.36327
+      "lon": -95.36327,
+      "tz": "America/Chicago"
     },
     "Jeddah": {
       "lat": 21.49012,
-      "lon": 39.18624
+      "lon": 39.18624,
+      "tz": "Asia/Riyadh"
     },
     "Brussels": {
       "lat": 50.85045,
-      "lon": 4.34878
+      "lon": 4.34878,
+      "tz": "Europe/Brussels"
     }
   }
 }

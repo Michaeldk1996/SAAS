@@ -4,7 +4,7 @@
 // Drives the real build() with an injected fetch (no network) and a real temp directory.
 const assert = require('assert');
 const fs = require('fs'), os = require('os'), path = require('path');
-const B = require('../build-weather.js');
+const B = require(process.env.TEN304_BW || '../build-weather.js');   // the mutant runner points TEN304_BW at a mutated copy
 
 let pass = 0, fail = 0;
 async function check(name, fn) {
@@ -16,7 +16,7 @@ const HINTS = {
   Basel: { city: 'Basel', country: 'CH', indoor: true },
   Paris: { city: 'Paris', country: 'FR', indoor: true },
 };
-const COORDS = { Chengdu: { lat: 30.66, lon: 104.06 }, Basel: { lat: 47.5, lon: 7.6 } };
+const COORDS = { Chengdu: { lat: 30.66, lon: 104.06, tz: 'Asia/Shanghai' }, Basel: { lat: 47.5, lon: 7.6, tz: 'Europe/Zurich' } };
 const MATCHES = [{ tour: 'ATP Chengdu' }, { tour: 'ATP Chengdu' }, { tour: 'ATP Basel' }, { tour: 'ATP Laver Cup' }, { tour: 'ATP Nowhere' }];
 function omResponse() {
   const time = [], t = [];
@@ -34,9 +34,9 @@ const tmp = () => { const d = fs.mkdtempSync(path.join(os.tmpdir(), 'ten304-bw-'
   await check('plan: one outdoor venue per tournament; indoor and Laver Cup carry indoor:true and no file; unmapped absent', () => {
     const { tours, venues } = B.planVenues(MATCHES, HINTS, COORDS);
     assert.deepStrictEqual(Object.keys(venues), ['Chengdu']);                              // mutation: fetch indoor venues too
-    assert.deepStrictEqual(tours['ATP Chengdu'], { key: 'Chengdu', indoor: false, file: 'weather/chengdu.json' });
-    assert.deepStrictEqual(tours['ATP Basel'], { key: 'Basel', indoor: true, file: null });
-    assert.deepStrictEqual(tours['ATP Laver Cup'], { key: 'Laver Cup', indoor: true, file: null }); // mutation: drop INDOOR_NO_VENUE
+    assert.deepStrictEqual(tours['ATP Chengdu'], { key: 'Chengdu', indoor: false, tz: 'Asia/Shanghai', file: 'weather/chengdu.json', archive: 'weather/archive/chengdu.json' });
+    assert.deepStrictEqual(tours['ATP Basel'], { key: 'Basel', indoor: true, tz: 'Europe/Zurich', file: null, archive: null });  // tz even indoor
+    assert.deepStrictEqual(tours['ATP Laver Cup'], { key: 'Laver Cup', indoor: true, tz: null, file: null, archive: null }); // mutation: drop INDOOR_NO_VENUE
     assert.ok(!('ATP Nowhere' in tours));
   });
   await check('request: every hourly field the tab needs, in the venue zone (timezone=auto)', () => {
@@ -108,6 +108,56 @@ const tmp = () => { const d = fs.mkdtempSync(path.join(os.tmpdir(), 'ten304-bw-'
     await B.build({ outDir: d, matchesPath: path.join(d, 'm.json'), hints: HINTS, coords: COORDS, log: () => {}, now: () => new Date('2026-09-27T04:00:00Z'),
       fetchImpl: async u => { if (/open-meteo/.test(u)) throw new Error('down'); return ok(old)(); } });
     assert.ok(!fs.existsSync(path.join(d, 'weather/chengdu.json')));
+  });
+  // ── completed matches: the ARCHIVE (founder ruling TEN-304, 27 Sep) ─────────────────────────────
+  // omResponse = Chengdu (UTC+8) 27–28 Sep local; the 27th's playing window opens 10:00 local = 02:00Z.
+  const F = at => B.toFile('Chengdu', 30.66, 104.06, omResponse(), at);
+  const START = Date.parse('2026-09-27T08:00:00Z');                                         // 16:00 Chengdu
+  const MK = [{ key: '12166157', startMs: START }];
+  const NOWA = Date.parse('2026-09-27T12:00:00Z');
+  await check('archive: a match keeps the LAST forecast fetched BEFORE its start — never one fetched after', () => {
+    let a = B.updateArchive(null, F('2026-09-27T04:00:00.000Z'), MK, NOWA);
+    assert.strictEqual(a.matches['12166157'].fetchedAt, '2026-09-27T04:00:00.000Z');
+    assert.deepStrictEqual(a.matches['12166157'].hourly.time, ['2026-09-27T08:00:00Z']);     // the hour holding the start
+    assert.strictEqual(a.matches['12166157'].hourly.temp[0], 36);                             // local 16:00 → 20+16
+    a = B.updateArchive(a, F('2026-09-27T07:00:00.000Z'), MK, NOWA);                          // later, still pre-start: replaces
+    assert.strictEqual(a.matches['12166157'].fetchedAt, '2026-09-27T07:00:00.000Z');
+    a = B.updateArchive(a, F('2026-09-27T09:00:00.000Z'), MK, NOWA);                          // mutation: drop `fAt < m.startMs`
+    assert.strictEqual(a.matches['12166157'].fetchedAt, '2026-09-27T07:00:00.000Z', 'a post-start fetch never replaces');
+    assert.ok(!('12166157' in B.updateArchive(null, F('2026-09-27T09:00:00.000Z'), MK, NOWA).matches), 'and never creates one');
+    a = B.updateArchive(a, F('2026-09-27T05:00:00.000Z'), MK, NOWA);                          // mutation: drop the newer-only check
+    assert.strictEqual(a.matches['12166157'].fetchedAt, '2026-09-27T07:00:00.000Z', 'an OLDER fetch never replaces a newer one');
+  });
+  await check('archive: a day is archived only from a fetch made before its 10:00 venue-time window', () => {
+    assert.strictEqual(B.ARCHIVE_WINDOW_FROM_HOUR, 10);
+    const a = B.updateArchive(null, F('2026-09-27T01:00:00.000Z'), [], NOWA);                 // 09:00 local
+    assert.strictEqual(a.days['2026-09-27'].fetchedAt, '2026-09-27T01:00:00.000Z');
+    assert.strictEqual(a.days['2026-09-27'].hourly.time.length, 24);
+    assert.deepStrictEqual([a.days['2026-09-27'].code, a.days['2026-09-27'].hi, a.days['2026-09-27'].lo], [3, 30, 20]);
+    const b = B.updateArchive(a, F('2026-09-27T03:00:00.000Z'), [], NOWA);                    // 11:00 local: window open
+    assert.strictEqual(b.days['2026-09-27'].fetchedAt, '2026-09-27T01:00:00.000Z', 'mutation: drop the pre-window check');
+    assert.strictEqual(b.days['2026-09-28'].fetchedAt, '2026-09-27T03:00:00.000Z', 'the next day still takes it');
+  });
+  await check('archive: pruned to 14 days back; the page window and this window are one number', () => {
+    const a = B.updateArchive(null, F('2026-09-27T01:00:00.000Z'), MK, Date.parse('2026-10-20T00:00:00Z'));
+    assert.deepStrictEqual([Object.keys(a.days).length, Object.keys(a.matches).length], [0, 0]);
+    const html = fs.readFileSync(path.join(__dirname, '..', 'bsp-consult-dashboard.html'), 'utf8');
+    assert.strictEqual(+/window:\s*\{\s*fromHour:\s*(\d+)/.exec(html)[1], B.ARCHIVE_WINDOW_FROM_HOUR);
+  });
+  await check('build: the archive is written for each outdoor venue and CARRIES the live copy (404 = start empty)', async () => {
+    const d = tmp();
+    fs.writeFileSync(path.join(d, 'm.json'), JSON.stringify([{ id: 'upcoming-12166157', tour: 'ATP Chengdu', startTs: '2026-09-27T08:00:00Z' }]));
+    const liveArch = { v: 1, venue: 'Chengdu', tz: 'Asia/Shanghai', source: 'Open-Meteo', days: {},
+      matches: { '999': { fetchedAt: '2026-09-26T01:00:00.000Z', start: '2026-09-26T08:00:00.000Z', hourly: { time: ['2026-09-26T08:00:00Z'], temp: [30] } } } };
+    const run = arch => B.build({ outDir: d, matchesPath: path.join(d, 'm.json'), hints: HINTS, coords: COORDS, log: () => {}, now: () => new Date('2026-09-27T04:00:00Z'),
+      fetchImpl: async u => /open-meteo/.test(u) ? ok(omResponse())() : /archive\//.test(u) ? (arch ? ok(arch)() : { ok: false, status: 404, json: async () => null }) : { ok: false, status: 404, json: async () => null } });
+    const idx = (await run(liveArch)).index;
+    assert.strictEqual(idx.tours['ATP Chengdu'].archive, 'weather/archive/chengdu.json');
+    const a = JSON.parse(fs.readFileSync(path.join(d, 'weather/archive/chengdu.json'), 'utf8'));
+    assert.ok(a.matches['999'], 'the live archive is carried');                               // mutation: ignore the live copy
+    assert.strictEqual(a.matches['12166157'].fetchedAt, '2026-09-27T04:00:00.000Z', 'this run\'s pre-start fetch archived');
+    await run(null);
+    assert.ok(!JSON.parse(fs.readFileSync(path.join(d, 'weather/archive/chengdu.json'), 'utf8')).matches['999'], '404 → starts empty');
   });
   console.log(`\nRESULT: ${pass} passed, ${fail} failed`);
   process.exit(fail ? 1 : 0);

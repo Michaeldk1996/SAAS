@@ -29,20 +29,21 @@ export function constSrc(name, src = HTML) {
 export const CONSTS = ['AODDS_C', 'WX_CONFIG', 'WX_COPY', 'WX_C'];
 export const FNS = ['acctTzOffsetMin', 'cardStartMs', 'cardFmtStart', 'aContextLine', 'escapeHtml', 'aOddsTipHtml',
   'wxForced', 'wxNum', 'wxFmt', 'wxSev', 'wxRank', 'wxLocalParts', 'wxAddDays', 'wxDayDiff', 'wxDow', 'wxMonDay', 'wxStamp',
-  'wxAgo', 'wxIconKind', 'wIcon', 'wxModel', 'buildWeatherSection'];
+  'wxAgo', 'wxIconKind', 'wIcon', 'wxStarted', 'wxArchMatchRow', 'wxArchiveFile', 'wxFirstSlot', 'wxBoard', 'wxModel', 'buildWeatherSection'];
 
 // The page's renderer in a sandbox. `over` replaces a const's source (e.g. a config under test);
 // `viewerTz` is what newsTz() returns (undefined = the runtime's zone, as on the page with no preference);
 // `search` is location.search (for the test-only ?wxForce param).
-export function build({ src = HTML, over = {}, viewerTz, search = '' } = {}) {
+export function build({ src = HTML, over = {}, viewerTz, search = '', board = [] } = {}) {
   const c = n => (over[n] != null ? `\nconst ${n} = ${over[n]};` : constSrc(n, src));
-  return new Function('__viewerTz', '__search', `
+  return new Function('__viewerTz', '__search', '__board', `
     const location = { search: __search };
+    const matches = __board;
     const newsTz = () => __viewerTz;
     ${CONSTS.map(c).join('\n')}
     ${FNS.map(n => slice(n, src)).join('\n')}
     return { buildWeatherSection, wxModel, aContextLine, cardStartMs, cardFmtStart, WX_CONFIG, WX_COPY, WX_C };
-  `)(viewerTz, search);
+  `)(viewerTz, search, board);
 }
 
 // The SHARED tooltip (TEN-303's aOddsTip*, which the Weather tab uses) run against a minimal fake DOM:
@@ -75,6 +76,7 @@ export function buildTips({ src = HTML } = {}) {
   return {
     api, delays, mkEl,
     fire: (type, el) => (listeners[type] || []).forEach(f => f({ target: el, relatedTarget: null })),
+    key: k => (listeners.keydown || []).forEach(f => f({ key: k, target: null })),
     tick: ms => { now += ms; timers.forEach(t => { if (t.f && t.at <= now) { const f = t.f; t.f = null; f(); } }); },
     tip: () => (tipEl && tipEl.style.display === 'block' ? tipEl.innerHTML : null),
     listenerTypes: () => Object.keys(listeners),
@@ -92,18 +94,22 @@ export function buildCache({ src = HTML, server }) {
   const api = new Function('fetch', 'document', 'Date', 'console', '__renders', `
     ${constSrc('WX_CONFIG', src)}
     ${decl}
-    function renderWeatherSection(){ __renders.push(_aWx.ready && _aWx.m === _aWxMatch ? { tour: _aWx.m.tour, entry: _aWx.entry, fetchedAt: _aWx.file && _aWx.file.fetchedAt } : 'loading'); }
-    ${['loadWeatherIndex', 'wxFileDue', 'loadWeatherFile', 'ensureWeather', 'wxOnMatchesReload', 'openWeatherTab'].map(n => slice(n, src)).join('\n')}
+    function renderWeatherSection(){ __renders.push(_aWx.ready && _aWx.m === _aWxMatch ? { tour: _aWx.m.tour, entry: _aWx.entry, fetchedAt: _aWx.file && _aWx.file.fetchedAt, arch: _aWx.arch || null } : 'loading'); }
+    ${['acctTzOffsetMin', 'cardStartMs', 'wxStarted', 'loadWeatherIndex', 'wxFileDue', 'loadWeatherFile', 'ensureWeather', 'wxOnMatchesReload', 'openWeatherTab'].map(n => slice(n, src)).join('\n')}
     return { openWeatherTab, wxOnMatchesReload, setMatch: m => { _aWxMatch = m; } };
   `)(fetch, document, { now: () => clock.now, parse: s => Date.parse(s) }, { warn() {} }, renders);
   return { api, clock, calls, renders, dom };
 }
 // printAnalysisReport with a fake modal / window; `openWeatherTab` is injected (a promise the test settles).
-export function buildReport({ src = HTML, openWeatherTab }) {
+// `wx` = { el, ready, m } — the Weather section element and the lazy state; `buildWeatherSection` = the page's.
+export function buildReport({ src = HTML, openWeatherTab, wx = null, buildWeatherSection = () => '' }) {
   const log = [];
   const modal = { classList: { add: c => log.push('add:' + c), remove: c => log.push('remove:' + c) } };
-  const fn = new Function('document', 'window', 'openWeatherTab', 'setTimeout', `${slice('printAnalysisReport', src)}; return printAnalysisReport;`)(
-    { querySelector: () => modal }, { addEventListener() {}, print: () => log.push('print') }, openWeatherTab, (f, ms) => { log.push('cap:' + ms); });
+  const doc = { querySelector: () => modal, getElementById: id => (id === 'aSectionWeather' && wx ? wx.el : null) };
+  const fn = new Function('document', 'window', 'openWeatherTab', 'setTimeout', '_aWx', '_aWxMatch', 'buildWeatherSection',
+    `${slice('printAnalysisReport', src)}; return printAnalysisReport;`)(
+    doc, { addEventListener() {}, print: () => log.push('print:' + (wx && wx.el ? wx.el.innerHTML : '')) }, openWeatherTab,
+    (f, ms) => { log.push('cap:' + ms); }, wx ? { ready: wx.ready, m: wx.m } : { ready: false }, wx ? wx.m : null, buildWeatherSection);
   return { print: fn, log };
 }
 // Attributes of every element in `html` whose class starts with `cls` (first tag only), entities decoded.

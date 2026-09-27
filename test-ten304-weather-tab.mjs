@@ -16,6 +16,7 @@ const ENTRY = { key: 'Chengdu', indoor: false, file: 'weather/chengdu.json' };
 // Mannarino v Shapovalov: 10:00 Berlin (CEST) = 08:00Z = 16:00 Chengdu.
 const M = { tour: 'ATP Chengdu', date: '2026-09-27', time: '10:00', surface: 'Hard',
             courtSpeed: { abstractSpeed: 1.17, category: 'Fast' } };
+const M0 = M;
 const file = (hour, extra = {}) => makeFile(Object.assign({ from: '2026-09-25', fetchedAt: FETCHED, hour }, extra));
 const render = (f, opts = {}, m = M, entry = ENTRY, now = NOW) => build(opts).buildWeatherSection(m, entry, f, now);
 
@@ -227,6 +228,7 @@ test('DST: a Sydney match after the 4 Oct 2026 change reads the RIGHT hour (real
 // Mutation: wxFileDue never says due for a cached file; the matches reload no longer marks the index stale.
 test('session cache: a venue file ≥ 3 h old is fetched again on open; a matches reload re-reads the index and the open tab', async () => {
   const H = 3600e3, T0 = Date.parse('2026-09-27T04:00:00Z');
+  const M = Object.assign({}, M0, { time: '20:00' });   // 18:00Z: still upcoming at every clock below
   let fileAt = T0 - 2 * H, tours = { 'ATP Chengdu': ENTRY };
   const server = url => url === 'weather-index.json' ? { v: 1, tours } : url === 'weather/chengdu.json' ? file(() => ({}), { fetchedAt: new Date(fileAt).toISOString() }) : null;
   const C = buildCache({ server });
@@ -263,9 +265,22 @@ test('Download report waits for the Weather section before printing (tab never o
   const R = buildReport({ openWeatherTab: () => wx });
   const p = R.print();
   await new Promise(r => setTimeout(r, 0));
-  assert.ok(!R.log.includes('print'), 'not printed while the Weather files load');
+  assert.ok(!R.log.some(x => x.startsWith('print')), 'not printed while the Weather files load');
   done(); await p;
-  assert.deepEqual(R.log.filter(x => x !== 'cap:8000'), ['add:printing', 'print']);
+  assert.deepEqual(R.log.filter(x => x !== 'cap:8000'), ['add:printing', 'print:']);
+});
+
+// Mutation: drop the print fallback (a Weather load that never lands prints "Loading forecast…").
+test('Download report never prints "Loading forecast…": an unloaded Weather section prints real dashes', async () => {
+  const R0 = build({});
+  const el = { innerHTML: '<div>' + R0.WX_COPY.loading + '</div>' };
+  const R = buildReport({ openWeatherTab: () => Promise.resolve(), wx: { el, ready: false, m: M },
+    buildWeatherSection: (m, e, f, now, a) => R0.buildWeatherSection(m, e, f, NOW, a) });
+  await R.print();
+  const printed = R.log.find(x => x.startsWith('print:'));
+  assert.ok(!printed.includes(R0.WX_COPY.loading), 'no loading line in the report');
+  assert.equal(elements(printed.slice(6), 'wx-banner').length, 1, 'the unavailable state');
+  assert.ok(elements(printed.slice(6), 'wx-day').every(d => text(elements(d, 'wx-hi')[0]) === '—'), 'dashes, never a guess');
 });
 
 // Mutation: the pace shift reads an UNAVAILABLE rain as calm (the old `on('rain') ? … : on('heat') ? 'quicker'`).
@@ -278,12 +293,77 @@ test('pace: "PLAYS QUICKER" needs heat hot AND rain calm — an UNAVAILABLE rain
   assert.equal(text(elements(calmRain, 'wx-sevl')[0]), 'PLAYS QUICKER');   // control
 });
 
-// Mutation: drop `|| uncovered` (an old match renders a dashed strip with an "ok" freshness line).
+// Mutation: drop `|| uncovered` (a match day the file does not reach renders a dashed strip with an "ok" line).
 test('a match day outside the forecast file → the unavailable state, with the real last-update time', () => {
-  const old = Object.assign({}, M, { date: '2026-09-10' });
-  const html = render(file(() => ({})), {}, old);
+  const far = Object.assign({}, M, { date: '2026-10-20' });                    // beyond the file's last day
+  const html = render(file(() => ({})), {}, far);
   assert.equal(elements(html, 'wx-banner').length, 1);
   assert.match(text(elements(html, 'wx-fresh')[0]), /^Forecast unavailable · last successful update Sep 27, 10:00 · Open-Meteo$/);
   assert.equal(text(elements(html, 'wx-verdict')[0]), 'Match-time forecast unavailable.');
   assert.equal(elements(render(file(() => ({}))), 'wx-banner').length, 0, 'control: an in-range match is available');
+});
+
+// ── founder rulings, 27 Sep 06:54Z ──────────────────────────────────────────────────────────────────
+// Completed match = our archived pre-start forecast only (build-weather.js's real updateArchive builds it).
+const PAST = Object.assign({}, M, { id: 'past-12166157' });                  // 08:00Z = 16:00 Chengdu
+const LATER = Date.parse('2026-09-27T12:00:00Z');
+const archOf = (fetchedAt, hour) => BW.updateArchive(null, makeFile({ from: '2026-09-25', fetchedAt, hour }),
+  [{ key: '12166157', startMs: Date.parse('2026-09-27T08:00:00Z') }], LATER);
+// Mutation: a started match reads the CURRENT file (archived = false), or the archived label is dropped.
+test('completed match: the archived pre-start forecast shows, labelled "forecast, not observed"; none → unavailable', () => {
+  const arch = archOf('2026-09-27T04:00:00Z', (d, h) => d === '2026-09-27' && h === 16 ? { gusts: 38 } : {});
+  const R = build({});
+  const html = R.buildWeatherSection(PAST, ENTRY, null, LATER, arch);
+  assert.equal(elements(html, 'wx-banner').length, 0);
+  assert.equal(text(elements(html, 'wx-athead')[0]), 'Sun Sep 27 · 16:00 · forecast, not observed');
+  assert.equal(text(elements(html, 'wx-verdict')[0]), 'Main factor at match time: Wind — gusts 38 km/h');
+  assert.equal(text(elements(html, 'wx-fresh')[0]), 'Archived forecast · fetched Sep 27, 12:00 · Open-Meteo');
+  const tip = attrsOf(html, 'wx-day').find(a => a['data-date'] === '2026-09-27')['data-aotip'];
+  assert.ok(tip.includes('archived forecast, not observed'), 'day tooltip labels the archive');
+  // no archive → unavailable; a CURRENT forecast file is never read for a started match
+  for (const [f, a] of [[null, null], [file(() => ({ gusts: 38 })), null], [file(() => ({ gusts: 38 })), { v: 1, days: {}, matches: {} }]]) {
+    const h = R.buildWeatherSection(PAST, ENTRY, f, LATER, a);
+    assert.equal(elements(h, 'wx-banner').length, 1);
+    assert.equal(text(elements(h, 'wx-verdict')[0]), 'Match-time forecast unavailable.');
+    assert.ok(!/38/.test(text(elements(h, 'wx-tiles')[0] || '')), 'never the current forecast for a past date');
+  }
+});
+
+// Mutation: the partial verdict loses its {missing} list (or lists an available factor).
+test('partial read: "No weather concern in the values we have. Missing: rain."', () => {
+  const html = render(file((d, h) => d === '2026-09-27' && h === 16 ? { rainChance: null } : {}));
+  assert.equal(text(elements(html, 'wx-verdict')[0]), 'No weather concern in the values we have. Missing: rain.');
+  const h2 = render(file((d, h) => d === '2026-09-27' && h === 16 ? { rainChance: null, gusts: null } : {}));
+  assert.equal(text(elements(h2, 'wx-verdict')[0]), 'No weather concern in the values we have. Missing: wind, rain.');
+});
+
+// Mutation: the zone ignores the index entry's tz (falls back to the viewer's zone with no forecast file).
+test('no forecast file: venue time still comes from the venue list (index tz); the viewer-zone note is only a fallback', () => {
+  const withTz = render(null, { viewerTz: 'UTC' }, M, Object.assign({}, ENTRY, { tz: 'Asia/Shanghai' }));
+  assert.equal(text(elements(withTz, 'wx-tznote')[0]), 'Times shown in venue local time');
+  assert.equal(text(elements(withTz, 'wx-badge')[0]), 'MATCH · 16:00');
+  const noTz = render(null, { viewerTz: 'UTC' }, M, ENTRY);
+  assert.equal(text(elements(noTz, 'wx-tznote')[0]), 'Times shown in your time zone');
+  assert.equal(text(elements(noTz, 'wx-badge')[0]), 'MATCH · 08:00');
+});
+
+// Mutation: wxFirstSlot always true (no note) or always false (the first match gets it too).
+test('"may start later" note on every match that is not first on court that day', () => {
+  const first = M, second = Object.assign({}, M, { time: '13:00' }), other = Object.assign({}, M, { tour: 'ATP Beijing', time: '06:00' });
+  const board = [first, second, other];
+  const note = m => elements(build({ board }).buildWeatherSection(m, ENTRY, file(() => ({})), NOW), 'wx-later').map(text);
+  assert.deepEqual(note(second), ['Scheduled time — later matches often start later.']);
+  assert.deepEqual(note(first), [], 'the first match of the day at that tournament has no note');
+  assert.deepEqual(note(Object.assign({}, M, { time: '10:00' })), [], 'a tie with the first slot is first on court');
+});
+
+// Mutation: drop the Escape keydown listener from initAOddsTips (the shared TEN-303 tooltip).
+test('Escape closes the shared tooltip (open or pending)', () => {
+  const T = buildTips(); T.api.initAOddsTips();
+  const el = T.mkEl({ 'data-aotip': '<b>x</b>', tabindex: '0' });
+  T.fire('mouseover', el); T.tick(250); assert.equal(T.tip(), '<b>x</b>');
+  T.key('Escape'); assert.equal(T.tip(), null, 'open tooltip closed');
+  const el2 = T.mkEl({ 'data-aotip': '<b>y</b>' });
+  T.fire('focusin', el2); T.key('Escape'); T.tick(300); assert.equal(T.tip(), null, 'pending tooltip cancelled');
+  T.fire('focusin', T.mkEl({ 'data-aotip': '<b>z</b>' })); T.key('Enter'); T.tick(250); assert.ok(T.tip(), 'other keys do nothing');
 });

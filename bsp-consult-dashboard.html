@@ -12796,6 +12796,7 @@ const WX_COPY = {
   viewerTimeNote: 'Times shown in your time zone',
   fresh: 'Forecast updated {ago} · {source}',
   freshUnavailable: 'Forecast unavailable · last successful update {when} · {source}',
+  freshArchived: 'Archived forecast · fetched {when} · {source}',   // completed match: our pre-start forecast
   ago: { now: 'just now', min: '{n} min ago', hours: '{n}h ago', days: '{n}d ago' },
   bannerTag: 'UNAVAILABLE',
   banner: 'No forecast returned for this venue. Values show as dashes until the feed is back.',
@@ -12807,12 +12808,14 @@ const WX_COPY = {
   legend: { n: 'No concern', a: 'Watch', r: 'Concern', note: 'Days 4+ ahead are less reliable and shown dimmed.' },
   atMatch: 'At match time',
   atMatchTbc: '{date} · time TBC',
-  pastValues: 'forecast values',
+  pastValues: 'forecast, not observed',
+  mayStartLater: 'Scheduled time — later matches often start later.',
   flag: { wind: 'Gusts {v} km/h', heat: 'Feels like {v}°', rain: 'Rain {v}%' },
   verdictLead: 'Main factor at match time: {name} — {what}',
   verdictWhat: { wind: 'gusts {v} km/h', heat: 'feels like {v}°', rain: 'rain {v}%' },
   verdictNone: 'No weather concern at match time.',
-  verdictPartial: 'No concern in the match-time values available; the rest are missing.',
+  verdictPartial: 'No weather concern in the values we have. Missing: {missing}.',
+  missingNames: { wind: 'wind', heat: 'heat', rain: 'rain' },   // {missing} = these, comma-separated
   verdictUnavailable: 'Match-time forecast unavailable.',
   verdictNoTime: 'Match time not set — no hourly forecast yet.',
   sev: { r: 'CONCERN', a: 'WATCH', n: 'NO CONCERN', u: 'UNAVAILABLE' },
@@ -12893,22 +12896,32 @@ function wxFileDue(f, nowMs){
 }
 function loadWeatherFile(file){
   const f = String(file || '');
-  if (!/^weather\/[a-z0-9-]+\.json$/.test(f)) return Promise.resolve(null);
+  if (!/^weather\/(archive\/)?[a-z0-9-]+\.json$/.test(f)) return Promise.resolve(null);
+  const isArch = f.indexOf('weather/archive/') === 0;
   if (!wxFileDue(f, Date.now())) return Promise.resolve(_wxFiles[f]);
   if (_wxFilePromises[f]) return _wxFilePromises[f];
   _wxFileTried[f] = Date.now();
   _wxFilePromises[f] = fetch('./' + f, { cache: 'no-cache' })
     .then(r => r.ok ? r.json() : null)
-    .then(d => { if (!d || d.v !== 2) throw new Error('bad weather file'); _wxFiles[f] = d; delete _wxFilePromises[f]; return d; })
+    .then(d => { if (!d || (isArch ? !(d.v === 1 && d.days && d.matches) : d.v !== 2)) throw new Error('bad weather file'); _wxFiles[f] = d; delete _wxFilePromises[f]; return d; })
     .catch(err => { console.warn(f + ' load failed:', err.message); delete _wxFilePromises[f]; return _wxFiles[f] || null; });
   return _wxFilePromises[f];
 }
 function ensureWeather(m){
   return loadWeatherIndex().then(idx => {
     const entry = (m && idx.tours && idx.tours[m.tour]) || null;
-    if (!entry || entry.indoor === true || !entry.file) return { entry, file: null };
-    return loadWeatherFile(entry.file).then(file => ({ entry, file }));
+    if (!entry || entry.indoor === true) return { entry, file: null, arch: null };
+    // a started / completed match reads ONLY the archive (our pre-start forecast) — never the current file
+    if (wxStarted(m, Date.now())) return (entry.archive ? loadWeatherFile(entry.archive) : Promise.resolve(null)).then(arch => ({ entry, file: null, arch }));
+    if (!entry.file) return { entry, file: null, arch: null };
+    return loadWeatherFile(entry.file).then(file => ({ entry, file, arch: null }));
   });
+}
+// Started = its start instant has passed, or the board says it is live / finished (a `past-` card; a finished
+// match with no time is still finished). Such a match shows only the archived pre-start forecast.
+function wxStarted(m, nowMs){
+  const s = cardStartMs(m);
+  return (Number.isFinite(s) && s <= nowMs) || !!(m && (m.live === true || /^past-/.test(String(m.id || ''))));
 }
 // matches.json reloaded (every few minutes): the index may have changed, and an open Weather tab is
 // re-read (and re-aged) so it never sits amber / unavailable while a fresh file is on the server.
@@ -12926,7 +12939,7 @@ function openWeatherTab(){
   if (_aWx.m === m && _aWx.ready) renderWeatherSection();       // paint the cached copy at once…
   return ensureWeather(m).then(r => {                             // …then any refetched one
     if (_aWxMatch !== m) return;
-    _aWx = { m, entry: r.entry, file: r.file, ready: true };
+    _aWx = { m, entry: r.entry, file: r.file, arch: r.arch, ready: true };
     renderWeatherSection();
   });
 }
@@ -12935,7 +12948,7 @@ function renderWeatherSection(){
   if (!el) return;
   aOddsTipHide();
   el.innerHTML = (_aWx.ready && _aWx.m === _aWxMatch)
-    ? buildWeatherSection(_aWx.m, _aWx.entry, _aWx.file, Date.now())
+    ? buildWeatherSection(_aWx.m, _aWx.entry, _aWx.file, Date.now(), _aWx.arch)
     : '<div style="font-size:13px; color:' + WX_C.dim + ';">' + escapeHtml(WX_COPY.loading) + '</div>';
   initAOddsTips();
 }
@@ -12994,9 +13007,15 @@ function wIcon(type, size, color){
 }
 
 // The tab's state, computed from the data (spec wxFor, minus the mock's STATE switcher).
-function wxModel(m, entry, file, nowMs, forced){
+function wxModel(m, entry, file, nowMs, forced, arch){
   const CF = WX_CONFIG, CP = WX_COPY;
   if (entry && entry.indoor === true) return { indoor: true };
+  const startMs = cardStartMs(m);
+  // A started / completed match: ONLY our archived pre-start forecast (founder ruling TEN-304) — the current
+  // file is never read for it. No archived match-time row → the unavailable state.
+  const archived = wxStarted(m, nowMs);
+  const mrow = archived ? wxArchMatchRow(arch, m, startMs) : null;
+  if (archived) file = mrow ? wxArchiveFile(arch, mrow) : null;
   const H = file && file.hourly;
   const tzOk = !!(file && file.tz && wxLocalParts(nowMs, file.tz));
   const valid = !!(tzOk && H && Array.isArray(H.time) && H.time.length);
@@ -13005,15 +13024,17 @@ function wxModel(m, entry, file, nowMs, forced){
   const rowsAt = valid ? H.time.map(t => { const ms = Date.parse(t); const p = wxLocalParts(ms, file.tz); return p ? { ms, date: p.date, hour: p.hour } : null; }) : [];
   const fetchedMs = file ? Date.parse(file.fetchedAt || '') : NaN;
   const ageH = Number.isFinite(fetchedMs) ? (nowMs - fetchedMs) / 3600e3 : NaN;
-  const startMs = cardStartMs(m);
   // A match day the file does not cover (an old match, or one beyond the forecast) has no forecast.
   const coverDate = (() => { const p = wxLocalParts(startMs, valid ? file.tz : undefined); return p ? p.date : (/^\d{4}-\d{2}-\d{2}$/.test((m && m.date) || '') ? m.date : null); })();
-  const uncovered = valid && !!coverDate && !rowsAt.some(r => r && r.date === coverDate);
-  const unavail = forced === 'unavailable' || !entry || !valid || !(ageH <= CF.staleHours.unavailable) || uncovered;
-  const zone = tzOk ? file.tz : (typeof newsTz === 'function' ? newsTz() : undefined);
+  const uncovered = !archived && valid && !!coverDate && !rowsAt.some(r => r && r.date === coverDate);
+  const unavail = forced === 'unavailable' || !entry || !valid || (!archived && !(ageH <= CF.staleHours.unavailable)) || uncovered;
+  // venue zone: the file's, else the index entry's (tournament-venues.json) — so venue time even with no file
+  const vz = (file && file.tz) || (entry && entry.tz) || null, zoneOk = !!(vz && wxLocalParts(nowMs, vz));
+  const zone = zoneOk ? vz : (typeof newsTz === 'function' ? newsTz() : undefined);
   const source = (file && file.source) || 'Open-Meteo';
   const fresh = unavail
     ? { text: wxFmt(CP.freshUnavailable, { when: Number.isFinite(fetchedMs) ? wxStamp(fetchedMs, zone) : '—', source }), tone: 'unavail' }
+    : archived ? { text: wxFmt(CP.freshArchived, { when: wxStamp(fetchedMs, zone), source }), tone: 'ok' }
     : { text: wxFmt(CP.fresh, { ago: wxAgo(fetchedMs, nowMs), source }), tone: ageH >= CF.staleHours.amber ? 'amber' : 'ok' };
 
   const nowP = wxLocalParts(nowMs, zone) || wxLocalParts(nowMs, 'UTC');
@@ -13062,8 +13083,8 @@ function wxModel(m, entry, file, nowMs, forced){
   });
 
   // at match time: the hourly row whose hour contains the start instant
-  const hi = (!unavail && mp) ? rowsAt.findIndex(r => r && r.ms <= startMs && startMs < r.ms + 3600e3) : -1;
-  const at = k => hi >= 0 ? val(k, hi) : null;
+  const hi = (!unavail && mp) ? (archived ? 0 : rowsAt.findIndex(r => r && r.ms <= startMs && startMs < r.ms + 3600e3)) : -1;
+  const at = k => hi < 0 ? null : archived ? wxNum(mrow.hourly[k] && mrow.hourly[k][0]) : val(k, hi);
   const mt = { gusts: rnd(at('gusts')), wind: rnd(at('wind')), feels: rnd(at('feels')), temp: rnd(at('temp')), hum: rnd(at('humidity')),
     rain: rnd(at('rainChance')), mm: at('rainMm') };
   const dash = v => v == null ? '—' : v;
@@ -13104,22 +13125,64 @@ function wxModel(m, entry, file, nowMs, forced){
   else if (!mp) verdict = CP.verdictNoTime;
   else if (hi < 0) verdict = CP.verdictUnavailable;
   else if (leadF) verdict = wxFmt(CP.verdictLead, { name: leadF.name, what: wxFmt(CP.verdictWhat[leadF.id], { v: leadF.what }) });
-  else if (F.some(f => f.sev === 'u')) verdict = F.every(f => f.sev === 'u') ? CP.verdictUnavailable : CP.verdictPartial;
+  else if (F.some(f => f.sev === 'u')) verdict = F.every(f => f.sev === 'u') ? CP.verdictUnavailable
+    : wxFmt(CP.verdictPartial, { missing: ['wind', 'heat', 'rain'].filter(id => sevOf(id) === 'u').map(id => CP.missingNames[id]).join(', ') });
   else verdict = CP.verdictNone;
   const matchDay = matchDate ? wxDow(matchDate) + ' ' + wxMonDay(matchDate) : '—';
   return {
-    indoor: false, unavail, fresh, source, zone, venueZone: tzOk, fetchedMs, nowMs, today,
+    indoor: false, unavail, archived, fresh, source, zone, venueZone: zoneOk, fetchedMs, nowMs, today,
+    mayStartLater: !unavail && !!mp && !wxFirstSlot(m, startMs, zone),
     range: wxMonDay(dates[0]) + ' – ' + wxMonDay(dates[N - 1]),
     days, badge: mp ? wxFmt(CP.matchBadge, { time: mp.hm }) : CP.matchBadgeTbc,
-    atHead: mp ? matchDay + ' · ' + mp.hm + (wxDayDiff(today, mp.date) < 0 || (startMs < nowMs) ? ' · ' + CP.pastValues : '') : wxFmt(CP.atMatchTbc, { date: matchDay }),
+    atHead: mp ? matchDay + ' · ' + mp.hm + (archived ? ' · ' + CP.pastValues : '') : wxFmt(CP.atMatchTbc, { date: matchDay }),
     verdict, verdictSev: (unavail || F.every(f => f.sev === 'u')) ? 'u' : leadF ? leadF.sev : 'n', lead: leadF, factors: F, pace,
   };
 }
 
+// The archived match-time row for a started match: the match's own snapshot (last fetch before its start)
+// when its hour holds the card's CURRENT start, else the archived day's row at that hour if that day was
+// fetched before the start. Anything else → null (no archived forecast for this match).
+function wxArchMatchRow(arch, m, startMs){
+  if (!arch || !arch.matches || !Number.isFinite(startMs)) return null;
+  const inHour = t => { const ms = Date.parse(t); return Number.isFinite(ms) && ms <= startMs && startMs < ms + 3600e3; };
+  const x = arch.matches[String((m && m.id) || '').replace(/^[a-z]+-/, '')];
+  if (x && x.hourly && Array.isArray(x.hourly.time) && inHour(x.hourly.time[0]) && Date.parse(x.fetchedAt) < startMs) return x;
+  for (const d of Object.values(arch.days || {})) {
+    const T = (d && d.hourly && d.hourly.time) || [], i = T.findIndex(inHour);
+    if (i >= 0 && Date.parse(d.fetchedAt) < startMs) {
+      const row = { fetchedAt: d.fetchedAt, hourly: {} };
+      Object.keys(d.hourly).forEach(k => { row.hourly[k] = [Array.isArray(d.hourly[k]) ? d.hourly[k][i] : null]; });
+      return row;
+    }
+  }
+  return null;
+}
+// The archive's days as a forecast file (same shape build-weather.js writes), fetchedAt = the match row's.
+function wxArchiveFile(arch, mrow){
+  const H = { time: [], temp: [], humidity: [], feels: [], rainChance: [], rainMm: [], wind: [], gusts: [] };
+  const D = { date: [], code: [], hi: [], lo: [] };
+  Object.keys(arch.days || {}).sort().forEach(date => {
+    const x = arch.days[date], h = (x && x.hourly) || {};
+    (h.time || []).forEach((t, i) => Object.keys(H).forEach(k => H[k].push(k === 'time' ? t : (Array.isArray(h[k]) ? h[k][i] : null))));
+    D.date.push(date); D.code.push(x.code); D.hi.push(x.hi); D.lo.push(x.lo);
+  });
+  return { v: 2, tz: arch.tz, source: arch.source, fetchedAt: mrow.fetchedAt, pastHours: 'forecast', hourly: H, daily: D };
+}
+// First on court: api-tennis has no order of play, so (as in the TEN-304 start-delay report) the first slot is
+// the EARLIEST scheduled start that venue-local day at that tournament on the board. Ties are all first.
+function wxFirstSlot(m, startMs, zone){
+  const day = wxLocalParts(startMs, zone);
+  if (!day) return true;
+  const same = wxBoard().filter(x => x && x.tour === m.tour).map(x => cardStartMs(x))
+    .filter(ms => Number.isFinite(ms) && (wxLocalParts(ms, zone) || {}).date === day.date);
+  return !same.length || startMs <= Math.min.apply(null, same);
+}
+function wxBoard(){ return (typeof matches !== 'undefined' && Array.isArray(matches)) ? matches : []; }
+
 // Render (spec §1–§6 markup; colours through WX_C).
-function buildWeatherSection(m, entry, file, nowMs){
+function buildWeatherSection(m, entry, file, nowMs, arch){
   const C = WX_C, CP = WX_COPY, CF = WX_CONFIG, hw = C.hw, hw1 = C.hw1, mono = "font-family:'IBM Plex Mono',monospace;";
-  const vm = wxModel(m, entry, file, nowMs, wxForced());
+  const vm = wxModel(m, entry, file, nowMs, wxForced(), arch);
   const tipAttr = html => ' data-aotip="' + escapeHtml(html) + '"', TC = AODDS_C;   // the shared (TEN-303) tooltip
   const sevC = s => s === 'r' ? C.red : s === 'a' ? C.amber : C.bar;
   const dotC = s => s === 'r' ? C.red : s === 'a' ? C.amber : s === 'u' ? C.unavail : C.dim;
@@ -13165,7 +13228,7 @@ function buildWeatherSection(m, entry, file, nowMs){
       const L = [[TP.gusts, u(a.gusts, ' km/h')], [TP.wind, u(a.wind, ' km/h')], [TP.feels, u(a.feels, '°')],
         [TP.rain, u(a.rain, '%')], [TP.mm, a.mm == null ? '—' : a.mm.toFixed(1) + ' mm'],
         [TP.window, wxFmt(TP.windowVal, { from: String(CF.window.fromHour).padStart(2, '0'), to: String(CF.window.toHour).padStart(2, '0') })]];
-      if (d.past) L.push([TP.values, TP.pastVal]);
+      if (d.past || vm.archived) L.push([TP.values, TP.pastVal]);
       L.push([TP.source, vm.source], [TP.fetched, wxStamp(vm.fetchedMs, vm.zone)]);
       tip = ' tabindex="0"' + tipAttr(aOddsTipHtml(d.dow + ' ' + d.label, L));
     }
@@ -13190,7 +13253,10 @@ function buildWeatherSection(m, entry, file, nowMs){
 
   // §3 at match time
   h += '<div style="display:flex; align-items:baseline; justify-content:space-between; gap:16px; margin:28px 0 12px;"><span style="font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:' + C.dim + ';">' + escapeHtml(CP.atMatch) + '</span>'
-    + '<span class="wx-athead" style="' + mono + ' font-size:12px; color:' + C.match + ';">' + escapeHtml(vm.atHead) + '</span></div>';
+    + (vm.mayStartLater
+      ? '<span style="display:flex; flex-direction:column; align-items:flex-end; gap:4px; text-align:right;"><span class="wx-athead" style="' + mono + ' font-size:12px; color:' + C.match + ';">' + escapeHtml(vm.atHead) + '</span>'
+        + '<span class="wx-later" style="font-size:11.5px; color:' + C.faint + ';">' + escapeHtml(CP.mayStartLater) + '</span></span>'
+      : '<span class="wx-athead" style="' + mono + ' font-size:12px; color:' + C.match + ';">' + escapeHtml(vm.atHead) + '</span>') + '</div>';
   h += '<div class="wx-verdict" style="display:flex; align-items:center; gap:12px; padding:15px 18px; margin-bottom:12px; border-radius:14px; background:' + C.card + '; border:' + hw + ' solid ' + C.bd + ';">'
     + '<span style="width:10px; height:10px; border-radius:50%; background:' + (vm.verdictSev === 'u' ? C.unavail : vm.verdictSev === 'n' ? C.dim : sevC(vm.verdictSev)) + '; flex-shrink:0;"></span>'
     + '<span style="font-size:17px; font-weight:800; line-height:1.3;">' + escapeHtml(vm.verdict) + '</span></div>';
@@ -16766,6 +16832,8 @@ function initAOddsTips(){
   };
   document.addEventListener('mouseover', on); document.addEventListener('mouseout', off);
   document.addEventListener('focusin', on); document.addEventListener('focusout', off);
+  // Escape closes an open (or pending) tooltip — TEN-304, founder-approved for the shared tooltip.
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && _aoTipFor) aOddsTipHide(); });
 }
 
 // Interaction handlers — each re-renders the section (state lives in _aOdds).
@@ -18844,6 +18912,9 @@ function printAnalysisReport(){
   const modal = document.querySelector('.modal-analysis');
   const wx = typeof openWeatherTab === 'function' ? openWeatherTab() : null;
   return Promise.race([Promise.resolve(wx), new Promise(r => setTimeout(r, 8000))]).catch(() => {}).then(() => {
+    // never print "Loading forecast…": a Weather section still not loaded prints as the unavailable state (dashes)
+    const wxEl = document.getElementById('aSectionWeather');
+    if (wxEl && _aWxMatch && !(_aWx.ready && _aWx.m === _aWxMatch)) wxEl.innerHTML = buildWeatherSection(_aWxMatch, null, null, Date.now(), null);
     modal.classList.add('printing');
     const cleanup = () => modal.classList.remove('printing');
     window.addEventListener('afterprint', cleanup, { once: true });

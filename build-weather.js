@@ -4,9 +4,19 @@
 // TEN-304 · per-venue forecast files for the Match analysis → Weather tab.
 //
 // Writes, for every tournament on the board (matches.json):
-//   weather-index.json            m.tour → { key, indoor, file }   (tiny, eager)
+//   weather-index.json            m.tour → { key, indoor, tz, file, archive }   (tiny, eager)
 //   weather/<slug>.json           one outdoor venue's forecast     (lazy, ~9 KB)
-// matches.json is never touched (protected file).
+//   weather/archive/<slug>.json   that venue's ARCHIVED forecasts  (lazy, completed matches only)
+// matches.json is never touched (protected file). `tz` is the venue's IANA zone from
+// tournament-venues.json, so the tab shows venue time even with no forecast file.
+//
+// The archive (founder ruling TEN-304, 27 Sep): a completed match shows OUR OWN forecast
+// as it stood BEFORE the match — never a forecast fetched for a past date.
+//   · matches[<id>]: the hourly row containing the match's start, from the LAST fetch made
+//     before that start (a later pre-start fetch replaces it; none after the start ever does).
+//   · days[<venue-local date>]: that day's hourly rows + daily code/hi/lo, from the last
+//     fetch made before the day's playing window opened (ARCHIVE_WINDOW_FROM_HOUR, venue time).
+// Pruned to ARCHIVE_KEEP_DAYS back. Carried from the live copy like the forecast files.
 //
 // Source: Open-Meteo's free endpoint (founder ruling TEN-304: licence accepted,
 // no key). One call per OUTDOOR venue, never per match. Hourly for 2 past + 8
@@ -46,6 +56,13 @@ const HOURLY = ['temperature_2m', 'relative_humidity_2m', 'apparent_temperature'
 const DAILY = ['weather_code', 'temperature_2m_max', 'temperature_2m_min'];
 // Venues with no fixed site that are always played under a roof (founder ruling TEN-304: Laver Cup → indoor panel).
 const INDOOR_NO_VENUE = ['Laver Cup'];
+// Archive: a day is archived from a fetch made before its playing window opens. Must equal the
+// page's WX_CONFIG.window.fromHour (a test asserts it).
+const ARCHIVE_WINDOW_FROM_HOUR = 10;
+const ARCHIVE_KEEP_DAYS = 14;
+const ARCHIVE_FIELDS = ['temp', 'humidity', 'feels', 'rainChance', 'rainMm', 'wind', 'gusts'];
+// The board's match key without its day prefix (upcoming-/live-/past-), stable across the move.
+const matchKeyOf = m => String((m && m.id) || '').replace(/^[a-z]+-/, '');
 
 const slugOf = key => String(key).toLowerCase().normalize('NFKD').replace(/[̀-ͯ]/g, '')
   .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
@@ -62,15 +79,16 @@ function planVenues(matches, hints, coords) {
     const tour = m && m.tour;
     if (!tour || tours[tour]) continue;
     const noVenue = INDOOR_NO_VENUE.find(k => tour.includes(k));
-    if (noVenue) { tours[tour] = { key: noVenue, indoor: true, file: null }; continue; }
+    if (noVenue) { tours[tour] = { key: noVenue, indoor: true, tz: null, file: null, archive: null }; continue; }
     const key = venueKeyFor(tour, hints);
     if (!key) continue;                                   // unmapped → no entry → tab: unavailable
     const hint = hints[key];
-    if (hint.indoor === true) { tours[tour] = { key, indoor: true, file: null }; continue; }
-    const c = coords[key];
+    const c = coords[key], tz = (c && typeof c.tz === 'string' && c.tz) || null;
+    if (hint.indoor === true) { tours[tour] = { key, indoor: true, tz, file: null, archive: null }; continue; }
     const file = c ? `weather/${slugOf(key)}.json` : null;
-    tours[tour] = { key, indoor: false, file };
-    if (c) venues[key] = { key, lat: c.lat, lon: c.lon, file };
+    const archive = c ? `weather/archive/${slugOf(key)}.json` : null;
+    tours[tour] = { key, indoor: false, tz, file, archive };
+    if (c) venues[key] = { key, lat: c.lat, lon: c.lon, file, archive };
   }
   return { tours, venues };
 }
@@ -105,18 +123,78 @@ function toFile(key, lat, lon, data, fetchedAt) {
   };
 }
 
+// Venue-local calendar date + hour of an instant (IANA zone, DST-exact).
+function localParts(ms, tz) {
+  const p = Object.fromEntries(new Intl.DateTimeFormat('en-CA', { timeZone: tz, hourCycle: 'h23', year: 'numeric',
+    month: '2-digit', day: '2-digit', hour: '2-digit' }).formatToParts(new Date(ms)).map(x => [x.type, x.value]));
+  return { date: `${p.year}-${p.month}-${p.day}`, hour: +p.hour };
+}
+
+// Fold one forecast file into a venue's archive. Pure — tested directly. `venueMatches` =
+// [{ key, startMs }] for this venue's board matches. Only a fetch made BEFORE a match's start
+// (before a day's window) is ever archived for it, and a later such fetch replaces an earlier one.
+function updateArchive(prev, file, venueMatches, nowMs) {
+  const a = { v: 1, venue: (file && file.venue) || (prev && prev.venue) || null,
+    tz: (file && file.tz) || (prev && prev.tz) || null, source: SOURCE,
+    days: Object.assign({}, prev && prev.days), matches: Object.assign({}, prev && prev.matches) };
+  const fAt = file ? Date.parse(file.fetchedAt) : NaN;
+  const H = file && file.hourly;
+  if (Number.isFinite(fAt) && file.tz && H && Array.isArray(H.time)) {
+    const rows = H.time.map((t, i) => { const ms = Date.parse(t); return Number.isFinite(ms) ? Object.assign({ i, ms }, localParts(ms, file.tz)) : null; })
+      .filter(Boolean);
+    const pick = idx => Object.assign({ time: idx.map(i => H.time[i]) },
+      Object.fromEntries(ARCHIVE_FIELDS.map(k => [k, idx.map(i => (Array.isArray(H[k]) && typeof H[k][i] === 'number') ? H[k][i] : null)])));
+    const newer = old => !old || fAt > Date.parse(old.fetchedAt);
+    const D = file.daily || {}, dv = (k, j) => (j >= 0 && Array.isArray(D[k]) && typeof D[k][j] === 'number') ? D[k][j] : null;
+    for (const date of [...new Set(rows.map(r => r.date))]) {
+      const day = rows.filter(r => r.date === date), win = day.filter(r => r.hour >= ARCHIVE_WINDOW_FROM_HOUR);
+      if (!win.length || !(fAt < Math.min(...win.map(r => r.ms))) || !newer(a.days[date])) continue;
+      const j = Array.isArray(D.date) ? D.date.indexOf(date) : -1;
+      a.days[date] = { fetchedAt: file.fetchedAt, code: dv('code', j), hi: dv('hi', j), lo: dv('lo', j), hourly: pick(day.map(r => r.i)) };
+    }
+    for (const m of venueMatches || []) {
+      if (!m || !m.key || !Number.isFinite(m.startMs) || !(fAt < m.startMs) || !newer(a.matches[m.key])) continue;
+      const r = rows.find(x => x.ms <= m.startMs && m.startMs < x.ms + 3600e3);
+      if (r) a.matches[m.key] = { fetchedAt: file.fetchedAt, start: new Date(m.startMs).toISOString(), hourly: pick([r.i]) };
+    }
+  }
+  const cut = nowMs - ARCHIVE_KEEP_DAYS * 86400e3;
+  const cutDate = a.tz ? localParts(cut, a.tz).date : new Date(cut).toISOString().slice(0, 10);
+  for (const d of Object.keys(a.days)) if (d < cutDate) delete a.days[d];
+  for (const [k, x] of Object.entries(a.matches)) if (!(Date.parse(x.start) >= cut)) delete a.matches[k];
+  return a;
+}
+
 async function getJson(url, fetchImpl) {
   const res = await fetchImpl(url, { signal: AbortSignal.timeout(20000) });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
   return res.json();
 }
 
+// A match's start instant — the page's cardStartMs rule: startTs, else the api-tennis Berlin wall clock.
+function defaultStartMs(m) {
+  const t = m && m.startTs != null ? Date.parse(m.startTs) : NaN;
+  if (Number.isFinite(t)) return t;
+  const iso = require('./bsp-pipeline.js').weatherStartIso(m && m.date, m && m.time);
+  return iso ? Date.parse(iso) : NaN;
+}
+
+// The live archive: 404 = none published yet (start empty); any other failure is retried, and
+// reported — the build then starts from empty rather than blocking the run.
+async function readLiveArchive(url, fetchImpl, log) {
+  for (let i = 0; i < 3; i++) {
+    try { const a = await getJson(url + '?t=' + Date.now(), fetchImpl); return (a && a.v === 1 && a.days && a.matches) ? a : null; }
+    catch (e) { if (/HTTP 404/.test(e.message)) return null; if (i === 2) { log(`  ⚠️ archive read failed (${e.message}) — rebuilt from this run only: ${url}`); return null; } }
+  }
+  return null;
+}
+
 async function build({ outDir = '.', matchesPath = 'matches.json', fetchImpl = fetch, now = () => new Date(),
-                       hints, coords, log = console.log } = {}) {
+                       hints, coords, log = console.log, startMsOf = defaultStartMs } = {}) {
   const raw = JSON.parse(fs.readFileSync(matchesPath, 'utf8'));
   const matches = Array.isArray(raw) ? raw : (raw.matches || []);
   const { tours, venues } = planVenues(matches, hints, coords);
-  fs.mkdirSync(path.join(outDir, 'weather'), { recursive: true });
+  fs.mkdirSync(path.join(outDir, 'weather', 'archive'), { recursive: true });
   const status = {};
   for (const v of Object.values(venues)) {
     let file = null, prev = null;
@@ -139,6 +217,12 @@ async function build({ outDir = '.', matchesPath = 'matches.json', fetchImpl = f
     }
     if (file) fs.writeFileSync(path.join(outDir, v.file), JSON.stringify(file));
     else for (const t of Object.values(tours)) if (t.key === v.key) t.file = null;
+    // archive: fold this run's file (fetched or carried) in; always written so it is never dropped
+    const venueMatches = matches.filter(m => m && tours[m.tour] && tours[m.tour].key === v.key)
+      .map(m => ({ key: matchKeyOf(m), startMs: startMsOf(m) }));
+    const arch = updateArchive(await readLiveArchive(SITE + v.archive, fetchImpl, log), file, venueMatches, now().getTime());
+    fs.writeFileSync(path.join(outDir, v.archive), JSON.stringify(arch));
+    status[v.key] += ` · archive ${Object.keys(arch.days).length} days / ${Object.keys(arch.matches).length} matches`;
   }
   const index = { v: 1, generatedAt: now().toISOString(), source: SOURCE, tours };
   fs.writeFileSync(path.join(outDir, 'weather-index.json'), JSON.stringify(index));
@@ -147,7 +231,8 @@ async function build({ outDir = '.', matchesPath = 'matches.json', fetchImpl = f
   return { index, status };
 }
 
-module.exports = { planVenues, toFile, forecastUrl, slugOf, build, INDOOR_NO_VENUE, HOURLY, DAILY, REFRESH_HOURS };
+module.exports = { planVenues, toFile, forecastUrl, slugOf, build, updateArchive, localParts, matchKeyOf, INDOOR_NO_VENUE, HOURLY, DAILY, REFRESH_HOURS,
+  ARCHIVE_WINDOW_FROM_HOUR, ARCHIVE_KEEP_DAYS };
 
 if (require.main === module) {
   const { TOURNAMENT_VENUE_HINTS } = require('./bsp-pipeline.js');

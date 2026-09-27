@@ -1623,7 +1623,8 @@ async function geocodeCity(city, countryCode) {
     const data = await res.json();
     if (!data.results || data.results.length === 0) return null;
     const best = [...data.results].sort((a, b) => (b.population || 0) - (a.population || 0))[0];
-    return { lat: best.latitude, lon: best.longitude };
+    // tz (IANA) = the venue's zone for the Weather tab's venue-local times (TEN-304); kept on refresh.
+    return best.timezone ? { lat: best.latitude, lon: best.longitude, tz: best.timezone } : { lat: best.latitude, lon: best.longitude };
   } catch (err) {
     console.error(`Geocoding failed for ${city}, ${countryCode}:`, err);
     return null;

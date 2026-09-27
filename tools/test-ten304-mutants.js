@@ -33,16 +33,32 @@ const MUTANTS = [
   ['pace: UNAVAILABLE rain read as calm', "sevOf('rain') !== 'n' ? null : on('heat')", "false ? null : on('heat')"],
   ['old match day outside the file renders a dashed week', ' || uncovered;', ';'],
   ['indoor flag ignored', 'if (entry && entry.indoor === true) return { indoor: true };', ''],
+  // founder rulings, 27 Sep 06:54Z
+  ['started match reads the CURRENT forecast file', 'const archived = wxStarted(m, nowMs);', 'const archived = false;'],
+  ['archived match loses "forecast, not observed"', "(archived ? ' · ' + CP.pastValues : '')", "''"],
+  ['partial verdict loses its Missing: list', "missing: ['wind', 'heat', 'rain'].filter(id => sevOf(id) === 'u')", "missing: ['wind', 'heat', 'rain'].filter(id => true)"],
+  ['venue zone ignores the index tz (no file → viewer zone)', '(file && file.tz) || (entry && entry.tz) || null', '(file && file.tz) || null'],
+  ['every match counted first on court (no note)', 'return !same.length || startMs <= Math.min.apply(null, same);', 'return true;'],
+  ['no match counted first on court (note everywhere)', 'return !same.length || startMs <= Math.min.apply(null, same);', 'return false;'],
+  ['Escape no longer closes the shared tooltip', "document.addEventListener('keydown', e => { if (e.key === 'Escape' && _aoTipFor) aOddsTipHide(); });", ''],
+  ['Download report prints "Loading forecast…"', 'if (wxEl && _aWxMatch && !(_aWx.ready && _aWx.m === _aWxMatch))', 'if (false)'],
+  ['archive: a post-start fetch is archived', '!(fAt < m.startMs) || ', '', 'bwt'],
+  ['archive: an older fetch replaces a newer one', 'const newer = old => !old || fAt > Date.parse(old.fetchedAt);', 'const newer = old => true;', 'bwt'],
+  ['archive: a day archived after its window opened', '!(fAt < Math.min(...win.map(r => r.ms))) || ', '', 'bwt'],
+  ['archive: the live copy is not carried', 'updateArchive(await readLiveArchive(SITE + v.archive, fetchImpl, log), file', 'updateArchive(null, file', 'bwt'],
 ];
 let caught = 0;
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ten304-mut-'));
 for (const [name, from, to, target] of MUTANTS) {
-  const base = target === 'bw' ? BW : SRC;
+  const isBw = target === 'bw' || target === 'bwt';
+  const base = isBw ? BW : SRC;
   if (base.split(from).length !== 2) { console.log(`  FAIL  anchor not unique/absent: ${name}`); process.exitCode = 1; continue; }
-  const file = path.join(dir, target === 'bw' ? 'build-weather.js' : 'm.html');
+  const file = path.join(dir, isBw ? 'build-weather.js' : 'm.html');
   fs.writeFileSync(file, base.replace(from, to));
-  const env = Object.assign({}, process.env, target === 'bw' ? { TEN304_BW: file } : { TEN304_HTML: file });
-  const r = spawnSync(process.execPath, ['--test', path.join(ROOT, 'test-ten304-weather-tab.mjs')], { env, encoding: 'utf8' });
+  const env = Object.assign({}, process.env, isBw ? { TEN304_BW: file } : { TEN304_HTML: file });
+  // 'bwt' = a build-weather.js rule whose test is tools/test-ten304-build-weather.js
+  const args = target === 'bwt' ? [path.join(ROOT, 'tools', 'test-ten304-build-weather.js')] : ['--test', path.join(ROOT, 'test-ten304-weather-tab.mjs')];
+  const r = spawnSync(process.execPath, args, { env, encoding: 'utf8' });
   if (r.status !== 0) { caught++; console.log(`  PASS  caught: ${name}`); }
   else { console.log(`  FAIL  SURVIVED: ${name}`); process.exitCode = 1; }
 }
