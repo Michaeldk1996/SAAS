@@ -20,7 +20,8 @@ Founder rulings from TEN-304 (2026-09-27). Rationale is in `BUILD-NOTES.md`.
 - **Brussels (European Open, Brussels Expo) is indoor hard.**
 - **Laver Cup has no venue on purpose** (rotating arena). Its Weather tab shows the **indoor panel**.
 
-## Tab display
+## Tab display — ruled, NOT BUILT YET (TEN-304 Wave B)
+Everything in this section is ruled but not yet in the code; Wave B builds it. Until Wave B ships, none of these texts or controls exist on the page, so don't treat them as delivered.
 - **The modal header subtitle carries the start time** in the viewer's zone, like the rest of the dashboard: "ATP Chengdu · Quarter-finals · 18:00". This is the one allowed header change.
 - **The Weather tab shows every time in venue-local time**, with one "Times shown in venue local time" note in the week-strip header.
 - **The MATCH badge is the same instant as the header, converted to venue time.**
