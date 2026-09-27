@@ -971,6 +971,28 @@ def alarm_faults(text):
 
 check('the alarm SQL keeps every rule', alarm_faults(PINGER) == [], alarm_faults(PINGER))
 
+# TEN-295 (founder 2026-09-27 comment bcd73c56): the first dispatch with the renewed PAT ran
+# (HTTP 204) and FAILED in "Unit tests (offline)" — this file runs the TEN-270 schema step,
+# whose heartbeat-check reads kibl-now-stream.js (TEN-277, 25 Sep), and the post-match
+# workflow's sparse checkout did not carry it: FileNotFoundError, every run red. Test: every
+# repo file the TEN-270 schema step open()s is in the post-match sparse checkout.
+def sparse_list(yml):
+    m = re.search(r"sparse-checkout: \|\n((?:\s+\S.*\n)+?)\s+sparse-checkout-cone-mode", yml)
+    return {ln.strip() for ln in m.group(1).splitlines() if ln.strip()} if m else set()
+
+
+def missing_from_sparse(schema_src, yml):
+    have = sparse_list(yml)
+    opened = set(re.findall(r"open\(\s*['\"]([^'\"]+)['\"]", schema_src))   # either quote, extra args ok
+    return sorted(f for f in opened
+                  if f not in have and not any(h.endswith('/') and f.startswith(h) for h in have))
+
+
+check('the post-match sparse checkout carries every file the TEN-270 schema step reads (kibl-now-stream.js)',
+      sparse_list(PM_YML) and missing_from_sparse(SCHEMA_SCRIPT, PM_YML) == [], missing_from_sparse(SCHEMA_SCRIPT, PM_YML))
+check('CONTROL: a sparse checkout without kibl-now-stream.js is caught',
+      missing_from_sparse(SCHEMA_SCRIPT, PM_YML.replace('            kibl-now-stream.js\n', '')) == ['kibl-now-stream.js'])
+
 
 def route_ok(text):
     t = re.sub(r'--[^\n]*', '', text)
