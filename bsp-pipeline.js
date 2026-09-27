@@ -1457,6 +1457,8 @@ const TOURNAMENT_VENUE_HINTS = {
   'Montpellier': { city: 'Montpellier', country: 'FR', category: 'ATP 250', indoor: true, surface: 'hard' },
   'Cordoba': { city: 'Cordoba', country: 'AR', category: 'ATP 250', indoor: false, surface: 'clay' },
   'Buenos Aires': { city: 'Buenos Aires', country: 'AR', category: 'ATP 250', indoor: false, surface: 'clay' },
+  // Outdoor clay by founder ruling (TEN-304, 2026-09-27) — odds-archive's tennis-data `court` column
+  // says "Indoor" for 2023–26; that column is not our flag and does not override this one.
   'Santiago': { city: 'Santiago', country: 'CL', category: 'ATP 250', indoor: false, surface: 'clay' },
   'Los Cabos': { city: 'Los Cabos', country: 'MX', category: 'ATP 250', indoor: false, surface: 'hard' },
   'Marrakech': { city: 'Marrakesh', country: 'MA', category: 'ATP 250', indoor: false, surface: 'clay' }, // Open-Meteo's geocoding db uses the "Marrakesh" spelling
@@ -1485,6 +1487,9 @@ const TOURNAMENT_VENUE_HINTS = {
   'Ho Chi Minh City': { city: 'Ho Chi Minh City', country: 'VN', category: 'ATP 250', indoor: false, surface: 'hard' },
   'Houston': { city: 'Houston', country: 'US', category: 'ATP 250', indoor: false, surface: 'clay' },
   'Jeddah': { city: 'Jeddah', country: 'SA', category: 'Next Gen Finals', indoor: true, surface: 'hard' },
+  // TEN-304: European Open, moved from Antwerp to Brussels Expo in 2025 (2025 edition: "Hard (indoor)");
+  // 2026 edition Oct 19–25 is on entry_lists_advance.json as "Brussels", ATP 250, Hard.
+  'Brussels': { city: 'Brussels', country: 'BE', category: 'ATP 250', indoor: true, surface: 'hard' },
 };
 
 // Real court-conditions data, self-compiled by the user in a Google Sheet
@@ -3160,9 +3165,11 @@ async function buildPastMatchObject(fixture, surfaceMap, venueMap) {
   // Task 3 — real weather on the day the match was played (historical archive
   // fallback lives inside fetchMatchWeather). Task 4 — pre-match odds recovered
   // from api-tennis get_odds so completed cards show odds like upcoming ones.
-  const pastMatchDateTime = `${fixture.event_date}T${(fixture.event_time || '12:00')}:00Z`;
+  // TEN-304: the hour is looked up at the real start instant — event_time is the Europe/Berlin
+  // wall clock (DST-aware), never UTC. No time → no weather (never a guessed noon).
+  const pastMatchDateTime = weatherStartIso(fixture.event_date, fixture.event_time);
   const [pastWeather, pastOdds] = await Promise.all([
-    venueMap ? fetchMatchWeather(tour, pastMatchDateTime, venueMap) : Promise.resolve(null),
+    venueMap && pastMatchDateTime ? fetchMatchWeather(tour, pastMatchDateTime, venueMap) : Promise.resolve(null),
     // event_date engages the BULK path: every fixture on this date is answered
     // from one cached payload instead of one call each.
     fetchApiTennisMatchOdds(fixture.event_key, fixture.event_date),
@@ -3320,7 +3327,9 @@ async function buildUpcomingMatchObject(fixture, surfaceMap, venueMap) {
   };
 
   // Weather is forward-looking here (unlike past matches), so it's fetched.
-  match.weather = await fetchMatchWeather(tour, commence, venueMap);
+  // TEN-304: `commence` is a zoneless Berlin wall clock — look the weather up at the real instant.
+  const weatherStart = weatherStartIso(fixture.event_date, fixture.event_time);
+  match.weather = weatherStart ? await fetchMatchWeather(tour, weatherStart, venueMap) : null;
 
   // Odds from api-tennis get_odds — a fixture-only card has no the-odds-api
   // event, but api-tennis usually already carries a pre-match Home/Away market.
@@ -4226,6 +4235,13 @@ function berlinWallMs(date, time) {
   };
   const first = guess - off(guess);
   return guess - off(first);
+}
+// TEN-304: the instant fetchMatchWeather looks the forecast hour up at — the api-tennis Berlin
+// wall clock converted through the tz database (CEST +2 / CET +1 after 25 Oct), as a UTC ISO
+// string; null when the fixture has no usable time, so no weather is read at a guessed hour.
+function weatherStartIso(date, time) {
+  const ms = berlinWallMs(date, time);
+  return Number.isFinite(ms) ? new Date(ms).toISOString() : null;
 }
 // The start the Pinnacle close is cut at: the card state's actual start, else the EARLIEST
 // scheduled one (m.startTs, the Oddspapi fixture's UTC start, the card's Berlin wall clock).
@@ -7320,4 +7336,6 @@ module.exports = { fetchH2H, h2hCountsInAtpRecord, H2H_NOT_ATP_RECORD, tourLabel
   // the verifier has to prove those two agree, not just that each runs.
   loadAtpStandings, writePlayerShardsAndIndex, MAX_SHARD_RANK, nextShardCacheEntry,
   _standingRows: () => atpStandingRows,
-  _setStandingRowsForTest: (rows) => { atpStandingRows = rows; } };
+  _setStandingRowsForTest: (rows) => { atpStandingRows = rows; },
+  // TEN-304 — weather hour at the real (Berlin wall clock) start, venue map
+  weatherStartIso, fetchMatchWeather, TOURNAMENT_VENUE_HINTS };

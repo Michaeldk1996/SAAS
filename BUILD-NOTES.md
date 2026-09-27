@@ -2085,3 +2085,10 @@ Tests:
 - `tools/test-ten273-lane-alert.js` (executes the real watchdog step).
 
 Every mechanism is paired with a mutant of the real source.
+
+## TEN-304 · Weather — Wave A (2026-09-27)
+
+- **Why the hour was wrong.** `fetchMatchWeather` got `${event_date}T${event_time}:00`, or `…:00Z` on the past path, and looked it up against Open-Meteo rows requested with `timezone=UTC`. `event_time` is the api-tennis account zone, Europe/Berlin, so every read landed 2 h late (CEST). Proof: Mannarino v Shapovalov at 10:00 Berlin had stored `{26.4°, 5, 71%}`, which is exactly Open-Meteo's 10:00Z row; the real start is 08:00Z, whose row is `{27.2°, 5.5, 67%}`. The fix reuses the pipeline's existing DST-aware `berlinWallMs`, the same reader the Pinnacle close cut uses.
+- **Why layer #12 is off.** It read that late hour and has no indoor check. It applied on 12 of 53 deployed cards on 2026-09-27. The config's `gated` flag was never read by `weather()`, so the switch needed a guard in the layer itself.
+- **Santiago.** atptour.com is behind Cloudflare and renders the surface field client-side, so no scripted ATP read was possible. The founder set outdoor clay by ruling.
+- **Brussels.** The European Open moved from Antwerp to Brussels Expo in 2025 ("Hard (indoor)"). Coordinates come from Open-Meteo geocoding (50.85045, 4.34878) and were added to `tournament-venues.json` directly, because that cache only re-geocodes after 90 days (next on 2026-10-05) and its rewrite is not committed back.

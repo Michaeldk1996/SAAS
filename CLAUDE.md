@@ -71,7 +71,7 @@ For current build state, open build state — do not rely on a snapshot in this 
 | OddsAPI / Oddsapi | ATP 250 and broader coverage | Live |
 | kibl | — | — |
 | bet105 | — | — |
-| Open-Meteo | Venue weather | Built, never verified in prod |
+| Open-Meteo (free endpoint, licence accepted by founder — TEN-304) | Venue weather | Live; rules in `.claude/rules/modal-weather.md` |
 | Sackmann tennis_atp | Historical W/L, surface splits, tournament records | In progress |
 | Sackmann MatchCharting | Shot-by-shot, serve/return, rally length | In progress |
 
@@ -181,7 +181,7 @@ Do **not** wire the proprietary methodology behind the rendered verdict, and do 
 ## Known bugs
 
 1. **H2H surface filter** — does not work correctly on the H2H page
-2. **Weather integration** — `fetchMatchWeather` has never successfully run in production; needs a live test. `VENUE_COORDS` has Wimbledon only
+2. **Weather** — live on 44 of 53 cards (2026-09-27). The weather hour was read 2 h late until TEN-304 Wave A (Berlin wall clock read as UTC); model layer #12 is OFF until an indoor check is in too. Rules: `.claude/rules/modal-weather.md`
 3. **Form bars** — had rendering issues on Today's Matches; check current state before touching
 4. **Modal filter pills** — should show tournament names with an "All surfaces" dropdown, not surface-type pills
 

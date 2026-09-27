@@ -1153,6 +1153,7 @@ function isRainCode(code) {
 function weather(ctx) {
   const c = config.adjustments.weather;
   const res = base(c.id, 'weather', 'Weather / conditions', c.maxMagnitude, 'matches.json:weather / style-radar.json');
+  if (c.gated) return gate(res, 'switched off (TEN-304) until the match-time fix and an indoor check are both in');
   const w = ctx.match.weather;
   if (!w) return res;
   const temp = num(w.temperature), wind = num(w.windSpeed), humidity = num(w.humidity);
@@ -1404,4 +1405,4 @@ function runAll(ctx) {
 
 // h2h + setDominance exported for unit tests (pure fns; today's live board is
 // all Tier 3, so the tier-1/2 + dominance paths can only be exercised directly).
-module.exports = { runAll, clamp, h2h, setDominance, winnerUE, recentFormParts, qualityForm, fatigue, fatigueUnits, serve, inTournamentServeDelta, serveSharedRow, returnPressure, inTournamentReturnDelta, returnSharedRow };
+module.exports = { runAll, clamp, weather, h2h, setDominance, winnerUE, recentFormParts, qualityForm, fatigue, fatigueUnits, serve, inTournamentServeDelta, serveSharedRow, returnPressure, inTournamentReturnDelta, returnSharedRow };

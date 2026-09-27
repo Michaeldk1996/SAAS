@@ -329,7 +329,10 @@ module.exports = {
                       // mild/moderate/severe spread instead of everything at the cap.
                       unitBands: [[15, 0.025], [6, 0.015], [3, 0.010]] },
     // 12. Weather / conditions — heat & wind vs style
-    weather:        { id: 12, maxMagnitude: 0.03, gated: false },
+    //     OFF (founder ruling TEN-304, 2026-09-27) until BOTH are in: the weather
+    //     hour read at the real start (Europe/Berlin wall clock, not UTC) AND an
+    //     indoor check. weather() honours this flag — flipping it is the switch.
+    weather:        { id: 12, maxMagnitude: 0.03, gated: true },
     // 13. Format split — Bo5 ONLY (TEN-8 reduced-scope build, founder spec
     //     2026-07-25). Bo3 outputs zero. Per player: career Bo5 win% minus a
     //     career Bo3 baseline, sample-damped by Bo5 match count; the layer signal
