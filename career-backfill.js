@@ -791,8 +791,9 @@ function totalSets(result) {
   return (p.length === 2 && !p.some(Number.isNaN)) ? p[0] + p[1] : null;
 }
 
-// Recompute history-level aggregates + withdrawal gap rows from the merged real
-// editions — mirrors buildTournamentHistory() in bsp-pipeline.js exactly.
+// Recompute history-level aggregates from the merged real editions — mirrors
+// buildTournamentHistory() in bsp-pipeline.js. No gap-year rows (TEN-320, founder N6):
+// a year with no match is not an edition the player entered.
 function finalizeEmbedded(realYears) {
   let longMatches = 0, scoredMatches = 0;
   for (const y of realYears) {
@@ -802,14 +803,9 @@ function finalizeEmbedded(realYears) {
     }
   }
   const years = realYears.slice();
-  const present = new Set(years.map((y) => parseInt(y.year, 10)));
-  const minY = Math.min(...present), maxY = Math.max(...present);
-  for (let y = minY + 1; y < maxY; y++) {
-    if (!present.has(y)) years.push({ year: String(y), matchCount: 0, won: 0, lost: 0, roundReached: 'Withdrawal', matches: [], withdrew: true });
-  }
   years.sort((a, b) => parseInt(b.year, 10) - parseInt(a.year, 10));
   return {
-    editionsPlayed: years.filter((y) => !y.withdrew).length,
+    editionsPlayed: years.length,
     totalWon: years.reduce((s, y) => s + y.won, 0),
     totalLost: years.reduce((s, y) => s + y.lost, 0),
     longMatches,
@@ -829,7 +825,7 @@ function buildEmbeddedHistory(existing, tmlMs) {
   const present = new Set();
   if (existing && Array.isArray(existing.years)) {
     for (const y of existing.years) {
-      if (y.withdrew) continue; // regenerate gaps after merge
+      if (y.withdrew) continue; // a pre-TEN-320 synthesised gap row: never an edition entered
       realYears.push(y);
       present.add(parseInt(y.year, 10));
     }

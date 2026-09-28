@@ -439,7 +439,7 @@ function buildTournamentHistory(matches, playerKey) {
   // match list and the edition's match count. The round it sits in still counts as
   // reached (roundReached), as on the ATP site. An edition whose only match was a
   // walkover GIVEN gets NO row (founder N6, 2026-09-28: no synthesised "Withdrawal"
-  // header — TEN-320 removes the gap-fill ones below). An in-match retirement is a match.
+  // header; TEN-320 removed the gap-year fill too). An in-match retirement is a match.
   const woGiven = {}; // season -> walkover fixtures (either side)
   const woOnlyGiven = {}; // season -> true while every walkover that season was given
   for (const m of matches) {
@@ -503,23 +503,13 @@ function buildTournamentHistory(matches, playerKey) {
   }
   if (years.length === 0) return null;
 
-  // Fill in any year strictly between the player's earliest and latest
-  // edition on file where they have zero matches — e.g. Zverev skipping
-  // Wimbledon 2022 while playing 2021/2023-2026. Shown as an explicit 0-0
-  // "Withdrawal" row instead of silently disappearing from the list. Only
-  // fills gaps INSIDE the player's own known span at this tournament — never
-  // guesses at editions outside the years we actually have data for.
-  const presentYears = new Set(years.map(y => parseInt(y.year, 10)));
-  const minYear = Math.min(...presentYears);
-  const maxYear = Math.max(...presentYears);
-  for (let y = minYear + 1; y < maxYear; y++) {
-    if (!presentYears.has(y)) {
-      years.push({ year: String(y), matchCount: 0, won: 0, lost: 0, roundReached: 'Withdrawal', matches: [], withdrew: true });
-    }
-  }
+  // TEN-320 (founder N6, 2026-09-28): list ONLY editions the player actually entered.
+  // A gap year between the first and last edition used to be filled with a synthesised
+  // 0-0 "Withdrawal" row — including editions never held (Tokyo 2020/2021, Laver Cup
+  // 2020). A year with no fixture is not an edition entered, so it gets no row.
   years.sort((a, b) => parseInt(b.year, 10) - parseInt(a.year, 10));
   return {
-    editionsPlayed: years.filter(y => !y.withdrew).length,
+    editionsPlayed: years.length,
     totalWon: years.reduce((s, y) => s + y.won, 0),
     totalLost: years.reduce((s, y) => s + y.lost, 0),
     longMatches,

@@ -2395,8 +2395,6 @@
   .atourn-yearrow .rd{ flex:1; min-width:0; color:var(--text); font-family:'Hanken Grotesk', sans-serif; font-size:13.5px; }
   .atourn-yearrow .wl{ font-family:'IBM Plex Mono', monospace; color:var(--text); font-size:13px; flex:none; }
   .atourn-yearrow.clickable{ cursor:pointer; }
-  .atourn-yearrow.withdrawn{ font-style:italic; }
-  .atourn-yearrow.withdrawn .yr, .atourn-yearrow.withdrawn .rd, .atourn-yearrow.withdrawn .wl{ color:var(--label); }
   /* Export centres the "Show N earlier editions" control (display:flex; justify-content:center). */
   .atourn-showmore{ display:flex; justify-content:center; align-items:center; gap:6px; white-space:nowrap; font-size:13px; font-weight:600; color:var(--periwinkle); cursor:pointer; margin-top:8px; }
   .atourn-showmore:hover{ color:var(--periwinkle); }
@@ -15859,12 +15857,10 @@ function atournYearRowHtml(y, colPrefix, expanded){
   // are expanded, a faint white otherwise; the chip carries a ▸/▾ chevron.
   const rowBd = open ? '#2e4fa8' : 'rgba(255,255,255,0.045)';
   const chev = hasMatches ? (open ? '▾' : '▸') : '';
-  // Withdrawal years render muted + italic, an em dash where the record would be —
-  // matching the export. Never a 0-0: not-played is not played-and-lost.
-  const rdCell = y.withdrew ? 'Withdrawal' : (y.roundReached || '—');
-  const wlCell = y.withdrew ? '—' : `${y.won}-${y.lost}`;
+  const rdCell = y.roundReached || '—';
+  const wlCell = `${y.won}-${y.lost}`;
   return `
-    <div class="atourn-yearrow${hasMatches ? ' clickable' : ''}${y.withdrew ? ' withdrawn' : ''}"${hasMatches ? ` onclick="toggleTournamentYear('${listId}')"` : ''} style="border-color:${rowBd};">
+    <div class="atourn-yearrow${hasMatches ? ' clickable' : ''}"${hasMatches ? ` onclick="toggleTournamentYear('${listId}')"` : ''} style="border-color:${rowBd};">
       <span class="yr">${y.year}${chev ? `<span class="exp">${chev}</span>` : ''}</span>
       <span class="rd">${rdCell}</span>
       <span class="wl">${wlCell}</span>
@@ -15904,8 +15900,11 @@ function atournPlayerColumn(name, history, colPrefix, isGrandSlam){
   const longAccentColor = isP1 ? '#6a9af8' : '#ebf1f2';  // GS-only; no export ref
   const trackBar = isP1 ? '#6a9af8' : '#ebf1f2';  // win-rate fill, by name order (export)
 
-  const visible = history.years.slice(0, 3);
-  const extra = history.years.slice(3);
+  // TEN-320 (founder N6): only editions the player actually entered. A `withdrew` row is
+  // a pre-TEN-320 synthesised gap year (never an entry), so a stale store cannot show one.
+  const years = history.years.filter(y => !y.withdrew);
+  const visible = years.slice(0, 3);
+  const extra = years.slice(3);
   // Export default-expands the most recent edition inline (state
   // modal-tournament) so the match detail is the first thing read, not a click
   // away.
