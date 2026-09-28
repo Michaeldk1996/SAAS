@@ -42,6 +42,22 @@ this file wins.
   **Test:** a player with an alias renders an `<img>` from the alias chain at the design's size and ring; one
   without renders the monogram in the same ring.
 
+## Header and footer (founder 2026-09-28, TEN-314 card answered in TEN-312 comment c1883bb0)
+- **Not-completed, not-live match:** the design's centred matchup strip (avatars, names, price pills).
+- **Live / suspended match:** keep the **sets-won pills and the live bar** (the design draws no live state; logged as a
+  design gap on TEN-312 document `design-gaps`). Don't invent new design for it.
+- **Completed match:** **nothing** in the header centre and **no sets score** beside the subtitle (design DF L105). The
+  result lives on the Match Stats tab.
+- **No footer line.** "All stats are updated live…" is removed (it isn't true and isn't in the design). If a real data
+  timestamp exists for the open match, show "Updated X min ago"; otherwise show nothing. **Test:** the modal contains no
+  "All stats are updated live" text.
+
+## Colour tokens (U1–U24, provisional)
+- The engineer's Night and Day proposals for the 91 source values README §3 doesn't cover (TEN-314 document
+  `phase1-token-mappings`, U1–U24) are **approved provisionally**. Each finished tab ships with side-by-side Night and
+  Day screenshots taken on the deployed site so the founder can flag a colour by eye; a mapping change is a one-line
+  token edit.
+
 ## Download report (D7)
 - Keeps the existing behaviour: `printAnalysisReport()` → `window.print()` of the modal. Rendered as designed.
   **Test:** clicking it calls `window.print`.
@@ -143,6 +159,16 @@ this file wins.
   the roster-wide before/after delta (with denominators) is reported before deploy. **Test:** over the deployed
   `player-profiles.json`, 0 rows where atp + chitf ≠ total; 0 pre-2021 rows labelled ATP with more matches than
   tour-level rows held.
+
+## Gates for this build
+- **Every tab** goes: build → fixture pixel diff against the design file in Chromium (diff % per screen) → real data →
+  dashes where data is missing → deploy → verify on the deployed URL → Night/Day screenshots to the founder.
+- **Rebuilt data is tested before it is published:** the reconcile checks (`tools/test-pp2-reconcile.js` and friends)
+  run against the **freshly built** store inside the pipeline, before the commit-back / publish step, and fail closed
+  (TEN-329). **Test:** reverting a data fix that the reconciler catches stops the pipeline before the push, not after.
+- **A walkover is never counted in W–L**: an assertion in the reconciler fails if one is (TEN-320).
+- **Edge model re-fits are staged, never flipped without the founder**: a layer change ships with a report of fair
+  odds, picks changed (n of N) and accuracy before/after on the last 30 days of completed matches (TEN-327).
 
 ## Data protection
 - **`point-by-point-cache.json` is irreplaceable:** api-tennis no longer returns tiebreak point rows for past
