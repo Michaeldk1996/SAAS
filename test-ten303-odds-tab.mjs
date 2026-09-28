@@ -273,7 +273,8 @@ test('no line: a dash row with its verdict — never a zero, never opens a pop-u
   assert.ok(hl.includes('aox-loading') && !hl.includes('aox-row') && !hl.includes('REDUCED'));
 });
 
-test('a book gone from the feed reads "Not in feed since", no Now, never best', () => {
+test('a book gone from the feed reads "Not in feed since", no Now, never best', () => atClock(Date.parse('2026-09-28T12:00:00Z'), () => {
+  // TEN-345: pinned — see 1c. `now - 2h` crosses the Berlin day 22:00Z→00:00Z and the tip rightly adds the date.
   const now = Date.now();
   const A = build();
   const m = fixture({ now, withAt: true });
@@ -285,7 +286,7 @@ test('a book gone from the feed reads "Not in feed since", no Now, never best', 
   assert.equal(cellTxt(row, 'aox-now', 'a'), '\u2014');
   assert.ok(!/>9\.90</.test(row.replace(/class="aox-open"[^<]*<\/span>/, '')) || cellTxt(row, 'aox-open', 'a') === '9.90');
   assert.ok(/Not in feed since \d\d:\d\d/.test(tipOf(h, 'Betano')), tipOf(h, 'Betano'));
-});
+}));
 
 test('start time: in-play points never draw (the page start is aOddsStartMs)', () => {
   const A = build();
@@ -529,7 +530,9 @@ test('1b: every missing price on the tab (NOW, NET, margin, pop-up header, stat 
 });
 // ── founder follow-up 1c: ALSO reads "<feed> · <status>", in the tooltip's label/value styling ──
 //    mutant: the ALSO value keeps the source key ("Pinnacle (api-tennis) · …") ──
-test('1c: the tooltip ALSO line reads "api-tennis · not in feed since HH:MM"', () => {
+test('1c: the tooltip ALSO line reads "api-tennis · not in feed since HH:MM"', () => atClock(Date.parse('2026-09-28T12:00:00Z'), () => {
+  // TEN-345: pinned. On the live clock, `now - 2h` falls on the PREVIOUS Berlin day from 22:00Z to 00:00Z,
+  // the renderer rightly prints "28 Sep, 23:47", and this gate redded every pipeline run 22:40Z→00:00Z.
   const now = Date.now();
   const A = build();
   const m = fixture({ now, withAt: true });
@@ -541,7 +544,7 @@ test('1c: the tooltip ALSO line reads "api-tennis · not in feed since HH:MM"', 
   assert.match(mm[2], /^api-tennis · not in feed since \d\d:\d\d$/);
   const src = />Source<\/span><span style="([^"]*)">/.exec(tip);
   assert.equal(mm[1], src[1], 'same value styling as the SOURCE line');
-});
+}));
 
 // ── review fold-in: HIGHEST / LOWEST on the DISPLAYED prices, earliest on a tie ──
 //    mutant: the stat boxes read raw prices again (1.404 beats 1.401 though both show 1.40) ──
