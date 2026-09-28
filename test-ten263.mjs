@@ -148,7 +148,7 @@ test('Opposition Elo = the mean of the badges shown; Elo change reads the same s
   assert.ok(new RegExp('class="fh-dval"[^>]*>' + mean + '<').test(h), 'Opposition Elo equals the mean of the badges shown');
   // Elo change: Sinner at 07-30 (snapshot 07-26: 2320) minus at the oldest row 07-20 (snapshot 07-19: 2300).
   assert.ok(/class="fh-dval"[^>]*>\+20</.test(h) && h.includes('since 20.07'));
-  assert.ok(/class="fh-dsub"[^>]*>3 matches</.test(h), 'thin side keeps its count, no ratio');
+  assert.ok(/class="fh-dval"[^>]*>—<\/span><span [^>]*>· 3 matches</.test(h), 'thin side keeps its count as the aside (TEN-330: DF L4687), no ratio');
   // Partial: 3 of Medvedev's 10 rows predate the first snapshot → mean over the 7 with Elo, captioned.
   const rows2 = Array.from({ length: 10 }, (_, i) => Object.assign(formRow(i, true, 'hard', `2026-07-${String(26 - i).padStart(2, '0')}`), { opponent: 'C. Alcaraz', opponentKey: 7 }));
   const m2 = Object.assign({}, m, { id: 'upcoming-12', p2RecentFormMatches: rows2 });
@@ -243,7 +243,7 @@ test('Form: partial pricing shows "N of M priced"; thin window shows no ratios',
   const d = S.fhBuildForm(m);
   assert.ok(d.includes('fh-dcell') && !/· \d+ of \d+ priced/.test(d.slice(d.indexOf('fh-dcell'))), 'no priced suffix after a data value');
   assert.ok(/class="fh-dsub"[^>]*>7 of 10 priced</.test(d), 'priced count in the sub-caption slot');
-  assert.ok(/class="fh-dsub"[^>]*>4 matches</.test(d), 'thin count in the sub-caption slot');
+  assert.ok(/class="fh-dval"[^>]*>—<\/span><span [^>]*>· 4 matches</.test(d), 'thin count in the aside slot (TEN-330: DF L4687)');
 });
 test('Form pixel pass: mirrored priced count, pill tooltip only with a figure, one-line score, design line-height, Days-mode baseline', () => {
   const rows = Array.from({ length: 10 }, (_, i) => formRow(i, i % 2 === 0, 'hard', `2026-08-${String(20 - i).padStart(2, '0')}`));
@@ -260,7 +260,7 @@ test('Form pixel pass: mirrored priced count, pill tooltip only with a figure, o
   assert.equal((thin.match(/ title="v market on /g) || []).length, 1, 'no pill tooltip on a thin side (its figure is a dash)');
   const r = S.fhRowFromForm({ opponent: 'C. Alcaraz', opponentKey: 1, date: '2026-03-15', tournament: 'US Open', round: 'ATP US Open - 1/64-finals', surface: 'hard', result: '2 - 3', won: false,
     sets: [{ p: 6, o: 2 }, { p: 3, o: 6 }, { p: 3, o: 6 }, { p: 7, o: 5 }, { p: 5, o: 7 }], retired: false, walkover: false, qualifying: false, tier: 'atp', eventKey: 9 }, 5, 'A. Shevchenko', 0);
-  assert.match(S.fhFormRowHtml(r), /title="6-2  3-6  3-6  7-5  5-7" style="[^"]*white-space:nowrap; overflow:hidden; text-overflow:ellipsis;/, 'a five-set score stays on one line (full text in the tooltip)');
+  assert.match(S.fhFormRowHtml(r), /title="6-2, 3-6, 3-6, 7-5, 5-7" style="[^"]*white-space:nowrap; overflow:hidden; text-overflow:ellipsis;/, 'a five-set score stays on one line (full text in the tooltip; TEN-330: the file\'s "6-4, 3-6" join)');
 });
 test('Form: a side with no match in a Days window keeps its bar row', () => {
   const rows = Array.from({ length: 4 }, (_, i) => formRow(i, true, 'hard', `2026-08-${String(28 - i).padStart(2, '0')}`));
@@ -268,16 +268,18 @@ test('Form: a side with no match in a Days window keeps its bar row', () => {
     p1RecentFormMatches: rows, p2RecentFormMatches: [], _fhFormData: true, _fhCloses: [null, null] };
   Object.assign(S.fhStateFor(m).form, { wmode: 'd', days: 10 });
   const h = S.fhBuildForm(m);
-  assert.equal((h.match(/aria-hidden="true" style="flex:1; position:relative; padding:5px 0; visibility:hidden;"/g) || []).length, 1, 'placeholder bar row on the empty side');
+  assert.equal((h.match(/aria-hidden="true" style="flex:1; position:relative; visibility:hidden; padding:5px 0;/g) || []).length, 1, 'placeholder bar row on the empty side');
 });
-test('Form data grid: a sub-caption on either side reserves the slot on both; values are Plex Mono tabular', () => {
+test('Form data grid: a sub-caption on either side reserves the slot on both; values are Plex Mono (TEN-330: the file sets no tabular figures)', () => {
   const A = { metrics: { x: { v: 2.75, val: '2.75', aside: '', sub: '9 of 10 priced' }, y: { v: 1, val: '1', aside: '', sub: '' } } };
   const B = { metrics: { x: { v: 1.45, val: '1.45', aside: '', sub: '' }, y: { v: 2, val: '2', aside: '', sub: '' } } };
   const h = S.fhFormDataRows(A, B, [['x', 'Median odd', 'his closing odd'], ['y', 'Load', 'matches']]);
   const rows = h.split('display:grid; grid-template-columns:minmax(0,1fr) 200px minmax(0,1fr)').slice(1);
   assert.equal((rows[0].match(/class="fh-dsub"/g) || []).length, 2, 'both sides carry the slot when one side has a caption');
-  assert.equal((rows[1].match(/class="fh-dsub"/g) || []).length, 0, 'control: a row without captions adds no slot (design rhythm)');
-  assert.ok((h.match(/class="fh-dval"[^>]*font-variant-numeric:tabular-nums/g) || []).length === 4);
+  // TEN-330: the file's cell always carries the sub span (DF L1000); an uncaptioned row's is empty, so it adds no line.
+  assert.equal((rows[1].match(/class="fh-dsub"[^>]*><\/span>/g) || []).length, 2, 'control: a row without captions keeps only the file\'s empty sub span');
+  assert.equal((rows[0].match(/class="fh-dsub"[^>]*>&nbsp;</g) || []).length, 1, 'the uncaptioned side of a captioned row reserves the line');
+  assert.ok((h.match(/class="fh-dval"[^>]*IBM Plex Mono/g) || []).length === 4);
 });
 test('H2H states: loading skeleton until the histories land; none → "on record" empty state with its scope', () => {
   const m = { id: 'upcoming-3', p1: 'A. B', p2: 'C. D', p1Key: 1, p2Key: 2, surface: 'hard', h2h: { matches: [{ date: '2024-01-01', eventKey: 4, p1Won: true, result: '2 - 0', surface: 'hard' }] } };

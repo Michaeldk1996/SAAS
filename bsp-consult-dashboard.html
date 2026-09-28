@@ -13983,7 +13983,7 @@ const FH_TCODE = { 'washington': 'WAS', 'wimbledon': 'WIM', 'halle': 'HAL', "que
 function fhTournCode(name){ const k = psNormTour(fhTournClean(name)); return FH_TCODE[k] || fhTournClean(name).replace(/[^A-Za-z]/g, '').slice(0, 3).toUpperCase() || FH_DASHC; }
 
 // ---- shared primitive 1: segmented control ----
-function fhSegStyle(on){ return { weight: on ? 700 : 600, color: on ? 'var(--text)' : 'var(--label)', bg: on ? 'var(--seg-active)' : 'transparent', bd: on ? 'var(--line-open)' : 'transparent' }; }
+function fhSegStyle(on){ return { weight: on ? 700 : 600, color: on ? 'var(--text)' : 'var(--label)', bg: on ? 'var(--seg-active)' : 'transparent', bd: on ? 'var(--seg-active-line)' : 'transparent' }; }   // DF L4800: on = blue .16 wash + .22 outline
 // items: [{label, on, onclick, count?, off?}]. `count` renders the H2H meeting count;
 // `off` is a greyed, non-clickable segment (a surface with 0 meetings).
 function fhSegTrack(items, trackExtra){
@@ -13995,7 +13995,7 @@ function fhSegTrack(items, trackExtra){
     const layout = it.count != null ? 'display:inline-flex; align-items:baseline; gap:6px; ' : '';
     return `<span class="${off ? 'fh-segoff' : 'seg'}"${off ? '' : ` onclick="${it.onclick}"`} style="${layout}padding:5px 12px; border-radius:7px; font-size:11px; font-weight:${off ? 600 : s.weight}; color:${color}; background:${off ? 'transparent' : s.bg}; border:1px solid ${off ? 'transparent' : s.bd}; cursor:${off ? 'default' : 'pointer'}; white-space:nowrap;">${fhEsc(it.label)}${cnt}</span>`;
   }).join('');
-  return `<div style="display:inline-flex; gap:4px; background:var(--surface-inner); border:0.33px solid var(--line); border-radius:9px; padding:3px;${trackExtra || ''}">${segs}</div>`;
+  return `<div style="display:inline-flex; gap:4px; background:var(--surface-inner); border:1px solid var(--line); border-radius:9px; padding:3px;${trackExtra || ''}">${segs}</div>`;
 }
 // ---- shared primitive 2: the W/L chip (keeps green/red on BOTH tabs) ----
 function fhWlChip(won){
@@ -14264,7 +14264,7 @@ function fhHotLinesTable(rows, sc, opts){
   const jc = opts.fixedCols ? ' justify-content:end;' : '';
   const cap = `${FH_MONO} font-size:8.5px; font-weight:600; letter-spacing:0.13em; color:var(--text-sub);`;
   const heads = rows.map(r => `<span class="seg" title="${fhEsc(opts.colTip(r))}" onclick="fhOpenSheet('${fhEsc(r.mid)}')" style="display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer;"><span style="width:6px; height:6px; border-radius:50%; background:${FH_SURF[r.surface] || 'var(--fh-muted)'};"></span><span style="${FH_MONO} font-size:8.5px; color:var(--text-sub); white-space:nowrap;">${fhEsc(fhTournCode(r.tournRaw || r.tourn))}</span><span style="${FH_MONO} font-size:8.5px; color:var(--label);${opts.colHead === 'date' ? ' white-space:nowrap;' : ''}">${fhEsc(opts.colHead === 'date' ? fhDDMM(r.date) : "'" + String(r.date).slice(2, 4))}</span></span>`).join('');
-  const head = `<div style="display:grid; grid-template-columns:minmax(150px,0.8fr) 72px 36px minmax(234px,1.6fr); align-items:end; gap:12px; padding:10px 0 8px; border-bottom:0.33px solid var(--line-soft);">
+  const head = `<div style="display:grid; grid-template-columns:minmax(150px,0.8fr) 72px 36px minmax(234px,1.6fr); align-items:end; gap:12px; padding:10px 0 8px; border-bottom:1px solid var(--line);">
       <span style="${cap}">LINE</span><span style="${cap}">COVERED</span><span></span>
       <div style="display:grid; grid-template-columns:${cols};${jc}">${heads}</div></div>`;
   const topK = sc.scored.length ? sc.scored[0].k : -1;
@@ -14278,7 +14278,7 @@ function fhHotLinesTable(rows, sc, opts){
       const tip = opts.dotTip(r) + ' · ' + (!e ? 'not eligible' + (why ? ' (' + why + ')' : '') : c ? 'covered' : 'not covered');
       return `<span style="display:flex; justify-content:center;"><span class="seg" title="${fhEsc(tip)}" onclick="fhOpenSheet('${fhEsc(r.mid)}')" style="width:${e ? '10px' : '6px'}; height:${e ? '10px' : '6px'}; border-radius:50%; background:${!e ? 'var(--fh-dot-off)' : c ? opts.color : 'transparent'}; border:1.5px solid ${!e ? 'transparent' : opts.color}; box-sizing:border-box; cursor:pointer; flex:none;"></span></span>`;
     }).join('');
-    return `<div class="${opts.lineCls(x.k)}" style="display:grid; grid-template-columns:minmax(150px,0.8fr) 72px 36px minmax(234px,1.6fr); align-items:center; gap:12px; padding:11px 12px; margin:0 -12px; border-radius:10px; background:${isTop ? 'var(--nav-hover)' : 'transparent'}; outline:${isTop ? '0.33px solid var(--seg-active-line)' : 'none'}; outline-offset:-1px; cursor:default;">
+    return `<div class="${opts.lineCls(x.k)}" style="display:grid; grid-template-columns:minmax(150px,0.8fr) 72px 36px minmax(234px,1.6fr); align-items:center; gap:12px; padding:11px 12px; margin:0 -12px; border-radius:10px; background:${isTop ? 'var(--seg-active)' : 'transparent'}; box-shadow:inset 0 0 0 1px ${isTop ? 'var(--seg-active-line)' : 'transparent'}; cursor:default;">
         <span style="display:flex; flex-direction:column; gap:3px; min-width:0;">
           ${famLbl ? `<span style="${FH_MONO} font-size:9px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:var(--label);">${fhEsc(famLbl)}</span>` : ''}
           <span style="font-size:13.5px; font-weight:700;">${fhEsc(x.name)}</span>
@@ -14358,6 +14358,10 @@ function fhEnsureStyles(){
   .fh-elotip-pop{ opacity:0; visibility:hidden; transition:opacity .12s ease; pointer-events:none; }
   .fh-elotip:hover .fh-elotip-pop{ opacity:1; visibility:visible; }
   .h2m, .fh-fm{ transition:opacity .12s; }
+  /* DF L1117 style-hover (white .03 → hover fill) */
+  #aSectionForm .fh-frow:hover{ background:var(--nav-hover) !important; }
+  /* DF font stack: glyphs Hanken lacks (▾ →) fall back as in the file, not to system-ui */
+  #aSectionForm{ font-family:'Hanken Grotesk',sans-serif; }
   #fhSheet .aform-panel-meta{ display:none; }
   .fh-av{ display:block; width:56px; height:56px; }
   .fh-av img, .fh-av .avatar-fallback{ width:56px; height:56px; border-radius:50%; border:2px solid var(--line-open); box-sizing:border-box; object-fit:cover;
@@ -14375,21 +14379,41 @@ function fhEnsureStyles(){
 // =====================================================================
 function fhRefDay(m){ const d = fhDayNum(m.date); if (d != null) return d; const t = new Date(); return Date.UTC(t.getUTCFullYear(), t.getUTCMonth(), t.getUTCDate()) / 86400000; }
 // Loads what the Form tab needs beyond the form shards: both players' priced archives.
+// TEN-330 (phase0-c §1): the form shards cover the board roster only. A player without one reads the same
+// fields from his career-history shard (every level, newest first), capped at the pipeline's form-row cap so
+// "on record" means the same population on both sources. opponentKey / tier / matchStats are not in that shard.
+const FH_FORM_ROW_CAP = 40;                // = RECENT_FORM_ROW_CAP (bsp-pipeline.js)
+function fhFormRowsFromCareer(ch){
+  return (Array.isArray(ch) ? ch : []).filter(x => x && x.date).slice(0, FH_FORM_ROW_CAP).map(x => ({
+    opponent: x.opponent, opponentKey: null, date: x.date, tournament: x.tournament, round: x.round, surface: x.surface,
+    result: x.result, won: !!x.won, sets: x.sets, retired: !!x.retired, walkover: !!x.walkover,
+    qualifying: /^qualif/i.test(String(x.round || '')), tier: x.level || null, eventKey: x.eventKey }));
+}
 function fhEnsureFormData(m){
-  if (m._fhFormData) return Promise.resolve(m);
+  // A keyed side left without a source may be a failed fetch (loadCareerHistory answers [] on one): the next open retries.
+  if (m._fhFormData && !m._fhFormRetry) return Promise.resolve(m);
+  const ch = k => (k == null || k === '' ? Promise.resolve(null) : Promise.resolve().then(() => loadCareerHistory(k)).then(r => Array.isArray(r) ? r : null).catch(() => null));
   return Promise.all([ensureFormRows(m), fhLoadCloses(m.p1Key), fhLoadCloses(m.p2Key), fhLoadEloHistory()]).then(([, a, b, eh]) => {
-    m._fhCloses = [a, b]; m._fhElo = eh; m._fhFormData = true; return m;
+    m._fhCloses = [a, b]; m._fhElo = eh;
+    // career-history only for a side the form shards do not cover
+    return Promise.all([m.p1RecentFormMatches ? null : ch(m.p1Key), m.p2RecentFormMatches ? null : ch(m.p2Key)]);
+  }).then(([c1, c2]) => {
+    m._fhFormSrc = [m.p1RecentFormMatches ? 'form' : (c1 && c1.length ? 'career' : null), m.p2RecentFormMatches ? 'form' : (c2 && c2.length ? 'career' : null)];
+    m._fhFormRows = [m.p1RecentFormMatches || fhFormRowsFromCareer(c1), m.p2RecentFormMatches || fhFormRowsFromCareer(c2)];
+    m._fhFormRetry = [m.p1Key, m.p2Key].some((k, i) => k != null && k !== '' && !m._fhFormSrc[i]);
+    m._fhFormData = true; return m;
   });
 }
 function fhFormPlayer(m, idx, st){
   const name = idx ? m.p2 : m.p1, key = idx ? m.p2Key : m.p1Key;
   const HC = idx === 0 ? FH_AC : FH_BC;
-  const raw = (idx ? m.p2RecentFormMatches : m.p1RecentFormMatches) || [];
+  const rowsOf = i => ((m._fhFormRows || [])[i]) || (i ? m.p2RecentFormMatches : m.p1RecentFormMatches) || [];
+  const raw = rowsOf(idx);
   const clRows = (m._fhCloses || [])[idx];
   const ref = fhRefDay(m);
   const ownEk = String(eventKeyOfMatch(m) || '');
   const eloOwners = fhEloKeyOwners([[m.p1, m.p1Key], [m.p2, m.p2Key]].concat(
-    [m.p1RecentFormMatches || [], m.p2RecentFormMatches || []].flat().map(x => [x.opponent, x.opponentKey])));
+    [rowsOf(0), rowsOf(1)].flat().map(x => [x.opponent, x.opponentKey])));
   const all = raw.map((x, i) => {
     const r = fhRowFromForm(x, key, name, idx * 1000 + i);
     r.oppElo = fhEloAt(m._fhElo, r.opp, r.date, eloOwners);
@@ -14397,7 +14421,8 @@ function fhFormPlayer(m, idx, st){
     if (c){ r.price = c.price; r.oppPrice = c.oppPrice; r.book = c.book; r.src = c.src; }
     const d = fhDayNum(r.date); r.ago = d == null ? null : ref - d;
     return r;
-  }).filter(r => (r.ago == null || r.ago >= 0) && !(ownEk && String(r.ek) === ownEk));   // never the analysed match itself
+  }).filter(r => (r.ago == null || r.ago >= 0) && !(ownEk && String(r.ek) === ownEk)   // never the analysed match itself
+    && !r.wo);   // N2 (TEN-312): a walkover is not a match played — no bar, no row, no count, no price, no line
   const S = st, SURFSEL = S.surf, favOn = S.role === 'fav', dogOn = S.role === 'dog';
   const NWIN = S.wmode === 'n' ? S.n : 999, DWIN = S.wmode === 'n' ? null : S.days;
   const WLBL = S.wmode === 'n' ? 'Last ' + S.n : 'Last ' + S.days + ' days';
@@ -14424,7 +14449,7 @@ function fhFormPlayer(m, idx, st){
   // moves because of a suffix. fhBuildForm mirrors the priced count onto the other side.
   const pricedCap = np + ' of ' + n + ' priced';
   const priceMetric = (fn, fmt) => {
-    if (thin) return { v: null, val: FH_DASHC, aside: '', sub: cnt, priced: false };
+    if (thin) return { v: null, val: FH_DASHC, aside: '· ' + cnt, sub: '', priced: false };   // design L10: the thin count is the aside
     if (np < FH_THIN) return { v: null, val: FH_DASHC, aside: '', sub: pricedCap, priced: true };
     return { v: fn(), val: fmt(fn()), aside: '', sub: cov, priced: true, small: mktSmall };
   };
@@ -14432,14 +14457,14 @@ function fhFormPlayer(m, idx, st){
   // Opposition Elo = the mean of the badges shown (ruling D-12); a ratio needs 5+ rows with Elo.
   const withElo = win.filter(r => r.oppElo && r.oppElo.v != null), ke = withElo.length;
   const eloCap = ke + ' of ' + n + ' with Elo';
-  const oppEloM = thin ? { v: null, val: FH_DASHC, aside: '', sub: cnt }
+  const oppEloM = thin ? { v: null, val: FH_DASHC, aside: '· ' + cnt, sub: '' }
     : ke < FH_THIN ? { v: null, val: FH_DASHC, aside: '', sub: ke ? eloCap : 'no snapshot on record' }
     : (() => { const v = withElo.reduce((s, r) => s + r.oppElo.v, 0) / ke;
       return { v, val: String(Math.round(v)), aside: '', sub: ke < n ? eloCap : '', small: maGate(ke).mode === 'small' }; })();
   // Elo change = his own Elo at this match's date minus at the oldest match in the window, same snapshots.
   const oldest = win[n - 1];
   const eNow = fhEloAt(m._fhElo, name, m.date || new Date().toISOString().slice(0, 10), eloOwners), eOld = oldest ? fhEloAt(m._fhElo, name, oldest.date, eloOwners) : null;
-  const eloChg = thin ? { v: null, val: FH_DASHC, aside: '', sub: cnt }
+  const eloChg = thin ? { v: null, val: FH_DASHC, aside: '· ' + cnt, sub: '' }
     : (eNow.v != null && eOld && eOld.v != null) ? { v: eNow.v - eOld.v, val: fhSigned(eNow.v - eOld.v, 0, ''), aside: '', sub: 'since ' + fhDDMM(oldest.date) }
     : noElo;
   const played = all.filter(r => !r.wo && r.ago != null);
@@ -14460,7 +14485,14 @@ function fhFormPlayer(m, idx, st){
   const entries = []; let cur = null;
   vis.forEach((r, i) => {
     if (i === NWIN){ entries.push({ isDiv: true }); cur = null; }
-    if (cur !== r.tourn){ cur = r.tourn; entries.push({ isHead: true, tourn: r.tourn }); }
+    if (cur !== r.tourn){
+      cur = r.tourn;
+      // DF L4712 "surface · W–L": the event's W–L over every LISTED row of it (vis — both sides of the divider, so it
+      // moves with "Show N more", as in the file); an edition = the same event within 30 days, so two years never merge.
+      const d0 = fhDayNum(r.date), tm = vis.filter(x => x.tourn === r.tourn && (d0 == null || fhDayNum(x.date) == null || Math.abs(fhDayNum(x.date) - d0) <= 30));
+      const tw = tm.filter(x => x.won).length;
+      entries.push({ isHead: true, tourn: r.tourn, meta: (r.surface || FH_DASHC) + ' · ' + tw + '–' + (tm.length - tw) });
+    }
     entries.push({ isRow: true, r });
   });
   if (!showAll && list.length > NWIN) entries.push({ isDiv: true });
@@ -14470,20 +14502,21 @@ function fhFormPlayer(m, idx, st){
   all.forEach(r => { _fh.sheetMap[r.mid] = { r, aName: name, aKey: key, bName: r.opp, bKey: r.oppKey }; });
   // Hot lines, this player's window oldest → newest.
   const hx = win.slice().reverse();
-  const medPrice = np >= FH_THIN ? fhMedian(priced.map(r => r.price)) : null;
-  const SHORT = medPrice != null && medPrice < 1.35;
   const sc = fhScoreLines(hx, fhFormLineDefs(fhSurname(name)));
   const hotOk = n >= FH_HOT_MIN_ELIGIBLE && sc.scored.length > 0;
   const table = hotOk ? fhHotLinesTable(hx, sc, {
-    colMin: '22px', colHead: 'date', color: HC, showAll: !!S.hotAll[idx], shortPriced: SHORT ? medPrice : null,
+    colMin: '22px', colHead: 'date', color: HC, showAll: !!S.hotAll[idx], shortPriced: null,   // DF binds no "priced in at" line (expTxt); the Short odds chip carries it
     lineCls: k => `fhl fl-${idx}-${k}`,
     colTip: r => 'v ' + fhOppFmt(r.opp) + ' · ' + r.tourn + ' · ' + r.round,
     dotTip: r => 'v ' + fhOppFmt(r.opp) + ' · ' + r.tourn + ' · ' + fhScoreText(r, false),
   }) : null;
-  const ctx = WLBL + ' · ' + (SURFSEL === 'all' ? 'All surfaces' : SURFSEL) + (favOn ? ' · as favourite' : dogOn ? ' · as underdog' : '') + (medPrice != null ? ' · median odd ' + fhOdd(medPrice) : '');
+  const ctx = WLBL + ' · ' + (SURFSEL === 'all' ? 'All surfaces' : SURFSEL) + (favOn ? ' · as favourite' : dogOn ? ' · as underdog' : '');
+  const hdr = { win: WLBL, surf: SURFSEL === 'all' ? 'All surfaces' : SURFSEL, role: favOn ? 'As favourite' : dogOn ? 'As underdog' : 'Any role' };   // DF L4774
   const nB = priced.filter(r => r.book === 'B').length;
   return { idx, name, key, HC, n, np, nB, pricedCap, ke, eloCap, wins, thin, mktOk, mktSmall, expW, winsP, cnt, cov, srcNote, win, metrics, entries, divEnd, list, shown,
-    hot: { ok: hotOk, table, sc, ctx, short: SHORT && hotOk, few: !hotOk, fewTxt: n === 0 ? 'No matches with these filters' : 'Not enough matches to rank lines (n=' + n + ')' },
+    noSource: !((m._fhFormSrc || [])[idx]) && !raw.length,
+    // DF L4773 hard-codes short:false — the file draws the "Short odds" chip slot but never shows it; built as the file.
+    hot: { ok: hotOk, table, sc, ctx, hdr, short: false, few: !hotOk, fewTxt: n === 0 ? 'No matches with these filters' : 'Not enough matches to rank lines (n=' + n + ')' },
     NWIN, WLBL, DWIN };
 }
 // Set-score text for a row. Form rows print games only; H2H adds tiebreak points.
@@ -14500,8 +14533,26 @@ function fhPriceCell(v, align, strong, r, mark){
     ? `<span class="fh-bmark" aria-hidden="true" style="position:absolute; top:-3px; right:-8px; font-size:7px; font-weight:700; letter-spacing:0; color:var(--text-sub);">B</span>` : '';
   return `<span title="${fhEsc(fhSrcTitle(r))}" style="position:relative; ${FH_MONO} font-size:12px;${strong ? ' font-weight:700;' : ''} text-align:${align}; color:${dash ? FH_DASH : (strong ? 'var(--text)' : 'var(--label)')};">${dash ? FH_DASHC : v.toFixed(2)}${bMark}</span>`;
 }
-// Form Match Row v3 LOCKED with the opponent Elo badge (ruling D-12: overall Elo at the match
-// date); the book marker sits in the H cell, not here.
+// TEN-330 · Form tab rebuilt on the design file (DF template L914–1150, `formFor` L4512–4915). Colours are the
+// token file's, mapped by role (README §3 / phase1-token-mappings): captions → --label, secondary text → --text-sub,
+// primary → --text, white .06–.09 hairlines → --line, .1–.14 → --line-open, the blue divider → --seg-active-line,
+// the tooltip box → --popup.
+// Set scores as the file prints them ("6-4, 3-6"); a retirement adds the sheet's " ret." tag (N2: marked "ret.").
+function fhFormSetScores(r){
+  if (!r.sets) return FH_DASHC;
+  return r.sets.map(x => x[0] + '-' + x[1]).join(', ') + (r.ret ? ' ret.' : '');
+}
+// The bar tooltip's score line (DF m.score: space-joined games).
+function fhFormTipScore(r){ return r.sets ? r.sets.map(x => x[0] + '-' + x[1]).join(' ') + (r.ret ? ' ret.' : '') : FH_DASHC; }
+// H / A cells (DF L1124–1125: mono 11px; H secondary text, A caption). A Bet365-priced row keeps the "B" marker in the
+// H cell (in the column gap, so the price's x never moves); the tooltip names book + source on both cells.
+function fhFormPriceCell(v, color, r, mark){
+  const dash = v == null;
+  const bMark = mark && !dash && r && r.book === 'B'
+    ? `<span class="fh-bmark" aria-hidden="true" style="position:absolute; top:-3px; right:-8px; font-size:7px; font-weight:700; letter-spacing:0; color:var(--text-sub);">B</span>` : '';
+  return `<span title="${fhEsc(fhSrcTitle(r))}" style="position:relative; ${FH_MONO} font-size:11px; color:${dash ? FH_DASH : color}; text-align:right;">${dash ? FH_DASHC : fhOdd(v)}${bMark}</span>`;
+}
+// The opponent Elo badge (ruling D-12: overall Elo at the match date; "ELO —" when no snapshot qualifies).
 function fhEloBadge(e){
   const v = e && e.v != null ? e.v : null;
   const tip = v != null
@@ -14509,40 +14560,46 @@ function fhEloBadge(e){
     : 'No Elo at the time of the match: ' + ((e && e.why) || 'no snapshot on record') + '.';
   return `<span class="fh-elo" title="${fhEsc(tip)}" style="display:inline-flex; align-items:baseline; gap:4px; cursor:help; flex:none;"><span style="${FH_MONO} font-size:8px; font-weight:700; letter-spacing:0.1em; color:var(--text-sub); border:0.33px solid var(--line); border-radius:3px; padding:0 3px;">ELO</span><span style="${FH_MONO} font-size:10.5px; color:${v == null ? FH_DASH : 'var(--label)'};">${v == null ? FH_DASHC : v}</span></span>`;
 }
+// Recent-matches row (DF L1116–1127): grid 48/12/1.1fr/36/40/1.3fr/46/46 (MA_ROW_COLS), gap 10, padding 6 inside an
+// 8px wrapper. PARKED (design file v ruling D-12): the file's row has no Elo slot, the ruling puts the opponent's Elo at
+// the match date on every Form row — the ruled badge stays after the name, inside the file's Opponent cell, until the
+// founder rules (TEN-330 report).
 function fhFormRowHtml(r){
+  const res = r.won ? 'var(--positive)' : 'var(--negative)';
   const setsTxt = r.pS == null ? FH_DASHC : r.pS + ' - ' + r.oS;
-  const scoreTxt = fhScoreText(r, false);
-  return `<div class="seg" onclick="fhOpenSheet('${fhEsc(r.mid)}')" style="display:grid; grid-template-columns:22px 40px minmax(0,1fr) 30px 38px 42px 42px; gap:9px; align-items:center; padding:8px 14px; border-top:0.33px solid var(--line-soft); cursor:pointer;">
-      ${fhWlChip(r.won)}
-      <span style="${FH_MONO} font-size:11px; color:var(--text-sub);">${fhDDMM(r.date)}</span>
-      <span style="display:flex; flex-direction:column; gap:3px; min-width:0;">
-        <span style="display:flex; align-items:baseline; gap:7px; min-width:0;"><span title="${fhEsc(fhFullName(r.opp, r.oppKey))}" style="font-size:13px; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${fhEsc(fhOppFmt(r.opp))}</span>${fhEloBadge(r.oppElo)}</span>
-        <span title="${fhEsc(scoreTxt)}" style="${FH_MONO} font-size:11px; color:var(--text-sub); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${fhEsc(scoreTxt)}</span>
-      </span>
-      <span style="${FH_MONO} font-size:10.5px; color:var(--label);">${fhEsc(r.round)}</span>
-      <span style="${FH_MONO} font-size:12.5px; font-weight:700; color:${r.pS == null ? FH_DASH : (r.won ? 'var(--positive)' : 'var(--negative)')};">${setsTxt}</span>
-      ${fhPriceCell(r.price, 'right', true, r, true)}
-      ${fhPriceCell(r.oppPrice, 'right', false, r)}
-    </div>`;
+  const mono = FH_MONO;
+  return `<div class="seg fh-frow" data-fh-mid="${fhEsc(r.mid)}" onclick="fhOpenSheet('${fhEsc(r.mid)}')" style="display:grid; grid-template-columns:${MA_ROW_COLS}; gap:0 10px; align-items:center; padding:6px; border-radius:6px; background:${_fh && _fh.sheet === r.mid ? 'var(--seg-active)' : 'transparent'}; cursor:pointer;">`
+    + `<span style="${mono} font-size:11px; color:var(--label);">${fhDDMM(r.date)}.</span>`
+    + `<span style="width:8px; height:8px; border-radius:2px; background:${res};"></span>`
+    + `<span style="display:flex; align-items:baseline; gap:7px; min-width:0;"><span title="${fhEsc(fhFullName(r.opp, r.oppKey))}" style="font-size:12.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${fhEsc(fhOppFmt(r.opp))}</span>${fhEloBadge(r.oppElo)}</span>`
+    + `<span style="${mono} font-size:10.5px; color:var(--label);">${fhEsc(r.round)}</span>`
+    + `<span style="${mono} font-size:11.5px; font-weight:700; color:${r.pS == null ? FH_DASH : res};">${setsTxt}</span>`
+    + `<span title="${fhEsc(fhFormSetScores(r))}" style="${mono} font-size:11px; color:var(--text-sub); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${fhEsc(fhFormSetScores(r))}</span>`
+    + fhFormPriceCell(r.price, 'var(--text-sub)', r, true) + fhFormPriceCell(r.oppPrice, 'var(--label)', r, false)
+    + `</div>`;
 }
+// Header column (DF L934–961). Each bar carries the player's closing price under it (DF L947, the one Form gap
+// phase0-c §1.2 found); an unpriced match shows "—" there, never a number.
 function fhFormColumnHtml(P, thinAny){
   const pill = r => {
     const c = r.won ? 'var(--positive)' : 'var(--negative)';
     return `<div class="fh-elotip" onclick="fhOpenSheet('${fhEsc(r.mid)}')" style="flex:1; position:relative; padding:5px 0; cursor:pointer;">
-        <div style="height:7px; border-radius:4px; background:${c};"></div>
-        <div class="fh-elotip-pop" style="position:absolute; bottom:20px; left:50%; transform:translateX(-50%); z-index:30; background:var(--surface); border:0.33px solid var(--line); border-radius:8px; padding:8px 11px; display:flex; flex-direction:column; gap:3px; align-items:flex-start; text-align:left; white-space:nowrap;  pointer-events:none;">
+        <div style="display:flex; flex-direction:column; align-items:center; gap:5px;"><div style="width:100%; height:7px; border-radius:4px; background:${c};"></div><span class="fh-bar-price" title="${fhEsc(fhSrcTitle(r))}" style="${FH_MONO} font-size:8.5px; color:var(--label); white-space:nowrap; height:10px;">${r.price != null ? fhOdd(r.price) : FH_DASHC}</span></div>
+        <div class="fh-elotip-pop" style="position:absolute; bottom:20px; left:50%; transform:translateX(-50%); z-index:30; background:var(--popup); border:1px solid var(--line-open); border-radius:8px; padding:8px 11px; display:flex; flex-direction:column; gap:3px; align-items:flex-start; text-align:left; white-space:nowrap; box-shadow:var(--ma-shadow-tip); pointer-events:none;">
           <span style="display:flex; align-items:baseline; gap:7px;"><span style="${FH_MONO} font-size:10.5px; font-weight:700; color:${c};">${r.won ? 'W' : 'L'}</span><span style="font-size:12.5px; font-weight:600; color:var(--text);">v ${fhEsc(fhOppFmt(r.opp))}</span><span style="${FH_MONO} font-size:10px; color:var(--label);">Elo ${r.oppElo && r.oppElo.v != null ? r.oppElo.v : FH_DASHC}</span></span>
           <span style="${FH_MONO} font-size:10.5px; color:var(--text-sub);">${fhEsc(r.tourn + ' · ' + r.round + ' · ' + fhDDMM(r.date))}</span>
-          <span style="${FH_MONO} font-size:10.5px; color:var(--text-sub);">${fhEsc(fhScoreText(r, false))}</span>
+          <span style="${FH_MONO} font-size:10.5px; color:var(--text-sub);">${fhEsc(fhFormTipScore(r))}</span>
           <span style="font-size:10px; color:var(--periwinkle);">Click for match stats</span>
         </div>
       </div>`;
   };
+  // An empty slot (DF L4785): the bar in the track colour, an empty price line, no tooltip.
+  const empty = `<div style="flex:1; position:relative; padding:5px 0; cursor:default;"><div style="display:flex; flex-direction:column; align-items:center; gap:5px;"><div style="width:100%; height:7px; border-radius:4px; background:var(--bar-track);"></div><span style="${FH_MONO} font-size:8.5px; white-space:nowrap; height:10px;"></span></div></div>`;
   const pills = P.win.slice().reverse().map(pill);
   // A side with no match in a Days window keeps an (invisible) bar row, so both bars share a baseline.
-  if (P.DWIN != null && !pills.length) pills.push(`<div aria-hidden="true" style="flex:1; position:relative; padding:5px 0; visibility:hidden;"><div style="height:7px;"></div></div>`);
-  if (P.DWIN == null) while (pills.length < P.NWIN) pills.unshift(`<div style="flex:1; position:relative; padding:5px 0; cursor:default;"><div style="height:7px; border-radius:4px; background:var(--surface-inner);"></div></div>`);
-  const side = P.idx === 0 ? 'padding-right:28px;' : 'padding-left:28px; border-left:0.33px solid var(--line-soft);';
+  if (P.DWIN != null && !pills.length) pills.push(empty.replace('<div style="flex:1; position:relative;', '<div aria-hidden="true" style="flex:1; position:relative; visibility:hidden;'));
+  if (P.DWIN == null) while (pills.length < P.NWIN) pills.unshift(empty);
+  const side = P.idx === 0 ? 'padding-right:28px;' : 'padding-left:28px; border-left:1px solid var(--line);';
   const dW = P.mktOk ? fhSigned(P.winsP - P.expW, 1) : FH_DASHC;
   // Design thin note; when EITHER side is thin both columns carry the slot (hidden on the
   // other side) so the form bars of both players sit on one baseline.
@@ -14554,40 +14611,48 @@ function fhFormColumnHtml(P, thinAny){
   return `<div style="display:flex; flex-direction:column; align-items:center; gap:10px; text-align:center; ${side} min-width:0;">
       ${fhNameLink(P.name, P.key, 'font-size:15px; font-weight:700; display:inline-block; ' + one)}
       <span style="${FH_MONO} font-size:40px; font-weight:800; line-height:1; white-space:nowrap;${P.n ? '' : ' color:' + FH_DASH + ';'}">${P.n ? P.wins + '–' + (P.n - P.wins) : FH_DASHC}</span>
-      <span${pillTip} style="display:inline-flex; align-items:baseline; gap:6px; padding:4px 10px; border-radius:999px; border:0.33px solid var(--line); background:var(--surface-inner); white-space:nowrap;"><span data-ma-gate="${P.mktOk ? (P.mktSmall ? 'small' : 'full') : 'nopct'}" style="${FH_MONO} font-size:12.5px; font-weight:700; color:${mktC('var(--text)')};">${dW}</span><span style="${FH_MONO} font-size:10px; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-sub);">v market</span>${P.mktSmall ? maSmallNote() : ''}</span>
-      <span class="fh-meta" title="${fhEsc('market expected ' + (P.mktOk ? P.expW.toFixed(1) : FH_DASHC) + ' wins in ' + (P.mktOk ? P.np : P.n) + (pricedNote ? ' · ' + pricedNote : ''))}" style="font-size:11.5px; color:var(--label); ${one}">market expected <span style="${FH_MONO} color:${mktC('var(--text-sub)')};">${P.mktOk ? P.expW.toFixed(1) : FH_DASHC}</span> wins in ${P.mktOk ? P.np : P.n}${pricedNote ? `<span style="${FH_MONO} font-size:10.5px; color:var(--label);"> · ${fhEsc(pricedNote)}</span>` : ''}</span>
+      <span${pillTip} style="display:inline-flex; align-items:baseline; gap:6px; padding:4px 10px; border-radius:999px; border:1px solid var(--line-open); background:var(--nav-hover); white-space:nowrap;"><span data-ma-gate="${P.mktOk ? (P.mktSmall ? 'small' : 'full') : 'nopct'}" style="${FH_MONO} font-size:12.5px; font-weight:700; color:${mktC('var(--text)')};">${dW}</span><span style="${FH_MONO} font-size:10px; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-sub);">v market</span>${P.mktSmall ? maSmallNote() : ''}</span>
+      <span class="fh-meta" title="${fhEsc('market expected ' + (P.mktOk ? P.expW.toFixed(1) : FH_DASHC) + ' wins in ' + (P.mktOk ? P.np : P.n) + (pricedNote ? ' · ' + pricedNote : ''))}" style="font-size:11.5px; color:var(--label); ${one}">market expected <span style="white-space:nowrap;"><span style="${FH_MONO} color:${mktC('var(--text-sub)')};">${P.mktOk ? P.expW.toFixed(1) : FH_DASHC}</span> wins in ${P.mktOk ? P.np : P.n}</span>${pricedNote ? `<span style="${FH_MONO} font-size:10.5px; color:var(--label);"> · ${fhEsc(pricedNote)}</span>` : ''}</span>
       ${note ? `<span style="${FH_MONO} font-size:10.5px; color:var(--label); ${one}">${fhEsc(note)}</span>` : thinAny ? `<span aria-hidden="true" style="${FH_MONO} font-size:10.5px; visibility:hidden;">${FH_DASHC}</span>` : ''}
       <div style="display:flex; gap:4px; margin-top:4px; width:100%;">${pills.join('')}</div>
       <div style="align-self:stretch; ${FH_MONO} font-size:9px; letter-spacing:0.06em; color:var(--label); margin-top:-6px; white-space:nowrap; text-align:right;">oldest → newest</div>
     </div>`;
 }
+// "Show form data" rows (DF L999–1003): value + aside ("· 3 matches" when thin) + sub caption.
 function fhFormDataRows(A, B, rows){
-  const cell = (me, align, subSlot) => `<div class="fh-dcell" style="display:flex; flex-direction:column; align-items:${align === 'right' ? 'flex-end' : 'flex-start'}; gap:2px; text-align:${align};"><span style="display:inline-flex; align-items:baseline; gap:6px;${align === 'right' ? ' flex-direction:row-reverse;' : ''}"><span class="fh-dval"${me.small ? ' data-ma-gate="small"' : ''} style="${FH_MONO} font-size:17px; font-weight:700; font-variant-numeric:tabular-nums; color:${me.v == null ? FH_DASH : me.small ? MA_GREY : 'var(--text)'}; white-space:nowrap;">${fhEsc(me.val)}</span>${me.small ? maSmallNote(true) : ''}</span>${subSlot ? `<span class="fh-dsub" style="${FH_MONO} font-size:10px; font-variant-numeric:tabular-nums; color:var(--label); white-space:nowrap;">${me.sub ? fhEsc(me.sub) : '&nbsp;'}</span>` : ''}</div>`;
+  const cell = (me, align, subSlot) => `<div class="fh-dcell" style="display:flex; flex-direction:column; align-items:${align === 'right' ? 'flex-end' : 'flex-start'}; gap:2px; text-align:${align};"><span style="display:flex; align-items:baseline; gap:6px; flex-wrap:wrap; justify-content:${align === 'right' ? 'flex-end' : 'flex-start'};"><span class="fh-dval"${me.small ? ' data-ma-gate="small"' : ''} style="${FH_MONO} font-size:17px; font-weight:700; color:${me.v == null ? FH_DASH : me.small ? MA_GREY : 'var(--text)'}; white-space:nowrap;">${fhEsc(me.val)}</span><span style="${FH_MONO} font-size:11px; color:var(--label);">${fhEsc(me.aside || '')}</span>${me.small ? maSmallNote(true) : ''}</span>${subSlot ? `<span class="fh-dsub" style="${FH_MONO} font-size:10px; color:var(--label);">${me.sub ? fhEsc(me.sub) : '&nbsp;'}</span>` : `<span class="fh-dsub" style="${FH_MONO} font-size:10px; color:var(--label);"></span>`}</div>`;
   return rows.map(d => { const a = A.metrics[d[0]], b = B.metrics[d[0]], slot = !!(a.sub || b.sub); return `<div style="display:grid; grid-template-columns:minmax(0,1fr) 200px minmax(0,1fr); align-items:center; gap:20px; padding:10px 0;">
       ${cell(a, 'right', slot)}
       <div style="display:flex; flex-direction:column; align-items:center; gap:2px; text-align:center;"><span style="font-size:12.5px; font-weight:600; color:var(--text);">${fhEsc(d[1])}</span><span style="font-size:10.5px; color:var(--label);">${fhEsc(d[2])}</span></div>
       ${cell(b, 'left', slot)}
     </div>`; }).join('');
 }
+// Recent matches (DF L1094–1150): sticky header, "tournament · surface · W–L" groups, the "↑ used in form stats"
+// divider after the window, "Show N more matches".
 function fhFormListHtml(P){
-  const head = fhStickyHeadHtml('22px 40px minmax(0,1fr) 30px 38px 42px 42px', ['Match', 'Rd', 'Sets', 'H', 'A'], false);
-  const div = `<div style="display:flex; align-items:center; gap:10px; padding:10px 14px; border-top:0.33px solid var(--line-soft);"><span style="flex:1; height:1px; background:var(--seg-active);"></span><span style="${FH_MONO} font-size:10px; letter-spacing:0.06em; color:var(--text-sub); white-space:nowrap;">↑ used in form stats</span><span style="flex:1; height:1px; background:var(--seg-active);"></span></div>`;
+  const cap = `${FH_MONO} font-size:9px; letter-spacing:0.1em; text-transform:uppercase; color:var(--label);`;
+  const head = `<div style="position:sticky; top:0; z-index:5; display:grid; grid-template-columns:${MA_ROW_COLS}; gap:0 10px; align-items:center; background:var(--surface); padding:8px 14px 7px; border-bottom:1px solid var(--line);">`
+    + ['Date', '', 'Opponent', 'Rd', 'Sets', 'Set scores', 'H', 'A'].map((l, i) => (l ? `<span style="${cap}${i >= 6 ? ' text-align:right;' : ''}">${l}</span>` : '<span></span>')).join('') + '</div>';
+  const div = `<div style="display:flex; align-items:center; gap:10px; padding:10px 14px; border-top:1px solid var(--line-soft);"><span style="flex:1; height:1px; background:var(--seg-active-line);"></span><span style="${FH_MONO} font-size:10px; letter-spacing:0.06em; color:var(--text-sub); white-space:nowrap;">↑ used in form stats</span><span style="flex:1; height:1px; background:var(--seg-active-line);"></span></div>`;
   const covMap = P.hot.sc ? P.hot.sc.covMap : {};
   const body = P.entries.map(e => {
-    if (e.isHead) return `<div style="display:flex; align-items:center; gap:9px; padding:14px 14px 6px; border-top:0.33px solid var(--line-soft);"><span style="${FH_MONO} font-size:10px; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; color:var(--text);">${fhEsc(e.tourn)}</span></div>`;
+    if (e.isHead) return `<div style="display:flex; align-items:center; gap:10px; padding:11px 14px 5px; border-top:1px solid var(--line);"><span style="font-size:12.5px; font-weight:700; white-space:nowrap;">${fhEsc(e.tourn)}</span><span style="${FH_MONO} font-size:10px; color:var(--label); white-space:nowrap;">${fhEsc(e.meta)}</span></div>`;
     if (e.isDiv) return div;
-    return `<div class="fh-fm fm${P.idx} ${(covMap[e.r.mid] || []).map(k => 'fc-' + P.idx + '-' + k).join(' ')}" style="transition:opacity .12s;">${fhFormRowHtml(e.r)}</div>`;
+    return `<div class="fh-fm fm${P.idx} ${(covMap[e.r.mid] || []).map(k => 'fc-' + P.idx + '-' + k).join(' ')}" style="transition:opacity .12s; padding:0 8px;">${fhFormRowHtml(e.r)}</div>`;
   }).join('');
   const more = P.list.length > P.NWIN
-    ? `<div class="seg" onclick="fhFormToggle('more',${P.idx})" style="text-align:center; padding:12px 0 13px; border-top:0.33px solid var(--line-soft); font-size:13px; font-weight:600; color:var(--periwinkle); cursor:pointer;">${_fh.form.more[P.idx] ? 'Show fewer' : 'Show ' + (P.list.length - P.NWIN) + ' more matches'}</div>` : '';
+    ? `<div class="seg" onclick="fhFormToggle('more',${P.idx})" style="text-align:center; padding:12px 0 13px; border-top:1px solid var(--line); font-size:13px; font-weight:600; color:var(--periwinkle); cursor:pointer;">${_fh.form.more[P.idx] ? 'Show fewer' : 'Show ' + (P.list.length - P.NWIN) + ' more matches'}</div>` : '';
+  // DESIGN GAP G8: no form source at all for this side (no form shard and no career-history shard). The file only
+  // draws "No matches with these filters."; the same empty line says the true reason instead.
+  const emptyTxt = P.noSource ? 'No recent matches on record.' : 'No matches with these filters.';
   return `<div style="display:flex; flex-direction:column; min-width:0;">
       <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:10px;">
         <span style="font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:var(--label);">Recent matches · ${fhEsc(fhSurname(P.name))}</span>
         <span style="font-size:11px; color:var(--label);">${P.shown.length} on record${P.DWIN == null ? '' : ' · last ' + P.DWIN + ' days'}</span>
       </div>
-      <div style="border:0.33px solid var(--line); border-radius:14px; overflow:clip; background:var(--surface); display:flex; flex-direction:column; flex:1;">
+      <div style="border:1px solid var(--line); border-radius:14px; overflow:clip; background:var(--surface); display:flex; flex-direction:column; flex:1;">
         ${head}
-        ${P.list.length === 0 ? `<div style="padding:28px 16px; text-align:center; font-size:12.5px; color:var(--label);">No matches with these filters.</div>` : ''}
+        ${P.list.length === 0 ? `<div style="padding:28px 16px; text-align:center; font-size:12.5px; color:var(--label);">${emptyTxt}</div>` : ''}
         ${body}
         <div style="flex:1;"></div>
         ${P.divEnd ? div : ''}
@@ -14595,17 +14660,22 @@ function fhFormListHtml(P){
       </div>
     </div>`;
 }
+// Hot lines, one player (DF L1029–1087): name in the player's colour over "window · surface · role".
 function fhFormHotHtml(P){
   const H = P.hot;
   const moreLbl = _fh.form.hotAll[P.idx] ? 'Best line per family' : 'Show all lines (' + (H.sc ? H.sc.scored.length : 0) + ')';
   const hasMore = H.ok && (H.sc.scored.length > H.table.shown || _fh.form.hotAll[P.idx]);
-  return `<div style="display:flex; flex-direction:column; border-top:0.33px solid var(--line-soft);">
-      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:8px 14px; flex-wrap:wrap; padding-top:12px;">
-        <span style="font-size:14px; font-weight:700; color:${P.HC};">${fhEsc(P.name)}</span>
-        <span style="${FH_MONO} font-size:10.5px; letter-spacing:0.04em; color:var(--text-sub);">${fhEsc(H.ctx)}</span>
+  const dot = `<span style="width:3px; height:3px; border-radius:50%; background:var(--label);"></span>`;
+  const cap = `${FH_MONO} font-size:8.5px; font-weight:600; letter-spacing:0.13em; color:var(--text-sub);`;
+  return `<div style="display:flex; flex-direction:column; border-top:1px solid var(--line);">
+      <div style="display:flex; align-items:center; gap:12px; padding-top:14px;">
+        <span style="display:flex; flex-direction:column; gap:3px; min-width:0; flex:1;">
+          <span style="font-size:14.5px; font-weight:700; color:${P.HC};">${fhEsc(P.name)}</span>
+          <span style="display:flex; align-items:center; gap:7px; flex-wrap:wrap; ${FH_MONO} font-size:10px; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-sub);">${fhEsc(H.hdr.win)}${dot}${fhEsc(H.hdr.surf)}${dot}${fhEsc(H.hdr.role)}</span>
+        </span>
       </div>
-      ${H.short ? `<span style="align-self:flex-start; margin-top:6px; ${FH_MONO} font-size:10px; color:var(--text-sub); border:0.33px solid var(--line); border-radius:999px; padding:2px 9px;">Short odds · high cover rates are priced in</span>` : ''}
-      ${H.ok ? H.table.head : `<div style="display:grid; grid-template-columns:minmax(150px,0.8fr) 72px 36px minmax(234px,1.6fr); align-items:end; gap:12px; padding:10px 0 8px; border-bottom:0.33px solid var(--line-soft);"><span style="${FH_MONO} font-size:8.5px; font-weight:600; letter-spacing:0.13em; color:var(--text-sub);">LINE</span><span style="${FH_MONO} font-size:8.5px; font-weight:600; letter-spacing:0.13em; color:var(--text-sub);">COVERED</span><span></span></div>`}
+      ${H.short ? `<span style="align-self:flex-start; margin-top:6px; ${FH_MONO} font-size:10px; color:var(--text-sub); border:1px solid var(--line-open); border-radius:999px; padding:2px 9px;">Short odds · high cover rates are priced in</span>` : ''}
+      ${H.ok ? H.table.head : `<div style="display:grid; grid-template-columns:minmax(150px,0.8fr) 72px 36px minmax(234px,1.6fr); align-items:end; gap:12px; padding:10px 0 8px; border-bottom:1px solid var(--line);"><span style="${cap}">LINE</span><span style="${cap}">COVERED</span><span></span></div>`}
       ${H.few ? `<div style="padding:18px 0 12px; text-align:center; ${FH_MONO} font-size:12px; color:var(--label);">${fhEsc(H.fewTxt)}</div>` : ''}
       ${H.ok ? H.table.lines : ''}
       ${hasMore ? `<span class="seg" onclick="fhFormToggle('hotAll',${P.idx})" style="align-self:flex-end; margin-top:8px; font-size:12.5px; font-weight:600; color:var(--periwinkle); cursor:pointer; white-space:nowrap;">${moreLbl}</span>` : ''}
@@ -14618,8 +14688,10 @@ function fhBuildForm(m){
     fhEnsureFormData(m).then(() => { if (_fh && _fh.m === m){ const el = document.getElementById('aSectionForm'); if (el) el.innerHTML = buildFormSection(m); } });
     return `<div class="acomingsoon">Loading recent form…</div>`;
   }
-  if (!m.p1RecentFormMatches && !m.p2RecentFormMatches){
-    return `<div class="acomingsoon">Recent-form data needs the stats source — not connected for this match.</div>`;
+  // DESIGN GAP G8: neither player has a form source (no form shard, no career-history shard) — the file draws no
+  // such state; the tab's existing one-line empty state stands in.
+  if (![0, 1].some(i => (((m._fhFormRows || [])[i]) || (i ? m.p2RecentFormMatches : m.p1RecentFormMatches) || []).length)){
+    return `<div class="acomingsoon">No recent matches on record for either player.</div>`;
   }
   const A = fhFormPlayer(m, 0, S), B = fhFormPlayer(m, 1, S);
   // Either side partially priced → both sides show "N of M priced" under their price figures.
@@ -14637,7 +14709,7 @@ function fhBuildForm(m){
   const vals = (S.wmode === 'n' ? [5, 10, 15, 20].map(k => ({ label: 'Last ' + k, on: S.n === k, onclick: `fhForm({n:${k}})` }))
     : [10, 20, 30, 60].map(k => ({ label: k + ' days', on: S.days === k, onclick: `fhForm({days:${k}})` })));
   const valsHtml = `<div style="display:inline-flex; gap:4px; margin-left:-4px;">${vals.map(it => { const s = seg(it.on); return `<span class="seg" onclick="${it.onclick}" style="padding:5px 12px; border-radius:7px; font-size:11px; font-weight:${s.weight}; color:${s.color}; background:${s.bg}; border:1px solid ${s.bd}; cursor:pointer; white-space:nowrap;">${it.label}</span>`; }).join('')}</div>`;
-  const vr = `<span style="width:1px; height:16px; background:var(--line-soft);"></span>`;
+  const vr = `<span style="width:1px; height:16px; background:var(--line-open);"></span>`;
   const WLBL = A.WLBL, favOn = S.role === 'fav', dogOn = S.role === 'dog';
   const roleSfx = favOn ? ' · as favourite' : dogOn ? ' · as underdog' : '';
   const surfLo = S.surf === 'all' ? 'all surfaces' : S.surf;
@@ -14646,27 +14718,26 @@ function fhBuildForm(m){
   const lastRows = [['medP', 'Median odd', 'his closing odd'], ['medO', 'Median opp odd', "opponents' closing odd"], ['oppElo', 'Opposition Elo', 'avg opponent Elo rating'], ['flat', 'Flat 1u', 'P/L backing him every match'], ['elo', 'Elo change', eloHelp]];
   const fatRows = [['load', 'Load', 'matches in 28 days'], ['m714', 'Matches 7d / 14d', 'last 7 and 14 days']];
   const cap = `${FH_MONO} font-size:9.5px; font-weight:600; letter-spacing:0.16em; text-transform:uppercase; color:var(--label); text-align:center; padding:16px 0 8px;`;
-  const cardData = S.card ? `<div style="border-top:0.33px solid var(--line-soft); padding-bottom:8px;">
+  const cardData = S.card ? `<div style="border-top:1px solid var(--line); padding-bottom:8px;">
       <div style="${cap}">${fhEsc(lastLabel)}</div>${fhFormDataRows(A, B, lastRows)}
       <div style="${cap}">Fatigue · all matches to ${fhDDMM(m.date)}</div>${fhFormDataRows(A, B, fatRows)}
     </div>` : '';
   const hotLabel = WLBL + ' · ' + surfLo + roleSfx;
-  const hot = `<div style="background:var(--surface); border:0.33px solid var(--line); border-radius:12px; margin-top:16px; display:flex; flex-direction:column;">
+  const hot = `<div style="background:var(--surface); border:1px solid var(--line); border-radius:12px; margin-top:16px; display:flex; flex-direction:column;">
       <div class="seg" onclick="fhForm({hot:${!S.hot}})" style="position:relative; display:flex; align-items:center; justify-content:center; gap:10px 16px; flex-wrap:wrap; padding:11px 16px; cursor:pointer;">
         <span style="display:flex; align-items:center; gap:10px;"><span style="${FH_MONO} font-size:10px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:var(--text-sub);">${S.hot ? 'Hide hot lines' : 'Show hot lines'}</span><span style="font-size:11px; color:var(--periwinkle); display:inline-block; transform:rotate(${S.hot ? '180deg' : '0deg'}); transition:transform .16s;">▾</span></span>
         <span style="position:absolute; right:16px; top:50%; transform:translateY(-50%); ${FH_MONO} font-size:10.5px; letter-spacing:0.06em; color:var(--label);">${fhEsc(hotLabel)}</span>
       </div>
-      ${S.hot ? `<div style="display:flex; flex-direction:column; gap:14px; padding:12px 20px 14px; border-top:0.33px solid var(--line-soft);">
-        <span style="font-size:12px; color:var(--text-sub);">Best-covered line in each market family over the window</span>
+      ${S.hot ? `<div style="display:flex; flex-direction:column; gap:14px; padding:12px 20px 14px; border-top:1px solid var(--line);">
         ${fhFormHotHtml(A)}${fhFormHotHtml(B)}
-        <span style="font-size:10.5px; color:var(--label); padding-top:4px; border-top:0.33px solid var(--line-soft);">One dot per match, oldest → newest · filled = covered · empty = not covered · small grey = not eligible · hover a line to find its matches, click a dot for the match</span>
+        <span style="font-size:10.5px; color:var(--label); padding-top:4px; border-top:1px solid var(--line);">One dot per match, oldest → newest · filled = covered · empty = not covered · small grey = not eligible · hover a line to find its matches, click a dot for the match</span>
       </div>` : ''}
     </div>`;
   return `<div class="fh-fwrap">
     <div style="display:flex; align-items:center; gap:14px; flex-wrap:wrap; margin-bottom:18px;">${surf}${vr}${role}${vr}${mode}${valsHtml}</div>
-    <div style="background:var(--surface); border:0.33px solid var(--line); border-radius:16px; padding:22px 24px 6px;">
+    <div style="background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:22px 24px 6px;">
       <div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr);">${fhFormColumnHtml(A, thinAny)}${fhFormColumnHtml(B, thinAny)}</div>${srcLine}
-      <div class="seg" onclick="fhForm({card:${!S.card}})" style="display:flex; align-items:center; justify-content:center; gap:9px; margin-top:18px; padding:11px 0 8px; border-top:0.33px solid var(--line-soft); cursor:pointer;">
+      <div class="seg" onclick="fhForm({card:${!S.card}})" style="display:flex; align-items:center; justify-content:center; gap:9px; margin-top:18px; padding:11px 0 8px; border-top:1px solid var(--line); cursor:pointer;">
         <span style="${FH_MONO} font-size:10px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:var(--text-sub);">${S.card ? 'Hide form data' : 'Show form data'}</span>
         <span style="font-size:11px; color:var(--periwinkle); display:inline-block; transform:rotate(${S.card ? '180deg' : '0deg'}); transition:transform .16s;">▾</span>
       </div>
@@ -15222,9 +15293,12 @@ function fhOpenSheet(mid){
       </div>
     </div>`;
   _fh.sheet = mid;
+  fhMarkRow(mid);
   fhSheetInit(e, r, 'pop');
 }
-function fhCloseSheet(){ const h = document.getElementById('fhSheet'); if (h) h.innerHTML = ''; if (_fh){ _fh.sheet = null; _fh.sheetBody = null; } }
+// DF L4715 rowBg: the Form row whose sheet is open carries the selected wash (blue .1 → --seg-active) until it closes.
+function fhMarkRow(mid){ document.querySelectorAll('#aSectionForm .fh-frow').forEach(el => { el.style.background = mid && el.getAttribute('data-fh-mid') === mid ? 'var(--seg-active)' : 'transparent'; }); }
+function fhCloseSheet(){ const h = document.getElementById('fhSheet'); if (h) h.innerHTML = ''; if (_fh){ _fh.sheet = null; _fh.sheetBody = null; } fhMarkRow(null); }
 // =====================================================================
 // MATCH STATS SHEET BODY (TEN-263, founder rulings 2026-09-24): one segmented control
 // (Match | Set 1 | … | Point by point), the design's Dominance ratio card and

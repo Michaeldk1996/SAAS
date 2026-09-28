@@ -1,0 +1,150 @@
+// TEN-330 (TEN-312 Form tab, founder 2026-09-28) — the Form tab rebuilt on the design file.
+// Every check drives the page's REAL functions (sliced out of bsp-consult-dashboard.html and executed) and names the
+// mutation that turns it red; tools/test-ten330-mutants.js applies each one to a copy of the page (TEN330_HTML).
+//   · the closing price under every form bar (DF L947), "—" when unpriced, nothing in an empty slot
+//   · a walkover is not a match played (N2): no bar, no row, no W–L, no count
+//   · a retirement is a match and settles at the listed price (ruling A); its set scores carry "ret."
+//   · N1: Form opens on today's surface
+//   · a player without a form shard reads his career-history shard, capped at the form-row cap (phase0-c §1)
+//   · the file's row geometry, "surface · W–L" group header, "window · surface · role" hot-line header; no Short chip
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const HERE = dirname(fileURLToPath(import.meta.url));
+const html = readFileSync(process.env.TEN330_HTML || join(HERE, 'bsp-consult-dashboard.html'), 'utf8');
+function slice(name) {
+  const start = html.indexOf(`\nfunction ${name}(`);
+  assert.ok(start > 0, `${name} not found`);
+  const eol = html.indexOf('\n', start + 1), line = html.slice(start, eol);
+  if (/\}\s*$/.test(line) && (line.match(/\{/g) || []).length === (line.match(/\}/g) || []).length) return line;
+  let d = 0, i = html.indexOf('{', start);
+  for (; i < html.length; i++) { if (html[i] === '{') d++; else if (html[i] === '}' && --d === 0) break; }
+  return html.slice(start, i + 1);
+}
+function constSrc(name) {
+  const start = html.indexOf(`\nconst ${name} = `);
+  assert.ok(start > 0, `const ${name} not found`);
+  const eol = html.indexOf('\n', start + 1), line = html.slice(start, eol);
+  if (/;\s*(\/\/.*)?$/.test(line)) return line;                       // one line (a trailing comment allowed)
+  return html.slice(start, html.indexOf(';\n', start) + 1);
+}
+const FNS = ['escapeHtml', 'fhEsc', 'fhSafeId', 'ppCleanTournamentName', 'fhTournClean', 'fhSurfName', 'h2hRoundLabel', 'psRoundAbbr', 'fhRoundCode',
+  'fhSetsFrom', 'psNormTour', 'fhBestOf', 'fhSetDone', 'fhFinishRow', 'fhRowFromForm', 'fhDayNum', 'fhDDMM', 'fhLongDate', 'fhIsInitial', 'fhNameKey',
+  'fhPickBook', 'fhCloseFor', 'fhEloKey', 'fhEloKeyOwners', 'fhEloAt', 'fhRefDay', 'tourxSampleGate', 'maGate', 'maGateBar', 'maSmallNote', 'fhMedian',
+  'fhOdd', 'fhSigned', 'fhSourceNote', 'fhSrcTitle', 'fhScoreText', 'fhEligible', 'fhIneligibleWhy', 'fhScoreLines', 'fhHotLineRank', 'fhFamOf',
+  'fhFormLineDefs', 'surnameFirstName', 'fhOppFmt', 'psShortName', 'fhSurname', 'fhTournCode', 'fhHotLinesTable', 'fhFormRowsFromCareer',
+  'fhFormPlayer', 'fhFormSetScores', 'fhFormTipScore', 'fhFormPriceCell', 'fhFormRowHtml', 'fhFormColumnHtml', 'fhFormListHtml', 'fhFormHotHtml',
+  'fhStateFor', 'fhNameLink', 'fhFullName', 'fhEloBadge'];
+const CONSTS = ['FH_SLAMS', 'FH_BOOK_ORDER', 'FH_BOOK', 'FH_SRC', 'FH_DASHC', 'FH_MONO', 'FH_THIN', 'FH_AC', 'FH_SURF', 'FH_ELO_MAX_AGE_DAYS',
+  'FH_HOT_MIN_ELIGIBLE', 'FH_HOT_FAM', 'FH_TCODE', 'FH_MONS', 'FH_FORM_ROW_CAP', 'MA_GREY', 'MA_SMALL_NOTE', 'MA_ROW_COLS'];
+const S = new Function(`
+  let _fh = null; const playerProfiles = {};
+  function eventKeyOfMatch(m){ return m.eventKey || null; }
+  ${CONSTS.map(constSrc).join('\n')}
+  ${FNS.map(slice).join('\n')}
+  return { fhFormPlayer, fhFormColumnHtml, fhFormListHtml, fhFormHotHtml, fhFormRowHtml, fhFormRowsFromCareer, fhStateFor, fhFormSetScores,
+    get fh(){ return _fh; } };
+`)();
+const text = h => h.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+
+// Fixture: A. Tester's last matches, newest first (analysed match on 2026-07-20, Hard).
+const row = (date, opp, won, sets, extra) => Object.assign({ opponent: opp, opponentKey: null, date, tournament: 'Test Open', round: '1/8-finals',
+  surface: 'hard', result: '', won, sets: sets.map(([p, o]) => ({ p, o })), retired: false, walkover: false, qualifying: false, tier: 'atp', eventKey: null }, extra || {});
+const ROWS = [
+  row('2026-07-18', 'B. Beta', true, [[6, 4], [6, 3]]),
+  row('2026-07-17', 'C. Gamma', false, [], { walkover: true, result: '0 - 0' }),           // W/O given: not a match
+  row('2026-07-16', 'D. Delta', true, [[6, 2], [2, 1]], { retired: true }),                // retirement: a win, priced
+  row('2026-07-10', 'E. Eps', true, [], { walkover: true, result: '0 - 0' }),              // W/O received: not a match
+  row('2026-07-09', 'F. Phi', false, [[4, 6], [3, 6]], { tournament: 'Other Cup', surface: 'clay' }),
+];
+const closes = { rows: [
+  { date: '2026-07-18', opp: 'B. Beta', won: true, P: [1.5, 2.6], B: null, ret: false, oppKey: null },
+  { date: '2026-07-16', opp: 'D. Delta', won: true, P: [1.8, 2.0], B: null, ret: true, oppKey: null },
+], cap: [] };
+function match(extra) {
+  return Object.assign({ p1: 'A. Tester', p2: 'Z. Other', p1Key: '9001', p2Key: '9002', date: '2026-07-20', surface: 'Hard',
+    _fhFormRows: [ROWS, []], _fhFormSrc: ['form', null], _fhCloses: [closes, null], _fhElo: null, _fhFormData: true }, extra || {});
+}
+function player(m, patch, idx = 0) {
+  const F = S.fhStateFor(m);
+  Object.assign(F.form, { surf: 'all' }, patch || {});
+  return S.fhFormPlayer(m, idx, F.form);
+}
+
+// Mutation: `&& !r.wo` dropped from fhFormPlayer's row filter (a walkover becomes a bar, a row and a loss).
+test('a walkover is not a match played: no bar, no row, not in the W–L (N2)', () => {
+  const P = player(match());
+  assert.equal(P.n, 3, 'three matches played (the two walkovers are not matches)');
+  assert.equal(P.wins + '–' + (P.n - P.wins), '2–1');
+  assert.ok(P.win.every(r => !r.wo));
+  assert.ok(!text(S.fhFormListHtml(P)).includes('Gamma') && !text(S.fhFormListHtml(P)).includes('Eps'), 'no walkover row in Recent matches');
+  assert.match(text(S.fhFormListHtml(P)), /3 on record/);
+});
+
+// Mutation: the retirement unpriced (`if (c && !r.ret)`), or " ret." dropped from fhFormSetScores.
+test('a retirement is a match, settles at its listed price and is marked "ret."', () => {
+  const P = player(match());
+  const ret = P.win.find(r => r.opp === 'D. Delta');
+  assert.ok(ret.ret && ret.price === 1.8, 'priced at the listed close');
+  assert.equal(S.fhFormSetScores(ret), '6-2, 2-1 ret.');
+  assert.match(text(S.fhFormListHtml(P)), /6-2, 2-1 ret\./);
+});
+
+// Mutation: the price span removed from the bar, or an unpriced bar printing a number / nothing.
+test('every form bar carries the closing price under it; "—" when unpriced; empty slots carry none (DF L947)', () => {
+  const m = match(); S.fhStateFor(m);
+  const P = player(m, { n: 5 });
+  const col = S.fhFormColumnHtml(P, false);
+  const prices = [...col.matchAll(/class="fh-bar-price"[^>]*>([^<]*)</g)].map(x => x[1]);
+  assert.deepEqual(prices, ['—', '1.80', '1.50'], 'oldest → newest: F. Phi unpriced, then 1.80, 1.50');
+  const slots = (col.match(/height:7px; border-radius:4px/g) || []).length;
+  assert.equal(slots, 5, 'Last 5 → 5 bar slots (2 empty)');
+  assert.equal((col.match(/font-size:8\.5px; white-space:nowrap; height:10px;"><\/span>/g) || []).length, 2, 'empty slots: an empty price line');
+});
+
+// Mutation: fhStateFor opens Form on 'all' (N1: today's surface).
+test('N1: Form opens on today\'s surface', () => {
+  const m = match({ surface: 'Clay' });
+  S.fh && (S.fh.m = null);
+  const F = S.fhStateFor(m);
+  assert.equal(F.form.surf, 'Clay');
+});
+
+// Mutation: fhFormRowsFromCareer loses its cap, or the career-history row keeps a walkover as a played match.
+test('a player without a form shard reads career-history, capped at the form-row cap (phase0-c §1)', () => {
+  const ch = Array.from({ length: 60 }, (_, i) => ({ date: `2026-06-${String(28 - (i % 28)).padStart(2, '0')}`, tournament: 'CH Event', round: 'Qualifying',
+    opponent: 'Q. Opp' + i, won: i % 2 === 0, result: '2 - 0', level: 'chitf', surface: 'hard', sets: [{ p: 6, o: 3 }, { p: 6, o: 4 }], eventKey: 7000 + i }));
+  ch[0].walkover = true;
+  const rows = S.fhFormRowsFromCareer(ch);
+  assert.equal(rows.length, 40, 'capped at FH_FORM_ROW_CAP');
+  assert.equal(rows[1].qualifying, true, 'a "Qualifying" round is a qualifying row');
+  assert.equal(rows[1].tier, 'chitf', 'Challenger / ITF rows stay (recent form is never ATP-only)');
+  const P = player(match({ _fhFormRows: [rows, []], _fhFormSrc: ['career', null], _fhCloses: [null, null] }));
+  assert.ok(P.win.every(r => !r.wo) && P.shown.length === 39, 'the walkover row is dropped; 39 played matches on record');
+});
+
+// Mutation: the group header meta dropped, or the tooltip/rows back to the double-space score join.
+test('the file\'s rows: "surface · W–L" group header, grid 48/12/1.1fr/36/40/1.3fr/46/46, set scores "6-4, 6-3"', () => {
+  const P = player(match());
+  const L = S.fhFormListHtml(P);
+  assert.match(text(L), /Test Open Hard · 2–0/);
+  assert.match(text(L), /Other Cup Clay · 0–1/);
+  const G = 'grid-template-columns:48px 12px minmax(0,1.1fr) 36px 40px minmax(0,1.3fr) 46px 46px';
+  assert.ok(S.fhFormRowHtml(P.win[0]).includes(G), 'every row on the file grid');
+  assert.equal(L.split(G).length - 1, 1 + P.win.length, 'the sticky header + every listed row');
+  assert.match(text(L), /Date Opponent Rd Sets Set scores H A/);
+  assert.match(text(L), /18\.07\. Beta B\. ELO — R16 2 - 0 6-4, 6-3 1\.50 2\.60/, 'the parked ruled ELO badge sits after the name (no Elo history loaded → —)');
+});
+
+// Mutation: the hot-line header back to one ctx string, or the Short chip shown again (DF L4773 short:false).
+test('hot lines: "window · surface · role" header under the name; the Short chip never shows (the file hard-codes it off)', () => {
+  const m = match(); const F = S.fhStateFor(m);
+  const P = player(m, { n: 10 });
+  assert.equal(P.hot.short, false);
+  const H = S.fhFormHotHtml(P);
+  assert.match(text(H), /A\. Tester Last 10 All surfaces Any role/);
+  assert.ok(!/Short odds/.test(H));
+});

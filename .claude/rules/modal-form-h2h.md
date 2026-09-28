@@ -48,6 +48,21 @@ Applies to the TEN-263 block in `bsp-consult-dashboard.html` (`fh*` functions), 
   from the Sets / Tiebreaks tallies; a retired match never counts as a deciding set and is not
   eligible for games or sets lines ("wins set 1" only if set 1 was finished).
 
+## Form tab build (TEN-330, TEN-312 design file `formFor` / template L914–1150)
+- **Built from the file:** filter tracks, header columns, bars with the **closing price under each bar** (`fh-bar-price`,
+  "—" when unpriced, nothing in an empty slot), Show form data (thin count as the aside), hot lines (name over
+  "window · surface · role"), Recent matches on the file's grid (`MA_ROW_COLS`, "surface · W–L" group header, set scores
+  "6-4, 6-3", " ret." on a retirement). The file hard-codes the "Short odds" chip off (`short:false`) and binds no
+  "priced in at" line: neither is shown.
+- **A walkover never becomes a Form row** (N2): no bar, no row, no W–L, no count — the pipeline already drops them from
+  the form shards; the tab drops any that reach it (career-history rows included).
+- **A player without a form shard** (non-board) reads his `career-history/{key}.json`, newest first, capped at
+  `FH_FORM_ROW_CAP = 40` (= `RECENT_FORM_ROW_CAP`). Neither source → "No recent matches on record" (design gap G8).
+- **Parked (design file v ruling D-12):** the file's row has no Elo slot; the ELO badge stays after the opponent's name
+  until the founder rules.
+- **Test:** `test-ten330-form.mjs` (+ `tools/test-ten330-mutants.js`, 13 mutants). Pixel/structure harness (manual):
+  `tools/ten330-form-capture.mjs` + `tools/ten330-form-structure.py`.
+
 ## Form rows: opponent Elo AT THE MATCH DATE (ruling 2026-09-24, D-12)
 - **Basis:** overall Elo from the latest weekly Tennis Abstract snapshot in `elo-history.json` dated
   **strictly before** the match day (ruling 2026-09-24: a same-day snapshot can hold the match's own result), and only if it is **no more than 7 days old** (`FH_ELO_MAX_AGE_DAYS`). No
