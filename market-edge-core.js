@@ -49,6 +49,11 @@
   }
   const isFavPrice = (price) => price != null && milli(price) < 2000;
 
+  /** TEN-325 (founder 2026-09-28, TEN-314 comment 70fb039e): a retirement settles on the ATP result — the player the
+   *  ATP credits with the win is the winner, at his listed close; bookmaker rules do not apply. Every surface that
+   *  counts retirements in profit (Market edge, Form, H2H, Tournament Backing) prints this one line. */
+  const RET_SETTLE_NOTE = 'Retirements settled on the official ATP result.';
+
   /** Flat 1u P&L of one row in integer cents (a decimal price is exact in cents). */
   function plCents(r) { return r.won ? Math.round(Number(r.price) * 100) - 100 : -100; }
 
@@ -240,7 +245,7 @@
     return { bo3: true, reason: 'atp-tour' };
   }
 
-  const api = { matchFormat, ME_THIN_FLOOR, ME_NEEDS, BANDS, bandOf, isFavPrice, plCents, whyNotPriced, whyNotBo3, inWinner, inBo3,
+  const api = { matchFormat, RET_SETTLE_NOTE, ME_THIN_FLOOR, ME_NEEDS, BANDS, bandOf, isFavPrice, plCents, whyNotPriced, whyNotBo3, inWinner, inBo3,
     inScope, summarise, needsCandidates, roundRank, byDate, playerModel, lineDefs, lineModel, chartModel };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.MarketEdgeCore = api;

@@ -77,6 +77,8 @@ Applies to the TEN-310 block in `bsp-consult-dashboard.html` (`me*` functions, `
   Derived lines keep their own set-score rule: a retired match's unfinished set is never a completed set, so it stays out
   of the games/sets lines. Walkovers never count. **Test:** a fixture with one retired win at 1.50 adds +0.50u and 1 to
   the band's n; Sinner's career priced n rises from the pre-ruling 414 (measured 427 under ruling A on 2026-09-28).
+  Settled on the ATP result, not any book's rule; both Match winner footnotes (band card, profit chart) and the profile
+  Market edge line print `MarketEdgeCore.RET_SETTLE_NOTE` (`modal-analysis.md` "Retirements in price figures").
 - **One basis for both Market edge surfaces** — the player-profile Market edge (`build-market-edge.js`,
   `market-edge/{key}.json`) uses this tab's rules, through `market-edge-core.js`: Pinnacle close, else Bet365
   close in the tab's order (R8 + card ruling, 2026-09-28: **our captured Pinnacle → Tennis-Data Pinnacle** →

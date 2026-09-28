@@ -442,6 +442,22 @@ test('ruling B: tab Match winner = the profile shard, band by band (Sinner, Alca
   assert.deepEqual([lone.ek, lone.sets, lone.round], [null, null, '—']);
 });
 
+// ---- TEN-325 (founder 2026-09-28, TEN-314 comment 70fb039e): retirements settle on the official ATP result, and every
+// surface that counts them in profit says so. The Match winner view counts them in the bands and the profit chart, so both
+// footnotes print the core's RET_SETTLE_NOTE. Mutation that turns this red: drop `${window.MarketEdgeCore.RET_SETTLE_NOTE}`
+// from either footnote (mePriceCard / meChartCard).
+test('TEN-325: the price-band and profit-chart footnotes say retirements settle on the ATP result', () => {
+  const ui = buildUI(), rows = load(ui);
+  const note = ui.core.RET_SETTLE_NOTE;
+  assert.equal(note, 'Retirements settled on the official ATP result.');
+  for (const scope of ['career', 'l52']) {
+    const html = ui.render(M, { meView: 'winner', meScope: scope }, rows).html;
+    const band = html.slice(0, html.indexOf('class="me-card me-chart"')), chart = html.slice(html.indexOf('class="me-card me-chart"'));
+    assert.ok(texts(band).some((t) => t.includes(note)), `${scope}: band card footnote carries the note`);
+    assert.ok(texts(chart).some((t) => t.startsWith('Cumulative units') && t.includes(note)), `${scope}: chart footnote carries the note`);
+  }
+});
+
 // ---- TEN-322 (TEN-312 M5): the profit-chart footnote describes the shared DATE axis ----
 // Under TEN-310 both lines sit on one real-date axis (chartModel's d0..d1 spans both players), so a later career
 // starts further right. The design's copy ("each line spans that player's own matches") described a per-player

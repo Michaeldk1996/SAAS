@@ -4563,8 +4563,10 @@
     var head = '<div style="' + GRID + 'padding:14px 10px 0;">' +
       HEAD.map(function (h) {
         return '<span style="font-family:\'IBM Plex Mono\',monospace;font-size:9px;letter-spacing:0.1em;' +
-          'text-transform:uppercase;color:var(--label);text-align:' + h[1] + ';padding-bottom:9px;">' +
-          esc(h[0]) + '</span>';
+          'text-transform:uppercase;color:var(--label);text-align:' + h[1] + ';padding-bottom:9px;"' +
+          // TEN-325: Backing counts retirements, settled on the ATP result.
+          (h[0] === 'Backing' && window.MarketEdgeCore ? ' data-ret-note="profile-backing" title="' + esc(window.MarketEdgeCore.RET_SETTLE_NOTE) + '"' : '') +
+          '>' + esc(h[0]) + '</span>';
       }).join('') + '</div>';
 
     var rows = shown.map(function (t) {
@@ -5508,7 +5510,9 @@
         esc(mk.priceBasis || 'Pinnacle closing, else Bet365 closing') + ' ' + MIDDOT + ' ' + mk.headline.n + ' priced ' + MIDDOT + ' ' +
         recordText(mk.headline.wins, mk.headline.losses) + ' ' + MIDDOT + ' median odds ' +
         (mk.medianPrice == null ? DASH : mk.medianPrice.toFixed(2)) +
-        ' ' + MIDDOT + ' tour baseline ' + (tourY == null ? DASH : neg(tourY, 2, '%')) + '</div>' +
+        ' ' + MIDDOT + ' tour baseline ' + (tourY == null ? DASH : neg(tourY, 2, '%')) +
+        // TEN-325 (founder 2026-09-28): retirements count in these figures, settled on the ATP result.
+        (window.MarketEdgeCore ? ' ' + MIDDOT + ' <span data-ret-note="profile-me">' + esc(window.MarketEdgeCore.RET_SETTLE_NOTE) + '</span>' : '') + '</div>' +
       '<div style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;">' + cards + '</div>' +
       '<div style="border:0.33px solid var(--line);border-radius:12px;padding:18px 20px 16px;' +
         'margin-top:16px;">' +

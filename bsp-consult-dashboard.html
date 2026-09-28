@@ -15115,6 +15115,7 @@ function fhBuildH2H(m){
       </div>
       ${nP ? '' : `<span style="font-size:13px; color:var(--text-sub); text-align:center; padding:4px 0 2px;">No closing odds on record for these meetings</span>`}
       <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); gap:14px;">${prSides.map(prCard).join('')}</div>
+      ${nP && globalThis.MarketEdgeCore ? `<span data-ret-note="h2h" style="font-size:10.5px; color:var(--label);">${fhEsc(globalThis.MarketEdgeCore.RET_SETTLE_NOTE)}</span>` : ''}
     </div>`;
   // ---- Hot lines (one table, one dot per meeting) ----
   const sc = fhScoreLines(F, fhH2hLineDefs(aS, bS));
@@ -15919,7 +15920,7 @@ function mePriceCard(E, MM){
   return `<div style="min-width:0; display:flex; flex-direction:column; overflow-x:auto;"><div class="me-card me-price" style="${ME_CARD}">`
     + `<div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; flex-wrap:wrap;"><span style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;"><span style="${ME_TITLE}">Price sensitivity</span>${meScopeSeg(S)}</span><span style="${ME_HINT}">Click a band for every match priced in it</span></div>`
     + `<div style="${ME_PGRID}">${meBandsCol(E, 0, MM[0])}${meBandsCol(E, 1, MM[1])}</div>`
-    + `<span style="${ME_FOOT}">Won = win rate at closing odds in the band. Needs = break-even win rate at the band's average price. 1u stake = profit backing him 1u on every match in the band. ${meScopeLbl(S)}.${meSmallFoot(MM.map(M => (M.state === 'ready' ? M.bands.map(b => b.n) : [])).flat())}</span></div></div>`;
+    + `<span style="${ME_FOOT}">Won = win rate at closing odds in the band. Needs = break-even win rate at the band's average price. 1u stake = profit backing him 1u on every match in the band. ${window.MarketEdgeCore.RET_SETTLE_NOTE} ${meScopeLbl(S)}.${meSmallFoot(MM.map(M => (M.state === 'ready' ? M.bands.map(b => b.n) : [])).flat())}</span></div></div>`;
 }
 // §3 Profit at 1u flat — one shared DATE axis for both players (TEN-310 §4.3).
 function meChartCard(E, MM){
@@ -15964,7 +15965,7 @@ function meChartCard(E, MM){
   return `<div style="min-width:0; display:flex; flex-direction:column; overflow-x:auto;"><div class="me-card me-chart" style="${ME_CARD}">`
     + `<div style="display:flex; align-items:flex-end; justify-content:space-between; gap:12px 20px; flex-wrap:wrap;"><span style="${ME_TITLE}">Profit at 1u flat</span><div style="display:flex; align-items:center; gap:22px; flex-wrap:wrap; min-height:18px;">${legend}</div></div>`
     + plot
-    + `<span style="${ME_FOOT}">Cumulative units, flat 1u at closing odds on every priced match, oldest to newest, on one date axis shared by both players (a later career starts further right). The bright rule is break even. ${meScopeLbl(S)}.</span></div></div>`;
+    + `<span style="${ME_FOOT}">Cumulative units, flat 1u at closing odds on every priced match, oldest to newest, on one date axis shared by both players (a later career starts further right). The bright rule is break even. ${window.MarketEdgeCore.RET_SETTLE_NOTE} ${meScopeLbl(S)}.</span></div></div>`;
 }
 // §4 Derived lines at today's price — one player's column.
 function meLinesCol(E, i, M){

@@ -118,6 +118,29 @@ function checkFormH2h(src) {
   return bad;
 }
 
+// ---- 3. the settlement label (founder 2026-09-28, TEN-314 comment 70fb039e) ------------------------------
+// "Settle on the ATP result only … Wherever retirements are counted in profit (Market edge, Form, H2H, Tournament
+// Backing), add a tooltip or footnote: 'Retirements settled on the official ATP result.'" One source: the core's
+// RET_SETTLE_NOTE. The Market edge tab's two footnotes are checked RENDERED in test-ten310-market-edge.mjs; here: the
+// exact text, and that H2H and both profile sites print the core's constant (never a copy of the words).
+const NOTE = 'Retirements settled on the official ATP result.';
+const PROFILE = fs.readFileSync(path.join(ROOT, 'player-profile-v2.js'), 'utf8');
+function checkLabel(coreSrc, html, profile) {
+  const bad = [];
+  const m = /const RET_SETTLE_NOTE = '([^']*)';/.exec(coreSrc);
+  if (!m || m[1] !== NOTE) bad.push(`core: RET_SETTLE_NOTE is ${m ? JSON.stringify(m[1]) : 'missing'}, not the founder's text`);
+  if (!/const api = \{[^}]*\bRET_SETTLE_NOTE\b/.test(coreSrc)) bad.push('core: RET_SETTLE_NOTE is not exported');
+  if (!/data-ret-note="h2h"[^`]*\$\{fhEsc\(globalThis\.MarketEdgeCore\.RET_SETTLE_NOTE\)\}/.test(html)) bad.push('H2H: the Price range card does not print the settlement note');
+  if (!/data-ret-note="profile-me">' \+ esc\(window\.MarketEdgeCore\.RET_SETTLE_NOTE\)/.test(profile)) bad.push('profile: the Market edge line does not print the settlement note');
+  if (!/data-ret-note="profile-backing" title="' \+ esc\(window\.MarketEdgeCore\.RET_SETTLE_NOTE\)/.test(profile)) bad.push('profile: the Backing column has no settlement tooltip');
+  // one source: no surface spells the words out itself
+  if (html.includes(NOTE) || profile.includes(NOTE)) bad.push('a surface hard-codes the note instead of reading RET_SETTLE_NOTE');
+  return bad;
+}
+const CORE = fs.readFileSync(path.join(ROOT, 'market-edge-core.js'), 'utf8');
+const l = checkLabel(CORE, HTML, PROFILE);
+l.length ? l.forEach(fail) : ok('the settlement note: one constant, printed on H2H, profile Market edge and profile Backing');
+
 // ---- run + controls ---------------------------------------------------------------------------------------
 const BUILDER = fs.readFileSync(path.join(ROOT, 'build-market-edge.js'), 'utf8');
 console.log('TEN-325 ruling A — retirements settle at the listed price');
@@ -140,10 +163,23 @@ function controls() {
     ['H2H: price range drops retirements', 'const PR = F.filter(r => r.price != null), nP', 'const PR = F.filter(r => r.price != null && !r.ret), nP'],
     ['Form rows: retirement unpriced', 'fhRowFromForm(x, selfKey, selfName, idx){', 'fhRowFromForm(x, selfKey, selfName, idx){ if (x.retired) x = Object.assign({}, x, { date: "1900-01-01" });'],
   ];
+  const LM = [
+    ['label: wording changed', "RET_SETTLE_NOTE = 'Retirements settled on the official ATP result.'", "RET_SETTLE_NOTE = 'Retirements settled at the listed price.'", 'core'],
+    ['label: not exported', 'const api = { matchFormat, RET_SETTLE_NOTE, ', 'const api = { matchFormat, ', 'core'],
+    ['label: H2H footnote dropped', 'data-ret-note="h2h"', 'data-x="h2h"', 'html'],
+    ['label: profile Market edge line dropped', 'data-ret-note="profile-me"', 'data-x="profile-me"', 'profile'],
+    ['label: Backing tooltip dropped', "' data-ret-note=\"profile-backing\" title=\"' + esc(window.MarketEdgeCore.RET_SETTLE_NOTE) + '\"'", "''", 'profile'],
+    ['label: hard-coded copy', 'data-ret-note="h2h" style', 'data-ret-note="h2h" title="Retirements settled on the official ATP result." style', 'html'],
+  ];
   let caught = 0;
+  for (const [name, from, to, where] of LM) {
+    const src = { core: CORE, html: HTML, profile: PROFILE };
+    src[where] = once(src[where], from, to, name);
+    if (checkLabel(src.core, src.html, src.profile).length) caught++; else fail(`control survived: ${name}`);
+  }
   for (const [name, from, to] of BM) { if (checkBuilder(runBuilder(once(BUILDER, from, to, name))).length) caught++; else fail(`control survived: ${name}`); }
   for (const [name, from, to] of HM) { if (checkFormH2h(once(HTML, from, to, name)).length) caught++; else fail(`control survived: ${name}`); }
-  console.log(`  mutants: ${caught} of ${BM.length + HM.length} caught`);
+  console.log(`  mutants: ${caught} of ${LM.length + BM.length + HM.length} caught`);
 }
 controls();
 if (failures) { console.error(`test-ten325-retirements: ${failures} failure(s)`); process.exit(1); }

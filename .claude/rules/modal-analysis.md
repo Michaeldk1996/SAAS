@@ -134,6 +134,17 @@ this file wins.
   (price range), Market edge (tab and profile), Tournament Backing and "vs market". One treatment for the same match on
   every surface. W–L already counts it (N2). Evidence: document `retirement-options` (1,237 of 42,858 priced ATP
   matches, 2.9%). **Test:** the same retired match contributes the same P&L on Form, Market edge and Backing.
+- **Settled on the ATP result only** (founder 2026-09-28, TEN-314 comment 70fb039e): the player the ATP credits with
+  the win is the winner, at his listed closing price. **Bookmaker settlement rules do not apply** — no book's
+  retirement rule (void, "one set completed", etc.) is fetched, quoted or modelled, and no "unconfirmed book rule"
+  label appears anywhere.
+- **Every surface that counts retirements in profit prints "Retirements settled on the official ATP result."** as a
+  footnote or tooltip: Market edge (tab band card + profit chart, player-profile Market edge), Form (flat 1u / v market),
+  H2H (Price range), Tournament Backing (modal tile and the profile per-event Backing column). The words come from one
+  constant, `MarketEdgeCore.RET_SETTLE_NOTE` (`market-edge-core.js`); no surface spells them out. A tab rebuild
+  (TEN-330 … TEN-341) that renders one of these figures carries the note in its definition of done.
+  **Test:** `tools/test-ten325-retirements.js` (exact text, one source, H2H + profile sites) and
+  `test-ten310-market-edge.mjs` "TEN-325" (both Market edge footnotes, rendered).
 
 ## Court-speed label — one scheme site-wide (N4, founder 2026-09-28)
 - The label is the **pipeline 3-band on the 0–100 index**: `courtSpeedCategory` (`bsp-pipeline.js`) — ≤ 43 Slow,
