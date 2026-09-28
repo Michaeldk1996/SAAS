@@ -65,6 +65,15 @@ this file wins.
   provisionally — a change is a one-line token edit). The TEN-303 verbatim exception is deleted: `AODDS_C`,
   `WX_C`, `ME_C` and the chrome CSS are tokens. **Test:** `test-ten314-tokens.mjs`, `test-ten303-colours.mjs`,
   `test-ten304-weather-tab.mjs`.
+- **Hairlines are the design's 1px, set in the token file** (founder, TEN-314 comment 70fb039e, 2026-09-28; this
+  replaces the 12a 0.33px inside the modal). `--ma-hw:1px` lives in `match-analysis-tokens.css`. Modal code
+  writes `var(--ma-hw,0.33px)`, so a builder the player profile shares keeps the site's 0.33px outside `.ma-theme`.
+  Weather and Odds keep their spec widths (`WX_C.hw` 1.25px, `hw1` 1px). **Test:** `test-ten314-tokens.mjs`
+  asserts no bare `0.33px` in any modal declaration or modal CSS rule.
+- **No figure without a count** (founder, same comment). The Tournament hold rate stays ungated but shows its
+  n (service games) in the tooltip. `COURT_CONDITIONS.serviceHold` is the founder's court-conditions sheet %
+  with **no** count, so Key factors shows a dash with a tooltip saying why (`MA_HOLD_NO_N`). The Tournament
+  tab (TEN-332) brings our own box-score hold rate with its n. **Test:** `test-ten314-components.mjs`.
 
 ## Players and avatars (D4, D5)
 - **Both players are neutral on every tab, Odds included:** player A white/primary, player B grey — as on

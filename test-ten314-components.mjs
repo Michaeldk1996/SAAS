@@ -192,3 +192,31 @@ test('Esc closes the topmost layer only: the stats sheet (capture phase, stops t
   const close = H.slice(at, H.indexOf('\n', at + 1));
   assert.ok(close.includes('fhCloseSheet()') && close.includes("const mp = document.getElementById('mePop'); if (mp) mp.innerHTML = '';"));
 });
+
+// Founder 2026-09-28: the Tournament hold rate stays ungated but must show its n (service games) — "no figure
+// without a count". COURT_CONDITIONS publishes the % with no count, so Key factors shows a dash + the tooltip.
+// Mutation: put `${cs.serviceHold}%` back in akTournamentBlock, or drop the tooltip (MA_HOLD_NO_N).
+test('Key factors · Tournament: hold rate has no n in its source → a dash with the tooltip, never the %', () => {
+  const run = new Function(`
+    ${constSrc('MA_HOLD_NO_N')}
+    const TOURNAMENT_CATALOG = [], ANALYSIS_P1_COLOR = 'a', ANALYSIS_P2_COLOR = 'b';
+    const psEsc = s => String(s), akSurname = s => s, altitudeLabel = () => 'x', tourxBounce = () => 'b',
+      tourxConditionsProse = () => 'prose', akCard = (k, h) => h;
+    ${['maTipHtml', 'akTournamentBlock'].map(slice).join('\n')}
+    return akTournamentBlock({ tour: 'ATP Basel', p1: 'A', p2: 'B', courtSpeed: { abstractSpeed: 1.4, altitude: 260, serviceHold: 82, category: 'Fast' } });
+  `);
+  const h = run();
+  const cond = /<div class="akt-cond">((?:(?!<div class="akt-cond">).)*?)<span>hold rate<\/span>/.exec(h);
+  assert.ok(cond, 'the hold-rate condition renders');
+  assert.ok(!/82/.test(cond[1]), 'the count-less % is not shown');
+  assert.match(cond[1], /class="elotip-pop" role="tooltip"[^>]*>Service hold at this event: [^<]*number of service games[^<]*<\/span>/);
+  // review: the sentence wraps (nowrap clipped it off-screen below 1100px), the dash takes keyboard focus, and the
+  // reason is visible without hover (touch, print). Mutation: drop { wrap: 220 }, the tabindex, or the em note.
+  assert.match(cond[1], /class="elotip-pop" role="tooltip" style="[^"]*white-space:normal; width:220px; left:0; transform:none;/);
+  assert.match(cond[1], /<b tabindex="0">—<\/b>/);
+  assert.match(h, /<span>hold rate<\/span><em>n not published<\/em>/);
+  // the card's label rule must not restyle the tooltip (it matched every descendant span: 10px grey, +3px offset).
+  // Mutation: `.akt-cond > span:not(.elotip)` back to `.akt-cond span`.
+  assert.match(html, /\.modal-analysis \.akt-cond > span:not\(\.elotip\)\{/);
+  assert.ok(!/\.modal-analysis \.akt-cond span\{/.test(html));
+});

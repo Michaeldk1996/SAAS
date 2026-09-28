@@ -186,7 +186,7 @@
   .circuit-toggle button:disabled{ cursor:not-allowed; opacity:0.5; }
 
   .stats{ display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; padding: 18px 24px; }
-  .stat{ background: var(--panel); border:0.33px solid var(--border); border-radius: var(--radius); padding:14px 16px; }
+  .stat{ background: var(--panel); border:var(--ma-hw,0.33px) solid var(--border); border-radius: var(--radius); padding:14px 16px; }
   .stat .label{ font-size:11px; color:var(--text-faint); text-transform:uppercase; letter-spacing:0.06em; margin-bottom:8px; }
   .stat .value{ font-family:'IBM Plex Mono', monospace; font-size:22px; font-weight:600; }
   .stat .value.accent{ color: var(--value-pos); }
@@ -978,10 +978,10 @@
   .badge.m1000{ background: var(--accent-dim); color: var(--accent); }
   .badge.finals{ background:#2A1533; color:#B183E0; }
   .badge.a500{ background:var(--court-hard-dim); color:var(--court-hard); }
-  .badge.a250{ background:var(--panel-2); color:var(--text-dim); border:0.33px solid var(--border); }
+  .badge.a250{ background:var(--panel-2); color:var(--text-dim); border:var(--ma-hw,0.33px) solid var(--border); }
   .badge.nextgen{ background:#2A1533; color:#B183E0; }
-  .badge.indoor{ background:var(--panel-2); color:var(--text-dim); border:0.33px solid var(--border); }
-  .badge.outdoor{ background:var(--panel-2); color:var(--text-dim); border:0.33px solid var(--border); }
+  .badge.indoor{ background:var(--panel-2); color:var(--text-dim); border:var(--ma-hw,0.33px) solid var(--border); }
+  .badge.outdoor{ background:var(--panel-2); color:var(--text-dim); border:var(--ma-hw,0.33px) solid var(--border); }
 
   /* Generic page padding */
   .pagewrap{ padding: 22px 24px 48px 24px; }
@@ -1087,7 +1087,7 @@
   .tourgroup-header .count{ color:var(--text-faint); font-weight:600; text-transform:none; letter-spacing:normal; background:var(--surface-inner); border-radius:20px; padding:1px 8px; margin-left:auto; }
   .tourrow{ display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:6px; cursor:pointer; font-family:var(--mx-font-ui); font-size:13px; color:var(--text); border-left:2px solid transparent; }
   .tourrow:hover{ background:var(--panel-2); border-left-color:var(--tier-color, var(--accent)); }
-  .tourrow .flag{ font-family:'IBM Plex Mono', monospace; font-size:10px; font-weight:700; letter-spacing:0.02em; color:var(--text-faint); background:var(--panel-2); border:0.33px solid var(--border); border-radius:5px; width:auto; min-width:28px; padding:2px 5px; text-align:center; flex-shrink:0; }
+  .tourrow .flag{ font-family:'IBM Plex Mono', monospace; font-size:10px; font-weight:700; letter-spacing:0.02em; color:var(--text-faint); background:var(--panel-2); border:var(--ma-hw,0.33px) solid var(--border); border-radius:5px; width:auto; min-width:28px; padding:2px 5px; text-align:center; flex-shrink:0; }
   .tourrow .rowname{ flex:1; font-weight:500; }
 
   /* Tournaments — profile view (14b: bolder gradient hero + real trend chart) */
@@ -1096,7 +1096,7 @@
   .tprofile-back:hover{ color:var(--periwinkle); }
   .tprofile-header{ border:0.33px solid var(--line-open); border-radius:18px; background:var(--surface); padding:30px 32px; margin-bottom:16px; display:flex; align-items:center; justify-content:space-between; gap:24px; }
   .tprofile-header .badges{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:18px; }
-  .tprofile-header .badges .chip{ font-size:12px; font-weight:600; color:var(--text-sub); background:var(--surface-inner); border:0.33px solid var(--line); border-radius:7px; padding:5px 11px; white-space:nowrap; }
+  .tprofile-header .badges .chip{ font-size:12px; font-weight:600; color:var(--text-sub); background:var(--surface-inner); border:var(--ma-hw,0.33px) solid var(--line); border-radius:7px; padding:5px 11px; white-space:nowrap; }
   .tprofile-header .titlerow{ display:flex; align-items:center; gap:20px; }
   .tprofile-header h1{ font-family:'Hanken Grotesk', sans-serif; font-size:36px; margin:0; font-weight:800; letter-spacing:-0.02em; line-height:1; color:var(--text); }
   .tprofile-header .tsubtitle{ font-size:13px; color:var(--text-sub); margin-top:8px; }
@@ -1120,7 +1120,7 @@
   .tprofile-explore{ display:grid; grid-template-columns:1.3fr 1fr; gap:16px; margin-bottom:16px; }
   .tprofile-card{ border:0.33px solid var(--line); border-radius:14px; background:var(--surface); padding:22px; }
   .tprofile-card .cardlabel{ font-size:11px; color:var(--label); text-transform:uppercase; letter-spacing:0.1em; font-weight:600; margin-bottom:16px; display:flex; align-items:center; justify-content:space-between; }
-  .info-ico{ display:inline-flex; align-items:center; justify-content:center; width:14px; height:14px; border-radius:50%; background:var(--panel-2); border:0.33px solid var(--border); color:var(--text-faint); font-size:10px; cursor:help; margin-left:6px; text-transform:none; letter-spacing:normal; flex-shrink:0; }
+  .info-ico{ display:inline-flex; align-items:center; justify-content:center; width:14px; height:14px; border-radius:50%; background:var(--panel-2); border:var(--ma-hw,0.33px) solid var(--border); color:var(--text-faint); font-size:10px; cursor:help; margin-left:6px; text-transform:none; letter-spacing:normal; flex-shrink:0; }
   .info-ico:hover{ color:var(--text-dim); border-color:var(--text-faint); }
   .badge-speed{ font-size:12px; font-weight:600; color:var(--periwinkle); background:var(--seg-active); border:0.33px solid var(--seg-active-line); border-radius:7px; padding:4px 11px; text-transform:none; letter-spacing:normal; }
   .tdesc{ font-size:13.5px; color:var(--text-sub); line-height:1.55; margin-top:18px; }
@@ -1194,7 +1194,7 @@
      over the modal's left edge and hid the Analysis rail's tab labels (TEN-8). */
   .modal-overlay{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; z-index:100; }
   .modal-overlay.open{ display:flex; }
-  .modal{ background: var(--panel); border:0.33px solid var(--border); border-radius:12px; padding:28px; max-width:340px; text-align:center; }
+  .modal{ background: var(--panel); border:var(--ma-hw,0.33px) solid var(--border); border-radius:12px; padding:28px; max-width:340px; text-align:center; }
   .modal .icon{ font-size:28px; margin-bottom:10px; color:var(--accent); }
   .modal h3{ font-family:'Space Grotesk', sans-serif; margin:0 0 8px 0; font-size:18px; }
   .modal p{ color:var(--text-dim); font-size:13px; margin:0 0 18px 0; }
@@ -1310,7 +1310,7 @@
   .aox-seg{ transition:background .14s ease, color .14s ease, border-color .14s ease; }
   .aodds-tab{ display:flex; flex-direction:column; gap:20px; }
   .aodds-summary{ display:flex; gap:12px; flex-wrap:wrap; }
-  .aodds-tile{ flex:1 1 200px; min-width:180px; border:0.33px solid var(--border); border-radius:12px; background:var(--surface); padding:13px 15px; display:flex; align-items:center; justify-content:space-between; gap:12px; }
+  .aodds-tile{ flex:1 1 200px; min-width:180px; border:var(--ma-hw,0.33px) solid var(--border); border-radius:12px; background:var(--surface); padding:13px 15px; display:flex; align-items:center; justify-content:space-between; gap:12px; }
   .aodds-tile.fav{ border-color:var(--seg-active-line); }
   .aodds-tile.dog{ border-color:var(--line); }
   .aodds-tile .aot-name{ font-size:9.5px; letter-spacing:0.06em; text-transform:uppercase; font-family:'IBM Plex Mono', monospace; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -1324,8 +1324,8 @@
   .aodds-badge{ font-family:'IBM Plex Mono', monospace; font-size:12px; font-weight:800; color:var(--ma-on-fill, var(--page)); background:var(--ma-fill, var(--periwinkle)); border-radius:6px; padding:3px 9px; }
   .aodds-sechead .aoh-title{ font-size:16px; font-weight:800; color:var(--text); }
   .aodds-sechead .aoh-sub{ font-size:12.5px; color:var(--label); }
-  .aodds-card{ border:0.33px solid var(--border); border-radius:16px; background:var(--surface); overflow:hidden; }
-  .aodds-chead{ display:grid; grid-template-columns:1fr 180px 180px; padding:11px 18px; border-bottom:0.33px solid var(--line-soft); align-items:end; }
+  .aodds-card{ border:var(--ma-hw,0.33px) solid var(--border); border-radius:16px; background:var(--surface); overflow:hidden; }
+  .aodds-chead{ display:grid; grid-template-columns:1fr 180px 180px; padding:11px 18px; border-bottom:var(--ma-hw,0.33px) solid var(--line-soft); align-items:end; }
   .aodds-chead .aoc-book{ font-size:10px; letter-spacing:0.1em; text-transform:uppercase; color:var(--label); font-family:'IBM Plex Mono', monospace; align-self:center; }
   .aodds-chead .aoc-p{ text-align:right; display:flex; flex-direction:column; align-items:flex-end; }
   .aodds-chead .aoc-p .aoc-nm{ font-size:13px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
@@ -1333,7 +1333,7 @@
   .aodds-chead .aoc-p.b .aoc-nm{ color:var(--text); }
   .aodds-chead .aoc-p .aoc-rng{ font-size:10.5px; font-family:'IBM Plex Mono', monospace; color:var(--label); margin-top:2px; }
   .aodds-chead .aoc-p .aoc-cap{ font-size:8.5px; letter-spacing:0.06em; text-transform:uppercase; font-family:'IBM Plex Mono', monospace; color:var(--label); margin-top:2px; }
-  .aodds-brow{ display:grid; grid-template-columns:1fr 180px 180px; align-items:center; padding:0 18px; border-bottom:0.33px solid var(--line-soft); }
+  .aodds-brow{ display:grid; grid-template-columns:1fr 180px 180px; align-items:center; padding:0 18px; border-bottom:var(--ma-hw,0.33px) solid var(--line-soft); }
   .aodds-brow:last-child{ border-bottom:none; }
   .aodds-brow .aob-name{ display:flex; align-items:center; gap:8px; padding:12px 0; font-size:13px; font-weight:600; color:var(--text); }
   .aodds-brow .aob-name .aob-ext{ display:flex; color:var(--label); }
@@ -1428,7 +1428,7 @@
      and the Stennisfy Model card are full-width strips below the grid. Every card is a
      .seg-tier clickable link into its tab (hover = the interactive-card border). */
   .modal-analysis .akbento{ display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:18px; align-items:stretch; }
-  .modal-analysis .akb{ display:flex; flex-direction:column; background:var(--surface); border:0.33px solid var(--line); border-radius:12px; padding:20px 22px; min-width:0; }
+  .modal-analysis .akb{ display:flex; flex-direction:column; background:var(--surface); border:var(--ma-hw,0.33px) solid var(--line); border-radius:12px; padding:20px 22px; min-width:0; }
   .modal-analysis .akb-wide{ width:100%; margin-top:18px; }
   .modal-analysis .akb[role="button"]{ cursor:pointer; transition:border-color .12s ease, background .12s ease; }
   .modal-analysis .akb[role="button"]:hover{ border-color:var(--line-open); background:var(--nav-hover); }
@@ -1454,7 +1454,7 @@
   .modal-analysis .akf-dot.w{ color:var(--positive); background:color-mix(in srgb, var(--positive) 16%, transparent); }
   .modal-analysis .akf-dot.l{ color:var(--negative); background:color-mix(in srgb, var(--negative) 16%, transparent); }
   .modal-analysis .akf-stat{ display:flex; justify-content:space-between; font-size:12px; color:var(--label); }
-  .modal-analysis .akf-stat.top{ padding-top:12px; border-top:0.33px solid var(--line-soft); }
+  .modal-analysis .akf-stat.top{ padding-top:12px; border-top:var(--ma-hw,0.33px) solid var(--line-soft); }
   .modal-analysis .akf-stat.sub{ margin-top:5px; }
   .modal-analysis .akf-stat b{ font-family:'IBM Plex Mono',monospace; color:var(--text); font-weight:400; }
   .modal-analysis .akf-na{ font-size:11.5px; color:var(--label); }
@@ -1470,7 +1470,7 @@
   .modal-analysis .akd-key{ display:inline-flex; align-items:center; gap:6px; font-size:11px; }
   .modal-analysis .akd-line{ width:14px; height:0; border-top:2px solid currentColor; }
   .modal-analysis .akd-dash{ font-size:11px; color:var(--label); }
-  .modal-analysis .akd-gaps{ margin-top:12px; padding-top:12px; border-top:0.33px solid var(--line-soft); display:flex; flex-direction:column; gap:8px; }
+  .modal-analysis .akd-gaps{ margin-top:12px; padding-top:12px; border-top:var(--ma-hw,0.33px) solid var(--line-soft); display:flex; flex-direction:column; gap:8px; }
   .modal-analysis .akd-gap{ display:grid; grid-template-columns:1fr auto 1fr; align-items:baseline; gap:10px; }
   .modal-analysis .akd-av{ font-family:'IBM Plex Mono',monospace; font-size:12.5px; font-weight:700; color:var(--ma-t1); }
   .modal-analysis .akd-k{ font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:var(--label); text-align:center; }
@@ -1484,7 +1484,7 @@
   .modal-analysis .akt-div{ height:1px; background:var(--line-soft); margin:14px 0 16px; }
   .modal-analysis .akt-conds{ display:flex; gap:16px; margin-bottom:18px; flex-wrap:wrap; }
   .modal-analysis .akt-cond b{ display:block; font-family:'IBM Plex Mono',monospace; font-size:17px; font-weight:800; color:var(--text); }
-  .modal-analysis .akt-cond span{ display:block; font-size:10px; color:var(--label); margin-top:3px; }
+  .modal-analysis .akt-cond > span:not(.elotip){ display:block; font-size:10px; color:var(--label); margin-top:3px; }
   .modal-analysis .akt-cond em{ display:block; font-size:10px; color:var(--label); font-style:normal; }
   .modal-analysis .akt-desc{ font-size:12.5px; color:var(--label); line-height:1.55; }
   /* Odds card */
@@ -1499,7 +1499,7 @@
   .modal-analysis .ako-movehd{ display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:var(--label); }
   .modal-analysis .ako-movehd span{ font-size:9.5px; font-family:'IBM Plex Mono',monospace; letter-spacing:0; text-transform:none; }
   /* Weather strip */
-  .modal-analysis .akw-strip{ display:flex; align-items:center; gap:22px; width:100%; background:var(--surface); border:0.33px solid var(--line); border-radius:12px; padding:18px 22px; margin-top:18px; flex-wrap:wrap; }
+  .modal-analysis .akw-strip{ display:flex; align-items:center; gap:22px; width:100%; background:var(--surface); border:var(--ma-hw,0.33px) solid var(--line); border-radius:12px; padding:18px 22px; margin-top:18px; flex-wrap:wrap; }
   .modal-analysis .akw-strip[role="button"]{ cursor:pointer; transition:border-color .12s ease, background .12s ease; }
   .modal-analysis .akw-strip[role="button"]:hover{ border-color:var(--line-open); background:var(--nav-hover); }
   .modal-analysis .akw-lbl{ font-size:11px; letter-spacing:0.1em; text-transform:uppercase; color:var(--label); }
@@ -1527,9 +1527,9 @@
      bounded block instead of dropping full-width below the stat row. */
   .modal-analysis .akw-note{ flex:0 1 360px; white-space:normal; line-height:1.45; }
   /* Stennisfy Model card */
-  .modal-analysis .akm{ width:100%; background:var(--surface); border:0.33px solid var(--line); border-radius:12px; overflow:hidden; margin-top:18px; }
-  .modal-analysis .akm-head{ padding:15px 22px; border-bottom:0.33px solid var(--line-soft); display:flex; align-items:center; gap:11px; flex-wrap:wrap; }
-  .modal-analysis .akm-icon{ width:32px; height:32px; border-radius:9px; background:var(--seg-active); border:0.33px solid var(--seg-active-line); display:flex; align-items:center; justify-content:center; flex:none; }
+  .modal-analysis .akm{ width:100%; background:var(--surface); border:var(--ma-hw,0.33px) solid var(--line); border-radius:12px; overflow:hidden; margin-top:18px; }
+  .modal-analysis .akm-head{ padding:15px 22px; border-bottom:var(--ma-hw,0.33px) solid var(--line-soft); display:flex; align-items:center; gap:11px; flex-wrap:wrap; }
+  .modal-analysis .akm-icon{ width:32px; height:32px; border-radius:9px; background:var(--seg-active); border:var(--ma-hw,0.33px) solid var(--seg-active-line); display:flex; align-items:center; justify-content:center; flex:none; }
   .modal-analysis .akm-title{ font-size:16px; font-weight:800; }
   .modal-analysis .akm-sub{ font-size:11.5px; color:var(--label); margin-top:1px; }
   /* The card deep-links to the top-level Stennisfy Model page, so it carries a
@@ -1540,7 +1540,7 @@
   .modal-analysis .akm-chev{ margin-left:auto; color:var(--label); font-size:20px; line-height:1; align-self:center; }
   .modal-analysis .akm-cols{ display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); }
   .modal-analysis .akm-col{ padding:20px 22px; display:flex; flex-direction:column; gap:14px; }
-  .modal-analysis .akm-col.divider{ border-right:0.33px solid var(--line-soft); }
+  .modal-analysis .akm-col.divider{ border-right:var(--ma-hw,0.33px) solid var(--line-soft); }
   .modal-analysis .akm-top{ display:flex; align-items:flex-end; justify-content:space-between; gap:12px; }
   .modal-analysis .akm-nm{ font-size:13px; font-weight:700; }
   .modal-analysis .akm-cap{ font-size:11px; letter-spacing:0.08em; text-transform:uppercase; color:var(--label); margin-top:4px; }
@@ -1549,7 +1549,7 @@
   .modal-analysis .akm-flag.sharp{ color:var(--positive); background:color-mix(in srgb, var(--positive) 12%, transparent); border-color:color-mix(in srgb, var(--positive) 34%, transparent); }
   .modal-analysis .akm-flag.none{ color:var(--negative); background:color-mix(in srgb, var(--negative) 10%, transparent); border-color:color-mix(in srgb, var(--negative) 28%, transparent); }
   .modal-analysis .akm-mkts{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
-  .modal-analysis .akm-mkt{ display:flex; flex-direction:column; gap:6px; border:0.33px solid var(--line); border-radius:12px; padding:13px 14px; }
+  .modal-analysis .akm-mkt{ display:flex; flex-direction:column; gap:6px; border:var(--ma-hw,0.33px) solid var(--line); border-radius:12px; padding:13px 14px; }
   .modal-analysis .akm-mkt-cap{ font-size:11px; letter-spacing:0.06em; text-transform:uppercase; color:var(--label); }
   .modal-analysis .akm-mkt-px{ font-family:'IBM Plex Mono',monospace; font-size:22px; font-weight:700; color:var(--text); text-align:center; }
   .modal-analysis .akm-mkt-mv{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--label); text-align:center; }
@@ -1571,7 +1571,7 @@
      modal surface, and no sibling tab nests a second panel inside .abody. */
   .modal-analysis .psx-wrap{ font-family:'Hanken Grotesk',sans-serif; max-width:940px; }
   .modal-analysis .psx-top{ display:grid; grid-template-columns:360px 1fr; gap:26px; align-items:center; padding:4px 0; }
-  .modal-analysis .psx-card{ background:var(--surface); border:0.33px solid var(--line); border-radius:12px; padding:18px 20px; }
+  .modal-analysis .psx-card{ background:var(--surface); border:var(--ma-hw,0.33px) solid var(--line); border-radius:12px; padding:18px 20px; }
   .modal-analysis .psr-col{ display:flex; flex-direction:column; justify-content:center; }
   .modal-analysis .psx-label{ font-size:11px; font-family:'Hanken Grotesk',sans-serif; letter-spacing:0.14em; text-transform:uppercase; color:var(--label); }
   .modal-analysis .psx-sub{ font-size:16px; font-weight:700; color:var(--text-soft); line-height:1.45; margin-top:9px; }
@@ -1584,13 +1584,13 @@
   .modal-analysis .psx-marker{ position:absolute; top:50%; width:15px; height:15px; border-radius:50%; background:var(--surface); border:3px solid; transform:translate(-50%,-50%); box-shadow:0 0 0 2px var(--ma-card); }
   .modal-analysis .psx-scale{ display:flex; justify-content:space-between; margin-top:7px; font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:normal; color:var(--label); }
   .modal-analysis .psx-tag{ display:inline-flex; align-items:center; gap:6px; margin-top:12px; font-family:'Hanken Grotesk',sans-serif; font-size:13px; border:1px solid; border-radius:6px; padding:4px 9px; }
-  .modal-analysis .psx-n{ margin-top:12px; padding-top:12px; border-top:0.33px solid var(--line-soft); font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--label); line-height:1.6; }
+  .modal-analysis .psx-n{ margin-top:12px; padding-top:12px; border-top:var(--ma-hw,0.33px) solid var(--line-soft); font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--label); line-height:1.6; }
   .modal-analysis .psx-nmuted{ color:var(--label); }
   .modal-analysis .psx-note{ margin-top:10px; font-size:11px; color:var(--label); line-height:1.5; }
   /* The design uses two different block gaps: 16px above Dimension edge, 20px
      above "How each has fared". Not one shared 18px. */
   .modal-analysis .psx-block{ margin-top:16px; }
-  .modal-analysis .psx-block.psx-block-vs{ margin-top:28px; padding-top:22px; border-top:0.33px solid var(--line-soft); }
+  .modal-analysis .psx-block.psx-block-vs{ margin-top:28px; padding-top:22px; border-top:var(--ma-hw,0.33px) solid var(--line-soft); }
   .modal-analysis .psr-svg{ width:100%; display:block; }
   .modal-analysis .psr-legend{ display:flex; justify-content:center; gap:18px; margin-top:6px; }
   .modal-analysis .psr-key{ display:inline-flex; align-items:center; gap:7px; font-size:11px; color:var(--text-soft); }
@@ -1612,7 +1612,7 @@
   .modal-analysis .psd-track-b{ justify-content:flex-start; border-radius:0 5px 5px 0; }
   .modal-analysis .psd-fill{ height:100%; }
   /* HISTORICAL BY SURFACE table (inside the style-edge card) */
-  .modal-analysis .pss-block{ margin-top:18px; padding-top:16px; border-top:0.33px solid var(--line-soft); }
+  .modal-analysis .pss-block{ margin-top:18px; padding-top:16px; border-top:var(--ma-hw,0.33px) solid var(--line-soft); }
   .modal-analysis .pss-title{ font-size:11px; font-family:'Hanken Grotesk',sans-serif; letter-spacing:0.12em; text-transform:uppercase; color:var(--label); margin-bottom:10px; }
   .modal-analysis .pss-head{ display:grid; grid-template-columns:1fr 72px 72px; gap:8px; padding:0 8px 8px; font-size:11px; font-family:'Hanken Grotesk',sans-serif; letter-spacing:0.1em; text-transform:uppercase; color:var(--label); }
   .modal-analysis .pss-c1h{ text-align:right; color:var(--periwinkle); }
@@ -1636,7 +1636,7 @@
   .modal-analysis .psv-pct{ font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; color:var(--label); }
   .modal-analysis .psv-none{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--label); }
   .modal-analysis .psv-list{ display:flex; flex-direction:column; margin-top:8px; }
-  .modal-analysis .psv-row{ display:grid; grid-template-columns:22px 1fr auto auto auto 12px; align-items:center; gap:10px; padding:7px 0; border-top:0.33px solid var(--line-soft); }
+  .modal-analysis .psv-row{ display:grid; grid-template-columns:22px 1fr auto auto auto 12px; align-items:center; gap:10px; padding:7px 0; border-top:var(--ma-hw,0.33px) solid var(--line-soft); }
   /* Expandable variant — same accordion machinery as the H2H and Form rows, so
      a meeting here opens the same box score / point log as everywhere else. */
   .modal-analysis .psv-row.psv-open{ cursor:pointer; transition:background .12s; margin:0 -8px; padding-left:8px; padding-right:8px; border-radius:6px; }
@@ -1651,7 +1651,7 @@
   /* Closing odds (both players, subject first). Book unlabelled per ruling — a
      closing price for context, not a sharp reference. Dash where no price. */
   .modal-analysis .psv-odds{ font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--text-sub); min-width:74px; text-align:right; white-space:nowrap; }
-  .modal-analysis .psv-more{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--label); padding-top:7px; border-top:0.33px solid var(--line-soft); cursor:pointer; transition:color .12s ease; }
+  .modal-analysis .psv-more{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--label); padding-top:7px; border-top:var(--ma-hw,0.33px) solid var(--line-soft); cursor:pointer; transition:color .12s ease; }
   .modal-analysis .psv-more:hover{ color:var(--periwinkle); }
   .modal-analysis .psv-more:focus-visible{ outline:2px solid var(--periwinkle); outline-offset:2px; border-radius:4px; }
   /* TEN-88 restyle — career-meetings list grouped by tournament, coloured square marker,
@@ -1665,7 +1665,7 @@
   .modal-analysis .psvhdr-none{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--label); margin-left:12px; }
   .modal-analysis .psvhdr-show{ font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--label); white-space:nowrap; }
   .modal-analysis .psvlist-grouped{ margin-top:4px; }
-  .modal-analysis .psvg-head{ display:flex; align-items:baseline; gap:10px; padding:13px 0 5px; border-top:0.33px solid var(--line-soft); margin-top:8px; }
+  .modal-analysis .psvg-head{ display:flex; align-items:baseline; gap:10px; padding:13px 0 5px; border-top:var(--ma-hw,0.33px) solid var(--line-soft); margin-top:8px; }
   .modal-analysis .psvg:first-child .psvg-head{ border-top:none; margin-top:0; }
   .modal-analysis .psvg-name{ font-size:13.5px; font-weight:700; color:var(--text); }
   .modal-analysis .psvg-meta{ font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:var(--label); }
@@ -1688,7 +1688,7 @@
      style tab suppresses on its own data source, so a missing radar never blanks the labels. */
   .modal-analysis .psl-labels{ margin-bottom:20px; }
   .modal-analysis .psl-grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:9px; }
-  .modal-analysis .psl-side{ background:var(--surface); border:0.33px solid var(--line); border-radius:12px; padding:13px 16px; }
+  .modal-analysis .psl-side{ background:var(--surface); border:var(--ma-hw,0.33px) solid var(--line); border-radius:12px; padding:13px 16px; }
   .modal-analysis .psl-nm{ font-size:14px; font-weight:700; }
   .modal-analysis .psl-arch{ font-family:'IBM Plex Mono',monospace; font-size:12.5px; font-weight:600; margin-top:4px; }
   .modal-analysis .psx-top.psx-top-solo{ grid-template-columns:1fr; }
@@ -1697,7 +1697,7 @@
   .modal-analysis .psv-delta{ font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:600; color:var(--label); margin-top:3px; }
   /* "Personally" (TEN-88 #2): the career record's baseline line — muted matrix
      average with a signed, colour-coded delta (green above / red below). */
-  .modal-analysis .psv-base{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--label); margin-top:9px; padding-top:9px; border-top:0.33px solid var(--line-soft); }
+  .modal-analysis .psv-base{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--label); margin-top:9px; padding-top:9px; border-top:var(--ma-hw,0.33px) solid var(--line-soft); }
   .modal-analysis .psv-basedelta{ font-weight:700; margin-left:4px; }
   @media (max-width:900px){
     .modal-analysis .psx-top{ grid-template-columns:1fr; }
@@ -1731,7 +1731,7 @@
      Match Stats tab. Relocated here from the modal shell header (founder ruling A,
      2026-08-01): the shell now carries only "Match analysis" + fixture line + close;
      the full result lives here. Grid = side | center | side. Spec §2. */
-  .modal-analysis .ms-scorehead{ display:grid; grid-template-columns:1fr auto 1fr; gap:16px; align-items:center; background:var(--surface); border:0.33px solid var(--line); border-radius:12px; padding:18px 22px 16px; margin:0 auto 16px; max-width:720px; }
+  .modal-analysis .ms-scorehead{ display:grid; grid-template-columns:1fr auto 1fr; gap:16px; align-items:center; background:var(--surface); border:var(--ma-hw,0.33px) solid var(--line); border-radius:12px; padding:18px 22px 16px; margin:0 auto 16px; max-width:720px; }
   .modal-analysis .ms-scorehead .msh-side{ display:flex; flex-direction:column; align-items:center; gap:9px; min-width:0; }
   .modal-analysis .ms-scorehead .msh-av img,
   .modal-analysis .ms-scorehead .msh-av .avatar-fallback{ width:52px; height:52px; border-radius:50%; font-family:'IBM Plex Mono', monospace; font-size:16px; font-weight:700; }
@@ -1765,9 +1765,9 @@
      group label is the export's dark recessed box (#0a0d14 + hairline), NOT a
      lighter white-tint strip that reads as heavy. §10: the diverging bar's unfilled
      track is one value from the export — rgba(255,255,255,0.09) — on every row. */
-  .modal-analysis .msheet-grouphead{ font-size:10px; letter-spacing:0.06em; color:var(--label); background:var(--popup); border:0.33px solid var(--line); border-radius:9px; padding:10px; margin:20px 0 16px; }
+  .modal-analysis .msheet-grouphead{ font-size:10px; letter-spacing:0.06em; color:var(--label); background:var(--popup); border:var(--ma-hw,0.33px) solid var(--line); border-radius:9px; padding:10px; margin:20px 0 16px; }
   .modal-analysis .msheet-bar .msheet-half{ background:var(--surface-inner); }
-  :is(.modal-analysis,.pp-formsurface) .msheet-row{ padding:13px 6px 15px; border-bottom:0.33px solid var(--line-soft); }
+  :is(.modal-analysis,.pp-formsurface) .msheet-row{ padding:13px 6px 15px; border-bottom:var(--ma-hw,0.33px) solid var(--line-soft); }
   /* Founder pass-3 §3/§11 (2026-08-01): percentage on the upper line, the
      (won/total) fraction stacked directly beneath it in muted mono — NOT inline
      beside it. Fixed-width side columns lock every left value to one left edge and
@@ -1787,7 +1787,7 @@
      controlled the match (return-points-won ratio). Two large tabular figures
      in the fixed identity colours (A #6aaeff, B #e7e9ee), centred label between.
      Not a bar row: it's a headline pair above the Service section. */
-  .modal-analysis .ms-dr{ display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:16px; background:var(--surface); border:0.33px solid var(--line); border-radius:11px; padding:14px 22px; margin:0 auto 18px; max-width:720px; }
+  .modal-analysis .ms-dr{ display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:16px; background:var(--surface); border:var(--ma-hw,0.33px) solid var(--line); border-radius:11px; padding:14px 22px; margin:0 auto 18px; max-width:720px; }
   .modal-analysis .ms-dr .ms-dr-val{ font-family:'IBM Plex Mono', monospace; font-size:30px; font-weight:700; line-height:1; font-variant-numeric:tabular-nums; }
   .modal-analysis .ms-dr .ms-dr-val.p1{ color:var(--ma-t1); text-align:left; }
   .modal-analysis .ms-dr .ms-dr-val.p2{ color:var(--text); text-align:right; }
@@ -1806,7 +1806,7 @@
   :is(.modal-analysis,.pp-formsurface) .msheet-bar .msheet-fill.p2{ background:var(--fh-pb-solid); }
   /* Banner above the stat sheet of a suspended match: these numbers are real but
      frozen mid-match, so they must never be read as a completed box score. */
-  .modal-analysis .ms-suspended{ display:flex; flex-direction:column; gap:3px; border:0.33px solid var(--line); border-left:2px solid var(--label); border-radius:10px; background:var(--surface-inner); padding:9px 13px; margin-bottom:16px; font-size:12px; font-weight:600; letter-spacing:0.02em; color:var(--text-soft); }
+  .modal-analysis .ms-suspended{ display:flex; flex-direction:column; gap:3px; border:var(--ma-hw,0.33px) solid var(--line); border-left:2px solid var(--label); border-radius:10px; background:var(--surface-inner); padding:9px 13px; margin-bottom:16px; font-size:12px; font-weight:600; letter-spacing:0.02em; color:var(--text-soft); }
   .modal-analysis .ms-suspended span{ font-weight:400; font-size:11px; color:var(--text-faint); letter-spacing:0; }
   /* (The green inset "Final · <score>" result banner and its CSS were removed:
      the modal header's score row already carries the result, and green is
@@ -1817,7 +1817,7 @@
      back. Both control rows sit on the recessed --mc-track (#0a0d13) with a
      hairline border, per the spec (`#0a0d13 track on both control rows`). Active
      segment = subtle rgba(91,155,255,.22) tint, inactive = transparent. */
-  .modal-analysis .ms-subtabs{ display:inline-flex; gap:4px; justify-content:center; width:max-content; max-width:100%; margin:0 auto 16px; background:var(--mc-track); border:0.33px solid var(--line); border-radius:8px; padding:3px; }
+  .modal-analysis .ms-subtabs{ display:inline-flex; gap:4px; justify-content:center; width:max-content; max-width:100%; margin:0 auto 16px; background:var(--mc-track); border:var(--ma-hw,0.33px) solid var(--line); border-radius:8px; padding:3px; }
   .modal-analysis .ms-subtabs-wrap{ display:flex; justify-content:center; }
   /* width:auto + flex:0 0 auto + nowrap override the global `.modal button{width:100%}`
      (same trap as .ms-setbtn below), which otherwise squeezes the pills against each
@@ -1844,7 +1844,7 @@
      rows, padding 2). Modal-scoped so the Profile/Form set selector — which
      reuses .ms-setsel — keeps its bare-pill treatment, same as the §9 group
      header scoping. */
-  .modal-analysis .ms-setsel{ background:var(--mc-track); border:0.33px solid var(--line); border-radius:8px; padding:2px; }
+  .modal-analysis .ms-setsel{ background:var(--mc-track); border:var(--ma-hw,0.33px) solid var(--line); border-radius:8px; padding:2px; }
   /* §3/§4 size correction (founder ruling 2026-08-01): both control rows rendered
      ~1.5× the design. Sizes read from design-export/match-stats-spec.md §3 (view
      toggle) and §4 (scope filter). The .ms-setbtn base rule is shared with the
@@ -1874,11 +1874,11 @@
      (§9). Two strip treatments doing the same job in one tab — unify them onto the
      group-header box (#0a0d14 + hairline, radius 9). Modal-scoped so the Form
      sheet's point log is untouched. Text colours/margins keep their per-band tone. */
-  .modal-analysis :is(.pbp-sethdr,.pbp-tbhdr){ background:var(--surface); border:0.33px solid var(--line); border-radius:9px; }
+  .modal-analysis :is(.pbp-sethdr,.pbp-tbhdr){ background:var(--surface); border:var(--ma-hw,0.33px) solid var(--line); border-radius:9px; }
   /* Every row — game or tiebreak point — is the same 5-column grid, so the ball,
      score and tags line up in one column down the whole set. */
-  :is(.modal-analysis,.pp-formsurface) .pbp-grow{ padding:12px 6px; border-bottom:0.33px solid var(--line-soft); }
-  :is(.modal-analysis,.pp-formsurface) .pbp-tbrow{ padding:10px 6px; border-bottom:0.33px solid var(--line-soft); }
+  :is(.modal-analysis,.pp-formsurface) .pbp-grow{ padding:12px 6px; border-bottom:var(--ma-hw,0.33px) solid var(--line-soft); }
+  :is(.modal-analysis,.pp-formsurface) .pbp-tbrow{ padding:10px 6px; border-bottom:var(--ma-hw,0.33px) solid var(--line-soft); }
   :is(.modal-analysis,.pp-formsurface) .pbp-line{ display:grid; grid-template-columns:1fr auto auto auto 1fr; align-items:center; column-gap:10px; }
   :is(.modal-analysis,.pp-formsurface) .pbp-tags{ display:flex; gap:7px; }
   :is(.modal-analysis,.pp-formsurface) .pbp-tags.left{ justify-content:flex-end; }
@@ -1910,7 +1910,7 @@
   :is(.modal-analysis,.pp-formsurface) .pbp-bp{ font-family:'IBM Plex Mono', monospace; font-size:8.5px; font-weight:700; color:var(--negative); background:color-mix(in srgb, var(--fh-neg) 15%, transparent); border:1px solid color-mix(in srgb, var(--fh-neg) 30%, transparent); border-radius:4px; padding:1px 5px; }
   :is(.modal-analysis,.pp-formsurface) .pbp-tag{ font-family:'IBM Plex Mono', monospace; font-size:9px; font-weight:700; letter-spacing:0.05em; border-radius:5px; padding:2px 7px; white-space:nowrap; }
   :is(.modal-analysis,.pp-formsurface) .pbp-tag.lost{ color:var(--negative); background:color-mix(in srgb, var(--fh-neg) 15%, transparent); border:1px solid color-mix(in srgb, var(--fh-neg) 30%, transparent); }
-  :is(.modal-analysis,.pp-formsurface) .pbp-tag.sp{ color:var(--text); background:var(--surface-inner); border:0.33px solid var(--line); }
+  :is(.modal-analysis,.pp-formsurface) .pbp-tag.sp{ color:var(--text); background:var(--surface-inner); border:var(--ma-hw,0.33px) solid var(--line); }
   :is(.modal-analysis,.pp-formsurface) .pbp-tag.mp{ color:var(--positive); background:color-mix(in srgb, var(--fh-pos) 16%, transparent); border:1px solid color-mix(in srgb, var(--fh-pos) 40%, transparent); }
   .modal-analysis .tprogress-title{ font-family:'Hanken Grotesk', sans-serif; font-size:18px; font-weight:800; color:var(--text); display:flex; align-items:center; margin-bottom:14px; }
   .modal-analysis .tprogress-title .tour{ color:var(--text-faint); font-weight:600; }
@@ -1918,25 +1918,25 @@
   .modal-analysis .tprogress-legend .item{ display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text-dim); }
   .modal-analysis .tprogress-legend .dot{ width:9px; height:9px; border-radius:50%; flex-shrink:0; }
   .modal-analysis .tprogress-legend .dash{ width:16px; height:0; border-top:2px dashed var(--text-faint); flex-shrink:0; }
-  .modal-analysis .tprogress-legend .note{ font-size:11px; color:var(--text-faint); line-height:1.4; padding-left:14px; border-left:0.33px solid var(--border); max-width:360px; }
+  .modal-analysis .tprogress-legend .note{ font-size:11px; color:var(--text-faint); line-height:1.4; padding-left:14px; border-left:var(--ma-hw,0.33px) solid var(--border); max-width:360px; }
   .modal-analysis .tprogress-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:14px; }
-  .modal-analysis .tprogress-card{ border:0.33px solid var(--border); border-radius:16px; background:var(--surface); padding:16px; }
+  .modal-analysis .tprogress-card{ border:var(--ma-hw,0.33px) solid var(--border); border-radius:16px; background:var(--surface); padding:16px; }
   .modal-analysis .tprogress-card .tphead{ display:flex; flex-wrap:wrap; align-items:flex-start; gap:10px; row-gap:6px; }
   .modal-analysis .tprogress-card .tptitle{ font-family:'Hanken Grotesk', sans-serif; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.09em; color:var(--text-dim); white-space:nowrap; }
   .modal-analysis .tprogress-card .tpreadouts{ display:flex; gap:16px; flex-shrink:0; margin-left:auto; }
   .modal-analysis .tprogress-card .tpreadout{ text-align:right; }
   .modal-analysis .tprogress-card .tpreadout .val{ font-family:'IBM Plex Mono', monospace; font-size:19px; font-weight:600; line-height:1.2; }
   .modal-analysis .tprogress-card .tpreadout .lbl{ font-family:'Hanken Grotesk', sans-serif; font-size:9px; color:var(--text-faint); letter-spacing:0.06em; margin-top:2px; }
-  .modal-analysis .tprogress-card .tpplot{ margin-top:12px; position:relative; height:196px; border:0.33px solid var(--border); border-radius:12px; background:var(--ma-inner); padding:10px 8px 4px; box-sizing:border-box; }
+  .modal-analysis .tprogress-card .tpplot{ margin-top:12px; position:relative; height:196px; border:var(--ma-hw,0.33px) solid var(--border); border-radius:12px; background:var(--ma-inner); padding:10px 8px 4px; box-sizing:border-box; }
   .modal-analysis .tprogress-card .tpplot svg{ width:100%; height:100%; display:block; overflow:visible; }
   .modal-analysis .tprogress-card .tpvlabel{ position:absolute; transform:translate(-50%,-50%); font-family:'IBM Plex Mono', monospace; font-size:10.5px; font-weight:600; color:var(--text); padding:2px 5px; border-radius:6px; white-space:nowrap; pointer-events:none; }
-  .modal-analysis .tprogress-card .tpavgtag{ position:absolute; transform:translate(-50%,-50%); font-family:'IBM Plex Mono', monospace; font-size:9.5px; color:var(--text-sub); padding:2px 8px; border-radius:20px; border:0.33px dashed var(--line-open); background:var(--ma-inner); white-space:nowrap; pointer-events:none; }
+  .modal-analysis .tprogress-card .tpavgtag{ position:absolute; transform:translate(-50%,-50%); font-family:'IBM Plex Mono', monospace; font-size:9.5px; color:var(--text-sub); padding:2px 8px; border-radius:20px; border:var(--ma-hw,0.33px) dashed var(--line-open); background:var(--ma-inner); white-space:nowrap; pointer-events:none; }
   .modal-analysis .tprogress-card .tpround{ position:absolute; bottom:2px; transform:translateX(-50%); font-family:'IBM Plex Mono', monospace; font-size:10.5px; color:var(--text-faint); pointer-events:none; }
   .modal-analysis .tprogress-card .tpbye{ position:absolute; transform:translate(-50%,-50%); font-family:'IBM Plex Mono', monospace; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; padding:3px 9px; border-radius:7px; border:1.5px solid; white-space:nowrap; pointer-events:none; box-shadow:var(--ma-shadow-tip); z-index:6; }
   .modal-analysis .tprogress-card .tpdot{ position:absolute; width:22px; height:22px; margin:-11px 0 0 -11px; cursor:default; z-index:5; }
   .modal-analysis .tprogress-card .tpdot:hover{ z-index:25; }
   .modal-analysis .tprogress-card .tpnode{ position:absolute; left:50%; top:50%; width:11px; height:11px; margin:-5.5px 0 0 -5.5px; border-radius:50%; border:2px solid var(--surface); }
-  .modal-analysis .tprogress-card .tptip{ position:absolute; left:50%; transform:translateX(-50%); background:var(--popup); border:0.33px solid var(--line); color:var(--text); font-family:'IBM Plex Mono', monospace; font-size:10px; font-weight:600; padding:4px 8px; border-radius:6px; white-space:nowrap; opacity:0; visibility:hidden; pointer-events:none; transition:opacity .12s ease;  }
+  .modal-analysis .tprogress-card .tptip{ position:absolute; left:50%; transform:translateX(-50%); background:var(--popup); border:var(--ma-hw,0.33px) solid var(--line); color:var(--text); font-family:'IBM Plex Mono', monospace; font-size:10px; font-weight:600; padding:4px 8px; border-radius:6px; white-space:nowrap; opacity:0; visibility:hidden; pointer-events:none; transition:opacity .12s ease;  }
   .modal-analysis .tprogress-card .tpdot:hover .tptip{ opacity:1; visibility:visible; }
   .modal-analysis .progression-summary-text{ margin:12px 0 0; font-family:'Hanken Grotesk', sans-serif; font-size:12.5px; color:var(--text-dim); line-height:1.6; }
   @media (max-width:820px){ .modal-analysis .tprogress-grid{ grid-template-columns:1fr; } }
@@ -1953,17 +1953,17 @@
   .modal-analysis .tpg-lkey .tpg-ar{ color:var(--text); font-weight:400; margin:0; }
   .modal-analysis .tpg-tablewrap{ overflow-x:auto; }
   .modal-analysis .tpg-table{ width:100%; border-collapse:collapse; font-family:'Hanken Grotesk', sans-serif; }
-  .modal-analysis .tpg-h{ text-align:center; padding:0 8px 9px; border-bottom:0.33px solid var(--border); white-space:nowrap; color:var(--label); }
+  .modal-analysis .tpg-h{ text-align:center; padding:0 8px 9px; border-bottom:var(--ma-hw,0.33px) solid var(--border); white-space:nowrap; color:var(--label); }
   /* METRIC · TREND · FIELD — Hanken caps, muted, wide-tracked (computed-styles: 11px/400, 1.54px, uppercase, rgb(91,104,128)). */
   .modal-analysis .tpg-hcaps{ font-size:11px; font-weight:400; letter-spacing:1.54px; text-transform:uppercase; }
   /* R1–R4 heads Mono 9.5px 700 muted; AVG head Mono 9.5px 800 bright — distinct from the caps heads. */
   .modal-analysis .tpg-hround{ font-family:'IBM Plex Mono', monospace; font-size:9.5px; font-weight:700; }
   .modal-analysis .tpg-havg{ font-family:'IBM Plex Mono', monospace; font-size:9.5px; font-weight:800; color:var(--text); }
   .modal-analysis .tpg-hmetric{ text-align:left; }
-  .modal-analysis .tpg-hfield{ text-align:right; border-left:0.33px solid var(--line-soft); }
+  .modal-analysis .tpg-hfield{ text-align:right; border-left:var(--ma-hw,0.33px) solid var(--line-soft); }
   /* FIELD methodology sentence — beneath the legend, above the table header (computed-styles + export README place the single intended instance here, full content width; the top-right copy is the export artifact). */
   .modal-analysis .tpg-method{ font-family:'Hanken Grotesk', sans-serif; font-size:12px; line-height:1.5; color:var(--label); margin:0 0 14px; }
-  .modal-analysis .tpg-table td{ padding:9px 8px; border-bottom:0.33px solid var(--line-soft); vertical-align:middle; }
+  .modal-analysis .tpg-table td{ padding:9px 8px; border-bottom:var(--ma-hw,0.33px) solid var(--line-soft); vertical-align:middle; }
   .modal-analysis .tpg-table tbody tr:last-child td{ border-bottom:none; }
   .modal-analysis .tpg-metric{ text-align:left; min-width:150px; }
   .modal-analysis .tpg-mlabel{ font-size:12.5px; font-weight:600; color:var(--text); }
@@ -1975,12 +1975,12 @@
   .modal-analysis .tpg-ar{ font-weight:800; margin-right:1px; }
   .modal-analysis .tpg-avg{ text-align:center; }
   .modal-analysis .tpg-chip{ display:block; width:max-content; margin:2px auto; font-family:'IBM Plex Mono', monospace; font-size:11px; font-weight:700; background:var(--surface-inner); border-radius:6px; padding:2.5px 11px; line-height:1.4; }
-  .modal-analysis .tpg-field{ text-align:right; font-family:'IBM Plex Mono', monospace; font-size:11.5px; font-weight:700; color:var(--text); border-left:0.33px solid var(--line-soft); }
+  .modal-analysis .tpg-field{ text-align:right; font-family:'IBM Plex Mono', monospace; font-size:11.5px; font-weight:700; color:var(--text); border-left:var(--ma-hw,0.33px) solid var(--line-soft); }
 
   /* ---- Key factors — 5-card summary row ---- */
   .akeycards{ display:grid; grid-template-columns:repeat(5, 1fr); gap:12px; margin-bottom:24px; }
   .akeycard{ background:var(--panel-2); border:0.33px solid var(--border); border-radius:14px; padding:15px 15px 16px; min-width:0; display:flex; flex-direction:column; }
-  .akeycard.unavailable{ background:var(--surface-inner); border:0.33px dashed var(--border); }
+  .akeycard.unavailable{ background:var(--surface-inner); border:var(--ma-hw,0.33px) dashed var(--border); }
   .akeycard .akc-icon{ width:32px; height:32px; border-radius:9px; display:flex; align-items:center; justify-content:center; margin-bottom:13px; flex-shrink:0; }
   .akeycard .akc-icon svg{ width:15px; height:15px; }
   .akeycard .akc-title{ font-size:14.5px; font-weight:700; color:var(--text); margin-bottom:5px; line-height:1.25; letter-spacing:-0.01em; min-height:auto; }
@@ -1992,7 +1992,7 @@
   .akeycard .akc-valcol .akc-pname{ font-size:10px; color:var(--text-faint); font-weight:600; margin-top:5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
   .akeycard .akc-vs{ font-size:10px; color:var(--text-faint); font-weight:600; padding-bottom:16px; flex-shrink:0; font-family:'IBM Plex Mono', monospace; }
   .akeycard .akc-edge{ font-size:11.5px; font-weight:600; color:var(--value-pos); background:color-mix(in srgb, var(--value-pos) 14%, transparent); border:1px solid color-mix(in srgb, var(--value-pos) 40%, transparent); border-radius:8px; padding:5px 10px; display:inline-flex; align-items:center; gap:6px; text-align:center; }
-  .akeycard .akc-edge.none{ color:var(--text-faint); background:var(--panel); border:0.33px solid var(--border); font-weight:600; }
+  .akeycard .akc-edge.none{ color:var(--text-faint); background:var(--panel); border:var(--ma-hw,0.33px) solid var(--border); font-weight:600; }
   .akeycard.unavailable .akc-unavail{ margin-top:16px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px; padding:16px 8px; border-radius:10px; background:var(--surface-inner); text-align:center; }
   .akeycard.unavailable .akc-unavail .akc-clock{ color:var(--text-faint); }
   .akeycard.unavailable .akc-unavail .akc-unavail-title{ font-size:12px; font-weight:600; color:var(--text-dim); }
@@ -2067,7 +2067,7 @@
   .yr-legend .yr-atponly{ margin:0 2px; }
   .yr-tierhead{ display:flex; align-items:center; justify-content:space-between; gap:16px; margin:0 0 20px; flex-wrap:wrap; }
   .yr-tierlbl{ font-size:11px; text-transform:uppercase; letter-spacing:0.14em; font-weight:400; color:var(--label); font-family:'Hanken Grotesk',sans-serif; }
-  .yr-tiertoggle{ display:flex; gap:2px; background:var(--surface); border:0.33px solid var(--line); border-radius:9px; padding:3px; }
+  .yr-tiertoggle{ display:flex; gap:2px; background:var(--surface); border:var(--ma-hw,0.33px) solid var(--line); border-radius:9px; padding:3px; }
   /* export §4: one segmented-control standard — inactive transparent/borderless #5b6880 600;
      active rgba(91,155,255,0.22) fill on rgba(91,155,255,0.45) border, #e7e9ee 700 (no raised white fill) */
   .yr-tiertoggle .opt{ font-size:11.5px; font-weight:600; color:var(--label); padding:6px 13px; border:1px solid transparent; border-radius:6px; cursor:pointer; font-family:'Hanken Grotesk',sans-serif; white-space:nowrap; }
@@ -2083,12 +2083,12 @@
   .yr-table td.yr-dcell{ padding:0; border-bottom:none; }
   .yr-dcell .yr-drill{ margin:0; }
   .yr-dcell .yr-drill:not(:empty){ padding:2px 0 9px; }
-  .yr-drill-head{ display:flex; align-items:center; gap:8px; font-size:11.5px; font-weight:600; color:var(--text-soft); padding:9px 2px 7px; border-top:0.33px solid var(--line-soft); }
+  .yr-drill-head{ display:flex; align-items:center; gap:8px; font-size:11.5px; font-weight:600; color:var(--text-soft); padding:9px 2px 7px; border-top:var(--ma-hw,0.33px) solid var(--line-soft); }
   .yr-drill-head b{ color:var(--text); font-family:'IBM Plex Mono',monospace; }
   .yr-drill-close{ margin-left:auto; cursor:pointer; color:var(--label); font-size:12px; width:20px; height:20px; display:flex; align-items:center; justify-content:center; border-radius:5px; }
   .yr-drill-close:hover{ background:var(--nav-hover); color:var(--text-soft); }
   .yr-drill-note{ font-size:11.5px; color:var(--label); padding:7px 2px; }
-  .yr-drill-row{ display:grid; grid-template-columns:16px minmax(0,1fr) auto; align-items:baseline; gap:8px; padding:5px 2px; border-bottom:0.33px solid var(--line-soft); font-size:11.5px; }
+  .yr-drill-row{ display:grid; grid-template-columns:16px minmax(0,1fr) auto; align-items:baseline; gap:8px; padding:5px 2px; border-bottom:var(--ma-hw,0.33px) solid var(--line-soft); font-size:11.5px; }
   .yr-drill-row:last-child{ border-bottom:none; }
   /* RULING REVERSED (2026-08-01, founder Overview item 3): the W/L result letter is
      coloured by OUTCOME — a completed match's result is a data fact, not a player
@@ -2143,7 +2143,7 @@
      the accent is BLUE-family, not an orange/green surface palette — Clay rgb(106,174,255),
      Hard/Grass rgb(91,155,255), identical on both players. This reverses the earlier §5
      "neutral accent" ruling (founder re-requested a visible leading accent — see report). */
-  .yr-surfrec{ display:flex; align-items:center; gap:14px; padding:12px 15px; background:var(--surface); border:0.33px solid var(--line); border-left:3px solid var(--line-soft); border-radius:10px; margin-bottom:5px; cursor:pointer; transition:background .12s; }
+  .yr-surfrec{ display:flex; align-items:center; gap:14px; padding:12px 15px; background:var(--surface); border:var(--ma-hw,0.33px) solid var(--line); border-left:3px solid var(--line-soft); border-radius:10px; margin-bottom:5px; cursor:pointer; transition:background .12s; }
   .yr-surfrec:hover{ background:var(--nav-hover); }
   .yr-surfrec.disabled{ cursor:default; opacity:0.45; }
   .yr-surfrec.disabled:hover{ background:var(--surface); }
@@ -2170,15 +2170,15 @@
   .yr-matchrow .btm{ font-size:10px; color:var(--label); margin-top:2px; margin-left:22px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .yr-table{ width:100%; border-collapse:collapse; font-family:'IBM Plex Mono', monospace; font-size:12.5px; }
   /* export: header row is UNIFORM #5b6880 across all five columns (no per-surface colour) on #11161f */
-  .yr-table th{ text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:0.12em; font-weight:400; padding:11px 14px; background:var(--surface); border-bottom:0.33px solid var(--line-soft); font-family:'Hanken Grotesk', sans-serif; color:var(--label); }
+  .yr-table th{ text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:0.12em; font-weight:400; padding:11px 14px; background:var(--surface); border-bottom:var(--ma-hw,0.33px) solid var(--line-soft); font-family:'Hanken Grotesk', sans-serif; color:var(--label); }
   .yr-table th:first-child,
   .yr-table th.h-total,
   .yr-table th.h-clay,
   .yr-table th.h-hard,
   .yr-table th.h-grass{ color:var(--label); }
-  .yr-table td{ padding:10px 14px; border-bottom:0.33px solid var(--line-soft); color:var(--text-sub); }
+  .yr-table td{ padding:10px 14px; border-bottom:var(--ma-hw,0.33px) solid var(--line-soft); color:var(--text-sub); }
   .yr-table td.yr-year{ color:var(--text-soft); font-weight:600; }
-  .yr-table tfoot td{ border-top:0.33px solid var(--line-soft); border-bottom:none; font-weight:700; padding-top:11px; padding-bottom:11px; background:var(--surface-inner); color:var(--text); }
+  .yr-table tfoot td{ border-top:var(--ma-hw,0.33px) solid var(--line-soft); border-bottom:none; font-weight:700; padding-top:11px; padding-bottom:11px; background:var(--surface-inner); color:var(--text); }
   /* export §1: every year-table value renders #e7e9ee — no per-column hue. Surface is
      carried by the column header word, not the number measured under it. */
   .yr-table .yr-col-total{ color:var(--text); }
@@ -2237,7 +2237,7 @@
   .fsm.open{ background:var(--surface); }
   .fsm-date{ font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--label); text-align:center; line-height:1.3; }
   .fsm-note{ display:block; font-size:9px; color:var(--label); letter-spacing:0.02em; }
-  .fsm-q{ display:inline-block; margin-top:2px; padding:0 4px; border-radius:4px; border:0.33px solid var(--seg-active-line); background:var(--seg-active); color:var(--periwinkle); font-family:'IBM Plex Mono', monospace; font-size:8px; font-weight:700; line-height:1.4; letter-spacing:0.04em; }
+  .fsm-q{ display:inline-block; margin-top:2px; padding:0 4px; border-radius:4px; border:var(--ma-hw,0.33px) solid var(--seg-active-line); background:var(--seg-active); color:var(--periwinkle); font-family:'IBM Plex Mono', monospace; font-size:8px; font-weight:700; line-height:1.4; letter-spacing:0.04em; }
   /* Two-line score grid (spec §3): one grid, both lines share columns, the
      divider spans both rows. Game cells are padded to the panel's max set count
      (transparent .pad cells) so the sets number, divider and first game score
@@ -2273,7 +2273,7 @@
      is the same Stats/Point-by-point control in both places.
      display:flex (not inline-flex) + width:max-content so `margin:0 auto`
      actually centres it without needing a wrapper element around the strip. */
-  .aform-tabs{ display:flex; gap:4px; background:var(--mc-track); border:0.33px solid var(--line); border-radius:8px; padding:3px; width:max-content; max-width:100%; margin:0 auto 12px; }
+  .aform-tabs{ display:flex; gap:4px; background:var(--mc-track); border:var(--ma-hw,0.33px) solid var(--line); border-radius:8px; padding:3px; width:max-content; max-width:100%; margin:0 auto 12px; }
   .aform-tabs.hidden{ display:none; }
   /* Scoped under .modal-analysis so these win against the global `.modal button`
      (width:100% + accent fill) — the same trap .ms-subtab and .ms-setbtn document
@@ -2365,12 +2365,12 @@
   .ah2h-cta{ text-align:left; font-size:12px; color:var(--label); padding:10px 2px 0; font-family:'Hanken Grotesk', sans-serif; }
 
   /* Tournament sub-tab (year-by-year at this specific tournament) */
-  .atourn-callout{ background:var(--surface); border:0.33px solid var(--line); border-radius:16px; padding:12px 14px; font-size:13px; color:var(--text-soft); line-height:1.5; margin-bottom:14px; font-family:'Hanken Grotesk', sans-serif; }
+  .atourn-callout{ background:var(--surface); border:var(--ma-hw,0.33px) solid var(--line); border-radius:16px; padding:12px 14px; font-size:13px; color:var(--text-soft); line-height:1.5; margin-bottom:14px; font-family:'Hanken Grotesk', sans-serif; }
   .atourn-callout b{ color:var(--text); }
   .atourn-locrow{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px; }
-  .atourn-loctag{ display:inline-flex; align-items:center; gap:7px; font-size:12px; font-weight:600; padding:6px 11px; border-radius:8px; background:var(--surface); border:0.33px solid var(--line); color:var(--text-sub); font-family:'Hanken Grotesk', sans-serif; }
+  .atourn-loctag{ display:inline-flex; align-items:center; gap:7px; font-size:12px; font-weight:600; padding:6px 11px; border-radius:8px; background:var(--surface); border:var(--ma-hw,0.33px) solid var(--line); color:var(--text-sub); font-family:'Hanken Grotesk', sans-serif; }
   .atourn-loctag .dot{ width:6px; height:6px; border-radius:50%; background:var(--ma-fill, var(--periwinkle)); flex-shrink:0; }
-  .atourn-banner{ border:0.33px solid var(--line); border-radius:16px; background:var(--surface); overflow:hidden; margin-bottom:20px; }
+  .atourn-banner{ border:var(--ma-hw,0.33px) solid var(--line); border-radius:16px; background:var(--surface); overflow:hidden; margin-bottom:20px; }
   .atourn-banner-head{ display:flex; align-items:center; gap:18px; padding:22px 24px; }
   .atourn-monogram{ width:56px; height:56px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono', monospace; font-size:23px; font-weight:700; flex:none; }
   .atourn-banner-title{ flex:1; min-width:0; }
@@ -2378,12 +2378,12 @@
   .atourn-tsub{ font-size:13px; color:var(--label); margin-top:6px; font-family:'Hanken Grotesk', sans-serif; }
   .atourn-surfpill{ flex:none; display:inline-flex; align-items:center; gap:8px; font-size:12.5px; font-weight:600; border-radius:9px; padding:8px 14px; font-family:'Hanken Grotesk', sans-serif; }
   .atourn-surfpill .dot{ width:7px; height:7px; border-radius:50%; }
-  .atourn-metagrid{ display:grid; grid-template-columns:repeat(4,1fr); border-top:0.33px solid var(--line-soft); }
-  .atourn-metacell{ padding:15px 20px; border-right:0.33px solid var(--line-soft); }
+  .atourn-metagrid{ display:grid; grid-template-columns:repeat(4,1fr); border-top:var(--ma-hw,0.33px) solid var(--line-soft); }
+  .atourn-metacell{ padding:15px 20px; border-right:var(--ma-hw,0.33px) solid var(--line-soft); }
   .atourn-metacell:last-child{ border-right:none; }
   .atourn-metacell .k{ font-size:10.5px; letter-spacing:0.1em; text-transform:uppercase; color:var(--label); font-weight:600; font-family:'Hanken Grotesk', sans-serif; }
   .atourn-metacell .v{ font-size:14.5px; font-weight:700; color:var(--text); margin-top:7px; font-family:'Hanken Grotesk', sans-serif; }
-  .atourn-bannerdesc{ padding:15px 24px 18px; border-top:0.33px solid var(--line-soft); font-size:12.5px; color:var(--label); line-height:1.55; font-family:'Hanken Grotesk', sans-serif; }
+  .atourn-bannerdesc{ padding:15px 24px 18px; border-top:var(--ma-hw,0.33px) solid var(--line-soft); font-size:12.5px; color:var(--label); line-height:1.55; font-family:'Hanken Grotesk', sans-serif; }
   .atourn-bannerdesc b{ color:var(--text-soft); font-weight:600; }
   .atourn-col{ min-width:0; }
   .atourn-name{ font-size:13px; font-weight:700; color:var(--text); margin-bottom:10px; font-family:'Hanken Grotesk', sans-serif; }
@@ -2396,7 +2396,7 @@
   .atourn-card .track div{ height:100%; border-radius:5px; }
   .atourn-card .recordrow{ display:flex; justify-content:space-between; margin-top:11px; font-size:12.5px; }
   .atourn-card .recordrow .rec{ font-family:'IBM Plex Mono', monospace; font-weight:600; }
-  .atourn-card .longblock{ margin-top:11px; padding-top:11px; border-top:0.33px solid var(--line-soft); }
+  .atourn-card .longblock{ margin-top:11px; padding-top:11px; border-top:var(--ma-hw,0.33px) solid var(--line-soft); }
   .atourn-card .longblock.empty{ font-size:11px; color:var(--label); font-family:'Hanken Grotesk', sans-serif; }
   .atourn-card .longstat{ display:flex; align-items:baseline; gap:9px; }
   .atourn-card .longstat .lpct{ font-family:'IBM Plex Mono', monospace; font-size:18px; font-weight:600; }
@@ -2407,9 +2407,9 @@
   /* Export (state modal-tournament): the year row is a light flex card — no left
      accent bar, no heavy full-width card — with the year in a subtle chip and a
      neutral #e7e9ee text palette. Border reads blue while the year is expanded. */
-  .atourn-yearrow{ display:flex; align-items:center; gap:14px; padding:12px 15px; border:0.33px solid var(--line); border-radius:10px; background:var(--surface); margin-bottom:8px; transition:border-color .12s; }
+  .atourn-yearrow{ display:flex; align-items:center; gap:14px; padding:12px 15px; border:var(--ma-hw,0.33px) solid var(--line); border-radius:10px; background:var(--surface); margin-bottom:8px; transition:border-color .12s; }
   .atourn-yearrow:last-child{ margin-bottom:0; }
-  .atourn-yearrow .yr{ font-family:'IBM Plex Mono', monospace; font-size:13px; font-weight:600; color:var(--text); background:var(--surface-inner); border:0.33px solid var(--line); border-radius:6px; padding:3px 8px; display:inline-flex; align-items:center; gap:7px; flex:none; }
+  .atourn-yearrow .yr{ font-family:'IBM Plex Mono', monospace; font-size:13px; font-weight:600; color:var(--text); background:var(--surface-inner); border:var(--ma-hw,0.33px) solid var(--line); border-radius:6px; padding:3px 8px; display:inline-flex; align-items:center; gap:7px; flex:none; }
   .atourn-yearrow .exp{ font-size:9px; color:var(--label); }
   .atourn-yearrow .rd{ flex:1; min-width:0; color:var(--text); font-family:'Hanken Grotesk', sans-serif; font-size:13.5px; }
   .atourn-yearrow .wl{ font-family:'IBM Plex Mono', monospace; color:var(--text); font-size:13px; flex:none; }
@@ -2419,7 +2419,7 @@
   .atourn-showmore:hover{ color:var(--periwinkle); }
   .atourn-showmore-chev{ font-size:14px; font-family:'IBM Plex Mono', monospace; }
   .atourn-matchlist{ padding:2px 0 8px 0; }
-  .atourn-matchrow{ display:flex; justify-content:space-between; align-items:center; gap:8px; padding:6px 0 6px 22px; border-bottom:0.33px dashed var(--line-soft); font-size:11px; }
+  .atourn-matchrow{ display:flex; justify-content:space-between; align-items:center; gap:8px; padding:6px 0 6px 22px; border-bottom:var(--ma-hw,0.33px) dashed var(--line-soft); font-size:11px; }
   .atourn-matchrow:last-child{ border-bottom:none; }
   /* Task 11 — a year's match row only becomes clickable once the availability
      indexes confirm it has a box score or a point log on file. */
@@ -5016,7 +5016,7 @@ window.EntryListsTab = (function(){
   .edge-vhead .net{ margin-left:auto; font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--periwinkle); }
   .edge-vcols{ display:grid; grid-template-columns:repeat(auto-fit, minmax(300px, 1fr)); }
   .edge-vcol{ padding:20px 22px; border-bottom:0.33px solid var(--line-soft); display:flex; flex-direction:column; gap:14px; }
-  .edge-vcol.divider{ border-right:0.33px solid var(--line-soft); }
+  .edge-vcol.divider{ border-right:var(--ma-hw,0.33px) solid var(--line-soft); }
   .edge-vtop{ display:flex; align-items:flex-end; justify-content:space-between; gap:12px; }
   .edge-vtop .nm{ font-size:13px; font-weight:700; color:var(--periwinkle); }
   .edge-vtop .nm.a{ color:var(--periwinkle); }
@@ -5031,7 +5031,7 @@ window.EntryListsTab = (function(){
   .edge-mkts{ display:grid; grid-template-columns:1fr 1fr; gap:12px; }
   .edge-mkt2{ display:flex; flex-direction:column; gap:6px; }
   .edge-mkt2 .cap{ font-size:10px; font-family:'IBM Plex Mono', monospace; letter-spacing:0.06em; text-transform:uppercase; color:var(--label); }
-  .edge-mkt2 .px{ background:var(--surface); border:0.33px solid var(--line); border-radius:9px; padding:10px 12px; color:var(--text); font-family:'IBM Plex Mono', monospace; font-size:16px; font-weight:600; text-align:center; }
+  .edge-mkt2 .px{ background:var(--surface); border:var(--ma-hw,0.33px) solid var(--line); border-radius:9px; padding:10px 12px; color:var(--text); font-family:'IBM Plex Mono', monospace; font-size:16px; font-weight:600; text-align:center; }
   .edge-mkt2 .px.na{ color:var(--label); }
   .edge-mkt2 .sub{ font-family:'IBM Plex Mono', monospace; font-size:10px; color:var(--label); text-align:center; }
   .edge-mkt2 .gap{ font-family:'IBM Plex Mono', monospace; font-size:11px; text-align:center; }
@@ -5185,7 +5185,7 @@ window.EntryListsTab = (function(){
   .edge-mclbl{ font-size:10px; font-family:'IBM Plex Mono',monospace; letter-spacing:0.08em;
     text-transform:uppercase; color:var(--label); }
   .edge-mcline{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; }
-  .edge-mcline.sep{ padding-top:11px; border-top:0.33px solid var(--line-soft); }
+  .edge-mcline.sep{ padding-top:11px; border-top:var(--ma-hw,0.33px) solid var(--line-soft); }
   .edge-mcnm{ font-size:12px; font-weight:700; }
   .edge-mcnm.a{ color:var(--periwinkle); } .edge-mcnm.b{ color:var(--text); }
   .edge-mcval{ display:flex; flex-direction:column; align-items:flex-end; gap:2px; }
@@ -13805,9 +13805,9 @@ function maSeg(style, items, o){
   const G = MA_SEG[style] || MA_SEG.readme;
   const segs = items.map(t => {
     const on = !!t.on && !t.disabled, off = !!t.disabled;
-    return `<span class="${off ? 'ma-seg-item' : 'seg ma-seg-item'}"${off ? `${t.title ? ` title="${escapeHtml(String(t.title))}"` : ''} aria-disabled="true"` : ` onclick="${t.onclick}"`} style="${G.item} font-weight:${on ? 700 : 600}; color:${on ? 'var(--text)' : 'var(--label)'}; background:${on ? 'var(--seg-active)' : 'transparent'}; border:0.33px solid ${on ? 'var(--seg-active-line)' : 'transparent'}; cursor:${off ? 'not-allowed' : 'pointer'}; white-space:nowrap;">${t.label}</span>`;
+    return `<span class="${off ? 'ma-seg-item' : 'seg ma-seg-item'}"${off ? `${t.title ? ` title="${escapeHtml(String(t.title))}"` : ''} aria-disabled="true"` : ` onclick="${t.onclick}"`} style="${G.item} font-weight:${on ? 700 : 600}; color:${on ? 'var(--text)' : 'var(--label)'}; background:${on ? 'var(--seg-active)' : 'transparent'}; border:var(--ma-hw,0.33px) solid ${on ? 'var(--seg-active-line)' : 'transparent'}; cursor:${off ? 'not-allowed' : 'pointer'}; white-space:nowrap;">${t.label}</span>`;
   }).join('');
-  return `<div class="ma-seg" data-ma-seg="${style}" style="${o.center ? 'display:flex; width:max-content; margin:0 auto;' : 'display:inline-flex;'} ${G.track} background:var(--surface-inner); border:0.33px solid var(--line);">${segs}</div>`;
+  return `<div class="ma-seg" data-ma-seg="${style}" style="${o.center ? 'display:flex; width:max-content; margin:0 auto;' : 'display:inline-flex;'} ${G.track} background:var(--surface-inner); border:var(--ma-hw,0.33px) solid var(--line);">${segs}</div>`;
 }
 
 // ---- pop-up frame (README §4.4, DF L1485–1560) ----
@@ -13820,9 +13820,9 @@ function maPopFrame(o){
   const c = o.cls || '', esc = s => escapeHtml(s == null ? '' : String(s));
   const mono = "font-family:'IBM Plex Mono',monospace;";
   return `<div class="ma-pop-overlay ma-fade${c ? ' ' + c + '-overlay' : ''}" onclick="if(event.target===this){${o.onClose}}" style="position:fixed; inset:0; z-index:${o.z || 85}; background:var(--ma-scrim, var(--backdrop)); display:flex; align-items:flex-start; justify-content:center; padding:40px 24px; overflow-y:auto; font-family:'Hanken Grotesk',system-ui,sans-serif; color:var(--text); line-height:normal; font-size:16px;">`
-    + `<div class="ma-pop ma-sigin${c ? ' ' + c : ''}" role="dialog" aria-modal="true" style="position:relative; width:100%; max-width:${o.maxWidth || 900}px; background:${o.bg || 'var(--surface)'}; border:0.33px solid ${o.line || 'var(--line)'}; border-radius:14px; padding:20px 22px 14px; display:flex; flex-direction:column; gap:16px;">`
+    + `<div class="ma-pop ma-sigin${c ? ' ' + c : ''}" role="dialog" aria-modal="true" style="position:relative; width:100%; max-width:${o.maxWidth || 900}px; background:${o.bg || 'var(--surface)'}; border:var(--ma-hw,0.33px) solid ${o.line || 'var(--line)'}; border-radius:14px; padding:20px 22px 14px; display:flex; flex-direction:column; gap:16px;">`
     + `<div style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px;"><div style="display:flex; flex-direction:column; gap:5px; min-width:0;"><span style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;"><span class="ma-pop-title${c ? ' ' + c + '-title' : ''}" style="font-size:17px; font-weight:800; letter-spacing:-0.01em;">${esc(o.title)}</span>${o.chip || ''}</span><span class="ma-pop-sub${c ? ' ' + c + '-sub' : ''}" style="${mono} font-size:10.5px; color:var(--label);">${esc(o.sub)}</span></div>`
-    + `<span class="seg ma-pop-x${o.xCls ? ' ' + o.xCls : ''}" role="button" aria-label="Close" onclick="${o.onClose}" style="width:30px; height:30px; flex:none; border-radius:8px; border:0.33px solid ${o.line || 'var(--line)'}; display:flex; align-items:center; justify-content:center; font-size:13px; color:var(--text-soft); cursor:pointer;">✕</span></div>`
+    + `<span class="seg ma-pop-x${o.xCls ? ' ' + o.xCls : ''}" role="button" aria-label="Close" onclick="${o.onClose}" style="width:30px; height:30px; flex:none; border-radius:8px; border:var(--ma-hw,0.33px) solid ${o.line || 'var(--line)'}; display:flex; align-items:center; justify-content:center; font-size:13px; color:var(--text-soft); cursor:pointer;">✕</span></div>`
     + (o.body || '') + (o.foot ? `<span style="font-size:11px; color:var(--label);">${o.foot}</span>` : '') + '</div></div>';
 }
 // Esc closes the topmost frame through its own ✕. Bubble phase: while the stats sheet is open on top, its
@@ -13879,10 +13879,14 @@ function maMatchRowsHtml(groups, opts){
 // trigger / body are markup. o.below = open under the trigger (default: above).
 // o.below = open under the trigger (default: above) · o.tag / o.cls / o.attrs / o.style = the wrapper (e.g. Form's bar:
 // a flex:1 div that opens the sheet) · o.popStyle = the pop-up's offset (Form: bottom:20px, DF L950).
+// o.wrap = a sentence: wrap it at that width (px) instead of the one-line nowrap default, so a long body stays inside the
+// content column; o.start = anchor the tip at the trigger's left edge, not centred on it (a trigger that can wrap to the
+// start of a row).
+const MA_HOLD_NO_N = 'Service hold at this event: the source gives a rate without its number of service games, so it is not shown.';
 function maTipHtml(trigger, body, o){
   o = o || {};
   const tag = o.tag || 'span';
-  return `<${tag} class="elotip${o.cls ? ' ' + o.cls : ''}"${o.attrs || ''} style="position:relative; display:${tag === 'span' ? 'inline-flex' : 'block'};${o.style ? ' ' + o.style : ''}">${trigger}<span class="elotip-pop" role="tooltip" style="${o.popStyle || (o.below ? 'top:calc(100% + 8px);' : 'bottom:calc(100% + 8px);')}">${body}</span></${tag}>`;
+  return `<${tag} class="elotip${o.cls ? ' ' + o.cls : ''}"${o.attrs || ''} style="position:relative; display:${tag === 'span' ? 'inline-flex' : 'block'};${o.style ? ' ' + o.style : ''}">${trigger}<span class="elotip-pop" role="tooltip" style="${o.popStyle || (o.below ? 'top:calc(100% + 8px);' : 'bottom:calc(100% + 8px);')}${o.wrap ? ` white-space:normal; width:${o.wrap}px;` : ''}${o.start ? ' left:0; transform:none;' : ''}">${body}</span></${tag}>`;
 }
 
 // ---- flagged rules: the founder's calls. One constant / function each, so a
@@ -14023,7 +14027,7 @@ function fhStickyHeadHtml(cols, labels, centred){
   const cells = labels.map((l, i) => i === 0
     ? `<span style="grid-column:1 / 4; ${cap}">${fhEsc(l)}</span>`
     : `<span style="${cap}${centred ? ' text-align:center;' : (i >= labels.length - 2 ? ' text-align:right;' : '')}">${fhEsc(l)}</span>`).join('');
-  return `<div style="position:sticky; top:0; z-index:5; display:grid; grid-template-columns:${cols}; gap:9px; align-items:center; padding:9px 14px; background:var(--surface); border-bottom:0.33px solid var(--line-soft);">${cells}</div>`;
+  return `<div style="position:sticky; top:0; z-index:5; display:grid; grid-template-columns:${cols}; gap:9px; align-items:center; padding:9px 14px; background:var(--surface); border-bottom:var(--ma-hw,0.33px) solid var(--line-soft);">${cells}</div>`;
 }
 
 // =====================================================================
@@ -14202,7 +14206,7 @@ function fhTodayPair(m){
 function fhSrcTitle(r){ return r && r.book ? `${FH_BOOK[r.book]} close · ${FH_SRC[r.src] || ''}` : 'No Pinnacle or Bet365 close on record'; }
 // Level tag on H2H meetings (ATP / CH / ITF), same style as the B365 tag.
 function fhLevelTag(r){ return r && r.level ? `<span title="${r.level === 'ATP' ? 'ATP tour' : r.level === 'CH' ? 'Challenger' : 'ITF'}" style="${FH_MONO} font-size:8px; font-weight:700; letter-spacing:0.1em; color:#a3abba; border:0.33px solid rgba(255,255,255,0.045); border-radius:3px; padding:0 3px;">${r.level}</span>` : ''; }
-function fhB365Tag(r){ return r && r.book === 'B' ? `<span title="${fhSrcTitle(r)} (no Pinnacle close for this match)" style="${FH_MONO} font-size:8px; font-weight:700; letter-spacing:0.1em; color:var(--text-sub); border:0.33px solid var(--line); border-radius:3px; padding:0 3px;">B365</span>` : ''; }
+function fhB365Tag(r){ return r && r.book === 'B' ? `<span title="${fhSrcTitle(r)} (no Pinnacle close for this match)" style="${FH_MONO} font-size:8px; font-weight:700; letter-spacing:0.1em; color:var(--text-sub); border:var(--ma-hw,0.33px) solid var(--line); border-radius:3px; padding:0 3px;">B365</span>` : ''; }
 // Source note: "Pinnacle" when every priced match is Pinnacle, else "Pinnacle, Bet365 where missing (N)".
 // Nothing priced → no source is named (a source for zero prices would be a false label).
 // Price range header: every figure in the section counts, today's price included (ruling 2026-09-24).
@@ -14901,9 +14905,9 @@ function fhH2hRecCard(label, arr, tag, surfColor, onclick, aName, bName, aS, bS)
   // D2: the small-sample chip for every n 1–9 (the design's and the old `n === 2` were both wrong).
   const smallChip = maSmallChip(n);
   const head = tag
-    ? `<span style="width:9px; height:9px; border-radius:50%; background:${surfColor};"></span><span style="${lbl}">${fhEsc(label)}</span><span style="font-size:10.5px; font-weight:600; color:var(--periwinkle); border:0.33px solid var(--seg-active-line); border-radius:999px; padding:2px 9px; white-space:nowrap;">${fhEsc(tag)}</span>${smallChip}`
+    ? `<span style="width:9px; height:9px; border-radius:50%; background:${surfColor};"></span><span style="${lbl}">${fhEsc(label)}</span><span style="font-size:10.5px; font-weight:600; color:var(--periwinkle); border:var(--ma-hw,0.33px) solid var(--seg-active-line); border-radius:999px; padding:2px 9px; white-space:nowrap;">${fhEsc(tag)}</span>${smallChip}`
     : `<span style="${lbl}">${fhEsc(label)}</span><span style="margin-left:auto; font-size:11px; font-weight:600; color:var(--periwinkle); white-space:nowrap;">All meetings ↓</span>${smallChip}`;
-  return `<div${onclick ? ` class="seg" onclick="${onclick}"` : ''} style="background:var(--surface); border:0.33px solid var(--line); border-radius:16px; padding:20px 22px; display:flex; flex-direction:column; gap:14px; min-width:0;${onclick ? ' cursor:pointer;' : ''}">
+  return `<div${onclick ? ` class="seg" onclick="${onclick}"` : ''} style="background:var(--surface); border:var(--ma-hw,0.33px) solid var(--line); border-radius:16px; padding:20px 22px; display:flex; flex-direction:column; gap:14px; min-width:0;${onclick ? ' cursor:pointer;' : ''}">
       <div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;">${head}</div>
       <div style="display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:16px;">
         <span style="font-size:14px; font-weight:700; color:${FH_AC}; text-align:right; white-space:nowrap;">${fhEsc(aName)}</span>
@@ -14984,13 +14988,13 @@ function fhBuildH2H(m){
   if (!E.length){
     // No meetings: the empty state; every section below is hidden.
     if (!m._styleMeetLoaded) Promise.all([ensureStyleMeetings(m), ensurePsMatrix()]).then(() => { if (_fh && _fh.m === m) fhH2h({}); }).catch(() => {});
-    const cards = fhNoMeetingCards(m).map(r => `<div style="border:0.33px solid var(--line); border-radius:12px; padding:16px 18px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:6px;">
+    const cards = fhNoMeetingCards(m).map(r => `<div style="border:var(--ma-hw,0.33px) solid var(--line); border-radius:12px; padding:16px 18px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:6px;">
         <span style="font-size:13px; color:var(--text-sub);"><span style="font-weight:700; color:${r.color};">${fhEsc(r.who)}</span> ${fhEsc(r.vs)}</span>
         <span style="${FH_MONO} font-size:30px; font-weight:800; line-height:1;${r.dash ? ' color:' + FH_DASH + ';' : ''}">${fhEsc(r.rec)}</span>
         <span style="${FH_MONO} font-size:11px; color:var(--label);">${r.metaHtml != null ? r.metaHtml : fhEsc(r.meta)}</span>
       </div>`).join('');
     return `<div class="fh-h2wrap" style="display:flex; flex-direction:column; gap:18px;">
-      <div style="background:var(--surface); border:0.33px solid var(--line); border-radius:16px; padding:22px 24px; display:flex; flex-direction:column; gap:16px;">
+      <div style="background:var(--surface); border:var(--ma-hw,0.33px) solid var(--line); border-radius:16px; padding:22px 24px; display:flex; flex-direction:column; gap:16px;">
         <div style="display:flex; flex-direction:column; align-items:center; text-align:center; gap:5px;">
           <span style="font-size:17px; font-weight:800;">No previous meetings on record</span>
           <span style="font-size:13px; color:var(--text-sub); line-height:1.5; text-wrap:pretty;">${fhEsc(A)} and ${fhEsc(B)} have no meeting on record. Closest guide: how each has done against the other's playing style, last 52 weeks.</span>
@@ -15014,7 +15018,7 @@ function fhBuildH2H(m){
       ${todaySurf ? fhH2hRecCard('On ' + todaySurf.toLowerCase(), E.filter(r => r.surface === todaySurf), "Today's surface", FH_SURF[todaySurf], null, A, B, aS, bS) : ''}
     </div>`;
   if (!F.length){
-    return `<div class="fh-h2wrap" style="display:flex; flex-direction:column; gap:18px;">${top}${cards}<div style="background:var(--surface); border:0.33px solid var(--line); border-radius:14px; padding:28px; text-align:center; font-size:13px; color:var(--label);">No meetings on ${SURF.toLowerCase()}.</div></div>`;
+    return `<div class="fh-h2wrap" style="display:flex; flex-direction:column; gap:18px;">${top}${cards}<div style="background:var(--surface); border:var(--ma-hw,0.33px) solid var(--line); border-radius:14px; padding:28px; text-align:center; font-size:13px; color:var(--label);">No meetings on ${SURF.toLowerCase()}.</div></div>`;
   }
   // ---- stats row (Sets won / Tiebreaks / Deciding sets) + breakdown drawers ----
   const withGames = F.filter(r => r.sets), withTally = F.filter(r => r.pS != null);
@@ -15031,13 +15035,13 @@ function fhBuildH2H(m){
   ];
   const statsHtml = `<div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:14px;">${stats.map(c => {
     const on = S.stat === c.key;
-    return `<div class="seg" onclick="fhH2h({stat:${on ? 'null' : "'" + c.key + "'"}})" style="background:${on ? 'var(--nav-hover)' : 'var(--surface)'}; border:0.33px solid ${on ? 'var(--seg-active-line)' : 'var(--line)'}; border-radius:14px; padding:14px 18px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:5px; cursor:pointer;">
+    return `<div class="seg" onclick="fhH2h({stat:${on ? 'null' : "'" + c.key + "'"}})" style="background:${on ? 'var(--nav-hover)' : 'var(--surface)'}; border:var(--ma-hw,0.33px) solid ${on ? 'var(--seg-active-line)' : 'var(--line)'}; border-radius:14px; padding:14px 18px; display:flex; flex-direction:column; align-items:center; text-align:center; gap:5px; cursor:pointer;">
         <span class="fh-tilehead" style="display:grid; grid-template-columns:1fr auto 1fr; align-items:baseline; align-content:end; width:100%; height:18px; overflow:visible;"><span></span><span style="${FH_MONO} font-size:9.5px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:var(--label);">${c.label}</span><span style="justify-self:end; font-size:10.5px; font-weight:600; color:var(--periwinkle); white-space:nowrap;">${on ? 'Hide breakdown ▴' : 'Breakdown ▾'}</span></span>
         <span style="${FH_MONO} font-size:22px; font-weight:800; color:${c.val === FH_DASHC ? FH_DASH : 'var(--text)'}; white-space:nowrap;">${c.val}</span>
         <span style="font-size:11px; color:var(--label);">${fhEsc(c.sub)}</span>
       </div>`; }).join('')}</div>`;
   const newest = F.slice().reverse();
-  const bRow = (r, val, valColor, meta) => `<div class="seg" onclick="fhOpenSheet('${fhEsc(r.mid)}')" style="display:grid; grid-template-columns:96px minmax(0,1fr) 80px minmax(0,1.2fr); gap:12px; align-items:baseline; padding:8px 0; border-top:0.33px solid var(--line-soft); cursor:pointer;">
+  const bRow = (r, val, valColor, meta) => `<div class="seg" onclick="fhOpenSheet('${fhEsc(r.mid)}')" style="display:grid; grid-template-columns:96px minmax(0,1fr) 80px minmax(0,1.2fr); gap:12px; align-items:baseline; padding:8px 0; border-top:var(--ma-hw,0.33px) solid var(--line-soft); cursor:pointer;">
       <span style="${FH_MONO} font-size:11px; color:var(--text-sub); white-space:nowrap;">${fhLongDate(r.date)}</span>
       <span style="font-size:12.5px; font-weight:600; min-width:0;">${fhEsc(r.tourn + ' ' + r.round)}</span>
       <span style="${FH_MONO} font-size:13px; font-weight:700; color:${valColor}; white-space:nowrap;">${fhEsc(val)}</span>
@@ -15047,7 +15051,7 @@ function fhBuildH2H(m){
   if (S.stat === 'sets'){ statTitle = 'Sets won per meeting'; statRows = newest.filter(r => r.pS != null).map(r => bRow(r, r.pS + '–' + r.oS, r.pS > r.oS ? FH_AC : r.oS > r.pS ? FH_BC : 'var(--text-sub)', r.sets ? r.sets.map(fhSetTxt).join('  ') + (r.ret ? '  RET' : '') : (r.wo ? 'W/O' : 'set scores not on record'))); }
   if (S.stat === 'tb'){ statTitle = 'Every tiebreak'; newest.forEach(r => (r.done || []).forEach((x, k) => { if (Math.max(x[0], x[1]) === 7 && Math.min(x[0], x[1]) === 6){ const aw = x[0] > x[1]; statRows.push(bRow(r, aw ? aS : bS, aw ? FH_AC : FH_BC, 'Set ' + (k + 1) + ' · ' + fhSetTxt(x))); } })); }
   if (S.stat === 'dec'){ statTitle = 'Every deciding set'; newest.filter(r => r.decider).forEach(r => { const x = r.sets ? r.sets[r.sets.length - 1] : null; const aw = x ? x[0] > x[1] : r.won; statRows.push(bRow(r, aw ? aS : bS, aw ? FH_AC : FH_BC, 'Set ' + (r.pS + r.oS) + (x ? ' · ' + fhSetTxt(x) : '') + (r.bo === 5 ? ' · Bo5' : ''))); }); }
-  const statPanel = S.stat && statRows.length ? `<div style="background:var(--surface); border:0.33px solid var(--seg-active-line); border-radius:14px; padding:14px 18px 8px; display:flex; flex-direction:column;">
+  const statPanel = S.stat && statRows.length ? `<div style="background:var(--surface); border:var(--ma-hw,0.33px) solid var(--seg-active-line); border-radius:14px; padding:14px 18px 8px; display:flex; flex-direction:column;">
       <div style="display:flex; align-items:baseline; justify-content:space-between; gap:12px; padding-bottom:8px;">
         <span style="${FH_MONO} font-size:9.5px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:var(--text-sub);">${statTitle}</span>
         <span style="font-size:10.5px; color:var(--label);">Click a row for match stats</span>
@@ -15073,14 +15077,14 @@ function fhBuildH2H(m){
     let inner = '';
     if (nP !== 1){
       const dash = !nP;
-      const pop = nP > 1 ? `<div class="fh-elotip-pop" style="position:absolute; top:calc(100% + 8px); left:-8px; right:-8px; z-index:30; background:var(--surface); border:0.33px solid var(--line); border-radius:10px;  padding:10px 14px; display:flex; flex-direction:column;">
+      const pop = nP > 1 ? `<div class="fh-elotip-pop" style="position:absolute; top:calc(100% + 8px); left:-8px; right:-8px; z-index:30; background:var(--surface); border:var(--ma-hw,0.33px) solid var(--line); border-radius:10px;  padding:10px 14px; display:flex; flex-direction:column;">
           <span style="${FH_MONO} font-size:9.5px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:var(--label); padding-bottom:6px;">${fhEsc(s.name)} · every priced close</span>
-          ${s.allRows.map(o => `<div style="display:grid; grid-template-columns:minmax(0,1fr) auto 48px; gap:10px; align-items:baseline; padding:4px 0; border-top:0.33px solid var(--line-soft);">
+          ${s.allRows.map(o => `<div style="display:grid; grid-template-columns:minmax(0,1fr) auto 48px; gap:10px; align-items:baseline; padding:4px 0; border-top:var(--ma-hw,0.33px) solid var(--line-soft);">
             <span style="display:flex; align-items:baseline; gap:6px; min-width:0;"><span style="font-size:11.5px; color:var(--text-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${fhEsc(o.r.tourn + ' ' + String(o.r.date).slice(0, 4) + ' · ' + o.r.round)}</span>${fhB365Tag(o.r)}</span>
             <span style="${FH_MONO} font-size:9.5px; letter-spacing:0.1em; text-transform:uppercase; color:var(--text-sub);">${o.isLo ? 'Lowest' : o.isHi ? 'Highest' : ''}</span>
             <span style="${FH_MONO} font-size:12.5px; font-weight:${o.isLo || o.isHi ? 800 : 600}; color:${o.isLo || o.isHi ? s.color : 'var(--text-soft)'}; text-align:right;">${o.v.toFixed(2)}</span>
           </div>`).join('')}
-          <div style="display:flex; justify-content:space-between; padding-top:6px; border-top:0.33px solid var(--line-soft); ${FH_MONO} font-size:11px; color:var(--text-sub);"><span>${FH_PRICE_AVG_LABEL}</span><span style="font-weight:700; color:var(--text);">${s.avgV.toFixed(2)}</span></div>
+          <div style="display:flex; justify-content:space-between; padding-top:6px; border-top:var(--ma-hw,0.33px) solid var(--line-soft); ${FH_MONO} font-size:11px; color:var(--text-sub);"><span>${FH_PRICE_AVG_LABEL}</span><span style="font-weight:700; color:var(--text);">${s.avgV.toFixed(2)}</span></div>
         </div>` : '';
       const fig = (v, c) => `<span style="${FH_MONO} font-size:22px; font-weight:800; line-height:1; color:${dash ? FH_DASH : c};">${v}</span>`;
       inner += `<div class="fh-elotip" style="position:relative; display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; align-items:start;">
@@ -15112,12 +15116,12 @@ function fhBuildH2H(m){
           <span style="${FH_MONO} font-size:10px; color:var(--fh-warn); border:1px solid var(--fh-warn-line); border-radius:999px; padding:2px 9px;">n=1</span>
         </div>`;
     }
-    return `<div style="background:var(--surface-inner); border:0.33px solid var(--line); border-radius:12px; padding:16px 18px; display:flex; flex-direction:column; gap:14px; min-width:0;">
+    return `<div style="background:var(--surface-inner); border:var(--ma-hw,0.33px) solid var(--line); border-radius:12px; padding:16px 18px; display:flex; flex-direction:column; gap:14px; min-width:0;">
         <div style="display:flex; align-items:center; justify-content:space-between; gap:12px;"><span style="font-size:14px; font-weight:700; color:${s.color};">${fhEsc(s.name)}</span>${nP > 1 && nP < FH_PRICE_THIN ? `<span class="fh-nchip" title="Range built from ${nP} priced meetings" style="${FH_MONO} font-size:10px; color:var(--fh-warn); border:1px solid var(--fh-warn-line); border-radius:999px; padding:2px 9px;">n=${nP}</span>` : ''}</div>
         ${inner}
       </div>`;
   };
-  const priceHtml = `<div style="background:var(--surface); border:0.33px solid var(--line); border-radius:16px; padding:18px 20px; display:flex; flex-direction:column; gap:16px;">
+  const priceHtml = `<div style="background:var(--surface); border:var(--ma-hw,0.33px) solid var(--line); border-radius:16px; padding:18px 20px; display:flex; flex-direction:column; gap:16px;">
       <div style="display:flex; align-items:center; justify-content:space-between; gap:10px 16px; flex-wrap:wrap;">
         <div style="display:flex; align-items:baseline; gap:8px 10px; flex-wrap:wrap;"><span style="font-size:17px; font-weight:800;">Price range</span><span style="font-size:12px; color:var(--text-sub);">· Closing odds${PR.length ? ' · ' + fhPriceRangeSource(PR, today) : ''}</span></div>
         <span style="${FH_MONO} font-size:11px; color:var(--text-sub); white-space:nowrap;">${nP} of ${F.length} meetings priced</span>
@@ -15137,15 +15141,15 @@ function fhBuildH2H(m){
     colTip: r => r.tourn + ' ' + String(r.date).slice(0, 4) + ' · ' + r.round,
     dotTip: r => r.tourn + ' ' + String(r.date).slice(0, 4) }) : null;
   const hotMore = hotOk && (sc.scored.length > table.shown || S.allLines);
-  const hotHtml = `<div style="background:var(--surface); border:0.33px solid var(--line); border-radius:16px; padding:18px 20px 12px; display:flex; flex-direction:column; gap:12px;">
+  const hotHtml = `<div style="background:var(--surface); border:var(--ma-hw,0.33px) solid var(--line); border-radius:16px; padding:18px 20px 12px; display:flex; flex-direction:column; gap:12px;">
       <div style="display:flex; align-items:center; justify-content:space-between; gap:10px 16px; flex-wrap:wrap;">
         <div style="display:flex; flex-direction:column; gap:3px;"><span style="font-size:17px; font-weight:800;">Hot lines</span><span style="font-size:12px; color:var(--text-sub);">Best-covered line in each market family across these meetings</span></div>
       </div>
-      ${hotOk ? `<div style="display:flex; flex-direction:column; border-top:0.33px solid var(--line-soft);">${table.head}${table.lines}</div>
-      <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; padding-top:4px; border-top:0.33px solid var(--line-soft);">
+      ${hotOk ? `<div style="display:flex; flex-direction:column; border-top:var(--ma-hw,0.33px) solid var(--line-soft);">${table.head}${table.lines}</div>
+      <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; padding-top:4px; border-top:var(--ma-hw,0.33px) solid var(--line-soft);">
         <span style="font-size:10.5px; color:var(--label);">One dot per meeting, oldest → newest · filled = covered · empty = not covered · small grey = not eligible · hover a line to find its meetings, click a dot for the match</span>
         ${hotMore ? `<span class="seg" onclick="fhH2h({allLines:${!S.allLines}})" style="font-size:12.5px; font-weight:600; color:var(--periwinkle); cursor:pointer; white-space:nowrap;">${S.allLines ? 'Best line per family' : 'Show all lines (' + sc.scored.length + ')'}</span>` : ''}
-      </div>` : `<div style="padding:22px 0 14px; text-align:center; ${FH_MONO} font-size:12px; color:var(--label); border-top:0.33px solid var(--line-soft);">${fhEsc(hotFew)}</div>`}
+      </div>` : `<div style="padding:22px 0 14px; text-align:center; ${FH_MONO} font-size:12px; color:var(--label); border-top:var(--ma-hw,0.33px) solid var(--line-soft);">${fhEsc(hotFew)}</div>`}
     </div>`;
   // ---- Meetings · A's side ----
   const entries = newest.map(r => {
@@ -15153,7 +15157,7 @@ function fhBuildH2H(m){
     const surfLbl = r.surface ? (r.surface === 'Hard' && meta && meta.indoor ? 'Indoor hard' : r.surface) : '';
     const cls = 'h2m ' + (sc.covMap[r.mid] || []).map(k => 'cov-' + k).join(' ') + ' ' + (prMark[r.mid] || []).join(' ');
     return `<div class="${cls}">
-        <div style="display:flex; align-items:center; gap:9px; padding:14px 14px 6px; border-top:0.33px solid var(--line-soft);"><span style="${FH_MONO} font-size:10px; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; color:var(--text); white-space:nowrap;">${fhEsc(r.tourn + ' ' + String(r.date).slice(0, 4))}</span><span style="font-size:11px; color:var(--text-sub); white-space:nowrap;">${fhEsc(surfLbl)}${surfLbl ? ' · ' : ''}<span title="${r.level === 'ATP' ? 'ATP tour' : r.level === 'CH' ? 'Challenger' : 'ITF'}">${fhEsc(r.level)}</span></span></div>
+        <div style="display:flex; align-items:center; gap:9px; padding:14px 14px 6px; border-top:var(--ma-hw,0.33px) solid var(--line-soft);"><span style="${FH_MONO} font-size:10px; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; color:var(--text); white-space:nowrap;">${fhEsc(r.tourn + ' ' + String(r.date).slice(0, 4))}</span><span style="font-size:11px; color:var(--text-sub); white-space:nowrap;">${fhEsc(surfLbl)}${surfLbl ? ' · ' : ''}<span title="${r.level === 'ATP' ? 'ATP tour' : r.level === 'CH' ? 'Challenger' : 'ITF'}">${fhEsc(r.level)}</span></span></div>
         ${fhH2hRowHtml(r)}
       </div>`;
   }).join('');
@@ -15162,7 +15166,7 @@ function fhBuildH2H(m){
         <span style="font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:var(--label);">Meetings · ${fhEsc(aS)}'s side</span>
         <span style="font-size:11px; color:var(--label);">${F.length} on record${SURF === 'all' ? '' : ' · ' + SURF.toLowerCase()}</span>
       </div>
-      <div style="border:0.33px solid var(--line); border-radius:14px; overflow:clip; background:var(--surface); display:flex; flex-direction:column;">
+      <div style="border:var(--ma-hw,0.33px) solid var(--line); border-radius:14px; overflow:clip; background:var(--surface); display:flex; flex-direction:column;">
         ${fhStickyHeadHtml('22px 40px minmax(0,1fr) 40px 38px 42px 42px', ['Meeting', 'Round', 'Sets', 'Home', 'Away'], true)}
         ${entries}
       </div>
@@ -15180,7 +15184,7 @@ function fhH2hEloSpan(e){
 }
 function fhFullName(name, key){ const p = key != null && typeof playerProfiles !== 'undefined' && playerProfiles && playerProfiles[String(key)]; return (p && p.name) || fhOppFmt(name); }
 function fhH2hRowHtml(r){
-  return `<div class="seg" onclick="fhOpenSheet('${fhEsc(r.mid)}')" style="display:grid; grid-template-columns:22px 40px minmax(0,1fr) 40px 38px 42px 42px; gap:9px; align-items:center; padding:8px 14px; border-top:0.33px solid var(--line-soft); cursor:pointer;">
+  return `<div class="seg" onclick="fhOpenSheet('${fhEsc(r.mid)}')" style="display:grid; grid-template-columns:22px 40px minmax(0,1fr) 40px 38px 42px 42px; gap:9px; align-items:center; padding:8px 14px; border-top:var(--ma-hw,0.33px) solid var(--line-soft); cursor:pointer;">
       ${fhWlChip(r.won)}
       <span style="${FH_MONO} font-size:11px; color:var(--text-sub);">${fhDDMM(r.date)}</span>
       <span style="display:flex; flex-direction:column; gap:3px; min-width:0;">
@@ -15257,12 +15261,12 @@ function fhSheetHeadHtml(e, r, opts){
     : r.won == null ? '' : (r.won ? last(e.aName) + ' won ' + (scoreTxt || (r.pS + '-' + r.oS)) : last(e.bName) + ' won ' + (flipTxt || (r.oS + '-' + r.pS))) + retTag;
   const setsKnown = r.pS != null;
   const aC = !setsKnown ? FH_DASH : (r.won ? 'var(--text)' : 'var(--label)'), bC = !setsKnown ? FH_DASH : (r.won ? 'var(--label)' : 'var(--text)');
-  const chips = o.inline ? '' : (r.sets || []).map(x => `<span style="${FH_MONO} font-size:12px; font-weight:700; color:var(--text); background:var(--surface-inner); border:0.33px solid var(--line); border-radius:6px; padding:3px 8px;">${x[0]}-${x[1]}</span>`).join('');
-  const badge = (v, c) => `<span style="position:absolute; left:50%; bottom:-9px; transform:translateX(-50%); ${FH_MONO} font-size:10.5px; font-weight:700; color:${v == null ? FH_DASH : c}; background:var(--surface-inner); border:0.33px solid var(--line); border-radius:999px; padding:1px 7px; white-space:nowrap;">${v == null ? FH_DASHC : v.toFixed(2)}</span>`;
+  const chips = o.inline ? '' : (r.sets || []).map(x => `<span style="${FH_MONO} font-size:12px; font-weight:700; color:var(--text); background:var(--surface-inner); border:var(--ma-hw,0.33px) solid var(--line); border-radius:6px; padding:3px 8px;">${x[0]}-${x[1]}</span>`).join('');
+  const badge = (v, c) => `<span style="position:absolute; left:50%; bottom:-9px; transform:translateX(-50%); ${FH_MONO} font-size:10.5px; font-weight:700; color:${v == null ? FH_DASH : c}; background:var(--surface-inner); border:var(--ma-hw,0.33px) solid var(--line); border-radius:999px; padding:1px 7px; white-space:nowrap;">${v == null ? FH_DASHC : v.toFixed(2)}</span>`;
   const av = (name, key) => `<span class="fh-av">${aAvatarHtml(name, key)}</span>`;
   // Date exactly as the design file prints it (DF L4856 "18.07"; founder 2026-09-29: never "18.07.26").
   const meta = [r.tourn, r.surface || FH_DASHC, r.round, r.date ? fhDDMM(r.date) : null].filter(x => x != null && x !== '').join(' · ');
-  const close = o.inline ? '' : `<span class="seg" onclick="fhCloseSheet()" style="background:var(--surface-inner); border:0.33px solid var(--line); border-radius:8px; width:30px; height:30px; color:var(--text-sub); font-size:15px; display:flex; align-items:center; justify-content:center; cursor:pointer; flex:none;">✕</span>`;
+  const close = o.inline ? '' : `<span class="seg" onclick="fhCloseSheet()" style="background:var(--surface-inner); border:var(--ma-hw,0.33px) solid var(--line); border-radius:8px; width:30px; height:30px; color:var(--text-sub); font-size:15px; display:flex; align-items:center; justify-content:center; cursor:pointer; flex:none;">✕</span>`;
   return `<div style="display:flex; flex-direction:column; gap:18px;">
           <div style="display:flex; align-items:center; justify-content:space-between; gap:16px;">
             <span style="display:flex; align-items:baseline; gap:8px;"><span style="${FH_MONO} font-size:11px; letter-spacing:0.06em; color:var(--label);">${fhEsc(meta)}</span>${fhB365Tag(r)}</span>
@@ -15282,7 +15286,7 @@ function fhSheetHeadHtml(e, r, opts){
               <div style="position:relative; flex:none;">${av(e.bName, e.bKey)}${badge(r.oppPrice, 'var(--text-soft)')}</div>
             </div>
           </div>
-          ${winLine ? `<div style="display:flex; justify-content:center;"><span style="${FH_MONO} font-size:10px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:var(--text-soft); background:var(--surface-inner); border:0.33px solid var(--line); border-radius:999px; padding:4px 12px;">${fhEsc(winLine)}</span></div>` : ''}
+          ${winLine ? `<div style="display:flex; justify-content:center;"><span style="${FH_MONO} font-size:10px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:var(--text-soft); background:var(--surface-inner); border:var(--ma-hw,0.33px) solid var(--line); border-radius:999px; padding:4px 12px;">${fhEsc(winLine)}</span></div>` : ''}
         </div>`;
 }
 function fhOpenSheet(mid){
@@ -15296,7 +15300,7 @@ function fhOpenSheet(mid){
   if (!host || host.parentNode !== card){ if (host) host.remove(); host = document.createElement('div'); host.id = 'fhSheet'; card.appendChild(host); }
   host.innerHTML = `<div style="position:fixed; inset:0; z-index:110; background:var(--backdrop); display:flex; align-items:flex-start; justify-content:center; padding:40px 24px; overflow-y:auto; font-family:'Hanken Grotesk',sans-serif; color:var(--text);">
       <div onclick="fhCloseSheet()" style="position:absolute; inset:0;"></div>
-      <div style="position:relative; width:100%; max-width:760px; background:var(--surface); border:0.33px solid var(--seg-active-line); border-radius:14px; padding:22px 24px 26px; display:flex; flex-direction:column; gap:16px;">
+      <div style="position:relative; width:100%; max-width:760px; background:var(--surface); border:var(--ma-hw,0.33px) solid var(--seg-active-line); border-radius:14px; padding:22px 24px 26px; display:flex; flex-direction:column; gap:16px;">
         ${fhSheetHeadHtml(e, r)}
         <div id="fhSheetBody" class="fh-sheet-body" style="display:flex; flex-direction:column; gap:16px;"></div>
       </div>
@@ -15475,7 +15479,7 @@ function fhSheetSectionHead(t){ return `<span style="display:block; text-align:c
 function fhSheetStatsHtml(joined, emptyMsg){
   const M = fhSheetModel(joined || null);
   const head = fhSheetSectionHead;
-  const dr = `<div style="display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:14px; background:var(--surface-inner); border:0.33px solid var(--line); border-radius:10px; padding:16px 20px;">
+  const dr = `<div style="display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:14px; background:var(--surface-inner); border:var(--ma-hw,0.33px) solid var(--line); border-radius:10px; padding:16px 20px;">
       <span title="${fhEsc(M.dr[0].title)}" style="${FH_MONO} font-size:24px; font-weight:700; color:${M.dr[0].txt === FH_DASHC ? FH_DASH : FH_AC};">${M.dr[0].txt}</span>
       <span style="${FH_MONO} font-size:10px; font-weight:700; letter-spacing:0.16em; text-transform:uppercase; color:var(--text-sub);">Dominance ratio</span>
       <span title="${fhEsc(M.dr[1].title)}" style="${FH_MONO} font-size:24px; font-weight:700; color:${M.dr[1].txt === FH_DASHC ? FH_DASH : FH_BC}; text-align:right;">${M.dr[1].txt}</span>
@@ -15808,7 +15812,7 @@ const ME_C = {
   hiBg: 'var(--ma-inner)', hiBd: 'var(--ma-hair-strong)',     // top-2
   sel: 'var(--ma-sel)',            // selected pop-up row
   chipBd: 'var(--ma-outline)',     // TODAY'S BAND border
-  line: 'var(--ma-hair)', lineSoft: 'var(--ma-hair-soft)', lineOpen: 'var(--ma-hair-strong)', hw: '0.33px',
+  line: 'var(--ma-hair)', lineSoft: 'var(--ma-hair-soft)', lineOpen: 'var(--ma-hair-strong)', hw: 'var(--ma-hw,0.33px)',
   backdrop: 'var(--ma-scrim)',     // overlay (U11)
   // chart (U14 / U15)
   loss: 'var(--ma-chart-loss)', grid: 'var(--ma-chart-grid)', tick: 'var(--ma-chart-tick)', zero: 'var(--ma-chart-zero)',
@@ -16768,7 +16772,7 @@ function maMsSheetEntry(m){
 }
 function maMsSheetHtml(m){
   const { e, r } = maMsSheetEntry(m);
-  return `<div class="ma-ms-sheet" style="max-width:760px; margin:0 auto; background:var(--surface); border:0.33px solid var(--line); border-radius:14px; padding:22px 24px 26px; display:flex; flex-direction:column; gap:16px; font-family:'Hanken Grotesk',sans-serif; color:var(--text); line-height:normal;">
+  return `<div class="ma-ms-sheet" style="max-width:760px; margin:0 auto; background:var(--surface); border:var(--ma-hw,0.33px) solid var(--line); border-radius:14px; padding:22px 24px 26px; display:flex; flex-direction:column; gap:16px; font-family:'Hanken Grotesk',sans-serif; color:var(--text); line-height:normal;">
       ${fhSheetHeadHtml(e, r, { inline: true })}
       <div id="maMsSheetBody" class="fh-sheet-body" style="display:flex; flex-direction:column; gap:16px;"></div>
     </div>`;
@@ -17914,7 +17918,7 @@ function buildOddsReduced(m){
   const p1Fair = (p1Imp / tot * 100).toFixed(1);
   const p2Fair = (p2Imp / tot * 100).toFixed(1);
   const favName = p1Fav ? m.p1 : m.p2;
-  const fairPanel = `<div style="border:0.33px solid var(--border);border-radius:12px;background:var(--surface);padding:13px 15px;">
+  const fairPanel = `<div style="border:var(--ma-hw,0.33px) solid var(--border);border-radius:12px;background:var(--surface);padding:13px 15px;">
     <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:7px;">
       <span style="font-size:11px;letter-spacing:0.08em;text-transform:uppercase;color:var(--label);font-family:'IBM Plex Mono',monospace;">Market-implied win probability</span>
       <span style="font-size:11px;color:var(--label);font-family:'IBM Plex Mono',monospace;">via ${m.odds.bookmaker} · vig removed</span>
@@ -18295,7 +18299,9 @@ function akTournamentBlock(m){
     const bits = [];
     if (cs.abstractSpeed != null) bits.push(`<div class="akt-cond"><b>${Number(cs.abstractSpeed).toFixed(2)}</b><span>court speed</span><em>${psEsc(cs.category || '')}</em></div>`);
     if (cs.altitude != null) bits.push(`<div class="akt-cond"><b>${Number(cs.altitude).toLocaleString()} m</b><span>altitude</span><em>${psEsc(altitudeLabel(cs.altitude))}</em></div>`);
-    if (cs.serviceHold != null) bits.push(`<div class="akt-cond"><b>${cs.serviceHold}%</b><span>hold rate</span><em>at this event</em></div>`);
+    // Founder 2026-09-28: the hold rate stays ungated but shows its n (service games) — no figure without a count.
+    // COURT_CONDITIONS carries the sheet's % with NO count, so the figure is a dash and the tooltip says why.
+    if (cs.serviceHold != null) bits.push(`<div class="akt-cond">${maTipHtml('<b tabindex="0">—</b>', MA_HOLD_NO_N, { wrap: 220, start: true })}<span>hold rate</span><em>n not published</em></div>`);
     if (bits.length) cond = `<div class="akt-div"></div><div class="akt-conds">${bits.join('')}</div>`;
     // Prose read, generated from the same court-speed record — reuses the
     // Tournament page's generator so the two surfaces can never disagree.
@@ -19196,7 +19202,7 @@ function styleArchLabelsHtml(m, s1, s2){
     const lab = st && st.archetype_label;
     const label = lab || 'Not yet classified';
     const chip = (st && st.variety)
-      ? ` <span style="display:inline-flex;align-items:center;font-size:10.5px;font-weight:700;color:var(--text);background:var(--surface-inner);border:0.33px solid var(--line);border-radius:7px;padding:2px 7px;margin-left:6px;vertical-align:middle;">+ Variety Player</span>`
+      ? ` <span style="display:inline-flex;align-items:center;font-size:10.5px;font-weight:700;color:var(--text);background:var(--surface-inner);border:var(--ma-hw,0.33px) solid var(--line);border-radius:7px;padding:2px 7px;margin-left:6px;vertical-align:middle;">+ Variety Player</span>`
       : '';
     return `<div class="psl-side">
       <div class="psl-nm" style="color:${color};" title="${psEsc(name)}">${psEsc(psShortName(name))}</div>
@@ -19360,7 +19366,7 @@ function styleDnaRadarHtml(m){
     const brw = bDna.ok ? _mdnaFmt(bDna.ratings ? bDna.ratings[i] : null, ax.dp) : '—';
     const ad = aDna.ok ? delta(aDna.deltas ? aDna.deltas[i] : null, ax.dp) : null;
     const bd = bDna.ok ? delta(bDna.deltas ? bDna.deltas[i] : null, ax.dp) : null;
-    return `<div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(120px,150px) minmax(0,1fr); gap:12px; align-items:center; padding:4px 2px; border-bottom:0.33px solid var(--line-soft);">
+    return `<div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(120px,150px) minmax(0,1fr); gap:12px; align-items:center; padding:4px 2px; border-bottom:var(--ma-hw,0.33px) solid var(--line-soft);">
       ${cell(arw, ad, ANALYSIS_P1_COLOR, true)}
       <span style="text-align:center; font-size:10.5px; letter-spacing:0.04em; color:var(--label);">${escapeHtml(ax.label)}</span>
       ${cell(brw, bd, ANALYSIS_P2_COLOR, false)}
@@ -19392,7 +19398,7 @@ function styleDnaRadarHtml(m){
         ${!hasRadar ? `<text x="150" y="150" text-anchor="middle" style="fill:var(--label)" font-size="11" font-family="IBM Plex Mono, monospace">${loading ? 'Loading DNA…' : 'No shape at this floor'}</text>` : ''}
       </svg>
     </div>
-    <div style="display:flex; flex-direction:column; gap:2px; border-top:0.33px solid var(--line-soft); padding-top:12px;">
+    <div style="display:flex; flex-direction:column; gap:2px; border-top:var(--ma-hw,0.33px) solid var(--line-soft); padding-top:12px;">
       <div style="display:flex; align-items:center; justify-content:space-between; padding-bottom:4px;">
         <span style="font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:0.08em; text-transform:uppercase; color:var(--label);">Raw rating · Δ vs 2024–now avg</span>
         <span style="display:inline-flex; gap:12px; font-size:10px;"><span style="color:${ANALYSIS_P1_COLOR};">■ ${escapeHtml(p1Short)}</span><span style="color:var(--text);">▢ ${escapeHtml(p2Short)}</span></span>

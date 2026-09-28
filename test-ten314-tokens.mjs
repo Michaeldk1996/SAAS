@@ -99,7 +99,8 @@ test('no literal colour in any declaration the modal reaches (JS)', () => {
 });
 
 // The modal's CSS: every rule whose selector targets the modal.
-const MODAL_SEL = /\.modal-analysis|#analysisModal|#aSection|#fhSheet|#mePop|#aoddsTip|\.aox-|\.wx-|\.fh-|\.me-|\.akb|\.aks-|\.akf-|\.akw-|\.psv|\.atourn|\.yr-drill|\.ms-|\.anews|\.tprogress/;
+// review 2026-09-29: + .aform- (formPanelHtml), .yr- (buildYearlyTables / seasonSurfaceTierViewHtml), .fsm- (fmtTournament)
+const MODAL_SEL = /\.modal-analysis|#analysisModal|#aSection|#fhSheet|#mePop|#aoddsTip|\.aox-|\.wx-|\.fh-|\.me-|\.akb|\.aks-|\.akf-|\.akw-|\.psv|\.atourn|\.yr-(?:drill|table|tiertoggle|surfrec)|\.aform-tabs|\.fsm-q\b|\.ms-|\.anews|\.tprogress/;
 function modalCss() {
   const css = [...HTML.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map(m => m[1]).join('\n').replace(/\/\*[\s\S]*?\*\//g, '');
   const rules = [];
@@ -124,6 +125,18 @@ test('every colour variable the modal reads resolves through the token file', ()
   const missing = [...used].filter(v => !NOT_COLOUR.has(v) && !(v in NIGHT));
   assert.deepEqual(missing, []);
   for (const [k, v] of Object.entries(NIGHT)) if (!k.startsWith('--ma-')) assert.match(v, /^var\(--ma-[\w-]+\)$/, `${k} re-points to a token`);
+});
+
+// Founder 2026-09-28: the modal's hairlines are the design's 1px, set in the token file. The modal writes
+// var(--ma-hw,0.33px), so the shared builders keep the site's 0.33px outside .ma-theme (player profile).
+// Mutation: --ma-hw back to 0.33px in the token file, or a bare `border:0.33px` back in a modal builder / modal CSS rule.
+test('hairline width: --ma-hw is 1px, and no bare 0.33px in the modal code or CSS', () => {
+  assert.equal(NIGHT['--ma-hw'], '1px');
+  const bare = s => (s.replace(/var\(--ma-hw,0\.33px\)/g, '').match(/0\.33px/g) || []).length;
+  const js = modalCode().filter(([, s]) => bare(s)).map(([n, s]) => n + ' ×' + bare(s));
+  const css = modalCss().filter(([, b]) => bare(b)).map(([sel]) => sel.slice(0, 60));
+  assert.deepEqual([...js, ...css], []);
+  assert.ok(modalCode().some(([, s]) => s.includes('var(--ma-hw,0.33px)')), 'the modal reads the token');
 });
 
 // Mutation: maApplyTheme stops writing the attribute, or maSetTheme writes a different storage key than TEN-315 reads.

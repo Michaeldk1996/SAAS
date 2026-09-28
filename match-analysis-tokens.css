@@ -21,6 +21,8 @@
   --ma-hair-soft:rgba(255,255,255,0.035); /* hairline soft (inner)              (white 0.03–0.05) */
   --ma-hair-strong:rgba(255,255,255,0.10); /* hairline strong (pop-up, table header) (white 0.10–0.16) */
   --ma-hair-hover:rgba(255,255,255,0.20);  /* U16: dashed chips, ✕ hover borders (white 0.18–0.25) */
+  --ma-hw:1px;                       /* hairline WIDTH — the design's 1px (founder 2026-09-28: not the site's 0.33px).
+                                        Modal code writes var(--ma-hw,0.33px): 1px inside .ma-theme, 0.33px outside */
   --ma-outline:rgba(157,179,242,0.30);     /* open / selected card outline      (blue 0.20–0.45) */
   --ma-focus:rgba(157,179,242,0.35);       /* U13: keyboard focus ring          (blue 0.35) */
   --ma-t1:#FFFFFF;                   /* text primary                            (#E7E9EE) */

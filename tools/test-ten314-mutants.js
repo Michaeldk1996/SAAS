@@ -1,9 +1,10 @@
-// TEN-314 — every check in test-ten314-modal-frame.mjs, test-ten314-sheet.mjs, test-ten314-gate.mjs and test-ten314-components.mjs must FAIL when the behaviour it locks is reverted. Each
+// TEN-314 — every check in test-ten314-modal-frame.mjs, test-ten314-sheet.mjs, test-ten314-gate.mjs, test-ten314-components.mjs and test-ten314-tokens.mjs must FAIL when the behaviour it locks is reverted. Each
 // mutant is applied to a copy of bsp-consult-dashboard.html and the suite is run against it (TEN314_HTML); a
 // mutant that leaves the suite green is a vacuous test and fails this runner.
 const fs = require('fs'), os = require('os'), path = require('path'), { spawnSync } = require('child_process');
 const ROOT = path.join(__dirname, '..');
 const html = fs.readFileSync(path.join(ROOT, 'bsp-consult-dashboard.html'), 'utf8');
+const css = fs.readFileSync(path.join(ROOT, 'match-analysis-tokens.css'), 'utf8');
 const MUTANTS = [
   ['frame: README max-width 1200', 'font-family:var(--mx-font-ui); max-width:1500px;', 'font-family:var(--mx-font-ui); max-width:1200px;'],
   ['frame: height a max, not fixed', 'max-width:1500px; width:100%; height:88vh;', 'max-width:1500px; width:100%; max-height:88vh;'],
@@ -78,7 +79,7 @@ const MUTANTS = [
   ['seg: sheet item radius 8', "item: 'padding:5px 12px; border-radius:7px; font-size:11px;' },", "item: 'padding:5px 12px; border-radius:8px; font-size:11px;' },"],
   ['seg: Market edge track padding 3', "  me: { track: 'gap:3px; padding:2px; border-radius:8px;',", "  me: { track: 'gap:3px; padding:3px; border-radius:8px;',"],
   ['seg: pbp tabs drawn in the scope geometry', "})), 'pbp') : '')", "}))) : '')"],
-  ['seg: the selected tile dropped', "background:${on ? 'var(--seg-active)' : 'transparent'}; border:0.33px solid ${on ? 'var(--seg-active-line)'", "background:transparent; border:0.33px solid ${on ? 'var(--seg-active-line)'"],
+  ['seg: the selected tile dropped', "background:${on ? 'var(--seg-active)' : 'transparent'}; border:var(--ma-hw,0.33px) solid ${on ? 'var(--seg-active-line)'", "background:transparent; border:var(--ma-hw,0.33px) solid ${on ? 'var(--seg-active-line)'"],
   ['seg: the 140ms transition dropped', "  .ma-seg-item{ transition:background .14s ease, color .14s ease, border-color .14s ease; }\n", ''],
   ['seg: Market edge keeps its own markup', "function meSegHtml(items){ return maSeg('me', items); }", "function meSegHtml(items){ return items.map(t => t.label).join(''); }"],
   ['pop: radius 12', "border-radius:14px; padding:20px 22px 14px; display:flex; flex-direction:column; gap:16px;\">`", "border-radius:12px; padding:20px 22px 14px; display:flex; flex-direction:column; gap:16px;\">`"],
@@ -95,6 +96,17 @@ const MUTANTS = [
   ['rows: a row loses its sheet opener', "<div class=\"seg ma-row${r.cls ? ' ' + r.cls : ''}\"${r.attrs || ''}${r.click || ''}", "<div class=\"seg ma-row${r.cls ? ' ' + r.cls : ''}\"${r.attrs || ''}"],
   ['tip: 200ms opacity', "transition:opacity .12s ease; pointer-events:none;\n    background:var(--ma-raised, var(--popup));", "transition:opacity .2s ease; pointer-events:none;\n    background:var(--ma-raised, var(--popup));"],
   ['tip: the helper drops the class pair', "<span class=\"elotip-pop\" role=\"tooltip\"", "<span class=\"tip-pop\" role=\"tooltip\""],
+  ['hairline: --ma-hw back to the site 0.33px (token file)', '  --ma-hw:1px;', '  --ma-hw:0.33px;', 'css'],
+  ['hairline: a bare 0.33px back in a modal builder', "background:var(--surface-inner); border:var(--ma-hw,0.33px) solid var(--line);\">${se", "background:var(--surface-inner); border:0.33px solid var(--line);\">${se"],
+  ['hairline: a bare 0.33px back in a modal CSS rule', '  .modal-analysis .akb{ display:flex; flex-direction:column; background:var(--surface); border:var(--ma-hw,0.33px) solid var(--line);', '  .modal-analysis .akb{ display:flex; flex-direction:column; background:var(--surface); border:0.33px solid var(--line);'],
+  ['hold: the count-less % shown again', "${maTipHtml('<b tabindex=\"0\">—</b>', MA_HOLD_NO_N, { wrap: 220, start: true })}", "<b>${cs.serviceHold}%</b>"],
+  ['hold: the dash loses its tooltip', "${maTipHtml('<b tabindex=\"0\">—</b>', MA_HOLD_NO_N, { wrap: 220, start: true })}", "<b tabindex=\"0\">—</b>"],
+  ['hold: the tooltip back to one clipped line', "MA_HOLD_NO_N, { wrap: 220, start: true })", "MA_HOLD_NO_N)"],
+  ['hold: the tooltip centred again (overhangs the column at 850px)', "MA_HOLD_NO_N, { wrap: 220, start: true })", "MA_HOLD_NO_N, { wrap: 220 })"],
+  ['hold: the dash not focusable', "maTipHtml('<b tabindex=\"0\">—</b>', MA_HOLD_NO_N", "maTipHtml('<b>—</b>', MA_HOLD_NO_N"],
+  ['hold: no visible reason without hover', "<span>hold rate</span><em>n not published</em>", "<span>hold rate</span><em>at this event</em>"],
+  ['hold: the card label rule restyles the tooltip', ".modal-analysis .akt-cond > span:not(.elotip){", ".modal-analysis .akt-cond span{"],
+  ['hairline: a bare 0.33px back in .aform-tabs (review gap)', '.aform-tabs{ display:flex; gap:4px; background:var(--mc-track); border:var(--ma-hw,0.33px) solid var(--line);', '.aform-tabs{ display:flex; gap:4px; background:var(--mc-track); border:0.33px solid var(--line);'],
 ];
 // "two tabs swapped" is a structural mutant: swap the News and Playing style menu rows.
 function apply(src, name, from, to) {
@@ -107,15 +119,17 @@ function apply(src, name, from, to) {
   if (src.split(from).length !== 2) return null;
   return src.replace(from, to);
 }
-const SUITES = ['test-ten314-modal-frame.mjs', 'test-ten314-sheet.mjs', 'test-ten314-gate.mjs', 'test-ten314-components.mjs'];
+const SUITES = ['test-ten314-modal-frame.mjs', 'test-ten314-sheet.mjs', 'test-ten314-gate.mjs', 'test-ten314-components.mjs', 'test-ten314-tokens.mjs'];
 let survived = 0;
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'ten314-mut-'));
-for (const [name, from, to] of MUTANTS) {
-  const m = apply(html, name, from, to);
+for (const [name, from, to, target] of MUTANTS) {
+  // target 'css' = the mutant applies to match-analysis-tokens.css (TEN314_CSS), else to the page (TEN314_HTML).
+  const m = apply(target === 'css' ? css : html, name, from, to);
   if (m == null) { console.error(`✖ anchor not found exactly once: ${name}`); survived++; continue; }
-  const file = path.join(dir, 'm.html');
+  const file = path.join(dir, target === 'css' ? 'm.css' : 'm.html');
   fs.writeFileSync(file, m);
-  const r = spawnSync(process.execPath, ['--test', ...SUITES.map(f => path.join(ROOT, f))], { env: Object.assign({}, process.env, { TEN314_HTML: file }), encoding: 'utf8' });
+  const env = Object.assign({}, process.env, target === 'css' ? { TEN314_CSS: file } : { TEN314_HTML: file });
+  const r = spawnSync(process.execPath, ['--test', ...SUITES.map(f => path.join(ROOT, f))], { env, encoding: 'utf8' });
   if (r.status === 0) { console.error(`✖ SURVIVED: ${name}`); survived++; } else console.log(`✔ caught: ${name}`);
 }
 fs.rmSync(dir, { recursive: true, force: true });

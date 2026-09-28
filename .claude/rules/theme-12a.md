@@ -61,7 +61,7 @@ Design-file values with no HANDOFF name (the promo icon tile): `promo-tile #1721
   the pipeline publishes has exactly one `<link rel="icon" type="image/png" href="assets/ring-transparent.png">`
   in `<head>`. Locked by `test-ten285-brand.mjs`.
 - **Hairlines** are written `0.33px` — except the **whole Match analysis modal**, which uses the design's `1px`
-  from its token file (founder 2026-09-28, TEN-314 70fb039e; see `modal-analysis.md`). Compared with the design **in the same browser at the same DPR** they are
+  from its token file (`--ma-hw`; founder 2026-09-28, TEN-314 70fb039e; see `modal-analysis.md`). Compared with the design **in the same browser at the same DPR** they are
   identical (1px at DPR 1; 0.5px computed = 1 device px at DPR 2 — measure with
   `--force-device-scale-factor`, never CDP-emulated DPR). No pseudo-element workaround (TEN-286 item 19, closed).
 
