@@ -459,6 +459,10 @@ function splits(matches) {
       brkPct: pct(t.obpFaced - t.obpSaved, t.osvGames),
       aPct: r1(t.pts ? t.aces / t.pts : null),
       dfPct: r1(t.pts ? t.dfs / t.pts : null),
+      // TEN-327: the house Serve rating's aces − double faults terms are PER MATCH (the season
+      // form of the per-match counts), over the same MS matches the percentages come from.
+      acesPM: MS ? Math.round(t.aces / MS * 100) / 100 : null,
+      dfPM: MS ? Math.round(t.dfs / MS * 100) / 100 : null,
       firstInPct: r1(t.pts ? t.firstIn / t.pts : null),
       firstWonPct: r1(t.firstIn ? t.firstWon / t.firstIn : null),
       secondWonPct: r1(secondPts > 0 ? t.secondWon / secondPts : null),

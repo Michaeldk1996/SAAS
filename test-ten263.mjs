@@ -19,6 +19,8 @@ import { gzipSync } from 'node:zlib';
 const HERE = dirname(fileURLToPath(import.meta.url));
 const require = createRequire(import.meta.url);
 const html = readFileSync(join(HERE, 'bsp-consult-dashboard.html'), 'utf8');
+// TEN-327: the sheet's Serve / Return ratings come from the shared helper the page loads by <script src>.
+const HOUSE_RATINGS_SRC = readFileSync(join(HERE, 'house-ratings.js'), 'utf8');
 
 function slice(name) {
   const start = html.indexOf(`function ${name}(`);
@@ -60,6 +62,7 @@ function sandbox() {
     function styleMeetRowsFor(){ return []; }
     function openPlayerProfileFromMatch(){}
     function aGoTab(){}
+    const HouseRatings = (function(){ const window = {}; ${HOUSE_RATINGS_SRC}; return window.HouseRatings; })();
     ${PS_TOUR_META_SRC[0]}
     ${HELPERS.map(slice).join('\n')}
     ${sliceBlock()}

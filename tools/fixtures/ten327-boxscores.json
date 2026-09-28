@@ -1,0 +1,419 @@
+{
+ "_source": "TEN-327 test fixture: the whole-match box scores (setstats/{ek}.json `match` node, deployed build 5ab8b107, fetched 2026-09-28) the formula-unification doc measured. Hand-copied; nothing regenerates it.",
+ "matches": {
+  "12145144": {
+   "subject": "J. Sinner",
+   "subjectKey": 2072,
+   "p1Key": 2072,
+   "p2Key": 1980,
+   "match": {
+    "p1": {
+     "Service:Aces": 15,
+     "Service:Double Faults": 2,
+     "Service:1st serve percentage": 64,
+     "Service:1st serve points won": 80.5,
+     "Service:2nd serve points won": 65.3,
+     "Service:Break Points Saved": 100,
+     "Return:1st return points won": 27.6,
+     "Return:2nd return points won": 41.2,
+     "Return:Break Points Converted": 40,
+     "Points:Winners": 58,
+     "Points:Unforced errors": 25,
+     "Points:Total Points Won": 52.7,
+     "Points:Service Points Won": 75,
+     "Points:Return Points Won": 30.9,
+     "Games:Service games won": 100,
+     "Games:Return games won": 9.5,
+     "Points:Net points won": 78.3,
+     "raw": {
+      "Service:1st serve points won": {
+       "won": 70,
+       "total": 87
+      },
+      "Service:2nd serve points won": {
+       "won": 32,
+       "total": 49
+      },
+      "Service:Break Points Saved": {
+       "won": 1,
+       "total": 1
+      },
+      "Return:1st return points won": {
+       "won": 29,
+       "total": 105
+      },
+      "Return:2nd return points won": {
+       "won": 14,
+       "total": 34
+      },
+      "Return:Break Points Converted": {
+       "won": 2,
+       "total": 5
+      },
+      "Points:Total Points Won": {
+       "won": 145,
+       "total": 275
+      },
+      "Points:Service Points Won": {
+       "won": 102,
+       "total": 136
+      },
+      "Points:Return Points Won": {
+       "won": 43,
+       "total": 139
+      },
+      "Games:Service games won": {
+       "won": 22,
+       "total": 22
+      },
+      "Games:Return games won": {
+       "won": 2,
+       "total": 21
+      },
+      "Points:Net points won": {
+       "won": 18,
+       "total": 23
+      }
+     }
+    },
+    "p2": {
+     "Service:Aces": 17,
+     "Service:Double Faults": 2,
+     "Service:1st serve percentage": 76,
+     "Service:1st serve points won": 72.4,
+     "Service:2nd serve points won": 58.8,
+     "Service:Break Points Saved": 60,
+     "Return:1st return points won": 19.5,
+     "Return:2nd return points won": 34.7,
+     "Return:Break Points Converted": 0,
+     "Points:Winners": 49,
+     "Points:Unforced errors": 45,
+     "Points:Total Points Won": 47.3,
+     "Points:Service Points Won": 69.1,
+     "Points:Return Points Won": 25,
+     "Games:Service games won": 90.5,
+     "Games:Return games won": 0,
+     "Points:Net points won": 71.4,
+     "raw": {
+      "Service:1st serve points won": {
+       "won": 76,
+       "total": 105
+      },
+      "Service:2nd serve points won": {
+       "won": 20,
+       "total": 34
+      },
+      "Service:Break Points Saved": {
+       "won": 3,
+       "total": 5
+      },
+      "Return:1st return points won": {
+       "won": 17,
+       "total": 87
+      },
+      "Return:2nd return points won": {
+       "won": 17,
+       "total": 49
+      },
+      "Return:Break Points Converted": {
+       "won": 0,
+       "total": 1
+      },
+      "Points:Total Points Won": {
+       "won": 130,
+       "total": 275
+      },
+      "Points:Service Points Won": {
+       "won": 96,
+       "total": 139
+      },
+      "Points:Return Points Won": {
+       "won": 34,
+       "total": 136
+      },
+      "Games:Service games won": {
+       "won": 19,
+       "total": 21
+      },
+      "Games:Return games won": {
+       "won": 0,
+       "total": 22
+      },
+      "Points:Net points won": {
+       "won": 20,
+       "total": 28
+      }
+     }
+    }
+   }
+  },
+  "12166089": {
+   "subject": "C. Alcaraz",
+   "subjectKey": 2382,
+   "p1Key": 2382,
+   "p2Key": 2832,
+   "match": {
+    "p1": {
+     "Service:Aces": 3,
+     "Service:Double Faults": 3,
+     "Service:1st serve percentage": 64,
+     "Service:1st serve points won": 69,
+     "Service:2nd serve points won": 45.8,
+     "Service:Break Points Saved": 50,
+     "Return:1st return points won": 38.3,
+     "Return:2nd return points won": 50,
+     "Return:Break Points Converted": 37.5,
+     "Points:Winners": 45,
+     "Points:Unforced errors": 33,
+     "Points:Total Points Won": 51,
+     "Points:Service Points Won": 60.6,
+     "Points:Return Points Won": 42.9,
+     "Games:Service games won": 77.8,
+     "Games:Return games won": 30,
+     "raw": {
+      "Service:1st serve points won": {
+       "won": 29,
+       "total": 42
+      },
+      "Service:2nd serve points won": {
+       "won": 11,
+       "total": 24
+      },
+      "Service:Break Points Saved": {
+       "won": 2,
+       "total": 4
+      },
+      "Return:1st return points won": {
+       "won": 18,
+       "total": 47
+      },
+      "Return:2nd return points won": {
+       "won": 15,
+       "total": 30
+      },
+      "Return:Break Points Converted": {
+       "won": 3,
+       "total": 8
+      },
+      "Points:Total Points Won": {
+       "won": 73,
+       "total": 143
+      },
+      "Points:Service Points Won": {
+       "won": 40,
+       "total": 66
+      },
+      "Points:Return Points Won": {
+       "won": 33,
+       "total": 77
+      },
+      "Games:Service games won": {
+       "won": 7,
+       "total": 9
+      },
+      "Games:Return games won": {
+       "won": 3,
+       "total": 10
+      }
+     }
+    },
+    "p2": {
+     "Service:Aces": 4,
+     "Service:Double Faults": 0,
+     "Service:1st serve percentage": 61,
+     "Service:1st serve points won": 61.7,
+     "Service:2nd serve points won": 50,
+     "Service:Break Points Saved": 62.5,
+     "Return:1st return points won": 31,
+     "Return:2nd return points won": 54.2,
+     "Return:Break Points Converted": 50,
+     "Points:Winners": 24,
+     "Points:Unforced errors": 9,
+     "Points:Total Points Won": 49,
+     "Points:Service Points Won": 57.1,
+     "Points:Return Points Won": 39.4,
+     "Games:Service games won": 70,
+     "Games:Return games won": 22.2,
+     "raw": {
+      "Service:1st serve points won": {
+       "won": 29,
+       "total": 47
+      },
+      "Service:2nd serve points won": {
+       "won": 15,
+       "total": 30
+      },
+      "Service:Break Points Saved": {
+       "won": 5,
+       "total": 8
+      },
+      "Return:1st return points won": {
+       "won": 13,
+       "total": 42
+      },
+      "Return:2nd return points won": {
+       "won": 13,
+       "total": 24
+      },
+      "Return:Break Points Converted": {
+       "won": 2,
+       "total": 4
+      },
+      "Points:Total Points Won": {
+       "won": 70,
+       "total": 143
+      },
+      "Points:Service Points Won": {
+       "won": 44,
+       "total": 77
+      },
+      "Points:Return Points Won": {
+       "won": 26,
+       "total": 66
+      },
+      "Games:Service games won": {
+       "won": 7,
+       "total": 10
+      },
+      "Games:Return games won": {
+       "won": 2,
+       "total": 9
+      }
+     }
+    }
+   }
+  },
+  "12166157": {
+   "subject": "D. Medvedev",
+   "subjectKey": 1093,
+   "p1Key": 1093,
+   "p2Key": 2227,
+   "match": {
+    "p1": {
+     "Service:Aces": 18,
+     "Service:Double Faults": 4,
+     "Service:1st serve percentage": 62,
+     "Service:1st serve points won": 79.4,
+     "Service:2nd serve points won": 50,
+     "Service:Break Points Saved": 83.3,
+     "Return:1st return points won": 22,
+     "Return:2nd return points won": 51.4,
+     "Return:Break Points Converted": 42.9,
+     "Points:Total Points Won": 52.7,
+     "Points:Service Points Won": 68.3,
+     "Points:Return Points Won": 34.1,
+     "Games:Service games won": 93.8,
+     "Games:Return games won": 21.4,
+     "raw": {
+      "Service:1st serve points won": {
+       "won": 50,
+       "total": 63
+      },
+      "Service:2nd serve points won": {
+       "won": 19,
+       "total": 38
+      },
+      "Service:Break Points Saved": {
+       "won": 5,
+       "total": 6
+      },
+      "Return:1st return points won": {
+       "won": 11,
+       "total": 50
+      },
+      "Return:2nd return points won": {
+       "won": 18,
+       "total": 35
+      },
+      "Return:Break Points Converted": {
+       "won": 3,
+       "total": 7
+      },
+      "Points:Total Points Won": {
+       "won": 98,
+       "total": 186
+      },
+      "Points:Service Points Won": {
+       "won": 69,
+       "total": 101
+      },
+      "Points:Return Points Won": {
+       "won": 29,
+       "total": 85
+      },
+      "Games:Service games won": {
+       "won": 15,
+       "total": 16
+      },
+      "Games:Return games won": {
+       "won": 3,
+       "total": 14
+      }
+     }
+    },
+    "p2": {
+     "Service:Aces": 10,
+     "Service:Double Faults": 1,
+     "Service:1st serve percentage": 59,
+     "Service:1st serve points won": 78,
+     "Service:2nd serve points won": 48.6,
+     "Service:Break Points Saved": 57.1,
+     "Return:1st return points won": 20.6,
+     "Return:2nd return points won": 50,
+     "Return:Break Points Converted": 16.7,
+     "Points:Total Points Won": 47.3,
+     "Points:Service Points Won": 65.9,
+     "Points:Return Points Won": 31.7,
+     "Games:Service games won": 78.6,
+     "Games:Return games won": 6.3,
+     "raw": {
+      "Service:1st serve points won": {
+       "won": 39,
+       "total": 50
+      },
+      "Service:2nd serve points won": {
+       "won": 17,
+       "total": 35
+      },
+      "Service:Break Points Saved": {
+       "won": 4,
+       "total": 7
+      },
+      "Return:1st return points won": {
+       "won": 13,
+       "total": 63
+      },
+      "Return:2nd return points won": {
+       "won": 19,
+       "total": 38
+      },
+      "Return:Break Points Converted": {
+       "won": 1,
+       "total": 6
+      },
+      "Points:Total Points Won": {
+       "won": 88,
+       "total": 186
+      },
+      "Points:Service Points Won": {
+       "won": 56,
+       "total": 85
+      },
+      "Points:Return Points Won": {
+       "won": 32,
+       "total": 101
+      },
+      "Games:Service games won": {
+       "won": 11,
+       "total": 14
+      },
+      "Games:Return games won": {
+       "won": 1,
+       "total": 16
+      }
+     }
+    }
+   }
+  }
+ }
+}

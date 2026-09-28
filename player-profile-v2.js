@@ -8490,9 +8490,10 @@
   // block; api-tennis only began populating the statistics block in 2024.
   //
   // WHAT WE DO NOT HOLD, and why each dashes rather than being estimated:
-  //  * Serve rating / Return rating — the repo's own definitions
-  //    (dna-apitennis-ratings.js) need hold% and return-games-won%, which this
-  //    per-match store does not carry. Dashed, never a partial sum.
+  //  * (Serve rating / Return rating used to be listed here as "needs hold%". The
+  //    store's `raw` carries Games:Service/Return games won at 99.9% of sides, so both
+  //    are now the house ratings from house-ratings.js — TEN-327, the same helper as
+  //    the Match stats sheet. A missing component still dashes, never a partial sum.)
   //  * Point FRACTIONS under each value — NOT because the feed withholds them.
   //    Measured against the committed floor, `raw` carries a won/total pair for
   //    TWELVE of the 17 fields: the four serve/return rates, the three Points:*
@@ -8517,7 +8518,7 @@
   // match and dashed on null like any other field, per the founder's Q2 ruling.
   var SHEET_SECTIONS = [
     { title: 'Service', rows: [
-      { label: 'Serve rating', held: false, why: 'rating formula needs hold%' },
+      { label: 'Serve rating', derived: 'serveRating', kind: 'rating' },
       { label: 'Aces', field: 'Service:Aces', kind: 'count' },
       { label: 'Double faults', field: 'Service:Double Faults', kind: 'count', lowerBetter: true },
       { label: '1st serve %', field: 'Service:1st serve percentage', kind: 'pct' },
@@ -8526,7 +8527,7 @@
       { label: 'Break points saved', field: 'Service:Break Points Saved', kind: 'pct' }
     ] },
     { title: 'Return', rows: [
-      { label: 'Return rating', held: false, why: 'rating formula needs return-games-won%' },
+      { label: 'Return rating', derived: 'returnRating', kind: 'rating' },
       { label: '1st return points won', field: 'Return:1st return points won', kind: 'pct' },
       { label: '2nd return points won', field: 'Return:2nd return points won', kind: 'pct' },
       { label: 'Break points converted', field: 'Return:Break Points Converted', kind: 'pct' }
@@ -8638,6 +8639,12 @@
   }
   function sheetValue(row, mine, theirs) {
     if (row.held === false) return null;
+    if (row.derived === 'serveRating' || row.derived === 'returnRating') {
+      var H = (typeof window !== 'undefined' && window.HouseRatings) || null;
+      if (!H || !mine) return null;
+      var hr = H.fromBoxSide(mine);
+      return row.derived === 'serveRating' ? hr.serve.v : hr.ret.v;
+    }
     if (row.derived === 'spw') return spwPct(mine);
     if (row.derived === 'rpw') return rpwPct(mine, theirs);
     return num(mine && mine[row.field]);
@@ -8921,7 +8928,7 @@
         'a mis-oriented sheet would put the opponent’s numbers under this player’s name.';
     } else {
       note = held + ' of ' + total + ' rows held for this match. Serve rating and Return rating ' +
-        'need hold% and return-games-won%, which the per-match feed does not carry. Service and ' +
+        'are our house sums of the ATP leaderboard components, built from this match’s counts. Service and ' +
         'Return points won are composed from the serve rates on this row. Dominance ratio uses ' +
         'our own definition, return points won over service points lost. Any other dash means ' +
         'the feed published no value for this match — Winners, unforced errors and net points ' +

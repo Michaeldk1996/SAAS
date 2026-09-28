@@ -128,6 +128,13 @@ this file wins.
   service points, a 10-point warm-up floor and missing-as-0 — a missing component now shows "—") and the **Edge model**
   value layers, whose return divisor is **re-fitted** to the new scale (report the re-fit before it goes live).
   **Test:** one shared helper computes each rating; a grep finds no second implementation.
+  - **Built (TEN-327):** the helper is `house-ratings.js` (dashboard `<script src>`, required by `h2h-model`);
+    `tools/test-ten327-house-ratings.js` locks every surface on the doc's three box scores.
+  - **Edge model — STAGED, not live (founder 2026-09-28):** `h2h-model/config.js` ships `ratingFormula: 'legacy'`
+    on layers #9 and #10; `'house'` (re-fit return divisor 16.9) goes live only when the founder confirms the
+    30-day report on TEN-327 (`tools/ten327-refit-report.js`). **Test:** `test-ten327-house-ratings.js` fails on
+    a flip. Before a flip, the **deployed** `career-splits.json` must carry `acesPM` / `dfPM` (the house serve
+    abstains without them).
 - **Under pressure** has **one builder**: the `surface-ratings.js` formula with its floors (50 BP faced, 50 BP chances,
   6 tiebreaks, 5 deciders; 3-of-4 → mean × 4; Challenger fold-in × 0.9), used by **every display** — the Edge Ratings
   table, Database boards, H2H rating row and all three style radars (DNA). The DNA builder's floor-less version and any

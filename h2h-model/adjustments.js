@@ -30,6 +30,8 @@
  */
 
 const config = require('./config');
+// TEN-327: the one house Serve / Return rating helper (also loaded by the dashboard).
+const HouseRatings = require('../house-ratings');
 const { surfaceCategory, rankOf, loadManualInputs, loadMcpBaseline } = require('./data');
 const { pinnacleSeries, bookSeries, preMatchCutoffMs } = require('./price');
 
@@ -92,10 +94,25 @@ function recentMatchesSorted(profile) {
 // surface). Mirrors the ATP serve/return leaderboards so Michael can sanity-
 // check a player's figure against atptour.com.
 
-// Serve rating = 1st-serve-in% + 1st-serve-won% + 2nd-serve-won%
-//              + service-games-held% + ace% − double-fault%.
+// Which serve / return formula the value layers use (TEN-327, founder 2026-09-28: "one formula
+// per stat name"). 'legacy' is the formula the model shipped with; 'house' is house-ratings.js,
+// the same helper every display surface uses. STAGED: config ships 'legacy' until the founder
+// confirms the re-fit calibration posted on TEN-327 — do not flip it without that.
+function ratingFormula(layer) {
+  const c = config.adjustments[layer];
+  return c && c.ratingFormula === 'house' ? 'house' : 'legacy';
+}
+
+// Serve rating. legacy = 1st-serve-in% + 1st-serve-won% + 2nd-serve-won%
+//              + service-games-held% + ace% − double-fault% (ace/DF per service point).
+// house  = the same four rates + aces/match − DFs/match (career-splits acesPM / dfPM), and
+//          any missing component → no rating (legacy counts a missing ace/DF as 0).
 function serveRatingRow(row) {
   if (!row) return null;
+  if (ratingFormula('serve') === 'house') {
+    return HouseRatings.serve({ firstIn: num(row.firstInPct), firstWon: num(row.firstWonPct), secondWon: num(row.secondWonPct),
+      svGames: num(row.hldPct), aces: num(row.acesPM), dfs: num(row.dfPM) }).v;
+  }
   const fi = num(row.firstInPct), fw = num(row.firstWonPct), sw = num(row.secondWonPct),
         hl = num(row.hldPct), a = num(row.aPct), df = num(row.dfPct);
   if (fi == null || fw == null || sw == null || hl == null) return null;
@@ -108,8 +125,12 @@ function serveRatingRow(row) {
 // faced/saved), so it folds into the base rating; still guarded by presence so a
 // row from an older splits build (or one lacking the field) degrades cleanly to
 // rpw + break rather than dropping to null.
+// house = 1st-return-won% + 2nd-return-won% + return-games-won% (brkPct) + BP-converted%.
 function returnRatingRow(row) {
   if (!row) return null;
+  if (ratingFormula('returnPressure') === 'house') {
+    return HouseRatings.ret({ ret1: num(row.ret1WonPct), ret2: num(row.ret2WonPct), retGames: num(row.brkPct), bpConv: num(row.bpConvPct) }).v;
+  }
   const rp = num(row.rpwPct), br = num(row.brkPct), bpc = num(row.bpConvPct);
   if (rp == null) return null;
   return rp + (br || 0) + (bpc || 0);
@@ -165,8 +186,10 @@ function serveSharedRow(row) {
 // it, so a hotter-than-season df% nudges the serve rating DOWN.
 const SERVE_IT_COMPONENTS = [
   { name: 'hold', row: (r) => r && num(r.hldPct), sign: 1,  minKey: 'hold', minDef: 8  }, // Games/Service games won -> hldPct
-  { name: 'ace',  row: (r) => r && num(r.aPct),   sign: 1,  minKey: 'ace',  minDef: 40 }, // Aces / service points   -> aPct
-  { name: 'df',   row: (r) => r && num(r.dfPct),  sign: -1, minKey: 'df',   minDef: 40 }, // Double Faults / svc pts  -> dfPct
+  { name: 'ace',  row: (r) => r && num(r.aPct),   sign: 1,  minKey: 'ace',  minDef: 40, // Aces / service points   -> aPct
+    houseRow: (r) => r && num(r.acesPM) },                                                // house: aces per match -> acesPM
+  { name: 'df',   row: (r) => r && num(r.dfPct),  sign: -1, minKey: 'df',   minDef: 40, // Double Faults / svc pts  -> dfPct
+    houseRow: (r) => r && num(r.dfPM) },                                                  // house: DFs per match    -> dfPM
 ];
 
 function inTournamentServeDelta(ctx, playerObj, splits, surfCat, bucket) {
@@ -185,6 +208,8 @@ function inTournamentServeDelta(ctx, playerObj, splits, surfCat, bucket) {
   // hold sums its own {won,total}; ace/df sum their raw counts over the service-
   // point denominator (svPts) — mirroring the season aPct/dfPct = aces|dfs / pts.
   const agg = { hold: { won: 0, total: 0 }, ace: { won: 0, total: 0 }, df: { won: 0, total: 0 } };
+  // TEN-327 house serve: aces / DFs deviate as per-match counts, so count the rounds they came from.
+  const perMatch = { ace: 0, df: 0 };
   for (const r of pRow.rounds) {
     const met = r && r.metrics;
     if (!met) continue;
@@ -197,8 +222,8 @@ function inTournamentServeDelta(ctx, playerObj, splits, surfCat, bucket) {
     }
     const sp = num(met.svPts);
     if (sp != null && sp > 0) {
-      if (Number.isFinite(met.aces)) { agg.ace.won += met.aces; agg.ace.total += sp; }
-      if (Number.isFinite(met.dfs))  { agg.df.won  += met.dfs;  agg.df.total  += sp; }
+      if (Number.isFinite(met.aces)) { agg.ace.won += met.aces; agg.ace.total += sp; perMatch.ace++; }
+      if (Number.isFinite(met.dfs))  { agg.df.won  += met.dfs;  agg.df.total  += sp; perMatch.df++; }
     }
   }
   const minR = num(cfg.minRounds) != null ? cfg.minRounds : 1;
@@ -224,8 +249,9 @@ function inTournamentServeDelta(ctx, playerObj, splits, surfCat, bucket) {
     const c = agg[comp.name];
     const floor = num(minSample[comp.minKey]) != null ? minSample[comp.minKey] : comp.minDef;
     if (!c || c.total < floor) continue;               // below min-sample => component self-hides (no fabrication)
-    const eventPct = 100 * c.won / c.total;
-    const season = blendedRating(splits, surfCat, bucket, comp.row);
+    const house = comp.houseRow && ratingFormula('serve') === 'house';
+    const eventPct = house ? c.won / perMatch[comp.name] : 100 * c.won / c.total;
+    const season = blendedRating(splits, surfCat, bucket, house ? comp.houseRow : comp.row);
     if (season == null) continue;                      // no season baseline => component self-hides
     const compNudge = clamp(w * comp.sign * (eventPct - season), -perCap, perCap);
     compSum += compNudge;
@@ -1007,8 +1033,11 @@ function returnPressure(ctx) {
   const effMag = Math.min(CEIL, baseMag * altMult);
   res.maxMagnitude = round4(effMag);
 
-  // Return ratings sit ~50-75; a 15-point gap is a decisive return edge.
-  const signal = clamp((r1 - r2) / 15, -1, 1);
+  // Return ratings: legacy (rpw% + break% + BP-conv%) sit ~70-130 and a 15-point gap is a
+  // decisive return edge; the house 4-part sits ~130-190 on a wider spread, so its divisor is
+  // re-fitted (config returnPressure.signalDivisor, TEN-327 — method and calibration on the ticket).
+  const div = (c.signalDivisor && num(c.signalDivisor[ratingFormula('returnPressure')])) || 15;
+  const signal = clamp((r1 - r2) / div, -1, 1);
   const speed = surfCat === 'Grass' ? 'fast' : surfCat === 'Clay' ? 'slow' : 'medium';
   const altPart = (alt != null && altMult < 1.0) ? `, ${Math.round(alt)}m x${altMult.toFixed(2)}` : '';
   // In-tournament top tier: note who it re-priced and off how many rounds.
@@ -1405,4 +1434,4 @@ function runAll(ctx) {
 
 // h2h + setDominance exported for unit tests (pure fns; today's live board is
 // all Tier 3, so the tier-1/2 + dominance paths can only be exercised directly).
-module.exports = { runAll, clamp, timingWeight, weather, h2h, setDominance, winnerUE, recentFormParts, qualityForm, fatigue, fatigueUnits, serve, inTournamentServeDelta, serveSharedRow, returnPressure, inTournamentReturnDelta, returnSharedRow };
+module.exports = { serveRatingRow, returnRatingRow, ratingFormula, runAll, clamp, timingWeight, weather, h2h, setDominance, winnerUE, recentFormParts, qualityForm, fatigue, fatigueUnits, serve, inTournamentServeDelta, serveSharedRow, returnPressure, inTournamentReturnDelta, returnSharedRow };

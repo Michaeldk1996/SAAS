@@ -6,6 +6,8 @@
 <title>Stennisfy — Dashboard</title>
 <link rel="icon" type="image/png" href="assets/ring-transparent.png">
 <script src="./analytics.js"></script>
+<!-- TEN-327: the one Serve / Return rating helper, read by the sheet, Tournament Report, Live tab and Player Profile. -->
+<script src="./house-ratings.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600;700&family=Hanken+Grotesk:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <!-- TEN-168 Series page: separate stylesheet (not inline) so JS/CSS-only edits
@@ -15105,11 +15107,11 @@ function fhCountCell(side, key, missing){
 // subtracted, as raw per-match counts) is the house formula ruled 2026-08-29 (TEN-103,
 // dna-apitennis-ratings.js / surface-ratings.js). Any component missing → a dash, and a
 // Return rating with 0 break-point chances is a dash (0/0 converted is not 0%).
-function fhRatingCell(parts, names){
-  const miss = parts.map((p, i) => p == null || !Number.isFinite(p) ? names[i] : null).filter(Boolean);
-  if (miss.length) return { v: null, txt: FH_DASHC, sub: '', title: 'Needs ' + miss.join(', ') };
-  const v = parts.reduce((s, x, i) => s + (names[i] === 'double faults' ? -x : x), 0);
-  return { v, txt: String(Math.round(v)), sub: '', title: '' };
+// The arithmetic lives in house-ratings.js (TEN-327: one helper per rating, every surface);
+// this only formats its result as a sheet cell.
+function fhRatingCell(h){
+  if (!h || h.v == null) return { v: null, txt: FH_DASHC, sub: '', title: 'Needs ' + ((h && h.missing) || []).join(', ') };
+  return { v: h.v, txt: String(Math.round(h.v)), sub: '', title: '' };
 }
 function fhSheetModel(joined){
   const A = joined ? joined.own : null, B = joined ? joined.opp : null;
@@ -15142,12 +15144,9 @@ function fhSheetModel(joined){
     const v = won / total * 100;
     return { v, txt: v.toFixed(1) + '%', sub: '(' + won + '/' + total + ')', title: PR_T, won, total };
   });
-  const SN = ['1st serve %', '1st serve points won', '2nd serve points won', 'service games won', 'aces', 'double faults'];
-  const RN = ['1st return points won', '2nd return points won', 'return games won', 'break points converted'];
   // A rating is built only from rates with their counts (a rate the feed sent bare is not enough).
-  const cv = c => c.total != null ? c.v : null;
-  const sr = [0, 1].map(i => fhRatingCell([cv(first[i]), cv(f1[i]), cv(f2[i]), cv(sgw[i]), aces[i].v, dfs[i].v], SN));
-  const rr = [0, 1].map(i => fhRatingCell([cv(r1[i]), cv(r2[i]), cv(rgw[i]), cv(bpc[i])], RN));
+  const HR = [A, B].map(s => HouseRatings.fromBoxSide(s));
+  const sr = HR.map(h => fhRatingCell(h.serve)), rr = HR.map(h => fhRatingCell(h.ret));
   // Dominance ratio = return points won % ÷ (100 − service points won %). Number only.
   const dr = [0, 1].map(i => (rpw[i].v != null && spw[i].v != null && spw[i].v < 100)
     ? { txt: (rpw[i].v / (100 - spw[i].v)).toFixed(2), title: 'Return points won ' + rpw[i].txt + ' ÷ (100 − service points won ' + spw[i].txt + ')' }
@@ -16174,11 +16173,9 @@ const MSHEET_ALWAYS_SHOW = new Set([
   'Points:Net points won',
 ]);
 
-// Serve Rating display label — OUR OWN four-component formula (1st serve % +
-// 1st serve points won % + 2nd serve points won % + service games won %). It
-// lands within ~9 points of the TNNS / ATP published figure but is NOT identical
-// to either, so it must not imply parity with an official rating. Founder will
-// decide final naming — this single const is the one place to change it.
+// Serve / Return Rating display labels. The ratings are the house formulas (house-ratings.js,
+// TEN-327) — our own sums of the ATP leaderboard components, NOT the ATP's published figure, so the
+// label must not imply parity with an official rating. This single const is the one place to rename.
 const SERVE_RATING_LABEL = 'Serve Rating';
 const RETURN_RATING_LABEL = 'Return Rating';
 
@@ -16216,52 +16213,6 @@ const MSHEET_ORDER = [
   ]],
 ];
 
-// Derived per-match stats computed client-side from the feed's real components
-// (never fabricated). Fail-closed: any component key ABSENT from the box score
-// collapses the whole derived stat to a dash. The one documented exception is
-// the ratings' zero-attempts rule — a component that is PRESENT but null (e.g.
-// Break Points Converted on a 0/0 no-break-points match) contributes ZERO, it
-// is not excluded (matches the reference implementation: 13 + 23 + 0 + 0 = 36).
-const MSHEET_SERVE_RATING_KEYS = [
-  'Service:1st serve percentage', 'Service:1st serve points won',
-  'Service:2nd serve points won', 'Games:Service games won',
-];
-const MSHEET_RETURN_RATING_KEYS = [
-  'Return:1st return points won', 'Return:2nd return points won',
-  'Return:Break Points Converted', 'Games:Return games won',
-];
-// Sum of the ROUNDED whole-number percentages (not the unrounded values — the
-// reference implementation rounds first, and unrounded gives a different total).
-// Returns null (→ dash) if any component key is missing from this box score.
-function msheetRatingSum(p, keys){
-  if (!p) return null;
-  let sum = 0;
-  for (const k of keys){
-    if (!(k in p)) return null;              // genuine gap → whole stat dashes
-    const v = p[k];
-    sum += Math.round(v == null ? 0 : v);    // present-but-null = 0-attempts → 0
-  }
-  return sum;
-}
-// Pressure Points: a player's share of ALL break points in the match =
-// (break points they saved on serve + break points they converted on return) /
-// (total break points in the match). The denominator (BP faced + BP had) is
-// identical for both players, so the two shares always sum to 100%. BP faced /
-// BP had come off the raw fractions (Break Points Saved total / Break Points
-// Converted total); a player with zero break points on that side simply carries
-// no raw entry there and contributes 0 to both numerator and denominator. Zero
-// break points in the whole match → null (dash), never 0%.
-function msheetPressure(p){
-  const raw = (p && p.raw) || {};
-  const sv = raw['Service:Break Points Saved'];      // {won: saved, total: faced}
-  const cv = raw['Return:Break Points Converted'];   // {won: converted, total: had}
-  const faced = sv ? sv.total : 0, saved = sv ? sv.won : 0;
-  const had   = cv ? cv.total : 0, conv  = cv ? cv.won : 0;
-  const den = faced + had;
-  if (den <= 0) return { pct: null, raw: null };
-  const num = saved + conv;
-  return { pct: Math.round((num / den) * 100), raw: { won: num, total: den } };
-}
 // Dominance Ratio: (A's return points won %) / (B's return points won %). The
 // two figures are reciprocal (multiply to 1). Undefined — dash both — if either
 // player's return points won % is missing or zero (no divide-by-zero).
@@ -25981,27 +25932,20 @@ function tourxOpenReport(name){ tourxState.section = 'reports'; tourxState.tour 
 // Shape a tournament-progression.json entry into per-player metric arrays +
 // derived round-reached, without inventing anything.
 // The four headline ratings are DERIVED per round from the raw components stored
-// in tournament-progression.json — never a direct feed key. Same definitions as
-// the Match-Stats modal (msheetDerived / msheetRatingSum / msheetPressure), just
-// fed from the progression JSON's per-round shape. Fail-closed: any missing
-// component collapses that rating to null (→ em dash), matching the modal.
+// in tournament-progression.json — never a direct feed key. Serve / Return ratings
+// are the house formulas (house-ratings.js, TEN-327 — the same helper as the Match
+// stats sheet), fed from the progression JSON's per-round shape. Fail-closed: any
+// missing component collapses that rating to null (→ em dash), matching the modal.
 const TOURX_DERIVED_KEYS = ['serveRating', 'returnRating', 'dominanceRatio', 'pressurePct'];
-function tourxFracPct(fr){ return (fr && fr.total) ? (fr.won / fr.total * 100) : null; }
 function tourxDerivedMetrics(m, oppM){
   m = m || {};
   const out = { serveRating: null, returnRating: null, dominanceRatio: null, pressurePct: null };
-  // Serve Rating = 1st serve % + 1st serve points won % + 2nd serve points won %
-  //              + service games won % (svHold). Sum of the rounded components.
-  const svHoldPct = (m.svHold && m.svHold.total) ? (m.svHold.won / m.svHold.total * 100) : null;
-  if (m.firstServePct != null && m.firstServeWonPct != null && m.secondServeWonPct != null && svHoldPct != null){
-    out.serveRating = Math.round(m.firstServePct) + Math.round(m.firstServeWonPct) + Math.round(m.secondServeWonPct) + Math.round(svHoldPct);
-  }
-  // Return Rating = 1st return won % + 2nd return won % + break points converted %
-  //               + return games won %.
-  const r1 = tourxFracPct(m.ret1), r2 = tourxFracPct(m.ret2), bc = tourxFracPct(m.bpConv), rg = tourxFracPct(m.retGames);
-  if (r1 != null && r2 != null && bc != null && rg != null){
-    out.returnRating = Math.round(r1) + Math.round(r2) + Math.round(bc) + Math.round(rg);
-  }
+  // Serve / Return Rating: the house 6-part / 4-part sums, unrounded (the card rounds once, at
+  // display). Progression holds 1st-in % and the 1st/2nd-won % as the feed's rates, not counts.
+  out.serveRating = HouseRatings.serve({ firstIn: m.firstServePct, firstWon: m.firstServeWonPct, secondWon: m.secondServeWonPct,
+    svGames: HouseRatings.pct(m.svHold), aces: m.aces, dfs: m.dfs }).v;
+  out.returnRating = HouseRatings.ret({ ret1: HouseRatings.pct(m.ret1), ret2: HouseRatings.pct(m.ret2),
+    retGames: HouseRatings.pct(m.retGames), bpConv: HouseRatings.pct(m.bpConv) }).v;
   // Dominance Ratio = (return points won %) / (service points LOST %). Reads
   // exactly the same as the modal's per-player ratio: a player's return points are
   // the opponent's service points, so this is (ret won %)/(100 − serve won %).
@@ -29536,7 +29480,8 @@ window.DatabaseTab = (function(){
     return: { label:'Return', rtg:'Rtg', rtgDec:0, node:'return', cols:[
       {h:'1RW%', full:'% 1st serve return points won', k:'return.ret1stWonPct', dec:1, pct:true},
       {h:'2RW%', full:'% 2nd serve return points won', k:'return.ret2ndWonPct', dec:1, pct:true},
-      {h:'RGW%', full:'% return points won', k:'return.rptWonPct', dec:1, pct:true},
+      // TEN-327: RGW% is the rating's 3rd term, return GAMES won (breakPct); it showed return points won.
+      {h:'RGW%', full:'% return games won', k:'return.breakPct', dec:1, pct:true},
       {h:'BPC%', full:'% break points converted', k:'return.bpConvPct', dec:1, pct:true}
     ]},
     up: { label:'Under pressure', rtg:'Rtg', rtgDec:0, node:'underPressure', cols:[
@@ -33547,9 +33492,9 @@ function renderVals(){
     return twoSided(label,a,b,a===null?'':String(a),b===null?'':String(b),'','','count',name);
   };
 
-  // Ratings use the model's own layer-9 / layer-10 formulas on this match's box
-  // score (live-tab.js), so the Live tab and the model cannot diverge. Under the
-  // sample floor a rating dashes rather than printing a noisy figure.
+  // Ratings are the house Serve / Return ratings (house-ratings.js via live-tab.js, TEN-327) on
+  // this match's box score — the same helper as the Match stats sheet. No sample floor; a missing
+  // component dashes.
   const r0=v=>v==null?null:Math.round(v);
   const svRat=p=>[r0(lf?lf.serveRating(idx,pA,p||per).rating:null),r0(lf?lf.serveRating(idx,pB,p||per).rating:null)];
   const rtRat=p=>[r0(lf?lf.returnRating(idx,pA,p||per).rating:null),r0(lf?lf.returnRating(idx,pB,p||per).rating:null)];

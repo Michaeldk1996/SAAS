@@ -191,6 +191,10 @@ module.exports = {
     //    rating at a `universalPenalty` reliability factor. `maxMagnitude` is the
     //    5pp ceiling used by the over-cap check.
     serve:          { id: 9,  maxMagnitude: 0.05, gated: false,
+                      // TEN-327 (founder 2026-09-28): 'house' switches the serve rating to
+                      // house-ratings.js (aces/DFs per match, missing → no rating). STAGED —
+                      // stays 'legacy' until the founder confirms the calibration on TEN-327.
+                      ratingFormula: 'legacy',
                       baseScalePP: { Fast: 0.04, Medium: 0.025, Slow: 0.02 },
                       altitudeTiers: [
                         { minM: 1500, mult: 2.00 },
@@ -237,6 +241,15 @@ module.exports = {
     //      altitude: >=1500m x0.70, 800-1499m x0.82, 300-799m x0.90, <300m x1.00
     //    maxMagnitude (0.03) is the 3pp post-altitude ceiling / over-cap check.
     returnPressure: { id: 10, maxMagnitude: 0.03, gated: false,
+                      // TEN-327 (founder 2026-09-28): 'house' switches the return rating to the
+                      // house 4-part (1st/2nd return won + return games won + BP converted), and
+                      // the signal divisor to its re-fit (method + calibration on TEN-327).
+                      // STAGED — stays 'legacy' until the founder confirms that calibration.
+                      ratingFormula: 'legacy',
+                      // house 16.9 = 15 × SD(house gap 18.7) / SD(legacy gap 16.6) over 139 pairings
+                      // of the 30 days to 2026-09-28 (tools/ten327-refit-report.js): keeps the layer's
+                      // signal distribution (clamped at ±1: 35.3% legacy, 36.0% house).
+                      signalDivisor: { legacy: 15, house: 16.9 },
                       baseScalePP: { Fast: 0.015, Medium: 0.0175, Slow: 0.03 },
                       altitudeTiers: [
                         { minM: 1500, mult: 0.70 },

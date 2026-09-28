@@ -95,11 +95,14 @@ check('all three ruled fields are ordinary field reads in SHEET_SECTIONS', () =>
     assert.notStrictEqual(row.held, false,
       `"${label}" is pre-declared absent — it would dash even where the feed published a value`);
   }
-  // Control: the two rows that genuinely are NOT held must still say so, or this
-  // check would pass on a renderer that simply stopped declaring anything absent.
-  for (const label of ['Serve rating', 'Return rating']) {
+  // TEN-327: Serve rating / Return rating are no longer declared unheld (the store's raw
+  // Games:* counts carry hold% and return-games-won%); they are the house ratings. Their
+  // values are locked in tools/test-ten327-house-ratings.js. The held:false guard itself
+  // stays and is proved by the MUTATION CONTROL below.
+  for (const [label, derived] of [['Serve rating', 'serveRating'], ['Return rating', 'returnRating']]) {
     const row = rows.find((r) => r.label === label);
-    assert.strictEqual(row.held, false, `"${label}" is no longer declared unheld — the formula still needs hold%`);
+    assert.strictEqual(row.derived, derived, `"${label}" is not the house rating row`);
+    assert.notStrictEqual(row.held, false, `"${label}" is declared unheld again — TEN-327 computes it`);
   }
 });
 

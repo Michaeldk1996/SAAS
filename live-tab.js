@@ -454,49 +454,18 @@
   //     while the modal is open (the point log is kept off the pushed Realtime row
   //     to halve Slam-day egress — see doc `detail-view-cost`).
   //
-  // Ratings use the model's own layer-9 / layer-10 rating formulas (h2h-model/
-  //   adjustments.js) on match-to-date stats, RAW (no shrinkage — founder ruling);
-  //   under a sample floor a rating shows "warming up" instead of a noisy figure.
-  //   serve = 1stIn% + 1stWon% + 2ndWon% + hold% + ace% − df%
-  //   return = returnPtsWon% + returnGamesWon% + bpConversion%
+  // Ratings are the house Serve / Return ratings (house-ratings.js — TEN-327, founder
+  //   2026-09-28: one formula per stat name, the same helper as the Match stats sheet) on
+  //   match-to-date stats, RAW. No sample floor; a missing component is "—", never 0.
+  //   serve = 1stIn% + 1stWon% + 2ndWon% + hold% + aces − double faults (match counts)
+  //   return = 1stRetWon% + 2ndRetWon% + returnGamesWon% + bpConversion%
   //   Dominance Ratio = returnPtsWon% / (100 − servicePtsWon%)   (Bialik)
   // ══════════════════════════════════════════════════════════════════════════════
   const Detail = (function () {
-    // Sample floors (display only — flagged for founder confirmation in staging doc).
-    const SERVE_FLOOR_PTS  = 10;   // service points before a serve rating is shown
-    const RETURN_FLOOR_PTS = 10;   // return  points before a return rating is shown
     const PBP_MAX_AGE_MS   = 12_000;
 
-    // ── 0–10 rating scale (founder ruling TEN-107 2026-08-31) ────────────────────
-    // The raw serve/return ratings are summed-percentage figures (serve ~200–308,
-    // return ~17–129) — unreadable on a live card. Rescale each axis LINEARLY so
-    // 5.0 == the tour average and each 2.5 points == one tour standard deviation,
-    // with 0 and 10 pinned at ±2 SD (≈ the tour's 2.3rd/97.7th percentile) and
-    // clamped. Anchors are the real tour distribution measured off our own
-    // career-splits DB (career Best-of-3 row, complete-component rows, 2026-09-01):
-    //   SERVE  mean 263.3, sd 16.0 (n=232)  → 0↔231.3, 5.0↔263.3, 10↔295.3
-    //   RETURN mean  91.2, sd 16.2 (n=230)  → 0↔ 58.8, 5.0↔ 91.2, 10↔123.6
-    // (2 players with an incomplete return row — missing break-point-conversion —
-    //  give a degenerate low figure and are excluded from the return anchor only.)
-    // Same transform anchors the H2H-board rating when that migrates to 0–10, so
-    // the two surfaces never diverge (doc `rating-0-10-scale`). Live figures swing
-    // wider than the career board because a single match is one noisy sample of
-    // the same underlying rating — an in-match rating of 8.5 means "serving ~1.4
-    // SD above tour-average right now", which is the intended read.
-    const SCALE10 = {
-      serve:  { mean: 263.3, sd: 16.0 },
-      return: { mean:  91.2, sd: 16.2 },
-    };
-    function scale10(raw, axis) {
-      if (raw == null) return null;
-      const a = SCALE10[axis];
-      if (!a) return null;
-      const v = 5 + 2.5 * (raw - a.mean) / a.sd;
-      return Math.max(0, Math.min(10, v));
-    }
-
     let _ek = null;                // open match's event_key (null = closed)
-    let _tab = 'stats';            // stats | points | ratings | holdbreak
+    let _tab = 'stats';            // stats | points | holdbreak
     let _statPeriod = 'match';     // match | set1 | set2 …
     let _ptsSet = 1;               // Points tab set filter
     let _hbMetric = 'hold';        // Hold/Break tab metric: 'hold' | 'break' (default HOLD)
@@ -539,37 +508,29 @@
     }
     const g = (idx, pkey, per, name) => (idx[String(pkey)] && idx[String(pkey)][per] && idx[String(pkey)][per][String(name).toLowerCase()]) || null;
 
-    // Exact layer-9 / layer-10 rating rows on the box score for a given period.
+    // The box-score side in the match-stats shape house-ratings.js reads: rates as their
+    // {won,total} counts (rebuilt from the count, never the feed's rounded %), aces/DFs as counts.
+    const boxSide = (idx, pkey, per) => {
+      const c = (name) => { const r = g(idx, pkey, per, name); return r ? { won: num(r.won), total: num(r.total) } : null; };
+      const n = (name) => { const r = g(idx, pkey, per, name); return r ? num(r.value) : null; };
+      return {
+        'Service:Aces': n('Aces'), 'Service:Double Faults': n('Double Faults'),
+        raw: {
+          'Service:1st serve points won': c('1st serve points won'), 'Service:2nd serve points won': c('2nd serve points won'),
+          'Games:Service games won': c('Service games won'), 'Games:Return games won': c('Return games won'),
+          'Return:1st return points won': c('1st return points won'), 'Return:2nd return points won': c('2nd return points won'),
+          'Return:Break Points Converted': c('Break Points Converted'),
+        },
+      };
+    };
+    const house = () => (typeof window !== 'undefined' && window.HouseRatings) || null;
     function serveRating(idx, pkey, per) {
-      const fi = num(g(idx, pkey, per, '1st serve percentage')?.value);
-      const fw = num(g(idx, pkey, per, '1st serve points won')?.value);
-      const sw = num(g(idx, pkey, per, '2nd serve points won')?.value);
-      const hl = num(g(idx, pkey, per, 'Service games won')?.value);
-      const aces = num(g(idx, pkey, per, 'Aces')?.value);
-      const dfs  = num(g(idx, pkey, per, 'Double Faults')?.value);
-      if (fi == null || fw == null || sw == null || hl == null) return { rating: null };
-      // Service-points total for the sample floor + ace/df denominator. Prefer the
-      // "Service Points Won" row; fall back to (1st-serve-pts total + 2nd-serve-pts
-      // total) since some feed tiers omit the aggregate row while carrying the splits.
-      const fwTot = g(idx, pkey, per, '1st serve points won')?.total;
-      const swTot = g(idx, pkey, per, '2nd serve points won')?.total;
-      let spTotal = g(idx, pkey, per, 'Service Points Won')?.total;
-      if (spTotal == null && fwTot != null && swTot != null) spTotal = fwTot + swTot;
-      // Only gate on the floor when the sample size is actually known — with all four
-      // percentages present but no counts, hide-as-"warming up" would be wrong.
-      if (spTotal != null && !(spTotal >= SERVE_FLOOR_PTS)) return { rating: null, warming: true };
-      const aPct  = (spTotal > 0 && aces != null) ? (aces / spTotal) * 100 : 0;
-      const dfPct = (spTotal > 0 && dfs  != null) ? (dfs  / spTotal) * 100 : 0;
-      return { rating: fi + fw + sw + hl + aPct - dfPct };
+      const H = house();
+      return { rating: H ? H.fromBoxSide(boxSide(idx, pkey, per)).serve.v : null };
     }
     function returnRating(idx, pkey, per) {
-      const rp = num(g(idx, pkey, per, 'Return Points Won')?.value);
-      const br = num(g(idx, pkey, per, 'Return games won')?.value);
-      const bp = num(g(idx, pkey, per, 'Break Points Converted')?.value);
-      const rpTotal = g(idx, pkey, per, 'Return Points Won')?.total;
-      if (rp == null) return { rating: null };
-      if (rpTotal != null && !(rpTotal >= RETURN_FLOOR_PTS)) return { rating: null, warming: true };
-      return { rating: rp + (br || 0) + (bp || 0) };
+      const H = house();
+      return { rating: H ? H.fromBoxSide(boxSide(idx, pkey, per)).ret.v : null };
     }
     function dominance(idx, pkey, per) {
       const rpw = num(g(idx, pkey, per, 'Return Points Won')?.value);
@@ -848,135 +809,6 @@
       </div>`;
     }
 
-    // ── Ratings tab (headline exact; chart = per-game trajectory from pbp) ────────
-    function ratingsHtml(fix, idx) {
-      const p1 = pk(fix, 1), p2 = pk(fix, 2);
-      const s1 = serveRating(idx, p1, 'match'), s2 = serveRating(idx, p2, 'match');
-      const r1 = returnRating(idx, p1, 'match'), r2 = returnRating(idx, p2, 'match');
-      const n1 = esc(fix.event_first_player || 'P1'), n2 = esc(fix.event_second_player || 'P2');
-      // Headline is the 0–10 rescale (5.0 = tour average); see scale10() above.
-      const val = (o, axis) => {
-        const r10 = o.rating != null ? scale10(o.rating, axis) : null;
-        return r10 != null
-          ? `<span class="ltm-rate-val">${r10.toFixed(1)}</span>`
-          : `<span class="ltm-rate-val warm">${o.warming ? 'warming up' : '—'}</span>`;
-      };
-
-      const head = `
-        <div class="ltm-section">
-          <div class="ltm-rate-row" style="grid-template-columns:auto 1fr auto;">
-            ${val(s1, 'serve')}<span class="ltm-sn" style="text-align:center;">⚡ Serve rating</span>${val(s2, 'serve')}
-          </div>
-          <div class="ltm-rate-row" style="grid-template-columns:auto 1fr auto;">
-            ${val(r1, 'return')}<span class="ltm-sn" style="text-align:center;">⛨ Return rating</span>${val(r2, 'return')}
-          </div>
-        </div>`;
-
-      // Charts from pbp trajectory (points-based; see staging doc note).
-      const traj = trajectory(fix);
-      const chart = (title, key) => {
-        if (!traj || traj.length < 2) {
-          return `<div class="ltm-chart"><div class="ltm-chart-hd"><span class="ltm-chart-title">${title}</span></div>
-            <div class="ltm-note" style="padding:14px;">Chart appears once a few games are complete.</div></div>`;
-        }
-        return `<div class="ltm-chart">
-          <div class="ltm-chart-hd"><span class="ltm-chart-title">${title}</span>
-            <span class="ltm-chart-leg"><span><i style="background:var(--lt-p1)"></i>${n1}</span><span><i style="background:var(--lt-p2)"></i>${n2}</span></span></div>
-          ${lineChart(traj.map(t => t.g), traj.map(t => t[key + '1']), traj.map(t => t[key + '2']))}
-        </div>`;
-      };
-      return `${head}
-        <div class="ltm-rate-row" style="display:block;">
-          ${chart('Serve rating · trajectory', 'sv')}
-          ${chart('Return rating · trajectory', 'rt')}
-        </div>`;
-    }
-
-    // Per-game cumulative points-based trajectory reconstructed from pbp. The feed's
-    // point log carries no per-point serve-type/ace/DF, so this plots the points-based
-    // core (serve = svc-pts-won% + hold%; return = ret-pts-won% + ret-games-won%),
-    // NOT the full split rating used for the headline — flagged for founder ruling.
-    function trajectory(fix) {
-      const entry = _pbp[_ek];
-      if (!entry || !Array.isArray(entry.games) || !entry.games.length) return null;
-      const rank = { '0': 0, '15': 1, '30': 2, '40': 3, 'A': 4 };
-      let sp1 = 0, spw1 = 0, sg1 = 0, sgw1 = 0, rp1 = 0, rpw1 = 0, rg1 = 0, rgw1 = 0;
-      let sp2 = 0, spw2 = 0, sg2 = 0, sgw2 = 0, rp2 = 0, rpw2 = 0, rg2 = 0, rgw2 = 0;
-      const out = [];
-      let gi = 0;
-      for (const gm of entry.games) {
-        const pts = Array.isArray(gm.points) ? gm.points : [];
-        if (!pts.length) continue;
-        const p1serves = /first/i.test(String(gm.player_served || '')) || /first/i.test(String(gm.serve_lost || ''));
-        // winner of each point (first=+1 / second=+1)
-        let prevA = 0, prevB = 0, w1 = 0, w2 = 0;
-        // Point score → comparable rank: 0/15/30/40/A for games, or the raw integer
-        // for tiebreak points (e.g. "7 - 5"). Within a game the scale is consistent.
-        const rk = (s) => (s in rank) ? rank[s] : (Number.isFinite(+s) ? +s : null);
-        pts.forEach((pt, i) => {
-          const parts = String(pt.score || '').split('-').map(s => s.trim());
-          const na = rk(parts[0]) ?? prevA, nb = rk(parts[1]) ?? prevB;
-          let winner = 0;
-          if (i === pts.length - 1) winner = gameWinner(gm);      // final point → game winner
-          else if (na > prevA) winner = 1; else if (nb > prevB) winner = 2;
-          else if (na < prevA) winner = 2; else if (nb < prevB) winner = 1;
-          if (winner === 1) w1++; else if (winner === 2) w2++;
-          prevA = na; prevB = nb;
-        });
-        const total = w1 + w2;
-        const gw = gameWinner(gm);   // 1 or 2
-        if (p1serves) {
-          sp1 += total; spw1 += w1; sg1 += 1; if (gw === 1) sgw1 += 1;
-          rp2 += total; rpw2 += w2; rg2 += 1; if (gw === 2) rgw2 += 1;
-        } else {
-          sp2 += total; spw2 += w2; sg2 += 1; if (gw === 2) sgw2 += 1;
-          rp1 += total; rpw1 += w1; rg1 += 1; if (gw === 1) rgw1 += 1;
-        }
-        gi++;
-        const pctv = (w, t) => t > 0 ? (w / t) * 100 : 0;
-        out.push({
-          g: gi,
-          sv1: pctv(spw1, sp1) + pctv(sgw1, sg1), sv2: pctv(spw2, sp2) + pctv(sgw2, sg2),
-          rt1: pctv(rpw1, rp1) + pctv(rgw1, rg1), rt2: pctv(rpw2, rp2) + pctv(rgw2, rg2),
-        });
-      }
-      return out;
-    }
-    function gameWinner(gm) {
-      // Prefer the running game score delta; fall back to serve_lost/serve_winner.
-      const parts = String(gm.score || '').split('-').map(s => s.trim());
-      // `score` is the games tally AFTER this game — can't diff without prior; use flags.
-      if (gm.serve_lost) return /first/i.test(String(gm.player_served || '')) || /first/i.test(String(gm.serve_lost)) ? 2 : 1;
-      if (gm.serve_winner) return /first/i.test(String(gm.serve_winner)) ? 1 : 2;
-      // in-progress final game: attribute to server as a neutral default
-      return /first/i.test(String(gm.player_served || '')) ? 1 : 2;
-    }
-
-    // Minimal inline SVG line chart (two series). No library — same ethos as the read path.
-    function lineChart(xs, y1, y2) {
-      const W = 640, H = 150, PL = 30, PR = 10, PT = 10, PB = 20;
-      const all = y1.concat(y2).filter(v => Number.isFinite(v));
-      let lo = Math.min(...all), hi = Math.max(...all);
-      if (!Number.isFinite(lo)) { lo = 0; hi = 1; }
-      if (hi - lo < 1) { hi = lo + 1; }
-      const pad = (hi - lo) * 0.15; lo -= pad; hi += pad;
-      const n = xs.length;
-      const X = (i) => PL + (n <= 1 ? 0 : (i / (n - 1)) * (W - PL - PR));
-      const Y = (v) => PT + (1 - (v - lo) / (hi - lo)) * (H - PT - PB);
-      const path = (ys) => ys.map((v, i) => `${i ? 'L' : 'M'}${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(' ');
-      const dots = (ys, c) => ys.map((v, i) => `<circle cx="${X(i).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="2.4" fill="${c}"/>`).join('');
-      const gy = [lo + (hi - lo) * 0.25, lo + (hi - lo) * 0.5, lo + (hi - lo) * 0.75];
-      const grid = gy.map(v => `<line x1="${PL}" y1="${Y(v).toFixed(1)}" x2="${W - PR}" y2="${Y(v).toFixed(1)}" stroke="#6e7a93" stroke-width="1"/>
-        <text x="${PL - 5}" y="${(Y(v) + 3).toFixed(1)}" fill="#6e7a93" font-size="9" text-anchor="end">${Math.round(v)}</text>`).join('');
-      const xlab = xs.map((x, i) => (i % Math.ceil(n / 7 || 1) === 0)
-        ? `<text x="${X(i).toFixed(1)}" y="${H - 6}" fill="#6e7a93" font-size="9" text-anchor="middle">G${x}</text>` : '').join('');
-      return `<svg viewBox="0 0 ${W} ${H}" width="100%" preserveAspectRatio="none" style="display:block;">
-        ${grid}${xlab}
-        <path d="${path(y1)}" fill="none" stroke="var(--lt-p1)" stroke-width="2"/>
-        <path d="${path(y2)}" fill="none" stroke="var(--lt-p2)" stroke-width="2"/>
-        ${dots(y1, '#6a9af8')}${dots(y2, '#da6259')}
-      </svg>`;
-    }
 
     // ── modal shell + header ─────────────────────────────────────────────────────
     let _overlay = null;
@@ -1027,7 +859,6 @@
         <div class="ltm-tabs">
           <button class="ltm-tab ${_tab === 'stats' ? 'active' : ''}" data-tab="stats">Stats</button>
           <button class="ltm-tab ${_tab === 'points' ? 'active' : ''}" data-tab="points">Points</button>
-          <button class="ltm-tab ${_tab === 'ratings' ? 'active' : ''}" data-tab="ratings">Ratings</button>
           <button class="ltm-tab ${_tab === 'holdbreak' ? 'active' : ''}" data-tab="holdbreak">Break/Hold</button>
         </div>`;
     }
@@ -1037,7 +868,7 @@
       if (_tab === 'stats')     return statsHtml(fix, idx, periods);
       if (_tab === 'points')    return pointsHtml(fix);
       if (_tab === 'holdbreak') return holdbreakHtml(fix);
-      return ratingsHtml(fix, idx);
+      return statsHtml(fix, idx, periods);
     }
 
     function paint() {
@@ -1064,7 +895,7 @@
       modal.querySelector('.ltm-close')?.addEventListener('click', close);
       modal.querySelectorAll('.ltm-tab').forEach(b => b.addEventListener('click', () => {
         _tab = b.getAttribute('data-tab');
-        if (_tab === 'points' || _tab === 'ratings') ensurePbp();
+        if (_tab === 'points') ensurePbp();
         paint();
       }));
       modal.querySelectorAll('.ltm-toggle button[data-per]').forEach(b =>
@@ -1112,7 +943,7 @@
     // and refresh pbp in the background if the Points/Ratings tab is showing.
     function onBoard(matches) {
       if (_ek == null) return;
-      if (_tab === 'points' || _tab === 'ratings') ensurePbp();
+      if (_tab === 'points') ensurePbp();
       paint();
     }
 
