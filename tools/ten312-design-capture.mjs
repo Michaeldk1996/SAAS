@@ -11,6 +11,9 @@
 //   --only     capture just these screens (comma-separated names, no .png)
 //   --gpu      GPU raster (matches screens/ at t=0 better, not deterministic) — default is software raster
 //   --eval     debug: boot the design, print the JSON value of <js> (page context), exit — no captures
+//   --palette night   recolour the rendered design through the token map (README §3 + TEN-314 U1–U24, Night 24b) before
+//              each capture, so a diff against the tokenised build measures structure, not the ruled palette change
+//              (TEN-337). Every computed colour the map does not cover is listed per screen in the manifest (`unmapped`).
 //
 // Writes <outDir>/<name>.png for every screen + <outDir>/manifest.json (name → state driven, clip, size).
 // Regenerates nothing else. Chrome's profile lives in <outDir>/.chrome-profile and is removed on exit.
@@ -46,6 +49,33 @@ const EVAL = opt('--eval');
 // --gpu = GPU raster, which is what the reference screens/ were rasterised with (lower t=0 residual vs
 // screens/, identical at t=8) but NOT deterministic (~4.7k px of low-bit AA noise across 41 screens per rerun).
 const GPU = args.includes('--gpu');
+const PALETTE = opt('--palette') || null;
+if (PALETTE && PALETTE !== 'night') { console.error('--palette: only night is mapped'); process.exit(2); }
+// Source colour (as Chrome computes it) → Night 24b token value, per property class (text | fill | line). Taken from the
+// handoff README §3 table and match-analysis-tokens.css (U1–U24). Alpha ranges are README §3's.
+const NIGHT = {
+  t1: '#FFFFFF', t2: '#DDE0EA', t3: '#A3AABE', page: '#191B24', card: '#14151D', inner: '#181922', raised: '#1B1C27', hover: '#20222E',
+  sel: '#222431', fill: '#5B82E8', link: '#9DB3F2', pos: '#5CCB84', neg: '#E06266', amber: '#E8A84E', onFill: '#06070A',
+};
+const PALETTE_RULES = [
+  // [class, r, g, b, alpha lo, alpha hi, to]   class: text (color, svg stroke/fill) | fill (background) | line (borders)
+  ['text', 231, 233, 238, 1, 1, NIGHT.t1], ['text', 255, 255, 255, 1, 1, NIGHT.t1],
+  ['text', 170, 179, 200, 1, 1, NIGHT.t2], ['text', 139, 150, 181, 1, 1, NIGHT.t2],
+  ['text', 91, 104, 128, 1, 1, NIGHT.t3], ['text', 75, 86, 114, 1, 1, NIGHT.t3], ['text', 107, 117, 144, 1, 1, NIGHT.t3],
+  ['text', 106, 174, 255, 1, 1, NIGHT.link], ['text', 91, 155, 255, 1, 1, NIGHT.link], ['text', 130, 180, 255, 1, 1, '#B5C6F5'],
+  ['text', 61, 214, 140, 1, 1, NIGHT.pos], ['text', 224, 97, 111, 1, 1, NIGHT.neg], ['text', 232, 168, 78, 1, 1, NIGHT.amber],
+  ['text', 6, 7, 10, 1, 1, NIGHT.onFill],
+  ['fill', 14, 16, 25, 1, 1, NIGHT.card], ['fill', 10, 13, 20, 1, 1, NIGHT.card], ['fill', 12, 14, 22, 1, 1, NIGHT.inner], ['fill', 15, 20, 32, 1, 1, NIGHT.inner],
+  ['fill', 19, 22, 35, 1, 1, NIGHT.raised], ['fill', 6, 7, 10, 1, 1, NIGHT.inner], ['fill', 17, 20, 31, 1, 1, NIGHT.hover],
+  ['fill', 255, 255, 255, 0.04, 0.04, NIGHT.hover], ['fill', 91, 155, 255, 0.06, 0.22, NIGHT.sel],
+  ['fill', 106, 174, 255, 1, 1, NIGHT.fill], ['fill', 91, 155, 255, 1, 1, NIGHT.fill], ['fill', 61, 214, 140, 1, 1, NIGHT.pos],
+  ['fill', 224, 97, 111, 1, 1, NIGHT.neg], ['fill', 232, 168, 78, 1, 1, NIGHT.amber], ['fill', 91, 104, 128, 1, 1, NIGHT.t3],
+  ['fill', 255, 255, 255, 0.08, 0.08, 'rgba(255, 255, 255, 0.08)'], ['fill', 255, 255, 255, 0.15, 0.15, 'rgba(255, 255, 255, 0.15)'],
+  ['line', 255, 255, 255, 0.06, 0.09, 'rgba(255, 255, 255, 0.05)'], ['line', 255, 255, 255, 0.03, 0.05, 'rgba(255, 255, 255, 0.035)'],
+  ['line', 255, 255, 255, 0.10, 0.16, 'rgba(255, 255, 255, 0.1)'], ['line', 255, 255, 255, 0.18, 0.25, 'rgba(255, 255, 255, 0.2)'],
+  ['line', 91, 155, 255, 0.20, 0.45, 'rgba(157, 179, 242, 0.3)'], ['line', 106, 174, 255, 0.75, 0.75, 'rgba(157, 179, 242, 0.75)'],
+  ['line', 224, 97, 111, 0.35, 0.35, 'rgba(224, 98, 102, 0.35)'], ['line', 232, 168, 78, 0.35, 0.45, null],   // amber keeps its value
+];
 const DESIGN = 'Match Analysis Progression v1.dc.html';
 const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
 if (!OUT) { console.error('usage: node tools/ten312-design-capture.mjs <outDir> [--handoff dir] [--only a,b] [--eval js]'); process.exit(2); }
@@ -108,6 +138,8 @@ const SCREENS = [
   { name: '10b-weather-state-a-calm', steps: [tab('Weather', { maWxState: 'a' })] },
   { name: '10c-weather-state-d-indoor', steps: [tab('Weather', { maWxState: 'd' })] },
   { name: '10d-weather-state-e-unavailable', steps: [tab('Weather', { maWxState: 'e' })] },
+  // state b is drawn by the file's STATE switcher but has no screens/ PNG (TEN-337 diffs every designed state)
+  { name: '10e-weather-state-b-one-problem-day', steps: [tab('Weather', { maWxState: 'b' })] },
   { name: '11-odds', steps: [tab('Odds')] },
   { name: '11b-odds-novig-market-selected', steps: [tab('Odds', { maOddsNovig: true, maMarket: 'Game handicap' })] },
   { name: '12-market-edge-match-winner', steps: [tab('Market edge', { meView: 'winner' })] },
@@ -222,6 +254,7 @@ async function main() {
       await ev(`__cap.settle()`);
     }
     await ev(`document.fonts.ready`);
+    const unmapped = PALETTE ? await ev(`__cap.recolour(${JSON.stringify(PALETTE_RULES)}, ${JSON.stringify(NIGHT.page)})`) : undefined;
     const frame = await ev(sc.pop ? `__cap.framePop()` : `__cap.frameModal(${FIT_H}, ${!!sc.inModalOverlay})`);
     await sleep(120);
     await ev(`__cap.settle()`);
@@ -230,12 +263,12 @@ async function main() {
       clip: { x: clip.x, y: clip.y, width: clip.w, height: clip.h, scale: 1 } });
     fs.writeFileSync(path.join(OUT, sc.name + '.png'), Buffer.from(shot.data, 'base64'));
     const state = await ev(`__cap.stateSummary()`);
-    manifest.push({ name: sc.name, steps: sc.steps, state, frame, size: [clip.w, clip.h] });
+    manifest.push({ name: sc.name, steps: sc.steps, state, frame, size: [clip.w, clip.h], ...(unmapped ? { unmapped } : {}) });
     console.log(`${sc.name.padEnd(48)} ${clip.w}x${clip.h}`);
     await ev(`__cap.unframe()`);
   }
   fs.writeFileSync(path.join(OUT, 'manifest.json'), JSON.stringify({ design: path.join(HANDOFF, DESIGN), frozenNow: new Date(FROZEN_NOW).toISOString(), timezone: TZ,
-    raster: GPU ? 'gpu' : 'software', viewport: [VIEW_W, VIEW_H], fitH: FIT_H, popW: POP_W, screens: manifest }, null, 1));
+    raster: GPU ? 'gpu' : 'software', palette: PALETTE, viewport: [VIEW_W, VIEW_H], fitH: FIT_H, popW: POP_W, screens: manifest }, null, 1));
 }
 
 // In-page helpers. The component instance is found through React's fiber on a rendered node: walk up
@@ -277,6 +310,33 @@ const HELPERS = `window.__cap = (() => {
       if (!el) throw new Error('click: no element for ' + text + ' (' + leaves.length + ' matches)');
       el.click();
       return true;
+    },
+    // --- palette (--palette): every computed colour in the modal through the token map; the modal box and its layout
+    // wrappers (#0A0D14 as the modal surface) take the page token. Returns the colours no rule covered. ------------
+    recolour(rules, pageTo) {
+      const m = modal(), wrappers = new Set([m, m.children[0], m.children[1], ...(m.children[1] ? m.children[1].children : [])]);
+      const cls = { color: 'text', stroke: 'text', fill: 'text', backgroundColor: 'fill', borderTopColor: 'line', borderRightColor: 'line', borderBottomColor: 'line', borderLeftColor: 'line' };
+      const css = { color: 'color', stroke: 'stroke', fill: 'fill', backgroundColor: 'background-color', borderTopColor: 'border-top-color', borderRightColor: 'border-right-color', borderBottomColor: 'border-bottom-color', borderLeftColor: 'border-left-color' };
+      const miss = {}, hex = h => h[0] === '#' ? 'rgb(' + [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)).join(', ') + ')' : h;
+      const targets = new Set(rules.map(x => x[6]).filter(Boolean).map(hex).concat([hex(pageTo)]));   // inherited, already mapped
+      for (const el of [m, ...m.querySelectorAll('*')]) {
+        const cs = getComputedStyle(el), isSvg = el instanceof SVGElement;
+        for (const k in cls) {
+          if ((k === 'stroke' || k === 'fill') && !isSvg) continue;
+          if (k.startsWith('border') && !(parseFloat(cs[k.replace('Color', 'Width')]) > 0)) continue;
+          const v = cs[k] || '';
+          if (!/^rgba?[(]/.test(v)) continue;          // none, url(), currentcolor…
+          const mm = [v].concat(v.slice(v.indexOf('(') + 1, v.lastIndexOf(')')).split(',').map(Number));
+          const a = mm[4] == null ? 1 : +mm[4];
+          if (a === 0) continue;
+          let to;
+          if (k === 'backgroundColor' && wrappers.has(el) && +mm[1] === 10 && +mm[2] === 13 && +mm[3] === 20) to = pageTo;
+          else { const r = rules.find(x => x[0] === cls[k] && +mm[1] === x[1] && +mm[2] === x[2] && +mm[3] === x[3] && a >= x[4] - 1e-9 && a <= x[5] + 1e-9);
+            if (!r) { if (!targets.has(v)) miss[cls[k] + ' ' + v] = (miss[cls[k] + ' ' + v] || 0) + 1; continue; } to = r[6]; }
+          if (to) api._style(el, css[k] + ':' + to + ' !important;');
+        }
+      }
+      return miss;
     },
     // --- framing -------------------------------------------------------------------------------------
     _saved: [],

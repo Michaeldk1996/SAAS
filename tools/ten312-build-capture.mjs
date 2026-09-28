@@ -30,6 +30,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import net from 'node:net';
 import { fileURLToPath } from 'node:url';
+import { WX_NOW, WX_STATES, WX_COURT_SPEED } from './ten312-weather-states.mjs';
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const args = process.argv.slice(2);
@@ -51,7 +52,8 @@ const VIEW_W = 1370, VIEW_H = 745, FIT_H = 760;
 // our menu key → the design screen it compares with (default state of each tab)
 const TABS = [['key', '03-key-factors'], ['news', '04-news'], ['style', '05-playing-style'], ['form', '06-form'], ['h2h', '07-h2h'],
   ['matchstats', '08-match-stats-key-stats'], ['progression', '01-progression'], ['overview', '02-overview'], ['tournament', '09-tournament'],
-  ['weather', '10-weather-state-c'], ['odds', '11-odds'], ['marketedge', '12-market-edge-match-winner']];
+  ['weather', '10-weather-state-c', { wx: 'c' }], ['weather', '10b-weather-state-a-calm', { wx: 'a' }], ['weather', '10c-weather-state-d-indoor', { wx: 'd' }],
+  ['weather', '10d-weather-state-e-unavailable', { wx: 'e' }], ['weather', '10e-weather-state-b-one-problem-day', { wx: 'b' }], ['odds', '11-odds'], ['marketedge', '12-market-edge-match-winner']];
 
 // The design's demo match (DF demoMatch / README §9). Start = Jul 20, 2026 18:00 venue time (Washington, UTC−4).
 // It is COMPLETED (Sinner won 6-4 4-6 7-6), which is why the design's screens draw no header matchup strip.
@@ -147,8 +149,9 @@ async function main() {
   await c.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-reduced-motion', value: 'reduce' }] });
   await c.send('Page.addScriptToEvaluateOnNewDocument', { source: `(() => {
     const T = ${FROZEN_NOW}, RD = Date;
-    function D(...a) { if (!new.target) return new RD(T).toString(); return a.length ? new RD(...a) : new RD(T); }
-    D.prototype = RD.prototype; D.now = () => T; D.parse = RD.parse; D.UTC = RD.UTC;
+    const now = () => window.__capNow || T;   // a screen may move the frozen clock (Weather states: window.__capNow)
+    function D(...a) { if (!new.target) return new RD(now()).toString(); return a.length ? new RD(...a) : new RD(now()); }
+    D.prototype = RD.prototype; D.now = now; D.parse = RD.parse; D.UTC = RD.UTC;
     Object.defineProperty(D.prototype, 'constructor', { value: D }); window.Date = D;
     var _b; Object.defineProperty(window, 'BSP', { configurable: true, get() { return _b; }, set(v) { if (v) { const u = Promise.resolve({ emailVerified: true });
       v.requireVerified = () => u; v.requireAuth = () => u; } _b = v; } });
@@ -172,7 +175,7 @@ async function main() {
     s.textContent = '#analysisModal.ma-theme, #analysisModal.ma-theme[data-ma-theme]{' + ${JSON.stringify(Object.entries(FIXTURE_SOURCE_PALETTE).map(([k, v]) => k + ':' + v).join(';'))} + '}';
     document.head.appendChild(s); return true; })()`);
   else if (PALETTE) throw new Error('--palette: only "source" is known');
-  for (const [tab, ref] of TABS) {
+  for (const [tab, ref, st] of TABS) {
     if (ONLY && !ONLY.has(tab)) continue;
     if (tab === 'odds') {
       const seed = designOddsSeed();
@@ -180,6 +183,18 @@ async function main() {
         m.oddsMovement = { market: 'Match Winner', books: {}, chart: ${JSON.stringify(seed.chart)} }; m._oddsLoaded = true; m.startTs = ${JSON.stringify(seed.startTs)};
         AODDS_BOOKS.splice(0, AODDS_BOOKS.length, ...${JSON.stringify(seed.books)}); renderOddsSection(); return true; })()`);
     }
+    // Weather: the design's STATE switcher states, fed through the tab's own lazy-load caches (TEN-337). The clock
+    // moves to Mon Jul 20 10:00 venue time so the demo match's forecast is the current one (the design draws a live
+    // forecast on its completed demo match); the header keeps the completed layout.
+    await ev(`(() => { window.__capNow = ${st && st.wx ? WX_NOW : 0};
+      if (!window.__wxReload) window.__wxReload = wxOnMatchesReload;
+      wxOnMatchesReload = ${!!(st && st.wx)} ? () => {} : window.__wxReload;   // a board reload must not swap the fed index mid-capture
+      // the match the modal shows (_aWxMatch) may be an older copy than the pinned fixture after a reload: set both
+      for (const fx of [window.__fx, typeof _aWxMatch !== 'undefined' ? _aWxMatch : null]) {
+        if (fx) { if (${!!(st && st.wx)}) fx.courtSpeed = ${JSON.stringify(WX_COURT_SPEED)}; else delete fx.courtSpeed; } }
+      ${st && st.wx ? `_wxIndex = { v: 1, tours: { [window.__fx.tour]: ${JSON.stringify(WX_STATES[st.wx].entry)} } }; _wxIndexStale = false; _aWx = { m: null };
+      ${WX_STATES[st.wx].file ? `_wxFiles[${JSON.stringify(WX_STATES[st.wx].entry.file)}] = ${JSON.stringify(WX_STATES[st.wx].file)};` : ''}` : ''}
+      return true; })()`);
     await ev(`aShowTab(${JSON.stringify(tab)}), true`);
     await sleep(1500); await ev(settle);
     manifest.push(await shootModal(tab, ref));
@@ -241,16 +256,18 @@ async function main() {
       const h = m.getBoundingClientRect().height, w = ${REFW(ref)} || (h > ${FIT_H} ? 1296 : 1306);
       st(ov, 'width:' + (w + 64) + 'px !important; padding:32px !important;'); st(m, 'min-height:${Math.round(VIEW_H * 0.88)}px !important;');
       const r = m.getBoundingClientRect(), hd = m.querySelector('.ahead2').getBoundingClientRect(), nv = m.querySelector('.asidenav'), items = nv.querySelectorAll('.asidenav-item, .asidenav-download');
+      const nr = nv.getBoundingClientRect();
       const last = items[items.length - 1].getBoundingClientRect();
       return { x: r.left + scrollX, y: r.top + scrollY, w: Math.round(r.width), h: Math.round(r.height), naturalH: Math.round(h),
-        header: [0, 0, Math.round(r.width), Math.round(hd.bottom - r.top)], menu: [0, Math.round(hd.bottom - r.top), Math.round(nv.getBoundingClientRect().right - r.left), Math.round(last.bottom - r.top + 16)] };
+        header: [0, 0, Math.round(r.width), Math.round(hd.bottom - r.top)],
+        content: [Math.round(nr.right - r.left), Math.round(hd.bottom - r.top), Math.round(r.width), Math.round(r.height)], menu: [0, Math.round(hd.bottom - r.top), Math.round(nv.getBoundingClientRect().right - r.left), Math.round(last.bottom - r.top + 16)] };
     })()`);
     await sleep(120); await ev(settle);
     const shot = await c.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: true, fromSurface: true, clip: { x: frame.x, y: frame.y, width: frame.w, height: frame.h, scale: 1 } });
     fs.writeFileSync(path.join(OUT, ref + '.png'), Buffer.from(shot.data, 'base64'));
     console.log(`${tab.padEnd(12)} → ${ref.padEnd(30)} ${frame.w}x${frame.h}`);
     await ev(`(() => { for (const [e, s] of window.__saved) { if (s == null) e.removeAttribute('style'); else e.setAttribute('style', s); } return true; })()`);
-    return { tab, ref, size: [frame.w, frame.h], header: frame.header, menu: frame.menu };
+    return { tab, ref, size: [frame.w, frame.h], header: frame.header, menu: frame.menu, content: frame.content };
   }
 }
 main().then(() => { cleanup(); process.exit(0); }, (e) => { console.error('FAIL:', e.stack || e.message); cleanup(); process.exit(1); });

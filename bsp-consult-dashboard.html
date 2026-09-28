@@ -12818,7 +12818,7 @@ const WX_COPY = {
     tag: 'FROM TOURNAMENT', detail: 'Court speed · {tour} · {surface} court',
     usual: 'AS USUAL', slower: 'PLAYS SLOWER', quicker: 'PLAYS QUICKER',
     asUsual: 'Conditions should leave the court playing close to its usual {speed} ({label}).',
-    shifted: 'Base court speed is {speed} ({label}). Today’s {cause} should make it play {dir} than that.',
+    shifted: "Base court speed is {speed} ({label}). Today's {cause} should make it play {dir} than that.",   // ASCII ' as in the file (DF wxFor)
     causeSlower: 'damp air', causeQuicker: 'heat', dirSlower: 'slower', dirQuicker: 'quicker',
     windAdds: ' Wind adds variance on top.',
   },
@@ -13179,7 +13179,9 @@ function buildWeatherSection(m, entry, file, nowMs, arch){
   const chipTip = '<div style="font-size:12px; line-height:1.45; color:' + TC.text + '; max-width:280px;">' + escapeHtml(CP.thresholdsTip) + '</div>'
     + '<div style="display:flex; flex-direction:column; gap:3px; margin-top:8px; ' + mono + ' font-size:11px; color:' + TC.sub + ';">'
     + ['gusts', 'feels', 'rain'].map(k => '<span>' + escapeHtml(wxFmt(CP.thresholdsLine[k], T[k])) + '</span>').join('') + '</div>';
-  const chipRow = '<div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:18px;">'
+  // The design's STATE row minus its review switcher (DoD: switchers never ship). min-height = the row's rendered
+  // height in the file (the 28px seg buttons set it), so every block below sits where the design draws it (TEN-337).
+  const chipRow = '<div class="wx-chiprow" style="display:flex; align-items:center; gap:8px; flex-wrap:wrap; min-height:28px; margin-bottom:18px;">'
     + '<span class="wx-tbd" tabindex="0"' + tipAttr(chipTip) + ' style="margin-left:auto; ' + mono + ' font-size:9.5px; font-weight:600; letter-spacing:0.14em; color:' + C.amber + '; padding:4px 8px; border-radius:6px; border:' + hw1 + ' dashed ' + C.chipBd + '; white-space:nowrap;">' + escapeHtml(CP.thresholdsChip) + '</span></div>';
   const wrap = inner => '<div class="wx-tab" style="line-height:normal; color:' + C.text + ';">' + chipRow + inner + '</div>';
 

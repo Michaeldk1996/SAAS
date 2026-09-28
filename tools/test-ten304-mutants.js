@@ -64,6 +64,9 @@ const MUTANTS = [
   ['build archives the placeholder hour', "return Number.isFinite(ms) && ((ms % 86400000) + 86400000) % 86400000 !== 7200000 ? ms : NaN;", 'return Number.isFinite(ms) ? ms : NaN;', 'bw'],
   ['archive: the committed copy is ignored', 'const prevArch = mergeArchives(readCommittedArchive(path.join(outDir, v.archive)), ', 'const prevArch = mergeArchives(null, ', 'bwt'],
   ['archive: the older of two copies wins', '(Date.parse(y.fetchedAt) > Date.parse(x.fetchedAt) ? y : x)', '(Date.parse(y.fetchedAt) > Date.parse(x.fetchedAt) ? x : y)', 'bwt'],
+  // TEN-337 (re-verify against the TEN-312 design file)
+  ['chip row loses the file\'s STATE-row height', 'min-height:28px; margin-bottom:18px;', 'margin-bottom:18px;'],
+  ['pace copy apostrophe curly, not the file\'s ASCII', "Today's {cause} should make it play", 'Today\u2019s {cause} should make it play'],
   ['archived day tooltip shows the match row fetch time', '[TP.fetched, wxStamp(d.fetchedMs, vm.zone)]', '[TP.fetched, wxStamp(vm.fetchedMs, vm.zone)]'],
 ];
 let caught = 0;

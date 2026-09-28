@@ -466,3 +466,22 @@ test('api-tennis 02:00Z placeholder = no time: "MATCH · TBC", "time TBC", no he
   assert.ok(Number.isNaN(BW.defaultStartMs({ date: '2026-09-27', time: '04:00' })));
   assert.equal(BW.defaultStartMs({ date: '2026-09-27', time: '04:05' }), Date.parse('2026-09-27T02:05:00Z'));
 });
+
+// ── TEN-337 re-verification against Match Analysis Progression v1.dc.html (TEN-312) ──
+// Mutation: drop `min-height:28px` from the chip row (every block below moves 5 px up from where the file draws it).
+test('no STATE switcher ships, and the chip row keeps the file\'s STATE-row height (28px) so the strip sits where the design draws it', () => {
+  const html = render(file(() => ({})));
+  const row = elements(html, 'wx-chiprow');
+  assert.equal(row.length, 1);
+  assert.match(row[0].slice(0, row[0].indexOf('>')), /min-height:28px; margin-bottom:18px;/);
+  assert.equal(elements(row[0], 'wx-tbd').length, 1, 'the THRESHOLDS TBD chip stays (D8)');
+  for (const s of ['a · Calm week', 'b · One problem day', 'c · Match day red', 'd · Indoor', 'e · Unavailable', '>STATE<']) assert.ok(!html.includes(s), s);
+  const indoor = render(null, {}, M, { key: 'Basel', indoor: true, file: null });
+  assert.equal(elements(indoor, 'wx-chiprow').length, 1, 'indoor keeps the same row');
+});
+
+// Mutation: write the pace copy's apostrophe as ’ (U+2019) — the file (DF wxFor) and the spec §5 write ASCII '.
+test('pace copy quotes the file verbatim: "Today\'s heat should make it play quicker than that." (ASCII apostrophe)', () => {
+  const pace = elements(render(file((d, h) => d === '2026-09-27' && h === 16 ? { feels: 32, rainChance: 5 } : {})), 'wx-tile').find(t => /data-factor="pace"/.test(t));
+  assert.equal(text(elements(pace, 'wx-effect')[0]), "Base court speed is 1.17 (Fast). Today's heat should make it play quicker than that.");
+});
