@@ -514,10 +514,11 @@
   }
   function currentYear() { return String(new Date().getFullYear()); }
 
-  // A pre-match walkover GIVEN is neither a win nor a loss (founder ruling
-  // 2026-08-04, CLAUDE.md). recentForm carries the flag explicitly, so the
+  // A walkover — given or received — is neither a win nor a loss (founder ruling
+  // 2026-09-28, TEN-313, "as the ATP rules and the ATP website do"; supersedes the
+  // 2026-08-04 "received = win"). recentForm carries the flag explicitly, so the
   // ribbon and ledger honour it instead of re-deriving from an empty score.
-  function counts(m) { return !(m.walkover && !m.won); }
+  function counts(m) { return !m.walkover; }
 
   function formRate(rows) {
     var w = 0, l = 0;
@@ -1335,8 +1336,8 @@
    * ledger and the drill came to disagree about set counts before.
    *
    * DISPLAY ONLY. Run counting is untouched — calRuns() still applies the
-   * founder's walkover ruling (received = a win and stays in the sequence, given =
-   * neither and is stepped over), and this helper is not on that path.
+   * founder's walkover ruling (TEN-313: a walkover either way is neither a win nor
+   * a loss and is stepped over), and this helper is not on that path.
    *
    * A walkover has no score to suffix — nothing was played — so it REPLACES the
    * score rather than trailing it. Printing "— w/o" would read as a missing
@@ -4399,7 +4400,7 @@
           price: x.price != null ? x.price : null,
           oppPrice: x.oppPrice != null ? x.oppPrice : null,
           book: x.book || null, sheetId: x.sheetId || null,
-          retired: !!x.retired, walkover: !!x.walkover
+          retired: !!x.retired, walkover: !!(m.walkover || x.walkover)
         };
       });
       ms.sort(function (a, b) {
@@ -4407,7 +4408,8 @@
         return b.order - a.order;
       });
       var w = 0, l = 0;
-      ms.forEach(function (m) { if (m.res === 'W') w++; else if (m.res === 'L') l++; });
+      // TEN-313: a walkover (the row's own flag; 'WD' given, 'W' received) is not counted.
+      ms.forEach(function (m) { if (m.walkover) return; if (m.res === 'W') w++; else if (m.res === 'L') l++; });
       return { year: e.year, finish: e.finish || null, won: w, lost: l, matches: ms };
     }).sort(function (a, b) { return Number(b.year) - Number(a.year); });
   }
@@ -6154,9 +6156,9 @@
         // marker it has is an EMPTY result string (" - ") where no set was ever
         // played. recentForm does carry `walkover`, so it is preferred wherever
         // the ±0-day join reaches (66 of Zverev's 775 rows). Either signal sets
-        // this flag; calRuns() then applies the founder's ruling — a walkover
-        // RECEIVED is a win and stays in the sequence, a walkover GIVEN is
-        // neither and is stepped over without breaking the run.
+        // this flag; calRuns() then applies the founder's ruling (TEN-313) — a
+        // walkover either way is neither a win nor a loss and is stepped over
+        // without breaking the run.
         wo: !!(rf && rf.walkover) || !/\d/.test(String(r.result || '')),
         sheetId: r.date + '|' + (r.opponent || '')
       };
@@ -6413,16 +6415,16 @@
 
   // Win/loss runs over the dated sequence, oldest first.
   //
-  // Item 27 · the founder's walkover ruling is applied HERE and nowhere else: a
-  // walkover RECEIVED is a win (it arrives as won:true and is simply kept), a
-  // walkover GIVEN is neither a win nor a loss, so it is stepped over — the run
+  // Item 27 · the founder's walkover ruling is applied HERE and nowhere else. Since
+  // TEN-313 (2026-09-28) a walkover — RECEIVED or GIVEN — is neither a win nor a
+  // loss, so it is stepped over — the run
   // either side of it continues rather than being broken by a match that was
   // never played. calRunsSkipped() reports how many rows that removed, because
   // it is the one thing that can make Sum(run lengths) differ from M.
   function calRuns(rows) {
     var runs = [];
     rows.forEach(function (r) {
-      if (r.wo && !r.won) return;                    // walkover given: neither
+      if (r.wo) return;                              // a walkover: neither (TEN-313)
       var res = r.won ? 'W' : 'L';
       var last = runs[runs.length - 1];
       if (last && last.res === res) { last.len++; last.to = r.date; last.rows.push(r); }
@@ -6431,11 +6433,11 @@
     return runs;
   }
   function calRunsSkipped(rows) {
-    return rows.filter(function (r) { return r.wo && !r.won; }).length;
+    return rows.filter(function (r) { return r.wo; }).length;
   }
   /** The rows calRuns() actually sequenced, in the same order. */
   function calRunRows(rows) {
-    return rows.filter(function (r) { return !(r.wo && !r.won); });
+    return rows.filter(function (r) { return !r.wo; });
   }
   // The design's Erdos-Renyi longest-run approximation, transcribed from the
   // .dc.html script (§6.4 asked for the definition behind "expected longest"
@@ -6572,7 +6574,7 @@
       'counts in its run and dashes its price and P&L.' +
       // Only stated when it actually happened, so the sentence can never read as
       // boilerplate on a player it does not apply to.
-      (skipped ? ' ' + skipped + (skipped === 1 ? ' walkover' : ' walkovers') + ' given ' +
+      (skipped ? ' ' + skipped + (skipped === 1 ? ' walkover' : ' walkovers') + ' ' +
         (skipped === 1 ? 'is' : 'are') + ' excluded from the sequence — neither a win nor a ' +
         'loss — so the run either side of ' + (skipped === 1 ? 'it' : 'them') + ' continues.' : '');
     return '<div style="margin-top:18px;font-size:11px;line-height:1.65;color:var(--label);' +

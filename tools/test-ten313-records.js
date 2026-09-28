@@ -3,9 +3,10 @@
 //   N3 — every careerByYear / p?Yearly year row reconciles: atp + chitf = total (the 2021
 //        hole-fill rebuilds the tier split, indoor included), and a pre-2021 row carries an
 //        ATP split only when it holds tour-level matches only.
-//   N2 — a walkover GIVEN is neither a win nor a loss: out of the form rows, the live
-//        Tournament history and the career-history archive half. (W/O RECEIVED is held on
-//        TEN-312's scope question and deliberately untouched — the controls below pin that.)
+//   N2 — a walkover, GIVEN or RECEIVED, is neither a win nor a loss anywhere (founder
+//        2026-09-28, hold released: one spine, profile included): out of the form rows,
+//        careerByYear, the career-history rows, the live Tournament history and every
+//        tournament-history W-L. An in-match retirement still counts.
 // Drives the REAL functions (bsp-pipeline.js, career-backfill.js, and the dashboard's
 // Overview year table sliced out of the shipped HTML) — no network, no store.
 const assert = require('assert');
@@ -103,15 +104,32 @@ const FORM = [
 ];
 {
   const f = P.recentFormFromFixtures(FORM, '1', new Map([['10', 'clay']]));
-  // Mutation: delete the `.filter(f => !isWalkoverGiven(f, wonBy(f)))` line → the W/O given returns as a loss.
-  check('N2 form: a walkover GIVEN never becomes a form row', () => assert.ok(!f.matches.some((m) => m.eventKey === 1)));
-  check('N2 form: the retirement stays and is a loss; W-L = 2-1 (W/O received held)', () => {
+  // Mutation: delete the `.filter(f => !isWalkover(f))` line → both walkovers return (W-L 2-2).
+  check('N2 form: no walkover, given or received, becomes a form row', () => assert.ok(!f.matches.some((m) => m.eventKey === 1 || m.eventKey === 2)));
+  check('N2 form: the retirement stays and is a loss; W-L = 1-1, pct 50', () => {
     const r = f.matches.find((m) => m.eventKey === 3); assert.ok(r && r.retired && r.won === false);
-    assert.deepStrictEqual([f.matches.filter((m) => m.won).length, f.matches.filter((m) => !m.won).length], [2, 1]);
+    assert.deepStrictEqual([f.matches.filter((m) => m.won).length, f.matches.filter((m) => !m.won).length, f.pct], [1, 1, 50]);
   });
-  check('control: for the OTHER player the same W/O is received and stays (held)', () => {
+  check('N2 form: the same holds from the OTHER side (his W/O received is not a win)', () => {
     const g = P.recentFormFromFixtures(FORM, '2', new Map());
-    assert.ok(g.matches.some((m) => m.eventKey === 1 && m.won && m.walkover));
+    assert.ok(!g.matches.some((m) => m.walkover)); assert.strictEqual(g.matches.length, 2);
+  });
+}
+
+// ── N2 · careerByYear and its row twin, built fresh (buildAllTierYearly / playerMatchHistory) ──
+{
+  const yr = String(new Date().getFullYear() - 1);
+  const F = FORM.map((f) => ({ ...f, event_date: yr + f.event_date.slice(4), tournament_season: yr }));
+  // Mutation: drop `if (isWalkover(f)) continue;` in buildAllTierYearly → the W/O received counts (2-1).
+  check('N2 careerByYear: neither walkover counts; the retirement does (1-1)', () => {
+    const rows = P.buildAllTierYearly(F, '1', { stats: [] }, new Date().getFullYear(), new Map([['10', 'clay']]), new Map());
+    const r = rows.find((x) => x.year === yr);
+    assert.deepStrictEqual([r.total, r.atp.total], [wl(1, 1), wl(1, 1)]);
+  });
+  // Mutation: drop `if (isWalkover(f)) continue;` in playerMatchHistory → 3 rows, one a walkover.
+  check('N2 career-history rows: the row twin carries no walkover either (2 rows = the 1-1 above)', () => {
+    const rows = P.playerMatchHistory(F, '1', new Date().getFullYear(), new Map([['10', 'clay']]));
+    assert.deepStrictEqual([rows.length, rows.some((m) => m.walkover)], [2, false]);
   });
 }
 
@@ -126,7 +144,7 @@ const tm = (o) => Object.assign({ p1: 'C. Alcaraz', p1Key: '1', p2: 'X', p2Key: 
     tm({ date: '2023-04-15', season: '2023', winner: 'First Player', round: 'ATP Barcelona - Final', walkover: true, result: '0 - 0' }),  // W/O received
   ], '1');
   const y = (yr) => h.years.find((x) => x.year === yr);
-  // Mutation: drop the `continue` on `m.walkover && !didWin` → 2026 reads 1-1 and totals 2-2.
+  // Mutation: drop the `continue` in the `if (m.walkover) {…}` branch → 2026 reads 1-1 and totals 2-2.
   check('N2 tournament: a W/O given is not a loss (2026 1-0, reached R16 where he withdrew)', () => {
     assert.deepStrictEqual([y('2026').won, y('2026').lost, y('2026').matchCount], [1, 0, 1]);
     assert.strictEqual(y('2026').roundReached, '1/8-finals');
@@ -135,8 +153,51 @@ const tm = (o) => Object.assign({ p1: 'C. Alcaraz', p1Key: '1', p2: 'X', p2Key: 
   check('N2 tournament: an edition whose only match was a W/O given is a 0-0 Withdrawal', () => {
     assert.deepStrictEqual([y('2025').won, y('2025').lost, y('2025').roundReached, y('2025').withdrew], [0, 0, 'Withdrawal', true]);
   });
-  check('N2 tournament: totals count the retirement as a loss and the W/O received as a win (held) — 2-1', () => {
-    assert.deepStrictEqual([h.totalWon, h.totalLost, h.editionsPlayed], [2, 1, 3]);
+  check('N2 tournament: totals count the retirement as a loss and NOT the W/O received — 1-1', () => {
+    assert.deepStrictEqual([h.totalWon, h.totalLost], [1, 1]);
+  });
+  check('N2 tournament: an edition of only a W/O received is 0-0, reached, not a Withdrawal', () => {
+    assert.deepStrictEqual([y('2023').won, y('2023').lost, y('2023').roundReached, !!y('2023').withdrew], [0, 0, 'Final', false]);
+  });
+}
+
+// ── N2 · tournament-history records (profile), recounted every run ─────────────────
+{
+  // A history cached under the old rule: header 3-1 counts the R16 W/O received as a win.
+  const prof = { tournamentHistory: [{ name: 'Barcelona', won: 3, lost: 1, editions: [
+    { year: 2026, matches: [{ res: 'W', round: 'R32' }, { res: 'W', round: 'R16', walkover: true }, { res: 'W', round: 'QF', ret: true }, { res: 'L', round: 'SF' }] },
+    { year: 2025, matches: [{ res: 'WD', round: 'R32', walkover: true }] }] }] };
+  // Mutation: drop `if (m.walkover) continue;` in recountTournamentRecords → header stays 3-1.
+  check('N2 tournament-history: the header is recounted without walkovers (3-1 → 2-1), retirement counted', () => {
+    assert.strictEqual(P.recountTournamentRecords(prof), 1);
+    assert.deepStrictEqual([prof.tournamentHistory[0].won, prof.tournamentHistory[0].lost], [2, 1]);
+    assert.strictEqual(P.recountTournamentRecords(prof), 0);   // idempotent: a second run moves nothing
+  });
+  // Mutation: drop `if (m.walkover) continue;` in career-backfill finalizeTournament → 2-0.
+  check('N2 tournament-history (TML half): finalizeTournament skips a walkover received, keeps the walkover title', () => {
+    const { _internal } = require('../career-backfill.js');
+    const t = _internal.finalizeTournament('Rome', { 2019: [{ res: 'W', round: 'SF', opp: 'A' }, { res: 'W', round: 'F', opp: 'B', walkover: true }] });
+    assert.deepStrictEqual([t.won, t.lost, t.titles], [1, 0, 1]);
+  });
+  // Mutation: drop `.filter((m) => !m.walkover)` in buildEmbeddedHistory → 2019 reads 2-1.
+  check('N2 board tournament history (TML backfill): walkovers leave the W-L; only-given edition is a withdrawal', () => {
+    const { _internal } = require('../career-backfill.js');
+    const { history } = _internal.buildEmbeddedHistory(null, [
+      { year: 2019, round: 'R32', oppName: 'A', won: true, score: '6-3 6-4' },
+      { year: 2019, round: 'R16', oppName: 'B', won: true, walkover: true, score: 'W/O' },
+      { year: 2019, round: 'QF', oppName: 'C', won: false, score: '6-3 6-4' },
+      { year: 2017, round: 'R32', oppName: 'D', won: false, walkover: true, score: 'W/O' }]);
+    const y19 = history.years.find((y) => y.year === '2019'), y17 = history.years.find((y) => y.year === '2017');
+    assert.deepStrictEqual([y19.won, y19.lost, y19.matchCount], [1, 1, 2]);
+    assert.deepStrictEqual([y17.won, y17.lost, !!y17.withdrew], [0, 0, true]);
+  });
+  // Mutation: drop `.filter(m => !isWalkover(m))` from fetchH2H's officialH2H → a walkover is a meeting again.
+  check('N2 H2H: fetchH2H keeps walkovers out of the meeting list (source)', () => {
+    const src = fs.readFileSync(path.join(__dirname, '..', 'bsp-pipeline.js'), 'utf8');
+    assert.ok(/filter\(h2hCountsInAtpRecord\)\.filter\(m => !isWalkover\(m\)\)/.test(src));
+    assert.ok(/h2hCountsInAtpRecord\(m\) && !isWalkover\(m\)\)/.test(src));
+    assert.strictEqual(P.isWalkover({ event_status: 'Walk Over' }), true);
+    assert.strictEqual(P.isWalkover({ event_status: 'Retired' }), false);
   });
 }
 
@@ -149,30 +210,45 @@ const tm = (o) => Object.assign({ p1: 'C. Alcaraz', p1Key: '1', p2: 'X', p2Key: 
     const tml = (o) => Object.assign({ level: 'atp', surface: 'hard', result: '2 - 0', round: 'R32' }, o);
     const archive = { 7: [
       tml({ year: '2019', date: '2019-05-01', tournament: 'Madrid Masters', opponent: 'A. B', won: false, walkover: true, result: '0 - 0' }), // W/O given
-      tml({ year: '2019', date: '2019-04-01', tournament: 'Monte Carlo Masters', opponent: 'C. D', won: true, walkover: true, result: '0 - 0' }), // W/O received (held)
+      tml({ year: '2019', date: '2019-04-01', tournament: 'Monte Carlo Masters', opponent: 'C. D', won: true, walkover: true, result: '0 - 0' }), // W/O received
       tml({ year: '2019', date: '2019-03-01', tournament: 'Miami Masters', opponent: 'E. F', won: true }),
       tml({ year: '2021', date: '2021-02-08', tournament: 'Rotterdam', opponent: 'G. H', won: true, _indoor: true }),
       tml({ year: '2021', date: '2021-03-22', tournament: 'Miami Masters', opponent: 'I. J', won: false, walkover: true, result: '0 - 0' }),      // W/O given in the hole
     ] };
-    const profiles = { 7: { name: 'P. Seven', careerMatches: [{ year: '2021', surface: 'clay', level: 'chitf', date: '2021-06-01', tournament: 'Lyon Challenger', opponent: 'K. L', result: '2 - 0', won: true, src: 'fixtures' }],
+    // careerMatches as a profile CACHED before the rule carries it: a 2022 W/O received
+    // still in the rows, and its careerByYear counting it (2022: 2-1 incl. the W/O).
+    const profiles = { 7: { name: 'P. Seven', careerMatches: [
+        { year: '2021', surface: 'clay', level: 'chitf', date: '2021-06-01', tournament: 'Lyon Challenger', opponent: 'K. L', result: '2 - 0', won: true, src: 'fixtures' },
+        { year: '2022', surface: 'hard', level: 'atp', date: '2022-03-10', tournament: 'Indian Wells', opponent: 'M. N', result: '0 - 0', won: true, walkover: true, src: 'fixtures' },
+        { year: '2022', surface: 'hard', level: 'atp', date: '2022-03-12', tournament: 'Indian Wells', opponent: 'O. P', result: '2 - 1', won: true, src: 'fixtures' },
+        { year: '2022', surface: 'clay', level: 'chitf', date: '2022-05-01', tournament: 'Rome Challenger', opponent: 'Q. R', result: '0 - 2', won: false, src: 'fixtures' },
+      ],
       careerByYear: [
+        { year: '2022', allTier: true, total: wl(2, 1), clay: wl(0, 1), hard: wl(2, 0), grass: null, indoor: null,
+          atp: { total: wl(2, 0), clay: null, hard: wl(2, 0), grass: null, indoor: null }, chitf: { total: wl(0, 1), clay: wl(0, 1), hard: null, grass: null, indoor: null } },
         { year: '2021', allTier: true, total: wl(1, 0), clay: wl(1, 0), hard: null, grass: null, indoor: null, atp: null, chitf: { total: wl(1, 0), clay: wl(1, 0), hard: null, grass: null, indoor: null } },
-        { year: '2019', allTier: false, total: wl(2, 0), clay: null, hard: wl(2, 0), grass: null, indoor: null, atp: null, chitf: null },
+        { year: '2019', allTier: false, total: wl(1, 0), clay: null, hard: wl(1, 0), grass: null, indoor: null, atp: null, chitf: null },
       ] } };
     const tallies = new Map();
     await P.writeCareerHistoryShards(profiles, { archive, log: () => {}, currentYear: 2026, yearTallies: tallies });
     const shard = JSON.parse(fs.readFileSync(path.join(tmp, 'career-history', '7.json'), 'utf8'));
-    // Mutation: drop the `.filter(r => !(r.walkover && !r.won))` on tmlAll → both W/O-given rows ship and tally as losses.
-    check('N2 writer: no archive W/O given reaches the shard (pre-window or 2021 fill)', () => assert.ok(!shard.matches.some((m) => m.walkover && !m.won)));
-    check('control: the archive W/O received stays (held)', () => assert.ok(shard.matches.some((m) => m.walkover && m.won)));
+    // Mutation: drop the `.filter(r => !r.walkover)` on tmlAll → three archive walkovers ship and tally.
+    // Mutation: drop the `fixtureWo.length ? … : fixtureAll` filter → the cached 2022 W/O ships.
+    check('N2 writer: no walkover (either side, either half) reaches the shard', () => assert.ok(!shard.matches.some((m) => m.walkover)));
+    // Mutation: delete the `subtractYearTally(...)` call → 2022 stays 2-1 with atp 2-0.
+    check('N2 writer: a cached year row loses its W/O-received win, tiers too (2022 1-1, atp 1-0, chitf 0-1)', () => {
+      const r22 = profiles[7].careerByYear[0];
+      assert.deepStrictEqual([r22.total, r22.hard, r22.atp.total, r22.chitf.total, r22.rows], [wl(1, 1), wl(1, 0), wl(1, 0), wl(0, 1), 2]);
+      assert.deepStrictEqual(tiersSum(r22), r22.total);
+    });
     check('N3 writer: _indoor is a build-time carrier, never written to a shard', () => assert.ok(!shard.matches.some((m) => '_indoor' in m)));
-    const [r21, r19] = profiles[7].careerByYear;
+    const [, r21, r19] = profiles[7].careerByYear;
     check('N3 writer: 2021 adopts feed + fill, atp + chitf = total (atp 1-0 indoor 1-0, chitf 1-0)', () => {
       assert.deepStrictEqual(r21.total, wl(2, 0)); assert.deepStrictEqual(tiersSum(r21), r21.total);
       assert.deepStrictEqual(r21.atp.indoor.total, wl(1, 0)); assert.strictEqual(r21.rows, 2);
     });
-    check('N3 writer: 2019 (2 named tour-level wins, W/O given gone) is ATP 2-0, atpOnly false', () => {
-      assert.deepStrictEqual([r19.total, r19.atp.total, r19.atpOnly], [wl(2, 0), wl(2, 0), false]);
+    check('N3 writer: 2019 (1 named tour-level win, both walkovers gone) is ATP 1-0, atpOnly false', () => {
+      assert.deepStrictEqual([r19.total, r19.atp.total, r19.atpOnly], [wl(1, 0), wl(1, 0), false]);
     });
     // Mutation: drop `if (opts.yearTallies) opts.yearTallies.set(...)` → the matches.json re-apply has nothing to read.
     check('N3 writer: the per-year tallies are published for the p1Yearly/p2Yearly re-apply', () => {

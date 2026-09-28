@@ -677,7 +677,9 @@ function finalizeTournament(name, byYear) {
     // this ran AFTER it and overwrote the compliant header with a wrong one.
     // Measured on the deployed store before the fix: 105 tournament rows carry
     // a WD and 105 of 105 counted it as a loss — zero compliant.
-    for (const m of ms) { if (m.res === 'W') won++; else if (m.res === 'L') lost++; }
+    // TEN-313 (N2, 2026-09-28): a walkover RECEIVED is not a win either — its row stays
+    // (it still advances him, and a final walkover is still a title) but never counts.
+    for (const m of ms) { if (m.walkover) continue; if (m.res === 'W') won++; else if (m.res === 'L') lost++; }
     if (y < firstYear) firstYear = y;
     if (y > lastYear) lastYear = y;
     const deepest = ms.reduce((best, m) => (rank(m.round) > rank(best.round) ? m : best), ms[0]);
@@ -842,16 +844,21 @@ function buildEmbeddedHistory(existing, tmlMs) {
     const y = parseInt(yStr, 10);
     if (present.has(y)) continue; // existing/API year wins
     const sorted = ms.slice().sort((a, b) => rank(b.round) - rank(a.round));
-    const emMatches = sorted.map((m) => ({
+    // TEN-313 (N2, founder 2026-09-28): a walkover, given or received, is not a match
+    // played — out of the list and the W-L, exactly as buildTournamentHistory does for the
+    // API years. Its round still counts as reached; an edition of only walkovers given
+    // is a withdrawal.
+    const emMatches = sorted.filter((m) => !m.walkover).map((m) => ({
       date: '', opponent: m.oppName, round: TML_TO_API_ROUND[m.round] || m.round,
       won: !!m.won, result: swapScore(m.score),
     }));
     let won = 0, lost = 0;
     for (const mm of emMatches) { if (mm.won) won++; else lost++; }
-    realYears.push({
-      year: String(y), matchCount: emMatches.length, won, lost,
-      roundReached: TML_TO_API_ROUND[sorted[0].round] || sorted[0].round, matches: emMatches,
-    });
+    const onlyGiven = !emMatches.length && sorted.every((m) => m.walkover && !m.won);
+    realYears.push(onlyGiven
+      ? { year: String(y), matchCount: 0, won: 0, lost: 0, roundReached: 'Withdrawal', matches: [], withdrew: true }
+      : { year: String(y), matchCount: emMatches.length, won, lost,
+        roundReached: TML_TO_API_ROUND[sorted[0].round] || sorted[0].round, matches: emMatches });
     present.add(y);
     added++;
   }

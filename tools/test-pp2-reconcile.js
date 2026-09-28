@@ -1526,28 +1526,29 @@ check('cal-2 · runs partition the CAREER sequence — lengths sum to the match 
       const runs = I.calRuns(rows);
       const summed = runs.reduce((a, r) => a + r.len, 0);
       // The partition is over the rows calRuns() SEQUENCES, not over the spine.
-      // Founder ruling (item 27): a walkover GIVEN is neither a win nor a loss
-      // and is stepped over without breaking the run, so it belongs to no run by
+      // Founder ruling (item 27; TEN-313 2026-09-28 widened it to BOTH sides): a
+      // walkover is neither a win nor a loss and is stepped over without breaking
+      // the run, so it belongs to no run by
       // design. Asserting `summed === rows.length` contradicted the ruling the
       // renderer implements and failed on any player who has ever given one —
       // 473 vs 474 on key 67, whose single skipped row is 2020-02-10 Buenos
       // Aires vs P. Sousa (empty result, lost). The identity that actually holds
       // is summed + skipped = n, and the skipped set is checked for what it is
       // so this cannot become a licence to lose arbitrary rows.
-      const skippedRows = rows.filter(r => r.wo && !r.won);
+      const skippedRows = rows.filter(r => r.wo);
       assert.strictEqual(I.calRunsSkipped(rows), skippedRows.length,
-        `${k}: calRunsSkipped disagrees with a direct scan for walkovers given`);
+        `${k}: calRunsSkipped disagrees with a direct scan for walkovers`);
       assert.strictEqual(summed + skippedRows.length, rows.length,
         `${k}: runs sum to ${summed} + ${skippedRows.length} skipped, not ${rows.length}`);
       skippedRows.forEach((r) => {
-        assert(r.wo && !r.won,
-          `${k}: ${r.date} was dropped from the run sequence without being a walkover given`);
+        assert(r.wo,
+          `${k}: ${r.date} was dropped from the run sequence without being a walkover`);
       });
       for (let i = 1; i < runs.length; i++) {
         assert(runs[i].res !== runs[i - 1].res, `${k}: two ${runs[i].res} runs in a row`);
       }
       let cur = 0, best = 0;
-      rows.forEach((r) => { cur = r.won ? cur + 1 : 0; if (cur > best) best = cur; });
+      rows.forEach((r) => { if (r.wo) return; cur = r.won ? cur + 1 : 0; if (cur > best) best = cur; });
       const lw = runs.filter(r => r.res === 'W').sort((a, b) => b.len - a.len)[0];
       assert.strictEqual(lw ? lw.len : 0, best, `${k}: longest win run disagrees with a direct scan`);
       // The priced set is a SUBSET of the run rows, never the other way round —
@@ -3665,6 +3666,28 @@ mustFail('the affordance check would catch a hook that opens nothing', () => {
 // rows." Caught live: the ledger header rated the WHOLE filtered set while its
 // strip drew only the last 18, so Djokovic read "75.0% win · 20 matches" over
 // an 18-square strip. Two figures for one claim, on one screen.
+// TEN-313 (founder 2026-09-28): a walkover RECEIVED is not a win on the profile either.
+// Synthetic rows, so these run without career-history/ (they never SKIP).
+// Mutation: drop `if (m.walkover) return;` in tournViews' edition count → 2-1, and the
+// edition row no longer reconciles with the pipeline's recounted header.
+check('TEN-313: an edition W-L does not count a walkover received (tournViews)', () => {
+  const p = { key: '__ten313', name: 'T. Test', tournamentHistory: [{ name: 'Barcelona', won: 1, lost: 1, titles: 0, bestYears: [2026],
+    editions: [{ year: 2026, finish: 'QF', matches: [
+      { res: 'W', round: 'R32', opp: 'A. One', score: '2 - 0' },
+      { res: 'W', round: 'R16', opp: 'B. Two', score: '', walkover: true },
+      { res: 'L', round: 'QF', opp: 'C. Three', score: '1 - 2' }] }] }] };
+  const v = I.tournViews(p)[0];
+  assert.deepStrictEqual([v.won, v.lost, v.reconciles], [1, 1, true]);
+});
+// Mutation: restore `if (r.wo && !r.won) return;` in calRuns → the W/O received joins the win run (len 3).
+check('TEN-313: a streak steps over a walkover received as well as a given one (calRuns)', () => {
+  const rows = [{ date: '2026-01-01', won: true }, { date: '2026-01-02', won: true, wo: true },
+    { date: '2026-01-03', won: true }, { date: '2026-01-04', won: false, wo: true }, { date: '2026-01-05', won: false }];
+  const runs = I.calRuns(rows);
+  assert.deepStrictEqual(runs.map(r => r.res + r.len), ['W2', 'L1']);
+  assert.strictEqual(I.calRunsSkipped(rows), 2);
+});
+
 check('the ledger rate is taken over exactly the rows its strip draws', () => {
   const keys = Object.keys(PLAYERS).filter(k => (PLAYERS[k].recentForm || {}).matches);
   let checked = 0, over = 0;
@@ -3679,8 +3702,9 @@ check('the ledger rate is taken over exactly the rows its strip draws', () => {
     I.state.ledgerOpen = true;
     const html = I.renderLedger(p, { ledgerOpen: true, ledgerRows: rows, ledgerFiltered: filtered });
     I.state.ledgerOpen = false;
-    const w = strip.filter(x => x.m.won && !(x.m.walkover && !x.m.won)).length;
-    const l = strip.filter(x => !x.m.won && !(x.m.walkover && !x.m.won)).length;
+    // TEN-313 (founder 2026-09-28): a walkover either way is neither a win nor a loss.
+    const w = strip.filter(x => x.m.won && !x.m.walkover).length;
+    const l = strip.filter(x => !x.m.won && !x.m.walkover).length;
     const n = w + l;
     // Correction-pass item 3: the ledger header is one of the export's two
     // .toFixed(0) values, so the expectation is a whole number here and stays at

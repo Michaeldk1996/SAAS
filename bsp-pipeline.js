@@ -319,14 +319,15 @@ async function fetchH2H(firstPlayerKey, secondPlayerKey) {
   // count, so they're kept. TEN-263: Challenger and ITF singles count too
   // (H2H_EVENT_TYPES); measured on the 2026-09-24 board, get_H2H returned 24 ATP,
   // 5 Challenger and 1 ITF meeting across 27 pairs.
-  const officialH2H = (Array.isArray(result.H2H) ? result.H2H : []).filter(m => H2H_EVENT_TYPES.has(m.event_type_type)).filter(h2hCountsInAtpRecord);
+  // TEN-313 (N2): a walkover is not a meeting — it never enters the H2H record.
+  const officialH2H = (Array.isArray(result.H2H) ? result.H2H : []).filter(m => H2H_EVENT_TYPES.has(m.event_type_type)).filter(h2hCountsInAtpRecord).filter(m => !isWalkover(m));
 
   // Backfill matches get_H2H omitted but the fixtures database actually has,
   // deduped by event_key so nothing already present gets double-counted.
   const seenKeys = new Set(officialH2H.map(m => m.event_key));
   const supplement = await fetchH2HSupplement(firstPlayerKey, secondPlayerKey);
   for (const m of supplement) {
-    if (!seenKeys.has(m.event_key) && m.event_type_type === 'Atp Singles' && h2hCountsInAtpRecord(m)) {
+    if (!seenKeys.has(m.event_key) && m.event_type_type === 'Atp Singles' && h2hCountsInAtpRecord(m) && !isWalkover(m)) {
       officialH2H.push(m);
       seenKeys.add(m.event_key);
     }
@@ -427,25 +428,29 @@ async function fetchPlayerTournamentMatches(playerKey, hintKey) {
       (f.event_winner === 'First Player' || f.event_winner === 'Second Player')
     )
     // TEN-313: carry the walkover verdict trimFixture drops, so buildTournamentHistory can
-    // keep a walkover GIVEN out of the W-L (N2: a walkover is not a match played).
+    // keep a walkover out of the W-L (N2: a walkover is not a match played).
     .map(f => (f.event_status === 'Walk Over' ? { ...trimFixture(f), walkover: true } : trimFixture(f)));
 }
 function buildTournamentHistory(matches, playerKey) {
   if (!matches || matches.length === 0) return null;
   const bySeason = {};
   // TEN-313 (N2, founder ruling 2026-09-28, "as the ATP rules and the ATP website do"): a
-  // walkover the player GAVE is neither a win nor a loss — it leaves the W-L, the match
-  // list and the edition's match count. An edition whose only match was a walkover given
-  // is still an edition he entered and withdrew from: it becomes the same 0-0
-  // "Withdrawal" row the gap-fill below writes. A walkover RECEIVED is untouched here
-  // (held on TEN-312's scope question); an in-match retirement is a match and counts.
-  // The round he withdrew in is still the round he reached, so it stays in roundReached.
-  const woGiven = {}; // season -> walkover-given fixtures
+  // walkover — given or received — is neither a win nor a loss: it leaves the W-L, the
+  // match list and the edition's match count. The round it sits in still counts as
+  // reached (roundReached), as on the ATP site. An edition whose only match was a
+  // walkover GIVEN is an edition he entered and withdrew from: the same 0-0
+  // "Withdrawal" row the gap-fill below writes. An in-match retirement is a match.
+  const woGiven = {}; // season -> walkover fixtures (either side)
+  const woOnlyGiven = {}; // season -> true while every walkover that season was given
   for (const m of matches) {
     const isP1 = String(m.p1Key) === String(playerKey);
     const didWin = (m.winner === 'First Player' && isP1) || (m.winner === 'Second Player' && !isP1);
     const season = m.season || m.date.slice(0, 4);
-    if (m.walkover && !didWin) { (woGiven[season] = woGiven[season] || []).push(m); continue; }
+    if (m.walkover) {
+      (woGiven[season] = woGiven[season] || []).push(m);
+      woOnlyGiven[season] = (woOnlyGiven[season] !== false) && !didWin;
+      continue;
+    }
     if (!bySeason[season]) bySeason[season] = [];
     bySeason[season].push(m);
   }
@@ -489,9 +494,14 @@ function buildTournamentHistory(matches, playerKey) {
       .sort((a, b) => new Date(b.date) - new Date(a.date));
     years.push({ year: season, matchCount: seasonMatches.length, won, lost, roundReached: roundLabel(latest.round), matches: matchList });
   }
-  // An edition whose only match was a walkover given: entered, withdrew, 0-0.
+  // An edition whose only matches were walkovers: 0-0. Only walkovers given → he
+  // withdrew ('Withdrawal'); a walkover received → he reached the next round unplayed.
   for (const season of Object.keys(woGiven)) {
-    if (!bySeason[season]) years.push({ year: season, matchCount: 0, won: 0, lost: 0, roundReached: 'Withdrawal', matches: [], withdrew: true });
+    if (bySeason[season]) continue;
+    const latest = woGiven[season].reduce((a, b) => (b.date > a.date ? b : a));
+    years.push(woOnlyGiven[season]
+      ? { year: season, matchCount: 0, won: 0, lost: 0, roundReached: 'Withdrawal', matches: [], withdrew: true }
+      : { year: season, matchCount: 0, won: 0, lost: 0, roundReached: roundLabel(latest.round), matches: [] });
   }
   if (years.length === 0) return null;
 
@@ -666,14 +676,13 @@ function yearlyBreakdown(playerStats) {
     .sort((a, b) => parseInt(b.year, 10) - parseInt(a.year, 10));
 }
 
-// A pre-match walkover a player GAVE is NOT a loss (founder ruling 2026-08-04,
-// TEN-8: "a pre-match withdrawal is NOT a loss"). Flashscore counts it as neither
-// win nor loss, so every W-L record surface skips it. Fingerprint: the feed's
-// event_status is 'Walk Over' AND the profiled player is the recorded loser. A
-// walkover RECEIVED (he's the winner) stays a win; an in-match 'Retired' stays a
-// loss for the retiree — so we key on event_status, never on the empty scoreline
-// (a retirement the provider stored with no partial score would else be misread).
-const isWalkoverGiven = (f, won) => f.event_status === 'Walk Over' && !won;
+// A walkover is NOT a match played (founder ruling 2026-09-28, TEN-312 N2: "as the
+// ATP rules and the ATP website do"; supersedes TEN-8's "W/O received = win"). It is
+// neither a win nor a loss for EITHER player, so every W-L record surface skips it —
+// given or received. An in-match 'Retired' stays a match (a loss for the retiree),
+// so we key on event_status, never on the empty scoreline (a retirement the provider
+// stored with no partial score would else be misread as a walkover).
+const isWalkover = (f) => f.event_status === 'Walk Over';
 
 // Year-by-year record across ALL tiers (ATP + Challenger + ITF), tallied from the
 // broad recent-form fixtures (which span currentYear-5..now). Seasons older than
@@ -722,7 +731,7 @@ function buildAllTierYearly(fixtures, playerKey, playerStats, currentYear, surfa
     const year = String(f.event_date || '').slice(0, 4);
     if (!/^\d{4}$/.test(year) || parseInt(year, 10) < cutoff) continue;
     const won = (f.event_winner === 'First Player' && isFirst) || (f.event_winner === 'Second Player' && isSecond);
-    if (isWalkoverGiven(f, won)) continue; // pre-match walkover given ≠ loss
+    if (isWalkover(f)) continue; // a walkover is not a match played (TEN-313)
     if (!byYear[year]) byYear[year] = { atp: blankTier(), chitf: blankTier() };
     const bucket = byYear[year][tierOf(f)];
     bucket.total[won ? 'won' : 'lost']++;
@@ -820,7 +829,7 @@ function playerMatchHistory(fixtures, playerKey, currentYear, surfaceMap) {
     // Skip a pre-match walkover the player GAVE — kept in lockstep with
     // buildAllTierYearly, which now skips the same fixture, so this drill-down
     // list stays 1:1 tallyable against that table's counts (its invariant).
-    if (isWalkoverGiven(f, won)) continue;
+    if (isWalkover(f)) continue;
     const opponent = isFirst ? f.event_second_player : f.event_first_player;
     let result = f.event_final_result;
     if (isSecond && result && result.includes('-')) {
@@ -1100,7 +1109,7 @@ function seasonSurfaceByTier(fixtures, playerKey, year, surfaceMap) {
     const surface = surfaceMap.get(String(f.tournament_key));
     if (!surface || !['clay', 'hard', 'grass'].includes(surface)) continue;
     const won = (f.event_winner === 'First Player' && isFirst) || (f.event_winner === 'Second Player' && isSecond);
-    if (isWalkoverGiven(f, won)) continue; // pre-match walkover given ≠ loss
+    if (isWalkover(f)) continue; // a walkover is not a match played (TEN-313)
     const opponent = isFirst ? f.event_second_player : f.event_first_player;
     let result = f.event_final_result;
     if (isSecond && result && result.includes('-')) {
@@ -1162,7 +1171,7 @@ function seasonRowFromFixtures(fixtures, playerKey, year, surfaceMap) {
     const isSecond = String(f.second_player_key) === String(playerKey);
     if (!isFirst && !isSecond) continue;
     const won = (f.event_winner === 'First Player' && isFirst) || (f.event_winner === 'Second Player' && isSecond);
-    if (isWalkoverGiven(f, won)) continue; // pre-match walkover given ≠ loss (not decided)
+    if (isWalkover(f)) continue; // a walkover is not a match played (TEN-313)
     decidedCount++;
     tally.total[won ? 'won' : 'lost']++;
     const surface = surfaceMap.get(String(f.tournament_key));
@@ -1351,7 +1360,7 @@ function courtSpeedRecordFromFixtures(fixtures, playerKey, category) {
     const cc = courtConditionsFor(f.tournament_name);
     if (!cc || courtSpeedCategory(cc.speed) !== category) continue;
     const won = isFirst ? f.event_winner === 'First Player' : f.event_winner === 'Second Player';
-    if (isWalkoverGiven(f, won)) continue; // pre-match walkover given ≠ loss
+    if (isWalkover(f)) continue; // a walkover is not a match played (TEN-313)
     if (won) wins++; else losses++;
   }
   const sampleSize = wins + losses;
@@ -3633,16 +3642,13 @@ function recentFormFromFixtures(fixtures, playerKey, surfaceMap) {
   // Tennis-Abstract career splits stay on their own sources and are unaffected.
   const isSingles = f => /singles/i.test(f.event_type_type || '') && !/doubles/i.test(f.event_type_type || '');
   // TEN-313 (N2, founder ruling 2026-09-28, "as the ATP rules and the ATP website do"): a
-  // walkover the player GAVE is not a match played, so it never becomes a form row — it
-  // was reaching the Form tab's W-L as a loss (Alcaraz's last 10 carried Barcelona 2026)
-  // and the card's form % with it, against TEN-8's "a withdrawal is not a loss" too.
-  // Same fingerprint as every other record builder (isWalkoverGiven). A walkover RECEIVED
-  // stays for now (held on TEN-312's scope question); a retirement is a match and stays.
-  const wonBy = f => (String(f.first_player_key) === String(playerKey)
-    ? f.event_winner === 'First Player' : f.event_winner === 'Second Player');
+  // walkover — given or received — is not a match played, so it never becomes a form row.
+  // A given one was reaching the Form tab's W-L as a loss (Alcaraz's last 10 carried
+  // Barcelona 2026), a received one as a win, and the card's form % with them. Same
+  // fingerprint as every other record builder (isWalkover); a retirement is a match and stays.
   const clean = (fixtures || [])
     .filter(f => isSingles(f) && ['Finished', 'Retired', 'Walk Over'].includes(f.event_status))
-    .filter(f => !isWalkoverGiven(f, wonBy(f)))
+    .filter(f => !isWalkover(f))
     .slice()
     .sort((a, b) => new Date(b.event_date) - new Date(a.event_date));
 
@@ -3941,6 +3947,34 @@ function reconcileMatchesYearly(matches, yearTallies) {
   return n;
 }
 
+// TEN-313 — take a tally of rows OUT of fixture-window year rows (the inverse of what
+// buildAllTierYearly counted), tier and surface splits included, so atp + chitf = total
+// still holds. Used only for walkover rows a pre-rule cached profile still counts. The
+// indoor split is left alone: a career row carries no court type, and the residue is
+// bounded by the cache TTL. Pre-window rows are provider aggregates and are not touched.
+function subtractYearTally(yearRows, byYear) {
+  const less = (c, t) => {
+    if (!c) return null;
+    const o = { won: c.won - (t ? t.won : 0), lost: c.lost - (t ? t.lost : 0) };
+    return (o.won > 0 || o.lost > 0) ? { won: Math.max(0, o.won), lost: Math.max(0, o.lost) } : null;
+  };
+  const lessSplit = (sp, t) => {
+    if (!sp) return null;
+    const o = { ...sp, total: less(sp.total, t.total), clay: less(sp.clay, t.clay), hard: less(sp.hard, t.hard), grass: less(sp.grass, t.grass) };
+    return (o.total || o.clay || o.hard || o.grass) ? o : null;
+  };
+  for (const row of (yearRows || [])) {
+    const y = row && row.allTier !== false ? (byYear || {})[String(row.year || '')] : null;
+    if (!y) continue;
+    row.total = less(row.total, y.total);
+    row.clay = less(row.clay, y.clay);
+    row.hard = less(row.hard, y.hard);
+    row.grass = less(row.grass, y.grass);
+    row.atp = lessSplit(row.atp, y.tiers.atp);
+    row.chitf = lessSplit(row.chitf, y.tiers.chitf);
+  }
+}
+
 async function writeCareerHistoryShards(profiles, opts = {}) {
   const log = opts.log || (() => {});
   // `opts.currentYear`: tests drive both regimes (2021 a hole year, and 2021 an ordinary archive year).
@@ -3982,11 +4016,18 @@ async function writeCareerHistoryShards(profiles, opts = {}) {
 
   for (const [key, p] of Object.entries(profiles)) {
     if (!p) continue;
-    const fixtureRows = Array.isArray(p.careerMatches) ? p.careerMatches : [];
-    // TEN-313 (N2): a walkover the player GAVE is not a match — the fixtures half has never
-    // carried one (playerMatchHistory skips it); the archive half now matches, so a TML W/O
-    // given can no longer reach a year tally as a loss (9 did in the 2021 fill alone).
-    const tmlAll = (archive[key] || []).filter(r => !(r.walkover && !r.won));
+    // TEN-313 (N2): a profile built before the walkover rule (cached, 14-day TTL) still
+    // carries its walkovers-received in careerMatches, and its careerByYear counts them
+    // as wins. Take them out of both here, so the rule reaches every profile this run.
+    // A fresh profile has none (playerMatchHistory skips them), so this is a no-op there.
+    const fixtureAll = Array.isArray(p.careerMatches) ? p.careerMatches : [];
+    const fixtureWo = fixtureAll.filter(r => r && r.walkover);
+    if (fixtureWo.length) subtractYearTally(p.careerByYear, tallyCareerYears(fixtureWo));
+    const fixtureRows = fixtureWo.length ? fixtureAll.filter(r => !(r && r.walkover)) : fixtureAll;
+    // TEN-313 (N2): a walkover is not a match — neither half carries one now
+    // (playerMatchHistory skips it too), so a TML walkover can no longer reach a year
+    // tally as a loss or a win.
+    const tmlAll = (archive[key] || []).filter(r => !r.walkover);
     const archiveRows = tmlAll.filter(r => Number(r.year) <= archiveMaxYear).map(r => ({ ...r, src: 'archive' }));
     // TEN-310: the 2021 hole, filled only where the feed half has neither the edition nor the match.
     for (const y of holeYears) {
@@ -5348,14 +5389,18 @@ async function fetchPlayerCareerHistory(playerKey) {
     // (its _rank drives the finish badge, e.g. Djokovic Paris '11 stays
     // "Quarter-final") and tag it 'WD' so the panel renders it neutrally, but
     // never count it in lost. _won stays false so it can never become a title.
-    const walkoverGiven = isWalkoverGiven(f, didWin);
+    // TEN-313 (N2, 2026-09-28): a walkover RECEIVED is not a win either. Its row
+    // stays 'W' with `walkover: true` — it still advances him a round and a final
+    // walkover is still a title, as on the ATP site — but it never counts in won.
+    // Every reader that recounts an edition skips `walkover` rows the same way.
+    const walkoverGiven = _isWo && !didWin;
     let t = byTournament[tid];
     if (!t) {
       t = byTournament[tid] = {
         name, won: 0, lost: 0, firstYear: year, lastYear: year, _byEdition: {},
       };
     }
-    if (didWin) t.won++; else if (!walkoverGiven) t.lost++;
+    if (!_isWo) { if (didWin) t.won++; else t.lost++; }
     if (year < t.firstYear) t.firstYear = year;
     if (year > t.lastYear) t.lastYear = year;
     if (!t._byEdition[year]) t._byEdition[year] = [];
@@ -5475,6 +5520,31 @@ function totalSetsOfScore(score) {
   if (parts.length !== 2 || !parts.every(Number.isFinite)) return null;
   return parts[0] + parts[1];
 }
+// TEN-313 (N2, founder ruling 2026-09-28): a tournament record's W-L is recounted from
+// its own edition rows every run, skipping walkovers either way — a walkover is not a
+// match played. Runs over every profile, cached ones included, so a history cached
+// under the old "W/O received = win" rule (7-day TTL) is corrected on this run instead
+// of when it expires. Measured before the change: header == this recount (old rule) on
+// 12,434 of 12,434 deployed tournaments, so the recount changes only walkover rows.
+// Returns the number of tournament records whose W-L moved.
+function recountTournamentRecords(profile) {
+  const hist = Array.isArray(profile && profile.tournamentHistory) ? profile.tournamentHistory : [];
+  let moved = 0;
+  for (const t of hist) {
+    if (!t || !Array.isArray(t.editions)) continue;
+    let won = 0, lost = 0;
+    for (const ed of t.editions) {
+      for (const m of (ed.matches || [])) {
+        if (m.walkover) continue;
+        if (m.res === 'W') won++; else if (m.res === 'L') lost++;
+      }
+    }
+    if (won !== t.won || lost !== t.lost) moved++;
+    t.won = won; t.lost = lost;
+  }
+  return moved;
+}
+
 // Attaches gsCareer to the profile and over35 to each Grand-Slam tournament.
 // Returns true if the player has any Grand-Slam main-draw history.
 function deriveSlamBoxes(profile) {
@@ -5491,6 +5561,7 @@ function deriveSlamBoxes(profile) {
         // this is what makes all five boxes share one denominator (Bonzi US Open:
         // 5-3 = 8 main-draw matches = the over-3.5 sample of 8). Retirements count
         // (a real result); a walkover GIVEN ('WD') is neither W nor L.
+        if (m.walkover) continue;                      // TEN-313: a walkover is not a match played
         if (m.res === 'W') { mdWon++; gsWon++; anySlam = true; }
         else if (m.res === 'L') { mdLost++; gsLost++; anySlam = true; }
         // Over-3.5: completed matches only.
@@ -5739,6 +5810,9 @@ async function buildPlayerProfiles(matches, surfaceMap) {
   // TML backfill — so both figures span the player's whole career (API 2021+ plus
   // the pre-2021 majors TML fills in), not just the feed-reachable years. Pure
   // derivation from the final merged editions, so it needs no cache/schema bump.
+  let recounted = 0;
+  for (const key of Object.keys(profiles)) recounted += recountTournamentRecords(profiles[key]);
+  console.log(`Tournament records: ${recounted} W-L header(s) recounted without walkovers (TEN-313).`);
   let gsBoxed = 0;
   for (const key of Object.keys(profiles)) if (deriveSlamBoxes(profiles[key])) gsBoxed++;
   console.log(`Grand-Slam profile boxes: gsCareer + per-major over-3.5 derived for ${gsBoxed} player(s).`);
@@ -7481,7 +7555,7 @@ module.exports = { fetchH2H, h2hCountsInAtpRecord, H2H_NOT_ATP_RECORD, tourLabel
   // The Career-record pair. Exported together on purpose: their whole contract
   // is that the counts one returns are tallyable from the rows the other
   // returns, and that is what ten8-career-verify.js asserts.
-  buildAllTierYearly, playerMatchHistory, writeCareerHistoryShards, tallyCareerYears, reconcileYearRows, reconcileMatchesYearly, buildTournamentHistory, careerRowIsComplete, careerRowIsBo5Slam, formSetsFromFixture,
+  buildAllTierYearly, playerMatchHistory, writeCareerHistoryShards, tallyCareerYears, reconcileYearRows, reconcileMatchesYearly, subtractYearTally, buildTournamentHistory, recountTournamentRecords, isWalkover, careerRowIsComplete, careerRowIsBo5Slam, formSetsFromFixture,
   // TEN-244: the NextGen exclusion key, exported so the suite asserts the SAME
   // constant the pipeline uses rather than a copy that can drift out of step.
   NEXTGEN_TOURNAMENT_KEY, CAREER_HISTORY_INDEX_PATH,

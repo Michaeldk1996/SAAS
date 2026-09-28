@@ -22389,13 +22389,13 @@ function ppTournamentResultHtml(p, name){
       // Explicit reconciliation of the two all-majors samples so a member never
       // has to subtract 15\u201321 (=36) vs 20/34 and wonder where the 2 went. The gap
       // is career main-draw total minus the completed-only over-3.5 sample, which
-      // by construction equals the retirements + walkovers-received removed from
-      // that sample (founder ruling 2026-08-28: state the gap, don't make them infer it).
+      // by construction equals the retirements removed from that sample — walkovers are
+      // in neither since TEN-313 (founder ruling 2026-08-28: state the gap, don't make them infer it).
       const gap = gsTot - gso.sample;
       const reconLine = gap > 0
-        ? `<br>Reconciles: ${gsTot} main-draw matches at the majors \u00b7 ${gap} excluded from the over-3.5 sample (retirements &amp; walkovers).`
+        ? `<br>Reconciles: ${gsTot} main-draw matches at the majors \u00b7 ${gap} excluded from the over-3.5 sample (retirements).`
         : '';
-      slamBasis = `<div style="font-size:10.5px;color:var(--label);margin-top:10px;line-height:1.55;font-family:'IBM Plex Mono',monospace;">All boxes: main draw only. W\u2013L &amp; Grand Slam career: incl. retirements (a walkover received is a win, a walkover given is neither).<br>Over 3.5 sets: completed matches only \u00b7 retirements &amp; walkovers excluded \u00b7 this event vs. all four majors combined.${reconLine}</div>`;
+      slamBasis = `<div style="font-size:10.5px;color:var(--label);margin-top:10px;line-height:1.55;font-family:'IBM Plex Mono',monospace;">All boxes: main draw only. W\u2013L &amp; Grand Slam career: incl. retirements (a walkover, given or received, is neither a win nor a loss).<br>Over 3.5 sets: completed matches only \u00b7 retirements &amp; walkovers excluded \u00b7 this event vs. all four majors combined.${reconLine}</div>`;
     }
   }
   const tilesHtml = `<div style="display:flex;flex-wrap:wrap;gap:14px;margin-top:16px;">
@@ -22409,12 +22409,12 @@ function ppTournamentResultHtml(p, name){
     const yy = String(ed.year).slice(-2);
     const rows = (ed.matches || []).map(m => {
       const win = m.res === 'W';
-      // A pre-match walkover the player gave ('WD') is neither win nor loss
-      // (founder ruling 2026-08-04): render it neutral grey, not a red loss.
-      const wo = m.res === 'WD';
+      // A walkover is neither win nor loss (TEN-313, 2026-09-28): given ('WD') or
+      // received ('W' + walkover flag), it renders neutral grey as W/O.
+      const wo = m.res === 'WD' || !!m.walkover;
       const bC = wo ? '#a3abba' : (win ? '#3ed68c' : '#da6259');
       const round = m.round === 'F' ? 'FINAL' : String(m.round || '').toUpperCase();
-      const verb = wo ? 'w/o to' : (win ? 'def.' : 'lost to');
+      const verb = wo ? (win ? 'w/o from' : 'w/o to') : (win ? 'def.' : 'lost to');
       const badge = wo ? 'W/O' : m.res;
       return `<div style="display:grid;grid-template-columns:auto auto 1fr auto;align-items:center;gap:12px;padding:11px 14px;border-top:0.33px solid var(--line-soft);">
         <span style="width:24px;height:24px;border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;font-family:'IBM Plex Mono',monospace;color:${bC};background:${ppHexA(bC,0.14)};border:1px solid ${ppHexA(bC,0.3)};">${badge}</span>
@@ -27563,6 +27563,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
         // surname+initial no other roster player shares (see oppNk above).
         if (!(mk !== '' && mk === String(oppKey)) && !(mk === '' && oppNk && nkOf(mt.opp) === oppNk)) return;
         if (mt.res !== 'W' && mt.res !== 'L') return;
+        if (mt.walkover) return;                      // TEN-313: a walkover is not a meeting
         const yr = String(ed.year || t.lastYear || '—');
         if (ownMeet[yr + '|' + tn(t.name)]) return;   // today's finished board match itself
         const round = H2H_ROUND[mt.round] || mt.round || '—';
