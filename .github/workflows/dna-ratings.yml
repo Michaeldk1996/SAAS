@@ -1,0 +1,94 @@
+name: BSP daily DNA ratings refresh
+
+# TEN-319 (founder-approved 2026-09-28). Rebuilds dna-apitennis-ratings.json — the
+# Playing Style DNA radar (Match analysis modal, H2H page, player profile Ratings) —
+# and commits it back to main. pipeline.yml copies the committed file into _site, so a
+# refresh reaches the live site on the next pipeline tick.
+#
+# Inputs, none of them from the checkout's stale copies (see the builder's header):
+#   roster   DEPLOYED player-profiles.json via tools/deployed-store.js (fails closed
+#            rather than read the committed July fossil)
+#   surfaces DEPLOYED tournament-surfaces.json
+#   boxes    api-tennis ATP (265) tier pages, 7-day windows 2024-03-06..today,
+#            ~135 get_fixtures calls per run, fetched fresh every run (the runner
+#            starts with an empty .dna-boxscores/)
+#   elo      committed elo-ratings.json (elo.yml commits it back weekly)
+#
+# Cadence: twice daily. This repo's `schedule:` is throttled (hourly slots measured at
+# ~27% delivery), so two slots make a daily refresh likely without an external pinger;
+# a second run on an unchanged day commits nothing but the new generatedAt stamp.
+# 06:40 UTC sits after the Americas' last matches have settled and after the 06:00
+# surface-ratings run. workflow_dispatch allows a manual refresh.
+
+on:
+  schedule:
+    - cron: '40 6 * * *'
+    - cron: '40 18 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: bsp-dna-ratings
+  cancel-in-progress: false
+
+permissions:
+  contents: write            # needed to commit the refreshed file
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Record the committed file's rated count
+        run: |
+          PREV=$(node -e 'let n=0;try{n=(require("./dna-apitennis-ratings.json").players||[]).length}catch(e){}; process.stdout.write(String(n))')
+          echo "PREV_RATED=$PREV" >> "$GITHUB_ENV"
+
+      - name: Rebuild DNA ratings
+        env:
+          API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
+        run: node dna-apitennis-ratings.js
+
+      - name: Sanity-check the rebuilt file
+        # A truncated build must never overwrite a good file.
+        run: |
+          node -e '
+            const d = require("./dna-apitennis-ratings.json");
+            const n = (d.players || []).length;
+            const prev = parseInt(process.env.PREV_RATED, 10) || 0;
+            const m = d._meta || {};
+            if (!m.roster || m.roster.source !== "deployed") { console.error("::error::roster was not the deployed store — refusing to commit"); process.exit(1); }
+            if (n < 200) { console.error(`::error::only ${n} rated players — refusing to commit`); process.exit(1); }
+            if (n < Math.floor(prev * 0.9)) { console.error(`::error::rated count regressed ${prev} -> ${n} — refusing to commit`); process.exit(1); }
+            console.log(`OK: ${n} rated of ${m.rosterSize} (was ${prev}), generatedAt ${m.generatedAt}.`);
+          '
+
+      - name: Commit refreshed dna-apitennis-ratings.json
+        run: |
+          git add dna-apitennis-ratings.json
+          if git diff --cached --quiet; then
+            echo "Nothing changed — nothing to commit."
+            exit 0
+          fi
+          git config user.name  "bsp-dna-bot"
+          git config user.email "bsp-dna-bot@users.noreply.github.com"
+          git commit -m "chore(dna): daily DNA ratings refresh [skip ci]"
+          # Another workflow may have advanced main since checkout; rebase and
+          # retry so the refresh is never lost to a benign race.
+          for attempt in 1 2 3; do
+            if git push origin HEAD:main; then
+              echo "Pushed on attempt $attempt."
+              exit 0
+            fi
+            echo "Push rejected (attempt $attempt) — rebasing on origin/main and retrying."
+            git pull --rebase origin main || true
+          done
+          echo "::error::Could not push dna-apitennis-ratings.json after 3 attempts."
+          exit 1

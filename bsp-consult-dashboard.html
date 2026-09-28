@@ -18899,7 +18899,7 @@ function styleArchLabelsHtml(m, s1, s2){
 // ── Playing Style DNA radar — ported into Match Analysis (TEN-103) ─────────────
 // The same 5-axis api-tennis-native DNA the founder approved on the H2H page:
 // Serve / Return / Under Pressure / Dominance Ratio come from dna-apitennis-ratings.json
-// (percentile `pct`, p2-p98 banded); Surface Elo is resolved LIVE from the same
+// (`pct` = true percentile rank in a stated population, TEN-319); Surface Elo is resolved LIVE from the same
 // ppEloForSurface() the header chip reads, so the two can never contradict. Shape =
 // trailing-52-week percentiles on the MATCH's own surface; labels print the raw rating +
 // a Δ vs the since-2024 baseline. Render floor = >=10 matches in scope+surface. This is a
@@ -18955,11 +18955,15 @@ function mdnaRadarPoints(vals, r){
   });
   return pts.join(' ');
 }
-function mdnaEloPctFromBand(rating, surface){
-  const bands = _mdna && _mdna.meta && _mdna.meta.eloBands;
-  const bd = bands && bands[surface];
-  if (rating == null || !bd || bd.p2 == null || bd.p98 == null || bd.p98 <= bd.p2) return null;
-  return +Math.max(0, Math.min(100, (rating - bd.p2) / (bd.p98 - bd.p2) * 100)).toFixed(1);
+// TEN-319 (founder D6): a live-resolved Elo is ranked in the file's own Elo population
+// by the builder's rule — 100 × (below + ½·equal) / n — never a linear rescale.
+function mdnaEloPctFromPop(rating, surface){
+  const pops = _mdna && _mdna.meta && _mdna.meta.eloPercentiles;
+  const vals = pops && pops[surface] && pops[surface].values;
+  if (rating == null || !Array.isArray(vals) || !vals.length) return null;
+  let below = 0, equal = 0;
+  for (const x of vals){ if (x < rating) below++; else if (x === rating) equal++; }
+  return +(100 * (below + equal / 2) / vals.length).toFixed(1);
 }
 // Resolve one player's 5-axis DNA for a surface+scope. Returns pcts (0-100 shape), raw
 // ratings, deltas vs the since-2024 baseline (null for Elo), match count and a draw flag.
@@ -18985,7 +18989,7 @@ function mdnaRadarFor(key, surface, scope, fullName){
       }
       if (eRating == null){ const e0 = sf.elo; eRating = (e0 && e0.rating != null) ? e0.rating : null; }
       ratings.push(eRating);
-      const livePct = eRating != null ? mdnaEloPctFromBand(eRating, surface) : null;
+      const livePct = eRating != null ? mdnaEloPctFromPop(eRating, surface) : null;
       pcts.push(livePct != null ? livePct : (sf.elo && sf.elo.pct != null ? sf.elo.pct : null));
       deltas.push(null);                       // Elo carries no scope, so no baseline delta
     } else {
@@ -27154,7 +27158,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
   // TEN-103 Playing Style DNA radar — 5 api-tennis-native axes (founder ruling
   // 2026-08-31), replacing the old 6-axis charting-derived radar. Serve / Return /
   // Under Pressure / Dominance Ratio come from dna-apitennis-ratings.json (percentile
-  // `pct` fields, p2-p98 banded); Surface Elo is Tennis Abstract, resolved LIVE from
+  // `pct` fields, true percentile rank — TEN-319); Surface Elo is Tennis Abstract, resolved LIVE from
   // elo-ratings.json at render (same source as the header chip — see dnaRadarFor).
   // Shape = trailing-52-week percentiles for the surface picked by the page's
   // Hard/Clay/Grass toggle (S.ctxSurface); labels print the raw rating + a Δ vs the
@@ -27327,13 +27331,15 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
   // player-profiles key (== api-tennis player_key == dna-apitennis-ratings playerKey).
   // Returns pcts (0-100 shape), raw ratings (labels), deltas vs the since-2024 baseline
   // (null for Elo, which is scope-less), match count, and a draw flag (>=DNA_FLOOR).
-  // Recompute an Elo percentile from the DNA meta band (p2-p98) so a live-resolved
-  // rating still pegs the spoke consistently with the pre-baked shape math.
-  function eloPctFromBand(rating, surface) {
-    const bands = _dna && _dna.meta && _dna.meta.eloBands;
-    const bd = bands && bands[surface];
-    if (rating == null || !bd || bd.p2 == null || bd.p98 == null || bd.p98 <= bd.p2) return null;
-    return +Math.max(0, Math.min(100, (rating - bd.p2) / (bd.p98 - bd.p2) * 100)).toFixed(1);
+  // Rank a live-resolved Elo in the DNA file's Elo population (TEN-319, founder D6) by
+  // the builder's rule, 100 × (below + ½·equal) / n, so it matches the pre-baked pcts.
+  function eloPctFromPop(rating, surface) {
+    const pops = _dna && _dna.meta && _dna.meta.eloPercentiles;
+    const vals = pops && pops[surface] && pops[surface].values;
+    if (rating == null || !Array.isArray(vals) || !vals.length) return null;
+    let below = 0, equal = 0;
+    for (const x of vals) { if (x < rating) below++; else if (x === rating) equal++; }
+    return +(100 * (below + equal / 2) / vals.length).toFixed(1);
   }
   function dnaRadarFor(key, surface, scope, fullName) {
     const rec = (_dna && _dna.byKey) ? _dna.byKey[String(key)] : null;
@@ -27363,7 +27369,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
         }
         if (eRating == null) { const e0 = sf.elo; eRating = (e0 && e0.rating != null) ? e0.rating : null; }
         ratings.push(eRating);
-        const livePct = eRating != null ? eloPctFromBand(eRating, surface) : null;
+        const livePct = eRating != null ? eloPctFromPop(eRating, surface) : null;
         pcts.push(livePct != null ? livePct : (sf.elo && sf.elo.pct != null ? sf.elo.pct : null));
         deltas.push(null);                       // Elo carries no scope, so no baseline delta
       } else {
@@ -28317,7 +28323,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
     </div>`;
   }
   // Per-axis raw-rating readout beneath the DNA radar. The radar SHAPE is percentile-
-  // normalised (p2-p98 banded) so 5 axes on different scales are comparable; these are
+  // ranked (true percentile, TEN-319) so 5 axes on different scales are comparable; these are
   // the real locked ratings + a Δ vs the since-2024 baseline. Also carries the render-
   // floor empty states so a below-floor / absent player reads honestly instead of a
   // phantom polygon. Archetype + Record-vs-style blocks are untouched by this.

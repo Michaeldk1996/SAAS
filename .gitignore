@@ -148,3 +148,6 @@ lines-field.json
 /weather-index.json
 /weather/*
 !/weather/archive/
+
+# TEN-319: dna-apitennis-ratings.js box-score window cache (CI starts empty)
+.dna-boxscores/

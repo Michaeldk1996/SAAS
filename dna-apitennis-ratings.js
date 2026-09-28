@@ -1,11 +1,13 @@
 #!/usr/bin/env node
 // =============================================================================
-// TEN-103 — DNA ratings PURELY from api-tennis cached box scores (NO Sackmann/TML)
+// TEN-103 — DNA ratings PURELY from api-tennis box scores (NO Sackmann/TML)
+// TEN-319 — rebuilt daily by .github/workflows/dna-ratings.yml off the DEPLOYED
+//           roster, with true percentiles (founder D6, 2026-09-28)
 // -----------------------------------------------------------------------------
 // Founder ruling: everything comes from api-tennis only. api-tennis match
 // statistics exist only from 2024-03-06 onward, and that is ACCEPTED — the
-// "baseline/career" scope is simply "since 2024" (sinceBase); the primary radar
-// scope is the trailing 52 weeks (last52), fully inside coverage.
+// "baseline/career" scope is simply "since 2024" (sinceBase; the UI labels it
+// "Since Mar 2024"); the primary radar scope is the trailing 52 weeks (last52).
 //
 // Four LOCKED DNA ratings (TEN-103 founder ruling 2026-08-29), straight unweighted
 // sums over the scope window, computed from api-tennis per-match statistics rows:
@@ -18,49 +20,63 @@
 //   DOMINANCE RATIO= returnPtsWon% / (100 − servicePtsWon%)
 //
 // (Surface Elo is the LOCKED 5th axis but already exists in elo-ratings.json — NOT
-//  computed here.)
+//  computed here. It is CURRENT only (D6): one rating per surface, no scope.)
 //
-// INPUTS (all read by ABSOLUTE path from the main checkout; this worktree has none):
-//   MAIN/apitennis-wue-cache/265-YYYY-MM-DD.json  ATP main-tour singles box scores
-//   MAIN/tournament-surfaces.json                 tournament_key -> clay|hard|grass|null
-//   MAIN/player-profiles.json                     roster (428 keys = api-tennis player_key)
+// INPUTS — nothing is read from an absolute path or from the committed July
+// `player-profiles.json` fossil (TEN-319):
+//   roster   the DEPLOYED player-profiles.json via tools/deployed-store.js. Fails
+//            closed: if only the committed copy is reachable the build aborts.
+//   surfaces the DEPLOYED tournament-surfaces.json (the committed copy lags the
+//            pipeline's in-run refresh, so current tournaments would read null).
+//   boxes    api-tennis get_fixtures tier pages, event_type_key 265, in 7-day
+//            windows from 2024-03-06 to today (~135 calls; a month page is ~75 s
+//            and 17 MB, a week ~5 s and 2 MB). Slimmed copies are cached under
+//            .dna-boxscores/ (gitignored); CI starts empty and fetches every week.
+//            Any window that still fails after a retry aborts the build.
+//   elo      elo-ratings.json (committed back weekly by elo.yml, so current).
+//   key      API_TENNIS_KEY (env), else an API_TENNIS_KEY line in <repo>/.env.
 //
 // SCOPE / SURFACE / FLOOR conventions mirror surface-ratings.js:
-//   scopes  : last52 (<=364d before player's most-recent cached match) + sinceBase (all)
+//   scopes  : last52 (<=364d before player's most-recent match) + sinceBase (all)
 //   surfaces: Hard / Clay / Grass / All (indoor->Hard, carpet dropped — already folded
 //             in tournament-surfaces.json's normalizeSurface)
 //   include : > 10 matches (INCLUDE_MIN_MATCHES = 11) on All/sinceBase
 //
+// PERCENTILES (founder D6, 2026-09-28 — replaces the p2–p98 linear rescale):
+//   `pct` is a true percentile rank, 100 × (below + ½·equal) / n, of the player's
+//   rating within the STATED population for that axis × scope × surface: rated
+//   players with >= POP_MIN_MATCHES matches in that scope × surface (the same
+//   >= 10 floor the radar draws at) and a non-null rating. The sorted population
+//   values, n and a one-line population statement are emitted in
+//   _meta.percentiles / _meta.eloPercentiles so the page can rank a value the
+//   file does not hold (the live Elo, the tour mean) by the same rule.
+//
 // TOUR LEVEL: ATP main-tour singles only (event_type 265), matching the tour-level
 //   serve/return convention of the Sackmann generator and the founder's ATP-scale
-//   check figures. Challenger (281) box scores exist in cache but are NOT folded in.
+//   check figures. Challenger (281) box scores are NOT folded in.
 // =============================================================================
+'use strict';
 const fs = require('fs');
 const path = require('path');
+const { execFile } = require('child_process');
 
-const MAIN = '/Users/Michael/bsp-consult-project';
-const CACHE = path.join(MAIN, 'apitennis-wue-cache');
-const SURF_MAP_PATH = path.join(MAIN, 'tournament-surfaces.json');
-const ROSTER_PATH = path.join(MAIN, 'player-profiles.json');
-const ELO_PATH = path.join(MAIN, 'elo-ratings.json');   // Tennis Abstract surface Elo (5th axis)
-const OUT = path.join(__dirname, 'dna-apitennis-ratings.json');
+const ROOT = __dirname;
+const OUT = process.env.DNA_OUT || path.join(ROOT, 'dna-apitennis-ratings.json');
+const BOX_DIR = process.env.DNA_BOX_DIR || path.join(ROOT, '.dna-boxscores');
+const ELO_PATH = path.join(ROOT, 'elo-ratings.json');   // Tennis Abstract surface Elo (5th axis)
+const API_BASE = 'https://api.api-tennis.com/tennis/';
 
 const STATS_FLOOR = '2024-03-06';
 const LAST52_DAYS = 364;
 const INCLUDE_MIN_MATCHES = 11;         // > 10 matches, All/sinceBase (matches surface-ratings.js)
+const POP_MIN_MATCHES = 10;             // percentile population floor = the radar's draw floor
+const ROSTER_MIN = 300;                 // a deployed roster below this is a broken fetch, not a roster
+const SURFACE_MAP_MIN = 5000;           // ditto for the tournament -> surface map (~10k entries)
+const WINDOW_DAYS = 7;
+const REFETCH_DAYS = 35;                // cached windows ending within this many days are re-fetched
+const FETCH_CONCURRENCY = 6;
 const SURFACES = ['Hard', 'Clay', 'Grass'];
 const CAP = { clay: 'Clay', hard: 'Hard', grass: 'Grass' };
-
-const t0 = Date.now();
-
-// ---- surface lookup (tournament_key -> 'Hard'|'Clay'|'Grass'|null) -----------
-const surfRaw = JSON.parse(fs.readFileSync(SURF_MAP_PATH, 'utf8')).surfaces;
-const surfaceOf = tk => CAP[surfRaw[String(tk)]] || null;   // null => carpet/unknown -> dropped from per-surface
-
-// ---- roster (denominator) ----------------------------------------------------
-const roster = JSON.parse(fs.readFileSync(ROSTER_PATH, 'utf8')).players;
-const rosterKeys = new Set(Object.keys(roster).map(String));
-const nameOf = k => (roster[String(k)] && roster[String(k)].name) || null;
 
 // ---- stat-row helpers --------------------------------------------------------
 function pick(rows, type, name) {
@@ -246,18 +262,104 @@ function computeRatings(a) {
   };
 }
 
-// ---- ingest cache ------------------------------------------------------------
-// contribs[playerKey] = [ {date, surface, block, score} ... ]  (ATP 265 only)
-const contribs = new Map();
-let filesRead = 0, filesBad = 0, fixturesSeen = 0, ingested = 0, noSurface = 0;
-const seenPM = new Set();
+// ---- inputs --------------------------------------------------------------------
+function apiKey() {
+  if (process.env.API_TENNIS_KEY) return process.env.API_TENNIS_KEY.trim();
+  const envPath = path.join(ROOT, '.env');
+  if (fs.existsSync(envPath)) {
+    const m = fs.readFileSync(envPath, 'utf8').match(/^API_TENNIS_KEY\s*=\s*["']?([^"'\r\n]+)/m);
+    if (m) return m[1].trim();
+  }
+  throw new Error('API_TENNIS_KEY not set (env or <repo>/.env) — cannot fetch box scores');
+}
 
-for (const file of fs.readdirSync(CACHE)) {
-  if (!file.startsWith('265-')) continue;   // ATP main-tour singles only
-  let arr;
-  try { arr = JSON.parse(fs.readFileSync(path.join(CACHE, file), 'utf8')); filesRead++; }
-  catch (e) { filesBad++; continue; }
-  for (const f of arr) {
+const isoDay = ms => new Date(ms).toISOString().slice(0, 10);
+const dayMs = d => new Date(d + 'T00:00:00Z').getTime();
+
+// Fixed 7-day windows anchored on STATS_FLOOR, so a window's file name is stable
+// from run to run and a local cache can be reused; the last one is clipped to today.
+function weekWindows(floor, today) {
+  const out = [];
+  for (let t = dayMs(floor); t <= dayMs(today); t += WINDOW_DAYS * 86400000) {
+    const stop = Math.min(t + (WINDOW_DAYS - 1) * 86400000, dayMs(today));
+    out.push({ start: isoDay(t), stop: isoDay(stop) });
+  }
+  return out;
+}
+
+// Only what the ratings read, so a cached week is ~10% of the raw page.
+function slimFixture(f) {
+  return {
+    event_key: f.event_key, event_date: f.event_date, event_status: f.event_status,
+    event_type_type: f.event_type_type, tournament_key: f.tournament_key,
+    first_player_key: f.first_player_key, second_player_key: f.second_player_key,
+    event_winner: f.event_winner, scores: f.scores,
+    statistics: Array.isArray(f.statistics) ? f.statistics.filter(s => s.stat_period === 'match') : [],
+  };
+}
+
+function curlJson(url) {
+  return new Promise((resolve, reject) => {
+    execFile('curl', ['-sS', '--fail', '--max-time', '180', url], { maxBuffer: 512 << 20 }, (err, stdout) => {
+      if (err) return reject(new Error(`curl failed (${String(err.message).split('\n')[0].replace(/APIkey=[^&\s]+/g, 'APIkey=***')})`));
+      try { resolve(JSON.parse(stdout)); } catch (e) { reject(new Error('response is not JSON')); }
+    });
+  });
+}
+
+// One tier page. An empty week answers {"success":1} with no `result`; a billing or
+// auth failure answers HTTP 200 with an `error` key (cod 1006 = unpaid) — that must
+// fail the window, never read as "no matches this week".
+async function fetchWindow(key, w) {
+  const url = `${API_BASE}?method=get_fixtures&event_type_key=265&date_start=${w.start}&date_stop=${w.stop}&APIkey=${encodeURIComponent(key)}`;
+  const d = await curlJson(url);
+  if (d && d.error && String(d.error) !== '0') {
+    const r0 = Array.isArray(d.result) && d.result[0] || {};
+    throw new Error(`api-tennis error ${d.error} (cod ${r0.cod}: ${r0.msg})`);
+  }
+  if (!d || Number(d.success) !== 1) throw new Error('api-tennis answered without success:1');
+  return Array.isArray(d.result) ? d.result : [];
+}
+
+async function loadBoxScores(key, today) {
+  if (!fs.existsSync(BOX_DIR)) fs.mkdirSync(BOX_DIR, { recursive: true });
+  const windows = weekWindows(STATS_FLOOR, today);
+  const fresh = dayMs(today) - REFETCH_DAYS * 86400000;
+  const fileOf = w => path.join(BOX_DIR, `265-${w.start}_${w.stop}.json`);
+  const need = windows.filter(w => !fs.existsSync(fileOf(w)) || dayMs(w.stop) >= fresh);
+  const failures = [];
+  let next = 0;
+  async function worker() {
+    while (next < need.length) {
+      const w = need[next++];
+      let lastErr = null;
+      for (let attempt = 1; attempt <= 2; attempt++) {
+        try {
+          const rows = await fetchWindow(key, w);
+          fs.writeFileSync(fileOf(w), JSON.stringify(rows.map(slimFixture)));
+          lastErr = null;
+          break;
+        } catch (e) { lastErr = e; }
+      }
+      if (lastErr) failures.push(`${w.start}..${w.stop}: ${lastErr.message}`);
+    }
+  }
+  await Promise.all(Array.from({ length: FETCH_CONCURRENCY }, worker));
+  if (failures.length) {
+    throw new Error(`${failures.length} of ${windows.length} box-score windows failed — refusing to rate on a partial corpus:\n  ${failures.slice(0, 5).join('\n  ')}`);
+  }
+  const fixtures = [];
+  for (const w of windows) fixtures.push(...JSON.parse(fs.readFileSync(fileOf(w), 'utf8')));
+  return { fixtures, windows: windows.length, fetched: need.length, reused: windows.length - need.length };
+}
+
+// ---- ingest ----------------------------------------------------------------------
+// contribs[playerKey] = [ {date, surface, block, score} ... ]  (ATP 265 only)
+function ingest(fixtures, surfaceOf) {
+  const contribs = new Map();
+  let fixturesSeen = 0, ingested = 0, noSurface = 0;
+  const seenPM = new Set();
+  for (const f of fixtures) {
     fixturesSeen++;
     if (!/finished/i.test(f.event_status || '')) continue;         // full stats only
     if (f.event_type_type && !/single/i.test(f.event_type_type)) continue;
@@ -282,46 +384,51 @@ for (const file of fs.readdirSync(CACHE)) {
       if (!surface) noSurface++;
     }
   }
+  return { contribs, stats: { fixturesSeen, playerMatchesIngested: ingested, playerMatchesWithoutSurface: noSurface, distinctPlayersInCorpus: contribs.size } };
 }
 
-// ---- aggregate per player into scopes x surfaces -----------------------------
-const players = [];
-for (const [pk, list] of contribs) {
-  // last52 anchored to the player's most-recent cached match date
-  let latest = '';
-  for (const c of list) if (c.date > latest) latest = c.date;
-  const cutoffMs = latest ? new Date(latest + 'T00:00:00Z').getTime() - LAST52_DAYS * 86400000 : null;
+// ---- aggregate per player into scopes x surfaces -------------------------------
+function ratePlayers(contribs, roster) {
+  const players = [];
+  for (const [pk, list] of contribs) {
+    if (!roster[pk]) continue;
+    // last52 anchored to the player's most-recent match date (surface-ratings.js convention)
+    let latest = '';
+    for (const c of list) if (c.date > latest) latest = c.date;
+    const cutoffMs = latest ? dayMs(latest) - LAST52_DAYS * 86400000 : null;
 
-  const scopes = { last52: {}, sinceBase: {} };
-  for (const s of [...SURFACES, 'All']) { scopes.last52[s] = newAgg(); scopes.sinceBase[s] = newAgg(); }
+    const scopes = { last52: {}, sinceBase: {} };
+    for (const s of [...SURFACES, 'All']) { scopes.last52[s] = newAgg(); scopes.sinceBase[s] = newAgg(); }
 
-  for (const c of list) {
-    const inL52 = cutoffMs != null && new Date(c.date + 'T00:00:00Z').getTime() >= cutoffMs;
-    add(scopes.sinceBase.All, c.block, c.score);
-    if (c.surface) add(scopes.sinceBase[c.surface], c.block, c.score);
-    if (inL52) {
-      add(scopes.last52.All, c.block, c.score);
-      if (c.surface) add(scopes.last52[c.surface], c.block, c.score);
+    for (const c of list) {
+      const inL52 = cutoffMs != null && dayMs(c.date) >= cutoffMs;
+      add(scopes.sinceBase.All, c.block, c.score);
+      if (c.surface) add(scopes.sinceBase[c.surface], c.block, c.score);
+      if (inL52) {
+        add(scopes.last52.All, c.block, c.score);
+        if (c.surface) add(scopes.last52[c.surface], c.block, c.score);
+      }
     }
-  }
 
-  const surfaces = {};
-  for (const s of [...SURFACES, 'All']) {
-    surfaces[s] = { last52: computeRatings(scopes.last52[s]), sinceBase: computeRatings(scopes.sinceBase[s]) };
+    const surfaces = {};
+    for (const s of [...SURFACES, 'All']) {
+      surfaces[s] = { last52: computeRatings(scopes.last52[s]), sinceBase: computeRatings(scopes.sinceBase[s]) };
+    }
+    players.push({
+      playerKey: pk,
+      name: roster[pk].name || null,
+      inRoster: true,
+      matchesAll: { last52: scopes.last52.All.matches, sinceBase: scopes.sinceBase.All.matches },
+      latestMatch: latest,
+      last52From: cutoffMs != null ? isoDay(cutoffMs) : null,
+      surfaces,
+    });
   }
-  players.push({
-    playerKey: pk,
-    name: nameOf(pk),
-    inRoster: rosterKeys.has(pk),
-    matchesAll: { last52: scopes.last52.All.matches, sinceBase: scopes.sinceBase.All.matches },
-    latestMatch: latest,
-    surfaces,
-  });
+  // keep only roster players with > 10 sinceBase-All matches (inclusion gate)
+  const rated = players.filter(p => p.matchesAll.sinceBase >= INCLUDE_MIN_MATCHES);
+  rated.sort((a, b) => b.matchesAll.sinceBase - a.matchesAll.sinceBase || (a.playerKey < b.playerKey ? -1 : 1));
+  return rated;
 }
-
-// keep only roster players with > 10 sinceBase-All matches (inclusion gate)
-const rated = players.filter(p => p.inRoster && p.matchesAll.sinceBase >= INCLUDE_MIN_MATCHES);
-rated.sort((a, b) => b.matchesAll.sinceBase - a.matchesAll.sinceBase);
 
 // ===========================================================================
 // 5th AXIS — Surface Elo (Tennis Abstract, elo-ratings.json). NOT computed here;
@@ -330,8 +437,6 @@ rated.sort((a, b) => b.matchesAll.sinceBase - a.matchesAll.sinceBase);
 // surface slot leaves that surface's Elo axis null rather than degrading to All
 // (honesty — a grass Elo we don't hold is not the all-surface number).
 // ===========================================================================
-const eloRaw = (() => { try { return JSON.parse(fs.readFileSync(ELO_PATH, 'utf8')); } catch (e) { return {}; } })();
-const eloMap = eloRaw.elo || {};
 function eloKeyOf(name) {
   const p = String(name || '').normalize('NFD').replace(/[̀-ͯ]/g, '')
     .toLowerCase().replace(/['’]/g, '').replace(/[.\-]/g, ' ').replace(/\s+/g, ' ').trim().split(' ').filter(Boolean);
@@ -339,121 +444,163 @@ function eloKeyOf(name) {
   return p[p.length - 1] + '|' + p[0][0];
 }
 const ELO_SLOT = { Hard: 'hard', Clay: 'clay', Grass: 'grass', All: 'all' };
-let eloResolved = 0;
-for (const p of rated) {
-  const rec = eloMap[eloKeyOf(p.name)] || null;
-  if (rec) eloResolved++;
-  for (const s of [...SURFACES, 'All']) {
-    const slot = rec ? rec[ELO_SLOT[s]] : null;
-    p.surfaces[s].elo = (slot && slot.rating != null)
-      ? { rating: slot.rating, rank: (slot.rank != null ? slot.rank : null), pct: null }
-      : null;
+function attachElo(rated, eloMap) {
+  let eloResolved = 0;
+  for (const p of rated) {
+    const rec = eloMap[eloKeyOf(p.name)] || null;
+    if (rec) eloResolved++;
+    for (const s of [...SURFACES, 'All']) {
+      const slot = rec ? rec[ELO_SLOT[s]] : null;
+      p.surfaces[s].elo = (slot && slot.rating != null)
+        ? { rating: slot.rating, rank: (slot.rank != null ? slot.rank : null), pct: null }
+        : null;
+    }
   }
+  return eloResolved;
 }
 
 // ===========================================================================
-// RADAR PERCENTILES — the ratings live on 4 different scales (Serve ~260-303,
-// Return ~120-169, Under Pressure ~228-271, Dominance ~1.0-1.55, Elo ~1400-2350),
-// so the radar can't chart raw values. For each axis x scope x surface pool
-// (rated players with a non-null rating), scale the raw rating linearly between
-// the pool's p2 and p98 values into 0-100 (`pct`), clamped so tail outliers don't
-// peg a spoke. p2/p98 band edges are emitted to _meta.bands for provenance. Elo is
-// scope-independent (one band per surface, shared by both scopes).
+// PERCENTILES (founder D6, 2026-09-28). The ratings live on 5 different scales
+// (Serve ~260-305, Return ~120-170, Under Pressure ~200-275, Dominance ~0.8-1.6,
+// Elo ~1400-2300), so the radar plots a percentile rank, not the raw value:
+//   pctRank(v) = 100 × (#population below v + ½ × #population equal to v) / n
+// The population for an axis × scope × surface is every rated player with at least
+// POP_MIN_MATCHES matches in that scope × surface and a non-null rating. A player
+// under the floor still gets a pct against that population (the page does not draw
+// him — its floor is the same 10). Elo is current only (D6): one population per
+// surface, shared by both scopes.
 // ===========================================================================
-function quantile(sorted, q) {
-  if (!sorted.length) return null;
-  if (sorted.length === 1) return sorted[0];
-  const pos = (sorted.length - 1) * q, base = Math.floor(pos), rest = pos - base;
-  return sorted[base + 1] !== undefined ? sorted[base] + rest * (sorted[base + 1] - sorted[base]) : sorted[base];
+function pctRank(sorted, v) {
+  if (v == null || !sorted || !sorted.length) return null;
+  let lo = 0, hi = sorted.length;
+  while (lo < hi) { const mid = (lo + hi) >> 1; if (sorted[mid] < v) lo = mid + 1; else hi = mid; }
+  const below = lo;
+  hi = sorted.length;
+  while (lo < hi) { const mid = (lo + hi) >> 1; if (sorted[mid] <= v) lo = mid + 1; else hi = mid; }
+  const equal = lo - below;
+  return +(100 * (below + equal / 2) / sorted.length).toFixed(1);
 }
-function pctFromBand(v, p2, p98) {
-  if (v == null || p2 == null || p98 == null || p98 <= p2) return v == null ? null : 50;
-  return +Math.max(0, Math.min(100, (v - p2) / (p98 - p2) * 100)).toFixed(1);
-}
+
 const RATE_AXES = ['serve', 'return', 'underPressure', 'dominanceRatio'];
-const bands = {};                          // bands[scope][surface][axis] = {p2,p98,n}
-for (const scope of ['last52', 'sinceBase']) {
-  bands[scope] = {};
+const SCOPE_TEXT = { last52: 'last 52 weeks', sinceBase: 'since Mar 2024' };
+function assignPercentiles(rated) {
+  const percentiles = {};                  // percentiles[scope][surface][axis] = {population,n,values}
+  for (const scope of ['last52', 'sinceBase']) {
+    percentiles[scope] = {};
+    for (const s of [...SURFACES, 'All']) {
+      percentiles[scope][s] = {};
+      for (const ax of RATE_AXES) {
+        const vals = [];
+        for (const p of rated) {
+          const node = p.surfaces[s][scope];
+          const r = node[ax];
+          if (r && r.rating != null && node.sample.matches >= POP_MIN_MATCHES) vals.push(r.rating);
+        }
+        vals.sort((a, b) => a - b);
+        percentiles[scope][s][ax] = {
+          population: `rated ATP main-tour players with >= ${POP_MIN_MATCHES} matches (${s === 'All' ? 'all surfaces' : s}, ${SCOPE_TEXT[scope]})`,
+          n: vals.length,
+          values: vals,
+        };
+        for (const p of rated) { const r = p.surfaces[s][scope][ax]; if (r && r.rating != null) r.pct = pctRank(vals, r.rating); }
+      }
+    }
+  }
+  const eloPercentiles = {};                // eloPercentiles[surface] = {population,n,values}
   for (const s of [...SURFACES, 'All']) {
-    bands[scope][s] = {};
-    for (const ax of RATE_AXES) {
-      const vals = [];
-      for (const p of rated) { const r = p.surfaces[s][scope][ax]; if (r && r.rating != null) vals.push(r.rating); }
-      vals.sort((a, b) => a - b);
-      const p2 = quantile(vals, 0.02), p98 = quantile(vals, 0.98);
-      bands[scope][s][ax] = { p2: p2 != null ? +p2.toFixed(2) : null, p98: p98 != null ? +p98.toFixed(2) : null, n: vals.length };
-      for (const p of rated) { const r = p.surfaces[s][scope][ax]; if (r && r.rating != null) r.pct = pctFromBand(r.rating, p2, p98); }
+    const vals = [];
+    for (const p of rated) { const e = p.surfaces[s].elo; if (e && e.rating != null) vals.push(e.rating); }
+    vals.sort((a, b) => a - b);
+    eloPercentiles[s] = {
+      population: `rated ATP main-tour players with a current Tennis Abstract ${s === 'All' ? 'overall' : s} Elo`,
+      n: vals.length,
+      values: vals,
+    };
+    for (const p of rated) { const e = p.surfaces[s].elo; if (e && e.rating != null) e.pct = pctRank(vals, e.rating); }
+  }
+  return { percentiles, eloPercentiles };
+}
+
+// ---- main ----------------------------------------------------------------------
+async function main() {
+  const t0 = Date.now();
+  const store = require('./tools/deployed-store.js');
+  const today = process.env.DNA_TODAY || new Date().toISOString().slice(0, 10);
+
+  // Roster — deployed or nothing. A fresh fetch every run (maxAgeMs 0), so a day-old
+  // cache in a local .deployed-cache/ cannot stand in for today's roster.
+  const pp = store.playerProfiles({ maxAgeMs: 0 });
+  const roster = pp.players || {};
+  const rosterSize = Object.keys(roster).length;
+  if (pp.source !== 'deployed') throw new Error(`roster source is '${pp.source}' (${JSON.stringify(pp.drift)}) — refusing to rate the committed July fossil`);
+  if (rosterSize < ROSTER_MIN) throw new Error(`deployed roster has ${rosterSize} players (< ${ROSTER_MIN}) — refusing to publish a shrunken board`);
+
+  // Surface map — deployed copy (the committed one lags the pipeline's refresh).
+  const sm = store.fetchJson('tournament-surfaces.json', { maxAgeMs: 0 });
+  const surfRaw = (sm && sm.surfaces) || null;
+  if (!surfRaw || Object.keys(surfRaw).length < SURFACE_MAP_MIN) {
+    throw new Error(`deployed tournament-surfaces.json unreachable or short (${surfRaw ? Object.keys(surfRaw).length : 0} entries)`);
+  }
+  const surfaceOf = tk => CAP[surfRaw[String(tk)]] || null;   // null => carpet/unknown -> dropped from per-surface
+
+  const box = await loadBoxScores(apiKey(), today);
+  const { contribs, stats } = ingest(box.fixtures, surfaceOf);
+  const rated = ratePlayers(contribs, roster);
+
+  const eloRaw = (() => { try { return JSON.parse(fs.readFileSync(ELO_PATH, 'utf8')); } catch (e) { return {}; } })();
+  const eloResolved = attachElo(rated, eloRaw.elo || {});
+  const { percentiles, eloPercentiles } = assignPercentiles(rated);
+
+  const out = {
+    _meta: {
+      task: 'TEN-103 — api-tennis-native DNA ratings; TEN-319 — daily rebuild off the deployed roster, true percentiles',
+      generatedAt: new Date().toISOString(),
+      source: `api-tennis box scores, ATP main-tour singles (event_type 265), ${STATS_FLOOR}..${today} — NO Sackmann/TML`,
+      scopes: { last52: `matches within ${LAST52_DAYS}d of player's most-recent match (last52From..latestMatch)`, sinceBase: `all data since ${STATS_FLOOR} (shown as "Since Mar 2024")` },
+      surfaces: 'Hard/Clay/Grass/All; indoor->Hard, carpet->dropped (via tournament-surfaces.json normalizeSurface)',
+      inclusion: `deployed-roster player with > 10 (>=${INCLUDE_MIN_MATCHES}) sinceBase-All matches`,
+      lockedFormulas: {
+        serve: '%1stIn + %1stWon + %2ndWon + hold% + acesPerMatch − DFPerMatch (aces/DF raw per-match)',
+        return: '%1stReturnWon + %2ndReturnWon + %returnGamesWon + %BPconverted',
+        underPressure: '%BPsaved + %BPconverted + %tiebreaksWon + %decidingSetsWon (4-sum; 3-of-4 -> mean*4 estimated:true; <3 -> null)',
+        dominanceRatio: 'returnPtsWon% / (100 − servicePtsWon%)',
+      },
+      roster: { source: pp.source, fetchedAt: pp.fetchedAt || null, players: rosterSize },
+      rosterSize,
+      ratedPlayers: rated.length,
+      eloResolved,
+      radarAxes: ['serve', 'return', 'underPressure', 'dominanceRatio', 'elo (Surface Elo, current only)'],
+      pctMethod: `true percentile rank: 100 × (below + ½·equal) / n within the (axis × scope × surface) population — rated players with >= ${POP_MIN_MATCHES} matches in that scope × surface; Elo: rated players with that surface's current Elo`,
+      popMinMatches: POP_MIN_MATCHES,
+      percentiles,      // percentiles[scope][surface][rateAxis] = {population, n, values (ascending)}
+      eloPercentiles,   // eloPercentiles[surface] = {population, n, values}  (Surface Elo is current only)
+      ingest: Object.assign({ windows: box.windows, windowsFetched: box.fetched, windowsReused: box.reused }, stats),
+      wallClockMs: Date.now() - t0,
+    },
+    players: rated,
+  };
+  fs.writeFileSync(OUT, JSON.stringify(out, null, 1));
+
+  // ---- coverage report ---------------------------------------------------------
+  const cnt = (scope, surf, axis, min) => rated.filter(p => {
+    const node = p.surfaces[surf][scope];
+    return node.sample.matches >= min && node[axis] && node[axis].rating != null;
+  }).length;
+  console.log(`\nWROTE ${path.relative(ROOT, OUT)} — roster ${rosterSize} (deployed ${pp.fetchedAt}), rated ${rated.length}, Elo ${eloResolved}`);
+  console.log(JSON.stringify(out._meta.ingest));
+  for (const scope of ['last52', 'sinceBase']) {
+    console.log(`-- ${scope}: population n (>=${POP_MIN_MATCHES} matches) --`);
+    for (const s of [...SURFACES, 'All']) {
+      console.log(`   ${s.padEnd(6)} ` + RATE_AXES.map(a => `${a}=${cnt(scope, s, a, POP_MIN_MATCHES)}`).join('  '));
     }
   }
 }
-const eloBands = {};                        // eloBands[surface] = {p2,p98,n}
-for (const s of [...SURFACES, 'All']) {
-  const vals = [];
-  for (const p of rated) { const e = p.surfaces[s].elo; if (e && e.rating != null) vals.push(e.rating); }
-  vals.sort((a, b) => a - b);
-  const p2 = quantile(vals, 0.02), p98 = quantile(vals, 0.98);
-  eloBands[s] = { p2: p2 != null ? +p2.toFixed(1) : null, p98: p98 != null ? +p98.toFixed(1) : null, n: vals.length };
-  for (const p of rated) { const e = p.surfaces[s].elo; if (e && e.rating != null) e.pct = pctFromBand(e.rating, p2, p98); }
-}
 
-const out = {
-  _meta: {
-    task: 'TEN-103 — api-tennis-native DNA ratings',
-    generatedAt: new Date().toISOString(),
-    source: `api-tennis box scores, ATP main-tour singles (event_type 265), ${STATS_FLOOR}..now — NO Sackmann/TML`,
-    scopes: { last52: `matches within ${LAST52_DAYS}d of player's most-recent cached match`, sinceBase: `all cached data (${STATS_FLOOR} -> now)` },
-    surfaces: 'Hard/Clay/Grass/All; indoor->Hard, carpet->dropped (via tournament-surfaces.json normalizeSurface)',
-    inclusion: `roster player with > 10 (>=${INCLUDE_MIN_MATCHES}) sinceBase-All matches`,
-    lockedFormulas: {
-      serve: '%1stIn + %1stWon + %2ndWon + hold% + acesPerMatch − DFPerMatch (aces/DF raw per-match)',
-      return: '%1stReturnWon + %2ndReturnWon + %returnGamesWon + %BPconverted',
-      underPressure: '%BPsaved + %BPconverted + %tiebreaksWon + %decidingSetsWon (4-sum; 3-of-4 -> mean*4 estimated:true; <3 -> null)',
-      dominanceRatio: 'returnPtsWon% / (100 − servicePtsWon%)',
-    },
-    rosterSize: rosterKeys.size,
-    ratedPlayers: rated.length,
-    eloResolved,
-    radarAxes: ['serve', 'return', 'underPressure', 'dominanceRatio', 'elo (Surface Elo)'],
-    pctMethod: 'raw rating scaled linearly p2->0, p98->100 within (axis x scope x surface) rated-player pool, clamped 0-100',
-    bands,            // bands[scope][surface][rateAxis] = {p2,p98,n}
-    eloBands,         // eloBands[surface] = {p2,p98,n}  (Surface Elo is scope-independent)
-    ingest: { filesRead, filesBad, fixturesSeen, playerMatchesIngested: ingested, playerMatchesWithoutSurface: noSurface, distinctPlayersInCache: contribs.size },
-    wallClockMs: Date.now() - t0,
-  },
-  players: rated,
+module.exports = {
+  pctRank, assignPercentiles, weekWindows, slimFixture, ingest, ratePlayers,
+  statBlock, scoreOutcome, computeRatings, POP_MIN_MATCHES, INCLUDE_MIN_MATCHES,
 };
-fs.writeFileSync(OUT, JSON.stringify(out, null, 1));
 
-// ---- coverage report ---------------------------------------------------------
-function cnt(scope, surf, axis, min) {
-  return rated.filter(p => {
-    const m = p.surfaces[surf][scope].sample.matches;
-    if (m < min) return false;
-    const r = p.surfaces[surf][scope][axis];
-    return r && r.rating != null;
-  }).length;
+if (require.main === module) {
+  main().catch((e) => { console.error(`dna-apitennis-ratings: ${e.message}`); process.exit(1); });
 }
-console.log(`\nWROTE ${OUT}`);
-console.log(JSON.stringify(out._meta.ingest, null, 1));
-console.log(`\n=== COVERAGE (All-surface) — players rated per axis/scope at >=10 and >=20 matches ===`);
-const axes = [['serve', 'Serve'], ['return', 'Return'], ['underPressure', 'Under Pressure'], ['dominanceRatio', 'Dominance Ratio']];
-for (const scope of ['last52', 'sinceBase']) {
-  console.log(`-- scope=${scope} --`);
-  for (const [a, label] of axes) {
-    console.log(`   ${label.padEnd(16)} >=10: ${String(cnt(scope, 'All', a, 10)).padStart(3)}   >=20: ${String(cnt(scope, 'All', a, 20)).padStart(3)}`);
-  }
-}
-console.log(`\n=== last52 per-surface >=10 (grass = binding constraint) ===`);
-for (const surf of SURFACES) {
-  const row = axes.map(([a, l]) => `${l}=${cnt('last52', surf, a, 10)}`).join('  ');
-  console.log(`   ${surf.padEnd(6)} ${row}`);
-}
-// Under Pressure last52 All: all-4 vs 3-of-4
-let up4 = 0, up3 = 0;
-for (const p of rated) {
-  const u = p.surfaces.All.last52.underPressure;
-  if (p.surfaces.All.last52.sample.matches < 10) continue;
-  if (u.rating == null) continue;
-  if (u.components >= 4) up4++; else if (u.components === 3) up3++;
-}
-console.log(`\n=== Under Pressure last52 All (>=10 matches): all-4-present=${up4}  3-of-4-estimated=${up3} ===`);

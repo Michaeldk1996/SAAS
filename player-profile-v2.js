@@ -3384,21 +3384,26 @@
     return out;
   }
 
-  // The published p2->p98 band is what turns a raw rating into the percentile the
-  // radar plots (`_meta.pctMethod`). Inverting it here is what lets the TOUR
-  // polygon sit at the tour mean's true percentile instead of a flat ring.
-  function dnaBand(scope, axKey) {
+  // TEN-319 (founder D6): the radar plots a TRUE percentile rank within a stated
+  // population (`_meta.pctMethod`); the file publishes each population's sorted
+  // values. Ranking by the builder's own rule, 100 × (below + ½·equal) / n, is
+  // what lets the TOUR polygon sit at the tour mean's percentile, and a rating the
+  // file holds no pct for still land where the builder would have put it.
+  function dnaPop(scope, axKey) {
     var st = dnaStore();
     var m = st && st.meta;
     if (!m) return null;
-    if (axKey === 'elo') return (m.eloBands && m.eloBands[DNA_SURFACE]) || null;
-    var b = m.bands && m.bands[scope] && m.bands[scope][DNA_SURFACE];
+    if (axKey === 'elo') return (m.eloPercentiles && m.eloPercentiles[DNA_SURFACE]) || null;
+    var b = m.percentiles && m.percentiles[scope] && m.percentiles[scope][DNA_SURFACE];
     return (b && b[axKey]) || null;
   }
-  function dnaPctFromBand(scope, axKey, rating) {
-    var b = dnaBand(scope, axKey);
-    if (rating == null || !b || b.p2 == null || b.p98 == null || b.p98 <= b.p2) return null;
-    return Math.max(0, Math.min(100, (rating - b.p2) / (b.p98 - b.p2) * 100));
+  function dnaPctFromPop(scope, axKey, rating) {
+    var p = dnaPop(scope, axKey);
+    var vals = p && p.values;
+    if (rating == null || !vals || !vals.length) return null;
+    var below = 0, equal = 0;
+    vals.forEach(function (x) { if (x < rating) below++; else if (x === rating) equal++; });
+    return 100 * (below + equal / 2) / vals.length;
   }
 
   // ── the resolved panel model ──────────────────────────────────────────────
@@ -3428,15 +3433,15 @@
         // not move between Career and Last 52. Said in the note rather than
         // silently drawn as if it had been rescoped.
         rating = (sf && sf.elo && sf.elo.rating != null) ? sf.elo.rating : null;
-        pct = rating != null ? dnaPctFromBand(scope, 'elo', rating) : null;
+        pct = rating != null ? dnaPctFromPop(scope, 'elo', rating) : null;
         if (pct == null && sf && sf.elo && sf.elo.pct != null) pct = sf.elo.pct;
       } else {
         var node = sc[ax.key];
         rating = (node && node.rating != null) ? node.rating : null;
-        pct = (node && node.pct != null) ? node.pct : dnaPctFromBand(scope, ax.key, rating);
+        pct = (node && node.pct != null) ? node.pct : dnaPctFromPop(scope, ax.key, rating);
       }
       var t = tour[ax.key] || null;
-      var tPct = t ? dnaPctFromBand(scope, ax.key, t.mean) : null;
+      var tPct = t ? dnaPctFromPop(scope, ax.key, t.mean) : null;
       return {
         key: ax.key, label: ax.label, dp: ax.dp,
         rating: rating, pct: pct,

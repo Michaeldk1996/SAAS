@@ -146,6 +146,7 @@ export const DATA_BOT_AUTHORS = new Set([
   'bsp-splits-bot@users.noreply.github.com',      // career-splits.yml (manual dispatch)
   'bot@bspconsult.local', // BSP Entry Lists / Styles / Splits (launchd refresh-*.sh)
   'bsp-weather-bot@users.noreply.github.com',     // pipeline.yml weather-archive commit-back (TEN-304, founder 2026-09-27)
+  'bsp-dna-bot@users.noreply.github.com',         // dna-ratings.yml daily DNA radar refresh (TEN-319, founder 2026-09-28)
 ]);
 // Every file a data bot writes, with its writer.
 export const DATA_FILES = new Set([
@@ -162,6 +163,7 @@ export const DATA_FILES = new Set([
   'career-splits.json', 'splits-matches-index.json',                              // refresh-career-splits.sh / career-splits.yml
   'playing-styles.json', 'matchup-matrix.json', 'holdbreak.json', 'situational.json', 'style-meetings-index.json', // refresh-playing-styles.sh
   'entry_lists.json', 'entry_lists_advance.json',                                 // refresh-entry-lists*.sh
+  'dna-apitennis-ratings.json',                                                   // dna-ratings.yml (TEN-319)
 ]);
 export const DATA_DIRS = ['style-meetings/', 'bet365-history/', 'splits-matches/', 'weather/archive/'];   // weather/archive/: pipeline.yml commit-back (TEN-304)
 const CODE_FILE = /\.(js|mjs|cjs|py|sh|ya?ml|html|css)$/i;

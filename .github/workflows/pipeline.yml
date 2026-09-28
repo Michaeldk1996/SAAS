@@ -738,9 +738,10 @@ jobs:
           cp style-radar.json _site/ 2>/dev/null || true
           # TEN-103 Playing Style DNA radar (H2H compare page): 5 api-tennis-native
           # axes (Serve / Return / Under Pressure / Dominance Ratio / Surface Elo),
-          # percentile-banded. Committed static data — NO workflow regenerates it, so
-          # the committed copy IS the source of truth. Not copied = silent 404 and the
-          # H2H DNA radar (a paid feature) goes empty. In the assert list below.
+          # true percentiles. Rebuilt and committed back by dna-ratings.yml (TEN-319,
+          # twice daily, off the deployed roster), so the committed copy IS the source of
+          # truth. Not copied = silent 404 and the H2H DNA radar (a paid feature) goes
+          # empty. In the assert list below.
           cp dna-apitennis-ratings.json _site/ 2>/dev/null || true
           # Market performance: the index gates the profile block (no entry = no block,
           # so a missing index silently hides the feature for every player), the shards
