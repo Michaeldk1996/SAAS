@@ -291,22 +291,26 @@ test('pinned headline figures on the frozen fixtures (Career / Last 52 weeks, re
 
 test('meLoad: a failed closes fetch or a missing player key is unknown history, never "0 priced"', async () => {
   const ui = buildUI();
-  const run = async ({ key, closes, profile }) => {
+  const run = async ({ key, closes, profile, wantWin }) => {
     const env = new Function('ui', 'cls', 'prof', `
       let _me = null; const _careerHistoryShards = {}, _fhCl = {}, _meShard = {};
       const loadCareerHistory = k => { _careerHistoryShards[String(k)] = []; return Promise.resolve([]); };
       const fhLoadCloses = k => { if (cls === 'ok') _fhCl[String(k)] = null; return Promise.resolve(null); };   // 'ok' = answered (404, no shard); else a failed fetch
-      const meLoadProfileShard = k => { if (prof !== 'failed') _meShard[String(k)] = { matches: [] }; return Promise.resolve(prof === 'failed' ? null : _meShard[String(k)]); };
+      const meLoadProfileShard = k => { if (prof !== 'failed') _meShard[String(k)] = prof === '404' ? { matches: [], missing: true } : { matches: [] }; return Promise.resolve(prof === 'failed' ? null : _meShard[String(k)]); };
       const meRowsFor = ui.meRowsFor, meWinnerRows = ui.meWinnerRows, meRender = () => {};
       ${slice('meStateFor')}
       ${slice('meLoad')}
-      return { go: m => { meLoad(m); return new Promise(r => setTimeout(() => r(_me.state.slice()), 20)); } };
+      return { go: m => { meLoad(m); return new Promise(r => setTimeout(() => r(_me.state.slice()), 20)); },
+               win: () => _me.data.map(d => !!(d && Array.isArray(d.win))) };
     `)(ui, closes, profile);
-    return env.go({ id: 'x', p1: 'A', p2: 'B', p1Key: key, p2Key: 7, date: '2026-09-27' });
+    const st = await env.go({ id: 'x', p1: 'A', p2: 'B', p1Key: key, p2Key: 7, date: '2026-09-27' });
+    return wantWin ? env.win() : st;
   };
   assert.deepEqual(await run({ key: 5, closes: 'failed' }), ['failed', 'failed']);
   assert.deepEqual(await run({ key: 5, closes: 'ok' }), ['ready', 'ready']);
   assert.deepEqual(await run({ key: 5, closes: 'ok', profile: 'failed' }), ['failed', 'failed'], 'a failed profile-shard fetch is a failure, never "0 priced"');
+  assert.deepEqual(await run({ key: 5, closes: 'ok', profile: '404' }), ['none', 'none'], 'no profile Market edge → dashes, like the profile');
+  assert.deepEqual(await run({ key: 5, closes: 'ok', wantWin: true }), [true, true], 'ruling B wiring: every ready player carries the profile rows');
   assert.deepEqual((await run({ key: null, closes: 'ok' }))[0], 'none');
   // and what the page shows for them
   const R = ui.render({ id: 'x', p1: 'A. One', p2: 'B. Two', p1Key: 5, p2Key: 7, date: '2026-09-27', bestOdds: { p1: { price: 1.5 }, p2: { price: 2.6 } } },
@@ -387,6 +391,9 @@ test('ruling B: tab Match winner = the profile shard, band by band (Sinner, Alca
   const bonzi = sin.find((r) => r.date === '2026-04-24');
   assert.ok(bonzi && bonzi.book === 'B' && bonzi.src === 'cap', 'Madrid v Bonzi is the captured Bet365 row');
   assert.ok(/Bonzi/.test(bonzi.opp) && bonzi.ek != null && bonzi.sets, 'it borrows the career row\'s eventKey and sets');
+  // what the stats sheet reads (set counts) comes with the join — never "— – —" on a joined row
+  assert.ok(joined.every((r) => r.pS != null && r.oS != null), 'joined rows carry the set counts');
+  assert.ok(sin.every((r) => r.retSettle === false && r.wo === false && r.profile), 'the profile settles its rows');
   // a profile row with no career counterpart keeps dashes and no eventKey (never a guessed join)
   const lone = ui.meWinnerRows({ matches: [{ date: '2026-05-02', event: 'X Open', surface: 'Clay', round: '1st Round', opp: 'Nobody Z.', won: true,
     price: 1.3, oppPrice: 3.4, book: 'bet365-capture', inBasis: true }] }, rows[0], '2072', M.p1)[0];

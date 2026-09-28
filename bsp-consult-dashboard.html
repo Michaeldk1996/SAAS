@@ -15435,26 +15435,28 @@ function meWinnerRows(shard, career, selfKey, selfName){
     if (!x.inBasis || !bk) return;
     let c = byTd[x.date + '|' + x.opp + '|' + (x.won ? 1 : 0)] || null;
     if (!c && (c = byName(x))) claimed.add(c);
-    out.push({
-      mid: fhSafeId('mw' + selfKey + '_' + i + '_' + x.date), date: x.date, day: fhDayNum(x.date),
-      tourn: c ? c.tourn : fhTournClean(x.event), surface: c ? c.surface : fhSurfName(x.surface),
-      round: c ? c.round : (ME_TD_ROUND[String(x.round || '').toLowerCase()] || FH_DASHC),
-      opp: c ? c.opp : x.opp, oppKey: c ? c.oppKey : null, won: !!x.won, sets: c ? c.sets : null, ek: c ? c.ek : null,
-      selfKey, selfName, price: Number(x.price), oppPrice: Number(x.oppPrice), book: bk[0], src: bk[1],
-      level: 'ATP', wo: false, ret: false, retSettle: false, profile: true,
-    });
+    // Joined: the career row as it is (set counts, result, best-of … — what the stats sheet reads), with the
+    // profile's price, book, date and settlement on top. Not joined: the profile's own fields, dashes elsewhere.
+    const base = c ? Object.assign({}, c) : {
+      tourn: fhTournClean(x.event), surface: fhSurfName(x.surface), round: ME_TD_ROUND[String(x.round || '').toLowerCase()] || FH_DASHC,
+      opp: x.opp, oppKey: null, sets: null, ek: null, selfKey, selfName, level: 'ATP' };
+    out.push(Object.assign(base, {
+      mid: fhSafeId('mw' + selfKey + '_' + i + '_' + x.date), date: x.date, day: fhDayNum(x.date), won: !!x.won,
+      price: Number(x.price), oppPrice: Number(x.oppPrice), book: bk[0], src: bk[1],
+      wo: false, retSettle: false, profile: true,                  // the profile's rows are Tennis-Data "Completed"
+    }));
   });
   return out;
 }
 const _meShard = {}, _meShardP = {};
-// market-edge/{key}.json: a 404 is an answer (the profile has no Market edge rows for him → 0 priced);
-// a network error is not cached and reads as a failed load.
+// market-edge/{key}.json: a 404 is an answer — the profile has no Market edge for him and dashes it, so the
+// tab dashes too (state 'none', never "0 priced"); a network error is not cached and reads as a failed load.
 function meLoadProfileShard(key){
   const k = String(key);
   if (k in _meShard) return Promise.resolve(_meShard[k]);
   if (_meShardP[k]) return _meShardP[k];
   _meShardP[k] = fetch(`./market-edge/${encodeURIComponent(k)}.json`, { cache: 'no-cache' })
-    .then(r => (r.ok ? r.json() : r.status === 404 ? { matches: [] } : Promise.reject(new Error('HTTP ' + r.status))))
+    .then(r => (r.ok ? r.json() : r.status === 404 ? { matches: [], missing: true } : Promise.reject(new Error('HTTP ' + r.status))))
     .then(d => { _meShard[k] = d; return d; })
     .catch(() => { delete _meShardP[k]; return null; });
   return _meShardP[k];
@@ -15512,6 +15514,7 @@ function meLoad(m){
       // (_fhCl), and without it every row would read unpriced — so it is a failure too, never "0 priced".
       const answered = String(key) in _careerHistoryShards && String(key) in _fhCl && String(key) in _meShard;
       if (!answered){ E.state[i] = 'failed'; E.data[i] = null; }
+      else if (ms && ms.missing){ E.state[i] = 'none'; E.data[i] = null; }             // no profile Market edge → dashes
       else {
         const rows = meRowsFor(ch, cl, String(key), name);
         rows.win = meWinnerRows(ms, rows, String(key), name);                          // ruling B

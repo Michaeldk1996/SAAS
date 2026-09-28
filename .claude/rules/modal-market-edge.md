@@ -10,8 +10,9 @@ Applies to the TEN-310 block in `bsp-consult-dashboard.html` (`me*` functions, `
   - **Match winner view (bands, profit chart, band pop-up)** = the player-profile Market edge's own rows,
     `market-edge/{key}.json` `matches` with `inBasis` (`meWinnerRows`). Each row borrows set scores, eventKey and the
     display name/round from the one career-history row that joined the same Tennis-Data row (`tdKey`); a row with no
-    such career row (e.g. a capture-only match) shows a dash there and is not clickable. A 404 shard = the profile has
-    no rows = "0 priced"; a failed fetch = failed, never "0 priced".
+    such career row is joined by opponent surname + result in the event window (exactly one candidate), else it shows a
+    dash there and is not clickable. A 404 shard = the profile has no Market edge and dashes it → the tab dashes that
+    player too (state `none`), never "0 priced"; a failed fetch = failed.
     **Test:** `test-ten310-market-edge.mjs` "ruling B" — every band's W–L and 1u, the legend n and end = the profile
     shard's bands and headline; control: the career rows do not match.
   - **Derived lines (card + pop-up)** = `career-history/{key}.json` (ATP tour level only) joined to
@@ -39,7 +40,8 @@ Applies to the TEN-310 block in `bsp-consult-dashboard.html` (`me*` functions, `
 
 ## Populations
 - **Match winner (bands + profit chart):** the profile's priced rows (ruling B), Bo5 included: Tennis-Data
-  "Completed" matches plus capture-priced ones. Walkovers and retirements never (Tennis-Data settles).
+  "Completed" matches, each priced in `FH_BOOK_ORDER` (some from our captures). Walkovers and retirements never
+  (Tennis-Data settles).
 - **Derived lines (card + pop-up):** career-history rows priced through the Form/H2H picker, not walkovers, not
   retired (feed flag or Tennis-Data), restricted to completed best-of-3 with every set a
   standard finished set: no Bo5, no NextGen / team events (Laver, Davis, United, ATP, Hopman Cup), no match-tiebreak

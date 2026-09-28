@@ -140,8 +140,8 @@
     const series = priced.length ? [{ day: priced[0].day, c: 0 }] : [];
     priced.forEach((r) => { cum += plCents(r); series.push({ day: r.day, c: cum }); });
     // counts for the report and the pill
-    const why = {};
-    scoped.forEach((r) => { const k = whyNotPriced(r) || 'priced'; why[k] = (why[k] || 0) + 1; });
+    const why = {};                                // Match winner population: why each in-scope row is in or out
+    win.forEach((r) => { const k = whyNotPriced(r) || 'priced'; why[k] = (why[k] || 0) + 1; });
     const whyBo3 = {};
     (o.winnerRows ? scoped.filter(inWinner) : priced).forEach((r) => { const k = whyNotBo3(r) || 'bo3'; whyBo3[k] = (whyBo3[k] || 0) + 1; });
     const book = { P: priced.filter((r) => r.book === 'P').length, B: priced.filter((r) => r.book === 'B').length };
