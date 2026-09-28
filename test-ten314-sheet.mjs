@@ -11,6 +11,8 @@ import { fileURLToPath } from 'node:url';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const html = readFileSync(process.env.TEN314_HTML || join(HERE, 'bsp-consult-dashboard.html'), 'utf8');
+// TEN-327: the sheet's Serve / Return ratings come from the shared helper the page loads by <script src>.
+const HOUSE_RATINGS_SRC = readFileSync(join(HERE, 'house-ratings.js'), 'utf8');
 function slice(name) {
   let start = html.indexOf(`\nfunction ${name}(`);
   if (start < 0) start = html.indexOf(`\nasync function ${name}(`);
@@ -31,6 +33,7 @@ const S = new Function(`
   const playerProfiles = {};
   function aAvatarHtml(name, key){ return '<AV ' + name + '|' + key + '>'; }
   function formPanelHtml(){ return ''; } function ensureFormRows(m){ return Promise.resolve(m); } function loadCareerHistory(){ return Promise.resolve([]); }
+  const HouseRatings = (function(){ const window = {}; ${HOUSE_RATINGS_SRC}; return window.HouseRatings; })();
   ${['escapeHtml', 'surnameFirstName', 'psShortName', 'formIni', 'ppCleanTournamentName', 'h2hRoundLabel', 'eventKeyOfMatch'].map(slice).join('\n')}
   ${sliceBlock()}
   return { fhSheetModel, fhSheetKeyModel, fhSheetKeyHtml, fhSheetStatsHtml, fhSheetHeadHtml, fhSheetTabs, MA_SHEET_NA };
