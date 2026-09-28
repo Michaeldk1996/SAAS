@@ -133,6 +133,33 @@ const FORM = [
   });
 }
 
+// ── N2 · the season / surface / court-speed records (same fixtures, same rule) ─────────
+{
+  const sf = (o) => Object.assign({ event_type_type: 'Atp Singles', first_player_key: '1', second_player_key: '2', tournament_key: '10',
+    tournament_name: 'Barcelona', event_qualification: 'False', event_date: '2026-04-10' }, o);
+  const S = [sf({ event_status: 'Walk Over', event_winner: 'First Player' }), sf({ event_status: 'Walk Over', event_winner: 'Second Player' }),
+    sf({ event_status: 'Retired', event_winner: 'Second Player' }), sf({ event_status: 'Finished', event_winner: 'First Player' })];
+  const sm = new Map([['10', 'clay']]);
+  // Mutation: restore `isWalkoverGiven(f, won)` (received counts) in each builder → 2-1 instead of 1-1.
+  check('N2 season row: 1-1 (retirement counted, both walkovers not)', () => assert.deepStrictEqual(P.seasonRowFromFixtures(S, '1', '2026', sm).total, wl(1, 1)));
+  check('N2 season surface by tier: clay 1-1', () => {
+    const c = P.seasonSurfaceByTier(S, '1', '2026', sm).atp.clay; assert.deepStrictEqual([c.won, c.lost, c.matches.length], [1, 1, 2]);
+  });
+  check('N2 court-speed record: 1-1 at Barcelona\'s category', () => {
+    const r = P.courtSpeedRecordFromFixtures(S, '1', 'Slow'); assert.deepStrictEqual([r.wins, r.losses], [1, 1]);
+  });
+  // Mutation: drop the `walkover` carry / 'WD' in career-backfill mergePlayer → the pre-2021 walkovers count.
+  check('N2 profile tournament history, pre-2021 (mergePlayer): a TML walkover carries its flag and is not counted', () => {
+    const { _internal } = require('../career-backfill.js');
+    const { history: hist } = _internal.mergePlayer([], [
+      { tourney: 'Roland Garros', year: 2011, round: 'QF', oppName: 'N. Djokovic', won: false, walkover: true, score: 'W/O' },
+      { tourney: 'Roland Garros', year: 2011, round: 'R16', oppName: 'A. Montanes', won: true, score: '4-6 6-4 3-6 6-3 11-9' }]);
+    const t = hist.find((x) => /roland|french/i.test(x.name));
+    const qf = t.editions[0].matches.find((m) => m.round === 'QF');
+    assert.deepStrictEqual([qf.res, !!qf.walkover, t.won, t.lost], ['WD', true, 1, 0]);
+  });
+}
+
 // ── N2 · live Tournament history (buildTournamentHistory) ─────────────────────────────
 const tm = (o) => Object.assign({ p1: 'C. Alcaraz', p1Key: '1', p2: 'X', p2Key: '9', result: '2 - 0' }, o);
 {
@@ -191,6 +218,14 @@ const tm = (o) => Object.assign({ p1: 'C. Alcaraz', p1Key: '1', p2: 'X', p2Key: 
     assert.deepStrictEqual([y19.won, y19.lost, y19.matchCount], [1, 1, 2]);
     assert.deepStrictEqual([y17.won, y17.lost, !!y17.withdrew], [0, 0, true]);
   });
+  // Mutation: drop the `withdrawn` re-add in buildEmbeddedHistory → the 2024 withdrawal vanishes on merge.
+  check('N2 board tournament history: a final-year withdrawal (W/O given only) survives the TML merge', () => {
+    const { _internal } = require('../career-backfill.js');
+    const existing = { years: [{ year: '2024', matchCount: 0, won: 0, lost: 0, roundReached: 'Withdrawal', matches: [], withdrew: true },
+      { year: '2023', matchCount: 1, won: 1, lost: 0, roundReached: 'R32', matches: [{ won: true, result: '2 - 0' }] }] };
+    const { history } = _internal.buildEmbeddedHistory(existing, [{ year: 2019, round: 'R32', oppName: 'A', won: true, score: '6-3 6-4' }]);
+    assert.ok(history.years.some((y) => y.year === '2024' && y.withdrew));
+  });
   // Mutation: drop `.filter(m => !isWalkover(m))` from fetchH2H's officialH2H → a walkover is a meeting again.
   check('N2 H2H: fetchH2H keeps walkovers out of the meeting list (source)', () => {
     const src = fs.readFileSync(path.join(__dirname, '..', 'bsp-pipeline.js'), 'utf8');
@@ -224,8 +259,8 @@ const tm = (o) => Object.assign({ p1: 'C. Alcaraz', p1Key: '1', p2: 'X', p2Key: 
         { year: '2022', surface: 'clay', level: 'chitf', date: '2022-05-01', tournament: 'Rome Challenger', opponent: 'Q. R', result: '0 - 2', won: false, src: 'fixtures' },
       ],
       careerByYear: [
-        { year: '2022', allTier: true, total: wl(2, 1), clay: wl(0, 1), hard: wl(2, 0), grass: null, indoor: null,
-          atp: { total: wl(2, 0), clay: null, hard: wl(2, 0), grass: null, indoor: null }, chitf: { total: wl(0, 1), clay: wl(0, 1), hard: null, grass: null, indoor: null } },
+        { year: '2022', allTier: true, total: wl(2, 1), clay: wl(0, 1), hard: wl(2, 0), grass: null, indoor: { total: wl(2, 0), clay: null, hard: wl(2, 0), grass: null },
+          atp: { total: wl(2, 0), clay: null, hard: wl(2, 0), grass: null, indoor: { total: wl(2, 0), clay: null, hard: wl(2, 0), grass: null } }, chitf: { total: wl(0, 1), clay: wl(0, 1), hard: null, grass: null, indoor: null } },
         { year: '2021', allTier: true, total: wl(1, 0), clay: wl(1, 0), hard: null, grass: null, indoor: null, atp: null, chitf: { total: wl(1, 0), clay: wl(1, 0), hard: null, grass: null, indoor: null } },
         { year: '2019', allTier: false, total: wl(1, 0), clay: null, hard: wl(1, 0), grass: null, indoor: null, atp: null, chitf: null },
       ] } };
@@ -240,6 +275,8 @@ const tm = (o) => Object.assign({ p1: 'C. Alcaraz', p1Key: '1', p2: 'X', p2Key: 
       const r22 = profiles[7].careerByYear[0];
       assert.deepStrictEqual([r22.total, r22.hard, r22.atp.total, r22.chitf.total, r22.rows], [wl(1, 1), wl(1, 0), wl(1, 0), wl(0, 1), 2]);
       assert.deepStrictEqual(tiersSum(r22), r22.total);
+      // Mutation: drop the `row.indoor = null` lines in subtractYearTally → a stale indoor survives.
+      assert.deepStrictEqual([r22.indoor, r22.atp.indoor], [null, null]);
     });
     check('N3 writer: _indoor is a build-time carrier, never written to a shard', () => assert.ok(!shard.matches.some((m) => '_indoor' in m)));
     const [, r21, r19] = profiles[7].careerByYear;
@@ -295,6 +332,13 @@ const tm = (o) => Object.assign({ p1: 'C. Alcaraz', p1Key: '1', p2: 'X', p2Key: 
       assert.deepStrictEqual([first('w1').indoor, first('l1').indoor, first('w2').indoor, first('w3').indoor], [true, true, false, null]);
     });
   }
+
+  // ── N2 · the dashboard H2H built from tournament history skips a walkover (source) ──
+  // Mutation: delete `if (mt.walkover) return;` in the dashboard → red.
+  check('N2 dashboard H2H (tournament-history path): a walkover is not a meeting (source)', () => {
+    const h = fs.readFileSync(path.join(__dirname, '..', 'bsp-consult-dashboard.html'), 'utf8');
+    assert.ok(/if \(mt\.res !== 'W' && mt\.res !== 'L'\) return;\s*\n\s*if \(mt\.walkover\) return;/.test(h));
+  });
 
   // ── N3 · the modal's "ATP" badge, sliced from the shipped dashboard and EXECUTED ──
   const html = fs.readFileSync(path.join(__dirname, '..', 'bsp-consult-dashboard.html'), 'utf8');

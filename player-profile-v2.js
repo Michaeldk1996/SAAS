@@ -2964,6 +2964,7 @@
     (p.tournamentHistory || []).forEach(function (t) {
       (t.editions || []).forEach(function (e) {
         (e.matches || []).forEach(function (mm) {
+          if (mm.walkover) return;             // TEN-313: not a match played, so not in the cell either
           var k = drillKey(e.year, t.name, mm.opp);
           if (seen[k]) return;
           seen[k] = true;

@@ -3949,9 +3949,11 @@ function reconcileMatchesYearly(matches, yearTallies) {
 
 // TEN-313 — take a tally of rows OUT of fixture-window year rows (the inverse of what
 // buildAllTierYearly counted), tier and surface splits included, so atp + chitf = total
-// still holds. Used only for walkover rows a pre-rule cached profile still counts. The
-// indoor split is left alone: a career row carries no court type, and the residue is
-// bounded by the cache TTL. Pre-window rows are provider aggregates and are not touched.
+// still holds. Used only for walkover rows a pre-rule cached profile still counts. A career
+// row carries no court type, so the indoor split of a year that lost a walkover cannot be
+// corrected — it is DASHED (null) until the profile rebuilds, never left able to exceed
+// its surface (review: Giustino 2022 would read an outdoor hard of "-1–3"). Pre-window
+// rows are provider aggregates and are not touched.
 function subtractYearTally(yearRows, byYear) {
   const less = (c, t) => {
     if (!c) return null;
@@ -3972,6 +3974,9 @@ function subtractYearTally(yearRows, byYear) {
     row.grass = less(row.grass, y.grass);
     row.atp = lessSplit(row.atp, y.tiers.atp);
     row.chitf = lessSplit(row.chitf, y.tiers.chitf);
+    row.indoor = null;
+    if (row.atp) row.atp.indoor = null;
+    if (row.chitf) row.chitf.indoor = null;
   }
 }
 
@@ -7555,7 +7560,7 @@ module.exports = { fetchH2H, h2hCountsInAtpRecord, H2H_NOT_ATP_RECORD, tourLabel
   // The Career-record pair. Exported together on purpose: their whole contract
   // is that the counts one returns are tallyable from the rows the other
   // returns, and that is what ten8-career-verify.js asserts.
-  buildAllTierYearly, playerMatchHistory, writeCareerHistoryShards, tallyCareerYears, reconcileYearRows, reconcileMatchesYearly, subtractYearTally, buildTournamentHistory, recountTournamentRecords, isWalkover, careerRowIsComplete, careerRowIsBo5Slam, formSetsFromFixture,
+  buildAllTierYearly, playerMatchHistory, writeCareerHistoryShards, tallyCareerYears, reconcileYearRows, seasonRowFromFixtures, seasonSurfaceByTier, courtSpeedRecordFromFixtures, reconcileMatchesYearly, subtractYearTally, buildTournamentHistory, recountTournamentRecords, isWalkover, careerRowIsComplete, careerRowIsBo5Slam, formSetsFromFixture,
   // TEN-244: the NextGen exclusion key, exported so the suite asserts the SAME
   // constant the pipeline uses rather than a copy that can drift out of step.
   NEXTGEN_TOURNAMENT_KEY, CAREER_HISTORY_INDEX_PATH,

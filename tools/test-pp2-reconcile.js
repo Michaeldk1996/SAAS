@@ -3679,6 +3679,13 @@ check('TEN-313: an edition W-L does not count a walkover received (tournViews)',
   const v = I.tournViews(p)[0];
   assert.deepStrictEqual([v.won, v.lost, v.reconciles], [1, 1, true]);
 });
+// Mutation: drop `if (mm.walkover) return;` in drillSpine step 2 → the walkover edition row is listed.
+check('TEN-313: a drill list carries no walkover edition row (drillSpine)', () => {
+  const p = { key: '__ten313drill', name: 'T. Drill', recentForm: { matches: [] }, tournamentHistory: [{ name: 'Barcelona', won: 1, lost: 0,
+    editions: [{ year: 2019, matches: [{ res: 'W', round: 'R32', opp: 'A. One', score: '2 - 0' }, { res: 'W', round: 'R16', opp: 'B. Two', score: '', walkover: true }] }] }] };
+  const rows = I.drillSpine(p).filter(r => r.src === 'edition');
+  assert.deepStrictEqual(rows.map(r => r.opp), ['A. One']);
+});
 // Mutation: restore `if (r.wo && !r.won) return;` in calRuns → the W/O received joins the win run (len 3).
 check('TEN-313: a streak steps over a walkover received as well as a given one (calRuns)', () => {
   const rows = [{ date: '2026-01-01', won: true }, { date: '2026-01-02', won: true, wo: true },
