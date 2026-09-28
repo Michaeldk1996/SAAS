@@ -17582,8 +17582,15 @@ function initAOddsTips(){
   };
   document.addEventListener('mouseover', on); document.addEventListener('mouseout', off);
   document.addEventListener('focusin', on); document.addEventListener('focusout', off);
-  // Escape closes an open (or pending) tooltip — TEN-304, founder-approved for the shared tooltip.
-  document.addEventListener('keydown', e => { if (e.key === 'Escape' && _aoTipFor) aOddsTipHide(); });
+  // Escape closes an open (or pending) tooltip — TEN-304, founder-approved for the shared tooltip. Capture phase +
+  // stopped (TEN-335): with a tooltip ON SCREEN, one Esc closes only the tooltip; the next reaches the Odds pop-up
+  // (maPopEscKey). A pending tip, or one inside a closed modal, is hidden but never swallows the Esc.
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape' || !_aoTipFor) return;
+    const t = document.getElementById('aoddsTip');
+    if (t && t.style.display === 'block' && t.getClientRects().length) e.stopPropagation();
+    aOddsTipHide();
+  }, true);
 }
 
 // Interaction handlers — each re-renders the section (state lives in _aOdds).
@@ -17591,7 +17598,8 @@ function renderOddsSection(){ const el = document.getElementById('aSectionOdds')
 function aOddsSetMode(nv){ _aOdds.novig = !!nv; renderOddsSection(); }
 // A market that is not recorded does nothing (TEN-303 §3.3): the table never shows another market's prices.
 function aOddsSetMarket(name){ const t = AODDS_MARKET_TILES.find(x => x.name === name); if (!t || !t.recorded) return; _aOdds.market = name; renderOddsSection(); }
-function aOddsOpenMv(book){ _aOdds.mv = book; renderOddsSection(); }
+// The pop-up enters with the shared motion (.ma-fade / .ma-sigin, TEN-314) when it opens — never on a book-tab switch.
+function aOddsOpenMv(book){ _aOdds.mvIn = !_aOdds.mv; _aOdds.mv = book; try { renderOddsSection(); } finally { _aOdds.mvIn = false; } }
 function aOddsCloseMv(){ _aOdds.mv = null; renderOddsSection(); }
 function aOddsKey(e, fn){ if (e.key === 'Enter' || e.key === ' '){ e.preventDefault(); fn(); } }
 
@@ -17707,13 +17715,13 @@ function aOddsMvHtml(m, D, marginLbl){
   const tabs = D.rows.filter(x => !x.noData).map(x => { const on = x.name === r.name;
     return '<span class="aox-seg aox-tab" role="button" tabindex="0" data-book="' + escapeHtml(x.name) + '" data-aotip="' + escapeHtml(aOddsBookTip(x, D)) + '" onclick="aOddsOpenMv(this.dataset.book)" onkeydown="aOddsKey(event,()=>aOddsOpenMv(this.dataset.book))"'
       + ' style="padding:5px 10px; border-radius:4px; font-size:11.5px; cursor:pointer; white-space:nowrap; font-weight:' + (on ? 700 : 500) + '; color:' + (on ? C.text : C.sub) + '; background:' + (on ? C.tabOnBg : 'transparent') + '; border:' + C.hw1 + ' solid ' + (on ? C.tabOnBd : C.tabBd) + ';">' + escapeHtml(x.name) + '</span>'; }).join('');
-  return '<div class="aox-mv" onclick="aOddsCloseMv()" style="position:fixed; inset:0; z-index:60; background:' + C.backdrop + '; display:flex; align-items:center; justify-content:center; padding:24px;">'
-    + '<div onclick="event.stopPropagation()" style="width:100%; max-width:1080px; border-radius:18px; background:' + C.pop + '; border:' + C.hw125 + ' solid ' + C.popBd + '; box-shadow:' + C.popShadow + '; padding:20px 22px 16px; display:flex; flex-direction:column; gap:14px; max-height:calc(100vh - 48px); overflow-y:auto; box-sizing:border-box;">'
+  return '<div class="aox-mv ma-pop-overlay' + (_aOdds.mvIn ? ' ma-fade' : '') + '" onclick="aOddsCloseMv()" style="position:fixed; inset:0; z-index:60; background:' + C.backdrop + '; display:flex; align-items:center; justify-content:center; padding:24px;">'
+    + '<div class="aox-mvbox' + (_aOdds.mvIn ? ' ma-sigin' : '') + '" role="dialog" aria-modal="true" aria-label="Odds movement" onclick="event.stopPropagation()" style="width:100%; max-width:1080px; border-radius:18px; background:' + C.pop + '; border:' + C.hw125 + ' solid ' + C.popBd + '; box-shadow:' + C.popShadow + '; padding:20px 22px 16px; display:flex; flex-direction:column; gap:14px; max-height:calc(100vh - 48px); overflow-y:auto; box-sizing:border-box;">'
     + '<div style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px;"><div style="display:flex; flex-direction:column; gap:5px;">'
     + '<span style="display:flex; align-items:baseline; gap:10px;"><span class="aox-mvbook" tabindex="0" style="font-size:18px; font-weight:800;"' + tipAttr + '>' + escapeHtml(r.name) + '</span>'
     + '<span style="' + mono + ' font-size:9.5px; letter-spacing:0.14em; color:' + C.label + '; text-transform:uppercase;">' + r.group + ' · ' + escapeHtml(marginLbl(r)) + '</span></span>'
     + '<span class="aox-mvsub" style="font-size:12px; color:' + C.label + ';">Odds movement · Decimal odds · ' + (D.novig ? 'no-vig' : 'as quoted') + ' · since ' + aOddsStamp(r.first) + '</span></div>'
-    + '<span class="aox-seg aox-x" role="button" tabindex="0" aria-label="Close" onclick="aOddsCloseMv()" onkeydown="aOddsKey(event,aOddsCloseMv)" style="width:32px; height:32px; display:flex; align-items:center; justify-content:center; border-radius:8px; border:' + C.hw1 + ' solid ' + C.closeBd + '; color:' + C.sub + '; cursor:pointer; font-size:14px; flex-shrink:0;">✕</span></div>'
+    + '<span class="aox-seg aox-x ma-pop-x" role="button" tabindex="0" aria-label="Close" onclick="aOddsCloseMv()" onkeydown="aOddsKey(event,aOddsCloseMv)" style="width:32px; height:32px; display:flex; align-items:center; justify-content:center; border-radius:8px; border:' + C.hw1 + ' solid ' + C.closeBd + '; color:' + C.sub + '; cursor:pointer; font-size:14px; flex-shrink:0;">✕</span></div>'
     + '<div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(360px, 1fr)); gap:12px;">' + panel('a', m.p1, C.a) + panel('b', m.p2, C.b, C.bFill) + '</div>'
     + '<div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;"><span style="display:flex; gap:6px; flex-wrap:wrap;">' + tabs + '</span></div>'
     + '</div></div>';

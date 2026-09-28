@@ -34,6 +34,12 @@ const MUTANTS = [
     "run.forEach((q, k) => { d += ' H' + f(X(q[1])); if (k + 1 < run.length) d += ' M' + f(X(run[k + 1][0])) + ',' + f(Y(run[k + 1][2])); });"],
   ['follow-up 1a: the raw (unrounded) price is plotted', 'const v = +aOddsFmt(p[1]); if (!Number.isFinite(v)) return;', 'const v = p[1]; if (!Number.isFinite(v)) return;'],
   ['follow-up 1b: the missing-price mark is an en dash', "const AODDS_DASH = '\\u2014';", "const AODDS_DASH = '\\u2013';"],
+  // TEN-335: the pop-up is a shared frame (Esc through maPopEscKey) with the entrance motion only when it opens
+  ['TEN-335: the overlay is not a shared frame (Esc cannot find it)', "<div class=\"aox-mv ma-pop-overlay'", "<div class=\"aox-mv'"],
+  ['TEN-335: the close button is not the frame\'s ma-pop-x', 'class="aox-seg aox-x ma-pop-x"', 'class="aox-seg aox-x"'],
+  ['TEN-335: the entrance never plays', '_aOdds.mvIn = !_aOdds.mv;', '_aOdds.mvIn = false;'],
+  ['TEN-335: the entrance replays on a book-tab switch', '_aOdds.mvIn = !_aOdds.mv;', '_aOdds.mvIn = true;'],
+  ['TEN-335: the open flag never cleared (a re-render replays)', 'try { renderOddsSection(); } finally { _aOdds.mvIn = false; } }', 'renderOddsSection(); }'],
   ['follow-up 1c: ALSO keeps the source key', 'const feed = (r.altMeta && r.altMeta.source) || aOddsSrcTitle(r.alt);', 'const feed = aOddsSrcTitle(r.alt);'],
   // TEN-314 (TEN-312 D1): the tab reads the token file — a 12a name or a literal in place of the role token is caught
   ['D1: the Odds-tab text on the 12a name, not its role token', "  text: 'var(--ma-t1)',      // Text", "  text: 'var(--text)',      // Text"],

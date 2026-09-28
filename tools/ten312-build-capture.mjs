@@ -10,6 +10,16 @@
 // fallback (D5) and no tab loads a real player's shard.
 //
 //   node tools/ten312-build-capture.mjs <outDir> [--ref <design capture dir>] [--only key,form] [--theme night|day]
+//        [--palette source]
+//
+//   --palette source  (TEN-335) re-point the modal's tokens to the design file's SOURCE hex for the role each token
+//                     carries on the Odds tab (FIXTURE_SOURCE_PALETTE below), so a diff against the design capture
+//                     measures structure, not the D1 Night/Day palette. Fixture-only CSS injected over CDP.
+//
+// Odds (TEN-335): the Odds screens (11-odds, 11b-odds-novig-market-selected, P2-odds-movement-popup) feed the SHIPPED
+// renderer the design's own seed — DF `oddsFor()` run in node on the committed design file (React stubbed), 7 books ×
+// 9 snapshots — as the fixture's `oddsMovement.chart`, and put AODDS_BOOKS in the design's 7-book order for the
+// duration of those screens only (the shipped 12-book config is ruled difference O2, verified on real data instead).
 //
 // Writes <outDir>/<design screen name>.png (the modal box grown to full content height, 1296 or 1306 wide — the
 // design capture's framing rules) + <outDir>/manifest.json, which also carries each screen's header and menu
@@ -49,6 +59,43 @@ const FIXTURE = { id: 'ten312-fixture', p1: 'J. Sinner', p2: 'C. Alcaraz', p1Key
   tour: 'ATP Washington', tournament: 'ATP Washington', tournamentRound: 'ATP Washington - Quarter-finals', surface: 'Hard',
   startTs: '2026-07-20T22:00:00Z', bestOdds: { p1: { price: 1.54 }, p2: { price: 2.62 } },
   finalScore: { display: '6-4, 4-6, 7-6', sets: [{ p1: 6, p2: 4 }, { p1: 4, p2: 6 }, { p1: 7, p2: 6 }], p1Sets: 2, p2Sets: 1, winner: 'p1' } };
+
+const PALETTE = opt('--palette') || null;
+// The design file's source value for the role each token plays on the Odds tab (AODDS_C comments, DF L1881–1931).
+// Where several source values share one token (e.g. t2 = #AAB3C8 caps and #8B96B5 muted), the more common one wins
+// and the residual is reported, not hidden.
+const FIXTURE_SOURCE_PALETTE = { '--ma-page': '#0A0D14', '--ma-card': '#0E1019', '--ma-inner': '#0A0D14', '--ma-raised': '#131623',
+  '--ma-hover': '#11141F', '--ma-sel': 'rgba(91,155,255,0.16)', '--ma-hair': 'rgba(255,255,255,0.06)', '--ma-hair-soft': 'rgba(255,255,255,0.05)',
+  '--ma-hair-strong': 'rgba(255,255,255,0.1)', '--ma-hair-hover': 'rgba(255,255,255,0.2)', '--ma-outline': 'rgba(91,155,255,0.45)',
+  '--ma-t1': '#E7E9EE', '--ma-t2': '#8B96B5', '--ma-t3': '#5B6880', '--ma-fill': '#5B9BFF', '--ma-link': '#5B9BFF',
+  '--ma-on-fill': '#06070A', '--ma-pos': '#3DD68C', '--ma-neg': '#E0616F', '--ma-pb-fill': '#E7E9EE',
+  '--ma-scrim': 'rgba(4,5,9,0.62)', '--ma-chart-grid': 'rgba(255,255,255,0.07)' };
+
+// The design's Odds demo: DF `oddsFor()` evaluated on the committed file, exactly as the design renders it
+// (AN = DF mkAnalysis(demoMatch(), 1.54, 2.62): seed 'm0' + 'ATP Washington' + 'J. Sinner').
+function designOddsSeed() {
+  process.env.TZ = TZ;   // DF builds its snapshot times with local-time `new Date(2026, 8, 26, 17, 52)`: the capture's zone
+  const dc = fs.readFileSync(path.join(ROOT, 'design', 'handoff-ten312-match-analysis', 'Match Analysis Progression v1.dc.html'), 'utf8');
+  const a = dc.indexOf('  oddsFor(AN, S) {'), b = dc.indexOf('\n  renderVals() {', a);
+  if (a < 0 || b < 0) throw new Error('DF oddsFor() not found');
+  let body = dc.slice(a + '  oddsFor(AN, S) '.length, b).trim();
+  if (!body.includes('      books, groups, chart,')) throw new Error('DF oddsFor() return anchor moved');
+  body = body.replace('      books, groups, chart,', '      __TS: TS, books, groups, chart,').replace(/^\{/, '').replace(/\}\s*$/, '');
+  const oddsFor = new Function('React', 'AN', 'S', body);
+  const AN = { seed: 'm0ATP WashingtonJ. Sinner', aName: 'J. Sinner', bName: 'C. Alcaraz', aOdds: '1.54', bOdds: '2.62' };
+  const d = oddsFor.call({ setState() {} }, { createElement: () => null }, AN, {});
+  const TS = d.__TS.map((x) => x.getTime()), iso = (ms) => new Date(ms).toISOString();
+  const chart = { books: {}, meta: {} };
+  d.books.forEach((bk) => {
+    chart.books[bk.name] = { p1: bk.aS.map((v, j) => [iso(TS[j]), v]), p2: bk.bS.map((v, j) => [iso(TS[j]), v]) };
+    chart.meta[bk.name] = { source: 'design fixture', group: bk.cls, clock: 'book tick', checkedAt: iso(TS[TS.length - 1]) };
+  });
+  return { chart, books: d.books.map((bk) => ({ name: bk.name, group: bk.cls, sources: [bk.name] })),
+    startTs: iso(TS[TS.length - 1] + 60e3) };   // the demo's "Now" is its last snapshot: the start just after it
+}
+// Odds screens beyond the default tab: [ref, in-page js run after the fixture is on, pop-up framing?]
+const ODDS_STATES = [['11b-odds-novig-market-selected', `_aOdds.novig = true; aOddsSetMarket('Game handicap'); renderOddsSection();`, false],
+  ['P2-odds-movement-popup', `aOddsOpenMv('Pinnacle');`, true]];
 
 async function freePort() { return new Promise((res, rej) => { const s = net.createServer(); s.listen(0, '127.0.0.1', () => { const p = s.address().port; s.close(() => res(p)); }); s.on('error', rej); }); }
 const MIME = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css', '.png': 'image/png', '.json': 'application/json', '.svg': 'image/svg+xml' };
@@ -114,17 +161,71 @@ async function main() {
   }
   await ev(`document.fonts.ready.then(() => true)`);
   // the fixture match, then open the modal on it
-  await ev(`(() => { const fx = ${JSON.stringify(FIXTURE)}; const i = matches.findIndex(m => m.id === fx.id); if (i >= 0) matches.splice(i, 1); matches.push(fx); return true; })()`);
+  await ev(`(() => { const fx = ${JSON.stringify(FIXTURE)}; const i = matches.findIndex(m => m.id === fx.id); if (i >= 0) matches.splice(i, 1); matches.push(fx); window.__fx = fx; return true; })()`);
   if (THEME) await ev(`typeof maSetTheme === 'function' ? (maSetTheme(${JSON.stringify(THEME)}), true) : false`);
   await ev(`openAnalysisModal('ten312-fixture'), true`);
   const served = await ev(`!!document.querySelector('#analysisModal .aclosecell')`);
   const settle = `new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => setTimeout(() => { for (const a of document.getAnimations()) { try { a.finish(); } catch (e) { try { a.pause(); a.currentTime = 0; } catch (_) {} } } r(true); }, 400))))`;
   const manifest = [];
   const REFW = r => { const x = REF && REF.screens.find(q => q.name === r); return x ? x.size[0] : 0; };
+  if (PALETTE === 'source') await ev(`(() => { const s = document.createElement('style'); s.id = '__capPalette';
+    s.textContent = '#analysisModal.ma-theme, #analysisModal.ma-theme[data-ma-theme]{' + ${JSON.stringify(Object.entries(FIXTURE_SOURCE_PALETTE).map(([k, v]) => k + ':' + v).join(';'))} + '}';
+    document.head.appendChild(s); return true; })()`);
+  else if (PALETTE) throw new Error('--palette: only "source" is known');
   for (const [tab, ref] of TABS) {
     if (ONLY && !ONLY.has(tab)) continue;
+    if (tab === 'odds') {
+      const seed = designOddsSeed();
+      await ev(`(() => { const m = window.__fx; window.__oddsSaved = { m, startTs: m.startTs, books: AODDS_BOOKS.slice(), om: m.oddsMovement, loaded: m._oddsLoaded };   // the pinned fixture: a board refresh can replace \`matches\`
+        m.oddsMovement = { market: 'Match Winner', books: {}, chart: ${JSON.stringify(seed.chart)} }; m._oddsLoaded = true; m.startTs = ${JSON.stringify(seed.startTs)};
+        AODDS_BOOKS.splice(0, AODDS_BOOKS.length, ...${JSON.stringify(seed.books)}); renderOddsSection(); return true; })()`);
+    }
     await ev(`aShowTab(${JSON.stringify(tab)}), true`);
     await sleep(1500); await ev(settle);
+    manifest.push(await shootModal(tab, ref));
+    if (tab === 'odds') {
+      for (const [sref, js, pop] of ODDS_STATES) {
+        await ev(`(() => { _aOdds.novig = false; _aOdds.market = 'Match Winner'; _aOdds.mv = null; ${js} return true; })()`);
+        await sleep(400); await ev(settle);
+        manifest.push(pop ? await shootPop(tab, sref, '.aox-mv') : await shootModal(tab, sref));
+      }
+      await ev(`(() => { _aOdds.novig = false; _aOdds.mv = null; const m = __oddsSaved.m; m.startTs = __oddsSaved.startTs; m.oddsMovement = __oddsSaved.om; m._oddsLoaded = __oddsSaved.loaded;
+        AODDS_BOOKS.splice(0, AODDS_BOOKS.length, ...__oddsSaved.books); renderOddsSection(); return true; })()`);
+    }
+  }
+  fs.writeFileSync(path.join(OUT, 'manifest.json'), JSON.stringify({ servedThisCheckout: served, root: ROOT, fixture: FIXTURE, frozenNow: new Date(FROZEN_NOW).toISOString(), timezone: TZ, theme: THEME, palette: PALETTE, screens: manifest }, null, 1));
+  if (!served) throw new Error('the page served is not this checkout (no .aclosecell)');
+
+  // A pop-up screen, framed as the design capture's framePop(): the pop-up's scrim, POP_W wide, cropped to its box ± 24 px,
+  // box grown to full height; everything else hidden.
+  async function shootPop(tab, ref, scrimSel) {
+    const clip = await ev(`(() => {
+      const ps = document.querySelector('#analysisModal ' + ${JSON.stringify(scrimSel)});
+      if (!ps) throw new Error('no pop-up open');
+      const box = ps.firstElementChild;
+      window.__saved = [document.documentElement, document.body, ps, box].map(e => [e, e.getAttribute('style')]);
+      const st = (e, css) => e.setAttribute('style', (e.getAttribute('style') || '') + ';' + css);
+      st(document.documentElement, 'background:transparent !important;'); st(document.body, 'background:transparent !important;');
+      if (!document.getElementById('__capHide')) { const h = document.createElement('style'); h.id = '__capHide';
+        h.textContent = 'body > *:not(#analysisModal){ visibility:hidden !important; }'; document.head.appendChild(h); }
+      const hp = document.createElement('style'); hp.id = '__capPopHide';
+      hp.textContent = '#analysisModal, #analysisModal *{ visibility:hidden !important; } #analysisModal [data-cap-pop], #analysisModal [data-cap-pop] *{ visibility:visible !important; } #analysisModal{ background:transparent !important; backdrop-filter:none !important; }';
+      document.head.appendChild(hp); ps.setAttribute('data-cap-pop', '1');
+      st(ps, 'position:fixed !important; inset:auto !important; left:0 !important; top:0 !important; width:${1001}px !important; height:auto !important; overflow:visible !important; padding-top:24px !important; padding-bottom:24px !important;');
+      st(box, 'max-height:none !important; overflow:visible !important;');
+      const r = ps.getBoundingClientRect(), br = box.getBoundingClientRect();
+      return { x: r.left + scrollX, y: br.top - 24 + scrollY, w: Math.round(r.width), h: Math.round(br.height + 48) };
+    })()`);
+    await sleep(120); await ev(settle);
+    const shot = await c.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: true, fromSurface: true, clip: { x: clip.x, y: clip.y, width: clip.w, height: clip.h, scale: 1 } });
+    fs.writeFileSync(path.join(OUT, ref + '.png'), Buffer.from(shot.data, 'base64'));
+    console.log(`${tab.padEnd(12)} → ${ref.padEnd(30)} ${clip.w}x${clip.h} (pop-up)`);
+    await ev(`(() => { for (const [e, s] of window.__saved) { if (s == null) e.removeAttribute('style'); else e.setAttribute('style', s); }
+      document.getElementById('__capPopHide').remove(); document.querySelectorAll('[data-cap-pop]').forEach(e => e.removeAttribute('data-cap-pop')); return true; })()`);
+    return { tab, ref, size: [clip.w, clip.h], pop: true };
+  }
+
+  async function shootModal(tab, ref) {
     // Grow the modal to its full content height — the design capture's _grow(), on our elements.
     const frame = await ev(`(() => {
       const ov = document.getElementById('analysisModal'), m = ov.querySelector('.modal-analysis'), body = m.querySelector('.aanalysis-body-wrap');
@@ -147,11 +248,9 @@ async function main() {
     await sleep(120); await ev(settle);
     const shot = await c.send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: true, fromSurface: true, clip: { x: frame.x, y: frame.y, width: frame.w, height: frame.h, scale: 1 } });
     fs.writeFileSync(path.join(OUT, ref + '.png'), Buffer.from(shot.data, 'base64'));
-    manifest.push({ tab, ref, size: [frame.w, frame.h], header: frame.header, menu: frame.menu });
     console.log(`${tab.padEnd(12)} → ${ref.padEnd(30)} ${frame.w}x${frame.h}`);
     await ev(`(() => { for (const [e, s] of window.__saved) { if (s == null) e.removeAttribute('style'); else e.setAttribute('style', s); } return true; })()`);
+    return { tab, ref, size: [frame.w, frame.h], header: frame.header, menu: frame.menu };
   }
-  fs.writeFileSync(path.join(OUT, 'manifest.json'), JSON.stringify({ servedThisCheckout: served, root: ROOT, fixture: FIXTURE, frozenNow: new Date(FROZEN_NOW).toISOString(), timezone: TZ, theme: THEME, screens: manifest }, null, 1));
-  if (!served) throw new Error('the page served is not this checkout (no .aclosecell)');
 }
 main().then(() => { cleanup(); process.exit(0); }, (e) => { console.error('FAIL:', e.stack || e.message); cleanup(); process.exit(1); });

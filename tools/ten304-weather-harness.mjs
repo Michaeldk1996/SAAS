@@ -56,9 +56,9 @@ export function buildTips({ src = HTML } = {}) {
     getAttribute: k => (k in attrs ? attrs[k] : null), setAttribute(k, v) { this[k] = v; },
     closest(sel) { const m = /^\[([\w-]+)\]$/.exec(sel); return m && m[1] in attrs ? this : (sel === '.modal-analysis' ? null : null); },
     contains: () => false, getBoundingClientRect: () => ({ left: 10, top: 10, right: 60, bottom: 30, width: 50, height: 20 }),
-    offsetWidth: 100, offsetHeight: 40, appendChild() {} });
+    offsetWidth: 100, offsetHeight: 40, appendChild() {}, rects: 1, getClientRects() { return { length: this.rects }; } });
   const document = {
-    addEventListener: (t, f) => (listeners[t] = listeners[t] || []).push(f),
+    addEventListener: (t, f, o) => { f.__capture = o === true || !!(o && o.capture); (listeners[t] = listeners[t] || []).push(f); },
     getElementById: id => (id === 'aoddsTip' ? tipEl : null),
     createElement: () => { const e = mkEl({}); return e; },
     body: { appendChild: e => { tipEl = e; } },
@@ -76,10 +76,12 @@ export function buildTips({ src = HTML } = {}) {
   return {
     api, delays, mkEl,
     fire: (type, el) => (listeners[type] || []).forEach(f => f({ target: el, relatedTarget: null })),
-    key: k => (listeners.keydown || []).forEach(f => f({ key: k, target: null })),
+    key: k => { const ev = { key: k, target: null, stopped: false, stopPropagation() { this.stopped = true; } }; (listeners.keydown || []).forEach(f => f(ev)); return ev; },
+    keyCapture: () => (listeners.keydown || []).map(f => f.__capture),
     tick: ms => { now += ms; timers.forEach(t => { if (t.f && t.at <= now) { const f = t.f; t.f = null; f(); } }); },
     tip: () => (tipEl && tipEl.style.display === 'block' ? tipEl.innerHTML : null),
     listenerTypes: () => Object.keys(listeners),
+    tipEl: () => tipEl,
   };
 }
 // The Weather data layer (lazy loads, refetch, matches-reload hook, openWeatherTab) with a fake fetch, a

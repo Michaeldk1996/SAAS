@@ -385,6 +385,22 @@ test('Escape closes the shared tooltip (open or pending)', () => {
   T.fire('focusin', T.mkEl({ 'data-aotip': '<b>z</b>' })); T.key('Enter'); T.tick(250); assert.ok(T.tip(), 'other keys do nothing');
 });
 
+// TEN-335. Mutations: the tooltip's Esc listener in the bubble phase, or not stopped — one Esc would close the tooltip
+// AND the Odds pop-up under it (maPopEscKey, bubble phase), losing the layered dismissal; or stopped while the tooltip is
+// only pending / in a hidden modal (an Esc meant for the page is swallowed).
+test('Escape with a tooltip up is consumed by the tooltip (capture phase, stopped); with none it passes on', () => {
+  const T = buildTips(); T.api.initAOddsTips();
+  assert.deepEqual(T.keyCapture(), [true], 'the tooltip listens in the capture phase, ahead of maPopEscKey');
+  T.fire('mouseover', T.mkEl({ 'data-aotip': '<b>x</b>' })); T.tick(250);
+  assert.equal(T.key('Escape').stopped, true, 'an open tooltip stops the Esc');
+  assert.equal(T.tip(), null, 'and closes');
+  assert.equal(T.key('Escape').stopped, false, 'no tooltip: the next Esc reaches the pop-up');
+  T.fire('mouseover', T.mkEl({ 'data-aotip': '<b>p</b>' }));   // pending (250 ms not up): hidden, never swallowed
+  assert.equal(T.key('Escape').stopped, false, 'a pending tooltip does not take the Esc'); T.tick(300); assert.equal(T.tip(), null);
+  T.fire('mouseover', T.mkEl({ 'data-aotip': '<b>h</b>' })); T.tick(250); T.tipEl().rects = 0;   // shown, but its modal closed
+  assert.equal(T.key('Escape').stopped, false, 'a tooltip in a closed (hidden) modal does not take the Esc');
+});
+
 // ── colours: the modal's ONE token file (TEN-314 / TEN-312 D1, founder 2026-09-28; the TEN-303 verbatim exception ended) ──
 // Each WX_C colour is the var() (or a colour-mix of one) of the token its ROLE maps to (README §3 + U7 / U10 / U16 / U23 /
 // U2), and the token file resolves it (Night) to the mapped value. Widths stay the Weather spec's.
