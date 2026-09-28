@@ -64,6 +64,7 @@ const POP_W = 1001;
 // (the same handlers a user fires). `pop` = pop-up framing, else modal framing.
 // ---------------------------------------------------------------------------------------------------
 const tab = (t, extra) => ({ state: Object.assign({ maTab: t }, extra || {}) });
+const NEWS_RESET = { js: `(() => { delete window.STENNISFY_NEWS; const L = __cap.host().logic; if (L.__nf) L.newsFor = L.__nf; return true; })()` };
 const FORM_SHEET = [tab('Form'), { click: '18.07.', nth: 0 }];   // Sinner's row v T. Griekspoor, Washington R16
 const SCREENS = [
   { name: '01-progression', steps: [tab('Progression')] },
@@ -74,6 +75,14 @@ const SCREENS = [
   { name: '03-key-factors', steps: [tab('Key factors')] },
   { name: '04-news', steps: [tab('News')] },
   { name: '04b-news-article-expanded', steps: [tab('News', { maNewsOpen: 'a:s1' })] },
+  // TEN-333: the file's other News states (no screens/ PNG). Filter = the segmented control's own state; empty = the
+  // file's `window.STENNISFY_NEWS` hook given an empty feed; unavailable = the template's drawn branch, which the file
+  // itself never reaches (its sample fallback), forced through newsFor's own return. Each starts from NEWS_RESET.
+  { name: '04c-news-filter-player-a', steps: [NEWS_RESET, tab('News', { maNewsFilter: 'a' })] },
+  { name: '04d-news-filter-player-b', steps: [NEWS_RESET, tab('News', { maNewsFilter: 'b' })] },
+  { name: '04e-news-empty', steps: [NEWS_RESET, { js: 'window.STENNISFY_NEWS = []' }, tab('News')] },
+  { name: '04f-news-unavailable', steps: [NEWS_RESET, { js: `(() => { const L = __cap.host().logic; L.__nf = L.__nf || L.newsFor;
+    L.newsFor = function (AN, S) { return Object.assign({}, L.__nf.call(this, AN, S), { unavailable: true, isEmpty: false, hasAny: false, groups: [] }); }; return true; })()` }, tab('News')] },
   { name: '05-playing-style', steps: [tab('Playing style')] },
   { name: '05b-playing-style-meetings-profile-open', steps: [tab('Playing style', { psMeetA: true, psProf: true })] },
   { name: '06-form', steps: [tab('Form')] },

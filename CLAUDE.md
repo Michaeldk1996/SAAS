@@ -266,6 +266,7 @@ Surface-specific rulings moved out of this file so they load only when relevant:
 | Key Factors — model card, soft-book gap, tournament tier | `.claude/rules/modal-key-factors.md` |
 | Weather tab — venue files, archive (completed matches), venue-local times, MATCH badge vs header, severity config, model layer #12, venues | `.claude/rules/modal-weather.md` |
 | Match Stats tone rules, point-log, score header | `.claude/rules/modal-match-stats.md` |
+| Match analysis News tab — feed, 5-day window, player_key join, N9 empty/unavailable, no sample | `.claude/rules/modal-news.md` |
 | Player Profile export parity | `.claude/rules/player-profile.md` |
 | Records counting (Flashscore rules), walkovers, retirements | `.claude/rules/pipeline-records.md` |
 | Match analysis modal rebuild (TEN-312): palette tokens, players/avatars, walkovers on every tab, sample gate, build order | `.claude/rules/modal-analysis.md` |

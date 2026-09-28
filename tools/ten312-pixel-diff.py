@@ -5,7 +5,8 @@
 #   python3 tools/ten312-pixel-diff.py <refDir> <candDir> <outDir> [--threshold N] [--also 8] [--regions <candDir>/manifest.json]
 #
 # --regions: also diff the named crop boxes each screen carries in a build-capture manifest (tools/ten312-build-capture.mjs:
-# `header`, `menu` = [x0, y0, x1, y1], modal-relative), reported as `<name>--<region>` rows. The frame (TEN-314 step 1)
+# `header`, `menu`, `content` (the tab pane right of the menu) = [x0, y0, x1, y1], modal-relative), reported as
+# `<name>--<region>` rows. The frame (TEN-314 step 1)
 # is judged on these rows; the whole-screen rows are the baseline for tabs not rebuilt yet.
 #
 # For every <name>.png present in BOTH dirs: compare RGBA per pixel; a pixel "differs" when any channel's
@@ -57,7 +58,7 @@ def main():
         for sc in man['screens']:
             n = sc['ref'] + '.png'
             if n in names:
-                jobs += [(n, (k, sc[k])) for k in ('header', 'menu') if k in sc]
+                jobs += [(n, (k, sc[k])) for k in ('header', 'menu', 'content') if k in sc]
     for n, region in jobs:
         ref = Image.open(os.path.join(ref_dir, n)).convert('RGBA')
         cand = Image.open(os.path.join(cand_dir, n)).convert('RGBA')

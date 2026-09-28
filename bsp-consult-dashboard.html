@@ -1297,14 +1297,13 @@
 
   .modal-analysis .abody{ padding:24px 28px; overflow:auto; min-height:0; min-width:0; }
   .modal-analysis .asection{ display:none; }
-  /* News tab (11th): in-place expand/rotate to match the export wire. */
-  #aSectionNews .anews-row{ cursor:pointer; border-radius:7px; transition:background .12s; }
-  #aSectionNews .anews-row:hover{ background:var(--nav-hover); }
-  #aSectionNews .anews-row.open .anews-grid{ align-items:start; }
-  #aSectionNews .anews-row.open .anews-when{ padding-top:2px; }
-  #aSectionNews .anews-row.open .anews-title{ white-space:normal; overflow:visible; line-height:1.4; text-wrap:pretty; }
-  #aSectionNews .anews-row.open .anews-caret{ transform:rotate(180deg); color:var(--text); }
-  #aSectionNews .anews-row.open .anews-body{ display:flex !important; }
+  /* News tab (TEN-333): the file's .wirerow + .seg hover rules (DF L18, L77–80), tokens only. */
+  #aSectionNews .anews-row{ border-bottom:1px solid var(--line); cursor:pointer; }
+  #aSectionNews .anews-row:last-child{ border-bottom:0; }
+  #aSectionNews .anews-row:hover{ border-color:var(--ma-outline); background:var(--ma-hover); }
+  #aSectionNews .anews-row:hover .anews-caret{ color:var(--text) !important; }
+  #aSectionNews .seg{ cursor:pointer; transition:background .14s ease, color .14s ease, border-color .14s ease; }
+  #aSectionNews .anews-viewall:hover{ color:var(--ma-link-hover) !important; }   /* beats the inline colour, as style-hover does */
   .modal-analysis .asection.active{ display:block; }
   /* ---- Odds tab (Design #16 — honest reduced: current prices only, no per-book history in feed) ---- */
   /* TEN-303 Odds tab (handoff 15): the hover colours live in the design-verbatim-analysis style block. */
@@ -16579,22 +16578,30 @@ function syncAnalysisLiveBar(tab){
   liveBar.style.display = (_aLiveBarOn && !insetHere) ? '' : 'none';
 }
 
-/* ---------- Match Analysis modal: News tab (11th) ---------- */
-// Reuses the shared news feed (news-feed.json / _newsData) and the News page's
-// compact wire, filtered to the match's two players. Attribution is DATA
-// (player_key), with the same fail-closed headline resolver the page uses as an
-// interim fallback for pre-field feeds. Colour rulings (TEN-312 D4): identity only — Player A
-// primary, Player B secondary text, by name order; View-all is a link. No fills.
+/* ---------- Match Analysis modal: News tab (2nd) — TEN-333 rebuild of the design file ---------- */
+// Design: `Match Analysis Progression v1.dc.html` newsFor (DF L2317–2400) + template (DF L2202–2248); the file wins
+// over the README. Data: the shared rolling 5-day feed news-feed.json (build-news-feed.js, api-tennis get_news, rebuilt
+// every pipeline run, never committed) — the same _newsData the News page reads. The design's sample articles and their
+// fallback are not ported (N9): no feed → the unavailable state, no article → the empty state, never a sample.
+// Attribution is DATA (player_key); the News page's fail-closed headline resolver (newsPlayerFor) is the interim
+// fallback for rows without one. One article open at a time (DF S.maNewsOpen). Colours are tokens only (D1/D4):
+// both group names primary text, blue only on "View all news →" and the selected segment's outline.
+const A_NEWS_WINDOW_DAYS = 5;   // the feed's own window (build-news-feed.js WINDOW_DAYS); a stale feed never shows older rows
 let _aNewsMatch = null;      // current match for the modal News tab
-let _aNewsFilter = 'all';    // 'all' | 'p1' | 'p2'
+let _aNewsFilter = 'all';    // 'all' | 'p1' | 'p2'  (DF S.maNewsFilter)
+let _aNewsOpen = '';         // 'p1:<news_key>' | 'p2:<news_key>' | ''  (DF S.maNewsOpen)
 let _aNewsState = 'load';    // 'load' | 'ok' | 'unavailable'
 
+// ok only on a feed with an articles array — the News page's own loader may have stored one without it
+function aNewsFeedOk(){ return !!(_newsData && Array.isArray(_newsData.articles)); }
 async function ensureNewsData(){
-  if (_newsData) { _aNewsState = 'ok'; return; }
+  if (aNewsFeedOk()) { _aNewsState = 'ok'; return; }
   try {
     const res = await fetch('./news-feed.json', { cache:'no-cache' });
     if (!res.ok) throw new Error('HTTP ' + res.status);
-    _newsData = JSON.parse(await res.text());
+    const d = JSON.parse(await res.text());
+    if (!d || !Array.isArray(d.articles)) throw new Error('no articles array');
+    _newsData = d;
     _aNewsState = 'ok';
   } catch (_) { _aNewsState = 'unavailable'; }
 }
@@ -16603,100 +16610,100 @@ function renderNewsSection(){
   if (el && _aNewsMatch) el.innerHTML = buildNewsSection(_aNewsMatch);
 }
 function aNewsSetFilter(f){ _aNewsFilter = f; renderNewsSection(); }
+function aNewsToggle(key){ _aNewsOpen = _aNewsOpen === key ? '' : key; renderNewsSection(); }
 function aNewsViewAll(){
   closeAnalysisModal();
   const b = document.querySelector('#mainNav button[data-tab="news"]');
   if (b) b.click();
 }
-// "Jul 31 · 08:40" — tz-bound (reuses newsFmtTime / newsTz).
+// DF `when`: en-US short month + numeric day, then en-GB 24h time — "Sep 8 · 07:37" — in the member's zone (newsTz).
 function aNewsWhen(ts){
   if (!isFinite(ts)) return '—';
   let d;
-  try { d = new Date(ts).toLocaleDateString('en-US', { month:'short', day:'2-digit', timeZone:newsTz() }); }
-  catch(e){ d = new Date(ts).toLocaleDateString('en-US', { month:'short', day:'2-digit' }); }
+  try { d = new Date(ts).toLocaleDateString('en-US', { month:'short', day:'numeric', timeZone:newsTz() }); }
+  catch(e){ d = new Date(ts).toLocaleDateString('en-US', { month:'short', day:'numeric' }); }
   return d + ' · ' + newsFmtTime(ts);
 }
-// One player's articles, newest-first. player_key is the join; the resolver is
-// the interim fallback (never a raw headline string-match).
+// One player's articles inside the rolling window, newest first. player_key is the join; the resolver is the
+// interim fallback for a row without one (never a raw headline string-match).
 function aNewsArticlesFor(key, name){
   const all = Array.isArray(_newsData && _newsData.articles) ? _newsData.articles : [];
+  const since = Date.now() - A_NEWS_WINDOW_DAYS * 864e5;
   const surname = String(name || '').replace(/^[A-Z]\.\s*/, '').trim().toLowerCase();
   return all.map(a => ({ a, ts: newsParseTs(a.published_at) }))
     .filter(x => {
+      if (!(x.ts >= since)) return false;
       const a = x.a;
-      if (a.player_key != null) return String(a.player_key) === String(key);
+      if (a.player_key != null && a.player_key !== '') return key != null && String(a.player_key) === String(key);
       const rn = newsPlayerFor(a.title);
       return rn ? String(rn).replace(/^[A-Z]\.\s*/, '').trim().toLowerCase() === surname : false;
     })
-    .sort((x,y) => (isFinite(y.ts)?y.ts:-Infinity) - (isFinite(x.ts)?x.ts:-Infinity))
-    .map(x => x.a);
+    .sort((x, y) => y.ts - x.ts);
 }
-function aNewsGroupHtml(label, color, articles){
-  if (!articles.length) return '';   // empty group does not render (README rule)
-  const rows = articles.map(a => {
-    const ts = newsParseTs(a.published_at);
-    const paras = a.content ? newsSplitParas(a.content) : [];
+// DF L2217–2243: name + count + hairline, then the compact wire (closed: one line, ellipsis; open: title wraps,
+// caret turns, body paragraphs under the title column).
+function aNewsGroupHtml(side, name, arts, total){
+  const esc = escapeHtml;   // quotes too: the key and tooltips sit in attributes
+  const rows = arts.map(({ a, ts }) => {
+    const key = side + ':' + (a.news_key != null ? a.news_key : ts + '|' + (a.title || ''));
+    const open = _aNewsOpen === key;
+    const when = `<span class="anews-when" title="${esc(newsFmtDateTime(ts) || '—')}" style="font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:var(--label); white-space:nowrap;${open ? ' padding-top:2px;' : ''}">${esc(aNewsWhen(ts))}</span>`;
+    const caret = `<span class="anews-caret" style="font-size:11px; color:var(--label); justify-self:end;${open ? ' transform:rotate(180deg);' : ''}">▾</span>`;
+    const title = open
+      ? `<span class="anews-title" style="min-width:0; font-size:13.5px; font-weight:600; color:var(--text); line-height:1.4; text-wrap:pretty;">${esc(a.title || '—')}</span>`
+      : `<span class="anews-title" style="font-size:13.5px; font-weight:600; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${esc(a.title || '—')}</span>`;
+    const head = `<div class="anews-grid" style="display:grid; grid-template-columns:104px minmax(0,1fr) 16px; gap:12px; align-items:${open ? 'start' : 'center'};">${when}${title}${caret}</div>`;
+    // an article with no body text shows its headline only (nothing fabricated under it)
+    const paras = open ? newsSplitParas(a.content) : [];
     const body = paras.length
-      ? paras.map(p => `<div class="anews-para" style="font-size:14px; color:var(--text-sub); line-height:1.7; text-wrap:pretty; max-width:68ch;">${newsEscape(p)}</div>`).join('')
-      : `<div class="anews-para" style="font-size:14px; color:var(--text-sub); line-height:1.7; max-width:68ch;"><em>No further detail provided.</em></div>`;
-    return `<div class="anews-row" onclick="this.classList.toggle('open')" style="display:flex; flex-direction:column; padding:9px 6px;">
-        <div class="anews-grid" style="display:grid; grid-template-columns:104px minmax(0,1fr) 16px; gap:12px; align-items:center;">
-          <span class="anews-when" title="${newsEscape(newsFmtDateTime(ts))}" style="font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:11.5px; color:var(--label); white-space:nowrap;">${newsEscape(aNewsWhen(ts))}</span>
-          <span class="anews-title" style="font-size:13.5px; font-weight:600; color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${newsEscape(a.title || 'Untitled')}</span>
-          <span class="anews-caret" style="font-size:11px; color:var(--label); justify-self:end;">▾</span>
-        </div>
-        <div class="anews-body" style="display:none; flex-direction:column; gap:8px; padding:8px 16px 4px 116px;">${body}</div>
-      </div>`;
+      ? `<div class="anews-body" style="display:flex; flex-direction:column; gap:8px; padding:8px 16px 4px 116px;">${paras.map(p => `<div class="anews-para" style="font-size:14px; color:var(--text-sub); line-height:1.7; text-wrap:pretty; max-width:68ch;">${esc(p)}</div>`).join('')}</div>`
+      : '';
+    return `<div class="anews-row${open ? ' open' : ''}" data-anews-key="${esc(key)}" onclick="aNewsToggle(this.dataset.anewsKey)" style="display:flex; flex-direction:column; padding:9px 6px;">${head}${body}</div>`;
   }).join('');
-  return `<div style="display:flex; align-items:center; gap:12px; margin-top:4px;">
-      <span style="font-family:'IBM Plex Mono',ui-monospace,monospace; font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:${color}; white-space:nowrap;">${newsEscape(label)}</span>
-      <span style="flex:1; height:1px; background:var(--line-soft);"></span>
-    </div>
-    <div style="display:flex; flex-direction:column;">${rows}</div>`;
+  // count = this player's articles in the feed window; the population rides on the tooltip (no new visual)
+  const pop = `${arts.length} of ${total} article${total === 1 ? '' : 's'} in the ATP news feed, last ${A_NEWS_WINDOW_DAYS} days`;
+  return `<div class="anews-ghead" style="display:flex; align-items:center; gap:12px; margin-top:4px;"><span class="anews-gname" style="font-size:13.5px; font-weight:700; color:var(--text); white-space:nowrap;">${esc(name)}</span><span class="anews-gcount" title="${esc(pop)}" style="font-family:'IBM Plex Mono',monospace; font-size:10.5px; color:var(--label);">${arts.length}</span><span style="flex:1; height:1px; background:var(--line);"></span></div>`
+    + `<div class="anews-rows" style="display:flex; flex-direction:column;">${rows}</div>`;
 }
 function buildNewsSection(m){
-  const seg = (id,label,on) => {
-    const st = on
-      ? 'font-weight:700; color:var(--text); background:var(--seg-active); border:0.33px solid var(--seg-active-line);'
-      : 'font-weight:600; color:var(--label); background:transparent; border:1px solid transparent;';
-    return `<span class="anews-seg" onclick="aNewsSetFilter('${id}')" style="cursor:pointer; white-space:nowrap; padding:8px 14px; border-radius:10px; font-size:12.5px; ${st}">${newsEscape(label)}</span>`;
-  };
-  const filters = `<div style="display:flex; align-items:center; gap:2px;">`
-    + seg('all','All', _aNewsFilter==='all')
-    + seg('p1', m.p1, _aNewsFilter==='p1')
-    + seg('p2', m.p2, _aNewsFilter==='p2')
-    + `</div>`;
-  const viewAll = `<span class="anews-viewall" onclick="aNewsViewAll()" style="font-size:13px; font-weight:600; color:var(--periwinkle); align-self:flex-start; cursor:pointer;">View all news →</span>`;
-  const wrap = inner => `<div style="display:flex; flex-direction:column; gap:12px;">${filters}${inner}</div>`;
+  const esc = escapeHtml;
+  // DF L2204: the `me` segmented geometry (track padding 2 radius 8, item 5px 12px radius 6, 12px)
+  const filters = `<div class="anews-filters" style="align-self:flex-start;">` + maSeg('me', [['all', 'All'], ['p1', m.p1], ['p2', m.p2]].map(([id, label]) =>
+    ({ label: esc(label), on: _aNewsFilter === id, onclick: `aNewsSetFilter('${id}')` }))) + `</div>`;
+  const viewAll = (extra) => `<span class="seg anews-viewall" onclick="aNewsViewAll()" style="font-size:13px; font-weight:600; color:var(--periwinkle); align-self:flex-start;${extra || ''}">View all news →</span>`;
+  // the file's content column is 16px / line-height normal / "Hanken Grotesk", sans-serif (the ▾ caret's fallback glyph
+  // comes from that generic family); the modal body's 14px / 1.5 / system-ui would make every row 2.25px taller.
+  const wrap = inner => `<div class="anews" style="display:flex; flex-direction:column; gap:12px; font-family:'Hanken Grotesk',sans-serif; font-size:16px; line-height:normal;">${filters}${inner}</div>`;
 
   if (_aNewsState === 'unavailable') {
     let chk;
     try { chk = new Date().toLocaleTimeString('en-GB', { hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false, timeZone:newsTz() }); }
     catch(e){ chk = new Date().toLocaleTimeString('en-GB', { hour12:false }); }
-    return wrap(`<div style="display:flex; flex-direction:column; gap:6px; padding:10px 0;">
+    return wrap(`<div class="anews-unavailable" style="display:flex; flex-direction:column; gap:6px; padding:10px 0;">
         <span style="font-size:15px; color:var(--text);">News feed unavailable.</span>
-        <span style="font-size:13px; color:var(--label);">Last checked <span style="font-family:'IBM Plex Mono',ui-monospace,monospace;">${chk}</span>.</span>
+        <span style="font-size:13px; color:var(--label);">Last checked <span style="font-family:'IBM Plex Mono',monospace;">${chk}</span>.</span>
       </div>`);
   }
   if (_aNewsState !== 'ok') {
-    return wrap(`<div style="font-size:13px; color:var(--label); padding:10px 0;">Loading news…</div>`);
+    // DESIGN GAP G8: the file draws no loading state — the unavailable/empty block's secondary line, no new pattern.
+    return wrap(`<div class="anews-loading" style="display:flex; flex-direction:column; gap:6px; padding:10px 0;"><span style="font-size:13px; color:var(--label);">Loading news…</span></div>`);
   }
 
+  const total = Array.isArray(_newsData.articles) ? _newsData.articles.filter(a => newsParseTs(a.published_at) >= Date.now() - A_NEWS_WINDOW_DAYS * 864e5).length : 0;
   const aArts = aNewsArticlesFor(m.p1Key, m.p1);
   const bArts = aNewsArticlesFor(m.p2Key, m.p2);
-  const showA = _aNewsFilter !== 'p2';
-  const showB = _aNewsFilter !== 'p1';
-  const groups = (showA ? aNewsGroupHtml(m.p1, ANALYSIS_P1_COLOR, aArts) : '')
-               + (showB ? aNewsGroupHtml(m.p2, ANALYSIS_P2_COLOR, bArts) : '');
-  const visible = (showA ? aArts.length : 0) + (showB ? bArts.length : 0);
-  if (!visible) {
-    const who = _aNewsFilter==='p1' ? m.p1 : _aNewsFilter==='p2' ? m.p2 : `${m.p1} or ${m.p2}`;
-    return wrap(`<div style="display:flex; flex-direction:column; gap:6px; padding:10px 0;">
-        <span style="font-size:15px; color:var(--text);">No recent news for ${newsEscape(who)}.</span>
-        ${viewAll}
+  const showA = _aNewsFilter !== 'p2' && aArts.length > 0;
+  const showB = _aNewsFilter !== 'p1' && bArts.length > 0;
+  if (!showA && !showB) {
+    // DF emptyTitle names both players. Under a one-player filter the file's sentence would deny the other player's
+    // articles, so the filtered player alone is named (design-file bug not ported; listed in the TEN-333 report).
+    const who = _aNewsFilter === 'p1' ? m.p1 : _aNewsFilter === 'p2' ? m.p2 : `${m.p1} or ${m.p2}`;
+    return wrap(`<div class="anews-empty" style="display:flex; flex-direction:column; gap:6px; padding:10px 0;">
+        <span class="anews-empty-title" style="font-size:15px; color:var(--text);">No recent news for ${esc(who)}.</span>
+        ${viewAll()}
       </div>`);
   }
-  return wrap(`${groups}${viewAll}`);
+  return wrap((showA ? aNewsGroupHtml('p1', m.p1, aArts, total) : '') + (showB ? aNewsGroupHtml('p2', m.p2, bArts, total) : '') + viewAll(' margin-top:2px;'));
 }
 
 // §2 Score header (completed only) — the Flashscore-style panel that opens the
@@ -19517,7 +19524,7 @@ const A_TAB_BUILD = {
   },
   news(m){
     // The shared feed is fetched the first time the News tab (or the News page) needs it.
-    _aNewsState = _newsData ? 'ok' : 'load';
+    _aNewsState = (_newsData && Array.isArray(_newsData.articles)) ? 'ok' : 'load';   // = aNewsFeedOk()
     renderNewsSection();
     return ensureNewsData().then(() => { if (_aNewsMatch === m && aBuilt(m, 'news')) renderNewsSection(); });
   },
@@ -19633,7 +19640,7 @@ function openAnalysisModal(matchId, tab){
   fhCloseSheet(); _maMsSheet = null;                        // no sheet carries over from the previous match
   for (const k in _maRowReg) delete _maRowReg[k];
   document.querySelectorAll('.modal-analysis .asection').forEach(s => { s.innerHTML = ''; });
-  _aStyleMatch = m; _aPbpMatch = m; _aFormMatch = m; _aWxMatch = m; _aNewsMatch = m; _aNewsFilter = 'all';
+  _aStyleMatch = m; _aPbpMatch = m; _aFormMatch = m; _aWxMatch = m; _aNewsMatch = m; _aNewsFilter = 'all'; _aNewsOpen = '';
   _me = null;
   const mePopEl = document.getElementById('mePop'); if (mePopEl) mePopEl.innerHTML = '';
   _aOdds = { m:m, novig:false, market:'Match Winner', mv:null };
