@@ -1023,16 +1023,36 @@ check('price bands sum to the headline priced count, for every shard', () => {
     `(neither favourite nor underdog; counted separately rather than forced into a card)`);
 });
 
+// TEN-310 R8 (2026-09-28, 09d84e45): a row's book is one of FOUR labels, in the tab's order —
+// captured Pinnacle, Tennis-Data Pinnacle, Tennis-Data Bet365, captured Bet365 — and the headline
+// counts every `pinnacle*` row as Pinnacle, every other as Bet365 (build-market-edge.js BASIS_BOOKS /
+// addTo). This check kept the two pre-R8 labels; only a FRESH build carries capture rows (the committed
+// floor predates R8), so it first went red in the TEN-329 built-store gate, run 5227: "358: 13 rows".
+const ME_BOOKS = new Set(['pinnacle', 'pinnacle-capture', 'bet365-archive', 'bet365-capture']);
+const meIsPinnacle = (m) => String(m.book).startsWith('pinnacle');
 check('per-row book counts sum to the headline, and the label is never blended', () => {
+  let captured = 0;
   for (const k of MK_KEYS) {
     const s = MARKET[k];
     assert.strictEqual(s.headline.book.pinnacle + s.headline.book.bet365, s.headline.n,
       `${k}: book mix does not sum to the priced count`);
-    const rows = s.matches.filter(m => m.book !== 'pinnacle' && m.book !== 'bet365-archive');
+    const rows = s.matches.filter(m => !ME_BOOKS.has(m.book));
     assert.strictEqual(rows.length, 0, `${k}: ${rows.length} rows carry no book label`);
-    assert.strictEqual(s.matches.filter(m => m.book === 'pinnacle').length, s.headline.book.pinnacle,
+    assert.strictEqual(s.matches.filter(meIsPinnacle).length, s.headline.book.pinnacle,
       `${k}: row-level Pinnacle count disagrees with the summary`);
+    assert.strictEqual(s.matches.filter(m => !meIsPinnacle(m)).length, s.headline.book.bet365,
+      `${k}: row-level Bet365 count disagrees with the summary`);
+    captured += s.matches.filter(m => /-capture$/.test(m.book)).length;
   }
+  console.log(`        ${captured} captured-close rows (TEN-310 R8) labelled and counted under their book`);
+});
+mustFail('the label check would catch a row with no book', () => {
+  const rows = [{ book: 'pinnacle-capture' }, { book: null }].filter(m => !ME_BOOKS.has(m.book));
+  assert.strictEqual(rows.length, 0, 'X: 1 rows carry no book label');
+});
+mustFail('the Pinnacle count would catch a captured Pinnacle row counted as Bet365', () => {
+  const ms = [{ book: 'pinnacle' }, { book: 'pinnacle-capture' }];
+  assert.strictEqual(ms.filter(meIsPinnacle).length, 1, 'X: row-level Pinnacle count disagrees with the summary');
 });
 
 // ★ Founder ruling TEN-310, 2026-09-27, SUPERSEDES R1 (Pinnacle closing only): the profile's Market
