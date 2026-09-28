@@ -166,7 +166,7 @@ const tm = (o) => Object.assign({ p1: 'C. Alcaraz', p1Key: '1', p2: 'X', p2Key: 
   const h = P.buildTournamentHistory([
     tm({ date: '2026-04-14', season: '2026', winner: 'First Player', round: 'ATP Barcelona - 1/16-finals' }),
     tm({ date: '2026-04-16', season: '2026', winner: 'Second Player', round: 'ATP Barcelona - 1/8-finals', walkover: true, result: '0 - 0' }),
-    tm({ date: '2025-04-15', season: '2025', winner: 'Second Player', round: 'ATP Barcelona - 1/16-finals', walkover: true, result: '0 - 0' }),
+    tm({ date: '2027-04-15', season: '2027', winner: 'Second Player', round: 'ATP Barcelona - 1/16-finals', walkover: true, result: '0 - 0' }),  // W/O given only, at the span's edge
     tm({ date: '2024-04-15', season: '2024', winner: 'Second Player', round: 'ATP Barcelona - 1/16-finals', result: '0 - 1' }),   // retired in-match
     tm({ date: '2023-04-15', season: '2023', winner: 'First Player', round: 'ATP Barcelona - Final', walkover: true, result: '0 - 0' }),  // W/O received
   ], '1');
@@ -177,8 +177,10 @@ const tm = (o) => Object.assign({ p1: 'C. Alcaraz', p1Key: '1', p2: 'X', p2Key: 
     assert.strictEqual(y('2026').roundReached, '1/8-finals');
     assert.ok(!y('2026').matches.some((m) => m.round === '1/8-finals'));
   });
-  check('N2 tournament: an edition whose only match was a W/O given is a 0-0 Withdrawal', () => {
-    assert.deepStrictEqual([y('2025').won, y('2025').lost, y('2025').roundReached, y('2025').withdrew], [0, 0, 'Withdrawal', true]);
+  // Mutation: drop `|| woOnlyGiven[season]` → a 2027 0-0 row appears.
+  check('N6: an edition whose only match was a W/O given gets NO row (no synthesised Withdrawal)', () => {
+    assert.strictEqual(y('2027'), undefined);
+    assert.ok(!h.years.some((x) => x.withdrew && x.year === '2027'));
   });
   check('N2 tournament: totals count the retirement as a loss and NOT the W/O received — 1-1', () => {
     assert.deepStrictEqual([h.totalWon, h.totalLost], [1, 1]);
@@ -207,7 +209,8 @@ const tm = (o) => Object.assign({ p1: 'C. Alcaraz', p1Key: '1', p2: 'X', p2Key: 
     assert.deepStrictEqual([t.won, t.lost, t.titles], [1, 0, 1]);
   });
   // Mutation: drop `.filter((m) => !m.walkover)` in buildEmbeddedHistory → 2019 reads 2-1.
-  check('N2 board tournament history (TML backfill): walkovers leave the W-L; only-given edition is a withdrawal', () => {
+  // Mutation: drop the only-given `continue` → a 2017 0-0 row appears (N6).
+  check('N2 board tournament history (TML backfill): walkovers leave the W-L; an only-given edition gets no row', () => {
     const { _internal } = require('../career-backfill.js');
     const { history } = _internal.buildEmbeddedHistory(null, [
       { year: 2019, round: 'R32', oppName: 'A', won: true, score: '6-3 6-4' },
@@ -216,15 +219,7 @@ const tm = (o) => Object.assign({ p1: 'C. Alcaraz', p1Key: '1', p2: 'X', p2Key: 
       { year: 2017, round: 'R32', oppName: 'D', won: false, walkover: true, score: 'W/O' }]);
     const y19 = history.years.find((y) => y.year === '2019'), y17 = history.years.find((y) => y.year === '2017');
     assert.deepStrictEqual([y19.won, y19.lost, y19.matchCount], [1, 1, 2]);
-    assert.deepStrictEqual([y17.won, y17.lost, !!y17.withdrew], [0, 0, true]);
-  });
-  // Mutation: drop the `withdrawn` re-add in buildEmbeddedHistory → the 2024 withdrawal vanishes on merge.
-  check('N2 board tournament history: a final-year withdrawal (W/O given only) survives the TML merge', () => {
-    const { _internal } = require('../career-backfill.js');
-    const existing = { years: [{ year: '2024', matchCount: 0, won: 0, lost: 0, roundReached: 'Withdrawal', matches: [], withdrew: true },
-      { year: '2023', matchCount: 1, won: 1, lost: 0, roundReached: 'R32', matches: [{ won: true, result: '2 - 0' }] }] };
-    const { history } = _internal.buildEmbeddedHistory(existing, [{ year: 2019, round: 'R32', oppName: 'A', won: true, score: '6-3 6-4' }]);
-    assert.ok(history.years.some((y) => y.year === '2024' && y.withdrew));
+    assert.strictEqual(y17, undefined);
   });
   // Mutation: drop `.filter(m => !isWalkover(m))` from fetchH2H's officialH2H → a walkover is a meeting again.
   check('N2 H2H: fetchH2H keeps walkovers out of the meeting list (source)', () => {

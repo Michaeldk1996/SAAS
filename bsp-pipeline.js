@@ -438,8 +438,8 @@ function buildTournamentHistory(matches, playerKey) {
   // walkover — given or received — is neither a win nor a loss: it leaves the W-L, the
   // match list and the edition's match count. The round it sits in still counts as
   // reached (roundReached), as on the ATP site. An edition whose only match was a
-  // walkover GIVEN is an edition he entered and withdrew from: the same 0-0
-  // "Withdrawal" row the gap-fill below writes. An in-match retirement is a match.
+  // walkover GIVEN gets NO row (founder N6, 2026-09-28: no synthesised "Withdrawal"
+  // header — TEN-320 removes the gap-fill ones below). An in-match retirement is a match.
   const woGiven = {}; // season -> walkover fixtures (either side)
   const woOnlyGiven = {}; // season -> true while every walkover that season was given
   for (const m of matches) {
@@ -494,14 +494,12 @@ function buildTournamentHistory(matches, playerKey) {
       .sort((a, b) => new Date(b.date) - new Date(a.date));
     years.push({ year: season, matchCount: seasonMatches.length, won, lost, roundReached: roundLabel(latest.round), matches: matchList });
   }
-  // An edition whose only matches were walkovers: 0-0. Only walkovers given → he
-  // withdrew ('Withdrawal'); a walkover received → he reached the next round unplayed.
+  // An edition whose only matches were walkovers: a walkover RECEIVED is a real edition
+  // he advanced in unplayed (0-0, round reached). Walkovers GIVEN only: no row at all.
   for (const season of Object.keys(woGiven)) {
-    if (bySeason[season]) continue;
+    if (bySeason[season] || woOnlyGiven[season]) continue;
     const latest = woGiven[season].reduce((a, b) => (b.date > a.date ? b : a));
-    years.push(woOnlyGiven[season]
-      ? { year: season, matchCount: 0, won: 0, lost: 0, roundReached: 'Withdrawal', matches: [], withdrew: true }
-      : { year: season, matchCount: 0, won: 0, lost: 0, roundReached: roundLabel(latest.round), matches: [] });
+    years.push({ year: season, matchCount: 0, won: 0, lost: 0, roundReached: roundLabel(latest.round), matches: [] });
   }
   if (years.length === 0) return null;
 
