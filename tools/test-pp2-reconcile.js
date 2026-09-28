@@ -781,6 +781,9 @@ check('every tournament W-L equals the sum of its editions', () => {
     for (const t of p.tournamentHistory || []) {
       let w = 0, l = 0, wd = 0;
       (t.editions || []).forEach(e => (e.matches || []).forEach(m => {
+        // TEN-313 (N2): a walkover RECEIVED ('W' + walkover) is not a win; a WD (given) still
+        // reaches the wd branch below, so the WD-as-loss check stays live.
+        if (m.walkover && m.res === 'W') return;
         if (m.res === 'W') w++;
         else if (m.res === 'L') l++;
         else { wd++; }        // WD today; any future code lands here too

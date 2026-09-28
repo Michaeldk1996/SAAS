@@ -4424,8 +4424,12 @@
       // §4: "Tournament W-L = sum of its listed editions". Recomputed from the
       // edition rows rather than trusting the stored pair — measured across the
       // whole roster, all 9,419 tournament rows agree, and this keeps it so.
+      // TEN-313 (N2): n is matches PLAYED — a walkover row stays listed but is not one.
       var w = 0, l = 0, n = 0;
-      eds.forEach(function (e) { w += e.won; l += e.lost; n += e.matches.length; });
+      eds.forEach(function (e) {
+        w += e.won; l += e.lost;
+        n += e.matches.filter(function (m) { return !m.walkover; }).length;
+      });
       var b = j.agg[t.name] || null;
       var level = b && b.lastLevel ? b.lastLevel : null;
       var surf = null, best = 0;
