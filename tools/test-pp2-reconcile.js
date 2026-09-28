@@ -3298,8 +3298,9 @@ check('the all-stores table covers every data store the module reads', () => {
     .map(s => s.replace('window.', '')));
   // Not data stores: the feature flag, the module's own export, and the shared
   // helper singletons (logic, not data — they carry no player rows). MarketEdgeCore
-  // (TEN-310) is the Market edge compute both surfaces share.
-  const NOT_STORES = new Set(['FEATURE_PP2', 'PlayerProfileV2', 'RoundClassify', 'HoldBreakHeatmap', 'MarketEdgeCore']);
+  // (TEN-310) is the Market edge compute both surfaces share; HouseRatings (TEN-327) is the one
+  // Serve / Return rating helper every surface shares.
+  const NOT_STORES = new Set(['FEATURE_PP2', 'PlayerProfileV2', 'RoundClassify', 'HoldBreakHeatmap', 'MarketEdgeCore', 'HouseRatings']);
   // Host callbacks the mount calls back into (navigation, not data). Exempt from
   // the coverage table but NOT from scrutiny: the module must not assume the
   // host defined them, so each is asserted to be typeof-guarded at its call

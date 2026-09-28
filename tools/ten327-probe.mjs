@@ -72,8 +72,8 @@ for (const [ek, f] of Object.entries(FIX)) {
   await check(`${f.subject}: Live tab (LiveFeed) = ${Math.round(want.serve)} / ${Math.round(want.ret)}`, async () => {
     const v = await ev(`(function(){var lf=window.LiveFeed; if(!lf||!lf.indexStats) return 'nolive';
       var rows=[]; [[${f.subjectKey},${JSON.stringify(own)}],[1,${JSON.stringify(opp)}]].forEach(function(pr){ var o=pr[1];
-        Object.keys(o).forEach(function(k){ if(k==='raw') return; var nm=k.split(':')[1], rw=(o.raw||{})[k], cnt=/Aces|Double|Winners|Unforced/.test(nm);
-          rows.push({player_key:pr[0],stat_period:'match',stat_name:nm,stat_value:cnt?String(o[k]):o[k]+'%',stat_won:rw?rw.won:null,stat_total:rw?rw.total:null}); }); });
+        Object.keys(o).forEach(function(k){ if(k==='raw') return; var nm=k.split(':')[1], rw=(o.raw||{})[k];
+          rows.push({player_key:pr[0],stat_period:'match',stat_name:nm,stat_value:/aces|double|winners|unforced/i.test(nm)?String(o[k]):o[k]+'%',stat_won:rw?rw.won:null,stat_total:rw?rw.total:null}); }); });
       var idx=lf.indexStats({statistics:rows}).idx; return [lf.serveRating(idx,${f.subjectKey},'match').rating, lf.returnRating(idx,${f.subjectKey},'match').rating];})()`);
     if (v === 'nolive') return 'SKIPPED — LiveFeed not initialised on this origin (needs the Supabase creds the deploy injects)';
     must(Math.abs(v[0] - want.serve) < 1e-6 && Math.abs(v[1] - want.ret) < 1e-6, `live ${v.join(' / ')}`);

@@ -58,6 +58,8 @@ const FILES = [
   'tools/harvest-wue-store.mjs',
   'tools/build-atp-entry-wue.js',
   'verify_dna_python.py',
+  'tools/test-ten327-house-ratings.js',  // TEN-327: builds api-tennis statistics rows for the Live tab
+  'tools/ten327-probe.mjs',              // TEN-327: same, in the deployed-page probe
 ];
 
 // A line is SAFE when it case-folds the name on the read side, either by

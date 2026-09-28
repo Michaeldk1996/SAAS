@@ -106,9 +106,8 @@ function toLive(pk, o) {
     if (k === 'raw') continue;
     const [type, name] = k.split(':');
     const rw = (o.raw || {})[k];
-    const count = /Aces|Double|Winners|Unforced/.test(name);
-    rows.push({ player_key: pk, stat_period: 'match', stat_type: type, stat_name: name,
-      stat_value: count ? String(v) : v + '%', stat_won: rw ? rw.won : null, stat_total: rw ? rw.total : null });
+    rows.push({ player_key: pk, stat_period: 'match', stat_type: type, stat_name: name, stat_value: /aces|double|winners|unforced/i.test(name) ? String(v) : v + '%',
+      stat_won: rw ? rw.won : null, stat_total: rw ? rw.total : null });
   }
   return rows;
 }
@@ -173,8 +172,9 @@ function suite(src) {
       ['1st serve points won', 3, 3], ['2nd serve points won', 0, 1], ['Service games won', 1, 1],
       ['1st return points won', 1, 4], ['2nd return points won', 0, 0], ['Return games won', 0, 1],
       ['Break Points Converted', null, null], ['Aces', null, null, '1'], ['Double Faults', null, null, '0'],
-    ].filter(([n]) => !(over || []).includes(n)).map(([n, w, t, v]) => ({ player_key: 7, stat_period: 'match',
-      stat_name: n, stat_value: v != null ? v : (t ? Math.round(w / t * 100) + '%' : '0%'), stat_won: w, stat_total: t }));
+    ].filter(([n]) => !(over || []).includes(n)).map(([n, w, t, v], i) => ({ player_key: 7, stat_period: 'match',
+      // every other name upper-cased: the feed's stat_name casing drifts by season (test-statname-casing.js)
+      stat_name: i % 2 ? n.toUpperCase() : n, stat_value: v != null ? v : (t ? Math.round(w / t * 100) + '%' : '0%'), stat_won: w, stat_total: t }));
     const idx = L.indexStats({ statistics: rows() }).idx;
     const s = L.serveRating(idx, 7, 'match').rating;
     assert.ok(Math.abs(s - (75 + 100 + 0 + 100 + 1 - 0)) < 1e-9, `4-point serve rating ${s}`);
