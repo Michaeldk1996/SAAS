@@ -58,13 +58,16 @@ const NIGHT = {
   sel: '#222431', fill: '#5B82E8', link: '#9DB3F2', pos: '#5CCB84', neg: '#E06266', amber: '#E8A84E', onFill: '#06070A',
 };
 const PALETTE_RULES = [
-  // [class, r, g, b, alpha lo, alpha hi, to]   class: text (color, svg stroke/fill) | fill (background) | line (borders)
+  // [class, r, g, b, alpha lo, alpha hi, to]   class: text (color, svg stroke/fill) | svg (tried first for svg stroke/fill) | fill (background) | line (borders)
   ['text', 231, 233, 238, 1, 1, NIGHT.t1], ['text', 255, 255, 255, 1, 1, NIGHT.t1],
   ['text', 170, 179, 200, 1, 1, NIGHT.t2], ['text', 139, 150, 181, 1, 1, NIGHT.t2],
   ['text', 91, 104, 128, 1, 1, NIGHT.t3], ['text', 75, 86, 114, 1, 1, NIGHT.t3], ['text', 107, 117, 144, 1, 1, NIGHT.t3],
   ['text', 106, 174, 255, 1, 1, NIGHT.link], ['text', 91, 155, 255, 1, 1, NIGHT.link], ['text', 130, 180, 255, 1, 1, '#B5C6F5'],
   ['text', 61, 214, 140, 1, 1, NIGHT.pos], ['text', 224, 97, 111, 1, 1, NIGHT.neg], ['text', 232, 168, 78, 1, 1, NIGHT.amber],
   ['text', 6, 7, 10, 1, 1, NIGHT.onFill],
+  // SVG stroke / fill: a blue is a chart line / bar (README §3 "bars, fills, chart lines" → fill); greys and signals as text
+  ['svg', 106, 174, 255, 1, 1, NIGHT.fill], ['svg', 91, 155, 255, 1, 1, NIGHT.fill],
+  ['fill', 16, 18, 27, 1, 1, NIGHT.card],   // #10121B soft ink (U8)
   ['fill', 14, 16, 25, 1, 1, NIGHT.card], ['fill', 10, 13, 20, 1, 1, NIGHT.card], ['fill', 12, 14, 22, 1, 1, NIGHT.inner], ['fill', 15, 20, 32, 1, 1, NIGHT.inner],
   ['fill', 19, 22, 35, 1, 1, NIGHT.raised], ['fill', 6, 7, 10, 1, 1, NIGHT.inner], ['fill', 17, 20, 31, 1, 1, NIGHT.hover],
   ['fill', 255, 255, 255, 0.04, 0.04, NIGHT.hover], ['fill', 91, 155, 255, 0.06, 0.22, NIGHT.sel],
@@ -331,7 +334,8 @@ const HELPERS = `window.__cap = (() => {
           if (a === 0) continue;
           let to;
           if (k === 'backgroundColor' && wrappers.has(el) && +mm[1] === 10 && +mm[2] === 13 && +mm[3] === 20) to = pageTo;
-          else { const r = rules.find(x => x[0] === cls[k] && +mm[1] === x[1] && +mm[2] === x[2] && +mm[3] === x[3] && a >= x[4] - 1e-9 && a <= x[5] + 1e-9);
+          else { const hit = c => rules.find(x => x[0] === c && +mm[1] === x[1] && +mm[2] === x[2] && +mm[3] === x[3] && a >= x[4] - 1e-9 && a <= x[5] + 1e-9);
+            const r = (isSvg && (k === 'stroke' || k === 'fill') && hit('svg')) || hit(cls[k]);
             if (!r) { if (!targets.has(v)) miss[cls[k] + ' ' + v] = (miss[cls[k] + ' ' + v] || 0) + 1; continue; } to = r[6]; }
           if (to) api._style(el, css[k] + ':' + to + ' !important;');
         }
