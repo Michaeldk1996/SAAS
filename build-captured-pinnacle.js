@@ -211,6 +211,8 @@ function build({ root = ROOT, out = OUT, since = null, nowMs = Date.now() } = {}
     commitsScanned: (held.commitsScanned || 0) + snap.commits.length,
     lastRun: { from, snapshots: scanned, added, replaced, ...stats },
     stats: held.stats,
+    // One-time backfills (TEN-346: 3–22 Sep from Oddspapi pinnacle+30 history) — their record survives every run.
+    ...(held.backfills ? { backfills: held.backfills } : {}),
     rows,
   };
   // Rewritten only when a row changes, so an idle run commits nothing back (the pipeline's
