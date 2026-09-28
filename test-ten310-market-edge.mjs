@@ -250,7 +250,7 @@ test('§4 edge cases: half-open bands, 2.00 is underdog, match-tiebreak is not a
   assert.equal(ui.render(m, {}, [rows, empty]).E && true, true);
 });
 
-test('wiring: Market edge is the last tab after Odds; today = the header price; lazy load', () => {
+test('wiring: Market edge is the last tab after Odds; today = the header price; lazy load; not in Download report', () => {
   const r0 = HTML.indexOf('<div class="asidenav" id="aTabs">'), rail = HTML.slice(r0, HTML.indexOf('asidenav-download', r0));
   const tabs = [...rail.matchAll(/data-atab="([a-z0-9]+)"/g)].map((x) => x[1]);
   assert.deepEqual(tabs.slice(-2), ['odds', 'marketedge']); assert.equal(tabs.length, 12);
@@ -271,6 +271,9 @@ test('wiring: Market edge is the last tab after Odds; today = the header price; 
   const own = slice('meLoadProfileShard');
   assert.ok(!block.includes('player-profiles.json') && !/fetch\(/.test(block.replace(own, '')), 'the tab fetches only through the lazy loaders');
   assert.equal((own.match(/fetch\(/g) || []).length, 1); assert.ok(own.includes('fetch(`./market-edge/${encodeURIComponent(k)}.json`'), 'only the per-player profile shard');
+  const print = HTML.slice(HTML.indexOf('.modal-analysis.printing .asection{'), HTML.indexOf('.modal-analysis.printing .asection{') + 400);
+  assert.ok(print.includes('.modal-analysis.printing #aSectionMarketEdge, .modal-analysis.printing #mePop{ display:none !important; }'), 'kept out of Download report (static print CSS)');
+  assert.ok(slice('aBuildForReport').includes("if (t === 'marketedge' || _aBuilt.has(t)) return;"), 'the report never builds Market edge');
   assert.ok(/<script src="market-edge-core\.js"><\/script>/.test(HTML));
 });
 

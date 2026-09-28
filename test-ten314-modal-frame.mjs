@@ -1,5 +1,5 @@
 // TEN-314 (TEN-312 Phase 1): the Match analysis modal's frame, header and left menu as the design FILE draws
-// them, the founder's D5 / D7 rulings, per-tab lazy building, and "no fixture code in the deployed bundle".
+// them, the founder's D5 ruling, the Download report print, per-tab lazy building, and "no fixture code in the deployed bundle".
 // Every check names the mutation that turns it red; tools/test-ten314-mutants.js applies each one.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -79,16 +79,61 @@ test('left menu: the 12 tabs in the file\'s order with the file\'s icon paths (T
   assert.deepEqual(ours, df);
 });
 
-// Mutation: put `onclick="printAnalysisReport()"` back on the item, or restore printAnalysisReport / window.print.
-test('D7: "Download report" is rendered as designed and wired to nothing', () => {
-  const at = HTML.indexOf('<span class="asidenav-download">');
+// Mutation: drop the item's onclick, or drop `window.print()` from printAnalysisReport (founder 2026-09-28: D7 reversed —
+// the item keeps the print, in the design's menu style).
+test('Download report: the design\'s menu item calls printAnalysisReport, which prints', () => {
+  const at = HTML.indexOf('<span class="asidenav-download"');
   assert.ok(at > 0, 'rendered');
   const tag = HTML.slice(at, HTML.indexOf('</span>', at));
-  assert.ok(!/on[a-z]+=/i.test(tag), 'no inline handler');
+  assert.ok(tag.includes('onclick="printAnalysisReport()"'), 'the item calls the report');
   assert.ok(tag.includes('<path d="M12 4v10m0 0l-4-4m4 4l4-4M5 19h14"'), 'the file\'s icon (DF L119)');
-  assert.ok(!HTML.includes('function printAnalysisReport('), 'no print path');
-  assert.ok(!/window\.print\(/.test(HTML), 'nothing prints');
-  assert.ok(!/asidenav-download['"]?\)?\.(addEventListener|onclick)/.test(HTML), 'no listener bound later');
+  assert.ok(/\n    window\.print\(\);\n/.test(slice('printAnalysisReport')), 'the report prints');
+});
+
+// Mutation: aBuildForReport skips unopened tabs (the report prints empty sections), or builds Market edge.
+test('Download report: every unopened tab except Market edge is built first; opened ones are not rebuilt', async () => {
+  const { api, log } = modalVM();
+  api.openAnalysisModal('a'); api.aShowTab('form'); await flush();
+  log.length = 0;
+  await api.aBuildForReport();
+  assert.deepEqual(api.built().sort(), ['form', 'h2h', 'key', 'matchstats', 'news', 'odds', 'overview', 'progression', 'style', 'tournament', 'weather']);
+  assert.ok(!log.includes('build:form'), 'an opened tab is not rebuilt');   // (key repaints when Style's shards land — a repaint, not a build)
+  assert.ok(!log.includes('load:marketedge'));
+});
+
+// Mutation: `const built = null;` in printAnalysisReport, or drop `built` from its Promise.all (the report prints
+// before the unopened tabs have built and loaded — review 2026-09-28).
+test('Download report: printing waits for the unopened tabs to build and load', async () => {
+  const log = []; let release;
+  const modal = { classList: { add: c => log.push('add:' + c), remove() {} } };
+  const doc = { querySelector: () => modal, getElementById: () => null };
+  const print = new Function('document', 'window', 'openWeatherTab', 'setTimeout', '_aWx', '_aWxMatch', 'buildWeatherSection', 'aBuildForReport',
+    `${slice('printAnalysisReport')}; return printAnalysisReport;`)(
+    doc, { addEventListener() {}, print: () => log.push('print') }, () => Promise.resolve(), () => {}, { ready: true }, null, () => '',
+    () => new Promise(r => { release = r; }));
+  const p = print();
+  await flush(); await flush();
+  assert.ok(!log.includes('print'), 'not printed while tabs load');
+  release(); await p;
+  assert.deepEqual(log, ['add:printing', 'print']);
+});
+
+// Mutation: drop `return` from a builder (the report stops waiting for that tab's load), or let a throwing builder escape.
+test('Download report: aBuildForReport settles only after every tab load, and survives a throwing builder', async () => {
+  const { api, pending } = modalVM({ hold: true });
+  api.openAnalysisModal('a');
+  while (pending.length) pending.shift()();                    // Key factors' own loads (built at open)
+  let done = false; api.aBuildForReport().then(() => { done = true; });
+  await flush();
+  // release every held load except the Odds shard: the report must still be waiting on it
+  for (const f of pending.splice(0).filter(f => { if (f.n === 'load:odds-shard') return true; f(); return false; })) pending.push(f);
+  await flush(); await flush();
+  assert.ok(!done, 'still waiting on the Odds shard');
+  while (pending.length) pending.shift()(); await flush(); await flush();
+  assert.ok(done);
+  const t = modalVM({ throwOn: 'h2h' }); t.api.openAnalysisModal('a');
+  await t.api.aBuildForReport();   // no throw
+  assert.ok(t.api.built().includes('tournament'), 'tabs after the thrower still build');
 });
 
 // ---- D5: avatars ----
@@ -124,10 +169,10 @@ function modalVM(opts = {}) {
     querySelectorAll: s => s.includes('asidenav-item') ? Object.values(nav) : s.includes('asection') ? Object.values(sec) : [],
   };
   // opts.hold: loaders return promises the test settles (pending[]), to model a shard landing after a reopen
-  const rec = n => (...a) => { log.push(n); if (!opts.hold) return Promise.resolve(a[0]); return new Promise(r => pending.push(() => r(a[0]))); };
+  const rec = n => (...a) => { log.push(n); if (!opts.hold) return Promise.resolve(a[0]); return new Promise(r => { const f = () => r(a[0]); f.n = n; pending.push(f); }); };
   const stubs = {
     buildKeyFactorsSection: m => { log.push('build:key'); log.push('paint:key:' + m.id); return 'K'; }, renderStyleSection: () => log.push('build:style'),
-    buildFormSection: () => { log.push('build:form'); return 'F'; }, buildH2HSection: () => { log.push('build:h2h'); return 'H'; },
+    buildFormSection: () => { log.push('build:form'); return 'F'; }, buildH2HSection: () => { log.push('build:h2h'); if (opts.throwOn === 'h2h') throw new Error('x'); return 'H'; },
     buildMatchStatsSection: () => { log.push('build:matchstats'); return ''; }, buildMatchProgressionSection: () => { log.push('build:progression'); return ''; },
     buildYearlyTables: () => { log.push('build:overview'); return ''; }, buildTournamentSection: () => { log.push('build:tournament'); return ''; },
     renderWeatherSection: () => log.push('build:weather'), openWeatherTab: rec('load:weather'), openMarketEdgeTab: () => log.push('load:marketedge'),
@@ -144,9 +189,10 @@ function modalVM(opts = {}) {
     ${HTML.slice(HTML.indexOf('\nlet _aM = null;'), HTML.indexOf('\nconst A_TAB_BUILD = {'))}
     ${objSrc('const A_TAB_BUILD')}
     ${objSrc('const A_TAB_REVISIT')}
+    ${slice('aBuildForReport')}
     ${slice('aShowTab')}
     ${slice('openAnalysisModal')}
-    return { openAnalysisModal, aShowTab, built: () => [..._aBuilt] };`;
+    return { openAnalysisModal, aShowTab, aBuildForReport, built: () => [..._aBuilt] };`;
   const api = new Function('document', 'matches', ...names, body)(document, [{ id: 'a', p1: 'J. Sinner', p2: 'C. Alcaraz' }, { id: 'b', p1: 'X', p2: 'Y' }], ...names.map(n => stubs[n]));
   return { api, log, nav, pending };
 }

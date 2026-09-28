@@ -1268,7 +1268,7 @@
     transition:background .14s ease, color .14s ease; }
   .modal-analysis .asidenav-item .aicon{ width:17px; height:17px; display:inline-flex; flex:none; }
   .modal-analysis .asidenav-item .aicon svg{ width:17px; height:17px; }
-  /* D7: rendered exactly as designed and wired to nothing — no print, no export. */
+  /* Download report: the design's menu style; prints the whole analysis (founder 2026-09-28 reversed D7). */
   .modal-analysis .asidenav-download{ display:flex; align-items:center; gap:10px; padding:12px; margin-top:8px; border-top:1px solid; font-family:'Hanken Grotesk', sans-serif; font-size:13px; font-weight:700; line-height:normal; cursor:pointer;
     transition:background .14s ease, color .14s ease, border-color .14s ease; }
   .modal-analysis .asidenav-download svg{ width:16px; height:16px; flex:none; }
@@ -2439,6 +2439,9 @@
     .modal-analysis .ahead2 .close, .modal-analysis .asidenav{ display:none !important; }
     .modal-analysis .aanalysis-body-wrap{ display:block !important; }
     .modal-analysis .abody{ overflow:visible !important; }
+    .modal-analysis.printing .asection{ display:block !important; page-break-inside:avoid; margin-bottom:20px; }
+    /* TEN-310: Market edge is not part of the Download report (brief §1). */
+    .modal-analysis.printing #aSectionMarketEdge, .modal-analysis.printing #mePop{ display:none !important; }
   }
   /* Pipeline-health banner: makes a missed/failed automated run immediately
      obvious instead of silently serving stale data. */
@@ -5302,7 +5305,7 @@ window.EntryListsTab = (function(){
         <div class="asidenav-item" data-atab="weather"><span class="aicon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M6 16a4 4 0 010-8 5 5 0 019.6-1.5A3.5 3.5 0 0117 16H6z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>Weather</div>
         <div class="asidenav-item" data-atab="odds"><span class="aicon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M8 9a2 2 0 100-4 2 2 0 000 4ZM16 19a2 2 0 100-4 2 2 0 000 4ZM6 18L18 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>Odds</div>
         <div class="asidenav-item" data-atab="marketedge"><span class="aicon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M4 16l4-5 3 3 5-7 4 5M4 20h16" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>Market edge</div>
-        <span class="asidenav-download"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 4v10m0 0l-4-4m4 4l4-4M5 19h14" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path></svg>Download report</span>
+        <span class="asidenav-download" onclick="printAnalysisReport()"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 4v10m0 0l-4-4m4 4l4-4M5 19h14" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path></svg>Download report</span>
       </div>
       <div class="abody">
         <div class="asection active" data-asection="key" id="aSectionKey"></div>
@@ -12909,7 +12912,7 @@ function wxOnMatchesReload(){
 }
 // Called when the Weather tab opens. Never blocks another tab: the section paints a loading line and
 // repaints when the files land (guarded, so a fast reopen of another match is never overwritten).
-// Returns a promise that settles once the section shows this match's data.
+// Returns a promise that settles once the section shows this match's data (Download report awaits it).
 function openWeatherTab(){
   const m = _aWxMatch;
   if (!m) return Promise.resolve();
@@ -19189,7 +19192,7 @@ const A_TAB_BUILD = {
     aPaint('aSectionKey', buildKeyFactorsSection(m));
     // Key factors reads the form shards (Recent form), the odds shard (Odds), the matchup matrix (Playing style)
     // and the MCP radar (Dimension edge) — nothing else.
-    Promise.all([ensureFormRows(m), ensureOddsMovement(m), loadStyleRadar(), ensurePsMatrix()])
+    return Promise.all([ensureFormRows(m), ensureOddsMovement(m), loadStyleRadar(), ensurePsMatrix()])
       .then(() => { if (aBuilt(m, 'key')) aPaint('aSectionKey', buildKeyFactorsSection(m)); });
   },
   style(m){
@@ -19197,7 +19200,7 @@ const A_TAB_BUILD = {
     // the career meeting shards and the DNA file have landed. Same stale-guard contract as every tab.
     _aStyleMatch = m;
     renderStyleSection(m);
-    Promise.all([loadStyleRadar(), ensurePsMatrix(), ensureStyleMeetings(m), ensureMatchDna()]).then(() => {
+    return Promise.all([loadStyleRadar(), ensurePsMatrix(), ensureStyleMeetings(m), ensureMatchDna()]).then(() => {
       if (_aStyleMatch !== m || !aBuilt(m, 'style')) return;
       renderStyleSection(m);
       if (aBuilt(m, 'key')) aPaint('aSectionKey', buildKeyFactorsSection(m));
@@ -19206,7 +19209,7 @@ const A_TAB_BUILD = {
   form(m){
     // Form shows a loading line until its shards land (fhBuildForm starts fhEnsureFormData itself).
     aPaint('aSectionForm', buildFormSection(m));
-    ensureFormRows(m).then(() => { if (aBuilt(m, 'form')) aPaint('aSectionForm', buildFormSection(m)); });
+    return ensureFormRows(m).then(() => { if (aBuilt(m, 'form')) aPaint('aSectionForm', buildFormSection(m)); });
   },
   h2h(m){ aPaint('aSectionH2H', buildH2HSection(m)); },
   matchstats(m){ aPaint('aSectionMatchStats', buildMatchStatsSection(m)); },
@@ -19214,22 +19217,36 @@ const A_TAB_BUILD = {
   overview(m){ aPaint('aSectionOverview', buildYearlyTables(m)); },
   tournament(m){ aPaint('aSectionTournament', buildTournamentSection(m)); },
   // TEN-304: loading line for THIS match, then its files load (openWeatherTab).
-  weather(m){ _aWxMatch = m; renderWeatherSection(); openWeatherTab(); },
+  weather(m){ _aWxMatch = m; renderWeatherSection(); return openWeatherTab(); },
   // TEN-310: a new match starts from its defaults with no pop-up; the tab loads its own shards.
   marketedge(m){ openMarketEdgeTab(); },
   odds(m){
     // Paint the reduced view from what is inline, then upgrade to the per-book movement chart once the
     // timeline shard lands (renderOddsSection guards on _aOdds.m).
     aPaint('aSectionOdds', buildOddsSection(m));
-    ensureOddsMovement(m).then(() => { if (_aOdds.m === m && aBuilt(m, 'odds')) renderOddsSection(); });
+    return ensureOddsMovement(m).then(() => { if (_aOdds.m === m && aBuilt(m, 'odds')) renderOddsSection(); });
   },
   news(m){
     // The shared feed is fetched the first time the News tab (or the News page) needs it.
     _aNewsState = _newsData ? 'ok' : 'load';
     renderNewsSection();
-    ensureNewsData().then(() => { if (_aNewsMatch === m && aBuilt(m, 'news')) renderNewsSection(); });
+    return ensureNewsData().then(() => { if (_aNewsMatch === m && aBuilt(m, 'news')) renderNewsSection(); });
   },
 };
+// Download report (founder 2026-09-28, D7 reversed: the print stays): the report covers every tab, but tabs build
+// lazily, so it first builds each tab the reader has not opened — except Market edge, never part of the report
+// (TEN-310) — and hands back one promise for their loads.
+function aBuildForReport(){
+  if (!_aM) return Promise.resolve();
+  const loads = [];
+  Object.keys(A_TAB_BUILD).forEach(t => {
+    if (t === 'marketedge' || _aBuilt.has(t)) return;
+    _aBuilt.add(t);
+    // a builder that throws (sync or async) never stops the print: its section prints as it stands
+    loads.push(new Promise(r => r(A_TAB_BUILD[t](_aM))).catch(err => console.warn('[report] ' + t + ' build failed:', err && err.message)));
+  });
+  return Promise.all(loads);
+}
 // Tabs whose open hook runs on EVERY visit, not just the first (their loaders are memoised, so a revisit costs no
 // second fetch): Weather re-reads a forecast that has aged since (TEN-304), Market edge retries a failed shard.
 const A_TAB_REVISIT = { weather: () => openWeatherTab(), marketedge: () => openMarketEdgeTab() };
@@ -19335,6 +19352,29 @@ document.getElementById('aTabs').addEventListener('click', e => {
   if (!btn) return;
   aShowTab(btn.dataset.atab);
 });
+
+// Download report — scoped print of the modal's current content. Shows every
+// section (not just the active tab) since a "report" should include the full
+// analysis, then restores the normal single-tab view once printing is done.
+// A real custom PDF export (formatted, non-browser-print) is a bigger build —
+// this is the reasonable v1 scope.
+// TEN-304: the Weather section loads lazily (index + venue file), so the report first loads it (capped
+// at 8 s) and prints the real Weather section even when the tab was never opened.
+function printAnalysisReport(){
+  const modal = document.querySelector('.modal-analysis');
+  // TEN-314: the tabs build lazily — build (and load) every unopened one first; the same 8 s cap covers them.
+  const built = typeof aBuildForReport === 'function' ? aBuildForReport() : null;
+  const wx = Promise.all([typeof openWeatherTab === 'function' ? openWeatherTab() : null, built]);
+  return Promise.race([Promise.resolve(wx), new Promise(r => setTimeout(r, 8000))]).catch(() => {}).then(() => {
+    // never print "Loading forecast…": a Weather section still not loaded prints as the unavailable state (dashes)
+    const wxEl = document.getElementById('aSectionWeather');
+    if (wxEl && _aWxMatch && !(_aWx.ready && _aWx.m === _aWxMatch)) wxEl.innerHTML = buildWeatherSection(_aWxMatch, null, null, Date.now(), null);
+    modal.classList.add('printing');
+    const cleanup = () => modal.classList.remove('printing');
+    window.addEventListener('afterprint', cleanup, { once: true });
+    window.print();
+  });
+}
 
 function closeAnalysisModal(){ document.getElementById('analysisModal').classList.remove('open'); }
 function setActiveButton(groupEl, clickedBtn){

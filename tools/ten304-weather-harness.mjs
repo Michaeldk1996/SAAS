@@ -100,6 +100,18 @@ export function buildCache({ src = HTML, server }) {
   `)(fetch, document, { now: () => clock.now, parse: s => Date.parse(s) }, { warn() {} }, renders);
   return { api, clock, calls, renders, dom };
 }
+// printAnalysisReport with a fake modal / window; `openWeatherTab` is injected (a promise the test settles).
+// `wx` = { el, ready, m } — the Weather section element and the lazy state; `buildWeatherSection` = the page's.
+export function buildReport({ src = HTML, openWeatherTab, wx = null, buildWeatherSection = () => '' }) {
+  const log = [];
+  const modal = { classList: { add: c => log.push('add:' + c), remove: c => log.push('remove:' + c) } };
+  const doc = { querySelector: () => modal, getElementById: id => (id === 'aSectionWeather' && wx ? wx.el : null) };
+  const fn = new Function('document', 'window', 'openWeatherTab', 'setTimeout', '_aWx', '_aWxMatch', 'buildWeatherSection',
+    `${slice('printAnalysisReport', src)}; return printAnalysisReport;`)(
+    doc, { addEventListener() {}, print: () => log.push('print:' + (wx && wx.el ? wx.el.innerHTML : '')) }, openWeatherTab,
+    (f, ms) => { log.push('cap:' + ms); }, wx ? { ready: wx.ready, m: wx.m } : { ready: false }, wx ? wx.m : null, buildWeatherSection);
+  return { print: fn, log };
+}
 // Attributes of every element in `html` whose class starts with `cls` (first tag only), entities decoded.
 export function attrsOf(html, cls) {
   return elements(html, cls).map(e => { const tag = e.slice(0, e.indexOf('>') + 1), o = {}; let m;

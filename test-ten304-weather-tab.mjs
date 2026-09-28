@@ -6,7 +6,7 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
-import { build, buildTips, buildCache, attrsOf, makeFile, elements, text, HTML } from './tools/ten304-weather-harness.mjs';
+import { build, buildTips, buildCache, buildReport, attrsOf, makeFile, elements, text, HTML } from './tools/ten304-weather-harness.mjs';
 import { readFileSync, writeFileSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -260,6 +260,30 @@ test('session cache: a venue file ≥ 3 h old is fetched again on open; a matche
   const n = C.calls.length; C.api.wxOnMatchesReload(); await new Promise(r => setTimeout(r, 0)); await new Promise(r => setTimeout(r, 0));
   assert.deepEqual(C.calls.slice(n), ['./weather-index.json']);
   assert.deepEqual(C.renders.pop().entry, { key: 'Hangzhou', indoor: true, file: null });
+});
+
+// Mutation: printAnalysisReport prints without waiting for the Weather load.
+test('Download report waits for the Weather section before printing (tab never opened)', async () => {
+  let done; const wx = new Promise(r => { done = r; });
+  const R = buildReport({ openWeatherTab: () => wx });
+  const p = R.print();
+  await new Promise(r => setTimeout(r, 0));
+  assert.ok(!R.log.some(x => x.startsWith('print')), 'not printed while the Weather files load');
+  done(); await p;
+  assert.deepEqual(R.log.filter(x => x !== 'cap:8000'), ['add:printing', 'print:']);
+});
+
+// Mutation: drop the print fallback (a Weather load that never lands prints "Loading forecast…").
+test('Download report never prints "Loading forecast…": an unloaded Weather section prints real dashes', async () => {
+  const R0 = build({});
+  const el = { innerHTML: '<div>' + R0.WX_COPY.loading + '</div>' };
+  const R = buildReport({ openWeatherTab: () => Promise.resolve(), wx: { el, ready: false, m: M },
+    buildWeatherSection: (m, e, f, now, a) => R0.buildWeatherSection(m, e, f, NOW, a) });
+  await R.print();
+  const printed = R.log.find(x => x.startsWith('print:'));
+  assert.ok(!printed.includes(R0.WX_COPY.loading), 'no loading line in the report');
+  assert.equal(elements(printed.slice(6), 'wx-banner').length, 1, 'the unavailable state');
+  assert.ok(elements(printed.slice(6), 'wx-day').every(d => text(elements(d, 'wx-hi')[0]) === '—'), 'dashes, never a guess');
 });
 
 // Mutation: the pace shift reads an UNAVAILABLE rain as calm (the old `on('rain') ? … : on('heat') ? 'quicker'`).
