@@ -177,7 +177,7 @@ function modalVM(opts = {}) {
     buildYearlyTables: () => { log.push('build:overview'); return ''; }, buildTournamentSection: () => { log.push('build:tournament'); return ''; },
     renderWeatherSection: () => log.push('build:weather'), openWeatherTab: rec('load:weather'), openMarketEdgeTab: () => log.push('load:marketedge'),
     buildOddsSection: () => { log.push('build:odds'); return ''; }, renderOddsSection: () => {}, renderNewsSection: () => log.push('build:news'),
-    ensureFormRows: rec('load:form-shards'), ensureOddsMovement: rec('load:odds-shard'), loadStyleRadar: rec('load:style-radar'), ensurePsMatrix: rec('load:matrix'),
+    ensureFormRows: rec('load:form-shards'), fhEnsureH2hData: rec('load:h2h-data'), fhEnsureFormData: rec('load:form-data'), ensureOddsMovement: rec('load:odds-shard'), loadStyleRadar: rec('load:style-radar'), ensurePsMatrix: rec('load:matrix'),
     ensureStyleMeetings: rec('load:style-meetings'), ensureMatchDna: rec('load:dna'), ensureNewsData: rec('load:news'),
     syncAnalysisLiveBar: () => {}, fhCloseSheet: () => {}, aHeaderOdds: () => ({ p1: '1.54', p2: '2.62' }), aAvatarHtml: () => '', profileLinkAttrs: () => '', openPlayerProfileFromMatch: () => {},
     h2hRoundLabel: () => 'Quarter-finals', aContextLine: () => 'ATP Washington · Quarter-finals', formatLiveScore: () => '', progressionRoundState: () => ({ state: 'shown' }),
@@ -252,6 +252,21 @@ test('a named tab opens directly: nothing else is built first', async () => {
   api.openAnalysisModal('a', 'matchstats'); await flush();
   assert.deepEqual([...new Set(log.filter(x => x.startsWith('build:')))], ['build:matchstats']);
   assert.ok(slice('mxOpenCardStats').includes("openAnalysisModal(id, 'matchstats');") && !slice('mxOpenCardStats').includes('aGoTab('));
+});
+
+// Mutation: drop `return` from the h2h or form builder (live 2026-09-28: the report printed H2H's loading line, 21 chars).
+test('Download report waits for H2H\'s meetings and Form\'s priced archives, not just their first paint', async () => {
+  for (const held of ['load:h2h-data', 'load:form-data']) {
+    const { api, pending } = modalVM({ hold: true });
+    api.openAnalysisModal('a'); while (pending.length) pending.shift()();
+    let done = false; api.aBuildForReport().then(() => { done = true; });
+    await flush();
+    for (const f of pending.splice(0).filter(f => { if (f.n === held) return true; f(); return false; })) pending.push(f);
+    await flush(); await flush();
+    assert.ok(!done, 'still waiting on ' + held);
+    while (pending.length) pending.shift()(); await flush(); await flush();
+    assert.ok(done, held);
+  }
 });
 
 // ---- nothing test-only ships ----

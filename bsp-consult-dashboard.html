@@ -19419,9 +19419,14 @@ const A_TAB_BUILD = {
   form(m){
     // Form shows a loading line until its shards land (fhBuildForm starts fhEnsureFormData itself).
     aPaint('aSectionForm', buildFormSection(m));
-    return ensureFormRows(m).then(() => { if (aBuilt(m, 'form')) aPaint('aSectionForm', buildFormSection(m)); });
+    // the returned promise covers everything the tab prints (shards + priced archives + Elo), so Download report waits for it
+    return Promise.all([ensureFormRows(m), fhEnsureFormData(m)]).then(() => { if (aBuilt(m, 'form')) aPaint('aSectionForm', buildFormSection(m)); });
   },
-  h2h(m){ aPaint('aSectionH2H', buildH2HSection(m)); },
+  h2h(m){
+    aPaint('aSectionH2H', buildH2HSection(m));
+    // returned so Download report waits for the meetings, not the loading line (live 2026-09-28: it printed 21 characters)
+    return fhEnsureH2hData(m).then(() => { if (aBuilt(m, 'h2h')) aPaint('aSectionH2H', buildH2HSection(m)); });
+  },
   matchstats(m){ aPaint('aSectionMatchStats', buildMatchStatsSection(m)); maMsSheetInit(m); },
   progression(m){ aPaint('aSectionProgression', buildMatchProgressionSection(m)); },
   overview(m){ aPaint('aSectionOverview', buildYearlyTables(m)); },

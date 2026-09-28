@@ -52,6 +52,8 @@ const MUTANTS = [
   ['esc: the sheet listener in the bubble phase', "if (ev.key === 'Escape' && _fh && _fh.sheet){ ev.stopPropagation(); fhCloseSheet(); } }, true);", "if (ev.key === 'Escape' && _fh && _fh.sheet){ ev.stopPropagation(); fhCloseSheet(); } });"],
   ['esc: the sheet lets Esc through to the pop-up', "if (ev.key === 'Escape' && _fh && _fh.sheet){ ev.stopPropagation(); fhCloseSheet(); }", "if (ev.key === 'Escape' && _fh && _fh.sheet){ fhCloseSheet(); }"],
   ['close: a Market edge pop-up survives closing the modal', " const mp = document.getElementById('mePop'); if (mp) mp.innerHTML = ''; }", " }"],
+  ['report: H2H meetings not awaited', "    return fhEnsureH2hData(m).then(() => { if (aBuilt(m, 'h2h')) aPaint('aSectionH2H', buildH2HSection(m)); });", "    fhEnsureH2hData(m).then(() => { if (aBuilt(m, 'h2h')) aPaint('aSectionH2H', buildH2HSection(m)); });"],
+  ['report: Form priced archives not awaited', "    return Promise.all([ensureFormRows(m), fhEnsureFormData(m)])", "    return Promise.all([ensureFormRows(m)])"],
   ['footer: the line put back', '      <div class="abody">', '      <div class="abody"><div class="aanalysisfooter">All stats are updated live.</div>'],
   ['bundle: mkPr in the deployed page', 'function closeAnalysisModal(){', 'function mkPr(){}\nfunction closeAnalysisModal(){'],
   ['bundle: SAMPLE_NEWS in the deployed page', 'function closeAnalysisModal(){', 'const SAMPLE_NEWS = [];\nfunction closeAnalysisModal(){'],
