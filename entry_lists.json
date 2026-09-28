@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-09-27T23:01:14.137246Z",
+  "generatedAt": "2026-09-28T23:35:09.598607Z",
   "source": "protennislive",
-  "sourcePublished": "2026-09-27T14:52:24Z",
+  "sourcePublished": "2026-09-28T13:58:29Z",
   "tournaments": [
     {
       "tour": "ATP",
@@ -16,7 +16,7 @@
       "tier": "ATP 250",
       "surface": "Hard",
       "status": "active",
-      "sourcePublished": "2026-09-27T13:32:12Z",
+      "sourcePublished": "2026-09-28T13:58:29Z",
       "counts": {
         "MD": 32,
         "Q": 16,
@@ -384,7 +384,7 @@
       "tier": "ATP 250",
       "surface": "Hard",
       "status": "active",
-      "sourcePublished": "2026-09-27T14:52:24Z",
+      "sourcePublished": "2026-09-28T13:28:33Z",
       "counts": {
         "MD": 32,
         "Q": 16,
@@ -752,13 +752,81 @@
       "tier": "ATP 500",
       "surface": "Hard",
       "status": "active",
-      "sourcePublished": "2026-09-27T12:18:58Z",
+      "sourcePublished": "2026-09-28T13:10:59Z",
       "counts": {
-        "MD": null,
+        "MD": 9,
         "Q": 15,
-        "ALT": 0
+        "ALT": 1
       },
       "sections": [
+        {
+          "title": "Main Draw",
+          "players": [
+            {
+              "name": "ZVEREV, Alexander",
+              "rank": 2,
+              "country": "GER",
+              "status": "SEED",
+              "playerKey": "1980"
+            },
+            {
+              "name": "NORRIE, Cameron",
+              "rank": null,
+              "country": "GBR",
+              "status": "DA",
+              "playerKey": "1103"
+            },
+            {
+              "name": "SHANG, Juncheng",
+              "rank": null,
+              "country": "CHN",
+              "status": "WC",
+              "playerKey": "2413"
+            },
+            {
+              "name": "BAEZ, Sebastian",
+              "rank": null,
+              "country": "ARG",
+              "status": "DA",
+              "playerKey": "1101"
+            },
+            {
+              "name": "CERUNDOLO, Juan M…",
+              "rank": null,
+              "country": "ARG",
+              "status": "DA",
+              "playerKey": null
+            },
+            {
+              "name": "BU, Yunchaokete",
+              "rank": null,
+              "country": "CHN",
+              "status": "WC",
+              "playerKey": "796"
+            },
+            {
+              "name": "BORGES, Nuno",
+              "rank": null,
+              "country": "POR",
+              "status": "DA",
+              "playerKey": "358"
+            },
+            {
+              "name": "DJOKOVIC, Novak",
+              "rank": 12,
+              "country": "SRB",
+              "status": "SEED",
+              "playerKey": "1905"
+            },
+            {
+              "name": "MEDVEDEV, Daniil",
+              "rank": 6,
+              "country": null,
+              "status": "SEED",
+              "playerKey": "1093"
+            }
+          ]
+        },
         {
           "title": "Qualifying",
           "players": [
@@ -805,11 +873,11 @@
               "playerKey": "663"
             },
             {
-              "name": "DUCKWORTH, James",
-              "rank": 65,
-              "country": "AUS",
-              "status": "SEED",
-              "playerKey": "1900"
+              "name": "GEA, Arthur",
+              "rank": null,
+              "country": "FRA",
+              "status": "ALT",
+              "playerKey": "9210"
             },
             {
               "name": "KECMANOVIC, Miomir",
