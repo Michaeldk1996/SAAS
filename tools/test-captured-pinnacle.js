@@ -41,8 +41,11 @@ function repoWith(commits, { fixtures = null, cardState = null, held = null } = 
   });
   // The pipeline's working copy has oddsMovement nulled — the builder must read git, not this.
   fs.writeFileSync(path.join(dir, 'matches.json'), JSON.stringify(commits[commits.length - 1].map((m) => Object.assign({}, m, { oddsMovement: null }))));
+  TMP.push(dir);
   return dir;
 }
+const TMP = [];
+process.on('exit', () => { for (const d of TMP) fs.rmSync(d, { recursive: true, force: true }); });
 
 function run(builderPath, dir, since = '2026-09-01T00:00:00Z') {
   delete require.cache[require.resolve(builderPath)];
@@ -84,6 +87,20 @@ check('live-flip start: the in-play 1.01 / 26.0 is present in the input and neve
 check('live-flip start: labelled', c.flip && c.flip.startSource === 'api-tennis-live' && c.flip.book === 'Pinnacle +30s' && c.flip.trueStart === at(0));
 check('trueStart beats a later card-state start: the +4 min tick is in-play', c.trueStart && c.trueStart.p1 === 1.534 && c.trueStart.p2 === 2.65 && c.trueStart.startSource === 'oddspapi', JSON.stringify(c.trueStart));
 
+// Card-state start EARLIER than trueStart: cut at the earlier one (review 2026-09-28).
+{
+  const S = p30([[at(-10), 1.70], [at(-3), 1.66]], [[at(-10), 2.20], [at(-3), 2.25]]);
+  const fx = { id9: { cat: 'ATP', trueStart: at(0), trueEnd: at(95), p1: 'Harris, Lloyd', p2: 'Kovacevic, Aleksandar' } };
+  const x = run(REAL, repoWith([[card(9, 'L. Harris', 'A. Kovacevic', 10, 20, S)]], { fixtures: fx, cardState: flip(at(-5)) }));
+  check('an earlier card-state start beats trueStart (the -3 min tick is after the flip)', x.row(9) && x.row(9).p1 === 1.70 && x.row(9).startSource === 'api-tennis-live', JSON.stringify(x.row(9)));
+}
+// A held row cut at a LATER start is replaced by a stricter cut, even though its close is earlier.
+{
+  const loose = { eventKey: 1, date: '2026-09-27', p1Key: 10, p2Key: 20, p1: 1.02, p2: 21.0, at: at(3), trueStart: at(10), startSource: 'api-tennis-live', book: 'Pinnacle +30s' };
+  const dir = repoWith([[card(1, 'L. Harris', 'A. Kovacevic', 10, 20, SERIES)]], { cardState: flip(at(0)), held: { rows: [loose] } });
+  const x = run(REAL, dir);
+  check('a stricter start replaces a held in-play close', x.row(1) && x.row(1).p1 === 1.534 && x.r.replaced === 1, JSON.stringify(x.row(1)));
+}
 // A tick exactly at the start is pre-start ("at or before"); 1 ms after is in-play.
 {
   const S = p30([[at(-5), 1.70], [at(0), 1.65], [new Date(T + 1).toISOString(), 1.30]], [[at(-5), 2.20], [at(0), 2.30], [new Date(T + 1).toISOString(), 3.60]]);
@@ -127,7 +144,7 @@ check('trueStart beats a later card-state start: the +4 min tick is in-play', c.
 // Merge: a held row out of view is kept; a held row with a LATER close is never backdated; idle = untouched.
 {
   const keep = { eventKey: 77, date: '2026-07-20', p1Key: 1, p2Key: 2, p1: 1.9, p2: 1.9, at: '2026-07-20T09:00:00.000Z' };
-  const later = { eventKey: 1, date: '2026-09-27', p1Key: 10, p2Key: 20, p1: 1.52, p2: 2.68, at: at(-1) };
+  const later = { eventKey: 1, date: '2026-09-27', p1Key: 10, p2Key: 20, p1: 1.52, p2: 2.68, at: at(-1), trueStart: at(0) };
   const dir = repoWith([[card(1, 'L. Harris', 'A. Kovacevic', 10, 20, SERIES)]], { cardState: flip(at(0)), held: { rows: [keep, later] } });
   const x = run(REAL, dir);
   check('merge keeps a held row the scan cannot see', !!x.row(77));

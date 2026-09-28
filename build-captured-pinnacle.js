@@ -24,11 +24,12 @@
  *      match; rejected when trueEnd - trueStart > 6 h or trueEnd < trueStart.
  *   2. odds-card-state.json startTs (startTsSource 'oddspapi' | 'api-tennis-live'). The live-flip
  *      value is last_not_live_seen_at — a moment the match was OBSERVED not live — so a tick at
- *      or before it cannot be in-play.
+ *      or before it cannot be in-play (board ruling 2026-09-28, TEN-316 card 9f0e123c).
+ *   When both 1 and 2 exist, the EARLIER one is the cut.
  *   3. none -> dropped.
  *
- * MERGE: rows are keyed by eventKey. A held row is never deleted; it is replaced only by a
- * fresh derivation whose close tick is at least as late (a later pre-start tick seen).
+ * MERGE: rows are keyed by eventKey. A held row is never deleted; it is replaced by a fresh
+ * derivation with an EARLIER start (a stricter cut), or the same start and a later close tick.
  *
  * Usage: node build-captured-pinnacle.js [--since <ISO>] [--out <file>]
  * No network calls. Reads git (read-only).
@@ -119,12 +120,15 @@ function actualStart(o, trueStarts, cardState) {
   // The one-time extract's rule: a match whose actual start is not unique is dropped.
   if (new Set(cands.map((c) => c.trueStart)).size > 1) return { reason: 'ambiguousStart' };
   const c = cands[0];
-  if (c && !(c.trueEnd != null && (c.trueEnd - c.trueStart > MAX_MATCH_MS || c.trueEnd < c.trueStart))) {
-    return { ms: c.trueStart, source: 'oddspapi' };
-  }
+  const okTrue = c && !(c.trueEnd != null && (c.trueEnd - c.trueStart > MAX_MATCH_MS || c.trueEnd < c.trueStart));
   const cs = ((cardState && cardState.byKey) || {})[k];
-  const ms = cs && ['oddspapi', 'api-tennis-live'].includes(cs.startTsSource) ? toMs(cs.startTs) : null;
-  if (ms != null) return { ms, source: cs.startTsSource };
+  const csMs = cs && ['oddspapi', 'api-tennis-live'].includes(cs.startTsSource) ? toMs(cs.startTs) : null;
+  // Both known: cut at the EARLIER (review 2026-09-28). The two clocks disagree by minutes either way
+  // (5 of 25 on the 28 Sep card state had the flip after trueStart), and the later cut can take an
+  // in-play tick; the earlier one can only lose a pre-start tick — missing, never in-play.
+  if (okTrue && csMs != null && csMs < c.trueStart) return { ms: csMs, source: cs.startTsSource };
+  if (okTrue) return { ms: c.trueStart, source: 'oddspapi' };
+  if (csMs != null) return { ms: csMs, source: cs.startTsSource };
   return { reason: c ? 'rejectedStart' : 'noStart' };
 }
 
@@ -154,7 +158,12 @@ function mergeRows(held, fresh) {
   for (const r of fresh) {
     const h = by.get(String(r.eventKey));
     if (!h) { by.set(String(r.eventKey), r); added++; continue; }
-    if (Date.parse(r.at) >= Date.parse(h.at) && (r.p1 !== h.p1 || r.p2 !== h.p2 || r.at !== h.at)) { by.set(String(r.eventKey), r); replaced++; }
+    // A STRICTER (earlier) start always wins, even with an earlier close: the held row may hold a
+    // tick that the better start shows was in-play. Same start: a later pre-start tick wins.
+    const rs = Date.parse(r.trueStart), hs = Date.parse(h.trueStart);
+    const stricter = Number.isFinite(rs) && Number.isFinite(hs) && rs < hs;
+    const later = rs === hs && Date.parse(r.at) > Date.parse(h.at);
+    if ((stricter || later) && (r.p1 !== h.p1 || r.p2 !== h.p2 || r.at !== h.at || r.trueStart !== h.trueStart)) { by.set(String(r.eventKey), r); replaced++; }
   }
   const rows = [...by.values()].sort((x, y) => (x.date < y.date ? -1 : x.date > y.date ? 1 : x.eventKey - y.eventKey));
   return { rows, added, replaced };

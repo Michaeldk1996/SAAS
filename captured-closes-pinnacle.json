@@ -1,27 +1,28 @@
 {
- "generatedAt": "2026-09-28T15:47:28.451Z",
+ "generatedAt": "2026-09-28T15:53:52.489Z",
  "source": "matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books[\"Pinnacle +30s\"] (Oddspapi pinnacle+30, from 2026-09-23)",
  "rule": "each side = last tick at or before the actual start (Oddspapi trueStart, else the card-state start: Oddspapi or the live-flip lower bound); both sides required; dropped when no unique actual start",
  "scannedThrough": {
   "commit": "64e5586d07c15c00bbb17f0a74d4b8ec04c284e3",
   "at": "2026-09-28T15:45:32Z"
  },
- "commitsScanned": 2841,
+ "commitsScanned": 3608,
  "lastRun": {
-  "from": "2026-09-28T06:00:59Z",
-  "snapshots": 38,
-  "added": 10,
-  "replaced": 0,
-  "series": 54,
-  "kept": 35,
+  "from": "2026-09-20",
+  "snapshots": 768,
+  "added": 0,
+  "replaced": 3,
+  "series": 79,
+  "kept": 56,
   "bySource": {
-   "api-tennis-live": 35
+   "api-tennis-live": 55,
+   "oddspapi": 1
   },
   "byBook": {
-   "Pinnacle +30s": 35
+   "Pinnacle +30s": 56
   },
   "dropped": {
-   "noStart": 19
+   "noStart": 23
   }
  },
  "stats": {
@@ -4940,8 +4941,8 @@
    "p1": 2.32,
    "p2": 1.675,
    "at": "2026-09-23T03:27:27.149Z",
-   "trueStart": "2026-09-23T05:08:57.000Z",
-   "startSource": "oddspapi",
+   "trueStart": "2026-09-23T05:03:03.000Z",
+   "startSource": "api-tennis-live",
    "book": "Pinnacle +30s"
   },
   {
@@ -4968,8 +4969,8 @@
    "p1": 2.07,
    "p2": 1.826,
    "at": "2026-09-23T10:03:31.417Z",
-   "trueStart": "2026-09-23T11:39:21.000Z",
-   "startSource": "oddspapi",
+   "trueStart": "2026-09-23T11:24:04.000Z",
+   "startSource": "api-tennis-live",
    "book": "Pinnacle +30s"
   },
   {
@@ -4982,8 +4983,8 @@
    "p1": 2.009,
    "p2": 1.884,
    "at": "2026-09-23T07:59:36.628Z",
-   "trueStart": "2026-09-23T08:24:21.000Z",
-   "startSource": "oddspapi",
+   "trueStart": "2026-09-23T08:14:57.000Z",
+   "startSource": "api-tennis-live",
    "book": "Pinnacle +30s"
   },
   {
