@@ -183,7 +183,29 @@ const tm = (o) => Object.assign({ p1: 'C. Alcaraz', p1Key: '1', p2: 'X', p2Key: 
       P.reconcileYearRows(modal, t);
       assert.deepStrictEqual([modal[0].total, modal[0].atp.total, modal[0].chitf.total], [r21.total, r21.atp.total, r21.chitf.total]);
     });
+    // Mutation: empty reconcileMatchesYearly's loop body → the modal copy keeps the feed's 1-0 and its null ATP split.
+    check('N3 matches.json: reconcileMatchesYearly brings the modal copy to the profile row, and counts the sides', () => {
+      const m = { p1Key: 7, p2Key: 99, p1Yearly: [{ year: '2021', allTier: true, total: wl(1, 0), clay: wl(1, 0), hard: null, grass: null, indoor: null, atp: null,
+        chitf: { total: wl(1, 0), clay: wl(1, 0), hard: null, grass: null, indoor: null } }],
+        p2Yearly: [{ year: '2018', allTier: false, total: wl(5, 5), clay: null, hard: wl(5, 5), grass: null, indoor: null, atp: { total: wl(5, 5) }, chitf: null }] };
+      assert.strictEqual(P.reconcileMatchesYearly([m], tallies), 2);
+      assert.deepStrictEqual([m.p1Yearly[0].total, m.p1Yearly[0].atp.total], [r21.total, r21.atp.total]);
+      assert.strictEqual(m.p2Yearly[0].atp, null);   // no shard: the aggregate's false ATP split is still cleared
+    });
   } finally { process.chdir(cwd); }
+
+  // The run-order wiring is a source fact (runPipeline needs the network): the re-apply must
+  // run after the career-history writer that fills the tallies, and must trigger the re-write.
+  // Mutation: delete the reconcileMatchesYearly call, or drop `|| yearlySidesPatched > 0` → red.
+  {
+    const src = fs.readFileSync(path.join(__dirname, '..', 'bsp-pipeline.js'), 'utf8');
+    check('N3 wiring: runPipeline re-applies to matches after the writer and re-writes matches.json', () => {
+      const w = src.indexOf('await writeCareerHistoryShards(allProfiles, { log: (m) => console.log(m), yearTallies: careerYearTallies });');
+      const c = src.indexOf('const yearlySidesPatched = reconcileMatchesYearly(matches, careerYearTallies);');
+      const r = src.indexOf('if (matchBf.patched > 0 || yearlySidesPatched > 0) {');
+      assert.ok(w > 0 && c > w && r > c, `writer ${w}, re-apply ${c}, re-write ${r}`);
+    });
+  }
 
   // ── N3 · TML's own court type reaches the archive rows (the input of the 2021 indoor rebuild) ──
   {

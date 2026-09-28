@@ -3925,6 +3925,22 @@ function reconcileYearRows(yearRows, byYear) {
   return adopted;
 }
 
+// TEN-313 (N3): re-apply reconcileYearRows to every match side's p1Yearly/p2Yearly from the
+// per-year tallies writeCareerHistoryShards published (opts.yearTallies). A side with no
+// shard gets `{}`, which still clears a pre-window aggregate's tier split. Returns the
+// number of sides patched — the caller re-writes matches.json when it is > 0.
+function reconcileMatchesYearly(matches, yearTallies) {
+  let n = 0;
+  for (const m of (matches || [])) {
+    for (const side of ['p1', 'p2']) {
+      if (!Array.isArray(m[side + 'Yearly'])) continue;
+      reconcileYearRows(m[side + 'Yearly'], yearTallies.get(String(m[side + 'Key'])) || {});
+      n++;
+    }
+  }
+  return n;
+}
+
 async function writeCareerHistoryShards(profiles, opts = {}) {
   const log = opts.log || (() => {});
   // `opts.currentYear`: tests drive both regimes (2021 a hole year, and 2021 an ordinary archive year).
@@ -7154,14 +7170,7 @@ async function runPipeline() {
   // career-history rows — it lacked the 2021 fill, so 39 of 63 board players read
   // differently in the modal than on their profile. A side with no shard still has its
   // pre-window tier split cleared. matches.json is re-written below.
-  let yearlySidesPatched = 0;
-  for (const m of matches) {
-    for (const side of ['p1', 'p2']) {
-      if (!Array.isArray(m[side + 'Yearly'])) continue;
-      reconcileYearRows(m[side + 'Yearly'], careerYearTallies.get(String(m[side + 'Key'])) || {});
-      yearlySidesPatched++;
-    }
-  }
+  const yearlySidesPatched = reconcileMatchesYearly(matches, careerYearTallies);
   console.log(`Reconciled p1Yearly/p2Yearly against career-history on ${yearlySidesPatched} match-side(s).`);
 
   // Per-player shards + search index — after the strip above, so a shard carries
@@ -7472,7 +7481,7 @@ module.exports = { fetchH2H, h2hCountsInAtpRecord, H2H_NOT_ATP_RECORD, tourLabel
   // The Career-record pair. Exported together on purpose: their whole contract
   // is that the counts one returns are tallyable from the rows the other
   // returns, and that is what ten8-career-verify.js asserts.
-  buildAllTierYearly, playerMatchHistory, writeCareerHistoryShards, tallyCareerYears, reconcileYearRows, buildTournamentHistory, careerRowIsComplete, careerRowIsBo5Slam, formSetsFromFixture,
+  buildAllTierYearly, playerMatchHistory, writeCareerHistoryShards, tallyCareerYears, reconcileYearRows, reconcileMatchesYearly, buildTournamentHistory, careerRowIsComplete, careerRowIsBo5Slam, formSetsFromFixture,
   // TEN-244: the NextGen exclusion key, exported so the suite asserts the SAME
   // constant the pipeline uses rather than a copy that can drift out of step.
   NEXTGEN_TOURNAMENT_KEY, CAREER_HISTORY_INDEX_PATH,
