@@ -2750,15 +2750,16 @@
       "tournamentId": null
     },
     "12166565": {
-      "fixtureId": null,
-      "mappedAt": "2026-09-28T10:00:29Z",
+      "fixtureId": "id1200303175107496",
+      "mappedAt": "2026-09-28T12:00:18Z",
+      "missHeldH": 2.0,
       "missRuns": 1,
       "missSince": "2026-09-28T10:00:29Z",
-      "orient": null,
+      "orient": "same",
       "p1": "J. Munar",
       "p2": "A. Kovacevic",
-      "startTime": null,
-      "tournamentId": null
+      "startTime": "2026-09-29T03:00:00.000Z",
+      "tournamentId": 3031
     },
     "12166584": {
       "fixtureId": null,
@@ -2787,15 +2788,15 @@
     "observed": {
       "measuredRunsPerDay": 17.7,
       "missResolutionHoursMax": 148.0,
-      "missResolutionHoursP50": 22.39,
-      "missResolutionsMeasured": 102,
+      "missResolutionHoursP50": 19.75,
+      "missResolutionsMeasured": 103,
       "note": "ttlBitRuns counts runs where an expired MISS was the ONLY reason a billable /v4/fixtures call was made. projectedTtlUnitsPerDay uses the MEASURED run rate (measuredRunsPerDay), not an assumed 24/day; it is null until observedSpanDays is wide enough to measure one. Compare it against the <=24/day ceiling the TTL was chosen against. openMisses counts only fixtures still on the board.",
-      "observedSpanDays": 17.23,
+      "observedSpanDays": 17.27,
       "projectedTtlUnitsPerDay": 5.5,
-      "runs": 305,
-      "spentRuns": 175,
-      "ttlBitRuns": 94,
-      "ttlBitShare": 0.308,
+      "runs": 306,
+      "spentRuns": 176,
+      "ttlBitRuns": 95,
+      "ttlBitShare": 0.31,
       "ttlHours": 1.0
     },
     "runs": [
@@ -6153,9 +6154,20 @@
         "ttlBit": false,
         "unmapped": 2,
         "upcoming": 46
+      },
+      {
+        "at": "2026-09-28T12:00:18Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 0,
+        "missExpired": 1,
+        "openMisses": 29,
+        "stale": 1,
+        "ttlBit": true,
+        "unmapped": 0,
+        "upcoming": 46
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-09-28T11:00:25Z"
+  "updatedAt": "2026-09-28T12:00:18Z"
 }
