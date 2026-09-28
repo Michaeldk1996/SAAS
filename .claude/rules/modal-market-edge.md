@@ -26,6 +26,9 @@ Applies to the TEN-310 block in `bsp-consult-dashboard.html` (`me*` functions, `
 - **Bands** are half-open in thousandths: [1.01,1.21) [1.21,1.41) [1.41,1.65) [1.65,2.00) | [2.00,2.50) [2.50,3.50)
   [3.50,6.00) [6.00,∞). Favourite = price < 2.00; **2.00 is underdog**. **Test:** 1.205 → 1.01 – 1.20, 2.00 → 2.00 – 2.49.
 
+## Default view (TEN-312 D3, founder 2026-09-28)
+- The tab opens on **Match winner** (`meView` default `winner`), not Derived lines. **Test:** a fresh modal's Market edge tab renders the Price sensitivity card first.
+
 ## Match format (R7, founder 2026-09-28)
 - **Derived lines only on a standard best-of-3 match.** Otherwise the Derived lines card body reads "Derived lines
   cover best-of-3 matches only." (the no-price state's style); the view is never switched; Match winner is unchanged.
