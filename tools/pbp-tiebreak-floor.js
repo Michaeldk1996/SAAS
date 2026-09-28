@@ -34,8 +34,10 @@
  *                the moment it holds the match's log again.
  *   - assertSuperset(): the floor is never written unless it still holds every row it
  *                was loaded with. An unreadable floor is never overwritten.
- * Committed back once a UTC day by pipeline.yml ("Refresh the committed tiebreak
- * floor"), so the durable copy is git, not the Actions cache or the live site.
+ * Committed back at most once a UTC hour, and only when rows were added, by
+ * pipeline.yml ("Refresh the committed tiebreak floor"). So the durable copy is git,
+ * not the Actions cache or the live site. The Actions cache saves only on a day's
+ * first run, and the feed can drop a fresh match's rows within the day.
  *
  * WHAT COUNTS AS A TIEBREAK ROW is the dashboard's own rule (`pbpSplitSet`,
  * bsp-consult-dashboard.html): a game row with an EMPTY points list and an integer
@@ -64,9 +66,9 @@ function parseScore(sc) {
 }
 const enc = s => (s === 'p1' ? 1 : s === 'p2' ? 2 : 0);
 // Row identity is (point number, running score), counted as a MULTISET. Measured over
-// the 11,198 stored TB sets (2026-09-28): 669 rows in 248 sets repeat a running score
-// under a different point number, and 305 rows in 36 sets repeat BOTH (the feed doubled
-// the sequence). The page renders every one of them, so "never drop a stored row" has
+// the 11,198 stored TB sets (2026-09-28): 669 rows in 248 sets repeat a running score,
+// 364 of them (212 sets) under a different point number and 305 (36 sets) repeating
+// BOTH (the feed doubled the sequence). The page renders every one of them, so "never drop a stored row" has
 // to keep every copy: 131,753 rows, not 131,084. server/winner are deliberately NOT in
 // the key: a refetch that returns the same point with other fields must not render it
 // twice. The cache keeps the fetched version and the floor keeps its own.

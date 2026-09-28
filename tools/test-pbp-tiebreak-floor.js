@@ -210,8 +210,8 @@ async function check(label, fn) {
     tbFloor.assertSuperset(floor, floor);
   });
 
-  // 305 stored rows in 36 sets repeat point number AND score, and 669 in 248 sets repeat a
-  // running score under another point number (live shards, 2026-09-28). The page
+  // 669 stored rows in 248 sets repeat a running score: 364 under another point number,
+  // 305 (36 sets) repeating point number AND score (live shards, 2026-09-28). The page
   // renders all of them, so a restore must put back every copy.
   await check('a duplicated stored TB row is restored as many times as it was stored', () => {
     const e = storedEntry();

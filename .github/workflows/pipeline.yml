@@ -1424,14 +1424,23 @@ jobs:
       # build-point-by-point.js keeps pbp-tiebreak-floor.json as a merge-only union of
       # every TB row it has held, and restores rows from it into the cache, so the git
       # copy is what survives a miss. It never writes a floor smaller than the one it
-      # read. Same shape as the match-stat floor: plain minified JSON, one commit per
-      # UTC day, after the deploy. Locked by tools/test-pbp-tiebreak-floor.js.
+      # read. Plain minified JSON after the deploy, like the match-stat floor.
+      #
+      # ONE COMMIT PER UTC HOUR, not per day, and only when rows were added. The
+      # Actions cache above saves only on a day's FIRST run, so a TB row first
+      # fetched by a later run lives in no durable copy until the next day's first
+      # run refetches it. By then the feed may have dropped it: of 32 TB sets
+      # finished on 2026-09-27, 8 were on the page and gone from the feed ~30 h
+      # later. An hourly commit lands every row while the feed still carries it.
+      # Measured cost: ~9 KB of history per commit (60 simulated appends), so the
+      # worst case is 24 x 9 KB/day, ~80 MB/yr. Idle hours add no rows and commit
+      # nothing. Locked by tools/test-pbp-tiebreak-floor.js.
       - name: Refresh the committed tiebreak floor
         run: |
-          LAST_DAY="$(git log -1 --format=%cd --date=format:%Y-%m-%d -- pbp-tiebreak-floor.json || true)"
-          TODAY="$(date -u +%Y-%m-%d)"
-          if [ -n "$LAST_DAY" ] && [ "$LAST_DAY" = "$TODAY" ]; then
-            echo "Committed tiebreak floor already refreshed today ($LAST_DAY) — one per UTC day."
+          LAST_HOUR="$(TZ=UTC git log -1 --format=%cd --date=format-local:%Y-%m-%dT%H -- pbp-tiebreak-floor.json || true)"
+          THIS_HOUR="$(date -u +%Y-%m-%dT%H)"
+          if [ -n "$LAST_HOUR" ] && [ "$LAST_HOUR" = "$THIS_HOUR" ]; then
+            echo "Committed tiebreak floor already refreshed this hour ($LAST_HOUR UTC) — one per UTC hour."
             exit 0
           fi
           if [ -z "$(git status --porcelain -- pbp-tiebreak-floor.json)" ]; then
