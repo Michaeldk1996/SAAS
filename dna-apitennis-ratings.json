@@ -1,7 +1,7 @@
 {
  "_meta": {
   "task": "TEN-103 — api-tennis-native DNA ratings; TEN-319 — daily rebuild off the deployed roster, true percentiles",
-  "generatedAt": "2026-09-28T06:56:57.874Z",
+  "generatedAt": "2026-09-28T07:36:17.869Z",
   "source": "api-tennis box scores, ATP main-tour singles (event_type 265), 2024-03-06..2026-09-28 — NO Sackmann/TML",
   "scopes": {
    "last52": "matches within 364d of player's most-recent match (last52From..latestMatch)",
@@ -17,10 +17,10 @@
   },
   "roster": {
    "source": "deployed",
-   "fetchedAt": "2026-09-28T06:44:32.647Z",
-   "players": 433
+   "fetchedAt": "2026-09-28T07:20:08.028Z",
+   "players": 432
   },
-  "rosterSize": 433,
+  "rosterSize": 432,
   "ratedPlayers": 292,
   "eloResolved": 271,
   "radarAxes": [
@@ -192,7 +192,7 @@
        284.4,
        284.7,
        284.8,
-       285.2,
+       285.1,
        285.3,
        285.6,
        285.9,
@@ -6834,15 +6834,23 @@
   },
   "ingest": {
    "windows": 134,
-   "windowsFetched": 6,
-   "windowsReused": 128,
-   "emptyWindowsFetched": [],
+   "windowsFetched": 134,
+   "windowsReused": 0,
+   "emptyWindowsFetched": [
+    "2024-11-27",
+    "2024-12-04",
+    "2024-12-11",
+    "2025-11-26",
+    "2025-12-03",
+    "2025-12-10",
+    "2025-12-24"
+   ],
    "fixturesSeen": 12263,
-   "playerMatchesIngested": 20826,
+   "playerMatchesIngested": 20827,
    "playerMatchesWithoutSurface": 598,
-   "distinctPlayersInCorpus": 735
+   "distinctPlayersInCorpus": 736
   },
-  "wallClockMs": 7964
+  "wallClockMs": 37186
  },
  "players": [
   {
@@ -15846,13 +15854,13 @@
     "Hard": {
      "last52": {
       "serve": {
-       "firstInPct": 64.6,
+       "firstInPct": 64.5,
        "firstWonPct": 75,
        "secondWonPct": 54.3,
        "holdPct": 84,
        "acesPerMatch": 9.3,
        "dfPerMatch": 2,
-       "rating": 285.2,
+       "rating": 285.1,
        "pct": 86.2
       },
       "return": {
@@ -16175,7 +16183,7 @@
      },
      "sinceBase": {
       "serve": {
-       "firstInPct": 65.9,
+       "firstInPct": 65.8,
        "firstWonPct": 71.7,
        "secondWonPct": 53.6,
        "holdPct": 81.9,
@@ -32387,7 +32395,7 @@
        "pct": 64
       },
       "return": {
-       "ret1stWonPct": 27.8,
+       "ret1stWonPct": 27.9,
        "ret2ndWonPct": 49.3,
        "returnGamesWonPct": 21.8,
        "bpConvPct": 44.5,
@@ -32606,7 +32614,7 @@
        "pct": 36.3
       },
       "return": {
-       "ret1stWonPct": 28.2,
+       "ret1stWonPct": 28.3,
        "ret2ndWonPct": 48,
        "returnGamesWonPct": 19.1,
        "bpConvPct": 35.2,
