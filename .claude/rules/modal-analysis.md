@@ -18,6 +18,11 @@ Applies to the whole Match analysis modal (`openAnalysisModal` and every tab bui
   Night / Day / Auto setting changes (Auto follows the OS `prefers-color-scheme`).
   **Test:** a grep of the modal's builders finds no literal hex/rgba outside the token file; switching the
   setting changes the computed colours of every open modal surface without a reload.
+- **Scope of the Night / Day / Auto switch = the whole site** (founder 2026-09-28, TEN-312 follow-up):
+  24b / 26f retires 12a everywhere, as a **separate task** after the modal's token layer. Until that task
+  lands, the rest of the site stays 12a (CLAUDE.md "Palette = 12a") and the modal is the only surface on
+  the 24b / 26f token file. **Test:** after the site-wide task, the computed-style audit reports zero 12a
+  values on any surface, in Night and in Day.
 - Amber `#E8A84E` is allowed only on Weather severity. Surfaces (Hard / Clay / Grass) are neutral text.
 - **Transition:** until the TEN-312 Phase 1 token layer lands, the TEN-303 design-verbatim values
   (`AODDS_C`, `WX_C`, `<style id="design-verbatim-analysis">`) remain in code and their tests remain
@@ -51,8 +56,9 @@ Applies to the whole Match analysis modal (`openAnalysisModal` and every tab bui
   lists results, marked "w/o", and it is excluded from every count on that row's page.
 - **An in-match retirement is a match:** a win for the opponent, a loss for the retiree, marked "ret."; its
   unfinished set is excluded from set tallies, deciding sets and games/sets lines (H2H rule e).
-- This supersedes, for the modal and the pipeline records that feed it, the TEN-8 "W/O received = win"
-  records rule. **Test:** a fixture player with one W/O given, one W/O received and one retirement shows
+- This **supersedes the TEN-8 "W/O received = win" records rule everywhere**, the player profile included
+  (founder 2026-09-28: one spine, both surfaces agree). `careerByYear`, career-history-derived W–L and
+  tournament-history W–L all follow it. **Test:** a fixture player with one W/O given, one W/O received and one retirement shows
   W–L that counts only the retirement, on Form, H2H, Overview and Tournament alike.
 
 ## Overview career spine (N3)
