@@ -788,19 +788,26 @@ console.log('\n11 · Record per tournament');
 // This is a STRICT equality now, not a ceiling: a WD must never again land in
 // a denominator.
 const WD_AS_LOSS_CEILING = 0;
+// The edition tally the stored header must equal. One function, shared by the
+// roster-wide check below and the synthetic walkover check after it, so the
+// synthetic check tests the very recount the gate runs, not a copy of it.
+function editionTally(t) {
+  let w = 0, l = 0, wd = 0;
+  (t.editions || []).forEach(e => (e.matches || []).forEach(m => {
+    // TEN-313 (N2): a walkover RECEIVED ('W' + walkover) is not a win; a WD (given) still
+    // reaches the wd branch below, so the WD-as-loss check stays live.
+    if (m.walkover && m.res === 'W') return;
+    if (m.res === 'W') w++;
+    else if (m.res === 'L') l++;
+    else { wd++; }        // WD today; any future code lands here too
+  }));
+  return { w, l, wd };
+}
 check('every tournament W-L equals the sum of its editions', () => {
   let rows = 0, wdAsLoss = 0, wdIgnored = 0, wdMatches = 0;
   for (const p of Object.values(PLAYERS)) {
     for (const t of p.tournamentHistory || []) {
-      let w = 0, l = 0, wd = 0;
-      (t.editions || []).forEach(e => (e.matches || []).forEach(m => {
-        // TEN-313 (N2): a walkover RECEIVED ('W' + walkover) is not a win; a WD (given) still
-        // reaches the wd branch below, so the WD-as-loss check stays live.
-        if (m.walkover && m.res === 'W') return;
-        if (m.res === 'W') w++;
-        else if (m.res === 'L') l++;
-        else { wd++; }        // WD today; any future code lands here too
-      }));
+      const { w, l, wd } = editionTally(t);
       assert.strictEqual(w, t.won || 0, `${p.name} / ${t.name}: editions ${w} wins vs stored ${t.won}`);
       if (!wd) {
         assert.strictEqual(l, t.lost || 0, `${p.name} / ${t.name}: editions ${l} losses vs stored ${t.lost}`);
@@ -822,6 +829,21 @@ check('every tournament W-L equals the sum of its editions', () => {
     + `${wdMatches} WD matches across ${wdAsLoss + wdIgnored} tournaments — `
     + `${wdAsLoss} headers still count WD as a loss, ${wdIgnored} exclude it `
     + `(RULED: exclude${compliant ? ' — COMPLIANT' : ' — NOT COMPLIANT'})`);
+});
+
+// TEN-313 (N2) · the store header can never count a walkover again. Synthetic, so it
+// runs on every store — the roster-wide check above only bites when a deployed header
+// actually carries a walkover.
+// Mutation: drop `if (m.walkover && m.res === 'W') return;` in editionTally → a header
+// that counts the W/O received (2-1) reconciles, and this goes red.
+check('TEN-313: a header that counts a walkover received is caught; a W/O given is never a loss', () => {
+  const eds = [{ year: 2026, matches: [
+    { res: 'W', round: 'R32' }, { res: 'W', round: 'R16', walkover: true },
+    { res: 'L', round: 'QF' }, { res: 'WD', round: 'R32', walkover: true }] }];
+  const clean = editionTally({ editions: eds });
+  assert.deepStrictEqual([clean.w, clean.l, clean.wd], [1, 1, 1], 'the walkover-free tally is 1-1 (+1 WD)');
+  const poisoned = { won: 2, lost: 1, editions: eds };   // the pre-TEN-313 header
+  assert.notStrictEqual(editionTally(poisoned).w, poisoned.won, 'a header counting the W/O received reconciled');
 });
 
 mustFail('tournament check would catch a dropped edition', () => {
@@ -3724,6 +3746,30 @@ check('TEN-313: a streak steps over a walkover received as well as a given one (
   const runs = I.calRuns(rows);
   assert.deepStrictEqual(runs.map(r => r.res + r.len), ['W2', 'L1']);
   assert.strictEqual(I.calRunsSkipped(rows), 2);
+});
+
+// The two recent-form record helpers, fed a walkover each way. The live ledger check
+// below only bites when a deployed strip carries a walkover; these always run.
+// Mutation: drop `if (!counts(m)) return;` in formRate → 2-2 over 4 (ribbon + ledger record).
+check('TEN-313: the ribbon/ledger record counts no walkover, either side (formRate)', () => {
+  const r = I.formRate([{ won: true }, { won: true, walkover: true }, { won: false }, { won: false, walkover: true }]);
+  assert.deepStrictEqual([r.won, r.lost, r.n], [1, 1, 2]);
+});
+// Mutation: drop `if (!counts(rows[i])) continue;` in currentRun → the header reads W1.
+check('TEN-313: the header\'s current run steps over a walkover received (currentRun)', () => {
+  const r = I.currentRun([{ date: '2026-01-01', won: true }, { date: '2026-01-02', won: false },
+    { date: '2026-01-03', won: true, walkover: true }]);
+  assert.deepStrictEqual([r.won, r.n, r.since], [false, 1, '2026-01-02']);
+});
+// Mutation: revert tournViews' n to `n += e.matches.length;` → n 3 against a 1-1 record.
+check('TEN-313: a tournament row\'s played count n excludes the walkover (tournViews)', () => {
+  const p = { key: '__ten313n', name: 'T. Count', tournamentHistory: [{ name: 'Barcelona', won: 1, lost: 1,
+    editions: [{ year: 2026, finish: 'QF', matches: [
+      { res: 'W', round: 'R32', opp: 'A. One', score: '2 - 0' },
+      { res: 'W', round: 'R16', opp: 'B. Two', score: '', walkover: true },
+      { res: 'L', round: 'QF', opp: 'C. Three', score: '1 - 2' }] }] }] };
+  const v = I.tournViews(p)[0];
+  assert.deepStrictEqual([v.won, v.lost, v.n], [1, 1, 2]);
 });
 
 check('the ledger rate is taken over exactly the rows its strip draws', () => {
