@@ -72,7 +72,7 @@ function load(ui) {
 const EDGES = [1.01, 1.21, 1.41, 1.65, 2.0, 2.5, 3.5, 6.0, Infinity];
 function oracle(rows, scope, refDay) {
   const pr = rows.filter((r) => r.day != null && r.day < refDay && (scope === 'career' || r.day >= refDay - 364)
-    && !r.wo && !r.retSettle && r.book && r.price != null && r.oppPrice != null && r.price >= 1.01);
+    && !r.wo && r.book && r.price != null && r.oppPrice != null && r.price >= 1.01);   // TEN-312 ruling A: retirements settle
   const bands = EDGES.slice(0, -1).map(() => ({ w: 0, l: 0, cents: 0 }));
   pr.forEach((r) => { const p = Math.round(r.price * 1000) / 1000; const i = EDGES.findIndex((e, k) => p >= e && p < EDGES[k + 1]);
     const b = bands[i]; if (r.won) b.w++; else b.l++; b.cents += r.won ? Math.round(r.price * 100) - 100 : -100; });
@@ -141,9 +141,41 @@ function checkPlayer(ui, R, k, rows, scope) {
 const meRound = (v) => ((v < 0 ? -1 : 1) * Math.round(Math.abs(v) * 10 + 1e-7) / 10).toFixed(1);
 function coveredOf(ui, R, k, li, sc) { const M = R.MM[k === 'a' ? 0 : 1]; const L = M.lines; const list = sc === 'band' ? L.inBand : L.all; return list.filter(L.rows[li].fn).length; }
 
+// TEN-312 retirement ruling A (founder 2026-09-28, TEN-325): an in-match retirement settles the match-winner bet at its
+// listed close — a win at the winner's price, a loss at the retiree's — in the bands, legend and chart; it never enters the
+// Derived lines (its unfinished set is not a completed set). Row 0: Tennis-Data says Retired, the feed missed it and the
+// stored score looks complete, so only the settlement flag keeps it out of the lines. Row 1: his own retirement (feed flag).
+function settlementChecks(ui) {
+  const core = ui.core, day = (d) => Date.parse(d + 'T00:00:00Z') / 86400000;
+  const ch = [
+    { date: '2026-03-01', level: 'atp', tournament: 'Doha', round: 'R32', opponent: 'X. Alpha', result: '2 - 0', won: true, eventKey: 11, src: 'fixtures', sets: [{ p: 6, o: 4 }, { p: 6, o: 3 }] },
+    { date: '2026-03-03', level: 'atp', tournament: 'Doha', round: 'R16', opponent: 'Y. Beta', result: '0 - 1', won: false, eventKey: 12, src: 'fixtures', retired: true, sets: [{ p: 4, o: 6 }, { p: 1, o: 2 }] },
+    { date: '2026-03-05', level: 'atp', tournament: 'Doha', round: 'QF', opponent: 'Z. Gamma', result: '2 - 0', won: true, eventKey: 13, src: 'fixtures', sets: [{ p: 6, o: 2 }, { p: 6, o: 2 }] },
+  ];
+  const cl = ui.fhParseCloses({ rows: [['2026-03-01', 'Alpha X.', 1, 1.5, 2.6, null, null, 1, null], ['2026-03-03', 'Beta Y.', 0, 1.8, 2.1, null, null, 1, null],
+    ['2026-03-05', 'Gamma Z.', 1, 1.4, 3.1, null, null, 0, null]], cap: [] });
+  const rows = ui.meRowsFor(ch, cl, '9', 'A. Test');
+  assert.deepEqual(rows.map((r) => r.retSettle), [true, true, false], 'settlement flag = Tennis-Data Retired or the feed flag');
+  const M = core.playerModel(rows, { scope: 'career', refDay: day('2026-04-01') });
+  assert.equal(M.priced.length, 3, 'ruling A: both retirements are priced matches');
+  assert.equal(Math.round(M.units * 100), -10, 'settled at the close: +0.50 (retired win at 1.50) −1 (he retired) +0.40 = −0.10u');
+  const b = M.bands[core.bandOf(1.5)];
+  assert.deepEqual([b.n, b.plCents], [1, 50], 'a retired win at 1.50 adds 1 to its band and +0.50u');
+  assert.deepEqual(M.bo3.map((r) => r.date), ['2026-03-05'], 'Derived lines: a retirement never counts, even with a complete-looking score');
+  assert.equal(core.whyNotBo3(rows[0]), 'retired');
+  // the Match winner view reads the profile rows: a profile row marked ret is settled and keeps its mark
+  const win = ui.meWinnerRows({ matches: [{ date: '2026-03-01', event: 'Doha', surface: 'Hard', round: '1st Round', opp: 'Alpha X.', won: true, price: 1.5, oppPrice: 2.6,
+    book: 'pinnacle', inBasis: true, ret: true }] }, rows, '9', 'A. Test');
+  assert.equal(win[0].retSettle, true, 'the profile row keeps its retirement mark');
+  assert.equal(core.playerModel(rows, { scope: 'career', refDay: day('2026-04-01'), winnerRows: win }).priced.length, 1, 'and is settled');
+}
+
 function runChecks(src) {
   const ui = buildUI(src ? { src } : {});
+  settlementChecks(ui);
   const rows = load(ui);
+  // the fixture holds priced retirements, so the oracle's settlement is exercised on real rows too
+  assert.ok(rows[0].filter((r) => r.retSettle && ui.core.inWinner(r)).length >= 5, 'Sinner fixture: priced retirements present');
   for (const scope of ['career', 'l52']) {
     const R = ui.render(M, { meScope: scope, meView: 'winner' }, rows);
     const RL = ui.render(M, { meScope: scope, meView: 'lines' }, rows);
@@ -181,7 +213,9 @@ test('§6 check 7: one-line mutants of the band bucketing / P&L make checks 1–
     ['P&L: win pays the price, not price − 1', 'return r.won ? Math.round(Number(r.price) * 100) - 100 : -100;', 'return r.won ? Math.round(Number(r.price) * 100) : -100;'],
     ['P&L: loss costs nothing', 'return r.won ? Math.round(Number(r.price) * 100) - 100 : -100;', 'return r.won ? Math.round(Number(r.price) * 100) - 100 : 0;'],
     ['record: wins counted as losses', 'rows.forEach((r) => { if (r.won) w++;', 'rows.forEach((r) => { if (!r.won) w++;'],
-    ['settlement: retirements settled', "if (r.retSettle) return 'retired';", ''],
+    // TEN-312 retirement ruling A (TEN-325): a retirement settles the match-winner bet, never the derived lines
+    ['settlement: retirements unsettled again', "    if (bandOf(r.price) < 0) return 'unpriced';\n    return '';", "    if (r.retSettle) return 'retired';\n    if (bandOf(r.price) < 0) return 'unpriced';\n    return '';"],
+    ['derived lines: retirements admitted', "    if (r.retSettle) return 'retired';\n    if (r.alt) return 'format';", "    if (r.alt) return 'format';"],
   ];
   const dir = mkdtempSync(join(tmpdir(), 'ten310-mut-'));
   // control: the unmutated core must pass the same child run, or a "caught" mutant proves nothing
@@ -284,10 +318,12 @@ if (process.argv.includes('--mutant-run')) {
 test('pinned headline figures on the frozen fixtures (Career / Last 52 weeks, ref 2026-09-27)', () => {
   const ui = buildUI(), rows = load(ui), refDay = Date.UTC(2026, 8, 27) / 86400000;
   const pick = (M) => [M.priced.length, M.book.P, M.book.B, M.bo3.length, Math.round(M.units * 100), M.bands[0].w, M.bands[0].l];
-  // [priced, Pinnacle, Bet365, Bo3, units×100, 1.01–1.20 W, L] — recomputed independently by the TEN-310 review
-  assert.deepEqual(pick(ui.core.playerModel(rows[0], { scope: 'career', refDay })), [382, 331, 51, 269, 2240, 193, 9]);
-  assert.deepEqual(pick(ui.core.playerModel(rows[1], { scope: 'career', refDay })), [330, 292, 38, 226, 2355, 161, 19]);
-  assert.deepEqual(pick(ui.core.playerModel(rows[0], { scope: 'l52', refDay })).slice(0, 5), [59, 13, 46, 48, 235]);
+  // [priced, Pinnacle, Bet365, Bo3, units×100, 1.01–1.20 W, L] — recomputed independently by the TEN-310 review.
+  // TEN-312 retirement ruling A (TEN-325): the career-row path now settles its 11 / 11 / 1 / 0 priced retirements
+  // (was Sinner 382 · +22.40u, Alcaraz 330 · +23.55u, Sinner L52 59 · +2.35u); Bo3 (Derived lines) is unchanged.
+  assert.deepEqual(pick(ui.core.playerModel(rows[0], { scope: 'career', refDay })), [393, 341, 52, 269, 1608, 196, 11]);
+  assert.deepEqual(pick(ui.core.playerModel(rows[1], { scope: 'career', refDay })), [341, 303, 38, 226, 2319, 166, 20]);
+  assert.deepEqual(pick(ui.core.playerModel(rows[0], { scope: 'l52', refDay })).slice(0, 5), [60, 13, 47, 48, 135]);
   assert.deepEqual(pick(ui.core.playerModel(rows[1], { scope: 'l52', refDay })).slice(0, 5), [38, 8, 30, 27, -279]);
 });
 
@@ -395,7 +431,11 @@ test('ruling B: tab Match winner = the profile shard, band by band (Sinner, Alca
   assert.ok(/Bonzi/.test(bonzi.opp) && bonzi.ek != null && bonzi.sets, 'it borrows the career row\'s eventKey and sets');
   // what the stats sheet reads (set counts) comes with the join — never "— – —" on a joined row
   assert.ok(joined.every((r) => r.pS != null && r.oS != null), 'joined rows carry the set counts');
-  assert.ok(sin.every((r) => r.retSettle === false && r.wo === false && r.profile), 'the profile settles its rows');
+  assert.ok(sin.every((r) => r.wo === false && r.profile), 'the profile settles its rows');
+  // TEN-312 ruling A: the profile keeps Tennis-Data "Retired" rows, marked ret, and the tab carries the mark
+  const sinRet = prof[0].matches.filter((x) => x.inBasis && x.ret);
+  assert.equal(sinRet.length, 13, 'Sinner: 13 retirements settled on the profile (414 → 427, TEN-325)');
+  assert.equal(sin.filter((r) => r.retSettle).length, sinRet.length, 'the tab marks the same 13 rows');
   // a profile row with no career counterpart keeps dashes and no eventKey (never a guessed join)
   const lone = ui.meWinnerRows({ matches: [{ date: '2026-05-02', event: 'X Open', surface: 'Clay', round: '1st Round', opp: 'Nobody Z.', won: true,
     price: 1.3, oppPrice: 3.4, book: 'bet365-capture', inBasis: true }] }, rows[0], '2072', M.p1)[0];

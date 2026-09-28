@@ -54,22 +54,25 @@
 
   // ---- populations -------------------------------------------------------------------------
   /** Match-winner population (band table + profit chart): a closing price, and the match was
-   *  played to a result. Walkovers never; retirements follow the player-profile Market edge
-   *  settlement (build-market-edge.js drops every Tennis-Data row whose comment is not
-   *  "Completed"), so a retired match is not settled here either. Bo5 counts. */
+   *  played to a result. Walkovers never. An in-match retirement IS settled at its listed close
+   *  (TEN-312 retirement ruling A, founder 2026-09-28): a win at the winner's price, a loss at the
+   *  retiree's — the same as the player-profile Market edge, which keeps Tennis-Data "Retired" rows.
+   *  Bo5 counts. */
   function whyNotPriced(r) {
     if (r.wo) return 'walkover';
     if (r.price == null || r.oppPrice == null || !r.book) return 'unpriced';
-    if (r.retSettle) return 'retired';
     if (bandOf(r.price) < 0) return 'unpriced';
     return '';
   }
   const inWinner = (r) => whyNotPriced(r) === '';
   /** Derived-lines population: a priced match-winner row that is also a completed best-of-3
-   *  with every set a standard, finished set. Reasons in the order they are counted. */
+   *  with every set a standard, finished set. Reasons in the order they are counted. A retirement
+   *  (feed flag or Tennis-Data) never enters: its unfinished set is not a completed set (ruling A
+   *  keeps the set-score rule, H2H rule e). */
   function whyNotBo3(r) {
     const w = whyNotPriced(r);
     if (w) return w;
+    if (r.retSettle) return 'retired';
     if (r.alt) return 'format';                   // NextGen short sets, team events (Laver Cup …)
     if (r.bo !== 3) return 'bo5';
     // the stored set list must be the whole match: as many finished sets as the result counts

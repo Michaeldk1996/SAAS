@@ -47,8 +47,8 @@ Applies to the TEN-310 block in `bsp-consult-dashboard.html` (`me*` functions, `
 
 ## Populations
 - **Match winner (bands + profit chart):** the profile's priced rows (ruling B), Bo5 included: Tennis-Data
-  "Completed" matches, each priced in `FH_BOOK_ORDER` (some from our captures). Walkovers and retirements never
-  (Tennis-Data settles).
+  "Completed" and "Retired" matches (retirement ruling A, 2026-09-28), each priced in `FH_BOOK_ORDER` (some from our
+  captures). Walkovers never. **Test:** `tools/test-ten325-retirements.js` (the real builder over a synthetic archive).
 - **Derived lines (card + pop-up):** career-history rows priced through the Form/H2H picker, not walkovers, not
   retired (feed flag or Tennis-Data), restricted to completed best-of-3 with every set a
   standard finished set: no Bo5, no NextGen / team events (Laver, Davis, United, ATP, Hopman Cup), no match-tiebreak

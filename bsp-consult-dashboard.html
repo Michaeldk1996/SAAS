@@ -15430,7 +15430,8 @@ function meRowFromCareer(x, cl, selfKey, selfName, idx){
     if (td && td.ret) r.retSettle = true;
   }
   // Settlement: a retirement is what the feed flags or what Tennis-Data (the price's own archive)
-  // marks as not "Completed" — the same rows the player-profile Market edge leaves out. A completed
+  // marks as not "Completed". Ruling A (2026-09-28): it settles the match-winner bet at the close, but
+  // never enters the Derived lines (its unfinished set is not a completed set; `whyNotBo3`). A completed
   // match whose stored set list is shorter than its result ("3 - 0" with two sets) is NOT a
   // retirement: its result stands; only the set-score lines cannot read it (`setsOk`).
   r.retSettle = !!(r.retSettle || x.retired);
@@ -15488,7 +15489,8 @@ function meWinnerRows(shard, career, selfKey, selfName){
     out.push(Object.assign(base, {
       mid: fhSafeId('mw' + selfKey + '_' + i + '_' + x.date), date: x.date, day: fhDayNum(x.date), won: !!x.won,
       price: Number(x.price), oppPrice: Number(x.oppPrice), book: bk[0], src: bk[1],
-      wo: false, retSettle: false, profile: true,                  // the profile's rows are Tennis-Data "Completed"
+      // TEN-312 ruling A: the profile keeps Tennis-Data "Retired" rows (`ret`), settled at the close like any other.
+      wo: false, retSettle: !!x.ret, profile: true,
     }));
   });
   return out;

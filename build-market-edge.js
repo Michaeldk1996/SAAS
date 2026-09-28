@@ -254,6 +254,10 @@ function summarise(a) {
   };
 }
 
+/** Tennis-Data `comment` of an in-match retirement: "Retired", and the archive's one "Rrtired" typo. */
+const RETIRED_COMMENTS = new Set(['retired', 'rrtired']);
+const isRetiredComment = (c) => RETIRED_COMMENTS.has(String(c || '').trim().toLowerCase());
+
 function median(xs) {
   if (!xs.length) return null;
   const s = xs.slice().sort((a, b) => a - b);
@@ -356,7 +360,7 @@ function main() {
   // blind returns, and it is the number each player's yield is compared against.
   const tour = { all: emptyAgg(), level: {}, season: {} };
   const perPlayer = new Map();
-  const stats = { rows: 0, incomplete: 0, unpriced: 0, sides: 0, joined: 0, ties: 0, captured: 0 };
+  const stats = { rows: 0, incomplete: 0, retired: 0, unpriced: 0, sides: 0, joined: 0, ties: 0, captured: 0 };
   // R8: our captured closes, per subject, from match-closes/{key}.json (build-match-closes.js runs first
   // in the pipeline). cap = [date, oppKey, pin, pinOpp, b365, b365Opp, eventKey]. Absent shard = none.
   const capCache = new Map();
@@ -382,9 +386,13 @@ function main() {
     const season = file.slice(0, 4);
     readCsv(path.join(ARCHIVE_DIR, file)).forEach((row) => {
       stats.rows += 1;
-      // Retirements and walkovers: the price was struck for a match that was never
-      // played out. Same exclusion the existing builder makes, for the same reason.
-      if (row.comment && row.comment.toLowerCase() !== 'completed') { stats.incomplete += 1; return; }
+      // TEN-312 retirement ruling A (founder, 2026-09-28): an in-match retirement is a priced match,
+      // settled at the listed close — a win at the winner's price, a loss at the retiree's. Tennis-Data
+      // marks it "Retired" (one row is typed "Rrtired"). Walkovers, "Awarded" and "Disqualified" were never
+      // played out and stay excluded. build-odds-performance.js keeps its own exclusion (other consumers).
+      const retired = isRetiredComment(row.comment);
+      if (row.comment && row.comment.toLowerCase() !== 'completed' && !retired) { stats.incomplete += 1; return; }
+      if (retired) stats.retired += 1;
 
       // R8 (founder, 2026-09-28): each side is priced by the tab's order (FH_BOOK_ORDER, Form/H2H rule):
       // our captured Pinnacle → Tennis-Data Pinnacle → Tennis-Data Bet365 → our captured Bet365, one book
@@ -425,7 +433,7 @@ function main() {
           // archive's: ATP tour MAIN DRAW only, which is why the Record-by-season
           // grid cannot use it and reads api-tennis's "(Indoor)" surface instead.
           court: (row.court || '').trim() || null,
-          round: row.round, season,
+          round: row.round, season, ret: retired,
           speed: speedMap ? speedMap.forRow(row.tournament, row.surface, row.court) : null,
           oppArchetype: archetypeOf(s.opp),
           opp: s.opp, won: s.won, p: s.p, price: s.price, oppPrice: s.oppPrice,
@@ -561,6 +569,8 @@ function main() {
         // Per-row P&L in units, struck in cents (the shared core's formula).
         pl: core.plCents(s) / 100,
         inBasis: isYieldBasis(s),
+        // Ruling A: a retired match, settled at its close like any other (the tab marks it "ret.").
+        ret: !!s.ret,
       })),
     };
 
@@ -579,7 +589,7 @@ function main() {
     players: index,
   }, null, 1));
 
-  log(`archive rows ${stats.rows}, ${stats.incomplete} retired/walkover excluded, ${stats.unpriced} unpriced dropped`);
+  log(`archive rows ${stats.rows}, ${stats.retired} retired kept (ruling A), ${stats.incomplete} walkover/awarded/disqualified excluded, ${stats.unpriced} unpriced dropped`);
   log(`player-sides ${stats.sides}, joined to a profile ${stats.joined}, exact price ties ${stats.ties}`);
   log(`tour baseline (${PRICE_BASIS}): ${tourSummary.n} priced sides, yield ${tourSummary.yield}%, `
     + `book mix ${tourSummary.book.pinnacle} Pinnacle / ${tourSummary.book.bet365} Bet365-archive`);
@@ -588,4 +598,4 @@ function main() {
 }
 
 if (require.main === module) process.exit(main());
-module.exports = { pickBook, pickSide, capPair, summarise, PRICE_BANDS, bandFor, PRICE_BASIS, GATE_FULL, GATE_SMALL };
+module.exports = { pickBook, pickSide, capPair, summarise, isRetiredComment, PRICE_BANDS, bandFor, PRICE_BASIS, GATE_FULL, GATE_SMALL };
