@@ -61,6 +61,9 @@ const SETSTATS_INDEX_PATH = 'setstats-index.json';
 // one of them.
 const MATCHSTATS_INDEX_PATH = 'matchstats-index.json';
 const PACE_MS = 150;
+// TEN-323: the tier-page sweep's write-once store (tools/tier-page-sweep.js), one
+// gzipped file per tier-week. Unioned into the shards below, never into the cache.
+const ARCHIVE_DIR = 'boxscore-archive';
 
 // Ceiling on NEW point logs fetched per run. Rows whose log has not been reached
 // yet simply have no Point-by-point tab and no set filter (never a fabricated one).
@@ -187,6 +190,28 @@ function buildCacheEntry(got, names = null) {
     : { sets: [], ...keys, stats, matchStats };
 }
 
+// Merge into an existing entry rather than overwrite it. An entry may already
+// exist from the window pass (with the dashboard's own names) or from an older
+// run that predates the set box score. Never trade real data for absent data:
+// a fixture that comes back without a point log must not blank a log we hold.
+// Lives here (moved from backfill-history-shards.js, TEN-323) because the
+// tier-page archive is unioned through it at emit time too — and a held point
+// log is the only copy of a past match's tiebreak points (TEN-312 N12).
+function mergeEntry(existing, built) {
+  if (!existing) return built;
+  const out = { ...existing };
+  if ((!out.sets || !out.sets.length) && built.sets && built.sets.length) out.sets = built.sets;
+  if (!out.p1 && built.p1) { out.p1 = built.p1; out.p2 = built.p2; }
+  if (out.p1Key == null && built.p1Key != null) { out.p1Key = built.p1Key; out.p2Key = built.p2Key; }
+  // `stats` present-but-null means "asked, feed had none" — don't ask again.
+  if (!('stats' in out) || (out.stats == null && built.stats)) out.stats = built.stats;
+  // Same rule for the whole-match box score, and the same reason it can't just
+  // overwrite: a window fixture that comes back without statistics must not
+  // blank a box score an earlier per-match fetch already resolved.
+  if (!('matchStats' in out) || (out.matchStats == null && built.matchStats)) out.matchStats = built.matchStats;
+  return out;
+}
+
 async function fetchFixture(eventKey) {
   const url = `${API_TENNIS_BASE}?method=get_fixtures&APIkey=${API_TENNIS_KEY}&match_key=${eventKey}`;
   const res = await fetch(url);
@@ -209,6 +234,75 @@ function eventKeyOf(id) {
   const parts = String(id).split('-');
   const last = parts[parts.length - 1];
   return /^\d+$/.test(last) ? last : null;
+}
+
+// Shard emission for one entry. Either half of the box score is worth a setstats
+// shard on its own: requiring per-set stats silently withheld the whole-match box
+// score for every match played between 2024-03 and 2024-11 — the window where the
+// feed publishes match rows but no set rows.
+function emitEntry(ek, e, index, setIndex, matchIndex) {
+  if (!e) return;
+  if (e.sets && e.sets.length && e.p1) {   // a real, named log (unnamed legacy entries are skipped)
+    writeAtomic(`${SHARD_DIR}/${ek}.json`, JSON.stringify({ p1: e.p1, p2: e.p2, sets: e.sets }));
+    index.push(ek);
+  }
+  if (e.p1Key == null || e.p2Key == null) return;   // unorientable — a row could not tell which side is its own
+  const hasSets = !!(e.stats && Object.keys(e.stats).length);
+  const hasMatch = !!(e.matchStats && (Object.keys(e.matchStats.p1 || {}).length || Object.keys(e.matchStats.p2 || {}).length));
+  if (!hasSets && !hasMatch) return;
+  writeAtomic(`${SETSTATS_DIR}/${ek}.json`, JSON.stringify({
+    p1Key: e.p1Key, p2Key: e.p2Key, sets: e.stats || null, match: e.matchStats || null,
+  }));
+  if (hasSets) setIndex.push(ek);
+  if (hasMatch) matchIndex.push(ek);
+}
+
+// Every cache entry, then the tier-page archive (TEN-323) for keys the cache does
+// not hold or holds only in part. The archive is merged UNDER the cache through
+// mergeEntry — a point log or box score the cache holds always wins, so a held
+// tiebreak point log (TEN-312 N12) can never be replaced — and the merge result is
+// only written out as shards, never assigned back into `cache`, so
+// point-by-point-cache.json does not grow towards V8's max string length.
+// One week file is in memory at a time. Returns archive counts for the log.
+function emitShards(cache, index, setIndex, matchIndex, { archiveDir = ARCHIVE_DIR } = {}) {
+  for (const ek of Object.keys(cache)) emitEntry(ek, cache[ek], index, setIndex, matchIndex);
+  const counts = { files: 0, entries: 0, added: 0, completed: 0 };
+  if (!archiveDir || !fs.existsSync(archiveDir)) return counts;
+  const zlib = require('zlib');
+  const seen = new Set();
+  const redone = new Set();   // cache keys re-emitted from a merged entry
+  const more = [[], [], []];  // their index lines, appended once at the end
+  for (const file of fs.readdirSync(archiveDir).filter(f => /^\d+-\d{4}-\d{2}-\d{2}\.json\.gz$/.test(f)).sort()) {
+    let week;
+    try { week = JSON.parse(zlib.gunzipSync(fs.readFileSync(`${archiveDir}/${file}`)).toString('utf8')); }
+    catch (err) { console.error(`box-score archive: unreadable ${file} — skipped: ${err.message}`); continue; }
+    counts.files++;
+    for (const ek of Object.keys(week)) {
+      if (seen.has(ek)) continue;   // a match listed on two pages: first file wins
+      seen.add(ek);
+      counts.entries++;
+      const held = cache[ek];
+      const a = week[ek];
+      if (!held) { emitEntry(ek, a, index, setIndex, matchIndex); counts.added++; continue; }
+      const merged = mergeEntry(held, a);
+      const gainsLog = !(held.sets && held.sets.length && held.p1) && merged.sets && merged.sets.length && merged.p1;
+      const gainsBox = (held.stats == null && merged.stats) || (held.matchStats == null && merged.matchStats)
+        || (held.p1Key == null && merged.p1Key != null);
+      if (!gainsLog && !gainsBox) continue;   // the cache already said everything the archive can
+      // Re-emitted from the merged entry; the cache's own index lines for this key
+      // are dropped below, so no key is listed twice.
+      redone.add(ek);
+      emitEntry(ek, merged, ...more);
+      counts.completed++;
+    }
+  }
+  [index, setIndex, matchIndex].forEach((list, i) => {
+    const kept = list.filter(ek => !redone.has(ek));   // always a copy: `list` is cleared next
+    list.length = 0;
+    for (const ek of kept) list.push(ek);      // a loop, not push(...spread): these lists
+    for (const ek of more[i]) list.push(ek);   // run to ~60k and would overflow the arg stack
+  });
+  return counts;
 }
 
 async function main() {
@@ -433,42 +527,20 @@ async function main() {
   // One shard per match, so opening a single row fetches a single small file
   // instead of a multi-megabyte bundle. Written for every event key that has a
   // real, named log — window matches included.
+  //
+  // Per-set box scores ride the same shard-and-index shape, separate files: a
+  // match can have a point log with no set stats or set stats with no log (they
+  // are two independent feeds), so one index cannot answer for both.
   fs.mkdirSync(SHARD_DIR, { recursive: true });
+  fs.mkdirSync(SETSTATS_DIR, { recursive: true });
   const index = [];
-  for (const ek of Object.keys(cache)) {
-    const e = cache[ek];
-    if (!e || !e.sets || !e.sets.length || !e.p1) continue;   // no log, or unnamed legacy entry
-    writeAtomic(`${SHARD_DIR}/${ek}.json`, JSON.stringify({ p1: e.p1, p2: e.p2, sets: e.sets }));
-    index.push(ek);
-  }
+  const setIndex = [];
+  const matchIndex = [];
+  const archived = emitShards(cache, index, setIndex, matchIndex, { archiveDir: ARCHIVE_DIR });
   // Which rows get a Point-by-point tab at all. The dashboard needs this BEFORE
   // it renders a row's tabs, and a 404 per logless row is not an answer it can
   // render against — so availability ships as data, not as a failed request.
   writeAtomic(INDEX_PATH, JSON.stringify(index));
-
-  // Per-set box scores, same shard-and-index shape, separate files: a match can
-  // have a point log with no set stats or set stats with no log (they are two
-  // independent feeds), so one index cannot answer for both.
-  fs.mkdirSync(SETSTATS_DIR, { recursive: true });
-  const setIndex = [];
-  const matchIndex = [];
-  for (const ek of Object.keys(cache)) {
-    const e = cache[ek];
-    if (!e) continue;
-    if (e.p1Key == null || e.p2Key == null) continue;   // unorientable — a row could not tell which side is its own
-    const hasSets = !!(e.stats && Object.keys(e.stats).length);
-    const hasMatch = !!(e.matchStats && (Object.keys(e.matchStats.p1 || {}).length || Object.keys(e.matchStats.p2 || {}).length));
-    // Either half is worth a shard on its own. This used to require per-set
-    // stats, which silently withheld the whole-match box score for every match
-    // played between 2024-03 and 2024-11 — the window where the feed publishes
-    // match rows but no set rows.
-    if (!hasSets && !hasMatch) continue;
-    writeAtomic(`${SETSTATS_DIR}/${ek}.json`, JSON.stringify({
-      p1Key: e.p1Key, p2Key: e.p2Key, sets: e.stats || null, match: e.matchStats || null,
-    }));
-    if (hasSets) setIndex.push(ek);
-    if (hasMatch) matchIndex.push(ek);
-  }
   writeAtomic(SETSTATS_INDEX_PATH, JSON.stringify(setIndex));
   // Which rows can open a whole-match Stats pane. Same contract as pbp-index:
   // availability ships as data, so a row knows whether to show an expander
@@ -482,6 +554,7 @@ async function main() {
   console.log(`point-by-point: ${index.length} shards -> ${SHARD_DIR}/ (${formResolved} recent-form rows resolved this run)`);
   console.log(`set-stats: ${setIndex.length} shards -> ${SETSTATS_DIR}/ (${backfilled} backfilled this run${backfillFailed ? `, ${backfillFailed} failed` : ''})`);
   console.log(`match-stats: ${matchIndex.length} matches carry a whole-match box score -> ${MATCHSTATS_INDEX_PATH}`);
+  if (archived.files) console.log(`box-score archive: ${archived.entries} archived matches in ${archived.files} week file(s) — ${archived.added} not in the cache, ${archived.completed} cache entries completed (shards only; the cache is unchanged).`);
   // Entries that predate the match box score are refilled by the PLAYER-WINDOW
   // path in backfill-history-shards.js (one call per player), NOT by the
   // per-match loop above — whose `pending` filter is deliberately left on
@@ -510,4 +583,4 @@ if (require.main === module) {
   main().catch(e => { console.error('point-by-point: unexpected error —', e.message); process.exit(0); });
 }
 
-module.exports = { compactPbp, parseFixture, buildCacheEntry, orderFormQueue, MAX_FETCHES_PER_RUN };
+module.exports = { compactPbp, parseFixture, buildCacheEntry, orderFormQueue, mergeEntry, emitShards, MAX_FETCHES_PER_RUN };

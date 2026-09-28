@@ -37,7 +37,7 @@
 const fs = require('fs');
 try { require('dotenv').config({ quiet: true }); } catch (_) { /* dotenv optional */ }
 const { fetchRecentSinglesFixtures } = require('./bsp-pipeline.js');
-const { buildCacheEntry, parseFixture } = require('./build-point-by-point.js');
+const { buildCacheEntry, parseFixture, mergeEntry } = require('./build-point-by-point.js');
 
 const HISTORIES_DIR = 'career-history';
 const CACHE_PATH = 'point-by-point-cache.json';
@@ -68,24 +68,8 @@ function writeAtomic(path, contents) {
   fs.renameSync(tmp, path);
 }
 
-// Merge into an existing entry rather than overwrite it. An entry may already
-// exist from the window pass (with the dashboard's own names) or from an older
-// run that predates the set box score. Never trade real data for absent data:
-// a fixture that comes back without a point log must not blank a log we hold.
-function mergeEntry(existing, built) {
-  if (!existing) return built;
-  const out = { ...existing };
-  if ((!out.sets || !out.sets.length) && built.sets && built.sets.length) out.sets = built.sets;
-  if (!out.p1 && built.p1) { out.p1 = built.p1; out.p2 = built.p2; }
-  if (out.p1Key == null && built.p1Key != null) { out.p1Key = built.p1Key; out.p2Key = built.p2Key; }
-  // `stats` present-but-null means "asked, feed had none" — don't ask again.
-  if (!('stats' in out) || (out.stats == null && built.stats)) out.stats = built.stats;
-  // Same rule for the whole-match box score, and the same reason it can't just
-  // overwrite: a window fixture that comes back without statistics must not
-  // blank a box score an earlier per-match fetch already resolved.
-  if (!('matchStats' in out) || (out.matchStats == null && built.matchStats)) out.matchStats = built.matchStats;
-  return out;
-}
+// mergeEntry() now lives in build-point-by-point.js (TEN-323): the tier-page
+// archive is unioned through the same rule at emit time.
 
 async function main() {
   if (!process.env.API_TENNIS_KEY) {
