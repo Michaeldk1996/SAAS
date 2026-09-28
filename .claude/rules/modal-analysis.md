@@ -8,13 +8,33 @@ Phase 0 evidence: TEN-312 documents `phase0-report`, `phase0-a` … `phase0-f`. 
 `modal-key-factors.md`, `modal-match-stats.md` and `odds.md`; where one of those conflicts with this file,
 this file wins.
 
-## Build order (founder 2026-09-28, TEN-312 comment 8574fb97 — supersedes the §6 order)
-- **Phase 1** = frame + one token file + **per-tab lazy fetch** + **one merged match stats sheet with real stats**
-  + shared components + fixture harness / pixel diff (TEN-314).
-- Then tabs, one at a time: **Form → H2H → Tournament → News → Overview (after TEN-313) → Odds → Market edge →
-  Weather → Match Stats → Progression (DRAW avg for active events only) → Playing style (after the DNA rebuild,
-  N11) → Key factors (`v.o` only).** **Test:** no tab's rebuild lands before every tab ahead of it has landed or
-  been explicitly skipped by the founder.
+## Build order (founder 2026-09-28, TEN-312 comments 8574fb97 + 940d7634)
+- **Priority: finish all 12 tabs** (TEN-330 … TEN-341), built, matched to the design file, wired to real data and live.
+  Everything else is secondary.
+- **Phase 1** = frame + one token file + per-tab lazy fetch + one merged match stats sheet with real stats + shared
+  components + fixture harness / pixel diff (TEN-314).
+- **Main queue, chained:** Form → H2H → Tournament → Overview (after TEN-324) → Market edge (after TEN-325) → Match Stats
+  (after TEN-318) → Progression (after TEN-327a) → Playing style (after TEN-328) → Key factors (`v.o` only).
+- **In parallel, as soon as Phase 1 lands:** News, Odds and Weather. They have no data prerequisite beyond Phase 1.
+- The Edge model re-fit (TEN-345, split from TEN-327) is staged for the founder and **blocks no tab**.
+
+## Definition of done — per tab (every item required)
+1. Every element in the design file for that tab is built. Nothing is skipped silently.
+2. Fixture pixel diff against the design file rendered in Chromium at 1296 px: diff % per state and per pop-up, diff images
+   attached, **zero structural differences**.
+3. Real data wired. Dashes plus a note where data is missing. The §5 gate applies to every rate.
+4. The review switchers and SAMPLE chips are gone, and no seeded data is in the bundle.
+5. Deployed and verified on the live URL with a **real match**, not the demo.
+6. Night and Day screenshots from the deployed site posted to the founder.
+7. A list of every parked element and design gap, each with its reason.
+
+- **Undrawn states** (TEN-312 `design-gaps`) never block a tab: use the nearest existing pattern in the design file, mark
+  the code `// DESIGN GAP Gn`, and list it in the tab report. Never invent a new visual pattern.
+- **An element that needs a founder ruling** is parked alone, as a dash with a note. The rest of the tab ships, and the
+  question goes in the report. A tab never waits whole on one decision.
+- **Reporting:** every tab update leads with one row
+  `tab · ticket · status (queued/building/diff/wiring/live) · pixel-diff % · parked items · blocker`.
+- **Core-data changes wait on the pre-publish reconcile gate (TEN-329, landed `9394f7db`).**
 
 ## Palette (D1)
 - **The modal is coloured only through one token file**, mapped from the design's source hex by the
