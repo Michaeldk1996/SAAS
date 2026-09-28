@@ -13955,10 +13955,11 @@ function fhRowFromForm(x, selfKey, selfName, idx){
 //      today's match  → Pinnacle current, else Bet365 current, else a dash (no dot).
 //      ONE BOOK PER MATCH: a book counts only if it has BOTH sides; a one-sided book
 //      is missing for that match and we fall through. Never m.bestOdds on these tabs.
-// Founder ruling 2026-09-23 (second pass): Pinnacle before Bet365 always, and within each
-// book the true close first — Tennis-Data, then our own capture (last price before the
-// ACTUAL start; see build-match-closes.js). Both sides from one book AND one source.
-const FH_BOOK_ORDER = ['Ptd', 'Pcap', 'Btd', 'Bcap'];      // the ruling's fallback order
+// Founder ruling 2026-09-23 (second pass): Pinnacle before Bet365 always. TEN-310 R8 ruling
+// (2026-09-28) set the order within Pinnacle: our own captured close (last price before the
+// ACTUAL start; see build-match-closes.js) first, then Tennis-Data; Bet365 stays Tennis-Data,
+// then capture. Both sides from one book AND one source. The profile builder uses the same order.
+const FH_BOOK_ORDER = ['Pcap', 'Ptd', 'Btd', 'Bcap'];      // the ruling's fallback order
 const FH_BOOK = { P: 'Pinnacle', B: 'Bet365' };
 const FH_SRC = { td: 'Tennis-Data', cap: 'captured' };
 // The single picker every price on both tabs goes through.
@@ -15335,10 +15336,12 @@ document.addEventListener('keydown', ev => { if (ev.key === 'Escape' && _fh && _
 // =====================================================================
 // TEN-310 · MATCH ANALYSIS → MARKET EDGE TAB. Design: handoff/Market Edge (`Market Edge Tab.dc.html`,
 // `Market Edge Tab - Paperclip.md`, locked 2026-09-27). Compute: market-edge-core.js (MarketEdgeCore).
-// DATA: career-history/{key}.json (dates, set scores, eventKey, RET/W/O, format) joined to
-// match-closes/{key}.json through the Form/H2H picker (fhCloseFor → fhPickBook: Pinnacle close,
-// else Bet365 close, one book and one source per match). Both shards are lazy, per player, rebuilt
-// by the pipeline; nothing here is hand-built. Loaded only when the tab opens.
+// DATA: Match winner (bands, chart, band pop-up) = the player-profile Market edge rows,
+// market-edge/{key}.json (ruling B, 2026-09-28: one row source, so tab = profile). Derived lines =
+// career-history/{key}.json (dates, set scores, eventKey, RET/W/O, format) joined to
+// match-closes/{key}.json through the Form/H2H picker (fhCloseFor → fhPickBook, FH_BOOK_ORDER, one book
+// and one source per match). All three shards are lazy, per player, rebuilt by the pipeline; nothing
+// here is hand-built. Loaded only when the tab opens.
 // =====================================================================
 // Team events and non-standard formats: never a derived-lines row (their sets are not a standard
 // best-of-3 even when the score looks like one). NextGen arrives flagged `altFormat` by the history.
@@ -15374,6 +15377,7 @@ function meRowFromCareer(x, cl, selfKey, selfName, idx){
     // accepted only when exactly one row in the window qualifies, with the same result.
     if (!hits.length && d0 != null && nk.length >= 4) hits = (cl.rows || []).filter(y => { const k2 = fhNameKey(y.opp); return inWin(y) && k2.length >= 4 && k2 !== nk && (k2.startsWith(nk) || nk.startsWith(k2)); });
     const td = hits.length === 1 ? hits[0] : null;
+    if (td) r.tdKey = td.date + '|' + td.opp + '|' + (td.won ? 1 : 0);   // the Tennis-Data row it joined (ruling B join)
     if (td && x.src === 'archive') r.date = td.date;
     const c = fhCloseFor(cl, td ? td.date : r.date, td ? td.opp : r.opp, r.won, td ? td.oppKey : null, r.ek);
     if (c){ r.price = c.price; r.oppPrice = c.oppPrice; r.book = c.book; r.src = c.src; }
@@ -15403,6 +15407,57 @@ function meRowsFor(career, cl, selfKey, selfName){
   });
   rows.notTour = notTour;
   return rows;
+}
+
+// TEN-310 ruling B (founder, 2026-09-28): the Match winner view (bands, chart, band pop-up) reads the
+// player-profile Market edge's own rows — market-edge/{key}.json `matches`, the rows its headline is
+// summed from (`inBasis`) — so the tab and the profile count the same matches, priced by the same order.
+// Each profile row borrows set scores, eventKey (stats sheet) and the display name/round from the one
+// career-history row that joined the same Tennis-Data row (`tdKey`); a row with no such career row
+// is joined by opponent surname + result in the event window, exactly one candidate; none → a dash, not clickable.
+const ME_PROFILE_BOOK = { 'pinnacle-capture': ['P', 'cap'], pinnacle: ['P', 'td'], 'bet365-archive': ['B', 'td'], 'bet365-capture': ['B', 'cap'] };
+const ME_TD_ROUND = { quarterfinals: 'QF', semifinals: 'SF', 'the final': 'F', 'round robin': 'RR' };
+function meWinnerRows(shard, career, selfKey, selfName){
+  const byTd = {};
+  (career || []).forEach(r => { if (r.tdKey) byTd[r.tdKey] = byTd[r.tdKey] === undefined ? r : null; });   // two claimants → no join
+  const claimed = new Set(Object.values(byTd).filter(Boolean));
+  // Fallback for a row whose career row joined no Tennis-Data row (a capture-priced match): the one unclaimed
+  // career row with the same result and opponent surname, dated in the event window (−14…+1 days).
+  const byName = (x) => {
+    const d = fhDayNum(x.date), nk = fhNameKey(x.opp);
+    const hits = d == null || !nk ? [] : (career || []).filter(r => !claimed.has(r) && r.won === !!x.won && r.day != null
+      && r.day >= d - 14 && r.day <= d + 1 && fhNameKey(r.opp) === nk);
+    return hits.length === 1 ? hits[0] : null;
+  };
+  const out = [];
+  ((shard && shard.matches) || []).forEach((x, i) => {
+    const bk = ME_PROFILE_BOOK[x.book];
+    if (!x.inBasis || !bk) return;
+    let c = byTd[x.date + '|' + x.opp + '|' + (x.won ? 1 : 0)] || null;
+    if (!c && (c = byName(x))) claimed.add(c);
+    out.push({
+      mid: fhSafeId('mw' + selfKey + '_' + i + '_' + x.date), date: x.date, day: fhDayNum(x.date),
+      tourn: c ? c.tourn : fhTournClean(x.event), surface: c ? c.surface : fhSurfName(x.surface),
+      round: c ? c.round : (ME_TD_ROUND[String(x.round || '').toLowerCase()] || FH_DASHC),
+      opp: c ? c.opp : x.opp, oppKey: c ? c.oppKey : null, won: !!x.won, sets: c ? c.sets : null, ek: c ? c.ek : null,
+      selfKey, selfName, price: Number(x.price), oppPrice: Number(x.oppPrice), book: bk[0], src: bk[1],
+      level: 'ATP', wo: false, ret: false, retSettle: false, profile: true,
+    });
+  });
+  return out;
+}
+const _meShard = {}, _meShardP = {};
+// market-edge/{key}.json: a 404 is an answer (the profile has no Market edge rows for him → 0 priced);
+// a network error is not cached and reads as a failed load.
+function meLoadProfileShard(key){
+  const k = String(key);
+  if (k in _meShard) return Promise.resolve(_meShard[k]);
+  if (_meShardP[k]) return _meShardP[k];
+  _meShardP[k] = fetch(`./market-edge/${encodeURIComponent(k)}.json`, { cache: 'no-cache' })
+    .then(r => (r.ok ? r.json() : r.status === 404 ? { matches: [] } : Promise.reject(new Error('HTTP ' + r.status))))
+    .then(d => { _meShard[k] = d; return d; })
+    .catch(() => { delete _meShardP[k]; return null; });
+  return _meShardP[k];
 }
 
 // ---- design values (Market Edge Tab - Paperclip.md), each mapped onto the 12a token the site's
@@ -15451,13 +15506,17 @@ function meLoad(m){
     if (E.state[i] === 'ready' || E.state[i] === 'loading') return;
     if (key == null){ E.state[i] = 'none'; E.data[i] = null; return; }      // no player key: history unknown, never "0 priced"
     E.state[i] = 'loading';
-    Promise.all([loadCareerHistory(key), fhLoadCloses(key)]).then(([ch, cl]) => {
+    Promise.all([loadCareerHistory(key), fhLoadCloses(key), meLoadProfileShard(key)]).then(([ch, cl, ms]) => {
       if (_me !== E) return;
       // answered = the shard was read (or the index says he has none); a failed closes fetch is not cached
       // (_fhCl), and without it every row would read unpriced — so it is a failure too, never "0 priced".
-      const answered = String(key) in _careerHistoryShards && String(key) in _fhCl;
+      const answered = String(key) in _careerHistoryShards && String(key) in _fhCl && String(key) in _meShard;
       if (!answered){ E.state[i] = 'failed'; E.data[i] = null; }
-      else { E.state[i] = 'ready'; E.data[i] = meRowsFor(ch, cl, String(key), name); }
+      else {
+        const rows = meRowsFor(ch, cl, String(key), name);
+        rows.win = meWinnerRows(ms, rows, String(key), name);                          // ruling B
+        E.state[i] = 'ready'; E.data[i] = rows;
+      }
       meRender();
     }).catch(() => { if (_me === E){ E.state[i] = 'failed'; meRender(); } });
   });
@@ -15490,7 +15549,7 @@ function meModels(E){
     const rows = E.data[i];
     if (E.state[i] !== 'ready' || !rows || !core) return { state: E.state[i] === 'failed' || E.state[i] === 'none' ? E.state[i] : 'loading', today: px[i] };
     const name = i ? E.m.p2 : E.m.p1;
-    const M = core.playerModel(rows, { scope: E.S.meScope, refDay, todayPrice: px[i], surname: fhSurname(name) });
+    const M = core.playerModel(rows, { scope: E.S.meScope, refDay, todayPrice: px[i], surname: fhSurname(name), winnerRows: rows.win });
     return Object.assign(M, { state: 'ready', today: px[i], rows });
   });
 }

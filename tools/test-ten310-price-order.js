@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // TEN-310 R8 (founder, 2026-09-28): the player-profile Market edge prices each side in the tab's order —
-// the page's FH_BOOK_ORDER = Tennis-Data Pinnacle → our captured Pinnacle → Tennis-Data Bet365 → our
+// the page's FH_BOOK_ORDER = our captured Pinnacle → Tennis-Data Pinnacle (R8 ruling 2026-09-28) → Tennis-Data Bet365 → our
 // captured Bet365 — one book and one source per side. Drives the REAL builder functions; the order is read
 // from the dashboard's own constant, so the two cannot drift apart silently.
 const assert = require('assert');
@@ -11,18 +11,18 @@ const check = (n, f) => { try { f(); pass++; console.log('  ok   ' + n); } catch
 
 const html = fs.readFileSync(path.join(__dirname, '..', 'bsp-consult-dashboard.html'), 'utf8');
 const m = /const FH_BOOK_ORDER = (\[[^\]]*\])/.exec(html);
-check('the page order is Ptd, Pcap, Btd, Bcap', () => assert.deepStrictEqual(JSON.parse(m[1].replace(/'/g, '"')), ['Ptd', 'Pcap', 'Btd', 'Bcap']));
+check('the page order is Pcap, Ptd, Btd, Bcap', () => assert.deepStrictEqual(JSON.parse(m[1].replace(/'/g, '"')), ['Pcap', 'Ptd', 'Btd', 'Bcap']));
 
 const caps = [
   { date: '2026-07-12', oppKey: '1980', P: [1.18, 5.2], B: [1.2, 4.8] },
   { date: '2026-04-24', oppKey: '1771', P: null, B: [1.01, 26] },
 ];
 const side = (tdP, tdB) => ({ tdP, tdB });
-check('1. Tennis-Data Pinnacle first', () => assert.strictEqual(pickSide(side([1.2, 4.5], [1.22, 4.33]), caps, '2026-07-12', '1980').book, 'pinnacle'));
-check('2. then our captured Pinnacle (before Tennis-Data Bet365)', () => {
-  const p = pickSide(side(null, [1.22, 4.33]), caps, '2026-07-12', '1980');
+check('1. our captured Pinnacle first, ahead of Tennis-Data Pinnacle', () => {
+  const p = pickSide(side([1.2, 4.5], [1.22, 4.33]), caps, '2026-07-12', '1980');
   assert.deepStrictEqual([p.book, p.price, p.oppPrice], ['pinnacle-capture', 1.18, 5.2]);
 });
+check('2. then Tennis-Data Pinnacle (before Tennis-Data Bet365)', () => assert.strictEqual(pickSide(side([1.2, 4.5], [1.22, 4.33]), caps, '2026-05-01', '1980').book, 'pinnacle'));
 check('3. then Tennis-Data Bet365', () => assert.strictEqual(pickSide(side(null, [1.22, 4.33]), caps, '2026-04-24', '1771').book, 'bet365-archive'));
 check('4. then our captured Bet365', () => {
   const p = pickSide(side(null, null), caps, '2026-04-24', '1771');

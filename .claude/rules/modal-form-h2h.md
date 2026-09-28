@@ -5,9 +5,11 @@ Applies to the TEN-263 block in `bsp-consult-dashboard.html` (`fh*` functions), 
 `buildH2HMatchList` in `bsp-pipeline.js`). Tests: `test-ten263.mjs`.
 
 ## Prices (rulings 2026-09-23 and 2026-09-24)
-- **Order.** Every price on both tabs goes through `fhPickBook` in the order
-  `FH_BOOK_ORDER = ['Ptd','Pcap','Btd','Bcap']`: Pinnacle close from Tennis-Data → Pinnacle
-  close from our capture → Bet365 Tennis-Data → Bet365 captured → a dash.
+- **Order** (TEN-310 R8, founder 2026-09-28, supersedes the 2026-09-23 Pinnacle order). Every price on
+  both tabs, the Match analysis Market edge tab and the player-profile Market edge goes through the order
+  `FH_BOOK_ORDER = ['Pcap','Ptd','Btd','Bcap']`: Pinnacle close from our capture → Pinnacle close from
+  Tennis-Data → Bet365 Tennis-Data → Bet365 captured → a dash. The builder (`build-market-edge.js`
+  `pickSide`) uses the same order; `tools/test-ten310-price-order.js` reads the page constant.
   **Test:** reversing any adjacent pair turns a test red.
 - **One book and one source per match**, both sides ≥ 1.01, else fall through.
   **Test:** no priced row carries sides from two slots.

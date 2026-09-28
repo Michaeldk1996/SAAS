@@ -38,10 +38,10 @@ export function loadCore() {
   return req(CORE_PATH);
 }
 
-const DATA_CONSTS = ['FH_SLAMS', 'FH_BOOK_ORDER', 'FH_DASHC', 'ME_NONSTD_EVENT'];
+const DATA_CONSTS = ['FH_SLAMS', 'FH_BOOK_ORDER', 'FH_DASHC', 'ME_NONSTD_EVENT', 'ME_PROFILE_BOOK', 'ME_TD_ROUND'];
 const DATA_FNS = ['escapeHtml', 'fhSafeId', 'ppCleanTournamentName', 'fhTournClean', 'fhSurfName', 'h2hRoundLabel', 'psRoundAbbr',
   'fhRoundCode', 'fhSetsFrom', 'psNormTour', 'fhBestOf', 'fhSetDone', 'fhFinishRow', 'fhLevelOf', 'fhDayNum', 'fhIsInitial',
-  'fhNameKey', 'fhPickBook', 'fhParseCloses', 'fhCloseFor', 'meRowFromCareer', 'meRowsFor'];
+  'fhNameKey', 'fhPickBook', 'fhParseCloses', 'fhCloseFor', 'meRowFromCareer', 'meRowsFor', 'meWinnerRows'];
 
 /** The page's data layer: { meRowsFor, fhParseCloses, core }. */
 export function buildData({ src = HTML } = {}) {
@@ -49,12 +49,12 @@ export function buildData({ src = HTML } = {}) {
   const api = new Function('MarketEdgeCore', `
     ${DATA_CONSTS.map((n) => constSrc(n, src)).join('\n')}
     ${DATA_FNS.map((n) => slice(n, src)).join('\n')}
-    return { meRowsFor, meRowFromCareer, fhParseCloses };
+    return { meRowsFor, meRowFromCareer, fhParseCloses, meWinnerRows };
   `)(core);
   return Object.assign(api, { core });
 }
 
-const UI_CONSTS = ['FH_MONO', 'FH_MONS', 'FH_BOOK', 'FH_SRC', 'AODDS_C', 'ME_C', 'ME_NOPRICE_MSG', 'ME_BO3_MSG', 'mePct0', 'mePct1', 'meUC', 'meSegT', 'ME_CARD',
+const UI_CONSTS = ['FH_DASHC', 'FH_MONO', 'FH_MONS', 'FH_BOOK', 'FH_SRC', 'AODDS_C', 'ME_C', 'ME_NOPRICE_MSG', 'ME_BO3_MSG', 'mePct0', 'mePct1', 'meUC', 'meSegT', 'ME_CARD',
   'ME_TITLE', 'ME_COLH', 'ME_FOOT', 'ME_HINT', 'ME_PGRID', 'ME_BCOLS', 'ME_LCOLS', 'meScopeLbl', 'meNoHist', 'meLoadingRow', 'meStatBox', 'ME_BAND_TCOLS', 'ME_LINE_TCOLS'];
 const UI_FNS = ['escapeHtml', 'fhDayNum', 'psShortName', 'fhSurname', 'fhEsc', 'fhRefDay', 'fhLongDate', 'fhOdd', 'fhSrcTitle', 'aOddsTipHtml', 'aHeaderOdds', 'meStateFor',
   'meSg', 'meDMY', 'meModels', 'meSegHtml', 'meScopeSeg', 'meBandsCol', 'mePriceCard', 'meChartCard', 'meLinesCol', 'meLinesCard', 'mePillTip',

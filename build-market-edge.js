@@ -24,7 +24,7 @@
  *      the headline. Two different artefacts that happen to share a book name; the ticket
  *      conflates them. Rows carry book:"bet365-archive" so the UI can label them.
  * R8 (founder, 2026-09-28): per side, in the Match analysis tab's order (FH_BOOK_ORDER) —
- * Tennis-Data Pinnacle → our captured Pinnacle → Tennis-Data Bet365 → our captured Bet365.
+ * our captured Pinnacle → Tennis-Data Pinnacle → Tennis-Data Bet365 → our captured Bet365.
  * Captures are read from match-closes/{key}.json (pipeline: build-match-closes runs first).
  * A row with none of them is unpriced and is dropped, never filled from the `avg` columns —
  * an average across books has no book identity, which is the whole point of this pass.
@@ -144,6 +144,8 @@ const num = (v) => {
 };
 const r1 = (v) => (v == null ? null : Math.round(v * 10) / 10);
 const r2 = (v) => (v == null ? null : Math.round(v * 100) / 100);
+// A closing price at the precision the bands use (thousandths: 1.645, a captured 1.177).
+const r3 = (v) => (v == null ? null : Math.round(v * 1000) / 1000);
 
 /**
  * Pick the book for one archive row. Returns null when neither book priced both sides —
@@ -163,11 +165,11 @@ function capPair(caps, book, date, oppKey) {
   const hits = caps.filter((c) => c[book] && c.oppKey === oppKey && d0 != null && dayNum(c.date) != null && Math.abs(dayNum(c.date) - d0) <= 1);
   return hits.length === 1 ? hits[0][book] : null;
 }
-/** The tab's order, FH_BOOK_ORDER = Ptd, Pcap, Btd, Bcap. Returns { book, label, price, oppPrice } or null. */
+/** The tab's order, FH_BOOK_ORDER = Pcap, Ptd, Btd, Bcap (R8 ruling 2026-09-28: captured Pinnacle first). Returns { book, label, price, oppPrice } or null. */
 function pickSide(b, caps, date, oppKey) {
   const order = [
-    ['pinnacle', 'Pinnacle', () => b.tdP],
     ['pinnacle-capture', 'Pinnacle (our capture)', () => capPair(caps, 'P', date, oppKey)],
+    ['pinnacle', 'Pinnacle', () => b.tdP],
     ['bet365-archive', 'Bet365 (archive close)', () => b.tdB],
     ['bet365-capture', 'Bet365 (our capture)', () => capPair(caps, 'B', date, oppKey)],
   ];
@@ -385,7 +387,7 @@ function main() {
       if (row.comment && row.comment.toLowerCase() !== 'completed') { stats.incomplete += 1; return; }
 
       // R8 (founder, 2026-09-28): each side is priced by the tab's order (FH_BOOK_ORDER, Form/H2H rule):
-      // Tennis-Data Pinnacle → our captured Pinnacle → Tennis-Data Bet365 → our captured Bet365, one book
+      // our captured Pinnacle → Tennis-Data Pinnacle → Tennis-Data Bet365 → our captured Bet365, one book
       // and one source per side. Captures come from the subject's own match-closes shard.
       const level = LEVEL_ALIASES[row.series] || null;
       const td = pickBookPairs(row);
@@ -550,10 +552,11 @@ function main() {
         // §5.6 Versus playing styles. Null = this opponent is not on the labelled
         // roster; the modal counts those rather than folding them into a bucket.
         oppArchetype: s.oppArchetype,
-        opp: s.opp, won: s.won, price: r2(s.price), oppPrice: r2(s.oppPrice),
+        // TEN-310 ruling B: the Match analysis tab reads these rows and bands them from `price`, so the
+        // price is stored at the bands' precision (thousandths) — a 2-dp copy re-banded 23 rows (1.645 → 1.65).
+        opp: s.opp, won: s.won, price: r3(s.price), oppPrice: r3(s.oppPrice),
         book: s.book, role: s.role,
-        // The band this row was counted in, from its unrounded price (a 3-decimal close such as
-        // 1.205 would re-band as 1.21 if the page re-derived it from `price` above).
+        // The band this row was counted in (= core.bandOf(price) now that price keeps 3 decimals).
         band: bandFor(s.price) ? bandFor(s.price).band.id : null,
         // Per-row P&L in units, struck in cents (the shared core's formula).
         pl: core.plCents(s) / 100,

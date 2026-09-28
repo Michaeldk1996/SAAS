@@ -266,7 +266,10 @@ test('wiring: Market edge is the last tab after Odds; today = the header price; 
   assert.ok(!/meLoad\(|openMarketEdgeTab\(\)/.test(open.slice(0, open.indexOf("document.getElementById('aTabs').addEventListener"))), 'no load at modal open');
   assert.ok(open.includes("if (btn.dataset.atab === 'marketedge') openMarketEdgeTab();"));
   const block = HTML.slice(HTML.indexOf('TEN-310 · MATCH ANALYSIS → MARKET EDGE TAB'), HTML.indexOf('/* ---------- TOURNAMENT SUB-TAB'));
-  assert.ok(!block.includes('player-profiles.json') && !/fetch\(/.test(block), 'the tab fetches only through the shared lazy loaders');
+  // ruling B: the one fetch of its own is the per-player profile shard, market-edge/{key}.json, inside meLoadProfileShard
+  const own = slice('meLoadProfileShard');
+  assert.ok(!block.includes('player-profiles.json') && !/fetch\(/.test(block.replace(own, '')), 'the tab fetches only through the lazy loaders');
+  assert.equal((own.match(/fetch\(/g) || []).length, 1); assert.ok(own.includes('fetch(`./market-edge/${encodeURIComponent(k)}.json`'), 'only the per-player profile shard');
   const print = HTML.slice(HTML.indexOf('.modal-analysis.printing .asection{'), HTML.indexOf('.modal-analysis.printing .asection{') + 400);
   assert.ok(print.includes('.modal-analysis.printing #aSectionMarketEdge, .modal-analysis.printing #mePop{ display:none !important; }'), 'kept out of Download report (static print CSS)');
   assert.ok(/<script src="market-edge-core\.js"><\/script>/.test(HTML));
@@ -288,20 +291,22 @@ test('pinned headline figures on the frozen fixtures (Career / Last 52 weeks, re
 
 test('meLoad: a failed closes fetch or a missing player key is unknown history, never "0 priced"', async () => {
   const ui = buildUI();
-  const run = async ({ key, closes }) => {
-    const env = new Function('ui', 'cls', `
-      let _me = null; const _careerHistoryShards = {}, _fhCl = {};
+  const run = async ({ key, closes, profile }) => {
+    const env = new Function('ui', 'cls', 'prof', `
+      let _me = null; const _careerHistoryShards = {}, _fhCl = {}, _meShard = {};
       const loadCareerHistory = k => { _careerHistoryShards[String(k)] = []; return Promise.resolve([]); };
       const fhLoadCloses = k => { if (cls === 'ok') _fhCl[String(k)] = null; return Promise.resolve(null); };   // 'ok' = answered (404, no shard); else a failed fetch
-      const meRowsFor = ui.meRowsFor, meRender = () => {};
+      const meLoadProfileShard = k => { if (prof !== 'failed') _meShard[String(k)] = { matches: [] }; return Promise.resolve(prof === 'failed' ? null : _meShard[String(k)]); };
+      const meRowsFor = ui.meRowsFor, meWinnerRows = ui.meWinnerRows, meRender = () => {};
       ${slice('meStateFor')}
       ${slice('meLoad')}
       return { go: m => { meLoad(m); return new Promise(r => setTimeout(() => r(_me.state.slice()), 20)); } };
-    `)(ui, closes);
+    `)(ui, closes, profile);
     return env.go({ id: 'x', p1: 'A', p2: 'B', p1Key: key, p2Key: 7, date: '2026-09-27' });
   };
   assert.deepEqual(await run({ key: 5, closes: 'failed' }), ['failed', 'failed']);
   assert.deepEqual(await run({ key: 5, closes: 'ok' }), ['ready', 'ready']);
+  assert.deepEqual(await run({ key: 5, closes: 'ok', profile: 'failed' }), ['failed', 'failed'], 'a failed profile-shard fetch is a failure, never "0 priced"');
   assert.deepEqual((await run({ key: null, closes: 'ok' }))[0], 'none');
   // and what the page shows for them
   const R = ui.render({ id: 'x', p1: 'A. One', p2: 'B. Two', p1Key: 5, p2Key: 7, date: '2026-09-27', bestOdds: { p1: { price: 1.5 }, p2: { price: 2.6 } } },
@@ -341,4 +346,49 @@ test('R7: Derived lines only on a standard best-of-3 match — format from match
   // the format gate outranks the price gate: a Slam with no header price still says best-of-3
   const noPx = ui.render(Object.assign({}, base, CASES[0][1], { bestOdds: null }), { meView: 'lines' }, rows).html;
   assert.ok(noPx.includes('Derived lines cover best-of-3 matches only.') && !noPx.includes('Derived lines need today'));
+});
+
+// ---- ruling B (founder, 2026-09-28): the Match winner view reads the player-profile Market edge rows ----
+// Fixtures market-edge-{key}.json = the profile builder's own output (captured-Pinnacle-first order) over the
+// deployed inputs of 2026-09-28. The tab must show, for every band, the profile's W–L and 1u; the legend = the
+// profile headline. Control: the same render WITHOUT the profile rows (career rows) does not match.
+test('ruling B: tab Match winner = the profile shard, band by band (Sinner, Alcaraz, Career)', () => {
+  const ui = buildUI(), rows = load(ui);
+  const prof = ['2072', '2382'].map((k) => rd(`market-edge-${k}.json`));
+  rows.forEach((r, i) => { r.win = ui.meWinnerRows(prof[i], r, ['2072', '2382'][i], [M.p1, M.p2][i]); });
+  const late = Object.assign({}, M, { date: '2026-12-31' });           // every profile row is before the match day
+  const R = ui.render(late, { meView: 'winner', meScope: 'career' }, rows);
+  const leg = legend(R.html);
+  ['a', 'b'].forEach((k, i) => {
+    const P = prof[i];
+    assert.ok(P.headline.n > 300, 'fixture is not empty');
+    assert.equal(leg[i].n, P.headline.n, `${k}: N priced = profile headline n`);
+    assert.ok(Math.abs(leg[i].end - P.headline.units) <= 0.05 + 1e-9, `${k}: legend end ${leg[i].end} vs profile ${P.headline.units}`);
+    const pb = P.bands.favourite.concat(P.bands.underdog);
+    assert.equal(pb.length, 8);
+    pb.forEach((b, j) => {
+      const t = bandRow(R.html, k + j);
+      assert.equal(t.w, b.wins, `${k}${j} wins`); assert.equal(t.l, b.losses, `${k}${j} losses`);
+      if (b.n) assert.equal(t.u, Number(meRound(b.units)), `${k}${j} 1u`);
+      if (b.n) assert.equal((R.band(k + j).match(/data-me-row=/g) || []).length, b.n, `${k}${j} pop-up rows = profile band n`);
+    });
+    // Derived lines stay on career-history: the "Wins match" denominator is the career Bo3 population
+    const M2 = ui.core.playerModel(rows[i], { scope: 'career', refDay: Date.UTC(2026, 11, 31) / 86400000 });
+    const R2 = ui.render(late, { meView: 'lines', meScope: 'career' }, rows);
+    assert.equal(lineRow(R2.html, `${k}|0`).all.n, M2.bo3.length, `${k}: lines count career Bo3 rows`);
+  });
+  // control: without the profile rows the tab counts career rows and does NOT equal the profile
+  const bare = load(ui), R0 = ui.render(late, { meView: 'winner', meScope: 'career' }, bare);
+  assert.notEqual(legend(R0.html)[0].n, prof[0].headline.n, 'control: career rows ≠ profile rows for Sinner');
+  // a profile row that joins a career row borrows its set scores and eventKey (clickable); a capture-only one does not
+  const sin = rows[0].win, joined = sin.filter((r) => r.ek != null);
+  assert.ok(joined.length > 200, `most profile rows join a career row (${joined.length}/${sin.length})`);
+  // a capture-priced row (no Tennis-Data row) joins by opponent surname + result in the event window
+  const bonzi = sin.find((r) => r.date === '2026-04-24');
+  assert.ok(bonzi && bonzi.book === 'B' && bonzi.src === 'cap', 'Madrid v Bonzi is the captured Bet365 row');
+  assert.ok(/Bonzi/.test(bonzi.opp) && bonzi.ek != null && bonzi.sets, 'it borrows the career row\'s eventKey and sets');
+  // a profile row with no career counterpart keeps dashes and no eventKey (never a guessed join)
+  const lone = ui.meWinnerRows({ matches: [{ date: '2026-05-02', event: 'X Open', surface: 'Clay', round: '1st Round', opp: 'Nobody Z.', won: true,
+    price: 1.3, oppPrice: 3.4, book: 'bet365-capture', inBasis: true }] }, rows[0], '2072', M.p1)[0];
+  assert.deepEqual([lone.ek, lone.sets, lone.round], [null, null, '—']);
 });

@@ -118,13 +118,18 @@
   const roundRank = (code) => (RR[code] != null ? RR[code] : 4.5);
   const byDate = (a, b) => (a.day - b.day) || (roundRank(a.round) - roundRank(b.round));
 
-  /** Everything the tab shows for one player in one scope. `todayPrice` = the header's price or null. */
+  /** Everything the tab shows for one player in one scope. `todayPrice` = the header's price or null.
+   *  TEN-310 ruling B (founder, 2026-09-28): `winnerRows` = the player-profile Market edge's own rows
+   *  (market-edge/{key}.json); when given, the Match winner population (bands, chart, band pop-up) is
+   *  those rows, so the tab and the profile count the same matches. Derived lines keep `rows`
+   *  (career-history: the only rows with set scores). Without `winnerRows` both come from `rows`. */
   function playerModel(rows, opts) {
     const o = opts || {};
     const floor = o.floor == null ? ME_THIN_FLOOR : o.floor;
     const scoped = rows.filter((r) => inScope(r, o.scope, o.refDay));
-    const priced = scoped.filter(inWinner).slice().sort(byDate);
-    const bo3 = priced.filter(inBo3);
+    const win = o.winnerRows ? o.winnerRows.filter((r) => inScope(r, o.scope, o.refDay)) : scoped;
+    const priced = win.filter(inWinner).slice().sort(byDate);
+    const bo3 = (o.winnerRows ? scoped.filter(inWinner).sort(byDate) : priced).filter(inBo3);
     const bandRows = BANDS.map(() => []);
     priced.forEach((r) => bandRows[bandOf(r.price)].push(r));
     const bands = bandRows.map((rs, i) => Object.assign({ i, rows: rs.slice().reverse() }, BANDS[i], summarise(rs, floor)));
@@ -138,7 +143,7 @@
     const why = {};
     scoped.forEach((r) => { const k = whyNotPriced(r) || 'priced'; why[k] = (why[k] || 0) + 1; });
     const whyBo3 = {};
-    priced.forEach((r) => { const k = whyNotBo3(r) || 'bo3'; whyBo3[k] = (whyBo3[k] || 0) + 1; });
+    (o.winnerRows ? scoped.filter(inWinner) : priced).forEach((r) => { const k = whyNotBo3(r) || 'bo3'; whyBo3[k] = (whyBo3[k] || 0) + 1; });
     const book = { P: priced.filter((r) => r.book === 'P').length, B: priced.filter((r) => r.book === 'B').length };
     const lines = o.todayPrice == null ? null : lineModel(bo3, tb, o.todayPrice, o.surname || '', floor);
     return {

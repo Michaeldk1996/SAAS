@@ -5515,12 +5515,12 @@
       cumulativeChart() +
       // §5's book rule, stated on the page rather than assumed. TEN-310 (2026-09-27): the same basis
       // as the Match analysis Market edge tab — Pinnacle close, else Bet365 close, one book per match.
-      // R8 (2026-09-28): in the tab's order — the archive's close first, then our captured close, per book.
+      // R8 + card ruling (2026-09-28): the tab's order — captured Pinnacle, archive Pinnacle, archive Bet365, captured Bet365.
       '<div style="border:0.33px solid var(--line);border-radius:10px;padding:14px 16px;' +
         'margin-top:16px;font-size:12.5px;color:var(--label);line-height:1.65;">' +
         'Every figure above is struck on closing prices: <b>Pinnacle, else Bet365 where Pinnacle has none</b> — ' +
         bk.pinnacle + ' Pinnacle and ' + bk.bet365 + ' Bet365, one book per match, in the Match analysis order: ' +
-        'the Tennis-Data archive close first, then our captured close. ' +
+        'our captured Pinnacle close, then the Tennis-Data archive\'s Pinnacle, then its Bet365, then our captured Bet365. ' +
         'The archive\'s Pinnacle stops at ' + esc(marketPinnacleEnd(mk)) + '; after it, Pinnacle comes from our captured ' +
         'closes where we hold one. Favourite = closing price under 2.00. ' +
         'The de-vig always uses both prices from the same book and the same source.' +

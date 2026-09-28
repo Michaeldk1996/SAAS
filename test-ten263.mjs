@@ -515,18 +515,19 @@ test('captured (oddspapi) names: full given names disambiguate; suffixes and dou
   assert.equal(R.comma('Sinner J / Rune H'), null);
 });
 
-// ── ODDS SOURCE RULE (founder rulings 2026-09-23): Pinnacle TD → Pinnacle captured →
-//    Bet365 TD → Bet365 captured → dash. Every test holds a case that goes wrong if
+// ── ODDS SOURCE RULE (founder rulings 2026-09-23; order within Pinnacle TEN-310 R8 2026-09-28):
+//    Pinnacle captured → Pinnacle TD → Bet365 TD → Bet365 captured → dash. Every test holds a case that goes wrong if
 //    the order is reversed. ──
 const PIN = [1.55, 2.55], PCAP = [1.6, 2.45], B365 = [1.5, 2.6], BCAP = [1.52, 2.58];
 const pick = (x) => x && [x.book + ':' + x.src, x.price, x.oppPrice];
 test('odds rule: the order constant', () => {
-  assert.deepEqual(S.consts.FH_BOOK_ORDER, ['Ptd', 'Pcap', 'Btd', 'Bcap']);
+  assert.deepEqual(S.consts.FH_BOOK_ORDER, ['Pcap', 'Ptd', 'Btd', 'Bcap']);
 });
 test('odds rule: each step wins over every later step', () => {
   const all = { Ptd: PIN, Pcap: PCAP, Btd: B365, Bcap: BCAP };
-  assert.deepEqual(pick(S.fhPickBook(all)), ['P:td', 1.55, 2.55]);
-  assert.deepEqual(pick(S.fhPickBook({ ...all, Ptd: null })), ['P:cap', 1.6, 2.45], 'Pinnacle captured before Bet365 Tennis-Data');
+  assert.deepEqual(pick(S.fhPickBook(all)), ['P:cap', 1.6, 2.45], 'Pinnacle captured first (R8)');
+  assert.deepEqual(pick(S.fhPickBook({ ...all, Pcap: null })), ['P:td', 1.55, 2.55], 'then Pinnacle Tennis-Data, before Bet365');
+  assert.deepEqual(pick(S.fhPickBook({ Ptd: PIN, Btd: B365, Bcap: BCAP })), ['P:td', 1.55, 2.55]);
   assert.deepEqual(pick(S.fhPickBook({ Btd: B365, Bcap: BCAP })), ['B:td', 1.5, 2.6]);
   assert.deepEqual(pick(S.fhPickBook({ Bcap: BCAP })), ['B:cap', 1.52, 2.58]);
 });

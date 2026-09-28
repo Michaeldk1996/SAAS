@@ -6,10 +6,19 @@ Applies to the TEN-310 block in `bsp-consult-dashboard.html` (`me*` functions, `
 (handoff 16). Tests: `test-ten310-market-edge.mjs` (fixtures: `tools/fixtures/ten310/`, snapshots of the deployed shards).
 
 ## Data
-- **Source.** `career-history/{key}.json` (ATP tour level only; other levels are counted, never shown) joined to
-  `match-closes/{key}.json` through the Form/H2H picker (`fhCloseFor` → `fhPickBook`): Pinnacle close, else Bet365
-  close, one book and one source per match. Both shards are lazy, per player, rebuilt by the pipeline, and are loaded
-  **only when the tab opens**. **Test:** nothing in the block fetches directly or reads `player-profiles.json`.
+- **Source (ruling B, founder 2026-09-28 — one row source, tab = profile for every player).**
+  - **Match winner view (bands, profit chart, band pop-up)** = the player-profile Market edge's own rows,
+    `market-edge/{key}.json` `matches` with `inBasis` (`meWinnerRows`). Each row borrows set scores, eventKey and the
+    display name/round from the one career-history row that joined the same Tennis-Data row (`tdKey`); a row with no
+    such career row (e.g. a capture-only match) shows a dash there and is not clickable. A 404 shard = the profile has
+    no rows = "0 priced"; a failed fetch = failed, never "0 priced".
+    **Test:** `test-ten310-market-edge.mjs` "ruling B" — every band's W–L and 1u, the legend n and end = the profile
+    shard's bands and headline; control: the career rows do not match.
+  - **Derived lines (card + pop-up)** = `career-history/{key}.json` (ATP tour level only) joined to
+    `match-closes/{key}.json` through the Form/H2H picker (`fhCloseFor` → `fhPickBook`): career-history is the only
+    store with set scores.
+  - All three shards are lazy, per player, rebuilt by the pipeline, loaded **only when the tab opens**. **Test:** the
+    block's only own fetch is `market-edge/{key}.json` in `meLoadProfileShard`; it never reads `player-profiles.json`.
 - **Today's price = the modal header's price** (`aHeaderOdds`, which also fills the header pills). No header price
   (completed / live / suspended, or no odds) → no TODAY band and the Derived lines card reads "Derived lines need
   today's price."; Match winner still renders.
@@ -29,14 +38,14 @@ Applies to the TEN-310 block in `bsp-consult-dashboard.html` (`me*` functions, `
   null round, "Roland-Garros", Davis Cup, United Cup). The format gate outranks the price gate.
 
 ## Populations
-- **Match winner (bands + profit chart):** priced, played matches, Bo5 included. Walkovers never. **Retirements are
-  not settled** — the player-profile Market edge's rule (Tennis-Data rows not "Completed" are dropped): a match the feed
-  flags retired or Tennis-Data marks not completed is out. A completed match whose stored set list is short ("3 - 0",
-  two sets) is **not** a retirement.
-- **Derived lines (card + pop-up):** the match-winner population restricted to completed best-of-3 with every set a
+- **Match winner (bands + profit chart):** the profile's priced rows (ruling B), Bo5 included: Tennis-Data
+  "Completed" matches plus capture-priced ones. Walkovers and retirements never (Tennis-Data settles).
+- **Derived lines (card + pop-up):** career-history rows priced through the Form/H2H picker, not walkovers, not
+  retired (feed flag or Tennis-Data), restricted to completed best-of-3 with every set a
   standard finished set: no Bo5, no NextGen / team events (Laver, Davis, United, ATP, Hopman Cup), no match-tiebreak
   decider (a set above 7 games or below 6), no short set list. Tiebreak = a 7-6 / 6-7 set.
-  **Test:** Σ band W − "Wins match" All = the wins among priced rows outside Bo3 (a documented difference, not equality).
+  **Test:** on one row set, Σ band W − "Wins match" All = the wins among priced rows outside Bo3 (a documented
+  difference, not equality); under ruling B the lines' denominator = the career Bo3 count (ruling B test).
 - **Profit chart:** cumulative 1u P&L in date order on one date axis shared by both players (a later career starts
   further right); six labels at even fractions of the real date range (years on Career, months on Last 52 weeks).
 
@@ -50,19 +59,21 @@ Applies to the TEN-310 block in `bsp-consult-dashboard.html` (`me*` functions, `
   renders. **Test:** `test-ten310-market-edge.mjs` finds no "sample data" in the tab or its pop-ups.
 - **Today's price = the modal header's price** (`aHeaderOdds`, best across books), not the Form/H2H
   Pinnacle-else-Bet365 current price. Exception inline: the Form/H2H tabs keep their own today rule.
-- **Retirements are not settled** in the Match winner view (bands, chart): a match the feed flags retired or
-  Tennis-Data marks not "Completed" is out. Walkovers never count.
+- **Retirements are not settled** in the Match winner view (bands, chart): under ruling B its rows are the profile's,
+  which drop every Tennis-Data row not "Completed" (the price's own archive settles). Derived lines also drop what the
+  feed flags retired. Walkovers never count.
 - **One basis for both Market edge surfaces** — the player-profile Market edge (`build-market-edge.js`,
   `market-edge/{key}.json`) uses this tab's rules, through `market-edge-core.js`: Pinnacle close, else Bet365
-  close in the tab's order (R8, 2026-09-28: Tennis-Data Pinnacle → our captured Pinnacle → Tennis-Data Bet365 →
-  our captured Bet365, the page's `FH_BOOK_ORDER`; captures from `match-closes/{key}.json`, so `build-market-edge.js`
+  close in the tab's order (R8 + card ruling, 2026-09-28: **our captured Pinnacle → Tennis-Data Pinnacle** →
+  Tennis-Data Bet365 → our captured Bet365, the page's `FH_BOOK_ORDER = ['Pcap','Ptd','Btd','Bcap']`, also the
+  Form/H2H order; captures from `match-closes/{key}.json`, so `build-market-edge.js`
   runs after `build-match-closes.js`; test `tools/test-ten310-price-order.js`); favourite = price < 2.00 (no "level" role); the half-open band ladder; the same cents P&L; the tour
   baseline on the same basis. This supersedes R1 (2026-09-17, "Pinnacle closing only"). **Test:**
   `tools/test-market-edge-basis.js` (11 controls) and the pipeline's market-edge assert
   (`priceBasis === "Pinnacle closing, else Bet365 closing"`, Bet365 sides in the tour baseline).
-  **Rows (ruling 2026-09-27, "Backfill career-history (2021 hole) and keep both joins"):** the profile keeps
-  counting Tennis-Data rows and the tab keeps its career-history join. career-history's 2021 hole (api-tennis
-  omits most of 2021; the TML half stopped at 2020) is filled from TML by `fillFixtureHole`
+  **Rows:** one row source since ruling B (2026-09-28, see Data): the tab's Match winner reads the profile's rows.
+  career-history (the Derived lines' rows) has its 2021 hole (api-tennis
+  omits most of 2021; the TML half stopped at 2020) filled from TML by `fillFixtureHole`
   (`career-backfill.js`, `FIXTURE_HOLE_YEARS = [2021]`): a TML row is added only if the feed half has neither
   its edition nor the match (same result, an opponent sharing a surname token, within the event's −2…+16 days).
   **Test:** `tools/test-ten310-hole-fill.js` — the same match under another event name or a hyphenated
