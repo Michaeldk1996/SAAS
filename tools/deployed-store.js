@@ -30,6 +30,13 @@ const { execFileSync } = require('child_process');
 const ROOT = path.join(__dirname, '..');
 const CACHE_DIR = path.join(ROOT, '.deployed-cache');
 const BASE = (process.env.TEN206_DATA_BASE || 'https://michaeldk1996.github.io/SAAS').replace(/\/+$/, '');
+// TEN-329: a directory holding the store THIS RUN BUILT (the pipeline's assembled _site/),
+// read in place of Pages. The pre-build gate reads the deployed store, so a break caused by
+// REBUILT data (TEN-313's walkover rule, runs 5203-5207) published first and went red after.
+// The pipeline re-runs the reconcile suite on _site/ before the upload, fail-closed.
+// Local files only: no network, no .deployed-cache (the pre-build step leaves the DEPLOYED
+// copy there, <1h old, and reading it back here would test the old store and pass).
+const BUILT_DIR = process.env.PP2_BUILT_STORE ? path.resolve(process.env.PP2_BUILT_STORE) : null;
 // A tick is ~10 min and a deploy ~26 min; an hour keeps a multi-tool run on one
 // consistent snapshot without ever reading something from a previous day.
 const DEFAULT_MAX_AGE_MS = 60 * 60 * 1000;
@@ -44,6 +51,10 @@ function cachePathFor(rel) {
  * Never throws for a network problem, always throws for a corrupt cache write.
  */
 function fetchText(rel, opts = {}) {
+  if (BUILT_DIR) {
+    const f = path.join(BUILT_DIR, rel.replace(/^\/+/, ''));
+    return fs.existsSync(f) ? fs.readFileSync(f, 'utf8') : null;
+  }
   const maxAge = opts.maxAgeMs == null ? DEFAULT_MAX_AGE_MS : opts.maxAgeMs;
   const dest = cachePathFor(rel);
   if (!opts.force && fs.existsSync(dest)) {
@@ -94,7 +105,8 @@ function playerProfiles(opts = {}) {
       fetchedAt: committed && committed.fetchedAt,
       source: 'committed',
       committedFetchedAt: committed && committed.fetchedAt,
-      drift: { why: 'deployed player-profiles.json unreachable and not cached' },
+      drift: { why: BUILT_DIR ? `built ${BUILT_DIR}/player-profiles.json absent or has no players map`
+        : 'deployed player-profiles.json unreachable and not cached' },
     };
   }
   const liveKeys = Object.keys(live.players);
@@ -105,7 +117,7 @@ function playerProfiles(opts = {}) {
     players: live.players,
     tourAverage: live.tourAverage,
     fetchedAt: live.fetchedAt,
-    source: 'deployed',
+    source: BUILT_DIR ? 'built' : 'deployed',
     committedFetchedAt: committed && committed.fetchedAt,
     drift: {
       deployedPlayers: liveKeys.length,
@@ -158,6 +170,14 @@ function hydrateCareerHistory(opts = {}) {
  * not. Returns { ok: Map<key,text>, failed: [key] }.
  */
 function fetchShards(dirRel, keys, opts = {}) {
+  if (BUILT_DIR) {
+    const ok = new Map(); const failed = [];
+    keys.forEach((k) => {
+      const t = fetchText(`${dirRel}/${k}.json`);
+      if (!t || t.trim().charAt(0) !== '{') failed.push(k); else ok.set(k, t);
+    });
+    return { ok, failed, retried: [] };
+  }
   const chunk = opts.chunk || 50;
   const tmp = path.join(CACHE_DIR, '_shardtmp');
   if (!fs.existsSync(tmp)) fs.mkdirSync(tmp, { recursive: true });
@@ -221,7 +241,9 @@ function tournamentHistoryIndex(opts) {
 function hydrateTournamentHistory(players, opts = {}) {
   const index = tournamentHistoryIndex(opts);
   if (!index) return { error: 'deployed tournament-history-index.json unreachable' };
-  const dir = opts.dir || path.join(ROOT, 'tournament-history');
+  // Built mode reads the built shards where they sit: ROOT/tournament-history holds the
+  // pre-build step's DEPLOYED shards, and a full-length stale one would never be re-read.
+  const dir = opts.dir || (BUILT_DIR ? path.join(BUILT_DIR, 'tournament-history') : path.join(ROOT, 'tournament-history'));
   if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
 
   const keys = Object.keys(players).filter((k) => k in index);
@@ -275,7 +297,7 @@ function hydrateTournamentHistory(players, opts = {}) {
 }
 
 module.exports = {
-  BASE, CACHE_DIR, fetchText, fetchJson, fetchShards,
+  BASE, BUILT_DIR, CACHE_DIR, fetchText, fetchJson, fetchShards,
   playerProfiles, careerHistoryIndex, hydrateCareerHistory,
   tournamentHistoryIndex, hydrateTournamentHistory,
 };

@@ -50,9 +50,13 @@ function loadModule(profiles, extra) {
 // never render as green — the same rule the career-history drift guard enforces
 // ninety lines down.
 const DEPLOYED = require('./deployed-store.js');
+// TEN-329: PP2_BUILT_STORE=_site points every store below at what THIS pipeline run built,
+// read before the upload — the pre-build `npm test` run can only see what is already live.
+const BUILT = DEPLOYED.BUILT_DIR;
+const STORE_WORD = BUILT ? 'BUILT' : 'deployed';
 const STORE = DEPLOYED.playerProfiles();
-if (STORE.source !== 'deployed') {
-  console.error('\n  ✗ COULD NOT READ THE DEPLOYED player-profiles.json — ABORTING.');
+if (STORE.source !== (BUILT ? 'built' : 'deployed')) {
+  console.error(`\n  ✗ COULD NOT READ THE ${STORE_WORD.toUpperCase()} player-profiles.json — ABORTING.`);
   console.error(`    ${STORE.drift.why}`);
   console.error(`    The committed copy is dated ${STORE.committedFetchedAt || 'unknown'} and is NOT a`);
   console.error('    substitute: reporting roster-wide numbers off it is the bug this guard exists for.');
@@ -67,7 +71,7 @@ const PLAYERS = STORE.players;
 const TH = DEPLOYED.hydrateTournamentHistory(PLAYERS);
 // indexed 0 is not "all hydrated": an empty or foreign index walks nothing (TEN-273).
 if (TH.error || TH.attached < TH.indexed || !TH.indexed) {
-  console.error('\n  ✗ tournament-history/ DID NOT HYDRATE FROM THE DEPLOYED STORE — ABORTING.');
+  console.error(`\n  ✗ tournament-history/ DID NOT HYDRATE FROM THE ${STORE_WORD.toUpperCase()} STORE — ABORTING.`);
   // Say WHICH deficiency tripped it and NAME the shard. The gate blocks on
   // `attached < indexed`, so it reports missingCount — which is exactly
   // indexed - attached — rather than `short`, a disjoint count of shards that
@@ -90,9 +94,9 @@ if (TH.error || TH.attached < TH.indexed || !TH.indexed) {
   console.error('    Every §5.3 check would walk an empty list and report a clean bill of health.\n');
   process.exit(1);
 }
-console.log(`  ····  tournament-history: ${TH.attached}/${TH.indexed} players hydrated from the deployed `
+console.log(`  ····  tournament-history: ${TH.attached}/${TH.indexed} players hydrated from the ${STORE_WORD} `
   + `shards (${TH.fetched} fetched, ${TH.tournamentRows} tournament rows; ${TH.rosterNotInIndex} roster keys not indexed).`);
-console.log(`  ····  profile store: DEPLOYED ${STORE.fetchedAt} — ${STORE.drift.deployedPlayers} players `
+console.log(`  ····  profile store: ${STORE_WORD.toUpperCase()}${BUILT ? ` (${BUILT})` : ''} ${STORE.fetchedAt} — ${STORE.drift.deployedPlayers} players `
   + `(committed copy: ${STORE.drift.committedFetchedAt}, ${STORE.drift.committedPlayers} players; `
   + `+${STORE.drift.onlyDeployed} live-only / −${STORE.drift.onlyCommitted} dropped).`);
 
@@ -205,7 +209,7 @@ if (fs.existsSync(B365_DIR)) {
 // §5.3 · career-history/{key}.json — the tournament modal's date and surface
 // source. GITIGNORED and CI-built, so it is normally absent here; the store's
 // coverage row asserts the documented fallback when it is.
-const CH_DIR = path.join(ROOT, 'career-history');
+const CH_DIR = path.join(BUILT || ROOT, 'career-history');
 const CAREER_HIST = {};
 if (fs.existsSync(CH_DIR)) {
   fs.readdirSync(CH_DIR).filter(f => f.endsWith('.json')).forEach((f) => {
@@ -232,7 +236,10 @@ const CH_DRIFT = (() => {
   const local = Object.keys(CAREER_HIST).length;
   if (!local) return { state: 'absent', local: 0 };
   let live = null;
-  try {
+  // Built mode measures the built shards against the built index they shipped with.
+  if (BUILT) {
+    live = (DEPLOYED.fetchJson('career-history-index.json') || {}).players || null;
+  } else try {
     const base = process.env.TEN206_DATA_BASE || 'https://michaeldk1996.github.io/SAAS';
     const out = require('child_process').execFileSync('curl',
       ['-sS', '--max-time', '20', `${base}/career-history-index.json`], { maxBuffer: 64 << 20 }).toString();
@@ -305,8 +312,8 @@ if (CH_DRIFT.state === 'absent') {
   console.log(`  ····  career-history/ present (${CH_DRIFT.local} players) but NOT verified against the `
     + `deployed store (${CH_DRIFT.why}). Treat §8 counts as unconfirmed.`);
 } else {
-  console.log(`  ····  career-history/ present and level with the deployed store `
-    + `(${CH_DRIFT.local} local / ${CH_DRIFT.live} deployed, 0 short).`);
+  console.log(`  ····  career-history/ present and level with the ${STORE_WORD} store `
+    + `(${CH_DRIFT.local} local / ${CH_DRIFT.live} ${STORE_WORD}, 0 short).`);
 }
 
 /**
@@ -315,6 +322,12 @@ if (CH_DRIFT.state === 'absent') {
  * point of the vacuity controls is that "did not run" must not read as "green".
  */
 const CH_TOO_THIN = CH_DRIFT.state === 'absent' || CH_DRIFT.state === 'partial';
+// Built mode is the publish gate: career-history/ is part of what ships, so a store the
+// per-match checks cannot walk fails the gate rather than SKIP it into a green.
+if (BUILT && CH_DRIFT.state !== 'fresh') {
+  console.error(`\n  ✗ BUILT career-history/ is ${CH_DRIFT.state} — the per-match checks cannot run; ABORTING the publish gate.\n`);
+  process.exit(1);
+}
 function checkCareer(name, fn) {
   if (CH_TOO_THIN) {
     skipped++;
@@ -2189,7 +2202,7 @@ mustFail('[neg] the render check would catch a Court speed list that dropped the
 });
 
 check('mis-oriented archive rows all carry the retirement signature', () => {
-  const chDir = path.join(ROOT, 'career-history');
+  const chDir = CH_DIR;
   if (!fs.existsSync(chDir)) {
     console.log('        career-history/ absent — skipped (runtime artefact)');
     return;
@@ -2429,8 +2442,11 @@ checkCareer('item 23 · an under-minimum archetype stays listed, dashed, dim and
       assert(html.indexOf(n + ' matches · below the five-match minimum') > -1,
         `${p.name}: thin archetype ${r.axis.label} does not carry the file's meta line`);
     });
-    // The file's DIM (#6e7a93), not its FAINT (#6e7a93) — item 23 names it.
-    assert(html.indexOf('font-size:14px;font-weight:700;color:var(--label);') > -1,
+    // The file's DIM — item 23 names it. 12a (TEN-285) set DIM_COLOUR to #6e7a93, the --label
+    // value, emitted as the literal; d2fd80fb rewrote this needle to var(--label), a string the
+    // renderer never emits. Unseen because this check SKIPs wherever career-history/ is absent,
+    // which was every CI run until the TEN-329 built-store gate.
+    assert(html.indexOf('font-size:14px;font-weight:700;color:#6e7a93;') > -1,
       `${p.name}: the under-minimum name is not the file's DIM colour`);
     if (++found >= 3) break;
   }
@@ -2652,13 +2668,15 @@ checkCareer('items 5,12,17-21,25,27-29 · the shell, rows and drill carry the fi
     ['item 7 · chart card clear space', 'display:flex;flex-direction:column;gap:14px;'],
     // item 8 · layout and plot box
     ['item 8 · 52px 1fr layout', 'grid-template-columns:52px minmax(0,1fr);gap:12px;'],
-    ['item 8 · 240px plot with 0.12 borders',
-      'height:240px;border-left:1px solid rgba(255,255,255,0.12);border-bottom:1px solid rgba(255,255,255,0.12);'],
+    // Items 8, 11, 19, 24 and 29 below carry the TEN-285 12a values (0.33px --line-soft hairlines,
+    // periwinkle #6a9af8, selection #2e4fa8, P&L #3ed68c/#da6259). The needles still quoted the
+    // pre-12a file until TEN-329 — the first run of this check with career-history/ present.
+    ['item 8 · 240px plot with 12a hairline borders',
+      'height:240px;border-left:0.33px solid var(--line-soft);border-bottom:0.33px solid var(--line-soft);'],
     // item 9 · tick labels right-aligned in the gutter, rotated label at its left
     ['item 9 · rotated label left of the ticks', 'left:-2px;top:50%;transform:translateY(-50%) rotate(-90deg);'],
     ['item 9 · tick label', 'font-size:10px;color:var(--label);'],
     // item 11 · the EVEN rule and its right-aligned, uppercased label
-    ['item 11 · even rule', 'height:1px;background:rgba(255,255,255,0.28);'],
     ['item 11 · EVEN label right-aligned', 'right:6px;top:'],
     ['item 11 · EVEN uppercased', 'text-transform:uppercase;color:var(--label);">even<'],
     // item 12 · the value label above the bubble
@@ -2676,13 +2694,13 @@ checkCareer('items 5,12,17-21,25,27-29 · the shell, rows and drill carry the fi
     ['item 18 · row name', 'font-size:14px;font-weight:700;'],
     ['item 18 · row meta', 'font-size:11.5px;color:var(--label);'],
     ['item 19 · minimal bar track (12a bar-track token)', 'height:4px;border-radius:2px;background:var(--bar-track);'],
-    ['item 19 · minimal bar fill', 'background:var(--periwinkle);border-radius:2px;'],
+    ['item 19 · minimal bar fill', 'background:#6a9af8;border-radius:2px;'],
     // item 20 · units above the rate
     ['item 20 · right column stacks', 'display:flex;flex-direction:column;align-items:flex-end;gap:4px;'],
     ['item 20 · units', 'font-size:12px;font-weight:700;color:#'],
     // item 24 · the selected row
-    ['item 24 · selected row background', 'background:rgba(91,155,255,0.08);'],
-    ['item 24 · selected row border', 'border:1px solid rgba(91,155,255,0.4);'],
+    ['item 24 · selected row background', 'background:rgba(106,154,248,0.08);'],
+    ['item 24 · selected row border', 'border:0.33px solid #2e4fa8;'],
     // item 25 · the CAREER footer
     ['item 25 · Career eyebrow', '>Career<'],
     // items 26-28 · the drill
@@ -2696,6 +2714,15 @@ checkCareer('items 5,12,17-21,25,27-29 · the shell, rows and drill carry the fi
     assert(html.indexOf(needle) > -1, `${subject.name}: ${what} missing — "${needle}"`);
   });
 
+  // item 11 · the EVEN rule, read as the rule that immediately precedes its "even" label (an
+  // elite divider may sit between). Its style alone also matches the 50% gridline, so a bare
+  // indexOf stayed green with the rule deleted.
+  const evenTop = (/right:6px;top:([0-9.]+px);transform:translateY\(-135%\)/.exec(html) || [])[1];
+  assert(evenTop && new RegExp('left:0;right:0;top:' + evenTop.replace('.', '\\.') +
+    ';height:1px;background:var\\(--line-soft\\);"></span>(<span[^>]*dashed[^>]*></span>)?' +
+    '<span style="position:absolute;right:6px;top:' + evenTop.replace('.', '\\.') + ';').test(html),
+    `${subject.name}: item 11 · even rule missing at the EVEN label's ${evenTop}`);
+
   // item 21 · a whole-number win rate. The live build printed "81.2%".
   assert(!/\d\.\d%</.test(html.replace(/[+−]\d+\.\d%/g, '')),
     `${subject.name}: a fractional rate is being printed`);
@@ -2703,13 +2730,13 @@ checkCareer('items 5,12,17-21,25,27-29 · the shell, rows and drill carry the fi
   assert(new RegExp('u \\u00b7 [+\\u2212]\\d+\\.\\d% \\u00b7 ' + open.priced + ' priced').test(html),
     `${subject.name}: the drill header does not carry "Xu · Y% · ${open.priced} priced"`);
   // item 29 · the drill's P&L column carries no "u" — the unit is in the header
-  assert(html.indexOf('text-align:right;color:var(--positive);">+') > -1 ||
-         html.indexOf('text-align:right;color:var(--negative);">−') > -1,
+  assert(html.indexOf('text-align:right;color:#3ed68c;">+') > -1 ||
+         html.indexOf('text-align:right;color:#da6259;">−') > -1,
     `${subject.name}: no signed P&L cell rendered`);
   // item 29 · "Oct 2026" dates
   assert(/>(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec) \d{4}</.test(html),
     `${subject.name}: the drill date is not the file's "Mon YYYY"`);
-  console.log(`        ${want.length + 4} values verified on ${subject.name}/${open.axis.label}`);
+  console.log(`        ${want.length + 5} values verified on ${subject.name}/${open.axis.label}`);
 });
 mustFail('the chrome check would catch the plain-text row list coming back', () => {
   const html = '<div style="display:grid;grid-template-columns:1fr 300px 58px;">';

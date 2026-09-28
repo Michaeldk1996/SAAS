@@ -1108,6 +1108,18 @@ jobs:
             console.log(`TEN-228: career-history-index.json names ${n} player(s).`);
           '
 
+      # TEN-329 (founder 2026-09-28): the §4 reconcile suite against the store THIS RUN BUILT.
+      # `npm test` above reads the DEPLOYED store, so it can only judge data that is already
+      # live: run 5201 passed it, published TEN-313's rebuilt walkover records, and every run
+      # from 5203 went red on them. Here the same suite reads _site/ — player-profiles.json,
+      # tournament-history-index.json + tournament-history/, career-history-index.json +
+      # career-history/ — through PP2_BUILT_STORE (tools/deployed-store.js), with no network
+      # and no .deployed-cache. Fail-closed and before the upload: a red check stops the
+      # publish and every commit-back below it. A built career-history/ the per-match checks
+      # cannot walk aborts rather than SKIPs (the pre-build run skips 19 of them).
+      - name: Reconcile suite on the freshly built store (fail-closed pre-publish gate)
+        run: PP2_BUILT_STORE=_site node tools/test-pp2-reconcile.js
+
       # TEN-178 scope item 2 — the merge-ancestor guard.
       #
       # Two separate jobs, both of which have to be true before anything ships:
