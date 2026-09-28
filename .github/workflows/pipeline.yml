@@ -805,6 +805,9 @@ jobs:
           # absent/failed build never blocks the deploy (the page dashes to its honest
           # empty state instead of a broken tab).
           cp series.js series.css _site/ 2>/dev/null || true
+          # TEN-314: the Match analysis modal's one colour file (Night 24b / Day 26f). Hard copy + asserted below:
+          # without it every modal colour falls back to the 12a values the file re-points.
+          cp match-analysis-tokens.css _site/
           # TEN-294 Dropping Odds page: module + stylesheet. Its data is NOT a site file - the page
           # reads stennisfy-drops.fly.dev - so there is no JSON to copy. Asserted below.
           cp drops-page.js drops-page.css _site/ 2>/dev/null || true
@@ -876,7 +879,7 @@ jobs:
                    tournament-history-index.json \
                    court-speed-map.json \
                    match-stat-event-coverage.json \
-                   series.js series.css \
+                   series.js series.css match-analysis-tokens.css \
                    drops-page.js drops-page.css \
                    assets/logo-dark-transparent.png assets/ring-transparent.png; do
             [ -s "_site/$f" ] || { echo "MISSING from _site: $f"; exit 1; }

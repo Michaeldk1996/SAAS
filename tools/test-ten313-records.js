@@ -358,6 +358,9 @@ const tm = (o) => Object.assign({ p1: 'C. Alcaraz', p1Key: '1', p2: 'X', p2Key: 
     'var overviewTier = "all", _overviewMatch = null, _openOverviewDrill = { p1: "", p2: "" };',
     'var ANALYSIS_P1_RGBA = (a) => "rgba(0,0,0," + a + ")", ANALYSIS_P2_RGBA = ANALYSIS_P1_RGBA;',
     'function loadCareerHistory() {} function seasonSurfaceBlockHtml() { return ""; }',
+    // TEN-314 D2: the one sample gate the career rates go through
+    ...(html.match(/\nconst (MA_GREY|MA_SMALL_NOTE) = [^\n]*/g) || []).map((l) => l.trim()),
+    ...['tourxSampleGate', 'maGate', 'maPct', 'maRate', 'maRateHtml', 'maGateBar', 'maSmallNote'].map(fnSource),
     ...['cellClass', 'cellText', 'cellForTier', 'sumCellsTier', 'yrSurfCell', 'buildYearlyTable', 'alignYearlyPair', 'buildYearlyTables'].map(fnSource),
   ].join('\n'), sb);
   const agg = { year: '2018', allTier: false, total: wl(18, 12), clay: null, hard: wl(18, 12), grass: null, indoor: null, atp: null, chitf: null };

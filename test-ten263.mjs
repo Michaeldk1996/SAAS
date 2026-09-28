@@ -86,7 +86,7 @@ test('flagged rules (a)–(e) are single constants at the designed values', () =
   assert.equal(S.consts.FH_HOT_MIN_ELIGIBLE, 3);          // (a)
   assert.equal(S.consts.FH_PRICE_AVG_MARGIN_REMOVED, true); // (b)
   assert.equal(S.consts.FH_H2H_SET1_MIRROR, true);        // (c)
-  assert.equal(S.consts.FH_SURF.Grass, '#45d6b0');        // (d) the live site's grass token
+  assert.equal(S.consts.FH_SURF.Grass, 'var(--court-grass)');   // (d) the live site's grass token (neutral inside the modal, TEN-314)
   assert.equal(S.consts.FH_H2H_RET_COUNTS, true);         // (e)
   assert.deepEqual(S.consts.FH_H2H_LEVELS, ['ATP', 'CH', 'ITF']);  // §3b: every level, one constant
 });

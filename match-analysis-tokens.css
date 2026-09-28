@@ -1,0 +1,86 @@
+/* TEN-314 · TEN-312 D1 — the Match analysis modal's ONE colour file.
+   Night 24b / Day 26f from the handoff README §3 table, plus the unmapped source values U1–U24 of TEN-314 document
+   `phase1-token-mappings` (founder: approved provisionally 2026-09-28 — a mapping change is a one-line edit HERE).
+   Nothing in the modal carries a literal colour: its markup, CSS and JS read these tokens (or the 12a names below,
+   which this file re-points inside the scope).
+   Scope  `.ma-theme` — the modal overlay #analysisModal (everything the modal draws, pop-ups and sheets included, is
+          mounted inside it). The site-wide switch (TEN-315) reuses this file by putting the same class on <html>.
+   Mode   data-ma-theme = night | day | auto (auto follows prefers-color-scheme); written by maApplyTheme() from the
+          one storage key `stennisfy-theme`.
+   Hand-written; nothing regenerates this file. Deployed by pipeline.yml (hard cp + completeness assert). */
+
+.ma-theme{
+  /* ---- Night 24b (the default) — README §3 ---- */
+  --ma-page:#191B24;                 /* page / modal body                       (source #06070A page, #0A0D14 modal) */
+  --ma-card:#14151D;                 /* card / header / stat box                (#0E1019, #0A0D14 cards, #10121B soft ink — U8) */
+  --ma-inner:#181922;                /* inner box nested in a card              (#0C0E16, #0F1420, #06070A tracks/chips — U2) */
+  --ma-raised:#1B1C27;               /* raised / pop-up / tooltip surface       (#131623) */
+  --ma-hover:#20222E;                /* hover fill                              (white 0.04, #11141F — U3) */
+  --ma-sel:#222431;                  /* selected segment / active nav tile      (blue washes 0.06–0.22) */
+  --ma-hair:rgba(255,255,255,0.05);  /* hairline (card, row)                    (white 0.06–0.09) */
+  --ma-hair-soft:rgba(255,255,255,0.035); /* hairline soft (inner)              (white 0.03–0.05) */
+  --ma-hair-strong:rgba(255,255,255,0.10); /* hairline strong (pop-up, table header) (white 0.10–0.16) */
+  --ma-hair-hover:rgba(255,255,255,0.20);  /* U16: dashed chips, ✕ hover borders (white 0.18–0.25) */
+  --ma-outline:rgba(157,179,242,0.30);     /* open / selected card outline      (blue 0.20–0.45) */
+  --ma-focus:rgba(157,179,242,0.35);       /* U13: keyboard focus ring          (blue 0.35) */
+  --ma-t1:#FFFFFF;                   /* text primary                            (#E7E9EE) */
+  --ma-t2:#DDE0EA;                   /* text secondary                          (#AAB3C8, #8B96B5; player-B text U5) */
+  --ma-t3:#A3AABE;                   /* labels / captions / dim                 (#5B6880, #4B5672; #6B7590 U4) */
+  --ma-t-dis:rgba(163,170,190,0.55); /* U17: disabled text                      (#3A4256, #3A4250, #4A5261) */
+  --ma-fill:#5B82E8;                 /* bars, fills, chart lines, today dot     (#5B9BFF / #6AAEFF as fills) */
+  --ma-link:#9DB3F2;                 /* links, accent text, TODAY, selection    (#5B9BFF / #6AAEFF as text) */
+  --ma-link-hover:#B5C6F5;           /* U1: link hover                          (#82B4FF) */
+  --ma-on-fill:#06070A;              /* U2: ink on a filled chip                (#06070A as text) */
+  --ma-pos:#5CCB84;                  /* positive / W / live                     (#3DD68C) */
+  --ma-neg:#E06266;                  /* negative / L; Weather severity red U10  (#E0616F) */
+  --ma-amber:#E8A84E;                /* Weather severity ONLY (rules: amber nowhere else) */
+  --ma-cta:#2F52D6;                  /* Pro / CTA button */
+  --ma-pb-fill:rgba(255,255,255,0.70);   /* U6: player-B bars / fills at 70% white */
+  --ma-track:rgba(255,255,255,0.08);     /* U7: bar tracks */
+  --ma-track-loss:rgba(255,255,255,0.25);/* U7: loss segment of a split bar */
+  --ma-zebra:rgba(255,255,255,0.022);    /* U21: Odds table zebra */
+  --ma-scrim:rgba(4,5,8,0.72);           /* U11: every overlay scrim */
+  --ma-shadow-modal:0 40px 120px rgba(0,0,0,0.6);  /* U12 */
+  --ma-shadow-pop:0 30px 80px rgba(0,0,0,0.55);    /* U12 */
+  --ma-shadow-tip:0 8px 24px rgba(0,0,0,0.45);     /* U12 */
+  --ma-chart-grid:rgba(255,255,255,0.055);         /* U14 */
+  --ma-chart-grid-faint:rgba(255,255,255,0.035);   /* U14 */
+  --ma-chart-tick:rgba(255,255,255,0.045);         /* U14 */
+  --ma-chart-zero:rgba(255,255,255,0.40);          /* U15: break-even rule */
+  --ma-chart-loss:rgba(255,255,255,0.014);         /* U15: loss area */
+  --ma-glow:radial-gradient(ellipse 1100px 420px at 720px -60px, rgba(52,70,170,0.24) 0%, transparent 100%);
+
+  /* ---- the site's 12a names, re-pointed inside the scope (every var(--x) the modal already uses re-themes) ---- */
+  --page:var(--ma-page); --panel:var(--ma-card); --panel-2:var(--ma-inner); --surface:var(--ma-card);
+  --surface-inner:var(--ma-inner); --popup:var(--ma-raised); --avatar:var(--ma-inner); --backdrop:var(--ma-scrim);
+  --line:var(--ma-hair); --border:var(--ma-hair); --line-soft:var(--ma-hair-soft); --line-panel:var(--ma-hair-soft);
+  --line-open:var(--ma-hair-strong); --line-avatar:var(--ma-hair);
+  --text:var(--ma-t1); --text-soft:var(--ma-t2); --text-sub:var(--ma-t2); --text-dim:var(--ma-t2);
+  --label:var(--ma-t3); --text-faint:var(--ma-t3); --mc-comma-faint:var(--ma-t3);
+  --periwinkle:var(--ma-link); --accent:var(--ma-link); --accent-hover:var(--ma-link-hover); --accent-dim:var(--ma-sel);
+  --nav-hover:var(--ma-hover); --seg-active:var(--ma-sel); --seg-active-line:var(--ma-outline);
+  --positive:var(--ma-pos); --negative:var(--ma-neg); --value-pos:var(--ma-pos); --value-neg:var(--ma-neg);
+  --bar-track:var(--ma-track); --mc-track:var(--ma-track); --mc-border-data:var(--ma-hair); --mc-border-hover:var(--ma-outline);
+  /* surfaces are neutral text (README §3 rule; U22) */
+  --court-hard:var(--ma-t1); --court-clay:var(--ma-t1); --court-grass:var(--ma-t1); --court-grass-dim:var(--ma-inner);
+  /* the Form / H2H / match-stats builders the player profile shares (their site-wide values: the dashboard's :root).
+     D4: players neutral — A primary, B secondary / the 70% white fill; amber nowhere but Weather (small-sample chip
+     → primary text, strong hairline); pos/neg tints are colour-mixes at the source alpha (U18); knock-out ring follows the card (U2). */
+  --fh-pa:var(--ma-t1); --fh-pb:var(--ma-t2); --fh-fill:var(--ma-fill); --fh-pb-seg:var(--ma-pb-fill);
+  --fh-pb-solid:var(--ma-pb-fill); --fh-pb-fill:var(--ma-pb-fill); --fh-pb-half:var(--ma-pb-fill);
+  --fh-warn:var(--ma-t1); --fh-warn-line:var(--ma-hair-strong); --fh-dot-off:var(--ma-track); --fh-muted:var(--ma-t2);
+  --fh-today:var(--ma-t1); --fh-ring:var(--ma-card);
+  --fh-neg:var(--ma-neg); --fh-pos:var(--ma-pos);
+}
+
+/* ---- Day 26f: only the surface tones and the glow differ (README §3 "same" everywhere else) ---- */
+.ma-theme[data-ma-theme="day"]{
+  --ma-page:#1E202B; --ma-card:#181922; --ma-inner:#1C1E28; --ma-raised:#20222E; --ma-hover:#262836; --ma-sel:#292B3A;
+  --ma-glow:radial-gradient(ellipse 1100px 420px at 720px -60px, rgba(52,70,170,0.16) 0%, transparent 100%);
+}
+@media (prefers-color-scheme: light){
+  .ma-theme[data-ma-theme="auto"]{
+    --ma-page:#1E202B; --ma-card:#181922; --ma-inner:#1C1E28; --ma-raised:#20222E; --ma-hover:#262836; --ma-sel:#292B3A;
+    --ma-glow:radial-gradient(ellipse 1100px 420px at 720px -60px, rgba(52,70,170,0.16) 0%, transparent 100%);
+  }
+}

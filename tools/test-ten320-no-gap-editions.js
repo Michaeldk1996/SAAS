@@ -66,16 +66,22 @@ const tk = (o) => Object.assign({ p1: 'S. Tsitsipas', p1Key: '1011', p2: 'X', p2
 // ── The modal Tournament tab renderer (atournPlayerColumn), sliced out of the shipped HTML ──
 {
   const html = fs.readFileSync(path.join(__dirname, '..', 'bsp-consult-dashboard.html'), 'utf8');
-  const slice = (start, end) => {
-    const a = html.indexOf(start); const b = html.indexOf(end, a);
+  const slice = (start, end, from) => {
+    const a = html.indexOf(start); const b = html.indexOf(end, a + (from || 0));
     assert.ok(a >= 0 && b > a, 'slice not found: ' + start);
     return html.slice(a, b);
   };
   const src = slice('function atournYearRowHtml(', '\nfunction showTournamentMore(') +
     slice('function atournPlayerColumn(', '\n// Task 11');
-  const ctx = { ANALYSIS_P1_RGBA: () => '', ANALYSIS_P2_RGBA: () => '', atournMatchRowHtml: () => '<i></i>' };
+  const ctx = { ANALYSIS_P1_RGBA: () => '', ANALYSIS_P2_RGBA: () => '', ANALYSIS_P1_COLOR: '', ANALYSIS_P2_COLOR: '', ANALYSIS_P2_FILL: '',
+    atournMatchRowHtml: () => '<i></i>' };
   vm.createContext(ctx);
-  vm.runInContext(src + '\nthis.atournPlayerColumn = atournPlayerColumn;', ctx);
+  // TEN-314 D2: the one sample gate the win rate goes through (each helper sliced whole from the page)
+  const fn = (n) => { const one = slice('\nfunction ' + n + '(', '\n', 1);   // a one-line helper is taken whole
+    return /\}\s*$/.test(one) ? one + '\n' : slice('\nfunction ' + n + '(', '\n}\n') + '\n}\n'; };
+  const gate = (html.match(/\nconst (MA_GREY|MA_SMALL_NOTE) = [^\n]*/g) || []).join('\n') + '\n'
+    + ['tourxSampleGate', 'maGate', 'maPct', 'maRate', 'maRateHtml', 'maGateBar', 'maSmallNote'].map(fn).join('');
+  vm.runInContext(gate + src + '\nthis.atournPlayerColumn = atournPlayerColumn;', ctx);
   const stale = { totalWon: 2, totalLost: 1, editionsPlayed: 2, longMatches: 0, longMatchesPlayed: 0, longMatchPct: 0, years: [
     { year: '2022', won: 1, lost: 1, roundReached: '1/8-finals', matches: [] },
     { year: '2021', won: 0, lost: 0, roundReached: 'Withdrawal', matches: [], withdrew: true },

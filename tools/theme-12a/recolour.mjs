@@ -326,16 +326,12 @@ const DATAVIZ_ZONES = {
   'holdbreak-heatmap.js': [['', null]],                                  // the whole cell engine
   'player-profile-v2.js': [['var HB_FAINT =', 'function hbSegHtml(']],   // hbCellHtml + hbGlobalCellHtml
 };
-// Design-verbatim zones (founder, TEN-303 follow-up 2026-09-27, comment 2b0ef96f): a surface built to a
-// LOCKED Claude Design export keeps the export's colour values exactly — the engine never re-tones them.
-// Each zone is [start anchor, end anchor]; both must exist (a missing anchor throws, never silently maps).
-const DESIGN_ZONES = {
-  'bsp-consult-dashboard.html': [
-    ['const AODDS_C = {', '\n};'],                                            // Odds tab tokens (Odds Tab - Spec.md)
-    ['<style id="design-verbatim-analysis">', '</style>'],                   // Match analysis modal chrome + nav
-    ['const WX_C = {', '\n};'],                                               // Weather tab tokens (Weather Tab - Paperclip.md, TEN-304)
-  ],
-};
+// Design-verbatim zones: a surface whose colour values the engine must never re-tone. Each zone is
+// [start anchor, end anchor]; both must exist (a missing anchor throws, never silently maps).
+// EMPTY since TEN-314 (TEN-312 D1): the Match analysis modal's three former zones (AODDS_C, WX_C and
+// <style id="design-verbatim-analysis">) now read match-analysis-tokens.css through var() only, so they hold no
+// literal for the engine to map; the TEN-303 verbatim exception ended with that change.
+const DESIGN_ZONES = {};
 function zones(file, src, table = DATAVIZ_ZONES) {
   return (table[file] || []).map(([a, b]) => {
     const s0 = a ? src.indexOf(a) : 0;

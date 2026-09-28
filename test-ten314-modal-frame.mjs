@@ -63,10 +63,10 @@ test('frame: overlay, modal, header, body grid and menu carry the design FILE va
   assert.equal(h['grid-template-columns'], hd['grid-template-columns']); assert.equal(h.gap, hd.gap); assert.equal(h.padding, hd.padding);
   assert.equal(b['grid-template-columns'], bd['grid-template-columns']);
   assert.equal(n.padding, nv.padding); assert.equal(n.gap, nv.gap);
-  // colours of the frame (the transition exception keeps the design's source values until the token layer lands)
-  const verbatim = HTML.slice(HTML.indexOf('<style id="design-verbatim-analysis">'));
-  assert.ok(verbatim.includes('#analysisModal{ background:rgba(4,5,8,0.72); }'));
-  assert.ok(verbatim.includes('box-shadow:0 40px 120px rgba(0,0,0,0.6)'));
+  // colours of the frame: the token file's scrim and modal shadow (TEN-314 D1; the design-verbatim block is gone)
+  const chrome = HTML.slice(HTML.indexOf('<style id="match-analysis-chrome">'));
+  assert.ok(chrome.includes('#analysisModal{ background:var(--ma-scrim); }'));
+  assert.ok(chrome.includes('box-shadow:var(--ma-shadow-modal)'));
 });
 
 // Mutation: reorder two menu items, or put back the old stroke-2 feather icons.
@@ -182,6 +182,7 @@ function modalVM(opts = {}) {
     syncAnalysisLiveBar: () => {}, fhCloseSheet: () => {}, aHeaderOdds: () => ({ p1: '1.54', p2: '2.62' }), aAvatarHtml: () => '', profileLinkAttrs: () => '', openPlayerProfileFromMatch: () => {},
     h2hRoundLabel: () => 'Quarter-finals', aContextLine: () => 'ATP Washington · Quarter-finals', formatLiveScore: () => '', progressionRoundState: () => ({ state: 'shown' }),
     teTrack: undefined,
+    maApplyTheme: () => 'night',   // the Night / Day / Auto writer (match-analysis-tokens.css); not under test here
   };
   const names = Object.keys(stubs);
   const body = `

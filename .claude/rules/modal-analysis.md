@@ -48,10 +48,12 @@ this file wins.
   reports zero 12a values on any surface, in Night and in Day.
 - Amber `#E8A84E` is allowed only on Weather severity. Surfaces (Hard / Clay / Grass) are neutral text — this
   includes the H2H/Form hot-line column-header dots, the Tournament tile and the Overview season rows.
-- **Transition:** until the TEN-312 Phase 1 token layer lands, the TEN-303 design-verbatim values
-  (`AODDS_C`, `WX_C`, `<style id="design-verbatim-analysis">`) remain in code and their tests remain
-  green; the Phase 1 change deletes that exception from CLAUDE.md and rewrites those tests against the
-  token file in the same commit.
+- **The token file is `match-analysis-tokens.css`** (TEN-314, 2026-09-28): Night 24b default, Day 26f on
+  `data-ma-theme="day"`, Auto on `"auto"`; one storage key `stennisfy-theme` (`maSetTheme`), shared with TEN-315.
+  The unmapped source values follow TEN-314 document `phase1-token-mappings` U1–U24 (founder: approved
+  provisionally — a change is a one-line token edit). The TEN-303 verbatim exception is deleted: `AODDS_C`,
+  `WX_C`, `ME_C` and the chrome CSS are tokens. **Test:** `test-ten314-tokens.mjs`, `test-ten303-colours.mjs`,
+  `test-ten304-weather-tab.mjs`.
 
 ## Players and avatars (D4, D5)
 - **Both players are neutral on every tab, Odds included:** player A white/primary, player B grey — as on
