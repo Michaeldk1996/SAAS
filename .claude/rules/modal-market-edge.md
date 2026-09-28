@@ -50,6 +50,6 @@ Applies to the TEN-310 block in `bsp-consult-dashboard.html` (`me*` functions, `
   counting Tennis-Data rows and the tab keeps its career-history join. career-history's 2021 hole (api-tennis
   omits most of 2021; the TML half stopped at 2020) is filled from TML by `fillFixtureHole`
   (`career-backfill.js`, `FIXTURE_HOLE_YEARS = [2021]`): a TML row is added only if the feed half has neither
-  its edition nor the match (same result, an opponent sharing a surname token, within the event's −3…+21 days).
+  its edition nor the match (same result, an opponent sharing a surname token, within the event's −2…+16 days).
   **Test:** `tools/test-ten310-hole-fill.js` — the same match under another event name or a hyphenated
   surname is never added; the index meta publishes `holeFill` (offered / kept / players).

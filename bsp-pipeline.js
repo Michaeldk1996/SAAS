@@ -3808,7 +3808,8 @@ function careerRowIsComplete(result, isBestOfFive) {
 
 async function writeCareerHistoryShards(profiles, opts = {}) {
   const log = opts.log || (() => {});
-  const currentYear = new Date().getFullYear();
+  // `opts.currentYear`: tests drive both regimes (2021 a hole year, and 2021 an ordinary archive year).
+  const currentYear = opts.currentYear || new Date().getFullYear();
   const archiveMaxYear = currentYear - 6;   // the fixture window starts at currentYear-5
 
   // Pre-window rows from the TML archive, keyed by API player key. Network- and
@@ -3871,9 +3872,10 @@ async function writeCareerHistoryShards(profiles, opts = {}) {
     for (const r of rows) {
       const y = String(r.year || '');
       if (!/^\d{4}$/.test(y)) continue;
-      if (!byYear[y]) byYear[y] = { rows: 0, atpOnly: true, total: blank(), clay: blank(), hard: blank(), grass: blank() };
+      if (!byYear[y]) byYear[y] = { rows: 0, holeRows: 0, atpOnly: true, total: blank(), clay: blank(), hard: blank(), grass: blank() };
       const b = byYear[y];
       b.rows++;
+      if (r.holeFill) b.holeRows++;
       if (r.src !== 'archive') b.atpOnly = false;
       b.total[r.won ? 'won' : 'lost']++;
       if (b[r.surface]) b[r.surface][r.won ? 'won' : 'lost']++;
@@ -3892,7 +3894,9 @@ async function writeCareerHistoryShards(profiles, opts = {}) {
       // a season that included Challenger/ITF play the archive doesn't carry
       // (Rublev 2017, 39 tour matches in a 78-match season), and the drill-down
       // says so in words.
-      if (y && row.allTier === false && y.rows >= size(row.total)) {
+      // TEN-310: a hole year (2021) whose rows were topped up from TML adopts the row tally the same way
+      // — the feed's aggregate is the undercount the fill exists to correct, and the rows name every match.
+      if (y && (row.allTier === false || y.holeRows > 0) && y.rows >= size(row.total)) {
         row.total = y.total;
         row.clay = size(y.clay) ? y.clay : null;
         row.hard = size(y.hard) ? y.hard : null;
@@ -4066,7 +4070,7 @@ async function writeCareerHistoryShards(profiles, opts = {}) {
   log(`  per-set games on ${setsRows}/${rowTotal} rows (${setsPct}%) — `
     + `fixtures half ${halfSets.fixtures}/${halfRows.fixtures} (${pct(halfSets.fixtures, halfRows.fixtures)}%), `
     + `archive half ${halfSets.archive}/${halfRows.archive} (${pct(halfSets.archive, halfRows.archive)}%).`);
-  for (const [y, h] of Object.entries(holeFill)) log(`  TEN-310 hole fill ${y}: ${h.kept} of ${h.offered} TML row(s) added for ${h.players} player(s) — the rest were already in the feed half.`);
+  for (const [y, h] of Object.entries(holeFill)) log(`  TEN-310 hole fill ${y}: ${h.kept} of ${h.offered} TML row(s) added for ${h.players} player(s); the rest matched a feed edition or match (a few genuine ones are dropped by design).`);
   log(`  ${incompleteTotal} row(s) flagged incomplete (unfinished for the format, or flagged retired/walkover/defaulted).`);
   log(`  ${untypedTotal} row(s) carried no readable best_of and were typed by the Slam-name inference instead.`);
   log(`  ${altFormatTotal} row(s) excluded from the format-typed population for FORMAT, not truncation `
