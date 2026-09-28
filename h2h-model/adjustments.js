@@ -96,8 +96,8 @@ function recentMatchesSorted(profile) {
 
 // Which serve / return formula the value layers use (TEN-327, founder 2026-09-28: "one formula
 // per stat name"). 'legacy' is the formula the model shipped with; 'house' is house-ratings.js,
-// the same helper every display surface uses. STAGED: config ships 'legacy' until the founder
-// confirms the re-fit calibration posted on TEN-327 — do not flip it without that.
+// the same helper every display surface uses. LIVE on 'house' from TEN-345 (founder approved the
+// re-fit 2026-09-28); config.js EDGE_RATING_FORMULA is the one switch for both layers.
 function ratingFormula(layer) {
   const c = config.adjustments[layer];
   return c && c.ratingFormula === 'house' ? 'house' : 'legacy';

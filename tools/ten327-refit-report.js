@@ -7,7 +7,7 @@
 // It replays the model (h2h-model/model.js runModel) over every completed ATP match of the window,
 // recovered from the git history of matches.json (the working copy only holds ~3 days of results),
 // once per formula:
-//   before = config as shipped (serve + returnPressure ratingFormula 'legacy', return divisor 15)
+//   before = ratingFormula 'legacy' on both layers, return divisor 15 (shipped until TEN-345)
 //   after  = ratingFormula 'house' on both layers, return divisor = the re-fit (below)
 // and nothing else changes between the two runs: same match records, same player snapshots, same
 // process. Both runs read TODAY's player snapshots (runModel has no point-in-time mode), so absolute

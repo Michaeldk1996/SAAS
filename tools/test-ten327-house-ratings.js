@@ -183,10 +183,12 @@ function suite(src) {
     assert.strictEqual(L.serveRating(idx2, 7, 'match').rating, null, 'no aces row must dash, not count as 0');
   });
 
-  // ── Edge model value layers #9 / #10 (STAGED: founder 2026-09-28, "don't flip the layer") ──
-  check('model: both layers ship on the LEGACY formula — the house re-fit is staged, not live', () => {
-    assert.strictEqual(MOD.config.adjustments.serve.ratingFormula, 'legacy', 'layer #9 flipped to house without the founder');
-    assert.strictEqual(MOD.config.adjustments.returnPressure.ratingFormula, 'legacy', 'layer #10 flipped to house without the founder');
+  // ── Edge model value layers #9 / #10 (LIVE: founder approved the re-fit 2026-09-28, TEN-345) ──
+  check('model: both layers ship on the HOUSE formula, from ONE switch (rollback = one line)', () => {
+    assert.strictEqual(MOD.config.adjustments.serve.ratingFormula, 'house', 'layer #9 is not on the approved house formula');
+    assert.strictEqual(MOD.config.adjustments.returnPressure.ratingFormula, 'house', 'layer #10 is not on the approved house formula');
+    assert.strictEqual((src.cfg.match(/ratingFormula: EDGE_RATING_FORMULA,/g) || []).length, 2, 'a layer no longer reads the single switch');
+    assert.ok(/^const EDGE_RATING_FORMULA = 'house';$/m.test(src.cfg), 'the single switch is gone or not house');
     assert.deepStrictEqual(MOD.config.adjustments.returnPressure.signalDivisor, { legacy: 15, house: 16.9 });
   });
   const ROW = { firstInPct: 64.8, firstWonPct: 71.6, secondWonPct: 50.8, hldPct: 79.9, aPct: 7.2, dfPct: 3.3, acesPM: 6.08, dfPM: 2.75,
@@ -267,8 +269,9 @@ const MUTANTS = [
   ['dead code: msheetRatingSum back', 'dash', 'function msheetHouseRatings(a, b){', 'function msheetRatingSum(p, keys){ return 0; }\nfunction msheetHouseRatings(a, b){'],
 ];
   MUTANTS.push(
-  ['model: layer #10 flipped live', 'cfg', "that calibration.\n                      ratingFormula: 'legacy',", "that calibration.\n                      ratingFormula: 'house',"],
-  ['model: layer #9 flipped live', 'cfg', "on TEN-327.\n                      ratingFormula: 'legacy',", "on TEN-327.\n                      ratingFormula: 'house',"],
+  ['model: the switch rolled back to legacy', 'cfg', "const EDGE_RATING_FORMULA = 'house';", "const EDGE_RATING_FORMULA = 'legacy';"],
+  ['model: layer #10 off the switch', 'cfg', "(top of file).\n                      ratingFormula: EDGE_RATING_FORMULA,", "(top of file).\n                      ratingFormula: 'legacy',"],
+  ['model: layer #9 off the switch', 'cfg', "this file.\n                      ratingFormula: EDGE_RATING_FORMULA,", "this file.\n                      ratingFormula: 'house',"],
   ['model: house return 3-part (combined RPW)', 'adj', 'return HouseRatings.ret({ ret1: num(row.ret1WonPct), ret2: num(row.ret2WonPct), retGames: num(row.brkPct), bpConv: num(row.bpConvPct) }).v;', 'return num(row.rpwPct) + num(row.brkPct) + num(row.bpConvPct);'],
   ['model: house serve on ace% not aces/match', 'adj', 'svGames: num(row.hldPct), aces: num(row.acesPM), dfs: num(row.dfPM) }).v;', 'svGames: num(row.hldPct), aces: num(row.aPct), dfs: num(row.dfPct) }).v;'],
   ['model: re-fit divisor dropped', 'cfg', 'signalDivisor: { legacy: 15, house: 16.9 },', 'signalDivisor: { legacy: 15, house: 15 },'],

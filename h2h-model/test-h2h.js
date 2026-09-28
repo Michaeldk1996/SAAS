@@ -176,33 +176,47 @@ ok('averages across completed rounds (n=2, avg 180)', avg && avg.n===2 && avg.it
 ok('no new components without serve counts', hot.components===0 && near(hot.nudge, SITC.weight*(200-180.4)), hot);
 
 // -------- upgraded 6-component serve tier (hold% / ace% / df%) --------
-// Season baselines now include hldPct/aPct/dfPct. Blends (0.6*last52+0.4*career):
+// TEN-345: the block runs on BOTH serve formulas. 'house' (live) compares aces / DFs PER MATCH against
+// career-splits acesPM / dfPM; 'legacy' (the one-line rollback) compares ace% / DF% of service points
+// against aPct / dfPct. The fixtures carry the same numbers under each formula's field names, so every
+// expectation below holds on both.
+function withServeFormula(f, fn){ const c=cfg.adjustments.serve, was=c.ratingFormula; c.ratingFormula=f; try{ return fn(); } finally { c.ratingFormula=was; } }
+for (const f of ['house','legacy']) withServeFormula(f, () => {
+// Season baselines now include hold + ace + df. Blends (0.6*last52+0.4*career):
 // hold 0.6*80+0.4*75=78 ; ace 0.6*8+0.4*6=7.2 ; df 0.6*4+0.4*5=4.4 ; shared 180.4.
+const ad = (a, d) => f==='house' ? { acesPM:a, dfPM:d } : { aPct:a, dfPct:d };
 const splits6 = {
-  last52:{ Clay:{firstInPct:60,firstWonPct:72,secondWonPct:52, hldPct:80, aPct:8, dfPct:4} },
-  career:{ Clay:{firstInPct:55,firstWonPct:70,secondWonPct:50, hldPct:75, aPct:6, dfPct:5} },
+  last52:{ Clay:Object.assign({firstInPct:60,firstWonPct:72,secondWonPct:52, hldPct:80}, ad(8,4)) },
+  career:{ Clay:Object.assign({firstInPct:55,firstWonPct:70,secondWonPct:50, hldPct:75}, ad(6,5)) },
 };
-// One round: hot serve (shared 200), strong hold (9/10=90), high ace (10/100=10%),
-// low df (2/100=2%). base3 = 0.5*(200-180.4)=9.8.
+// One round (one match, 100 service points): hot serve (shared 200), strong hold (9/10=90),
+// 10 aces (house 10/match, legacy 10%), 2 DFs (house 2/match, legacy 2%). base3 = 0.5*(200-180.4)=9.8.
 const r6=[{round:'R1',metrics:{firstServePct:60,firstServeWonPct:80,secondServeWonPct:60,
           svHold:{won:9,total:10}, aces:10, dfs:2, svPts:100}}];
 const full=inTournamentServeDelta(progCtx(r6), pObj, splits6,'Clay','Best of 3');
-ok('all three new components fire', full && full.components===3 && full.used.join(',')==='hold,ace,df', full);
+ok(`${f}: all three new components fire`, full && full.components===3 && full.used.join(',')==='hold,ace,df', full);
 // hold dev +12 -> 0.5*12=6 capped to perComponentCap 4 ; ace 0.5*(10-7.2)=1.4 ;
 // df sign: 0.5*(-1)*(2-4.4)=+1.2 (lower df than season => serve better) => compSum 6.6.
-ok('6-comp nudge = base3 + capped components', full && near(full.nudge, 9.8 + 4 + 1.4 + 1.2), full && full.nudge);
-ok('per-component cap bounds hold', full && /hold .* \+4\.00/.test(full.cdetail), full && full.cdetail);
+ok(`${f}: 6-comp nudge = base3 + capped components`, full && near(full.nudge, 9.8 + 4 + 1.4 + 1.2), full && full.nudge);
+ok(`${f}: per-component cap bounds hold`, full && /hold .* \+4\.00/.test(full.cdetail), full && full.cdetail);
 // df polarity: a round with HIGH df must nudge the rating DOWN vs the low-df round.
 const rHiDf=[{round:'R1',metrics:{firstServePct:60,firstServeWonPct:80,secondServeWonPct:60,
              svHold:{won:9,total:10}, aces:10, dfs:8, svPts:100}}];
 const hiDf=inTournamentServeDelta(progCtx(rHiDf), pObj, splits6,'Clay','Best of 3');
-ok('higher df% lowers the serve nudge', hiDf && hiDf.nudge < full.nudge, {full:full&&full.nudge, hiDf:hiDf&&hiDf.nudge});
+ok(`${f}: higher df lowers the serve nudge`, hiDf && hiDf.nudge < full.nudge, {full:full&&full.nudge, hiDf:hiDf&&hiDf.nudge});
 // Fabrication guard: counts below the min-sample floors self-hide (no rate from
 // too few chances) => components 0, nudge falls back to base3 only.
 const rThin=[{round:'R1',metrics:{firstServePct:60,firstServeWonPct:80,secondServeWonPct:60,
              svHold:{won:4,total:5}, aces:2, dfs:1, svPts:30}}];
 const thin=inTournamentServeDelta(progCtx(rThin), pObj, splits6,'Clay','Best of 3');
-ok('below-floor serve counts self-hide (fabrication guard)', thin && thin.components===0 && near(thin.nudge, 9.8), thin);
+ok(`${f}: below-floor serve counts self-hide (fabrication guard)`, thin && thin.components===0 && near(thin.nudge, 9.8), thin);
+// Cross-check: a baseline on the OTHER formula's field names must not be read (house must not fall back
+// to aPct, legacy must not read acesPM) — ace + df abstain, only hold fires.
+const other = { last52:{ Clay:Object.assign({firstInPct:60,firstWonPct:72,secondWonPct:52, hldPct:80}, f==='house' ? {aPct:8,dfPct:4} : {acesPM:8,dfPM:4}) },
+                career:{ Clay:Object.assign({firstInPct:55,firstWonPct:70,secondWonPct:50, hldPct:75}, f==='house' ? {aPct:6,dfPct:5} : {acesPM:6,dfPM:5}) } };
+const cross=inTournamentServeDelta(progCtx(r6), pObj, other,'Clay','Best of 3');
+ok(`${f}: reads only its own formula's ace/df fields`, cross && cross.used.join(',')==='hold', cross);
+});
 
 // =========================================================================
 // #10 in-tournament RETURN tier (return analog of the serve tier)

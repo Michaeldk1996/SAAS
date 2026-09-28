@@ -17,6 +17,12 @@
  *  - Stage-1 blend weights are fractions that sum to 1.0.
  */
 
+// TEN-345 (founder 2026-09-28, TEN-314 comment 70fb039e: "The edge model re-fit is approved. Take it
+// live."). ONE switch for BOTH value layers #9 Serve and #10 Return: 'house' = house-ratings.js formulas
+// + the re-fit return divisor (16.9); 'legacy' = the formulas and ÷15 the model shipped with, kept in the
+// code. Rollback is this one line set back to 'legacy', in one commit.
+const EDGE_RATING_FORMULA = 'house';
+
 module.exports = {
   // ---- Stage 1: base probability blend --------------------------------
   // baseP1 = w.raw*eloRaw + w.surface*eloSurface + w.blend*elo5050
@@ -192,9 +198,9 @@ module.exports = {
     //    5pp ceiling used by the over-cap check.
     serve:          { id: 9,  maxMagnitude: 0.05, gated: false,
                       // TEN-327 (founder 2026-09-28): 'house' switches the serve rating to
-                      // house-ratings.js (aces/DFs per match, missing → no rating). STAGED —
-                      // stays 'legacy' until the founder confirms the calibration on TEN-327.
-                      ratingFormula: 'legacy',
+                      // house-ratings.js (aces/DFs per match, missing → no rating). LIVE from
+                      // TEN-345 — set by the single EDGE_RATING_FORMULA switch at the top of this file.
+                      ratingFormula: EDGE_RATING_FORMULA,
                       baseScalePP: { Fast: 0.04, Medium: 0.025, Slow: 0.02 },
                       altitudeTiers: [
                         { minM: 1500, mult: 2.00 },
@@ -244,8 +250,8 @@ module.exports = {
                       // TEN-327 (founder 2026-09-28): 'house' switches the return rating to the
                       // house 4-part (1st/2nd return won + return games won + BP converted), and
                       // the signal divisor to its re-fit (method + calibration on TEN-327).
-                      // STAGED — stays 'legacy' until the founder confirms that calibration.
-                      ratingFormula: 'legacy',
+                      // LIVE from TEN-345 — set by the single EDGE_RATING_FORMULA switch (top of file).
+                      ratingFormula: EDGE_RATING_FORMULA,
                       // house 16.9 = 15 × SD(house gap 18.7) / SD(legacy gap 16.6) over 139 pairings
                       // of the 30 days to 2026-09-28 (tools/ten327-refit-report.js): keeps the layer's
                       // signal distribution (clamped at ±1: 35.3% legacy, 36.0% house).
