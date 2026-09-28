@@ -21,10 +21,12 @@ Applies to the TEN-310 block in `bsp-consult-dashboard.html` (`me*` functions, `
   cover best-of-3 matches only." (the no-price state's style); the view is never switched; Match winner is unchanged.
 - **How the format is read** (`MarketEdgeCore.matchFormat`): the board's match has no format field, so it comes from
   matches.json `tour` (api-tennis `tournament_name`), `tournamentRound` and `tourBadge`. No tournament name or not
-  badged ATP → unknown → no lines. Laver / Davis / United / ATP / Hopman Cup and NextGen → no lines. A Grand Slam main
-  draw → best-of-5 → no lines; a Slam qualifying round → best-of-3. Any other ATP event → best-of-3.
-  **Test:** `test-ten310-market-edge.mjs` R7 (Slam R1, Laver Cup, NextGen, ATP 250, unknown, Slam qualifying, Davis Cup,
-  United Cup). The format gate outranks the price gate.
+  badged ATP → unknown → no lines. Laver / Davis / United / ATP / Hopman Cup, NextGen and UTS → no lines. A Grand Slam
+  main draw → best-of-5 → no lines; a Slam round naming qualifying → best-of-3. A Slam match with **no round** → unknown
+  → no lines (the feed sends Slam qualifying with `tournamentRound` null, so it can't be told from main draw). Any other
+  ATP event → best-of-3.
+  **Test:** `test-ten310-market-edge.mjs` R7 (Slam R1, Laver Cup, NextGen, ATP 250, unknown, Slam qualifying, Slam with
+  null round, "Roland-Garros", Davis Cup, United Cup). The format gate outranks the price gate.
 
 ## Populations
 - **Match winner (bands + profit chart):** priced, played matches, Bo5 included. Walkovers never. **Retirements are

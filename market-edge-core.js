@@ -213,17 +213,22 @@
   //   no tournament name, or not badged ATP      → unknown   (never guessed: not best-of-3)
   //   Laver / Davis / United / ATP / Hopman Cup, NextGen → non-standard format (team events, short
   //                                                  sets, match-tiebreak deciders)
-  //   a Grand Slam main-draw match               → best-of-5
   //   a Grand Slam qualifying round              → best-of-3
+  //   a Grand Slam match with no round           → unknown   (the feed sends qualifying rounds with
+  //                                                  tournamentRound null, so main draw can't be told apart)
+  //   a Grand Slam main-draw match               → best-of-5
   //   any other ATP tour event                   → best-of-3
-  const FMT_SLAM = /\b(australian open|french open|roland garros|wimbledon|us open)\b/;
-  const FMT_NONSTD = /laver cup|davis cup|united cup|atp cup|hopman cup|next ?gen/;
+  const FMT_SLAM = /\b(australian open|french open|roland[- ]garros|wimbledon|us open)\b/;
+  const FMT_NONSTD = /laver cup|davis cup|united cup|atp cup|hopman cup|next ?gen|\buts\b|ultimate tennis showdown/;
   function matchFormat(m) {
     const norm = (x) => String(x == null ? '' : x).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
     const tour = norm(m && m.tour), round = norm(m && m.tournamentRound);
     if (!tour || String((m && m.tourBadge) || '').toUpperCase() !== 'ATP') return { bo3: false, reason: 'unknown' };
     if (FMT_NONSTD.test(tour)) return { bo3: false, reason: 'non-standard' };
-    if (FMT_SLAM.test(tour)) return /qualif/.test(round) || /qualif/.test(tour) ? { bo3: true, reason: 'slam-qualifying' } : { bo3: false, reason: 'best-of-5' };
+    if (FMT_SLAM.test(tour)) {
+      if (/qualif/.test(round) || /qualif/.test(tour)) return { bo3: true, reason: 'slam-qualifying' };
+      return round ? { bo3: false, reason: 'best-of-5' } : { bo3: false, reason: 'unknown' };
+    }
     return { bo3: true, reason: 'atp-tour' };
   }
 

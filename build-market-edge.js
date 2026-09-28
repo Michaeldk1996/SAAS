@@ -23,7 +23,10 @@
  *      from the same archive row, NOT the Oddspapi pre-match snapshot that §5 bars from
  *      the headline. Two different artefacts that happen to share a book name; the ticket
  *      conflates them. Rows carry book:"bet365-archive" so the UI can label them.
- * A row with neither is unpriced and is dropped, never filled from the `avg` columns —
+ * R8 (founder, 2026-09-28): per side, in the Match analysis tab's order (FH_BOOK_ORDER) —
+ * Tennis-Data Pinnacle → our captured Pinnacle → Tennis-Data Bet365 → our captured Bet365.
+ * Captures are read from match-closes/{key}.json (pipeline: build-match-closes runs first).
+ * A row with none of them is unpriced and is dropped, never filled from the `avg` columns —
  * an average across books has no book identity, which is the whole point of this pass.
  *
  * Why the fallback is necessary rather than cosmetic (measured over the whole archive):
@@ -363,6 +366,10 @@ function main() {
         const d = JSON.parse(fs.readFileSync(path.join(ROOT, 'match-closes', k + '.json'), 'utf8'));
         const two = (a, b) => (num(a) >= 1.01 && num(b) >= 1.01 ? [num(a), num(b)] : null);
         caps = (d.cap || []).map((x) => ({ date: x[0], oppKey: x[1] != null ? String(x[1]) : null, P: two(x[2], x[3]), B: two(x[4], x[5]) }));
+        // The shard's Tennis-Data rows carry the opponent key build-match-closes resolved; the tab
+        // matches captures by that key, so the profile must too. `${date}|${opp}|${won}` → key.
+        caps.tdOpp = new Map();
+        (d.rows || []).forEach((x) => { if (x[8] != null) caps.tdOpp.set(`${x[0]}|${x[1]}|${x[2]}`, String(x[8])); });
       } catch (e) { caps = null; }
       capCache.set(k, caps);
     }
@@ -389,13 +396,16 @@ function main() {
       let pricedSides = 0;
       const sides = [];
       base.forEach((b) => {
-        const hit = resolve(b.name), oh = resolve(b.opp);
+        const hit = resolve(b.name);
         const caps = hit ? capsFor(hit.key) : null;
-        const pick = pickSide(b, caps, row.date, oh ? String(oh.key) : null);
+        // Opponent key: the subject's match-closes row first (the key the tab uses), else our resolver.
+        let oppKey = caps && caps.tdOpp.get(`${row.date}|${b.opp}|${b.won ? 1 : 0}`);
+        if (!oppKey) { const oh = resolve(b.opp); oppKey = oh ? String(oh.key) : null; }
+        const pick = pickSide(b, caps, row.date, oppKey);
         if (!pick) return;
         const pW = devig(pick.price, pick.oppPrice);
         if (pW == null) return;
-        if (pick.price === pick.oppPrice) stats.ties += 1;
+        if (b.won && pick.price === pick.oppPrice) stats.ties += 1;   // one count per match, not per side
         pricedSides++;
         sides.push({ name: b.name, opp: b.opp, won: b.won, p: pW, price: pick.price, oppPrice: pick.oppPrice, bk: pick });
       });

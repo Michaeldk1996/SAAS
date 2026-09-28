@@ -320,6 +320,9 @@ test('R7: Derived lines only on a standard best-of-3 match — format from match
     ['regular ATP 250', { tour: 'ATP Chengdu', tournamentRound: 'ATP Chengdu - Semi-finals', tourBadge: 'ATP' }, true, 'atp-tour'],
     ['unknown format (no tournament name)', { tour: '', tournamentRound: '', tourBadge: 'ATP' }, false, 'unknown'],
     ['unknown format (not badged ATP)', { tour: 'Chengdu', tournamentRound: '', tourBadge: '' }, false, 'unknown'],
+    // the feed's real qualifying shape (US Open 2026, upcoming-12157210): round null → can't tell → not best-of-3
+    ['Slam, round missing (feed qualifying shape)', { tour: 'ATP US Open', tournamentRound: null, tourBadge: 'ATP' }, false, 'unknown'],
+    ['Slam R1, hyphenated name', { tour: 'ATP Roland-Garros', tournamentRound: 'ATP Roland-Garros - 1/64-finals', tourBadge: 'ATP' }, false, 'best-of-5'],
     ['Slam qualifying (best-of-3)', { tour: 'ATP US Open', tournamentRound: 'ATP US Open - Qualification - 1/16-finals', tourBadge: 'ATP' }, true, 'slam-qualifying'],
     ['Davis Cup', { tour: 'Davis Cup - World Group', tournamentRound: '', tourBadge: 'ATP' }, false, 'non-standard'],
     ['United Cup', { tour: 'ATP United Cup', tournamentRound: '', tourBadge: 'ATP' }, false, 'non-standard'],
