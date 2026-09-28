@@ -1631,8 +1631,28 @@ function courtSpeedCategory(speed) {
 // pattern already used for TOURNAMENT_VENUE_HINTS lookups elsewhere.
 function courtConditionsFor(tournamentName) {
   if (!tournamentName) return null;
-  const key = Object.keys(COURT_CONDITIONS).find(k => tournamentName.includes(k));
+  const key = Object.keys(COURT_CONDITIONS).find(k => tournamentName.includes(k))
+    || COURT_CONDITIONS_ALIASES[Object.keys(COURT_CONDITIONS_ALIASES).find(k => tournamentName.includes(k))];
   return key ? { key, ...COURT_CONDITIONS[key] } : null;
+}
+
+// TEN-321: the two tables name one event differently. api-tennis (and so the hint key)
+// calls it "French Open"; the court-conditions sheet row is "Roland Garros". Without
+// this, every French Open card had no court speed, altitude or hold rate. Scanned
+// 2026-09-28: the only hint key whose event HAS a sheet row under another name. It must
+// never fall through to 'Paris' — that row is Bercy, indoor hard 0.97.
+const COURT_CONDITIONS_ALIASES = { 'French Open': 'Roland Garros' };
+
+// The one hint → venue + court-speed join, shared by every match build path.
+function venueAndCourtSpeedFor(name) {
+  const hintKey = Object.keys(TOURNAMENT_VENUE_HINTS).find(k => String(name || '').includes(k));
+  const hint = hintKey ? TOURNAMENT_VENUE_HINTS[hintKey] : null;
+  const courtConditions = hintKey ? COURT_CONDITIONS[COURT_CONDITIONS_ALIASES[hintKey] || hintKey] : null;
+  return {
+    hintKey,
+    venue: hint ? { city: hint.city, country: hint.country, category: hint.category, indoor: hint.indoor } : null,
+    courtSpeed: courtConditions ? { ...courtConditions, category: courtSpeedCategory(courtConditions.speed) } : null,
+  };
 }
 
 async function geocodeCity(city, countryCode) {
@@ -2173,17 +2193,11 @@ async function buildMatchObject(oddsEvent, apiTennisFixtures, surfaceMap, venueM
 
   // Curated static reference facts (city/country/category/indoor) — same source
   // of truth as TOURNAMENT_VENUE_HINTS used for weather above, not a new lookup.
-  const hintKey = Object.keys(TOURNAMENT_VENUE_HINTS).find(k => venueName.includes(k));
-  const hint = hintKey ? TOURNAMENT_VENUE_HINTS[hintKey] : null;
-  match.venue = hint ? { city: hint.city, country: hint.country, category: hint.category, indoor: hint.indoor } : null;
-
-  // Court-conditions data reuses the same hintKey lookup as match.venue above
-  // (both keyed by the same short tournament names) — real data from the
-  // user's court-conditions sheet (COURT_CONDITIONS), not re-derived.
-  const courtConditions = hintKey ? COURT_CONDITIONS[hintKey] : null;
-  match.courtSpeed = courtConditions
-    ? { ...courtConditions, category: courtSpeedCategory(courtConditions.speed) }
-    : null;
+  // Court-conditions data reuses the same hintKey lookup (through the TEN-321
+  // alias) — real data from the user's court-conditions sheet, not re-derived.
+  const { hintKey, venue, courtSpeed } = venueAndCourtSpeedFor(venueName);
+  match.venue = venue;
+  match.courtSpeed = courtSpeed;
 
   if (!fixture) return match; // no API-Tennis match found — stays "coming soon" in the UI
 
@@ -3183,14 +3197,9 @@ async function buildPastMatchObject(fixture, surfaceMap, venueMap) {
   // player's `wue.source`. No-op for matches with no stat sheet.
   attachWue(match.matchStats, match.tour, match.p1, match.p2);
 
-  const hintKey = Object.keys(TOURNAMENT_VENUE_HINTS).find(k => fixture.tournament_name.includes(k));
-  const hint = hintKey ? TOURNAMENT_VENUE_HINTS[hintKey] : null;
-  match.venue = hint ? { city: hint.city, country: hint.country, category: hint.category, indoor: hint.indoor } : null;
-
-  const courtConditions = hintKey ? COURT_CONDITIONS[hintKey] : null;
-  match.courtSpeed = courtConditions
-    ? { ...courtConditions, category: courtSpeedCategory(courtConditions.speed) }
-    : null;
+  const { hintKey, venue, courtSpeed } = venueAndCourtSpeedFor(fixture.tournament_name);
+  match.venue = venue;
+  match.courtSpeed = courtSpeed;
 
   // Task 3 — real weather on the day the match was played (historical archive
   // fallback lives inside fetchMatchWeather). Task 4 — pre-match odds recovered
@@ -3374,14 +3383,9 @@ async function buildUpcomingMatchObject(fixture, surfaceMap, venueMap) {
     if (upOdds.allBooks) match.apiTennisBooks = upOdds.allBooks;
   }
 
-  const hintKey = Object.keys(TOURNAMENT_VENUE_HINTS).find(k => fixture.tournament_name.includes(k));
-  const hint = hintKey ? TOURNAMENT_VENUE_HINTS[hintKey] : null;
-  match.venue = hint ? { city: hint.city, country: hint.country, category: hint.category, indoor: hint.indoor } : null;
-
-  const courtConditions = hintKey ? COURT_CONDITIONS[hintKey] : null;
-  match.courtSpeed = courtConditions
-    ? { ...courtConditions, category: courtSpeedCategory(courtConditions.speed) }
-    : null;
+  const { hintKey, venue, courtSpeed } = venueAndCourtSpeedFor(fixture.tournament_name);
+  match.venue = venue;
+  match.courtSpeed = courtSpeed;
 
   const h2hData = await fetchH2H(p1Key, p2Key);
   if (h2hData) {
@@ -7544,7 +7548,7 @@ if (require.main === module) {
   });
 }
 
-module.exports = { ocsMatchKey, ocsNameKey, fetchH2H, h2hCountsInAtpRecord, H2H_NOT_ATP_RECORD, tourLabelOf, aggregatePlayerWue, aggregateStatsFromFixtures, isCancelledFixture, profileRosterFloorVerdict, lastPublishedRosterCount, profilesWithoutTournamentHistory, PROFILE_ROSTER_BACKSTOP, PROFILE_ROSTER_RATIO, MAX_OPPONENT_BUILDS_PER_RUN, isIndoorTournament, loadTournamentCourtMap, fetchRecentSinglesFixtures, recentFormFromFixtures, buildTournamentProgression, extractProgressionMetrics, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
+module.exports = { venueAndCourtSpeedFor, courtConditionsFor, courtSpeedRecordFromFixtures, COURT_CONDITIONS, ocsMatchKey, ocsNameKey, fetchH2H, h2hCountsInAtpRecord, H2H_NOT_ATP_RECORD, tourLabelOf, aggregatePlayerWue, aggregateStatsFromFixtures, isCancelledFixture, profileRosterFloorVerdict, lastPublishedRosterCount, profilesWithoutTournamentHistory, PROFILE_ROSTER_BACKSTOP, PROFILE_ROSTER_RATIO, MAX_OPPONENT_BUILDS_PER_RUN, isIndoorTournament, loadTournamentCourtMap, fetchRecentSinglesFixtures, recentFormFromFixtures, buildTournamentProgression, extractProgressionMetrics, buildSetStatsFromFixture, buildMatchStatsFromFixture, extractFormShards, buildRecentFormForMatch,
   // The Career-record pair. Exported together on purpose: their whole contract
   // is that the counts one returns are tallyable from the rows the other
   // returns, and that is what ten8-career-verify.js asserts.

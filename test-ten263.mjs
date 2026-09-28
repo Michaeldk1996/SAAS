@@ -726,7 +726,8 @@ test('odds-feed card: p1 is chosen by given name when both players share a surna
 });
 test('odds-feed card: an undecidable same-surname pair is built WITHOUT player keys (executed buildMatchObject)', async () => {
   const B = new Function(`const NAME_SUFFIXES = new Set(['jr', 'sr', 'ii', 'iii', 'iv', 'v']);
-    const TOURNAMENT_VENUE_HINTS = {}, COURT_CONDITIONS = {};
+    const TOURNAMENT_VENUE_HINTS = {}, COURT_CONDITIONS = {}, COURT_CONDITIONS_ALIASES = {};
+    ${slicePipe('venueAndCourtSpeedFor')}
     const surfaceFromEvent = () => 'hard', pinnacleOrFirst = () => null, normalizeName = x => x, computeModelProbability = () => null;
     const bestOdds = () => ({ bestP1: null, bestP2: null }), computeDay = () => 'today', fetchMatchWeather = async () => null;
     let fetched = 0; const fetchH2H = async () => { fetched++; return null; };

@@ -637,8 +637,13 @@ check('N4: the profile carries three bands and no cut-offs of its own', () => {
 
 check('N4: the three renderers print the pipeline stamp, and the stamp is courtSpeedCategory()', () => {
   const pipeSrc = fs.readFileSync(path.join(ROOT, 'bsp-pipeline.js'), 'utf8');
-  assert.strictEqual((pipeSrc.match(/category: courtSpeedCategory\(courtConditions\.speed\)/g) || []).length, 3,
-    'the three match builders must each stamp category from courtSpeedCategory()');
+  // TEN-321: the three match builders share one join, venueAndCourtSpeedFor(), which stamps the category.
+  assert.strictEqual((pipeSrc.match(/category: courtSpeedCategory\(courtConditions\.speed\)/g) || []).length, 1,
+    'the shared join must stamp category from courtSpeedCategory()');
+  assert.strictEqual((pipeSrc.match(/= venueAndCourtSpeedFor\(/g) || []).length, 3,
+    'the three match builders must each take courtSpeed from venueAndCourtSpeedFor()');
+  assert.strictEqual((pipeSrc.match(/\.courtSpeed = (?!courtSpeed;)/g) || []).length, 0,
+    'no match builder may stamp courtSpeed any other way');
   // TEN-332: the rebuilt Tournament header prints the stamp beside the abstract speed (trHeaderHtml)
   assert(/Number\(cs\.abstractSpeed\)\.toFixed\(2\) \+ \(cs\.category \? ' · ' \+ cs\.category : ''\)/.test(DASH_SPEED_SRC), 'modal Tournament card no longer prints cs.category');
   assert(/<span>court speed<\/span><em>\$\{psEsc\(cs\.category/.test(DASH_SPEED_SRC), 'Key factors no longer prints cs.category');
