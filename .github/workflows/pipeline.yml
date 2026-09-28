@@ -352,6 +352,15 @@ jobs:
       # (run-pipeline.js, above) for Challenger names. Read lazily by the Match analysis
       # Form and H2H tabs. No network calls. Best-effort: a failure publishes nothing and
       # those cells dash.
+      # TEN-316 (ruled 2026-09-28, TEN-310 card fdfcd158): captured Pinnacle is refreshed EVERY run,
+      # before the match-close shards read it. build-captured-pinnacle.js scans the committed matches.json
+      # (git HEAD + the commits since its last scan: this job's working copy has oddsMovement nulled)
+      # for the Oddspapi Pinnacle series, cuts each side at the actual start, and merges new rows into
+      # captured-closes-pinnacle.json (committed back after the deploy, below). No network calls.
+      # Best-effort: a failure leaves the committed file, which build-match-closes reads as before.
+      - name: Refresh captured Pinnacle closes (best-effort)
+        run: node build-captured-pinnacle.js || true
+
       - name: Build match-close shards (best-effort)
         run: node build-match-closes.js || true
 
@@ -1353,6 +1362,21 @@ jobs:
           git config user.email "bsp-weather-bot@users.noreply.github.com"
           COMMITBACK_OWNED="admin-log.json series-outcomes.json player-profiles-cache.json.gz player-tournament-history.json.gz historical-match-stats.floor.json pbp-tiebreak-floor.json $(git ls-files -co --exclude-standard -- weather/archive | tr '\n' ' ')" \
             tools/commitback-push.sh "chore(weather): archive pre-start forecasts [skip ci]" weather/archive
+
+      # TEN-316: the captured Pinnacle closes accumulate across runs (the board drops a finished match
+      # within days), so the merged file is committed back. Only-if-changed: the builder rewrites it only
+      # when a row is added or replaced. One writer (this job), so a conflict on it is a hard failure.
+      - name: Commit captured Pinnacle closes (only if changed)
+        continue-on-error: true
+        run: |
+          if [ -z "$(git status --porcelain -- captured-closes-pinnacle.json)" ]; then
+            echo "Captured Pinnacle closes unchanged — nothing to commit."
+            exit 0
+          fi
+          git config user.name "bsp-captured-pinnacle-bot"
+          git config user.email "bsp-captured-pinnacle-bot@users.noreply.github.com"
+          COMMITBACK_OWNED="admin-log.json series-outcomes.json player-profiles-cache.json.gz player-tournament-history.json.gz historical-match-stats.floor.json pbp-tiebreak-floor.json captured-closes-pinnacle.json" \
+            tools/commitback-push.sh "chore(odds): captured Pinnacle closes [skip ci]" captured-closes-pinnacle.json
 
       # TEN-206 founder ruling Q2(d) ch-1, 2026-09-16 — the daily half of "key per day
       # + commit one gzipped file daily". Runs AFTER the deploy has published, like the

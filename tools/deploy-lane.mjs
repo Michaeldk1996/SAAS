@@ -147,10 +147,11 @@ export const DATA_BOT_AUTHORS = new Set([
   'bot@bspconsult.local', // BSP Entry Lists / Styles / Splits (launchd refresh-*.sh)
   'bsp-weather-bot@users.noreply.github.com',     // pipeline.yml weather-archive commit-back (TEN-304, founder 2026-09-27)
   'bsp-dna-bot@users.noreply.github.com',         // dna-ratings.yml daily DNA radar refresh (TEN-319, founder 2026-09-28)
+  'bsp-captured-pinnacle-bot@users.noreply.github.com', // pipeline.yml captured-Pinnacle commit-back (TEN-316, ruled 2026-09-28)
 ]);
 // Every file a data bot writes, with its writer.
 export const DATA_FILES = new Set([
-  'admin-log.json', 'series-outcomes.json',                                      // pipeline.yml commit-backs
+  'admin-log.json', 'series-outcomes.json', 'captured-closes-pinnacle.json',     // pipeline.yml commit-backs
   'player-profiles-cache.json.gz', 'player-tournament-history.json.gz', 'historical-match-stats.floor.json',
   'pbp-tiebreak-floor.json',                                                      // pipeline.yml commit-back (TEN-318)
   'matches.json', 'odds-open-monitor.json', 'odds-quota-history.json', 'alert-state.json',   // odds-now / odds-history / scores

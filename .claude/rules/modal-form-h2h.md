@@ -13,8 +13,17 @@ Applies to the TEN-263 block in `bsp-consult-dashboard.html` (`fh*` functions), 
   **Test:** reversing any adjacent pair turns a test red.
 - **One book and one source per match**, both sides ≥ 1.01, else fall through.
   **Test:** no priced row carries sides from two slots.
-- **A captured close is the last tick at or before the oddspapi actual start** (`trueStart`).
-  A capture without an actual start is dropped. **Test:** an in-play tick is never the close.
+- **A captured close is the last tick at or before the actual start**: the oddspapi `trueStart`
+  (rejected when `trueEnd − trueStart > 6 h` or `trueEnd < trueStart`), **else the card state's
+  live-flip start** (`odds-card-state.json` `startTs`, `startTsSource` `api-tennis-live` = the last poll
+  where the match was NOT live) — TEN-316 board ruling 2026-09-28 (card 9f0e123c), because no trueStart
+  is stored after 23 Sep. A capture with neither is dropped; never a scheduled time.
+  **Test:** an in-play tick is never the close (`tools/test-captured-pinnacle.js`, with a no-cut mutant control).
+- **Captured Pinnacle is refreshed every pipeline run** (TEN-316): `build-captured-pinnacle.js` runs before
+  `build-match-closes.js`, reads the committed `matches.json` history for `oddsMovement.books.Pinnacle`
+  (to 2 Sep) and `oddsMovement.chart.books["Pinnacle +30s"]` (Oddspapi pinnacle+30, from 23 Sep), and merges
+  into `captured-closes-pinnacle.json` (committed back after the deploy; held rows are never deleted).
+  Pinnacle +30s rows are labelled **"Pinnacle · captured"** like the Jul–Sep rows (board ruling, card 9f0e123c).
 - **api-tennis closing prices (TEN-269)** join as a **5th, fallback-only** slot. They move up
   only after the TEN-269 validation shows they agree with Tennis-Data on overlapping
   matches, reported with the agreement rate and its denominator. api-tennis **opening**

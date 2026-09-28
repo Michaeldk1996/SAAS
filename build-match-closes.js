@@ -6,9 +6,9 @@
  * two kinds of source, so the page can apply the founder's picker (2026-09-23):
  *
  *   1. Pinnacle close, Tennis-Data     (odds-archive/{yyyy}.csv psw/psl)
- *   2. Pinnacle close, our capture     (captured-closes-pinnacle.json: oddspapi Pinnacle
- *                                       series from the board's odds history, cut at the
- *                                       ACTUAL start; a closed 2026-07..09 set)
+ *   2. Pinnacle close, our capture     (captured-closes-pinnacle.json: oddspapi Pinnacle /
+ *                                       Pinnacle +30s series from the board's odds history,
+ *                                       cut at the ACTUAL start; refreshed every run, TEN-316)
  *   3. Bet365 close, Tennis-Data       (b365w/b365l)
  *   4. Bet365 close, our capture       (bet365-history/{yyyy-mm}.json, oddspapi, cut at
  *                                       the ACTUAL start)
@@ -210,7 +210,8 @@ function capturedBet365(root, resolver, stats) {
   }
   return out;
 }
-// Captured Pinnacle closes: a committed one-time extract (tools/ten263-extract-captured-pinnacle.mjs),
+// Captured Pinnacle closes: captured-closes-pinnacle.json, refreshed every pipeline run by
+// build-captured-pinnacle.js (TEN-316; first a one-time extract, tools/ten263-extract-captured-pinnacle.mjs),
 // already cut at the actual start and keyed by board eventKey + both player keys.
 function capturedPinnacle(root, stats) {
   const d = readJson(path.join(root, 'captured-closes-pinnacle.json'), null);
