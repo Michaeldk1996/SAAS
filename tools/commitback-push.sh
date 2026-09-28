@@ -36,7 +36,7 @@ set -uo pipefail
 
 MSG="${1:?commit message required}"; shift
 [ "$#" -gt 0 ] || { echo "::error::commitback-push: no files given"; exit 1; }
-OWNED="${COMMITBACK_OWNED:-admin-log.json series-outcomes.json player-profiles-cache.json.gz player-tournament-history.json.gz historical-match-stats.floor.json}"
+OWNED="${COMMITBACK_OWNED:-admin-log.json series-outcomes.json player-profiles-cache.json.gz player-tournament-history.json.gz historical-match-stats.floor.json pbp-tiebreak-floor.json}"
 
 git add -- "$@"
 git commit -q -m "$MSG" || { echo "::error::commitback-push: commit failed."; exit 1; }

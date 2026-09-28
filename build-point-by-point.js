@@ -37,6 +37,9 @@ const { buildSetStatsFromFixture, buildMatchStatsFromFixture } = require('./bsp-
 // TEN-263 follow-up: the feed's untracked Winners / Unforced errors placeholder
 // ("0" for both players) is stored as null, never 0 — same rule as the pipeline.
 const { sanitizeFixture, sanitizePbpCache } = require('./match-stat-placeholders');
+// TEN-318: tiebreak point rows are no longer refetchable, so they ride a committed
+// merge-only floor as well as this cache. See the header of tools/pbp-tiebreak-floor.js.
+const tbFloor = require('./tools/pbp-tiebreak-floor.js');
 
 const API_TENNIS_KEY = process.env.API_TENNIS_KEY;
 const API_TENNIS_BASE = 'https://api.api-tennis.com/tennis/';
@@ -230,6 +233,13 @@ function writeAtomic(path, contents) {
   fs.renameSync(tmp, path);
 }
 
+// A floor refusal is an ::error annotation on the run. Off under test
+// (PBP_TB_FLOOR_ANNOTATE=0), where the refusal paths are driven on purpose.
+function tbFloorNote(lvl, message) {
+  if (process.env.PBP_TB_FLOOR_ANNOTATE === '0') console.log(`tiebreak-floor ${lvl}: ${message}`);
+  else console.log(`::${lvl} title=tiebreak floor::${message}`);
+}
+
 function eventKeyOf(id) {
   const parts = String(id).split('-');
   const last = parts[parts.length - 1];
@@ -264,9 +274,18 @@ function emitEntry(ek, e, index, setIndex, matchIndex) {
 // only written out as shards, never assigned back into `cache`, so
 // point-by-point-cache.json does not grow towards V8's max string length.
 // One week file is in memory at a time. Returns archive counts for the log.
-function emitShards(cache, index, setIndex, matchIndex, { archiveDir = ARCHIVE_DIR } = {}) {
+// TEN-318: `tbFloor` is the in-run tiebreak floor. An archived point log came from
+// the feed AFTER it stopped sending tiebreak rows, so a log emitted from the archive
+// (a key the cache lacks, or a cache entry with no log of its own) gets the floor's
+// held TB rows put back first. Without this a from-scratch rebuild, whose cache holds
+// almost nothing, would publish those shards with the tiebreak section gone.
+function emitShards(cache, index, setIndex, matchIndex, { archiveDir = ARCHIVE_DIR, tbFloor: floor = null } = {}) {
   for (const ek of Object.keys(cache)) emitEntry(ek, cache[ek], index, setIndex, matchIndex);
-  const counts = { files: 0, entries: 0, added: 0, completed: 0 };
+  const counts = { files: 0, entries: 0, added: 0, completed: 0, tbRestored: 0 };
+  const withFloorTb = (ek, e) => {
+    if (floor && floor[ek] && e && e.sets && e.sets.length) counts.tbRestored += tbFloor.restore({ [ek]: e }, { [ek]: floor[ek] }).rows;
+    return e;
+  };
   if (!archiveDir || !fs.existsSync(archiveDir)) return counts;
   const zlib = require('zlib');
   const seen = new Set();
@@ -283,7 +302,7 @@ function emitShards(cache, index, setIndex, matchIndex, { archiveDir = ARCHIVE_D
       counts.entries++;
       const held = cache[ek];
       const a = week[ek];
-      if (!held) { emitEntry(ek, a, index, setIndex, matchIndex); counts.added++; continue; }
+      if (!held) { emitEntry(ek, withFloorTb(ek, a), index, setIndex, matchIndex); counts.added++; continue; }
       const merged = mergeEntry(held, a);
       const gainsLog = !(held.sets && held.sets.length && held.p1) && merged.sets && merged.sets.length && merged.p1;
       const gainsBox = (held.stats == null && merged.stats) || (held.matchStats == null && merged.matchStats)
@@ -292,7 +311,7 @@ function emitShards(cache, index, setIndex, matchIndex, { archiveDir = ARCHIVE_D
       // Re-emitted from the merged entry; the cache's own index lines for this key
       // are dropped below, so no key is listed twice.
       redone.add(ek);
-      emitEntry(ek, merged, ...more);
+      emitEntry(ek, gainsLog ? withFloorTb(ek, merged) : merged, ...more);
       counts.completed++;
     }
   }
@@ -327,6 +346,22 @@ async function main() {
   // shards below are rewritten from it on this same run.
   const placeholderSheets = sanitizePbpCache(cache);
   if (placeholderSheets) console.log(`set-stats: ${placeholderSheets} cached sheet(s) carried the untracked W/UE placeholder (all four 0) — now null.`);
+
+  // TEN-318: fold every tiebreak row the cache holds into the floor BEFORE any fetch
+  // below can replace an entry, then heal the cache from it. On a from-scratch
+  // rebuild (cache absent, or reset to the fossil by a schema bump / eviction) the
+  // cache holds almost nothing and the committed floor is what carries the rows.
+  // `held` is the in-run union and is used even when the file is unreadable, so this
+  // run's own stored rows are still protected; only the WRITE is withheld then.
+  const floorLoad = tbFloor.loadFloor(tbFloor.FLOOR_PATH);
+  if (floorLoad.status === 'unreadable') {
+    tbFloorNote('error', `${tbFloor.FLOOR_PATH} is unreadable (${floorLoad.error}). It will NOT be rewritten this run; restore it from git.`);
+  }
+  const held = tbFloor.clone(floorLoad.floor || {});
+  const tbAbsorbed = tbFloor.absorb(held, cache);
+  const tbHealed = tbFloor.restore(cache, held);
+  const tbAtLoad = tbFloor.census(held);
+  console.log(`tiebreak-floor: ${tbAtLoad.rows} TB point rows in ${tbAtLoad.sets} sets of ${tbAtLoad.matches} matches (${floorLoad.status}; +${tbAbsorbed} from the cache; ${tbHealed.rows} rows restored into ${tbHealed.entries} cache entries).`);
 
   const out = {};
   let fetched = 0, reused = 0, skipped = 0;
@@ -524,6 +559,25 @@ async function main() {
     }
   }
 
+  // TEN-318: the passes above may have replaced an entry with a refetch that came
+  // back with fewer tiebreak points (the feed's one-row summary). Keep any NEW rows a
+  // fetch brought, then put every held row back, before a single shard is written.
+  const tbAbsorbedAfter = tbFloor.absorb(held, cache);
+  const tbHealedAfter = tbFloor.restore(cache, held);
+  if (tbHealedAfter.rows) console.log(`tiebreak-floor: a refetch dropped ${tbHealedAfter.rows} stored TB rows in ${tbHealedAfter.entries} entries — restored.`);
+  // Never write a floor that lost a row. A refusal withholds only the floor write:
+  // the shards below still ship, so the page never pays for it.
+  let floorOk = !!floorLoad.floor;
+  if (floorOk) {
+    try { tbFloor.assertSuperset(floorLoad.floor, held); }
+    catch (e) { floorOk = false; tbFloorNote('error', `${e.message}. ${tbFloor.FLOOR_PATH} left as committed.`); }
+  }
+  if (floorOk) {
+    writeAtomic(tbFloor.FLOOR_PATH, tbFloor.serialize(held));
+    const c = tbFloor.census(held);
+    console.log(`tiebreak-floor: ${c.rows} rows / ${c.sets} sets / ${c.matches} matches -> ${tbFloor.FLOOR_PATH} (+${tbAbsorbedAfter} new this run).`);
+  }
+
   // One shard per match, so opening a single row fetches a single small file
   // instead of a multi-megabyte bundle. Written for every event key that has a
   // real, named log — window matches included.
@@ -536,7 +590,7 @@ async function main() {
   const index = [];
   const setIndex = [];
   const matchIndex = [];
-  const archived = emitShards(cache, index, setIndex, matchIndex, { archiveDir: ARCHIVE_DIR });
+  const archived = emitShards(cache, index, setIndex, matchIndex, { archiveDir: ARCHIVE_DIR, tbFloor: held });
   // Which rows get a Point-by-point tab at all. The dashboard needs this BEFORE
   // it renders a row's tabs, and a 404 per logless row is not an answer it can
   // render against — so availability ships as data, not as a failed request.
@@ -555,6 +609,7 @@ async function main() {
   console.log(`set-stats: ${setIndex.length} shards -> ${SETSTATS_DIR}/ (${backfilled} backfilled this run${backfillFailed ? `, ${backfillFailed} failed` : ''})`);
   console.log(`match-stats: ${matchIndex.length} matches carry a whole-match box score -> ${MATCHSTATS_INDEX_PATH}`);
   if (archived.files) console.log(`box-score archive: ${archived.entries} archived matches in ${archived.files} week file(s) — ${archived.added} not in the cache, ${archived.completed} cache entries completed (shards only; the cache is unchanged).`);
+  if (archived.tbRestored) console.log(`tiebreak-floor: ${archived.tbRestored} held TB rows put back into archive-sourced pbp shards.`);
   // Entries that predate the match box score are refilled by the PLAYER-WINDOW
   // path in backfill-history-shards.js (one call per player), NOT by the
   // per-match loop above — whose `pending` filter is deliberately left on
@@ -583,4 +638,6 @@ if (require.main === module) {
   main().catch(e => { console.error('point-by-point: unexpected error —', e.message); process.exit(0); });
 }
 
-module.exports = { compactPbp, parseFixture, buildCacheEntry, orderFormQueue, mergeEntry, emitShards, MAX_FETCHES_PER_RUN };
+// `main` is exported for tools/test-pbp-tiebreak-floor.js, which drives the real
+// writer end to end against a stubbed feed.
+module.exports = { compactPbp, parseFixture, buildCacheEntry, orderFormQueue, mergeEntry, emitShards, MAX_FETCHES_PER_RUN, main };

@@ -152,6 +152,7 @@ export const DATA_BOT_AUTHORS = new Set([
 export const DATA_FILES = new Set([
   'admin-log.json', 'series-outcomes.json',                                      // pipeline.yml commit-backs
   'player-profiles-cache.json.gz', 'player-tournament-history.json.gz', 'historical-match-stats.floor.json',
+  'pbp-tiebreak-floor.json',                                                      // pipeline.yml commit-back (TEN-318)
   'matches.json', 'odds-open-monitor.json', 'odds-quota-history.json', 'alert-state.json',   // odds-now / odds-history / scores
   'odds-fixture-map.json', 'odds-capture-cadence.json', 'odds-now-staleness.json', 'underway-audit.jsonl',
   'odds-card-state.json', 'kibl-entitlement-baseline.json',                       // ten232-kibl-archive.yml

@@ -1335,7 +1335,7 @@ jobs:
           fi
           git config user.name "bsp-weather-bot"
           git config user.email "bsp-weather-bot@users.noreply.github.com"
-          COMMITBACK_OWNED="admin-log.json series-outcomes.json player-profiles-cache.json.gz player-tournament-history.json.gz historical-match-stats.floor.json $(git ls-files -co --exclude-standard -- weather/archive | tr '\n' ' ')" \
+          COMMITBACK_OWNED="admin-log.json series-outcomes.json player-profiles-cache.json.gz player-tournament-history.json.gz historical-match-stats.floor.json pbp-tiebreak-floor.json $(git ls-files -co --exclude-standard -- weather/archive | tr '\n' ' ')" \
             tools/commitback-push.sh "chore(weather): archive pre-start forecasts [skip ci]" weather/archive
 
       # TEN-206 founder ruling Q2(d) ch-1, 2026-09-16 — the daily half of "key per day
@@ -1415,6 +1415,33 @@ jobs:
           git config user.email "bsp-profile-cache-bot@users.noreply.github.com"
           tools/commitback-push.sh "chore(stats): refresh committed match-stat floor [skip ci]" historical-match-stats.floor.json \
             || { rc=$?; [ "$rc" = 1 ] || exit "$rc"; echo "::warning::Could not push the match-stat floor after 3 attempts — the next run retries."; }
+
+      # TEN-318 (founder-approved 2026-09-28): the tiebreak-point floor. api-tennis stops
+      # returning a match's tiebreak point rows some time after it is played, so the
+      # rows we hold cannot be refetched. point-by-point-cache.json lives only in the
+      # Actions cache above, and a PROFILE_SCHEMA_VERSION bump is a guaranteed miss on
+      # it: run 4067 (2026-09-21) restored nothing and rebuilt from the 52-entry fossil.
+      # build-point-by-point.js keeps pbp-tiebreak-floor.json as a merge-only union of
+      # every TB row it has held, and restores rows from it into the cache, so the git
+      # copy is what survives a miss. It never writes a floor smaller than the one it
+      # read. Same shape as the match-stat floor: plain minified JSON, one commit per
+      # UTC day, after the deploy. Locked by tools/test-pbp-tiebreak-floor.js.
+      - name: Refresh the committed tiebreak floor
+        run: |
+          LAST_DAY="$(git log -1 --format=%cd --date=format:%Y-%m-%d -- pbp-tiebreak-floor.json || true)"
+          TODAY="$(date -u +%Y-%m-%d)"
+          if [ -n "$LAST_DAY" ] && [ "$LAST_DAY" = "$TODAY" ]; then
+            echo "Committed tiebreak floor already refreshed today ($LAST_DAY) — one per UTC day."
+            exit 0
+          fi
+          if [ -z "$(git status --porcelain -- pbp-tiebreak-floor.json)" ]; then
+            echo "Committed tiebreak floor unchanged this run — nothing to commit."
+            exit 0
+          fi
+          git config user.name "bsp-profile-cache-bot"
+          git config user.email "bsp-profile-cache-bot@users.noreply.github.com"
+          tools/commitback-push.sh "chore(pbp): refresh committed tiebreak floor [skip ci]" pbp-tiebreak-floor.json \
+            || { rc=$?; [ "$rc" = 1 ] || exit "$rc"; echo "::warning::Could not push the tiebreak floor after 3 attempts — the next run retries."; }
 
       # TEN-151 (founder ruling 2026-09-05, second comment): the Trading Report
       # generator runs ISOLATED (continue-on-error above) so its failure never
