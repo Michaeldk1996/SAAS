@@ -11709,8 +11709,8 @@ function sumCellsTier(rows, key, tier){
 }
 function setOverviewTier(t){
   overviewTier = t;
-  const el = document.getElementById('aSectionOverview');
-  if (el && _overviewMatch) el.innerHTML = buildYearlyTables(_overviewMatch);
+  // through ovPaint, not a bare rebuild: a player-profiles.json reload may have dropped a shard-loaded profile
+  if (_overviewMatch) ovPaint(_overviewMatch);
 }
 // A year-table cell for the active tier. All-tier rows (2021+) are clickable to
 // drill into that year+surface's matches; older/empty cells stay plain.
@@ -12512,9 +12512,36 @@ function alignYearlyPair(p1Rows, p2Rows){
   };
   return [build(p1Rows), build(p2Rows)];
 }
+// TEN-324 (N3, .claude/rules/modal-analysis.md §Overview career spine): the year table, career hero and tier
+// toggle read each player's careerByYear from the player-profile spine — the eager player-profiles.json, or the
+// profiles/{key}.json shard for a player it lacks — never the per-match yearly rows in matches.json. One spine,
+// so the modal and the profile page cannot show one player two career records.
+const _ovProfileSettled = new Set();   // player keys whose profile load has resolved, found or not
+function ovCareerByYear(key){
+  const p = key != null && typeof playerProfiles !== 'undefined' && playerProfiles ? playerProfiles[String(key)] : null;
+  return p && Array.isArray(p.careerByYear) && p.careerByYear.length ? p.careerByYear : null;
+}
+function ensureOverviewProfiles(m){
+  return Promise.all([m.p1Key, m.p2Key].filter(k => k != null).map(k => {
+    if (!ovCareerByYear(k)) _ovProfileSettled.delete(String(k));   // not in memory now = loading again, never "no record"
+    return Promise.resolve(ensurePlayerProfile(k)).catch(() => false).then(() => { _ovProfileSettled.add(String(k)); });
+  }));
+}
+// Paint the Overview from the profiles in memory, then again once both players' profiles have landed (a shard
+// fetch, or a re-fetch after a reload dropped one). Returned so Download report waits for the table, not the
+// loading line.
+function ovPaint(m){
+  const loaded = ensureOverviewProfiles(m);
+  aPaint('aSectionOverview', buildYearlyTables(m));
+  return loaded.then(() => { if (aBuilt(m, 'overview')) aPaint('aSectionOverview', buildYearlyTables(m)); });
+}
 function buildYearlyTables(m){
-  const hasYearly = (m.p1Yearly && m.p1Yearly.length) || (m.p2Yearly && m.p2Yearly.length);
-  if (!hasYearly) {
+  const y1 = ovCareerByYear(m.p1Key), y2 = ovCareerByYear(m.p2Key);
+  // A player whose profile is still loading would otherwise paint as "not yet on tour" for a moment.
+  if ([[m.p1Key, y1], [m.p2Key, y2]].some(([k, y]) => !y && k != null && !_ovProfileSettled.has(String(k)))) {
+    return `<div class="acomingsoon">Loading career records…</div>`;
+  }
+  if (!y1 && !y2) {
     return `<div class="acomingsoon">Year-by-year records need the stats source — not connected for this match.</div>`;
   }
   _overviewMatch = m;
@@ -12522,10 +12549,10 @@ function buildYearlyTables(m){
   // avoid pointing at a stale (now-empty) container id.
   _openOverviewDrill.p1 = ''; _openOverviewDrill.p2 = '';
   const tier = overviewTier;
-  const [p1Rows, p2Rows] = alignYearlyPair(m.p1Yearly || [], m.p2Yearly || []);
+  const [p1Rows, p2Rows] = alignYearlyPair(y1 || [], y2 || []);
   // TEN-313 (N3): "ATP" only on a pre-2021 row that holds tour-level matches only (it
   // carries an atp split); a provider all-tier aggregate carries none and is not badged.
-  const hasAtpOnly = [...(m.p1Yearly || []), ...(m.p2Yearly || [])].some(r => r && r.allTier === false && r.atp);
+  const hasAtpOnly = [...(y1 || []), ...(y2 || [])].some(r => r && r.allTier === false && r.atp);
   const legend = (tier === 'all' && hasAtpOnly)
     ? `<div class="yr-legend">Recent seasons include ATP + Challenger + ITF. <span class="yr-atponly">ATP</span> marks older seasons where only ATP-level records are available.</div>`
     : (tier === 'chitf'
@@ -19287,7 +19314,8 @@ const A_TAB_BUILD = {
   },
   matchstats(m){ aPaint('aSectionMatchStats', buildMatchStatsSection(m)); maMsSheetInit(m); },
   progression(m){ aPaint('aSectionProgression', buildMatchProgressionSection(m)); },
-  overview(m){ aPaint('aSectionOverview', buildYearlyTables(m)); },
+  // TEN-324: the career spine (careerByYear) for both players, eager file or shard; returned so Download report waits.
+  overview(m){ return ovPaint(m); },
   tournament(m){ aPaint('aSectionTournament', buildTournamentSection(m)); },
   // TEN-304: loading line for THIS match, then its files load (openWeatherTab).
   weather(m){ _aWxMatch = m; renderWeatherSection(); return openWeatherTab(); },

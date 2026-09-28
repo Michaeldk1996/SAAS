@@ -355,17 +355,19 @@ const tm = (o) => Object.assign({ p1: 'C. Alcaraz', p1Key: '1', p2: 'X', p2Key: 
   const sb = {};
   vm.createContext(sb);
   vm.runInContext([
-    'var overviewTier = "all", _overviewMatch = null, _openOverviewDrill = { p1: "", p2: "" };',
+    'var overviewTier = "all", _overviewMatch = null, _openOverviewDrill = { p1: "", p2: "" }, playerProfiles = {};',
+    // TEN-324: the Overview reads careerByYear off the profile spine, so the rows go in through playerProfiles
+    ...(html.match(/\nconst _ovProfileSettled = [^\n]*/g) || []).map((l) => l.trim()),
     'var ANALYSIS_P1_RGBA = (a) => "rgba(0,0,0," + a + ")", ANALYSIS_P2_RGBA = ANALYSIS_P1_RGBA;',
     'function loadCareerHistory() {} function seasonSurfaceBlockHtml() { return ""; }',
     // TEN-314 D2: the one sample gate the career rates go through
     ...(html.match(/\nconst (MA_GREY|MA_SMALL_NOTE) = [^\n]*/g) || []).map((l) => l.trim()),
     ...['tourxSampleGate', 'maGate', 'maPct', 'maRate', 'maRateHtml', 'maGateBar', 'maSmallNote'].map(fnSource),
-    ...['cellClass', 'cellText', 'cellForTier', 'sumCellsTier', 'yrSurfCell', 'buildYearlyTable', 'alignYearlyPair', 'buildYearlyTables'].map(fnSource),
+    ...['cellClass', 'cellText', 'cellForTier', 'sumCellsTier', 'yrSurfCell', 'buildYearlyTable', 'alignYearlyPair', 'ovCareerByYear', 'buildYearlyTables'].map(fnSource),
   ].join('\n'), sb);
   const agg = { year: '2018', allTier: false, total: wl(18, 12), clay: null, hard: wl(18, 12), grass: null, indoor: null, atp: null, chitf: null };
   const tour = { year: '2017', allTier: false, total: wl(2, 1), clay: null, hard: wl(2, 1), grass: null, indoor: null, atp: { total: wl(2, 1), clay: null, hard: wl(2, 1), grass: null, indoor: null }, chitf: null };
-  const out = (rows) => sb.buildYearlyTables({ p1: 'A', p2: 'B', p1Key: null, p2Key: null, p1Yearly: rows, p2Yearly: [] });
+  const out = (rows) => { sb.playerProfiles[7] = { careerByYear: rows }; return sb.buildYearlyTables({ p1: 'A', p2: 'B', p1Key: 7, p2Key: null }); };
   const badge = /<td class="yr-year">2018<span class="yr-atponly"/;
   // Mutation: revert the badge condition to `r.allTier === false` → the aggregate row is badged ATP again.
   check('N3 modal: an all-tier aggregate year is NOT badged "ATP", and no ATP legend is printed', () => {
