@@ -15,7 +15,7 @@
       "p1": 1.59,
       "p2": 2.38,
       "bookmaker": "1xBet",
-      "seenAt": "2026-09-28T09:42:01.821Z"
+      "seenAt": "2026-09-28T09:59:59.957Z"
     },
     "bestOdds": {
       "p1": {
@@ -26,7 +26,7 @@
         "price": 2.38,
         "bookmaker": "1xBet"
       },
-      "seenAt": "2026-09-28T09:42:01.821Z"
+      "seenAt": "2026-09-28T09:59:59.957Z"
     },
     "tournamentRound": "ATP Chengdu - Semi-finals",
     "p1Key": 2841,
@@ -2971,6 +2971,22 @@
               [
                 "2026-09-28T09:57:25.012Z",
                 1.67
+              ],
+              [
+                "2026-09-28T10:07:45.088Z",
+                1.68
+              ],
+              [
+                "2026-09-28T10:09:45.113Z",
+                1.69
+              ],
+              [
+                "2026-09-28T10:10:05.057Z",
+                1.68
+              ],
+              [
+                "2026-09-28T10:13:25.046Z",
+                1.67
               ]
             ],
             "p2": [
@@ -3280,6 +3296,30 @@
               ],
               [
                 "2026-09-28T09:57:25.012Z",
+                2.46
+              ],
+              [
+                "2026-09-28T10:07:50.025Z",
+                2.44
+              ],
+              [
+                "2026-09-28T10:08:40.069Z",
+                2.42
+              ],
+              [
+                "2026-09-28T10:09:45.113Z",
+                2.44
+              ],
+              [
+                "2026-09-28T10:11:50.154Z",
+                2.42
+              ],
+              [
+                "2026-09-28T10:12:15.055Z",
+                2.44
+              ],
+              [
+                "2026-09-28T10:12:20.086Z",
                 2.46
               ]
             ]
@@ -3633,6 +3673,18 @@
               [
                 "2026-09-28T09:59:54.553Z",
                 1.632
+              ],
+              [
+                "2026-09-28T10:08:10.633Z",
+                1.649
+              ],
+              [
+                "2026-09-28T10:09:57.546Z",
+                1.636
+              ],
+              [
+                "2026-09-28T10:12:39.287Z",
+                1.625
               ]
             ],
             "p2": [
@@ -3815,6 +3867,18 @@
               [
                 "2026-09-28T09:59:54.322Z",
                 2.43
+              ],
+              [
+                "2026-09-28T10:08:10.633Z",
+                2.39
+              ],
+              [
+                "2026-09-28T10:09:57.546Z",
+                2.42
+              ],
+              [
+                "2026-09-28T10:12:39.287Z",
+                2.45
               ]
             ]
           },
@@ -3889,6 +3953,18 @@
               [
                 "2026-09-28T09:59:26.379Z",
                 1.625
+              ],
+              [
+                "2026-09-28T10:07:43.105Z",
+                1.641
+              ],
+              [
+                "2026-09-28T10:09:31.777Z",
+                1.629
+              ],
+              [
+                "2026-09-28T10:12:18.769Z",
+                1.617
               ]
             ],
             "p2": [
@@ -3939,6 +4015,18 @@
               [
                 "2026-09-28T09:59:26.389Z",
                 2.42
+              ],
+              [
+                "2026-09-28T10:07:43.112Z",
+                2.38
+              ],
+              [
+                "2026-09-28T10:09:31.784Z",
+                2.41
+              ],
+              [
+                "2026-09-28T10:12:18.783Z",
+                2.44
               ]
             ]
           },
@@ -3962,19 +4050,19 @@
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-09-28T10:00:01.000Z"
+            "checkedAt": "2026-09-28T10:15:00.000Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-09-28T09:59:50.121Z"
+            "checkedAt": "2026-09-28T10:14:50.472Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-09-28T09:59:50.121Z"
+            "checkedAt": "2026-09-28T10:14:50.472Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -3986,7 +4074,7 @@
             "source": "api-tennis",
             "group": "sharp",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-28T09:59:30.613Z",
+            "checkedAt": "2026-09-28T10:14:38.218Z",
             "firstSeen": "2026-09-28T03:49:24.874Z",
             "gaps": [
               [
@@ -3999,7 +4087,7 @@
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-28T09:59:30.613Z",
+            "checkedAt": "2026-09-28T10:14:38.218Z",
             "firstSeen": "2026-09-27T15:46:25.119Z",
             "gaps": [
               [
@@ -4028,7 +4116,7 @@
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-28T09:59:30.613Z",
+            "checkedAt": "2026-09-28T10:14:38.218Z",
             "firstSeen": "2026-09-27T16:16:46.131Z",
             "gaps": [
               [
@@ -4061,31 +4149,31 @@
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Betfair Sportsbook (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Marathon": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "bet365 (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Sbobet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-28T09:59:30.613Z",
+            "checkedAt": "2026-09-28T10:14:38.218Z",
             "firstSeen": "2026-09-27T20:32:31.567Z",
             "gaps": [
               [
@@ -4110,7 +4198,7 @@
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           }
         }
       }
@@ -4134,15 +4222,15 @@
       "Pncl": {
         "p1": 1.68,
         "p2": 2.29,
-        "seenAt": "2026-09-28T04:28:30.410Z"
+        "seenAt": "2026-09-28T04:11:24.705Z"
       }
     },
     "bookNow": {
       "1xBet": {
         "p1": 1.59,
         "p2": 2.38,
-        "seenAt": "2026-09-28T09:44:31.472Z",
-        "since": "2026-09-28T09:44:31.472Z"
+        "seenAt": "2026-09-28T10:04:49.079Z",
+        "since": "2026-09-28T09:26:38.745Z"
       }
     },
     "pinnacleOpen": {
@@ -4156,7 +4244,7 @@
       "fairP2": 0.4321,
       "edgeVsPinnacleP1": -0.009,
       "edgeVsPinnacleP2": 0.009,
-      "ts": "2026-09-28T04:28:30.288Z"
+      "ts": "2026-09-28T04:11:24.617Z"
     }
   },
   {
@@ -4175,7 +4263,7 @@
       "p1": 1.5,
       "p2": 2.75,
       "bookmaker": "1xBet",
-      "seenAt": "2026-09-28T09:42:01.821Z"
+      "seenAt": "2026-09-28T09:59:59.957Z"
     },
     "bestOdds": {
       "p1": {
@@ -4186,7 +4274,7 @@
         "price": 2.75,
         "bookmaker": "1xBet"
       },
-      "seenAt": "2026-09-28T09:42:01.821Z"
+      "seenAt": "2026-09-28T09:59:59.957Z"
     },
     "tournamentRound": "ATP Hangzhou - Semi-finals",
     "p1Key": 1093,
@@ -7592,13 +7680,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-09-28T09:59:50.121Z"
+            "checkedAt": "2026-09-28T10:14:50.472Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-09-28T09:59:50.121Z"
+            "checkedAt": "2026-09-28T10:14:50.472Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -7610,14 +7698,14 @@
             "source": "api-tennis",
             "group": "sharp",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Betano": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "firstSeen": "2026-09-27T15:46:25.119Z",
-            "checkedAt": "2026-09-28T09:59:30.613Z",
+            "checkedAt": "2026-09-28T10:14:38.218Z",
             "gaps": [
               [
                 "2026-09-27T16:16:46.131Z",
@@ -7649,7 +7737,7 @@
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-28T09:59:30.613Z",
+            "checkedAt": "2026-09-28T10:14:38.218Z",
             "firstSeen": "2026-09-27T16:16:46.131Z",
             "gaps": [
               [
@@ -7682,19 +7770,19 @@
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Betfair Sportsbook (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Marathon": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-28T09:59:30.613Z",
+            "checkedAt": "2026-09-28T10:14:38.218Z",
             "firstSeen": "2026-09-28T01:48:05.736Z",
             "gaps": [
               [
@@ -7715,13 +7803,13 @@
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Sbobet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-28T09:59:30.613Z",
+            "checkedAt": "2026-09-28T10:14:38.218Z",
             "firstSeen": "2026-09-27T16:31:58.238Z",
             "gaps": [
               [
@@ -7766,13 +7854,13 @@
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Pinnacle +30s": {
             "source": "Oddspapi",
             "group": "sharp",
             "clock": "book tick",
-            "checkedAt": "2026-09-28T10:00:01.000Z"
+            "checkedAt": "2026-09-28T10:15:00.000Z"
           }
         }
       }
@@ -7803,8 +7891,8 @@
       "1xBet": {
         "p1": 1.5,
         "p2": 2.75,
-        "seenAt": "2026-09-28T09:44:31.473Z",
-        "since": "2026-09-28T08:31:54.438Z"
+        "seenAt": "2026-09-28T10:04:49.079Z",
+        "since": "2026-09-28T08:50:16.934Z"
       }
     }
   },
@@ -7821,13 +7909,21 @@
     "style": "TBD",
     "value": null,
     "odds": {
-      "p1": null,
-      "p2": null,
-      "bookmaker": null
+      "p1": 1.61,
+      "p2": 2.18,
+      "bookmaker": "1xBet",
+      "seenAt": "2026-09-28T10:00:20.952Z"
     },
     "bestOdds": {
-      "p1": null,
-      "p2": null
+      "p1": {
+        "price": 1.61,
+        "bookmaker": "1xBet"
+      },
+      "p2": {
+        "price": 2.18,
+        "bookmaker": "1xBet"
+      },
+      "seenAt": "2026-09-28T10:00:20.952Z"
     },
     "tournamentRound": null,
     "p1Key": 2083,
@@ -10085,107 +10181,7 @@
       "cpiYear": null,
       "category": "Fast"
     },
-    "weather": {
-      "temperature": 20.8,
-      "windSpeed": 1.1,
-      "humidity": 95,
-      "source": "Open-Meteo",
-      "historical": false,
-      "weekRange": "Sep 28 – 4, 2026",
-      "week": [
-        {
-          "date": "2026-09-28",
-          "dow": "Mon",
-          "label": "Sep 28",
-          "code": 63,
-          "hi": 24,
-          "lo": 21,
-          "rain": 99,
-          "wind": 6,
-          "humidity": 96,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-09-29",
-          "dow": "Tue",
-          "label": "Sep 29",
-          "code": 63,
-          "hi": 21,
-          "lo": 18,
-          "rain": 100,
-          "wind": 4,
-          "humidity": 96,
-          "isMatch": true,
-          "available": true
-        },
-        {
-          "date": "2026-09-30",
-          "dow": "Wed",
-          "label": "Sep 30",
-          "code": 51,
-          "hi": 22,
-          "lo": 18,
-          "rain": 15,
-          "wind": 4,
-          "humidity": 85,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-10-01",
-          "dow": "Thu",
-          "label": "Oct 1",
-          "code": 51,
-          "hi": 27,
-          "lo": 18,
-          "rain": 24,
-          "wind": 13,
-          "humidity": 80,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-10-02",
-          "dow": "Fri",
-          "label": "Oct 2",
-          "code": 51,
-          "hi": 25,
-          "lo": 16,
-          "rain": 22,
-          "wind": 7,
-          "humidity": 75,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-10-03",
-          "dow": "Sat",
-          "label": "Oct 3",
-          "code": 3,
-          "hi": 22,
-          "lo": 16,
-          "rain": 10,
-          "wind": 8,
-          "humidity": 72,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-10-04",
-          "dow": "Sun",
-          "label": "Oct 4",
-          "code": 53,
-          "hi": 23,
-          "lo": 17,
-          "rain": 27,
-          "wind": 8,
-          "humidity": 82,
-          "isMatch": false,
-          "available": true
-        }
-      ]
-    },
+    "weather": null,
     "live": false,
     "liveStatus": null,
     "liveScore": null,
@@ -10230,13 +10226,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-09-28T09:59:50.121Z"
+            "checkedAt": "2026-09-28T10:14:50.472Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-09-28T09:59:50.121Z"
+            "checkedAt": "2026-09-28T10:14:50.472Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -10249,58 +10245,80 @@
             "source": "api-tennis",
             "group": "sharp",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Betano": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "1xBet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-28T09:59:30.613Z",
+            "checkedAt": "2026-09-28T10:14:38.218Z",
             "firstSeen": "2026-09-28T09:49:19.610Z"
           },
           "BetVictor": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Betfair Sportsbook (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Marathon": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "bet365 (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Sbobet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "William Hill": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
+          },
+          "Pinnacle +30s": {
+            "source": "Oddspapi",
+            "group": "sharp",
+            "clock": "book tick",
+            "note": "no Oddspapi fixture matched",
+            "checkedAt": "2026-09-28T10:00:29.000Z"
           }
         }
+      }
+    },
+    "bookOpens": {
+      "1xBet": {
+        "p1": 1.61,
+        "p2": 2.18,
+        "seenAt": "2026-09-28T10:04:49.079Z"
+      }
+    },
+    "bookNow": {
+      "1xBet": {
+        "p1": 1.61,
+        "p2": 2.18,
+        "seenAt": "2026-09-28T10:04:49.079Z",
+        "since": "2026-09-28T10:04:49.079Z"
       }
     }
   },
@@ -12159,107 +12177,7 @@
       "cpiYear": null,
       "category": "Fast"
     },
-    "weather": {
-      "temperature": 20.6,
-      "windSpeed": 3.1,
-      "humidity": 78,
-      "source": "Open-Meteo",
-      "historical": false,
-      "weekRange": "Sep 28 – 4, 2026",
-      "week": [
-        {
-          "date": "2026-09-28",
-          "dow": "Mon",
-          "label": "Sep 28",
-          "code": 63,
-          "hi": 24,
-          "lo": 21,
-          "rain": 99,
-          "wind": 6,
-          "humidity": 96,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-09-29",
-          "dow": "Tue",
-          "label": "Sep 29",
-          "code": 63,
-          "hi": 21,
-          "lo": 18,
-          "rain": 100,
-          "wind": 4,
-          "humidity": 96,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-09-30",
-          "dow": "Wed",
-          "label": "Sep 30",
-          "code": 51,
-          "hi": 22,
-          "lo": 18,
-          "rain": 15,
-          "wind": 4,
-          "humidity": 85,
-          "isMatch": true,
-          "available": true
-        },
-        {
-          "date": "2026-10-01",
-          "dow": "Thu",
-          "label": "Oct 1",
-          "code": 51,
-          "hi": 27,
-          "lo": 18,
-          "rain": 24,
-          "wind": 13,
-          "humidity": 80,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-10-02",
-          "dow": "Fri",
-          "label": "Oct 2",
-          "code": 51,
-          "hi": 25,
-          "lo": 16,
-          "rain": 22,
-          "wind": 7,
-          "humidity": 75,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-10-03",
-          "dow": "Sat",
-          "label": "Oct 3",
-          "code": 3,
-          "hi": 22,
-          "lo": 16,
-          "rain": 10,
-          "wind": 8,
-          "humidity": 72,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-10-04",
-          "dow": "Sun",
-          "label": "Oct 4",
-          "code": 53,
-          "hi": 23,
-          "lo": 17,
-          "rain": 27,
-          "wind": 8,
-          "humidity": 82,
-          "isMatch": false,
-          "available": true
-        }
-      ]
-    },
+    "weather": null,
     "live": false,
     "liveStatus": null,
     "liveScore": null,
@@ -12283,14 +12201,14 @@
             "group": "soft",
             "clock": "recorded by us",
             "note": "no recorded event matched",
-            "checkedAt": "2026-09-28T09:59:50.121Z"
+            "checkedAt": "2026-09-28T10:14:50.472Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
             "note": "no recorded event matched",
-            "checkedAt": "2026-09-28T09:59:50.121Z"
+            "checkedAt": "2026-09-28T10:14:50.472Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -12304,63 +12222,63 @@
             "group": "sharp",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Betano": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "1xBet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "BetVictor": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Betfair Sportsbook (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Marathon": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "bet365 (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Sbobet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "William Hill": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           }
         }
       }
@@ -14276,6 +14194,10 @@
               [
                 "2026-09-28T05:21:45.820Z",
                 1.41
+              ],
+              [
+                "2026-09-28T10:14:15.062Z",
+                1.47
               ]
             ]
           }
@@ -14292,13 +14214,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-09-28T09:59:50.121Z"
+            "checkedAt": "2026-09-28T10:14:50.472Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-09-28T09:59:50.121Z"
+            "checkedAt": "2026-09-28T10:14:50.472Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -14312,63 +14234,63 @@
             "group": "sharp",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Betano": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "1xBet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "BetVictor": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Betfair Sportsbook (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Marathon": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "bet365 (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Sbobet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "William Hill": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           }
         }
       }
@@ -16718,6 +16640,10 @@
               [
                 "2026-09-28T09:03:29.453Z",
                 2.62
+              ],
+              [
+                "2026-09-28T10:14:10.063Z",
+                2.78
               ]
             ],
             "p2": [
@@ -16756,6 +16682,14 @@
               [
                 "2026-09-28T09:59:10.033Z",
                 1.31
+              ],
+              [
+                "2026-09-28T10:04:10.032Z",
+                1.32
+              ],
+              [
+                "2026-09-28T10:14:10.063Z",
+                1.33
               ]
             ]
           }
@@ -16772,13 +16706,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-09-28T09:59:50.121Z"
+            "checkedAt": "2026-09-28T10:14:50.472Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-09-28T09:59:50.121Z"
+            "checkedAt": "2026-09-28T10:14:50.472Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -16792,63 +16726,63 @@
             "group": "sharp",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Betano": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "1xBet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "BetVictor": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Betfair Sportsbook (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Marathon": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "bet365 (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Sbobet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "William Hill": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           }
         }
       }
@@ -18803,8 +18737,8 @@
             "Service:Double Faults": 1.5,
             "Service:1st Serve Points Won": 71.2,
             "Service:2nd Serve Points Won": 54.9,
-            "Service:Break Points Saved": 67.6,
-            "Return:Break Points Converted": 40.4,
+            "Service:Break Points Saved": 67.8,
+            "Return:Break Points Converted": 40.5,
             "Points:Winners": 25.1,
             "Points:Unforced Errors": 23.6,
             "Points:Service Points Won": 66.1,
@@ -18814,15 +18748,15 @@
           "samples": {
             "Service:Aces": 55,
             "Service:Double Faults": 55,
-            "Service:1st Serve Points Won": 2846,
-            "Service:2nd Serve Points Won": 1284,
-            "Service:Break Points Saved": 306,
-            "Return:Break Points Converted": 332,
+            "Service:1st Serve Points Won": 2855,
+            "Service:2nd Serve Points Won": 1292,
+            "Service:Break Points Saved": 307,
+            "Return:Break Points Converted": 333,
             "Points:Winners": 42,
             "Points:Unforced Errors": 42,
-            "Points:Service Points Won": 4130,
-            "Points:Return Points Won": 4143,
-            "Points:Total Points Won": 8273
+            "Points:Service Points Won": 4145,
+            "Points:Return Points Won": 4153,
+            "Points:Total Points Won": 8298
           }
         },
         "p2": {
@@ -18863,26 +18797,26 @@
             "Service:Double Faults": 2,
             "Service:1st Serve Points Won": 70.2,
             "Service:2nd Serve Points Won": 52.9,
-            "Service:Break Points Saved": 65.2,
-            "Return:Break Points Converted": 44.9,
+            "Service:Break Points Saved": 65.3,
+            "Return:Break Points Converted": 45,
             "Points:Winners": 22,
             "Points:Unforced Errors": 23.3,
             "Points:Service Points Won": 64.5,
             "Points:Return Points Won": 37.6,
-            "Points:Total Points Won": 51.1
+            "Points:Total Points Won": 51.2
           },
           "samples": {
             "Service:Aces": 66,
             "Service:Double Faults": 66,
-            "Service:1st Serve Points Won": 3358,
-            "Service:2nd Serve Points Won": 1638,
-            "Service:Break Points Saved": 391,
-            "Return:Break Points Converted": 408,
+            "Service:1st Serve Points Won": 3367,
+            "Service:2nd Serve Points Won": 1646,
+            "Service:Break Points Saved": 392,
+            "Return:Break Points Converted": 409,
             "Points:Winners": 47,
             "Points:Unforced Errors": 47,
-            "Points:Service Points Won": 4995,
-            "Points:Return Points Won": 4934,
-            "Points:Total Points Won": 9929
+            "Points:Service Points Won": 5010,
+            "Points:Return Points Won": 4944,
+            "Points:Total Points Won": 9954
           }
         },
         "p2": {
@@ -19077,14 +19011,14 @@
             "group": "soft",
             "clock": "recorded by us",
             "note": "no recorded event matched",
-            "checkedAt": "2026-09-28T09:59:50.121Z"
+            "checkedAt": "2026-09-28T10:14:50.472Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
             "note": "no recorded event matched",
-            "checkedAt": "2026-09-28T09:59:50.121Z"
+            "checkedAt": "2026-09-28T10:14:50.472Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -19098,63 +19032,63 @@
             "group": "sharp",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Betano": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "1xBet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "BetVictor": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Betfair Sportsbook (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Marathon": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "bet365 (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Sbobet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "William Hill": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           }
         }
       }
@@ -21464,13 +21398,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-09-28T09:59:50.121Z"
+            "checkedAt": "2026-09-28T10:14:50.472Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-09-28T09:59:50.121Z"
+            "checkedAt": "2026-09-28T10:14:50.472Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -21484,63 +21418,63 @@
             "group": "sharp",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Betano": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "1xBet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "BetVictor": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Betfair Sportsbook (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Marathon": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "bet365 (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Sbobet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "William Hill": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           }
         }
       }
@@ -23549,6 +23483,10 @@
               [
                 "2026-09-28T08:11:33.250Z",
                 2.36
+              ],
+              [
+                "2026-09-28T10:13:15.055Z",
+                2.48
               ]
             ]
           }
@@ -23565,13 +23503,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-09-28T09:59:50.121Z"
+            "checkedAt": "2026-09-28T10:14:50.472Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-09-28T09:59:50.121Z"
+            "checkedAt": "2026-09-28T10:14:50.472Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -23585,63 +23523,63 @@
             "group": "sharp",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Betano": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "1xBet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "BetVictor": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Betfair Sportsbook (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Marathon": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "bet365 (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Sbobet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "William Hill": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           }
         }
       }
@@ -26222,6 +26160,10 @@
               [
                 "2026-09-28T05:21:45.820Z",
                 1.34
+              ],
+              [
+                "2026-09-28T10:14:10.063Z",
+                1.25
               ]
             ],
             "p2": [
@@ -26288,6 +26230,14 @@
               [
                 "2026-09-28T09:59:10.033Z",
                 2.68
+              ],
+              [
+                "2026-09-28T10:04:10.032Z",
+                2.72
+              ],
+              [
+                "2026-09-28T10:14:10.063Z",
+                2.78
               ]
             ]
           }
@@ -26304,13 +26254,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-09-28T09:59:50.121Z"
+            "checkedAt": "2026-09-28T10:14:50.472Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-09-28T09:59:50.121Z"
+            "checkedAt": "2026-09-28T10:14:50.472Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -26324,63 +26274,63 @@
             "group": "sharp",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Betano": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "1xBet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "BetVictor": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Betfair Sportsbook (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Marathon": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "bet365 (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Sbobet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "William Hill": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           }
         }
       }
@@ -29107,13 +29057,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-09-28T09:59:50.121Z"
+            "checkedAt": "2026-09-28T10:14:50.472Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-09-28T09:59:50.121Z"
+            "checkedAt": "2026-09-28T10:14:50.472Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -29127,63 +29077,63 @@
             "group": "sharp",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Betano": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "1xBet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "BetVictor": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Betfair Sportsbook (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Marathon": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "bet365 (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Sbobet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "William Hill": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           }
         }
       }
@@ -30756,32 +30706,32 @@
           }
         },
         "p2": {
-          "matchCount": 33,
+          "matchCount": 34,
           "stats": {
-            "Service:Aces": 6.5,
-            "Service:Double Faults": 3.8,
-            "Service:1st Serve Points Won": 73.9,
-            "Service:2nd Serve Points Won": 51.2,
+            "Service:Aces": 6.4,
+            "Service:Double Faults": 3.7,
+            "Service:1st Serve Points Won": 74,
+            "Service:2nd Serve Points Won": 51.3,
             "Service:Break Points Saved": 63.1,
             "Return:Break Points Converted": 40.4,
             "Points:Winners": 25.4,
             "Points:Unforced Errors": 25,
-            "Points:Service Points Won": 63.9,
-            "Points:Return Points Won": 37.7,
+            "Points:Service Points Won": 64,
+            "Points:Return Points Won": 37.6,
             "Points:Total Points Won": 50.9
           },
           "samples": {
-            "Service:Aces": 33,
-            "Service:Double Faults": 33,
-            "Service:1st Serve Points Won": 1570,
-            "Service:2nd Serve Points Won": 1229,
+            "Service:Aces": 34,
+            "Service:Double Faults": 34,
+            "Service:1st Serve Points Won": 1580,
+            "Service:2nd Serve Points Won": 1233,
             "Service:Break Points Saved": 222,
             "Return:Break Points Converted": 235,
             "Points:Winners": 18,
             "Points:Unforced Errors": 18,
-            "Points:Service Points Won": 2799,
-            "Points:Return Points Won": 2737,
-            "Points:Total Points Won": 5536
+            "Points:Service Points Won": 2813,
+            "Points:Return Points Won": 2750,
+            "Points:Total Points Won": 5563
           }
         }
       },
@@ -30816,32 +30766,32 @@
           }
         },
         "p2": {
-          "matchCount": 22,
+          "matchCount": 23,
           "stats": {
-            "Service:Aces": 7,
-            "Service:Double Faults": 4.1,
-            "Service:1st Serve Points Won": 74.3,
-            "Service:2nd Serve Points Won": 51,
+            "Service:Aces": 6.8,
+            "Service:Double Faults": 4,
+            "Service:1st Serve Points Won": 74.5,
+            "Service:2nd Serve Points Won": 51.1,
             "Service:Break Points Saved": 67.7,
             "Return:Break Points Converted": 41.2,
             "Points:Winners": 22.7,
             "Points:Unforced Errors": 24,
-            "Points:Service Points Won": 63.5,
-            "Points:Return Points Won": 36.6,
+            "Points:Service Points Won": 63.6,
+            "Points:Return Points Won": 36.5,
             "Points:Total Points Won": 50.4
           },
           "samples": {
-            "Service:Aces": 22,
-            "Service:Double Faults": 22,
-            "Service:1st Serve Points Won": 1025,
-            "Service:2nd Serve Points Won": 881,
+            "Service:Aces": 23,
+            "Service:Double Faults": 23,
+            "Service:1st Serve Points Won": 1035,
+            "Service:2nd Serve Points Won": 885,
             "Service:Break Points Saved": 161,
             "Return:Break Points Converted": 148,
             "Points:Winners": 11,
             "Points:Unforced Errors": 11,
-            "Points:Service Points Won": 1906,
-            "Points:Return Points Won": 1807,
-            "Points:Total Points Won": 3713
+            "Points:Service Points Won": 1920,
+            "Points:Return Points Won": 1820,
+            "Points:Total Points Won": 3740
           }
         }
       },
@@ -31007,14 +30957,14 @@
             "group": "soft",
             "clock": "recorded by us",
             "note": "no recorded event matched",
-            "checkedAt": "2026-09-28T09:59:50.121Z"
+            "checkedAt": "2026-09-28T10:14:50.472Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
             "note": "no recorded event matched",
-            "checkedAt": "2026-09-28T09:59:50.121Z"
+            "checkedAt": "2026-09-28T10:14:50.472Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -31028,63 +30978,63 @@
             "group": "sharp",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Betano": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "1xBet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "BetVictor": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Betfair Sportsbook (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Marathon": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "bet365 (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Sbobet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "William Hill": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           }
         }
       }
@@ -33579,14 +33529,14 @@
             "group": "soft",
             "clock": "recorded by us",
             "note": "no recorded event matched",
-            "checkedAt": "2026-09-28T09:59:50.121Z"
+            "checkedAt": "2026-09-28T10:14:50.472Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
             "note": "no recorded event matched",
-            "checkedAt": "2026-09-28T09:59:50.121Z"
+            "checkedAt": "2026-09-28T10:14:50.472Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -33600,63 +33550,63 @@
             "group": "sharp",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Betano": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "1xBet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "BetVictor": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Betfair Sportsbook (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Marathon": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "bet365 (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Sbobet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "William Hill": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           }
         }
       }
@@ -36250,13 +36200,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-09-28T09:59:50.121Z"
+            "checkedAt": "2026-09-28T10:14:50.472Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-09-28T09:59:50.121Z"
+            "checkedAt": "2026-09-28T10:14:50.472Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -36270,63 +36220,63 @@
             "group": "sharp",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Betano": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "1xBet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "BetVictor": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Betfair Sportsbook (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Marathon": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "bet365 (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Sbobet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "William Hill": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           }
         }
       }
@@ -38230,6 +38180,10 @@
               [
                 "2026-09-28T09:54:50.005Z",
                 1.72
+              ],
+              [
+                "2026-09-28T10:08:35.137Z",
+                1.85
               ]
             ],
             "p2": [
@@ -38244,6 +38198,10 @@
               [
                 "2026-09-28T09:43:34.994Z",
                 1.64
+              ],
+              [
+                "2026-09-28T10:08:35.137Z",
+                1.59
               ]
             ]
           }
@@ -38260,13 +38218,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-09-28T09:59:50.121Z"
+            "checkedAt": "2026-09-28T10:14:50.472Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-09-28T09:59:50.121Z"
+            "checkedAt": "2026-09-28T10:14:50.472Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -38280,63 +38238,63 @@
             "group": "sharp",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Betano": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "1xBet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "BetVictor": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Betfair Sportsbook (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Marathon": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "bet365 (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Sbobet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "William Hill": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           }
         }
       }
@@ -40811,13 +40769,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-09-28T09:59:50.121Z"
+            "checkedAt": "2026-09-28T10:14:50.472Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-09-28T09:59:50.121Z"
+            "checkedAt": "2026-09-28T10:14:50.472Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -40831,63 +40789,63 @@
             "group": "sharp",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Betano": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "1xBet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "BetVictor": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Betfair Sportsbook (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Marathon": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "bet365 (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Sbobet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "William Hill": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           }
         }
       }
@@ -43125,14 +43083,14 @@
             "group": "soft",
             "clock": "recorded by us",
             "note": "no recorded event matched",
-            "checkedAt": "2026-09-28T09:59:50.121Z"
+            "checkedAt": "2026-09-28T10:14:50.472Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
             "note": "no recorded event matched",
-            "checkedAt": "2026-09-28T09:59:50.121Z"
+            "checkedAt": "2026-09-28T10:14:50.472Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -43146,63 +43104,63 @@
             "group": "sharp",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Betano": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "1xBet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "BetVictor": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Betfair Sportsbook (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Marathon": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "bet365 (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Sbobet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "William Hill": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           }
         }
       }
@@ -45478,13 +45436,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-09-28T09:59:50.121Z"
+            "checkedAt": "2026-09-28T10:14:50.472Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-09-28T09:59:50.121Z"
+            "checkedAt": "2026-09-28T10:14:50.472Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -45498,63 +45456,63 @@
             "group": "sharp",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Betano": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "1xBet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "BetVictor": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Betfair Sportsbook (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Marathon": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "bet365 (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Sbobet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "William Hill": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           }
         }
       }
@@ -47758,6 +47716,10 @@
               [
                 "2026-09-28T09:59:10.033Z",
                 1.5
+              ],
+              [
+                "2026-09-28T10:09:10.160Z",
+                1.51
               ]
             ]
           }
@@ -47774,13 +47736,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-09-28T09:59:50.121Z"
+            "checkedAt": "2026-09-28T10:14:50.472Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-09-28T09:59:50.121Z"
+            "checkedAt": "2026-09-28T10:14:50.472Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -47794,63 +47756,63 @@
             "group": "sharp",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Betano": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "1xBet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "BetVictor": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Betfair Sportsbook (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Marathon": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "bet365 (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Sbobet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "William Hill": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           }
         }
       }
@@ -50061,14 +50023,14 @@
             "group": "soft",
             "clock": "recorded by us",
             "note": "no recorded event matched",
-            "checkedAt": "2026-09-28T09:59:50.121Z"
+            "checkedAt": "2026-09-28T10:14:50.472Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
             "note": "no recorded event matched",
-            "checkedAt": "2026-09-28T09:59:50.121Z"
+            "checkedAt": "2026-09-28T10:14:50.472Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -50082,63 +50044,63 @@
             "group": "sharp",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Betano": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "1xBet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "BetVictor": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Betfair Sportsbook (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Marathon": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "bet365 (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Sbobet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "William Hill": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           }
         }
       }
@@ -52397,32 +52359,32 @@
           }
         },
         "p2": {
-          "matchCount": 53,
+          "matchCount": 54,
           "stats": {
-            "Service:Aces": 7.3,
+            "Service:Aces": 7.2,
             "Service:Double Faults": 2.8,
             "Service:1st Serve Points Won": 74.6,
-            "Service:2nd Serve Points Won": 51.7,
+            "Service:2nd Serve Points Won": 51.8,
             "Service:Break Points Saved": 66.8,
             "Return:Break Points Converted": 36.1,
             "Points:Winners": 27.6,
             "Points:Unforced Errors": 25.9,
-            "Points:Service Points Won": 65.7,
-            "Points:Return Points Won": 37.4,
+            "Points:Service Points Won": 65.8,
+            "Points:Return Points Won": 37.3,
             "Points:Total Points Won": 51.3
           },
           "samples": {
-            "Service:Aces": 53,
-            "Service:Double Faults": 53,
-            "Service:1st Serve Points Won": 2689,
-            "Service:2nd Serve Points Won": 1668,
+            "Service:Aces": 54,
+            "Service:Double Faults": 54,
+            "Service:1st Serve Points Won": 2701,
+            "Service:2nd Serve Points Won": 1673,
             "Service:Break Points Saved": 277,
             "Return:Break Points Converted": 363,
             "Points:Winners": 43,
             "Points:Unforced Errors": 43,
-            "Points:Service Points Won": 4365,
-            "Points:Return Points Won": 4531,
-            "Points:Total Points Won": 8896
+            "Points:Service Points Won": 4381,
+            "Points:Return Points Won": 4545,
+            "Points:Total Points Won": 8926
           }
         }
       },
@@ -52457,32 +52419,32 @@
           }
         },
         "p2": {
-          "matchCount": 62,
+          "matchCount": 63,
           "stats": {
-            "Service:Aces": 8.6,
-            "Service:Double Faults": 3.1,
+            "Service:Aces": 8.5,
+            "Service:Double Faults": 3,
             "Service:1st Serve Points Won": 77.5,
-            "Service:2nd Serve Points Won": 51,
+            "Service:2nd Serve Points Won": 51.1,
             "Service:Break Points Saved": 63.1,
             "Return:Break Points Converted": 36,
             "Points:Winners": 27.3,
             "Points:Unforced Errors": 26.5,
-            "Points:Service Points Won": 67,
+            "Points:Service Points Won": 67.1,
             "Points:Return Points Won": 36.7,
             "Points:Total Points Won": 51.3
           },
           "samples": {
-            "Service:Aces": 62,
-            "Service:Double Faults": 62,
-            "Service:1st Serve Points Won": 3025,
-            "Service:2nd Serve Points Won": 1929,
+            "Service:Aces": 63,
+            "Service:Double Faults": 63,
+            "Service:1st Serve Points Won": 3037,
+            "Service:2nd Serve Points Won": 1934,
             "Service:Break Points Saved": 325,
             "Return:Break Points Converted": 456,
             "Points:Winners": 47,
             "Points:Unforced Errors": 47,
-            "Points:Service Points Won": 4962,
-            "Points:Return Points Won": 5333,
-            "Points:Total Points Won": 10295
+            "Points:Service Points Won": 4978,
+            "Points:Return Points Won": 5347,
+            "Points:Total Points Won": 10325
           }
         }
       },
@@ -52648,14 +52610,14 @@
             "group": "soft",
             "clock": "recorded by us",
             "note": "no recorded event matched",
-            "checkedAt": "2026-09-28T09:59:50.121Z"
+            "checkedAt": "2026-09-28T10:14:50.472Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
             "note": "no recorded event matched",
-            "checkedAt": "2026-09-28T09:59:50.121Z"
+            "checkedAt": "2026-09-28T10:14:50.472Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -52669,63 +52631,63 @@
             "group": "sharp",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Betano": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "1xBet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "BetVictor": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Betfair Sportsbook (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Marathon": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "bet365 (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Sbobet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "William Hill": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           }
         }
       }
@@ -55313,13 +55275,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-09-28T09:59:50.121Z"
+            "checkedAt": "2026-09-28T10:14:50.472Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-09-28T09:59:50.121Z"
+            "checkedAt": "2026-09-28T10:14:50.472Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -55333,63 +55295,63 @@
             "group": "sharp",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Betano": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "1xBet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "BetVictor": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Betfair Sportsbook (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Marathon": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "bet365 (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Sbobet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "William Hill": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           }
         }
       }
@@ -57866,14 +57828,14 @@
             "group": "soft",
             "clock": "recorded by us",
             "note": "no recorded event matched",
-            "checkedAt": "2026-09-28T09:59:50.121Z"
+            "checkedAt": "2026-09-28T10:14:50.472Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
             "note": "no recorded event matched",
-            "checkedAt": "2026-09-28T09:59:50.121Z"
+            "checkedAt": "2026-09-28T10:14:50.472Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -57887,63 +57849,63 @@
             "group": "sharp",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Betano": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "1xBet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "BetVictor": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Betfair Sportsbook (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Marathon": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "bet365 (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Sbobet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "William Hill": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           }
         }
       }
@@ -59840,6 +59802,14 @@
               [
                 "2026-09-28T09:59:15.030Z",
                 1.99
+              ],
+              [
+                "2026-09-28T10:04:10.032Z",
+                2.0
+              ],
+              [
+                "2026-09-28T10:14:10.063Z",
+                2.02
               ]
             ]
           }
@@ -59856,13 +59826,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-09-28T09:59:50.121Z"
+            "checkedAt": "2026-09-28T10:14:50.472Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-09-28T09:59:50.121Z"
+            "checkedAt": "2026-09-28T10:14:50.472Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -59876,63 +59846,63 @@
             "group": "sharp",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Betano": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "1xBet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "BetVictor": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Betfair Sportsbook (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Marathon": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "bet365 (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Sbobet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "William Hill": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           }
         }
       }
@@ -62292,14 +62262,14 @@
             "group": "soft",
             "clock": "recorded by us",
             "note": "no recorded event matched",
-            "checkedAt": "2026-09-28T09:59:50.121Z"
+            "checkedAt": "2026-09-28T10:14:50.472Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
             "note": "no recorded event matched",
-            "checkedAt": "2026-09-28T09:59:50.121Z"
+            "checkedAt": "2026-09-28T10:14:50.472Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -62313,63 +62283,63 @@
             "group": "sharp",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Betano": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "1xBet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "BetVictor": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Betfair Sportsbook (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Marathon": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "bet365 (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Sbobet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "William Hill": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           }
         }
       }
@@ -64431,14 +64401,14 @@
             "group": "soft",
             "clock": "recorded by us",
             "note": "no recorded event matched",
-            "checkedAt": "2026-09-28T09:59:50.121Z"
+            "checkedAt": "2026-09-28T10:14:50.472Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
             "note": "no recorded event matched",
-            "checkedAt": "2026-09-28T09:59:50.121Z"
+            "checkedAt": "2026-09-28T10:14:50.472Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -64452,63 +64422,63 @@
             "group": "sharp",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Betano": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "1xBet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "BetVictor": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Betfair Sportsbook (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Marathon": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "bet365 (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Sbobet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "William Hill": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           }
         }
       }
@@ -67342,6 +67312,18 @@
               [
                 "2026-09-28T09:59:05.045Z",
                 4.2
+              ],
+              [
+                "2026-09-28T10:04:10.032Z",
+                4.3
+              ],
+              [
+                "2026-09-28T10:09:10.160Z",
+                4.4
+              ],
+              [
+                "2026-09-28T10:14:10.063Z",
+                4.5
               ]
             ]
           }
@@ -67358,13 +67340,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-09-28T09:59:50.121Z"
+            "checkedAt": "2026-09-28T10:14:50.472Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-09-28T09:59:50.121Z"
+            "checkedAt": "2026-09-28T10:14:50.472Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -67378,63 +67360,63 @@
             "group": "sharp",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Betano": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "1xBet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "BetVictor": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Betfair Sportsbook (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Marathon": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "bet365 (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Sbobet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "William Hill": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
             "note": "api-tennis lists no odds for this match",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           }
         }
       }
@@ -67458,7 +67440,7 @@
       "p1": 2.3,
       "p2": 1.61,
       "bookmaker": "bet365",
-      "seenAt": "2026-09-28T09:43:06.608Z"
+      "seenAt": "2026-09-28T10:02:12.638Z"
     },
     "bestOdds": {
       "p1": {
@@ -67469,7 +67451,7 @@
         "price": 1.62,
         "bookmaker": "Betfair"
       },
-      "seenAt": "2026-09-28T09:43:06.608Z"
+      "seenAt": "2026-09-28T10:02:12.638Z"
     },
     "tournamentRound": "ATP Hangzhou - 1/8-finals",
     "p1Key": 1335,
@@ -69428,32 +69410,32 @@
     "extraStats": {
       "last52Weeks": {
         "p1": {
-          "matchCount": 33,
+          "matchCount": 34,
           "stats": {
-            "Service:Aces": 6.5,
-            "Service:Double Faults": 3.8,
-            "Service:1st Serve Points Won": 73.9,
-            "Service:2nd Serve Points Won": 51.2,
+            "Service:Aces": 6.4,
+            "Service:Double Faults": 3.7,
+            "Service:1st Serve Points Won": 74,
+            "Service:2nd Serve Points Won": 51.3,
             "Service:Break Points Saved": 63.1,
             "Return:Break Points Converted": 40.4,
             "Points:Winners": 25.4,
             "Points:Unforced Errors": 25,
-            "Points:Service Points Won": 63.9,
-            "Points:Return Points Won": 37.7,
+            "Points:Service Points Won": 64,
+            "Points:Return Points Won": 37.6,
             "Points:Total Points Won": 50.9
           },
           "samples": {
-            "Service:Aces": 33,
-            "Service:Double Faults": 33,
-            "Service:1st Serve Points Won": 1570,
-            "Service:2nd Serve Points Won": 1229,
+            "Service:Aces": 34,
+            "Service:Double Faults": 34,
+            "Service:1st Serve Points Won": 1580,
+            "Service:2nd Serve Points Won": 1233,
             "Service:Break Points Saved": 222,
             "Return:Break Points Converted": 235,
             "Points:Winners": 18,
             "Points:Unforced Errors": 18,
-            "Points:Service Points Won": 2799,
-            "Points:Return Points Won": 2737,
-            "Points:Total Points Won": 5536
+            "Points:Service Points Won": 2813,
+            "Points:Return Points Won": 2753,
+            "Points:Total Points Won": 5566
           }
         },
         "p2": {
@@ -69488,32 +69470,32 @@
       },
       "surface": {
         "p1": {
-          "matchCount": 22,
+          "matchCount": 23,
           "stats": {
-            "Service:Aces": 7,
-            "Service:Double Faults": 4.1,
-            "Service:1st Serve Points Won": 74.3,
-            "Service:2nd Serve Points Won": 51,
+            "Service:Aces": 6.8,
+            "Service:Double Faults": 4,
+            "Service:1st Serve Points Won": 74.5,
+            "Service:2nd Serve Points Won": 51.1,
             "Service:Break Points Saved": 67.7,
             "Return:Break Points Converted": 41.2,
             "Points:Winners": 22.7,
             "Points:Unforced Errors": 24,
-            "Points:Service Points Won": 63.5,
-            "Points:Return Points Won": 36.6,
+            "Points:Service Points Won": 63.6,
+            "Points:Return Points Won": 36.4,
             "Points:Total Points Won": 50.4
           },
           "samples": {
-            "Service:Aces": 22,
-            "Service:Double Faults": 22,
-            "Service:1st Serve Points Won": 1025,
-            "Service:2nd Serve Points Won": 881,
+            "Service:Aces": 23,
+            "Service:Double Faults": 23,
+            "Service:1st Serve Points Won": 1035,
+            "Service:2nd Serve Points Won": 885,
             "Service:Break Points Saved": 161,
             "Return:Break Points Converted": 148,
             "Points:Winners": 11,
             "Points:Unforced Errors": 11,
-            "Points:Service Points Won": 1906,
-            "Points:Return Points Won": 1807,
-            "Points:Total Points Won": 3713
+            "Points:Service Points Won": 1920,
+            "Points:Return Points Won": 1823,
+            "Points:Total Points Won": 3743
           }
         },
         "p2": {
@@ -70620,7 +70602,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-09-28T09:44:31.473Z"
+      "seenAt": "2026-09-28T10:04:49.079Z"
     },
     "closingOdds": {
       "p1": 2.37,
@@ -70657,7 +70639,7 @@
       "p1": 1.5,
       "p2": 2.62,
       "bookmaker": "bet365",
-      "seenAt": "2026-09-28T09:43:06.608Z"
+      "seenAt": "2026-09-28T10:02:12.638Z"
     },
     "bestOdds": {
       "p1": {
@@ -70668,7 +70650,7 @@
         "price": 2.67,
         "bookmaker": "Betano"
       },
-      "seenAt": "2026-09-28T09:43:06.608Z"
+      "seenAt": "2026-09-28T10:02:12.638Z"
     },
     "tournamentRound": "ATP Hangzhou - 1/8-finals",
     "p1Key": 824,
@@ -74111,7 +74093,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-09-28T09:44:31.474Z"
+      "seenAt": "2026-09-28T10:04:49.080Z"
     },
     "closingOdds": {
       "p1": 1.47,
@@ -74161,7 +74143,7 @@
       "p1": 1.66,
       "p2": 2.2,
       "bookmaker": "bet365",
-      "seenAt": "2026-09-28T09:43:06.608Z"
+      "seenAt": "2026-09-28T10:02:12.638Z"
     },
     "bestOdds": {
       "p1": {
@@ -74172,7 +74154,7 @@
         "price": 2.2,
         "bookmaker": "bet365"
       },
-      "seenAt": "2026-09-28T09:43:06.608Z"
+      "seenAt": "2026-09-28T10:02:12.638Z"
     },
     "tournamentRound": "ATP Chengdu - 1/8-finals",
     "p1Key": 2169,
@@ -76015,28 +75997,28 @@
           "stats": {
             "Service:Aces": 7.2,
             "Service:Double Faults": 1.9,
-            "Service:1st Serve Points Won": 72.8,
-            "Service:2nd Serve Points Won": 52,
-            "Service:Break Points Saved": 62.9,
-            "Return:Break Points Converted": 35.4,
+            "Service:1st Serve Points Won": 72.7,
+            "Service:2nd Serve Points Won": 51.9,
+            "Service:Break Points Saved": 62.7,
+            "Return:Break Points Converted": 35.5,
             "Points:Winners": 24.3,
             "Points:Unforced Errors": 22.6,
-            "Points:Service Points Won": 66,
+            "Points:Service Points Won": 65.9,
             "Points:Return Points Won": 33.9,
-            "Points:Total Points Won": 49.8
+            "Points:Total Points Won": 49.7
           },
           "samples": {
             "Service:Aces": 44,
             "Service:Double Faults": 44,
-            "Service:1st Serve Points Won": 2332,
-            "Service:2nd Serve Points Won": 1171,
-            "Service:Break Points Saved": 245,
-            "Return:Break Points Converted": 240,
+            "Service:1st Serve Points Won": 2339,
+            "Service:2nd Serve Points Won": 1178,
+            "Service:Break Points Saved": 249,
+            "Return:Break Points Converted": 242,
             "Points:Winners": 28,
             "Points:Unforced Errors": 28,
-            "Points:Service Points Won": 3503,
-            "Points:Return Points Won": 3570,
-            "Points:Total Points Won": 7073
+            "Points:Service Points Won": 3517,
+            "Points:Return Points Won": 3585,
+            "Points:Total Points Won": 7102
           }
         }
       },
@@ -76075,28 +76057,28 @@
           "stats": {
             "Service:Aces": 7.2,
             "Service:Double Faults": 2.4,
-            "Service:1st Serve Points Won": 73.6,
-            "Service:2nd Serve Points Won": 50.6,
-            "Service:Break Points Saved": 68.1,
-            "Return:Break Points Converted": 39.5,
+            "Service:1st Serve Points Won": 73.5,
+            "Service:2nd Serve Points Won": 50.5,
+            "Service:Break Points Saved": 67.9,
+            "Return:Break Points Converted": 39.6,
             "Points:Winners": 27.7,
             "Points:Unforced Errors": 25.3,
-            "Points:Service Points Won": 65.6,
-            "Points:Return Points Won": 34.2,
+            "Points:Service Points Won": 65.5,
+            "Points:Return Points Won": 34.3,
             "Points:Total Points Won": 50.2
           },
           "samples": {
             "Service:Aces": 52,
             "Service:Double Faults": 52,
-            "Service:1st Serve Points Won": 2883,
-            "Service:2nd Serve Points Won": 1529,
-            "Service:Break Points Saved": 354,
-            "Return:Break Points Converted": 301,
+            "Service:1st Serve Points Won": 2890,
+            "Service:2nd Serve Points Won": 1536,
+            "Service:Break Points Saved": 358,
+            "Return:Break Points Converted": 303,
             "Points:Winners": 35,
             "Points:Unforced Errors": 35,
-            "Points:Service Points Won": 4408,
-            "Points:Return Points Won": 4230,
-            "Points:Total Points Won": 8638
+            "Points:Service Points Won": 4422,
+            "Points:Return Points Won": 4245,
+            "Points:Total Points Won": 8667
           }
         }
       },
@@ -77344,7 +77326,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-09-28T09:44:31.474Z"
+      "seenAt": "2026-09-28T10:04:49.080Z"
     },
     "closingOdds": {
       "p1": 1.77,
@@ -77381,7 +77363,7 @@
       "p1": 4.5,
       "p2": 1.2,
       "bookmaker": "bet365",
-      "seenAt": "2026-09-28T09:43:06.608Z"
+      "seenAt": "2026-09-28T10:02:12.638Z"
     },
     "bestOdds": {
       "p1": {
@@ -77392,7 +77374,7 @@
         "price": 1.22,
         "bookmaker": "Betano"
       },
-      "seenAt": "2026-09-28T09:43:06.608Z"
+      "seenAt": "2026-09-28T10:02:12.638Z"
     },
     "tournamentRound": "ATP Chengdu - 1/8-finals",
     "p1Key": 1083,
@@ -80792,7 +80774,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-09-28T09:44:31.474Z"
+      "seenAt": "2026-09-28T10:04:49.080Z"
     },
     "closingOdds": {
       "p1": 4,
@@ -80829,7 +80811,7 @@
       "p1": 1.4,
       "p2": 3,
       "bookmaker": "bet365",
-      "seenAt": "2026-09-28T09:43:06.608Z"
+      "seenAt": "2026-09-28T10:02:12.638Z"
     },
     "bestOdds": {
       "p1": {
@@ -80840,7 +80822,7 @@
         "price": 3,
         "bookmaker": "bet365"
       },
-      "seenAt": "2026-09-28T09:43:06.608Z"
+      "seenAt": "2026-09-28T10:02:12.638Z"
     },
     "tournamentRound": "ATP Hangzhou - 1/8-finals",
     "p1Key": 10148,
@@ -80856,7 +80838,7 @@
     "p1Rank": 59,
     "p2Rank": 193,
     "p1RecentForm": 50,
-    "p2RecentForm": 60,
+    "p2RecentForm": 50,
     "p1RecentFormMatches": null,
     "p2RecentFormMatches": null,
     "p1SeasonSurface": {
@@ -81251,8 +81233,15 @@
         },
         "hard": {
           "won": 3,
-          "lost": 2,
+          "lost": 3,
           "matches": [
+            {
+              "opponent": "D. Vallejo",
+              "result": "0 - 2",
+              "tournament": "Tokyo",
+              "date": "2026-09-28",
+              "won": false
+            },
             {
               "opponent": "F. Marozsan",
               "result": "1 - 2",
@@ -82071,7 +82060,7 @@
         "allTier": true,
         "total": {
           "won": 38,
-          "lost": 16
+          "lost": 17
         },
         "clay": {
           "won": 21,
@@ -82079,14 +82068,14 @@
         },
         "hard": {
           "won": 17,
-          "lost": 10
+          "lost": 11
         },
         "grass": null,
         "indoor": null,
         "atp": {
           "total": {
             "won": 7,
-            "lost": 4
+            "lost": 5
           },
           "clay": {
             "won": 4,
@@ -82094,7 +82083,7 @@
           },
           "hard": {
             "won": 3,
-            "lost": 2
+            "lost": 3
           },
           "grass": null,
           "indoor": null
@@ -82928,30 +82917,30 @@
         "p2": {
           "matchCount": 14,
           "stats": {
-            "Service:Aces": 3.7,
+            "Service:Aces": 3.8,
             "Service:Double Faults": 1.6,
-            "Service:1st Serve Points Won": 67.6,
-            "Service:2nd Serve Points Won": 52,
-            "Service:Break Points Saved": 63.2,
+            "Service:1st Serve Points Won": 67.2,
+            "Service:2nd Serve Points Won": 51.9,
+            "Service:Break Points Saved": 62.5,
             "Return:Break Points Converted": 37.4,
             "Points:Winners": 11.5,
             "Points:Unforced Errors": 20.5,
-            "Points:Service Points Won": 61.5,
-            "Points:Return Points Won": 36.5,
-            "Points:Total Points Won": 49.2
+            "Points:Service Points Won": 61.3,
+            "Points:Return Points Won": 36.4,
+            "Points:Total Points Won": 49.1
           },
           "samples": {
             "Service:Aces": 14,
             "Service:Double Faults": 14,
-            "Service:1st Serve Points Won": 626,
-            "Service:2nd Serve Points Won": 400,
-            "Service:Break Points Saved": 87,
+            "Service:1st Serve Points Won": 632,
+            "Service:2nd Serve Points Won": 401,
+            "Service:Break Points Saved": 88,
             "Return:Break Points Converted": 91,
             "Points:Winners": 4,
             "Points:Unforced Errors": 4,
-            "Points:Service Points Won": 1026,
-            "Points:Return Points Won": 990,
-            "Points:Total Points Won": 2016
+            "Points:Service Points Won": 1032,
+            "Points:Return Points Won": 996,
+            "Points:Total Points Won": 2028
           }
         }
       },
@@ -82990,28 +82979,28 @@
           "stats": {
             "Service:Aces": 5.6,
             "Service:Double Faults": 2.4,
-            "Service:1st Serve Points Won": 71.8,
+            "Service:1st Serve Points Won": 71.6,
             "Service:2nd Serve Points Won": 49.1,
-            "Service:Break Points Saved": 61.1,
+            "Service:Break Points Saved": 60.8,
             "Return:Break Points Converted": 34.8,
             "Points:Winners": 19,
             "Points:Unforced Errors": 24.7,
-            "Points:Service Points Won": 62.8,
+            "Points:Service Points Won": 62.7,
             "Points:Return Points Won": 32.3,
             "Points:Total Points Won": 48
           },
           "samples": {
             "Service:Aces": 27,
             "Service:Double Faults": 27,
-            "Service:1st Serve Points Won": 1303,
-            "Service:2nd Serve Points Won": 855,
-            "Service:Break Points Saved": 180,
+            "Service:1st Serve Points Won": 1309,
+            "Service:2nd Serve Points Won": 856,
+            "Service:Break Points Saved": 181,
             "Return:Break Points Converted": 155,
             "Points:Winners": 16,
             "Points:Unforced Errors": 16,
-            "Points:Service Points Won": 2156,
-            "Points:Return Points Won": 2028,
-            "Points:Total Points Won": 4184
+            "Points:Service Points Won": 2162,
+            "Points:Return Points Won": 2034,
+            "Points:Total Points Won": 4196
           }
         }
       },
@@ -83025,9 +83014,9 @@
         },
         "p2": {
           "wins": 3,
-          "losses": 2,
-          "sampleSize": 5,
-          "pct": 60
+          "losses": 3,
+          "sampleSize": 6,
+          "pct": 50
         }
       }
     },
@@ -84135,7 +84124,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-09-28T09:44:31.474Z"
+      "seenAt": "2026-09-28T10:04:49.080Z"
     },
     "closingOdds": {
       "p1": 1.37,
@@ -84172,7 +84161,7 @@
       "p1": 3.4,
       "p2": 1.33,
       "bookmaker": "bet365",
-      "seenAt": "2026-09-28T09:43:06.608Z"
+      "seenAt": "2026-09-28T10:02:12.638Z"
     },
     "bestOdds": {
       "p1": {
@@ -84183,7 +84172,7 @@
         "price": 1.33,
         "bookmaker": "bet365"
       },
-      "seenAt": "2026-09-28T09:43:06.608Z"
+      "seenAt": "2026-09-28T10:02:12.638Z"
     },
     "tournamentRound": "ATP Hangzhou - 1/8-finals",
     "p1Key": 3317,
@@ -86400,32 +86389,32 @@
           }
         },
         "p2": {
-          "matchCount": 53,
+          "matchCount": 54,
           "stats": {
-            "Service:Aces": 7.3,
+            "Service:Aces": 7.2,
             "Service:Double Faults": 2.8,
             "Service:1st Serve Points Won": 74.6,
-            "Service:2nd Serve Points Won": 51.7,
+            "Service:2nd Serve Points Won": 51.8,
             "Service:Break Points Saved": 66.8,
             "Return:Break Points Converted": 36.1,
             "Points:Winners": 27.6,
             "Points:Unforced Errors": 25.9,
-            "Points:Service Points Won": 65.7,
-            "Points:Return Points Won": 37.4,
+            "Points:Service Points Won": 65.8,
+            "Points:Return Points Won": 37.3,
             "Points:Total Points Won": 51.3
           },
           "samples": {
-            "Service:Aces": 53,
-            "Service:Double Faults": 53,
-            "Service:1st Serve Points Won": 2689,
-            "Service:2nd Serve Points Won": 1668,
+            "Service:Aces": 54,
+            "Service:Double Faults": 54,
+            "Service:1st Serve Points Won": 2701,
+            "Service:2nd Serve Points Won": 1673,
             "Service:Break Points Saved": 277,
             "Return:Break Points Converted": 363,
             "Points:Winners": 43,
             "Points:Unforced Errors": 43,
-            "Points:Service Points Won": 4365,
-            "Points:Return Points Won": 4531,
-            "Points:Total Points Won": 8896
+            "Points:Service Points Won": 4381,
+            "Points:Return Points Won": 4545,
+            "Points:Total Points Won": 8926
           }
         }
       },
@@ -86460,32 +86449,32 @@
           }
         },
         "p2": {
-          "matchCount": 62,
+          "matchCount": 63,
           "stats": {
-            "Service:Aces": 8.6,
-            "Service:Double Faults": 3.1,
+            "Service:Aces": 8.5,
+            "Service:Double Faults": 3,
             "Service:1st Serve Points Won": 77.5,
-            "Service:2nd Serve Points Won": 51,
+            "Service:2nd Serve Points Won": 51.1,
             "Service:Break Points Saved": 63.1,
             "Return:Break Points Converted": 36,
             "Points:Winners": 27.3,
             "Points:Unforced Errors": 26.5,
-            "Points:Service Points Won": 67,
+            "Points:Service Points Won": 67.1,
             "Points:Return Points Won": 36.7,
             "Points:Total Points Won": 51.3
           },
           "samples": {
-            "Service:Aces": 62,
-            "Service:Double Faults": 62,
-            "Service:1st Serve Points Won": 3025,
-            "Service:2nd Serve Points Won": 1929,
+            "Service:Aces": 63,
+            "Service:Double Faults": 63,
+            "Service:1st Serve Points Won": 3037,
+            "Service:2nd Serve Points Won": 1934,
             "Service:Break Points Saved": 325,
             "Return:Break Points Converted": 456,
             "Points:Winners": 47,
             "Points:Unforced Errors": 47,
-            "Points:Service Points Won": 4962,
-            "Points:Return Points Won": 5333,
-            "Points:Total Points Won": 10295
+            "Points:Service Points Won": 4978,
+            "Points:Return Points Won": 5347,
+            "Points:Total Points Won": 10325
           }
         }
       },
@@ -87719,7 +87708,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-09-28T09:44:31.474Z"
+      "seenAt": "2026-09-28T10:04:49.080Z"
     },
     "closingOdds": {
       "p1": 3.4,
@@ -87769,7 +87758,7 @@
       "p1": 2.75,
       "p2": 1.44,
       "bookmaker": "bet365",
-      "seenAt": "2026-09-28T09:43:06.608Z"
+      "seenAt": "2026-09-28T10:02:12.638Z"
     },
     "bestOdds": {
       "p1": {
@@ -87780,7 +87769,7 @@
         "price": 1.52,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-09-28T09:43:06.608Z"
+      "seenAt": "2026-09-28T10:02:12.638Z"
     },
     "tournamentRound": "ATP Chengdu - 1/8-finals",
     "p1Key": 424,
@@ -90139,26 +90128,26 @@
             "Service:Aces": 6.3,
             "Service:Double Faults": 3.8,
             "Service:1st Serve Points Won": 77.3,
-            "Service:2nd Serve Points Won": 50.2,
-            "Service:Break Points Saved": 57.5,
-            "Return:Break Points Converted": 34.1,
+            "Service:2nd Serve Points Won": 50.3,
+            "Service:Break Points Saved": 57.1,
+            "Return:Break Points Converted": 34,
             "Points:Unforced Errors": 28.8,
             "Points:Service Points Won": 65,
             "Points:Return Points Won": 36,
-            "Points:Total Points Won": 50.4,
+            "Points:Total Points Won": 50.3,
             "Points:Winners": 22.6
           },
           "samples": {
             "Service:Aces": 50,
             "Service:Double Faults": 50,
-            "Service:1st Serve Points Won": 1867,
-            "Service:2nd Serve Points Won": 1527,
-            "Service:Break Points Saved": 167,
-            "Return:Break Points Converted": 208,
+            "Service:1st Serve Points Won": 1871,
+            "Service:2nd Serve Points Won": 1532,
+            "Service:Break Points Saved": 168,
+            "Return:Break Points Converted": 209,
             "Points:Unforced Errors": 40,
-            "Points:Service Points Won": 3390,
-            "Points:Return Points Won": 3465,
-            "Points:Total Points Won": 6855,
+            "Points:Service Points Won": 3399,
+            "Points:Return Points Won": 3480,
+            "Points:Total Points Won": 6879,
             "Points:Winners": 38
           }
         },
@@ -90198,12 +90187,12 @@
           "stats": {
             "Service:Aces": 7,
             "Service:Double Faults": 3.9,
-            "Service:1st Serve Points Won": 76.7,
+            "Service:1st Serve Points Won": 76.6,
             "Service:2nd Serve Points Won": 52,
-            "Service:Break Points Saved": 60,
-            "Return:Break Points Converted": 38.2,
+            "Service:Break Points Saved": 59.7,
+            "Return:Break Points Converted": 38,
             "Points:Unforced Errors": 28,
-            "Points:Service Points Won": 65.9,
+            "Points:Service Points Won": 65.8,
             "Points:Return Points Won": 36.2,
             "Points:Total Points Won": 50.8,
             "Points:Winners": 20.6
@@ -90211,14 +90200,14 @@
           "samples": {
             "Service:Aces": 49,
             "Service:Double Faults": 49,
-            "Service:1st Serve Points Won": 1816,
-            "Service:2nd Serve Points Won": 1463,
-            "Service:Break Points Saved": 210,
-            "Return:Break Points Converted": 249,
+            "Service:1st Serve Points Won": 1820,
+            "Service:2nd Serve Points Won": 1468,
+            "Service:Break Points Saved": 211,
+            "Return:Break Points Converted": 250,
             "Points:Unforced Errors": 35,
-            "Points:Service Points Won": 3273,
-            "Points:Return Points Won": 3345,
-            "Points:Total Points Won": 6618,
+            "Points:Service Points Won": 3282,
+            "Points:Return Points Won": 3360,
+            "Points:Total Points Won": 6642,
             "Points:Winners": 33
           }
         },
@@ -91979,7 +91968,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-09-28T09:44:31.474Z"
+      "seenAt": "2026-09-28T10:04:49.080Z"
     },
     "closingOdds": {
       "p1": 2.62,
@@ -92016,7 +92005,7 @@
       "p1": 1.44,
       "p2": 2.75,
       "bookmaker": "bet365",
-      "seenAt": "2026-09-28T09:43:06.608Z"
+      "seenAt": "2026-09-28T10:02:12.638Z"
     },
     "bestOdds": {
       "p1": {
@@ -92027,7 +92016,7 @@
         "price": 2.77,
         "bookmaker": "1xBet"
       },
-      "seenAt": "2026-09-28T09:43:06.608Z"
+      "seenAt": "2026-09-28T10:02:12.638Z"
     },
     "tournamentRound": "ATP Chengdu - 1/8-finals",
     "p1Key": 2982,
@@ -96102,7 +96091,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-09-28T09:44:31.474Z"
+      "seenAt": "2026-09-28T10:04:49.080Z"
     },
     "closingOdds": {
       "p1": 1.5,
@@ -96139,7 +96128,7 @@
       "p1": 1.83,
       "p2": 1.83,
       "bookmaker": "bet365",
-      "seenAt": "2026-09-28T09:43:06.608Z"
+      "seenAt": "2026-09-28T10:02:12.638Z"
     },
     "bestOdds": {
       "p1": {
@@ -96150,7 +96139,7 @@
         "price": 1.99,
         "bookmaker": "1xBet"
       },
-      "seenAt": "2026-09-28T09:43:06.608Z"
+      "seenAt": "2026-09-28T10:02:12.638Z"
     },
     "tournamentRound": "",
     "p1Key": 430,
@@ -99806,7 +99795,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-09-28T09:44:31.474Z"
+      "seenAt": "2026-09-28T10:04:49.080Z"
     },
     "closingOdds": {
       "p1": 1.8,
@@ -99843,7 +99832,7 @@
       "p1": 1.72,
       "p2": 2,
       "bookmaker": "bet365",
-      "seenAt": "2026-09-28T09:43:06.608Z"
+      "seenAt": "2026-09-28T10:02:12.638Z"
     },
     "bestOdds": {
       "p1": {
@@ -99854,7 +99843,7 @@
         "price": 2.25,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-09-28T09:43:06.608Z"
+      "seenAt": "2026-09-28T10:02:12.638Z"
     },
     "tournamentRound": "",
     "p1Key": 902,
@@ -102872,7 +102861,7 @@
       "src": "api-tennis",
       "noTimestamp": true,
       "noLagCheck": true,
-      "seenAt": "2026-09-28T09:44:31.474Z"
+      "seenAt": "2026-09-28T10:04:49.080Z"
     },
     "closingOdds": {
       "p1": 1.69,
@@ -102909,7 +102898,7 @@
       "p1": 1.56,
       "p2": 2.51,
       "bookmaker": "Pncl",
-      "seenAt": "2026-09-28T09:43:06.608Z"
+      "seenAt": "2026-09-28T10:02:12.638Z"
     },
     "bestOdds": {
       "p1": {
@@ -102920,7 +102909,7 @@
         "price": 2.51,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-09-28T09:43:06.608Z"
+      "seenAt": "2026-09-28T10:02:12.638Z"
     },
     "tournamentRound": "",
     "p1Key": 50323,
@@ -106068,7 +106057,7 @@
       "p1": 1.28,
       "p2": 3.99,
       "bookmaker": "Pncl",
-      "seenAt": "2026-09-28T09:43:30.410Z"
+      "seenAt": "2026-09-28T10:02:45.828Z"
     },
     "bestOdds": {
       "p1": {
@@ -106079,7 +106068,7 @@
         "price": 3.99,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-09-28T09:43:30.410Z"
+      "seenAt": "2026-09-28T10:02:45.828Z"
     },
     "tournamentRound": "ATP Hangzhou - 1/8-finals",
     "p1Key": 1093,
@@ -108391,7 +108380,7 @@
           "code": 2,
           "hi": 32,
           "lo": 23,
-          "rain": 0,
+          "rain": null,
           "wind": 11,
           "humidity": 62,
           "isMatch": false,
@@ -108404,7 +108393,7 @@
           "code": 3,
           "hi": 31,
           "lo": 24,
-          "rain": 4,
+          "rain": null,
           "wind": 12,
           "humidity": 61,
           "isMatch": false,
@@ -108417,7 +108406,7 @@
           "code": 3,
           "hi": 32,
           "lo": 24,
-          "rain": 8,
+          "rain": null,
           "wind": 14,
           "humidity": 64,
           "isMatch": false,
@@ -108430,7 +108419,7 @@
           "code": 53,
           "hi": 33,
           "lo": 23,
-          "rain": 71,
+          "rain": null,
           "wind": 12,
           "humidity": 70,
           "isMatch": false,
@@ -108443,7 +108432,7 @@
           "code": 55,
           "hi": 35,
           "lo": 26,
-          "rain": 54,
+          "rain": null,
           "wind": 8,
           "humidity": 70,
           "isMatch": false,
@@ -108453,10 +108442,10 @@
           "date": "2026-09-26",
           "dow": "Sat",
           "label": "Sep 26",
-          "code": 80,
+          "code": 61,
           "hi": 36,
           "lo": 25,
-          "rain": 98,
+          "rain": null,
           "wind": 15,
           "humidity": 80,
           "isMatch": true,
@@ -108466,10 +108455,10 @@
           "date": "2026-09-27",
           "dow": "Sun",
           "label": "Sep 27",
-          "code": 80,
+          "code": 61,
           "hi": 33,
           "lo": 25,
-          "rain": 100,
+          "rain": null,
           "wind": 15,
           "humidity": 83,
           "isMatch": false,
@@ -109974,7 +109963,7 @@
       "p1": 2.09,
       "p2": 1.81,
       "bookmaker": "Pncl",
-      "seenAt": "2026-09-28T09:43:30.410Z"
+      "seenAt": "2026-09-28T10:02:45.828Z"
     },
     "bestOdds": {
       "p1": {
@@ -109985,7 +109974,7 @@
         "price": 1.81,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-09-28T09:43:30.410Z"
+      "seenAt": "2026-09-28T10:02:45.828Z"
     },
     "tournamentRound": "ATP Hangzhou - 1/8-finals",
     "p1Key": 796,
@@ -111998,30 +111987,30 @@
         "p2": {
           "matchCount": 48,
           "stats": {
-            "Service:Aces": 6.9,
+            "Service:Aces": 7,
             "Service:Double Faults": 1.8,
-            "Service:1st Serve Points Won": 72.2,
+            "Service:1st Serve Points Won": 72.3,
             "Service:2nd Serve Points Won": 50.7,
-            "Service:Break Points Saved": 60.1,
-            "Return:Break Points Converted": 37.5,
+            "Service:Break Points Saved": 60,
+            "Return:Break Points Converted": 37.7,
             "Points:Winners": 24.1,
             "Points:Unforced Errors": 24.4,
             "Points:Service Points Won": 64.4,
-            "Points:Return Points Won": 36,
-            "Points:Total Points Won": 50.2
+            "Points:Return Points Won": 36.1,
+            "Points:Total Points Won": 50.3
           },
           "samples": {
             "Service:Aces": 48,
             "Service:Double Faults": 48,
-            "Service:1st Serve Points Won": 2539,
-            "Service:2nd Serve Points Won": 1509,
-            "Service:Break Points Saved": 258,
-            "Return:Break Points Converted": 277,
+            "Service:1st Serve Points Won": 2546,
+            "Service:2nd Serve Points Won": 1515,
+            "Service:Break Points Saved": 260,
+            "Return:Break Points Converted": 281,
             "Points:Winners": 35,
             "Points:Unforced Errors": 35,
-            "Points:Service Points Won": 3993,
-            "Points:Return Points Won": 3962,
-            "Points:Total Points Won": 7955
+            "Points:Service Points Won": 4007,
+            "Points:Return Points Won": 3976,
+            "Points:Total Points Won": 7983
           }
         }
       },
@@ -112058,30 +112047,30 @@
         "p2": {
           "matchCount": 48,
           "stats": {
-            "Service:Aces": 7.1,
+            "Service:Aces": 7.2,
             "Service:Double Faults": 1.9,
-            "Service:1st Serve Points Won": 72.6,
+            "Service:1st Serve Points Won": 72.7,
             "Service:2nd Serve Points Won": 51,
-            "Service:Break Points Saved": 63.7,
-            "Return:Break Points Converted": 37.4,
+            "Service:Break Points Saved": 63.6,
+            "Return:Break Points Converted": 37.6,
             "Points:Winners": 24.3,
             "Points:Unforced Errors": 23.6,
-            "Points:Service Points Won": 64.7,
-            "Points:Return Points Won": 37,
+            "Points:Service Points Won": 64.6,
+            "Points:Return Points Won": 37.1,
             "Points:Total Points Won": 50.8
           },
           "samples": {
             "Service:Aces": 48,
             "Service:Double Faults": 48,
-            "Service:1st Serve Points Won": 2518,
-            "Service:2nd Serve Points Won": 1536,
-            "Service:Break Points Saved": 289,
-            "Return:Break Points Converted": 310,
+            "Service:1st Serve Points Won": 2525,
+            "Service:2nd Serve Points Won": 1542,
+            "Service:Break Points Saved": 291,
+            "Return:Break Points Converted": 314,
             "Points:Winners": 36,
             "Points:Unforced Errors": 36,
-            "Points:Service Points Won": 3995,
-            "Points:Return Points Won": 4017,
-            "Points:Total Points Won": 8012
+            "Points:Service Points Won": 4009,
+            "Points:Return Points Won": 4031,
+            "Points:Total Points Won": 8040
           }
         }
       },
@@ -112121,107 +112110,7 @@
       "cpiYear": null,
       "category": "Fast"
     },
-    "weather": {
-      "temperature": 29.2,
-      "windSpeed": 13.4,
-      "humidity": 75,
-      "source": "Open-Meteo",
-      "historical": true,
-      "weekRange": "Sep 21 – 27, 2026",
-      "week": [
-        {
-          "date": "2026-09-21",
-          "dow": "Mon",
-          "label": "Sep 21",
-          "code": 2,
-          "hi": 32,
-          "lo": 23,
-          "rain": 0,
-          "wind": 11,
-          "humidity": 62,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-09-22",
-          "dow": "Tue",
-          "label": "Sep 22",
-          "code": 3,
-          "hi": 31,
-          "lo": 24,
-          "rain": 4,
-          "wind": 12,
-          "humidity": 61,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-09-23",
-          "dow": "Wed",
-          "label": "Sep 23",
-          "code": 3,
-          "hi": 32,
-          "lo": 24,
-          "rain": 8,
-          "wind": 14,
-          "humidity": 64,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-09-24",
-          "dow": "Thu",
-          "label": "Sep 24",
-          "code": 53,
-          "hi": 33,
-          "lo": 23,
-          "rain": 71,
-          "wind": 12,
-          "humidity": 70,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-09-25",
-          "dow": "Fri",
-          "label": "Sep 25",
-          "code": 55,
-          "hi": 35,
-          "lo": 26,
-          "rain": 54,
-          "wind": 8,
-          "humidity": 70,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-09-26",
-          "dow": "Sat",
-          "label": "Sep 26",
-          "code": 80,
-          "hi": 36,
-          "lo": 25,
-          "rain": 98,
-          "wind": 15,
-          "humidity": 80,
-          "isMatch": true,
-          "available": true
-        },
-        {
-          "date": "2026-09-27",
-          "dow": "Sun",
-          "label": "Sep 27",
-          "code": 80,
-          "hi": 33,
-          "lo": 25,
-          "rain": 100,
-          "wind": 15,
-          "humidity": 83,
-          "isMatch": false,
-          "available": true
-        }
-      ]
-    },
+    "weather": null,
     "live": false,
     "liveStatus": null,
     "liveScore": null,
@@ -113516,7 +113405,7 @@
       "p1": 2.04,
       "p2": 1.85,
       "bookmaker": "Pncl",
-      "seenAt": "2026-09-28T09:43:30.410Z"
+      "seenAt": "2026-09-28T10:02:45.828Z"
     },
     "bestOdds": {
       "p1": {
@@ -113527,7 +113416,7 @@
         "price": 1.88,
         "bookmaker": "1xBet"
       },
-      "seenAt": "2026-09-28T09:43:30.410Z"
+      "seenAt": "2026-09-28T10:02:45.828Z"
     },
     "tournamentRound": "ATP Chengdu - 1/8-finals",
     "p1Key": 38264,
@@ -117452,7 +117341,7 @@
       "p1": 1.88,
       "p2": 2.01,
       "bookmaker": "Pncl",
-      "seenAt": "2026-09-28T09:43:30.410Z"
+      "seenAt": "2026-09-28T10:02:45.828Z"
     },
     "bestOdds": {
       "p1": {
@@ -117463,7 +117352,7 @@
         "price": 2.01,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-09-28T09:43:30.410Z"
+      "seenAt": "2026-09-28T10:02:45.828Z"
     },
     "tournamentRound": "ATP Chengdu - 1/8-finals",
     "p1Key": 1852,
@@ -121179,7 +121068,7 @@
       "p1": 2.14,
       "p2": 1.78,
       "bookmaker": "Pncl",
-      "seenAt": "2026-09-28T09:43:30.410Z"
+      "seenAt": "2026-09-28T10:02:45.828Z"
     },
     "bestOdds": {
       "p1": {
@@ -121190,7 +121079,7 @@
         "price": 1.78,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-09-28T09:43:30.410Z"
+      "seenAt": "2026-09-28T10:02:45.828Z"
     },
     "tournamentRound": "ATP Hangzhou - 1/8-finals",
     "p1Key": 1925,
@@ -125310,7 +125199,7 @@
       "p1": 3.19,
       "p2": 1.4,
       "bookmaker": "Pncl",
-      "seenAt": "2026-09-28T09:43:30.410Z"
+      "seenAt": "2026-09-28T10:02:45.828Z"
     },
     "bestOdds": {
       "p1": {
@@ -125321,7 +125210,7 @@
         "price": 1.4,
         "bookmaker": "Betfair"
       },
-      "seenAt": "2026-09-28T09:43:30.410Z"
+      "seenAt": "2026-09-28T10:02:45.828Z"
     },
     "tournamentRound": "ATP Chengdu - 1/8-finals",
     "p1Key": 1317,
@@ -129440,7 +129329,7 @@
       "p1": 2.31,
       "p2": 1.67,
       "bookmaker": "Pncl",
-      "seenAt": "2026-09-28T09:43:30.410Z"
+      "seenAt": "2026-09-28T10:02:45.828Z"
     },
     "bestOdds": {
       "p1": {
@@ -129451,7 +129340,7 @@
         "price": 1.67,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-09-28T09:43:30.410Z"
+      "seenAt": "2026-09-28T10:02:45.828Z"
     },
     "tournamentRound": "ATP Chengdu - 1/8-finals",
     "p1Key": 388,
@@ -131490,8 +131379,8 @@
             "Service:Double Faults": 1.5,
             "Service:1st Serve Points Won": 71.2,
             "Service:2nd Serve Points Won": 54.9,
-            "Service:Break Points Saved": 67.6,
-            "Return:Break Points Converted": 40.4,
+            "Service:Break Points Saved": 67.8,
+            "Return:Break Points Converted": 40.5,
             "Points:Winners": 25.1,
             "Points:Unforced Errors": 23.6,
             "Points:Service Points Won": 66.1,
@@ -131501,15 +131390,15 @@
           "samples": {
             "Service:Aces": 55,
             "Service:Double Faults": 55,
-            "Service:1st Serve Points Won": 2847,
-            "Service:2nd Serve Points Won": 1284,
-            "Service:Break Points Saved": 306,
-            "Return:Break Points Converted": 332,
+            "Service:1st Serve Points Won": 2855,
+            "Service:2nd Serve Points Won": 1293,
+            "Service:Break Points Saved": 307,
+            "Return:Break Points Converted": 333,
             "Points:Winners": 42,
             "Points:Unforced Errors": 42,
-            "Points:Service Points Won": 4130,
-            "Points:Return Points Won": 4144,
-            "Points:Total Points Won": 8274
+            "Points:Service Points Won": 4145,
+            "Points:Return Points Won": 4156,
+            "Points:Total Points Won": 8301
           }
         }
       },
@@ -131550,8 +131439,8 @@
             "Service:Double Faults": 2,
             "Service:1st Serve Points Won": 70.2,
             "Service:2nd Serve Points Won": 52.9,
-            "Service:Break Points Saved": 65.2,
-            "Return:Break Points Converted": 44.9,
+            "Service:Break Points Saved": 65.3,
+            "Return:Break Points Converted": 45,
             "Points:Winners": 22,
             "Points:Unforced Errors": 23.3,
             "Points:Service Points Won": 64.5,
@@ -131561,15 +131450,15 @@
           "samples": {
             "Service:Aces": 66,
             "Service:Double Faults": 66,
-            "Service:1st Serve Points Won": 3359,
-            "Service:2nd Serve Points Won": 1638,
-            "Service:Break Points Saved": 391,
-            "Return:Break Points Converted": 408,
+            "Service:1st Serve Points Won": 3367,
+            "Service:2nd Serve Points Won": 1647,
+            "Service:Break Points Saved": 392,
+            "Return:Break Points Converted": 409,
             "Points:Winners": 47,
             "Points:Unforced Errors": 47,
-            "Points:Service Points Won": 4995,
-            "Points:Return Points Won": 4935,
-            "Points:Total Points Won": 9930
+            "Points:Service Points Won": 5010,
+            "Points:Return Points Won": 4947,
+            "Points:Total Points Won": 9957
           }
         }
       },
@@ -132771,7 +132660,7 @@
       "p1": 1.58,
       "p2": 2.5,
       "bookmaker": "Pncl",
-      "seenAt": "2026-09-28T09:43:30.410Z"
+      "seenAt": "2026-09-28T10:02:45.828Z"
     },
     "bestOdds": {
       "p1": {
@@ -132782,7 +132671,7 @@
         "price": 2.5,
         "bookmaker": "Betfair"
       },
-      "seenAt": "2026-09-28T09:43:30.410Z"
+      "seenAt": "2026-09-28T10:02:45.828Z"
     },
     "tournamentRound": "ATP Hangzhou - 1/8-finals",
     "p1Key": 2227,
@@ -133461,9 +133350,16 @@
           ]
         },
         "hard": {
-          "won": 6,
+          "won": 7,
           "lost": 6,
           "matches": [
+            {
+              "opponent": "T. Daniel",
+              "result": "2 - 0",
+              "tournament": "Tokyo",
+              "date": "2026-09-28",
+              "won": true
+            },
             {
               "opponent": "C. Wong",
               "result": "1 - 2",
@@ -134300,7 +134196,7 @@
         "year": "2026",
         "allTier": true,
         "total": {
-          "won": 43,
+          "won": 44,
           "lost": 22
         },
         "clay": {
@@ -134308,7 +134204,7 @@
           "lost": 13
         },
         "hard": {
-          "won": 6,
+          "won": 7,
           "lost": 6
         },
         "grass": {
@@ -134318,7 +134214,7 @@
         "indoor": null,
         "atp": {
           "total": {
-            "won": 21,
+            "won": 22,
             "lost": 17
           },
           "clay": {
@@ -134326,7 +134222,7 @@
             "lost": 8
           },
           "hard": {
-            "won": 6,
+            "won": 7,
             "lost": 6
           },
           "grass": {
@@ -134766,10 +134662,10 @@
           "stats": {
             "Service:Aces": 3.6,
             "Service:Double Faults": 2.8,
-            "Service:1st Serve Points Won": 69.5,
-            "Service:2nd Serve Points Won": 50.3,
+            "Service:1st Serve Points Won": 69.6,
+            "Service:2nd Serve Points Won": 50.4,
             "Service:Break Points Saved": 62.6,
-            "Return:Break Points Converted": 40.1,
+            "Return:Break Points Converted": 40.3,
             "Points:Winners": 21.8,
             "Points:Unforced Errors": 24.5,
             "Points:Service Points Won": 62.3,
@@ -134779,15 +134675,15 @@
           "samples": {
             "Service:Aces": 37,
             "Service:Double Faults": 37,
-            "Service:1st Serve Points Won": 1769,
-            "Service:2nd Serve Points Won": 1054,
+            "Service:1st Serve Points Won": 1772,
+            "Service:2nd Serve Points Won": 1058,
             "Service:Break Points Saved": 230,
-            "Return:Break Points Converted": 257,
+            "Return:Break Points Converted": 258,
             "Points:Winners": 23,
             "Points:Unforced Errors": 23,
-            "Points:Service Points Won": 2828,
-            "Points:Return Points Won": 2816,
-            "Points:Total Points Won": 5644
+            "Points:Service Points Won": 2834,
+            "Points:Return Points Won": 2822,
+            "Points:Total Points Won": 5656
           }
         }
       },
@@ -134826,28 +134722,28 @@
           "stats": {
             "Service:Aces": 4.1,
             "Service:Double Faults": 3.6,
-            "Service:1st Serve Points Won": 69.9,
-            "Service:2nd Serve Points Won": 48.8,
+            "Service:1st Serve Points Won": 70,
+            "Service:2nd Serve Points Won": 49,
             "Service:Break Points Saved": 63.9,
-            "Return:Break Points Converted": 45.5,
+            "Return:Break Points Converted": 46.1,
             "Points:Winners": 20.1,
             "Points:Unforced Errors": 28.8,
             "Points:Service Points Won": 61.8,
-            "Points:Return Points Won": 37,
-            "Points:Total Points Won": 49.9
+            "Points:Return Points Won": 37.2,
+            "Points:Total Points Won": 50
           },
           "samples": {
             "Service:Aces": 15,
             "Service:Double Faults": 15,
-            "Service:1st Serve Points Won": 657,
-            "Service:2nd Serve Points Won": 400,
+            "Service:1st Serve Points Won": 660,
+            "Service:2nd Serve Points Won": 404,
             "Service:Break Points Saved": 97,
-            "Return:Break Points Converted": 88,
+            "Return:Break Points Converted": 89,
             "Points:Winners": 9,
             "Points:Unforced Errors": 9,
-            "Points:Service Points Won": 1060,
-            "Points:Return Points Won": 971,
-            "Points:Total Points Won": 2031
+            "Points:Service Points Won": 1066,
+            "Points:Return Points Won": 977,
+            "Points:Total Points Won": 2043
           }
         }
       },
@@ -134860,10 +134756,10 @@
           "pct": 64.3
         },
         "p2": {
-          "wins": 3,
+          "wins": 4,
           "losses": 3,
-          "sampleSize": 6,
-          "pct": 50
+          "sampleSize": 7,
+          "pct": 57.1
         }
       }
     },
@@ -137157,7 +137053,7 @@
       "p1": 2.7,
       "p2": 1.47,
       "bookmaker": "Betano",
-      "seenAt": "2026-09-28T09:43:30.410Z"
+      "seenAt": "2026-09-28T10:02:45.828Z"
     },
     "bestOdds": {
       "p1": {
@@ -137168,7 +137064,7 @@
         "price": 1.47,
         "bookmaker": "Betano"
       },
-      "seenAt": "2026-09-28T09:43:30.410Z"
+      "seenAt": "2026-09-28T10:02:45.828Z"
     },
     "tournamentRound": "",
     "p1Key": 372,
@@ -140457,7 +140353,7 @@
       "p1": 1.29,
       "p2": 3.6,
       "bookmaker": "Betano",
-      "seenAt": "2026-09-28T09:43:30.410Z"
+      "seenAt": "2026-09-28T10:02:45.828Z"
     },
     "bestOdds": {
       "p1": {
@@ -140468,7 +140364,7 @@
         "price": 3.6,
         "bookmaker": "Betano"
       },
-      "seenAt": "2026-09-28T09:43:30.410Z"
+      "seenAt": "2026-09-28T10:02:45.828Z"
     },
     "tournamentRound": "",
     "p1Key": 1980,
@@ -144617,7 +144513,7 @@
       "p1": 1.26,
       "p2": 3.9,
       "bookmaker": "Betano",
-      "seenAt": "2026-09-28T09:43:30.410Z"
+      "seenAt": "2026-09-28T10:02:45.828Z"
     },
     "bestOdds": {
       "p1": {
@@ -144628,7 +144524,7 @@
         "price": 3.9,
         "bookmaker": "Betano"
       },
-      "seenAt": "2026-09-28T09:43:30.410Z"
+      "seenAt": "2026-09-28T10:02:45.828Z"
     },
     "tournamentRound": "",
     "p1Key": 2382,
@@ -148501,7 +148397,7 @@
       "p1": 3.1,
       "p2": 1.42,
       "bookmaker": "Pncl",
-      "seenAt": "2026-09-28T09:43:53.169Z"
+      "seenAt": "2026-09-28T10:03:51.806Z"
     },
     "bestOdds": {
       "p1": {
@@ -148512,7 +148408,7 @@
         "price": 1.42,
         "bookmaker": "Pncl"
       },
-      "seenAt": "2026-09-28T09:43:53.169Z"
+      "seenAt": "2026-09-28T10:03:51.806Z"
     },
     "tournamentRound": "ATP Chengdu - Quarter-finals",
     "p1Key": 438,
@@ -153075,7 +152971,7 @@
       "p1": 1.73,
       "p2": 2.1,
       "bookmaker": "Betfair",
-      "seenAt": "2026-09-28T09:43:53.169Z"
+      "seenAt": "2026-09-28T10:03:51.806Z"
     },
     "bestOdds": {
       "p1": {
@@ -153086,7 +152982,7 @@
         "price": 2.2,
         "bookmaker": "Betano"
       },
-      "seenAt": "2026-09-28T09:43:53.169Z"
+      "seenAt": "2026-09-28T10:03:51.806Z"
     },
     "tournamentRound": "ATP Chengdu - Quarter-finals",
     "p1Key": 2169,
@@ -155312,10 +155208,10 @@
           "stats": {
             "Service:Aces": 6.3,
             "Service:Double Faults": 3.8,
-            "Service:1st Serve Points Won": 77.4,
-            "Service:2nd Serve Points Won": 50.2,
-            "Service:Break Points Saved": 57.5,
-            "Return:Break Points Converted": 34.1,
+            "Service:1st Serve Points Won": 77.3,
+            "Service:2nd Serve Points Won": 50.3,
+            "Service:Break Points Saved": 57.1,
+            "Return:Break Points Converted": 34,
             "Points:Unforced Errors": 28.8,
             "Points:Service Points Won": 65,
             "Points:Return Points Won": 36,
@@ -155325,14 +155221,14 @@
           "samples": {
             "Service:Aces": 50,
             "Service:Double Faults": 50,
-            "Service:1st Serve Points Won": 1868,
-            "Service:2nd Serve Points Won": 1527,
-            "Service:Break Points Saved": 167,
-            "Return:Break Points Converted": 208,
+            "Service:1st Serve Points Won": 1873,
+            "Service:2nd Serve Points Won": 1534,
+            "Service:Break Points Saved": 168,
+            "Return:Break Points Converted": 209,
             "Points:Unforced Errors": 40,
-            "Points:Service Points Won": 3392,
-            "Points:Return Points Won": 3465,
-            "Points:Total Points Won": 6857,
+            "Points:Service Points Won": 3403,
+            "Points:Return Points Won": 3480,
+            "Points:Total Points Won": 6883,
             "Points:Winners": 38
           }
         }
@@ -155372,10 +155268,10 @@
           "stats": {
             "Service:Aces": 7,
             "Service:Double Faults": 3.9,
-            "Service:1st Serve Points Won": 76.7,
-            "Service:2nd Serve Points Won": 52,
-            "Service:Break Points Saved": 60,
-            "Return:Break Points Converted": 38.2,
+            "Service:1st Serve Points Won": 76.6,
+            "Service:2nd Serve Points Won": 52.1,
+            "Service:Break Points Saved": 59.7,
+            "Return:Break Points Converted": 38,
             "Points:Unforced Errors": 28,
             "Points:Service Points Won": 65.9,
             "Points:Return Points Won": 36.2,
@@ -155385,14 +155281,14 @@
           "samples": {
             "Service:Aces": 49,
             "Service:Double Faults": 49,
-            "Service:1st Serve Points Won": 1817,
-            "Service:2nd Serve Points Won": 1463,
-            "Service:Break Points Saved": 210,
-            "Return:Break Points Converted": 249,
+            "Service:1st Serve Points Won": 1822,
+            "Service:2nd Serve Points Won": 1470,
+            "Service:Break Points Saved": 211,
+            "Return:Break Points Converted": 250,
             "Points:Unforced Errors": 35,
-            "Points:Service Points Won": 3275,
-            "Points:Return Points Won": 3345,
-            "Points:Total Points Won": 6620,
+            "Points:Service Points Won": 3286,
+            "Points:Return Points Won": 3360,
+            "Points:Total Points Won": 6646,
             "Points:Winners": 33
           }
         }
@@ -155433,107 +155329,7 @@
       "cpiYear": null,
       "category": "Fast"
     },
-    "weather": {
-      "temperature": 25.3,
-      "windSpeed": 6.2,
-      "humidity": 75,
-      "source": "Open-Meteo",
-      "historical": true,
-      "weekRange": "Sep 21 – 27, 2026",
-      "week": [
-        {
-          "date": "2026-09-21",
-          "dow": "Mon",
-          "label": "Sep 21",
-          "code": 51,
-          "hi": 26,
-          "lo": 21,
-          "rain": null,
-          "wind": 7,
-          "humidity": 75,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-09-22",
-          "dow": "Tue",
-          "label": "Sep 22",
-          "code": 53,
-          "hi": 25,
-          "lo": 21,
-          "rain": null,
-          "wind": 6,
-          "humidity": 86,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-09-23",
-          "dow": "Wed",
-          "label": "Sep 23",
-          "code": 53,
-          "hi": 26,
-          "lo": 21,
-          "rain": null,
-          "wind": 7,
-          "humidity": 84,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-09-24",
-          "dow": "Thu",
-          "label": "Sep 24",
-          "code": 53,
-          "hi": 24,
-          "lo": 21,
-          "rain": null,
-          "wind": 8,
-          "humidity": 87,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-09-25",
-          "dow": "Fri",
-          "label": "Sep 25",
-          "code": 51,
-          "hi": 27,
-          "lo": 21,
-          "rain": null,
-          "wind": 8,
-          "humidity": 80,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-09-26",
-          "dow": "Sat",
-          "label": "Sep 26",
-          "code": 51,
-          "hi": 28,
-          "lo": 22,
-          "rain": null,
-          "wind": 8,
-          "humidity": 82,
-          "isMatch": false,
-          "available": true
-        },
-        {
-          "date": "2026-09-27",
-          "dow": "Sun",
-          "label": "Sep 27",
-          "code": 53,
-          "hi": 27,
-          "lo": 22,
-          "rain": null,
-          "wind": 12,
-          "humidity": 82,
-          "isMatch": true,
-          "available": true
-        }
-      ]
-    },
+    "weather": null,
     "live": false,
     "liveStatus": null,
     "liveScore": null,
@@ -157954,7 +157750,7 @@
       "p1": 1.73,
       "p2": 2.1,
       "bookmaker": "Betfair",
-      "seenAt": "2026-09-28T09:43:53.169Z"
+      "seenAt": "2026-09-28T10:03:51.806Z"
     },
     "bestOdds": {
       "p1": {
@@ -157965,7 +157761,7 @@
         "price": 2.1,
         "bookmaker": "Betfair"
       },
-      "seenAt": "2026-09-28T09:43:53.169Z"
+      "seenAt": "2026-09-28T10:03:51.806Z"
     },
     "tournamentRound": "ATP Hangzhou - Quarter-finals",
     "p1Key": 10148,
@@ -159823,32 +159619,32 @@
           }
         },
         "p2": {
-          "matchCount": 33,
+          "matchCount": 34,
           "stats": {
-            "Service:Aces": 6.5,
-            "Service:Double Faults": 3.8,
-            "Service:1st Serve Points Won": 73.9,
-            "Service:2nd Serve Points Won": 51.2,
+            "Service:Aces": 6.4,
+            "Service:Double Faults": 3.7,
+            "Service:1st Serve Points Won": 74,
+            "Service:2nd Serve Points Won": 51.3,
             "Service:Break Points Saved": 63.1,
             "Return:Break Points Converted": 40.4,
             "Points:Winners": 25.4,
             "Points:Unforced Errors": 25,
-            "Points:Service Points Won": 63.9,
-            "Points:Return Points Won": 37.7,
-            "Points:Total Points Won": 50.9
+            "Points:Service Points Won": 64,
+            "Points:Return Points Won": 37.6,
+            "Points:Total Points Won": 51
           },
           "samples": {
-            "Service:Aces": 33,
-            "Service:Double Faults": 33,
-            "Service:1st Serve Points Won": 1570,
-            "Service:2nd Serve Points Won": 1229,
+            "Service:Aces": 34,
+            "Service:Double Faults": 34,
+            "Service:1st Serve Points Won": 1583,
+            "Service:2nd Serve Points Won": 1235,
             "Service:Break Points Saved": 222,
             "Return:Break Points Converted": 235,
             "Points:Winners": 18,
             "Points:Unforced Errors": 18,
-            "Points:Service Points Won": 2799,
-            "Points:Return Points Won": 2737,
-            "Points:Total Points Won": 5536
+            "Points:Service Points Won": 2817,
+            "Points:Return Points Won": 2753,
+            "Points:Total Points Won": 5570
           }
         }
       },
@@ -159883,32 +159679,32 @@
           }
         },
         "p2": {
-          "matchCount": 22,
+          "matchCount": 23,
           "stats": {
-            "Service:Aces": 7,
-            "Service:Double Faults": 4.1,
-            "Service:1st Serve Points Won": 74.3,
-            "Service:2nd Serve Points Won": 51,
+            "Service:Aces": 6.8,
+            "Service:Double Faults": 4,
+            "Service:1st Serve Points Won": 74.6,
+            "Service:2nd Serve Points Won": 51.2,
             "Service:Break Points Saved": 67.7,
             "Return:Break Points Converted": 41.2,
             "Points:Winners": 22.7,
             "Points:Unforced Errors": 24,
-            "Points:Service Points Won": 63.5,
-            "Points:Return Points Won": 36.6,
+            "Points:Service Points Won": 63.7,
+            "Points:Return Points Won": 36.4,
             "Points:Total Points Won": 50.4
           },
           "samples": {
-            "Service:Aces": 22,
-            "Service:Double Faults": 22,
-            "Service:1st Serve Points Won": 1025,
-            "Service:2nd Serve Points Won": 881,
+            "Service:Aces": 23,
+            "Service:Double Faults": 23,
+            "Service:1st Serve Points Won": 1038,
+            "Service:2nd Serve Points Won": 887,
             "Service:Break Points Saved": 161,
             "Return:Break Points Converted": 148,
             "Points:Winners": 11,
             "Points:Unforced Errors": 11,
-            "Points:Service Points Won": 1906,
-            "Points:Return Points Won": 1807,
-            "Points:Total Points Won": 3713
+            "Points:Service Points Won": 1924,
+            "Points:Return Points Won": 1823,
+            "Points:Total Points Won": 3747
           }
         }
       },
@@ -161674,7 +161470,7 @@
       "p1": 4.6,
       "p2": 1.19,
       "bookmaker": "Marathon",
-      "seenAt": "2026-09-28T09:43:53.169Z"
+      "seenAt": "2026-09-28T10:03:51.806Z"
     },
     "bestOdds": {
       "p1": {
@@ -161685,7 +161481,7 @@
         "price": 1.19,
         "bookmaker": "Marathon"
       },
-      "seenAt": "2026-09-28T09:43:53.169Z"
+      "seenAt": "2026-09-28T10:03:51.806Z"
     },
     "tournamentRound": "ATP Hangzhou - Quarter-finals",
     "p1Key": 1102,
@@ -163983,32 +163779,32 @@
           }
         },
         "p2": {
-          "matchCount": 53,
+          "matchCount": 54,
           "stats": {
-            "Service:Aces": 7.3,
+            "Service:Aces": 7.2,
             "Service:Double Faults": 2.8,
             "Service:1st Serve Points Won": 74.6,
-            "Service:2nd Serve Points Won": 51.7,
+            "Service:2nd Serve Points Won": 51.8,
             "Service:Break Points Saved": 66.8,
             "Return:Break Points Converted": 36.1,
             "Points:Winners": 27.6,
             "Points:Unforced Errors": 25.9,
-            "Points:Service Points Won": 65.7,
-            "Points:Return Points Won": 37.4,
+            "Points:Service Points Won": 65.8,
+            "Points:Return Points Won": 37.3,
             "Points:Total Points Won": 51.3
           },
           "samples": {
-            "Service:Aces": 53,
-            "Service:Double Faults": 53,
-            "Service:1st Serve Points Won": 2689,
-            "Service:2nd Serve Points Won": 1668,
+            "Service:Aces": 54,
+            "Service:Double Faults": 54,
+            "Service:1st Serve Points Won": 2700,
+            "Service:2nd Serve Points Won": 1673,
             "Service:Break Points Saved": 277,
             "Return:Break Points Converted": 363,
             "Points:Winners": 43,
             "Points:Unforced Errors": 43,
-            "Points:Service Points Won": 4365,
-            "Points:Return Points Won": 4531,
-            "Points:Total Points Won": 8896
+            "Points:Service Points Won": 4381,
+            "Points:Return Points Won": 4549,
+            "Points:Total Points Won": 8930
           }
         }
       },
@@ -164043,32 +163839,32 @@
           }
         },
         "p2": {
-          "matchCount": 62,
+          "matchCount": 63,
           "stats": {
-            "Service:Aces": 8.6,
-            "Service:Double Faults": 3.1,
+            "Service:Aces": 8.5,
+            "Service:Double Faults": 3,
             "Service:1st Serve Points Won": 77.5,
-            "Service:2nd Serve Points Won": 51,
+            "Service:2nd Serve Points Won": 51.1,
             "Service:Break Points Saved": 63.1,
             "Return:Break Points Converted": 36,
             "Points:Winners": 27.3,
             "Points:Unforced Errors": 26.5,
-            "Points:Service Points Won": 67,
-            "Points:Return Points Won": 36.7,
+            "Points:Service Points Won": 67.1,
+            "Points:Return Points Won": 36.6,
             "Points:Total Points Won": 51.3
           },
           "samples": {
-            "Service:Aces": 62,
-            "Service:Double Faults": 62,
-            "Service:1st Serve Points Won": 3025,
-            "Service:2nd Serve Points Won": 1929,
+            "Service:Aces": 63,
+            "Service:Double Faults": 63,
+            "Service:1st Serve Points Won": 3036,
+            "Service:2nd Serve Points Won": 1934,
             "Service:Break Points Saved": 325,
             "Return:Break Points Converted": 456,
             "Points:Winners": 47,
             "Points:Unforced Errors": 47,
-            "Points:Service Points Won": 4962,
-            "Points:Return Points Won": 5333,
-            "Points:Total Points Won": 10295
+            "Points:Service Points Won": 4978,
+            "Points:Return Points Won": 5351,
+            "Points:Total Points Won": 10329
           }
         }
       },
@@ -166139,7 +165935,7 @@
       "p1": 3.45,
       "p2": 1.32,
       "bookmaker": "Betano",
-      "seenAt": "2026-09-28T09:43:53.169Z"
+      "seenAt": "2026-09-28T10:03:51.806Z"
     },
     "bestOdds": {
       "p1": {
@@ -166150,7 +165946,7 @@
         "price": 1.32,
         "bookmaker": "Betano"
       },
-      "seenAt": "2026-09-28T09:43:53.169Z"
+      "seenAt": "2026-09-28T10:03:51.806Z"
     },
     "tournamentRound": "ATP Chengdu - Quarter-finals",
     "p1Key": 374,
@@ -168259,8 +168055,8 @@
             "Service:Double Faults": 1.5,
             "Service:1st Serve Points Won": 71.2,
             "Service:2nd Serve Points Won": 54.9,
-            "Service:Break Points Saved": 67.6,
-            "Return:Break Points Converted": 40.4,
+            "Service:Break Points Saved": 67.8,
+            "Return:Break Points Converted": 40.5,
             "Points:Winners": 25.1,
             "Points:Unforced Errors": 23.6,
             "Points:Service Points Won": 66.1,
@@ -168270,15 +168066,15 @@
           "samples": {
             "Service:Aces": 55,
             "Service:Double Faults": 55,
-            "Service:1st Serve Points Won": 2847,
-            "Service:2nd Serve Points Won": 1284,
-            "Service:Break Points Saved": 306,
-            "Return:Break Points Converted": 332,
+            "Service:1st Serve Points Won": 2855,
+            "Service:2nd Serve Points Won": 1293,
+            "Service:Break Points Saved": 307,
+            "Return:Break Points Converted": 333,
             "Points:Winners": 42,
             "Points:Unforced Errors": 42,
-            "Points:Service Points Won": 4130,
-            "Points:Return Points Won": 4146,
-            "Points:Total Points Won": 8276
+            "Points:Service Points Won": 4145,
+            "Points:Return Points Won": 4157,
+            "Points:Total Points Won": 8302
           }
         }
       },
@@ -168319,8 +168115,8 @@
             "Service:Double Faults": 2,
             "Service:1st Serve Points Won": 70.2,
             "Service:2nd Serve Points Won": 52.9,
-            "Service:Break Points Saved": 65.2,
-            "Return:Break Points Converted": 44.9,
+            "Service:Break Points Saved": 65.3,
+            "Return:Break Points Converted": 45,
             "Points:Winners": 22,
             "Points:Unforced Errors": 23.3,
             "Points:Service Points Won": 64.5,
@@ -168330,15 +168126,15 @@
           "samples": {
             "Service:Aces": 66,
             "Service:Double Faults": 66,
-            "Service:1st Serve Points Won": 3359,
-            "Service:2nd Serve Points Won": 1638,
-            "Service:Break Points Saved": 391,
-            "Return:Break Points Converted": 408,
+            "Service:1st Serve Points Won": 3367,
+            "Service:2nd Serve Points Won": 1647,
+            "Service:Break Points Saved": 392,
+            "Return:Break Points Converted": 409,
             "Points:Winners": 47,
             "Points:Unforced Errors": 47,
-            "Points:Service Points Won": 4995,
-            "Points:Return Points Won": 4937,
-            "Points:Total Points Won": 9932
+            "Points:Service Points Won": 5010,
+            "Points:Return Points Won": 4948,
+            "Points:Total Points Won": 9958
           }
         }
       },
@@ -174370,7 +174166,7 @@
       "p1": 1.85,
       "p2": 1.98,
       "bookmaker": "Betano",
-      "seenAt": "2026-09-28T09:43:53.169Z"
+      "seenAt": "2026-09-28T10:03:51.806Z"
     },
     "bestOdds": {
       "p1": {
@@ -174381,7 +174177,7 @@
         "price": 1.98,
         "bookmaker": "Betano"
       },
-      "seenAt": "2026-09-28T09:43:53.169Z"
+      "seenAt": "2026-09-28T10:03:51.806Z"
     },
     "tournamentRound": "ATP Hangzhou - Quarter-finals",
     "p1Key": 1057,
@@ -178880,7 +178676,7 @@
       "p1": 1.23,
       "p2": 4.25,
       "bookmaker": "Betano",
-      "seenAt": "2026-09-28T09:43:53.169Z"
+      "seenAt": "2026-09-28T10:03:51.806Z"
     },
     "bestOdds": {
       "p1": {
@@ -178891,7 +178687,7 @@
         "price": 4.25,
         "bookmaker": "Betano"
       },
-      "seenAt": "2026-09-28T09:43:53.169Z"
+      "seenAt": "2026-09-28T10:03:51.806Z"
     },
     "tournamentRound": "ATP Hangzhou - Quarter-finals",
     "p1Key": 1093,
@@ -182787,7 +182583,7 @@
       "p1": 1.35,
       "p2": 3.25,
       "bookmaker": "Betano",
-      "seenAt": "2026-09-28T09:43:53.169Z"
+      "seenAt": "2026-09-28T10:03:51.806Z"
     },
     "bestOdds": {
       "p1": {
@@ -182798,7 +182594,7 @@
         "price": 3.25,
         "bookmaker": "Betano"
       },
-      "seenAt": "2026-09-28T09:43:53.169Z"
+      "seenAt": "2026-09-28T10:03:51.806Z"
     },
     "tournamentRound": "",
     "p1Key": 1980,
@@ -191974,6 +191770,10 @@
               [
                 "2026-09-28T09:11:40.435Z",
                 2.02
+              ],
+              [
+                "2026-09-28T10:04:10.032Z",
+                2.04
               ]
             ],
             "p2": [
@@ -192003,13 +191803,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-09-28T09:59:50.121Z"
+            "checkedAt": "2026-09-28T10:14:50.472Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-09-28T09:59:50.121Z"
+            "checkedAt": "2026-09-28T10:14:50.472Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -192022,56 +191822,56 @@
             "source": "api-tennis",
             "group": "sharp",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Betano": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "1xBet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-28T09:59:30.613Z",
+            "checkedAt": "2026-09-28T10:14:38.218Z",
             "firstSeen": "2026-09-28T09:49:19.610Z"
           },
           "BetVictor": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Betfair Sportsbook (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Marathon": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "bet365 (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Sbobet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "William Hill": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Pinnacle +30s": {
             "source": "Oddspapi",
@@ -198914,6 +198714,22 @@
               [
                 "2026-09-28T09:54:10.060Z",
                 1.41
+              ],
+              [
+                "2026-09-28T09:59:10.033Z",
+                1.42
+              ],
+              [
+                "2026-09-28T10:04:10.032Z",
+                1.43
+              ],
+              [
+                "2026-09-28T10:09:10.160Z",
+                1.44
+              ],
+              [
+                "2026-09-28T10:14:10.063Z",
+                1.45
               ]
             ],
             "p2": [
@@ -199020,6 +198836,22 @@
               [
                 "2026-09-28T09:54:10.060Z",
                 3.15
+              ],
+              [
+                "2026-09-28T09:59:10.033Z",
+                2.74
+              ],
+              [
+                "2026-09-28T10:04:10.032Z",
+                2.78
+              ],
+              [
+                "2026-09-28T10:09:10.160Z",
+                3.0
+              ],
+              [
+                "2026-09-28T10:14:10.063Z",
+                2.86
               ]
             ]
           },
@@ -199148,13 +198980,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-09-28T09:59:50.121Z"
+            "checkedAt": "2026-09-28T10:14:50.472Z"
           },
           "Superbet": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-09-28T09:59:50.121Z"
+            "checkedAt": "2026-09-28T10:14:50.472Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -199167,56 +198999,56 @@
             "source": "api-tennis",
             "group": "sharp",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Betano": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-28T09:59:30.613Z",
+            "checkedAt": "2026-09-28T10:14:38.218Z",
             "firstSeen": "2026-09-28T09:49:19.610Z"
           },
           "1xBet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "BetVictor": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Betfair Sportsbook (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Marathon": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "bet365 (api-tennis)": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "Sbobet": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           },
           "William Hill": {
             "source": "api-tennis",
             "group": "soft",
             "clock": "seen by us every 5 min",
-            "checkedAt": "2026-09-28T09:59:30.613Z"
+            "checkedAt": "2026-09-28T10:14:38.218Z"
           }
         }
       }
@@ -245735,13 +245567,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-09-28T09:50:00.000Z"
+            "checkedAt": "2026-09-28T09:55:00.000Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-09-28T09:50:00.000Z"
+            "checkedAt": "2026-09-28T09:55:00.000Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -249211,13 +249043,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-09-28T09:59:50.121Z"
+            "checkedAt": "2026-09-28T10:14:50.472Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-09-28T09:59:50.121Z"
+            "checkedAt": "2026-09-28T10:14:50.472Z"
           },
           "Bet105": {
             "source": "Kibl",
@@ -252118,6 +251950,30 @@
               [
                 "2026-09-28T08:41:48.794Z",
                 1.51
+              ],
+              [
+                "2026-09-28T08:55:18.035Z",
+                1.52
+              ],
+              [
+                "2026-09-28T09:00:20.219Z",
+                1.5
+              ],
+              [
+                "2026-09-28T09:12:27.464Z",
+                1.53
+              ],
+              [
+                "2026-09-28T09:41:23.996Z",
+                1.5
+              ],
+              [
+                "2026-09-28T09:52:16.873Z",
+                1.47
+              ],
+              [
+                "2026-09-28T10:09:09.955Z",
+                1.5
               ]
             ],
             "p2": [
@@ -252212,6 +252068,26 @@
               [
                 "2026-09-28T08:41:48.794Z",
                 2.3
+              ],
+              [
+                "2026-09-28T09:00:20.219Z",
+                2.27
+              ],
+              [
+                "2026-09-28T09:12:27.464Z",
+                2.22
+              ],
+              [
+                "2026-09-28T09:41:23.996Z",
+                2.27
+              ],
+              [
+                "2026-09-28T09:52:16.873Z",
+                2.35
+              ],
+              [
+                "2026-09-28T10:09:09.955Z",
+                2.27
               ]
             ]
           },
@@ -252768,6 +252644,50 @@
               [
                 "2026-09-28T08:41:44.389Z",
                 1.62
+              ],
+              [
+                "2026-09-28T08:58:09.423Z",
+                1.61
+              ],
+              [
+                "2026-09-28T08:58:24.389Z",
+                1.62
+              ],
+              [
+                "2026-09-28T09:29:05.033Z",
+                1.63
+              ],
+              [
+                "2026-09-28T09:29:19.954Z",
+                1.62
+              ],
+              [
+                "2026-09-28T09:34:05.001Z",
+                1.63
+              ],
+              [
+                "2026-09-28T09:34:19.960Z",
+                1.62
+              ],
+              [
+                "2026-09-28T09:39:10.010Z",
+                1.63
+              ],
+              [
+                "2026-09-28T09:39:45.160Z",
+                1.62
+              ],
+              [
+                "2026-09-28T09:49:00.377Z",
+                1.63
+              ],
+              [
+                "2026-09-28T09:52:50.011Z",
+                1.64
+              ],
+              [
+                "2026-09-28T09:53:19.976Z",
+                1.63
               ]
             ],
             "p2": [
@@ -253146,6 +253066,14 @@
               [
                 "2026-09-28T08:42:34.366Z",
                 2.56
+              ],
+              [
+                "2026-09-28T09:52:05.001Z",
+                2.54
+              ],
+              [
+                "2026-09-28T10:07:10.015Z",
+                2.56
               ]
             ]
           },
@@ -253477,13 +253405,13 @@
             "source": "odds-api.io",
             "group": "soft",
             "clock": "vendor updatedAt",
-            "checkedAt": "2026-09-28T08:55:00.000Z"
+            "checkedAt": "2026-09-28T10:10:00.000Z"
           },
           "Betfair Exchange (recorded by us)": {
             "source": "odds-api.io",
             "group": "soft",
             "clock": "recorded by us",
-            "checkedAt": "2026-09-28T08:55:00.000Z"
+            "checkedAt": "2026-09-28T10:10:00.000Z"
           },
           "Bet105": {
             "source": "Kibl",
