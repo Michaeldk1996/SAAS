@@ -206,7 +206,28 @@
     return { d0, d1, lo, hi, H, zeroY: Y(0), grid, ticks, a: mk(seriesA), b: mk(seriesB) };
   }
 
-  const api = { ME_THIN_FLOOR, ME_NEEDS, BANDS, bandOf, isFavPrice, plCents, whyNotPriced, whyNotBo3, inWinner, inBo3,
+  // ---- R7 (founder, 2026-09-28): derived lines only for a standard best-of-3 match ----------------
+  // The board's match carries NO format field. The format is read from api-tennis's tournament name and
+  // round as the board stores them (matches.json `tour` = get_fixtures `tournament_name`, e.g. "ATP US Open";
+  // `tournamentRound` = "ATP US Open - 1/64-finals"; `tourBadge` = "ATP"). Rules, in order:
+  //   no tournament name, or not badged ATP      → unknown   (never guessed: not best-of-3)
+  //   Laver / Davis / United / ATP / Hopman Cup, NextGen → non-standard format (team events, short
+  //                                                  sets, match-tiebreak deciders)
+  //   a Grand Slam main-draw match               → best-of-5
+  //   a Grand Slam qualifying round              → best-of-3
+  //   any other ATP tour event                   → best-of-3
+  const FMT_SLAM = /\b(australian open|french open|roland garros|wimbledon|us open)\b/;
+  const FMT_NONSTD = /laver cup|davis cup|united cup|atp cup|hopman cup|next ?gen/;
+  function matchFormat(m) {
+    const norm = (x) => String(x == null ? '' : x).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
+    const tour = norm(m && m.tour), round = norm(m && m.tournamentRound);
+    if (!tour || String((m && m.tourBadge) || '').toUpperCase() !== 'ATP') return { bo3: false, reason: 'unknown' };
+    if (FMT_NONSTD.test(tour)) return { bo3: false, reason: 'non-standard' };
+    if (FMT_SLAM.test(tour)) return /qualif/.test(round) || /qualif/.test(tour) ? { bo3: true, reason: 'slam-qualifying' } : { bo3: false, reason: 'best-of-5' };
+    return { bo3: true, reason: 'atp-tour' };
+  }
+
+  const api = { matchFormat, ME_THIN_FLOOR, ME_NEEDS, BANDS, bandOf, isFavPrice, plCents, whyNotPriced, whyNotBo3, inWinner, inBo3,
     inScope, summarise, needsCandidates, roundRank, byDate, playerModel, lineDefs, lineModel, chartModel };
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
   else root.MarketEdgeCore = api;

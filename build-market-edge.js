@@ -146,6 +146,34 @@ const r2 = (v) => (v == null ? null : Math.round(v * 100) / 100);
  * Pick the book for one archive row. Returns null when neither book priced both sides —
  * a one-sided price cannot be de-vigged and a half-priced market is not a market.
  */
+/** R8: the archive row's two pairs, each [winner, loser] or null (both sides > 1.00). */
+function pickBookPairs(row) {
+  const two = (a, b) => (num(a) > 1 && num(b) > 1 ? [num(a), num(b)] : null);
+  return { P: two(row.psw, row.psl), B: two(row.b365w, row.b365l) };
+}
+const dayNum = (iso) => { const t = Date.parse(String(iso || '').slice(0, 10) + 'T00:00:00Z'); return Number.isFinite(t) ? t / 864e5 : null; };
+/** A captured pair for one side: the subject's capture against this opponent (by key), within ±1 day,
+ *  exactly one candidate — the page's fhCloseFor capture rule. */
+function capPair(caps, book, date, oppKey) {
+  if (!caps || !oppKey) return null;
+  const d0 = dayNum(date);
+  const hits = caps.filter((c) => c[book] && c.oppKey === oppKey && d0 != null && dayNum(c.date) != null && Math.abs(dayNum(c.date) - d0) <= 1);
+  return hits.length === 1 ? hits[0][book] : null;
+}
+/** The tab's order, FH_BOOK_ORDER = Ptd, Pcap, Btd, Bcap. Returns { book, label, price, oppPrice } or null. */
+function pickSide(b, caps, date, oppKey) {
+  const order = [
+    ['pinnacle', 'Pinnacle', () => b.tdP],
+    ['pinnacle-capture', 'Pinnacle (our capture)', () => capPair(caps, 'P', date, oppKey)],
+    ['bet365-archive', 'Bet365 (archive close)', () => b.tdB],
+    ['bet365-capture', 'Bet365 (our capture)', () => capPair(caps, 'B', date, oppKey)],
+  ];
+  for (const [book, label, f] of order) {
+    const pr = f();
+    if (pr && pr[0] >= 1.01 && pr[1] >= 1.01) return { book, label, price: pr[0], oppPrice: pr[1] };
+  }
+  return null;
+}
 function pickBook(row) {
   const pw = num(row.psw);
   const pl = num(row.psl);
@@ -165,7 +193,8 @@ function pickBook(row) {
  */
 // The 1.01 floor (CLAUDE.md odds invariant) is the core's too: a price below it has no band, so it is
 // on no basis — never in the headline while missing from the bands.
-const isYieldBasis = (side) => (side.book === 'pinnacle' || side.book === 'bet365-archive') && core.bandOf(side.price) >= 0;
+const BASIS_BOOKS = new Set(['pinnacle', 'pinnacle-capture', 'bet365-archive', 'bet365-capture']);
+const isYieldBasis = (side) => BASIS_BOOKS.has(side.book) && core.bandOf(side.price) >= 0;
 
 function emptyAgg() {
   // profitCents, not profit. Summing `price - 1` as a float reorders with the row
@@ -182,7 +211,7 @@ function addTo(a, side) {
   const cents = Math.round(side.price * 100);
   a.profitCents += core.plCents(side);          // the tab's P&L, the same function
   a.priceCents += cents;
-  if (side.book === 'pinnacle') a.pinnacle += 1; else a.bet365 += 1;
+  if (String(side.book).startsWith('pinnacle')) a.pinnacle += 1; else a.bet365 += 1;
 }
 
 /**
@@ -322,7 +351,23 @@ function main() {
   // blind returns, and it is the number each player's yield is compared against.
   const tour = { all: emptyAgg(), level: {}, season: {} };
   const perPlayer = new Map();
-  const stats = { rows: 0, incomplete: 0, unpriced: 0, sides: 0, joined: 0, ties: 0 };
+  const stats = { rows: 0, incomplete: 0, unpriced: 0, sides: 0, joined: 0, ties: 0, captured: 0 };
+  // R8: our captured closes, per subject, from match-closes/{key}.json (build-match-closes.js runs first
+  // in the pipeline). cap = [date, oppKey, pin, pinOpp, b365, b365Opp, eventKey]. Absent shard = none.
+  const capCache = new Map();
+  function capsFor(key) {
+    const k = String(key);
+    if (!capCache.has(k)) {
+      let caps = null;
+      try {
+        const d = JSON.parse(fs.readFileSync(path.join(ROOT, 'match-closes', k + '.json'), 'utf8'));
+        const two = (a, b) => (num(a) >= 1.01 && num(b) >= 1.01 ? [num(a), num(b)] : null);
+        caps = (d.cap || []).map((x) => ({ date: x[0], oppKey: x[1] != null ? String(x[1]) : null, P: two(x[2], x[3]), B: two(x[4], x[5]) }));
+      } catch (e) { caps = null; }
+      capCache.set(k, caps);
+    }
+    return capCache.get(k);
+  }
 
   seasons.forEach((file) => {
     const season = file.slice(0, 4);
@@ -332,21 +377,32 @@ function main() {
       // played out. Same exclusion the existing builder makes, for the same reason.
       if (row.comment && row.comment.toLowerCase() !== 'completed') { stats.incomplete += 1; return; }
 
-      const bk = pickBook(row);
-      if (!bk) { stats.unpriced += 1; return; }
-
-      const pWin = devig(bk.w, bk.l);
-      const pLose = devig(bk.l, bk.w);
-      if (pWin == null || pLose == null) return;
-      if (bk.w === bk.l) stats.ties += 1;
-
+      // R8 (founder, 2026-09-28): each side is priced by the tab's order (FH_BOOK_ORDER, Form/H2H rule):
+      // Tennis-Data Pinnacle → our captured Pinnacle → Tennis-Data Bet365 → our captured Bet365, one book
+      // and one source per side. Captures come from the subject's own match-closes shard.
       const level = LEVEL_ALIASES[row.series] || null;
-      const sides = [
-        { name: row.winner, opp: row.loser, won: true, p: pWin, price: bk.w, oppPrice: bk.l },
-        { name: row.loser, opp: row.winner, won: false, p: pLose, price: bk.l, oppPrice: bk.w },
+      const td = pickBookPairs(row);
+      const base = [
+        { name: row.winner, opp: row.loser, won: true, tdP: td.P, tdB: td.B },
+        { name: row.loser, opp: row.winner, won: false, tdP: td.P && [td.P[1], td.P[0]], tdB: td.B && [td.B[1], td.B[0]] },
       ];
+      let pricedSides = 0;
+      const sides = [];
+      base.forEach((b) => {
+        const hit = resolve(b.name), oh = resolve(b.opp);
+        const caps = hit ? capsFor(hit.key) : null;
+        const pick = pickSide(b, caps, row.date, oh ? String(oh.key) : null);
+        if (!pick) return;
+        const pW = devig(pick.price, pick.oppPrice);
+        if (pW == null) return;
+        if (pick.price === pick.oppPrice) stats.ties += 1;
+        pricedSides++;
+        sides.push({ name: b.name, opp: b.opp, won: b.won, p: pW, price: pick.price, oppPrice: pick.oppPrice, bk: pick });
+      });
+      if (!pricedSides) { stats.unpriced += 1; return; }
 
       sides.forEach((s) => {
+        const bk = s.bk;
         stats.sides += 1;
         const side = {
           date: row.date, event: row.tournament, level, surface: row.surface,
@@ -376,6 +432,7 @@ function main() {
 
         const hit = resolve(s.name);
         if (!hit) return;
+        if (bk.book === 'pinnacle-capture' || bk.book === 'bet365-capture') stats.captured += 1;
         if (only && hit.key !== only) return;
         stats.joined += 1;
         if (!perPlayer.has(hit.key)) perPlayer.set(hit.key, { name: hit.name, sides: [] });
@@ -518,4 +575,4 @@ function main() {
 }
 
 if (require.main === module) process.exit(main());
-module.exports = { pickBook, summarise, PRICE_BANDS, bandFor, PRICE_BASIS, GATE_FULL, GATE_SMALL };
+module.exports = { pickBook, pickSide, capPair, summarise, PRICE_BANDS, bandFor, PRICE_BASIS, GATE_FULL, GATE_SMALL };

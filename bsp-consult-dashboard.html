@@ -15435,6 +15435,8 @@ const ME_C = {
 // §4.5 thin-sample floor and §4.2 Needs basis: ruled 2026-09-27 (TEN-310) — n < 5 and n / Σ price.
 // Both live in market-edge-core.js (ME_THIN_FLOOR, ME_NEEDS).
 const ME_NOPRICE_MSG = 'Derived lines need today’s price.';
+// R7 (founder, 2026-09-28): a match that is not a standard best-of-3 (MarketEdgeCore.matchFormat) shows no lines.
+const ME_BO3_MSG = 'Derived lines cover best-of-3 matches only.';
 let _me = null;
 function meStateFor(m){
   if (!_me || _me.m !== m) _me = { m, S: { meView: 'lines', meScope: 'career', meBand: null, meLine: null, meLineScope: 'all' },
@@ -15611,7 +15613,10 @@ function meLinesCol(E, i, M){
 }
 function meLinesCard(E, MM){
   const S = E.S, noPrice = MM[0].today == null && MM[1].today == null;
-  const body = noPrice
+  const fmt = window.MarketEdgeCore ? window.MarketEdgeCore.matchFormat(E.m) : { bo3: false };
+  const body = !fmt.bo3
+    ? `<div class="me-nobo3" data-me-format="${fmt.reason || 'unknown'}" style="padding:28px 0; text-align:center; font-size:12.5px; color:${ME_C.m2};">${ME_BO3_MSG}</div>`
+    : noPrice
     ? `<div class="me-noprice" style="padding:28px 0; text-align:center; font-size:12.5px; color:${ME_C.m2};">${ME_NOPRICE_MSG}</div>`
     : `<div style="${ME_PGRID}">${meLinesCol(E, 0, MM[0])}${meLinesCol(E, 1, MM[1])}</div>`;
   return `<div style="min-width:0; display:flex; flex-direction:column; overflow-x:auto;"><div class="me-card me-lines" style="${ME_CARD}">`

@@ -337,6 +337,26 @@ jobs:
       - name: Build market performance shards (best-effort)
         run: node build-odds-performance.js || true
 
+      # Per-tournament market performance (TEN-8 Tournaments Overview §4/§5):
+      # flat-stake yields backing favourites/underdogs + favourite reliability,
+      # grouped by tournament from the same committed odds-archive/ CSVs. No
+      # network calls. Best-effort: a failure keeps the committed JSON.
+      - name: Build tournament market (best-effort)
+        run: node build-tournament-market.js || true
+
+      # TEN-263 match-close shards: per player, every closing price we hold — Tennis-Data
+      # (committed odds-archive/ CSVs, Pinnacle + Bet365) and our own captures (committed
+      # captured-closes-pinnacle.json; bet365-history/ cut at the oddspapi ACTUAL start,
+      # never in-play), each pair only when two-sided. The page picks Pinnacle TD →
+      # Pinnacle captured → Bet365 TD → Bet365 captured per match. Needs the form/ shards
+      # (run-pipeline.js, above) for Challenger names. Read lazily by the Match analysis
+      # Form and H2H tabs. No network calls. Best-effort: a failure publishes nothing and
+      # those cells dash.
+      - name: Build match-close shards (best-effort)
+        run: node build-match-closes.js || true
+
+      # TEN-310 R8 (2026-09-28): runs AFTER the match-close shards — it prices each side by the tab's order
+      # and reads our captured closes from match-closes/{key}.json.
       # TEN-263 (founder ruling 2026-09-24): market-edge/ is a pipeline output, rebuilt
       # every run — never hand-built again. Same inputs as odds-performance (committed
       # odds-archive/ CSVs + the profiles just refreshed) plus court-speed-map.json and
@@ -359,23 +379,6 @@ jobs:
           echo "MARKET_EDGE_BUILD_RC=$ME_RC" >> "$GITHUB_ENV"
           if [ "$ME_RC" -ne 0 ]; then echo "::warning::build-market-edge.js exited $ME_RC; the committed market-edge floor will ship and the run is failed after the deploy."; fi
 
-      # Per-tournament market performance (TEN-8 Tournaments Overview §4/§5):
-      # flat-stake yields backing favourites/underdogs + favourite reliability,
-      # grouped by tournament from the same committed odds-archive/ CSVs. No
-      # network calls. Best-effort: a failure keeps the committed JSON.
-      - name: Build tournament market (best-effort)
-        run: node build-tournament-market.js || true
-
-      # TEN-263 match-close shards: per player, every closing price we hold — Tennis-Data
-      # (committed odds-archive/ CSVs, Pinnacle + Bet365) and our own captures (committed
-      # captured-closes-pinnacle.json; bet365-history/ cut at the oddspapi ACTUAL start,
-      # never in-play), each pair only when two-sided. The page picks Pinnacle TD →
-      # Pinnacle captured → Bet365 TD → Bet365 captured per match. Needs the form/ shards
-      # (run-pipeline.js, above) for Challenger names. Read lazily by the Match analysis
-      # Form and H2H tabs. No network calls. Best-effort: a failure publishes nothing and
-      # those cells dash.
-      - name: Build match-close shards (best-effort)
-        run: node build-match-closes.js || true
 
       # TEN-263 D-12: Elo name keys two feed players share (J. D. Silva / J. Reis Da Silva). The
       # Form tab dashes their Elo rather than risk the wrong player. NOT best-effort: without this

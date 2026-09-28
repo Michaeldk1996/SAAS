@@ -63,6 +63,7 @@ function stat(html, l) { const m = new RegExp(`data-me-stat="${l}"[^>]*>([^<]*)<
 
 // ---- the fixture match: Sinner (A, 1.54) v Alcaraz (B, 2.62) — the design's own demo prices ----
 const M = { id: 'upcoming-x', p1: 'J. Sinner', p2: 'C. Alcaraz', p1Key: 2072, p2Key: 2382, date: '2026-09-27',
+  tour: 'ATP Beijing', tournamentRound: 'ATP Beijing - Final', tourBadge: 'ATP',
   bestOdds: { p1: { price: 1.54 }, p2: { price: 2.62 } } };
 function load(ui) {
   return [['2072', 'J. Sinner'], ['2382', 'C. Alcaraz']].map(([k, n]) => ui.meRowsFor(rd(`career-history-${k}.json`).matches, ui.fhParseCloses(rd(`match-closes-${k}.json`)), k, n));
@@ -222,7 +223,7 @@ test('§4 edge cases: half-open bands, 2.00 is underdog, match-tiebreak is not a
   assert.equal(rows[0].price, 2.0); assert.equal(core.bandOf(rows[0].price), 4, '2.00 sits in the underdog ladder');
   // render: thin samples, n = 0 bands, one player with no priced matches, no header price
   const empty = Object.assign([], { notTour: 0 });
-  const m = { id: 'x', p1: 'A. Test', p2: 'B. None', p1Key: 9, p2Key: 10, date: '2026-09-27', bestOdds: { p1: { price: 1.21 }, p2: { price: 4.4 } } };
+  const m = { id: 'x', p1: 'A. Test', p2: 'B. None', p1Key: 9, p2Key: 10, date: '2026-09-27', tour: 'ATP Chengdu', tourBadge: 'ATP', bestOdds: { p1: { price: 1.21 }, p2: { price: 4.4 } } };
   const R = ui.render(m, { meView: 'winner' }, [rows, empty]);
   const b1 = bandRow(R.html, 'a0');   // the 1.205 row: 1.01 – 1.20
   assert.deepEqual([b1.w, b1.l, b1.won], [1, 0, '—'], 'n < 5: W–L kept, Won dashed'); assert.equal(b1.uTxt, '+0.2u', '1u still shown (a sum)');
@@ -307,4 +308,34 @@ test('meLoad: a failed closes fetch or a missing player key is unknown history, 
     { meView: 'winner' }, [null, null], ['failed', 'none']);
   assert.ok(!/\d+ priced/.test(R.html), 'no "N priced" for unknown history');
   assert.ok(R.html.includes('History unavailable') && R.html.includes('No history on file for this player.'));
+});
+
+test('R7: Derived lines only on a standard best-of-3 match — format from matches.json tour / tournamentRound / tourBadge', () => {
+  const ui = buildUI(), rows = load(ui), fmt = ui.core.matchFormat;
+  const base = { id: 'x', p1: 'J. Sinner', p2: 'C. Alcaraz', p1Key: 2072, p2Key: 2382, date: '2026-09-27', bestOdds: { p1: { price: 1.54 }, p2: { price: 2.62 } } };
+  const CASES = [
+    ['Slam R1', { tour: 'ATP US Open', tournamentRound: 'ATP US Open - 1/64-finals', tourBadge: 'ATP' }, false, 'best-of-5'],
+    ['Laver Cup', { tour: 'ATP Laver Cup', tournamentRound: '', tourBadge: 'ATP' }, false, 'non-standard'],
+    ['NextGen', { tour: 'ATP Next Gen Finals - Jeddah', tournamentRound: 'ATP Next Gen Finals - Jeddah - Group A', tourBadge: 'ATP' }, false, 'non-standard'],
+    ['regular ATP 250', { tour: 'ATP Chengdu', tournamentRound: 'ATP Chengdu - Semi-finals', tourBadge: 'ATP' }, true, 'atp-tour'],
+    ['unknown format (no tournament name)', { tour: '', tournamentRound: '', tourBadge: 'ATP' }, false, 'unknown'],
+    ['unknown format (not badged ATP)', { tour: 'Chengdu', tournamentRound: '', tourBadge: '' }, false, 'unknown'],
+    ['Slam qualifying (best-of-3)', { tour: 'ATP US Open', tournamentRound: 'ATP US Open - Qualification - 1/16-finals', tourBadge: 'ATP' }, true, 'slam-qualifying'],
+    ['Davis Cup', { tour: 'Davis Cup - World Group', tournamentRound: '', tourBadge: 'ATP' }, false, 'non-standard'],
+    ['United Cup', { tour: 'ATP United Cup', tournamentRound: '', tourBadge: 'ATP' }, false, 'non-standard'],
+  ];
+  for (const [name, f, bo3, reason] of CASES) {
+    const m = Object.assign({}, base, f);
+    assert.deepEqual(fmt(m), { bo3, reason }, name);
+    const RL = ui.render(m, { meView: 'lines' }, rows);          // the default view stays Derived lines
+    assert.equal(RL.html.includes('Derived lines cover best-of-3 matches only.'), !bo3, `${name}: empty state`);
+    assert.equal(RL.html.includes('data-me-line='), bo3, `${name}: line rows`);
+    assert.ok(RL.html.includes('>Derived lines<'), `${name}: the view is not switched`);
+    const RW = ui.render(m, { meView: 'winner' }, rows);          // Match winner is unchanged for every format
+    assert.equal((RW.html.match(/data-me-band="/g) || []).length, 16, `${name}: bands render`);
+    assert.ok(/\d+ priced/.test(RW.html), `${name}: chart legend renders`);
+  }
+  // the format gate outranks the price gate: a Slam with no header price still says best-of-3
+  const noPx = ui.render(Object.assign({}, base, CASES[0][1], { bestOdds: null }), { meView: 'lines' }, rows).html;
+  assert.ok(noPx.includes('Derived lines cover best-of-3 matches only.') && !noPx.includes('Derived lines need today'));
 });

@@ -54,7 +54,7 @@ export function buildData({ src = HTML } = {}) {
   return Object.assign(api, { core });
 }
 
-const UI_CONSTS = ['FH_MONO', 'FH_MONS', 'FH_BOOK', 'FH_SRC', 'AODDS_C', 'ME_C', 'ME_NOPRICE_MSG', 'mePct0', 'mePct1', 'meUC', 'meSegT', 'ME_CARD',
+const UI_CONSTS = ['FH_MONO', 'FH_MONS', 'FH_BOOK', 'FH_SRC', 'AODDS_C', 'ME_C', 'ME_NOPRICE_MSG', 'ME_BO3_MSG', 'mePct0', 'mePct1', 'meUC', 'meSegT', 'ME_CARD',
   'ME_TITLE', 'ME_COLH', 'ME_FOOT', 'ME_HINT', 'ME_PGRID', 'ME_BCOLS', 'ME_LCOLS', 'meScopeLbl', 'meNoHist', 'meLoadingRow', 'meStatBox', 'ME_BAND_TCOLS', 'ME_LINE_TCOLS'];
 const UI_FNS = ['escapeHtml', 'fhDayNum', 'psShortName', 'fhSurname', 'fhEsc', 'fhRefDay', 'fhLongDate', 'fhOdd', 'fhSrcTitle', 'aOddsTipHtml', 'aHeaderOdds', 'meStateFor',
   'meSg', 'meDMY', 'meModels', 'meSegHtml', 'meScopeSeg', 'meBandsCol', 'mePriceCard', 'meChartCard', 'meLinesCol', 'meLinesCard', 'mePillTip',

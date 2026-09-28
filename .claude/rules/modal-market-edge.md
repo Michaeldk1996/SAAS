@@ -16,6 +16,16 @@ Applies to the TEN-310 block in `bsp-consult-dashboard.html` (`me*` functions, `
 - **Bands** are half-open in thousandths: [1.01,1.21) [1.21,1.41) [1.41,1.65) [1.65,2.00) | [2.00,2.50) [2.50,3.50)
   [3.50,6.00) [6.00,∞). Favourite = price < 2.00; **2.00 is underdog**. **Test:** 1.205 → 1.01 – 1.20, 2.00 → 2.00 – 2.49.
 
+## Match format (R7, founder 2026-09-28)
+- **Derived lines only on a standard best-of-3 match.** Otherwise the Derived lines card body reads "Derived lines
+  cover best-of-3 matches only." (the no-price state's style); the view is never switched; Match winner is unchanged.
+- **How the format is read** (`MarketEdgeCore.matchFormat`): the board's match has no format field, so it comes from
+  matches.json `tour` (api-tennis `tournament_name`), `tournamentRound` and `tourBadge`. No tournament name or not
+  badged ATP → unknown → no lines. Laver / Davis / United / ATP / Hopman Cup and NextGen → no lines. A Grand Slam main
+  draw → best-of-5 → no lines; a Slam qualifying round → best-of-3. Any other ATP event → best-of-3.
+  **Test:** `test-ten310-market-edge.mjs` R7 (Slam R1, Laver Cup, NextGen, ATP 250, unknown, Slam qualifying, Davis Cup,
+  United Cup). The format gate outranks the price gate.
+
 ## Populations
 - **Match winner (bands + profit chart):** priced, played matches, Bo5 included. Walkovers never. **Retirements are
   not settled** — the player-profile Market edge's rule (Tennis-Data rows not "Completed" are dropped): a match the feed
@@ -42,7 +52,9 @@ Applies to the TEN-310 block in `bsp-consult-dashboard.html` (`me*` functions, `
   Tennis-Data marks not "Completed" is out. Walkovers never count.
 - **One basis for both Market edge surfaces** — the player-profile Market edge (`build-market-edge.js`,
   `market-edge/{key}.json`) uses this tab's rules, through `market-edge-core.js`: Pinnacle close, else Bet365
-  close; favourite = price < 2.00 (no "level" role); the half-open band ladder; the same cents P&L; the tour
+  close in the tab's order (R8, 2026-09-28: Tennis-Data Pinnacle → our captured Pinnacle → Tennis-Data Bet365 →
+  our captured Bet365, the page's `FH_BOOK_ORDER`; captures from `match-closes/{key}.json`, so `build-market-edge.js`
+  runs after `build-match-closes.js`; test `tools/test-ten310-price-order.js`); favourite = price < 2.00 (no "level" role); the half-open band ladder; the same cents P&L; the tour
   baseline on the same basis. This supersedes R1 (2026-09-17, "Pinnacle closing only"). **Test:**
   `tools/test-market-edge-basis.js` (11 controls) and the pipeline's market-edge assert
   (`priceBasis === "Pinnacle closing, else Bet365 closing"`, Bet365 sides in the tour baseline).
