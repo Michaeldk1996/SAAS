@@ -22,7 +22,7 @@ Applies to the TEN-263 block in `bsp-consult-dashboard.html` (`fh*` functions), 
 - **Never `m.bestOdds`** on these tabs. **Test:** the block does not read it.
 
 ## Display constants (ruling 2026-09-24): each is one constant, and each is a test
-- **a** `FH_HOT_MIN_ELIGIBLE = 3`: a hot line needs at least 3 eligible matches.
+- **a** `FH_HOT_MIN_ELIGIBLE = 3`: a hot line needs at least 3 eligible matches. That is the minimum to **appear**; the % beside it follows `tourxSampleGate` (TEN-312 D2: no % under 5, grey 5–9). Form `THIN = 5` gains the same 5–9 grey tier. The H2H small-sample chip shows for n 1–9, not only n = 2. H2H opens on All surfaces; Form on today's surface (TEN-312 N1).
 - **b** `FH_PRICE_AVG_MARGIN_REMOVED = true`: the Price range average has the bookmaker margin
   removed, and every place it shows says so ("avg · margin removed", `FH_PRICE_AVG_LABEL`).
 - **c** `FH_H2H_SET1_MIRROR = true`: H2H hot lines list "A wins set 1" and "B wins set 1".

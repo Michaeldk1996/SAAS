@@ -11,7 +11,7 @@ Applies to the TEN-310 block in `bsp-consult-dashboard.html` (`me*` functions, `
     `market-edge/{key}.json` `matches` with `inBasis` (`meWinnerRows`). Each row borrows set scores, eventKey and the
     display name/round from the one career-history row that joined the same Tennis-Data row (`tdKey`); a row with no
     such career row is joined by opponent surname + result in the event window (exactly one candidate), else it shows a
-    dash there and is not clickable. A 404 shard = the profile has no Market edge and dashes it → the tab dashes that
+    dash there; the row still opens the match stats sheet (header wired, stats dashed where absent — TEN-312 sheet rule). A 404 shard = the profile has no Market edge and dashes it → the tab dashes that
     player too (state `none`), never "0 priced"; a failed fetch = failed.
     **Test:** `test-ten310-market-edge.mjs` "ruling B" — every band's W–L and 1u, the legend n and end = the profile
     shard's bands and headline; control: the career rows do not match.
@@ -25,6 +25,10 @@ Applies to the TEN-310 block in `bsp-consult-dashboard.html` (`me*` functions, `
   today's price."; Match winner still renders.
 - **Bands** are half-open in thousandths: [1.01,1.21) [1.21,1.41) [1.41,1.65) [1.65,2.00) | [2.00,2.50) [2.50,3.50)
   [3.50,6.00) [6.00,∞). Favourite = price < 2.00; **2.00 is underdog**. **Test:** 1.205 → 1.01 – 1.20, 2.00 → 2.00 – 2.49.
+
+## Sheet and footnote (TEN-312, founder 2026-09-28)
+- **Every pop-up row opens the match stats sheet** — the "stats on file" click condition (`meSheetOk`) is dropped; where no stats exist the sheet shows the wired header and "Match stats not available for this match".
+- **The profit chart footnote describes the shared date axis** (both players on one real-date axis; a later career starts further right), not the design's per-player index axis (M5). **Test:** the footnote text does not say each line spans the player's own matches.
 
 ## Default view (TEN-312 D3, founder 2026-09-28)
 - The tab opens on **Match winner** (`meView` default `winner`), not Derived lines. **Test:** a fresh modal's Market edge tab renders the Price sensitivity card first.
@@ -61,7 +65,7 @@ Applies to the TEN-310 block in `bsp-consult-dashboard.html` (`me*` functions, `
   Not 100 / band midpoint. `ME_NEEDS` in `market-edge-core.js`. **Test:** a band of prices 1.10, 1.30 shows
   2 / 2.40 = 83%.
 - **Thin-sample floor = 5** (`ME_THIN_FLOOR`), both tables and both pop-ups: n < 5 → Won, Yield and line % read
-  "—"; W–L and 1u stay (1u is a sum). n = 0 → not clickable, Won "—", 1u "—". **Test:** a 1–0 band prints "—".
+  "—"; W–L and 1u stay (1u is a sum). **n 5–9 → greyed + "small sample" note** via `tourxSampleGate` (TEN-312 D2, 2026-09-28). n = 0 → not clickable, Won "—", 1u "—". **Test:** a 1–0 band prints "—".
 - **Pill = "CLOSING ODDS"**, hover = Pinnacle / Bet365 split + latest match date in scope. "SAMPLE DATA" never
   renders. **Test:** `test-ten310-market-edge.mjs` finds no "sample data" in the tab or its pop-ups.
 - **Today's price = the modal header's price** (`aHeaderOdds`, best across books), not the Form/H2H
