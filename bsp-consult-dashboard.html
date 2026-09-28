@@ -15612,7 +15612,7 @@ function meChartCard(E, MM){
   return `<div style="min-width:0; display:flex; flex-direction:column; overflow-x:auto;"><div class="me-card me-chart" style="${ME_CARD}">`
     + `<div style="display:flex; align-items:flex-end; justify-content:space-between; gap:12px 20px; flex-wrap:wrap;"><span style="${ME_TITLE}">Profit at 1u flat</span><div style="display:flex; align-items:center; gap:22px; flex-wrap:wrap; min-height:18px;">${legend}</div></div>`
     + plot
-    + `<span style="${ME_FOOT}">Cumulative units, flat 1u at closing odds on every priced match, oldest to newest; each line spans that player's own matches. The bright rule is break even. ${meScopeLbl(S)}.</span></div></div>`;
+    + `<span style="${ME_FOOT}">Cumulative units, flat 1u at closing odds on every priced match, oldest to newest, on one date axis shared by both players (a later career starts further right). The bright rule is break even. ${meScopeLbl(S)}.</span></div></div>`;
 }
 // §4 Derived lines at today's price — one player's column.
 function meLinesCol(E, i, M){

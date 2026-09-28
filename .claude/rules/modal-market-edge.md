@@ -53,6 +53,8 @@ Applies to the TEN-310 block in `bsp-consult-dashboard.html` (`me*` functions, `
   difference, not equality); under ruling B the lines' denominator = the career Bo3 count (ruling B test).
 - **Profit chart:** cumulative 1u P&L in date order on one date axis shared by both players (a later career starts
   further right); six labels at even fractions of the real date range (years on Career, months on Last 52 weeks).
+  The footnote says so, not the design's "each line spans that player's own matches" (TEN-322).
+  **Test:** `test-ten310-market-edge.mjs` "TEN-322" — no per-player span claim, names the shared date axis.
 
 ## Rulings (founder, 2026-09-27, TEN-310 question card) — each one is a test
 - **Needs = n / Σ price** (= 100 / mean closing price in the band; the flat-stake break-even), shown at any n > 0.

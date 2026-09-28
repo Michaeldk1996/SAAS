@@ -398,3 +398,21 @@ test('ruling B: tab Match winner = the profile shard, band by band (Sinner, Alca
     price: 1.3, oppPrice: 3.4, book: 'bet365-capture', inBasis: true }] }, rows[0], '2072', M.p1)[0];
   assert.deepEqual([lone.ek, lone.sets, lone.round], [null, null, '—']);
 });
+
+// ---- TEN-322 (TEN-312 M5): the profit-chart footnote describes the shared DATE axis ----
+// Under TEN-310 both lines sit on one real-date axis (chartModel's d0..d1 spans both players), so a later career
+// starts further right. The design's copy ("each line spans that player's own matches") described a per-player
+// index axis and is wrong here. Mutation that turns this red: restore that clause in meChartCard's footnote.
+test('TEN-322: the profit-chart footnote says the axis is shared dates, never per-player spans', () => {
+  const ui = buildUI(), rows = load(ui);
+  for (const scope of ['career', 'l52']) {
+    const html = ui.render(M, { meView: 'winner', meScope: scope }, rows).html;
+    const card = html.slice(html.indexOf('class="me-card me-chart"'));
+    const foot = texts(card).find((t) => t.startsWith('Cumulative units'));
+    assert.ok(foot, `${scope}: chart footnote renders`);
+    assert.ok(!/own matches|each line spans/i.test(foot), `${scope}: no per-player span claim: ${foot}`);
+    assert.ok(foot.includes('one date axis shared by both players'), `${scope}: says the axis is shared dates: ${foot}`);
+    // the copy is true of the render: Alcaraz's career starts later than Sinner's, so his line starts further right
+    if (scope === 'career') assert.ok(series(html, 'b')[0][0] > series(html, 'a')[0][0], 'B starts right of A on the shared axis');
+  }
+});
