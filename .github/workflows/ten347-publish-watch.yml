@@ -17,7 +17,7 @@ concurrency:
   group: ten347-publish-watch
   cancel-in-progress: false
 env:
-  TEN347_STEPS: install
+  TEN347_STEPS: status   # installed + armed 2026-09-28 23:51Z (run 36499769668); install re-sends TEST messages
 jobs:
   sql:
     runs-on: ubuntu-latest
