@@ -70,7 +70,7 @@ def main():
     pw = os.urandom(32).hex()
     subprocess.run(["openssl", "enc", "-aes-256-cbc", "-pbkdf2", "-salt", "-in", "out/result.json",
                     "-out", "out/result.enc", "-pass", "pass:" + pw], check=True)
-    subprocess.run(["openssl", "pkeyutl", "-encrypt", "-pubin", "-inkey", "tools/ten294-pub.pem",
+    subprocess.run(["openssl", "pkeyutl", "-encrypt", "-pubin", "-inkey", os.environ.get("SQL_PUB_PEM", "tools/ten294-pub.pem"),
                     "-out", "out/pass.enc"], input=pw.encode(), check=True)
     os.remove("out/result.json")
     sys.exit(1 if failed else 0)

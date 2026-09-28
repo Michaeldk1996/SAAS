@@ -1,0 +1,22 @@
+[
+ {
+  "name": "status",
+  "sql": "select s.condition, s.since, s.owed_kind, c.stale_after, c.label, c.dry_run, j.schedule, j.active from publish_watch.state s, publish_watch.config c, cron.job j where j.jobname = 'ten347_publish_watch'"
+ },
+ {
+  "name": "last_checks",
+  "sql": "select id, fired_at, status_code, built_at, commit_sha, cache_age_s, error from publish_watch.checks order by fired_at desc limit 5"
+ },
+ {
+  "name": "messages",
+  "sql": "select id, kind, delivery, created_at, text from publish_watch.messages order by id"
+ },
+ {
+  "name": "neighbours",
+  "sql": "select jobname, schedule, active from cron.job order by jobname"
+ },
+ {
+  "name": "cron_runs",
+  "sql": "select d.status, d.return_message, d.start_time from cron.job_run_details d join cron.job j using (jobid) where j.jobname = 'ten347_publish_watch' order by d.start_time desc limit 10"
+ }
+]

@@ -1,0 +1,42 @@
+# TEN-347 — publish-freshness alert (founder ruling, TEN-314 comment 70fb039e). Branch-only: fires on a push to
+# ten347-publish-watch and nothing else. Installs a Supabase pg_cron job that reads the LIVE build-info.json every
+# minute and tells the founder on Telegram (the chat the TEN-280/294 alerts already use) when no new build has been
+# published for 30 min — once per freeze, plus one recovery notice. It lives outside Actions on purpose: the
+# pipeline it watches cannot silence it.
+#   TEN347_STEPS=install  Vault secrets (own names) -> install -> rolled-back self-test -> LIVE fresh control,
+#                         forced-stale alert and recovery (TEST-labelled, each confirmed by a Telegram 2xx) -> arm.
+#   TEN347_STEPS=status   read-only: state, recent checks, messages, cron runs. Sends nothing.
+# Results are ENCRYPTED to tools/ten347-pub.pem (public repo). Stop: select cron.unschedule('ten347_publish_watch');
+name: ten347-publish-watch
+on:
+  push:
+    branches: [ten347-publish-watch]
+permissions:
+  contents: read
+concurrency:
+  group: ten347-publish-watch
+  cancel-in-progress: false
+env:
+  TEN347_STEPS: install
+jobs:
+  sql:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: SQL steps (encrypted output)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          SQL_PUB_PEM: tools/ten347-pub.pem
+        run: TEN294_STEPS=tools/ten347-steps-$TEN347_STEPS.json python3 tools/ten294-sql.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: ten347-sql
+          path: |
+            out/result.enc
+            out/pass.enc
+          retention-days: 2

@@ -1,0 +1,162 @@
+[
+ {
+  "name": "vault_tg_token",
+  "vault_from_env": "TELEGRAM_BOT_TOKEN",
+  "vault_name": "ten347_telegram_bot_token",
+  "required": true,
+  "stop_on_error": true
+ },
+ {
+  "name": "vault_tg_chat",
+  "vault_from_env": "TELEGRAM_CHAT_ID",
+  "vault_name": "ten347_telegram_chat_id",
+  "required": true,
+  "stop_on_error": true
+ },
+ {
+  "name": "install",
+  "sql_files": [
+   "tools/ten347-publish-watch.sql"
+  ],
+  "transaction": true,
+  "required": true,
+  "stop_on_error": true
+ },
+ {
+  "name": "selftest",
+  "file": "tools/ten347-publish-watch-test.sql",
+  "required": true,
+  "stop_on_error": true
+ },
+ {
+  "name": "live_reset",
+  "sql": "update publish_watch.config set dry_run = false, label = 'TEST (TEN-347 install check)', stale_after = interval '24 hours'; delete from publish_watch.checks; delete from publish_watch.messages; update publish_watch.state set condition = 'ok', since = now(), owed_kind = null, owed_text = null; select publish_watch.tick() as r",
+  "required": true,
+  "stop_on_error": true
+ },
+ {
+  "sleep": 15
+ },
+ {
+  "name": "fresh_1",
+  "sql": "select publish_watch.tick() as r"
+ },
+ {
+  "sleep": 15
+ },
+ {
+  "name": "fresh_2",
+  "sql": "select publish_watch.tick() as r"
+ },
+ {
+  "sleep": 15
+ },
+ {
+  "name": "fresh_3",
+  "sql": "select publish_watch.tick() as r"
+ },
+ {
+  "name": "fresh_assert",
+  "sql": "do $$ begin if (select count(*) from publish_watch.checks where built_at is not null) < 2 then raise exception 'fresh control read no build-info'; end if; if exists (select 1 from publish_watch.messages) then raise exception 'fresh control SENT a message'; end if; end $$; select count(*) filter (where built_at is not null) as good_reads, count(*) as checks, (select count(*) from publish_watch.messages) as messages from publish_watch.checks",
+  "required": true,
+  "stop_on_error": true
+ },
+ {
+  "name": "force_stale",
+  "sql": "update publish_watch.config set stale_after = interval '1 minute'; select publish_watch.tick() as r",
+  "required": true,
+  "stop_on_error": true
+ },
+ {
+  "sleep": 15
+ },
+ {
+  "name": "stale_1",
+  "sql": "select publish_watch.tick() as r"
+ },
+ {
+  "sleep": 15
+ },
+ {
+  "name": "stale_2",
+  "sql": "select publish_watch.tick() as r"
+ },
+ {
+  "sleep": 15
+ },
+ {
+  "name": "stale_3",
+  "sql": "select publish_watch.tick() as r"
+ },
+ {
+  "sleep": 15
+ },
+ {
+  "name": "stale_4",
+  "sql": "select publish_watch.tick() as r"
+ },
+ {
+  "name": "stale_assert",
+  "sql": "do $$ begin if (select condition from publish_watch.state) <> 'stale' then raise exception 'not stale: %', (select condition from publish_watch.state); end if; if (select count(*) from publish_watch.messages where kind = 'alert' and delivery = 'sent') <> 1 then raise exception 'alert not delivered exactly once: %', (select string_agg(delivery, ', ') from publish_watch.messages); end if; end $$; select id, kind, delivery, created_at from publish_watch.messages order by id",
+  "required": true,
+  "stop_on_error": true
+ },
+ {
+  "name": "force_fresh",
+  "sql": "update publish_watch.config set stale_after = interval '24 hours'; select publish_watch.tick() as r",
+  "required": true,
+  "stop_on_error": true
+ },
+ {
+  "sleep": 15
+ },
+ {
+  "name": "rec_1",
+  "sql": "select publish_watch.tick() as r"
+ },
+ {
+  "sleep": 15
+ },
+ {
+  "name": "rec_2",
+  "sql": "select publish_watch.tick() as r"
+ },
+ {
+  "sleep": 15
+ },
+ {
+  "name": "rec_3",
+  "sql": "select publish_watch.tick() as r"
+ },
+ {
+  "name": "recovery_assert",
+  "sql": "do $$ begin if (select condition from publish_watch.state) <> 'ok' then raise exception 'not recovered'; end if; if (select count(*) from publish_watch.messages where kind = 'recovery' and delivery = 'sent') <> 1 then raise exception 'recovery not delivered exactly once: %', (select string_agg(kind || '=' || delivery, ', ') from publish_watch.messages); end if; if (select count(*) from publish_watch.messages where delivery in ('sent', 'queued')) <> 2 then raise exception 'extra messages: %', (select string_agg(kind || '=' || delivery, ', ') from publish_watch.messages); end if; end $$; select id, kind, delivery, created_at, text from publish_watch.messages order by id",
+  "required": true,
+  "stop_on_error": true
+ },
+ {
+  "name": "arm",
+  "sql": "update publish_watch.config set label = null, stale_after = interval '30 minutes', dry_run = false; update publish_watch.state set condition = 'ok', since = now(), owed_kind = null, owed_text = null; select cron.schedule('ten347_publish_watch', '* * * * *', 'select publish_watch.tick()') as jobid",
+  "required": true,
+  "stop_on_error": true
+ },
+ {
+  "sleep": 150
+ },
+ {
+  "name": "status",
+  "sql": "select s.condition, s.since, s.owed_kind, c.stale_after, c.label, c.dry_run, j.schedule, j.active from publish_watch.state s, publish_watch.config c, cron.job j where j.jobname = 'ten347_publish_watch'"
+ },
+ {
+  "name": "last_checks",
+  "sql": "select id, fired_at, status_code, built_at, commit_sha, cache_age_s, error from publish_watch.checks order by fired_at desc limit 5"
+ },
+ {
+  "name": "messages",
+  "sql": "select id, kind, delivery, created_at, text from publish_watch.messages order by id"
+ },
+ {
+  "name": "neighbours",
+  "sql": "select jobname, schedule, active from cron.job order by jobname"
+ }
+]
