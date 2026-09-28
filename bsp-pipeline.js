@@ -30,7 +30,7 @@
 
 require('dotenv').config();
 const fs = require('fs');
-const { backfillProfilesHistory, backfillMatchesTournamentHistory, buildArchiveHistories } = require('./career-backfill');
+const { backfillProfilesHistory, backfillMatchesTournamentHistory, buildArchiveHistories, FIXTURE_HOLE_YEARS, fillFixtureHole } = require('./career-backfill');
 const { canonicalTournament } = require('./tournament-identity');
 const { berlinWallMs } = require('./berlin-time');
 // Layer #8 W/UE source resolver: api-tennis primary, @ATP_Entry OCR fallback,
@@ -3734,6 +3734,8 @@ function extractFormShards(matches) {
 //   currentYear-5 .. now : all-tier fixtures (ATP + Challenger + ITF), the same
 //                          rows buildAllTierYearly tallies into careerByYear.
 //                          Count == row count, by construction.
+//   2021 (TEN-310)       : TML rows fill the fixture feed's 2021 hole where the feed has neither
+//                          the edition nor the match (fillFixtureHole, career-backfill.js).
 //   .. currentYear-6     : the TML archive (buildArchiveHistories). API-Tennis's
 //                          fixture feed is effectively empty before ~2021 —
 //                          measured on Rublev, 2019 returns 8 fixtures against a
@@ -3812,9 +3814,14 @@ async function writeCareerHistoryShards(profiles, opts = {}) {
   // Pre-window rows from the TML archive, keyed by API player key. Network- and
   // reconciliation-tolerant: a player who cannot be matched to a TML identity
   // simply gets no pre-window rows (never a guessed one).
+  // TEN-310: the archive is also read for the fixture-window years api-tennis leaves empty
+  // (FIXTURE_HOLE_YEARS); those rows go through fillFixtureHole below, never straight in.
+  const holeYears = FIXTURE_HOLE_YEARS.filter((y) => y > archiveMaxYear);
+  const archiveReadMax = Math.max(archiveMaxYear, ...holeYears);
   let archive = {};
   try {
-    archive = await buildArchiveHistories(profiles, 2000, archiveMaxYear, { log }) || {};
+    // `opts.archive` lets a test drive this writer over a controlled archive instead of the network.
+    archive = opts.archive || await buildArchiveHistories(profiles, 2000, archiveReadMax, { log }) || {};
   } catch (e) {
     log(`  Career archive unavailable (${e.message}) — shards will cover the fixture window only.`);
   }
@@ -3834,11 +3841,22 @@ async function writeCareerHistoryShards(profiles, opts = {}) {
   let altFormatTotal = 0, altSets = 0;
   const altHalf = { archive: 0, fixtures: 0 };
   const reasons = { retired: 0, walkover: 0, defaulted: 0, altFormat: {} };
+  // TEN-310: hole-year TML rows kept / offered, per year, published in the index meta.
+  const holeFill = {};
 
   for (const [key, p] of Object.entries(profiles)) {
     if (!p) continue;
     const fixtureRows = Array.isArray(p.careerMatches) ? p.careerMatches : [];
-    const archiveRows = (archive[key] || []).map(r => ({ ...r, src: 'archive' }));
+    const tmlAll = archive[key] || [];
+    const archiveRows = tmlAll.filter(r => Number(r.year) <= archiveMaxYear).map(r => ({ ...r, src: 'archive' }));
+    // TEN-310: the 2021 hole, filled only where the feed half has neither the edition nor the match.
+    for (const y of holeYears) {
+      const offered = tmlAll.filter(r => Number(r.year) === y);
+      const kept = fillFixtureHole(fixtureRows, offered, y);
+      holeFill[y] = holeFill[y] || { offered: 0, kept: 0, players: 0 };
+      holeFill[y].offered += offered.length; holeFill[y].kept += kept.length; if (kept.length) holeFill[y].players++;
+      for (const r of kept) archiveRows.push({ ...r, src: 'archive', holeFill: true });
+    }
     const rows = [...fixtureRows, ...archiveRows]
       .sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
     // careerMatches is a build-time carrier only; it must not ship inside
@@ -4022,6 +4040,9 @@ async function writeCareerHistoryShards(profiles, opts = {}) {
       // Slam-name inference. Distinct from `altFormat`, which is a row we
       // decline to type at all.
       untypedByName: untypedTotal,
+      // TEN-310: TML rows added for the fixture-window years api-tennis leaves empty, per year:
+      // offered (TML rows for that year), kept (added — neither edition nor match in the feed half).
+      holeFill,
       // `rows` is over the WHOLE population (population.rows). `excluded` is how
       // much of that numerator sits on altFormat rows, and `typed`/`typedOf` are
       // the games-COMPARABLE figures. Published explicitly because the two are
@@ -4045,6 +4066,7 @@ async function writeCareerHistoryShards(profiles, opts = {}) {
   log(`  per-set games on ${setsRows}/${rowTotal} rows (${setsPct}%) — `
     + `fixtures half ${halfSets.fixtures}/${halfRows.fixtures} (${pct(halfSets.fixtures, halfRows.fixtures)}%), `
     + `archive half ${halfSets.archive}/${halfRows.archive} (${pct(halfSets.archive, halfRows.archive)}%).`);
+  for (const [y, h] of Object.entries(holeFill)) log(`  TEN-310 hole fill ${y}: ${h.kept} of ${h.offered} TML row(s) added for ${h.players} player(s) — the rest were already in the feed half.`);
   log(`  ${incompleteTotal} row(s) flagged incomplete (unfinished for the format, or flagged retired/walkover/defaulted).`);
   log(`  ${untypedTotal} row(s) carried no readable best_of and were typed by the Slam-name inference instead.`);
   log(`  ${altFormatTotal} row(s) excluded from the format-typed population for FORMAT, not truncation `

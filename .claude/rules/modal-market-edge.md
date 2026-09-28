@@ -46,7 +46,10 @@ Applies to the TEN-310 block in `bsp-consult-dashboard.html` (`me*` functions, `
   baseline on the same basis. This supersedes R1 (2026-09-17, "Pinnacle closing only"). **Test:**
   `tools/test-market-edge-basis.js` (11 controls) and the pipeline's market-edge assert
   (`priceBasis === "Pinnacle closing, else Bet365 closing"`, Bet365 sides in the tour baseline).
-  **Known residual:** the two surfaces count different ROWS — the profile counts Tennis-Data archive rows, the
-  tab counts career-history rows joined to their closes (it needs set scores and eventKeys) — so a band can
-  still differ where career-history lacks a match (e.g. Sinner Feb–Jun 2021) or the feed flags a retirement
-  Tennis-Data does not. Not ruled; reported on TEN-310.
+  **Rows (ruling 2026-09-27, "Backfill career-history (2021 hole) and keep both joins"):** the profile keeps
+  counting Tennis-Data rows and the tab keeps its career-history join. career-history's 2021 hole (api-tennis
+  omits most of 2021; the TML half stopped at 2020) is filled from TML by `fillFixtureHole`
+  (`career-backfill.js`, `FIXTURE_HOLE_YEARS = [2021]`): a TML row is added only if the feed half has neither
+  its edition nor the match (same result, an opponent sharing a surname token, within the event's −3…+21 days).
+  **Test:** `tools/test-ten310-hole-fill.js` — the same match under another event name or a hyphenated
+  surname is never added; the index meta publishes `holeFill` (offered / kept / players).

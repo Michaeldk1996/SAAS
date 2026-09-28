@@ -936,10 +936,46 @@ async function backfillProfilesHistory(profiles, opts = {}) {
   return { backfilled, addedEditions };
 }
 
+// TEN-310 (founder ruling 2026-09-27, "Backfill career-history (2021 hole) and keep both joins").
+// api-tennis's get_fixtures omits most of 2021 and the TML archive half of career-history stopped at
+// currentYear-6 (2020), so 2021 was covered by neither source: Sinner's Feb–Jun 2021 (Miami final,
+// Barcelona SF, Roland Garros R16…) was simply absent. For the years in FIXTURE_HOLE_YEARS, TML rows
+// fill the hole — but only where the feed half has NOTHING for that match. Two guards, both required,
+// because the two sources name the same thing differently ("Great Ocean Road Open" vs "Melbourne (Great
+// Ocean Road Open)", "Queen's Club" vs "London", "Carreno Busta" vs "Carreno-Busta"):
+//   1. EDITION absent: no feed row of that year in the same canonical tournament.
+//   2. MATCH absent: no feed row with the same result against an opponent sharing a surname token
+//      (3+ letters), dated within the TML event's window (its Monday −3 … +21 days).
+// Either guard firing drops the TML row. The direction is deliberate: a genuine match lost to a guard
+// is an undercount, a duplicate kept would be a fabricated match. Measured on the deployed store
+// (2026-09-28): 3,797 TML 2021 rows, 1,674 kept across 157 players, 2,123 dropped as already present.
+const FIXTURE_HOLE_YEARS = [2021];
+function holeNameTokens(n) {
+  return String(n || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase()
+    .replace(/[^a-z\s-]/g, ' ').split(/[\s-]+/).filter((t) => t.length > 2);
+}
+function fillFixtureHole(fixtureRows, tmlRows, year) {
+  const Y = String(year);
+  const day = (d) => { const t = Date.parse(String(d || '').slice(0, 10) + 'T00:00:00Z'); return Number.isFinite(t) ? t / 864e5 : null; };
+  const feed = (fixtureRows || []).filter((r) => r && String(r.year) === Y);
+  const editions = new Set(feed.map((r) => canonicalTournament(r.tournament).id));
+  const feedToks = feed.map((r) => ({ r, toks: holeNameTokens(r.opponent), d: day(r.date) }));
+  return (tmlRows || []).filter((t) => {
+    if (!t || String(t.year) !== Y) return false;
+    if (editions.has(canonicalTournament(t.tournament).id)) return false;
+    const d0 = day(t.date);
+    if (d0 == null) return false;
+    const mine = new Set(holeNameTokens(t.opponent));
+    return !feedToks.some((f) => !!f.r.won === !!t.won && f.d != null && f.d >= d0 - 3 && f.d <= d0 + 21 && f.toks.some((z) => mine.has(z)));
+  });
+}
+
 module.exports = {
   backfillProfilesHistory,
   backfillMatchesTournamentHistory,
   buildArchiveHistories,
+  FIXTURE_HOLE_YEARS,
+  fillFixtureHole,
   // exported for testing
   altFormatForTourneyId,
   ARCHIVE_ALT_FORMAT_TOURNEY_IDS,
