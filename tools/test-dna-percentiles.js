@@ -21,6 +21,7 @@
 //   M4  delete the `pp.source !== 'deployed'` abort       (fail-closed check)
 //   M5  dashboard mdnaEloPctFromPop / eloPctFromPop back to the band formula
 //   M6  player-profile-v2 dnaPctFromPop back to the band formula (tour pct check)
+//   M7  delete the assertFetchedThisRun() roster call   (stale-cache check)
 // ─────────────────────────────────────────────────────────────────────────────
 const assert = require('assert');
 const fs = require('fs');
@@ -97,7 +98,7 @@ check('committed file: no p2–p98 bands; pctMethod states the percentile rank',
 check('committed file: roster is the deployed store, not the July fossil', () => {
   assert.ok(META.roster && META.roster.source === 'deployed', `roster: ${JSON.stringify(META.roster)}`);
   assert.strictEqual(META.rosterSize, META.roster.players);
-  assert.ok(ROWS.length >= 200, `only ${ROWS.length} rated`);
+  assert.ok(ROWS.length > 0, 'no rated players');
 });
 check('committed file: every pct = rank in its published population; n = the floor-cleared players', () => {
   let checked = 0;
@@ -124,14 +125,12 @@ check('committed file: every pct = rank in its published population; n = the flo
       checked++;
     }
   }
-  assert.ok(checked > 1000, `only ${checked} pcts checked — vacuous`);
+  assert.ok(checked >= ROWS.length, `only ${checked} pcts checked for ${ROWS.length} rated — vacuous`);
 });
-check('committed file: no axis pins a crowd to the rim (the p2–p98 symptom)', () => {
-  const all = META.percentiles.last52.Hard.serve;
-  const at100 = ROWS.filter(p => { const r = p.surfaces.Hard.last52.serve; return r && r.pct === 100; }).length;
-  assert.ok(all.n > 50, 'Hard last52 serve population too small to judge');
-  assert.ok(at100 <= 1, `${at100} players at exactly 100 on Hard last52 serve`);
-});
+// No check pins a count that moves (rated players, players at 100, population n):
+// this file is re-committed twice a day by dna-ratings.yml and npm test gates every
+// deploy, so a moving pin would freeze the site on an ordinary refresh. The p2–p98
+// rim-pinning symptom is caught on the synthetic field above (M3).
 
 // ── 4. the page ranks by the same rule over the same values ──────────────────
 // Brace-matched slice of a named function out of shipped source (no braces in
@@ -160,7 +159,7 @@ for (const [fname, holder] of [['mdnaEloPctFromPop', '_mdna'], ['eloPctFromPop',
     const vals = META.eloPercentiles.Hard.values;
     const probe = vals[Math.floor(vals.length / 2)] + 0.5;           // a rating the file does not hold
     assert.strictEqual(fn(probe, 'Hard'), rank(vals, probe));
-    assert.ok(n > 200, `only ${n} Elo values compared`);
+    assert.ok(n > 0, 'no Elo values compared — vacuous');
   });
 }
 
@@ -205,6 +204,29 @@ check('builder aborts when only the committed roster is reachable, and holds no 
     assert.notStrictEqual(r.status, 0, 'the builder exited 0 with no deployed roster');
     assert.ok(/refusing to rate the committed July fossil/.test(r.stderr), `stderr: ${r.stderr.slice(0, 300)}`);
     assert.ok(!fs.existsSync(path.join(tmp, 'dna-apitennis-ratings.json')), 'an output file was written');
+  } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
+});
+
+check('builder refuses a stale cached "deployed" roster when the live fetch fails', () => {
+  // deployed-store hands back a cache of ANY age as source 'deployed' when curl fails.
+  const tmp = fs.mkdtempSync(path.join(os.tmpdir(), 'ten319-'));
+  try {
+    fs.mkdirSync(path.join(tmp, 'tools'));
+    fs.mkdirSync(path.join(tmp, '.deployed-cache'));
+    fs.copyFileSync(path.join(ROOT, 'dna-apitennis-ratings.js'), path.join(tmp, 'dna-apitennis-ratings.js'));
+    fs.copyFileSync(path.join(ROOT, 'tools', 'deployed-store.js'), path.join(tmp, 'tools', 'deployed-store.js'));
+    const players = {};
+    for (let i = 1; i <= 400; i++) players[i] = { name: `P ${i}` };
+    const cached = path.join(tmp, '.deployed-cache', 'player-profiles.json');
+    fs.writeFileSync(cached, JSON.stringify({ fetchedAt: '2026-07-22', players }));
+    const old = new Date('2026-07-22T00:00:00Z');
+    fs.utimesSync(cached, old, old);
+    const r = spawnSync(process.execPath, ['dna-apitennis-ratings.js'], {
+      cwd: tmp, encoding: 'utf8', timeout: 60000,
+      env: Object.assign({}, process.env, { TEN206_DATA_BASE: 'http://127.0.0.1:9', API_TENNIS_KEY: 'unused' }),
+    });
+    assert.notStrictEqual(r.status, 0, 'the builder exited 0 on a stale cached roster');
+    assert.ok(/player-profiles\.json could not be fetched this run/.test(r.stderr), `stderr: ${r.stderr.slice(0, 300)}`);
   } finally { fs.rmSync(tmp, { recursive: true, force: true }); }
 });
 

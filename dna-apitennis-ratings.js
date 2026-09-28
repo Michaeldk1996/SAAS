@@ -307,6 +307,16 @@ function curlJson(url) {
   });
 }
 
+// deployed-store falls back to a cached copy OF ANY AGE when curl fails and still calls
+// it 'deployed'; maxAgeMs 0 does not stop that. So the builder checks that the cache
+// file was written by THIS run, i.e. the fetch really happened.
+function assertFetchedThisRun(store, rel, t0) {
+  const f = path.join(store.CACHE_DIR, rel.replace(/[^A-Za-z0-9._-]+/g, '_'));
+  if (!fs.existsSync(f) || fs.statSync(f).mtimeMs < t0 - 2000) {
+    throw new Error(`deployed ${rel} could not be fetched this run — refusing a cached copy of unknown age`);
+  }
+}
+
 // One tier page. An empty week answers {"success":1} with no `result`; a billing or
 // auth failure answers HTTP 200 with an `error` key (cod 1006 = unpaid) — that must
 // fail the window, never read as "no matches this week".
@@ -328,6 +338,7 @@ async function loadBoxScores(key, today) {
   const fileOf = w => path.join(BOX_DIR, `265-${w.start}_${w.stop}.json`);
   const need = windows.filter(w => !fs.existsSync(fileOf(w)) || dayMs(w.stop) >= fresh);
   const failures = [];
+  const empty = [];
   let next = 0;
   async function worker() {
     while (next < need.length) {
@@ -335,7 +346,12 @@ async function loadBoxScores(key, today) {
       let lastErr = null;
       for (let attempt = 1; attempt <= 2; attempt++) {
         try {
-          const rows = await fetchWindow(key, w);
+          let rows = await fetchWindow(key, w);
+          // An empty week is real in the off-season, but a vendor hiccup looks identical
+          // (success:1, no result), so an empty answer is asked once more before it is
+          // believed. The workflow's corpus-shrink gate backs this up.
+          if (!rows.length) rows = await fetchWindow(key, w);
+          if (!rows.length) empty.push(w.start);
           fs.writeFileSync(fileOf(w), JSON.stringify(rows.map(slimFixture)));
           lastErr = null;
           break;
@@ -350,7 +366,7 @@ async function loadBoxScores(key, today) {
   }
   const fixtures = [];
   for (const w of windows) fixtures.push(...JSON.parse(fs.readFileSync(fileOf(w), 'utf8')));
-  return { fixtures, windows: windows.length, fetched: need.length, reused: windows.length - need.length };
+  return { fixtures, windows: windows.length, fetched: need.length, reused: windows.length - need.length, emptyFetched: empty.sort() };
 }
 
 // ---- ingest ----------------------------------------------------------------------
@@ -534,6 +550,7 @@ async function main() {
   const rosterSize = Object.keys(roster).length;
   if (pp.source !== 'deployed') throw new Error(`roster source is '${pp.source}' (${JSON.stringify(pp.drift)}) — refusing to rate the committed July fossil`);
   if (rosterSize < ROSTER_MIN) throw new Error(`deployed roster has ${rosterSize} players (< ${ROSTER_MIN}) — refusing to publish a shrunken board`);
+  assertFetchedThisRun(store, 'player-profiles.json', t0);
 
   // Surface map — deployed copy (the committed one lags the pipeline's refresh).
   const sm = store.fetchJson('tournament-surfaces.json', { maxAgeMs: 0 });
@@ -541,14 +558,18 @@ async function main() {
   if (!surfRaw || Object.keys(surfRaw).length < SURFACE_MAP_MIN) {
     throw new Error(`deployed tournament-surfaces.json unreachable or short (${surfRaw ? Object.keys(surfRaw).length : 0} entries)`);
   }
+  assertFetchedThisRun(store, 'tournament-surfaces.json', t0);
   const surfaceOf = tk => CAP[surfRaw[String(tk)]] || null;   // null => carpet/unknown -> dropped from per-surface
 
   const box = await loadBoxScores(apiKey(), today);
   const { contribs, stats } = ingest(box.fixtures, surfaceOf);
   const rated = ratePlayers(contribs, roster);
 
-  const eloRaw = (() => { try { return JSON.parse(fs.readFileSync(ELO_PATH, 'utf8')); } catch (e) { return {}; } })();
-  const eloResolved = attachElo(rated, eloRaw.elo || {});
+  // Elo is an axis on every radar: an unreadable file must stop the build, not publish
+  // a DNA file with the fifth axis silently null for everyone.
+  const eloMap = JSON.parse(fs.readFileSync(ELO_PATH, 'utf8')).elo || {};
+  if (Object.keys(eloMap).length < 100) throw new Error(`elo-ratings.json holds ${Object.keys(eloMap).length} players — refusing to publish without the Elo axis`);
+  const eloResolved = attachElo(rated, eloMap);
   const { percentiles, eloPercentiles } = assignPercentiles(rated);
 
   const out = {
@@ -574,7 +595,7 @@ async function main() {
       popMinMatches: POP_MIN_MATCHES,
       percentiles,      // percentiles[scope][surface][rateAxis] = {population, n, values (ascending)}
       eloPercentiles,   // eloPercentiles[surface] = {population, n, values}  (Surface Elo is current only)
-      ingest: Object.assign({ windows: box.windows, windowsFetched: box.fetched, windowsReused: box.reused }, stats),
+      ingest: Object.assign({ windows: box.windows, windowsFetched: box.fetched, windowsReused: box.reused, emptyWindowsFetched: box.emptyFetched }, stats),
       wallClockMs: Date.now() - t0,
     },
     players: rated,

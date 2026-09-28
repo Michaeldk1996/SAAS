@@ -46,10 +46,12 @@ jobs:
         with:
           node-version: '20'
 
-      - name: Record the committed file's rated count
+      - name: Record the committed file's rated count and corpus size
         run: |
           PREV=$(node -e 'let n=0;try{n=(require("./dna-apitennis-ratings.json").players||[]).length}catch(e){}; process.stdout.write(String(n))')
           echo "PREV_RATED=$PREV" >> "$GITHUB_ENV"
+          PREVF=$(node -e 'let n=0;try{n=require("./dna-apitennis-ratings.json")._meta.ingest.fixturesSeen||0}catch(e){}; process.stdout.write(String(n))')
+          echo "PREV_FIXTURES=$PREVF" >> "$GITHUB_ENV"
 
       - name: Rebuild DNA ratings
         env:
@@ -67,28 +69,28 @@ jobs:
             if (!m.roster || m.roster.source !== "deployed") { console.error("::error::roster was not the deployed store — refusing to commit"); process.exit(1); }
             if (n < 200) { console.error(`::error::only ${n} rated players — refusing to commit`); process.exit(1); }
             if (n < Math.floor(prev * 0.9)) { console.error(`::error::rated count regressed ${prev} -> ${n} — refusing to commit`); process.exit(1); }
-            console.log(`OK: ${n} rated of ${m.rosterSize} (was ${prev}), generatedAt ${m.generatedAt}.`);
+            // The 2024-03-06.. corpus only grows. A tier page that answered success with no
+            // rows (a vendor hiccup reads exactly like an empty week) shows up here.
+            const fx = (m.ingest || {}).fixturesSeen || 0, prevFx = parseInt(process.env.PREV_FIXTURES, 10) || 0;
+            if (fx < Math.floor(prevFx * 0.98)) { console.error(`::error::box-score corpus shrank ${prevFx} -> ${fx} fixtures — refusing to commit`); process.exit(1); }
+            console.log(`OK: ${n} rated of ${m.rosterSize} (was ${prev}), ${fx} fixtures (was ${prevFx}), generatedAt ${m.generatedAt}.`);
           '
+
+      - name: Run the DNA suite on the rebuilt file
+        # npm test gates every deploy and includes this suite, so a file that fails it
+        # must never reach main — it would freeze the site on the next pipeline tick.
+        run: node tools/test-dna-percentiles.js
 
       - name: Commit refreshed dna-apitennis-ratings.json
         run: |
-          git add dna-apitennis-ratings.json
-          if git diff --cached --quiet; then
+          if git diff --quiet -- dna-apitennis-ratings.json; then
             echo "Nothing changed — nothing to commit."
             exit 0
           fi
           git config user.name  "bsp-dna-bot"
           git config user.email "bsp-dna-bot@users.noreply.github.com"
-          git commit -m "chore(dna): daily DNA ratings refresh [skip ci]"
-          # Another workflow may have advanced main since checkout; rebase and
-          # retry so the refresh is never lost to a benign race.
-          for attempt in 1 2 3; do
-            if git push origin HEAD:main; then
-              echo "Pushed on attempt $attempt."
-              exit 0
-            fi
-            echo "Push rejected (attempt $attempt) — rebasing on origin/main and retrying."
-            git pull --rebase origin main || true
-          done
-          echo "::error::Could not push dna-apitennis-ratings.json after 3 attempts."
-          exit 1
+          # tools/commitback-push.sh rebases and retries on a race, and exits 2 (red) if
+          # the commit itself conflicts — a bare `pull --rebase || true` loop could print
+          # "Pushed" after losing the refresh.
+          COMMITBACK_OWNED=dna-apitennis-ratings.json \
+            bash tools/commitback-push.sh "chore(dna): daily DNA ratings refresh [skip ci]" dna-apitennis-ratings.json

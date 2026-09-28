@@ -1,7 +1,7 @@
 {
  "_meta": {
   "task": "TEN-103 — api-tennis-native DNA ratings; TEN-319 — daily rebuild off the deployed roster, true percentiles",
-  "generatedAt": "2026-09-28T06:43:02.337Z",
+  "generatedAt": "2026-09-28T06:56:57.874Z",
   "source": "api-tennis box scores, ATP main-tour singles (event_type 265), 2024-03-06..2026-09-28 — NO Sackmann/TML",
   "scopes": {
    "last52": "matches within 364d of player's most-recent match (last52From..latestMatch)",
@@ -17,7 +17,7 @@
   },
   "roster": {
    "source": "deployed",
-   "fetchedAt": "2026-09-28T06:10:26.386Z",
+   "fetchedAt": "2026-09-28T06:44:32.647Z",
    "players": 433
   },
   "rosterSize": 433,
@@ -6834,14 +6834,15 @@
   },
   "ingest": {
    "windows": 134,
-   "windowsFetched": 134,
-   "windowsReused": 0,
+   "windowsFetched": 6,
+   "windowsReused": 128,
+   "emptyWindowsFetched": [],
    "fixturesSeen": 12263,
-   "playerMatchesIngested": 20827,
+   "playerMatchesIngested": 20826,
    "playerMatchesWithoutSurface": 598,
-   "distinctPlayersInCorpus": 736
+   "distinctPlayersInCorpus": 735
   },
-  "wallClockMs": 737880
+  "wallClockMs": 7964
  },
  "players": [
   {
@@ -85977,7 +85978,7 @@
       },
       "sample": {
        "matches": 19,
-       "svpt": 1868,
+       "svpt": 1869,
        "bpFaced": 156,
        "bpChances": 186,
        "tbPlayed": 11,
@@ -86021,7 +86022,7 @@
       },
       "sample": {
        "matches": 21,
-       "svpt": 2012,
+       "svpt": 2013,
        "bpFaced": 169,
        "bpChances": 199,
        "tbPlayed": 12,
@@ -86256,13 +86257,13 @@
       },
       "dominanceRatio": {
        "servicePtsWonPct": 63,
-       "returnPtsWonPct": 40,
+       "returnPtsWonPct": 40.1,
        "rating": 1.08,
        "pct": 86.1
       },
       "sample": {
        "matches": 27,
-       "svpt": 2468,
+       "svpt": 2469,
        "bpFaced": 206,
        "bpChances": 239,
        "tbPlayed": 14,
@@ -86306,7 +86307,7 @@
       },
       "sample": {
        "matches": 32,
-       "svpt": 2937,
+       "svpt": 2938,
        "bpFaced": 264,
        "bpChances": 285,
        "tbPlayed": 15,
