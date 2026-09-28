@@ -254,7 +254,10 @@ async function buildTmlIndex(log, opts = {}) {
       rowCount++;
 
       // surface/date/display-name carried for the Overview year-table drill-down.
-      const meta = { surface: tmlSurface(r.surface), date: tmlDate(r.tourney_date), tournamentName: r.tourney_name };
+      const meta = { surface: tmlSurface(r.surface), date: tmlDate(r.tourney_date), tournamentName: r.tourney_name,
+        // TEN-313: TML's own court type ('I'/'O'; blank = unknown), so a 2021 hole-fill row can
+        // rebuild careerByYear's indoor split instead of silently counting as outdoor.
+        indoor: r.indoor === 'I' ? true : (r.indoor === 'O' ? false : null) };
       // TEN-89 Part 2: the raw TML score marks retirements ("... RET"); setCounts
       // drops the token, so capture it here for the over-3.5 exclusion downstream.
       const ret = /\bRET\b|Retired/i.test(String(r.score || ''));
@@ -644,6 +647,9 @@ async function buildArchiveHistories(profiles, minYear, maxYear, opts = {}) {
         // as the source published it: we decline to USE it here, we do not
         // delete what TML said.
         ...(m.altFormat ? { altFormat: m.altFormat } : {}),
+        // TEN-313: build-time carrier only — writeCareerHistoryShards reads it for the 2021
+        // indoor split and deletes it before the shard is written (no shard schema change).
+        ...(m.indoor === true ? { _indoor: true } : {}),
       });
     }
     if (list.length) {

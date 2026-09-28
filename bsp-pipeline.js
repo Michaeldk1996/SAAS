@@ -426,13 +426,26 @@ async function fetchPlayerTournamentMatches(playerKey, hintKey) {
       f.tournament_round && f.event_qualification !== 'True' &&
       (f.event_winner === 'First Player' || f.event_winner === 'Second Player')
     )
-    .map(trimFixture);
+    // TEN-313: carry the walkover verdict trimFixture drops, so buildTournamentHistory can
+    // keep a walkover GIVEN out of the W-L (N2: a walkover is not a match played).
+    .map(f => (f.event_status === 'Walk Over' ? { ...trimFixture(f), walkover: true } : trimFixture(f)));
 }
 function buildTournamentHistory(matches, playerKey) {
   if (!matches || matches.length === 0) return null;
   const bySeason = {};
+  // TEN-313 (N2, founder ruling 2026-09-28, "as the ATP rules and the ATP website do"): a
+  // walkover the player GAVE is neither a win nor a loss — it leaves the W-L, the match
+  // list and the edition's match count. An edition whose only match was a walkover given
+  // is still an edition he entered and withdrew from: it becomes the same 0-0
+  // "Withdrawal" row the gap-fill below writes. A walkover RECEIVED is untouched here
+  // (held on TEN-312's scope question); an in-match retirement is a match and counts.
+  // The round he withdrew in is still the round he reached, so it stays in roundReached.
+  const woGiven = {}; // season -> walkover-given fixtures
   for (const m of matches) {
+    const isP1 = String(m.p1Key) === String(playerKey);
+    const didWin = (m.winner === 'First Player' && isP1) || (m.winner === 'Second Player' && !isP1);
     const season = m.season || m.date.slice(0, 4);
+    if (m.walkover && !didWin) { (woGiven[season] = woGiven[season] || []).push(m); continue; }
     if (!bySeason[season]) bySeason[season] = [];
     bySeason[season].push(m);
   }
@@ -446,7 +459,7 @@ function buildTournamentHistory(matches, playerKey) {
       const didWin = (m.winner === 'First Player' && isP1) || (m.winner === 'Second Player' && !isP1);
       if (didWin) won++; else lost++;
     }
-    const latest = seasonMatches.reduce((a, b) => (b.date > a.date ? b : a));
+    const latest = seasonMatches.concat(woGiven[season] || []).reduce((a, b) => (b.date > a.date ? b : a));
     // Per-match detail (opponent, round, self-first score, win/loss) for this
     // edition — same self-first score reordering already used in
     // buildH2HMatchList (event_final_result is always "player1 sets -
@@ -475,6 +488,10 @@ function buildTournamentHistory(matches, playerKey) {
       })
       .sort((a, b) => new Date(b.date) - new Date(a.date));
     years.push({ year: season, matchCount: seasonMatches.length, won, lost, roundReached: roundLabel(latest.round), matches: matchList });
+  }
+  // An edition whose only match was a walkover given: entered, withdrew, 0-0.
+  for (const season of Object.keys(woGiven)) {
+    if (!bySeason[season]) years.push({ year: season, matchCount: 0, won: 0, lost: 0, roundReached: 'Withdrawal', matches: [], withdrew: true });
   }
   if (years.length === 0) return null;
 
@@ -748,16 +765,21 @@ function buildAllTierYearly(fixtures, playerKey, playerStats, currentYear, surfa
       atp: hasAny(atp) ? atp : null, chitf: hasAny(chitf) ? chitf : null,
     };
   });
-  // Pre-window rows: ATP-only provider aggregates (no all-tier data that far back).
-  // `indoor: null` is load-bearing — it is the difference between "this player
-  // played no indoor matches in 2018" and "2018 predates any court-type source",
-  // and the grid must dash the second rather than print 0-0.
+  // Pre-window rows: the provider's season aggregates. `indoor: null` is load-bearing
+  // — it is the difference between "this player played no indoor matches in 2018" and
+  // "2018 predates any court-type source", and the grid must dash the second rather
+  // than print 0-0.
+  // TEN-313 (N3, founder ruling 2026-09-28): the aggregate is ALL-TIER, not ATP — it
+  // exceeded the tour-level rows held on 1,325 of 1,415 deployed pre-window rows
+  // (Giustino 2015-20: 344 vs 4) — so it carries NO tier split: `atp` and `chitf` are
+  // null. A pre-window row gains an `atp` split only when reconcileYearRows adopts its
+  // tour-level career-history rows, i.e. when every match it counts is tour-level.
   const preRows = yearlyBreakdown(playerStats)
     .filter(r => parseInt(r.year, 10) < cutoff)
     .map(r => ({
       year: r.year, allTier: false,
       total: r.total, clay: r.clay, hard: r.hard, grass: r.grass, indoor: null,
-      atp: { total: r.total, clay: r.clay, hard: r.hard, grass: r.grass, indoor: null }, chitf: null,
+      atp: null, chitf: null,
     }));
   return [...allTierRows, ...preRows]
     .filter(r => r.total || r.clay || r.hard || r.grass)
@@ -3610,8 +3632,17 @@ function recentFormFromFixtures(fixtures, playerKey, surfaceMap) {
   // they match Flashscore; provider-aggregate stats (career/surface win %) and
   // Tennis-Abstract career splits stay on their own sources and are unaffected.
   const isSingles = f => /singles/i.test(f.event_type_type || '') && !/doubles/i.test(f.event_type_type || '');
+  // TEN-313 (N2, founder ruling 2026-09-28, "as the ATP rules and the ATP website do"): a
+  // walkover the player GAVE is not a match played, so it never becomes a form row — it
+  // was reaching the Form tab's W-L as a loss (Alcaraz's last 10 carried Barcelona 2026)
+  // and the card's form % with it, against TEN-8's "a withdrawal is not a loss" too.
+  // Same fingerprint as every other record builder (isWalkoverGiven). A walkover RECEIVED
+  // stays for now (held on TEN-312's scope question); a retirement is a match and stays.
+  const wonBy = f => (String(f.first_player_key) === String(playerKey)
+    ? f.event_winner === 'First Player' : f.event_winner === 'Second Player');
   const clean = (fixtures || [])
     .filter(f => isSingles(f) && ['Finished', 'Retired', 'Walk Over'].includes(f.event_status))
+    .filter(f => !isWalkoverGiven(f, wonBy(f)))
     .slice()
     .sort((a, b) => new Date(b.event_date) - new Date(a.event_date));
 
@@ -3806,6 +3837,94 @@ function careerRowIsComplete(result, isBestOfFive) {
   return won === need && lost < need;
 }
 
+// TEN-313 — per-year tallies of one player's career-history rows, the input of
+// reconcileYearRows. Split by the row's own `level` (fixtures half: event_type_type;
+// archive half: always 'atp', TML being tour-level only), so a tier split rebuilt
+// from it sums to the year total by construction. `holeIndoor` counts only the 2021
+// hole-fill rows TML marks indoor: the fixtures half's indoor split is already on the
+// pristine year row (buildAllTierYearly, courts map), and pre-window rows stay
+// `indoor: null` as before.
+function tallyCareerYears(rows) {
+  const blank = () => ({ won: 0, lost: 0 });
+  const blankSplit = () => ({ total: blank(), clay: blank(), hard: blank(), grass: blank() });
+  const byYear = {};
+  for (const r of (rows || [])) {
+    const y = String(r.year || '');
+    if (!/^\d{4}$/.test(y)) continue;
+    if (!byYear[y]) {
+      byYear[y] = { rows: 0, holeRows: 0, atpOnly: true, ...blankSplit(),
+        tiers: { atp: blankSplit(), chitf: blankSplit() }, holeIndoor: { atp: blankSplit(), chitf: blankSplit() } };
+    }
+    const b = byYear[y];
+    const wl = r.won ? 'won' : 'lost';
+    const tier = r.level === 'atp' ? 'atp' : 'chitf';
+    b.rows++;
+    if (r.holeFill) b.holeRows++;
+    if (r.src !== 'archive') b.atpOnly = false;
+    b.total[wl]++;
+    b.tiers[tier].total[wl]++;
+    if (b[r.surface]) { b[r.surface][wl]++; b.tiers[tier][r.surface][wl]++; }
+    if (r.holeFill && r._indoor) {
+      b.holeIndoor[tier].total[wl]++;
+      if (b.holeIndoor[tier][r.surface]) b.holeIndoor[tier][r.surface][wl]++;
+    }
+  }
+  return byYear;
+}
+
+// TEN-313 (N3, founder ruling 2026-09-28) — make every year row reconcile. Applied to
+// the profile's careerByYear AND to a match's p1Yearly/p2Yearly (the modal's copy), so
+// the two can never disagree again (they did for 39 of 63 board players). Input rows are
+// PRISTINE buildAllTierYearly output — the profile cache is written before this runs —
+// which is why the fixtures-half indoor split can be read off the row and added to.
+//
+//  * A row ADOPTS its career-history tally when it is pre-window (provider aggregate)
+//    or a hole year topped up from TML, and the rows are not short of its count (the
+//    TEN-310 rule, unchanged). Adoption now rebuilds the tier split from the same rows,
+//    not just total/clay/hard/grass — the 2021 fill used to leave atp/chitf/indoor on the
+//    feed's undercount (158 of 340 players: atp + chitf != total; Sinner 427-111 vs 403-99).
+//  * A pre-window row that does NOT adopt is the provider's all-tier aggregate: no tier
+//    split (`atp: null, chitf: null`). Enforced here as well as in buildAllTierYearly so a
+//    profile cached by older code is corrected on the next run, not after its TTL.
+// Returns the rows it adopted (the writer stamps `atpOnly: false` on those).
+function reconcileYearRows(yearRows, byYear) {
+  const size = c => (c ? (c.won || 0) + (c.lost || 0) : 0);
+  const cell = c => (size(c) ? { won: c.won, lost: c.lost } : null);
+  const addCell = (a, b) => cell({ won: (a ? a.won : 0) + (b ? b.won : 0), lost: (a ? a.lost : 0) + (b ? b.lost : 0) });
+  const addIndoor = (a, b) => {
+    const o = { total: addCell(a && a.total, b && b.total), clay: addCell(a && a.clay, b && b.clay),
+      hard: addCell(a && a.hard, b && b.hard), grass: addCell(a && a.grass, b && b.grass) };
+    return o.total ? o : null;
+  };
+  const adopted = new Set();
+  for (const row of (yearRows || [])) {
+    if (!row) continue;
+    const y = (byYear || {})[String(row.year || '')];
+    if (y && (row.allTier === false || y.holeRows > 0) && y.rows >= size(row.total)) {
+      const preWindow = row.allTier === false;
+      const tierOf = (t) => {
+        const s = y.tiers[t];
+        const indoor = preWindow ? null : addIndoor(row[t] && row[t].indoor, y.holeIndoor[t]);
+        const o = { total: cell(s.total), clay: cell(s.clay), hard: cell(s.hard), grass: cell(s.grass), indoor };
+        return (o.total || o.clay || o.hard || o.grass) ? o : null;
+      };
+      const atp = tierOf('atp'), chitf = tierOf('chitf');
+      row.total = cell(y.total);
+      row.clay = cell(y.clay);
+      row.hard = cell(y.hard);
+      row.grass = cell(y.grass);
+      row.atp = atp;
+      row.chitf = chitf;
+      if (!preWindow) row.indoor = addIndoor(atp && atp.indoor, chitf && chitf.indoor);
+      adopted.add(row);
+    } else if (row.allTier === false) {
+      row.atp = null;
+      row.chitf = null;
+    }
+  }
+  return adopted;
+}
+
 async function writeCareerHistoryShards(profiles, opts = {}) {
   const log = opts.log || (() => {});
   // `opts.currentYear`: tests drive both regimes (2021 a hole year, and 2021 an ordinary archive year).
@@ -3848,7 +3967,10 @@ async function writeCareerHistoryShards(profiles, opts = {}) {
   for (const [key, p] of Object.entries(profiles)) {
     if (!p) continue;
     const fixtureRows = Array.isArray(p.careerMatches) ? p.careerMatches : [];
-    const tmlAll = archive[key] || [];
+    // TEN-313 (N2): a walkover the player GAVE is not a match — the fixtures half has never
+    // carried one (playerMatchHistory skips it); the archive half now matches, so a TML W/O
+    // given can no longer reach a year tally as a loss (9 did in the 2021 fill alone).
+    const tmlAll = (archive[key] || []).filter(r => !(r.walkover && !r.won));
     const archiveRows = tmlAll.filter(r => Number(r.year) <= archiveMaxYear).map(r => ({ ...r, src: 'archive' }));
     // TEN-310: the 2021 hole, filled only where the feed half has neither the edition nor the match.
     for (const y of holeYears) {
@@ -3863,47 +3985,33 @@ async function writeCareerHistoryShards(profiles, opts = {}) {
     // careerMatches is a build-time carrier only; it must not ship inside
     // player-profiles.json, which is on the critical path.
     delete p.careerMatches;
-    if (!rows.length) continue;
 
     // Per-year row counts, so the table can decide whether a cell is drillable
     // and how to caption it WITHOUT fetching the shard first.
-    const blank = () => ({ won: 0, lost: 0 });
-    const byYear = {};
-    for (const r of rows) {
-      const y = String(r.year || '');
-      if (!/^\d{4}$/.test(y)) continue;
-      if (!byYear[y]) byYear[y] = { rows: 0, holeRows: 0, atpOnly: true, total: blank(), clay: blank(), hard: blank(), grass: blank() };
-      const b = byYear[y];
-      b.rows++;
-      if (r.holeFill) b.holeRows++;
-      if (r.src !== 'archive') b.atpOnly = false;
-      b.total[r.won ? 'won' : 'lost']++;
-      if (b[r.surface]) b[r.surface][r.won ? 'won' : 'lost']++;
-    }
-    const size = c => (c ? (c.won || 0) + (c.lost || 0) : 0);
+    const byYear = tallyCareerYears(rows);
+    // TEN-313: the caller re-applies the same reconcile to matches.json p1Yearly/p2Yearly.
+    if (opts.yearTallies) opts.yearTallies.set(String(key), byYear);
+    // Pre-window years count from the provider's season aggregate while their
+    // rows come from the tour-level archive, so the two can differ either way.
+    // When the archive is not SHORT of the aggregate it is the better source —
+    // it names every match it counts — so the cell adopts its tally and
+    // becomes exact. (Djokovic 2015 read 88 against 89 nameable matches.)
+    // When the archive IS short the aggregate stays: it is the truer count of
+    // a season that included Challenger/ITF play the archive doesn't carry
+    // (Rublev 2017, 39 tour matches in a 78-match season), and the drill-down
+    // says so in words.
+    // TEN-310: a hole year (2021) whose rows were topped up from TML adopts the row tally the same way
+    // — the feed's aggregate is the undercount the fill exists to correct, and the rows name every match.
+    // TEN-313: reconcileYearRows does the adopting, tier split included — run even for a
+    // player with no rows, so his pre-window aggregate still loses its false ATP split.
+    const adopted = reconcileYearRows(p.careerByYear, byYear);
+    if (!rows.length) continue;
     for (const row of (p.careerByYear || [])) {
       const y = byYear[String(row.year || '')];
       row.rows = y ? y.rows : 0;
-      row.atpOnly = y ? y.atpOnly : false;
-      // Pre-window years count from the provider's season aggregate while their
-      // rows come from the tour-level archive, so the two can differ either way.
-      // When the archive is not SHORT of the aggregate it is the better source —
-      // it names every match it counts — so the cell adopts its tally and
-      // becomes exact. (Djokovic 2015 read 88 against 89 nameable matches.)
-      // When the archive IS short the aggregate stays: it is the truer count of
-      // a season that included Challenger/ITF play the archive doesn't carry
-      // (Rublev 2017, 39 tour matches in a 78-match season), and the drill-down
-      // says so in words.
-      // TEN-310: a hole year (2021) whose rows were topped up from TML adopts the row tally the same way
-      // — the feed's aggregate is the undercount the fill exists to correct, and the rows name every match.
-      if (y && (row.allTier === false || y.holeRows > 0) && y.rows >= size(row.total)) {
-        row.total = y.total;
-        row.clay = size(y.clay) ? y.clay : null;
-        row.hard = size(y.hard) ? y.hard : null;
-        row.grass = size(y.grass) ? y.grass : null;
-        row.atpOnly = false;   // number and rows now describe the same set
-      }
+      row.atpOnly = adopted.has(row) ? false : (y ? y.atpOnly : false);   // adopted: number and rows describe the same set
     }
+    for (const r of rows) delete r._indoor;   // TEN-313 build-time carrier, never shipped
 
     // TEN-244: stamp completeness on EVERY row, both halves, in one place - a
     // predicate applied on only one source half is a predicate a reader cannot
@@ -7039,7 +7147,22 @@ async function runPipeline() {
   // careerMatches carrier and stamps careerByYear row counts, so a shard player
   // who skipped it would ship the heavy carrier and render without its counts.
   const allProfiles = playerProfiles._allProfiles || playerProfiles.players;
-  await writeCareerHistoryShards(allProfiles, { log: (m) => console.log(m) });
+  const careerYearTallies = new Map();
+  await writeCareerHistoryShards(allProfiles, { log: (m) => console.log(m), yearTallies: careerYearTallies });
+  // TEN-313 (N3): the modal's Overview copy (p1Yearly/p2Yearly, same buildAllTierYearly
+  // output) gets the same reconcile the profile's careerByYear just got, from the same
+  // career-history rows — it lacked the 2021 fill, so 39 of 63 board players read
+  // differently in the modal than on their profile. A side with no shard still has its
+  // pre-window tier split cleared. matches.json is re-written below.
+  let yearlySidesPatched = 0;
+  for (const m of matches) {
+    for (const side of ['p1', 'p2']) {
+      if (!Array.isArray(m[side + 'Yearly'])) continue;
+      reconcileYearRows(m[side + 'Yearly'], careerYearTallies.get(String(m[side + 'Key'])) || {});
+      yearlySidesPatched++;
+    }
+  }
+  console.log(`Reconciled p1Yearly/p2Yearly against career-history on ${yearlySidesPatched} match-side(s).`);
 
   // Per-player shards + search index — after the strip above, so a shard carries
   // exactly the shape the eager file's profiles have.
@@ -7068,9 +7191,9 @@ async function runPipeline() {
   // just built. Idempotent + network-tolerant, then re-writes matches.json.
   console.log('Backfilling pre-2021 tournament history into match cards...');
   const matchBf = await backfillMatchesTournamentHistory(matches, playerProfiles.players, { log: (m) => console.log(m) });
-  if (matchBf.patched > 0) {
+  if (matchBf.patched > 0 || yearlySidesPatched > 0) {
     writeJsonAtomic('matches.json', matches);
-    console.log(`Re-wrote matches.json with backfilled tournament history (${matchBf.patched} match-sides, ${matchBf.addedEditions} editions).`);
+    console.log(`Re-wrote matches.json with backfilled tournament history (${matchBf.patched} match-sides, ${matchBf.addedEditions} editions) and reconciled yearly rows (${yearlySidesPatched} match-sides).`);
   }
 
   // Player Tournament Progression — round-by-round real stats for still-alive
@@ -7349,7 +7472,7 @@ module.exports = { fetchH2H, h2hCountsInAtpRecord, H2H_NOT_ATP_RECORD, tourLabel
   // The Career-record pair. Exported together on purpose: their whole contract
   // is that the counts one returns are tallyable from the rows the other
   // returns, and that is what ten8-career-verify.js asserts.
-  buildAllTierYearly, playerMatchHistory, writeCareerHistoryShards, careerRowIsComplete, careerRowIsBo5Slam, formSetsFromFixture,
+  buildAllTierYearly, playerMatchHistory, writeCareerHistoryShards, tallyCareerYears, reconcileYearRows, buildTournamentHistory, careerRowIsComplete, careerRowIsBo5Slam, formSetsFromFixture,
   // TEN-244: the NextGen exclusion key, exported so the suite asserts the SAME
   // constant the pipeline uses rather than a copy that can drift out of step.
   NEXTGEN_TOURNAMENT_KEY, CAREER_HISTORY_INDEX_PATH,

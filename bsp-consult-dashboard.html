@@ -11836,7 +11836,7 @@ function buildYearlyTable(name, rows, colPrefix, seasonSurface, playerKey, tier)
       : '';
     return `
     <tr>
-      <td class="yr-year">${r.year}${r.allTier === false ? '<span class="yr-atponly" title="ATP-level only — Challenger/ITF results aren&#39;t available this far back">ATP</span>' : ''}</td>
+      <td class="yr-year">${r.year}${(r.allTier === false && r.atp) ? '<span class="yr-atponly" title="ATP-level only — Challenger/ITF results aren&#39;t available this far back">ATP</span>' : ''}</td>
       ${yrSurfCell(r, 'total', colPrefix, playerKey, tier)}
       ${yrSurfCell(r, 'clay', colPrefix, playerKey, tier)}
       ${yrSurfCell(r, 'hard', colPrefix, playerKey, tier)}
@@ -12643,7 +12643,9 @@ function buildYearlyTables(m){
   _openOverviewDrill.p1 = ''; _openOverviewDrill.p2 = '';
   const tier = overviewTier;
   const [p1Rows, p2Rows] = alignYearlyPair(m.p1Yearly || [], m.p2Yearly || []);
-  const hasAtpOnly = [...(m.p1Yearly || []), ...(m.p2Yearly || [])].some(r => r && r.allTier === false);
+  // TEN-313 (N3): "ATP" only on a pre-2021 row that holds tour-level matches only (it
+  // carries an atp split); a provider all-tier aggregate carries none and is not badged.
+  const hasAtpOnly = [...(m.p1Yearly || []), ...(m.p2Yearly || [])].some(r => r && r.allTier === false && r.atp);
   const legend = (tier === 'all' && hasAtpOnly)
     ? `<div class="yr-legend">Recent seasons include ATP + Challenger + ITF. <span class="yr-atponly">ATP</span> marks older seasons where only ATP-level records are available.</div>`
     : (tier === 'chitf'
