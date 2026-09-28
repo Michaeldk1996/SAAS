@@ -223,24 +223,6 @@ behaviour.header = await ev(`document.getElementById('aContext').textContent`);
 behaviour.badge = await ev(`document.querySelector('#aSectionWeather .wx-badge').textContent`);
 await ev(`(document.querySelector('#aSectionWeather .wx-tile[data-factor="pace"]').click(), true)`); await new Promise(r => setTimeout(r, 200));
 behaviour.afterPaceClick = await ev(`document.querySelector('#aTabs .asidenav-item.active').dataset.atab`);
-// Download report without ever opening the Weather tab: a fresh page state (caches empty, a slow
-// weather-index.json) — window.print is stubbed to record what the Weather section holds when it fires.
-behaviour.report = await ev(`(async () => {
-  const FX = ${JSON.stringify(MATCH)}; const S = ${JSON.stringify(STATES.c)};
-  _wxIndex = null; _wxIndexPromise = null; for (const k in _wxFiles) delete _wxFiles[k]; for (const k in _wxFileTried) delete _wxFileTried[k]; _aWx = { m: null };
-  const realFetch = window.fetch;
-  window.fetch = (u, o) => String(u).includes('weather-index.json') ? new Promise(r => setTimeout(() => r(new Response(JSON.stringify({ v: 1, tours: { [FX.tour]: S.entry } }))), 600))
-    : String(u).includes('weather/fx-c.json') ? Promise.resolve(new Response(JSON.stringify(S.file))) : realFetch(u, o);
-  openAnalysisModal(FX.id);
-  const before = document.getElementById('aSectionWeather').innerText.split(String.fromCharCode(10)).join(' ').trim().slice(0, 40);
-  let atPrint = null; const realPrint = window.print;
-  window.print = () => { const t = document.getElementById('aSectionWeather'); atPrint = { printingClass: document.querySelector('.modal-analysis').classList.contains('printing'),
-    weatherTabOpened: document.querySelector('#aTabs .asidenav-item.active').dataset.atab, strip: t.querySelectorAll('.wx-day').length,
-    verdict: (t.querySelector('.wx-verdict') || {}).innerText || null, head: (t.querySelector('.wx-head') || {}).innerText || null }; };
-  await printAnalysisReport();
-  window.print = realPrint; window.fetch = realFetch; document.querySelector('.modal-analysis').classList.remove('printing');
-  return { sectionBeforePrint: before, atPrint };
-})()`);
 console.error('behaviour', JSON.stringify(behaviour, null, 1));
 await ev(`(document.querySelector('#aTabs .asidenav-item[data-atab="weather"]').click(), true)`);
 

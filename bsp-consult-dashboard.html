@@ -1226,77 +1226,54 @@
      font-family resolved to the CSS initial — Times, a serif — on every tab
      (H2H match-history names, Odds, etc.). Re-declare the faces on the modal
      root and pin a UI default so inheriting text is Hanken, not Times. */
-  .modal-analysis{ --mx-font-ui:'Hanken Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif; --mx-font-mono:'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace; font-family:var(--mx-font-ui); max-width:1200px; width:100%; text-align:left; max-height:88vh; padding:0; display:flex; flex-direction:column; overflow:hidden;  }
+  /* TEN-314 (TEN-312 Phase 1 step 1): the frame, header and left menu are the design file's
+     (`Match Analysis Progression v1.dc.html` L85–123), not the README §2 numbers: overlay z 80 · scrim ·
+     blur 3px · padding 32; modal max 1500 · height 88vh FIXED · radius 20; header grid 1fr auto 1fr; menu 238px.
+     Colours are in the design-verbatim-analysis block at the foot of the file. */
+  #analysisModal{ z-index:80; padding:32px; backdrop-filter:blur(3px); -webkit-backdrop-filter:blur(3px); }
+  .modal-analysis{ --mx-font-ui:'Hanken Grotesk', system-ui, -apple-system, 'Segoe UI', sans-serif; --mx-font-mono:'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace; font-family:var(--mx-font-ui); max-width:1500px; width:100%; height:88vh; text-align:left; padding:0; border-width:1px; border-style:solid; border-radius:20px; display:flex; flex-direction:column; overflow:hidden; -webkit-font-smoothing:antialiased; }
 
-  /* ---- Header ---- */
-  .modal-analysis .ahead2{ position:relative; padding:20px 48px 20px 24px; border-bottom:0.33px solid var(--border); display:flex; align-items:center; justify-content:space-between; gap:24px; flex-shrink:0; flex-wrap:wrap; }
-  .modal-analysis .ahead2 .close{ position:absolute; top:18px; right:20px; cursor:pointer; font-size:16px; line-height:1; padding:4px; border-radius:8px; }
-  .modal-analysis .atitleblock{ flex:1 1 0; min-width:0; }
-  .modal-analysis .atitleblock .atitle{ font-family:'Hanken Grotesk', sans-serif; font-weight:800; font-size:18px; letter-spacing:-0.01em; margin-bottom:3px; }
-  .modal-analysis .atitleblock .acontext{ font-family:'Hanken Grotesk', sans-serif; font-size:12.5px; font-weight:500; }
-  .modal-analysis .atitleblock .acontextrow{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; }
-  /* Completed-match result restored to the shell (founder ruling 2026-08-01): the
-     sets score ONLY, beside the fixture line — plain mono, neutral #e7e9ee, no pill,
-     no per-set line, no FINAL, no outcome hue. The shell states WHO won (the one fact
-     every tab needs); the Match Stats §2 panel remains the detailed statement of HOW. */
-  .modal-analysis .atitleblock .ashellscore{ font-family:'IBM Plex Mono', monospace; font-size:13px; font-weight:700; letter-spacing:0.04em; color:var(--text); font-variant-numeric:tabular-nums; }
-  .modal-analysis .atitleblock .ashellscore:empty{ display:none; }
-  .modal-analysis .amatchup-center{ display:flex; flex-direction:column; align-items:center; gap:8px; flex:none; }
-  .modal-analysis .ahead-spacer{ flex:1 1 0; }
-  .modal-analysis .amatchuprow{ display:flex; align-items:center; gap:12px; }
-  .modal-analysis .aplayeridt{ display:flex; align-items:center; gap:9px; min-width:0; }
-  .modal-analysis .aplayeridt.right{ flex-direction:row-reverse; }
-  .modal-analysis .aavatar{ border-radius:50%; display:inline-flex; }
+  /* ---- Header (DF L87–109) ---- */
+  .modal-analysis .ahead2{ display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:20px; padding:20px 24px; border-bottom:1px solid; flex:none; }
+  .modal-analysis .atitleblock{ min-width:0; }
+  .modal-analysis .atitleblock .atitle{ font-family:'Hanken Grotesk', sans-serif; font-size:22px; font-weight:800; letter-spacing:-0.01em; line-height:normal; }
+  .modal-analysis .atitleblock .acontext{ font-family:'Hanken Grotesk', sans-serif; font-size:12.5px; font-weight:400; line-height:normal; margin-top:5px; }
+  /* Not-completed matches only (DF L92–104); a completed match leaves an empty centre cell (DF L105). */
+  .modal-analysis .amatchup-center{ display:flex; flex-direction:column; align-items:center; gap:10px; }
+  .modal-analysis .amatchup-center.done > *{ display:none; }
+  .modal-analysis .amatchuprow{ display:flex; align-items:center; gap:13px; }
+  /* D5: ATP photo from player-atp-aliases.json (photoCandidatesFor), monogram fallback — the design's 40px ring. */
+  .modal-analysis .aavatar{ display:inline-flex; flex:none; }
   .modal-analysis .aavatar img,
-  .modal-analysis .aavatar .avatar-fallback{ width:34px; height:34px; font-size:12px; flex-shrink:0; border-radius:50%; border:2px solid transparent; box-sizing:border-box; }
-  /* export §10: identity is A #6aaeff / B neutral, fixed by name order — there is no
-     orange anywhere. Player A's avatar keeps a blue-tinted fallback; Player B's was a
-     brown/orange gradient (the "orange box") — now a neutral slate. */
-  .modal-analysis #aP1Avatar .avatar-fallback{ background:var(--avatar); }
-  .modal-analysis #aP2Avatar .avatar-fallback{ background:var(--avatar); }
-  .modal-analysis .apname{ font-family:'Hanken Grotesk', sans-serif; font-weight:700; font-size:14px; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:170px; }
-  .modal-analysis .aodds{ font-family:'IBM Plex Mono', monospace; font-size:15px; font-weight:700; color:var(--text-dim); background:var(--surface); border:0.33px solid var(--border); border-radius:8px; min-width:30px; height:30px; padding:0 8px; display:inline-flex; align-items:center; justify-content:center; box-sizing:border-box; flex-shrink:0; }
-  /* export §10: both odds pills share a neutral box (white-04 fill / white-09 border);
-     only the TEXT carries identity — A #6aaeff, B #e7e9ee — by name order. */
-  .modal-analysis .aodds.p1{ background:var(--surface-inner); border-color:var(--line); color:var(--periwinkle); }
-  .modal-analysis .aodds.p2{ background:var(--surface-inner); border-color:var(--line); color:var(--text); }
-  /* Founder pass-3 §8: for a completed/interrupted/live match these header pills
-     carry SETS WON, not odds — the export tile is neutral (no identity tint), one
-     shared box treatment, winner a touch brighter than the loser. */
-  .modal-analysis .aodds.sets{ background:var(--surface-inner); border-color:var(--line); color:var(--text); }
-  .modal-analysis .aodds.sets.win{ background:var(--surface-inner); }
+  .modal-analysis .aavatar .avatar-fallback{ width:40px; height:40px; flex-shrink:0; border-radius:50%; border:1px solid; box-sizing:border-box; object-fit:cover;
+    display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono', monospace; font-size:13px; font-weight:700; }
+  .modal-analysis .apname{ font-family:'Hanken Grotesk', sans-serif; font-size:16px; font-weight:700; line-height:normal; white-space:nowrap; }
+  .modal-analysis .apname.plink{ cursor:pointer; }
+  .modal-analysis .apname.plink:hover{ text-decoration:underline; }
+  .modal-analysis .aodds{ font-family:'IBM Plex Mono', monospace; font-size:15px; font-weight:700; line-height:normal; border:1px solid; border-radius:8px; padding:5px 11px; flex-shrink:0; }
   .modal-analysis .aodds:empty{ display:none; }
-  .modal-analysis .avslabel2{ color:var(--text-faint); font-weight:500; font-size:11px; font-family:'IBM Plex Mono', monospace; flex-shrink:0; }
-  /* The score is stated ONCE in the header: sets in the matchup pills, then this
-     row. The compact FINAL pill replaces the old full-width green banner, which
-     repeated a score the two rows above it already carried. */
-  .modal-analysis .ascorerow{ display:flex; align-items:center; gap:11px; }
-  /* The FINAL pill was removed entirely in founder pass-3 §1 (2026-08-01): the
-     Match Stats tab body now carries the set-by-set line, so the header no longer
-     repeats the result — it keeps only avatars, names, the sets-won pills and the
-     fixture line. (Earlier §C had recoloured this pill green→blue; now it's gone.) */
-  .modal-analysis .asetline{ display:flex; align-items:center; gap:16px; font-family:'IBM Plex Mono', monospace; font-size:13px; font-weight:600; color:var(--text-sub); }
-  .modal-analysis .asetline span{ white-space:nowrap; }
-  .modal-analysis .asetline:empty{ display:none; }
+  .modal-analysis .avslabel2{ font-family:'IBM Plex Mono', monospace; font-size:12px; line-height:normal; flex-shrink:0; }
+  .modal-analysis .aclosecell{ display:flex; justify-content:flex-end; }
+  .modal-analysis .ahead2 .close{ width:34px; height:34px; border-radius:9px; border:1px solid; display:flex; align-items:center; justify-content:center; font-size:17px; line-height:normal; cursor:pointer; box-sizing:border-box;
+    transition:background .14s ease, color .14s ease, border-color .14s ease; }
 
   .modal-analysis .alivebar{ margin:16px 24px 0; padding:12px 16px; background:#3A2015; color:#E28B4A; border-radius:11px; font-family:'IBM Plex Mono', monospace; font-size:13.5px; font-weight:600; display:flex; align-items:center; gap:11px; flex-wrap:wrap; flex-shrink:0; }
   .modal-analysis .alivebar[style*="display: none"]{ margin:0; }
-  .modal-analysis .alivebar.completed{ background:rgba(62,207,142,0.06); border:1px solid rgba(62,207,142,0.18); color:var(--text); }
   .modal-analysis .alivebar .anote{ font-family:'Hanken Grotesk', sans-serif; font-weight:400; font-size:12px; color:var(--text-faint); text-align:left; }
 
-  /* ---- Body wrap: sidebar + content ---- */
-  .modal-analysis .aanalysis-body-wrap{ display:flex; flex:1; min-height:0; }
-  .modal-analysis .asidenav{ width:196px; flex-shrink:0; border-right:0.33px solid var(--border); padding:8px 14px 18px; display:flex; flex-direction:column; gap:2px; overflow-y:auto; }
-  .modal-analysis .asidenav-item{ display:flex; align-items:center; gap:11px; padding:9px 11px; border-radius:9px; cursor:pointer; font-size:13px; font-weight:500; font-family:'Hanken Grotesk', sans-serif; transition:background .12s, color .12s; }
-  .modal-analysis .asidenav-item .aicon{ width:16px; height:16px; flex-shrink:0; display:flex; align-items:center; justify-content:center; }
-  .modal-analysis .asidenav-item .aicon svg{ width:15px; height:15px; }
-  .modal-analysis .asidenav-item.active{ font-weight:600; }
-  .modal-analysis .asidenav-download{ margin-top:12px; padding-top:14px; border-top:0.33px solid var(--border); display:flex; align-items:center; gap:11px; padding-left:11px; padding-bottom:9px; padding-right:11px; border-radius:9px; cursor:pointer; color:var(--accent); font-size:13px; font-weight:600; font-family:'Hanken Grotesk', sans-serif; }
-  .modal-analysis .asidenav-download .aicon{ width:16px; height:16px; display:flex; align-items:center; justify-content:center; }
-  .modal-analysis .asidenav-download .aicon svg{ width:15px; height:15px; }
-  .modal-analysis .asidenav-download:hover{ background:var(--accent-dim); }
+  /* ---- Body: menu 238px + content (DF L110–123) ---- */
+  .modal-analysis .aanalysis-body-wrap{ flex:1; min-height:0; display:grid; grid-template-columns:238px 1fr; grid-template-rows:minmax(0,1fr); }
+  .modal-analysis .asidenav{ border-right:1px solid; padding:16px 14px; display:flex; flex-direction:column; gap:3px; overflow:auto; }
+  .modal-analysis .asidenav-item{ display:flex; align-items:center; gap:12px; padding:10px 12px; border-radius:10px; cursor:pointer; font-family:'Hanken Grotesk', sans-serif; font-size:13.5px; font-weight:600; line-height:normal;
+    transition:background .14s ease, color .14s ease; }
+  .modal-analysis .asidenav-item .aicon{ width:17px; height:17px; display:inline-flex; flex:none; }
+  .modal-analysis .asidenav-item .aicon svg{ width:17px; height:17px; }
+  /* D7: rendered exactly as designed and wired to nothing — no print, no export. */
+  .modal-analysis .asidenav-download{ display:flex; align-items:center; gap:10px; padding:12px; margin-top:8px; border-top:1px solid; font-family:'Hanken Grotesk', sans-serif; font-size:13px; font-weight:700; line-height:normal; cursor:pointer;
+    transition:background .14s ease, color .14s ease, border-color .14s ease; }
+  .modal-analysis .asidenav-download svg{ width:16px; height:16px; flex:none; }
 
-  .modal-analysis .abody{ padding:18px 24px 22px 24px; flex:1; overflow-y:auto; min-width:0; }
+  .modal-analysis .abody{ padding:24px 28px; overflow:auto; min-height:0; min-width:0; }
   .modal-analysis .asection{ display:none; }
   /* News tab (11th): in-place expand/rotate to match the export wire. */
   #aSectionNews .anews-row{ cursor:pointer; border-radius:7px; transition:background .12s; }
@@ -2460,13 +2437,10 @@
     body > *:not(.modal-overlay){ display:none !important; }
     .modal-overlay{ position:static !important; background:none !important; display:block !important; }
     .modal-overlay:not(#analysisModal){ display:none !important; }
-    .modal-analysis{ max-width:none !important; max-height:none !important; overflow:visible !important; box-shadow:none !important; }
+    .modal-analysis{ max-width:none !important; max-height:none !important; height:auto !important; overflow:visible !important; box-shadow:none !important; }
     .modal-analysis .ahead2 .close, .modal-analysis .asidenav{ display:none !important; }
     .modal-analysis .aanalysis-body-wrap{ display:block !important; }
     .modal-analysis .abody{ overflow:visible !important; }
-    .modal-analysis.printing .asection{ display:block !important; page-break-inside:avoid; margin-bottom:20px; }
-    /* TEN-310: Market edge is not part of the Download report (brief §1). */
-    .modal-analysis.printing #aSectionMarketEdge, .modal-analysis.printing #mePop{ display:none !important; }
   }
   /* Pipeline-health banner: makes a missed/failed automated run immediately
      obvious instead of silently serving stale data. */
@@ -5300,48 +5274,37 @@ window.EntryListsTab = (function(){
     <div class="ahead2">
       <div class="atitleblock">
         <div class="atitle">Match analysis</div>
-        <div class="acontextrow">
-          <div class="acontext" id="aContext"></div>
-          <span class="ashellscore" id="aShellScore"></span>
-        </div>
+        <div class="acontext" id="aContext"></div>
       </div>
-      <div class="amatchup-center">
+      <div class="amatchup-center" id="aMatchup">
         <div class="amatchuprow">
-          <div class="aplayeridt">
-            <span class="aavatar" id="aP1Avatar"></span>
-            <span id="aP1Name" class="apname"></span>
-            <span class="aodds" id="aP1Odds"></span>
-          </div>
+          <span class="aavatar" id="aP1Avatar"></span>
+          <span id="aP1Name" class="apname"></span>
+          <span class="aodds" id="aP1Odds"></span>
           <span class="avslabel2">vs</span>
-          <div class="aplayeridt right">
-            <span class="aavatar" id="aP2Avatar"></span>
-            <span id="aP2Name" class="apname"></span>
-            <span class="aodds" id="aP2Odds"></span>
-          </div>
-        </div>
-        <div class="ascorerow">
-          <div class="asetline" id="aSetLine"></div>
+          <span class="aodds" id="aP2Odds"></span>
+          <span id="aP2Name" class="apname b"></span>
+          <span class="aavatar" id="aP2Avatar"></span>
         </div>
       </div>
-      <div class="ahead-spacer"></div>
-      <div class="close" onclick="closeAnalysisModal()">✕</div>
+      <div class="aclosecell"><span class="close" onclick="closeAnalysisModal()">✕</span></div>
     </div>
     <div class="alivebar" id="aLiveBar" style="display:none;"></div>
     <div class="aanalysis-body-wrap">
       <div class="asidenav" id="aTabs">
-        <div class="asidenav-item active" data-atab="key"><span class="aicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="7.5" cy="15.5" r="5.5"></circle><path d="M21 2l-9.6 9.6"></path><path d="M15.5 7.5l3 3L22 7l-3-3"></path></svg></span><span>Key factors</span></div>
-        <div class="asidenav-item" data-atab="news"><span class="aicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h11a1 1 0 0 1 1 1v13a2 2 0 0 0 2 2H6a2 2 0 0 1-2-2z"></path><path d="M16 8h3a1 1 0 0 1 1 1v9a2 2 0 0 1-2 2"></path><line x1="8" y1="8" x2="12" y2="8"></line><line x1="8" y1="12" x2="12" y2="12"></line><line x1="8" y1="16" x2="12" y2="16"></line></svg></span><span>News</span></div>
-        <div class="asidenav-item" data-atab="style"><span class="aicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg></span><span>Playing style</span></div>
-        <div class="asidenav-item" data-atab="form"><span class="aicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg></span><span>Form</span></div>
-        <div class="asidenav-item" data-atab="h2h"><span class="aicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></span><span>H2H</span></div>
-        <div class="asidenav-item" data-atab="matchstats"><span class="aicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line><line x1="2" y1="20" x2="22" y2="20"></line></svg></span><span>Match Stats</span></div>
-        <div class="asidenav-item" data-atab="progression"><span class="aicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></svg></span><span>Progression</span></div>
-        <div class="asidenav-item" data-atab="overview"><span class="aicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg></span><span>Overview</span></div>
-        <div class="asidenav-item" data-atab="tournament"><span class="aicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg></span><span>Tournament</span></div>
-        <div class="asidenav-item" data-atab="weather"><span class="aicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path></svg></span><span>Weather</span></div>
-        <div class="asidenav-item" data-atab="odds"><span class="aicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="8" cy="7" rx="5" ry="2.4"></ellipse><path d="M3 7v5c0 1.3 2.2 2.4 5 2.4s5-1.1 5-2.4V7"></path><ellipse cx="16" cy="14" rx="5" ry="2.4"></ellipse><path d="M11 14v5c0 1.3 2.2 2.4 5 2.4s5-1.1 5-2.4v-5"></path></svg></span><span>Odds</span></div>
-        <div class="asidenav-item" data-atab="marketedge"><span class="aicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16l4-5 3 3 5-7 4 5M4 20h16"></path></svg></span><span>Market edge</span></div>
-        <div class="asidenav-download" onclick="printAnalysisReport()"><span class="aicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg></span><span>Download report</span></div>
+        <div class="asidenav-item active" data-atab="key"><span class="aicon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M12 3l2.5 5 5.5.8-4 3.9 1 5.5-5-2.6-5 2.6 1-5.5-4-3.9 5.5-.8z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>Key factors</div>
+        <div class="asidenav-item" data-atab="news"><span class="aicon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M4 5h12v14H4zM16 8h4v9a2 2 0 01-2 2M7 9h6M7 13h6M7 17h4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>News</div>
+        <div class="asidenav-item" data-atab="style"><span class="aicon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M3 12h3l2-6 3.5 12 2.5-8 1.5 2H21" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>Playing style</div>
+        <div class="asidenav-item" data-atab="form"><span class="aicon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M3 16l5-5 3 3 6-7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>Form</div>
+        <div class="asidenav-item" data-atab="h2h"><span class="aicon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M8 10a2.5 2.5 0 100-5 2.5 2.5 0 000 5ZM3.5 18a4.5 4.5 0 019 0M16 10a2.5 2.5 0 100-5M14.5 14a4.5 4.5 0 016 4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>H2H</div>
+        <div class="asidenav-item" data-atab="matchstats"><span class="aicon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M5 20V10M12 20V4M19 20v-7" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>Match Stats</div>
+        <div class="asidenav-item" data-atab="progression"><span class="aicon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M4 16l5-5 3 3 8-9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>Progression</div>
+        <div class="asidenav-item" data-atab="overview"><span class="aicon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M4 6h16M4 12h16M4 18h11" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>Overview</div>
+        <div class="asidenav-item" data-atab="tournament"><span class="aicon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M8 4h8v3a4 4 0 01-8 0V4ZM12 11v3M9 17h6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>Tournament</div>
+        <div class="asidenav-item" data-atab="weather"><span class="aicon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M6 16a4 4 0 010-8 5 5 0 019.6-1.5A3.5 3.5 0 0117 16H6z" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>Weather</div>
+        <div class="asidenav-item" data-atab="odds"><span class="aicon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M8 9a2 2 0 100-4 2 2 0 000 4ZM16 19a2 2 0 100-4 2 2 0 000 4ZM6 18L18 6" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>Odds</div>
+        <div class="asidenav-item" data-atab="marketedge"><span class="aicon"><svg width="17" height="17" viewBox="0 0 24 24" fill="none"><path d="M4 16l4-5 3 3 5-7 4 5M4 20h16" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>Market edge</div>
+        <span class="asidenav-download"><svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M12 4v10m0 0l-4-4m4 4l4-4M5 19h14" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path></svg>Download report</span>
       </div>
       <div class="abody">
         <div class="asection active" data-asection="key" id="aSectionKey"></div>
@@ -12946,7 +12909,7 @@ function wxOnMatchesReload(){
 }
 // Called when the Weather tab opens. Never blocks another tab: the section paints a loading line and
 // repaints when the files land (guarded, so a fast reopen of another match is never overwritten).
-// Returns a promise that settles once the section shows this match's data (Download report awaits it).
+// Returns a promise that settles once the section shows this match's data.
 function openWeatherTab(){
   const m = _aWxMatch;
   if (!m) return Promise.resolve();
@@ -14074,7 +14037,7 @@ function fhStateFor(m){
   }
   return _fh;
 }
-function fhRerender(){ if (!_fh) return; const m = _fh.m; const f = document.getElementById('aSectionForm'); if (f) f.innerHTML = buildFormSection(m); const h = document.getElementById('aSectionH2H'); if (h) h.innerHTML = buildH2HSection(m); }
+function fhRerender(){ if (!_fh) return; const m = _fh.m; if (aBuilt(m, 'form')) aPaint('aSectionForm', buildFormSection(m)); if (aBuilt(m, 'h2h')) aPaint('aSectionH2H', buildH2HSection(m)); }   // TEN-314: never builds an unopened tab
 function fhForm(patch){ if (!_fh) return; Object.assign(_fh.form, patch); const f = document.getElementById('aSectionForm'); if (f) f.innerHTML = buildFormSection(_fh.m); }
 function fhFormToggle(key, idx){ if (!_fh) return; _fh.form[key][idx] = !_fh.form[key][idx]; fhForm({}); }
 function fhH2h(patch){ if (!_fh) return; Object.assign(_fh.h2h, patch); const h = document.getElementById('aSectionH2H'); if (h) h.innerHTML = buildH2HSection(_fh.m); }
@@ -19207,240 +19170,166 @@ function aHeaderOdds(m){
   if (!upcoming) return { p1: '', p2: '' };
   return { p1: m.bestOdds?.p1?.price ? m.bestOdds.p1.price.toFixed(2) : '', p2: m.bestOdds?.p2?.price ? m.bestOdds.p2.price.toFixed(2) : '' };
 }
-function openAnalysisModal(matchId){
+// TEN-314 (TEN-312 Phase 1 step 4): every tab builds — and so fetches — on its FIRST open, never at modal
+// open. Opening the modal paints the header and the Key factors tab only; each other tab's builder (and every
+// shard it loads) runs the first time its menu item is clicked. A late shard repaints only tabs already built
+// for THIS match (_aM guards a fast reopen of a different match).
+let _aM = null;
+const _aBuilt = new Set();
+let _aLastTab = 'key';                 // design §6: the modal reopens on the last-used tab this session
+function aBuilt(m, tab){ return _aM === m && _aBuilt.has(tab); }
+function aPaint(id, html){ const el = document.getElementById(id); if (el) el.innerHTML = html; }
+const A_TAB_BUILD = {
+  key(m){
+    aPaint('aSectionKey', buildKeyFactorsSection(m));
+    // Key factors reads the form shards (Recent form), the odds shard (Odds), the matchup matrix (Playing style)
+    // and the MCP radar (Dimension edge) — nothing else.
+    Promise.all([ensureFormRows(m), ensureOddsMovement(m), loadStyleRadar(), ensurePsMatrix()])
+      .then(() => { if (aBuilt(m, 'key')) aPaint('aSectionKey', buildKeyFactorsSection(m)); });
+  },
+  style(m){
+    // Playing style paints from whatever is in memory, then repaints once the radar shard, the matchup matrix,
+    // the career meeting shards and the DNA file have landed. Same stale-guard contract as every tab.
+    _aStyleMatch = m;
+    renderStyleSection(m);
+    Promise.all([loadStyleRadar(), ensurePsMatrix(), ensureStyleMeetings(m), ensureMatchDna()]).then(() => {
+      if (_aStyleMatch !== m || !aBuilt(m, 'style')) return;
+      renderStyleSection(m);
+      if (aBuilt(m, 'key')) aPaint('aSectionKey', buildKeyFactorsSection(m));
+    });
+  },
+  form(m){
+    // Form shows a loading line until its shards land (fhBuildForm starts fhEnsureFormData itself).
+    aPaint('aSectionForm', buildFormSection(m));
+    ensureFormRows(m).then(() => { if (aBuilt(m, 'form')) aPaint('aSectionForm', buildFormSection(m)); });
+  },
+  h2h(m){ aPaint('aSectionH2H', buildH2HSection(m)); },
+  matchstats(m){ aPaint('aSectionMatchStats', buildMatchStatsSection(m)); },
+  progression(m){ aPaint('aSectionProgression', buildMatchProgressionSection(m)); },
+  overview(m){ aPaint('aSectionOverview', buildYearlyTables(m)); },
+  tournament(m){ aPaint('aSectionTournament', buildTournamentSection(m)); },
+  // TEN-304: loading line for THIS match, then its files load (openWeatherTab).
+  weather(m){ _aWxMatch = m; renderWeatherSection(); openWeatherTab(); },
+  // TEN-310: a new match starts from its defaults with no pop-up; the tab loads its own shards.
+  marketedge(m){ openMarketEdgeTab(); },
+  odds(m){
+    // Paint the reduced view from what is inline, then upgrade to the per-book movement chart once the
+    // timeline shard lands (renderOddsSection guards on _aOdds.m).
+    aPaint('aSectionOdds', buildOddsSection(m));
+    ensureOddsMovement(m).then(() => { if (_aOdds.m === m && aBuilt(m, 'odds')) renderOddsSection(); });
+  },
+  news(m){
+    // The shared feed is fetched the first time the News tab (or the News page) needs it.
+    _aNewsState = _newsData ? 'ok' : 'load';
+    renderNewsSection();
+    ensureNewsData().then(() => { if (_aNewsMatch === m && aBuilt(m, 'news')) renderNewsSection(); });
+  },
+};
+// Tabs whose open hook runs on EVERY visit, not just the first (their loaders are memoised, so a revisit costs no
+// second fetch): Weather re-reads a forecast that has aged since (TEN-304), Market edge retries a failed shard.
+const A_TAB_REVISIT = { weather: () => openWeatherTab(), marketedge: () => openMarketEdgeTab() };
+// Show one tab: menu state, section, live bar, scroll reset (design §6), and its first-open build.
+function aShowTab(tab){
+  const btn = document.querySelector(`#aTabs .asidenav-item[data-atab="${tab}"]`);
+  const sec = document.querySelector(`.asection[data-asection="${tab}"]`);
+  if (!btn || !sec) return;
+  document.querySelectorAll('#aTabs .asidenav-item').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.querySelectorAll('.asection').forEach(s => s.classList.remove('active'));
+  sec.classList.add('active');
+  const body = document.querySelector('.modal-analysis .abody'); if (body) body.scrollTop = 0;
+  _aLastTab = tab;
+  syncAnalysisLiveBar(tab);
+  if (!_aM) return;
+  if (!_aBuilt.has(tab)) { _aBuilt.add(tab); A_TAB_BUILD[tab](_aM); }
+  else if (A_TAB_REVISIT[tab]) A_TAB_REVISIT[tab]();
+}
+
+// D5 (TEN-312, founder 2026-09-28): the modal's avatars are the ATP headshot from player-atp-aliases.json and
+// otherwise the monogram — never the api-tennis logo or a Wikimedia override (those are the board's chain).
+// A headshot that fails to load degrades to the same monogram. Used by the header and the match stats sheet.
+function aAvatarHtml(name, key){
+  const initials = playerInitials(name), attrs = profileLinkAttrs(key, name), src = atpPhotoFor(key);
+  return src
+    ? `<img class="avatar"${attrs} src="${src}" alt="${escapeHtml(name)}" referrerpolicy="no-referrer" onerror="avatarFallback(this,'${initials}')">`
+    : `<div class="avatar-fallback"${attrs}>${initials}</div>`;
+}
+// `tab` (optional) opens on that tab instead of the last-used one — nothing else is built first.
+function openAnalysisModal(matchId, tab){
   const m = matches.find(x => x.id === matchId);
   if (!m) return;
 
-  document.getElementById('aP1Name').textContent = m.p1;
-  document.getElementById('aP2Name').textContent = m.p2;
-
+  // Header (DF L87–109). The matchup strip is for not-completed matches only; a completed match leaves the
+  // centre cell empty (DF L105) — the result lives on the Match Stats tab.
+  // Names are profile links (DF .plink) when the player has a profile.
+  const setName = (id, name, key) => {
+    const el = document.getElementById(id), link = !!profileLinkAttrs(key, name);
+    el.textContent = name; el.classList.toggle('plink', link); el.title = link ? `View ${name} profile` : '';
+    el.onclick = link ? (ev => { ev.stopPropagation(); openPlayerProfileFromMatch(String(key)); }) : null;
+  };
+  setName('aP1Name', m.p1, m.p1Key);
+  setName('aP2Name', m.p2, m.p2Key);
   const p1Pill = document.getElementById('aP1Odds');
   const p2Pill = document.getElementById('aP2Odds');
-  const setLine = document.getElementById('aSetLine');
-  p1Pill.className = 'aodds'; p2Pill.className = 'aodds';
-  const setSpans = sets => (sets || []).map(s => `<span>${s.p1}-${s.p2}</span>`).join('');
-  if (m.finalScore) {
-    // Completed match — the score header RELOCATES to the Match Stats tab (§2 panel,
-    // buildMsScoreHead). Founder ruling A (2026-08-01): the shell drops the matchup
-    // row entirely and carries only "Match analysis" + fixture line + close. The
-    // whole .amatchup-center is hidden below, so nothing is written to the pills here.
-    p1Pill.textContent = ''; p2Pill.textContent = '';
-    setLine.innerHTML = '';
-  } else if (m.interrupted && m.partialScore) {
-    // Suspended match — sets won so far + per-set line. Both pills stay neutral
-    // (no p1/p2 tint): tinting is the winner cue, and there's no winner yet.
+  if (m.interrupted && m.partialScore) {
+    // Suspended match — sets won so far (a state the design does not draw; kept from the live modal).
     p1Pill.textContent = String(m.partialScore.p1Sets);
     p2Pill.textContent = String(m.partialScore.p2Sets);
-    setLine.innerHTML = setSpans(m.partialScore.sets);
   } else if (m.live && (m.liveScore || []).length) {
-    // Live match — sets won so far + per-set line.
-    const p1Won = m.liveScore.filter(s => s.p1 > s.p2).length;
-    const p2Won = m.liveScore.filter(s => s.p2 > s.p1).length;
-    p1Pill.textContent = String(p1Won);
-    p2Pill.textContent = String(p2Won);
-    setLine.innerHTML = setSpans(m.liveScore);
+    // Live match — sets won so far (same).
+    p1Pill.textContent = String(m.liveScore.filter(s => s.p1 > s.p2).length);
+    p2Pill.textContent = String(m.liveScore.filter(s => s.p2 > s.p1).length);
   } else {
-    // Upcoming match — market odds pills (p1 blue, p2 orange). aHeaderOdds is also the Market edge
-    // tab's "today's price" (TEN-310: same value, same source).
+    // Upcoming — the header prices. aHeaderOdds is also the Market edge tab's "today's price" (TEN-310).
     const ho = aHeaderOdds(m);
     p1Pill.textContent = ho.p1;
     p2Pill.textContent = ho.p2;
-    if (p1Pill.textContent) p1Pill.className = 'aodds p1';
-    if (p2Pill.textContent) p2Pill.className = 'aodds p2';
-    setLine.innerHTML = '';
   }
-  document.getElementById('aP1Avatar').innerHTML = playerAvatarHtml(m.p1PhotoUrl, m.p1, m.p1Key);
-  document.getElementById('aP2Avatar').innerHTML = playerAvatarHtml(m.p2PhotoUrl, m.p2, m.p2Key);
-  document.querySelector('#aP1Avatar img, #aP1Avatar .avatar-fallback').style.borderColor = '#2e4fa8';
-  document.querySelector('#aP2Avatar img, #aP2Avatar .avatar-fallback').style.borderColor = 'rgba(255,255,255,0.045)';
+  document.getElementById('aP1Avatar').innerHTML = aAvatarHtml(m.p1, m.p1Key);
+  document.getElementById('aP2Avatar').innerHTML = aAvatarHtml(m.p2, m.p2Key);
+  document.getElementById('aMatchup').classList.toggle('done', !!m.finalScore);
 
   const roundText = h2hRoundLabel(m.tournamentRound);
   // TEN-304 ruling: the subtitle carries the start time in the viewer's zone (cardFmtStart, newsTz),
   // written as the ruling's example reads: "ATP Chengdu · Quarter-finals · 18:00". No instant → no time.
   document.getElementById('aContext').textContent = aContextLine(m, roundText);
 
-  // Founder ruling (2026-08-01): a COMPLETED match shows a minimal result beside the
-  // fixture line in the shell — the sets score ONLY ("1–2"), plain mono, no pill, no
-  // per-set sequence, no FINAL, no colour. Ten of eleven tab bodies never state the
-  // outcome, so the shell carries the one fact "who won"; the Match Stats §2 panel
-  // still says "how". Upcoming / live / interrupted have no result to state here → ''.
-  document.getElementById('aShellScore').textContent =
-    (m.finalScore && m.finalScore.p1Sets != null && m.finalScore.p2Sets != null)
-      ? `${m.finalScore.p1Sets}–${m.finalScore.p2Sets}` : '';
-
-  // Founder ruling A (2026-08-01): a COMPLETED match relocates its full score header
-  // into the Match Stats tab (§2 panel), so the shell header drops the matchup row
-  // and shows only "Match analysis" + fixture line + close. Upcoming / live /
-  // interrupted matches have no §2 relocation target, so they keep the shell matchup
-  // (market-odds pills, or live/partial sets-won + per-set line).
-  document.querySelector('.modal-analysis .amatchup-center').style.display = m.finalScore ? 'none' : '';
-
   const liveBar = document.getElementById('aLiveBar');
-  liveBar.classList.remove('completed');
   if (m.interrupted) {
     _aLiveBarOn = true;
     liveBar.innerHTML = `⏸ ${m.liveStatus || 'Interrupted'}${m.partialScore ? ' · ' + m.partialScore.display : ''} <span class="anote" style="margin:0;">match suspended · no result yet</span>`;
   } else if (m.live) {
     _aLiveBarOn = true;
     liveBar.innerHTML = `🔴 Live${m.liveStatus ? ' · ' + m.liveStatus : ''}${formatLiveScore(m) ? ' · ' + formatLiveScore(m) : ''} <span class="anote" style="margin:0;">as of last data refresh</span>`;
-  } else if (m.finalScore) {
-    // No bar for a completed match: the header's FINAL pill + set-by-set line
-    // already state the result, and this bar was a third copy of the same score.
-    _aLiveBarOn = false;
   } else {
     _aLiveBarOn = false;
   }
-  // The green inset "Final · <score>" banner was removed (the modal header's
-  // score row already carries the result, and green is reserved for data
-  // quality, not status). Nothing suppresses #aLiveBar on Match Stats anymore.
   _aMsInsetBanner = false;
 
-  document.getElementById('aSectionKey').innerHTML = buildKeyFactorsSection(m);
-
-  // Playing style paints from whatever is already in memory, then repaints as
-  // the radar shard and the matchup matrix land. Same stale-guard contract as
-  // the form sections: the user can open a second match mid-flight.
-  _aStyleMatch = m;
-  renderStyleSection(m);
-  // ensureStyleMeetings loads the per-player CAREER meeting shards that feed the
-  // "vs this style" detail list (TEN-88 option B); folded in here so the one repaint
-  // below has radar + matrix + meetings all resolved.
-  Promise.all([loadStyleRadar(), ensurePsMatrix(), ensureStyleMeetings(m), ensureMatchDna()]).then(() => {
-    if (_aStyleMatch !== m) return;
-    renderStyleSection(m);
-    // Key Factors' "Playing style" card reads the matchup matrix too
-    // (akStyleBlock -> psCellFor). It paints once at open, before the matrix
-    // shard lands, and is otherwise only repainted off the form/odds shards —
-    // so if the matrix resolves LAST, the card is stuck on "too few tour
-    // meetings" for pairings that in fact have ample history. Repaint it here on
-    // the same stale-guard, matching the form/odds late-repaint pattern.
-    const keyEl = document.getElementById('aSectionKey');
-    if (keyEl) keyEl.innerHTML = buildKeyFactorsSection(m);
-  });
-
-  document.getElementById('aSectionTournament').innerHTML = buildTournamentSection(m);
-
-  document.getElementById('aSectionH2H').innerHTML = buildH2HSection(m);
-
-  document.getElementById('aSectionMatchStats').innerHTML = buildMatchStatsSection(m);
-
-  document.getElementById('aSectionProgression').innerHTML = buildMatchProgressionSection(m);
-  // Task 6: hide the Progression tab entirely in the first round (only one
-  // data point — nothing to trend). Reset display each open so it reappears
-  // for later-round matches.
+  // Task 6: hide the Progression tab entirely in the first round (only one data point — nothing to trend).
   const progNav = document.querySelector('#aTabs .asidenav-item[data-atab="progression"]');
   if (progNav) progNav.style.display = progressionRoundState(m).state === 'hidden' ? 'none' : '';
 
-  // Task 4: Point-by-point is a sub-tab of Match Stats (finished matches only).
-  // buildMatchStatsSection already rendered a fresh, empty #msPbpPane above; the
-  // sidecar fetch is deferred until the user opens that sub-tab.
-  _aPbpMatch = m;
-  _aFormMatch = m;
-
-  // Recent-form rows are a lazy per-player shard, so these two sections render
-  // twice: once now (Form shows a loading line, Recent Results is simply absent)
-  // and again the moment the rows land. Everything else on the modal — the form
-  // score itself included — comes from matches.json and paints immediately, so
-  // the modal is never held on the network.
-  //
-  // Both sections are rebuilt, not just the Form tab: Recent Results lives on
-  // the Key tab, which is the one that opens by default.
-  document.getElementById('aSectionForm').innerHTML = buildFormSection(m);
-  ensureFormRows(m).then(() => {
-    // The user can close this modal and open another while the shard is in
-    // flight; without this guard the late rows would repaint the new match's
-    // sections with the old match's form.
-    if (_aFormMatch !== m) return;
-    document.getElementById('aSectionForm').innerHTML = buildFormSection(m);
-    document.getElementById('aSectionKey').innerHTML = buildKeyFactorsSection(m);
-    // The style tab's "vs this style" list now reads its OWN career-meeting shards
-    // (not the form rows), but the radar/dimension blocks still repaint here; the
-    // meeting shards are cached by now, so this paint keeps the list intact.
-    renderStyleSection(m);
-  });
-
-  document.getElementById('aSectionOverview').innerHTML = buildYearlyTables(m);
-
-  // TEN-304: the Weather tab loads its files lazily when the tab opens (openWeatherTab); until then
-  // it holds a loading line for THIS match.
-  _aWxMatch = m;
-  renderWeatherSection();
-
-  // TEN-310: the Market edge tab loads nothing until it is opened (openMarketEdgeTab); a new match
-  // starts from its defaults with no pop-up.
+  // Per-match state every tab reads; nothing is built or fetched here.
+  _aM = m; _aBuilt.clear();
+  document.querySelectorAll('.modal-analysis .asection').forEach(s => { s.innerHTML = ''; });
+  _aStyleMatch = m; _aPbpMatch = m; _aFormMatch = m; _aWxMatch = m; _aNewsMatch = m; _aNewsFilter = 'all';
   _me = null;
-  const meEl = document.getElementById('aSectionMarketEdge'); if (meEl) meEl.innerHTML = '';
   const mePopEl = document.getElementById('mePop'); if (mePopEl) mePopEl.innerHTML = '';
-
   _aOdds = { m:m, novig:false, market:'Match Winner', mv:null };
-  // Paint immediately from what is inline (the reduced view), then upgrade to the
-  // full per-book movement chart once the lazy timeline shard lands. Re-rendering
-  // through renderOddsSection keeps this identical to a book/snapshot toggle, and
-  // it guards on _aOdds.m so a fast reopen of a DIFFERENT match cannot be
-  // overwritten by an in-flight fetch for the previous one.
-  document.getElementById('aSectionOdds').innerHTML = buildOddsSection(m);
-  // News tab (11th). The shared news feed is only fetched when the News PAGE is
-  // visited, so lazy-load it here on first modal open (odds/form pattern): paint
-  // a placeholder now, repaint when the fetch lands. Guarded on _aNewsMatch so a
-  // fast reopen of a different match can't be overwritten by an in-flight fetch.
-  _aNewsMatch = m;
-  _aNewsFilter = 'all';
-  _aNewsState = _newsData ? 'ok' : 'load';
-  renderNewsSection();
-  ensureNewsData().then(() => { if (_aNewsMatch !== m) return; renderNewsSection(); });
-  ensureOddsMovement(m).then(() => {
-    if (_aOdds.m !== m) return;
-    renderOddsSection();
-    // Key Factors' odds block carries a compact movement chart off the same shard,
-    // so it needs the same late repaint the Odds tab gets — without this the chart
-    // is absent on first open and only appears if the form shard happens to land
-    // afterwards and repaint the bento for its own reasons.
-    const keyEl = document.getElementById('aSectionKey');
-    if (keyEl) keyEl.innerHTML = buildKeyFactorsSection(m);
-  });
 
-  document.querySelectorAll('#aTabs .asidenav-item').forEach(b => b.classList.remove('active'));
-  document.querySelector('#aTabs .asidenav-item[data-atab="key"]').classList.add('active');
-  document.querySelectorAll('.asection').forEach(s => s.classList.remove('active'));
-  document.querySelector('.asection[data-asection="key"]').classList.add('active');
-  syncAnalysisLiveBar('key');
-
+  const want = (tab && A_TAB_BUILD[tab]) ? tab : _aLastTab;
+  const first = (want === 'progression' && progNav && progNav.style.display === 'none') ? 'key' : want;
   document.getElementById('analysisModal').classList.add('open');
+  aShowTab(first);
   if (typeof teTrack === 'function') teTrack('view_match_analysis', { match_id: matchId, completed: !!m.finalScore });
 }
 
 document.getElementById('aTabs').addEventListener('click', e => {
   const btn = e.target.closest('.asidenav-item[data-atab]');
   if (!btn) return;
-  document.querySelectorAll('#aTabs .asidenav-item').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-  document.querySelectorAll('.asection').forEach(s => s.classList.remove('active'));
-  document.querySelector(`.asection[data-asection="${btn.dataset.atab}"]`).classList.add('active');
-  syncAnalysisLiveBar(btn.dataset.atab);
-  if (btn.dataset.atab === 'weather') openWeatherTab();
-  if (btn.dataset.atab === 'marketedge') openMarketEdgeTab();
+  aShowTab(btn.dataset.atab);
 });
-
-// Download report — scoped print of the modal's current content. Shows every
-// section (not just the active tab) since a "report" should include the full
-// analysis, then restores the normal single-tab view once printing is done.
-// A real custom PDF export (formatted, non-browser-print) is a bigger build —
-// this is the reasonable v1 scope.
-// TEN-304: the Weather section loads lazily (index + venue file), so the report first loads it (capped
-// at 8 s) and prints the real Weather section even when the tab was never opened.
-function printAnalysisReport(){
-  const modal = document.querySelector('.modal-analysis');
-  const wx = typeof openWeatherTab === 'function' ? openWeatherTab() : null;
-  return Promise.race([Promise.resolve(wx), new Promise(r => setTimeout(r, 8000))]).catch(() => {}).then(() => {
-    // never print "Loading forecast…": a Weather section still not loaded prints as the unavailable state (dashes)
-    const wxEl = document.getElementById('aSectionWeather');
-    if (wxEl && _aWxMatch && !(_aWx.ready && _aWx.m === _aWxMatch)) wxEl.innerHTML = buildWeatherSection(_aWxMatch, null, null, Date.now(), null);
-    modal.classList.add('printing');
-    const cleanup = () => modal.classList.remove('printing');
-    window.addEventListener('afterprint', cleanup, { once: true });
-    window.print();
-  });
-}
 
 function closeAnalysisModal(){ document.getElementById('analysisModal').classList.remove('open'); }
 function setActiveButton(groupEl, clickedBtn){
@@ -19542,8 +19431,7 @@ document.getElementById('mxModeToggle').addEventListener('click', e => {
 function mxOpenCardStats(card){
   const id = card && card.dataset.id;
   if (!id) return;
-  openAnalysisModal(id);
-  aGoTab('matchstats');
+  openAnalysisModal(id, 'matchstats');
 }
 // True when this click should be left to something else on the card.
 function mxCardClickInert(e, card){
@@ -34319,12 +34207,25 @@ if(document.querySelector('.tabpage[data-page="live"]')&&document.querySelector(
      tools/theme-12a/recolour.mjs skips this block (DESIGN_ZONES). Hairlines keep the modal's 0.33px width. */
   /* surface #0A0D14 = the extract's own card; the Claude Design screenshots render that value (and the spec's
      #0A0D14 Market/No-vig track) as #0B0C13, so both references agree on #0A0D14. */
-  .modal-analysis{ background:#0A0D14; border-color:rgba(255,255,255,0.09); }
+  .modal-analysis{ background:#0A0D14; border-color:rgba(255,255,255,0.09); box-shadow:0 40px 120px rgba(0,0,0,0.6); }
+  /* TEN-314: the design file's overlay (DF L85) — scrim over the page, blurred. */
+  #analysisModal{ background:rgba(4,5,8,0.72); }
   .modal-analysis .ahead2{ border-bottom-color:rgba(255,255,255,0.07); }
   .modal-analysis .asidenav{ border-right-color:rgba(255,255,255,0.07); }
   .modal-analysis .asidenav-download{ border-top-color:rgba(255,255,255,0.07); }
-  .modal-analysis .ahead2 .close{ color:#5B6880; }
-  .modal-analysis .ahead2 .close:hover{ color:#E7E9EE; background:rgba(255,255,255,0.04); }
+  .modal-analysis .ahead2 .close{ color:#5B6880; border-color:rgba(255,255,255,0.09); }
+  .modal-analysis .ahead2 .close:hover{ color:#E7E9EE; background:var(--line-avatar); }   /* = the DF's white 0.06 (12a --line-avatar is that value) */
+  /* header matchup (DF L95–101). D4: both players neutral — A primary, B grey (#AAB3C8, the file's secondary
+     text) — never the design's #6AAEFF player-A blue. Avatars (D5) keep the design's ring; a monogram takes
+     the design's neutral (player-B) fill for BOTH players. */
+  .modal-analysis .aavatar img, .modal-analysis .aavatar .avatar-fallback{ border-color:rgba(255,255,255,0.09); }
+  .modal-analysis .aavatar .avatar-fallback{ background:rgba(123,145,180,0.14); color:#5B6880; }
+  .modal-analysis .apname{ color:#E7E9EE; }
+  .modal-analysis .apname.b{ color:#AAB3C8; }
+  .modal-analysis .aodds{ background:rgba(255,255,255,0.04); border-color:rgba(255,255,255,0.09); color:#E7E9EE; }
+  .modal-analysis #aP2Odds{ color:#AAB3C8; }
+  .modal-analysis .avslabel2{ color:#4B5672; }
+  .modal-analysis .asidenav-download{ color:#5B9BFF; }
   #aSectionOdds{ color:#E7E9EE; }
   /* the extract's type base (browser default: 16px, line-height normal) — the modal's inherited 14px / 1.5
      made every tile and row 3-5px taller than the design (deployed measure 2026-09-27: tile 61px vs 56px). */
@@ -34334,7 +34235,6 @@ if(document.querySelector('.tabpage[data-page="live"]')&&document.querySelector(
   .modal-analysis .asidenav-item{ color:#5B6880; }
   .modal-analysis .asidenav-item .aicon{ color:#4B5672; }
   .modal-analysis .asidenav-item:hover{ background:rgba(255,255,255,0.04); color:#E7E9EE; }
-  .modal-analysis .asidenav-item:hover .aicon{ color:#E7E9EE; }
   .modal-analysis .asidenav-item.active{ background:#171D2F; color:#FFFFFF; }
   .modal-analysis .asidenav-item.active .aicon{ color:var(--periwinkle); }
   .aox-row:not(.aox-nodata):hover{ border-color:rgba(106,154,248,0.25) !important; background:#11141F !important; }

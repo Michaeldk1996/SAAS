@@ -250,11 +250,11 @@ test('§4 edge cases: half-open bands, 2.00 is underdog, match-tiebreak is not a
   assert.equal(ui.render(m, {}, [rows, empty]).E && true, true);
 });
 
-test('wiring: Market edge is the last tab after Odds; today = the header price; lazy load; not in Download report', () => {
+test('wiring: Market edge is the last tab after Odds; today = the header price; lazy load', () => {
   const r0 = HTML.indexOf('<div class="asidenav" id="aTabs">'), rail = HTML.slice(r0, HTML.indexOf('asidenav-download', r0));
   const tabs = [...rail.matchAll(/data-atab="([a-z0-9]+)"/g)].map((x) => x[1]);
   assert.deepEqual(tabs.slice(-2), ['odds', 'marketedge']); assert.equal(tabs.length, 12);
-  assert.ok(rail.includes('<path d="M4 16l4-5 3 3 5-7 4 5M4 20h16"></path></svg></span><span>Market edge</span>'));
+  assert.ok(rail.includes('<path d="M4 16l4-5 3 3 5-7 4 5M4 20h16" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"></path></svg></span>Market edge</div>'));
   assert.equal((HTML.match(/data-atab="marketedge"/g) || []).length, 1, 'one entry');
   // the header pills and the tab read one function
   assert.ok(/const ho = aHeaderOdds\(m\);\s*p1Pill\.textContent = ho\.p1;\s*p2Pill\.textContent = ho\.p2;/.test(HTML));
@@ -262,16 +262,15 @@ test('wiring: Market edge is the last tab after Odds; today = the header price; 
   assert.deepEqual(ui.aHeaderOdds(M), { p1: '1.54', p2: '2.62' });
   assert.deepEqual(ui.aHeaderOdds(Object.assign({}, M, { live: true, liveScore: [{ p1: 1, p2: 0 }] })), { p1: '', p2: '' });
   // loaded only when the tab opens, never at modal open; never the monolithic profiles file
-  const open = HTML.slice(HTML.indexOf('\nfunction openAnalysisModal('), HTML.indexOf('\nfunction printAnalysisReport('));
-  assert.ok(!/meLoad\(|openMarketEdgeTab\(\)/.test(open.slice(0, open.indexOf("document.getElementById('aTabs').addEventListener"))), 'no load at modal open');
-  assert.ok(open.includes("if (btn.dataset.atab === 'marketedge') openMarketEdgeTab();"));
+  // TEN-314: every tab builds on its first open (A_TAB_BUILD); the modal open itself loads nothing of Market edge
+  const open = slice('openAnalysisModal');
+  assert.ok(!/meLoad\(|openMarketEdgeTab\(\)/.test(open), 'no load at modal open');
+  assert.ok(HTML.includes('  marketedge(m){ openMarketEdgeTab(); },'));
   const block = HTML.slice(HTML.indexOf('TEN-310 · MATCH ANALYSIS → MARKET EDGE TAB'), HTML.indexOf('/* ---------- TOURNAMENT SUB-TAB'));
   // ruling B: the one fetch of its own is the per-player profile shard, market-edge/{key}.json, inside meLoadProfileShard
   const own = slice('meLoadProfileShard');
   assert.ok(!block.includes('player-profiles.json') && !/fetch\(/.test(block.replace(own, '')), 'the tab fetches only through the lazy loaders');
   assert.equal((own.match(/fetch\(/g) || []).length, 1); assert.ok(own.includes('fetch(`./market-edge/${encodeURIComponent(k)}.json`'), 'only the per-player profile shard');
-  const print = HTML.slice(HTML.indexOf('.modal-analysis.printing .asection{'), HTML.indexOf('.modal-analysis.printing .asection{') + 400);
-  assert.ok(print.includes('.modal-analysis.printing #aSectionMarketEdge, .modal-analysis.printing #mePop{ display:none !important; }'), 'kept out of Download report (static print CSS)');
   assert.ok(/<script src="market-edge-core\.js"><\/script>/.test(HTML));
 });
 
