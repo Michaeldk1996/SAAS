@@ -1100,15 +1100,16 @@ test('popup: winners/errors all 0 on both sides were not sent → dashes, with t
   const M2 = S.fhSheetModel({ own: SIDE({ 'Points:Winners': 0 }), opp: SIDE() });
   assert.equal(M2.sections[2].rows[0].a.txt, '0', 'a real 0 next to real counts stays 0');
 });
-test('popup layout: one control Match | Set n | Point by point, set tabs disabled with a tooltip; no name row; design section labels', () => {
+// TEN-314: the merged sheet carries the design's Key stats scope (DF mkSheet tabsDef: Match · Key stats · Set n · Point by point).
+test('popup layout: one control Match | Key stats | Set n | Point by point, set tabs disabled with a tooltip; no name row; design section labels', () => {
   const tabs = S.fhSheetTabs({ scope: 'match', nSets: 3, sets: null, setsLoading: false, hasPbp: true });
-  assert.deepEqual(tabs.map(t => t.label), ['Match', 'Set 1', 'Set 2', 'Set 3', 'Point by point']);
-  assert.ok(tabs.slice(1, 4).every(t => t.disabled && t.title === 'No per-set stats for this match'), 'Miami 2024: set tabs shown, disabled, never hidden');
+  assert.deepEqual(tabs.map(t => t.label), ['Match', 'Key stats', 'Set 1', 'Set 2', 'Set 3', 'Point by point']);
+  assert.ok(tabs.slice(2, 5).every(t => t.disabled && t.title === 'No per-set stats for this match'), 'Miami 2024: set tabs shown, disabled, never hidden');
   const seg = S.fhSheetSeg(tabs);
   assert.equal((seg.match(/aria-disabled="true"/g) || []).length, 3);
   assert.ok(!/onclick="fhSheetScope\(1\)"/.test(seg), 'a disabled tab is not clickable');
   const t2 = S.fhSheetTabs({ scope: 1, nSets: 2, sets: { 1: {}, 2: {} }, hasPbp: false });
-  assert.deepEqual(t2.map(t => !!t.disabled), [false, false, false, true]);
+  assert.deepEqual(t2.map(t => !!t.disabled), [false, false, false, false, true]);
   const html = S.fhSheetStatsHtml({ own: SIDE(), opp: SIDE() });
   assert.ok(!/aform-panel-names/.test(html), 'no extra name row');
   assert.ok(/>Service</.test(html) && />Return</.test(html) && />Points won</.test(html));

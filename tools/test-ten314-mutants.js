@@ -1,4 +1,4 @@
-// TEN-314 — every check in test-ten314-modal-frame.mjs must FAIL when the behaviour it locks is reverted. Each
+// TEN-314 — every check in test-ten314-modal-frame.mjs and test-ten314-sheet.mjs must FAIL when the behaviour it locks is reverted. Each
 // mutant is applied to a copy of bsp-consult-dashboard.html and the suite is run against it (TEN314_HTML); a
 // mutant that leaves the suite green is a vacuous test and fails this runner.
 const fs = require('fs'), os = require('os'), path = require('path'), { spawnSync } = require('child_process');
@@ -31,6 +31,25 @@ const MUTANTS = [
   ['lazy: a late shard of the previous match repaints the new one', 'function aBuilt(m, tab){ return _aM === m && _aBuilt.has(tab); }', 'function aBuilt(m, tab){ return _aBuilt.has(tab); }'],
   ['revisit: Weather / Market edge hooks only on the first open', "  else if (A_TAB_REVISIT[tab]) A_TAB_REVISIT[tab]();\n", ''],
   ['direct tab: the completed-card path builds Key factors first', "  openAnalysisModal(id, 'matchstats');\n}", "  openAnalysisModal(id);\n  aGoTab('matchstats');\n}"],
+  ['sheet: a Key stats row dropped', "    row('Winners / unforced errors', wue(win.a, ue.a), wue(win.b, ue.b), 'ratio'),\n", ''],
+  ['sheet: W / total points over own points won', "  const tp = [tpw.a, tpw.b].map(c => c.total).find(t => t > 0) || null;", "  const tp = tpw.a.won || null;"],
+  ['sheet: no stats back to the message-only state', "  const M = fhSheetModel(joined || null);\n  const head = fhSheetSectionHead;", "  if (!joined) return `<div>${fhEsc(emptyMsg)}</div>`;\n  const M = fhSheetModel(joined || null);\n  const head = fhSheetSectionHead;"],
+  ['sheet: the not-available note dropped', "  const note = !joined ? maSheetNaNote()", "  const note = !joined ? ''"],
+  ['sheet: opens on Match, not Key stats', "\n    scope: 'key', nSets:", "\n    scope: 'match', nSets:"],
+  ['sheet: tabs lose their slot', "onclick: `fhSheetScope('key','${sl}')` }];", "onclick: `fhSheetScope('key')` }];"],
+  ['sheet: initials in rings (D5 undone)', "  const av = (name, key) => `<span class=\"fh-av\">${aAvatarHtml(name, key)}</span>`;", "  const av = (name, key) => `<span class=\"fh-av\">${fhEsc(fhIni(name))}</span>`;"],
+  ['sheet: inline copy keeps the set chips', "  const chips = o.inline ? '' : (r.sets || [])", "  const chips = (r.sets || [])"],
+  ['sheet: Match Stats tab back to the old stat sheet', "  if (hasPointLog) return maMsSheetHtml(m);\n", ''],
+  ['sheet: Match Stats inline never filled', "buildMatchStatsSection(m)); maMsSheetInit(m); },", "buildMatchStatsSection(m)); },"],
+  ['sheet: Market edge rows gated on stats on file again', "<div class=\"seg me-row\" data-me-row=\"${r.mid}\" onclick=\"meOpenRow('${r.mid}')\"", "<div class=\"seg me-row\" data-me-row=\"${r.mid}\"${r.ek ? ` onclick=\"meOpenRow('${r.mid}')\"` : ''}"],
+  ['sheet: Overview drill rows do not open', "    const click = maRowOnclick({ key: playerKey,", "    const click = '' && maRowOnclick({ key: playerKey,"],
+  ['sheet: Tournament rows do not open', "  const click = maRowOnclick({ key: opts.playerKey,", "  const click = '' && maRowOnclick({ key: opts.playerKey,"],
+  ['sheet: an unplaced row opens nothing', "    let r;\n    if (i >= 0) r = meRowFromCareer(", "    let r;\n    if (i < 0) return;\n    if (i >= 0) r = meRowFromCareer("],
+  ['sheet: exact name keys on the date join', "  return lo.length >= 4 && hi.endsWith(lo);\n}\nlet _maRowReq", "  return false;\n}\nlet _maRowReq"],
+  ['sheet: one of two same-date candidates accepted', "      if (hits.length === 1) i = hits[0];", "      if (hits.length) i = hits[0];"],
+  ['sheet: a late fetch opens into a closed modal', "    if (_aM !== m || req !== _maRowReq || !document.getElementById('analysisModal').classList.contains('open')) return;", "    if (_aM !== m) return;"],
+  ['report: Match Stats prints Key stats only', "  if (typeof _maMsSheet !== 'undefined' && _maMsSheet){ _maMsSheet.scope = 'match'; fhSheetRender('tab'); }\n", ''],
+  ['footer: the line put back', '      <div class="abody">', '      <div class="abody"><div class="aanalysisfooter">All stats are updated live.</div>'],
   ['bundle: mkPr in the deployed page', 'function closeAnalysisModal(){', 'function mkPr(){}\nfunction closeAnalysisModal(){'],
   ['bundle: SAMPLE_NEWS in the deployed page', 'function closeAnalysisModal(){', 'const SAMPLE_NEWS = [];\nfunction closeAnalysisModal(){'],
 ];
@@ -52,7 +71,7 @@ for (const [name, from, to] of MUTANTS) {
   if (m == null) { console.error(`✖ anchor not found exactly once: ${name}`); survived++; continue; }
   const file = path.join(dir, 'm.html');
   fs.writeFileSync(file, m);
-  const r = spawnSync(process.execPath, ['--test', path.join(ROOT, 'test-ten314-modal-frame.mjs')], { env: Object.assign({}, process.env, { TEN314_HTML: file }), encoding: 'utf8' });
+  const r = spawnSync(process.execPath, ['--test', path.join(ROOT, 'test-ten314-modal-frame.mjs'), path.join(ROOT, 'test-ten314-sheet.mjs')], { env: Object.assign({}, process.env, { TEN314_HTML: file }), encoding: 'utf8' });
   if (r.status === 0) { console.error(`✖ SURVIVED: ${name}`); survived++; } else console.log(`✔ caught: ${name}`);
 }
 fs.rmSync(dir, { recursive: true, force: true });

@@ -173,19 +173,19 @@ function modalVM(opts = {}) {
   const stubs = {
     buildKeyFactorsSection: m => { log.push('build:key'); log.push('paint:key:' + m.id); return 'K'; }, renderStyleSection: () => log.push('build:style'),
     buildFormSection: () => { log.push('build:form'); return 'F'; }, buildH2HSection: () => { log.push('build:h2h'); if (opts.throwOn === 'h2h') throw new Error('x'); return 'H'; },
-    buildMatchStatsSection: () => { log.push('build:matchstats'); return ''; }, buildMatchProgressionSection: () => { log.push('build:progression'); return ''; },
+    buildMatchStatsSection: () => { log.push('build:matchstats'); return ''; }, maMsSheetInit: () => {}, buildMatchProgressionSection: () => { log.push('build:progression'); return ''; },
     buildYearlyTables: () => { log.push('build:overview'); return ''; }, buildTournamentSection: () => { log.push('build:tournament'); return ''; },
     renderWeatherSection: () => log.push('build:weather'), openWeatherTab: rec('load:weather'), openMarketEdgeTab: () => log.push('load:marketedge'),
     buildOddsSection: () => { log.push('build:odds'); return ''; }, renderOddsSection: () => {}, renderNewsSection: () => log.push('build:news'),
     ensureFormRows: rec('load:form-shards'), ensureOddsMovement: rec('load:odds-shard'), loadStyleRadar: rec('load:style-radar'), ensurePsMatrix: rec('load:matrix'),
     ensureStyleMeetings: rec('load:style-meetings'), ensureMatchDna: rec('load:dna'), ensureNewsData: rec('load:news'),
-    syncAnalysisLiveBar: () => {}, aHeaderOdds: () => ({ p1: '1.54', p2: '2.62' }), aAvatarHtml: () => '', profileLinkAttrs: () => '', openPlayerProfileFromMatch: () => {},
+    syncAnalysisLiveBar: () => {}, fhCloseSheet: () => {}, aHeaderOdds: () => ({ p1: '1.54', p2: '2.62' }), aAvatarHtml: () => '', profileLinkAttrs: () => '', openPlayerProfileFromMatch: () => {},
     h2hRoundLabel: () => 'Quarter-finals', aContextLine: () => 'ATP Washington · Quarter-finals', formatLiveScore: () => '', progressionRoundState: () => ({ state: 'shown' }),
     teTrack: undefined,
   };
   const names = Object.keys(stubs);
   const body = `
-    let _aStyleMatch, _aPbpMatch, _aFormMatch, _aWxMatch, _aNewsMatch, _aNewsFilter, _me, _aOdds = { m: null }, _aLiveBarOn, _aMsInsetBanner, _aNewsState, _newsData = null;
+    let _aStyleMatch, _aPbpMatch, _aFormMatch, _aWxMatch, _aNewsMatch, _aNewsFilter, _me, _aOdds = { m: null }, _aLiveBarOn, _aMsInsetBanner, _aNewsState, _newsData = null, _maMsSheet = null; const _maRowReg = {};
     ${HTML.slice(HTML.indexOf('\nlet _aM = null;'), HTML.indexOf('\nconst A_TAB_BUILD = {'))}
     ${objSrc('const A_TAB_BUILD')}
     ${objSrc('const A_TAB_REVISIT')}

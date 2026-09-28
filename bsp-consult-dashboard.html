@@ -1955,8 +1955,6 @@
   .modal-analysis .tpg-avg{ text-align:center; }
   .modal-analysis .tpg-chip{ display:block; width:max-content; margin:2px auto; font-family:'IBM Plex Mono', monospace; font-size:11px; font-weight:700; background:var(--surface-inner); border-radius:6px; padding:2.5px 11px; line-height:1.4; }
   .modal-analysis .tpg-field{ text-align:right; font-family:'IBM Plex Mono', monospace; font-size:11.5px; font-weight:700; color:var(--text); border-left:0.33px solid var(--line-soft); }
-  .modal-analysis .aanalysisfooter{ padding:14px 24px; border-top:0.33px solid var(--line-soft); display:flex; justify-content:space-between; align-items:center; gap:12px; font-family:'Hanken Grotesk', sans-serif; font-size:11.5px; color:var(--label); flex-shrink:0; flex-wrap:wrap; }
-  .modal-analysis .aanalysisfooter .abrand{ font-weight:600; color:var(--label); font-family:'Hanken Grotesk', sans-serif; letter-spacing:0; }
 
   /* ---- Key factors — 5-card summary row ---- */
   .akeycards{ display:grid; grid-template-columns:repeat(5, 1fr); gap:12px; margin-bottom:24px; }
@@ -5321,9 +5319,6 @@ window.EntryListsTab = (function(){
         <div class="asection" data-asection="marketedge" id="aSectionMarketEdge"></div>
         <div class="asection" data-asection="news" id="aSectionNews"></div>
       </div>
-    </div>
-    <div class="aanalysisfooter">
-      <span>All stats are updated live. Model insights are for informational purposes only.</span>
     </div>
   </div>
 </div>
@@ -12577,34 +12572,20 @@ async function showOverviewMatches(playerKey, year, surface, colPrefix, tier, co
   // or a point log is actually on file. Two ~25-100KB indexes, fetched once per
   // session and shared with the Form tab — the per-row shards stay unfetched
   // until a row is clicked.
-  const [msIdx, pbpIdx] = await Promise.all([loadMatchStatsIndex(), loadPbpIndex()]);
-  if (container.dataset.token !== token) return;   // superseded while the indexes loaded
   const playerName = (_overviewMatch && _overviewMatch[colPrefix]) || '';
+  // TEN-314: every row opens THE match stats sheet (no stats on file = header wired, stats dashed).
   const rows = list.map((mm, i) => {
     const w = mm.won;
     const dateStr = mm.date ? formatShortDate(new Date(mm.date + 'T00:00:00')) : '';
     const meta = [mm.tournament || '', mm.round || ''].filter(Boolean).join(' · ');
-    const ek = String(mm.eventKey || '');
-    const canOpen = !!ek && (msIdx.has(ek) || pbpIdx.has(ek));
-    if (!canOpen){
-      return `<div class="yr-drill-row">
-        <span class="yr-drill-wl ${w ? 'win' : 'loss'}">${w ? 'W' : 'L'}</span>
-        <span class="yr-drill-opp">${escapeHtml(mm.opponent)}</span>
-        ${careerScoreHtml(mm)}
-        <span class="yr-drill-meta">${escapeHtml(meta)}${dateStr ? ' · ' + dateStr : ''}</span>
-      </div>`;
-    }
-    // Suffix must stay `ovw<i>` — toggleFormPanel strips it to derive the accordion
-    // group, so every row in this drill shares one group and opening a second row
-    // closes the first. groupTag makes each drill (year or surface) its own group.
-    const idPrefix = `${groupTag}ovw${i}`;
-    return `<div class="yr-drill-row yr-drill-open" id="formRow-${idPrefix}" onclick="toggleFormPanel('${idPrefix}')">
+    const click = maRowOnclick({ key: playerKey, name: playerName, ek: mm.eventKey != null ? String(mm.eventKey) : null, date: mm.date, opp: mm.opponent });
+    return `<div class="yr-drill-row yr-drill-open"${click}>
       <span class="yr-drill-wl ${w ? 'win' : 'loss'}">${w ? 'W' : 'L'}</span>
       <span class="yr-drill-opp">${escapeHtml(mm.opponent)}</span>
       ${careerScoreHtml(mm)}
       <span class="yr-drill-meta">${escapeHtml(meta)}${dateStr ? ' · ' + dateStr : ''}</span>
-      <span class="yr-drill-chev" id="formChev-${idPrefix}">▸</span>
-    </div>${formPanelHtml(mm, idPrefix, playerKey, playerName)}`;
+      <span class="yr-drill-chev">▸</span>
+    </div>`;
   }).join('');
   container.innerHTML = `<div class="yr-drill-head">${surfLabel} · ${year}${tierLabel} · <b>${won}-${lost}</b>${closeBtn}</div>${rows}`;
   requestAnimationFrame(() => container.scrollIntoView({ behavior: 'smooth', block: 'nearest' }));
@@ -14188,6 +14169,9 @@ function fhEnsureStyles(){
   .fh-elotip:hover .fh-elotip-pop{ opacity:1; visibility:visible; }
   .h2m, .fh-fm{ transition:opacity .12s; }
   #fhSheet .aform-panel-meta{ display:none; }
+  .fh-av{ display:block; width:56px; height:56px; }
+  .fh-av img, .fh-av .avatar-fallback{ width:56px; height:56px; border-radius:50%; border:2px solid var(--line-open); box-sizing:border-box; object-fit:cover;
+    display:flex; align-items:center; justify-content:center; font-weight:800; font-size:17px; color:var(--text-soft); background:var(--surface-inner); }
   #fhSheet .aform-panel{ padding:0; background:transparent; max-width:720px; margin:0 auto; }
   #fhSheet .aform-panel-names{ font-size:11.5px; font-weight:700; margin-bottom:12px; }
   #fhSheet .aform-panel-names span:first-child{ color:var(--periwinkle); } #fhSheet .aform-panel-names span:last-child{ color:var(--text); }
@@ -14941,55 +14925,107 @@ function fhH2hOverall(){
 // MATCH STATS SHEET — header 2a + the sheet body below (fhSheetInit / fhSheetRender).
 // Every clickable match on both tabs opens it.
 // =====================================================================
+// TEN-314 (founder 2026-09-28): EVERY match row, dot and cell on every tab opens the one sheet. Rows that are not
+// Form / H2H / Market edge rows (Overview drill, Tournament editions, Playing-style meetings) register a descriptor
+// here; a click joins the player's career-history row (by event key, else date + opponent) and its closing prices
+// exactly as Market edge does (meRowFromCareer), then opens the sheet. A row the history cannot place still opens,
+// its header from what the row carries and its stat sections dashed.
+const _maRowReg = {}; let _maRowSeq = 0;
+function maRowOnclick(d){ const id = 'mr' + (++_maRowSeq); _maRowReg[id] = d; return ` onclick="event.stopPropagation(); maOpenRowSheet('${id}')"`; }
+// Same player? The meetings shard writes full names ("Karen Khachanov"), career history short ones ("K. Khachanov"):
+// one name key equal to, or ending with, the other (≥ 4 letters) — compound surnames included ("Davidovich Fokina").
+function maSameOpp(a, b){
+  const x = fhNameKey(a), y = fhNameKey(b);
+  if (!x || !y) return false;
+  if (x === y) return true;
+  const [lo, hi] = x.length < y.length ? [x, y] : [y, x];
+  return lo.length >= 4 && hi.endsWith(lo);
+}
+let _maRowReq = 0;
+function maOpenRowSheet(id){
+  const d = _maRowReg[id], m = _aM, req = ++_maRowReq;
+  if (!d || !m) return;
+  const key = d.key != null ? String(d.key) : null;
+  const ch = key == null ? Promise.resolve(null) : Promise.resolve().then(() => loadCareerHistory(key)).catch(() => null);
+  const cl = key == null ? Promise.resolve(null) : Promise.resolve().then(() => fhLoadCloses(key)).catch(() => null);
+  Promise.all([ch, cl]).then(([rows, closes]) => {
+    // the modal was closed or reopened, or a later row click superseded this one: open nothing
+    if (_aM !== m || req !== _maRowReq || !document.getElementById('analysisModal').classList.contains('open')) return;
+    const list = Array.isArray(rows) ? rows : [];
+    const nk = fhNameKey(d.opp);
+    let i = d.ek ? list.findIndex(x => x.eventKey != null && String(x.eventKey) === String(d.ek)) : -1;
+    if (i < 0 && d.date){
+      // date + opponent, accepted only when exactly one history row qualifies (never a guess between two)
+      const hits = list.map((x, k) => (x.date === d.date && maSameOpp(x.opponent, d.opp)) ? k : -1).filter(k => k >= 0);
+      if (hits.length === 1) i = hits[0];
+    }
+    let r;
+    if (i >= 0) r = meRowFromCareer(list[i], closes, key, d.name, i);
+    else { r = Object.assign({ mid: fhSafeId('mr_' + key + '_' + (d.ek || d.date) + '_' + nk), opp: d.opp, oppKey: null, ek: d.ek || null, price: null, oppPrice: null }, d.fallback || {}); fhFinishRow(r); }
+    fhStateFor(m).sheetMap[r.mid] = { r, aName: d.name, aKey: key, bName: r.opp, bKey: r.oppKey };
+    fhOpenSheet(r.mid);
+  });
+}
+// The sheet's header (DF form.sheet L1659–1686, header 2a): meta line, avatars 56px with the closing-price badge,
+// names, sets score 40px, set chips, "[Winner] won …" pill. Shared by the pop-up and the Match Stats tab
+// (opts.inline: no ✕, no set chips — README §5.6). D5: ATP photo or monogram inside the design's 2px ring;
+// D4: both players neutral.
+function fhSheetHeadHtml(e, r, opts){
+  const o = opts || {};
+  const last = n => fhSurname(n);
+  const scoreTxt = r.sets ? r.sets.map(x => x[0] + '-' + x[1]).join(' ') : '';
+  const flipTxt = r.sets ? r.sets.map(x => x[1] + '-' + x[0]).join(' ') : '';
+  const retTag = r.ret ? ' ret.' : '';
+  const winLine = r.wo ? (r.won ? last(e.aName) : last(e.bName)) + ' won by walkover'
+    : r.won == null ? '' : (r.won ? last(e.aName) + ' won ' + (scoreTxt || (r.pS + '-' + r.oS)) : last(e.bName) + ' won ' + (flipTxt || (r.oS + '-' + r.pS))) + retTag;
+  const setsKnown = r.pS != null;
+  const aC = !setsKnown ? FH_DASH : (r.won ? '#ebf1f2' : '#6e7a93'), bC = !setsKnown ? FH_DASH : (r.won ? '#6e7a93' : '#ebf1f2');
+  const chips = o.inline ? '' : (r.sets || []).map(x => `<span style="${FH_MONO} font-size:12px; font-weight:700; color:var(--text); background:var(--surface-inner); border:0.33px solid var(--line); border-radius:6px; padding:3px 8px;">${x[0]}-${x[1]}</span>`).join('');
+  const badge = (v, c) => `<span style="position:absolute; left:50%; bottom:-9px; transform:translateX(-50%); ${FH_MONO} font-size:10.5px; font-weight:700; color:${v == null ? FH_DASH : c}; background:var(--surface-inner); border:0.33px solid var(--line); border-radius:999px; padding:1px 7px; white-space:nowrap;">${v == null ? FH_DASHC : v.toFixed(2)}</span>`;
+  const av = (name, key) => `<span class="fh-av">${aAvatarHtml(name, key)}</span>`;
+  const yy = String(r.date || '').slice(2, 4);
+  const meta = [r.tourn, r.surface || FH_DASHC, r.round, r.date ? fhDDMM(r.date) + (yy ? '.' + yy : '') : null].filter(x => x != null && x !== '').join(' · ');
+  const close = o.inline ? '' : `<span class="seg" onclick="fhCloseSheet()" style="background:var(--surface-inner); border:0.33px solid var(--line); border-radius:8px; width:30px; height:30px; color:var(--text-sub); font-size:15px; display:flex; align-items:center; justify-content:center; cursor:pointer; flex:none;">✕</span>`;
+  return `<div style="display:flex; flex-direction:column; gap:18px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:16px;">
+            <span style="display:flex; align-items:baseline; gap:8px;"><span style="${FH_MONO} font-size:11px; letter-spacing:0.06em; color:var(--label);">${fhEsc(meta)}</span>${fhB365Tag(r)}</span>
+            ${close}
+          </div>
+          <div style="display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:20px;">
+            <div style="display:flex; align-items:center; gap:16px; min-width:0;">
+              <div style="position:relative; flex:none;">${av(e.aName, e.aKey)}${badge(r.price, '#ebf1f2')}</div>
+              <span style="font-size:18px; font-weight:800; letter-spacing:-0.015em; color:var(--text);">${fhEsc(e.aName)}</span>
+            </div>
+            <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
+              <span style="${FH_MONO} font-size:40px; font-weight:700; line-height:1; letter-spacing:-0.02em; white-space:nowrap;"><span style="color:${aC};">${setsKnown ? r.pS : FH_DASHC}</span><span style="color:var(--label);"> – </span><span style="color:${bC};">${setsKnown ? r.oS : FH_DASHC}</span></span>
+              ${chips ? `<div style="display:flex; gap:6px;">${chips}</div>` : ''}
+            </div>
+            <div style="display:flex; align-items:center; gap:16px; justify-content:flex-end; min-width:0;">
+              <span style="font-size:18px; font-weight:800; letter-spacing:-0.015em; color:var(--text-soft); text-align:right;">${fhEsc(e.bName)}</span>
+              <div style="position:relative; flex:none;">${av(e.bName, e.bKey)}${badge(r.oppPrice, '#d9dbdf')}</div>
+            </div>
+          </div>
+          ${winLine ? `<div style="display:flex; justify-content:center;"><span style="${FH_MONO} font-size:10px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:var(--text-soft); background:var(--surface-inner); border:0.33px solid var(--line); border-radius:999px; padding:4px 12px;">${fhEsc(winLine)}</span></div>` : ''}
+        </div>`;
+}
 function fhOpenSheet(mid){
   if (!_fh || !_fh.sheetMap[mid]) return;
+  fhEnsureStyles();
   const e = _fh.sheetMap[mid], r = e.r;
   let host = document.getElementById('fhSheet');
   // Mounted inside the modal card so the existing match-detail body (formPanelHtml)
   // picks up its scoped styles (:is(.modal-analysis, …) rules).
   const card = document.querySelector('#analysisModal .modal-analysis') || document.body;
   if (!host || host.parentNode !== card){ if (host) host.remove(); host = document.createElement('div'); host.id = 'fhSheet'; card.appendChild(host); }
-  const last = n => fhSurname(n);
-  const scoreTxt = r.sets ? r.sets.map(x => x[0] + '-' + x[1]).join(' ') : '';
-  const flipTxt = r.sets ? r.sets.map(x => x[1] + '-' + x[0]).join(' ') : '';
-  const retTag = r.ret ? ' ret.' : '';
-  const winLine = r.wo ? (r.won ? last(e.aName) : last(e.bName)) + ' won by walkover'
-    : (r.won ? last(e.aName) + ' won ' + (scoreTxt || (r.pS + '-' + r.oS)) : last(e.bName) + ' won ' + (flipTxt || (r.oS + '-' + r.pS))) + retTag;
-  const setsKnown = r.pS != null;
-  const aC = !setsKnown ? FH_DASH : (r.won ? '#ebf1f2' : '#6e7a93'), bC = !setsKnown ? FH_DASH : (r.won ? '#6e7a93' : '#ebf1f2');
-  const chips = (r.sets || []).map(x => `<span style="${FH_MONO} font-size:12px; font-weight:700; color:var(--text); background:var(--surface-inner); border:0.33px solid var(--line); border-radius:6px; padding:3px 8px;">${x[0]}-${x[1]}</span>`).join('');
-  const badge = (v, c) => `<span style="position:absolute; left:50%; bottom:-9px; transform:translateX(-50%); ${FH_MONO} font-size:10.5px; font-weight:700; color:${v == null ? FH_DASH : c}; background:var(--surface-inner); border:0.33px solid var(--line); border-radius:999px; padding:1px 7px; white-space:nowrap;">${v == null ? FH_DASHC : v.toFixed(2)}</span>`;
-  const yy = String(r.date || '').slice(2, 4);
-  const meta = [r.tourn, r.surface || FH_DASHC, r.round, fhDDMM(r.date) + (yy ? '.' + yy : '')].join(' · ');
   host.innerHTML = `<div style="position:fixed; inset:0; z-index:110; background:var(--backdrop); display:flex; align-items:flex-start; justify-content:center; padding:40px 24px; overflow-y:auto; font-family:'Hanken Grotesk',sans-serif; color:var(--text);">
       <div onclick="fhCloseSheet()" style="position:absolute; inset:0;"></div>
       <div style="position:relative; width:100%; max-width:760px; background:var(--surface); border:0.33px solid var(--seg-active-line); border-radius:14px; padding:22px 24px 26px; display:flex; flex-direction:column; gap:16px;">
-        <div style="display:flex; flex-direction:column; gap:18px;">
-          <div style="display:flex; align-items:center; justify-content:space-between; gap:16px;">
-            <span style="display:flex; align-items:baseline; gap:8px;"><span style="${FH_MONO} font-size:11px; letter-spacing:0.06em; color:var(--label);">${fhEsc(meta)}</span>${fhB365Tag(r)}</span>
-            <span class="seg" onclick="fhCloseSheet()" style="background:var(--surface-inner); border:0.33px solid var(--line); border-radius:8px; width:30px; height:30px; color:var(--text-sub); font-size:15px; display:flex; align-items:center; justify-content:center; cursor:pointer; flex:none;">✕</span>
-          </div>
-          <div style="display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:20px;">
-            <div style="display:flex; align-items:center; gap:16px; min-width:0;">
-              <div style="position:relative; flex:none;"><div style="width:56px; height:56px; border-radius:50%; background:var(--seg-active); border:2px solid var(--periwinkle); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:17px; color:var(--periwinkle);">${fhEsc(fhIni(e.aName))}</div>${badge(r.price, '#ebf1f2')}</div>
-              <span style="font-size:18px; font-weight:800; letter-spacing:-0.015em; color:var(--text);">${fhEsc(e.aName)}</span>
-            </div>
-            <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
-              <span style="${FH_MONO} font-size:40px; font-weight:700; line-height:1; letter-spacing:-0.02em; white-space:nowrap;"><span style="color:${aC};">${setsKnown ? r.pS : FH_DASHC}</span><span style="color:var(--label);"> – </span><span style="color:${bC};">${setsKnown ? r.oS : FH_DASHC}</span></span>
-              <div style="display:flex; gap:6px;">${chips}</div>
-            </div>
-            <div style="display:flex; align-items:center; gap:16px; justify-content:flex-end; min-width:0;">
-              <span style="font-size:18px; font-weight:800; letter-spacing:-0.015em; color:var(--text-soft); text-align:right;">${fhEsc(e.bName)}</span>
-              <div style="position:relative; flex:none;"><div style="width:56px; height:56px; border-radius:50%; background:var(--surface-inner); border:2px solid var(--line); display:flex; align-items:center; justify-content:center; font-weight:800; font-size:17px; color:var(--text-soft);">${fhEsc(fhIni(e.bName))}</div>${badge(r.oppPrice, '#d9dbdf')}</div>
-            </div>
-          </div>
-          <div style="display:flex; justify-content:center;"><span style="${FH_MONO} font-size:10px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:var(--text-soft); background:var(--surface-inner); border:0.33px solid var(--line); border-radius:999px; padding:4px 12px;">${fhEsc(winLine)}</span></div>
-        </div>
+        ${fhSheetHeadHtml(e, r)}
         <div id="fhSheetBody" class="fh-sheet-body" style="display:flex; flex-direction:column; gap:16px;"></div>
       </div>
     </div>`;
   _fh.sheet = mid;
-  fhSheetInit(e, r);
+  fhSheetInit(e, r, 'pop');
 }
 function fhCloseSheet(){ const h = document.getElementById('fhSheet'); if (h) h.innerHTML = ''; if (_fh){ _fh.sheet = null; _fh.sheetBody = null; } }
 // =====================================================================
@@ -15154,18 +15190,53 @@ function fhSheetRowHtml(s){
 // this match ("on file", not "recorded": a row not yet fetched reads the same).
 // Never filled from another match or source.
 const FH_NO_MATCH_STATS_MSG = 'No serve or return stats on file for this match.';
+// TEN-314 (founder 2026-09-28): a match without a box score (pre-2024, ITF, a set the feed has no rows for) still
+// draws the sheet — every stat a dash — with this note under it, 10.5px faint. Never another match's figures.
+const MA_SHEET_NA = 'Match stats not available for this match';
+const maSheetNaNote = () => `<span class="ma-sheet-na" style="font-size:10.5px; color:var(--text-faint); text-align:center;">${MA_SHEET_NA}</span>`;
+function fhSheetSectionHead(t){ return `<span style="display:block; text-align:center; ${FH_MONO} font-size:9.5px; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; color:var(--label); background:var(--surface-inner); border-radius:8px; padding:8px 0;">${fhEsc(t)}</span>`; }
 function fhSheetStatsHtml(joined, emptyMsg){
-  if (!joined) return `<div style="min-height:72px; display:flex; align-items:center; justify-content:center; text-align:center; font-size:12.5px; color:var(--label);">${fhEsc(emptyMsg)}</div>`;
-  const M = fhSheetModel(joined);
-  const head = t => `<span style="display:block; text-align:center; ${FH_MONO} font-size:9.5px; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; color:var(--label); background:var(--surface-inner); border-radius:8px; padding:8px 0;">${fhEsc(t)}</span>`;
+  const M = fhSheetModel(joined || null);
+  const head = fhSheetSectionHead;
   const dr = `<div style="display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:14px; background:var(--surface-inner); border:0.33px solid var(--line); border-radius:10px; padding:16px 20px;">
       <span title="${fhEsc(M.dr[0].title)}" style="${FH_MONO} font-size:24px; font-weight:700; color:${M.dr[0].txt === FH_DASHC ? FH_DASH : '#6a9af8'};">${M.dr[0].txt}</span>
       <span style="${FH_MONO} font-size:10px; font-weight:700; letter-spacing:0.16em; text-transform:uppercase; color:var(--text-sub);">Dominance ratio</span>
       <span title="${fhEsc(M.dr[1].title)}" style="${FH_MONO} font-size:24px; font-weight:700; color:${M.dr[1].txt === FH_DASHC ? FH_DASH : '#ebf1f2'}; text-align:right;">${M.dr[1].txt}</span>
     </div>`;
   const secs = M.sections.map(sec => `<div style="display:flex; flex-direction:column; gap:13px;">${head(sec.title)}${sec.rows.map(fhSheetRowHtml).join('')}</div>`).join('');
-  const note = M.partial ? `<span style="font-size:10.5px; color:var(--label);">Winners, errors and net points: only where the feed sends them for the match.</span>` : '';
+  const note = !joined ? maSheetNaNote()
+    : M.partial ? `<span style="font-size:10.5px; color:var(--label);">Winners, errors and net points: only where the feed sends them for the match.</span>` : '';
   return dr + secs + note;
+}
+// Key stats (DF mkSheet `keySection`, the scope the sheet opens on): Dominance ratio, Serve rating, Return rating,
+// Winners / total points, Unforced errors / total points, Winners / unforced errors — each ratio with its counts.
+// Values come from the same model as the Match scope (fhSheetModel), so the two can never disagree. Bars follow the
+// 2026-09-24 bar rule: ratings on their scale; the two per-point shares as a rate; DR and W/UE number only.
+function fhSheetKeyModel(joined){
+  const M = fhSheetModel(joined || null);
+  const find = (sec, label) => M.sections[sec].rows.find(r => r.label === label);
+  const sr = find(0, 'Serve rating'), rr = find(1, 'Return rating');
+  const win = find(2, 'Winners'), ue = find(2, 'Unforced errors'), tpw = find(2, 'Total points won');
+  // total points played in the match = either side's Total points won denominator
+  const tp = [tpw.a, tpw.b].map(c => c.total).find(t => t > 0) || null;
+  const share = c => (c.v == null || !tp) ? { v: null, txt: FH_DASHC, sub: '', title: tp ? c.title : 'Needs the match\'s total points' }
+    : { v: c.v / tp * 100, txt: (c.v / tp).toFixed(2), sub: '(' + c.v + '/' + tp + ')', title: '' };
+  const wue = (w, u) => (w.v == null || u.v == null || !u.v) ? { v: null, txt: FH_DASHC, sub: '', title: u.v === 0 ? 'No unforced errors' : (w.title || u.title) }
+    : { v: w.v / u.v, txt: (w.v / u.v).toFixed(2), sub: '(' + w.v + '/' + u.v + ')', title: '' };
+  const drc = d => d.txt === FH_DASHC ? { v: null, txt: FH_DASHC, sub: '', title: d.title } : { v: Number(d.txt), txt: d.txt, sub: '', title: d.title };
+  const row = (label, a, b, kind, k) => ({ label, a, b, kind, k });
+  return [
+    row('Dominance ratio', drc(M.dr[0]), drc(M.dr[1]), 'ratio'),
+    row('Serve rating', sr.a, sr.b, 'rating', FH_RATING_SCALE.serve),
+    row('Return rating', rr.a, rr.b, 'rating', FH_RATING_SCALE.return),
+    row('Winners / total points', share(win.a), share(win.b), 'pct'),
+    row('Unforced errors / total points', share(ue.a), share(ue.b), 'pct'),
+    row('Winners / unforced errors', wue(win.a, ue.a), wue(win.b, ue.b), 'ratio'),
+  ];
+}
+function fhSheetKeyHtml(joined){
+  return `<div style="display:flex; flex-direction:column; gap:13px;">${fhSheetSectionHead('Key stats')}${fhSheetKeyModel(joined).map(fhSheetRowHtml).join('')}</div>`
+    + (joined ? '' : maSheetNaNote());
 }
 // The sheet's one segmented control, and the scope it shows. Set tabs are always drawn
 // (one per set in the score); a set with no per-set stats is disabled with a tooltip.
@@ -15179,16 +15250,22 @@ function fhSheetSeg(tabs){
 // tooltip when that set has no per-set stats), Point by point (disabled without a log).
 function fhSheetTabs(S){
   const nSets = Math.max(S.nSets, 0);
-  const tabs = [{ label: 'Match', on: S.scope === 'match', onclick: "fhSheetScope('match')" }];
+  const sl = S.slot || 'pop';
+  const tabs = [{ label: 'Match', on: S.scope === 'match', onclick: `fhSheetScope('match','${sl}')` },
+    { label: 'Key stats', on: S.scope === 'key', onclick: `fhSheetScope('key','${sl}')` }];
   for (let i = 1; i <= nSets; i++){
     const ok = !!(S.sets && S.sets[i]);
-    tabs.push({ label: 'Set ' + i, on: S.scope === i, disabled: !ok, title: S.setsLoading ? 'Loading per-set stats…' : 'No per-set stats for this match', onclick: `fhSheetScope(${i})` });
+    tabs.push({ label: 'Set ' + i, on: S.scope === i, disabled: !ok, title: S.setsLoading ? 'Loading per-set stats…' : 'No per-set stats for this match', onclick: `fhSheetScope(${i},'${sl}')` });
   }
-  tabs.push({ label: 'Point by point', on: S.scope === 'pbp', disabled: !S.hasPbp, title: S.pbpLoading ? 'Loading…' : 'No point-by-point log for this match', onclick: "fhSheetScope('pbp')" });
+  tabs.push({ label: 'Point by point', on: S.scope === 'pbp', disabled: !S.hasPbp, title: S.pbpLoading ? 'Loading…' : 'No point-by-point log for this match', onclick: `fhSheetScope('pbp','${sl}')` });
   return tabs;
 }
-function fhSheetRender(){
-  const S = _fh && _fh.sheetBody, host = document.getElementById('fhSheetBody');
+// TEN-314: ONE match stats sheet (merged fhOpenSheet + the Match Stats tab's buildMatchStatsSheet). Two slots can be
+// live at once: 'pop' = the overlay any match row / dot / cell opens, 'tab' = the Match Stats tab's inline copy.
+let _maMsSheet = null;                       // the 'tab' slot's state ('pop' lives on _fh.sheetBody)
+function fhSheetBodyOf(slot){ return slot === 'tab' ? _maMsSheet : (_fh && _fh.sheetBody); }
+function fhSheetRender(slot){
+  const S = fhSheetBodyOf(slot), host = document.getElementById(slot === 'tab' ? 'maMsSheetBody' : 'fhSheetBody');
   if (!S || !host) return;
   const tabs = fhSheetTabs(S);
   let body;
@@ -15198,12 +15275,12 @@ function fhSheetRender(){
     else {
       const setNos = sh.sets.map(s => Number(s.set)).filter(Number.isFinite).sort((a, b) => a - b);
       const cur = setNos.includes(S.pbpSet) ? S.pbpSet : setNos[0];
-      body = (setNos.length > 1 ? fhSheetSeg(setNos.map(n => ({ label: 'Set ' + n, on: n === cur, onclick: `fhSheetPbpSet(${n})` }))) : '')
+      body = (setNos.length > 1 ? fhSheetSeg(setNos.map(n => ({ label: 'Set ' + n, on: n === cur, onclick: `fhSheetPbpSet(${n},'${S.slot || 'pop'}')` }))) : '')
         + `<div class="fh-pbp">${buildPointByPointHtml({ p1: sh.p1, p2: sh.p2 }, sh, cur)}</div>`;
     }
-  } else if (S.scope === 'match'){
+  } else if (S.scope === 'match' || S.scope === 'key'){
     body = S.matchLoading ? `<div class="acomingsoon" style="padding:10px 0 2px;">Loading match stats…</div>`
-      : fhSheetStatsHtml(S.match, FH_NO_MATCH_STATS_MSG);
+      : S.scope === 'key' ? fhSheetKeyHtml(S.match) : fhSheetStatsHtml(S.match, FH_NO_MATCH_STATS_MSG);
   } else {
     body = fhSheetStatsHtml(S.sets && S.sets[S.scope], 'No per-set stats for this match.');
   }
@@ -15244,13 +15321,13 @@ function fhPbpAIsFirst(sh, S){
   return null;
 }
 function fhPbpForA(sh, S){ return fhPbpAIsFirst(sh, S) === false ? fhPbpFlip(sh) : sh; }
-function fhSheetScope(sc){ const S = _fh && _fh.sheetBody; if (!S) return; S.scope = sc; if (sc === 'pbp') fhSheetLoadPbp(); fhSheetRender(); }
-function fhSheetPbpSet(n){ const S = _fh && _fh.sheetBody; if (!S) return; S.pbpSet = n; fhSheetRender(); }
-function fhSheetLoadPbp(){
-  const S = _fh.sheetBody;
+function fhSheetScope(sc, slot){ const S = fhSheetBodyOf(slot); if (!S) return; S.scope = sc; if (sc === 'pbp') fhSheetLoadPbp(slot); fhSheetRender(slot); }
+function fhSheetPbpSet(n, slot){ const S = fhSheetBodyOf(slot); if (!S) return; S.pbpSet = n; fhSheetRender(slot); }
+function fhSheetLoadPbp(slot){
+  const S = fhSheetBodyOf(slot);
   if (S.pbp || S.pbpReq || !S.ek) return;
   S.pbpReq = true;
-  loadPbpShard(S.ek).then(sh => { if (_fh && _fh.sheetBody === S){ S.pbp = sh && sh.sets && sh.sets.length ? sh : null; if (!S.pbp){ S.hasPbp = false; S.scope = 'match'; } fhSheetRender(); } });
+  loadPbpShard(S.ek).then(sh => { if (fhSheetBodyOf(slot) === S){ S.pbp = sh && sh.sets && sh.sets.length ? sh : null; if (!S.pbp){ S.hasPbp = false; S.scope = 'key'; } fhSheetRender(slot); } });
 }
 // The whole-match box score for a sheet row, oriented to player A: the Form row's inline
 // copy; else (H2H) either board player's form-shard row for the same eventKey; else the
@@ -15266,32 +15343,35 @@ function fhSheetInlineStats(e, r){
   }
   return null;
 }
-function fhSheetInit(e, r){
+function fhSheetInit(e, r, slot){
+  const sl = slot === 'tab' ? 'tab' : 'pop';
   const ek = String(r.ek || (r.formRow && r.formRow.eventKey) || '');
-  const inline = fhSheetInlineStats(e, r);
-  const S = { ek, aKey: e.aKey, aName: e.aName, bName: e.bName, setScores: r.sets || null,
-    scope: 'match', nSets: (r.sets || []).length, match: inline, matchLoading: !inline && !!ek,
-    sets: null, setsLoading: !!ek, hasPbp: false, pbpLoading: !!ek, pbp: null, pbpSet: 1 };
-  _fh.sheetBody = S;
-  fhSheetRender();
-  if (!ek){ S.matchLoading = S.setsLoading = S.pbpLoading = false; fhSheetRender(); return; }
+  // r.inline (the Match Stats tab): the board match's own box score, already oriented to player A.
+  const inline = (r.inline && r.inline.match) || fhSheetInlineStats(e, r);
+  const S = { slot: sl, ek, aKey: e.aKey, aName: e.aName, bName: e.bName, setScores: r.sets || null,
+    scope: 'key', nSets: (r.sets || []).length, match: inline, matchLoading: !inline && !!ek,
+    sets: (r.inline && r.inline.sets) || null, setsLoading: !(r.inline && r.inline.sets) && !!ek, hasPbp: false, pbpLoading: !!ek, pbp: null, pbpSet: 1 };
+  if (sl === 'tab') _maMsSheet = S; else _fh.sheetBody = S;
+  const live = () => fhSheetBodyOf(sl) === S;
+  fhSheetRender(sl);
+  if (!ek){ S.matchLoading = S.setsLoading = S.pbpLoading = false; fhSheetRender(sl); return; }
   Promise.all([loadPbpIndex(), loadMatchStatsIndex(), loadSetStatsIndex()]).then(([pbpIdx, msIdx, ssIdx]) => {
-    if (!_fh || _fh.sheetBody !== S) return;
+    if (!live()) return;
     S.hasPbp = pbpIdx.has(ek); S.pbpLoading = false;
-    const need = (!S.match && msIdx.has(ek)) || ssIdx.has(ek);
+    const need = (!S.match && msIdx.has(ek)) || (!S.sets && ssIdx.has(ek));
     const done = shard => {
-      if (!_fh || _fh.sheetBody !== S) return;
+      if (!live()) return;
       if (!S.match && shard) S.match = matchStatsFromShard(shard, e.aKey);
       if (shard && shard.p1Key != null) S.feedP1Key = String(shard.p1Key);
       if (shard && shard.p2Key != null) S.feedP2Key = String(shard.p2Key);
       S.matchLoading = false;
-      if (shard && shard.sets){
+      if (!S.sets && shard && shard.sets){
         S.sets = {};
         Object.keys(shard.sets).forEach(k => { const n = Number(k); const j = setStatsForFormRow(shard, e.aKey, n); if (Number.isFinite(n) && j) S.sets[n] = j; });
         if (!S.nSets) S.nSets = Math.max(0, ...Object.keys(S.sets).map(Number));
       }
       S.setsLoading = false;
-      fhSheetRender();
+      fhSheetRender(sl);
     };
     if (need) loadSetStatsShard(ek).then(done); else done(null);
   });
@@ -15670,15 +15750,6 @@ function buildMarketEdgeSection(m){
 }
 
 // ---- §5 / §6 pop-ups (mounted on the modal card, like the stats sheet) ----
-function meSheetOk(r){
-  const I = _me && _me.idx, ek = r.ek != null ? String(r.ek) : '';
-  return !!(I && ek && (I.ms.has(ek) || I.ss.has(ek) || I.pbp.has(ek)));
-}
-function meEnsureIdx(){
-  if (!_me || _me.idx || _me.idxP) return;
-  const E = _me;
-  E.idxP = Promise.all([loadMatchStatsIndex(), loadSetStatsIndex(), loadPbpIndex()]).then(([ms, ss, pbp]) => { E.idx = { ms, ss, pbp }; if (_me === E) meRenderPop(); });
-}
 function meOpenRow(mid){
   const E = _me; if (!E || !E.rowMap || !E.rowMap[mid]) return;
   const x = E.rowMap[mid];
@@ -15699,9 +15770,11 @@ const meStatBox = (l, v, c, big) => `<div style="background:${ME_C.inner}; borde
 function meBookNote(rows){ const nb = rows.filter(r => r.book === 'B').length; return rows.length ? (nb ? `Pinnacle, Bet365 where missing (${nb})` : 'Pinnacle') : ''; }
 function meRowsHtml(list, cols, cells, E, name, key){
   return list.map(r => {
-    const ok = meSheetOk(r), sel = E.selMid === r.mid;
-    if (ok) E.rowMap[r.mid] = { r, name, key };
-    return `<div style="padding:0 22px;"><div class="${ok ? 'seg me-row' : ''}" data-me-row="${r.mid}"${ok ? ` onclick="meOpenRow('${r.mid}')"` : ''} title="${ok ? '' : 'No stats on file for this match'}" style="display:grid; grid-template-columns:${cols}; gap:0 8px; align-items:center; padding:6px; border-radius:6px; background:${sel ? ME_C.sel : 'transparent'}; cursor:${ok ? 'pointer' : 'default'}; border-bottom:${ME_C.hw} solid ${ME_C.lineSoft};">${cells(r)}</div></div>`;
+    // TEN-314 (founder 2026-09-28): every row opens the sheet; a match with no stats on file opens it too,
+    // header wired and the stat sections dashed.
+    const sel = E.selMid === r.mid;
+    E.rowMap[r.mid] = { r, name, key };
+    return `<div style="padding:0 22px;"><div class="seg me-row" data-me-row="${r.mid}" onclick="meOpenRow('${r.mid}')" style="display:grid; grid-template-columns:${cols}; gap:0 8px; align-items:center; padding:6px; border-radius:6px; background:${sel ? ME_C.sel : 'transparent'}; cursor:pointer; border-bottom:${ME_C.hw} solid ${ME_C.lineSoft};">${cells(r)}</div></div>`;
   }).join('');
 }
 function meTableHead(cols, labels){
@@ -15762,7 +15835,6 @@ function meRenderPop(){
   if (!host || host.parentNode !== card){ if (host) host.remove(); host = document.createElement('div'); host.id = 'mePop'; card.appendChild(host); }
   const MM = (E.S.meBand || E.S.meLine) ? meModels(E) : null;
   E.rowMap = {};
-  if (MM) meEnsureIdx();
   host.innerHTML = !MM ? '' : E.S.meBand ? meBandPopHtml(E, MM) : meLinePopHtml(E, MM);
 }
 // Escape closes the pop-up. Bubble phase: while the stats sheet is open its capture-phase handler
@@ -15799,42 +15871,12 @@ function atournMatchRowHtml(x, opts){
       <span class="opp ${x.won ? 'win' : 'loss'}">${x.won ? 'def.' : 'Lost to'} ${x.opponent || 'Unknown'}</span>
       <span class="rd">${h2hRoundLabel(x.round) || ''}</span>
       <span class="sc">${x.result || '—'}</span>`;
-  if (!opts || !opts.canOpen) {
-    return `<div class="atourn-matchrow">${cells}</div>`;
-  }
-  const idPrefix = opts.idPrefix;
-  // formPanelHtml is written against a form-row shape. The tournament name is
-  // implied by the tab (every row is this event), so it's passed in rather than
-  // carried per row. Orientation is the column's own player — matchStatsFromShard
-  // returns null off-side rather than guessing, so a wrong key shows nothing
-  // instead of silently swapping the two players' numbers.
-  const asFormRow = {
-    date: x.date,
-    tournament: opts.tournament,
-    round: x.round,
-    result: x.result,
-    won: !!x.won,
-    opponent: x.opponent,
-    eventKey: x.eventKey,
-  };
-  return `
-    <div class="atourn-matchrow atourn-open" id="formRow-${idPrefix}" onclick="toggleTournamentMatch('${idPrefix}')">
-      ${cells}
-      <span class="atourn-chev" id="formChev-${idPrefix}">▸</span>
-    </div>
-    ${formPanelHtml(asFormRow, idPrefix, opts.playerKey, opts.playerName)}
-  `;
-}
-// Task 11 asks for the modal to scroll the expanded content into view rather
-// than leaving the user to find it. Only on open — collapsing a row shouldn't
-// move the page under them.
-function toggleTournamentMatch(idPrefix){
-  toggleFormPanel(idPrefix);
-  const wrap = document.getElementById('formPanelWrap-' + idPrefix);
-  if (!wrap || !wrap.classList.contains('open')) return;
-  setTimeout(() => {
-    try { wrap.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } catch (e) { /* older engines */ }
-  }, 180);   // after the panel's own expand transition, or it scrolls to the collapsed height
+  if (!opts) return `<div class="atourn-matchrow">${cells}</div>`;
+  // TEN-314: every row opens THE match stats sheet. The history row carries no set scores, so the sheet joins the
+  // player's career history by event key; failing that, its header shows the set count this row holds.
+  const click = maRowOnclick({ key: opts.playerKey, name: opts.playerName, ek: x.eventKey != null ? String(x.eventKey) : null, date: x.date, opp: x.opponent,
+    fallback: { date: x.date, tourn: opts.tournament, round: h2hRoundLabel(x.round) || '', won: !!x.won, result: x.result, sets: null } });
+  return `<div class="atourn-matchrow atourn-open"${click}>${cells}<span class="atourn-chev">▸</span></div>`;
 }
 function toggleTournamentYear(id){
   const el = document.getElementById(id);
@@ -15969,10 +16011,9 @@ function upgradeTournamentRows(m, token, tourName){
     { colPrefix: 'p2', history: m.p2TournamentHistory, playerKey: m.p2Key, playerName: m.p2 },
   ].filter(c => c.history && Array.isArray(c.history.years));
   if (!cols.length) return;
-  Promise.all([loadMatchStatsIndex(), loadPbpIndex()]).then(([msIdx, pbpIdx]) => {
+  Promise.resolve().then(() => {
     const grid = document.getElementById('atournGrid');
     if (!grid || grid.dataset.token !== String(token)) return;
-    let n = 0;
     for (const c of cols) {
       for (const y of c.history.years) {
         const matches = Array.isArray(y.matches) ? y.matches : [];
@@ -15980,14 +16021,7 @@ function upgradeTournamentRows(m, token, tourName){
         const list = document.getElementById(`atournMatches-${c.colPrefix}-${y.year}`);
         if (!list) continue;
         list.innerHTML = matches.map(x => {
-          const ek = String(x.eventKey || '');
-          const canOpen = !!ek && (msIdx.has(ek) || pbpIdx.has(ek));
-          // Suffix must stay `tourn<n>` — toggleFormPanel strips it to derive the
-          // accordion group, so both columns share ONE group and opening a second
-          // match anywhere in this tab closes the first.
           return atournMatchRowHtml(x, {
-            canOpen,
-            idPrefix: `atourntourn${n++}`,
             playerKey: c.playerKey,
             playerName: c.playerName,
             tournament: tourName,
@@ -16472,35 +16506,43 @@ function buildMsScoreHead(m){
     </div>
   `;
 }
+// The board match as a sheet entry: header from the match's own data (names, keys, sets, winner, closing price
+// as the card shows it), its inline box score oriented p1 → A, and the event key for the per-set / point-by-point
+// shards. Oriented exactly like the header (p1 = A).
+function maMsSheetEntry(m){
+  const fs = m.finalScore || m.partialScore || null;
+  const sets = fs && Array.isArray(fs.sets) ? fs.sets.map(x => [Number(x.p1), Number(x.p2)]) : null;
+  const pS = fs && fs.p1Sets != null ? fs.p1Sets : null, oS = fs && fs.p2Sets != null ? fs.p2Sets : null;
+  const won = m.finalScore ? (m.finalScore.winner === 'p1' ? true : m.finalScore.winner === 'p2' ? false : null) : null;
+  const j = x => (x && (x.p1 || x.p2)) ? { own: x.p1 || {}, opp: x.p2 || {} } : null;
+  const setJ = m.setStats ? Object.fromEntries(Object.keys(m.setStats).map(k => [Number(k), j(m.setStats[k])]).filter(x => Number.isFinite(x[0]) && x[1])) : null;
+  const close = w => { const v = typeof _mcCloseOf === 'function' ? Number(_mcCloseOf(m, w)) : NaN; return v > 1 ? v : null; };
+  return { e: { aName: m.p1, aKey: m.p1Key, bName: m.p2, bKey: m.p2Key },
+    r: { ek: String(eventKeyOfMatch(m) || ''), sets, pS, oS, won, ret: !!m.retired, wo: !!m.walkover, price: close('p1'), oppPrice: close('p2'),
+      tourn: m.tour, surface: m.surface, round: h2hRoundLabel(m.tournamentRound), date: m.date,
+      inline: { match: j(m.matchStats), sets: setJ && Object.keys(setJ).length ? setJ : null } } };
+}
+function maMsSheetHtml(m){
+  const { e, r } = maMsSheetEntry(m);
+  return `<div class="ma-ms-sheet" style="max-width:760px; margin:0 auto; background:var(--surface); border:0.33px solid var(--line); border-radius:14px; padding:22px 24px 26px; display:flex; flex-direction:column; gap:16px; font-family:'Hanken Grotesk',sans-serif; color:var(--text); line-height:normal;">
+      ${fhSheetHeadHtml(e, r, { inline: true })}
+      <div id="maMsSheetBody" class="fh-sheet-body" style="display:flex; flex-direction:column; gap:16px;"></div>
+    </div>`;
+}
+function maMsSheetInit(m){
+  if (!document.getElementById('maMsSheetBody')) return;
+  fhEnsureStyles();
+  const { e, r } = maMsSheetEntry(m);
+  fhSheetInit(e, r, 'tab');
+}
 function buildMatchStatsSection(m){
   // An interrupted match has no result but does have a point log up to the
   // moment play stopped, so it gets the sub-tab too.
   const hasPointLog = (!!m.finalScore || !!m.interrupted) && !m.live;
-  const stats = buildMatchStatsSheet(m, null);
-  if (!hasPointLog) return stats;   // no point-by-point log for upcoming/live matches
-  // Level 1 = Stats · Point by point (Stats default); Level 2 = the set-scope row,
-  // which belongs to Stats only (Point by point paints its own per-set row). All of
-  // it lives inside one 720px content cap so the stat sheet and the point log share
-  // the same centred width. The old "Summary" view was dropped: its distinguishing
-  // content was a MATCH TIME row, and the api-tennis feed carries no duration field
-  // (event_time is the match START only) — with nothing real to show it added no
-  // information beyond the score already on the modal header.
-  return `
-    ${buildMsScoreHead(m)}
-    <div class="ms-cap">
-      <div class="ms-subtabs-wrap">
-        <div class="ms-subtabs" role="tablist">
-          <button class="ms-subtab active" data-mstab="stats" onclick="switchMatchStatsTab(this,'stats')">Stats</button>
-          <button class="ms-subtab" data-mstab="pbp" onclick="switchMatchStatsTab(this,'pbp')">Point by point</button>
-        </div>
-      </div>
-      <div class="ms-pane active" id="msStatsPane">
-        ${buildSetSelectorHtml(msheetSetNumbers(m), 'switchStatsSet', 'Match')}
-        <div id="msStatsSheet">${stats}</div>
-      </div>
-      <div class="ms-pane" id="msPbpPane"></div>
-    </div>
-  `;
+  // TEN-314: a finished (or suspended) match shows THE match stats sheet, inline (README §5.6: no overlay, no ✕,
+  // no set chips, 9% white outline, max 760 centred, opens on Key stats). maMsSheetInit fills it once painted.
+  if (hasPointLog) return maMsSheetHtml(m);
+  return buildMatchStatsSheet(m, null);   // upcoming / live: no finished box score to show
 }
 // Shared set-scope pill row for both panes: an optional "<allLabel>" pill plus
 // one per set that actually has data. Rendered only when there are 2+ sets to
@@ -18674,12 +18716,19 @@ function psGroupMeetings(rows){
 // One career-meeting row — coloured square marker, separate sets/game columns, both-side
 // closing odds (subject price then opponent, dash on miss). Rows are static: the meeting
 // shard carries no api-tennis eventKey, so there is no box-score panel to open.
-function styleVsArchetypeRowHtml(r){
+function styleVsArchetypeRowHtml(r, side){
   const won = !!r.won;
   const sets = psSetsScore(r.result);
   const setsDisp = (sets.self + sets.opp) === 0 ? '—' : `${sets.self} - ${sets.opp}`;   // walkover/no-score → dash, not "0 - 0"
   const od = v => (v == null ? '—' : Number(v).toFixed(2));
-  return `<div class="psvr">
+  // TEN-314: the row opens THE match stats sheet (joined to the player's career history by date + opponent — the
+  // meetings shard has no event key); the shard's own games and prices head it when no history row matches.
+  const M = _aStyleMatch || _aM, key = M && side ? M[side + 'Key'] : null, name = M && side ? M[side] : '';
+  const gs = String(r.result || '').trim().split(/\s+/).map(t => /^(\d+)-(\d+)/.exec(t)).filter(Boolean).map(x => [+x[1], +x[2]]);
+  const click = side ? maRowOnclick({ key, name, ek: null, date: r.date, opp: r.opponent,
+    fallback: { date: r.date, tourn: r.tournament, surface: r.surface, round: psRoundAbbr(r.round), won, sets: gs.length ? gs : null,
+      price: r.oddsSelf != null ? Number(r.oddsSelf) : null, oppPrice: r.oddsOpp != null ? Number(r.oddsOpp) : null } }) : '';
+  return `<div class="psvr"${click}${side ? ' style="cursor:pointer;"' : ''}>
       <span class="psvr-date">${psEsc(psFmtMeetDate(r.date))}</span>
       <span class="psvr-sq ${won ? 'psvsq-win' : 'psvsq-loss'}" title="${won ? 'win' : 'loss'}"></span>
       <span class="psvr-opp">${psEsc(psShortName(r.opponent))}</span>
@@ -18712,7 +18761,7 @@ function psvListHtml(side){
     const rowsHtml = [];
     for (const r of g.rows){
       if (!open && shown >= PSV_ROW_CAP) break;
-      rowsHtml.push(styleVsArchetypeRowHtml(r));
+      rowsHtml.push(styleVsArchetypeRowHtml(r, side));
       shown++;
     }
     if (rowsHtml.length){
@@ -19212,7 +19261,7 @@ const A_TAB_BUILD = {
     return ensureFormRows(m).then(() => { if (aBuilt(m, 'form')) aPaint('aSectionForm', buildFormSection(m)); });
   },
   h2h(m){ aPaint('aSectionH2H', buildH2HSection(m)); },
-  matchstats(m){ aPaint('aSectionMatchStats', buildMatchStatsSection(m)); },
+  matchstats(m){ aPaint('aSectionMatchStats', buildMatchStatsSection(m)); maMsSheetInit(m); },
   progression(m){ aPaint('aSectionProgression', buildMatchProgressionSection(m)); },
   overview(m){ aPaint('aSectionOverview', buildYearlyTables(m)); },
   tournament(m){ aPaint('aSectionTournament', buildTournamentSection(m)); },
@@ -19334,6 +19383,8 @@ function openAnalysisModal(matchId, tab){
 
   // Per-match state every tab reads; nothing is built or fetched here.
   _aM = m; _aBuilt.clear();
+  fhCloseSheet(); _maMsSheet = null;                        // no sheet carries over from the previous match
+  for (const k in _maRowReg) delete _maRowReg[k];
   document.querySelectorAll('.modal-analysis .asection').forEach(s => { s.innerHTML = ''; });
   _aStyleMatch = m; _aPbpMatch = m; _aFormMatch = m; _aWxMatch = m; _aNewsMatch = m; _aNewsFilter = 'all';
   _me = null;
@@ -19364,6 +19415,8 @@ function printAnalysisReport(){
   const modal = document.querySelector('.modal-analysis');
   // TEN-314: the tabs build lazily — build (and load) every unopened one first; the same 8 s cap covers them.
   const built = typeof aBuildForReport === 'function' ? aBuildForReport() : null;
+  // The Match Stats sheet prints its full box score (the Match scope), not the Key stats it opens on.
+  if (typeof _maMsSheet !== 'undefined' && _maMsSheet){ _maMsSheet.scope = 'match'; fhSheetRender('tab'); }
   const wx = Promise.all([typeof openWeatherTab === 'function' ? openWeatherTab() : null, built]);
   return Promise.race([Promise.resolve(wx), new Promise(r => setTimeout(r, 8000))]).catch(() => {}).then(() => {
     // never print "Loading forecast…": a Weather section still not loaded prints as the unavailable state (dashes)
@@ -19376,7 +19429,7 @@ function printAnalysisReport(){
   });
 }
 
-function closeAnalysisModal(){ document.getElementById('analysisModal').classList.remove('open'); }
+function closeAnalysisModal(){ document.getElementById('analysisModal').classList.remove('open'); if (typeof fhCloseSheet === 'function') fhCloseSheet(); }
 function setActiveButton(groupEl, clickedBtn){
   groupEl.querySelectorAll('button').forEach(b => b.classList.remove('active'));
   clickedBtn.classList.add('active');
