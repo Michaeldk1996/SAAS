@@ -43,7 +43,6 @@ Where this file conflicts with `modal-analysis.md` (TEN-312, 2026-09-28), that f
 - **Retirements count as matches (founder ruling 2026-08-04, restated TEN-312 N2 2026-09-28).** An
   **in-match `Retired`** (he quit mid-match) is still a **loss** for the retiree and a win for the opponent,
   marked "ret."; its unfinished set is excluded from set tallies, deciding sets and games/sets lines (H2H
-  rule e, `modal-form-h2h.md`). How retirements settle in **price** figures is an open founder question
-  (`modal-analysis.md`).
+  rule e, `modal-form-h2h.md`). In **price** figures a retirement settles at the listed price everywhere (ruling A, 2026-09-28; see `modal-analysis.md` "Retirements in price figures").md`).
   **Test:** a `Retired` loss still adds 1 to lost; a `Walk Over` fixture adds 0 to won and 0 to lost for
   both players, on every record surface.

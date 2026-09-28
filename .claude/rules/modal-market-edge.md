@@ -70,9 +70,13 @@ Applies to the TEN-310 block in `bsp-consult-dashboard.html` (`me*` functions, `
   renders. **Test:** `test-ten310-market-edge.mjs` finds no "sample data" in the tab or its pop-ups.
 - **Today's price = the modal header's price** (`aHeaderOdds`, best across books), not the Form/H2H
   Pinnacle-else-Bet365 current price. Exception inline: the Form/H2H tabs keep their own today rule.
-- **Retirements are not settled** in the Match winner view (bands, chart): under ruling B its rows are the profile's,
-  which drop every Tennis-Data row not "Completed" (the price's own archive settles). Derived lines also drop what the
-  feed flags retired. Walkovers never count.
+- **Retirements settle at the listed price** (TEN-312 retirement ruling A, founder 2026-09-28; supersedes "Retirements
+  are not settled"): an in-match retirement is a priced match — a win at the winner's close, a loss at the retiree's —
+  in the Match winner view (bands, Won, Yield, 1u, legend n, profit chart), the band pop-up, the player-profile Market
+  edge and the Tournament Backing figure. The builder (`build-market-edge.js`) keeps "Retired" Tennis-Data rows.
+  Derived lines keep their own set-score rule: a retired match's unfinished set is never a completed set, so it stays out
+  of the games/sets lines. Walkovers never count. **Test:** a fixture with one retired win at 1.50 adds +0.50u and 1 to
+  the band's n; Sinner's career priced n rises from the pre-ruling 414 (measured 427 under ruling A on 2026-09-28).
 - **One basis for both Market edge surfaces** — the player-profile Market edge (`build-market-edge.js`,
   `market-edge/{key}.json`) uses this tab's rules, through `market-edge-core.js`: Pinnacle close, else Bet365
   close in the tab's order (R8 + card ruling, 2026-09-28: **our captured Pinnacle → Tennis-Data Pinnacle** →

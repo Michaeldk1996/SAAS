@@ -91,6 +91,34 @@ this file wins.
 - **N10:** the Key factors "Dimension edge" card uses the **5-axis DNA** data. The MCP / Sackmann radar
   (CC BY-NC-SA) is not used on any paid surface. **Test:** the modal never fetches `style-radar.json`.
 
+## Retirements in price figures (founder 2026-09-28, TEN-312 option A)
+- **An in-match retirement settles at the listed closing price, everywhere**: Form (flat 1u, v market, medians), H2H
+  (price range), Market edge (tab and profile), Tournament Backing and "vs market". One treatment for the same match on
+  every surface. W–L already counts it (N2). Evidence: document `retirement-options` (1,237 of 42,858 priced ATP
+  matches, 2.9%). **Test:** the same retired match contributes the same P&L on Form, Market edge and Backing.
+
+## Court-speed label — one scheme site-wide (N4, founder 2026-09-28)
+- The label is the **pipeline 3-band on the 0–100 index**: `courtSpeedCategory` (`bsp-pipeline.js`) — ≤ 43 Slow,
+  ≤ 68 Medium, else Fast. The player-profile quintile bands (`SPEED_BANDS`, grass forced Very fast) and the design's
+  raw-AS cut-offs (< 0.90 / < 1.15) are retired. Evidence: document `n4-court-speed` (64 venues).
+  **Test:** for every venue, the modal Tournament card, Key factors, Weather pace tile, Tournament Report and player
+  profile print the same label.
+
+## One formula per stat name (founder 2026-09-28)
+- **Serve rating** = 1st-in % + 1st-won % + 2nd-won % + service-games-held % + aces − double faults (per match: the
+  counts; per season: per-match averages). **Return rating** = 1st-return-won % + 2nd-return-won % + return-games-won %
+  + BP-converted %. These are the house formulas (`fhSheetModel`, dash) and apply on **every** surface, including the
+  Tournament Report (`tourxDerivedMetrics`, today 4-term serve), the Live tab (today 3-term return, aces/DF as % of
+  service points, a 10-point warm-up floor and missing-as-0 — a missing component now shows "—") and the **Edge model**
+  value layers, whose return divisor is **re-fitted** to the new scale (report the re-fit before it goes live).
+  **Test:** one shared helper computes each rating; a grep finds no second implementation.
+- **Under pressure** has **one builder**: the `surface-ratings.js` formula with its floors (50 BP faced, 50 BP chances,
+  6 tiebreaks, 5 deciders; 3-of-4 → mean × 4; Challenger fold-in × 0.9), used by **every display** — the Edge Ratings
+  table, Database boards, H2H rating row and all three style radars (DNA). The DNA builder's floor-less version and any
+  display of `clutch-rating.js` are retired for display. **Test:** Medvedev Clay last-52 reads the same value on the
+  Ratings board and the Playing style radar.
+- Evidence: document `formula-unification` (every place that changes, before/after on 3 players).
+
 ## Design-file bugs not to port
 - Market edge band `bandOf` returns −1 above 15 in the design (DF L3422) and crashes; the live band ladder is
   open-ended above 6.00 and stays so. **Test:** a 21.00 price lands in the 6.00+ band.
@@ -101,9 +129,7 @@ this file wins.
   a set count, a rate, a hot line or a price population. It may appear as a row only where the design
   lists results, marked "w/o", and it is excluded from every count on that row's page.
 - **An in-match retirement is a match** for W–L: a win for the opponent, a loss for the retiree, marked "ret."; its
-  unfinished set is excluded from set tallies, deciding sets and games/sets lines (H2H rule e). How retirements
-  settle in **price** figures is an open founder question (TEN-312) — today Form/H2H settle them, Market edge
-  excludes them.
+  unfinished set is excluded from set tallies, deciding sets and games/sets lines (H2H rule e). In **price** figures a retirement settles at the listed price everywhere (ruling A, 2026-09-28; see `modal-analysis.md` "Retirements in price figures").
 - This **supersedes the TEN-8 "W/O received = win" records rule everywhere**, the player profile included
   (founder 2026-09-28: one spine, both surfaces agree). `careerByYear`, career-history-derived W–L and
   tournament-history W–L all follow it. **Test:** a fixture player with one W/O given, one W/O received and one
