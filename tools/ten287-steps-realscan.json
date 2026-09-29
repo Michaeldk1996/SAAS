@@ -1,22 +1,10 @@
 [
  {
-  "name": "t287_count",
-  "sql": "select ten287_bot.load_ticks('Superbet', '2026-09-12T00:00:00Z', '2026-09-29T06:02:00Z'); select count(*) n, count(*) filter (where side='home') home, min(at) min_at, max(at) max_at from pg_temp.t287"
+  "name": "cuts",
+  "sql": "select event_id, cut_at from drops_live.cuts_287('2026-09-23T00:00:00Z') order by event_id"
  },
  {
-  "name": "t287_ev",
-  "sql": "select ten287_bot.load_ticks('Superbet', '2026-09-12T00:00:00Z', '2026-09-29T06:02:00Z'); select side, price, at, known_at from pg_temp.t287 where event_id = 15060042968 and at < '2026-09-27T07:20:00Z' order by side, at"
- },
- {
-  "name": "raw_ev",
-  "sql": "select t.id, t.back_home, t.back_away, t.book_updated_at, t.seen_at, t.event_status, t.src from ten287_rec.ticks t where t.book='Superbet' and t.event_id = 15060042968 and t.seen_at < '2026-09-27T07:20:00Z' order by t.book_updated_at, t.seen_at"
- },
- {
-  "name": "raw_count",
-  "sql": "select count(*) n from ten287_rec.ticks t join ten287_rec.events e using (event_id) where t.book='Superbet' and e.tier is not null and coalesce(t.event_status, e.status) = 'pending' and t.book_updated_at is not null and t.book_updated_at between '2026-09-12T00:00:00Z' and '2026-09-29T06:02:00Z' and t.seen_at <= '2026-09-29T06:02:00Z'"
- },
- {
-  "name": "fn_src",
-  "sql": "select pg_get_functiondef('ten287_bot.load_ticks(text,timestamptz,timestamptz)'::regprocedure) def"
+  "name": "scan_src",
+  "sql": "select pg_get_functiondef('ten287_bot.scan(text,timestamptz,timestamptz,numeric,text,text,interval,numeric,interval)'::regprocedure) def"
  }
 ]
