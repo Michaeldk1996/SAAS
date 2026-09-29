@@ -14433,7 +14433,8 @@ function fhFormPlayer(m, idx, st){
     r.oppElo = fhEloAt(m._fhElo, r.opp, r.date, eloOwners);
     // A career-history row carries no opponent key; the closes shard has resolved most of its opponents, so a
     // keyless row matches by name against every archive row (still exactly one candidate within ±1 day, same result).
-    const c = fhCloseFor(clRows, r.date, r.opp, r.won, r.oppKey, r.ek) || (r.oppKey == null && clNoKey ? fhCloseFor(clNoKey, r.date, r.opp, r.won, null, r.ek) : null);
+    // One call either way, so the ruled order (Pcap → Ptd → Btd → Bcap) decides between every candidate.
+    const c = r.oppKey == null && clNoKey ? fhCloseFor(clNoKey, r.date, r.opp, r.won, null, r.ek) : fhCloseFor(clRows, r.date, r.opp, r.won, r.oppKey, r.ek);
     if (c){ r.price = c.price; r.oppPrice = c.oppPrice; r.book = c.book; r.src = c.src; }
     const d = fhDayNum(r.date); r.ago = d == null ? null : ref - d;
     return r;

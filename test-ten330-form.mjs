@@ -162,6 +162,11 @@ test('a career-history row (no opponent key) is priced by name against a keyed a
   const P = player(match({ _fhFormRows: [rows, []], _fhFormSrc: ['career', null], _fhCloses: [keyed, null] }));
   assert.equal(P.win.find(r => r.opp === 'B. Beta').price, 1.4, 'matched by name, same day, same result');
   assert.equal(P.win.find(r => r.opp === 'D. Delta').price, null, 'the archive row disagrees on the result → unpriced, never guessed');
+  // review 2026-09-29: a Bet365-only capture on the row's eventKey must not beat the Pinnacle Tennis-Data close.
+  const withCap = { rows: keyed.rows, cap: [{ date: '2026-07-18', oppKey: '77', P: null, B: [1.5, 2.7], ek: '1' }] };
+  const P2 = player(match({ _fhFormRows: [rows, []], _fhFormSrc: ['career', null], _fhCloses: [withCap, null] }));
+  const b = P2.win.find(r => r.opp === 'B. Beta');
+  assert.deepEqual([b.price, b.book, b.src], [1.4, 'P', 'td'], 'Pinnacle Tennis-Data before Bet365 captured (FH_BOOK_ORDER)');
 });
 
 // Mutation: the settlement note dropped from the v-market pill or the Flat 1u value (TEN-325, founder 70fb039e).
