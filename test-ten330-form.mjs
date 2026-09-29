@@ -37,9 +37,9 @@ const FNS = ['escapeHtml', 'fhEsc', 'fhSafeId', 'ppCleanTournamentName', 'fhTour
   'fhOdd', 'fhSigned', 'fhSourceNote', 'fhSrcTitle', 'fhScoreText', 'fhEligible', 'fhIneligibleWhy', 'fhScoreLines', 'fhHotLineRank', 'fhFamOf',
   'fhFormLineDefs', 'surnameFirstName', 'fhOppFmt', 'psShortName', 'fhSurname', 'fhTournCode', 'fhHotLinesTable', 'fhFormRowsFromCareer',
   'fhFormPlayer', 'fhFormSetScores', 'fhFormTipScore', 'fhFormRowData', 'maMatchRowsHtml', 'maTipHtml', 'fhFormColumnHtml', 'fhFormListHtml', 'fhFormHotHtml',
-  'fhStateFor', 'fhNameLink', 'fhFullName', 'fhEloText', 'fhRetNote', 'fhFormDataRows'];
+  'fhStateFor', 'fhNameLink', 'fhFullName', 'fhEloText', 'fhEloSlot', 'fhS', 'fhRetNote', 'fhFormDataRows'];
 const CONSTS = ['FH_SLAMS', 'FH_BOOK_ORDER', 'FH_BOOK', 'FH_SRC', 'FH_DASHC', 'FH_MONO', 'FH_THIN', 'FH_AC', 'FH_SURF', 'FH_ELO_MAX_AGE_DAYS',
-  'FH_HOT_MIN_ELIGIBLE', 'FH_HOT_FAM', 'FH_TCODE', 'FH_MONS', 'FH_FORM_ROW_CAP', 'MA_GREY', 'MA_SMALL_NOTE', 'MA_ROW_COLS'];
+  'FH_HOT_MIN_ELIGIBLE', 'FH_HOT_FAM', 'FH_TCODE', 'FH_MONS', 'FH_FORM_ROW_CAP', 'MA_GREY', 'MA_SMALL_NOTE', 'MA_ROW_COLS', 'MA_ROW_COLS_SB'];
 globalThis.MarketEdgeCore = (await import('node:module')).createRequire(import.meta.url)(join(HERE, 'market-edge-core.js'));
 const S = new Function(`
   let _fh = null; const playerProfiles = {};
@@ -127,18 +127,20 @@ test('a player without a form shard reads career-history, capped at the form-row
   assert.ok(P.win.every(r => !r.wo) && P.shown.length === 39, 'the walkover row is dropped; 39 played matches on record');
 });
 
-// Mutation: the group header meta dropped, or the tooltip/rows back to the double-space score join.
-test('the file\'s rows: "surface · W–L" group header, grid 48/12/1.1fr/36/40/1.3fr/46/46, set scores "6-4, 6-3"', () => {
+// Mutation: the group header meta dropped, or the tooltip/rows back to the double-space score join, or Form back on the
+// file's 8-track grid (`scoresBelow: true` dropped).
+test('the file\'s rows: "surface · W–L" group header, set scores "6-4, 6-3" under the name (TEN-350: 48/12/1fr/36/40/46/46)', () => {
   const P = player(match());
   const L = S.fhFormListHtml(P);
   assert.match(text(L), /Test Open Hard · 2–0/);
   assert.match(text(L), /Other Cup Clay · 0–1/);
-  const G = 'grid-template-columns:48px 12px minmax(0,1.1fr) 36px 40px minmax(0,1.3fr) 46px 46px';
-  assert.ok(S.maMatchRowsHtml([{ title: 't', rows: [S.fhFormRowData(P.win[0], P)] }], { inset: 8 }).includes(G), 'every row on the file grid');
+  // TEN-350 (founder bbe5c072 "names are never cut"): two lists side by side leave the file's Opponent track ~59 px, so
+  // the set scores move under the name and their track goes.
+  const G = 'grid-template-columns:48px 12px minmax(0,1fr) 36px 40px 46px 46px';
   assert.equal(L.split(G).length - 1, 1 + P.win.length, 'the sticky header + every listed row');
-  assert.match(text(L), /Date Opponent Rd Sets Set scores H A/);
-  assert.match(text(L), /18\.07\. Beta B\. R16 2 - 0 6-4, 6-3 1\.50 2\.60/, 'the name is never cut by a badge (the Elo is its hover text)');
-  assert.match(L, /class="fh-opp" data-elo="" title="Beta B\. · Elo — at the time of the match: Elo history not loaded"/);
+  assert.match(text(L), /Date Opponent Rd Sets H A/);
+  assert.match(text(L), /18\.07\. Beta B\. — 6-4, 6-3 R16 2 - 0 1\.50 2\.60/, 'name, Elo slot (a dash: no history loaded), the scores under them');
+  assert.match(L, /<span class="fh-opp" title="Beta B\.">Beta B\.<\/span> <span class="ma-row-elo" data-elo="" title="Elo — at the time of the match: Elo history not loaded"/);
 });
 
 // Mutation: the hot-line header back to one ctx string, or the Short chip shown again (DF L4773 short:false).
