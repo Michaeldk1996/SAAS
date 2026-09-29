@@ -130,6 +130,16 @@ test('price header: today\'s Bet365 price is named only where it is drawn (the r
   m._fhCloses[0].rows.push({ date: d(1), opp: 'Alcaraz C.', won: true, P: [1.9, 1.95], B: null, oppKey: '2' });
   assert.ok(build(m).includes('Pinnacle, Bet365 where missing (today)'), 'control: n = 2 draws Today, so its book is named');
 });
+// Mutations 'today: the dash loses its reason', 'text: the section inherits the 12a ink'
+test('Today with no Pinnacle / Bet365 price: a dash with its reason; the section\'s own ink is the design token', () => {
+  const m = nMeet(3, () => true);
+  m._fhCloses = [{ rows: [0, 1].map(i => ({ date: d(i), opp: 'Alcaraz C.', won: true, P: [1.8 + i / 10, 2.0], B: null, oppKey: '2' })), cap: [] }, null];
+  m.bookNow = { Betano: { p1: 1.12, p2: 6.2 } }; m.bestOdds = { p1: { price: 1.12 }, p2: { price: 6.2 } };
+  const h = build(m);
+  assert.match(h, /Today <span class="fh-today-dash" title="No Pinnacle or Bet365 price for today on record[^"]*"[^>]*>—</, 'Betano / bestOdds never stand in');
+  assert.ok(!h.includes('Today 1.12'));
+  assert.match(block(), /#aSectionH2H\{ color:var\(--ma-s-e7e9ee, var\(--text\)\); \}/, 'uncoloured text takes the design ink token (re-themes Night / Day)');
+});
 // Mutations 'hot lines: appear under 3', 'hot lines: bar ignores the gate', 'hot lines: column dots coloured by surface'
 test('hot lines: ≥ 3 meetings to appear; a 3-of-3 bar draws no fill; neutral column-head dots', () => {
   assert.ok(text(build(nMeet(2, () => true))).includes('Not enough meetings to rank lines (n=2)'));

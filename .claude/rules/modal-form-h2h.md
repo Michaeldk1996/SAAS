@@ -83,12 +83,14 @@ Applies to the TEN-263 block in `bsp-consult-dashboard.html` (`fh*` functions), 
 - **A walkover** is listed (marked "w/o") and enters no count, record, tally, line or price (N2); the list header says
   "k w/o not counted"; a surface whose only meetings are walkovers still opens (count 0). Every meeting a walkover → the
   card (0–0) and the list only (DESIGN GAP G11). A retirement's set scores end " ret.".
-- **Price range header:** today's book is counted only where today's price is drawn (the range marker, n ≥ 2).
+- **Price range header:** today's book is counted only where today's price is drawn (the range marker, n ≥ 2). No
+  Pinnacle / Bet365 price for today → "Today —" with the reason on hover (`FH_TODAY_NONE`); `m.bestOdds` / other books never
+  stand in (measured 2026-09-29: 1 of 26 upcoming board matches carried a Pinnacle now-price).
 - **An empty drawer** (no tiebreak / no decider in these meetings) opens with the file's empty-line pattern and says why
   (DESIGN GAP G10 — the file opens nothing).
 - **Parked (design file v ruling 2026-09-24):** the file's row has no Elo slot; the opponent's Elo (D-12 basis) is the
   name's `data-elo` + hover text, as on Form, until the founder rules on a visible slot.
-- **Test:** `test-ten331-h2h.mjs` (+ `tools/test-ten331-mutants.js`, 25 mutants). Pixel/structure harness (manual):
+- **Test:** `test-ten331-h2h.mjs` (+ `tools/test-ten331-mutants.js`, 27 mutants). Pixel/structure harness (manual):
   `tools/ten331-h2h-capture.mjs` (`--theme source --ruled-off`) + `tools/ten312-pixel-diff.py --regions` +
   `tools/ten330-form-structure.py`.
 

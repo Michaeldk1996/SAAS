@@ -14379,6 +14379,8 @@ function fhEnsureStyles(){
   .h2m, .fh-fm{ transition:opacity .12s; }
   /* DF font stack: glyphs Hanken lacks (▾ →) fall back as in the file, not to system-ui */
   #aSectionForm, #aSectionH2H{ font-family:'Hanken Grotesk',sans-serif; }
+  /* TEN-331: the H2H text the file leaves uncoloured takes the file's default ink token, so it re-themes */
+  #aSectionH2H{ color:var(--ma-s-e7e9ee, var(--text)); }
   #fhSheet .aform-panel-meta{ display:none; }
   .fh-av{ display:block; width:56px; height:56px; }
   .fh-av img, .fh-av .avatar-fallback{ width:56px; height:56px; border-radius:50%; border:2px solid var(--line-open); box-sizing:border-box; object-fit:cover;
@@ -15126,7 +15128,7 @@ function fhBuildH2H(m){
       const has = s.today != null;
       const p = has ? Math.max(0, Math.min(100, (s.today - s.loV) / ((s.hiV - s.loV) || 1) * 100)) : 0;
       inner += `<div style="position:relative; height:40px; margin:0 6px;">
-          <span style="position:absolute; top:0; left:${p.toFixed(1)}%; transform:${has ? tx(p) : 'translateX(-6px)'}; ${FH_MONO} font-size:10.5px; font-weight:700; color:${fhS('e7e9ee', '--text')}; white-space:nowrap;">Today ${has ? s.today.toFixed(2) : `<span style="color:${t4};">${FH_DASHC}</span>`}</span>
+          <span style="position:absolute; top:0; left:${p.toFixed(1)}%; transform:${has ? tx(p) : 'translateX(-6px)'}; ${FH_MONO} font-size:10.5px; font-weight:700; color:${fhS('e7e9ee', '--text')}; white-space:nowrap;">Today ${has ? s.today.toFixed(2) : `<span class="fh-today-dash" title="${FH_TODAY_NONE}" style="color:${t4};">${FH_DASHC}</span>`}</span>
           <span style="position:absolute; top:24px; left:0; right:0; height:6px; border-radius:3px; background:${s.rangeBg};"></span>
           ${has ? `<span style="position:absolute; top:21px; left:${p.toFixed(1)}%; width:12px; height:12px; margin-left:-6px; border-radius:50%; background:var(--ma-s-e7e9ee, var(--fh-today)); box-shadow:0 0 0 3px var(--ma-s-06070a, var(--fh-ring));"></span>` : ''}
         </div>`;
@@ -15199,6 +15201,8 @@ function fhBuildH2H(m){
   // state; the record card (0–0, "No meetings") and the list show, the tally / price / line sections have nothing to show.
   return wrap(onlyWo ? `${top}${recCard}${listHtml}` : `${top}${recCard}${statsHtml}${statPanel}${priceHtml}${hotHtml}${listHtml}`);
 }
+// Today's price on the range: Pinnacle, else Bet365 (one book, FH_BOOK_ORDER) — never another book's price.
+const FH_TODAY_NONE = 'No Pinnacle or Bet365 price for today on record (one book per match: another book\'s price is never shown here)';
 // Set scores as the H2H list prints them (DF L4479: "6-7(4), 7-6(5)"); a retirement adds " ret." (N2), a walkover
 // reads "w/o" and is counted nowhere.
 function fhH2hSetScores(r){

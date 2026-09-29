@@ -16,6 +16,8 @@ const MUTANTS = [
   ['N2: an all-walkover H2H lists nothing', "  if (!FL.length){\n    return wrap(", "  if (!F.length){\n    return wrap("],
   ['N2: a w/o-only surface greyed out', "on: SURF === t[0], off: !listed, onclick:", "on: SURF === t[0], off: n === 0, onclick:"],
   ['price: header counts a today price it does not draw', "fhPriceRangeSource(PR, nP > 1 ? today : null)", "fhPriceRangeSource(PR, today)"],
+  ['today: the dash loses its reason', '<span class="fh-today-dash" title="${FH_TODAY_NONE}"', '<span class="fh-today-dash"'],
+  ['text: the section inherits the 12a ink', "  #aSectionH2H{ color:var(--ma-s-e7e9ee, var(--text)); }", ""],
   ['hot lines: a line with fewer than 3 eligible meetings appears', "  }).filter(x => x.n >= FH_HOT_MIN_ELIGIBLE).sort(fhHotLineRank);", "  }).filter(x => x.n > 0).sort(fhHotLineRank);"],
   ['hot lines: bar ignores the gate', "(bar => `<span data-ma-gate=\"${bar.mode}\"", "(bar => (bar = { w: x.c / x.n * 100, color: 'var(--fh-fill)', mode: 'full' }, `<span data-ma-gate=\"${bar.mode}\""],
   ['hot lines: column dots coloured by surface', "border-radius:50%; background:${FH_SURF[r.surface] || 'var(--fh-muted)'};", "border-radius:50%; background:${r.surface === 'Clay' ? 'var(--ma-amber)' : 'var(--ma-link)'};"],
