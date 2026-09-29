@@ -232,6 +232,7 @@
   /* README §3 maps a value by the ROLE it plays: the same source alpha drawn as a border or as a fill gets a variant. */
   --ma-s-5b9bff-220-line:rgba(157,179,242,0.30); /* src rgba(91,155,255,0.22) as a selected BORDER → §3 open/selected outline */
   --ma-s-ffffff-060-fill:#20222E;           /* src rgba(255,255,255,0.06) as a hover FILL → §3 hover fill */
+  --ma-s-ffffff-070-fill:#20222E;           /* src rgba(255,255,255,0.07) as a FILL (Progression's leading heat cell, TEN-339) → §3 hover fill */
   --ma-s-ffffff-050-fill:#181922;           /* src rgba(255,255,255,0.05) as a FILL (sheet ✕, pill, bar track) → §3 inner box */
 
   /* ---- the site's 12a names, re-pointed inside the scope (every var(--x) the modal already uses re-themes) ---- */
@@ -261,12 +262,12 @@
 .ma-theme[data-ma-theme="day"]{
   --ma-page:#1E202B; --ma-card:#181922; --ma-inner:#1C1E28; --ma-raised:#20222E; --ma-hover:#262836; --ma-sel:#292B3A;
   --ma-glow:radial-gradient(ellipse 1100px 420px at 720px -60px, rgba(52,70,170,0.16) 0%, transparent 100%);
-  --ma-s-ffffff-060-fill:#262836; --ma-s-ffffff-050-fill:#1C1E28; --ma-s-06070a:#1E202B; --ma-s-090d15:#1D202C; --ma-s-0a0d13:#1E202A; --ma-s-0a0d14:#1E202B; --ma-s-0b0f18:#1B1F2A; --ma-s-0c0e16:#1C1E28; --ma-s-0d111b:#171A24; --ma-s-0e1019:#181922; --ma-s-0f1526:#1C2131; --ma-s-10121b:#181922; --ma-s-10162b:#1D2236; --ma-s-11141f:#262836; --ma-s-11151f:#20222E; --ma-s-11161f:#262A36; --ma-s-131623:#20222E; --ma-s-161a28:#232633; --ma-s-5b9bff-120:#292B3A; --ma-s-5b9bff-140:#292B3A; --ma-s-5b9bff-150:#292B3A; --ma-s-5b9bff-160:#292B3A; --ma-s-5b9bff-180:#292B3A; --ma-s-5b9bff-200:#292B3A; --ma-s-5b9bff-220:#292B3A; --ma-s-ffffff-040:#262836;
+  --ma-s-ffffff-060-fill:#262836; --ma-s-ffffff-070-fill:#262836; --ma-s-ffffff-050-fill:#1C1E28; --ma-s-06070a:#1E202B; --ma-s-090d15:#1D202C; --ma-s-0a0d13:#1E202A; --ma-s-0a0d14:#1E202B; --ma-s-0b0f18:#1B1F2A; --ma-s-0c0e16:#1C1E28; --ma-s-0d111b:#171A24; --ma-s-0e1019:#181922; --ma-s-0f1526:#1C2131; --ma-s-10121b:#181922; --ma-s-10162b:#1D2236; --ma-s-11141f:#262836; --ma-s-11151f:#20222E; --ma-s-11161f:#262A36; --ma-s-131623:#20222E; --ma-s-161a28:#232633; --ma-s-5b9bff-120:#292B3A; --ma-s-5b9bff-140:#292B3A; --ma-s-5b9bff-150:#292B3A; --ma-s-5b9bff-160:#292B3A; --ma-s-5b9bff-180:#292B3A; --ma-s-5b9bff-200:#292B3A; --ma-s-5b9bff-220:#292B3A; --ma-s-ffffff-040:#262836;
 }
 @media (prefers-color-scheme: light){
   .ma-theme[data-ma-theme="auto"]{
     --ma-page:#1E202B; --ma-card:#181922; --ma-inner:#1C1E28; --ma-raised:#20222E; --ma-hover:#262836; --ma-sel:#292B3A;
     --ma-glow:radial-gradient(ellipse 1100px 420px at 720px -60px, rgba(52,70,170,0.16) 0%, transparent 100%);
-    --ma-s-ffffff-060-fill:#262836; --ma-s-ffffff-050-fill:#1C1E28; --ma-s-06070a:#1E202B; --ma-s-090d15:#1D202C; --ma-s-0a0d13:#1E202A; --ma-s-0a0d14:#1E202B; --ma-s-0b0f18:#1B1F2A; --ma-s-0c0e16:#1C1E28; --ma-s-0d111b:#171A24; --ma-s-0e1019:#181922; --ma-s-0f1526:#1C2131; --ma-s-10121b:#181922; --ma-s-10162b:#1D2236; --ma-s-11141f:#262836; --ma-s-11151f:#20222E; --ma-s-11161f:#262A36; --ma-s-131623:#20222E; --ma-s-161a28:#232633; --ma-s-5b9bff-120:#292B3A; --ma-s-5b9bff-140:#292B3A; --ma-s-5b9bff-150:#292B3A; --ma-s-5b9bff-160:#292B3A; --ma-s-5b9bff-180:#292B3A; --ma-s-5b9bff-200:#292B3A; --ma-s-5b9bff-220:#292B3A; --ma-s-ffffff-040:#262836;
+    --ma-s-ffffff-060-fill:#262836; --ma-s-ffffff-070-fill:#262836; --ma-s-ffffff-050-fill:#1C1E28; --ma-s-06070a:#1E202B; --ma-s-090d15:#1D202C; --ma-s-0a0d13:#1E202A; --ma-s-0a0d14:#1E202B; --ma-s-0b0f18:#1B1F2A; --ma-s-0c0e16:#1C1E28; --ma-s-0d111b:#171A24; --ma-s-0e1019:#181922; --ma-s-0f1526:#1C2131; --ma-s-10121b:#181922; --ma-s-10162b:#1D2236; --ma-s-11141f:#262836; --ma-s-11151f:#20222E; --ma-s-11161f:#262A36; --ma-s-131623:#20222E; --ma-s-161a28:#232633; --ma-s-5b9bff-120:#292B3A; --ma-s-5b9bff-140:#292B3A; --ma-s-5b9bff-150:#292B3A; --ma-s-5b9bff-160:#292B3A; --ma-s-5b9bff-180:#292B3A; --ma-s-5b9bff-200:#292B3A; --ma-s-5b9bff-220:#292B3A; --ma-s-ffffff-040:#262836;
   }
 }

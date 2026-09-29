@@ -1306,6 +1306,10 @@
   #aSectionNews .anews-row:hover .anews-caret{ color:var(--text) !important; }
   #aSectionNews .seg{ cursor:pointer; transition:background .14s ease, color .14s ease, border-color .14s ease; }
   #aSectionNews .anews-viewall:hover{ color:var(--ma-link-hover) !important; }   /* beats the inline colour, as style-hover does */
+  /* Progression tab (TEN-339): the file's .seg hover rule and its style-hover values (DF L807 "All metrics", L825 heat cell). */
+  #aSectionProgression .seg{ cursor:pointer; transition:background .14s ease, color .14s ease, border-color .14s ease; }
+  #aSectionProgression .pg-hcell:hover{ filter:brightness(1.35); }
+  #aSectionProgression .pg-met-reset:hover{ color:var(--ma-s-cfd6e6, var(--text)) !important; }
   .modal-analysis .asection.active{ display:block; }
   /* ---- Odds tab (Design #16 — honest reduced: current prices only, no per-book history in feed) ---- */
   /* TEN-303 Odds tab (handoff 15): the hover colours live in the design-verbatim-analysis style block. */
@@ -1825,70 +1829,6 @@
   :is(.modal-analysis,.pp-formsurface) .pbp-tag.lost{ color:var(--negative); background:color-mix(in srgb, var(--fh-neg) 15%, transparent); border:1px solid color-mix(in srgb, var(--fh-neg) 30%, transparent); }
   :is(.modal-analysis,.pp-formsurface) .pbp-tag.sp{ color:var(--text); background:var(--surface-inner); border:var(--ma-hw,0.33px) solid var(--line); }
   :is(.modal-analysis,.pp-formsurface) .pbp-tag.mp{ color:var(--positive); background:color-mix(in srgb, var(--fh-pos) 16%, transparent); border:1px solid color-mix(in srgb, var(--fh-pos) 40%, transparent); }
-  .modal-analysis .tprogress-title{ font-family:'Hanken Grotesk', sans-serif; font-size:18px; font-weight:800; color:var(--text); display:flex; align-items:center; margin-bottom:14px; }
-  .modal-analysis .tprogress-title .tour{ color:var(--text-faint); font-weight:600; }
-  .modal-analysis .tprogress-legend{ display:flex; flex-wrap:wrap; align-items:center; gap:18px; margin:0 0 16px; font-family:'Hanken Grotesk', sans-serif; }
-  .modal-analysis .tprogress-legend .item{ display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text-dim); }
-  .modal-analysis .tprogress-legend .dot{ width:9px; height:9px; border-radius:50%; flex-shrink:0; }
-  .modal-analysis .tprogress-legend .dash{ width:16px; height:0; border-top:2px dashed var(--text-faint); flex-shrink:0; }
-  .modal-analysis .tprogress-legend .note{ font-size:11px; color:var(--text-faint); line-height:1.4; padding-left:14px; border-left:var(--ma-hw,0.33px) solid var(--border); max-width:360px; }
-  .modal-analysis .tprogress-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:14px; }
-  .modal-analysis .tprogress-card{ border:var(--ma-hw,0.33px) solid var(--border); border-radius:16px; background:var(--surface); padding:16px; }
-  .modal-analysis .tprogress-card .tphead{ display:flex; flex-wrap:wrap; align-items:flex-start; gap:10px; row-gap:6px; }
-  .modal-analysis .tprogress-card .tptitle{ font-family:'Hanken Grotesk', sans-serif; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.09em; color:var(--text-dim); white-space:nowrap; }
-  .modal-analysis .tprogress-card .tpreadouts{ display:flex; gap:16px; flex-shrink:0; margin-left:auto; }
-  .modal-analysis .tprogress-card .tpreadout{ text-align:right; }
-  .modal-analysis .tprogress-card .tpreadout .val{ font-family:'IBM Plex Mono', monospace; font-size:19px; font-weight:600; line-height:1.2; }
-  .modal-analysis .tprogress-card .tpreadout .lbl{ font-family:'Hanken Grotesk', sans-serif; font-size:9px; color:var(--text-faint); letter-spacing:0.06em; margin-top:2px; }
-  .modal-analysis .tprogress-card .tpplot{ margin-top:12px; position:relative; height:196px; border:var(--ma-hw,0.33px) solid var(--border); border-radius:12px; background:var(--ma-inner); padding:10px 8px 4px; box-sizing:border-box; }
-  .modal-analysis .tprogress-card .tpplot svg{ width:100%; height:100%; display:block; overflow:visible; }
-  .modal-analysis .tprogress-card .tpvlabel{ position:absolute; transform:translate(-50%,-50%); font-family:'IBM Plex Mono', monospace; font-size:10.5px; font-weight:600; color:var(--text); padding:2px 5px; border-radius:6px; white-space:nowrap; pointer-events:none; }
-  .modal-analysis .tprogress-card .tpavgtag{ position:absolute; transform:translate(-50%,-50%); font-family:'IBM Plex Mono', monospace; font-size:9.5px; color:var(--text-sub); padding:2px 8px; border-radius:20px; border:var(--ma-hw,0.33px) dashed var(--line-open); background:var(--ma-inner); white-space:nowrap; pointer-events:none; }
-  .modal-analysis .tprogress-card .tpround{ position:absolute; bottom:2px; transform:translateX(-50%); font-family:'IBM Plex Mono', monospace; font-size:10.5px; color:var(--text-faint); pointer-events:none; }
-  .modal-analysis .tprogress-card .tpbye{ position:absolute; transform:translate(-50%,-50%); font-family:'IBM Plex Mono', monospace; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:0.08em; padding:3px 9px; border-radius:7px; border:1.5px solid; white-space:nowrap; pointer-events:none; box-shadow:var(--ma-shadow-tip); z-index:6; }
-  .modal-analysis .tprogress-card .tpdot{ position:absolute; width:22px; height:22px; margin:-11px 0 0 -11px; cursor:default; z-index:5; }
-  .modal-analysis .tprogress-card .tpdot:hover{ z-index:25; }
-  .modal-analysis .tprogress-card .tpnode{ position:absolute; left:50%; top:50%; width:11px; height:11px; margin:-5.5px 0 0 -5.5px; border-radius:50%; border:2px solid var(--surface); }
-  .modal-analysis .tprogress-card .tptip{ position:absolute; left:50%; transform:translateX(-50%); background:var(--popup); border:var(--ma-hw,0.33px) solid var(--line); color:var(--text); font-family:'IBM Plex Mono', monospace; font-size:10px; font-weight:600; padding:4px 8px; border-radius:6px; white-space:nowrap; opacity:0; visibility:hidden; pointer-events:none; transition:opacity .12s ease;  }
-  .modal-analysis .tprogress-card .tpdot:hover .tptip{ opacity:1; visibility:visible; }
-  .modal-analysis .progression-summary-text{ margin:12px 0 0; font-family:'Hanken Grotesk', sans-serif; font-size:12.5px; color:var(--text-dim); line-height:1.6; }
-  @media (max-width:820px){ .modal-analysis .tprogress-grid{ grid-template-columns:1fr; } }
-  /* Progression tab, table build (structural rebuild per export). One table:
-     METRIC | TREND (inline sparkline) | one column per round played | AVG | FIELD.
-     Player identity only: A #6aaeff, B #e7e9ee, fixed by name order — no orange,
-     no per-metric chart cards. Directional arrows take the player's identity
-     colour (movement vs the previous round), never a red/green treatment. */
-  .modal-analysis .tpg-legend{ display:flex; align-items:center; flex-wrap:wrap; gap:14px; margin:0 0 14px; font-family:'Hanken Grotesk', sans-serif; font-size:11.5px; color:var(--text-dim); }
-  .modal-analysis .tpg-lg{ display:inline-flex; align-items:center; gap:6px; }
-  .modal-analysis .tpg-swatch{ width:16px; height:2.5px; border-radius:2px; display:inline-block; }
-  .modal-analysis .tpg-ldiv{ width:1px; height:12px; background:var(--border); }
-  .modal-analysis .tpg-lkey{ color:var(--text-faint); gap:4px; }
-  .modal-analysis .tpg-lkey .tpg-ar{ color:var(--text); font-weight:400; margin:0; }
-  .modal-analysis .tpg-tablewrap{ overflow-x:auto; }
-  .modal-analysis .tpg-table{ width:100%; border-collapse:collapse; font-family:'Hanken Grotesk', sans-serif; }
-  .modal-analysis .tpg-h{ text-align:center; padding:0 8px 9px; border-bottom:var(--ma-hw,0.33px) solid var(--border); white-space:nowrap; color:var(--label); }
-  /* METRIC · TREND · FIELD — Hanken caps, muted, wide-tracked (computed-styles: 11px/400, 1.54px, uppercase, rgb(91,104,128)). */
-  .modal-analysis .tpg-hcaps{ font-size:11px; font-weight:400; letter-spacing:1.54px; text-transform:uppercase; }
-  /* R1–R4 heads Mono 9.5px 700 muted; AVG head Mono 9.5px 800 bright — distinct from the caps heads. */
-  .modal-analysis .tpg-hround{ font-family:'IBM Plex Mono', monospace; font-size:9.5px; font-weight:700; }
-  .modal-analysis .tpg-havg{ font-family:'IBM Plex Mono', monospace; font-size:9.5px; font-weight:800; color:var(--text); }
-  .modal-analysis .tpg-hmetric{ text-align:left; }
-  .modal-analysis .tpg-hfield{ text-align:right; border-left:var(--ma-hw,0.33px) solid var(--line-soft); }
-  /* FIELD methodology sentence — beneath the legend, above the table header (computed-styles + export README place the single intended instance here, full content width; the top-right copy is the export artifact). */
-  .modal-analysis .tpg-method{ font-family:'Hanken Grotesk', sans-serif; font-size:12px; line-height:1.5; color:var(--label); margin:0 0 14px; }
-  .modal-analysis .tpg-table td{ padding:9px 8px; border-bottom:var(--ma-hw,0.33px) solid var(--line-soft); vertical-align:middle; }
-  .modal-analysis .tpg-table tbody tr:last-child td{ border-bottom:none; }
-  .modal-analysis .tpg-metric{ text-align:left; min-width:150px; }
-  .modal-analysis .tpg-mlabel{ font-size:12.5px; font-weight:600; color:var(--text); }
-  .modal-analysis .tpg-sub{ font-size:10px; color:var(--text-faint); margin-top:1px; }
-  .modal-analysis .tpg-trend{ width:112px; text-align:center; }
-  .modal-analysis .tpg-trend svg{ display:inline-block; }
-  .modal-analysis .tpg-round{ text-align:center; }
-  .modal-analysis .tpg-v{ font-family:'IBM Plex Mono', monospace; font-size:11px; font-weight:800; line-height:1.6; white-space:nowrap; }
-  .modal-analysis .tpg-ar{ font-weight:800; margin-right:1px; }
-  .modal-analysis .tpg-avg{ text-align:center; }
-  .modal-analysis .tpg-chip{ display:block; width:max-content; margin:2px auto; font-family:'IBM Plex Mono', monospace; font-size:11px; font-weight:700; background:var(--surface-inner); border-radius:6px; padding:2.5px 11px; line-height:1.4; }
-  .modal-analysis .tpg-field{ text-align:right; font-family:'IBM Plex Mono', monospace; font-size:11.5px; font-weight:700; color:var(--text); border-left:var(--ma-hw,0.33px) solid var(--line-soft); }
 
   /* ---- Key factors — 5-card summary row ---- */
   .akeycards{ display:grid; grid-template-columns:repeat(5, 1fr); gap:12px; margin-bottom:24px; }
@@ -15209,6 +15149,7 @@ function maOpenRowSheet(id){
     let r;
     if (i >= 0) r = meRowFromCareer(list[i], closes, key, d.name, i);
     else { r = Object.assign({ mid: fhSafeId('mr_' + key + '_' + (d.ek || d.date) + '_' + nk), opp: d.opp, oppKey: null, ek: d.ek || null, price: null, oppPrice: null }, d.fallback || {}); fhFinishRow(r); }
+    if (d.round) r.round = d.round;   // the caller's round label (Progression: the draw's "R2", DF L4056), not the feed's fraction
     fhStateFor(m).sheetMap[r.mid] = { r, aName: d.name, aKey: key, bName: r.opp, bKey: r.oppKey };
     fhOpenSheet(r.mid);
   });
@@ -19316,7 +19257,8 @@ const A_TAB_BUILD = {
     return fhEnsureH2hData(m).then(() => { if (aBuilt(m, 'h2h')) aPaint('aSectionH2H', buildH2HSection(m)); });
   },
   matchstats(m){ aPaint('aSectionMatchStats', buildMatchStatsSection(m)); maMsSheetInit(m); },
-  progression(m){ aPaint('aSectionProgression', buildMatchProgressionSection(m)); },
+  // TEN-339: loading line, then the two histories, closes and box scores (pgEnsureData); returned so Download report waits.
+  progression(m){ aPaint('aSectionProgression', buildMatchProgressionSection(m)); return pgEnsureData(m).then(() => { if (aBuilt(m, 'progression')) aPaint('aSectionProgression', buildMatchProgressionSection(m)); }); },
   // TEN-324: the career spine (careerByYear) for both players, eager file or shard; returned so Download report waits.
   overview(m){ return ovPaint(m); },
   tournament(m){ aPaint('aSectionTournament', buildTournamentSection(m)); },
@@ -19440,9 +19382,7 @@ function openAnalysisModal(matchId, tab){
   }
   _aMsInsetBanner = false;
 
-  // Task 6: hide the Progression tab entirely in the first round (only one data point — nothing to trend).
-  const progNav = document.querySelector('#aTabs .asidenav-item[data-atab="progression"]');
-  if (progNav) progNav.style.display = progressionRoundState(m).state === 'hidden' ? 'none' : '';
+  // TEN-339: the Progression tab is always listed — the design draws its first-round state (DF L681, "No progression yet").
 
   // Per-match state every tab reads; nothing is built or fetched here.
   _aM = m; _aBuilt.clear();
@@ -19450,12 +19390,11 @@ function openAnalysisModal(matchId, tab){
   for (const k in _maRowReg) delete _maRowReg[k];
   document.querySelectorAll('.modal-analysis .asection').forEach(s => { s.innerHTML = ''; });
   _aStyleMatch = m; _aFormMatch = m; _aWxMatch = m; _aNewsMatch = m; _aNewsFilter = 'all'; _aNewsOpen = '';
-  _me = null;
+  _me = null; _pg = null;
   const mePopEl = document.getElementById('mePop'); if (mePopEl) mePopEl.innerHTML = '';
   _aOdds = { m:m, novig:false, market:'Match Winner', mv:null };
 
-  const want = (tab && A_TAB_BUILD[tab]) ? tab : _aLastTab;
-  const first = (want === 'progression' && progNav && progNav.style.display === 'none') ? 'key' : want;
+  const first = (tab && A_TAB_BUILD[tab]) ? tab : _aLastTab;
   maApplyTheme();
   document.getElementById('analysisModal').classList.add('open');
   aShowTab(first);
@@ -24157,6 +24096,7 @@ async function loadTournamentProfiles(){
 // matches, rebuilt fresh every pipeline run (not the 30-day historical
 // cache tournamentProfiles uses above).
 let tournamentProgression = { tournaments: {} };
+let _tpLoad = null;   // the boot fetch's promise: the modal's Progression tab waits on it and never refetches (TEN-339)
 async function loadTournamentProgression(){
   try {
     // Cache-bust so this always pulls the CURRENT deploy from origin. The
@@ -24344,307 +24284,6 @@ const PROGRESSION_METRIC_ORDER = [
   ['totalPointsWonPct', 'Total Points Won %'],
 ];
 
-// Row order, labels and sub-labels for the Progression TAB table (export build).
-// Deliberately separate from PROGRESSION_METRIC_ORDER above, which the match-card
-// AK block and the AI-summary ranking still consume — reordering that shared list
-// would silently change those other surfaces. Export order puts Total points won
-// fourth and the winners/UE group last; two rows carry a muted sub-label.
-const PROGRESSION_TABLE_METRICS = [
-  { key: 'firstServePct',        label: '1st serve' },
-  { key: 'firstServeWonPct',     label: '1st serve points won' },
-  { key: 'secondServeWonPct',    label: '2nd serve points won' },
-  { key: 'totalPointsWonPct',    label: 'Total points won' },
-  { key: 'winnersPct',           label: 'Winners' },
-  { key: 'unforcedErrorsPct',    label: 'Unforced errors', sub: 'lower is better' },
-  { key: 'winnersUnforcedRatio', label: 'Winners / UE', sub: 'ratio', ratio: true },
-];
-
-// Up to 2 named player line-series (solid, gradient area fill down to the
-// plot baseline) plus 1 optional field-average series (dashed, muted, no
-// fill). Nodes and value labels are rendered as an absolutely-positioned
-// HTML overlay (not SVG shapes) so fixed pixel sizes (11px nodes, mono
-// label chips) don't distort under the non-uniform-scale SVG viewBox — the
-// SVG itself only draws gridlines, polylines and area-fill gradients, all
-// with vector-effect="non-scaling-stroke" so stroke widths stay in real
-// pixels regardless of the viewBox's x/y scale ratio. A series' line breaks
-// (does not interpolate) across a null value. Same hand-rolled approach as
-// trendChartSvg() above (no chart library).
-function progressionPlot(rounds, series, formatValue){
-  const padSide = 8;
-  const xs = rounds.map((r, i) => rounds.length === 1 ? 50 : padSide + i * ((100 - padSide * 2) / (rounds.length - 1)));
-  const allVals = series.flatMap(s => s.values).filter(v => v != null);
-  if (allVals.length === 0) {
-    return `<div style="display:flex; align-items:center; justify-content:center; height:100%; font-size:11px; color:var(--text-faint); font-family:'Hanken Grotesk', sans-serif;">No data yet</div>`;
-  }
-  let min = Math.min(...allVals), max = Math.max(...allVals);
-  const pad = (max - min) * 0.22 || 1;
-  min -= pad; max += pad;
-  const yOf = v => 12 + (max - v) / (max - min) * 74;
-
-  const gridHtml = [24, 42, 60, 78].map(y => `<line x1="0" y1="${y}" x2="100" y2="${y}" stroke="rgba(255,255,255,0.05)" stroke-width="1" vector-effect="non-scaling-stroke"/>`).join('');
-
-  let gradDefs = '', pathsHtml = '', overlayHtml = '';
-  const solid = [];
-
-  series.forEach(s => {
-    const pts = s.values.map((v, i) => v == null ? null : { x: xs[i], y: yOf(v), v, opp: s.opponents ? s.opponents[i] : null });
-    let path = '', started = false;
-    pts.forEach(p => {
-      if (!p) { started = false; return; }
-      path += (started ? 'L' : 'M') + p.x + ',' + p.y + ' ';
-      started = true;
-    });
-    if (!path) return;
-
-    // A player who has not survived two rounds is drawn as a bar at the single
-    // round they posted, while their opponent may still be a line on the same
-    // plot: one point is a reading, not a trend, and drawing it as a stub line
-    // would claim a direction the data does not have.
-    if (s.bar) {
-      const w = 6;
-      pts.filter(Boolean).forEach(p => {
-        pathsHtml += `<rect x="${p.x - w / 2}" y="${p.y}" width="${w}" height="${Math.max(0, 100 - p.y)}" fill="${s.color}" fill-opacity="${s.fillOpacity}"/>`;
-        pathsHtml += `<line x1="${p.x - w / 2}" y1="${p.y}" x2="${p.x + w / 2}" y2="${p.y}" stroke="${s.color}" stroke-width="2.5" vector-effect="non-scaling-stroke"/>`;
-        const tip = p.opp ? `<div class="tptip" style="${p.y <= 50 ? 'top:26px;' : 'bottom:26px;'}">vs ${p.opp}</div>` : '';
-        overlayHtml += `<div class="tpdot" style="left:${p.x}%; top:${p.y}%;">${tip}</div>`;
-      });
-      solid.push({ dashed: false, color: s.color, pts: pts.filter(Boolean) });
-      return;
-    }
-
-    if (s.dashed) {
-      pathsHtml += `<path d="${path.trim()}" fill="none" stroke="${s.color}" stroke-width="1.5" stroke-dasharray="4 4" vector-effect="non-scaling-stroke"/>`;
-      solid.push({ dashed: true, pts: pts.filter(Boolean) });
-    } else {
-      const validPts = pts.filter(Boolean);
-      const gid = 'tpgrad' + Math.random().toString(36).slice(2, 9);
-      const areaPath = `M${validPts[0].x},100 ` + validPts.map(p => `L${p.x},${p.y}`).join(' ') + ` L${validPts[validPts.length - 1].x},100 Z`;
-      gradDefs += `<linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="${s.color}" stop-opacity="${s.fillOpacity}"/><stop offset="100%" stop-color="${s.color}" stop-opacity="0"/></linearGradient>`;
-      pathsHtml += `<path d="${areaPath}" fill="url(#${gid})" stroke="none"/>`;
-      pathsHtml += `<path d="${path.trim()}" fill="none" stroke="${s.color}" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`;
-      validPts.forEach(p => {
-        const tip = p.opp ? `<div class="tptip" style="${p.y <= 50 ? 'top:26px;' : 'bottom:26px;'}">vs ${p.opp}</div>` : '';
-        overlayHtml += `<div class="tpdot" style="left:${p.x}%; top:${p.y}%;"><div class="tpnode" style="background:${s.color}; box-shadow:0 0 0 3px ${s.color}38;"></div>${tip}</div>`;
-      });
-      solid.push({ dashed: false, color: s.color, pts: validPts });
-    }
-  });
-
-  // Collision-avoided value labels: the higher line's label goes above its
-  // node, the lower goes below; near the top/bottom edges the label flips
-  // inward so it never runs off the plot.
-  const players = solid.filter(s => !s.dashed);
-  const labelPositions = [];
-  players.forEach((s, si) => {
-    s.pts.forEach(p => {
-      let above = si === 0;
-      const other = players[si === 0 ? 1 : 0];
-      const op = other && other.pts.find(pt => pt.x === p.x);
-      if (op) above = p.y <= op.y;
-      let dy = above ? -20 : 20;
-      if (p.y < 18) dy = 20;
-      else if (p.y > 84) dy = -20;
-      const labelY = p.y + dy;
-      labelPositions.push({ x: p.x, y: labelY });
-      overlayHtml += `<div class="tpvlabel" style="left:${p.x}%; top:${labelY}%; background:${s.color}2e; border:1px solid ${s.color}6b;">${formatValue(p.v)}</div>`;
-    });
-  });
-
-  // "Field avg" tag: placed at the round of maximum separation from both
-  // player lines, skipping any round where a value-label chip already sits
-  // too close (so the tag never overlaps a printed number).
-  const avg = solid.find(s => s.dashed);
-  if (avg && avg.pts.length) {
-    const candidates = avg.pts.map(dp => {
-      const seps = players.map(s => {
-        const sp = s.pts.find(pt => pt.x === dp.x);
-        return sp ? Math.abs(sp.y - dp.y) : Infinity;
-      });
-      return { dp, sep: seps.length ? Math.min(...seps) : 0 };
-    }).sort((a, b) => b.sep - a.sep);
-    const collides = (x, y) => labelPositions.some(lp => Math.abs(lp.x - x) < 6 && Math.abs(lp.y - y) < 14);
-    let chosen = null;
-    for (const c of candidates) {
-      const tagDy = c.dp.y > 50 ? -10 : 10;
-      const tagY = c.dp.y + tagDy;
-      if (!collides(c.dp.x, tagY)) { chosen = { x: c.dp.x, y: tagY }; break; }
-    }
-    if (!chosen) {
-      const c = candidates[0];
-      chosen = { x: c.dp.x, y: c.dp.y + (c.dp.y > 50 ? -10 : 10) };
-    }
-    overlayHtml += `<div class="tpavgtag" style="left:${chosen.x}%; top:${chosen.y}%;">Field avg</div>`;
-  }
-
-  // Byes, marked at the round the player sat out. The round keeps its own tick —
-  // the axis is shared with an opponent who may have played a real match there —
-  // so the bye is drawn as a chip in the player's own colour above that tick, and
-  // no data point is plotted. Without it the gap before a bye recipient's line is
-  // indistinguishable from data we simply do not have.
-  const byeRows = {};
-  series.forEach(s => (s.byes || []).forEach((isBye, i) => {
-    if (isBye) (byeRows[i] = byeRows[i] || []).push(s.color);
-  }));
-  // Two bye recipients can meet, so a round can carry more than one chip; stack
-  // them upward, and step over any value label already occupying the slot.
-  Object.keys(byeRows).forEach(i => {
-    byeRows[i].forEach((color, k) => {
-      const x = xs[i];
-      const taken = y => labelPositions.some(lp => Math.abs(lp.x - x) < 6 && Math.abs(lp.y - y) < 12);
-      let top = 90 - k * 14;
-      while (top > 20 && taken(top)) top -= 14;
-      overlayHtml += `<div class="tpbye" style="left:${x}%; top:${top}%; color:${color}; border-color:${color}; background:${color}33;">Bye</div>`;
-    });
-  });
-
-  const roundsHtml = rounds.map((r, i) => `<span class="tpround" style="left:${xs[i]}%;">${r}</span>`).join('');
-
-  return `
-    <div style="position:relative; height:calc(100% - 20px);">
-      <svg viewBox="0 0 100 100" preserveAspectRatio="none">
-        <defs>${gradDefs}</defs>
-        ${gridHtml}
-        ${pathsHtml}
-      </svg>
-      ${overlayHtml}
-    </div>
-    <div style="position:relative; height:20px;">${roundsHtml}</div>
-  `;
-}
-
-// Template-based, real-data-only synthesis of the 6 progression charts into
-// a short analytical paragraph — same philosophy as abstractSpeedInsight()/
-// trendInsight() above: fixed thresholds applied to real numbers already
-// shown in the charts, never a fabricated forecast, no bet/winner calls.
-// Any sentence whose underlying signal doesn't clear its threshold is simply
-// omitted (honest fallback), same as trendInsight() returning null for
-// flat/insufficient data. winnersUnforcedRatio is excluded from the
-// cross-metric strength/weakness ranking below (different scale, ~0.5-2.0,
-// not point-comparable with the 5 percentage metrics) but is still eligible
-// for the head-to-head gap sentence, which compares it player-to-player on
-// its own scale.
-const AI_SUMMARY_LOWER_BETTER = new Set(['unforcedErrorsPct']);
-// Brief, generic tennis-analytics context per metric, used to explain why
-// a stat matters rather than just repeating the number, without inventing
-// any player-specific claim.
-const AI_SUMMARY_METRIC_CONTEXT = {
-  firstServePct: 'how consistently first deliveries land in play, which shapes how often a player gets to dictate points on their own terms',
-  firstServeWonPct: 'how well a player closes out points behind a strong first delivery',
-  secondServeWonPct: 'composure on the more vulnerable second delivery, when the returner gets the best look at the point',
-  winnersPct: 'aggressive, point ending shot making',
-  unforcedErrorsPct: 'how often free points are handed over through unforced mistakes',
-  winnersUnforcedRatio: 'the balance between aggression and risk, essentially how efficiently winners are being traded against unforced errors',
-  totalPointsWonPct: 'the overall share of points won across the match, the broadest single measure of who controlled play rather than just who took the big moments',
-};
-// Realistic ATP level floors and ceilings per metric, used so a genuinely
-// solid number (like 73% on 1st serve points won) is never mislabeled as a
-// weakness just for sitting below the opponent or the field average. A
-// value only counts as a real strength or weak spot once it clears one of
-// these bars; the field average comparison below is still required on top
-// of this, never a replacement for it.
-const AI_SUMMARY_ABS_BOUNDS = {
-  firstServePct: { weak: 55, strong: 65 },
-  firstServeWonPct: { weak: 65, strong: 75 },
-  secondServeWonPct: { weak: 45, strong: 55 },
-  winnersPct: { weak: 12, strong: 25 },
-  unforcedErrorsPct: { weak: 18, strong: 8 },
-  // totalPointsWonPct is deliberately absent: it hugs 50% by construction (the
-  // two players' shares sum to 100), so there is no honest ATP-wide "strong" or
-  // "weak" floor for it. With no bounds it can never be picked as sentence 1/2's
-  // strength or weakness — it still charts, trends, and can carry sentence 4.
-};
-function aiSummaryDirection(metricKey, v){
-  return AI_SUMMARY_LOWER_BETTER.has(metricKey) ? -v : v;
-}
-function aiSummaryFormatValue(metricKey, v){
-  return metricKey === 'winnersUnforcedRatio' ? v.toFixed(2) : `${v}%`;
-}
-// Percentage-point "goodness" vs field average, direction-adjusted so a
-// higher return value always means "better than average" regardless of
-// whether the raw metric is higher-is-better or lower-is-better.
-function aiSummaryGoodness(metricKey, playerVal, avgVal){
-  if (playerVal == null || avgVal == null) return null;
-  return aiSummaryDirection(metricKey, playerVal - avgVal);
-}
-function aiSummaryIsAbsStrong(metricKey, val){
-  const bounds = AI_SUMMARY_ABS_BOUNDS[metricKey];
-  if (!bounds || val == null) return false;
-  return AI_SUMMARY_LOWER_BETTER.has(metricKey) ? val <= bounds.strong : val >= bounds.strong;
-}
-function aiSummaryIsAbsWeak(metricKey, val){
-  const bounds = AI_SUMMARY_ABS_BOUNDS[metricKey];
-  if (!bounds || val == null) return false;
-  return AI_SUMMARY_LOWER_BETTER.has(metricKey) ? val >= bounds.weak : val < bounds.weak;
-}
-
-function buildProgressionAiSummary(m, data, p1Data, p2Data, bareTour){
-  const RANKED = PROGRESSION_METRIC_ORDER.filter(([key]) => key !== 'winnersUnforcedRatio');
-  const p1Surname = (m.p1 || '').trim().split(' ').pop();
-  const p2Surname = (m.p2 || '').trim().split(' ').pop();
-  // Same round the charts and bars plot for each player — their deepest WIN, not
-  // their last match. Reading the last match here made the prose quote Sonego's
-  // losing R2 (54% / 71.4%) while the chart beside it plotted his winning R1
-  // (59% / 75%): two different numbers for one player on one card.
-  const p1Latest = progressionShownRound(p1Data, progressionPlayerDepth(p1Data, data.rounds));
-  const p2Latest = progressionShownRound(p2Data, progressionPlayerDepth(p2Data, data.rounds));
-  const latestBySurname = { [p1Surname]: p1Latest, [p2Surname]: p2Latest };
-  const otherSurname = (surname) => surname === p1Surname ? p2Surname : p1Surname;
-
-  // One candidate list of {surname, metricKey, label, val, avg, goodness}
-  // across both players x the 6 ranked (same-scale) metrics, for
-  // strength/weakness ranking against the field average.
-  const candidates = [];
-  [[p1Data, p1Latest, p1Surname], [p2Data, p2Latest, p2Surname]].forEach(([pData, latest, surname]) => {
-    if (!pData || !latest) return;
-    const roundIdx = data.rounds.indexOf(latest.round);
-    if (roundIdx === -1) return;
-    RANKED.forEach(([key, label]) => {
-      const val = latest.metrics[key];
-      const avg = data.fieldAverage.metrics[key][roundIdx];
-      const goodness = aiSummaryGoodness(key, val, avg);
-      if (goodness == null) return;
-      candidates.push({ surname, metricKey: key, label, val, avg, goodness });
-    });
-  });
-
-  // Refinement pass item 8: the summary now names ONLY the single clearest signal
-  // and what it means — one comparison, one implication, then stop. No reciting of
-  // values that already appear in the rows above, and (structurally) no second
-  // sentence into which a "comes down to …" clause could repeat itself. Prefer a
-  // genuine, above-field strength; fall back to the widest head-to-head gap.
-  let sentence = null;
-  const strengthPick = candidates
-    .filter(c => c.goodness > 0 && aiSummaryIsAbsStrong(c.metricKey, c.val))
-    .reduce((best, c) => (!best || c.goodness > best.goodness) ? c : best, null);
-  if (strengthPick) {
-    const oppSurname = otherSurname(strengthPick.surname);
-    sentence = `${strengthPick.surname} has been the sharper of the two on ${strengthPick.label.toLowerCase()} through this draw, ahead of both ${oppSurname} and the ${bareTour} field &mdash; it comes down to ${AI_SUMMARY_METRIC_CONTEXT[strengthPick.metricKey]}.`;
-  } else if (p1Latest && p2Latest) {
-    const gaps = PROGRESSION_METRIC_ORDER.map(([key, label]) => {
-      const v1 = p1Latest.metrics[key], v2 = p2Latest.metrics[key];
-      if (v1 == null || v2 == null) return null;
-      return { key, label, v1, v2, gap: Math.abs(v1 - v2) };
-    }).filter(Boolean);
-    const widest = gaps.reduce((b, g) => (!b || g.gap > b.gap) ? g : b, null);
-    if (widest) {
-      const higherBetter = widest.key !== 'unforcedErrorsPct';
-      const leader = (higherBetter ? widest.v1 > widest.v2 : widest.v1 < widest.v2) ? p1Surname : p2Surname;
-      sentence = `The clearest gap between the two so far is on ${widest.label.toLowerCase()}, where ${leader} holds the edge &mdash; it comes down to ${AI_SUMMARY_METRIC_CONTEXT[widest.key]}.`;
-    }
-  }
-
-  const body = sentence
-    ? `<p class="progression-summary-text">${sentence}</p>`
-    : `<div class="acomingsoon">Not enough round-by-round data yet to generate meaningful insights.</div>`;
-
-  return `
-    <div class="tprogress-card" style="grid-column:1/-1;">
-      <div class="tphead"><div class="tptitle">Summary</div></div>
-      ${body}
-    </div>
-  `;
-}
-
 // Scoped to the two players in the match being analyzed (not a multi-player
 // selector) — looked up via the reliable numeric m.p1Key/m.p2Key join, not
 // fuzzy name matching. If a player's key doesn't resolve to a progression
@@ -24815,146 +24454,448 @@ function progressionRoundState(m){
   return { state, data, p1Data, p2Data, bareTour, pts, d1, d2, depth, cutIdx: scope.cutIdx };
 }
 
-function buildMatchProgressionSection(m){
-  const st = progressionRoundState(m);
-  const { data, p1Data, p2Data, bareTour } = st;
-  if (st.state === 'none') {
-    return `<div class="acomingsoon">No live tournament draw data on file for this match yet.</div>`;
-  }
-  if (st.state === 'hidden') {
-    // Tab is hidden from the sidebar in this state; content is a safe fallback only.
-    // Reached on an opening-round card: this section only ever shows form built
-    // BEFORE the match on the card, and neither man has played this event yet.
-    return `<div class="acomingsoon">Progression opens once a player has completed an earlier match in this event.</div>`;
-  }
+// =====================================================================
+// TEN-339 · MATCH ANALYSIS → PROGRESSION TAB. Design: `Match Analysis Progression v1.dc.html` progressionFor
+// (DF L3936–4168) + its template (DF L668–839), with the variants the file renders: palette A · Uniform (PGK),
+// road cards A · Soft ink (RCK), road C · Timeline (RV), THIS MATCH C · Raised ink (NWK), metric chips B · Soft ink
+// (FCK), heat cards B · 3 per row (DZK). The file's review switchers (the FACING R1…F / bye row, the variant tabs) and
+// its SAMPLE DATA chip are not built (DoD item 4): the facing round is the match's own.
+// DATA (TEN-312 phase0-report §4.7; TEN-339 brief):
+//   road + per-round figures = each player's career-history/{key}.json rows at this event before this match (main
+//     draw only, N7; this match excluded). Set scores from career-history `sets` (player-oriented — never the
+//     progression file's feed-order resultDisplay). Closes through the Form/H2H picker (meRowFromCareer → fhCloseFor
+//     → fhPickBook). Metrics from the setstats/{ek} whole-match box score, house formulas (HouseRatings: the 6-part
+//     Serve rating, TEN-327), every rate rebuilt from its count.
+//   DRAW avg = tournament-progression.json, active ATP events only: the mean over every player who played that round
+//     (both players of every match, DF L4167), same formulas from the file's raw fields. Any other event: "—".
+//   Opponent style = playing-styles.json `archetype_label`.
+// DoD item 8: the tab draws no match-row list and no pop-up tooltip (its hover text is the file's native `title`);
+// every match cell opens the shared sheet (maRowOnclick). Hand-written; nothing regenerates it.
+// =====================================================================
+const PG_RDS = ['R128', 'R64', 'R32', 'R16', 'QF', 'SF', 'F'];
+const PG_QF = 4;                      // PG_RDS index of the quarter-final; every round before it is an "Rn"
+const PG_ATP_FIRST = 2;               // an ATP main draw holds ≥ 28 players: its first round is 1/16-finals (R32) or earlier
+const PG_LONG = { R1: 'first round', R2: 'second round', R3: 'third round', R4: 'fourth round', QF: 'quarter-final', SF: 'semi-final', F: 'final' };
+const PG_WINDOW_DAYS = 20;            // an event's rounds sit inside this many days before the analysed match
+// DF L3967–3977: order, names and kinds (num = a rating, whole number · ratio = 2 dp · pct = 1 dp)
+const PG_METRICS = [
+  { key: 'dominance', name: 'Dominance ratio', kind: 'ratio' },
+  { key: 'serveRating', name: 'Serve rating', kind: 'num' },
+  { key: 'returnRating', name: 'Return rating', kind: 'num' },
+  { key: 'firstServe', name: '1st serve %', kind: 'pct' },
+  { key: 'firstServeWon', name: '1st serve points won', kind: 'pct' },
+  { key: 'secondServeWon', name: '2nd serve points won', kind: 'pct' },
+  { key: 'wue', name: 'Winners / unforced errors', kind: 'ratio' },
+  { key: 'winners', name: 'Winners', kind: 'pct' },
+  { key: 'pressure', name: 'Pressure points', kind: 'pct' },
+];
+const PG_NO_DRAW = 'Draw average: only for events on this week’s board (tournament-progression.json holds the active ATP events).';
+let _pg = null, _pgStylesP = null;
 
-  // Player identity only — Player A (name order p1) blue, Player B neutral light,
-  // fixed by name order. Progression has no scoped exception: no orange, no
-  // per-metric accent. Directional arrows below take the player's identity colour
-  // (movement vs the previous round), never a red/green treatment — read from the
-  // export, which folds the arrow into the identity-coloured value.
-  const A_COLOR = ANALYSIS_P1_COLOR, B_COLOR = ANALYSIS_P2_FILL;   // D4: neutral players (lines / dots / swatches)
-  const p1Surname = (m.p1 || '').trim().split(' ').pop();
-  const p2Surname = (m.p2 || '').trim().split(' ').pop();
-  const rounds = data.rounds;
+function pgTourName(m){ return fhTournClean(String(m.tour || '').replace(/^(ATP|WTA|Challenger)\s+/i, '').trim()); }
+function pgRoundIdx(raw){ const c = psRoundAbbr(h2hRoundLabel(raw) || raw); return PG_RDS.indexOf(c); }
+function pgMatchEk(m){ const k = eventKeyOfMatch(m); return /^\d+$/.test(k) ? k : null; }   // a hash id (live cards) carries no event key
 
-  // Per-player metric series aligned to the draw's rounds. A player who has
-  // survived only one round carries just their shown box score; a multi-round
-  // player carries every round they played. Same pre-match scoping the chart
-  // build used (progressionShownRound / depth), so the table cannot disagree
-  // with the window rule the tab has always enforced. Byes and rounds not on
-  // file simply read as a null value at that round → an em dash in the cell.
-  const seriesFor = (pData, d) => {
-    if (!pData) return null;
-    const asBar = !d || d.depth <= 1;
-    const shown = asBar ? [progressionShownRound(pData, d)].filter(Boolean) : pData.rounds;
-    const at = round => shown.find(x => x && x.round === round) || null;
-    return rounds.map(round => { const r = at(round); return r ? r.metrics : null; });
+// One whole-match box side (matchStatsFromShard → { own, opp }) → the nine figures, own player's side. Every rate
+// carries its count ({ v, won, total }); a rate the feed sent without one is not used.
+function pgBoxMetrics(j){
+  const A = j && j.own;
+  if (!A) return null;
+  const B = j.opp || {}, raw = A.raw || {};
+  const wt = k => { const x = raw[k]; return x && Number(x.total) > 0 ? { won: Number(x.won), total: Number(x.total) } : null; };
+  const rate = c => (c && c.v != null && c.total != null ? { v: c.v, won: c.won, total: c.total } : { v: null });
+  const hr = HouseRatings.fromBoxSide(A);
+  const rp = wt('Points:Return Points Won'), sp = wt('Points:Service Points Won'), tp = wt('Points:Total Points Won');
+  // Winners / UE: all four counts 0 = the feed sent none (fhSheetModel's rule) — a dash, never 0.
+  const noWue = [A, B].every(s => ['Points:Winners', 'Points:Unforced errors'].every(k => !Number(s[k])));
+  const w = Number(A['Points:Winners']), u = Number(A['Points:Unforced errors']);
+  const pr = fhSheetModel(j).pr[0];
+  return {
+    dominance: rp && sp && sp.won < sp.total ? { v: (rp.won / rp.total) / (1 - sp.won / sp.total), rp, sp } : { v: null },
+    serveRating: { v: hr.serve.v, why: hr.serve.missing },
+    returnRating: { v: hr.ret.v, why: hr.ret.missing },
+    firstServe: rate(fhFirstInCell(A)),
+    firstServeWon: rate(fhRateCell(A, 'Service:1st serve points won', '')),
+    secondServeWon: rate(fhRateCell(A, 'Service:2nd serve points won', '')),
+    wue: !noWue && Number.isFinite(w) && u > 0 ? { v: w / u, w, u } : { v: null },
+    winners: !noWue && Number.isFinite(w) && tp ? { v: w / tp.total * 100, won: w, total: tp.total } : { v: null },
+    pressure: pr && pr.v != null ? { v: pr.v, won: pr.won, total: pr.total } : { v: null },
   };
-  const s1 = p1Data ? seriesFor(p1Data, st.d1) : null;
-  const s2 = p2Data ? seriesFor(p2Data, st.d2) : null;
+}
+// Several rounds → one figure: a rate over the summed counts, Dominance and W/UE over their summed counts, a rating
+// the mean of its rounds. n = rounds with a value (the design's "(n)").
+function pgPool(vals, mt){
+  const got = vals.filter(x => x && x.v != null), sum = f => got.reduce((s, x) => s + f(x), 0);
+  if (!got.length) return { v: null, n: 0 };
+  if (mt.kind === 'pct'){ const won = sum(x => x.won), total = sum(x => x.total); return { v: won / total * 100, won, total, n: got.length }; }
+  if (mt.key === 'dominance'){
+    const rw = sum(x => x.rp.won), rt = sum(x => x.rp.total), sw = sum(x => x.sp.won), st = sum(x => x.sp.total);
+    return { v: sw < st ? (rw / rt) / (1 - sw / st) : null, n: got.length };
+  }
+  if (mt.key === 'wue') return { v: sum(x => x.w) / sum(x => x.u), n: got.length };
+  return { v: sum(x => x.v) / got.length, n: got.length };
+}
+// A figure's text. A rate goes through the one gate on its own count (D2): n 1–4 → the count, 5–9 → grey + note.
+function pgFig(x, mt){
+  if (!x || x.v == null || !Number.isFinite(x.v)) return { t: FH_DASHC, none: true };
+  if (mt.kind === 'num') return { t: String(Math.round(x.v)) };
+  if (mt.kind === 'ratio') return { t: x.v.toFixed(2) };
+  const g = maGate(x.total).mode;
+  if (g === 'none') return { t: FH_DASHC, none: true };
+  if (g === 'nopct') return { t: x.won + '/' + x.total, count: ' (' + x.won + '/' + x.total + ')' };
+  return { t: x.v.toFixed(1) + '%', small: g === 'small', count: ' (' + x.won + '/' + x.total + ')' };
+}
 
-  const fmt = (key, v) => v == null
-    ? '&mdash;'
-    : (key === 'winnersUnforcedRatio' ? (Math.round(v * 100) / 100).toFixed(2) : `${Math.round(v)}%`);
-  const mean = vals => { const v = vals.filter(x => x != null); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
-  const prevOf = (vals, i) => { for (let j = i - 1; j >= 0; j--) { if (vals[j] != null) return vals[j]; } return null; };
-  const arrow = (cur, prev) => (cur == null || prev == null || cur === prev) ? '' : (cur > prev ? '&#8599;' : '&#8600;');
+// The draw average (active events): every player-round in tournament-progression.json at that round, same formulas.
+function pgTpMetrics(x, o){
+  const M = x.metrics || {}, H = HouseRatings, pct = H.pct;
+  const fin = v => (v != null && v !== '' && Number.isFinite(Number(v)) ? Number(v) : null);
+  const out = {
+    firstServe: fin(M.firstServePct), firstServeWon: fin(M.firstServeWonPct), secondServeWon: fin(M.secondServeWonPct),
+    winners: fin(M.winnersPct), wue: fin(M.winnersUnforcedRatio),
+    serveRating: H.serve({ firstIn: M.firstServePct, firstWon: M.firstServeWonPct, secondWon: M.secondServeWonPct, svGames: pct(M.svHold), aces: M.aces, dfs: M.dfs }).v,
+    returnRating: H.ret({ ret1: pct(M.ret1), ret2: pct(M.ret2), retGames: pct(M.retGames), bpConv: pct(M.bpConv) }).v,
+    dominance: null, pressure: null,
+  };
+  const OM = o && o.metrics;
+  if (OM){
+    const rpw = y => (y.ret1 && y.ret2 && y.ret1.total + y.ret2.total > 0 ? (y.ret1.won + y.ret2.won) / (y.ret1.total + y.ret2.total) : null);
+    const a = rpw(M), b = rpw(OM);
+    if (a != null && b) out.dominance = a / b;   // own return points won ÷ own service points lost (= the opponent's return points won)
+    // break points: the file keeps a {won,total} only when there was a chance, so a box score without one had none
+    const bp = y => y.bpConv || (y.ret1 ? { won: 0, total: 0 } : null);
+    const own = bp(M), opp = bp(OM);
+    if (own && opp && own.total + opp.total > 0) out.pressure = (own.won + opp.total - opp.won) / (own.total + opp.total) * 100;
+  }
+  return out;
+}
+function pgDrawFor(t, labels){
+  if (!t) return null;
+  const players = t.players || [];
+  return labels.map(L => {
+    const acc = {};
+    players.forEach(P => (P.rounds || []).forEach(x => {
+      if (x.round !== L) return;
+      const O = players.find(Q => Q !== P && maSameOpp(Q.name, x.opponent));
+      const ox = O && (O.rounds || []).find(y => y.round === L && maSameOpp(y.opponent, P.name));
+      const v = pgTpMetrics(x, ox);
+      PG_METRICS.forEach(mt => { if (v[mt.key] != null && Number.isFinite(v[mt.key])) (acc[mt.key] = acc[mt.key] || []).push(v[mt.key]); });
+    }));
+    const out = {};
+    PG_METRICS.forEach(mt => { const a = acc[mt.key] || []; out[mt.key] = { v: a.length ? a.reduce((s, y) => s + y, 0) / a.length : null, n: a.length }; });
+    return out;
+  });
+}
+// A draw mean's text: a mean has no count to show, so a rate is dashed below n = 5 player-rounds and greyed at 5–9.
+function pgDrawFig(x, mt){
+  if (!x || x.v == null) return { t: FH_DASHC, none: true };
+  if (mt.kind !== 'pct') return { t: mt.kind === 'num' ? String(Math.round(x.v)) : x.v.toFixed(2) };
+  const g = maGate(x.n).mode;
+  if (g === 'none' || g === 'nopct') return { t: FH_DASHC, none: true };
+  return { t: x.v.toFixed(1) + '%', small: g === 'small' };
+}
 
-  // Inline TREND sparkline: two thin identity-coloured lines with a round point
-  // marker at every round. A glyph, not a chart — no axes, no labels. Each row is
-  // normalised over its OWN data (both players' round values PLUS the field
-  // average for that row), then the domain is padded by max((hi-lo)*0.4, 3pp)
-  // (0.12 for the ratio row) so the line sits at LOW amplitude inside the cell —
-  // it reads as a texture, not a full-bleed chart, and small real moves stay
-  // small. Sized to the 112px TREND column (computed-styles: svg 112x28, 1.75
-  // stroke). domainExtra carries the field series for scaling but is not drawn.
-  const sparkline = (rowSeries, domainExtra, isRatio) => {
-    const all = [...rowSeries.flatMap(s => s.vals), ...(domainExtra || [])].filter(v => v != null);
-    if (!all.length) return '';
-    let lo = Math.min(...all), hi = Math.max(...all);
-    const pad = Math.max((hi - lo) * 0.4, isRatio ? 0.12 : 3);
-    lo -= pad; hi += pad;
-    const W = 112, H = 28, padX = 9, padY = 5, n = rounds.length;
-    const xOf = i => n === 1 ? W / 2 : padX + i * ((W - 2 * padX) / (n - 1));
-    const yOf = v => (H - padY) - (v - lo) / (hi - lo) * (H - 2 * padY);
-    let out = '';
-    rowSeries.forEach(s => {
-      const pts = s.vals.map((v, i) => v == null ? null : { x: xOf(i), y: yOf(v) });
-      const valid = pts.filter(Boolean);
-      if (!valid.length) return;
-      let dpath = '', started = false;
-      pts.forEach(p => { if (!p) { started = false; return; } dpath += (started ? 'L' : 'M') + p.x.toFixed(1) + ',' + p.y.toFixed(1) + ' '; started = true; });
-      if (valid.length > 1) out += `<path d="${dpath.trim()}" fill="none" style="stroke:${s.color}" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"/>`;
-      valid.forEach(p => { out += `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="2" style="fill:${s.color}"/>`; });
+// One player's rows at this event, before this match (main draw only; this match excluded).
+function pgSide(m, idx, hist, closes){
+  const key = idx ? m.p2Key : m.p1Key, name = idx ? m.p2 : m.p1, oppName = idx ? m.p1 : m.p2;
+  const tn = psNormTour(pgTourName(m)), ref = fhDayNum(m.date), ek = pgMatchEk(m);
+  const list = Array.isArray(hist) ? hist : [];
+  const rows = [];
+  list.forEach((x, i) => {
+    if (psNormTour(fhTournClean(x.tournament)) !== tn) return;
+    const d = fhDayNum(x.date);
+    if (ref == null || d == null || d > ref || d < ref - PG_WINDOW_DAYS) return;
+    if (x.qualifying || /^qualif/i.test(String(x.round || ''))) return;                  // N7: main draw only
+    // this match: by event key when both carry one; else the opponent's name on the same day (a surname alone would drop
+    // an earlier round against a namesake — J. M. Cerundolo in R1, F. Cerundolo today)
+    if (ek && x.eventKey != null ? String(x.eventKey) === ek : (maSameOpp(x.opponent, oppName) && Math.abs(d - ref) <= 1)) return;
+    const ri = pgRoundIdx(x.round);
+    if (ri < 0) return;
+    const r = meRowFromCareer(x, closes, String(key), name, i);
+    r.ri = ri;
+    rows.push(r);
+  });
+  const k = key == null ? null : String(key);
+  return { key: k, name, rows, loaded: Array.isArray(hist) && k != null && k in _careerHistoryShards };
+}
+function pgEnsureData(m){
+  if (m._pgP) return m._pgP;
+  const keys = [m.p1Key, m.p2Key];
+  const hist = k => (k == null ? Promise.resolve(null) : Promise.resolve().then(() => loadCareerHistory(k)).catch(() => null));
+  const cls = k => (k == null ? Promise.resolve(null) : fhLoadCloses(k).catch(() => null));
+  if (!Object.keys((playerStyles && playerStyles.byKey) || {}).length) _pgStylesP = _pgStylesP || loadPlayerStyles();
+  m._pgP = Promise.all([hist(keys[0]), hist(keys[1]), cls(keys[0]), cls(keys[1]), loadMatchStatsIndex(), _pgStylesP, _tpLoad && _tpLoad.catch(() => null)])
+    .then(([h1, h2, c1, c2, msIdx]) => {
+      const sides = [pgSide(m, 0, h1, c1), pgSide(m, 1, h2, c2)];
+      const eks = [...new Set(sides.flatMap(s => s.rows).map(r => r.ek).filter(ek => ek != null && msIdx.has(String(ek))).map(String))];
+      return Promise.all(eks.map(ek => loadSetStatsShard(ek))).then(() => {
+        sides.forEach(s => s.rows.forEach(r => {
+          const sh = r.ek != null && !r.wo ? _setStatsShards[String(r.ek)] : null;
+          r.pg = sh && s.key != null ? pgBoxMetrics(matchStatsFromShard(sh, s.key)) : null;
+        }));
+        m._pg = { sides };
+        if (sides.some(s => s.key != null && !s.loaded)) m._pgP = null;   // a history that failed to load is retried on the next open
+      });
+    })
+    .catch(err => { console.warn('[progression] load failed:', err && err.message); m._pg = { sides: [pgSide(m, 0, null, null), pgSide(m, 1, null, null)] }; m._pgP = null; });
+  return m._pgP;
+}
+
+// The tab's model: draw rounds, both roads, and the nine metric cards.
+function pgModel(m){
+  const D = m._pg, tourn = pgTourName(m), last = n => fhSurname(n);
+  const aS = last(m.p1), bS = last(m.p2);
+  const t = (tournamentProgression && tournamentProgression.tournaments || {})[tourn] || null;
+  let fi = pgRoundIdx(m.tournamentRound);
+  const seen = D.sides.flatMap(s => s.rows.map(r => r.ri));
+  if (fi < 0) fi = seen.length ? Math.min(PG_RDS.length - 1, Math.max(...seen) + 1) : -1;
+  // the draw's first round: the earliest round either player's history shows, never later than an ATP draw's R32,
+  // and as early as the active draw's own "Rn" rounds (tournament-progression.json) say.
+  const tpPre = t ? (t.rounds || []).filter(r => /^R\d/.test(r)).length : 0;
+  const start = fi < 0 ? 0 : Math.min(fi, FH_SLAMS.has(psNormTour(tourn)) ? 0 : PG_ATP_FIRST, PG_QF - tpPre, ...seen);   // a Slam is a 128 draw
+  const label = i => (i < PG_QF ? 'R' + (i - start + 1) : PG_RDS[i]);
+  const played = [], future = [];
+  for (let i = start; i < PG_RDS.length; i++){ if (fi >= 0 && i < fi) played.push(i); else if (i > fi) future.push(i); }
+  const facing = fi >= 0 ? label(fi) : null, n = played.length;
+  const base = { tourn, aS, bS, n };
+  if (!n) return Object.assign(base, { isEmpty: true,
+    sub: 'First round · neither player has a match at ' + tourn + ' yet',
+    emptyTitle: 'No progression yet',
+    emptyBody: 'This is both players’ first match at ' + tourn + '. Round-by-round stats start once they have played a round here; the next match will show this one.' });
+  const labels = played.map(label);
+  const byeOk = !t || progressionByesCredible(t);
+  // Road: one cell per played round. Both players reached this match, so a round with no row is a bye or a hole in our
+  // record. A bye only at the draw's FIRST round (a seed's R1), only from a history we read, and never where the active
+  // draw's own file shows the player in that round or its bye arithmetic fails (progressionByesCredible); any other
+  // hole is a round we hold no record of.
+  const roads = D.sides.map((s, k) => {
+    const tpP = t && (t.players || []).find(Q => String(Q.playerKey) === s.key);
+    const cells = played.map((ri, j) => {
+      const r = s.rows.find(x => x.ri === ri) || null;
+      if (r) return { r, rd: labels[j] };
+      const bye = j === 0 && s.loaded && byeOk && !(tpP && (tpP.rounds || []).some(y => y.round === labels[j]));
+      return { bye, missing: !bye, rd: labels[j] };
     });
-    return `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">${out}</svg>`;
+    const real = cells.filter(c => c.r && !c.r.wo);
+    const w = real.filter(c => c.r.won).length, l = real.length - w;
+    const sw = real.reduce((a, c) => a + (c.r.pS || 0), 0), sl = real.reduce((a, c) => a + (c.r.oS || 0), 0);
+    return { name: k ? m.p2 : m.p1, short: k ? bS : aS, key: s.key, cells, played: real.length, rec: w + '–' + l + ' · sets ' + sw + '–' + sl };
+  });
+  const byeAny = roads.some(p => p.cells.some(c => c.bye));
+  const rw = k => (k === 1 ? 'round' : 'rounds');
+  const [pa, pb] = roads.map(p => p.played);
+  const sub = 'Facing the ' + (PG_LONG[facing] || facing) + ' · '
+    + (pa === pb && !byeAny ? pa + ' ' + rw(pa) + ' played each' : aS + ' ' + pa + ' ' + rw(pa) + ', ' + bS + ' ' + pb + ' ' + rw(pb) + (byeAny ? ' (bye)' : ''))
+    + ' · this match excluded';
+  const draw = pgDrawFor(t, labels);
+  const metrics = PG_METRICS.map(mt => {
+    const series = roads.map(p => p.cells.map(c => (c.r && c.r.pg ? c.r.pg[mt.key] : null)));
+    const avg = series.map(vals => pgPool(vals, mt));
+    const f = draw ? draw.map(d => d[mt.key]) : labels.map(() => null);
+    const fv = f.filter(x => x && x.v != null);
+    const fAvg = fv.length ? { v: fv.reduce((s, x) => s + x.v, 0) / fv.length, n: fv.reduce((s, x) => s + x.n, 0) } : null;
+    return { mt, series, avg, f, fAvg };
+  });
+  return Object.assign(base, { isEmpty: false, facing, fi, labels, future: future.map(label), roads, sub, metrics, draw: !!draw,
+    long: PG_LONG[facing] || facing });
+}
+
+function pgState(m){ if (!_pg || _pg.m !== m) _pg = { m, hi: null, met: null }; return _pg; }
+function pgRender(){ const m = _pg && _pg.m; if (m && aBuilt(m, 'progression')) aPaint('aSectionProgression', buildMatchProgressionSection(m)); }
+function pgHi(i){ if (!_pg) return; _pg.hi = _pg.hi === i ? null : i; pgRender(); }
+function pgMet(k){
+  if (!_pg) return;
+  const cur = _pg.met || PG_METRICS.reduce((o, x) => { o[x.key] = true; return o; }, {});
+  const nx = Object.assign({}, cur);
+  if (nx[k]) delete nx[k]; else nx[k] = true;
+  const c = Object.keys(nx).length;
+  _pg.met = c === PG_METRICS.length || c === 0 ? null : nx;   // DF L4093
+  pgRender();
+}
+function pgMetReset(){ if (_pg){ _pg.met = null; pgRender(); } }
+
+function buildMatchProgressionSection(m){
+  const S = fhS, M = FH_MONO, st = pgState(m);
+  if (!m._pg){
+    pgEnsureData(m).then(() => { if (_pg && _pg.m === m) pgRender(); });
+    // DESIGN GAP G12: the file draws no loading state — the tabs' one-line loading pattern (Form, News G8).
+    return `<div class="acomingsoon">Loading tournament progression…</div>`;
+  }
+  const P = pgModel(m);
+  const head = `<div style="display:flex; align-items:flex-end; justify-content:space-between; gap:24px; flex-wrap:wrap; margin-bottom:16px;">
+      <div style="display:flex; flex-direction:column; gap:6px;">
+        <div style="display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;"><span style="font-size:20px; font-weight:800; letter-spacing:-0.01em;">Tournament progression</span><span style="font-size:20px; font-weight:600; color:${S('8b96b5', '--text-sub')};">${fhEsc(P.tourn)}</span></div>
+        <span style="font-size:12.5px; color:${S('5b6880', '--label')};">${fhEsc(P.sub)}</span>
+      </div>
+    </div>`;
+  if (P.isEmpty){
+    // DF L681–687: the R1 empty state.
+    return `<div class="pg-wrap" style="line-height:normal; color:${S('e7e9ee', '--text')};">${head}<div class="pg-empty" style="background:${S('0e1019', '--surface')}; border:1.25px solid ${S('ffffff-060', '--line')}; border-radius:14px; padding:56px 24px; display:flex; flex-direction:column; align-items:center; gap:10px; text-align:center;">
+        <span style="width:40px; height:40px; border-radius:12px; background:${S('5b9bff-120', '--seg-active')}; color:${S('5b9bff', '--accent')}; display:flex; align-items:center; justify-content:center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16l5-5 3 3 8-9"></path></svg></span>
+        <span style="font-size:18px; font-weight:800;">${fhEsc(P.emptyTitle)}</span>
+        <span style="font-size:13px; color:${S('5b6880', '--label')}; max-width:460px; line-height:1.6; text-wrap:pretty;">${fhEsc(P.emptyBody)}</span>
+      </div></div>`;
+  }
+  const n = P.n, hi = st.hi != null && st.hi < n ? st.hi : null;
+  const op = i => (hi == null || hi === i ? 1 : 0.3);
+  const A_COL = S('e7e9ee', '--text'), B_COL = S('9aa3b5', '--text-soft');   // DF PGP.a — D4: both players neutral
+  const cols = [A_COL, B_COL];
+  const aHead = aHeaderOdds(m);
+  const done = !!m.finalScore || !!m.live || !!(m.interrupted && m.partialScore);
+
+  // ---- road (DF roadFor L4044–4069 · timeline template L698–775) ----
+  const priceSpan = (own, opp, strict) => {
+    const fav = own != null && opp != null ? (strict ? own < opp : own <= opp) : null;   // DF L4126: player B's favourite test is strict
+    const o = own == null ? FH_DASHC : fhOdd(own), p = opp == null ? FH_DASHC : fhOdd(opp);
+    const oc = fav === false ? S('8b96b5', '--text-sub') : S('e7e9ee', '--text'), pc = fav === false ? S('e7e9ee', '--text') : S('8b96b5', '--text-sub');
+    return `<span style="white-space:nowrap;"><span style="color:${own == null ? S('5b6880', '--label') : oc}; font-weight:${fav === false ? 500 : fav ? 700 : 500};">${o}</span> <span style="color:${S('4b5672', '--label')};">v</span> <span style="color:${opp == null ? S('5b6880', '--label') : pc}; font-weight:${fav === false ? 700 : 500};">${p}</span></span>`;
   };
-
-  const bodyRows = PROGRESSION_TABLE_METRICS.map(mt => {
-    const key = mt.key;
-    const valsA = s1 ? s1.map(mm => mm ? mm[key] : null) : rounds.map(() => null);
-    const valsB = s2 ? s2.map(mm => mm ? mm[key] : null) : rounds.map(() => null);
-    const fieldArr = (data.fieldAverage && data.fieldAverage.metrics[key]) || [];
-    // One benchmark value per row: the draw's field average across the rounds on
-    // show (mean of every player at each round). Quieter than the player chips.
-    const fieldV = mean(rounds.map((_, i) => fieldArr[i] == null ? null : fieldArr[i]));
-
-    const roundCells = rounds.map((r, i) => {
-      const cell = (vals, color) => {
-        const v = vals[i];
-        const ar = i === 0 ? '' : arrow(v, prevOf(vals, i));
-        return `<div class="tpg-v" style="color:${color}">${ar ? `<span class="tpg-ar">${ar}</span>` : ''}${fmt(key, v)}</div>`;
-      };
-      return `<td class="tpg-round">${p1Data ? cell(valsA, A_COLOR) : ''}${p2Data ? cell(valsB, B_COLOR) : ''}</td>`;
-    }).join('');
-
-    const chip = (vals, color) => `<div class="tpg-chip" style="color:${color}">${fmt(key, mean(vals))}</div>`;
-    const spark = sparkline([
-      ...(p1Data ? [{ color: A_COLOR, vals: valsA }] : []),
-      ...(p2Data ? [{ color: B_COLOR, vals: valsB }] : []),
-    ], rounds.map((_, i) => fieldArr[i]), !!mt.ratio);
-
-    return `<tr>
-      <td class="tpg-metric"><div class="tpg-mlabel">${mt.label}</div>${mt.sub ? `<div class="tpg-sub">${mt.sub}</div>` : ''}</td>
-      <td class="tpg-trend">${spark}</td>
-      ${roundCells}
-      <td class="tpg-avg">${p1Data ? chip(valsA, A_COLOR) : ''}${p2Data ? chip(valsB, B_COLOR) : ''}</td>
-      <td class="tpg-field">${fmt(key, fieldV)}</td>
-    </tr>`;
-  }).join('');
-
-  const roundHeads = rounds.map(r => `<th class="tpg-h tpg-hround">${r}</th>`).join('');
-
-  // Legend: two short line swatches with surname only, a divider, then an arrow
-  // key. No field-average swatch — FIELD is a column now. Arrows here are the
-  // neutral key colour; in the table they take each player's identity colour.
-  const legendHtml = `
-    <div class="tpg-legend">
-      ${p1Data ? `<span class="tpg-lg"><span class="tpg-swatch" style="background:${A_COLOR}"></span>${p1Surname}</span>` : ''}
-      ${p2Data ? `<span class="tpg-lg"><span class="tpg-swatch" style="background:${B_COLOR}"></span>${p2Surname}</span>` : ''}
-      <span class="tpg-ldiv"></span>
-      <span class="tpg-lg tpg-lkey"><span class="tpg-ar">&#8599;</span>up <span class="tpg-ar">&#8600;</span>down vs prev round</span>
+  const styleOf = name => { const s = ppStyleFor(name); return s && s.archetype_label ? s.archetype_label : null; };
+  const scoreOf = r => (r.wo ? 'w/o' : r.sets ? r.sets.map(x => x[0] + '-' + x[1]).join(' ') + (r.ret ? ' ret.' : '') : FH_DASHC);
+  const shell = (inner, c) => `<div class="seg pg-cell"${c.click || ''}${c.tip ? ` title="${fhEsc(c.tip)}"` : ''} style="flex:1; min-width:0; background:${c.cbg}; border:1.25px solid ${c.bd}; border-radius:10px; overflow:hidden; display:flex; flex-direction:column; opacity:${c.op};${c.click ? '' : ' cursor:default;'}">${inner}</div>`;
+  const cardBody = (opp, style, styleTitle, mid, foot, meta, midStyle) => `<div style="flex:1; padding:10px 12px; display:flex; flex-direction:column; gap:3px;">
+      <span style="font-size:12.5px; font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${fhEsc(opp)}</span>
+      <span${styleTitle ? ` data-aotip="${fhEsc(styleTitle)}"` : ''} style="font-size:11px; color:${S('8b96b5', '--text-sub')}; line-height:1.35; min-height:2.7em; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${fhEsc(style)}</span>
+      <span style="${M} font-size:11px; ${midStyle} line-height:1.35; margin:3px 0 5px;">${mid}</span>
+      <span style="display:flex; flex-wrap:wrap; justify-content:space-between; gap:2px 8px; margin-top:auto; padding-top:6px; border-top:1px solid ${S('ffffff-050', '--line')}; ${M} font-size:10.5px;">${foot}<span style="color:${S('5b6880', '--label')};">${meta}</span></span>
+    </div>`;
+  const cellHtml = (p, c, i) => {
+    const on = hi === i, bd = on ? S('ffffff-160', '--line-open') : S('ffffff-050', '--line'), cbg = on ? S('131623', '--surface-inner') : S('0c0e16', '--surface-inner');
+    if (c.bye){ c.tip = c.rd + ' · bye'; return shell(`<div style="padding:10px 12px; display:flex; flex-direction:column; gap:3px;"><span style="font-size:12.5px; font-weight:700; color:${S('5b6880', '--label')};">Bye</span><span style="${M} font-size:11px; color:${S('5b6880', '--label')};">—</span><span style="${M} font-size:9.5px; color:${S('5b6880', '--label')};">no match played</span></div>`,
+      { cbg, bd, op: op(i), tip: c.tip, click: ` onclick="pgHi(${i})"` }); }
+    // DESIGN GAP G13: a round we hold no record of (a player who reached this round, but no career-history row for it).
+    // The file draws no such cell — the bye cell's pattern, saying so; never a guessed opponent.
+    if (c.missing){ c.tip = c.rd + ' · no match on record for ' + p.name + ' in this round'; return shell(`<div style="padding:10px 12px; display:flex; flex-direction:column; gap:3px;"><span style="font-size:12.5px; font-weight:700; color:${S('5b6880', '--label')};">—</span><span style="${M} font-size:11px; color:${S('5b6880', '--label')};">—</span><span style="${M} font-size:9.5px; color:${S('5b6880', '--label')};">no record of this round</span></div>`,
+      { cbg, bd, op: op(i), tip: c.tip, click: ` onclick="pgHi(${i})"` }); }
+    const r = c.r, dr = r.pg && r.pg.dominance && r.pg.dominance.v != null ? r.pg.dominance.v.toFixed(2) : FH_DASHC;
+    const sty = styleOf(r.opp);
+    const verb = r.wo ? 'walkover v' : r.won ? 'beat' : 'lost to';
+    c.tip = c.rd + ' · ' + verb + ' ' + r.opp + (r.wo ? '' : ' ' + scoreOf(r)) + ' · click for match stats';
+    c.click = maRowOnclick({ key: p.key, name: p.name, opp: r.opp, ek: r.ek, date: r.date, round: c.rd,
+      fallback: { date: r.date, tourn: r.tourn, surface: r.surface, round: r.round, won: r.won, result: r.result, sets: r.sets, wo: r.wo, ret: r.ret } });
+    const foot = r.wo ? `<span style="white-space:nowrap; color:${S('5b6880', '--label')};">— v —</span>` : priceSpan(r.price, r.oppPrice);
+    return shell(cardBody(r.opp, sty || FH_DASHC, sty ? '' : 'No playing style on file for ' + r.opp, fhEsc(scoreOf(r)), foot, r.wo ? 'w/o' : 'DR ' + dr, `color:${S('e7e9ee', '--text')};`),
+      { cbg, bd, op: op(i), tip: c.tip + (r.wo ? '' : (r.price == null ? ' · ' + fhSrcTitle(r) : '')), click: c.click });
+  };
+  const nowHtml = k => {
+    const opp = k ? m.p1 : m.p2, sty = styleOf(opp);
+    const own = Number(k ? aHead.p2 : aHead.p1), oth = Number(k ? aHead.p1 : aHead.p2);
+    const ok = v => Number.isFinite(v) && v >= 1.01;
+    // "not played" is the file's word for an unplayed match; a live or finished one says nothing there (DESIGN GAP G14).
+    return shell(cardBody('vs ' + opp, sty || FH_DASHC, sty ? '' : 'No playing style on file for ' + opp, 'THIS MATCH', priceSpan(ok(own) ? own : null, ok(oth) ? oth : null, k === 1), done ? '' : 'not played',
+      `font-weight:700; letter-spacing:0.08em; color:${S('8bb8ff', '--accent')};`),
+      { cbg: S('131623', '--surface-inner'), bd: S('ffffff-160', '--line-open'), op: 1, tip: P.facing + ' · this match' });
+  };
+  // DF L712–719: an unplayed round, its placeholder blurred. The file's sample numbers are not shipped (no seeded data):
+  // the same lines, dashed.
+  const futHtml = lbl => shell(`<div style="position:relative; flex:1; padding:10px 12px;">
+      <div aria-hidden="true" style="display:flex; flex-direction:column; gap:3px; filter:blur(3.5px); opacity:0.55; user-select:none;">
+        <span style="font-size:12.5px; font-weight:700;">Opponent TBD</span>
+        <span style="font-size:11px; color:${S('8b96b5', '--text-sub')};">Playing style</span>
+        <span style="${M} font-size:11px; color:${S('e7e9ee', '--text')}; margin-top:3px;">— —</span>
+        <span style="display:flex; justify-content:space-between; margin-top:5px; padding-top:6px; border-top:1px solid ${S('ffffff-050', '--line')}; ${M} font-size:10.5px;"><span>— v —</span><span>DR —</span></span>
+      </div>
+      <span style="position:absolute; inset:0; display:flex; align-items:center; justify-content:center; ${M} font-size:9.5px; font-weight:700; letter-spacing:0.14em; color:${S('5b6880', '--label')};">${lbl}</span>
+    </div>`, { cbg: 'transparent', bd: S('ffffff-070', '--line'), op: 1, tip: lbl + ' · not reached yet' });
+  const roadRow = (p, k) => `<div style="display:flex; gap:8px; align-items:stretch;">${p.cells.map((c, i) => cellHtml(p, c, i)).join('')}${nowHtml(k)}${P.future.map(futHtml).join('')}</div>`;
+  const chip = (label, tc, cbg, cbd, click) => `<span style="flex:1; display:flex; justify-content:center; position:relative;"><span class="seg"${click ? ` onclick="${click}"` : ''} style="${M} font-size:10.5px; font-weight:700; letter-spacing:0.1em; color:${tc}; border:1px solid ${cbd}; border-radius:6px; text-align:center; background:${cbg}; padding:4px 12px;${click ? '' : ' cursor:default;'}">${label}</span></span>`;
+  const roadHead = P.labels.map((l, i) => { const on = hi === i; return chip(l, on ? S('e7e9ee', '--text') : S('5b6880', '--label'), on ? S('131623', '--surface-inner') : S('0e1019', '--surface'), on ? S('ffffff-160', '--line-open') : 'transparent', `pgHi(${i})`); }).join('')
+    + chip(P.facing, S('8bb8ff', '--accent'), S('10162b', '--seg-active'), S('5b9bff-450', '--accent'), null)
+    + P.future.map(l => chip(l, S('4b5672', '--label'), S('0e1019', '--surface'), S('ffffff-060', '--line'), null)).join('');
+  const nameLine = (p, k) => `<span style="display:flex; align-items:baseline; gap:10px;"><span style="font-size:14px; font-weight:700; color:${cols[k]};">${fhEsc(p.name)}</span><span style="${M} font-size:10.5px; color:${S('5b6880', '--label')};">${p.rec}</span></span>`;
+  const slots = n + 1 + P.future.length;
+  const road = `<div class="pg-road" style="background:${S('0e1019', '--surface')}; border:1.25px solid ${S('ffffff-060', '--line')}; border-radius:14px; padding:16px 18px 18px; margin-bottom:12px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin-bottom:10px;">
+        <span style="${M} font-size:10px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:${S('5b6880', '--label')};">Road to the ${fhEsc(P.long)}</span>
+        <span style="font-size:11.5px; color:${S('5b6880', '--label')};">Click a round to highlight it on every chart · click a match for its stats</span>
+      </div>
+      <div style="overflow-x:auto;"><div style="min-width:${slots * 132 + (slots - 1) * 8}px; display:flex; flex-direction:column; gap:8px;">
+        ${nameLine(P.roads[0], 0)}
+        ${roadRow(P.roads[0], 0)}
+        <div style="position:relative; display:flex; gap:8px; padding:4px 0;"><span style="position:absolute; left:0; right:0; top:50%; height:1px; background:${S('ffffff-120', '--line')};"></span>${roadHead}</div>
+        ${roadRow(P.roads[1], 1)}
+        ${nameLine(P.roads[1], 1)}
+      </div></div>
     </div>`;
 
-  return `
-    <div class="tprogress-title">Player Tournament Progression <span class="tour">&mdash; ${bareTour}</span> <span class="info-ico" title="Real round-by-round stats for both players from the rounds they completed BEFORE this match, vs. the field average for each round. The match on this card is excluded.">&#9432;</span></div>
-    ${legendHtml}
-    <div class="tpg-method">Mean of every player in the ${bareTour} draw at each round &mdash; the benchmark for above/below-tour form. Shows form built BEFORE this match; the match on this card is excluded. A player is charted once they have survived two rounds.</div>
-    <div class="tpg-tablewrap">
-      <table class="tpg-table">
-        <thead><tr>
-          <th class="tpg-h tpg-hcaps tpg-hmetric">Metric</th>
-          <th class="tpg-h tpg-hcaps">Trend</th>
-          ${roundHeads}
-          <th class="tpg-h tpg-havg">AVG</th>
-          <th class="tpg-h tpg-hcaps tpg-hfield">Field</th>
-        </tr></thead>
-        <tbody>${bodyRows}</tbody>
-      </table>
-    </div>
-    ${buildProgressionAiSummary(m, data, p1Data, p2Data, bareTour)}
-  `;
+  // ---- metric chips (DF L4091–4094, template L801–808) ----
+  const metSel = st.met;
+  const chips = PG_METRICS.map(mt => { const on = !metSel || !!metSel[mt.key];
+    return `<span class="seg" onclick="pgMet('${mt.key}')" style="font-size:11.5px; font-weight:${on ? 700 : 600}; color:${on ? S('e7e9ee', '--text') : S('5b6880', '--label')}; background:${on ? S('131623', '--surface-inner') : 'transparent'}; border:1px solid ${on ? S('ffffff-140', '--line-open') : S('ffffff-100', '--line')}; border-radius:8px; padding:6px 10px; white-space:nowrap;">${fhEsc(mt.name)}</span>`; }).join('')
+    + (metSel ? `<span class="seg pg-met-reset" onclick="pgMetReset()" style="font-size:12px; font-weight:600; color:${S('5b6880', '--label')}; padding:6px;">All metrics</span>` : '');
+
+  // ---- heat cards (DF L4097–4110, template L810–838; DZ 'b') ----
+  const DZ = { gap: 12, pad: 12, title: 11, name: 12, nGap: 6, nPad: 8, cellH: 28, rad: 6, cell: 11.5, avg: 12, avgPad: 8, nTop: 6, field: 10, nameW: 84, colW: 36, avgW: 50 };
+  const hmCols = `${DZ.nameW}px repeat(${n},minmax(${DZ.colW}px,1fr)) ${DZ.avgW}px`, hmMin = DZ.nameW + DZ.avgW + n * DZ.colW + (n + 1) * 5;
+  let anySmall = false;
+  const cards = P.metrics.filter(x => !metSel || metSel[x.mt.key]).map(X => {
+    const mt = X.mt;
+    const rowHtml = (k) => {
+      const p = P.roads[k], vals = X.series[k], other = X.series[1 - k];
+      const cells = vals.map((x, i) => {
+        const c = p.cells[i], F = pgFig(x, mt), o = other[i];
+        if (F.none){
+          const why = c.r && !c.r.wo && !c.r.pg ? ' · no box score on file for this match' : c.r && c.r.pg && mt.kind !== 'pct' && x && x.why && x.why.length ? ' · needs ' + x.why.join(', ') : '';
+          // DF L4102: a round without a value is a flat dash — no highlight, no click
+          return `<span class="seg" title="${fhEsc((c.tip || c.rd) + why)}" style="display:flex; align-items:center; justify-content:center; height:${DZ.cellH}px; border-radius:${DZ.rad}px; background:transparent; ${M} font-weight:400; font-size:${DZ.cell}px; color:${S('4b5672', '--label')}; opacity:1; cursor:default;">${FH_DASHC}</span>`;
+        }
+        const lead = !o || o.v == null || x.v - o.v >= 0;
+        if (F.small) anySmall = true;
+        const tip = (c.tip || c.rd) + (F.count ? ' · ' + F.count.trim() : '') + (F.small ? ' · ' + MA_SMALL_NOTE : '');
+        return `<span class="seg pg-hcell"${c.click || ''} title="${fhEsc(tip)}" data-ma-gate="${F.small ? 'small' : /\//.test(F.t) ? 'nopct' : 'full'}" style="display:flex; align-items:center; justify-content:center; height:${DZ.cellH}px; border-radius:${DZ.rad}px; background:${lead ? S('ffffff-070-fill', '--surface-inner') : S('ffffff-030', '--surface-inner')}; ${M} font-weight:${lead ? 700 : 400}; font-size:${DZ.cell}px; color:${F.small ? MA_GREY : S('e7e9ee', '--text')}; opacity:${hi == null || hi === i ? 1 : 0.26}; cursor:pointer;">${fhEsc(F.t)}</span>`;
+      }).join('');
+      const av = X.avg[k], AF = pgFig(av, mt);
+      if (AF.small) anySmall = true;
+      const nV = av.n, avgN = nV < n ? '(' + nV + ')' : '';
+      const avgTip = AF.none ? 'No value in the rounds shown' : (mt.kind === 'pct' ? 'Over ' + nV + ' ' + (nV === 1 ? 'round' : 'rounds') + (AF.count ? AF.count : '') : mt.kind === 'num' ? 'Mean of ' + nV + ' ' + (nV === 1 ? 'round' : 'rounds') : 'Over ' + nV + ' ' + (nV === 1 ? 'round' : 'rounds') + ', from the summed counts') + (AF.small ? ' · ' + MA_SMALL_NOTE : '');
+      return `<div style="display:grid; grid-template-columns:${hmCols}; gap:5px; margin-bottom:5px; align-items:center;">
+          <span style="display:flex; align-items:center; gap:${DZ.nGap}px; min-width:0; border-left:2px solid ${cols[k]}; padding-left:${DZ.nPad}px;"><span style="font-size:${DZ.name}px; font-weight:600; color:${S('e7e9ee', '--text')}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${fhEsc(p.short)}</span><span style="margin-left:auto; ${M} font-size:10px; color:${S('6b7484', '--label')}; flex:none;"></span></span>
+          ${cells}
+          <span data-aotip="${fhEsc(avgTip)}" style="display:flex; align-items:baseline; justify-content:flex-end; gap:2px; height:${DZ.cellH}px; padding:0 2px 0 ${DZ.avgPad}px; border-left:1px solid ${S('ffffff-090', '--line')};"><span style="${M} font-weight:700; font-size:${DZ.avg}px; color:${AF.none ? S('4b5672', '--label') : AF.small ? MA_GREY : S('e7e9ee', '--text')}; align-self:center;">${fhEsc(AF.t)}</span><span style="${M} font-size:8.5px; font-weight:600; color:${S('5b6880', '--label')}; align-self:flex-start; padding-top:${DZ.nTop}px;">${avgN}</span></span>
+        </div>`;
+    };
+    const fCell = (x, i) => {
+      const F = pgDrawFig(x, mt);
+      const tip = !P.draw ? PG_NO_DRAW : x && x.n ? 'Mean of the ' + x.n + ' player' + (x.n === 1 ? '' : 's') + ' who played ' + P.labels[i] + ' at ' + P.tourn + (F.small ? ' · ' + MA_SMALL_NOTE : '') : 'No box scores for ' + P.labels[i] + ' at ' + P.tourn;
+      if (F.small) anySmall = true;
+      return `<span data-aotip="${fhEsc(tip)}" style="text-align:center; ${M} font-size:${DZ.field}px; color:${F.small ? MA_GREY : S('5b6880', '--label')}; white-space:nowrap;">${fhEsc(F.t)}</span>`;
+    };
+    const FA = pgDrawFig(X.fAvg, mt);
+    const fTip = !P.draw ? PG_NO_DRAW : X.fAvg ? 'Mean of the round averages · ' + X.fAvg.n + ' player-rounds' : 'No box scores in the rounds shown';
+    return `<div class="pg-card" data-pg-metric="${mt.key}" style="background:${S('0e1019', '--surface')}; border:1.25px solid ${S('ffffff-060', '--line')}; border-radius:12px; padding:${DZ.pad}px; min-width:0;">
+        <div style="display:flex; align-items:baseline; justify-content:space-between; gap:4px 10px; flex-wrap:wrap; font-size:${DZ.title}px; letter-spacing:0.06em; text-transform:uppercase; color:${S('5b6880', '--label')}; font-weight:600; ${M} padding-bottom:11px; margin-bottom:10px; border-bottom:1px solid ${S('ffffff-060', '--line')};"><span style="color:${S('5b6880', '--label')};">${fhEsc(mt.name)}</span></div>
+        <div style="overflow-x:auto;"><div style="min-width:${hmMin}px;">
+          <div style="display:grid; grid-template-columns:${hmCols}; gap:5px; margin-bottom:7px;">
+            <span></span>
+            ${P.labels.map(l => `<span style="text-align:center; font-size:9.5px; ${M} letter-spacing:0.08em; color:${S('5b6880', '--label')}; font-weight:600;">${l}</span>`).join('')}
+            <span style="text-align:right; padding:0 2px 0 ${DZ.avgPad}px; font-size:9.5px; ${M} letter-spacing:0.08em; color:${S('5b6880', '--label')}; font-weight:600;">AVG</span>
+          </div>
+          ${rowHtml(0)}${rowHtml(1)}
+          <div style="display:grid; grid-template-columns:${hmCols}; gap:5px; margin-top:9px; padding-top:9px; border-top:1px solid ${S('ffffff-070', '--line')}; align-items:center;">
+            <span style="padding-left:${DZ.nPad}px; font-size:9px; ${M} letter-spacing:0.06em; text-transform:uppercase; color:${S('5b6880', '--label')}; font-weight:600; font-style:italic; white-space:nowrap; overflow:hidden;">Draw</span>
+            ${X.f.map(fCell).join('')}
+            <span data-aotip="${fhEsc(fTip)}" style="display:flex; align-items:center; justify-content:flex-end; padding:0 2px 0 ${DZ.avgPad}px; border-left:1px solid ${S('ffffff-090', '--line')}; ${M} font-size:${DZ.field}px; color:${FA.small ? MA_GREY : S('5b6880', '--label')}; white-space:nowrap;">${fhEsc(FA.t)}</span>
+          </div>
+        </div></div>
+      </div>`;
+  }).join('');
+  // D2: in narrow table cells the 5–9 "small sample" note is a hover note plus this footnote (modal-analysis.md).
+  // DESIGN GAP G15: the file has no footnote line — its section-hint text style.
+  // DoD 8 (TEN-314 f0db3de8): the file's own native titles (road cards, heat cells) stay; every hover text the file does
+  // not draw (style, draw row, AVG) is the modal's one tooltip component, positioned mode (data-aotip).
+  if (typeof initAOddsTips === 'function') initAOddsTips();
+  const foot = anySmall ? `<div class="pg-foot" style="margin-top:10px; font-size:11.5px; color:${S('5b6880', '--label')};">Grey = small sample (5–9): hover a figure for its count.</div>` : '';
+  return `<div class="pg-wrap" style="line-height:normal; color:${S('e7e9ee', '--text')};">${head}${road}
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin:18px 0 10px;">
+        <span style="${M} font-size:10px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:${S('5b6880', '--label')};">Metrics · round by round</span>
+        <span style="font-size:11.5px; color:${S('5b6880', '--label')};">Highlighted cell = better of the two that round · click a cell for match stats</span>
+      </div>
+      <div style="display:flex; align-items:flex-start; gap:10px 14px; flex-wrap:wrap; margin-bottom:14px;">
+        <span style="${M} font-size:9.5px; font-weight:600; letter-spacing:0.14em; color:${S('5b6880', '--label')}; padding-top:7px;">METRICS</span>
+        <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap; flex:1; min-width:0;">${chips}</div>
+      </div>
+      <div style="display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:${DZ.gap}px;">${cards}</div>${foot}
+    </div>`;
 }
 
 function showTournamentProfile(key){
@@ -29136,7 +29077,7 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
 // Critical path: the match list. matches.json (+ the tiny progression file)
 // load first so Today's Matches paints immediately.
 loadMatches();
-loadTournamentProgression();
+_tpLoad = loadTournamentProgression();
 // Heavy profile datasets are NOT needed for the initial match list:
 // tournament-profiles.json (~5MB) powers the Tournament page; player-profiles.json
 // (~21MB) powers the Player Profile page and makes cards clickable/searchable.
