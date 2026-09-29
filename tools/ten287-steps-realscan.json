@@ -1,22 +1,22 @@
 [
  {
-  "name": "real_scan_sb",
-  "sql": "select ten287_bot.load_ticks('Superbet', '2026-09-12T00:00:00Z', '2026-09-29T06:02:00Z') loaded, ten287_bot.scan('Superbet', '2026-09-26T03:20:00Z', '2026-09-29T06:02:00Z', 5, 'backtest', 'ten348-sb') fired"
+  "name": "t287_count",
+  "sql": "select ten287_bot.load_ticks('Superbet', '2026-09-12T00:00:00Z', '2026-09-29T06:02:00Z'); select count(*) n, count(*) filter (where side='home') home, min(at) min_at, max(at) max_at from pg_temp.t287"
  },
  {
-  "name": "real_scan_bf",
-  "sql": "select ten287_bot.load_ticks('Betfair Exchange', '2026-09-12T00:00:00Z', '2026-09-29T06:02:00Z') loaded, ten287_bot.scan('Betfair Exchange', '2026-09-26T00:00:00Z', '2026-09-29T06:02:00Z', 5, 'backtest', 'ten348-bf') fired"
+  "name": "t287_ev",
+  "sql": "select ten287_bot.load_ticks('Superbet', '2026-09-12T00:00:00Z', '2026-09-29T06:02:00Z'); select side, price, at, known_at from pg_temp.t287 where event_id = 15060042968 and at < '2026-09-27T07:20:00Z' order by side, at"
  },
  {
-  "name": "real_alerts",
-  "sql": "select run_id, event_id, side, tier, eval_at, ref_price, ref_at, cur_price, cur_at, pct_10m from ten287_bot.alerts where mode='backtest' and run_id in ('ten348-sb','ten348-bf') order by run_id, eval_at"
+  "name": "raw_ev",
+  "sql": "select t.id, t.back_home, t.back_away, t.book_updated_at, t.seen_at, t.event_status, t.src from ten287_rec.ticks t where t.book='Superbet' and t.event_id = 15060042968 and t.seen_at < '2026-09-27T07:20:00Z' order by t.book_updated_at, t.seen_at"
  },
  {
-  "name": "cleanup",
-  "sql": "delete from ten287_bot.alerts where mode='backtest' and run_id in ('ten348-sb','ten348-bf') returning id"
+  "name": "raw_count",
+  "sql": "select count(*) n from ten287_rec.ticks t join ten287_rec.events e using (event_id) where t.book='Superbet' and e.tier is not null and coalesce(t.event_status, e.status) = 'pending' and t.book_updated_at is not null and t.book_updated_at between '2026-09-12T00:00:00Z' and '2026-09-29T06:02:00Z' and t.seen_at <= '2026-09-29T06:02:00Z'"
  },
  {
-  "name": "tick_counts",
-  "sql": "select t.book, e.tier, (t.seen_at at time zone 'utc')::date as d, t.src, count(*) n, count(distinct t.event_id) ev from ten287_rec.ticks t left join ten287_rec.events e using (event_id) group by 1,2,3,4 order by 1,2,3,4"
+  "name": "fn_src",
+  "sql": "select pg_get_functiondef('ten287_bot.load_ticks(text,timestamptz,timestamptz)'::regprocedure) def"
  }
 ]

@@ -12,7 +12,7 @@ jobs:
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
-      # Run 31: TEN-348 control — the real ten287_bot.scan in backtest mode (rows deleted in the same run); nothing sends.
+      # Run 32: READ-ONLY — TEN-348 control diagnostics: what load_ticks puts in t287 for one event.
       - name: SQL steps (encrypted output)
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
