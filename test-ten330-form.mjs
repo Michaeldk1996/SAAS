@@ -37,15 +37,16 @@ const FNS = ['escapeHtml', 'fhEsc', 'fhSafeId', 'ppCleanTournamentName', 'fhTour
   'fhOdd', 'fhSigned', 'fhSourceNote', 'fhSrcTitle', 'fhScoreText', 'fhEligible', 'fhIneligibleWhy', 'fhScoreLines', 'fhHotLineRank', 'fhFamOf',
   'fhFormLineDefs', 'surnameFirstName', 'fhOppFmt', 'psShortName', 'fhSurname', 'fhTournCode', 'fhHotLinesTable', 'fhFormRowsFromCareer',
   'fhFormPlayer', 'fhFormSetScores', 'fhFormTipScore', 'fhFormPriceCell', 'fhFormRowHtml', 'fhFormColumnHtml', 'fhFormListHtml', 'fhFormHotHtml',
-  'fhStateFor', 'fhNameLink', 'fhFullName', 'fhEloBadge'];
+  'fhStateFor', 'fhNameLink', 'fhFullName', 'fhEloText', 'fhRetNote', 'fhFormDataRows'];
 const CONSTS = ['FH_SLAMS', 'FH_BOOK_ORDER', 'FH_BOOK', 'FH_SRC', 'FH_DASHC', 'FH_MONO', 'FH_THIN', 'FH_AC', 'FH_SURF', 'FH_ELO_MAX_AGE_DAYS',
   'FH_HOT_MIN_ELIGIBLE', 'FH_HOT_FAM', 'FH_TCODE', 'FH_MONS', 'FH_FORM_ROW_CAP', 'MA_GREY', 'MA_SMALL_NOTE', 'MA_ROW_COLS'];
+globalThis.MarketEdgeCore = (await import('node:module')).createRequire(import.meta.url)(join(HERE, 'market-edge-core.js'));
 const S = new Function(`
   let _fh = null; const playerProfiles = {};
   function eventKeyOfMatch(m){ return m.eventKey || null; }
   ${CONSTS.map(constSrc).join('\n')}
   ${FNS.map(slice).join('\n')}
-  return { fhFormPlayer, fhFormColumnHtml, fhFormListHtml, fhFormHotHtml, fhFormRowHtml, fhFormRowsFromCareer, fhStateFor, fhFormSetScores,
+  return { fhFormDataRows, fhFormPlayer, fhFormColumnHtml, fhFormListHtml, fhFormHotHtml, fhFormRowHtml, fhFormRowsFromCareer, fhStateFor, fhFormSetScores,
     get fh(){ return _fh; } };
 `)();
 const text = h => h.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
@@ -136,7 +137,8 @@ test('the file\'s rows: "surface · W–L" group header, grid 48/12/1.1fr/36/40/
   assert.ok(S.fhFormRowHtml(P.win[0]).includes(G), 'every row on the file grid');
   assert.equal(L.split(G).length - 1, 1 + P.win.length, 'the sticky header + every listed row');
   assert.match(text(L), /Date Opponent Rd Sets Set scores H A/);
-  assert.match(text(L), /18\.07\. Beta B\. ELO — R16 2 - 0 6-4, 6-3 1\.50 2\.60/, 'the parked ruled ELO badge sits after the name (no Elo history loaded → —)');
+  assert.match(text(L), /18\.07\. Beta B\. R16 2 - 0 6-4, 6-3 1\.50 2\.60/, 'the name is never cut by a badge (the Elo is its hover text)');
+  assert.match(L, /class="fh-opp" data-elo="" title="Beta B\. · Elo — at the time of the match: Elo history not loaded"/);
 });
 
 // Mutation: the hot-line header back to one ctx string, or the Short chip shown again (DF L4773 short:false).
@@ -147,4 +149,31 @@ test('hot lines: "window · surface · role" header under the name; the Short ch
   const H = S.fhFormHotHtml(P);
   assert.match(text(H), /A\. Tester Last 10 All surfaces Any role/);
   assert.ok(!/Short odds/.test(H));
+});
+
+// Mutation: the keyless name join dropped (`|| (r.oppKey == null && clNoKey ? … : null)` removed) — every career-history
+// row comes out unpriced, because the closes shard resolved its opponents' keys.
+test('a career-history row (no opponent key) is priced by name against a keyed archive row; a different result is not', () => {
+  const rows = S.fhFormRowsFromCareer([
+    { date: '2026-07-18', tournament: 'Test Open', round: '1/8-finals', opponent: 'B. Beta', won: true, result: '2 - 0', level: 'atp', surface: 'hard', sets: [{ p: 6, o: 3 }, { p: 6, o: 4 }], eventKey: 1 },
+    { date: '2026-07-16', tournament: 'Test Open', round: '1/16-finals', opponent: 'D. Delta', won: false, result: '0 - 2', level: 'atp', surface: 'hard', sets: [{ p: 3, o: 6 }, { p: 4, o: 6 }], eventKey: 2 }]);
+  const keyed = { rows: [{ date: '2026-07-18', opp: 'Beta B.', won: true, P: [1.4, 3.1], B: null, ret: false, oppKey: '77' },
+    { date: '2026-07-16', opp: 'Delta D.', won: true, P: [1.6, 2.4], B: null, ret: false, oppKey: '78' }], cap: [] };
+  const P = player(match({ _fhFormRows: [rows, []], _fhFormSrc: ['career', null], _fhCloses: [keyed, null] }));
+  assert.equal(P.win.find(r => r.opp === 'B. Beta').price, 1.4, 'matched by name, same day, same result');
+  assert.equal(P.win.find(r => r.opp === 'D. Delta').price, null, 'the archive row disagrees on the result → unpriced, never guessed');
+});
+
+// Mutation: the settlement note dropped from the v-market pill or the Flat 1u value (TEN-325, founder 70fb039e).
+test('profit figures that count retirements carry "Retirements settled on the official ATP result." (one constant)', () => {
+  const NOTE = globalThis.MarketEdgeCore.RET_SETTLE_NOTE;
+  assert.equal(NOTE, 'Retirements settled on the official ATP result.');
+  const many = Array.from({ length: 6 }, (_, i) => row(`2026-07-${String(18 - i).padStart(2, '0')}`, 'P. ' + ['Alpha', 'Bravo', 'Carlo', 'Delta', 'Echo', 'Foxtrot'][i], i % 2 === 0, [[6, 4], [6, 3]]));
+  const cl = { rows: many.map(r => ({ date: r.date, opp: r.opponent, won: r.won, P: [1.7, 2.2], B: null, ret: false, oppKey: null })), cap: [] };
+  const m = match({ _fhFormRows: [many, many], _fhFormSrc: ['form', 'form'], _fhCloses: [cl, cl] });
+  const A = player(m, {}, 0), B = player(m, {}, 1);
+  assert.ok(A.mktOk, `market figures shown (n ${A.n}, priced ${A.np})`);
+  assert.ok(S.fhFormColumnHtml(A, false).includes(' · ' + NOTE + '"'), 'the v market pill\'s tooltip');
+  const d = S.fhFormDataRows(A, B, [['flat', 'Flat 1u', 'P/L'], ['medP', 'Median odd', 'x']]);
+  assert.equal((d.match(new RegExp('title="' + NOTE.replace(/\./g, '\\.') + '"', 'g')) || []).length, 2, 'both Flat 1u values, and no other figure');
 });

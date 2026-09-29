@@ -72,7 +72,7 @@ function sandbox() {
       fhFormLineDefs, fhH2hLineDefs, fhPriceAvg, fhTodayPair, fhFormRowHtml, fhH2hRowHtml, fhBuildForm,
       fhBuildH2H, fhSetsFrom, fhRoundCode, fhStateFor, fhNameKey, fhOdd, fhH2hRecCard, fhPickBook,
       fhSrcTitle, fhAllMeetingRows, fhLevelOf, fhH2hScopeNote, fhH2hGapNote, fhEligible, fhFormDataRows,
-      fhEloAt, fhEloKey, fhEloKeyOwners, fhEloBadge, fhPriceRangeSource, fhRecLevelMix, fhH2hEloSpan,
+      fhEloAt, fhEloKey, fhEloKeyOwners, fhEloText, fhPriceRangeSource, fhRecLevelMix, fhH2hEloSpan,
       fhStatBarWidth, fhSheetModel, fhSheetStatsHtml, fhSheetRowHtml, fhRateCell, fhSheetTabs, fhSheetSeg, fhSheetInlineStats,
       FH_BAR_FLOOR, FH_RATING_SCALE, FH_BAR_CAP,
       consts: { FH_HOT_MIN_ELIGIBLE, FH_PRICE_AVG_MARGIN_REMOVED, FH_H2H_SET1_MIRROR, FH_H2H_RET_COUNTS,
@@ -92,17 +92,15 @@ test('flagged rules (a)–(e) are single constants at the designed values', () =
 });
 
 // ── data check 4: no dated Elo → "No number" variant, no Elo in any row ──
-test('H2H rows keep the No-number variant; Form rows carry the Elo badge (ruling D-12)', () => {
+test('H2H rows keep the No-number variant; Form rows carry the opponent Elo (ruling D-12; TEN-330: on the name, parked)', () => {
   assert.equal(S.consts.FH_ELO_AT_TIME, false);
   const r = S.fhRowFromForm({ opponent: 'C. Alcaraz', opponentKey: 1, date: '2026-08-01', tournament: 'Cincinnati', round: 'ATP Cincinnati - Final',
     surface: 'hard', result: '2 - 0', won: true, sets: [{ p: 6, o: 4 }, { p: 6, o: 3 }], retired: false, walkover: false, qualifying: false, tier: 'atp', eventKey: 9 }, 5, 'J. Sinner', 0);
   assert.ok(!/ELO/.test(S.fhH2hRowHtml(r)), 'H2H row: no Elo (not ruled)');
   r.oppElo = { v: 2141, asOf: '2026-07-27' };
-  assert.match(S.fhFormRowHtml(r), />ELO<\/span><span [^>]*>2141<\/span>/);
-  assert.match(S.fhFormRowHtml(r), /title="Opponent&#39;s Elo rating at the time of the match \(Tennis Abstract weekly snapshot of 27 Jul 2026\)/);
+  assert.match(S.fhFormRowHtml(r), /data-elo="2141" title="[^"]* · Elo 2141 at the time of the match \(Tennis Abstract weekly snapshot of 27 Jul 2026\)"/);
   r.oppElo = { v: null, why: 'before the first Elo snapshot (2026-07-18)' };
-  assert.match(S.fhFormRowHtml(r), />ELO<\/span><span [^>]*>—<\/span>/, 'no value → ELO —, never blank');
-  assert.match(S.fhFormRowHtml(r), /title="No Elo at the time of the match: before the first Elo snapshot/);
+  assert.match(S.fhFormRowHtml(r), /data-elo="" title="[^"]* · Elo — at the time of the match: before the first Elo snapshot/, 'no value → Elo — with the reason, never blank');
 });
 // ── Ruling D-12 (2026-09-24): overall Elo AT THE MATCH DATE, snapshot no more than 7 days old ──
 const EH = { snapshots: [
@@ -141,7 +139,7 @@ test('Opposition Elo = the mean of the badges shown; Elo change reads the same s
   const h = S.fhBuildForm(m);
   // Rows 07-20..07-29 (snapshots strictly before): 07-27..07-29 read 07-26 = 2140 (3 rows), 07-20..07-26 read 07-19 = 2100 (7 rows) → mean 2112.
   const i1 = h.indexOf('Recent matches · '), i2 = h.indexOf('Recent matches · ', i1 + 1);
-  const badges = [...h.slice(i1, i2).matchAll(/>ELO<\/span><span [^>]*>(\d+)<\/span>/g)].map(x => +x[1]);   // Sinner's list only
+  const badges = [...h.slice(i1, i2).matchAll(/data-elo="(\d+)"/g)].map(x => +x[1]);   // Sinner's list only
   assert.equal(badges.length, 10);
   const mean = Math.round(badges.reduce((a, b) => a + b, 0) / badges.length);
   assert.equal(mean, 2112);
@@ -237,7 +235,7 @@ test('Form: partial pricing shows "N of M priced"; thin window shows no ratios',
   assert.ok(h.includes('class="fh-srcline"') && h.includes('Closing odds · Pinnacle, Bet365 where missing (Sinner 2)'), 'shared book-source line names the player and count');
   assert.ok(h.includes('4 matches with these filters'), 'thin note missing for the 4-match player');
   assert.equal((h.match(/visibility:hidden;">—<\/span>/g) || []).length, 1, 'the other column reserves the thin slot, so both form bars share a baseline');
-  assert.ok(/>ELO<\/span><span [^>]*>—<\/span>/.test(h), 'no Elo history loaded → every badge reads ELO —');
+  assert.ok(/data-elo="" title="[^"]*Elo — at the time of the match/.test(h) && !/data-elo="\d/.test(h), 'no Elo history loaded → every row reads Elo —');
   // Form data open: the priced count is a sub-caption, never after the value; mirrored on both sides.
   S.fhStateFor(m).form.card = true;
   const d = S.fhBuildForm(m);

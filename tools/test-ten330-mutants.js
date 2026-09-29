@@ -22,6 +22,10 @@ const MUTANTS = [
   ['rows: the old 7-column Form Match Row', "  return `<div class=\"seg fh-frow\" data-fh-mid=\"${fhEsc(r.mid)}\" onclick=\"fhOpenSheet('${fhEsc(r.mid)}')\" style=\"display:grid; grid-template-columns:${MA_ROW_COLS};",
     "  return `<div class=\"seg fh-frow\" data-fh-mid=\"${fhEsc(r.mid)}\" onclick=\"fhOpenSheet('${fhEsc(r.mid)}')\" style=\"display:grid; grid-template-columns:22px 40px minmax(0,1fr) 30px 38px 42px 42px;"],
   ['hot lines: the Short chip back on', "    hot: { ok: hotOk, table, sc, ctx, hdr, short: false,", "    hot: { ok: hotOk, table, sc, ctx, hdr, short: hotOk,"],
+  ['career-history: keyless rows never priced', " || (r.oppKey == null && clNoKey ? fhCloseFor(clNoKey, r.date, r.opp, r.won, null, r.ek) : null);", ";"],
+  ['rows: the opponent Elo leaves the name (D-12)', "fhFullName(r.opp, r.oppKey) + ' · ' + fhEloText(r.oppElo))}", "fhFullName(r.opp, r.oppKey))}"],
+  ['TEN-325: no settlement note on the pill', "P.srcNote ? 'closing odds: ' + P.srcNote : '', retNote].filter(Boolean)", "P.srcNote ? 'closing odds: ' + P.srcNote : ''].filter(Boolean)"],
+  ['TEN-325: no settlement note on Flat 1u', "  metrics.flat.ret = true;", "  metrics.flat.ret = false;"],
   ['hot lines: header loses the role', "${fhEsc(H.hdr.win)}${dot}${fhEsc(H.hdr.surf)}${dot}${fhEsc(H.hdr.role)}", "${fhEsc(H.hdr.win)}${dot}${fhEsc(H.hdr.surf)}"],
 ];
 const SUITES = ['test-ten330-form.mjs'];

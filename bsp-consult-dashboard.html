@@ -14411,6 +14411,7 @@ function fhFormPlayer(m, idx, st){
   const rowsOf = i => ((m._fhFormRows || [])[i]) || (i ? m.p2RecentFormMatches : m.p1RecentFormMatches) || [];
   const raw = rowsOf(idx);
   const clRows = (m._fhCloses || [])[idx];
+  const clNoKey = clRows && Array.isArray(clRows.rows) ? { rows: clRows.rows.map(x => (x.oppKey != null ? Object.assign({}, x, { oppKey: null }) : x)), cap: clRows.cap || [] } : null;
   const ref = fhRefDay(m);
   const ownEk = String(eventKeyOfMatch(m) || '');
   const eloOwners = fhEloKeyOwners([[m.p1, m.p1Key], [m.p2, m.p2Key]].concat(
@@ -14418,7 +14419,9 @@ function fhFormPlayer(m, idx, st){
   const all = raw.map((x, i) => {
     const r = fhRowFromForm(x, key, name, idx * 1000 + i);
     r.oppElo = fhEloAt(m._fhElo, r.opp, r.date, eloOwners);
-    const c = fhCloseFor(clRows, r.date, r.opp, r.won, r.oppKey, r.ek);
+    // A career-history row carries no opponent key; the closes shard has resolved most of its opponents, so a
+    // keyless row matches by name against every archive row (still exactly one candidate within ±1 day, same result).
+    const c = fhCloseFor(clRows, r.date, r.opp, r.won, r.oppKey, r.ek) || (r.oppKey == null && clNoKey ? fhCloseFor(clNoKey, r.date, r.opp, r.won, null, r.ek) : null);
     if (c){ r.price = c.price; r.oppPrice = c.oppPrice; r.book = c.book; r.src = c.src; }
     const d = fhDayNum(r.date); r.ago = d == null ? null : ref - d;
     return r;
@@ -14480,6 +14483,7 @@ function fhFormPlayer(m, idx, st){
     load: rest == null ? { v: null, val: FH_DASHC, aside: '', sub: 'not enough data' } : { v: in28, val: in28 + ' in 28d', aside: '', sub: rest + 'd rest' },
     m714: played.length ? { v: m14, val: m7 + ' / ' + m14, aside: '', sub: '' } : { v: null, val: FH_DASHC, aside: '', sub: 'not enough data' },
   };
+  metrics.flat.ret = true;   // flat 1u counts retirements at their listed price: its value carries the settlement note
   // Recent matches list (export entries/divider logic, verbatim).
   const list = shown.slice(0, NWIN + 6), showAll = !!S.more[idx];
   const vis = showAll ? list : list.slice(0, NWIN);
@@ -14543,6 +14547,8 @@ function fhFormSetScores(r){
   if (!r.sets) return FH_DASHC;
   return r.sets.map(x => x[0] + '-' + x[1]).join(', ') + (r.ret ? ' ret.' : '');
 }
+// The retirement settlement note — MarketEdgeCore.RET_SETTLE_NOTE, the one constant; '' if the core is absent.
+function fhRetNote(){ return (globalThis.MarketEdgeCore && globalThis.MarketEdgeCore.RET_SETTLE_NOTE) || ''; }
 // The bar tooltip's score line (DF m.score: space-joined games).
 function fhFormTipScore(r){ return r.sets ? r.sets.map(x => x[0] + '-' + x[1]).join(' ') + (r.ret ? ' ret.' : '') : FH_DASHC; }
 // H / A cells (DF L1124–1125: mono 11px; H secondary text, A caption). A Bet365-priced row keeps the "B" marker in the
@@ -14553,18 +14559,25 @@ function fhFormPriceCell(v, color, r, mark){
     ? `<span class="fh-bmark" aria-hidden="true" style="position:absolute; top:-3px; right:-8px; font-size:7px; font-weight:700; letter-spacing:0; color:var(--text-sub);">B</span>` : '';
   return `<span title="${fhEsc(fhSrcTitle(r))}" style="position:relative; ${FH_MONO} font-size:11px; color:${dash ? FH_DASH : color}; text-align:right;">${dash ? FH_DASHC : fhOdd(v)}${bMark}</span>`;
 }
-// The opponent Elo badge (ruling D-12: overall Elo at the match date; "ELO —" when no snapshot qualifies).
-function fhEloBadge(e){
-  const v = e && e.v != null ? e.v : null;
-  const tip = v != null
-    ? "Opponent's Elo rating at the time of the match (Tennis Abstract weekly snapshot of " + fhLongDate(e.asOf) + "). Higher = stronger (tour average ≈ 1800, top 10 ≈ 2000+)."
-    : 'No Elo at the time of the match: ' + ((e && e.why) || 'no snapshot on record') + '.';
-  return `<span class="fh-elo" title="${fhEsc(tip)}" style="display:inline-flex; align-items:baseline; gap:4px; cursor:help; flex:none;"><span style="${FH_MONO} font-size:8px; font-weight:700; letter-spacing:0.1em; color:var(--text-sub); border:0.33px solid var(--line); border-radius:3px; padding:0 3px;">ELO</span><span style="${FH_MONO} font-size:10.5px; color:${v == null ? FH_DASH : 'var(--label)'};">${v == null ? FH_DASHC : v}</span></span>`;
+// The opponent's Elo at the match date as text (ruling D-12: the latest weekly snapshot strictly before the match day,
+// at most 7 days old; otherwise "Elo —" and why). Never the current Elo, never blank.
+function fhEloText(e){
+  return e && e.v != null ? 'Elo ' + e.v + ' at the time of the match (Tennis Abstract weekly snapshot of ' + fhLongDate(e.asOf) + ')'
+    : 'Elo — at the time of the match: ' + ((e && e.why) || 'no snapshot on record');
+}
+// H / A cells (DF L1124–1125: mono 11px; H secondary text, A caption). A Bet365-priced row keeps the "B" marker in the
+// H cell (in the column gap, so the price's x never moves); the tooltip names book + source on both cells.
+function fhFormPriceCell(v, color, r, mark){
+  const dash = v == null;
+  const bMark = mark && !dash && r && r.book === 'B'
+    ? `<span class="fh-bmark" aria-hidden="true" style="position:absolute; top:-3px; right:-8px; font-size:7px; font-weight:700; letter-spacing:0; color:var(--text-sub);">B</span>` : '';
+  return `<span title="${fhEsc(fhSrcTitle(r))}" style="position:relative; ${FH_MONO} font-size:11px; color:${dash ? FH_DASH : color}; text-align:right;">${dash ? FH_DASHC : fhOdd(v)}${bMark}</span>`;
 }
 // Recent-matches row (DF L1116–1127): grid 48/12/1.1fr/36/40/1.3fr/46/46 (MA_ROW_COLS), gap 10, padding 6 inside an
-// 8px wrapper. PARKED (design file v ruling D-12): the file's row has no Elo slot, the ruling puts the opponent's Elo at
-// the match date on every Form row — the ruled badge stays after the name, inside the file's Opponent cell, until the
-// founder rules (TEN-330 report).
+// 8px wrapper. PARKED (design file v ruling D-12): the file's row has no Elo slot, and the ruled ELO badge inside the
+// Opponent cell cut real names to one letter on the live build (CLAUDE.md: names are never truncated). The opponent's
+// Elo at the match date (same D-12 basis, "Elo —" + the reason when none qualifies) is carried on the name as
+// `data-elo` + its hover text, and in the bar tooltip, until the founder rules on a visible slot (TEN-330 report).
 function fhFormRowHtml(r){
   const res = r.won ? 'var(--positive)' : 'var(--negative)';
   const setsTxt = r.pS == null ? FH_DASHC : r.pS + ' - ' + r.oS;
@@ -14572,7 +14585,7 @@ function fhFormRowHtml(r){
   return `<div class="seg fh-frow" data-fh-mid="${fhEsc(r.mid)}" onclick="fhOpenSheet('${fhEsc(r.mid)}')" style="display:grid; grid-template-columns:${MA_ROW_COLS}; gap:0 10px; align-items:center; padding:6px; border-radius:6px; background:${_fh && _fh.sheet === r.mid ? 'var(--seg-active)' : 'transparent'}; cursor:pointer;">`
     + `<span style="${mono} font-size:11px; color:var(--label);">${fhDDMM(r.date)}.</span>`
     + `<span style="width:8px; height:8px; border-radius:2px; background:${res};"></span>`
-    + `<span style="display:flex; align-items:baseline; gap:7px; min-width:0;"><span title="${fhEsc(fhFullName(r.opp, r.oppKey))}" style="font-size:12.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${fhEsc(fhOppFmt(r.opp))}</span>${fhEloBadge(r.oppElo)}</span>`
+    + `<span class="fh-opp" data-elo="${r.oppElo && r.oppElo.v != null ? r.oppElo.v : ''}" title="${fhEsc(fhFullName(r.opp, r.oppKey) + ' · ' + fhEloText(r.oppElo))}" style="font-size:12.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${fhEsc(fhOppFmt(r.opp))}</span>`
     + `<span style="${mono} font-size:10.5px; color:var(--label);">${fhEsc(r.round)}</span>`
     + `<span style="${mono} font-size:11.5px; font-weight:700; color:${r.pS == null ? FH_DASH : res};">${setsTxt}</span>`
     + `<span title="${fhEsc(fhFormSetScores(r))}" style="${mono} font-size:11px; color:var(--text-sub); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${fhEsc(fhFormSetScores(r))}</span>`
@@ -14607,7 +14620,9 @@ function fhFormColumnHtml(P, thinAny){
   const note = P.thin ? `${FH_DASHC} · ${P.cnt} with these filters` : '';
   const mktC = c => (!P.mktOk ? FH_DASH : P.mktSmall ? MA_GREY : c);
   const pricedNote = !P.thin ? P.cov : '';        // "9 of 10 priced"; the book note is the shared line under both columns
-  const pillTip = P.mktOk && P.srcNote ? ` title="${fhEsc('v market on ' + P.np + ' of ' + P.n + ' priced · closing odds: ' + P.srcNote)}"` : '';
+  // TEN-325 (founder 70fb039e): a profit figure that counts retirements says how they settle — the one constant.
+  const retNote = fhRetNote();
+  const pillTip = P.mktOk ? ` title="${fhEsc(['v market on ' + P.np + ' of ' + P.n + ' priced', P.srcNote ? 'closing odds: ' + P.srcNote : '', retNote].filter(Boolean).join(' · '))}"` : '';
   const one = 'white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%;';
   return `<div style="display:flex; flex-direction:column; align-items:center; gap:10px; text-align:center; ${side} min-width:0;">
       ${fhNameLink(P.name, P.key, 'font-size:15px; font-weight:700; display:inline-block; ' + one)}
@@ -14621,7 +14636,7 @@ function fhFormColumnHtml(P, thinAny){
 }
 // "Show form data" rows (DF L999–1003): value + aside ("· 3 matches" when thin) + sub caption.
 function fhFormDataRows(A, B, rows){
-  const cell = (me, align, subSlot) => `<div class="fh-dcell" style="display:flex; flex-direction:column; align-items:${align === 'right' ? 'flex-end' : 'flex-start'}; gap:2px; text-align:${align};"><span style="display:flex; align-items:baseline; gap:6px; flex-wrap:wrap; justify-content:${align === 'right' ? 'flex-end' : 'flex-start'};"><span class="fh-dval"${me.small ? ' data-ma-gate="small"' : ''} style="${FH_MONO} font-size:17px; font-weight:700; color:${me.v == null ? FH_DASH : me.small ? MA_GREY : 'var(--text)'}; white-space:nowrap;">${fhEsc(me.val)}</span><span style="${FH_MONO} font-size:11px; color:var(--label);">${fhEsc(me.aside || '')}</span>${me.small ? maSmallNote(true) : ''}</span>${subSlot ? `<span class="fh-dsub" style="${FH_MONO} font-size:10px; color:var(--label);">${me.sub ? fhEsc(me.sub) : '&nbsp;'}</span>` : `<span class="fh-dsub" style="${FH_MONO} font-size:10px; color:var(--label);"></span>`}</div>`;
+  const cell = (me, align, subSlot) => `<div class="fh-dcell" style="display:flex; flex-direction:column; align-items:${align === 'right' ? 'flex-end' : 'flex-start'}; gap:2px; text-align:${align};"><span style="display:flex; align-items:baseline; gap:6px; flex-wrap:wrap; justify-content:${align === 'right' ? 'flex-end' : 'flex-start'};"><span class="fh-dval"${me.small ? ' data-ma-gate="small"' : ''}${me.ret && me.v != null && fhRetNote() ? ` title="${fhEsc(fhRetNote())}"` : ''} style="${FH_MONO} font-size:17px; font-weight:700; color:${me.v == null ? FH_DASH : me.small ? MA_GREY : 'var(--text)'}; white-space:nowrap;">${fhEsc(me.val)}</span><span style="${FH_MONO} font-size:11px; color:var(--label);">${fhEsc(me.aside || '')}</span>${me.small ? maSmallNote(true) : ''}</span>${subSlot ? `<span class="fh-dsub" style="${FH_MONO} font-size:10px; color:var(--label);">${me.sub ? fhEsc(me.sub) : '&nbsp;'}</span>` : `<span class="fh-dsub" style="${FH_MONO} font-size:10px; color:var(--label);"></span>`}</div>`;
   return rows.map(d => { const a = A.metrics[d[0]], b = B.metrics[d[0]], slot = !!(a.sub || b.sub); return `<div style="display:grid; grid-template-columns:minmax(0,1fr) 200px minmax(0,1fr); align-items:center; gap:20px; padding:10px 0;">
       ${cell(a, 'right', slot)}
       <div style="display:flex; flex-direction:column; align-items:center; gap:2px; text-align:center;"><span style="font-size:12.5px; font-weight:600; color:var(--text);">${fhEsc(d[1])}</span><span style="font-size:10.5px; color:var(--label);">${fhEsc(d[2])}</span></div>
@@ -14643,7 +14658,7 @@ function fhFormListHtml(P){
   }).join('');
   const more = P.list.length > P.NWIN
     ? `<div class="seg" onclick="fhFormToggle('more',${P.idx})" style="text-align:center; padding:12px 0 13px; border-top:1px solid var(--line); font-size:13px; font-weight:600; color:var(--periwinkle); cursor:pointer;">${_fh.form.more[P.idx] ? 'Show fewer' : 'Show ' + (P.list.length - P.NWIN) + ' more matches'}</div>` : '';
-  // DESIGN GAP G8: no form source at all for this side (no form shard and no career-history shard). The file only
+  // DESIGN GAP G9: no form source at all for this side (no form shard and no career-history shard). The file only
   // draws "No matches with these filters."; the same empty line says the true reason instead.
   const emptyTxt = P.noSource ? 'No recent matches on record.' : 'No matches with these filters.';
   return `<div style="display:flex; flex-direction:column; min-width:0;">
@@ -14689,7 +14704,7 @@ function fhBuildForm(m){
     fhEnsureFormData(m).then(() => { if (_fh && _fh.m === m){ const el = document.getElementById('aSectionForm'); if (el) el.innerHTML = buildFormSection(m); } });
     return `<div class="acomingsoon">Loading recent form…</div>`;
   }
-  // DESIGN GAP G8: neither player has a form source (no form shard, no career-history shard) — the file draws no
+  // DESIGN GAP G9: neither player has a form source (no form shard, no career-history shard) — the file draws no
   // such state; the tab's existing one-line empty state stands in.
   if (![0, 1].some(i => (((m._fhFormRows || [])[i]) || (i ? m.p2RecentFormMatches : m.p1RecentFormMatches) || []).length)){
     return `<div class="acomingsoon">No recent matches on record for either player.</div>`;

@@ -57,9 +57,12 @@ Applies to the TEN-263 block in `bsp-consult-dashboard.html` (`fh*` functions), 
 - **A walkover never becomes a Form row** (N2): no bar, no row, no W–L, no count — the pipeline already drops them from
   the form shards; the tab drops any that reach it (career-history rows included).
 - **A player without a form shard** (non-board) reads his `career-history/{key}.json`, newest first, capped at
-  `FH_FORM_ROW_CAP = 40` (= `RECENT_FORM_ROW_CAP`). Neither source → "No recent matches on record" (design gap G8).
-- **Parked (design file v ruling D-12):** the file's row has no Elo slot; the ELO badge stays after the opponent's name
-  until the founder rules.
+  `FH_FORM_ROW_CAP = 40` (= `RECENT_FORM_ROW_CAP`). Neither source → "No recent matches on record" (design gap G9).
+- **Retirement settlement note** (TEN-325): the v-market pill's tooltip and each Flat 1u value's tooltip carry
+  `MarketEdgeCore.RET_SETTLE_NOTE` (the tooltip form keeps the file's layout).
+- **Parked (design file v ruling D-12):** the file's row has no Elo slot, and the ELO badge in the Opponent cell cut real
+  names to one letter on the live build (names are never truncated). The row's Elo (same D-12 basis) is the name's
+  `data-elo` + hover text and sits in the bar tooltip, until the founder rules on a visible slot.
 - **Test:** `test-ten330-form.mjs` (+ `tools/test-ten330-mutants.js`, 13 mutants). Pixel/structure harness (manual):
   `tools/ten330-form-capture.mjs` + `tools/ten330-form-structure.py`.
 
