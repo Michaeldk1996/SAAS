@@ -16,7 +16,8 @@ this file wins.
 - **Main queue, chained:** Form → H2H → Tournament → Overview (after TEN-324) → Market edge (after TEN-325) → Match Stats
   (after TEN-318) → Progression (after TEN-327a) → Playing style (after TEN-328) → Key factors (`v.o` only).
 - **In parallel, as soon as Phase 1 lands:** News, Odds and Weather. They have no data prerequisite beyond Phase 1.
-- The Edge model re-fit (TEN-345, split from TEN-327) is staged for the founder and **blocks no tab**.
+- The Edge model re-fit (TEN-345, split from TEN-327) was approved by the founder (2026-09-28, TEN-314 70fb039e)
+  and ships on its own ticket; it **blocks no tab**.
 
 ## Definition of done — per tab (every item required)
 1. Every element in the design file for that tab is built. Nothing is skipped silently.
@@ -27,11 +28,21 @@ this file wins.
 5. Deployed and verified on the live URL with a **real match**, not the demo.
 6. Night and Day screenshots from the deployed site posted to the founder.
 7. A list of every parked element and design gap, each with its reason.
+8. **Shared helpers only** (founder 2026-09-29, TEN-314 comment 1641c7ce): the tab renders its match rows with
+   `maMatchRowsHtml`, its tooltips with the shared tooltip, and every match opens the shared sheet. The tab's own row
+   and tooltip renderers are **deleted**, not hidden (Form first: `.fh-elotip-pop` and Form's own rows go). Variant
+   geometry (e.g. Form's 14 px inset) is a parameter of the shared helper, never a second renderer. **Test:** a grep
+   finds no tab-local row or tooltip renderer; a tab that draws no rows or tooltips says so in its report.
 
 - **Undrawn states** (TEN-312 `design-gaps`) never block a tab: use the nearest existing pattern in the design file, mark
   the code `// DESIGN GAP Gn`, and list it in the tab report. Never invent a new visual pattern.
-- **An element that needs a founder ruling** is parked alone, as a dash with a note. The rest of the tab ships, and the
-  question goes in the report. A tab never waits whole on one decision.
+- **An element that needs a founder ruling** is parked alone, as a dash with a note. The rest of the tab ships. A tab
+  never waits whole on one decision, and nobody stops mid-queue for the founder: every open question is collected into
+  **one card at the end** (founder 2026-09-29).
+- **Batching:** when the lane is the bottleneck, compatible tab commits land together in one lane cycle.
+- **Review pack when all 12 are live** (founder 2026-09-29): (1) the status table `tab · ticket · live commit ·
+  pixel-diff % · parked items · design gaps`; (2) Night/Day screenshots of every tab and pop-up from the deployed site;
+  (3) the single card of open questions.
 - **Reporting:** every tab update leads with one row
   `tab · ticket · status (queued/building/diff/wiring/live) · pixel-diff % · parked items · blocker`.
 - **Core-data changes wait on the pre-publish reconcile gate (TEN-329, landed `9394f7db`).**
@@ -79,6 +90,14 @@ this file wins.
   `phase1-token-mappings`, U1–U24) are **approved provisionally**. Each finished tab ships with side-by-side Night and
   Day screenshots taken on the deployed site so the founder can flag a colour by eye; a mapping change is a one-line
   token edit.
+- **Every design shade is its own token** (founder 2026-09-29, TEN-314 comment 1641c7ce), in the source palette and in
+  Night/Day: every source value the map could not express gets a token — e.g. `#06070A` inner track, `#0C0E16`,
+  `#11151F` tooltip surface, `#4B5672` dim icon, `#B4BCCF`, `#FFF`, every hairline alpha (0.08, 0.09 frame, 0.12, 0.14,
+  0.16 …) and the selected washes/borders at their exact values (menu 0.16, segmented selected border 0.22).
+  **Test:** `ten312-component-diff.mjs` in the source palette reports ≈0 colour difference on every Phase 1 component.
+- **Modal hairlines are the design's 1px**, set in the token file (founder 2026-09-28, TEN-314 70fb039e: 0.33px only
+  matches at 1× DPR and renders thinner on Retina and phones). This replaces, for the modal only, the site's 0.33px
+  hairline rule in `theme-12a.md`. **Test:** a computed border width in the modal at DPR 2 is 1px.
 
 ## Download report (D7)
 - Keeps the existing behaviour: `printAnalysisReport()` → `window.print()` of the modal. Rendered as designed.
@@ -96,12 +115,25 @@ this file wins.
   season %, sheet `pct` helper, Playing style personal record). **Test:** n = 0 renders "—".
 - **Small-sample chip:** shown for every n 1–9 per the gate, not only `n === 2` (design L4346 and dash
   `fhH2hRecCard` both wrong). **Test:** n = 1, 3, 9 show it; n = 10 doesn't.
+- **Exceptions to the gate (founder 2026-09-29, TEN-312 card):**
+  - **H2H record tug bar** is drawn at any n ≥ 1, as the design draws it (a 2–1 record fills 67/33). The numbers
+    beside it still follow the gate. **Test:** a 2–1 H2H renders the bar at 67/33 and no %.
+  - **Market edge "Needs"** is not gated: it is derived from prices, not a sample rate.
+  - **Archetype-matrix %** is not gated here (its own upstream floor applies). The **tournament hold rate** is not
+    gated, but its tooltip always shows its n (service games) — no figure without a count (founder 2026-09-28,
+    TEN-314 70fb039e). **Test:** the hold-rate tooltip contains the service-game count.
+  - In narrow table cells the 5–9 "small sample" note is a hover note plus a footnote, not inline text.
 
 ## Match stats sheet — every tab
 - **Every match row, dot and cell opens the one sheet**, on every tab, Market edge included (its "stats on file"
   click condition is dropped). The header (meta, score, set chips, closing odds) is always wired from match data;
   where stats don't exist (pre-2024, ITF, events without W/UE) the stat sections show "—" plus "Match stats not
   available for this match" (10.5px, faint). **Test:** a pre-2024 row opens a sheet with a wired header and the note.
+- **Date format** in the sheet is exactly the design file's, never "18.07.26" (founder 2026-09-29).
+- **Sheet scopes in the pixel diff:** Match, Set N and Point-by-point are each diffed against the design file, fed
+  through **our real stats model**, not only the demo numbers. Required before TEN-338 Match Stats is done.
+- **Design exception — Key stats bars:** the bars keep the 2026-09-24 rule (`modal-form-h2h.md` "Bars — one rule",
+  `fhStatBarWidth`), not the design's share-of-total. Deliberate; the pixel diff reports it as ruled, not structural.
 
 ## Metrics with no formula before TEN-312 (D6)
 - **Per-tournament "+Y.Ypt vs market"** = the player-scope rule (`build-market-edge.js` `summarise`: actual win %
@@ -163,10 +195,13 @@ this file wins.
   **Test:** one shared helper computes each rating; a grep finds no second implementation.
   - **Built (TEN-327):** the helper is `house-ratings.js` (dashboard `<script src>`, required by `h2h-model`);
     `tools/test-ten327-house-ratings.js` locks every surface on the doc's three box scores.
-  - **Edge model — STAGED, not live (founder 2026-09-28):** `h2h-model/config.js` ships `ratingFormula: 'legacy'`
-    on layers #9 and #10; `'house'` (re-fit return divisor 16.9) goes live only when the founder confirms the
-    30-day report on TEN-327 (`tools/ten327-refit-report.js`). **Test:** `test-ten327-house-ratings.js` fails on
-    a flip. Before a flip, the **deployed** `career-splits.json` must carry `acesPM` / `dfPM` (the house serve
+  - **Edge model — house formula LIVE (founder approved 2026-09-28, TEN-314 70fb039e; TEN-345 `cd809633`):**
+    `h2h-model/config.js` `EDGE_RATING_FORMULA = 'house'` is the **one switch** layers #9 and #10 read (re-fit
+    return divisor 16.9). The legacy formulas stay in the code; rollback = that line back to `'legacy'`, one commit.
+    A before-switch copy of the board's fair prices and picks is kept; after deploy, 3 matches' live fair prices must
+    equal the re-fit report; after 7 days live, report picks, hit rate and ROI (each with n) beside what legacy would
+    have produced on the same matches. **Test:** `test-ten327-house-ratings.js` fails if the switch is rolled back
+    or a layer stops reading it. The **deployed** `career-splits.json` must carry `acesPM` / `dfPM` (the house serve
     abstains without them).
 - **Under pressure** has **one builder**: the `surface-ratings.js` formula with its floors (50 BP faced, 50 BP chances,
   6 tiebreaks, 5 deciders; 3-of-4 → mean × 4; Challenger fold-in × 0.9), used by **every display** — the Edge Ratings
@@ -208,7 +243,8 @@ this file wins.
   (TEN-329). **Test:** reverting a data fix that the reconciler catches stops the pipeline before the push, not after.
 - **A walkover is never counted in W–L**: an assertion in the reconciler fails if one is (TEN-320).
 - **Edge model re-fits are staged, never flipped without the founder**: a layer change ships with a report of fair
-  odds, picks changed (n of N) and accuracy before/after on the last 30 days of completed matches (TEN-327).
+  odds, picks changed (n of N) and accuracy before/after on the last 30 days of completed matches (TEN-327), and goes
+  live only on the founder's explicit approval (as TEN-345 did), behind one rollback switch.
 
 ## Data protection
 - **`point-by-point-cache.json` is irreplaceable:** api-tennis no longer returns tiebreak point rows for past
