@@ -1,0 +1,74 @@
+[
+ {
+  "name": "cron_jobs",
+  "sql": "select jobid, jobname, schedule, active from cron.job where jobname like 'ten287%' or jobname like 'ten280%' order by jobname"
+ },
+ {
+  "name": "cron_runs",
+  "sql": "select j.jobname, (d.start_time at time zone 'utc')::date as day, d.status, count(*) n, max(extract(epoch from d.end_time-d.start_time)) max_s, min(d.start_time) first, max(d.start_time) last from cron.job_run_details d join cron.job j using (jobid) where j.jobname like 'ten287%' group by 1,2,3 order by 1,2,3"
+ },
+ {
+  "name": "cron_fail_msgs",
+  "sql": "select j.jobname, left(d.return_message,200) msg, count(*) n, min(d.start_time) first, max(d.start_time) last from cron.job_run_details d join cron.job j using (jobid) where j.jobname like 'ten287%' and d.status <> 'succeeded' group by 1,2 order by 3 desc limit 30"
+ },
+ {
+  "name": "sizes",
+  "sql": "select relname, n_live_tup, pg_total_relation_size(relid) bytes from pg_stat_user_tables where schemaname in ('ten287_rec','ten287_bot') order by 1"
+ },
+ {
+  "name": "tick_counts",
+  "sql": "select t.book, e.tier, (t.seen_at at time zone 'utc')::date day, t.src, count(*) n, count(distinct t.event_id) ev from ten287_rec.ticks t left join ten287_rec.events e using (event_id) group by 1,2,3,4 order by 1,2,3,4"
+ },
+ {
+  "name": "events",
+  "sql": "select event_id, home, away, start_at, status, tier, league, first_seen, last_seen from ten287_rec.events where tier is not null order by event_id"
+ },
+ {
+  "name": "live_alerts",
+  "sql": "select id, book, event_id, side, tier, eval_at, ref_price, ref_at, cur_price, cur_at, pct_10m, delivery, sent_at, created_at from ten287_bot.alerts where mode='live' order by eval_at"
+ },
+ {
+  "name": "requests",
+  "sql": "select count(*) n, string_agg(concat_ws(',', coalesce((id)::text,''), coalesce((kind)::text,''), coalesce((book)::text,''), coalesce((round(extract(epoch from fired_at)::numeric,1))::text,''), coalesce((round(extract(epoch from processed_at)::numeric,1))::text,''), coalesce((status_code)::text,''), coalesce((n_items)::text,''), coalesce((ratelimit_remaining)::text,''), coalesce((case when note like 'lost%' then 'LOST' when status_code is distinct from 200 then replace(left(note,80),',',';') end)::text,'')), E'\\n' order by id) as rows from ten287_rec.requests"
+ },
+ {
+  "name": "ticks_bf_2026-09-25",
+  "sql": "select count(*) n, string_agg(concat_ws(',', coalesce((t.id)::text,''), coalesce((t.event_id)::text,''), coalesce((t.back_home)::text,''), coalesce((t.back_away)::text,''), coalesce((t.lay_home)::text,''), coalesce((t.lay_away)::text,''), coalesce((t.depth_home)::text,''), coalesce((t.depth_away)::text,''), coalesce((round(extract(epoch from t.book_updated_at)::numeric,3))::text,''), coalesce((round(extract(epoch from t.seen_at)::numeric,3))::text,''), coalesce((t.event_status)::text,''), coalesce((t.src)::text,'')), E'\\n' order by t.id) as rows from ten287_rec.ticks t join ten287_rec.events e using (event_id) where e.tier is not null and t.book = 'Betfair Exchange' and t.src <> 'selftest' and t.seen_at >= '2026-09-25T00:00:00Z' and t.seen_at < '2026-09-26T00:00:00Z'"
+ },
+ {
+  "name": "ticks_bf_2026-09-26",
+  "sql": "select count(*) n, string_agg(concat_ws(',', coalesce((t.id)::text,''), coalesce((t.event_id)::text,''), coalesce((t.back_home)::text,''), coalesce((t.back_away)::text,''), coalesce((t.lay_home)::text,''), coalesce((t.lay_away)::text,''), coalesce((t.depth_home)::text,''), coalesce((t.depth_away)::text,''), coalesce((round(extract(epoch from t.book_updated_at)::numeric,3))::text,''), coalesce((round(extract(epoch from t.seen_at)::numeric,3))::text,''), coalesce((t.event_status)::text,''), coalesce((t.src)::text,'')), E'\\n' order by t.id) as rows from ten287_rec.ticks t join ten287_rec.events e using (event_id) where e.tier is not null and t.book = 'Betfair Exchange' and t.src <> 'selftest' and t.seen_at >= '2026-09-26T00:00:00Z' and t.seen_at < '2026-09-27T00:00:00Z'"
+ },
+ {
+  "name": "ticks_bf_2026-09-27",
+  "sql": "select count(*) n, string_agg(concat_ws(',', coalesce((t.id)::text,''), coalesce((t.event_id)::text,''), coalesce((t.back_home)::text,''), coalesce((t.back_away)::text,''), coalesce((t.lay_home)::text,''), coalesce((t.lay_away)::text,''), coalesce((t.depth_home)::text,''), coalesce((t.depth_away)::text,''), coalesce((round(extract(epoch from t.book_updated_at)::numeric,3))::text,''), coalesce((round(extract(epoch from t.seen_at)::numeric,3))::text,''), coalesce((t.event_status)::text,''), coalesce((t.src)::text,'')), E'\\n' order by t.id) as rows from ten287_rec.ticks t join ten287_rec.events e using (event_id) where e.tier is not null and t.book = 'Betfair Exchange' and t.src <> 'selftest' and t.seen_at >= '2026-09-27T00:00:00Z' and t.seen_at < '2026-09-28T00:00:00Z'"
+ },
+ {
+  "name": "ticks_bf_2026-09-28",
+  "sql": "select count(*) n, string_agg(concat_ws(',', coalesce((t.id)::text,''), coalesce((t.event_id)::text,''), coalesce((t.back_home)::text,''), coalesce((t.back_away)::text,''), coalesce((t.lay_home)::text,''), coalesce((t.lay_away)::text,''), coalesce((t.depth_home)::text,''), coalesce((t.depth_away)::text,''), coalesce((round(extract(epoch from t.book_updated_at)::numeric,3))::text,''), coalesce((round(extract(epoch from t.seen_at)::numeric,3))::text,''), coalesce((t.event_status)::text,''), coalesce((t.src)::text,'')), E'\\n' order by t.id) as rows from ten287_rec.ticks t join ten287_rec.events e using (event_id) where e.tier is not null and t.book = 'Betfair Exchange' and t.src <> 'selftest' and t.seen_at >= '2026-09-28T00:00:00Z' and t.seen_at < '2026-09-29T00:00:00Z'"
+ },
+ {
+  "name": "ticks_bf_2026-09-29",
+  "sql": "select count(*) n, string_agg(concat_ws(',', coalesce((t.id)::text,''), coalesce((t.event_id)::text,''), coalesce((t.back_home)::text,''), coalesce((t.back_away)::text,''), coalesce((t.lay_home)::text,''), coalesce((t.lay_away)::text,''), coalesce((t.depth_home)::text,''), coalesce((t.depth_away)::text,''), coalesce((round(extract(epoch from t.book_updated_at)::numeric,3))::text,''), coalesce((round(extract(epoch from t.seen_at)::numeric,3))::text,''), coalesce((t.event_status)::text,''), coalesce((t.src)::text,'')), E'\\n' order by t.id) as rows from ten287_rec.ticks t join ten287_rec.events e using (event_id) where e.tier is not null and t.book = 'Betfair Exchange' and t.src <> 'selftest' and t.seen_at >= '2026-09-29T00:00:00Z' and t.seen_at < '2026-09-30T00:00:00Z'"
+ },
+ {
+  "name": "ticks_sb_2026-09-25",
+  "sql": "select count(*) n, string_agg(concat_ws(',', coalesce((t.id)::text,''), coalesce((t.event_id)::text,''), coalesce((t.back_home)::text,''), coalesce((t.back_away)::text,''), coalesce((t.lay_home)::text,''), coalesce((t.lay_away)::text,''), coalesce((t.depth_home)::text,''), coalesce((t.depth_away)::text,''), coalesce((round(extract(epoch from t.book_updated_at)::numeric,3))::text,''), coalesce((round(extract(epoch from t.seen_at)::numeric,3))::text,''), coalesce((t.event_status)::text,''), coalesce((t.src)::text,'')), E'\\n' order by t.id) as rows from ten287_rec.ticks t join ten287_rec.events e using (event_id) where e.tier is not null and t.book = 'Superbet' and t.src <> 'selftest' and t.seen_at >= '2026-09-25T00:00:00Z' and t.seen_at < '2026-09-26T00:00:00Z'"
+ },
+ {
+  "name": "ticks_sb_2026-09-26",
+  "sql": "select count(*) n, string_agg(concat_ws(',', coalesce((t.id)::text,''), coalesce((t.event_id)::text,''), coalesce((t.back_home)::text,''), coalesce((t.back_away)::text,''), coalesce((t.lay_home)::text,''), coalesce((t.lay_away)::text,''), coalesce((t.depth_home)::text,''), coalesce((t.depth_away)::text,''), coalesce((round(extract(epoch from t.book_updated_at)::numeric,3))::text,''), coalesce((round(extract(epoch from t.seen_at)::numeric,3))::text,''), coalesce((t.event_status)::text,''), coalesce((t.src)::text,'')), E'\\n' order by t.id) as rows from ten287_rec.ticks t join ten287_rec.events e using (event_id) where e.tier is not null and t.book = 'Superbet' and t.src <> 'selftest' and t.seen_at >= '2026-09-26T00:00:00Z' and t.seen_at < '2026-09-27T00:00:00Z'"
+ },
+ {
+  "name": "ticks_sb_2026-09-27",
+  "sql": "select count(*) n, string_agg(concat_ws(',', coalesce((t.id)::text,''), coalesce((t.event_id)::text,''), coalesce((t.back_home)::text,''), coalesce((t.back_away)::text,''), coalesce((t.lay_home)::text,''), coalesce((t.lay_away)::text,''), coalesce((t.depth_home)::text,''), coalesce((t.depth_away)::text,''), coalesce((round(extract(epoch from t.book_updated_at)::numeric,3))::text,''), coalesce((round(extract(epoch from t.seen_at)::numeric,3))::text,''), coalesce((t.event_status)::text,''), coalesce((t.src)::text,'')), E'\\n' order by t.id) as rows from ten287_rec.ticks t join ten287_rec.events e using (event_id) where e.tier is not null and t.book = 'Superbet' and t.src <> 'selftest' and t.seen_at >= '2026-09-27T00:00:00Z' and t.seen_at < '2026-09-28T00:00:00Z'"
+ },
+ {
+  "name": "ticks_sb_2026-09-28",
+  "sql": "select count(*) n, string_agg(concat_ws(',', coalesce((t.id)::text,''), coalesce((t.event_id)::text,''), coalesce((t.back_home)::text,''), coalesce((t.back_away)::text,''), coalesce((t.lay_home)::text,''), coalesce((t.lay_away)::text,''), coalesce((t.depth_home)::text,''), coalesce((t.depth_away)::text,''), coalesce((round(extract(epoch from t.book_updated_at)::numeric,3))::text,''), coalesce((round(extract(epoch from t.seen_at)::numeric,3))::text,''), coalesce((t.event_status)::text,''), coalesce((t.src)::text,'')), E'\\n' order by t.id) as rows from ten287_rec.ticks t join ten287_rec.events e using (event_id) where e.tier is not null and t.book = 'Superbet' and t.src <> 'selftest' and t.seen_at >= '2026-09-28T00:00:00Z' and t.seen_at < '2026-09-29T00:00:00Z'"
+ },
+ {
+  "name": "ticks_sb_2026-09-29",
+  "sql": "select count(*) n, string_agg(concat_ws(',', coalesce((t.id)::text,''), coalesce((t.event_id)::text,''), coalesce((t.back_home)::text,''), coalesce((t.back_away)::text,''), coalesce((t.lay_home)::text,''), coalesce((t.lay_away)::text,''), coalesce((t.depth_home)::text,''), coalesce((t.depth_away)::text,''), coalesce((round(extract(epoch from t.book_updated_at)::numeric,3))::text,''), coalesce((round(extract(epoch from t.seen_at)::numeric,3))::text,''), coalesce((t.event_status)::text,''), coalesce((t.src)::text,'')), E'\\n' order by t.id) as rows from ten287_rec.ticks t join ten287_rec.events e using (event_id) where e.tier is not null and t.book = 'Superbet' and t.src <> 'selftest' and t.seen_at >= '2026-09-29T00:00:00Z' and t.seen_at < '2026-09-30T00:00:00Z'"
+ }
+]
