@@ -65,11 +65,12 @@ this file wins.
   provisionally — a change is a one-line token edit). The TEN-303 verbatim exception is deleted: `AODDS_C`,
   `WX_C`, `ME_C` and the chrome CSS are tokens. **Test:** `test-ten314-tokens.mjs`, `test-ten303-colours.mjs`,
   `test-ten304-weather-tab.mjs`.
-- **Hairlines are the design's 1px, set in the token file** (founder, TEN-314 comment 70fb039e, 2026-09-28; this
-  replaces the 12a 0.33px inside the modal). `--ma-hw:1px` lives in `match-analysis-tokens.css`. Modal code
+- **Hairlines are the design's 1px, set in the token file** (founder, TEN-314 comment 70fb039e, 2026-09-28: 0.33px only
+  matches at 1× DPR and renders thinner on Retina and phones; this replaces, for the modal only, the 12a 0.33px rule in
+  `theme-12a.md`). `--ma-hw:1px` lives in `match-analysis-tokens.css`. Modal code
   writes `var(--ma-hw,0.33px)`, so a builder the player profile shares keeps the site's 0.33px outside `.ma-theme`.
   Weather and Odds keep their spec widths (`WX_C.hw` 1.25px, `hw1` 1px). **Test:** `test-ten314-tokens.mjs`
-  asserts no bare `0.33px` in any modal declaration or modal CSS rule.
+  asserts no bare `0.33px` in any modal declaration or modal CSS rule; a computed border width in the modal at DPR 2+ is 1px.
 - **No figure without a count** (founder, same comment). The Tournament hold rate stays ungated but shows its
   n (service games) in the tooltip. `COURT_CONDITIONS.serviceHold` is the founder's court-conditions sheet %
   with **no** count, so Key factors shows a dash with a tooltip saying why (`MA_HOLD_NO_N`). The Tournament
@@ -95,18 +96,21 @@ this file wins.
   "All stats are updated live" text.
 
 ## Colour tokens (U1–U24, provisional)
+- **Every design shade is its own token** (founder 2026-09-29, TEN-314 comment 1641c7ce): every source value in the
+  design file (e.g. `#06070A` inner track, `#0C0E16`, `#11151F` tooltip surface, `#4B5672` dim icon, `#B4BCCF`, `#FFF`),
+  including every hairline alpha and the selected washes/borders at their exact values, has its own token with source, Night and Day
+  values; none is folded into a neighbour. The token is `--ma-s-<source hex>[-<alpha × 1000>]` (role variants `-fill`,
+  `-ink`, `-line`): its name IS the source value, so the fixture's source palette is read from the names. Night / Day
+  follow README §3 **by the role the shade plays** (the same alpha drawn as a border or as a fill gets a `-line` /
+  `-fill` variant: a selected border never resolves to its own fill), then the U-rows, then the nearest §3 anchor + the shade's per-channel offset; a saturated data colour
+  with no §3/U row keeps its source value. The values are listed in `phase1-token-mappings` (U25+), provisional.
+  **Test:** a scan of the design file's colours finds no source value without a token, and the role Night values are
+  pinned (`test-ten314-tokens.mjs`);
+  `ten312-component-diff.mjs` in the source palette shows ≈0 colour residual on every Phase 1 component.
 - The engineer's Night and Day proposals for the 91 source values README §3 doesn't cover (TEN-314 document
   `phase1-token-mappings`, U1–U24) are **approved provisionally**. Each finished tab ships with side-by-side Night and
   Day screenshots taken on the deployed site so the founder can flag a colour by eye; a mapping change is a one-line
   token edit.
-- **Every design shade is its own token** (founder 2026-09-29, TEN-314 comment 1641c7ce), in the source palette and in
-  Night/Day: every source value the map could not express gets a token — e.g. `#06070A` inner track, `#0C0E16`,
-  `#11151F` tooltip surface, `#4B5672` dim icon, `#B4BCCF`, `#FFF`, every hairline alpha (0.08, 0.09 frame, 0.12, 0.14,
-  0.16 …) and the selected washes/borders at their exact values (menu 0.16, segmented selected border 0.22).
-  **Test:** `ten312-component-diff.mjs` in the source palette reports ≈0 colour difference on every Phase 1 component.
-- **Modal hairlines are the design's 1px**, set in the token file (founder 2026-09-28, TEN-314 70fb039e: 0.33px only
-  matches at 1× DPR and renders thinner on Retina and phones). This replaces, for the modal only, the site's 0.33px
-  hairline rule in `theme-12a.md`. **Test:** a computed border width in the modal at DPR 2 is 1px.
 
 ## Download report (D7)
 - Keeps the existing behaviour: `printAnalysisReport()` → `window.print()` of the modal. Rendered as designed.
@@ -130,7 +134,9 @@ this file wins.
   - **Market edge "Needs"** is not gated: it is derived from prices, not a sample rate.
   - **Archetype-matrix %** is not gated here (its own upstream floor applies). The **tournament hold rate** is not
     gated, but its tooltip always shows its n (service games) — no figure without a count (founder 2026-09-28,
-    TEN-314 70fb039e). **Test:** the hold-rate tooltip contains the service-game count.
+    TEN-314 70fb039e). Where the source carries no count (`COURT_CONDITIONS.serviceHold` today) the figure itself is
+    a dash with the reason in the tooltip (see Palette, "No figure without a count"). **Test:** a hold rate with a count
+    shows it in the tooltip; one without shows "—", never the %.
   - In narrow table cells the 5–9 "small sample" note is a hover note plus a footnote, not inline text.
 
 ## Match stats sheet — every tab
@@ -138,7 +144,10 @@ this file wins.
   click condition is dropped). The header (meta, score, set chips, closing odds) is always wired from match data;
   where stats don't exist (pre-2024, ITF, events without W/UE) the stat sections show "—" plus "Match stats not
   available for this match" (10.5px, faint). **Test:** a pre-2024 row opens a sheet with a wired header and the note.
-- **Date format** in the sheet is exactly the design file's, never "18.07.26" (founder 2026-09-29).
+- **Date format** in the sheet is exactly the design file's (founder 2026-09-29). DF mkSheet L4856 prints its source's
+  date: a Form row `DD.MM` (P1 "Washington · Hard · R16 · 18.07"); every other list `DD.MM.YY` (Tournament L2609,
+  Overview L3140, Market edge L3411, H2H L4481, Progression L4043, Playing style L3639); the Match Stats tab's inline
+  copy the long date ("Jul 20, 2026", DF L4881). **Test:** `test-ten314-sheet.mjs`.
 - **Sheet scopes in the pixel diff:** Match, Set N and Point-by-point are each diffed against the design file, fed
   through **our real stats model**, not only the demo numbers. Required before TEN-338 Match Stats is done.
 - **Design exception — Key stats bars:** the bars keep the 2026-09-24 rule (`modal-form-h2h.md` "Bars — one rule",

@@ -122,7 +122,8 @@ test('every colour variable the modal reads resolves through the token file', ()
   const code = modalCode().map(([, s]) => s).join('\n') + modalCss().map(([, b]) => b).join('\n');
   const used = new Set([...code.matchAll(/var\(\s*(--[\w-]+)/g)].map(m => m[1]));
   const NOT_COLOUR = new Set(['--mx-font-ui', '--mx-font-mono', '--radius', '--sf-font-mono', '--sf-font-ui']);
-  const missing = [...used].filter(v => !NOT_COLOUR.has(v) && !(v in NIGHT));
+  // `var(--ma-s-${…})` = a shade key filled in at runtime (MA_SEG, maMatchRowsHtml); those keys are checked below.
+  const missing = [...used].filter(v => !NOT_COLOUR.has(v) && v !== '--ma-s-' && !(v in NIGHT));
   assert.deepEqual(missing, []);
   for (const [k, v] of Object.entries(NIGHT)) if (!k.startsWith('--ma-')) assert.match(v, /^var\(--ma-[\w-]+\)$/, `${k} re-points to a token`);
 });
@@ -137,6 +138,68 @@ test('hairline width: --ma-hw is 1px, and no bare 0.33px in the modal code or CS
   const css = modalCss().filter(([, b]) => bare(b)).map(([sel]) => sel.slice(0, 60));
   assert.deepEqual([...js, ...css], []);
   assert.ok(modalCode().some(([, s]) => s.includes('var(--ma-hw,0.33px)')), 'the modal reads the token');
+});
+
+// Founder 2026-09-29 (TEN-314 comment 1641c7ce): every design shade is its own token. The token NAME is the source
+// value (--ma-s-<hex>[-<alpha x1000>][-fill|-ink]), so the fixture's source palette is read from the names.
+// Mutation: delete one --ma-s-* line from the token file (e.g. --ma-s-06070a), or drop its Day override.
+const DF = readFileSync(join(HERE, 'design/handoff-ten312-match-analysis/Match Analysis Progression v1.dc.html'), 'utf8');
+function dfShades() {
+  const out = new Set();
+  for (const m of DF.matchAll(/#[0-9a-fA-F]{3,8}\b|rgba?\([^)]*\)/g)) {
+    const pre = DF[m.index - 1] || '';
+    let v = m[0].replace(/\s+/g, '').toLowerCase();
+    if (v[0] === '#' && /[\w&-]/.test(pre)) continue;                          // ids, entities, anchors
+    if (v[0] === '#') {
+      let h = v.slice(1); if (h.length === 3) h = [...h].map(c => c + c).join(''); if (h.length !== 6) continue;
+      out.add(h);
+    } else {
+      const p = /^rgba?\((\d+),(\d+),(\d+)(?:,([\d.]+))?\)$/.exec(v); if (!p) continue;  // template expressions
+      const h = [p[1], p[2], p[3]].map(n => (+n).toString(16).padStart(2, '0')).join('');
+      out.add(p[4] == null || +p[4] === 1 ? h : h + '-' + String(Math.round(+p[4] * 1000)).padStart(3, '0'));
+    }
+  }
+  return out;
+}
+test('every design shade is its own token, with a Night value (and Day where it differs)', () => {
+  const shades = dfShades();
+  assert.ok(shades.size > 150, `read the design file's shades (${shades.size})`);
+  const missing = [...shades].filter(k => !(('--ma-s-' + k) in NIGHT));
+  assert.deepEqual(missing, [], 'a design shade without its own token');
+  const surfaces = ['0a0d14', '0e1019', '0c0e16', '131623', '06070a'];
+  for (const k of surfaces) assert.ok(('--ma-s-' + k) in DAY, `--ma-s-${k} re-tones in Day`);
+  // role variants the README needs from one source value
+  for (const v of ['--ma-s-5b9bff-fill', '--ma-s-6aaeff-fill', '--ma-s-06070a-ink']) assert.ok(v in NIGHT, v);
+});
+
+// The source diff re-points every --ma-s-* to its own name, so it cannot see a Night value. README §3 maps by ROLE:
+// a shade drawn as a border, a fill or a surface keeps the approved Night of that role (review 2026-09-29).
+// Mutation: MA_SEG me.sl back to '5b9bff-220' (the selected outline vanishes into the #222431 fill in Night), or
+// --ma-s-11151f back to its offset value #20232E (README §6: the tooltip is the raised surface).
+test('Night values follow the role README §3 gives the shade (border / fill / surface)', () => {
+  const N = k => NIGHT['--ma-s-' + k];
+  assert.equal(N('5b9bff-220-line'), 'rgba(157,179,242,0.30)', 'blue 0.22 as a border = the §3 outline');
+  assert.notEqual(N('5b9bff-220-line'), N('5b9bff-160'), 'a selected border never equals its fill');
+  assert.equal(N('ffffff-060-fill'), '#20222E', 'white 0.06 as a hover fill = §3 hover');
+  assert.equal(N('ffffff-050-fill'), '#181922', 'white 0.05 as a fill = §3 inner box');
+  assert.equal(N('11151f'), '#1B1C27', 'the tooltip = §3 raised surface');
+  // the approved chrome Night values did not move
+  assert.deepEqual([N('0a0d14'), N('5b9bff-120'), N('ffffff-040'), N('5b6880'), N('5b9bff')], ['#191B24', '#222431', '#20222E', '#A3AABE', '#9DB3F2']);
+  const seg = HTML.slice(HTML.indexOf('\nconst MA_SEG = {'), HTML.indexOf('\n};', HTML.indexOf('\nconst MA_SEG = {')));
+  for (const m of seg.matchAll(/\bsl: '([\w-]+)'/g)) assert.notEqual(N(m[1]), '#222431', `MA_SEG selected border ${m[1]} must not resolve to the fill`);
+});
+
+// The runtime shade keys (MA_SEG's track / selected colours, maMatchRowsHtml's S('…')) are real tokens.
+// Mutation: a typo in a key (e.g. MA_SEG sheet tb '06070b').
+test('every runtime shade key in the shared helpers names a token', () => {
+  const seg = HTML.slice(HTML.indexOf('\nconst MA_SEG = {'), HTML.indexOf('\n};', HTML.indexOf('\nconst MA_SEG = {')));
+  const keys = [...seg.matchAll(/\b(?:tb|tl|sb|sl): '([\w-]+)'/g)].map(m => m[1]);
+  assert.equal(keys.length, 16, 'four geometries × track fill/line + selected fill/line');
+  const rows = HTML.slice(HTML.indexOf('\nfunction maMatchRowsHtml('), HTML.indexOf('\n}\n', HTML.indexOf('\nfunction maMatchRowsHtml(')));
+  const rk = [...rows.matchAll(/\bS\('([\w-]+)'/g)].map(m => m[1]);
+  assert.ok(rk.length >= 10, 'the rows read their shades');
+  const bad = [...keys, ...rk].filter(k => !(('--ma-s-' + k) in NIGHT));
+  assert.deepEqual(bad, []);
 });
 
 // Mutation: maApplyTheme stops writing the attribute, or maSetTheme writes a different storage key than TEN-315 reads.

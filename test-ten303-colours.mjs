@@ -101,12 +101,13 @@ function applied(src, selector, prop) {
 }
 
 test('2: the rendered chrome reads the tokens (Night and Day): nav selected, modal box, menu, close, the Odds tab text', () => {
+  // founder 2026-09-29: each chrome colour is the token of the design's OWN shade (--ma-s-<source>, DF L85–123 / L5323)
   const want = [
-    ['.modal-analysis .asidenav-item.active', 'background', 'ma-sel'], ['.modal-analysis .asidenav-item.active', 'color', 'ma-t1'],
-    ['.modal-analysis', 'background', 'ma-page'], ['.modal-analysis', 'box-shadow', 'ma-shadow-modal'], ['#analysisModal', 'background', 'ma-scrim'],
-    ['.modal-analysis .asidenav-item', 'color', 'ma-t3'], ['.modal-analysis .asidenav-item:hover', 'background', 'ma-hover'],
-    ['#aSectionOdds', 'color', 'ma-t1'], ['.modal-analysis .ahead2 .close', 'color', 'ma-t3'], ['.modal-analysis .asidenav-download', 'border-top-color', 'ma-hair'],
-    ['.modal-analysis .asidenav-download', 'color', 'ma-link'], ['.modal-analysis .apname', 'color', 'ma-t1'], ['.modal-analysis .apname.b', 'color', 'ma-t2'],
+    ['.modal-analysis .asidenav-item.active', 'background', 'ma-s-5b9bff-120'], ['.modal-analysis .asidenav-item.active', 'color', 'ma-s-ffffff'],
+    ['.modal-analysis', 'background', 'ma-s-0a0d14'], ['.modal-analysis', 'box-shadow', 'ma-shadow-modal'], ['#analysisModal', 'background', 'ma-s-040508-720'],
+    ['.modal-analysis .asidenav-item', 'color', 'ma-s-5b6880'], ['.modal-analysis .asidenav-item:hover', 'background', 'ma-s-ffffff-040'],
+    ['#aSectionOdds', 'color', 'ma-t1'], ['.modal-analysis .ahead2 .close', 'color', 'ma-s-5b6880'], ['.modal-analysis .asidenav-download', 'border-top-color', 'ma-s-ffffff-070'],
+    ['.modal-analysis .asidenav-download', 'color', 'ma-s-5b9bff'], ['.modal-analysis .apname', 'color', 'ma-t1'], ['.modal-analysis .apname.b', 'color', 'ma-t2'],
     ['.aox-row:not(.aox-nodata):hover', 'background', 'ma-hover'], ['.aox-row:not(.aox-nodata):hover', 'border-color', 'ma-outline'],
   ];
   for (const [sel, prop, t] of want) assert.equal(tokenOf(applied(HTML, sel, prop)), t, `${sel} ${prop}`);

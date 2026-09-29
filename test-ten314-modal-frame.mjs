@@ -63,9 +63,9 @@ test('frame: overlay, modal, header, body grid and menu carry the design FILE va
   assert.equal(h['grid-template-columns'], hd['grid-template-columns']); assert.equal(h.gap, hd.gap); assert.equal(h.padding, hd.padding);
   assert.equal(b['grid-template-columns'], bd['grid-template-columns']);
   assert.equal(n.padding, nv.padding); assert.equal(n.gap, nv.gap);
-  // colours of the frame: the token file's scrim and modal shadow (TEN-314 D1; the design-verbatim block is gone)
+  // colours of the frame: the token of the design's own scrim shade (DF L85 rgba(4,5,8,0.72); founder 2026-09-29) and the modal shadow
   const chrome = HTML.slice(HTML.indexOf('<style id="match-analysis-chrome">'));
-  assert.ok(chrome.includes('#analysisModal{ background:var(--ma-scrim); }'));
+  assert.ok(chrome.includes('#analysisModal{ background:var(--ma-s-040508-720); }'));
   assert.ok(chrome.includes('box-shadow:var(--ma-shadow-modal)'));
 });
 

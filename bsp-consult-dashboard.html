@@ -13793,10 +13793,11 @@ function maSmallChip(n){
 //   me     DF L1524/1804  Market edge view / scope / line pop-up  track padding 2 radius 8, item radius 6, 12px
 //   readme README §4.1 (no file site carries it)        track padding 3 radius 10 gap 2, item 6px 12px radius 8, 12.5px
 const MA_SEG = {
-  sheet: { track: 'gap:3px; padding:3px; border-radius:9px;', item: 'padding:5px 12px; border-radius:7px; font-size:11px;' },
-  pbp: { track: 'gap:3px; padding:2px; border-radius:8px;', item: 'padding:5px 12px; border-radius:6px; font-size:11px;' },
-  me: { track: 'gap:3px; padding:2px; border-radius:8px;', item: 'padding:5px 12px; border-radius:6px; font-size:12px;' },
-  readme: { track: 'gap:2px; padding:3px; border-radius:10px;', item: 'padding:6px 12px; border-radius:8px; font-size:12.5px;' },
+  // colours = the design's own shade per geometry (founder 2026-09-29): tb/tl track fill/line, sb/sl selected fill/line
+  sheet: { track: 'gap:3px; padding:3px; border-radius:9px;', item: 'padding:5px 12px; border-radius:7px; font-size:11px;', tb: '06070a', tl: 'ffffff-090', sb: '5b9bff-220', sl: '5b9bff-450' },   // DF L1689 + segF L3014
+  pbp: { track: 'gap:3px; padding:2px; border-radius:8px;', item: 'padding:5px 12px; border-radius:6px; font-size:11px;', tb: '0a0d13', tl: 'ffffff-090', sb: '5b9bff-220', sl: '5b9bff-450' },     // DF L1725 + segF L4838
+  me: { track: 'gap:3px; padding:2px; border-radius:8px;', item: 'padding:5px 12px; border-radius:6px; font-size:12px;', tb: '0c0e16', tl: 'ffffff-060', sb: '5b9bff-160', sl: '5b9bff-220-line' },      // DF L1804 + segT L3373
+  readme: { track: 'gap:2px; padding:3px; border-radius:10px;', item: 'padding:6px 12px; border-radius:8px; font-size:12.5px;', tb: '0c0e16', tl: 'ffffff-050', sb: '5b9bff-160', sl: '5b9bff-220-line' },  // README §4.1: inner box, hairline soft
 };
 // items: [{ label, on, onclick, disabled?, title? }] (label is markup: callers escape). o.center = the sheet's
 // centred track. Selected = README §3 "selected segment" tile + primary text; transitions 140ms (.ma-seg-item).
@@ -13805,24 +13806,25 @@ function maSeg(style, items, o){
   const G = MA_SEG[style] || MA_SEG.readme;
   const segs = items.map(t => {
     const on = !!t.on && !t.disabled, off = !!t.disabled;
-    return `<span class="${off ? 'ma-seg-item' : 'seg ma-seg-item'}"${off ? `${t.title ? ` title="${escapeHtml(String(t.title))}"` : ''} aria-disabled="true"` : ` onclick="${t.onclick}"`} style="${G.item} font-weight:${on ? 700 : 600}; color:${on ? 'var(--text)' : 'var(--label)'}; background:${on ? 'var(--seg-active)' : 'transparent'}; border:var(--ma-hw,0.33px) solid ${on ? 'var(--seg-active-line)' : 'transparent'}; cursor:${off ? 'not-allowed' : 'pointer'}; white-space:nowrap;">${t.label}</span>`;
+    return `<span class="${off ? 'ma-seg-item' : 'seg ma-seg-item'}"${off ? `${t.title ? ` title="${escapeHtml(String(t.title))}"` : ''} aria-disabled="true"` : ` onclick="${t.onclick}"`} style="${G.item} font-weight:${on ? 700 : 600}; color:${on ? 'var(--ma-s-e7e9ee, var(--text))' : 'var(--ma-s-5b6880, var(--label))'}; background:${on ? `var(--ma-s-${G.sb}, var(--seg-active))` : 'transparent'}; border:var(--ma-hw,0.33px) solid ${on ? `var(--ma-s-${G.sl}, var(--seg-active-line))` : 'transparent'}; cursor:${off ? 'not-allowed' : 'pointer'}; white-space:nowrap;">${t.label}</span>`;
   }).join('');
-  return `<div class="ma-seg" data-ma-seg="${style}" style="${o.center ? 'display:flex; width:max-content; margin:0 auto;' : 'display:inline-flex;'} ${G.track} background:var(--surface-inner); border:var(--ma-hw,0.33px) solid var(--line);">${segs}</div>`;
+  return `<div class="ma-seg" data-ma-seg="${style}" style="${o.center ? 'display:flex; width:max-content; margin:0 auto;' : 'display:inline-flex;'} ${G.track} background:var(--ma-s-${G.tb}, var(--surface-inner)); border:var(--ma-hw,0.33px) solid var(--ma-s-${G.tl}, var(--line));">${segs}</div>`;
 }
 
 // ---- pop-up frame (README §4.4, DF L1485–1560) ----
 // o: { title (text), chip (markup beside the title), sub (text), body, foot (markup), maxWidth (px),
 //      onClose (JS run by ✕ / outside click / Esc), cls (the caller's class hooks: cls, cls-overlay, cls-title,
-//      cls-sub), xCls (extra class on ✕), bg / line (surface + hairline; default card + hairline), z }.
+//      cls-sub), xCls (extra class on ✕), bg / line (override the box surface / border; default = the design's own
+//      shades, DF L1517–1522: card box, 1.25px border at white 0.08, ✕ 1px at white 0.12, the 0.72 pop-up scrim), z }.
 // The overlay fades in (120ms, .ma-fade); the box enters with sigIn (200ms, .ma-sigin). Outside click =
 // a click whose target is the overlay itself; Esc = maPopEscKey (one listener, the topmost frame).
 function maPopFrame(o){
   const c = o.cls || '', esc = s => escapeHtml(s == null ? '' : String(s));
   const mono = "font-family:'IBM Plex Mono',monospace;";
-  return `<div class="ma-pop-overlay ma-fade${c ? ' ' + c + '-overlay' : ''}" onclick="if(event.target===this){${o.onClose}}" style="position:fixed; inset:0; z-index:${o.z || 85}; background:var(--ma-scrim, var(--backdrop)); display:flex; align-items:flex-start; justify-content:center; padding:40px 24px; overflow-y:auto; font-family:'Hanken Grotesk',system-ui,sans-serif; color:var(--text); line-height:normal; font-size:16px;">`
-    + `<div class="ma-pop ma-sigin${c ? ' ' + c : ''}" role="dialog" aria-modal="true" style="position:relative; width:100%; max-width:${o.maxWidth || 900}px; background:${o.bg || 'var(--surface)'}; border:var(--ma-hw,0.33px) solid ${o.line || 'var(--line)'}; border-radius:14px; padding:20px 22px 14px; display:flex; flex-direction:column; gap:16px;">`
-    + `<div style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px;"><div style="display:flex; flex-direction:column; gap:5px; min-width:0;"><span style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;"><span class="ma-pop-title${c ? ' ' + c + '-title' : ''}" style="font-size:17px; font-weight:800; letter-spacing:-0.01em;">${esc(o.title)}</span>${o.chip || ''}</span><span class="ma-pop-sub${c ? ' ' + c + '-sub' : ''}" style="${mono} font-size:10.5px; color:var(--label);">${esc(o.sub)}</span></div>`
-    + `<span class="seg ma-pop-x${o.xCls ? ' ' + o.xCls : ''}" role="button" aria-label="Close" onclick="${o.onClose}" style="width:30px; height:30px; flex:none; border-radius:8px; border:var(--ma-hw,0.33px) solid ${o.line || 'var(--line)'}; display:flex; align-items:center; justify-content:center; font-size:13px; color:var(--text-soft); cursor:pointer;">✕</span></div>`
+  return `<div class="ma-pop-overlay ma-fade${c ? ' ' + c + '-overlay' : ''}" onclick="if(event.target===this){${o.onClose}}" style="position:fixed; inset:0; z-index:${o.z || 85}; background:var(--ma-s-030509-720, var(--backdrop)); display:flex; align-items:flex-start; justify-content:center; padding:40px 24px; overflow-y:auto; font-family:'Hanken Grotesk',system-ui,sans-serif; color:var(--ma-s-e7e9ee, var(--text)); line-height:normal; font-size:16px;">`
+    + `<div class="ma-pop ma-sigin${c ? ' ' + c : ''}" role="dialog" aria-modal="true" style="position:relative; width:100%; max-width:${o.maxWidth || 900}px; background:${o.bg || 'var(--ma-s-0e1019, var(--surface))'}; border:1.25px solid ${o.line || 'var(--ma-s-ffffff-080, var(--line))'}; border-radius:14px; padding:20px 22px 14px; display:flex; flex-direction:column; gap:16px;">`
+    + `<div style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px;"><div style="display:flex; flex-direction:column; gap:5px; min-width:0;"><span style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;"><span class="ma-pop-title${c ? ' ' + c + '-title' : ''}" style="font-size:17px; font-weight:800; letter-spacing:-0.01em;">${esc(o.title)}</span>${o.chip || ''}</span><span class="ma-pop-sub${c ? ' ' + c + '-sub' : ''}" style="${mono} font-size:10.5px; color:var(--ma-s-5b6880, var(--label));">${esc(o.sub)}</span></div>`
+    + `<span class="seg ma-pop-x${o.xCls ? ' ' + o.xCls : ''}" role="button" aria-label="Close" onclick="${o.onClose}" style="width:30px; height:30px; flex:none; border-radius:8px; border:var(--ma-hw,0.33px) solid var(--ma-s-ffffff-120, var(--line)); display:flex; align-items:center; justify-content:center; font-size:13px; color:var(--ma-s-8b96b5, var(--text-soft)); cursor:pointer;">✕</span></div>`
     + (o.body || '') + (o.foot ? `<span style="font-size:11px; color:var(--label);">${o.foot}</span>` : '') + '</div></div>';
 }
 // Esc closes the topmost frame through its own ✕. Bubble phase: while the stats sheet is open on top, its
@@ -13851,33 +13853,36 @@ function maMatchRowsHtml(groups, opts){
   //   attributes), oppTitle / oppAttrs, scoresTitle, setsColor, hTitle / aTitle, hMark (a one-letter marker in the H cell).
   const o = opts || {}, esc = s => escapeHtml(s == null ? '' : String(s));
   const mono = "font-family:'IBM Plex Mono',monospace;";
-  const cap = `${mono} font-size:9px; letter-spacing:0.1em; text-transform:uppercase; color:var(--label);`;
+  // colours = the design's own shades (founder 2026-09-29), fallbacks = the 12a names outside the modal
+  const S = (k, f) => `var(--ma-s-${k}, var(${f}))`;
+  const cap = `${mono} font-size:9px; letter-spacing:0.1em; text-transform:uppercase; color:${S('4b5672', '--label')};`;
   const labels = o.labels || ['Date', '', 'Opponent', 'Rd', 'Sets', 'Set scores', 'H', 'A'];
-  const head = `<div class="ma-rows-head" style="position:sticky; top:0; z-index:5; display:grid; grid-template-columns:${MA_ROW_COLS}; gap:0 10px; align-items:center; background:${o.bg || 'var(--surface)'}; padding:${o.headPad || '6px 6px 7px'}; border-bottom:1px solid ${o.headLine || 'var(--line-open)'};">`
+  const head = `<div class="ma-rows-head" style="position:sticky; top:0; z-index:5; display:grid; grid-template-columns:${MA_ROW_COLS}; gap:0 10px; align-items:center; background:${o.bg || S('0a0d14', '--surface')}; padding:${o.headPad || '6px 6px 7px'}; border-bottom:var(--ma-hw,0.33px) solid ${o.headLine || S('ffffff-090', '--line-open')};">`
     + labels.map((l, i) => (l ? `<span style="${cap}${i >= 6 ? ' text-align:right;' : ''}">${esc(l)}</span>` : '<span></span>')).join('') + '</div>';
-  const wl = r => (r.won == null ? 'var(--label)' : r.won ? 'var(--positive)' : 'var(--negative)');
+  const wl = r => (r.won == null ? S('5b6880', '--label') : r.won ? S('3dd68c', '--positive') : S('e0616f', '--negative'));
   const t = v => (v ? ` title="${esc(v)}"` : '');
   const mark = m => (m ? `<span class="ma-row-mark" aria-hidden="true" style="position:absolute; top:-3px; right:-8px; font-size:7px; font-weight:700; letter-spacing:0; color:var(--text-sub);">${esc(m)}</span>` : '');
-  const row = r => `<div class="seg ma-row${r.cls ? ' ' + r.cls : ''}"${r.attrs || ''}${r.click || ''} style="display:grid; grid-template-columns:${MA_ROW_COLS}; gap:0 10px; align-items:center; padding:6px; border-radius:6px; background:${r.selected ? 'var(--seg-active)' : 'transparent'}; cursor:pointer;">`
-      + `<span style="${mono} font-size:11px; color:var(--label);">${esc(r.date)}</span>`
+  const row = r => `<div class="seg ma-row${r.cls ? ' ' + r.cls : ''}"${r.attrs || ''}${r.click || ''} style="display:grid; grid-template-columns:${MA_ROW_COLS}; gap:0 10px; align-items:center; padding:6px; border-radius:6px; background:${r.selected ? S('5b9bff-100', '--seg-active') : 'transparent'}; cursor:pointer;">`
+      + `<span style="${mono} font-size:11px; color:${S('5b6880', '--label')};">${esc(r.date)}</span>`
       + `<span style="width:8px; height:8px; border-radius:2px; background:${wl(r)};"></span>`
       + `<span${r.oppAttrs || ''}${t(r.oppTitle)} style="font-size:12.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${esc(r.opp)}</span>`
-      + `<span style="${mono} font-size:10.5px; color:var(--label);">${esc(r.rd)}</span>`
+      + `<span style="${mono} font-size:10.5px; color:${S('5b6880', '--label')};">${esc(r.rd)}</span>`
       + `<span style="${mono} font-size:11.5px; font-weight:700; color:${r.setsColor || wl(r)};">${esc(r.sets)}</span>`
-      + `<span${t(r.scoresTitle)} style="${mono} font-size:11px; color:var(--text-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(r.scores)}</span>`
-      + `<span${t(r.hTitle)} style="position:relative; ${mono} font-size:11px; color:${r.h === '—' ? 'var(--label)' : 'var(--text-soft)'}; text-align:right;">${esc(r.h)}${mark(r.hMark)}</span>`
-      + `<span${t(r.aTitle)} style="${mono} font-size:11px; color:var(--label); text-align:right;">${esc(r.a)}</span></div>`;
+      + `<span${t(r.scoresTitle)} style="${mono} font-size:11px; color:${S('8b96b5', '--text-soft')}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(r.scores)}</span>`
+      + `<span${t(r.hTitle)} style="position:relative; ${mono} font-size:11px; color:${r.h === '—' ? S('5b6880', '--label') : S('c6ccdb', '--text-soft')}; text-align:right;">${esc(r.h)}${mark(r.hMark)}</span>`
+      + `<span${t(r.aTitle)} style="${mono} font-size:11px; color:${S('5b6880', '--label')}; text-align:right;">${esc(r.a)}</span></div>`;
   const wrap = r => (o.inset != null || r.wrapCls ? `<div class="${r.wrapCls || ''}" style="transition:opacity .12s; padding:0 ${o.inset || 0}px;">${row(r)}</div>` : row(r));
   const body = groups.map(g => (g.divBefore && o.divider ? o.divider : '')
-    + `<div class="ma-rows-group" style="display:flex; align-items:center; gap:10px; padding:${o.groupPad || '11px 6px 5px'}; border-top:1px solid var(--line);"><span style="font-size:12.5px; font-weight:700; white-space:nowrap;">${esc(g.title)}</span>${g.meta ? `<span style="${mono} font-size:10px; color:var(--label); white-space:nowrap;">${esc(g.meta)}</span>` : ''}</div>`
+    + `<div class="ma-rows-group" style="display:flex; align-items:center; gap:10px; padding:${o.groupPad || '11px 6px 5px'}; border-top:var(--ma-hw,0.33px) solid ${S('ffffff-070', '--line')};"><span style="font-size:12.5px; font-weight:700; white-space:nowrap;">${esc(g.title)}</span>${g.meta ? `<span style="${mono} font-size:10px; color:${S('4b5672', '--label')}; white-space:nowrap;">${esc(g.meta)}</span>` : ''}</div>`
     + g.rows.map(wrap).join('')).join('');
   const empty = !groups.length && o.empty ? `<div style="padding:28px 16px; text-align:center; font-size:12.5px; color:var(--label);">${esc(o.empty)}</div>` : '';
   // line-height:normal = the design's (its rows sit in no line-height rule); a host section's 21px drifted every row down.
   return `<div class="ma-rows" style="display:flex; flex-direction:column; line-height:normal;">${head}${empty}${body}</div>`;
 }
 
-// ---- tooltip (README §6 `.elotip-pop`: 120ms opacity, raised surface, strong hairline, mono 11px) ----
-// trigger / body are markup. o.below = open under the trigger (default: above).
+// ---- tooltip (README §6 `.elotip-pop`: 120ms opacity; DF L950 surface and 1px white-0.14 border as their own shades) ----
+// The pop takes the UI font as in the design file (DF L950: markup bodies set their own mono spans); a plain-text body
+// is wrapped in README §6's mono 11px.
 // o.below = open under the trigger (default: above) · o.tag / o.cls / o.attrs / o.style = the wrapper (e.g. Form's bar:
 // a flex:1 div that opens the sheet) · o.popStyle = the pop-up's offset (Form: bottom:20px, DF L950).
 // o.wrap = a sentence: wrap it at that width (px) instead of the one-line nowrap default, so a long body stays inside the
@@ -13887,7 +13892,7 @@ const MA_HOLD_NO_N = 'Service hold at this event: the source gives a rate withou
 function maTipHtml(trigger, body, o){
   o = o || {};
   const tag = o.tag || 'span';
-  return `<${tag} class="elotip${o.cls ? ' ' + o.cls : ''}"${o.attrs || ''} style="position:relative; display:${tag === 'span' ? 'inline-flex' : 'block'};${o.style ? ' ' + o.style : ''}">${trigger}<span class="elotip-pop" role="tooltip" style="${o.popStyle || (o.below ? 'top:calc(100% + 8px);' : 'bottom:calc(100% + 8px);')}${o.wrap ? ` white-space:normal; width:${o.wrap}px;` : ''}${o.start ? ' left:0; transform:none;' : ''}">${body}</span></${tag}>`;
+  return `<${tag} class="elotip${o.cls ? ' ' + o.cls : ''}"${o.attrs || ''} style="position:relative; display:${tag === 'span' ? 'inline-flex' : 'block'};${o.style ? ' ' + o.style : ''}">${trigger}<span class="elotip-pop" role="tooltip" style="${o.popStyle || (o.below ? 'top:calc(100% + 8px);' : 'bottom:calc(100% + 8px);')}${o.wrap ? ` white-space:normal; width:${o.wrap}px;` : ''}${o.start ? ' left:0; transform:none;' : ''}">${/^\s*</.test(body) ? body : `<span style="font-family:'IBM Plex Mono',monospace; font-size:11px;">${body}</span>`}</span></${tag}>`;
 }
 
 // ---- flagged rules: the founder's calls. One constant / function each, so a
@@ -14522,7 +14527,8 @@ function fhFormPlayer(m, idx, st){
   if (list.length > 0 && list.length <= NWIN) entries.push({ isDiv: true });
   const divEnd = entries.length > 0 && entries[entries.length - 1].isDiv;
   if (divEnd) entries.pop();
-  all.forEach(r => { _fh.sheetMap[r.mid] = { r, aName: name, aKey: key, bName: r.opp, bKey: r.oppKey }; });
+  // noYear: the design's Form sheet prints the row's DD.MM (DF L4671/L4715); every other list keeps DD.MM.YY
+  all.forEach(r => { _fh.sheetMap[r.mid] = { r, aName: name, aKey: key, bName: r.opp, bKey: r.oppKey, noYear: true }; });
   // Hot lines, this player's window oldest → newest.
   const hx = win.slice().reverse();
   const sc = fhScoreLines(hx, fhFormLineDefs(fhSurname(name)));
@@ -14658,14 +14664,14 @@ function fhFormListHtml(P){
     ? `<div class="seg" onclick="fhFormToggle('more',${P.idx})" style="text-align:center; padding:12px 0 13px; border-top:1px solid var(--line); font-size:13px; font-weight:600; color:var(--periwinkle); cursor:pointer;">${_fh.form.more[P.idx] ? 'Show fewer' : 'Show ' + (P.list.length - P.NWIN) + ' more matches'}</div>` : '';
   // DESIGN GAP G9: no form source at all for this side (no form shard and no career-history shard). The file only
   // draws "No matches with these filters."; the same empty line says the true reason instead.
-  const rows = maMatchRowsHtml(groups, { headPad: '8px 14px 7px', headLine: 'var(--line)', groupPad: '11px 14px 5px', inset: 8, divider: div,
+  const rows = maMatchRowsHtml(groups, { headPad: '8px 14px 7px', groupPad: '11px 14px 5px', inset: 8, divider: div,
     empty: P.list.length === 0 ? (P.noSource ? 'No recent matches on record.' : 'No matches with these filters.') : '' });
   return `<div style="display:flex; flex-direction:column; min-width:0;">
       <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:10px;">
         <span style="font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:var(--label);">Recent matches · ${fhEsc(fhSurname(P.name))}</span>
         <span style="font-size:11px; color:var(--label);">${P.shown.length} on record${P.DWIN == null ? '' : ' · last ' + P.DWIN + ' days'}</span>
       </div>
-      <div style="border:1px solid var(--line); border-radius:14px; overflow:clip; background:var(--surface); display:flex; flex-direction:column; flex:1;">
+      <div class="fh-fcard" style="border:1px solid var(--ma-s-ffffff-090, var(--line)); border-radius:14px; overflow:clip; background:var(--ma-s-0a0d14, var(--surface)); display:flex; flex-direction:column; flex:1;">
         ${rows}
         <div style="flex:1;"></div>
         ${P.divEnd ? div : ''}
@@ -15261,33 +15267,38 @@ function fhSheetHeadHtml(e, r, opts){
   const winLine = r.wo ? (r.won ? last(e.aName) : last(e.bName)) + ' won by walkover'
     : r.won == null ? '' : (r.won ? last(e.aName) + ' won ' + (scoreTxt || (r.pS + '-' + r.oS)) : last(e.bName) + ' won ' + (flipTxt || (r.oS + '-' + r.pS))) + retTag;
   const setsKnown = r.pS != null;
-  const aC = !setsKnown ? FH_DASH : (r.won ? 'var(--text)' : 'var(--label)'), bC = !setsKnown ? FH_DASH : (r.won ? 'var(--label)' : 'var(--text)');
-  const chips = o.inline ? '' : (r.sets || []).map(x => `<span style="${FH_MONO} font-size:12px; font-weight:700; color:var(--text); background:var(--surface-inner); border:var(--ma-hw,0.33px) solid var(--line); border-radius:6px; padding:3px 8px;">${x[0]}-${x[1]}</span>`).join('');
-  const badge = (v, c) => `<span style="position:absolute; left:50%; bottom:-9px; transform:translateX(-50%); ${FH_MONO} font-size:10.5px; font-weight:700; color:${v == null ? FH_DASH : c}; background:var(--surface-inner); border:var(--ma-hw,0.33px) solid var(--line); border-radius:999px; padding:1px 7px; white-space:nowrap;">${v == null ? FH_DASHC : v.toFixed(2)}</span>`;
+  const aC = !setsKnown ? FH_DASH : (r.won ? 'var(--ma-s-e7e9ee, var(--text))' : 'var(--ma-s-5b6880, var(--label))'), bC = !setsKnown ? FH_DASH : (r.won ? 'var(--ma-s-5b6880, var(--label))' : 'var(--ma-s-e7e9ee, var(--text))');   // DF L4870
+  const chips = o.inline ? '' : (r.sets || []).map(x => `<span style="${FH_MONO} font-size:12px; font-weight:700; color:var(--ma-s-e7e9ee, var(--text)); background:var(--ma-s-06070a, var(--surface-inner)); border:var(--ma-hw,0.33px) solid var(--ma-s-ffffff-090, var(--line)); border-radius:6px; padding:3px 8px;">${x[0]}-${x[1]}</span>`).join('');
+  const badge = (v, c) => `<span style="position:absolute; left:50%; bottom:-9px; transform:translateX(-50%); ${FH_MONO} font-size:10.5px; font-weight:700; color:${v == null ? FH_DASH : c}; background:var(--ma-s-06070a, var(--surface-inner)); border:var(--ma-hw,0.33px) solid var(--ma-s-ffffff-160, var(--line)); border-radius:999px; padding:1px 7px; white-space:nowrap;">${v == null ? FH_DASHC : v.toFixed(2)}</span>`;
   const av = (name, key) => `<span class="fh-av">${aAvatarHtml(name, key)}</span>`;
-  // Date exactly as the design file prints it (DF L4856 "18.07"; founder 2026-09-29: never "18.07.26").
-  const meta = [r.tourn, r.surface || FH_DASHC, r.round, r.date ? fhDDMM(r.date) : null].filter(x => x != null && x !== '').join(' · ');
-  const close = o.inline ? '' : `<span class="seg" onclick="fhCloseSheet()" style="background:var(--surface-inner); border:var(--ma-hw,0.33px) solid var(--line); border-radius:8px; width:30px; height:30px; color:var(--text-sub); font-size:15px; display:flex; align-items:center; justify-content:center; cursor:pointer; flex:none;">✕</span>`;
+  // date = the design's sheet meta exactly (DF mkSheet L4856 prints its source's date): a Form row DD.MM (P1 "… · 18.07",
+  // DF L4671); Tournament / Overview / Market edge / H2H / Progression / Playing style DD.MM.YY (DF L2609, L3140,
+  // L3411, L4481, L4043, L3639); the Match Stats tab's inline copy the long date (README §4.3 "Jul 20, 2026", DF L4881).
+  const yy = String(r.date || '').slice(2, 4);
+  const longDate = d => { const t = new Date(String(d).slice(0, 10) + 'T12:00:00Z'); return isNaN(t) ? null : t.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }); };
+  const dateTxt = !r.date ? null : o.inline ? longDate(r.date) : e.noYear ? fhDDMM(r.date) : fhDDMM(r.date) + (yy ? '.' + yy : '');
+  const meta = [r.tourn, r.surface || FH_DASHC, r.round, dateTxt].filter(x => x != null && x !== '').join(' · ');
+  const close = o.inline ? '' : `<span class="seg" onclick="fhCloseSheet()" style="background:var(--ma-s-ffffff-050-fill, var(--surface-inner)); border:var(--ma-hw,0.33px) solid var(--ma-s-ffffff-120, var(--line)); border-radius:8px; width:30px; height:30px; color:var(--ma-s-8b96b5, var(--text-sub)); font-size:15px; display:flex; align-items:center; justify-content:center; cursor:pointer; flex:none;">✕</span>`;
   return `<div style="display:flex; flex-direction:column; gap:18px;">
           <div style="display:flex; align-items:center; justify-content:space-between; gap:16px;">
-            <span style="display:flex; align-items:baseline; gap:8px;"><span style="${FH_MONO} font-size:11px; letter-spacing:0.06em; color:var(--label);">${fhEsc(meta)}</span>${fhB365Tag(r)}</span>
+            <span style="display:flex; align-items:baseline; gap:8px;"><span style="${FH_MONO} font-size:11px; letter-spacing:0.06em; color:var(--ma-s-5b6880, var(--label));">${fhEsc(meta)}</span>${fhB365Tag(r)}</span>
             ${close}
           </div>
           <div style="display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:20px;">
             <div style="display:flex; align-items:center; gap:16px; min-width:0;">
-              <div style="position:relative; flex:none;">${av(e.aName, e.aKey)}${badge(r.price, 'var(--text)')}</div>
-              <span style="font-size:18px; font-weight:800; letter-spacing:-0.015em; color:var(--text);">${fhEsc(e.aName)}</span>
+              <div style="position:relative; flex:none;">${av(e.aName, e.aKey)}${badge(r.price, 'var(--ma-s-e7e9ee, var(--text))')}</div>
+              <span style="font-size:18px; font-weight:800; letter-spacing:-0.015em; color:var(--ma-s-e7e9ee, var(--text));">${fhEsc(e.aName)}</span>
             </div>
             <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
-              <span style="${FH_MONO} font-size:40px; font-weight:700; line-height:1; letter-spacing:-0.02em; white-space:nowrap;"><span style="color:${aC};">${setsKnown ? r.pS : FH_DASHC}</span><span style="color:var(--label);"> – </span><span style="color:${bC};">${setsKnown ? r.oS : FH_DASHC}</span></span>
+              <span style="${FH_MONO} font-size:40px; font-weight:700; line-height:1; letter-spacing:-0.02em; white-space:nowrap;"><span style="color:${aC};">${setsKnown ? r.pS : FH_DASHC}</span><span style="color:var(--ma-s-4b5672, var(--label));"> – </span><span style="color:${bC};">${setsKnown ? r.oS : FH_DASHC}</span></span>
               ${chips ? `<div style="display:flex; gap:6px;">${chips}</div>` : ''}
             </div>
             <div style="display:flex; align-items:center; gap:16px; justify-content:flex-end; min-width:0;">
-              <span style="font-size:18px; font-weight:800; letter-spacing:-0.015em; color:var(--text-soft); text-align:right;">${fhEsc(e.bName)}</span>
-              <div style="position:relative; flex:none;">${av(e.bName, e.bKey)}${badge(r.oppPrice, 'var(--text-soft)')}</div>
+              <span style="font-size:18px; font-weight:800; letter-spacing:-0.015em; color:var(--ma-s-b4bccf, var(--text-soft)); text-align:right;">${fhEsc(e.bName)}</span>
+              <div style="position:relative; flex:none;">${av(e.bName, e.bKey)}${badge(r.oppPrice, 'var(--ma-s-b4bccf, var(--text-soft))')}</div>
             </div>
           </div>
-          ${winLine ? `<div style="display:flex; justify-content:center;"><span style="${FH_MONO} font-size:10px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:var(--text-soft); background:var(--surface-inner); border:var(--ma-hw,0.33px) solid var(--line); border-radius:999px; padding:4px 12px;">${fhEsc(winLine)}</span></div>` : ''}
+          ${winLine ? `<div style="display:flex; justify-content:center;"><span style="${FH_MONO} font-size:10px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:var(--ma-s-b4bccf, var(--text-soft)); background:var(--ma-s-ffffff-050-fill, var(--surface-inner)); border:var(--ma-hw,0.33px) solid var(--ma-s-ffffff-120, var(--line)); border-radius:999px; padding:4px 12px;">${fhEsc(winLine)}</span></div>` : ''}
         </div>`;
 }
 function fhOpenSheet(mid){
@@ -15454,17 +15465,17 @@ function fhSheetModel(joined){
 function fhSheetRowHtml(s){
   const aW = fhStatBarWidth(s.kind, s.a.v, s.b.v, s.k), bW = fhStatBarWidth(s.kind, s.b.v, s.a.v, s.k);
   const val = (c, col) => `<span style="${FH_MONO} font-size:15px; font-weight:700; color:${c.v == null ? FH_DASH : col};">${fhEsc(c.txt)}</span>`;
-  const sub = c => c.sub ? `<span style="${FH_MONO} font-size:10px; color:var(--label);">${fhEsc(c.sub)}</span>` : '';
+  const sub = c => c.sub ? `<span style="${FH_MONO} font-size:10px; color:var(--ma-s-4b5672, var(--label));">${fhEsc(c.sub)}</span>` : '';
   const fill = (w, col) => w == null ? '' : `<span class="fh-sbar" style="height:7px; width:${w.toFixed(1)}%; background:${col}; border-radius:4px;"></span>`;
   return `<div class="fh-srow" style="display:flex; flex-direction:column; gap:6px;">
       <div style="display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:baseline; gap:12px;">
         <span${s.a.title ? ` title="${fhEsc(s.a.title)}"` : ''} style="display:flex; align-items:baseline; gap:7px;">${val(s.a, FH_AC)}${sub(s.a)}</span>
-        <span style="${FH_MONO} font-size:9.5px; letter-spacing:0.14em; text-transform:uppercase; color:var(--text-sub); text-align:center;">${fhEsc(s.label)}</span>
+        <span style="${FH_MONO} font-size:9.5px; letter-spacing:0.14em; text-transform:uppercase; color:var(--ma-s-8b96b5, var(--text-sub)); text-align:center;">${fhEsc(s.label)}</span>
         <span${s.b.title ? ` title="${fhEsc(s.b.title)}"` : ''} style="display:flex; align-items:baseline; gap:7px; justify-content:flex-end;">${sub(s.b)}${val(s.b, FH_BC)}</span>
       </div>
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
-        <span class="fh-shalf" style="display:flex; justify-content:flex-end; height:7px; background:var(--surface-inner); border-radius:4px;">${fill(aW, FH_AC)}</span>
-        <span class="fh-shalf" style="display:flex; height:7px; background:var(--surface-inner); border-radius:4px;">${fill(bW, 'var(--fh-pb-half)')}</span>
+        <span class="fh-shalf" style="display:flex; justify-content:flex-end; height:7px; background:var(--ma-s-ffffff-050-fill, var(--surface-inner)); border-radius:4px;">${fill(aW, FH_AC)}</span>
+        <span class="fh-shalf" style="display:flex; height:7px; background:var(--ma-s-ffffff-050-fill, var(--surface-inner)); border-radius:4px;">${fill(bW, 'var(--ma-s-ffffff-750, var(--fh-pb-half))')}</span>
       </div>
     </div>`;
 }
@@ -15476,13 +15487,15 @@ const FH_NO_MATCH_STATS_MSG = 'No serve or return stats on file for this match.'
 // draws the sheet — every stat a dash — with this note under it, 10.5px faint. Never another match's figures.
 const MA_SHEET_NA = 'Match stats not available for this match';
 const maSheetNaNote = () => `<span class="ma-sheet-na" style="font-size:10.5px; color:var(--text-faint); text-align:center;">${MA_SHEET_NA}</span>`;
-function fhSheetSectionHead(t){ return `<span style="display:block; text-align:center; ${FH_MONO} font-size:9.5px; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; color:var(--label); background:var(--surface-inner); border-radius:8px; padding:8px 0;">${fhEsc(t)}</span>`; }
+// DF L1706: the caption strip carries a 1px white-0.07 border. Its width is --ma-hw (1px in the modal, 0 outside), so the
+// player profile, which shares this head, keeps its layout.
+function fhSheetSectionHead(t){ return `<span style="display:block; text-align:center; ${FH_MONO} font-size:9.5px; font-weight:700; letter-spacing:0.18em; text-transform:uppercase; color:var(--ma-s-5b6880, var(--label)); background:var(--ma-s-06070a, var(--surface-inner)); border:var(--ma-hw, 0px) solid var(--ma-s-ffffff-070, transparent); border-radius:8px; padding:8px 0;">${fhEsc(t)}</span>`; }
 function fhSheetStatsHtml(joined, emptyMsg){
   const M = fhSheetModel(joined || null);
   const head = fhSheetSectionHead;
-  const dr = `<div style="display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:14px; background:var(--surface-inner); border:var(--ma-hw,0.33px) solid var(--line); border-radius:10px; padding:16px 20px;">
+  const dr = `<div style="display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:14px; background:var(--ma-s-06070a, var(--surface-inner)); border:var(--ma-hw,0.33px) solid var(--ma-s-ffffff-080, var(--line)); border-radius:10px; padding:16px 20px;">
       <span title="${fhEsc(M.dr[0].title)}" style="${FH_MONO} font-size:24px; font-weight:700; color:${M.dr[0].txt === FH_DASHC ? FH_DASH : FH_AC};">${M.dr[0].txt}</span>
-      <span style="${FH_MONO} font-size:10px; font-weight:700; letter-spacing:0.16em; text-transform:uppercase; color:var(--text-sub);">Dominance ratio</span>
+      <span style="${FH_MONO} font-size:10px; font-weight:700; letter-spacing:0.16em; text-transform:uppercase; color:var(--ma-s-8b96b5, var(--text-sub));">Dominance ratio</span>
       <span title="${fhEsc(M.dr[1].title)}" style="${FH_MONO} font-size:24px; font-weight:700; color:${M.dr[1].txt === FH_DASHC ? FH_DASH : FH_BC}; text-align:right;">${M.dr[1].txt}</span>
     </div>`;
   const secs = M.sections.map(sec => `<div style="display:flex; flex-direction:column; gap:13px;">${head(sec.title)}${sec.rows.map(fhSheetRowHtml).join('')}</div>`).join('');
@@ -16049,7 +16062,7 @@ function meOpenRow(mid){
 function meScoreTxt(r){ return r.sets ? r.sets.map(x => x[0] + '-' + x[1]).join(' ') : FH_DASHC; }
 // TEN-314: the shared pop-up frame (maPopFrame) at Market edge's spec values (max 860, card surface, hairline).
 function mePopShell(title, chip, sub, inner, foot, closeJs){
-  return maPopFrame({ cls: 'me-pop', xCls: 'me-x', title, chip, sub, body: inner, foot, maxWidth: 860, bg: ME_C.card, line: ME_C.line, onClose: closeJs });
+  return maPopFrame({ cls: 'me-pop', xCls: 'me-x', title, chip, sub, body: inner, foot, maxWidth: 860, onClose: closeJs });
 }
 const meStatBox = (l, v, c, big, note) => `<div style="background:${ME_C.inner}; border:${ME_C.hw} solid ${ME_C.line}; border-radius:10px; padding:${big ? '10px 12px' : '8px 12px'}; display:flex; flex-direction:column; gap:${big ? 4 : 3}px; ${big ? 'min-width:0;' : 'min-width:84px;'}"><span style="${ME_COLH}">${l}</span><span class="me-stat" data-me-stat="${l}" style="${FH_MONO} font-size:${big ? 16 : 15}px; font-weight:700; color:${c}; white-space:nowrap;">${v}</span>${note ? `<span class="ma-small-note" style="${FH_MONO} font-size:10px; color:${MA_GREY}; white-space:nowrap;">${MA_SMALL_NOTE}</span>` : ''}</div>`;
 // A rate stat box through the D2 gate: n < 5 keeps the ME_THIN_FLOOR dash, 5–9 greyed + "small sample", 10+ full.
@@ -34565,35 +34578,36 @@ if(document.querySelector('.tabpage[data-page="live"]')&&document.querySelector(
      states, coloured ONLY through match-analysis-tokens.css (Night 24b / Day 26f, README §3 + U-mappings).
      Same selectors and properties as the design build; the values are tokens. Hairlines keep the 0.33px width. */
   /* the modal box = README §3 "Page" (role conflict: only the modal box is Page) */
-  .modal-analysis{ background:var(--ma-page); border-color:var(--ma-hair); box-shadow:var(--ma-shadow-modal); }
+  /* every chrome colour below is the token of the design's own shade (--ma-s-<source>, founder 2026-09-29), DF L85–123 / L5323 */
+  .modal-analysis{ background:var(--ma-s-0a0d14); border-color:var(--ma-s-ffffff-090); box-shadow:var(--ma-shadow-modal); }
   /* the design file's overlay (DF L85) — the one scrim (U11) */
-  #analysisModal{ background:var(--ma-scrim); }
-  .modal-analysis .ahead2{ border-bottom-color:var(--ma-hair); }
-  .modal-analysis .asidenav{ border-right-color:var(--ma-hair); }
-  .modal-analysis .asidenav-download{ border-top-color:var(--ma-hair); }
-  .modal-analysis .ahead2 .close{ color:var(--ma-t3); border-color:var(--ma-hair); }
-  .modal-analysis .ahead2 .close:hover{ color:var(--ma-t1); background:var(--ma-hover); }
+  #analysisModal{ background:var(--ma-s-040508-720); }
+  .modal-analysis .ahead2{ border-bottom-color:var(--ma-s-ffffff-070); }
+  .modal-analysis .asidenav{ border-right-color:var(--ma-s-ffffff-070); }
+  .modal-analysis .asidenav-download{ border-top-color:var(--ma-s-ffffff-070); }
+  .modal-analysis .ahead2 .close{ color:var(--ma-s-5b6880); border-color:var(--ma-s-ffffff-090); }
+  .modal-analysis .ahead2 .close:hover{ color:var(--ma-s-e7e9ee); background:var(--ma-s-ffffff-060-fill); }
   /* header matchup (DF L95–101). D4: both players neutral — A primary, B secondary text — never the link blue.
      Avatars (D5) keep the design's ring; a monogram takes the same neutral fill for BOTH players. */
-  .modal-analysis .aavatar img, .modal-analysis .aavatar .avatar-fallback{ border-color:var(--ma-hair); }
+  .modal-analysis .aavatar img, .modal-analysis .aavatar .avatar-fallback{ border-color:var(--ma-s-ffffff-090); }
   .modal-analysis .aavatar .avatar-fallback{ background:var(--ma-hover); color:var(--ma-t3); }
   .modal-analysis .apname{ color:var(--ma-t1); }
   .modal-analysis .apname.b{ color:var(--ma-t2); }
   .modal-analysis .aodds{ background:var(--ma-hover); border-color:var(--ma-hair); color:var(--ma-t1); }
   .modal-analysis #aP2Odds{ color:var(--ma-t2); }
-  .modal-analysis .avslabel2{ color:var(--ma-t3); }
-  .modal-analysis .asidenav-download{ color:var(--ma-link); }
+  .modal-analysis .avslabel2{ color:var(--ma-s-4b5672); }
+  .modal-analysis .asidenav-download{ color:var(--ma-s-5b9bff); }
   #aSectionOdds{ color:var(--ma-t1); }
   /* the extract's type base (browser default: 16px, line-height normal) — the modal's inherited 14px / 1.5
      made every tile and row 3-5px taller than the design (deployed measure 2026-09-27: tile 61px vs 56px). */
   #aSectionOdds{ font-size:16px; line-height:normal; }   /* not #aoddsTip: the Weather tab shares that tooltip */
-  .modal-analysis .atitleblock .atitle{ color:var(--ma-t1); }
-  .modal-analysis .atitleblock .acontext{ color:var(--ma-t3); }
-  .modal-analysis .asidenav-item{ color:var(--ma-t3); }
-  .modal-analysis .asidenav-item .aicon{ color:var(--ma-t3); }
-  .modal-analysis .asidenav-item:hover{ background:var(--ma-hover); color:var(--ma-t1); }
-  .modal-analysis .asidenav-item.active{ background:var(--ma-sel); color:var(--ma-t1); }
-  .modal-analysis .asidenav-item.active .aicon{ color:var(--periwinkle); }
+  .modal-analysis .atitleblock .atitle{ color:var(--ma-s-e7e9ee); }
+  .modal-analysis .atitleblock .acontext{ color:var(--ma-s-5b6880); }
+  .modal-analysis .asidenav-item{ color:var(--ma-s-5b6880); }
+  .modal-analysis .asidenav-item .aicon{ color:var(--ma-s-4b5672); }
+  .modal-analysis .asidenav-item:hover{ background:var(--ma-s-ffffff-040); color:var(--ma-s-e7e9ee); }
+  .modal-analysis .asidenav-item.active{ background:var(--ma-s-5b9bff-120); color:var(--ma-s-ffffff); }
+  .modal-analysis .asidenav-item.active .aicon{ color:var(--ma-s-5b9bff); }
   .aox-row:not(.aox-nodata):hover{ border-color:var(--ma-outline) !important; background:var(--ma-hover) !important; }
   .aox-tile.aox-able:hover{ border-color:var(--ma-outline) !important; }
   .aox-x:hover{ color:var(--ma-t1) !important; border-color:var(--ma-hair-hover) !important; }
@@ -34607,11 +34621,11 @@ if(document.querySelector('.tabpage[data-page="live"]')&&document.querySelector(
   .ma-fade{ animation:maFade .12s ease; }
   .ma-seg-item{ transition:background .14s ease, color .14s ease, border-color .14s ease; }
   .ma-row{ transition:background .12s ease; }
-  .ma-row:hover{ background:var(--ma-hover, var(--nav-hover)) !important; }
-  .ma-pop-x:hover{ color:var(--ma-t1, var(--text)) !important; border-color:var(--ma-hair-hover, var(--line-open)) !important; }
+  .ma-row:hover{ background:var(--ma-s-ffffff-030, var(--nav-hover)) !important; }   /* DF style-hover rgba(255,255,255,0.03) */
+  .ma-pop-x:hover{ color:var(--ma-s-e7e9ee, var(--text)) !important; border-color:var(--ma-s-ffffff-220, var(--line-open)) !important; }
   .elotip-pop{ position:absolute; left:50%; transform:translateX(-50%); z-index:30; opacity:0; visibility:hidden; transition:opacity .12s ease; pointer-events:none;
-    background:var(--ma-raised, var(--popup)); border:1px solid var(--ma-hair-strong, var(--line-open)); border-radius:8px; padding:8px 11px;
-    font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--ma-t2, var(--text-soft)); white-space:nowrap; box-shadow:var(--ma-shadow-tip, none); }
+    background:var(--ma-s-11151f, var(--popup)); border:var(--ma-hw,0.33px) solid var(--ma-s-ffffff-140, var(--line-open)); border-radius:8px; padding:8px 11px;
+    font-family:'Hanken Grotesk',sans-serif; font-size:11px; color:var(--ma-t2, var(--text-soft)); white-space:nowrap; box-shadow:var(--ma-shadow-tip, none); }
   .elotip:hover .elotip-pop, .elotip:focus-within .elotip-pop{ opacity:1; visibility:visible; }
   @media (prefers-reduced-motion: reduce){ .ma-sigin, .ma-fade{ animation:none; } }
 </style>

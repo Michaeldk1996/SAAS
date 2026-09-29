@@ -94,6 +94,20 @@ test('header: D5 avatars in the 56px ring; the inline copy (Match Stats tab) has
   assert.match(html, /\.fh-av img, \.fh-av \.avatar-fallback\{ width:56px; height:56px; border-radius:50%; border:2px solid var\(--line-open\);/);
 });
 
+// Founder 2026-09-29: the header date is the design file's format exactly. DF mkSheet L4856 prints its SOURCE's date:
+// a Form row DD.MM (P1 "Washington · Hard · R16 · 18.07"), every other list DD.MM.YY (Tournament L2609, Overview L3140,
+// Market edge L3411, H2H L4481, Progression L4043, Playing style L3639), the Match Stats tab's inline copy the long date
+// (README §4.3 "Jul 20, 2026"). Mutations: the ".yy" back on a Form sheet; the year dropped for another list; the inline
+// copy back to DD.MM.YY.
+test('header: the meta date follows the design per source (Form DD.MM · lists DD.MM.YY · Match Stats tab long)', () => {
+  const r = { sets: [[6, 4], [6, 4]], pS: 2, oS: 0, won: true, price: 1.05, oppPrice: 10.53, tourn: 'Washington', surface: 'Hard', round: 'R16', date: '2026-07-18' };
+  const meta = h => /letter-spacing:0\.06em;[^"]*">([^<]*)<\/span>/.exec(h)[1];
+  assert.equal(meta(S.fhSheetHeadHtml({ aName: 'J. Sinner', bName: 'T. Griekspoor', noYear: true }, r)), 'Washington · Hard · R16 · 18.07');
+  assert.equal(meta(S.fhSheetHeadHtml({ aName: 'J. Sinner', bName: 'T. Griekspoor' }, r)), 'Washington · Hard · R16 · 18.07.26');
+  assert.equal(meta(S.fhSheetHeadHtml({ aName: 'J. Sinner', bName: 'T. Griekspoor' }, r, { inline: true })), 'Washington · Hard · R16 · Jul 18, 2026');
+  assert.match(html, /_fh\.sheetMap\[r\.mid\] = \{ r, aName: name, aKey: key, bName: r\.opp, bKey: r\.oppKey, noYear: true \}/, 'the Form list registers noYear');
+});
+
 // Mutation: the Match Stats tab back to buildMatchStatsSheet for a completed match, or maMsSheetInit not called.
 test('the Match Stats tab renders THE sheet inline for a finished match, filled from the match\'s own box score', () => {
   assert.match(slice('buildMatchStatsSection'), /if \(hasPointLog\) return maMsSheetHtml\(m\);/);

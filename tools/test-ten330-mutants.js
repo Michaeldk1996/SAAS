@@ -19,7 +19,7 @@ const MUTANTS = [
     "  const rowsOf = i => (i ? m.p2RecentFormMatches : m.p1RecentFormMatches) || [];"],
   ['rows: group header loses "surface · W–L"', "      entries.push({ isHead: true, tourn: r.tourn, meta: (r.surface || FH_DASHC) + ' · ' + tw + '–' + (tm.length - tw) });",
     "      entries.push({ isHead: true, tourn: r.tourn, meta: '' });"],
-  ['rows: the shared helper loses the Form inset parameter', "headPad: '8px 14px 7px', headLine: 'var(--line)', groupPad: '11px 14px 5px', inset: 8,", "headLine: 'var(--line)',"],
+  ['rows: the shared helper loses the Form inset parameter', "{ headPad: '8px 14px 7px', groupPad: '11px 14px 5px', inset: 8,", "{"],
   ['DoD 8: a Form-local row renderer again', "function fhFormListHtml(P){", "function fhFormRowHtml(r){ return ''; }\nfunction fhFormListHtml(P){"],
   ['DoD 8: bars back on a Form-local tooltip', "return maTipHtml(bar, tip, { tag: 'div', cls: 'fh-bar',", "return maTipHtml(bar, tip, { tag: 'div', cls: 'fh-bar fh-elotip',"],
   ['hot lines: the Short chip back on', "    hot: { ok: hotOk, table, sc, ctx, hdr, short: false,", "    hot: { ok: hotOk, table, sc, ctx, hdr, short: hotOk,"],

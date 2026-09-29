@@ -52,6 +52,188 @@
   --ma-chart-loss:rgba(255,255,255,0.014);         /* U15: loss area */
   --ma-glow:radial-gradient(ellipse 1100px 420px at 720px -60px, rgba(52,70,170,0.24) 0%, transparent 100%);
 
+  /* ---- every design shade is its own token (founder 2026-09-29, TEN-314 comment 1641c7ce) ----
+     One token per colour value in `Match Analysis Progression v1.dc.html`: --ma-s-<source hex>[-<alpha x1000>]
+     (role variants: -fill, -ink). The name IS the source value, so the fixture's source palette is read from the
+     names (tools/ten312-component-diff.mjs) and a design site points to the token of its own shade. Night / Day
+     values: README §3 exactly, then the U-rows, then the nearest §3 anchor + the shade's per-channel offset; data
+     colours with no §3/U row keep their source value (as §3 keeps amber). TEN-314 document phase1-token-mappings
+     lists every one (U25+). Provisional, like U1–U24: a change is a one-line edit here. */
+  --ma-s-000000-450:rgba(0,0,0,0.45);       /* src rgba(0,0,0,0.45) */
+  --ma-s-000000-550:rgba(0,0,0,0.55);       /* src rgba(0,0,0,0.55) */
+  --ma-s-000000-600:rgba(0,0,0,0.6);        /* src rgba(0,0,0,0.6) */
+  --ma-s-030509-720:rgba(4,5,8,0.72);       /* src rgba(3,5,9,0.72) */
+  --ma-s-040508-720:rgba(4,5,8,0.72);       /* src rgba(4,5,8,0.72) */
+  --ma-s-040508-740:rgba(4,5,8,0.74);       /* src rgba(4,5,8,0.74) */
+  --ma-s-040509-620:rgba(4,5,8,0.62);       /* src rgba(4,5,9,0.62) */
+  --ma-s-06070a:#191B24;                    /* src #06070A */
+  --ma-s-090d15:#181B25;                    /* src #090D15 */
+  --ma-s-0a0d13:#191B23;                    /* src #0A0D13 */
+  --ma-s-0a0d14:#191B24;                    /* src #0A0D14 */
+  --ma-s-0b0f18:#171A24;                    /* src #0B0F18 */
+  --ma-s-0c0e16:#181922;                    /* src #0C0E16 */
+  --ma-s-0d111b:#13161F;                    /* src #0D111B */
+  --ma-s-0e1019:#14151D;                    /* src #0E1019 */
+  --ma-s-0f1526:#171B2A;                    /* src #0F1526 */
+  --ma-s-10121b:#14151D;                    /* src #10121B */
+  --ma-s-10162b:#181C2F;                    /* src #10162B */
+  --ma-s-11141f:#20222E;                    /* src #11141F */
+  --ma-s-11151f:#1B1C27;                    /* src #11151F — README §6 names the tooltip's role: raised surface */
+  --ma-s-11161f:#20242E;                    /* src #11161F */
+  --ma-s-131623:#1B1C27;                    /* src #131623 */
+  --ma-s-161a22:#181922;                    /* src #161A22 */
+  --ma-s-161a28:#1E202C;                    /* src #161A28 */
+  --ma-s-2850be-140:rgba(40,80,190,0.14);   /* src rgba(40,80,190,0.14) */
+  --ma-s-2ab8a0:#FFFFFF;                    /* src #2AB8A0 */
+  --ma-s-3a4250:rgba(163,170,190,0.55);     /* src #3A4250 */
+  --ma-s-3a4256:rgba(163,170,190,0.55);     /* src #3A4256 */
+  --ma-s-3a4557:#9299A3;                    /* src #3A4557 */
+  --ma-s-3dd68c:#5CCB84;                    /* src #3DD68C */
+  --ma-s-3dd68c-050:rgba(92,203,132,0.05);  /* src rgba(61,214,140,0.05) */
+  --ma-s-3dd68c-070:rgba(92,203,132,0.07);  /* src rgba(61,214,140,0.07) */
+  --ma-s-3dd68c-080:rgba(92,203,132,0.08);  /* src rgba(61,214,140,0.08) */
+  --ma-s-3dd68c-100:rgba(92,203,132,0.1);   /* src rgba(61,214,140,0.1) */
+  --ma-s-3dd68c-120:rgba(92,203,132,0.12);  /* src rgba(61,214,140,0.12) */
+  --ma-s-3dd68c-140:rgba(92,203,132,0.14);  /* src rgba(61,214,140,0.14) */
+  --ma-s-3dd68c-150:rgba(92,203,132,0.15);  /* src rgba(61,214,140,0.15) */
+  --ma-s-3dd68c-160:rgba(92,203,132,0.16);  /* src rgba(61,214,140,0.16) */
+  --ma-s-3dd68c-250:rgba(92,203,132,0.25);  /* src rgba(61,214,140,0.25) */
+  --ma-s-3dd68c-300:rgba(92,203,132,0.3);   /* src rgba(61,214,140,0.3) */
+  --ma-s-3dd68c-850:rgba(92,203,132,0.85);  /* src rgba(61,214,140,0.85) */
+  --ma-s-3f4d70:#3F4D70;                    /* src #3F4D70 */
+  --ma-s-4a5261:rgba(163,170,190,0.55);     /* src #4A5261 */
+  --ma-s-4b5672:#A3AABE;                    /* src #4B5672 */
+  --ma-s-4db8ff:#FFFFFF;                    /* src #4DB8FF */
+  --ma-s-5b6880:#A3AABE;                    /* src #5B6880 */
+  --ma-s-5b9bff:#9DB3F2;                    /* src #5B9BFF */
+  --ma-s-5b9bff-020:rgba(157,179,242,0.02); /* src rgba(91,155,255,0.02) */
+  --ma-s-5b9bff-040:rgba(157,179,242,0.04); /* src rgba(91,155,255,0.04) */
+  --ma-s-5b9bff-060:rgba(157,179,242,0.06); /* src rgba(91,155,255,0.06) */
+  --ma-s-5b9bff-070:rgba(157,179,242,0.07); /* src rgba(91,155,255,0.07) */
+  --ma-s-5b9bff-080:rgba(157,179,242,0.08); /* src rgba(91,155,255,0.08) */
+  --ma-s-5b9bff-100:rgba(157,179,242,0.1);  /* src rgba(91,155,255,0.1) */
+  --ma-s-5b9bff-110:rgba(157,179,242,0.11); /* src rgba(91,155,255,0.11) */
+  --ma-s-5b9bff-120:#222431;                /* src rgba(91,155,255,0.12) */
+  --ma-s-5b9bff-140:#222431;                /* src rgba(91,155,255,0.14) */
+  --ma-s-5b9bff-150:#222431;                /* src rgba(91,155,255,0.15) */
+  --ma-s-5b9bff-160:#222431;                /* src rgba(91,155,255,0.16) */
+  --ma-s-5b9bff-180:#222431;                /* src rgba(91,155,255,0.18) */
+  --ma-s-5b9bff-200:#222431;                /* src rgba(91,155,255,0.2) */
+  --ma-s-5b9bff-220:#222431;                /* src rgba(91,155,255,0.22) */
+  --ma-s-5b9bff-250:rgba(157,179,242,0.25); /* src rgba(91,155,255,0.25) */
+  --ma-s-5b9bff-280:rgba(157,179,242,0.28); /* src rgba(91,155,255,0.28) */
+  --ma-s-5b9bff-300:rgba(157,179,242,0.3);  /* src rgba(91,155,255,0.3) */
+  --ma-s-5b9bff-340:rgba(157,179,242,0.34); /* src rgba(91,155,255,0.34) */
+  --ma-s-5b9bff-350:rgba(157,179,242,0.3);  /* src rgba(91,155,255,0.35) */
+  --ma-s-5b9bff-400:rgba(157,179,242,0.3);  /* src rgba(91,155,255,0.4) */
+  --ma-s-5b9bff-450:rgba(157,179,242,0.3);  /* src rgba(91,155,255,0.45) */
+  --ma-s-5b9bff-500:rgba(157,179,242,0.5);  /* src rgba(91,155,255,0.5) */
+  --ma-s-5b9bff-550:rgba(157,179,242,0.55); /* src rgba(91,155,255,0.55) */
+  --ma-s-5b9bff-600:rgba(157,179,242,0.6);  /* src rgba(91,155,255,0.6) */
+  --ma-s-6a9af8-250:rgba(157,179,242,0.25); /* src rgba(106,154,248,0.25) */
+  --ma-s-6a9af8-300:rgba(157,179,242,0.3);  /* src rgba(106,154,248,0.3) */
+  --ma-s-6aaeff:#9DB3F2;                    /* src #6AAEFF */
+  --ma-s-6aaeff-090:rgba(157,179,242,0.09); /* src rgba(106,174,255,0.09) */
+  --ma-s-6aaeff-120:rgba(157,179,242,0.12); /* src rgba(106,174,255,0.12) */
+  --ma-s-6aaeff-160:rgba(157,179,242,0.16); /* src rgba(106,174,255,0.16) */
+  --ma-s-6aaeff-280:rgba(157,179,242,0.28); /* src rgba(106,174,255,0.28) */
+  --ma-s-6aaeff-300:rgba(157,179,242,0.3);  /* src rgba(106,174,255,0.3) */
+  --ma-s-6aaeff-750:rgba(157,179,242,0.75); /* src rgba(106,174,255,0.75) */
+  --ma-s-6b7484:#A3A9B2;                    /* src #6B7484 */
+  --ma-s-6b7590:#A3AABE;                    /* src #6B7590 */
+  --ma-s-6b7590-050:rgba(163,170,190,0.05); /* src rgba(107,117,144,0.05) */
+  --ma-s-72b894:#72B894;                    /* src #72B894 */
+  --ma-s-72b894-100:rgba(114,184,148,0.1);  /* src rgba(114,184,148,0.1) */
+  --ma-s-7b91b4-080:rgba(123,145,180,0.08); /* src rgba(123,145,180,0.08) */
+  --ma-s-7b91b4-140:rgba(123,145,180,0.14); /* src rgba(123,145,180,0.14) */
+  --ma-s-7b91b4-300:rgba(123,145,180,0.3);  /* src rgba(123,145,180,0.3) */
+  --ma-s-7f93bf:#7F93BF;                    /* src #7F93BF */
+  --ma-s-7f95c2:#7F95C2;                    /* src #7F95C2 */
+  --ma-s-82b4ff:#B5C6F5;                    /* src #82B4FF */
+  --ma-s-8b96b5:#DDE0EA;                    /* src #8B96B5 */
+  --ma-s-8b96b5-400:rgba(163,170,190,0.4);  /* src rgba(139,150,181,0.4) */
+  --ma-s-8b96b5-600:rgba(163,170,190,0.6);  /* src rgba(139,150,181,0.6) */
+  --ma-s-8bb8ff:#8BB8FF;                    /* src #8BB8FF */
+  --ma-s-8fb4f5:#8FB4F5;                    /* src #8FB4F5 */
+  --ma-s-9aa3b5:#DDE0EA;                    /* src #9AA3B5 */
+  --ma-s-a8b0c0:#DBDDE2;                    /* src #A8B0C0 */
+  --ma-s-a9c3f0:#A9C3F0;                    /* src #A9C3F0 */
+  --ma-s-a9c3f0-060:rgba(169,195,240,0.06); /* src rgba(169,195,240,0.06) */
+  --ma-s-a9c3f0-300:rgba(169,195,240,0.3);  /* src rgba(169,195,240,0.3) */
+  --ma-s-aab3c8:#DDE0EA;                    /* src #AAB3C8 */
+  --ma-s-b49a74:#B49A74;                    /* src #B49A74 */
+  --ma-s-b49a74-350:rgba(180,154,116,0.35); /* src rgba(180,154,116,0.35) */
+  --ma-s-b4bccf:#DDE0EA;                    /* src #B4BCCF */
+  --ma-s-b4bdd3:#DDE1EE;                    /* src #B4BDD3 */
+  --ma-s-b8e05a:#B8E05A;                    /* src #B8E05A */
+  --ma-s-c47983:#C47983;                    /* src #C47983 */
+  --ma-s-c47983-100:rgba(196,121,131,0.1);  /* src rgba(196,121,131,0.1) */
+  --ma-s-c6ccdb:#EFF0F6;                    /* src #C6CCDB */
+  --ma-s-c6ccdb-060:rgba(239,240,246,0.06); /* src rgba(198,204,219,0.06) */
+  --ma-s-c79bff:#C79BFF;                    /* src #C79BFF */
+  --ma-s-cfd6e6:#E7ECF7;                    /* src #CFD6E6 */
+  --ma-s-e0616f:#E06266;                    /* src #E0616F */
+  --ma-s-e0616f-080:rgba(224,98,102,0.08);  /* src rgba(224,97,111,0.08) */
+  --ma-s-e0616f-100:rgba(224,98,102,0.1);   /* src rgba(224,97,111,0.1) */
+  --ma-s-e0616f-120:rgba(224,98,102,0.12);  /* src rgba(224,97,111,0.12) */
+  --ma-s-e0616f-140:rgba(224,98,102,0.14);  /* src rgba(224,97,111,0.14) */
+  --ma-s-e0616f-150:rgba(224,98,102,0.15);  /* src rgba(224,97,111,0.15) */
+  --ma-s-e0616f-160:rgba(224,98,102,0.16);  /* src rgba(224,97,111,0.16) */
+  --ma-s-e0616f-250:rgba(224,98,102,0.25);  /* src rgba(224,97,111,0.25) */
+  --ma-s-e0616f-300:rgba(224,98,102,0.3);   /* src rgba(224,97,111,0.3) */
+  --ma-s-e0616f-350:rgba(224,98,102,0.35);  /* src rgba(224,97,111,0.35) */
+  --ma-s-e0616f-600:rgba(224,98,102,0.6);   /* src rgba(224,97,111,0.6) */
+  --ma-s-e7e9ee:#FFFFFF;                    /* src #E7E9EE */
+  --ma-s-e7e9ee-050:rgba(255,255,255,0.05); /* src rgba(231,233,238,0.05) */
+  --ma-s-e7e9ee-070:rgba(255,255,255,0.07); /* src rgba(231,233,238,0.07) */
+  --ma-s-e7e9ee-080:rgba(255,255,255,0.08); /* src rgba(231,233,238,0.08) */
+  --ma-s-e7e9ee-090:rgba(255,255,255,0.09); /* src rgba(231,233,238,0.09) */
+  --ma-s-e7e9ee-100:rgba(255,255,255,0.1);  /* src rgba(231,233,238,0.1) */
+  --ma-s-e7e9ee-140:rgba(255,255,255,0.14); /* src rgba(231,233,238,0.14) */
+  --ma-s-e7e9ee-250:rgba(255,255,255,0.25); /* src rgba(231,233,238,0.25) */
+  --ma-s-e7e9ee-350:rgba(255,255,255,0.35); /* src rgba(231,233,238,0.35) */
+  --ma-s-e7e9ee-550:rgba(255,255,255,0.55); /* src rgba(231,233,238,0.55) */
+  --ma-s-e7e9ee-700:rgba(255,255,255,0.7);  /* src rgba(231,233,238,0.7) */
+  --ma-s-e7e9ee-750:rgba(255,255,255,0.7);  /* src rgba(231,233,238,0.75) */
+  --ma-s-e8934b:#E8934B;                    /* src #E8934B */
+  --ma-s-e8934b-180:rgba(232,147,75,0.18);  /* src rgba(232,147,75,0.18) */
+  --ma-s-e8a84e:#E8A84E;                    /* src #E8A84E */
+  --ma-s-e8a84e-350:rgba(232,168,78,0.35);  /* src rgba(232,168,78,0.35) */
+  --ma-s-e8a84e-400:rgba(232,168,78,0.4);   /* src rgba(232,168,78,0.4) */
+  --ma-s-e8a84e-450:rgba(232,168,78,0.45);  /* src rgba(232,168,78,0.45) */
+  --ma-s-ffffff:#FFFFFF;                    /* src #FFFFFF */
+  --ma-s-ffffff-014:rgba(255,255,255,0.014); /* src rgba(255,255,255,0.014) */
+  --ma-s-ffffff-015:rgba(255,255,255,0.015); /* src rgba(255,255,255,0.015) */
+  --ma-s-ffffff-020:rgba(255,255,255,0.02); /* src rgba(255,255,255,0.02) */
+  --ma-s-ffffff-022:rgba(255,255,255,0.022); /* src rgba(255,255,255,0.022) */
+  --ma-s-ffffff-030:rgba(255,255,255,0.03); /* src rgba(255,255,255,0.03) */
+  --ma-s-ffffff-035:rgba(255,255,255,0.035); /* src rgba(255,255,255,0.035) */
+  --ma-s-ffffff-040:#20222E;                /* src rgba(255,255,255,0.04) */
+  --ma-s-ffffff-045:rgba(255,255,255,0.045); /* src rgba(255,255,255,0.045) */
+  --ma-s-ffffff-050:rgba(255,255,255,0.035); /* src rgba(255,255,255,0.05) */
+  --ma-s-ffffff-060:rgba(255,255,255,0.05); /* src rgba(255,255,255,0.06) */
+  --ma-s-ffffff-070:rgba(255,255,255,0.05); /* src rgba(255,255,255,0.07) */
+  --ma-s-ffffff-080:rgba(255,255,255,0.05); /* src rgba(255,255,255,0.08) */
+  --ma-s-ffffff-090:rgba(255,255,255,0.05); /* src rgba(255,255,255,0.09) */
+  --ma-s-ffffff-100:rgba(255,255,255,0.1);  /* src rgba(255,255,255,0.1) */
+  --ma-s-ffffff-120:rgba(255,255,255,0.1);  /* src rgba(255,255,255,0.12) */
+  --ma-s-ffffff-140:rgba(255,255,255,0.1);  /* src rgba(255,255,255,0.14) */
+  --ma-s-ffffff-150:rgba(255,255,255,0.1);  /* src rgba(255,255,255,0.15) */
+  --ma-s-ffffff-160:rgba(255,255,255,0.1);  /* src rgba(255,255,255,0.16) */
+  --ma-s-ffffff-180:rgba(255,255,255,0.2);  /* src rgba(255,255,255,0.18) */
+  --ma-s-ffffff-200:rgba(255,255,255,0.2);  /* src rgba(255,255,255,0.2) */
+  --ma-s-ffffff-220:rgba(255,255,255,0.2);  /* src rgba(255,255,255,0.22) */
+  --ma-s-ffffff-250:rgba(255,255,255,0.2);  /* src rgba(255,255,255,0.25) */
+  --ma-s-ffffff-400:rgba(255,255,255,0.4);  /* src rgba(255,255,255,0.4) */
+  --ma-s-ffffff-750:rgba(255,255,255,0.7);  /* src rgba(255,255,255,0.75) */
+  --ma-s-5b9bff-fill:#5B82E8;               /* src #5B9BFF */
+  --ma-s-6aaeff-fill:#5B82E8;               /* src #6AAEFF */
+  --ma-s-06070a-ink:#06070A;                /* src #06070A */
+  /* README §3 maps a value by the ROLE it plays: the same source alpha drawn as a border or as a fill gets a variant. */
+  --ma-s-5b9bff-220-line:rgba(157,179,242,0.30); /* src rgba(91,155,255,0.22) as a selected BORDER → §3 open/selected outline */
+  --ma-s-ffffff-060-fill:#20222E;           /* src rgba(255,255,255,0.06) as a hover FILL → §3 hover fill */
+  --ma-s-ffffff-050-fill:#181922;           /* src rgba(255,255,255,0.05) as a FILL (sheet ✕, pill, bar track) → §3 inner box */
+
   /* ---- the site's 12a names, re-pointed inside the scope (every var(--x) the modal already uses re-themes) ---- */
   --page:var(--ma-page); --panel:var(--ma-card); --panel-2:var(--ma-inner); --surface:var(--ma-card);
   --surface-inner:var(--ma-inner); --popup:var(--ma-raised); --avatar:var(--ma-inner); --backdrop:var(--ma-scrim);
@@ -79,10 +261,12 @@
 .ma-theme[data-ma-theme="day"]{
   --ma-page:#1E202B; --ma-card:#181922; --ma-inner:#1C1E28; --ma-raised:#20222E; --ma-hover:#262836; --ma-sel:#292B3A;
   --ma-glow:radial-gradient(ellipse 1100px 420px at 720px -60px, rgba(52,70,170,0.16) 0%, transparent 100%);
+  --ma-s-ffffff-060-fill:#262836; --ma-s-ffffff-050-fill:#1C1E28; --ma-s-06070a:#1E202B; --ma-s-090d15:#1D202C; --ma-s-0a0d13:#1E202A; --ma-s-0a0d14:#1E202B; --ma-s-0b0f18:#1B1F2A; --ma-s-0c0e16:#1C1E28; --ma-s-0d111b:#171A24; --ma-s-0e1019:#181922; --ma-s-0f1526:#1C2131; --ma-s-10121b:#181922; --ma-s-10162b:#1D2236; --ma-s-11141f:#262836; --ma-s-11151f:#20222E; --ma-s-11161f:#262A36; --ma-s-131623:#20222E; --ma-s-161a28:#232633; --ma-s-5b9bff-120:#292B3A; --ma-s-5b9bff-140:#292B3A; --ma-s-5b9bff-150:#292B3A; --ma-s-5b9bff-160:#292B3A; --ma-s-5b9bff-180:#292B3A; --ma-s-5b9bff-200:#292B3A; --ma-s-5b9bff-220:#292B3A; --ma-s-ffffff-040:#262836;
 }
 @media (prefers-color-scheme: light){
   .ma-theme[data-ma-theme="auto"]{
     --ma-page:#1E202B; --ma-card:#181922; --ma-inner:#1C1E28; --ma-raised:#20222E; --ma-hover:#262836; --ma-sel:#292B3A;
     --ma-glow:radial-gradient(ellipse 1100px 420px at 720px -60px, rgba(52,70,170,0.16) 0%, transparent 100%);
+    --ma-s-ffffff-060-fill:#262836; --ma-s-ffffff-050-fill:#1C1E28; --ma-s-06070a:#1E202B; --ma-s-090d15:#1D202C; --ma-s-0a0d13:#1E202A; --ma-s-0a0d14:#1E202B; --ma-s-0b0f18:#1B1F2A; --ma-s-0c0e16:#1C1E28; --ma-s-0d111b:#171A24; --ma-s-0e1019:#181922; --ma-s-0f1526:#1C2131; --ma-s-10121b:#181922; --ma-s-10162b:#1D2236; --ma-s-11141f:#262836; --ma-s-11151f:#20222E; --ma-s-11161f:#262A36; --ma-s-131623:#20222E; --ma-s-161a28:#232633; --ma-s-5b9bff-120:#292B3A; --ma-s-5b9bff-140:#292B3A; --ma-s-5b9bff-150:#292B3A; --ma-s-5b9bff-160:#292B3A; --ma-s-5b9bff-180:#292B3A; --ma-s-5b9bff-200:#292B3A; --ma-s-5b9bff-220:#292B3A; --ma-s-ffffff-040:#262836;
   }
 }

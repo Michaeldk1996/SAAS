@@ -10,8 +10,9 @@
 // widths — read from the design instance's DOM, never typed here) inside the open fixture modal, and clips that.
 // Every other element is hidden (visibility), the canvas behind the component is painted one flat colour:
 //   ref/     the design instance, on the colour behind it in the design (its ancestors' backgrounds, composited)
-//   source/  ours with the modal re-pointed to the SOURCE palette (FIXTURE_SOURCE_PALETTE below, fixture-only
-//            <style>) on the design's own background colour → structure
+//   source/  ours with the modal re-pointed to the SOURCE palette (fixture-only <style>): every --ma-s-* token takes the
+//            source value its NAME spells (read from match-analysis-tokens.css), the older role tokens
+//            FIXTURE_SOURCE_PALETTE below — on the design's own background colour → structure
 //   night/   ours with the shipped Night tokens on our background (the real parent, or the README-role token where
 //            the helper has no parent of its own) → what the user sees
 // Components: seg-sheet (sheet scope tabs, fhSheetSeg→maSeg 'sheet'), seg-me (Market edge view tabs, meSegHtml→maSeg
@@ -67,6 +68,16 @@ const FIXTURE_SOURCE_PALETTE = { '--ma-page': '#0A0D14', '--ma-card': '#0E1019',
   '--ma-t1': '#E7E9EE', '--ma-t2': '#8B96B5', '--ma-t3': '#5B6880', '--ma-fill': '#5B9BFF', '--ma-link': '#5B9BFF',
   '--ma-on-fill': '#06070A', '--ma-pos': '#3DD68C', '--ma-neg': '#E0616F', '--ma-pb-fill': '#E7E9EE',
   '--ma-scrim': 'rgba(4,5,9,0.62)', '--ma-chart-grid': 'rgba(255,255,255,0.07)' };
+// Every design shade is its own token (founder 2026-09-29): --ma-s-<hex>[-<alpha x1000>][-fill|-ink]. The source value
+// is the NAME, so it is read from the token file here, never typed: `--ma-s-ffffff-090` → rgba(255,255,255,0.09).
+function shadeSource(name) {
+  const m = /^--ma-s-([0-9a-f]{6})(?:-(\d{3}))?(?:-(?:fill|ink|line))?$/.exec(name);
+  if (!m) return null;
+  const [r, g, b] = [0, 2, 4].map(i => parseInt(m[1].slice(i, i + 2), 16));
+  return m[2] ? `rgba(${r},${g},${b},${+m[2] / 1000})` : '#' + m[1].toUpperCase();
+}
+const SHADE_NAMES = [...new Set([...fs.readFileSync(path.join(ROOT, 'match-analysis-tokens.css'), 'utf8').matchAll(/(--ma-s-[\w-]+)\s*:/g)].map(m => m[1]))];
+for (const n of SHADE_NAMES) { const v = shadeSource(n); if (v) FIXTURE_SOURCE_PALETTE[n] = v; }
 const PALETTE_CSS = `#analysisModal.ma-theme, #analysisModal.ma-theme[data-ma-theme]{ ${Object.entries(FIXTURE_SOURCE_PALETTE).map(([k, v]) => `${k}:${v};`).join(' ')} }`;
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -356,7 +367,7 @@ function oursMount(name, d, tmap) {
     const sets = h.chips.map((x) => x.split('-').map(Number));
     const r = { mid: 'cd-sheet', sets, pS: +h.aSets, oS: +h.bSets, won: +h.aSets > +h.bSets, price: +h.aPrice, oppPrice: +h.bPrice,
       tourn: parts[0], surface: parts[1], round: parts[2], date, ek: null };
-    const st = fhStateFor(_aM); st.sheetMap['cd-sheet'] = { r, aName: h.aName, aKey: null, bName: h.bName, bKey: null };
+    const st = fhStateFor(_aM); st.sheetMap['cd-sheet'] = { r, aName: h.aName, aKey: null, bName: h.bName, bKey: null, noYear: true };   // the design instance is a Form-row sheet (P1)
     fhOpenSheet('cd-sheet');
     const box = document.querySelector('#fhSheet > div > div:nth-child(2)');
     return { box, head: box.children[0], body: document.getElementById('fhSheetBody'), fedDate: date };
@@ -397,7 +408,8 @@ function oursMount(name, d, tmap) {
   }
   if (name === 'rows-form' || name === 'rows-tournament') {
     const h = host(name === 'rows-form' ? 'aSectionForm' : 'aSectionTournament', Math.round(d.w));
-    h.innerHTML = maMatchRowsHtml(d.groups, { labels: d.labels });
+    // rows-form = the design's Form list: the shared helper with the Form tab's own geometry options (TEN-330)
+    h.innerHTML = maMatchRowsHtml(d.groups, Object.assign({ labels: d.labels }, name === 'rows-form' ? { headPad: '8px 14px 7px', groupPad: '11px 14px 5px', inset: 8 } : {}));
     return ret(h.firstElementChild);
   }
   if (name === 'tooltip') {
@@ -546,7 +558,7 @@ async function main() {
   // rgb(...) → token for the tooltip's inner colours: the palette table read backwards, text roles first
   const toRgb = (v) => { if (v.startsWith('#')) { const n = parseInt(v.slice(1), 16); return `rgb(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255})`; } return v.replace(/\s+/g, '').replace(/^rgba\((\d+),(\d+),(\d+),1\)$/, 'rgb($1,$2,$3)'); };
   const tmap = {};
-  for (const k of ['--ma-t1', '--ma-t2', '--ma-t3', '--ma-link', '--ma-pos', '--ma-neg', ...Object.keys(FIXTURE_SOURCE_PALETTE)]) { const rgb = toRgb(FIXTURE_SOURCE_PALETTE[k]); if (!tmap[rgb]) tmap[rgb] = k; }
+  for (const k of [...SHADE_NAMES.filter(n => !/-(fill|ink|line)$/.test(n)), '--ma-t1', '--ma-t2', '--ma-t3', '--ma-link', '--ma-pos', '--ma-neg', ...Object.keys(FIXTURE_SOURCE_PALETTE)]) { const rgb = toRgb(FIXTURE_SOURCE_PALETTE[k]); if (!tmap[rgb]) tmap[rgb] = k; }
   meta.tooltipColourMap = tmap;
 
   for (const pal of ['night', 'source']) {
