@@ -79,7 +79,7 @@ jobs:
       - name: Run the DNA suite on the rebuilt file
         # npm test gates every deploy and includes this suite, so a file that fails it
         # must never reach main — it would freeze the site on the next pipeline tick.
-        run: node tools/test-dna-percentiles.js
+        run: node tools/test-dna-percentiles.js && node tools/test-dna-up-one-builder.js
 
       - name: Commit refreshed dna-apitennis-ratings.json
         run: |
@@ -89,8 +89,30 @@ jobs:
           fi
           git config user.name  "bsp-dna-bot"
           git config user.email "bsp-dna-bot@users.noreply.github.com"
-          # tools/commitback-push.sh rebases and retries on a race, and exits 2 (red) if
-          # the commit itself conflicts — a bare `pull --rebase || true` loop could print
-          # "Pushed" after losing the refresh.
-          COMMITBACK_OWNED=dna-apitennis-ratings.json \
-            bash tools/commitback-push.sh "chore(dna): daily DNA ratings refresh [skip ci]" dna-apitennis-ratings.json
+          # TEN-328: surface-ratings.yml also writes this file (it re-sources the
+          # Under-pressure axis), so a rebase of this commit could line-merge two
+          # generated JSONs into one whose ratings and percentiles disagree. Instead,
+          # every attempt rebuilds the commit on the current main: this run's file,
+          # Under pressure re-sourced from MAIN's surface-ratings.json, both DNA suites
+          # re-run. Whichever bot pushes last therefore carries the latest SR build.
+          # Every failing command aborts the step (bash -e) before a push.
+          MSG="chore(dna): daily DNA ratings refresh [skip ci]"
+          cp dna-apitennis-ratings.json "$RUNNER_TEMP/dna-built.json"
+          for attempt in 1 2 3; do
+            git fetch -q origin main
+            git reset -q --hard origin/main
+            cp "$RUNNER_TEMP/dna-built.json" dna-apitennis-ratings.json
+            node tools/dna-up-from-surface-ratings.js
+            node tools/test-dna-percentiles.js
+            node tools/test-dna-up-one-builder.js
+            git add dna-apitennis-ratings.json
+            git diff --cached --quiet && { echo "Main already holds this refresh."; exit 0; }
+            git commit -q -m "$MSG"
+            if git push origin HEAD:main; then
+              echo "Pushed on attempt $attempt."
+              exit 0
+            fi
+            echo "Push rejected (attempt $attempt) — rebuilding the commit on origin/main."
+          done
+          echo "::error::Could not push dna-apitennis-ratings.json after 3 attempts."
+          exit 1

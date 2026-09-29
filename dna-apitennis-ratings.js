@@ -14,9 +14,11 @@
 //   SERVE          = %1stIn + %1stWon + %2ndWon + hold%(svc games won)
 //                    + acesPerMatch − DFPerMatch   (aces/DF RAW per-match counts)
 //   RETURN         = %1stReturnWon + %2ndReturnWon + %returnGamesWon + %BPconverted
-//   UNDER PRESSURE = %BPsaved + %BPconverted + %tiebreaksWon + %decidingSetsWon
-//                    (4-sum; if only 3 present emit mean(present)*4, estimated:true;
-//                     <3 present -> null)
+//   UNDER PRESSURE = NOT computed here. TEN-328 (founder 2026-09-28): Under pressure
+//                    has ONE builder, surface-ratings.js (floors 50 BP faced / 50 BP
+//                    chances / 6 TB / 5 deciders career, 20/20/4/3 last52; 3-of-4 ->
+//                    mean×4; Challenger fold-in ×0.9). The axis is copied from
+//                    surface-ratings.json: last52 <- last52, sinceBase <- career.
 //   DOMINANCE RATIO= returnPtsWon% / (100 − servicePtsWon%)
 //
 // (Surface Elo is the LOCKED 5th axis but already exists in elo-ratings.json — NOT
@@ -34,6 +36,9 @@
 //            .dna-boxscores/ (gitignored); CI starts empty and fetches every week.
 //            Any window that still fails after a retry aborts the build.
 //   elo      elo-ratings.json (committed back weekly by elo.yml, so current).
+//   UP       surface-ratings.json (committed back daily by surface-ratings.yml,
+//            which re-sources this file's Under-pressure axis in the same commit
+//            via tools/dna-up-from-surface-ratings.js).
 //   key      API_TENNIS_KEY (env), else an API_TENNIS_KEY line in <repo>/.env.
 //
 // SCOPE / SURFACE / FLOOR conventions mirror surface-ratings.js:
@@ -228,23 +233,8 @@ function computeRatings(a) {
       rating: R1(ret1WonPct + ret2WonPct + retGmWonPct + bpConvPct),
     };
   }
-  // UNDER PRESSURE (4-sum; 3-of-4 -> mean*4 estimate; <3 -> null)
-  const bpSavedPct = a.bpSavedTot > 0 ? a.bpSavedWon / a.bpSavedTot * 100 : null;
-  const bpConvPct = a.bpConvTot > 0 ? a.bpConvWon / a.bpConvTot * 100 : null;
-  const tbWinPct = a.tbPlayed > 0 ? a.tbWon / a.tbPlayed * 100 : null;
-  const decWinPct = a.decPlayed > 0 ? a.decWon / a.decPlayed * 100 : null;
-  const parts = [bpSavedPct, bpConvPct, tbWinPct, decWinPct];
-  const present = parts.filter(v => v != null);
-  const haveUp = present.length;
-  const up = {
-    bpSavedPct: R1(bpSavedPct), bpConvPct: R1(bpConvPct),
-    tbWinPct: R1(tbWinPct), decWinPct: R1(decWinPct),
-    rating: haveUp >= 4 ? R1(bpSavedPct + bpConvPct + tbWinPct + decWinPct)
-          : haveUp === 3 ? R1(present.reduce((x, c) => x + c, 0) / haveUp * 4)
-          : null,
-    estimated: haveUp === 3,
-    components: haveUp,
-  };
+  // UNDER PRESSURE is not computed here (TEN-328, founder 2026-09-28: one builder).
+  // sourceUnderPressure() fills the node from surface-ratings.json.
   // DOMINANCE RATIO
   let dom = null;
   if (a.svpt > 0 && a.retPTot > 0) {
@@ -257,7 +247,7 @@ function computeRatings(a) {
     };
   }
   return {
-    serve, return: ret, underPressure: up, dominanceRatio: dom,
+    serve, return: ret, underPressure: null, dominanceRatio: dom,
     sample: { matches: a.matches, svpt: a.svpt, bpFaced: a.bpSavedTot, bpChances: a.bpConvTot, tbPlayed: a.tbPlayed, decPlayed: a.decPlayed },
   };
 }
@@ -447,6 +437,66 @@ function ratePlayers(contribs, roster) {
 }
 
 // ===========================================================================
+// UNDER PRESSURE — copied from surface-ratings.json (TEN-328, founder 2026-09-28:
+// "one builder, the surface-ratings.js formula with its floors, used by every
+// display"). Nothing is recomputed here, so the radar reads the same number as the
+// Edge Ratings table, the Database boards and the H2H rating row. Scopes:
+// last52 <- last52 (both anchored on the player's own last match), sinceBase <-
+// career (surface-ratings has no since-2024 scope). Joined on the profile name,
+// which both files take from player-profiles.json; a name held twice in
+// surface-ratings is ambiguous and joins nothing. A player surface-ratings does not
+// rate gets a null axis, never a fallback to a second formula.
+// ===========================================================================
+const SR_PATH = process.env.DNA_SR_PATH || path.join(ROOT, 'surface-ratings.json');
+const SR_MIN = 150;                      // a shorter file is a broken build, not a pool
+const UP_SCOPE_FROM_SR = { last52: 'last52', sinceBase: 'career' };
+function upNodeFrom(srSurface, srScope) {
+  const u = (srSurface && srSurface[srScope] && srSurface[srScope].underPressure) || null;
+  const rating = u && u.rating != null ? u.rating : null;
+  return {
+    bpSavedPct: u ? u.bpSavedPct : null, bpConvPct: u ? u.bpConvPct : null,
+    tbWinPct: u ? u.tbWinPct : null, decWinPct: u ? u.decWinPct : null,
+    rating,
+    estimated: rating != null && u.components === 3,   // surface-ratings' 3-of-4 mean×4
+    components: u ? u.components : 0,
+    inclChallenger: !!(u && u.inclChallenger),
+    srScope,
+  };
+}
+function sourceUnderPressure(rated, sr) {
+  const byName = new Map();
+  for (const r of (sr && sr.players) || []) {
+    if (!r || !r.name) continue;
+    byName.set(r.name, byName.has(r.name) ? null : r);
+  }
+  let joined = 0;
+  for (const p of rated) {
+    const row = byName.get(p.name) || null;
+    if (row) joined++;
+    for (const s of [...SURFACES, 'All']) {
+      const srSurface = row && row.surfaces ? row.surfaces[s] : null;
+      for (const scope of Object.keys(UP_SCOPE_FROM_SR)) {
+        p.surfaces[s][scope].underPressure = upNodeFrom(srSurface, UP_SCOPE_FROM_SR[scope]);
+      }
+    }
+  }
+  return joined;
+}
+function loadSurfaceRatings(file) {
+  const sr = JSON.parse(fs.readFileSync(file, 'utf8'));
+  const n = (sr.players || []).length;
+  if (n < SR_MIN) throw new Error(`${path.basename(file)} holds ${n} players (< ${SR_MIN}) — refusing to publish the Under-pressure axis from it`);
+  return sr;
+}
+function underPressureMeta(sr, joined, rated) {
+  return {
+    file: 'surface-ratings.json', generatedAt: sr.generatedAt || null,
+    players: (sr.players || []).length, joined, rated: rated.length,
+    scopes: UP_SCOPE_FROM_SR, floors: sr.floors || null,
+  };
+}
+
+// ===========================================================================
 // 5th AXIS — Surface Elo (Tennis Abstract, elo-ratings.json). NOT computed here;
 // attached per rated player, resolved by surname|firstInitial (the exact join the
 // dashboard's edgeEloKey/ppEloForSurface use). Strict per-surface: a missing
@@ -570,6 +620,8 @@ async function main() {
   const eloMap = JSON.parse(fs.readFileSync(ELO_PATH, 'utf8')).elo || {};
   if (Object.keys(eloMap).length < 100) throw new Error(`elo-ratings.json holds ${Object.keys(eloMap).length} players — refusing to publish without the Elo axis`);
   const eloResolved = attachElo(rated, eloMap);
+  const sr = loadSurfaceRatings(SR_PATH);
+  const upJoined = sourceUnderPressure(rated, sr);
   const { percentiles, eloPercentiles } = assignPercentiles(rated);
 
   const out = {
@@ -583,13 +635,14 @@ async function main() {
       lockedFormulas: {
         serve: '%1stIn + %1stWon + %2ndWon + hold% + acesPerMatch − DFPerMatch (aces/DF raw per-match)',
         return: '%1stReturnWon + %2ndReturnWon + %returnGamesWon + %BPconverted',
-        underPressure: '%BPsaved + %BPconverted + %tiebreaksWon + %decidingSetsWon (4-sum; 3-of-4 -> mean*4 estimated:true; <3 -> null)',
+        underPressure: 'copied from surface-ratings.json (TEN-328: one builder, floors, 3-of-4 -> mean*4 estimated:true, Challenger fold-in x0.9); last52 <- last52, sinceBase <- career',
         dominanceRatio: 'returnPtsWon% / (100 − servicePtsWon%)',
       },
       roster: { source: pp.source, fetchedAt: pp.fetchedAt || null, players: rosterSize },
       rosterSize,
       ratedPlayers: rated.length,
       eloResolved,
+      underPressureSource: underPressureMeta(sr, upJoined, rated),
       radarAxes: ['serve', 'return', 'underPressure', 'dominanceRatio', 'elo (Surface Elo, current only)'],
       pctMethod: `true percentile rank: 100 × (below + ½·equal) / n within the (axis × scope × surface) population — rated players with >= ${POP_MIN_MATCHES} matches in that scope × surface; Elo: rated players with that surface's current Elo`,
       popMinMatches: POP_MIN_MATCHES,
@@ -620,6 +673,7 @@ async function main() {
 module.exports = {
   pctRank, assignPercentiles, weekWindows, slimFixture, ingest, ratePlayers,
   statBlock, scoreOutcome, computeRatings, POP_MIN_MATCHES, INCLUDE_MIN_MATCHES,
+  sourceUnderPressure, loadSurfaceRatings, underPressureMeta, UP_SCOPE_FROM_SR,
 };
 
 if (require.main === module) {

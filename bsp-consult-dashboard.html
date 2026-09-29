@@ -19095,7 +19095,10 @@ function mdnaRadarFor(key, surface, scope, fullName){
       const r = sc[ax.key], b = base[ax.key];
       ratings.push(r && r.rating != null ? r.rating : null);
       pcts.push(r && r.pct != null ? r.pct : null);
-      deltas.push((r && r.rating != null && b && b.rating != null) ? +(r.rating - b.rating).toFixed(ax.dp) : null);
+      // TEN-328: Under pressure's baseline node is surface-ratings CAREER (2010+), not
+      // 2024–now, so a Δ under the "vs 2024–now avg" label would be false — none, like Elo.
+      const baseOk = b && b.rating != null && b.srScope !== 'career';
+      deltas.push((r && r.rating != null && baseOk) ? +(r.rating - b.rating).toFixed(ax.dp) : null);
     }
   }
   const ok = matches >= MDNA_FLOOR && pcts.some(v => v != null);
@@ -27509,7 +27512,9 @@ window.__h2hEnv = { playerProfiles: () => playerProfiles, surfaceRatings: () => 
         const r = sc[ax.key], b = base[ax.key];
         ratings.push(r && r.rating != null ? r.rating : null);
         pcts.push(r && r.pct != null ? r.pct : null);
-        deltas.push((r && r.rating != null && b && b.rating != null) ? +(r.rating - b.rating).toFixed(ax.dp) : null);
+        // TEN-328: Under pressure's baseline is surface-ratings CAREER, not since-2024 — no Δ.
+        const baseOk = b && b.rating != null && b.srScope !== 'career';
+        deltas.push((r && r.rating != null && baseOk) ? +(r.rating - b.rating).toFixed(ax.dp) : null);
       }
     }
     const ok = matches >= DNA_FLOOR && pcts.some(v => v != null);

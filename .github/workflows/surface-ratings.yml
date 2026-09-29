@@ -89,29 +89,50 @@ jobs:
             console.log(`OK: ${n} players (was ${prev}), generatedAt ${d.generatedAt}.`);
           '
 
+      - name: Re-source the DNA radars' Under-pressure axis (TEN-328)
+        # Under pressure has ONE builder (founder 2026-09-28): the DNA file copies this
+        # file's values. Re-source it here, with no api-tennis calls, so the radars never
+        # trail the Ratings board until the next dna-ratings.yml run; then run the gate
+        # npm test runs on main.
+        run: |
+          node tools/dna-up-from-surface-ratings.js
+          node tools/test-dna-up-one-builder.js
+
       - name: Commit refreshed surface-ratings.json
         run: |
-          # Only surface-ratings.json is committed. tml-cache/ is gitignored (.gitignore),
+          # surface-ratings.json and the re-sourced dna-apitennis-ratings.json are
+          # committed together. tml-cache/ is gitignored (.gitignore),
           # so the old `git add "tml-cache/$Y.csv"` returned exit 1 under `bash -e` and
           # aborted this whole step BEFORE the commit — the weekly refresh silently never
           # landed. The current-year CSV is re-fetched every run, so it need not be tracked.
-          git add surface-ratings.json
+          git add surface-ratings.json dna-apitennis-ratings.json
           if git diff --cached --quiet; then
             echo "Nothing changed — nothing to commit."
             exit 0
           fi
           git config user.name  "bsp-surface-bot"
           git config user.email "bsp-surface-bot@users.noreply.github.com"
-          git commit -m "chore(surface-ratings): weekly serve/return/under-pressure refresh [skip ci]"
-          # Another workflow may have advanced main since checkout; rebase and
-          # retry so the refresh is never lost to a benign race.
+          MSG="chore(surface-ratings): weekly serve/return/under-pressure refresh [skip ci]"
+          git commit -m "$MSG"
+          cp surface-ratings.json "$RUNNER_TEMP/surface-ratings.json"
+          # Another workflow may have advanced main since checkout. The DNA bot writes
+          # dna-apitennis-ratings.json too, so a plain rebase can conflict on it: rebuild
+          # the commit on the new main instead — this run's surface-ratings.json, main's
+          # DNA file re-sourced from it — so neither bot's refresh is lost.
           for attempt in 1 2 3; do
             if git push origin HEAD:main; then
               echo "Pushed on attempt $attempt."
               exit 0
             fi
-            echo "Push rejected (attempt $attempt) — rebasing on origin/main and retrying."
-            git pull --rebase origin main || true
+            echo "Push rejected (attempt $attempt) — rebuilding the commit on origin/main and retrying."
+            git fetch -q origin main
+            git reset -q --hard origin/main
+            cp "$RUNNER_TEMP/surface-ratings.json" surface-ratings.json
+            node tools/dna-up-from-surface-ratings.js
+            node tools/test-dna-up-one-builder.js
+            git add surface-ratings.json dna-apitennis-ratings.json
+            git diff --cached --quiet && { echo "Main already holds this refresh."; exit 0; }
+            git commit -q -m "$MSG"
           done
           echo "::error::Could not push surface-ratings.json after 3 attempts."
           exit 1
