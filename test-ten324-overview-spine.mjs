@@ -8,24 +8,10 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { overviewVM } from './tools/ten334-overview-vm.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const HTML = readFileSync(join(HERE, 'bsp-consult-dashboard.html'), 'utf8');
-
-function slice(name, src) {
-  const start = src.indexOf(`\nfunction ${name}(`);
-  if (start < 0) throw new Error(`${name} not found`);
-  let d = 0, i = src.indexOf('{', start);
-  for (; i < src.length; i++) { if (src[i] === '{') d++; else if (src[i] === '}' && --d === 0) break; }
-  return src.slice(start, i + 1);
-}
-function objSrc(decl, src) {
-  const start = src.indexOf(`\n${decl} = {`);
-  if (start < 0) throw new Error(`${decl} not found`);
-  let d = 0, i = src.indexOf('{', start);
-  for (; i < src.length; i++) { if (src[i] === '{') d++; else if (src[i] === '}' && --d === 0) break; }
-  return src.slice(start, i + 2);
-}
 
 // ---- fixture: the two sources disagree on every number ----
 const cell = (won, lost) => ({ won, lost });
@@ -48,33 +34,10 @@ const YEARLY = {
 };
 const MATCH = () => ({ id: 'm1', p1: 'A. One', p2: 'B. Two', p1Key: 101, p2Key: 202, ...YEARLY });
 
-// Slice the Overview builder and its helpers and run them. `profiles` is the playerProfiles map; `shard(k)` models
-// ensurePlayerProfile: it may add a profile to the map and resolves true/false.
-function overviewVM(src, { profiles = {}, shard = () => Promise.resolve(false), built = () => true } = {}) {
-  const fns = ['cellClass', 'cellText', 'cellForTier', 'sumCellsTier', 'yrSurfCell', 'buildYearlyTable', 'alignYearlyPair',
-    'ovCareerByYear', 'ensureOverviewProfiles', 'ovPaint', 'buildYearlyTables', 'setOverviewTier',
-    // the TEN-314 sample gate the hero's rates and bars go through (real code, not stubs)
-    'tourxSampleGate', 'maGate', 'maPct', 'maRate', 'maSmallNote', 'maRateHtml', 'maGateBar'];
-  const settledDecl = src.match(/\nconst _ovProfileSettled = [^\n]*/);
-  const consts = ['MA_GREY', 'MA_SMALL_NOTE'].map(c => src.match(new RegExp(`\\nconst ${c} = [^\\n]*`))[0]).join('');
-  const painted = {};
-  const byId = {};
-  const document = { getElementById: id => (byId[id] = byId[id] || { innerHTML: '' }) };
-  const api = new Function('document', 'playerProfiles', 'ensurePlayerProfile', 'loadCareerHistory', 'seasonSurfaceBlockHtml',
-    'ANALYSIS_P1_RGBA', 'ANALYSIS_P2_RGBA', 'aPaint', 'aBuilt', `
-    let overviewTier = 'all', _overviewMatch = null; const _openOverviewDrill = {};
-    ${settledDecl ? settledDecl[0] : ''}
-    ${consts}
-    ${fns.map(f => slice(f, src)).join('\n')}
-    ${objSrc('const A_TAB_BUILD', src)}
-    return { buildYearlyTables, setOverviewTier, A_TAB_BUILD };`)(
-    document, profiles, k => shard(String(k)), () => {}, () => '', a => `rgba(1,1,1,${a})`, a => `rgba(2,2,2,${a})`,
-    (id, html) => { painted[id] = html; }, (m, tab) => built(m, tab));
-  return { ...api, painted, byId };
-}
+// The Overview builder and its helpers are sliced out of the dashboard and run (tools/ten334-overview-vm.mjs, TEN-334).
 const profilesWithSpine = () => ({ 101: { name: 'A. One', careerByYear: CBY[101] }, 202: { name: 'B. Two', careerByYear: CBY[202] } });
-const heroes = html => [...html.matchAll(/<span class="rec"[^>]*>(\d+-\d+)<\/span>/g)].map(x => x[1]);
-const years = html => [...html.matchAll(/<td class="yr-year">(\d{4})/g)].map(x => x[1]);
+const heroes = html => [...html.matchAll(/<span class="ov-career-rec"[^>]*>(\d+-\d+)<\/span>/g)].map(x => x[1]);
+const years = html => [...html.matchAll(/data-ov-year="(\d{4})"/g)].map(x => x[1]);
 
 // ---- the checks, each a function of the dashboard source so the mutants can re-run them ----
 const CHECKS = {
@@ -83,7 +46,7 @@ const CHECKS = {
     const html = overviewVM(src, { profiles: profilesWithSpine() }).buildYearlyTables(MATCH());
     assert.deepEqual(heroes(html), ['50-15', '33-22'], 'career hero = Σ careerByYear');
     assert.deepEqual(years(html), ['2025', '2024', '2025', '2023'], 'year rows = careerByYear years (placeholders aside)');
-    assert.ok(html.includes('>30-10<') && html.includes('>21-12<'), 'the 2025 totals are the profile rows');
+    assert.ok(/>30-10</.test(html) && />21-12</.test(html), 'the 2025 totals are the profile rows');
     for (const n of ['61-1', '36-2', '88-4', '97-3', '2022']) assert.ok(!html.includes(n), `no p?Yearly value (${n}) on the tab`);
   },
   // Mutation: the tier toggle's cell reader ignores careerByYear's tier split (reads p?Yearly's).
@@ -195,7 +158,7 @@ const MUTANTS = [
   ['fall back to p?Yearly', 'const y1 = ovCareerByYear(m.p1Key), y2 = ovCareerByYear(m.p2Key);', 'const y1 = ovCareerByYear(m.p1Key) || m.p1Yearly, y2 = ovCareerByYear(m.p2Key) || m.p2Yearly;'],
   ['no repaint after the shard', "  return loaded.then(() => { if (aBuilt(m, 'overview')) aPaint('aSectionOverview', buildYearlyTables(m)); });", '  return loaded;'],
   ['builder does not return its load', '  overview(m){ return ovPaint(m); },', '  overview(m){ ovPaint(m); },'],
-  ['tier click rebuilds without re-fetch', '  if (_overviewMatch) ovPaint(_overviewMatch);', "  if (_overviewMatch) aPaint('aSectionOverview', buildYearlyTables(_overviewMatch));"],
+  ['tier click rebuilds without re-fetch', '  ovPaint(_ov.m);', "  aPaint('aSectionOverview', buildYearlyTables(_ov.m));"],
   ['no stale-match guard on the repaint', "if (aBuilt(m, 'overview')) aPaint('aSectionOverview', buildYearlyTables(m)); });", "aPaint('aSectionOverview', buildYearlyTables(m)); });"],
   ['a dropped profile stays "settled"', "    if (!ovCareerByYear(k)) _ovProfileSettled.delete(String(k));", ''],
   ['no shard fetch', 'Promise.resolve(ensurePlayerProfile(k))', 'Promise.resolve(false)'],

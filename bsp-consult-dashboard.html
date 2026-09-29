@@ -1879,63 +1879,13 @@
   .arr-meta{ font-size:10.5px; color:var(--text-faint); margin-top:1px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .arr-score{ font-family:'IBM Plex Mono', monospace; font-size:13px; color:var(--text-dim); flex-shrink:0; }
 
-  /* Year-by-year career records table (Overview tab) */
+  /* Two-column player grid (Tournament tab, Recent results). */
   .yr-grid{ display:grid; grid-template-columns:1fr 1fr; gap:24px; }
-  .yr-col{ min-width:0; }
-  .yr-name{ font-size:15px; font-weight:700; color:var(--text); margin-bottom:12px; font-family:'Hanken Grotesk', sans-serif; }
-  .yr-hero{ border-radius:16px; padding:22px 24px; margin-bottom:14px; border:1px solid transparent; box-sizing:border-box; position:relative; min-height:184px; }
-  /* §6: the empty side keeps an aligned career-card placeholder (same slot as a
-     real hero) so both columns' THIS SEASON headers share a baseline and the
-     empty-state message below can't float up a card-height. */
-  .yr-hero.yr-hero-empty{ display:flex; align-items:center; justify-content:center; text-align:center; background:var(--surface-inner); }
-  .yr-hero.yr-hero-empty .msg{ font-size:12px; color:var(--label); line-height:1.55; font-family:'Hanken Grotesk', sans-serif; }
-  /* export "CAREER" label sits inline in the header group, IBM Plex Mono, muted (not absolute) */
-  .yr-hero .career-lbl{ font-size:10px; text-transform:uppercase; letter-spacing:0.16em; font-weight:400; font-family:'IBM Plex Mono', monospace; color:var(--label); }
-  .yr-hero .recrow{ display:flex; align-items:baseline; gap:12px; }
-  .yr-hero .rec{ font-family:'IBM Plex Mono', monospace; font-size:31px; font-weight:800; line-height:1; letter-spacing:-0.02em; white-space:nowrap; }
-  .yr-hero .pct{ font-size:14px; font-weight:700; font-family:'Hanken Grotesk', sans-serif; }
-  .yr-hero .bars{ margin-top:16px; }
-  .yr-hero .bar-row{ display:grid; grid-template-columns:50px 1fr auto; align-items:center; gap:12px; margin-bottom:8px; }
-  .yr-hero .bar-row:last-child{ margin-bottom:0; }
-  /* export keeps the surface TEXT label neutral #e7e9ee; colour lives on the bar fill only */
-  .yr-hero .bar-row .lbl{ font-size:12.5px; font-weight:400; color:var(--text); font-family:'Hanken Grotesk', sans-serif; }
-  .yr-hero .bar-row .track{ height:7px; border-radius:4px; background:var(--bar-track); overflow:hidden; }
-  /* RULING REVERSED (2026-08-01, founder Overview item 1): the career surface bars
-     carry PLAYER IDENTITY by name order — left player (P1) fill is the identity blue
-     #6aaeff, right player (P2) the light neutral #e7e9ee. This is the standing
-     A-blue/B-neutral identity rule applied to the bar fill (fixed by column, never by
-     value); track stays rgba(255,255,255,0.09). Column set on .yr-hero by colPrefix. */
-  .yr-hero .bar-row .track div{ height:100%; border-radius:4px; background:var(--ma-t1); }
-  .yr-hero.yr-hero-p1 .bar-row .track div{ background:var(--ma-fill, var(--periwinkle)); }
-  .yr-hero .bar-row .v{ font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--label); text-align:right; white-space:nowrap; }
-  .yr-hero .bar-row .v .v-pct{ font-size:12px; color:var(--label); margin-left:1px; }
-  .yr-hero .bar-note{ font-size:10px; color:var(--label); margin-top:2px; }
-  .yr-summary{ font-size:11px; color:var(--label); margin-bottom:10px; line-height:1.6; }
-  .yr-summary .yr-surf.clay{ color:var(--court-clay); font-weight:600; }
-  .yr-summary .yr-surf.hard{ color:var(--court-hard); font-weight:600; }
-  .yr-summary .yr-surf.grass{ color:var(--court-grass); font-weight:600; }
-  /* export §8: inline ATP chip — muted #5b6880, subtle white-06 fill, r3px, fw700 9px, NO border */
-  .yr-atponly{ display:inline-block; margin-left:6px; font-size:9px; font-weight:700; letter-spacing:0.04em; color:var(--label); background:var(--surface-inner); border-radius:3px; padding:1px 4px; font-family:'IBM Plex Mono',monospace; vertical-align:middle; cursor:help; }
-  .yr-legend{ margin-top:22px; font-size:12px; color:var(--label); line-height:1.5; text-align:center; }
-  .yr-legend .yr-atponly{ margin:0 2px; }
-  .yr-tierhead{ display:flex; align-items:center; justify-content:space-between; gap:16px; margin:0 0 20px; flex-wrap:wrap; }
-  .yr-tierlbl{ font-size:11px; text-transform:uppercase; letter-spacing:0.14em; font-weight:400; color:var(--label); font-family:'Hanken Grotesk',sans-serif; }
-  .yr-tiertoggle{ display:flex; gap:2px; background:var(--surface); border:var(--ma-hw,0.33px) solid var(--line); border-radius:9px; padding:3px; }
-  /* export §4: one segmented-control standard — inactive transparent/borderless #5b6880 600;
-     active rgba(91,155,255,0.22) fill on rgba(91,155,255,0.45) border, #e7e9ee 700 (no raised white fill) */
-  .yr-tiertoggle .opt{ font-size:11.5px; font-weight:600; color:var(--label); padding:6px 13px; border:1px solid transparent; border-radius:6px; cursor:pointer; font-family:'Hanken Grotesk',sans-serif; white-space:nowrap; }
-  .yr-tiertoggle .opt.active{ color:var(--text); font-weight:700; background:var(--seg-active); border-color:var(--seg-active-line); }
-  /* export §2: year-table data cells carry NO resting link colour or underline — the
-     drill affordance is hover-only (underline appears on hover, resting is a plain value) */
-  .yr-table td.yr-clickable{ cursor:pointer; }
-  .yr-table td.yr-clickable:hover{ background:var(--nav-hover); text-decoration:underline; text-decoration-color:color-mix(in srgb, var(--ma-link) 70%, transparent); text-underline-offset:2px; }
+  /* TEN-334 · Overview (DF style-hover, L2057 / L1978): a count that opens its pop-up, a season row that does. */
+  #aSectionOverview .ov-cell.ov-open:hover{ background:var(--ma-s-ffffff-050-fill, var(--nav-hover)); }
+  #aSectionOverview .ov-srow.ov-open:hover{ background:var(--ma-s-ffffff-040, var(--nav-hover)) !important; }
+  #aSectionOverview .seg{ transition:background .14s ease, color .14s ease, border-color .14s ease; }
   .yr-drill{ margin-top:2px; }
-  /* §5: the year-cell drill renders inline in a full-width row beneath its year,
-     collapsing to zero height until it's populated (so unopened years add no gap). */
-  .yr-table tr.yr-dtr:hover td{ background:none; }
-  .yr-table td.yr-dcell{ padding:0; border-bottom:none; }
-  .yr-dcell .yr-drill{ margin:0; }
-  .yr-dcell .yr-drill:not(:empty){ padding:2px 0 9px; }
   .yr-drill-head{ display:flex; align-items:center; gap:8px; font-size:11.5px; font-weight:600; color:var(--text-soft); padding:9px 2px 7px; border-top:var(--ma-hw,0.33px) solid var(--line-soft); }
   .yr-drill-head b{ color:var(--text); font-family:'IBM Plex Mono',monospace; }
   .yr-drill-close{ margin-left:auto; cursor:pointer; color:var(--label); font-size:12px; width:20px; height:20px; display:flex; align-items:center; justify-content:center; border-radius:5px; }
@@ -1982,64 +1932,6 @@
   .pp-form-chev.open{ transform:rotate(90deg); }
   #ppRecentFormCard div[data-ppek].pp-openable:hover{ background:var(--nav-hover); }
   #ppRecentFormCard div[data-ppek].open{ background:var(--nav-hover); }
-  .yr-season{ margin-bottom:11px; }
-  .yr-season-head{ display:flex; align-items:center; justify-content:space-between; gap:8px; margin-bottom:8px; flex-wrap:wrap; }
-  .yr-season-lbl{ font-size:11px; text-transform:uppercase; letter-spacing:0.14em; font-weight:400; color:var(--label); font-family:'Hanken Grotesk',sans-serif; }
-  /* export §4: the per-player ATP/Challenger season toggle was removed — one top
-     tier control governs this tab now, so .yr-season-toggle markup is gone (dead CSS dropped). */
-  .yr-season-view.hidden{ display:none; }
-  /* §7: an entirely-empty tier occupies the surface-rows' slot (min-height) so
-     it holds place and doesn't jump up, keeping both columns aligned. */
-  .yr-season-empty{ font-size:11.5px; color:var(--label); padding:6px 2px; min-height:151px; display:flex; align-items:center; }
-  /* export §2/§3: season row keeps its own fill (#0b0f18, 10px radius, 1px hairline
-     border) plus a 3px left accent. Measured from computed-styles.json (modal-overview):
-     the accent is BLUE-family, not an orange/green surface palette — Clay rgb(106,174,255),
-     Hard/Grass rgb(91,155,255), identical on both players. This reverses the earlier §5
-     "neutral accent" ruling (founder re-requested a visible leading accent — see report). */
-  .yr-surfrec{ display:flex; align-items:center; gap:14px; padding:12px 15px; background:var(--surface); border:var(--ma-hw,0.33px) solid var(--line); border-left:3px solid var(--line-soft); border-radius:10px; margin-bottom:5px; cursor:pointer; transition:background .12s; }
-  .yr-surfrec:hover{ background:var(--nav-hover); }
-  .yr-surfrec.disabled{ cursor:default; opacity:0.45; }
-  .yr-surfrec.disabled:hover{ background:var(--surface); }
-  .yr-surfrec .yr-surf{ font-size:13px; font-weight:400; min-width:44px; color:var(--text); }
-  .yr-surfrec .rec{ font-family:'IBM Plex Mono',monospace; font-size:14px; font-weight:700; color:var(--text); }
-  .yr-surfrec .rpct{ font-size:12px; font-weight:700; color:var(--text); font-family:'IBM Plex Mono',monospace; }
-  .yr-surfrec .chev{ margin-left:auto; font-size:10px; color:var(--label); transition:transform .15s; }
-  .yr-surfrec.expanded .chev{ transform:rotate(90deg); }
-  /* Overview item 2: the row's 3px left accent carries PLAYER IDENTITY (whose column
-     this is), not surface — left player (P1) blue #6aaeff, right (P2) neutral #e7e9ee.
-     Same name-order rule as the career bars; never coloured by clay/hard/grass. */
-  .yr-surfrec.ovcol-p1{ border-left-color:var(--periwinkle); }
-  .yr-surfrec.ovcol-p2{ border-left-color:var(--text); }
-  .yr-surfmatches{ margin:0 0 7px 8px; border-left:2px solid var(--line-soft); padding-left:10px; }
-  .yr-surfmatches.hidden{ display:none; }
-  .yr-matchrow{ padding:5px 0; border-bottom:0.33px solid var(--line-soft); }
-  .yr-matchrow:last-child{ border-bottom:none; }
-  .yr-matchrow .top{ display:flex; align-items:center; gap:8px; font-size:11.5px; }
-  .yr-matchrow .mw{ font-family:'IBM Plex Mono',monospace; font-weight:700; font-size:10px; width:14px; text-align:center; flex:none; }
-  .yr-matchrow .mw.win{ color:var(--text); }
-  .yr-matchrow .mw.loss{ color:var(--text); }
-  .yr-matchrow .opp{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text); flex:1; min-width:0; }
-  .yr-matchrow .sc{ font-family:'IBM Plex Mono',monospace; color:var(--label); flex:none; }
-  .yr-matchrow .btm{ font-size:10px; color:var(--label); margin-top:2px; margin-left:22px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .yr-table{ width:100%; border-collapse:collapse; font-family:'IBM Plex Mono', monospace; font-size:12.5px; }
-  /* export: header row is UNIFORM #5b6880 across all five columns (no per-surface colour) on #11161f */
-  .yr-table th{ text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:0.12em; font-weight:400; padding:11px 14px; background:var(--surface); border-bottom:var(--ma-hw,0.33px) solid var(--line-soft); font-family:'Hanken Grotesk', sans-serif; color:var(--label); }
-  .yr-table th:first-child,
-  .yr-table th.h-total,
-  .yr-table th.h-clay,
-  .yr-table th.h-hard,
-  .yr-table th.h-grass{ color:var(--label); }
-  .yr-table td{ padding:10px 14px; border-bottom:var(--ma-hw,0.33px) solid var(--line-soft); color:var(--text-sub); }
-  .yr-table td.yr-year{ color:var(--text-soft); font-weight:600; }
-  .yr-table tfoot td{ border-top:var(--ma-hw,0.33px) solid var(--line-soft); border-bottom:none; font-weight:700; padding-top:11px; padding-bottom:11px; background:var(--surface-inner); color:var(--text); }
-  /* export §1: every year-table value renders #e7e9ee — no per-column hue. Surface is
-     carried by the column header word, not the number measured under it. */
-  .yr-table .yr-col-total{ color:var(--text); }
-  .yr-table .yr-col-clay{ color:var(--text); }
-  .yr-table .yr-col-hard{ color:var(--text); }
-  .yr-table .yr-col-grass{ color:var(--text); }
-  .yr-table .yr-na{ color:var(--label); }
-  .yr-table .yr-preera td{ font-style:italic; color:var(--label); font-family:'Hanken Grotesk', sans-serif; border-bottom-style:dashed; }
 
   /* Weather tab (TEN-304 Wave B): styled inline from the spec — see buildWeatherSection. */
 
@@ -2239,6 +2131,7 @@
     .modal-analysis.printing .asection{ display:block !important; page-break-inside:avoid; margin-bottom:20px; }
     /* TEN-310: Market edge is not part of the Download report (brief §1). */
     .modal-analysis.printing #aSectionMarketEdge, .modal-analysis.printing #mePop{ display:none !important; }
+    .modal-analysis.printing #ovPop{ display:none !important; }   /* TEN-334: the Overview pop-up never prints */
   }
   /* Pipeline-health banner: makes a missed/failed automated run immediately
      obvious instead of silently serving stale data. */
@@ -11457,111 +11350,10 @@ function formCellHtml(val){
   return `<div class="mx-formbar"><div class="mx-formbar-fill" style="width:${w}%"></div></div><span class="mx-form">${Math.round(val)}%</span>`;
 }
 
-// --- Year-by-year career records table (Overview tab) ---
-// A cell is { won, lost } for real data, or null when the player didn't
-// play that surface that year (API-Tennis returns "" — treated as "no
-// data", not 0, by yearlyBreakdown() in the pipeline).
-function cellClass(cell, col){
-  if (!cell) return 'yr-na';
-  return `yr-col-${col}`;
-}
-function cellText(cell){
-  // export §3: one separator everywhere — a DASH. The hero card, surface rows and
-  // Total row already use won-lost; the year-table cells now match (was won/lost).
-  return cell ? `${cell.won}-${cell.lost}` : '—';
-}
-function sumCells(rows, key){
-  let won = 0, lost = 0, has = false;
-  for (const r of rows) {
-    if (r[key]) { won += r[key].won; lost += r[key].lost; has = true; }
-  }
-  return has ? { won, lost } : null;
-}
-function currentSeasonSummary(latestYear){
-  if (!latestYear) return '<span style="color:var(--text-faint);">No matches recorded this season yet</span>';
-  const parts = [];
-  if (latestYear.clay) parts.push(`<span class="yr-surf clay">Clay ${latestYear.clay.won}-${latestYear.clay.lost}</span>`);
-  if (latestYear.hard) parts.push(`<span class="yr-surf hard">Hard ${latestYear.hard.won}-${latestYear.hard.lost}</span>`);
-  if (latestYear.grass) parts.push(`<span class="yr-surf grass">Grass ${latestYear.grass.won}-${latestYear.grass.lost}</span>`);
-  return parts.length ? parts.join(' · ') : '<span style="color:var(--text-faint);">No matches recorded this season yet</span>';
-}
-// Current-season surface record with an ATP / Challenger & ITF tier filter, each
-// surface record clickable to reveal the underlying matches (opponent, score,
-// tournament, date). Driven by m.p{1,2}SeasonSurface (all-tier, per-surface match
-// lists). Falls back to the ATP-only text summary if that field isn't present
-// (e.g. a matches.json written before this field existed).
-function seasonSurfaceTierViewHtml(tierData, tier, colPrefix, seasonYear, playerKey){
-  const surfaces = [['clay', 'Clay'], ['hard', 'Hard'], ['grass', 'Grass']];
-  const total = surfaces.reduce((n, [s]) => n + ((tierData[s]?.won || 0) + (tierData[s]?.lost || 0)), 0);
-  if (total === 0) {
-    const scope = tier === 'atp' ? 'ATP ' : tier === 'chitf' ? 'Challenger / ITF ' : '';
-    return `<div class="yr-season-empty">No ${scope}singles matches recorded this season.</div>`;
-  }
-  const drillYear = seasonYear || (new Date().getFullYear());
-  return surfaces.map(([s, label]) => {
-    const rec = tierData[s] || { won: 0, lost: 0, matches: [] };
-    const n = rec.won + rec.lost;
-    if (n === 0) {
-      return `<div class="yr-surfrec disabled ovcol-${colPrefix}"><span class="yr-surf ${s}">${label}</span><span class="rec">—</span></div>`;
-    }
-    const id = `${tier}-${s}-${colPrefix}`;
-    // D2: the season rate through the one gate (1–4: the W–L alone; 5–9: greyed, "small sample" on hover).
-    const pct = maRateHtml(rec.won, n, { cls: 'rpct', note: 'title' });
-    // export §5: the surface row expands inline onto the SAME rich career-history
-    // renderer as the year-table cells (showOverviewMatches), so each match row
-    // carries the score→match-stats expander. Needs the player's career shard —
-    // if we don't have a key, fall back to a non-clickable record row.
-    if (!playerKey) {
-      return `<div class="yr-surfrec disabled ${s} ovcol-${colPrefix}"><span class="yr-surf ${s}">${label}</span><span class="rec">${rec.won}-${rec.lost}</span>${pct}</div>`;
-    }
-    const grp = `ovs${colPrefix}${tier}${s}`;
-    return `
-        <div class="yr-surfrec ${s} ovcol-${colPrefix}" id="seasonRec-${id}" onclick="showOverviewMatches('${playerKey}','${drillYear}','${s}','${colPrefix}','${tier}','seasonMatches-${id}','${grp}','seasonRec-${id}')">
-          <span class="yr-surf ${s}">${label}</span>
-          <span class="rec">${rec.won}-${rec.lost}</span>
-          ${pct}
-          <span class="chev">▸</span>
-        </div>
-        <div class="yr-drill" id="seasonMatches-${id}"></div>`;
-  }).join('');
-}
-// export §4: ONE tier control governs this tab (the top "Career records by tier"
-// segmented control). The old per-player ATP / Challenger&ITF toggle above the
-// surface rows is removed — this block now renders for whichever tier that single
-// top control selects. 'all' merges ATP + Challenger&ITF per surface.
-function mergeSeasonTierData(a, b){
-  const out = {};
-  for (const s of ['clay', 'hard', 'grass']){
-    const ca = a && a[s], cb = b && b[s];
-    const won = (ca?.won || 0) + (cb?.won || 0);
-    const lost = (ca?.lost || 0) + (cb?.lost || 0);
-    const matches = [...(ca?.matches || []), ...(cb?.matches || [])]
-      .sort((x, y) => String(y.date || '').localeCompare(String(x.date || '')));
-    out[s] = { won, lost, matches };
-  }
-  return out;
-}
-function seasonSurfaceBlockHtml(seasonSurface, colPrefix, latestYearRow, tier, playerKey){
-  const has = seasonSurface && (seasonSurface.atp || seasonSurface.chitf);
-  if (!has) return `<div class="yr-summary">${currentSeasonSummary(latestYearRow)}</div>`;
-  const atp = seasonSurface.atp || { clay: {}, hard: {}, grass: {} };
-  const chitf = seasonSurface.chitf || { clay: {}, hard: {}, grass: {} };
-  const data = tier === 'atp' ? atp : tier === 'chitf' ? chitf : mergeSeasonTierData(atp, chitf);
-  const scope = tier === 'atp' ? 'atp' : tier === 'chitf' ? 'chitf' : 'all';
-  return `
-    <div class="yr-season">
-      <div class="yr-season-head">
-        <span class="yr-season-lbl">This season · by surface</span>
-      </div>
-      <div class="yr-season-view" id="seasonView-${scope}-${colPrefix}">${seasonSurfaceTierViewHtml(data, scope, colPrefix, latestYearRow && latestYearRow.year, playerKey)}</div>
-    </div>`;
-}
-// Career-overview tier filter: 'all' (ATP + Challenger&ITF combined, default),
-// 'atp', or 'chitf'. Selecting a tier re-renders the whole Overview table +
-// career total for that tier. Challenger/ITF only exists 2021+, so older rows
-// show — under that tab.
-let overviewTier = 'all';
-let _overviewMatch = null;
+// ══ TEN-334 · Match analysis → Overview: the career spine's cell reader (careerByYear rows, TEN-313/TEN-324).
+// A cell is { won, lost }, or null when the row carries no figure for it (no split for that tier, or no match on
+// that surface). 'all' reads the row's all-tier figures; 'atp' / 'chitf' its tier split — a pre-2021 aggregate row
+// carries none (TEN-313: only a row holding tour-level matches only keeps an exact ATP split).
 function cellForTier(r, surf, tier){
   if (tier === 'all') return r[surf] || null;
   const t = r[tier];
@@ -11571,122 +11363,6 @@ function sumCellsTier(rows, key, tier){
   let won = 0, lost = 0, has = false;
   for (const r of rows){ const c = cellForTier(r, key, tier); if (c){ won += c.won; lost += c.lost; has = true; } }
   return has ? { won, lost } : null;
-}
-function setOverviewTier(t){
-  overviewTier = t;
-  // through ovPaint, not a bare rebuild: a player-profiles.json reload may have dropped a shard-loaded profile
-  if (_overviewMatch) ovPaint(_overviewMatch);
-}
-// A year-table cell for the active tier. All-tier rows (2021+) are clickable to
-// drill into that year+surface's matches; older/empty cells stay plain.
-function yrSurfCell(r, surf, colPrefix, playerKey, tier){
-  const cell = cellForTier(r, surf, tier);
-  const cls = cellClass(cell, surf);
-  const txt = cellText(cell);
-  // Clickable only for 2021+ rows, whose full all-tier match list we actually
-  // have. Pre-2021 numbers include Challenger/ITF results that no archive we have
-  // covers, so those rows stay non-clickable rather than show a misleading subset.
-  if (cell && r.allTier && playerKey){
-    const drillSurf = surf === 'total' ? 'all' : surf;
-    // §5: drill renders inline beneath THIS year's row (yrDrill-${col}-${year}),
-    // not into a shared bottom panel; groupTag scopes the row accordion per year.
-    return `<td class="${cls} yr-clickable" onclick="showOverviewMatches('${playerKey}','${r.year}','${drillSurf}','${colPrefix}','${tier}','yrDrill-${colPrefix}-${r.year}','ovd${colPrefix}y${r.year}','')">${txt}</td>`;
-  }
-  return `<td class="${cls}">${txt}</td>`;
-}
-function buildYearlyTable(name, rows, colPrefix, seasonSurface, playerKey, tier){
-  if (!rows || rows.length === 0) {
-    return `
-      <div class="yr-col">
-        <div class="yr-name">${name}</div>
-        <div class="acomingsoon" style="padding:16px 0;">No year-by-year stats found for this player.</div>
-      </div>
-    `;
-  }
-  const isP1 = colPrefix === 'p1';
-  const tint = isP1 ? ANALYSIS_P1_RGBA : ANALYSIS_P2_RGBA;
-  // export keeps the career record, win-% and "CAREER" label NEUTRAL — the per-player accent
-  // lives only on the hero border/gradient (careerBg/cardBd), not on these numbers.
-  // (README agrees: a win-% is a performance value, never identity blue.)
-  const recColor = 'var(--text)';
-  const pctColor = 'var(--text)';
-  const lblColor = 'var(--label)';
-
-  const bodyRows = rows.map(r => {
-    // `_placeholder` is set by alignYearlyPair() for a year the player has no
-    // row in but the *other* player does — so both tables span the same years.
-    // 'preEra' = before this player's debut ("not yet on tour"); 'future' = a
-    // current season they haven't played yet ("no matches yet"). A real row
-    // with all-null cells (e.g. an injury year) still reads "not yet on tour".
-    const isPreEra = r._placeholder ? true : (!r.total && !r.clay && !r.hard && !r.grass);
-    if (isPreEra) {
-      const label = r._placeholder === 'future' ? 'no matches yet' : 'not yet on tour';
-      return `<tr class="yr-preera"><td>${r.year}</td><td colspan="4">${label}</td></tr>`;
-    }
-    // §5: a full-width inline drill row sits directly beneath each clickable year
-    // (2021+ all-tier rows we actually have match lists for). It stays collapsed to
-    // zero height until a cell in this year is clicked.
-    const drillRow = (r.allTier && playerKey)
-      ? `<tr class="yr-dtr"><td class="yr-dcell" colspan="5"><div class="yr-drill" id="yrDrill-${colPrefix}-${r.year}"></div></td></tr>`
-      : '';
-    return `
-    <tr>
-      <td class="yr-year">${r.year}${(r.allTier === false && r.atp) ? '<span class="yr-atponly" title="ATP-level only — Challenger/ITF results aren&#39;t available this far back">ATP</span>' : ''}</td>
-      ${yrSurfCell(r, 'total', colPrefix, playerKey, tier)}
-      ${yrSurfCell(r, 'clay', colPrefix, playerKey, tier)}
-      ${yrSurfCell(r, 'hard', colPrefix, playerKey, tier)}
-      ${yrSurfCell(r, 'grass', colPrefix, playerKey, tier)}
-    </tr>${drillRow}
-  `;
-  }).join('');
-  const totals = { total: sumCellsTier(rows, 'total', tier), clay: sumCellsTier(rows, 'clay', tier), hard: sumCellsTier(rows, 'hard', tier), grass: sumCellsTier(rows, 'grass', tier) };
-  // D2: every career rate + its bar through the one gate (0 "—", 1–4 W–L only, 5–9 greyed + note, 10+ full).
-  const surfBarHtml = (cell, cls, label) => {
-    const n = cell ? cell.won + cell.lost : 0;
-    const bar = maGateBar(cell ? cell.won : 0, n, '');
-    const rate = maRateHtml(cell ? cell.won : 0, n, { note: 'title' });
-    const vHtml = n ? `${cell.won}-${cell.lost}${rate ? `<span class="v-pct"> · ${rate}</span>` : ''}` : '—';
-    return `<div class="bar-row"><span class="lbl ${cls}">${label}</span><div class="track ${cls}"><div style="width:${bar.w}%${bar.mode === 'small' ? '; background:' + MA_GREY : ''}"></div></div><span class="v">${vHtml}</span></div>`;
-  };
-  const totalN = totals.total ? totals.total.won + totals.total.lost : 0;
-  const totalPct = totals.total ? maRateHtml(totals.total.won, totalN, { text: totalN ? maPct(totals.total.won, totalN) + ' win' : null, color: pctColor, cls: 'pct' }) : '';
-  const heroHtml = totals.total ? `
-    <div class="yr-hero${isP1 ? ' yr-hero-p1' : ' yr-hero-p2'}" style="border-color:${tint(0.28)}; background:var(--surface);">
-      <div class="recrow">
-        <span class="rec" style="color:${recColor};">${totals.total.won}-${totals.total.lost}</span>
-        ${totalPct}
-        <span class="career-lbl" style="color:${lblColor};">Career</span>
-      </div>
-      <div class="bars">
-        ${surfBarHtml(totals.clay, 'clay', 'Clay')}
-        ${surfBarHtml(totals.hard, 'hard', 'Hard')}
-        ${surfBarHtml(totals.grass, 'grass', 'Grass')}
-      </div>
-      <div class="bar-note">Bar length = win rate on that surface</div>
-    </div>
-  ` : `
-    <div class="yr-hero yr-hero-empty" style="border-color:${tint(0.18)};">
-      <div class="msg">No career singles record on file<br>for this player in this tier.</div>
-    </div>
-  `;
-  return `
-    <div class="yr-col">
-      <div class="yr-name">${name}</div>
-      ${heroHtml}
-      ${seasonSurfaceBlockHtml(seasonSurface, colPrefix, rows[0], tier, playerKey)}
-      <table class="yr-table">
-        <thead><tr><th>Year</th><th class="h-total">Total</th><th class="h-clay">Clay</th><th class="h-hard">Hard</th><th class="h-grass">Grass</th></tr></thead>
-        <tbody>${bodyRows}</tbody>
-        <tfoot><tr>
-          <td>Total</td>
-          <td class="${cellClass(totals.total, 'total')}">${cellText(totals.total)}</td>
-          <td class="${cellClass(totals.clay, 'clay')}">${cellText(totals.clay)}</td>
-          <td class="${cellClass(totals.hard, 'hard')}">${cellText(totals.hard)}</td>
-          <td class="${cellClass(totals.grass, 'grass')}">${cellText(totals.grass)}</td>
-        </tr></tfoot>
-      </table>
-    </div>
-  `;
 }
 // ---- Year-table drill-down (TennisExplorer-style): click a year+surface number
 // to list those matches below.
@@ -12288,71 +11964,6 @@ function buildPointByPointHtml(m, entry, setNo){
   html += `</div>`;
   return html;
 }
-// §5: ONE renderer drives both drill surfaces — a season-surface row and a
-// year-table cell both call this, rendering the same rich career-history match
-// list inline into their own container. Only one drill is open per player column
-// (the "block"): opening a second closes the first. Every row whose box score or
-// point log is on file carries the score→match-stats expander (toggleFormPanel).
-const _openOverviewDrill = {};   // colPrefix -> currently-open containerId
-function _clearOverviewTrigger(id){ if (id){ const t = document.getElementById(id); if (t) t.classList.remove('expanded'); } }
-async function showOverviewMatches(playerKey, year, surface, colPrefix, tier, containerId, groupTag, triggerId){
-  tier = tier || 'all';
-  const container = document.getElementById(containerId);
-  if (!container) return;
-  const token = `${containerId}|${playerKey}|${year}|${surface}|${tier}`;
-  // Re-clicking the open selection toggles it closed.
-  if (container.dataset.token === token && container.innerHTML){
-    container.innerHTML = ''; container.dataset.token = '';
-    _clearOverviewTrigger(container.dataset.trigger); container.dataset.trigger = '';
-    if (_openOverviewDrill[colPrefix] === containerId) _openOverviewDrill[colPrefix] = '';
-    return;
-  }
-  // One drill open per column: close whichever was previously open here.
-  const prevId = _openOverviewDrill[colPrefix];
-  if (prevId && prevId !== containerId){
-    const prev = document.getElementById(prevId);
-    if (prev){ _clearOverviewTrigger(prev.dataset.trigger); prev.dataset.trigger = ''; prev.innerHTML = ''; prev.dataset.token = ''; }
-  }
-  _openOverviewDrill[colPrefix] = containerId;
-  container.dataset.token = token;
-  container.dataset.trigger = triggerId || '';
-  if (triggerId){ const t = document.getElementById(triggerId); if (t) t.classList.add('expanded'); }
-  container.innerHTML = `<div class="yr-drill-note">Loading matches…</div>`;
-  const all = await loadCareerHistory(playerKey);
-  if (container.dataset.token !== token) return; // superseded by a newer click
-  const list = all.filter(mm => String(mm.year) === String(year) && (surface === 'all' || mm.surface === surface) && (tier === 'all' || mm.level === tier));
-  const surfLabel = surface === 'all' ? 'All surfaces' : surface.charAt(0).toUpperCase() + surface.slice(1);
-  const tierLabel = tier === 'all' ? '' : (tier === 'atp' ? ' · ATP' : ' · Challenger & ITF');
-  const won = list.filter(mm => mm.won).length, lost = list.length - won;
-  const closeBtn = `<span class="yr-drill-close" onclick="showOverviewMatches('${playerKey}','${year}','${surface}','${colPrefix}','${tier}','${containerId}','${groupTag}','${triggerId || ''}')" title="Close">✕</span>`;
-  if (!list.length){
-    container.innerHTML = `<div class="yr-drill-head">${surfLabel} · ${year}${tierLabel}${closeBtn}</div><div class="yr-drill-note">No matches on record for this selection.</div>`;
-    requestAnimationFrame(() => container.scrollIntoView({ behavior: 'smooth', block: 'nearest' }));
-    return;
-  }
-  // Which of these rows can open, decided BEFORE any row is painted: the chevron
-  // is a promise that something is there, so it is only drawn where a box score
-  // or a point log is actually on file. Two ~25-100KB indexes, fetched once per
-  // session and shared with the Form tab — the per-row shards stay unfetched
-  // until a row is clicked.
-  const playerName = (_overviewMatch && _overviewMatch[colPrefix]) || '';
-  // TEN-314: every row opens THE match stats sheet (no stats on file = header wired, stats dashed).
-  const rows = list.map((mm, i) => {
-    const w = mm.won;
-    const dateStr = mm.date ? formatShortDate(new Date(mm.date + 'T00:00:00')) : '';
-    const meta = [mm.tournament || '', mm.round || ''].filter(Boolean).join(' · ');
-    const click = maRowOnclick({ key: playerKey, name: playerName, ek: mm.eventKey != null ? String(mm.eventKey) : null, date: mm.date, opp: mm.opponent });
-    return `<div class="yr-drill-row yr-drill-open"${click}>
-      <span class="yr-drill-wl ${w ? 'win' : 'loss'}">${w ? 'W' : 'L'}</span>
-      <span class="yr-drill-opp">${escapeHtml(mm.opponent)}</span>
-      ${careerScoreHtml(mm)}
-      <span class="yr-drill-meta">${escapeHtml(meta)}${dateStr ? ' · ' + dateStr : ''}</span>
-      <span class="yr-drill-chev">▸</span>
-    </div>`;
-  }).join('');
-  container.innerHTML = `<div class="yr-drill-head">${surfLabel} · ${year}${tierLabel} · <b>${won}-${lost}</b>${closeBtn}</div>${rows}`;
-  requestAnimationFrame(() => container.scrollIntoView({ behavior: 'smooth', block: 'nearest' }));
-}
 // Pads both players' year lists to a single shared year span so the two
 // tables line up row-for-row (per the design). Each player keeps their real
 // seasons; any year only the *other* player has is inserted as a placeholder —
@@ -12400,7 +12011,120 @@ function ovPaint(m){
   aPaint('aSectionOverview', buildYearlyTables(m));
   return loaded.then(() => { if (aBuilt(m, 'overview')) aPaint('aSectionOverview', buildYearlyTables(m)); });
 }
+// ══ TEN-334 · the Overview tab as the TEN-312 design file draws it (`overviewFor`, DF L2969–3181; markup DF L1933–2076,
+// pop-up DF L1484–1515), in its live variants: the tier control inside each career card (TV 'b'), the "Soft ink" card
+// (CVK 'e'), the name inside the card (NV 'b'). The file's review switchers (tvTabs / cvTabs / nvTabs) are review controls
+// and are not built. Data: careerByYear (TEN-324 spine) for the card, the season rows and the year table; the pop-up lists
+// career-history/{key}.json rows priced from match-closes/{key}.json through meRowFromCareer (R8 order, FH_BOOK_ORDER).
+// Rules: .claude/rules/modal-overview.md + modal-analysis.md (N2 walkovers, N3 spine, N8 Challenger/ITF prices, D2 gate, D4).
+// Colours: the design's own shades (fhS tokens); the career bars and the season-row accent carry player identity by name
+// order (A primary, B grey — D4 / modal-overview.md item 1), never the file's surface blues.
+const OV_TIERS = [['all', 'All'], ['atp', 'ATP'], ['chitf', 'Challenger & ITF']];
+const OV_SURFS = [['clay', 'Clay'], ['hard', 'Hard'], ['grass', 'Grass']];
+const OV_C = {
+  m2: fhS('5b6880', '--label'), text: fhS('e7e9ee', '--text'), m3: fhS('4b5672', '--label'),
+  dis: fhS('3a4250', '--label'), off: fhS('4a5261', '--label'), chev: fhS('5b9bff', '--periwinkle'),
+  card: fhS('10121b', '--surface'), cardLine: fhS('ffffff-090', '--line'), nameLine: fhS('ffffff-080', '--line'),
+  track: fhS('ffffff-090-fill', '--bar-track'), season: fhS('0b0f18', '--surface'), head: fhS('11161f', '--surface'),
+  rowLine: fhS('ffffff-040-line', '--line-soft'), totLine: fhS('ffffff-100', '--line-open'), totBg: fhS('0a0d14', '--surface'),
+  chip: fhS('6aaeff', '--periwinkle'), chipBg: fhS('5b9bff-120', '--seg-active'), legendChipBg: fhS('ffffff-060-fill', '--surface-inner'),
+  pa: 'var(--fh-pa)', pb: 'var(--fh-pb-fill)',
+};
+const OV_GRID = 'display:grid; grid-template-columns:1.1fr 1fr 1fr 1fr 1fr;';
+const OV_MONO = "font-family:'IBM Plex Mono',monospace;";
+// Per-open state: the tier (applies to both players, DF `maOvTier`), the open cell (DF `maOvCell`: 'i|year|surf', surf =
+// clay | hard | grass | total, year 'season' = this season) and the pop-up row whose sheet is open (DF `maFormSheet`).
+let _ov = { m: null, tier: 'all', cell: null, sel: null, rows: {} };
+function ovStateFor(m){ if (_ov.m !== m) _ov = { m, tier: 'all', cell: null, sel: null, rows: {} }; return _ov; }
+function setOverviewTier(t){
+  if (!_ov.m) return;
+  _ov.tier = t;
+  // through ovPaint, not a bare rebuild: a player-profiles.json reload may have dropped a shard-loaded profile
+  ovPaint(_ov.m);
+  if (_ov.cell) ovRenderPop();
+}
+const ovSeasonYear = () => String(new Date().getFullYear());
+// A row's cells list their matches only when career-history holds the same matches the count is made of: every 2021+
+// row (TEN-313: 2021+ totals = the history rows), and a pre-2021 row that keeps an exact ATP split (tour-level matches
+// only — the ATP archive). A pre-2021 all-tier aggregate counts Challenger/ITF matches no archive we hold carries, so its
+// count shows and it opens nothing (parked: data gap, not a design change).
+function ovListable(r){ return !!r && (r.allTier === true || (r.allTier === false && !!r.atp)); }
+const OV_NO_LIST = 'Match list not on file: before 2021 we hold ATP tour-level matches only, and this count includes Challenger and ITF matches.';
+const OV_NO_KEY = 'Match list not on file: this player has no id to look his matches up by.';
+const OV_NO_SPLIT = 'No tier split for this season: before 2021 we hold the season total only (All).';
+function ovRec(c){ return c && (c.won + c.lost) ? `${c.won}-${c.lost}` : '—'; }
+// One year-table cell (DF L2057 / L2058): a count opens the pop-up for that year and surface.
+function ovCellHtml(i, r, key, tier, pk, isTotal){
+  const c = cellForTier(r, key, tier), n = c ? c.won + c.lost : 0;
+  const cid = `${i}|${r.year}|${key}`, can = n > 0 && pk != null && ovListable(r), open = can && _ov.cell === cid;
+  const color = isTotal || n ? OV_C.text : OV_C.dis;
+  const chev = can ? `<span style="font-size:8px; color:${OV_C.chev}; margin-left:4px;">${open ? '▾' : '▸'}</span>` : '';
+  const why = n > 0 && pk == null ? ` title="${fhEsc(OV_NO_KEY)}"` : n > 0 && !ovListable(r) ? ` title="${fhEsc(OV_NO_LIST)}"`
+    : !n && tier !== 'all' && r.allTier === false && !r[tier] ? ` title="${fhEsc(OV_NO_SPLIT)}"` : '';
+  return `<span class="${can ? 'seg ov-cell ov-open' : 'ov-cell'}" data-ov-cell="${cid}"${can ? ` onclick="ovOpenCell('${cid}')"` : ''}${why} style="${OV_MONO} font-size:12.5px; color:${color}; width:fit-content; cursor:${can ? 'pointer' : 'default'}; border-radius:4px; padding:1px 5px;">${ovRec(c)}${chev}</span>`;
+}
+// One player's column: career card (DF L1942–1965), this season by surface (L1967–1988), year table (L2014–2073).
+function ovColumnHtml(i, name, pk, rows, real, tier){
+  const accent = i ? OV_C.pb : OV_C.pa;
+  const seg = maSeg('ov', OV_TIERS.map(([t, l]) => ({ label: fhEsc(l), on: tier === t, onclick: `setOverviewTier('${t}')` })));
+  // career record + win rate (D2: n 0 "—", 1–4 the W–L alone, 5–9 greyed + "small sample" on hover, 10+ full)
+  const cr = real.length ? sumCellsTier(real, 'total', tier) : null, cn = cr ? cr.won + cr.lost : 0;
+  const pct = maRateHtml(cr ? cr.won : 0, cn, { text: cn ? maPct(cr.won, cn) + ' win' : null, nopct: '', color: OV_C.text, note: 'title', cls: 'ov-career-pct', style: 'font-size:14px; font-weight:700;' });
+  const bars = OV_SURFS.map(([s, lbl]) => {
+    const c = real.length ? sumCellsTier(real, s, tier) : null, n = c ? c.won + c.lost : 0;
+    const bar = maGateBar(c ? c.won : 0, n, accent);
+    const w = bar.w ? Math.max(4, Math.min(96, Math.round(bar.w))) : 0;   // DF L3096: the drawn length is clamped 4–96
+    const rate = maRateHtml(c ? c.won : 0, n, { nopct: '', note: 'title' });
+    return `<div style="display:grid; grid-template-columns:50px 1fr auto; align-items:center; gap:12px;">`
+      + `<span style="font-size:12.5px; color:${OV_C.text};">${lbl}</span>`
+      + `<div style="height:7px; border-radius:4px; background:${OV_C.track}; overflow:hidden;"><div class="ov-bar" data-ov-bar="${s}" style="width:${w}%; height:100%; background:${bar.color};"></div></div>`
+      + `<span class="ov-surf-v" style="${OV_MONO} font-size:12px; color:${OV_C.m2}; white-space:nowrap;">${n ? `${c.won}-${c.lost}${rate ? ' · ' + rate : ''}` : '—'}</span></div>`;
+  }).join('');
+  const card = `<div class="ov-card" style="background:${OV_C.card}; border:var(--ma-hw,0.33px) solid ${OV_C.cardLine}; border-radius:16px; padding:22px 24px;">`
+    + `<div style="display:flex; align-items:center; gap:10px; padding-bottom:14px; margin-bottom:16px; border-bottom:var(--ma-hw,0.33px) solid ${OV_C.nameLine};"><span class="ov-name" style="font-size:15px; font-weight:700; white-space:nowrap;">${fhEsc(name)}</span><span style="${OV_MONO} font-size:9.5px; letter-spacing:0.14em; color:${OV_C.m2};">CAREER RECORD</span></div>`
+    + `<div style="display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap;"><div style="display:flex; align-items:baseline; gap:12px;">`
+    + `<span class="ov-career-rec" style="${OV_MONO} font-size:31px; font-weight:800; line-height:1; letter-spacing:-0.02em; white-space:nowrap;">${ovRec(cr)}</span>${pct}`
+    + `<span style="font-size:10px; ${OV_MONO} letter-spacing:0.16em; color:${OV_C.m2};">CAREER</span></div>`
+    + `<span style="flex-basis:100%; height:0;"></span>${seg}</div>`
+    + `<div style="display:flex; flex-direction:column; gap:11px; margin-top:18px;">${bars}<div style="font-size:10px; color:${OV_C.m3}; margin-top:2px;">Bar length = win rate on that surface</div></div></div>`;
+  // this season by surface: a row opens the pop-up for the season's matches on that surface
+  const yr = ovSeasonYear(), sr = real.find(r => String(r.year) === yr) || null;
+  const season = OV_SURFS.map(([s, lbl]) => {
+    const c = sr ? cellForTier(sr, s, tier) : null, n = c ? c.won + c.lost : 0;
+    const cid = `${i}|season|${s}`, can = n > 0 && pk != null && ovListable(sr);
+    const rate = maRateHtml(c ? c.won : 0, n, { nopct: '', note: 'title', color: OV_C.text });
+    return `<div><div class="${can ? 'seg ov-srow ov-open' : 'ov-srow'}" data-ov-cell="${cid}"${can ? ` onclick="ovOpenCell('${cid}')"` : ''} style="display:flex; align-items:center; gap:14px; background:${OV_C.season}; border:var(--ma-hw,0.33px) solid ${OV_C.cardLine}; border-left:3px solid ${accent}; border-radius:10px; padding:12px 15px; cursor:${can ? 'pointer' : 'default'};">`
+      + `<span style="width:44px; font-size:13px; color:${OV_C.text};">${lbl}</span>`
+      + `<span style="width:56px; ${OV_MONO} font-size:14px; font-weight:700;">${ovRec(c)}</span>`
+      + `<span style="width:44px; ${OV_MONO} font-size:12px; font-weight:700; color:${OV_C.text};">${n ? rate : '—'}</span>`
+      + `<span style="margin-left:auto; color:${OV_C.m2}; font-size:14px;">${can ? '›' : ''}</span></div></div>`;
+  }).join('');
+  // year table
+  const head = `<div style="${OV_GRID} padding:11px 14px; background:${OV_C.head}; font-size:11px; letter-spacing:0.12em; text-transform:uppercase; color:${OV_C.m2};"><span>Year</span><span>Total</span><span>Clay</span><span>Hard</span><span>Grass</span></div>`;
+  const body = rows.length ? rows.map(r => {
+    if (r._placeholder) {
+      // 'future' = a season the other player has and this one has not played yet. DESIGN GAP G19: the file draws only
+      // "not yet on tour" (before a debut); the same row pattern carries it.
+      const lbl = r._placeholder === 'future' ? 'no matches yet' : 'not yet on tour';
+      return `<div class="ov-yr ov-yr-off" style="${OV_GRID} padding:10px 14px; border-top:var(--ma-hw,0.33px) solid ${OV_C.rowLine}; align-items:center;"><span style="${OV_MONO} font-size:12.5px; color:${OV_C.off}; font-style:italic;">${fhEsc(r.year)}</span><span style="grid-column:2 / 6; font-size:12px; color:${OV_C.off}; font-style:italic;">${lbl}</span></div>`;
+    }
+    // TEN-313 (N3): "ATP" only on a pre-2021 row that holds tour-level matches only (it keeps an exact ATP split)
+    const badge = r.allTier === false && r.atp ? `<span class="ov-atp" style="font-size:8px; font-weight:700; letter-spacing:0.06em; color:${OV_C.chip}; background:${OV_C.chipBg}; border-radius:3px; padding:1px 4px;">ATP</span>` : '';
+    return `<div class="ov-yr" data-ov-year="${fhEsc(r.year)}" style="${OV_GRID} padding:10px 14px; border-top:var(--ma-hw,0.33px) solid ${OV_C.rowLine}; align-items:center;">`
+      + `<span style="${OV_MONO} font-size:12.5px; font-weight:700; display:flex; align-items:center; gap:6px;">${fhEsc(r.year)}${badge}</span>`
+      + ovCellHtml(i, r, 'total', tier, pk, true) + OV_SURFS.map(([s]) => ovCellHtml(i, r, s, tier, pk, false)).join('') + '</div>';
+  }).join('')
+    // DESIGN GAP G20: a player with no career record on file (the file always has one) — one row in the not-on-tour style
+    : `<div class="ov-yr ov-yr-off" style="padding:10px 14px; border-top:var(--ma-hw,0.33px) solid ${OV_C.rowLine}; font-size:12px; color:${OV_C.off}; font-style:italic;">No career record on file for this player.</div>`;
+  const tot = [['total'], ...OV_SURFS].map(([s]) => { const c = real.length ? sumCellsTier(real, s, tier) : null; return `<span style="${OV_MONO} font-size:12.5px; font-weight:700; color:${OV_C.text};">${ovRec(c)}</span>`; }).join('');
+  const table = `<div class="ov-table" style="margin-top:16px; border:var(--ma-hw,0.33px) solid ${OV_C.cardLine}; border-radius:12px; overflow:hidden;">${head}${body}`
+    + `<div class="ov-total" style="${OV_GRID} padding:12px 14px; border-top:var(--ma-hw,0.33px) solid ${OV_C.totLine}; background:${OV_C.totBg}; align-items:center;"><span style="font-size:12px; font-weight:700;">Total</span>${tot}</div></div>`;
+  return `<div class="ov-col" data-ov-p="${i}">${card}`
+    + `<div style="display:flex; align-items:center; justify-content:space-between; gap:8px 12px; margin:18px 0 10px; flex-wrap:wrap;"><span style="font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:${OV_C.m2};">This season · by surface</span></div>`
+    + `<div style="display:flex; flex-direction:column; gap:8px;">${season}</div>${table}</div>`;
+}
 function buildYearlyTables(m){
+  const S = ovStateFor(m);
   const y1 = ovCareerByYear(m.p1Key), y2 = ovCareerByYear(m.p2Key);
   // A player whose profile is still loading would otherwise paint as "not yet on tour" for a moment.
   if ([[m.p1Key, y1], [m.p2Key, y2]].some(([k, y]) => !y && k != null && !_ovProfileSettled.has(String(k)))) {
@@ -12409,39 +12133,129 @@ function buildYearlyTables(m){
   if (!y1 && !y2) {
     return `<div class="acomingsoon">Year-by-year records need the stats source — not connected for this match.</div>`;
   }
-  _overviewMatch = m;
-  // Re-render replaces every drill container, so drop the open-drill tracker to
-  // avoid pointing at a stale (now-empty) container id.
-  _openOverviewDrill.p1 = ''; _openOverviewDrill.p2 = '';
-  const tier = overviewTier;
+  const tier = S.tier;
   const [p1Rows, p2Rows] = alignYearlyPair(y1 || [], y2 || []);
-  // TEN-313 (N3): "ATP" only on a pre-2021 row that holds tour-level matches only (it
-  // carries an atp split); a provider all-tier aggregate carries none and is not badged.
-  const hasAtpOnly = [...(y1 || []), ...(y2 || [])].some(r => r && r.allTier === false && r.atp);
-  const legend = (tier === 'all' && hasAtpOnly)
-    ? `<div class="yr-legend">Recent seasons include ATP + Challenger + ITF. <span class="yr-atponly">ATP</span> marks older seasons where only ATP-level records are available.</div>`
-    : (tier === 'chitf'
-      ? `<div class="yr-legend">Challenger &amp; ITF results are tracked from 2021 onward; earlier seasons show —.</div>`
-      : '');
-  const tierToggle = ['all', 'atp', 'chitf'].map(t => {
-    const label = t === 'all' ? 'All' : (t === 'atp' ? 'ATP' : 'Challenger & ITF');
-    return `<span class="opt${tier === t ? ' active' : ''}" onclick="setOverviewTier('${t}')">${label}</span>`;
-  }).join('');
-  // Warm the drill-down shards for the two players on this card while the modal
-  // paints, so the first cell click renders without a visible fetch.
-  [m.p1Key, m.p2Key].forEach(k => { if (k != null) loadCareerHistory(k); });
-  return `
-    <div class="yr-tierhead">
-      <span class="yr-tierlbl">Career records by tier</span>
-      <div class="yr-tiertoggle">${tierToggle}</div>
-    </div>
-    <div class="yr-grid">
-      ${buildYearlyTable(m.p1, p1Rows, 'p1', m.p1SeasonSurface, m.p1Key, tier)}
-      ${buildYearlyTable(m.p2, p2Rows, 'p2', m.p2SeasonSurface, m.p2Key, tier)}
-    </div>${legend}
-  `;
+  // Warm the pop-up's shards for the two players while the tab paints, so the first cell click renders without a fetch.
+  [m.p1Key, m.p2Key].forEach(k => { if (k != null) { loadCareerHistory(k); fhLoadCloses(k); } });
+  const legendChip = `<span style="font-size:9px; font-weight:700; color:${OV_C.m2}; background:${OV_C.legendChipBg}; border-radius:3px; padding:1px 5px;">ATP</span>`;
+  return `<div class="ov-pane" style="font-family:'Hanken Grotesk',system-ui,sans-serif; color:${OV_C.text}; line-height:normal;">`
+    + `<div class="ov-grid" style="display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:24px;">`
+    + ovColumnHtml(0, m.p1, m.p1Key, y1 ? p1Rows : [], y1 || [], tier) + ovColumnHtml(1, m.p2, m.p2Key, y2 ? p2Rows : [], y2 || [], tier) + '</div>'
+    + `<div class="ov-legend" style="text-align:center; font-size:12px; color:${OV_C.m2}; margin-top:22px; line-height:1.5;">Recent seasons include ATP + Challenger + ITF. ${legendChip} marks older seasons where only ATP-level records are available.</div></div>`;
 }
 
+// ---- the pop-up: every match behind a clicked count (DF L1484–1515 + overviewFor pop, L3119–3157) ----
+// Rows = career-history for that player, year, surface and tier (walkovers out, N2), newest first, each priced by
+// meRowFromCareer (the R8 order, one book and one source per match). Challenger / ITF rows carry no price (N8).
+// Record = the rows; Win rate through the D2 gate on n; Avg price and 1u flat over the priced rows (1u through the gate
+// on the priced n, as Form's flat 1u); the sub-line names the priced count out of n.
+function ovOpenCell(cid){
+  const S = _ov; if (!S.m) return;
+  S.cell = S.cell === cid ? null : cid; S.sel = null;
+  aPaint('aSectionOverview', buildYearlyTables(S.m));
+  ovRenderPop();
+  if (!S.cell) return;
+  const i = +cid.split('|')[0], key = i ? S.m.p2Key : S.m.p1Key, m = S.m;
+  Promise.all([loadCareerHistory(key), fhLoadCloses(key)]).then(() => { if (_ov.m === m && _ov.cell === cid) ovRenderPop(); });
+}
+function ovCloseCell(){
+  const S = _ov; S.cell = null; S.sel = null; S._popKey = null;
+  const h = document.getElementById('ovPop'); if (h) h.innerHTML = '';
+  if (S.m && aBuilt(S.m, 'overview')) aPaint('aSectionOverview', buildYearlyTables(S.m));
+}
+// The pop-up model for the open cell, or null while its shards load. state: 'ready' | 'loading' | 'failed'.
+function ovPopModel(){
+  const S = _ov, m = S.m; if (!m || !S.cell) return null;
+  const [pi, yk, surf] = S.cell.split('|'), i = +pi, key = i ? m.p2Key : m.p1Key, name = i ? m.p2 : m.p1;
+  const year = yk === 'season' ? ovSeasonYear() : yk, tier = S.tier;
+  const k = String(key);
+  const M = { i, key, name, year, surf, tier, rows: [], state: 'ready' };
+  const answered = k in _careerHistoryShards && k in _fhCl;
+  // not answered: still loading, or a load failed (not cached — a second click on the count retries)
+  if (!answered) { M.state = (!(k in _careerHistoryShards) && _careerHistoryPromises[k]) || (!(k in _fhCl) && _fhClP[k]) ? 'loading' : 'failed'; return M; }
+  const cl = _fhCl[k];
+  (_careerHistoryShards[k] || []).forEach((x, idx) => {
+    if (!x || String(x.year) !== year) return;
+    if (surf !== 'total' && x.surface !== surf) return;
+    if (tier !== 'all' && x.level !== tier) return;
+    const r = meRowFromCareer(x, cl, k, name, idx);
+    if (r.wo) return;                                         // N2: a walkover is not a match played
+    if (x.level !== 'atp') { r.price = null; r.oppPrice = null; r.book = null; r.src = null; }   // N8
+    r.mid = fhSafeId('ov' + k + '_' + idx);
+    M.rows.push(r);
+  });
+  M.rows.sort((a, b) => String(b.date || '').localeCompare(String(a.date || '')));
+  return M;
+}
+function ovPopHtml(M){
+  const surfLbl = M.surf === 'total' ? 'All surfaces' : (OV_SURFS.find(x => x[0] === M.surf) || [0, M.surf])[1];
+  const tierLbl = M.tier === 'atp' ? 'ATP' : M.tier === 'chitf' ? 'Challenger & ITF' : 'All tiers';
+  const title = `${M.name} · ${surfLbl} · ${M.year}`;
+  const close = 'ovCloseCell()';
+  if (M.state !== 'ready') {
+    // DESIGN GAP G21: the file draws no loading or failed state for this pop-up; the frame carries one line
+    const msg = M.state === 'loading' ? 'Loading matches…' : 'The match list did not load. Close this and open the count again.';
+    return maPopFrame({ cls: 'ov-pop', title, sub: `${tierLbl} · closing odds`, maxWidth: 900, onClose: close,
+      body: `<div class="ov-pop-${M.state}" style="padding:28px 16px; text-align:center; font-size:12.5px; color:${OV_C.m2};">${msg}</div>` });
+  }
+  const rows = M.rows, n = rows.length, w = rows.filter(r => r.won).length;
+  const priced = rows.filter(r => r.price != null), np = priced.length;
+  const pl = priced.reduce((a, r) => a + (r.won ? r.price - 1 : -1), 0);
+  const avg = np ? priced.reduce((a, r) => a + r.price, 0) / np : null;
+  const up = fhS('3dd68c', '--positive'), dn = fhS('e0616f', '--negative');
+  const stats = `<div style="display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:8px;">`
+    + meStatBox('Record', n ? `${w}–${n - w}` : '—', OV_C.text, true)
+    + meRateBox('Win rate', w, n, null, OV_C.text, true)
+    + meStatBox('Avg price', avg == null ? '—' : avg.toFixed(2), OV_C.text, true)
+    + ovFlatBox(np, n, pl, priced, pl >= 0 ? up : dn) + '</div>';
+  const table = maMatchRowsHtml([{ title: null, rows: rows.map(r => ({
+    date: fhDDMM(r.date) + '.', won: r.won, opp: r.opp || FH_DASHC,
+    event: r.tourn || FH_DASHC, eventSub: M.surf === 'total' && r.surface ? r.surface : '',
+    rd: r.round || FH_DASHC, sets: r.pS != null ? `${r.pS} - ${r.oS}` : FH_DASHC,
+    // DESIGN GAP G22: the file's rows never retire; a retirement carries "ret." after its set scores (modal-overview.md item 1)
+    scores: r.sets ? r.sets.map(x => x[0] + '-' + x[1]).join(', ') : FH_DASHC, ret: !!r.ret,
+    price: r.price != null ? fhOdd(r.price) : FH_DASHC, oppPrice: r.oppPrice != null ? fhOdd(r.oppPrice) : FH_DASHC,
+    priceTip: r.book === 'B' ? fhSrcTitle(r) + ' (no Pinnacle close for this match)' : null,
+    selected: _ov.sel === r.mid, click: ` onclick="ovOpenRow('${r.mid}')"`, attrs: ` data-ov-mid="${r.mid}"`,
+  })) }], { cols: ['date', 'sq', 'opp', 'event', 'rd', 'sets', 'scores', 'price', 'oppPrice'],
+    grid: '50px 10px minmax(0,1.3fr) minmax(0,1fr) 34px 38px minmax(0,1.1fr) 42px 42px',
+    labels: ['Date', '', 'Opponent', 'Event', 'Rd', 'Sets', 'Set scores', 'Price', 'Opp'], inset: 22,
+    empty: 'No matches on file for this selection.' });
+  _ov.rows = {}; rows.forEach(r => { _ov.rows[r.mid] = r; });
+  const foot = `Every match behind this record, newest first. Price = his closing price, Opp = the opponent's. Click a match for its stats.`;
+  return maPopFrame({ cls: 'ov-pop', title, sub: `${tierLbl} · closing odds · ${np} of ${n} priced`, maxWidth: 900, onClose: close,
+    body: stats + `<div style="margin:0 -22px;">${table}</div>`, foot });
+}
+// "At 1u flat" (DF L1490): flat 1u at the close over the priced rows, through the D2 gate on the priced n (Form's flat 1u).
+// Its basis — the priced count, the book, and the retirement settlement note (TEN-325, one constant) — rides in the shared
+// tooltip on the figure, so the file's one-line footnote keeps its place.
+function ovFlatBox(np, n, pl, priced, col){
+  const R = maRate(0, np, { text: fhSigned(pl, 1, 'u').replace(/^(?=\d)/, '±'), nopct: '—' });
+  const core = window.MarketEdgeCore;
+  const tip = `Flat 1u at the closing price on ${np} priced of ${n} matches.${np ? ' Prices: ' + fhSourceNote(priced) + '.' : ''} ${core ? core.RET_SETTLE_NOTE : ''}`;
+  const v = maTipHtml(`<span class="ov-flat" tabindex="0" data-ret-note="1">${fhEsc(R.txt)}</span>`, fhEsc(tip), { wrap: 260, popStyle: 'bottom:calc(100% + 8px); left:auto; right:0; transform:none;' });
+  return meStatBox('At 1u flat', v, R.mode === 'full' ? col : MA_GREY, true, R.mode === 'small');
+}
+function ovRenderPop(){
+  const S = _ov;
+  const card = document.querySelector('#analysisModal .modal-analysis') || document.body;
+  let host = document.getElementById('ovPop');
+  if (!host || host.parentNode !== card){ if (host) host.remove(); host = document.createElement('div'); host.id = 'ovPop'; card.appendChild(host); }
+  const M = S.cell ? ovPopModel() : null;
+  host.innerHTML = M ? ovPopHtml(M) : '';
+  // the same pop-up re-rendered (its shards landed, a row selected) keeps its place: no second entrance
+  if (M && S._popKey === S.cell) maPopNoReplay(host);
+  S._popKey = M ? S.cell : null;
+}
+// A pop-up row opens the one match stats sheet (DoD item 8), dated DD.MM.YY (DF L3140), and keeps the selected wash.
+function ovOpenRow(mid){
+  const S = _ov, r = S.rows[mid]; if (!S.m || !r) return;
+  const i = +String(S.cell || '0').split('|')[0];
+  fhStateFor(S.m).sheetMap[mid] = { r, aName: i ? S.m.p2 : S.m.p1, aKey: String(i ? S.m.p2Key : S.m.p1Key), bName: r.opp, bKey: r.oppKey };
+  S.sel = mid;
+  ovRenderPop();
+  fhOpenSheet(mid);
+}
 // --- Weather tab (Open-Meteo forecast at match time) ---
 // Bucket thresholds match the ones used for the (currently unavailable)
 // "record by temperature/wind" splits, so the forecast labels and the
@@ -13557,12 +13371,14 @@ function maSmallChip(n){
 //   pbp    DF L1724  sheet point-by-point set tabs      track padding 2 radius 8, item 5px 12px radius 6, 11px
 //   me     DF L1524/1804  Market edge view / scope / line pop-up  track padding 2 radius 8, item radius 6, 12px
 //   readme README §4.1 (no file site carries it)        track padding 3 radius 10 gap 2, item 6px 12px radius 8, 12.5px
+//   ov     DF L1954 Overview tier control               track padding 3 radius 9 gap 2, item 6px 13px radius 6, 11.5px
 const MA_SEG = {
   // colours = the design's own shade per geometry (founder 2026-09-29): tb/tl track fill/line, sb/sl selected fill/line
   sheet: { track: 'gap:3px; padding:3px; border-radius:9px;', item: 'padding:5px 12px; border-radius:7px; font-size:11px;', tb: '06070a', tl: 'ffffff-090', sb: '5b9bff-220', sl: '5b9bff-450' },   // DF L1689 + segF L3014
   pbp: { track: 'gap:3px; padding:2px; border-radius:8px;', item: 'padding:5px 12px; border-radius:6px; font-size:11px;', tb: '0a0d13', tl: 'ffffff-090', sb: '5b9bff-220', sl: '5b9bff-450' },     // DF L1725 + segF L4838
   me: { track: 'gap:3px; padding:2px; border-radius:8px;', item: 'padding:5px 12px; border-radius:6px; font-size:12px;', tb: '0c0e16', tl: 'ffffff-060', sb: '5b9bff-160', sl: '5b9bff-220-line' },      // DF L1804 + segT L3373
   readme: { track: 'gap:2px; padding:3px; border-radius:10px;', item: 'padding:6px 12px; border-radius:8px; font-size:12.5px;', tb: '0c0e16', tl: 'ffffff-050', sb: '5b9bff-160', sl: '5b9bff-220-line' },  // README §4.1: inner box, hairline soft
+  ov: { track: 'gap:2px; padding:3px; border-radius:9px;', item: 'padding:6px 13px; border-radius:6px; font-size:11.5px;', tb: '0a0d13', tl: 'ffffff-090', sb: '5b9bff-220', sl: '5b9bff-450' },   // DF L1954 + tierTabs L2973
 };
 // items: [{ label, on, onclick, disabled?, title? }] (label is markup: callers escape). o.center = the sheet's
 // centred track. Selected = README §3 "selected segment" tile + primary text; transitions 140ms (.ma-seg-item).
@@ -13630,7 +13446,7 @@ function maMatchRowsHtml(groups, opts){
   //   o.grid = their track sizes; o.labels then names those columns. That geometry is DF's table variant: gap 8, head
   //   padding '7px 28px 6px' between a 0.06 and a 0.09 hairline, not sticky, each row a 0.03 hairline under it; set inset
   //   (the file's 22) for the row wrapper. Row extras there: event, score, price, priceTip (shared tooltip body), oppPrice,
-  //   pnl + pnlColor, line + lineColor.
+  //   pnl + pnlColor, line + lineColor, sets + scores (the Overview pop-up), eventSub (a muted " · surface" after the event).
   const o = opts || {}, esc = s => escapeHtml(s == null ? '' : String(s));
   if (o.cols){
     const S = (k, f) => `var(--ma-s-${k}, var(${f}))`;
@@ -13691,9 +13507,13 @@ const MA_ROW_CELLS = {
   date: { cell: (r, x) => `<span style="${x.mono} font-size:10.5px; color:${x.S('5b6880', '--label')};">${x.esc(r.date)}</span>` },
   sq: { cell: (r, x) => `<span style="width:8px; height:8px; border-radius:2px; background:${x.wl(r)};"></span>` },
   opp: { cell: (r, x) => `<span${r.oppAttrs || ''}${x.t(r.oppTitle)} style="font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${x.esc(r.opp)}</span>` },
-  event: { cell: (r, x) => `<span style="font-size:11.5px; color:${x.S('8b96b5', '--text-soft')}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${x.esc(r.event)}</span>` },
+  event: { cell: (r, x) => `<span style="font-size:11.5px; color:${x.S('8b96b5', '--text-soft')}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${x.esc(r.event)}${r.eventSub ? `<span style="color:${x.S('4b5672', '--label')};"> · ${x.esc(r.eventSub)}</span>` : ''}</span>` },
   rd: { cell: (r, x) => `<span style="${x.mono} font-size:10px; color:${x.S('5b6880', '--label')};">${x.esc(r.rd)}</span>` },
   score: { cell: (r, x) => `<span style="${x.mono} font-size:10.5px; color:${x.S('8b96b5', '--text-soft')}; white-space:nowrap;">${x.esc(r.score)}</span>` },
+  // the Overview pop-up's two score columns (DF L1503–1504): sets won in the result colour, then the set scores
+  sets: { cell: (r, x) => `<span style="${x.mono} font-size:11px; font-weight:700; color:${x.wl(r)}; white-space:nowrap;">${x.esc(r.sets)}</span>` },
+  // r.ret: the design's "ret." span (DF L1997) — loss red when this player retired, neutral when his opponent did
+  scores: { cell: (r, x) => `<span style="${x.mono} font-size:10.5px; color:${x.S('8b96b5', '--text-soft')}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${x.esc(r.scores)}${r.ret ? `<span class="ma-ret" style="font-weight:400; color:${r.won ? x.S('8b96b5', '--text-soft') : x.S('e0616f', '--negative')}; margin-left:5px;">ret.</span>` : ''}</span>` },
   price: { right: true, cell: (r, x) => (r.priceTip
     ? maTipHtml(`<span tabindex="0" style="${x.mono} font-size:11px; font-weight:700; text-align:right;">${x.esc(r.price)}</span>`, x.esc(r.priceTip), { cls: 'ma-row-tip', style: 'justify-self:end;' })
     : `<span style="${x.mono} font-size:11px; font-weight:700; text-align:right;">${x.esc(r.price)}</span>`) },
@@ -19492,6 +19312,8 @@ function openAnalysisModal(matchId, tab){
   _me = null; _pg = null;
   const mePopEl = document.getElementById('mePop'); if (mePopEl) mePopEl.innerHTML = '';
   if (typeof trCloseRoi === 'function') trCloseRoi();
+  // TEN-334: every open starts the Overview from its defaults (tier All, no pop-up), the same match reopened included
+  const ovPopEl = document.getElementById('ovPop'); if (ovPopEl) ovPopEl.innerHTML = ''; _ov = { m: null, tier: 'all', cell: null, sel: null, rows: {} };
   _aOdds = { m:m, novig:false, market:'Match Winner', mv:null };
 
   const first = (tab && A_TAB_BUILD[tab]) ? tab : _aLastTab;
@@ -19534,7 +19356,7 @@ function printAnalysisReport(){
 
 // Closing leaves no layer behind: the stats sheet and any Market edge pop-up go too (a hidden pop-up would keep
 // answering Esc anywhere on the site — review 2026-09-28).
-function closeAnalysisModal(){ document.getElementById('analysisModal').classList.remove('open'); if (typeof fhCloseSheet === 'function') fhCloseSheet(); if (typeof trCloseRoi === 'function') trCloseRoi(); const mp = document.getElementById('mePop'); if (mp) mp.innerHTML = ''; }
+function closeAnalysisModal(){ document.getElementById('analysisModal').classList.remove('open'); if (typeof fhCloseSheet === 'function') fhCloseSheet(); if (typeof trCloseRoi === 'function') trCloseRoi(); const mp = document.getElementById('mePop'); if (mp) mp.innerHTML = ''; const op = document.getElementById('ovPop'); if (op) op.innerHTML = ''; if (typeof _ov === 'object' && _ov){ _ov.cell = null; _ov._popKey = null; } }
 function setActiveButton(groupEl, clickedBtn){
   groupEl.querySelectorAll('button').forEach(b => b.classList.remove('active'));
   clickedBtn.classList.add('active');

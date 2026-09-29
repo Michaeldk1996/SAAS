@@ -352,29 +352,18 @@ const tm = (o) => Object.assign({ p1: 'C. Alcaraz', p1Key: '1', p2: 'X', p2Key: 
     }
     return html.slice(m.index + 1, k + 1);
   };
-  const sb = {};
-  vm.createContext(sb);
-  vm.runInContext([
-    'var overviewTier = "all", _overviewMatch = null, _openOverviewDrill = { p1: "", p2: "" }, playerProfiles = {};',
-    // TEN-324: the Overview reads careerByYear off the profile spine, so the rows go in through playerProfiles
-    ...(html.match(/\nconst _ovProfileSettled = [^\n]*/g) || []).map((l) => l.trim()),
-    'var ANALYSIS_P1_RGBA = (a) => "rgba(0,0,0," + a + ")", ANALYSIS_P2_RGBA = ANALYSIS_P1_RGBA;',
-    'function loadCareerHistory() {} function seasonSurfaceBlockHtml() { return ""; }',
-    // TEN-314 D2: the one sample gate the career rates go through
-    ...(html.match(/\nconst (MA_GREY|MA_SMALL_NOTE) = [^\n]*/g) || []).map((l) => l.trim()),
-    ...['tourxSampleGate', 'maGate', 'maPct', 'maRate', 'maRateHtml', 'maGateBar', 'maSmallNote'].map(fnSource),
-    ...['cellClass', 'cellText', 'cellForTier', 'sumCellsTier', 'yrSurfCell', 'buildYearlyTable', 'alignYearlyPair', 'ovCareerByYear', 'buildYearlyTables'].map(fnSource),
-  ].join('\n'), sb);
+  // TEN-334: the Overview's real builder, sliced and run (tools/ten334-overview-vm.mjs); rows go in through playerProfiles.
+  const { overviewVM } = await import('./ten334-overview-vm.mjs');
   const agg = { year: '2018', allTier: false, total: wl(18, 12), clay: null, hard: wl(18, 12), grass: null, indoor: null, atp: null, chitf: null };
   const tour = { year: '2017', allTier: false, total: wl(2, 1), clay: null, hard: wl(2, 1), grass: null, indoor: null, atp: { total: wl(2, 1), clay: null, hard: wl(2, 1), grass: null, indoor: null }, chitf: null };
-  const out = (rows) => { sb.playerProfiles[7] = { careerByYear: rows }; return sb.buildYearlyTables({ p1: 'A', p2: 'B', p1Key: 7, p2Key: null }); };
-  const badge = /<td class="yr-year">2018<span class="yr-atponly"/;
+  const out = (rows) => overviewVM(html, { profiles: { 7: { careerByYear: rows } } }).buildYearlyTables({ p1: 'A', p2: 'B', p1Key: 7, p2Key: null });
+  const yearRow = (h, y) => { const i = h.indexOf(`data-ov-year="${y}"`); assert.ok(i >= 0, 'year row ' + y); return h.slice(i, h.indexOf('</span>', i)); };
   // Mutation: revert the badge condition to `r.allTier === false` → the aggregate row is badged ATP again.
-  check('N3 modal: an all-tier aggregate year is NOT badged "ATP", and no ATP legend is printed', () => {
-    const h = out([agg]); assert.ok(!badge.test(h)); assert.ok(!/marks older seasons/.test(h));
+  check('N3 modal: an all-tier aggregate year is NOT badged "ATP"', () => {
+    assert.ok(!/class="ov-atp"/.test(yearRow(out([agg]), '2018')));
   });
-  check('control: a tour-level-only pre-window year IS badged "ATP" with its legend', () => {
-    const h = out([tour]); assert.ok(/<td class="yr-year">2017<span class="yr-atponly"/.test(h)); assert.ok(/marks older seasons/.test(h));
+  check('control: a tour-level-only pre-window year IS badged "ATP"', () => {
+    assert.ok(/class="ov-atp"/.test(yearRow(out([tour]), '2017')));
   });
 
   console.log(`\nten313-records: ${pass} passed, ${fail} failed.`);

@@ -128,7 +128,9 @@ test('every match row opens the sheet: Market edge and Tournament rows unconditi
   const me = slice('meRowOf');   // TEN-336: the Market edge pop-up rows are maMatchRowsHtml rows; meRowOf hands each its opener
   assert.ok(me.includes(`click: \` onclick="meOpenRow('\${r.mid}')"\``) && !/meSheetOk|\? ` onclick/.test(me));
   assert.ok(!html.includes('function meSheetOk('), 'the stats-on-file gate is gone');
-  assert.match(slice('showOverviewMatches'), /const click = maRowOnclick\(\{ key: playerKey,/);
+  // TEN-334: the Overview pop-up rows are maMatchRowsHtml rows; each opens the sheet through ovOpenRow → fhOpenSheet
+  assert.ok(slice('ovPopHtml').includes(`click: \` onclick="ovOpenRow('\${r.mid}')"\``));
+  assert.match(slice('ovOpenRow'), /fhStateFor\(S\.m\)\.sheetMap\[mid\] = \{ r,[\s\S]*fhOpenSheet\(mid\);/);
   assert.match(slice('trRowData'), /click: ` onclick="fhOpenSheet\('\$\{fhEsc\(r\.mid\)\}'\)"`/);   // TEN-332: a registered sheet row
   assert.match(slice('styleVsArchetypeRowHtml'), /const click = side \? maRowOnclick\(/);
   assert.match(slice('psvListHtml'), /styleVsArchetypeRowHtml\(r, side\)/);

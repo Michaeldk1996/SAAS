@@ -262,7 +262,7 @@ Surface-specific rulings moved out of this file so they load only when relevant:
 
 | Rules | Location |
 |---|---|
-| Overview tab identity/outcome, nested Match Stats block | `.claude/rules/modal-overview.md` |
+| Overview tab — the design build, identity/outcome colours, what a count opens, pop-up figures | `.claude/rules/modal-overview.md` |
 | Key Factors — model card, soft-book gap, tournament tier | `.claude/rules/modal-key-factors.md` |
 | Weather tab — venue files, archive (completed matches), venue-local times, MATCH badge vs header, severity config, model layer #12, venues | `.claude/rules/modal-weather.md` |
 | Match Stats tone rules, point-log, score header | `.claude/rules/modal-match-stats.md` |

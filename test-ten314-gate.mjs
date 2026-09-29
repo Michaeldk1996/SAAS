@@ -9,6 +9,7 @@ import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { overviewVM } from './tools/ten334-overview-vm.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const html = readFileSync(process.env.TEN314_HTML || join(HERE, 'bsp-consult-dashboard.html'), 'utf8');
@@ -37,13 +38,14 @@ const S = new Function(`
      'ANALYSIS_P1_COLOR', 'ANALYSIS_P2_COLOR', 'ANALYSIS_P2_FILL', 'ANALYSIS_P1_RGBA', 'ANALYSIS_P2_RGBA', '_psvSides', ...GATE_CONSTS, 'meRateBox'].map(constSrc).join('\n')}
   const FH_H2H_RET_COUNTS = true;
   ${[...GATE, 'escapeHtml', 'fhEsc', 'fhHexA', 'meSg', 'psEsc', 'psShortName', 'akSurname', 'akHead', 'akCard', 'akSeasonOf', 'akFormBlock',
-     'fhRecLevelMix', 'fhS', 'fhH2hRecCard', 'meBandsCol', 'seasonSurfaceTierViewHtml', 'styleNoteHtml', 'styleVsArchetypeCard',
+     'fhRecLevelMix', 'fhS', 'fhH2hRecCard', 'meBandsCol', 'styleNoteHtml', 'styleVsArchetypeCard',
      'stylePersonalCard'].map(slice).join('\n')}
   function psvShowText(){ return ''; } function psvListHtml(){ return ''; }
   let psMatrixData = null; const PS_ARCHETYPES = []; function styleKey(n){ return n; } function psCellFor(){ return null; } function psArchIndex(){ return 0; }
   return { maGate, maRate, maRateHtml, maGateBar, maSmallChip, akFormBlock, fhH2hRecCard, meBandsCol,
-    seasonSurfaceTierViewHtml, styleVsArchetypeCard, stylePersonalCard, meRateBox, set psMatrix(v){ psMatrixData = v; } };
+    styleVsArchetypeCard, stylePersonalCard, meRateBox, set psMatrix(v){ psMatrixData = v; } };
 `)();
+const OV = overviewVM(html);
 const text = h => h.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
 const NS = [0, 3, 7, 12], WINS = { 0: 0, 3: 2, 7: 4, 12: 9 };      // fixtures: k of n
 const NEVER = /(^|[^\d.])(0%|0\.0%|NaN%)/;
@@ -115,16 +117,17 @@ test('Market edge band row: Won + win bar through the gate — 0 / 3 dash + neut
 
 // The Tournament tab's rates (W–L %, sets won, vs market) go through the same gate: test-ten332-tournament.mjs (TEN-332).
 
-// Mutation: the Overview season rate back to `${Math.round(rec.won / n * 100)}%`.
+// Mutation: the Overview season rate back to `${Math.round(c.won / n * 100)}%` (TEN-334: the season rows of ovColumnHtml).
 test('Overview this season by surface: 0 "—", 3 W–L only, 7 greyed (hover note), 12 full', () => {
-  const rec = n => ({ won: WINS[n], lost: n - WINS[n], matches: [] });
-  const h = S.seasonSurfaceTierViewHtml({ clay: rec(0), hard: rec(3), grass: rec(7) }, 'all', 'p1', 2026, null);
-  const rows = h.split('yr-surfrec').slice(1);
-  assert.ok(text(rows[0]).includes('—') && !NEVER.test(text(rows[0])), 'n = 0');
-  assert.ok(!/%/.test(text(rows[1])), 'n = 3: W–L only');
-  assert.match(rows[2], /class="ma-rate rpct" data-ma-gate="small" title="small sample · n=7"[^>]*>57%/);
-  const full = S.seasonSurfaceTierViewHtml({ clay: rec(12), hard: rec(0), grass: rec(0) }, 'all', 'p1', 2026, null);
-  assert.match(full, /class="ma-rate rpct" data-ma-gate="full"[^>]*>75%/);
+  const rec = n => (n ? { won: WINS[n], lost: n - WINS[n] } : null);
+  const yr = String(new Date().getFullYear());
+  const season = (clay, hard, grass) => { const r = { year: yr, allTier: true, total: null, clay: rec(clay), hard: rec(hard), grass: rec(grass), atp: null, chitf: null };
+    const h = OV.ovColumnHtml(0, 'A. One', 7, [r], [r], 'all'); return h.split('data-ov-cell="0|season|').slice(1).map(x => x.slice(0, x.indexOf('</div></div>'))); };
+  const rows = season(0, 3, 7);
+  assert.ok(text('<' + rows[0]).includes('—') && !NEVER.test(text('<' + rows[0])), 'n = 0');
+  assert.ok(!/%/.test(text('<' + rows[1])) && text('<' + rows[1]).includes('2-1'), 'n = 3: W–L only');
+  assert.match(rows[2], /class="ma-rate" data-ma-gate="small" title="small sample · n=7"[^>]*>57%/);
+  assert.match(season(12, 0, 0)[0], /class="ma-rate" data-ma-gate="full"[^>]*>75%/);
 });
 
 // Mutation: the Playing style header back to `${Math.round(w / n * 100)}%` for every n.

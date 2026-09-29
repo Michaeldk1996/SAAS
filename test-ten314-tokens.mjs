@@ -99,8 +99,8 @@ test('no literal colour in any declaration the modal reaches (JS)', () => {
 });
 
 // The modal's CSS: every rule whose selector targets the modal.
-// review 2026-09-29: + .aform- (formPanelHtml), .yr- (buildYearlyTables / seasonSurfaceTierViewHtml), .fsm- (fmtTournament)
-const MODAL_SEL = /\.modal-analysis|#analysisModal|#aSection|#fhSheet|#mePop|#aoddsTip|\.aox-|\.wx-|\.fh-|\.me-|\.akb|\.aks-|\.akf-|\.akw-|\.psv|\.atourn|\.yr-(?:drill|table|tiertoggle|surfrec)|\.aform-tabs|\.fsm-q\b|\.ms-|\.anews|\.tprogress/;
+// review 2026-09-29: + .aform- (formPanelHtml), .yr-drill (the player profile's career drill; TEN-334 rebuilt the Overview inline, #aSectionOverview / #ovPop), .fsm- (fmtTournament)
+const MODAL_SEL = /\.modal-analysis|#analysisModal|#aSection|#fhSheet|#mePop|#aoddsTip|\.aox-|\.wx-|\.fh-|\.me-|\.akb|\.aks-|\.akf-|\.akw-|\.psv|\.atourn|\.yr-drill|#ovPop|\.aform-tabs|\.fsm-q\b|\.ms-|\.anews|\.tprogress/;
 function modalCss() {
   const css = [...HTML.matchAll(/<style[^>]*>([\s\S]*?)<\/style>/g)].map(m => m[1]).join('\n').replace(/\/\*[\s\S]*?\*\//g, '');
   const rules = [];
@@ -194,7 +194,7 @@ test('Night values follow the role README §3 gives the shade (border / fill / s
 test('every runtime shade key in the shared helpers names a token', () => {
   const seg = HTML.slice(HTML.indexOf('\nconst MA_SEG = {'), HTML.indexOf('\n};', HTML.indexOf('\nconst MA_SEG = {')));
   const keys = [...seg.matchAll(/\b(?:tb|tl|sb|sl): '([\w-]+)'/g)].map(m => m[1]);
-  assert.equal(keys.length, 16, 'four geometries × track fill/line + selected fill/line');
+  assert.equal(keys.length, 20, 'five geometries (TEN-334: + ov) × track fill/line + selected fill/line');
   const rows = HTML.slice(HTML.indexOf('\nfunction maMatchRowsHtml('), HTML.indexOf('\n}\n', HTML.indexOf('\nfunction maMatchRowsHtml(')));
   const rk = [...rows.matchAll(/\bS\('([\w-]+)'/g)].map(m => m[1]);
   assert.ok(rk.length >= 10, 'the rows read their shades');

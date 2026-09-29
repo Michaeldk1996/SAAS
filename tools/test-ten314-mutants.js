@@ -44,7 +44,7 @@ const MUTANTS = [
   ['sheet: Match Stats inline never filled', "buildMatchStatsSection(m)); maMsSheetInit(m); },", "buildMatchStatsSection(m)); },"],
   // TEN-336: the Market edge pop-up rows are maMatchRowsHtml rows; meRowOf hands each its opener
   ['sheet: Market edge rows gated on stats on file again', "click: ` onclick=\"meOpenRow('${r.mid}')\"` }", "click: r.ek ? ` onclick=\"meOpenRow('${r.mid}')\"` : '' }"],
-  ['sheet: Overview drill rows do not open', "    const click = maRowOnclick({ key: playerKey,", "    const click = '' && maRowOnclick({ key: playerKey,"],
+  ['sheet: Overview pop-up rows do not open', "click: ` onclick=\"ovOpenRow('${r.mid}')\"`,", "click: '',"],
   // TEN-332: the Tournament rows are registered sheet rows now (trRowData); their gate mutants live in test-ten332-mutants.js
   ['sheet: Tournament rows do not open', "    cls: 'tr-row', attrs: ` data-fh-mid=\"${fhEsc(r.mid)}\"`, click: ` onclick=\"fhOpenSheet('${fhEsc(r.mid)}')\"`,", "    cls: 'tr-row', attrs: ` data-fh-mid=\"${fhEsc(r.mid)}\"`, click: ` onclick=\"void('${fhEsc(r.mid)}')\"`,"],
   ['sheet: an unplaced row opens nothing', "    let r;\n    if (i >= 0) r = meRowFromCareer(", "    let r;\n    if (i < 0) return;\n    if (i >= 0) r = meRowFromCareer("],
@@ -54,7 +54,7 @@ const MUTANTS = [
   ['report: Match Stats prints Key stats only', "  if (typeof _maMsSheet !== 'undefined' && _maMsSheet){ _maMsSheet.scope = 'match'; fhSheetRender('tab'); }\n", ''],
   ['esc: the sheet listener in the bubble phase', "if (ev.key === 'Escape' && _fh && _fh.sheet){ ev.stopPropagation(); fhCloseSheet(); } }, true);", "if (ev.key === 'Escape' && _fh && _fh.sheet){ ev.stopPropagation(); fhCloseSheet(); } });"],
   ['esc: the sheet lets Esc through to the pop-up', "if (ev.key === 'Escape' && _fh && _fh.sheet){ ev.stopPropagation(); fhCloseSheet(); }", "if (ev.key === 'Escape' && _fh && _fh.sheet){ fhCloseSheet(); }"],
-  ['close: a Market edge pop-up survives closing the modal', " const mp = document.getElementById('mePop'); if (mp) mp.innerHTML = ''; }", " }"],
+  ['close: a Market edge pop-up survives closing the modal', " const mp = document.getElementById('mePop'); if (mp) mp.innerHTML = '';", ""],
   ['report: H2H meetings not awaited', "    return fhEnsureH2hData(m).then(() => { if (aBuilt(m, 'h2h')) aPaint('aSectionH2H', buildH2HSection(m)); });", "    fhEnsureH2hData(m).then(() => { if (aBuilt(m, 'h2h')) aPaint('aSectionH2H', buildH2HSection(m)); });"],
   ['report: Form priced archives not awaited', "    return Promise.all([ensureFormRows(m), fhEnsureFormData(m)])", "    return Promise.all([ensureFormRows(m)])"],
   ['footer: the line put back', '      <div class="abody">', '      <div class="abody"><div class="aanalysisfooter">All stats are updated live.</div>'],
@@ -72,7 +72,7 @@ const MUTANTS = [
   ['Market edge: band Won ungated', "${maRateHtml(b.w, n, { text: mePct0(b.won), nopct: '—', note: 'title' })}", "${mePct0(b.won)}"],
   ['Market edge: win bar drawn at any n', "const bar = maGateBar(b.w, n, ME_C.text), winW", "const bar = { w: n ? b.w / n * 100 : 0, color: ME_C.text, mode: 'full' }, winW"],
   ['Market edge: pop-up rate box loses its note', "big, R.mode === 'small'); };", "big, false); };"],
-  ['Overview: season rate ungated', "    const pct = maRateHtml(rec.won, n, { cls: 'rpct', note: 'title' });", "    const pct = `<span class=\"rpct\">${Math.round(rec.won / n * 100)}%</span>`;"],
+  ['Overview: season rate ungated', "    const rate = maRateHtml(c ? c.won : 0, n, { nopct: '', note: 'title', color: OV_C.text });", "    const rate = `<span class=\"ma-rate\">${Math.round(c.won / n * 100)}%</span>`;"],
   ['Playing style: header rate ungated', "  const pct = maRateHtml(w, n, { nopct: '' });\n  // Publish", "  const pct = Math.round((w / n) * 100) + '%';\n  // Publish"],
   ['Playing style: personal record keeps its own ladder', "  const gate = maGate(n).mode;\n  if (gate === 'none'){", "  const gate = n === 0 ? 'none' : n < 3 ? 'nopct' : n < 10 ? 'small' : 'full';\n  if (gate === 'none'){"],
   // ---- test-ten314-components.mjs (shared components) ----

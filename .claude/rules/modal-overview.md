@@ -1,8 +1,7 @@
 # Match analysis — Overview tab: founder rulings
 
 Applies to the Match analysis modal's **Overview** tab in `bsp-consult-dashboard.html`: the career card,
-its surface bars and drill-downs, the `THIS SEASON · BY SURFACE` row, match lists, and the nested match
-stats block inside the career drill (`.yr-drill` scope).
+its surface bars, the `THIS SEASON · BY SURFACE` rows, the year table and the pop-up behind a count.
 Restored from CLAUDE.md before 011e3e20 (2026-09-21 trim); TEN-312 N13, founder-approved 2026-09-28.
 Where this file conflicts with `modal-analysis.md` (TEN-312, 2026-09-28), that file wins; the conflicts
 found at restore time are marked inline.
@@ -15,7 +14,7 @@ found at restore time are marked inline.
   *Superseded colours (TEN-312 D4, 2026-09-28):* the old values "left player (P1) blue `#6aaeff`, right (P2)
   neutral `#e7e9ee`" no longer apply — both players are neutral on every tab (player A white/primary,
   player B grey; blue is only links, TODAY and selection). See `modal-analysis.md` "Players and avatars".
-  **(2) Outcome as a data fact:** the `W`/`L` result letter in the surface drill-down and match lists is
+  **(2) Outcome as a data fact:** the result square and the Sets figure of a pop-up row are
   coloured by outcome — canonical W / L green / red — and a `ret.` suffix carries the loss red (`w/o` stays
   neutral). A completed match's result is a data-fact verdict, not a two-player comparison, so it is a
   permitted green/red exception alongside LOST SERVE/BP markers (reverses the earlier "W/L neutral in modal"
@@ -25,15 +24,22 @@ found at restore time are marked inline.
   **Test:** surface bars/accents/left-name never change hue with the *value* (identity only); the W/L letter
   never stays neutral on a completed match.
 
-- **Nested Match Stats block (Overview drill) is tertiary.** The shared `.aform-*` form panel, when it
-  appears inside a match-row drill inside the Overview career card (`.yr-drill` scope), reads one step
-  **smaller** than the Form tab / Player Profile (which are primary surfaces and keep full size). Its active
-  view chip is **flat** — segmented-control standard fill + primary text, **never** a solid bright fill.
-  *Colour values (TEN-312 D1):* the old values (`rgba(91,155,255,0.22)` fill + `#e7e9ee` text; solid
-  `#3E7BFA` reserved product-wide to Login-primary / Verify) are pre-12a; inside the modal the chip takes
-  its colours from the token file.
-  **Test:** the Overview nested block is visibly smaller than the standalone Match Stats tab and its active
-  chip carries no solid bright fill.
+- **Build (TEN-334, 2026-09-29): the tab is the design file's `overviewFor`** (DF L2969–3181, markup L1933–2076, pop-up
+  L1484–1515) in its live variants: the tier control inside each career card (maSeg `ov`), the "Soft ink" card, the name
+  inside the card. The file's review switchers (tvTabs / cvTabs / nvTabs) are not built. There is no inline drill and no
+  nested match-stats block any more: a count (year × surface cell, a year's Total, a season row) opens the **pop-up** —
+  every match behind it (maPopFrame + maMatchRowsHtml table rows) — and every pop-up row opens the one match stats sheet
+  (DoD item 8). **Test:** `test-ten334-overview.mjs`.
+- **What a count opens.** A count lists its matches only where career-history holds the matches the count is made of:
+  every 2021+ row, and a pre-2021 row that keeps an exact ATP split (tour-level only). A pre-2021 all-tier aggregate shows
+  its count, opens nothing, and says why on hover (its Challenger/ITF matches are in no archive we hold).
+  **Test:** a 2018 aggregate cell has no opener and the "Match list not on file" note; a 2019 ATP-only cell opens.
+- **Pop-up figures.** Record and Win rate over the listed matches (walkovers out, N2; Win rate through the D2 gate);
+  Avg price and "At 1u flat" over the priced rows only, prices in the R8 order (`meRowFromCareer` → `fhPickBook`),
+  Challenger/ITF rows unpriced (N8); 1u through the gate on the priced n (Form's flat 1u rule). The sub-line names the
+  priced count out of n; the 1u tooltip names the book split and prints `RET_SETTLE_NOTE`. A retirement counts and is
+  marked "ret." after its set scores — loss red when the player retired, neutral when his opponent did (DF L1997).
+  A count that opens nothing says why on hover (no player id, a pre-2021 aggregate, no tier split before 2021). **Test:** `test-ten334-overview.mjs` (N2, N8, R8, D2, retirement, sheet).
 
-See also: CLAUDE.md "Match-detail view toggle" (Stats | Point by point, no Summary — covers the Overview
-drill); `modal-analysis.md` "Overview career spine (N3)" (the Overview reads `careerByYear`).
+See also: `modal-analysis.md` "Overview career spine (N3)" (the Overview reads `careerByYear`) and "Match stats sheet —
+every tab" (the sheet a pop-up row opens).

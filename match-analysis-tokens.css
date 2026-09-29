@@ -234,6 +234,8 @@
   --ma-s-ffffff-060-fill:#20222E;           /* src rgba(255,255,255,0.06) as a hover FILL → §3 hover fill */
   --ma-s-ffffff-070-fill:#20222E;           /* src rgba(255,255,255,0.07) as a FILL (Progression's leading heat cell, TEN-339) → §3 hover fill */
   --ma-s-ffffff-050-fill:#181922;           /* src rgba(255,255,255,0.05) as a FILL (sheet ✕, pill, bar track) → §3 inner box */
+  --ma-s-ffffff-090-fill:rgba(255,255,255,0.08); /* src rgba(255,255,255,0.09) as a bar TRACK (Overview career bars, DF L1963) → U7 track */
+  --ma-s-ffffff-040-line:rgba(255,255,255,0.035); /* src rgba(255,255,255,0.04) as a row HAIRLINE (Overview year table, DF L2056) → §3 hairline soft */
 
   /* ---- the site's 12a names, re-pointed inside the scope (every var(--x) the modal already uses re-themes) ---- */
   --page:var(--ma-page); --panel:var(--ma-card); --panel-2:var(--ma-inner); --surface:var(--ma-card);
