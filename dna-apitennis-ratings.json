@@ -1,7 +1,7 @@
 {
  "_meta": {
   "task": "TEN-103 — api-tennis-native DNA ratings; TEN-319 — daily rebuild off the deployed roster, true percentiles",
-  "generatedAt": "2026-09-29T13:17:52.665Z",
+  "generatedAt": "2026-09-29T22:35:50.166Z",
   "source": "api-tennis box scores, ATP main-tour singles (event_type 265), 2024-03-06..2026-09-29 — NO Sackmann/TML",
   "scopes": {
    "last52": "matches within 364d of player's most-recent match (last52From..latestMatch)",
@@ -17,7 +17,7 @@
   },
   "roster": {
    "source": "deployed",
-   "fetchedAt": "2026-09-29T13:09:36.982Z",
+   "fetchedAt": "2026-09-29T22:18:34.040Z",
    "players": 435
   },
   "rosterSize": 435,
@@ -424,7 +424,7 @@
        154.9,
        154.9,
        156.1,
-       156.9,
+       156.8,
        157.4,
        159.6,
        160,
@@ -1759,7 +1759,7 @@
        154.7,
        155.1,
        155.2,
-       155.3,
+       155.2,
        156.9,
        158.6,
        160.7,
@@ -4963,7 +4963,7 @@
        151.9,
        152.5,
        153.1,
-       153.5,
+       153.4,
        153.8,
        154,
        154.2,
@@ -6635,11 +6635,11 @@
     "2025-12-24"
    ],
    "fixturesSeen": 12273,
-   "playerMatchesIngested": 20874,
+   "playerMatchesIngested": 20875,
    "playerMatchesWithoutSurface": 598,
-   "distinctPlayersInCorpus": 735
+   "distinctPlayersInCorpus": 736
   },
-  "wallClockMs": 40833
+  "wallClockMs": 35668
  },
  "players": [
   {
@@ -8709,11 +8709,11 @@
        "pct": 78.7
       },
       "return": {
-       "ret1stWonPct": 33.1,
+       "ret1stWonPct": 33,
        "ret2ndWonPct": 53.8,
        "returnGamesWonPct": 27.6,
        "bpConvPct": 42.4,
-       "rating": 156.9,
+       "rating": 156.8,
        "pct": 96.9
       },
       "underPressure": {
@@ -9009,8 +9009,8 @@
        "ret2ndWonPct": 53.2,
        "returnGamesWonPct": 26.9,
        "bpConvPct": 41.8,
-       "rating": 155.3,
-       "pct": 97.3
+       "rating": 155.2,
+       "pct": 97.1
       },
       "underPressure": {
        "bpSavedPct": 61.2,
@@ -9051,11 +9051,11 @@
        "pct": 73.8
       },
       "return": {
-       "ret1stWonPct": 32.7,
+       "ret1stWonPct": 32.6,
        "ret2ndWonPct": 52.8,
        "returnGamesWonPct": 26.8,
        "bpConvPct": 41.2,
-       "rating": 153.5,
+       "rating": 153.4,
        "pct": 94.7
       },
       "underPressure": {
@@ -81426,7 +81426,7 @@
        "returnGamesWonPct": 26.7,
        "bpConvPct": 44.5,
        "rating": 155.2,
-       "pct": 96.9
+       "pct": 97.1
       },
       "underPressure": {
        "bpSavedPct": 67.9,
@@ -117482,7 +117482,7 @@
        "returnGamesWonPct": 26.1,
        "bpConvPct": 46.2,
        "rating": 156.9,
-       "pct": 96.9
+       "pct": 97.2
       },
       "underPressure": {
        "bpSavedPct": null,
