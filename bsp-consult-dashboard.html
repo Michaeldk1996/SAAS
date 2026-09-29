@@ -2217,81 +2217,6 @@
      equivalent because its mock data is complete). */
   .ah2h-cta{ text-align:left; font-size:12px; color:var(--label); padding:10px 2px 0; font-family:'Hanken Grotesk', sans-serif; }
 
-  /* Tournament sub-tab (year-by-year at this specific tournament) */
-  .atourn-callout{ background:var(--surface); border:var(--ma-hw,0.33px) solid var(--line); border-radius:16px; padding:12px 14px; font-size:13px; color:var(--text-soft); line-height:1.5; margin-bottom:14px; font-family:'Hanken Grotesk', sans-serif; }
-  .atourn-callout b{ color:var(--text); }
-  .atourn-locrow{ display:flex; gap:8px; flex-wrap:wrap; margin-bottom:20px; }
-  .atourn-loctag{ display:inline-flex; align-items:center; gap:7px; font-size:12px; font-weight:600; padding:6px 11px; border-radius:8px; background:var(--surface); border:var(--ma-hw,0.33px) solid var(--line); color:var(--text-sub); font-family:'Hanken Grotesk', sans-serif; }
-  .atourn-loctag .dot{ width:6px; height:6px; border-radius:50%; background:var(--ma-fill, var(--periwinkle)); flex-shrink:0; }
-  .atourn-banner{ border:var(--ma-hw,0.33px) solid var(--line); border-radius:16px; background:var(--surface); overflow:hidden; margin-bottom:20px; }
-  .atourn-banner-head{ display:flex; align-items:center; gap:18px; padding:22px 24px; }
-  .atourn-monogram{ width:56px; height:56px; border-radius:14px; display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono', monospace; font-size:23px; font-weight:700; flex:none; }
-  .atourn-banner-title{ flex:1; min-width:0; }
-  .atourn-tname{ font-size:26px; font-weight:800; letter-spacing:-0.02em; color:var(--text); line-height:1; font-family:'Hanken Grotesk', sans-serif; }
-  .atourn-tsub{ font-size:13px; color:var(--label); margin-top:6px; font-family:'Hanken Grotesk', sans-serif; }
-  .atourn-surfpill{ flex:none; display:inline-flex; align-items:center; gap:8px; font-size:12.5px; font-weight:600; border-radius:9px; padding:8px 14px; font-family:'Hanken Grotesk', sans-serif; }
-  .atourn-surfpill .dot{ width:7px; height:7px; border-radius:50%; }
-  .atourn-metagrid{ display:grid; grid-template-columns:repeat(4,1fr); border-top:var(--ma-hw,0.33px) solid var(--line-soft); }
-  .atourn-metacell{ padding:15px 20px; border-right:var(--ma-hw,0.33px) solid var(--line-soft); }
-  .atourn-metacell:last-child{ border-right:none; }
-  .atourn-metacell .k{ font-size:10.5px; letter-spacing:0.1em; text-transform:uppercase; color:var(--label); font-weight:600; font-family:'Hanken Grotesk', sans-serif; }
-  .atourn-metacell .v{ font-size:14.5px; font-weight:700; color:var(--text); margin-top:7px; font-family:'Hanken Grotesk', sans-serif; }
-  .atourn-bannerdesc{ padding:15px 24px 18px; border-top:var(--ma-hw,0.33px) solid var(--line-soft); font-size:12.5px; color:var(--label); line-height:1.55; font-family:'Hanken Grotesk', sans-serif; }
-  .atourn-bannerdesc b{ color:var(--text-soft); font-weight:600; }
-  .atourn-col{ min-width:0; }
-  .atourn-name{ font-size:13px; font-weight:700; color:var(--text); margin-bottom:10px; font-family:'Hanken Grotesk', sans-serif; }
-  .atourn-card{ border-radius:16px; padding:20px; margin-bottom:14px; border:1px solid transparent; box-sizing:border-box; position:relative; }
-  .atourn-card .venue-lbl{ position:absolute; top:20px; right:20px; font-size:11px; text-transform:uppercase; letter-spacing:0.07em; font-weight:600; }
-  .atourn-card .pctrow{ display:flex; align-items:baseline; gap:9px; }
-  .atourn-card .pct{ font-family:'IBM Plex Mono', monospace; font-size:46px; font-weight:600; line-height:0.9; letter-spacing:-0.02em; }
-  .atourn-card .pctlbl{ font-size:13px; font-weight:600; }
-  .atourn-card .track{ height:8px; background:var(--bar-track); border-radius:5px; overflow:hidden; margin-top:14px; }
-  .atourn-card .track div{ height:100%; border-radius:5px; }
-  .atourn-card .recordrow{ display:flex; justify-content:space-between; margin-top:11px; font-size:12.5px; }
-  .atourn-card .recordrow .rec{ font-family:'IBM Plex Mono', monospace; font-weight:600; }
-  .atourn-card .longblock{ margin-top:11px; padding-top:11px; border-top:var(--ma-hw,0.33px) solid var(--line-soft); }
-  .atourn-card .longblock.empty{ font-size:11px; color:var(--label); font-family:'Hanken Grotesk', sans-serif; }
-  .atourn-card .longstat{ display:flex; align-items:baseline; gap:9px; }
-  .atourn-card .longstat .lpct{ font-family:'IBM Plex Mono', monospace; font-size:18px; font-weight:600; }
-  .atourn-card .longstat .ltxt{ font-size:12px; font-weight:600; }
-  .atourn-card .longtrack{ height:6px; border-radius:4px; background:var(--bar-track); overflow:hidden; margin-top:9px; }
-  .atourn-card .longtrack div{ height:100%; border-radius:4px; }
-  .atourn-yearhead{ font-size:11px; color:var(--label); text-transform:uppercase; letter-spacing:0.05em; margin:14px 0 8px 0; font-family:'Hanken Grotesk', sans-serif; }
-  /* Export (state modal-tournament): the year row is a light flex card — no left
-     accent bar, no heavy full-width card — with the year in a subtle chip and a
-     neutral #e7e9ee text palette. Border reads blue while the year is expanded. */
-  .atourn-yearrow{ display:flex; align-items:center; gap:14px; padding:12px 15px; border:var(--ma-hw,0.33px) solid var(--line); border-radius:10px; background:var(--surface); margin-bottom:8px; transition:border-color .12s; }
-  .atourn-yearrow:last-child{ margin-bottom:0; }
-  .atourn-yearrow .yr{ font-family:'IBM Plex Mono', monospace; font-size:13px; font-weight:600; color:var(--text); background:var(--surface-inner); border:var(--ma-hw,0.33px) solid var(--line); border-radius:6px; padding:3px 8px; display:inline-flex; align-items:center; gap:7px; flex:none; }
-  .atourn-yearrow .exp{ font-size:9px; color:var(--label); }
-  .atourn-yearrow .rd{ flex:1; min-width:0; color:var(--text); font-family:'Hanken Grotesk', sans-serif; font-size:13.5px; }
-  .atourn-yearrow .wl{ font-family:'IBM Plex Mono', monospace; color:var(--text); font-size:13px; flex:none; }
-  .atourn-yearrow.clickable{ cursor:pointer; }
-  /* Export centres the "Show N earlier editions" control (display:flex; justify-content:center). */
-  .atourn-showmore{ display:flex; justify-content:center; align-items:center; gap:6px; white-space:nowrap; font-size:13px; font-weight:600; color:var(--periwinkle); cursor:pointer; margin-top:8px; }
-  .atourn-showmore:hover{ color:var(--periwinkle); }
-  .atourn-showmore-chev{ font-size:14px; font-family:'IBM Plex Mono', monospace; }
-  .atourn-matchlist{ padding:2px 0 8px 0; }
-  .atourn-matchrow{ display:flex; justify-content:space-between; align-items:center; gap:8px; padding:6px 0 6px 22px; border-bottom:var(--ma-hw,0.33px) dashed var(--line-soft); font-size:11px; }
-  .atourn-matchrow:last-child{ border-bottom:none; }
-  /* Task 11 — a year's match row only becomes clickable once the availability
-     indexes confirm it has a box score or a point log on file. */
-  .atourn-matchrow.atourn-open{ cursor:pointer; transition:background .12s; }
-  .atourn-matchrow.atourn-open:hover{ background:var(--nav-hover); }
-  .atourn-matchrow.atourn-open.open{ background:var(--nav-hover); }
-  .atourn-chev{ color:var(--label); font-size:10px; flex:0 0 auto; transition:transform .16s; }
-  .atourn-chev.open{ transform:rotate(90deg); color:var(--text-sub); }
-  .atourn-matchrow .d{ color:var(--label); font-family:'IBM Plex Mono', monospace; flex:0 0 auto; }
-  /* Verb (def./Lost to) + opponent name are ONE neutral colour per the export
-     (state modal-tournament): both the verb and the name read #e7e9ee. Green/red
-     are data-quality signals elsewhere, not a match-outcome vocabulary — the
-     verb already states the result, so the win/loss classes carry no colour. */
-  .atourn-matchrow .opp{ color:var(--text); flex:1 1 auto; font-family:'Hanken Grotesk', sans-serif; }
-  .atourn-matchrow .opp.win{ color:var(--text); }
-  .atourn-matchrow .opp.loss{ color:var(--text); }
-  .atourn-matchrow .rd{ color:var(--label); flex:0 0 auto; font-family:'Hanken Grotesk', sans-serif; }
-  .atourn-matchrow .sc{ font-family:'IBM Plex Mono', monospace; color:var(--text-sub); flex:0 0 auto; }
-
   /* Extra stats tab — real per-match serve/return/point stats */
   .aextra-card{ background:var(--surface); border:0.33px solid var(--line); border-radius:14px; padding:18px 20px; margin-bottom:16px; }
   .aextra-card:last-child{ margin-bottom:0; }
@@ -15223,7 +15148,7 @@ function fhOpenSheet(mid){
 }
 // DF L4715 rowBg: the Form row whose sheet is open carries the selected wash (blue .1 → --seg-active) until it closes.
 // The open meeting's row takes the shared row's selected shade (DF rowBg, L4480 / maMatchRowsHtml).
-function fhMarkRow(mid){ document.querySelectorAll('#aSectionForm .fh-frow, #aSectionH2H .fh-h2row').forEach(el => { el.style.background = mid && el.getAttribute('data-fh-mid') === mid ? fhS('5b9bff-100', '--seg-active') : 'transparent'; }); }
+function fhMarkRow(mid){ document.querySelectorAll('#aSectionForm .fh-frow, #aSectionH2H .fh-h2row, #aSectionTournament .tr-row').forEach(el => { el.style.background = mid && el.getAttribute('data-fh-mid') === mid ? fhS('5b9bff-100', '--seg-active') : 'transparent'; }); }
 function fhCloseSheet(){ const h = document.getElementById('fhSheet'); if (h) h.innerHTML = ''; if (_fh){ _fh.sheet = null; _fh.sheetBody = null; } fhMarkRow(null); }
 // =====================================================================
 // MATCH STATS SHEET BODY (TEN-263, founder rulings 2026-09-24): one segmented control
@@ -16135,282 +16060,397 @@ function meEnsureStyles(){
 }
 
 /* ---------- TOURNAMENT SUB-TAB ---------- */
-// Note: deliberately does not include anything derived from "court speed
-// index" or win% by court-speed category — that classification needs
-// Michael's own methodology and isn't built here, per explicit scope.
-// One match inside a year group. `opts` is what makes the row expandable —
-// omit it (or pass canOpen:false) and the row renders exactly as it always
-// has, minus a chevron. Same contract as the H2H list (Task 10): a row only
-// becomes clickable once the availability indexes say this event key actually
-// has a box score or a point log, because a chevron opening an empty panel is
-// a worse answer than no chevron.
-function atournMatchRowHtml(x, opts){
-  const cells = `
-      <span class="d">${x.date || '—'}</span>
-      <span class="opp ${x.won ? 'win' : 'loss'}">${x.won ? 'def.' : 'Lost to'} ${x.opponent || 'Unknown'}</span>
-      <span class="rd">${h2hRoundLabel(x.round) || ''}</span>
-      <span class="sc">${x.result || '—'}</span>`;
-  if (!opts) return `<div class="atourn-matchrow">${cells}</div>`;
-  // TEN-314: every row opens THE match stats sheet. The history row carries no set scores, so the sheet joins the
-  // player's career history by event key; failing that, its header shows the set count this row holds.
-  const click = maRowOnclick({ key: opts.playerKey, name: opts.playerName, ek: x.eventKey != null ? String(x.eventKey) : null, date: x.date, opp: x.opponent,
-    fallback: { date: x.date, tourn: opts.tournament, round: h2hRoundLabel(x.round) || '', won: !!x.won, result: x.result, sets: null } });
-  return `<div class="atourn-matchrow atourn-open"${click}>${cells}<span class="atourn-chev">▸</span></div>`;
+// Match analysis → Tournament tab — TEN-332 rebuild of the TEN-312 design file (the marker above is a slice anchor for
+// several suites: the blocks before it end here).
+// Design: `Match Analysis Progression v1.dc.html` isTournament (DF L216–331), tournamentFor (L2642) + tourRecFor (L2579);
+// the file wins over the README. Three blocks: the header card, the "Show court speed & market" inline panel (its two ROI
+// cards open the Database page embedded, reused as built — `DatabaseTab.mount`, never restyled), and "Record at X": per
+// player five tiles + the shared match rows (maMatchRowsHtml, DoD item 8), every row opening the shared sheet.
+// DATA — nothing seeded, nothing fabricated:
+//   · header / panel  m.venue + m.courtSpeed (the pipeline's COURT_CONDITIONS row + its N4 3-band label,
+//                     courtSpeedCategory) · tournament-market.json (the Tournaments page's own yields, trMarketFor)
+//   · editions        m.p?TournamentHistory (bsp-pipeline.js buildTournamentHistory): main draw only (N7, qualifying
+//                     filtered at the fetch), only editions entered (N6), walkovers in no count (N2)
+//   · set scores      career-history/{key}.json joined by event key (meRowFromCareer)
+//   · prices          match-closes/{key}.json through the Form/H2H picker (fhCloseFor → FH_BOOK_ORDER, the R8 order, N5)
+// Colours are the file's own shades (fhS → --ma-s-<source>), surfaces neutral (U9 / U22). The reading paragraph waits on
+// the founder's copy: nothing is drawn (never the placeholder). Rows, tooltips and the sheet are the shared helpers only.
+const TR_LIM = 3;                               // editions shown before "Show N earlier editions" (DF LIM)
+const TR_VS_MKT_MIN = 5;                        // D6: "+Y.Ypt vs market" needs n >= 5 priced rows
+const TR_SPEED_YEARS = [2020, 2021, 2022, 2023, 2024, 2025, 2026];   // DF trend axis; the sheet holds 2023–25 only
+const TR_RG_NOTE = 'Roland Garros court speed: the court-conditions key does not match this event yet (TEN-321), so it is not shown.';
+const TR_NO_SPEED = 'No court-conditions row for this event, so no court speed is shown.';
+const TR_RESULT = { F: 'Final', SF: 'Semi-final', QF: 'Quarter-final', R16: 'Round of 16', R32: 'Round of 32', R64: 'Round of 64', R128: 'Round of 128' };
+const TR_BEST_RANK = { Won: 8, F: 7, SF: 6, QF: 5, R16: 4, R32: 3, R64: 2, R128: 1 };
+let _tr = null;
+function trStateFor(m){
+  if (!_tr || _tr.m !== m) _tr = { m, S: { more: false, roi: false, recMore: [false, false] }, data: [null, null], state: ['idle', 'idle'] };
+  return _tr;
 }
-function toggleTournamentYear(id){
-  const el = document.getElementById(id);
-  if (!el) return;
-  const nowOpen = el.style.display === 'none';
-  el.style.display = nowOpen ? '' : 'none';
-  // Export: the year row's border reads blue while its matches are expanded, and
-  // the chip chevron flips ▸/▾.
-  const row = el.previousElementSibling;
-  if (row && row.classList.contains('atourn-yearrow')) {
-    row.style.borderColor = nowOpen ? 'var(--seg-active-line)' : 'var(--line)';
-    const chev = row.querySelector('.exp');
-    if (chev) chev.textContent = nowOpen ? '▾' : '▸';
-  }
+// The tournament's key in the site's tables (COURT_CONDITIONS / TOURNAMENT_CATALOG / tournament-market.json): the longest
+// table name the feed's tournament string contains — the pipeline's own substring join (courtConditionsFor).
+function trKeyOf(m){
+  const tour = String((m && m.tour) || '');
+  const names = new Set([...Object.keys(COURT_CONDITIONS || {}), ...(TOURNAMENT_CATALOG || []).map(t => t.name),
+    ...Object.keys((tourxMarketData && tourxMarketData.tournaments) || {})]);
+  let best = null; names.forEach(k => { if (k && tour.includes(k) && (!best || k.length > best.length)) best = k; });
+  return best;
 }
-function atournYearRowHtml(y, colPrefix, expanded){
-  const matches = Array.isArray(y.matches) ? y.matches : [];
-  const listId = `atournMatches-${colPrefix}-${y.year}`;
-  const rows = matches.map(x => atournMatchRowHtml(x)).join('');
-  const hasMatches = matches.length > 0;
-  const open = !!expanded && hasMatches;
-  // Export (state modal-tournament): the row border reads blue while its matches
-  // are expanded, a faint white otherwise; the chip carries a ▸/▾ chevron.
-  const rowBd = open ? 'var(--seg-active-line)' : 'var(--line)';
-  const chev = hasMatches ? (open ? '▾' : '▸') : '';
-  const rdCell = y.roundReached || '—';
-  const wlCell = `${y.won}-${y.lost}`;
-  return `
-    <div class="atourn-yearrow${hasMatches ? ' clickable' : ''}"${hasMatches ? ` onclick="toggleTournamentYear('${listId}')"` : ''} style="border-color:${rowBd};">
-      <span class="yr">${y.year}${chev ? `<span class="exp">${chev}</span>` : ''}</span>
-      <span class="rd">${rdCell}</span>
-      <span class="wl">${wlCell}</span>
-    </div>
-    ${hasMatches ? `<div class="atourn-matchlist" id="${listId}" style="display:${open ? '' : 'none'};">${rows}</div>` : ''}
-  `;
+// This event's row of tournament-market.json (the Tournaments page's yields), with the tour baseline.
+function trMarketFor(key){
+  const t = key && tourxMarketData && tourxMarketData.tournaments && tourxMarketData.tournaments[key];
+  return t && tourxMarketData.baseline ? Object.assign({}, t, { baseline: tourxMarketData.baseline }) : null;
 }
-function showTournamentMore(colPrefix){
-  document.querySelectorAll('.atourn-extra-' + colPrefix).forEach(el => { el.style.display = ''; });
-  const link = document.getElementById('atournShowMore-' + colPrefix);
-  if (link) link.style.display = 'none';
+// A career-history row's tournament is this event: its name contains the event's name or one of its archive names
+// (tournament-market.json archiveNames, e.g. "China Open" for Beijing). No name = no evidence either way.
+function trSameEvent(t, names){
+  const a = String(t || '').toLowerCase(); if (!a) return true;
+  return names.some(n => { const b = String(n || '').toLowerCase(); return !!b && (a.includes(b) || b.includes(a)); });
 }
-function atournPlayerColumn(name, history, colPrefix, isGrandSlam){
-  if (!history) {
-    return `
-      <div class="atourn-col">
-        <div class="atourn-name">${name}</div>
-        <div class="acomingsoon" style="padding:16px 0;">No tournament history on record for this event.</div>
-      </div>
-    `;
-  }
-  const total = history.totalWon + history.totalLost;
-  const isP1 = colPrefix === 'p1';
-  const tint = isP1 ? ANALYSIS_P1_RGBA : ANALYSIS_P2_RGBA;
-  // Colour vocabulary read from design-export/computed-styles.json (state
-  // modal-tournament): the player cards share ONE neutral TEXT palette — there
-  // is no orange in the identity system. The win-rate BAR, however, is fixed by
-  // name order; TEN-312 D4 makes both fills neutral (A primary, B the 70% white fill).
-  const recColor = 'var(--text)';        // big win-rate %   (export fw800 / 44px)
-  const pctLblColor = 'var(--text)';     // "win rate" label (export fw400 / 14px)
-  const recordColor = 'var(--text)';     // record figure    (export fw700 / 14px)
-  const editionsColor = 'var(--label)';  // "N editions played" (export 12.5px)
-  const longAccentColor = isP1 ? ANALYSIS_P1_COLOR : ANALYSIS_P2_COLOR;  // GS-only; no export ref
-  const trackBar = isP1 ? ANALYSIS_P1_COLOR : ANALYSIS_P2_FILL;  // win-rate fill, by name order (export)
-  // D2: the win rate and its bar through the one gate — n 0 "—" (never "0%"), 1–4 the W–L carries it (no %),
-  // 5–9 greyed + note, 10+ full.
-  const winBar = maGateBar(history.totalWon, total, trackBar);
-  const winPct = maRateHtml(history.totalWon, total, { color: recColor, note: false, cls: 'pct' });
-  const winSmall = maGate(total).mode === 'small';
+function trClean(m){ return String((m && m.tour) || 'Tournament').replace(/^(ATP|WTA|Challenger)\s+/i, '').trim() || 'Tournament'; }
+// TEN-321 (founder 2026-09-29): Roland Garros's court-conditions key misses the feed's "French Open" — its speed cells are
+// dashed with a note until the key lands; every other event dashes only where the sheet holds no row.
+function trIsRG(m){ return /french open|roland garros/i.test(String((m && m.tour) || '')); }
+function trSpeedNote(m){ return trIsRG(m) ? TR_RG_NOTE : TR_NO_SPEED; }
 
-  // TEN-320 (founder N6): only editions the player actually entered. A `withdrew` row is
-  // a pre-TEN-320 synthesised gap year (never an entry), so a stale store cannot show one.
-  const years = history.years.filter(y => !y.withdrew);
-  const visible = years.slice(0, 3);
-  const extra = years.slice(3);
-  // Export default-expands the most recent edition inline (state
-  // modal-tournament) so the match detail is the first thing read, not a click
-  // away.
-  const visibleRows = visible.map((y, i) => atournYearRowHtml(y, colPrefix, i === 0)).join('');
-  const extraRows = extra.map(y => `<div class="atourn-extra-${colPrefix}" style="display:none;">${atournYearRowHtml(y, colPrefix)}</div>`).join('');
-  // "Show N earlier editions · YEAR(S)›" — the export states the year range the
-  // control reveals and carries a trailing chevron. Years run newest-first, so
-  // the range is oldest–newest.
-  const extraYears = extra.map(y => y.year);
-  const extraRange = extra.length === 1
-    ? `${extraYears[0]}`
-    : `${extraYears[extraYears.length - 1]}–${extraYears[0]}`;
-  const showMoreHtml = extra.length ? `<div class="atourn-showmore" id="atournShowMore-${colPrefix}" onclick="showTournamentMore('${colPrefix}')">Show ${extra.length} earlier edition${extra.length === 1 ? '' : 's'} · ${extraRange}<span class="atourn-showmore-chev">›</span></div>` : '';
-
-  // "Went the distance (4+ sets)" is only meaningful in best-of-five, i.e.
-  // Grand Slams. Every other ATP event is best-of-three, where 4+ sets is
-  // impossible — so the stat is hidden entirely for those (Task 2).
-  const longN = history.longMatchesPlayed || 0, longBar = maGateBar(history.longMatches || 0, longN, tint(0.55));
-  const longPct = maRateHtml(history.longMatches || 0, longN, { text: history.longMatchPct + '%', color: longAccentColor, cls: 'lpct' });
-  const longBlock = !isGrandSlam ? '' : (longN ? `
-    <div class="longblock">
-      <div class="longstat">
-        ${longPct}
-        <span class="ltxt" style="color:${pctLblColor};">went the distance (4+ sets), ${history.longMatches}/${history.longMatchesPlayed}</span>
-      </div>
-      <div class="longtrack"><div style="width:${longBar.w}%;background:${longBar.color};"></div></div>
-    </div>
-  ` : `<div class="longblock empty">No scored matches on file to compute set length</div>`);
-
-  return `
-    <div class="atourn-col">
-      <div class="atourn-name">${name}</div>
-      <div class="atourn-card" style="border-color:${tint(0.28)}; background:var(--surface);">
-        ${winPct ? `<div class="pctrow">
-          ${winPct}
-          <span class="pctlbl" style="color:${pctLblColor};">win rate</span>${winSmall ? maSmallNote() : ''}
-        </div>` : ''}
-        <div class="track"><div style="width:${winBar.w}%;background:${winBar.color};"></div></div>
-        <div class="recordrow">
-          <span class="rec" style="color:${recordColor};">${history.totalWon}-${history.totalLost}</span>
-          <span class="editions" style="color:${editionsColor};">${history.editionsPlayed} edition${history.editionsPlayed === 1 ? '' : 's'} played</span>
-        </div>
-        ${longBlock}
-      </div>
-      <div class="atourn-yearhead">Year-by-year</div>
-      ${visibleRows}${extraRows}
-      ${showMoreHtml}
-    </div>
-  `;
-}
-// Task 11 — turns the static year-by-year match rows into expandable rows once
-// the two availability indexes resolve. Repaints each year's list in place
-// rather than the whole section, so a year the user already opened stays open.
-//
-// The token guard is the H2H/Overview one: opening a different match while the
-// indexes are in flight must not let a stale response repaint the new match.
-let _atournToken = 0;
-function upgradeTournamentRows(m, token, tourName){
-  const cols = [
-    { colPrefix: 'p1', history: m.p1TournamentHistory, playerKey: m.p1Key, playerName: m.p1 },
-    { colPrefix: 'p2', history: m.p2TournamentHistory, playerKey: m.p2Key, playerName: m.p2 },
-  ].filter(c => c.history && Array.isArray(c.history.years));
-  if (!cols.length) return;
-  Promise.resolve().then(() => {
-    const grid = document.getElementById('atournGrid');
-    if (!grid || grid.dataset.token !== String(token)) return;
-    for (const c of cols) {
-      for (const y of c.history.years) {
-        const matches = Array.isArray(y.matches) ? y.matches : [];
-        if (!matches.length) continue;
-        const list = document.getElementById(`atournMatches-${c.colPrefix}-${y.year}`);
-        if (!list) continue;
-        list.innerHTML = matches.map(x => {
-          return atournMatchRowHtml(x, {
-            playerKey: c.playerKey,
-            playerName: c.playerName,
-            tournament: tourName,
-          });
-        }).join('');
-      }
-    }
-    // §7 (ruling B) — the "N of M rows expand…" footer note was removed at the
-    // founder's direction; it was a build-side count with no counterpart in the
-    // export. The rows still upgrade to expandable in place; we just no longer
-    // print a caption about how many.
+// Lazy, per player, when the tab opens: career-history (set scores) + match-closes (prices). A failed load is not cached
+// and reads as unknown — never "0 priced".
+function trLoad(m){
+  const E = trStateFor(m);
+  const loads = [];
+  [[m.p1Key, m.p1TournamentHistory, 0], [m.p2Key, m.p2TournamentHistory, 1]].forEach(([key, hist, i]) => {
+    if (E.state[i] === 'ready' || E.state[i] === 'loading') return;
+    if (key == null || !hist){ E.state[i] = 'ready'; E.data[i] = { ch: null, cl: null }; return; }   // nothing to join
+    E.state[i] = 'loading';
+    loads.push(Promise.all([loadCareerHistory(key), fhLoadCloses(key)]).then(([ch, cl]) => {
+      if (_tr !== E) return;
+      const ok = String(key) in _careerHistoryShards && String(key) in _fhCl;
+      E.state[i] = ok ? 'ready' : 'failed'; E.data[i] = ok ? { ch, cl } : null;
+    }).catch(() => { if (_tr === E){ E.state[i] = 'failed'; E.data[i] = null; } }));
   });
+  loads.push(tourxFetchMarket());
+  return Promise.all(loads).then(() => { if (_tr === E) trRender(); });
+}
+function trRender(){
+  const E = _tr; if (!E || !aBuilt(E.m, 'tournament')) return;
+  aPaint('aSectionTournament', buildTournamentSection(E.m));
+  trRenderRoi();
+}
+// The ROI overlay closes with the modal and on every open: its state never outlives the modal (a reopened match must not
+// remount it unprompted).
+function trCloseRoi(){ if (_tr) _tr.S.roi = false; const h = document.getElementById('trRoiPop'); if (h) h.innerHTML = ''; }
+function trSet(patch){ if (!_tr) return; Object.assign(_tr.S, patch); trRender(); }
+function trToggleMore(i){ if (!_tr) return; _tr.S.recMore[i] = !_tr.S.recMore[i]; trRender(); }
+
+// One pipeline history match → a normalised row. Joined to his career-history row by event key: set scores, retirement,
+// best-of — then priced through the Form/H2H rule (meRowFromCareer). Unjoined: the history's own fields, the closes
+// still tried on date + opponent, set scores a dash.
+function trRowOf(x, season, d, key, name, idx, tourn, names){
+  const ch = (d && d.ch) || [], cl = d && d.cl;
+  let ci = x.eventKey != null ? ch.findIndex(c => c && c.eventKey != null && String(c.eventKey) === String(x.eventKey)) : -1;
+  // Older editions reach the history with no event key and no date: joined on season + opponent + result, main draw, not a
+  // team event — accepted only when exactly one career row qualifies (never a guess between two).
+  // a joined row that disagrees on the result is not this match (the feed's name-order scramble): no join
+  if (ci >= 0 && !!ch[ci].won !== !!x.won) ci = -1;
+  if (ci < 0 && season){
+    const hits = [];
+    ch.forEach((c, k) => { if (c && String(c.year || String(c.date || '').slice(0, 4)) === String(season) && !!c.won === !!x.won && maSameOpp(c.opponent, x.opponent)
+      && !(c.eventKey != null && x.eventKey != null && String(c.eventKey) !== String(x.eventKey))   // a different match by key
+      && trSameEvent(c.tournament, names)
+      && !c.qualifying && !/^qualif/i.test(String(c.round || '')) && !ME_NONSTD_EVENT.test(String(c.tournament || ''))) hits.push(k); });
+    if (hits.length === 1) ci = hits[0];
+  }
+  let r;
+  if (ci >= 0) r = meRowFromCareer(ch[ci], cl, String(key), name, ci);
+  else {
+    r = { mid: fhSafeId('tr' + key + '_' + idx + '_' + (x.eventKey != null ? x.eventKey : x.date)), date: x.date, opp: x.opponent,
+      oppKey: null, won: !!x.won, result: x.result, sets: null, ret: false, wo: false, round: fhRoundCode(x.round, false),
+      ek: x.eventKey != null ? x.eventKey : null, selfKey: String(key), selfName: name, price: null, oppPrice: null, book: null, src: null };
+    fhFinishRow(r);
+    const c = fhCloseFor(cl, r.date, r.opp, r.won, null, r.ek);
+    if (c){ r.price = c.price; r.oppPrice = c.oppPrice; r.book = c.book; r.src = c.src; }
+  }
+  // The history carries no walkovers (buildTournamentHistory drops them, TEN-313): a row fhFinishRow read as one (no set,
+  // "0 - 0") is a match stopped in the first set — a retirement, a match played, settled at the close (TEN-325).
+  if (r.wo){ r.wo = false; r.ret = true; r.retSettle = true; r.complete = false; r.pS = r.pS || 0; r.oS = r.oS || 0;
+    if (r.price == null){ const c = fhCloseFor(cl, x.date || r.date, x.opponent, !!x.won, null, x.eventKey); if (c){ r.price = c.price; r.oppPrice = c.oppPrice; r.book = c.book; r.src = c.src; } } }
+  r.round = fhRoundCode(x.round, false);   // the history's main-draw round (N7)
+  if (tourn) r.tourn = tourn + ' ' + season;   // the sheet's meta line names the edition (DF L2609: "Washington 2025")
+  r.won = !!x.won; r.date = x.date || r.date || null;
+  r.mid = fhSafeId('tr' + key + '_' + idx + '_' + (x.eventKey != null ? x.eventKey : x.date));
+  return r;
+}
+// One player's record at this event: editions newest first, each with its rows and result label, and the five tiles.
+function trModelFor(m, i){
+  const E = _tr, key = i ? m.p2Key : m.p1Key, name = i ? m.p2 : m.p1;
+  const hist = i ? m.p2TournamentHistory : m.p1TournamentHistory;
+  const d = E && E.data[i];
+  const clean = trClean(m), mYear = String(m.date || '').slice(0, 4);
+  const mk = trMarketFor(trKeyOf(m)), names = [clean].concat((mk && mk.archiveNames) || []);
+  // N6: only editions entered — a pre-TEN-320 store's synthesised gap year (`withdrew`) never shows
+  const years = ((hist && hist.years) || []).filter(y => !y.withdrew);
+  let idx = 0;
+  const eds = years.map(y => {
+    const rows = (y.matches || []).map(x => trRowOf(x, y.year, d, key, name, idx++, clean, names));   // newest first (the pipeline's order)
+    const last = rows[0] || null;
+    const lastRd = last ? last.round : null;
+    let result;
+    if (!last) result = (TR_RESULT[psRoundAbbr(y.roundReached)] || y.roundReached || '—') + ' · w/o';   // N2: reached unplayed
+    else if (last.won && lastRd === 'F') result = 'Won';
+    else if (!last.won) result = TR_RESULT[lastRd] || lastRd;
+    // DESIGN GAP G17: an edition still being played (this event, this year, his last match a win) — the file draws only
+    // finished editions; the meta line says so in its own words, no new pattern.
+    else if (String(y.year) === mYear) result = 'In progress';
+    else result = (TR_RESULT[psRoundAbbr(y.roundReached)] || y.roundReached || '—') + ' · w/o';   // won, then gave a walkover
+    return { year: String(y.year), rows, result, won: y.won, lost: y.lost };
+  });
+  // tiles (DF tourRecFor L2622–2628)
+  const W = eds.reduce((s, e) => s + e.won, 0), L = eds.reduce((s, e) => s + e.lost, 0), n = W + L;
+  let best = null;
+  eds.forEach(e => {
+    const code = e.result === 'Won' ? 'Won' : e.rows.length && !e.rows[0].won ? e.rows[0].round : null;   // finished editions only
+    if (code && TR_BEST_RANK[code] && (!best || TR_BEST_RANK[code] > TR_BEST_RANK[best.code])) best = { code, year: e.year };
+  });
+  let sW = 0, sT = 0;
+  eds.forEach(e => e.rows.forEach(r => { if (r.pS != null && !r.wo){ sW += r.pS; sT += r.pS + r.oS; } }));   // finished sets only (rule e)
+  const played = eds.filter(e => e.rows.length);
+  const all = eds.flatMap(e => e.rows);
+  const core = window.MarketEdgeCore;
+  const priced = core ? all.filter(core.inWinner) : [];
+  const cents = priced.reduce((s, r) => s + core.plCents(r), 0);
+  const exp = priced.reduce((s, r) => s + (1 / r.price) / ((1 / r.price) + (1 / r.oppPrice)), 0);
+  const pw = priced.filter(r => r.won).length;
+  const vm = priced.length ? (pw / priced.length - exp / priced.length) * 100 : null;
+  return { name, key, eds, W, L, n, best, sW, sT, played, all, priced, units: cents / 100, vm, state: E ? E.state[i] : 'idle',
+    hasHist: !!hist, summary: all.length + ' match' + (all.length === 1 ? '' : 'es') + ' · ' + eds.length + ' edition' + (eds.length === 1 ? '' : 's') };
+}
+
+// ---- rendering ----
+const TR_MONO = "font-family:'IBM Plex Mono',monospace;";
+function trTileHtml(cap, value, color, sub, o){
+  o = o || {};
+  const val = `<span class="tr-tile-v" style="${TR_MONO} font-size:23px; font-weight:700; line-height:1.15; color:${color}; white-space:nowrap; max-width:100%;">${value}</span>`;
+  const body = `<span style="${TR_MONO} font-size:9px; font-weight:600; letter-spacing:0.12em; text-transform:uppercase; color:${fhS('5b6880', '--label')};">${cap}</span>`
+    + (o.tip ? maTipHtml(`<span tabindex="0" style="display:inline-flex;">${val}</span>`, o.tip, { wrap: 280 }) : val)
+    + `<span class="tr-tile-sub" style="font-size:10.5px; color:${fhS('4b5672', '--label')}; white-space:nowrap;">${sub}</span>`;
+  return `<div class="tr-tile"${o.attrs || ''} style="background:${fhS('0e1019', '--surface')}; border:1.25px solid ${fhS('ffffff-060', '--line')}; border-radius:11px; padding:13px 8px; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:7px; min-width:0;">${body}</div>`;
+}
+function trTilesHtml(P){
+  const t1 = fhS('e7e9ee', '--text'), dash = fhS('5b6880', '--label');
+  const loading = P.state === 'loading' || P.state === 'idle';
+  // W–L record: the count always shows; its % through the one gate (D2) — n 1–4 the W–L carries it, n 0 "—".
+  const wlRate = maRateHtml(P.W, P.n, { note: 'title', nopct: '' });
+  const wl = trTileHtml('W–L record', P.n ? P.W + '–' + P.L : '—', P.n ? t1 : dash, (wlRate ? wlRate + ' · ' : '') + 'main draw');
+  const best = trTileHtml('Best result', P.best ? fhEsc(P.best.code) : '—', P.best ? t1 : dash, P.best ? P.best.year : (P.eds.length ? 'no finished edition' : ''));
+  // sets won: finished sets only (a retirement's unfinished set is not a set, rule e); unjoined rows count their result
+  const setsV = maRateHtml(P.sW, P.sT, { color: t1, note: 'title', nopct: '' });
+  const sets = trTileHtml('Sets won', setsV || '—', setsV ? t1 : dash, P.sT ? P.sW + ' of ' + P.sT + ' sets' : '');
+  const last = trTileHtml('Last played', P.played.length ? P.played[0].year : '—', P.played.length ? t1 : dash, P.eds.length + ' edition' + (P.eds.length === 1 ? '' : 's') + ' listed');
+  // Backing (N5): flat 1u at the closing price, Pinnacle then Bet365 (FH_BOOK_ORDER, one book per match); retirements settle
+  // on the ATP result (TEN-325). Units show at any priced n; "vs market" (D6) = win rate − mean de-vigged implied rate, n >= 5,
+  // through the gate (5–9 greyed).
+  const core = window.MarketEdgeCore;
+  const np = P.priced.length;
+  let back;
+  if (loading) back = trTileHtml('Backing', '—', dash, 'loading prices');
+  else if (P.state === 'failed') back = trTileHtml('Backing', '—', dash, 'prices unavailable');
+  else {
+    const uC = np ? meUC(P.units, 1) : dash;
+    const g = maGate(np).mode;
+    const vmTxt = np >= TR_VS_MKT_MIN && P.vm != null ? meSg(P.vm, 1, 'pt') + ' vs market' : '';
+    const sub = vmTxt ? `<span class="ma-rate" data-ma-gate="${g}"${g === 'small' ? ` title="${MA_SMALL_NOTE} · n=${np}"` : ''} style="${g === 'small' ? 'color:' + MA_GREY + ';' : ''}">${vmTxt}</span>`
+      : (np ? np + ' priced' : 'none priced');
+    const nb = P.priced.filter(r => r.book === 'B').length;
+    const tip = `<span style="${TR_MONO} font-size:11px; line-height:1.5;">${np} of ${P.all.length} matches priced${np ? ' · flat 1u at the closing price, Pinnacle' + (nb ? ', Bet365 where missing (' + nb + ')' : '') : ' (no Pinnacle or Bet365 close on record)'}.`
+      + (np >= TR_VS_MKT_MIN ? ' vs market = win rate minus the market’s de-vigged implied win rate.' : ' vs market needs 5 priced matches.')
+      + ` <span data-ret-note="tournament">${fhEsc(core ? core.RET_SETTLE_NOTE : '')}</span></span>`;
+    back = trTileHtml('Backing', np ? meSg(P.units, 1, 'u') : '—', uC, sub, { tip, attrs: ' data-tr="backing"' });
+  }
+  return `<div class="tr-tiles" style="display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:8px;">${wl}${best}${sets}${last}${back}</div>`;
+}
+function trRowData(r){
+  // the opponent as the history names him (DF L315: "A. Cazaux", initial first — not the H2H list's surname-first order)
+  return { date: fhDDMM(r.date) + '.', won: r.wo ? null : r.won, opp: r.opp || FH_DASHC, rd: r.round,
+    sets: r.wo || r.pS == null ? FH_DASHC : r.pS + ' - ' + r.oS, setsColor: r.wo || r.pS == null ? FH_DASH : null,
+    scores: fhH2hSetScores(r), scoresTitle: r.sets ? fhH2hSetScores(r) : 'No set scores on record for this match',
+    h: r.price == null ? FH_DASHC : fhOdd(r.price), a: r.oppPrice == null ? FH_DASHC : fhOdd(r.oppPrice),
+    hTitle: fhSrcTitle(r), aTitle: fhSrcTitle(r), hMark: r.price != null && r.book === 'B' ? 'B' : '',
+    cls: 'tr-row', attrs: ` data-fh-mid="${fhEsc(r.mid)}"`, click: ` onclick="fhOpenSheet('${fhEsc(r.mid)}')"`,
+    selected: !!(_fh && _fh.sheet === r.mid) };
+}
+function trPlayerCardHtml(m, P, i){
+  const S = _tr.S, clean = trClean(m);
+  const F = fhStateFor(m);
+  const all = !!S.recMore[i];
+  const shown = all ? P.eds : P.eds.slice(0, TR_LIM);
+  // every row opens the ONE sheet (DoD item 8): registered in the Form/H2H sheet map, header from the row, stats by event key
+  P.all.forEach(r => { F.sheetMap[r.mid] = { r, aName: P.name, aKey: P.key, bName: r.opp, bKey: r.oppKey }; });
+  const groups = shown.map(e => ({ title: clean + ' ' + e.year, meta: e.result + ' · ' + e.won + '–' + e.lost, rows: e.rows.map(trRowData) }));
+  const rows = P.eds.length ? maMatchRowsHtml(groups, {}) : '';
+  const nameColor = i ? fhS('e7e9ee', '--fh-pb') : fhS('e7e9ee', '--fh-pa');
+  const more = P.eds.length > TR_LIM
+    ? `<span class="seg tr-more" onclick="trToggleMore(${i})" style="align-self:center; font-size:12.5px; font-weight:600; color:${fhS('5b9bff', '--periwinkle')}; cursor:pointer;">${all ? 'Show fewer editions' : 'Show ' + (P.eds.length - TR_LIM) + ' earlier edition' + (P.eds.length - TR_LIM === 1 ? '' : 's')}</span>` : '';
+  // DESIGN GAP G18: no record at this event (never entered, or no player key) — the file draws only players with editions;
+  // the tiles dash and the row list says why, in the file's empty-list line.
+  const empty = !P.eds.length ? `<div class="tr-empty" style="padding:18px 6px 6px; font-size:12.5px; color:${fhS('5b6880', '--label')}; text-align:center;">${P.hasHist ? 'No main-draw match at this event on record.' : 'No main-draw record at ' + fhEsc(clean) + ' on file.'}</div>` : '';
+  return `<div class="tr-card" style="background:${fhS('0a0d14', '--surface')}; border:var(--ma-hw,0.33px) solid ${fhS('ffffff-090', '--line')}; border-radius:16px; padding:18px 20px; display:flex; flex-direction:column; gap:14px; min-width:0;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:12px;">
+        ${fhNameLink(P.name, P.key, `font-size:15px; font-weight:700; color:${nameColor};`)}
+        <span style="${TR_MONO} font-size:11px; color:${fhS('8b96b5', '--text-soft')};">${fhEsc(P.summary)}</span>
+      </div>
+      ${trTilesHtml(P)}
+      ${rows ? `<div style="display:flex; flex-direction:column;">${rows}</div>` : empty}
+      ${more}
+    </div>`;
+}
+// The header card (DF L217–232): tile + name + location + surface, the four meta cells. The reading paragraph (DF L231)
+// waits on the founder's copy: nothing is drawn.
+function trHeaderHtml(m){
+  const clean = trClean(m), cs = m.courtSpeed, surf = fhSurfName(m.surface) || 'Hard';
+  const location = m.venue ? [m.venue.city, m.venue.country].filter(Boolean).join(', ') : '';
+  const rdRaw = m.tournamentRound ? (m.tournamentRound.includes(' - ') ? m.tournamentRound.split(' - ').pop().trim() : m.tournamentRound) : '';
+  const round = /^1\/\d+-finals$/i.test(rdRaw) ? (TR_RESULT[psRoundAbbr(rdRaw)] || rdRaw) : rdRaw;   // the feed's words (DF "Quarter-finals"); "1/16-finals" → "Round of 32"
+  const t3 = fhS('5b6880', '--label');
+  const speedCell = cs && cs.abstractSpeed != null
+    ? Number(cs.abstractSpeed).toFixed(2) + (cs.category ? ' · ' + cs.category : '')
+    : maTipHtml(`<span tabindex="0" data-tr="speed-dash" style="color:${t3};">—</span>`, fhEsc(trSpeedNote(m)), { wrap: 260, start: true });
+  const altCell = cs && cs.altitude != null ? Number(cs.altitude).toLocaleString('en-US') + ' m'
+    : maTipHtml(`<span tabindex="0" style="color:${t3};">—</span>`, fhEsc(trSpeedNote(m)), { wrap: 260, start: true });
+  const meta = [['Category', m.venue && m.venue.category ? fhEsc(m.venue.category) : `<span style="color:${t3};">—</span>`],
+    ['Court speed', speedCell], ['Altitude', altCell], ['Round', round ? fhEsc(round) : `<span style="color:${t3};">—</span>`]];
+  const card = fhS('0b0f18', '--surface');
+  return `<div class="tr-head" style="border:var(--ma-hw,0.33px) solid ${fhS('ffffff-090', '--line')}; border-radius:16px; background:${card}; padding:22px 24px;">
+      <div style="display:flex; align-items:center; gap:16px;">
+        <span class="tr-badge" style="width:56px; height:56px; flex:none; border-radius:14px; background:var(--ma-inner, var(--surface-inner)); border:var(--ma-hw,0.33px) solid var(--ma-hair-strong, var(--line-open)); display:flex; align-items:center; justify-content:center; ${TR_MONO} font-size:24px; font-weight:800; color:var(--ma-t1, var(--text));">${fhEsc((clean[0] || 'T').toUpperCase())}</span>
+        <div style="flex:1; min-width:0;">
+          <div style="font-size:26px; font-weight:800; letter-spacing:-0.01em;">${fhEsc(clean)}</div>
+          <div style="font-size:13px; color:${t3}; margin-top:3px;">${location ? fhEsc(location) : '—'}</div>
+        </div>
+        <span style="white-space:nowrap; font-size:15px; font-weight:700; letter-spacing:0.01em; color:var(--ma-t1, var(--text));">${fhEsc(surf)} court</span>
+      </div>
+      <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:1px; background:${fhS('ffffff-060', '--line')}; border:var(--ma-hw,0.33px) solid ${fhS('ffffff-090', '--line')}; border-radius:12px; overflow:hidden; margin-top:20px;">
+        ${meta.map(([k, v]) => `<div class="tr-meta" style="background:${card}; padding:15px 18px;"><div style="font-size:11px; letter-spacing:0.13em; text-transform:uppercase; color:${t3}; margin-bottom:7px;">${k}</div><div style="font-size:16px; font-weight:700;">${v}</div></div>`).join('')}
+      </div>
+    </div>`;
+}
+// "Show court speed & market" (DF L233–266): the speed gauge + the seven-season trend, the two ROI cards (open the
+// Database page embedded) and favourite reliability — real yields from tournament-market.json, dashed when absent.
+function trMarketHtml(m){
+  const cs = m.courtSpeed, key = trKeyOf(m), mkt = trMarketFor(key);
+  const t1 = fhS('e7e9ee', '--text'), t3 = fhS('5b6880', '--label'), t4 = fhS('4b5672', '--label'), box = fhS('0a0d14', '--surface'), line = fhS('ffffff-090', '--line');
+  const hasSpeed = !!(cs && cs.abstractSpeed != null);
+  const reg = tourxConditionRegistry().map(t => t.abstractSpeed);
+  // the knob's scale is the venue set's own range (founder ruling 2026-09-19, tourxKnobPct) — the Tournaments page's gauge
+  const pos = hasSpeed ? tourxKnobPct(Number(cs.abstractSpeed), reg) : null;
+  const gauge = `<div style="flex:1 1 260px; min-width:0;">
+      <div style="display:flex; align-items:baseline; gap:14px;"><span data-tr="speed" style="${TR_MONO} font-size:44px; font-weight:700; line-height:0.9; letter-spacing:-0.02em; font-variant-numeric:tabular-nums;${hasSpeed ? '' : ' color:' + t3 + ';'}">${hasSpeed ? Number(cs.abstractSpeed).toFixed(2) : '—'}</span><span style="font-size:13px; color:${t3};">abstract court speed · <span style="color:${t1}; font-weight:600;">${hasSpeed && cs.category ? fhEsc(cs.category) : '—'}</span></span></div>
+      <div style="position:relative; height:8px; border-radius:5px; background:linear-gradient(90deg,${fhS('161a22', '--surface-inner')},${fhS('3a4557', '--line-open')},${fhS('5b9bff', '--periwinkle')}); margin-top:18px;">${hasSpeed ? `<span style="position:absolute; top:50%; left:${pos}%; width:16px; height:16px; border-radius:50%; background:${t1}; border:3px solid ${box}; box-shadow:0 0 0 1px ${fhS('5b9bff-500', '--seg-active-line')}; transform:translate(-50%,-50%);"></span>` : ''}</div>
+      <div style="display:flex; justify-content:space-between; margin-top:9px; font-size:11px; letter-spacing:0.06em; text-transform:uppercase; color:${t3};"><span>Slow</span><span>Medium</span><span>Fast</span></div>
+      ${hasSpeed ? '' : `<div style="font-size:11px; color:${t4}; margin-top:9px;">${fhEsc(trSpeedNote(m))}</div>`}
+    </div>`;
+  // seven seasons on the file's axis; the sheet holds 2023–25 (as2023…as2025), so every other season is a dash (no dot,
+  // no line through it — a gap is never interpolated). The trend reads the real span.
+  const val = y => (cs && cs['as' + y] != null ? Number(cs['as' + y]) : null);
+  const pts = TR_SPEED_YEARS.map((y, i) => ({ y, i, v: val(y) }));
+  const have = pts.filter(p => p.v != null);
+  const vals = have.map(p => p.v), tMin = vals.length ? Math.min(...vals) : 0, tSpan = vals.length ? (Math.max(...vals) - tMin) || 1 : 1;
+  const X = i => 26 + i * (308 / 6), Y = v => 66 - (v - tMin) / tSpan * 26;
+  let word = '—', delta = '';
+  if (have.length > 1){
+    const d = +(have[have.length - 1].v - have[0].v).toFixed(2), yrs = have[have.length - 1].y - have[0].y;
+    word = Math.abs(d) < 0.03 ? 'Holding steady' : (d > 0 ? 'Trending faster' : 'Trending slower');
+    delta = (d >= 0 ? '+' : '−') + Math.abs(d).toFixed(2) + ' over ' + yrs + ' yr' + (yrs === 1 ? '' : 's');
+  }
+  // segments only between adjacent measured seasons (a hole breaks the line)
+  const segs = []; let cur = [];
+  pts.forEach(p => { if (p.v != null) cur.push(p); else { if (cur.length) segs.push(cur); cur = []; } }); if (cur.length) segs.push(cur);
+  const poly = segs.filter(s => s.length > 1).map(s => `<polyline points="${s.map(p => X(p.i).toFixed(1) + ',' + Y(p.v).toFixed(1)).join(' ')}" fill="none" stroke="${fhS('ffffff', '--text')}" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"></polyline>`).join('');
+  const area = segs.filter(s => s.length > 1).map(s => `<path d="M${s.map(p => X(p.i).toFixed(1) + ' ' + Y(p.v).toFixed(1)).join(' L')} L${X(s[s.length - 1].i).toFixed(1)} 90 L${X(s[0].i).toFixed(1)} 90 Z" fill="url(#trSpFill)"></path>`).join('');
+  const dots = pts.map(p => {
+    const left = (X(p.i) / 360 * 100).toFixed(2) + '%';
+    const yTxt = p.v != null ? Y(p.v).toFixed(1) + 'px' : '66px';
+    return (p.v != null ? `<span style="position:absolute; left:${left}; top:${yTxt}; width:9px; height:9px; border-radius:50%; background:${box}; border:2px solid ${fhS('ffffff', '--text')}; transform:translate(-50%,-50%);"></span>` : '')
+      + `<span class="tr-sp-v" style="position:absolute; left:${left}; top:${yTxt}; transform:translate(-50%,calc(-100% - 11px)); ${TR_MONO} font-size:12px; font-weight:700; color:${p.v != null ? t1 : t3}; white-space:nowrap;">${p.v != null ? p.v.toFixed(2) : '—'}</span>`
+      + `<span style="position:absolute; left:${left}; bottom:0; transform:translateX(-50%); ${TR_MONO} font-size:11px; letter-spacing:0.06em; color:${t3};">${p.y}</span>`;
+  }).join('');
+  const trend = `<div style="flex:1 1 360px; min-width:0;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+        <span style="font-size:11px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:${t3};">Abstract court speed · 2020–2026</span>
+        <span style="display:flex; align-items:baseline; gap:10px;"><span data-tr="trend" style="font-size:15px; font-weight:800;${have.length > 1 ? '' : ' color:' + t3 + ';'}">${word}</span>${delta ? `<span style="${TR_MONO} font-size:12px; color:${t3};">${delta}</span>` : ''}</span>
+      </div>
+      <div style="position:relative; height:104px; margin-top:6px;">
+        <svg viewBox="0 0 360 104" preserveAspectRatio="none" width="100%" height="100%" style="position:absolute; inset:0; display:block;" fill="none"><defs><linearGradient id="trSpFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${fhS('ffffff', '--text')}" stop-opacity="0.14"></stop><stop offset="1" stop-color="${fhS('ffffff', '--text')}" stop-opacity="0"></stop></linearGradient></defs>${area}${poly}</svg>
+        ${dots}
+      </div>
+    </div>`;
+  // ROI + reliability: the Tournaments page's numbers (build-tournament-market.js), gated on the event's n (D2).
+  const g = maGate(mkt ? mkt.n : null).mode, rateOk = !!mkt && (g === 'full' || g === 'small');
+  const openable = !!(mkt && mkt.archiveNames && mkt.archiveNames.length);
+  const roiCard = (label, side, v, avg) => {
+    const has = rateOk && v != null && avg != null, dlt = has ? v - avg : 0;
+    const col = !has || g === 'small' ? MA_GREY : Math.abs(dlt) < 1 ? t3 : dlt > 0 ? fhS('3dd68c', '--positive') : fhS('e0616f', '--negative');
+    const cmp = has ? (Math.abs(dlt) < 1 ? 'in line with tour average' : (dlt > 0 ? '+' : '−') + Math.abs(dlt).toFixed(1) + 'pp vs tour avg') + (g === 'small' ? ' · ' + MA_SMALL_NOTE : '')
+      : (mkt ? 'Not enough settled matches here for a yield.' : 'No settled prices for this event on record.');
+    return `<div class="${openable ? 'seg ' : ''}tr-roi" data-tr="roi-${side}"${openable ? ` onclick="trSet({roi:'${side}'})"` : ''} style="background:${box}; border:var(--ma-hw,0.33px) solid ${line}; border-radius:12px; padding:15px 18px;${openable ? ' cursor:pointer;' : ''}"><div style="font-size:11px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:${t3}; ${TR_MONO}">${label}</div><div style="display:flex; align-items:baseline; gap:9px; margin-top:8px;"><span style="${TR_MONO} font-size:26px; font-weight:700; line-height:1; font-variant-numeric:tabular-nums; color:${col};">${has ? (v >= 0 ? '+' : '−') + Math.abs(v).toFixed(1) + '%' : '—'}</span><span style="font-size:11.5px; color:${t3};">flat-stake yield</span></div><div style="font-size:11px; color:${t4}; margin-top:5px;">${cmp}</div>${openable ? `<div style="display:flex; align-items:center; gap:7px; margin-top:11px; font-size:11.5px; font-weight:700; color:${fhS('5b9bff', '--periwinkle')};">Open ${side === 'fav' ? 'favourites' : 'underdogs'} graphics <span style="${TR_MONO}">→</span></div>` : ''}</div>`;
+  };
+  const relHas = rateOk && mkt.favRel != null;
+  const rv = relHas ? mkt.favRel : null, ra = relHas ? mkt.baseline.favRel : null, rd = relHas ? rv - ra : 0;
+  const relWord = rd >= 3 ? 'Reliable' : rd <= -3 ? 'Upset-prone' : 'Moderate';
+  const relTail = rd >= 3 ? 'clearly above average, so chalk tends to hold and backing favourites is a stronger play than usual.'
+    : rd <= -3 ? 'below average, so this is an upset-prone draw where underdogs return more value than the tour norm.'
+    : 'broadly in line with the tour, so no strong lean toward favourites or underdogs.';
+  const rel = `<div class="tr-rel" style="background:${box}; border:var(--ma-hw,0.33px) solid ${line}; border-radius:12px; padding:15px 18px;">
+      <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;"><span style="font-size:11px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:${t3};">Favourite reliability</span><span style="display:inline-flex; align-items:baseline; gap:8px;"><span style="${TR_MONO} font-size:16px; font-weight:700; font-variant-numeric:tabular-nums; color:${relHas ? (g === 'small' ? MA_GREY : t1) : t3};">${relHas ? rv + '%' : '—'}</span>${relHas ? `<span style="font-size:11px; font-weight:600; color:${t1};">${relWord}</span>` : ''}</span></div>
+      <div style="height:4px; border-radius:4px; background:${fhS('ffffff-060', '--bar-track')}; overflow:hidden; margin-top:11px;"><span style="display:block; height:100%; width:${relHas ? rv : 0}%; background:${fhS('5b9bff-500', '--periwinkle')}; border-radius:4px;"></span></div>
+      <div style="font-size:12px; line-height:1.6; color:${t3}; margin-top:9px; text-wrap:pretty;">${relHas ? `Favourites win ${rv}% of matches here versus ${ra}% across the tour — ${relTail}` : (mkt ? 'Not enough settled matches here to measure favourite reliability.' : 'No settled prices for this event on record.')}</div>
+    </div>`;
+  return `<div class="tr-market" style="display:flex; flex-direction:column; gap:12px; margin-top:12px;">
+      <div style="background:${box}; border:var(--ma-hw,0.33px) solid ${line}; border-radius:12px; padding:18px 24px 20px; display:flex; flex-wrap:wrap; align-items:flex-start; gap:20px 32px;">${gauge}${trend}</div>
+      <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:12px;">${roiCard('ROI backing favourites', 'fav', mkt && mkt.roiFav, mkt && mkt.baseline.roiFav)}${roiCard('ROI backing underdogs', 'dog', mkt && mkt.roiDog, mkt && mkt.baseline.roiDog)}${rel}</div>
+    </div>`;
+}
+// The ROI overlay (DF L268–279): the Database page mounted (DatabaseTab.mount — the Tournaments page's own embed), not restyled.
+function trRenderRoi(){
+  const E = _tr; if (!E) return;
+  // Mounted on <body>, outside the modal box: the modal's own button rule (.modal button) would restyle the embedded page's
+  // controls. The overlay carries the modal's token scope (ma-theme + its Night / Day setting) for its own frame.
+  let host = document.getElementById('trRoiPop');
+  if (!host){ host = document.createElement('div'); host.id = 'trRoiPop'; document.body.appendChild(host); }
+  const key = trKeyOf(E.m), mkt = trMarketFor(key);
+  if (!E.S.roi || !mkt || !mkt.archiveNames || !mkt.archiveNames.length){ host.innerHTML = ''; return; }
+  if (host.querySelector('[data-db-root="tr-roi"]') && host.dataset.side === E.S.roi) return;   // already mounted
+  host.dataset.side = E.S.roi;
+  const clean = trClean(E.m);
+  const th = maThemeMode();
+  host.innerHTML = `<div class="ma-pop-overlay ma-fade ma-theme" data-ma-theme="${fhEsc(th)}" onclick="if(event.target===this){trSet({roi:false})}" style="position:fixed; inset:0; z-index:200; background:${fhS('040508-740', '--backdrop')}; display:flex; align-items:flex-start; justify-content:center; overflow:auto; padding:34px 22px 60px;">
+      <div role="dialog" aria-modal="true" aria-label="${fhEsc(clean)} · favourites and underdogs" style="width:100%; max-width:1180px; background:${fhS('06070a', '--surface')}; border:var(--ma-hw,0.33px) solid ${fhS('ffffff-100', '--line')}; border-radius:16px; overflow:hidden; font-family:'Hanken Grotesk',sans-serif; color:${fhS('e7e9ee', '--text')}; line-height:normal;">
+        <div style="display:flex; align-items:baseline; gap:14px; padding:18px 22px; border-bottom:var(--ma-hw,0.33px) solid ${fhS('ffffff-080', '--line')};">
+          <span style="font-size:18px; font-weight:800; letter-spacing:-0.01em;">${fhEsc(clean)} · favourites and underdogs</span>
+          <span style="${TR_MONO} font-size:11.5px; color:${fhS('5b6880', '--label')};">flat 1u · yields by price band</span>
+          <span class="seg ma-pop-x" role="button" onclick="trSet({roi:false})" style="margin-left:auto; font-size:12.5px; font-weight:700; color:${fhS('8b96b5', '--text-soft')}; background:${fhS('ffffff-060', '--surface-inner')}; border:var(--ma-hw,0.33px) solid ${fhS('ffffff-120', '--line')}; border-radius:8px; padding:8px 14px; cursor:pointer;">Close</span>
+        </div>
+        <div data-db-root="tr-roi" data-page="database" class="pagewrap" style="max-width:none; padding:18px 20px 22px;">
+          <div class="db-headcard" data-db="head"><div><h1>Database</h1><p data-db="subtitle"></p></div><div class="db-fresh" data-db="fresh"></div></div>
+          <div class="db-ctl" data-db="ctl"><div class="db-ctltop"><div class="db-seg" data-db="viewtabs"><button data-dbview="tour">Tour</button><button class="active" data-dbview="tournaments">Tournaments</button><button data-dbview="players">Players</button></div></div><div class="db-ctlbot" data-db="filters"></div></div>
+          <div data-db="body"><div class="db-loading">Loading archive…</div></div>
+        </div>
+      </div>
+    </div>`;
+  const root = host.querySelector('[data-db-root="tr-roi"]');
+  if (root && window.DatabaseTab && window.DatabaseTab.mount)
+    window.DatabaseTab.mount(root, { hideHeader: true, lockSubject: true, initialTournamentNames: mkt.archiveNames, initialTournamentLabel: key, side: E.S.roi });
 }
 function buildTournamentSection(m){
-  if (!m.p1TournamentHistory && !m.p2TournamentHistory) {
-    return `
-      <div class="acomingsoon">No tournament-history data on record for ${m.tour} yet.</div>
-      <div class="anote">${m.surface.charAt(0).toUpperCase()+m.surface.slice(1)}${h2hRoundLabel(m.tournamentRound) ? ' · ' + h2hRoundLabel(m.tournamentRound) : ''}</div>
-    `;
-  }
-  // Grand Slams are best-of-five; every other ATP event is best-of-three.
-  // Drives format-aware stats below (e.g. the 4+ set "went the distance" row).
-  const isGrandSlam = (m.venue && m.venue.category === 'Grand Slam');
-  // Premium tournament banner (Design 11) — built entirely from real match
-  // fields: clean tournament name, venue location, category, environment,
-  // surface (colour-coded), and the round (stripped of its tournament prefix).
-  // TEN-314 (README §3, U9 / U22): surfaces are neutral text — the tile and the pill take the same tokens on every
-  // surface (letter / text primary, inner-box fill, strong hairline); the surface is named in words.
-  const surf = m.surface || 'hard';
-  const surfHex = 'var(--ma-t1)';
-  const surfLabel = surf.charAt(0).toUpperCase() + surf.slice(1);
-  const cleanTourName = (m.tour || '').replace(/^(ATP|WTA)\s+(Challenger\s+)?/i, '').trim() || (m.tour || 'Tournament');
-  const monogram = (cleanTourName.match(/[A-Za-z0-9]/) || ['?'])[0].toUpperCase();
-  const roundName = m.tournamentRound
-    ? (m.tournamentRound.includes(' - ') ? m.tournamentRound.split(' - ').pop().trim() : m.tournamentRound)
-    : '';
-  const venueSub = m.venue
-    ? [m.venue.city, m.venue.country].filter(Boolean).join(', ')
-    : '';
-  // Task 2 (items 4-5): the Environment cell now shows the venue's court speed
-  // (Abstract Speed value + category, e.g. "1.00 · Medium") and the Surface cell
-  // shows real venue altitude (e.g. "1,050 m"). Both come from m.courtSpeed
-  // (COURT_CONDITIONS). When a venue has no court-conditions data we fall back to
-  // the original Environment/Surface labels rather than render an empty cell.
-  const cs2 = m.courtSpeed;
-  const courtSpeedCell = (cs2 && cs2.abstractSpeed != null)
-    ? `<div class="atourn-metacell"><div class="k">Court speed</div><div class="v">${cs2.abstractSpeed.toFixed(2)}${cs2.category ? ` · ${cs2.category}` : ''}</div></div>`
-    : (m.venue ? `<div class="atourn-metacell"><div class="k">Environment</div><div class="v">${m.venue.indoor ? 'Indoor' : 'Outdoor'}</div></div>` : '');
-  const altitudeCell = (cs2 && cs2.altitude != null)
-    ? `<div class="atourn-metacell"><div class="k">Altitude</div><div class="v">${cs2.altitude.toLocaleString('en-US')} m</div></div>`
-    : `<div class="atourn-metacell"><div class="k">Surface</div><div class="v" style="color:${surfHex};">${surfLabel}</div></div>`;
-  // §3 (ruling A) — the export's block is a per-tournament "conditions read", not
-  // the data-provenance caveat that used to live here. The founder will supply the
-  // bespoke per-tournament prose later; until then we render a surface-true
-  // placeholder keyed off m.surface (real data, not fabricated per-event text) so
-  // the block reads correctly on every court. Swap SURFACE_CONDITIONS for the
-  // authored per-tournament source when it arrives.
-  const SURFACE_CONDITIONS = {
-    hard: `This is a hard court — a true, medium-paced bounce that rewards clean baseline timing and first-strike serving. Read the records below with that in mind: whichever game best fits these conditions usually holds the better win rate here.`,
-    clay: `This is a clay court — a slower, higher bounce that lengthens rallies and rewards movement, patience and heavy topspin over flat power. Read the records below with that in mind: whichever game best fits these conditions usually holds the better win rate here.`,
-    grass: `This is a grass court — a low, fast, skidding bounce that rewards serving and early, aggressive striking over long baseline exchanges. Read the records below with that in mind: whichever game best fits these conditions usually holds the better win rate here.`,
-  };
-  const conditionsText = SURFACE_CONDITIONS[surf] || SURFACE_CONDITIONS.hard;
-  const banner = `
-    <div class="atourn-banner">
-      <div class="atourn-banner-head">
-        <span class="atourn-monogram" style="background:var(--ma-inner); border:1px solid var(--ma-hair-strong); color:${surfHex};">${monogram}</span>
-        <div class="atourn-banner-title">
-          <div class="atourn-tname">${cleanTourName}</div>
-          ${venueSub ? `<div class="atourn-tsub">${venueSub}</div>` : ''}
-        </div>
-        <span class="atourn-surfpill" style="color:${surfHex}; background:var(--ma-inner); border:1px solid var(--ma-hair-strong);"><span class="dot" style="background:${surfHex};"></span>${surfLabel} court</span>
-      </div>
-      <div class="atourn-metagrid">
-        ${m.venue && m.venue.category ? `<div class="atourn-metacell"><div class="k">Category</div><div class="v">${m.venue.category}</div></div>` : ''}
-        ${courtSpeedCell}
-        ${altitudeCell}
-        ${roundName ? `<div class="atourn-metacell"><div class="k">Round</div><div class="v">${roundName}</div></div>` : ''}
-      </div>
-      <div class="atourn-bannerdesc">${conditionsText}</div>
-    </div>
-  `;
-  // bsp-pipeline.js now fetches each player's full career at this
-  // tournament directly (fetchPlayerTournamentMatches, one player_key query
-  // per player, no PROFILE_YEARS_BACK cap) — so this is a real career
-  // record, not just a recent-seasons snapshot. Still framed as "on file"
-  // rather than an absolute claim: confirmed live (same as the H2H tab)
-  // that this data provider's database can have real gaps for specific
-  // older matches even within a player's career, so it may not be 100%
-  // complete for every player in every edge case.
-  // Task 2 (item 6): the "Record on <speed> courts (last 52 weeks)" block was
-  // removed entirely at the user's direction — it surfaced per-court-speed
-  // records that aren't finalised for now.
-
-  // Painted static first, then upgraded to expandable rows by
-  // upgradeTournamentRows once the availability indexes resolve (Task 11).
-  // Rendering twice keeps the tab's first paint free of a network wait, and
-  // means a row never looks clickable before we know it has something to show.
-  const token = ++_atournToken;
-  upgradeTournamentRows(m, token, cleanTourName);
-  return `
-    ${banner}
-    <div class="yr-grid" id="atournGrid" data-token="${token}">
-      ${atournPlayerColumn(m.p1, m.p1TournamentHistory, 'p1', isGrandSlam)}
-      ${atournPlayerColumn(m.p2, m.p2TournamentHistory, 'p2', isGrandSlam)}
-    </div>
-  `;
+  const E = trStateFor(m), S = E.S;
+  const clean = trClean(m);
+  const P = [trModelFor(m, 0), trModelFor(m, 1)];
+  const t3 = fhS('5b6880', '--label'), t4 = fhS('4b5672', '--label');
+  const toggle = `<div style="display:flex; justify-content:center; margin-top:14px;"><span class="seg tr-more-toggle" onclick="trSet({more:${!S.more}})" style="display:inline-flex; align-items:center; gap:8px; padding:8px 16px; border-radius:9px; font-size:12.5px; font-weight:700; color:${fhS('8b96b5', '--text-soft')}; background:${fhS('0a0d14', '--surface')}; border:var(--ma-hw,0.33px) solid ${fhS('ffffff-090', '--line')}; cursor:pointer;">${S.more ? 'Hide court speed &amp; market' : 'Show court speed &amp; market'}<svg width="10" height="10" viewBox="0 0 10 10" style="transform:${S.more ? 'rotate(180deg)' : 'none'};"><path d="M2 3.5 5 6.5 8 3.5" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linecap="round"></path></svg></span></div>`;
+  const recHead = `<div style="display:flex; align-items:baseline; justify-content:space-between; gap:12px; margin:24px 0 12px;"><span style="font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:${t3};">Record at ${fhEsc(clean)}</span><span style="font-size:11px; color:${t4};">Career main-draw record at this event, newest edition first. Click a match for its stats.</span></div>`;
+  return `<div class="tr" style="font-family:'Hanken Grotesk',sans-serif; font-size:16px; line-height:normal; color:${fhS('e7e9ee', '--text')};">
+      ${trHeaderHtml(m)}${toggle}${S.more ? trMarketHtml(m) : ''}${recHead}
+      <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(min(560px,100%),1fr)); gap:20px; align-items:start;">${P.map((p, i) => trPlayerCardHtml(m, p, i)).join('')}</div>
+    </div>`;
 }
 
 // Extra stats tab REMOVED (TEN-8 Item 5): the founder's spec fixes the rail at
@@ -19261,7 +19301,9 @@ const A_TAB_BUILD = {
   progression(m){ aPaint('aSectionProgression', buildMatchProgressionSection(m)); return pgEnsureData(m).then(() => { if (aBuilt(m, 'progression')) aPaint('aSectionProgression', buildMatchProgressionSection(m)); }); },
   // TEN-324: the career spine (careerByYear) for both players, eager file or shard; returned so Download report waits.
   overview(m){ return ovPaint(m); },
-  tournament(m){ aPaint('aSectionTournament', buildTournamentSection(m)); },
+  // TEN-332: paints from the inline history, then its shards (career history, closes, tournament-market) land; returned so
+  // Download report waits for the prices.
+  tournament(m){ aPaint('aSectionTournament', buildTournamentSection(m)); return trLoad(m); },
   // TEN-304: loading line for THIS match, then its files load (openWeatherTab).
   weather(m){ _aWxMatch = m; renderWeatherSection(); return openWeatherTab(); },
   // TEN-310: a new match starts from its defaults with no pop-up; the tab loads its own shards.
@@ -19392,6 +19434,7 @@ function openAnalysisModal(matchId, tab){
   _aStyleMatch = m; _aFormMatch = m; _aWxMatch = m; _aNewsMatch = m; _aNewsFilter = 'all'; _aNewsOpen = '';
   _me = null; _pg = null;
   const mePopEl = document.getElementById('mePop'); if (mePopEl) mePopEl.innerHTML = '';
+  if (typeof trCloseRoi === 'function') trCloseRoi();
   _aOdds = { m:m, novig:false, market:'Match Winner', mv:null };
 
   const first = (tab && A_TAB_BUILD[tab]) ? tab : _aLastTab;
@@ -19434,7 +19477,7 @@ function printAnalysisReport(){
 
 // Closing leaves no layer behind: the stats sheet and any Market edge pop-up go too (a hidden pop-up would keep
 // answering Esc anywhere on the site — review 2026-09-28).
-function closeAnalysisModal(){ document.getElementById('analysisModal').classList.remove('open'); if (typeof fhCloseSheet === 'function') fhCloseSheet(); const mp = document.getElementById('mePop'); if (mp) mp.innerHTML = ''; }
+function closeAnalysisModal(){ document.getElementById('analysisModal').classList.remove('open'); if (typeof fhCloseSheet === 'function') fhCloseSheet(); if (typeof trCloseRoi === 'function') trCloseRoi(); const mp = document.getElementById('mePop'); if (mp) mp.innerHTML = ''; }
 function setActiveButton(groupEl, clickedBtn){
   groupEl.querySelectorAll('button').forEach(b => b.classList.remove('active'));
   clickedBtn.classList.add('active');
@@ -25044,14 +25087,22 @@ function tourxQuotesFor(name){
   return (t && t.length) ? t : null;
 }
 
-let tourxMarketData = null, tourxMarketLoading = false, tourxMarketFailed = false;
+let tourxMarketData = null, tourxMarketLoading = false, tourxMarketFailed = false, tourxMarketP = null;
+// The one load promise, no rendering (TEN-332: the Match analysis Tournament tab waits on it too — it must not reach this
+// page's renderers, which carry the 12a palette).
+function tourxFetchMarket(){
+  if (tourxMarketData || tourxMarketFailed) return Promise.resolve(tourxMarketData);
+  if (tourxMarketLoading && tourxMarketP) return tourxMarketP;
+  tourxMarketLoading = true;
+  tourxMarketP = fetch('./tournament-market.json', { cache: 'no-cache' })
+    .then(r => r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)))
+    .then(d => { tourxMarketData = d; tourxMarketLoading = false; return d; })
+    .catch(err => { tourxMarketFailed = true; tourxMarketLoading = false; console.warn('tournament-market.json load failed:', err.message); return null; });
+  return tourxMarketP;
+}
 function tourxLoadMarket(){
   if (tourxMarketData || tourxMarketLoading || tourxMarketFailed) return;
-  tourxMarketLoading = true;
-  fetch('./tournament-market.json', { cache: 'no-cache' })
-    .then(r => r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)))
-    .then(d => { tourxMarketData = d; tourxMarketLoading = false; if (tourxState.section === 'overview') renderTourxOverview(); })
-    .catch(err => { tourxMarketFailed = true; tourxMarketLoading = false; console.warn('tournament-market.json load failed:', err.message); });
+  tourxFetchMarket().then(d => { if (d && tourxState.section === 'overview') renderTourxOverview(); });
 }
 function tourxMarketFor(name){
   if (!tourxMarketData || !tourxMarketData.tournaments) return null;

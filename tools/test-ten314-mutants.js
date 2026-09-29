@@ -45,7 +45,8 @@ const MUTANTS = [
   // TEN-336: the Market edge pop-up rows are maMatchRowsHtml rows; meRowOf hands each its opener
   ['sheet: Market edge rows gated on stats on file again', "click: ` onclick=\"meOpenRow('${r.mid}')\"` }", "click: r.ek ? ` onclick=\"meOpenRow('${r.mid}')\"` : '' }"],
   ['sheet: Overview drill rows do not open', "    const click = maRowOnclick({ key: playerKey,", "    const click = '' && maRowOnclick({ key: playerKey,"],
-  ['sheet: Tournament rows do not open', "  const click = maRowOnclick({ key: opts.playerKey,", "  const click = '' && maRowOnclick({ key: opts.playerKey,"],
+  // TEN-332: the Tournament rows are registered sheet rows now (trRowData); their gate mutants live in test-ten332-mutants.js
+  ['sheet: Tournament rows do not open', "    cls: 'tr-row', attrs: ` data-fh-mid=\"${fhEsc(r.mid)}\"`, click: ` onclick=\"fhOpenSheet('${fhEsc(r.mid)}')\"`,", "    cls: 'tr-row', attrs: ` data-fh-mid=\"${fhEsc(r.mid)}\"`, click: ` onclick=\"void('${fhEsc(r.mid)}')\"`,"],
   ['sheet: an unplaced row opens nothing', "    let r;\n    if (i >= 0) r = meRowFromCareer(", "    let r;\n    if (i < 0) return;\n    if (i >= 0) r = meRowFromCareer("],
   ['sheet: exact name keys on the date join', "  return lo.length >= 4 && hi.endsWith(lo);\n}\nlet _maRowReq", "  return false;\n}\nlet _maRowReq"],
   ['sheet: one of two same-date candidates accepted', "      if (hits.length === 1) i = hits[0];", "      if (hits.length) i = hits[0];"],
@@ -71,8 +72,6 @@ const MUTANTS = [
   ['Market edge: band Won ungated', "${maRateHtml(b.w, n, { text: mePct0(b.won), nopct: '—', note: 'title' })}", "${mePct0(b.won)}"],
   ['Market edge: win bar drawn at any n', "const bar = maGateBar(b.w, n, ME_C.text), winW", "const bar = { w: n ? b.w / n * 100 : 0, color: ME_C.text, mode: 'full' }, winW"],
   ['Market edge: pop-up rate box loses its note', "big, R.mode === 'small'); };", "big, false); };"],
-  ['Tournament: win rate "0%" at n = 0', "  const winPct = maRateHtml(history.totalWon, total, { color: recColor, note: false, cls: 'pct' });", "  const winPct = `<span class=\"pct\">${total > 0 ? Math.round(history.totalWon / total * 100) : 0}%</span>`;"],
-  ['Tournament: bar drawn at any n', "  const winBar = maGateBar(history.totalWon, total, trackBar);", "  const winBar = { w: total ? history.totalWon / total * 100 : 0, color: trackBar };"],
   ['Overview: season rate ungated', "    const pct = maRateHtml(rec.won, n, { cls: 'rpct', note: 'title' });", "    const pct = `<span class=\"rpct\">${Math.round(rec.won / n * 100)}%</span>`;"],
   ['Playing style: header rate ungated', "  const pct = maRateHtml(w, n, { nopct: '' });\n  // Publish", "  const pct = Math.round((w / n) * 100) + '%';\n  // Publish"],
   ['Playing style: personal record keeps its own ladder', "  const gate = maGate(n).mode;\n  if (gate === 'none'){", "  const gate = n === 0 ? 'none' : n < 3 ? 'nopct' : n < 10 ? 'small' : 'full';\n  if (gate === 'none'){"],

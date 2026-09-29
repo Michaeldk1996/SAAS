@@ -1,0 +1,263 @@
+// TEN-332 (TEN-312 Tournament tab, founder 2026-09-28 / 2026-09-29) — the Tournament tab rebuilt on the design file.
+// Every check drives the page's REAL code (the TEN-263 … Tournament blocks sliced out of bsp-consult-dashboard.html and
+// executed) and names the mutation that turns it red; tools/test-ten332-mutants.js applies each one to a copy of the page
+// (TEN332_HTML).
+//   · N6 only editions entered · N7 main draw (the history's own rows) · N2 walkovers in no count
+//   · D2 one gate on every rate (W–L %, sets won, vs market) — never "0%" · D6 "+Y.Ypt vs market" at n >= 5
+//   · N5 Backing at the R8 close (Pinnacle, then Bet365) · TEN-325 retirements settle at the close, note from the core
+//   · N4 the court-speed label is the pipeline's 3-band (m.courtSpeed.category) · Roland Garros speed dashed (TEN-321)
+//   · the reading paragraph is not drawn · the seven-season trend dashes every season the sheet does not hold
+//   · DoD 8: maMatchRowsHtml rows, every row opens the shared sheet; the old renderers are deleted
+import { test } from 'node:test';
+import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { createRequire } from 'node:module';
+
+const HERE = dirname(fileURLToPath(import.meta.url));
+const html = readFileSync(process.env.TEN332_HTML || join(HERE, 'bsp-consult-dashboard.html'), 'utf8');
+const pp2 = readFileSync(process.env.TEN332_PP2 || join(HERE, 'player-profile-v2.js'), 'utf8');
+const HOUSE_RATINGS_SRC = readFileSync(join(HERE, 'house-ratings.js'), 'utf8');
+globalThis.MarketEdgeCore = createRequire(import.meta.url)(join(HERE, 'market-edge-core.js'));
+function slice(name) {
+  const start = html.indexOf(`function ${name}(`);
+  assert.ok(start > 0, `${name} not found`);
+  let d = 0, i = html.indexOf('{', start);
+  for (; i < html.length; i++) { if (html[i] === '{') d++; else if (html[i] === '}' && --d === 0) break; }
+  return html.slice(start, i + 1);
+}
+function between(a, b) {
+  const x = html.indexOf(a), y = html.indexOf(b, x);
+  assert.ok(x > 0 && y > x, 'block not found: ' + a);
+  return html.slice(x, y);
+}
+const constSrc = (name) => { const m = new RegExp(`\\nconst ${name} = [\\s\\S]*?\\n(?:\\};|\\];)\\n`).exec(html); assert.ok(m, name); return m[0]; };
+const PS_TOUR_META_SRC = /const PS_TOUR_META = \(\(\) => \{[\s\S]*?\n\}\)\(\);/.exec(html)[0];
+const S = new Function('window', `
+  const document = { addEventListener(){}, getElementById(){ return null; }, querySelector(){ return null; }, querySelectorAll(){ return []; },
+    head: { appendChild(){} }, createElement(){ return { set textContent(v){} }; } };
+  const playerProfiles = {};
+  const MarketEdgeCore = window.MarketEdgeCore;
+  function formPanelHtml(){ return ''; } function ensureFormPanelTabs(){}
+  function ensureFormRows(m){ return Promise.resolve(m); } function loadCareerHistory(){ return Promise.resolve([]); }
+  function ensureStyleMeetings(m){ return Promise.resolve(m); } function ensurePsMatrix(){ return Promise.resolve(); }
+  function ppStyleFor(){ return null; } function psArchFor(){ return null; } function styleMeetRowsFor(){ return []; }
+  function openPlayerProfileFromMatch(){} function aGoTab(){}
+  let _aM = null; const _aBuilt = new Set(); function aBuilt(){ return false; } function aPaint(){}
+  const _careerHistoryShards = {};
+  let tourxMarketData = null; function tourxFetchMarket(){ return Promise.resolve(tourxMarketData); }
+  const HouseRatings = (function(){ const window = {}; ${HOUSE_RATINGS_SRC}; return window.HouseRatings; })();
+  ${PS_TOUR_META_SRC}
+  ${constSrc('TOURNAMENT_CATALOG')}
+  ${constSrc('COURT_CONDITIONS')}
+  const TOURX_KNOB_PAD = 0.08;
+  ${['escapeHtml', 'surnameFirstName', 'psShortName', 'formIni', 'ppCleanTournamentName', 'psNormTour', 'psTourMeta', 'psRoundAbbr', 'h2hRoundLabel',
+     'eventKeyOfMatch', 'courtSpeedCategory', 'tourxKnobPct', 'tourxConditionRegistry'].map(slice).join('\n')}
+  ${between('/* =====================================================================\n   TEN-263 ', '// Extra stats tab REMOVED (TEN-8 Item 5)')}
+  return { buildTournamentSection, trModelFor, trStateFor, trMarketHtml, trHeaderHtml, trRowOf, fhStateFor, maMatchRowsHtml,
+    get tr(){ return _tr; }, get fh(){ return _fh; }, set market(v){ tourxMarketData = v; }, TR_RG_NOTE, TR_NO_SPEED };
+`)(globalThis);
+const text = h => h.replace(/<[^>]*>/g, ' ').replace(/&amp;/g, '&').replace(/\s+/g, ' ').trim();
+
+// ---- fixtures: history editions (the pipeline's shape), career rows (set scores) and closes (prices) for p1 ----
+let EK = 90000;
+// ed(year, [[date, opp, roundLabel, won, sets, extra]...], extra) — sets = [[own, opp], ...]
+function ed(year, ms, x) {
+  const matches = ms.map(([date, opp, round, won, sets, o]) => {
+    const done = (sets || []).filter(s => Math.max(s[0], s[1]) >= 6 && (Math.abs(s[0] - s[1]) >= 2 || Math.max(s[0], s[1]) === 7));
+    const pS = done.filter(s => s[0] > s[1]).length, oS = done.length - pS;
+    return { date, opponent: opp, round, won, result: pS + ' - ' + oS, eventKey: ++EK, _sets: sets, _o: o || {} };
+  }).sort((a, b) => (a.date < b.date ? 1 : -1));
+  const won = matches.filter(m => m.won).length;
+  return Object.assign({ year: String(year), matchCount: matches.length, won, lost: matches.length - won, roundReached: matches[0] ? matches[0].round : 'Final', matches }, x || {});
+}
+function fixture(eds, o) {
+  o = o || {};
+  const ch = [], rows = [];
+  eds.forEach(e => e.matches.forEach(x => {
+    ch.push({ date: x.date, year: x.date.slice(0, 4), opponent: x.opponent, round: x.round, won: x.won, result: x.result, eventKey: x.eventKey,
+      tournament: 'Washington', surface: 'hard', level: 'atp', retired: !!x._o.ret, sets: (x._sets || []).map(s => ({ p: s[0], o: s[1] })) });
+    if (x._o.p) rows.push({ date: x.date, opp: x.opponent, won: x.won, P: x._o.p, B: null, ret: !!x._o.ret, oppKey: null });
+    if (x._o.b) rows.push({ date: x.date, opp: x.opponent, won: x.won, P: null, B: x._o.b, ret: false, oppKey: null });
+  }));
+  const hist = eds.length ? { editionsPlayed: eds.length, totalWon: 0, totalLost: 0, years: eds } : null;
+  const m = Object.assign({ id: 'fx-tr-' + (++EK), tour: 'ATP Washington', surface: 'hard', date: '2026-07-20', tournamentRound: 'ATP Washington - Quarter-finals',
+    p1: 'J. Sinner', p2: 'C. Alcaraz', p1Key: '1', p2Key: '2', p1TournamentHistory: hist, p2TournamentHistory: null,
+    venue: { city: 'Washington', country: 'US', category: 'ATP 500', indoor: false },
+    courtSpeed: { speed: 66, altitude: 20, abstractSpeed: 1.02, as2023: 0.98, as2024: 1.01, as2025: 1.02, category: 'Medium' } }, o.m || {});
+  const E = S.trStateFor(m);
+  E.data = [{ ch, cl: { rows, cap: [] } }, { ch: [], cl: { rows: [], cap: [] } }]; E.state = ['ready', 'ready'];
+  return m;
+}
+const W2 = [[6, 3], [6, 4]], L2 = [[3, 6], [4, 6]];
+const nMatches = (n, wonFn, price) => ed(2024, Array.from({ length: n }, (_, i) => ['2024-07-' + String(10 + i).padStart(2, '0'), 'P. Opp' + String.fromCharCode(97 + i), 'Round ' + i, wonFn(i), wonFn(i) ? W2 : L2, price ? { p: price(i) } : null]));
+const card0 = h => h.slice(h.indexOf('class="tr-card"'), h.indexOf('class="tr-card"', h.indexOf('class="tr-card"') + 5));
+const tile = (h, cap) => { const c = card0(h), i = c.indexOf('>' + cap + '<'); assert.ok(i > 0, cap); const a = c.lastIndexOf('<div class="tr-tile"', i), b = c.indexOf('<div class="tr-tile"', i);
+  return c.slice(a, b > 0 ? b : c.indexOf('</div>', c.indexOf('tr-tile-sub', i)) + 6); };
+
+// Mutation 'N6: a synthesised Withdrawal edition renders' (drop `.filter(y => !y.withdrew)`)
+test('N6: only editions entered — a stale store\'s gap year never renders', () => {
+  const m = fixture([ed(2025, [['2025-07-22', 'A. B', 'Final', true, W2]]), ed(2021, [], { withdrew: true, roundReached: 'Withdrawal' }), ed(2019, [['2019-07-22', 'C. D', '1/8-finals', false, L2]])]);
+  const h = S.buildTournamentSection(m);
+  assert.ok(!/Withdrawal|2021/.test(text(card0(h))));
+  assert.deepEqual([...card0(h).matchAll(/>Washington (\d{4})</g)].map(x => x[1]), ['2025', '2019']);
+});
+
+// Mutations 'result: won final not "Won"', 'result: in-progress edition labelled by its last round', 'rows: group meta loses W–L'
+test('edition headers: "Washington YYYY" + result · W–L — Won / the round lost / In progress (DESIGN GAP G17)', () => {
+  // this year's edition stays "In progress" whether or not the analysed match itself is finished (never "· w/o")
+  const done = fixture([ed(2026, [['2026-07-18', 'E. F', '1/8-finals', true, W2]])], { m: { finalScore: { winner: 'p1' } } });
+  assert.ok(text(card0(S.buildTournamentSection(done))).includes('Washington 2026 In progress · 1–0'));
+  const m = fixture([ed(2026, [['2026-07-18', 'E. F', '1/8-finals', true, W2]]), ed(2025, [['2025-07-20', 'A. B', 'Final', true, W2], ['2025-07-19', 'G. H', 'Semi-finals', true, W2]]),
+    ed(2024, [['2024-07-19', 'C. D', 'Quarter-finals', false, L2], ['2024-07-17', 'I. J', '1/8-finals', true, W2]])]);
+  const g = [...card0(S.buildTournamentSection(m)).matchAll(/<div class="ma-rows-group"[\s\S]*?<\/div>/g)].map(x => text(x[0]));
+  assert.deepEqual(g, ['Washington 2026 In progress · 1–0', 'Washington 2025 Won · 2–0', 'Washington 2024 Quarter-final · 1–1']);
+});
+
+// Mutation 'gate: W–L % printed below n 5' / 'gate: n 0 prints 0%'
+test('W–L record tile: n 0 "—" (never 0%), 3 count only, 7 greyed + hover note, 12 full', () => {
+  const at = n => tile(S.buildTournamentSection(fixture(n ? [nMatches(n, i => i % 3 !== 2)] : [])), 'W–L record');
+  assert.ok(text(at(0)).includes('—') && !/0%/.test(text(at(0))));
+  assert.ok(!/%/.test(text(at(3))) && text(at(3)).includes('2–1'));
+  assert.match(at(7), /data-ma-gate="small" title="small sample · n=7"[^>]*>71%</);
+  assert.match(at(12), /data-ma-gate="full"[^>]*>67%</);
+});
+
+// Mutation 'sets: a retirement\'s unfinished set counted'
+test('Sets won: finished sets only — a retirement\'s unfinished set is not a set (rule e)', () => {
+  const m = fixture([ed(2024, [['2024-07-20', 'A. B', 'Final', true, [[6, 3], [2, 1]], { ret: true }], ['2024-07-18', 'C. D', 'Semi-finals', true, W2],
+    ['2024-07-17', 'E. F', 'Quarter-finals', true, W2], ['2024-07-16', 'G. H', '1/8-finals', true, [[6, 3], [4, 6], [6, 2]]], ['2024-07-15', 'I. J', '1/16-finals', true, W2]])]);
+  const t = text(tile(S.buildTournamentSection(m), 'Sets won'));
+  assert.ok(t.includes('90%') && t.includes('9 of 10 sets'), t);   // 1 of the retirement's 2 sets + 6 + 2 of 3
+});
+
+// Mutation 'best: an in-progress edition counts as a result'
+test('Best result: Won beats a final; an edition still being played is no result; the year under it', () => {
+  const m = fixture([ed(2026, [['2026-07-19', 'E. F', 'Semi-finals', true, W2]]), ed(2024, [['2024-07-20', 'A. B', 'Final', false, L2]]), ed(2022, [['2022-07-20', 'A. B', 'Quarter-finals', false, L2]])]);
+  assert.equal(text(tile(S.buildTournamentSection(m), 'Best result')), 'Best result F 2024');
+  const m2 = fixture([ed(2026, [['2026-07-19', 'E. F', 'Semi-finals', true, W2]])]);
+  assert.equal(text(tile(S.buildTournamentSection(m2), 'Best result')), 'Best result — no finished edition');
+});
+
+// Mutations 'backing: Pinnacle only (Bet365 fallback dropped)', 'backing: a retirement not settled', 'vm: shown below n 5',
+// 'vm: implied rate not de-vigged', 'backing: RET note spelled out / dropped'
+test('Backing (N5 + D6 + TEN-325): R8 closes, retirements settle at the close, vs market at n >= 5 de-vigged, note from the core', () => {
+  // 6 matches: 4 Pinnacle, 1 Bet365 only, 1 a retirement win at the close
+  const m = fixture([ed(2024, [
+    ['2024-07-21', 'A. B', 'Final', true, [[6, 3], [2, 1]], { p: [1.5, 2.6], ret: true }],
+    ['2024-07-20', 'C. D', 'Semi-finals', false, L2, { p: [2.0, 1.85] }],
+    ['2024-07-19', 'E. F', 'Quarter-finals', true, W2, { p: [1.8, 2.05] }],
+    ['2024-07-18', 'G. H', '1/8-finals', true, W2, { b: [1.4, 2.9] }],
+    ['2024-07-17', 'I. J', '1/16-finals', true, W2, { p: [1.3, 3.5] }],
+    ['2024-07-16', 'K. L', '1/32-finals', false, L2, { p: [1.6, 2.4] }]])]);
+  const P = S.trModelFor(m, 0);
+  assert.equal(P.priced.length, 6);
+  assert.equal(P.priced.filter(r => r.book === 'B').length, 1);
+  assert.equal(Math.round(P.units * 100), 50 - 100 + 80 + 40 + 30 - 100);
+  const pairs = [[1.5, 2.6], [2.0, 1.85], [1.8, 2.05], [1.4, 2.9], [1.3, 3.5], [1.6, 2.4]];
+  const exp = pairs.reduce((s, [a, b]) => s + (1 / a) / (1 / a + 1 / b), 0) / 6;
+  assert.ok(Math.abs(P.vm - (4 / 6 - exp) * 100) < 1e-9);
+  const t = tile(S.buildTournamentSection(m), 'Backing');
+  assert.match(t, /−0\.0u|\+0\.0u|±0\.0u/);
+  assert.match(t, /data-ma-gate="small"[^>]*>[+−]\d+\.\dpt vs market</);
+  assert.ok(t.includes('>' + globalThis.MarketEdgeCore.RET_SETTLE_NOTE + '<') && t.includes('data-ret-note="tournament"'));
+  // n 4 priced: the units show, no vs market
+  const m4 = fixture([nMatches(4, i => i < 3, () => [1.5, 2.6])]);
+  const t4 = text(tile(S.buildTournamentSection(m4), 'Backing'));
+  assert.ok(t4.includes('+0.5u') && t4.includes('4 priced') && !/vs market/.test(t4.replace('vs market needs', '')), t4);
+});
+
+// Mutation 'N2: a set-less history row read as a walkover' (the pipeline history carries no walkovers — TEN-313 drops
+// them — so a "0 - 0" row with no set is a match stopped in set 1: a retirement, played, settled at the close)
+test('N2 + TEN-325: a set-less "0 - 0" history row is a first-set retirement — counted and settled at its close', () => {
+  const m = fixture([ed(2024, [['2024-07-20', 'A. B', 'Final', true, W2, { p: [1.5, 2.6] }]])]);
+  S.tr.data[0].ch[0].sets = []; S.tr.data[0].ch[0].result = '0 - 0'; m.p1TournamentHistory.years[0].matches[0].result = '0 - 0';
+  const P = S.trModelFor(m, 0);
+  assert.equal(P.priced.length, 1);
+  assert.ok(P.all[0].ret && !P.all[0].wo);
+  assert.equal(Math.round(P.units * 100), 50);
+});
+
+// Mutation 'join: the season + opponent fallback takes another event's row'
+test('the season + opponent fallback joins only a row of this event (name or archive name), never a different match key', () => {
+  const m = fixture([ed(2019, [['2019-07-22', 'C. Dee', 'Final', true, W2, { p: [1.5, 2.6] }]])]);
+  const E = S.tr, x = m.p1TournamentHistory.years[0].matches[0];
+  delete x.eventKey; x.date = '';
+  E.data[0].ch[0].eventKey = null; E.data[0].ch[0].tournament = 'Toronto';                 // the same opponent, another event
+  let P = S.trModelFor(m, 0);
+  assert.equal(P.all[0].sets, null, 'a Toronto row never joins a Washington edition');
+  E.data[0].ch[0].tournament = 'Citi Open';                                                 // an archive name of this event
+  S.market = { baseline: { roiFav: 0, roiDog: 0, favRel: 70 }, tournaments: { Washington: { n: 50, roiFav: 1, roiDog: 1, favRel: 70, archiveNames: ['Citi Open'] } } };
+  P = S.trModelFor(m, 0);
+  assert.ok(P.all[0].sets && P.all[0].sets.length === 2, 'the archive name joins');
+  S.market = null;
+});
+
+// Mutations 'N4: the design\'s AS cut-offs back', 'TEN-321: Roland Garros speed printed from another key'
+test('N4 + TEN-321: the header prints the pipeline\'s 3-band label; Roland Garros dashes its speed with the note', () => {
+  // 1.17 is "Fast" on the design's retired AS cut-offs (< 1.15) and "Medium" on the pipeline index (66 <= 68)
+  const m = fixture([], { m: { courtSpeed: { speed: 66, abstractSpeed: 1.17, altitude: 20, category: 'Medium' } } });
+  assert.ok(text(S.trHeaderHtml(m)).includes('1.17 · Medium'), 'label from courtSpeed.category, never re-banded here');
+  const rg = fixture([], { m: { tour: 'ATP French Open', courtSpeed: null, venue: { city: 'Paris', country: 'FR', category: 'Grand Slam' } } });
+  const h = S.trHeaderHtml(rg);
+  assert.match(h, /data-tr="speed-dash"[^>]*>—</);
+  assert.ok(h.includes(S.TR_RG_NOTE));
+  assert.ok(!h.includes(S.TR_NO_SPEED));
+});
+
+// Mutation 'the reading paragraph back (placeholder copy)'
+test('the reading paragraph waits on the founder\'s copy: nothing is drawn', () => {
+  const h = S.buildTournamentSection(fixture([nMatches(2, () => true)]));
+  assert.ok(!/Read the records below|plays fast and low|true, medium-paced/.test(h));
+  assert.ok(!/SURFACE_CONDITIONS/.test(html));
+});
+
+// Mutations 'trend: a missing season interpolated', 'trend: header span claims 7 years'
+test('seven-season trend: 2020–2026 on the axis, dots only where the sheet holds a value, the rest dashed', () => {
+  const m = fixture([], { m: { courtSpeed: { speed: 66, abstractSpeed: 1.02, altitude: 20, as2023: 0.98, as2024: null, as2025: 1.02, category: 'Medium' } } });
+  S.market = null;
+  const h = S.trMarketHtml(m);
+  const v = [...h.matchAll(/class="tr-sp-v"[^>]*>([^<]*)</g)].map(x => x[1]);
+  assert.deepEqual(v, ['—', '—', '—', '0.98', '—', '1.02', '—']);
+  assert.equal((h.match(/<polyline/g) || []).length, 0, 'a hole in 2024 breaks the line: no segment of 2+ adjacent seasons');
+  assert.ok(text(h).includes('Trending faster +0.04 over 2 yrs'));
+  assert.ok(text(h).includes('Abstract court speed · 2020–2026'));
+});
+
+// Mutations 'ROI: a card clickable with no archive names', 'ROI: a small-n yield in full colour'
+test('ROI + reliability: tournament-market.json figures, dashed when absent, greyed at n 5–9, open only with archive names', () => {
+  const m = fixture([]);
+  S.market = null;
+  let h = S.trMarketHtml(m);
+  assert.ok(!/onclick="trSet\(\{roi/.test(h) && text(h).includes('ROI backing favourites — flat-stake yield'));
+  S.market = { baseline: { roiFav: -1.8, roiDog: -6.9, favRel: 70 }, tournaments: { Washington: { n: 120, roiFav: 2.5, roiDog: -9, favRel: 74, archiveNames: ['Citi Open'] } } };
+  h = S.trMarketHtml(m);
+  assert.ok(text(h).includes('+2.5% flat-stake yield +4.3pp vs tour avg'));
+  assert.ok(/data-tr="roi-fav" onclick="trSet\(\{roi:'fav'\}\)"/.test(h));
+  assert.ok(text(h).includes('74% Reliable'));
+  S.market = { baseline: { roiFav: -1.8, roiDog: -6.9, favRel: 70 }, tournaments: { Washington: { n: 7, roiFav: 2.5, roiDog: -9, favRel: 74 } } };
+  h = S.trMarketHtml(m);
+  assert.ok(text(h).includes('small sample') && !/data-tr="roi-fav" onclick/.test(h));
+  assert.match(h, /color:var\(--ma-t3, var\(--label\)\);">\+2\.5%</, 'a 5–9 yield is greyed');
+  S.market = null;
+});
+
+// Mutations 'DoD 8: a row stops opening the sheet', 'DoD 8: a tab-local row renderer again', 'more: the singular plural'
+test('DoD 8: maMatchRowsHtml rows, every row registered in the one sheet map and opening it; the old renderers are gone', () => {
+  const m = fixture([ed(2025, [['2025-07-22', 'A. B', 'Final', true, W2]]), ed(2024, [['2024-07-22', 'A. B', 'Final', true, W2]]), ed(2023, [['2023-07-22', 'A. B', 'Final', true, W2]]), ed(2022, [['2022-07-22', 'A. B', 'Final', true, W2]])]);
+  const h = card0(S.buildTournamentSection(m));
+  const rows = [...h.matchAll(/class="seg ma-row tr-row" data-fh-mid="([^"]+)" onclick="fhOpenSheet\('([^']+)'\)"/g)];
+  assert.equal(rows.length, 3, 'three editions shown before "Show 1 earlier edition"');
+  rows.forEach(r => { assert.equal(r[1], r[2]); assert.ok(S.fh.sheetMap[r[1]], 'registered in the one sheet map'); });
+  assert.ok(text(h).includes('Show 1 earlier edition') && !text(h).includes('Show 1 earlier editions'));
+  for (const f of ['atournMatchRowHtml', 'atournYearRowHtml', 'atournPlayerColumn', 'upgradeTournamentRows', 'toggleTournamentYear', 'showTournamentMore'])
+    assert.ok(!html.includes('function ' + f + '('), f + ' deleted');
+  assert.ok(!/\.atourn-/.test(html), 'the tab\'s own CSS is deleted');
+});
+
+// Mutation 'N5 (profile): the per-event Backing back to Pinnacle rows only'
+test('N5: the player-profile per-event Backing counts the R8 basis rows (inBasis), not Pinnacle alone', () => {
+  assert.ok(pp2.includes("if (r.inBasis && r.pl != null && isFinite(r.pl)) { b.pinPl += r.pl; b.pinN++; }"));
+  assert.ok(!pp2.includes("if (r.book === 'pinnacle' && r.pl != null"));
+});

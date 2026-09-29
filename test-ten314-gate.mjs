@@ -37,11 +37,11 @@ const S = new Function(`
      'ANALYSIS_P1_COLOR', 'ANALYSIS_P2_COLOR', 'ANALYSIS_P2_FILL', 'ANALYSIS_P1_RGBA', 'ANALYSIS_P2_RGBA', '_psvSides', ...GATE_CONSTS, 'meRateBox'].map(constSrc).join('\n')}
   const FH_H2H_RET_COUNTS = true;
   ${[...GATE, 'escapeHtml', 'fhEsc', 'fhHexA', 'meSg', 'psEsc', 'psShortName', 'akSurname', 'akHead', 'akCard', 'akSeasonOf', 'akFormBlock',
-     'fhRecLevelMix', 'fhS', 'fhH2hRecCard', 'meBandsCol', 'atournPlayerColumn', 'seasonSurfaceTierViewHtml', 'styleNoteHtml', 'styleVsArchetypeCard',
+     'fhRecLevelMix', 'fhS', 'fhH2hRecCard', 'meBandsCol', 'seasonSurfaceTierViewHtml', 'styleNoteHtml', 'styleVsArchetypeCard',
      'stylePersonalCard'].map(slice).join('\n')}
-  function psvShowText(){ return ''; } function psvListHtml(){ return ''; } function atournYearRowHtml(){ return ''; }
+  function psvShowText(){ return ''; } function psvListHtml(){ return ''; }
   let psMatrixData = null; const PS_ARCHETYPES = []; function styleKey(n){ return n; } function psCellFor(){ return null; } function psArchIndex(){ return 0; }
-  return { maGate, maRate, maRateHtml, maGateBar, maSmallChip, akFormBlock, fhH2hRecCard, meBandsCol, atournPlayerColumn,
+  return { maGate, maRate, maRateHtml, maGateBar, maSmallChip, akFormBlock, fhH2hRecCard, meBandsCol,
     seasonSurfaceTierViewHtml, styleVsArchetypeCard, stylePersonalCard, meRateBox, set psMatrix(v){ psMatrixData = v; } };
 `)();
 const text = h => h.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
@@ -113,18 +113,7 @@ test('Market edge band row: Won + win bar through the gate — 0 / 3 dash + neut
   assert.ok(!S.meRateBox('Won', 9, 12, '75.0%', 'var(--ma-t1)', true).includes('small sample'));
 });
 
-// Mutation: the Tournament win rate back to `total > 0 ? Math.round(...) : 0` + "%" — n = 0 renders "0%".
-test('Tournament win rate: 0 → "—" (never 0%), 3 → W–L only, 7 → greyed + note, 12 → full; the bar follows', () => {
-  const col = n => S.atournPlayerColumn('J. Sinner', { totalWon: WINS[n], totalLost: n - WINS[n], editionsPlayed: 2, longMatches: 0, longMatchesPlayed: 0, longMatchPct: 0, years: [] }, 'p1', false);
-  const card = n => { const h = col(n); return h.slice(h.lastIndexOf('<', h.indexOf('atourn-card')), h.lastIndexOf('<', h.indexOf('atourn-yearhead'))); };
-  assert.ok(!NEVER.test(text(card(0))), 'n = 0: no "0%"');
-  assert.match(card(0), /data-ma-gate="none"[^>]*>—</);
-  assert.ok(!/%/.test(text(card(3))) && text(card(3)).includes('2-1'), 'n = 3: the record, no rate');
-  assert.match(card(3), /class="track"><div style="width:0%;background:transparent;/);
-  assert.match(card(7), /class="ma-rate pct" data-ma-gate="small"[^>]*>57%<\/span>[\s\S]*win rate<\/span><span class="ma-small-note"/);
-  assert.match(card(7), /width:57\.14[\d]*%;background:var\(--ma-t3, var\(--label\)\);/);
-  assert.match(card(12), /class="ma-rate pct" data-ma-gate="full" style="color:var\(--text\);">75%/);
-});
+// The Tournament tab's rates (W–L %, sets won, vs market) go through the same gate: test-ten332-tournament.mjs (TEN-332).
 
 // Mutation: the Overview season rate back to `${Math.round(rec.won / n * 100)}%`.
 test('Overview this season by surface: 0 "—", 3 W–L only, 7 greyed (hover note), 12 full', () => {

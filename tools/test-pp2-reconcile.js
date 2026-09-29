@@ -639,7 +639,8 @@ check('N4: the three renderers print the pipeline stamp, and the stamp is courtS
   const pipeSrc = fs.readFileSync(path.join(ROOT, 'bsp-pipeline.js'), 'utf8');
   assert.strictEqual((pipeSrc.match(/category: courtSpeedCategory\(courtConditions\.speed\)/g) || []).length, 3,
     'the three match builders must each stamp category from courtSpeedCategory()');
-  assert(/<div class="k">Court speed<\/div>[^\n]*cs2\.category/.test(DASH_SPEED_SRC), 'modal Tournament card no longer prints cs2.category');
+  // TEN-332: the rebuilt Tournament header prints the stamp beside the abstract speed (trHeaderHtml)
+  assert(/Number\(cs\.abstractSpeed\)\.toFixed\(2\) \+ \(cs\.category \? ' · ' \+ cs\.category : ''\)/.test(DASH_SPEED_SRC), 'modal Tournament card no longer prints cs.category');
   assert(/<span>court speed<\/span><em>\$\{psEsc\(cs\.category/.test(DASH_SPEED_SRC), 'Key factors no longer prints cs.category');
   assert(/spdLabel = cs\.category/.test(DASH_SPEED_SRC), 'Weather pace tile no longer reads cs.category');
   assert(/const cat = courtSpeedCategory\(c\.speed\);/.test(DASH_SPEED_SRC), 'Tournament Report registry no longer calls courtSpeedCategory()');
@@ -5380,35 +5381,31 @@ mustFail('[neg] the display-name check would catch the shipped feed name', () =>
   assert.strictEqual('French Open', 'Roland Garros');
 });
 
-check('§5.3 items 11-12 · the open row is highlighted and BACKING is Pinnacle-closing only', () => {
+check('§5.3 items 11-12 · the open row is highlighted and BACKING is the R8 basis (N5)', () => {
   I.state.tournOpen = 'Australian Open';
   const open = I.renderTournModal(ZVEREV);
   assert(open.indexOf('background:#0b1c4e;') > 0,
     'the selected row carries no highlight');
   I.state.tournOpen = null;
-  // BACKING must come from Pinnacle rows only — never the bet365-archive rows
-  // the same shard carries.
+  // BACKING (N5, founder 2026-09-28): the R8 basis — every `inBasis` row (Pinnacle, else Bet365, one book per match), the
+  // same order as the Match analysis Tournament tab. Pinnacle-only (the old §5 / item 12 rule) is retired.
   const mk = MARKET[ZVEREV.key];
-  const pin = mk.matches.filter(m => m.book === 'pinnacle');
-  assert(pin.length > 0 && pin.length < mk.matches.length,
-    'the fixture cannot prove book filtering — Zverev has only one book');
+  const basis = mk.matches.filter(m => m.inBasis);
+  const pinOnly = mk.matches.filter(m => m.book === 'pinnacle');
+  assert(basis.length > pinOnly.length,
+    'the fixture cannot prove the R8 basis — every basis row is Pinnacle');
   const views = I.tournViews(ZVEREV);
-  let sumPin = 0, sumN = 0;
-  views.forEach((t) => { if (t.pinN) { sumPin += t.pinPl; sumN += t.pinN; } });
-  assert(sumN > 0, 'no tournament came back with a Pinnacle-priced count');
-  assert(sumN <= pin.length,
-    `attributed ${sumN} Pinnacle rows but the shard only holds ${pin.length}`);
-  // and the attributed P&L must equal the sum of pl over the rows attributed
-  const allPin = pin.reduce((a, m) => a + m.pl, 0);
-  assert(Math.abs(sumPin) <= Math.abs(allPin) + 1e-9 + Math.abs(allPin),
-    'attributed P&L is not bounded by the shard total');
-  console.log(`        BACKING attributes ${sumN} of ${pin.length} Pinnacle rows; ` +
-    `${mk.matches.length - pin.length} bet365-archive rows excluded`);
+  let sumPl = 0, sumN = 0;
+  views.forEach((t) => { if (t.pinN) { sumPl += t.pinPl; sumN += t.pinN; } });
+  assert(sumN > 0, 'no tournament came back with a priced count');
+  assert(sumN <= basis.length,
+    `attributed ${sumN} basis rows but the shard only holds ${basis.length}`);
+  console.log(`        BACKING attributes ${sumN} of ${basis.length} basis rows (${pinOnly.length} Pinnacle)`);
 });
-mustFail('[neg] the BACKING check would catch a blended book', () => {
+mustFail('[neg] the BACKING check would catch a Pinnacle-only sum', () => {
   const mk = MARKET[ZVEREV.key];
   const pin = mk.matches.filter(m => m.book === 'pinnacle').length;
-  assert(mk.matches.length <= pin, 'the headline blended every book');
+  assert(mk.matches.filter(m => m.inBasis).length <= pin, 'the basis carries Bet365 rows too');
 });
 
 check('§5.3 items 13-14 · the detail is the file\'s container and carries the header line', () => {

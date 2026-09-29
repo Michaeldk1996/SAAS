@@ -185,6 +185,30 @@ this file wins.
 - **N10:** the Key factors "Dimension edge" card uses the **5-axis DNA** data. The MCP / Sackmann radar
   (CC BY-NC-SA) is not used on any paid surface. **Test:** the modal never fetches `style-radar.json`.
 
+## Tournament tab (TEN-332, built 2026-09-29)
+- **Structure = the design file** (DF L216–331, `tournamentFor` / `tourRecFor`): header card (tile, name, location, surface
+  as neutral text, four meta cells), the "Show court speed & market" toggle opening the **inline** panel (speed gauge,
+  seven-season trend, two ROI cards, favourite reliability), the ROI cards opening the **Database page embedded**
+  (`DatabaseTab.mount`, reused as built, mounted on `<body>` so the modal's `.modal button` rule cannot restyle it), and
+  "Record at X": per player five tiles + the shared rows (`maMatchRowsHtml`), one group per edition
+  ("X YYYY" + result · W–L), every row a registered sheet row (`fhOpenSheet`).
+- **Data:** editions = `m.p?TournamentHistory` (pipeline; main draw only, N7; walkovers out, N2; only editions entered,
+  N6). Set scores from `career-history/{key}.json` joined by event key, else season + opponent + result (exactly one row).
+  Prices from `match-closes/{key}.json` through the Form/H2H picker (R8, N5). Header / panel from `m.venue`, `m.courtSpeed`
+  (N4 label = `courtSpeed.category`, never re-banded in the tab) and `tournament-market.json`.
+- **Backing** = flat 1u over the rows priced by the R8 picker; a retirement settles at the close (TEN-325, the note from
+  `MarketEdgeCore.RET_SETTLE_NOTE` in the tile's tooltip). **"vs market"** (D6) = win rate − mean de-vigged implied rate,
+  n ≥ 5 priced, 5–9 greyed. Units show at any priced n.
+- **Result label** per edition: "Won" (won the final) · the round lost in the feed's words ("Quarter-final", "Round of 16")
+  · "In progress" (this event, this year, last match a win; DESIGN GAP G17) · "<round> · w/o" (reached unplayed).
+- **Not drawn:** the reading paragraph (waits on the founder's copy); synthesised "Withdrawal" headers (N6).
+- **Seven-season trend:** the axis is 2020–2026 as drawn; only seasons the sheet holds (2023–25) get a dot and a value, the
+  rest a dash; a hole breaks the line; the delta states the real span. Roland Garros speed and altitude dash with the
+  TEN-321 note until its key lands.
+- **Open:** the tab's Backing and the player-profile per-event Backing (now on the R8 basis too) read two row sources
+  (closes shard vs market-edge shard) and agree on 42 of 71 board player-events (2026-09-29; most misses are events the profile join attributes no priced row to) — the question is on the
+  end-of-queue card. **Test:** `test-ten332-tournament.mjs` + `tools/test-ten332-mutants.js`.
+
 ## Retirements in price figures (founder 2026-09-28, TEN-312 option A)
 - **An in-match retirement settles at the listed closing price, everywhere**: Form (flat 1u, v market, medians), H2H
   (price range), Market edge (tab and profile), Tournament Backing and "vs market". One treatment for the same match on

@@ -63,41 +63,13 @@ const tk = (o) => Object.assign({ p1: 'S. Tsitsipas', p1Key: '1011', p2: 'X', p2
   });
 }
 
-// ── The modal Tournament tab renderer (atournPlayerColumn), sliced out of the shipped HTML ──
+// ── The modal Tournament tab (TEN-332 rebuild): the renderer drops a stale store's gap rows. Its behaviour is driven end to
+//    end in test-ten332-tournament.mjs ("N6: only editions entered", mutant in tools/test-ten332-mutants.js); here the
+//    guard's presence in the shipped page is checked so this suite still names the ruling it owns. ──
 {
   const html = fs.readFileSync(path.join(__dirname, '..', 'bsp-consult-dashboard.html'), 'utf8');
-  const slice = (start, end, from) => {
-    const a = html.indexOf(start); const b = html.indexOf(end, a + (from || 0));
-    assert.ok(a >= 0 && b > a, 'slice not found: ' + start);
-    return html.slice(a, b);
-  };
-  const src = slice('function atournYearRowHtml(', '\nfunction showTournamentMore(') +
-    slice('function atournPlayerColumn(', '\n// Task 11');
-  const ctx = { ANALYSIS_P1_RGBA: () => '', ANALYSIS_P2_RGBA: () => '', ANALYSIS_P1_COLOR: '', ANALYSIS_P2_COLOR: '', ANALYSIS_P2_FILL: '',
-    atournMatchRowHtml: () => '<i></i>' };
-  vm.createContext(ctx);
-  // TEN-314 D2: the one sample gate the win rate goes through (each helper sliced whole from the page)
-  const fn = (n) => { const one = slice('\nfunction ' + n + '(', '\n', 1);   // a one-line helper is taken whole
-    return /\}\s*$/.test(one) ? one + '\n' : slice('\nfunction ' + n + '(', '\n}\n') + '\n}\n'; };
-  const gate = (html.match(/\nconst (MA_GREY|MA_SMALL_NOTE) = [^\n]*/g) || []).join('\n') + '\n'
-    + ['tourxSampleGate', 'maGate', 'maPct', 'maRate', 'maRateHtml', 'maGateBar', 'maSmallNote'].map(fn).join('');
-  vm.runInContext(gate + src + '\nthis.atournPlayerColumn = atournPlayerColumn;', ctx);
-  const stale = { totalWon: 2, totalLost: 1, editionsPlayed: 2, longMatches: 0, longMatchesPlayed: 0, longMatchPct: 0, years: [
-    { year: '2022', won: 1, lost: 1, roundReached: '1/8-finals', matches: [] },
-    { year: '2021', won: 0, lost: 0, roundReached: 'Withdrawal', matches: [], withdrew: true },
-    { year: '2020', won: 0, lost: 0, roundReached: 'Withdrawal', matches: [], withdrew: true },
-    { year: '2019', won: 1, lost: 0, roundReached: '1/16-finals', matches: [] }] };
-  const out = ctx.atournPlayerColumn('S. Tsitsipas', stale, 'p1', false);
-  // Mutation: drop `.filter(y => !y.withdrew)` in atournPlayerColumn → "Withdrawal" and 2021/2020 render.
-  check('renderer: a stale store\'s gap rows never render — 2022 and 2019 only', () => {
-    assert.ok(!/Withdrawal/.test(out));
-    const yrs = [...out.matchAll(/<span class="yr">(\d{4})/g)].map((m) => m[1]);
-    assert.deepStrictEqual(yrs, ['2022', '2019']);
-    assert.ok(!/earlier edition/.test(out));
-  });
-  check('control: a clean history renders every edition it carries', () => {
-    const o = ctx.atournPlayerColumn('X', { ...stale, years: stale.years.filter((y) => !y.withdrew) }, 'p2', false);
-    assert.deepStrictEqual([...o.matchAll(/<span class="yr">(\d{4})/g)].map((m) => m[1]), ['2022', '2019']);
+  check('renderer: the Tournament tab filters a stale store\'s synthesised gap rows (`withdrew`)', () => {
+    assert.ok(html.includes("const years = ((hist && hist.years) || []).filter(y => !y.withdrew);"));
   });
 }
 

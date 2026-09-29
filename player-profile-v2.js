@@ -4226,8 +4226,10 @@
     mrows.forEach(function (r, i) { if (!owner[i] && alias[r.event]) owner[i] = alias[r.event]; });
 
     // 3 · per-tournament aggregates from the assigned market rows: BACKING
-    //     (Pinnacle closing only, §5 / item 12), plus the tier and surface the
-    //     design's name column and SURFACE column need.
+    //     (N5, founder 2026-09-28: the R8 basis — every `inBasis` row, Pinnacle
+    //     then Bet365, one book per match — the same order as the Match analysis
+    //     Tournament tab), plus the tier and surface the design's name column and
+    //     SURFACE column need.
     var agg = {};
     function bucket(name) {
       return agg[name] || (agg[name] = {
@@ -4239,7 +4241,7 @@
       if (!name) return;
       var b = bucket(name);
       b.anyN++;
-      if (r.book === 'pinnacle' && r.pl != null && isFinite(r.pl)) { b.pinPl += r.pl; b.pinN++; }
+      if (r.inBasis && r.pl != null && isFinite(r.pl)) { b.pinPl += r.pl; b.pinN++; }
       if (r.surface) b.surf[r.surface] = (b.surf[r.surface] || 0) + 1;
       var y = String(r.date || '').slice(0, 4);
       if (r.level) {
@@ -4630,7 +4632,7 @@
       '</div>' +
       '<div style="font-size:11px;color:var(--label);margin-top:14px;line-height:1.6;">' +
         'Each W' + ENDASH + 'L is the sum of the editions listed beneath it. Backing is a flat 1u ' +
-        'stake at the Pinnacle closing price, so an event Pinnacle never priced shows a dash rather ' +
+        'stake at the closing price (Pinnacle, else Bet365), so an event neither priced shows a dash rather ' +
         'than a zero' + (j.hasMarket ? '' : ' (the price shard has not loaded)') + '. ' +
         'This block is the tournament record we hold per event and does not sum to the career ' +
         'total above ' + MIDDOT + ' it carries only events with stored edition detail.</div>';
@@ -4678,8 +4680,8 @@
       ? 'priced count (' + t.pricedClaimed + ') exceeds ' + t.n + ' matches played ' + MIDDOT +
         ' odds join under investigation'
       : t.pinN
-        ? t.pinN + ' priced ' + MIDDOT + ' Pinnacle closing'
-        : 'Pinnacle priced none of these';
+        ? t.pinN + ' priced ' + MIDDOT + ' Pinnacle, else Bet365 closing'
+        : 'none of these priced';
     var backTile = tile('Backing him here', pinTxt, pinSub, pinColour);
     var wlTile = tile('W' + ENDASH + 'L record', recordText(t.won, t.lost),
       rateText0(t.won, t.lost) + ' ' + MIDDOT + ' main draw');
