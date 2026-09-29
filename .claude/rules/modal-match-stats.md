@@ -36,8 +36,12 @@ found at restore time are marked inline.
 - **Point by point = the file's shape** (`fhPbpSetModel` + `fhSheetPbpHtml`, DF L2150–2195): set tabs always drawn, caption
   "SET n · a-b", one row per game (server ball, LOST SERVE when the server lost the game, running score toned by the game's
   winner, the point sequence with BP), a 7-6 set's "Tiebreak · Set n" strip and one row per point. **SP** whenever the
-  leader can win the set on the next point, past 6-6 too; a 10-point tiebreak is recognised from its own sequence. The file
-  tags SP in the final set as well (the old MP tag is gone — end-of-queue question). Tiebreak points come from the pbp
+  leader can win the set on the next point, past 6-6 too; a 10-point tiebreak is recognised from its own sequence.
+  **MP on every match point** (founder Q6, 2026-09-29, TEN-312 bbe5c072; supersedes the file's SP-everywhere): a set point
+  whose set would give its player the sets needed to win the match (Bo3: 2, Bo5: 3), in a game or any tiebreak incl. a
+  match tiebreak; every other set point stays SP; where the point winner can't be decided (G16), no tag. **Test:** fixed
+  logs — final-set game MP, final-set tiebreak MP, Bo5 set-4 MP at 2–1, set-1 SP stays SP (mutation: drop the
+  sets-needed check → set-1 SP reads MP) — built on TEN-349. Tiebreak points come from the pbp
   shards the guarded cache feeds (TEN-318). The old class-based point log stays for the other match-detail panels only.
 - **Bars — design exception:** the 2026-09-24 bar rule (`fhStatBarWidth`), not the file's share-of-total; W/UE and DR are
   numbers only. Reported as ruled, never as a divergence.

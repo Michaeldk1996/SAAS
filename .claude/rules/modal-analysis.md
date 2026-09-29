@@ -13,8 +13,11 @@ this file wins.
   Everything else is secondary.
 - **Phase 1** = frame + one token file + per-tab lazy fetch + one merged match stats sheet with real stats + shared
   components + fixture harness / pixel diff (TEN-314).
-- **Main queue, chained:** Form → H2H → Tournament → Overview (after TEN-324) → Market edge (after TEN-325) → Match Stats
-  (after TEN-318) → Progression (after TEN-327a) → Playing style (after TEN-328) → Key factors (`v.o` only).
+- **Tabs wait only on their data prerequisite, never on queue order** (founder 2026-09-29, TEN-312 c288de06 +
+  bbe5c072): Tournament (starts at once; Roland Garros court speed dashed until TEN-321 lands), Overview (TEN-324),
+  Market edge (TEN-325), Match Stats (TEN-318), Progression (TEN-327a), Playing style (TEN-328), then Key factors
+  (`v.o` only) after Playing style. **Test:** no tab ticket's `blockedBy` holds another tab ticket, except Key factors
+  ← Playing style.
 - **In parallel, as soon as Phase 1 lands:** News, Odds and Weather. They have no data prerequisite beyond Phase 1.
 - The Edge model re-fit (TEN-345, split from TEN-327) was approved by the founder (2026-09-28, TEN-314 70fb039e)
   and ships on its own ticket; it **blocks no tab**.
@@ -41,7 +44,18 @@ this file wins.
    **Test:** `test-ten314-components.mjs` (one component; News count on it).
 
 - **Undrawn states** (TEN-312 `design-gaps`) never block a tab: use the nearest existing pattern in the design file, mark
-  the code `// DESIGN GAP Gn`, and list it in the tab report. Never invent a new visual pattern.
+  the code `// DESIGN GAP Gn`, and list it in the tab report. Never invent a new visual pattern. The TEN-312
+  `design-gaps` document goes to Claude Design (founder 2026-09-29): one row per gap with where it is, what's missing,
+  the interim and a deployed-site screenshot, kept current; when a drawing comes back, the interim is swapped for it.
+- **No silent stalls** (founder 2026-09-29, TEN-312 bbe5c072 §3): every 2 hours every open TEN-312 child ticket is
+  checked (routine "TEN-312 stall sweep"); one that is `in_progress` or `todo` with no run in the last 2 hours is
+  **restarted**, not just reported (founder 2026-09-29, 5dd79b7e). Only a ticket with a scheduled monitor, a review
+  path or a founder park (TEN-315, the site-wide theme, until the review pack is reviewed) is flagged instead.
+  Internal only, no new outbound channel.
+- **Estimate discipline:** the accepted estimate is all 12 live 29 Sep 20:00–23:00Z. A slip of more than 2 hours gets
+  one line on TEN-312 with the cause and the new time.
+- **TEN-312 is done** when all 12 tabs are live and pass all 8 DoD items, TEN-349, TEN-350 and TEN-352 are closed, and the
+  single review pack is posted on TEN-312.
 - **An element that needs a founder ruling** is parked alone, as a dash with a note. The rest of the tab ships. A tab
   never waits whole on one decision, and nobody stops mid-queue for the founder: every open question is collected into
   **one card at the end** (founder 2026-09-29).
@@ -158,6 +172,14 @@ this file wins.
   through **our real stats model**, not only the demo numbers. Required before TEN-338 Match Stats is done.
 - **Design exception — Key stats bars:** the bars keep the 2026-09-24 rule (`modal-form-h2h.md` "Bars — one rule",
   `fhStatBarWidth`), not the design's share-of-total. Deliberate; the pixel diff reports it as ruled, not structural.
+- **Design exception — point order (Q5, founder 2026-09-29, TEN-312 bbe5c072):** the point log follows the **header's
+  player order**, as Flashscore does (the 2026-09-24 ruling kept); the serve ball marks the server. The file writes each
+  point server first; we don't. **Test:** on a game player B serves, the running score reads A's points first.
+- **Design follows the data (founder 2026-09-29):** where the design file contradicts its own numbers, our counts win and
+  each case is a logged design exception, not a divergence: (1) 1st serve % drawn 58.8% against its 38/65 = 58.5%;
+  (2) its pressure-points figure, which matches none of its counts; (3) LOST SERVE tags that disagree with its own running
+  score in 11 of 20 games. **Test:** every sheet % equals its own count ratio; LOST SERVE appears exactly on games the
+  server lost.
 
 ## Metrics with no formula before TEN-312 (D6)
 - **Per-tournament "+Y.Ypt vs market"** = the player-scope rule (`build-market-edge.js` `summarise`: actual win %
