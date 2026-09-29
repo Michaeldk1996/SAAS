@@ -2858,6 +2858,86 @@
       "p2": "A. Rublev",
       "startTime": "2026-09-29T11:30:00.000Z",
       "tournamentId": 42979
+    },
+    "12166948": {
+      "fixtureId": null,
+      "mappedAt": "2026-09-29T09:47:52Z",
+      "missRuns": 1,
+      "missSince": "2026-09-29T09:47:52Z",
+      "orient": null,
+      "p1": "Z. Zhang",
+      "p2": "A. Gea",
+      "startTime": null,
+      "tournamentId": null
+    },
+    "12166949": {
+      "fixtureId": "id1200303175135966",
+      "mappedAt": "2026-09-29T09:47:52Z",
+      "orient": "same",
+      "p1": "T. M. Etcheverry",
+      "p2": "S. Tsitsipas",
+      "startTime": "2026-09-30T02:00:00.000Z",
+      "tournamentId": 3031
+    },
+    "12166950": {
+      "fixtureId": "id1200303175135964",
+      "mappedAt": "2026-09-29T09:47:52Z",
+      "orient": "same",
+      "p1": "A. Fils",
+      "p2": "L. van Assche",
+      "startTime": "2026-09-30T02:00:00.000Z",
+      "tournamentId": 3031
+    },
+    "12166951": {
+      "fixtureId": "id1200303175135970",
+      "mappedAt": "2026-09-29T09:47:52Z",
+      "orient": "same",
+      "p1": "T. Fritz",
+      "p2": "J. Munar",
+      "startTime": "2026-09-30T02:00:00.000Z",
+      "tournamentId": 3031
+    },
+    "12166952": {
+      "fixtureId": "id1200303175135968",
+      "mappedAt": "2026-09-29T09:47:52Z",
+      "orient": "same",
+      "p1": "D. Vallejo",
+      "p2": "R. Jodar",
+      "startTime": "2026-09-30T02:00:00.000Z",
+      "tournamentId": 3031
+    },
+    "12166953": {
+      "fixtureId": null,
+      "mappedAt": "2026-09-29T09:47:52Z",
+      "missRuns": 1,
+      "missSince": "2026-09-29T09:47:52Z",
+      "orient": null,
+      "p1": "D. Medvedev",
+      "p2": "P. Carreno-Busta",
+      "startTime": null,
+      "tournamentId": null
+    },
+    "12166954": {
+      "fixtureId": null,
+      "mappedAt": "2026-09-29T09:47:52Z",
+      "missRuns": 1,
+      "missSince": "2026-09-29T09:47:52Z",
+      "orient": null,
+      "p1": "A. Molcan",
+      "p2": "A. Rinderknech",
+      "startTime": null,
+      "tournamentId": null
+    },
+    "12166955": {
+      "fixtureId": null,
+      "mappedAt": "2026-09-29T09:47:52Z",
+      "missRuns": 1,
+      "missSince": "2026-09-29T09:47:52Z",
+      "orient": null,
+      "p1": "B. Van De Zandschulp",
+      "p2": "F. Cerundolo",
+      "startTime": null,
+      "tournamentId": null
     }
   },
   "missAudit": {
@@ -2867,12 +2947,12 @@
       "missResolutionHoursP50": 10.24,
       "missResolutionsMeasured": 132,
       "note": "ttlBitRuns counts runs where an expired MISS was the ONLY reason a billable /v4/fixtures call was made. projectedTtlUnitsPerDay uses the MEASURED run rate (measuredRunsPerDay), not an assumed 24/day; it is null until observedSpanDays is wide enough to measure one. Compare it against the <=24/day ceiling the TTL was chosen against. openMisses counts only fixtures still on the board.",
-      "observedSpanDays": 18.14,
+      "observedSpanDays": 18.18,
       "projectedTtlUnitsPerDay": 5.2,
-      "runs": 324,
-      "spentRuns": 178,
+      "runs": 325,
+      "spentRuns": 179,
       "ttlBitRuns": 95,
-      "ttlBitShare": 0.293,
+      "ttlBitShare": 0.292,
       "ttlHours": 1.0
     },
     "runs": [
@@ -6439,9 +6519,20 @@
         "ttlBit": false,
         "unmapped": 0,
         "upcoming": 31
+      },
+      {
+        "at": "2026-09-29T09:47:52Z",
+        "fixturesUnitsSpent": 1,
+        "hitExpired": 0,
+        "missExpired": 0,
+        "openMisses": 0,
+        "stale": 8,
+        "ttlBit": false,
+        "unmapped": 8,
+        "upcoming": 39
       }
     ]
   },
   "schema": "odds-fixture-map/1",
-  "updatedAt": "2026-09-28T15:45:24Z"
+  "updatedAt": "2026-09-29T09:47:52Z"
 }
