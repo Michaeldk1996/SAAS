@@ -1,28 +1,27 @@
 {
- "generatedAt": "2026-09-28T15:53:52.489Z",
+ "generatedAt": "2026-09-29T01:38:59.072Z",
  "source": "matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books[\"Pinnacle +30s\"] (Oddspapi pinnacle+30, from 2026-09-23)",
  "rule": "each side = last tick at or before the actual start (Oddspapi trueStart, else the card-state start: Oddspapi or the live-flip lower bound); both sides required; dropped when no unique actual start",
  "scannedThrough": {
-  "commit": "64e5586d07c15c00bbb17f0a74d4b8ec04c284e3",
-  "at": "2026-09-28T15:45:32Z"
+  "commit": "62abbd7214b335987e84d5a33520d8965b764d9f",
+  "at": "2026-09-29T01:18:38Z"
  },
- "commitsScanned": 3608,
+ "commitsScanned": 3645,
  "lastRun": {
-  "from": "2026-09-20",
-  "snapshots": 768,
-  "added": 0,
-  "replaced": 3,
-  "series": 79,
-  "kept": 56,
+  "from": "2026-09-28T15:45:32Z",
+  "snapshots": 38,
+  "added": 9,
+  "replaced": 0,
+  "series": 63,
+  "kept": 44,
   "bySource": {
-   "api-tennis-live": 55,
-   "oddspapi": 1
+   "api-tennis-live": 44
   },
   "byBook": {
-   "Pinnacle +30s": 56
+   "Pinnacle +30s": 44
   },
   "dropped": {
-   "noStart": 23
+   "noStart": 19
   }
  },
  "stats": {
@@ -34,6 +33,21 @@
   "kept": 408,
   "hadPostStartTicks": 171
  },
+ "backfills": [
+  {
+   "ticket": "TEN-346",
+   "at": "2026-09-28T19:36:55.722Z",
+   "source": "Oddspapi /v4/historical-odds bookmakers=pinnacle+30, market 121 (free), board cards 2026-09-03..2026-09-22",
+   "fetched": 95,
+   "kept": 47,
+   "added": 47,
+   "replaced": 0,
+   "dropped": {
+    "http404": 60,
+    "noStart": 48
+   }
+  }
+ ],
  "rows": [
   {
    "eventKey": 12145144,
@@ -6234,6 +6248,34 @@
    "book": "Pinnacle +30s"
   },
   {
+   "eventKey": 12166292,
+   "date": "2026-09-28",
+   "p1Key": 424,
+   "p2Key": 2842,
+   "p1Name": "N. Basilashvili",
+   "p2Name": "A. Davidovich Fokina",
+   "p1": 2.95,
+   "p2": 1.458,
+   "at": "2026-09-28T08:30:45.702Z",
+   "trueStart": "2026-09-28T08:54:06.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
+  },
+  {
+   "eventKey": 12166334,
+   "date": "2026-09-28",
+   "p1Key": 1335,
+   "p2Key": 2847,
+   "p1Name": "K. Jacquet",
+   "p2Name": "A. Rublev",
+   "p1": 3.49,
+   "p2": 1.354,
+   "at": "2026-09-28T08:41:56.324Z",
+   "trueStart": "2026-09-28T09:20:58.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
+  },
+  {
    "eventKey": 12166335,
    "date": "2026-09-28",
    "p1Key": 3317,
@@ -6300,6 +6342,20 @@
    "p2": 2.46,
    "at": "2026-09-28T05:56:38.090Z",
    "trueStart": "2026-09-28T05:56:59.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
+  },
+  {
+   "eventKey": 12166340,
+   "date": "2026-09-28",
+   "p1Key": 2843,
+   "p2Key": 1096,
+   "p1Name": "L. Sonego",
+   "p2Name": "K. Majchrzak",
+   "p1": 2.25,
+   "p2": 1.671,
+   "at": "2026-09-27T23:59:43.155Z",
+   "trueStart": "2026-09-28T08:45:06.000Z",
    "startSource": "api-tennis-live",
    "book": "Pinnacle +30s"
   },
@@ -6372,21 +6428,90 @@
    "trueStart": "2026-09-28T06:27:02.000Z",
    "startSource": "api-tennis-live",
    "book": "Pinnacle +30s"
-  }
- ],
- "backfills": [
+  },
   {
-   "ticket": "TEN-346",
-   "at": "2026-09-28T19:36:55.722Z",
-   "source": "Oddspapi /v4/historical-odds bookmakers=pinnacle+30, market 121 (free), board cards 2026-09-03..2026-09-22",
-   "fetched": 95,
-   "kept": 47,
-   "added": 47,
-   "replaced": 0,
-   "dropped": {
-    "http404": 60,
-    "noStart": 48
-   }
+   "eventKey": 12166375,
+   "date": "2026-09-28",
+   "p1Key": 39862,
+   "p2Key": 434,
+   "p1Name": "Y. Zhou",
+   "p2Name": "P. Carreno-Busta",
+   "p1": 3.33,
+   "p2": 1.344,
+   "at": "2026-09-28T05:04:58.051Z",
+   "trueStart": "2026-09-28T09:26:58.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
+  },
+  {
+   "eventKey": 12166376,
+   "date": "2026-09-28",
+   "p1Key": 1274,
+   "p2Key": 1099,
+   "p1Name": "J. Cui",
+   "p2Name": "D. Altmaier",
+   "p1": 3.27,
+   "p2": 1.363,
+   "at": "2026-09-28T05:49:01.969Z",
+   "trueStart": "2026-09-28T09:56:02.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
+  },
+  {
+   "eventKey": 12166377,
+   "date": "2026-09-28",
+   "p1Key": 2972,
+   "p2Key": 954,
+   "p1Name": "B. Van De Zandschulp",
+   "p2Name": "V. Royer",
+   "p1": 1.609,
+   "p2": 2.4,
+   "at": "2026-09-28T05:50:03.340Z",
+   "trueStart": "2026-09-28T10:36:06.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
+  },
+  {
+   "eventKey": 12166378,
+   "date": "2026-09-28",
+   "p1Key": 2848,
+   "p2Key": 438,
+   "p1Name": "M. Kecmanovic",
+   "p2Name": "A. Mannarino",
+   "p1": 1.628,
+   "p2": 2.35,
+   "at": "2026-09-28T07:33:56.579Z",
+   "trueStart": "2026-09-28T10:06:02.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
+  },
+  {
+   "eventKey": 12166379,
+   "date": "2026-09-28",
+   "p1Key": 2841,
+   "p2Key": 431,
+   "p1Name": "H. Hurkacz",
+   "p2Name": "D. Shapovalov",
+   "p1": 1.662,
+   "p2": 2.37,
+   "at": "2026-09-28T10:39:00.283Z",
+   "trueStart": "2026-09-28T11:15:07.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
+  },
+  {
+   "eventKey": 12166418,
+   "date": "2026-09-28",
+   "p1Key": 1093,
+   "p2Key": 1057,
+   "p1Name": "D. Medvedev",
+   "p2Name": "R. Safiullin",
+   "p1": 1.485,
+   "p2": 2.85,
+   "at": "2026-09-28T11:14:43.911Z",
+   "trueStart": "2026-09-28T11:24:06.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
   }
  ]
 }
