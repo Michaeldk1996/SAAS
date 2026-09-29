@@ -220,3 +220,13 @@ test('Key factors · Tournament: hold rate has no n in its source → a dash wit
   assert.match(html, /\.modal-analysis \.akt-cond > span:not\(\.elotip\)\{/);
   assert.ok(!/\.modal-analysis \.akt-cond span\{/.test(html));
 });
+
+// Component diff 2026-09-29 (tools/ten312-component-diff.mjs): with no line-height of its own the rows inherited a
+// host section's 21px and drifted down (Tournament instance 157 vs the design's 147 px tall).
+// Mutation: drop `line-height:normal` from the .ma-rows root.
+test('match rows: the root sets line-height:normal, so a host section cannot stretch the rows', () => {
+  const h = U.maMatchRowsHtml([{ name: 'X', meta: 'm', rows: [{ date: '1', opp: 'o', rd: 'R', sets: '2-0', scores: '6-1', h: '1.5', a: '2.5', won: true }] }]);
+  const root = /^<div class="ma-rows" style="([^"]*)"/.exec(h);
+  assert.ok(root, '.ma-rows root');
+  assert.equal(decl(root[1])['line-height'], 'normal');
+});

@@ -13872,7 +13872,8 @@ function maMatchRowsHtml(groups, opts){
     + `<div class="ma-rows-group" style="display:flex; align-items:center; gap:10px; padding:${o.groupPad || '11px 6px 5px'}; border-top:1px solid var(--line);"><span style="font-size:12.5px; font-weight:700; white-space:nowrap;">${esc(g.title)}</span>${g.meta ? `<span style="${mono} font-size:10px; color:var(--label); white-space:nowrap;">${esc(g.meta)}</span>` : ''}</div>`
     + g.rows.map(wrap).join('')).join('');
   const empty = !groups.length && o.empty ? `<div style="padding:28px 16px; text-align:center; font-size:12.5px; color:var(--label);">${esc(o.empty)}</div>` : '';
-  return `<div class="ma-rows" style="display:flex; flex-direction:column;">${head}${empty}${body}</div>`;
+  // line-height:normal = the design's (its rows sit in no line-height rule); a host section's 21px drifted every row down.
+  return `<div class="ma-rows" style="display:flex; flex-direction:column; line-height:normal;">${head}${empty}${body}</div>`;
 }
 
 // ---- tooltip (README §6 `.elotip-pop`: 120ms opacity, raised surface, strong hairline, mono 11px) ----
