@@ -18,7 +18,7 @@ const MUTANTS = [
   ['pill: tooltip dropped', "  return maTipHtml(pill, body, { popStyle:", "  return pill; maTipHtml(pill, body, { popStyle:"],
   ['helper: a titleless group draws its header', "    + (g.title == null ? '' : `<div class=\"ma-rows-group\"", "    + (false ? '' : `<div class=\"ma-rows-group\""],
   ['helper: price column no longer right-aligned', "  price: { right: true, cell:", "  price: { cell:"],
-  ['helper: table rows lose their hairline', "cursor:pointer; border-bottom:var(--ma-hw,0.33px) solid ${S('ffffff-030', '--line')};\">`", "cursor:pointer;\">`"],
+  ['helper: table rows lose their hairline', "const line = o.rowLine === false ? '' : ` border-bottom:var(--ma-hw,0.33px) solid ${S('ffffff-030', '--line')};`;", "const line = '';"],
   ['helper: the table head sticks', "const head = `<div class=\"ma-rows-head\" style=\"${grid} padding:", "const head = `<div class=\"ma-rows-head\" style=\"position:sticky; top:0; ${grid} padding:"],
   ['helper: the default rows change by a pixel', "grid-template-columns:${COLS}; gap:0 10px; align-items:center; padding:6px;", "grid-template-columns:${COLS}; gap:0 10px; align-items:center; padding:7px;"],
   ['data: the Slam-name retirement guess survives a best-of-3', "    r.ret = !r.wo && (!!x.retired || unfinished || (r.pS != null && (r.won ? r.pS : r.oS) < (r.bo === 5 ? 3 : 2)));",

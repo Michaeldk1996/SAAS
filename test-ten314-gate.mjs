@@ -35,15 +35,13 @@ const S = new Function(`
   const document = { addEventListener(){}, querySelectorAll(){ return []; } };
   const window = {};
   ${['FH_MONO', 'FH_DASHC', 'FH_AC', 'ME_C', 'ME_BCOLS', 'ME_COLH', 'ME_NOPRICE_MSG', 'mePct0', 'mePct1', 'meUC', 'meNoHist', 'meLoadingRow', 'meStatBox',
-     'ANALYSIS_P1_COLOR', 'ANALYSIS_P2_COLOR', 'ANALYSIS_P2_FILL', 'ANALYSIS_P1_RGBA', 'ANALYSIS_P2_RGBA', '_psvSides', ...GATE_CONSTS, 'meRateBox'].map(constSrc).join('\n')}
+     'ANALYSIS_P1_COLOR', 'ANALYSIS_P2_COLOR', 'ANALYSIS_P2_FILL', 'ANALYSIS_P1_RGBA', 'ANALYSIS_P2_RGBA', ...GATE_CONSTS, 'meRateBox'].map(constSrc).join('\n')}
   const FH_H2H_RET_COUNTS = true;
   ${[...GATE, 'escapeHtml', 'fhEsc', 'fhHexA', 'meSg', 'psEsc', 'psShortName', 'akSurname', 'akHead', 'akCard', 'akSeasonOf', 'akFormBlock',
-     'fhRecLevelMix', 'fhS', 'fhH2hRecCard', 'meBandsCol', 'styleNoteHtml', 'styleVsArchetypeCard',
-     'stylePersonalCard'].map(slice).join('\n')}
-  function psvShowText(){ return ''; } function psvListHtml(){ return ''; }
+     'fhRecLevelMix', 'fhS', 'fhH2hRecCard', 'meBandsCol'].map(slice).join('\n')}
   let psMatrixData = null; const PS_ARCHETYPES = []; function styleKey(n){ return n; } function psCellFor(){ return null; } function psArchIndex(){ return 0; }
   return { maGate, maRate, maRateHtml, maGateBar, maSmallChip, akFormBlock, fhH2hRecCard, meBandsCol,
-    styleVsArchetypeCard, stylePersonalCard, meRateBox, set psMatrix(v){ psMatrixData = v; } };
+    meRateBox, set psMatrix(v){ psMatrixData = v; } };
 `)();
 const OV = overviewVM(html);
 const text = h => h.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
@@ -130,23 +128,5 @@ test('Overview this season by surface: 0 "—", 3 W–L only, 7 greyed (hover no
   assert.match(season(12, 0, 0)[0], /class="ma-rate" data-ma-gate="full"[^>]*>75%/);
 });
 
-// Mutation: the Playing style header back to `${Math.round(w / n * 100)}%` for every n.
-test('Playing style "vs this style" header: 3 → W–L + count, 7 → greyed + note, 12 → full', () => {
-  const arch = { name: 'Counterpuncher' }, tint = () => 'var(--line)';
-  const agg = n => { const h = S.styleVsArchetypeCard('J. Sinner', Array.from({ length: n }, (_, i) => ({ won: i < WINS[n] })), arch, 'var(--text)', tint, 'x', 'p1');
-    const i = h.indexOf('<span class="psvhdr-agg'); return i < 0 ? h : h.slice(i, h.indexOf('</div>', i)); };
-  assert.ok(!NEVER.test(text(agg(0))) && text(agg(0)).includes('no tour meetings'));
-  assert.equal(text(agg(3)), '2–1 · 3 matches');
-  assert.match(agg(7), /4–3 · <span class="ma-rate" data-ma-gate="small"[^>]*>57%<\/span><span class="ma-small-note"[^>]*>small sample<\/span> · 7 matches/);
-  assert.match(agg(12), /9–3 · <span class="ma-rate" data-ma-gate="full"[^>]*>75%<\/span> · 12 matches/);
-});
-
-// Mutation: stylePersonalCard keeps its own ladder (e.g. `n < 3` for the W–L-only tier) instead of the shared gate.
-test('Playing style personal record: the shared gate — 0 "—", 3 W–L + n, 7 greyed + note, 12 full', () => {
-  const card = n => { S.psMatrix = { byPlayer: { 'J. Sinner': { vs: { lab: { w: WINS[n], l: n - WINS[n] } } } } };
-    return S.stylePersonalCard('J. Sinner', { id: 'a' }, { id: 'a', name: 'Counterpuncher' }, 'lab', 'var(--text)', () => 'var(--line)'); };
-  assert.ok(text(card(0)).includes('— no tour meetings'));
-  assert.match(card(3), /W2–L1<\/span> <span class="psv-pct">n=3<\/span>/);
-  assert.match(card(7), /data-ma-gate="small"[^>]*>57% · n=7<\/span><span class="ma-small-note"/);
-  assert.match(card(12), /data-ma-gate="full"[^>]*>75% · n=12</);
-});
+// Playing style (TEN-340): the tab's record, rate, tug and meetings header run through this gate; the checks (n 0 / 3 / 7 / 12)
+// live in test-ten340-playing-style.mjs, with the rebuilt tab.

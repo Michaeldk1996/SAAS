@@ -5,7 +5,7 @@ Applies to the whole Match analysis modal (`openAnalysisModal` and every tab bui
 (`Match Analysis Progression v1.dc.html`), plus the pipeline records and player-profile figures it shares.
 Phase 0 evidence: TEN-312 documents `phase0-report`, `phase0-a` … `phase0-f`. Tab-specific rulings stay in
 `modal-form-h2h.md`, `modal-market-edge.md`, `modal-weather.md`, `modal-overview.md`,
-`modal-key-factors.md`, `modal-match-stats.md`, `modal-news.md`, `modal-progression.md` and `odds.md`; where one of those conflicts with this file,
+`modal-key-factors.md`, `modal-match-stats.md`, `modal-news.md`, `modal-progression.md`, `modal-playing-style.md` and `odds.md`; where one of those conflicts with this file,
 this file wins.
 
 ## Build order (founder 2026-09-28, TEN-312 comments 8574fb97 + 940d7634)

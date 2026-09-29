@@ -171,7 +171,7 @@ function modalVM(opts = {}) {
   // opts.hold: loaders return promises the test settles (pending[]), to model a shard landing after a reopen
   const rec = n => (...a) => { log.push(n); if (!opts.hold) return Promise.resolve(a[0]); return new Promise(r => { const f = () => r(a[0]); f.n = n; pending.push(f); }); };
   const stubs = {
-    buildKeyFactorsSection: m => { log.push('build:key'); log.push('paint:key:' + m.id); return 'K'; }, renderStyleSection: () => log.push('build:style'),
+    buildKeyFactorsSection: m => { log.push('build:key'); log.push('paint:key:' + m.id); return 'K'; }, buildStyleSection: () => { log.push('build:style'); return ''; }, playerStyles: { byKey: { x: 1 } }, _pgStylesP: null, loadPlayerStyles: rec('load:styles'),
     buildFormSection: () => { log.push('build:form'); return 'F'; }, buildH2HSection: () => { log.push('build:h2h'); if (opts.throwOn === 'h2h') throw new Error('x'); return 'H'; },
     buildMatchStatsSection: () => { log.push('build:matchstats'); return ''; }, maMsSheetInit: () => {}, buildMatchProgressionSection: () => { log.push('build:progression'); return ''; },
     buildYearlyTables: () => { log.push('build:overview'); return ''; }, buildTournamentSection: () => { log.push('build:tournament'); return ''; },
@@ -208,7 +208,8 @@ test('lazy: opening the modal builds and loads Key factors only; every other tab
   assert.deepEqual(log.filter(x => x.startsWith('load:')).sort(), ['load:form-shards', 'load:matrix', 'load:odds-shard', 'load:style-radar']);
   log.length = 0;
   api.aShowTab('style'); await flush();
-  assert.deepEqual(log.filter(x => x.startsWith('load:')).sort(), ['load:dna', 'load:matrix', 'load:style-meetings', 'load:style-radar']);
+  // TEN-340: the Playing style tab reads the 5-axis DNA only — never the MCP radar (N10: the modal never fetches style-radar.json)
+  assert.deepEqual(log.filter(x => x.startsWith('load:')).sort(), ['load:dna', 'load:matrix', 'load:style-meetings']);
   log.length = 0;
   api.aShowTab('news'); await flush();
   assert.deepEqual(built(), ['build:news']);

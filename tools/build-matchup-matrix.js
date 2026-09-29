@@ -375,7 +375,7 @@ function main() {
   for (const A of PRIMARIES) { wins[A] = {}; for (const B of PRIMARIES) wins[A][B] = 0; }
   for (const s of SURFACES) { winsSurf[s] = {}; for (const A of PRIMARIES) { winsSurf[s][A] = {}; for (const B of PRIMARIES) winsSurf[s][A][B] = 0; } }
 
-  let tmlTotal = 0, counted = 0;
+  let tmlTotal = 0, counted = 0, tmlWalkover = 0;
   const surfaceCounted = { hard: 0, clay: 0, grass: 0 };
   for (let y = FROM_YEAR; y <= TO_YEAR; y++) {
     const f = path.join(TML_CACHE, `${y}.csv`);
@@ -393,6 +393,15 @@ function main() {
       const _kw = clientKey(wn); harvestName(_kw, c[ix.winner_id], wn, y);
       const _kl = clientKey(ln); harvestName(_kl, c[ix.loser_id], ln, y);
       tmlTotal++;
+      // A walkover is not a match played (N2, founder 2026-09-28): it enters no cell, no record and no meeting row —
+      // the same rule the api supplement below applies ("Walk Over"). TML writes it as the score "W/O".
+      if (/\bW\/O\b/i.test(c[ix.score] || '')) {
+        tmlWalkover++;
+        // still register the pair + date, so the api supplement's ±1-day dedup drops the same walkover in its feed too
+        const wd = isoDate(c[ix.tourney_date]), wpk = pairKey(wn, ln);
+        if (wpk && wd) (tmlPairDates.get(wpk) || tmlPairDates.set(wpk, []).get(wpk)).push(wd);
+        continue;
+      }
       const wl = lookup(wn), ll = lookup(ln);
       if (!wl || !ll) continue;                 // at least one endpoint outside the deployed pool
       wins[wl][ll]++; counted++;
@@ -508,6 +517,7 @@ function main() {
     tmlMatchesCounted: counted,
     supplementMatchesInMatrix: supp.matrix,
     matchesInWindow: tmlTotal,
+    tmlWalkoverExcluded: tmlWalkover,   // N2: TML "W/O" rows, never counted (TEN-340)
     retentionPct: retention,
     archetypes: Object.fromEntries(PRIMARIES.map(k => [k, { en: k }])),
     matrix,
@@ -570,7 +580,7 @@ function main() {
   if (mism) throw new Error(`${mism} meeting-shard reconciliation mismatches — refusing to write a detail list that disagrees with the career record`);
 
   // ---- console sanity ----
-  console.log(`Wrote matchup-matrix.json — ${PRIMARIES.length} primaries, ${counted}/${tmlTotal} matches (${retention}% retention).`);
+  console.log(`Wrote matchup-matrix.json — ${PRIMARIES.length} primaries, ${counted}/${tmlTotal} matches (${retention}% retention; ${tmlWalkover} TML walkovers excluded).`);
   console.log(`Per-player split: ${Object.keys(byPlayer).length} players, ${bpCounted} player-endpoints (TML ${counted} + api-supp ${supp.added} = ${counted + supp.added} matches x2 = ${(counted + supp.added) * 2} endpoints before ambiguous/unkeyed drops).`);
   console.log(`Meeting shards: ${index.length} players, ${meetRows} rows, reconciled clean vs byPlayer.`);
   console.log('Players per primary:');

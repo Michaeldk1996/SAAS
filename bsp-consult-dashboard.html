@@ -1568,149 +1568,12 @@
     .modal-analysis .akbento{ grid-template-columns:1fr; }
     .modal-analysis .akw-note{ margin-left:0; white-space:normal; }
   }
-  /* ---- Playing Style tab ---- */
-  /* The design is a 940px panel and sets Hanken Grotesk on its root, inherited
-     by every label in it. Without this the whole tab silently renders in Inter
-     (the body font) — the single largest deviation from the design file.
-     The design's own panel background/border/radius are deliberately NOT
-     reproduced: in the mock the panel is standalone, but here it sits on the
-     modal surface, and no sibling tab nests a second panel inside .abody. */
-  .modal-analysis .psx-wrap{ font-family:'Hanken Grotesk',sans-serif; max-width:940px; }
-  .modal-analysis .psx-top{ display:grid; grid-template-columns:360px 1fr; gap:26px; align-items:center; padding:4px 0; }
-  .modal-analysis .psx-card{ background:var(--surface); border:var(--ma-hw,0.33px) solid var(--line); border-radius:12px; padding:18px 20px; }
-  .modal-analysis .psr-col{ display:flex; flex-direction:column; justify-content:center; }
-  .modal-analysis .psx-label{ font-size:11px; font-family:'Hanken Grotesk',sans-serif; letter-spacing:0.14em; text-transform:uppercase; color:var(--label); }
-  .modal-analysis .psx-sub{ font-size:16px; font-weight:700; color:var(--text-soft); line-height:1.45; margin-top:9px; }
-  .modal-analysis .psx-nums{ display:flex; align-items:flex-start; justify-content:space-between; margin-top:16px; }
-  .modal-analysis .psx-pct{ font-family:'IBM Plex Mono',monospace; font-size:34px; font-weight:800; line-height:0.85; }
-  .modal-analysis .psx-code{ font-size:11px; font-family:'IBM Plex Mono',monospace; letter-spacing:0.1em; margin-top:5px; color:var(--label); }
-  .modal-analysis .psx-name{ font-family:'Hanken Grotesk',sans-serif; font-size:10.5px; font-weight:600; margin-top:3px; }
-  .modal-analysis .psx-track{ position:relative; height:12px; border-radius:6px; margin-top:16px; background:linear-gradient(90deg,var(--ma-t1),var(--ma-pb-fill)); opacity:0.9; }
-  .modal-analysis .psx-tick{ position:absolute; left:50%; top:-4px; bottom:-4px; width:1.5px; background:color-mix(in srgb, var(--ma-t1) 45%, transparent); transform:translateX(-50%); }
-  .modal-analysis .psx-marker{ position:absolute; top:50%; width:15px; height:15px; border-radius:50%; background:var(--surface); border:3px solid; transform:translate(-50%,-50%); box-shadow:0 0 0 2px var(--ma-card); }
-  .modal-analysis .psx-scale{ display:flex; justify-content:space-between; margin-top:7px; font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:normal; color:var(--label); }
-  .modal-analysis .psx-tag{ display:inline-flex; align-items:center; gap:6px; margin-top:12px; font-family:'Hanken Grotesk',sans-serif; font-size:13px; border:1px solid; border-radius:6px; padding:4px 9px; }
-  .modal-analysis .psx-n{ margin-top:12px; padding-top:12px; border-top:var(--ma-hw,0.33px) solid var(--line-soft); font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--label); line-height:1.6; }
-  .modal-analysis .psx-nmuted{ color:var(--label); }
-  .modal-analysis .psx-note{ margin-top:10px; font-size:11px; color:var(--label); line-height:1.5; }
-  /* The design uses two different block gaps: 16px above Dimension edge, 20px
-     above "How each has fared". Not one shared 18px. */
-  .modal-analysis .psx-block{ margin-top:16px; }
-  .modal-analysis .psx-block.psx-block-vs{ margin-top:28px; padding-top:22px; border-top:var(--ma-hw,0.33px) solid var(--line-soft); }
+  /* ---- Playing style tab (TEN-340): the file's .seg hover rule and its style-hover values (DF L548 personal box, DF L604 row). ---- */
+  #aSectionStyle .seg{ transition:background .14s ease, color .14s ease, border-color .14s ease; }
+  #aSectionStyle .ps2-box-open:hover{ border-color:var(--ma-s-5b9bff-300, var(--line-open)) !important; }
+  #aSectionStyle .ps2-prof-toggle:hover, #aSectionStyle .ps2-more:hover{ color:var(--ma-link-hover, var(--periwinkle)) !important; }
+  /* Key factors' Dimension edge radar (styleRadarSvg) */
   .modal-analysis .psr-svg{ width:100%; display:block; }
-  .modal-analysis .psr-legend{ display:flex; justify-content:center; gap:18px; margin-top:6px; }
-  .modal-analysis .psr-key{ display:inline-flex; align-items:center; gap:7px; font-size:11px; color:var(--text-soft); }
-  .modal-analysis .psr-swatch{ width:18px; height:0; }
-  .modal-analysis .psr-swatch-a{ border-top:2px solid var(--ma-t1); }
-  .modal-analysis .psr-swatch-b{ border-top:2px dashed var(--text); }
-  .modal-analysis .psr-n{ text-align:center; font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--label); margin-top:7px; }
-  .modal-analysis .psr-empty{ display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:220px; text-align:center; font-size:12px; color:var(--label); line-height:1.55; padding:0 14px; }
-  .modal-analysis .psr-empty-sub{ display:block; margin-top:8px; font-size:11px; color:var(--label); }
-  .modal-analysis .psd-header{ display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; font-size:12.5px; font-weight:600; }
-  .modal-analysis .psd-list{ display:flex; flex-direction:column; gap:16px; }
-  .modal-analysis .psd-metric{ text-align:center; font-size:11px; font-family:'Hanken Grotesk',sans-serif; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-soft); margin-bottom:6px; }
-  .modal-analysis .psd-bars{ display:grid; grid-template-columns:36px 1fr 1fr 36px; align-items:center; gap:9px; }
-  .modal-analysis .psd-val{ font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:700; }
-  .modal-analysis .psd-val-a{ text-align:right; }
-  .modal-analysis .psd-val-b{ text-align:left; }
-  .modal-analysis .psd-track{ height:8px; background:var(--bar-track); display:flex; overflow:hidden; }
-  .modal-analysis .psd-track-a{ justify-content:flex-end; border-radius:5px 0 0 5px; }
-  .modal-analysis .psd-track-b{ justify-content:flex-start; border-radius:0 5px 5px 0; }
-  .modal-analysis .psd-fill{ height:100%; }
-  /* HISTORICAL BY SURFACE table (inside the style-edge card) */
-  .modal-analysis .pss-block{ margin-top:18px; padding-top:16px; border-top:var(--ma-hw,0.33px) solid var(--line-soft); }
-  .modal-analysis .pss-title{ font-size:11px; font-family:'Hanken Grotesk',sans-serif; letter-spacing:0.12em; text-transform:uppercase; color:var(--label); margin-bottom:10px; }
-  .modal-analysis .pss-head{ display:grid; grid-template-columns:1fr 72px 72px; gap:8px; padding:0 8px 8px; font-size:11px; font-family:'Hanken Grotesk',sans-serif; letter-spacing:0.1em; text-transform:uppercase; color:var(--label); }
-  .modal-analysis .pss-c1h{ text-align:right; color:var(--periwinkle); }
-  .modal-analysis .pss-c2h{ text-align:right; color:var(--text); }
-  .modal-analysis .pss-row{ display:grid; grid-template-columns:1fr 72px 72px; gap:8px; align-items:baseline; padding:9px 8px; border-radius:7px; border-left:2px solid transparent; }
-  .modal-analysis .pss-today{ border-left-color:var(--periwinkle); }
-  .modal-analysis .pss-surf{ display:flex; align-items:baseline; gap:8px; font-size:12.5px; color:var(--text); }
-  .modal-analysis .pss-n{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--label); }
-  .modal-analysis .pss-today-tag{ font-family:'Hanken Grotesk',sans-serif; font-size:9px; color:var(--label); }
-  .modal-analysis .pss-c1{ font-family:'IBM Plex Mono',monospace; font-size:12.5px; text-align:right; color:var(--periwinkle); }
-  .modal-analysis .pss-c2{ font-family:'IBM Plex Mono',monospace; font-size:12.5px; text-align:right; color:var(--text); }
-  .modal-analysis .pss-src{ font-size:10.5px; color:var(--label); margin-top:9px; line-height:1.45; }
-  .modal-analysis .psv-grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; }
-  .modal-analysis .psv-grid.psv-grid-solo{ grid-template-columns:1fr; }
-  .modal-analysis .psv-card{ background:var(--surface); border:1px solid; border-radius:12px; padding:15px 17px; }
-  .modal-analysis .psv-head{ display:flex; align-items:baseline; justify-content:space-between; }
-  .modal-analysis .psv-title{ font-size:14px; font-weight:700; }
-  .modal-analysis .psv-sub{ font-size:12px; color:var(--label); margin-top:2px; }
-  .modal-analysis .psv-rec{ text-align:right; white-space:nowrap; }
-  .modal-analysis .psv-wl{ font-family:'IBM Plex Mono',monospace; font-size:15px; font-weight:800; color:var(--text); }
-  .modal-analysis .psv-pct{ font-family:'IBM Plex Mono',monospace; font-size:12px; font-weight:600; color:var(--label); }
-  .modal-analysis .psv-none{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--label); }
-  .modal-analysis .psv-list{ display:flex; flex-direction:column; margin-top:8px; }
-  .modal-analysis .psv-row{ display:grid; grid-template-columns:22px 1fr auto auto auto 12px; align-items:center; gap:10px; padding:7px 0; border-top:var(--ma-hw,0.33px) solid var(--line-soft); }
-  /* Expandable variant — same accordion machinery as the H2H and Form rows, so
-     a meeting here opens the same box score / point log as everywhere else. */
-  .modal-analysis .psv-row.psv-open{ cursor:pointer; transition:background .12s; margin:0 -8px; padding-left:8px; padding-right:8px; border-radius:6px; }
-  .modal-analysis .psv-row.psv-open:hover{ background:var(--nav-hover); }
-  .modal-analysis .psv-row.psv-open.open{ background:var(--surface-inner); }
-  .modal-analysis .psv-chev{ font-size:9px; color:var(--label); transition:transform .15s; justify-self:end; }
-  .modal-analysis .psv-chev.open{ transform:rotate(90deg); }
-  .modal-analysis .psv-badge{ width:20px; height:19px; border-radius:5px; display:flex; align-items:center; justify-content:center; font-family:'Hanken Grotesk',sans-serif; font-size:11px; font-weight:800; }
-  .modal-analysis .psv-opp{ font-size:13.5px; color:var(--text); }
-  .modal-analysis .psv-meta{ font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--label); }
-  .modal-analysis .psv-score{ font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:700; color:var(--text-soft); min-width:34px; text-align:right; }
-  /* Closing odds (both players, subject first). Book unlabelled per ruling — a
-     closing price for context, not a sharp reference. Dash where no price. */
-  .modal-analysis .psv-odds{ font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--text-sub); min-width:74px; text-align:right; white-space:nowrap; }
-  .modal-analysis .psv-more{ font-family:'IBM Plex Mono',monospace; font-size:10px; color:var(--label); padding-top:7px; border-top:var(--ma-hw,0.33px) solid var(--line-soft); cursor:pointer; transition:color .12s ease; }
-  .modal-analysis .psv-more:hover{ color:var(--periwinkle); }
-  .modal-analysis .psv-more:focus-visible{ outline:2px solid var(--periwinkle); outline-offset:2px; border-radius:4px; }
-  /* TEN-88 restyle — career-meetings list grouped by tournament, coloured square marker,
-     separate sets/game columns, both-side closing odds. Blocks stack full-width so the
-     wide row (date · marker · opp · round · sets · games · odds×2) has room. */
-  .modal-analysis .psvstack{ display:flex; flex-direction:column; gap:16px; }
-  .modal-analysis .psvcard-full{ background:var(--surface); border:1px solid; border-radius:12px; padding:16px 18px; }
-  .modal-analysis .psvhdr{ display:flex; align-items:baseline; justify-content:space-between; gap:12px; }
-  .modal-analysis .psvhdr-title{ font-size:14.5px; font-weight:700; }
-  .modal-analysis .psvhdr-agg{ font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:var(--text-sub); margin-left:12px; }
-  .modal-analysis .psvhdr-none{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--label); margin-left:12px; }
-  .modal-analysis .psvhdr-show{ font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--label); white-space:nowrap; }
-  .modal-analysis .psvlist-grouped{ margin-top:4px; }
-  .modal-analysis .psvg-head{ display:flex; align-items:baseline; gap:10px; padding:13px 0 5px; border-top:var(--ma-hw,0.33px) solid var(--line-soft); margin-top:8px; }
-  .modal-analysis .psvg:first-child .psvg-head{ border-top:none; margin-top:0; }
-  .modal-analysis .psvg-name{ font-size:13.5px; font-weight:700; color:var(--text); }
-  .modal-analysis .psvg-meta{ font-family:'IBM Plex Mono',monospace; font-size:11.5px; color:var(--label); }
-  .modal-analysis .psvr{ display:grid; grid-template-columns:52px 14px minmax(90px,1fr) 42px 56px minmax(150px,300px) 52px 52px; align-items:center; gap:12px; padding:6px 0; }
-  .modal-analysis .psvr-date{ font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--label); }
-  .modal-analysis .psvr-sq{ width:13px; height:13px; border-radius:4px; }
-  .modal-analysis .psvsq-win{ background:var(--positive); }
-  .modal-analysis .psvsq-loss{ background:var(--negative); }
-  .modal-analysis .psvr-opp{ font-size:13.5px; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .modal-analysis .psvr-round{ font-family:'IBM Plex Mono',monospace; font-size:12px; color:var(--label); }
-  .modal-analysis .psvr-sets{ font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:800; white-space:nowrap; }
-  .modal-analysis .psvset-win{ color:var(--positive); }
-  .modal-analysis .psvset-loss{ color:var(--negative); }
-  .modal-analysis .psvr-games{ font-family:'IBM Plex Mono',monospace; font-size:12.5px; color:var(--text-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .modal-analysis .psvr-odds{ font-family:'IBM Plex Mono',monospace; font-size:12.5px; text-align:right; }
-  .modal-analysis .psvr-oddself{ color:var(--text-soft); }
-  .modal-analysis .psvr-oddopp{ color:var(--text-sub); }
-  /* Archetype-labels header — its own block, fed by v5.1 classification (tour results),
-     independent of the charted radar. Board ruling 2026-08-26: each block on the Playing
-     style tab suppresses on its own data source, so a missing radar never blanks the labels. */
-  .modal-analysis .psl-labels{ margin-bottom:20px; }
-  .modal-analysis .psl-grid{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:9px; }
-  .modal-analysis .psl-side{ background:var(--surface); border:var(--ma-hw,0.33px) solid var(--line); border-radius:12px; padding:13px 16px; }
-  .modal-analysis .psl-nm{ font-size:14px; font-weight:700; }
-  .modal-analysis .psl-arch{ font-family:'IBM Plex Mono',monospace; font-size:12.5px; font-weight:600; margin-top:4px; }
-  .modal-analysis .psx-top.psx-top-solo{ grid-template-columns:1fr; }
-  /* Personal record vs the general-matrix expectation — a single-player value read
-     against a baseline, so it stays neutral grey (the +/− sign carries direction). */
-  .modal-analysis .psv-delta{ font-family:'IBM Plex Mono',monospace; font-size:11px; font-weight:600; color:var(--label); margin-top:3px; }
-  /* "Personally" (TEN-88 #2): the career record's baseline line — muted matrix
-     average with a signed, colour-coded delta (green above / red below). */
-  .modal-analysis .psv-base{ font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--label); margin-top:9px; padding-top:9px; border-top:var(--ma-hw,0.33px) solid var(--line-soft); }
-  .modal-analysis .psv-basedelta{ font-weight:700; margin-left:4px; }
-  @media (max-width:900px){
-    .modal-analysis .psx-top{ grid-template-columns:1fr; }
-    .modal-analysis .psl-grid{ grid-template-columns:1fr; }
-    .modal-analysis .psv-grid{ grid-template-columns:1fr; }
-    .modal-analysis .psd-row{ grid-template-columns:28px 1fr 110px 1fr 28px; gap:8px; }
-  }
   .modal-analysis .anote{ font-size:11px; color:var(--text-faint); text-align:center; margin-top:8px; }
 
   /* ---- Match Stats tab — single split bar per stat (Flashscore-style) ---- */
@@ -6193,31 +6056,6 @@ function psSurfaceCellFor(surfaceKey, i, j){
   });
   if (!rated || ratedN < minN) return { pct:null, n:rawN };
   return { pct: Math.round(wins / ratedN * 100), n: rawN };
-}
-// The HISTORICAL BY SURFACE table body — one row per surface, real per-surface
-// win% for p1's archetype (i1) vs p2's (i2). The row matching today's surface
-// gets a left accent bar and an inline "today's surface" label.
-function styleSurfaceTableHtml(i1, i2, a1, a2, todayKey){
-  const rows = ['clay', 'hard', 'grass'].map(sk => {
-    const cell = psSurfaceCellFor(sk, i1, i2);
-    const n = cell ? cell.n : 0;
-    const pct = cell && cell.pct != null ? cell.pct : null;
-    const isToday = sk === todayKey;
-    const label = sk.charAt(0).toUpperCase() + sk.slice(1);
-    const c1 = pct == null ? '—' : `${pct}%`;
-    const c2 = pct == null ? '—' : `${100 - pct}%`;
-    return `<div class="pss-row${isToday ? ' pss-today' : ''}">
-      <span class="pss-surf">${label}<span class="pss-n">n=${n.toLocaleString()}</span>${isToday ? `<span class="pss-today-tag">today's surface</span>` : ''}</span>
-      <span class="pss-c1">${c1}</span>
-      <span class="pss-c2">${c2}</span>
-    </div>`;
-  }).join('');
-  return `<div class="pss-block">
-    <div class="pss-title">Historical by surface</div>
-    <div class="pss-head"><span>Surface</span><span class="pss-c1h">${psEsc(a1.code)}</span><span class="pss-c2h">${psEsc(a2.code)}</span></div>
-    ${rows}
-    <div class="pss-src">Per-surface win rate from the surface-split matchup matrix — real ATP/Challenger results, ${a1.name} vs ${a2.name}. Cells below the ${(psMatrixData && psMatrixData.minSampleN) || 20}-meeting floor show n with a dashed rate.</div>
-  </div>`;
 }
 function psEsc(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
 let psRendered = false;
@@ -13446,7 +13284,11 @@ function maMatchRowsHtml(groups, opts){
   //   o.grid = their track sizes; o.labels then names those columns. That geometry is DF's table variant: gap 8, head
   //   padding '7px 28px 6px' between a 0.06 and a 0.09 hairline, not sticky, each row a 0.03 hairline under it; set inset
   //   (the file's 22) for the row wrapper. Row extras there: event, score, price, priceTip (shared tooltip body), oppPrice,
-  //   pnl + pnlColor, line + lineColor, sets + scores (the Overview pop-up), eventSub (a muted " · surface" after the event).
+  //   pnl + pnlColor, line + lineColor, sets (+ setsColor) + scores (+ scoresTitle, ret) (the Overview pop-up; the Playing style
+  //   meetings), eventSub (a muted " · surface" after the event), h (Playing style: own price).
+  //   Grouped tables (Playing style career meetings, DF L596–615): a group with a title draws the file's tournament header
+  //   (o.groupPad, default '10px 24px 4px': name 12px/700 + meta mono 9.5px, a 0.05 hairline above); o.cellPad = the row's
+  //   own padding (default 6px; Playing style 5px 6px); o.rowLine false = no hairline under each row (Playing style).
   const o = opts || {}, esc = s => escapeHtml(s == null ? '' : String(s));
   if (o.cols){
     const S = (k, f) => `var(--ma-s-${k}, var(${f}))`;
@@ -13457,9 +13299,11 @@ function maMatchRowsHtml(groups, opts){
     const cap = `${x.mono} font-size:9px; letter-spacing:0.1em; text-transform:uppercase; color:${S('4b5672', '--label')};`;
     const head = `<div class="ma-rows-head" style="${grid} padding:${o.headPad || '7px 28px 6px'}; border-top:var(--ma-hw,0.33px) solid ${S('ffffff-060', '--line')}; border-bottom:var(--ma-hw,0.33px) solid ${S('ffffff-090', '--line-open')};">`
       + (o.labels || []).map((l, i) => (l ? `<span style="${cap}${cols[i] && cols[i].right ? ' text-align:right;' : ''}">${esc(l)}</span>` : '<span></span>')).join('') + '</div>';
-    const row = r => `<div class="${r.wrapCls || ''}" style="padding:${o.rowPad || '0 ' + (o.inset || 0) + 'px'};"><div class="seg ma-row${r.cls ? ' ' + r.cls : ''}"${r.attrs || ''}${r.click || ''} style="${grid} padding:6px; border-radius:6px; background:${r.selected ? S('5b9bff-100', '--seg-active') : 'transparent'}; cursor:pointer; border-bottom:var(--ma-hw,0.33px) solid ${S('ffffff-030', '--line')};">`
+    const line = o.rowLine === false ? '' : ` border-bottom:var(--ma-hw,0.33px) solid ${S('ffffff-030', '--line')};`;
+    const row = r => `<div class="${r.wrapCls || ''}" style="padding:${o.rowPad || '0 ' + (o.inset || 0) + 'px'};"><div class="seg ma-row${r.cls ? ' ' + r.cls : ''}"${r.attrs || ''}${r.click || ''} style="${grid} padding:${o.cellPad || '6px'}; border-radius:6px; background:${r.selected ? S('5b9bff-100', '--seg-active') : 'transparent'}; cursor:pointer;${line}">`
       + cols.map(c => c.cell(r, x)).join('') + '</div></div>';
-    const body = groups.map(g => g.rows.map(row).join('')).join('');
+    const ghead = g => (g.title == null ? '' : `<div class="ma-rows-group" style="display:flex; align-items:center; gap:9px; padding:${o.groupPad || '10px 24px 4px'}; border-top:var(--ma-hw,0.33px) solid ${S('ffffff-050', '--line')};"><span style="font-size:12px; font-weight:700; white-space:nowrap;">${esc(g.title)}</span>${g.meta ? `<span${x.t(g.metaTitle)} style="${x.mono} font-size:9.5px; color:${S('4b5672', '--label')}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(g.meta)}</span>` : ''}</div>`);
+    const body = groups.map(g => ghead(g) + g.rows.map(row).join('')).join('');
     const empty = !groups.some(g => g.rows.length) && o.empty ? `<div style="padding:28px 16px; text-align:center; font-size:12.5px; color:var(--label);">${esc(o.empty)}</div>` : '';
     return `<div class="ma-rows ma-rows-table" style="display:flex; flex-direction:column; line-height:normal;">${head}${empty}${body}</div>`;
   }
@@ -13510,10 +13354,13 @@ const MA_ROW_CELLS = {
   event: { cell: (r, x) => `<span style="font-size:11.5px; color:${x.S('8b96b5', '--text-soft')}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${x.esc(r.event)}${r.eventSub ? `<span style="color:${x.S('4b5672', '--label')};"> · ${x.esc(r.eventSub)}</span>` : ''}</span>` },
   rd: { cell: (r, x) => `<span style="${x.mono} font-size:10px; color:${x.S('5b6880', '--label')};">${x.esc(r.rd)}</span>` },
   score: { cell: (r, x) => `<span style="${x.mono} font-size:10.5px; color:${x.S('8b96b5', '--text-soft')}; white-space:nowrap;">${x.esc(r.score)}</span>` },
-  // the Overview pop-up's two score columns (DF L1503–1504): sets won in the result colour, then the set scores
-  sets: { cell: (r, x) => `<span style="${x.mono} font-size:11px; font-weight:700; color:${x.wl(r)}; white-space:nowrap;">${x.esc(r.sets)}</span>` },
+  // the two score columns (Overview pop-up DF L1503–1504; Playing style meetings DF L605–610): sets won in the result colour
+  // (r.setsColor overrides), then the set scores (r.scoresTitle = the file's native title, Playing style)
+  sets: { cell: (r, x) => `<span style="${x.mono} font-size:11px; font-weight:700; color:${r.setsColor || x.wl(r)}; white-space:nowrap;">${x.esc(r.sets)}</span>` },
   // r.ret: the design's "ret." span (DF L1997) — loss red when this player retired, neutral when his opponent did
-  scores: { cell: (r, x) => `<span style="${x.mono} font-size:10.5px; color:${x.S('8b96b5', '--text-soft')}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${x.esc(r.scores)}${r.ret ? `<span class="ma-ret" style="font-weight:400; color:${r.won ? x.S('8b96b5', '--text-soft') : x.S('e0616f', '--negative')}; margin-left:5px;">ret.</span>` : ''}</span>` },
+  scores: { cell: (r, x) => `<span${x.t(r.scoresTitle)} style="${x.mono} font-size:10.5px; color:${x.S('8b96b5', '--text-soft')}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${x.esc(r.scores)}${r.ret ? `<span class="ma-ret" style="font-weight:400; color:${r.won ? x.S('8b96b5', '--text-soft') : x.S('e0616f', '--negative')}; margin-left:5px;">ret.</span>` : ''}</span>` },
+  // Playing style meetings: own closing price (DF L609)
+  h: { right: true, cell: (r, x) => `<span style="${x.mono} font-size:10.5px; color:${x.S('c6ccdb', '--text-soft')}; text-align:right;">${x.esc(r.h)}</span>` },
   price: { right: true, cell: (r, x) => (r.priceTip
     ? maTipHtml(`<span tabindex="0" style="${x.mono} font-size:11px; font-weight:700; text-align:right;">${x.esc(r.price)}</span>`, x.esc(r.priceTip), { cls: 'ma-row-tip', style: 'justify-self:end;' })
     : `<span style="${x.mono} font-size:11px; font-weight:700; text-align:right;">${x.esc(r.price)}</span>`) },
@@ -18389,60 +18236,7 @@ function styleRadarSvg(dims){
   return `<svg viewBox="0 0 360 300" class="psr-svg" role="img" aria-label="Playing style radar">${rings}${spokes}${ringLabels}${shapeB}${shapeA}${dots('b')}${dots('a')}${labels}</svg>`;
 }
 
-function styleNoteHtml(text){
-  return `<div class="psx-note">${psEsc(text)}</div>`;
-}
 
-// The style-vs-style balance meter. Returns the matrix cell read in p1's
-// direction. A mirror matchup is 50/50 by definition, not missing data — the
-// matrix stores null on the diagonal, so it has to be handled separately or a
-// same-archetype match reads as "no data".
-function styleEdgeHtml(m, s1, s2){
-  const a1 = s1 && psArchFor(s1.archetype_label), a2 = s2 && psArchFor(s2.archetype_label);
-  const head = `<div class="psx-label">Style vs style edge</div>`;
-  if (!a1 || !a2){
-    const who = !a1 && !a2 ? 'Neither player has' : `${psEsc(!a1 ? m.p1 : m.p2)} has not`;
-    return `<div class="psx-card">${head}${styleNoteHtml(`${who} enough tour-level match history to classify an archetype, so there is no style matchup to read.`)}</div>`;
-  }
-  if (a1.id === a2.id){
-    const mirrorN = psMirrorN(psArchIndex(a1.id));
-    return `<div class="psx-card">${head}
-      <div class="psx-sub">Mirror matchup — both play as ${psEsc(a1.name)}s<span style="color:var(--label); font-family:'IBM Plex Mono',monospace; font-size:11px; margin-left:6px;">· n=${mirrorN.toLocaleString()} · same archetype</span></div>
-      <div class="psx-nums"><div><div class="psx-pct" style="color:${ANALYSIS_P1_COLOR};">50%</div><div class="psx-code">${psEsc(a1.code)}</div><div class="psx-name" style="color:${ANALYSIS_P1_COLOR};">${psEsc(psShortName(m.p1))}</div></div>
-        <div style="text-align:right;"><div class="psx-pct" style="color:${ANALYSIS_P2_COLOR};">50%</div><div class="psx-code">${psEsc(a2.code)}</div><div class="psx-name" style="color:${ANALYSIS_P2_COLOR};">${psEsc(psShortName(m.p2))}</div></div></div>
-      <div class="psx-track"><div class="psx-tick"></div><div class="psx-marker" style="left:50%; border-color:var(--label);"></div></div>
-      <div class="psx-scale"><span>${psEsc(a1.name)}</span><span>50% coin-flip</span><span>${psEsc(a2.name)}</span></div>
-      <div class="psx-tag" style="color:var(--label); background:color-mix(in srgb, var(--ma-t3) 10%, transparent); border-color:var(--line);">▸ style gives neither player an edge</div>
-      ${styleNoteHtml('Same archetype on both sides — the edge has to come from form, surface and the market, not style.')}</div>`;
-  }
-  const cell = psCellFor(psArchIndex(a1.id), psArchIndex(a2.id));
-  if (!cell || cell.pct == null){
-    const minN = (psMatrixData && psMatrixData.minSampleN) || 20;
-    // Surface the real meeting count so a rare pairing (e.g. Big Server x All Court
-    // Elite, n=13 — a Djokovic-vs-Opelka match) reads as a deliberate below-floor
-    // state, not an empty/broken cell.
-    const note = (cell && cell.n)
-      ? `Only ${cell.n.toLocaleString()} tour meeting${cell.n === 1 ? '' : 's'} between these two archetypes — below the ${minN}-meeting floor, so no win rate is quoted.`
-      : `Fewer than ${minN} tour meetings between these two archetypes — not enough to quote a win rate.`;
-    return `<div class="psx-card">${head}
-      <div class="psx-sub">${psEsc(a1.name)} vs ${psEsc(a2.name)}</div>
-      ${styleNoteHtml(note)}</div>`;
-  }
-  const p1pct = cell.pct, p2pct = 100 - cell.pct;
-  const lead = p1pct >= p2pct ? { name:a1.name, pts:p1pct - 50, color:ANALYSIS_P1_COLOR, bg:ANALYSIS_P1_RGBA(0.1), bd:ANALYSIS_P1_RGBA(0.26) }
-                              : { name:a2.name, pts:p2pct - 50, color:ANALYSIS_P2_COLOR, bg:ANALYSIS_P2_RGBA(0.1), bd:ANALYSIS_P2_RGBA(0.26) };
-  const tag = lead.pts < 2
-    ? `<div class="psx-tag" style="color:var(--label); background:color-mix(in srgb, var(--ma-t3) 10%, transparent); border-color:var(--line);">▸ effectively a coin-flip on style alone</div>`
-    : `<div class="psx-tag" style="color:${lead.color}; background:${lead.bg}; border-color:${lead.bd};">▸ leans +${lead.pts} pts to the ${psEsc(lead.name.toLowerCase())}</div>`;
-  return `<div class="psx-card">${head}
-    <div class="psx-sub">${psEsc(p1pct >= p2pct ? a1.name : a2.name)}s beat ${psEsc(p1pct >= p2pct ? a2.name : a1.name)}s<span style="color:var(--label); font-family:'IBM Plex Mono',monospace; font-size:11px; margin-left:6px;">· n=${cell.n.toLocaleString()} meetings</span></div>
-    <div class="psx-nums"><div><div class="psx-pct" style="color:${ANALYSIS_P1_COLOR};">${p1pct}%</div><div class="psx-code">${psEsc(a1.code)}</div><div class="psx-name" style="color:${ANALYSIS_P1_COLOR};">${psEsc(psShortName(m.p1))}</div></div>
-      <div style="text-align:right;"><div class="psx-pct" style="color:${ANALYSIS_P2_COLOR};">${p2pct}%</div><div class="psx-code">${psEsc(a2.code)}</div><div class="psx-name" style="color:${ANALYSIS_P2_COLOR};">${psEsc(psShortName(m.p2))}</div></div></div>
-    <div class="psx-track"><div class="psx-tick"></div><div class="psx-marker" style="left:${p2pct}%; border-color:${p1pct >= p2pct ? ANALYSIS_P1_COLOR : ANALYSIS_P2_COLOR};"></div></div>
-    <div class="psx-scale"><span>${psEsc(a1.name)}</span><span>50% coin-flip</span><span>${psEsc(a2.name)}</span></div>
-    ${tag}
-  </div>`;
-}
 
 // The radar draws only when BOTH players clear the charted-match bar. This is a
 // hard gate, not a caveat: below 10 charted matches the percentiles are noise —
@@ -18451,47 +18245,7 @@ function styleEdgeHtml(m, s1, s2){
 // A drawn hexagon reads as measurement, so a provisional one is worse than none:
 // it would tell a bettor a top-50 player is 2nd-percentile on serve off 3 matches.
 function styleRadarDrawable(r1, r2){ return !!(r1 && r2 && r1.ok && r2.ok); }
-function styleRadarBlockHtml(m, r1, r2){
-  if (!styleRadarDrawable(r1, r2)){
-    const minN = (styleRadarData && styleRadarData.minCharted) || 10;
-    const short = (r, name) => `${psShortName(name)}${r ? ` (${r.n})` : ' (0)'}`;
-    const weak = [ (!r1 || !r1.ok) ? short(r1, m.p1) : null, (!r2 || !r2.ok) ? short(r2, m.p2) : null ].filter(Boolean);
-    return `<div class="psr-empty">Not enough charted matches to draw a reliable style radar — ${psEsc(weak.join(' and '))} ${weak.length > 1 ? 'are' : 'is'} below the ${minN}-match minimum.<br><span class="psr-empty-sub">The style edge and head-to-head records below are unaffected: they come from full tour results, not charted matches.</span></div>`;
-  }
-  const dims = STYLE_AXES.map(ax => ({ label:ax.label, a:r1.radar[ax.k] ?? 50, b:r2.radar[ax.k] ?? 50 }));
-  return `${styleRadarSvg(dims)}
-    <div class="psr-legend">
-      <span class="psr-key"><span class="psr-swatch psr-swatch-a"></span>${psEsc(psShortName(m.p1))}</span>
-      <span class="psr-key"><span class="psr-swatch psr-swatch-b"></span>${psEsc(psShortName(m.p2))}</span>
-    </div>
-    <div class="psr-n">${r1.n} · ${r2.n} charted matches · percentile vs the charted field</div>`;
-}
 
-function styleDimensionEdgeHtml(m, r1, r2){
-  // Same data as the radar, so the same gate — otherwise the bars would quietly
-  // publish the exact numbers the radar just refused to draw.
-  if (!styleRadarDrawable(r1, r2)) return '';
-  // Player names live in ONE header row, not repeated per metric — the per-row
-  // winner tag was the source of the "same name six times" read. Bars mirror from
-  // the centre and normalise to the larger value so the longer bar = the edge.
-  const rows = STYLE_AXES.map(ax => {
-    const a = r1.radar[ax.k] ?? 50, b = r2.radar[ax.k] ?? 50;
-    const aWins = a > b, tied = a === b;
-    const max = Math.max(a, b) || 1;
-    const aShare = Math.round(a / max * 100), bShare = Math.round(b / max * 100);
-    return `<div class="psd-row">
-      <div class="psd-metric">${psEsc(ax.label)}</div>
-      <div class="psd-bars">
-        <span class="psd-val psd-val-a" style="color:${aWins && !tied ? ANALYSIS_P1_COLOR : 'var(--label)'};">${a}</span>
-        <span class="psd-track psd-track-a"><span class="psd-fill" style="width:${aShare}%; background:${aWins && !tied ? ANALYSIS_P1_COLOR : ANALYSIS_P1_RGBA(0.32)};"></span></span>
-        <span class="psd-track psd-track-b"><span class="psd-fill" style="width:${bShare}%; background:${!aWins && !tied ? ANALYSIS_P2_FILL : ANALYSIS_P2_RGBA(0.32)};"></span></span>
-        <span class="psd-val psd-val-b" style="color:${!aWins && !tied ? ANALYSIS_P2_COLOR : 'var(--label)'};">${b}</span>
-      </div>
-    </div>`;
-  }).join('');
-  const header = `<div class="psd-header"><span style="color:${ANALYSIS_P1_COLOR};">${psEsc(psShortName(m.p1))}</span><span style="color:var(--text);">${psEsc(psShortName(m.p2))}</span></div>`;
-  return `<div class="psx-block"><div class="psx-label" style="margin-bottom:12px;">Dimension edge</div>${header}<div class="psd-list">${rows}</div></div>`;
-}
 
 // TEN-88 restyle helpers — the career-meetings list is grouped by tournament and
 // each row carries date · marker · opponent · round · sets · game-scores · odds×2.
@@ -18518,27 +18272,6 @@ function psRoundAbbr(round){
   if (lc.includes('robin') || lc.includes('group')) return 'RR';
   if (lc === 'final' || lc.includes('final')) return 'F';   // after semi/quarter/fraction
   return r;                                                  // R32/QF/F/RR/BR/3rd-4th pass through
-}
-// Sets score in the subject's perspective. `result` is already flipped to subject-first
-// by the build (result = won ? score : flipScore(score)), so a>b means the subject took
-// that set. Leading-integer parse tolerates tiebreak suffixes like "6-7(5)".
-function psSetsScore(result){
-  let s = 0, o = 0;
-  for (const t of String(result || '').trim().split(/\s+/)){
-    const m = /^\[?(\d+)-(\d+)/.exec(t); if (!m) continue;   // tolerate a match-tiebreak token "[11-9]"
-    const a = +m[1], b = +m[2]; if (a > b) s++; else if (b > a) o++;
-  }
-  return { self: s, opp: o };
-}
-// Game scores verbatim, comma-separated. A trailing " RET"/"W/O"/"DEF" stays attached
-// without a leading comma; a bare walkover/retirement (no numeric sets) shows just that token.
-function psGameScores(result){
-  const raw = String(result || '').trim(); if (!raw) return '';
-  const toks = raw.split(/\s+/);
-  let tail = '';
-  if (toks.length && /^(ret|w\/o|def)\.?$/i.test(toks[toks.length - 1])) tail = toks.pop().toUpperCase().replace(/\.$/, '');
-  const body = toks.join(', ');
-  return body && tail ? `${body} ${tail}` : (body || tail);
 }
 // Static tier + indoor map for the group headers (`Cincinnati · Hard · Masters 1000`).
 // Founder ruling 2026-08-28 (interaction e4eb8d4a): Option A — a small client map over
@@ -18614,115 +18347,7 @@ function psGroupMeetings(rows){
   }
   return order.map(k => groups[k]);
 }
-// One career-meeting row — coloured square marker, separate sets/game columns, both-side
-// closing odds (subject price then opponent, dash on miss). Rows are static: the meeting
-// shard carries no api-tennis eventKey, so there is no box-score panel to open.
-function styleVsArchetypeRowHtml(r, side){
-  const won = !!r.won;
-  const sets = psSetsScore(r.result);
-  const setsDisp = (sets.self + sets.opp) === 0 ? '—' : `${sets.self} - ${sets.opp}`;   // walkover/no-score → dash, not "0 - 0"
-  const od = v => (v == null ? '—' : Number(v).toFixed(2));
-  // TEN-314: the row opens THE match stats sheet (joined to the player's career history by date + opponent — the
-  // meetings shard has no event key); the shard's own games and prices head it when no history row matches.
-  const M = _aStyleMatch || _aM, key = M && side ? M[side + 'Key'] : null, name = M && side ? M[side] : '';
-  const gs = String(r.result || '').trim().split(/\s+/).map(t => /^(\d+)-(\d+)/.exec(t)).filter(Boolean).map(x => [+x[1], +x[2]]);
-  const click = side ? maRowOnclick({ key, name, ek: null, date: r.date, opp: r.opponent,
-    fallback: { date: r.date, tourn: r.tournament, surface: r.surface, round: psRoundAbbr(r.round), won, sets: gs.length ? gs : null,
-      price: r.oddsSelf != null ? Number(r.oddsSelf) : null, oppPrice: r.oddsOpp != null ? Number(r.oddsOpp) : null } }) : '';
-  return `<div class="psvr"${click}${side ? ' style="cursor:pointer;"' : ''}>
-      <span class="psvr-date">${psEsc(psFmtMeetDate(r.date))}</span>
-      <span class="psvr-sq ${won ? 'psvsq-win' : 'psvsq-loss'}" title="${won ? 'win' : 'loss'}"></span>
-      <span class="psvr-opp">${psEsc(psShortName(r.opponent))}</span>
-      <span class="psvr-round">${psEsc(psRoundAbbr(r.round))}</span>
-      <span class="psvr-sets ${won ? 'psvset-win' : 'psvset-loss'}">${setsDisp}</span>
-      <span class="psvr-games">${psEsc(psGameScores(r.result))}</span>
-      <span class="psvr-odds psvr-oddself" title="closing odds — ${psEsc(psShortName(r.opponent))}'s price shown to the right">${od(r.oddsSelf)}</span>
-      <span class="psvr-odds psvr-oddopp">${od(r.oddsOpp)}</span>
-    </div>`;
-}
 
-const PSV_ROW_CAP = 9;   // collapsed default (matches the "Showing 9 of 43" reference)
-// "+N more" is a real control, so the extra rows have to be reachable after the
-// list is already in the DOM. styleVsArchetypeCard publishes the side's full row
-// list here; the toggle re-renders through it, so expanding after a late repaint
-// still yields the complete grouped list.
-const _psvSides = { p1:null, p2:null };
-const _psvOpen  = { p1:false, p2:false };
-// Grouped, capped body. Collapsed shows the first PSV_ROW_CAP rows across groups
-// (respecting most-recent order); a group only renders its header once it has a
-// visible row. Expanded shows everything.
-function psvListHtml(side){
-  const s = _psvSides[side];
-  if (!s || !s.rows) return '';
-  const open = _psvOpen[side];
-  const total = s.rows.length;
-  const groups = psGroupMeetings(s.rows);
-  let shown = 0; const out = [];
-  for (const g of groups){
-    const rowsHtml = [];
-    for (const r of g.rows){
-      if (!open && shown >= PSV_ROW_CAP) break;
-      rowsHtml.push(styleVsArchetypeRowHtml(r, side));
-      shown++;
-    }
-    if (rowsHtml.length){
-      const meta = psTourMeta(g.tournament);
-      const surf = g.rows[0].surface;
-      const surfDisp = meta && meta.indoor ? 'Indoors' : (surf ? surf.charAt(0).toUpperCase() + surf.slice(1) : '');
-      const parts = []; if (surfDisp) parts.push(surfDisp); if (meta && meta.tier) parts.push(meta.tier);
-      const metaHtml = parts.length ? `<span class="psvg-meta">${psEsc(parts.join(' · '))}</span>` : '';
-      out.push(`<div class="psvg"><div class="psvg-head"><span class="psvg-name">${psEsc(g.tournament)}</span>${metaHtml}</div>${rowsHtml.join('')}</div>`);
-    }
-    if (!open && shown >= PSV_ROW_CAP) break;
-  }
-  let body = out.join('');
-  const hidden = total - Math.min(PSV_ROW_CAP, total);
-  if (open && total > PSV_ROW_CAP){
-    body += psvMoreControl(side, 'Show less');
-  } else if (!open && hidden > 0){
-    body += psvMoreControl(side, `+${hidden} more`);
-  }
-  return body;
-}
-function psvMoreControl(side, label){
-  return `<div class="psv-more" role="button" tabindex="0" onclick="event.stopPropagation();psvToggleMore('${side}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();event.stopPropagation();psvToggleMore('${side}')}">${label}</div>`;
-}
-// Header "Showing X of Y" reflects the collapsed/expanded state.
-function psvShowText(side){
-  const s = _psvSides[side]; if (!s || !s.rows) return '';
-  const total = s.rows.length;
-  return `Showing ${_psvOpen[side] ? total : Math.min(PSV_ROW_CAP, total)} of ${total}`;
-}
-function psvRenderList(side){
-  const list = document.getElementById('psvList-' + side);
-  if (list) list.innerHTML = psvListHtml(side);
-  const sh = document.getElementById('psvShow-' + side);
-  if (sh) sh.textContent = psvShowText(side);
-}
-function psvToggleMore(side){ _psvOpen[side] = !_psvOpen[side]; psvRenderList(side); }
-// The CAREER meeting DETAIL list: this player's full tour-career meetings vs the
-// opponent's archetype (TEN-88 option B). It is the detail view of the "Personally"
-// record above — same rows the record aggregates — so the W–L·n here reconciles to
-// that block. Rows are static (meeting shards carry no eventKey).
-function styleVsArchetypeCard(playerName, rows, oppArch, accent, tint, oppLabel, side){
-  // Block header carries the archetype pairing + the aggregate record on the left and
-  // "Showing X of Y" on the right (founder's restyle spec / screenshot).
-  const card = (aggHtml, showHtml, bodyHtml) => `<div class="psvcard-full" style="border-color:${tint(0.2)};">
-    <div class="psvhdr"><div><span class="psvhdr-title" style="color:${accent};">${psEsc(psShortName(playerName))} vs ${psEsc(oppArch.name)}s</span>${aggHtml}</div><span class="psvhdr-show" id="psvShow-${side}">${showHtml}</span></div>${bodyHtml}</div>`;
-  if (!rows) return card('', '', styleNoteHtml('Career meetings still loading.'));
-  if (!rows.length){
-    return card(`<span class="psvhdr-none">no tour meetings</span>`, '',
-      styleNoteHtml(`No tour meetings vs a ${oppArch.name.toLowerCase()} on record.`));
-  }
-  const w = rows.filter(r => r.won).length, l = rows.length - w, n = rows.length;
-  // D2: the header rate through the one gate (1–4: W–L and count only; 5–9: greyed + note).
-  const pct = maRateHtml(w, n, { nopct: '' });
-  // Publish the side's full rows behind the shared "+N more" control (psvListHtml reads _psvSides).
-  _psvSides[side] = { rows: rows };
-  const agg = `<span class="psvhdr-agg">${w}–${l} · ${pct ? pct + ' · ' : ''}${n} ${n === 1 ? 'match' : 'matches'}</span>`;
-  return card(agg, psvShowText(side),
-    `<div class="psv-list psvlist-grouped" id="psvList-${side}">${psvListHtml(side)}</div>`);
-}
 
 // Resolve a side's CAREER meeting rows from its per-player shard (TEN-88 option B).
 // Returns null while the shard is still loading (card shows "loading"), or an array
@@ -18749,109 +18374,8 @@ function styleMeetRowsFor(m, side, oppLabel, playerName){
   return rows;
 }
 
-function styleVsArchetypeHtml(m, s1, s2){
-  const a1 = s1 && psArchFor(s1.archetype_label), a2 = s2 && psArchFor(s2.archetype_label);
-  const lab1 = s1 && s1.archetype_label, lab2 = s2 && s2.archetype_label;
-  // Each side keys off the OPPONENT's archetype, so p1's list needs a2 and p2's needs a1 —
-  // one classified player is enough for one column (board ruling 2026-08-26). This is the
-  // CAREER meeting DETAIL list (TEN-88 option B): the same rows the "Personally" record above
-  // aggregates, keyed on the OPPONENT's archetype_label so the row count reconciles to that n.
-  if (!a1 && !a2) return '';
-  const r1 = a2 ? styleMeetRowsFor(m, 'p1', lab2, m.p1) : null;
-  const r2 = a1 ? styleMeetRowsFor(m, 'p2', lab1, m.p2) : null;
-  const cards = [];
-  if (a2) cards.push(styleVsArchetypeCard(m.p1, r1, a2, ANALYSIS_P1_COLOR, ANALYSIS_P1_RGBA, `${psShortName(m.p2)}'s archetype`, 'p1'));
-  if (a1) cards.push(styleVsArchetypeCard(m.p2, r2, a1, ANALYSIS_P2_COLOR, ANALYSIS_P2_RGBA, `${psShortName(m.p1)}'s archetype`, 'p2'));
-  if (!cards.length) return '';
-  return `<div class="psx-block psx-block-vs"><div class="psx-label" style="margin-bottom:12px;">Career meetings vs this style</div>
-    <div class="psvstack">${cards.join('')}</div></div>`;
-}
 
-// "Personally" — each player's CAREER record vs the OPPONENT's archetype, all
-// surfaces pooled, from the per-player split in matchup-matrix.json (byPlayer,
-// TEN-88 #2). Distinct from the last-40 list further down: that is the recent
-// detail; this is the career aggregate, and the delta against the general-matrix
-// cell — how this specific player handles that archetype vs the archetype average
-// — is the actionable read. Sample ladder (board spec): n>=10 shows the %, 5-9 is
-// flagged small-sample, <5 shows W-L only (no %), 0 shows a dash. The record keys
-// off the same surname|initial styleKey the front end uses everywhere else, so it
-// resolves the same player the rest of the tab is about.
-function stylePersonalCard(playerName, ownArch, oppArch, oppLabel, accent, tint){
-  const bp = psMatrixData && psMatrixData.byPlayer;
-  // id-space guard (TEN-88): `oppLabel` is the opponent's DISPLAY label (archetype_label)
-  // and byPlayer.vs is keyed by that label — NEVER by a machine id (.id). The paired
-  // ownArch.id/oppArch.id below stay in machine-id space for psArchIndex/psCellFor. If a
-  // refactor ever passes oppArch.id into this label slot, bp[..].vs[id] silently misses →
-  // n=0 → "no tour meetings" — the exact TEN-88 #1 regression. Warn if a machine id lands here.
-  if (oppLabel && PS_ARCHETYPES.some(a => a.id === oppLabel && !(a.ids || []).includes(oppLabel))) {
-    console.warn('[stylePersonalCard] machine id in label slot — pass archetype_label, not .id:', oppLabel);
-  }
-  const rec = bp && oppLabel ? bp[styleKey(playerName)] : null;
-  const vs = rec && rec.vs && rec.vs[oppLabel];
-  const w = vs ? (vs.w || 0) : 0, l = vs ? (vs.l || 0) : 0, n = w + l;
-  const title = `<div><div class="psv-title" style="color:${accent};">${psEsc(psShortName(playerName))} vs ${psEsc(oppArch.name)}s</div><div class="psv-sub">all surfaces · tour career</div></div>`;
-  // Matrix baseline read in THIS player's direction (own archetype vs opponent's).
-  const cell = (ownArch && oppArch && ownArch.id !== oppArch.id) ? psCellFor(psArchIndex(ownArch.id), psArchIndex(oppArch.id)) : null;
-  const base = cell && cell.pct != null ? cell.pct : null;
-  let recHtml, baseHtml = '';
-  // D2: the shared gate (was its own copy of the ladder): 0 "—", 1–4 W–L + n, 5–9 greyed + note, 10+ full.
-  const gate = maGate(n).mode;
-  if (gate === 'none'){
-    recHtml = `<span class="psv-none">— no tour meetings</span>`;
-  } else if (gate === 'nopct'){
-    recHtml = `<span class="psv-wl">W${w}–L${l}</span> <span class="psv-pct">n=${n}</span>`;
-  } else {
-    const pct = Math.round(w / n * 100);
-    recHtml = `<span class="psv-wl">W${w}–L${l}</span> <span class="psv-pct">${maRateHtml(w, n, { text: pct + '% · n=' + n })}</span>`;
-    if (base != null){
-      const d = pct - base, sign = d > 0 ? '+' : (d < 0 ? '−' : '±');
-      const dc = d > 0 ? 'var(--positive)' : (d < 0 ? 'var(--negative)' : 'var(--text-sub)');
-      baseHtml = `<div class="psv-base">matrix avg ${base}% <span class="psv-basedelta" style="color:${dc};">${sign}${Math.abs(d)}</span></div>`;
-    }
-  }
-  return `<div class="psv-card" style="border-color:${tint(0.2)};">
-    <div class="psv-head">${title}<div class="psv-rec">${recHtml}</div></div>${baseHtml}</div>`;
-}
-function stylePersonalHtml(m, s1, s2, a1, a2){
-  // Needs BOTH classified: each card reads the opponent's archetype for the record
-  // and both archetypes for the matrix baseline. Mirrors the style-vs-style edge gate.
-  if (!a1 || !a2) return '';
-  const lab1 = s1 && s1.archetype_label, lab2 = s2 && s2.archetype_label;
-  const cards = [
-    stylePersonalCard(m.p1, a1, a2, lab2, ANALYSIS_P1_COLOR, ANALYSIS_P1_RGBA),
-    stylePersonalCard(m.p2, a2, a1, lab1, ANALYSIS_P2_COLOR, ANALYSIS_P2_RGBA),
-  ];
-  return `<div class="psx-block"><div class="psx-label" style="margin-bottom:12px;">Personally · career record vs this style</div>
-    <div class="psv-grid">${cards.join('')}</div>
-    <div class="psx-note">n = vs classified opponents only — matches against players without a style label aren't counted.</div></div>`;
-}
 
-// Archetype labels — their own block, driven by the v5.1 classification (tour results),
-// NOT by shot charting. Names whoever carries a label; an unclassified player reads
-// "Not yet classified" rather than blanking the tab (board ruling 2026-08-26). Colours are
-// identity-only per the Blue rule — p1 blue, p2 neutral — the label never signals quality.
-function styleArchLabelsHtml(m, s1, s2){
-  // v5.1 board taxonomy: the label is the free-string `archetype_label`, NOT the retired
-  // primary/PS_ARCHETYPES id — apply-board-archetypes.js clears `primary` on every nightly
-  // refresh, so psArchFor(primary) is null for every player and would read "Not yet
-  // classified" for the whole tour (incl. Alcaraz/Sinner). Mirror the profile card
-  // (archetype_label || "Not yet classified") and add the neutral "+ Variety Player" chip.
-  const side = (name, st, color) => {
-    const lab = st && st.archetype_label;
-    const label = lab || 'Not yet classified';
-    const chip = (st && st.variety)
-      ? ` <span style="display:inline-flex;align-items:center;font-size:10.5px;font-weight:700;color:var(--text);background:var(--surface-inner);border:var(--ma-hw,0.33px) solid var(--line);border-radius:7px;padding:2px 7px;margin-left:6px;vertical-align:middle;">+ Variety Player</span>`
-      : '';
-    return `<div class="psl-side">
-      <div class="psl-nm" style="color:${color};" title="${psEsc(name)}">${psEsc(psShortName(name))}</div>
-      <div class="psl-arch" style="color:${lab ? color : 'var(--label)'};">${psEsc(label)}${chip}</div>
-    </div>`;
-  };
-  return `<div class="psl-labels">
-    <div class="psx-label">Playing-style archetypes</div>
-    <div class="psl-grid">${side(m.p1, s1, ANALYSIS_P1_COLOR)}${side(m.p2, s2, ANALYSIS_P2_COLOR)}</div>
-  </div>`;
-}
 
 // ── Playing Style DNA radar — ported into Match Analysis (TEN-103) ─────────────
 // The same 5-axis api-tennis-native DNA the founder approved on the H2H page:
@@ -18963,167 +18487,373 @@ function mdnaRadarFor(key, surface, scope, fullName){
   const est = !!(sc.underPressure && sc.underPressure.estimated);
   return { inPool: true, ok, matches, pcts, ratings, deltas, est, surface, scope };
 }
-// The DNA card for a match: overlaid 5-axis radar + raw-rating readout with Δ vs baseline.
-// Archetype badges + style-vs-style edges are already shown elsewhere on this tab, so this
-// block is JUST the DNA (radar + readout), never the record-vs-style footer the H2H card
-// carries. Suppressed entirely when neither player is in the api-tennis pool (nothing to
-// show) — but shown, with an honest withheld/loading state, when at least one is.
-function styleDnaRadarHtml(m){
-  const surface = mdnaSurface(m);
-  const aDna = mdnaRadarFor(m.p1Key, surface, MDNA_SCOPE, m.p1);
-  const bDna = mdnaRadarFor(m.p2Key, surface, MDNA_SCOPE, m.p2);
-  const loading = !_mdna;
-  if (!loading && !aDna.inPool && !bDna.inPool) return '';   // genuinely nothing to show
-  const r0 = MDNA_R0;
-  const rings = [0.34, 0.67, 1].map(f => mdnaRadarPoints(MDNA_LABELS.map(() => 100), r0 * f));
-  const spokes = MDNA_LABELS.map((_, i) => { const ang = (-90 + i * MDNA_STEP) * Math.PI / 180; return { x: (150 + Math.cos(ang) * r0).toFixed(1), y: (150 + Math.sin(ang) * r0).toFixed(1) }; });
-  const axisLabels = MDNA_LABELS.map((lbl, i) => {
-    const ang = (-90 + i * MDNA_STEP) * Math.PI / 180;
-    const x = 150 + Math.cos(ang) * (r0 + 24), y = 150 + Math.sin(ang) * (r0 + 24) + 4;
-    return { label: lbl, x: x.toFixed(0), y: y.toFixed(0), anchor: Math.abs(Math.cos(ang)) < 0.2 ? 'middle' : (Math.cos(ang) > 0 ? 'start' : 'end') };
-  });
-  const aPoints = aDna.ok ? mdnaRadarPoints(aDna.pcts, r0) : null;
-  const bPoints = bDna.ok ? mdnaRadarPoints(bDna.pcts, r0) : null;
-  const hasRadar = !!(aPoints || bPoints);
-  const p1Short = psShortName(m.p1), p2Short = psShortName(m.p2);
-  const stateOf = (dna) => dna.loading ? 'loading' : (!dna.inPool ? 'absent' : (dna.ok ? 'ok' : 'below'));
-  const aState = stateOf(aDna), bState = stateOf(bDna);
-  const stateNote = (st, matches) =>
-    st === 'loading' ? 'Loading DNA…'
-    : st === 'absent' ? 'No api-tennis rating on record'
-    : st === 'below' ? ('Fewer than ' + MDNA_FLOOR + ' ' + surface + '-surface matches in the last 52 weeks (' + matches + ') — shape withheld')
-    : '';
-  const delta = (dv, dp) => {
-    if (dv == null || dv === 0) return { txt: '', color: 'var(--label)' };
-    const up = dv > 0;
-    return { txt: (up ? '▲' : '▼') + Math.abs(dv).toFixed(dp), color: up ? 'var(--positive)' : 'var(--negative)' };
-  };
-  const cell = (raw, d, color, right) => `<span style="display:inline-flex; align-items:baseline; gap:5px; justify-content:${right ? 'flex-end' : 'flex-start'};">
-    <span style="font-family:'IBM Plex Mono',monospace; font-size:13px; font-weight:700; color:${raw === '—' ? 'var(--label)' : color};">${escapeHtml(raw)}</span>
-    ${d && d.txt ? `<span style="font-family:'IBM Plex Mono',monospace; font-size:10px; color:${d.color};">${escapeHtml(d.txt)}</span>` : ''}
-  </span>`;
-  const rows = MDNA_AXES.map((ax, i) => {
-    const arw = aDna.ok ? _mdnaFmt(aDna.ratings ? aDna.ratings[i] : null, ax.dp) : '—';
-    const brw = bDna.ok ? _mdnaFmt(bDna.ratings ? bDna.ratings[i] : null, ax.dp) : '—';
-    const ad = aDna.ok ? delta(aDna.deltas ? aDna.deltas[i] : null, ax.dp) : null;
-    const bd = bDna.ok ? delta(bDna.deltas ? bDna.deltas[i] : null, ax.dp) : null;
-    return `<div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(120px,150px) minmax(0,1fr); gap:12px; align-items:center; padding:4px 2px; border-bottom:var(--ma-hw,0.33px) solid var(--line-soft);">
-      ${cell(arw, ad, ANALYSIS_P1_COLOR, true)}
-      <span style="text-align:center; font-size:10.5px; letter-spacing:0.04em; color:var(--label);">${escapeHtml(ax.label)}</span>
-      ${cell(brw, bd, ANALYSIS_P2_COLOR, false)}
-    </div>`;
-  }).join('');
-  const aNote = stateNote(aState, aDna.matches || 0), bNote = stateNote(bState, bDna.matches || 0);
-  const noteRow = (aNote || bNote) ? `<div style="display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:14px; padding-top:6px;">
-    <span style="text-align:right; font-size:11px; color:var(--ma-t1);">${escapeHtml(aNote)}</span>
-    <span style="text-align:left; font-size:11px; color:var(--ma-t1);">${escapeHtml(bNote)}</span>
-  </div>` : '';
-  const est = (aDna.est || bDna.est) ? ' · Under Pressure from 3 of 4 components for one player (estimated)' : '';
-  const scopeLabel = 'Last 52 weeks · ' + surface + '-surface · percentile vs the api-tennis field';
-  return `<div class="psx-block"><div class="psx-card" style="display:flex; flex-direction:column; gap:14px;">
-    <div style="display:flex; align-items:baseline; justify-content:space-between;">
-      <span style="font-family:'IBM Plex Mono',monospace; font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:var(--text-sub);">Playing style DNA</span>
-      <span style="font-size:11px; color:var(--label);">Five-axis profile · overlaid</span>
-    </div>
-    <div style="display:flex; align-items:center; justify-content:center; gap:22px; font-size:12px;">
-      <span style="color:${ANALYSIS_P1_COLOR}; font-weight:700;">■ ${escapeHtml(p1Short)}</span>
-      <span style="color:${ANALYSIS_P2_COLOR}; font-weight:700;">▢ ${escapeHtml(p2Short)}</span>
-    </div>
-    <div style="display:flex; justify-content:center;">
-      <svg viewBox="-42 0 384 300" style="width:min(340px,82%); height:auto;">
-        ${rings.map(pts => `<polygon points="${pts}" fill="none" style="stroke:var(--ma-hair)" stroke-width="1"></polygon>`).join('')}
-        ${spokes.map(sp => `<line x1="150" y1="150" x2="${sp.x}" y2="${sp.y}" style="stroke:var(--ma-hair)" stroke-width="1"></line>`).join('')}
-        ${aPoints ? `<polygon points="${aPoints}" style="fill:${ANALYSIS_P1_RGBA(0.18)}; stroke:${ANALYSIS_P1_COLOR}" stroke-width="2"></polygon>` : ''}
-        ${bPoints ? `<polygon points="${bPoints}" style="fill:${ANALYSIS_P2_RGBA(0.10)}; stroke:${ANALYSIS_P2_FILL}" stroke-width="2" stroke-dasharray="5 4"></polygon>` : ''}
-        ${axisLabels.map(l => `<text x="${l.x}" y="${l.y}" text-anchor="${l.anchor}" style="fill:var(--text-sub)" font-size="11.5" font-family="IBM Plex Mono, monospace">${escapeHtml(l.label)}</text>`).join('')}
-        ${!hasRadar ? `<text x="150" y="150" text-anchor="middle" style="fill:var(--label)" font-size="11" font-family="IBM Plex Mono, monospace">${loading ? 'Loading DNA…' : 'No shape at this floor'}</text>` : ''}
-      </svg>
-    </div>
-    <div style="display:flex; flex-direction:column; gap:2px; border-top:var(--ma-hw,0.33px) solid var(--line-soft); padding-top:12px;">
-      <div style="display:flex; align-items:center; justify-content:space-between; padding-bottom:4px;">
-        <span style="font-family:'IBM Plex Mono',monospace; font-size:9.5px; letter-spacing:0.08em; text-transform:uppercase; color:var(--label);">Raw rating · Δ vs 2024–now avg</span>
-        <span style="display:inline-flex; gap:12px; font-size:10px;"><span style="color:${ANALYSIS_P1_COLOR};">■ ${escapeHtml(p1Short)}</span><span style="color:var(--text);">▢ ${escapeHtml(p2Short)}</span></span>
-      </div>
-      ${rows}
-      ${noteRow}
-      <span style="font-size:10.5px; color:var(--label); text-align:center; padding-top:8px;">${escapeHtml(scopeLabel + est)}</span>
-    </div>
-  </div></div>`;
-}
 
-// The tab is a stack of blocks that each stand or fall on their OWN data source, so a
-// missing input suppresses only its block — never the whole tab (board ruling 2026-08-26):
-//   · radar + dimension edge      ← shot charting (10+ charted matches for BOTH)
-//   · archetype labels            ← v5.1 classification (per player)
-//   · style-vs-style edge         ← general matrix (BOTH classified)
-//   · recent-vs-style + record    ← tour results (each side needs only its OPPONENT classified)
-function buildStyleSection(m){
-  const s1 = ppStyleFor(m.p1), s2 = ppStyleFor(m.p2);
-  const r1 = styleRadarFor(m.p1), r2 = styleRadarFor(m.p2);
-  // Two SEPARATE axes: the board label (archetype_label, free string) drives the label
-  // block + the empty state; the retired primary/PS_ARCHETYPES id (a1/a2) still gates the
-  // style-vs-style matrix cell. primary is cleared nightly, so a1/a2 stay null until the
-  // matchup matrix is rebuilt on the v5.1 taxonomy (escalated separately).
-  const a1 = s1 && psArchFor(s1.archetype_label), a2 = s2 && psArchFor(s2.archetype_label);
-  const lab1 = s1 && s1.archetype_label, lab2 = s2 && s2.archetype_label;
-  const radarOK = styleRadarDrawable(r1, r2);
-  // Playing Style DNA (TEN-103): api-tennis-native, keyed by player_key, so it works for
-  // players the charting-based radar/classification can't reach. Built here so it can also
-  // show in the "neither classified" branch below — the whole point of DNA is that it isn't
-  // gated on tour-level charting. Suppresses itself when neither player is in the pool.
-  const dnaHtml = styleDnaRadarHtml(m);
-  // Neither player classified AND no drawable radar → every classification/charting block is
-  // a "not available" panel. Still show the DNA card if we have it (it doesn't depend on
-  // charting), otherwise fall back to the one honest message about the binding constraint.
-  if (!lab1 && !lab2 && !radarOK){
-    const coming = `<div class="acomingsoon">Neither ${psEsc(psShortName(m.p1))} nor ${psEsc(psShortName(m.p2))} has enough tour-level match history to be classified, so there's no style comparison to show.</div>`;
-    return dnaHtml ? `<div class="psx-wrap">${dnaHtml}${coming}</div>` : coming;
+// =====================================================================
+// PLAYING STYLE — TEN-340 (TEN-312 tab rebuild). Built from `Match Analysis Progression v1.dc.html` ps2For
+// (DF L3553–3685, template L495–664) in the variant the file renders: palette `cur` (both players white; blue only for
+// links, today and selection), personal record variant F "tug from centre", view fixed to `ratings` (README §5.3). The
+// file's review switchers (psPal, psPrVar, the Style dimensions view) and its SAMPLE chip are not built. Every figure is real:
+//   · archetypes         playing-styles.json archetype_label + variety (ppStyleFor)
+//   · style matchup      matchup-matrix.json matrix / matrixBySurface (psCellFor, psSurfaceCellFor; the diagonal = a mirror)
+//   · personal record    the player's style-meetings/{slug}.json rows vs the opponent's archetype, walkovers excluded (N2)
+//   · career meetings    the same rows through the shared rows (maMatchRowsHtml); every row opens the shared sheet
+//   · DNA radar/profile  dna-apitennis-ratings.json (TEN-319, rebuilt twice daily: true percentiles, stated populations;
+//                        Under pressure from surface-ratings, TEN-328) + the live surface Elo, current on both views
+// Rules: .claude/rules/modal-playing-style.md. The archetype-matrix % is not gated (its own 20-meeting floor applies);
+// every other rate goes through the one gate (tourxSampleGate via maRate / maRateHtml).
+// =====================================================================
+let _aStyleMatch = null;
+const PS2_ROWS_SHOWN = 8;                     // DF L3614–3631: the file lists 8 meetings under "Showing 8 of N"
+const PS2_C = {
+  t2: fhS('8b96b5', '--text-sub'), text: fhS('e7e9ee', '--text'), t3: fhS('5b6880', '--label'), t4: fhS('4b5672', '--label'),
+  t5: fhS('c6ccdb', '--text-soft'), card: fhS('0e1019', '--surface'), inner: fhS('0c0e16', '--surface-inner'),
+  line: fhS('ffffff-060', '--line'), soft: fhS('ffffff-050', '--line'), chipLine: fhS('ffffff-120', '--line'),
+  pillBg: fhS('ffffff-040', '--surface-inner'), pillLine: fhS('ffffff-100', '--line'), ring: fhS('ffffff-070', '--line'),
+  link: fhS('5b9bff', '--periwinkle'), tBg: fhS('5b9bff-060', '--seg-active'), tBd: fhS('5b9bff-250', '--seg-active-line'),
+  up: fhS('3dd68c', '--positive'), dn: fhS('e0616f', '--negative'),
+  // pal (DF L3568, palette `cur`): A = B = the primary white; the B fills at the file's own alphas
+  A: fhS('e7e9ee', '--text'), B: fhS('e7e9ee', '--text'), aFill: fhS('e7e9ee-120', '--seg-active'),
+  bDash: fhS('e7e9ee-850', '--text'), bDim: fhS('e7e9ee-300', '--bar-track'), tugL: fhS('e7e9ee-700', '--text-soft'),
+};
+const PS2_CARD = `background:${PS2_C.card}; border:1.25px solid ${PS2_C.line}; border-radius:14px; padding:20px 22px; display:flex; flex-direction:column; gap:16px; min-width:0;`;
+const PS2_CAP = `${FH_MONO} font-size:10px; font-weight:700; letter-spacing:0.16em; text-transform:uppercase; color:${PS2_C.t2};`;
+// The five DNA axes in the file's order and words (DF L3593); dp = the rating's printed precision.
+const PS2_AXES = [
+  { key: 'serve', label: 'Serve', dp: 0 },
+  { key: 'return', label: 'Return', dp: 1 },
+  { key: 'underPressure', label: 'Under pressure', dp: 1 },
+  { key: 'dominanceRatio', label: 'Dominance ratio', dp: 2 },
+  // D6: no windowed Elo exists — the current rating on both views, labelled "current" (the profile row prints it in its
+  // Δ slot, which Elo never uses: the 128px label column would wrap the long label onto a second line).
+  { key: 'elo', label: 'Surface Elo · current', short: 'Surface Elo', dp: 0 },
+];
+const PS2_WIN = { w52: { scope: 'last52', label: 'Last 52 weeks', lc: 'last 52 weeks' }, since: { scope: 'sinceBase', label: 'Since Mar 2024', lc: 'since Mar 2024' } };
+
+let _ps2 = null;
+function ps2StateFor(m){
+  if (!_ps2 || _ps2.m !== m) _ps2 = { m, meetA: false, meetB: false, moreA: false, moreB: false, prof: false, win: 'w52' };
+  return _ps2;
+}
+function ps2Set(patch){
+  if (!_ps2) return;
+  Object.assign(_ps2, patch);
+  if (aBuilt(_ps2.m, 'style')) aPaint('aSectionStyle', buildStyleSection(_ps2.m));
+}
+const ps2Plural = lab => lab + 's';
+
+// ---- data ----
+// A walkover is not a match played (N2): it never enters the record, the list or the counts. The meetings shard writes
+// it as a bare "W/O" score (190 of 32,274 rows on 2026-09-29; tools/build-matchup-matrix.js drops them at source from
+// its next run).
+function ps2IsWalkover(r){ const s = String(r && r.result || ''); return /w\/o/i.test(s) || !/\d+-\d+/.test(s); }
+// A finished set: someone reached 6 with a two-game lead, or 7 (7-5 / 7-6), or won a tiebreak at any score (a final-set
+// tiebreak at 12-12: "13-12(3)"); a match tiebreak [10-8] to 10 by two.
+function ps2SetDone(a, b, mtb, tb){ const hi = Math.max(a, b), d = Math.abs(a - b); return mtb ? hi >= 10 && d >= 2 : (hi >= 6 && d >= 2) || hi === 7 || (tb && hi >= 7 && d === 1); }
+// One meeting row, from the subject's side (the shard's result is subject-first): sets won – lost over FINISHED sets
+// only (an in-match retirement's unfinished set is excluded, N2), set scores as the file prints them ("7-6(7), 6-1");
+// a retirement sets `ret` (the shared scores cell adds the file's "ret." mark, DF L1997).
+function ps2Meeting(r){
+  const toks = String(r.result || '').trim().split(/\s+/).filter(Boolean);
+  const ret = toks.some(t => /^ret\.?$/i.test(t));
+  const sets = [];
+  for (const t of toks){ const x = /^(\[)?(\d+)-(\d+)(\(\d+\))?\]?$/.exec(t); if (x) sets.push({ a: +x[2], b: +x[3], txt: x[2] + '-' + x[3] + (x[4] || ''), mtb: !!x[1], tb: !!x[4] }); }
+  let p = 0, o = 0;
+  sets.forEach(s => { if (!ps2SetDone(s.a, s.b, s.mtb, s.tb)) return; if (s.a > s.b) p++; else if (s.b > s.a) o++; });
+  return { pS: p, oS: o, sets: p + o ? p + ' - ' + o : FH_DASHC, scores: sets.map(s => s.txt).join(', '), ret,
+    gs: sets.map(s => [s.a, s.b]) };
+}
+// The matchup cell in p1's direction. kind: loading · unclassified · mirror · thin (below the matrix floor) · cell.
+function ps2Edge(s1, s2){
+  const l1 = s1 && s1.archetype_label, l2 = s2 && s2.archetype_label;
+  if (!l1 || !l2) return { kind: 'unclassified', l1, l2 };
+  if (!psMatrixData) return { kind: 'loading', l1, l2 };
+  const i1 = psArchIndex(l1), i2 = psArchIndex(l2);
+  if (i1 < 0 || i2 < 0) return { kind: 'unclassified', l1: i1 < 0 ? null : l1, l2: i2 < 0 ? null : l2 };
+  if (i1 === i2) return { kind: 'mirror', a: 50, b: 50, n: psMirrorN(i1), l1, l2, i1, i2 };
+  const c = psCellFor(i1, i2);
+  if (!c || c.pct == null) return { kind: 'thin', n: c ? c.n : 0, l1, l2, i1, i2 };
+  return { kind: 'cell', a: c.pct, b: 100 - c.pct, n: c.n, l1, l2, i1, i2 };
+}
+// One player's career record vs the OPPONENT's archetype (side 0 = p1), from the meetings shard, walkovers out (N2).
+// avg = the matrix cell in this player's direction (a mirror = 50%, the diagonal's "coin flip on style").
+function ps2Record(m, side){
+  const name = side ? m.p2 : m.p1, other = side ? m.p1 : m.p2;
+  const own = ppStyleFor(name), opp = ppStyleFor(other);
+  const ownLab = own && own.archetype_label, oppLab = opp && opp.archetype_label;
+  // the meetings are tracked only between classified players: either side unclassified → "not classified", never "no meetings"
+  if (!oppLab || !ownLab) return { state: 'unclassified', name, other, oppLab: oppLab || null, self: !ownLab };
+  const raw = m._styleMeetLoaded ? styleMeetRowsFor(m, side ? 'p2' : 'p1', oppLab, name) : null;
+  if (raw == null) return { state: 'loading', name, other, oppLab };
+  const rows = raw.filter(r => !ps2IsWalkover(r));
+  const w = rows.filter(r => r.won).length, n = rows.length;
+  let avg = null;
+  if (ownLab && psMatrixData){
+    const i = psArchIndex(ownLab), j = psArchIndex(oppLab);
+    if (i >= 0 && j >= 0){ const c = i === j ? { pct: 50 } : psCellFor(i, j); avg = c && c.pct != null ? c.pct : null; }
   }
-  // Old 6-axis charting radar RETIRED here (founder ruling 2026-08-31, TEN-103): the
-  // api-tennis Playing Style DNA radar built above replaces it — exactly as on the H2H
-  // page, where the charting radar only graded ~1/3 of players and was retired for DNA.
-  // The style-vs-style edge (the matrix matchup cell) is a SEPARATE block that still needs
-  // BOTH archetypes; it stays, and now takes the full width since the radar no longer sits
-  // beside it. It self-suppresses to nothing when either player is unclassified.
-  const edgeHtml = (a1 && a2) ? styleEdgeHtml(m, s1, s2) : '';
-  const topHtml = edgeHtml ? `<div class="psx-top psx-top-solo">${edgeHtml}</div>` : '';
-  // "Historical by surface" was extracted from inside the edge card so the career
-  // "Personally" block can sit between the general edge and the per-surface split
-  // (board order, TEN-88 #2). Same gate the edge used for it: both classified, a
-  // real (non-mirror) pairing above the pooled-sample floor.
-  const pooledCell = (a1 && a2 && a1.id !== a2.id) ? psCellFor(psArchIndex(a1.id), psArchIndex(a2.id)) : null;
-  const surfaceHtml = (pooledCell && pooledCell.pct != null)
-    ? `<div class="psx-block">${styleSurfaceTableHtml(psArchIndex(a1.id), psArchIndex(a2.id), a1, a2, (m.surface || '').toLowerCase())}</div>`
-    : '';
-  // Order (board spec, TEN-88 #2): archetypes → radar + style-vs-style edge →
-  // Personally (career) → historical by surface → dimension edge → last-40 list.
-  return `<div class="psx-wrap">
-    ${styleArchLabelsHtml(m, s1, s2)}
-    ${dnaHtml}
-    ${topHtml}
-    ${stylePersonalHtml(m, s1, s2, a1, a2)}
-    ${surfaceHtml}
-    ${styleDimensionEdgeHtml(m, r1, r2)}
-    ${styleVsArchetypeHtml(m, s1, s2)}
-  </div>`;
+  return { state: 'ready', name, other, oppLab, rows, w, l: n - w, n, avg };
+}
+// The population a DNA percentile ranks in (TEN-319 `_meta.percentiles` / `eloPercentiles`): its words and its size.
+function ps2Pop(scope, surface, key){
+  const meta = _mdna && _mdna.meta || {};
+  const p = key === 'elo' ? (meta.eloPercentiles || {})[surface] : ((meta.percentiles || {})[scope] || {})[surface] && meta.percentiles[scope][surface][key];
+  if (!p) return null;
+  const n = p.n != null ? p.n : Array.isArray(p.values) ? p.values.length : null;
+  return { n, words: p.population || '' };
+}
+function ps2UpScope(key, surface, scope){
+  const rec = _mdna && _mdna.byKey ? _mdna.byKey[String(key)] : null;
+  const node = rec && rec.surfaces && rec.surfaces[surface] && rec.surfaces[surface][scope] && rec.surfaces[surface][scope].underPressure;
+  return node ? node.srScope || null : null;
 }
 
-let _aStyleMatch = null, _psvToken = 0;
-function renderStyleSection(m){
-  const el = document.getElementById('aSectionStyle');
-  if (!el) return;
-  // Every repaint invalidates any in-flight row upgrade from the previous one.
-  const token = ++_psvToken;
-  // A repaint rebuilds both lists from scratch, so the expand state must reset
-  // with them — otherwise opening a second match inherits the first's expansion.
-  _psvOpen.p1 = false; _psvOpen.p2 = false;
-  _psvSides.p1 = null; _psvSides.p2 = null;
-  el.innerHTML = buildStyleSection(m);
-  el.dataset.psvToken = String(token);
-  // TEN-88 option B: the "vs this style" list is now the CAREER meeting detail from
-  // per-player shards (TML-sourced, no api-tennis eventKey), so its rows are static —
-  // there is nothing to upgrade to an openable box-score row, and re-sourcing from the
-  // form shards here would clobber the meeting rows with the old last-40 list.
+// ---- blocks ----
+// 1 · Style matchup (DF L497–541). DESIGN GAP G5 (mirror: 50/50, "neither player an edge", no surface tiles), G17 (an
+// unclassified player, or a matrix cell below its floor: the file draws only a rated cross-archetype pairing).
+function ps2MatchupCard(m, s1, s2){
+  const C = PS2_C, E = ps2Edge(s1, s2), M = FH_MONO;
+  const side = (name, st, right) => {
+    const lab = st && st.archetype_label;
+    const chip = st && st.variety ? `<span style="${right ? '' : 'align-self:flex-start; '}${M} font-size:10.5px; color:${C.t5}; border:var(--ma-hw,0.33px) solid ${C.chipLine}; border-radius:999px; padding:2px 10px;">+ Variety Player</span>` : '';
+    return `<div style="display:flex; flex-direction:column;${right ? ' align-items:flex-end; text-align:right;' : ''} gap:6px; min-width:0;">
+      <span style="font-size:13px; font-weight:600; color:${C.t2};">${fhEsc(name)}</span>
+      <span class="ps2-arch" style="font-size:22px; font-weight:800; letter-spacing:-0.01em; color:${lab ? C.text : C.t3};">${fhEsc(lab || 'Not yet classified')}</span>${chip}</div>`;
+  };
+  const head = `<div style="display:flex; align-items:center; gap:10px;"><span style="${PS2_CAP}">Style matchup</span></div>
+    <div style="display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:start; gap:18px;">${side(m.p1, s1, false)}<span style="${M} font-size:11px; color:${C.t4}; padding-top:26px;">vs</span>${side(m.p2, s2, true)}</div>
+    <div style="height:1.25px; background:${C.line};"></div>`;
+  const pill = t => `<span class="ps2-lean" style="align-self:center; ${M} font-size:11px; font-weight:700; color:${C.text}; background:${C.pillBg}; border:var(--ma-hw,0.33px) solid ${C.pillLine}; border-radius:999px; padding:4px 12px;">${fhEsc(t)}</span>`;
+  const titleRow = (t, n) => `<div style="display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap;"><span class="ps2-edge-title" style="font-size:14px; font-weight:700; color:${C.text};">${fhEsc(t)}</span><span class="ps2-edge-n" style="${M} font-size:10.5px; color:${C.t3};">${fhEsc(n)}</span></div>`;
+  let edge;
+  if (E.kind === 'loading') edge = `<span style="font-size:12.5px; color:${C.t3};">Loading the style matrix…</span>`;   // DESIGN GAP G17: the tabs' one-line loading pattern
+  else if (E.kind === 'unclassified'){
+    const who = [!E.l1 ? fhSurname(m.p1) : null, !E.l2 ? fhSurname(m.p2) : null].filter(Boolean);
+    edge = titleRow('No style matchup', '') + pill(`${who.join(' and ')} ${who.length > 1 ? 'are' : 'is'} not yet classified`);   // DESIGN GAP G17
+  } else if (E.kind === 'thin'){
+    const floor = (psMatrixData && psMatrixData.minSampleN) || 20;
+    edge = titleRow(`${ps2Plural(E.l1)} vs ${ps2Plural(E.l2)}`, `n=${E.n.toLocaleString('en-US')} tour meetings`) + pill(`Below the ${floor}-meeting floor: no win rate quoted`);   // DESIGN GAP G17
+  } else {
+    const mirror = E.kind === 'mirror';
+    const lead = E.a >= E.b ? E.l1 : E.l2, other = E.a >= E.b ? E.l2 : E.l1, pts = Math.abs(E.a - 50);
+    const title = mirror ? `Mirror matchup: both play as ${ps2Plural(E.l1)}` : E.a === E.b ? `${ps2Plural(E.l1)} vs ${ps2Plural(E.l2)}` : `${ps2Plural(lead)} beat ${ps2Plural(other)}`;
+    const lean = mirror ? 'Style gives neither player an edge' : pts < 2 ? 'Effectively a coin-flip on style alone' : `Leans +${pts} pts to the ${lead.toLowerCase()}`;
+    edge = titleRow(title, `n=${E.n.toLocaleString('en-US')} tour meetings${mirror ? ' · same archetype' : ''}`)
+      + `<div style="display:grid; grid-template-columns:auto minmax(0,1fr) auto; align-items:center; gap:16px;">
+          <span class="ps2-edge-a" style="${M} font-size:30px; font-weight:800; line-height:1; color:${C.text};">${E.a}%</span>
+          <div style="position:relative; height:8px; display:flex; gap:3px;"><span style="width:${E.a}%; background:${C.A}; border-radius:4px 0 0 4px;"></span><span style="flex:1; background:${C.bDim}; border-radius:0 4px 4px 0;"></span><span style="position:absolute; left:50%; top:-5px; bottom:-5px; width:1.5px; margin-left:-0.75px; background:${C.t2};"></span></div>
+          <span class="ps2-edge-b" style="${M} font-size:30px; font-weight:800; line-height:1; color:${C.t2};">${E.b}%</span>
+        </div>
+        <div style="display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:12px; ${M} font-size:10px; letter-spacing:0.06em; color:${C.t3};"><span>${fhEsc(E.l1)}</span><span>50% coin-flip</span><span style="text-align:right;">${fhEsc(E.l2)}</span></div>`
+      + pill(lean);
+  }
+  // Surface tiles (DF L533–540): the style matrix's split on each surface, n = that surface's meetings; below the floor "—".
+  let tiles = '';
+  if (E.kind === 'cell' || E.kind === 'thin'){
+    // today's surface only when the match states one (hard / indoor → Hard); an unknown or carpet surface tags no tile
+    const sk = String(m.surface || '').toLowerCase(), today = /clay/.test(sk) ? 'Clay' : /grass/.test(sk) ? 'Grass' : /hard|indoor/.test(sk) ? 'Hard' : null;
+    tiles = `<div style="display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px;">` + ['Clay', 'Hard', 'Grass'].map(sf => {
+      const c = psSurfaceCellFor(sf.toLowerCase(), E.i1, E.i2), on = sf === today;
+      const a = c && c.pct != null ? c.pct + '%' : FH_DASHC, b = c && c.pct != null ? (100 - c.pct) + '%' : FH_DASHC;
+      return `<div class="ps2-tile" data-ps2-surface="${sf}" style="background:${on ? C.tBg : C.inner}; border:var(--ma-hw,0.33px) solid ${on ? C.tBd : C.soft}; border-radius:11px; padding:11px 14px; display:flex; flex-direction:column; gap:6px; min-width:0;">
+        <div style="display:flex; align-items:baseline; justify-content:space-between; gap:8px;"><span style="font-size:12.5px; font-weight:700; color:${C.text};">${sf}</span><span style="${M} font-size:9.5px; color:${C.t3};">n=${(c ? c.n : 0).toLocaleString('en-US')}</span></div>
+        <span style="${M} font-size:16px; font-weight:700; color:${C.text}; white-space:nowrap;">${a} <span style="color:${C.t4};">–</span> <span style="color:${C.t2};">${b}</span></span>
+        <span style="${M} font-size:9px; font-weight:600; letter-spacing:0.12em; text-transform:uppercase; color:${C.link};">${on ? "Today's surface" : '&nbsp;'}</span></div>`;
+    }).join('') + '</div>';
+  }
+  return `<div class="ps2-card ps2-matchup" style="${PS2_CARD}">${head}<div style="display:flex; flex-direction:column; gap:10px;">${edge}</div>${tiles}</div>`;
+}
+
+// 2 · Personal record vs this style (DF L543–574, variant F): one box per player; a box with meetings opens its list.
+function ps2PersonalBox(m, side, R, open){
+  const C = PS2_C, M = FH_MONO, sur = fhSurname(R.name);
+  const title = R.oppLab ? `${sur} vs ${ps2Plural(R.oppLab)}` : `${sur} vs ${fhSurname(R.other)}'s style`;
+  const ready = R.state === 'ready', n = ready ? R.n : 0;
+  const g = maGate(n).mode, shown = g === 'full' || g === 'small', small = g === 'small';
+  const rate = ready && n ? maRateHtml(R.w, n, { nopct: '', note: false, color: C.t5, style: `${M} font-size:12px;` }) : '';
+  const wl = ready && n ? `W${R.w}–L${R.l}` : FH_DASHC;
+  // the tug: a bar whose length is a rate, so it follows the gate (none / 1–4 no fill, 5–9 grey)
+  const tw = ready && shown && R.w > R.l ? (R.w - R.l) / n * 50 : 0, tl = ready && shown && R.l > R.w ? (R.l - R.w) / n * 50 : 0;
+  const tugTxt = !ready || !n ? FH_DASHC : R.w === R.l ? 'Level' : R.w > R.l ? `+${R.w - R.l} ${R.w - R.l === 1 ? 'win' : 'wins'}` : `+${R.l - R.w} ${R.l - R.w === 1 ? 'loss' : 'losses'}`;
+  const tugC = !ready || !n || R.w === R.l ? C.t2 : C.text;
+  const pct = ready && shown ? Math.round(R.w / n * 100) : null;
+  const d = pct != null && R.avg != null ? pct - R.avg : null;
+  const dTxt = d == null ? '' : d === 0 ? '±0' : (d > 0 ? '+' : '−') + Math.abs(d);
+  const dC = d == null ? C.t2 : small ? MA_GREY : d > 0 ? C.up : d < 0 ? C.dn : C.t2;
+  const hint = R.state === 'loading' ? 'Loading career meetings…' : R.state === 'unclassified' ? (R.self ? `${sur}'s playing style is not classified` : 'Playing style not classified')
+    : !n ? 'No career meetings on record' : open ? 'Hide career meetings' : `Show career meetings (${n})`;
+  const click = ready && n ? ` onclick="ps2Set({${side ? 'meetB' : 'meetA'}: !_ps2.${side ? 'meetB' : 'meetA'}})"` : '';
+  return `<div class="seg ps2-box${click ? ' ps2-box-open' : ''}" data-ps2-side="${side ? 'b' : 'a'}"${click} style="background:${open ? C.tBg : C.inner}; border:var(--ma-hw,0.33px) solid ${open ? C.tBd : C.soft}; border-radius:11px; padding:14px 16px; display:flex; flex-direction:column; gap:10px; min-width:0; cursor:${click ? 'pointer' : 'default'};">
+      <span style="font-size:13px; font-weight:700; color:${C.text};">${fhEsc(title)}</span>
+      <div style="display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;"><span class="ps2-wl" style="${M} font-size:23px; font-weight:800; line-height:1; color:${ready && n ? C.text : C.t3};">${wl}</span>${rate}<span class="ps2-n" style="${M} font-size:10.5px; color:${C.t3};">${ready ? 'n=' + n : ''}</span></div>
+      <div style="display:flex; flex-direction:column; align-items:center; gap:6px;">
+        <div style="position:relative; width:100%; height:8px; background:${C.soft}; border-radius:4px;">
+          <span style="position:absolute; right:50%; top:0; bottom:0; width:${tw}%; background:${small ? MA_GREY : C.A}; border-radius:4px 0 0 4px;"></span>
+          <span style="position:absolute; left:50%; top:0; bottom:0; width:${tl}%; background:${small ? MA_GREY : C.tugL}; border-radius:0 4px 4px 0;"></span>
+          <span style="position:absolute; left:50%; top:-4px; bottom:-4px; width:1.5px; margin-left:-0.75px; background:${C.t2};"></span>
+        </div>
+        <div style="width:100%; display:grid; grid-template-columns:1fr auto 1fr; align-items:center; ${M} font-size:9px; letter-spacing:0.08em; color:${C.t4};"><span>WINS</span><span class="ps2-tug" style="font-size:10.5px; font-weight:700; letter-spacing:0; color:${tugC};">${tugTxt}</span><span style="text-align:right;">LOSSES</span></div>
+      </div>
+      <div style="display:flex; align-items:baseline; gap:8px; ${M} font-size:10.5px; color:${C.t3};"><span class="ps2-avg">Matrix avg ${ready && R.avg != null ? R.avg + '%' : FH_DASHC}</span><span class="ps2-delta" style="font-weight:700; color:${dC};">${dTxt}</span><span style="margin-left:auto;">All surfaces · career</span></div>
+      <span style="align-self:flex-start; display:flex; align-items:center; gap:6px; font-size:12px; font-weight:600; color:${click ? C.link : C.t3};">${hint}${click ? `<span style="display:inline-block; transform:${open ? 'rotate(180deg)' : 'none'}; font-size:10px;">▾</span>` : ''}</span>
+    </div>`;
+}
+function ps2PersonalCard(m, RR, S){
+  const boxes = [0, 1].map(i => ps2PersonalBox(m, i, RR[i], i ? S.meetB && RR[1].state === 'ready' && RR[1].n > 0 : S.meetA && RR[0].state === 'ready' && RR[0].n > 0)).join('');
+  return `<div class="ps2-card ps2-personal" style="${PS2_CARD}"><span style="${PS2_CAP}">Personal record vs this style</span>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(min(320px,100%),1fr)); gap:10px;">${boxes}</div>
+    <span style="font-size:11px; color:${PS2_C.t4};">n counts classified opponents only. Tick = what the style matrix expects.${[0, 1].some(i => RR[i].state === 'ready' && maGate(RR[i].n).mode === 'small') ? ' Grey = small sample (5–9 meetings).' : ''}</span></div>`;
+}
+
+// 3 · Career meetings vs this style (DF L578–617): the open boxes' rows, side by side, grouped by tournament edition,
+// through the shared rows (DoD item 8). Every row opens the shared sheet (maRowOnclick: career history by date +
+// opponent, else the row's own score and prices). DESIGN GAP G18: the file shows 8 rows with no way to the rest; the
+// "Show N more matches" control is the file's own (its Form list foot, DF L1146; wording DF L3871).
+const PS2_MEET_COLS = ['date', 'sq', 'opp', 'rd', 'sets', 'scores', 'h', 'oppPrice'];
+const PS2_MEET_GRID = '42px 10px minmax(0,1fr) 34px 36px minmax(0,1.15fr) 36px 36px';
+function ps2MeetCard(m, side, R, more){
+  const C = PS2_C, M = FH_MONO, key = side ? m.p2Key : m.p1Key;
+  const all = R.rows, list = more ? all : all.slice(0, PS2_ROWS_SHOWN);
+  const od = v => (v == null ? FH_DASHC : Number(v).toFixed(2));
+  const groups = psGroupMeetings(list).map(g => {
+    const meta = psTourMeta(g.tournament), surf = g.rows[0].surface;
+    const sd = surf ? surf.charAt(0).toUpperCase() + surf.slice(1) : '';
+    return { title: g.tournament, meta: [sd, meta && meta.tier].filter(Boolean).join(' · '), rows: g.rows.map(r => {
+      const x = ps2Meeting(r);
+      return { date: psFmtMeetDate(r.date), won: !!r.won, opp: r.opponent, rd: psRoundAbbr(r.round) || FH_DASHC, sets: x.sets, scores: x.scores, scoresTitle: x.scores + (x.ret ? ' ret.' : ''), ret: x.ret,
+        h: od(r.oddsSelf), oppPrice: od(r.oddsOpp), attrs: ` data-ps2-row="${side ? 'b' : 'a'}"`,
+        click: maRowOnclick({ key, name: R.name, ek: null, date: r.date, opp: r.opponent,
+          fallback: { date: r.date, tourn: r.tournament, surface: sd || null, round: psRoundAbbr(r.round) || null, won: !!r.won, sets: x.gs.length ? x.gs : null, ret: x.ret,
+            price: r.oddsSelf != null ? Number(r.oddsSelf) : null, oppPrice: r.oddsOpp != null ? Number(r.oddsOpp) : null } }) };
+    }) };
+  });
+  // the rate through the gate's markup (5–9 grey, like the box above; 1–4 none)
+  const rate = maRateHtml(R.w, R.n, { nopct: '', note: false });
+  const sub = [fhEsc(`${R.w}–${R.l}`), rate || null, fhEsc(`${R.n} ${R.n === 1 ? 'match' : 'matches'}`)].filter(Boolean).join(' · ');
+  const rest = all.length - PS2_ROWS_SHOWN;
+  const moreCtl = rest > 0 ? `<div class="seg ps2-more" onclick="ps2Set({${side ? 'moreB' : 'moreA'}: !_ps2.${side ? 'moreB' : 'moreA'}})" style="text-align:center; padding:12px 0 13px; border-top:var(--ma-hw,0.33px) solid ${C.ring}; font-size:13px; font-weight:600; color:${C.link}; cursor:pointer;">${more ? 'Show fewer' : `Show ${rest} more ${rest === 1 ? 'match' : 'matches'}`}</div>` : '';   // DESIGN GAP G18
+  return `<div class="ps2-meet" data-ps2-side="${side ? 'b' : 'a'}" style="background:${C.card}; border:1.25px solid ${C.line}; border-radius:14px; padding:16px 18px 8px; display:flex; flex-direction:column; gap:12px; min-width:0;">
+      <div style="display:flex; flex-direction:column; gap:4px;">
+        <div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px;"><span style="font-size:14px; font-weight:700; color:${C.text};">${fhEsc(fhSurname(R.name) + ' vs ' + ps2Plural(R.oppLab))}</span><span class="ps2-showing" style="${M} font-size:10px; color:${C.t3}; white-space:nowrap;">Showing ${list.length} of ${all.length}</span></div>
+        <span class="ps2-meet-sub" style="${M} font-size:11px; color:${C.t2};">${sub}</span>
+      </div>
+      <div style="margin:0 -18px;">${maMatchRowsHtml(groups, { cols: PS2_MEET_COLS, grid: PS2_MEET_GRID, labels: ['Date', '', 'Opponent', 'Rd', 'Sets', 'Scores', 'H', 'A'],
+        headPad: '7px 24px 6px', groupPad: '10px 24px 4px', rowPad: '0 18px', cellPad: '5px 6px', rowLine: false })}${moreCtl}</div>
+    </div>`;
+}
+function ps2MeetingsBlock(m, RR, S){
+  const open = [0, 1].filter(i => (i ? S.meetB : S.meetA) && RR[i].state === 'ready' && RR[i].n > 0);
+  if (!open.length) return '';
+  return `<div style="display:flex; flex-direction:column; gap:10px;"><span style="${PS2_CAP} padding:4px 2px 0;">Career meetings vs this style</span>
+    <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(min(440px,100%),1fr)); gap:14px; align-items:stretch;">${open.map(i => ps2MeetCard(m, i, RR[i], i ? S.moreB : S.moreA)).join('')}</div></div>`;
+}
+
+// 4 · Playing style DNA (DF L618–664): seg Last 52 weeks | Since Mar 2024 (D6), the overlaid five-axis radar (true
+// percentiles on the match's surface), the "Show player profile" drop-down. The population and n of every percentile
+// ride on the modal's one tooltip (data-aotip). Both players white (bars neutral: open question, see the rules file).
+function ps2DnaModel(m, S){
+  const W = PS2_WIN[S.win] || PS2_WIN.w52, surface = mdnaSurface(m);
+  const side = (key, name) => {
+    const d = mdnaRadarFor(key, surface, W.scope, name);
+    const vals = PS2_AXES.map((ax, i) => {
+      const elo = ax.key === 'elo';
+      const has = elo ? !!d.ratings && d.ratings[i] != null : d.ok && !!d.ratings && d.ratings[i] != null;
+      return { raw: has ? d.ratings[i] : null, pct: has && d.pcts ? d.pcts[i] : null,
+        delta: has && W.scope === 'last52' && d.deltas ? d.deltas[i] : null };   // no Δ on the since-Mar-2024 view (DF L3582)
+    });
+    return { d, vals, name, key };
+  };
+  return { W, surface, a: side(m.p1Key, m.p1), b: side(m.p2Key, m.p2), loading: !_mdna };
+}
+function ps2AxisTip(D, i){
+  if (D.loading) return 'Loading DNA…';
+  const ax = PS2_AXES[i], pop = ps2Pop(D.W.scope, D.surface, ax.key);
+  const fmtP = p => (p == null ? 'no percentile' : 'percentile ' + (+p).toFixed(1));
+  const line = s => {
+    const v = s.vals[i], nm = fhSurname(s.name);
+    if (v.raw == null) return `${nm}: ${FH_DASHC}${s.d.inPool && !s.d.ok && ax.key !== 'elo' ? ` (${s.d.matches || 0} ${D.surface} matches, ${D.W.lc}: below the ${MDNA_FLOOR}-match floor)` : !s.d.inPool ? ' (no api-tennis rating on record)' : ''}`;
+    const up = ax.key === 'underPressure' ? ps2UpScope(s.key, D.surface, D.W.scope) : null;
+    return `${nm}: ${_mdnaFmt(v.raw, ax.dp)} · ${fmtP(v.pct)}${up === 'career' ? ' · surface-ratings career (2010–)' : ''}${ax.key === 'underPressure' && s.d.est ? ' · estimated from 3 of 4 parts' : ''}`;
+  };
+  const head = ax.key === 'elo' ? `Surface Elo (${D.surface}) · current Tennis Abstract rating, the same on both views` : `${ax.label} · ${D.surface} · ${D.W.lc}`;
+  const popTxt = pop ? `Rank among ${pop.n} ${pop.words}.` : 'Population not on file.';
+  return [head, line(D.a), line(D.b), popTxt].map(fhEsc).join('<br>');
+}
+function ps2DnaCard(m, S){
+  const C = PS2_C, M = FH_MONO, D = ps2DnaModel(m, S);
+  const seg = maSeg('me', Object.keys(PS2_WIN).map(k => ({ label: PS2_WIN[k].label, on: S.win === k, onclick: `ps2Set({win:'${k}'})` })));
+  const CX = 210, CY = 150, RR = 105, ang = i => (-90 + i * 72) * Math.PI / 180;
+  const pt = (i, v) => (CX + RR * v * Math.cos(ang(i))).toFixed(1) + ',' + (CY + RR * v * Math.sin(ang(i))).toFixed(1);
+  // a missing axis is not a zero: its vertex is left out (never a false centre point)
+  const poly = s => (s.d.ok ? s.vals.map((v, i) => (v.pct == null ? null : pt(i, Math.max(0, Math.min(100, v.pct)) / 100))).filter(Boolean).join(' ') : '');
+  const rings = [0.25, 0.5, 0.75, 1].map(r => `<polygon points="${PS2_AXES.map((_, i) => pt(i, r)).join(' ')}" fill="none" stroke="${C.ring}" stroke-width="1"></polygon>`).join('');
+  const spokes = PS2_AXES.map((_, i) => `<line x1="${CX}" y1="${CY}" x2="${(CX + RR * Math.cos(ang(i))).toFixed(1)}" y2="${(CY + RR * Math.sin(ang(i))).toFixed(1)}" stroke="${C.ring}" stroke-width="1"></line>`).join('');
+  const aP = poly(D.a), bP = poly(D.b);
+  const labels = PS2_AXES.map((ax, i) => {
+    const c = Math.cos(ang(i)), sn = Math.sin(ang(i)), mid = Math.abs(c) < 0.2;
+    const lp = ((CX + (RR + 16) * c) / 420 * 100).toFixed(2), tp = ((CY + (RR + 16) * sn + (sn < -0.9 ? -4 : sn > 0.5 ? 6 : 0)) / 300 * 100).toFixed(2);
+    const tx = `translate(${mid ? '-50%' : c > 0 ? '0' : '-100%'}, ${sn < -0.9 ? '-80%' : '-50%'})`;
+    const av = _mdnaFmt(D.a.vals[i].raw, ax.dp), bv = _mdnaFmt(D.b.vals[i].raw, ax.dp);
+    return `<span class="ps2-axis" data-ps2-axis="${ax.key}" tabindex="0" data-aotip="${escapeHtml(ps2AxisTip(D, i))}" style="position:absolute; left:${lp}%; top:${tp}%; transform:${tx}; display:flex; flex-direction:column; align-items:${mid ? 'center' : c > 0 ? 'flex-start' : 'flex-end'}; gap:2px; white-space:nowrap; cursor:default;"><span style="${M} font-size:11px; color:${C.t2};">${fhEsc(ax.label)}</span><span style="${M} font-size:11.5px; font-weight:700; color:${C.A};">${av} <span style="color:${C.t4}; font-weight:400;">·</span> <span style="color:${C.B};">${bv}</span></span></span>`;
+  }).join('');
+  const center = D.loading ? 'Loading DNA…' : !aP && !bP ? 'No shape at the 10-match floor' : '';   // DESIGN GAP G19
+  const svg = `<svg viewBox="0 0 420 300" style="display:block; width:100%; height:auto; overflow:visible;">${rings}${spokes}`
+    + (aP ? `<polygon class="ps2-poly-a" points="${aP}" fill="${C.aFill}" stroke="${C.A}" stroke-width="1.75" stroke-linejoin="round"></polygon>` : '')
+    + (bP ? `<polygon class="ps2-poly-b" points="${bP}" fill="none" stroke="${C.bDash}" stroke-width="1.5" stroke-dasharray="4 3" stroke-linejoin="round"></polygon>` : '')
+    + (center ? `<text x="${CX}" y="${CY + 4}" text-anchor="middle" fill="${C.t3}" font-size="11" font-family="IBM Plex Mono, monospace">${center}</text>` : '') + '</svg>';
+  // DESIGN GAP G19: a player with no shape at the floor (or no rating) — one line under the file's foot.
+  const why = s => (D.loading ? '' : !s.d.inPool ? `${fhSurname(s.name)}: no api-tennis rating on record.` : !s.d.ok ? `${fhSurname(s.name)}: ${s.d.matches || 0} ${D.surface} ${s.d.matches === 1 ? 'match' : 'matches'} ${D.W.lc}, below the ${MDNA_FLOOR}-match floor; not drawn.` : '');
+  const notes = [why(D.a), why(D.b)].filter(Boolean).join(' ');
+  const foot = `<span class="ps2-dna-foot" style="font-size:11px; color:${C.t4}; text-align:center;">Five-axis profile, overlaid · percentile vs the api-tennis field · ${D.W.lc}</span>`
+    + (notes ? `<span class="ps2-dna-note" style="font-size:11px; color:${C.t4}; text-align:center;">${fhEsc(notes)}</span>` : '');
+  let prof = '';
+  if (S.prof){
+    const dl = (v, dp) => (v == null ? { t: '', c: C.t2 } : v === 0 ? { t: '±0', c: C.t2 } : { t: (v > 0 ? '▴' : '▾') + '\u2002' + Math.abs(v).toFixed(dp), c: v > 0 ? C.up : C.dn });
+    const rows = PS2_AXES.map((ax, i) => {
+      const a = D.a.vals[i], b = D.b.vals[i], cur = { t: 'current', c: C.t3 };
+      const x = ax.key === 'elo' ? cur : dl(a.delta, ax.dp), y = ax.key === 'elo' ? cur : dl(b.delta, ax.dp);
+      const w = v => (v.pct == null ? 0 : Math.max(0, Math.min(100, v.pct)));
+      return `<div class="ps2-prow" data-ps2-axis="${ax.key}" style="display:grid; grid-template-columns:minmax(0,1fr) 128px minmax(0,1fr); align-items:center; gap:14px; padding:10px 0; border-top:var(--ma-hw,0.33px) solid ${C.soft};">
+        <div style="display:flex; align-items:center; gap:12px; min-width:0;">
+          <span style="display:flex; align-items:baseline; gap:6px; flex:none; min-width:92px; justify-content:flex-end;"><span style="${M} font-size:10px; color:${x.c};">${x.t}</span><span style="${M} font-size:14px; font-weight:700; color:${a.raw == null ? C.t3 : C.A};">${_mdnaFmt(a.raw, ax.dp)}</span></span>
+          <span style="flex:1; height:6px; background:${C.soft}; border-radius:3px; display:flex; justify-content:flex-end;"><span class="ps2-bar-a" style="width:${w(a)}%; background:${C.A}; border-radius:3px;"></span></span>
+        </div>
+        <span tabindex="0" data-aotip="${escapeHtml(ps2AxisTip(D, i))}" style="${M} font-size:10px; font-weight:600; letter-spacing:0.12em; text-transform:uppercase; color:${C.t2}; text-align:center; cursor:default;">${fhEsc(ax.short || ax.label)}</span>
+        <div style="display:flex; align-items:center; gap:12px; min-width:0;">
+          <span style="flex:1; height:6px; background:${C.soft}; border-radius:3px; display:flex;"><span class="ps2-bar-b" style="width:${w(b)}%; background:${C.B}; border-radius:3px;"></span></span>
+          <span style="display:flex; align-items:baseline; gap:6px; flex:none; min-width:92px;"><span style="${M} font-size:14px; font-weight:700; color:${b.raw == null ? C.t3 : C.B};">${_mdnaFmt(b.raw, ax.dp)}</span><span style="${M} font-size:10px; color:${y.c};">${y.t}</span></span>
+        </div></div>`;
+    }).join('');
+    const note = (D.W.scope === 'last52' ? 'Raw rating with Δ vs 2024–now average' : 'Since Mar 2024 raw rating') + ` · bars = percentile vs the api-tennis field · ${D.W.lc} · ${D.surface.toLowerCase()}`;
+    prof = `<div class="ps2-prof" style="display:flex; flex-direction:column; gap:16px;">
+      <div style="display:grid; grid-template-columns:minmax(0,1fr) 128px minmax(0,1fr); align-items:center; gap:14px;"><span style="font-size:13px; font-weight:700; color:${C.text}; text-align:right;">${fhEsc(m.p1)}</span><span></span><span style="font-size:13px; font-weight:700; color:${C.text};">${fhEsc(m.p2)}</span></div>
+      <div style="display:flex; flex-direction:column;">${rows}</div>
+      <span style="font-size:11px; color:${C.t4}; text-align:center;">${fhEsc(note)}</span></div>`;
+  }
+  return `<div class="ps2-card ps2-dna" style="${PS2_CARD}">
+    <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;">
+      <span style="display:flex; align-items:center; gap:12px; flex-wrap:wrap;"><span style="${PS2_CAP}">Playing style DNA</span>${seg}</span>
+      <span style="display:flex; align-items:center; gap:16px; font-size:12px; font-weight:600; color:${C.text};">
+        <span style="display:flex; align-items:center; gap:7px;"><span style="width:14px; height:8px; border-radius:2px; background:${C.aFill}; border:1.5px solid ${C.A};"></span>${fhEsc(m.p1)}</span>
+        <span style="display:flex; align-items:center; gap:7px;"><span style="width:14px; height:0; border-top:1.5px dashed ${C.bDash};"></span>${fhEsc(m.p2)}</span>
+      </span>
+    </div>
+    <div style="display:flex; justify-content:center;"><div style="position:relative; width:100%; max-width:520px;">${labels}${svg}</div></div>
+    ${foot}
+    <div style="height:1.25px; background:${C.line}; margin:0 -22px;"></div>
+    <span class="seg ps2-prof-toggle" onclick="ps2Set({prof: !_ps2.prof})" style="align-self:center; display:flex; align-items:center; gap:7px; font-size:12.5px; font-weight:600; color:${C.link}; cursor:pointer; padding:2px 8px;">${S.prof ? 'Hide player profile' : 'Show player profile'}<span style="display:inline-block; transform:${S.prof ? 'rotate(180deg)' : 'none'}; font-size:10px;">▾</span></span>
+    ${prof}</div>`;
+}
+
+function buildStyleSection(m){
+  const S = ps2StateFor(m);
+  // DESIGN GAP G17: the file draws no loading state — the tabs' one-line loading pattern (Form, News G8, Progression)
+  // until the archetypes are in memory (a failed load then reads as "not yet classified", never as loading forever).
+  if (!m._ps2Loaded && !Object.keys((playerStyles && playerStyles.byKey) || {}).length) return `<div class="acomingsoon">Loading playing styles…</div>`;
+  const s1 = ppStyleFor(m.p1), s2 = ppStyleFor(m.p2);
+  const RR = [ps2Record(m, 0), ps2Record(m, 1)];
+  initAOddsTips();
+  return `<div class="ps2-wrap" style="display:flex; flex-direction:column; gap:14px; max-width:1040px; margin:0 auto; line-height:normal; font-family:'Hanken Grotesk',system-ui,sans-serif; color:${PS2_C.text};">
+    ${ps2MatchupCard(m, s1, s2)}${ps2PersonalCard(m, RR, S)}${ps2MeetingsBlock(m, RR, S)}${ps2DnaCard(m, S)}</div>`;
 }
 
 // The modal header's two price pills, exactly as printed: an upcoming match shows m.bestOdds' two prices;
@@ -19152,13 +18882,15 @@ const A_TAB_BUILD = {
       .then(() => { if (aBuilt(m, 'key')) aPaint('aSectionKey', buildKeyFactorsSection(m)); });
   },
   style(m){
-    // Playing style paints from whatever is in memory, then repaints once the radar shard, the matchup matrix,
-    // the career meeting shards and the DNA file have landed. Same stale-guard contract as every tab.
+    // Playing style (TEN-340) paints from whatever is in memory, then repaints once the archetypes, the matchup matrix,
+    // the career meeting shards and the DNA file have landed. Same stale-guard contract as every tab. No MCP radar (N10).
     _aStyleMatch = m;
-    renderStyleSection(m);
-    return Promise.all([loadStyleRadar(), ensurePsMatrix(), ensureStyleMeetings(m), ensureMatchDna()]).then(() => {
+    aPaint('aSectionStyle', buildStyleSection(m));
+    const styles = Object.keys((playerStyles && playerStyles.byKey) || {}).length ? null : (_pgStylesP = _pgStylesP || loadPlayerStyles());
+    return Promise.all([styles, ensurePsMatrix(), ensureStyleMeetings(m), ensureMatchDna()]).then(() => {
+      m._ps2Loaded = true;
       if (_aStyleMatch !== m || !aBuilt(m, 'style')) return;
-      renderStyleSection(m);
+      aPaint('aSectionStyle', buildStyleSection(m));
       if (aBuilt(m, 'key')) aPaint('aSectionKey', buildKeyFactorsSection(m));
     });
   },
