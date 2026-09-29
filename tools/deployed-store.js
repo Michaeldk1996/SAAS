@@ -61,13 +61,19 @@ function fetchText(rel, opts = {}) {
     const age = Date.now() - fs.statSync(dest).mtimeMs;
     if (age < maxAge) return fs.readFileSync(dest, 'utf8');
   }
-  let body;
-  try {
-    body = execFileSync('curl', [
-      '-sS', '--fail', '--max-time', String(opts.timeoutSec || 120),
-      `${BASE}/${rel.replace(/^\/+/, '')}`,
-    ], { maxBuffer: 256 << 20 }).toString();
-  } catch (err) {
+  // TEN-351: the TEN-273 shard rule (founder 2026-09-25) for single files too — ONE more fetch,
+  // then fail closed exactly as before. Run 5264 (2026-09-28 21:09Z) aborted the pre-deploy gate
+  // on a single 503 for tournament-history-index.json; its shards get a retry, the index did not.
+  let body = null;
+  for (let attempt = 1; attempt <= 2 && body == null; attempt++) {
+    try {
+      body = execFileSync('curl', [
+        '-sS', '--fail', '--max-time', String(opts.timeoutSec || 120),
+        `${BASE}/${rel.replace(/^\/+/, '')}`,
+      ], { maxBuffer: 256 << 20 }).toString();
+    } catch (err) { body = null; }
+  }
+  if (body == null) {
     // Stale cache beats no data, but the caller is told it is stale.
     if (fs.existsSync(dest)) return fs.readFileSync(dest, 'utf8');
     return null;
