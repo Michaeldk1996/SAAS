@@ -1,27 +1,27 @@
 {
- "generatedAt": "2026-09-29T01:38:59.072Z",
+ "generatedAt": "2026-09-29T07:12:26.811Z",
  "source": "matches.json git history: oddsMovement.books.Pinnacle (Oddspapi pinnacle, to 2026-09-02) and oddsMovement.chart.books[\"Pinnacle +30s\"] (Oddspapi pinnacle+30, from 2026-09-23)",
  "rule": "each side = last tick at or before the actual start (Oddspapi trueStart, else the card-state start: Oddspapi or the live-flip lower bound); both sides required; dropped when no unique actual start",
  "scannedThrough": {
-  "commit": "62abbd7214b335987e84d5a33520d8965b764d9f",
-  "at": "2026-09-29T01:18:38Z"
+  "commit": "5887b17c47f4601bf1650aeb5c889d717b84c0a0",
+  "at": "2026-09-29T06:47:42Z"
  },
- "commitsScanned": 3645,
+ "commitsScanned": 3670,
  "lastRun": {
-  "from": "2026-09-28T15:45:32Z",
-  "snapshots": 38,
-  "added": 9,
+  "from": "2026-09-29T01:18:38Z",
+  "snapshots": 26,
+  "added": 7,
   "replaced": 0,
   "series": 63,
-  "kept": 44,
+  "kept": 40,
   "bySource": {
-   "api-tennis-live": 44
+   "api-tennis-live": 40
   },
   "byBook": {
-   "Pinnacle +30s": 44
+   "Pinnacle +30s": 40
   },
   "dropped": {
-   "noStart": 19
+   "noStart": 23
   }
  },
  "stats": {
@@ -6510,6 +6510,104 @@
    "p2": 2.85,
    "at": "2026-09-28T11:14:43.911Z",
    "trueStart": "2026-09-28T11:24:06.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
+  },
+  {
+   "eventKey": 12166488,
+   "date": "2026-09-29",
+   "p1Key": 1906,
+   "p2Key": 3317,
+   "p1Name": "S. Tsitsipas",
+   "p2Name": "R. Hijikata",
+   "p1": 1.3,
+   "p2": 3.71,
+   "at": "2026-09-29T01:10:48.017Z",
+   "trueStart": "2026-09-29T01:56:51.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
+  },
+  {
+   "eventKey": 12166523,
+   "date": "2026-09-29",
+   "p1Key": 2981,
+   "p2Key": 9210,
+   "p1Name": "T. Machac",
+   "p2Name": "A. Gea",
+   "p1": 2.24,
+   "p2": 1.694,
+   "at": "2026-09-29T01:31:38.882Z",
+   "trueStart": "2026-09-29T02:50:56.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
+  },
+  {
+   "eventKey": 12166565,
+   "date": "2026-09-29",
+   "p1Key": 2083,
+   "p2Key": 2978,
+   "p1Name": "J. Munar",
+   "p2Name": "A. Kovacevic",
+   "p1": 1.657,
+   "p2": 2.3,
+   "at": "2026-09-29T01:23:13.686Z",
+   "trueStart": "2026-09-29T02:50:56.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
+  },
+  {
+   "eventKey": 12166584,
+   "date": "2026-09-29",
+   "p1Key": 395,
+   "p2Key": 436,
+   "p1Name": "M. Trungelliti",
+   "p2Name": "A. Molcan",
+   "p1": 2.24,
+   "p2": 1.694,
+   "at": "2026-09-29T00:32:11.195Z",
+   "trueStart": "2026-09-29T03:51:00.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
+  },
+  {
+   "eventKey": 12166616,
+   "date": "2026-09-29",
+   "p1Key": 1759,
+   "p2Key": 1096,
+   "p1Name": "A. Fils",
+   "p2Name": "K. Majchrzak",
+   "p1": 1.207,
+   "p2": 4.76,
+   "at": "2026-09-29T03:17:36.100Z",
+   "trueStart": "2026-09-29T03:24:06.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
+  },
+  {
+   "eventKey": 12166630,
+   "date": "2026-09-29",
+   "p1Key": 438,
+   "p2Key": 434,
+   "p1Name": "A. Mannarino",
+   "p2Name": "P. Carreno-Busta",
+   "p1": 2.44,
+   "p2": 1.591,
+   "at": "2026-09-29T03:01:51.504Z",
+   "trueStart": "2026-09-29T05:57:03.000Z",
+   "startSource": "api-tennis-live",
+   "book": "Pinnacle +30s"
+  },
+  {
+   "eventKey": 12166631,
+   "date": "2026-09-29",
+   "p1Key": 2972,
+   "p2Key": 1274,
+   "p1Name": "B. Van De Zandschulp",
+   "p2Name": "J. Cui",
+   "p1": 1.187,
+   "p2": 5.09,
+   "at": "2026-09-29T04:07:04.289Z",
+   "trueStart": "2026-09-29T04:36:04.000Z",
    "startSource": "api-tennis-live",
    "book": "Pinnacle +30s"
   }
