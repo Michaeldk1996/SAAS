@@ -53,6 +53,12 @@ const STATES = [
   { name: '06h-form-bar-tooltip', d: {}, b: {}, hover: true },
   { name: 'P1-form-match-stats-sheet', d: {}, b: {}, sheet: '18.07.', pop: true },
 ];
+// TEN-350: since the design-shade tokens (founder 2026-09-29, `--ma-s-<source>` in match-analysis-tokens.css) most modal
+// surfaces read a --ma-s- token, so --theme source also sets each of those to the source value its own `/* src … */`
+// comment names (the Night block), or the diff measures the Night palette again.
+const SHADE_SOURCE = (() => { const css = fs.readFileSync(path.join(ROOT, 'match-analysis-tokens.css'), 'utf8');
+  const night = css.slice(css.indexOf('.ma-theme{'), css.indexOf('.ma-theme[data-ma-theme="day"]'));
+  return [...night.matchAll(/(--ma-s-[\w-]+):[^;]+;\s*\/\* src (#[0-9A-Fa-f]{3,8}|rgba?\([^)]*\))/g)].map(m => [m[1], m[2]]); })();
 // The design's source value per token, for --theme source (README §3 read backwards; the Form tab's own uses).
 const SOURCE_TOKENS = { '--ma-page': '#0a0d14', '--ma-card': '#0a0d14', '--ma-inner': '#06070a', '--ma-raised': '#11151f', '--ma-hover': 'rgba(255,255,255,0.03)',
   '--ma-sel': 'rgba(91,155,255,0.16)', '--ma-hair': 'rgba(255,255,255,0.09)', '--ma-hair-soft': 'rgba(255,255,255,0.04)', '--ma-hair-strong': 'rgba(255,255,255,0.12)',
@@ -251,7 +257,7 @@ async function buildSide(dir, inputs) {
     fx._fhFormData = true; return true; })()`);
   if (THEME === 'day' || THEME === 'night') await x.ev(`typeof maSetTheme === 'function' ? (maSetTheme(${JSON.stringify(THEME)}), true) : false`);
   await x.ev(`openAnalysisModal('ten312-fixture'), true`);
-  if (THEME === 'source') await x.ev(`(() => { const ov = document.getElementById('analysisModal'); ${JSON.stringify(Object.entries(SOURCE_TOKENS))}.forEach(([k, v]) => ov.style.setProperty(k, v)); return true; })()`);
+  if (THEME === 'source') await x.ev(`(() => { const ov = document.getElementById('analysisModal'); ${JSON.stringify(Object.entries(SOURCE_TOKENS).concat(SHADE_SOURCE))}.forEach(([k, v]) => ov.style.setProperty(k, v)); return true; })()`);
   const served = await x.ev(`!!document.querySelector('#analysisModal .aclosecell') && typeof fhFormSetScores === 'function'`);
   if (!served) throw new Error('the page served is not this checkout (no fhFormSetScores)');
   await x.ev(`aShowTab('form'), true`); await sleep(600); await x.ev(SETTLE);

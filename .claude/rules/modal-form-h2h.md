@@ -63,10 +63,16 @@ Applies to the TEN-263 block in `bsp-consult-dashboard.html` (`fh*` functions), 
   `FH_FORM_ROW_CAP = 40` (= `RECENT_FORM_ROW_CAP`). Neither source → "No recent matches on record" (design gap G9).
 - **Retirement settlement note** (TEN-325): the v-market pill's tooltip and each Flat 1u value's tooltip carry
   `MarketEdgeCore.RET_SETTLE_NOTE` (the tooltip form keeps the file's layout).
-- **Parked (design file v ruling D-12):** the file's row has no Elo slot, and the ELO badge in the Opponent cell cut real
-  names to one letter on the live build (names are never truncated). The row's Elo (same D-12 basis) is the name's
-  `data-elo` + hover text and sits in the bar tooltip, until the founder rules on a visible slot.
-- **Test:** `test-ten330-form.mjs` (+ `tools/test-ten330-mutants.js`, 13 mutants). Pixel/structure harness (manual):
+- **Elo slot (TEN-350, founder bbe5c072 §2.4):** the opponent's Elo at the match date (D-12) is a plain grey number
+  after the name (`maMatchRowsHtml` row `elo` = `fhEloSlot`, class `ma-row-elo`, `data-elo`); no qualifying snapshot →
+  "—" with the reason on hover (`fhEloText`). The name's hover is the full name only. **Names are never cut:** the two
+  lists sit side by side (row ~438 px at 1296), so Form rows use `scoresBelow` (set scores on a second line under the
+  name, grid `MA_ROW_COLS_SB` 48/12/1fr/36/40/46/46) and `fullNames` (the name wraps between words, no ellipsis; a word
+  wider than the whole track wraps mid-word as a last resort rather than run into the Rd column).
+  The bar tooltip keeps the file's Elo line.
+- **"Most covered" line:** the file's blue 0.06 wash / 0.25 outline as their own design-shade tokens on both tabs
+  (`fhS('5b9bff-060')` / `fhS('5b9bff-250')`), never the 12a selected-tile pair (TEN-350: Form's unruled 06b difference).
+- **Test:** `test-ten330-form.mjs` (+ `tools/test-ten330-mutants.js`, 21 mutants). Pixel/structure harness (manual):
   `tools/ten330-form-capture.mjs` + `tools/ten330-form-structure.py`.
 
 ## H2H tab build (TEN-331, TEN-312 design file `h2hV2For` / template L1153–1360)
@@ -88,8 +94,8 @@ Applies to the TEN-263 block in `bsp-consult-dashboard.html` (`fh*` functions), 
   stand in (measured 2026-09-29: 1 of 26 upcoming board matches carried a Pinnacle now-price).
 - **An empty drawer** (no tiebreak / no decider in these meetings) opens with the file's empty-line pattern and says why
   (DESIGN GAP G10 — the file opens nothing).
-- **Parked (design file v ruling 2026-09-24):** the file's row has no Elo slot; the opponent's Elo (D-12 basis) is the
-  name's `data-elo` + hover text, as on Form, until the founder rules on a visible slot.
+- **Elo slot (TEN-350):** the meetings carry the same visible slot after the name as Form (`fullNames`; the file's
+  8-track grid stays — the H2H row is ~918 px wide).
 - **Test:** `test-ten331-h2h.mjs` (+ `tools/test-ten331-mutants.js`, 27 mutants). Pixel/structure harness (manual):
   `tools/ten331-h2h-capture.mjs` (`--theme source --ruled-off`) + `tools/ten312-pixel-diff.py --regions` +
   `tools/ten330-form-structure.py`.
@@ -135,7 +141,9 @@ Applies to the TEN-263 block in `bsp-consult-dashboard.html` (`fh*` functions), 
   + a Bet365 today price → the mixed wording.
 - **Hot-line dots on H2H use fixed columns** (1/max(n, 9) of the grid, right-aligned), so 4 meetings sit
   where 9 would. Form keeps stretched columns.
-- **Long names:** ellipsis, full name on hover (Form and H2H rows).
+- **Long names:** never cut (founder bbe5c072, supersedes the 2026-09-24 ellipsis): they wrap between words; full name
+  on hover (Form and H2H rows). **Test:** `test-ten350-elo-slot.mjs` renders the real rows in headless Chrome at the
+  1296 px geometry (Davidovich Fokina, Van De Zandschulp…) + `tools/test-ten350-mutants.js` (8 mutants).
 
 ## Player identity by key (rulings 2026-09-24)
 - The H2H compare page's roster, selections and meeting store are keyed by **player key**; two players

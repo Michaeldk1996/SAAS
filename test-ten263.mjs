@@ -96,16 +96,18 @@ test('flagged rules (a)–(e) are single constants at the designed values', () =
 });
 
 // ── data check 4: no dated Elo → "No number" variant, no Elo in any row ──
-test('H2H and Form rows carry the opponent Elo on the name (ruling D-12; the file has no Elo slot — parked, TEN-330 / TEN-331)', () => {
+test('H2H and Form rows show the opponent Elo in a visible slot after the name (ruling D-12; TEN-350, founder bbe5c072)', () => {
   assert.equal(S.consts.FH_ELO_AT_TIME, false);
   const r = S.fhRowFromForm({ opponent: 'C. Alcaraz', opponentKey: 1, date: '2026-08-01', tournament: 'Cincinnati', round: 'ATP Cincinnati - Final',
     surface: 'hard', result: '2 - 0', won: true, sets: [{ p: 6, o: 4 }, { p: 6, o: 3 }], retired: false, walkover: false, qualifying: false, tier: 'atp', eventKey: 9 }, 5, 'J. Sinner', 0);
-  assert.ok(!/ELO/.test(h2hRowHtml(S, r)), 'H2H row: no visible Elo badge (the file draws no slot)');
+  assert.match(h2hRowHtml(S, r), /<span class="ma-row-elo" data-elo="" title="Elo — at the time of the match: no snapshot on record"[^>]*>—<\/span>/, 'no Elo computed for the row → a dash with its reason, never blank');
   r.oppElo = { v: 2141, asOf: '2026-07-27' };
-  assert.match(formRowHtml(S, r), /data-elo="2141" title="[^"]* · Elo 2141 at the time of the match \(Tennis Abstract weekly snapshot of 27 Jul 2026\)"/);
-  assert.match(h2hRowHtml(S, r), /class="fh-opp" data-elo="2141" title="[^"]* · Elo 2141 at the time of the match \(Tennis Abstract weekly snapshot of 27 Jul 2026\)"/, 'H2H: the same Elo, on the name');
+  const slot = /<span class="ma-row-elo" data-elo="2141" title="Elo 2141 at the time of the match \(Tennis Abstract weekly snapshot of 27 Jul 2026\)"[^>]*>2141<\/span>/;
+  assert.match(formRowHtml(S, r), slot);
+  assert.match(h2hRowHtml(S, r), slot, 'H2H: the same Elo, in the same slot');
+  assert.ok(!/class="fh-opp"[^>]*(data-elo|title="[^"]*Elo)/.test(formRowHtml(S, r) + h2hRowHtml(S, r)), 'the hover-only interim is gone from the name');
   r.oppElo = { v: null, why: 'before the first Elo snapshot (2026-07-18)' };
-  assert.match(formRowHtml(S, r), /data-elo="" title="[^"]* · Elo — at the time of the match: before the first Elo snapshot/, 'no value → Elo — with the reason, never blank');
+  assert.match(formRowHtml(S, r), /<span class="ma-row-elo" data-elo="" title="Elo — at the time of the match: before the first Elo snapshot \(2026-07-18\)"[^>]*>—<\/span>/, 'no value → a dash with the reason on hover, never blank');
 });
 // ── Ruling D-12 (2026-09-24): overall Elo AT THE MATCH DATE, snapshot no more than 7 days old ──
 const EH = { snapshots: [

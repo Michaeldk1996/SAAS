@@ -20,7 +20,7 @@ const MUTANTS = [
   ['helper: price column no longer right-aligned', "  price: { right: true, cell:", "  price: { cell:"],
   ['helper: table rows lose their hairline', "cursor:pointer; border-bottom:var(--ma-hw,0.33px) solid ${S('ffffff-030', '--line')};\">`", "cursor:pointer;\">`"],
   ['helper: the table head sticks', "const head = `<div class=\"ma-rows-head\" style=\"${grid} padding:", "const head = `<div class=\"ma-rows-head\" style=\"position:sticky; top:0; ${grid} padding:"],
-  ['helper: the default rows change by a pixel', "grid-template-columns:${MA_ROW_COLS}; gap:0 10px; align-items:center; padding:6px;", "grid-template-columns:${MA_ROW_COLS}; gap:0 10px; align-items:center; padding:7px;"],
+  ['helper: the default rows change by a pixel', "grid-template-columns:${COLS}; gap:0 10px; align-items:center; padding:6px;", "grid-template-columns:${COLS}; gap:0 10px; align-items:center; padding:7px;"],
   ['data: the Slam-name retirement guess survives a best-of-3', "    r.ret = !r.wo && (!!x.retired || unfinished || (r.pS != null && (r.won ? r.pS : r.oS) < (r.bo === 5 ? 3 : 2)));",
     "    if (!r.wo && !r.ret && r.pS != null && (r.won ? r.pS : r.oS) < (r.bo === 5 ? 3 : 2)) r.ret = true;"],
   ['data: the deciding-set flag keeps the Slam-name guess', "    r.decider = r.complete && r.pS != null && (r.pS + r.oS) === r.bo;   // fhFinishRow's rule, under the recorded format\n", ""],
