@@ -15482,10 +15482,11 @@ function fhPbpSetModel(st, ctx){
   const { real, tbPts } = pbpSplitSet(st);
   const fin = real.length ? pbpParseScore(real[real.length - 1].score) : null;
   const lastTb = tbPts.length ? tbPts[tbPts.length - 1] : null;
-  // Tiebreak length: a set with no games is a match tiebreak (10 points); otherwise a 10-point tiebreak shows itself when
-  // a score before its last point already had 7+ with a 2-point lead. (A final-set 10-pointer that stays close cannot be
-  // told from an extended 7-pointer by its scores alone: it is read as 7 points.)
-  const T = !lastTb ? 7 : (!real.length || tbPts.some((p, i) => i < tbPts.length - 1 && Math.max(p.a, p.b) >= 7 && Math.abs(p.a - p.b) >= 2)) ? 10 : 7;
+  // Tiebreak length: a set with no games is a match tiebreak (10 points), and so is a Bo5's fifth-set tiebreak (the Slams'
+  // 10-point decider); otherwise a 10-point tiebreak shows itself when a score before its last point already had 7+ with a
+  // 2-point lead. (A Bo3 final-set 10-pointer that stays close cannot be told from an extended 7-pointer by its scores
+  // alone: it is read as 7 points.)
+  const T = !lastTb ? 7 : (!real.length || (c.need === 3 && Number(st.set) === 5) || tbPts.some((p, i) => i < tbPts.length - 1 && Math.max(p.a, p.b) >= 7 && Math.abs(p.a - p.b) >= 2)) ? 10 : 7;
   const tbDone = !!lastTb && Math.max(lastTb.a, lastTb.b) >= T && Math.abs(lastTb.a - lastTb.b) >= 2;
   // The caption's set score: the games; a finished tiebreak adds its game to the winner (6-6 → 7-6); a match tiebreak shows
   // its points; an unfinished one (a retirement) keeps the games as they stood.
@@ -15505,8 +15506,9 @@ function fhPbpSetModel(st, ctx){
       const mp = sp ? isMp(p.a > p.b ? 'p1' : 'p2') : null;
       return Object.assign({ a: p.a, b: p.b, spA: mp === false && p.a > p.b, spB: mp === false && p.b > p.a, mpA: mp === true && p.a > p.b, mpB: mp === true && p.b > p.a }, side(p, p.winner)); }) };
   }
-  // Who won the set, from the log (fhPbpMatchCtx counts these): a finished tiebreak, else games at 6+ two clear; null = unfinished.
-  const won = lastTb ? (tbDone ? (lastTb.a > lastTb.b ? 'p1' : 'p2') : null)
+  // Who won the set, from the log (fhPbpMatchCtx counts these): a tiebreak's last point at 7+ two clear (not T, so a repeated
+  // point that reads a 7-pointer as 10 doesn't lose the set), else games at 6+ two clear; null = unfinished.
+  const won = lastTb ? (Math.max(lastTb.a, lastTb.b) >= 7 && Math.abs(lastTb.a - lastTb.b) >= 2 ? (lastTb.a > lastTb.b ? 'p1' : 'p2') : null)
     : setSc && Math.max(setSc[0], setSc[1]) >= 6 && Math.abs(setSc[0] - setSc[1]) >= 2 ? (setSc[0] > setSc[1] ? 'p1' : 'p2') : null;
   return { set: st.set, label: 'SET ' + st.set + (setSc ? ' · ' + setSc[0] + '-' + setSc[1] : ''), games, tb, won };
 }
@@ -15578,7 +15580,7 @@ function fhSheetInit(e, r, slot){
   const ek = String(r.ek || (r.formRow && r.formRow.eventKey) || '');
   // r.inline (the Match Stats tab): the board match's own box score, already oriented to player A.
   const inline = (r.inline && r.inline.match) || fhSheetInlineStats(e, r);
-  const S = { slot: sl, ek, aKey: e.aKey, aName: e.aName, bName: e.bName, setScores: r.sets || null, bo: r.bo || null,
+  const S = { slot: sl, ek, aKey: e.aKey, aName: e.aName, bName: e.bName, setScores: r.sets || null, bo: r.bo || fhBestOf(r),
     scope: 'key', nSets: (r.sets || []).length, match: inline, matchLoading: !inline && !!ek,
     sets: (r.inline && r.inline.sets) || null, setsLoading: !(r.inline && r.inline.sets) && !!ek, hasPbp: false, pbpLoading: !!ek, pbp: null, pbpSet: 1 };
   if (sl === 'tab') _maMsSheet = S; else _fh.sheetBody = S;
@@ -16668,7 +16670,6 @@ function maMsSheetEntry(m){
   const close = w => { const v = typeof _mcCloseOf === 'function' ? Number(_mcCloseOf(m, w)) : NaN; return v > 1 ? v : null; };
   return { e: { aName: m.p1, aKey: m.p1Key, bName: m.p2, bKey: m.p2Key },
     r: { ek: String(eventKeyOfMatch(m) || ''), sets, pS, oS, won, ret: !!m.retired, wo: !!m.walkover, price: close('p1'), oppPrice: close('p2'),
-      bo: fhBestOf({ pS, oS, tourn: m.tour }),   // the Form rows' format rule (TEN-349: MP needs the sets that win)
       tourn: m.tour, surface: fhSurfName(m.surface), round: h2hRoundLabel(m.tournamentRound), date: m.date,
       inline: { match: j(m.matchStats), sets: setJ && Object.keys(setJ).length ? setJ : null } } };
 }

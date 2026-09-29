@@ -258,6 +258,18 @@ test('TEN-349: no tag where the log cannot decide — format unknown, or an earl
   const c = S.fhPbpMatchCtx(cut, 3);
   assert.deepEqual([c[2].a, c[3].a], [null, null], 'no winner for set 1: nothing after it is counted');
   assert.deepEqual(tags(S.fhPbpSetModel(cut.sets[2], c[3])), { games: [], mp: [], sp: [] });
-  assert.equal(S.maMsSheetEntry({ id: 'x', p1: 'A', p2: 'B', tour: 'ATP US Open', surface: 'hard', finalScore: { sets: [{ p1: 6, p2: 3 }], p1Sets: 1, p2Sets: 0 } }).r.bo, 5, 'the tab passes the format');
-  assert.match(slice('fhSheetInit'), /bo: r\.bo \|\| null/, 'the sheet keeps the row\'s format');
+  assert.match(slice('fhSheetInit'), /bo: r\.bo \|\| fhBestOf\(r\),/, 'the sheet keeps the row\'s format, else the Form rows\' rule (the tab\'s rows have none)');
+});
+
+// Review fixes (clean-context review, 2026-09-29). Mutations: a Bo5 fifth-set tiebreak read as 7 points → a close Slam decider
+// tags MP at 6-5, 7-6, 8-7; the set winner read off T → a repeated tiebreak point (read as a 10-pointer) loses set 1 and
+// every later set goes untagged.
+test('TEN-349: a Bo5 fifth-set tiebreak is 10 points; a repeated tiebreak point does not lose the set', () => {
+  const five = { sets: [BO5.sets[0], BO5.sets[1], BO5.sets[2], logSet(4, S63B), logSet(5, G('ABABABABABAB'), ['p1', 'p2', 'p1', 'p2', 'p1', 'p2', 'p1', 'p2', 'p1', 'p2', 'p1', 'p2', 'p1', 'p2', 'p1', 'p2', 'p1', 'p1'])] };   // …8-8, 9-8, 10-8
+  const s5 = model(five, 5, 5);
+  assert.deepEqual(tags(s5), { games: [], mp: ['9-8A'], sp: [] }, 'at 2–2 only 9-8 is a match point in a 10-point decider');
+  assert.equal(s5.label, 'SET 5 · 7-6');
+  const dup = JSON.parse(JSON.stringify(BO3)); const g1 = dup.sets[0].games; g1.splice(g1.length - 1, 0, JSON.parse(JSON.stringify(g1[g1.length - 1])));   // 7-5 twice
+  assert.deepEqual(S.fhPbpMatchCtx(dup, 3)[3], { a: 1, b: 1, need: 2 }, 'set 1 still counted for A');
+  assert.deepEqual(tags(model(dup, 3, 3)).mp, ['5-6B', '7-6A']);
 });

@@ -263,7 +263,7 @@ const B_FEED = (ruledOff) => `(() => { const S = _maMsSheet; if (!S) throw new E
   const scopes = { match: rows(S.match) }; for (let i = 1; i <= S.nSets; i++) scopes['s' + i] = rows(S.sets && S.sets[i]);
   const sh = S.pbp && fhPbpForA(S.pbp, S); const hi = '#e7e9ee', dim = '#5b6880', mut = '#4b5672';
   const setNos = sh ? sh.sets.map(s => Number(s.set)).sort((a, b) => a - b) : [], last = Math.max(S.nSets || 0, setNos[setNos.length - 1] || 0);
-  const pbp = !sh ? [] : sh.sets.map(st => { const M = fhPbpSetModel(st);
+  const pbp = !sh ? [] : sh.sets.map(st => { const M = fhPbpSetModel(st, fhPbpMatchCtx(sh, S.bo)[st.set]);
     return { key: 'set' + st.set, label: M.label, games: M.games.map(g => ({ key: 'set' + st.set, gA: g.gA, gB: g.gB, serverA: g.serverA, serverB: g.serverB, aLost: g.aLost, bLost: g.bLost,
       aColor: g.aWon ? hi : dim, bColor: g.bWon ? hi : dim, points: g.points.map((p, i, arr) => ({ txt: p.txt, bp: p.bp, comma: i < arr.length - 1 })) })),
       tiebreak: !!M.tb, tb: M.tb ? { label: M.tb.label, pts: M.tb.pts.map(p => ({ a: p.a, b: p.b, serverA: p.serverA, serverB: p.serverB, aLost: p.aLost, bLost: p.bLost, sp: p.spA || p.spB, spA: p.spA, spB: p.spB,
