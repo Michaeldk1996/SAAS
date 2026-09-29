@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-28T23:36:15.727Z",
+  "generatedAt": "2026-09-29T23:46:58.866Z",
   "source": "tennis_atp (TML mirror) + Match Charting Project (rally/winner, R&D use only)",
   "window": "2000-2026",
   "note": "Each axis is a 0-100 percentile within the full classified field (50 = typical). MCP-dependent axes (counter/attacking/defender) fall back to base components and are flagged partial when a player has < 10 charted matches.",
@@ -1386,9 +1386,9 @@
       "badges": [],
       "pressure_score": null,
       "mcp_charted": 0,
-      "win_pct": 50,
+      "win_pct": 51.4,
       "clay_wr": 56,
-      "hard_wr": 50,
+      "hard_wr": 54,
       "grass_wr": 0,
       "top10_wins": 0,
       "archetype_label": "Solid Baseliner"
@@ -2011,9 +2011,9 @@
       "badges": [],
       "pressure_score": null,
       "mcp_charted": 3,
-      "win_pct": 67.4,
+      "win_pct": 65.9,
       "clay_wr": 65,
-      "hard_wr": 67,
+      "hard_wr": 63,
       "grass_wr": 80,
       "top10_wins": 0,
       "archetype_label": "Attacking Baseliner"
@@ -3122,9 +3122,9 @@
       "badges": [],
       "pressure_score": null,
       "mcp_charted": 0,
-      "win_pct": 66.7,
+      "win_pct": 67.9,
       "clay_wr": 33,
-      "hard_wr": 79,
+      "hard_wr": 80,
       "grass_wr": 50,
       "top10_wins": 0,
       "archetype_label": "Attacking Baseliner"
@@ -4016,7 +4016,7 @@
       "source": "challenger"
     },
     {
-      "name": "Frederico Ferreira Silva",
+      "name": "F. Ferreira Silva",
       "archetype_data_coverage": "challenger",
       "partial_axes": [],
       "badges": [],
@@ -4025,7 +4025,8 @@
       "hard_wr": 54,
       "grass_wr": null,
       "matches": 250,
-      "source": "challenger"
+      "source": "challenger",
+      "player_key": "585"
     },
     {
       "name": "M. Polmans",
@@ -4090,7 +4091,7 @@
       "source": "challenger"
     },
     {
-      "name": "Raul Brancaccio",
+      "name": "R. Brancaccio",
       "archetype_data_coverage": "challenger",
       "partial_axes": [],
       "badges": [],
@@ -4099,7 +4100,8 @@
       "hard_wr": 49,
       "grass_wr": 50,
       "matches": 244,
-      "source": "challenger"
+      "source": "challenger",
+      "player_key": "1873"
     },
     {
       "name": "Z. Piros",
@@ -4643,8 +4645,7 @@
       "hard_wr": 58,
       "grass_wr": 20,
       "matches": 197,
-      "source": "challenger",
-      "player_key": "1087"
+      "source": "challenger"
     },
     {
       "name": "O. Luz",
@@ -4758,7 +4759,7 @@
       "source": "challenger"
     },
     {
-      "name": "F. C. Jianu",
+      "name": "Filip Cristian Jianu",
       "archetype_data_coverage": "challenger",
       "partial_axes": [],
       "badges": [],
@@ -4767,8 +4768,7 @@
       "hard_wr": 41,
       "grass_wr": null,
       "matches": 192,
-      "source": "challenger",
-      "player_key": "576"
+      "source": "challenger"
     },
     {
       "name": "Denis Kudla",
@@ -5918,7 +5918,7 @@
       "source": "challenger"
     },
     {
-      "name": "M. Alves",
+      "name": "Mateus Alves",
       "archetype_data_coverage": "challenger",
       "partial_axes": [],
       "badges": [],
@@ -5927,8 +5927,7 @@
       "hard_wr": 33,
       "grass_wr": null,
       "matches": 129,
-      "source": "challenger",
-      "player_key": "28260"
+      "source": "challenger"
     },
     {
       "name": "Guilherme Clezar",
@@ -6251,7 +6250,7 @@
       "source": "challenger"
     },
     {
-      "name": "C. Sanchez Jover",
+      "name": "Carlos Sanchez Jover",
       "archetype_data_coverage": "challenger",
       "partial_axes": [],
       "badges": [],
@@ -6260,8 +6259,7 @@
       "hard_wr": 42,
       "grass_wr": null,
       "matches": 118,
-      "source": "challenger",
-      "player_key": "584"
+      "source": "challenger"
     },
     {
       "name": "L. Neumayer",
@@ -7687,7 +7685,7 @@
       "player_key": "9230"
     },
     {
-      "name": "J. Paul",
+      "name": "Jakub Paul",
       "archetype_data_coverage": "challenger",
       "partial_axes": [],
       "badges": [],
@@ -7696,8 +7694,7 @@
       "hard_wr": 53,
       "grass_wr": null,
       "matches": 79,
-      "source": "challenger",
-      "player_key": "1966"
+      "source": "challenger"
     },
     {
       "name": "David Jorda Sanchis",
@@ -7748,7 +7745,7 @@
       "source": "challenger"
     },
     {
-      "name": "Oliver Crawford",
+      "name": "O. Crawford",
       "archetype_data_coverage": "challenger",
       "partial_axes": [],
       "badges": [],
@@ -7757,7 +7754,8 @@
       "hard_wr": 41,
       "grass_wr": null,
       "matches": 77,
-      "source": "challenger"
+      "source": "challenger",
+      "player_key": "945"
     },
     {
       "name": "John Patrick Smith",
@@ -8867,7 +8865,7 @@
       "source": "challenger"
     },
     {
-      "name": "A. Barrena",
+      "name": "Alex Barrena",
       "archetype_data_coverage": "challenger",
       "partial_axes": [],
       "badges": [],
@@ -8876,8 +8874,7 @@
       "hard_wr": null,
       "grass_wr": null,
       "matches": 58,
-      "source": "challenger",
-      "player_key": "1324"
+      "source": "challenger"
     },
     {
       "name": "Omni Kumar",
@@ -9440,7 +9437,7 @@
       "source": "challenger"
     },
     {
-      "name": "Daniil Glinka",
+      "name": "D. Glinka",
       "archetype_data_coverage": "challenger",
       "partial_axes": [],
       "badges": [],
@@ -9449,7 +9446,8 @@
       "hard_wr": 44,
       "grass_wr": null,
       "matches": 51,
-      "source": "challenger"
+      "source": "challenger",
+      "player_key": "780"
     },
     {
       "name": "Kiranpal Pannu",
@@ -10117,7 +10115,7 @@
       "player_key": "1935"
     },
     {
-      "name": "Adria Soriano Barrera",
+      "name": "A. Soriano Barrera",
       "archetype_data_coverage": "challenger",
       "partial_axes": [],
       "badges": [],
@@ -10126,7 +10124,8 @@
       "hard_wr": 47,
       "grass_wr": null,
       "matches": 43,
-      "source": "challenger"
+      "source": "challenger",
+      "player_key": "1330"
     },
     {
       "name": "Alejo Lorenzo Lingua Lavallen",
@@ -11090,7 +11089,7 @@
       "source": "challenger"
     },
     {
-      "name": "S. Dostanic",
+      "name": "Stefan Dostanic",
       "archetype_data_coverage": "challenger",
       "partial_axes": [],
       "badges": [],
@@ -11099,8 +11098,7 @@
       "hard_wr": 58,
       "grass_wr": null,
       "matches": 33,
-      "source": "challenger",
-      "player_key": "37907"
+      "source": "challenger"
     },
     {
       "name": "Marcelo Zormann Da Silva",
@@ -11115,7 +11113,7 @@
       "source": "challenger"
     },
     {
-      "name": "L. Mikrut",
+      "name": "Luka Mikrut",
       "archetype_data_coverage": "challenger",
       "partial_axes": [],
       "badges": [],
@@ -11124,8 +11122,7 @@
       "hard_wr": 33,
       "grass_wr": null,
       "matches": 33,
-      "source": "challenger",
-      "player_key": "938"
+      "source": "challenger"
     },
     {
       "name": "Victor Estrella",
@@ -11575,7 +11572,7 @@
       "source": "challenger"
     },
     {
-      "name": "T. Colson",
+      "name": "Tibo Colson",
       "archetype_data_coverage": "challenger",
       "partial_axes": [],
       "badges": [],
@@ -11584,8 +11581,7 @@
       "hard_wr": 31,
       "grass_wr": null,
       "matches": 29,
-      "source": "challenger",
-      "player_key": "961"
+      "source": "challenger"
     },
     {
       "name": "Micah Braswell",
@@ -12012,7 +12008,7 @@
       "source": "challenger"
     },
     {
-      "name": "Pe. Tsitsipas",
+      "name": "Petros Tsitsipas",
       "archetype_data_coverage": "challenger",
       "partial_axes": [],
       "badges": [],
@@ -12021,8 +12017,7 @@
       "hard_wr": 18,
       "grass_wr": null,
       "matches": 25,
-      "source": "challenger",
-      "player_key": "1872"
+      "source": "challenger"
     },
     {
       "name": "Moerani Bouzige",
@@ -12167,8 +12162,7 @@
       "hard_wr": 33,
       "grass_wr": null,
       "matches": 24,
-      "source": "challenger",
-      "player_key": "7078"
+      "source": "challenger"
     },
     {
       "name": "Rayane Roumane",
