@@ -15418,7 +15418,7 @@ function fhSheetRender(slot){
       // DF L2150: the set tabs (always drawn, one per set) and the set's log in one 14px-gap column
       body = `<div class="fh-pbp" style="display:flex; flex-direction:column; gap:14px;">`
         + fhSheetSeg(setNos.map(n => ({ label: 'Set ' + n, on: n === cur, onclick: `fhSheetPbpSet(${n},'${S.slot || 'pop'}')` })), 'pbp') + order
-        + (st ? fhSheetPbpHtml(fhPbpSetModel(st)) : '') + `</div>`;
+        + (st ? fhSheetPbpHtml(fhPbpSetModel(st, fhPbpMatchCtx(sh, S.bo)[st.set])) : '') + `</div>`;
     }
   } else if (S.scope === 'match' || S.scope === 'key'){
     body = S.matchLoading ? `<div class="acomingsoon" style="padding:10px 0 2px;">Loading match stats…</div>`
@@ -15466,9 +15466,19 @@ function fhPbpForA(sh, S){ return fhPbpAIsFirst(sh, S) === false ? fhPbpFlip(sh)
 const MA_PBP_FEED_ORDER = (p1, p2) => `Point log in the feed's order: ${p1 || 'player 1'} left, ${p2 || 'player 2'} right.`;
 // TEN-338: one set of the point-by-point log in the design's shape (DF _fGen L4556–4590): the set caption, the games
 // (running set score, server, LOST SERVE, the point sequence with BP) and a tiebreak's points (running score, server,
-// a mini-break = LOST SERVE, SP while the leader is one point from the set — the file tags SP in the final set too). The set is
+// a mini-break = LOST SERVE, SP while the leader is one point from the set). The set is
 // already oriented to player A (fhPbpForA). tools/ten338-match-stats-capture.mjs feeds this same model to the design file.
-function fhPbpSetModel(st){
+// TEN-349 (founder ruling Q6, 2026-09-29): a set point that would also win the match is tagged MP instead — in a tiebreak
+// row, and on the game point of a normal game (next to its BP). `ctx` = { a, b, need }: sets each side had won before this
+// set (from the log itself, fhPbpMatchCtx) and the sets that win the match. Where either is unknown and the point could be
+// a match point, it carries no tag rather than a guess; set 1 is always 0–0.
+function fhPbpSetModel(st, ctx){
+  const c = Object.assign(Number(st.set) === 1 ? { a: 0, b: 0 } : {}, ctx || {});
+  // true = MP, false = SP, null = can't tell (no tag)
+  const isMp = side => { const n = side === 'p1' ? c.a : c.b; if (n == null) return null; if (n + 1 < 2) return false; return c.need ? n + 1 >= c.need : null; };
+  const GP = { '0': 0, '15': 1, '30': 2, '40': 3, 'A': 4 };
+  const gpSide = s => { const m = /^\s*(0|15|30|40|A)\s*-\s*(0|15|30|40|A)\s*$/.exec(String(s || '')); if (!m) return null; const x = GP[m[1]], y = GP[m[2]];
+    return (x === 4 || (x === 3 && y < 3)) ? 'p1' : (y === 4 || (y === 3 && x < 3)) ? 'p2' : null; };
   const { real, tbPts } = pbpSplitSet(st);
   const fin = real.length ? pbpParseScore(real[real.length - 1].score) : null;
   const lastTb = tbPts.length ? tbPts[tbPts.length - 1] : null;
@@ -15482,15 +15492,36 @@ function fhPbpSetModel(st){
   const setSc = !lastTb ? fin : !real.length ? [lastTb.a, lastTb.b] : !tbDone || !fin ? fin : lastTb.a > lastTb.b ? [fin[0] + 1, fin[1]] : [fin[0], fin[1] + 1];
   const side = (p, w) => ({ serverA: p.server === 'p1', serverB: p.server === 'p2', aLost: p.server === 'p1' && w === 'p2', bLost: p.server === 'p2' && w === 'p1', aWon: w === 'p1', bWon: w === 'p2' });
   const games = real.map(g => { const sc = pbpParseScore(g.score) || [null, null];
-    return Object.assign({ gA: sc[0], gB: sc[1], points: (g.points || []).map(p => ({ txt: String(p.s || '').replace(/\s*-\s*/, ':'), bp: !!p.bp })) }, side(g, g.winner)); });
+    // the games as this game started (its score less the game it records), for "winning this game wins the set"
+    const pre = sc[0] != null && (g.winner === 'p1' || g.winner === 'p2') ? [sc[0] - (g.winner === 'p1' ? 1 : 0), sc[1] - (g.winner === 'p2' ? 1 : 0)] : null;
+    const setPt = s => { if (!pre) return false; const own = s === 'p1' ? pre[0] + 1 : pre[1] + 1, oth = s === 'p1' ? pre[1] : pre[0]; return own >= 6 && own - oth >= 2; };
+    return Object.assign({ gA: sc[0], gB: sc[1], points: (g.points || []).map(p => { const s = gpSide(p.s);
+      return { txt: String(p.s || '').replace(/\s*-\s*/, ':'), bp: !!p.bp, mp: !!s && setPt(s) && isMp(s) === true }; }) }, side(g, g.winner)); });
   let tb = null;
   if (tbPts.length){
     tb = { label: 'Tiebreak · Set ' + st.set, pts: tbPts.map(p => {
       const hi = Math.max(p.a, p.b), lo = Math.min(p.a, p.b), over = hi >= T && hi - lo >= 2;
       const sp = !over && p.a !== p.b && hi >= T - 1 && hi + 1 - lo >= 2;
-      return Object.assign({ a: p.a, b: p.b, spA: sp && p.a > p.b, spB: sp && p.b > p.a }, side(p, p.winner)); }) };
+      const mp = sp ? isMp(p.a > p.b ? 'p1' : 'p2') : null;
+      return Object.assign({ a: p.a, b: p.b, spA: mp === false && p.a > p.b, spB: mp === false && p.b > p.a, mpA: mp === true && p.a > p.b, mpB: mp === true && p.b > p.a }, side(p, p.winner)); }) };
   }
-  return { set: st.set, label: 'SET ' + st.set + (setSc ? ' · ' + setSc[0] + '-' + setSc[1] : ''), games, tb };
+  // Who won the set, from the log (fhPbpMatchCtx counts these): a finished tiebreak, else games at 6+ two clear; null = unfinished.
+  const won = lastTb ? (tbDone ? (lastTb.a > lastTb.b ? 'p1' : 'p2') : null)
+    : setSc && Math.max(setSc[0], setSc[1]) >= 6 && Math.abs(setSc[0] - setSc[1]) >= 2 ? (setSc[0] > setSc[1] ? 'p1' : 'p2') : null;
+  return { set: st.set, label: 'SET ' + st.set + (setSc ? ' · ' + setSc[0] + '-' + setSc[1] : ''), games, tb, won };
+}
+// Per set of a point log: { a, b, need } for fhPbpSetModel. Sets won before it are counted off the log itself (so they
+// share the log's order, oriented or the feed's own under G16); after a set whose winner can't be read, unknown. Sets
+// that win the match: three when the log shows a Bo5 (4+ sets, or three won), else the row's format (bo), else unknown.
+function fhPbpMatchCtx(sh, bo){
+  const sets = (sh && sh.sets || []).slice().sort((x, y) => Number(x.set) - Number(y.set));
+  const won = sets.map(st => fhPbpSetModel(st).won);
+  const n1 = won.filter(w => w === 'p1').length, n2 = won.filter(w => w === 'p2').length;
+  const need = (sets.length >= 4 || n1 >= 3 || n2 >= 3) ? 3 : bo === 5 ? 3 : bo === 3 ? 2 : null;
+  const out = {}; let a = 0, b = 0;
+  sets.forEach((st, i) => { out[st.set] = { a, b, need };
+    if (a != null && won[i] === 'p1') a++; else if (a != null && won[i] === 'p2') b++; else a = b = null; });
+  return out;
 }
 // The set's log as the file draws it (template L2150–2195). Tone marks who won each game / tiebreak point (the Match
 // Stats tone rule, modal-match-stats.md): the winner's figure primary, the other dim; never a hue.
@@ -15500,7 +15531,9 @@ function fhSheetPbpHtml(M){
   const red = `color:${fhS('e0616f', '--negative')}; background:${fhS('e0616f-150', '--surface-inner')}; border:var(--ma-hw,0.33px) solid ${fhS('e0616f-300', '--negative')};`;
   const lost = `<span style="${FH_MONO} font-size:9.5px; font-weight:700; letter-spacing:0.08em; ${red} border-radius:5px; padding:3px 8px; white-space:nowrap;">LOST SERVE</span>`;
   const bp = `<span style="font-size:8.5px; font-weight:700; ${red} border-radius:4px; padding:1px 5px;">BP</span>`;
-  const sp = `<span style="font-size:8.5px; font-weight:700; color:${hi}; background:${fhS('ffffff-040', '--surface-inner')}; border:var(--ma-hw,0.33px) solid ${fhS('ffffff-090', '--line')}; border-radius:4px; padding:2px 6px;">SP</span>`;
+  // MP (TEN-349) is drawn in the file's SP chip: the design has no MP of its own
+  const chip = t => `<span style="font-size:8.5px; font-weight:700; color:${hi}; background:${fhS('ffffff-040', '--surface-inner')}; border:var(--ma-hw,0.33px) solid ${fhS('ffffff-090', '--line')}; border-radius:4px; padding:2px 6px;">${t}</span>`;
+  const sp = chip('SP'), mp = chip('MP');
   const num = (v, c, fs) => `<span style="${FH_MONO} font-size:${fs}px; font-weight:700; color:${c};">${v == null ? FH_DASHC : v}</span>`;
   const games = M.games.map(g => `<div class="ma-pbp-game" style="max-width:600px; margin:0 auto; padding:18px 4px; border-bottom:var(--ma-hw,0.33px) solid ${fhS('ffffff-070', '--line-soft')};">
         <div style="display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:12px; margin-bottom:11px;">
@@ -15508,13 +15541,13 @@ function fhSheetPbpHtml(M){
           <span style="display:flex; align-items:center; justify-content:center; gap:9px;">${num(g.gA, g.aWon ? hi : dim, 20)}<span style="color:${dim}; font-size:16px;">·</span>${num(g.gB, g.bWon ? hi : dim, 20)}</span>
           <span style="display:flex; justify-content:flex-start; align-items:center; gap:8px;">${g.serverB ? ball : ''}${g.bLost ? lost : ''}</span>
         </div>
-        <div style="display:flex; flex-wrap:wrap; gap:5px; justify-content:center; align-items:center;">${g.points.map(p => `<span style="display:inline-flex; align-items:center; gap:5px; ${FH_MONO} font-size:12.5px; color:${hi};">${fhEsc(p.txt)}${p.bp ? bp : ''}</span>`).join('')}</div>
+        <div style="display:flex; flex-wrap:wrap; gap:5px; justify-content:center; align-items:center;">${g.points.map(p => `<span style="display:inline-flex; align-items:center; gap:5px; ${FH_MONO} font-size:12.5px; color:${hi};">${fhEsc(p.txt)}${p.bp ? bp : ''}${p.mp ? mp : ''}</span>`).join('')}</div>
       </div>`).join('');
   const tb = !M.tb ? '' : `<div class="ma-pbp-tbhead" style="background:${fhS('0a0d14', '--surface')}; border:var(--ma-hw,0.33px) solid ${fhS('ffffff-090', '--line')}; border-radius:9px; text-align:center; font-size:10px; letter-spacing:0.16em; color:${dim}; padding:9px; margin:12px 0 4px;">${fhEsc(M.tb.label)}</div>
       <div style="display:flex; flex-direction:column;">${M.tb.pts.map(p => `<div class="ma-pbp-tb" style="display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:12px; padding:11px 4px; border-bottom:var(--ma-hw,0.33px) solid ${fhS('ffffff-050', '--line-soft')};">
-          <div style="display:flex; align-items:center; justify-content:flex-end; gap:8px;">${p.aLost ? lost : ''}${p.spA ? sp : ''}${p.serverA ? ball : ''}</div>
+          <div style="display:flex; align-items:center; justify-content:flex-end; gap:8px;">${p.aLost ? lost : ''}${p.spA ? sp : p.mpA ? mp : ''}${p.serverA ? ball : ''}</div>
           <div style="display:flex; align-items:center; justify-content:center; gap:9px;">${num(p.a, p.aWon ? hi : mut, 18)}<span style="color:${dim}; font-size:15px;">·</span>${num(p.b, p.bWon ? hi : mut, 18)}</div>
-          <div style="display:flex; align-items:center; justify-content:flex-start; gap:8px;">${p.serverB ? ball : ''}${p.spB ? sp : ''}${p.bLost ? lost : ''}</div>
+          <div style="display:flex; align-items:center; justify-content:flex-start; gap:8px;">${p.serverB ? ball : ''}${p.spB ? sp : p.mpB ? mp : ''}${p.bLost ? lost : ''}</div>
         </div>`).join('')}</div>`;
   return `<div class="ma-pbp-set">${fhSheetSectionHead(M.label)}${games}${tb}</div>`;
 }
@@ -15545,7 +15578,7 @@ function fhSheetInit(e, r, slot){
   const ek = String(r.ek || (r.formRow && r.formRow.eventKey) || '');
   // r.inline (the Match Stats tab): the board match's own box score, already oriented to player A.
   const inline = (r.inline && r.inline.match) || fhSheetInlineStats(e, r);
-  const S = { slot: sl, ek, aKey: e.aKey, aName: e.aName, bName: e.bName, setScores: r.sets || null,
+  const S = { slot: sl, ek, aKey: e.aKey, aName: e.aName, bName: e.bName, setScores: r.sets || null, bo: r.bo || null,
     scope: 'key', nSets: (r.sets || []).length, match: inline, matchLoading: !inline && !!ek,
     sets: (r.inline && r.inline.sets) || null, setsLoading: !(r.inline && r.inline.sets) && !!ek, hasPbp: false, pbpLoading: !!ek, pbp: null, pbpSet: 1 };
   if (sl === 'tab') _maMsSheet = S; else _fh.sheetBody = S;
@@ -16635,6 +16668,7 @@ function maMsSheetEntry(m){
   const close = w => { const v = typeof _mcCloseOf === 'function' ? Number(_mcCloseOf(m, w)) : NaN; return v > 1 ? v : null; };
   return { e: { aName: m.p1, aKey: m.p1Key, bName: m.p2, bKey: m.p2Key },
     r: { ek: String(eventKeyOfMatch(m) || ''), sets, pS, oS, won, ret: !!m.retired, wo: !!m.walkover, price: close('p1'), oppPrice: close('p2'),
+      bo: fhBestOf({ pS, oS, tourn: m.tour }),   // the Form rows' format rule (TEN-349: MP needs the sets that win)
       tourn: m.tour, surface: fhSurfName(m.surface), round: h2hRoundLabel(m.tournamentRound), date: m.date,
       inline: { match: j(m.matchStats), sets: setJ && Object.keys(setJ).length ? setJ : null } } };
 }

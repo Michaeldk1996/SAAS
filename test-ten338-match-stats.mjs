@@ -10,6 +10,8 @@
 //     strip and its points with SP while the leader is one point from the set (10-point tiebreaks too)
 //   · the sheet header: surface capitalised, a dash for a missing round (four parts, DF L4859)
 //   · DoD 8: the tab draws no match rows and no tooltip of its own; the old stat-sheet path is deleted
+//   · TEN-349 (founder ruling Q6, 2026-09-29): MP on every match point — a tiebreak point or a normal game's game point
+//     that would win the match — and SP for a set point that would not; no tag where the log can't decide
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
@@ -53,7 +55,7 @@ const S = new Function(`
   ${block()}
   ${consts(/const MA_MS_NOT_PLAYED = [^\n]*\n/)}${consts(/const MA_MS_NOT_PLAYED_SUB = [^\n]*\n/)}
   ${['maMsNotPlayedHtml', 'maMsSheetEntry', 'maMsSheetHtml', 'buildMatchStatsSection'].map(slice).join('\n')}
-  return { fhSheetModel, fhSheetKeyModel, fhSheetStatsHtml, fhGateCell, fhPbpSetModel, fhSheetPbpHtml, fhSheetHeadHtml, maMsSheetEntry, buildMatchStatsSection };
+  return { fhSheetModel, fhSheetKeyModel, fhSheetStatsHtml, fhGateCell, fhPbpSetModel, fhPbpMatchCtx, fhSheetPbpHtml, fhSheetHeadHtml, maMsSheetEntry, buildMatchStatsSection };
 `)();
 const text = h => h.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
 
@@ -145,7 +147,7 @@ test('point by point is the file\'s shape: "SET n · a-b", games with LOST SERVE
   assert.match(h, /class="ma-pbp-tbhead"[^>]*>Tiebreak · Set 1</);
   // a 10-point tiebreak (a score before the end already had 7+ with a 2-point lead): 6-5 is not a set point, 9-8 is
   const tb10 = []; for (let i = 0; i < 7; i++) tb10.push(['p1', 'p1']); for (let i = 0; i < 8; i++) tb10.push(['p2', 'p2']); tb10.push(['p1', 'p1'], ['p1', 'p1'], ['p2', 'p2'], ['p1', 'p1']);   // 7-0 … 7-8, 9-8, 9-9? no: 8-8, 9-8, 9-9, 10-9 → keep A two clear at the end
-  const M10 = S.fhPbpSetModel(tbSet(3, HOLDS, tb10.concat([['p1', 'p1']])));
+  const M10 = S.fhPbpSetModel(tbSet(3, HOLDS, tb10.concat([['p1', 'p1']])), { a: 1, b: 1, need: 3 });   // Bo5 set 3 at 1–1: set points, not match points
   const sp10 = M10.tb.pts.filter(p => p.spA || p.spB).map(p => p.a + '-' + p.b);
   assert.ok(!sp10.includes('6-0') && sp10.includes('9-8'), '10-point tiebreak: ' + sp10.join(' '));
   const plain = S.fhPbpSetModel({ set: 2, games: HOLDS.slice(0, 10).map((g, i) => ({ g: i + 1, server: g[0], winner: g[1], score: Math.ceil((i + 1) / 2) + ' - ' + Math.floor((i + 1) / 2), points: [{ n: 1, s: '15 - 0' }] })) });
@@ -159,7 +161,7 @@ test('point by point edge cases: a retirement inside a tiebreak, a match tiebrea
   assert.equal(ret.label, 'SET 2 · 6-6', 'an unfinished tiebreak keeps the games as they stood');
   // a match tiebreak (no games) that stays close: …6-6, 7-6, 7-7, 8-7, 8-8, 9-8, 10-8
   const mw = ['p1', 'p2', 'p1', 'p2', 'p1', 'p2', 'p1', 'p2', 'p1', 'p2', 'p1', 'p2', 'p1', 'p2', 'p1', 'p2', 'p1', 'p1'];
-  const mtb = S.fhPbpSetModel(tbSet(3, [], mw.map((w, i) => [i % 2 ? 'p2' : 'p1', w])));
+  const mtb = S.fhPbpSetModel(tbSet(3, [], mw.map((w, i) => [i % 2 ? 'p2' : 'p1', w])), { a: 1, b: 1, need: 3 });
   assert.equal(mtb.label, 'SET 3 · 10-8', 'a match tiebreak shows its points');
   assert.deepEqual(mtb.tb.pts.filter(p => p.spA || p.spB).map(p => p.a + '-' + p.b), ['9-8'], 'only 9-8 is a set point in a 10-point tiebreak');
   const R = slice('fhSheetRender');
@@ -183,5 +185,79 @@ test('DoD 8: the tab draws no match rows or tooltips of its own, and the old sta
   assert.ok(!/maMatchRowsHtml|maTipHtml|elotip|<table/.test(src), 'no rows, no tooltip');
   for (const gone of ['buildMatchStatsSheet', 'msheetDerived', 'msheetRowHtml', 'buildMsScoreHead', 'switchMatchStatsTab', 'switchStatsSet', 'ensurePointByPoint'])
     assert.ok(!html.includes(`function ${gone}(`), gone + ' is deleted');
-  assert.match(slice('fhSheetRender'), /fhSheetPbpHtml\(fhPbpSetModel\(st\)\)/, 'the sheet\'s point log is the file-shaped renderer');
+  assert.match(slice('fhSheetRender'), /fhSheetPbpHtml\(fhPbpSetModel\(st, fhPbpMatchCtx\(sh, S\.bo\)\[st\.set\]\)\)/, 'the sheet\'s point log is the file-shaped renderer');
+});
+
+// TEN-349 fixtures: a set from its games ([server, winner, point scores?]) and, optionally, tiebreak point winners.
+function logSet(set, games, tbWin) {
+  const g = []; let a = 0, b = 0, n = 0;
+  for (const [srv, win, pts] of games) { if (win === 'p1') a++; else b++; g.push({ g: ++n, server: srv, winner: win, score: a + ' - ' + b, points: (pts || ['15 - 0', '30 - 0']).map((s, i) => ({ n: i + 1, s })) }); }
+  let x = 0, y = 0;
+  for (const w of tbWin || []) { if (w === 'p1') x++; else y++; g.push({ g: ++n, server: 'p1', winner: w, score: x + ' - ' + y, points: [] }); }
+  return { set, games: g };
+}
+const srv = i => i % 2 ? 'p2' : 'p1';
+// games from a winners string ("AB…"), servers alternating from A; `pts` = { gameIndex: [point scores] }
+const G = (ws, pts = {}) => [...ws].map((c, i) => [srv(i), c === 'A' ? 'p1' : 'p2', pts[i]]);
+const S63A = G('ABABABAAA'), S63B = G('ABABABBBB');   // A 6-3 (break at 7th), B 6-3
+const tags = M => ({
+  games: M.games.flatMap(g => g.points.filter(p => p.mp).map(p => p.txt)),
+  mp: M.tb ? M.tb.pts.filter(p => p.mpA || p.mpB).map(p => p.a + '-' + p.b + (p.mpA ? 'A' : 'B')) : [],
+  sp: M.tb ? M.tb.pts.filter(p => p.spA || p.spB).map(p => p.a + '-' + p.b + (p.spA ? 'A' : 'B')) : [] });
+const model = (log, n, bo) => S.fhPbpSetModel(log.sets[n - 1], S.fhPbpMatchCtx(log, bo)[n]);
+// Games alternate serve from A and are holds unless the string says otherwise, so game 10 (index 9) is B serving at 4-5.
+// Bo3, A wins 7-6 3-6 7-6. Set 1: A's game point on B's serve at 5-4 (a set point: games carry no SP, so no tag) and
+// A at 6-5 in the tiebreak (SP). Set 3: A's break/match points at 5-4 on B's serve (40:15, 40:30; B saves, and 40:A is
+// B's game point for 5-5, no tag), A's 40:0 at 5-5 (6-5 is not the set, no tag), then a tiebreak with B at match point
+// 5-6 before A wins 8-6.
+const TB1 = ['p1', 'p2', 'p1', 'p2', 'p1', 'p2', 'p1', 'p2', 'p1', 'p2', 'p1', 'p1'];    // … 5-5, 6-5, 7-5
+const TB3 = ['p1', 'p2', 'p1', 'p2', 'p1', 'p2', 'p1', 'p2', 'p1', 'p2', 'p2', 'p1', 'p1', 'p1'];   // … 5-5, 5-6, 6-6, 7-6, 8-6
+const BO3 = { p1: 'A', p2: 'B', sets: [
+  logSet(1, G('ABABABABABAB', { 9: ['0 - 15', '15 - 15', '30 - 15', '40 - 15'] }), TB1),
+  logSet(2, S63B),
+  logSet(3, G('ABABABABABAB', { 9: ['0 - 15', '15 - 15', '30 - 15', '40 - 15', '40 - 30', '40 - 40', '40 - A'], 10: ['15 - 0', '30 - 0', '40 - 0'] }), TB3),
+] };
+// Bo5, A leads 2–1 into set 4: at 5-4 A reaches advantage on B's serve (A:40 → MP; 15:40 is B's game point for 5-5, no
+// tag), B holds; in the tiebreak B's 5-6 is a set point for the trailing player (it would square the match: SP), A's 7-6
+// is a match point.
+const BO5 = { p1: 'A', p2: 'B', sets: [
+  logSet(1, S63A), logSet(2, S63B), logSet(3, S63A),
+  logSet(4, G('ABABABABABAB', { 9: ['15 - 0', '15 - 15', '15 - 30', '15 - 40', '30 - 40', '40 - 40', 'A - 40', '40 - 40', '40 - A'], 10: ['15 - 0', '30 - 0', '40 - 0'] }),
+    ['p1', 'p2', 'p1', 'p2', 'p1', 'p2', 'p1', 'p2', 'p1', 'p2', 'p2', 'p1', 'p1', 'p1']),   // … 5-5, 5-6 (B SP), 6-6, 7-6 (A MP), 8-6
+] };
+
+// Mutations (tools/test-ten338-mutants.js, "MP: …"): games never tagged → no MP at 5-4 of the decider; every set point
+// read as MP (no sets-needed check) → set 1's SP becomes MP; the tiebreak MP drawn as SP → the html loses its MP chips;
+// "two clear" dropped from the game's set point → A's 40-0 at 5-5 tagged.
+test('TEN-349 Bo3: MP in the decider (a game point on the opponent\'s serve and inside the tiebreak, either player); set 1 stays SP', () => {
+  const s1 = model(BO3, 1, 3), s3 = model(BO3, 3, 3);
+  assert.deepEqual(tags(s1), { games: [], mp: [], sp: ['6-5A'] }, 'set 1: a set point, never a match point; a game point is not tagged');
+  assert.deepEqual([s3.games[9].serverB, s3.games[9].gA, s3.games[9].gB], [true, 5, 5], 'fixture: B serves game 10 at 5-4 and holds');
+  assert.deepEqual(tags(s3), { games: ['40:15', '40:30'], mp: ['5-6B', '7-6A'], sp: [] }, 'set 3 (1–1): every set point wins the match');
+  const h = S.fhSheetPbpHtml(s3);
+  assert.equal((h.match(/>MP</g) || []).length, 4); assert.ok(!/>SP</.test(h));
+  assert.equal((S.fhSheetPbpHtml(s1).match(/>SP</g) || []).length, 1);
+});
+// Mutations: sets won read off the wrong side → A's 2–1 lead counted as 1 (no MP at 5-4 / 7-6) and B's 6-5 turns MP;
+// need fixed at 2 (a Bo5 read as Bo3) → the trailing player's SP becomes MP.
+test('TEN-349 Bo5: A leading 2–1 has match points in set 4 (game and tiebreak); B\'s set point there stays SP', () => {
+  const s4 = model(BO5, 4, 5);
+  assert.deepEqual(tags(s4), { games: ['A:40'], mp: ['7-6A'], sp: ['5-6B'] });
+  assert.deepEqual(S.fhPbpMatchCtx(BO5, 5)[4], { a: 2, b: 1, need: 3 });
+  const h = S.fhSheetPbpHtml(s4);
+  assert.equal((h.match(/>MP</g) || []).length, 2); assert.equal((h.match(/>SP</g) || []).length, 1);
+});
+// Mutations: an unknown format guessed as Bo3 → set 3 of a format-less 3-set log tags MP; a set whose winner can't be read
+// still counted → the sets after it get a 0–0 count instead of none.
+test('TEN-349: no tag where the log cannot decide — format unknown, or an earlier set with no winner', () => {
+  assert.equal(S.fhPbpMatchCtx(BO3, null)[3].need, null, 'three sets, nobody on three: Bo3 or Bo5 is not in the log');
+  assert.equal(S.fhPbpMatchCtx(BO5, null)[4].need, 3, 'four sets: the log itself says Bo5');
+  assert.deepEqual(tags(model(BO3, 3, null)), { games: [], mp: [], sp: [] }, 'could be MP or SP: no tag');
+  assert.deepEqual(tags(model(BO3, 1, null)), { games: [], mp: [], sp: ['6-5A'] }, 'set 1 is 0–0 whatever the format');
+  const cut = { sets: [logSet(1, G('ABABABABABAB'), ['p1', 'p2', 'p1']), BO3.sets[1], BO3.sets[2]] };   // set 1's tiebreak stops at 2-1
+  const c = S.fhPbpMatchCtx(cut, 3);
+  assert.deepEqual([c[2].a, c[3].a], [null, null], 'no winner for set 1: nothing after it is counted');
+  assert.deepEqual(tags(S.fhPbpSetModel(cut.sets[2], c[3])), { games: [], mp: [], sp: [] });
+  assert.equal(S.maMsSheetEntry({ id: 'x', p1: 'A', p2: 'B', tour: 'ATP US Open', surface: 'hard', finalScore: { sets: [{ p1: 6, p2: 3 }], p1Sets: 1, p2Sets: 0 } }).r.bo, 5, 'the tab passes the format');
+  assert.match(slice('fhSheetInit'), /bo: r\.bo \|\| null/, 'the sheet keeps the row\'s format');
 });
