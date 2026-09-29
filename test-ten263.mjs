@@ -69,7 +69,7 @@ function sandbox() {
     function buildFormSection(m){ return fhBuildForm(m); }
     function buildH2HSection(m){ return fhBuildH2H(m); }
     return { fhCloseFor, fhFinishRow, fhRowFromForm, fhBestOf, fhMeetingList, fhMeetings, fhScoreLines,
-      fhFormLineDefs, fhH2hLineDefs, fhPriceAvg, fhTodayPair, fhFormRowHtml, fhH2hRowHtml, fhBuildForm,
+      fhFormLineDefs, fhH2hLineDefs, fhPriceAvg, fhTodayPair, fhFormRowData, maMatchRowsHtml, fhH2hRowHtml, fhBuildForm,
       fhBuildH2H, fhSetsFrom, fhRoundCode, fhStateFor, fhNameKey, fhOdd, fhH2hRecCard, fhPickBook,
       fhSrcTitle, fhAllMeetingRows, fhLevelOf, fhH2hScopeNote, fhH2hGapNote, fhEligible, fhFormDataRows,
       fhEloAt, fhEloKey, fhEloKeyOwners, fhEloText, fhPriceRangeSource, fhRecLevelMix, fhH2hEloSpan,
@@ -79,6 +79,8 @@ function sandbox() {
         FH_ELO_AT_TIME, FH_BOOK_ORDER, FH_SURF, FH_H2H_LEVELS } };
   `)();
 }
+// TEN-330 (DoD item 8): a Form row is the shared helper's row, fed by fhFormRowData.
+function formRowHtml(S, r) { return S.maMatchRowsHtml([{ title: '', rows: [S.fhFormRowData(r, { idx: 0, hot: {} })] }], { inset: 8 }); }
 const S = sandbox();
 
 // ── the flagged rules are one named constant each, at their designed values ──
@@ -98,9 +100,9 @@ test('H2H rows keep the No-number variant; Form rows carry the opponent Elo (rul
     surface: 'hard', result: '2 - 0', won: true, sets: [{ p: 6, o: 4 }, { p: 6, o: 3 }], retired: false, walkover: false, qualifying: false, tier: 'atp', eventKey: 9 }, 5, 'J. Sinner', 0);
   assert.ok(!/ELO/.test(S.fhH2hRowHtml(r)), 'H2H row: no Elo (not ruled)');
   r.oppElo = { v: 2141, asOf: '2026-07-27' };
-  assert.match(S.fhFormRowHtml(r), /data-elo="2141" title="[^"]* · Elo 2141 at the time of the match \(Tennis Abstract weekly snapshot of 27 Jul 2026\)"/);
+  assert.match(formRowHtml(S, r), /data-elo="2141" title="[^"]* · Elo 2141 at the time of the match \(Tennis Abstract weekly snapshot of 27 Jul 2026\)"/);
   r.oppElo = { v: null, why: 'before the first Elo snapshot (2026-07-18)' };
-  assert.match(S.fhFormRowHtml(r), /data-elo="" title="[^"]* · Elo — at the time of the match: before the first Elo snapshot/, 'no value → Elo — with the reason, never blank');
+  assert.match(formRowHtml(S, r), /data-elo="" title="[^"]* · Elo — at the time of the match: before the first Elo snapshot/, 'no value → Elo — with the reason, never blank');
 });
 // ── Ruling D-12 (2026-09-24): overall Elo AT THE MATCH DATE, snapshot no more than 7 days old ──
 const EH = { snapshots: [
@@ -258,7 +260,7 @@ test('Form pixel pass: mirrored priced count, pill tooltip only with a figure, o
   assert.equal((thin.match(/ title="v market on /g) || []).length, 1, 'no pill tooltip on a thin side (its figure is a dash)');
   const r = S.fhRowFromForm({ opponent: 'C. Alcaraz', opponentKey: 1, date: '2026-03-15', tournament: 'US Open', round: 'ATP US Open - 1/64-finals', surface: 'hard', result: '2 - 3', won: false,
     sets: [{ p: 6, o: 2 }, { p: 3, o: 6 }, { p: 3, o: 6 }, { p: 7, o: 5 }, { p: 5, o: 7 }], retired: false, walkover: false, qualifying: false, tier: 'atp', eventKey: 9 }, 5, 'A. Shevchenko', 0);
-  assert.match(S.fhFormRowHtml(r), /title="6-2, 3-6, 3-6, 7-5, 5-7" style="[^"]*white-space:nowrap; overflow:hidden; text-overflow:ellipsis;/, 'a five-set score stays on one line (full text in the tooltip; TEN-330: the file\'s "6-4, 3-6" join)');
+  assert.match(formRowHtml(S, r), /title="6-2, 3-6, 3-6, 7-5, 5-7" style="[^"]*white-space:nowrap; overflow:hidden; text-overflow:ellipsis;/, 'a five-set score stays on one line (full text in the tooltip; TEN-330: the file\'s "6-4, 3-6" join)');
 });
 test('Form: a side with no match in a Days window keeps its bar row', () => {
   const rows = Array.from({ length: 4 }, (_, i) => formRow(i, true, 'hard', `2026-08-${String(28 - i).padStart(2, '0')}`));
@@ -595,13 +597,13 @@ test('B365 tag, and every price names its book and source', () => {
   r.price = 2.1; r.oppPrice = 1.75; r.book = 'B'; r.src = 'td';
   // Pixel pass (2026-09-24): the Form row's name slot carries no bookmaker badge; the book shows as a
   // small marker in the H price cell + the tooltip. The H2H row keeps its B365 tag.
-  assert.ok(!S.fhFormRowHtml(r).includes('>B365<') && !S.fhH2hRowHtml(r).includes('>B365<'), 'no book badge after the name on either tab');
-  assert.equal((S.fhFormRowHtml(r).match(/class="fh-bmark"[^>]*>B</g) || []).length, 1, 'one B marker, in the H cell');
+  assert.ok(!formRowHtml(S, r).includes('>B365<') && !S.fhH2hRowHtml(r).includes('>B365<'), 'no book badge after the name on either tab');
+  assert.equal((formRowHtml(S, r).match(/class="ma-row-mark"[^>]*>B</g) || []).length, 1, 'one B marker, in the H cell');
   assert.equal((S.fhH2hRowHtml(r).match(/class="fh-bmark"[^>]*>B</g) || []).length, 1, 'one B marker, in the Home cell');
-  assert.ok(S.fhFormRowHtml(r).includes('title="Bet365 close · Tennis-Data"'));
+  assert.ok(formRowHtml(S, r).includes('title="Bet365 close · Tennis-Data"'));
   r.book = 'P'; r.src = 'cap';
-  assert.ok(!S.fhFormRowHtml(r).includes('fh-bmark') && !S.fhH2hRowHtml(r).includes('B365'), 'Pinnacle rows carry no marker or tag');
-  assert.ok(S.fhFormRowHtml(r).includes('title="Pinnacle close · captured"') && S.fhH2hRowHtml(r).includes('title="Pinnacle close · captured"'));
+  assert.ok(!formRowHtml(S, r).includes('ma-row-mark') && !S.fhH2hRowHtml(r).includes('B365'), 'Pinnacle rows carry no marker or tag');
+  assert.ok(formRowHtml(S, r).includes('title="Pinnacle close · captured"') && S.fhH2hRowHtml(r).includes('title="Pinnacle close · captured"'));
   assert.equal(S.fhSrcTitle({ book: 'P', src: 'td' }), 'Pinnacle close · Tennis-Data');
   assert.equal(S.fhSrcTitle(null), 'No Pinnacle or Bet365 close on record');
 });

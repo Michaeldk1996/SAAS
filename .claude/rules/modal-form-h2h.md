@@ -54,6 +54,9 @@ Applies to the TEN-263 block in `bsp-consult-dashboard.html` (`fh*` functions), 
   "window · surface · role"), Recent matches on the file's grid (`MA_ROW_COLS`, "surface · W–L" group header, set scores
   "6-4, 6-3", " ret." on a retirement). The file hard-codes the "Short odds" chip off (`short:false`) and binds no
   "priced in at" line: neither is shown.
+- **Shared helpers only** (DoD item 8): Recent-matches rows are `maMatchRowsHtml` rows (`fhFormRowData` maps a row;
+  the file's 14 px inset = `headPad` / `groupPad` / `inset: 8`), each bar is a `maTipHtml` tooltip (`popStyle:
+  bottom:20px`), and every row / bar opens the shared sheet. Form has no row or tooltip renderer of its own.
 - **A walkover never becomes a Form row** (N2): no bar, no row, no W–L, no count — the pipeline already drops them from
   the form shards; the tab drops any that reach it (career-history rows included).
 - **A player without a form shard** (non-board) reads his `career-history/{key}.json`, newest first, capped at

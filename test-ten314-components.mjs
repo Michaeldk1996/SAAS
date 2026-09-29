@@ -177,7 +177,7 @@ test('tooltip: .elotip-pop — 120ms opacity, raised surface, strong hairline, m
   assert.equal(c.transition, 'opacity .12s ease');
   assert.deepEqual([c.opacity, c.visibility], ['0', 'hidden']);
   assert.equal(c.background, 'var(--ma-raised, var(--popup))');
-  assert.equal(c.border, '0.33px solid var(--ma-hair-strong, var(--line-open))');
+  assert.equal(c.border, '1px solid var(--ma-hair-strong, var(--line-open))');   // modal hairlines are the design's 1px (founder 2026-09-28, TEN-314 70fb039e)
   assert.deepEqual([c['font-family'], c['font-size']], ["'IBM Plex Mono',monospace", '11px']);
   assert.match(html, /\.elotip:hover \.elotip-pop, \.elotip:focus-within \.elotip-pop\{ opacity:1; visibility:visible; \}/);
   assert.match(U.maTipHtml('<b>x</b>', 'tip'), /^<span class="elotip"[^>]*><b>x<\/b><span class="elotip-pop" role="tooltip"[^>]*>tip<\/span><\/span>$/);

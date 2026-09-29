@@ -13844,31 +13844,45 @@ function maPopNoReplay(host){ if (host) host.querySelectorAll('.ma-sigin, .ma-fa
 // `click` = the row's opener attribute (maRowOnclick(...) or ` onclick="fhOpenSheet('mid')"`) — every row opens the sheet.
 const MA_ROW_COLS = '48px 12px minmax(0,1.1fr) 36px 40px minmax(0,1.3fr) 46px 46px';
 function maMatchRowsHtml(groups, opts){
+  // opts (variant geometry is a parameter, never a second renderer — founder 2026-09-29, DoD item 8):
+  //   labels · bg · headPad (default '6px 6px 7px') · groupPad ('11px 6px 5px') · inset (px wrapper around every row;
+  //   Form: 8 → the file's 14 px text inset with padding 6) · divider (markup before a group with divBefore) · empty (text)
+  // groups: [{ title, meta, divBefore, rows }]; row extras: wrapCls (wrapper classes), cls (row classes), attrs (raw
+  //   attributes), oppTitle / oppAttrs, scoresTitle, setsColor, hTitle / aTitle, hMark (a one-letter marker in the H cell).
   const o = opts || {}, esc = s => escapeHtml(s == null ? '' : String(s));
   const mono = "font-family:'IBM Plex Mono',monospace;";
   const cap = `${mono} font-size:9px; letter-spacing:0.1em; text-transform:uppercase; color:var(--label);`;
   const labels = o.labels || ['Date', '', 'Opponent', 'Rd', 'Sets', 'Set scores', 'H', 'A'];
-  const head = `<div class="ma-rows-head" style="position:sticky; top:0; z-index:5; display:grid; grid-template-columns:${MA_ROW_COLS}; gap:0 10px; align-items:center; background:${o.bg || 'var(--surface)'}; padding:6px 6px 7px; border-bottom:0.33px solid var(--line-open);">`
+  const head = `<div class="ma-rows-head" style="position:sticky; top:0; z-index:5; display:grid; grid-template-columns:${MA_ROW_COLS}; gap:0 10px; align-items:center; background:${o.bg || 'var(--surface)'}; padding:${o.headPad || '6px 6px 7px'}; border-bottom:1px solid ${o.headLine || 'var(--line-open)'};">`
     + labels.map((l, i) => (l ? `<span style="${cap}${i >= 6 ? ' text-align:right;' : ''}">${esc(l)}</span>` : '<span></span>')).join('') + '</div>';
   const wl = r => (r.won == null ? 'var(--label)' : r.won ? 'var(--positive)' : 'var(--negative)');
-  const body = groups.map(g => `<div class="ma-rows-group" style="display:flex; align-items:center; gap:10px; padding:11px 6px 5px; border-top:0.33px solid var(--line);"><span style="font-size:12.5px; font-weight:700; white-space:nowrap;">${esc(g.title)}</span>${g.meta ? `<span style="${mono} font-size:10px; color:var(--label); white-space:nowrap;">${esc(g.meta)}</span>` : ''}</div>`
-    + g.rows.map(r => `<div class="seg ma-row"${r.click || ''} style="display:grid; grid-template-columns:${MA_ROW_COLS}; gap:0 10px; align-items:center; padding:6px; border-radius:6px; background:${r.selected ? 'var(--seg-active)' : 'transparent'}; cursor:pointer;">`
+  const t = v => (v ? ` title="${esc(v)}"` : '');
+  const mark = m => (m ? `<span class="ma-row-mark" aria-hidden="true" style="position:absolute; top:-3px; right:-8px; font-size:7px; font-weight:700; letter-spacing:0; color:var(--text-sub);">${esc(m)}</span>` : '');
+  const row = r => `<div class="seg ma-row${r.cls ? ' ' + r.cls : ''}"${r.attrs || ''}${r.click || ''} style="display:grid; grid-template-columns:${MA_ROW_COLS}; gap:0 10px; align-items:center; padding:6px; border-radius:6px; background:${r.selected ? 'var(--seg-active)' : 'transparent'}; cursor:pointer;">`
       + `<span style="${mono} font-size:11px; color:var(--label);">${esc(r.date)}</span>`
       + `<span style="width:8px; height:8px; border-radius:2px; background:${wl(r)};"></span>`
-      + `<span style="font-size:12.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${esc(r.opp)}</span>`
+      + `<span${r.oppAttrs || ''}${t(r.oppTitle)} style="font-size:12.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${esc(r.opp)}</span>`
       + `<span style="${mono} font-size:10.5px; color:var(--label);">${esc(r.rd)}</span>`
-      + `<span style="${mono} font-size:11.5px; font-weight:700; color:${wl(r)};">${esc(r.sets)}</span>`
-      + `<span style="${mono} font-size:11px; color:var(--text-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(r.scores)}</span>`
-      + `<span style="${mono} font-size:11px; color:var(--text-soft); text-align:right;">${esc(r.h)}</span>`
-      + `<span style="${mono} font-size:11px; color:var(--label); text-align:right;">${esc(r.a)}</span></div>`).join('')).join('');
-  return `<div class="ma-rows" style="display:flex; flex-direction:column;">${head}${body}</div>`;
+      + `<span style="${mono} font-size:11.5px; font-weight:700; color:${r.setsColor || wl(r)};">${esc(r.sets)}</span>`
+      + `<span${t(r.scoresTitle)} style="${mono} font-size:11px; color:var(--text-soft); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(r.scores)}</span>`
+      + `<span${t(r.hTitle)} style="position:relative; ${mono} font-size:11px; color:${r.h === '—' ? 'var(--label)' : 'var(--text-soft)'}; text-align:right;">${esc(r.h)}${mark(r.hMark)}</span>`
+      + `<span${t(r.aTitle)} style="${mono} font-size:11px; color:var(--label); text-align:right;">${esc(r.a)}</span></div>`;
+  const wrap = r => (o.inset != null || r.wrapCls ? `<div class="${r.wrapCls || ''}" style="transition:opacity .12s; padding:0 ${o.inset || 0}px;">${row(r)}</div>` : row(r));
+  const body = groups.map(g => (g.divBefore && o.divider ? o.divider : '')
+    + `<div class="ma-rows-group" style="display:flex; align-items:center; gap:10px; padding:${o.groupPad || '11px 6px 5px'}; border-top:1px solid var(--line);"><span style="font-size:12.5px; font-weight:700; white-space:nowrap;">${esc(g.title)}</span>${g.meta ? `<span style="${mono} font-size:10px; color:var(--label); white-space:nowrap;">${esc(g.meta)}</span>` : ''}</div>`
+    + g.rows.map(wrap).join('')).join('');
+  const empty = !groups.length && o.empty ? `<div style="padding:28px 16px; text-align:center; font-size:12.5px; color:var(--label);">${esc(o.empty)}</div>` : '';
+  return `<div class="ma-rows" style="display:flex; flex-direction:column;">${head}${empty}${body}</div>`;
 }
 
 // ---- tooltip (README §6 `.elotip-pop`: 120ms opacity, raised surface, strong hairline, mono 11px) ----
 // trigger / body are markup. o.below = open under the trigger (default: above).
+// o.below = open under the trigger (default: above) · o.tag / o.cls / o.attrs / o.style = the wrapper (e.g. Form's bar:
+// a flex:1 div that opens the sheet) · o.popStyle = the pop-up's offset (Form: bottom:20px, DF L950).
 function maTipHtml(trigger, body, o){
   o = o || {};
-  return `<span class="elotip" style="position:relative; display:inline-flex;">${trigger}<span class="elotip-pop" role="tooltip" style="${o.below ? 'top:calc(100% + 8px);' : 'bottom:calc(100% + 8px);'}">${body}</span></span>`;
+  const tag = o.tag || 'span';
+  return `<${tag} class="elotip${o.cls ? ' ' + o.cls : ''}"${o.attrs || ''} style="position:relative; display:${tag === 'span' ? 'inline-flex' : 'block'};${o.style ? ' ' + o.style : ''}">${trigger}<span class="elotip-pop" role="tooltip" style="${o.popStyle || (o.below ? 'top:calc(100% + 8px);' : 'bottom:calc(100% + 8px);')}">${body}</span></${tag}>`;
 }
 
 // ---- flagged rules: the founder's calls. One constant / function each, so a
@@ -14359,8 +14373,6 @@ function fhEnsureStyles(){
   .fh-elotip-pop{ opacity:0; visibility:hidden; transition:opacity .12s ease; pointer-events:none; }
   .fh-elotip:hover .fh-elotip-pop{ opacity:1; visibility:visible; }
   .h2m, .fh-fm{ transition:opacity .12s; }
-  /* DF L1117 style-hover (white .03 → hover fill) */
-  #aSectionForm .fh-frow:hover{ background:var(--nav-hover) !important; }
   /* DF font stack: glyphs Hanken lacks (▾ →) fall back as in the file, not to system-ui */
   #aSectionForm{ font-family:'Hanken Grotesk',sans-serif; }
   #fhSheet .aform-panel-meta{ display:none; }
@@ -14551,62 +14563,44 @@ function fhFormSetScores(r){
 function fhRetNote(){ return (globalThis.MarketEdgeCore && globalThis.MarketEdgeCore.RET_SETTLE_NOTE) || ''; }
 // The bar tooltip's score line (DF m.score: space-joined games).
 function fhFormTipScore(r){ return r.sets ? r.sets.map(x => x[0] + '-' + x[1]).join(' ') + (r.ret ? ' ret.' : '') : FH_DASHC; }
-// H / A cells (DF L1124–1125: mono 11px; H secondary text, A caption). A Bet365-priced row keeps the "B" marker in the
-// H cell (in the column gap, so the price's x never moves); the tooltip names book + source on both cells.
-function fhFormPriceCell(v, color, r, mark){
-  const dash = v == null;
-  const bMark = mark && !dash && r && r.book === 'B'
-    ? `<span class="fh-bmark" aria-hidden="true" style="position:absolute; top:-3px; right:-8px; font-size:7px; font-weight:700; letter-spacing:0; color:var(--text-sub);">B</span>` : '';
-  return `<span title="${fhEsc(fhSrcTitle(r))}" style="position:relative; ${FH_MONO} font-size:11px; color:${dash ? FH_DASH : color}; text-align:right;">${dash ? FH_DASHC : fhOdd(v)}${bMark}</span>`;
-}
 // The opponent's Elo at the match date as text (ruling D-12: the latest weekly snapshot strictly before the match day,
 // at most 7 days old; otherwise "Elo —" and why). Never the current Elo, never blank.
 function fhEloText(e){
   return e && e.v != null ? 'Elo ' + e.v + ' at the time of the match (Tennis Abstract weekly snapshot of ' + fhLongDate(e.asOf) + ')'
     : 'Elo — at the time of the match: ' + ((e && e.why) || 'no snapshot on record');
 }
-// H / A cells (DF L1124–1125: mono 11px; H secondary text, A caption). A Bet365-priced row keeps the "B" marker in the
-// H cell (in the column gap, so the price's x never moves); the tooltip names book + source on both cells.
-function fhFormPriceCell(v, color, r, mark){
-  const dash = v == null;
-  const bMark = mark && !dash && r && r.book === 'B'
-    ? `<span class="fh-bmark" aria-hidden="true" style="position:absolute; top:-3px; right:-8px; font-size:7px; font-weight:700; letter-spacing:0; color:var(--text-sub);">B</span>` : '';
-  return `<span title="${fhEsc(fhSrcTitle(r))}" style="position:relative; ${FH_MONO} font-size:11px; color:${dash ? FH_DASH : color}; text-align:right;">${dash ? FH_DASHC : fhOdd(v)}${bMark}</span>`;
-}
-// Recent-matches row (DF L1116–1127): grid 48/12/1.1fr/36/40/1.3fr/46/46 (MA_ROW_COLS), gap 10, padding 6 inside an
-// 8px wrapper. PARKED (design file v ruling D-12): the file's row has no Elo slot, and the ruled ELO badge inside the
-// Opponent cell cut real names to one letter on the live build (CLAUDE.md: names are never truncated). The opponent's
-// Elo at the match date (same D-12 basis, "Elo —" + the reason when none qualifies) is carried on the name as
-// `data-elo` + its hover text, and in the bar tooltip, until the founder rules on a visible slot (TEN-330 report).
-function fhFormRowHtml(r){
-  const res = r.won ? 'var(--positive)' : 'var(--negative)';
-  const setsTxt = r.pS == null ? FH_DASHC : r.pS + ' - ' + r.oS;
-  const mono = FH_MONO;
-  return `<div class="seg fh-frow" data-fh-mid="${fhEsc(r.mid)}" onclick="fhOpenSheet('${fhEsc(r.mid)}')" style="display:grid; grid-template-columns:${MA_ROW_COLS}; gap:0 10px; align-items:center; padding:6px; border-radius:6px; background:${_fh && _fh.sheet === r.mid ? 'var(--seg-active)' : 'transparent'}; cursor:pointer;">`
-    + `<span style="${mono} font-size:11px; color:var(--label);">${fhDDMM(r.date)}.</span>`
-    + `<span style="width:8px; height:8px; border-radius:2px; background:${res};"></span>`
-    + `<span class="fh-opp" data-elo="${r.oppElo && r.oppElo.v != null ? r.oppElo.v : ''}" title="${fhEsc(fhFullName(r.opp, r.oppKey) + ' · ' + fhEloText(r.oppElo))}" style="font-size:12.5px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">${fhEsc(fhOppFmt(r.opp))}</span>`
-    + `<span style="${mono} font-size:10.5px; color:var(--label);">${fhEsc(r.round)}</span>`
-    + `<span style="${mono} font-size:11.5px; font-weight:700; color:${r.pS == null ? FH_DASH : res};">${setsTxt}</span>`
-    + `<span title="${fhEsc(fhFormSetScores(r))}" style="${mono} font-size:11px; color:var(--text-sub); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${fhEsc(fhFormSetScores(r))}</span>`
-    + fhFormPriceCell(r.price, 'var(--text-sub)', r, true) + fhFormPriceCell(r.oppPrice, 'var(--label)', r, false)
-    + `</div>`;
+// A Recent-matches row as the shared helper's data (maMatchRowsHtml — DoD item 8: no Form row renderer). The file's
+// row has no Elo slot: PARKED (design file v ruling D-12) — the ruled ELO badge cut real names to one letter on the
+// live build, so the opponent's Elo at the match date (D-12 basis, "Elo —" + why) rides on the name as `data-elo` +
+// its hover text, and in the bar tooltip, until the founder rules on a visible slot.
+function fhFormRowData(r, P){
+  const covMap = P.hot.sc ? P.hot.sc.covMap : {};
+  return { date: fhDDMM(r.date) + '.', won: r.won, opp: fhOppFmt(r.opp), rd: r.round, sets: r.pS == null ? FH_DASHC : r.pS + ' - ' + r.oS,
+    setsColor: r.pS == null ? FH_DASH : null, scores: fhFormSetScores(r), scoresTitle: fhFormSetScores(r),
+    h: r.price == null ? FH_DASHC : fhOdd(r.price), a: r.oppPrice == null ? FH_DASHC : fhOdd(r.oppPrice),
+    hTitle: fhSrcTitle(r), aTitle: fhSrcTitle(r), hMark: r.price != null && r.book === 'B' ? 'B' : '',
+    oppTitle: fhFullName(r.opp, r.oppKey) + ' · ' + fhEloText(r.oppElo),
+    oppAttrs: ` class="fh-opp" data-elo="${r.oppElo && r.oppElo.v != null ? r.oppElo.v : ''}"`,
+    wrapCls: 'fh-fm fm' + P.idx + ' ' + (covMap[r.mid] || []).map(k => 'fc-' + P.idx + '-' + k).join(' '),
+    cls: 'fh-frow', attrs: ` data-fh-mid="${fhEsc(r.mid)}"`, click: ` onclick="fhOpenSheet('${fhEsc(r.mid)}')"`,
+    selected: !!(_fh && _fh.sheet === r.mid) };
 }
 // Header column (DF L934–961). Each bar carries the player's closing price under it (DF L947, the one Form gap
 // phase0-c §1.2 found); an unpriced match shows "—" there, never a number.
 function fhFormColumnHtml(P, thinAny){
+  // Each bar through the shared tooltip (maTipHtml — DoD item 8), geometry as the file: the bar + its closing price
+  // under it (DF L947), the pop-up 20px above the bar's foot (DF L950).
   const pill = r => {
     const c = r.won ? 'var(--positive)' : 'var(--negative)';
-    return `<div class="fh-elotip" onclick="fhOpenSheet('${fhEsc(r.mid)}')" style="flex:1; position:relative; padding:5px 0; cursor:pointer;">
-        <div style="display:flex; flex-direction:column; align-items:center; gap:5px;"><div style="width:100%; height:7px; border-radius:4px; background:${c};"></div><span class="fh-bar-price" title="${fhEsc(fhSrcTitle(r))}" style="${FH_MONO} font-size:8.5px; color:var(--label); white-space:nowrap; height:10px;">${r.price != null ? fhOdd(r.price) : FH_DASHC}</span></div>
-        <div class="fh-elotip-pop" style="position:absolute; bottom:20px; left:50%; transform:translateX(-50%); z-index:30; background:var(--popup); border:1px solid var(--line-open); border-radius:8px; padding:8px 11px; display:flex; flex-direction:column; gap:3px; align-items:flex-start; text-align:left; white-space:nowrap; box-shadow:var(--ma-shadow-tip); pointer-events:none;">
-          <span style="display:flex; align-items:baseline; gap:7px;"><span style="${FH_MONO} font-size:10.5px; font-weight:700; color:${c};">${r.won ? 'W' : 'L'}</span><span style="font-size:12.5px; font-weight:600; color:var(--text);">v ${fhEsc(fhOppFmt(r.opp))}</span><span style="${FH_MONO} font-size:10px; color:var(--label);">Elo ${r.oppElo && r.oppElo.v != null ? r.oppElo.v : FH_DASHC}</span></span>
+    const bar = `<div style="padding:5px 0;"><div style="display:flex; flex-direction:column; align-items:center; gap:5px;"><div style="width:100%; height:7px; border-radius:4px; background:${c};"></div><span class="fh-bar-price" title="${fhEsc(fhSrcTitle(r))}" style="${FH_MONO} font-size:8.5px; color:var(--label); white-space:nowrap; height:10px;">${r.price != null ? fhOdd(r.price) : FH_DASHC}</span></div></div>`;
+    const tip = `<span style="display:flex; flex-direction:column; gap:3px; align-items:flex-start; text-align:left;">
+          <span style="display:flex; align-items:baseline; gap:7px;"><span style="${FH_MONO} font-size:10.5px; font-weight:700; color:${c};">${r.won ? 'W' : 'L'}</span><span style="font-family:'Hanken Grotesk',sans-serif; font-size:12.5px; font-weight:600; color:var(--text);">v ${fhEsc(fhOppFmt(r.opp))}</span><span style="${FH_MONO} font-size:10px; color:var(--label);">Elo ${r.oppElo && r.oppElo.v != null ? r.oppElo.v : FH_DASHC}</span></span>
           <span style="${FH_MONO} font-size:10.5px; color:var(--text-sub);">${fhEsc(r.tourn + ' · ' + r.round + ' · ' + fhDDMM(r.date))}</span>
           <span style="${FH_MONO} font-size:10.5px; color:var(--text-sub);">${fhEsc(fhFormTipScore(r))}</span>
-          <span style="font-size:10px; color:var(--periwinkle);">Click for match stats</span>
-        </div>
-      </div>`;
+          <span style="font-family:'Hanken Grotesk',sans-serif; font-size:10px; color:var(--periwinkle);">Click for match stats</span></span>`;
+    return maTipHtml(bar, tip, { tag: 'div', cls: 'fh-bar', attrs: ` onclick="fhOpenSheet('${fhEsc(r.mid)}')"`, style: 'flex:1; cursor:pointer;', popStyle: 'bottom:20px;' });
   };
+
   // An empty slot (DF L4785): the bar in the track colour, an empty price line, no tooltip.
   const empty = `<div style="flex:1; position:relative; padding:5px 0; cursor:default;"><div style="display:flex; flex-direction:column; align-items:center; gap:5px;"><div style="width:100%; height:7px; border-radius:4px; background:var(--bar-track);"></div><span style="${FH_MONO} font-size:8.5px; white-space:nowrap; height:10px;"></span></div></div>`;
   const pills = P.win.slice().reverse().map(pill);
@@ -14646,30 +14640,27 @@ function fhFormDataRows(A, B, rows){
 // Recent matches (DF L1094–1150): sticky header, "tournament · surface · W–L" groups, the "↑ used in form stats"
 // divider after the window, "Show N more matches".
 function fhFormListHtml(P){
-  const cap = `${FH_MONO} font-size:9px; letter-spacing:0.1em; text-transform:uppercase; color:var(--label);`;
-  const head = `<div style="position:sticky; top:0; z-index:5; display:grid; grid-template-columns:${MA_ROW_COLS}; gap:0 10px; align-items:center; background:var(--surface); padding:8px 14px 7px; border-bottom:1px solid var(--line);">`
-    + ['Date', '', 'Opponent', 'Rd', 'Sets', 'Set scores', 'H', 'A'].map((l, i) => (l ? `<span style="${cap}${i >= 6 ? ' text-align:right;' : ''}">${l}</span>` : '<span></span>')).join('') + '</div>';
   const div = `<div style="display:flex; align-items:center; gap:10px; padding:10px 14px; border-top:1px solid var(--line-soft);"><span style="flex:1; height:1px; background:var(--seg-active-line);"></span><span style="${FH_MONO} font-size:10px; letter-spacing:0.06em; color:var(--text-sub); white-space:nowrap;">↑ used in form stats</span><span style="flex:1; height:1px; background:var(--seg-active-line);"></span></div>`;
-  const covMap = P.hot.sc ? P.hot.sc.covMap : {};
-  const body = P.entries.map(e => {
-    if (e.isHead) return `<div style="display:flex; align-items:center; gap:10px; padding:11px 14px 5px; border-top:1px solid var(--line);"><span style="font-size:12.5px; font-weight:700; white-space:nowrap;">${fhEsc(e.tourn)}</span><span style="${FH_MONO} font-size:10px; color:var(--label); white-space:nowrap;">${fhEsc(e.meta)}</span></div>`;
-    if (e.isDiv) return div;
-    return `<div class="fh-fm fm${P.idx} ${(covMap[e.r.mid] || []).map(k => 'fc-' + P.idx + '-' + k).join(' ')}" style="transition:opacity .12s; padding:0 8px;">${fhFormRowHtml(e.r)}</div>`;
-  }).join('');
+  // entries (head / row / divider, DF L4709–4720) → the shared helper's groups; a divider opens the next group.
+  const groups = []; let divNext = false;
+  P.entries.forEach(e => {
+    if (e.isDiv){ divNext = true; return; }
+    if (e.isHead){ groups.push({ title: e.tourn, meta: e.meta, divBefore: divNext, rows: [] }); divNext = false; return; }
+    groups[groups.length - 1].rows.push(fhFormRowData(e.r, P));
+  });
   const more = P.list.length > P.NWIN
     ? `<div class="seg" onclick="fhFormToggle('more',${P.idx})" style="text-align:center; padding:12px 0 13px; border-top:1px solid var(--line); font-size:13px; font-weight:600; color:var(--periwinkle); cursor:pointer;">${_fh.form.more[P.idx] ? 'Show fewer' : 'Show ' + (P.list.length - P.NWIN) + ' more matches'}</div>` : '';
   // DESIGN GAP G9: no form source at all for this side (no form shard and no career-history shard). The file only
   // draws "No matches with these filters."; the same empty line says the true reason instead.
-  const emptyTxt = P.noSource ? 'No recent matches on record.' : 'No matches with these filters.';
+  const rows = maMatchRowsHtml(groups, { headPad: '8px 14px 7px', headLine: 'var(--line)', groupPad: '11px 14px 5px', inset: 8, divider: div,
+    empty: P.list.length === 0 ? (P.noSource ? 'No recent matches on record.' : 'No matches with these filters.') : '' });
   return `<div style="display:flex; flex-direction:column; min-width:0;">
       <div style="display:flex; align-items:center; justify-content:space-between; gap:12px; margin-bottom:10px;">
         <span style="font-size:11px; letter-spacing:0.14em; text-transform:uppercase; color:var(--label);">Recent matches · ${fhEsc(fhSurname(P.name))}</span>
         <span style="font-size:11px; color:var(--label);">${P.shown.length} on record${P.DWIN == null ? '' : ' · last ' + P.DWIN + ' days'}</span>
       </div>
       <div style="border:1px solid var(--line); border-radius:14px; overflow:clip; background:var(--surface); display:flex; flex-direction:column; flex:1;">
-        ${head}
-        ${P.list.length === 0 ? `<div style="padding:28px 16px; text-align:center; font-size:12.5px; color:var(--label);">${emptyTxt}</div>` : ''}
-        ${body}
+        ${rows}
         <div style="flex:1;"></div>
         ${P.divEnd ? div : ''}
         ${more}
@@ -15268,8 +15259,8 @@ function fhSheetHeadHtml(e, r, opts){
   const chips = o.inline ? '' : (r.sets || []).map(x => `<span style="${FH_MONO} font-size:12px; font-weight:700; color:var(--text); background:var(--surface-inner); border:0.33px solid var(--line); border-radius:6px; padding:3px 8px;">${x[0]}-${x[1]}</span>`).join('');
   const badge = (v, c) => `<span style="position:absolute; left:50%; bottom:-9px; transform:translateX(-50%); ${FH_MONO} font-size:10.5px; font-weight:700; color:${v == null ? FH_DASH : c}; background:var(--surface-inner); border:0.33px solid var(--line); border-radius:999px; padding:1px 7px; white-space:nowrap;">${v == null ? FH_DASHC : v.toFixed(2)}</span>`;
   const av = (name, key) => `<span class="fh-av">${aAvatarHtml(name, key)}</span>`;
-  const yy = String(r.date || '').slice(2, 4);
-  const meta = [r.tourn, r.surface || FH_DASHC, r.round, r.date ? fhDDMM(r.date) + (yy ? '.' + yy : '') : null].filter(x => x != null && x !== '').join(' · ');
+  // Date exactly as the design file prints it (DF L4856 "18.07"; founder 2026-09-29: never "18.07.26").
+  const meta = [r.tourn, r.surface || FH_DASHC, r.round, r.date ? fhDDMM(r.date) : null].filter(x => x != null && x !== '').join(' · ');
   const close = o.inline ? '' : `<span class="seg" onclick="fhCloseSheet()" style="background:var(--surface-inner); border:0.33px solid var(--line); border-radius:8px; width:30px; height:30px; color:var(--text-sub); font-size:15px; display:flex; align-items:center; justify-content:center; cursor:pointer; flex:none;">✕</span>`;
   return `<div style="display:flex; flex-direction:column; gap:18px;">
           <div style="display:flex; align-items:center; justify-content:space-between; gap:16px;">
@@ -34611,7 +34602,7 @@ if(document.querySelector('.tabpage[data-page="live"]')&&document.querySelector(
   .ma-row:hover{ background:var(--ma-hover, var(--nav-hover)) !important; }
   .ma-pop-x:hover{ color:var(--ma-t1, var(--text)) !important; border-color:var(--ma-hair-hover, var(--line-open)) !important; }
   .elotip-pop{ position:absolute; left:50%; transform:translateX(-50%); z-index:30; opacity:0; visibility:hidden; transition:opacity .12s ease; pointer-events:none;
-    background:var(--ma-raised, var(--popup)); border:0.33px solid var(--ma-hair-strong, var(--line-open)); border-radius:8px; padding:8px 11px;
+    background:var(--ma-raised, var(--popup)); border:1px solid var(--ma-hair-strong, var(--line-open)); border-radius:8px; padding:8px 11px;
     font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--ma-t2, var(--text-soft)); white-space:nowrap; box-shadow:var(--ma-shadow-tip, none); }
   .elotip:hover .elotip-pop, .elotip:focus-within .elotip-pop{ opacity:1; visibility:visible; }
   @media (prefers-reduced-motion: reduce){ .ma-sigin, .ma-fade{ animation:none; } }

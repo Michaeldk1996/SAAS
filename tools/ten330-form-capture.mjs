@@ -278,7 +278,7 @@ async function buildSide(dir, inputs) {
       continue;
     }
     const fr = await x.ev(B_FRAME); await sleep(100); await x.ev(SETTLE);
-    if (st.hover) { const pt = await x.ev(`(() => { const c = document.getElementById('aSectionForm'); const R = c.getBoundingClientRect(); const bars = [...c.querySelectorAll('.fh-elotip')].filter(b => b.getBoundingClientRect().left < R.left + R.width / 2); const b = bars[bars.length - 1].getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + 8 }; })()`); await hoverAt(x, pt); await sleep(200); await x.ev(SETTLE); }
+    if (st.hover) { const pt = await x.ev(`(() => { const c = document.getElementById('aSectionForm'); const R = c.getBoundingClientRect(); const bars = [...c.querySelectorAll('.fh-bar')].filter(b => b.getBoundingClientRect().left < R.left + R.width / 2); const b = bars[bars.length - 1].getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + 8 }; })()`); await hoverAt(x, pt); await sleep(200); await x.ev(SETTLE); }
     const clip = await x.ev(`(() => { const r = document.querySelector('#analysisModal .modal-analysis').getBoundingClientRect(); return { x: r.left + scrollX, y: r.top + scrollY, w: Math.round(r.width), h: Math.round(r.height) }; })()`);
     await shot(x, clip, path.join(dir, st.name + '.png'));
     leaves[st.name] = await x.ev(LEAVES(`document.getElementById('aSectionForm')`));

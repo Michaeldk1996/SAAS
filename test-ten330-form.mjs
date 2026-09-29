@@ -36,7 +36,7 @@ const FNS = ['escapeHtml', 'fhEsc', 'fhSafeId', 'ppCleanTournamentName', 'fhTour
   'fhPickBook', 'fhCloseFor', 'fhEloKey', 'fhEloKeyOwners', 'fhEloAt', 'fhRefDay', 'tourxSampleGate', 'maGate', 'maGateBar', 'maSmallNote', 'fhMedian',
   'fhOdd', 'fhSigned', 'fhSourceNote', 'fhSrcTitle', 'fhScoreText', 'fhEligible', 'fhIneligibleWhy', 'fhScoreLines', 'fhHotLineRank', 'fhFamOf',
   'fhFormLineDefs', 'surnameFirstName', 'fhOppFmt', 'psShortName', 'fhSurname', 'fhTournCode', 'fhHotLinesTable', 'fhFormRowsFromCareer',
-  'fhFormPlayer', 'fhFormSetScores', 'fhFormTipScore', 'fhFormPriceCell', 'fhFormRowHtml', 'fhFormColumnHtml', 'fhFormListHtml', 'fhFormHotHtml',
+  'fhFormPlayer', 'fhFormSetScores', 'fhFormTipScore', 'fhFormRowData', 'maMatchRowsHtml', 'maTipHtml', 'fhFormColumnHtml', 'fhFormListHtml', 'fhFormHotHtml',
   'fhStateFor', 'fhNameLink', 'fhFullName', 'fhEloText', 'fhRetNote', 'fhFormDataRows'];
 const CONSTS = ['FH_SLAMS', 'FH_BOOK_ORDER', 'FH_BOOK', 'FH_SRC', 'FH_DASHC', 'FH_MONO', 'FH_THIN', 'FH_AC', 'FH_SURF', 'FH_ELO_MAX_AGE_DAYS',
   'FH_HOT_MIN_ELIGIBLE', 'FH_HOT_FAM', 'FH_TCODE', 'FH_MONS', 'FH_FORM_ROW_CAP', 'MA_GREY', 'MA_SMALL_NOTE', 'MA_ROW_COLS'];
@@ -46,7 +46,7 @@ const S = new Function(`
   function eventKeyOfMatch(m){ return m.eventKey || null; }
   ${CONSTS.map(constSrc).join('\n')}
   ${FNS.map(slice).join('\n')}
-  return { fhFormDataRows, fhFormPlayer, fhFormColumnHtml, fhFormListHtml, fhFormHotHtml, fhFormRowHtml, fhFormRowsFromCareer, fhStateFor, fhFormSetScores,
+  return { fhFormDataRows, fhFormPlayer, fhFormColumnHtml, fhFormListHtml, fhFormHotHtml, fhFormRowData, maMatchRowsHtml, fhFormRowsFromCareer, fhStateFor, fhFormSetScores,
     get fh(){ return _fh; } };
 `)();
 const text = h => h.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
@@ -134,7 +134,7 @@ test('the file\'s rows: "surface · W–L" group header, grid 48/12/1.1fr/36/40/
   assert.match(text(L), /Test Open Hard · 2–0/);
   assert.match(text(L), /Other Cup Clay · 0–1/);
   const G = 'grid-template-columns:48px 12px minmax(0,1.1fr) 36px 40px minmax(0,1.3fr) 46px 46px';
-  assert.ok(S.fhFormRowHtml(P.win[0]).includes(G), 'every row on the file grid');
+  assert.ok(S.maMatchRowsHtml([{ title: 't', rows: [S.fhFormRowData(P.win[0], P)] }], { inset: 8 }).includes(G), 'every row on the file grid');
   assert.equal(L.split(G).length - 1, 1 + P.win.length, 'the sticky header + every listed row');
   assert.match(text(L), /Date Opponent Rd Sets Set scores H A/);
   assert.match(text(L), /18\.07\. Beta B\. R16 2 - 0 6-4, 6-3 1\.50 2\.60/, 'the name is never cut by a badge (the Elo is its hover text)');
@@ -176,4 +176,17 @@ test('profit figures that count retirements carry "Retirements settled on the of
   assert.ok(S.fhFormColumnHtml(A, false).includes(' · ' + NOTE + '"'), 'the v market pill\'s tooltip');
   const d = S.fhFormDataRows(A, B, [['flat', 'Flat 1u', 'P/L'], ['medP', 'Median odd', 'x']]);
   assert.equal((d.match(new RegExp('title="' + NOTE.replace(/\./g, '\\.') + '"', 'g')) || []).length, 2, 'both Flat 1u values, and no other figure');
+});
+
+// Mutation: Form draws its rows / bar tooltips with its own renderer again (founder 2026-09-29, DoD item 8).
+test('Form renders rows with maMatchRowsHtml and bar tooltips with maTipHtml; no Form-local row or tooltip renderer', () => {
+  assert.ok(!/\nfunction fhFormRowHtml\(|\nfunction fhFormPriceCell\(/.test(html), 'the Form row renderers are deleted');
+  const P = player(match());
+  const L = S.fhFormListHtml(P);
+  assert.equal((L.match(/class="seg ma-row fh-frow"/g) || []).length, P.win.length, 'every listed row is the shared row');
+  assert.ok(L.includes('padding:8px 14px 7px') && L.includes('padding:11px 14px 5px') && L.includes('padding:0 8px;'), 'Form inset = parameters of the shared helper');
+  const col = S.fhFormColumnHtml(P, false);
+  assert.equal((col.match(/class="elotip fh-bar"/g) || []).length, P.win.length, 'every bar is the shared tooltip');
+  assert.ok(!/fh-elotip/.test(col), 'no Form-local tooltip class');
+  assert.ok(col.includes('style="bottom:20px;"'), 'the file\'s tooltip offset is a parameter');
 });

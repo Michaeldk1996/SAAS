@@ -92,7 +92,7 @@ const MUTANTS = [
   ['motion: a re-render replays the entrance', "  if (popKey && popKey === E._popKey) maPopNoReplay(host);\n", ''],
   ['rows: README grid instead of the file\'s', "const MA_ROW_COLS = '48px 12px minmax(0,1.1fr) 36px 40px minmax(0,1.3fr) 46px 46px';", "const MA_ROW_COLS = '52px 14px minmax(0,1fr) 44px 56px minmax(0,1.2fr) 56px 56px';"],
   ['rows: header not sticky', "<div class=\"ma-rows-head\" style=\"position:sticky; top:0;", "<div class=\"ma-rows-head\" style=\"position:relative; top:0;"],
-  ['rows: a row loses its sheet opener', "<div class=\"seg ma-row\"${r.click || ''}", "<div class=\"seg ma-row\""],
+  ['rows: a row loses its sheet opener', "<div class=\"seg ma-row${r.cls ? ' ' + r.cls : ''}\"${r.attrs || ''}${r.click || ''}", "<div class=\"seg ma-row${r.cls ? ' ' + r.cls : ''}\"${r.attrs || ''}"],
   ['tip: 200ms opacity', "transition:opacity .12s ease; pointer-events:none;\n    background:var(--ma-raised, var(--popup));", "transition:opacity .2s ease; pointer-events:none;\n    background:var(--ma-raised, var(--popup));"],
   ['tip: the helper drops the class pair', "<span class=\"elotip-pop\" role=\"tooltip\"", "<span class=\"tip-pop\" role=\"tooltip\""],
 ];
