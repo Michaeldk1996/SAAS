@@ -32,7 +32,7 @@ const MUTANTS = [
   ['lazy: a late shard of the previous match repaints the new one', 'function aBuilt(m, tab){ return _aM === m && _aBuilt.has(tab); }', 'function aBuilt(m, tab){ return _aBuilt.has(tab); }'],
   ['revisit: Weather / Market edge hooks only on the first open', "  else if (A_TAB_REVISIT[tab]) A_TAB_REVISIT[tab]();\n", ''],
   ['direct tab: the completed-card path builds Key factors first', "  openAnalysisModal(id, 'matchstats');\n}", "  openAnalysisModal(id);\n  aGoTab('matchstats');\n}"],
-  ['sheet: a Key stats row dropped', "    row('Winners / unforced errors', wue(win.a, ue.a), wue(win.b, ue.b), 'ratio'),\n", ''],
+  ['sheet: a Key stats row dropped', "    row('Winners / unforced errors', M.wue[0], M.wue[1], 'ratio'),\n", ''],
   ['sheet: W / total points over own points won', "  const tp = [tpw.a, tpw.b].map(c => c.total).find(t => t > 0) || null;", "  const tp = tpw.a.won || null;"],
   ['sheet: no stats back to the message-only state', "  const M = fhSheetModel(joined || null);\n  const head = fhSheetSectionHead;", "  if (!joined) return `<div>${fhEsc(emptyMsg)}</div>`;\n  const M = fhSheetModel(joined || null);\n  const head = fhSheetSectionHead;"],
   ['sheet: the not-available note dropped', "  const note = !joined ? maSheetNaNote()", "  const note = !joined ? ''"],
@@ -79,7 +79,7 @@ const MUTANTS = [
   // ---- test-ten314-components.mjs (shared components) ----
   ['seg: sheet item radius 8', "item: 'padding:5px 12px; border-radius:7px; font-size:11px;', tb:", "item: 'padding:5px 12px; border-radius:8px; font-size:11px;', tb:"],
   ['seg: Market edge track padding 3', "  me: { track: 'gap:3px; padding:2px; border-radius:8px;',", "  me: { track: 'gap:3px; padding:3px; border-radius:8px;',"],
-  ['seg: pbp tabs drawn in the scope geometry', "})), 'pbp') : '')", "}))) : '')"],
+  ['seg: pbp tabs drawn in the scope geometry', "` })), 'pbp') + order\n", "` }))) + order\n"],
   ['seg: the selected tile dropped', "background:${on ? `var(--ma-s-${G.sb}, var(--seg-active))` : 'transparent'};", "background:transparent;"],
   ['seg: the 140ms transition dropped', "  .ma-seg-item{ transition:background .14s ease, color .14s ease, border-color .14s ease; }\n", ''],
   ['seg: Market edge keeps its own markup', "function meSegHtml(items){ return maSeg('me', items); }", "function meSegHtml(items){ return items.map(t => t.label).join(''); }"],

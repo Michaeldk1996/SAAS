@@ -23,6 +23,30 @@ found at restore time are marked inline.
   **Test:** the two score-header names never change tone with the result; the only permitted tone-marked
   outcome is the point-log game/tiebreak score; a player's identity colour must never change with the result.
 
+## Match Stats tab build (TEN-338, TEN-312 design file `matchStatsFor` / template L2078–2200)
+- **Completed / suspended match:** THE shared sheet inline (`maMsSheetHtml` → `fhSheetInit(e, r, 'tab')`), scopes Match ·
+  Key stats · Set 1…N · Point by point, opens on Key stats. Header meta = four parts (tournament · surface · round · date),
+  a dash where one is missing; surface through `fhSurfName`.
+- **Uncompleted match:** the file's block (DF L2079: chart tile, "Match not played yet", the file's line), centred in the
+  whole pane. **Live match:** the same block titled "Match in progress" — DESIGN GAP G15 (the file draws no live state).
+- **Points won** carries the file's "Winners / unforced errors" row (DF L4272); Key stats reads the same cell.
+- **D2 on every sheet %** (`fhGateCell`, n = the rate's own count): n 1–4 → the count ("2/3"), no % and no bar; n 5–9 →
+  grey value + bar, "small sample" on hover, footnote `MA_SHEET_GATE_NOTE` under the sheet; 10+ as is. Counts and ratios
+  (aces, W/UE, DR, ratings) are not rates and are not gated.
+- **Point by point = the file's shape** (`fhPbpSetModel` + `fhSheetPbpHtml`, DF L2150–2195): set tabs always drawn, caption
+  "SET n · a-b", one row per game (server ball, LOST SERVE when the server lost the game, running score toned by the game's
+  winner, the point sequence with BP), a 7-6 set's "Tiebreak · Set n" strip and one row per point. **SP** whenever the
+  leader can win the set on the next point, past 6-6 too; a 10-point tiebreak is recognised from its own sequence. The file
+  tags SP in the final set as well (the old MP tag is gone — end-of-queue question). Tiebreak points come from the pbp
+  shards the guarded cache feeds (TEN-318). The old class-based point log stays for the other match-detail panels only.
+- **Bars — design exception:** the 2026-09-24 bar rule (`fhStatBarWidth`), not the file's share-of-total; W/UE and DR are
+  numbers only. Reported as ruled, never as a divergence.
+- **Shared helpers (DoD 8):** the tab draws no match rows and no tooltip. The old tab sheet (`buildMatchStatsSheet`,
+  `msheet*`, `buildMsScoreHead`, the Stats | Point by point sub-tabs) and its CSS are deleted.
+- **Test:** `test-ten338-match-stats.mjs` (+ `tools/test-ten338-mutants.js`, 17 mutants). Pixel/structure harness (manual):
+  `tools/ten338-match-stats-capture.mjs` (`--theme source`, `--ruled-off`, `--real <dir>` — the design fed OUR model's
+  output for real matches) + `tools/ten312-pixel-diff.py --regions` + `tools/ten330-form-structure.py`.
+
 See also: CLAUDE.md "Match-detail view toggle" (Stats | Point by point, no Summary);
 `modal-form-h2h.md` "Match stats popup and every match-detail panel" (set control, rates with counts, bars,
 Serve/Return rating, point by point follows the header); `modal-analysis.md` "Match stats sheet — every tab".

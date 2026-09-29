@@ -206,6 +206,8 @@ Applies to the TEN-263 block in `bsp-consult-dashboard.html` (`fh*` functions), 
   0 with opportunities is `0.0% (0/4)`; 0/0 is `—` with its reason; a stat the feed never sent is `—`.
   Winners/unforced errors all 0 on both sides = not sent (`—`): a display guard until the pipeline
   stores `null` for an unsent count.
+  **TEN-312 D2 applies on top (TEN-338):** a rate on n 1–4 shows its count only ("2/3", no %), n 5–9 greyed with a
+  footnote — `fhGateCell`, rules in `modal-match-stats.md`.
 - **Bars — one rule, on the popup and all eight other match-detail panels** (`msBarHtml` →
   `fhStatBarWidth`): a rate fills its own value of that player's half (a genuine 100.0% fills 100%);
   a count fills value ÷ max(p1, p2, floor) and a rating value ÷ its scale, both mapped onto

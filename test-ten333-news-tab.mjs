@@ -26,7 +26,7 @@ function constSrc(name) {
 }
 // the News block, from its header comment to the next section (the tab's own state lives there)
 const BLOCK = (() => {
-  const a = html.indexOf('/* ---------- Match Analysis modal: News tab'), b = html.indexOf('// §2 Score header (completed only)');
+  const a = html.indexOf('/* ---------- Match Analysis modal: News tab'), b = html.indexOf('// The board match as a sheet entry: header from');   // TEN-338 deleted the §2 score header that followed
   assert.ok(a > 0 && b > a, 'News block');
   return html.slice(a, b);
 })();

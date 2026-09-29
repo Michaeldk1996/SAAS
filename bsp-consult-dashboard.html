@@ -1297,6 +1297,8 @@
 
   .modal-analysis .abody{ padding:24px 28px; overflow:auto; min-height:0; min-width:0; }
   .modal-analysis .asection{ display:none; }
+  /* TEN-338: DF L2080 centres "Match not played yet" in the whole pane (height:100% of the content column) */
+  .modal-analysis #aSectionMatchStats:has(> .ma-ms-notplayed){ height:100%; }
   /* News tab (TEN-333): the file's .wirerow + .seg hover rules (DF L18, L77–80), tokens only. */
   #aSectionNews .anews-row{ border-bottom:1px solid var(--line); cursor:pointer; }
   #aSectionNews .anews-row:last-child{ border-bottom:0; }
@@ -1727,35 +1729,6 @@
      #6aaeff, B #e7e9ee — matching the dot beside it (.mstat-dot.p1/.p2 already do). */
   :is(.modal-analysis,.pp-formsurface) .msheet-names .p1{ color:var(--fh-pa); }
   :is(.modal-analysis,.pp-formsurface) .msheet-names .p2{ color:var(--fh-pb); }
-  /* §2 Score header (completed only) — Flashscore-style panel at the TOP of the
-     Match Stats tab. Relocated here from the modal shell header (founder ruling A,
-     2026-08-01): the shell now carries only "Match analysis" + fixture line + close;
-     the full result lives here. Grid = side | center | side. Spec §2. */
-  .modal-analysis .ms-scorehead{ display:grid; grid-template-columns:1fr auto 1fr; gap:16px; align-items:center; background:var(--surface); border:var(--ma-hw,0.33px) solid var(--line); border-radius:12px; padding:18px 22px 16px; margin:0 auto 16px; max-width:720px; }
-  .modal-analysis .ms-scorehead .msh-side{ display:flex; flex-direction:column; align-items:center; gap:9px; min-width:0; }
-  .modal-analysis .ms-scorehead .msh-av img,
-  .modal-analysis .ms-scorehead .msh-av .avatar-fallback{ width:52px; height:52px; border-radius:50%; font-family:'IBM Plex Mono', monospace; font-size:16px; font-weight:700; }
-  .modal-analysis .ms-scorehead .msh-av.a .avatar-fallback{ background:var(--ma-hover); color:var(--text); }
-  .modal-analysis .ms-scorehead .msh-av.b .avatar-fallback{ background:var(--ma-hover); color:var(--text); }
-  /* Ruling B (2026-08-01): BOTH names #e7e9ee — the header names never carry an
-     outcome cue. Winner/loser marking is tone-not-hue only in the point-log game
-     scores; identity hue rides on the legend dot / left stat column / avatar tint. */
-  .modal-analysis .ms-scorehead .msh-name{ font-family:'Hanken Grotesk', sans-serif; font-size:13.5px; font-weight:700; color:var(--text); max-width:100%; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; text-align:center; }
-  .modal-analysis .ms-scorehead .msh-name[onclick]{ cursor:pointer; }
-  .modal-analysis .ms-scorehead .msh-center{ display:flex; flex-direction:column; align-items:center; gap:7px; white-space:nowrap; }
-  .modal-analysis .ms-scorehead .msh-date{ font-family:'IBM Plex Mono', monospace; font-size:10.5px; letter-spacing:0.06em; color:var(--label); }
-  .modal-analysis .ms-scorehead .msh-sets{ font-family:'IBM Plex Mono', monospace; font-size:36px; font-weight:700; letter-spacing:0.06em; color:var(--text); line-height:1; font-variant-numeric:tabular-nums; }
-  .modal-analysis .ms-scorehead .msh-perset{ font-family:'IBM Plex Mono', monospace; font-size:12px; font-weight:700; letter-spacing:0.08em; color:var(--label); }
-  .modal-analysis .ms-scorehead .msh-status{ font-family:'Hanken Grotesk', sans-serif; font-size:9.5px; font-weight:700; text-transform:uppercase; letter-spacing:0.16em; color:var(--label); }
-  /* Export header anatomy (matches-upcoming.html shared match-detail component):
-     (1) big sets line "2–1" mono 38px/700, (2) score line "6-4, 3-6, 6-2" mono
-     17px/700, (3) "Stat comparison" label LAST — 10px uppercase #4b5672. Founder
-     ruling §4 (2026-08-01): "yes follow export!" — restructured from the old
-     title-first / score-beside layout. */
-  :is(.modal-analysis,.pp-formsurface) .msheet-head{ text-align:center; margin-bottom:6px; }
-  :is(.modal-analysis,.pp-formsurface) .msheet-head .msheet-setsbig{ font-family:'IBM Plex Mono', monospace; font-size:38px; font-weight:700; line-height:1.02; color:var(--text); font-variant-numeric:tabular-nums; }
-  :is(.modal-analysis,.pp-formsurface) .msheet-head .msheet-scoreline{ font-family:'IBM Plex Mono', monospace; font-size:17px; font-weight:700; color:var(--text-soft); margin-top:2px; font-variant-numeric:tabular-nums; }
-  :is(.modal-analysis,.pp-formsurface) .msheet-head .msheet-label{ font-family:'IBM Plex Mono', monospace; font-size:10px; letter-spacing:0.16em; text-transform:uppercase; color:var(--label); margin-top:6px; }
   /* Section band (SERVICE / RETURN / POINTS) — a centred mono caption on a faint
      tint, not a table header: the rows beneath it are free-standing, separated by
      hairlines rather than boxed in a bordered table. */
@@ -1767,33 +1740,6 @@
      track is one value from the export — rgba(255,255,255,0.09) — on every row. */
   .modal-analysis .msheet-grouphead{ font-size:10px; letter-spacing:0.06em; color:var(--label); background:var(--popup); border:var(--ma-hw,0.33px) solid var(--line); border-radius:9px; padding:10px; margin:20px 0 16px; }
   .modal-analysis .msheet-bar .msheet-half{ background:var(--surface-inner); }
-  :is(.modal-analysis,.pp-formsurface) .msheet-row{ padding:13px 6px 15px; border-bottom:var(--ma-hw,0.33px) solid var(--line-soft); }
-  /* Founder pass-3 §3/§11 (2026-08-01): percentage on the upper line, the
-     (won/total) fraction stacked directly beneath it in muted mono — NOT inline
-     beside it. Fixed-width side columns lock every left value to one left edge and
-     every right value to one right edge, so the column can't wander when a row has
-     no fraction (export: left min-width 56px flex-start, right min-width 56px
-     flex-end, centre label flex:1). §2: the value takes its player's identity
-     colour by name order — left #6aaeff, right #e7e9ee. */
-  :is(.modal-analysis,.pp-formsurface) .msheet-vals{ display:grid; grid-template-columns:minmax(56px,1fr) auto minmax(56px,1fr); align-items:start; margin-bottom:9px; }
-  :is(.modal-analysis,.pp-formsurface) .msheet-val{ display:flex; flex-direction:column; font-family:'IBM Plex Mono', monospace; font-size:16px; font-weight:600; font-variant-numeric:tabular-nums; color:var(--text); }
-  :is(.modal-analysis,.pp-formsurface) .msheet-val.p1{ align-items:flex-start; color:var(--fh-pa); }
-  :is(.modal-analysis,.pp-formsurface) .msheet-val.p2{ align-items:flex-end; color:var(--text); }
-  :is(.modal-analysis,.pp-formsurface) .msheet-pct{ line-height:1.12; }
-  :is(.modal-analysis,.pp-formsurface) .msheet-frac{ font-size:10.5px; color:var(--label); margin-top:1px; }
-  :is(.modal-analysis,.pp-formsurface) .msheet-label{ font-size:11px; font-weight:600; letter-spacing:0.06em; text-transform:uppercase; color:var(--label); text-align:center; padding:0 14px; white-space:nowrap; }
-  :is(.modal-analysis,.pp-formsurface) .msheet-na{ color:var(--label); font-size:12px; letter-spacing:0.03em; font-weight:500; cursor:help; }
-  /* Dominance Ratio headline — the single best one-number summary of who
-     controlled the match (return-points-won ratio). Two large tabular figures
-     in the fixed identity colours (A #6aaeff, B #e7e9ee), centred label between.
-     Not a bar row: it's a headline pair above the Service section. */
-  .modal-analysis .ms-dr{ display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:16px; background:var(--surface); border:var(--ma-hw,0.33px) solid var(--line); border-radius:11px; padding:14px 22px; margin:0 auto 18px; max-width:720px; }
-  .modal-analysis .ms-dr .ms-dr-val{ font-family:'IBM Plex Mono', monospace; font-size:30px; font-weight:700; line-height:1; font-variant-numeric:tabular-nums; }
-  .modal-analysis .ms-dr .ms-dr-val.p1{ color:var(--ma-t1); text-align:left; }
-  .modal-analysis .ms-dr .ms-dr-val.p2{ color:var(--text); text-align:right; }
-  .modal-analysis .ms-dr .ms-dr-mid{ display:flex; flex-direction:column; align-items:center; gap:3px; white-space:nowrap; }
-  .modal-analysis .ms-dr .ms-dr-title{ font-family:'IBM Plex Mono', monospace; font-size:10.5px; font-weight:700; letter-spacing:0.16em; text-transform:uppercase; color:var(--text-sub); }
-  .modal-analysis .ms-dr .ms-dr-sub{ font-family:'Hanken Grotesk', sans-serif; font-size:10px; letter-spacing:0.02em; color:var(--label); }
   /* Diverging bar: two tracks meeting at the centre. The left fill is anchored to
      the centre (justify-content:flex-end) and grows leftward, the right grows
      rightward, so each side's length reads as its share of the raw stat. Colour
@@ -1804,33 +1750,6 @@
   :is(.modal-analysis,.pp-formsurface) .msheet-bar .msheet-fill{ height:100%; border-radius:4px; display:block; }
   :is(.modal-analysis,.pp-formsurface) .msheet-bar .msheet-fill.p1{ background:var(--fh-pa); }
   :is(.modal-analysis,.pp-formsurface) .msheet-bar .msheet-fill.p2{ background:var(--fh-pb-solid); }
-  /* Banner above the stat sheet of a suspended match: these numbers are real but
-     frozen mid-match, so they must never be read as a completed box score. */
-  .modal-analysis .ms-suspended{ display:flex; flex-direction:column; gap:3px; border:var(--ma-hw,0.33px) solid var(--line); border-left:2px solid var(--label); border-radius:10px; background:var(--surface-inner); padding:9px 13px; margin-bottom:16px; font-size:12px; font-weight:600; letter-spacing:0.02em; color:var(--text-soft); }
-  .modal-analysis .ms-suspended span{ font-weight:400; font-size:11px; color:var(--text-faint); letter-spacing:0; }
-  /* (The green inset "Final · <score>" result banner and its CSS were removed:
-     the modal header's score row already carries the result, and green is
-     reserved for data quality, not match status.) */
-  /* Match Stats sub-tabs (Stats | Point by point) — Flashscore-style pill row */
-  /* Founder ruling REVERSED 2026-08-01 (§4 flag): the capsule is the control
-     TRACK, not a redundant card, so the box-in-box rule doesn't apply — put it
-     back. Both control rows sit on the recessed --mc-track (#0a0d13) with a
-     hairline border, per the spec (`#0a0d13 track on both control rows`). Active
-     segment = subtle rgba(91,155,255,.22) tint, inactive = transparent. */
-  .modal-analysis .ms-subtabs{ display:inline-flex; gap:4px; justify-content:center; width:max-content; max-width:100%; margin:0 auto 16px; background:var(--mc-track); border:var(--ma-hw,0.33px) solid var(--line); border-radius:8px; padding:3px; }
-  .modal-analysis .ms-subtabs-wrap{ display:flex; justify-content:center; }
-  /* width:auto + flex:0 0 auto + nowrap override the global `.modal button{width:100%}`
-     (same trap as .ms-setbtn below), which otherwise squeezes the pills against each
-     other and wraps "Point by point" onto two lines, spilling it out of the capsule. */
-  /* One segmented-control standard (export-measured, design-export mock `segMS`):
-     inactive is borderless/transparent #5b6880 at 600; active is a SUBTLE tint —
-     rgba(91,155,255,0.22) fill, rgba(91,155,255,0.45) border, #e7e9ee at 700 — never
-     a saturated solid-blue block. The set-scope row below uses the identical rule. */
-  .modal-analysis .ms-subtab{ font-family:'Hanken Grotesk', sans-serif; font-size:11.5px; font-weight:600; color:var(--label); background:none; border:1px solid transparent; padding:6px 12px; border-radius:6px; cursor:pointer; width:auto; flex:0 0 auto; white-space:nowrap; transition:background .15s ease, color .15s ease, border-color .15s ease; }
-  .modal-analysis .ms-subtab:hover{ color:var(--text-soft); }
-  .modal-analysis .ms-subtab.active{ color:var(--text); font-weight:700; background:var(--seg-active); border-color:var(--seg-active-line); }
-  .modal-analysis .ms-pane{ display:none; }
-  .modal-analysis .ms-pane.active{ display:block; }
   /* Scope selector — mono pills beneath the view toggle. Quieter than .ms-subtab
      (no accent fill) so the primary Stats/Point-by-point toggle stays dominant.
      width:auto + flex:0 0 auto override the global `.modal button{width:100%}`,
@@ -1851,12 +1770,6 @@
      Profile/Form set selector (.pp-formsurface) — scope the shrink to the modal so
      that surface keeps its size. Track radii view/scope 8; buttons radius 6. */
   .modal-analysis .ms-setbtn{ font-size:10.5px; padding:4px 10px; border-radius:6px; }
-  /* Match Stats — one 720px content cap governs both views (Stats / Point by point)
-     AND both control rows, so the stat sheet and the point log share the same
-     centred column width (README §Match Stats tab: "both standard segmented, centred
-     in a 720px cap"). 20px gap from the last control row to content is carried by the
-     control rows' own bottom margins above. */
-  .modal-analysis .ms-cap{ max-width:720px; margin:0 auto; }
   /* Point-by-point (Task 4) — Flashscore-style centered game/tiebreak layout */
   :is(.modal-analysis,.pp-formsurface) .pbp-wrap{ max-width:560px; margin:0 auto; }
   /* Set band + tiebreak band share the section-band treatment of the Stats view. */
@@ -12510,46 +12423,6 @@ function buildPointByPointHtml(m, entry, setNo){
   html += `</div>`;
   return html;
 }
-// Fill the Point-by-point pane (inside Match Stats) for the currently open
-// match, fetching the sidecar on first use. Guarded by the pane's matchId so a
-// fast re-open on a different match can't paint stale data.
-function ensurePointByPoint(){
-  const container = document.getElementById('msPbpPane');
-  if (!container || !_aPbpMatch) return;
-  const m = _aPbpMatch;
-  if (container.dataset.matchId === m.id && container.dataset.loaded === '1') return; // already painted
-  container.dataset.matchId = m.id;
-  container.dataset.loaded = '';
-  _aPbpEntry = null;
-  container.innerHTML = `<div class="acomingsoon">Loading point-by-point…</div>`;
-  loadPointByPoint().then(data => {
-    if (container.dataset.matchId !== m.id) return; // superseded by a newer open
-    const entry = data && data[pbpEventKey(m.id)];
-    _aPbpEntry = entry || null;
-    // The set filter comes from the point log itself (not m.setStats): the two
-    // are independent feeds, and a match can have a point log for a set whose
-    // box score is missing, or vice versa.
-    const setNos = (entry && Array.isArray(entry.sets))
-      ? entry.sets.map(s => Number(s.set)).filter(n => Number.isFinite(n)).sort((a, b) => a - b)
-      : [];
-    // Open on the first set rather than the whole match: one set is the unit a
-    // reader actually reads. null (= every set) only survives when there is no
-    // set data at all, where it resolves to the "no log on file" message.
-    const firstSet = setNos.length ? setNos[0] : null;
-    container.innerHTML = buildSetSelectorHtml(setNos, 'switchPbpSet', null)
-      + `<div id="msPbpBody">${buildPointByPointHtml(m, entry, firstSet)}</div>`;
-    container.dataset.loaded = '1';
-  });
-}
-// Repaint the point log for the chosen set from the already-fetched sidecar
-// entry — the set filter never triggers another fetch.
-function switchPbpSet(el, setNo){
-  const pane = document.getElementById('msPbpPane');
-  const body = document.getElementById('msPbpBody');
-  if (!pane || !body || !_aPbpMatch) return;
-  pane.querySelectorAll('.ms-setsel .ms-setbtn').forEach(b => b.classList.toggle('active', b === el));
-  body.innerHTML = buildPointByPointHtml(_aPbpMatch, _aPbpEntry, setNo);
-}
 // §5: ONE renderer drives both drill surfaces — a season-surface row and a
 // year-table cell both call this, rendering the same rich career-history match
 // list inline into their own container. Only one drill is open per player column
@@ -13341,7 +13214,7 @@ function formShortDate(d){
   return m ? `${m[3]}.${m[2]}` : (d || '');
 }
 // THE one diverging stat bar, shared by every match-detail surface: the modal
-// Match Stats sheet (msheetRowHtml) and all seven form-panel mounts
+// match-detail panels (the Match Stats tab is the shared sheet since TEN-338): all seven form-panel mounts
 // (formPanelStatRow). Fixed centre; Player A's fill is drawn from the centre
 // leftward, Player B's rightward, each by the popup's bar rule (fhStatBarWidth,
 // see msBarHtml). Colour is the player's identity (A #6a9af8 / B #ebf1f2, in
@@ -14421,7 +14294,7 @@ function fhEnsureStyles(){
   #fhSheet .aform-panel-meta{ display:none; }
   .fh-av{ display:block; width:56px; height:56px; }
   .fh-av img, .fh-av .avatar-fallback{ width:56px; height:56px; border-radius:50%; border:2px solid var(--line-open); box-sizing:border-box; object-fit:cover;
-    display:flex; align-items:center; justify-content:center; font-weight:800; font-size:17px; color:var(--text-soft); background:var(--surface-inner); }
+    display:flex; align-items:center; justify-content:center; font-family:'Hanken Grotesk',sans-serif; font-weight:800; font-size:17px; color:var(--text-soft); background:var(--surface-inner); }
   #fhSheet .aform-panel{ padding:0; background:transparent; max-width:720px; margin:0 auto; }
   #fhSheet .aform-panel-names{ font-size:11.5px; font-weight:700; margin-bottom:12px; }
   #fhSheet .aform-panel-names span:first-child{ color:var(--fh-pa); } #fhSheet .aform-panel-names span:last-child{ color:var(--fh-pb); }
@@ -15336,7 +15209,7 @@ function fhSheetHeadHtml(e, r, opts){
   const yy = String(r.date || '').slice(2, 4);
   const longDate = d => { const t = new Date(String(d).slice(0, 10) + 'T12:00:00Z'); return isNaN(t) ? null : t.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' }); };
   const dateTxt = !r.date ? null : o.inline ? longDate(r.date) : e.noYear ? fhDDMM(r.date) : fhDDMM(r.date) + (yy ? '.' + yy : '');
-  const meta = [r.tourn, r.surface || FH_DASHC, r.round, dateTxt].filter(x => x != null && x !== '').join(' · ');
+  const meta = [r.tourn, r.surface || FH_DASHC, r.round || FH_DASHC, dateTxt].filter(x => x != null && x !== '').join(' · ');   // DF L4859: four parts, a dash where one is missing
   const close = o.inline ? '' : `<span class="seg" onclick="fhCloseSheet()" style="background:var(--ma-s-ffffff-050-fill, var(--surface-inner)); border:var(--ma-hw,0.33px) solid var(--ma-s-ffffff-120, var(--line)); border-radius:8px; width:30px; height:30px; color:var(--ma-s-8b96b5, var(--text-sub)); font-size:15px; display:flex; align-items:center; justify-content:center; cursor:pointer; flex:none;">✕</span>`;
   return `<div style="display:flex; flex-direction:column; gap:18px;">
           <div style="display:flex; align-items:center; justify-content:space-between; gap:16px;">
@@ -15505,7 +15378,12 @@ function fhSheetModel(joined){
   const dr = [0, 1].map(i => (rpw[i].v != null && spw[i].v != null && spw[i].v < 100)
     ? { txt: (rpw[i].v / (100 - spw[i].v)).toFixed(2), title: 'Return points won ' + rpw[i].txt + ' ÷ (100 − service points won ' + spw[i].txt + ')' }
     : { txt: FH_DASHC, title: 'Needs service and return points won' });
-  const row = (label, cells, kind, k) => ({ label, a: cells[0], b: cells[1], kind, k });
+  // Winners ÷ unforced errors (DF maSheetFor L4272, Points won and Key stats): a number with its counts; 0 errors → "—".
+  const wue = [0, 1].map(i => { const w = win[i], u = ue[i];
+    return (w.v == null || u.v == null || !u.v) ? { v: null, txt: FH_DASHC, sub: '', title: u.v === 0 ? 'No unforced errors' : (w.title || u.title) }
+      : { v: w.v / u.v, txt: (w.v / u.v).toFixed(2), sub: '(' + w.v + '/' + u.v + ')', title: '' }; });
+  // TEN-338 (D2): every % in the sheet goes through the one gate, on its own count (fhGateCell).
+  const row = (label, cells, kind, k) => ({ label, a: kind === 'pct' ? fhGateCell(cells[0]) : cells[0], b: kind === 'pct' ? fhGateCell(cells[1]) : cells[1], kind, k });
   const sections = [
     { title: 'Service', rows: [
       row('Serve rating', sr, 'rating', FH_RATING_SCALE.serve), row('Aces', aces, 'count', FH_BAR_FLOOR.aces),
@@ -15516,17 +15394,30 @@ function fhSheetModel(joined){
       row('2nd return points won', r2, 'pct'), row('Break points converted', bpc, 'pct') ] },
     { title: 'Points won', rows: [
       row('Winners', win, 'count', FH_BAR_FLOOR.winners), row('Unforced errors', ue, 'count', FH_BAR_FLOOR.ue),
-      row('Net points won', net, 'pct'), row('Service points won', spw, 'pct'), row('Return points won', rpw, 'pct'), row('Pressure points', pr, 'pct'),
+      row('Winners / unforced errors', wue, 'ratio'), row('Net points won', net, 'pct'), row('Service points won', spw, 'pct'), row('Return points won', rpw, 'pct'), row('Pressure points', pr, 'pct'),
       row('Total points won', tpw, 'pct') ] },
   ];
   const partial = [win, ue, net].some(c => c[0].v == null || c[1].v == null);
-  return { dr, sections, partial, pr, bps, bpc };
+  const gated = sections.some(sec => sec.rows.some(r => r.a.gate || r.b.gate));
+  return { dr, sections, partial, gated, pr, bps, bpc, wue };
+}
+// TEN-338 (TEN-312 D2): a sheet rate on n < 5 shows its count, not a %; on n 5–9 it is greyed, with "small sample" on
+// hover and the footnote under the sheet (narrow cells: hover + footnote, not inline). n = the rate's own denominator.
+// A gated cell keeps won / total, so Pressure points and the ratings still read the counts.
+const MA_SHEET_GATE_NOTE = 'Grey: small sample (5–9). Under 5: the count only, no %.';
+function fhGateCell(c){
+  if (!c || !(c.total > 0)) return c;
+  const m = maGate(c.total).mode;
+  if (m === 'nopct') return Object.assign({}, c, { v: null, txt: c.won + '/' + c.total, sub: '', gate: m, title: 'n = ' + c.total + ': under 5, so the count only, no %' });
+  if (m === 'small') return Object.assign({}, c, { gate: m, title: (c.title ? c.title + ' · ' : '') + MA_SMALL_NOTE + ' · n=' + c.total });
+  return c;
 }
 function fhSheetRowHtml(s){
   const aW = fhStatBarWidth(s.kind, s.a.v, s.b.v, s.k), bW = fhStatBarWidth(s.kind, s.b.v, s.a.v, s.k);
-  const val = (c, col) => `<span style="${FH_MONO} font-size:15px; font-weight:700; color:${c.v == null ? FH_DASH : col};">${fhEsc(c.txt)}</span>`;
+  // gate (fhGateCell): small → grey value and bar · nopct → the count in the player's colour, no bar
+  const val = (c, col) => `<span${c.gate ? ` data-ma-gate="${c.gate}"` : ''} style="${FH_MONO} font-size:15px; font-weight:700; color:${c.gate === 'small' ? MA_GREY : c.v == null && !c.gate ? FH_DASH : col};">${fhEsc(c.txt)}</span>`;
   const sub = c => c.sub ? `<span style="${FH_MONO} font-size:10px; color:var(--ma-s-4b5672, var(--label));">${fhEsc(c.sub)}</span>` : '';
-  const fill = (w, col) => w == null ? '' : `<span class="fh-sbar" style="height:7px; width:${w.toFixed(1)}%; background:${col}; border-radius:4px;"></span>`;
+  const fill = (w, col, c) => w == null ? '' : `<span class="fh-sbar" style="height:7px; width:${w.toFixed(1)}%; background:${c && c.gate === 'small' ? MA_GREY : col}; border-radius:4px;"></span>`;
   return `<div class="fh-srow" style="display:flex; flex-direction:column; gap:6px;">
       <div style="display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:baseline; gap:12px;">
         <span${s.a.title ? ` title="${fhEsc(s.a.title)}"` : ''} style="display:flex; align-items:baseline; gap:7px;">${val(s.a, FH_AC)}${sub(s.a)}</span>
@@ -15534,8 +15425,8 @@ function fhSheetRowHtml(s){
         <span${s.b.title ? ` title="${fhEsc(s.b.title)}"` : ''} style="display:flex; align-items:baseline; gap:7px; justify-content:flex-end;">${sub(s.b)}${val(s.b, FH_BC)}</span>
       </div>
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
-        <span class="fh-shalf" style="display:flex; justify-content:flex-end; height:7px; background:var(--ma-s-ffffff-050-fill, var(--surface-inner)); border-radius:4px;">${fill(aW, FH_AC)}</span>
-        <span class="fh-shalf" style="display:flex; height:7px; background:var(--ma-s-ffffff-050-fill, var(--surface-inner)); border-radius:4px;">${fill(bW, 'var(--ma-s-ffffff-750, var(--fh-pb-half))')}</span>
+        <span class="fh-shalf" style="display:flex; justify-content:flex-end; height:7px; background:var(--ma-s-ffffff-050-fill, var(--surface-inner)); border-radius:4px;">${fill(aW, FH_AC, s.a)}</span>
+        <span class="fh-shalf" style="display:flex; height:7px; background:var(--ma-s-ffffff-050-fill, var(--surface-inner)); border-radius:4px;">${fill(bW, 'var(--ma-s-ffffff-750, var(--fh-pb-half))', s.b)}</span>
       </div>
     </div>`;
 }
@@ -15561,8 +15452,9 @@ function fhSheetStatsHtml(joined, emptyMsg){
   const secs = M.sections.map(sec => `<div style="display:flex; flex-direction:column; gap:13px;">${head(sec.title)}${sec.rows.map(fhSheetRowHtml).join('')}</div>`).join('');
   const note = !joined ? maSheetNaNote()
     : M.partial ? `<span style="font-size:10.5px; color:var(--label);">Winners, errors and net points: only where the feed sends them for the match.</span>` : '';
-  return dr + secs + note;
+  return dr + secs + note + (M.gated ? maSheetGateNote() : '');
 }
+const maSheetGateNote = () => `<span class="ma-sheet-gate" style="font-size:10.5px; color:var(--label);">${MA_SHEET_GATE_NOTE}</span>`;
 // Key stats (DF mkSheet `keySection`, the scope the sheet opens on): Dominance ratio, Serve rating, Return rating,
 // Winners / total points, Unforced errors / total points, Winners / unforced errors — each ratio with its counts.
 // Values come from the same model as the Match scope (fhSheetModel), so the two can never disagree. Bars follow the
@@ -15576,8 +15468,6 @@ function fhSheetKeyModel(joined){
   const tp = [tpw.a, tpw.b].map(c => c.total).find(t => t > 0) || null;
   const share = c => (c.v == null || !tp) ? { v: null, txt: FH_DASHC, sub: '', title: tp ? c.title : 'Needs the match\'s total points' }
     : { v: c.v / tp * 100, txt: (c.v / tp).toFixed(2), sub: '(' + c.v + '/' + tp + ')', title: '' };
-  const wue = (w, u) => (w.v == null || u.v == null || !u.v) ? { v: null, txt: FH_DASHC, sub: '', title: u.v === 0 ? 'No unforced errors' : (w.title || u.title) }
-    : { v: w.v / u.v, txt: (w.v / u.v).toFixed(2), sub: '(' + w.v + '/' + u.v + ')', title: '' };
   const drc = d => d.txt === FH_DASHC ? { v: null, txt: FH_DASHC, sub: '', title: d.title } : { v: Number(d.txt), txt: d.txt, sub: '', title: d.title };
   const row = (label, a, b, kind, k) => ({ label, a, b, kind, k });
   return [
@@ -15586,7 +15476,7 @@ function fhSheetKeyModel(joined){
     row('Return rating', rr.a, rr.b, 'rating', FH_RATING_SCALE.return),
     row('Winners / total points', share(win.a), share(win.b), 'pct'),
     row('Unforced errors / total points', share(ue.a), share(ue.b), 'pct'),
-    row('Winners / unforced errors', wue(win.a, ue.a), wue(win.b, ue.b), 'ratio'),
+    row('Winners / unforced errors', M.wue[0], M.wue[1], 'ratio'),
   ];
 }
 function fhSheetKeyHtml(joined){
@@ -15629,8 +15519,13 @@ function fhSheetRender(slot){
     else {
       const setNos = sh.sets.map(s => Number(s.set)).filter(Number.isFinite).sort((a, b) => a - b);
       const cur = setNos.includes(S.pbpSet) ? S.pbpSet : setNos[0];
-      body = (setNos.length > 1 ? fhSheetSeg(setNos.map(n => ({ label: 'Set ' + n, on: n === cur, onclick: `fhSheetPbpSet(${n},'${S.slot || 'pop'}')` })), 'pbp') : '')
-        + `<div class="fh-pbp">${buildPointByPointHtml({ p1: sh.p1, p2: sh.p2 }, sh, cur)}</div>`;
+      const st = sh.sets.find(s => Number(s.set) === cur);
+      // DESIGN GAP G16: the file's log has no name row; when the order can't be settled the feed's order stands, said once
+      const order = fhPbpAIsFirst(S.pbp, S) === null ? `<span class="ma-pbp-order" style="font-size:10.5px; color:var(--text-faint); text-align:center;">${fhEsc(MA_PBP_FEED_ORDER(sh.p1, sh.p2))}</span>` : '';
+      // DF L2150: the set tabs (always drawn, one per set) and the set's log in one 14px-gap column
+      body = `<div class="fh-pbp" style="display:flex; flex-direction:column; gap:14px;">`
+        + fhSheetSeg(setNos.map(n => ({ label: 'Set ' + n, on: n === cur, onclick: `fhSheetPbpSet(${n},'${S.slot || 'pop'}')` })), 'pbp') + order
+        + (st ? fhSheetPbpHtml(fhPbpSetModel(st)) : '') + `</div>`;
     }
   } else if (S.scope === 'match' || S.scope === 'key'){
     body = S.matchLoading ? `<div class="acomingsoon" style="padding:10px 0 2px;">Loading match stats…</div>`
@@ -15644,7 +15539,7 @@ function fhSheetRender(slot){
 // order (ruling 2026-09-24). The log stores every point and game score first-player-first, so
 // orienting it swaps server/winner and each "a - b". Who the feed's first player is: the per-set
 // box score's player keys first; else the set scores against the header's; else the names. When
-// none decides, the feed order stands and the log's own name row says who is where.
+// none decides, the feed order stands and the sheet says so under the set tabs (MA_PBP_FEED_ORDER, DESIGN GAP G16).
 function fhPbpFlip(sh){
   const sw = v => v === 'p1' ? 'p2' : v === 'p2' ? 'p1' : v;
   const fs = x => { const m = /^\s*(\S+)\s*-\s*(\S+)\s*$/.exec(String(x == null ? '' : x)); return m ? m[2] + ' - ' + m[1] : x; };
@@ -15675,6 +15570,61 @@ function fhPbpAIsFirst(sh, S){
   return null;
 }
 function fhPbpForA(sh, S){ return fhPbpAIsFirst(sh, S) === false ? fhPbpFlip(sh) : sh; }
+const MA_PBP_FEED_ORDER = (p1, p2) => `Point log in the feed's order: ${p1 || 'player 1'} left, ${p2 || 'player 2'} right.`;
+// TEN-338: one set of the point-by-point log in the design's shape (DF _fGen L4556–4590): the set caption, the games
+// (running set score, server, LOST SERVE, the point sequence with BP) and a tiebreak's points (running score, server,
+// a mini-break = LOST SERVE, SP while the leader is one point from the set — the file tags SP in the final set too). The set is
+// already oriented to player A (fhPbpForA). tools/ten338-match-stats-capture.mjs feeds this same model to the design file.
+function fhPbpSetModel(st){
+  const { real, tbPts } = pbpSplitSet(st);
+  const fin = real.length ? pbpParseScore(real[real.length - 1].score) : null;
+  const lastTb = tbPts.length ? tbPts[tbPts.length - 1] : null;
+  // Tiebreak length: a set with no games is a match tiebreak (10 points); otherwise a 10-point tiebreak shows itself when
+  // a score before its last point already had 7+ with a 2-point lead. (A final-set 10-pointer that stays close cannot be
+  // told from an extended 7-pointer by its scores alone: it is read as 7 points.)
+  const T = !lastTb ? 7 : (!real.length || tbPts.some((p, i) => i < tbPts.length - 1 && Math.max(p.a, p.b) >= 7 && Math.abs(p.a - p.b) >= 2)) ? 10 : 7;
+  const tbDone = !!lastTb && Math.max(lastTb.a, lastTb.b) >= T && Math.abs(lastTb.a - lastTb.b) >= 2;
+  // The caption's set score: the games; a finished tiebreak adds its game to the winner (6-6 → 7-6); a match tiebreak shows
+  // its points; an unfinished one (a retirement) keeps the games as they stood.
+  const setSc = !lastTb ? fin : !real.length ? [lastTb.a, lastTb.b] : !tbDone || !fin ? fin : lastTb.a > lastTb.b ? [fin[0] + 1, fin[1]] : [fin[0], fin[1] + 1];
+  const side = (p, w) => ({ serverA: p.server === 'p1', serverB: p.server === 'p2', aLost: p.server === 'p1' && w === 'p2', bLost: p.server === 'p2' && w === 'p1', aWon: w === 'p1', bWon: w === 'p2' });
+  const games = real.map(g => { const sc = pbpParseScore(g.score) || [null, null];
+    return Object.assign({ gA: sc[0], gB: sc[1], points: (g.points || []).map(p => ({ txt: String(p.s || '').replace(/\s*-\s*/, ':'), bp: !!p.bp })) }, side(g, g.winner)); });
+  let tb = null;
+  if (tbPts.length){
+    tb = { label: 'Tiebreak · Set ' + st.set, pts: tbPts.map(p => {
+      const hi = Math.max(p.a, p.b), lo = Math.min(p.a, p.b), over = hi >= T && hi - lo >= 2;
+      const sp = !over && p.a !== p.b && hi >= T - 1 && hi + 1 - lo >= 2;
+      return Object.assign({ a: p.a, b: p.b, spA: sp && p.a > p.b, spB: sp && p.b > p.a }, side(p, p.winner)); }) };
+  }
+  return { set: st.set, label: 'SET ' + st.set + (setSc ? ' · ' + setSc[0] + '-' + setSc[1] : ''), games, tb };
+}
+// The set's log as the file draws it (template L2150–2195). Tone marks who won each game / tiebreak point (the Match
+// Stats tone rule, modal-match-stats.md): the winner's figure primary, the other dim; never a hue.
+function fhSheetPbpHtml(M){
+  const hi = fhS('e7e9ee', '--text'), dim = fhS('5b6880', '--label'), mut = fhS('4b5672', '--label');
+  const ball = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="color:${mut};"><circle cx="12" cy="12" r="9"></circle><path d="M4 8a15 15 0 0116 0M4 16a15 15 0 0016 0"></path></svg>`;
+  const red = `color:${fhS('e0616f', '--negative')}; background:${fhS('e0616f-150', '--surface-inner')}; border:var(--ma-hw,0.33px) solid ${fhS('e0616f-300', '--negative')};`;
+  const lost = `<span style="${FH_MONO} font-size:9.5px; font-weight:700; letter-spacing:0.08em; ${red} border-radius:5px; padding:3px 8px; white-space:nowrap;">LOST SERVE</span>`;
+  const bp = `<span style="font-size:8.5px; font-weight:700; ${red} border-radius:4px; padding:1px 5px;">BP</span>`;
+  const sp = `<span style="font-size:8.5px; font-weight:700; color:${hi}; background:${fhS('ffffff-040', '--surface-inner')}; border:var(--ma-hw,0.33px) solid ${fhS('ffffff-090', '--line')}; border-radius:4px; padding:2px 6px;">SP</span>`;
+  const num = (v, c, fs) => `<span style="${FH_MONO} font-size:${fs}px; font-weight:700; color:${c};">${v == null ? FH_DASHC : v}</span>`;
+  const games = M.games.map(g => `<div class="ma-pbp-game" style="max-width:600px; margin:0 auto; padding:18px 4px; border-bottom:var(--ma-hw,0.33px) solid ${fhS('ffffff-070', '--line-soft')};">
+        <div style="display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:12px; margin-bottom:11px;">
+          <span style="display:flex; justify-content:flex-end; align-items:center; gap:8px;">${g.aLost ? lost : ''}${g.serverA ? ball : ''}</span>
+          <span style="display:flex; align-items:center; justify-content:center; gap:9px;">${num(g.gA, g.aWon ? hi : dim, 20)}<span style="color:${dim}; font-size:16px;">·</span>${num(g.gB, g.bWon ? hi : dim, 20)}</span>
+          <span style="display:flex; justify-content:flex-start; align-items:center; gap:8px;">${g.serverB ? ball : ''}${g.bLost ? lost : ''}</span>
+        </div>
+        <div style="display:flex; flex-wrap:wrap; gap:5px; justify-content:center; align-items:center;">${g.points.map(p => `<span style="display:inline-flex; align-items:center; gap:5px; ${FH_MONO} font-size:12.5px; color:${hi};">${fhEsc(p.txt)}${p.bp ? bp : ''}</span>`).join('')}</div>
+      </div>`).join('');
+  const tb = !M.tb ? '' : `<div class="ma-pbp-tbhead" style="background:${fhS('0a0d14', '--surface')}; border:var(--ma-hw,0.33px) solid ${fhS('ffffff-090', '--line')}; border-radius:9px; text-align:center; font-size:10px; letter-spacing:0.16em; color:${dim}; padding:9px; margin:12px 0 4px;">${fhEsc(M.tb.label)}</div>
+      <div style="display:flex; flex-direction:column;">${M.tb.pts.map(p => `<div class="ma-pbp-tb" style="display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:12px; padding:11px 4px; border-bottom:var(--ma-hw,0.33px) solid ${fhS('ffffff-050', '--line-soft')};">
+          <div style="display:flex; align-items:center; justify-content:flex-end; gap:8px;">${p.aLost ? lost : ''}${p.spA ? sp : ''}${p.serverA ? ball : ''}</div>
+          <div style="display:flex; align-items:center; justify-content:center; gap:9px;">${num(p.a, p.aWon ? hi : mut, 18)}<span style="color:${dim}; font-size:15px;">·</span>${num(p.b, p.bWon ? hi : mut, 18)}</div>
+          <div style="display:flex; align-items:center; justify-content:flex-start; gap:8px;">${p.serverB ? ball : ''}${p.spB ? sp : ''}${p.bLost ? lost : ''}</div>
+        </div>`).join('')}</div>`;
+  return `<div class="ma-pbp-set">${fhSheetSectionHead(M.label)}${games}${tb}</div>`;
+}
 function fhSheetScope(sc, slot){ const S = fhSheetBodyOf(slot); if (!S) return; S.scope = sc; if (sc === 'pbp') fhSheetLoadPbp(slot); fhSheetRender(slot); }
 function fhSheetPbpSet(n, slot){ const S = fhSheetBodyOf(slot); if (!S) return; S.pbpSet = n; fhSheetRender(slot); }
 function fhSheetLoadPbp(slot){
@@ -16525,136 +16475,6 @@ const MATCH_STAT_ORDER = [
   ]],
 ];
 
-// Stats the user always wants to SEE, even when the data source returns no
-// value for this particular match. Rather than silently dropping the row
-// (which reads as "we removed it"), we keep it and mark the cell with an em
-// dash "—" (the system's one no-data glyph; "N/A" appears nowhere). The
-// api-tennis feed does not carry Winners/Unforced Errors for every fixture.
-const MSHEET_ALWAYS_SHOW = new Set([
-  'Points:Winners',
-  'Points:Unforced errors',
-  'Points:Net points won',
-]);
-
-// Serve / Return Rating display labels. The ratings are the house formulas (house-ratings.js,
-// TEN-327) — our own sums of the ATP leaderboard components, NOT the ATP's published figure, so the
-// label must not imply parity with an official rating. This single const is the one place to rename.
-const SERVE_RATING_LABEL = 'Serve Rating';
-const RETURN_RATING_LABEL = 'Return Rating';
-
-// Modal Match Stats sheet layout (TEN-8, 2026-08-08). SEPARATE from
-// MATCH_STAT_ORDER (which the Form-tab inline panel still iterates, incl. its
-// `lowerBetter` 4th field) so this restructure — Serve/Return Rating rows, the
-// new "Points Won" group, Pressure Points — touches ONLY the modal sheet and
-// leaves the Form tab untouched. Rows keyed with a leading '@' are DERIVED
-// (computed in msheetDerived), not a direct feed key. Winners & Unforced Errors
-// MOVE here from the old "Points" group (not duplicated).
-const MSHEET_ORDER = [
-  ['service', 'Service', [
-    ['@serveRating', SERVE_RATING_LABEL, 'rating'],
-    ['Service:Aces', 'Aces', 'count'],
-    ['Service:Double Faults', 'Double Faults', 'count'],
-    ['Service:1st serve percentage', '1st Serve %', 'pct'],
-    ['Service:1st serve points won', '1st Serve Points Won', 'pct'],
-    ['Service:2nd serve points won', '2nd Serve Points Won', 'pct'],
-    ['Service:Break Points Saved', 'Break Points Saved', 'pct'],
-  ]],
-  ['return', 'Return', [
-    ['@returnRating', RETURN_RATING_LABEL, 'rating'],
-    ['Return:1st return points won', '1st Return Points Won', 'pct'],
-    ['Return:2nd return points won', '2nd Return Points Won', 'pct'],
-    ['Return:Break Points Converted', 'Break Points Converted', 'pct'],
-  ]],
-  ['pointswon', 'Points Won', [
-    ['Points:Winners', 'Winners', 'count'],
-    ['Points:Unforced errors', 'Unforced Errors', 'count'],
-    ['Points:Net points won', 'Net Points Won', 'pct'],
-    ['Points:Service Points Won', 'Service Points Won', 'pct'],
-    ['Points:Return Points Won', 'Return Points Won', 'pct'],
-    ['@pressure', 'Pressure Points', 'pressure'],
-    ['Points:Total Points Won', 'Total Points Won', 'pct'],
-  ]],
-];
-
-// Dominance Ratio: (A's return points won %) / (B's return points won %). The
-// two figures are reciprocal (multiply to 1). Undefined — dash both — if either
-// player's return points won % is missing or zero (no divide-by-zero).
-function msheetHouseRatings(a, b){
-  if (!a || !b) return { serve: [null, null], ret: [null, null] };
-  const M = fhSheetModel({ own: a, opp: b });
-  const r = v => v == null ? null : Math.round(v);
-  const sr = M.sections[0].rows[0], rr = M.sections[1].rows[0];
-  return { serve: [r(sr.a.v), r(sr.b.v)], ret: [r(rr.a.v), r(rr.b.v)] };
-}
-function msheetDerived(stats){
-  const d = { p1: {}, p2: {} };
-  // TEN-263 (ruling 2026-09-24): one Serve / Return rating across the product — the 6-part house
-  // sum (TEN-103, 2026-08-29) the Match stats popup uses, from the same function, so the same
-  // match shows the same number on both. 0 break-point chances → no Return rating (a dash).
-  const hr = msheetHouseRatings(stats.p1, stats.p2);
-  d.p1.serveRating  = hr.serve[0];  d.p2.serveRating  = hr.serve[1];
-  d.p1.returnRating = hr.ret[0];    d.p2.returnRating = hr.ret[1];
-  // Pressure points: the popup's one implementation (Michael's definition, 2026-09-24), one decimal
-  // with its count; a missing break-point row is a dash, never a 0.
-  const PM = fhSheetModel({ own: stats.p1, opp: stats.p2 }).pr;
-  const pv = c => c.v == null ? null : c.v.toFixed(1), praw = c => c.total != null ? { won: c.won, total: c.total } : null;
-  d.p1.pressurePct = pv(PM[0]); d.p1.pressureRaw = praw(PM[0]);
-  d.p2.pressurePct = pv(PM[1]); d.p2.pressureRaw = praw(PM[1]);
-  const ra = stats.p1['Points:Return Points Won'], rb = stats.p2['Points:Return Points Won'];
-  if (ra == null || rb == null || ra <= 0 || rb <= 0){ d.drP1 = null; d.drP2 = null; }
-  else { d.drP1 = Math.round((ra / rb) * 100) / 100; d.drP2 = Math.round((rb / ra) * 100) / 100; }
-  return d;
-}
-// Dominance Ratio headline pair, above the Service section. Two-decimal format
-// (1.22 / 0.82); em dash for both when undefined.
-function msheetDrHeadHtml(d){
-  const fmt = v => v == null ? '<span class="msheet-na" title="Undefined — a player won no return points">—</span>' : v.toFixed(2);
-  return `
-    <div class="ms-dr">
-      <div class="ms-dr-val p1">${fmt(d.drP1)}</div>
-      <div class="ms-dr-mid"><span class="ms-dr-title">Dominance Ratio</span></div>
-      <div class="ms-dr-val p2">${fmt(d.drP2)}</div>
-    </div>`;
-}
-
-// Grouped stat-sheet row. Founder pass-3 §3 (2026-08-01): the percentage sits on
-// the upper line in the player's identity colour, the real "(won/total)" fraction
-// stacked directly beneath it in muted mono — left-aligned on the left player,
-// right-aligned on the right, no inline hug and no placeholder when the fraction is
-// absent. The diverging bar beneath carries the comparison; its colour is the
-// player's side, never who is ahead.
-function msheetRowHtml(label, kind, p1Val, p2Val, p1Raw, p2Raw, alwaysShow, key){
-  if (p1Val == null && p2Val == null) {
-    if (!alwaysShow) return '';
-    // Data source didn't supply this stat for this match — keep the row so the
-    // user still sees it, but flag it honestly rather than dropping or faking it.
-    // No bar: there is no magnitude to draw, and a pair of empty tracks would
-    // read as a genuine 0-0 rather than as missing data.
-    const na = `<span class="msheet-na" title="Not provided by the data source for this match">—</span>`;
-    return `
-    <div class="msheet-row">
-      <div class="msheet-vals">
-        <span class="msheet-val p1"><span class="msheet-pct">${na}</span></span>
-        <span class="msheet-label">${label}</span>
-        <span class="msheet-val p2"><span class="msheet-pct">${na}</span></span>
-      </div>
-    </div>
-  `;
-  }
-  const frac = (raw) => (raw && raw.total > 0) ? `<span class="msheet-frac">(${raw.won}/${raw.total})</span>` : '';
-  const num = (v) => v == null ? '—' : (kind === 'pct' ? `${v}%` : String(v));
-  return `
-    <div class="msheet-row">
-      <div class="msheet-vals">
-        <span class="msheet-val p1"><span class="msheet-pct">${num(p1Val)}</span>${frac(p1Raw)}</span>
-        <span class="msheet-label">${label}</span>
-        <span class="msheet-val p2"><span class="msheet-pct">${num(p2Val)}</span>${frac(p2Raw)}</span>
-      </div>
-      ${msBarHtml(p1Val, p2Val, kind, key || label)}
-    </div>
-  `;
-}
-
 // Hide the modal's own result bar while the Match Stats panel is showing its
 // inset copy, otherwise the same sentence renders twice inches apart. Every
 // other tab still gets the bar. _aLiveBarOn is what openAnalysisModal decided
@@ -16794,40 +16614,6 @@ function buildNewsSection(m){
   return wrap((showA ? aNewsGroupHtml('p1', m.p1, aArts, total) : '') + (showB ? aNewsGroupHtml('p2', m.p2, bArts, total) : '') + viewAll(' margin-top:2px;'));
 }
 
-// §2 Score header (completed only) — the Flashscore-style panel that opens the
-// Match Stats tab. Founder ruling A (2026-08-01): the completed-match score header
-// RELOCATES here from the modal shell (shell → tab); the shell keeps only the title,
-// fixture line and close. avatars + names + sets + per-set line + FINISHED. Names
-// are both primary text (ruling B); outcome is never cued on the header names.
-function buildMsScoreHead(m){
-  const fs = m.finalScore;
-  if (!fs) return '';   // completed only — upcoming/live/interrupted have no §2 panel
-  const bigSets = (fs.p1Sets != null && fs.p2Sets != null) ? `${fs.p1Sets}–${fs.p2Sets}` : '';
-  const sets = Array.isArray(fs.sets) ? fs.sets : [];
-  const perSet = sets.length
-    ? sets.map(s => `${s.p1}-${s.p2}`).join(', ')
-    : (fs.display || '');
-  let dateStr = '';
-  if (m.date){ const d = new Date(m.date + 'T00:00:00'); if (!isNaN(d)) dateStr = `${formatShortDate(d)} ${d.getFullYear()}`; }
-  return `
-    <div class="ms-scorehead">
-      <div class="msh-side">
-        <span class="msh-av a">${playerAvatarHtml(m.p1PhotoUrl, m.p1, m.p1Key)}</span>
-        <span class="msh-name"${profileLinkAttrs(m.p1Key, m.p1)}>${escapeHtml(m.p1)}</span>
-      </div>
-      <div class="msh-center">
-        ${dateStr ? `<div class="msh-date">${escapeHtml(dateStr)}</div>` : ''}
-        ${bigSets ? `<div class="msh-sets">${escapeHtml(bigSets)}</div>` : ''}
-        ${perSet ? `<div class="msh-perset">${escapeHtml(perSet)}</div>` : ''}
-        <div class="msh-status">Finished</div>
-      </div>
-      <div class="msh-side right">
-        <span class="msh-av b">${playerAvatarHtml(m.p2PhotoUrl, m.p2, m.p2Key)}</span>
-        <span class="msh-name"${profileLinkAttrs(m.p2Key, m.p2)}>${escapeHtml(m.p2)}</span>
-      </div>
-    </div>
-  `;
-}
 // The board match as a sheet entry: header from the match's own data (names, keys, sets, winner, closing price
 // as the card shows it), its inline box score oriented p1 → A, and the event key for the per-set / point-by-point
 // shards. Oriented exactly like the header (p1 = A).
@@ -16841,12 +16627,12 @@ function maMsSheetEntry(m){
   const close = w => { const v = typeof _mcCloseOf === 'function' ? Number(_mcCloseOf(m, w)) : NaN; return v > 1 ? v : null; };
   return { e: { aName: m.p1, aKey: m.p1Key, bName: m.p2, bKey: m.p2Key },
     r: { ek: String(eventKeyOfMatch(m) || ''), sets, pS, oS, won, ret: !!m.retired, wo: !!m.walkover, price: close('p1'), oppPrice: close('p2'),
-      tourn: m.tour, surface: m.surface, round: h2hRoundLabel(m.tournamentRound), date: m.date,
+      tourn: m.tour, surface: fhSurfName(m.surface), round: h2hRoundLabel(m.tournamentRound), date: m.date,
       inline: { match: j(m.matchStats), sets: setJ && Object.keys(setJ).length ? setJ : null } } };
 }
 function maMsSheetHtml(m){
   const { e, r } = maMsSheetEntry(m);
-  return `<div class="ma-ms-sheet" style="max-width:760px; margin:0 auto; background:var(--surface); border:var(--ma-hw,0.33px) solid var(--line); border-radius:14px; padding:22px 24px 26px; display:flex; flex-direction:column; gap:16px; font-family:'Hanken Grotesk',sans-serif; color:var(--text); line-height:normal;">
+  return `<div class="ma-ms-sheet" style="max-width:760px; margin:0 auto; background:${fhS('0a0d14', '--surface')}; border:var(--ma-hw,0.33px) solid ${fhS('ffffff-090', '--line')}; border-radius:14px; padding:22px 24px 26px; display:flex; flex-direction:column; gap:16px; font-family:'Hanken Grotesk',sans-serif; color:var(--text); line-height:normal;">
       ${fhSheetHeadHtml(e, r, { inline: true })}
       <div id="maMsSheetBody" class="fh-sheet-body" style="display:flex; flex-direction:column; gap:16px;"></div>
     </div>`;
@@ -16864,7 +16650,18 @@ function buildMatchStatsSection(m){
   // TEN-314: a finished (or suspended) match shows THE match stats sheet, inline (README §5.6: no overlay, no ✕,
   // no set chips, 9% white outline, max 760 centred, opens on Key stats). maMsSheetInit fills it once painted.
   if (hasPointLog) return maMsSheetHtml(m);
-  return buildMatchStatsSheet(m, null);   // upcoming / live: no finished box score to show
+  return maMsNotPlayedHtml(!!m.live);   // upcoming / live: no finished box score to show
+}
+// TEN-338: an uncompleted match (DF L2079–2084, `msNotCompleted`): the chart tile, "Match not played yet" and the file's
+// line. The file draws no live state: a live match gets the same block with an honest title — DESIGN GAP G15.
+const MA_MS_NOT_PLAYED = 'Match not played yet', MA_MS_IN_PLAY = 'Match in progress';
+const MA_MS_NOT_PLAYED_SUB = 'Full match statistics and the point-by-point breakdown appear here once the match is completed.';
+function maMsNotPlayedHtml(live){
+  return `<div class="ma-ms-notplayed" style="height:100%; min-height:340px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:12px; text-align:center; font-family:'Hanken Grotesk',sans-serif; color:${fhS('e7e9ee', '--text')}; line-height:normal;">
+      <span style="width:52px; height:52px; border-radius:14px; background:${fhS('5b9bff-100', '--seg-active')}; border:var(--ma-hw,0.33px) solid ${fhS('5b9bff-220-line', '--seg-active-line')}; display:flex; align-items:center; justify-content:center; color:${fhS('5b9bff', '--link')};"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M5 20V10M12 20V4M19 20v-7"></path></svg></span>
+      <div style="font-size:17px; font-weight:700;">${live ? MA_MS_IN_PLAY : MA_MS_NOT_PLAYED}</div>
+      <div style="font-size:13px; color:${fhS('5b6880', '--label')}; max-width:340px; line-height:1.55;">${MA_MS_NOT_PLAYED_SUB}</div>
+    </div>`;
 }
 // Shared set-scope pill row for both panes: an optional "<allLabel>" pill plus
 // one per set that actually has data. Rendered only when there are 2+ sets to
@@ -16889,125 +16686,6 @@ function buildSetSelectorHtml(setNos, handler, allLabel){
     </div>
   `;
 }
-// Repaint the stat sheet for the chosen set. Reads the already-loaded match
-// object — no refetch, the per-set box scores ship inline with the match.
-function switchStatsSet(el, setNo){
-  const pane = document.getElementById('msStatsPane');
-  const sheet = document.getElementById('msStatsSheet');
-  if (!pane || !sheet || !_aPbpMatch) return;
-  pane.querySelectorAll('.ms-setsel .ms-setbtn').forEach(b => b.classList.toggle('active', b === el));
-  sheet.innerHTML = buildMatchStatsSheet(_aPbpMatch, setNo);
-}
-function switchMatchStatsTab(el, which){
-  document.querySelectorAll('.modal-analysis .ms-subtab').forEach(b => b.classList.toggle('active', b === el));
-  const statsPane = document.getElementById('msStatsPane');
-  const pbpPane = document.getElementById('msPbpPane');
-  if (!statsPane || !pbpPane) return;
-  statsPane.classList.toggle('active', which === 'stats');
-  pbpPane.classList.toggle('active', which === 'pbp');
-  if (which === 'pbp') ensurePointByPoint();   // lazy-load the sidecar on first open
-}
-// Set numbers (ascending) with a real per-set box score on file, or [] when the
-// feed carried no per-set rows for this match. Drives whether the set filter is
-// offered at all — a match with no set-level data shows no selector rather than
-// an empty one.
-function msheetSetNumbers(m){
-  // No match sheet means the pane is showing a "no stats"/"not finished yet"
-  // message, so a set filter over it would be offering to filter nothing.
-  if (!m.setStats || !m.matchStats) return [];
-  return Object.keys(m.setStats)
-    .map(Number)
-    .filter(n => Number.isFinite(n) && n >= 1)
-    .sort((a, b) => a - b);
-}
-// `setNo` null = whole match (the default view, unchanged); a number = that
-// set's own box score, read from the same-shaped m.setStats[n] entry.
-function buildMatchStatsSheet(m, setNo){
-  // An interrupted match is the one case with real stats but no result: the feed
-  // returns the full statistics block up to the moment play stopped. Show it,
-  // flagged as a snapshot — everything else still waits for a final score.
-  if (m.live || (!m.finalScore && !m.interrupted)) {
-    return `<div class="acomingsoon">Box score isn't available until the match finishes.</div>`;
-  }
-  if (!m.matchStats) {
-    return `<div class="acomingsoon">No match statistics on file for this match.</div>`;
-  }
-  const stats = setNo == null ? m.matchStats : (m.setStats || {})[String(setNo)];
-  if (!stats) {
-    return `<div class="acomingsoon">No statistics on file for set ${escapeHtml(String(setNo))} of this match.</div>`;
-  }
-  const suspendedNote = m.interrupted
-    ? `<div class="ms-suspended">Stats at interruption · Match suspended<span>These are the numbers at the moment play stopped. They stay frozen until the match resumes.</span></div>`
-    : '';
-  const derived = msheetDerived(stats);
-  const groups = MSHEET_ORDER.map(([, groupLabel, rows]) => {
-    const rowsHtml = rows
-      .map(([key, label, kind]) => {
-        // Derived rows (leading '@') are computed client-side from real feed
-        // components, always shown (dash when an input is missing). Ratings are
-        // plain integers (no raw fraction); Pressure Points carries its own
-        // numerator/denominator fraction (e.g. "9/18").
-        if (key === '@serveRating')
-          return msheetRowHtml(label, 'rating', derived.p1.serveRating, derived.p2.serveRating, null, null, true, 'serve');
-        if (key === '@returnRating')
-          return msheetRowHtml(label, 'rating', derived.p1.returnRating, derived.p2.returnRating, null, null, true, 'return');
-        if (key === '@pressure')
-          return msheetRowHtml(label, 'pct', derived.p1.pressurePct, derived.p2.pressurePct, derived.p1.pressureRaw, derived.p2.pressureRaw, true);
-        // Show the fraction wherever the feed carried real won/total counts —
-        // it never derives one from the percentage, so a row without raw counts
-        // (Aces, 1st Serve %) simply shows the value alone.
-        const p1Raw = stats.p1.raw ? stats.p1.raw[key] : null;
-        const p2Raw = stats.p2.raw ? stats.p2.raw[key] : null;
-        const alwaysShow = MSHEET_ALWAYS_SHOW.has(key);
-        return msheetRowHtml(label, kind, stats.p1[key], stats.p2[key], p1Raw, p2Raw, alwaysShow, key);
-      })
-      .filter(Boolean)
-      .join('');
-    if (!rowsHtml) return '';
-    return `<div class="msheet-grouphead">${groupLabel}</div>${rowsHtml}`;
-  }).filter(Boolean).join('');
-  // Score shown beside the title: the final score, or for a suspended match the
-  // partial score. Read defensively — an interrupted match reaches this function
-  // with finalScore null by design, so `m.finalScore.display` would throw and
-  // blank the entire sheet. When one set is selected, show that set's own score
-  // instead of the match score, so the header can never contradict the numbers
-  // beneath it (the score array is 0-indexed; sets are 1-indexed).
-  // Export header anatomy — ONE structure in every state (founder pass-3 §7,
-  // 2026-08-01): the full-match sets line, the set-by-set score line, then the
-  // "Stat comparison" label LAST. The scope selector changes the stats below; it
-  // never restructures the header. This matches the export, whose sets/score lines
-  // are scope-independent — earlier the per-set view dropped the score line and
-  // swapped the big line to a single set's score, which read as a second anatomy.
-  // Ruling REVERSED 2026-08-01 (§7 flag): drop the `· Set N` suffix — the active
-  // segment in the scope row above already states the scope, so echoing it in the
-  // label was redundant. The label matches the export: plain "Stat comparison".
-  const score = m.finalScore || m.partialScore || {};
-  const bigLine = (score.p1Sets != null && score.p2Sets != null) ? `${score.p1Sets}–${score.p2Sets}` : '';
-  const scoreLine = score.display || '';
-  const headLabel = 'Stat comparison';
-  // Founder ruling A (2026-08-01): for a COMPLETED match the §2 score panel at the
-  // top of the tab (buildMsScoreHead) now carries the sets + per-set line, so the
-  // stat sheet shows ONLY the "STAT COMPARISON" caption (§6) — no second score copy.
-  // An INTERRUPTED match has no §2 panel (result is provisional), so it keeps the
-  // inline sets/score line here as its sole in-tab score.
-  const statHeader = m.finalScore
-    ? `<div class="msheet-head"><div class="msheet-label">${escapeHtml(headLabel)}</div></div>`
-    : ((bigLine || scoreLine) ? `
-    <div class="msheet-head">
-      ${bigLine ? `<div class="msheet-setsbig">${escapeHtml(bigLine)}</div>` : ''}
-      ${scoreLine ? `<div class="msheet-scoreline">${escapeHtml(scoreLine)}</div>` : ''}
-      <div class="msheet-label">${escapeHtml(headLabel)}</div>
-    </div>
-  ` : `<div class="msheet-head"><div class="msheet-label">${escapeHtml(headLabel)}</div></div>`);
-  return `
-    ${suspendedNote}
-    <div class="msheet-names"><span class="p1"><span class="mstat-dot p1"></span>${m.p1}</span><span class="p2">${m.p2}<span class="mstat-dot p2"></span></span></div>
-    ${statHeader}
-    ${groups ? msheetDrHeadHtml(derived) : ''}
-    ${groups || '<div class="acomingsoon">No comparable stats on file for this match.</div>'}
-  `;
-}
-
 // Key factors — condensed aggregator pulling already-computed headline
 // numbers from every other tab. Deliberately does NOT recompute anything
 // itself (no duplicate logic): every value here is read straight off the
@@ -17123,11 +16801,9 @@ function unavailableKeyCardHtml(iconSvg, title, subtitle){
 const AODDS_WARN_ICON = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;"><path d="M12 3 2 20h20L12 3Z"></path><path d="M12 10v5"></path><circle cx="12" cy="18" r="0.8" fill="currentColor"></circle></svg>`;
 
 let _aOdds = { m:null, novig:false, market:'Match Winner', mv:null };
-let _aPbpMatch = null; // match whose Match Stats section is currently open (Task 4; also backs the Task 9 set filter on both panes)
 let _aFormMatch = null; // match the modal is currently showing — guards the async recent-form repaint against a modal reopened on another match meanwhile
 let _aLiveBarOn = false;      // whether the open match warrants #aLiveBar at all
 let _aMsInsetBanner = false;  // whether Match Stats draws its own inset banner (TEN-21)
-let _aPbpEntry = null; // that match's already-fetched point log, kept so the Task 9 set filter can repaint without refetching
 
 function escapeHtml(s){ return String(s==null?'':s).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 
@@ -19742,7 +19418,7 @@ function openAnalysisModal(matchId, tab){
   fhCloseSheet(); _maMsSheet = null;                        // no sheet carries over from the previous match
   for (const k in _maRowReg) delete _maRowReg[k];
   document.querySelectorAll('.modal-analysis .asection').forEach(s => { s.innerHTML = ''; });
-  _aStyleMatch = m; _aPbpMatch = m; _aFormMatch = m; _aWxMatch = m; _aNewsMatch = m; _aNewsFilter = 'all'; _aNewsOpen = '';
+  _aStyleMatch = m; _aFormMatch = m; _aWxMatch = m; _aNewsMatch = m; _aNewsFilter = 'all'; _aNewsOpen = '';
   _me = null;
   const mePopEl = document.getElementById('mePop'); if (mePopEl) mePopEl.innerHTML = '';
   _aOdds = { m:m, novig:false, market:'Match Winner', mv:null };

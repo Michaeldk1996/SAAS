@@ -112,7 +112,7 @@ test('header: the meta date follows the design per source (Form DD.MM · lists D
 test('the Match Stats tab renders THE sheet inline for a finished match, filled from the match\'s own box score', () => {
   assert.match(slice('buildMatchStatsSection'), /if \(hasPointLog\) return maMsSheetHtml\(m\);/);
   assert.match(html, /  matchstats\(m\)\{ aPaint\('aSectionMatchStats', buildMatchStatsSection\(m\)\); maMsSheetInit\(m\); \},/);
-  const entry = new Function('eventKeyOfMatch', 'h2hRoundLabel', '_mcCloseOf', `${slice('maMsSheetEntry')}; return maMsSheetEntry;`)(
+  const entry = new Function('eventKeyOfMatch', 'h2hRoundLabel', '_mcCloseOf', `${slice('fhSurfName')}; ${slice('maMsSheetEntry')}; return maMsSheetEntry;`)(
     () => 99, x => x, (m, w) => (w === 'p1' ? 1.54 : 2.62));
   const E = entry({ p1: 'A', p1Key: 1, p2: 'B', p2Key: 2, tour: 'ATP X', finalScore: { sets: [{ p1: 6, p2: 4 }, { p1: 6, p2: 3 }], p1Sets: 2, p2Sets: 0, winner: 'p1' },
     matchStats: { p1: { 'Service:Aces': 3 }, p2: { 'Service:Aces': 9 } }, setStats: { 1: { p1: { a: 1 }, p2: { a: 2 } } } });

@@ -47,7 +47,7 @@ function loadHR(src) {
   return w.HouseRatings;
 }
 function loadDash(src, HR) {
-  const code = `const FH_DASHC = '—';\n` +
+  const code = `const FH_DASHC = '—';\nconst MA_SMALL_NOTE = 'small sample';\n` + sliceFn(src, 'tourxSampleGate') + '\n' + sliceFn(src, 'maGate') + '\n' +
     between(src, 'const FH_BAR_FLOOR', 'function fhSheetRowHtml(') + '\n' +
     sliceFn(src, 'tourxDerivedMetrics') + '\nreturn { fhSheetModel, tourxDerivedMetrics };';
   return new Function('HouseRatings', code)(HR);
@@ -266,7 +266,7 @@ const MUTANTS = [
   ['PP: Return rating from the wrong side', 'pp', "return row.derived === 'serveRating' ? hr.serve.v : hr.ret.v;", "return row.derived === 'serveRating' ? hr.serve.v : H.fromBoxSide(theirs).ret.v;"],
   ['DB: RGW% reads return points won again', 'dash', "{h:'RGW%', full:'% return games won', k:'return.breakPct',", "{h:'RGW%', full:'% return points won', k:'return.rptWonPct',"],
   ['page: the helper script tag dropped', 'dash', '<script src="./house-ratings.js"></script>', ''],
-  ['dead code: msheetRatingSum back', 'dash', 'function msheetHouseRatings(a, b){', 'function msheetRatingSum(p, keys){ return 0; }\nfunction msheetHouseRatings(a, b){'],
+  ['dead code: msheetRatingSum back', 'dash', 'function fhSheetModel(joined){', 'function msheetRatingSum(p, keys){ return 0; }\nfunction fhSheetModel(joined){'],
 ];
   MUTANTS.push(
   ['model: the switch rolled back to legacy', 'cfg', "const EDGE_RATING_FORMULA = 'house';", "const EDGE_RATING_FORMULA = 'legacy';"],

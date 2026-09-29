@@ -1143,7 +1143,8 @@ test('popup Pressure points (Michael 2026-09-24): saved + converted ÷ all break
   const pr = M.sections[2].rows.find(r => r.label === 'Pressure points');
   const bps = M.sections[0].rows.find(r => r.label === 'Break points saved'), bpc = M.sections[1].rows.find(r => r.label === 'Break points converted');
   assert.equal(pr.a.won, bps.a.won + bpc.a.won); assert.equal(pr.a.total, bps.a.total + bpc.a.total);
-  assert.deepEqual([pr.a.txt, pr.a.sub, pr.a.title], [(6 / 7 * 100).toFixed(1) + '%', '(6/7)', 'Break points saved + converted ÷ all break points played']);
+  // n = 7 is a small sample (TEN-338, D2 gate): the rate stays, greyed, and the tooltip keeps the definition + the note
+  assert.deepEqual([pr.a.txt, pr.a.sub, pr.a.title, pr.a.gate], [(6 / 7 * 100).toFixed(1) + '%', '(6/7)', 'Break points saved + converted ÷ all break points played · small sample · n=7', 'small']);
   // No break point faced, one chance converted: the 0/0 side adds nothing to either count.
   const x = SIDE({ 'Service:Break Points Saved': null }); delete x.raw['Service:Break Points Saved'];
   const M2 = S.fhSheetModel({ own: x, opp: SIDE() }).sections[2].rows.find(r => r.label === 'Pressure points');
@@ -1174,15 +1175,12 @@ test('point-by-point follows the header (player A left), not the feed order: a r
   assert.equal(f.fhPbpAIsFirst(feed, { aName: 'X. Smith', bName: 'Y. Jones' }), null, 'undecidable: the feed order stands (its name row says who is where)');
 });
 test('the Match Stats tab shows the same Serve / Return rating as the popup (6-part house sum, one function)', () => {
+  // TEN-338: the tab IS the popup's sheet (fhSheetInit slot 'tab'): one model, no second stat-sheet path left to disagree
   const H = readFileSync(join(HERE, 'bsp-consult-dashboard.html'), 'utf8');
-  assert.match(slice('msheetDerived'), /msheetHouseRatings\(stats\.p1, stats\.p2\)/);
-  assert.match(slice('msheetHouseRatings'), /fhSheetModel\(\{ own: a, opp: b \}\)/);
-  assert.ok(!/msheetRatingSum\(stats/.test(slice('msheetDerived')), 'the 4-part sum is no longer used');
-  const mh = new Function('fhSheetModel', slice('msheetHouseRatings') + '; return msheetHouseRatings;')(S.fhSheetModel);
-  const want = Math.round(S.fhSheetModel({ own: SIDE(), opp: SIDE() }).sections[0].rows[0].a.v);
-  assert.equal(mh(SIDE(), SIDE()).serve[0], want);
+  assert.match(slice('maMsSheetInit'), /fhSheetInit\(e, r, 'tab'\)/);
+  assert.ok(!/function (msheetDerived|msheetHouseRatings|buildMatchStatsSheet)\(/.test(H), 'the old Match Stats sheet model is deleted');
   const noBp = SIDE({ 'Return:Break Points Converted': null }); delete noBp.raw['Return:Break Points Converted'];
-  assert.equal(mh(noBp, SIDE()).ret[0], null, '0 break-point chances → no Return rating, same as the popup');
+  assert.equal(S.fhSheetModel({ own: noBp, opp: SIDE() }).sections[1].rows[0].a.v, null, '0 break-point chances → no Return rating');
 });
 test('every match-detail panel draws the popup\'s bar rule (msBarHtml → fhStatBarWidth)', () => {
   const src = slice('msBarHtml') + slice('msBarFloor') + slice('msBarScale');
@@ -1193,7 +1191,7 @@ test('every match-detail panel draws the popup\'s bar rule (msBarHtml → fhStat
   assert.deepEqual(w(bar(50, 90, 'pct')), ['p1:50.0', 'p2:90.0'], 'rates are absolute');
   assert.deepEqual(w(bar(40, 12, 'count', 'Points:Winners')), ['p1:45.0', 'p2:13.5'], 'winners floor 80');
   assert.deepEqual(w(bar(290, 350, 'rating', 'serve')), ['p1:65.3', 'p2:78.8'], 'serve scale 400, 90% cap');
-  for (const call of ['msBarHtml(ownVal, oppVal, kind, key || label)', 'msBarHtml(p1Val, p2Val, kind, key || label)'])
+  for (const call of ['msBarHtml(ownVal, oppVal, kind, key || label)'])   // TEN-338: the tab's old msheetRowHtml call is deleted with it
     assert.ok(readFileSync(join(HERE, 'bsp-consult-dashboard.html'), 'utf8').includes(call), call);
 });
 test('price range: fewer than 3 priced meetings shows its count as a chip (n=2 like n=1)', () => {
@@ -1223,7 +1221,7 @@ test('review fixes: pbp never flips on a key that matches neither player; expand
   assert.equal(f.fhPbpAIsFirst(feed, { aKey: 566, feedP1Key: '2841', feedP2Key: '999', aName: 'X. One', bName: 'Y. Two' }), null, 'and never a confident flip from a stray key');
   assert.match(slice('switchFormPbpSet'), /formPbpHtml\(idPrefix, shard, setNo\)/);
   assert.match(slice('formPbpHtml'), /fhPbpForA\(shard, S\)/);
-  assert.match(slice('msheetDerived'), /fhSheetModel\(\{ own: stats\.p1, opp: stats\.p2 \}\)\.pr/);
+  assert.match(slice('maMsSheetInit'), /fhSheetInit\(e, r, 'tab'\)/, 'Match Stats pressure = the popup\'s: the tab is the same sheet (TEN-338)');
 });
 test('Live modal: untracked winners/UE (all 0 over 10+ points) are dashes, a real early 0-0 stays', () => {
   const H = readFileSync(join(HERE, 'bsp-consult-dashboard.html'), 'utf8');
