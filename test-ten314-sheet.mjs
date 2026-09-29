@@ -125,8 +125,8 @@ test('the Match Stats tab renders THE sheet inline for a finished match, filled 
 // Mutation: put back meSheetOk (Market edge rows without stats on file stop opening), or drop the row opener from
 // the Overview drill / Tournament / Playing-style rows.
 test('every match row opens the sheet: Market edge rows unconditionally; Overview, Tournament and Playing style through maRowOnclick', () => {
-  const me = slice('meRowsHtml');
-  assert.ok(me.includes(`onclick="meOpenRow('\${r.mid}')"`) && !/meSheetOk|\? ` onclick/.test(me));
+  const me = slice('meRowOf');   // TEN-336: the Market edge pop-up rows are maMatchRowsHtml rows; meRowOf hands each its opener
+  assert.ok(me.includes(`click: \` onclick="meOpenRow('\${r.mid}')"\``) && !/meSheetOk|\? ` onclick/.test(me));
   assert.ok(!html.includes('function meSheetOk('), 'the stats-on-file gate is gone');
   assert.match(slice('showOverviewMatches'), /const click = maRowOnclick\(\{ key: playerKey,/);
   assert.match(slice('atournMatchRowHtml'), /const click = maRowOnclick\(\{ key: opts\.playerKey,/);

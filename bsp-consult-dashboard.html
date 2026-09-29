@@ -13825,7 +13825,7 @@ function maPopFrame(o){
     + `<div class="ma-pop ma-sigin${c ? ' ' + c : ''}" role="dialog" aria-modal="true" style="position:relative; width:100%; max-width:${o.maxWidth || 900}px; background:${o.bg || 'var(--ma-s-0e1019, var(--surface))'}; border:1.25px solid ${o.line || 'var(--ma-s-ffffff-080, var(--line))'}; border-radius:14px; padding:20px 22px 14px; display:flex; flex-direction:column; gap:16px;">`
     + `<div style="display:flex; align-items:flex-start; justify-content:space-between; gap:16px;"><div style="display:flex; flex-direction:column; gap:5px; min-width:0;"><span style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;"><span class="ma-pop-title${c ? ' ' + c + '-title' : ''}" style="font-size:17px; font-weight:800; letter-spacing:-0.01em;">${esc(o.title)}</span>${o.chip || ''}</span><span class="ma-pop-sub${c ? ' ' + c + '-sub' : ''}" style="${mono} font-size:10.5px; color:var(--ma-s-5b6880, var(--label));">${esc(o.sub)}</span></div>`
     + `<span class="seg ma-pop-x${o.xCls ? ' ' + o.xCls : ''}" role="button" aria-label="Close" onclick="${o.onClose}" style="width:30px; height:30px; flex:none; border-radius:8px; border:var(--ma-hw,0.33px) solid var(--ma-s-ffffff-120, var(--line)); display:flex; align-items:center; justify-content:center; font-size:13px; color:var(--ma-s-8b96b5, var(--text-soft)); cursor:pointer;">✕</span></div>`
-    + (o.body || '') + (o.foot ? `<span style="font-size:11px; color:var(--label);">${o.foot}</span>` : '') + '</div></div>';
+    + (o.body || '') + (o.foot ? `<span class="ma-pop-foot" style="font-size:11px; color:var(--ma-s-4b5672, var(--label));">${o.foot}</span>` : '') + '</div></div>';
 }
 // Esc closes the topmost frame through its own ✕. Bubble phase: while the stats sheet is open on top, its
 // capture-phase handler closes the sheet and stops the event, so one Escape never closes both.
@@ -13853,7 +13853,28 @@ function maMatchRowsHtml(groups, opts){
   // groups: [{ title, meta, metaTitle (hover text on the meta), cls (a wrapper round the group header + its rows, e.g. H2H's
   //   hover-dim hooks, DF L1305), divBefore, rows }]; row extras: wrapCls (wrapper classes), cls (row classes), attrs (raw
   //   attributes), oppTitle / oppAttrs, scoresTitle, setsColor, hTitle / aTitle, hMark (a one-letter marker in the H cell).
+  //   A group with title null draws no group header (a flat list).
+  // Pop-up tables (the file's 7–9 column match lists, DF L1495–1590): o.cols = the cell keys in order (MA_ROW_CELLS) and
+  //   o.grid = their track sizes; o.labels then names those columns. That geometry is DF's table variant: gap 8, head
+  //   padding '7px 28px 6px' between a 0.06 and a 0.09 hairline, not sticky, each row a 0.03 hairline under it; set inset
+  //   (the file's 22) for the row wrapper. Row extras there: event, score, price, priceTip (shared tooltip body), oppPrice,
+  //   pnl + pnlColor, line + lineColor.
   const o = opts || {}, esc = s => escapeHtml(s == null ? '' : String(s));
+  if (o.cols){
+    const S = (k, f) => `var(--ma-s-${k}, var(${f}))`;
+    const x = { esc, S, mono: "font-family:'IBM Plex Mono',monospace;", t: v => (v ? ` title="${esc(v)}"` : ''),
+      wl: r => (r.won == null ? S('5b6880', '--label') : r.won ? S('3dd68c', '--positive') : S('e0616f', '--negative')) };
+    const cols = o.cols.map(k => MA_ROW_CELLS[k]);
+    const grid = `display:grid; grid-template-columns:${o.grid}; gap:0 8px; align-items:center;`;
+    const cap = `${x.mono} font-size:9px; letter-spacing:0.1em; text-transform:uppercase; color:${S('4b5672', '--label')};`;
+    const head = `<div class="ma-rows-head" style="${grid} padding:${o.headPad || '7px 28px 6px'}; border-top:var(--ma-hw,0.33px) solid ${S('ffffff-060', '--line')}; border-bottom:var(--ma-hw,0.33px) solid ${S('ffffff-090', '--line-open')};">`
+      + (o.labels || []).map((l, i) => (l ? `<span style="${cap}${cols[i] && cols[i].right ? ' text-align:right;' : ''}">${esc(l)}</span>` : '<span></span>')).join('') + '</div>';
+    const row = r => `<div class="${r.wrapCls || ''}" style="padding:${o.rowPad || '0 ' + (o.inset || 0) + 'px'};"><div class="seg ma-row${r.cls ? ' ' + r.cls : ''}"${r.attrs || ''}${r.click || ''} style="${grid} padding:6px; border-radius:6px; background:${r.selected ? S('5b9bff-100', '--seg-active') : 'transparent'}; cursor:pointer; border-bottom:var(--ma-hw,0.33px) solid ${S('ffffff-030', '--line')};">`
+      + cols.map(c => c.cell(r, x)).join('') + '</div></div>';
+    const body = groups.map(g => g.rows.map(row).join('')).join('');
+    const empty = !groups.some(g => g.rows.length) && o.empty ? `<div style="padding:28px 16px; text-align:center; font-size:12.5px; color:var(--label);">${esc(o.empty)}</div>` : '';
+    return `<div class="ma-rows ma-rows-table" style="display:flex; flex-direction:column; line-height:normal;">${head}${empty}${body}</div>`;
+  }
   const mono = "font-family:'IBM Plex Mono',monospace;";
   // colours = the design's own shades (founder 2026-09-29), fallbacks = the 12a names outside the modal
   const S = (k, f) => `var(--ma-s-${k}, var(${f}))`;
@@ -13876,12 +13897,28 @@ function maMatchRowsHtml(groups, opts){
   const wrap = r => (o.inset != null || r.wrapCls ? `<div class="${r.wrapCls || ''}" style="transition:opacity .12s; padding:${o.rowPad || '0 ' + (o.inset || 0) + 'px'};">${row(r)}</div>` : row(r));
   const body = groups.map(g => (g.divBefore && o.divider ? o.divider : '')
     + (g.cls ? `<div class="${g.cls}">` : '')
-    + `<div class="ma-rows-group" style="display:flex; align-items:center; gap:10px; padding:${o.groupPad || '11px 6px 5px'}; border-top:var(--ma-hw,0.33px) solid ${S('ffffff-070', '--line')};"><span style="font-size:12.5px; font-weight:700; white-space:nowrap;">${esc(g.title)}</span>${g.meta ? `<span${t(g.metaTitle)} style="${mono} font-size:10px; color:${S('4b5672', '--label')}; white-space:nowrap;">${esc(g.meta)}</span>` : ''}</div>`
+    + (g.title == null ? '' : `<div class="ma-rows-group" style="display:flex; align-items:center; gap:10px; padding:${o.groupPad || '11px 6px 5px'}; border-top:var(--ma-hw,0.33px) solid ${S('ffffff-070', '--line')};"><span style="font-size:12.5px; font-weight:700; white-space:nowrap;">${esc(g.title)}</span>${g.meta ? `<span${t(g.metaTitle)} style="${mono} font-size:10px; color:${S('4b5672', '--label')}; white-space:nowrap;">${esc(g.meta)}</span>` : ''}</div>`)
     + g.rows.map(wrap).join('') + (g.cls ? '</div>' : '')).join('');
   const empty = !groups.length && o.empty ? `<div style="padding:28px 16px; text-align:center; font-size:12.5px; color:var(--label);">${esc(o.empty)}</div>` : '';
   // line-height:normal = the design's (its rows sit in no line-height rule); a host section's 21px drifted every row down.
   return `<div class="ma-rows" style="display:flex; flex-direction:column; line-height:normal;">${head}${empty}${body}</div>`;
 }
+// maMatchRowsHtml's pop-up table variant (o.cols): one cell per key, in the file's own sizes and shades (DF L1499–1590,
+// the Overview / Market edge pop-up rows). right = the column's header and cell align right.
+const MA_ROW_CELLS = {
+  date: { cell: (r, x) => `<span style="${x.mono} font-size:10.5px; color:${x.S('5b6880', '--label')};">${x.esc(r.date)}</span>` },
+  sq: { cell: (r, x) => `<span style="width:8px; height:8px; border-radius:2px; background:${x.wl(r)};"></span>` },
+  opp: { cell: (r, x) => `<span${r.oppAttrs || ''}${x.t(r.oppTitle)} style="font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${x.esc(r.opp)}</span>` },
+  event: { cell: (r, x) => `<span style="font-size:11.5px; color:${x.S('8b96b5', '--text-soft')}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${x.esc(r.event)}</span>` },
+  rd: { cell: (r, x) => `<span style="${x.mono} font-size:10px; color:${x.S('5b6880', '--label')};">${x.esc(r.rd)}</span>` },
+  score: { cell: (r, x) => `<span style="${x.mono} font-size:10.5px; color:${x.S('8b96b5', '--text-soft')}; white-space:nowrap;">${x.esc(r.score)}</span>` },
+  price: { right: true, cell: (r, x) => (r.priceTip
+    ? maTipHtml(`<span tabindex="0" style="${x.mono} font-size:11px; font-weight:700; text-align:right;">${x.esc(r.price)}</span>`, x.esc(r.priceTip), { cls: 'ma-row-tip', style: 'justify-self:end;' })
+    : `<span style="${x.mono} font-size:11px; font-weight:700; text-align:right;">${x.esc(r.price)}</span>`) },
+  oppPrice: { right: true, cell: (r, x) => `<span style="${x.mono} font-size:10.5px; color:${x.S('5b6880', '--label')}; text-align:right;">${x.esc(r.oppPrice)}</span>` },
+  pnl: { right: true, cell: (r, x) => `<span style="${x.mono} font-size:11px; font-weight:700; text-align:right; color:${r.pnlColor || x.wl(r)};">${x.esc(r.pnl)}</span>` },
+  line: { right: true, cell: (r, x) => `<span style="justify-self:end; ${x.mono} font-size:10.5px; font-weight:700; color:${r.lineColor || x.S('5b6880', '--label')}; white-space:nowrap;">${x.esc(r.line)}</span>` },
+};
 
 // ---- tooltip (README §6 `.elotip-pop`: 120ms opacity; DF L950 surface and 1px white-0.14 border as their own shades) ----
 // The pop takes the UI font as in the design file (DF L950: markup bodies set their own mono spans); a plain-text body
@@ -15729,8 +15766,12 @@ function meRowFromCareer(x, cl, selfKey, selfName, idx){
   // The history's own best-of, where it records one, beats the Slam-name inference.
   if ((x.bestOf === 3 || x.bestOf === 5) && x.bestOf !== r.bo){
     r.bo = x.bestOf;
-    if (!r.wo && !r.ret && r.pS != null && (r.won ? r.pS : r.oS) < (r.bo === 5 ? 3 : 2)) r.ret = true;
+    // Re-read the retirement under the history's format, both ways: a 2–0 win the Slam-name guess (Bo5) flagged
+    // as stopped short is complete in a best-of-3 (TEN-336); a Bo5 winner short of three sets stopped.
+    const unfinished = !!(r.sets && r.done && r.done.length < r.sets.length);
+    r.ret = !r.wo && (!!x.retired || unfinished || (r.pS != null && (r.won ? r.pS : r.oS) < (r.bo === 5 ? 3 : 2)));
     r.complete = !r.ret && !r.wo && r.pS != null;
+    r.decider = r.complete && r.pS != null && (r.pS + r.oS) === r.bo;   // fhFinishRow's rule, under the recorded format
   }
   if (!r.wo && cl){
     const d0 = fhDayNum(r.date), nk = fhNameKey(r.opp), hi = d0 + (x.src === 'archive' ? 14 : 1);
@@ -15827,32 +15868,35 @@ function meLoadProfileShard(key){
   return _meShardP[k];
 }
 
-// ---- design values (Market Edge Tab - Paperclip.md) through the modal's ONE token file (match-analysis-tokens.css,
-//      TEN-314 / TEN-312 D1): each is the var() of the token its ROLE maps to (README §3 + U-mappings); the design
-//      source value is in the comment. ----
+// ---- colours: the TEN-312 design file's own shades (founder 2026-09-29: every design shade is its own token,
+//      match-analysis-tokens.css `--ma-s-<source hex>[-<alpha × 1000>]`, Night / Day there). The file's live palette is
+//      meFor's PALS 'a' ("One colour", DF L3363); the source value is the token's name. Fallback = the 12a name outside the modal. ----
 const ME_C = {
-  text: 'var(--ma-t1)',            // player A, win bar, values
-  b: 'var(--ma-t3)',               // player B line (U4)
-  aFill: 'color-mix(in srgb, var(--ma-t1) 8%, transparent)', // chart area A
-  bFill: 'color-mix(in srgb, var(--ma-t3) 5%, transparent)', // chart area B (U4)
-  track: 'var(--ma-track-loss)',   // loss part of the split bar (U7)
-  up: 'var(--ma-pos)', dn: 'var(--ma-neg)',   // (+/− only)
-  m1: 'var(--ma-t2)',              // captions, card titles, events, chart labels
-  m2: 'var(--ma-t3)',              // sub-lines, dates, idle seg, Needs, Not covered
-  m3: 'var(--ma-t3)',              // column headers, footnotes, stat labels
-  'blue': 'var(--ma-link)',        // accent text: TODAY, In band header, TODAY'S BAND
-  card: 'var(--ma-card)', inner: 'var(--ma-inner)',
-  wash: 'var(--ma-sel)',           // today's band
-  hover: 'var(--ma-hover)',        // row hover
-  ring: 'var(--ma-outline)',       // inset ring
-  segOnBg: 'var(--ma-sel)', segOnBd: 'var(--ma-outline)',
-  hiBg: 'var(--ma-inner)', hiBd: 'var(--ma-hair-strong)',     // top-2
-  sel: 'var(--ma-sel)',            // selected pop-up row
-  chipBd: 'var(--ma-outline)',     // TODAY'S BAND border
-  line: 'var(--ma-hair)', lineSoft: 'var(--ma-hair-soft)', lineOpen: 'var(--ma-hair-strong)', hw: 'var(--ma-hw,0.33px)',
-  backdrop: 'var(--ma-scrim)',     // overlay (U11)
-  // chart (U14 / U15)
-  loss: 'var(--ma-chart-loss)', grid: 'var(--ma-chart-grid)', tick: 'var(--ma-chart-tick)', zero: 'var(--ma-chart-zero)',
+  text: fhS('e7e9ee', '--text'),              // player A line + dot, win bar, values
+  b: fhS('6b7590', '--label'),                // player B line + dot (PALS a cB, U4)
+  aFill: fhS('e7e9ee-080', '--line'),         // chart area A
+  bFill: fhS('6b7590-050', '--line'),         // chart area B
+  track: fhS('e7e9ee-250', '--line-open'),    // loss part of the split bar (DF L1821)
+  up: fhS('3dd68c', '--positive'), dn: fhS('e0616f', '--negative'),   // (+/− only)
+  m1: fhS('8b96b5', '--text-soft'),           // captions, card titles, events, chart labels
+  m2: fhS('5b6880', '--label'),               // sub-lines, dates, Needs, Not covered
+  m3: fhS('4b5672', '--label'),               // column headers, footnotes, stat labels
+  'blue': fhS('5b9bff', '--periwinkle'),      // accent text: TODAY, In band header, TODAY'S BAND
+  card: fhS('0e1019', '--surface'), inner: fhS('0c0e16', '--surface-inner'),
+  wash: fhS('5b9bff-060', '--seg-active'),    // today's band
+  hover: fhS('ffffff-030', '--nav-hover'),    // row hover (style-hover)
+  ring: fhS('5b9bff-250', '--seg-active-line'),   // today's band inset ring
+  hiBg: fhS('ffffff-050-fill', '--surface-inner'), hiBd: fhS('ffffff-160', '--line-open'),   // top-2 (PALS a hi)
+  sel: fhS('5b9bff-100', '--seg-active'),     // selected pop-up row
+  chipBd: fhS('5b9bff-350', '--seg-active-line'),   // TODAY'S BAND border
+  cardLine: fhS('ffffff-060', '--line'),      // card border, 1.25px (DF L1810)
+  headLine: fhS('ffffff-090', '--line-open'), // column-head rule (DF L1817, L1875)
+  rowLine: fhS('ffffff-050', '--line'),       // derived-line row rule; stat box border (DF L1875, L1558)
+  pillLine: fhS('ffffff-100', '--line'),      // the pill (DF L1805)
+  xLine: fhS('ffffff-220', '--line-open'),    // ✕ hover border (DF L1521)
+  hw: 'var(--ma-hw,0.33px)',
+  // chart (DF L1858–1866)
+  loss: fhS('ffffff-014', '--line'), grid: fhS('ffffff-060', '--line'), tick: fhS('ffffff-045', '--line'), zero: fhS('ffffff-400', '--line-open'),
 };
 // §4.5 thin-sample floor and §4.2 Needs basis: ruled 2026-09-27 (TEN-310) — n < 5 and n / Σ price.
 // Both live in market-edge-core.js (ME_THIN_FLOOR, ME_NEEDS).
@@ -15861,7 +15905,7 @@ const ME_NOPRICE_MSG = 'Derived lines need today’s price.';
 const ME_BO3_MSG = 'Derived lines cover best-of-3 matches only.';
 let _me = null;
 function meStateFor(m){
-  if (!_me || _me.m !== m) _me = { m, S: { meView: 'lines', meScope: 'career', meBand: null, meLine: null, meLineScope: 'all' },
+  if (!_me || _me.m !== m) _me = { m, S: { meView: 'winner', meScope: 'career', meBand: null, meLine: null, meLineScope: 'all' },
     data: [null, null], state: ['idle', 'idle'], idx: null };
   return _me;
 }
@@ -15896,9 +15940,8 @@ function meRender(){
   const E = _me; if (!E) return;
   meEnsureStyles();
   const el = document.getElementById('aSectionMarketEdge');
-  if (el){ if (typeof aOddsTipHide === 'function') aOddsTipHide(); el.innerHTML = buildMarketEdgeSection(E.m); }
+  if (el) el.innerHTML = buildMarketEdgeSection(E.m);
   meRenderPop();
-  if (typeof initAOddsTips === 'function') initAOddsTips();
 }
 // Signed figure with the true minus sign; a value that rounds to zero is "±0". Rounded half away from
 // zero on the magnitude (3.15 → 3.2, −3.15 → −3.2): toFixed alone reads the binary 3.1499… and gives 3.1.
@@ -15924,7 +15967,7 @@ function meModels(E){
 // TEN-314: the shared segmented control, Market edge geometry (DF L1524 / L1804: track radius 8 padding 2,
 // item radius 6, 12px). Inside the modal the 12a names maSeg draws resolve to the same ME_C tokens.
 function meSegHtml(items){ return maSeg('me', items); }
-const ME_CARD = `background:${ME_C.card}; border:${ME_C.hw} solid ${ME_C.line}; border-radius:14px; padding:20px 22px; display:flex; flex-direction:column; gap:16px; min-width:0;`;
+const ME_CARD = `background:${ME_C.card}; border:1.25px solid ${ME_C.cardLine}; border-radius:14px; padding:20px 22px; display:flex; flex-direction:column; gap:16px; min-width:0;`;
 const ME_TITLE = `${FH_MONO} font-size:10px; font-weight:700; letter-spacing:0.16em; text-transform:uppercase; color:${ME_C.m1};`;
 const ME_COLH = `${FH_MONO} font-size:9px; letter-spacing:0.1em; text-transform:uppercase; color:${ME_C.m3};`;
 const ME_FOOT = `font-size:11px; color:${ME_C.m3};`;
@@ -15934,28 +15977,30 @@ const ME_BCOLS = 'minmax(92px,1fr) minmax(110px,1.4fr) 52px 52px 56px';
 const ME_LCOLS = 'minmax(0,1.1fr) 104px 104px 44px';
 const meScopeLbl = S => (S.meScope === 'l52' ? 'Last 52 weeks' : 'Career');
 function meScopeSeg(S){ return meSegHtml([['l52', 'Last 52 weeks'], ['career', 'Career']].map(t => ({ label: t[1], on: S.meScope === t[0], onclick: `meSet({meScope:'${t[0]}'})` }))); }
-// While a shard loads the body keeps its loaded height (measured: 2 group labels + 8 band rows = 282px,
-// 6 line rows × 38px = 228px), so nothing moves when the data lands (TEN-310 §4.9).
-// A player whose history is unknown: the load failed, or he has no player key. Never "0 priced".
+// DESIGN GAP G12 (the file draws no loading state): while a shard loads the body keeps its loaded height (measured:
+// 2 group labels + 8 band rows = 282px, 6 line rows × 38px = 228px), so nothing moves when the data lands (TEN-310 §4.9).
+// DESIGN GAP G13 (the file draws only data): a player whose history is unknown — no profile Market edge, no player key,
+// or the load failed. Never "0 priced".
 const meNoHist = (M, pad) => `<div style="padding:${pad}; font-size:11.5px; color:${ME_C.m2};">${M.state === 'none' ? 'No history on file for this player.' : 'History unavailable — reopen the tab to retry.'}</div>`;
 const meLoadingRow = (pad, h) => `<div style="min-height:${h}px;"><div style="padding:${pad}; font-size:11.5px; color:${ME_C.m2};">Loading…</div></div>`;
 
 // §2 Price sensitivity — one player's column.
 function meBandsCol(E, i, M){
   const name = i ? E.m.p2 : E.m.p1, core = window.MarketEdgeCore;
-  const head = `<div style="display:grid; grid-template-columns:${ME_BCOLS}; gap:0 8px; align-items:end; padding:0 8px 7px; border-bottom:${ME_C.hw} solid ${ME_C.lineSoft};">`
+  const head = `<div style="display:grid; grid-template-columns:${ME_BCOLS}; gap:0 8px; align-items:end; padding:0 8px 7px; border-bottom:${ME_C.hw} solid ${ME_C.headLine};">`
     + `<span style="${ME_COLH}">Price</span><span style="${ME_COLH}">Wins · losses</span><span style="${ME_COLH} text-align:right;">Won</span><span style="${ME_COLH} text-align:right;">Needs</span><span style="${ME_COLH} text-align:right;">1u stake</span></div>`;
   let body;
   if (M.state !== 'ready') body = `<div class="me-bands-body">${M.state === 'loading' ? meLoadingRow('7px 8px', 282) : meNoHist(M, '7px 8px')}</div>`;
   else {
     body = '<div class="me-bands-body" style="display:flex; flex-direction:column;">' + [['fav', 'As favourite'], ['dog', 'As underdog']].map(g => `<span style="${FH_MONO} font-size:9px; font-weight:700; letter-spacing:0.14em; text-transform:uppercase; color:${ME_C.m1}; padding:10px 8px 4px;">${g[1]}</span>`
       + M.bands.filter(b => b.gk === g[0]).map(b => {
-        const isToday = b.i === M.tb, n = b.n, click = n > 0;
+        // DF L3443: the wash marks today's band and the band whose pop-up is open; the ring only today's
+        const isToday = b.i === M.tb, n = b.n, click = n > 0, on = E.S.meBand === (i ? 'b' : 'a') + b.i;
         // D2: the win share is a rate — the bar follows the gate like the Won % (n < 5: a neutral track, no share;
         // 5–9: grey fill). ME_THIN_FLOOR = 5 keeps its dash; 5–9 gains the grey tier (note on hover).
         const bar = maGateBar(b.w, n, ME_C.text), winW = bar.w.toFixed(1) + '%';
         const lossBg = bar.mode === 'none' || bar.mode === 'nopct' ? 'var(--ma-track)' : ME_C.track;
-        return `<div class="${click ? 'seg me-row' : ''}"${click ? ` onclick="meSet({meBand:'${i ? 'b' : 'a'}${b.i}'})"` : ''} data-me-band="${i ? 'b' : 'a'}${b.i}" style="display:grid; grid-template-columns:${ME_BCOLS}; gap:0 8px; align-items:center; padding:7px 8px; border-radius:7px; background:${isToday ? ME_C.wash : 'transparent'}; box-shadow:inset 0 0 0 1px ${isToday ? ME_C.ring : 'transparent'}; cursor:${click ? 'pointer' : 'default'};">`
+        return `<div class="${click ? 'seg me-row' : ''}"${click ? ` onclick="meSet({meBand:'${i ? 'b' : 'a'}${b.i}'})"` : ''} data-me-band="${i ? 'b' : 'a'}${b.i}" style="display:grid; grid-template-columns:${ME_BCOLS}; gap:0 8px; align-items:center; padding:7px 8px; border-radius:7px; background:${isToday || on ? ME_C.wash : 'transparent'}; box-shadow:inset 0 0 0 1px ${isToday ? ME_C.ring : 'transparent'}; cursor:${click ? 'pointer' : 'default'};">`
           + `<span style="display:flex; align-items:center; gap:6px; min-width:0;"><span style="${FH_MONO} font-size:11.5px; font-weight:700; white-space:nowrap;">${b.label}</span>${isToday ? `<span style="${FH_MONO} font-size:8.5px; font-weight:700; letter-spacing:0.1em; color:${ME_C.blue};">TODAY</span>` : ''}</span>`
           + `<span style="display:flex; align-items:center; gap:8px; min-width:0;"><span style="flex:1; display:flex; gap:2px; height:7px;"><span style="width:${winW}; background:${bar.color}; border-radius:3px 0 0 3px;"></span><span style="flex:1; background:${lossBg}; border-radius:0 3px 3px 0;"></span></span><span style="${FH_MONO} font-size:10px; color:${ME_C.m1}; white-space:nowrap; min-width:48px; text-align:right;">${b.w}–${b.l}</span></span>`
           + `<span style="${FH_MONO} font-size:11.5px; font-weight:700; text-align:right;">${maRateHtml(b.w, n, { text: mePct0(b.won), nopct: '—', note: 'title' })}</span>`
@@ -16022,23 +16067,21 @@ function meLinesCol(E, i, M){
   const name = i ? E.m.p2 : E.m.p1, core = window.MarketEdgeCore;
   const L = M.state === 'ready' ? M.lines : null;
   const bandLbl = L && L.tb >= 0 ? `In band = ${core.BANDS[L.tb].label} · n=${L.inBand.length}` : '';
-  const head = `<div style="display:grid; grid-template-columns:${ME_LCOLS}; gap:0 10px; align-items:end; padding:0 10px 7px; border-bottom:${ME_C.hw} solid ${ME_C.lineSoft};">`
+  const head = `<div style="display:grid; grid-template-columns:${ME_LCOLS}; gap:0 10px; align-items:end; padding:0 10px 7px; border-bottom:${ME_C.hw} solid ${ME_C.headLine};">`
     + `<span style="${ME_COLH}">Line</span><span style="${ME_COLH} text-align:right;">All</span><span style="${ME_COLH} text-align:right; color:${ME_C.blue};">In band</span><span style="${ME_COLH} text-align:right;">Diff</span></div>`;
   let body;
   if (M.state !== 'ready') body = M.state === 'loading' ? meLoadingRow('7px 10px', 228) : meNoHist(M, '7px 10px');
   else if (!L) body = `<div class="me-noprice" style="padding:28px 0; text-align:center; font-size:12.5px; color:${ME_C.m2};">${ME_NOPRICE_MSG}</div>`;
   else body = L.rows.map(r => {
-    // D2: each cell's rate through the gate on its own n. n < 5 keeps the ME_THIN_FLOOR dash (count shown as n);
-    // 5–9 = the whole cell greyed, "small sample" on hover.
-    const cellR = (c, nn, pct) => maRate(c, nn, { text: pct == null ? null : `${c}/${nn} · ${pct}%`, nopct: `— · n=${nn}`, dash: `— · n=${nn}` });
-    const aR = cellR(r.aC, r.aN, r.aPct), bR = cellR(r.bC, r.bN, r.bPct);
-    const aTxt = aR.txt, bTxt = bR.txt;
-    const gTip = (R, nn) => (R.mode === 'small' ? ` title="${MA_SMALL_NOTE} · n=${nn}"` : '');
+    // D2: each cell's rate through the gate on its own n (the shared maRateHtml). n < 5 keeps the ME_THIN_FLOOR dash
+    // (count shown as n); 5–9 = the whole cell greyed, "small sample · n" on hover (a narrow cell: note 'title').
+    const cell = (c, nn, pct, style, col) => maRateHtml(c, nn, { text: pct == null ? null : `${c}/${nn} · ${pct}%`, nopct: `— · n=${nn}`, dash: `— · n=${nn}`, note: 'title', color: col, style });
+    const aR = maRate(r.aC, r.aN, {}), bR = maRate(r.bC, r.bN, {});
     const d = r.diff, dSmall = aR.mode === 'small' || bR.mode === 'small';
-    return `<div class="seg me-row" onclick="meSet({meLine:'${i ? 'b' : 'a'}|${r.li}', meLineScope:'all'})" data-me-line="${i ? 'b' : 'a'}|${r.li}" style="display:grid; grid-template-columns:${ME_LCOLS}; gap:0 10px; align-items:center; cursor:pointer; padding:7px 10px; border-bottom:${ME_C.hw} solid ${ME_C.lineSoft}; border-radius:6px;">`
+    return `<div class="seg me-row" onclick="meSet({meLine:'${i ? 'b' : 'a'}|${r.li}', meLineScope:'all'})" data-me-line="${i ? 'b' : 'a'}|${r.li}" style="display:grid; grid-template-columns:${ME_LCOLS}; gap:0 10px; align-items:center; cursor:pointer; padding:7px 10px; border-bottom:${ME_C.hw} solid ${ME_C.rowLine}; border-radius:6px;">`
       + `<span style="font-size:12.5px; font-weight:600;">${fhEsc(r.label)}</span>`
-      + `<span data-ma-gate="${aR.mode}"${gTip(aR, r.aN)} style="${FH_MONO} font-size:11px; color:${aR.mode === 'small' ? MA_GREY : ME_C.m2}; text-align:right; white-space:nowrap;">${aTxt}</span>`
-      + `<span data-ma-gate="${bR.mode}"${gTip(bR, r.bN)} style="justify-self:end; ${FH_MONO} font-size:12px; font-weight:700; white-space:nowrap;${bR.mode === 'small' ? ' color:' + MA_GREY + ';' : ''} background:${r.top ? ME_C.hiBg : 'transparent'}; border:${ME_C.hw} solid ${r.top ? ME_C.hiBd : 'transparent'}; border-radius:6px; padding:3px 8px;">${bTxt}</span>`
+      + cell(r.aC, r.aN, r.aPct, `${FH_MONO} font-size:11px; text-align:right; white-space:nowrap;`, ME_C.m2)
+      + cell(r.bC, r.bN, r.bPct, `justify-self:end; ${FH_MONO} font-size:12px; font-weight:700; white-space:nowrap; background:${r.top ? ME_C.hiBg : 'transparent'}; border:${ME_C.hw} solid ${r.top ? ME_C.hiBd : 'transparent'}; border-radius:6px; padding:3px 8px;`, ME_C.text)
       + `<span style="${FH_MONO} font-size:11px; font-weight:700; text-align:right; color:${d == null ? ME_C.m1 : dSmall ? MA_GREY : meUC(d, 0)};">${d == null ? '' : meSg(d, 0, '')}</span></div>`;
   }).join('');
   return `<div style="display:flex; flex-direction:column; min-width:0;"><div style="display:flex; align-items:baseline; justify-content:space-between; gap:10px; padding-bottom:8px;"><span style="font-size:13px; font-weight:700;">${fhEsc(name)}</span><span style="${FH_MONO} font-size:10px; color:${ME_C.m2};">${bandLbl}</span></div>${head}${body}</div>`;
@@ -16046,6 +16089,7 @@ function meLinesCol(E, i, M){
 function meLinesCard(E, MM){
   const S = E.S, noPrice = MM[0].today == null && MM[1].today == null;
   const fmt = window.MarketEdgeCore ? window.MarketEdgeCore.matchFormat(E.m) : { bo3: false };
+  // DESIGN GAP G14 (the file always draws both tables): not a standard best-of-3 (R7) / no price in the header.
   const body = !fmt.bo3
     ? `<div class="me-nobo3" data-me-format="${fmt.reason || 'unknown'}" style="padding:28px 0; text-align:center; font-size:12.5px; color:${ME_C.m2};">${ME_BO3_MSG}</div>`
     : noPrice
@@ -16056,21 +16100,27 @@ function meLinesCard(E, MM){
     + body
     + `<span style="${ME_FOOT}">Coverage from set scores, not settled line markets, so no yield is shown. In band = matches priced in the same band as today. Highlighted = the two most covered lines in today's band. ${meScopeLbl(S)}.${meSmallFoot(MM.map(M => (M.state === 'ready' && M.lines ? [M.lines.all.length, M.lines.inBand.length] : [])).flat())}</span></div></div>`;
 }
-// The pill: "CLOSING ODDS" (proposal, TEN-310 §4.6) — hover = book split + latest match in scope.
-function mePillTip(MM){
+// The pill: "CLOSING ODDS" (proposal, TEN-310 §4.6; the file's "SAMPLE DATA" chip, DF L1805, never renders) — hover = book
+// split + latest match in scope, through the shared tooltip (maTipHtml, DoD item 8). Opens under the pill, right-aligned:
+// the pill sits at the pane's right edge.
+function mePill(MM){
+  const pill = `<span class="me-pill" tabindex="0" style="${FH_MONO} font-size:9.5px; font-weight:600; letter-spacing:0.12em; color:${ME_C.m2}; border:${ME_C.hw} solid ${ME_C.pillLine}; border-radius:999px; padding:2px 8px; cursor:default;">CLOSING ODDS</span>`;
   const ok = MM.filter(M => M.state === 'ready');
-  if (ok.length < 2) return '';
+  if (ok.length < 2) return pill;
   const P = ok.reduce((s, M) => s + M.book.P, 0), B = ok.reduce((s, M) => s + M.book.B, 0);
   const last = ok.map(M => M.lastDate).filter(Boolean).sort().pop();
-  return ' tabindex="0" data-aotip="' + escapeHtml(aOddsTipHtml('Closing odds', [['Pinnacle', String(P)], ['Bet365', String(B) + (B ? ' (no Pinnacle close)' : '')], ['Latest match', last ? fhLongDate(last) : '—']])) + '"';
+  const line = (l, v) => `<span style="${FH_MONO} font-size:9px; font-weight:600; letter-spacing:0.14em; text-transform:uppercase; color:${ME_C.m2}; white-space:nowrap;">${l}</span><span style="${FH_MONO} font-size:11px; color:${ME_C.m1}; white-space:nowrap;">${fhEsc(v)}</span>`;
+  const body = `<span class="me-pill-tip" style="display:flex; flex-direction:column; gap:8px;"><span style="font-size:13px; font-weight:700; color:${ME_C.text};">Closing odds</span>`
+    + `<span style="display:grid; grid-template-columns:auto minmax(0,1fr); gap:4px 12px; align-items:baseline;">${line('Pinnacle', String(P))}${line('Bet365', String(B) + (B ? ' (no Pinnacle close)' : ''))}${line('Latest match', last ? fhLongDate(last) : '—')}</span></span>`;
+  return maTipHtml(pill, body, { popStyle: 'top:calc(100% + 8px); left:auto; right:0; transform:none;' });
 }
 function buildMarketEdgeSection(m){
   const E = meStateFor(m), S = E.S, MM = meModels(E);
   const view = meSegHtml([['winner', 'Match winner'], ['lines', 'Derived lines']].map(t => ({ label: t[1], on: S.meView === t[0], onclick: `meSet({meView:'${t[0]}'})` })));
   const top = `<div style="display:flex; align-items:center; justify-content:space-between; gap:10px 16px; flex-wrap:wrap;"><div style="display:flex; align-items:center; gap:10px; flex-wrap:wrap;"><div style="display:flex; flex-direction:column; align-items:flex-start; gap:10px;">${view}</div></div>`
-    + `<span class="me-pill"${mePillTip(MM)} style="${FH_MONO} font-size:9.5px; font-weight:600; letter-spacing:0.12em; color:${ME_C.m2}; border:${ME_C.hw} solid ${ME_C.line}; border-radius:999px; padding:2px 8px; cursor:default;">CLOSING ODDS</span></div>`;
+    + `${mePill(MM)}</div>`;
   const cards = S.meView === 'winner' ? mePriceCard(E, MM) + meChartCard(E, MM) : meLinesCard(E, MM);
-  return `<div class="me-pane" style="padding:6px 4px 2px; font-family:'Hanken Grotesk',system-ui,sans-serif; color:${ME_C.text};"><div style="display:flex; flex-direction:column; gap:14px; max-width:1040px; margin:0 auto;">${top}<div style="display:grid; grid-template-columns:minmax(0,1fr); gap:14px; align-items:start;">${cards}</div></div></div>`;
+  return `<div class="me-pane" style="font-family:'Hanken Grotesk',system-ui,sans-serif; color:${ME_C.text};"><div style="display:flex; flex-direction:column; gap:14px; max-width:1040px; margin:0 auto;">${top}<div style="display:grid; grid-template-columns:minmax(0,1fr); gap:14px; align-items:start;">${cards}</div></div></div>`;
 }
 
 // ---- §5 / §6 pop-ups (mounted on the modal card, like the stats sheet) ----
@@ -16087,32 +16137,26 @@ function meScoreTxt(r){ return r.sets ? r.sets.map(x => x[0] + '-' + x[1]).join(
 function mePopShell(title, chip, sub, inner, foot, closeJs){
   return maPopFrame({ cls: 'me-pop', xCls: 'me-x', title, chip, sub, body: inner, foot, maxWidth: 860, onClose: closeJs });
 }
-const meStatBox = (l, v, c, big, note) => `<div style="background:${ME_C.inner}; border:${ME_C.hw} solid ${ME_C.line}; border-radius:10px; padding:${big ? '10px 12px' : '8px 12px'}; display:flex; flex-direction:column; gap:${big ? 4 : 3}px; ${big ? 'min-width:0;' : 'min-width:84px;'}"><span style="${ME_COLH}">${l}</span><span class="me-stat" data-me-stat="${l}" style="${FH_MONO} font-size:${big ? 16 : 15}px; font-weight:700; color:${c}; white-space:nowrap;">${v}</span>${note ? `<span class="ma-small-note" style="${FH_MONO} font-size:10px; color:${MA_GREY}; white-space:nowrap;">${MA_SMALL_NOTE}</span>` : ''}</div>`;
+const meStatBox = (l, v, c, big, note) => `<div style="background:${ME_C.inner}; border:${ME_C.hw} solid ${ME_C.rowLine}; border-radius:10px; padding:${big ? '10px 12px' : '8px 12px'}; display:flex; flex-direction:column; gap:${big ? 4 : 3}px; ${big ? 'min-width:0;' : 'min-width:84px;'}"><span style="${ME_COLH}">${l}</span><span class="me-stat" data-me-stat="${l}" style="${FH_MONO} font-size:${big ? 16 : 15}px; font-weight:700; color:${c}; white-space:nowrap;">${v}</span>${note ? `<span class="ma-small-note" style="${FH_MONO} font-size:10px; color:${MA_GREY}; white-space:nowrap;">${MA_SMALL_NOTE}</span>` : ''}</div>`;
 // A rate stat box through the D2 gate: n < 5 keeps the ME_THIN_FLOOR dash, 5–9 greyed + "small sample", 10+ full.
 const meRateBox = (l, k, n, text, c, big) => { const R = maRate(k, n, { text, nopct: '—' }); return meStatBox(l, R.txt, R.mode === 'full' ? c : MA_GREY, big, R.mode === 'small'); };
 // The foot line's gloss when a figure on the card sits in the 5–9 tier.
 function meSmallFoot(ns){ return ns.some(n => maGate(n).mode === 'small') ? ' Grey = small sample (5–9 matches); hover for n.' : ''; }
 function meBookNote(rows){ const nb = rows.filter(r => r.book === 'B').length; return rows.length ? (nb ? `Pinnacle, Bet365 where missing (${nb})` : 'Pinnacle') : ''; }
-function meRowsHtml(list, cols, cells, E, name, key){
-  return list.map(r => {
-    // TEN-314 (founder 2026-09-28): every row opens the sheet; a match with no stats on file opens it too,
-    // header wired and the stat sections dashed.
-    const sel = E.selMid === r.mid;
-    E.rowMap[r.mid] = { r, name, key };
-    return `<div style="padding:0 22px;"><div class="seg me-row" data-me-row="${r.mid}" onclick="meOpenRow('${r.mid}')" style="display:grid; grid-template-columns:${cols}; gap:0 8px; align-items:center; padding:6px; border-radius:6px; background:${sel ? ME_C.sel : 'transparent'}; cursor:pointer; border-bottom:${ME_C.hw} solid ${ME_C.lineSoft};">${cells(r)}</div></div>`;
-  }).join('');
-}
-function meTableHead(cols, labels){
-  return `<div style="display:grid; grid-template-columns:${cols}; gap:0 8px; align-items:center; padding:7px 28px 6px; border-top:${ME_C.hw} solid ${ME_C.lineSoft}; border-bottom:${ME_C.hw} solid ${ME_C.lineSoft};">`
-    + labels.map(l => l === '' ? '<span></span>' : `<span style="${ME_COLH}${/^(Price|Opp|P&amp;L|Line)$/.test(l) ? ' text-align:right;' : ''}">${l}</span>`).join('') + '</div>';
-}
+// The pop-up match tables: the shared rows (maMatchRowsHtml, pop-up table variant — DoD item 8), grids as the file
+// (band DF L1560, line DF L1528). Every row opens the shared stats sheet (meOpenRow → fhOpenSheet); a match with no stats
+// opens it too, header wired and the stat sections dashed (TEN-314, founder 2026-09-28). Newest first.
 const ME_BAND_TCOLS = '64px 10px minmax(0,1.3fr) minmax(0,1fr) 34px minmax(0,0.9fr) 46px 42px 56px';
 const ME_LINE_TCOLS = '64px 10px minmax(0,1.3fr) minmax(0,1fr) minmax(0,0.9fr) 46px 96px';
-function meCommonCells(r){
-  return `<span style="${FH_MONO} font-size:10.5px; color:${ME_C.m2};">${meDMY(r.date)}</span>`
-    + `<span style="width:8px; height:8px; border-radius:2px; background:${r.won ? ME_C.up : ME_C.dn};"></span>`
-    + `<span style="font-size:12px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;" title="${fhEsc(r.opp)}">${fhEsc(r.opp)}</span>`
-    + `<span style="font-size:11.5px; color:${ME_C.m1}; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${fhEsc(r.tourn)}</span>`;
+function meRowOf(r, E, name, key, extra){
+  E.rowMap[r.mid] = { r, name, key };
+  return Object.assign({ date: meDMY(r.date), won: r.won, opp: r.opp, event: r.tourn, rd: r.round || FH_DASHC, score: meScoreTxt(r),
+    price: fhOdd(r.price), priceTip: fhSrcTitle(r), selected: E.selMid === r.mid,
+    attrs: ` data-me-row="${r.mid}"`, click: ` onclick="meOpenRow('${r.mid}')"` }, extra);
+}
+function mePopTable(list, cols, labels, grid, E, name, key, extra){
+  const rows = list.map(r => meRowOf(r, E, name, key, extra(r)));
+  return `<div style="margin:0 -22px;">${maMatchRowsHtml([{ title: null, rows }], { cols, labels, grid, inset: 22 })}</div>`;
 }
 function meBandPopHtml(E, MM){
   const k = E.S.meBand[0], i = k === 'b' ? 1 : 0, bi = +E.S.meBand.slice(1), M = MM[i];
@@ -16125,13 +16169,8 @@ function meBandPopHtml(E, MM){
     + meStatBox('Needs', mePct1(b.needs), ME_C.m1, true)
     + meRateBox('Yield', b.w, b.n, b.yield == null ? null : meSg(b.yield * 100, 1, '%'), b.yield == null ? ME_C.m1 : meUC(b.yield * 100, 1), true)
     + meStatBox('At 1u flat', meSg(b.units, 1, 'u'), meUC(b.units, 1), true) + '</div>';
-  const cells = r => meCommonCells(r)
-    + `<span style="${FH_MONO} font-size:10px; color:${ME_C.m2};">${fhEsc(r.round || FH_DASHC)}</span>`
-    + `<span style="${FH_MONO} font-size:10.5px; color:${ME_C.m1}; white-space:nowrap;">${meScoreTxt(r)}</span>`
-    + `<span style="${FH_MONO} font-size:11px; font-weight:700; text-align:right;" title="${fhEsc(fhSrcTitle(r))}">${fhOdd(r.price)}</span>`
-    + `<span style="${FH_MONO} font-size:10.5px; color:${ME_C.m2}; text-align:right;">${fhOdd(r.oppPrice)}</span>`
-    + `<span style="${FH_MONO} font-size:11px; font-weight:700; text-align:right; color:${r.won ? ME_C.up : ME_C.dn};">${meSg(core.plCents(r) / 100, 2, 'u')}</span>`;
-  const table = `<div style="margin:0 -22px;">${meTableHead(ME_BAND_TCOLS, ['Date', '', 'Opponent', 'Event', 'Rd', 'Score', 'Price', 'Opp', 'P&amp;L'])}${meRowsHtml(b.rows, ME_BAND_TCOLS, cells, E, name, key)}</div>`;
+  const table = mePopTable(b.rows, ['date', 'sq', 'opp', 'event', 'rd', 'score', 'price', 'oppPrice', 'pnl'], ['Date', '', 'Opponent', 'Event', 'Rd', 'Score', 'Price', 'Opp', 'P&L'],
+    ME_BAND_TCOLS, E, name, key, r => ({ oppPrice: fhOdd(r.oppPrice), pnl: meSg(core.plCents(r) / 100, 2, 'u') }));
   return mePopShell(name + ' · priced ' + b.label, chip, sub, stats + table, 'Every match with a closing price in this band, newest first. Flat 1u stake. Click a match for its stats.', "meSet({meBand:null})");
 }
 function meLinePopHtml(E, MM){
@@ -16145,12 +16184,10 @@ function meLinePopHtml(E, MM){
   const stats = `<div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;">${seg}<div style="display:flex; gap:8px;">`
     + meStatBox('Covered', cov + ' of ' + n, ME_C.text, false) + meRateBox('Rate', cov, n, rateOk ? Math.round(cov / n * 100) + '%' : null, ME_C.text, false)
     + meStatBox('Not covered', String(n - cov), ME_C.m1, false) + '</div></div>';
-  const cells = r => { const c = row.fn(r); return meCommonCells(r)
-    + `<span style="${FH_MONO} font-size:10.5px; color:${ME_C.m1}; white-space:nowrap;">${meScoreTxt(r)}</span>`
-    + `<span style="${FH_MONO} font-size:11px; font-weight:700; text-align:right;" title="${fhEsc(fhSrcTitle(r))}">${fhOdd(r.price)}</span>`
-    + `<span style="justify-self:end; ${FH_MONO} font-size:10.5px; font-weight:700; color:${c ? ME_C.up : ME_C.m2}; white-space:nowrap;">${c ? 'Covered' : 'Not covered'}</span>`; };
   const sub = (sc === 'band' ? 'Priced ' + core.BANDS[L.tb].label + ' (today’s band)' : 'All priced matches') + ' · ' + meScopeLbl(E.S) + ' · Bo3 · closing odds';
-  const table = `<div style="margin:0 -22px;">${meTableHead(ME_LINE_TCOLS, ['Date', '', 'Opponent', 'Event', 'Score', 'Price', 'Line'])}${meRowsHtml(list, ME_LINE_TCOLS, cells, E, name, key)}</div>`;
+  // the file's live coverage variant is 'a' (text only, DF L3522): no row tint, no edge
+  const table = mePopTable(list, ['date', 'sq', 'opp', 'event', 'score', 'price', 'line'], ['Date', '', 'Opponent', 'Event', 'Score', 'Price', 'Line'],
+    ME_LINE_TCOLS, E, name, key, r => { const c = row.fn(r); return { line: c ? 'Covered' : 'Not covered', lineColor: c ? ME_C.up : ME_C.m2 }; });
   return mePopShell(name + ' · ' + row.label, '', sub, stats + table, 'Coverage is read from set scores, not a settled line market. Square = match result. Click a match for its stats.', "meSet({meLine:null})");
 }
 function meRenderPop(){
@@ -16174,8 +16211,8 @@ function meEnsureStyles(){
   el.textContent = `
   #aSectionMarketEdge, #mePop{ line-height:normal; font-size:16px; }
   #aSectionMarketEdge .seg, #mePop .seg{ cursor:pointer; transition:background .14s ease, color .14s ease, border-color .14s ease; }
-  #aSectionMarketEdge .me-row:hover, #mePop .me-row:hover{ background:${ME_C.hover} !important; }
-  #mePop .me-x:hover{ color:${ME_C.text} !important; border-color:${ME_C.lineOpen} !important; }`;
+  #aSectionMarketEdge .me-row:hover{ background:${ME_C.hover} !important; }
+  #mePop .me-x:hover{ color:${ME_C.text} !important; border-color:${ME_C.xLine} !important; }`;
   document.head.appendChild(el);
 }
 

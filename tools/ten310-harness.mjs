@@ -57,11 +57,11 @@ export function buildData({ src = HTML } = {}) {
 // TEN-314: MA_* / ma* = the modal's shared components (D2 sample gate, segmented control, pop-up frame).
 const UI_CONSTS = ['FH_DASHC', 'FH_MONO', 'FH_MONS', 'FH_BOOK', 'FH_SRC', 'AODDS_C', 'ME_C', 'ME_NOPRICE_MSG', 'ME_BO3_MSG', 'mePct0', 'mePct1', 'meUC', 'ME_CARD',
   'ME_TITLE', 'ME_COLH', 'ME_FOOT', 'ME_HINT', 'ME_PGRID', 'ME_BCOLS', 'ME_LCOLS', 'meScopeLbl', 'meNoHist', 'meLoadingRow', 'meStatBox', 'ME_BAND_TCOLS', 'ME_LINE_TCOLS',
-  'MA_GREY', 'MA_SMALL_NOTE', 'MA_SEG', 'meRateBox'];
+  'MA_GREY', 'MA_SMALL_NOTE', 'MA_SEG', 'meRateBox', 'MA_ROW_COLS', 'MA_ROW_CELLS'];
 const UI_FNS = ['escapeHtml', 'fhDayNum', 'psShortName', 'fhSurname', 'fhEsc', 'fhRefDay', 'fhLongDate', 'fhOdd', 'fhSrcTitle', 'aOddsTipHtml', 'aHeaderOdds', 'meStateFor',
-  'meSg', 'meDMY', 'meModels', 'meSegHtml', 'meScopeSeg', 'meBandsCol', 'mePriceCard', 'meChartCard', 'meLinesCol', 'meLinesCard', 'mePillTip',
-  'buildMarketEdgeSection', 'meScoreTxt', 'mePopShell', 'meBookNote', 'meRowsHtml', 'meTableHead', 'meCommonCells', 'meBandPopHtml', 'meLinePopHtml',
-  'meSmallFoot', 'tourxSampleGate', 'maGate', 'maPct', 'maRate', 'maRateHtml', 'maGateBar', 'maSmallNote', 'maSeg', 'maPopFrame'];
+  'meSg', 'meDMY', 'meModels', 'meSegHtml', 'meScopeSeg', 'meBandsCol', 'mePriceCard', 'meChartCard', 'meLinesCol', 'meLinesCard', 'mePill',
+  'buildMarketEdgeSection', 'meScoreTxt', 'mePopShell', 'meBookNote', 'meRowOf', 'mePopTable', 'meBandPopHtml', 'meLinePopHtml',
+  'meSmallFoot', 'tourxSampleGate', 'maGate', 'maPct', 'maRate', 'maRateHtml', 'maGateBar', 'maSmallNote', 'maSeg', 'maPopFrame', 'fhS', 'maMatchRowsHtml', 'maTipHtml'];
 
 /** The page's data layer + renderer. ui.render(m, S, rowsA, rowsB) → { html, band(k), line(k) }. */
 export function buildUI({ src = HTML } = {}) {

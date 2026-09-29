@@ -30,6 +30,23 @@ Applies to the TEN-310 block in `bsp-consult-dashboard.html` (`me*` functions, `
 - **Every pop-up row opens the match stats sheet** — the "stats on file" click condition (`meSheetOk`) is dropped; where no stats exist the sheet shows the wired header and "Match stats not available for this match".
 - **The profit chart footnote describes the shared date axis** (both players on one real-date axis; a later career starts further right), not the design's per-player index axis (M5). **Test:** the footnote text does not say each line spans the player's own matches.
 
+## TEN-312 rebuild (TEN-336, 2026-09-29)
+- **Built from `Match Analysis Progression v1.dc.html`** (meFor DF L3359, template L1516–1598 + L1801–1880). The file's
+  live variants are fixed in its code: palette PALS `a` ("One colour"), layout `a`, band pop-up `cur`, line pop-up `a`.
+- **Shared helpers only (DoD item 8).** The pop-up match tables are `maMatchRowsHtml` rows in its pop-up table variant
+  (`cols` + `grid` + `labels`, cells from `MA_ROW_CELLS`); every row opens the shared sheet (`meOpenRow` → `fhOpenSheet`).
+  The pill's book split and each row's price source are `maTipHtml` tooltips. `meRowsHtml` / `meTableHead` /
+  `meCommonCells` / `mePillTip` are deleted. **Test:** `test-ten336-market-edge.mjs` "DoD 8" (+ the helper's default rows
+  are byte-identical to before the variant existed).
+- **Colours = the file's own shades** (`ME_C` → `fhS('<source hex>')`, token file `--ma-s-*`); cards 1.25px at white 0.06,
+  column heads on the 0.09 rule, no pane padding (M12); the open band takes the today wash (DF L3443).
+- **Undrawn states:** loading (G12), no history (G13), Derived lines without a price or outside best-of-3 (G14) — TEN-312
+  `design-gaps`; each carries `// DESIGN GAP Gn`.
+- A best-of the history records beats the Slam-name guess **both ways**: the retirement is re-read under it (a 2–0 win
+  recorded best-of-3 at a Slam-named event is complete). **Test:** `test-ten336-market-edge.mjs` "data".
+- Pixel harness (manual): `tools/ten336-me-capture.mjs <out> --theme source` → `tools/ten312-pixel-diff.py` +
+  `tools/ten336-card-diff.py` (per card) + `tools/ten330-form-structure.py` (text leaves).
+
 ## Default view (TEN-312 D3, founder 2026-09-28)
 - The tab opens on **Match winner** (`meView` default `winner`), not Derived lines. **Test:** a fresh modal's Market edge tab renders the Price sensitivity card first.
 

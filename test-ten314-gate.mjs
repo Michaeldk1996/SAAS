@@ -96,7 +96,7 @@ test('Key factors · Recent form "Last N": 3 → W–L, 7 → greyed + note, 12 
 // Mutation: the Won cell back to the bare mePct0(b.won), or the win bar drawn at any n ≥ 1 (`b.w / n * 100`).
 test('Market edge band row: Won + win bar through the gate — 0 / 3 dash + neutral track, 7 greyed (hover note), 12 full', () => {
   const band = n => ({ i: 0, gk: 'fav', label: '1.01 – 1.20', n, w: WINS[n], l: n - WINS[n], won: n >= 5 ? WINS[n] / n : null, needs: n ? 0.8 : null, units: n ? 1.2 : 0 });
-  const row = n => S.meBandsCol({ m: { p1: 'J. Sinner', p2: 'C. Alcaraz' } }, 0, { state: 'ready', tb: -1, bands: [band(n)] });
+  const row = n => S.meBandsCol({ m: { p1: 'J. Sinner', p2: 'C. Alcaraz' }, S: {} }, 0, { state: 'ready', tb: -1, bands: [band(n)] });
   const won = h => { const m = /text-align:right;">(<span class="ma-rate[^>]*>[^<]*<\/span>)<\/span>/.exec(h); return m && m[1]; };
   const barW = h => /<span style="width:([\d.]+)%; background:([^;]*);/.exec(h).slice(1);
   assert.match(won(row(0)), /data-ma-gate="none"[^>]*>—</); assert.deepEqual(barW(row(0)), ['0.0', 'transparent']);
@@ -106,7 +106,7 @@ test('Market edge band row: Won + win bar through the gate — 0 / 3 dash + neut
   assert.match(won(row(7)), /data-ma-gate="small" title="small sample · n=7" style="color:var\(--ma-t3, var\(--label\)\);">57%</);
   assert.deepEqual(barW(row(7)), ['57.1', 'var(--ma-t3, var(--label))']);
   assert.match(won(row(12)), /data-ma-gate="full"[^>]*>75%</);
-  assert.deepEqual(barW(row(12)), ['75.0', 'var(--ma-t1)']);
+  assert.deepEqual(barW(row(12)), ['75.0', 'var(--ma-s-e7e9ee, var(--text))']);   // TEN-336: the file's own shade (ME_C.text)
   // the band pop-up's Won / Yield boxes: greyed + a visible note at 5–9
   const box = S.meRateBox('Won', 4, 7, '57.1%', 'var(--ma-t1)', true);
   assert.ok(/color:var\(--ma-t3, var\(--label\)\); white-space:nowrap;">57\.1%<\/span><span class="ma-small-note"/.test(box));
